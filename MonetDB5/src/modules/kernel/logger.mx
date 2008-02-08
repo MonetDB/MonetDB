@@ -30,7 +30,7 @@ transaction commit to include the changes in the log file.
 The logger uses a directory to store its log files. One master log file
 stores information about the version of the logger and the transaction 
 log files. This file is a simple ascii file with the following format: 
- 	6DIGIT-VERSION\n[log file number \n]*]*
+ @code{6DIGIT-VERSION\n[log file number \n]*]*}
 The transaction log files have a binary format, which stores fixed size 
 logformat headers (flag,nr,bid), where the flag is the type of update logged.
 The nr field indicates how many changes there were (in case of inserts/deletes).

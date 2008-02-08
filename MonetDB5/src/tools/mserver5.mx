@@ -18,7 +18,7 @@
 @a M.L. Kersten, P. Boncz, Niels Nes, Stefan Manegold, Sjoerd Mullender
 @v 5.0
 @* The Monet Server
-The program @code{ mserver5} is the MonetDB server. It is started by the database
+The program @code{mserver5} is the MonetDB server. It is started by the database
 administrator.  The console is primarilly meant to further initialize
 the server, such as starting internet listeners.
 
@@ -51,7 +51,7 @@ The server options have the following meaning:
 	where to find the environment settings
 @item --dbinit <stmt>
         execute the statement first.
-@end itemize
+@end table
 
 @{
 @+ Implementation
@@ -178,7 +178,7 @@ monet_hello(opt *set, int setlen)
 		printf("# Configuration:%s\n", GDKgetenv("config"));
 		printf("# Database farm:%s\n", GDKgetenv("gdk_dbfarm"));
 #endif
-		printf("# Copyright (c) 1993-2007 CWI, all rights reserved\n");
+		printf("# Copyright (c) 1993-2008 CWI, all rights reserved\n");
 		printf("# Visit http://monetdb.cwi.nl/ for further information\n");
 	}
 }

@@ -170,7 +170,7 @@ mal_export void showAllScenarios(stream *f);
 mal_export void resetScenario(Client c);
 
 mal_export Scenario findScenario(str nme);
-mal_export void updateScenario(str nme, MALfcn fcn);
+mal_export void updateScenario(str scen, str nme, MALfcn fcn);
 
 #endif /* _MAL_SCENARIO_H */
 @-
@@ -190,7 +190,7 @@ struct SCENARIO scenarioRec[MAXSCEN] = {
 	{"mal", "mal",
 	 0, 0,			/* hardwired MALinit*/
 	 0, 0,			/* implicit */
-	 0, 0,			/* no initClient */
+	 "MALinitClient", (MALfcn) &MALinitClient,
 	 "MALexitClient", (MALfcn) &MALexitClient,
 	 "MALreader", (MALfcn) &MALreader, 0,
 	 "MALparser", (MALfcn) &MALparser, 0,
@@ -235,11 +235,6 @@ getFreeScenario()
 }
 
 @-
-@= initScen
-if( @1->@2){
-	if( @1->@2Cmd == 0) @1->@2Cmd = (MALfcn)getAddress(@3,@3,@1->@2,1);
-}
-@-
 A scenario is initialized only once per session. 
 All other requests are silently ignored. 
 After initialization, all state functions should have been set.
@@ -251,6 +246,7 @@ call once the routine default scenario for each client first.
 str
 initScenario(Client c, Scenario s)
 {
+	str l = s->language;
 	str msg = MAL_SUCCEED;
 
 	if (s->initSystemCmd)
@@ -258,26 +254,35 @@ initScenario(Client c, Scenario s)
 	/* prepare for conclicts */
 	mal_set_lock(mal_contextLock, "Scenario");
 	if (s->initSystem && s->initSystemCmd == 0) {
-		s->initSystemCmd = (MALfcn) getAddress(s->language, s->language, s->initSystem,1);
+		s->initSystemCmd = (MALfcn) getAddress(l, l, s->initSystem,1);
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
 		} else {
 			char buf[BUFSIZ];
-			snprintf(buf,BUFSIZ,"%s.init",s->language);
+			snprintf(buf,BUFSIZ,"%s.init", l);
 			msg = createException(MAL, buf, "Scenario not initialized"); 
 		}
 	}
 	/* does the return below unset the lock? */
 	if (msg)
 		return msg;
-	@:initScen(s, exitSystem,s->language)@
-	@:initScen(s, initClient,s->language)@
-	@:initScen(s, exitClient,s->language)@
-	@:initScen(s, reader,s->language)@
-	@:initScen(s, parser,s->language)@
-	@:initScen(s, optimizer,s->language)@
-	@:initScen(s, tactics,s->language)@
-	@:initScen(s, engine,s->language)@
+
+	if (s->exitSystem && s->exitSystemCmd == 0) 
+		s->exitSystemCmd = (MALfcn) getAddress(l, l, s->exitSystem,1);
+	if (s->initClient && s->initClientCmd == 0) 
+		s->initClientCmd = (MALfcn) getAddress(l, l, s->initClient,1);
+	if (s->exitClient && s->exitClientCmd == 0) 
+		s->exitClientCmd = (MALfcn) getAddress(l, l, s->exitClient,1);
+	if (s->reader && s->readerCmd == 0) 
+		s->readerCmd = (MALfcn) getAddress(l, l, s->reader,1);
+	if (s->parser && s->parserCmd == 0) 
+		s->parserCmd = (MALfcn) getAddress(l, l, s->parser,1);
+	if (s->optimizer && s->optimizerCmd == 0) 
+		s->optimizerCmd = (MALfcn) getAddress(l, l, s->optimizer,1);
+	if (s->tactics && s->tacticsCmd == 0) 
+		s->tacticsCmd = (MALfcn) getAddress(l, l, s->tactics,1);
+	if (s->engine && s->engineCmd == 0) 
+		s->engineCmd = (MALfcn) getAddress(l, l, s->engine,1);
 	mal_unset_lock(mal_contextLock, "Scenario");
 	return(fillScenario(c, s));
 }
@@ -291,23 +296,29 @@ defaultScenario(Client c)
 @-
 The Monet debugger provides an option to inspect the scenarios currently
 defined.
-@= scenarioCommand
-    if( scen->@1) stream_printf(f," \"%s%s\",",scen->@1,
-        (scen->@1Cmd?"":"?"));
-    else stream_printf(f," nil,");
+
 @c
+static void
+print_scenarioCommand(stream *f, str cmd, void *funcptr)
+{
+    if (cmd) 
+	stream_printf(f," \"%s%s\",", cmd, (funcptr?"":"?"));
+    else 
+	stream_printf(f," nil,");
+}
+
 void
 showScenario(stream *f, Scenario scen)
 {
 	stream_printf(f, "[ \"%s\",", scen->name);
-	@:scenarioCommand(initSystem)@
-	@:scenarioCommand(exitSystem)@
-	@:scenarioCommand(initClient)@
-	@:scenarioCommand(exitClient)@
-	@:scenarioCommand(parser)@
-	@:scenarioCommand(optimizer)@
-	@:scenarioCommand(tactics)@
-	@:scenarioCommand(engine)@
+	print_scenarioCommand(f, scen->initSystem, scen->initSystemCmd);
+	print_scenarioCommand(f, scen->exitSystem, scen->exitSystemCmd);
+	print_scenarioCommand(f, scen->initClient, scen->initClientCmd);
+	print_scenarioCommand(f, scen->exitClient, scen->exitClientCmd);
+	print_scenarioCommand(f, scen->parser, scen->parserCmd);
+	print_scenarioCommand(f, scen->optimizer, scen->optimizerCmd);
+	print_scenarioCommand(f, scen->tactics, scen->tacticsCmd);
+	print_scenarioCommand(f, scen->engine, scen->engineCmd);
 	stream_printf(f, "]\n");
 }
 
@@ -329,34 +340,55 @@ has been loaded. This should be announced as part of the module
 prelude code.
 Beware that after the update, we also have to adjust the client records.
 They contain a copy of the functions addresses.
-@= updLine
-if( scen->@1 && strcmp(scen->@1,nme) == 0){
-	Client c1;
-	scen->@1Cmd = fcn;
-    for(c1 = mal_clients; c1 < mal_clients+MAL_MAXCLIENTS; c1++) 
-    if(@2 && c1->scenario && strcmp(c1->scenario,scen->name)==0) 
-		c1->phase[@2]= fcn;
-	else
-    if(@2 && c1->oldscenario && strcmp(c1->oldscenario,scen->name)==0) 
-		c1->oldphase[@2]= fcn;
-}
 @c
 void
-updateScenario(str nme, MALfcn fcn)
+updateScenario(str nme, str fnme, MALfcn fcn)
 {
-	int i;
-	Scenario scen = scenarioRec;
+	int phase = -1;
+	Scenario scen = findScenario(nme);
 
-	for (i = 0; i < MAXSCEN && scen->name; i++, scen++) {
-		@:updLine(initSystem, 0)@
-		@:updLine(exitSystem, 0)@
-		@:updLine(initClient, MAL_SCENARIO_INITCLIENT)@
-		@:updLine(exitClient, MAL_SCENARIO_EXITCLIENT)@
-		@:updLine(reader, MAL_SCENARIO_READER)@
-		@:updLine(parser, MAL_SCENARIO_PARSER)@
-		@:updLine(optimizer, MAL_SCENARIO_OPTIMIZE)@
-		@:updLine(tactics, MAL_SCENARIO_SCHEDULER)@
-		@:updLine(engine, MAL_SCENARIO_ENGINE)@
+	if (scen->initSystem && strcmp(scen->initSystem, fnme) == 0) 
+		scen->initSystemCmd = fcn;
+	if (scen->exitSystem && strcmp(scen->exitSystem, fnme) == 0) 
+		scen->exitSystemCmd = fcn;
+	if (scen->initClient && strcmp(scen->initClient, fnme) == 0) {
+		scen->initClientCmd = fcn;
+		phase = MAL_SCENARIO_INITCLIENT;
+	}
+	if (scen->exitClient && strcmp(scen->exitClient, fnme) == 0) {
+		scen->exitClientCmd = fcn;
+		phase = MAL_SCENARIO_EXITCLIENT;
+	}
+	if (scen->reader && strcmp(scen->reader, fnme) == 0) {
+		scen->readerCmd = fcn;
+		phase = MAL_SCENARIO_READER;
+	}
+	if (scen->parser && strcmp(scen->parser, fnme) == 0) {
+		scen->parserCmd = fcn;
+		phase = MAL_SCENARIO_PARSER;
+	}
+	if (scen->optimizer && strcmp(scen->optimizer, fnme) == 0) {
+		scen->optimizerCmd = fcn;
+		phase = MAL_SCENARIO_OPTIMIZE;
+	}
+	if (scen->tactics && strcmp(scen->tactics, fnme) == 0) {
+		scen->tacticsCmd = fcn;
+		phase = MAL_SCENARIO_SCHEDULER;
+	}
+	if (scen->engine && strcmp(scen->engine, fnme) == 0) {
+		scen->engineCmd = fcn;
+		phase = MAL_SCENARIO_ENGINE;
+	}
+	if (phase != -1) {
+		Client c1;
+
+    		for(c1 = mal_clients; c1 < mal_clients+MAL_MAXCLIENTS; c1++) 
+    			if (c1->scenario && 
+			    strcmp(c1->scenario, scen->name) == 0)
+				c1->phase[phase] = fcn;
+			if (c1->oldscenario && 
+			    strcmp(c1->oldscenario, scen->name) == 0)
+				c1->oldphase[phase] = fcn;
 	}
 }
 
@@ -549,25 +581,16 @@ between speed and ability to analysis its behavior.
 
 @-
 @{
-@= runPhase
-	c->stage= @1;
-	if(msg== MAL_SUCCEED && c->phase[@1] && ((msg= (str) (*c->phase[@1])(c)) ||  c->mode <= FINISHING)){
-		/* error occurred */
-#ifdef MAL_SCENARIO_DEBUG
-		stream_printf(GDKstdout,"Error in @1 phase\n");
-		if( /*c->mode > FINISHING &&*/ msg )
-			stream_printf(GDKstdout,"%s",msg);
-#endif
-		if (msg) {
-			/* FIXME: why is the error not handed back to the user here? */
-			/* for later */
-			int r= strcmp(msg,"MALException:client.quit:Server stopped.")==0;
-			if( r ) break;
-			GDKfree(msg); 
-			msg=0;
-		}
-		continue;
-	}
+@c
+static str 
+runPhase(Client c, int phase)
+{
+	str msg = MAL_SUCCEED;
+	if (c->phase[c->stage = phase]) 
+	    return msg = (str) (*c->phase[phase])(c); 
+	return msg;
+}
+
 @-
 Access control enforcement. Except for the server owner
 running a scenario should be explicitly permitted.
@@ -581,20 +604,30 @@ runScenarioBody(Client c)
 	struct tms t0,t1;
 #endif
 
-	if (c->phase[MAL_SCENARIO_INITCLIENT])
-		(*c->phase[MAL_SCENARIO_INITCLIENT]) (c);
-	while (c->mode > FINISHING) {
-		msg = MAL_SUCCEED;
-		@:runPhase(MAL_SCENARIO_READER)@
+	while (c->mode > FINISHING || msg != MAL_SUCCEED) {
+		if (!c->state[0] &&
+		    (msg = runPhase(c, MAL_SCENARIO_INITCLIENT)) != MAL_SUCCEED)
+			continue;
+		if (c->mode <= FINISHING || 
+		    (msg = runPhase(c, MAL_SCENARIO_READER)) != MAL_SUCCEED)
+			continue;
 		c->lastcmd= time(0);
 		start= GDKusec();
 #ifdef HAVE_TIMES
 		times(&t0);
 #endif
-		@:runPhase(MAL_SCENARIO_PARSER)@
-		@:runPhase(MAL_SCENARIO_OPTIMIZE)@
-		@:runPhase(MAL_SCENARIO_SCHEDULER)@
-		@:runPhase(MAL_SCENARIO_ENGINE)@
+		if (c->mode <= FINISHING ||
+		    (msg = runPhase(c, MAL_SCENARIO_PARSER)) != MAL_SUCCEED)
+			continue;
+		if (c->mode <= FINISHING || 
+		    (msg = runPhase(c, MAL_SCENARIO_OPTIMIZE)) != MAL_SUCCEED)
+			continue;
+		if (c->mode <= FINISHING || 
+                    (msg = runPhase(c, MAL_SCENARIO_SCHEDULER)) != MAL_SUCCEED)
+			continue;
+		if (c->mode <= FINISHING || 
+		    (msg = runPhase(c, MAL_SCENARIO_ENGINE)) != MAL_SUCCEED)
+			continue;
 		c->actions++;
 		start = GDKusec()-start;
 		c->totaltime += start;

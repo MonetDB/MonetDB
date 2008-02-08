@@ -61,7 +61,7 @@ During parallel execution additional layers may be constructed.
 @{
 The routines defined below provide management of the client
 administration. Routines dealing with serviceing requests
-are located in mal\_startup.
+are located in mal_startup.
 @h
 #ifndef _MAL_CLIENT_H_
 #define _MAL_CLIENT_H_

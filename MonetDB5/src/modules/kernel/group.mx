@@ -40,7 +40,7 @@ the sub-group mapping. They can be used for various optimization
 schemes at the MAL level.
 
 The prime limitation of the current implementation is that an
-underlying database of @{oid->any@} BATs is assumed.
+underlying database of @code{oid->any} BATs is assumed.
 This enables representation of each group using an oid,
 and the value representation of the group can be accordingly be
 retrieved easily. An optimized implementation in which we use positional
@@ -70,8 +70,8 @@ Successively the subgroups can be identified by modifying the GRP BAT or
 to derive a new GRP BAT for the subgroups. After all groups have been
 identified this way, a BAT histogram operation can be used to obtain
 the counts of each data cube. Other aggregation operations using the MIL
-set aggregate construct @{X@}(bat) 
-can be used as well; note for instance that histogram == @{count@}(b.reverse()).
+set aggregate construct @code{@{X@}(bat)} 
+can be used as well; note for instance that @code{histogram == @{count@}(b.reverse())}.
 
 The Monet interface module specification is shown below.
 Ideally we should defined stronger type constraints, e.g.
@@ -410,9 +410,9 @@ an order of values in the parent groups;
 Values @{standard and custom@}, 
 choosing between a fixed predefined and a custom hashmask. Custom
 allows the user to determine the size of the hashmask (and indirectly
-the estimated size of the result). The hashmask is $2^n - 1$ where $n$
+the estimated size of the result). The hashmask is @math{2^n - 1} where @math{n}
 is given by the user, or 1023 otherwise, and the derived result
-size is $4 \cdot 2^n$.
+size is @math{4 @dots{} 2^n}.
 @end multitable
 
 Further research should point out whether fitting a simple statistical

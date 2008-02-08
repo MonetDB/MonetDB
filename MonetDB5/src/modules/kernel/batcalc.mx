@@ -52,7 +52,7 @@ This variant can be obtained using a compile time flag (NULLTST) for the time
 being. If it turns out to be effective, we will derive a new
 
 version of batcalc.
-Experiments show that ignoring the NULLS saves about 15\%
+Experiments show that ignoring the NULLS saves about 15%
 for larger instructions.
 @{
 @mal
@@ -517,7 +517,18 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 	} else {
 		@:accumCst(@3,@1,@4,@5)@ 
 	}
-	bn->tsorted = 0;
+	if (@6 == 2)
+		bn->tsorted = BATtordered(b);
+#if @7
+	else if (@6 == 3) {
+		if (*(@5*)cst >= 0) 
+			bn->tsorted = BATtordered(b);
+		else
+			bn->tsorted = REVERT_SORTED(BATtordered(b));
+	} 
+#endif
+	else
+		bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 
 	BBPkeepref(*ret = bn->batCacheid);
@@ -540,7 +551,18 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *l, void *cst, int *r)
 	} else {
 		@:accumCstLeft(@3,@1,@4,@5)@ 
 	}
-	bn->tsorted = 0;
+	if (@6 == 2)
+		bn->tsorted = BATtordered(b);
+#if @7
+	else if (@6 == 3) {
+		if (*(@4*)cst >= 0) 
+			bn->tsorted = BATtordered(b);
+		else
+			bn->tsorted = REVERT_SORTED(BATtordered(b));
+	} 
+#endif
+	else
+		bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 
 	BBPkeepref(*ret = bn->batCacheid);
@@ -567,7 +589,18 @@ str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 		@:accumCst(@3,@1,@4,@5)@ 
 	}
 	BATsetcount(bn, BATcount(b));
-	bn->tsorted = 0;
+	if (@6 == 2)
+		bn->tsorted = BATtordered(b);
+#if @7
+	else if (@6 == 3) {
+		if (*(@5*)cst >= 0) 
+			bn->tsorted = BATtordered(b);
+		else
+			bn->tsorted = REVERT_SORTED(BATtordered(b));
+	} 
+#endif
+	else
+		bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
@@ -597,7 +630,18 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 		@:accumCstLeft(@3,@1,@4,@5)@ 
 	}
 	BATsetcount(bn, BATcount(b));
-	bn->tsorted = 0;
+	if (@6 == 2)
+		bn->tsorted = BATtordered(b);
+#if @7
+	else if (@6 == 3) {
+		if (*(@5*)cst >= 0) 
+			bn->tsorted = BATtordered(b);
+		else
+			bn->tsorted = REVERT_SORTED(BATtordered(b));
+	} 
+#endif
+	else
+		bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
@@ -617,32 +661,32 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 #include "batcalc.h"
 
 @= arithGrpImpl
-@:arithmeticImpl(@1,@2,flt,flt,flt)@
-@:arithmeticImpl(@1,@2,dbl,dbl,dbl)@
-@:arithmeticImpl(@1,@2,oid,oid,oid)@
+@:arithmeticImpl(@1,@2,flt,flt,flt,@3,1)@
+@:arithmeticImpl(@1,@2,dbl,dbl,dbl,@3,1)@
+@:arithmeticImpl(@1,@2,oid,oid,oid,@3,0)@
 
-@:arithmeticImpl(@1,@2,int,int,sht)@
-@:arithmeticImpl(@1,@2,int,sht,int)@
-@:arithmeticImpl(@1,@2,int,sht,sht)@
-@:arithmeticImpl(@1,@2,sht,sht,sht)@
+@:arithmeticImpl(@1,@2,int,int,sht,@3,1)@
+@:arithmeticImpl(@1,@2,int,sht,int,@3,1)@
+@:arithmeticImpl(@1,@2,int,sht,sht,@3,1)@
+@:arithmeticImpl(@1,@2,sht,sht,sht,@3,1)@
 
-@:arithmeticImpl(@1,@2,lng,lng,lng)@
-@:arithmeticImpl(@1,@2,lng,sht,lng)@
-@:arithmeticImpl(@1,@2,lng,lng,sht)@
-@:arithmeticImpl(@1,@2,lng,sht,sht)@
-@:arithmeticImpl(@1,@2,lng,sht,int)@
-@:arithmeticImpl(@1,@2,lng,int,sht)@
-@:arithmeticImpl(@1,@2,lng,int,lng)@
-@:arithmeticImpl(@1,@2,lng,lng,int)@
+@:arithmeticImpl(@1,@2,lng,lng,lng,@3,1)@
+@:arithmeticImpl(@1,@2,lng,sht,lng,@3,1)@
+@:arithmeticImpl(@1,@2,lng,lng,sht,@3,1)@
+@:arithmeticImpl(@1,@2,lng,sht,sht,@3,1)@
+@:arithmeticImpl(@1,@2,lng,sht,int,@3,1)@
+@:arithmeticImpl(@1,@2,lng,int,sht,@3,1)@
+@:arithmeticImpl(@1,@2,lng,int,lng,@3,1)@
+@:arithmeticImpl(@1,@2,lng,lng,int,@3,1)@
 
-@:arithmeticImpl(@1,@2,lng,int,int)@
-@:arithmeticImpl(@1,@2,int,int,int)@
+@:arithmeticImpl(@1,@2,lng,int,int,@3,1)@
+@:arithmeticImpl(@1,@2,int,int,int,@3,1)@
 
 @c
-@:arithGrpImpl(/,DIV)@
-@:arithGrpImpl(*,MUL)@
-@:arithGrpImpl(-,SUB)@
-@:arithGrpImpl(+,ADD)@
+@:arithGrpImpl(/,DIV,0)@
+@:arithGrpImpl(*,MUL,3)@
+@:arithGrpImpl(-,SUB,2)@
+@:arithGrpImpl(+,ADD,2)@
 
 @-  Modulo arithmetic
 The Modulo function doesn;t work on all types. Therefore we 

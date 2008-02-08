@@ -15,11 +15,11 @@
 @' All Rights Reserved.
 
 @f mtime
+@t New Temporal Module
 @a Peter Boncz, Martin van Dinther
 @v 1.0
 
-@* Temporal Module
-@T
+@+ Temporal Module
 The goal of this module is to provide adequate functionality for storing
 and manipulated time-related data. The minimum requirement is that data
 can easily be imported from all common commercial RDBMS products.
@@ -30,67 +30,77 @@ conceptual problems and hard-to-solve bugs that stem from these problems.
 The starting point of this module are SQL 92 and the ODBC time-related data types.
 Also, some functionalities have been imported from the time classes of the Java
 standard library.
-@T
+
 This module introduces four basic types and operations on them:
-\begin{description}
-\item[date] a date in the Gregorian calendar, e.g. 1999-JAN-31
+@table @samp
+@item date 
+a @samp{date} in the Gregorian calendar, e.g. 1999-JAN-31
 
-\item[daytime] a time of day to the detail of milliseconds, e.g. 23:59:59:000
+@item daytime 
+a time of day to the detail of milliseconds, e.g. 23:59:59:000
 
-\item[timestamp] a combination of date and time, indicating an exact point in
+@item timestamp 
+a combination of date and time, indicating an exact point in
+
 time (GMT). GMT is the time at the Greenwich meridian without a daylight savings
 time (DST) regime. Absence of DST means that hours are consecutive (no jumps) which
 makes it easy to perform time difference calculations.
-\item[timezone] the local time is often different from GMT (even at Greenwich in
+
+@item timezone  
+the local time is often different from GMT (even at Greenwich in
 summer, as the UK also has DST). Therefore, whenever a timestamp is composed
 from a local daytime and date, a timezone should be specified in order to
 translate the local daytime to GMT (and vice versa if a timestamp is to
 be decomposed in a local date and daytime).
 
-There is an additional atom {\bf rule} that is used to define when daylight
+@item rule
+There is an additional atom @samp{rule} that is used to define when daylight
 savings time in a timezone starts and ends. We provide predefined timezone
 objects for a number of timezones below (see the init script of this module).
-Also, there is one timezone called the {\bf local timezone}, which can be set
+Also, there is one timezone called the local @samp{timezone}, which can be set
 to one global value in a running Monet server, that is used if the timezone
 parameter is omitted from a command that needs it (if not set, the default value
 of the local timezone is plain GMT).
-\end{description}
+@end table
 
 @+ Limitations
-@T
 The valid ranges of the various data types are as follows:
-\begin{description}
-\item[min and max year]
+
+@table @samp
+@item min and max year
 The maximum and minimum dates and timestamps that can be stored are in the years 5,867,411 and
 -5,867,411, respectively. Interestingly, the year 0 is not a valid year. The year before 1 is
 called -1.
-\item[valid dates]
+
+@item valid dates
 Fall in a valid year, and have a month and day that is valid in that year. The first day in the year
 is January 1, the last December 31. Months with 31 days are January, March, May, July, August,
 October, and December, while April, June, September and November have 30 days. February has 28
 days, expect in a leap year, when it has 29. A leap year is a year that is an exact multiple of
 4. Years that are a multiple of 100 but not of 400 are an exception; they are no leap years.
-\item[valid daytime]
+
+@item valid daytime
 The smallest daytime is 00:00:00:000 and the largest 23:59:59:999 (the hours in a daytime
 range between [0,23], minutes and seconds between [0,59] and milliseconds between [0:999]).
 Daytime identifies a valid time-of-day, not an amount of time (for denoting amounts of time, or
 time differences, we use here concepts like "number of days" or "number of milliseconds" denoted
 by some value of a standard integer type).
-\item[valid timestamp]
+
+@item valid timestamp
 is formed by a combination of a valid date and valid daytime.
-\item[difference in days]
-For difference calculations between dates (in numbers of days) we use signed integers (the {\tt int}
+@item difference in days
+For difference calculations between dates (in numbers of days) we use signed integers (the @i{int}
 Monet type), hence the valid range for difference calculations is between -2147483648 and
 2147483647 days (which corresponds to roughly -5,867,411 and 5,867,411 years).
-\item[difference in msecs]
-For difference between timestamps (in numbers of milliseconds) we use 64-bit longs (the {\tt lng} Monet type).
+@item difference in msecs
+For difference between timestamps (in numbers of milliseconds) we use 64-bit longs (the @i{lng} Monet type).
 These are large integers of maximally 19 digits, which therefore impose a limit of about 106,000,000,000 years
 on the maximum time difference used in computations.
-\end{description}
+@end table
 
 There are also conceptual limitations that are inherent to the time system itself:
-\begin{description}
-\item[Gregorian calendar]
+@table @samp
+@item Gregorian calendar
 The basics of the Gregorian calendar stem from the time of Julius Caesar,
 when the concept of a solar year as consisting of 365.25 days (365 days plus once
 in 4 years one extra day) was introduced. However, this Julian Calendar, made a year 11
@@ -99,7 +109,7 @@ seasons. In medieval times this was noticed, and in 1582 Pope Gregory XIII issue
 decree, skipped 11 days. This measure was not adopted in the whole of Europe immediately,
 however.  For this reason, there were many regions in Europe that upheld different dates.
 
-It was only on {\bf September 14, 1752} that some consensus was reached and more countries
+It was only on @b{September 14, 1752} that some consensus was reached and more countries
 joined the Gregorian Calendar, which also was last modified at that time. The modifications
 were twofold: first, 12 more days were skipped. Second, it was determined that the
 year starts on January 1 (in England, for instance, it had been starting on March 25).
@@ -112,8 +122,8 @@ people really used in times before that (what they did use, however, was very va
 anyway, as explained above). In solar terms, however, this calendar is reasonably
 accurate (see the "correction seconds" note below).
 
-\item[timezones]
-The basic timezone regime was established on {\bf November 1, 1884} in the {\em International
+@item timezones
+The basic timezone regime was established on @b{November 1, 1884} in the @emph{International
 Meridian Conference} held in Greenwich (UK). Before that, a different time held in almost
 any city. The conference established 24 different time zones defined by regular longitude intervals
 that all differed by one hour.	Not for long it was that national and political interest started
@@ -135,24 +145,25 @@ from absolute timestamps, a correct timezone object should be used for the conve
 Applications that do not make correct use of timezones, will produce irregular results
 on e.g. time difference calculations.
 
-\item[correction seconds]
+@item correction seconds
 Once every such hundred years, a correction second is added on new year's night.
 As I do not know the rule, and this rule would seriously complicate this module
 (as then the duration of a day, which is now the fixed number of 24*60*60*1000
 milliseconds, becomes parametrized by the date), it is not implemented. Hence
 these seconds are lost, so time difference calculations in milliseconds (rather than
 in days) have a small error if the time difference spans many hundreds of years.
-\end{description}
+@end table
 
 TODO: we cannot handle well changes in the timezone rules (e.g., DST only exists since
 40 years, and some countries make frequent changes to the DST policy). To accommodate
-this we should make timezone\_local a function with a year parameter. The tool should
+this we should make timezone_local a function with a year parameter. The tool should
 maintain and access the timezone database stored in two bats [str,timezone],[str,year].
-Lookup of the correct timezone would be dynamic in this structure. The timezone\_setlocal
+Lookup of the correct timezone would be dynamic in this structure. The timezone_setlocal
 would just set the string name of the timezone.
 
 @+ Time/date comparison 
 
+@{
 @= compareGrp
 command ==(v:@1,w:@1):bit 
 address MTIME@1_EQ
@@ -204,17 +215,17 @@ comment "Minimum test for @1 value";
 command calc.max(v:@1,w:@1):@1 
 address MTIME@1_max
 comment "Maximum test for @1 value";
+@}
 @mal
 
 @+ Date atom
-@T
-Monet atoms can have multiple {\em parse formats}. One of these formats is
-chosen as the {\em print format}.
+Monet atoms can have multiple @emph{parse formats}. One of these formats is
+chosen as the @emph{print format}.
 
 To facilitate date descriptions, many formats are supported when parsing
 date atoms from a string, as described by the below grammar.
-{\small
-\begin{verbatim}
+
+@verbatim
 print format: INT_YEAR '-' INT_MONTH '-' INT_DAY
 parse format: INT_YEAR SEP1 INT_MONTH SEP1 INT_DAY
 	  or: INT_YEAR SEP2 STR_MONTH SEP2 INT_DAY
@@ -229,8 +240,8 @@ with:	INT_YEAR = integer between -5867411 and 5867411
 		   only the first three characters are also allowed)
 	    SEP1 = '-' or '/' or '\' or (' ')+
 	    SEP2 = SEP1 or ''
-\end{verbatim}
-}
+@end verbatim
+
 Printing a date uses the 1999-01-31 format, as this is both language neutral
 and the lexicographical string ordering of this representation respects the
 actual date ordering.
@@ -251,10 +262,9 @@ address date_tostr;
 
 @:compareGrp(date)@
 @+ Daytime atom
-@T
 A valid time of day to the detail of milliseconds, like 23:59:59:000
-{\small
-\begin{verbatim}
+
+@verbatim
 print format: HOUR ':' MIN ':' SEC '.' MSEC
 parse format: HOUR ':' MIN ':' SEC SEP MSEC
 	  or: HOUR ':' MIN ':' SEC
@@ -265,8 +275,8 @@ with: HOUR = integer between 0 and 23
        SEC = integer between 0 and 59 (default = 0)
       MSEC = integer between 0 and 999 (default = 0)
        SEP = '.' or ':'
-\end{verbatim}
-}
+@end verbatim
+
 @mal
 atom daytime :int;
 command fromstr():daytime 
@@ -277,21 +287,20 @@ address daytime_tostr;
 @:compareGrp(daytime)@
 
 @+ Timestamp
-@T
 An absolute point of time, as formed by the combination of a date a daytime in GMT
-e.g. 1999-01-31@23:59:59:000. GMT is the universal time at the Greenwich meridian,
+e.g. 1999-01-31@@23:59:59:000. GMT is the universal time at the Greenwich meridian,
 without any daylight savings time (DST). As such GMT times are 'absolute' (continuous,
 without hour jumps as in DST), so accurate time difference computations can be performed.
-{\small
-\begin{verbatim}
+
+@verbatim
 print format: DATE ' ' DAYTIME
 parse format: DATE ' ' DAYTIME ['GMT' ZONE ]
 
 with:	DATE = a valid parse format of the date atom (as decribed earlier)
      DAYTIME = a valid parse format of the daytime atom (as decribed earlier)
 	ZONE = ('+'|'-') HOUR ':' MIN [ 'DST' ]
-\end{verbatim}
-}
+@end verbatim
+
 Though internally timestamps are stored in GMT, the printing and parsing of
 timestamps is relative to the local timezone. That is, timestamps are
 printed without GMT part, meaning that the time is relative to the local
@@ -299,8 +308,8 @@ timezone.   Also, if a timestamp is parsed from a string that does not have
 an explicit GMT specifier, it is taken to be a timestamp in the local
 timezone. The default local timezone is just GMT+00, but it can be set
 arbitrarily.
-# not stored as a lng !
 @mal
+@{
 atom timestamp :lng;
 command fromstr():timestamp 
 address timestamp_fromstr;
@@ -320,7 +329,7 @@ comment "unix-time (epoch) support: seconds since epoch";
 
 @:compareGrp(timestamp)@
 
-@T
+@
 When creating a timestamp from a date and daytime, a timezone should be specified
 (if timezone is omitted, the local timezone is assumed). If a timezone is specified,
 it is used to convert the date and time in that timezone to GMT, which is the internal
@@ -331,37 +340,37 @@ such date and time combinations. In those case, we act as if it was the first
 occurrence (still within DST).
 
 @+ tzone
-@T
-A timezone determines a {\em time offset} from GMT with format
+A timezone determines a @emph{time offset} from GMT with format
 [-] HOUR ':' MINUTES, with HOUR between [0:23] and MINUTES between [0:59].
 
-Possibly, {\em Daylight Savings Time} (DST) is in force in a timezone, which means that
-between a start and an end date, the clock is set back {\bf one hour}. The start and
-end date of DST are determined by a {\em rule}. These rules (similar to the
-Java Timezone class) are made up of 4 parameters: a month {\bf M}, a day number in the
-month {\bf D}, a day-of-week (monday,..,sunday) denoted {\bf W}, and a daytime {\bf T}
+Possibly, @emph{Daylight Savings Time} (DST) is in force in a timezone, which means that
+between a start and an end date, the clock is set back @b{one hour}. The start and
+end date of DST are determined by a @emph{rule}. These rules (similar to the
+Java Timezone class) are made up of 4 parameters: a month @b{M}, a day number in the
+month @b{D}, a day-of-week (monday,..,sunday) denoted @b{W}, and a daytime @b{T}
 (only to the minute detail).
 
 Depending of the values of these parameters, five kinds of rules can be made
 (similar to the Java TimeZone class):
-\begin{itemize}
-\item first {\bf D}th weekday {\bf W} from start of month {\bf M}.\\
-iff {\bf D} in [1,..,5], {\bf W} in [1,..,7]
 
-\item last {\bf D}th weekday {\bf W} from end of month {\bf M}.\\
-iff {\bf D} in [-5,..,-1], {\bf W} in [1,..,7]
+@itemize @bullet
+@item first @b{D}th weekday @b{W} from start of month @b{M}.
+iff @b{D} in [1,..,5], @b{W} in [1,..,7]
 
-\item first weekday {\bf W} in month {\bf M} after exact {\bf D}th day of month.\\
-iff {\bf D} in [1,..,31], {\bf W} in [-7,..,-1]
+@item last @b{D}th weekday @b{W} from end of month @b{M}.
+iff @b{D} in [-5,..,-1], @b{W} in [1,..,7]
 
-\item last weekday {\bf W} in month {\bf M} before exact {\bf D}th day of month.\\
-iff {\bf D} in [-31,..,-1], {\bf W} in [-7,..,-1]
+@item first weekday @b{W} in month @b{M} after exact @b{D}th day of month.
+iff @b{D} in [1,..,31], @b{W} in [-7,..,-1]
 
-\item exact {\bf D}th day of month {\bf M}.\\
-iff {\bf D} in [1,..,31], {\bf W}=0;
+@item last weekday @b{W} in month @b{M} before exact @b{D}th day of month.
+iff @b{D} in [-31,..,-1], @b{W} in [-7,..,-1]
 
-\end{itemize}
-The parameters {\bf M} is a month number between 1 and 12, and {\bf T} is a time
+@item exact @b{D}th day of month @b{M}.
+iff @b{D} in [1,..,31], @b{W}=0;
+@end itemize
+
+The parameters @b{M} is a month number between 1 and 12, and @b{T} is a time
 to the minute detail just like the time offset of the timezone.
 
 Other values of the rule parameters on creating a timezone will produce a
@@ -518,7 +527,6 @@ comment "create a timezone as an hour difference
 	from GMT and a DST.";
 
 @+ Time/date decomposition
-@T
 There are routines that decompose a date and routines that decompose a daytime.
 For decomposing a timestamp, there are routines that decompose it in a date
 and daytime. The bulk variants are also provided to simplify code
@@ -617,7 +625,6 @@ address MTIMErule_extract_minutes
 comment "extract minutes from rule.";
 
 @+ Time/date arithmetic
-@T
 We choose to represent intervals of time as numbers of days (as int, a 32-bits integer)
 and numbers of milliseconds (as lng, a 64-bits integer). Using standard integer types
 facilitates computation with these amounts of time (you can use all normal integer
@@ -773,7 +780,6 @@ command msec{unsafe}():lng
 address MTIMEmsec
 comment "get time of day in msec since 1-1-1970.";
 
-@{
 @+ Prelude section
 Upon intialization of the time module, we have to
 initialize some variables, e.g. nils and the box with predefined
@@ -3914,7 +3920,6 @@ MTIMEmsec(lng *r)
 @:Extract(daytime,minutes,int)@
 @:Extract(daytime,seconds,int)@
 @:Extract(daytime,milliseconds,int)@
-@}
 
 str 
 MTIMEstrptime(date *d, str *s, str *format)
@@ -3951,3 +3956,4 @@ str MTIMEstrftime(str *s, date *d, str *format)
 #endif
 	throw(MAL, "mtime.str_to_date", "strptime support missing");
 }
+@}

@@ -33,12 +33,9 @@ It uses
 @itemize
 @item @url{http://www.cse.msu.edu/~enbody/perfmon.html,libperfmon } libperfex (IRIX) for R10000/R12000,
 @item (Solaris <= 7) by Richard Enbody, libcpc (Solaris >= 8) for UltraSparcI/II,
-@item @[<a href="http://qso.lanl.gov/~mpg/pperf.html"> libpperf </a>@
-(Linux-i?86 <= 2.2), by M. Patrick Goda and Michael S. Warren,
-@item @url{http://www.csd.uu.se/~mikpe/linux/perfctr/,libperfctr} (Linux-i?86 >= 2.4), by M. Pettersson for Pentiums \& Athlons.
+@item @url{http://user.it.uu.se/~mikpe/linux/perfctr/,libperfctr} (Linux-i?86 >= 2.4), by M. Pettersson for Pentiums & Athlons.
 @item @url{http://www.hpl.hp.com/research/linux/perfmon/, libpfm} (Linux-ia64 >= 2.4), by HP for Itanium[2].
 @end itemize
-
 
 Module counters provides similar interface and facilities as Peter's
 R10000 perfex module, but it offers no multiplexing of several events;

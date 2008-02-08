@@ -17,6 +17,7 @@
 @a M. Kersten
 @v 0.0
 @+ Type implementation
+@section MAL Type System
 The MAL type module overloads the atom structure managed in the GDK
 library. 
 For the time being, we assume GDK to support at most 127 different

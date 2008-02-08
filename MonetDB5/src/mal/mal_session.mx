@@ -23,7 +23,7 @@ This script is an ordinary MAL program, but will mostly
 consist of include statements to load modules of general interest.
 The startup script is ran as user Admin.
 Its location is described in Monet configuration file.
-The default location is:  !!!###%%% TODO %%%###!!! <-- FIXME
+The default location is:  !!!%%% TODO %%%!!! <-- FIXME
 
 It may overwritten using a command line argument.
 
@@ -40,6 +40,7 @@ mal_export void MSinitClientPrg(Client cntxt, str mod, str nme);
 mal_export void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout);
 
 mal_export str MALreader(Client c);
+mal_export str MALinitClient(Client c);
 mal_export str MALexitClient(Client c);
 mal_export str MALparser(Client c);
 mal_export str MALengine(Client c);
@@ -515,6 +516,14 @@ table may have grown in size.
 	MSresetVariables(c->curprg->def, 0, oldstate.vtop);
 @c
 str
+MALinitClient(Client c)
+{
+	assert (c->state[0] == NULL);
+	c->state[0] = c;
+	return NULL;
+}
+
+str
 MALexitClient(Client c)
 {
 	if (c->glb) {
@@ -522,7 +531,7 @@ MALexitClient(Client c)
 		GDKfree(c->glb);
 	}
 	c->glb = 0;
-	return 0;
+	return NULL;
 }
 
 str

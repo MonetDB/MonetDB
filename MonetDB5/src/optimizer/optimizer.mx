@@ -101,7 +101,7 @@ optimizer_prelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) stk;
 	(void) mb;
 	(void) p;
-	updateScenario("MALoptimizer", (MALfcn) MALoptimizer);
+	updateScenario("mal", "MALoptimizer", (MALfcn) MALoptimizer);
 	return MAL_SUCCEED;
 }
 

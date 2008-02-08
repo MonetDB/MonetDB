@@ -797,6 +797,7 @@ BATXMLagg3(int *ret, int *bid,int *grp, int *ext)
 	BBPunfix(e->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(b->batCacheid);
+	bn->tsorted = 0;
 	BBPkeepref(*ret=bn->batCacheid);
 	return MAL_SUCCEED;
 bunins_failed:
@@ -867,6 +868,7 @@ BATXMLagg(int *ret, int *bid,int *grp)
 	BBPunfix(r->batCacheid);
 	BBPunfix(j->batCacheid);
 	GDKfree(buf);
+	bn->tsorted = 0;
 	BBPkeepref(*ret=bn->batCacheid);
 	return MAL_SUCCEED;
 bunins_failed:

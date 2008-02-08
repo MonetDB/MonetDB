@@ -36,6 +36,7 @@ machine and redirect to each other when necessary.
 @-
 
 @c
+@{
 #include "mal_config.h"
 #include "mal_sabaoth.h"
 #include <stdio.h> /* fseek, rewind */
@@ -766,6 +767,7 @@ str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
 
 	return(MAL_SUCCEED);
 }
+@}
 
 @h
 #endif

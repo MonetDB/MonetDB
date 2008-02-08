@@ -36,6 +36,7 @@ The last byte holds whether inet atom represents the value nil or not.
 The value nil is represented as (per byte) 0000 0001.
 
 @h
+@{
 typedef struct _inet {
 	unsigned char q1;
 	unsigned char q2;
@@ -46,7 +47,7 @@ typedef struct _inet {
 	unsigned char filler2;
 	unsigned char isnil;
 } inet;
-
+@}
 #define in_isnil(i) ((i)->q1 == 0 && (i)->q2 == 0 && (i)->q3 == 0 && (i)->q4 == 0 && (i)->mask == 0 && (i)->isnil != 0)
 #define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
@@ -87,17 +88,19 @@ inet_export str INET_inet(inet *d, inet *s);
 inet_export str INET_fromstr(inet *ret, str *s);
 
 @c
+@{
 #include "mal_config.h"
 #include <gdk.h>
 #include "mal.h"
 #include "mal_exception.h"
 #include "inet.h"
-
+@}
 @mal
 command fromstr() 
 address INETfromString
 comment "Convert a string to an inet";
 @c
+@{
 /**
  * Creates a new inet from the given string.
  * Warning: GDK function, does NOT pass a string by reference, and wants
@@ -223,12 +226,13 @@ error: /* catch exception: return NULL */
 	*len = 0;	/* signal INETnew something went wrong */
 	return(i - 1);
 }
-
+@}
 @mal
 command tostr() 
 address INETtoString
 comment "Convert inet to string equivalent";
 @c
+@{
 /**
  * Returns the string representation of the given inet value.
  * Warning: GDK function
@@ -254,12 +258,13 @@ INETtoString(str *retval, int *len, inet *handle)
 
 	return(*len);
 }
-
+@}
 @mal
 command new(s:str):inet 
 address INETnew
 comment "Create an inet from a string literal";
 @c
+@{
 /**
  * Returns a inet, parsed from a string.  The fromStr function is used
  * to parse the string.
@@ -279,12 +284,13 @@ INETnew(inet *retval, str *in)
 
 
 /* === Operators === */
-
+@}
 @mal
 command isnil(v:inet):bit 
 address INET_isnil
 comment "Nil test for inet value";
 @c
+@{
 /**
  * Returns whether val represents a nil inet value
  */
@@ -295,12 +301,13 @@ INET_isnil(bit *retval, inet * val)
 
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command =(v:inet,w:inet):bit 
 address INET_comp_EQ
 comment "Equality of two inets";
 @c
+@{
 /**
  * Returns whether val1 and val2 are equal.
  */
@@ -317,12 +324,13 @@ INET_comp_EQ(bit *retval, inet * val1, inet * val2)
 
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command !=(v:inet,w:inet):bit 
 address INET_comp_NEQ
 comment "Inequality of two inets";
 @c
+@{
 /**
  * Returns whether val1 and val2 are not equal.
  */
@@ -339,12 +347,13 @@ INET_comp_NEQ(bit *retval, inet * val1, inet * val2)
 
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command <(v:inet,w:inet):bit 
 address INET_comp_LT
 comment "Whether v is less than w";
 @c
+@{
 /**
  * Returns whether val1 is smaller than val2.
  */
@@ -377,12 +386,13 @@ INET_comp_LT(bit *retval, inet * val1, inet * val2)
 
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command >(v:inet,w:inet):bit 
 address INET_comp_GT
 comment "Whether v is greater than w";
 @c
+@{
 /**
  * Returns whether val1 is greater than val2.
  */
@@ -391,12 +401,13 @@ INET_comp_GT(bit *retval, inet * val1, inet * val2)
 {
 	return (INET_comp_LT(retval, val2, val1));
 }
-
+@}
 @mal
 command <=(v:inet,w:inet):bit 
 address INET_comp_LE
 comment "Whether v is less than or equal to w";
 @c
+@{
 /**
  * Returns whether val1 is smaller than or equal to val2.
  */
@@ -412,12 +423,13 @@ INET_comp_LE(bit *retval, inet * val1, inet * val2)
 	*retval = ret;
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command >=(v:inet,w:inet):bit 
 address INET_comp_GE
 comment "Whether v is equal to or greater than w";
 @c
+@{
 /**
  * Returns whether val1 is smaller than or equal to val2.
  */
@@ -435,12 +447,13 @@ INET_comp_GE(bit *retval, inet * val1, inet * val2)
 	*retval = ret;
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command <<(v:inet,w:inet):bit
 address INET_comp_CW
 comment "Whether v is contained within w";
 @c
+@{
 /**
  * Returns whether val1 is contained within val2
  */
@@ -503,12 +516,13 @@ INET_comp_CW(bit *retval, inet * val1, inet * val2)
 	}
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command <<=(v:inet,w:inet):bit
 address INET_comp_CWE
 comment "Whether v is contained within or is equal to w";
 @c
+@{
 /**
  * Returns whether val1 is contained within or equal to val2
  */
@@ -525,12 +539,13 @@ INET_comp_CWE(bit *retval, inet * val1, inet * val2)
 	*retval = ret;
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command >>(v:inet,w:inet):bit
 address INET_comp_CS
 comment "Whether v contains w";
 @c
+@{
 /**
  * Returns whether val1 is contains val2
  */
@@ -540,12 +555,13 @@ INET_comp_CS(bit *retval, inet * val1, inet * val2)
 	/* swap the input arguments and call the contained within function */
 	return (INET_comp_CW(retval, val2, val1));
 }
-
+@}
 @mal
 command >>=(v:inet,w:inet):bit
 address INET_comp_CSE
 comment "Whether v contains or is equal to w";
 @c
+@{
 /**
  * Returns whether val1 contains or is equal to val2
  */
@@ -558,12 +574,13 @@ INET_comp_CSE(bit *retval, inet * val1, inet * val2)
 
 
 /* === Functions === */
-
+@}
 @mal
 command broadcast(:inet):inet
 address INETbroadcast
 comment "Returns the broadcast address for network";
 @c
+@{
 /**
  * Returns the broadcast address for the network the inet represents.
  * If the subnet mask is 32, the given input inet is returned.
@@ -617,12 +634,13 @@ INETbroadcast(inet * retval, inet * val)
 	}
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command host(:inet):str
 address INEThost
 comment "Extract IP address as text";
 @c
+@{
 /**
  * Extract only the IP address as text.  Unlike the toString function,
  * this function never returns the netmask length.
@@ -643,12 +661,13 @@ INEThost(str *retval, inet * val)
 	}
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command masklen(:inet):int
 address INETmasklen
 comment "Extract netmask length";
 @c
+@{
 /**
  * Extract netmask length.
  */
@@ -662,12 +681,13 @@ INETmasklen(int *retval, inet * val)
 	}
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command setmasklen(:inet,:int):inet
 address INETsetmasklen
 comment "Set netmask length for inet value";
 @c
+@{
 /**
  * Set netmask length for inet value.
  */
@@ -683,12 +703,13 @@ INETsetmasklen(inet * retval, inet * val, int *mask)
 
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command netmask(:inet):inet
 address INETnetmask
 comment "Construct netmask for network";
 @c
+@{
 /**
  * Construct netmask for network.
  */
@@ -733,12 +754,13 @@ INETnetmask(inet * retval, inet * val)
 	}
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command hostmask(:inet):inet
 address INEThostmask
 comment "Construct host mask for network";
 @c
+@{
 /**
  * Construct host mask for network.
  */
@@ -763,12 +785,13 @@ INEThostmask(inet * retval, inet * val)
 
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command network(:inet):inet
 address INETnetwork
 comment "Extract network part of address";
 @c
+@{
 /**
  * Extract network part of address, returns the same inet if the netmask
  * is equal to 32.  This function basically zeros out values that are
@@ -816,12 +839,13 @@ INETnetwork(inet * retval, inet * val)
 	}
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command text(:inet):str
 address INETtext
 comment "Extract IP address and netmask length as text";
 @c
+@{
 /**
  * Extract IP address and netmask length as text.  Unlike the toStr
  * function, this function always prints the netmask length.
@@ -842,12 +866,13 @@ INETtext(str *retval, inet * val)
 	}
 	return (MAL_SUCCEED);
 }
-
+@}
 @mal
 command abbrev(:inet):str
 address INETabbrev
 comment "Abbreviated display format as text";
 @c
+@{
 /**
  * Abbreviated display format as text.  The abbreviation is only made if
  * the value has no bits set to right of mask.  Otherwise the return of
@@ -913,9 +938,7 @@ INETabbrev(str *retval, inet * val)
 	}
 	return (MAL_SUCCEED);
 }
-
 @}
-
 @mal
 module calc;
 
@@ -923,6 +946,7 @@ command inet(s:inet):inet
 address INET_inet
 comment "Convert a inet to an inet";
 
+@{
 @c
 str
 INET_inet(inet *d, inet *s)
@@ -930,12 +954,12 @@ INET_inet(inet *d, inet *s)
 	*d = *s;
 	return MAL_SUCCEED;
 }
-
+@}
 @mal
 command inet(s:str):inet
 address INET_fromstr
 comment "Convert a string to an inet";
-
+@{
 @c
 str
 INET_fromstr(inet *ret, str *s)
@@ -944,7 +968,7 @@ INET_fromstr(inet *ret, str *s)
 	INETfromString(*s, &len, &ret);
 	return MAL_SUCCEED;
 }
-
+@}
 @mal
 command isnil(v:inet):bit 
 address INET_isnil

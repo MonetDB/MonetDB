@@ -31,7 +31,7 @@ type share the storage space.
 The result of this optimizer can be seen using the MonetDB debugger,
 which marks unused variables explicitly.
 Experience with the SQL front-end shows, that this optimization
-step easily reduces the stack consumption by over 20\%.
+step easily reduces the stack consumption by over 20%.
 
 This optimizer needs further testing. 
 Furthermore, the other optimizers should be careful in setting

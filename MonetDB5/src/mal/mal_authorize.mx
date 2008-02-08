@@ -80,6 +80,7 @@ mal_export str AUTHgetHashAlgorithms(str *ret);
 #endif /* _MAL_AUTHORIZE_H */
 @-
 @c
+@{
 #include "mal_config.h"
 #include "mal_authorize.h"
 #ifdef HAVE_UNISTD_H

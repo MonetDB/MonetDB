@@ -47,7 +47,7 @@ The @emph{inv} unary operation calculates the inverse of the input value.
 An error message is given when the input value is zero.
 
 @item [bitwise operators]
-For integers there are some additional operations. The @emph{\%} operator
+For integers there are some additional operations. The @emph{%} operator
 implements the congruent modulo operation. The @emph{<<} and @emph{>>} 
 are the left and right bit shift. The @emph{or}, @emph{and}, @emph{xor} and 
 @emph{not} for integers are implemented as bitwise boolean operations. 

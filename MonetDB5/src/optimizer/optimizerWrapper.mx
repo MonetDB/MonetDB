@@ -25,6 +25,7 @@ debugging and analysis.
 
 The wrapper expects the optimizers to return the number of
 actions taken, i.e. number of succesful changes to the code.
+@{
 @= exportOptimizer
 opt_export str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
@@ -90,3 +91,4 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb,"@1");
 	return MAL_SUCCEED;
 }
+@}
