@@ -80,7 +80,7 @@ to derive a new CT BAT for the subgroups. After all groups have been
 identified this way, a BAT histogram operation can be used to obtain
 the counts of each data cube. Other aggregation operations using the MIL
 set aggregate construct \{X\}(bat) (see the
-@[<a href="../../../FrontEnds/mil/index.html#mod_3_2_0">MIL Reference Manual</a>@)
+@[<a href="_ROOTURL_/MonetDB/Version4/Documentation/mil/index.html#mod_3_2_0">MIL Reference Manual</a>@)
 can be used as well; note for instance that histogram == \{count\}(b.reverse).
 
 @* Module Definition
