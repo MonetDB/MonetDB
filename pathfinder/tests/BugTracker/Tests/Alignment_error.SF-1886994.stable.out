@@ -1,0 +1,34 @@
+stdout of test 'Alignment_error.SF-1886994` in directory 'tests/BugTracker` itself:
+
+
+# 17:37:40 >  
+# 17:37:40 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=34380 --set xrpc_port=46003 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 17:37:40 >  
+
+# MonetDB Server v4.22.0
+# based on GDK   v1.22.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.22.0 loaded
+# XRPC administrative console at http://127.0.0.1:46003/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 17:37:41 >  
+# 17:37:41 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=34380 Alignment_error.SF-1886994.xq
+# 17:37:41 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><answer c="2"><world prob="0"><movie><title>Jaws</title><genres><genre>Horror</genre><genre>Thriller</genre><genre>Adventure</genre></genres><directors><prob><poss prob="0.0036630036630036643"><director>Spielberg,+Steven</director><director>Spielberg, Steven</director></poss><poss prob="0.99633699633699624"><director><prob key="84/110"><poss prob="0.5">Spielberg,+Steven</poss><poss prob="0.5">Spielberg, Steven</poss></prob></director></poss></prob></directors><year>1975</year></movie></world><world prob="0"/></answer></XQueryResult>
+
+# 17:37:44 >  
+# 17:37:44 >  Done.
+# 17:37:44 >  
+

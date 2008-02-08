@@ -1,0 +1,142 @@
+declare function allCombinations($worldlists as element(worldlist)*)
+   as element(worldlist)*
+{
+   let $cnt := count($worldlists)
+   return
+   if ($cnt eq 0)
+   then ()
+   else if ($cnt eq 1)
+        then for $x in $worldlists/world return <worldlist>{$x}</worldlist>
+        else let $nrworlds := for $w in $worldlists return count($w/world)
+                ,$multiple := for $n at $p in $nrworlds where $n gt 1 return $p
+                ,$fstmultiple := if (empty($multiple))
+                                 then count($nrworlds) - 1
+                                 else exactly-one($multiple[1])
+                ,$before := subsequence($worldlists,1,$fstmultiple - 1)/world
+                ,$y := subsequence($worldlists,$fstmultiple,1)
+                ,$ys := subsequence($worldlists,$fstmultiple + 1)
+                ,$as := allCombinations($ys)
+             return
+                if (empty($as))
+                then for $x in $y/world
+                     return <worldlist>{$before,$x}</worldlist>
+                else for $x in $y/world, $a in $as
+                     return <worldlist>{$before,$x}{$a/world}</worldlist>
+};
+
+let $doc := exactly-one(doc("$TSTSRCDIR/Alignment_error.SF-1886994.xml")//movies)
+let $scope := $doc
+let $ctx0 := <world prob="1">{for $n in $doc return <nid>{pf:nid($n)}</nid>}</world>
+(: step1: ./movie :)
+let $ctx1 :=
+   for $w1 in $ctx0
+   let $pw1 := data($w1/@prob)
+   let $sub1 :=
+      for $nid1 in $w1/nid
+      let $xml1 := id($nid1,$scope)
+      let $certain1 := $xml1/movie
+      return
+         (<worldlist><world>{for $n in $certain1
+                             return <nid>{pf:nid($n)}</nid>}</world></worldlist>
+         ,for $prob1 in $xml1/prob[./poss/movie]
+          return
+             <worldlist>{
+                for $poss1 in $prob1/poss
+                let $newnids1 := for $n in $poss1/movie return <nid>{pf:nid($n)}</nid>
+                return <world>{$poss1/@prob,$newnids1}</world>
+             }</worldlist>
+         )
+   for $comb1 in allCombinations($sub1)
+   let $p1 := sum($comb1/world/@prob)
+   return <world prob="{$p1*$pw1}">{$comb1/world/nid}</world>
+(: pred 6: [(2) :)
+let $ctx6 := 
+   for $w6 in $ctx1
+   let $pw6 := data($w6/@prob)
+   let $sub6 :=
+      for $nid6 in $w6/nid
+      let $ctx2 := <world prob="{$pw6}">{$nid6}</world>
+(: step3: ./directors :)
+let $ctx3 :=
+   for $w3 in $ctx2
+   let $pw3 := data($w3/@prob)
+   let $sub3 :=
+      for $nid3 in $w3/nid
+      let $xml3 := id($nid3,$scope)
+      let $certain3 := $xml3/directors
+      return
+         (<worldlist><world>{for $n in $certain3
+                             return <nid>{pf:nid($n)}</nid>}</world></worldlist>
+         ,for $prob3 in $xml3/prob[./poss/directors]
+          return
+             <worldlist>{
+                for $poss3 in $prob3/poss
+                let $newnids3 := for $n in $poss3/directors return <nid>{pf:nid($n)}</nid>
+                return <world>{$poss3/@prob,$newnids3}</world>
+             }</worldlist>
+         )
+   for $comb3 in allCombinations($sub3)
+   let $p3 := sum($comb3/world/@prob)
+   return <world prob="{$p3*$pw3}">{$comb3/world/nid}</world>
+(: step4: ./director :)
+let $ctx4 :=
+   for $w4 in $ctx3
+   let $pw4 := data($w4/@prob)
+   let $sub4 :=
+      for $nid4 in $w4/nid
+      let $xml4 := id($nid4,$scope)
+      let $certain4 := $xml4/director
+      return
+         (<worldlist><world>{for $n in $certain4
+                             return <nid>{pf:nid($n)}</nid>}</world></worldlist>
+         ,for $prob4 in $xml4/prob[./poss/director]
+          return
+             <worldlist>{
+                for $poss4 in $prob4/poss
+                let $newnids4 := for $n in $poss4/director return <nid>{pf:nid($n)}</nid>
+                return <world>{$poss4/@prob,$newnids4}</world>
+             }</worldlist>
+         )
+   for $comb4 in allCombinations($sub4)
+   let $p4 := sum($comb4/world/@prob)
+   return <world prob="{$p4*$pw4}">{$comb4/world/nid}</world>
+(: step5: ./text()[.="Spielberg, Steven"] :)
+let $ctx5 :=
+   for $w5 in $ctx4
+   let $pw5 := data($w5/@prob)
+   let $sub5 :=
+      for $nid5 in $w5/nid
+      let $xml5 := id($nid5,$scope)
+      let $certain5 := $xml5/text()[.="Spielberg, Steven"]
+      return
+         (<worldlist><world>{for $n in $certain5
+                             return <nid>{pf:nid($n)}</nid>}</world></worldlist>
+         ,for $prob5 in $xml5/prob[./poss/text()[.="Spielberg, Steven"]]
+          return
+             <worldlist>{
+                for $poss5 in $prob5/poss
+                let $newnids5 := for $n in $poss5/text()[.="Spielberg, Steven"] return <nid>{pf:nid($n)}</nid>
+                return <world>{$poss5/@prob,$newnids5}</world>
+             }</worldlist>
+         )
+   for $comb5 in allCombinations($sub5)
+   let $p5 := sum($comb5/world/@prob)
+   return <world prob="{$p5*$pw5}">{$comb5/world/nid}</world>
+(: pred 6: (5)] :)
+      let $filter6 := $ctx5[./child::node()]
+      let $sumprob6 := sum($filter6/@prob)
+      return if (empty($filter6))
+             then <worldlist><world prob="1"/></worldlist>
+             else if (empty($ctx5 except $filter6))
+                  then <worldlist><world prob="1">{$nid6}</world></worldlist>
+                  else <worldlist><world prob="{$sumprob6}">{$nid6}</world>
+                                  <world prob="{1-$sumprob6}"/></worldlist>
+   for $comb6 in allCombinations($sub6)
+   let $p6 := sum($comb6/world/@prob)
+   return <world prob="{$p6*$pw6}">{$comb6/world/nid}</world>
+return
+   <answer c="{count($ctx6)}">{
+      for $w in $ctx6
+      let $p := data($w/@prob)
+      return <world prob="{$p}">{for $n in $w/nid return id($n,$scope)}</world>
+   }</answer>
