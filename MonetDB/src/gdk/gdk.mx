@@ -1682,6 +1682,8 @@ this does not necessarily mean that they are sorted in reverse order!
 @h
 #define GDK_SORTED_REV	128	/* reversely sorted */
 #define GDK_SORTED	65	/* 65 = (32 bits radix_clustered)<<1 + 1 */
+#define REVERT_SORTED(o) \
+	o==GDK_SORTED?GDK_SORTED_REV:(o==GDK_SORTED_REV?GDK_SORTED:0)
 
 gdk_export BAT *BATsort(BAT *b);
 gdk_export BAT *BATsort_rev(BAT *b);
