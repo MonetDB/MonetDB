@@ -1,0 +1,10 @@
+let $doc := exactly-one(doc("$TSTSRCDIR/for_variable.SF-1887055.xml")//movies)
+let $ctx0 := <world prob="1"><nid>{pf:nid($doc)}</nid></world>
+let $ctx1 :=
+   for $w4 in $ctx0
+   for $poss4 in $doc//poss[./director]
+   return <world>{$poss4/@prob}</world>
+return <bla>{
+   for $w5 in $ctx1
+   return <world count="{count($w5)}">{$w5}</world>
+}</bla>
