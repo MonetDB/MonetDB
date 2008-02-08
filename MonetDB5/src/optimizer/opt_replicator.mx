@@ -95,6 +95,8 @@ opt_export str REPdump(int *ret);
 typedef struct REPLICAREC {
 	str sname, tname, cname;	/* source BAT schema, table, column */
         bat resbid;		/* intermediate result BAT */
+	int tpe;		
+	bit tail;		/* does result include tail */
 
         ValRecord low,hgh;	/* selected tail range */
         bit li, hi;		/* inclusive bits */
@@ -146,6 +148,17 @@ static void printReplica(stream *f, int i){
 
 str
 REPdump(int *ret)
+{
+	int i;
+	(void) ret;
+	stream_printf(GDKout,"Number of replicas %d\n",replnr);
+	for( i=0; i<replnr; i++)
+		printReplica(GDKout, i);
+	return MAL_SUCCEED;
+}
+
+str
+REPstat(int *ret)
 {
 	int i;
 	(void) ret;
@@ -222,78 +235,70 @@ opt_export str ALGreplicator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "../kernel/algebra.h"
 @:wrapOptimizer(replicator,OPT_CHECK_ALL)@
 
-str
-REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+
+static int findReplica( str sname, str tname, str cname, int tpe, bit tail,
+	ptr low, ptr hgh, bit li, bit hi, sht * ov)
 {
-	int *ret, *bid, tpe;
-	ptr low,hgh;
-	bit t=TRUE,*li=&t,*hi=&t;
-	BAT *b,*bn;
-	lng cnt,clk;
 	Replica r;
-	sht argcnt = pci->argc;
-	
-	(void) mb;
-	ret= (int*) getArgReference(stk,pci,0);
-	bid= (int*) getArgReference(stk,pci,1);
-	low= (ptr) getArgReference(stk,pci,2);
-	if( argcnt >= 7)
-		hgh = (ptr) getArgReference(stk,pci,3);
-	else hgh = 0;
-	if( argcnt == 9){
-		li= (bit*) getArgReference(stk,pci,4);
-		hi= (bit*) getArgReference(stk,pci,5);
+	int (*cmp) (ptr, ptr);
+	ptr nilptr;
+	int i, minr;
+	size_t minc = (size_t) GDK_lng_max;
+	bit leq, lsub, heq, hsub;
+	int rs[replnr], ri=0; /* subset replicas */
+
+	cmp= BATatoms[tpe].atomCmp;
+	nilptr = ATOMnilptr(tpe);
+
+	for (i=0; i<replnr; i++){
+		r = repltable + i;
+			/* check compatibility */
+		if( (strcmp(cname,r->cname)!=0) ||
+			(strcmp(tname,r->tname)!=0) ||
+			(strcmp(sname,r->sname)!=0) )
+			continue;
+		if (tail && !r->tail) continue;
+		if (tpe != r->tpe) continue;
+
+			/* check overlap */
+		leq = lsub = heq = hsub = FALSE;
+		if( ((*cmp)(low, &r->low) == 0) && (li == r->li) ) leq = TRUE;
+		else if( ((*cmp)(low, nilptr)==0) ||
+			 ((*cmp)(low, &r->low) > 0) ||
+			 (((*cmp)(low, &r->low) == 0) && !li && r->li) ) lsub = TRUE;
+
+		if( ((*cmp)(hgh, &r->hgh) == 0) && (hi == r->hi) ) heq = TRUE;
+		else if( ((*cmp)(&r->hgh, nilptr)==0) ||
+			 ((*cmp)(hgh, &r->hgh) < 0) ||
+			 (((*cmp)(hgh, &r->hgh) == 0) && !hi && r->hi) ) hsub = TRUE;
+
+		if (leq && heq) { /* equal replica exists */
+			*ov = 0;
+			return i;
+		} else
+		if ( (leq || lsub ) && (heq || hsub) ){ /* query is a subset of the replica */
+			rs[ri] = i; ri++;
+		}
 	}
-	
-	
-	if ((b = BATdescriptor(*bid)) == NULL) {
-                throw(MAL, "REPuselect", "Cannot access descriptor");
-        }
-	
-	tpe= ATOMstorage(b->T->type);
-	if( tpe == TYPE_str || tpe > TYPE_str ){
-	 	if(low== 0 || *(str*)low==0) low = (str)str_nil;
-			else low = *(str *)low;
-		if(hgh== 0 || *(str*)hgh==0) hgh = (str)str_nil;
-			else hgh = *(str *)hgh;
+
+
+	if( ri ==0){ /* no replica overlaps with query */
+		*ov = -1;
+		return -1;
+	} else {	/* search min replica overlaping with query */
+		for( i=0; i<ri; i++){
+			r = repltable + rs[i];
+			if( r->cnt < minc){
+				minc = r->cnt;
+				minr = rs[i];
+			}
+		}
+		*ov = 1;
+		return minr;
 	}
 
-	clk= GDKusec();
-	bn = BAT_select_(b, low, hgh, *li, *hi, FALSE, FALSE);
-	clk= GDKusec()-clk;
-
-        BBPreleaseref(b->batCacheid);
-        if (bn) {
-                if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-                *ret = bn->batCacheid;
-                BBPincref(bn->batCacheid,TRUE);
-        }
-        else throw(MAL, "REPuselect", "GDKerror");
-
-	/* decide about replica */
-	/* Currently just keep stat */
-
-	cnt= BATcount(bn);
-	assureSpace();
-	r = repltable + replnr;
-	r->resbid = *ret;
-	r->sname = GDKstrdup(*(str *) getArgReference(stk, pci,argcnt-3));
-	r->tname = GDKstrdup(*(str *) getArgReference(stk, pci,argcnt-2));
-	r->cname = GDKstrdup(*(str *) getArgReference(stk, pci,argcnt-1));
-
-	VALset(&r->low,tpe, low);
-	if( hgh == 0) 
-		VALset(&r->hgh,tpe, ATOMnilptr(tpe));
-	else VALset(&r->hgh,tpe, hgh);
-	r->li = *li;
-	r->hi = *hi; 
-	r->cnt = cnt;
-	r->cost = clk;
-	replnr++;
-	BBPkeepref(*ret);
-
-	return MAL_SUCCEED;
 }
+
 
 
 @-
@@ -301,31 +306,141 @@ The overloaded algebra operator simply calles the
 underlying implementation and collects statistics on the
 cost.
 @c
+
+static 
+str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi, 
+		str sname, str tname, str cname, bit tl)
+{
+	int tpe, rr;
+	BAT *bn,*br;
+	lng cnt,clk;
+	Replica r;
+	sht ov;
+
+	tpe= ATOMstorage(b->T->type);
+	rr = findReplica(sname,tname,cname,tpe,tl, low, hgh, li, hi, &ov);
+
+	if (ov < 0){ /* no replica overlaps, execute selection and save replica */
+		clk= GDKusec();
+		bn = BAT_select_(b, low, hgh, li, hi, tl, FALSE);
+		clk= GDKusec()-clk;
+
+                if (bn) {
+        	        if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+                	*ret = bn->batCacheid;
+	                BBPincref(bn->batCacheid,TRUE);
+	        }
+        	else throw(MAL, "REPselectImpl", "GDKerror");
+
+		/* decide about replica- currently just keep stat 
+		Place to plugin keepReplica policy*/
+
+		cnt= BATcount(bn);
+		assureSpace();
+		r = repltable + replnr;
+		r->resbid = *ret;
+		r->sname = GDKstrdup(sname);
+		r->tname = GDKstrdup(tname);
+		r->cname = GDKstrdup(cname);
+	
+		if( tpe < TYPE_str){
+		        VALset(&r->low,tpe, low);
+	        	/*	if( hgh == 0)
+        	        	VALset(&r->hgh,tpe, ATOMnilptr(tpe));
+		        else */
+			VALset(&r->hgh,tpe, hgh);
+		} else if ( tpe < TYPE_str){
+			 VALset(&r->low,tpe, GDKstrdup(low));
+			 VALset(&r->hgh,tpe, GDKstrdup(hgh));
+		}  /* ?? */
+		r->li = li;
+		r->hi = hi; 
+		r->cnt = cnt;
+		r->cost = clk;
+		r->tail = tl;
+		r->tpe =tpe;
+		r->ucnteq = r->ucntsub = 0;
+		replnr++;
+		BBPkeepref(*ret);
+	} else 
+	if (ov == 0 ){  /* equality, reuse replica rr*/
+		r = repltable + rr;
+		r->ucnteq++;
+		*ret = r->resbid;
+	        BBPincref(r->resbid,TRUE);
+	} 
+	else {  /* use replica rr to shrink selection */
+		r = repltable + rr;
+		r->ucntsub++;
+
+		if ((br = BATdescriptor(r->resbid)) == NULL) {
+        	        throw(MAL, "REPselectImpl", "Cannot access replica descriptor");
+	        }
+		clk= GDKusec();
+		bn = BAT_select_(br, low, hgh, li, hi, tl, FALSE);
+		clk= GDKusec()-clk;
+
+ 	      	BBPreleaseref(br->batCacheid);
+	        if (bn) {
+        	        if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+                	*ret = bn->batCacheid;
+	                BBPincref(bn->batCacheid,TRUE);
+	        }
+        	else throw(MAL, "REPselectImpl", "GDKerror");
+
+		/* decide about replica- currently just keep stat */
+
+		cnt= BATcount(bn);
+		assureSpace();
+		r = repltable + replnr;
+		r->resbid = *ret;
+		r->sname = GDKstrdup(sname);
+		r->tname = GDKstrdup(tname);
+		r->cname = GDKstrdup(cname);
+	
+       		if( tpe < TYPE_str){
+		        VALset(&r->low,tpe, low);
+			VALset(&r->hgh,tpe, hgh);
+		} else if ( tpe < TYPE_str){
+			 VALset(&r->low,tpe, GDKstrdup(low));
+			 VALset(&r->hgh,tpe, GDKstrdup(hgh));
+		} /* ?? */
+		r->li = li;
+		r->hi = hi; 
+		r->cnt = cnt;
+		r->cost = clk;
+		r->tail = tl;
+		r->tpe =tpe;
+		r->ucnteq = r->ucntsub = 0;
+		replnr++;
+		BBPkeepref(*ret);
+	
+	}
+	return MAL_SUCCEED;
+}
+
 str
 REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret, *bid, tpe;
-	ptr low,hgh;
+	ptr low, hgh;
 	bit t=TRUE,*li=&t,*hi=&t;
-	BAT *b,*bn;
-	lng cnt,clk;
-	Replica r;
+	BAT *b;
 	sht argcnt = pci->argc;
+	str sname, tname, cname;
 
-	
 	(void) mb;
 	ret= (int*) getArgReference(stk, pci,0);
 	bid= (int*) getArgReference(stk, pci,1);
 	low= (ptr) getArgReference(stk, pci,2);
 	if( argcnt >= 7)
                 hgh = (ptr) getArgReference(stk,pci,3);
-        else hgh = 0;
+        else hgh = low;
 
 	if( argcnt==9){
 		li= (bit*) getArgReference(stk, pci,4);
 		hi= (bit*) getArgReference(stk, pci,5);
 	}
-	
 	
 	if ((b = BATdescriptor(*bid)) == NULL) {
                 throw(MAL, "REPselect", "Cannot access descriptor");
@@ -339,40 +454,58 @@ REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                         else hgh = *(str *)hgh;
         }
 
-	clk= GDKusec();
-	bn = BAT_select_(b, low, hgh, *li, *hi, TRUE, FALSE);
-	clk= GDKusec()-clk;
-
-        BBPreleaseref(b->batCacheid);
-        if (bn) {
-                if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-                *ret = bn->batCacheid;
-                BBPincref(bn->batCacheid,TRUE);
-        }
-        else throw(MAL, "REPselect", "GDKerror");
-
-	/* decide about replica */
-	/* Currently just keep stat */
-
-	cnt= BATcount(bn);
-	assureSpace();
-	r = repltable + replnr;
-	r->resbid = *ret;
-	r->sname = GDKstrdup(*(str *) getArgReference(stk, pci,argcnt-3));
-	r->tname = GDKstrdup(*(str *) getArgReference(stk, pci,argcnt-2));
-	r->cname = GDKstrdup(*(str *) getArgReference(stk, pci,argcnt-1));
+	sname = *(str *) getArgReference(stk, pci,argcnt-3);
+	tname = *(str *) getArgReference(stk, pci,argcnt-2);
+	cname = *(str *) getArgReference(stk, pci,argcnt-1);
 	
-        VALset(&r->low,tpe, low);
-        if( hgh == 0)
-                VALset(&r->hgh,tpe, ATOMnilptr(tpe));
-        else VALset(&r->hgh,tpe, hgh);
-	r->li = *li;
-	r->hi = *hi; 
-	r->cnt = cnt;
-	r->cost = clk;
-	replnr++;
-	BBPkeepref(*ret);
-
+	REPselectImpl(ret, b, low, hgh, *li, *hi, sname,tname,cname, TRUE);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
+str
+REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret, *bid, tpe;
+	ptr low, hgh;
+	bit t=TRUE,*li=&t,*hi=&t;
+	BAT *b;
+	sht argcnt = pci->argc;
+	str sname, tname, cname;
+
+	(void) mb;
+	ret= (int*) getArgReference(stk, pci,0);
+	bid= (int*) getArgReference(stk, pci,1);
+	low= (ptr) getArgReference(stk, pci,2);
+	if( argcnt >= 7)
+                hgh = (ptr) getArgReference(stk,pci,3);
+        else hgh = low;
+
+	if( argcnt==9){
+		li= (bit*) getArgReference(stk, pci,4);
+		hi= (bit*) getArgReference(stk, pci,5);
+	}
+	
+	if ((b = BATdescriptor(*bid)) == NULL) {
+                throw(MAL, "REPselect", "Cannot access descriptor");
+        }
+	
+	tpe= ATOMstorage(b->T->type);
+        if( tpe == TYPE_str || tpe > TYPE_str ){
+                if(low== 0 || *(str*)low==0) low = (str)str_nil;
+                        else low = *(str *)low;
+                if(hgh== 0 || *(str*)hgh==0) hgh = (str)str_nil;
+                        else hgh = *(str *)hgh;
+        }
+
+	sname = *(str *) getArgReference(stk, pci,argcnt-3);
+	tname = *(str *) getArgReference(stk, pci,argcnt-2);
+	cname = *(str *) getArgReference(stk, pci,argcnt-1);
+	
+	REPselectImpl(ret, b, low, hgh, *li, *hi, sname,tname,cname, FALSE);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+
 @}
