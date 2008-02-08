@@ -227,7 +227,9 @@ Edit the file ``win32\Makefile.msvc`` and change the one occurrence of
 the ``win32`` subdirectory, substituting the correct locations for the
 iconv and zlib libraries::
 
- cscript configure.js compiler=msvc prefix=C:\libxml2-2.6.30.win64 include=C:\iconv-1.11.win64\include;C:\zlib-1.2.3.win64\include lib=C:\iconv-1.11.win64\lib;C:\zlib-1.2.3.win64\lib iconv=yes zlib=yes
+ cscript configure.js compiler=msvc prefix=C:\libxml2-2.6.30.win64 ^
+  include=C:\iconv-1.11.win64\include;C:\zlib-1.2.3.win64\include ^
+  lib=C:\iconv-1.11.win64\lib;C:\zlib-1.2.3.win64\lib iconv=yes zlib=yes
  nmake /f Makefile.msvc
  nmake /f Makefile.msvc install
 
