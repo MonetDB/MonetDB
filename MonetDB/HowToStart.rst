@@ -18,10 +18,10 @@ This document assumes that you are planning on compiling and
 installing MonetDB on a Unix-like system (e.g., Linux, IRIX, Solaris,
 AIX, Mac OS X/Darwin, or CYGWIN).  For compilation and installation on
 a native Windows system (NT, 2000, XP) see the instructions in the
-file `HowToStart-Win32.txt`__.
+file `../buildtools/doc/windowsbuild.rst`__.
 
 __ http://sourceforge.net/project/showfiles.php?group_id=56967
-__ ../Windows/index.html
+__ Windows-Installation.html
 
 The Suite
 ---------
@@ -309,7 +309,7 @@ runs (e.g. ``make -j2``) are currently known to be unsuccessful.
 Testing the Build
 ~~~~~~~~~~~~~~~~~
 
-This step is optional and only relevant for the packages MonetDB4,
+This step is optional and only relevant for the packages clients, MonetDB4,
 MonetDB5, pathfinder, and sql.
 
 If ``make`` went successfully, you can try
@@ -340,7 +340,7 @@ privileges.
 Testing the Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-This step is optional and only relevant for the packages MonetDB4,
+This step is optional and only relevant for the packages clients, MonetDB4,
 MonetDB5, pathfinder, and sql.
 
 Make sure that *prefix*/bin is in your ``PATH``.  Then
@@ -348,7 +348,17 @@ in the package top-level directory issue the command
 
 ::
 
- Mtest.py -r
+ Mtest.py -r [--package=<package>]
+
+where *package* is one of ``clients``, ``MonetDB4``, ``MonetDB5``, ``sql``,
+or ``pathfinder`` (the ``--package=<package>`` option can be omitted when
+using a CVS checkout; see
+
+::
+
+ Mtest.py --help
+
+for more options).
 
 This should produce much the same output as ``make check`` above, but
 uses the installed version of MonetDB.
@@ -423,7 +433,13 @@ be stored persistently to be re-used after stopping and restarting
 
  mclient --help
 
-for details.
+for global details and 
+
+::
+
+ mclient -l<language> --help
+
+for language-specific details.
 
 At the ``mclient`` prompt some extra commands are available.  Type
 a single question mark to get a list of options.  Note that one of the

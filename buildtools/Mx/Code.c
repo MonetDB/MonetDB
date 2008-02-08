@@ -64,8 +64,6 @@ GenCode(void)
 		case Subsection:
 		case Paragraph:
 		case Continue:
-		case Qtex:
-		case Qtexi:
 		case Qcode:
 			break;
 		case Cdef:
@@ -98,7 +96,6 @@ GenCode(void)
 		case Swig:
 		case CCyacc:
 		case CClex:
-		case BibTeX:
 			if (!extract(d->d_dir))
 				break;
 			IoWriteFile(fname, d->d_dir);
@@ -120,14 +117,14 @@ GenCode(void)
 			break;
 		case InHide:
 			HideOn();
-			if (bak >= Qtex) {
+			if (bak >= Qcode) {
 				d->d_dir = bak;
 				goto again;
 			}
 			break;
 		case OutHide:
 			HideOff();
-			if (bak >= Qtex) {
+			if (bak >= Qcode) {
 				d->d_dir = bak;
 				goto again;
 			}
@@ -354,10 +351,8 @@ void
 UnRef(char *ref)
 {
 	Error("Unresolved reference:%s", ref);
-	if (mode & M_CODE && (textmode == M_TEX || textmode == M_TEXI))
+	if (mode & M_CODE && (textmode == M_TEXI))
 		ofile_printf("/* Unresolved Reference :%s */", ref);
-	if (mode & M_CODE && textmode == M_MS)
-		ofile_printf("/* %s */", ref);
 	/* should text for actual source format */
 }
 
@@ -375,7 +370,6 @@ CodeLine(void)
 		case DTD:
 		case XSL:
 		case Swig:
-		case BibTeX:
 		case Cyacc:
 		case Clex:
 		case CCyacc:

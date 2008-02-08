@@ -67,12 +67,12 @@ typedef enum {
 	Index0, Index1, Index2, Index3, Index4, Index5, Index6, Index7, Index8, Index9,
 	Bfile, Efile, Ofile, Mxmacro, Ifdef, Ifndef, Endif,
 	Title, Author, Version, Date, InHide, OutHide, Comment,
-	Module, Section, Subsection, Paragraph, Qtex, Qtexi, Qcode, Continue,
+	Module, Section, Subsection, Paragraph, Qcode, Continue,
 	Pspec, Pimpl, Cdef, Csrc, CCsrc, ODLspec, SQL,
 	OQLspec, Cyacc, Clex, Prolog, Haskell, Monet, MALcode, MILcode,
 	Qnap, HTML, Java,
 	Tcl, ProC, Shell, fGrammar, Macro, XML, DTD, XSL, Config, Swig,
-	CCyacc, CClex, BibTeX
+	CCyacc, CClex
 } CmdCode;
 
 
@@ -127,10 +127,9 @@ extern	char *		strchr();
 #define	M_DRAFT	0x1000
 #define	M_BOOK	0x2000
 
-#define M_WWW 	0x00f0
-#define	M_MS	0x0f00
-#define	M_TEX	0xf000
 #define	M_TEXI	0xf0000
+
+#define TEXIMODE (textmode==M_TEXI)
 
 extern int mode;
 
@@ -158,14 +157,12 @@ extern int mx_out;
 
 /* Mx Options
  */
-extern int opt_column;
 extern int opt_hide;
 extern char *opt_code;		/* extract code of interest only */
 extern int textmode;		/* either T_TEX or T_MS */
 extern int bodymode;		/* either 0= all 1= for inclusion */
 extern int noline;
 extern int notouch;
-extern int texihdr;
 
 #define	NO_HIDE	-1
 
@@ -222,43 +219,3 @@ typedef struct {
 	char *t_nxt;
 	char t_chr;
 } Tok;
-
-/* MX Index
- */
-#define  M_ITABLE	 12
-#define  M_IENTRY	1000
-
-#define ICONT		 0
-#define IFRAG		10
-#define IMACRO		11
-
-typedef struct {
-	char *ie_name;
-	int ie_sec;
-	int ie_mod;
-} Ientry;
-
-typedef struct {
-	char *it_name;
-	int it_nentry;
-	Ientry *it_entrys;
-} Itable;
-
-extern Itable *itable;
-extern int itable_done;
-
-#define link_color "#6666ff"
-#define vlnk_color "#871F78"
-#define text_color "#000000"
-#define code_color "#505050"
-#define line_color "#A0A0A0"
-
-/* Footnotes
- * They contain however tex commands ??
- */
-#define PNOTE "\
-The work reported in this document was conducted as part of the PRISMA project,\n\
-a joint effort with Philips Research Eindhoven,\n\
-partially supported by the Dutch Stimuleringsprojectteam Informaticaonderzoek (SPIN).\n"
-#define MNOTE "\
-This document was produced with the {\\bf mx} programmer's tool.\n"

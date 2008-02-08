@@ -25,10 +25,7 @@
 #include	"Mx.h"
 #include	"MxFcnDef.h"
 
-#define TEXMODE		(textmode==M_TEX)
-#define TEXIMODE (textmode==M_TEXI)
-#define WWWMODE		(textmode==M_WWW )
-#define Newline		if WWWMODE { PrCmd("<br>"); } else if TEXMODE { PrCmd("\n"); } else if TEXIMODE {PrCmd("\n");} else { PrCmd(".LP\n"); }
+#define Newline		if TEXIMODE {PrCmd("\n");} 
 
 extern int pr_env;
 extern int opt_hide;
@@ -53,7 +50,6 @@ GenForm(void)
 	int env;
 	char *getlogin();
 	char *dstbak = NULL;
-	extern char bibtexfile[256];
 
 	for (d = defs; d < defs + ndef && (d->d_dir != Bfile); dirbak = d->d_dir, d++) ;
 	for (; d < defs + ndef; dirbak = d->d_dir, d++) {
@@ -71,12 +67,7 @@ GenForm(void)
 			FormTitle();
 			break;
 		case Efile:
-			PrIndex();
 			PrPostlude();
-			if (*bibtexfile) {
-				PrCmd("<hr size=5 noshade><br><br>");
-				bib_print();
-			}
 			UpdateFiles();
 			break;
 		case Ofile:
@@ -98,7 +89,7 @@ GenForm(void)
 			FormBlk(d);
 			break;
 		case Paragraph:
-			if (dirbak >= Qtex)
+			if (dirbak >= Qcode)
 				PrRule(0);
 			FormPar(d->d_cmd);
 			PrEnv(E_TEXT);
@@ -107,7 +98,7 @@ GenForm(void)
 		case Ifdef:
 		case Ifndef:
 		case Endif:
-			if (dirbak >= Qtex)
+			if (dirbak >= Qcode)
 				PrRule(0);
 			env = pr_env;
 			PrEnv(E_TEXT);
@@ -116,61 +107,19 @@ GenForm(void)
 			PrEnv(env);
 			break;
 		case Continue:
-			if (dirbak >= Qtex)
+			if (dirbak >= Qcode)
 				PrRule(0);
 			FormBlk(d);
 			Newline;
 			break;
-		case Qtexi:
-		case Qtex:
-			if (dirbak >= Qtex)
-				PrRule(0);
-			if WWWMODE {
-				if (!Hide())
-					latex2html(d->d_blk, dirbak != Qtex, d[1].d_dir != Qtex);
-			} else {
-				/* was: 
-				   PrCmd(d->d_blk);
-				   Newline;
-				   seems incorrect, as @[ @$ and the like still should be processed 
-				 */
-				env = pr_env;
-				PrEnv(E_CMD);
-				FormBlk(d);
-				PrEnv(env);
-			}
-			break;
 		case Mxmacro:
 			PrEnv(E_TEXT);
 			PrRule(0);
-			if (WWWMODE) {
-				int env = pr_env;
-
-				PrCmd("<a name=\"");
-				PrCmd(d->d_cmd);
-				PrCmd("\"></a><b>");
-				PrCmd(d->d_cmd);
-				PrCmd(" ::=</b>");
-				PrEnv(env);
-			} else if (TEXIMODE) {
-				PrCode(d->d_cmd);
-				PrCode(" ::=\n");
-				if (!Hide())
-					IndexEntry(IFRAG, d->d_cmd, d->d_mod, d->d_sec);
-				PrEnv(E_CODE);
-				FormBlk(d);
-				PrEnv(E_TEXT);
-				break;
-			} else {
-				PrCode(d->d_cmd);
-				PrCode(" ::=\n");
-			}
-			if (!Hide())
-				IndexEntry(IFRAG, d->d_cmd, d->d_mod, d->d_sec);
+			PrCode(d->d_cmd);
+			PrCode(" ::=\n");
 			PrEnv(E_CODE);
 			FormBlk(d);
 			PrEnv(E_TEXT);
-			PrRule(0);
 			break;
 		case Index0:
 		case Index1:
@@ -185,14 +134,14 @@ GenForm(void)
 			break;
 		case InHide:
 			HideOn();
-			if (dirbak >= Qtex) {
+			if (dirbak >= Qcode) {
 				d->d_dir = dirbak;	/* dirbak=0; */
 				goto again;
 			}
 			break;
 		case OutHide:
 			HideOff();
-			if (dirbak >= Qtex) {
+			if (dirbak >= Qcode) {
 				d->d_dir = dirbak;	/* dirbak=0; */
 				goto again;
 			}
@@ -297,11 +246,6 @@ GenForm(void)
 				case CClex:
 					PrCodeDisplay(d, "ll");
 					break;
-				case BibTeX:	/* writes out a .bib file;
-						   NOTE: this is unrelated to the magic *bibtexfile that seems
-						   only of importance in Tex2Html -- CHECK!!!
-						 */
-					break;
 				default:
 					Fatal("GenForm", "Non directive:%s [%s:%d]", dir2str(d->d_dir), d->d_file, d->d_line);
 				}
@@ -323,35 +267,18 @@ PrCodeDisplay(Def * d, char *tail)
 void
 FormIf(Def * d)
 {
-	if (TEXMODE || TEXIMODE)
-		switch (d->d_dir) {
-		case Ifdef:
-/*
-	PrCmd("\\framebox[\\linewidth]{ Variant ");
-	PrStr(d->d_cmd);
-	PrCmd("}\n");
- */
-			break;
-
-		case Ifndef:
-			if (TEXMODE)
-				PrCmd("\\framebox[\\linewidth]{ Variant not(");
-			PrTxt(d->d_cmd);
-			if (TEXMODE)
-				PrCmd(")}\n");
-			break;
-
-		case Endif:
-/*
-	PrCmd("\\framebox[\\linewidth]{ End variant ");
-	PrTxt(d->d_cmd);
-	PrCmd("}\n");
- */
-			break;
-		default:
-			/* shut up compiler */
-			break;
-		}
+	switch (d->d_dir) {
+	case Ifdef:
+		break;
+	case Ifndef:
+		PrTxt(d->d_cmd);
+		break;
+	case Endif:
+		break;
+	default:
+		/* shut up compiler */
+		break;
+	}
 }
 
 void
@@ -361,9 +288,6 @@ FormBlk(Def * d)
 	int i;
 
 	for (t = FstTok(d->d_blk); t; t = NxtTok(t)) {
-		if (WWWMODE && (pr_env & E_CODE)) {
-			PrCodeline();
-		}
 		switch (t->t_dir) {
 		case T_BOLD:
 		case T_ITALIC:
@@ -376,8 +300,6 @@ FormBlk(Def * d)
 			break;
 		case T_INDEX:
 			i = t->t_ext - '0';
-			if (!Hide())
-				IndexEntry(i, t->t_str, d->d_mod, d->d_sec);
 			PrStr(t->t_str);
 			break;
 		case T_SGML:
@@ -392,8 +314,6 @@ FormBlk(Def * d)
 				}
 				if (!sgml)
 					PrChr(*p);
-				else if (WWWMODE)
-					ofile_putc(*p);
 				if (*p == '"') {
 					instr = !instr;
 				} else if (!instr && sgml) {
@@ -434,36 +354,31 @@ FormBlk(Def * d)
 void
 FormTitle(void)
 {
-	if (bodymode == 0)
+	if (bodymode)
 		return;
+
 	if (!(mx_author && mx_title))
 		return;
-
+	PrCmd("@titlepage\n");
 	if (*mx_title) {
-		PrCmd(TEXMODE ? "\\title{" : TEXIMODE ? "@titlepage\n@title " : WWWMODE ? "<center><h1>" : ".TL\n\\s+2");
+		PrCmd("@title ");
 		PrText(mx_title);
 		if (mx_version && *mx_version) {
-			PrCmd(TEXMODE ? "\\\\\nVersion\\ " : TEXIMODE ? "Version " : WWWMODE ? "</h1><h2>" : "\n.sp\n\\fIVersion ");
+			PrCmd("Version ");
 			PrText(mx_version);
 		}
-		PrCmd(TEXMODE ? "}\n" : TEXIMODE ? "\n" : WWWMODE ? "</h2></center>\n" : "\\s-2\n");
+		PrCmd("\n");
 	}
 	if (*mx_author) {
-		PrCmd(TEXMODE ? "\\author{" : TEXIMODE ? "@author " : WWWMODE ? "<center><h3>" : ".AU\n\\s+1");
+		PrCmd("@author ");
 		PrText(mx_author);
-		PrCmd(TEXMODE ? "}\n" : TEXIMODE ? "\n" : WWWMODE ? "</h3></center>" : "\\s-1\n");
+		PrCmd("\n");
 	}
 	if (mx_date && *mx_date) {
-		PrCmd(TEXMODE ? "\\date{" : TEXIMODE ? "" : WWWMODE ? "<center><h3>" : "\n\\fBDate\\fP");
 		PrText(mx_date);
-		PrCmd(TEXMODE ? "}\n" : TEXIMODE ? "\n" : WWWMODE ? "<p></font></h3></center>" : "\n");
+		PrCmd("\n");
 	}
-	PrCmd(TEXMODE ? "\\maketitle\n" : TEXIMODE ? "@end titlepage\n" : "");
-
-	if (textmode == M_MS)
-		PrCmd(".sp 2\n");
-	if (texDocStyle == (char *) 0)
-		PrCont();
+	PrCmd("@end titlepage\n");
 }
 
 void
@@ -474,34 +389,13 @@ FormSub(char *str)
 	int env = pr_env;
 	char *p = (char *) strchr(str, '(');
 
-	if (textmode == M_MS)
-		PrCmd("\\fI");
-
 	if ((d = GetDef(argv[0])) != 0)
 		if (p)
 			*p = 0;
 
-	if (WWWMODE) {
-		if (env == E_CODE) {
-			PrCodeline();
-			pr_env = E_CMD;
-		}
-		if (d) {
-			PrCmd("<a href=\"#");
-			PrCmd(d->d_cmd);
-			PrCmd("\">");
-		}
-		PrCmd("<i>");
-		PrStr(str);
+	PrStr(str);
+	PrRef(d ? d->d_mod : 0, d ? d->d_sec : 0);
 
-		PrCmd("</i>");
-		if (d)
-			PrCmd("</a>");
-	} else {
-		PrStr(str);
-
-		PrRef(d ? d->d_mod : 0, d ? d->d_sec : 0);
-	}
 	if (d && p) {
 		char *backup = d->d_blk;
 
@@ -510,14 +404,8 @@ FormSub(char *str)
 		FormBlk(d);
 		d->d_blk = backup;
 	}
-	if (textmode == M_MS)
-		PrCmd("\\fI");
-	else if (WWWMODE && (env == E_CODE))
-		pr_env = E_CODE;
 	PrEnv(env);
 }
-
-int wwwmod = 0, wwwsec = 0, wwwpar = 0;
 
 /* handling a form module */
 void
@@ -525,135 +413,34 @@ FormMod(char *str, int mod)
 {
 	mx_title = str;
 
-	if (TEXMODE || TEXIMODE)
-		FormHeader();
-	if (TEXMODE) {
-		if (bodymode == 0)
-			PrCmd("\\vfill\\clearpage");
-		PrCmd("\\section{");
-	} else if TEXIMODE {
-		PrCmd("\n@chapter ");
-	} else if WWWMODE {
-		if (bodymode == 0)
-			PrCmd("<hr size=1 noshade><hr size=1 noshade><br><br>");
-		PrCmd("<a name=\"mod_");
-		PrNum(wwwmod = mod);
-		PrCmd("_0_0\"></a>\n<h2>");
-		if (bodymode == 0) {
-			PrNum(mod);
-			PrChr(' ');
-		}
-		wwwpar = 1;
-	} else {
-		PrCmd(".ps+2\n.SH\n");
-		PrNum(mod);
-		PrStr(" ");
-	}
+	FormHeader();
+	PrCmd("\n@chapter ");
 	PrEnv(E_TEXT);
 	PrStr(str);
-
-	if TEXMODE {
-		PrCmd("}\n");
-	} else if TEXIMODE {
-		PrCmd("\n");
-	} else if WWWMODE {
-		PrCmd("</h2>\n");
-	} else
-		PrCmd("\n.ps -2\n.LP\n");
+	PrCmd("\n");
 }
 
 void
 FormSec(char *str, int mod, int sec)
 {
-	if TEXMODE {
-		PrCmd("\\subsection{");
-	} else if TEXIMODE {
-		PrCmd("\n@section ");
-	} else if WWWMODE {
-		if (bodymode == 0)
-			PrCmd("<hr size=1 noshade>");
-		PrCmd("<br><a name=\"mod_");
-		PrNum(wwwmod = mod);
-		PrChr('_');
-		PrNum(wwwsec = sec);
-		PrCmd("_0\"></a>\n<h4>");
-		wwwpar = 1;
-		if (bodymode == 0) {
-			PrNum(mod);
-			PrChr('.');
-			PrNum(sec);
-			PrChr(' ');
-		}
-	} else {
-		PrCmd(".SH\n");
-		PrNum(mod);
-		PrChr('.');
-		PrNum(sec);
-		PrChr(' ');
-	}
+	PrCmd("\n@section ");
+
 	PrEnv(E_TEXT);
 	PrStr(str);
 
-	if TEXMODE {
-		PrCmd("}\n");
-	} else if TEXIMODE {
-		PrCmd("\n");
-	} else if WWWMODE {
-		PrCmd("</h4>");
-	} else
-		PrCmd("\n.LP\n");
+	PrCmd("\n");
 }
 
 void
 FormSubSec(char *str)
 {
 	if (str &&(strlen(str) > 0)) {
-		if TEXMODE {
-			PrCmd("\\subsubsection{");
-		} else if TEXIMODE {
-			PrCmd("\n@subsection ");
-		} else if WWWMODE {
-			PrCmd("<br><a name=\"mod_");
-			PrNum(wwwmod);
-			PrChr('_');
-			PrNum(wwwsec);
-			PrChr('_');
-			PrNum(wwwpar);
-			PrCmd("\"></a>\n<h5><b>");
-			if (bodymode == 0) {
-				PrNum(wwwmod);
-				PrChr('.');
-				PrNum(wwwsec);
-				PrChr('.');
-				PrNum(wwwpar++);
-				PrChr(' ');
-			}
-		} else {
-			PrCmd("\n.LP\n");
-		}
+		PrCmd("\n@subsection ");
 		PrEnv(E_TEXT);
 		PrStr(str);
-
-		if TEXMODE {
-			PrCmd("}\n");
-		} else if TEXIMODE {
-			PrCmd("\n");
-		} else if WWWMODE {
-			PrCmd("</b></h5>\n");
-		} else {
-			PrCmd("\n.LP\n");
-		}
+		PrCmd("\n");
 	} else {
-		if TEXMODE {
-			if (bodymode == 0)
-				PrCmd("\\smallskip\n\\noindent");
-		} else if TEXIMODE {
-			PrCmd("\n");
-		} else if WWWMODE {
-			PrCmd("<p>");
-		} else {
-			PrCmd("\n.LP\n");
-		}
+		PrCmd("\n");
 	}
 }
 
@@ -661,98 +448,27 @@ void
 FormPar(char *str)
 {
 	if (str &&(strlen(str) > 0)) {
-		if TEXMODE {
-			PrCmd("\\paragraph{");
-		} else if TEXIMODE {
-			PrCmd("\n");
-		} else if WWWMODE {
-			PrCmd("<br><h5>");
-		} else {
-			PrCmd("\n.LP\n");
-		}
+		PrCmd("\n");
 		PrEnv(E_TEXT);
 		PrStr(str);
-
-		if TEXMODE {
-			PrCmd("}\n");
-		} else if TEXIMODE {
-			PrCmd("\n");
-		} else if WWWMODE {
-			PrCmd("</h5>\n");
-		} else {
-			PrCmd("\n.LP\n");
-		}
+		PrCmd("\n");
 	} else {
-		if TEXMODE {
-			if (bodymode == 0)
-				PrCmd("\\smallskip\n\\noindent");
-		} else if TEXIMODE {
-			PrCmd("\n");
-		} else if WWWMODE {
-			PrCmd("<p>");
-		} else {
-			PrCmd("\n.LP\n");
-		}
+		PrCmd("\n");
 	}
 }
 
 void
 FormHeader(void)
 {
-	extern char *texDocStyle;
-
+	/* disabled ?? */
 	if TEXIMODE
 		return;
-	if TEXMODE
-		if (texDocStyle != NULL)
-			return;
-
-	if TEXMODE
-		PrCmd("\\markboth{ \\ \\ ");
-	else if TEXIMODE
-		PrCmd("@settitle ");
-	else if WWWMODE
-		PrCmd("<p><h1 align=center>");
-	else
-		PrCmd(".TL\n");
-
 	PrText(mx_title);
-
-	if TEXMODE
-		PrCmd("\\hfill ");
-	else if TEXIMODE
-		PrCmd("\n@author ");
-	else if WWWMODE
-		PrCmd("</h1>\n\n<h2 align=center>");
-	else
-		PrCmd(".AU\n");
-
+	PrCmd("\n@author ");
 	PrText(mx_author);
-
-	if TEXMODE
-		PrCmd("}{\\ \\ ");
-	else if TEXIMODE
-		PrCmd("\n@c ");
-	else if WWWMODE
-		PrCmd("</h2>\n\n<h3 align=center>");
-	else
-		PrCmd("\\sp 2\n\\fBVersion \\fP");
-
+	PrCmd("\n@c ");
 	PrText(mx_version);
-
-	if TEXMODE
-		PrCmd("\\hfill ");
-	else if WWWMODE
-		PrCmd("</h3>\n\n<h4 align=center>");
-	else
-		PrCmd("\n");
-
+	PrCmd("\n");
 	PrText(mx_date);
-
-	if TEXMODE
-		PrCmd("}\n");
-	else if TEXIMODE
-		PrCmd("\n");
-	else if WWWMODE
-		PrCmd("</h4>\n\n");
+	PrCmd("\n");
 }

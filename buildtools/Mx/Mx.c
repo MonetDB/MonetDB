@@ -32,13 +32,11 @@
 unsigned int db_flag = 0x00;
 int archived;			/* set for archived portions */
 int mode = M_TEXT;
-int opt_column = 1;
 int opt_hide = NO_HIDE;
-int textmode = M_TEX;
+int textmode = M_TEXT;
 int bodymode = 0;		/* all should be shown */
 char *opt_code;
 char *defHideText = 0;
-int texihdr = 0;
 
 int mx_err = 0;
 char *mx_file = 0;
@@ -54,18 +52,12 @@ static void
 usage(void)
 {
 	Message("Usage: Mx <flags> <file>.mx");
-	Message("\t-t\t\tProduce LaTeX document (default)");
-	Message("\t-i\t\tProduce texi document ");
+	Message("\t-i\t\tProduce texi document (default)");
 	Message("\t-c\t\tExtract code");
 	Message("\t-R <dir>\tSet target directory to <dir>)");
-	Message("\t-S <style>\tSet LaTeX documentstyle to 'style'");
-	Message("\t-s\t\tProduce nroff -ms document");
-	Message("\t-1\t\tSingle column (default) ");
-	Message("\t-2\t\tDouble column");
 	Message("\t-H <n>\t\tSet hide level to 'n' (-H0 default)");
 	Message("\t-d\t\tProduce a draft document");
 	Message("\t-x <extension>\tExtract <extension> labelled code");
-	Message("\t-w\t\tExtract HTML code");
 	Message("\t-D <id>\t\tDefine macro 'id'");
 	Message("\t-T <string>\tDefine default hide text <string>");
 	Message("\t-l\t\tNo #line and alike statements");
@@ -86,18 +78,11 @@ char **argv;
 	}
 	InitDef();
 	OutputDir(".");
-	InitIndex();
 
 /* Preprocess the arguments.
  */
-	while ((i = getopt(argc, argv, "sticC:x:Bwdg:D:R:S:H:12T:ln+")) != EOF) {
+	while ((i = getopt(argc, argv, "icC:x:Bdg:D:R:H:T:ln+")) != EOF) {
 		switch (i) {
-		case 's':
-			textmode = M_MS;
-			break;
-		case 't':
-			textmode = M_TEX;
-			break;
 		case 'i':
 			textmode = M_TEXI;
 			break;
@@ -114,9 +99,6 @@ char **argv;
 			break;
 		case 'B':
 			bodymode = 1;	/* use for inclusion */
-			break;
-		case 'w':
-			textmode = M_WWW;
 			break;
 		case 'd':
 			mode = M_DRAFT;
@@ -135,17 +117,8 @@ char **argv;
 		case 'R':
 			OutputDir(optarg);
 			break;
-		case 'S':
-			texDocStyle = StrDup(optarg);
-			break;
 		case 'H':
 			sscanf(optarg, "%d", &opt_hide);
-			break;
-		case '1':
-			opt_column = 1;
-			break;
-		case '2':
-			opt_column = 2;
 			break;
 		case 'T':
 			defHideText = optarg;
@@ -208,8 +181,6 @@ Directive str2dir[] = {
 	{"+", Section, "",},
 	{"-", Subsection, "",},
 	{".", Paragraph, "",},
-	{"T", Qtex, "",},
-	{"texi", Qtexi, "",},
 	{"C", CCsrc, MX_CXX_SUFFIX,},
 	{"i", Pimpl, "impl",},
 	{"s", Pspec, "spec",},
@@ -240,7 +211,6 @@ Directive str2dir[] = {
 	{"swig", Swig, "i",},
 	{"Y", CCyacc, "yy",},
 	{"L", CClex, "ll",},
-	{"bib", BibTeX, "bib",},
 	{"{", InHide, "",},
 	{"}", OutHide, "",},
 	{"/", Comment, "",},

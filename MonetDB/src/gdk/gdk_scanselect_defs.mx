@@ -32,6 +32,7 @@ created for scanselect, whereas the file gdk_scanselect.mx contains the
 calls to these functions.
 @c
 
+@{
 @- The actual BAT_scanselect
 
 @= seqscanPrologue
@@ -300,3 +301,5 @@ Generate all working functions.
 @c
 @:DEFseqscanTTget(c)@
 @-
+
+@}

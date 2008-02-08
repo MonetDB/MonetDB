@@ -180,7 +180,6 @@ MakeDefs(char *name)
 		case Index8:
 		case Index9:
 			if (allTrue()) {
-				IndexTable(dir, cmd);
 				d = NwDef(dir, mod, sec, lino);
 				d->d_cmd = cmd;
 				d->d_blk = blk;
@@ -238,8 +237,6 @@ MakeDefs(char *name)
 				d = NwDef(dir, mod, sec, lino);
 				d->d_cmd = cmd;
 				d->d_blk = blk;
-				if (!Hide())
-					IndexEntry(0, d->d_cmd, d->d_mod, d->d_sec);
 				lastdir = Continue;
 			}
 			break;
@@ -250,8 +247,6 @@ MakeDefs(char *name)
 				d = NwDef(dir, mod, sec, lino);
 				d->d_cmd = cmd;
 				d->d_blk = blk;
-				if (!Hide())
-					IndexEntry(0, d->d_cmd, d->d_mod, d->d_sec);
 				lastdir = Continue;
 			}
 			break;
@@ -264,8 +259,6 @@ MakeDefs(char *name)
 				lastdir = Continue;
 			}
 			break;
-		case Qtex:
-		case Qtexi:
 		case Qcode:
 		case Continue:
 			if (allTrue()) {
@@ -326,7 +319,6 @@ MakeDefs(char *name)
 		case Swig:
 		case CCyacc:
 		case CClex:
-		case BibTeX:
 			if (allTrue()) {
 				d = NwDef(dir, mod, sec, lino);
 				d->d_cmd = cmd;
@@ -386,19 +378,10 @@ dir2ext(CmdCode dir)
 	Directive *d = str2dir;
 
 	if (dir == Bfile) {
-		if (textmode == M_WWW) {
+		if (textmode == M_TEXI) {
 			if (bodymode)
-				return "bdy.html";
-			return "html";
-		} else {
-			if (textmode == M_TEXI) {
-				if (bodymode)
-					return "bdy.texi";
-				return "texi";
-			}
-			if (bodymode)
-				return "bdy.tex";
-			return "tex";
+				return "bdy.texi";
+			return "texi";
 		}
 	}
 

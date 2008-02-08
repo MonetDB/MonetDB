@@ -2268,7 +2268,7 @@ The new semantics is to do nothing: the new mapping only takes effect the next t
 Thus we cannot modify the hp->storage fields, but rather store the new modes in special
 batMap fields that are used when the BAT descriptor is saved.
 
-This makes the BATmmap safer \& simpler as it is now
+This makes the BATmmap safer & simpler as it is now
 incorporated in the normal bat loading and saving mechanism.
 
 It also makes the mmap faster as when through caching you
@@ -2476,8 +2476,8 @@ tab
 goto (1)
 @end multitable
 
-Now we see that for BBPsync (heap\_move) it is sufficient to check for the .priv
-suffix to determine the appropriate backup\_bat behavior (i.e. register a X .killfile
+Now we see that for BBPsync (heap_move) it is sufficient to check for the .priv
+suffix to determine the appropriate backup_bat behavior (i.e. register a X .killfile
 anticipating the write(X) besides a X.priv).
 
 HEAPsave: we do not need to worry about saving readonly bats: as we save them in 

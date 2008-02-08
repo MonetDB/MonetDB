@@ -25,13 +25,13 @@ The Bat Buffer Pool has a number of functions:
 The BBP is a directory which contains status information about all known BATs. 
 This interface may be used very heavily, by data-intensive applications.
 To eliminate all overhead, read-only access to the BBP may be done by 
-table-lookups. The integer index type for these lookups is @%bat@, as 
-retrieved by @%BBPcacheid(b)@. The @%bat@ zero is reserved for the nil bat. 
+table-lookups. The integer index type for these lookups is @emph{bat}, as 
+retrieved by @emph{BBPcacheid(b)}. The @emph{bat} zero is reserved for the nil bat. 
 
 @item persistence
 The BBP is made persistent by saving it to the dictionary file 
 called @emph{BBP.dir} in the database. The dictionary can always be 
-reconstructed from the @emph{ .desc} files. Its main role is to 
+reconstructed from the @emph{.desc} files. Its main role is to 
 speed-up system restart, because now it requires just a few IOs 
 instead of a complete directory scan and reading all descriptors
 to find all BATs.
@@ -257,15 +257,15 @@ The main BBP array is protected by two locks:
 @table @code
 @item GDKcacheLock]
 this lock guards the free slot management in the BBP array.  The BBP 
-operations that allocate a new slot for a new BAT (@%BBPinit@,@%BBPcacheit@), 
-delete the slot of a destroyed BAT (@%BBPreclaim@), or rename a BAT 
-(@%BBPrename@), hold this lock. It also protects all BAT (re)naming actions 
+operations that allocate a new slot for a new BAT (@emph{BBPinit},@emph{BBPcacheit}), 
+delete the slot of a destroyed BAT (@emph{BBPreclaim}), or rename a BAT 
+(@emph{BBPrename}), hold this lock. It also protects all BAT (re)naming actions 
 include (read and write) in the hash table with BAT names.
 @item GDKswapLock
 this lock guards the swap (loaded/unloaded) status of the BATs. Hence, all
 BBP routines that influence the swapping policy, or actually carry out the
-swapping policy itself, acquire this lock (e.g. @%BBPfix@,@%BBPunfix@).
-Note that this also means that updates to the BBP\_status indicator array
+swapping policy itself, acquire this lock (e.g. @emph{BBPfix},@emph{BBPunfix}).
+Note that this also means that updates to the BBP_status indicator array
 must be protected by GDKswapLock. 
 
 To reduce contention GDKswapLock was split into multiple locks; it is now 
@@ -282,7 +282,7 @@ itself are locked by the BBP functions themselves. Hence, multiple concurrent BB
 operations may be ongoing while at the same time at most one BBP write 
 operation @strong{on a different BAT} is executing.  
 This holds for accesses to the public (quasi-)
-arrays @%BBPcache@, @%BBPstatus@, @%BBPrefs@, @%BBPlogical@ and @%BBPphysical@. These 
+arrays @emph{BBPcache}, @emph{BBPstatus}, @emph{BBPrefs}, @emph{BBPlogical} and @emph{BBPphysical}. These 
 arrays are called quasi as now they are actually stored together in one big BBPrec 
 array called BBP, that is allocated in anonymous VM space, so we can reallocate 
 this structure without changing the base address (a crucial feature if read 
@@ -1786,7 +1786,7 @@ just one thread does a BBPtrim at a time (by having a BBPtrimLock set).
 @item
 while decisions are made as to which bats to unload (1) the BBP is
 scanned, and (2) unload decisions are made. Due to these properties,
-the search\&decide phase of BBPtrim acquires both GDKcacheLock (due to (1))i
+the search&decide phase of BBPtrim acquires both GDKcacheLock (due to (1))
 and all GDKswapLocks (due to (2)). They must be released during the actual 
 unloading.  (as otherwise deadlock occurs => unloading a bat may e.g. kill 
 an accelerator that is a BAT, which in turn requires BBP lock acquisition).
@@ -1794,7 +1794,7 @@ an accelerator that is a BAT, which in turn requires BBP lock acquisition).
 to avoid further deadlock, the update functions in BBP that hold either 
 GDKcacheLock or a GDKswapLock may never cause a BBPtrim (notice that BBPtrim 
 could theoretically be set off just by allocating a little piece of memory, e.g. 
-GDKstrdup()). If these routines must alloc memory, they must set the BBP\_notrim 
+GDKstrdup()). If these routines must alloc memory, they must set the BBP_notrim 
 variable, acquiring the addition GDKtrimLock, in order to prevent such deadlock.
 @item
 the BBPtrim is atomic; only releases its locks when all BAT unload 
@@ -1814,7 +1814,7 @@ bats and will more quickly find fresh unload candidates).
 We also refined the swap criterion. If the BBPtrim was initiated due to:
 - too much descriptors: small bats are unloaded first (from LRU cold to hot)  
 - too little memory: big bats are unloaded first (from LRU cold to hot).
-Unloading-first is enforced by subtracting $2^31$ from the stamp in the
+Unloading-first is enforced by subtracting @math{2^31} from the stamp in the
 field where the candidates are sorted on.
 @{
 @c
@@ -2185,7 +2185,6 @@ BBPquickdesc(bat bid, int delaccess)
 @}
 
 @+ Small BAT Cache
-@T
 PETER: rewrote the batcache to make it stable with views and actually faster
        than allocating new bats (I guess that was the purpose of it)
 
@@ -2205,13 +2204,13 @@ main ideas:
 
 and then benchmark the d*mn thing (also missing in the previous exercise) :
 
-module(alarm);
-bbp_batcache_minsize(wrd(256));
-{ var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); }
-[ 490 ]
-bbp_batcache_minsize(wrd(0));
-{ var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); }
-[ 847 ]
+ module(alarm);
+ bbp_batcache_minsize(wrd(256));
+ @{ var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); @}
+ [ 490 ]
+ bbp_batcache_minsize(wrd(0));
+ @{ var t := time(), i := 0; while((i :+= 1) < 100000) bat(int,int); print(time() - t); @}
+ [ 847 ]
 
 so with caching *some* MIL programs can be nearly twice as fast (optimized compile),
 though I expect the gains to be smaller in general.
@@ -2753,7 +2752,7 @@ For subcommits, it does the same with SUBDIR.
 
 It is now locked, to get proper file counters, and also to prevent
 concurrent BBPrecovers, etc.
-@T
+
 backup_dir == 0 => no backup BBP.dir 
 backup_dir == 1 => BBP.dir saved in BACKUP/
 backup_dir == 2 => BBP.dir saved in SUBCOMMIT/

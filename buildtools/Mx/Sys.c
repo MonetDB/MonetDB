@@ -41,8 +41,6 @@ ofile_printf(char *format, ...)
 	if (mx_out & 1)
 		vfprintf(ofile, format, ap);
 	va_start(ap, format);
-	if (ofile_index && (mx_out & 2))
-		vfprintf(ofile_index, format, ap);
 	va_start(ap, format);
 	if (ofile_body && (mx_out & 4))
 		vfprintf(ofile_body, format, ap);
@@ -55,8 +53,6 @@ ofile_puts(char *s)
 {
 	if (mx_out & 1)
 		fputs(s, ofile);
-	if (ofile_index && (mx_out & 2))
-		fputs(s, ofile_index);
 	if (ofile_body && (mx_out & 4))
 		fputs(s, ofile_body);
 	somethingPrinted++;
@@ -67,8 +63,6 @@ ofile_putc(char c)
 {
 	if (mx_out & 1)
 		fputc(c, ofile);
-	if (ofile_index && (mx_out & 2))
-		fputc(c, ofile_index);
 	if (ofile_body && (mx_out & 4))
 		fputc(c, ofile_body);
 	somethingPrinted++;

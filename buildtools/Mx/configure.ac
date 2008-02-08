@@ -48,5 +48,5 @@ AC_DEFINE_UNQUOTED(DIR_SEP, '$DIRSEP', [Directory separator])
 AC_DEFINE(MX_CXX_SUFFIX, "cc", [Suffix for C++ files])
 
 # Produce output files
-AC_CONFIG_FILES([Makefile epstogif])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

@@ -58,7 +58,6 @@ FILE *fpstack[16] = { 0 };
 FILE **fptop = fpstack;
 FILE *ofile = 0;
 FILE *ofile_body = 0;
-FILE *ofile_index = 0;
 
 char *outputdir;
 char *inputdir;
@@ -222,7 +221,7 @@ IoWriteFile(char *s, CmdCode m)
 	File *f;
 
 	if (ofile) {
-		if (texihdr)
+		if (TEXIMODE && bodymode == 0) 
 			ofile_printf("@bye\n");
 		fclose(ofile);
 	}
@@ -311,21 +310,6 @@ UpdateFiles(void)
 	ofile = NULL;
 
 	for (f = files; f < files + nfile; f++) {
-		if (ofile_index) {
-			KillLines(ofile_index, "+</font></td>", 1);
-			KillLines(ofile_body, "+</font></td>", 1);
-			KillLines(ofile_body, "<BASE target=\"_parent\">", 0);
-			fclose(ofile_body);
-			ofile_body = NULL;
-			fclose(ofile_index);
-			ofile_index = NULL;
-			if (!itable_done) {
-				/* now use the body file as the output file */
-				unlink(filename_index);
-				unlink(f->f_tmp);
-				rename(filename_body, f->f_tmp);
-			}
-		}
 		status = CompareFiles(f->f_tmp, f->f_name);
 		switch (status) {
 		case 0:	/* identical files, remove temporary file */
