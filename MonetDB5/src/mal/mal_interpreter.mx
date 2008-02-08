@@ -462,7 +462,7 @@ The code currently does not statically checks the mode change.
 Preferrably we should introduce a itrace flag PROFILE
 We rely on optimizing compilers to remove the redundant code.
 @c
-	if( malProfileMode == 0 && cntxt->itrace==0){
+	if( malProfileMode == 0 && cntxt->itrace==0 && cntxt->flags == 0 && GDKdebug == 0){
 		while(stkpc < mb->stop && stkpc != stoppc ){
 			pci = getInstrPtr(mb,stkpc);
 			if( malProfileMode + cntxt->itrace)
