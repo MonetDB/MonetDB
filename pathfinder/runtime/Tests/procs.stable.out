@@ -30,7 +30,7 @@ procs();
 [ "CTrefine_rev(oid, BAT[oid,any]) : BAT[oid,oid]"													  ]
 [ "CTrefine_rev(oid, any) : oid"															  ]
 [ "CTsubgroup(BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[oid,oid]"											  ]
-[ "DocmgmTape(BAT[oid,BAT], BAT[oid,str], BAT[oid,str], BAT[oid,str], BAT[oid,lng]) : void"									  ]
+[ "DocmgmTape(BAT[void,BAT], BAT[void,str], BAT[void,str], BAT[void,str], BAT[void,lng]) : void"								  ]
 [ "TIMEZONE(str) : tzone"																  ]
 [ "[:rotate_xor_hash=](BAT[any::1,int], int, BAT[any::1,any]) : BAT[any::1,int]"																				  ]
 [ "[date](BAT[any::1,timestamp]) : BAT[any::1,date]"													  ]

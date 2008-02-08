@@ -475,6 +475,7 @@ special_col (PFsql_special_t spc)
 #define LEVEL_      column_name (special_col (sql_col_level))
 #define KIND_       column_name (special_col (sql_col_kind))
 #define NAME_       column_name (special_col (sql_col_name))
+#define NS_URI_     column_name (special_col (sql_col_ns_uri))
 #define GUIDE_      column_name (special_col (sql_col_guide))
 #define VALUE_      column_name (special_col (sql_col_value))
 #define TWIG_PRE_   column_name (special_col (sql_col_twig_pre))
@@ -488,13 +489,20 @@ special_col (PFsql_special_t spc)
 #define LEVEL(n)      ext_column_name (n, special_col (sql_col_level))
 #define KIND(n)       ext_column_name (n, special_col (sql_col_kind))
 #define NAME(n)       ext_column_name (n, special_col (sql_col_name))
-#define NAMESPACE(n)  ext_column_name (n, special_col (sql_col_namespace))   
+#define NS_URI(n)     ext_column_name (n, special_col (sql_col_ns_uri))
 #define GUIDE(n)      ext_column_name (n, special_col (sql_col_guide))
 #define VALUE(n)      ext_column_name (n, special_col (sql_col_value))
 #define TWIG_PRE(n)   ext_column_name (n, special_col (sql_col_twig_pre))
 #define ITER(n)       ext_column_name (n, special_col (sql_col_iter))
 #define POS(n)        ext_column_name (n, special_col (sql_col_pos))
 #define MAX(n)        ext_column_name (n, special_col (sql_col_max))
+
+#define TRUE_STR       lit_str("true")
+#define FALSE_STR      lit_str("false")
+#define TRUE_DEC       lit_dec(1.0E0)
+#define FALSE_DEC      lit_dec(0.0E0)
+#define TRUE_INT       lit_int(1)
+#define FALSE_INT      lit_int(0)
 
 /**
  * Returns a new column name
@@ -697,7 +705,7 @@ transform_expression (PFsql_t *n, PFsql_t *col)
         n = (n->kind == sql_column_name ||
              n->kind == sql_lit_int)?
             n:
-            case_ (when (n, lit_int (1)), else_ (lit_int (0)));
+            case_ (when (n, TRUE_INT), else_ (FALSE_INT));
 
     if (n->kind == sql_column_name)
     {
@@ -1294,7 +1302,7 @@ step_name (PFla_op_t *p, PFsql_aident_t step, PFty_t ty)
     if (name)
         where_list_add (WHERELIST(p), eq (NAME(step), name));
     if (namespace)
-        where_list_add (WHERELIST(p), eq (NAMESPACE(step), namespace));
+        where_list_add (WHERELIST(p), eq (NS_URI(step), namespace));
 }
 
 static void
@@ -1635,6 +1643,60 @@ collect_fragments (PFla_op_t * p)
         return frag_select (table_name (PF_SQL_TABLE_FRAG));
 }
 
+/**
+ * Cast from a boolean value 
+ */
+static PFsql_t *
+cast_from_bool (PFsql_t * expr, PFalg_simple_type_t res_ty)
+{
+    switch (res_ty) {
+        case aat_uA:  
+        case aat_str:
+            if (expr->kind == sql_column_name)
+                expr = eq (expr, TRUE_INT);
+            return case_ (when (expr,TRUE_STR),
+                          else_ (FALSE_STR));
+        case aat_dec:
+        case aat_dbl:
+            if (expr->kind != sql_column_name)
+                return case_ (when (expr, TRUE_DEC),
+                              else_ (FALSE_DEC));
+            else
+                return cast (expr, type (res_ty));
+        case aat_int:
+            if (expr->kind != sql_column_name)
+                return case_ (when (expr, TRUE_INT),
+                              else_ (FALSE_INT));
+            else
+                return expr;
+        default:
+            PFoops (OOPS_FATAL, "This cast from a boolean"
+                                " value is not allowed");
+    }
+    
+    return NULL; /* satisfy picky compilers */
+}
+
+/**
+ * A cast to boolean is has to provide a boolean expression.
+ */
+static PFsql_t *
+cast_to_bool (PFsql_t *expr, PFalg_simple_type_t ty)
+{
+    switch (ty) {
+        case aat_dec:
+        case aat_dbl:
+            return eq(expr, TRUE_DEC);
+        case aat_int:
+            return eq(expr, TRUE_INT);
+        default:
+            PFoops (OOPS_FATAL, "This cast to a boolean"
+                                " boolean value is not allowed");
+    }
+    
+    return NULL; /* satisfy picky compilers */
+}
+
 static PFsql_t *
 cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
 {
@@ -1647,12 +1709,19 @@ cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
     #define CHAR_TYPE(t)   ((t == aat_str) || \
                             (t == aat_uA))
     #define NUM_NOTEXPR(t) ((t == aat_int))
+    #define BOOL_TYPE(t)    (t == aat_bln)
 
     /* Since we handle untypedAtomic and Strings the same
      * way in SQL, its obvious we don't have to
      * perform a cast if res_ty is a CHAR_TYPE and
      * and input type is a CHAR_TYPE */
     if (CHAR_TYPE(ty) && CHAR_TYPE(res_ty)) return expr;
+
+    if (BOOL_TYPE(ty))
+        return cast_from_bool (expr, res_ty);
+
+    if (BOOL_TYPE(res_ty))
+        return cast_to_bool (expr, ty);
 
     /* if we cast a numeric type to varchar we have to
        first cast it to CHAR and then to varchar */
@@ -1890,8 +1959,8 @@ reduce (PFla_op_t * p, int goalnt)
                     if (entry.type == aat_bln)
                         colexpr = (colexpr->kind == sql_column_name)?
                                   colexpr:
-                                  case_ (when (colexpr, lit_int (1)),
-                                         else_ (lit_int (0)));
+                                  case_ (when (colexpr, TRUE_INT),
+                                         else_ (FALSE_INT));
                     
                     /* Generate a special column name DIST
                        that can be overloaded ... */

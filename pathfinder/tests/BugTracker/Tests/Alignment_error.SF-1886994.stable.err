@@ -1,0 +1,17 @@
+stderr of test 'Alignment_error.SF-1886994` in directory 'tests/BugTracker` itself:
+
+
+# 17:37:40 >  
+# 17:37:40 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=34380 --set xrpc_port=46003 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 17:37:40 >  
+
+
+# 17:37:41 >  
+# 17:37:41 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=34380 Alignment_error.SF-1886994.xq
+# 17:37:41 >  
+
+
+# 17:37:44 >  
+# 17:37:44 >  Done.
+# 17:37:44 >  
+

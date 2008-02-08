@@ -1341,7 +1341,7 @@ PFsql_column_name_str (PFsql_col_t *name)
             case sql_col_nameid:     return "nameid";
             case sql_col_value:      return "value";
             case sql_col_name:       return "name";
-            case sql_col_namespace:  return "namespace";  
+            case sql_col_ns_uri:     return "uri";  
             case sql_col_twig_pre:   return "twig_pre";
             case sql_col_iter:       return "iter";
             case sql_col_pos:        return "pos";

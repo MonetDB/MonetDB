@@ -627,6 +627,9 @@ main (int argc, char *argv[])
     /* URL of query file (if present) */
     char *url = "-";
 
+    PFerrbuf = malloc(OOPS_SIZE);
+    PFerrbuf[0] = 0;
+
     PFmem_init ();
     /*
      * Determine basename(argv[0]) and dirname(argv[0]) on *copies*

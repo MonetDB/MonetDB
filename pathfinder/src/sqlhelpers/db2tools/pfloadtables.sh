@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 THIS=${0}
 THISDIR=${0%/*}

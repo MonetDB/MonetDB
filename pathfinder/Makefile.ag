@@ -30,17 +30,5 @@ EXTRA_DIST = extra.mk.in RunMtest.in RunMtest.bat.in \
 		MonetDB-XQuery.spec.in MonetDB-XQuery.spec rpm.mk.in 
 EXTRA_DIST_DIR = NT tests benchmarks 
 
-headers_txt = {
-	HEADERS = txt
-	SOURCES = HowToStart-MinGW.txt
-	DIR = datadir/doc/MonetDB-XQuery-$(VERSION)
-}
-
-headers_docs = {
-	HEADERS = ""
-	SOURCES = HowToStart-PF 
-	DIR = datadir/doc/MonetDB-XQuery-$(VERSION)
-}
-
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
