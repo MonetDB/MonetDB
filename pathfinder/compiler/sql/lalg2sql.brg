@@ -475,6 +475,7 @@ special_col (PFsql_special_t spc)
 #define LEVEL_      column_name (special_col (sql_col_level))
 #define KIND_       column_name (special_col (sql_col_kind))
 #define NAME_       column_name (special_col (sql_col_name))
+#define NS_URI_     column_name (special_col (sql_col_ns_uri))
 #define GUIDE_      column_name (special_col (sql_col_guide))
 #define VALUE_      column_name (special_col (sql_col_value))
 #define TWIG_PRE_   column_name (special_col (sql_col_twig_pre))
@@ -488,7 +489,7 @@ special_col (PFsql_special_t spc)
 #define LEVEL(n)      ext_column_name (n, special_col (sql_col_level))
 #define KIND(n)       ext_column_name (n, special_col (sql_col_kind))
 #define NAME(n)       ext_column_name (n, special_col (sql_col_name))
-#define NAMESPACE(n)  ext_column_name (n, special_col (sql_col_namespace))   
+#define NS_URI(n)     ext_column_name (n, special_col (sql_col_ns_uri))
 #define GUIDE(n)      ext_column_name (n, special_col (sql_col_guide))
 #define VALUE(n)      ext_column_name (n, special_col (sql_col_value))
 #define TWIG_PRE(n)   ext_column_name (n, special_col (sql_col_twig_pre))
@@ -1301,7 +1302,7 @@ step_name (PFla_op_t *p, PFsql_aident_t step, PFty_t ty)
     if (name)
         where_list_add (WHERELIST(p), eq (NAME(step), name));
     if (namespace)
-        where_list_add (WHERELIST(p), eq (NAMESPACE(step), namespace));
+        where_list_add (WHERELIST(p), eq (NS_URI(step), namespace));
 }
 
 static void
