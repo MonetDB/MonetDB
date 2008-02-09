@@ -242,7 +242,7 @@ static int findReplica( str sname, str tname, str cname, int tpe, bit tail,
 	Replica r;
 	int (*cmp) (ptr, ptr);
 	ptr nilptr;
-	int i, minr;
+	int i, minr = -1;
 	size_t minc = (size_t) GDK_lng_max;
 	bit leq, lsub, heq, hsub;
 	int rs[replnr], ri=0; /* subset replicas */
