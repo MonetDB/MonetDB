@@ -99,7 +99,6 @@ prop_infer_set (PFla_op_t *n, bool set)
 
         case la_serialize_rel:
         case la_pos_select:
-        case la_to:
         case la_avg:
         case la_sum:
         case la_count:
@@ -128,6 +127,7 @@ prop_infer_set (PFla_op_t *n, bool set)
         case la_bool_and:
         case la_bool_or:
         case la_bool_not:
+        case la_to:
         case la_rowrank:
         case la_rank:
         case la_type:
@@ -159,12 +159,12 @@ prop_infer_set (PFla_op_t *n, bool set)
             r_set = true;
             break;
 
-        case la_error:
         case la_distinct:
         case la_max:
         case la_min:
         case la_seqty1:
         case la_all:
+        case la_error:
             l_set = true;
             break;
 
@@ -205,7 +205,7 @@ prop_infer_set (PFla_op_t *n, bool set)
 
         case la_cond_err:
             l_set = n->prop->set;
-            r_set = false;
+            r_set = true;
             break;
 
         /* For proxies we overwrite inferred property at its

@@ -1,0 +1,34 @@
+stdout of test 'for_variable.SF-1887055` in directory 'tests/BugTracker` itself:
+
+
+# 17:29:56 >  
+# 17:29:56 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=35000 --set xrpc_port=43385 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 17:29:56 >  
+
+# MonetDB Server v4.22.0
+# based on GDK   v1.22.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.22.0 loaded
+# XRPC administrative console at http://127.0.0.1:43385/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 17:29:57 >  
+# 17:29:57 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=35000 for_variable.SF-1887055.xq
+# 17:29:57 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><bla><world count="1"><world prob="0.020100502512562804"/></world><world count="1"><world prob="0.97989949748743721"/></world><world count="1"><world prob="0.19379844961240306"/></world><world count="1"><world prob="0.80620155038759689"/></world><world count="1"><world prob="0.085910652920962144"/></world><world count="1"><world prob="0.91408934707903777"/></world><world count="1"><world prob="0.0063694267515923475"/></world><world count="1"><world prob="0.99363057324840764"/></world><world count="1"><world prob="0.004739336492890993"/></world><world count="1"><world prob="0.99526066350710896"/></world><world count="1"><world prob="0.0036630036630036643"/></world><world count="1"><world prob="0.99633699633699624"/></world></bla></XQueryResult>
+
+# 17:29:57 >  
+# 17:29:57 >  Done.
+# 17:29:57 >  
+

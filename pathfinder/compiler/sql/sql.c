@@ -558,7 +558,7 @@ PFsql_where_list_ (unsigned int count, const PFsql_t **list)
 
 
 
-/* .......... Union .......... */
+/* .......... Set operators .......... */
 
 /**
  * Create a SQL tree node representing the SQL
@@ -570,10 +570,6 @@ PFsql_union (const PFsql_t *a, const PFsql_t *b)
     return wire2 (sql_union, a, b);
 }
 
-
-
-/* .......... Difference .......... */
-
 /**
  * Create a SQL tree node representing the SQL
  * `EXCEPT ALL' operator.
@@ -584,7 +580,15 @@ PFsql_difference (const PFsql_t *a, const PFsql_t *b)
     return wire2 (sql_diff, a, b);
 }
 
-
+/**
+ * Create a SQL tree node representing the SQL
+ * `INTERSECT ALL' operator.
+ */
+PFsql_t *
+PFsql_intersect (const PFsql_t *a, const PFsql_t *b)
+{
+    return wire2 (sql_intersect, a, b);
+}
 
 /* .......... Literal construction .......... */
 
@@ -968,6 +972,37 @@ PFsql_sum (const PFsql_t * column)
     return wire1 (sql_sum, column);
 }
 
+/* ........... String Functions ........... */
+
+/**
+ * Construct a SQL tree  node representing
+ * the SQL length functions for strings
+ */
+PFsql_t *
+PFsql_str_length (const PFsql_t *a)
+{
+    return wire1 (sql_str_length, a);
+}
+
+/**
+ * Construct a SQL tree  node representing
+ * the SQL length functions for strings
+ */
+PFsql_t *
+PFsql_str_upper (const PFsql_t *a)
+{
+    return wire1 (sql_str_upper, a);
+}
+
+/**
+ * Construct a SQL tree  node representing
+ * the SQL length functions for strings
+ */
+PFsql_t *
+PFsql_str_lower (const PFsql_t *a)
+{
+    return wire1 (sql_str_lower, a);
+}
 
 
 /* .......... OLAP Functionality .......... */
@@ -1306,7 +1341,7 @@ PFsql_column_name_str (PFsql_col_t *name)
             case sql_col_nameid:     return "nameid";
             case sql_col_value:      return "value";
             case sql_col_name:       return "name";
-            case sql_col_namespace:  return "namespace";  
+            case sql_col_ns_uri:     return "uri";  
             case sql_col_twig_pre:   return "twig_pre";
             case sql_col_iter:       return "iter";
             case sql_col_pos:        return "pos";

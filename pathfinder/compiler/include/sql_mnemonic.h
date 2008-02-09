@@ -75,11 +75,10 @@
 #define left_outer_join(tbl1, tbl2)     PFsql_left_outer_join(tbl1, tbl2)
 #define where_list(...)                 PFsql_where_list(__VA_ARGS__)
 
-/* .......... Union .......... */
+/* .......... Set operators .......... */
 #define union_(a,b)                  PFsql_union(a,b)
-
-/* .......... Difference .......... */
 #define diff(a,b)                    PFsql_difference(a,b)
+#define intersect(a,b)               PFsql_intersect(a,b)
 
 /* .......... Literal construction .......... */
 #define lit_int(i)                   PFsql_lit_int(i)
@@ -127,6 +126,12 @@
 #define min(c)                       PFsql_min(c)
 #define avg(c)                       PFsql_avg(c)
 #define sum(c)                       PFsql_sum(c)
+
+/* ............ String Functions ........... */
+
+#define str_length(a)                PFsql_str_length(a)
+#define str_upper(a)                 PFsql_str_upper(a)
+#define str_lower(a)                 PFsql_str_lower(a)
                                      
 /* .......... OLAP Functionality .......... */
 #define over(a,b)                    PFsql_over(a,b)

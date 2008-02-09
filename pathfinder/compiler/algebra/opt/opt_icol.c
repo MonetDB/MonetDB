@@ -386,6 +386,7 @@ opt_icol (PFla_op_t *p)
             if (L(p)->kind == la_twig &&
                 !PFprop_icol (p->prop, L(p)->sem.iter_item.item))
                 switch (LL(p)->kind) {
+                            
                     case la_docnode:
                         *p = *PFla_project (
                                   LLL(p),
@@ -425,6 +426,11 @@ opt_icol (PFla_op_t *p)
                         assert (0);
                         break;
                 }
+            else if (L(p)->kind == la_doc_tbl &&
+                     !PFprop_icol (L(p)->prop, L(p)->sem.doc_tbl.res)) {
+                *p = *PFla_dummy (LL(p));
+                break;
+            }
             break;
 
         case la_frag_union:
@@ -435,6 +441,14 @@ opt_icol (PFla_op_t *p)
             else if (R(p)->kind == la_fragment &&
                 RL(p)->kind == la_twig &&
                 !PFprop_icol (RL(p)->prop, RL(p)->sem.iter_item.item))
+                *p = *PFla_dummy (L(p));
+            else if (L(p)->kind == la_fragment &&
+                LL(p)->kind == la_doc_tbl &&
+                !PFprop_icol (LL(p)->prop, LL(p)->sem.doc_tbl.res))
+                *p = *PFla_dummy (R(p));
+            else if (R(p)->kind == la_fragment &&
+                RL(p)->kind == la_doc_tbl &&
+                !PFprop_icol (RL(p)->prop, RL(p)->sem.doc_tbl.res))
                 *p = *PFla_dummy (L(p));
             break;
 

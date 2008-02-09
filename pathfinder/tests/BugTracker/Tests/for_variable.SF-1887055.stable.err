@@ -1,0 +1,17 @@
+stderr of test 'for_variable.SF-1887055` in directory 'tests/BugTracker` itself:
+
+
+# 17:29:56 >  
+# 17:29:56 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=35000 --set xrpc_port=43385 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 17:29:56 >  
+
+
+# 17:29:57 >  
+# 17:29:57 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=35000 for_variable.SF-1887055.xq
+# 17:29:57 >  
+
+
+# 17:29:57 >  
+# 17:29:57 >  Done.
+# 17:29:57 >  
+

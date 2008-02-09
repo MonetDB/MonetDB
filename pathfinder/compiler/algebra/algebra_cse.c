@@ -275,6 +275,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_to:
             return (a->sem.binary.att1 == b->sem.binary.att1
                     && a->sem.binary.att2 == b->sem.binary.att2
                     && a->sem.binary.res == b->sem.binary.res);
@@ -283,13 +284,6 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_bool_not:
             return (a->sem.unary.att == b->sem.unary.att
                     && a->sem.unary.res == b->sem.unary.res);
-            break;
-
-        case la_to:
-            return (a->sem.to.res == b->sem.to.res
-                    && a->sem.to.att1 == b->sem.to.att1
-                    && a->sem.to.att2 == b->sem.to.att2
-                    && a->sem.to.part == b->sem.to.part);
             break;
 
         case la_avg:
@@ -387,9 +381,8 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_doc_tbl:
-            return (a->sem.doc_tbl.iter        == b->sem.doc_tbl.iter
-                    && a->sem.doc_tbl.item     == b->sem.doc_tbl.item
-                    && a->sem.doc_tbl.item_res == b->sem.doc_tbl.item_res);
+            return (a->sem.doc_tbl.att == b->sem.doc_tbl.att &&
+                    a->sem.doc_tbl.res == b->sem.doc_tbl.res);
             break;
 
         case la_merge_adjacent:

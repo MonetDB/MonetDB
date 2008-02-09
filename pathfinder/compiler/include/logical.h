@@ -297,14 +297,6 @@ union PFla_op_sem_t {
         PFalg_att_t     res;      /**< attribute to hold the result */
     } unary;
 
-    /* semantic content for op:to operator */
-    struct {
-        PFalg_att_t     att1;     /**< first operand */
-        PFalg_att_t     att2;     /**< second operand */
-        PFalg_att_t     part;     /**< partitioning attribute */
-        PFalg_att_t     res;      /**< attribute to hold the result */
-    } to;
-
     /*
      * semantic content for operators applying a 
      * (partitioned) aggregation function (count, sum, min, max and avg)
@@ -365,9 +357,8 @@ union PFla_op_sem_t {
     
     /* store the column names necessary for document lookup */
     struct {
-        PFalg_att_t     iter;     /**< iter column to retain */
-        PFalg_att_t     item;     /**< column that contains the references */
-        PFalg_att_t     item_res; /**< column to store the document nodes */
+        PFalg_att_t     res;      /**< column to store the document nodes */
+        PFalg_att_t     att;      /**< column that contains the references */
     } doc_tbl;
 
     /* store the column names necessary for document access */
@@ -420,10 +411,9 @@ union PFla_op_sem_t {
 
     /* semantic content for error and conditional error */
     struct {
-        /* error: column of error message
-         * cond_error: name of the boolean attribute */
-        PFalg_att_t     att;
-        char *          str;      /**< error message, only used by cond_err */
+        PFalg_att_t     att;      /**< error:      column of error message
+                                       cond_error: name of the bool column */
+        char *          str;      /**< error message (only used by cond_err) */
     } err;
 
     /* semantic content for debug relation map operator */
@@ -770,8 +760,7 @@ PFla_op_t * PFla_not (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att);
 PFla_op_t * PFla_to (const PFla_op_t *n, 
                      PFalg_att_t res,
                      PFalg_att_t att1,
-                     PFalg_att_t att2,
-                     PFalg_att_t part);
+                     PFalg_att_t att2);
 
 /** 
  * Constructor for operators forming the application of a 
@@ -957,8 +946,7 @@ PFla_op_t * PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
  * function.  Returns a (frag, result) pair.
  */
 PFla_op_t * PFla_doc_tbl (const PFla_op_t *rel, 
-                          PFalg_att_t iter, PFalg_att_t item,
-                          PFalg_att_t item_res);
+                          PFalg_att_t res, PFalg_att_t att);
 
 /** Constructor for string access of loaded documents */
 PFla_op_t * PFla_doc_access (const PFla_op_t *doc,
@@ -1100,8 +1088,10 @@ PFla_op_t * PFla_empty_frag (void);
 /****************************************************************/
 
 /**
- * Constructor for error
+ * Constructor for a runtime error message
  */
+PFla_op_t * PFla_error_ (const PFla_op_t *n, PFalg_att_t att,
+                         PFalg_simple_type_t att_ty);
 PFla_op_t * PFla_error (const PFla_op_t *n, PFalg_att_t att);
 
 /**

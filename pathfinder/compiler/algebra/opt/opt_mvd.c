@@ -853,33 +853,25 @@ opt_mvd (PFla_op_t *p)
 
     case la_to:
         if (is_cross (L(p))) {
-            if (att_present (LL(p), p->sem.to.att1) &&
-                att_present (LL(p), p->sem.to.att2)) {
-                *p = *(cross_can (
-                           LR(p),
-                           project (to (attach (LL(p),
-                                                p->sem.to.part,
-                                                lit_nat(1)),
-                                        p->sem.to.res,
-                                        p->sem.to.att1,
-                                        p->sem.to.att2,
-                                        p->sem.to.part),
-                                    proj (p->sem.to.res,
-                                          p->sem.to.res))));
+            bool switch_left = att_present (LL(p), p->sem.binary.att1) &&
+                               att_present (LL(p), p->sem.binary.att2);
+            bool switch_right = att_present (LR(p), p->sem.binary.att1) &&
+                                att_present (LR(p), p->sem.binary.att2);
+
+            if (switch_left) {
+                *p = *(cross_can (to (LL(p),
+                                      p->sem.binary.res,
+                                      p->sem.binary.att1,
+                                      p->sem.binary.att2),
+                                  LR(p)));
                 modified = true;
-            } else if (att_present (LR(p), p->sem.to.att1) &&
-                       att_present (LR(p), p->sem.to.att2)) {
-                *p = *(cross_can (
-                           LL(p),
-                           project (to (attach (LR(p),
-                                                p->sem.to.part,
-                                                lit_nat(1)),
-                                        p->sem.to.res,
-                                        p->sem.to.att1,
-                                        p->sem.to.att2,
-                                        p->sem.to.part),
-                                    proj (p->sem.to.res,
-                                          p->sem.to.res))));
+            }
+            else if (switch_right) {
+                *p = *(cross_can (LL(p),
+                                  to (LR(p),
+                                      p->sem.binary.res,
+                                      p->sem.binary.att1,
+                                      p->sem.binary.att2)));
                 modified = true;
             }
         }
@@ -1516,68 +1508,43 @@ opt_mvd (PFla_op_t *p)
            that is no constructor: roots-doc_tbl */
         if (L(p)->kind == la_doc_tbl) {
             if (is_cross (LL(p))) {
-                if (att_present (LL(L(p)), L(p)->sem.doc_tbl.item)) {
-                    /* save iter relation */
-                    PFla_op_t *iter_rel = LR(L(p));
+                if (att_present (L(LL(p)), L(p)->sem.doc_tbl.att)) {
+                    PFla_op_t *other_side = R(LL(p));
                     /* overwrite doc_tbl node to update
                        both roots and frag operators */
-                    *(L(p)) = *(doc_tbl (attach (LL(L(p)),
-                                                 L(p)->sem.doc_tbl.iter,
-                                                 lit_nat (1)),
-                                         L(p)->sem.doc_tbl.iter,
-                                         L(p)->sem.doc_tbl.item,
-                                         L(p)->sem.doc_tbl.item_res));
+                    *(L(p)) = *(doc_tbl (L(LL(p)),
+                                         L(p)->sem.doc_tbl.res,
+                                         L(p)->sem.doc_tbl.att));
                     /* push roots + doc_tbl through the cross product */
-                    *p = *(cross_can (
-                               iter_rel,
-                               project (roots (L(p)),
-                                        proj (L(p)->sem.doc_tbl.item_res,
-                                              L(p)->sem.doc_tbl.item_res))));
+                    *p = *(cross_can (other_side, roots (L(p))));
                 }
                 else {
-                    /* save iter relation */
-                    PFla_op_t *iter_rel = LL(L(p));
+                    PFla_op_t *other_side = L(LL(p));
                     /* overwrite doc_tbl node to update
                        both roots and frag operators */
-                    *(L(p)) = *(doc_tbl (attach (LR(L(p)),
-                                                 L(p)->sem.doc_tbl.iter,
-                                                 lit_nat (1)),
-                                         L(p)->sem.doc_tbl.iter,
-                                         L(p)->sem.doc_tbl.item,
-                                         L(p)->sem.doc_tbl.item_res));
+                    *(L(p)) = *(doc_tbl (R(LL(p)),
+                                         L(p)->sem.doc_tbl.res,
+                                         L(p)->sem.doc_tbl.att));
                     /* push roots + doc_tbl through the cross product */
-                    *p = *(cross_can (
-                               iter_rel,
-                               project (roots (L(p)),
-                                        proj (L(p)->sem.doc_tbl.item_res,
-                                              L(p)->sem.doc_tbl.item_res))));
+                    *p = *(cross_can (other_side, roots (L(p))));
                 }
                 modified = true;
             }
             else if (LL(p)->kind == la_attach &&
-                     LL(p)->sem.attach.res == L(p)->sem.doc_tbl.item) {
-                /* save iter relation */
-                PFla_op_t *iter_rel = LL(L(p));
+                     LL(p)->sem.attach.res == L(p)->sem.doc_tbl.att) {
+                /* save input relation */
+                PFla_op_t *input = L(LL(p));
 
                 /* create base table and overwrite doc_tbl
                    node to update both roots and frag operators */
                 *(L(p)) = *(doc_tbl (lit_tbl (
-                                         attlist (L(p)->sem.doc_tbl.iter,
-                                                  L(p)->sem.doc_tbl.item),
-                                         tuple (lit_nat (1),
-                                                LL(p)->sem.attach.value)),
-                                     L(p)->sem.doc_tbl.iter,
-                                     L(p)->sem.doc_tbl.item,
-                                     L(p)->sem.doc_tbl.item_res));
+                                         attlist (L(p)->sem.doc_tbl.att),
+                                         tuple (LL(p)->sem.attach.value)),
+                                     L(p)->sem.doc_tbl.res,
+                                     L(p)->sem.doc_tbl.att));
 
-                /* Apply the cross product with the possibly
-                   huge iter relation. */
-                *p = *(cross_can (
-                          iter_rel,
-                          project (
-                              roots (L(p)),
-                              proj (L(p)->sem.doc_tbl.item_res,
-                                    L(p)->sem.doc_tbl.item_res))));
+                /* push roots + doc_tbl through the cross product */
+                *p = *(cross_can (input, roots (L(p))));
                 modified = true;
             }
         }
@@ -1589,8 +1556,9 @@ opt_mvd (PFla_op_t *p)
     case la_empty_frag:
         break;
 
-    case la_error: /* don't rewrite errors */
+    case la_error: /* don't rewrite runtime errors */
         break;
+
     case la_cond_err:
         if (is_cross (L(p))) {
             *p = *(cross_can (cond_err (LL(p), R(p),

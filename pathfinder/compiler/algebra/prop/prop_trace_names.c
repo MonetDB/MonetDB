@@ -155,7 +155,6 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
         case la_ref_tbl:
         case la_select:
         case la_pos_select:
-        case la_error:
         case la_distinct:
         case la_disjunion:
         case la_intersect:
@@ -163,6 +162,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
         case la_count:
         case la_type_assert:
         case la_roots:
+        case la_error:
         case la_proxy:
         case la_proxy_base:
         case la_dummy:
@@ -254,15 +254,12 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_to:
             diff_np (np_list, n->sem.binary.res);
             break;
 
         case la_bool_not:
             diff_np (np_list, n->sem.unary.res);
-            break;
-
-        case la_to:
-            diff_np (np_list, n->sem.to.res);
             break;
 
         case la_avg:
@@ -301,7 +298,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             break;
 
         case la_doc_tbl:
-            diff_np (np_list, n->sem.doc_tbl.item_res);
+            diff_np (np_list, n->sem.doc_tbl.res);
             break;
 
         case la_doc_access:

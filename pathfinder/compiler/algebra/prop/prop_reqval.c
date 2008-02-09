@@ -627,6 +627,7 @@ prop_infer_reqvals (PFla_op_t *n,
 
         case la_num_eq:
         case la_num_gt:
+        case la_to:
             rv.name = diff (rv.name, n->sem.binary.res);
             rv.val = diff (rv.val, n->sem.binary.res);
             
@@ -689,27 +690,6 @@ prop_infer_reqvals (PFla_op_t *n,
             cols = diff (cols, n->sem.unary.res);
             break;
 
-        case la_to:
-            rv.name = empty_list;
-            rv.val = empty_list;
-            
-            /* mark the input columns as value columns */
-            vc = union_ (union_ (empty_list, n->sem.to.att1), n->sem.to.att2);
-
-            if (n->sem.to.part) {
-                /* we only have to provide the same groups */
-                bc = union_ (bc, n->sem.to.part);
-                /* we cannot split up a partition column */
-                mc = diff (mc, n->sem.to.part);
-            }
-            
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.to.res);
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (union_ (cols, n->sem.to.att1), n->sem.to.att2);
-            break;
-            
         case la_avg:
         case la_max:
         case la_min:
@@ -781,7 +761,23 @@ prop_infer_reqvals (PFla_op_t *n,
                         rv.val = union_ (rv.val, n->sem.type.att);
                 }
             }
-            /* fall through */
+            rv.name = diff (rv.name, n->sem.type.res);
+            rv.val = diff (rv.val, n->sem.type.res);
+            
+            if (!in (vc, n->sem.type.res) &&
+                !in (bc, n->sem.type.res) &&
+                in (oc, n->sem.type.res)) 
+                /* mark the input column as order column if
+                   not used differently */
+                oc = union_ (oc, n->sem.type.att);
+            else
+                /* mark the input column as value columns */
+                vc = union_ (vc, n->sem.type.att);
+
+            /* make the new column invisible for the children */
+            cols = diff (cols, n->sem.type.res);
+            break;
+
         case la_type:
             rv.name = diff (rv.name, n->sem.type.res);
             rv.val = diff (rv.val, n->sem.type.res);
@@ -849,17 +845,14 @@ prop_infer_reqvals (PFla_op_t *n,
             return; /* only infer once */
 
         case la_doc_tbl:
-            rv.name = empty_list;
-            rv.val = empty_list;
+            rv.name = diff (rv.name, n->sem.doc_tbl.res);
+            rv.val = diff (rv.val, n->sem.doc_tbl.res);
             
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (union_ (empty_list, n->sem.doc_tbl.iter),
-                           n->sem.doc_tbl.item);
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            vc   = cols;
+            /* mark the input columns as value columns */
+            vc = union_ (vc, n->sem.doc_tbl.att);
+
+            /* make the new column invisible for the children */
+            cols = diff (cols, n->sem.doc_tbl.res);
             break;
 
         case la_doc_access:

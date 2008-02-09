@@ -208,15 +208,6 @@
                     PFxml2la_xpath_getNthNode(XPATH(xpath), 0)))
 
 /**              
- * Macro return-type:  PFty_t 
- * XPath return-type:  attribute(){1}
- */
-#define PFLA_SEQTY(xpath) \
-            PFxml2la_conv_2PFLA_sequenceType( \
-                PFxml2la_xpath_getAttributeValueFromAttributeNode( \
-                    PFxml2la_xpath_getNthNode(XPATH(xpath), 0)))
-
-/**              
  * Macro return-type:  PFalg_fun_t 
  * XPath return-type:  attribute(){1}
  */
@@ -287,6 +278,13 @@
 #define A2STR(xpath) \
   (char*)xmlXPathCastToString(XPATH(xpath))
 
+/**              
+ * Macro return-type:  char* 
+ * XPath return-type:  attribute()?
+ */
+#define A2STR_O(xpath, fallback) \
+   getOptionalAttributeValueAsStr(ctx, nodePtr, xpath, fallback)
+
 
 
 /**              
@@ -336,6 +334,13 @@ getOptionalAttributeValueAsInt(
   xmlNodePtr nodePtr, 
   const char* xpathExpression, 
   int fallback);
+
+char *
+getOptionalAttributeValueAsStr(
+  XML2LALGContext* ctx, 
+  xmlNodePtr nodePtr, 
+  const char* xpathExpression, 
+  char *fallback);
 
 /******************************************************************************/
 /******************************************************************************/
@@ -415,6 +420,13 @@ getPFLA_Ordering(
     xmlNodePtr nodePtr, 
     const char* xpathExpression);
 
+PFty_t
+getPFLA_SeqTy(
+    char *kind,
+    char *prefix,
+    char *uri,
+    char *local);
+
 /******************************************************************************/
 /******************************************************************************/
 
@@ -446,8 +458,9 @@ info1(XML2LALGContext* ctx, xmlNodePtr nodePtr);
 XML2LALGContext* 
 PFxml2la_xml2lalgContext(void) 
 {
-
-    XML2LALGContext* ctx = (XML2LALGContext*) PFmalloc (sizeof (XML2LALGContext));
+    XML2LALGContext* ctx;
+   
+    ctx = (XML2LALGContext*) PFmalloc (sizeof (XML2LALGContext));
 
     ctx->nodeStore = PFarray(sizeof (PFla_op_t*));
 
@@ -522,7 +535,7 @@ importXML(XML2LALGContext* ctx, xmlDocPtr doc)
     }
 
 
-    /******************************************************************************/
+    /**************************************************************************/
     ctx->docXPathCtx = docXPathCtx;
 
     /**
@@ -535,7 +548,7 @@ importXML(XML2LALGContext* ctx, xmlDocPtr doc)
             PFxml2la_xpath_getAttributeValueFromAttributeNode(
                 PFxml2la_xpath_getNthNode(
                     PFxml2la_xpath_evalXPathFromDocCtx(
-                            docXPathCtx, "/logical_query_plan/@unique_names"), 0)));
+                        docXPathCtx, "/logical_query_plan/@unique_names"), 0)));
     if (uniqueNames)
     {
         ctx->convert2PFLA_attributeName = PFxml2la_conv_2PFLA_attributeName_unq;
@@ -544,7 +557,7 @@ importXML(XML2LALGContext* ctx, xmlDocPtr doc)
     {
         ctx->convert2PFLA_attributeName = PFxml2la_conv_2PFLA_attributeName;
     }
-    /******************************************************************************/
+    /**************************************************************************/
 
 
     /* fetch the serialized algebra nodes from xml */
@@ -659,8 +672,10 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             newAlgNode = PFla_serialize_seq 
              (
              CHILDNODE(0), CHILDNODE(1),
-             PFLA_ATT("/content/column[@new='false' and @function='pos']/@name"), 
-             PFLA_ATT("/content/column[@new='false' and @function='item']/@name")
+             PFLA_ATT(
+                 "/content/column[@new='false' and @function='pos']/@name"), 
+             PFLA_ATT(
+                 "/content/column[@new='false' and @function='item']/@name")
              );
 
 
@@ -677,15 +692,18 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              <content>
                <column name="COLNAME" new="false" function="iter"/>
                <column name="COLNAME" new="false" function="pos"/>
-              (<column name="COLNAME" new="false" function="item" position="[0..n]"/>)+
+              (<column name="COLNAME" new="false" function="item"
+                       position="[0..n]"/>)+
              </content>
             */
 
             newAlgNode = PFla_serialize_rel 
              (
              CHILDNODE(0),
-             PFLA_ATT("/content/column[@new='false' and @function='iter']/@name"), 
-             PFLA_ATT("/content/column[@new='false' and @function='pos']/@name"),
+             PFLA_ATT(
+                 "/content/column[@new='false' and @function='iter']/@name"), 
+             PFLA_ATT(
+                 "/content/column[@new='false' and @function='pos']/@name"),
              PFLA_ATT_LST("/content/column[@new='false' and @function='item']")
              );
                                       
@@ -720,7 +738,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              (
              PFLA_ATT_LST("/content/column[@new='true']"), 
              rowCount, 
-             PFLA_TUPLES("/content/column[@new='true']/value", rowCount, columnCount)
+             PFLA_TUPLES("/content/column[@new='true']/value",
+                         rowCount, columnCount)
              );
         }  
         break;
@@ -762,7 +781,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             
              <content>
                 <table name="TABLENAME">
-                    (<column name="COLNAME" tname="TCOLNAME" type="DATATYPE"/>)+    
+                    (<column name="COLNAME" tname="TCOLNAME"
+                             type="DATATYPE"/>)+    
                 </table>
              </content>             
             */
@@ -931,7 +951,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             /*
             <content>
                <position>POSITION</position>
-              (<column name="COLNAME" function="sort" position="[0..n]" direction="DIRECTION" new="false"/>)+
+              (<column name="COLNAME" function="sort" position="[0..n]"
+                       direction="DIRECTION" new="false"/>)+
               (<column name="COLNAME" function="partition" new="false"/>)?
             </content>
             */
@@ -941,7 +962,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              CHILDNODE(0), 
              E2INT("/content/position"), 
              PFLA_ORDERING("/content/column[@function='sort']"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name", att_NULL)
+             PFLA_ATT_O("/content/column[@function='partition']/@name",
+                        att_NULL)
              );
         }  
         break;
@@ -1136,19 +1158,17 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             /*
             <content>
                <column name="COLNAME" new="true"/>
-               <column name="COLNAME" new="false" function="start"/>
-               <column name="COLNAME" new="false" function="end"/>
-              (<column name="COLNAME" new="false" function="partition"/>)?
-           </content>
-           */
+               <column name="COLNAME" new="false" position="1"/>
+               <column name="COLNAME" new="false" position="2"/>
+            </content>
+            */
 
             newAlgNode = PFla_to 
              (
              CHILDNODE(0), 
              PFLA_ATT("/content/column[@new='true']/@name"), 
-             PFLA_ATT("/content/column[@function='start']/@name"), 
-             PFLA_ATT("/content/column[@function='end']/@name"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name", att_NULL)
+             PFLA_ATT("/content/column[@new='false' and @position='1']/@name"), 
+             PFLA_ATT("/content/column[@new='false' and @position='2']/@name")
              );
         }  
         break;
@@ -1175,7 +1195,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              CHILDNODE(0), 
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name", att_NULL)
+             PFLA_ATT_O("/content/column[@function='partition']/@name",
+                        att_NULL)
              );
         }  
         break;                       
@@ -1197,7 +1218,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              (
              CHILDNODE(0), 
              PFLA_ATT("/content/column[@new='true']/@name"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name", att_NULL)
+             PFLA_ATT_O("/content/column[@function='partition']/@name",
+                        att_NULL)
              );
         }  
         break;
@@ -1211,7 +1233,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             /*
             <content>
                <column name="COLNAME" new="true"/>
-              (<column name="COLNAME" function="sort" position="[0..n]" direction="DIRECTION" new="false"/>)+
+              (<column name="COLNAME" function="sort" position="[0..n]"
+                       direction="DIRECTION" new="false"/>)+
               (<column name="COLNAME" function="partition" new="false"/>)?
             </content>
             */
@@ -1221,7 +1244,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              CHILDNODE(0), 
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ORDERING("/content/column[@function='sort']"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name", att_NULL)
+             PFLA_ATT_O("/content/column[@function='partition']/@name",
+                        att_NULL)
              );
         }  
         break;
@@ -1235,7 +1259,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             /*
             <content>
                <column name="COLNAME" new="true"/>
-              (<column name="COLNAME" function="sort" position="[0..n]" direction="DIRECTION" new="false"/>)+
+              (<column name="COLNAME" function="sort" position="[0..n]"
+                       direction="DIRECTION" new="false"/>)+
             </content>
             */
 
@@ -1257,7 +1282,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             /*
             <content>
                <column name="COLNAME" new="true"/>
-              (<column name="COLNAME" function="sort" position="[0..n]" direction="DIRECTION" new="false"/>)+
+              (<column name="COLNAME" function="sort" position="[0..n]"
+                       direction="DIRECTION" new="false"/>)+
             </content>
             */
 
@@ -1381,7 +1407,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              CHILDNODE(0), 
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name", att_NULL)
+             PFLA_ATT_O("/content/column[@function='partition']/@name",
+                        att_NULL)
              );
         }  
         break;
@@ -1405,7 +1432,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              CHILDNODE(0), 
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name", att_NULL)
+             PFLA_ATT_O("/content/column[@function='partition']/@name",
+                        att_NULL)
              );
         }  
         break;
@@ -1418,8 +1446,9 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
         {
             /*
             <content>
-               <step axis="AXIS" type="NODE TEST" (level="LEVEL")? />
-               <column name="COLNAME" new="true"/>
+               <step axis="AXIS" kind="KIND TEST"
+                     (prefix="NS TEST" uri="NS TEST")?
+                     (name="NAME TEST")? (level="LEVEL")? />
                <column name="COLNAME" function="iter"/>
                <column name="COLNAME" function="item"/>
             </content>
@@ -1429,11 +1458,15 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              (
              CHILDNODE(0), CHILDNODE(1), 
              PFLA_AXIS("/content/step/@axis"), 
-             PFLA_SEQTY("/content/step/@type"), 
+             getPFLA_SeqTy (
+                 A2STR("/content/step/@kind"),
+                 A2STR_O("/content/step/@prefix", NULL),
+                 A2STR_O("/content/step/@uri", NULL),
+                 A2STR_O("/content/step/@name", NULL)),
              A2INT_O("/content/step/@level", -1), 
              PFLA_ATT("/content/column[@function='iter']/@name"), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
-             PFLA_ATT("/content/column[@new='true']/@name")
+             PFLA_ATT("/content/column[@function='item']/@name")
              );
         }  
         break;
@@ -1446,7 +1479,9 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
         {
             /*
              <content>
-               <step axis="AXIS" type="NODE TEST" (level="LEVEL")?/>
+               <step axis="AXIS" kind="KIND TEST"
+                     (prefix="NS TEST" uri="NS TEST")?
+                     (name="NAME TEST")? (level="LEVEL")? />
                <column name="COLNAME" new="true"/>
                <column name="COLNAME" function="item"/>
              </content>
@@ -1456,7 +1491,11 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              (
              CHILDNODE(0), CHILDNODE(1), 
              PFLA_AXIS("/content/step/@axis"), 
-             PFLA_SEQTY("/content/step/@type"), 
+             getPFLA_SeqTy (
+                 A2STR("/content/step/@kind"),
+                 A2STR_O("/content/step/@prefix", NULL),
+                 A2STR_O("/content/step/@uri", NULL),
+                 A2STR_O("/content/step/@name", NULL)),
              A2INT_O("/content/step/@level", -1), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
              PFLA_ATT("/content/column[@new='true']/@name")
@@ -1469,21 +1508,26 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 /******************************************************************************/
         /*
          todo: implement
-         needed: "Guide-File address" as global param in the query plan, tokenizing, etc.
+         needed: "Guide-File address" as global param in the query plan,
+                 tokenizing, etc.
         */
     case la_guide_step           : 
 
         {
             /*
             <content>
-               <step axis="AXIS" type="NODE TEST" guide="GUIDELIST"/>
+               <step axis="AXIS" kind="KIND TEST"
+                     (prefix="NS TEST" uri="NS TEST")?
+                     (name="NAME TEST")? (level="LEVEL")?
+                     guide="GUIDELIST"/>
                <column name="COLNAME" function="iter"/>
                <column name="COLNAME" function="item"/>
             </content>
             */
 
 
-           PFoops (OOPS_FATAL, "Importing of la_guide_step operator is not implemented yet");
+           PFoops (OOPS_FATAL,
+                   "Import of la_guide_step operator is not implemented yet");
 
         }  
         break;
@@ -1498,13 +1542,18 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
         {
             /*
             <content>
-               <step axis="AXIS" type="NODE TEST" guide="GUIDELIST"/>
+               <step axis="AXIS" kind="KIND TEST"
+                     (prefix="NS TEST" uri="NS TEST")?
+                     (name="NAME TEST")? (level="LEVEL")?
+                     guide="GUIDELIST"/>
                <column name="COLNAME" new="true"/>
                <column name="COLNAME" function="item"/>
             </content>
             */
 
-            PFoops (OOPS_FATAL, "Importing of la_guide_step_join operator is not implemented yet");
+            PFoops (OOPS_FATAL,
+                    "Import of la_guide_step_join operator "
+                    "is not implemented yet");
 
 
         }  
@@ -1516,7 +1565,9 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     case la_doc_index_join                :
 
         {
-            PFoops (OOPS_FATAL, "Importing of la_doc_index_join operator is not implemented yet");
+            PFoops (OOPS_FATAL,
+                    "Import of la_doc_index_join operator "
+                    "is not implemented yet");
         }
         break;
 
@@ -1529,6 +1580,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             /*
             <content>
                <column name="COLNAME" new="true"/>
+               <column name="COLNAME" new="false"/>
                <column name="COLNAME" function="iter"/>
                <column name="COLNAME" function="item"/>
             </content>
@@ -1537,9 +1589,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             newAlgNode = PFla_doc_tbl
              (
              CHILDNODE(0),
-             PFLA_ATT("/content/column[@function='iter']/@name"),
-             PFLA_ATT("/content/column[@function='item']/@name"),
-             PFLA_ATT("/content/column[@new='true']/@name")
+             PFLA_ATT("/content/column[@new='true']/@name"),
+             PFLA_ATT("/content/column[@new='false']/@name")
              );
         }  
         break;
@@ -1847,7 +1898,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 
     case la_error                :
         {
-            PFoops (OOPS_FATAL, "Importing of error operator is not implemented yet");
+            PFoops (OOPS_FATAL,
+                    "Import of error operator is not implemented yet");
         }
         break;
 
@@ -1958,7 +2010,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 
         {
 
-            PFoops (OOPS_FATAL, "Importing of la_rec_fix operator is not implemented yet");
+            PFoops (OOPS_FATAL,
+                    "Import of la_rec_fix operator is not implemented yet");
         }  
         break;
 
@@ -1968,7 +2021,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     case la_rec_param            : 
 
         {
-            PFoops (OOPS_FATAL, "Importing of la_rec_param operator is not implemented yet");
+            PFoops (OOPS_FATAL,
+                    "Import of la_rec_param operator is not implemented yet");
         }  
         break;
 
@@ -1978,7 +2032,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     case la_rec_arg              : 
 
         {
-            PFoops (OOPS_FATAL, "Importing of la_rec_arg operator is not implemented yet");
+            PFoops (OOPS_FATAL,
+                    "Import of la_rec_arg operator is not implemented yet");
         }  
         break;
 
@@ -1988,7 +2043,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     case la_rec_base             : 
 
         {
-            PFoops (OOPS_FATAL, "Importing of la_rec_base operator is not implemented yet");
+            PFoops (OOPS_FATAL,
+                    "Import of la_rec_base operator is not implemented yet");
         }  
         break;
 
@@ -1998,7 +2054,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     case la_fun_call             : 
 
         {
-            PFoops (OOPS_FATAL, "Importing of la_fun_call operator is not implemented yet");
+            PFoops (OOPS_FATAL,
+                    "Import of la_fun_call operator is not implemented yet");
         }  
         break;
 
@@ -2008,7 +2065,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     case la_fun_param            : 
 
         {
-            PFoops (OOPS_FATAL, "Importing of la_fun_param operator is not implemented yet");
+            PFoops (OOPS_FATAL,
+                    "Import of la_fun_param operator is not implemented yet");
         }  
         break;
 
@@ -2018,7 +2076,9 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     case la_fun_frag_param       : 
 
         {
-            PFoops (OOPS_FATAL, "Importing of la_fun_frag_param operator is not implemented yet");
+            PFoops (OOPS_FATAL,
+                    "Import of la_fun_frag_param operator "
+                    "is not implemented yet");
         }  
         break;
 
@@ -2028,7 +2088,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     case la_proxy                : 
 
         {
-            PFoops (OOPS_FATAL, "Importing of la_proxy operator is not implemented yet");
+            PFoops (OOPS_FATAL,
+                    "Import of la_proxy operator is not implemented yet");
         }  
         break;
 
@@ -2188,6 +2249,25 @@ getOptionalAttributeValueAsInt(
     return  value;  
 }
 
+char *
+getOptionalAttributeValueAsStr(
+    XML2LALGContext* ctx, xmlNodePtr nodePtr, 
+    const char* xpathExpression, 
+    char *fallback)
+{
+
+    char *value = fallback;
+
+    xmlNodePtr xml_att =  PFxml2la_xpath_getNthNode(XPATH(xpathExpression), 0);
+    if (xml_att)
+    {
+        value = PFxml2la_xpath_getAttributeValueFromAttributeNode(xml_att);
+
+    }
+
+    return  value;  
+}
+
 /******************************************************************************/
 /******************************************************************************/
 int 
@@ -2277,11 +2357,12 @@ getPFLAOpKind(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 {
 
     /* fetch the node kind string from xml */
-    char* nodeKindAsXMLString = PFxml2la_xpath_getAttributeValueFromAttributeNode(
-        PFxml2la_xpath_getNthNode(XPATH("/@kind"), 0));
-    /* convert the node kind string to the corresponding algebra operator kind id */
-    PFla_op_kind_t  algOpKindID = PFxml2la_conv_2PFLA_OpKind(nodeKindAsXMLString);
-    return algOpKindID;
+    char* nodeKindAsXMLString;
+    nodeKindAsXMLString = PFxml2la_xpath_getAttributeValueFromAttributeNode (
+                              PFxml2la_xpath_getNthNode(XPATH("/@kind"), 0));
+    /* convert the node kind string
+       to the corresponding algebra operator kind id */
+    return PFxml2la_conv_2PFLA_OpKind(nodeKindAsXMLString);
 }
 
 PFalg_att_t 
@@ -2314,11 +2395,31 @@ getPFLA_Atom(
     xmlNodePtr nodePtr, 
     const char* xpathExpression)
 {
+    PFalg_simple_type_t type;
+    PFalg_atom_t atom;
     /* fetch the atom from xml and transfer it to the corresponding PF-Type */
     xmlNodePtr atom_xml = PFxml2la_xpath_getNthNode(XPATH(xpathExpression), 0);
-    PFalg_atom_t atom = PFxml2la_conv_2PFLA_atom(        
-        (char*)xmlXPathCastToString(XPATH2(atom_xml, "/@type")),
-        PFxml2la_xpath_getElementValue(atom_xml));
+    
+    type = PFxml2la_conv_2PFLA_atomType (
+               (char *) xmlXPathCastToString(XPATH2(atom_xml, "/@type")));
+        
+    if (type == aat_qname) {
+        /* special treating of QNames as it is split up into three attributes */
+        char *prefix, *uri, *local;
+        
+        prefix = (char *) xmlXPathCastToString (XPATH2 (atom_xml,
+                                                        "/qname/@prefix"));
+        uri    = (char *) xmlXPathCastToString (XPATH2 (atom_xml,
+                                                        "/qname/@uri"));
+        local  = (char *) xmlXPathCastToString (XPATH2 (atom_xml,
+                                                        "/qname/@local"));
+        atom = PFxml2la_conv_2PFLA_atom (type, prefix, uri, local);
+    }
+    else
+        atom = PFxml2la_conv_2PFLA_atom(
+                   type, NULL, NULL,
+                   PFxml2la_xpath_getElementValue (atom_xml));
+
     return atom;
 }
 
@@ -2441,9 +2542,14 @@ getPFLA_KeyInfos(
         /*for (int j = 0; j < keyColumnsCount; j++)*/
         for (int j = 0; j < 1; j++)
         {
-            xmlNodePtr keyColumn_xml = PFxml2la_xpath_getNthNode(keyColumns_xml, j);
-            char* columnName = (char*)xmlXPathCastToString(XPATH2(keyColumn_xml, "/@name"));
-            PFalg_att_t keyAttribute = ctx->convert2PFLA_attributeName(columnName);
+            xmlNodePtr  keyColumn_xml;
+            char       *columnName;
+            PFalg_att_t keyAttribute;
+            
+            keyColumn_xml = PFxml2la_xpath_getNthNode(keyColumns_xml, j);
+            columnName = (char*) xmlXPathCastToString(
+                                     XPATH2(keyColumn_xml, "/@name"));
+            keyAttribute = ctx->convert2PFLA_attributeName(columnName);
 
             int keyPos = -1;
 
@@ -2498,7 +2604,8 @@ getPFLA_Tuples(
     {
         /* we have columnCount atoms in each tuple */
         tuples[row].count = columnCount;
-        /* and therefore we must allocate a tuple able to hold columnCount atoms */
+        /* and therefore we must allocate a tuple
+           able to hold columnCount atoms */
         tuples[row].atoms = PFmalloc (columnCount * sizeof (PFalg_atom_t));
     }
 
@@ -2508,16 +2615,37 @@ getPFLA_Tuples(
     {
         for (int column = 0; column < columnCount; column++)
         {
+            PFalg_simple_type_t type;
+            
             /* fetch the next atom from xml*/
             xmlNodePtr atom_xml = PFxml2la_xpath_getNthNode(
                 atoms_xml, (column * rowCount + row));
+            
             /* convert the atom-data to pf-atom-data and 
             store the atom in the correct tuple position */
-            tuples[row].atoms[column] = 
-                PFxml2la_conv_2PFLA_atom(
-                    PFxml2la_xpath_getAttributeValueFromElementNode(
-                        atom_xml, "type"),
-                            PFxml2la_xpath_getElementValue(atom_xml));
+            type = PFxml2la_conv_2PFLA_atomType (
+                       (char *) xmlXPathCastToString(
+                                  XPATH2(atom_xml, "/@type")));
+                
+            if (type == aat_qname) {
+                /* special treating of QNames as it
+                   is split up into three attributes */
+                char *prefix, *uri, *local;
+
+                prefix = (char *) xmlXPathCastToString (
+                                      XPATH2 (atom_xml, "/qname/@prefix"));
+                uri    = (char *) xmlXPathCastToString (
+                                      XPATH2 (atom_xml, "/qname/@uri"));
+                local  = (char *) xmlXPathCastToString (
+                                      XPATH2 (atom_xml, "/qname/@local"));
+                
+                tuples[row].atoms[column] = PFxml2la_conv_2PFLA_atom (
+                                                type, prefix, uri, local);
+            }
+            else
+                tuples[row].atoms[column] = PFxml2la_conv_2PFLA_atom(
+                           type, NULL, NULL,
+                           PFxml2la_xpath_getElementValue (atom_xml));
         }
     }
 
@@ -2672,7 +2800,8 @@ getPFLA_Ordering(
     /* create an empty ordering */
     PFord_ordering_t ordering = PFord_order_intro_(0, NULL);
 
-    /* successively refine the ordering according to the specified sort columns */
+    /* successively refine the ordering according
+       to the specified sort columns */
     for (int i = 0; i < orderingsCount; i++)
     {
         PFalg_att_t attribute = ctx->convert2PFLA_attributeName(
@@ -2691,6 +2820,49 @@ getPFLA_Ordering(
 
     return ordering;
 
+}
+
+
+
+
+
+PFty_t
+getPFLA_SeqTy (char *kind, char *prefix, char *uri, char *local)
+{
+    if (!strcmp (kind, "attribute")) {
+        if (!prefix && !uri && !local)
+            return PFty_xs_anyAttribute ();
+        else
+            return PFty_attr (
+                       PFqname (
+                           (PFns_t) { .prefix = prefix, .uri = uri },
+                           local),
+                       PFty_xs_anySimpleType ());
+    }
+    else if (!strcmp (kind, "element")) {
+        if (!prefix && !uri && !local)
+            return PFty_xs_anyElement ();
+        else
+            return PFty_elem (
+                       PFqname (
+                           (PFns_t) { .prefix = prefix, .uri = uri },
+                           local),
+                       PFty_xs_anyType ());
+    }
+    else if (!strcmp (kind, "textnode"))
+        return PFty_text ();
+    else if (!strcmp (kind, "comment"))
+        return PFty_comm ();
+    else if (!strcmp (kind, "processing-instruction"))
+        return PFty_pi (local);
+    else if (!strcmp (kind, "node"))
+        return PFty_xs_anyNode ();
+    else
+        PFoops (OOPS_FATAL,
+                "Problem with an XPath step: cannot evaluate "
+                "node test");
+
+    return PFty_none(); /* return dummy type */
 }
 
 
@@ -2829,10 +3001,4 @@ void info1(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 
 }
 
-
-
-
-
-
-
-
+/* vim:set shiftwidth=4 expandtab: */

@@ -298,6 +298,7 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_KIND_TEXT:   return "TEXT";
         case PF_MIL_VAR_KIND_COM:    return "COMMENT";
         case PF_MIL_VAR_KIND_PI:     return "PI";
+        case PF_MIL_VAR_KIND_REF:    return "REFERENCE";
 
         case PF_MIL_VAR_ATTR:        return "ATTR";
         case PF_MIL_VAR_ELEM:        return "ELEM";
@@ -895,6 +896,16 @@ PFmil_ctderive (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
+ * enumerate operator, return sequence of integers
+ * starting from @a a with the length @a l.
+ */
+PFmil_t *
+PFmil_enumerate (const PFmil_t *a, const PFmil_t *l)
+{
+    return wire2 (m_enum, a, l);
+}
+
+/**
  * Monet count operator, return number of items in @a a.
  */
 PFmil_t *
@@ -1088,6 +1099,15 @@ PFmil_t *
 PFmil_mmod (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_mmod, a, b);
+}
+
+/**
+ * Multiplexed arithmetic maximum operator
+ */
+PFmil_t *
+PFmil_mmax (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mmax, a, b);
 }
 
 /**

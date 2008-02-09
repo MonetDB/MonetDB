@@ -313,7 +313,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_all:
             case la_step:
             case la_guide_step:
-            case la_doc_tbl:
             case la_twig:
             case la_fcns:
             case la_docnode:
@@ -419,6 +418,10 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 if ((modified = GEN(lp->sem.doc_join.item_res))) LP = R(lp);
                 break;
 
+            case la_doc_tbl:
+                if ((modified = GEN(lp->sem.doc_tbl.res))) LP = L(lp);
+                break;
+
             case la_doc_access:
                 if ((modified = GEN(lp->sem.doc_access.res))) LP = R(lp);
                 break;
@@ -444,7 +447,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_intersect:
             case la_difference:
             case la_distinct:
-            case la_to:
             case la_avg:
             case la_max:
             case la_min:
@@ -454,7 +456,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_all:
             case la_step:
             case la_guide_step:
-            case la_doc_tbl:
             case la_twig:
             case la_fcns:
             case la_docnode:
@@ -1384,6 +1385,9 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_bool_not:
                 next_join = modify_unary_op (p, lp, rp, PFla_not);
                 break;
+            case la_to:
+                next_join = modify_binary_op (p, lp, rp, PFla_to);
+                break;
 
             case la_rownum:
                 if (!PFprop_key (rp->prop, ratt) ||
@@ -1680,6 +1684,18 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 }
                 break;
 
+            case la_doc_tbl:
+                if (!is_join_att (p, lp->sem.doc_tbl.res)) {
+                    *p = *(doc_tbl (eqjoin_unq (L(lp), rp, latt, ratt,
+                                                p->sem.eqjoin_unq.res),
+                                    lp->sem.doc_tbl.res,
+                                    is_join_att(p, lp->sem.doc_tbl.att)
+                                       ? p->sem.eqjoin_unq.res
+                                       : lp->sem.doc_tbl.att));
+                    next_join = L(p);
+                }
+                break;
+                
             case la_doc_access:
                 if (!is_join_att (p, lp->sem.doc_access.res)) {
                     *p = *(doc_access (L(lp),
@@ -1694,7 +1710,29 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 }
                 break;
 
-            case la_error: /* don't rewrite errors */
+            case la_error:
+                if (!PFprop_key (rp->prop, ratt) ||
+                    !PFprop_subdom (rp->prop,
+                                    PFprop_dom (lp->prop, latt),
+                                    PFprop_dom (rp->prop, ratt)))
+                    /* Ensure that the values of the left join argument
+                       are a subset of the values of the right join argument
+                       and that the right join argument is keyed. These
+                       two tests make sure that we have exactly one match per
+                       tuple in the left relation and thus the result of the
+                       error operator stays stable. */
+                    break;
+
+                if (!is_join_att (p, lp->sem.err.att)) {
+                    *p = *(PFla_error_ (eqjoin_unq (L(lp), rp, latt, ratt,
+                                                    p->sem.eqjoin_unq.res),
+                                        lp->sem.err.att,
+                                        PFprop_type_of (lp, lp->sem.err.att)));
+                    next_join = L(p);
+                    break;
+                }
+                break;
+
             case la_cond_err:
                 /* this breaks proxy generation - thus don't
                    rewrite conditional errors */
@@ -1838,7 +1876,6 @@ map_name (PFla_op_t *p, PFalg_att_t att)
         case la_all:
         case la_step:
         case la_guide_step:
-        case la_doc_tbl:
         case la_twig:
         case la_fcns:
         case la_docnode:
@@ -1924,6 +1961,9 @@ map_name (PFla_op_t *p, PFalg_att_t att)
             break;
         case la_doc_index_join:
             if (att == p->sem.doc_join.item_res) return att_NULL;
+            break;
+        case la_doc_tbl:
+            if (att == p->sem.doc_tbl.res) return att_NULL;
             break;
         case la_doc_access:
             if (att == p->sem.doc_access.res) return att_NULL;

@@ -2078,6 +2078,65 @@ PFpa_bool_not (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att)
 }
 
 /**
+ * Constructor for op:to operator
+ */
+PFpa_op_t *
+PFpa_to (const PFpa_op_t *n, PFalg_att_t res,
+         PFalg_att_t att1, PFalg_att_t att2)
+{
+    PFpa_op_t *ret = wire1 (pa_to, n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+#ifndef NDEBUG
+    /* verify that attributes 'att1' and 'att2' are attributes of n */
+    if (!check_col (n, att1))
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in op:to not found",
+                PFatt_str (att1));
+    if (!check_col (n, att2))
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in op:to not found",
+                PFatt_str (att2));
+#endif
+
+    /* finally add schema item for new attribute */
+    ret->schema.items[n->schema.count].name = res;
+    ret->schema.items[n->schema.count].type = aat_int;
+
+    /* insert semantic value (input attributes and result attribute)
+       into the result */
+    ret->sem.binary.res = res;
+    ret->sem.binary.att1 = att1;
+    ret->sem.binary.att2 = att2;
+
+    /* ---- orderings ---- */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++) {
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+        /* if we have already an ordering we can also add the new
+           generated column at the end. It won't break the ordering. */
+        PFord_set_add (ret->orderings,
+                       PFord_refine (
+                           PFord_set_at (n->orderings, i),
+                           res, DIR_ASC));
+
+    }
+
+    /* ---- costs ---- */
+    ret->cost = DEFAULT_COST + n->cost;
+
+    return ret;
+}
+
+/**
  * HashCount: Hash-based Count operator. Does neither benefit from
  * any existing ordering, nor does it provide/preserve any input
  * ordering.
@@ -2794,60 +2853,36 @@ PFpa_llscj_prec_sibl (const PFpa_op_t *frag,
  * function.  Returns a (frag, result) pair.
  */
 PFpa_op_t *
-PFpa_doc_tbl (const PFpa_op_t *rel, PFalg_att_t iter, PFalg_att_t item)
+PFpa_doc_tbl (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att)
 {
-    PFpa_op_t         *ret;
+    unsigned int i;
+    PFpa_op_t   *ret;
 
-#ifndef NDEBUG
-    unsigned short found = 0;
+    ret = wire1 (pa_doc_tbl, n);
 
-    for (unsigned int i = 0; i < rel->schema.count; i++)
-        if (rel->schema.items[i].name == iter
-            || rel->schema.items[i].name == item)
-            found++;
+    /* store columns to work on in semantical field */
+    ret->sem.unary.res = res;
+    ret->sem.unary.att = att;
 
-    if (found != 2)
-        PFoops (OOPS_FATAL, "document access requires iter|item schema");
-#endif
-
-    ret = wire1 (pa_doc_tbl, rel);
-
-    ret->sem.ii.iter = iter;
-    ret->sem.ii.item = item;
-
-    /* The schema of the result part is iter|item */
-    ret->schema.count = 2;
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
     ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = iter,
-                                .type = aat_nat };
-    ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = item,
-                                .type = aat_pnode };
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    ret->schema.items[i]
+        = (struct PFalg_schm_item_t) { .name = res,
+                                       .type = aat_pnode };
 
     /* ---- doc_tbl: orderings ---- */
-
-    /* If the input is sorted by `iter', the output will be as well. */
-    bool sorted_by_iter = false;
-
-    for (unsigned int i = 0; i < PFord_set_count (rel->orderings); i++)
-        if (PFord_implies (PFord_set_at (rel->orderings, i),
-                           sortby (iter))) {
-            sorted_by_iter = true;
-            break;
-        }
-
-    if (sorted_by_iter) {
-        if (PFprop_const (rel->prop, item))
-            PFord_set_add (ret->orderings, sortby (iter, item));
-        else
-            PFord_set_add (ret->orderings, sortby (iter));
-    }
+    /*    ordering stays the same   */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
 
     /* ---- doc_tbl: costs ---- */
-    ret->cost = DEFAULT_COST + rel->cost;
+    ret->cost = DEFAULT_COST + n->cost;
 
     return ret;
 }
@@ -3316,7 +3351,8 @@ PFpa_empty_frag (void)
 /**
  * Constructor for error
  */
-PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att)
+PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att,
+                        PFalg_simple_type_t att_ty)
 {
     PFpa_op_t *ret = wire1 (pa_error, n);
 
@@ -3331,16 +3367,16 @@ PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att)
     for (unsigned int i = 0; i < n->schema.count; i++) {
         ret->schema.items[i] = n->schema.items[i];
         if (att == n->schema.items[i].name)
-            ret->schema.items[i].type = 0;
+            ret->schema.items[i].type = att_ty;
     }
 
     ret->sem.err.att = att;
-    ret->sem.err.str = "I was there, Case; I was there when "
-                       "they invented your kind";
+    ret->sem.err.str = NULL; /* error message is stored in column @a att */
 
     /* ordering stays the same */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
     /* costs */
     ret->cost = DEFAULT_COST + n->cost;
 

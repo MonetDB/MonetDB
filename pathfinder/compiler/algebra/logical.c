@@ -986,11 +986,13 @@ PFla_project_ (const PFla_op_t *n, unsigned int count, PFalg_proj_t *proj)
 
         /* see if we have duplicate attributes now */
         for (j = 0; j < i; j++)
-            if (ret->sem.proj.items[i].new == ret->sem.proj.items[j].new)
+            if (ret->sem.proj.items[i].new == ret->sem.proj.items[j].new) {
+                fprintf (stderr, "foo\n");
                 PFoops (OOPS_FATAL,
                         "projection results in duplicate attribute `%s' "
                         "(attributes %i and %i)",
                         PFatt_str (ret->sem.proj.items[i].new), i+1, j+1);
+            }
     }
 
     return ret;
@@ -1901,27 +1903,14 @@ unary_op(PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
 /**
  * Constructor for op:to operator
  */
-PFla_op_t * PFla_to (const PFla_op_t *n,
-                     PFalg_att_t res,
-                     PFalg_att_t att1,
-                     PFalg_att_t att2,
-                     PFalg_att_t part)
+PFla_op_t *
+PFla_to (const PFla_op_t *n, PFalg_att_t res,
+         PFalg_att_t att1, PFalg_att_t att2)
 {
     PFla_op_t    *ret = la_op_wire1 (la_to, n);
 
-    /* set number of schema items in the result schema
-     * (partitioning attribute plus result attribute)
-     */
-    ret->schema.count = part ? 2 : 1;
-
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-
 #ifndef NDEBUG
-    /* verify that attributes 'att' and 'part' are attributes of n
-     * and include them into the result schema
-     */
+    /* verify that attributes 'att1' and 'att2' are attributes of n */
     if (!PFprop_ocol (n, att1))
         PFoops (OOPS_FATAL,
                 "attribute `%s' referenced in op:to not found",
@@ -1930,26 +1919,29 @@ PFla_op_t * PFla_to (const PFla_op_t *n,
         PFoops (OOPS_FATAL,
                 "attribute `%s' referenced in op:to not found",
                 PFatt_str (att2));
-    if (part && !PFprop_ocol (n, part))
-        PFoops (OOPS_FATAL,
-                "partitioning attribute `%s' referenced in op:to not found",
-                PFatt_str (part));
 #endif
 
-    ret->schema.items[0].name = res;
-    ret->schema.items[0].type = aat_int;
-    if (part) {
-        ret->schema.items[1].name = part;
-        ret->schema.items[1].type = PFprop_type_of (n, part);
-    }
+    /* allocate memory for the result schema (schema(n) + 'res') */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* insert semantic value (input attributes, partitioning
-     * attribute(s), and result attribute) into the result
+    /* copy schema from 'n' argument */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* add the information on the 'res' attribute; it is of type
+     * integer and named 'res'
      */
-    ret->sem.to.res = res;
-    ret->sem.to.att1 = att1;
-    ret->sem.to.att2 = att2;
-    ret->sem.to.part = part;
+    ret->schema.items[n->schema.count].name = res;
+    ret->schema.items[n->schema.count].type = aat_int;
+
+    /* insert semantic value (operand attributes and result attribute)
+     * into the result
+     */
+    ret->sem.binary.att1 = att1;
+    ret->sem.binary.att2 = att2;
+    ret->sem.binary.res = res;
 
     return ret;
 }
@@ -2946,29 +2938,28 @@ PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
  * function.  Returns a (frag, result) pair.
  */
 PFla_op_t *
-PFla_doc_tbl (const PFla_op_t *rel,
-              PFalg_att_t iter, PFalg_att_t item,
-              PFalg_att_t item_res)
+PFla_doc_tbl (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att)
 {
-    PFla_op_t         *ret;
+    unsigned int i;
+    PFla_op_t   *ret;
 
-    ret = la_op_wire1 (la_doc_tbl, rel);
+    ret = la_op_wire1 (la_doc_tbl, n);
 
     /* store columns to work on in semantical field */
-    ret->sem.doc_tbl.iter     = iter;
-    ret->sem.doc_tbl.item     = item;
-    ret->sem.doc_tbl.item_res = item_res;
+    ret->sem.doc_tbl.res = res;
+    ret->sem.doc_tbl.att = att;
 
-    /* The schema of the result part is iter|item */
-    ret->schema.count = 2;
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
     ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = iter,
-                                .type = PFprop_type_of (rel, iter) };
-    ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = item_res, .type = aat_pnode };
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    ret->schema.items[i]
+        = (struct PFalg_schm_item_t) { .name = res,
+                                       .type = aat_pnode };
 
     return ret;
 }
@@ -3489,13 +3480,15 @@ PFla_empty_frag (void)
 
 
 /**
- * Construct for an error message.
+ * Constructor for a runtime error message.
  *
+ * This operator generates a runtime error (using the string in column
+ * @a att) if a tuple flows through it.
  */
 PFla_op_t *
-PFla_error (const PFla_op_t *n, PFalg_att_t att)
+PFla_error_ (const PFla_op_t *n, PFalg_att_t att, PFalg_simple_type_t att_ty)
 {
-    PFla_op_t    *ret;
+    PFla_op_t   *ret;
     unsigned int i;
 
     assert(n);
@@ -3511,16 +3504,26 @@ PFla_error (const PFla_op_t *n, PFalg_att_t att)
     for (i = 0; i < n->schema.count; i++) {
         ret->schema.items[i] = n->schema.items[i];
         if (att == n->schema.items[i].name)
-            ret->schema.items[i].type = 0;
+            ret->schema.items[i].type = att_ty;
     }
 
     ret->sem.err.att = att;
-    ret->sem.err.str =  "Flying is learning how to throw yourself "
-                        "at the ground and miss.";
+    ret->sem.err.str = NULL; /* error message is stored in column @a att */
 
     return ret;
 }
 
+/**
+ * Constructor for a runtime error message.
+ *
+ * This operator generates a runtime error (using the string in column
+ * @a att) if a tuple flows through it.
+ */
+PFla_op_t *
+PFla_error (const PFla_op_t *n, PFalg_att_t att)
+{
+    return PFla_error_ (n, att, 0);
+}
 
 /**
  * Constructor for a conditional error message.
@@ -4225,10 +4228,9 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
 
         case la_to:
             return PFla_to (left,
-                            n->sem.to.res,
-                            n->sem.to.att1,
-                            n->sem.to.att2,
-                            n->sem.to.part);
+                            n->sem.binary.res,
+                            n->sem.binary.att1,
+                            n->sem.binary.att2);
 
         case la_avg:
         case la_max:
@@ -4341,9 +4343,8 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
 
         case la_doc_tbl:
             return PFla_doc_tbl (left,
-                                 n->sem.doc_tbl.iter,
-                                 n->sem.doc_tbl.item,
-                                 n->sem.doc_tbl.item_res);
+                                 n->sem.doc_tbl.res,
+                                 n->sem.doc_tbl.att);
 
         case la_doc_access:
             return PFla_doc_access (left, right,
@@ -4422,7 +4423,8 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
             return PFla_empty_frag ();
 
         case la_error:
-            return PFla_error (left, n->sem.err.att);
+            return PFla_error_ (left, n->sem.err.att,
+                                PFprop_type_of (n, n->sem.err.att));
 
         case la_cond_err:
             return PFla_cond_err (left, right,

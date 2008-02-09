@@ -86,6 +86,7 @@ enum PFpa_op_kind_t {
     , pa_bool_or        =  47 /**< Boolean or */
     , pa_bool_and_atom  =  48 /**< Boolean and, where one arg is an atom */
     , pa_bool_or_atom   =  49 /**< Boolean or, where one arg is an atom */
+    , pa_to             =  50 /**< op:to operator */
     , pa_hash_count     =  55 /**< Hash-based count operator */
     , pa_avg            =  56 /**< Avg operator */
     , pa_max            =  57 /**< Max operator */
@@ -343,10 +344,9 @@ union PFpa_op_sem_t {
 
     /* semantic content for error and conditional error */
     struct {
-        /* error: column of error message
-         * cond_error: name of the boolean attribute */
-        PFalg_att_t     att;
-        char *          str;     /**< error message, only used by cond_err */
+        PFalg_att_t     att;      /**< error:      column of error message
+                                       cond_error: name of the bool column */
+        char *          str;      /**< error message (only used by cond_err) */
     } err;
     
     /* semantic content for debug relation map operator */
@@ -638,6 +638,12 @@ PFpa_op_t *PFpa_or_atom (const PFpa_op_t *, PFalg_att_t res,
                          PFalg_att_t att1, PFalg_atom_t att2);
 
 /**
+ * Constructor for op:to operator
+ */
+PFpa_op_t * PFpa_to (const PFpa_op_t *n, PFalg_att_t res,
+                     PFalg_att_t att1, PFalg_att_t att2);
+
+/**
  * HashCount: Hash-based Count operator. Does neither benefit from
  * any existing ordering, nor does it provide/preserve any input
  * ordering.
@@ -771,12 +777,10 @@ PFpa_op_t *PFpa_llscj_prec_sibl (const PFpa_op_t *frag,
 
 /**
  * Access to persistently stored document table.
- *
- * Requires an iter | item schema as its input.
  */
 PFpa_op_t * PFpa_doc_tbl (const PFpa_op_t *,
-                          PFalg_att_t iter,
-                          PFalg_att_t item);
+                          PFalg_att_t res,
+                          PFalg_att_t att);
 
 /**
  * Access to the string content of loaded documents
@@ -869,9 +873,10 @@ PFpa_op_t *PFpa_frag_union (const PFpa_op_t *n1, const PFpa_op_t *n2);
 PFpa_op_t *PFpa_empty_frag (void);
 
 /**
- * Constructor for error
+ * Constructor for a runtime error message
  */
-PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att);
+PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att,
+                        PFalg_simple_type_t att_ty);
 
 /**
  * Constructor for conditional error

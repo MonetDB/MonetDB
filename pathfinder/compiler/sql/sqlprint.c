@@ -97,8 +97,9 @@ static char *ID[] = {
       [sql_alias_bind]        = "alias_bind",
       [sql_on]                = "on",
       [sql_left_outer_join]   = "left_outer_join",
-      [sql_union]             = "union",
-      [sql_diff]              = "diff",
+      [sql_union]             = "UNION ALL",
+      [sql_diff]              = "EXCEPT ALL",
+      [sql_intersect]         = "INTERSECT ALL",
       [sql_lit_int]           = "lit_int",
       [sql_lit_lng]           = "lit_lng",
       [sql_lit_dec]           = "lit_dec",
@@ -121,7 +122,7 @@ static char *ID[] = {
       [sql_between]           = "between",
       [sql_like]              = "like",
       [sql_in]                = "in",
-      [sql_stmt_list]          = "stmt_list",
+      [sql_stmt_list]         = "stmt_list",
       [sql_list_list]         = "list_list",
       [sql_not]               = "not",
       [sql_and]    /* used */ = "AND",
@@ -131,6 +132,9 @@ static char *ID[] = {
       [sql_sum]    /* used */ = "SUM",
       [sql_min]    /* used */ = "MIN",
       [sql_avg]    /* used */ = "AVG",
+      [sql_str_length]        = "LENGTH",
+      [sql_str_upper]         = "UPPER",
+      [sql_str_lower]         = "LOWER",
       [sql_over]              = "over",
       [sql_row_number]        = "ROW_NUMBER",
       [sql_dense_rank]        = "DENSE_RANK",
@@ -616,6 +620,14 @@ print_statement (PFsql_t *n)
             PFprettyprintf(")");
             break;
 
+        case sql_str_length:
+        case sql_str_upper:
+        case sql_str_lower:
+            PFprettyprintf("%s (", ID[n->kind]);
+            print_statement (L(n));
+            PFprettyprintf(")");
+            break;
+
         case sql_cast:
             assert (R(n)->kind == sql_type);
 
@@ -935,20 +947,15 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
             break;
 
         case sql_union:
+        case sql_diff:
+        case sql_intersect:
             print_fullselect (f, L(n), i);
             indent (f, i);
-            fprintf (f, "UNION ALL");
+            fprintf (f, "%s", ID[n->kind]);
             indent (f, i);
             print_fullselect (f, R(n), i);
             break;
             
-        case sql_diff:
-            print_fullselect (f, L(n), i);
-            indent (f, i);
-            fprintf (f, "EXCEPT ALL");
-            indent (f, i);
-            print_fullselect (f, R(n), i);
-            break;
         case sql_alias_bind:
         case sql_tbl_name:
         case sql_schema_tbl_name:

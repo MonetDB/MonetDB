@@ -539,25 +539,6 @@ opt_complex (PFla_op_t *p)
                                     L(p)->sem.proj.items[0]);
                 break;
             }
-            /* prune unnecessary attach-project operators */
-            if (L(p)->kind == la_project &&
-                L(p)->schema.count == 1 &&
-                LL(p)->kind == la_roots &&
-                LLL(p)->kind == la_doc_tbl &&
-                p->sem.attach.res == LLL(p)->sem.doc_tbl.iter &&
-                PFprop_const (LLL(p)->prop, LLL(p)->sem.doc_tbl.iter) &&
-                PFalg_atom_comparable (
-                    p->sem.attach.value,
-                    PFprop_const_val (LLL(p)->prop,
-                                      LLL(p)->sem.doc_tbl.iter)) &&
-                !PFalg_atom_cmp (
-                    p->sem.attach.value,
-                    PFprop_const_val (LLL(p)->prop,
-                                      LLL(p)->sem.doc_tbl.iter)) &&
-                L(p)->sem.proj.items[0].new == LLL(p)->sem.doc_tbl.item_res) {
-                *p = *PFla_dummy (LL(p));
-                break;
-            }
 
             break;
 
@@ -1203,6 +1184,22 @@ opt_complex (PFla_op_t *p)
             }
             break;
 
+        case la_cast:
+            if (!PFprop_req_value_col (p->prop, p->sem.type.res) &&
+                !PFprop_req_bijective_col (p->prop, p->sem.type.res) &&
+                p->sem.type.ty == aat_int &&
+                PFprop_type_of (p, p->sem.type.att) == aat_nat) {
+                PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                               sizeof (PFalg_proj_t));
+                for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                    proj[i] = PFalg_proj (L(p)->schema.items[i].name,
+                                          L(p)->schema.items[i].name);
+                proj[L(p)->schema.count] = PFalg_proj (p->sem.type.res,
+                                                       p->sem.type.att);
+                *p = *PFla_project_ (L(p), p->schema.count, proj);
+            }
+            break;
+            
         case la_step:
             if (p->sem.step.level < 0)
                 p->sem.step.level = PFprop_level (p->prop,

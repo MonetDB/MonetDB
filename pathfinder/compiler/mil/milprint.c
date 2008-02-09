@@ -97,6 +97,7 @@
                  | '/(' expression ',' expression ')'       <m_div>
                  | '[/](' expression ',' expression ')'     <m_mdiv>
                  | '[%](' expression ',' expression ')'     <m_mmod>
+                 | '[max](' expression ',' expression ')'   <m_mmax>
                  | '[abs](' expression ')'                  <m_mabs>
                  | '[ceil](' expression ')'                 <m_mceiling>
                  | '[floor](' expression ')'                <m_mfloor>
@@ -109,6 +110,7 @@
                  | '[<](' expression ',' expression ')'     <m_mlt>
                  | '[<=](' expression ',' expression ')'    <m_mle>
                  | '[!=](' expression ',' expression ')'    <m_mne>
+                 | 'enumerate(' expr ',' expr ')'           <m_enum>
                  | 'not(' expression ')'                    <m_not>
                  | '[not](' expression ')'                  <m_mnot>
                  | '[-](' expression ')'                    <m_mneg>
@@ -275,6 +277,7 @@ static char *ID[] = {
     , [m_div]          = "/"
     , [m_mdiv]         = "[/]"
     , [m_mmod]         = "[%]"
+    , [m_mmax]         = "[max]"
     , [m_mabs]         = "[abs]"
     , [m_mceiling]     = "[ceil]"
     , [m_mfloor]       = "[floor]"
@@ -470,6 +473,7 @@ static char *ID[] = {
 
     , [m_sc_desc]  = "sc_desc"
 
+    , [m_enum]     = "enumerate"
     , [m_count]    = "count"
     , [m_gcount]   = "{count}"
     , [m_egcount]  = "{count}"
@@ -913,6 +917,8 @@ print_expression (PFmil_t * n)
         case m_mdiv:
         /* expression : '[%](' expression ',' expression ')' */
         case m_mmod:
+        /* expression : '[max](' expression ',' expression ')' */
+        case m_mmax:
         /* expression : '>(' expression ',' expression ')' */
         case m_gt:
         /* expression : '=(' expression ',' expression ')' */
@@ -933,6 +939,8 @@ print_expression (PFmil_t * n)
         case m_mand:
         /* expression : '[or](' expression ',' expression ')' */
         case m_mor:
+        /* expression : 'enumerate(' expression ',' expression ')' */
+        case m_enum:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");

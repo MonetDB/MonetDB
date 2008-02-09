@@ -885,6 +885,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_to:
             bulk_add_dom (n->prop, L(n));
             add_dom (n->prop, n->sem.binary.res, id++);
             break;
@@ -892,14 +893,6 @@ infer_dom (PFla_op_t *n, unsigned int id)
         case la_bool_not:
             bulk_add_dom (n->prop, L(n));
             add_dom (n->prop, n->sem.unary.res, id++);
-            break;
-
-        case la_to:
-            add_dom (n->prop, n->sem.to.res, id++);
-            if (n->sem.to.part)
-                add_dom (n->prop,
-                         n->sem.to.part,
-                         PFprop_dom (L(n)->prop, n->sem.to.part));
             break;
 
         case la_avg:
@@ -1012,12 +1005,8 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_doc_tbl:
-            /* retain domain for attribute iter */
-            add_dom (n->prop,
-                     n->sem.doc_tbl.iter,
-                     PFprop_dom (L(n)->prop, n->sem.doc_tbl.iter));
-            /* create new domain for attribute item */
-            add_dom (n->prop, n->sem.doc_tbl.item_res, id++);
+            bulk_add_dom (n->prop, L(n));
+            add_dom (n->prop, n->sem.doc_tbl.res, id++);
             break;
 
         case la_doc_access:
@@ -1127,6 +1116,16 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_error:
+            /* use a new domain for the result of the error operator */
+            for (unsigned int i = 0; i < L(n)->schema.count; i++)
+                if (L(n)->schema.items[i].name != n->sem.err.att)
+                    add_dom (n->prop,
+                             L(n)->schema.items[i].name,
+                             PFprop_dom (L(n)->prop, L(n)->schema.items[i].name));
+                else
+                    add_dom (n->prop, n->sem.err.att, id++);
+            break;
+
         case la_cond_err:
         case la_trace:
             bulk_add_dom (n->prop, L(n));

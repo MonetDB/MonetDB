@@ -1367,11 +1367,12 @@ static void fun_not_found (PFqname_t qn, PFcnode_t *args)
 static PFfun_t *
 overload (PFqname_t qn, PFcnode_t *args)
 {
+    PFty_t     zoo_ty;
     PFarray_t *fns;
     PFcnode_t *arg;
     PFfun_t *fn;
     unsigned int i, a;
-    bool match;
+    bool match, zoo_match, arg_match;
 
     assert (args && (args->kind == c_nil || args->kind == c_arg));
 
@@ -1386,7 +1387,10 @@ overload (PFqname_t qn, PFcnode_t *args)
          * expected formal parameter types?
          */
         if (fn->sig_count == 1) {
-            for (a = 0, match = true; a < fn->arity; a++) {
+            match     = true;
+            zoo_match = true;
+            a         = 0;
+            while (a < fn->arity) {
                 /* test if function has at least the same
                    number of arguments as the tested function */
                 if (arg->kind == c_nil)
@@ -1395,12 +1399,69 @@ overload (PFqname_t qn, PFcnode_t *args)
                     break;
                 }
 
-                match = match && PFty_promotable (arg->child[0]->type,
-                        (fn->sigs[0].par_ty)[a]);
-                if (!match)
+                arg_match = PFty_promotable (arg->child[0]->type,
+                                             (fn->sigs[0].par_ty)[a]);
+                
+                match = match && arg_match;
+                
+                /* apply function zero-or-one on the type of the argument */
+                zoo_ty = *PFty_simplify (
+                              PFty_opt (
+                                  PFty_prime (
+                                      PFty_defn (
+                                          arg->child[0]->type))));
+                
+                /* and check if this type would be ok */
+                zoo_match = PFty_promotable (zoo_ty, (fn->sigs[0].par_ty)[a]);
+
+                /* if neither the original type
+                   nor the zero-or-one type match
+                   we give up */
+                if (!match && !zoo_match)
                     break;
 
-                arg = arg->child[1];
+                /* if the original type does not match
+                   but the zero-or-one type matches 
+                   we apply function zero-or-one on the input
+                   and check the argument again */
+                if (!arg_match && zoo_match) {
+                    /* create the function fn:zero-or-one */
+                    PFfun_t *zoo = function (PFqname (PFns_fn, "zero-or-one"));
+                    PFcnode_t *ret = PFcore_apply (
+                                         zoo,
+                                         PFcore_arg (
+                                             L(arg),
+                                             PFcore_nil ()));
+                    
+                    /* Set state label correctly before we return. */
+                    STATE_LABEL(LR(ret)) = PFtypecheck_state (
+                                               OP_LABEL(LR(ret)), 0, 0);
+                    STATE_LABEL(L(ret))  = PFtypecheck_state (
+                                               OP_LABEL(L(ret)),
+                                               STATE_LABEL(LL(ret)),
+                                               STATE_LABEL(LR(ret)));
+                    STATE_LABEL(ret)     = PFtypecheck_state (
+                                               OP_LABEL(ret),
+                                               STATE_LABEL(L(ret)),
+                                               0);
+                    
+                    /* fix the types correctly */
+                    TY(L(ret)) = TY(L(arg));
+                    TY(ret)    = zoo_ty;
+                    TY(arg)    = zoo_ty;
+                    
+                    /* replace the argument by the function
+                       zero-or-one applied to the argument */
+                    L(arg) = ret;
+
+                    /* re-check */
+                }
+                else {
+                    /* continue */
+                    a++;
+                    arg = arg->child[1];
+                }
+                
                 assert (arg);
             }
 

@@ -135,3 +135,5 @@ preceding_following-sibling_bug.SF-1850772
 insert-new-page.SF-1854215
 substitution_fails.SF-1871789
 uncompilable_comparison.SF-1871790
+for_variable.SF-1887055
+Alignment_error.SF-1886994

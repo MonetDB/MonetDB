@@ -486,11 +486,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_to:
-            res = to (PROJ(LEFT, p),
-                      ONAME(p, p->sem.to.res),
-                      ONAME(p, p->sem.to.att1),
-                      ONAME(p, p->sem.to.att2),
-                      p->sem.to.part?ONAME(p, p->sem.to.part):att_NULL);
+            res = binary_op (PFla_to, p, map);
             break;
 
         case la_avg:
@@ -685,31 +681,9 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_doc_tbl:
-            /* In case columns iter and item_in are identical columns
-               item_in and item_out cannot refer to the same original
-               name. Then we need to ensure that we correct the naming
-               upfront (as the physical translation relies on the fact
-               that item_in and item_out are identical columns). */
-            if (ONAME(p, p->sem.doc_tbl.item) !=
-                ONAME(p, p->sem.doc_tbl.item_res)) {
-                PFalg_att_t iter, item_in, item_out;
-                iter     = ONAME(p, p->sem.doc_tbl.iter);
-                item_in  = ONAME(p, p->sem.doc_tbl.item);
-                item_out = ONAME(p, p->sem.doc_tbl.item_res);
-
-                assert (item_in == iter);
-
-                res = doc_tbl (project (PROJ(LEFT, p),
-                                        proj (iter, iter),
-                                        proj (item_out, item_in)),
-                               iter,
-                               item_out,
-                               item_out);
-            } else
-                res = doc_tbl (PROJ(LEFT, p),
-                               ONAME(p, p->sem.doc_tbl.iter),
-                               ONAME(p, p->sem.doc_tbl.item),
-                               ONAME(p, p->sem.doc_tbl.item_res));
+            res = doc_tbl (SEC_PROJ(LEFT, p, p->sem.doc_tbl.res),
+                           ONAME(p, p->sem.doc_tbl.res),
+                           ONAME(p, p->sem.doc_tbl.att));
             break;
 
         case la_doc_access:
@@ -838,8 +812,9 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_error:
-            res = error (PROJ(LEFT, p),
-                         PFprop_ori_name_left (p->prop, p->sem.err.att));
+            res = PFla_error_ (O(L(p)),
+                               PFprop_ori_name_left (p->prop, p->sem.err.att),
+                               PFprop_type_of (p, p->sem.err.att));
             break;
 
         case la_cond_err:

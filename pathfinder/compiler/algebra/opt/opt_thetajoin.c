@@ -1373,6 +1373,37 @@ opt_mvd (PFla_op_t *p)
             break;
 
         case la_to:
+            if (is_tj (L(p))) {
+                bool switch_left = PFprop_ocol (LL(p), p->sem.binary.att1) &&
+                                   PFprop_ocol (LL(p), p->sem.binary.att2);
+                bool switch_right = PFprop_ocol (LR(p), p->sem.binary.att1) &&
+                                    PFprop_ocol (LR(p), p->sem.binary.att2);
+
+                if (switch_left) {
+                    resolve_name_conflict (L(p), p->sem.binary.res);
+                    *p = *(thetajoin_opt (
+                               to (LL(p),
+                                   p->sem.binary.res,
+                                   p->sem.binary.att1,
+                                   p->sem.binary.att2),
+                               LR(p),
+                               L(p)->sem.thetajoin_opt.pred));
+                    modified = true;
+                }
+                else if (switch_right) {
+                    resolve_name_conflict (L(p), p->sem.binary.res);
+                    *p = *(thetajoin_opt (
+                               LL(p),
+                               to (LR(p),
+                                   p->sem.binary.res,
+                                   p->sem.binary.att1,
+                                   p->sem.binary.att2),
+                               L(p)->sem.thetajoin_opt.pred));
+                    modified = true;
+                }
+            }
+            break;
+
         case la_avg:
         case la_max:
         case la_min:
@@ -1830,6 +1861,8 @@ opt_mvd (PFla_op_t *p)
             break;
 
         case la_doc_tbl:
+            /* should not appear as roots already
+               translates the doc_tbl operator. */
             break;
 
         case la_doc_access:
@@ -1873,6 +1906,39 @@ opt_mvd (PFla_op_t *p)
             }
             break;
 
+        case la_roots:
+            /* modify the only pattern starting in roots
+               that is no constructor: roots-doc_tbl */
+            if (L(p)->kind == la_doc_tbl &&
+                is_tj (LL(p))) {
+                    if (PFprop_ocol (L(LL(p)), p->sem.doc_tbl.att)) {
+                        resolve_name_conflict (LL(p), p->sem.doc_tbl.res);
+                        PFarray_t *pred = LL(p)->sem.thetajoin_opt.pred;
+                        PFla_op_t *other_side = R(LL(p));
+                        /* overwrite doc_tbl node to update
+                           both roots and frag operators */
+                        *(L(p)) = *(doc_tbl (L(LL(p)),
+                                             L(p)->sem.doc_tbl.res,
+                                             L(p)->sem.doc_tbl.att));
+                        /* push roots + doc_tbl through the thetajoin */
+                        *p = *(thetajoin_opt (roots (L(p)), other_side, pred));
+                    }
+                    else {
+                        resolve_name_conflict (LL(p), p->sem.doc_tbl.res);
+                        PFarray_t *pred = LL(p)->sem.thetajoin_opt.pred;
+                        PFla_op_t *other_side = L(LL(p));
+                        /* overwrite doc_tbl node to update
+                           both roots and frag operators */
+                        *(L(p)) = *(doc_tbl (R(LL(p)),
+                                             L(p)->sem.doc_tbl.res,
+                                             L(p)->sem.doc_tbl.att));
+                        /* push roots + doc_tbl through the thetajoin */
+                        *p = *(thetajoin_opt (other_side, roots (L(p)), pred));
+                    }
+                    modified = true;
+                }
+            break;
+
         case la_twig:
         case la_fcns:
         case la_docnode:
@@ -1883,7 +1949,6 @@ opt_mvd (PFla_op_t *p)
         case la_processi:
         case la_content:
         case la_merge_adjacent:
-        case la_roots:
             /* constructors introduce like the unpartitioned
                rowid or rownum operators a dependency. */
             break;
@@ -1896,6 +1961,7 @@ opt_mvd (PFla_op_t *p)
 
         case la_error: /* don't rewrite errors */
             break;
+
         case la_cond_err:
             /* We push the error operator into the left input
                as we do not know whether it relates to the left or

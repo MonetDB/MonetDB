@@ -152,16 +152,14 @@ PFstate_t PFstate = {
                                 "}IM__{_[J]OKVCG"
                                 "}IMTS{_[J]OKVCGCG"
                                 "}IMTS{_[J]OKVCG"
-                                "}IMTS{_[J]OKVCGCGP",
-                                /*"}IMTS{_[J]OKVCGE[]CGP",*/
+                                "}IMTS{_[J]OKVCGE[]CGP",
     .opt_sql             = "OIKDCG_VGO_[J]OKVCG"
                                 "}IM__{_[J]OKVCG"
                                 "}IM__{_[J]OKVCGCG"
                                 "}IM__{_[J]OKVCG"
                                 "}IMTS{_[J]OKVCGUCG"
                                 "}IMTS{_[J]OKVCGU"
-                                "}IMTS{_[J]OKVCGUCGP"
-                                /*"}IMTS{_[J]OKVCGUE[]CGP"*/
+                                "}IMTS{_[J]OKVCGUE[]CGP"
                            "}IQ[J]}IQ[J]IOKVCGQUCGP",
 
     .format              = NULL,
@@ -329,8 +327,6 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     /* setup sementation fault signal handler */
     signal (SIGSEGV, segfault_handler);
 #endif
-    PFerrbuf = malloc(OOPS_SIZE);
-    PFerrbuf[0] = 0;
     /*******************************************/
     /* Split Point: Logical Algebra XML Import */
     /*******************************************/
@@ -343,6 +339,12 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         XML2LALGContext *ctx = PFxml2la_xml2lalgContext();
         PFla_op_t       *rootOp;
         
+        /* Initialize data structures in the Namespace department */
+        PFns_init ();
+
+        /* Initialize data structures in the QName department */
+        PFqname_init ();
+
         if (status->import_xml_filename) {
             /**
              * If the input is explicitely specified with an filename,
@@ -429,6 +431,9 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     STOP_POINT(3);
     
+    /* Initialize data structures in the Namespace department */
+    PFns_init ();
+
     /* Initialize data structures in the QName department */
     PFqname_init ();
 
@@ -806,7 +811,9 @@ AFTER_CORE2ALG:
             if (status->print_dot)
                 PFpa_dot (pfout, paroot);
             if (status->print_xml)
-                PFpa_xml (pfout, paroot);
+                PFinfo (OOPS_WARNING,
+                        "No xml representation for physical algebra tree."
+                        " Sorry.");
         }
         else
             PFinfo (OOPS_NOTICE,
@@ -878,6 +885,7 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
             /* algebra MIL/MAL generation could/should also use it.. */
             proot = PFheuristic_index (proot);
         }
+        PFns_init ();
         PFqname_init ();
         PFns_resolve (proot);
         PFextract_options (proot);

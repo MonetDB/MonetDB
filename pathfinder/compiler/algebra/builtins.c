@@ -638,7 +638,12 @@ PFbui_fn_error_empty (const PFla_op_t *loop, bool ordering,
     (void) loop; (void) ordering; (void) args;
 
     return (struct PFla_pair_t) {
-        .rel  = NULL,
+        .rel  = error (
+                    attach (
+                        attach (loop, att_pos, lit_nat (1)),
+                        att_item,
+                        lit_str ("http://www.w3.org/2005/xqt-errors#FOER0000")),
+                    att_item),
         .frag = PFla_empty_set ()};
 }
 
@@ -2384,6 +2389,7 @@ PFbui_fn_qname (const PFla_op_t *loop, bool ordering,
                                                args[0].rel,
                                                proj (att_iter, att_iter))),
                                        att_pos, lit_nat (1)),
+                                   /* use '|' as invalid uri */
                                    att_item, lit_str ("|"))),
                            project (args[1].rel,
                                     proj (att_iter1, att_iter),
@@ -3148,12 +3154,12 @@ struct PFla_pair_t
 PFbui_fn_zero_or_one (const PFla_op_t *loop, bool ordering,
                       struct PFla_pair_t *args)
 {
-    PFla_op_t *count = eq (attach (
+    PFla_op_t *count = gt (attach (
                                count (
                                    project (args[0].rel,
                                             proj (att_iter, att_iter)),
                                    att_item, att_iter),
-                               att_item1, lit_int (1)),
+                               att_item1, lit_int (2)),
                            att_res, att_item1, att_item);
 
     char *err_string = "err:FORG0003, fn:zero-or-one called with "
@@ -3632,8 +3638,8 @@ PFbui_op_to (const PFla_op_t *loop, bool ordering,
     (void) loop;
     (void) ordering;
 
-    PFla_op_t *to = to (project (
-                            eqjoin (
+    PFla_op_t *to = project (
+                        to (eqjoin (
                                 project (
                                     args[0].rel,
                                     proj (att_iter, att_iter),
@@ -3644,13 +3650,11 @@ PFbui_op_to (const PFla_op_t *loop, bool ordering,
                                     proj (att_item1, att_item)),
                                 att_iter,
                                 att_iter1),
-                            proj (att_iter, att_iter),
-                            proj (att_item, att_item),
-                            proj (att_item1, att_item1)),
-                        att_item,
-                        att_item,
-                        att_item1,
-                        att_iter);
+                            att_res,
+                            att_item,
+                            att_item1),
+                        proj (att_iter, att_iter),
+                        proj (att_item, att_res));
 
     return (struct PFla_pair_t) {
         .rel = rank (
@@ -3742,13 +3746,13 @@ PFbui_fn_doc (const PFla_op_t *loop, bool ordering,
 {
     (void) loop; (void) ordering;
 
-    PFla_op_t *doc = doc_tbl (project (args[0].rel,
-                                       proj (att_iter, att_iter),
-                                       proj (att_item, att_item)),
-                              att_iter, att_item, att_item);
+    PFla_op_t *doc = doc_tbl (args[0].rel, att_res, att_item);
 
     return (struct PFla_pair_t) {
-        .rel  = attach (roots (doc), att_pos, lit_nat (1)),
+        .rel  = project (roots (doc),
+                         proj (att_iter, att_iter),
+                         proj (att_pos, att_pos),
+                         proj (att_item, att_res)),
         .frag = PFla_set (fragment (doc)) };
 }
 

@@ -183,7 +183,6 @@ find_join_worker (PFla_op_t *n,
         case la_disjunion:
         case la_intersect:
         case la_difference:
-        case la_error:
         case la_distinct:
             break;
 
@@ -320,15 +319,11 @@ find_join_worker (PFla_op_t *n,
             break;
 
         case la_to:
-            if (LEFT_COLS(n) & n->sem.to.res) {
-                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.to.res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.to.att1);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.to.att2);
+            if (LEFT_COLS(n) & n->sem.binary.res) {
+                LEFT_COLS(n) = diff (LEFT_COLS(n), n->sem.binary.res);
             }
-            if (RIGHT_COLS(n) & n->sem.to.res) {
-                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.to.res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.to.att1);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.to.att2);
+            if (RIGHT_COLS(n) & n->sem.binary.res) {
+                RIGHT_COLS(n) = diff (RIGHT_COLS(n), n->sem.binary.res);
             }
             break;
 
@@ -443,13 +438,13 @@ find_join_worker (PFla_op_t *n,
             break;
 
         case la_doc_tbl:
-            if (LEFT_COLS(n) & n->sem.doc_tbl.item_res) {
-                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.doc_tbl.item_res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.doc_tbl.item);
+            if (LEFT_COLS(n) & n->sem.doc_tbl.res) {
+                LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.doc_tbl.res);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.doc_tbl.att);
             }
-            if (RIGHT_COLS(n) & n->sem.doc_tbl.item_res) {
-                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.doc_tbl.item_res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.doc_tbl.item);
+            if (RIGHT_COLS(n) & n->sem.doc_tbl.res) {
+                RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.doc_tbl.res);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.doc_tbl.att);
             }
             break;
 
@@ -496,6 +491,13 @@ find_join_worker (PFla_op_t *n,
             /* for the fragment information we do not need to introduce
                column names as the thetajoin can never be moved along
                its edges. */
+            LEFT_COLS(n)  = att_NULL;
+            RIGHT_COLS(n) = att_NULL;
+            break;
+
+        case la_error:
+            /* FIXME: for now we assume that a theta-join
+               cannot be pushed through an error */
             LEFT_COLS(n)  = att_NULL;
             RIGHT_COLS(n) = att_NULL;
             break;

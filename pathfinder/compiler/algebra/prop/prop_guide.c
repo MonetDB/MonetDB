@@ -426,15 +426,16 @@ copy_doc_tbl(PFla_op_t *n, PFguide_tree_t *guide)
     assert(PROP(n));
 
     /* Test if the document name is constant */
-    if(PFprop_const_left (n->prop, n->sem.doc_tbl.item) == true) {
+    if (PFprop_const_left (n->prop, n->sem.doc_tbl.att) == true) {
         /* value of the document name */
-        PFalg_atom_t a = PFprop_const_val_left (PROP(n),
-            n->sem.doc_tbl.item);
-        if(a.type == aat_str) {
+        PFalg_atom_t a = PFprop_const_val_left (PROP(n), n->sem.doc_tbl.att);
+        if (a.type == aat_str) {
             /* Is guide filename equal to qurey filename */
-            if(strcmp(guide->tag_name,a.val.str) == 0) {
+            if (strcmp(guide->tag_name, a.val.str) == 0) {
                 /* add the guide to the guide_list */
-                MAPPING_LIST(n) = add_guide(MAPPING_LIST(n), guide, n->sem.doc_tbl.item);
+                MAPPING_LIST(n) = add_guide (MAPPING_LIST(n),
+                                             guide,
+                                             n->sem.doc_tbl.res);
             } else {
                 MAPPING_LIST(n) = NULL;
             }
@@ -1001,6 +1002,7 @@ infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
         case la_bool_and:
         case la_bool_or:
         case la_bool_not:
+        case la_to:
         case la_rownum:
         case la_rowrank:
         case la_rank:
@@ -1024,7 +1026,6 @@ infer_guide(PFla_op_t *n, PFguide_tree_t *guide)
         case la_lit_tbl:
         case la_empty_tbl:
         case la_ref_tbl:
-        case la_to:
         case la_avg:
         case la_max:
         case la_min:

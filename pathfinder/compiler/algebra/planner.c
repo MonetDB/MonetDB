@@ -1193,6 +1193,29 @@ plan_unary (const PFla_op_t *n)
 }
 
 /**
+ * Generate physical plan for integer enumeration (op:to).
+ */
+static PFplanlist_t *
+plan_to (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist ();
+
+    assert (n);
+    assert (n->kind == la_to);
+    assert (L(n)); assert (L(n)->plans);
+
+    /* consider each plan in n */
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plan (ret,
+                  to (*(plan_t **) PFarray_at (L(n)->plans, i),
+                      n->sem.binary.res,
+                      n->sem.binary.att1,
+                      n->sem.binary.att2));
+
+    return ret;
+}
+
+/**
  * Generate physical plan for logical aggregation operators
  * (avg, max, min, sum).
  */
@@ -1557,52 +1580,12 @@ plan_step (const PFla_op_t *n)
 static PFplanlist_t *
 plan_doc_tbl (const PFla_op_t *n)
 {
-    PFplanlist_t  *ret                = new_planlist ();
-    PFplanlist_t  *ordered            = new_planlist ();
-    plan_t        *cheapest_unordered = NULL;
-    plan_t        *cheapest_ordered   = NULL;
+    PFplanlist_t *ret = new_planlist ();
 
-#ifndef NDEBUG
-    /* ensure that input and output columns have the same name */
-    assert (n->sem.doc_tbl.item == n->sem.doc_tbl.item_res);
-#endif
-
-    /* find the cheapest plan for our argument */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        if (!cheapest_unordered
-            || costless (*(plan_t **) PFarray_at (L(n)->plans, i),
-                         cheapest_unordered))
-            cheapest_unordered
-                = *(plan_t **) PFarray_at (L(n)->plans, i);
-
-    /* an ordering by `iter' is typically helpful -> sort all plans */
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        add_plans (ordered,
-                   ensure_ordering (
-                       *(plan_t **) PFarray_at (L(n)->plans, i),
-                       sortby (n->sem.doc_tbl.iter)));
-
-    for (unsigned int i = 0; i < PFarray_last (ordered); i++)
-        if (!cheapest_ordered
-            || costless (*(plan_t **) PFarray_at (ordered, i),
-                         cheapest_ordered))
-            cheapest_ordered = *(plan_t **) PFarray_at (ordered, i);
-
-    /*
-     * The plan `cheapest_unordered' is always the cheapest possible
-     * plan.  However, an ordered plan could still be benefitial,
-     * even if it is slightly more expensive on its own.  We assume
-     * that the ordering makes up the cost of an unordered plan, if
-     * its cost is at most 1.5 times the cost of an unordered plan.
-     */
-    if (cheapest_ordered->cost <= cheapest_unordered->cost * 1.5)
-        add_plan (ret, doc_tbl (cheapest_ordered,
-                                n->sem.doc_tbl.iter,
-                                n->sem.doc_tbl.item));
-    else
-        add_plan (ret, doc_tbl (cheapest_unordered,
-                                n->sem.doc_tbl.iter,
-                                n->sem.doc_tbl.item));
+        add_plan (ret,
+                  doc_tbl (*(plan_t **) PFarray_at (L(n)->plans, i),
+                           n->sem.doc_tbl.res, n->sem.doc_tbl.att));
 
     return ret;
 }
@@ -2030,7 +2013,8 @@ plan_error (const PFla_op_t *n)
 
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plan (ret, error(*(plan_t **) PFarray_at (L(n)->plans, i),
-                             n->sem.err.att));
+                             n->sem.err.att,
+                             type_of (n->schema, n->sem.err.att)));
 
     return ret;
 }
@@ -2863,11 +2847,12 @@ plan_subexpression (PFla_op_t *n)
 
         case la_bool_not:
                                 plans = plan_unary (n);        break;
+        case la_to:             plans = plan_to (n);           break;
+        case la_count:          plans = plan_count (n);        break;
         case la_avg:            plans = plan_aggr (pa_avg, n); break;
         case la_max:            plans = plan_aggr (pa_max, n); break;
         case la_min:            plans = plan_aggr (pa_min, n); break;
         case la_sum:            plans = plan_aggr (pa_sum, n); break;
-        case la_count:          plans = plan_count (n);        break;
 
         case la_rownum:         plans = plan_rownum (n);       break;
         case la_rowrank:

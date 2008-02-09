@@ -591,28 +591,10 @@ infer_ocol (PFla_op_t *n)
             break;
 
         case la_to:
-            /* set number of schema items in the result schema:
-             * result attribute plus partitioning attribute
-             * (if available -- constant optimizations may
-             *  have removed it).
-             */
-            new_ocols (n, n->sem.to.part ? 2 : 1);
-
-            /* verify that attributes 'att1', 'att2' and 'part'
-             * are attributes of n* and include them into the result
-             * schema
-             */
-            assert (PFprop_ocol (L(n), n->sem.to.att1) &&
-                    PFprop_ocol (L(n), n->sem.to.att2));
-
-            ocol_at (n, 0).name = n->sem.to.res;
-            ocol_at (n, 0).type = aat_int;
-
-            if (n->sem.to.part) {
-                assert (PFprop_ocol (L(n), n->sem.to.part));
-                ocol_at (n, 1).name = n->sem.to.part;
-                ocol_at (n, 1).type = PFprop_type_of (L(n), n->sem.to.part);
-            }
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
+            ocol_at (n, ocols_count (n)).name = n->sem.binary.res;
+            ocol_at (n, ocols_count (n)).type = aat_int;
+            ocols_count (n)++;
             break;
 
         case la_avg:
@@ -824,18 +806,11 @@ infer_ocol (PFla_op_t *n)
             ocols_count (n)++;
             break;
 
-        /* operators with static iter|item schema */
         case la_doc_tbl:
-            new_ocols (n, 2);
-
-            ocol_at (n, 0)
-                = (PFalg_schm_item_t) { .name = n->sem.doc_tbl.iter,
-                                        .type = PFprop_type_of (
-                                                    L(n),
-                                                    n->sem.doc_tbl.iter) };
-            ocol_at (n, 1)
-                = (PFalg_schm_item_t) { .name = n->sem.doc_tbl.item_res,
-                                        .type = aat_pnode };
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
+            ocol_at (n, ocols_count (n)).name = n->sem.doc_tbl.res;
+            ocol_at (n, ocols_count (n)).type = aat_pnode;
+            ocols_count (n)++;
             break;
 
         case la_twig:
@@ -938,6 +913,14 @@ infer_ocol (PFla_op_t *n)
             break;
 
         case la_error:
+        {
+            PFalg_simple_type_t ty = PFprop_type_of (n, n->sem.err.att);
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
+            for (unsigned int i = 0; i < ocols_count (n); i++)
+                if (ocol_at (n, i).name == n->sem.err.att)
+                    ocol_at (n, i).type = ty;
+        }   break;
+            
         case la_cond_err:
         case la_trace:
         case la_trace_msg:

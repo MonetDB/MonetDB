@@ -493,12 +493,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_to:
-            res = to (U(L(p)),
-                      UNAME(p, p->sem.to.res),
-                      /* attribute att is stored only in child operator */
-                      UNAME(L(p), p->sem.to.att1),
-                      UNAME(L(p), p->sem.to.att2),
-                      p->sem.to.part?UNAME(p, p->sem.to.part):att_NULL);
+            res = binary_op (PFla_to, p, map);
             break;
 
         case la_avg:
@@ -645,11 +640,8 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
         case la_doc_tbl:
             res = doc_tbl (U(L(p)),
-                           UNAME(p, p->sem.doc_tbl.iter),
-                           /* unique name of input attribute item is
-                              stored in the child operator only */
-                           UNAME(L(p), p->sem.doc_tbl.item),
-                           UNAME(p, p->sem.doc_tbl.item_res));
+                           UNAME(p, p->sem.doc_tbl.res),
+                           UNAME(p, p->sem.doc_tbl.att));
             break;
 
         case la_doc_access:
@@ -748,8 +740,11 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_error:
-            res =  error (U(L(p)), UNAME(L(p), p->sem.err.att) );
+            res = PFla_error_ (U(L(p)),
+                               UNAME(L(p), p->sem.err.att),
+                               PFprop_type_of (p, p->sem.err.att));
             break;
+
         case la_cond_err:
             res = cond_err (U(L(p)), U(R(p)),
                             /* unique name of input attribute att is

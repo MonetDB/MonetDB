@@ -644,28 +644,11 @@ infer_dom (PFla_op_t *n, unsigned int id)
         case la_bool_and:
         case la_bool_or:
         case la_bool_not:
+        case la_to:
         case la_type:
         case la_cast:
         case la_type_assert:
             bulk_add_dom (n->prop, L(n));
-            break;
-
-        case la_to:
-            if (n->sem.to.part) {
-                PFalg_simple_type_t join_ty = 0;
-                /* find the partition type */
-                for (unsigned int i = 0; i < n->schema.count; i++)
-                    if (n->schema.items[i].name == n->sem.to.part) {
-                        join_ty = n->schema.items[i].type;
-                        break;
-                    }
-                assert (join_ty);
-
-                if (join_ty == aat_nat)
-                    add_dom (n->prop,
-                             n->sem.to.part,
-                             PFprop_dom (L(n)->prop, n->sem.to.part));
-            }
             break;
 
         case la_avg:
@@ -736,10 +719,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_doc_tbl:
-            /* retain domain for attribute iter */
-            add_dom (n->prop,
-                     n->sem.doc_tbl.iter,
-                     PFprop_dom (L(n)->prop, n->sem.doc_tbl.iter));
+            bulk_add_dom (n->prop, L(n));
             break;
 
         case la_doc_access:
@@ -845,6 +825,14 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_error:
+            /* ignore the domain of the error operator */
+            for (unsigned int i = 0; i < L(n)->schema.count; i++)
+                if (L(n)->schema.items[i].name != n->sem.err.att)
+                    add_dom (n->prop,
+                             L(n)->schema.items[i].name,
+                             PFprop_dom (L(n)->prop, L(n)->schema.items[i].name));
+            break;
+
         case la_cond_err:
         case la_trace:
             bulk_add_dom (n->prop, L(n));

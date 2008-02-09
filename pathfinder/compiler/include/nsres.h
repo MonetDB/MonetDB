@@ -38,6 +38,11 @@
 #include "abssyn.h"
 
 /**
+ * Initialize the namespaces.
+ */
+void PFns_init (void);
+
+/**
  * Resolve NS usage in a query.
  */
 void PFns_resolve (PFpnode_t *);

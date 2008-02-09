@@ -22,7 +22,7 @@
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.53)
-AC_INIT([MonetDB XQuery], [0.21.0], [monet@cwi.nl], [MonetDB-XQuery])
+AC_INIT([MonetDB XQuery], [0.23.0], [monet@cwi.nl], [MonetDB-XQuery])
 #                          ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -58,7 +58,7 @@ AM_MONETDB_XQ_VARS_1()
 
 
 dnl Check for Monet
-req_monetdb_ver='1.21.0'
+req_monetdb_ver='1.22.0'
 #                ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -83,7 +83,7 @@ req_monetdb_java_ver='1.7.0'
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB_JAVA($req_monetdb_java_ver)
-req_clients_ver='1.20.0'
+req_clients_ver='1.22.0'
 #                ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -103,13 +103,13 @@ dnl We may not call AM_MONETDB4 and AM_MONETDB5 conditionally,
 dnl since they use AM_CONDITIONAL.  So we do both tests, but
 dnl ignore their outcome if we haven't found MonetDB common before.
 
-req_monetdb4_ver='4.21.0'
+req_monetdb4_ver='4.22.0'
 #                 ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB4($req_monetdb4_ver)
 
-req_monetdb5_ver='5.3.0'
+req_monetdb5_ver='5.4.0'
 #                 ^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

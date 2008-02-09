@@ -256,6 +256,7 @@ infer_const (PFla_op_t *n)
         case la_bool_and:
         case la_bool_or:
         case la_bool_not:
+        case la_to:
         case la_rownum:
         case la_rowrank:
         case la_rank:
@@ -266,6 +267,7 @@ infer_const (PFla_op_t *n)
         case la_step_join:
         case la_guide_step_join:
         case la_doc_index_join:
+        case la_doc_tbl:
         case la_doc_access:
         case la_docnode:
         case la_element:
@@ -506,18 +508,18 @@ infer_const (PFla_op_t *n)
             break;
 
         case la_to:
-            if (PFprop_const (L(n)->prop, n->sem.to.att1) &&
-                PFprop_const (L(n)->prop, n->sem.to.att2) &&
+            if (PFprop_const (L(n)->prop, n->sem.binary.att1) &&
+                PFprop_const (L(n)->prop, n->sem.binary.att2) &&
                 PFalg_atom_comparable (
-                    PFprop_const_val (L(n)->prop, n->sem.to.att1),
-                    PFprop_const_val (L(n)->prop, n->sem.to.att2)) &&
+                    PFprop_const_val (L(n)->prop, n->sem.binary.att1),
+                    PFprop_const_val (L(n)->prop, n->sem.binary.att2)) &&
                 !PFalg_atom_cmp (
-                    PFprop_const_val (L(n)->prop, n->sem.to.att1),
-                    PFprop_const_val (L(n)->prop, n->sem.to.att2)))
+                    PFprop_const_val (L(n)->prop, n->sem.binary.att1),
+                    PFprop_const_val (L(n)->prop, n->sem.binary.att2)))
                 PFprop_mark_const (
                     n->prop,
-                    n->sem.to.res,
-                    PFprop_const_val (L(n)->prop, n->sem.to.att1));
+                    n->sem.binary.res,
+                    PFprop_const_val (L(n)->prop, n->sem.binary.att1));
             break;
 
         case la_avg:
@@ -599,14 +601,6 @@ infer_const (PFla_op_t *n)
                         n->prop,
                         n->sem.step.iter,
                         PFprop_const_val (R(n)->prop, n->sem.step.iter));
-            break;
-
-        case la_doc_tbl:
-            if (PFprop_const (L(n)->prop, n->sem.doc_tbl.iter))
-                PFprop_mark_const (
-                        n->prop,
-                        n->sem.doc_tbl.iter,
-                        PFprop_const_val (L(n)->prop, n->sem.doc_tbl.iter));
             break;
 
         case la_twig:
@@ -730,6 +724,7 @@ infer_const (PFla_op_t *n)
         case la_step_join:
         case la_guide_step_join:
         case la_doc_index_join:
+        case la_doc_tbl:
         case la_doc_access:
         case la_fcns:
         case la_docnode:

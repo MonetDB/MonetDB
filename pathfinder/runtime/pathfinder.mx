@@ -81,7 +81,7 @@ if (not(isnil(CATCH_module_pftijah))) {
 }
 else {
     if (monet_environment.find("monet_welcome") = "yes")
-        printf("%c PF/Tijah module v0.3.0 loaded. http://dbappl.cs.utwente.nl/pftijah\n", int
+        printf("%c PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah\n", int
 (35));
 }
 
@@ -402,6 +402,7 @@ const LOGGER_VERSION := 1;
 @:ws_@1_decl(PI,        3,,,,,,.chr())@
 @:ws_@1_decl(DOCUMENT,  4,,,,,,.chr())@
 @:ws_@1_decl(COLLECTION,5,,,,,,.chr())@
+@:ws_@1_decl(REFERENCE ,6,,,,,,.chr())@
 
 @mil
 # zero
@@ -3984,7 +3985,7 @@ collection_cleanup(_collection_cleanup()); # silently clean up the repository
 
 mapi_register(xquery_frontend()); # open up mapi client access
 if (monet_environment.find("monet_welcome") = "yes") 
-    printf("%c MonetDB/XQuery module v0.21.0 loaded\n", int(35));
+    printf("%c MonetDB/XQuery module v0.23.0 loaded\n", int(35));
     #                                 ^^^^^^
     # Maintained via vertoo. Please don't modify by hand!
     # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -4382,7 +4383,7 @@ xquery_compile_exec(xquery_client *ctx,
 #else /* ALGEBRA_IS_DEFAULT */
     if (!(ctx->mode & XQ_MILPRINT_SUMMER) && \
         ((ctx->mode & XQ_ALGEBRA) || \
-         (GDKgetenv("xquery_backend") == NULL) || (strcmp(GDKgetenv("xquery_backend"),"miprint_summer") != 0)))
+         (GDKgetenv("xquery_backend") == NULL) || (strcmp(GDKgetenv("xquery_backend"),"milprint_summer") != 0)))
         options |= COMPILE_OPTION_ALGEBRA;
 #endif
 

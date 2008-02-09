@@ -46,7 +46,7 @@ enum PFsql_special_t {
     , sql_col_nameid
     , sql_col_value
     , sql_col_name
-    , sql_col_namespace
+    , sql_col_ns_uri
     , sql_col_twig_pre
     , sql_col_iter
     , sql_col_pos
@@ -141,6 +141,7 @@ enum PFsql_kind_t {
 
     , sql_union             /* UNION ALL expression */
     , sql_diff              /* EXCEPT ALL expression */
+    , sql_intersect         /* INTERSECT ALL expression */
 
     , sql_lit_int           /* literal integer */
     , sql_lit_lng           /* literal 64 bit integer */
@@ -180,6 +181,10 @@ enum PFsql_kind_t {
     , sql_sum               /* SUM () aggregate */
     , sql_min               /* MIN () aggregate */
     , sql_avg               /* AVG () aggregate */
+
+    , sql_str_length        /* SQL LENGTH () function */
+    , sql_str_upper         /* SQL UPPER () function */
+    , sql_str_lower         /* SQL LOWER () function */
 
     , sql_over              /* OVER expression */
     , sql_row_number        /* ROW_NUMBER () function
@@ -621,6 +626,12 @@ PFsql_t * PFsql_union (const PFsql_t *a, const PFsql_t *b);
  */
 PFsql_t * PFsql_difference (const PFsql_t *a, const PFsql_t *b);
 
+/**
+ * Create a SQL tree node representing the SQL
+ * `INTERSECT ALL' operator.
+ */
+PFsql_t * PFsql_intersect (const PFsql_t *a, const PFsql_t *b);
+
 /* .......... Literal construction .......... */
 
 /**
@@ -835,6 +846,26 @@ PFsql_t * PFsql_avg (const PFsql_t *column);
  * the aggregate function `SUM'.
  */
 PFsql_t * PFsql_sum (const PFsql_t * column);
+
+/* ........... String Functions ........... */
+
+/**
+ * Construct a SQL tree  node representing
+ * the SQL length functions for strings
+ */
+PFsql_t * PFsql_str_length (const PFsql_t *a);
+
+/**
+ * Construct a SQL tree  node representing
+ * the SQL length functions for strings
+ */
+PFsql_t * PFsql_str_upper (const PFsql_t *a);
+
+/**
+ * Construct a SQL tree  node representing
+ * the SQL length functions for strings
+ */
+PFsql_t * PFsql_str_lower (const PFsql_t *a);
 
 /* .......... OLAP Functionality .......... */
 

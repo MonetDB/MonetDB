@@ -223,6 +223,8 @@
 #endif
 #define max(a) PFmil_max(a)
 
+#define enumerate(a,b) PFmil_enumerate((a),(b))
+
 /** count() operator and grouped count */
 #define count(a) PFmil_count(a)
 #define gcount(a) PFmil_gcount(a)
@@ -262,6 +264,9 @@
 
 /** multiplexed arithmetic modulo */
 #define mmod(a,b) PFmil_mmod ((a), (b))
+
+/** multiplexed arithmetic maximum */
+#define mmax(a,b) PFmil_mmax ((a), (b))
 
 /** greater than */
 #define gt(a,b) PFmil_gt ((a), (b))
