@@ -1050,6 +1050,7 @@ GDKmallocmax(size_t size, size_t * maxsize, int emergency)
 #endif
 	}
 	size = (size + 7) & ~7;	/* round up to a multiple of eight */
+#if 0
 	if (size > GDK_mem_bigsize) {
 		size_t newsize = size + sizeof(size_t) + sizeof(size_t);
 		size_t newmax = MAX(*maxsize, newsize);
@@ -1064,6 +1065,7 @@ GDKmallocmax(size_t size, size_t * maxsize, int emergency)
 		*maxsize = newmax - (sizeof(size_t) + sizeof(size_t));
 		return (void *) s;
 	}
+#endif
 	CHKMEM(size, 0);
 	GDKmalloc_prefixsize(s, size);
 	if (s == NULL) {
