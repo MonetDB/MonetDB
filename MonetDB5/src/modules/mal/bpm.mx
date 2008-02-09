@@ -240,19 +240,19 @@ module bpm;
 
 command open():void
 address BPMopen
-comment "Locate and open the BAT partition box";
+comment "Locate and open the BAT partition box.";
 
 command close():void
 address BPMclose
-comment "Save and close the BAT partition box ";
+comment "Save and close the BAT partition box.";
 
 command destroy():void
 address BPMdestroy
-comment "Destroy the BAT partition box";
+comment "Destroy the BAT partition box.";
 
 command deposit(nme:str,b:bat[:oid,:any_2]) :bat[:oid,:any_2]
 address BPMdeposit
-comment "Create a new partitioned BAT by name";
+comment "Create a new partitioned BAT by name.";
 
 @-
 Temporary results can be administered as partitioned tables as well.
@@ -260,33 +260,33 @@ There is no a priori need to have the partitioned non-overlapping.
 @mal
 pattern new(ht:any_1,tt:any_2):bat[:any_1,:any_2]
 address BPMnew
-comment "Create a temporary partitioned table";
+comment "Create a temporary partitioned table.";
 
 command fold(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address BPMfold
-comment "Collapse the partitioned BAT into a single BAT";
+comment "Collapse the partitioned BAT into a single BAT.";
 
 command unfold(alias:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BPMunfold
-comment "Unfold a BAT into a partitioned one";
+comment "Unfold a BAT into a partitioned one.";
 
 command garbage(b:bat[:any_1,:any_2]):void
 address BPMgarbage
-comment "Remove a temporary partitioned table";
+comment "Remove a temporary partitioned table.";
 
 command pieces(b:bat[:any_1,:any_2]):int
 address BPMpieces
-comment "Count the number of partitions";
+comment "Count the number of partitions.";
 
 command count(b:bat[:any_1,:any_2]):int
 address BPMcount;
 command emptySet(b:bat[:any_1,:any_2]):void
 address BPMemptySet
-comment "Implement the constraints test efficiently";
+comment "Implement the empty set constraints test efficiently.";
 
 command sortTail(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address BPMsortTail
-comment "Implement the sort on tail for partitioned BAT efficiently";
+comment "Implement the sort on tail for partitioned BAT efficiently.";
 @-
 The partitioning is handled inside the module.
 If the alias BAT denotes an existing partition, it is
@@ -294,38 +294,38 @@ further broken into pieces.
 @mal
 command rangePartition(pb:bat[:any_1,:any_2], rl:any_2, rh:any_2):void
 address BPMrange
-comment "Create a range partition on a BAT";
+comment "Create a range partition on a BAT.";
 
 command rangePartition(pb:bat[:any_1,:any_2], pv:bat[:oid,:any_2]):void
 address BPMrangeVector
-comment "Create the partitions based on a range vector";
+comment "Create the partitions based on a range vector.";
 
 command rangePartitionSort(pb:bat[:any_1,:any_2], pv:bat[:oid,:any_2]):void
 address BPMrangeVectorSort
-comment "Create the partitions based on a range vector";
+comment "Create the partitions based on a range vector.";
 
 command sortPartitions(b:bat[:any_1,:any_2]):void
 address BPMsortPartitions
-comment "Sort all partitions of alias b on the tail";
+comment "Sort all partitions of alias b on the tail.";
 
 command hashPartitions(b:bat[:any_1,:any_2]):void
 address BPMhashPartitions
-comment "Ensure all partitions have a hash in the head";
+comment "Ensure all partitions have a hash in the head.";
 
 command partition(pb:bat[:any_1,:any_2], val:any_2):void
 address BPMsplitpartition
-comment "Split all partitions that cover the split value";
+comment "Split all partitions that cover the split value.";
 
 command addPartition(b:bat[:any_1,:any_2],s:bat[:any_1,:any_2]):void
 address BPMaddPartition
-comment "Add a partition to a fragmented temporary table";
+comment "Add a partition to a fragmented temporary table.";
 command addPartition(b:bat[:any_1,:any_2],s:BAT):void
 address BPMaddPartition
-comment "Add a partition to a fragmented temporary table";
+comment "Add a partition to a fragmented temporary table.";
 
 command hashPartition(pb:bat[:any_1,:any_2], slots:int):void
 address BPMhash
-comment "Create a hash partition on a BAT";
+comment "Create a hash partition on a BAT.";
 command derivePartition(pb:bat[:any_1,:any_2], 
 	src:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address BPMderived
@@ -333,45 +333,45 @@ comment "Create a derived fragmentation over the head using src.";
 
 command adapt(s:bat[:any_1,:any_2], low:any_2, hgh:any_2, rs:bat[:any_1,:any_3], pol:int) :bat[:any_1,:any_2]
 address BPMadapt
-comment "Re-organize segment s using the selection (val1,val2) stored in bat rs";
+comment "Re-organize segment s using the selection (val1,val2) stored in bat rs.";
 
 
 command take(pb:int):bat[:any_1,:any_2]
 address BPMtakeIndexed
-comment "Retrieve the partition given the its index ";
+comment "Retrieve the partition given the its index.";
 command take(pb:str):bat[:any_1,:any_2]
 address BPMtake
-comment "Retrieve the alias given the name of a partitioned BAT";
+comment "Retrieve the alias given the name of a partitioned BAT.";
 
 command take(nme:str, hl:any_1, hh:any_1, tl:any_2, th:any_2) :bat[:any_1,:any_2]
 address BPMtakePartition
-comment "Retrieve a single component of a partitioned BAT by index";
+comment "Retrieve a single component of a partitioned BAT by index.";
 
 command take(nme:bat[:any_1,:any_2],idx:int, hl:any_1, hh:any_1, tl:any_2, th:any_2) :bat[:any_1,:any_2]
 address BPMtakePartitionIndexed
-comment "Retrieve a single component of a partitioned BAT by index";
+comment "Retrieve a single component of a partitioned BAT by index.";
 
 command insert(pb:bat[:any_1,:any_2],b:bat[:any_1,:any_2]) :void
 address BPMinsert
-comment "Insert elements into the BAT partitions";
+comment "Insert elements into the BAT partitions.";
 command delete(pb:bat[:any_1,:any_2],b:bat[:any_1,:any_2]) :void
 address BPMdelete
-comment "Delete elements from the BAT partitions";
+comment "Delete elements from the BAT partitions.";
 command replace(pb:bat[:any_1,:any_2],old:bat[:any_1,:any_2],
 		nwe:bat[:any_1,:any_2]) :void
 address BPMreplace
-comment "Replace the content of the BAT partitions";
+comment "Replace the content of the BAT partitions.";
 
 command getNames():bat[:oid,:str]
 address BPMgetNames
-comment "Retrieve the names of all known partitioned BATs";
+comment "Retrieve the names of all known partitioned BATs.";
 
 command discard(alias:bat[:any_1,:any_2]) :void
 address BPMdiscard
-comment "Release a partitioned BAT from the box";
+comment "Release a partitioned BAT from the box.";
 command discard() :void
 address BPMdiscardAll
-comment "Release all partitioned BATs";
+comment "Release all partitioned BATs.";
 
 @-
 In most situations we would like to iterator over

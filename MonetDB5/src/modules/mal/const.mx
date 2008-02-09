@@ -39,41 +39,41 @@ module const;
 
 pattern open():void
 address CSTopen
-comment "Locate and open the constant box";
+comment "Locate and open the constant box.";
 pattern close():void
 address CSTclose
-comment "Close the constant box ";
+comment "Close the constant box.";
 pattern destroy():void
 address CSTdestroy
-comment "Destroy the box";
+comment "Destroy the box.";
 pattern take(name:str):any_1 
 address CSTtake
-comment "Take a variable out of the box";
+comment "Take a variable out of the box.";
 pattern deposit(name:str,val:any_1) :void 		
 address CSTdeposit
-comment "Enter a new variable into the box";
+comment "Add a variable to the box.";
 
 pattern releaseAll():void 
 address CSTreleaseAll
-comment "Release all variables in the box";
+comment "Release all variables in the box.";
 pattern release(name:str) :void 		
 address CSTrelease
-comment "Release a new constant value";
+comment "Release a constant value.";
 pattern release(name:any_1):void 
 address CSTrelease
-comment "Release a new constant value";
+comment "Release a constant value.";
 pattern toString(name:any_1):str 
 address CSTtoString
-comment "Get the string representation of an element in the box";
+comment "Get the string representation of an element in the box.";
 pattern discard(name:any_1) :void 		
 address CSTdiscard
-comment "Release the const from the box";
+comment "Release the const from the box.";
 pattern newIterator()(:lng,:str)
 address CSTnewIterator
-comment "Locate next element in the box";
+comment "Locate next element in the box.";
 pattern hasMoreElements()(:lng,:str)
 address CSThasMoreElements
-comment "Locate next element in the box";
+comment "Locate next element in the box.";
 
 @{
 pattern prelude():void 

@@ -47,7 +47,7 @@ the event log becomes available as a series of BATs.
 
 @node Event Filtering, Event Caching, The MAL Profiler, The MAL Profiler
 @+ Event Filtering 
-The profiler supports selective retrieval of such information by
+The profiler supports selective retrieval of performance information by
 tagging the instructions of interest. This means that a profiler
 call has a global effect,
 all concurrent users are affected by the performance overhead.
@@ -83,7 +83,7 @@ profiler.stop();
 profiler.closeStream();
 @end example
 
-We are interested in all functions name @sc{insert} and @sc{print}. 
+In this example, we are interested in all functions name @sc{insert} and @sc{print}. 
 A wildcard can be used to signify any name, e.g.
 no constraints are put on the module in which the operations
 are defined.

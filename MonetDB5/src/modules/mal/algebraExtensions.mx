@@ -28,7 +28,7 @@ address ALGprojectCst
 comment "Fill the tail column with a newly typed constant.";
 pattern algebra.project(b:bat[:any_1,:any_3], val:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address ALGprojectCst
-comment "Fill the tail column with a constant.";
+comment "Fill the tail column with a constant taken from the aligned BAT.";
                                                                                 
 @{
 @include prelude.mx

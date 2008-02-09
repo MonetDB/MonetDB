@@ -82,32 +82,32 @@ command assert(v:oid,term:str):void
 address MALassertOid;
 pattern assert(v:any_1,pname:str,oper:str,val:any_2):void
 address MALassertTriple
-comment "Assertion test";
+comment "Assertion test.";
 
 pattern assertSpace(depth:int)
 address MALsafeguardStack
 comment "Ensures that the current call does not consume
-more then depth*vtop elements on the stack";
+more then depth*vtop elements on the stack.";
 
 pattern dataflow():int
 address MALstartDataflow
 comment "The current guarded block is executed using
-dataflow control ";
+dataflow control.";
 
 command register(m:str,f:str,code:str,help:str):void
 address CMDregisterFunction
-comment"Compile the code string and register it as a MAL function";
+comment"Compile the code string and register it as a MAL function.";
 
 pattern call(s:str):void
 address CMDcallString
-comment "Evaluate a MAL string program";
+comment "Evaluate a MAL string program.";
 pattern call(s:bat[:oid,:str]):void
 address CMDcallBAT
-comment "Evaluate a program stored in a BAT";
+comment "Evaluate a program stored in a BAT.";
 command source(f:str):void
 address CMDevalFile
 comment "Merge the instructions stored in the 
-	file with the current program";
+	file with the current program.";
 
 @{
 @+ Dummy code 

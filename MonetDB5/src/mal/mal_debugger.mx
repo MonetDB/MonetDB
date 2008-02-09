@@ -43,15 +43,15 @@ comes with a gdb-like debugger.
 An illustrative session elicits the functionality offered.
 
 @example
->function test(i:int):str;
->	io.print(i);
->	i:= i*2;
->	b:= bat.new(:int,:int);
->	bat.insert(b,1,i);
->	io.print(b);
->	return test:= "ok";
->end test;
->user.test(1);
+mal>function test(i:int):str;
+mal>	io.print(i);
+mal>	i:= i*2;
+mal>	b:= bat.new(:int,:int);
+mal>	bat.insert(b,1,i);
+mal>	io.print(b);
+mal>	return test:= "ok";
+mal>end test;
+mal>user.test(1);
 [ 1 ]
 #-----------------#
 # h     t         # name
@@ -63,7 +63,7 @@ An illustrative session elicits the functionality offered.
 The debugger can be entered at any time using the call mdb.start().
 An overview of the available commands is readily available.
 @example
->mdb.start();
+mal>mdb.start();
 #mdb !end main;
 mdb>help
 	next             -- Advance to next statement
@@ -110,7 +110,7 @@ MAL function, as shown by issuing the list command.
 A more detailed listing shows the binding to the C-routine
 and the result of type resolution.
 @example
->mdb.start();
+mal>mdb.start();
 #end main;
 mdb>l
 function user.main():int;
@@ -147,7 +147,7 @@ await for commands. The default operation is to step through
 the execution using the 'next' ('n') or 'step' ('s) commands,
 as shown below.
 @example
->user.test(1);
+mal>user.test(1);
 #    user.test(1);
 mdb>n
 #    io.print(i);
@@ -197,10 +197,10 @@ a [module.]function name, or a MAL line number (#<number>).
 The snippet below illustrates the reaction to set a break point
 on assignment to variable 'i'. 
 @example
->mdb.start();
+mal>mdb.start();
 #end main;
 mdb>
->user.test(1);
+mal>user.test(1);
 #    user.test(1);
 mdb>break i
 breakpoint on 'i' not set
@@ -319,17 +319,17 @@ Using a boolean argument makes it easy to control the (performance) trace
 at run time. The following snippet shows the effect of patching
 the test case.
 @example
->function test(i:int):str;
->	mdb.setTrace(true);
->	io.print(i);
->	i:= i*2;
->	b:= bat.new(:int,:int);
->	bat.insert(b,1,i);
->	io.print(b);
->	mdb.setTrace(false);
->	return test:= "ok";
->end test;
->user.test(1);
+mal>function test(i:int):str;
+mal>	mdb.setTrace(true);
+mal>	io.print(i);
+mal>	i:= i*2;
+mal>	b:= bat.new(:int,:int);
+mal>	bat.insert(b,1,i);
+mal>	io.print(b);
+mal>	mdb.setTrace(false);
+mal>	return test:= "ok";
+mal>end test;
+mal>user.test(1);
 #    mdb.setTrace(_3=true)
 [ 1 ]
 #    io.print(i=1)
@@ -343,7 +343,7 @@ the test case.
 [ 1,      2       ]
 #    io.print(b=<tmp_1226>)
 #   261 usec!    user.test(_2=1)
->
+mal>
 @end example
 
 The command @sc{mdb.setTimer()} toggles the performance traceing flag. 
@@ -359,17 +359,17 @@ tool @emph{valgrind} may be of help.
 The routines @sc{mdb.setFlow()}, @sc{mdb.setMemory()}, and @sc{mdb.setIO()} 
 (de-)activate the other switches.
 @example
->function test(i:int):str;
->	mdb.setTimer(true);
->	io.print(i);
->	i:= i*2;
->	b:= bat.new(:int,:int);
->	bat.insert(b,1,i);
->	io.print(b);
->	mdb.setTimer(false);
->	return test:= "ok";
->end test;
->user.test(1);
+mal>function test(i:int):str;
+mal>	mdb.setTimer(true);
+mal>	io.print(i);
+mal>	i:= i*2;
+mal>	b:= bat.new(:int,:int);
+mal>	bat.insert(b,1,i);
+mal>	io.print(b);
+mal>	mdb.setTimer(false);
+mal>	return test:= "ok";
+mal>end test;
+mal>user.test(1);
 #     6 usec#    mdb.setTimer(_3=true)
 [ 1 ]
 #    43 usec#    io.print(i=1)
@@ -412,20 +412,26 @@ The top stack frame is accessed using @sc{mdb.getStackFrame()}.
 Debugging a running MAL process is simplified with a few
 hooks in the kernel. It is illustrated with a short example.
 
-First open a client connection with the user using MAL as
+First open a client connection using MAL as
 preferred language. Then the state of the system can be inspected,
 in particular, the clients active can be looked up.
 @example
-> b:= clients.getLogins();
-> c:= clients.getUsers();
-> io.print(b,c);
+mal>b:= clients.getLogins();
+mal>c:= clients.getUsers();
+mal>io.print(b,c);
+#-------------------------------------------------#
+# client        login                           users     # name
+# int   str                             str       # type
+#-------------------------------------------------#
+[ 0,      "Thu Feb  7 15:57:08 2008",     "0"     ]
+[ 1,      "Thu Feb  7 15:57:11 2008",     "0"     ]
 @end example
 Locate the process you are interested in and obtain its identifier,
 say N (the first column in the list above).
 The next step is to gracefully put the running process into
 debugging mode without jeopardizing the application running.
 @example
-> clients.suspend(N);
+mal> clients.suspend(N);
 @end example
 As soon as the next MAL instruction of process N starts 
 the target process is put to sleep and the debugger gains

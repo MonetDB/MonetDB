@@ -40,7 +40,7 @@ address BOXdestroy
 comment "Destroy the box.";
 pattern take(bnme:str, vnme:str):any_1
 address BOXtake
-comment "Locates the typed value in the box.";
+comment "Locate the typed value in the box.";
 pattern deposit(bname:str,name:str,v:any_1):void 			
 address BOXdeposit
 comment "Enter a new value into the box.";

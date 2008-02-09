@@ -23,7 +23,7 @@ module constraints;
 
 command emptySet(b:bat[:oid,:any_2]):void
 address CemptySet
-comment "Check if the bat is empty";
+comment "Check if the BAT is empty.";
 
 @h
 #ifndef _CONSTRAINTS_H
