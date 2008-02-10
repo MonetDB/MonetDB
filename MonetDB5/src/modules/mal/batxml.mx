@@ -33,43 +33,43 @@ we may postpone string contstruction until it is really needed.
 
 command xml.xml(src:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLstr2xml
-comment "Cast the string to an xml compliant string";
+comment "Cast the string to an xml compliant string.";
 
 command xml.str(src:bat[:oid,:xml]):bat[:oid,:str]
 address BATXMLxml2str
-comment "Cast the string to an xml compliant string";
+comment "Cast the string to an xml compliant string.";
 
 command xml.document(src:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLdocument
-comment "Parse the string as a document";
+comment "Parse the string as an XML document.";
 
 command xml.content(src:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLcontent
-comment "Parse the string as a document";
+comment "Parse the string as an XML document.";
 
 command xml.tag(nme:str,val:bat[:oid,:xml]):bat[:oid,:xml]
 address BATXMLtag
-comment "Routine to put element brackets around an XML value";
+comment "Put element brackets around an XML value.";
 
 command xml.comment(val:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLcomment
-comment "Construct an comment struction ";
+comment "Create an XML comment element.";
 
 command xml.parse(val:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLparse
-comment "Parse the XML document or element string values ";
+comment "Parse the XML document or element string values. ";
 
 command xml.serialize(val:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLxml2str
-comment "Serialize the XML object to a string";
+comment "Serialize the XML object to a string.";
 
 command xml.text(val:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLxml2str
-comment "Serialize the XQuery object to a string";
+comment "Serialize the XML object to a string.";
 
 command xml.xquery(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
 address BATXMLxquery
-comment "Execute the XQuery against the elements";
+comment "Execute the XQuery against the elements.";
 
 #todo
 #command xml.table(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
@@ -78,51 +78,51 @@ comment "Execute the XQuery against the elements";
 
 command xml.pi(operator:str, ret:bat[:oid,:xml]):bat[:oid,:xml]
 address XMLpi
-comment "Call the processing instruction";
+comment "Call the XML processing instruction.";
 
 command xml.attribute(name:str, val:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLattribute
-comment "Construct an attribute value pair";
+comment "Construct an attribute value pair.";
 
 command xml.element(name:str, s:bat[:oid,:xml]) :bat[:oid,:xml]
 address BATXMLtag
-comment "The basic building block for XML elements are namespaces, attributes and a sequence of xml elements. The name space and the attributes may be left unspecified."; 
+comment "The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified."; 
 
 command xml.options(tag:str, option:str,left:bat[:oid,:xml]):bat[:oid,:xml]
 address BATXMLoptions
-comment "Create the components including NULL conversions";
+comment "Create the components including NULL conversions.";
 
 command xml.element(name:str, ns:xml, attr:xml, s:bat[:oid,:xml]):bat[:oid,:xml]
 address BATXMLelement
-comment "The basic building block for XML elements are namespaces, attributes and a sequence of xml elements. The name space and the attributes may be left unspecified(=nilt).";
+comment "The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified(=nil).";
 
 command xml.concat(left:bat[:oid,:xml],right:bat[:oid,:xml] ):bat[:oid,:xml]
 address BATXMLconcat
-comment "Concatenate the xml values";
+comment "Concatenate the XML values.";
 
 pattern xml.forest(val:bat[:oid,:xml]...):bat[:oid,:xml]
 address BATXMLforest
-comment "Construct an element list";
+comment "Construct an element list.";
 
 command xml.agg(val:bat[:oid,:xml],grp:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:xml]
 address BATXMLagg3
-comment "Aggregate the XML values over grouping specified";
+comment "Aggregate the XML values over groups specified.";
 
 command xml.agg(val:bat[:oid,:xml],grp:bat[:oid,:oid]):bat[:oid,:xml]
 address BATXMLagg
-comment "Aggregate the XML values over grouping specified";
+comment "Aggregate the XML values over groups specified.";
 
 command xml.agg(val:bat[:oid,:xml]):bat[:oid,:xml]
 address BATXMLgroup
-comment "Aggregate the XML values over grouping specified";
+comment "Aggregate the XML values over groups specified.";
 
 command xml.root(val:bat[:oid,:xml], version:str, standalone:str):bat[:oid,:xml]
 address BATXMLroot
-comment "Contruct the root nodes";
+comment "Contruct the root nodes.";
 
 command xml.isdocument(val:bat[:oid,:str]):bat[:oid,:bit]
 address BATXMLisdocument
-comment "Validate the string as a document";
+comment "Validate the string as a XML document.";
 
 module batcalc;
 command xml(src:bat[:oid,:str]):bat[:oid,:xml] address BATXMLstr2xml;

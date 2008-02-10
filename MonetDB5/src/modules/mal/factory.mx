@@ -25,27 +25,27 @@ module factory;
 
 command getPlants()(mod:bat[:oid,:str], fcn:bat[:oid,:str])
 address FCTgetPlants 
-comment "Retrieve the names for all active factories";
+comment "Retrieve the names for all active factories.";
 
 command getCaller():int
 address FCTgetCaller
-comment "Retrieve the unique identity of the factory caller";
+comment "Retrieve the unique identity of the factory caller.";
 
 command getOwners():bat[:oid,:str]
 address FCTgetOwners
-comment "Retrieve the factory owners table";
+comment "Retrieve the factory owners table.";
 
 command getArrival():bat[:oid,:timestamp]
 address FCTgetArrival
-comment "Retrieve the time stamp the last call was made";
+comment "Retrieve the time stamp the last call was made.";
 
 command getDeparture():bat[:oid,:timestamp]
 address FCTgetDeparture
-comment "Retrieve the time stamp the last answer was returned";
+comment "Retrieve the time stamp the last answer was returned.";
 
 command shutdown(m:str, f:str):void
 address FCTshutdown
-comment "Close a factory";
+comment "Close a factory.";
 @-
 @{
 @include prelude.mx

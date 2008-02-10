@@ -32,7 +32,7 @@ access the runtime stack to (push)pull the values needed.
 
 pattern bat.new(ht:any_1, tt:any_2, b:bat[:any_3,:any_4]) :bat[:any_1,:any_2] 	
 address CMDBATclone
-comment "Creates a new empty transient BAT by cloning another";
+comment "Creates a new empty transient BAT by cloning another.";
 pattern bat.new(ht:any_1, tt:any_2) :bat[:any_1,:any_2] 	
 address CMDBATnew
 comment "Creates a new empty transient BAT,
@@ -54,28 +54,28 @@ pattern bat.new(b:bat[:any_1,:any_2], size:lng) :bat[:any_1,:any_2]
 address CMDBATnewDerived;
 command bat.new(nme:str):bat[:any_1,:any_2]
 address CMDBATderivedByName
-comment "Localize a bat by name and produce a variant";
+comment "Localize a bat by name and produce a clone.";
 
 command bat.reduce(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address CMDBATreduce
-comment "Designate a BAT for which auxillary structures can be dropped";
+comment "Drop auxillary BAT structures.";
 command bat.flush(b:bat[:any_1,:any_2]):void
 address CMDBATflush
-comment "Designate a BAT as not needed anymore";
+comment "Designate a BAT as not needed anymore.";
 pattern bat.setGarbage(b:bat[:any_1,:any_2]):void
 address CMDBATsetGarbage
-comment "Designate a BAT as garbage";
+comment "Designate a BAT as garbage.";
 
 pattern bat.unpack(b:bat[:any_1,:any_2])(h:any_1,t:any_2)
 address CMDbatunpack
-comment "Extract the first tuple from a bat";
+comment "Extract the first tuple from a BAT.";
 pattern bat.pack(h:any_1,t:any_2):bat[:any_1,:any_2]
 address CMDbatpack
-comment "Pack a pair into a BAT";
+comment "Pack a pair of values into a BAT.";
 
 pattern bat.setBase(b:bat[:any_1,:any_2],c:bat[:any_1,:any_2]...):void
 address CMDsetBase
-comment "Give the non-empty BATs consecutive oid bases";
+comment "Give the non-empty BATs consecutive oid bases.";
                                                                                 
 @{
 @{

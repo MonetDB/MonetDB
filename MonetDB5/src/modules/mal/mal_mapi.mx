@@ -40,10 +40,10 @@ address SERVERlisten_default
 comment "Start a Mapi server with the default settings.";
 command listen(port:int):int
 address SERVERlisten_port
-comment "Start a Mapi server on the given port";
+comment "Start a Mapi listener on the port given.";
 command listen(port:int, maxusers:int):int
 address SERVERlisten2
-comment "Start a Mapi server";
+comment "Start a Mapi listener.";
 
 command listen(port:int, maxusers:int, cmd:str):int
 address SERVERlisten3
@@ -62,73 +62,73 @@ comment "Start the Mapi listener on <port> for <maxusers> using SSL.
 
 command stop():void
 address SERVERstop
-comment "Terminate connection listeners"; 
+comment "Terminate connection listeners."; 
 
 command suspend():void
 address SERVERsuspend
-comment "Suspend accepting connections";
+comment "Suspend accepting connections.";
 
 command resume():void
 address SERVERresume
-comment "Resume connection listeners";
+comment "Resume connection listeners.";
 
 command malclient(in:streams, out:streams):void
 address SERVERclient
-comment "Start a Mapi client.";
+comment "Start a Mapi client for a particular stream pair.";
 
 
 command trace(mid:int,flag:int):void
 address SERVERtrace
-comment "Toggle the Mapi library tracer";
+comment "Toggle the Mapi library debug tracer.";
 
 command reconnect(host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERreconnectWithoutAlias
-comment "Re-establish connection with a remote mserver";
+comment "Re-establish connection with a remote mserver.";
 
 command reconnect(host:str, port:int, db_alias:str, usr:str, passwd:str,lang:str):int
 address SERVERreconnectAlias
-comment "Re-establish connection with a remote mserver";
+comment "Re-establish connection with a remote mserver.";
 
 command reconnect(mid:int):void
 address SERVERreconnect
-comment "Re-establish a connection";
+comment "Re-establish a connection.";
 
 command connect(host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERconnect
-comment "Establish connection with a remote mserver";
+comment "Establish connection with a remote mserver.";
 
 command connect_ssl(host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERconnectssl
 comment "Establish connection with a remote mserver using the
-secure socket layer";
+secure socket layer.";
 
 command disconnect(dbalias:str):int
 address SERVERdisconnectWithAlias
-comment "Close connection with a remote mserver";
+comment "Close connection with a remote Mserver.";
 
 command disconnect():int
 address SERVERdisconnectALL
-comment "Close connections with all remote mserver";
+comment "Close connections with all remote Mserver.";
 
 command setAlias(dbalias:str)
 address SERVERsetAlias
-comment "Give the channel a logical name";
+comment "Give the channel a logical name.";
 
 command lookup(dbalias:str):int
 address SERVERlookup
-comment "Retrieve the connection identifier";
+comment "Retrieve the connection identifier.";
 
 command disconnect(mid:int):void
 address SERVERdisconnect
-comment "Terminate the session";
+comment "Terminate the session.";
 
 command destroy(mid:int):void
 address SERVERdestroy
-comment "Destroy the handle";
+comment "Destroy the handle for an Mserver.";
 
 command ping(mid:int):int
 address SERVERping
-comment "Test availability of server";
+comment "Test availability of an Mserver.";
 
 command query(mid:int, qry:str):int
 address SERVERquery
@@ -136,75 +136,75 @@ comment "Sent the query for execution";
 
 command query_handle(mid:int, qry:str):int
 address SERVERquery_handle
-comment "Sent the query for execution";
+comment "Sent the query for execution.";
 
 pattern query_array(mid:int, qry:str, arg:str...):int
 address SERVERquery_array
-comment "Sent the query for execution replacing '?' by arguments";
+comment "Sent the query for execution replacing '?' by arguments.";
 
 command prepare(mid:int, qry:str):int
 address SERVERprepare
-comment "Prepare a query for execution";
+comment "Prepare a query for execution.";
 
 command finish(hdl:int):int
 address SERVERfinish
-comment "Remove all remaining answers";
+comment "Remove all remaining answers.";
 
 command get_field_count(hdl:int):int
 address SERVERget_field_count
-comment "Return number of fields";
+comment "Return number of fields.";
 
 command get_row_count(hdl:int):int
 address SERVERget_row_count
-comment "Return number of rows";
+comment "Return number of rows.";
 
 command fetch_row(hdl:int):int
 address SERVERrows_affected
-comment "Return number of affected rows";
+comment "Return number of affected rows.";
 
 command fetch_row(hdl:int):int
 address SERVERfetch_row
-comment "Retrieve the next row for analysis";
+comment "Retrieve the next row for analysis.";
 
 command fetch_all_rows(hdl:int):int
 address SERVERfetch_all_rows
-comment "Retrieve all rows into the cache";
+comment "Retrieve all rows into the cache.";
 
 command fetch_field(hdl:int,fnr:int):str
 address SERVERfetch_field_str
-comment "Retrieve a single field";
+comment "Retrieve a single field.";
 
 command fetch_field(hdl:int,fnr:int):int
 address SERVERfetch_field_int
-comment "Retrieve a single int field";
+comment "Retrieve a single int field.";
 
 command fetch_field(hdl:int,fnr:int):lng
 address SERVERfetch_field_lng
-comment "Retrieve a single lng field";
+comment "Retrieve a single lng field.";
 
 command fetch_field(hdl:int,fnr:int):sht
 address SERVERfetch_field_sht
-comment "Retrieve a single sht field";
+comment "Retrieve a single sht field.";
 
 command fetch_field(hdl:int,fnr:int):void
 address SERVERfetch_field_void
-comment "Retrieve a single void field";
+comment "Retrieve a single void field.";
 
 command fetch_field(hdl:int,fnr:int):oid
 address SERVERfetch_field_oid
-comment "Retrieve a single void field";
+comment "Retrieve a single void field.";
 
 command fetch_field(hdl:int,fnr:int):chr
 address SERVERfetch_field_chr
-comment "Retrieve a single chr field";
+comment "Retrieve a single chr field.";
 
 command fetch_field_array(hdl:int):bat[:int,:str]
 address SERVERfetch_field_bat
-comment "Retrieve all fields for a row";
+comment "Retrieve all fields for a row.";
 
 command fetch_line(hdl:int):str
 address SERVERfetch_line
-comment "Retrieve a complete line";
+comment "Retrieve a complete line.";
 
 command fetch_reset(hdl:int):int
 address SERVERfetch_reset
@@ -212,50 +212,50 @@ comment "Reset the cache read line.";
 
 command next_result(hdl:int):int
 address SERVERnext_result
-comment "Go to next result set";
+comment "Go to next result set.";
 
 command error(mid:int):int
 address SERVERerror
-comment "Check for an error in the communication";
+comment "Check for an error in the communication.";
 
 command getError(mid:int):str
 address SERVERgetError
-comment "Get error message";
+comment "Get error message.";
 
 command explain(mid:int):str
 address SERVERexplain
-comment "Turn the error seen into a string";
+comment "Turn the error seen into a string.";
 
 pattern put(mid:int, nme:str, val:any_1):void
 address SERVERput
-comment "Send a value to a remote site";
+comment "Send a value to a remote site.";
 
 pattern put(nme:str, val:any_1):str
 address SERVERputLocal
-comment "Prepare sending a value to a remote site";
+comment "Prepare sending a value to a remote site.";
 
 pattern rpc(key:int,qry:str...):any
 address SERVERmapi_rpc_single_row
-comment "Sent a simple query for execution and fetch result";
+comment "Sent a simple query for execution and fetch result.";
 
 pattern rpc(key:int,qry:str):bat[:any_1,:any_2]
 address SERVERmapi_rpc_bat;
 
 command rpc(key:int,qry:str):void
 address SERVERquery
-comment "Sent a simple query for execution";
+comment "Sent a simple query for execution.";
 
 pattern bind(key:int,rschema:str,rtable:str,rcolumn:str,i:int):bat[:any_1,:any_2]
 address SERVERbindBAT
-comment "Bind a remote variable to a local one";
+comment "Bind a remote variable to a local one.";
 
 pattern bind(key:int,rschema:str,rtable:str,i:int):bat[:any_1,:any_2]
 address SERVERbindBAT
-comment "Bind a remote variable to a local one";
+comment "Bind a remote variable to a local one.";
 
 pattern bind(key:int,remoteName:str):bat[:any_1,:any_2]
 address SERVERbindBAT
-comment "Bind a remote variable to a local one";
+comment "Bind a remote variable to a local one.";
 
 
 mapi.listen();

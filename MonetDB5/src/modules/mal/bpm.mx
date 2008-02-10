@@ -29,11 +29,11 @@ Consider we want to reorganize R:bat[:oid,:int] into two partitions,
 based on splitting by tail value. 
 The following MAL program illustrates the snippet of actions needed:
 @example
-	bpm.open();
-	Ralias:= bpm.deposit("myversion",R:bat[:oid,:int]);
-	bpm.rangePartition(Ralias,nil:int,100);
-	bpm.rangePartition(Ralias,101,200);
-	bpm.close();
+bpm.open();
+Ralias:= bpm.deposit("myversion",R:bat[:oid,:int]);
+bpm.rangePartition(Ralias,nil:int,100);
+bpm.rangePartition(Ralias,101,200);
+bpm.close();
 @end example
 The command @sc{bpm.deposit} registers a BAT as one 
 for which a partitioned copy is required.
@@ -48,11 +48,11 @@ on the source BAT first.
 The partition manager also supports hash-based partitioning.
 Its argument is the number of hash bucket bits.
 @example
-	bpm.open();
-	Rev:= bat.reverse(R:bat[:oid,:int]);
-	Ralias:= bpm.deposit("myHashVersion",Rev);	# creates side effects
-	bpm.hashPartition(Ralias,2);
-	bpm.close();
+bpm.open();
+Rev:= bat.reverse(R:bat[:oid,:int]);
+Ralias:= bpm.deposit("myHashVersion",Rev);	# creates side effects
+bpm.hashPartition(Ralias,2);
+bpm.close();
 @end example
 This example creates a hash-partition based on the head.
 
@@ -67,7 +67,7 @@ fragments on the same site.
 Assume a relation R(A,B) which is already partitioned on A
 the derived fragmentation on the head is enforced with
 @example
-	bpm.derivePartition(B,A);
+bpm.derivePartition(B,A);
 @end example
 @- Using partitions
 The partitioned BAT can be used in two ways. A query plan can be
@@ -79,17 +79,17 @@ The former is illustrated with the snippet to select part of
 a partitioned BAT. In this example we collect the partial
 results in the accumulator BAT U.
 @example
-	bpm.open();
-	Ralias:bat[:oid,:int]:= bpm.take("myversion");
-	U:= bat.new(:oid,:int);
+    bpm.open();
+    Ralias:bat[:oid,:int]:= bpm.take("myversion");
+    U:= bat.new(:oid,:int);
 barrier Rp:= bpm.newIterator(Ralias);
-	...
-	t:= algebra.select(Rp,0,100);
-	U:= algebra.union(tu,t);
-	...
-	redo Rp:= bpm.hasMoreElements(Ralias);
+    ...
+    t:= algebra.select(Rp,0,100);
+    U:= algebra.union(tu,t);
+    ...
+    redo Rp:= bpm.hasMoreElements(Ralias);
 exit Rp;
-	bpm.close();
+    bpm.close();
 @end example
 
 The properties of the partitioned BATs are particularly useful during query
@@ -100,21 +100,21 @@ the catalog as part of a preparatory optimizer step.
 To illustrate, the same problem handled by an optimizer that produces the plan
 based on a known number of partitions:
 @example
-	bpm.open();
-	R:bat[:oid,:int]:= bpm.take("myversion"); # get the partition alias
-	optimizer.mergetable();
-	T:= algebra.select(R,0,100);
+    bpm.open();
+    R:bat[:oid,:int]:= bpm.take("myversion"); # get the partition alias
+    optimizer.mergetable();
+    T:= algebra.select(R,0,100);
 @end example
 is translated to the plan:
 @example
-	bpm.open();
-	R:bat[:oid,:int]:= bpm.take("myversion"); # get the partition alias
-	R0:bat[:oid,:int]:= bpm.take(R,0, nil:oid,nil:oid, 0,100);
-	R1:bat[:oid,:int]:= bpm.take(R,1, nil:oid,nil:oid, 101,200);
-	R2:bat[:oid,:int]:= bpm.take(R,2, nil:oid,nil:oid, 201,nil:int);
-	R:= mat.new(R0,R1,R2);
-	T:= algebra.select(R,0,100);
-	optimizer.multitable();
+    bpm.open();
+    R:bat[:oid,:int]:= bpm.take("myversion"); # get the partition alias
+    R0:bat[:oid,:int]:= bpm.take(R,0, nil:oid,nil:oid, 0,100);
+    R1:bat[:oid,:int]:= bpm.take(R,1, nil:oid,nil:oid, 101,200);
+    R2:bat[:oid,:int]:= bpm.take(R,2, nil:oid,nil:oid, 201,nil:int);
+    R:= mat.new(R0,R1,R2);
+    T:= algebra.select(R,0,100);
+    optimizer.multitable();
 @end example
 In this translation Ri also gets the properties of the BATs.
 It is now up to the @sc{mat} optimizer to decide about
@@ -127,12 +127,12 @@ update BATs, as already performed in the SQL code generator.
 Once the transaction is commited, the updates are propagated
 (in parallel) to all partitions.
 @example
-	bpm.open();
-	Ralias:bat[:oid,:int] := bpm.take("myversion"); 
-	bpm.insert(Ralias, Rinsert);	# handle pending inserts
-	bpm.delete(Ralias, Rdelete);	# handle pending deletes
-	bpm.replace(Ralias, Rold, Rnew);	# handle pending updates
-	bpm.close();
+    bpm.open();
+    Ralias:bat[:oid,:int] := bpm.take("myversion"); 
+    bpm.insert(Ralias, Rinsert);# handle pending inserts
+    bpm.delete(Ralias, Rdelete);# handle pending deletes
+    bpm.replace(Ralias, Rold, Rnew);# handle pending updates
+    bpm.close();
 @end example
 The @sc{replace} operator works on the assumption that
 the head of @sc{Rold} and @sc{Rnew} is unique.
@@ -152,23 +152,23 @@ buns to the correct bats.
 
 In the previous plan for this becomes
 @example
-	bpm.open();
-	Tmp := bpm.deposit("tmp",:bat[:oid,:int]);
-	bpm.rangePartition(tmp,nil:int,100);
-	bpm.rangePartition(tmp,101,nil:int);
+    bpm.open();
+    Tmp := bpm.deposit("tmp",:bat[:oid,:int]);
+    bpm.rangePartition(tmp,nil:int,100);
+    bpm.rangePartition(tmp,101,nil:int);
 
-	Ralias:bat[:oid,:int]:= bpm.take("myversion"); # get the partition alias
-	R0:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 0,100);
-	T0:= algebra.select(R0,0,100);
-	bpm.insert(Tmp,T0);
+    Ralias:bat[:oid,:int]:= bpm.take("myversion"); # get the partition alias
+    R0:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 0,100);
+    T0:= algebra.select(R0,0,100);
+    bpm.insert(Tmp,T0);
 
-	R1:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 101,200);
-	T1:= algebra.select(R1,0,100);
-	bpm.insert(Tmp,T1);
+    R1:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 101,200);
+    T1:= algebra.select(R1,0,100);
+    bpm.insert(Tmp,T1);
 
-	R2:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 201,nil:int);
-	T2:= algebra.select(R2,0,100);
-	bpm.insert(Tmp,T2);
+    R2:bat[:oid,:int]:= bpm.take("myversion", nil:oid,nil:oid, 201,nil:int);
+    T2:= algebra.select(R2,0,100);
+    bpm.insert(Tmp,T2);
 @end example
 Note that a symbolic optimizer can reduce this plan to a small snippet.
 
@@ -181,28 +181,28 @@ For temporary results the range bounds need not be
 stored in the BPM catalog. Instead, the mat approach could
 be used to reduce the plan size.
 @example
-	bpm.open();
-	Ralias:= bpm.take("myversion",:bat[:oid,:int]); # get the partition alias
-	R0@{hlow=nil:oid,hhigh=nil:oid,tlow=nil:int,thigh=100@}:= bpm.take(Ralias, 0);
-	T0:=algebra.select(R0,0,100);
+    bpm.open();
+    Ralias:= bpm.take("myversion",:bat[:oid,:int]); # get the partition alias
+    R0@{hlow=nil:oid,hhigh=nil:oid,tlow=nil:int,thigh=100@}:= bpm.take(Ralias, 0);
+    T0:=algebra.select(R0,0,100);
 
-	R1@{hlow=nil:oid,hhigh=nil:oid,tlow=101,thigh=200@}:= bpm.take(Ralias, 1);
-	T1:= algebra.select(R1,0,100);
+    R1@{hlow=nil:oid,hhigh=nil:oid,tlow=101,thigh=200@}:= bpm.take(Ralias, 1);
+    T1:= algebra.select(R1,0,100);
 
-	R2@{hlow=nil:oid,hhigh=nil:oid,tlow=201,thigh=nil:int@}:=  bpm.take(Ralias, 2);
-	R:= mat.new(T0,T1,T2);
-	T2:=algebra.select(R2,0,100);
+    R2@{hlow=nil:oid,hhigh=nil:oid,tlow=201,thigh=nil:int@}:=  bpm.take(Ralias, 2);
+    R:= mat.new(T0,T1,T2);
+    T2:=algebra.select(R2,0,100);
 @end example
 
 @- Partition iterators
 The default strategy for an optimizer is to replace a
 reference to a partitioned BAT by an iterator.
 @example
-	l:= bpm.new();
+    l:= bpm.new();
 barrier Elm:bat[:oid,:int]:= bpm.newIterator(Ralias);
-	t:= algebra.select(Elm,0,20);
-	bpm.addPartition(l,t);
-	redo Elm:bat[:oid,:int]:= bpm.newIterator(Ralias);
+    t:= algebra.select(Elm,0,20);
+    bpm.addPartition(l,t);
+    redo Elm:bat[:oid,:int]:= bpm.newIterator(Ralias);
 exit Elm;
 @end example
 Variations on this theme are iterators that search for
@@ -217,7 +217,7 @@ A few operators relevant for the SQL environment will be added.
 The select operation can be overloaded in the BPM to
 improve processing further. For example, the operation
 @example
-	t := bpm.select(Ralias,0,100);
+    t := bpm.select(Ralias,0,100);
 @end example
 extracts portions of all three partitions and creates 
 a non-partitioned result BAT. 
@@ -240,19 +240,19 @@ module bpm;
 
 command open():void
 address BPMopen
-comment "Locate and open the BAT partition box";
+comment "Locate and open the BAT partition box.";
 
 command close():void
 address BPMclose
-comment "Save and close the BAT partition box ";
+comment "Save and close the BAT partition box.";
 
 command destroy():void
 address BPMdestroy
-comment "Destroy the BAT partition box";
+comment "Destroy the BAT partition box.";
 
 command deposit(nme:str,b:bat[:oid,:any_2]) :bat[:oid,:any_2]
 address BPMdeposit
-comment "Create a new partitioned BAT by name";
+comment "Create a new partitioned BAT by name.";
 
 @-
 Temporary results can be administered as partitioned tables as well.
@@ -260,33 +260,33 @@ There is no a priori need to have the partitioned non-overlapping.
 @mal
 pattern new(ht:any_1,tt:any_2):bat[:any_1,:any_2]
 address BPMnew
-comment "Create a temporary partitioned table";
+comment "Create a temporary partitioned table.";
 
 command fold(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address BPMfold
-comment "Collapse the partitioned BAT into a single BAT";
+comment "Collapse the partitioned BAT into a single BAT.";
 
 command unfold(alias:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BPMunfold
-comment "Unfold a BAT into a partitioned one";
+comment "Unfold a BAT into a partitioned one.";
 
 command garbage(b:bat[:any_1,:any_2]):void
 address BPMgarbage
-comment "Remove a temporary partitioned table";
+comment "Remove a temporary partitioned table.";
 
 command pieces(b:bat[:any_1,:any_2]):int
 address BPMpieces
-comment "Count the number of partitions";
+comment "Count the number of partitions.";
 
 command count(b:bat[:any_1,:any_2]):int
 address BPMcount;
 command emptySet(b:bat[:any_1,:any_2]):void
 address BPMemptySet
-comment "Implement the constraints test efficiently";
+comment "Implement the empty set constraints test efficiently.";
 
 command sortTail(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address BPMsortTail
-comment "Implement the sort on tail for partitioned BAT efficiently";
+comment "Implement the sort on tail for partitioned BAT efficiently.";
 @-
 The partitioning is handled inside the module.
 If the alias BAT denotes an existing partition, it is
@@ -294,38 +294,38 @@ further broken into pieces.
 @mal
 command rangePartition(pb:bat[:any_1,:any_2], rl:any_2, rh:any_2):void
 address BPMrange
-comment "Create a range partition on a BAT";
+comment "Create a range partition on a BAT.";
 
 command rangePartition(pb:bat[:any_1,:any_2], pv:bat[:oid,:any_2]):void
 address BPMrangeVector
-comment "Create the partitions based on a range vector";
+comment "Create the partitions based on a range vector.";
 
 command rangePartitionSort(pb:bat[:any_1,:any_2], pv:bat[:oid,:any_2]):void
 address BPMrangeVectorSort
-comment "Create the partitions based on a range vector";
+comment "Create the partitions based on a range vector.";
 
 command sortPartitions(b:bat[:any_1,:any_2]):void
 address BPMsortPartitions
-comment "Sort all partitions of alias b on the tail";
+comment "Sort all partitions of alias b on the tail.";
 
 command hashPartitions(b:bat[:any_1,:any_2]):void
 address BPMhashPartitions
-comment "Ensure all partitions have a hash in the head";
+comment "Ensure all partitions have a hash in the head.";
 
 command partition(pb:bat[:any_1,:any_2], val:any_2):void
 address BPMsplitpartition
-comment "Split all partitions that cover the split value";
+comment "Split all partitions that cover the split value.";
 
 command addPartition(b:bat[:any_1,:any_2],s:bat[:any_1,:any_2]):void
 address BPMaddPartition
-comment "Add a partition to a fragmented temporary table";
+comment "Add a partition to a fragmented temporary table.";
 command addPartition(b:bat[:any_1,:any_2],s:BAT):void
 address BPMaddPartition
-comment "Add a partition to a fragmented temporary table";
+comment "Add a partition to a fragmented temporary table.";
 
 command hashPartition(pb:bat[:any_1,:any_2], slots:int):void
 address BPMhash
-comment "Create a hash partition on a BAT";
+comment "Create a hash partition on a BAT.";
 command derivePartition(pb:bat[:any_1,:any_2], 
 	src:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address BPMderived
@@ -333,45 +333,45 @@ comment "Create a derived fragmentation over the head using src.";
 
 command adapt(s:bat[:any_1,:any_2], low:any_2, hgh:any_2, rs:bat[:any_1,:any_3], pol:int) :bat[:any_1,:any_2]
 address BPMadapt
-comment "Re-organize segment s using the selection (val1,val2) stored in bat rs";
+comment "Re-organize segment s using the selection (val1,val2) stored in bat rs.";
 
 
 command take(pb:int):bat[:any_1,:any_2]
 address BPMtakeIndexed
-comment "Retrieve the partition given the its index ";
+comment "Retrieve the partition given the its index.";
 command take(pb:str):bat[:any_1,:any_2]
 address BPMtake
-comment "Retrieve the alias given the name of a partitioned BAT";
+comment "Retrieve the alias given the name of a partitioned BAT.";
 
 command take(nme:str, hl:any_1, hh:any_1, tl:any_2, th:any_2) :bat[:any_1,:any_2]
 address BPMtakePartition
-comment "Retrieve a single component of a partitioned BAT by index";
+comment "Retrieve a single component of a partitioned BAT by index.";
 
 command take(nme:bat[:any_1,:any_2],idx:int, hl:any_1, hh:any_1, tl:any_2, th:any_2) :bat[:any_1,:any_2]
 address BPMtakePartitionIndexed
-comment "Retrieve a single component of a partitioned BAT by index";
+comment "Retrieve a single component of a partitioned BAT by index.";
 
 command insert(pb:bat[:any_1,:any_2],b:bat[:any_1,:any_2]) :void
 address BPMinsert
-comment "Insert elements into the BAT partitions";
+comment "Insert elements into the BAT partitions.";
 command delete(pb:bat[:any_1,:any_2],b:bat[:any_1,:any_2]) :void
 address BPMdelete
-comment "Delete elements from the BAT partitions";
+comment "Delete elements from the BAT partitions.";
 command replace(pb:bat[:any_1,:any_2],old:bat[:any_1,:any_2],
 		nwe:bat[:any_1,:any_2]) :void
 address BPMreplace
-comment "Replace the content of the BAT partitions";
+comment "Replace the content of the BAT partitions.";
 
 command getNames():bat[:oid,:str]
 address BPMgetNames
-comment "Retrieve the names of all known partitioned BATs";
+comment "Retrieve the names of all known partitioned BATs.";
 
 command discard(alias:bat[:any_1,:any_2]) :void
 address BPMdiscard
-comment "Release a partitioned BAT from the box";
+comment "Release a partitioned BAT from the box.";
 command discard() :void
 address BPMdiscardAll
-comment "Release all partitioned BATs";
+comment "Release all partitioned BATs.";
 
 @-
 In most situations we would like to iterator over

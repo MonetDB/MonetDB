@@ -30,7 +30,7 @@ and @emph{ discard} elements.
 Any BAT B created can be brought under this scheme with the name N.
 The association N->B is only maintained in the box administration
 and not reflected in the BAT descriptor.
-In particular, taking a  BATobject out of the box leads to a private 
+In particular, taking a  BAT object out of the box leads to a private 
 copy to isolate the user from concurrent updates on the underlying store.
 Upon releasing it, the updates are merged with the master copy [todo].
 
@@ -51,7 +51,7 @@ address CMDbbpdestroy
 comment "Destroy the box";
 pattern take(name:str) :bat[:any_1,:any_2] 
 address CMDbbptake
-comment "Load a particular bat";
+comment "Load a particular bat.";
 pattern deposit(name:str,v:bat[:any_1,:any_2]) :void 			
 address CMDbbpdeposit
 comment "Enter a new bat into the bbp box.";
@@ -60,10 +60,10 @@ address CMDbbpbindDefinition
 comment "Relate a logical name to a physical BAT in the buffer pool.";
 pattern commit():void 	
 address CMDbbpReleaseAll
-comment "Commit updates for this client";
+comment "Commit updates for this client.";
 pattern releaseAll():void 	
 address CMDbbpReleaseAll
-comment "Commit updates for this client";
+comment "Commit updates for this client.";
 pattern release(name:str,val:bat[:any_1,:any_2]) :void 			
 address CMDbbprelease
 comment "Commit updates and release this BAT.";
@@ -72,24 +72,24 @@ address CMDbbpreleaseBAT
 comment "Remove the BAT from further consideration";
 pattern destroy(b:bat[:any_1,:any_2]):void
 address CMDbbpdestroyBAT1
-comment "BAT removal at session end";
+comment "Schedule a BAT for removal at session end.";
 pattern destroy(b:bat[:any_1,:any_2],immediate:bit)
 address CMDbbpdestroyBAT
-comment "Schedule a BAT for removal at session end or immediately";
+comment "Schedule a BAT for removal at session end or immediately.";
 pattern toString(name:str):str 	
 address CMDbbptoStr
-comment "Get the string representation of an element in the box";
+comment "Get the string representation of an element in the box.";
 pattern discard(name:str):void 
 address CMDbbpdiscard
-comment "Remove the BAT from the box";
+comment "Remove the BAT from the box.";
 
 pattern iterator(nme:str):lng 	
 address CMDbbpiterator
-comment "Locates the next element in the box";
+comment "Locate the next element in the box.";
 
 pattern prelude():void 
 address CMDbbpprelude
-comment "Initialize the bbp box";
+comment "Initialize the bbp box.";
 
 pattern bind(name:str):bat[:any_1,:any_2]
 address CMDbbpbind
@@ -176,7 +176,7 @@ address CMDgetBATlrefcnt
 comment "Utility for debugging MAL interpreter";
 command getDiskSpace() :int
 address CMDbbpDiskSpace
-comment "Estimate the amount of diskspace occupied by dbfarm";
+comment "Estimate the amount of disk space occupied by dbfarm";
 @-
 @{
 @include prelude.mx

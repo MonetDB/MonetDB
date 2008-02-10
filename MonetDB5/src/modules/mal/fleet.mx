@@ -184,7 +184,7 @@ module fleet;
 command registry(name:str,port:nr)
 address FLEETregistry
 comment "Take upon you to act as a localhost registry and listen
-to requests to join/leave";
+to requests to join/leave.";
 
 command join(nme:str, host:str, port:nr): str
 address FLEETjoin
@@ -193,22 +193,22 @@ It returns an alias by which the server will be known
 within the fleet.";
 
 command leave(alias:str)
-comment "Leave the fleet of servers for which you have an alias";
+comment "Leave the fleet of servers for which you have an alias.";
 
 command members(name:str):bat[:oid,:str]
-comment "Produce the alias member list of a fleet";
+comment "Produce the alias member list of a fleet.";
 
 pattern put(alias:int, nme:str, val:any_1):void
 address FLEETput
-comment "Send a value to a remote site";
+comment "Send a value to a remote site.";
 
 pattern put(nme:str, val:any_1):str
 address FLEETputLocal
-comment "Prepare sending a value to a remote site";
+comment "Prepare sending a value to a remote site.";
 
 pattern rpc(key:int,qry:str...):any
 address FLEETmapi_rpc_single_row
-comment "Sent a simple query for execution and fetch result";
+comment "Sent a simple query for execution and fetch result.";
 
 pattern rpc(key:int,qry:str):bat[:any_1,:any_2]
 address FLEETmapi_rpc_bat;
@@ -219,15 +219,15 @@ comment "Sent a simple query for execution";
 
 pattern bind(key:int,rschema:str,rtable:str,rcolumn:str,i:int):bat[:any_1,:any_2]
 address FLEETbindBAT
-comment "Bind a remote variable to a local one";
+comment "Bind a remote variable to a local one.";
 
 pattern bind(key:int,rschema:str,rtable:str,i:int):bat[:any_1,:any_2]
 address FLEETbindBAT
-comment "Bind a remote variable to a local one";
+comment "Bind a remote variable to a local one.";
 
 pattern bind(key:int,remoteName:str):bat[:any_1,:any_2]
 address FLEETbindBAT
-comment "Bind a remote variable to a local one";
+comment "Bind a remote variable to a local one.";
 
 @-
 @{
