@@ -85,14 +85,14 @@ Over..
 % . # table_name
 % element_Customer # name
 % xml # type
-% 55 # length
-[ <Customer  id="1"><!-- simple comment test -</Customer>	]
-[ <Customer  id="2"><!-- simple comment test -</Customer>	]
-[ <Customer  id="3"><!-- simple comment test -</Customer>	]
-[ <Customer  id="4"><!-- simple comment test -</Customer>	]
-[ <Customer  id="5"><!-- simple comment test -</Customer>	]
+% 57 # length
+[ <Customer  id="1"><!-- simple comment test --></Customer>	]
+[ <Customer  id="2"><!-- simple comment test --></Customer>	]
+[ <Customer  id="3"><!-- simple comment test --></Customer>	]
+[ <Customer  id="4"><!-- simple comment test --></Customer>	]
+[ <Customer  id="5"><!-- simple comment test --></Customer>	]
 
-# 17:54:53 >  
-# 17:54:53 >  Done.
-# 17:54:53 >  
+# 18:26:50 >  
+# 18:26:50 >  Done.
+# 18:26:50 >  
 
