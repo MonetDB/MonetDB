@@ -57,42 +57,42 @@ Only the standard types {\tt bte}, {\tt sht}, {\tt int}, {\tt wrd}, {\tt lng}, {
 .END bat_arith;
 
 @= operations
-@:@1_operation(bte,+,add,,0,2)@
-@:@1_operation(bte,-,sub,,0,2)@
-@:@1_operation(bte,*,mul,1,0,3)@
-@:@1_operation(bte,/,div,1,1,1)@
+@:@1_operation(bte,+,add,,0,(1|2))@
+@:@1_operation(bte,-,sub,,0,(1|8))@
+@:@1_operation(bte,*,mul,1,0,(16|32))@
+@:@1_operation(bte,/,div,1,1,16)@
 @:@1_operation(bte,%,mod,1,1,0)@
-@:@1_operation(sht,+,add,,0,2)@
-@:@1_operation(sht,-,sub,,0,2)@
-@:@1_operation(sht,*,mul,1,0,3)@
-@:@1_operation(sht,/,div,1,1,1)@
+@:@1_operation(sht,+,add,,0,(1|2))@
+@:@1_operation(sht,-,sub,,0,(1|8))@
+@:@1_operation(sht,*,mul,1,0,(16|32))@
+@:@1_operation(sht,/,div,1,1,16)@
 @:@1_operation(sht,%,mod,1,1,0)@
-@:@1_operation(int,+,add,,0,2)@
-@:@1_operation(int,-,sub,,0,2)@
-@:@1_operation(int,*,mul,1,0,3)@
-@:@1_operation(int,/,div,1,1,1)@
+@:@1_operation(int,+,add,,0,(1|2))@
+@:@1_operation(int,-,sub,,0,(1|8))@
+@:@1_operation(int,*,mul,1,0,(16|32))@
+@:@1_operation(int,/,div,1,1,16)@
 @:@1_operation(int,%,mod,1,1,0)@
-@:@1_operation(wrd,+,add,,0,2)@
-@:@1_operation(wrd,-,sub,,0,2)@
-@:@1_operation(wrd,*,mul,1,0,3)@
-@:@1_operation(wrd,/,div,1,1,1)@
+@:@1_operation(wrd,+,add,,0,(1|2))@
+@:@1_operation(wrd,-,sub,,0,(1|8))@
+@:@1_operation(wrd,*,mul,1,0,(16|32))@
+@:@1_operation(wrd,/,div,1,1,16)@
 @:@1_operation(wrd,%,mod,1,1,0)@
-@:@1_operation(lng,+,add,,0,2)@
-@:@1_operation(lng,-,sub,,0,2)@
-@:@1_operation(lng,*,mul,1,0,3)@
-@:@1_operation(lng,/,div,1,1,1)@
+@:@1_operation(lng,+,add,,0,(1|2))@
+@:@1_operation(lng,-,sub,,0,(1|8))@
+@:@1_operation(lng,*,mul,1,0,(16|32))@
+@:@1_operation(lng,/,div,1,1,16)@
 @:@1_operation(lng,%,mod,1,1,0)@
-@:@1_operation(flt,+,add,,0,2)@
-@:@1_operation(flt,-,sub,,0,2)@
-@:@1_operation(flt,*,mul,1,0,3)@
-@:@1_operation(flt,/,div,1,1,1)@
-@:@1_operation(dbl,+,add,,0,2)@
-@:@1_operation(dbl,-,sub,,0,2)@
-@:@1_operation(dbl,*,mul,1,0,3)@
-@:@1_operation(dbl,/,div,1,1,1)@
+@:@1_operation(flt,+,add,,0,(1|2))@
+@:@1_operation(flt,-,sub,,0,(1|8))@
+@:@1_operation(flt,*,mul,1,0,(16|32))@
+@:@1_operation(flt,/,div,1,1,16)@
+@:@1_operation(dbl,+,add,,0,(1|2))@
+@:@1_operation(dbl,-,sub,,0,(1|8))@
+@:@1_operation(dbl,*,mul,1,0,(16|32))@
+@:@1_operation(dbl,/,div,1,1,16)@
 @:@1_redefine_OP()@
-@:@1_operation(flt,%,mod,1,1,1,%)@
-@:@1_operation(dbl,%,mod,1,1,1,%)@
+@:@1_operation(flt,%,mod,1,1,0,%)@
+@:@1_operation(dbl,%,mod,1,1,0,%)@
 
 @* Implementation
 @c
@@ -108,9 +108,13 @@ Only the standard types {\tt bte}, {\tt sht}, {\tt int}, {\tt wrd}, {\tt lng}, {
 	@3:	add, sub, mul, div, mod basic arithmetic operator name
 	@4:	not used
 	@5:		0 / 1		disable/enable division by zero check
-	@6:		0 / 1 / 2	disable/enable sorting propagation
-					1 propagate on bat,const
-					2 propagate also on const,bat
+	@6:		(bit pattern)	disable/enable sorting propagation
+					 1 propagate as-is on bat,const
+					 2 propagate as-is on const,bat
+					 4 propagate reverted on bat,const (not required/used!)
+					 8 propagate reverted on const,bat
+					16 propagate as-is / reverted on bat,const if const >=0 / <0
+					32 propagate as-is / reverted on const,bat if const >=0 / <0
 */
 @= c_operation
 int
@@ -201,7 +205,6 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 	if (bn == NULL)
 		 return GDK_FAIL;
 	BATseqbase(bn,b->hseqbase);
-	bn->tsorted = 0;
 	bq = (@1*)Tloc(b,BUNlast(b));
 	bp = (@1*)Tloc(b,BUNfirst(b));
 	s = bnp = (@1*)Tloc(bn,BUNlast(bn));
@@ -225,13 +228,19 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 	BATsetcount(bn, bnp-s);
 	if (!bn->batDirty) bn->batDirty = TRUE;
 
-	if (@6 == 2) 
+	if (@6 & 2) {
 		bn->tsorted = BATtordered(b);
-	if (@6 == 3) { 
-		if (*v > 0)
+	} else
+	if (@6 & 8) {
+		bn->tsorted = REVERT_SORTED(BATtordered(b));
+	} else
+	if (@6 & 32) { 
+		if (*v >= 0)
 			bn->tsorted = BATtordered(b);
 		else
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
+	} else {
+		bn->tsorted = 0;
 	}
 
 	*ret = bn;
@@ -264,15 +273,20 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 	}
 	if (!b->batDirty) b->batDirty = TRUE;
 
-	if (@6 == 2) 
+	if (@6 & 2) {
 		b->tsorted = BATtordered(b);
-	if (@6 == 3) { 
-		if (*v > 0)
+	} else
+	if (@6 & 8) {
+		b->tsorted = REVERT_SORTED(BATtordered(b));
+	} else
+	if (@6 & 32) { 
+		if (*v >= 0)
 			b->tsorted = BATtordered(b);
 		else
 			b->tsorted = REVERT_SORTED(BATtordered(b));
-	} else 
+	} else {
 		b->tsorted = 0;
+	}
 
 	BBPfix(b->batCacheid);
 	*ret = b;
@@ -294,7 +308,6 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 	if( bn == NULL)
 		return GDK_FAIL;
 	BATseqbase(bn,b->hseqbase);
-	bn->tsorted = 0;
 	bq = (@1*)Tloc(b,BUNlast(b));
 	bp = (@1*)Tloc(b,BUNfirst(b));
 	s = bnp = (@1*)Tloc(bn,BUNlast(bn));
@@ -317,14 +330,21 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 	}
 	BATsetcount(bn, bnp-s);
 	if (!bn->batDirty) bn->batDirty = TRUE;
-	if (@6 == 2) 
+
+	if (@6 & 1) {
 		bn->tsorted = BATtordered(b);
-	if (@6 == 3) { 
-		if (*v > 0)
+	} else
+	if (@6 & 4) {
+		bn->tsorted = REVERT_SORTED(BATtordered(b));
+	} else
+	if (@6 & 16) { 
+		if (*v >= 0)
 			bn->tsorted = BATtordered(b);
 		else
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
-	} 
+	} else {
+		bn->tsorted = 0;
+	}
 
 	*ret = bn;
 	return GDK_SUCCEED;
@@ -356,15 +376,21 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 		}
 	}
 	if (!b->batDirty) b->batDirty = TRUE;
-	if (@6 == 2) 
+
+	if (@6 & 1) {
 		b->tsorted = BATtordered(b);
-	if (@6 == 3) { 
-		if (*v > 0)
+	} else
+	if (@6 & 4) {
+		b->tsorted = REVERT_SORTED(BATtordered(b));
+	} else
+	if (@6 & 16) { 
+		if (*v >= 0)
 			b->tsorted = BATtordered(b);
 		else
 			b->tsorted = REVERT_SORTED(BATtordered(b));
-	} else
+	} else {
 		b->tsorted = 0;
+	}
 
 	BBPfix(b->batCacheid);
 	*ret = b;
