@@ -1056,7 +1056,7 @@ to the operators.
 	}
 	/* Provide debugging support */
 #if @1
-	if( GDKdebug & 10 ){
+	if( GDKdebug & 10 && exceptionVar >= 0) {
 		BAT *b;
 		str oldmsg =0;
 
