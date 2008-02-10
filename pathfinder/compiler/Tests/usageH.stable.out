@@ -91,7 +91,6 @@ Usage: pf [OPTION] [FILE]
          1  enable dead code elimination (default)
 = -O[0-3], --optimize: select optimization level (default=1)
                        (only works in combination with option -M)
-= -d TEST, --debug=TEST: call internall debugging function TEST
 = -b, --enable-standoff: enable StandOff axis steps
 = -q, --quiet: do not print informational messages to log file
 
