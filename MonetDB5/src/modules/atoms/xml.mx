@@ -213,10 +213,11 @@ XMLisdocument(bit *x, str *s){
 
 str
 XMLcomment(xml *x, str *s){
-	int len;
-	str buf = (str) GDKmalloc(len= strlen(*s)+strlen("<!-- -->"));
-	snprintf(buf,len,"<!-- %s -->",*s);
-	*x= buf;
+	int len = strlen(*s) + 10;
+	str buf = (str) GDKmalloc(len);
+
+	snprintf(buf, len, "<!-- %s -->", *s);
+	*x = buf;
 	return MAL_SUCCEED;
 }
 
