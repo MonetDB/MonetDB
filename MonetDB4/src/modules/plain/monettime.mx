@@ -586,6 +586,9 @@ One day we should introduce the concept of locale, and hook here.
 	proc timestamp(int secs) : timestamp{
 		return EPOCH.add(lng(secs) * lng(1000));
 	}
+	proc epoch(int secs) : timestamp {
+		return EPOCH.add(lng(secs) * lng(1000));
+	}
 	proc timestamp(lng msecs) : timestamp{
 		return EPOCH.add(lng(msecs));
 	}
