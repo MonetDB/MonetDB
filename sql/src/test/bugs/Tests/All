@@ -79,3 +79,5 @@ not_in_null_bug
 copy_into_quote
 alter_add_column-bug
 alter_drop_column_insert_crash
+temporal
+seconds2timestamp
