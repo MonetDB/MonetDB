@@ -400,7 +400,6 @@ after checking that there is no under-/overflow.
 #endif
 	sze = (size_t)*num;
 @c
-#if 0
 int
 get_mem_bigsize(lng *num)
 {
@@ -415,7 +414,6 @@ set_mem_bigsize(lng *num)
 	GDK_mem_bigsize = MAX(32768, sze);
 	return GDK_SUCCEED;
 }
-#endif
 
 int
 get_mem_cursize(lng *num)
@@ -435,12 +433,9 @@ int
 set_mem_maxsize(lng *num)
 {
 	@:num2sze(mem_maxsize)@
-#if 0
 	if (sze < GDK_mem_bigsize)
 		set_mem_bigsize(num);
 	GDK_mem_maxsize = MAX(GDK_mem_bigsize, sze);
-#endif
-	GDK_mem_maxsize = sze;
 	return GDK_SUCCEED;
 }
 
@@ -462,12 +457,9 @@ int
 set_vm_minsize(lng *num)
 {
 	@:num2sze(vm_minsize)@
-#if 0
 	if (sze < GDK_mem_bigsize)
 		set_mem_bigsize(num);
 	GDK_vm_minsize = MAX(GDK_mem_bigsize, sze);
-#endif
-	GDK_vm_minsize = sze;
 	return GDK_SUCCEED;
 }
 
