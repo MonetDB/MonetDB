@@ -169,7 +169,7 @@ in the interpreter to collect the information.
 # include <sys/times.h>
 #endif
 
-#if defined(SOLARIS) && OSVER < 560
+#if defined(SOLARIS) && SYSTVER < 560
 #include "/usr/ucbinclude/sys/rusage.h"
 #include "/usr/ucbinclude/sys/resource.h"
 #endif

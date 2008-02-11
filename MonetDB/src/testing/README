@@ -194,21 +194,21 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   a) overrule the initial setting of MONETDB_SOURCE, MONETDB_BUILD,
      and MONETDB_PREFIX which were hardcoded during configure as (e.g.)
 	MONETDB_SOURCE=~/dev/monet
-	MONETDB_BUILD=~/dev/monet/$OSVER
-	MONETDB_PREFIX=~/dev/monet/$OSVER
+	MONETDB_BUILD=~/dev/monet/$SYSTVER
+	MONETDB_PREFIX=~/dev/monet/$SYSTVER
      by
      either setting the respective environment variables (e.g.) as follows
 	MONETDB_SOURCE=/net/myhost/export/scratch1/myname/monet
-	MONETDB_BUILD=/net/myhost/export/scratch1/myname/monet/$OSVER
-	MONETDB_PREFIX=/net/myhost/export/scratch1/myname/monet/$OSVER
+	MONETDB_BUILD=/net/myhost/export/scratch1/myname/monet/$SYSTVER
+	MONETDB_PREFIX=/net/myhost/export/scratch1/myname/monet/$SYSTVER
      before running Mtest.py 
      or using the respective command line options to Mtest.py
   or
   b) overrule the default settings of TSTSRCBASE, TSTBLDBASE, and
      TSTTRGBASE (e.g.) as follows
 	TSTSRCBASE=/net/myhost/export/scratch1/myname/monet
-	TSTBLDBASE=/net/myhost/export/scratch1/myname/monet/$OSVER
-	TSTTRGBASE=/net/myhost/export/scratch1/myname/monet/$OSVER
+	TSTBLDBASE=/net/myhost/export/scratch1/myname/monet/$SYSTVER
+	TSTTRGBASE=/net/myhost/export/scratch1/myname/monet/$SYSTVER
      either by setting the repective environment variables
      or by using the respective command line options to Mtest.py (see
      above).
@@ -266,8 +266,8 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   	name		description
 	----		-----------
 	HOST		hostname
-	OS		`uname`
-	OSVER		`uname``uname -r`
+	SYST		`uname`
+	SYSTVER		`uname``uname -r`
 	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
 	MDIFF		"$MTIMEOUT Mdiff"
 	MSERVER		"$MTIMEOUT Mserver --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM $setSQL_LOGDIR $setXQUERY_LOGDIR --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --set monet_prompt= --trace"
@@ -315,7 +315,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 - Mtest.py stores the output of test "$TSTSRCDIR/TST" in
   $TSTTRGDIR/TST.test.{out,err} and checks it against
   $TSTSRCDIR/TST.stable.{out,err}. If system specific stable output files
-  ($TSTSRCDIR/TST.stable.{out,err}[.($OS|$OSVER)][.(64|32)bit][.oid(32|64)][.Five][.STATIC])
+  ($TSTSRCDIR/TST.stable.{out,err}[.($SYST|$SYSTVER)][.(64|32)bit][.oid(32|64)][.Five][.STATIC])
   exist, the most specific stable output is used. Mtest.py stores the
   respective Mdiff results in $TSTTRGDIR/TST.{out,err}.diff.html.
   For each test directory, a common entry point to the test results is
