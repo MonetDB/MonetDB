@@ -10,10 +10,10 @@ def server_start(x,dbname,mapi_port):
     return Popen(srvcmd);
 
 def server_stop(srv):
+    srv.stdin.close()
     r = srv.stdout.read()
     sys.stdout.write(r);
     srv.stdout.close()
-    srv.stdin.close()
 
 prelude_1 = '''
 io.print(1);
