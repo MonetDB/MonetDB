@@ -396,14 +396,19 @@ str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi,
 		str sname, str tname, str cname, bit tl)
 {
 	int tpe, rr;
-	BAT *bn;
+	BAT *bn, *br;
 	lng cnt=0,clk;
 	Replica r;
 	sht ov;
 
 	tpe= ATOMstorage(b->T->type);
 
-	if( retain == 0){ /* normal execution + keep stat */
+	/* replica match */
+        rr = findReplica(sname,tname,cname,tpe,tl, low, hgh, li, hi, &ov);
+
+	/* execute selection if needed */
+	if((retain == 0) || 	/* normal execution + keep stat */
+	   ((retain == 1) && (ov < 0))){	/* no overlap in exist. repl. */
 		clk= GDKusec();
 		bn = BAT_select_(b, low, hgh, li, hi, tl, FALSE);
 		clk= GDKusec()-clk;
@@ -412,31 +417,61 @@ str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi,
         	        if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
                 	*ret = bn->batCacheid;
 			cnt= BATcount(bn);
-	                BBPkeepref(bn->batCacheid);
+	                BBPkeepref(*ret);
 	        }
         	else throw(MAL, "REPselectImpl", "GDKerror");
-		
-		rr = findReplica(sname,tname,cname,tpe,tl,low,hgh,li,hi,&ov);
-		if (ov < 0){	/* no repl overlaps, new entry in repl. table*/
-			r = newReplica(sname,tname,cname,tpe,tl);
-			setReplicaRange(r,tpe,low,hgh,li,hi);
-			r->cnt = cnt;
-			r->cost = clk;
-			r->ucnteq = r->ucntsub = 0;
-		} else 
-		if (ov == 0 ){  /* equality, reuse replica rr*/
-			r = repltable + rr;
-			r->ucnteq++;
-		} 
-		else {  	/* use replica rr to shrink selection */
-			r = repltable + rr;
-			r->ucntsub++;
-				/* make new entry in replica table*/
-			r = newReplica(sname,tname,cname,tpe,tl);
-			setReplicaRange(r,tpe,low,hgh,li,hi);
-			r->cnt = cnt;
-			r->cost = clk;
-			r->ucnteq = r->ucntsub = 0;
+
+	} else 
+	if ((retain == 1) && (ov > 0)){	/* exec. over subset repl. */ 
+                r = repltable + rr;
+       	        r->ucntsub++;
+
+               	if ((br = BATdescriptor(r->resbid)) == NULL) {
+                       	throw(MAL, "REPselectImpl", "Cannot access replica descriptor");
+                }
+       	        clk= GDKusec();
+               	bn = BAT_select_(br, low, hgh, li, hi, tl, FALSE);
+                clk= GDKusec()-clk;
+
+       	        BBPreleaseref(br->batCacheid);
+		if (bn) {
+                       	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+                        *ret = bn->batCacheid;
+			cnt = BATcount(bn);
+       	                BBPkeepref(*ret);
+               	}
+                else throw(MAL, "REPselectImpl", "GDKerror");
+	}
+
+		/* update replica table */
+	if( ov < 0 ){			/* new intermed. -> new entry */
+		r = newReplica(sname,tname,cname,tpe,tl);
+		setReplicaRange(r,tpe,low,hgh,li,hi);
+		r->cnt = cnt;
+		r->cost = clk;
+		r->ucnteq = r->ucntsub = 0;
+		if( retain == 1){
+	                r->resbid = *ret;
+			BBPincref(*ret,TRUE);
+		}
+	} else
+	if(ov == 0 ){		/* equality, reuse replica rr*/
+		r = repltable + rr;
+		r->ucnteq++;
+		if( retain == 1 ){  
+        		*ret = r->resbid;
+                	BBPincref(*ret,TRUE);
+		}
+	} else {  	/* reuse replica rr to shrink selection,
+			 make new entry for the result*/
+		r = newReplica(sname,tname,cname,tpe,tl);
+		setReplicaRange(r,tpe,low,hgh,li,hi);
+		r->cnt = cnt;
+		r->cost = clk;
+		r->ucnteq = r->ucntsub = 0;
+		if( retain == 1){
+	         	r->resbid = *ret;
+			BBPincref(*ret,TRUE);
 		}
 	}
 	return MAL_SUCCEED;
