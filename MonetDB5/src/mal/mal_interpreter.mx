@@ -437,7 +437,7 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	bat *backup= (bat*) alloca(mb->maxarg * sizeof(bat));
 	str *sbackup= (str*) alloca(mb->maxarg * sizeof(str));
 	lng oldtimer=0;
-	struct mallinfo oldMemory;
+	struct Mallinfo oldMemory;
 	int stkpc=0;
 
 #ifdef HAVE_SYS_RESOURCE_H
@@ -623,7 +623,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	bat *backup= (bat*) alloca(mb->maxarg * sizeof(bat));
 	str *sbackup= (str*) alloca(mb->maxarg * sizeof(str));
 	lng oldtimer=0;
-	struct mallinfo oldMemory;
+	struct Mallinfo oldMemory;
 	int stkpc=0;
 
 #ifdef HAVE_SYS_RESOURCE_H
@@ -1641,11 +1641,11 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	}
 #endif
 	if( cntxt->flags & memoryFlag){
-		struct mallinfo memory;
+		struct Mallinfo memory;
 		memory= MT_mallinfo();
 		if( memory.arena- oldMemory.arena > 0)
-			stream_printf(cntxt->fdout," %6d bytes ",
-				memory.arena-oldMemory.arena );
+			stream_printf(cntxt->fdout," " SZFMT " bytes ",
+				(size_t) (memory.arena-oldMemory.arena) );
 	}
 	if( cntxt->flags & flowFlag){
 		/* calculate the read/write byte flow */

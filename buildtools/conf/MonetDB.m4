@@ -2343,7 +2343,9 @@ AC_SUBST(MALLOC_LIBS)
 
 save_LIBS="$LIBS"
 LIBS="$LIBS $MALLOC_LIBS"
-AC_CHECK_FUNCS(mallopt mallinfo)
+AC_CHECK_FUNCS(mallopt)
+AC_CHECK_FUNC(mallinfo, AC_TRY_COMPILE([$ac_includes_default
+#include <malloc.h>], [struct mallinfo m;int x[[1+sizeof(m.usmblks)-sizeof(void *)]]], AC_DEFINE(HAVE_USEFUL_MALLINFO, 1, [Define if you have mallinfo])))
 LIBS="$save_LIBS"
 
 MATH_LIBS=""

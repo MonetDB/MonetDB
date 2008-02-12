@@ -1,14 +1,16 @@
 stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 
 
-# 10:05:29 >  
-# 10:05:29 >   Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=38294 --set xrpc_port=49233 --set monet_prompt= --trace --dbname=mTests_tests_Availability 00_Mserver.prelude 
-# 10:05:29 >  
+# 09:52:00 >  
+# 09:52:00 >   Mserver "--config=/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/conf/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/modules/plain:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/modules/contrib:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/modules/calibrator:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/mapi/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/src/mapi:/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/scripts/tools" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/MonetDB4/x86_64-unknown-linux-gnu/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=39367 --set xrpc_port=46798 --set monet_prompt= --trace  --dbname=mTests_tests_Availability 00_Mserver.prelude 
+# 09:52:00 >  
 
-# MonetDB Server v4.21.0
-# based on GDK   v1.21.0
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+
+
+# MonetDB Server v4.22.0
+# based on GDK   v1.22.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 #---------------------------------#
 # BAT:		  tmp_30	  #

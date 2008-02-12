@@ -363,10 +363,10 @@ proc pInit() : void {
 	perf_tag_size:= pNew("_tag_size", int);
 	perf_beg_time:= pNew("_beg_time", int);
 	perf_beg_io:= pNew("_beg_io", int);
-	perf_beg_memory:= pNew("_beg_memory", int);
+	perf_beg_memory:= pNew("_beg_memory", wrd);
 	perf_end_time:= pNew("_end_time", int);
 	perf_end_io:= pNew("_end_io", int);
-	perf_end_memory:= pNew("_end_memory", int);
+	perf_end_memory:= pNew("_end_memory", wrd);
 	commit();
 }
 
