@@ -442,8 +442,8 @@ str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi,
 	return MAL_SUCCEED;
 }
 
-str
-REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+REPselect_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int uselect)
 {
 	int *ret, *bid, tpe;
 	ptr low, hgh;
@@ -466,7 +466,7 @@ REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	
 	if ((b = BATdescriptor(*bid)) == NULL) {
-                throw(MAL, "REPselect", "Cannot access descriptor");
+                throw(MAL, uselect ? "REPuselect" : "REPselect", "Cannot access descriptor");
         }
 	
 	tpe= ATOMstorage(b->T->type);
@@ -481,54 +481,22 @@ REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tname = *(str *) getArgReference(stk, pci,argcnt-2);
 	cname = *(str *) getArgReference(stk, pci,argcnt-1);
 	
-	REPselectImpl(ret, b, low, hgh, *li, *hi, sname,tname,cname, TRUE);
+	REPselectImpl(ret, b, low, hgh, *li, *hi, sname,tname,cname, uselect ? FALSE : TRUE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
+}
+
+
+str
+REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return REPselect_wrap(mb, stk, pci, 0);
 }
 
 str
 REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret, *bid, tpe;
-	ptr low, hgh;
-	bit t=TRUE,*li=&t,*hi=&t;
-	BAT *b;
-	sht argcnt = pci->argc;
-	str sname, tname, cname;
-
-	(void) mb;
-	ret= (int*) getArgReference(stk, pci,0);
-	bid= (int*) getArgReference(stk, pci,1);
-	low= (ptr) getArgReference(stk, pci,2);
-	if( argcnt >= 7)
-                hgh = (ptr) getArgReference(stk,pci,3);
-        else hgh = low;
-
-	if( argcnt==9){
-		li= (bit*) getArgReference(stk, pci,4);
-		hi= (bit*) getArgReference(stk, pci,5);
-	}
-	
-	if ((b = BATdescriptor(*bid)) == NULL) {
-                throw(MAL, "REPselect", "Cannot access descriptor");
-        }
-	
-	tpe= ATOMstorage(b->T->type);
-        if( tpe == TYPE_str || tpe > TYPE_str ){
-                if(low== 0 || *(str*)low==0) low = (str)str_nil;
-                        else low = *(str *)low;
-                if(hgh== 0 || *(str*)hgh==0) hgh = (str)str_nil;
-                        else hgh = *(str *)hgh;
-        }
-
-	sname = *(str *) getArgReference(stk, pci,argcnt-3);
-	tname = *(str *) getArgReference(stk, pci,argcnt-2);
-	cname = *(str *) getArgReference(stk, pci,argcnt-1);
-	
-	REPselectImpl(ret, b, low, hgh, *li, *hi, sname,tname,cname, FALSE);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
+	return REPselect_wrap(mb, stk, pci, 1);
 }
-
 
 @}
