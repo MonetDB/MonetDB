@@ -74,6 +74,20 @@ command replicator.dump():void
 address REPdump
 comment "Dump summary of replica table for potential re-use benefits";
 
+command replicator.setRetainPolicy(p:sht):void
+address REPsetRetain
+comment "Set replica retainment policy";
+
+command replicator.setReusePolicy(p:sht):void
+address REPsetReuse
+comment "Set replica reuse policy";
+
+command replicator.setCachePolicy(p:sht):void
+address REPsetCache
+comment "Set replica cache policy";
+
+
+
 @h
 #ifndef _OPT_REPLICATOR_
 #define _OPT_REPLICATOR_
@@ -85,6 +99,9 @@ opt_export str REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str REPinit(void);
 opt_export str REPdump(int *ret);
+opt_export str REPsetRetain(int *ret, sht *p);
+opt_export str REPsetReuse(int *ret, sht *p);
+opt_export str REPsetCache(int *ret, sht *p);
 
 /* #define DEBUG_OPT_REPLICATOR  */
 @-
@@ -109,6 +126,19 @@ typedef struct REPLICAREC {
 static Replica repltable = NULL;
 static int replsz = 0;  /* alloc. mem */
 static int replnr = 0;	/* number of replicas */
+static sht retain = 0;  /* replica retainment policy
+			0: baseline, keeps stat, no retain, no reuse
+			1: infinite case, retain all
+			2: cost-based, retain if beneficial */
+static sht reuse = 0;	/* replica reuse policy
+			0: baseline, keeps stat, no retain, no reuse
+			1: reuse smallest covering
+			2: reuse closest covering */
+static sht rcache = 0;  /* replica cache management policy
+			0: baseline, do nothing
+			1: throw LRU
+			2: cost-based, throw least beneficial */
+
 
 static void assureSpace(){
 	if ( replsz == 0){
@@ -165,6 +195,30 @@ REPstat(int *ret)
 	stream_printf(GDKout,"Number of replicas %d\n",replnr);
 	for( i=0; i<replnr; i++)
 		printReplica(GDKout, i);
+	return MAL_SUCCEED;
+}
+
+str
+REPsetRetain(int *ret, sht *p)
+{
+	(void) ret;
+	retain = *p;
+	return MAL_SUCCEED;
+}
+
+str
+REPsetReuse(int *ret, sht *p)
+{
+	(void) ret;
+	reuse = *p;
+	return MAL_SUCCEED;
+}
+
+str
+REPsetCache(int *ret, sht *p)
+{
+	(void) ret;
+	rcache = *p;
 	return MAL_SUCCEED;
 }
 
@@ -307,20 +361,49 @@ underlying implementation and collects statistics on the
 cost.
 @c
 
+static Replica newReplica(str sname, str tname, str cname, int tpe, bit tl)
+{
+	Replica r;
+	
+	assureSpace();
+	r = repltable + replnr++;
+	r->sname = GDKstrdup(sname);
+	r->tname = GDKstrdup(tname);
+	r->cname = GDKstrdup(cname);
+	r->tail = tl;
+	r->tpe =tpe;
+	return r;
+}
+
+static void setReplicaRange(Replica r, int tpe, ptr low, ptr hgh, bit li, bit hi)
+{
+	if(r != NULL){
+		if( tpe < TYPE_str){
+		        VALset(&r->low,tpe, low);
+			VALset(&r->hgh,tpe, hgh);
+		} else if ( tpe < TYPE_str){
+			VALset(&r->low,tpe, GDKstrdup(low));
+			VALset(&r->hgh,tpe, GDKstrdup(hgh));
+		} 
+		r->li = li;
+		r->hi = hi;
+	}
+} 
+
+
 static 
 str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi, 
 		str sname, str tname, str cname, bit tl)
 {
 	int tpe, rr;
-	BAT *bn,*br;
-	lng cnt,clk;
+	BAT *bn;
+	lng cnt=0,clk;
 	Replica r;
 	sht ov;
 
 	tpe= ATOMstorage(b->T->type);
-	rr = findReplica(sname,tname,cname,tpe,tl, low, hgh, li, hi, &ov);
 
-	if (ov < 0){ /* no replica overlaps, execute selection and save replica */
+	if( retain == 0){ /* normal execution + keep stat */
 		clk= GDKusec();
 		bn = BAT_select_(b, low, hgh, li, hi, tl, FALSE);
 		clk= GDKusec()-clk;
@@ -328,93 +411,33 @@ str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi,
                 if (bn) {
         	        if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
                 	*ret = bn->batCacheid;
-	                BBPincref(bn->batCacheid,TRUE);
+			cnt= BATcount(bn);
+	                BBPkeepref(bn->batCacheid);
 	        }
         	else throw(MAL, "REPselectImpl", "GDKerror");
-
-		/* decide about replica- currently just keep stat 
-		Place to plugin keepReplica policy*/
-
-		cnt= BATcount(bn);
-		assureSpace();
-		r = repltable + replnr;
-		r->resbid = *ret;
-		r->sname = GDKstrdup(sname);
-		r->tname = GDKstrdup(tname);
-		r->cname = GDKstrdup(cname);
-	
-		if( tpe < TYPE_str){
-		        VALset(&r->low,tpe, low);
-	        	/*	if( hgh == 0)
-        	        	VALset(&r->hgh,tpe, ATOMnilptr(tpe));
-		        else */
-			VALset(&r->hgh,tpe, hgh);
-		} else if ( tpe < TYPE_str){
-			 VALset(&r->low,tpe, GDKstrdup(low));
-			 VALset(&r->hgh,tpe, GDKstrdup(hgh));
-		}  /* ?? */
-		r->li = li;
-		r->hi = hi; 
-		r->cnt = cnt;
-		r->cost = clk;
-		r->tail = tl;
-		r->tpe =tpe;
-		r->ucnteq = r->ucntsub = 0;
-		replnr++;
-		BBPkeepref(*ret);
-	} else 
-	if (ov == 0 ){  /* equality, reuse replica rr*/
-		r = repltable + rr;
-		r->ucnteq++;
-		*ret = r->resbid;
-	        BBPincref(r->resbid,TRUE);
-	} 
-	else {  /* use replica rr to shrink selection */
-		r = repltable + rr;
-		r->ucntsub++;
-
-		if ((br = BATdescriptor(r->resbid)) == NULL) {
-        	        throw(MAL, "REPselectImpl", "Cannot access replica descriptor");
-	        }
-		clk= GDKusec();
-		bn = BAT_select_(br, low, hgh, li, hi, tl, FALSE);
-		clk= GDKusec()-clk;
-
- 	      	BBPreleaseref(br->batCacheid);
-	        if (bn) {
-        	        if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-                	*ret = bn->batCacheid;
-	                BBPincref(bn->batCacheid,TRUE);
-	        }
-        	else throw(MAL, "REPselectImpl", "GDKerror");
-
-		/* decide about replica- currently just keep stat */
-
-		cnt= BATcount(bn);
-		assureSpace();
-		r = repltable + replnr;
-		r->resbid = *ret;
-		r->sname = GDKstrdup(sname);
-		r->tname = GDKstrdup(tname);
-		r->cname = GDKstrdup(cname);
-	
-       		if( tpe < TYPE_str){
-		        VALset(&r->low,tpe, low);
-			VALset(&r->hgh,tpe, hgh);
-		} else if ( tpe < TYPE_str){
-			 VALset(&r->low,tpe, GDKstrdup(low));
-			 VALset(&r->hgh,tpe, GDKstrdup(hgh));
-		} /* ?? */
-		r->li = li;
-		r->hi = hi; 
-		r->cnt = cnt;
-		r->cost = clk;
-		r->tail = tl;
-		r->tpe =tpe;
-		r->ucnteq = r->ucntsub = 0;
-		replnr++;
-		BBPkeepref(*ret);
-	
+		
+		rr = findReplica(sname,tname,cname,tpe,tl,low,hgh,li,hi,&ov);
+		if (ov < 0){	/* no repl overlaps, new entry in repl. table*/
+			r = newReplica(sname,tname,cname,tpe,tl);
+			setReplicaRange(r,tpe,low,hgh,li,hi);
+			r->cnt = cnt;
+			r->cost = clk;
+			r->ucnteq = r->ucntsub = 0;
+		} else 
+		if (ov == 0 ){  /* equality, reuse replica rr*/
+			r = repltable + rr;
+			r->ucnteq++;
+		} 
+		else {  	/* use replica rr to shrink selection */
+			r = repltable + rr;
+			r->ucntsub++;
+				/* make new entry in replica table*/
+			r = newReplica(sname,tname,cname,tpe,tl);
+			setReplicaRange(r,tpe,low,hgh,li,hi);
+			r->cnt = cnt;
+			r->cost = clk;
+			r->ucnteq = r->ucntsub = 0;
+		}
 	}
 	return MAL_SUCCEED;
 }
