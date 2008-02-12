@@ -960,18 +960,18 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				if( strncmp("flow",b,1) == 0)
 					cntxt->flags |= flowFlag;
 				if( strncmp("memory",b,1) == 0){
-					struct mallinfo memory;
+					struct Mallinfo memory;
 					cntxt->flags |= memoryFlag;
 					memory = MT_mallinfo();
-					stream_printf(out,"arena %d ordblks %d smblks %d "
-						" hblkhd %d hblks %d fsmblks %d uordblks %d\n",
-						memory.arena,
-						memory.ordblks,
-						memory.smblks,
-						memory.hblkhd,
-						memory.hblks,
-						memory.fsmblks,
-						memory.uordblks
+					stream_printf(out,"arena " SZFMT " ordblks " SZFMT " smblks " SZFMT " "
+						" hblkhd " SZFMT " hblks " SZFMT " fsmblks " SZFMT " uordblks " SZFMT "\n",
+						(size_t) memory.arena,
+						(size_t) memory.ordblks,
+						(size_t) memory.smblks,
+						(size_t) memory.hblkhd,
+						(size_t) memory.hblks,
+						(size_t) memory.fsmblks,
+						(size_t) memory.uordblks
 					);
 				}
 				if (strncmp("timer", b, 1) == 0) {

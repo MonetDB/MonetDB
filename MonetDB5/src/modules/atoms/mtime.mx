@@ -323,9 +323,12 @@ comment "The Unix epoch time (00:00:00 UTC on January 1, 1970)";
 command epoch{unsafe}():timestamp
 address MTIMEepoch
 comment "unix-time (epoch) support: seconds since the Unix epoch";
-command epoch{unsafe}(t:timestamp):lng 
-address MTIMEepoch2lng
+command epoch(t:timestamp):int 
+address MTIMEepoch2int
 comment "unix-time (epoch) support: seconds since epoch";
+command epoch(t:int):timestamp 
+address MTIMEtimestamp
+comment "convert seconds since epoch into a timestamp";
 
 @:compareGrp(timestamp)@
 
@@ -804,6 +807,8 @@ command date(t:timestamp) :date address MTIMEtimestamp_extract_date_default;
 command timestamp(s:str):timestamp address MTIMEtimestamp_fromstr;
 command timestamp(t:timestamp):timestamp address MTIMEtimestamp2timestamp;
 command timestamp(d:date) :timestamp address MTIMEtimestamp_create_from_date;
+command timestamp(secs:int):timestamp address MTIMEtimestamp;
+command timestamp(msecs:lng):timestamp address MTIMEtimestamp_lng;
 
 command daytime(s:str):daytime address MTIMEdaytime_fromstr;
 command daytime(d:daytime):daytime address MTIMEdaytime2daytime;
@@ -1036,8 +1041,9 @@ mtime_export str MTIMEdaytime2(daytime *ret, int *h, int *m);
 mtime_export str MTIMEdaytime3(daytime *ret, int *h, int *m, int *s);
 mtime_export str MTIMEunix_epoch(timestamp *ret);
 mtime_export str MTIMEepoch(timestamp *ret);
-mtime_export str MTIMEepoch2lng(lng *ret, timestamp *t);
+mtime_export str MTIMEepoch2int(int *res, timestamp *ts);
 mtime_export str MTIMEtimestamp(timestamp *ret, int *sec);
+mtime_export str MTIMEtimestamp_lng(timestamp *ret, lng *msecs);
 mtime_export str MTIMEruleDef0(rule *ret, int *m, int *d, int *w, int *h, int *mint);
 mtime_export str MTIMEruleDef1(rule *ret, int *m, str *dnme, int *w, int *h, int *mint);
 mtime_export str MTIMEruleDef2(rule *ret, int *m, str *dnme, int *w, int *mint);
@@ -3690,19 +3696,19 @@ MTIMEepoch(timestamp *ret)
 
 	/* convert number of seconds into a timestamp */
 	if ((e = MTIMEunix_epoch(&ts)) == MAL_SUCCEED)
-			e = MTIMEtimestamp_add(ret, &ts, &t);
-	return (e);
+		e = MTIMEtimestamp_add(ret, &ts, &t);
+	return e;
 }
 
 str
-MTIMEepoch2lng(lng *ret, timestamp *t)
+MTIMEepoch2int(int *ret, timestamp *t)
 {
 	timestamp e;
 	lng v;
 
 	MTIMEunix_epoch(&e);
-	timestamp_diff(&v, &e, t);
-	*ret = v / 1000;
+	timestamp_diff(&v, t, &e);
+	*ret = (int)(v / 1000);
 	return MAL_SUCCEED;
 }
 
@@ -3710,7 +3716,18 @@ str
 MTIMEtimestamp(timestamp *ret, int *sec)
 {
 	timestamp e;
-	lng l = *sec * 1000;
+	lng l = ((lng) *sec) * 1000;
+
+	MTIMEunix_epoch(&e);
+	timestamp_add(ret, &e, &l);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_lng(timestamp *ret, lng *msec)
+{
+	timestamp e;
+	lng l = *msec;
 
 	MTIMEunix_epoch(&e);
 	timestamp_add(ret, &e, &l);

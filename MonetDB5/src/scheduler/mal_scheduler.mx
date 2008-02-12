@@ -143,7 +143,7 @@ micro scheduling decisions.
 # include <sys/times.h>
 #endif
 
-#if defined(OSVER) && OSVER < 560 && defined(SOLARIS)
+#if defined(SOLARIS) && defined(OSVER) && OSVER < 560
 #include "/usr/ucbinclude/sys/rusage.h"
 #include "/usr/ucbinclude/sys/resource.h"
 #endif

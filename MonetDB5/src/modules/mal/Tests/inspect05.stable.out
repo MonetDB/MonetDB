@@ -5,10 +5,10 @@ stdout of test 'inspect05` in directory 'src/modules/mal` itself:
 # 07:22:37 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_port=38414 --set xrpc_port=42448 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  inspect05.mal
 # 07:22:37 >  
 
-# MonetDB Server v5.0.0
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_modules_mal
+# MonetDB server v5.4.0, based on kernel v1.22.0
+# Serving database 'mTests_src_modules_mal'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 ##Illustrate the modules loaded after start
 #k:= inspect.getKind();
@@ -2194,7 +2194,8 @@ end main;	# 11
 [ "==",					  "command",	  "timestamp",	  "(v:timestamp,w:timestamp):bit ",											  "MTIMEtimestamp_EQ;"				  ]
 [ ">=",					  "command",	  "timestamp",	  "(v:timestamp,w:timestamp):bit ",											  "MTIMEtimestamp_GE;"				  ]
 [ ">",					  "command",	  "timestamp",	  "(v:timestamp,w:timestamp):bit ",											  "MTIMEtimestamp_GT;"				  ]
-[ "epoch",				  "command",	  "timestamp",	  "(t:timestamp):lng ",													  "MTIMEepoch2lng;"				  ]
+[ "epoch",				  "command",	  "timestamp",	  "(t:int):timestamp ",																  "MTIMEtimestamp;"				  ]
+[ "epoch",				  "command",	  "timestamp",	  "(t:timestamp):int ",																  "MTIMEepoch2int;"				  ]
 [ "epoch",				  "command",	  "timestamp",	  "():timestamp ",													  "MTIMEepoch;"					  ]
 [ "#fromstr",				  "command",	  "timestamp",	  "():timestamp ",													  "timestamp_fromstr;"				  ]
 [ "isnil",				  "command",	  "timestamp",	  "(v:timestamp):bit ",													  "MTIMEtimestamp_isnil;"			  ]
@@ -2524,7 +2525,7 @@ end main;	# 11
 [ "mem_maxsize",			  "command",	  "status",	  "():lng ",														  "SYSgetmem_maxsize;"				  ]
 [ "mem_cursize",			  "command",	  "status",	  "():lng ",														  "SYSgetmem_cursize;"				  ]
 [ "memUsage",				  "command",	  "status",	  "(minsize:lng):bat[:str,:lng] ",											  "SYSmem_usage;"				  ]
-[ "memStatistics",			  "command",	  "status",	  "():bat[:str,:int] ",													  "SYSmemStatistics;"				  ]
+[ "memStatistics",		  "command",	  "status",	  "():bat[:str,:wrd] ",												  "SYSmemStatistics;"				  ]
 [ "vm_maxsize",				  "command",	  "status",	  "(v:lng):void ",													  "SYSsetvm_maxsize;"				  ]
 [ "vm_maxsize",				  "command",	  "status",	  "():lng ",														  "SYSgetvm_maxsize;"				  ]
 [ "vm_cursize",				  "command",	  "status",	  "():lng ",														  "SYSgetvm_cursize;"				  ]
@@ -3388,6 +3389,8 @@ end main;	# 11
 [ "sign",				  "command",	  "calc",	  "(x:sht):sht ",											  "CALCunaryshtSIGN;"				  ]
 [ "sign",				  "command",	  "calc",	  "(x:bte):bte ",											  "CALCunarybteSIGN;"				  ]
 [ "sign",				  "command",	  "calc",	  "(x:chr):chr ",											  "CALCunarychrSIGN;"				  ]
+[ "timestamp",			  "command",	  "calc",	  "(msecs:lng):timestamp ",														  "MTIMEtimestamp_lng;"				  ]
+[ "timestamp",				  "command",	  "calc",	  "(secs:int):timestamp ",															  "MTIMEtimestamp;"				  ]
 [ "timestamp",				  "command",	  "calc",	  "(d:date):timestamp ",												  "MTIMEtimestamp_create_from_date;"		  ]
 [ "timestamp",				  "command",	  "calc",	  "(t:timestamp):timestamp ",												  "MTIMEtimestamp2timestamp;"			  ]
 [ "timestamp",				  "command",	  "calc",	  "(s:str):timestamp ",													  "MTIMEtimestamp_fromstr;"			  ]

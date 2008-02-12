@@ -169,7 +169,7 @@ in the interpreter to collect the information.
 # include <sys/times.h>
 #endif
 
-#if defined(SOLARIS) && OSVER < 560
+#if defined(SOLARIS) && defined(OSVER) && OSVER < 560
 #include "/usr/ucbinclude/sys/rusage.h"
 #include "/usr/ucbinclude/sys/resource.h"
 #endif
@@ -180,7 +180,7 @@ typedef struct rusage Rusage;
 #endif
 
 typedef struct tms Tms;
-typedef struct mallinfo Mallinfo;
+typedef struct Mallinfo Mallinfo;
 
 mal_export str activateCounter(str name);
 mal_export str deactivateCounter(str name);
@@ -438,7 +438,7 @@ offlineProfilerHeader(void)
 void
 offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
-	static struct mallinfo prevMalloc;
+	static struct Mallinfo prevMalloc;
 	InstrPtr pci = getInstrPtr(mb,pc);
 
 #ifdef HAVE_SYS_RESOURCE_H
@@ -449,7 +449,7 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 #ifdef HAVE_TIMES
 	struct tms newTms;
 #endif
-	struct mallinfo infoMalloc;
+	struct Mallinfo infoMalloc;
 	str stmt, c;
 
 	(void) cntxt;
@@ -524,13 +524,13 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 #ifdef HAVE_SYS_RESOURCE_H
 		log("%d,\t", infoUsage.ru_maxrss);
 #endif
-		log("%d,\t", infoMalloc.arena - prevMalloc.arena);
-		log("%d,\t", infoMalloc.ordblks - prevMalloc.ordblks);
-		log("%d,\t", infoMalloc.smblks - prevMalloc.smblks);
-		log("%d,\t", infoMalloc.hblkhd - prevMalloc.hblkhd);
-		log("%d,\t", infoMalloc.hblks - prevMalloc.hblks);
-		log("%d,\t", infoMalloc.fsmblks - prevMalloc.fsmblks);
-		log("%d,\t", infoMalloc.uordblks - prevMalloc.uordblks);
+		log(SZFMT ",\t", (size_t) (infoMalloc.arena - prevMalloc.arena));
+		log(SZFMT ",\t", (size_t) (infoMalloc.ordblks - prevMalloc.ordblks));
+		log(SZFMT ",\t", (size_t) (infoMalloc.smblks - prevMalloc.smblks));
+		log(SZFMT ",\t", (size_t) (infoMalloc.hblkhd - prevMalloc.hblkhd));
+		log(SZFMT ",\t", (size_t) (infoMalloc.hblks - prevMalloc.hblks));
+		log(SZFMT ",\t", (size_t) (infoMalloc.fsmblks - prevMalloc.fsmblks));
+		log(SZFMT ",\t", (size_t) (infoMalloc.uordblks - prevMalloc.uordblks));
 		prevMalloc = infoMalloc;
 	}
 #ifdef HAVE_SYS_RESOURCE_H
@@ -1012,14 +1012,14 @@ getTrace(str nme)
 void
 cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
-	/* static struct mallinfo prevMalloc; */
+	/* static struct Mallinfo prevMalloc; */
 	/* static struct rusage   prevUsage; */
 	static int eventcounter;
 #ifdef HAVE_TIMES
 	struct tms newTms;
 #endif
 
-	/* struct mallinfo infoMalloc; */
+	/* struct Mallinfo infoMalloc; */
 #ifdef HAVE_SYS_RESOURCE_H
 	struct rusage infoUsage;
 #endif

@@ -33,7 +33,7 @@ module status;
 command cpuStatistics() :bat[:str,:int] 
 address SYScpuStatistics
 comment "Global cpu usage information";
-command memStatistics():bat[:str,:int] 
+command memStatistics():bat[:str,:wrd] 
 address SYSmemStatistics
 comment "Global memory usage information";
 command ioStatistics():bat[:str,:int] 
@@ -337,13 +337,13 @@ status_export str SYSmemStatistics(int *ret);
 str
 SYSmemStatistics(int *ret)
 {
-	struct mallinfo m;
+	struct Mallinfo m;
 	BAT *b;
-	int i;
+	wrd i;
 
 	m = MT_mallinfo();
 
-	b = BATnew(TYPE_str, TYPE_int, 32);
+	b = BATnew(TYPE_str, TYPE_wrd, 32);
 	if (b == 0)
 		throw(MAL, "catalog.memStatistics", "Failed to create BAT");
 
@@ -400,7 +400,6 @@ after checking that there is no under-/overflow.
 #endif
 	sze = (size_t)*num;
 @c
-#if 0
 int
 get_mem_bigsize(lng *num)
 {
@@ -415,7 +414,6 @@ set_mem_bigsize(lng *num)
 	GDK_mem_bigsize = MAX(32768, sze);
 	return GDK_SUCCEED;
 }
-#endif
 
 int
 get_mem_cursize(lng *num)
@@ -435,12 +433,9 @@ int
 set_mem_maxsize(lng *num)
 {
 	@:num2sze(mem_maxsize)@
-#if 0
 	if (sze < GDK_mem_bigsize)
 		set_mem_bigsize(num);
 	GDK_mem_maxsize = MAX(GDK_mem_bigsize, sze);
-#endif
-	GDK_mem_maxsize = sze;
 	return GDK_SUCCEED;
 }
 
@@ -462,12 +457,9 @@ int
 set_vm_minsize(lng *num)
 {
 	@:num2sze(vm_minsize)@
-#if 0
 	if (sze < GDK_mem_bigsize)
 		set_mem_bigsize(num);
 	GDK_vm_minsize = MAX(GDK_mem_bigsize, sze);
-#endif
-	GDK_vm_minsize = sze;
 	return GDK_SUCCEED;
 }
 
@@ -506,7 +498,7 @@ SYSmem_usage(int *ret, lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, n = 0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2 * BBPsize);
-	struct mallinfo m;
+	struct Mallinfo m;
 	char buf[1024];
 	bat i;
 
