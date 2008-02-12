@@ -1049,7 +1049,7 @@ def ApproveOutput (env, TST) :
                 w = 0
             else: # WHAT == 'err'
                 w = 1
-            stableOUTPUT = TSTSRCDIRTST+StableOutErr(env,par,TSTSRCDIRTST,OS,RELEASE,DIST,VERSION)[w]
+            stableOUTPUT = TSTSRCDIRTST+StableOutErr(env,par,TSTSRCDIRTST,SYST,RELEASE,DIST,VERSION)[w]
             SYSTEM = stableOUTPUT.split(WHAT)[-1]
 
         if os.path.isfile(testOUTPUT):
@@ -1367,7 +1367,7 @@ def StartAt(cmd) :
 def StopAt(ATJOB,ME) :
     while  os.path.isfile(path("/tmp/.MkillUsers."+ME)):
         time.sleep(9)
-    if OS == "IRIX" or OS == "IRIX64":
+    if SYST == "IRIX" or SYST == "IRIX64":
         ATRM = 'at -r '
     else:
         ATRM = 'atrm '
@@ -1376,7 +1376,7 @@ def StopAt(ATJOB,ME) :
     #LOG1x at -l >&2
 ### StopAt(ATJOB,ME) #
 
-def StableOutErr(env,par,TST,OS,RELEASE,DIST,VERSION) :
+def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     BITS = env['TST_BITS']
     OIDS = env['TST_OIDS']
     FIVE = env['TST_FIVE']
@@ -1389,7 +1389,7 @@ def StableOutErr(env,par,TST,OS,RELEASE,DIST,VERSION) :
     if ALGEBRA:
         ALGEBRA = "(\.Algebra)?"
     dir,file = os.path.split(TST)
-    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?(\.%s)?%s%s%s$' % (re.escape(OS), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, OIDS, FIVE, STATIC, ALGEBRA))
+    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?(\.%s)?%s%s%s$' % (re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, OIDS, FIVE, STATIC, ALGEBRA))
     bestout = besterr = ''
     for f in os.listdir(dir or os.curdir):
         res = outre.match(f)
@@ -1409,7 +1409,7 @@ def StableOutErr(env,par,TST,OS,RELEASE,DIST,VERSION) :
     else:
         STABLEerr = '.stable.err'
     return STABLEout, STABLEerr
-### StableOutErr(env,par,TST,OS,RELEASE,DIST,VERSION) #
+### StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) #
 
 def RunTest(env, TST, BusyPorts, COND) :
     Failed = F_SKIP
@@ -1627,7 +1627,7 @@ def RunTest(env, TST, BusyPorts, COND) :
 
         ACCURACYout = par['ACCURACY']
         ACCURACYerr = par['ACCURACY']
-        STABLEout,STABLEerr = StableOutErr(env,par,TST,OS,RELEASE,DIST,VERSION)
+        STABLEout,STABLEerr = StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION)
         if not os.path.isfile(TST+STABLEout):
             open(TST+STABLEout,"w").close()
             ACCURACYout = 0
@@ -2539,7 +2539,7 @@ def SetExecEnv(exe,verbose) :
 
 def ReadMapproveRc(f) :
     v = {}
-    v['OS'] = OS
+    v['SYST'] = SYST
     v['RELEASE'] = RELEASE
     v['DIST'] = DIST
     v['VERSION'] = VERSION
@@ -2590,7 +2590,7 @@ HOST = HOST.split('.', 1)[0]
 os.environ['HOST'] = HOST
 
 if os.name == "nt":
-    OS    = "Windows"
+    SYST    = "Windows"
     RELEASE = "5.0"
     r = re.compile('^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
     proc = subprocess.Popen('cmd /c ver', stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
@@ -2600,19 +2600,19 @@ if os.name == "nt":
         if m and m.group(2):
             RELEASE = m.group(2)
 else:
-    OS    = os.uname()[0].split("_NT-", 1)[0]
-    if OS == "AIX":
+    SYST    = os.uname()[0].split("_NT-", 1)[0]
+    if SYST == "AIX":
         RELEASE = os.uname()[3]+"."+os.uname()[2]
     else:
         RELEASE = os.uname()[2].split("(", 1)[0]
 
 # this is for the wine/mingw setup
 if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
-    OS = 'Windows'
+    SYST = 'Windows'
     HOST = "WINE"
     RELEASE = "5.2"
 
-if OS == "Linux":
+if SYST == "Linux":
     #  Please keep this aligned / in sync with buildtools/conf/MonetDB.m4 & TestTools/.Mconfig.rc & TestTools/MdoServer !
     LINUX_DIST=''
     if os.path.isfile('/etc/fedora-release'):
@@ -2666,16 +2666,16 @@ if OS == "Linux":
     elif os.path.isfile('/etc/debian_version'):
         LINUX_DIST = "Debian:"+open('/etc/debian_version').readline().strip()
     if not LINUX_DIST:
-        LINUX_DIST = OS+':'+re.compile('^([0-9\.]*)([^0-9\.].*)$').match(RELEASE).group(1)
+        LINUX_DIST = SYST+':'+re.compile('^([0-9\.]*)([^0-9\.].*)$').match(RELEASE).group(1)
     DIST,VERSION = LINUX_DIST.split(':', 1)
 else:
-    DIST = OS
+    DIST = SYST
     VERSION = RELEASE
 
-OSVER = OS+RELEASE
+SYSTVER = SYST+RELEASE
 DISTVER = DIST+VERSION
-os.environ['OS'] = OS
-os.environ['OSVER'] = OSVER
+os.environ['SYST'] = SYST
+os.environ['SYSTVER'] = SYSTVER
 os.environ['RELEASE'] = RELEASE
 os.environ['DIST'] = DIST
 os.environ['DISTVER'] = DISTVER
@@ -2899,9 +2899,9 @@ def main(argv) :
              "(default: <ext> = 'out' & 'err')"),
             (None, 'S', 'sys', '<sys>',
              "approve specific output *.<ext><sys>\n"
-             "(<sys> = '[.(<OS>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.Five][.STATIC][.Algebra]',\n"
+             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.oid(32|64)][.Five][.STATIC][.Algebra]',\n"
              "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s%s%s')"
-              % (v['OS'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'], v['ALGEBRA'])),
+              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'], v['ALGEBRA'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
             ]
@@ -3153,20 +3153,20 @@ def main(argv) :
     if THISFILE == 'Mapprove.py':
         f = os.path.join(env['TSTTRGBASE'],TSTPREF,'.Mapprove.rc')
         v = ReadMapproveRc(f)
-        OS = v['OS']
+        SYST = v['SYST']
         RELEASE = v['RELEASE']
-        OSVER = OS+RELEASE
+        SYSTVER = SYST+RELEASE
         DIST = v['DIST']
         VERSION = v['VERSION']
         DISTVER = DIST+VERSION
-        os.environ['OS'] = OS
-        os.environ['OSVER'] = OSVER
+        os.environ['SYST'] = SYST
+        os.environ['SYSTVER'] = SYSTVER
         os.environ['RELEASE'] = RELEASE
         os.environ['DIST'] = DIST
         os.environ['DISTVER'] = DISTVER
         os.environ['VERSION'] = VERSION
         w = {}
-        for i in 'OS', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA':
+        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA':
             w[i] = re.escape(v[i])
         for i in 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA':
             j = 'TST_'+i
@@ -3175,8 +3175,8 @@ def main(argv) :
             if v[i]:
                 v[i] = '(.%s)?' % v[i]
                 w[i] = '(\.%s)?' % w[i]
-        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s%s%s$' % (v['OS'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'], v['ALGEBRA'])
-        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s%s%s$' % (w['OS'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['OIDS'], w['FIVE'], w['STATIC'], w['ALGEBRA'])
+        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'], v['ALGEBRA'])
+        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['OIDS'], w['FIVE'], w['STATIC'], w['ALGEBRA'])
         r = re.compile(sw)
         if not r.match(par['SYSTEM']):
             ErrXit("System (-S) must match '"+sv+"' !")
@@ -3540,13 +3540,13 @@ def main(argv) :
                 BusyPorts.append(SRVR)
 
         # create '.Mapprove.rc'
-        env['OS'] = os.environ['OS']
+        env['SYST'] = os.environ['SYST']
         env['RELEASE'] = os.environ['RELEASE']
         env['DIST'] = os.environ['DIST']
         env['VERSION'] = os.environ['VERSION']
         n = os.path.join(env['TSTTRGBASE'],TSTPREF,'.Mapprove.rc')
         f = open(n, 'w')
-        for v in 'OS', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_FIVE', 'TST_STATIC', 'TST_ALGEBRA':
+        for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_FIVE', 'TST_STATIC', 'TST_ALGEBRA':
             w = v.replace('TST_','')
             f.write('%s = "%s"\n' % (w, env[v]))
         f.close()
@@ -3653,7 +3653,7 @@ VALUES (%s, '%s', '%s', '%s',
     '%s', '%s', %s, %s, %s,
     '%s', '%s', '%s',
     %s, '%s', '%s');
-""" %(now, host, env['OS'], env['RELEASE'],
+""" %(now, host, env['SYST'], env['RELEASE'],
         ccname, ccopts, bits, oids, isStatic,
         product, TSTDIR, TST,
         tms, Fcodes[FtOut], Fcodes[FtErr])

@@ -75,7 +75,6 @@ gdk_export int gprof_pthread_create(pthread_t * __restrict, __const pthread_attr
 #undef HAVE_MALLOPT
 #endif
 
-#ifndef HAVE_MALLINFO
 #ifndef M_MXFAST
 #define M_MXFAST	1	/* set size of blocks to be fast */
 #endif
@@ -90,27 +89,22 @@ gdk_export int gprof_pthread_create(pthread_t * __restrict, __const pthread_attr
 #define M_KEEP		4	/* retain contents of block after a free */
 			   /* until another allocation */
 #endif
-#ifndef HAVE_STRUCT_MALLINFO
-struct mallinfo {
-	int arena;		/* total space in arena */
-	int ordblks;		/* number of ordinary blocks */
-	int smblks;		/* number of small blocks */
-	int hblks;		/* number of holding blocks */
-	int hblkhd;		/* space in holding block headers */
-	int usmblks;		/* space in small blocks in use */
-	int fsmblks;		/* space in free small blocks */
-	int uordblks;		/* space in ordinary blocks in use */
-	int fordblks;		/* space in free ordinary blocks */
-	int keepcost;		/* cost of enabling keep option */
+
+/* our version of struct mallinfo */
+struct Mallinfo {
+	size_t arena;		/* total space in arena */
+	size_t ordblks;		/* number of ordinary blocks */
+	size_t smblks;		/* number of small blocks */
+	size_t hblks;		/* number of holding blocks */
+	size_t hblkhd;		/* space in holding block headers */
+	size_t usmblks;		/* space in small blocks in use */
+	size_t fsmblks;		/* space in free small blocks */
+	size_t uordblks;	/* space in ordinary blocks in use */
+	size_t fordblks;	/* space in free ordinary blocks */
+	size_t keepcost;	/* cost of enabling keep option */
 };
-#endif
 
-#define mallinfo() 		{0}
-#define mallopt(cmd,value)	0
-
-#endif /* ! HAVE_MALLINFO */
-
-gdk_export struct mallinfo MT_mallinfo(void);
+gdk_export struct Mallinfo MT_mallinfo(void);
 
 @- locking, sleep
 @h
@@ -1122,13 +1116,25 @@ MT_madvise(void *p, size_t len, int advise)
 	return ret;
 }
 
-struct mallinfo
+struct Mallinfo
 MT_mallinfo(void)
 {
-	struct mallinfo _ret;
+	struct Mallinfo _ret;
 
-#ifdef HAVE_MALLINFO
-	_ret = mallinfo();
+#ifdef HAVE_USEFUL_MALLINFO
+	struct mallinfo m;
+
+	m = mallinfo();
+	_ret.arena = m.arena;
+	_ret.ordblks = m.ordblks;
+	_ret.smblks = m.smblks;
+	_ret.hblks = m.hblks;
+	_ret.hblkhd = m.hblkhd;
+	_ret.usmblks = m.usmblks;
+	_ret.fsmblks = m.fsmblks;
+	_ret.uordblks = m.uordblks;
+	_ret.fordblks = m.fordblks;
+	_ret.keepcost = m.keepcost;
 #else
 	memset(&_ret, 0, sizeof(_ret));
 #endif
@@ -1427,17 +1433,16 @@ MT_madvise(void *p, size_t len, int advise)
 #define _HEAPBADPTR     (-6)
 #endif
 
-struct mallinfo
+struct Mallinfo
 MT_mallinfo(void)
 {
-	struct mallinfo _ret;
+	struct Mallinfo _ret;
 	_HEAPINFO hinfo;
 	int heapstatus;
 
 	hinfo._pentry = NULL;
-	memset(&_ret, 0, sizeof(struct mallinfo));
+	memset(&_ret, 0, sizeof(_ret));
 
-/* 64bit: mallinfo uses ints which won't work on 64 bit platforms */
 	while ((heapstatus = _heapwalk(&hinfo)) == _HEAPOK) {
 		_ret.arena += hinfo._size;
 		if (hinfo._size > MT_SMALLBLOCK) {

@@ -70,14 +70,11 @@ storage mode.  This is discussed in detail in BATsetaccess (gdk_bat.mx).
 static char *
 decompose_filename(str nme)
 {
-	char *ext, *priv;
+	char *ext;
 
 	ext = strchr(nme, '.');	/* extract base and ext from heap file name */
 	if (ext) {
 		*ext++ = 0;
-		priv = strchr(ext, '.');
-		if (priv)
-			*priv = 0;
 	}
 	return ext;
 }
@@ -139,7 +136,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			fclose(fp);
 			/* a non-persistent heap: we create a .priv but *not* MMAP_PRIV !!! */
 			h->storage = STORE_MMAP;
-			HEAPload(h, nme, ext, FALSE);
+			HEAPload(h, nme, privext, FALSE);
 		}
 		GDKfree(of);
 	}
@@ -222,7 +219,7 @@ HEAPextend(Heap *h, size_t size)
 				/* a non-persistent heap: we create a .priv but *not* MMAP_PRIV !!! */
 				h->storage = STORE_MMAP;
 				h->base = NULL;
-				if (HEAPload(h, nme, ext, FALSE) >= 0) {
+				if (HEAPload(h, nme, privext, FALSE) >= 0) {
 					memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak);
 					return 0;

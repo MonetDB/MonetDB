@@ -264,7 +264,7 @@
 #endif
 
 /* Define to 1 if you have the `mallinfo' function. */
-/* #undef HAVE_MALLINFO */
+/* #undef HAVE_USEFUL_MALLINFO */
 
 /* Define to 1 if you have the <malloc.h> header file. */
 #define HAVE_MALLOC_H 1
