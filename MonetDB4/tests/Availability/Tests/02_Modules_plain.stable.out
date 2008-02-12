@@ -874,8 +874,8 @@ Module: "mmath"
 
 Module: "monettime"
 
-[ 119 ]
-[ 119 ]
+[ 120 ]
+[ 120 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			| type		| signature														| help													  #
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -945,6 +945,7 @@ Module: "monettime"
 [ "diff",			  "COMMAND:   ",  "diff(timestamp, timestamp) : lng",											  "returns the number of milliseconds between 'val1' and 'val2' (!DS2.2)."				  ]
 [ "dst",			  "COMMAND:   ",  "dst(timestamp, tzone) : bit",											  "return whether DST holds in the tzone at a certain point of time (!DS2.2)."				  ]
 [ "end_dst",			  "COMMAND:   ",  "end_dst(tzone) : rule",												  "extract rule that determines end of DST from tzone (!DS2.2)."					  ]
+[ "epoch",			  "PROC:      ",  "epoch(int) : timestamp",												  "not available"											  ]
 [ "epoch",			  "PROC:      ",  "epoch(timestamp) : int",												  "not available"											  ]
 [ "hours",			  "COMMAND:   ",  "hours(daytime) : int",												  "extracts hour from daytime (value between 0 and 23)"							  ]
 [ "hours",			  "PROC:      ",  "hours(lng) : int",													  "not available"											  ]
