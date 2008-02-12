@@ -511,22 +511,14 @@ GDKmem_heapinuse(void)
 }
 
 volatile int GDK_heapcheck_last = 0;
-int mallinfo_ok = 1;
 
 static INLINE void
 GDKmem_heapcheck(int t)
 {
 	/* correct heap estimate with the real thing */
-	if (mallinfo_ok) {
-		struct mallinfo m = MT_mallinfo();
+	struct Mallinfo m = MT_mallinfo();
 
-#if ((SIZEOF_VOID_P==8) && defined(HAVE_SIGNED_MALLINFO))
-		if (m.usmblks < 0 || m.uordblks < 0 || m.hblkhd < 0)
-			mallinfo_ok = 0;	/* incredible POSIX incompetence!! non-64-bit safe mallinfo */
-		else
-#endif
-			GDK_mallocedbytes_estimate = (size_t) (m.usmblks + m.uordblks + m.hblkhd);
-	}
+	GDK_mallocedbytes_estimate = (size_t) (m.usmblks + m.uordblks + m.hblkhd);
 	GDK_heapcheck_last = t;
 }
 
@@ -624,7 +616,7 @@ GDKmem_heapcheck(int t)
 static void
 GDKmemdump(void)
 {
-	struct mallinfo m = MT_mallinfo();
+	struct Mallinfo m = MT_mallinfo();
 
 	THRprintf(GDKout, "\n#mallinfo.arena = " SSZFMT "\n", (ssize_t) m.arena);
 	THRprintf(GDKout, "#mallinfo.ordblks = " SSZFMT "\n", (ssize_t) m.ordblks);
@@ -967,7 +959,7 @@ pointer (as well as the VM maxsize), so the malloc primitives can recognize
 these redirected blocks.
 @end table
 
-64-bits update: POSIX mallinfo is severely broken, as it uses int-s for memory sizes!!
+64-bits update: Some 64-bit implementations (Linux) of mallinfo is severely broken, as they use int-s for memory sizes!!
 This causes corruption of mallinfo stats. As we depend on those, we should keep the
 malloc arena small. Thus, VM redirection is now quickly applied: for all mallocs > 1MB.
 @{

@@ -43,7 +43,7 @@ that you might well find very useful.
 @m
 .COMMAND view_gdk_cpu() : BAT[str,int] = view_gdk_cpu;
 	"Global cpu usage info"
-.COMMAND view_gdk_memory(): BAT[str,int] = view_gdk_mem;
+.COMMAND view_gdk_memory(): BAT[str,wrd] = view_gdk_mem;
 	"Global memory usage info"
 .COMMAND view_gdk_io(): BAT[str,int] = view_gdk_io;
 	"Global IO activityinfo"
@@ -448,7 +448,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
     PROC cpu() : bat[str,int] { RETURN view_gdk_cpu();}
     ADDHELP("cpu", "boncz", "Mar 22 1998", "Global cpu usage info", "sys");
 
-    PROC memory() : bat[str,int] { RETURN view_gdk_memory();}
+    PROC memory() : bat[str,wrd] { RETURN view_gdk_memory();}
     ADDHELP("memory", "boncz", "Mar 22 1998", "Global memory usage info","sys");
 
     PROC io() : bat[str,int]  { RETURN view_gdk_io();}
@@ -1363,14 +1363,13 @@ static char *memincr = NULL;
 int
 view_gdk_mem(BAT **retval)
 {
-/* 64bit: should return a [str,wrd] bat, but then again, mallinfo returns ints */
-	struct mallinfo m;
+	struct Mallinfo m;
 	BAT *b;
-	int i;
+	wrd i;
 
 	m = MT_mallinfo();
 
-	*retval = b = BATnew(TYPE_str, TYPE_int, 32);
+	*retval = b = BATnew(TYPE_str, TYPE_wrd, 32);
 	if (b == 0)
 		return GDK_FAIL;
 
@@ -1523,7 +1522,7 @@ get_mem_usage(BAT **ret, lng *minsize)
 {
 	lng buns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, n = 0, sz;
 	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2 * BBPsize);
-	struct mallinfo m;
+	struct Mallinfo m;
 	char buf[1024];
 	bat i;
 
@@ -1595,7 +1594,7 @@ get_mem_usage(BAT **ret, lng *minsize)
 	/* how much *used* bytes in heap? */
 	m = MT_mallinfo();
 	sz = (size_t) (m.usmblks + m.uordblks + m.hblkhd);
-	BUNins(bn, "_tot/malloc", &tot, FALSE);
+	BUNins(bn, "_tot/malloc", &sz, FALSE);
 
 	/* measure actual heap size, includes wasted fragmented space and anon mmap space used by malloc() */
 	sz = GDKvm_heapsize();
