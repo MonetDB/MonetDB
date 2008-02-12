@@ -808,7 +808,7 @@ command timestamp(s:str):timestamp address MTIMEtimestamp_fromstr;
 command timestamp(t:timestamp):timestamp address MTIMEtimestamp2timestamp;
 command timestamp(d:date) :timestamp address MTIMEtimestamp_create_from_date;
 command timestamp(secs:int):timestamp address MTIMEtimestamp;
-command timestamp(secs:lng):timestamp address MTIMEtimestamp_lng;
+command timestamp(msecs:lng):timestamp address MTIMEtimestamp_lng;
 
 command daytime(s:str):daytime address MTIMEdaytime_fromstr;
 command daytime(d:daytime):daytime address MTIMEdaytime2daytime;
@@ -1043,7 +1043,7 @@ mtime_export str MTIMEunix_epoch(timestamp *ret);
 mtime_export str MTIMEepoch(timestamp *ret);
 mtime_export str MTIMEepoch2int(int *res, timestamp *ts);
 mtime_export str MTIMEtimestamp(timestamp *ret, int *sec);
-mtime_export str MTIMEtimestamp_lng(timestamp *ret, lng *sec);
+mtime_export str MTIMEtimestamp_lng(timestamp *ret, lng *msecs);
 mtime_export str MTIMEruleDef0(rule *ret, int *m, int *d, int *w, int *h, int *mint);
 mtime_export str MTIMEruleDef1(rule *ret, int *m, str *dnme, int *w, int *h, int *mint);
 mtime_export str MTIMEruleDef2(rule *ret, int *m, str *dnme, int *w, int *mint);
@@ -3716,7 +3716,7 @@ str
 MTIMEtimestamp(timestamp *ret, int *sec)
 {
 	timestamp e;
-	lng l = *sec * 1000;
+	lng l = ((lng) *sec) * 1000;
 
 	MTIMEunix_epoch(&e);
 	timestamp_add(ret, &e, &l);
@@ -3724,10 +3724,10 @@ MTIMEtimestamp(timestamp *ret, int *sec)
 }
 
 str
-MTIMEtimestamp_lng(timestamp *ret, lng *sec)
+MTIMEtimestamp_lng(timestamp *ret, lng *msec)
 {
 	timestamp e;
-	lng l = *sec * 1000;
+	lng l = *msec;
 
 	MTIMEunix_epoch(&e);
 	timestamp_add(ret, &e, &l);
