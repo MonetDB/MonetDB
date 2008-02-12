@@ -869,7 +869,7 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 		/* lets copy the head */
 		if (special <= 1 && retb->htype) {
 			buntrick = Tsize(retb);
-			memcpy(retb->H->heap.base, bh->H->heap.base, headsize(bh,BATcount(bh)));
+			memcpy(retb->H->heap.base, Hloc(bh, BUNfirst(bh)), headsize(bh,BATcount(bh)));
 			retb->H->heap.free = headsize(retb,BATcount(bh));
 			/* for var sized also copy heap */
 			if (retb->hvarsized) {

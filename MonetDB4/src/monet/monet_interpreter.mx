@@ -2546,11 +2546,11 @@ quote(char *buf, int lim)
 void
 onlineProfilerEvent(char *caller, lng clk, lng ticks, struct tms *timer, YYSTREE lt)
 {
-	static struct mallinfo prevMalloc;
+	static struct Mallinfo prevMalloc;
 	static struct rusage prevUsage;
 	static int eventcounter;
 	struct tms newTms;
-	struct mallinfo infoMalloc;
+	struct Mallinfo infoMalloc;
 	struct rusage infoUsage;
 	char namebuf[1024];
 
