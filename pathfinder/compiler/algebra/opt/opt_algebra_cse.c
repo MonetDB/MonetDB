@@ -679,8 +679,7 @@ create_attlist (PFalg_schema_t schema)
 static bool
 atom_eq (PFalg_atom_t a, PFalg_atom_t b)
 {
-    if (a.type != b.type)
-        return false;
+    assert (PFalg_atom_comparable (a,b));
 
     switch (a.type) {
         /* if type is nat, compare nat member of union */
@@ -1281,7 +1280,8 @@ column_eq (unsigned int col1, unsigned int col2,
 
     /* check every item of the column */
     for (i = 0; i < littbl1->sem.lit_tbl.count; i++) {
-        if (!atom_eq (a[i].atoms[col1], b[i].atoms[col2]))
+        if (!PFalg_atom_comparable (a[i].atoms[col1], b[i].atoms[col2]) ||
+            !atom_eq (a[i].atoms[col1], b[i].atoms[col2]))
             return false;
     } 
     return true;

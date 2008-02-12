@@ -305,7 +305,7 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
         /* count sibligs for excat result BAT allocation */
         cur_lev = level[*ctx_cur];
         cur_sib = *ctx_cur + size[*ctx_cur] + 1;
-        while (cur_sib <= doc_max && ((sz = size[cur_sib]) < 0 || level[cur_sib] == cur_lev)) {
+        while (cur_sib < doc_max && ((sz = size[cur_sib]) < 0 || level[cur_sib] == cur_lev)) {
             num_sib += (sz >= 0);
             cur_sib += 1 + (sz & sz_msk); 
         }
@@ -316,7 +316,7 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
             PFll_check_BAT_capacity(res, grow, res_scur, res_hcur, res_tcur);
             if (num_iter == 1) {
                 ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, 1 iter\n", name);
-                while (cur_sib <= doc_max && ((sz = size[cur_sib]) < 0 || level[cur_sib] == cur_lev)) {
+                while (cur_sib < doc_max && ((sz = size[cur_sib]) < 0 || level[cur_sib] == cur_lev)) {
                     if (sz >= 0) {
                         @1 {
                             *res_hcur++ = min_iter;
@@ -328,7 +328,7 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
             } else {
                 /* num_iter > 1 */
                 ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, n iter\n", name);
-                while (cur_sib <= doc_max && ((sz = size[cur_sib]) < 0 || level[cur_sib] == cur_lev)) {
+                while (cur_sib < doc_max && ((sz = size[cur_sib]) < 0 || level[cur_sib] == cur_lev)) {
                     if (sz >= 0) {
                         @1 {
                             oid *cur_iter = iter_cur;
@@ -409,6 +409,8 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
         @2 *stack = 0;
         oid ctx;
 
+        ALGODEBUG THRprintf(GDKout, "%s: ll_foll_sib_n_ctx( @1 , @2 )\n", name);
+
         stack = (@2*)GDKmalloc(sizeof(@2) * (XML_DEPTH_MAX + 1));
         if (stack == NULL) {
             GDKerror("%s: could not allocate stack of size "SZFMT".\n", name, sizeof(@2) * (XML_DEPTH_MAX + 1));
@@ -473,7 +475,7 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
             cur_lev = level[ctx];
             cur_sib = ctx + size[ctx] + 1;
             /* get all remaining siblings of active item */
-            while (cur_sib <= doc_max && ((sz = size[cur_sib]) < 0 || level[cur_sib] == cur_lev)) {
+            while (cur_sib < doc_max && ((sz = size[cur_sib]) < 0 || level[cur_sib] == cur_lev)) {
                 if (sz >= 0) {
                     @1 {
                         /* check, if result buffer is big enough; otherwise extend it */
