@@ -555,6 +555,7 @@ end main;	# 11
 [ "setCachePolicy",		  "command",	  "replicator",	  "(p:sht):void ",													  "REPsetCache;"					  ]
 [ "setReusePolicy",		  "command",	  "replicator",	  "(p:sht):void ",													  "REPsetReuse;"					  ]
 [ "setRetainPolicy",		  "command",	  "replicator",	  "(p:sht):void ",													  "REPsetRetain;"					  ]
+[ "stat",				  "command",	  "replicator",	  "():void ",																	  "REPstat;"					  ]
 [ "select",			  "pattern",	  "replicator",	  "(b:bat[:any_1,:any_2],low:any_2,hgh:any_2,li:bit,hi:bit,sname:str,tname:str,cname:str):bat[:any_1,:any_2] ",				  "REPselect;"					  ]
 [ "select",			  "pattern",	  "replicator",	  "(b:bat[:any_1,:any_2],low:any_2,hgh:any_2,sname:str,tname:str,cname:str):bat[:any_1,:any_2] ",					  "REPselect;"					  ]
 [ "select",			  "pattern",	  "replicator",	  "(b:bat[:any_1,:any_2],value:any_2,sname:str,tname:str,cname:str):bat[:any_1,:any_2] ",						  "REPselect;"					  ]
