@@ -173,16 +173,11 @@ static void printReplica(stream *f, int i){
 
 	Replica r = repltable+i;
 	if (r==NULL) GDKerror("Empty replica element");
-/*	stream_printf(f,"Source BAT: %s, %s, %s\n", r->sname, r->tname, r->cname);*/
 	stream_printf(f,"%s\t%s\t%s\t", r->sname, r->tname, r->cname);
-/*	stream_printf(f,"Selection ["); */
 	VALprint(f,&r->low);
 	stream_printf(f,":"); VALprint(f,&r->hgh);
-/*	stream_printf(f,"] inclusive [%d,%d]\n", r->li,r->hi);*/
 	stream_printf(f,"\t[%d:%d]\t", r->li,r->hi);
-/*	stream_printf(f,"Cnt %d cost %8.2f \n", r->cnt,r->cost);
-	stream_printf(f,"Usage: equality %d, subset %d \n", r->ucnteq,r->ucntsub); */
-	stream_printf(f,"%d\t%8.2f\t", r->cnt,r->cost);
+	stream_printf(f,"%d\t%8.2f ms\t", r->cnt,r->cost/1000.0);
 	stream_printf(f,"%d:%d\n", r->ucnteq,r->ucntsub);
 }
 
@@ -211,7 +206,7 @@ REPstat(int *ret)
 		if( repltable[i].ucntsub>0 ) /* approx benefit of subset reuse */
 			ben+= repltable[i].ucnteq * repltable[i].cost * 0.5;
 	}
-	stream_printf(GDKout,"Potential benefit from %d replicas %10.2f\n",replnr,ben);
+	stream_printf(GDKout,"Potential benefit from %d replicas %10.2f ms\n",replnr,ben/1000.0);
 	return MAL_SUCCEED;
 }
 
