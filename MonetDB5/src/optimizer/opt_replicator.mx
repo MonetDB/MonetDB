@@ -397,7 +397,7 @@ str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi,
 {
 	int tpe, rr;
 	BAT *bn, *br;
-	lng cnt=0,clk;
+	lng cnt=0, clk = 0;
 	Replica r;
 	sht ov;
 
@@ -409,9 +409,9 @@ str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi,
 	/* execute selection if needed */
 	if((retain == 0) || 	/* normal execution + keep stat */
 	   ((retain == 1) && (ov < 0))){	/* no overlap in exist. repl. */
-		clk= GDKusec();
+		clk = GDKusec();
 		bn = BAT_select_(b, low, hgh, li, hi, tl, FALSE);
-		clk= GDKusec()-clk;
+		clk = GDKusec()-clk;
 
                 if (bn) {
         	        if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
