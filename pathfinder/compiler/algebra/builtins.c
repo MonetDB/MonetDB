@@ -2350,6 +2350,10 @@ PFbui_fn_not_bln (const PFla_op_t *loop, bool ordering,
  * is not even the right function to use there, because the constructors
  * should do their job based on _statically-known namespace declarations_,
  * not in-scope declarations.
+ *
+ * Furthermore a cast from string to xs:QName is only allowed at compile
+ * time on constant strings. At runtime a cast to xs:QName is only allowed
+ * for QNames inputs.
  */
 struct PFla_pair_t
 PFbui_fn_resolve_qname (const PFla_op_t *loop, bool ordering,
@@ -2416,22 +2420,34 @@ PFbui_fn_qname (const PFla_op_t *loop, bool ordering,
 struct PFla_pair_t
 PFbui_fn_name (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) ordering;
 
-    return (struct PFla_pair_t) {
-        .rel = project (
-                   fun_1to1 (
-                       project (args[0].rel,
-                                proj (att_iter, att_iter),
-                                proj (att_pos, att_pos),
-                                proj (att_item, att_item)),
-                       alg_fun_fn_name,
-                       att_res,
-                       attlist(att_item)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
-        .frag = PFla_empty_set() };
+    PFla_op_t *strings = project (
+                             fun_1to1 (
+                                 project (args[0].rel,
+                                          proj (att_iter, att_iter),
+                                          proj (att_pos, att_pos),
+                                          proj (att_item, att_item)),
+                                 alg_fun_fn_name,
+                                 att_res,
+                                 attlist(att_item)),
+                             proj (att_iter, att_iter),
+                             proj (att_pos, att_pos),
+                             proj (att_item, att_res));
+    
+    PFla_op_t *res = disjunion (
+                         strings,
+                         attach (
+                             attach (
+                                 difference (
+                                     loop,
+                                     project (
+                                         strings,
+                                         proj (att_iter, att_iter))),
+                                 att_pos, lit_nat (1)),
+                             att_item, lit_str ("")));
+
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set() };
 }
 
 /* ------------------- */
@@ -2442,22 +2458,34 @@ struct PFla_pair_t
 PFbui_fn_local_name (const PFla_op_t *loop, bool ordering,
                      struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) ordering;
 
-    return (struct PFla_pair_t) {
-        .rel = project (
-                   fun_1to1 (
-                       project (args[0].rel,
-                                proj (att_iter, att_iter),
-                                proj (att_pos, att_pos),
-                                proj (att_item, att_item)),
-                       alg_fun_fn_local_name,
-                       att_res,
-                       attlist(att_item)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
-        .frag = args[0].frag };
+    PFla_op_t *strings = project (
+                             fun_1to1 (
+                                 project (args[0].rel,
+                                          proj (att_iter, att_iter),
+                                          proj (att_pos, att_pos),
+                                          proj (att_item, att_item)),
+                                 alg_fun_fn_local_name,
+                                 att_res,
+                                 attlist(att_item)),
+                             proj (att_iter, att_iter),
+                             proj (att_pos, att_pos),
+                             proj (att_item, att_res));
+    
+    PFla_op_t *res = disjunion (
+                         strings,
+                         attach (
+                             attach (
+                                 difference (
+                                     loop,
+                                     project (
+                                         strings,
+                                         proj (att_iter, att_iter))),
+                                 att_pos, lit_nat (1)),
+                             att_item, lit_str ("")));
+
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set() };
 }
 
 /* --------------------- */
@@ -2468,22 +2496,34 @@ struct PFla_pair_t
 PFbui_fn_namespace_uri (const PFla_op_t *loop, bool ordering,
                         struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) ordering;
 
-    return (struct PFla_pair_t) {
-        .rel = project (
-                   fun_1to1 (
-                       project (args[0].rel,
-                                proj (att_iter, att_iter),
-                                proj (att_pos, att_pos),
-                                proj (att_item, att_item)),
-                       alg_fun_fn_namespace_uri,
-                       att_res,
-                       attlist(att_item)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
-        .frag = args[0].frag };
+    PFla_op_t *strings = project (
+                             fun_1to1 (
+                                 project (args[0].rel,
+                                          proj (att_iter, att_iter),
+                                          proj (att_pos, att_pos),
+                                          proj (att_item, att_item)),
+                                 alg_fun_fn_namespace_uri,
+                                 att_res,
+                                 attlist(att_item)),
+                             proj (att_iter, att_iter),
+                             proj (att_pos, att_pos),
+                             proj (att_item, att_res));
+    
+    PFla_op_t *res = disjunion (
+                         strings,
+                         attach (
+                             attach (
+                                 difference (
+                                     loop,
+                                     project (
+                                         strings,
+                                         proj (att_iter, att_iter))),
+                                 att_pos, lit_nat (1)),
+                             att_item, lit_str ("")));
+
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set() };
 }
 
 /* --------------- */
