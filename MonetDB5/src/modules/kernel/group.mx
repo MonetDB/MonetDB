@@ -244,7 +244,6 @@ int
 grp_new(BAT *b, BAT *h)
 {
 	if (h) {
-		if (!(h->batDirty&2)) h = BATsetaccess(h, BAT_READ); 
 		BATkey(h, TRUE);
 		h->tsorted = 0;
 		if ((h->hsorted = BAThordered(b)) & 1) {
@@ -255,6 +254,7 @@ grp_new(BAT *b, BAT *h)
 			BBPreclaim(h);
 			return GDK_FAIL;
 		}
+		if (!(h->batDirty&2)) h = BATsetaccess(h, BAT_READ); 
 		BBPkeepref(h->batCacheid);
 	} else {
 		assert(h);
@@ -492,6 +492,7 @@ bunins_failed:
 		GDKfree(hash);
 	return NULL;
 }
+
 @c
 static int
 tailtype(BAT *b, int str_trick)
@@ -1244,6 +1245,76 @@ GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize)
 	return MAL_SUCCEED;
 }
 
+@= group_ordered
+BAT *
+CTgroup_@1_ordered(BAT *b, BAT **res) 
+{
+	BAT *bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
+	BAT *histo = BATnew(TYPE_oid, TYPE_int, 1024); 
+	@1 *t = (@1*)Tloc(b, BUNfirst(b)), *e = t + BATcount(b), cur;
+	int cnt = 0;
+	oid *rt = (oid*)Tloc(bn, BUNfirst(bn)), curid;
+
+	if (bn == NULL || histo == NULL) 
+		return NULL;
+
+	bn->hseqbase = b->hseqbase;
+	cur = *t;
+	if (b->htype == TYPE_void) {
+		oid h = b->hseqbase;
+
+		curid = h;
+		for(; t < e; t++, h++) {
+			if (*t != cur) {
+				BUNins(histo, &curid, &cnt, FALSE);
+				cur = *t;
+				curid = h;
+				cnt = 0;
+			}
+			cnt++;
+			*rt++ = curid;
+		}
+	} else { /* TYPE_oid */
+		oid *h = (oid*)Hloc(b, BUNfirst(b));
+	
+		curid = *h;
+		for(; t < e; t++, h++) {
+			if (*t != cur) {
+				BUNins(histo, &curid, &cnt, FALSE);
+				cur = *t;
+				curid = *h;
+				cnt = 0;
+			}
+			cnt++;
+			*rt++ = curid;
+		}
+	}
+	BATsetcount(bn, BATcount(b));
+	if (BATcount(b))
+		BUNins(histo, &curid, &cnt, FALSE);
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
+	if (BAThordered(b)) {
+		bn->tsorted = b->tsorted;
+		histo->hsorted = b->hsorted;
+		histo->tsorted = b->tsorted;
+		BATkey(histo, TRUE);
+	}
+	if (b->hkey)
+		BATkey(bn, TRUE);
+	*res = bn;
+	return histo;
+}
+@c
+@:group_ordered(bte)@
+@:group_ordered(sht)@
+@:group_ordered(int)@
+@:group_ordered(lng)@
+
 group_export str GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng);
 group_export str GRPgroup(int *rethisto, int *retbid, int *bid);
 str
@@ -1253,6 +1324,33 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "group.group", "Cannot access descriptor");
+	}
+	if (BATcount(b) > 1 &&
+	    BATtordered(b)&1 && 
+	    ATOMtype(b->htype) == TYPE_oid && 
+	    b->ttype <= TYPE_str) {
+		switch(tailtype(b,TRUE)) {
+		case TYPE_bte:
+			histo = CTgroup_bte_ordered(b, &bn);
+			break;
+		case TYPE_sht:
+			histo = CTgroup_sht_ordered(b, &bn);
+			break;
+		case TYPE_int:
+			histo = CTgroup_int_ordered(b, &bn);
+			break;
+		case TYPE_lng:
+			histo = CTgroup_lng_ordered(b, &bn);
+			break;
+		default:
+			throw(MAL, "group.group", "Impossible type");
+		}
+		if (!histo)
+			throw(MAL, "group.group", "ordered group failed");
+		BBPkeepref(*rethisto = histo->batCacheid);
+		BBPkeepref(*retbid = bn->batCacheid);
+		BBPreleaseref(b->batCacheid);
+		return MAL_SUCCEED;
 	}
 	if (BATcount(b) > 1024*1024 &&
 	    (ATOMstorage(b->ttype) == TYPE_int || 
