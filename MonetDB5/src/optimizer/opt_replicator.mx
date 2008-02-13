@@ -74,6 +74,10 @@ command replicator.dump():void
 address REPdump
 comment "Dump summary of replica table for potential re-use benefits";
 
+command replicator.stat():void
+address REPstat
+comment "Estimate of potential replica benefit";
+
 command replicator.setRetainPolicy(p:sht):void
 address REPsetRetain
 comment "Set replica retainment policy";
@@ -99,6 +103,7 @@ opt_export str REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str REPinit(void);
 opt_export str REPdump(int *ret);
+opt_export str REPstat(int *ret);
 opt_export str REPsetRetain(int *ret, sht *p);
 opt_export str REPsetReuse(int *ret, sht *p);
 opt_export str REPsetCache(int *ret, sht *p);
@@ -168,12 +173,17 @@ static void printReplica(stream *f, int i){
 
 	Replica r = repltable+i;
 	if (r==NULL) GDKerror("Empty replica element");
-	stream_printf(f,"Source BAT: %s, %s, %s\n", r->sname, r->tname, r->cname);
-	stream_printf(f,"Selection ["); VALprint(f,&r->low);
+/*	stream_printf(f,"Source BAT: %s, %s, %s\n", r->sname, r->tname, r->cname);*/
+	stream_printf(f,"%s\t%s\t%s\t", r->sname, r->tname, r->cname);
+/*	stream_printf(f,"Selection ["); */
+	VALprint(f,&r->low);
 	stream_printf(f,":"); VALprint(f,&r->hgh);
-	stream_printf(f,"] inclusive [%d,%d]\n", r->li,r->hi);
-	stream_printf(f,"Cnt %d cost %f \n", r->cnt,r->cost);
-	stream_printf(f,"Usage: equality %d, subset %d \n", r->ucnteq,r->ucntsub);
+/*	stream_printf(f,"] inclusive [%d,%d]\n", r->li,r->hi);*/
+	stream_printf(f,"\t[%d:%d]\t", r->li,r->hi);
+/*	stream_printf(f,"Cnt %d cost %8.2f \n", r->cnt,r->cost);
+	stream_printf(f,"Usage: equality %d, subset %d \n", r->ucnteq,r->ucntsub); */
+	stream_printf(f,"%d\t%8.2f\t", r->cnt,r->cost);
+	stream_printf(f,"%d:%d\n", r->ucnteq,r->ucntsub);
 }
 
 str
@@ -182,6 +192,7 @@ REPdump(int *ret)
 	int i;
 	(void) ret;
 	stream_printf(GDKout,"Number of replicas %d\n",replnr);
+	stream_printf(GDKout,"Schema\tTable\t\tColumn\tLow : High\t[LI : HI]\tCnt\tCost\tEq : Sub\n");
 	for( i=0; i<replnr; i++)
 		printReplica(GDKout, i);
 	return MAL_SUCCEED;
@@ -191,10 +202,16 @@ str
 REPstat(int *ret)
 {
 	int i;
+	dbl ben = 0;
 	(void) ret;
 	stream_printf(GDKout,"Number of replicas %d\n",replnr);
-	for( i=0; i<replnr; i++)
-		printReplica(GDKout, i);
+	for( i=0; i<replnr; i++){
+		if( repltable[i].ucnteq>0 )
+			ben+= repltable[i].ucnteq * repltable[i].cost;
+		if( repltable[i].ucntsub>0 ) /* approx benefit of subset reuse */
+			ben+= repltable[i].ucnteq * repltable[i].cost * 0.5;
+	}
+	stream_printf(GDKout,"Potential benefit from %d replicas %10.2f\n",replnr,ben);
 	return MAL_SUCCEED;
 }
 
@@ -295,7 +312,7 @@ static int findReplica( str sname, str tname, str cname, int tpe, bit tail,
 {
 	Replica r;
 	int (*cmp) (ptr, ptr);
-	ptr nilptr;
+	ptr nilptr, plow, phgh;
 	int i, minr = -1;
 	size_t minc = (size_t) GDK_lng_max;
 	bit leq, lsub, heq, hsub;
@@ -303,6 +320,7 @@ static int findReplica( str sname, str tname, str cname, int tpe, bit tail,
 
 	cmp= BATatoms[tpe].atomCmp;
 	nilptr = ATOMnilptr(tpe);
+
 
 	for (i=0; i<replnr; i++){
 		r = repltable + i;
@@ -316,15 +334,17 @@ static int findReplica( str sname, str tname, str cname, int tpe, bit tail,
 
 			/* check overlap */
 		leq = lsub = heq = hsub = FALSE;
-		if( ((*cmp)(low, &r->low) == 0) && (li == r->li) ) leq = TRUE;
-		else if( ((*cmp)(low, nilptr)==0) ||
-			 ((*cmp)(low, &r->low) > 0) ||
-			 (((*cmp)(low, &r->low) == 0) && !li && r->li) ) lsub = TRUE;
+		plow = VALget(&r->low);
+		phgh = VALget(&r->hgh);
+		if( ((*cmp)(low, plow) == 0) && (li == r->li) ) leq = TRUE;
+		else if( ((*cmp)(plow, nilptr)==0) ||
+			 ((*cmp)(low, plow) > 0) ||
+			 (((*cmp)(low, plow) == 0) && !li && r->li) ) lsub = TRUE;
 
-		if( ((*cmp)(hgh, &r->hgh) == 0) && (hi == r->hi) ) heq = TRUE;
-		else if( ((*cmp)(&r->hgh, nilptr)==0) ||
-			 ((*cmp)(hgh, &r->hgh) < 0) ||
-			 (((*cmp)(hgh, &r->hgh) == 0) && !hi && r->hi) ) hsub = TRUE;
+		if( ((*cmp)(hgh, phgh) == 0) && (hi == r->hi) ) heq = TRUE;
+		else if( ((*cmp)(phgh, nilptr)==0) ||
+			 ((*cmp)(hgh, phgh) < 0) ||
+			 (((*cmp)(hgh, phgh) == 0) && !hi && r->hi) ) hsub = TRUE;
 
 		if (leq && heq) { /* equal replica exists */
 			*ov = 0;
@@ -381,7 +401,8 @@ static void setReplicaRange(Replica r, int tpe, ptr low, ptr hgh, bit li, bit hi
 		if( tpe < TYPE_str){
 		        VALset(&r->low,tpe, low);
 			VALset(&r->hgh,tpe, hgh);
-		} else if ( tpe < TYPE_str){
+		} else
+		if( tpe == TYPE_str){ 
 			VALset(&r->low,tpe, GDKstrdup(low));
 			VALset(&r->hgh,tpe, GDKstrdup(hgh));
 		} 
@@ -443,6 +464,8 @@ str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi,
                 else throw(MAL, "REPselectImpl", "GDKerror");
 	}
 
+	if( cnt == 0 ) /* don't store empty intermediates */
+		return MAL_SUCCEED;
 		/* update replica table */
 	if( ov < 0 ){			/* new intermed. -> new entry */
 		r = newReplica(sname,tname,cname,tpe,tl);
