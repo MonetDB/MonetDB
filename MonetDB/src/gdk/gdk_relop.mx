@@ -1178,8 +1178,10 @@ BATjoin(BAT *l, BAT *r, size_t estimate)
 	 * `debugmask(or(debugmask(),16777216));` in MIL.
 	 */
 	JOINPROPCHK {
-		if (b)
+		if (b) {
 			BATpropcheck(b, BATPROPS_ALL);
+			BATpropcheck(BATmirror(b), BATPROPS_ALL);
+		}
 	}
 
 	return b;
@@ -2086,6 +2088,15 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 	}
 	if (tmp) {
 		BBPreclaim(tmp);
+	}
+	/* invest in property check, since we cannot easily derive the result properties,
+	 * but later operations might benefit from / depend on them
+	 * Disable at runtime via `Mserver --debug=16777216` or
+	 * `debugmask(or(debugmask(),16777216));` in MIL.
+	 */
+	JOINPROPCHK {
+		if (bn) 
+			BATpropcheck(BATmirror(bn), BATPROPS_ALL);
 	}
 	return bn;
 }
