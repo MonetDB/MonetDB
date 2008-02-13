@@ -674,67 +674,6 @@ create_attlist (PFalg_schema_t schema)
 }
 
 /**
- * Check the equivalence of two atoms.
- */
-static bool
-atom_eq (PFalg_atom_t a, PFalg_atom_t b)
-{
-    assert (PFalg_atom_comparable (a,b));
-
-    switch (a.type) {
-        /* if type is nat, compare nat member of union */
-        case aat_nat:
-            if (a.val.nat_ == b.val.nat_)
-                return true;
-            break;
-        /* if type is int, compare int member of union */
-        case aat_int:
-            if (a.val.int_ == b.val.int_)
-                return true;
-            break;
-        /* if type is str, compare str member of union */
-        case aat_uA:
-        case aat_str:
-            if (!strcmp (a.val.str,
-                         b.val.str))
-                return true;
-            break;
-        /* if type is float, compare float member of union */
-        case aat_dec:
-            if (a.val.dec_ == b.val.dec_)
-                return true;
-            break;
-        /* if type is double, compare double member of union */
-        case aat_dbl:
-            if (a.val.dbl == b.val.dbl)
-                return true;
-            break;
-        /* if type is boolean, compare double member of union */
-        case aat_bln:
-            if ((a.val.bln &&
-                 b.val.bln) ||
-                (!a.val.bln
-                  && !b.val.bln))
-                return true;
-            break;
-        case aat_qname:
-            if (!PFqname_eq (a.val.qname, b.val.qname))
-                return true;
-            break;
-        /* anything else is actually bogus (e.g. there are no
-         * literal nodes */
-        default:
-        {
-            PFinfo (OOPS_WARNING, "literal value that do not make sense");
-            return true;
-        } break;
-    }
- 
-    /* if you get there every test failed */
-    return false;
-}
-
-/**
  * Test the equality of two literal table tuples.
  *
  * @param a Tuple to test against tuple @a b.
@@ -754,7 +693,7 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
 
     for (i = 0; i < a.count; i++) {
         /* check the equivalence */
-        mismatch = atom_eq (a.atoms[i], b.atoms[i])?false:true; 
+        mismatch = PFalg_atom_cmp (a.atoms[i], b.atoms[i])?true:false; 
         
         if (mismatch)
             break;
@@ -891,8 +830,7 @@ match (PFla_op_t *a, PFla_op_t *b)
                                         b->sem.attach.value))
                 return false;
 
-            if (!atom_eq (a->sem.attach.value,
-                          b->sem.attach.value))
+            if (PFalg_atom_cmp (a->sem.attach.value, b->sem.attach.value) != 0)
                 return false;
             
             return true;
@@ -1281,7 +1219,7 @@ column_eq (unsigned int col1, unsigned int col2,
     /* check every item of the column */
     for (i = 0; i < littbl1->sem.lit_tbl.count; i++) {
         if (!PFalg_atom_comparable (a[i].atoms[col1], b[i].atoms[col2]) ||
-            !atom_eq (a[i].atoms[col1], b[i].atoms[col2]))
+            PFalg_atom_cmp (a[i].atoms[col1], b[i].atoms[col2]) != 0)
             return false;
     } 
     return true;
