@@ -729,25 +729,9 @@ PFxml2la_conv_2PFLA_atomType(char* typeString)
     {
         return aat_anode;
     }
-    else if (strcmp(typeString, "attrID") == 0)
-    {
-        return aat_attr;
-    }
-    else if (strcmp(typeString, "afrag") == 0)
-    {
-        return aat_afrag;
-    }
     else if (strcmp(typeString, "pnode") == 0)
     {
         return aat_pnode;
-    }
-    else if (strcmp(typeString, "pre") == 0)
-    {
-        return aat_pre;
-    }
-    else if (strcmp(typeString, "pfrag") == 0)
-    {
-        return aat_pfrag;
     }
     else
     {
@@ -816,11 +800,7 @@ PFxml2la_conv_2PFLA_atom(PFalg_simple_type_t type,
         }
     case aat_node:   
     case aat_anode:   
-    case aat_attr:   
-    case aat_afrag:  
     case aat_pnode:  
-    case aat_pre:    
-    case aat_pfrag:  
     case aat_charseq:
     default:       
         {
