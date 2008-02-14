@@ -313,6 +313,8 @@ static int findReplica( str sname, str tname, str cname, int tpe, bit tail,
 	bit leq, lsub, heq, hsub;
 	int rs[replnr], ri=0; /* subset replicas */
 
+	(void) reuse;
+	(void) rcache;
 	cmp= BATatoms[tpe].atomCmp;
 	nilptr = ATOMnilptr(tpe);
 
