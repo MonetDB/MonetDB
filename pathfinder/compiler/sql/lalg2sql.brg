@@ -1376,7 +1376,7 @@ construct_twig_generic (PFla_op_t *p,
                            column_assign (name, NAME_)),
                        from_list (
                            alias_bind (select (
-                                           column_assign (max (PRE_), MAX_),
+                                           column_assign (max_ (PRE_), MAX_),
                                            from_list (max_pre_frag),
                                            NULL),
                                        alias (max)),
@@ -1401,7 +1401,7 @@ construct_twig_generic (PFla_op_t *p,
                            NAME(content)),
                        from_list (
                            alias_bind (select (
-                                           column_assign (max (PRE_), MAX_),
+                                           column_assign (max_ (PRE_), MAX_),
                                            from_list (max_pre_frag),
                                            NULL),
                                        alias (max)),
@@ -2864,7 +2864,7 @@ reduce (PFla_op_t * p, int goalnt)
                 expr = col_env_lookup (COLMAP(L(p)), att, ty);
 
                 /* generate the aggregation */
-                expr = p->sem.pos_sel.pos > 0 ? min (expr) : max (expr);
+                expr = p->sem.pos_sel.pos > 0 ? min_ (expr) : max_ (expr);
 
                 col_env_add (COLMAP(p), att, ty,
                              ext_column_name (newalias, col));
@@ -3441,22 +3441,22 @@ reduce (PFla_op_t * p, int goalnt)
 
             /* generate the aggregation */
             switch (p->kind) {
-                case la_avg:   expr = avg (expr); break;
-                case la_max:   expr = max (expr); break;
-                case la_min:   expr = min (expr); break;
+                case la_avg:   expr = avg (expr);      break;
+                case la_max:   expr = max_ (expr);     break;
+                case la_min:   expr = min_ (expr);     break;
                 /* with la_all we have to ensure that each
                  * attribute att is true for all rows within
                  * a group, since we express boolean values
                  * as literal integers, MIN does the job */ 
                 case la_all:   assert (ty == aat_bln);
-                               expr = min (((expr)->kind == sql_column_name)?
+                               expr = min_ (((expr)->kind == sql_column_name)?
                                            expr:
                                            case_(
                                               when (expr,
                                                     lit_int(1)),
                                               else_ (lit_int (0))));
                              break;
-                case la_sum:   expr = sum (expr); break;
+                case la_sum:   expr = sum (expr);      break;
                 case la_count: expr = count (star ()); break;
                 default: assert (0); break;
             }

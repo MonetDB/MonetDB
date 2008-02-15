@@ -27,7 +27,7 @@ MSERVER = os.environ['MSERVER'].replace('--trace','')
 TSTSRCDIR = os.environ['TSTSRCDIR']
 PF =  os.environ['PF']
 
-CALL = '%s --enable-standoff "%s.xq" | %s --set standoff=enabled --dbname=%s "--dbinit=module(pathfinder);"' % (PF,os.path.join(TSTSRCDIR,TST),MSERVER,TSTDB)
+CALL = '%s -b "%s.xq" | %s --set standoff=enabled --dbname=%s "--dbinit=module(pathfinder);"' % (PF,os.path.join(TSTSRCDIR,TST),MSERVER,TSTDB)
 
 import sys, time
 Mlog = "\n%s  %s\n\n" % (time.strftime('# %H:%M:%S >',time.localtime(time.time())), CALL)

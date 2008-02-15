@@ -1,0 +1,61 @@
+stdout of test 'mclient-lxquery--help` in directory 'src/tools` itself:
+
+
+# 19:33:05 >  
+# 19:33:05 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/prefix.--enable-strict_--disable-debug_--enable-optimize_--disable-assert/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=31795 --set xrpc_port=42301 --set monet_prompt= --trace "--dbname=mTests_src_tools" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 19:33:05 >  
+
+
+
+# MonetDB Server v4.21.0
+# based on GDK   v1.21.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.3.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.20.1 loaded
+# XRPC administrative console at http://127.0.0.1:49429/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 23:46:47 >  
+# 23:46:47 >  Mtimeout -timeout 120 ./mclient-lxquery--help.XQUERY.sh mclient-lxquery--help 
+# 23:46:47 >  
+
+
+# 23:46:47 >  
+# 23:46:47 >  Mtimeout -timeout 60 mclient -umonetdb -Pmonetdb --config=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/prefix.--enable-strict_--disable-optimize_--enable-debug/etc/MonetDB.conf --host=corona --port=33349 -lxquery --help
+# 23:46:47 >  
+
+mclient interactive MonetDB/XQuery session: type an XQuery or XQUF update.
+
+Supported document-management XQuery extensions:
+ pf:collections() as node()
+ pf:documents($collectionName as xs:string) as node()
+ pf:del-doc($documentName as xs:string)
+ pf:add-doc($uri as xs:string, $documentName as xs:string
+     [,$collectionName as xs:string [,$freePercentage as xs:integer]])
+
+Session commands:
+<>      - send query to server (or CTRL-Z)
+\?      - show this message
+\<file  - read input from file
+\>file  - save response in file, or stdout if no file is given
+\|cmd   - pipe result to process, or stop when no command is given
+\t      - toggle timer
+\G      - switch to algebra frontend
+\g      - switch to old frontend
+\f      - result format: dm or xml[-noheader][-typed|-noroot|-root-FOOBAR]
+\L file - save client/server interaction
+\X      - trace mclient code
+\q      - terminate session
+[?1034hxquery>
+# 23:46:24 >  
+# 23:46:24 >  Done.
+# 23:46:24 >  
+
