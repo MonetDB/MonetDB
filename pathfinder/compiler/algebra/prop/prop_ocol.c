@@ -39,13 +39,8 @@
 #include "oops.h"
 #include "mem.h"
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /*
  * access ocol information

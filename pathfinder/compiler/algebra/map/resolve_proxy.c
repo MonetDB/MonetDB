@@ -39,15 +39,10 @@
 #include "properties.h"
 #include "mem.h"
 
-#define SEEN(p) ((p)->bit_dag)
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
+#define SEEN(p) ((p)->bit_dag)
 
 static void
 resolve_proxies (PFla_op_t *p)

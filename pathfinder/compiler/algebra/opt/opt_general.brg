@@ -44,6 +44,9 @@
 #include "mem.h"          /* PFmalloc() */
 #include "subtyping.h"
 
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
+
 /*
  * Accessors for the burg matcher
  */
@@ -334,22 +337,6 @@ EmptyRel:    dummy (EmptyRel)                     = 202  (0);
 %%
 
 #include "algebra_mnemonic.h"
-
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) (LEFT_CHILD(p))
-/** starting from p, make a step right */
-#define R(p) (RIGHT_CHILD(p))
-/** starting from p, make two steps left */
-#define LL(p) L(L(p))
-/** starting from p, make two steps right */
-#define RR(p) R(R(p))
-/** and so on... */
-#define RL(p) (L(R(p)))
-#define LLL(p) (LL(L(p)))
-#define RLL(p) (LL(R(p)))
 
 #define MAX_KIDS 10
 

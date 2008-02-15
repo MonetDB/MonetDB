@@ -39,10 +39,10 @@
 #include "alg_dag.h"
 #include "subtyping.h"
 
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
+
 #define SEEN(n) ((n)->bit_dag)
-/* left and right child*/
-#define L(n) ((n)->child[0])
-#define R(n) ((n)->child[1])
 /* prop of n */
 #define PROP(n) ((n)->prop)
 /* guide_mapping_list of n */

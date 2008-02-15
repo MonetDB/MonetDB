@@ -39,17 +39,8 @@
 #include "mem.h"
 #include "qname.h"
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
-/** starting from p, make two steps left */
-#define LL(p) (L(L(p)))
-/** starting from p, make a step left, then a step right */
-#define LR(p) R(L(p))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /**
  * worker for PFprop_key;

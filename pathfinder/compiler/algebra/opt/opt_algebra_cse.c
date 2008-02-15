@@ -49,14 +49,8 @@
 #include <string.h> /* strcmp */
 #include <stdio.h>
 
-/*
- * Easily access subtree-parts.
- */
-
-/* starting from p, make a step left     */
-#define L(p)         ((p)->child[0])
-/* starting from p, make a right step    */
-#define R(p)         ((p)->child[1])
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /* prune already checked nodes           */
 #define SEEN(p)      ((p)->bit_dag)

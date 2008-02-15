@@ -42,17 +42,8 @@
 #include "mem.h"
 #include <stdio.h>
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
-/** starting from p, make two steps left */
-#define RL(p) L(R(p))
-/** starting from p, make two steps right */
-#define RR(p) R(R(p))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /**
  * Test if an operator referenced via its container @a prop

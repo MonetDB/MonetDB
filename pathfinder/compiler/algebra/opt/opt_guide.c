@@ -41,20 +41,14 @@
 #include "properties.h"
 #include "alg_dag.h"
 
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
+
 #define SEEN(n) ((n)->bit_dag)
 /* prop of n */
 #define PROP(n) ((n)->prop)
 /* axis of n, n must be a step */
 #define AXIS(n) ((n)->sem.step.axis)
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
-/** starting from p, make two steps right */
-#define RR(p) (((p)->child[1])->child[1])
 
 /* Merge 2 guide_steps if it is possible */
 static void
