@@ -39,7 +39,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_865BD53FF1F14CA7B08C65BD28BFFB84"
+        "MsmKey" = "8:_775FED10B57C4AC993E2919745C8FEDC"
         "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -441,14 +441,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB ODBC Driver"
-        "ProductCode" = "8:{D6284B62-3B19-4F36-ADBD-20173699A465}"
-        "PackageCode" = "8:{3C100975-FDAF-48EB-8D52-9D27F964AF9F}"
+        "ProductCode" = "8:{F0FD9106-F229-47FE-A4D1-BCDFC91BA0EB}"
+        "PackageCode" = "8:{C9C9E476-4B19-4633-BDC9-A21C4B53A450}"
         "UpgradeCode" = "8:{C1F69378-3F5C-4120-8224-32F07D3458F3}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:7.11.20"
+        "ProductVersion" = "8:8.2.14"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -1091,7 +1091,7 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_865BD53FF1F14CA7B08C65BD28BFFB84"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_775FED10B57C4AC993E2919745C8FEDC"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
