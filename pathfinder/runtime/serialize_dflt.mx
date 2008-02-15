@@ -37,9 +37,10 @@
 
 #include "pf_config.h"
 #include "serialize.h"
-#include "xrpc_server.h"
 /* contains dummy callback functions */
 #include "serialize_null.h"
+#include "pathfinder.h"
+#include "xrpc_common.h"
 
 /* a lot of characters, static strings, and their sizes 
    (the idea is to reuse constant character pointers during

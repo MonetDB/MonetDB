@@ -473,8 +473,6 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
 #ifndef XRPC_CLIENT_H
 #define XRPC_CLIENT_H
 
-#include "xrpc_server.h"
-
 #define MAX_BUF_SIZE            (1024*1024)
 #define NR_RETRIES              3
 
@@ -482,8 +480,13 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
 
 @c
 #include "pf_config.h"
+#include <gdk.h>
+#include "pathfinder.h"
+#include "pf_support.h"
+#include "shredder.h"
+#include "serialize.h"
+#include "xrpc_common.h"
 #include "xrpc_client.h"
-#include <stream_socket.h>
 
 #define errCheck(iterc, argc, ws,                                      \
             fvid, fiter, fitem, fkind,                                 \

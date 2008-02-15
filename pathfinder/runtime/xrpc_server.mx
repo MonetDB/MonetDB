@@ -137,99 +137,30 @@ Start XPRC receiver using the default values as specified in \
 #ifndef XRPC_SERVER_H
 #define XRPC_SERVER_H
 
-#include <gdk.h>
-#include <mapi/mapi.h>
-#include <time.h>
-
-#ifdef _WIN32   /* Windows specific */
-    #include <winsock.h>
-    #define snprintf _snprintf
-    #ifndef __MINGW32__
-        #pragma comment(lib, "ws2_32")
-    #endif
-#else           /* UNIX specific */
-    #include <sys/select.h>
-    #include <sys/types.h>	/* used by socket */
-    #include <sys/socket.h>
-    #include <unistd.h>
-    #include <netinet/in.h> /* hton and ntoh */
-    #include <arpa/inet.h>  /* dotted IP addr to and from 32-bits int */
-    #include <netdb.h>      /* convert domain names into IP addr */
-    #include <errno.h>
-    #include <ctype.h>
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "pathfinder.h"
-#include "pf_support.h"
-#include "shredder.h"
-#include "serialize.h"
-#include "shttpd.h"
-
-#define XRPC_REQ_CALLBACK       "/xrpc"
 #define XRPC_DOC_CALLBACK       "/xrpc/doc"
 #define XRPC_ADM_CALLBACK       "/xrpc/admin"
+
 #define ERR403                  "403 Forbidden"
 #define ERR404                  "404 Bad Request"
 #define ERR500                  "500 Internal Server Error"
+
 #define OUT_OF_MEM              "Internal Receiver Error: out-of memory"
 #define NOT_WELL_FORMED         "Request XML message not well-formed"
+
 #define MAX_NR_PARAMS           32
-
-#define MXQ_ADMIN   "http://monetdb.cwi.nl/XQuery/admin/"
-#define SOAP_NS     "http://www.w3.org/2003/05/soap-envelope"
-#define XDT_NS      "http://www.w3.org/2005/xpath-datatypes"
-#define XS_NS       "http://www.w3.org/2001/XMLSchema"
-#define XSI_NS      "http://www.w3.org/2001/XMLSchema-instance"
-#define XRPC_NS     "http://monetdb.cwi.nl/XQuery"
-#define XRPC_LOC    "http://monetdb.cwi.nl/XQuery/XRPC.xsd"
-
-#define XRPC_HEADER "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"  \
-                    "<env:Envelope xmlns:env=\"%s\""                \
-                                 " xmlns:xrpc=\"%s\""               \
-                                 " xmlns:xdt=\"%s\" "               \
-                                 " xmlns:xs=\"%s\""                 \
-                                 " xmlns:xsi=\"%s\""                \
-                                 " xsi:schemaLocation=\"%s %s\">"   \
-                      "<env:Body>"                                  \
-                        "<xrpc:request xrpc:module=\"%s\""          \
-                                     " xrpc:location=\"%s\""        \
-                                     " xrpc:method=\"%s\""          \
-                                     " xrpc:arity=\"%lld\""         \
-                                     " xrpc:iter-count=\"%lld\""    \
-                                     " xrpc:updCall=\"%s\">"
-
-#define XRPC_HTTP_CALL "<xrpc:call>"                                    \
-                         "<xrpc:sequence>"                              \
-                           "<xrpc:atomic-value xsi:type=\"xs:string\">" \
-                             "%s"                                       \
-                           "</xrpc:atomic-value>"                       \
-                         "</xrpc:sequence>"                             \
-                       "</xrpc:call>"
-
-#define XRPC_PUT_CALL  "<xrpc:call>"                                    \
-                         "<xrpc:sequence>"                              \
-                           "<xrpc:atomic-value xsi:type=\"xs:string\">" \
-                             "%s"                                       \
-                           "</xrpc:atomic-value>"                       \
-                         "</xrpc:sequence>"                             \
-                         "<xrpc:sequence>"                              \
-                           "<xrpc:element>%s</xrpc:element>"            \
-                         "</xrpc:sequence>"                             \
-                       "</xrpc:call>"
-
-#define XRPC_FOOTER     "</xrpc:request>"   \
-                      "</env:Body>"         \
-                    "</env:Envelope>\n"
 
 #endif /* XRPC_SERVER_H */
 
 @c
 #include "pf_config.h"
+#include <gdk.h>
+#include "pathfinder.h"
+#include "pf_support.h"
+#include "shredder.h"
+#include "serialize.h"
+#include "xrpc_common.h"
 #include "xrpc_server.h"
-#include <stream_socket.h>
+#include "shttpd.h"
 
 extern int xrpc_port;
 static int rpcd_running = 0;
