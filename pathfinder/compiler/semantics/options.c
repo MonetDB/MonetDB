@@ -61,8 +61,8 @@
 
 #include "options.h"
 
-#define L(p) ((p)->child[0])
-#define R(p) ((p)->child[1])
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /**
  * This is the environment we populate.

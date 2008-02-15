@@ -39,16 +39,8 @@
 #include "oops.h"
 #include "prettyp.h"
 
-/*
- * Easily access subtree parts.
- */
-/** starting from p, make a left step */
-#define L(p)      ((p)->child[0])
-/** starting from p, make a right step */
-#define R(p)      ((p)->child[1])
-/** starting from p, make a right step
- *  then a left step */
-#define RL(p)     L(R(p))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /* shortcut for pretty printing */
 #define pretty_dump(f,i) PFprettyp_extended ((f), 70, (i))

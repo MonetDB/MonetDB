@@ -50,13 +50,8 @@
 #include "prettyp.h"
 #include <assert.h>
 
-/*
- * Easily access subtree parts.
- */
-/** starting from p, make a left step */
-#define L(p)      ((p)->child[0])
-/** starting from p, make a right step */
-#define R(p)      ((p)->child[1])
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /** Node names to print out for all the abstract syntax tree nodes. */
 char *c_id[]  = {

@@ -43,18 +43,8 @@
 #include "alg_dag.h"
 #include "mem.h"          /* PFmalloc() */
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
-/** and so on ... */
-#define LL(p) (L(L(p)))
-#define LR(p) (R(L(p)))
-#define RL(p) (L(R(p)))
-#define RR(p) (R(R(p)))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 #define SEEN(p) ((p)->bit_dag)
 

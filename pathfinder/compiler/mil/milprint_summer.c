@@ -79,38 +79,20 @@
 /* accessor to the type of the node */
 #define TY(p) ((p)->type)
 
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
+
 /*
  * Easily access subtree-parts.
  */
-/** starting from p, make a step left */
-#define L(p) (LEFT_CHILD(p))
-/** starting from p, make a step right */
-#define R(p) (RIGHT_CHILD(p))
 /** starting from p, make a step down */
 #define D(p) (LEFT_CHILD(p))
-/** starting from p, make two steps left */
-#define LL(p) L(L(p))
-/** starting from p, make a step left, then a step right */
-#define LR(p) R(L(p))
-/** starting from p, make a step right, then a step left */
-#define RL(p) L(R(p))
-/** starting from p, make two steps right */
-#define RR(p) R(R(p))
 /** starting from p, make a step right, then a step down */
 #define RD(p) D(R(p))
 /** starting from p, make a step down, then a step left */
 #define DL(p) L(L(p))
 /* ... and so on ... */
 #define DRL(p) L(R(L(p)))
-#define RLL(p) L(L(R(p)))
-#define RRL(p) L(R(R(p)))
-#define RLR(p) R(L(R(p)))
-#define LLR(p) R(L(L(p)))
-#define RRR(p) R(R(R(p)))
-#define LLL(p) L(L(L(p)))
-
-#define RRRL(p) L(R(R(R(p))))
-#define RRRRL(p) L(R(R(R(R(p)))))
 
 /* starting level of user-defined functions */ 
 #define UDF_LEV 1024

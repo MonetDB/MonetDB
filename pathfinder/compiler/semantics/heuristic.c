@@ -240,14 +240,8 @@
 #include "qname.h"
 #include "mem.h"
 
-/* some abssyn tree helper macros and constructor functions
- */
-#define L(p)  ((p)->child[0])
-#define R(p)  ((p)->child[1])
-#define LL(p) L(L(p))
-#define LR(p) R(L(p))
-#define RL(p) L(R(p))
-#define RR(p) R(R(p))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 #define nil               p_leaf (p_nil, p->loc)
 #define dot               p_leaf (p_dot, p->loc)

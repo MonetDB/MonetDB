@@ -40,21 +40,8 @@
 #include <assert.h>
 #include <string.h>
 
-/*
- * Easily access subtree parts.
- */
-/* starting from p, make a left step */
-#define L(p)      (p->child[0])
-/* starting from p, make a right step */
-#define R(p)      (p->child[1])
-/* ... and so on */
-#define LL(p)     L(L(p))
-#define LR(p)     R(L(p))
-#define RL(p)     L(R(p))
-#define RR(p)     R(R(p))
-#define RLR(p)    R(L(R(p)))
-#define RLL(p)    L(L(R(p)))
-#define RLRL(p)   L(R(L(R(p))))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /* encoding for the different node types in out XML scheme
    !!! Keep this aligned with the SQL code generation !!! */

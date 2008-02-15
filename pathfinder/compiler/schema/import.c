@@ -64,13 +64,6 @@
 
 #include "mem.h"
 
-#define L(n) ((n)->child[0])
-#define R(n) ((n)->child[1])
-#define LR(n) R(L(n))
-#define RL(n) L(R(n))
-#define LL(n) L(L(n))
-#define RR(n) R(R(n))
-
 /**
  * XML Schema import requires libxml2
  */
@@ -79,6 +72,9 @@
 /* SAX parser interface (libxml2) */
 #include "libxml/parser.h"
 #include "libxml/parserInternals.h"
+
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /**
  * Current state of type mapping DFA.
