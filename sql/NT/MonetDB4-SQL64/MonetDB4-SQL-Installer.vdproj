@@ -51,12 +51,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_0F3917FBB7DB4C7EA8CE15996B961C05"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_11CB1E338938478894097DC0B65D8899"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -363,6 +357,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_68E92995FDDF44F88BF3D8A2791283BD"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_6F1C6D04B737498BB5BA3F67E429B136"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -543,7 +543,13 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_AFF9F6E61DBA4165985EDB4430F915A3"
+        "MsmKey" = "8:_AE53E7CA998A4645BD008805E1D4E216"
+        "OwnerKey" = "8:_F2140ED9D2C04D0AB1367617B77EAE25"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_AF2D65953260483BA3161BACB8E5E56F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -749,12 +755,6 @@
         {
         "MsmKey" = "8:_E2B6007084CD4A44A2C3CAC84A1BA0D5"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_E501DDD18AE6487D83B8F5D0A1B31D83"
-        "OwnerKey" = "8:_F2140ED9D2C04D0AB1367617B77EAE25"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -1076,26 +1076,6 @@
             "TargetName" = "8:stats.sql"
             "Tag" = "8:"
             "Folder" = "8:_9AD056F041C4488B825BCBCC559BC6A2"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0F3917FBB7DB4C7EA8CE15996B961C05"
-            {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.21.0\\dump-restore.txt"
-            "TargetName" = "8:dump-restore.txt"
-            "Tag" = "8:"
-            "Folder" = "8:_876B289F659E4FE681DDAD9153E36616"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2130,6 +2110,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_68E92995FDDF44F88BF3D8A2791283BD"
+            {
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.22.0\\dump-restore.txt"
+            "TargetName" = "8:dump-restore.txt"
+            "Tag" = "8:"
+            "Folder" = "8:_876B289F659E4FE681DDAD9153E36616"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6F1C6D04B737498BB5BA3F67E429B136"
             {
             "SourcePath" = "8:lib\\MonetDB4\\bitset.mil"
@@ -2730,9 +2730,9 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AFF9F6E61DBA4165985EDB4430F915A3"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AF2D65953260483BA3161BACB8E5E56F"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.21.0\\dump-restore.html"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-2.22.0\\dump-restore.html"
             "TargetName" = "8:dump-restore.html"
             "Tag" = "8:"
             "Folder" = "8:_876B289F659E4FE681DDAD9153E36616"
@@ -3872,7 +3872,7 @@
                                 {
                                     "{9EF0B969-E518-4E46-987F-47570745A589}:_876B289F659E4FE681DDAD9153E36616"
                                     {
-                                    "Name" = "8:MonetDB-SQL-2.21.0"
+                                    "Name" = "8:MonetDB-SQL-2.22.0"
                                     "AlwaysCreate" = "11:FALSE"
                                     "Condition" = "8:"
                                     "Transitive" = "11:FALSE"
@@ -3968,14 +3968,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB4"
-        "ProductCode" = "8:{18E2484E-207A-43AF-B603-3328C4154204}"
-        "PackageCode" = "8:{0A57FFA1-2C49-465D-A7D8-4B958FFC9366}"
+        "ProductCode" = "8:{01BBEA34-67F8-45C1-961F-036DBB0B5464}"
+        "PackageCode" = "8:{855FE29C-17CA-4035-9FA9-F6A8B0ED6198}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:7.11.23"
+        "ProductVersion" = "8:8.2.14"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -4889,7 +4889,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_E501DDD18AE6487D83B8F5D0A1B31D83"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_AE53E7CA998A4645BD008805E1D4E216"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"

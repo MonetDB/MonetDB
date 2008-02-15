@@ -643,12 +643,8 @@ convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, ch
 		l = sql_timestamp_tostr((void *) ts_res, buf, &len, mtype, p);
 
 	} else if (!p || ATOMcmp(mtype, ATOMnilptr(mtype), p) == 0) {
-		if ((unsigned int)len < sizeof("NULL")) {
-			GDKfree(*buf);
-			*buf = GDKstrdup("NULL");
-		} else {
-			strncpy(*buf, "NULL", sizeof("NULL"));
-		}
+		(*buf)[0] = GDK_chr_min;
+		(*buf)[1] = 0;
 	} else {
 		l = (*BATatoms[mtype].atomToStr) (buf, &len, p);
 	}

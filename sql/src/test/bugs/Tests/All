@@ -81,3 +81,5 @@ alter_add_column-bug
 alter_drop_column_insert_crash
 temporal
 seconds2timestamp
+select_not_equal
+case_substring

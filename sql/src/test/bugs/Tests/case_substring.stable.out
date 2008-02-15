@@ -1,0 +1,60 @@
+stdout of test 'case_substring` in directory 'src/test/bugs` itself:
+
+
+# 14:09:53 >  
+# 14:09:53 >   Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32711 --set xrpc_port=42408 --set monet_prompt= --trace  "--dbname=mTests_src_test_bugs" "--dbinit= module(sql_server);" ; echo ; echo Over..
+# 14:09:53 >  
+
+# MonetDB Server v4.22.0
+# based on GDK   v1.22.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# MonetDB/SQL module v2.22.0 loaded
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 14:09:53 >  
+# 14:09:53 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=32711 
+# 14:09:53 >  
+
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+% sys.test456,	sys.,	sys.,	sys. # table_name
+% col1,	substring_col1,	substring_col1,	substring_col1 # name
+% int,	char,	char,	char # type
+% 8,	0,	0,	0 # length
+[ 20080101,	"2008",	"01",	"01"	]
+[ 20080227,	"2008",	"02",	"27"	]
+[ 20080215,	"2008",	"02",	"15"	]
+[ NULL,	NULL,	NULL,	NULL	]
+[ NULL,	NULL,	NULL,	NULL	]
+% sys. # table_name
+% ifthenelse_not_isnull_col1 # name
+% date # type
+% 10 # length
+[ 2008-01-01	]
+[ 2008-02-27	]
+[ 2008-02-15	]
+[ NULL	]
+[ NULL	]
+% sys. # table_name
+% concat_substring_col1 # name
+% date # type
+% 10 # length
+[ 2008-01-01	]
+[ 2008-02-27	]
+[ 2008-02-15	]
+
+# 14:09:53 >  
+# 14:09:53 >  Done.
+# 14:09:53 >  
+

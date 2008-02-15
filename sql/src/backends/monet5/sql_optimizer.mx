@@ -353,7 +353,7 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 				sql_table *t = mvc_bind_table(m, s, tname);
 				sql_column *c = mvc_bind_column(m, t, cname);
 
-				not_null = c->null;
+				not_null = !c->null;
 
 				if (active_store_type == store_bpm) {
 					bpm = c->data;

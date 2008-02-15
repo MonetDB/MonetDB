@@ -2265,7 +2265,7 @@ str
 SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
 {
 	char *r = NULL;
-	int sz = len + 1;
+	int sz = MAX(2,len + 1);	/* nil should fit */
 
 	if (tpe != TYPE_str) {
 		r = GDKmalloc(sz);

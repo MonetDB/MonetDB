@@ -571,7 +571,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 					break;
 				case cmp_notequal:
 					len = snprintf(buf, BUFSIZ, "var ns%d := s%d.uselect(s%d);\n", -s->nr, l, r);
-					len += snprintf(buf + len, BUFSIZ, "var s%d := s%d.project(nil).kdiff(ns%d);\n", -s->nr, l, -s->nr);
+					len += snprintf(buf + len, BUFSIZ, "var s%d := s%d.kdiff(s%d.uselect(%s(nil))).project(nil).kdiff(ns%d);\n", -s->nr, l, l, tail_type(s)->type->base.name, -s->nr);
 					break;
 				case cmp_lt:
 					len = snprintf(buf, BUFSIZ, "var s%d := s%d.%s(%s(nil), s%d, FALSE, FALSE);\n", -s->nr, l, cmd, tail_type(s)->type->base.name, r);

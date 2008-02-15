@@ -1038,8 +1038,8 @@ int
 str_cast(str *res, mvc *M, int *eclass, int *d, int *s, int *has_tz, ptr v, int tpe, int *len)
 {
 	mvc *m = *(mvc**)M;
-	int sz = *len + 1;
 	char *r = NULL;
+	int sz = MAX(2,*len + 1);	/* nil should fit */
 
 	if (tpe != TYPE_str) {
 		r = GDKmalloc(sz);
