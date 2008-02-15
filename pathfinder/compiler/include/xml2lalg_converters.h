@@ -38,10 +38,6 @@
 #ifndef XML2LALG_CONVERTERS_H
 #define XML2LALG_CONVERTERS_H
 
-
-
-#include "pathfinder.h"
-
 #include <stdio.h>
 #ifdef HAVE_STDBOOL_H
     #include <stdbool.h>
@@ -51,14 +47,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
-
-
 #include "algebra.h"
 #include "logical.h"
 #include "logical_mnemonic.h"
-
-
-
 
 PFla_op_kind_t 
 PFxml2la_conv_2PFLA_OpKind(const char* s);
@@ -68,15 +59,12 @@ PFxml2la_conv_2PFLA_attributeName(const char* s);
 PFalg_att_t 
 PFxml2la_conv_2PFLA_attributeName_unq(const char* s);
 
-
 PFalg_simple_type_t 
 PFxml2la_conv_2PFLA_atomType(char* typeString);
  
-
 PFalg_atom_t 
 PFxml2la_conv_2PFLA_atom(PFalg_simple_type_t,
                          char *prefix, char *uri, char* valueString);
-
 
 PFalg_comp_t 
 PFxml2la_conv_2PFLA_comparisonType(char* s);

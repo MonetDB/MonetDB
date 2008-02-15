@@ -38,15 +38,10 @@
 #ifndef LIBXML_XPATH_UTILS_H
 #define LIBXML_XPATH_UTILS_H
 
-#include "pathfinder.h"
-
-
 #include <stdio.h>
 #ifdef HAVE_STDBOOL_H
     #include <stdbool.h>
 #endif
-
-
 
 /* SAX parser interface (libxml2) */
 #include <libxml/parser.h>
@@ -54,10 +49,6 @@
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
-
-
-
-
 
 xmlXPathObjectPtr 
 PFxml2la_xpath_evalXPathFromDocCtx(xmlXPathContextPtr xpathCtx, 
@@ -67,7 +58,6 @@ xmlXPathObjectPtr
 PFxml2la_xpath_evalXPathFromNodeCtx(xmlXPathContextPtr docXPathCtx, 
                      xmlNodePtr nodeXpathCtx, 
                      const char* xpathExpression);
-
 
 int 
 PFxml2la_xpath_getNodeCount(xmlXPathObjectPtr xpathObjPtr);
@@ -90,7 +80,6 @@ PFxml2la_xpath_getAttributeValuesFromAttributeNodes(
 char* 
 PFxml2la_xpath_getElementValue(xmlNodePtr nodePtr);
 
-
 int 
 PFxml2la_xpath_getIntValue(char* s);
 
@@ -100,7 +89,4 @@ PFxml2la_xpath_getFloatValue(char* s);
 bool 
 PFxml2la_xpath_getBoolValue(char* s);
 
-
-
 #endif
-
