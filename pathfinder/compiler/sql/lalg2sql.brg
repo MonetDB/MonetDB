@@ -45,6 +45,9 @@
 #include "oops.h"             /* PFoops() */
 #include "subtyping.h"
 
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
+
 /**
  * Accessors for the burg pattern matcher
  */
@@ -306,22 +309,6 @@ Rel:    cross_mvd (Rel, Rel)                         = 114 (10);
 
 #define MAX_KIDS 5
 
-/*
- * Easily access subtree parts.
- */
-/* starting from p, make a left step */
-#define L(p)      (LEFT_CHILD(p))
-/* starting from p, make a right step */
-#define R(p)      (RIGHT_CHILD(p))
-/* ... and so on */
-#define LL(p)     L(L(p))
-#define LR(p)     R(L(p))
-#define RL(p)     L(R(p))
-#define RR(p)     R(R(p))
-#define RLR(p)    R(L(R(p)))
-#define RLL(p)    L(L(R(p)))
-#define RLRL(p)   L(R(L(R(p))))
-
 /** Macro determining if a node was already visited */
 #define SEEN(p)   ((p)->bit_dag)
 
@@ -353,7 +340,7 @@ static PFsql_t *max_pre_frag = NULL;
 
 /* we "mask out" the flags regarding the generation of attributes,
  * up to now we don't support attributes */
-#define TYPE_MASK(t)  ((t) & ~(aat_afrag | aat_pfrag))
+#define TYPE_MASK(t)  ((t) & ~(aat_frag | aat_attr | aat_nkind))
 
 /* reference counter */
 #define REFCTR(p)     ((p)->refctr)
@@ -558,7 +545,7 @@ col_env_add_full (PFarray_t * env, PFalg_att_t att,
             ty == aat_dbl || ty == aat_dec ||
             ty == aat_str || ty == aat_uA ||
             ty == aat_qname || ty == aat_bln ||
-            ty == aat_pre || ty == aat_attr);
+            ty == aat_pre);
 
     *(sql_column_env_t *) PFarray_add (env) =
         (sql_column_env_t) { .type = ty,

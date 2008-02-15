@@ -1374,7 +1374,6 @@ PFsql_simple_type_str (PFalg_simple_type_t type)
 {
     switch (type) {
         case aat_pre:
-        case aat_attr:
         case aat_nat:
         case aat_int:
         /* we even translate boolean as INTEGER */

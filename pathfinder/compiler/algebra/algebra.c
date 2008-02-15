@@ -160,11 +160,13 @@
  *
  * The simple type @c node plays a special role: Lateron, we will
  * distinct attribute nodes and other nodes. In both cases we will
- * implement XML tree nodes with help of @em two columns: @em pre / @em attr
- * and @em pfrag / @em afrag. Enum value @c aat_pnode thus sets @em two bits;
- * the two sub-parts are available as @c aat_pre and @c aat_pfrag. Accordingly
- * the enum value @c aat_anode sets the bits for the sub-parts @c aat_attr
- * and @c aat_afrag. (See also @ref table_representation below.)
+ * implement XML tree nodes with help of @em two to three columns:
+ * @em pre, @em frag and possibly @em attr. Enum value @c aat_pnode
+ * thus sets @em three bits; the three sub-parts are available as
+ * @c aat_pre, @c aat_frag and @c aat_nkind. The last bit is only used
+ * to decide if we have non-attribute nodes. Accordingly the enum value
+ * @c aat_anode sets the bits for the sub-parts @c aat_pre, @c aat_attr
+ * and @c aat_frag. (See also @ref table_representation below.)
  *
  * @subsection algopt Optimizing Logical Algebra Trees
  *
@@ -301,7 +303,7 @@
  * information please refer to the @ref commandline section on the
  * main page (main.c).
  *
- * @section milgen Compiling Plans into Internal MIL Code Representation
+ * @section milgenOverview Compiling Plans into Internal MIL Code Representation
  *
  * Generation into MIL code is again implemented based on a Burg pattern
  * matcher (file @c milgen.brg). Its output is an internal representation
@@ -333,11 +335,9 @@
 @endverbatim
  *   .
  * - XML tree nodes are not implemented as a single column, but as a
- *   pre/kind pair. This is adapted from Jan's "summer branch"
- *   implementation and allows to re-use lots of things in the runtime
- *   module.
+ *   pre/attr/frag triple.
  *
- * The special role, where nodes are represented as two columns, while
+ * The special role, where nodes are represented as three columns, while
  * other types only occupy one column, is nicely captured by our bit
  * vector encoding of algebra types (see @ref log_impl).
  *
@@ -381,12 +381,15 @@
  * of compilation. Future versions might directly serialize the value
  * encoding used by the "algebra" MIL generator.
  *
+ * For more specific information on the MIl generation please refer
+ * to the @ref milgenDetail page in milgen.brg.
+ *
  * @section milprint Serializing MIL
  *
  * The file @c milgen.brg produces an <em>internal tree representation</em>
- * of the generated MIL program. (Reason for this is that we might do
- * rewrites to the MIL code afterwards this way, comparable to the
- * mil_opt.c optimizer in the "summer branch").
+ * of the generated MIL program. Reason for this is that we apply a dead code
+ * elimination on the MIL tree afterwards. The MIL dead code elimination in
+ * #mil_dce.c removes all variables that are not referenced.
  *
  * The ASCII representation parsable by MonetDB is generated in
  * milprint.c. In a sense, this file implements a grammar for the
@@ -554,7 +557,7 @@ schema_eq (PFalg_schema_t a, PFalg_schema_t b)
  * a pair consisting of the new and old attribute name.
  * Particularly useful in combination with the constructor
  * function for the algebra projection operator (see
- * #PFalg_project() or its wrapper macro #project()).
+ * #PFla_project_() or its wrapper macro #project()).
  *
  * @param new Attribute name after the projection
  * @param old ``Old'' attribute name in the argument of
@@ -683,9 +686,6 @@ PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
                                 : (a.val.nat_ < b.val.nat_ ? -1 : 1));
         case aat_int:   return a.val.int_ - b.val.int_;
         case aat_uA:
-        case aat_path:
-        case aat_docnm:
-        case aat_colnm:
         case aat_str:   return strcmp (a.val.str, b.val.str);
         case aat_dec:   return (a.val.dec_ == b.val.dec_ ? 0
                                 : (a.val.dec_ < b.val.dec_ ? -1 : 1));
@@ -693,26 +693,10 @@ PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
                                 : (a.val.dbl < b.val.dbl ? -1 : 1));
         case aat_bln:   return a.val.bln - b.val.bln;
         case aat_qname: return PFqname_eq (a.val.qname, b.val.qname);
-        case aat_node:
-        case aat_pnode:
-        case aat_anode:
-        case aat_pre:
-        case aat_attr:
-        case aat_pfrag:
-        case aat_afrag:
-        case aat_update:
-        case aat_docmgmt:
-        case aat_node1:
-        case aat_pnode1:
-        case aat_anode1:
-        case aat_pre1:
-        case aat_attr1:
-        case aat_pfrag1:
-        case aat_afrag1:
-                        break;
+        default:
+            PFoops (OOPS_FATAL, "error comparing literal values");
+            break;
     }
-
-    PFoops (OOPS_FATAL, "error comparing literal values");
 
     assert(0); /* never reached due to "exit" in PFoops */
     return 0; /* pacify picky compilers */
@@ -734,21 +718,12 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
         case aat_qname: return "qname";
         case aat_node:  return "node";
         case aat_anode: return "attr";
-        case aat_attr:  return "attrID";
-        case aat_afrag: return "afrag";
         case aat_pnode: return "pnode";
-        case aat_pre:   return "pre";
-        case aat_pfrag: return "pfrag";
-        case aat_node1: return "node1";
-        case aat_anode1:return "attr1";
-        case aat_attr1: return "attrID1";
-        case aat_afrag1:return "afrag1";
-        case aat_pnode1:return "pnode1";
-        case aat_pre1:  return "pre1";
-        case aat_pfrag1:return "pfrag1";
-        case aat_path:  return "path";
-        case aat_docnm: return "docnm";
-        case aat_colnm: return "colnm";
+        case aat_qname_id:   return "qname id";
+        case aat_qname_cont: return "qname cont";
+        case aat_frag:       return "frag";
+        case aat_pre:        return "pre";
+        case aat_attr:       return "attr";
         default:
             if (type & aat_update)
                 return "update";

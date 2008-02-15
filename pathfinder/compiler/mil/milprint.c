@@ -526,12 +526,12 @@ static void print_args (PFmil_t *);
 #endif
 
 /**
- * Implementation of the grammar rules for `statements'.
+ * @brief Implementation of the grammar rules for `statements'.
  *
  * @param n MIL tree node
  */
 static void
-print_statements (PFmil_t * n)
+print_statements (PFmil_t *n)
 {
     switch (n->kind) {
 

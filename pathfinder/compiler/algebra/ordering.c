@@ -112,6 +112,24 @@ PFord_order_dir_at (const PFord_ordering_t ordering, unsigned int index)
     return (*((PFalg_order_item_t *) PFarray_at (ordering, index))).dir;
 }
 
+void
+PFord_set_order_col_at (PFord_ordering_t ordering, unsigned int index,
+                        PFalg_att_t name)
+{
+    assert (index < PFord_count (ordering));
+
+    (*((PFalg_order_item_t *) PFarray_at (ordering, index))).name = name;
+}
+
+void
+PFord_set_order_dir_at (PFord_ordering_t ordering, unsigned int index,
+                        bool dir)
+{
+    assert (index < PFord_count (ordering));
+
+    (*((PFalg_order_item_t *) PFarray_at (ordering, index))).dir = dir;
+}
+
 bool
 PFord_implies (const PFord_ordering_t a, const PFord_ordering_t b)
 {

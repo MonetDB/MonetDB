@@ -280,7 +280,7 @@
  * For details on the algebra stuff, please refer to the
  * @ref compilation page (algebra/algebra.c).
  *
- * @subsection milgen Compilation into a MIL tree
+ * @subsection milgenBrief Compilation into a MIL tree
  *
  * MIL is Pathfinder's target language. The code in mil/milgen.brg
  * translates a physical algebra tree into MIL. We do not, however,

@@ -39,10 +39,8 @@
 
 #include <assert.h>
 
-/* short-hands */
-#define L(p) ((p)->child[0])
-#define R(p) ((p)->child[1])
-#define LR(p) (R(L(p)))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 #define SEEN(n) n->bit_dag
 #define pfIN(n) n->bit_in
@@ -65,11 +63,6 @@ introduce_rec_borders_worker (PFpa_op_t *n, PFarray_t *bases)
 
     switch (n->kind)
     {
-        /* make sure we don't follow fragment */
-        case pa_frag_union:
-        case pa_empty_frag:
-            return false;
-
         /* ignore nested recursions and only collect the path */
         case pa_rec_fix:
             base_path = introduce_rec_borders_worker (L(n), bases);
@@ -123,11 +116,6 @@ introduce_rec_borders_worker (PFpa_op_t *n, PFarray_t *bases)
                          introduce_rec_borders_worker (R(n), bases);
              break;
             
-        case pa_fun_frag_param:             
-             /* only collect the base paths */
-             base_path = introduce_rec_borders_worker (R(n), bases);
-             break;
-             
         case pa_fcns:
             /* this also skips the introduction of a rec_border
                operator for the content of an empty elements:
@@ -145,9 +133,7 @@ introduce_rec_borders_worker (PFpa_op_t *n, PFarray_t *bases)
                the recursion while its left child is not.
                Make sure that no borders are introduced along the
                fragment information edge. */
-            if (base_path && L(n) && !pfIN(L(n)) && 
-                L(n)->kind != pa_frag_union && 
-                L(n)->kind != pa_empty_frag) {
+            if (base_path && L(n) && !pfIN(L(n))) {
                 L(n) = PFpa_rec_border (L(n));
                 L(n)->prop = L(L(n))->prop;
             }

@@ -32,7 +32,7 @@
 /* Also import generic algebra stuff */
 #include "algebra_mnemonic.h"
 
-#define serialize(a,b,c)     PFpa_serialize ((a), (b), (c))
+#define serialize(a,b)       PFpa_serialize ((a), (b))
 
 /** literal table construction */
 #define lit_tbl(a,b,c)       PFpa_lit_tbl ((a), (b), (c))
@@ -48,14 +48,6 @@
 
 /** join that preserves the order of the first argument */
 #define leftjoin(a,b,c,d)    PFpa_leftjoin ((a), (b), (c), (d))
-
-#if 0
-/** NestedLoopJoin */
-#define nljoin(a,b,c,d)      PFpa_nljoin ((a), (b), (c), (d))
-
-/** MergeJoin */
-#define merge_join(a,b,c,d)  PFpa_merge_join ((a), (b), (c), (d))
-#endif
 
 /** standard join operator */
 #define eqjoin(a,b,c,d)      PFpa_eqjoin ((a), (b), (c), (d))
@@ -85,11 +77,8 @@
 
 #define intersect(a,b)       PFpa_intersect ((a), (b))
 #define difference(a,b)      PFpa_difference ((a), (b))
-/** HashDistinct */
 #define sort_distinct(a,b)   PFpa_sort_distinct ((a), (b))
-/** StandardSort */
 #define std_sort(a,b)        PFpa_std_sort ((a), (b))
-/** RefineSort */
 #define refine_sort(a,b,c)   PFpa_refine_sort ((a), (b), (c))
 
 #define fun_1to1(a,b,c,d)    PFpa_fun_1to1 ((a), (b), (c), (d))
@@ -98,7 +87,8 @@
 
 #define to(a,b,c,d)          PFpa_to ((a), (b), (c), (d))
 
-#define hash_count(a,b,c)    PFpa_hash_count ((a), (b), (c))
+#define count(a,b,c)         PFpa_count ((a), (b), (c))
+#define ecount(a,b,c,d,e)    PFpa_count_ext ((a), (b), (c), (d), (e))
 #define aggr(a,b,c,d,e)      PFpa_aggr ((a), (b), (c), (d), (e))
 
 /** a sort specification list is just another attribute list */
@@ -114,31 +104,11 @@
 #define cast(a,b,c,d)        PFpa_cast ((a), (b), (c), (d))
 
 /** StaircaseJoin */
-#define llscj_anc(a,b,c,d,e,f,g) PFpa_llscj_anc ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_anc_self(a,b,c,d,e,f,g) PFpa_llscj_anc_self ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_attr(a,b,c,d,e,f,g) PFpa_llscj_attr ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_child(a,b,c,d,e,f,g) PFpa_llscj_child ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_desc(a,b,c,d,e,f,g) PFpa_llscj_desc ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_desc_self(a,b,c,d,e,f,g) PFpa_llscj_desc_self ((a),(b), (c), \
-        (d), (e), (f), (g))
-#define llscj_foll(a,b,c,d,e,f,g) PFpa_llscj_foll ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_foll_self(a,b,c,d,e,f,g) PFpa_llscj_foll_self ((a),(b), (c), \
-        (d), (e), (f), (g))
-#define llscj_parent(a,b,c,d,e,f,g) PFpa_llscj_parent ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_prec(a,b,c,d,e,f,g) PFpa_llscj_prec ((a), (b), (c), \
-        (d), (e), (f), (g))
-#define llscj_prec_self(a,b,c,d,e,f,g) PFpa_llscj_prec_self ((a),(b), (c), \
+#define llscjoin(a,b,c,d,e,f,g) PFpa_llscjoin ((a), (b), (c), \
         (d), (e), (f), (g))
 
 #define doc_tbl(a,b,c)       PFpa_doc_tbl ((a), (b), (c))
-#define doc_access(a,b,c,d,e) PFpa_doc_access ((a), (b), (c), (d), (e))
+#define doc_access(a,b,c,d)  PFpa_doc_access ((a), (b), (c), (d))
 
 /* twig root operator */
 #define twig(a,b,c)          PFpa_twig ((a),(b),(c))
@@ -165,19 +135,12 @@
 #define processi(a,b,c,d)    PFpa_processi ((a),(b),(c),(d))
 
 /* constructor content operator (elem|doc) */
-#define content(a,b,c,d)     PFpa_content ((a),(b),(c),(d))
+#define content(a,b,c)       PFpa_content ((a),(b),(c))
 
-#define merge_adjacent(a,b,c,d,e) PFpa_merge_adjacent ((a),(b),(c),(d),(e))
+/* slim constructor content operator (elem|doc) */
+#define slim_content(a,b,c)  PFpa_slim_content ((a),(b),(c))
 
-/** roots() operator */
-#define roots(a)             PFpa_roots (a)
-
-#define fragment(a)          PFpa_fragment (a)
-#define frag_extract(a,b)    PFpa_frag_extract ((a),(b))
-#define frag_union(a,b)      PFpa_frag_union ((a), (b))
-
-/** empty fragment list */
-#define empty_frag()         PFpa_empty_frag ()
+#define merge_adjacent(a,b,c,d) PFpa_merge_adjacent ((a),(b),(c),(d))
 
 #define error(a,b,c)         PFpa_error ((a), (b), (c))
 #define cond_err(a,b,c,d)    PFpa_cond_err ((a), (b), (c), (d))
@@ -197,10 +160,7 @@
 #define fun_call(a,b,c,d,e,f,g,h) \
         PFpa_fun_call ((a),(b),(c),(d),(e),(f),(g),(h))
 #define fun_param(a,b,c)  PFpa_fun_param ((a),(b),(c))  
-#define fun_frag_param(a,b,c) PFpa_fun_frag_param ((a),(b),(c))  
 
-#define fn_concat(a,b,c,d)   PFpa_fn_concat ((a), (b), (c), (d))
-#define fn_contains(a,b,c,d) PFpa_fn_contains ((a), (b), (c), (d))
 #define string_join(a,b,c,d) PFpa_string_join ((a),(b),(c),(d))
 
 /* vim:set shiftwidth=4 expandtab: */

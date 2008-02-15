@@ -198,7 +198,7 @@ PFmil_lit_int (int i)
  * (The result will be a MIL leaf node, with kind #m_lit_lng and
  * semantic value @a i.)
  *
- * @param i The integer value to represent in MIL
+ * @param l The long integer value to represent in MIL
  */
 PFmil_t *
 PFmil_lit_lng (long long int l)
@@ -300,6 +300,8 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_KIND_PI:     return "PI";
         case PF_MIL_VAR_KIND_REF:    return "REFERENCE";
 
+        case PF_MIL_VAR_GENTYPE:     return "genType";
+
         case PF_MIL_VAR_ATTR:        return "ATTR";
         case PF_MIL_VAR_ELEM:        return "ELEM";
 
@@ -323,6 +325,7 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_ATTR_CONT:   return "ATTR_CONT";
         case PF_MIL_VAR_QN_LOC:      return "QN_LOC";
         case PF_MIL_VAR_QN_URI:      return "QN_URI";
+        case PF_MIL_VAR_QN_URI_LOC:  return "QN_URI_LOC";
         case PF_MIL_VAR_QN_PREFIX:   return "QN_PREFIX";
         case PF_MIL_VAR_PROP_VAL:    return "PROP_VAL";
         case PF_MIL_VAR_PROP_TEXT:   return "PROP_TEXT";
@@ -560,12 +563,14 @@ PFmil_binsert (const PFmil_t *dest, const PFmil_t *src)
  *
  * Example:
  *
- *  void | int            void | int       void | int
- * ------+-----  append  ------+-----  =  ------+-----
- *   0@0 |  10             0@0 |  20        0@0 |  10
- *   1@0 |  11             1@0 |  21        1@0 |  11
- *                                          2@0 |  20
- *                                          3@0 |  21
+ * @verbatim
+    void | int            void | int       void | int
+   ------+-----  append  ------+-----  =  ------+-----
+     0@0 |  10             0@0 |  20        0@0 |  10
+     1@0 |  11             1@0 |  21        1@0 |  11
+                                            2@0 |  20
+                                            3@0 |  21
+   @endverbatim
  */
 PFmil_t *
 PFmil_bappend (const PFmil_t *dest, const PFmil_t *src)

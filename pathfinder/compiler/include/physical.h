@@ -54,10 +54,6 @@ enum PFpa_op_kind_t {
     , pa_attach         =   4 /**< ColumnAttach */
     , pa_cross          =  10 /**< Cross */
     , pa_leftjoin       =  11 /**< LeftJoin */
-#if 0                        
-    , pa_nljoin         =  12 /**< NestedLoopJoin */
-    , pa_merge_join     =  13 /**< MergeJoin */
-#endif                       
     , pa_eqjoin         =  14 /**< Generic join implementation */
     , pa_semijoin       =  15 /**< Semijoin implementation */
     , pa_thetajoin      =  16 /**< Thetajoin implementation */
@@ -78,16 +74,14 @@ enum PFpa_op_kind_t {
                                    by the values of a single row (cardinality 
                                    stays the same) */
     , pa_eq             =  40 /**< Numeric or String Equality */
-    , pa_eq_atom        =  41 /**< Numeric or String Equality */
     , pa_gt             =  42 /**< Numeric or String GreaterThan */
-    , pa_gt_atom        =  43 /**< Numeric or String GreaterThan */
     , pa_bool_not       =  45 /**< Boolean negation */
     , pa_bool_and       =  46 /**< Boolean and */
     , pa_bool_or        =  47 /**< Boolean or */
-    , pa_bool_and_atom  =  48 /**< Boolean and, where one arg is an atom */
-    , pa_bool_or_atom   =  49 /**< Boolean or, where one arg is an atom */
     , pa_to             =  50 /**< op:to operator */
-    , pa_hash_count     =  55 /**< Hash-based count operator */
+    , pa_count_ext      =  54 /**< Count operator with loop backup
+                                   for empty values*/
+    , pa_count          =  55 /**< Count operator */
     , pa_avg            =  56 /**< Avg operator */
     , pa_max            =  57 /**< Max operator */
     , pa_min            =  58 /**< Min operator */    
@@ -101,17 +95,7 @@ enum PFpa_op_kind_t {
                                    certain type */
     , pa_type_assert    =  64 /**< restriction of the type of a given column */
     , pa_cast           =  65 /**< cast a table to a given type */
-    , pa_llscj_anc      = 100 /**< Loop-Lifted StaircaseJoin Ancestor */
-    , pa_llscj_anc_self = 101 /**< Loop-Lifted StaircaseJoin AncestorOrSelf */
-    , pa_llscj_attr     = 102 /**< Loop-Lifted StaircaseJoin AncestorOrSelf */
-    , pa_llscj_child    = 103 /**< Loop-Lifted StaircaseJoin Child */
-    , pa_llscj_desc     = 104 /**< Loop-Lifted StaircaseJoin Descendant */
-    , pa_llscj_desc_self= 105 /**< Loop-Lifted StaircaseJoin DescendantOrSelf */
-    , pa_llscj_foll     = 106 /**< Loop-Lifted StaircaseJoin Following */
-    , pa_llscj_foll_sibl= 107 /**< Loop-Lifted StaircaseJoin FollowingSibling */
-    , pa_llscj_parent   = 108 /**< Loop-Lifted StaircaseJoin Parent */
-    , pa_llscj_prec     = 109 /**< Loop-Lifted StaircaseJoin Preceding */
-    , pa_llscj_prec_sibl= 110 /**< Loop-Lifted StaircaseJoin PrecedingSibling */
+    , pa_llscjoin       = 100 /**< Loop-Lifted StaircaseJoin */
     , pa_doc_tbl        = 120 /**< Access to persistent document relation */
     , pa_doc_access     = 121 /**< Access to string content of loaded docs */
     , pa_twig           = 122 /**< twig root operator */
@@ -123,12 +107,8 @@ enum PFpa_op_kind_t {
     , pa_comment        = 128 /**< comment-constructing operator */
     , pa_processi       = 129 /**< processing instruction-constr. operator */
     , pa_content        = 130 /**< constructor content operator (elem|doc) */
-    , pa_merge_adjacent = 131
-    , pa_roots          = 132
-    , pa_fragment       = 133
-    , pa_frag_extract   = 134
-    , pa_frag_union     = 135
-    , pa_empty_frag     = 136
+    , pa_slim_content   = 131 /**< shallow constructor content operator */
+    , pa_merge_adjacent = 132
     , pa_error          = 139 /**< error operator */
     , pa_cond_err       = 140 /**< conditional error operator */
     , pa_nil            = 141 /**< end of the list of parameters */
@@ -143,7 +123,6 @@ enum PFpa_op_kind_t {
     , pa_rec_border     = 149 /**< border of the DAG describing the recursion */
     , pa_fun_call       = 150 /**< function application */
     , pa_fun_param      = 151 /**< function application parameter */
-    , pa_fun_frag_param = 152 /**< function application parameter */
     , pa_string_join    = 160 /**< Concatenation of multiple strings */
 };
 /** algebra operator kinds */
@@ -236,15 +215,6 @@ union PFpa_op_sem_t {
         PFalg_att_t     res;      /**< attribute to hold the result */
     } binary;
 
-    /* semantic content for binary (arithmetic and boolean) operators
-     * where the second argument is an atom (if we know that an
-     * attribute will be constant) */
-    struct {
-        PFalg_att_t     att1;     /**< first operand */
-        PFalg_atom_t    att2;     /**< second operand */
-        PFalg_att_t     res;      /**< attribute to hold the result */
-    } bin_atom;
-
     /**
      * semantic content for unary (numeric or Boolean) operators
      * (e.g. Boolean negation)
@@ -258,6 +228,7 @@ union PFpa_op_sem_t {
     struct {
         PFalg_att_t         res;  /**< Name of result attribute */
         PFalg_att_t         part; /**< Partitioning attribute */
+        PFalg_att_t         loop; /**< loop attribute */
     } count;
 
     /*
@@ -306,6 +277,7 @@ union PFpa_op_sem_t {
 
     /** semantic content for staircase join operator */
     struct {
+        PFalg_axis_t     axis;
         PFty_t           ty;      /**< sequence type that describes the
                                        node test */
         PFord_ordering_t in;      /**< input ordering */
@@ -373,13 +345,6 @@ union PFpa_op_sem_t {
                                        iter column of the result
                                        (used for optimizations) */
     } fun_call;
-    
-    /* semantic content of the function call fragment paramter and
-       the fragment extraction operator */
-    struct {
-        unsigned int    pos;      /**< position of the referenced column */
-    } col_ref;
-
 };
 /** semantic content in physical algebra operators */
 typedef union PFpa_op_sem_t PFpa_op_sem_t;
@@ -429,8 +394,7 @@ struct PFpa_op_t {
  * A `serialize' node will be placed on the very top of the algebra
  * expression tree.
  */
-PFpa_op_t * PFpa_serialize (const PFpa_op_t *doc, const PFpa_op_t *alg,
-                            PFalg_att_t item);
+PFpa_op_t * PFpa_serialize (const PFpa_op_t *alg, PFalg_att_t item);
 
 /****************************************************************/
 
@@ -455,7 +419,7 @@ PFpa_op_t *PFpa_attach (const PFpa_op_t *n,
     foreach $a in a
       foreach $b in b
         return ($a, $b) .
-@verbatim
+@endverbatim
  *
  * That is, the left operand is in the *outer* loop.
  */
@@ -596,18 +560,6 @@ PFpa_op_t *PFpa_gt (const PFpa_op_t *, PFalg_att_t res,
                     PFalg_att_t att1, PFalg_att_t att2);
 
 /**
- * Comparison operator eq, where one column is an atom (constant).
- */
-PFpa_op_t *PFpa_eq_atom (const PFpa_op_t *, PFalg_att_t res,
-                         PFalg_att_t att1, PFalg_atom_t att2);
-
-/**
- * Comparison operator gt, where one column is an atom (constant).
- */
-PFpa_op_t *PFpa_gt_atom (const PFpa_op_t *, PFalg_att_t res,
-                         PFalg_att_t att1, PFalg_atom_t att2);
-
-/**
  * Boolean negation
  */
 PFpa_op_t *PFpa_bool_not (const PFpa_op_t *,
@@ -626,30 +578,27 @@ PFpa_op_t *PFpa_or (const PFpa_op_t *, PFalg_att_t res,
                     PFalg_att_t att1, PFalg_att_t att2);
 
 /**
- * Boolean and, where one column is an atom (constant).
- */
-PFpa_op_t *PFpa_and_atom (const PFpa_op_t *, PFalg_att_t res,
-                          PFalg_att_t att1, PFalg_atom_t att2);
-
-/**
- * Boolean or, where one column is an atom (constant).
- */
-PFpa_op_t *PFpa_or_atom (const PFpa_op_t *, PFalg_att_t res,
-                         PFalg_att_t att1, PFalg_atom_t att2);
-
-/**
  * Constructor for op:to operator
  */
 PFpa_op_t * PFpa_to (const PFpa_op_t *n, PFalg_att_t res,
                      PFalg_att_t att1, PFalg_att_t att2);
 
 /**
- * HashCount: Hash-based Count operator. Does neither benefit from
+ * Count: Count function operator with a loop relation to
+ * correctly fill in missing values. Does neither benefit from
  * any existing ordering, nor does it provide/preserve any input
  * ordering.
  */
-PFpa_op_t *PFpa_hash_count (const PFpa_op_t *,
-                            PFalg_att_t, PFalg_att_t);
+PFpa_op_t *PFpa_count_ext (const PFpa_op_t *, const PFpa_op_t *,
+                           PFalg_att_t, PFalg_att_t, PFalg_att_t);
+
+/**
+ * Count: Count function operator. Does neither benefit from
+ * any existing ordering, nor does it provide/preserve any input
+ * ordering.
+ */
+PFpa_op_t *PFpa_count (const PFpa_op_t *,
+                       PFalg_att_t, PFalg_att_t);
 
 /**
  * Aggr: Aggregation function operator. Does neither benefit from
@@ -695,85 +644,15 @@ PFpa_op_t *PFpa_cast (const PFpa_op_t *,
 /**
  * StaircaseJoin operator.
  *
- * Input must have iter|item schema, and be sorted on iter.
+ * Input must have iter|item schema
  */
-PFpa_op_t *PFpa_llscj_anc (const PFpa_op_t *frag,
-                           const PFpa_op_t *ctx,
-                           const PFty_t test,
-                           const PFord_ordering_t in,
-                           const PFord_ordering_t out,
-                           PFalg_att_t iter,
-                           PFalg_att_t item);
-PFpa_op_t *PFpa_llscj_anc_self (const PFpa_op_t *frag,
-                                const PFpa_op_t *ctx,
-                                const PFty_t test,
-                                const PFord_ordering_t in,
-                                const PFord_ordering_t out,
-                                PFalg_att_t iter,
-                                PFalg_att_t item);
-PFpa_op_t *PFpa_llscj_attr (const PFpa_op_t *frag,
-                            const PFpa_op_t *ctx,
-                            const PFty_t test,
-                            const PFord_ordering_t in,
-                            const PFord_ordering_t out,
-                            PFalg_att_t iter,
-                            PFalg_att_t item);
-PFpa_op_t *PFpa_llscj_child (const PFpa_op_t *frag,
-                             const PFpa_op_t *ctx,
-                             const PFty_t test,
-                             const PFord_ordering_t in,
-                             const PFord_ordering_t out,
-                             PFalg_att_t iter,
-                             PFalg_att_t item);
-PFpa_op_t *PFpa_llscj_desc (const PFpa_op_t *frag,
-                            const PFpa_op_t *ctx,
-                            const PFty_t test,
-                            const PFord_ordering_t in,
-                            const PFord_ordering_t out,
-                            PFalg_att_t iter,
-                            PFalg_att_t item);
-PFpa_op_t *PFpa_llscj_desc_self (const PFpa_op_t *frag,
-                                 const PFpa_op_t *ctx,
-                                 const PFty_t test,
-                                 const PFord_ordering_t in,
-                                 const PFord_ordering_t out,
-                                 PFalg_att_t iter,
-                                 PFalg_att_t item);
-PFpa_op_t *PFpa_llscj_foll (const PFpa_op_t *frag,
-                            const PFpa_op_t *ctx,
-                            const PFty_t test,
-                            const PFord_ordering_t in,
-                            const PFord_ordering_t out,
-                            PFalg_att_t iter,
-                            PFalg_att_t item);
-PFpa_op_t *PFpa_llscj_foll_sibl (const PFpa_op_t *frag,
-                                 const PFpa_op_t *ctx,
-                                 const PFty_t test,
-                                 const PFord_ordering_t in,
-                                 const PFord_ordering_t out,
-                                 PFalg_att_t iter,
-                                 PFalg_att_t item);
-PFpa_op_t *PFpa_llscj_parent (const PFpa_op_t *frag,
-                              const PFpa_op_t *ctx,
-                              const PFty_t test,
-                              const PFord_ordering_t in,
-                              const PFord_ordering_t out,
-                              PFalg_att_t iter,
-                              PFalg_att_t item);
-PFpa_op_t *PFpa_llscj_prec (const PFpa_op_t *frag,
-                            const PFpa_op_t *ctx,
-                            const PFty_t test,
-                            const PFord_ordering_t in,
-                            const PFord_ordering_t out,
-                            PFalg_att_t iter,
-                            PFalg_att_t item);
-PFpa_op_t *PFpa_llscj_prec_sibl (const PFpa_op_t *frag,
-                                 const PFpa_op_t *ctx,
-                                 const PFty_t test,
-                                 const PFord_ordering_t in,
-                                 const PFord_ordering_t out,
-                                 PFalg_att_t iter,
-                                 PFalg_att_t item);
+PFpa_op_t *PFpa_llscjoin (const PFpa_op_t *ctx,
+                          PFalg_axis_t axis,
+                          const PFty_t test,
+                          const PFord_ordering_t in,
+                          const PFord_ordering_t out,
+                          PFalg_att_t iter,
+                          PFalg_att_t item);
 
 /**
  * Access to persistently stored document table.
@@ -785,8 +664,7 @@ PFpa_op_t * PFpa_doc_tbl (const PFpa_op_t *,
 /**
  * Access to the string content of loaded documents
  */
-PFpa_op_t * PFpa_doc_access (const PFpa_op_t *doc, 
-                             const PFpa_op_t *alg,
+PFpa_op_t * PFpa_doc_access (const PFpa_op_t *alg,
                              PFalg_att_t res,
                              PFalg_att_t att,
                              PFalg_doc_t doc_col);
@@ -834,43 +712,20 @@ PFpa_op_t * PFpa_processi (const PFpa_op_t *cont,
                            PFalg_att_t val);
 
 /** Constructor for constructor content operators (elem|doc). */
-PFpa_op_t * PFpa_content (const PFpa_op_t *doc,
-                          const PFpa_op_t *cont,
+PFpa_op_t * PFpa_content (const PFpa_op_t *cont,
                           PFalg_att_t iter,
                           PFalg_att_t item);
 
+/** Constructor for shallow constructor content operators (elem|doc). */
+PFpa_op_t * PFpa_slim_content (const PFpa_op_t *cont,
+                               PFalg_att_t iter,
+                               PFalg_att_t item);
+
 /** Constructor for pf:merge-adjacent-text-nodes() functionality */
-PFpa_op_t * PFpa_merge_adjacent (const PFpa_op_t *fragment,
-                                 const PFpa_op_t *n,
+PFpa_op_t * PFpa_merge_adjacent (const PFpa_op_t *n,
                                  PFalg_att_t,
                                  PFalg_att_t,
                                  PFalg_att_t);
-
-/**
- * Extract result part from a (frag, result) pair.
- */
-PFpa_op_t *PFpa_roots (const PFpa_op_t *n);
-
-/**
- * Extract fragment part from a (frag, result) pair.
- */
-PFpa_op_t *PFpa_fragment (const PFpa_op_t *n);
-
-/**
- * Constructor for a fragment extract operator
- * (to be used in combination with a function call)
- */
-PFpa_op_t * PFpa_frag_extract (const PFpa_op_t *n, unsigned int col_pos);
-
-/**
- * Form disjoint union between two fragments.
- */
-PFpa_op_t *PFpa_frag_union (const PFpa_op_t *n1, const PFpa_op_t *n2);
-
-/**
- * Empty fragment list
- */
-PFpa_op_t *PFpa_empty_frag (void);
 
 /**
  * Constructor for a runtime error message
@@ -972,14 +827,6 @@ PFpa_op_t *PFpa_fun_param (const PFpa_op_t *argument,
                            const PFpa_op_t *param_list,
                            PFalg_schema_t schema);
                                    
-/**
- * Constructor for the fragment information of a list item
- * of a parameter list related to function application
- */
-PFpa_op_t *PFpa_fun_frag_param (const PFpa_op_t *argument,
-                                const PFpa_op_t *param_list,
-                                unsigned int col_pos);
-
 /****************************************************************/
 /* operators introduced by built-in functions */
 

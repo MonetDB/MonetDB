@@ -75,37 +75,24 @@ static char *a_id[]  = {
     , [pa_refine_sort]     = "refine_sort"
     , [pa_fun_1to1]        = "1:1 fun"
     , [pa_eq]              = "="
-    , [pa_eq_atom]         = "= (atom)"
     , [pa_gt]              = ">"
-    , [pa_gt_atom]         = "> (atom)"
     , [pa_bool_and]        = "AND"
     , [pa_bool_or]         = "OR"
     , [pa_bool_not]        = "NOT"
-    , [pa_bool_and_atom]   = "AND (atom)"
-    , [pa_bool_or_atom]    = "OR (atom)"
     , [pa_to]              = "op:to"
     , [pa_avg]             = "AVG"
     , [pa_min]             = "MAX"
     , [pa_max]             = "MIN"
     , [pa_sum]             = "SUM"
-    , [pa_hash_count]      = "HASH_COUNT"
+    , [pa_count_ext]       = "{COUNT}"
+    , [pa_count]           = "COUNT"
     , [pa_mark]            = "mark"
     , [pa_rank]            = "rank"
     , [pa_mark_grp]        = "mark_grp"
     , [pa_type]            = "TYPE"
     , [pa_type_assert]     = "type assertion"
     , [pa_cast]            = "CAST"
-    , [pa_llscj_anc]       = "//| ancestor"
-    , [pa_llscj_anc_self]  = "//| anc-self"
-    , [pa_llscj_attr]      = "//| attr"
-    , [pa_llscj_child]     = "//| child"
-    , [pa_llscj_desc]      = "//| descendant"
-    , [pa_llscj_desc_self] = "//| desc-self"
-    , [pa_llscj_foll]      = "//| following"
-    , [pa_llscj_foll_sibl] = "//| foll-sibl"
-    , [pa_llscj_parent]    = "//| parent"
-    , [pa_llscj_prec]      = "//| preceding"
-    , [pa_llscj_prec_sibl] = "//| prec-sibl"
+    , [pa_llscjoin]        = "//| "
     , [pa_doc_tbl]         = "DOC"
     , [pa_doc_access]      = "access"
     , [pa_twig]            = "TWIG"             /* lawn \"#00FF00\" */
@@ -117,12 +104,8 @@ static char *a_id[]  = {
     , [pa_comment]         = "COMMENT"          /* lawn \"#00FF00\" */
     , [pa_processi]        = "PI"               /* lawn \"#00FF00\" */
     , [pa_content]         = "CONTENT"          /* lawn \"#00FF00\" */
+    , [pa_slim_content]    = "content"          /* lawn \"#00FF00\" */
     , [pa_merge_adjacent]  = "#pf:merge-adjacent-text-nodes"
-    , [pa_roots]           = "ROOTS"
-    , [pa_fragment]        = "FRAGs"
-    , [pa_frag_extract]    = "FRAG EXTRACT"
-    , [pa_frag_union]      = "FRAG_UNION"
-    , [pa_empty_frag]      = "EMPTY_FRAG"
     , [pa_error]           = "!ERROR"
     , [pa_cond_err]        = "!ERROR"
     , [pa_nil]             = "nil"
@@ -136,7 +119,6 @@ static char *a_id[]  = {
     , [pa_rec_border]      = "rec border"
     , [pa_fun_call]        = "fun call"
     , [pa_fun_param]       = "fun param"
-    , [pa_fun_frag_param]  = "fun frag param"
     , [pa_string_join]     = "fn:string-join"
 };
 
@@ -234,37 +216,24 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_refine_sort]     = "red"
         , [pa_fun_1to1]        = "\"#C0C0C0\""
         , [pa_eq]              = "\"#00DDDD\""
-        , [pa_eq_atom]         = "\"#00DDDD\""
         , [pa_gt]              = "\"#00DDDD\""
-        , [pa_gt_atom]         = "\"#00DDDD\""
         , [pa_bool_not]        = "\"#C0C0C0\""
         , [pa_bool_and]        = "\"#C0C0C0\""
         , [pa_bool_or]         = "\"#C0C0C0\""
-        , [pa_bool_and_atom]   = "\"#C0C0C0\""
-        , [pa_bool_or_atom]    = "\"#C0C0C0\""
         , [pa_to]              = "\"#C0C0C0\""
         , [pa_avg]             = "\"#A0A0A0\""
         , [pa_max]             = "\"#A0A0A0\""
         , [pa_min]             = "\"#A0A0A0\""
         , [pa_sum]             = "\"#A0A0A0\""
-        , [pa_hash_count]      = "\"#A0A0A0\""
+        , [pa_count_ext]       = "\"#A0A0A0\""
+        , [pa_count]           = "\"#A0A0A0\""
         , [pa_mark]            = "\"#FFBBBB\""
         , [pa_rank]            = "\"#FFBBBB\""
         , [pa_mark_grp]        = "\"#FFBBBB\""
         , [pa_type]            = "\"#C0C0C0\""
         , [pa_type_assert]     = "\"#C0C0C0\""
         , [pa_cast]            = "\"#C0C0C0\""
-        , [pa_llscj_anc]       = "\"#1E90FF\""
-        , [pa_llscj_anc_self]  = "\"#1E90FF\""
-        , [pa_llscj_attr]      = "\"#1E90FF\""
-        , [pa_llscj_child]     = "\"#1E90FF\""
-        , [pa_llscj_desc]      = "\"#1E90FF\""
-        , [pa_llscj_desc_self] = "\"#1E90FF\""
-        , [pa_llscj_foll]      = "\"#1E90FF\""
-        , [pa_llscj_foll_sibl] = "\"#1E90FF\""
-        , [pa_llscj_parent]    = "\"#1E90FF\""
-        , [pa_llscj_prec]      = "\"#1E90FF\""
-        , [pa_llscj_prec_sibl] = "\"#1E90FF\""
+        , [pa_llscjoin]        = "\"#1E90FF\""
         , [pa_doc_tbl]         = "\"#C0C0C0\""
         , [pa_doc_access]      = "\"#CCCCFF\""
         , [pa_twig]            = "\"#00FC59\""
@@ -277,11 +246,6 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_processi]        = "\"#00FC59\""
         , [pa_content]         = "\"#00FC59\""
         , [pa_merge_adjacent]  = "\"#00D000\""
-        , [pa_roots]           = "\"#E0E0E0\""
-        , [pa_fragment]        = "\"#E0E0E0\""
-        , [pa_frag_extract]    = "\"#DD22DD\""
-        , [pa_frag_union]      = "\"#E0E0E0\""
-        , [pa_empty_frag]      = "\"#E0E0E0\""
         , [pa_error]           = "\"#C0C0C0\""
         , [pa_cond_err]        = "\"#C0C0C0\""
         , [pa_nil]             = "\"#FFFFFF\""
@@ -295,7 +259,6 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         , [pa_rec_border]      = "\"#BB00BB\""
         , [pa_fun_call]        = "\"#BB00BB\""
         , [pa_fun_param]       = "\"#BB00BB\""
-        , [pa_fun_frag_param]  = "\"#BB00BB\""
         , [pa_string_join]     = "\"#C0C0C0\""
     };
 
@@ -462,23 +425,14 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                             PFatt_str (n->sem.binary.att2));
             break;
 
-        case pa_eq_atom:
-        case pa_gt_atom:
-        case pa_bool_and_atom:
-        case pa_bool_or_atom:
-            PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
-                            PFatt_str (n->sem.bin_atom.res),
-                            PFatt_str (n->sem.bin_atom.att1),
-                            literal (n->sem.bin_atom.att2));
-            break;
-
         case pa_bool_not:
             PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
                             PFatt_str (n->sem.unary.res),
                             PFatt_str (n->sem.unary.att));
             break;
 
-        case pa_hash_count:
+        case pa_count_ext:
+        case pa_count:
             if (n->sem.count.part == att_NULL)
                 PFarray_printf (dot, "%s (%s)", a_id[n->kind],
                                 PFatt_str (n->sem.count.res));
@@ -486,6 +440,9 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                 PFarray_printf (dot, "%s (%s:/%s)", a_id[n->kind],
                                 PFatt_str (n->sem.count.res),
                                 PFatt_str (n->sem.count.part));
+            if (n->sem.count.loop != att_NULL)
+                PFarray_printf (dot, " (%s)",
+                                PFatt_str (n->sem.count.loop));
             break;
 
         case pa_avg:
@@ -541,19 +498,50 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
                             PFalg_simple_type_str (n->sem.cast.ty));
             break;
 
-        case pa_llscj_anc:
-        case pa_llscj_anc_self:
-        case pa_llscj_attr:
-        case pa_llscj_child:
-        case pa_llscj_desc:
-        case pa_llscj_desc_self:
-        case pa_llscj_foll:
-        case pa_llscj_foll_sibl:
-        case pa_llscj_parent:
-        case pa_llscj_prec:
-        case pa_llscj_prec_sibl:
+        case pa_llscjoin:
             PFarray_printf (dot, "%s", a_id[n->kind]);
-            PFarray_printf (dot, "::%s", PFty_str (n->sem.scjoin.ty));
+            switch (n->sem.scjoin.axis)
+            {
+                case alg_anc:
+                    PFarray_printf (dot, "ancestor::");
+                    break;
+                case alg_anc_s:
+                    PFarray_printf (dot, "anc-or-self::");
+                    break;
+                case alg_attr:
+                    PFarray_printf (dot, "attribute::");
+                    break;
+                case alg_chld:
+                    PFarray_printf (dot, "child::");
+                    break;
+                case alg_desc:
+                    PFarray_printf (dot, "descendant::");
+                    break;
+                case alg_desc_s:
+                    PFarray_printf (dot, "desc-or-self::");
+                    break;
+                case alg_fol:
+                    PFarray_printf (dot, "following::");
+                    break;
+                case alg_fol_s:
+                    PFarray_printf (dot, "fol-sibling::");
+                    break;
+                case alg_par:
+                    PFarray_printf (dot, "parent::");
+                    break;
+                case alg_prec:
+                    PFarray_printf (dot, "preceding::");
+                    break;
+                case alg_prec_s:
+                    PFarray_printf (dot, "prec-sibling::");
+                    break;
+                case alg_self:
+                    PFarray_printf (dot, "self::");
+                    break;
+                default: PFoops (OOPS_FATAL,
+                        "unknown XPath axis in dot output");
+            }
+            PFarray_printf (dot, "%s", PFty_str (n->sem.scjoin.ty));
             break;
 
         case pa_doc_access:
@@ -587,6 +575,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         case pa_textnode:
         case pa_comment:
         case pa_content:
+        case pa_slim_content:
         case pa_trace:
         case pa_trace_msg:
             PFarray_printf (dot, "%s (%s, %s)",
@@ -650,12 +639,6 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
             PFarray_printf (dot, ")");
             break;
             
-        case pa_frag_extract:
-        case pa_fun_frag_param:
-            PFarray_printf (dot, "%s (referencing column %i)",
-                            a_id[n->kind], n->sem.col_ref.pos);
-            break;
-            
         case pa_serialize:
         case pa_cross:
         case pa_append_union:
@@ -664,10 +647,6 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         case pa_doc_tbl:
         case pa_fcns:
         case pa_merge_adjacent:
-        case pa_roots:
-        case pa_fragment:
-        case pa_frag_union:
-        case pa_empty_frag:
         case pa_nil:
         case pa_rec_fix:
         case pa_rec_param:

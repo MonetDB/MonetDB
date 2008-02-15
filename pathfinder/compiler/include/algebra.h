@@ -48,35 +48,52 @@
  *
  * Observe that the type #aat_node has four bits set, as nodes are split
  * in MonetDB into attribute nodes (#aat_anode) and other nodes (#aat_pnode).
- * Both node kinds require two bits each, to represented the nodes using a
- * node id (#aat_pre/#aat_attr) and a document fragment (#aat_pfrag/#aat_afrag).
+ * Both node kinds require three bits each, to represented the nodes using a
+ * node id (#aat_pre), a document fragment (#aat_frag), and based on the
+ * node kind either the attribute id (#aat_attr) or a kind identifier
+ * (#aat_nkind).
  *
  * @note
- *   The bits for #aat_pfrag and #aat_afrag @b must be lower than the bit
- *   for #aat_pre and #aat_attr, respectively. Our sort implementation will
- *   first sort by the frag BAT, then by the pre BAT this way.
- *   This implements document order across documents correctly.
+ *   The bits for #aat_frag must be lower than the bit
+ *   for #aat_pre and the bit for #aat_pre must be lower
+ *   than the bit for #aat_attr, respectively. Our sort
+ *   implementation will first sort by the frag BAT,
+ *   then by the pre BAT, and then by the attribute id
+ *   this way. This implements document order across
+ *   documents and attributes correctly.
  */
-#define aat_nat     0x00000001 /**< algebra simple atomic type natural number */
-#define aat_int     0x00000002 /**< algebra simple atomic type integer */
-#define aat_str     0x00000004 /**< algebra simple atomic type string  */
-#define aat_dec     0x00000008 /**< algebra simple atomic type decimal */
-#define aat_dbl     0x00000010 /**< algebra simple atomic type double  */
-#define aat_bln     0x00000020 /**< algebra simple atomic type boolean  */
-#define aat_qname   0x00000040 /**< algebra simple atomic type QName  */
-#define aat_uA      0x00000080 /**< algebra simple atomic type untypedAtomic  */
-#define aat_node    0x00000F00 /**< algebra simple atomic type node */
-#define aat_anode   0x00000C00 /**< algebra simple atomic type attribute */
-#define aat_attr    0x00000800 /**< an attribute is represented
-                                     by an attr value... */
-#define aat_afrag   0x00000400 /**< ...and a attribute fragment */
-#define aat_pnode   0x00000300 /**< algebra simple atomic type representing
-                                     all other nodes */
-#define aat_pre     0x00000200 /**< a node is represented by a pre value... */
-#define aat_pfrag   0x00000100 /**< ...and a node fragment */
+#define aat_nat         0x00000001 /**< algebra simple atomic type natural number */
+#define aat_int         0x00000002 /**< algebra simple atomic type integer */
+#define aat_str         0x00000004 /**< algebra simple atomic type string  */
+#define aat_dec         0x00000008 /**< algebra simple atomic type decimal */
+#define aat_dbl         0x00000010 /**< algebra simple atomic type double  */
+#define aat_bln         0x00000020 /**< algebra simple atomic type boolean  */
+#define aat_uA          0x00000040 /**< algebra simple atomic type untypedAtomic  */
 
-#define aat_charseq 0x00010000 /**< this type represents the CHAR type in SQL */
-#define aat_update  0x00010000 /**< and it represents the update kind in MIL */
+/* qname representation in MIL and SQL */ 
+#define aat_qname_id    0x00000100 /**< MIL id column representing a QName */
+#define aat_qname_loc   0x00000100 /**< SQL local name column representing a QName */
+#define aat_qname_cont  0x00000200 /**< MIL container column representing a QName */
+#define aat_qname_uri   0x00000200 /**< SQL uri column representing a QName */
+/* qname representation in the algebra */
+#define aat_qname       0x00000300 /**< algebra simple atomic type QName  */
+
+/* node representation in MIL and SQL */
+#define aat_frag        0x00001000 /**< node fragment */
+#define aat_pre         0x00002000 /**< pre value */
+#define aat_attr        0x00004000 /**< attr value */
+#define aat_nkind       0x00008000 /**< node kind indicating that
+                                        a node is not an attribute */
+/* attribute node representation in the algebra */
+#define aat_anode       0x00007000 /**< algebra simple atomic type attribute */
+/* element/document/text/pi/comment node representation in the algebra */
+#define aat_pnode       0x0000B000 /**< algebra simple atomic type 
+                                        representing all other nodes */
+/* node representation in the algebra */
+#define aat_node        0x0000F000 /**< algebra simple atomic type node */
+
+#define aat_charseq     0x00100000 /**< this type represents the CHAR type in SQL */
+#define aat_update      0x00100000 /**< and it represents the update kind in MIL */
 /**
  * The following types represent the first parameter of an update function
  * (which is a always of kind node). This allows an update item to correctly
@@ -85,29 +102,33 @@
  * at the serialize operator.
  *
  * @note
- *    The bits encoding the node1 information #aat_att1, #aat_afrag1, #aat_pre1,
- *    and #aat_pfrag1 represent the normal node information shifted 4 bits
+ *    The bits encoding the node1 information #aat_frag1, #aat_pre1, #aat_attr1,
+ *    and #aat_nkind1 represent the normal node information shifted 4 bits
  *    to the left.
  */
-#define aat_node1   0x0000F000 /**< algebra simple atomic type node */
-#define aat_anode1  0x0000C000 /**< algebra simple atomic type attribute */
-#define aat_attr1   0x00008000 /**< an attribute is represented
-                                     by an attr value... */
-#define aat_afrag1  0x00004000 /**< ...and a attribute fragment */
-#define aat_pnode1  0x00003000 /**< algebra simple atomic type representing
-                                     all other nodes */
-#define aat_pre1    0x00002000 /**< a node is represented by a pre value... */
-#define aat_pfrag1  0x00001000 /**< ...and a node fragment */
+/* node representation in MIL and SQL */
+#define aat_frag1       0x00010000 /**< node fragment */
+#define aat_pre1        0x00020000 /**< pre value */
+#define aat_attr1       0x00040000 /**< attr value */
+#define aat_nkind1      0x00080000 /**< node kind indicating that
+                                        a node is not an attribute */
+/* attribute node representation in the algebra */
+#define aat_anode1      0x00070000 /**< algebra simple atomic type attribute */
+/* element/document/text/pi/comment node representation in the algebra */
+#define aat_pnode1      0x000B0000 /**< algebra simple atomic type 
+                                        representing all other nodes */
+/* node representation in the algebra */
+#define aat_node1       0x000F0000 /**< algebra simple atomic type node */
 
 /**
  * The following types are for the document management functions. We introduce
  * one new type, aat_docmgmt, to signify document management queries, and 3 
  * new types for path, document name and collection name.
  */
-#define aat_docmgmt  0x00100000 /**< represents the doc management type */
-#define aat_path     0x00020000 /**< the path where a document resides*/
-#define aat_docnm    0x00040000 /**< the name of the document */
-#define aat_colnm    0x00080000 /**< the name of the collection */
+#define aat_docmgmt  0x01000000 /**< represents the doc management type */
+#define aat_path     0x02000000 /**< the path where a document resides*/
+#define aat_docnm    0x04000000 /**< the name of the document */
+#define aat_colnm    0x08000000 /**< the name of the collection */
 
 /** Simple atomic types in our algebra */
 typedef unsigned int PFalg_simple_type_t;
@@ -116,8 +137,8 @@ typedef unsigned int PFalg_simple_type_t;
                         || (a) == aat_dec || (a) == aat_dbl || (a) == aat_bln \
                         || (a) == aat_qname || (a) == aat_uA \
                         || (a) == aat_anode || (a) == aat_pnode \
-                        || ((a) == aat_pre || (a) == aat_pfrag) \
-                        || ((a) == aat_attr || (a) == aat_afrag) \
+                        || ((a) == aat_pre || (a) == aat_frag) \
+                        || ((a) == aat_attr || (a) == aat_nkind) \
                         || ((a) == 0))
 
 typedef unsigned int nat;

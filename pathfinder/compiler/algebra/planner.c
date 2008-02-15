@@ -113,11 +113,8 @@
 /* We will need a notion of ``ordering''. */
 #include "ordering.h"
 
-/* short-hands */
-#define L(p) ((p)->child[0])
-#define R(p) ((p)->child[1])
-#define LL(p) (L(L(p)))
-#define LR(p) (R(L(p)))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /**
  * A ``plan'' is actually a physical algebra operator tree.
@@ -207,7 +204,6 @@ plan_serialize (const PFla_op_t *n)
     PFplanlist_t *sorted = new_planlist ();
 
     assert (n); assert (n->kind == la_serialize_seq);
-    assert (L(n)); assert (L(n)->plans);
     assert (R(n)); assert (R(n)->plans);
 
     /* The serialize operator requires its input to be properly sorted. */
@@ -222,12 +218,10 @@ plan_serialize (const PFla_op_t *n)
 
     /* for each remaining plan, generate a Serialize operator */
     for (unsigned int i = 0; i < PFarray_last (sorted); i++)
-        for (unsigned int j = 0; j < PFarray_last (L(n)->plans); j++)
-            add_plan (ret,
-                      serialize (
-                          *(plan_t **) PFarray_at (L(n)->plans, j),
-                          *(plan_t **) PFarray_at (sorted, i),
-                          n->sem.ser_seq.item));
+        add_plan (ret,
+                  serialize (
+                      *(plan_t **) PFarray_at (sorted, i),
+                      n->sem.ser_seq.item));
 
     return ret;
 }
@@ -399,54 +393,6 @@ join_worker (PFplanlist_t *ret,
      */
     add_plan (ret, leftjoin (att2, att1, b, a));
     add_plan (ret, leftjoin (att1, att2, a, b));
-
-#if 0
-    PFalg_att_t    att_a = NULL;
-    PFalg_att_t    att_b = NULL;
-    PFplanlist_t  *sorted_a;
-    PFplanlist_t  *sorted_b;
-
-    /* We can always apply the nested loops join */
-    add_plan (ret, nljoin (att1, att2, a, b));
-
-    /* test which of the two attributes is in which argument */
-    for (unsigned int i = 0; i < a->schema.count; i++)
-        if (a->schema.items[i].name == att1) {
-            att_a = att1;
-            break;
-        }
-        else if (a->schema.items[i].name == att2) {
-            att_a = att2;
-            break;
-        }
-
-    for (unsigned int i = 0; i < b->schema.count; i++)
-        if (b->schema.items[i].name == att1) {
-            att_b = att1;
-            break;
-        }
-        else if (b->schema.items[i].name == att2) {
-            att_b = att2;
-            break;
-        }
-
-    assert (att_a && att_b);
-
-    /* We can use MergeJoin after sorting both arguments on the
-     * join attributes.
-     */
-    sorted_a = prune_plans (
-                   ensure_ordering (a, PFord_refine (PFordering (), att_a)));
-    sorted_b = prune_plans (
-                   ensure_ordering (b, PFord_refine (PFordering (), att_b)));
-
-    /* apply MergeJoin for all the resulting plans */
-    for (unsigned int i = 0; i < PFarray_last (sorted_a); i++)
-        for (unsigned int j = 0; j < PFarray_last (sorted_a); j++)
-            add_plan (ret, merge_join (att_a, att_b,
-                                       *(plan_t **) PFarray_at (sorted_a, i),
-                                       *(plan_t **) PFarray_at (sorted_b, j)));
-#endif
 }
 
 /**
@@ -1094,15 +1040,6 @@ plan_binop (const PFla_op_t *n)
 {
     PFplanlist_t *ret = new_planlist ();
 
-    static PFpa_op_t * (*op_atom[]) (const PFpa_op_t *, const PFalg_att_t,
-                                     const PFalg_att_t, const PFalg_atom_t)
-        = {
-              [la_num_eq]       = PFpa_eq_atom
-            , [la_num_gt]       = PFpa_gt_atom
-            , [la_bool_and]     = PFpa_and_atom
-            , [la_bool_or]      = PFpa_or_atom
-        };
-
     static PFpa_op_t * (*op[]) (const PFpa_op_t *, const PFalg_att_t,
                                 const PFalg_att_t, const PFalg_att_t)
         = {
@@ -1112,57 +1049,15 @@ plan_binop (const PFla_op_t *n)
             , [la_bool_or]      = PFpa_or
         };
 
+    assert (op[n->kind]);
 
-    switch (n->kind) {
-
-        case la_num_eq:
-
-            assert (op_atom[n->kind]);
-
-            /* consider NumAddConst if attribute att1 is known to be constant */
-            if (PFprop_const (L(n)->prop, n->sem.binary.att1))
-                for (unsigned int i = 0;
-                        i < PFarray_last (L(n)->plans); i++)
-                    add_plan (ret,
-                        op_atom[n->kind] (
-                            *(plan_t **) PFarray_at (L(n)->plans,i),
-                            n->sem.binary.res,
-                            n->sem.binary.att2,
-                            PFprop_const_val (L(n)->prop,
-                                              n->sem.binary.att1)));
-
-            /* fall through */
-
-        case la_num_gt:
-
-            assert (op_atom[n->kind]);
-
-            /* consider NumAddConst if attribute att2 is known to be constant */
-            if (PFprop_const (L(n)->prop, n->sem.binary.att2))
-                for (unsigned int i = 0;
-                        i < PFarray_last (L(n)->plans); i++)
-                    add_plan (ret,
-                        op_atom[n->kind] (
-                            *(plan_t **) PFarray_at (L(n)->plans,i),
-                            n->sem.binary.res,
-                            n->sem.binary.att1,
-                            PFprop_const_val (L(n)->prop,
-                                              n->sem.binary.att2)));
-
-            /* fall through */
-
-        default:
-
-            assert (op[n->kind]);
-
-            for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-                add_plan (ret,
-                        op[n->kind] (
-                            *(plan_t **) PFarray_at (L(n)->plans, i),
-                            n->sem.binary.res,
-                            n->sem.binary.att1,
-                            n->sem.binary.att2));
-    }
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plan (ret,
+                op[n->kind] (
+                    *(plan_t **) PFarray_at (L(n)->plans, i),
+                    n->sem.binary.res,
+                    n->sem.binary.att1,
+                    n->sem.binary.att2));
 
     return ret;
 }
@@ -1240,6 +1135,48 @@ plan_aggr (PFpa_op_kind_t kind, const PFla_op_t *n)
 }
 
 /**
+ * Generate physical plan for the logical `Count' operator
+ * whose empty partitions are filled up with 0 values.
+ */
+static PFplanlist_t *
+plan_count_ext (const PFla_op_t *n)
+{
+    PFplanlist_t  *ret  = new_planlist ();
+
+    if (!n ||
+        n->kind != la_disjunion ||
+        L(n)->kind != la_count ||
+        !L(n)->sem.aggr.part ||
+        R(n)->kind != la_attach ||
+        RL(n)->kind != la_difference ||
+        R(RL(n))->kind != la_project ||
+        RL(RL(n))->kind != la_count ||
+        L(n) != RL(RL(n)) ||
+        R(n)->sem.attach.res != L(n)->sem.aggr.res ||
+        R(n)->sem.attach.value.type != aat_int ||
+        R(n)->sem.attach.value.val.int_ != 0 ||
+        L(RL(n))->schema.count != 1 ||
+        type_of (n->schema, L(n)->sem.aggr.part) != aat_nat)
+        return ret;
+
+    assert (LL(n)->plans && L(RL(n))->plans);
+
+    /* consider each plan in L */
+    for (unsigned int l = 0; l < PFarray_last (LL(n)->plans); l++)
+        /* and each plan in R */
+        for (unsigned int r = 0; r < PFarray_last (L(RL(n))->plans); r++)
+            add_plan (ret,
+                      ecount (
+                          *(plan_t **) PFarray_at (LL(n)->plans, l),
+                          *(plan_t **) PFarray_at (L(RL(n))->plans, r),
+                          L(n)->sem.aggr.res,
+                          L(n)->sem.aggr.part,
+                          L(n)->sem.aggr.part));
+
+    return ret;
+}
+
+/**
  * Generate physical plan for the logical `Count' operator.
  *
  * Currently we only provide HashCount, which neither benefits from
@@ -1260,10 +1197,8 @@ plan_count (const PFla_op_t *n)
     /* consider each plan in n */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plan (ret,
-                  hash_count (
-                      *(plan_t **) PFarray_at (L(n)->plans, i),
-                      n->sem.aggr.res, n->sem.aggr.part));
-
+                  count (*(plan_t **) PFarray_at (L(n)->plans, i),
+                         n->sem.aggr.res, n->sem.aggr.part));
     return ret;
 }
 
@@ -1478,37 +1413,11 @@ static PFplanlist_t *
 plan_step (const PFla_op_t *n)
 {
     PFplanlist_t *ret     = new_planlist ();
-    PFpa_op_t* (*llscj) (const PFpa_op_t *, const PFpa_op_t *, const PFty_t,
-                         const PFord_ordering_t, const PFord_ordering_t,
-                         PFalg_att_t, PFalg_att_t) = NULL;
 
 #ifndef NDEBUG
     /* ensure that input and output columns have the same name */
     assert (n->sem.step.item == n->sem.step.item_res);
 #endif
-
-    switch (n->sem.step.axis) {
-        case alg_anc:       llscj = PFpa_llscj_anc;         break;
-        case alg_anc_s:     llscj = PFpa_llscj_anc_self;    break;
-        case alg_attr:      llscj = PFpa_llscj_attr;        break;
-        case alg_chld:      llscj = PFpa_llscj_child;       break;
-        case alg_desc:      llscj = PFpa_llscj_desc;        break;
-        case alg_desc_s:    llscj = PFpa_llscj_desc_self;   break;
-        case alg_fol:       llscj = PFpa_llscj_foll;        break;
-        case alg_fol_s:     llscj = PFpa_llscj_foll_sibl;   break;
-        case alg_par:       llscj = PFpa_llscj_parent;      break;
-        case alg_prec:      llscj = PFpa_llscj_prec;        break;
-        case alg_prec_s:    llscj = PFpa_llscj_prec_sibl;   break;
-        case alg_self:      assert (0);                     break;
-    }
-
-    /*
-     * Consider loop-lifted staircase join variants.
-     *
-     * (For top-level XPath expressions, we'd not actually need
-     * loop-lifted staircase joins, but could fall back to the
-     * more efficient ``standard'' staircase join.
-     */
 
     /*
      * Loop-lifted staircase join can handle two different orderings
@@ -1539,30 +1448,30 @@ plan_step (const PFla_op_t *n)
         /* generate plans for each input and each output ordering */
 
         for (unsigned int k = 0; k < PFarray_last (ordered); k++)
-            for (unsigned int l = 0; l < PFarray_last (L(n)->plans); l++)
-                /* the evaluation of the attribute axis keeps the input order */
-                if (n->sem.step.axis == alg_attr)
+            /* the evaluation of the attribute axis keeps the input order */
+            if (n->sem.step.axis == alg_attr)
+                add_plan (
+                    ret,
+                    llscjoin (
+                        *(plan_t **) PFarray_at (ordered, k),
+                        n->sem.step.axis,
+                        n->sem.step.ty,
+                        in[i],
+                        out[i],
+                        n->sem.step.iter,
+                        n->sem.step.item));
+            else
+                for (unsigned short o = 0; o < 2; o++)
                     add_plan (
                         ret,
-                        llscj (*(plan_t **) PFarray_at (L(n)->plans, l),
-                               *(plan_t **) PFarray_at (ordered, k),
-                               n->sem.step.ty,
-                               in[i],
-                               out[i],
-                               n->sem.step.iter,
-                               n->sem.step.item));
-                else
-                    for (unsigned short o = 0; o < 2; o++)
-                        add_plan (
-                            ret,
-                            llscj (*(plan_t **) PFarray_at (L(n)->plans,
-                                                            l),
-                                   *(plan_t **) PFarray_at (ordered, k),
-                                   n->sem.step.ty,
-                                   in[i],
-                                   out[o],
-                                   n->sem.step.iter,
-                                   n->sem.step.item));
+                        llscjoin (
+                            *(plan_t **) PFarray_at (ordered, k),
+                            n->sem.step.axis,
+                            n->sem.step.ty,
+                            in[i],
+                            out[o],
+                            n->sem.step.iter,
+                            n->sem.step.item));
     }
 
     return ret;
@@ -1605,14 +1514,12 @@ plan_doc_access (const PFla_op_t *n)
 
     /* for each plan, generate a doc_access operator */
     for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++)
-        for (unsigned int j = 0; j < PFarray_last (L(n)->plans); j++)
-            add_plan (ret,
-                      doc_access (
-                          *(plan_t **) PFarray_at (L(n)->plans, j),
-                          *(plan_t **) PFarray_at (R(n)->plans, i),
-                          n->sem.doc_access.res,
-                          n->sem.doc_access.att,
-                          n->sem.doc_access.doc_col));
+        add_plan (ret,
+                  doc_access (
+                      *(plan_t **) PFarray_at (R(n)->plans, i),
+                      n->sem.doc_access.res,
+                      n->sem.doc_access.att,
+                      n->sem.doc_access.doc_col));
 
     return ret;
 }
@@ -1847,15 +1754,20 @@ plan_content (const PFla_op_t *n)
                        *(plan_t **) PFarray_at (R(n)->plans, i),
                        sortby (iter, pos)));
 
-    /* for each plan, generate a constructor */
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        for (unsigned int j = 0; j < PFarray_last (ordered_in); j++)
+    if (false /* magic flag to enable shallow content constructors */)
+        /* for each plan, generate a constructor */
+        for (unsigned int i = 0; i < PFarray_last (ordered_in); i++)
             add_plan (ret,
-                      content (
-                          *(plan_t **) PFarray_at (L(n)->plans, i),
-                          *(plan_t **) PFarray_at (ordered_in, j),
-                          iter,
-                          n->sem.iter_pos_item.item));
+                      slim_content (*(plan_t **) PFarray_at (ordered_in, i),
+                                    iter,
+                                    n->sem.iter_pos_item.item));
+    else
+        /* for each plan, generate a constructor */
+        for (unsigned int i = 0; i < PFarray_last (ordered_in); i++)
+            add_plan (ret,
+                      content (*(plan_t **) PFarray_at (ordered_in, i),
+                               iter,
+                               n->sem.iter_pos_item.item));
 
     return ret;
 }
@@ -1869,7 +1781,6 @@ plan_merge_texts (const PFla_op_t *n)
 {
     PFplanlist_t *ret    = new_planlist ();
     PFplanlist_t *sorted = new_planlist ();
-    plan_t       *cheapest_frag_plan = NULL;
     plan_t       *cheapest_sorted    = NULL;
     PFalg_att_t   iter = n->sem.merge_adjacent.iter_in;
     PFalg_att_t   pos  = n->sem.merge_adjacent.pos_in;
@@ -1882,17 +1793,8 @@ plan_merge_texts (const PFla_op_t *n)
     assert (item == n->sem.merge_adjacent.item_res);
 #endif
 
-
     assert (n); assert (n->kind == la_merge_adjacent);
-    assert (L(n)); assert (L(n)->plans);
     assert (R(n)); assert (R(n)->plans);
-
-    /* find the cheapest plan for the fragments */
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        if (!cheapest_frag_plan
-            || costless (*(plan_t **) PFarray_at (L(n)->plans, i),
-                         cheapest_frag_plan))
-            cheapest_frag_plan = *(plan_t **) PFarray_at (L(n)->plans, i);
 
     /* The merge_adjacent_text_node operator requires
        its inputs to be properly sorted. */
@@ -1912,93 +1814,8 @@ plan_merge_texts (const PFla_op_t *n)
        the single remaining plan */
     add_plan (ret,
               merge_adjacent (
-                  cheapest_frag_plan,
                   cheapest_sorted,
                   iter, pos, item));
-    return ret;
-}
-
-/**
- * `roots' operators in the logical algebra just get a 1:1 mapping
- * into the physical Roots operator.
- */
-static PFplanlist_t *
-plan_roots (const PFla_op_t *n)
-{
-    PFplanlist_t *ret = new_planlist ();
-
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        add_plan (ret, roots (*(plan_t **) PFarray_at (L(n)->plans, i)));
-
-    return ret;
-}
-
-/**
- * `fragment' operators in the logical algebra just get a 1:1 mapping
- * into the physical Fragment operator.
- */
-static PFplanlist_t *
-plan_fragment (const PFla_op_t *n)
-{
-    PFplanlist_t *ret = new_planlist ();
-
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        add_plan (ret,
-                  fragment (*(plan_t **) PFarray_at (L(n)->plans, i)));
-
-    return ret;
-}
-
-/**
- * `frag_extract' operators in the logical algebra just get a 1:1 mapping
- * into the physical frag_extract operator.
- */
-static PFplanlist_t *
-plan_frag_extract (const PFla_op_t *n)
-{
-    PFplanlist_t *ret = new_planlist ();
-
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        add_plan (ret,
-                  frag_extract (*(plan_t **) PFarray_at (L(n)->plans, i),
-                                n->sem.col_ref.pos));
-
-    return ret;
-}
-
-/**
- * `frag_union' operators in the logical algebra just get a 1:1 mapping
- * into the physical FragUnion operator.
- */
-static PFplanlist_t *
-plan_frag_union (const PFla_op_t *n)
-{
-    PFplanlist_t *ret = new_planlist ();
-
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        for (unsigned int j = 0; j < PFarray_last (R(n)->plans); j++)
-            add_plan (ret,
-                      frag_union (
-                          *(plan_t **) PFarray_at (L(n)->plans, i),
-                          *(plan_t **) PFarray_at (R(n)->plans, j)));
-
-    return ret;
-}
-
-/**
- * `empty_frag' operators in the logical algebra just get a 1:1 mapping
- * into the physical EmptyFrag operator.
- */
-static PFplanlist_t *
-plan_empty_frag (const PFla_op_t *n __attribute__((unused)))
-{
-    PFplanlist_t *ret    = new_planlist ();
-
-    (void) n; /* pacify picky compilers that do not understand
-                 "__attribute__((unused))" */
-
-    add_plan (ret, empty_frag ());
-
     return ret;
 }
 
@@ -2188,26 +2005,6 @@ plan_fun_param (const PFla_op_t *n)
                           *(plan_t **) PFarray_at (left, i),
                           *(plan_t **) PFarray_at (R(n)->plans, j),
                           n->schema));
-
-    return ret;
-}
-
-/**
- * `fun_frag_param' operators in the logical algebra just get a 1:1 mapping
- * into the physical fun_frag_param operator.
- */
-static PFplanlist_t *
-plan_fun_frag_param (const PFla_op_t *n)
-{
-    PFplanlist_t *ret = new_planlist ();
-
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        for (unsigned int j = 0; j < PFarray_last (R(n)->plans); j++)
-            add_plan (ret,
-                      fun_frag_param (
-                          *(plan_t **) PFarray_at (L(n)->plans, i),
-                          *(plan_t **) PFarray_at (R(n)->plans, j),
-                          n->sem.col_ref.pos));
 
     return ret;
 }
@@ -2746,7 +2543,6 @@ plan_subexpression (PFla_op_t *n)
         /* process the following logical algebra nodes top-down */
         case la_rec_fix:
         case la_fun_call:
-        case la_fun_frag_param:
             break;
         default:
             /* translate bottom-up (ensure that the fragment
@@ -2804,7 +2600,10 @@ plan_subexpression (PFla_op_t *n)
 
         case la_select:         plans = plan_select (n);       break;
         case la_pos_select:     plans = plan_pos_select (n);   break;
-        case la_disjunion:      plans = plan_disjunion (n);    break;
+        case la_disjunion:
+            plans = plan_disjunion (n);
+            add_plans (plans, plan_count_ext (n));
+            break;
         case la_intersect:      plans = plan_intersect (n);    break;
         case la_difference:     plans = plan_difference (n);   break;
         case la_distinct:
@@ -2883,12 +2682,14 @@ plan_subexpression (PFla_op_t *n)
         case la_content:        plans = plan_content (n);      break;
 
         case la_merge_adjacent: plans = plan_merge_texts (n);  break;
-
-        case la_roots:          plans = plan_roots (n);        break;
-        case la_fragment:       plans = plan_fragment (n);     break;
-        case la_frag_extract:   plans = plan_frag_extract (n); break;
-        case la_frag_union:     plans = plan_frag_union (n);   break;
-        case la_empty_frag:     plans = plan_empty_frag (n);   break;
+        /* copy the plans from the children */
+        case la_roots:          plans = L(n)->plans;           break;
+        /* dummy plans (they are not used anyway) */
+        case la_fragment:
+        case la_frag_extract:
+        case la_frag_union:
+        case la_empty_frag:
+                                plans = new_planlist ();       break;
 
         case la_error:          plans = plan_error (n);        break;
         case la_cond_err:       plans = plan_cond_err (n);     break;
@@ -3005,14 +2806,8 @@ plan_subexpression (PFla_op_t *n)
         } break;
 
         case la_fun_param:      plans = plan_fun_param (n);    break;  
-        case la_fun_frag_param:
-            /* TOPDOWN */
-            /* change the order of the translation to ensure that fragment
-               information is translated after the value part) */
-            plan_subexpression (R(n));
-            plan_subexpression (L(n));
-            plans = plan_fun_frag_param (n);
-            break;           
+        /* copy the plans from the rest of the list */
+        case la_fun_frag_param: plans = R(n)->plans;           break;  
         
         case la_string_join:    plans = plan_string_join (n);  break;
 
@@ -3023,7 +2818,18 @@ plan_subexpression (PFla_op_t *n)
     }
 
     assert (plans);
-    assert (PFarray_last (plans) > 0);
+#ifndef NDEBUG
+    switch (n->kind) {
+        case la_fragment:
+        case la_frag_extract:
+        case la_frag_union:
+        case la_empty_frag:
+            break;
+        default:
+            assert (PFarray_last (plans) > 0);
+            break;
+    }
+#endif
 
     /* Introduce some more orders (on iter columns of length 1 or 2)
        in the hope to share more sort operations. */

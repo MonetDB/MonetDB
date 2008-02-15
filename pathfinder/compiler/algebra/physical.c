@@ -38,10 +38,8 @@
 #include "pathfinder.h"
 
 #include <assert.h>
-/* FIXME: only for debugging */
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 
 #include "physical.h"
 #include "mem.h"
@@ -164,19 +162,15 @@ wire2 (enum PFpa_op_kind_t kind, const PFpa_op_t *n1, const PFpa_op_t *n2)
  * A serialization node will be placed on the very top of the algebra
  * expression tree. Its main use is to have an explicit match for
  * the expression root.
- *
- * @a doc is the current document (live nodes) and @a alg is the overall
- * algebra expression.
  */
 PFpa_op_t *
-PFpa_serialize (const PFpa_op_t *doc, const PFpa_op_t *alg,
-                PFalg_att_t item)
+PFpa_serialize (const PFpa_op_t *alg, PFalg_att_t item)
 {
-    PFpa_op_t *ret = wire2 (pa_serialize, doc, alg);
+    PFpa_op_t *ret = wire1 (pa_serialize, alg);
 
     ret->sem.serialize.item = item;
 
-    ret->cost = doc->cost + alg->cost;
+    ret->cost = alg->cost;
 
     return ret;
 }
@@ -515,17 +509,6 @@ PFpa_cross (const PFpa_op_t *a, const PFpa_op_t *b)
     return ret;
 }
 
-/** Helper: Is attribute @a att contained in schema @a s? */
-static bool
-contains_att (PFalg_schema_t s, PFalg_att_t att)
-{
-    for (unsigned int i = 0; i < s.count; i++)
-        if (s.items[i].name == att)
-            return true;
-
-    return false;
-}
-
 /**
  * LeftJoin: Equi-Join of two relations. Preserves the ordering
  *           of the left operand.
@@ -537,12 +520,12 @@ PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
     PFpa_op_t  *ret = wire2 (pa_leftjoin, n1, n2);
 
     /* see if we can find attribute att1 in n1 */
-    if (contains_att (n1->schema, att1) && contains_att (n2->schema, att2)) {
+    if (check_col (n1, att1) && check_col (n2, att2)) {
         ret->sem.eqjoin.att1 = att1;
         ret->sem.eqjoin.att2 = att2;
     }
-    else if (contains_att (n2->schema, att1)
-             && contains_att (n1->schema, att2)) {
+    else if (check_col (n2, att1)
+             && check_col (n1, att2)) {
         ret->sem.eqjoin.att2 = att1;
         ret->sem.eqjoin.att1 = att2;
     }
@@ -654,12 +637,12 @@ PFpa_eqjoin (PFalg_att_t att1, PFalg_att_t att2,
     PFpa_op_t  *ret = wire2 (pa_eqjoin, n1, n2);
 
     /* see if we can find attribute att1 in n1 */
-    if (contains_att (n1->schema, att1) && contains_att (n2->schema, att2)) {
+    if (check_col (n1, att1) && check_col (n2, att2)) {
         ret->sem.eqjoin.att1 = att1;
         ret->sem.eqjoin.att2 = att2;
     }
-    else if (contains_att (n2->schema, att1)
-             && contains_att (n1->schema, att2)) {
+    else if (check_col (n2, att1)
+             && check_col (n1, att2)) {
         ret->sem.eqjoin.att2 = att1;
         ret->sem.eqjoin.att1 = att2;
     }
@@ -699,7 +682,7 @@ PFpa_semijoin (PFalg_att_t att1, PFalg_att_t att2,
     PFpa_op_t  *ret = wire2 (pa_semijoin, n1, n2);
 
     /* see if we can find attribute att1 in n1 */
-    if (contains_att (n1->schema, att1) && contains_att (n2->schema, att2)) {
+    if (check_col (n1, att1) && check_col (n2, att2)) {
         ret->sem.eqjoin.att1 = att1;
         ret->sem.eqjoin.att2 = att2;
     }
@@ -744,15 +727,15 @@ PFpa_thetajoin (const PFpa_op_t *n1, const PFpa_op_t *n2,
 
     /* verify that the join attributes are all available */
     for (i = 0; i < count; i++)
-        if (!contains_att (n1->schema, pred[i].left) ||
-            !contains_att (n2->schema, pred[i].right))
+        if (!check_col (n1, pred[i].left) ||
+            !check_col (n2, pred[i].right))
             break;
 
     /* did we find all attributes? */
     if (i < count)
         PFoops (OOPS_FATAL,
                 "attribute `%s' referenced in theta-join not found",
-                contains_att (n2->schema, pred[i].right)
+                check_col (n2, pred[i].right)
                 ? PFatt_str(pred[i].left) : PFatt_str(pred[i].right));
 
     ret = wire2 (pa_thetajoin, n1, n2);
@@ -800,10 +783,10 @@ PFpa_unq2_thetajoin (PFalg_comp_t comp, PFalg_att_t left, PFalg_att_t right,
 {
     PFpa_op_t  *ret = wire2 (pa_unq2_thetajoin, n1, n2);
 
-    assert (contains_att (n1->schema, left) &&
-            contains_att (n2->schema, right) &&
-            contains_att (n1->schema, ldist) &&
-            contains_att (n2->schema, rdist));
+    assert (check_col (n1, left) &&
+            check_col (n2, right) &&
+            check_col (n1, ldist) &&
+            check_col (n2, rdist));
 
     ret->sem.unq_thetajoin.comp  = comp;
     ret->sem.unq_thetajoin.left  = left;
@@ -853,10 +836,10 @@ PFpa_unq1_thetajoin (PFalg_comp_t comp, PFalg_att_t left, PFalg_att_t right,
 {
     PFpa_op_t  *ret = wire2 (pa_unq1_thetajoin, n1, n2);
 
-    assert (contains_att (n1->schema, left) &&
-            contains_att (n2->schema, right) &&
-            contains_att (n1->schema, ldist) &&
-            contains_att (n2->schema, rdist));
+    assert (check_col (n1, left) &&
+            check_col (n2, right) &&
+            check_col (n1, ldist) &&
+            check_col (n2, rdist));
 
     ret->sem.unq_thetajoin.comp  = comp;
     ret->sem.unq_thetajoin.left  = left;
@@ -1200,7 +1183,7 @@ PFpa_merge_union (const PFpa_op_t *n1, const PFpa_op_t *n2,
 
     if (PFord_count (ord) != 1)
         PFoops (OOPS_FATAL,
-                "MergeUnion for more complex orderings is not yet implemented "
+                "MergeUnion for more complex orderings is not implemented "
                 "(got %s)", PFord_str (ord));
 
     ret->sem.merge_union.ord = ord;
@@ -1897,71 +1880,6 @@ bin_comp (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
     return ret;
 }
 
-/**
- * Helper function for binary comparisons (where second argument is
- * an atom).
- */
-static PFpa_op_t *
-bin_comp_atom (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
-               PFalg_att_t att1, const PFalg_atom_t att2)
-{
-    PFpa_op_t           *ret = wire1 (op, n);
-#ifndef NDEBUG
-    PFalg_simple_type_t  t1 = 0;
-#endif
-
-    assert (n);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from n */
-    for (unsigned int i = 0; i < n->schema.count; i++) {
-
-        ret->schema.items[i] = n->schema.items[i];
-
-#ifndef NDEBUG
-        if (n->schema.items[i].name == att1)
-            t1 = n->schema.items[i].type;
-#endif
-    }
-
-#ifndef NDEBUG
-    assert (t1);
-
-    if (t1 != att2.type)
-        PFoops (OOPS_FATAL,
-                "illegal types in arithmetic operation: %u vs. %u",
-                t1, att2.type);
-#endif
-
-    /* finally add schema item for new attribute */
-    ret->schema.items[n->schema.count]
-        = (PFalg_schm_item_t) { .name = res, .type = aat_bln };
-
-    /* store information about attributes for arithmetics */
-    ret->sem.bin_atom.res = res;
-    ret->sem.bin_atom.att1 = att1;
-    ret->sem.bin_atom.att2 = att2;
-
-    /* ---- NumAdd: orderings ---- */
-    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
-
-    /*
-     * Hmm... From the ordering contributed by the arithmetic operands
-     * we could actually infer some more order information. But it's
-     * probably not worth to fiddle with that...
-     */
-
-    /* ---- NumAdd: costs ---- */
-    ret->cost = DEFAULT_COST + n->cost;    /* cheaper than NumAdd */
-
-    return ret;
-}
-
 PFpa_op_t *
 PFpa_eq (const PFpa_op_t *n, PFalg_att_t res,
          PFalg_att_t att1, PFalg_att_t att2)
@@ -1977,20 +1895,6 @@ PFpa_gt (const PFpa_op_t *n, PFalg_att_t res,
 }
 
 PFpa_op_t *
-PFpa_eq_atom (const PFpa_op_t *n, PFalg_att_t res,
-              PFalg_att_t att1, const PFalg_atom_t att2)
-{
-    return bin_comp_atom (pa_eq_atom, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_gt_atom (const PFpa_op_t *n, PFalg_att_t res,
-              PFalg_att_t att1, const PFalg_atom_t att2)
-{
-    return bin_comp_atom (pa_gt_atom, n, res, att1, att2);
-}
-
-PFpa_op_t *
 PFpa_and (const PFpa_op_t *n, PFalg_att_t res,
           PFalg_att_t att1, PFalg_att_t att2)
 {
@@ -2002,20 +1906,6 @@ PFpa_or (const PFpa_op_t *n, PFalg_att_t res,
          PFalg_att_t att1, PFalg_att_t att2)
 {
     return bin_comp (pa_bool_or, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_and_atom (const PFpa_op_t *n, PFalg_att_t res,
-               PFalg_att_t att1, const PFalg_atom_t att2)
-{
-    return bin_comp_atom (pa_bool_and_atom, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_or_atom (const PFpa_op_t *n, PFalg_att_t res,
-              PFalg_att_t att1, const PFalg_atom_t att2)
-{
-    return bin_comp_atom (pa_bool_or_atom, n, res, att1, att2);
 }
 
 
@@ -2137,17 +2027,61 @@ PFpa_to (const PFpa_op_t *n, PFalg_att_t res,
 }
 
 /**
- * HashCount: Hash-based Count operator. Does neither benefit from
+ * Count: Count function operator with a loop relation to
+ * correctly fill in missing values. Does neither benefit from
  * any existing ordering, nor does it provide/preserve any input
  * ordering.
  */
-PFpa_op_t *PFpa_hash_count (const PFpa_op_t *n,
-                            PFalg_att_t res, PFalg_att_t part)
+PFpa_op_t *
+PFpa_count_ext (const PFpa_op_t *n1, const PFpa_op_t *n2,
+                PFalg_att_t res, PFalg_att_t part, PFalg_att_t loop)
 {
-    PFpa_op_t *ret = wire1 (pa_hash_count, n);
+    PFpa_op_t *ret = wire2 (pa_count_ext, n1, n2);
 
     ret->sem.count.res  = res;
     ret->sem.count.part = part;
+    ret->sem.count.loop = loop;
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 2;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+#ifndef NDEBUG
+    assert (part);
+    assert (check_col (n1, part));
+    assert (check_col (n2, loop));
+    assert (type_of (n1, part) == type_of (n2, loop));
+    assert (part != res);
+#endif
+
+    ret->schema.items[0].name = part;
+    ret->schema.items[0].type = type_of (n1, part);
+    ret->schema.items[1].name = res;
+    ret->schema.items[1].type = aat_int;
+
+    /* ---- HashCount: orderings ---- */
+    /* HashCount does not provide any orderings. */
+
+    /* ---- HashCount: costs ---- */
+    ret->cost = AGGR_COST + n1->cost + n2->cost;
+
+    return ret;
+}
+
+/**
+ * Count: Count function operator. Does neither benefit from
+ * any existing ordering, nor does it provide/preserve any input
+ * ordering.
+ */
+PFpa_op_t *
+PFpa_count (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t part)
+{
+    PFpa_op_t *ret = wire1 (pa_count, n);
+
+    ret->sem.count.res  = res;
+    ret->sem.count.part = part;
+    ret->sem.count.loop = att_NULL;
 
     /* allocate memory for the result schema */
     ret->schema.count = part ? 2 : 1;
@@ -2188,8 +2122,9 @@ PFpa_op_t *PFpa_hash_count (const PFpa_op_t *n,
  * any existing ordering, nor does it provide/preserve any input
  * ordering.
  */
-PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_att_t res,
-		     PFalg_att_t att, PFalg_att_t part)
+PFpa_op_t *
+PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n,
+           PFalg_att_t res, PFalg_att_t att, PFalg_att_t part)
 {
     PFpa_op_t *ret = wire1 (kind, n);
     unsigned int  i;
@@ -2495,6 +2430,8 @@ PFpa_cast (const PFpa_op_t *n, PFalg_att_t res,
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
+    assert (att != res);
+
     ret->sem.cast.att = att;
     ret->sem.cast.ty  = ty;
     ret->sem.cast.res = res;
@@ -2514,33 +2451,34 @@ PFpa_cast (const PFpa_op_t *n, PFalg_att_t res,
     return ret;
 }
 
-static PFpa_op_t *
-llscj_worker (PFpa_op_kind_t axis,
-              const PFpa_op_t *frag,
-              const PFpa_op_t *ctx,
-              const PFty_t test,
-              const PFord_ordering_t in,
-              const PFord_ordering_t out,
-              PFalg_att_t iter, PFalg_att_t item)
+/**
+ * StaircaseJoin operator.
+ *
+ * Input must have iter|item schema.
+ */
+PFpa_op_t *
+PFpa_llscjoin (const PFpa_op_t *ctx,
+               PFalg_axis_t axis,
+               const PFty_t test,
+               const PFord_ordering_t in,
+               const PFord_ordering_t out,
+               PFalg_att_t iter, PFalg_att_t item)
 {
-    PFpa_op_t *ret = wire2 (axis, frag, ctx);
+    PFpa_op_t *ret = wire1 (pa_llscjoin, ctx);
     PFord_ordering_t iter_item
         = sortby (iter, item);
     PFord_ordering_t item_iter
         = sortby (item, iter);
 
 #ifndef NDEBUG
-    unsigned short found = 0;
-
-    for (unsigned int i = 0; i < ctx->schema.count; i++)
-        if (ctx->schema.items[i].name == iter
-            || ctx->schema.items[i].name == item)
-            found++;
-
-    if (found != 2)
-        PFoops (OOPS_FATAL, "staircase join requires iter|item schema");
+    assert (check_col (ctx, iter));
+    assert (check_col (ctx, item));
+    assert (type_of (ctx, iter) == aat_nat);
 #endif
 
+    /* store semantic content in node */
+    ret->sem.scjoin.axis = axis;
+    ret->sem.scjoin.ty   = test;
     ret->sem.scjoin.iter = iter;
     ret->sem.scjoin.item = item;
 
@@ -2552,16 +2490,14 @@ llscj_worker (PFpa_op_kind_t axis,
     ret->schema.items[0]
         = (PFalg_schm_item_t) { .name = iter, .type = aat_nat };
     /* the result of an attribute axis is also of type attribute */
-    if (axis == pa_llscj_attr)
+    if (axis == alg_attr)
         ret->schema.items[1]
             = (PFalg_schm_item_t) { .name = item, .type = aat_anode };
     else
         ret->schema.items[1]
             = (PFalg_schm_item_t) { .name = item, .type = aat_pnode };
 
-    /* store semantic content in node */
-    ret->sem.scjoin.ty = test;
-
+    /* input and output orderings */
     if (PFord_implies (in, iter_item))
         ret->sem.scjoin.in = iter_item;
     else if (PFord_implies (in, item_iter))
@@ -2576,281 +2512,49 @@ llscj_worker (PFpa_op_kind_t axis,
     else
         PFoops (OOPS_FATAL, "illegal output ordering: %s", PFord_str (out));
 
-    /* ---- LLSCJchild: orderings ---- */
+    /* ---- LLSCJoin: orderings ---- */
 
     /* the specified output ordering */
     PFord_set_add (ret->orderings, ret->sem.scjoin.out);
 
-    /*
-     * Costs depend on actual axis, and we do that in the
-     * PFpa_llscj_XXX functions
-     */
+    /* ---- LLSCJoin: costs ---- */
 
-    return ret;
-}
-
-static void
-llscj_cost (PFpa_op_t *n, unsigned long ctx_cost)
-{
-    PFord_ordering_t iter_item
-        = sortby (n->sem.scjoin.iter, n->sem.scjoin.item);
-
-    /* ---- LLSCJchild: costs ---- */
-
-    if (PFord_implies (n->sem.scjoin.in, iter_item)) {
+    if (PFord_implies (ret->sem.scjoin.in, iter_item)) {
         /* input has iter|item ordering */
 
-        if (PFord_implies (n->sem.scjoin.out, iter_item)) {
+        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            n->cost = 3 * SORT_COST;
+            ret->cost = 3 * SORT_COST;
         }
         else {
             /* output has item|iter ordering */
-            n->cost = 2 * SORT_COST;
+            ret->cost = 2 * SORT_COST;
         }
 
     }
     else {
         /* input has item|iter ordering */
 
-        if (PFord_implies (n->sem.scjoin.out, iter_item)) {
+        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            n->cost = 1 * SORT_COST;
+            ret->cost = 1 * SORT_COST;
         }
         else {
             /* output has item|iter ordering */
 
             /* should be cheapest */
-            n->cost = 0 * SORT_COST;
+            ret->cost = 0 * SORT_COST;
         }
     }
 
-    n->cost += ctx_cost;
-}
-
-/**
- * StaircaseJoin operator.
- *
- * Input must have iter|item schema, and be sorted on iter.
- */
-PFpa_op_t *
-PFpa_llscj_anc (const PFpa_op_t *frag,
-                const PFpa_op_t *ctx,
-                const PFty_t test,
-                const PFord_ordering_t in,
-                const PFord_ordering_t out,
-                PFalg_att_t iter, PFalg_att_t item)
-{
-    PFpa_op_t *ret = llscj_worker (pa_llscj_anc, frag, ctx, test, in, out,
-                                   iter, item);
-    llscj_cost (ret, ctx->cost);
-
-    return ret;
-}
-
-/**
- * StaircaseJoin operator.
- *
- * Input must have iter|item schema, and be sorted on iter.
- */
-PFpa_op_t *
-PFpa_llscj_anc_self (const PFpa_op_t *frag,
-                     const PFpa_op_t *ctx,
-                     const PFty_t test,
-                     const PFord_ordering_t in,
-                     const PFord_ordering_t out,
-                     PFalg_att_t iter, PFalg_att_t item)
-{
-    PFpa_op_t *ret = llscj_worker (pa_llscj_anc_self, frag, ctx, test, in, out,
-                                   iter, item);
-    llscj_cost (ret, ctx->cost);
-
-    return ret;
-}
-
-/**
- * StaircaseJoin operator.
- *
- * Input must have iter|item schema, and be sorted on iter.
- */
-PFpa_op_t *
-PFpa_llscj_attr (const PFpa_op_t *frag,
-                 const PFpa_op_t *ctx,
-                 const PFty_t test,
-                 const PFord_ordering_t in,
-                 const PFord_ordering_t out,
-                 PFalg_att_t iter, PFalg_att_t item)
-{
-    PFpa_op_t *ret = llscj_worker (pa_llscj_attr, frag, ctx, test, in, out,
-                                   iter, item);
-    ret-> cost = DEFAULT_COST + ctx->cost;
-
-    return ret;
-}
-
-/**
- * StaircaseJoin operator.
- *
- * Input must have iter|item schema, and be sorted on iter.
- */
-PFpa_op_t *
-PFpa_llscj_child (const PFpa_op_t *frag,
-                  const PFpa_op_t *ctx,
-                  const PFty_t test,
-                  const PFord_ordering_t in,
-                  const PFord_ordering_t out,
-                  PFalg_att_t iter, PFalg_att_t item)
-{
-    PFpa_op_t *ret = llscj_worker (pa_llscj_child, frag, ctx, test, in, out,
-                                   iter, item);
-    llscj_cost (ret, ctx->cost);
-
-    return ret;
-}
-
-/**
- * StaircaseJoin operator.
- *
- * Input must have iter|item schema, and be sorted on iter.
- */
-PFpa_op_t *
-PFpa_llscj_desc (const PFpa_op_t *frag,
-                 const PFpa_op_t *ctx,
-                 const PFty_t test,
-                 const PFord_ordering_t in,
-                 const PFord_ordering_t out,
-                 PFalg_att_t iter, PFalg_att_t item)
-{
-    PFpa_op_t *ret = llscj_worker (pa_llscj_desc, frag, ctx, test, in, out,
-                                   iter, item);
-    llscj_cost (ret, ctx->cost);
-
-    return ret;
-}
-
-/**
- * StaircaseJoin operator.
- *
- * Input must have iter|item schema, and be sorted on iter.
- */
-PFpa_op_t *
-PFpa_llscj_desc_self (const PFpa_op_t *frag,
-                      const PFpa_op_t *ctx,
-                      const PFty_t test,
-                      const PFord_ordering_t in,
-                      const PFord_ordering_t out,
-                      PFalg_att_t iter, PFalg_att_t item)
-{
-    PFpa_op_t *ret = llscj_worker (pa_llscj_desc_self,frag, ctx, test, in, out,
-                                   iter, item);
-    llscj_cost (ret, ctx->cost);
-
-    return ret;
-}
-
-/**
- * StaircaseJoin operator.
- *
- * Input must have iter|item schema, and be sorted on iter.
- */
-PFpa_op_t *
-PFpa_llscj_foll (const PFpa_op_t *frag,
-                 const PFpa_op_t *ctx,
-                 const PFty_t test,
-                 const PFord_ordering_t in,
-                 const PFord_ordering_t out,
-                 PFalg_att_t iter, PFalg_att_t item)
-{
-    PFpa_op_t *ret = llscj_worker (pa_llscj_foll, frag, ctx, test, in, out,
-                                   iter, item);
-    llscj_cost (ret, ctx->cost);
-
-    return ret;
-}
-
-/**
- * StaircaseJoin operator.
- *
- * Input must have iter|item schema, and be sorted on iter.
- */
-PFpa_op_t *
-PFpa_llscj_foll_sibl (const PFpa_op_t *frag,
-                      const PFpa_op_t *ctx,
-                      const PFty_t test,
-                      const PFord_ordering_t in,
-                      const PFord_ordering_t out,
-                      PFalg_att_t iter, PFalg_att_t item)
-{
-    PFpa_op_t *ret = llscj_worker (pa_llscj_foll_sibl,frag, ctx, test, in, out,
-                                   iter, item);
-    llscj_cost (ret, ctx->cost);
-
-    return ret;
-}
-
-/**
- * StaircaseJoin operator.
- *
- * Input must have iter|item schema, and be sorted on iter.
- */
-PFpa_op_t *
-PFpa_llscj_parent (const PFpa_op_t *frag,
-                   const PFpa_op_t *ctx,
-                   const PFty_t test,
-                   const PFord_ordering_t in,
-                   const PFord_ordering_t out,
-                   PFalg_att_t iter, PFalg_att_t item)
-{
-    PFpa_op_t *ret = llscj_worker (pa_llscj_parent, frag, ctx, test, in, out,
-                                   iter, item);
-    llscj_cost (ret, ctx->cost);
-
-    return ret;
-}
-
-/**
- * StaircaseJoin operator.
- *
- * Input must have iter|item schema, and be sorted on iter.
- */
-PFpa_op_t *
-PFpa_llscj_prec (const PFpa_op_t *frag,
-                 const PFpa_op_t *ctx,
-                 const PFty_t test,
-                 const PFord_ordering_t in,
-                 const PFord_ordering_t out,
-                 PFalg_att_t iter, PFalg_att_t item)
-{
-    PFpa_op_t *ret = llscj_worker (pa_llscj_prec, frag, ctx, test, in, out,
-                                   iter, item);
-    llscj_cost (ret, ctx->cost);
-
-    return ret;
-}
-
-/**
- * StaircaseJoin operator.
- *
- * Input must have iter|item schema, and be sorted on iter.
- */
-PFpa_op_t *
-PFpa_llscj_prec_sibl (const PFpa_op_t *frag,
-                      const PFpa_op_t *ctx,
-                      const PFty_t test,
-                      const PFord_ordering_t in,
-                      const PFord_ordering_t out,
-                      PFalg_att_t iter, PFalg_att_t item)
-{
-    PFpa_op_t *ret = llscj_worker (pa_llscj_prec_sibl,frag, ctx, test, in, out,
-                                   iter, item);
-    llscj_cost (ret, ctx->cost);
+    ret->cost += ctx->cost;
 
     return ret;
 }
 
 /**
  * Access to (persistently stored) XML documents, the fn:doc()
- * function.  Returns a (frag, result) pair.
+ * function.
  */
 PFpa_op_t *
 PFpa_doc_tbl (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att)
@@ -2895,11 +2599,11 @@ PFpa_doc_tbl (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att)
  * algebra expression.
  */
 PFpa_op_t *
-PFpa_doc_access (const PFpa_op_t *doc, const PFpa_op_t *alg,
+PFpa_doc_access (const PFpa_op_t *alg,
                  PFalg_att_t res, PFalg_att_t att, PFalg_doc_t doc_col)
 {
     unsigned int i;
-    PFpa_op_t *ret = wire2 (pa_doc_access, doc, alg);
+    PFpa_op_t *ret = wire1 (pa_doc_access, alg);
 
     /* allocate memory for the result schema */
     ret->schema.count = alg->schema.count + 1;
@@ -2921,7 +2625,7 @@ PFpa_doc_access (const PFpa_op_t *doc, const PFpa_op_t *alg,
     for (unsigned int i = 0; i < PFord_set_count (alg->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (alg->orderings, i));
     /* costs */
-    ret->cost = DEFAULT_COST + doc->cost + alg->cost;
+    ret->cost = DEFAULT_COST + alg->cost;
 
     return ret;
 }
@@ -2929,9 +2633,8 @@ PFpa_doc_access (const PFpa_op_t *doc, const PFpa_op_t *alg,
 /**
  * Constructor for twig root operators.
  */
-PFpa_op_t * PFpa_twig (const PFpa_op_t *n,
-                       PFalg_att_t iter,
-                       PFalg_att_t item)
+PFpa_op_t *
+PFpa_twig (const PFpa_op_t *n, PFalg_att_t iter, PFalg_att_t item)
 {
     PFpa_op_t *ret = wire1 (pa_twig, n);
 
@@ -2981,8 +2684,8 @@ PFpa_op_t * PFpa_twig (const PFpa_op_t *n,
  * @a fc is the next 'first' child operator and @a ns is the
  * next sibling in the constructor sequence operator list.
  */
-PFpa_op_t * PFpa_fcns (const PFpa_op_t *fc,
-                       const PFpa_op_t *ns)
+PFpa_op_t *
+PFpa_fcns (const PFpa_op_t *fc, const PFpa_op_t *ns)
 {
     PFpa_op_t *ret = wire2 (pa_fcns, fc, ns);
 
@@ -3004,8 +2707,8 @@ PFpa_op_t * PFpa_fcns (const PFpa_op_t *fc,
  * @a scope is the current scope the document node is constructed in
  * and @a fcns is the content of the node.
  */
-PFpa_op_t * PFpa_docnode (const PFpa_op_t *scope, const PFpa_op_t *fcns,
-                          PFalg_att_t iter)
+PFpa_op_t *
+PFpa_docnode (const PFpa_op_t *scope, const PFpa_op_t *fcns, PFalg_att_t iter)
 {
     PFpa_op_t *ret = wire2 (pa_docnode, scope, fcns);
 
@@ -3033,10 +2736,9 @@ PFpa_op_t * PFpa_docnode (const PFpa_op_t *scope, const PFpa_op_t *fcns,
  * @a tag constructs the elements' tag names, and @a fcns
  * is the content of the new elements.
  */
-PFpa_op_t * PFpa_element (const PFpa_op_t *tag,
-                          const PFpa_op_t *fcns,
-                          PFalg_att_t iter,
-                          PFalg_att_t item)
+PFpa_op_t *
+PFpa_element (const PFpa_op_t *tag, const PFpa_op_t *fcns,
+              PFalg_att_t iter, PFalg_att_t item)
 {
     PFpa_op_t *ret = wire2 (pa_element, tag, fcns);
 
@@ -3064,8 +2766,9 @@ PFpa_op_t * PFpa_element (const PFpa_op_t *tag,
  * @a cont stores the name-value relation of the attribute. @a iter, @a qn,
  * and @a val reference the iter, qname, and value input columns, respectively.
  */
-PFpa_op_t * PFpa_attribute (const PFpa_op_t *cont,
-                            PFalg_att_t iter, PFalg_att_t qn, PFalg_att_t val)
+PFpa_op_t *
+PFpa_attribute (const PFpa_op_t *cont,
+                PFalg_att_t iter, PFalg_att_t qn, PFalg_att_t val)
 {
     PFpa_op_t *ret = wire1 (pa_attribute, cont);
 
@@ -3157,10 +2860,9 @@ PFpa_comment (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
  * @a iter, @a target, and @a val reference the iter, target, and value
  * input columns, respectively.
  */
-PFpa_op_t * PFpa_processi (const PFpa_op_t *cont,
-                           PFalg_att_t iter,
-                           PFalg_att_t target,
-                           PFalg_att_t val)
+PFpa_op_t *
+PFpa_processi (const PFpa_op_t *cont,
+               PFalg_att_t iter, PFalg_att_t target, PFalg_att_t val)
 {
     PFpa_op_t *ret = wire1 (pa_processi, cont);
 
@@ -3187,21 +2889,11 @@ PFpa_op_t * PFpa_processi (const PFpa_op_t *cont,
 
 /**
  * Constructor for constructor content operators (elem|doc).
- *
- * Use @a doc to retrieve information about the nodes in @a cont,
- * i.e. to collect all subtree nodes (using a descendant-or-self::node()
- * step) for later use in the twig constructor.
- *
- * The input parameters have the following schemata:
- * - @a doc:  none (as it is a node fragment)
- * - @a cont: iter | pos | item
  */
-PFpa_op_t * PFpa_content (const PFpa_op_t *doc,
-                          const PFpa_op_t *cont,
-                          PFalg_att_t iter,
-                          PFalg_att_t item)
+PFpa_op_t *
+PFpa_content (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
 {
-    PFpa_op_t *ret = wire2 (pa_content, doc, cont);
+    PFpa_op_t *ret = wire1 (pa_content, cont);
 
     assert (check_col (cont, iter) && check_col (cont, item));
 
@@ -3216,16 +2908,24 @@ PFpa_op_t * PFpa_content (const PFpa_op_t *doc,
     /* orderings */
 
     /* costs */
-    ret->cost = DEFAULT_COST + doc->cost + cont->cost;
+    ret->cost = DEFAULT_COST + cont->cost;
 
     return ret;
 }
 
 PFpa_op_t *
-PFpa_merge_adjacent (const PFpa_op_t *fragment, const PFpa_op_t *n,
+PFpa_slim_content (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
+{
+    PFpa_op_t *ret = PFpa_content (cont, iter, item);
+    ret->kind = pa_slim_content;
+    return ret;
+}
+
+PFpa_op_t *
+PFpa_merge_adjacent (const PFpa_op_t *n,
                      PFalg_att_t iter, PFalg_att_t pos, PFalg_att_t item)
 {
-    PFpa_op_t *ret = wire2 (pa_merge_adjacent, fragment, n);
+    PFpa_op_t *ret = wire1 (pa_merge_adjacent, n);
 
     ret->sem.ii.iter = iter;
     ret->sem.ii.item = item;
@@ -3242,117 +2942,16 @@ PFpa_merge_adjacent (const PFpa_op_t *fragment, const PFpa_op_t *n,
     /* result is in iter|pos order */
     PFord_set_add (ret->orderings, sortby (iter, pos));
     /* costs */
-    ret->cost = DEFAULT_COST + fragment->cost + n->cost;
+    ret->cost = DEFAULT_COST + n->cost;
 
     return ret;
-}
-
-/**
- * Extract the expression result part from a (frag, result) pair.
- */
-PFpa_op_t *
-PFpa_roots (const PFpa_op_t *n)
-{
-    PFpa_op_t *ret = wire1 (pa_roots, n);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = n->schema.count;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from n */
-    for (unsigned int i = 0; i < n->schema.count; i++)
-        ret->schema.items[i] = n->schema.items[i];
-
-    /* ---- Roots: orderings ---- */
-
-    /* `Rel' part of (Frag, Rel) pair inherits orderings of its argument */
-    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
-
-    /* ---- Roots: costs ---- */
-    ret->cost = n->cost;
-
-    return ret;
-}
-
-/**
- * Extract the document fragment part from a (frag, result) pair.
- * It typically contains newly constructed nodes of some node
- * construction operator.  The document representation is dependent
- * on the back-end system.  Hence, the resulting algebra node does
- * not have a meaningful relational schema (in fact, the schema
- * component will be set to NULL).
- */
-PFpa_op_t *
-PFpa_fragment (const PFpa_op_t *n)
-{
-    PFpa_op_t *ret = wire1 (pa_fragment, n);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = 0;
-    ret->schema.items = NULL;
-
-    /* ---- Fragment: costs ---- */
-    ret->cost = 0;
-
-    return ret;
-}
-
-/**
- * Constructor for a fragment extract operator
- * (to be used in combination with a function call)
- */
-PFpa_op_t *
-PFpa_frag_extract (const PFpa_op_t *n, unsigned int col_pos)
-{
-    PFpa_op_t *ret = wire1 (pa_frag_extract, n);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = 0;
-    ret->schema.items = NULL;
-
-    ret->sem.col_ref.pos = col_pos;
-
-    /* ---- Fragment: costs ---- */
-    ret->cost = 0;
-
-    return ret;
-}
-
-/** Form algebraic disjoint union between two fragments. */
-PFpa_op_t *
-PFpa_frag_union (const PFpa_op_t *n1, const PFpa_op_t *n2)
-{
-    PFpa_op_t *ret = wire2 (pa_frag_union, n1, n2);
-
-    assert (n1->schema.count == 0);
-    assert (n2->schema.count == 0);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = 0;
-    ret->schema.items = NULL;
-
-    /* ---- FragUnion: costs ---- */
-    ret->cost = 0;
-
-    return ret;
-}
-
-/**
- * Empty fragment list
- */
-PFpa_op_t *
-PFpa_empty_frag (void)
-{
-    return leaf (pa_empty_frag);
 }
 
 /**
  * Constructor for error
  */
-PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att,
-                        PFalg_simple_type_t att_ty)
+PFpa_op_t *
+PFpa_error (const PFpa_op_t *n,  PFalg_att_t att, PFalg_simple_type_t att_ty)
 {
     PFpa_op_t *ret = wire1 (pa_error, n);
 
@@ -3386,8 +2985,9 @@ PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att,
 /**
  * Constructor for conditional error
  */
-PFpa_op_t * PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
-                           PFalg_att_t att, char *err_string)
+PFpa_op_t *
+PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
+               PFalg_att_t att, char *err_string)
 {
     PFpa_op_t *ret = wire2 (pa_cond_err, n, err);
 
@@ -3419,7 +3019,8 @@ PFpa_op_t * PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
 /**
  * Constructor for the last item of a parameter list
  */
-PFpa_op_t *PFpa_nil (void)
+PFpa_op_t *
+PFpa_nil (void)
 {
     PFpa_op_t     *ret;
 
@@ -3596,8 +3197,8 @@ PFpa_trace_map (const PFpa_op_t *n1,
 /**
  * Constructor for a tail recursion operator
  */
-PFpa_op_t *PFpa_rec_fix (const PFpa_op_t *paramList,
-                         const PFpa_op_t *res)
+PFpa_op_t *
+PFpa_rec_fix (const PFpa_op_t *paramList, const PFpa_op_t *res)
 {
     PFpa_op_t     *ret;
     unsigned int   i;
@@ -3631,8 +3232,8 @@ PFpa_op_t *PFpa_rec_fix (const PFpa_op_t *paramList,
  * Constructor for a list item of a parameter list
  * related to recursion
  */
-PFpa_op_t *PFpa_rec_param (const PFpa_op_t *arguments,
-                           const PFpa_op_t *paramList)
+PFpa_op_t *
+PFpa_rec_param (const PFpa_op_t *arguments, const PFpa_op_t *paramList)
 {
     PFpa_op_t     *ret;
 
@@ -3658,9 +3259,9 @@ PFpa_op_t *PFpa_rec_param (const PFpa_op_t *arguments,
  * Constructor for the arguments of a parameter (seed and recursion
  * will be the input relations for the base operator)
  */
-PFpa_op_t *PFpa_rec_arg (const PFpa_op_t *seed,
-                         const PFpa_op_t *recursion,
-                         const PFpa_op_t *base)
+PFpa_op_t *
+PFpa_rec_arg (const PFpa_op_t *seed, const PFpa_op_t *recursion,
+              const PFpa_op_t *base)
 {
     PFpa_op_t     *ret;
     unsigned int   i, j;
@@ -3761,7 +3362,8 @@ PFpa_op_t *PFpa_rec_arg (const PFpa_op_t *seed,
  * operator representing the seed relation as well as the argument
  * computed in the recursion).
  */
-PFpa_op_t *PFpa_rec_base (PFalg_schema_t schema, PFord_ordering_t ord)
+PFpa_op_t *
+PFpa_rec_base (PFalg_schema_t schema, PFord_ordering_t ord)
 {
     PFpa_op_t     *ret;
     unsigned int   i, j;
@@ -3803,7 +3405,8 @@ PFpa_op_t *PFpa_rec_base (PFalg_schema_t schema, PFord_ordering_t ord)
 /**
  * Constructor for a border of the recursion body
  */
-PFpa_op_t *PFpa_rec_border (const PFpa_op_t *n)
+PFpa_op_t *
+PFpa_rec_border (const PFpa_op_t *n)
 {
     PFpa_op_t     *ret;
     unsigned int   i;
@@ -3908,35 +3511,6 @@ PFpa_fun_param (const PFpa_op_t *argument, const PFpa_op_t *param_list,
     /* ordering stays the same as the input */
     for (unsigned int i = 0; i < PFord_set_count (argument->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (argument->orderings, i));
-
-    /* costs */
-    ret->cost = argument->cost + param_list->cost;
-
-    return ret;
-}
-
-/**
- * Constructor for the fragment information of a list item
- * of a parameter list related to function application
- */
-PFpa_op_t *
-PFpa_fun_frag_param (const PFpa_op_t *argument,
-                     const PFpa_op_t *param_list,
-                     unsigned int col_pos)
-{
-    PFpa_op_t     *ret;
-
-    assert (argument);
-    assert (param_list);
-
-    /* create new function application parameter node */
-    ret = wire2 (pa_fun_frag_param, argument, param_list);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = 0;
-    ret->schema.items = NULL;
-
-    ret->sem.col_ref.pos = col_pos;
 
     /* costs */
     ret->cost = argument->cost + param_list->cost;
