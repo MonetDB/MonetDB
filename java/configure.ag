@@ -19,7 +19,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([MonetDB Java], [1.7.1], [monet@cwi.nl], [MonetDB-java])
+AC_INIT([MonetDB Java], [20080213], [monet@cwi.nl], [MonetDB-java])
 AC_CONFIG_AUX_DIR(conf)
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER([monetdb_java_config.h])
