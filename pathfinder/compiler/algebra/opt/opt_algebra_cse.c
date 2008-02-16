@@ -42,9 +42,6 @@
 #include "logical_mnemonic.h"
 #include "ordering.h"
 
-/* compare types in staircase join operator nodes */
-#include "subtyping.h"
-
 #include <assert.h>
 #include <string.h> /* strcmp */
 #include <stdio.h>
@@ -1045,8 +1042,10 @@ match (PFla_op_t *a, PFla_op_t *b)
                  ACTATT (R(b), b->sem.step.iter)) &&
                 (ACTATT (R(a), a->sem.step.item) ==
                  ACTATT (R(b), b->sem.step.item))  &&
-                PFty_eq (a->sem.step.ty, b->sem.step.ty) &&
-                (a->sem.step.axis == b->sem.step.axis) &&
+                (a->sem.step.spec.axis == b->sem.step.spec.axis) &&
+                (a->sem.step.spec.kind == b->sem.step.spec.kind) &&
+                (!PFqname_eq (a->sem.step.spec.qname,
+                              b->sem.step.spec.qname)) &&
                 (a->sem.step.level == b->sem.step.level))
                 return true;
 
@@ -1058,8 +1057,10 @@ match (PFla_op_t *a, PFla_op_t *b)
                  ACTATT (R(b), b->sem.step.iter)) &&
                 (ACTATT (R(a), a->sem.step.item) ==
                  ACTATT (R(b), b->sem.step.item))  &&
-                PFty_eq (a->sem.step.ty, b->sem.step.ty) &&
-                (a->sem.step.axis == b->sem.step.axis) &&
+                (a->sem.step.spec.axis == b->sem.step.spec.axis) &&
+                (a->sem.step.spec.kind == b->sem.step.spec.kind) &&
+                (!PFqname_eq (a->sem.step.spec.qname,
+                              b->sem.step.spec.qname)) &&
                 (a->sem.step.level == b->sem.step.level) &&
                 (a->sem.step.guide_count == b->sem.step.guide_count)))
                 return false;
@@ -1745,8 +1746,7 @@ new_operator (PFla_op_t *n)
 
         case la_step:
             return PFla_step (CSE(L(n)), CSE(R(n)),
-                              n->sem.step.axis,
-                              n->sem.step.ty,
+                              n->sem.step.spec,
                               n->sem.step.level,
                               ACTATT (R(n), n->sem.step.iter),
                               ACTATT (R(n), n->sem.step.item),
@@ -1754,8 +1754,7 @@ new_operator (PFla_op_t *n)
 
         case la_step_join:
             return PFla_step_join (CSE(L(n)), CSE(R(n)),
-                                   n->sem.step.axis,
-                                   n->sem.step.ty,
+                                   n->sem.step.spec,
                                    n->sem.step.level,
                                    ACTATT (R(n), n->sem.step.item),
                                    create_unq_name (CSE(R(n))->schema,
@@ -1763,8 +1762,7 @@ new_operator (PFla_op_t *n)
 
         case la_guide_step:
             return PFla_guide_step (CSE(L(n)), CSE(R(n)),
-                                    n->sem.step.axis,
-                                    n->sem.step.ty,
+                                    n->sem.step.spec,
                                     n->sem.step.guide_count,
                                     n->sem.step.guides,
                                     n->sem.step.level,
@@ -1774,8 +1772,7 @@ new_operator (PFla_op_t *n)
 
         case la_guide_step_join:
             return PFla_guide_step_join (CSE(L(n)), CSE(R(n)),
-                                         n->sem.step.axis,
-                                         n->sem.step.ty,
+                                         n->sem.step.spec,
                                          n->sem.step.guide_count,
                                          n->sem.step.guides,
                                          n->sem.step.level,

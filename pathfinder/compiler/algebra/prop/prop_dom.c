@@ -944,9 +944,9 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_guide_step:
-            if ((n->sem.step.axis == alg_chld ||
-                 n->sem.step.axis == alg_attr ||
-                 n->sem.step.axis == alg_self) &&
+            if ((n->sem.step.spec.axis == alg_chld ||
+                 n->sem.step.spec.axis == alg_attr ||
+                 n->sem.step.spec.axis == alg_self) &&
                 find_guide_min (n->sem.step.guide_count,
                                 n->sem.step.guides) > 0)
                 add_dom (n->prop,
@@ -972,9 +972,9 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_guide_step_join:
-            if ((n->sem.step.axis == alg_chld ||
-                 n->sem.step.axis == alg_attr ||
-                 n->sem.step.axis == alg_self) &&
+            if ((n->sem.step.spec.axis == alg_chld ||
+                 n->sem.step.spec.axis == alg_attr ||
+                 n->sem.step.spec.axis == alg_self) &&
                 find_guide_min (n->sem.step.guide_count,
                                 n->sem.step.guides) > 0)
                 bulk_add_dom (n->prop, R(n));

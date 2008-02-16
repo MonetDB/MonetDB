@@ -1192,12 +1192,12 @@ opt_complex (PFla_op_t *p)
                 p->sem.step.level = PFprop_level (p->prop,
                                                   p->sem.step.item_res);
 
-            if ((p->sem.step.axis == alg_desc ||
-                 p->sem.step.axis == alg_desc_s) &&
+            if ((p->sem.step.spec.axis == alg_desc ||
+                 p->sem.step.spec.axis == alg_desc_s) &&
                 p->sem.step.level >= 1 &&
                 p->sem.step.level - 1 == PFprop_level (R(p)->prop,
                                                        p->sem.step.item))
-                p->sem.step.axis = alg_chld;
+                p->sem.step.spec.axis = alg_chld;
 
             if (R(p)->kind == la_project &&
                 RL(p)->kind == la_step) {
@@ -1220,8 +1220,7 @@ opt_complex (PFla_op_t *p)
                     *p = *PFla_project (PFla_step (
                                             L(p),
                                             RL(p),
-                                            p->sem.step.axis,
-                                            p->sem.step.ty,
+                                            p->sem.step.spec,
                                             p->sem.step.level,
                                             RL(p)->sem.step.iter,
                                             RL(p)->sem.step.item,
@@ -1231,7 +1230,7 @@ opt_complex (PFla_op_t *p)
                 break;
             }
             else if (R(p)->kind == la_rowid &&
-                     p->sem.step.axis == alg_chld &&
+                     p->sem.step.spec.axis == alg_chld &&
                      p->sem.step.iter == R(p)->sem.rowid.res &&
                      !PFprop_icol (p->prop, p->sem.step.iter) &&
                      PFprop_key (p->prop, p->sem.step.item)) {
@@ -1252,12 +1251,12 @@ opt_complex (PFla_op_t *p)
                 p->sem.step.level = level;
             }
 
-            if ((p->sem.step.axis == alg_desc ||
-                 p->sem.step.axis == alg_desc_s) &&
+            if ((p->sem.step.spec.axis == alg_desc ||
+                 p->sem.step.spec.axis == alg_desc_s) &&
                 p->sem.step.level >= 1 &&
                 p->sem.step.level - 1 == PFprop_level (R(p)->prop,
                                                        p->sem.step.item))
-                p->sem.step.axis = alg_chld;
+                p->sem.step.spec.axis = alg_chld;
             break;
 
         case la_step_join:
@@ -1265,12 +1264,12 @@ opt_complex (PFla_op_t *p)
                 p->sem.step.level = PFprop_level (p->prop,
                                                   p->sem.step.item_res);
 
-            if ((p->sem.step.axis == alg_desc ||
-                 p->sem.step.axis == alg_desc_s) &&
+            if ((p->sem.step.spec.axis == alg_desc ||
+                 p->sem.step.spec.axis == alg_desc_s) &&
                 p->sem.step.level >= 1 &&
                 p->sem.step.level - 1 == PFprop_level (R(p)->prop,
                                                        p->sem.step.item))
-                p->sem.step.axis = alg_chld;
+                p->sem.step.spec.axis = alg_chld;
             break;
 
         case la_fcns:

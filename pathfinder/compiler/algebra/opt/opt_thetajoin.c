@@ -1677,16 +1677,14 @@ opt_mvd (PFla_op_t *p)
                     *p = *(thetajoin_opt (step_join (
                                                 L(p),
                                                 RL(p),
-                                                p->sem.step.axis,
-                                                p->sem.step.ty,
+                                                p->sem.step.spec,
                                                 p->sem.step.level,
                                                 p->sem.step.item,
                                                 p->sem.step.item_res),
                                           step_join (
                                                 L(p),
                                                 RR(p),
-                                                p->sem.step.axis,
-                                                p->sem.step.ty,
+                                                p->sem.step.spec,
                                                 p->sem.step.level,
                                                 p->sem.step.item,
                                                 p->sem.step.item_res),
@@ -1697,8 +1695,7 @@ opt_mvd (PFla_op_t *p)
                     resolve_name_conflict (R(p), p->sem.step.item_res);
                     *p = *(thetajoin_opt (step_join (
                                                 L(p), RL(p),
-                                                p->sem.step.axis,
-                                                p->sem.step.ty,
+                                                p->sem.step.spec,
                                                 p->sem.step.level,
                                                 p->sem.step.item,
                                                 p->sem.step.item_res),
@@ -1712,8 +1709,7 @@ opt_mvd (PFla_op_t *p)
                                           step_join (
                                                 L(p),
                                                 RR(p),
-                                                p->sem.step.axis,
-                                                p->sem.step.ty,
+                                                p->sem.step.spec,
                                                 p->sem.step.level,
                                                 p->sem.step.item,
                                                 p->sem.step.item_res),
@@ -1733,8 +1729,7 @@ opt_mvd (PFla_op_t *p)
                     *p = *(thetajoin_opt (guide_step_join (
                                                 L(p),
                                                 RL(p),
-                                                p->sem.step.axis,
-                                                p->sem.step.ty,
+                                                p->sem.step.spec,
                                                 p->sem.step.guide_count,
                                                 p->sem.step.guides,
                                                 p->sem.step.level,
@@ -1743,8 +1738,7 @@ opt_mvd (PFla_op_t *p)
                                           guide_step_join (
                                                 L(p),
                                                 RR(p),
-                                                p->sem.step.axis,
-                                                p->sem.step.ty,
+                                                p->sem.step.spec,
                                                 p->sem.step.guide_count,
                                                 p->sem.step.guides,
                                                 p->sem.step.level,
@@ -1757,8 +1751,7 @@ opt_mvd (PFla_op_t *p)
                     resolve_name_conflict (R(p), p->sem.step.item_res);
                     *p = *(thetajoin_opt (guide_step_join (
                                                 L(p), RL(p),
-                                                p->sem.step.axis,
-                                                p->sem.step.ty,
+                                                p->sem.step.spec,
                                                 p->sem.step.guide_count,
                                                 p->sem.step.guides,
                                                 p->sem.step.level,
@@ -1774,8 +1767,7 @@ opt_mvd (PFla_op_t *p)
                                           guide_step_join (
                                                 L(p),
                                                 RR(p),
-                                                p->sem.step.axis,
-                                                p->sem.step.ty,
+                                                p->sem.step.spec,
                                                 p->sem.step.guide_count,
                                                 p->sem.step.guides,
                                                 p->sem.step.level,

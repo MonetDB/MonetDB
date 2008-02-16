@@ -723,7 +723,7 @@ infer_ocol (PFla_op_t *n)
                                                     R(n),
                                                     n->sem.step.iter) };
 
-            if (n->sem.step.axis == alg_attr)
+            if (n->sem.step.spec.axis == alg_attr)
                 ocol_at (n, 1)
                     = (PFalg_schm_item_t) { .name = n->sem.step.item_res,
                                             .type = aat_anode };
@@ -751,7 +751,7 @@ infer_ocol (PFla_op_t *n)
                         PFprop_type_of (R(n), n->sem.step.item));
 #endif
             ocols (n) = copy_ocols (ocols (R(n)), ocols_count (R(n)) + 1);
-            if (n->sem.step.axis == alg_attr)
+            if (n->sem.step.spec.axis == alg_attr)
                 ocol_at (n, ocols_count (n))
                     = (PFalg_schm_item_t) { .name = n->sem.step.item_res,
                                             .type = aat_anode };

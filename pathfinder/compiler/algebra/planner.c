@@ -1449,13 +1449,12 @@ plan_step (const PFla_op_t *n)
 
         for (unsigned int k = 0; k < PFarray_last (ordered); k++)
             /* the evaluation of the attribute axis keeps the input order */
-            if (n->sem.step.axis == alg_attr)
+            if (n->sem.step.spec.axis == alg_attr)
                 add_plan (
                     ret,
                     llscjoin (
                         *(plan_t **) PFarray_at (ordered, k),
-                        n->sem.step.axis,
-                        n->sem.step.ty,
+                        n->sem.step.spec,
                         in[i],
                         out[i],
                         n->sem.step.iter,
@@ -1466,8 +1465,7 @@ plan_step (const PFla_op_t *n)
                         ret,
                         llscjoin (
                             *(plan_t **) PFarray_at (ordered, k),
-                            n->sem.step.axis,
-                            n->sem.step.ty,
+                            n->sem.step.spec,
                             in[i],
                             out[o],
                             n->sem.step.iter,

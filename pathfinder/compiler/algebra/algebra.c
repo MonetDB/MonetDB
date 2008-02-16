@@ -428,7 +428,6 @@
 #include "oops.h"
 #include "mem.h"
 #include "array.h"
-#include "subtyping.h"
 
 #include "algebra.h"
 
@@ -956,6 +955,47 @@ PFatt_str (PFalg_att_t att) {
 }
 
 /**
+ * Print XPath axis
+ */
+char *
+PFalg_axis_str (PFalg_axis_t axis)
+{
+    switch (axis) {
+        case alg_anc:    return "ancestor";
+        case alg_anc_s:  return "ancestor-or-self";
+        case alg_attr:   return "attribute";
+        case alg_chld:   return "child";
+        case alg_desc:   return "descendant";
+        case alg_desc_s: return "descendant-or-self";
+        case alg_fol:    return "following";
+        case alg_fol_s:  return "following-sibling";
+        case alg_par:    return "parent";
+        case alg_prec:   return "preceding";
+        case alg_prec_s: return "preceding-sibling";
+        case alg_self:   return "self";
+    }
+    return NULL;
+}
+
+/**
+ * Print node kind
+ */
+char *
+PFalg_node_kind_str (PFalg_node_kind_t kind)
+{
+    switch (kind) {
+        case node_kind_elem: return "element";
+        case node_kind_attr: return "attribute";
+        case node_kind_text: return "text";
+        case node_kind_pi:   return "processing-instruction";
+        case node_kind_comm: return "comment";
+        case node_kind_doc:  return "document-node";
+        case node_kind_node: return "node";
+    }
+    return NULL;
+}
+
+/**
  * Print function call kind
  */
 char *
@@ -968,70 +1008,6 @@ PFalg_fun_call_kind_str (PFalg_fun_call_t kind)
         case alg_fun_call_tijah:        return "Tijah";
     }
     return NULL;
-}
-
-/**
- * Extract all possible algebra types from the XQuery type.
- */
-PFalg_simple_type_t
-PFalg_type (PFty_t ty)
-{
-    PFalg_simple_type_t alg_ty = 0;
-
-    ty = PFty_prime (PFty_defn (ty));
-
-    if (!PFty_disjoint (ty, PFty_xs_integer ()))
-        alg_ty |= aat_int;
-    if (!PFty_disjoint (ty, PFty_xs_string ()))
-        alg_ty |= aat_str;
-    if (!PFty_disjoint (ty, PFty_xs_double ()))
-        alg_ty |= aat_dbl;
-    if (!PFty_disjoint (ty, PFty_xs_decimal ()))
-        alg_ty |= aat_dec;
-    if (!PFty_disjoint (ty, PFty_xs_boolean ()))
-        alg_ty |= aat_bln;
-    if (!PFty_disjoint (ty, PFty_xs_QName ()))
-        alg_ty |= aat_qname;
-    if (!PFty_disjoint (ty, PFty_untypedAtomic ()))
-        alg_ty |= aat_uA;
-    if (!PFty_disjoint (ty, PFty_xs_anyAttribute ()))
-        alg_ty |= aat_anode;
-    if (!PFty_disjoint (ty, PFty_xs_anyElement ()) ||
-        !PFty_disjoint (ty, PFty_doc (PFty_xs_anyNode ())) ||
-        !PFty_disjoint (ty, PFty_pi (NULL)) ||
-        !PFty_disjoint (ty, PFty_comm ()) ||
-        !PFty_disjoint (ty, PFty_text ()))
-        alg_ty |= aat_pnode;
-    if (!PFty_disjoint (ty, PFty_stmt ())) {
-        alg_ty |= aat_update;
-        alg_ty |= aat_node;
-        alg_ty |= aat_node1;
-        alg_ty |= aat_uA;
-        alg_ty |= aat_qname;
-    }
-    if (!PFty_disjoint (ty, PFty_docmgmt ())) {
-        alg_ty |= aat_docmgmt;
-        alg_ty |= aat_path;
-        alg_ty |= aat_docnm;
-        alg_ty |= aat_colnm;
-    }
-    return alg_ty;
-}
-
-/**
- * Extract occurrence indicator from the XQuery type.
- */
-PFalg_occ_ind_t
-PFalg_type_occ (PFty_t ty)
-{
-    if (PFty_subtype (ty, PFty_item ()))
-        return alg_occ_exactly_one;
-    else if (PFty_subtype (ty, PFty_plus (PFty_item ())))
-        return alg_occ_one_or_more;
-    else if (PFty_subtype (ty, PFty_opt(PFty_item ())))
-        return alg_occ_zero_or_one;
-    else
-        return alg_occ_unknown;
 }
 
 /**

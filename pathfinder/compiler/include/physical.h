@@ -277,9 +277,7 @@ union PFpa_op_sem_t {
 
     /** semantic content for staircase join operator */
     struct {
-        PFalg_axis_t     axis;
-        PFty_t           ty;      /**< sequence type that describes the
-                                       node test */
+        PFalg_step_spec_t spec;   /**< step specification */
         PFord_ordering_t in;      /**< input ordering */
         PFord_ordering_t out;     /**< output ordering */
         PFalg_att_t      iter;    /**< iter column */
@@ -647,8 +645,7 @@ PFpa_op_t *PFpa_cast (const PFpa_op_t *,
  * Input must have iter|item schema
  */
 PFpa_op_t *PFpa_llscjoin (const PFpa_op_t *ctx,
-                          PFalg_axis_t axis,
-                          const PFty_t test,
+                          PFalg_step_spec_t spec,
                           const PFord_ordering_t in,
                           const PFord_ordering_t out,
                           PFalg_att_t iter,

@@ -38,9 +38,6 @@
 #include "array.h"
 #include "alg_dag.h"
 
-/* compare types in path step operator nodes */
-#include "subtyping.h"
-
 #include <assert.h>
 #include <string.h> /* strcmp */
 
@@ -348,9 +345,9 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_step_join:
         case la_guide_step:
         case la_guide_step_join:
-            if (a->sem.step.axis        != b->sem.step.axis
-             || !PFty_subtype (a->sem.step.ty, b->sem.step.ty)
-             || !PFty_subtype (b->sem.step.ty, a->sem.step.ty)
+            if (a->sem.step.spec.axis   != b->sem.step.spec.axis
+             || a->sem.step.spec.kind   != b->sem.step.spec.kind
+             || !PFqname_eq (a->sem.step.spec.qname, b->sem.step.spec.qname)
              || a->sem.step.guide_count != b->sem.step.guide_count
              || a->sem.step.level       != b->sem.step.level
              || a->sem.step.iter        != b->sem.step.iter

@@ -94,8 +94,6 @@
 #include "mil.h"
 /* XRPC function call context */
 #include "core.h"
-/* axis */
-#include "subtyping.h"
 
 /* abbreviate MIL constructor calls */
 #include "mil_mnemonic.h"
@@ -2000,9 +1998,11 @@ static void
 llscj (const PFpa_op_t *p)
 { /* fold( */
     /* abbreviations for input expressions */
-    PFty_t           ty  = p->sem.scjoin.ty;
     PFord_ordering_t in  = p->sem.scjoin.in;
     PFord_ordering_t out = p->sem.scjoin.out;
+
+    char *uri = PFqname_uri (p->sem.scjoin.spec.qname),
+         *loc = PFqname_loc (p->sem.scjoin.spec.qname);
 
     /* MIL equivalents of input expression */
     PFmil_t *iter;
@@ -2074,95 +2074,64 @@ llscj (const PFpa_op_t *p)
 
     order = lit_int (o);
 
-    if (PFty_subtype (ty, PFty_xs_anyElement ())) {
-
+    if (p->sem.scjoin.spec.kind == node_kind_elem) {
         /* This is a test for element nodes */
 
-        /* Is it just a generic element kind test? (e.g. .../element()) */
-        if (PFty_subtype (PFty_xs_anyElement (), ty))
-
-            scj = llscj_elem (p->sem.scjoin.axis, iter, item, frag,
-                              var (PF_MIL_VAR_WS), order);
-
-        /* Is it a test on element kind and local name only? */
-        else if (PFty_subtype (
-                    PFty_elem (
-                        PFqname (PFns_wild,
-                                 PFqname_loc (PFty_name (PFty_defn (ty)))),
-                        PFty_xs_anyType ()),
-                    ty))
-            scj = llscj_elem_loc (p->sem.scjoin.axis, iter, item, frag,
-                                  var (PF_MIL_VAR_WS), order,
-                                  lit_str (PFqname_loc (
-                                               PFty_name (PFty_defn (ty)))));
-
-        /* Or maybe a test on element kind and namespace only? */
-        else if (PFty_subtype (
-                    PFty_elem (PFqname (PFqname_ns (PFty_name (PFty_defn (ty))),
-                                        NULL),
-                               PFty_xs_anyType ()),
-                    ty))
-            scj = llscj_elem_ns (p->sem.scjoin.axis, iter, item, frag,
-                                 var (PF_MIL_VAR_WS), order,
-                                 lit_str (PFqname_uri (
-                                              PFty_name (PFty_defn (ty)))));
-
-        /* A test on element kind and full QName? */
-        else if (PFty_subtype (
-                    PFty_elem (PFty_name (PFty_defn (ty)),
-                               PFty_xs_anyType ()),
-                    ty))
+        if (uri && loc)
+            /* A test on element kind and full QName? */
             scj = llscj_elem_nsloc (
-                    p->sem.scjoin.axis,
+                    p->sem.scjoin.spec.axis,
                     iter, item, frag, var (PF_MIL_VAR_WS), order,
-                    lit_str (PFqname_uri (PFty_name (PFty_defn (ty)))),
-                    lit_str (PFqname_loc (PFty_name (PFty_defn (ty)))));
-        /*
-         * If we couldn't figure out what element test we got, give up.
-         *
-         * NOTE: The surface language actually allows such tests. We
-         *       just cannot implement them (yet):
-         *
-         *        doc("foo")/child::element(shoeSize, xs:integer)
-         */
+                    lit_str (uri), lit_str (loc));
+        else if (uri)
+            /* Or maybe a test on element kind and namespace only? */
+            scj = llscj_elem_ns (p->sem.scjoin.spec.axis, iter, item, frag,
+                                 var (PF_MIL_VAR_WS), order,
+                                 lit_str (uri));
+        else if (loc)
+            /* Is it a test on element kind and local name only? */
+            scj = llscj_elem_loc (p->sem.scjoin.spec.axis, iter, item, frag,
+                                  var (PF_MIL_VAR_WS), order,
+                                  lit_str (loc));
         else
-            PFoops (OOPS_FATAL,
-                    "Problem with an XPath step: cannot evaluate "
-                    "node test `%s'", PFty_str (ty));
+            /* Is it just a generic element kind test? (e.g. .../element()) */
+            scj = llscj_elem (p->sem.scjoin.spec.axis, iter, item, frag,
+                              var (PF_MIL_VAR_WS), order);
     }
     /* If the node test wasn't some element test, maybe it is a text() test? */
-    else if (PFty_subtype (ty, PFty_text ())) {
-        scj = llscj_text (p->sem.scjoin.axis,
+    else if (p->sem.scjoin.spec.kind == node_kind_text) {
+        scj = llscj_text (p->sem.scjoin.spec.axis,
                           iter, item, frag, var (PF_MIL_VAR_WS), order);
     }
     /* or a comment() test? */
-    else if (PFty_subtype (ty, PFty_comm ())) {
-        scj = llscj_comm (p->sem.scjoin.axis,
+    else if (p->sem.scjoin.spec.kind == node_kind_comm) {
+        scj = llscj_comm (p->sem.scjoin.spec.axis,
                           iter, item, frag, var (PF_MIL_VAR_WS), order);
     }
     /* some test for processing-instructions? */
-    else if (PFty_subtype (ty, PFty_pi (NULL))) {
+    else if (p->sem.scjoin.spec.kind == node_kind_pi) {
         /* maybe we look for _any_ pi, regardless of its target? */
-        if (PFty_subtype (PFty_pi (NULL), ty))
-            scj = llscj_pi (p->sem.scjoin.axis,
+        if (!loc)
+            scj = llscj_pi (p->sem.scjoin.spec.axis,
                             iter, item, frag, var (PF_MIL_VAR_WS), order);
         /* or was there a target specified? */
         else
             scj = llscj_pi_targ (
-                    p->sem.scjoin.axis,
+                    p->sem.scjoin.spec.axis,
                     iter, item, frag, var (PF_MIL_VAR_WS), order,
-                    lit_str (PFqname_loc (PFty_name (PFty_defn (ty)))));
+                    lit_str (loc));
     }
     /* If all these cases did not apply, it is probably a node() test. */
-    else if (PFty_subtype (PFty_xs_anyNode (), ty)) {
-        scj = llscj_node (p->sem.scjoin.axis,
+    else if (p->sem.scjoin.spec.kind == node_kind_node) {
+        scj = llscj_node (p->sem.scjoin.spec.axis,
                           iter, item, frag, var (PF_MIL_VAR_WS), order);
     }
     /* If we still couldn't find out, we probably need to give up. */
     else
         PFoops (OOPS_FATAL,
                 "Problem with an XPath step: cannot evaluate "
-                "node test `%s'", PFty_str (ty));
+                "node test `%s'",
+                PFalg_node_kind_str (p->sem.scjoin.spec.kind));
 
     assert (scj);
 
@@ -6056,13 +6025,12 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Rel:      llscjoin (Rel) */
         /* FIXME: This code needs to be cleaned up. */
         case 80: /* fold( */
-            if (p->sem.scjoin.axis != alg_attr)
+            if (p->sem.scjoin.spec.axis != alg_attr)
                 llscj (p);
             else
         {
-            
-            /* abbreviations for input expressions */
-            PFty_t           ty  = p->sem.scjoin.ty;
+            char *uri = PFqname_uri (p->sem.scjoin.spec.qname),
+                 *loc = PFqname_loc (p->sem.scjoin.spec.qname);
 
             /* MIL equivalents of input expression */
             PFmil_t *iter;
@@ -6136,188 +6104,134 @@ reduce (PFpa_op_t * p, int goalnt)
 
             unpin (tmp2, 1);
 
-            /* ... then filter out all nodes, whose name test does not match */
-            if (PFty_subtype (ty, PFty_xs_anyAttribute ())) {
+            assert (p->sem.scjoin.spec.kind == node_kind_attr);
 
-                /* Is it just a generic attribute kind test?
-                   (e.g. .../attribute()) */
-                if (PFty_subtype (PFty_xs_anyAttribute (), ty))
-                    ;
-
-                /* Is it a test on attribute kind and local name only? */
-                else if (PFty_subtype (
-                            PFty_attr (
-                                PFqname (PFns_wild,
-                                         PFqname_loc (
-                                             PFty_name (PFty_defn (ty)))),
-                                PFty_xs_anySimpleType ()),
-                            ty))
-                    execute (
-                        assgn (var (tmp->name),
+            /* Is it a test on attribute kind and local name only? */
+            if (loc && !uri)
+                execute (
+                    assgn (var (tmp->name),
+                           mposjoin (
                                mposjoin (
-                                   mposjoin (
-                                       var (ret_attr->name),
-                                       var (ret_frag->name),
-                                       fetch (var (PF_MIL_VAR_WS),
-                                              var (PF_MIL_VAR_ATTR_QN))),
-                                   mposjoin (
-                                       var (ret_attr->name),
-                                       var (ret_frag->name),
-                                       fetch (var (PF_MIL_VAR_WS),
-                                              var (PF_MIL_VAR_ATTR_CONT))),
+                                   var (ret_attr->name),
+                                   var (ret_frag->name),
+                                   fetch (var (PF_MIL_VAR_WS),
+                                          var (PF_MIL_VAR_ATTR_QN))),
+                               mposjoin (
+                                   var (ret_attr->name),
+                                   var (ret_frag->name),
+                                   fetch (var (PF_MIL_VAR_WS),
+                                          var (PF_MIL_VAR_ATTR_CONT))),
+                           fetch (var (PF_MIL_VAR_WS),
+                                  var (PF_MIL_VAR_QN_LOC)))),
+                    assgn (var (tmp->name),
+                           uselect (var (tmp->name),
+                                    lit_str (loc))),
+                    assgn (var (tmp->name),
+                           reverse (mark (var (tmp->name), lit_oid (0)))),
+                    assgn (var (ret_attr->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_attr->name))),
+                    assgn (var (ret_pre->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_pre->name))),
+                    assgn (var (ret_frag->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_frag->name))),
+                    assgn (var (ret_iter->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_iter->name))));
+            /* Or maybe a test on attribute kind and namespace only? */
+            else if (!loc && uri)
+                execute (
+                    assgn (var (tmp->name),
+                           mposjoin (
+                               mposjoin (var (ret_attr->name),
+                                         var (ret_frag->name),
+                                         fetch (var (PF_MIL_VAR_WS),
+                                                var (PF_MIL_VAR_ATTR_QN))),
+                               mposjoin (
+                                   var (ret_attr->name),
+                                   var (ret_frag->name),
+                                   fetch (var (PF_MIL_VAR_WS),
+                                          var (PF_MIL_VAR_ATTR_CONT))),
                                fetch (var (PF_MIL_VAR_WS),
-                                      var (PF_MIL_VAR_QN_LOC)))),
-                        assgn (var (tmp->name),
-                               uselect (var (tmp->name),
-                                        lit_str (
-                                            PFqname_loc (
-                                                PFty_name (
-                                                    PFty_defn (ty)))))),
-                        assgn (var (tmp->name),
-                               reverse (mark (var (tmp->name), lit_oid (0)))),
-                        assgn (var (ret_attr->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_attr->name))),
-                        assgn (var (ret_pre->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_pre->name))),
-                        assgn (var (ret_frag->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_frag->name))),
-                        assgn (var (ret_iter->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_iter->name))));
-
-                /* Or maybe a test on attribute kind and namespace only? */
-                else if (PFty_subtype (
-                            PFty_attr (
-                                PFqname (
-                                    PFqname_ns (PFty_name (PFty_defn (ty))),
-                                    NULL),
-                                PFty_xs_anySimpleType ()),
-                            ty))
-                    execute (
-                        assgn (var (tmp->name),
+                                      var (PF_MIL_VAR_QN_URI)))),
+                    assgn (var (tmp->name),
+                           uselect (var (tmp->name),
+                                    lit_str (uri))),
+                    assgn (var (tmp->name),
+                           reverse (mark (var (tmp->name), lit_oid (0)))),
+                    assgn (var (ret_attr->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_attr->name))),
+                    assgn (var (ret_frag->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_frag->name))),
+                    assgn (var (ret_iter->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_iter->name))));
+            /* A test on attribute kind and full QName? */
+            else if (loc && uri)
+                execute (
+                    assgn (var (tmp->name),
+                           mposjoin (
+                              mposjoin (var (ret_attr->name),
+                                        var (ret_frag->name),
+                                        fetch (var (PF_MIL_VAR_WS),
+                                               var (PF_MIL_VAR_ATTR_QN))),
+                              mposjoin (var (ret_attr->name),
+                                        var (ret_frag->name),
+                                        fetch (var (PF_MIL_VAR_WS),
+                                               var (PF_MIL_VAR_ATTR_CONT))),
+                              fetch (var (PF_MIL_VAR_WS),
+                                     var (PF_MIL_VAR_QN_LOC)))),
+                    assgn (var (tmp->name),
+                           uselect (var (tmp->name),
+                                    lit_str (loc))),
+                    assgn (var (tmp->name),
+                           reverse (mark (var (tmp->name), lit_oid (0)))),
+                    assgn (var (ret_attr->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_attr->name))),
+                    assgn (var (ret_pre->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_pre->name))),
+                    assgn (var (ret_frag->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_frag->name))),
+                    assgn (var (ret_iter->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_iter->name))),
+                    assgn (var (tmp->name),
+                           mposjoin (
+                               mposjoin (var (ret_attr->name),
+                                         var (ret_frag->name),
+                                         fetch (var (PF_MIL_VAR_WS),
+                                                var (PF_MIL_VAR_ATTR_QN))),
                                mposjoin (
-                                   mposjoin (var (ret_attr->name),
-                                             var (ret_frag->name),
-                                             fetch (var (PF_MIL_VAR_WS),
-                                                    var (PF_MIL_VAR_ATTR_QN))),
-                                   mposjoin (
-                                       var (ret_attr->name),
-                                       var (ret_frag->name),
-                                       fetch (var (PF_MIL_VAR_WS),
-                                              var (PF_MIL_VAR_ATTR_CONT))),
+                                   var (ret_attr->name),
+                                   var (ret_frag->name),
                                    fetch (var (PF_MIL_VAR_WS),
-                                          var (PF_MIL_VAR_QN_URI)))),
-                        assgn (var (tmp->name),
-                               uselect (var (tmp->name),
-                                        lit_str (
-                                            PFqname_uri (
-                                                PFty_name (
-                                                    PFty_defn (ty)))))),
-                        assgn (var (tmp->name),
-                               reverse (mark (var (tmp->name), lit_oid (0)))),
-                        assgn (var (ret_attr->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_attr->name))),
-                        assgn (var (ret_frag->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_frag->name))),
-                        assgn (var (ret_iter->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_iter->name))));
-
-                /* A test on attribute kind and full QName? */
-                else if (PFty_subtype (
-                            PFty_attr (PFty_name (PFty_defn (ty)),
-                                       PFty_xs_anySimpleType ()),
-                            ty))
-                    execute (
-                        assgn (var (tmp->name),
-                               mposjoin (
-                                  mposjoin (var (ret_attr->name),
-                                            var (ret_frag->name),
-                                            fetch (var (PF_MIL_VAR_WS),
-                                                   var (PF_MIL_VAR_ATTR_QN))),
-                                  mposjoin (var (ret_attr->name),
-                                            var (ret_frag->name),
-                                            fetch (var (PF_MIL_VAR_WS),
-                                                   var (PF_MIL_VAR_ATTR_CONT))),
-                                  fetch (var (PF_MIL_VAR_WS),
-                                         var (PF_MIL_VAR_QN_LOC)))),
-                        assgn (var (tmp->name),
-                               uselect (var (tmp->name),
-                                        lit_str (
-                                            PFqname_loc (
-                                                PFty_name (
-                                                    PFty_defn (ty)))))),
-                        assgn (var (tmp->name),
-                               reverse (mark (var (tmp->name), lit_oid (0)))),
-                        assgn (var (ret_attr->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_attr->name))),
-                        assgn (var (ret_pre->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_pre->name))),
-                        assgn (var (ret_frag->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_frag->name))),
-                        assgn (var (ret_iter->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_iter->name))),
-                        assgn (var (tmp->name),
-                               mposjoin (
-                                   mposjoin (var (ret_attr->name),
-                                             var (ret_frag->name),
-                                             fetch (var (PF_MIL_VAR_WS),
-                                                    var (PF_MIL_VAR_ATTR_QN))),
-                                   mposjoin (
-                                       var (ret_attr->name),
-                                       var (ret_frag->name),
-                                       fetch (var (PF_MIL_VAR_WS),
-                                              var (PF_MIL_VAR_ATTR_CONT))),
-                                   fetch (var (PF_MIL_VAR_WS),
-                                          var (PF_MIL_VAR_QN_URI)))),
-                        assgn (var (tmp->name),
-                               uselect (var (tmp->name),
-                                        lit_str (
-                                            PFqname_uri (
-                                                PFty_name (
-                                                    PFty_defn (ty)))))),
-                        assgn (var (tmp->name),
-                               reverse (mark (var (tmp->name), lit_oid (0)))),
-                        assgn (var (ret_attr->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_attr->name))),
-                        assgn (var (ret_pre->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_pre->name))),
-                        assgn (var (ret_frag->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_frag->name))),
-                        assgn (var (ret_iter->name),
-                               leftjoin (var (tmp->name),
-                                         var (ret_iter->name))));
-
-                /*
-                 * If we couldn't figure out what attribute test we got,
-                 * give up.
-                 *
-                 * NOTE: The surface language actually allows such tests. We
-                 *       just cannot implement them (yet):
-                 *
-                 *        doc("foo")/attribute::attribute(shoeSize, xs:integer)
-                 */
-                else
-                    PFoops (OOPS_FATAL,
-                            "Problem with an XPath step: cannot evaluate "
-                            "node test `%s'", PFty_str (ty));
-            }
-            else
-                PFoops (OOPS_FATAL,
-                        "Problem with an XPath step: cannot evaluate "
-                        "node test `%s'", PFty_str (ty));
+                                          var (PF_MIL_VAR_ATTR_CONT))),
+                               fetch (var (PF_MIL_VAR_WS),
+                                      var (PF_MIL_VAR_QN_URI)))),
+                    assgn (var (tmp->name),
+                           uselect (var (tmp->name),
+                                    lit_str (uri))),
+                    assgn (var (tmp->name),
+                           reverse (mark (var (tmp->name), lit_oid (0)))),
+                    assgn (var (ret_attr->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_attr->name))),
+                    assgn (var (ret_pre->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_pre->name))),
+                    assgn (var (ret_frag->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_frag->name))),
+                    assgn (var (ret_iter->name),
+                           leftjoin (var (tmp->name),
+                                     var (ret_iter->name))));
 
             /* because leftjoin does not know that we have
                exactly one match for each tuple in v,

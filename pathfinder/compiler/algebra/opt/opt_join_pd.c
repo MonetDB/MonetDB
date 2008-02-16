@@ -1623,8 +1623,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                L(lp),
                                eqjoin_unq (R(lp), rp, latt, ratt,
                                            p->sem.eqjoin_unq.res),
-                               lp->sem.step.axis,
-                               lp->sem.step.ty,
+                               lp->sem.step.spec,
                                lp->sem.step.level,
                                is_join_att(p, lp->sem.step.item)
                                   ? p->sem.eqjoin_unq.res
@@ -1640,8 +1639,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                L(lp),
                                eqjoin_unq (R(lp), rp, latt, ratt,
                                            p->sem.eqjoin_unq.res),
-                               lp->sem.step.axis,
-                               lp->sem.step.ty,
+                               lp->sem.step.spec,
                                lp->sem.step.guide_count,
                                lp->sem.step.guides,
                                lp->sem.step.level,

@@ -383,7 +383,11 @@ static PFla_env_t enventry (PFvar_t *var, PFla_op_t *rel,
 /* worker to implement type tests */
 static PFla_op_t *type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop);
 
+/* Extract all possible algebra types from the XQuery type.  */
+static PFalg_simple_type_t PFalg_type (PFty_t ty);
 
+/* Extract occurrence indicator from the XQuery type.  */
+static PFalg_occ_ind_t PFalg_type_occ (PFty_t ty);
 
 /**
  * Reducer function. This is the heart of this source file. It
@@ -2833,9 +2837,54 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
  */
 static struct PFla_pair_t
 locstep (core2alg_ctx_t *ctx,
-         PFalg_axis_t axis, PFty_t seqty,
+         PFalg_axis_t axis, PFty_t ty,
          struct PFla_pair_t p)
 {
+    PFalg_step_spec_t spec;
+
+    spec.axis = axis;
+    /* missing QName */
+    spec.qname = PFqname (PFns_wild, NULL);
+    
+    if (PFty_subtype (ty, PFty_xs_anyAttribute ())) {
+        /* This is a test for attribute nodes */
+        spec.kind = node_kind_attr;
+        spec.qname = PFty_name (ty);
+    }
+    else if (PFty_subtype (ty, PFty_xs_anyElement ())) {
+        /* This is a test for element nodes */
+        spec.kind = node_kind_elem;
+        spec.qname = PFty_name (ty);
+    }
+    else if (PFty_subtype (ty, PFty_doc (PFty_xs_anyType ()))) {
+        /* This is a test for document nodes */
+        spec.kind = node_kind_doc;
+    }
+    else if (PFty_subtype (ty, PFty_text ())) {
+        /* This is a test for text nodes */
+        spec.kind = node_kind_text;
+    }
+    else if (PFty_subtype (ty, PFty_comm ())) {
+        /* This is a test for comment nodes */
+        spec.kind = node_kind_comm;
+    }
+    else if (PFty_subtype (ty, PFty_pi (NULL))) {
+        /* This is a test for processing-instruction nodes */
+        spec.kind = node_kind_pi;
+        spec.qname = PFty_name (ty);
+    }
+    else if (PFty_subtype (PFty_xs_anyNode (), ty)) {
+        /* If all these cases did not apply, it is probably a node() test. */
+        spec.kind = node_kind_node;
+    }
+    /* If we still couldn't find out, we probably need to give up. */
+    else {
+        PFoops (OOPS_FATAL,
+                "Problem with an XPath step: cannot evaluate "
+                "node test `%s'", PFty_str (ty));
+        spec.kind = node_kind_node;
+    }
+
     /*
      *                  env, loop: e => (q(e), delta)
      * ------------------------------------------------------------
@@ -2850,7 +2899,7 @@ locstep (core2alg_ctx_t *ctx,
                           project (p.rel,
                                    proj (att_iter, att_iter),
                                    proj (att_item, att_item)),
-                          axis, seqty, att_iter, att_item, att_item);
+                          spec, att_iter, att_item, att_item);
 
     if (ORDERING)
         return (struct  PFla_pair_t) {
@@ -3089,6 +3138,70 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     PFoops (OOPS_FATAL, "Error in type_test().");
     assert(0); /* we should never come here! */
     return NULL; /* pacify picky compilers */
+}
+
+/**
+ * Extract all possible algebra types from the XQuery type.
+ */
+static PFalg_simple_type_t
+PFalg_type (PFty_t ty)
+{
+    PFalg_simple_type_t alg_ty = 0;
+
+    ty = PFty_prime (PFty_defn (ty));
+
+    if (!PFty_disjoint (ty, PFty_xs_integer ()))
+        alg_ty |= aat_int;
+    if (!PFty_disjoint (ty, PFty_xs_string ()))
+        alg_ty |= aat_str;
+    if (!PFty_disjoint (ty, PFty_xs_double ()))
+        alg_ty |= aat_dbl;
+    if (!PFty_disjoint (ty, PFty_xs_decimal ()))
+        alg_ty |= aat_dec;
+    if (!PFty_disjoint (ty, PFty_xs_boolean ()))
+        alg_ty |= aat_bln;
+    if (!PFty_disjoint (ty, PFty_xs_QName ()))
+        alg_ty |= aat_qname;
+    if (!PFty_disjoint (ty, PFty_untypedAtomic ()))
+        alg_ty |= aat_uA;
+    if (!PFty_disjoint (ty, PFty_xs_anyAttribute ()))
+        alg_ty |= aat_anode;
+    if (!PFty_disjoint (ty, PFty_xs_anyElement ()) ||
+        !PFty_disjoint (ty, PFty_doc (PFty_xs_anyNode ())) ||
+        !PFty_disjoint (ty, PFty_pi (NULL)) ||
+        !PFty_disjoint (ty, PFty_comm ()) ||
+        !PFty_disjoint (ty, PFty_text ()))
+        alg_ty |= aat_pnode;
+    if (!PFty_disjoint (ty, PFty_stmt ())) {
+        alg_ty |= aat_update;
+        alg_ty |= aat_node;
+        alg_ty |= aat_node1;
+        alg_ty |= aat_uA;
+        alg_ty |= aat_qname;
+    }
+    if (!PFty_disjoint (ty, PFty_docmgmt ())) {
+        alg_ty |= aat_docmgmt;
+        alg_ty |= aat_path;
+        alg_ty |= aat_docnm;
+        alg_ty |= aat_colnm;
+    }
+    return alg_ty;
+}
+
+/**
+ * Extract occurrence indicator from the XQuery type.
+ */
+static PFalg_occ_ind_t
+PFalg_type_occ (PFty_t ty)
+{
+    if (PFty_subtype (ty, PFty_item ()))
+        return alg_occ_exactly_one;
+    else if (PFty_subtype (ty, PFty_plus (PFty_item ())))
+        return alg_occ_one_or_more;
+    else if (PFty_subtype (ty, PFty_opt(PFty_item ())))
+        return alg_occ_zero_or_one;
+    else
+        return alg_occ_unknown;
 }
 
 

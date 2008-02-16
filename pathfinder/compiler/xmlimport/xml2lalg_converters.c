@@ -1025,6 +1025,30 @@ PFxml2la_conv_2PFLA_xpathaxis(char* s)
 
 /******************************************************************************/
 /******************************************************************************/
+PFalg_node_kind_t 
+PFxml2la_conv_2PFLA_nodekind(char* s) 
+{
+         if (strcmp (s, "element") == 0)                return node_kind_elem;
+    else if (strcmp (s, "attribute") == 0)              return node_kind_attr;
+    else if (strcmp (s, "text") == 0)                   return node_kind_text;
+    else if (strcmp (s, "processing-instruction") == 0) return node_kind_pi;
+    else if (strcmp (s, "comment") == 0)                return node_kind_comm;
+    else if (strcmp (s, "document-node") == 0)          return node_kind_doc;
+    else if (strcmp (s, "node") == 0)                   return node_kind_node;
+    else
+        PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
+    
+    /* pacify picky compilers */
+    return node_kind_node;
+}
+
+
+
+
+
+
+/******************************************************************************/
+/******************************************************************************/
 
 PFalg_doc_t 
 PFxml2la_conv_2PFLA_docType(char* s) 

@@ -43,7 +43,6 @@
 #include "alg_dag.h"
 #include "mem.h"
 #include "oops.h"             /* PFoops() */
-#include "subtyping.h"
 
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
@@ -1184,112 +1183,42 @@ step_level (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
 #define DOC     6    /* document root node */
 
 static void
-step_kind (PFla_op_t *p, PFsql_aident_t step, PFty_t ty, bool *leaf)
+step_kind (PFla_op_t *p, PFsql_aident_t step,
+           PFalg_node_kind_t kind, bool *leaf)
 {
-    int kind = 0;
+    int sql_kind = 0;
 
-    if (PFty_subtype (ty, PFty_doc (PFty_xs_anyNode ())))
-        kind = DOC;
-    else if (PFty_subtype (ty, PFty_xs_anyElement ()))
-        kind = ELEM;
-    else if (PFty_subtype (ty, PFty_text ()))
-        kind = PF_TEXT;
-    else if (PFty_subtype (ty, PFty_comm ()))
-        kind = COMM;
-    else if (PFty_subtype (ty, PFty_pi (NULL)))
-        kind = PI;
-    else if (PFty_subtype (ty, PFty_xs_anyAttribute ()))
-        kind = ATTR;
+    switch (kind) {
+        case node_kind_elem: sql_kind = ELEM;    break;
+        case node_kind_attr: sql_kind = ATTR;    break;
+        case node_kind_text: sql_kind = PF_TEXT; break;
+        case node_kind_pi:   sql_kind = PI;      break;
+        case node_kind_comm: sql_kind = COMM;    break;
+        case node_kind_doc:  sql_kind = DOC;     break; 
+        case node_kind_node:
+            where_list_add (WHERELIST (p),
+                            not_ (eq (KIND(step), lit_int (ATTR))));
+            *leaf = false;
+            return;
+    }
 
-    if (kind)
+    if (sql_kind)
         where_list_add (WHERELIST(p),
-                        eq (KIND(step), lit_int (kind)));
+                        eq (KIND(step), lit_int (sql_kind)));
 
-    *leaf = kind && kind != DOC && kind != ELEM;
+    *leaf = sql_kind && sql_kind != DOC && sql_kind != ELEM;
 }
 
 static void
-step_name (PFla_op_t *p, PFsql_aident_t step, PFty_t ty)
+step_name (PFla_op_t *p, PFsql_aident_t step, PFqname_t qname)
 {
-    PFsql_t *name = NULL;
-    PFsql_t *namespace = NULL;
-
-    if (!PFty_subtype (ty, PFty_xs_anyElement ()) &&
-        !PFty_subtype (ty, PFty_xs_anyAttribute ()))
-        return;
-
-    /* This is a test for element nodes */
-
-    /* This is just a generic kind test */
-    if (PFty_subtype (PFty_xs_anyElement (), ty) ||
-        PFty_subtype (PFty_xs_anyAttribute (), ty))
-        return;
-    /* test on local name only */
-    else if (PFty_subtype (
-                 PFty_elem (
-                     PFqname (
-                         PFns_wild,
-                         PFqname_loc (PFty_name (PFty_defn (ty)))),
-                     PFty_xs_anyType ()),
-                 ty) ||
-             PFty_subtype (
-                 PFty_attr (
-                     PFqname (
-                         PFns_wild,
-                         PFqname_loc (PFty_name (PFty_defn (ty)))),
-                     PFty_xs_anySimpleType ()),
-                 ty))
-        name = lit_str (PFqname_loc (PFty_name (PFty_defn (ty))));
-    /* test on namespace only */
-    else if (PFty_subtype (
-                 PFty_elem (
-                     PFqname (
-                         PFqname_ns (PFty_name (PFty_defn (ty))),
-                         NULL),
-                     PFty_xs_anyType ()),
-                 ty) ||
-             PFty_subtype (
-                 PFty_attr (
-                     PFqname (
-                         PFqname_ns (PFty_name (PFty_defn (ty))),
-                         NULL),
-                     PFty_xs_anySimpleType ()),
-                 ty))
-         /* get the URI of the given namespace */
-         namespace = lit_str (PFqname_uri (PFty_name (PFty_defn (ty))));
-    /* test on full QName */
-    else if (PFty_subtype (
-                 PFty_elem (
-                     PFty_name (PFty_defn (ty)),
-                     PFty_xs_anyType ()),
-                 ty) ||
-             PFty_subtype (
-                 PFty_attr (
-                     PFty_name (PFty_defn (ty)),
-                     PFty_xs_anySimpleType ()),
-                 ty)) {
-        /* get the uri of the given namespace */
-        namespace = lit_str (PFqname_uri (PFty_name (PFty_defn(ty))));
-        name = lit_str (PFqname_loc (PFty_name (PFty_defn (ty))));
-    }
-    else
-    /*
-     * If we couldn't figure out what name test we got,
-     * give up.
-     *
-     * NOTE: The surface language actually allows such tests. We
-     *       just cannot implement them (yet):
-     *
-     *    doc("foo")/attribute::attribute(shoeSize, xs:integer)
-     */
-         PFoops (OOPS_FATAL,
-                 "SQLgen: Problem with an XPath step: cannot evaluate "
-                 "node test `%s'", PFty_str (ty));
+    char *name = PFqname_loc (qname);
+    char *namespace = PFqname_uri (qname);
 
     if (name)
-        where_list_add (WHERELIST(p), eq (NAME(step), name));
+        where_list_add (WHERELIST(p), eq (NAME(step), lit_str (name)));
     if (namespace)
-        where_list_add (WHERELIST(p), eq (NS_URI(step), namespace));
+        where_list_add (WHERELIST(p), eq (NS_URI(step), lit_str (namespace)));
 }
 
 static void
@@ -3872,15 +3801,15 @@ reduce (PFla_op_t * p, int goalnt)
             step_axis (p,
                        ctxalias,
                        stepalias,
-                       p->sem.step.axis,
+                       p->sem.step.spec.axis,
                        FRAG(L(p)),
                        PFprop_level (R(p)->prop, p->sem.step.item));
 
             if (p->kind == la_step || p->kind == la_step_join) {
-                step_name (p, stepalias, p->sem.step.ty);
-                step_kind (p, stepalias, p->sem.step.ty, &leaf);
+                step_name (p, stepalias, p->sem.step.spec.qname);
+                step_kind (p, stepalias, p->sem.step.spec.kind, &leaf);
                 step_level (p, ctxalias, stepalias,
-                            p->sem.step.axis, p->sem.step.level);
+                            p->sem.step.spec.axis, p->sem.step.level);
             } else {
                 assert (p->kind == la_guide_step ||
                         p->kind == la_guide_step_join);

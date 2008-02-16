@@ -37,7 +37,6 @@
 
 #include "properties.h"
 #include "alg_dag.h"
-#include "subtyping.h"
 
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
@@ -52,78 +51,6 @@
 PFns_t PFns_guide =
     { .prefix = "",
       .uri    = "" };
-
-/* get the corresponding PFguide_mapping_t element from @a guide_mapping_list
- * where the columns are equal */
-static PFguide_mapping_t *get_guide_mapping(PFarray_t *guide_mapping_list,
-        PFalg_att_t column);
-
-/* Copy @a guide_mapping element */
-static PFguide_mapping_t *copy_guide_mapping(
-        PFguide_mapping_t *guide_mapping);
-
-/* Deep copy of @a guide_mapping_list */
-static PFarray_t *deep_copy_guide_mapping_list(
-        PFarray_t *guide_mapping_list);
-
-/* the elements of @a list2 will be copied in @a list1  */
-static PFarray_t *merge_guide_mapping_list(PFarray_t *list1, PFarray_t *list2);
-
-/* Create a PFty_t from a guide element */
-static PFty_t  create_PFty_t(PFguide_tree_t *n);
-
-/* Returns all ancestor of @a n */
-static PFarray_t *getAncestorFromGuide(PFguide_tree_t *n, PFty_t type);
-
-/* Get recursive all descendant elements */
-static PFarray_t *getDescendantFromGuideRec(PFguide_tree_t *n, PFty_t type,
-    PFarray_t *descendant);
-
-/* Returns all descendant of @a n if they are a suptype of @a type */
-static PFarray_t *getDescendantFromGuide(PFguide_tree_t *n, PFty_t type);
-
-/* copy guide nodes from left child guide_mapping_list to @a n */
-static void copyL(PFla_op_t *n);
-
-/* copy guide nodes from right child guide_mapping_list to @a n */
-static void copyR(PFla_op_t *n);
-
-/* copy guide nodes from left and right child guide_mapping_list to @a n */
-static void copyLR(PFla_op_t *n);
-
-/* add a PFguide_mapping_t to a @guide_mapping_list  if the @a column
- * do not exist, otherwise it will be added only @a guide in the
- * corresponding PFguide_mapping_t in @guide_mapping_list */
-static PFarray_t* add_guide(PFarray_t *guide_mapping_list,
-        PFguide_tree_t  *guide, PFalg_att_t column);
-
-/* initialize the guide property in @a n */
-static void copy_doc_tbl(PFla_op_t *n, PFguide_tree_t *guide);
-
-/* Copy guides for the project operator */
-static void copy_project(PFla_op_t *n);
-
-/* Remove duplicate guides from array */
-static void remove_duplicate(PFla_op_t *n);
-
-/* Copy guides for the step operator*/
-static void copy_step(PFla_op_t *n);
-
-/* copy all guides from @a n->sem.step.guides to @a n->prop->guide_list */
-static void copy_guide_step(PFla_op_t *n);
-
-/* Copy guides for the step operator*/
-static void copy_step_join(PFla_op_t *n);
-
-/* Union between left and right child guide nodes */
-static void copy_disunion(PFla_op_t  *n);
-
-/* Intersect between left and right child guide nodes */
-static void copy_intersect(PFla_op_t  *n);
-
-/* Infer domain properties; worker for prop_infer(). */
-static void infer_guide(PFla_op_t *n, PFguide_tree_t *guide);
-
 
 /* ++++++++++++++++++++++++++++++++++++ */
 
@@ -229,94 +156,90 @@ static PFarray_t *merge_guide_mapping_list(PFarray_t *list1, PFarray_t *list2)
     return list1;
 }
 
-/* Create a PFty_t type from a guide node */
-static PFty_t
-create_PFty_t(PFguide_tree_t *n)
+/* Apply kind and name test */
+static bool
+node_test (PFguide_tree_t *n, PFalg_step_spec_t spec)
 {
-
     assert(n);
 
-    PFty_t  ret;
-    switch(n->kind) {
-        case(elem):
-            ret = PFty_elem(PFqname(PFns_guide, n->tag_name),
-                PFty_xs_anyType());
-            break;
-        case(attr):
-            ret = PFty_attr(PFqname(PFns_guide, n->tag_name),
-                PFty_star(PFty_atomic()));
-            break;
-        case(text):
-            ret = PFty_text();
-            break;
-        case(comm):
-            ret = PFty_comm();
-            break;
-        case(pi):
-            ret = PFty_pi(NULL);
-            break;
-        case(doc):
-            ret = PFty_doc(PFty_xs_anyNode());
+    switch (spec.kind) {
+        case node_kind_node:
+            return n->kind != attr;
+        case node_kind_doc:
+            return n->kind == doc;
+        case node_kind_elem:
+            return n->kind == elem &&
+                   !PFqname_eq (spec.qname,
+                                PFqname(PFns_guide, n->tag_name));
+        case node_kind_attr:
+            return n->kind == attr &&
+                   !PFqname_eq (spec.qname,
+                                PFqname(PFns_guide, n->tag_name));
+        case node_kind_text:
+            return n->kind == text;
+        case node_kind_comm:
+            return n->kind == comm;
+        case node_kind_pi:
+            return n->kind == pi &&
+                   !PFqname_eq (spec.qname,
+                                PFqname(PFns_wild, NULL));
     }
-    return ret;
+    return false;
 }
 
 /* return the ancestors of @a n */
 static PFarray_t *
-getAncestorFromGuide(PFguide_tree_t *n, PFty_t type)
+getAncestorFromGuide (PFguide_tree_t *n, PFalg_step_spec_t spec)
 {
     assert(n);
 
-    PFarray_t  *parents = PFarray(sizeof(PFguide_tree_t**));
-    PFguide_tree_t  *node = n->parent;
+    PFarray_t      *ancestors = PFarray(sizeof(PFguide_tree_t**));
+    PFguide_tree_t *node      = n->parent;
 
     /* compute ancestors */
-    while(node != NULL) {
-         if(PFty_subtype(create_PFty_t(node), type)) {
-            *(PFguide_tree_t**) PFarray_add(parents) = node;
-        }
+    while (node != NULL) {
+        if (node_test (node, spec))
+            *(PFguide_tree_t**) PFarray_add (ancestors) = node;
         node = node->parent;
     }
 
-    return parents;
+    return ancestors;
 }
 
-/* Get recursive all descendant elements that are subtypes
- * of @type */
-static PFarray_t *
-getDescendantFromGuideRec(PFguide_tree_t *n, PFty_t type,
-    PFarray_t *descendant)
+/* Use recursion to collect all descendants */
+static void
+getDescendantFromGuideRec (PFguide_tree_t *n, PFalg_step_spec_t spec,
+                           PFarray_t *descendants)
 {
-    if(n == NULL)
-        return NULL;
+    if (n == NULL)
+        return;
 
-    PFarray_t  *childs = n->child_list; /* all childs of n */
-    PFguide_tree_t  *element = NULL;    /* one child element */
-    if(childs == NULL)
-        return NULL;
+    PFarray_t       *children = n->child_list; /* all children of n */
+    PFguide_tree_t  *element  = NULL;          /* one child element */
 
-    /* loop over all child element of @a n */
-    for(unsigned int i = 0; i < PFarray_last(childs); i++) {
-        element = *((PFguide_tree_t**) PFarray_at(childs, i));
-        /* get recursive all descendant element */
-        getDescendantFromGuideRec(element, type, descendant);
-        /* add element if it is a subtype of @a type*/
-        if(PFty_subtype(create_PFty_t(element),type)) {
-            *((PFguide_tree_t**) PFarray_add(descendant)) = element;
+    if (children == NULL)
+        return;
+
+    /* loop over all children elements of @a n */
+    for (unsigned int i = 0; i < PFarray_last (children); i++) {
+        element = *((PFguide_tree_t**) PFarray_at (children, i));
+        /* recursively get all descendants */
+        getDescendantFromGuideRec (element, spec, descendants);
+
+        /* add node if the node test succeeds */
+        if (node_test (element, spec)) {
+            *((PFguide_tree_t**) PFarray_add(descendants)) = element;
         }
     }
-
-    return descendant;
 }
 
 /* Returns all descendant of @a n if they are a suptype of @a type */
 static PFarray_t *
-getDescendantFromGuide(PFguide_tree_t *n, PFty_t type)
+getDescendantFromGuide(PFguide_tree_t *n, PFalg_step_spec_t spec)
 {
-    PFarray_t  *descendant =  PFarray(sizeof(PFguide_tree_t**));
-
-    PFarray_t *ret =  getDescendantFromGuideRec(n, type, descendant);
-    return ret;
+    PFarray_t *descendant = PFarray (sizeof (PFguide_tree_t **));
+    getDescendantFromGuideRec (n, spec, descendant);
+    return descendant;
 }
 
 /* copy guide nodes from left and right child guide_mapping_list to @a n */
@@ -328,7 +251,7 @@ copyL(PFla_op_t *n)
     assert(L(n));
     assert(PROP(L(n)));
 
-    /* Deep copy of left childs guide_mapping_list */
+    /* Deep copy of left children guide_mapping_list */
     MAPPING_LIST(n) = deep_copy_guide_mapping_list(MAPPING_LIST(L(n)));
 
     return;
@@ -343,7 +266,7 @@ copyR(PFla_op_t *n)
     assert(R(n));
     assert(PROP(R(n)));
 
-    /* Deep copy of right childs guide_mapping_list */
+    /* Deep copy of right children guide_mapping_list */
     MAPPING_LIST(n) = deep_copy_guide_mapping_list(MAPPING_LIST(R(n)));
 
     return;
@@ -550,7 +473,7 @@ copy_step(PFla_op_t *n)
     assert(R(n));
     assert(PROP(R(n)));
 
-    PFalg_axis_t  axis = n->sem.step.axis; /* axis step */
+    PFalg_axis_t  axis = n->sem.step.spec.axis; /* axis step */
     PFarray_t *guide_mapping_list = MAPPING_LIST(R(n));
 
     PFalg_att_t column_in = n->sem.step.item,  /* input column */
@@ -560,7 +483,7 @@ copy_step(PFla_op_t *n)
     PFarray_t *guide_list = NULL;
     PFguide_tree_t  *element = NULL, *element2 = NULL, *child_element = NULL;
     PFarray_t       *new_guide_mapping_list = NULL;   /* return array */
-    PFarray_t       *childs = NULL; /* childs of guide nodes */
+    PFarray_t       *children = NULL; /* children of guide nodes */
     PFarray_t       *help_array = NULL;
 
     /* delete guide for axis following/preceding
@@ -592,15 +515,13 @@ copy_step(PFla_op_t *n)
         return;
     }
 
-    /* if axis is NOT the attribute axis, but the ty is ty_attr
-     * the guides will be emty */
-    if(axis != alg_attr) {
-        if(n->sem.step.ty.type == ty_attr) {
-            new_guide_mapping_list = add_guide(new_guide_mapping_list,
-                    child_element, column_out);
-            MAPPING_LIST(n) = new_guide_mapping_list;
-            return;
-        }
+    /* if axis is NOT the attribute axis, but the kind is attribute
+       the guides will be empty */
+    if (axis != alg_attr && n->sem.step.spec.kind == node_kind_attr) {
+        new_guide_mapping_list = add_guide(new_guide_mapping_list,
+                child_element, column_out);
+        MAPPING_LIST(n) = new_guide_mapping_list;
+        return;
     }
     switch(axis) {
         case(alg_chld):
@@ -608,17 +529,18 @@ copy_step(PFla_op_t *n)
             /* child step for all guide nodes */
             for(unsigned int i = 0; i < PFarray_last(guide_list); i++) {
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
-                childs = element->child_list;
-                if(childs == NULL)
+                children = element->child_list;
+                if(children == NULL)
                     continue;
-                /* subtype check for all childs */
-                for(unsigned int j = 0; j < PFarray_last(childs); j++) {
-                    child_element= *((PFguide_tree_t**) PFarray_at(childs,j));
-                    if(PFty_subtype(
-                            create_PFty_t(child_element),
-                            n->sem.step.ty)) {
+                /* apply node test for all children */
+                for(unsigned int j = 0; j < PFarray_last(children); j++) {
+                    child_element= *((PFguide_tree_t**) PFarray_at(children,j));
+                    if (node_test (child_element, n->sem.step.spec)) {
                         /* add child */
-                        new_guide_mapping_list = add_guide(new_guide_mapping_list, child_element, column_out);
+                        new_guide_mapping_list = add_guide(
+                                                     new_guide_mapping_list,
+                                                     child_element,
+                                                     column_out);
                     }
                 }
             }
@@ -629,11 +551,13 @@ copy_step(PFla_op_t *n)
 
             for(unsigned int i = 0; i < PFarray_last(guide_list); i++) {
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
-                /* subtype check for all childs */
-                if(PFty_subtype(create_PFty_t(element),
-                        n->sem.step.ty)) {
+                /* apply node test for all children */
+                if (node_test (element, n->sem.step.spec)) {
                     /* add guide nodes to return array */
-                    new_guide_mapping_list = add_guide(new_guide_mapping_list, element, column_out);
+                    new_guide_mapping_list = add_guide(
+                                                new_guide_mapping_list,
+                                                element,
+                                                column_out);
                 }
             }
             break;
@@ -642,11 +566,13 @@ copy_step(PFla_op_t *n)
         /* ancestor-or-self axis */
             for(unsigned int i = 0; i < PFarray_last(guide_list); i++) {
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
-                /* subtype check for all childs */
-                if(PFty_subtype(create_PFty_t(element),
-                        n->sem.step.ty)) {
+                /* apply node test for all children */
+                if (node_test (element, n->sem.step.spec)) {
                     /* add guide nodes to return array */
-                    new_guide_mapping_list = add_guide(new_guide_mapping_list, element, column_out);
+                    new_guide_mapping_list = add_guide(
+                                                 new_guide_mapping_list,
+                                                 element,
+                                                 column_out);
                 }
             }
             /* NO BREAK! */
@@ -655,16 +581,15 @@ copy_step(PFla_op_t *n)
             for(unsigned int i = 0; i < PFarray_last(guide_list); i++) {
                 /* find all ancestor */
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
-                help_array = getAncestorFromGuide(element, n->sem.step.ty);
-                if(help_array == NULL)
-                    continue;
+                help_array = getAncestorFromGuide (element, n->sem.step.spec);
+                assert (help_array);
                 /* add ancestor to return array */
-                for(unsigned int k = 0; k < PFarray_last(help_array); k++) {
-                    element2= *((PFguide_tree_t**) PFarray_at(help_array, k));
-                    if(PFty_subtype(create_PFty_t(element2),
-                            n->sem.step.ty)) {
-                        new_guide_mapping_list = add_guide(new_guide_mapping_list, element2, column_out);
-                    }
+                for (unsigned int k = 0; k < PFarray_last (help_array); k++) {
+                    element2 = *((PFguide_tree_t**) PFarray_at (help_array, k));
+                    new_guide_mapping_list = add_guide(
+                                                 new_guide_mapping_list,
+                                                 element2,
+                                                 column_out);
                 }
             }
             break;
@@ -674,11 +599,12 @@ copy_step(PFla_op_t *n)
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
                 if(element->parent == NULL)
                     break;
-                if(PFty_subtype(create_PFty_t(element->parent),
-                            n->sem.step.ty)) {
+                if (node_test (element->parent, n->sem.step.spec)) {
                     /* add guide nodes to return array */
-                    new_guide_mapping_list = add_guide(new_guide_mapping_list, element->parent,
-                            column_out);
+                    new_guide_mapping_list = add_guide(
+                                                 new_guide_mapping_list,
+                                                 element->parent,
+                                                 column_out);
                 }
             }
             break;
@@ -686,10 +612,12 @@ copy_step(PFla_op_t *n)
         /* descendant-or-self axis */
             for(unsigned int i = 0; i < PFarray_last(guide_list); i++) {
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
-                if(PFty_subtype(create_PFty_t(element),
-                        n->sem.step.ty)) {
+                if (node_test (element, n->sem.step.spec)) {
                     /* add guide nodes to return array */
-                    new_guide_mapping_list = add_guide(new_guide_mapping_list, element, column_out);
+                    new_guide_mapping_list = add_guide(
+                                                 new_guide_mapping_list,
+                                                 element,
+                                                 column_out);
                 }
             }
             /* NO BREAK! */
@@ -697,16 +625,15 @@ copy_step(PFla_op_t *n)
         /* descendant axis */
             for(unsigned int i = 0; i < PFarray_last(guide_list); i++) {
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
-                help_array = getDescendantFromGuide(element,n->sem.step.ty);
-                if(help_array == NULL)
-                    continue;
+                help_array = getDescendantFromGuide (element, n->sem.step.spec);
+                assert (help_array);
                 /* add descendant to return array */
-                for(unsigned int k = 0; k < PFarray_last(help_array); k++) {
-                    element2= *((PFguide_tree_t**) PFarray_at(help_array, k));
-                    if(PFty_promotable(create_PFty_t(element2),
-                            n->sem.step.ty)) {
-                        new_guide_mapping_list = add_guide(new_guide_mapping_list, element2, column_out);
-                    }
+                for (unsigned int k = 0; k < PFarray_last (help_array); k++) {
+                    element2 = *((PFguide_tree_t**) PFarray_at (help_array, k));
+                    new_guide_mapping_list = add_guide(
+                                                 new_guide_mapping_list,
+                                                 element2,
+                                                 column_out);
                 }
             }
             break;
@@ -714,18 +641,18 @@ copy_step(PFla_op_t *n)
         /* attribute axis */
             for(unsigned int i = 0; i < PFarray_last(guide_list); i++) {
                 element = *((PFguide_tree_t**) PFarray_at(guide_list, i));
-                childs = element->child_list;
-                if(childs == NULL)
+                children = element->child_list;
+                if(children == NULL)
                     continue;
-                /* subtype check for all childs */
-                for(unsigned int j = 0; j < PFarray_last(childs); j++) {
-                    child_element= *((PFguide_tree_t**) PFarray_at(childs,j));
-                    if(PFty_subtype(
-                            create_PFty_t(child_element),
-                            n->sem.step.ty)) {
+                /* apply node test for all children */
+                for(unsigned int j = 0; j < PFarray_last(children); j++) {
+                    child_element= *((PFguide_tree_t**) PFarray_at(children,j));
+                    if (node_test (child_element, n->sem.step.spec)) {
                         /* add guide nodes to return array */
                         new_guide_mapping_list = add_guide(
-                        new_guide_mapping_list, child_element, column_out);
+                                                     new_guide_mapping_list,
+                                                     child_element,
+                                                     column_out);
                     }
                 }
             }
@@ -852,7 +779,7 @@ static void copy_step_join(PFla_op_t *n)
     assert(R(n));
     assert(PROP(R(n)));
 
-    /* Deep copy of right childs guide_mapping_list */
+    /* Deep copy of right children guide_mapping_list */
     PFarray_t *right_guide_mapping_list =
             deep_copy_guide_mapping_list(MAPPING_LIST(R(n)));
 

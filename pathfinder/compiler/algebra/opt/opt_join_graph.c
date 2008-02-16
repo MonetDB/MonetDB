@@ -178,13 +178,13 @@ opt_join_graph (PFla_op_t *p)
            of unnecessary eqjoin and rowid operators */
         case la_step:
             if ((PFprop_key_right (p->prop, p->sem.step.item) &&
-                 (p->sem.step.axis == alg_attr ||
-                  p->sem.step.axis == alg_chld ||
-                  p->sem.step.axis == alg_self)) ||
+                 (p->sem.step.spec.axis == alg_attr ||
+                  p->sem.step.spec.axis == alg_chld ||
+                  p->sem.step.spec.axis == alg_self)) ||
                 (PFprop_key_right (p->prop, p->sem.step.item) &&
                  PFprop_level_right (p->prop, p->sem.step.item) >= 0 &&
-                 (p->sem.step.axis == alg_desc ||
-                  p->sem.step.axis == alg_desc_s))) {
+                 (p->sem.step.spec.axis == alg_desc ||
+                  p->sem.step.spec.axis == alg_desc_s))) {
 
                 PFalg_att_t item_res;
                 item_res = PFalg_ori_name (
@@ -196,8 +196,7 @@ opt_join_graph (PFla_op_t *p)
                              PFla_step_join (
                                  L(p),
                                  R(p),
-                                 p->sem.step.axis,
-                                 p->sem.step.ty,
+                                 p->sem.step.spec,
                                  p->sem.step.level,
                                  p->sem.step.item,
                                  item_res),
@@ -215,14 +214,14 @@ opt_join_graph (PFla_op_t *p)
         case la_guide_step:
             if (((PFprop_key_right (p->prop, p->sem.step.item) ||
                   PFprop_ckey (R(p)->prop, p->schema)) &&
-                 (p->sem.step.axis == alg_attr ||
-                  p->sem.step.axis == alg_chld ||
-                  p->sem.step.axis == alg_self)) ||
+                 (p->sem.step.spec.axis == alg_attr ||
+                  p->sem.step.spec.axis == alg_chld ||
+                  p->sem.step.spec.axis == alg_self)) ||
                 ((PFprop_key_right (p->prop, p->sem.step.item) ||
                   PFprop_ckey (R(p)->prop, p->schema)) &&
                  PFprop_level_right (p->prop, p->sem.step.item) >= 0 &&
-                 (p->sem.step.axis == alg_desc ||
-                  p->sem.step.axis == alg_desc_s))) {
+                 (p->sem.step.spec.axis == alg_desc ||
+                  p->sem.step.spec.axis == alg_desc_s))) {
 
                 PFalg_att_t item_res;
                 item_res = PFalg_ori_name (
@@ -234,8 +233,7 @@ opt_join_graph (PFla_op_t *p)
                              PFla_guide_step_join (
                                  L(p),
                                  R(p),
-                                 p->sem.step.axis,
-                                 p->sem.step.ty,
+                                 p->sem.step.spec,
                                  p->sem.step.guide_count,
                                  p->sem.step.guides,
                                  p->sem.step.level,
@@ -350,8 +348,7 @@ opt_set (PFla_op_t *p)
                              PFla_step_join (
                                  L(p),
                                  R(p),
-                                 p->sem.step.axis,
-                                 p->sem.step.ty,
+                                 p->sem.step.spec,
                                  p->sem.step.level,
                                  p->sem.step.item,
                                  item_res),
@@ -379,8 +376,7 @@ opt_set (PFla_op_t *p)
                              PFla_guide_step_join (
                                  L(p),
                                  R(p),
-                                 p->sem.step.axis,
-                                 p->sem.step.ty,
+                                 p->sem.step.spec,
                                  p->sem.step.guide_count,
                                  p->sem.step.guides,
                                  p->sem.step.level,

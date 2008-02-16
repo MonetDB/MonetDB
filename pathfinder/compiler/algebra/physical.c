@@ -2458,8 +2458,7 @@ PFpa_cast (const PFpa_op_t *n, PFalg_att_t res,
  */
 PFpa_op_t *
 PFpa_llscjoin (const PFpa_op_t *ctx,
-               PFalg_axis_t axis,
-               const PFty_t test,
+               PFalg_step_spec_t spec,
                const PFord_ordering_t in,
                const PFord_ordering_t out,
                PFalg_att_t iter, PFalg_att_t item)
@@ -2477,8 +2476,7 @@ PFpa_llscjoin (const PFpa_op_t *ctx,
 #endif
 
     /* store semantic content in node */
-    ret->sem.scjoin.axis = axis;
-    ret->sem.scjoin.ty   = test;
+    ret->sem.scjoin.spec = spec;
     ret->sem.scjoin.iter = iter;
     ret->sem.scjoin.item = item;
 
@@ -2490,7 +2488,7 @@ PFpa_llscjoin (const PFpa_op_t *ctx,
     ret->schema.items[0]
         = (PFalg_schm_item_t) { .name = iter, .type = aat_nat };
     /* the result of an attribute axis is also of type attribute */
-    if (axis == alg_attr)
+    if (spec.axis == alg_attr)
         ret->schema.items[1]
             = (PFalg_schm_item_t) { .name = item, .type = aat_anode };
     else

@@ -606,7 +606,7 @@ infer_ckey (PFla_op_t *n)
 
         case la_step:
         case la_guide_step:
-            if (n->sem.step.axis == alg_chld &&
+            if (n->sem.step.spec.axis == alg_chld &&
                 PFprop_key (R(n)->prop, n->sem.step.iter) &&
                 PFprop_key (R(n)->prop, n->sem.step.item))
                 union_ (n->prop->ckeys, n->sem.step.item_res);

@@ -42,7 +42,6 @@
 #include "alg_dag.h"
 #include "oops.h"         /* PFoops() */
 #include "mem.h"          /* PFmalloc() */
-#include "subtyping.h"
 
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
@@ -1121,14 +1120,15 @@ reduce (PFla_op_t *p, int goalnt)
         case 63:
             /* combine steps if they are of the form:
                ``/descandent-or-self::node()/child::element()'' */
-            if (R(p)->sem.step.axis == alg_desc_s &&
-                PFty_equality (R(p)->sem.step.ty, PFty_xs_anyNode ()) &&
-                p->sem.step.axis == alg_chld) {
+            if (R(p)->sem.step.spec.axis == alg_desc_s &&
+                R(p)->sem.step.spec.kind == node_kind_node &&
+                p->sem.step.spec.axis == alg_chld) {
+                PFalg_step_spec_t spec = p->sem.step.spec;
+                spec.axis = alg_desc,
                 /* rewrite child into descendant
                    and discard descendant-or-self step */
                 *p = *PFla_step_simple (
-                          L(p), RR(p),
-                          alg_desc, p->sem.step.ty,
+                          L(p), RR(p), spec,
                           p->sem.step.iter, R(p)->sem.step.item,
                           p->sem.step.item_res);
                 SEEN(p) = false;

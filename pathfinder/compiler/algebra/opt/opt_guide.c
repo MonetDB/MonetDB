@@ -48,7 +48,7 @@
 /* prop of n */
 #define PROP(n) ((n)->prop)
 /* axis of n, n must be a step */
-#define AXIS(n) ((n)->sem.step.axis)
+#define AXIS(n) ((n)->sem.step.spec.axis)
 
 /* Merge 2 guide_steps if it is possible */
 static void
@@ -255,15 +255,15 @@ opt_guide(PFla_op_t *n)
                 /* create new step operator */
                 if (n->kind == la_step) {
                     ret = PFla_guide_step (
-                              L(n), R(n), n->sem.step.axis,
-                              n->sem.step.ty, count, guides,
+                              L(n), R(n), n->sem.step.spec,
+                              count, guides,
                               n->sem.step.level,
                               n->sem.step.iter, n->sem.step.item,
                               n->sem.step.item_res);
                 } else {
                     ret = PFla_guide_step_join (
-                              L(n), R(n), n->sem.step.axis,
-                              n->sem.step.ty, count, guides,
+                              L(n), R(n), n->sem.step.spec,
+                              count, guides,
                               n->sem.step.level,
                               n->sem.step.item,
                               n->sem.step.item_res);
@@ -280,9 +280,9 @@ opt_guide(PFla_op_t *n)
 
         case la_guide_step_join:
             if ((PFprop_set (n->prop) ||
-                ((n->sem.step.axis == alg_chld ||
-                  n->sem.step.axis == alg_attr ||
-                  n->sem.step.axis == alg_self) &&
+                ((n->sem.step.spec.axis == alg_chld ||
+                  n->sem.step.spec.axis == alg_attr ||
+                  n->sem.step.spec.axis == alg_self) &&
                  find_guide_max (n->sem.step.guide_count,
                                  n->sem.step.guides) <= 1)) &&
                 !PFprop_icol (n->prop, n->sem.step.item))

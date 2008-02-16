@@ -263,7 +263,7 @@ infer_level (PFla_op_t *n)
                 PFalg_att_t item_res = n->sem.step.item_res;
                 int level = PFprop_level (R(n)->prop, n->sem.step.item);
                 if (level >= 0)
-                    switch (n->sem.step.axis) {
+                    switch (n->sem.step.spec.axis) {
                         case alg_attr:
                         case alg_chld:
                             mark_level (n->prop, item_res, level+1);

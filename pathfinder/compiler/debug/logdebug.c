@@ -44,7 +44,6 @@
 #include "mem.h"
 #include "prettyp.h"
 #include "oops.h"
-#include "subtyping.h" /* step printing */
 #include "pfstrings.h"
 
 /** Node names to print out for all the Algebra tree nodes. */
@@ -763,52 +762,21 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
             PFarray_printf (dot, "\", fontcolor=\"#FFFFFF\", label=\"");
         case la_step:
         case la_step_join:
-            PFarray_printf (dot, "%s ", a_id[n->kind]);
+            PFarray_printf (dot, "%s %s::%s",
+                            a_id[n->kind],
+                            PFalg_axis_str (n->sem.step.spec.axis),
+                            PFalg_node_kind_str (n->sem.step.spec.kind));
+
+            if (n->sem.step.spec.kind == node_kind_elem ||
+                n->sem.step.spec.kind == node_kind_attr)
+                PFarray_printf (dot, "(%s)",
+                                PFqname_str (n->sem.step.spec.qname));
+            else if (n->sem.step.spec.kind == node_kind_pi &&
+                     PFqname_loc (n->sem.step.spec.qname))
+                PFarray_printf (dot, "(%s)", PFqname_loc (n->sem.step.spec.qname));
+            else
+                PFarray_printf (dot, "()");
                 
-            /* print out XPath axis */
-            switch (n->sem.step.axis)
-            {
-                case alg_anc:
-                    PFarray_printf (dot, "ancestor::");
-                    break;
-                case alg_anc_s:
-                    PFarray_printf (dot, "anc-or-self::");
-                    break;
-                case alg_attr:
-                    PFarray_printf (dot, "attribute::");
-                    break;
-                case alg_chld:
-                    PFarray_printf (dot, "child::");
-                    break;
-                case alg_desc:
-                    PFarray_printf (dot, "descendant::");
-                    break;
-                case alg_desc_s:
-                    PFarray_printf (dot, "desc-or-self::");
-                    break;
-                case alg_fol:
-                    PFarray_printf (dot, "following::");
-                    break;
-                case alg_fol_s:
-                    PFarray_printf (dot, "fol-sibling::");
-                    break;
-                case alg_par:
-                    PFarray_printf (dot, "parent::");
-                    break;
-                case alg_prec:
-                    PFarray_printf (dot, "preceding::");
-                    break;
-                case alg_prec_s:
-                    PFarray_printf (dot, "prec-sibling::");
-                    break;
-                case alg_self:
-                    PFarray_printf (dot, "self::");
-                    break;
-                default: PFoops (OOPS_FATAL,
-                        "unknown XPath axis in dot output");
-            }
-            PFarray_printf (dot, "%s ", PFty_str (n->sem.step.ty));
-            
             /* print guide info */
             if (n->kind == la_guide_step ||
                 n->kind == la_guide_step_join) {
@@ -1878,188 +1846,24 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
         case la_guide_step:
         case la_guide_step_join:
         {
-            PFty_t ty     = n->sem.step.ty;
-            char  *kind   = NULL,
+            char  *axis   = PFalg_axis_str (n->sem.step.spec.axis),
+                  *kind   = PFalg_node_kind_str (n->sem.step.spec.kind),
                   *prefix = NULL,
                   *uri    = NULL,
                   *local  = NULL;
             
-            PFarray_printf (xml, "    <content>\n      <step axis=\"");
-                
-            /* print out XPath axis */
-            switch (n->sem.step.axis)
-            {
-                case alg_anc:
-                    PFarray_printf (xml, "ancestor");
-                    break;
-                case alg_anc_s:
-                    PFarray_printf (xml, "ancestor-or-self");
-                    break;
-                case alg_attr:
-                    PFarray_printf (xml, "attribute");
-                    break;
-                case alg_chld:
-                    PFarray_printf (xml, "child");
-                    break;
-                case alg_desc:
-                    PFarray_printf (xml, "descendant");
-                    break;
-                case alg_desc_s:
-                    PFarray_printf (xml, "descendant-or-self");
-                    break;
-                case alg_fol:
-                    PFarray_printf (xml, "following");
-                    break;
-                case alg_fol_s:
-                    PFarray_printf (xml, "following-sibling");
-                    break;
-                case alg_par:
-                    PFarray_printf (xml, "parent");
-                    break;
-                case alg_prec:
-                    PFarray_printf (xml, "preceding");
-                    break;
-                case alg_prec_s:
-                    PFarray_printf (xml, "preceding-sibling");
-                    break;
-                case alg_self:
-                    PFarray_printf (xml, "self");
-                    break;
-                default: PFoops (OOPS_FATAL,
-                        "unknown XPath axis in dot output");
-            }
-
-            if (PFty_subtype (ty, PFty_xs_anyAttribute ())) {
-                
-                /* This is a test for attribute nodes */
-                kind = "attribute";
-
-                /* Is it just a generic attribute kind test?
-                   (e.g. .../attribute()) */
-                if (PFty_subtype (PFty_xs_anyAttribute (), ty))
-                    ;
-                /* Is it a test on attribute kind and local name only? */
-                else if (PFty_subtype (
-                            PFty_attr (
-                                PFqname (PFns_wild,
-                                         PFqname_loc (
-                                             PFty_name (PFty_defn (ty)))),
-                                PFty_xs_anySimpleType ()),
-                            ty))
-                    local = PFqname_loc (PFty_name (PFty_defn (ty)));
-                /* Or maybe a test on attribute kind and namespace only? */
-                else if (PFty_subtype (
-                            PFty_attr (
-                                PFqname (
-                                    PFqname_ns (PFty_name (PFty_defn (ty))),
-                                    NULL),
-                                PFty_xs_anySimpleType ()),
-                            ty)) {
-                    prefix = PFqname_prefix (PFty_name (PFty_defn (ty)));
-                    uri    = PFqname_uri (PFty_name (PFty_defn (ty)));
-                }
-                /* A test on attribute kind and full QName? */
-                else if (PFty_subtype (
-                            PFty_attr (PFty_name (PFty_defn (ty)),
-                                       PFty_xs_anySimpleType ()),
-                            ty)) {
-                    prefix = PFqname_prefix (PFty_name (PFty_defn (ty)));
-                    uri    = PFqname_uri (PFty_name (PFty_defn (ty)));
-                    local = PFqname_loc (PFty_name (PFty_defn (ty)));
-                }
-                /*
-                 * If we couldn't figure out what attribute test we got,
-                 * give up.
-                 *
-                 * NOTE: The surface language actually allows such tests. We
-                 *       just cannot implement them (yet):
-                 *
-                 *        doc("foo")/attribute::attribute(shoeSize, xs:integer)
-                 */
-                else
-                    PFoops (OOPS_FATAL,
-                            "Problem with an XPath step: cannot evaluate "
-                            "node test `%s'", PFty_str (ty));
-            }
-            else if (PFty_subtype (ty, PFty_xs_anyElement ())) {
-
-                /* This is a test for element nodes */
-                kind = "element";
-
-                /* Is it just a generic element kind test?
-                   (e.g. .../element()) */
-                if (PFty_subtype (PFty_xs_anyElement (), ty))
-                    ;
-                /* Is it a test on element kind and local name only? */
-                else if (PFty_subtype (
-                            PFty_elem (
-                                PFqname (PFns_wild,
-                                         PFqname_loc (
-                                             PFty_name (PFty_defn (ty)))),
-                                PFty_xs_anyType ()),
-                            ty))
-                    local = PFqname_loc (PFty_name (PFty_defn (ty)));
-                /* Or maybe a test on element kind and namespace only? */
-                else if (PFty_subtype (
-                            PFty_elem (
-                                PFqname (
-                                    PFqname_ns (PFty_name (PFty_defn (ty))),
-                                                NULL),
-                                       PFty_xs_anyType ()),
-                            ty)) {
-                    prefix = PFqname_prefix (PFty_name (PFty_defn (ty)));
-                    uri    = PFqname_uri (PFty_name (PFty_defn (ty)));
-                }
-                /* A test on element kind and full QName? */
-                else if (PFty_subtype (
-                            PFty_elem (PFty_name (PFty_defn (ty)),
-                                       PFty_xs_anyType ()),
-                            ty)) {
-                    prefix = PFqname_prefix (PFty_name (PFty_defn (ty)));
-                    uri    = PFqname_uri (PFty_name (PFty_defn (ty)));
-                    local = PFqname_loc (PFty_name (PFty_defn (ty)));
-                }
-                /*
-                 * If we couldn't figure out what element test we got, give up.
-                 *
-                 * NOTE: The surface language actually allows such tests. We
-                 *       just cannot implement them (yet):
-                 *
-                 *        doc("foo")/child::element(shoeSize, xs:integer)
-                 */
-                else
-                    PFoops (OOPS_FATAL,
-                            "Problem with an XPath step: cannot evaluate "
-                            "node test `%s'", PFty_str (ty));
-            }
-            else if (PFty_subtype (ty, PFty_text ())) {
-                /* This is a test for text nodes */
-                kind = "textnode";
-            }
-            else if (PFty_subtype (ty, PFty_comm ())) {
-                /* This is a test for comment nodes */
-                kind = "comment";
-            }
-            else if (PFty_subtype (ty, PFty_pi (NULL))) {
-                /* This is a test for processing-instruction nodes */
-                kind = "processing-instruction";
-
-                /* lookup target if any */
-                if (!PFty_subtype (PFty_pi (NULL), ty))
-                    local = PFqname_loc (PFty_name (PFty_defn (ty)));
-            }
-            else if (PFty_subtype (PFty_xs_anyNode (), ty)) {
-                /* If all these cases did not apply,
-                   it is probably a node() test. */
-                kind = "node";
-            }
-            /* If we still couldn't find out, we probably need to give up. */
-            else
-                PFoops (OOPS_FATAL,
-                        "Problem with an XPath step: cannot evaluate "
-                        "node test `%s'", PFty_str (ty));
-
-            PFarray_printf (xml, "\" kind=\"%s\"", kind);
+            if (n->sem.step.spec.kind == node_kind_elem ||
+                n->sem.step.spec.kind == node_kind_attr) {
+                prefix = PFqname_prefix (n->sem.step.spec.qname);
+                uri    = PFqname_uri (n->sem.step.spec.qname);
+                local  = PFqname_loc (n->sem.step.spec.qname);
+            } else if (n->sem.step.spec.kind == node_kind_pi)
+                local  = PFqname_loc (n->sem.step.spec.qname);
+            
+            PFarray_printf (xml,
+                            "    <content>\n"
+                            "      <step axis=\"%s\" kind=\"%s\"",
+                            axis, kind);
             if (prefix) {
                 PFarray_printf (xml, " prefix=\"%s\"", prefix);
                 PFarray_printf (xml, " uri=\"%s\"", uri);

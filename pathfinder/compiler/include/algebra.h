@@ -284,15 +284,12 @@ enum PFalg_node_kind_t {
 };
 typedef enum PFalg_node_kind_t PFalg_node_kind_t;
 
-struct PFalg_scj_spec_t {
-    PFalg_axis_t        axis;    /**< represented axis */
-    PFalg_node_kind_t   kind;    /**< node kind to test for */
-    union {
-        char           *target;  /**< target specified for pi's */
-        PFqname_t       qname;   /**< for name tests */
-    } str;
+struct PFalg_step_spec_t {
+    PFalg_axis_t      axis;    /**< represented axis */
+    PFalg_node_kind_t kind;    /**< node kind to test for */
+    PFqname_t         qname;   /**< for name tests */
 };
-typedef struct PFalg_scj_spec_t PFalg_scj_spec_t;
+typedef struct PFalg_step_spec_t PFalg_step_spec_t;
 
 /** function call result occurrence indicator */
 enum PFalg_occ_ind_t {
@@ -494,6 +491,16 @@ PFalg_att_t PFalg_unq_name (PFalg_att_t ori, unsigned int id);
 PFalg_att_t PFalg_ori_name (PFalg_att_t unq, PFalg_att_t free);
 
 /**
+ * Print XPath axis
+ */
+char * PFalg_axis_str (PFalg_axis_t axis);
+
+/**
+ * Print node kind
+ */
+char * PFalg_node_kind_str (PFalg_node_kind_t kind);
+
+/**
  * Print simple type name
  */
 char * PFalg_simple_type_str (PFalg_simple_type_t att);
@@ -502,16 +509,6 @@ char * PFalg_simple_type_str (PFalg_simple_type_t att);
  * Print function call kind
  */
 char * PFalg_fun_call_kind_str (PFalg_fun_call_t kind);
-
-/**
- * Extract all possible algebra types from the XQuery type.
- */
-PFalg_simple_type_t PFalg_type (PFty_t ty);
-
-/**
- * Extract occurrence indicator from the XQuery type.
- */
-PFalg_occ_ind_t PFalg_type_occ (PFty_t ty);
 
 /**
  * Print function name

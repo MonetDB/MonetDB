@@ -1204,8 +1204,7 @@ opt_mvd (PFla_op_t *p)
                                             attach (RL(p),
                                                     p->sem.step.iter,
                                                     lit_nat(1)),
-                                            p->sem.step.axis,
-                                            p->sem.step.ty,
+                                            p->sem.step.spec,
                                             p->sem.step.level,
                                             p->sem.step.iter,
                                             p->sem.step.item,
@@ -1219,8 +1218,7 @@ opt_mvd (PFla_op_t *p)
                                             attach (RR(p),
                                                     p->sem.step.iter,
                                                     lit_nat(1)),
-                                            p->sem.step.axis,
-                                            p->sem.step.ty,
+                                            p->sem.step.spec,
                                             p->sem.step.level,
                                             p->sem.step.iter,
                                             p->sem.step.item,
@@ -1241,16 +1239,14 @@ opt_mvd (PFla_op_t *p)
                 *p = *(cross_can (step_join (
                                         L(p),
                                         RL(p),
-                                        p->sem.step.axis,
-                                        p->sem.step.ty,
+                                        p->sem.step.spec,
                                         p->sem.step.level,
                                         p->sem.step.item,
                                         p->sem.step.item_res),
                                   step_join (
                                         L(p),
                                         RR(p),
-                                        p->sem.step.axis,
-                                        p->sem.step.ty,
+                                        p->sem.step.spec,
                                         p->sem.step.level,
                                         p->sem.step.item,
                                         p->sem.step.item_res)));
@@ -1259,8 +1255,7 @@ opt_mvd (PFla_op_t *p)
             else if (switch_left) {
                 *p = *(cross_can (step_join (
                                         L(p), RL(p),
-                                        p->sem.step.axis,
-                                        p->sem.step.ty,
+                                        p->sem.step.spec,
                                         p->sem.step.level,
                                         p->sem.step.item,
                                         p->sem.step.item_res),
@@ -1272,8 +1267,7 @@ opt_mvd (PFla_op_t *p)
                                   step_join (
                                         L(p),
                                         RR(p),
-                                        p->sem.step.axis,
-                                        p->sem.step.ty,
+                                        p->sem.step.spec,
                                         p->sem.step.level,
                                         p->sem.step.item,
                                         p->sem.step.item_res)));
@@ -1292,8 +1286,7 @@ opt_mvd (PFla_op_t *p)
                                         attach (RL(p),
                                                 p->sem.step.iter,
                                                 lit_nat(1)),
-                                        p->sem.step.axis,
-                                        p->sem.step.ty,
+                                        p->sem.step.spec,
                                         p->sem.step.guide_count,
                                         p->sem.step.guides,
                                         p->sem.step.level,
@@ -1310,8 +1303,7 @@ opt_mvd (PFla_op_t *p)
                                         attach (RR(p),
                                                 p->sem.step.iter,
                                                 lit_nat(1)),
-                                        p->sem.step.axis,
-                                        p->sem.step.ty,
+                                        p->sem.step.spec,
                                         p->sem.step.guide_count,
                                         p->sem.step.guides,
                                         p->sem.step.level,
@@ -1334,8 +1326,7 @@ opt_mvd (PFla_op_t *p)
                 *p = *(cross_can (guide_step_join (
                                         L(p),
                                         RL(p),
-                                        p->sem.step.axis,
-                                        p->sem.step.ty,
+                                        p->sem.step.spec,
                                         p->sem.step.guide_count,
                                         p->sem.step.guides,
                                         p->sem.step.level,
@@ -1344,8 +1335,7 @@ opt_mvd (PFla_op_t *p)
                                   guide_step_join (
                                         L(p),
                                         RR(p),
-                                        p->sem.step.axis,
-                                        p->sem.step.ty,
+                                        p->sem.step.spec,
                                         p->sem.step.guide_count,
                                         p->sem.step.guides,
                                         p->sem.step.level,
@@ -1356,8 +1346,7 @@ opt_mvd (PFla_op_t *p)
             else if (switch_left) {
                 *p = *(cross_can (guide_step_join (
                                         L(p), RL(p),
-                                        p->sem.step.axis,
-                                        p->sem.step.ty,
+                                        p->sem.step.spec,
                                         p->sem.step.guide_count,
                                         p->sem.step.guides,
                                         p->sem.step.level,
@@ -1371,8 +1360,7 @@ opt_mvd (PFla_op_t *p)
                                   guide_step_join (
                                         L(p),
                                         RR(p),
-                                        p->sem.step.axis,
-                                        p->sem.step.ty,
+                                        p->sem.step.spec,
                                         p->sem.step.guide_count,
                                         p->sem.step.guides,
                                         p->sem.step.level,
