@@ -263,6 +263,7 @@ typedef struct ascii_io_t {
 	frStr frstr;
 	void *extra;
 	void *data;
+	char *nullstr;
 	int len;
 	int nillen;
 	bit ws; 	/* if set we need to skip white space */
@@ -462,6 +463,7 @@ create_loadformat(ascii *as, BAT *names, BAT *seps, BAT *types)
 		fmt[p].ws = !(has_whitespace(fmt[p].sep));
 		fmt[p].quote = '"';
 		fmt[p].data = GDKmalloc(fmt[p].len);
+		fmt[p].nullstr = GDKstrdup("nil");
 		if (ascii_io_debug)
 			stream_printf(GDKerr, "%s\n", fmt[p].name);
 	}
@@ -498,6 +500,7 @@ create_dumpformat(ascii *as, BAT *names, BAT *seps, BAT *bats)
 		fmt[p].len = 0;
 		fmt[p].nillen = 0;
 		fmt[p].ws = 0;
+		fmt[p].nullstr = GDKstrdup("nil");
 		BBPunfix(b->batCacheid);
 	}
 	return as->nr_attrs;
@@ -513,6 +516,8 @@ ASCIIdestroy_format(ascii *as)
 		if (fmt[p].c)
 			BBPunfix(fmt[p].c->batCacheid);
 		GDKfree(fmt[p].sep);
+		if (fmt[p].nullstr)
+			GDKfree(fmt[p].nullstr);
 		if (fmt[p].data)
 			GDKfree(fmt[p].data);
 	}
@@ -673,7 +678,16 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 	}
 	if (e < s)
 		e = s;
-	adt = fmt->frstr(fmt->extra, fmt->adt, s, e, quote);
+	if ( s == NULL ||
+	     (s == e && fmt->nullstr[0] == 0) ||
+	     (!quote && strcasecmp(s,fmt->nullstr) == 0) ||
+	     (quote && strncasecmp(s+1, fmt->nullstr, e-s-2) == 0)
+		) {
+		adt = fmt->data;
+		memcpy(adt, ATOMnilptr(fmt->adt), fmt->nillen);
+	} else {
+		adt = fmt->frstr(fmt->extra, fmt->adt, s, e, quote);
+	}
 	*end = bak;
 
 	if (!adt) {
@@ -789,9 +803,15 @@ dump_line(char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs, size
 		if (f->c) {
 			p = (char *) bun_tail(f->c, id);
 
-			l = f->tostr(f->extra, buf, len, f->adt, p);
-			if (stream_write(fd, *buf, 1, l) != l)
-				return ascii_io_error(fd);
+			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
+				l = strlen(f->nullstr);
+				if (stream_write(fd, f->nullstr, 1, l) != l)
+					return ascii_io_error(fd);
+			} else {
+				l = f->tostr(f->extra, buf, len, f->adt, p);
+				if (stream_write(fd, *buf, 1, l) != l)
+					return ascii_io_error(fd);
+			}
 		}
 		if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
 			return ascii_io_error(fd);
@@ -821,9 +841,16 @@ output_line(char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs, pt
 			f = fmt + i;
 			if (f->c) {
 				p = BUNtail(f->ci, f->p);
-				l = f->tostr(f->extra, buf, len, f->adt, p);
-				if (stream_write(fd, *buf, 1, l) != l)
-					return ascii_io_error(fd);
+
+				if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
+					l = strlen(f->nullstr);
+					if (stream_write(fd, f->nullstr, 1, l) != l)
+						return ascii_io_error(fd);
+				} else {
+					l = f->tostr(f->extra, buf, len, f->adt, p);
+					if (stream_write(fd, *buf, 1, l) != l)
+						return ascii_io_error(fd);
+				}
 			}
 			if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
 				return ascii_io_error(fd);
@@ -842,10 +869,16 @@ output_line_dense(char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_att
 
 		if (f->c) {
 			char *p = BUNtail(f->ci, f->p);
-			int l = f->tostr(f->extra, buf, len, f->adt, p);
 
-			if (stream_write(fd, *buf, 1, l) != l)
-				return ascii_io_error(fd);
+			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
+				int l = strlen(f->nullstr);
+				if (stream_write(fd, f->nullstr, 1, l) != l)
+					return ascii_io_error(fd);
+			} else {
+				int l = f->tostr(f->extra, buf, len, f->adt, p);
+				if (stream_write(fd, *buf, 1, l) != l)
+					return ascii_io_error(fd);
+			}
 			f->p++;
 		}
 		if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
@@ -864,10 +897,17 @@ output_line_lookup(char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_at
 
 		if (f->c) {
 			char *p = BUNtail(f->ci, id + BUNfirst(f->c));
-			int l = f->tostr(f->extra, buf, len, f->adt, p);
 
-			if (stream_write(fd, *buf, 1, l) != l)
-				return ascii_io_error(fd);
+			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
+				int l = strlen(f->nullstr);
+				if (stream_write(fd, f->nullstr, 1, l) != l)
+					return ascii_io_error(fd);
+			} else {
+				int l = f->tostr(f->extra, buf, len, f->adt, p);
+
+				if (stream_write(fd, *buf, 1, l) != l)
+					return ascii_io_error(fd);
+			}
 		}
 		if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
 			return ascii_io_error(fd);
