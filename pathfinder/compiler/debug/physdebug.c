@@ -499,49 +499,21 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
             break;
 
         case pa_llscjoin:
-            PFarray_printf (dot, "%s", a_id[n->kind]);
-            switch (n->sem.scjoin.axis)
-            {
-                case alg_anc:
-                    PFarray_printf (dot, "ancestor::");
-                    break;
-                case alg_anc_s:
-                    PFarray_printf (dot, "anc-or-self::");
-                    break;
-                case alg_attr:
-                    PFarray_printf (dot, "attribute::");
-                    break;
-                case alg_chld:
-                    PFarray_printf (dot, "child::");
-                    break;
-                case alg_desc:
-                    PFarray_printf (dot, "descendant::");
-                    break;
-                case alg_desc_s:
-                    PFarray_printf (dot, "desc-or-self::");
-                    break;
-                case alg_fol:
-                    PFarray_printf (dot, "following::");
-                    break;
-                case alg_fol_s:
-                    PFarray_printf (dot, "fol-sibling::");
-                    break;
-                case alg_par:
-                    PFarray_printf (dot, "parent::");
-                    break;
-                case alg_prec:
-                    PFarray_printf (dot, "preceding::");
-                    break;
-                case alg_prec_s:
-                    PFarray_printf (dot, "prec-sibling::");
-                    break;
-                case alg_self:
-                    PFarray_printf (dot, "self::");
-                    break;
-                default: PFoops (OOPS_FATAL,
-                        "unknown XPath axis in dot output");
-            }
-            PFarray_printf (dot, "%s", PFty_str (n->sem.scjoin.ty));
+            PFarray_printf (dot, "%s %s::%s",
+                            a_id[n->kind],
+                            PFalg_axis_str (n->sem.scjoin.spec.axis),
+                            PFalg_node_kind_str (n->sem.scjoin.spec.kind));
+
+            if (n->sem.scjoin.spec.kind == node_kind_elem ||
+                n->sem.scjoin.spec.kind == node_kind_attr)
+                PFarray_printf (dot, "(%s)",
+                                PFqname_str (n->sem.scjoin.spec.qname));
+            else if (n->sem.scjoin.spec.kind == node_kind_pi &&
+                     PFqname_loc (n->sem.scjoin.spec.qname))
+                PFarray_printf (dot, "(%s)",
+                                PFqname_loc (n->sem.scjoin.spec.qname));
+            else
+                PFarray_printf (dot, "()");
             break;
 
         case pa_doc_access:
