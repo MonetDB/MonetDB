@@ -1048,6 +1048,7 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 		fmt[p].ws = !(has_whitespace(fmt[p].sep));
 		fmt[p].quote = '"';
 		fmt[p].data = GDKmalloc(fmt[p].len);
+		fmt[p].nullstr = GDKstrdup("nil");
 		if (tablet_debug)
 			stream_printf(GDKerr, "%s\n", fmt[p].name);
 	}
@@ -1084,6 +1085,7 @@ create_dumpformat(Tablet * as, BAT *names, BAT *seps, BAT *bats)
 		fmt[p].len = 0;
 		fmt[p].nillen = 0;
 		fmt[p].ws = 0;
+		fmt[p].nullstr = GDKstrdup("nil");
 		BBPunfix(b->batCacheid);
 	}
 	return as->nr_attrs;
@@ -1099,6 +1101,8 @@ TABLETdestroy_format(Tablet * as)
 		if (fmt[p].c)
 			BBPunfix(fmt[p].c->batCacheid);
 		GDKfree(fmt[p].sep);
+		if (fmt[p].nullstr)
+			GDKfree(fmt[p].nullstr);
 		if (fmt[p].data)
 			GDKfree(fmt[p].data);
 	}
@@ -1258,7 +1262,16 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err)
 	}
 	if (e < s)
 		e = s;
-	adt = fmt->frstr(fmt->extra, fmt->adt, s, e, quote);
+	if ( s == NULL ||
+	     (s == e && fmt->nullstr[0] == 0) ||
+	     (!quote && strcasecmp(s,fmt->nullstr) == 0) ||
+	     (quote && strncasecmp(s+1, fmt->nullstr, e-s-2) == 0)
+		) {
+		adt = fmt->data;
+		memcpy(adt, ATOMnilptr(fmt->adt), fmt->nillen);
+	} else {
+		adt = fmt->frstr(fmt->extra, fmt->adt, s, e, quote);
+	}
 	*end = bak;
 
 	if (!adt) {
@@ -1381,9 +1394,15 @@ dump_line(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attrs, size_
 		if (f->c) {
 			p = (char *) bun_tail(f->c, id);
 
-			l = f->tostr(f->extra, buf, len, f->adt, p);
-			if (stream_write(fd, *buf, 1, l) != l)
-				return TABLET_error(fd);
+			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
+				l = strlen(f->nullstr);
+				if (stream_write(fd, f->nullstr, 1, l) != l)
+					return TABLET_error(fd);
+			} else {
+				l = f->tostr(f->extra, buf, len, f->adt, p);
+				if (stream_write(fd, *buf, 1, l) != l)
+					return TABLET_error(fd);
+			}
 		}
 		if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
 			return TABLET_error(fd);
@@ -1391,13 +1410,10 @@ dump_line(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attrs, size_
 	return 0;
 }
 
-#define MB 1024*1024
 static INLINE int
 output_line(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attrs, ptr id)
 {
 	size_t i;
-	char lbuf[MB]; /* collect first before write */
-	int k=0;
 
 	for (i = 0; i < nr_attrs; i++) {
 		if (fmt[i].c == NULL)
@@ -1407,31 +1423,30 @@ output_line(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attrs, ptr
 		if (fmt[i].p == BUN_NONE)
 			break;
 	}
-	lbuf[k]=0;
 	if (i == nr_attrs) {
 		for (i = 0; i < nr_attrs; i++) {
 			Column *f;
-			ptr p;
-			int l=0;
+			char *p;
+			int l;
 
 			f = fmt + i;
 			if (f->c) {
 				p = BUNtail(f->ci, f->p);
-				l = f->tostr(f->extra, buf, len, f->adt, p);
+
+				if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
+					l = strlen(f->nullstr);
+					if (stream_write(fd, f->nullstr, 1, l) != l)
+						return TABLET_error(fd);
+				} else {
+					l = f->tostr(f->extra, buf, len, f->adt, p);
+					if (stream_write(fd, *buf, 1, l) != l)
+						return TABLET_error(fd);
+				}
 			}
-			if( k+f->seplen+l+1 >=MB){
-				if( stream_write(fd, lbuf, 1, k) != l)
-					return TABLET_error(fd);
-				l=0;
-			}
-			if( f->c)
-				strcat(lbuf+k,*buf);
-			strcat(lbuf+k,f->sep);
-			k+= strlen(lbuf+k);
+			if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
+				return TABLET_error(fd);
 		}
 	}
-	if( k && stream_write(fd, lbuf, 1, k) != k)
-				return TABLET_error(fd);
 	return 0;
 }
 
@@ -1445,10 +1460,16 @@ output_line_dense(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attr
 
 		if (f->c) {
 			char *p = BUNtail(f->ci, f->p);
-			int l = f->tostr(f->extra, buf, len, f->adt, p);
 
-			if (stream_write(fd, *buf, 1, l) != l)
-				return TABLET_error(fd);
+			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
+				int l = strlen(f->nullstr);
+				if (stream_write(fd, f->nullstr, 1, l) != l)
+					return TABLET_error(fd);
+			} else {
+				int l = f->tostr(f->extra, buf, len, f->adt, p);
+				if (stream_write(fd, *buf, 1, l) != l)
+					return TABLET_error(fd);
+			}
 			f->p++;
 		}
 		if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
@@ -1467,10 +1488,17 @@ output_line_lookup(char **buf, int *len, Column * fmt, stream *fd, size_t nr_att
 
 		if (f->c) {
 			char *p = BUNtail(f->ci, id + BUNfirst(f->c));
-			int l = f->tostr(f->extra, buf, len, f->adt, p);
 
-			if (stream_write(fd, *buf, 1, l) != l)
-				return TABLET_error(fd);
+			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
+				int l = strlen(f->nullstr);
+				if (stream_write(fd, f->nullstr, 1, l) != l)
+					return TABLET_error(fd);
+			} else {
+				int l = f->tostr(f->extra, buf, len, f->adt, p);
+
+				if (stream_write(fd, *buf, 1, l) != l)
+					return TABLET_error(fd);
+			}
 		}
 		if (stream_write(fd, f->sep, 1, f->seplen) != f->seplen)
 			return TABLET_error(fd);
