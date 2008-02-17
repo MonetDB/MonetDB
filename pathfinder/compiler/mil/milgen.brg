@@ -1265,7 +1265,8 @@ fn_node_name (PFpa_op_t *p, PFalg_att_t att, mvar_t *id, mvar_t *cont)
         /* find all element nodes and extract their QName references */
         mvar_t  *kind      = new_var (1),
                 *elem      = new_var (1),
-                *elem_cont = new_var (1);
+                *elem_cont = new_var (1),
+                *map       = new_var (1);
         PFmil_t *pre       = VAR (p->env, att, aat_pre),
                 *pre_cont  = VAR (p->env, att, aat_frag);
 
@@ -1276,27 +1277,33 @@ fn_node_name (PFpa_op_t *p, PFalg_att_t att, mvar_t *id, mvar_t *cont)
                        pre_cont,
                        fetch (var (PF_MIL_VAR_WS),
                               var (PF_MIL_VAR_PRE_KIND)))),
-            assgn (var (kind->name),
-                   mirror (select_ (var (kind->name), 
-                                    var (PF_MIL_VAR_KIND_ELEM)))),
+            assgn (var (map->name),
+                   hmark (select_ (var (kind->name), 
+                                   var (PF_MIL_VAR_KIND_ELEM)),
+                          lit_oid (0))),
             assgn (var (elem->name),
-                   leftjoin (var (kind->name), pre)),
+                   leftfetchjoin (var (map->name), pre)),
             assgn (var (elem_cont->name),
-                   leftjoin (var (kind->name), pre_cont)),
+                   leftfetchjoin (var (map->name), pre_cont)),
             assgn (var (id->name),
-                   mposjoin (var (elem->name),
-                             var (elem_cont->name),
-                             fetch (var (PF_MIL_VAR_WS),
-                                    var (PF_MIL_VAR_PRE_PROP)))),
+                   leftfetchjoin (
+                       reverse (var (map->name)),
+                       mposjoin (var (elem->name),
+                                 var (elem_cont->name),
+                                 fetch (var (PF_MIL_VAR_WS),
+                                        var (PF_MIL_VAR_PRE_PROP))))),
             assgn (var (cont->name),
-                   mposjoin (var (elem->name),
-                             var (elem_cont->name),
-                             fetch (var (PF_MIL_VAR_WS),
-                                    var (PF_MIL_VAR_PRE_CONT)))));
+                   leftfetchjoin (
+                       reverse (var (map->name)),
+                       mposjoin (var (elem->name),
+                                 var (elem_cont->name),
+                                 fetch (var (PF_MIL_VAR_WS),
+                                        var (PF_MIL_VAR_PRE_CONT))))));
 
         unpin (kind, 1);
         unpin (elem, 1);
         unpin (elem_cont, 1);
+        unpin (map, 1);
     }
     else if (ty == aat_anode) {
         /* extract all QName references from the attributes */
@@ -1320,8 +1327,7 @@ fn_node_name (PFpa_op_t *p, PFalg_att_t att, mvar_t *id, mvar_t *cont)
         
         /* split up nodes and attributes,
            find all element nodes and extract their QName references */
-        mvar_t  *kind      = new_var (1),
-                *elem      = new_var (1),
+        mvar_t  *elem      = new_var (1),
                 *elem_cont = new_var (1),
                 *pre_sel   = new_var (1),
                 *attr_sel  = new_var (1),
@@ -1340,40 +1346,49 @@ fn_node_name (PFpa_op_t *p, PFalg_att_t att, mvar_t *id, mvar_t *cont)
         execute (
             /* get all attributes */
             assgn (var (attr_sel->name),
-                   mirror (
+                   hmark (
                        select2 (var (attr_col->name),
                                 cast (type (mty_oid), nil ()),
-                                cast (type (mty_oid), nil ())))),
+                                cast (type (mty_oid), nil ())),
+                       lit_oid (0))),
             /* get all attribute QNames */
             assgn (var (aid->name),
-                   mposjoin (leftjoin (var (attr_sel->name), attr),
-                             leftjoin (var (attr_sel->name), pre_cont),
+                   mposjoin (leftfetchjoin (var (attr_sel->name), attr),
+                             leftfetchjoin (var (attr_sel->name), pre_cont),
                              fetch (var (PF_MIL_VAR_WS),
                                     var (PF_MIL_VAR_ATTR_QN)))),
             assgn (var (acont->name),
-                   mposjoin (leftjoin (var (attr_sel->name), attr),
-                             leftjoin (var (attr_sel->name), pre_cont),
+                   mposjoin (leftfetchjoin (var (attr_sel->name), attr),
+                             leftfetchjoin (var (attr_sel->name), pre_cont),
                              fetch (var (PF_MIL_VAR_WS),
                                     var (PF_MIL_VAR_ATTR_CONT)))),
             /* get all other nodes */
             assgn (var (pre_sel->name),
-                   mirror (
+                   hmark (
                        select_ (
                            misnil (var (attr_col->name)),
-                           lit_bit (true)))),
+                           lit_bit (true)),
+                       lit_oid (0))),
             /* get all element nodes */
-            assgn (var (kind->name),
-                   mposjoin (leftjoin (var (pre_sel->name), pre),
-                             leftjoin (var (pre_sel->name), pre_cont),
-                             fetch (var (PF_MIL_VAR_WS),
-                                    var (PF_MIL_VAR_PRE_KIND)))),
-            assgn (var (kind->name),
-                   mirror (select_ (var (kind->name), 
-                                    var (PF_MIL_VAR_KIND_ELEM)))),
             assgn (var (elem->name),
-                   leftjoin (var (kind->name), pre)),
+                   leftfetchjoin (var (pre_sel->name), pre)),
             assgn (var (elem_cont->name),
-                   leftjoin (var (kind->name), pre_cont)),
+                   leftfetchjoin (var (pre_sel->name), pre_cont)),
+            assgn (var (pre_sel->name),
+                   leftfetchjoin (
+                       reverse (var (pre_sel->name)),
+                       mposjoin (var (elem->name),
+                                 var (elem_cont->name),
+                                 fetch (var (PF_MIL_VAR_WS),
+                                        var (PF_MIL_VAR_PRE_KIND))))),
+            assgn (var (pre_sel->name),
+                   hmark (select_ (var (pre_sel->name), 
+                                   var (PF_MIL_VAR_KIND_ELEM)),
+                          lit_oid (0))),
+            assgn (var (elem->name),
+                   leftfetchjoin (var (pre_sel->name), pre)),
+            assgn (var (elem_cont->name),
+                   leftfetchjoin (var (pre_sel->name), pre_cont)),
             /* get all element QNames */
             assgn (var (pid->name),
                    mposjoin (var (elem->name),
@@ -1388,16 +1403,12 @@ fn_node_name (PFpa_op_t *p, PFalg_att_t att, mvar_t *id, mvar_t *cont)
             /* combine the results */
             assgn (var (res->name),
                    merged_union (
-                       arg (hmark (var (aid->name), lit_oid (0)),
-                            arg (hmark (var (pid->name), lit_oid (0)),
-                                 arg (tmark (var (aid->name),
-                                             lit_oid (0)),
-                                      arg (tmark (var (pid->name),
-                                                  lit_oid (0)),
-                                           arg (tmark (var (acont->name),
-                                                       lit_oid (0)),
-                                                tmark (var (pcont->name),
-                                                       lit_oid (0))))))))),
+                       arg (var (attr_sel->name),
+                            arg (var (pre_sel->name),
+                                 arg (var (aid->name),
+                                      arg (var (pid->name),
+                                           arg (var (acont->name),
+                                                var (pcont->name)))))))),
             assgn (var (id->name),
                    leftfetchjoin (
                        reverse (fetch (var (res->name), lit_int (0))),
@@ -1407,7 +1418,6 @@ fn_node_name (PFpa_op_t *p, PFalg_att_t att, mvar_t *id, mvar_t *cont)
                        reverse (fetch (var (res->name), lit_int (0))),
                        fetch (var (res->name), lit_int (2)))));
 
-        unpin (kind, 1);
         unpin (elem, 1);
         unpin (elem_cont, 1);
         unpin (pre_sel, 1);
@@ -4852,8 +4862,8 @@ reduce (PFpa_op_t * p, int goalnt)
                     /* get all prefixes */
                     execute (
                         assgn (var (prefix->name),
-                               mposjoin (var (id->name),
-                                         var (cont->name),
+                               mposjoin (tmark (var (id->name), lit_oid (0)),
+                                         tmark (var (cont->name), lit_oid (0)),
                                          fetch (var (PF_MIL_VAR_WS),
                                                 var (PF_MIL_VAR_QN_PREFIX)))),
                         /* add ":" only to prefix that are not "" */
@@ -4884,8 +4894,10 @@ reduce (PFpa_op_t * p, int goalnt)
                                    fetch (var (mu->name), lit_int (1)))),
                         assgn (var (name->name),
                                madd (var (prefix->name),
-                                     mposjoin (var (id->name),
-                                               var (cont->name),
+                                     mposjoin (tmark (var (id->name),
+                                                      lit_oid (0)),
+                                               tmark (var (cont->name),
+                                                      lit_oid (0)),
                                                fetch (
                                                    var (PF_MIL_VAR_WS),
                                                    var (PF_MIL_VAR_QN_LOC))))),
@@ -4896,11 +4908,10 @@ reduce (PFpa_op_t * p, int goalnt)
                                         lit_str (""))),
                         assgn (var (mu->name),
                                merged_union (
-                                   arg (hmark (var (name->name), lit_oid (0)),
+                                   arg (hmark (var (id->name), lit_oid (0)),
                                         arg (hmark (var (empty_str->name),
                                                     lit_oid (0)),
-                                             arg (tmark (var (name->name),
-                                                         lit_oid (0)),
+                                             arg (var (name->name),
                                                   tmark (var (empty_str->name),
                                                          lit_oid (0))))))),
                         assgn (var (res->name),
@@ -4945,8 +4956,8 @@ reduce (PFpa_op_t * p, int goalnt)
                     /* get all prefixes */
                     execute (
                         assgn (var (name->name),
-                               mposjoin (var (id->name),
-                                         var (cont->name),
+                               mposjoin (tmark (var (id->name), lit_oid (0)),
+                                         tmark (var (cont->name), lit_oid (0)),
                                          fetch (var (PF_MIL_VAR_WS),
                                                 var (uri_loc)))),
                         /* empty names for nodes that have no QName */
@@ -4956,11 +4967,10 @@ reduce (PFpa_op_t * p, int goalnt)
                                         lit_str (""))),
                         assgn (var (mu->name),
                                merged_union (
-                                   arg (hmark (var (name->name), lit_oid (0)),
+                                   arg (hmark (var (id->name), lit_oid (0)),
                                         arg (hmark (var (empty_str->name),
                                                     lit_oid (0)),
-                                             arg (tmark (var (name->name),
-                                                         lit_oid (0)),
+                                             arg (var (name->name),
                                                   tmark (var (empty_str->name),
                                                          lit_oid (0))))))),
                         assgn (var (res->name),
@@ -6025,6 +6035,8 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Rel:      llscjoin (Rel) */
         /* FIXME: This code needs to be cleaned up. */
         case 80: /* fold( */
+            if (p->sem.scjoin.spec.axis == alg_self)
+                PFoops (OOPS_FATAL, "self step not implemented yet.");
             if (p->sem.scjoin.spec.axis != alg_attr)
                 llscj (p);
             else
