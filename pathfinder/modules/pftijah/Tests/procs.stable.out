@@ -562,6 +562,7 @@ procs();
 [ "standoff_reject_wide(BAT[void,oid], BAT[oid,void], BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[void,oid]"											  ]
 [ "standoff_select_narrow(BAT[void,oid], BAT[oid,void], BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[void,oid]"											  ]
 [ "standoff_select_wide(BAT[void,oid], BAT[oid,void], BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[void,oid]"											  ]
+[ "step(int, int, BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,BAT], int, chr, str, str, str) : BAT[void,BAT]"					  ]
 [ "stream_line(Stream) : str"																  ]
 [ "stream_strip(Stream, str) : str"															  ]
 [ "string(str, int) : str"																								  ]

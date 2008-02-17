@@ -1752,6 +1752,66 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] item, oid cont, BAT[void,bat] ws, int 
 @
 
 @mil
+CONST AXIS_ancestor           :=  0;
+CONST AXIS_ancestor_or_self   :=  1;
+CONST AXIS_child              :=  2;
+CONST AXIS_descendant         :=  3;
+CONST AXIS_descendant_or_self :=  4;
+CONST AXIS_following          :=  5;
+CONST AXIS_following_sibling  :=  6;
+CONST AXIS_parent             :=  7;
+CONST AXIS_preceding          :=  8;
+CONST AXIS_preceding_sibling  :=  9;
+CONST AXIS_self               := 10;
+CONST AXIS_attribute          := 11;
+CONST TEST_none   := 0;
+CONST TEST_kind   := 1;
+CONST TEST_ns     := 2;
+CONST TEST_loc    := 3;
+CONST TEST_nsloc  := 4;
+CONST TEST_target := 5;
+
+PROC step (int axis, int test, bat[void,oid] iter, bat[void,oid] item, bat[void,oid] cont, bat[void,bat] ws, int order, chr kind, str ns, str loc, str tgt) : bat[void,bat]
+{
+	if (isnil(order)) order := 0;
+
+	if ((axis < AXIS_ancestor) or (axis > AXIS_attribute)) {
+		ERROR ("PROC step(): Unknown axis '%d' !", axis);
+	} else if ((test < TEST_none) or (test > TEST_target)) {
+		ERROR ("PROC step(): Unknown test '%d' !", test);
+@= PROC_step
+	} else if (axis = AXIS_@1) {
+		       if (test = TEST_none  ) {
+			return loop_lifted_@1_step                  (iter, item, cont, ws, order);
+		} else if (test = TEST_kind  ) {
+			return loop_lifted_@1_step_with_kind_test   (iter, item, cont, ws, order, kind);
+		} else if (test = TEST_ns    ) {
+			return loop_lifted_@1_step_with_ns_test     (iter, item, cont, ws, order, ns);
+		} else if (test = TEST_loc   ) {
+			return loop_lifted_@1_step_with_loc_test    (iter, item, cont, ws, order, loc);
+		} else if (test = TEST_nsloc ) {
+			return loop_lifted_@1_step_with_nsloc_test  (iter, item, cont, ws, order, ns, loc);
+		} else if (test = TEST_target) {
+			return loop_lifted_@1_step_with_target_test (iter, item, cont, ws, order, tgt);
+		}
+@mil
+	@:PROC_step(ancestor)@
+	@:PROC_step(ancestor_or_self)@
+	@:PROC_step(child)@
+	@:PROC_step(descendant)@
+	@:PROC_step(descendant_or_self)@
+	@:PROC_step(following)@
+	@:PROC_step(following_sibling)@
+	@:PROC_step(parent)@
+	@:PROC_step(preceding)@
+	@:PROC_step(preceding_sibling)@
+	} else if (axis = AXIS_self) {
+		ERROR ("PROC step(): AXIS_self not supported, yet!");
+	} else if (axis = AXIS_attribute) {
+		ERROR ("PROC step(): AXIS_attribute not supported, yet!");
+	}
+}
+
 @:loop_lifted_scj_step1(parent)@
 @:loop_lifted_scj_step1(ancestor)@
 @:loop_lifted_scj_step1(ancestor_or_self)@
