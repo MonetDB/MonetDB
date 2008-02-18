@@ -14,6 +14,9 @@ Release Etiquette
 - A release is a major time investment of several people.  Cooperation
   of all developers is essential to live up to our charter: to deliver
   state-of-the-art database technology to the community.
+- In particular, a new release should not be worse than any previous one,
+  i.e., all features and tests that did work before (and are still
+  supported) must still work flawlessly with the new release.
 - Strictly adhere to bug fixes and feature updates.  Nothing
   is a bug fix unless it is covered by a bug report.
 - Remember that after every release there will be uncountable
@@ -29,6 +32,8 @@ Well before the release
 - Prepare a draft release note to finalize the scope of the release
   and inform those affected/responsible for parts to fix errors and
   prepare/update documentation.
+- Decide on and fix the desired version numbers for all packages involved in
+  the release.
 - All other developers leave the stable branch.
 - Get all the bug fixes (and new features for a major release) in long
   before continuing with the rest of the steps.
@@ -37,6 +42,11 @@ Well before the release
 - Regularly try building the release on Windows during this stage.
   This includes trying to create installers and trying out the
   installers.
+- A major (and very time consuming) task of the release manager is to
+  continuously remind the developers to indeed care about and fix their
+  bugs. This task consists mainly of reading aloud both the nightly testing
+  result emails and the daily TestWeb status to each involved developer
+  personally.
 
 Preparation of a Major Release
 ------------------------------
@@ -57,6 +67,10 @@ Preparation of a Major Release
   ``dft_netcdf=no``).
 - Create a tag on the head of the new branch for propagation purposes
   (e.g. ``cvs tag MonetDB_1-16_sync``).
+- Update the nightly testing setup to use the new branch for nightly
+  testing.
+- Where necessary, update the "TestWeb" pages of the MonetDB web site to
+  point to the new branch's nighly testing results.
 
 After this, it's **bug fixes only** on the new branch.
 

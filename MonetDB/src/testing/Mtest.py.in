@@ -1266,8 +1266,8 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
         env['TST_FIVE'] = "Five"
         os.environ['TST_FIVE'] = "Five"
     if par['ALGEBRA']:
-        env['TST_ALGEBRA'] = "-G:Algebra"
-        os.environ['TST_ALGEBRA'] = "-G:Algebra"
+        env['TST_ALGEBRA'] = "Algebra"
+        os.environ['TST_ALGEBRA'] = "Algebra"
     return rtrn
 ### GetBitsAndOIDsAndModsAndStatic(env) #
 
