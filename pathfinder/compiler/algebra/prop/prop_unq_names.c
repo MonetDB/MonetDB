@@ -247,7 +247,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
                argument are replaced by the overall join column name
                and all columns that are also referenced on the other
                side will be renamed by introducing a new unique name.
-               All other column stay unchanged. */
+               All other columns stay unchanged. */
             for (unsigned int i = 0; i < L(n)->schema.count; i++) {
                 ori = L(n)->schema.items[i].name;
                 child_unq = PFprop_unq_name (L(n)->prop, ori);
@@ -271,6 +271,8 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
 
                     add_name_pair (np_list, ori, unq);
                 }
+                else if (child_unq == att2_unq)
+                    add_name_pair (np_list, ori, PFalg_unq_name (ori, id++));
                 else
                     add_name_pair (np_list, ori, child_unq);
 
@@ -300,6 +302,8 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
 
                     add_name_pair (np_list, ori, unq);
                 }
+                else if (child_unq == att1_unq)
+                    add_name_pair (np_list, ori, PFalg_unq_name (ori, id++));
                 else
                     add_name_pair (np_list, ori, child_unq);
 

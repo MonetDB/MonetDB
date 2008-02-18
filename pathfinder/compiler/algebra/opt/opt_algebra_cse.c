@@ -684,7 +684,8 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
 
     for (i = 0; i < a.count; i++) {
         /* check the equivalence */
-        mismatch = PFalg_atom_cmp (a.atoms[i], b.atoms[i])?true:false; 
+        mismatch = !(PFalg_atom_comparable (a.atoms[i], b.atoms[i]) && 
+                     (PFalg_atom_cmp (a.atoms[i], b.atoms[i]) == 0)); 
         
         if (mismatch)
             break;
@@ -821,7 +822,8 @@ match (PFla_op_t *a, PFla_op_t *b)
                                         b->sem.attach.value))
                 return false;
 
-            if (PFalg_atom_cmp (a->sem.attach.value, b->sem.attach.value) != 0)
+            if (PFalg_atom_cmp (a->sem.attach.value,
+                                b->sem.attach.value) != 0)
                 return false;
             
             return true;

@@ -49,7 +49,7 @@
 bool
 PFprop_icol (const PFprop_t *prop, PFalg_att_t attr)
 {
-    return prop->icols & attr;
+    return prop->icols & attr ? true : false;
 }
 
 /**
@@ -59,7 +59,7 @@ PFprop_icol (const PFprop_t *prop, PFalg_att_t attr)
 bool
 PFprop_icol_left (const PFprop_t *prop, PFalg_att_t attr)
 {
-    return prop->l_icols & attr;
+    return prop->l_icols & attr ? true : false;
 }
 
 /**
@@ -69,7 +69,7 @@ PFprop_icol_left (const PFprop_t *prop, PFalg_att_t attr)
 bool
 PFprop_icol_right (const PFprop_t *prop, PFalg_att_t attr)
 {
-    return prop->r_icols & attr;
+    return prop->r_icols & attr ? true : false;
 }
 
 /**

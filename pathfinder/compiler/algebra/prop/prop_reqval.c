@@ -51,7 +51,7 @@
 #define EDGE(n) ((n)->refctr)
 
 #define empty_list 0
-#define in(a,b) ((a) & (b))
+#define in(a,b) ((a) & (b) ? true : false)
 
 /**
  * Test if @a attr is in the list of required value columns

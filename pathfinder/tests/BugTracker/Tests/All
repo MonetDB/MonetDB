@@ -137,3 +137,5 @@ substitution_fails.SF-1871789
 uncompilable_comparison.SF-1871790
 for_variable.SF-1887055
 Alignment_error.SF-1886994
+ALGsegfault.SF-1894964a
+ALGsegfault.SF-1894964b
