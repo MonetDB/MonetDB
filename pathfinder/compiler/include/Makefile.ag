@@ -58,7 +58,6 @@ EXTRA_DIST = \
         map_names.h \
 	mem.h \
 	mil_dce.h \
-	mildebug.h \
 	milgen.h \
 	mil.h \
 	mil_mnemonic.h \
