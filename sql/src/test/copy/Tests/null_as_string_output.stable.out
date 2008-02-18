@@ -1,0 +1,51 @@
+stdout of test 'null_as_string_output` in directory 'src/test/copy` itself:
+
+
+# 18:52:46 >  
+# 18:52:46 >   Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=33682 --set xrpc_port=46545 --set monet_prompt= --trace  "--dbname=mTests_src_test_copy" "--dbinit= module(sql_server);" ; echo ; echo Over..
+# 18:52:46 >  
+
+# MonetDB Server v4.23.0
+# based on GDK   v1.23.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# MonetDB/SQL module v2.23.0 loaded
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 18:52:46 >  
+# 18:52:46 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=33682 
+# 18:52:46 >  
+
+[ 4	]
+,,
+,"zero",0.00
+1,,1.00
+2,"two",
+[ 4	]
+[ 4	]
+[ 4	]
+null,null,null
+null,"zero",0.00
+1,null,1.00
+2,"two",null
+[ 4	]
+[ 4	]
+[ 4	]
+\N,\N,\N
+\N,"zero",0.00
+1,\N,1.00
+2,"two",\N
+[ 4	]
+[ 4	]
+
+# 18:52:46 >  
+# 18:52:46 >  Done.
+# 18:52:46 >  
+

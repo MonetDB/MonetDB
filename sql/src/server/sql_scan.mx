@@ -127,6 +127,7 @@ scanner_init_keywords(void)
 	keywords_insert("RECORDS", RECORDS);
 	keywords_insert("DELIMITERS", DELIMITERS);
 	keywords_insert("STDIN", STDIN);
+	keywords_insert("STDOUT", STDOUT);
 
 	keywords_insert("TINYINT", TINYINT);
 	keywords_insert("SMALLINT", SMALLINT);

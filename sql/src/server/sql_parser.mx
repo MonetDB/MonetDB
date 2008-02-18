@@ -435,6 +435,7 @@ int yydebug=1;
 	opt_alias_name
 	opt_to_savepoint
 	opt_using
+	opt_null_string
 	string
 	type_alias
 	varchar
@@ -687,7 +688,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
-%token COPY RECORDS DELIMITERS STDIN
+%token COPY RECORDS DELIMITERS STDIN STDOUT
 %token INDEX
 
 %token AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
@@ -1938,7 +1939,7 @@ return_statement:
    ;
 
 return_value:
-      select_no_parens
+      select_no_parens_orderby
    |  search_condition
    |  TABLE '(' select_no_parens ')'	
 		{ $$ = _symbol_create_symbol(SQL_TABLE, $3); }
@@ -2377,25 +2378,35 @@ opt_to_savepoint:
  ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname FROM string_commalist opt_seps 
+    COPY opt_nr INTO qname FROM string_commalist opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $6);
 	  append_list(l, $7);
 	  append_list(l, $2);
+	  append_string(l, $8);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname FROM STDIN opt_seps 
+  | COPY opt_nr INTO qname FROM STDIN opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, NULL);
 	  append_list(l, $7);
 	  append_list(l, $2);
+	  append_string(l, $8);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY select_no_parens_orderby INTO string opt_seps 
+  | COPY select_no_parens_orderby INTO string opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_symbol(l, $2);
 	  append_string(l, $4);
 	  append_list(l, $5);
+	  append_string(l, $6);
+	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
+  | COPY select_no_parens_orderby INTO STDOUT opt_seps opt_null_string
+	{ dlist *l = L();
+	  append_symbol(l, $2);
+	  append_string(l, NULL);
+	  append_list(l, $5);
+	  append_string(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
   ;
 
@@ -2432,6 +2443,11 @@ opt_nr:
     /* empty */			{ $$ = NULL; }
  |  posint RECORDS		{ $$ = append_int(append_int(L(), $1), 0); }
  |  posint OFFSET posint RECORDS	{ $$ = append_int(append_int(L(), $1), $3); }
+ ;
+
+opt_null_string:
+	/* empty */		{ $$ = NULL; }
+ |  	sqlNULL opt_as string	{ $$ = $3; }
  ;
 
 string_commalist:

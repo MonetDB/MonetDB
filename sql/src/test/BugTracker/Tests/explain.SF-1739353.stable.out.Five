@@ -37,7 +37,7 @@ Over..
 | mal                                                                          |
 +==============================================================================+
 | function user.s1_1():void;                                                   |
-|     _1:bat[:oid,:int]{rows=1:lng,notnil}  := sql.bind("tmp","_tables","id",0); |
+|     _1:bat[:oid,:int]{rows=1:lng}  := sql.bind("tmp","_tables","id",0);      |
 |     _6:bat[:oid,:oid]{rows=1:lng}  := sql.bind_dbat("tmp","_tables",1);      |
 |     _8{rows=1:lng} := bat.reverse(_6);                                       |
 |     _6:bat[:oid,:oid]{rows=1:lng}  := nil;                                   |
@@ -47,20 +47,20 @@ Over..
 |     _9{rows=1:lng} := nil;                                                   |
 |     _12{rows=1:lng,hlb>=0@0:oid,hub<1@0:oid} := bat.reverse(_11);            |
 |     _11{rows=1:lng,tlb>=0@0:oid,tub<1@0:oid} := nil;                         |
-|     _13:bat[:oid,:sht]{rows=1:lng,notnil}  := sql.bind("tmp","_tables","type",0); |
+|     _13:bat[:oid,:sht]{rows=1:lng}  := sql.bind("tmp","_tables","type",0);   |
 |     _15{rows=1:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_12,_13);       |
-|     _13:bat[:oid,:sht]{rows=1:lng,notnil}  := nil;                           |
-|     _16:bat[:oid,:int]{rows=107:lng,notnil}  := sql.bind("sys","_tables","id",0); |
-|     _18:bat[:oid,:int]{rows=1:lng,notnil}  := sql.bind("sys","_tables","id",1); |
+|     _13:bat[:oid,:sht]{rows=1:lng}  := nil;                                  |
+|     _16:bat[:oid,:int]{rows=107:lng}  := sql.bind("sys","_tables","id",0);   |
+|     _18:bat[:oid,:int]{rows=1:lng}  := sql.bind("sys","_tables","id",1);     |
 |     _19{rows=108:lng} := algebra.kunion(_16,_18);                            |
-|     _16:bat[:oid,:int]{rows=107:lng,notnil}  := nil;                         |
-|     _18:bat[:oid,:int]{rows=1:lng,notnil}  := nil;                           |
-|     _20:bat[:oid,:int]{rows=1:lng,notnil}  := sql.bind("sys","_tables","id",2); |
+|     _16:bat[:oid,:int]{rows=107:lng}  := nil;                                |
+|     _18:bat[:oid,:int]{rows=1:lng}  := nil;                                  |
+|     _20:bat[:oid,:int]{rows=1:lng}  := sql.bind("sys","_tables","id",2);     |
 |     _22{rows=108:lng} := algebra.kdifference(_19,_20);                       |
 |     _19{rows=108:lng} := nil;                                                |
 |     _23{rows=109:lng} := algebra.kunion(_22,_20);                            |
 |     _22{rows=108:lng} := nil;                                                |
-|     _20:bat[:oid,:int]{rows=1:lng,notnil}  := nil;                           |
+|     _20:bat[:oid,:int]{rows=1:lng}  := nil;                                  |
 |     _24:bat[:oid,:oid]{rows=1:lng}  := sql.bind_dbat("sys","_tables",1);     |
 |     _25{rows=1:lng} := bat.reverse(_24);                                     |
 |     _24:bat[:oid,:oid]{rows=1:lng}  := nil;                                  |
@@ -70,17 +70,17 @@ Over..
 |     _26{rows=109:lng} := nil;                                                |
 |     _28{rows=109:lng,hlb>=0@0:oid,hub<1@0:oid} := bat.reverse(_27);          |
 |     _27{rows=109:lng,tlb>=0@0:oid,tub<1@0:oid} := nil;                       |
-|     _29:bat[:oid,:sht]{rows=107:lng,notnil}  := sql.bind("sys","_tables","type",0); |
-|     _30:bat[:oid,:sht]{rows=1:lng,notnil}  := sql.bind("sys","_tables","type",1); |
+|     _29:bat[:oid,:sht]{rows=107:lng}  := sql.bind("sys","_tables","type",0); |
+|     _30:bat[:oid,:sht]{rows=1:lng}  := sql.bind("sys","_tables","type",1);   |
 |     _31{rows=108:lng} := algebra.kunion(_29,_30);                            |
-|     _29:bat[:oid,:sht]{rows=107:lng,notnil}  := nil;                         |
-|     _30:bat[:oid,:sht]{rows=1:lng,notnil}  := nil;                           |
-|     _32:bat[:oid,:sht]{rows=1:lng,notnil}  := sql.bind("sys","_tables","type",2); |
+|     _29:bat[:oid,:sht]{rows=107:lng}  := nil;                                |
+|     _30:bat[:oid,:sht]{rows=1:lng}  := nil;                                  |
+|     _32:bat[:oid,:sht]{rows=1:lng}  := sql.bind("sys","_tables","type",2);   |
 |     _33{rows=108:lng} := algebra.kdifference(_31,_32);                       |
 |     _31{rows=108:lng} := nil;                                                |
 |     _34{rows=109:lng} := algebra.kunion(_33,_32);                            |
 |     _33{rows=108:lng} := nil;                                                |
-|     _32:bat[:oid,:sht]{rows=1:lng,notnil}  := nil;                           |
+|     _32:bat[:oid,:sht]{rows=1:lng}  := nil;                                  |
 |     _35{rows=109:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_28,_34);     |
 |     _34{rows=109:lng} := nil;                                                |
 |     _36{rows=111:lng,hlb>=0@0:oid,hub<1@0:oid} := bat.setWriteMode(_35);     |
@@ -94,7 +94,7 @@ Over..
 |     _44{rows=56:lng,tlb>=0@0:oid,tub<1@0:oid,hlb>=0@0:oid,hub<1@0:oid} := bat.reverse(_43); |
 |     _43{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid,tlb>=0@0:oid,tub<1@0:oid} := nil; |
 |     _45{rows=1:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_12,_1);        |
-|     _1:bat[:oid,:int]{rows=1:lng,notnil}  := nil;                            |
+|     _1:bat[:oid,:int]{rows=1:lng}  := nil;                                   |
 |     _46{rows=109:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_28,_23);     |
 |     _23{rows=109:lng} := nil;                                                |
 |     _47{rows=111:lng,hlb>=0@0:oid,hub<1@0:oid} := bat.setWriteMode(_46);     |
@@ -107,21 +107,21 @@ Over..
 |     _49{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                        |
 |     _51{rows=56:lng,tlb>=0@0:oid,tub<1@0:oid,hlb>=0@0:oid,hub<1@0:oid} := bat.reverse(_50); |
 |     _50{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid,tlb>=0@0:oid,tub<1@0:oid} := nil; |
-|     _52:bat[:oid,:str]{rows=1:lng,notnil}  := sql.bind("tmp","_tables","name",0); |
+|     _52:bat[:oid,:str]{rows=1:lng}  := sql.bind("tmp","_tables","name",0);   |
 |     _54{rows=1:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_12,_52);       |
 |     _12{rows=1:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                         |
-|     _52:bat[:oid,:str]{rows=1:lng,notnil}  := nil;                           |
-|     _55:bat[:oid,:str]{rows=107:lng,notnil}  := sql.bind("sys","_tables","name",0); |
-|     _56:bat[:oid,:str]{rows=1:lng,notnil}  := sql.bind("sys","_tables","name",1); |
+|     _52:bat[:oid,:str]{rows=1:lng}  := nil;                                  |
+|     _55:bat[:oid,:str]{rows=107:lng}  := sql.bind("sys","_tables","name",0); |
+|     _56:bat[:oid,:str]{rows=1:lng}  := sql.bind("sys","_tables","name",1);   |
 |     _57{rows=108:lng} := algebra.kunion(_55,_56);                            |
-|     _55:bat[:oid,:str]{rows=107:lng,notnil}  := nil;                         |
-|     _56:bat[:oid,:str]{rows=1:lng,notnil}  := nil;                           |
-|     _58:bat[:oid,:str]{rows=1:lng,notnil}  := sql.bind("sys","_tables","name",2); |
+|     _55:bat[:oid,:str]{rows=107:lng}  := nil;                                |
+|     _56:bat[:oid,:str]{rows=1:lng}  := nil;                                  |
+|     _58:bat[:oid,:str]{rows=1:lng}  := sql.bind("sys","_tables","name",2);   |
 |     _59{rows=108:lng} := algebra.kdifference(_57,_58);                       |
 |     _57{rows=108:lng} := nil;                                                |
 |     _60{rows=109:lng} := algebra.kunion(_59,_58);                            |
 |     _59{rows=108:lng} := nil;                                                |
-|     _58:bat[:oid,:str]{rows=1:lng,notnil}  := nil;                           |
+|     _58:bat[:oid,:str]{rows=1:lng}  := nil;                                  |
 |     _61{rows=109:lng,hlb>=0@0:oid,hub<1@0:oid} := algebra.join(_28,_60);     |
 |     _28{rows=109:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                       |
 |     _60{rows=109:lng} := nil;                                                |
@@ -138,10 +138,11 @@ Over..
 |     _66 := sql.resultSet(1,1,_65);                                           |
 |     sql.rsColumn(_66,"sys.tables","name","varchar",1024,0,_65);              |
 |     _65{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                        |
-|     sql.exportResult(_66,"");                                                |
+|     _71 := io.stdout();                                                      |
+|     sql.exportResult(_71,_66,"");                                            |
 | end s1_1;                                                                    |
 +------------------------------------------------------------------------------+
-104 rows
+105 rows
 
 
 # 13:06:44 >  

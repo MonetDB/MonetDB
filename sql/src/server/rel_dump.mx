@@ -110,6 +110,8 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 		sql_subfunc *f = e->f;
 		printf("%s", f->func->base.name );
 		exps_print( sql, e->l, depth, alias, 1);
+		if (e->r)
+			exps_print( sql, e->r, depth, alias, 1);
 	} 	break;
 	case e_aggr: {
 		sql_subaggr *a = e->f;

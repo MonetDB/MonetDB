@@ -1377,7 +1377,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 }
 
 static stmt *
-sql_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *filename, int nr, int offset)
+sql_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, int nr, int offset)
 {
 	stmt *rs = NULL;
 	stmt *fname = (filename) ? stmt_atom_string(_strdup(filename)) : NULL;
@@ -1385,7 +1385,7 @@ sql_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *fil
 	int i, len = 0;
 	stmt **inserts, *res = NULL;
 
-	rs = stmt_import(stmt_basetable(t, t->base.name), _strdup(tsep), _strdup(rsep), _strdup(ssep), fname, nr, offset);
+	rs = stmt_import(stmt_basetable(t, t->base.name), _strdup(tsep), _strdup(rsep), _strdup(ssep), _strdup(ns), fname, nr, offset);
 	inserts = table_update_array(t, &len);
 	for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 		sql_column *c = n->data;
@@ -1399,7 +1399,7 @@ sql_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *fil
 }
 
 static stmt *
-copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset)
+copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, str null_string)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
@@ -1408,6 +1408,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset)
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
 	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
+	char *ns = (null_string)?null_string:"null";
 	list *slist;
 	int nr = (nr_offset)?nr_offset->h->data.ival:-1;
 	int offset = (nr_offset)?nr_offset->h->next->data.ival:0;
@@ -1436,29 +1437,31 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset)
 		for (slist = create_stmt_list(); n; n = n->next) {
 			char *fname = n->data.sval;
 
-			list_append(slist, sql_import(sql, t, tsep, rsep, ssep, fname, nr, offset));
+			list_append(slist, sql_import(sql, t, tsep, rsep, ssep, ns, fname, nr, offset));
 		}
 		return stmt_list(slist);
 	}
 	slist = create_stmt_list();
-	list_append(slist, sql_import(sql, t, tsep, rsep, ssep, NULL, nr, offset));
+	list_append(slist, sql_import(sql, t, tsep, rsep, ssep, ns, NULL, nr, offset));
 	return stmt_list(slist);
 }
 
 static stmt *
-copyto(mvc *sql, symbol *sq, str file, dlist *seps)
+copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 {
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
 	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
+	char *ns = (null_string)?null_string:"null";
 	stmt *s = flat_subquery(sql, sq);
+	stmt *fname = (filename) ? stmt_atom_string(_strdup(filename)) : NULL;
 	list *slist;
 
 	if (!s) 
 		return NULL;
 
 	slist = create_stmt_list();
-	list_append(slist, stmt_export(s, _strdup(tsep), _strdup(rsep), _strdup(ssep), stmt_atom_string(_strdup(file))));
+	list_append(slist, stmt_export(s, _strdup(tsep), _strdup(rsep), _strdup(ssep), _strdup(ns), fname));
 	if (s->type == st_list && ((stmt*)s->op1.lval->h->data)->nrcols != 0) {
 		stmt *cnt = stmt_aggr(stmt_dup(s->op1.lval->h->data), NULL, sql_bind_aggr(sql->session->schema, "count", NULL), 1);
 		list_append(slist, stmt_affected_rows(cnt));
@@ -1963,7 +1966,7 @@ updates(mvc *sql, scope *scp, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval);
+		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.sval);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -1971,7 +1974,7 @@ updates(mvc *sql, scope *scp, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = copyto(sql, l->h->data.sym, l->h->next->data.sval, l->h->next->next->data.lval);
+		ret = copyto(sql, l->h->data.sym, l->h->next->data.sval, l->h->next->next->data.lval, l->h->next->next->next->data.sval);
 		sql->type = Q_UPDATE;
 	}
 		break;

@@ -222,7 +222,7 @@ sql_xmlcomment(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int 
 	comment_st = sql_value_exp(sql, scp, comment, grp, subset, f, knd); 
 	if (!comment_st)
 		return NULL;
-	return sql_unop_(sql, scp, NULL, "comment", comment_st); 
+	return sql_unop_(sql, NULL, "comment", comment_st); 
 }
 
 static stmt *
@@ -281,7 +281,7 @@ sql_xmldocument(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int
 	val_st = sql_value_exp(sql, scp, val, grp, subset, f, knd); 
 	if (!val_st)
 		return NULL;
-	return sql_unop_(sql, scp, NULL, "document", val_st); 
+	return sql_unop_(sql, NULL, "document", val_st); 
 }
 
 static stmt *

@@ -140,9 +140,9 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 	} 	break;
 	case e_func: {
 		node *en;
-		list *l = create_stmt_list(), *exps = e->l;
+		list *l = create_stmt_list(), *exps = e->l, *obe = e->r;
 
-		if (exps) {
+		if (!obe && exps) {
 			for (en = exps->h; en; en = en->next) {
 				stmt *es;
 
@@ -152,6 +152,51 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 					return NULL;
 				}
 				list_append(l,es);
+			}
+		}
+		/* Window expressions are handled differently.
+		   ->l == group by expression list
+		   ->r == order by expression list
+		   If both lists are empty, we pass a single 
+		 	column for the inner relation
+		 */
+		if (obe) {
+			group *g = NULL;
+			stmt *orderby = NULL;
+		
+			if (exps) {
+				for (en = exps->h; en; en = en->next) {
+					stmt *es;
+
+					es = exp_bin(sql, en->data, left, right, NULL);
+					if (!es) {
+						list_destroy(l);
+						return NULL;
+					}
+					g = grp_create(es, g, NULL);
+				}
+			}
+			/* TODO: we should here afcourse reorder groups */
+			for (en = obe->h; en; en = en->next) {
+				sql_exp *orderbycole = en->data; 
+				stmt *orderbycols = exp_bin(sql, orderbycole, left, right, g); 
+
+				if (!orderbycols) {
+					list_destroy(l);
+					return NULL;
+				}
+				if (orderby)
+					orderby = stmt_reorder(orderby, orderbycols, orderbycole->flag&ASCENDING);
+				else
+					orderby = stmt_order(orderbycols, orderbycole->flag&ASCENDING);
+			}
+			if (!orderby)
+				orderby = stmt_mirror(bin_first_column(left));
+			list_append(l, orderby);
+			if (g) {
+				list_append(l, stmt_dup(g->grp));
+				list_append(l, stmt_dup(g->ext));
+				grp_destroy(g);
 			}
 		}
 		s = stmt_Nop(stmt_list(l), sql_dup_func(e->f)); 

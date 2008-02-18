@@ -149,7 +149,7 @@ comment "Bind the column bat into the focus ";
 The Monet 5 code generator uses several SQL specific wrapper functions.
 They are not present in V4
 @mal
-command resultSet( nr_cols:int, file:str, sep:str, rsep:str, ssep:str, order:bat[:oid,:any_1] ) :int 
+command resultSet( nr_cols:int, sep:str, rsep:str, ssep:str, ns:str, order:bat[:oid,:any_1] ) :int 
 address mvc_result_file_wrap
 comment "Prepare a file result set"; 
 
@@ -182,7 +182,7 @@ address mvc_result_value_lng;
 command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:int ) :void
 address mvc_result_value_int;
 
-command exportResult(res_id:int, w:str) :void
+command exportResult(s:streams, res_id:int, w:str) :void
 address mvc_export_result_wrap
 comment "Export a result (in order) to stream s"; 
 
@@ -203,7 +203,7 @@ address mvc_export_value_wrap
 comment "export a single value onto the stream s";
 
 command importTable( s:bstream, tname:str, 
-	sep:str, rsep:str, ssep:str, nr:int, offset:int) :bat[:str,:bat] 
+	sep:str, rsep:str, ssep:str, ns:str, nr:int, offset:int) :bat[:str,:bat] 
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
@@ -552,30 +552,33 @@ comment "cast @1 to a month_interval and check for overflow";
 @:mal_interval(int)@
 @:mal_interval(lng)@
 
-function aggr.mark_grp( b:bat[:oid,:any_1], a:bat[:any_2,:any_3], g:bat[:oid,:oid]) :bat[:oid,:int]; 
-	x := algebra.mark_grp(b,g,0:oid);
+command sql.rank_grp(b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int] 
+address sql_rank_grp
+comment "return the ranked groups";
+
+command sql.rank(b:bat[:oid,:any_1]) :bat[:oid,:int] 
+address sql_rank
+comment "return the rank bat";
+
+function batcalc.mark_grp( b:bat[:oid,:any_1], a:bat[:any_2,:any_3], g:bat[:oid,:oid]) :bat[:oid,:int]; 
+	x := algebra.mark_grp(a,g,1:oid);
 	return batcalc.int(x);
-end aggr.mark_grp;
+end batcalc.mark_grp;
 
-function aggr.mark_grp( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
-	x := algebra.markT(b,0:oid);
+function batcalc.mark_grp( b:bat[:oid,:any_1] ) :bat[:oid,:int]; 
+	x := algebra.markT(b,1:oid);
 	return batcalc.int(x);
-end aggr.mark_grp;
+end batcalc.mark_grp;
 
-function aggr.rank_grp( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int]; 
-	(h1,m1) := group.new(gp);
-	(hist,m) := group.derive(h1,m1,b);
-	ext := bat.mirror(hist);
-	e := batcalc.int(ext);
-	return algebra.join(m, e);
-end aggr.rank_grp;
+function batcalc.rank_grp( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int]; 
+	o := bat.mirror(b);
+	g := algebra.join(o, gp);
+	return sql.rank_grp(b, g, gpe);
+end batcalc.rank_grp;
 
-function aggr.rank_grp( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
-	(hist,m) := group.new(b);
-	ext := bat.mirror(hist);
-	e := batcalc.int(ext);
-	return algebra.join(m, e);
-end aggr.rank_grp;
+function batcalc.rank_grp( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
+	return sql.rank(b);
+end batcalc.rank_grp;
 
 function mmath.rand( v:int ) :int;
 	x := mmath.rand();
@@ -686,7 +689,7 @@ sql5_export str mvc_bind_idxbat_wrap(int *ret, str *sname, str *tname, str *inam
 sql5_export str mvc_clear_table_wrap(lng *res, str *sname, str *tname);
 sql5_export str mvc_delete_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_result_row_wrap(int *res_id, int *nr_cols, int *qtype, int *o);
-sql5_export str mvc_result_file_wrap(int *res_id, int *nr_cols, str *file, unsigned char* *sep, unsigned char* *rsep, unsigned char* *ssep, bat *order_bid);
+sql5_export str mvc_result_file_wrap(int *res_id, int *nr_cols, unsigned char* *sep, unsigned char* *rsep, unsigned char* *ssep, unsigned char* *ns, bat *order_bid);
 sql5_export str mvc_result_table_wrap(int *res_id, int *nr_cols, int *qtype, bat *order_bid);
 sql5_export str mvc_result_column_wrap(int *ret, int *rs, str *tn, str *name, str *type, int *digits, int *scale, bat *bid);
 @= result_value_export
@@ -701,10 +704,10 @@ sql5_export str mvc_result_value_@1(int *ret, int *rs, str *tn, str *name, str *
 
 sql5_export str mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_affected_rows_wrap(int *r, lng *nr, str *w);
-sql5_export str mvc_export_result_wrap(int *ret, int *res_id, str *w);
+sql5_export str mvc_export_result_wrap(int *ret, stream **s, int *res_id, str *w);
 sql5_export str mvc_export_operation_wrap(int *ret, str *w);
 sql5_export str mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_import_table_wrap(int *res, bstream **s, str *tname, unsigned char* *sep, unsigned char* *rsep, unsigned char* *ssep, int *sz, int *offset);
+sql5_export str mvc_import_table_wrap(int *res, bstream **s, str *tname, unsigned char* *sep, unsigned char* *rsep, unsigned char* *ssep, unsigned char* *ns, int *sz, int *offset);
 sql5_export str bathash_wrap(int *res, int *bid );
 sql5_export str hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 sql5_export str setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1530,14 +1533,14 @@ mvc_result_row_wrap(int *res_id, int *nr_cols, int *qtype, int *o)
 }
 
 str 
-mvc_result_file_wrap(int *res_id, int *nr_cols, str *file, unsigned char* *T, unsigned char* *R, unsigned char* *S, bat *order_bid)
+mvc_result_file_wrap(int *res_id, int *nr_cols, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, bat *order_bid)
 {
 	str res = MAL_SUCCEED;
 	BAT *order;
 	mvc *m = NULL;
 	str msg = getContext(&m, NULL);
 	res_table *t = NULL;
-	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL;
+	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len;
 
 	if (msg)
@@ -1547,16 +1550,18 @@ mvc_result_file_wrap(int *res_id, int *nr_cols, str *file, unsigned char* *T, un
         }
 	t = res_table_create(m->session->tr, m->result_id++, *nr_cols, Q_TABLE, m->results, order);
 	m->results = t;
-	t->filename = _strdup(*file);
 	len = strlen((char*)(*T));
 	GDKstrFromStr(tsep=GDKmalloc(len+1), *T, len); len = 0;
 	len = strlen((char*)(*R));
 	GDKstrFromStr(rsep=GDKmalloc(len+1), *R, len); len = 0;
 	len = strlen((char*)(*S));
 	GDKstrFromStr(ssep=GDKmalloc(len+1), *S, len); len = 0;
+	len = strlen((char*)(*N));
+	GDKstrFromStr(ns=GDKmalloc(len+1), *N, len); len = 0;
 	t->tsep = (char*)tsep;
 	t->rsep = (char*)rsep;
 	t->ssep = (char*)ssep;
+	t->ns = (char*)ns;
 	*res_id = t->id;
 	if (*res_id < 0)
 		res = createException(SQL, "sql.resultSet", "failed");
@@ -1679,7 +1684,7 @@ mvc_affected_rows_int(int *r, int *nr, str *w)
 }
 
 str
-mvc_export_result_wrap(int *ret, int *res_id, str *w)
+mvc_export_result_wrap(int *ret, stream **s, int *res_id, str *w)
 {
 	backend *b = NULL;
 	mvc *c = NULL;
@@ -1687,7 +1692,7 @@ mvc_export_result_wrap(int *ret, int *res_id, str *w)
 
 	if (msg)
 		return msg;
-	if (mvc_export_result(c, b->out, *res_id, *w)) {
+	if (mvc_export_result(c, *s, *res_id, *w)) {
 		throw(SQL, "sql.exportResult", "failed");
 	}
 	(void)ret;
@@ -1733,18 +1738,18 @@ mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (ATOMextern(mtype)) 
 		p = *(ptr*)p;
-	if (mvc_export_value(c, b->out, *qtype, *tn, *cn, *type, *digits, *scale, *eclass, p, mtype, *w) != SQL_OK)
+	if (mvc_export_value(c, b->out, *qtype, *tn, *cn, *type, *digits, *scale, *eclass, p, mtype, *w, "NULL") != SQL_OK)
 		throw(SQL, "sql.exportValue", "failed");
 	return MAL_SUCCEED;
 }
 
 str
-mvc_import_table_wrap(int *res, bstream **s, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, int *sz, int *offset)
+mvc_import_table_wrap(int *res, bstream **s, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char * *N, int *sz, int *offset)
 {
 	BAT *b;
 	mvc *m = NULL;
 	str msg = getContext(&m, NULL);
-	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL;
+	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len = 0;
 
 	if (msg)
@@ -1755,10 +1760,13 @@ mvc_import_table_wrap(int *res, bstream **s, str *tname, unsigned char* *T, unsi
 	GDKstrFromStr(rsep=GDKmalloc(len+1), *R, len); len = 0;
 	len = strlen((char*)(*S));
 	GDKstrFromStr(ssep=GDKmalloc(len+1), *S, len); len = 0;
-	b = mvc_import_table(m, *s, *tname, (char*)tsep, (char*)rsep, (char*)ssep, *sz, *offset);
+	len = strlen((char*)(*N));
+	GDKstrFromStr(ns=GDKmalloc(len+1), *N, len); len = 0;
+	b = mvc_import_table(m, *s, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset);
 	GDKfree(tsep);
 	GDKfree(rsep);
 	GDKfree(ssep);
+	GDKfree(ns);
 	if (!b)
 		throw(SQL, "importTable", "failed to import table");
 	*res = b->batCacheid;
@@ -1822,7 +1830,7 @@ str not_unique(bit *ret, int* bid)
 	}
 
 	*ret = FALSE;
-	if (b->tkey || b->tdense || BATcount(b) <= 1) {
+	if (BATtkey(b) || BATtdense(b) || BATcount(b) <= 1) {
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	} else if (b->tsorted&1) {
@@ -3103,3 +3111,90 @@ dump_opt_stats(int *r)
 	return MAL_SUCCEED;
 }
 
+str 
+sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
+{
+	BAT *r, *b, *g;
+	BUN p, q;
+	BATiter bi, gi;
+	int (*ocmp)(ptr, ptr), (*gcmp)(ptr, ptr);
+	ptr oc, gc;
+	int rank = 1, nrank = 1;
+
+	if( (b = BATdescriptor(*bid)) == NULL )
+		throw(SQL, "sql.rank_grp", "Cannot access descriptor");
+	if( (g = BATdescriptor(*gid)) == NULL )
+		throw(SQL, "sql.rank_grp", "Cannot access descriptor");
+	(void)gpe;
+	bi = bat_iterator(b);
+	gi = bat_iterator(g);
+	ocmp = BATatoms[b->ttype].atomCmp;
+	gcmp = BATatoms[g->ttype].atomCmp;
+	oc = BUNtail(bi, BUNfirst(b));
+	gc = BUNtail(gi, BUNfirst(g));
+	if (!ALIGNsynced(b, g))
+		throw(SQL, "sql.rank_grp", "bats not aligned");
+	if (BATtordered(b) != GDK_SORTED)
+		throw(SQL, "sql.rank_grp", "bat not sorted");
+	r = BATnew(TYPE_oid, TYPE_int, BATcount(b));
+	if (r == NULL)
+		throw(SQL, "sql.rank_grp", "cannot allocate result bat");
+	BATloop(b, p, q) {
+		ptr on = BUNtail(bi, p);
+		ptr gn = BUNtail(gi, p);
+
+		if (ocmp(on, oc) != 0) 
+			rank = nrank;
+		if (gcmp(gn, gc) != 0) 
+			rank = nrank = 1;  
+		oc = on;
+		gc = gn;
+		BUNins(r, BUNhead(bi,p), &rank, FALSE);
+		nrank++;
+	}
+	BBPunfix(b->batCacheid);
+	BBPunfix(g->batCacheid);
+	BBPkeepref(*rid = r->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+sql_rank(bat *rid, bat *bid)
+{ 
+	BAT *r, *b;
+	BATiter bi;
+	int (*cmp)(ptr, ptr);
+	ptr c;
+	BUN p, q;
+	int rank = 1, nrank = 1;
+
+	if( (b = BATdescriptor(*bid)) == NULL )
+		throw(SQL, "sql.rank", "Cannot access descriptor");
+	if (BATtordered(b) != GDK_SORTED)
+		throw(SQL, "sql.rank", "bat not sorted");
+	bi = bat_iterator(b);
+	cmp = BATatoms[b->ttype].atomCmp;
+	c = BUNtail(bi, BUNfirst(b));
+	r = BATnew(TYPE_oid, TYPE_int, BATcount(b));
+	if (r == NULL)
+		throw(SQL, "sql.rank", "cannot allocate result bat");
+	if (BATtdense(b)) {
+		BATloop(b, p, q) {
+			BUNins(r, BUNhead(bi,p), &rank, FALSE);
+			rank++;
+		}
+	} else {
+		BATloop(b, p, q) {
+			ptr n = BUNtail(bi, p);
+	
+			if (cmp(n, c) != 0) 
+				rank = nrank; 
+			c = n;
+			BUNins(r, BUNhead(bi,p), &rank, FALSE);
+			nrank++;
+		}
+	}
+	BBPunfix(b->batCacheid);
+	BBPkeepref(*rid = r->batCacheid);
+	return MAL_SUCCEED;
+}

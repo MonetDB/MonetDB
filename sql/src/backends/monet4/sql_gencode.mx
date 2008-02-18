@@ -1190,8 +1190,9 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			char *sep = n->data;
 			char *rsep = n->next->data;
 			char *ssep = sql_escape_ident(n->next->next->data);
-			int nr_rec = *(int*)(n->next->next->next->data);
-			int offset = *(int*)(n->next->next->next->next->data);
+			char *ns = n->next->next->next->data;
+			int nr_rec = *(int*)(n->next->next->next->next->data);
+			int offset = *(int*)(n->next->next->next->next->next->data);
 
 			buflen = strlen(tname) + 512;
 			buf = NEW_ARRAY(char, buflen + 1);
@@ -1203,14 +1204,14 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				assert(len <= buflen);
 				len += snprintf(buf + len, buflen - len, "var f%d := bstream_create(f%ds, 1024*1024);\n", file, file);
 				assert(len <= buflen);
-				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, f%d, \"%s\", \"%s\", \"%s\", \"%s\", %d, %d);\n", -s->nr, file, tname, sep, rsep, ssep, nr_rec, offset);
+				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, f%d, \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", %d, %d);\n", -s->nr, file, tname, sep, rsep, ssep, ns, nr_rec, offset);
 				assert(len <= buflen);
 				len += snprintf(buf + len, buflen - len, "bstream_destroy(f%d);\n", file);
 				assert(len <= buflen);
 				len += snprintf(buf + len, buflen - len, "stream_close(f%ds);\n", file);
 				assert(len <= buflen);
 			} else {
-				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, Input, \"%s\", \"%s\", \"%s\", \"%s\", %d, %d);\n", -s->nr, tname, sep, rsep, ssep, nr_rec, offset);
+				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, Input, \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", %d, %d);\n", -s->nr, tname, sep, rsep, ssep, ns, nr_rec, offset);
 				assert(len <= buflen);
 			}
 			dump(sql, buf, len, -s->nr);
@@ -1312,12 +1313,13 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 					buf = RENEW_ARRAY(char, buf, buflen);
 				}
 				if (s->type == st_export) {
-					int file = backend_dumpstmt_(s->op4.stval, nr, sql);
 					node *n = s->op2.lval->h;
 					char *sep = n->data;
 					char *rsep = n->next->data;
 					char *ssep = sql_escape_ident(n->next->next->data);
-					len = snprintf(buf, buflen, "var s%d := mvc_result_file(myc, %d, s%d, \"%s\", \"%s\", \"%s\", s%d);\n", -s->nr, cnt, file, sep, rsep, ssep, order->nr);
+					char *ns = n->next->next->next->data;
+
+					len += snprintf(buf + len, buflen -len , "var s%d := mvc_result_file(myc, %d, \"%s\", \"%s\", \"%s\", \"%s\", s%d);\n", -s->nr, cnt, sep, rsep, ssep, ns, order->nr);
 					_DELETE(ssep);
 				} else {
 					len = snprintf(buf, buflen, "var s%d := mvc_result_table(myc, %d, %d, s%d);\n", -s->nr, cnt, sql->mvc->type, order->nr);
@@ -1362,7 +1364,17 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 					buflen += BUFSIZ;
 					buf = RENEW_ARRAY(char, buf, buflen);
 				}
-				len = snprintf(buf, buflen, "mvc_export_result(myc, Output, s%d, \"\");\n", -s->nr);
+				if (s->type == st_export && s->op4.stval) {
+					int file = backend_dumpstmt_(s->op4.stval, nr, sql);
+					len += snprintf(buf + len, buflen - len, "var f%d := open_wastream(iconv(s%d, \"UTF-8\", codeset()));\n", file, file);
+					assert(len <= buflen);
+					len += snprintf(buf + len, buflen - len, "mvc_export_result(myc, f%d, s%d, \"\");\n", file, -s->nr);
+					assert(len <= buflen);
+					len += snprintf(buf + len, buflen - len, "stream_close(f%d);\n", file);
+					assert(len <= buflen);
+				} else {
+					len = snprintf(buf, buflen, "mvc_export_result(myc, Output, s%d, \"\");\n", -s->nr);
+				}
 				assert(len <= buflen);
 
 				assert(len <= buflen);

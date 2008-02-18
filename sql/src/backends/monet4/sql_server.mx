@@ -126,7 +126,7 @@ The results of the SQL queries are assembled in result sets, which
 can be shipped to the front-end for display or exported over a
 stream.
 @m
-	.COMMAND mvc_result_file( mvc m, int nr_cols, str filename, str tsep, str rsep, str ssep, BAT[oid,any] order ) : int = mvc_result_file_wrap; "Create structure to cache a file query result" 
+	.COMMAND mvc_result_file( mvc m, int nr_cols, str tsep, str rsep, str ssep, str ns, BAT[oid,any] order ) : int = mvc_result_file_wrap; "Create structure to cache a file query result" 
 
 	.COMMAND mvc_result_table( mvc m, int nr_cols, int type, any order ) : int = mvc_result_row_wrap; "Create structure to cache a row query result" 
 
@@ -150,7 +150,7 @@ stream.
 	.COMMAND mvc_export_value(mvc m, Stream s, int qtype, str tname, str name, str typename, int digits, int scale, int eclass, any val, str w) =
 		mvc_export_value_wrap; "export a single value onto the stream s"
 
-	.COMMAND mvc_import_table( mvc c, Bstream s, str tname, str sep, str rsep, str ssep, int nr, int offset) : BAT[str,BAT] = mvc_import_table_wrap; 
+	.COMMAND mvc_import_table( mvc c, Bstream s, str tname, str sep, str rsep, str ssep, str ns, int nr, int offset) : BAT[str,BAT] = mvc_import_table_wrap; 
 		"import a table from stream s with the given tuple and record seperators (sep/rsep)"
 
 @= mel_round
@@ -265,6 +265,10 @@ stream.
 	.COMMAND not_unique( BAT[oid,oid] b) : bit = not_unique; "check if the tail sorted bat b doesn't have unique tail values" 
 
 	.COMMAND storage( int t ) : int = atom_storage; "return the atoms (t) storage type"
+
+	.COMMAND rank_grp(BAT[oid,any::1] b, BAT[oid,oid] gp, BAT[oid,oid] gpe) : BAT[oid,int] = sql_rank_grp; "return the ranked groups"
+
+	.COMMAND rank(BAT[oid,any::1] b) : BAT[oid,int] = sql_rank; "return the rank bat"
 
 .END sql_server;
 
@@ -741,15 +745,15 @@ mvc_result_row(mvc *m, int nr_cols, int qtype)
 }
 
 int
-mvc_result_file_wrap(int *res_id, mvc *M, int *nr_cols, str filename, str tsep, str rsep, str ssep, BAT *order )
+mvc_result_file_wrap(int *res_id, mvc *M, int *nr_cols, str tsep, str rsep, str ssep, str ns, BAT *order )
 {
 	mvc *m = *(mvc**)M;
 	res_table *t = res_table_create(m->session->tr, m->result_id++, *nr_cols, Q_TABLE, m->results, order);
 	m->results = t;
-	t->filename = _strdup(filename);
 	t->tsep = _strdup(tsep);
 	t->rsep = _strdup(rsep);
 	t->ssep = _strdup(ssep);
+	t->ns = _strdup(ns);
 	*res_id = t->id;
 	if (*res_id < 0)
 		return GDK_FAIL;
@@ -794,9 +798,9 @@ mvc_result_value_wrap(mvc *M, str tn, str name, str type, int *digits, int *scal
 }
 
 int
-mvc_import_table_wrap(BAT **res, mvc *c, Bstream *s, str tname, str sep, str rsep, str ssep, int *sz, int *offset)
+mvc_import_table_wrap(BAT **res, mvc *c, Bstream *s, str tname, str sep, str rsep, str ssep, str ns, int *sz, int *offset)
 {
-	*res = mvc_import_table(*(mvc **) c, *(bstream **) s, tname, sep, rsep, ssep, *sz, *offset);
+	*res = mvc_import_table(*(mvc **) c, *(bstream **) s, tname, sep, rsep, ssep, ns, *sz, *offset);
 	if (*res == NULL) {
 		GDKerror("importTable: failed to import table");
 		return GDK_FAIL;
@@ -845,7 +849,7 @@ mvc_affected_rows_int(mvc *M, Stream *S, int *nr, str w)
 int
 mvc_export_value_wrap(mvc *M, Stream *S, int *qtype, str tn, str name, str type, int *digits, int *scale, int *eclass, ptr p, int mtype, str w)
 {
-	if (mvc_export_value(*(mvc **) M, *(stream **)S, *qtype, tn, name, type, *digits, *scale, *eclass, p, mtype, w) != SQL_OK)
+	if (mvc_export_value(*(mvc **) M, *(stream **)S, *qtype, tn, name, type, *digits, *scale, *eclass, p, mtype, w, "NULL") != SQL_OK)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -1488,7 +1492,7 @@ zero_or_one(ptr ret, BAT* b)
 int not_unique(bit *ret, BAT* b) 
 {
 	*ret = FALSE;
-	if (b->tkey || b->tdense || BATcount(b) <= 1) {
+	if (BATtkey(b) || BATtdense(b) || BATcount(b) <= 1) {
 		return GDK_SUCCEED;
 	} else if (b->tsorted&1) {
 		BUN p,q;
@@ -1514,6 +1518,78 @@ int atom_storage(int *t, int *i )
 	return GDK_SUCCEED;
 }
 
+
+int 
+sql_rank_grp(BAT **RG, BAT *b, BAT *gp, BAT *gpe)
+{
+	BAT *r;
+	BATiter bi = bat_iterator(b);
+	BATiter gi = bat_iterator(gp);
+	int (*ocmp)(ptr, ptr) = BATatoms[b->ttype].atomCmp;
+	int (*gcmp)(ptr, ptr) = BATatoms[gp->ttype].atomCmp;
+	ptr oc = BUNtail(bi, BUNfirst(b));
+	ptr gc = BUNtail(gi, BUNfirst(gp));
+	BUN p, q;
+	int rank = 1, nrank = 1;
+
+	(void)gp;
+	(void)gpe;
+	if (!ALIGNsynced(b, gp))
+		return GDK_FAIL;
+	if (BATtordered(b) != GDK_SORTED)
+		return GDK_FAIL;
+	*RG = r = BATnew(TYPE_oid, TYPE_int, BATcount(b));
+	if (r == NULL)
+		return GDK_FAIL;
+	BATloop(b, p, q) {
+		ptr on = BUNtail(bi, p);
+		ptr gn = BUNtail(gi, p);
+
+		if (ocmp(on, oc) != 0) 
+			rank = nrank;
+		if (gcmp(gn, gc) != 0) 
+			rank = nrank = 1;  
+		oc = on;
+		gc = gn;
+		BUNins(r, BUNhead(bi,p), &rank, FALSE);
+		nrank++;
+	}
+	return GDK_SUCCEED;
+}
+
+int
+sql_rank(BAT **R, BAT *b)
+{ 
+	BAT *r;
+	BATiter bi = bat_iterator(b);
+	int (*cmp)(ptr, ptr) = BATatoms[b->ttype].atomCmp;
+	ptr c = BUNtail(bi, BUNfirst(b));
+	BUN p, q;
+	int rank = 1, nrank = 1;
+
+	if (BATtordered(b) != GDK_SORTED)
+		return GDK_FAIL;
+	*R = r = BATnew(TYPE_oid, TYPE_int, BATcount(b));
+	if (r == NULL)
+		return GDK_FAIL;
+	if (BATtdense(b)) {
+		BATloop(b, p, q) {
+			BUNins(r, BUNhead(bi,p), &rank, FALSE);
+			rank++;
+		}
+	} else {
+		BATloop(b, p, q) {
+			ptr n = BUNtail(bi, p);
+	
+			if (cmp(n, c) != 0) 
+				rank = nrank; 
+			c = n;
+			BUNins(r, BUNhead(bi,p), &rank, FALSE);
+			nrank++;
+		}
+	}
+	return GDK_SUCCEED;
+}
 @-
 An SQL session needs a minimal set of modules, shown below.
 The MIL procs should also be moved to the kernel, despite the
@@ -1638,23 +1714,19 @@ proc in (bat[any::1,any::2] b, any::2 v) : bit { return b.reverse().exist(v); }
 proc in (any::2 b, any::2 v) : bit { return (b = v); }
 proc [identity](bat[oid,any::1] b) : bat[oid,oid] { return mirror(b); }
 
-proc {mark_grp}(BAT[oid,any::1] b, any::2 a, BAT[oid,oid] g) : BAT[oid,int] {
-	return [int](mark_grp(b,g,0@0));
+proc [mark_grp](BAT[oid,any::1] b, any::2 a, BAT[oid,oid] g) : BAT[oid,int] {
+	return [int](mark_grp(a,g,1@0));
 }
-proc mark_grp(BAT[oid,any::1] b) : BAT[oid,int] {
-	return [int](mark(b,0@0));
+proc [mark_grp](BAT[oid,any::1] b) : BAT[oid,int] {
+	return [int](mark(b,1@0));
 }
-proc {rank_grp}(BAT[oid,any::1] b, BAT[oid,oid] gp, BAT[oid,oid] gpe) : BAT[oid,int] {
-	var g := CTderive(gp,b);
-	var m := g.map();
-	var e := [int](g.extend().mirror());
-	return join(m, e);
+proc [rank_grp](BAT[oid,any::1] b, BAT[oid,oid] gp, BAT[oid,oid] gpe) : BAT[oid,int] {
+	# make sure we have gp and b aligned
+	gp := b.mirror().join(gp);
+	return rank_grp(b, gp, gpe);
 }
-proc rank_grp(BAT[oid,any::1] b) : BAT[oid,int] {
-	var g := CTgroup(b);
-	var m := g.map();
-	var e := [int](g.extend().mirror());
-	return join(m, e);
+proc [rank_grp](BAT[oid,any::1] b) : BAT[oid,int] {
+	return rank(b);
 }
 proc rand(int v) : int {
 	return rand();

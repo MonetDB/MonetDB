@@ -66,7 +66,7 @@ extern stmt *stmt2pivot(scope *scp, stmt *s);
 extern stmt *sql_compare(mvc *sql, scope *scp, stmt *ls, stmt *rs, char *compare_op, int f);
 extern stmt *complex_find_subset(stmt *subset, stmt *t);
 extern stmt *sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f);
-extern stmt *sql_unop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *rs);
+extern stmt *sql_unop_(mvc *sql, sql_schema *s, char *fname, stmt *rs);
 extern stmt *sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs);
 extern stmt *sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4);
 extern stmt *find_pivot(stmt *subset, stmt *t);
@@ -1105,12 +1105,11 @@ sql_op(mvc *sql, symbol *se)
 }
 
 stmt *
-sql_unop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *rs)
+sql_unop_(mvc *sql, sql_schema *s, char *fname, stmt *rs)
 {
 	sql_subtype *rt = NULL;
 	sql_subfunc *f = NULL;
 
-	(void)scp;
 	if (!s)
 		s = sql->session->schema;
 	rt = tail_type(rs);
@@ -1156,7 +1155,7 @@ sql_unop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 		return NULL;
 	if (sname) 
 		s = mvc_bind_schema(sql, sname);
-	return sql_unop_(sql, scp, s, fname, rs);
+	return sql_unop_(sql, s, fname, rs);
 }
 
 static stmt *
@@ -1479,7 +1478,7 @@ query_orderby(mvc *sql, scope *scp, symbol *orderby, stmt *sel, stmt *subset, gr
 
 			/* fall back to column references, ie those not in
 			   the selection result */
-			if (!sc && !grp) {
+			if (!sc && (!sel || !grp)) {
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
@@ -1524,12 +1523,12 @@ sql_rankop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	
 	if (window_function->token == SQL_RANK) {
 		aggrstr = window_function->data.sval;
-	} else { /* real aggr */
+	} else { /* window aggr function */
 		aggrstr  = window_function->data.lval->h->data.sval;
 	}
 
 	if (grp && window_specification->h->data.sym) 
-		return sql_error(sql, 02, "OVER: not allowed in combination with GROUP BY");
+		return sql_error(sql, 02, "OVER: not supported in combination with GROUP BY");
 
 	if (f == sql_where) 
 		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpper(alloca(strlen(aggrstr) + 1), aggrstr));
@@ -1541,30 +1540,22 @@ sql_rankop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	/* Order By */
 	if (window_specification->h->next->data.sym) {
 		s = query_orderby(sql, scp, window_specification->h->next->data.sym, NULL, subset, grp);
+	} else if (grp) { /* order on group by result */
+		s = stmt_order(stmt_dup(grp->grp), 1);
 	}
-	/* Rank or Aggr function */
-	if (window_function->token == SQL_RANK) {
-		/* for now only row_number */
-		if (!s && subset) 
-			s = first_subset(subset);
-		else if (!s)
-			return s;
-		if (grp) {
-			sql_subaggr *a = sql_bind_aggr(sql->session->schema, aggrstr, NULL);
-			if (!a)
-				return sql_error(sql, 02, "SELECT: function '%s' not found", aggrstr );
-			s = stmt_aggr(stmt_dup(grp->grp), grp_dup(grp), a, 0);
-		} else if (aggrstr) {
-			sql_subaggr *a = sql_bind_aggr(sql->session->schema, aggrstr, NULL);
-			if (!a)
-				return sql_error(sql, 02, "SELECT: function '%s' not found", aggrstr );
-			s = stmt_aggr(s, NULL, a, 0);
-		} else {
-			assert(0);
-			s = stmt_mark(stmt_reverse(s), 0);
-		}
+	if (!s && subset) 
+		s = first_subset(subset);
+	else if (!s)
+		return s;
+	if (grp) {
+		stmt *map = stmt_dup(grp->grp);
+		stmt *ext = stmt_dup(grp->ext);
+		return sql_Nop_(sql, aggrstr, s, map, ext, NULL);
+	} else if (aggrstr) {
+		return sql_unop_(sql, NULL, aggrstr, s);
 	} else {
- 		s = sql_aggrop(sql, scp, window_function, grp, subset, f);
+		assert(0);
+		s = stmt_mark(stmt_reverse(s), 0);
 	}
 	return s;
 }
@@ -2114,7 +2105,7 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 						;
 					ls = stmt_dup(m->data);
 					rs = stmt_dup(p->data);
-					ls = sql_Nop_(sql, "ifthenelse", sql_unop_(sql, scp, NULL, "isnull", ls), rs, stmt_dup(ls), NULL);
+					ls = sql_Nop_(sql, "ifthenelse", sql_unop_(sql, NULL, "isnull", ls), rs, stmt_dup(ls), NULL);
 					ls = stmt_alias(ls, NULL, _strdup(lc->cname));
 					list_append(l2, ls);
 				}

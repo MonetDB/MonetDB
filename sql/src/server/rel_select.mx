@@ -3127,7 +3127,7 @@ rel_selection_ref(mvc *sql, sql_rel *rel, symbol *grp, dlist *selection )
 	return NULL;
 }
 
-static sql_rel *
+static list *
 rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection )
 {
 	dnode *o = groupby->data.lval->h;
@@ -3150,7 +3150,7 @@ rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection )
 		}
 		append(exps, e);
 	}
-	return rel_groupby( rel, exps );
+	return exps;
 }
 
 /* find selection expressions matching the order by column expression */
@@ -3178,7 +3178,7 @@ rel_order_by_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 	return sql_error(sql, 02, "ORDER BY: absolute column names not supported");
 }
 
-static sql_rel *
+static list *
 rel_order_by(mvc *sql, sql_rel *rel, symbol *orderby )
 {
 	list *exps = new_exp_list();
@@ -3210,7 +3210,7 @@ rel_order_by(mvc *sql, sql_rel *rel, symbol *orderby )
 			return sql_error(sql, 02, "order not of type SQL_COLUMN\n");
 		}
 	}
-	return rel_orderby(sql, rel, exps);
+	return exps;
 }
 
 /* window functions */
@@ -3221,66 +3221,46 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	symbol *window_function = l->h->data.sym;
 	dlist *window_specification = l->h->next->data.lval;
 	char *aggrstr = NULL;
+	sql_subfunc *wf = NULL;
 	sql_exp *e = NULL;
-	sql_rel *groupby, *old = NULL, *p = NULL;
+	sql_rel *r = *rel;
+	list *gbe = NULL, *obe = NULL;
+	sql_subtype *idtype = sql_bind_localtype("oid");
 	
 	if (window_function->token == SQL_RANK) {
 		aggrstr = window_function->data.sval;
-	} else { /* real aggr */
+	} else { /* window aggr function */
 		aggrstr = window_function->data.lval->h->data.sval;
 	}
-
-	groupby = *rel;
-
-	if (groupby->l && groupby->op == op_project) {
-		sql_rel *r = groupby->l;	
-		if (r->op == op_groupby) {
-			groupby = r;
-		} else if (r->op == op_select && r->l) {  
-			/* a having after a groupby */
-			r = r->l;
-			if (r->op == op_groupby)
-				groupby = r;
-		}
-	}
-
-	if (is_groupby(groupby->op) && window_specification->h->data.sym) 
-		return sql_error(sql, 02, "OVER: not allowed in combination with GROUP BY");
-	/* we are rewriting the input for the projection */
-	if (groupby->l && groupby->op == op_project) {
-		p = groupby;
-		groupby = rel_dup(groupby->l);
-	}
-	old = *rel;
 
 	if (f == sql_where) 
 		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpper(alloca(strlen(aggrstr) + 1), aggrstr));
 
+	/* window operations are only allowed in the projection */
+	if (r->op != op_project)
+		return sql_error(sql, 02, "OVER: only possible within the selection");
+
 	/* Partition By */
-	if (window_specification->h->data.sym) 
-		groupby = rel_group_by(sql, groupby, window_specification->h->data.sym, NULL /* cannot use (selection) column references, as this result is a selection column */ );
-	if (!groupby)
-		return NULL;
+	if (window_specification->h->data.sym) {
+		gbe = rel_group_by(sql, r, window_specification->h->data.sym, NULL /* cannot use (selection) column references, as this result is a selection column */ );
+		if (!gbe)
+			return NULL;
+	}
 	/* Order By */
-	if (window_specification->h->next->data.sym) 
-		groupby = rel_order_by(sql, groupby, window_specification->h->next->data.sym);
-	if (!groupby)
-		return NULL;
-	/* Rank or Aggr function */
-	if (window_function->token == SQL_RANK) {
-		/* for now only row_number */
-		sql_subaggr *a = sql_bind_aggr(sql->session->schema, aggrstr, NULL);
-		if (!a)
-			return sql_error(sql, 02, "SELECT: function '%s' not found", aggrstr );
-		e = exp_aggr(NULL, a, 0, 0, groupby->card);
-	} else {
- 		e = rel_aggr(sql, &groupby, window_function, f);
+	if (window_specification->h->next->data.sym) {
+		obe = rel_order_by(sql, r, window_specification->h->next->data.sym);
+		if (!obe)
+			return NULL;
 	}
-	if (p && p->l != groupby) {
-		rel_destroy(p->l);
-		p->l = groupby;
-		*rel = old;
-	}
+	wf = sql_bind_func(sql->session->schema, aggrstr, idtype, NULL);
+	if (!wf)
+		return sql_error(sql, 02, "SELECT: function '%s' not found", aggrstr );
+	/* now we need the gbe and obe lists */
+	e = exp_op(gbe, wf);
+	if (obe) 
+		e->r = obe;
+	else 	/* e->r specifies window expression */
+		e->r = obe = new_exp_list(); 
 	return e;
 }
 
@@ -3574,10 +3554,10 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int tople
 
 	if (rel) {
 		if (rel && sn->groupby) {
-			rel = rel_group_by(sql, rel, sn->groupby,sn->selection);
-
-			if (!rel) 
+			list *gbe = rel_group_by(sql, rel, sn->groupby,sn->selection);
+			if (!gbe) 
 				return NULL;
+			rel = rel_groupby(rel, gbe);
 			aggr = 1;
 		}
 
@@ -3722,8 +3702,13 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int tople
 		rel = rel_crossproduct(outer, rel, op_join);
 		rel_join_add_exps(rel, jexps );
 	}
-	if (rel && sn->orderby) 
-		rel = rel_order_by(sql, rel, sn->orderby);
+	if (rel && sn->orderby) {
+		list *obe = rel_order_by(sql, rel, sn->orderby);
+
+		if (!obe)
+			return NULL;
+		rel = rel_orderby(sql, rel, obe);
+	}
 
 	if (!rel) 
 		return NULL;

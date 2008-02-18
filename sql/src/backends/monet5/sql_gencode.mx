@@ -1474,8 +1474,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *sep = n->data;
 			char *rsep = n->next->data;
 			char *ssep = n->next->next->data;
-			int nr_rec = *(int*)(n->next->next->next->data);
-			int offset = *(int*)(n->next->next->next->next->data);
+			char *ns = n->next->next->next->data;
+			int nr_rec = *(int*)(n->next->next->next->next->data);
+			int offset = *(int*)(n->next->next->next->next->next->data);
 
 			if (s->op4.stval) {
 				int file = _dumpstmt(sql, mb, s->op4.stval);
@@ -1506,6 +1507,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushStr(mb, q, sep);
 				q = pushStr(mb, q, rsep);
 				q = pushStr(mb, q, ssep);
+				q = pushStr(mb, q, ns);
 				q = pushInt(mb, q, nr_rec);
 				q = pushInt(mb, q, offset);
 				s->nr = getDestVar(q);
@@ -1526,6 +1528,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushStr(mb, q, sep);
 				q = pushStr(mb, q, rsep);
 				q = pushStr(mb, q, ssep);
+				q = pushStr(mb, q, ns);
 				q = pushInt(mb, q, nr_rec);
 				q = pushInt(mb, q, offset);
 				s->nr = getDestVar(q);
@@ -1562,9 +1565,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				lst = lst->op2.stval;
 			}
 			if (lst->type == st_list) {
-				int file = 0;
 				list *l = lst->op1.lval;
-				int cnt = list_length(l);
+				int file, cnt = list_length(l);
 				stmt *f;
 				InstrPtr k;
 
@@ -1615,8 +1617,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						order = n->data;
 					}
 				}
-				if (s->type == st_export)
-					file = _dumpstmt(sql, mb, s->op4.stval);
 				k = newStmt2(mb, sqlRef, resultSetRef);
 				s->nr = getDestVar(k);
 				k = pushInt(mb, k, cnt);
@@ -1625,20 +1625,47 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					char *sep = n->data;
 					char *rsep = n->next->data;
 					char *ssep = n->next->next->data;
+					char *ns = n->next->next->next->data;
 
-					k = pushArgument(mb, k, file);
 					k = pushStr(mb, k, sep);
 					k = pushStr(mb, k, rsep);
 					k = pushStr(mb, k, ssep);
+					k = pushStr(mb, k, ns);
 				} else {
 					k = pushInt(mb, k, sql->mvc->type);
 				}
 				k = pushArgument(mb, k, order->nr);
 				dump_header(mb, s, l);
 				
+				if (s->type == st_export && s->op4.stval) {
+					int codeset;
+
+					q = newStmt(mb, "str", "codeset");
+					codeset = getDestVar(q);
+					file = _dumpstmt(sql, mb, s->op4.stval);
+
+					q = newStmt(mb, "str", "iconv");
+					q = pushArgument(mb, q, file);
+					q = pushStr(mb, q, "UTF-8");
+					q = pushArgument(mb, q, codeset);
+					file = getDestVar(q);
+
+					q = newStmt(mb, "streams", "openWrite");
+					q = pushArgument(mb, q, file);
+					file = getDestVar(q);
+				} else {
+					q = newStmt(mb, "io", "stdout");
+					file = getDestVar(q);
+				}
+
 				q = newStmt2(mb, sqlRef, exportResultRef);
+				q = pushArgument(mb, q, file);
 				q = pushArgument(mb, q, s->nr);
 				q = pushStr(mb, q, ""); /* warning */
+				if (s->type == st_export && s->op4.stval) {
+					q = newStmt(mb, "streams", "close");
+					q = pushArgument(mb, q, file);
+				}
 			} else {
 				q = newStmt1(mb, sqlRef, "print");
 				q = pushStr(mb, q, "not a valid output list\n");

@@ -6,7 +6,7 @@ CREATE TABLE my_test (
   col5  VARCHAR(1)
 ) ;
 
-COPY 5 OFFSET 5 RECORDS INTO my_test FROM stdin USING DELIMITERS '|','\n' ;
+COPY 5 OFFSET 5 RECORDS INTO my_test FROM stdin USING DELIMITERS '|','\n' NULL as '';
 123|1.01||aaa|bbb
 553|.02||aaa|bbb
 223|2.03||aaa|bbb
@@ -19,7 +19,7 @@ COPY 5 OFFSET 5 RECORDS INTO my_test FROM stdin USING DELIMITERS '|','\n' ;
 
 select * from my_test;
 
-COPY 9 RECORDS INTO my_test FROM stdin USING DELIMITERS '|','\n' ;
+COPY 9 RECORDS INTO my_test FROM stdin USING DELIMITERS '|','\n' NULL as '';
 123|1.01||aaa|bbb
 553|.02||aaa|bbb
 223|2.03||aaa|bbb
