@@ -57,7 +57,6 @@
 #define JOIN_COST 100
 #define SORT_COST 700
 
-#ifndef NDEBUG
 /**
  * check for a column @a a in op @a p.
  */
@@ -72,7 +71,6 @@ check_col (const PFpa_op_t *p, PFalg_att_t a)
 
     return false;
 }
-#endif
 
 /**
  * check for the type of column @a a in op @a p.
