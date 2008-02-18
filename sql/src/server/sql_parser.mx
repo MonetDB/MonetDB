@@ -4906,23 +4906,25 @@ XML_aggregate:
       opt_order_by_clause
       opt_XML_returning_clause
       ')'
-	{ dlist *l = L();
+	{ 
           dlist *aggr = L();
 
-	  dlist *window_spec = L();
-
+          if ($4) {
+	  	if ($3 != NULL && $3->token == SQL_SELECT) {
+			SelectNode *s = (SelectNode*)$3;
+	
+			s->orderby = $4;
+	  	} else {
+			yyerror("ORDER BY: missing select operator");
+			YYABORT;
+		}
+	  }
 	  append_string(aggr, "xmlagg");
   	  append_int(aggr, FALSE);
 	  append_symbol(aggr, $3);
-
-	  append_symbol(l, _symbol_create_list( SQL_AGGR, aggr));
-
-	  append_symbol(window_spec, NULL); /* no partiting */
-	  append_symbol(window_spec, $4);   /* just sorting */
-
-	  append_list(l, window_spec);
 	  /* int returning not used */
-	  $$ = _symbol_create_list( SQL_RANK, l); }
+	  $$ = _symbol_create_list( SQL_AGGR, aggr);
+	}
  ;
 
 %%
