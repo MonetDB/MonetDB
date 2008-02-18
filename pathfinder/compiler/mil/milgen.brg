@@ -3739,20 +3739,33 @@ reduce (PFpa_op_t * p, int goalnt)
                         "multi-predicate joins are not supported yet");
             }
 
-            /* evaluate the join and create two map relations */
-            execute (
-                assgn (var (v->name),
-                       leftjoin (var (l->name), reverse (var (r->name)))),
-                assgn (var (v1->name),
-                       reverse (mark (var (v->name), lit_oid (0)))),
-                assgn (var (v2->name),
-                       reverse (
-                           mark (reverse (var (v->name)), lit_oid (0)))));
+            if (p->kind == pa_semijoin) {
+                /* evaluate the semijoin and create the map relation */
+                execute (
+                    assgn (var (v->name),
+                           kintersect (reverse (var (l->name)),
+                                       reverse (var (r->name)))),
+                    assgn (var (v1->name),
+                           tmark (var (v->name), lit_oid (0))));
 
-            /* map all columns from the left and the right argument */
-            env_map (p, L(p)->env, v1);
-            if (p->kind != pa_semijoin)
+                /* map all columns from the left argument */
+                env_map (p, L(p)->env, v1);
+            }
+            else {
+                /* evaluate the join and create two map relations */
+                execute (
+                    assgn (var (v->name),
+                           leftjoin (var (l->name), reverse (var (r->name)))),
+                    assgn (var (v1->name),
+                           reverse (mark (var (v->name), lit_oid (0)))),
+                    assgn (var (v2->name),
+                           reverse (
+                               mark (reverse (var (v->name)), lit_oid (0)))));
+
+                /* map all columns from the left and the right argument */
+                env_map (p, L(p)->env, v1);
                 env_map (p, R(p)->env, v2);
+            }
 
             unpin (v, 1);
             unpin (v1, 1);
