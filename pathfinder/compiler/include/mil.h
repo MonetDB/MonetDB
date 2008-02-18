@@ -32,8 +32,6 @@
 #ifndef MIL_H
 #define MIL_H
 
-#include "pathfinder.h"
-
 /** maximum number of children of a MIL tree node */
 #define MIL_MAXCHILD 8
 
@@ -53,6 +51,8 @@ typedef unsigned int PFmil_ident_t;
 #define PF_MIL_VAR_KIND_COM     6
 #define PF_MIL_VAR_KIND_PI      7
 #define PF_MIL_VAR_KIND_REF     8
+
+#define PF_MIL_VAR_GENTYPE      9
 
 #define PF_MIL_VAR_ATTR        10
 #define PF_MIL_VAR_ELEM        11
@@ -77,12 +77,13 @@ typedef unsigned int PFmil_ident_t;
 #define PF_MIL_VAR_ATTR_CONT   31
 #define PF_MIL_VAR_QN_LOC      32
 #define PF_MIL_VAR_QN_URI      33
-#define PF_MIL_VAR_QN_PREFIX   34
-#define PF_MIL_VAR_PROP_VAL    35
-#define PF_MIL_VAR_PROP_TEXT   36
-#define PF_MIL_VAR_PROP_COM    37
-#define PF_MIL_VAR_PROP_INS    38
-#define PF_MIL_VAR_PROP_TGT    39
+#define PF_MIL_VAR_QN_URI_LOC  34
+#define PF_MIL_VAR_QN_PREFIX   35
+#define PF_MIL_VAR_PROP_VAL    36
+#define PF_MIL_VAR_PROP_TEXT   37
+#define PF_MIL_VAR_PROP_COM    38
+#define PF_MIL_VAR_PROP_INS    39
+#define PF_MIL_VAR_PROP_TGT    40
 
 #define PF_MIL_VAR_LE          42
 #define PF_MIL_VAR_LT          43

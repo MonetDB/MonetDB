@@ -41,14 +41,8 @@
 #include "oops.h"
 #include "mem.h"
 
-
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 #define SEEN(p) ((p)->bit_dag)
 
@@ -57,7 +51,7 @@
 #define EDGE(n) ((n)->refctr)
 
 #define empty_list 0
-#define in(a,b) ((a) & (b))
+#define in(a,b) ((a) & (b) ? true : false)
 
 /**
  * Test if @a attr is in the list of required value columns

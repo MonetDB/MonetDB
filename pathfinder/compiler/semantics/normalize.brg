@@ -44,6 +44,9 @@
 #include "qname.h"
 #include "mem.h"
 
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
+
 /*
  * Accessors for the burg matcher
  */
@@ -613,28 +616,6 @@ FunctionDeclaration:    fun_decl (fun_sig (OptParamList_,
 
 
 %%
-
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) (LEFT_CHILD(p))
-/** starting from p, make a step right */
-#define R(p) (RIGHT_CHILD(p))
-/** starting from p, make two steps left */
-#define LL(p) L(L(p))
-/** starting from p, make a step left, then a step right */
-#define LR(p) R(L(p))
-/** starting from p, make a step right, then a step left */
-#define RL(p) L(R(p))
-/** starting from p, make two steps right */
-#define RR(p) R(R(p))
-/* ... and so on ... */
-#define RRL(p) L(R(R(p)))
-#define RRRL(p) L(R(R(R(p))))
-#define RRRRL(p) L(R(R(R(R(p)))))
-#define RRRRRL(p) L(R(R(R(R(R(p))))))
-#define RRRRRR(p) R(R(R(R(R(R(p))))))
 
 /** Maximum number of pattern leaves */
 #define MAX_KIDS 10

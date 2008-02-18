@@ -137,12 +137,12 @@
 #define all(a,b,c,d)      PFla_all((a), (b), (c), (d))
 
 /* path step */
-#define step(a,b,c,d,e,f,g,h) PFla_step ((a),(b),(c),(d),(e),(f),(g),(h))
-#define step_join(a,b,c,d,e,f,g) PFla_step_join ((a),(b),(c),(d),(e),(f),(g))
-#define guide_step(a,b,c,d,e,f,g,h,i,j) \
-        PFla_guide_step ((a),(b),(c),(d),(e),(f),(g),(h),(i),(j))
-#define guide_step_join(a,b,c,d,e,f,g,h,i) \
-        PFla_guide_step_join ((a),(b),(c),(d),(e),(f),(g),(h),(i))
+#define step(a,b,c,d,e,f,g) PFla_step ((a),(b),(c),(d),(e),(f),(g))
+#define step_join(a,b,c,d,e,f) PFla_step_join ((a),(b),(c),(d),(e),(f))
+#define guide_step(a,b,c,d,e,f,g,h,i) \
+        PFla_guide_step ((a),(b),(c),(d),(e),(f),(g),(h),(i))
+#define guide_step_join(a,b,c,d,e,f,g,h) \
+        PFla_guide_step_join ((a),(b),(c),(d),(e),(f),(g),(h))
 
 /* doc index join */
 #define doc_index_join(a,b,c,d,e,f) \

@@ -82,21 +82,8 @@
 /* mnemonic algebra constructors */
 #include "logical_mnemonic.h"
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
-/** starting from p, make two steps left */
-#define LL(p) L(L(p))
-/** starting from p, make a step left, then a step right */
-#define LR(p) R(L(p))
-/** starting from p, make a step right, then a step left */
-#define RL(p) L(R(p))
-/** starting from p, make two steps right */
-#define RR(p) R(R(p))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 #define SEEN(p) ((p)->bit_dag)
 #define LEFT(p) ((p)->bit_in)
@@ -1636,8 +1623,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                L(lp),
                                eqjoin_unq (R(lp), rp, latt, ratt,
                                            p->sem.eqjoin_unq.res),
-                               lp->sem.step.axis,
-                               lp->sem.step.ty,
+                               lp->sem.step.spec,
                                lp->sem.step.level,
                                is_join_att(p, lp->sem.step.item)
                                   ? p->sem.eqjoin_unq.res
@@ -1653,8 +1639,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                L(lp),
                                eqjoin_unq (R(lp), rp, latt, ratt,
                                            p->sem.eqjoin_unq.res),
-                               lp->sem.step.axis,
-                               lp->sem.step.ty,
+                               lp->sem.step.spec,
                                lp->sem.step.guide_count,
                                lp->sem.step.guides,
                                lp->sem.step.level,

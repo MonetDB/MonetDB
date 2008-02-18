@@ -1,0 +1,48 @@
+stdout of test 'ALGsegfault.SF-1894964b` in directory 'tests/BugTracker` itself:
+
+
+# 07:12:17 >  
+# 07:12:17 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--disable-optimize_--enable-debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32782 --set xrpc_port=46346 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" --set sql_debug=16384 --set xquery_backend=algebra "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 07:12:17 >  
+
+# MonetDB Server v4.22.0
+# based on GDK   v1.22.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.22.0 loaded
+# XRPC administrative console at http://127.0.0.1:46346/admin
+
+printf("\nReady.\n");
+
+Ready.
+
+Over..
+
+# 07:12:18 >  
+# 07:12:18 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=32782 -G ALGsegfault.SF-1894964b_s00.xq
+# 07:12:18 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>1</XQueryResult>
+
+# 07:12:18 >  
+# 07:12:18 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=32782 -G ALGsegfault.SF-1894964b_s01.xq
+# 07:12:18 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>2</XQueryResult>
+
+# 07:12:18 >  
+# 07:12:18 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=corona --port=32782 -G ALGsegfault.SF-1894964b_s02.xq
+# 07:12:18 >  
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>3</XQueryResult>
+
+# 07:12:18 >  
+# 07:12:18 >  Done.
+# 07:12:18 >  
+

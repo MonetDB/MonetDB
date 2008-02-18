@@ -328,7 +328,7 @@ INPUT                  = compiler
 # and *.h) to filter out the source-files in the directories. If left 
 # blank all files are included. 
 
-FILE_PATTERNS          = *.c *.h
+FILE_PATTERNS          = *.c *.h *.brg
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories 
 # should be searched for input files as well. Possible values are YES and NO. 

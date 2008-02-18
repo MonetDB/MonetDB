@@ -50,6 +50,9 @@
 
 #include "subtyping.h"
 
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
+
 /*
  * Accessors for the burg matcher
  */
@@ -297,41 +300,6 @@ CoreExpr:           recursion (var, seed (CoreExpr, CoreExpr))  =  87 (10);
 CoreExpr:           xrpc (CoreExpr, CoreExpr)                   =  88 (10);
 
 %%
-
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) (LEFT_CHILD(p))
-/** starting from p, make a step right */
-#define R(p) (RIGHT_CHILD(p))
-/** starting from p, make two steps left */
-#define LL(p) L(L(p))
-/** starting from p, make a step left, then a step right */
-#define LR(p) R(L(p))
-/** starting from p, make a step right, then a step left */
-#define RL(p) L(R(p))
-/** starting from p, make two steps right */
-#define RR(p) R(R(p))
-/* ... and so on ... */
-#define RRL(p) L(R(R(p)))
-#define RRRL(p) L(R(R(R(p))))
-#define RRRRL(p) L(R(R(R(R(p)))))
-#define RRRRRL(p) L(R(R(R(R(R(p))))))
-#define RRRRRR(p) R(R(R(R(R(R(p))))))
-#define LLR(p) R(L(L(p)))
-#define RRR(p) R(R(R(p)))
-#define LLL(p) L(L(L(p)))
-#define LLLL(p) L(L(L(L(p))))
-#define LLLLL(p) L(L(L(L(L(p)))))
-#define LLLLR(p) R(L(L(L(L(p)))))
-#define LLLR(p) R(L(L(L(p))))
-#define RLL(p) L(L(R(p)))
-#define RLLR(p) R(L(L(R(p))))
-#define RLLL(p) L(L(L(R(p))))
-#define RLR(p) R(L(R(p)))
-#define RRLL(p) L(L(R(R(p))))
-#define RRLR(p) R(L(R(R(p))))
 
 /** Type of a core tree node */
 #define TY(p) ((p)->type)

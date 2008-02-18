@@ -42,21 +42,12 @@
 #include "logical_mnemonic.h"
 #include "ordering.h"
 
-/* compare types in staircase join operator nodes */
-#include "subtyping.h"
-
 #include <assert.h>
 #include <string.h> /* strcmp */
 #include <stdio.h>
 
-/*
- * Easily access subtree-parts.
- */
-
-/* starting from p, make a step left     */
-#define L(p)         ((p)->child[0])
-/* starting from p, make a right step    */
-#define R(p)         ((p)->child[1])
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /* prune already checked nodes           */
 #define SEEN(p)      ((p)->bit_dag)
@@ -674,68 +665,6 @@ create_attlist (PFalg_schema_t schema)
 }
 
 /**
- * Check the equivalence of two atoms.
- */
-static bool
-atom_eq (PFalg_atom_t a, PFalg_atom_t b)
-{
-    if (a.type != b.type)
-        return false;
-
-    switch (a.type) {
-        /* if type is nat, compare nat member of union */
-        case aat_nat:
-            if (a.val.nat_ == b.val.nat_)
-                return true;
-            break;
-        /* if type is int, compare int member of union */
-        case aat_int:
-            if (a.val.int_ == b.val.int_)
-                return true;
-            break;
-        /* if type is str, compare str member of union */
-        case aat_uA:
-        case aat_str:
-            if (!strcmp (a.val.str,
-                         b.val.str))
-                return true;
-            break;
-        /* if type is float, compare float member of union */
-        case aat_dec:
-            if (a.val.dec_ == b.val.dec_)
-                return true;
-            break;
-        /* if type is double, compare double member of union */
-        case aat_dbl:
-            if (a.val.dbl == b.val.dbl)
-                return true;
-            break;
-        /* if type is boolean, compare double member of union */
-        case aat_bln:
-            if ((a.val.bln &&
-                 b.val.bln) ||
-                (!a.val.bln
-                  && !b.val.bln))
-                return true;
-            break;
-        case aat_qname:
-            if (!PFqname_eq (a.val.qname, b.val.qname))
-                return true;
-            break;
-        /* anything else is actually bogus (e.g. there are no
-         * literal nodes */
-        default:
-        {
-            PFinfo (OOPS_WARNING, "literal value that do not make sense");
-            return true;
-        } break;
-    }
- 
-    /* if you get there every test failed */
-    return false;
-}
-
-/**
  * Test the equality of two literal table tuples.
  *
  * @param a Tuple to test against tuple @a b.
@@ -755,7 +684,8 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
 
     for (i = 0; i < a.count; i++) {
         /* check the equivalence */
-        mismatch = atom_eq (a.atoms[i], b.atoms[i])?false:true; 
+        mismatch = !(PFalg_atom_comparable (a.atoms[i], b.atoms[i]) && 
+                     (PFalg_atom_cmp (a.atoms[i], b.atoms[i]) == 0)); 
         
         if (mismatch)
             break;
@@ -892,8 +822,8 @@ match (PFla_op_t *a, PFla_op_t *b)
                                         b->sem.attach.value))
                 return false;
 
-            if (!atom_eq (a->sem.attach.value,
-                          b->sem.attach.value))
+            if (PFalg_atom_cmp (a->sem.attach.value,
+                                b->sem.attach.value) != 0)
                 return false;
             
             return true;
@@ -1114,8 +1044,10 @@ match (PFla_op_t *a, PFla_op_t *b)
                  ACTATT (R(b), b->sem.step.iter)) &&
                 (ACTATT (R(a), a->sem.step.item) ==
                  ACTATT (R(b), b->sem.step.item))  &&
-                PFty_eq (a->sem.step.ty, b->sem.step.ty) &&
-                (a->sem.step.axis == b->sem.step.axis) &&
+                (a->sem.step.spec.axis == b->sem.step.spec.axis) &&
+                (a->sem.step.spec.kind == b->sem.step.spec.kind) &&
+                (!PFqname_eq (a->sem.step.spec.qname,
+                              b->sem.step.spec.qname)) &&
                 (a->sem.step.level == b->sem.step.level))
                 return true;
 
@@ -1127,8 +1059,10 @@ match (PFla_op_t *a, PFla_op_t *b)
                  ACTATT (R(b), b->sem.step.iter)) &&
                 (ACTATT (R(a), a->sem.step.item) ==
                  ACTATT (R(b), b->sem.step.item))  &&
-                PFty_eq (a->sem.step.ty, b->sem.step.ty) &&
-                (a->sem.step.axis == b->sem.step.axis) &&
+                (a->sem.step.spec.axis == b->sem.step.spec.axis) &&
+                (a->sem.step.spec.kind == b->sem.step.spec.kind) &&
+                (!PFqname_eq (a->sem.step.spec.qname,
+                              b->sem.step.spec.qname)) &&
                 (a->sem.step.level == b->sem.step.level) &&
                 (a->sem.step.guide_count == b->sem.step.guide_count)))
                 return false;
@@ -1281,7 +1215,8 @@ column_eq (unsigned int col1, unsigned int col2,
 
     /* check every item of the column */
     for (i = 0; i < littbl1->sem.lit_tbl.count; i++) {
-        if (!atom_eq (a[i].atoms[col1], b[i].atoms[col2]))
+        if (!(PFalg_atom_comparable (a[i].atoms[col1], b[i].atoms[col2]) &&
+              (PFalg_atom_cmp (a[i].atoms[col1], b[i].atoms[col2]) == 0)))
             return false;
     } 
     return true;
@@ -1813,8 +1748,7 @@ new_operator (PFla_op_t *n)
 
         case la_step:
             return PFla_step (CSE(L(n)), CSE(R(n)),
-                              n->sem.step.axis,
-                              n->sem.step.ty,
+                              n->sem.step.spec,
                               n->sem.step.level,
                               ACTATT (R(n), n->sem.step.iter),
                               ACTATT (R(n), n->sem.step.item),
@@ -1822,8 +1756,7 @@ new_operator (PFla_op_t *n)
 
         case la_step_join:
             return PFla_step_join (CSE(L(n)), CSE(R(n)),
-                                   n->sem.step.axis,
-                                   n->sem.step.ty,
+                                   n->sem.step.spec,
                                    n->sem.step.level,
                                    ACTATT (R(n), n->sem.step.item),
                                    create_unq_name (CSE(R(n))->schema,
@@ -1831,8 +1764,7 @@ new_operator (PFla_op_t *n)
 
         case la_guide_step:
             return PFla_guide_step (CSE(L(n)), CSE(R(n)),
-                                    n->sem.step.axis,
-                                    n->sem.step.ty,
+                                    n->sem.step.spec,
                                     n->sem.step.guide_count,
                                     n->sem.step.guides,
                                     n->sem.step.level,
@@ -1842,8 +1774,7 @@ new_operator (PFla_op_t *n)
 
         case la_guide_step_join:
             return PFla_guide_step_join (CSE(L(n)), CSE(R(n)),
-                                         n->sem.step.axis,
-                                         n->sem.step.ty,
+                                         n->sem.step.spec,
                                          n->sem.step.guide_count,
                                          n->sem.step.guides,
                                          n->sem.step.level,

@@ -43,21 +43,8 @@
 #include "alg_dag.h"
 #include "mem.h"          /* PFmalloc() */
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
-#define LL(p) (L(L(p)))
-#define RL(p) (L(R(p)))
-#define LR(p) (R(L(p)))
-#define LLL(p) (LL(L(p)))
-#define LLR(p) (R(LL(p)))
-#define LRL(p) (L(LR(p)))
-#define LRLL(p) (LL(LR(p)))
-#define LLRL(p) (RL(LL(p)))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 #define SEEN(p) ((p)->bit_dag)
 
@@ -1205,12 +1192,12 @@ opt_complex (PFla_op_t *p)
                 p->sem.step.level = PFprop_level (p->prop,
                                                   p->sem.step.item_res);
 
-            if ((p->sem.step.axis == alg_desc ||
-                 p->sem.step.axis == alg_desc_s) &&
+            if ((p->sem.step.spec.axis == alg_desc ||
+                 p->sem.step.spec.axis == alg_desc_s) &&
                 p->sem.step.level >= 1 &&
                 p->sem.step.level - 1 == PFprop_level (R(p)->prop,
                                                        p->sem.step.item))
-                p->sem.step.axis = alg_chld;
+                p->sem.step.spec.axis = alg_chld;
 
             if (R(p)->kind == la_project &&
                 RL(p)->kind == la_step) {
@@ -1233,8 +1220,7 @@ opt_complex (PFla_op_t *p)
                     *p = *PFla_project (PFla_step (
                                             L(p),
                                             RL(p),
-                                            p->sem.step.axis,
-                                            p->sem.step.ty,
+                                            p->sem.step.spec,
                                             p->sem.step.level,
                                             RL(p)->sem.step.iter,
                                             RL(p)->sem.step.item,
@@ -1244,7 +1230,7 @@ opt_complex (PFla_op_t *p)
                 break;
             }
             else if (R(p)->kind == la_rowid &&
-                     p->sem.step.axis == alg_chld &&
+                     p->sem.step.spec.axis == alg_chld &&
                      p->sem.step.iter == R(p)->sem.rowid.res &&
                      !PFprop_icol (p->prop, p->sem.step.iter) &&
                      PFprop_key (p->prop, p->sem.step.item)) {
@@ -1265,12 +1251,12 @@ opt_complex (PFla_op_t *p)
                 p->sem.step.level = level;
             }
 
-            if ((p->sem.step.axis == alg_desc ||
-                 p->sem.step.axis == alg_desc_s) &&
+            if ((p->sem.step.spec.axis == alg_desc ||
+                 p->sem.step.spec.axis == alg_desc_s) &&
                 p->sem.step.level >= 1 &&
                 p->sem.step.level - 1 == PFprop_level (R(p)->prop,
                                                        p->sem.step.item))
-                p->sem.step.axis = alg_chld;
+                p->sem.step.spec.axis = alg_chld;
             break;
 
         case la_step_join:
@@ -1278,12 +1264,12 @@ opt_complex (PFla_op_t *p)
                 p->sem.step.level = PFprop_level (p->prop,
                                                   p->sem.step.item_res);
 
-            if ((p->sem.step.axis == alg_desc ||
-                 p->sem.step.axis == alg_desc_s) &&
+            if ((p->sem.step.spec.axis == alg_desc ||
+                 p->sem.step.spec.axis == alg_desc_s) &&
                 p->sem.step.level >= 1 &&
                 p->sem.step.level - 1 == PFprop_level (R(p)->prop,
                                                        p->sem.step.item))
-                p->sem.step.axis = alg_chld;
+                p->sem.step.spec.axis = alg_chld;
             break;
 
         case la_fcns:

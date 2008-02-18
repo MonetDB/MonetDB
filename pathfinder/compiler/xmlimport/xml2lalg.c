@@ -199,6 +199,15 @@
                     PFxml2la_xpath_getNthNode(XPATH(xpath), 0)))
 
 /**              
+ * Macro return-type:  PFalg_node_kind_t 
+ * XPath return-type:  attribute(){1}
+ */
+#define PFLA_NODEKIND(xpath) \
+            PFxml2la_conv_2PFLA_nodekind( \
+                PFxml2la_xpath_getAttributeValueFromAttributeNode( \
+                    PFxml2la_xpath_getNthNode(XPATH(xpath), 0)))
+
+/**              
  * Macro return-type:  PFalg_simple_type_t 
  * XPath return-type:  attribute(){1}
  */
@@ -1453,16 +1462,19 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
                <column name="COLNAME" function="item"/>
             </content>
             */
+            PFalg_step_spec_t spec;
+            spec.axis = PFLA_AXIS("/content/step/@axis");
+            spec.kind = PFLA_NODEKIND("/content/step/@kind");
+            spec.qname = PFqname (
+                             (PFns_t)
+                             { .prefix = A2STR_O("/content/step/@prefix", NULL),
+                               .uri    = A2STR_O("/content/step/@uri", NULL) },
+                             A2STR_O("/content/step/@name", NULL));
 
             newAlgNode = PFla_step
              (
              CHILDNODE(0), CHILDNODE(1), 
-             PFLA_AXIS("/content/step/@axis"), 
-             getPFLA_SeqTy (
-                 A2STR("/content/step/@kind"),
-                 A2STR_O("/content/step/@prefix", NULL),
-                 A2STR_O("/content/step/@uri", NULL),
-                 A2STR_O("/content/step/@name", NULL)),
+             spec,
              A2INT_O("/content/step/@level", -1), 
              PFLA_ATT("/content/column[@function='iter']/@name"), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
@@ -1486,16 +1498,19 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
                <column name="COLNAME" function="item"/>
              </content>
             */
+            PFalg_step_spec_t spec;
+            spec.axis = PFLA_AXIS("/content/step/@axis");
+            spec.kind = PFLA_NODEKIND("/content/step/@kind");
+            spec.qname = PFqname (
+                             (PFns_t)
+                             { .prefix = A2STR_O("/content/step/@prefix", NULL),
+                               .uri    = A2STR_O("/content/step/@uri", NULL) },
+                             A2STR_O("/content/step/@name", NULL));
 
             newAlgNode = PFla_step_join
              (
              CHILDNODE(0), CHILDNODE(1), 
-             PFLA_AXIS("/content/step/@axis"), 
-             getPFLA_SeqTy (
-                 A2STR("/content/step/@kind"),
-                 A2STR_O("/content/step/@prefix", NULL),
-                 A2STR_O("/content/step/@uri", NULL),
-                 A2STR_O("/content/step/@name", NULL)),
+             spec,
              A2INT_O("/content/step/@level", -1), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
              PFLA_ATT("/content/column[@new='true']/@name")

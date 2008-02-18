@@ -39,15 +39,10 @@
 #include "properties.h"
 #include "mem.h"
 
-#define SEEN(p) ((p)->bit_dag)
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
+#define SEEN(p) ((p)->bit_dag)
 
 static void
 resolve_proxies (PFla_op_t *p)
@@ -120,8 +115,7 @@ resolve_proxies (PFla_op_t *p)
                            PFalg_proj (join_att1, join_att2),
                            PFalg_proj (p->sem.step.item_res,
                                        p->sem.step.item)),
-                       p->sem.step.axis,
-                       p->sem.step.ty,
+                       p->sem.step.spec,
                        p->sem.step.level,
                        join_att1,
                        p->sem.step.item_res,
@@ -134,8 +128,7 @@ resolve_proxies (PFla_op_t *p)
                            PFalg_proj (join_att1, join_att2),
                            PFalg_proj (p->sem.step.item_res,
                                        p->sem.step.item)),
-                       p->sem.step.axis,
-                       p->sem.step.ty,
+                       p->sem.step.spec,
                        p->sem.step.guide_count,
                        p->sem.step.guides,
                        p->sem.step.level,

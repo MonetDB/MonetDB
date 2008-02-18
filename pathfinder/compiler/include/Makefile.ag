@@ -34,6 +34,7 @@ EXTRA_DIST = \
 	array.h \
 	bitset.h \
 	builtins.h \
+        child_mnemonic.h \
 	compile.h \
 	compile_interface.h \
 	core2alg.h \
@@ -57,7 +58,6 @@ EXTRA_DIST = \
         map_names.h \
 	mem.h \
 	mil_dce.h \
-	mildebug.h \
 	milgen.h \
 	mil.h \
 	mil_mnemonic.h \

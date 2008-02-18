@@ -39,17 +39,8 @@
 #include "mem.h"
 #include "qname.h"
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
-/** starting from p, make two steps left */
-#define LL(p) (L(L(p)))
-/** starting from p, make a step left, then a step right */
-#define LR(p) R(L(p))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /**
  * worker for PFprop_ckey;
@@ -615,7 +606,7 @@ infer_ckey (PFla_op_t *n)
 
         case la_step:
         case la_guide_step:
-            if (n->sem.step.axis == alg_chld &&
+            if (n->sem.step.spec.axis == alg_chld &&
                 PFprop_key (R(n)->prop, n->sem.step.iter) &&
                 PFprop_key (R(n)->prop, n->sem.step.item))
                 union_ (n->prop->ckeys, n->sem.step.item_res);

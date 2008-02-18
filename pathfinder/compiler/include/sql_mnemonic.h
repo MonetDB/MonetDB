@@ -122,8 +122,8 @@
                                      
 /* .......... Aggregate Functions .......... */
 #define count(c)                     PFsql_count(c)
-#define max(c)                       PFsql_max(c)
-#define min(c)                       PFsql_min(c)
+#define max_(c)                      PFsql_max(c)
+#define min_(c)                      PFsql_min(c)
 #define avg(c)                       PFsql_avg(c)
 #define sum(c)                       PFsql_sum(c)
 

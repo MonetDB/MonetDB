@@ -108,6 +108,12 @@ then
         exit 1
 fi
 
+#
+# DISABLE LATEX GENERATIOn
+# when tested last it didn't work 
+#
+if test 1 -eq 0
+then
 # Now generate the PDF documentation
 if test ${HAVE_LATEX} = 'YES' -o ${HAVE_LATEX} = 'yes'
 then
@@ -135,6 +141,7 @@ then
                         ps2pdf doc/latex/refman.ps doc/latex/refman.pdf
                 fi
         fi
+fi
 fi
 
 # Report success to user

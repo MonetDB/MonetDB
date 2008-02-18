@@ -32,9 +32,6 @@
 #ifndef ORDERING_H
 #define ORDERING_H
 
-/* Always include pathfinder.h first! */
-#include "pathfinder.h"
-
 /* Orderings use arrays of column names. */
 #include "array.h"
 
@@ -92,6 +89,12 @@ PFalg_att_t PFord_order_col_at (const PFord_ordering_t ordering,
 
 bool PFord_order_dir_at (const PFord_ordering_t ordering,
                          unsigned int index);
+
+void PFord_set_order_col_at (PFord_ordering_t ordering, unsigned int index,
+                             PFalg_att_t name);
+
+void PFord_set_order_dir_at (PFord_ordering_t ordering, unsigned int index,
+                             bool dir);
 
 /**
  * Return true if the ordering @a a implies the ordering @a b.

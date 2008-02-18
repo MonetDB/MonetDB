@@ -35,8 +35,6 @@
 #ifndef SUBTYPING_H
 #define SUBTYPING_H
 
-#include "pathfinder.h"
-
 #include "types.h"
 
 /** 

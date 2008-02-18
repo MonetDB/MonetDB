@@ -117,9 +117,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/MonetDB4/*.mil
 %{_bindir}/Mbeddedxq
 %{_libdir}/libembeddedxq.so.*
-%dir %{_datadir}/doc/MonetDB-XQuery-%{version}
-%{_datadir}/doc/MonetDB-XQuery-%{version}/*
-#%{_datadir}/doc/%{name}-%{version}/*
 %dir %{_datadir}/MonetDB/xrpc
 %dir %{_datadir}/MonetDB/xrpc/admin
 %dir %{_datadir}/MonetDB/xrpc/export

@@ -1,6 +1,6 @@
 @echo off
 
-let q=uncompilable_comparison.SF-1871790.xq
+set q=uncompilable_comparison.SF-1871790.xq
 @echo "pf %q% >/dev/null"
 @echo "pf %q% >/dev/null" >&2
 @%PF% %q% > nul

@@ -43,13 +43,8 @@
 /** mnemonic algebra constructors */
 #include "logical_mnemonic.h"
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 #define SEEN(p) ((p)->bit_dag)
 
@@ -594,16 +589,14 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                             project (PROJ(RIGHT, p),
                                      proj (iter, iter),
                                      proj (item_out, item_in)),
-                            p->sem.step.axis,
-                            p->sem.step.ty,
+                            p->sem.step.spec,
                             p->sem.step.level,
                             iter,
                             item_out,
                             item_out);
             } else
                 res = step (O(L(p)), PROJ(RIGHT, p),
-                            p->sem.step.axis,
-                            p->sem.step.ty,
+                            p->sem.step.spec,
                             p->sem.step.level,
                             ONAME(p, p->sem.step.iter),
                             ONAME(p, p->sem.step.item),
@@ -613,8 +606,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
         case la_step_join:
             res = step_join (O(L(p)),
                              SEC_PROJ(RIGHT, p, p->sem.step.item_res),
-                             p->sem.step.axis,
-                             p->sem.step.ty,
+                             p->sem.step.spec,
                              p->sem.step.level,
                              ONAME(p, p->sem.step.item),
                              ONAME(p, p->sem.step.item_res));
@@ -639,8 +631,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                                   project (PROJ(RIGHT, p),
                                            proj (iter, iter),
                                            proj (item_out, item_in)),
-                                  p->sem.step.axis,
-                                  p->sem.step.ty,
+                                  p->sem.step.spec,
                                   p->sem.step.guide_count,
                                   p->sem.step.guides,
                                   p->sem.step.level,
@@ -649,8 +640,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                                   item_out);
             } else
                 res = guide_step (O(L(p)), PROJ(RIGHT, p),
-                                  p->sem.step.axis,
-                                  p->sem.step.ty,
+                                  p->sem.step.spec,
                                   p->sem.step.guide_count,
                                   p->sem.step.guides,
                                   p->sem.step.level,
@@ -662,8 +652,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
         case la_guide_step_join:
             res = guide_step_join (O(L(p)),
                                    SEC_PROJ(RIGHT, p, p->sem.step.item_res),
-                                   p->sem.step.axis,
-                                   p->sem.step.ty,
+                                   p->sem.step.spec,
                                    p->sem.step.guide_count,
                                    p->sem.step.guides,
                                    p->sem.step.level,

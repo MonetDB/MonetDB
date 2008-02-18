@@ -44,13 +44,8 @@
 /** mnemonic algebra constructors */
 #include "logical_mnemonic.h"
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 #define SEEN(p) ((p)->bit_dag)
 
@@ -586,8 +581,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
         case la_step:
             res = step (U(L(p)), U(R(p)),
-                        p->sem.step.axis,
-                        p->sem.step.ty,
+                        p->sem.step.spec,
                         p->sem.step.level,
                         UNAME(p, p->sem.step.iter),
                         /* unique name of input attribute item is
@@ -598,8 +592,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
         case la_step_join:
             res = step_join (U(L(p)), U(R(p)),
-                             p->sem.step.axis,
-                             p->sem.step.ty,
+                             p->sem.step.spec,
                              p->sem.step.level,
                              UNAME(p, p->sem.step.item),
                              UNAME(p, p->sem.step.item_res));
@@ -607,8 +600,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
         case la_guide_step:
             res = guide_step (U(L(p)), U(R(p)),
-                              p->sem.step.axis,
-                              p->sem.step.ty,
+                              p->sem.step.spec,
                               p->sem.step.guide_count,
                               p->sem.step.guides,
                               p->sem.step.level,
@@ -621,8 +613,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
         case la_guide_step_join:
             res = guide_step_join (U(L(p)), U(R(p)),
-                                   p->sem.step.axis,
-                                   p->sem.step.ty,
+                                   p->sem.step.spec,
                                    p->sem.step.guide_count,
                                    p->sem.step.guides,
                                    p->sem.step.level,

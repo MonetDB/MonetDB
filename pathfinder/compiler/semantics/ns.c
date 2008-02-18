@@ -82,13 +82,8 @@
 /* PFstrdup() */
 #include "mem.h"
 
-/* short-hands for tree navigation */
-#define L(p) (p)->child[0]
-#define R(p) (p)->child[1]
-#define LL(p) L(L(p))
-#define LR(p) R(L(p))
-#define RL(p) L(R(p))
-#define RR(p) R(R(p))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /**
  * When we encounter a p_req_name node, this describes the QName of

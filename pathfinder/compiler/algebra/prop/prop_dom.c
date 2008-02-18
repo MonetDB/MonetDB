@@ -48,15 +48,8 @@
 #include "oops.h"
 #include "mem.h"
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
-/** starting from p, make a step right, then a step left */
-#define RL(p) L(R(p))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /** Identifier for the (statically known) empty domain */
 #define EMPTYDOM 1
@@ -951,9 +944,9 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_guide_step:
-            if ((n->sem.step.axis == alg_chld ||
-                 n->sem.step.axis == alg_attr ||
-                 n->sem.step.axis == alg_self) &&
+            if ((n->sem.step.spec.axis == alg_chld ||
+                 n->sem.step.spec.axis == alg_attr ||
+                 n->sem.step.spec.axis == alg_self) &&
                 find_guide_min (n->sem.step.guide_count,
                                 n->sem.step.guides) > 0)
                 add_dom (n->prop,
@@ -979,9 +972,9 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_guide_step_join:
-            if ((n->sem.step.axis == alg_chld ||
-                 n->sem.step.axis == alg_attr ||
-                 n->sem.step.axis == alg_self) &&
+            if ((n->sem.step.spec.axis == alg_chld ||
+                 n->sem.step.spec.axis == alg_attr ||
+                 n->sem.step.spec.axis == alg_self) &&
                 find_guide_min (n->sem.step.guide_count,
                                 n->sem.step.guides) > 0)
                 bulk_add_dom (n->prop, R(n));

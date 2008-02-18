@@ -729,25 +729,9 @@ PFxml2la_conv_2PFLA_atomType(char* typeString)
     {
         return aat_anode;
     }
-    else if (strcmp(typeString, "attrID") == 0)
-    {
-        return aat_attr;
-    }
-    else if (strcmp(typeString, "afrag") == 0)
-    {
-        return aat_afrag;
-    }
     else if (strcmp(typeString, "pnode") == 0)
     {
         return aat_pnode;
-    }
-    else if (strcmp(typeString, "pre") == 0)
-    {
-        return aat_pre;
-    }
-    else if (strcmp(typeString, "pfrag") == 0)
-    {
-        return aat_pfrag;
     }
     else
     {
@@ -816,11 +800,7 @@ PFxml2la_conv_2PFLA_atom(PFalg_simple_type_t type,
         }
     case aat_node:   
     case aat_anode:   
-    case aat_attr:   
-    case aat_afrag:  
     case aat_pnode:  
-    case aat_pre:    
-    case aat_pfrag:  
     case aat_charseq:
     default:       
         {
@@ -1036,6 +1016,30 @@ PFxml2la_conv_2PFLA_xpathaxis(char* s)
 
     }
 
+}
+
+
+
+
+
+
+/******************************************************************************/
+/******************************************************************************/
+PFalg_node_kind_t 
+PFxml2la_conv_2PFLA_nodekind(char* s) 
+{
+         if (strcmp (s, "element") == 0)                return node_kind_elem;
+    else if (strcmp (s, "attribute") == 0)              return node_kind_attr;
+    else if (strcmp (s, "text") == 0)                   return node_kind_text;
+    else if (strcmp (s, "processing-instruction") == 0) return node_kind_pi;
+    else if (strcmp (s, "comment") == 0)                return node_kind_comm;
+    else if (strcmp (s, "document-node") == 0)          return node_kind_doc;
+    else if (strcmp (s, "node") == 0)                   return node_kind_node;
+    else
+        PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
+    
+    /* pacify picky compilers */
+    return node_kind_node;
 }
 
 

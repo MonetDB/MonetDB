@@ -43,7 +43,9 @@
 #include "alg_dag.h"
 #include "mem.h"
 #include "oops.h"             /* PFoops() */
-#include "subtyping.h"
+
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /**
  * Accessors for the burg pattern matcher
@@ -306,22 +308,6 @@ Rel:    cross_mvd (Rel, Rel)                         = 114 (10);
 
 #define MAX_KIDS 5
 
-/*
- * Easily access subtree parts.
- */
-/* starting from p, make a left step */
-#define L(p)      (LEFT_CHILD(p))
-/* starting from p, make a right step */
-#define R(p)      (RIGHT_CHILD(p))
-/* ... and so on */
-#define LL(p)     L(L(p))
-#define LR(p)     R(L(p))
-#define RL(p)     L(R(p))
-#define RR(p)     R(R(p))
-#define RLR(p)    R(L(R(p)))
-#define RLL(p)    L(L(R(p)))
-#define RLRL(p)   L(R(L(R(p))))
-
 /** Macro determining if a node was already visited */
 #define SEEN(p)   ((p)->bit_dag)
 
@@ -353,7 +339,7 @@ static PFsql_t *max_pre_frag = NULL;
 
 /* we "mask out" the flags regarding the generation of attributes,
  * up to now we don't support attributes */
-#define TYPE_MASK(t)  ((t) & ~(aat_afrag | aat_pfrag))
+#define TYPE_MASK(t)  ((t) & ~(aat_frag | aat_attr | aat_nkind))
 
 /* reference counter */
 #define REFCTR(p)     ((p)->refctr)
@@ -558,7 +544,7 @@ col_env_add_full (PFarray_t * env, PFalg_att_t att,
             ty == aat_dbl || ty == aat_dec ||
             ty == aat_str || ty == aat_uA ||
             ty == aat_qname || ty == aat_bln ||
-            ty == aat_pre || ty == aat_attr);
+            ty == aat_pre);
 
     *(sql_column_env_t *) PFarray_add (env) =
         (sql_column_env_t) { .type = ty,
@@ -1197,112 +1183,42 @@ step_level (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
 #define DOC     6    /* document root node */
 
 static void
-step_kind (PFla_op_t *p, PFsql_aident_t step, PFty_t ty, bool *leaf)
+step_kind (PFla_op_t *p, PFsql_aident_t step,
+           PFalg_node_kind_t kind, bool *leaf)
 {
-    int kind = 0;
+    int sql_kind = 0;
 
-    if (PFty_subtype (ty, PFty_doc (PFty_xs_anyNode ())))
-        kind = DOC;
-    else if (PFty_subtype (ty, PFty_xs_anyElement ()))
-        kind = ELEM;
-    else if (PFty_subtype (ty, PFty_text ()))
-        kind = PF_TEXT;
-    else if (PFty_subtype (ty, PFty_comm ()))
-        kind = COMM;
-    else if (PFty_subtype (ty, PFty_pi (NULL)))
-        kind = PI;
-    else if (PFty_subtype (ty, PFty_xs_anyAttribute ()))
-        kind = ATTR;
+    switch (kind) {
+        case node_kind_elem: sql_kind = ELEM;    break;
+        case node_kind_attr: sql_kind = ATTR;    break;
+        case node_kind_text: sql_kind = PF_TEXT; break;
+        case node_kind_pi:   sql_kind = PI;      break;
+        case node_kind_comm: sql_kind = COMM;    break;
+        case node_kind_doc:  sql_kind = DOC;     break; 
+        case node_kind_node:
+            where_list_add (WHERELIST (p),
+                            not_ (eq (KIND(step), lit_int (ATTR))));
+            *leaf = false;
+            return;
+    }
 
-    if (kind)
+    if (sql_kind)
         where_list_add (WHERELIST(p),
-                        eq (KIND(step), lit_int (kind)));
+                        eq (KIND(step), lit_int (sql_kind)));
 
-    *leaf = kind && kind != DOC && kind != ELEM;
+    *leaf = sql_kind && sql_kind != DOC && sql_kind != ELEM;
 }
 
 static void
-step_name (PFla_op_t *p, PFsql_aident_t step, PFty_t ty)
+step_name (PFla_op_t *p, PFsql_aident_t step, PFqname_t qname)
 {
-    PFsql_t *name = NULL;
-    PFsql_t *namespace = NULL;
-
-    if (!PFty_subtype (ty, PFty_xs_anyElement ()) &&
-        !PFty_subtype (ty, PFty_xs_anyAttribute ()))
-        return;
-
-    /* This is a test for element nodes */
-
-    /* This is just a generic kind test */
-    if (PFty_subtype (PFty_xs_anyElement (), ty) ||
-        PFty_subtype (PFty_xs_anyAttribute (), ty))
-        return;
-    /* test on local name only */
-    else if (PFty_subtype (
-                 PFty_elem (
-                     PFqname (
-                         PFns_wild,
-                         PFqname_loc (PFty_name (PFty_defn (ty)))),
-                     PFty_xs_anyType ()),
-                 ty) ||
-             PFty_subtype (
-                 PFty_attr (
-                     PFqname (
-                         PFns_wild,
-                         PFqname_loc (PFty_name (PFty_defn (ty)))),
-                     PFty_xs_anySimpleType ()),
-                 ty))
-        name = lit_str (PFqname_loc (PFty_name (PFty_defn (ty))));
-    /* test on namespace only */
-    else if (PFty_subtype (
-                 PFty_elem (
-                     PFqname (
-                         PFqname_ns (PFty_name (PFty_defn (ty))),
-                         NULL),
-                     PFty_xs_anyType ()),
-                 ty) ||
-             PFty_subtype (
-                 PFty_attr (
-                     PFqname (
-                         PFqname_ns (PFty_name (PFty_defn (ty))),
-                         NULL),
-                     PFty_xs_anySimpleType ()),
-                 ty))
-         /* get the URI of the given namespace */
-         namespace = lit_str (PFqname_uri (PFty_name (PFty_defn (ty))));
-    /* test on full QName */
-    else if (PFty_subtype (
-                 PFty_elem (
-                     PFty_name (PFty_defn (ty)),
-                     PFty_xs_anyType ()),
-                 ty) ||
-             PFty_subtype (
-                 PFty_attr (
-                     PFty_name (PFty_defn (ty)),
-                     PFty_xs_anySimpleType ()),
-                 ty)) {
-        /* get the uri of the given namespace */
-        namespace = lit_str (PFqname_uri (PFty_name (PFty_defn(ty))));
-        name = lit_str (PFqname_loc (PFty_name (PFty_defn (ty))));
-    }
-    else
-    /*
-     * If we couldn't figure out what name test we got,
-     * give up.
-     *
-     * NOTE: The surface language actually allows such tests. We
-     *       just cannot implement them (yet):
-     *
-     *    doc("foo")/attribute::attribute(shoeSize, xs:integer)
-     */
-         PFoops (OOPS_FATAL,
-                 "SQLgen: Problem with an XPath step: cannot evaluate "
-                 "node test `%s'", PFty_str (ty));
+    char *name = PFqname_loc (qname);
+    char *namespace = PFqname_uri (qname);
 
     if (name)
-        where_list_add (WHERELIST(p), eq (NAME(step), name));
+        where_list_add (WHERELIST(p), eq (NAME(step), lit_str (name)));
     if (namespace)
-        where_list_add (WHERELIST(p), eq (NS_URI(step), namespace));
+        where_list_add (WHERELIST(p), eq (NS_URI(step), lit_str (namespace)));
 }
 
 static void
@@ -1389,7 +1305,7 @@ construct_twig_generic (PFla_op_t *p,
                            column_assign (name, NAME_)),
                        from_list (
                            alias_bind (select (
-                                           column_assign (max (PRE_), MAX_),
+                                           column_assign (max_ (PRE_), MAX_),
                                            from_list (max_pre_frag),
                                            NULL),
                                        alias (max)),
@@ -1414,7 +1330,7 @@ construct_twig_generic (PFla_op_t *p,
                            NAME(content)),
                        from_list (
                            alias_bind (select (
-                                           column_assign (max (PRE_), MAX_),
+                                           column_assign (max_ (PRE_), MAX_),
                                            from_list (max_pre_frag),
                                            NULL),
                                        alias (max)),
@@ -2877,7 +2793,7 @@ reduce (PFla_op_t * p, int goalnt)
                 expr = col_env_lookup (COLMAP(L(p)), att, ty);
 
                 /* generate the aggregation */
-                expr = p->sem.pos_sel.pos > 0 ? min (expr) : max (expr);
+                expr = p->sem.pos_sel.pos > 0 ? min_ (expr) : max_ (expr);
 
                 col_env_add (COLMAP(p), att, ty,
                              ext_column_name (newalias, col));
@@ -3454,22 +3370,22 @@ reduce (PFla_op_t * p, int goalnt)
 
             /* generate the aggregation */
             switch (p->kind) {
-                case la_avg:   expr = avg (expr); break;
-                case la_max:   expr = max (expr); break;
-                case la_min:   expr = min (expr); break;
+                case la_avg:   expr = avg (expr);      break;
+                case la_max:   expr = max_ (expr);     break;
+                case la_min:   expr = min_ (expr);     break;
                 /* with la_all we have to ensure that each
                  * attribute att is true for all rows within
                  * a group, since we express boolean values
                  * as literal integers, MIN does the job */ 
                 case la_all:   assert (ty == aat_bln);
-                               expr = min (((expr)->kind == sql_column_name)?
+                               expr = min_ (((expr)->kind == sql_column_name)?
                                            expr:
                                            case_(
                                               when (expr,
                                                     lit_int(1)),
                                               else_ (lit_int (0))));
                              break;
-                case la_sum:   expr = sum (expr); break;
+                case la_sum:   expr = sum (expr);      break;
                 case la_count: expr = count (star ()); break;
                 default: assert (0); break;
             }
@@ -3885,15 +3801,15 @@ reduce (PFla_op_t * p, int goalnt)
             step_axis (p,
                        ctxalias,
                        stepalias,
-                       p->sem.step.axis,
+                       p->sem.step.spec.axis,
                        FRAG(L(p)),
                        PFprop_level (R(p)->prop, p->sem.step.item));
 
             if (p->kind == la_step || p->kind == la_step_join) {
-                step_name (p, stepalias, p->sem.step.ty);
-                step_kind (p, stepalias, p->sem.step.ty, &leaf);
+                step_name (p, stepalias, p->sem.step.spec.qname);
+                step_kind (p, stepalias, p->sem.step.spec.kind, &leaf);
                 step_level (p, ctxalias, stepalias,
-                            p->sem.step.axis, p->sem.step.level);
+                            p->sem.step.spec.axis, p->sem.step.level);
             } else {
                 assert (p->kind == la_guide_step ||
                         p->kind == la_guide_step_join);

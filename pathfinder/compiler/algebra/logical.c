@@ -986,13 +986,11 @@ PFla_project_ (const PFla_op_t *n, unsigned int count, PFalg_proj_t *proj)
 
         /* see if we have duplicate attributes now */
         for (j = 0; j < i; j++)
-            if (ret->sem.proj.items[i].new == ret->sem.proj.items[j].new) {
-                fprintf (stderr, "foo\n");
+            if (ret->sem.proj.items[i].new == ret->sem.proj.items[j].new)
                 PFoops (OOPS_FATAL,
                         "projection results in duplicate attribute `%s' "
                         "(attributes %i and %i)",
                         PFatt_str (ret->sem.proj.items[i].new), i+1, j+1);
-            }
     }
 
     return ret;
@@ -2537,7 +2535,7 @@ PFla_all (const PFla_op_t *n,
  */
 PFla_op_t *
 PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
-           PFalg_axis_t axis, PFty_t seqty, int level,
+           PFalg_step_spec_t spec, int level,
            PFalg_att_t iter, PFalg_att_t item,
            PFalg_att_t item_res)
 {
@@ -2552,8 +2550,7 @@ PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
     ret = la_op_wire2 (la_step, doc, n);
 
     /* insert semantic value (axis/kind test, col names) into the result */
-    ret->sem.step.axis        = axis;
-    ret->sem.step.ty          = seqty;
+    ret->sem.step.spec        = spec;
     ret->sem.step.guide_count = 0;
     ret->sem.step.guides      = NULL;
     ret->sem.step.level       = level;
@@ -2588,7 +2585,7 @@ PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
         = (struct PFalg_schm_item_t) { .name = iter,
                                        .type = PFprop_type_of (n, iter) };
     /* the result of an attribute axis is also of type attribute */
-    if (ret->sem.step.axis == alg_attr)
+    if (ret->sem.step.spec.axis == alg_attr)
         ret->schema.items[1]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = aat_anode };
@@ -2602,11 +2599,11 @@ PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
 
 PFla_op_t *
 PFla_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
-                  PFalg_axis_t axis, PFty_t seqty,
+                  PFalg_step_spec_t spec,
                   PFalg_att_t iter, PFalg_att_t item,
                   PFalg_att_t item_res)
 {
-    return PFla_step (doc, n, axis, seqty, -1, iter, item, item_res);
+    return PFla_step (doc, n, spec, -1, iter, item, item_res);
 }
 
 
@@ -2621,7 +2618,7 @@ PFla_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
  */
 PFla_op_t *
 PFla_step_join (const PFla_op_t *doc, const PFla_op_t *n,
-                PFalg_axis_t axis, PFty_t seqty, int level,
+                PFalg_step_spec_t spec, int level,
                 PFalg_att_t item,
                 PFalg_att_t item_res)
 {
@@ -2634,8 +2631,7 @@ PFla_step_join (const PFla_op_t *doc, const PFla_op_t *n,
     ret = la_op_wire2 (la_step_join, doc, n);
 
     /* insert semantic value (axis/kind test, col names) into the result */
-    ret->sem.step.axis        = axis;
-    ret->sem.step.ty          = seqty;
+    ret->sem.step.spec        = spec;
     ret->sem.step.guide_count = 0;
     ret->sem.step.guides      = NULL;
     ret->sem.step.level       = level;
@@ -2668,7 +2664,7 @@ PFla_step_join (const PFla_op_t *doc, const PFla_op_t *n,
         ret->schema.items[i] = n->schema.items[i];
 
     /* the result of an attribute axis is also of type attribute */
-    if (ret->sem.step.axis == alg_attr)
+    if (ret->sem.step.spec.axis == alg_attr)
         ret->schema.items[i]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = aat_anode };
@@ -2682,10 +2678,10 @@ PFla_step_join (const PFla_op_t *doc, const PFla_op_t *n,
 
 PFla_op_t *
 PFla_step_join_simple (const PFla_op_t *doc, const PFla_op_t *n,
-                       PFalg_axis_t axis, PFty_t seqty,
+                       PFalg_step_spec_t spec,
                        PFalg_att_t item, PFalg_att_t item_res)
 {
-    return PFla_step_join (doc, n, axis, seqty, -1, item, item_res);
+    return PFla_step_join (doc, n, spec, -1, item, item_res);
 }
 
 
@@ -2700,7 +2696,7 @@ PFla_step_join_simple (const PFla_op_t *doc, const PFla_op_t *n,
  */
 PFla_op_t *
 PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
-                 PFalg_axis_t axis, PFty_t seqty,
+                 PFalg_step_spec_t spec,
                  unsigned int guide_count, PFguide_tree_t **guides,
                  int level,
                  PFalg_att_t iter, PFalg_att_t item,
@@ -2717,8 +2713,7 @@ PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
     ret = la_op_wire2 (la_guide_step, doc, n);
 
     /* insert semantic value (axis/kind test, col names) into the result */
-    ret->sem.step.axis        = axis;
-    ret->sem.step.ty          = seqty;
+    ret->sem.step.spec        = spec;
     ret->sem.step.guide_count = guide_count;
     ret->sem.step.guides      = memcpy (PFmalloc (guide_count *
                                                   sizeof (PFguide_tree_t *)),
@@ -2756,7 +2751,7 @@ PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
         = (struct PFalg_schm_item_t) { .name = iter,
                                        .type = PFprop_type_of (n, iter) };
     /* the result of an attribute axis is also of type attribute */
-    if (ret->sem.step.axis == alg_attr)
+    if (ret->sem.step.spec.axis == alg_attr)
         ret->schema.items[1]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = aat_anode };
@@ -2770,14 +2765,14 @@ PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
 
 PFla_op_t *
 PFla_guide_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
-                        PFalg_axis_t axis, PFty_t seqty,
+                        PFalg_step_spec_t spec,
                         unsigned int guide_count, PFguide_tree_t **guides,
                         PFalg_att_t iter, PFalg_att_t item,
                         PFalg_att_t item_res)
 {
     return PFla_guide_step (
                doc, n,
-               axis, seqty,
+               spec,
                guide_count, guides,
                -1,
                iter, item, item_res);
@@ -2796,7 +2791,7 @@ PFla_guide_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
  */
 PFla_op_t *
 PFla_guide_step_join (const PFla_op_t *doc, const PFla_op_t *n,
-                      PFalg_axis_t axis, PFty_t seqty,
+                      PFalg_step_spec_t spec,
                       unsigned int guide_count, PFguide_tree_t **guides,
                       int level, PFalg_att_t item, PFalg_att_t item_res)
 {
@@ -2809,8 +2804,7 @@ PFla_guide_step_join (const PFla_op_t *doc, const PFla_op_t *n,
     ret = la_op_wire2 (la_guide_step_join, doc, n);
 
     /* insert semantic value (axis/kind test, col names) into the result */
-    ret->sem.step.axis        = axis;
-    ret->sem.step.ty          = seqty;
+    ret->sem.step.spec        = spec;
     ret->sem.step.guide_count = guide_count;
     ret->sem.step.guides      = memcpy (PFmalloc (guide_count *
                                                   sizeof (PFguide_tree_t *)),
@@ -2847,7 +2841,7 @@ PFla_guide_step_join (const PFla_op_t *doc, const PFla_op_t *n,
         ret->schema.items[i] = n->schema.items[i];
 
     /* the result of an attribute axis is also of type attribute */
-    if (ret->sem.step.axis == alg_attr)
+    if (ret->sem.step.spec.axis == alg_attr)
         ret->schema.items[i]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = aat_anode };
@@ -2861,13 +2855,13 @@ PFla_guide_step_join (const PFla_op_t *doc, const PFla_op_t *n,
 
 PFla_op_t *
 PFla_guide_step_join_simple (const PFla_op_t *doc, const PFla_op_t *n,
-                             PFalg_axis_t axis, PFty_t seqty,
+                             PFalg_step_spec_t spec,
                              unsigned int guide_count, PFguide_tree_t **guides,
                              PFalg_att_t item, PFalg_att_t item_res)
 {
     return PFla_guide_step_join (
                doc, n,
-               axis, seqty,
+               spec,
                guide_count, guides,
                -1, item, item_res);
 }
@@ -4298,8 +4292,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
 
         case la_step:
             return PFla_step (left, right,
-                              n->sem.step.axis,
-                              n->sem.step.ty,
+                              n->sem.step.spec,
                               n->sem.step.level,
                               n->sem.step.iter,
                               n->sem.step.item,
@@ -4307,16 +4300,14 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
 
         case la_step_join:
             return PFla_step_join (left, right,
-                                   n->sem.step.axis,
-                                   n->sem.step.ty,
+                                   n->sem.step.spec,
                                    n->sem.step.level,
                                    n->sem.step.item,
                                    n->sem.step.item_res);
 
         case la_guide_step:
             return PFla_guide_step (left, right,
-                                    n->sem.step.axis,
-                                    n->sem.step.ty,
+                                    n->sem.step.spec,
                                     n->sem.step.guide_count,
                                     n->sem.step.guides,
                                     n->sem.step.level,
@@ -4326,8 +4317,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
 
         case la_guide_step_join:
             return PFla_guide_step_join (left, right,
-                                         n->sem.step.axis,
-                                         n->sem.step.ty,
+                                         n->sem.step.spec,
                                          n->sem.step.guide_count,
                                          n->sem.step.guides,
                                          n->sem.step.level,

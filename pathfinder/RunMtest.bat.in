@@ -32,6 +32,7 @@ set MOD_PATH=%builddir%\runtime\.libs;%MOD_PATH%
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\compiler;%PATH%
 set PATH=%builddir%\conf;%PATH%
+set PATH=%builddir%\src\tools;%PATH%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%

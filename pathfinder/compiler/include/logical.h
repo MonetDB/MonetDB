@@ -336,13 +336,12 @@ union PFla_op_sem_t {
 
     /* store the semantic information for path steps (with guide information) */
     struct {
-        PFalg_axis_t    axis;
-        PFty_t          ty;
-        unsigned int    guide_count;
-        PFguide_tree_t **guides;
-        int             level;
-        PFalg_att_t     iter;    /**< column to look up the iterations */
-        PFalg_att_t     item;    /**< column to look up the context nodes */
+        PFalg_step_spec_t spec;   /**< step specification */
+        unsigned int    guide_count; /**< number of attached guide nodes */
+        PFguide_tree_t **guides;  /**< list of attached guide nodes */
+        int             level;    /**< level of the result nodes */
+        PFalg_att_t     iter;     /**< column to look up the iterations */
+        PFalg_att_t     item;     /**< column to look up the context nodes */
         PFalg_att_t     item_res; /**< column to store the resulting nodes */
     } step;
 
@@ -825,7 +824,7 @@ PFla_op_t * PFla_all (const PFla_op_t *n, PFalg_att_t res,
  * Constructor for XPath step evaluation.
  */
 PFla_op_t * PFla_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
-                              PFalg_axis_t axis, PFty_t seqty,
+                              PFalg_step_spec_t spec,
                               PFalg_att_t iter, PFalg_att_t item,
                               PFalg_att_t item_res);
 
@@ -833,7 +832,7 @@ PFla_op_t * PFla_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
  * Constructor for XPath step evaluation.
  */
 PFla_op_t * PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
-                       PFalg_axis_t axis, PFty_t seqty, int level,
+                       PFalg_step_spec_t spec, int level,
                        PFalg_att_t iter, PFalg_att_t item,
                        PFalg_att_t item_res);
 
@@ -841,7 +840,7 @@ PFla_op_t * PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
  * Constructor for XPath step evaluation (without duplicate removal).
  */
 PFla_op_t * PFla_step_join_simple (const PFla_op_t *doc, const PFla_op_t *n,
-                                   PFalg_axis_t axis, PFty_t seqty,
+                                   PFalg_step_spec_t spec,
                                    PFalg_att_t item,
                                    PFalg_att_t item_res);
 
@@ -849,7 +848,7 @@ PFla_op_t * PFla_step_join_simple (const PFla_op_t *doc, const PFla_op_t *n,
  * Constructor for XPath step evaluation (without duplicate removal).
  */
 PFla_op_t * PFla_step_join (const PFla_op_t *doc, const PFla_op_t *n,
-                            PFalg_axis_t axis, PFty_t seqty, int level,
+                            PFalg_step_spec_t spec, int level,
                             PFalg_att_t item,
                             PFalg_att_t item_res);
 
@@ -857,7 +856,7 @@ PFla_op_t * PFla_step_join (const PFla_op_t *doc, const PFla_op_t *n,
  * Constructor for XPath step evaluation (with guide information).
  */
 PFla_op_t * PFla_guide_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
-                                    PFalg_axis_t axis, PFty_t seqty,
+                                    PFalg_step_spec_t spec,
                                     unsigned int guide_count,
                                     PFguide_tree_t **guides,
                                     PFalg_att_t iter, PFalg_att_t item,
@@ -867,7 +866,7 @@ PFla_op_t * PFla_guide_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
  * Constructor for XPath step evaluation (with guide information).
  */
 PFla_op_t * PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
-                             PFalg_axis_t axis, PFty_t seqty,
+                             PFalg_step_spec_t spec,
                              unsigned int guide_count,
                              PFguide_tree_t **guides, int level,
                              PFalg_att_t iter, PFalg_att_t item,
@@ -879,7 +878,7 @@ PFla_op_t * PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
  */
 PFla_op_t * PFla_guide_step_join_simple (const PFla_op_t *doc,
                                          const PFla_op_t *n,
-                                         PFalg_axis_t axis, PFty_t seqty,
+                                         PFalg_step_spec_t spec,
                                          unsigned int guide_count,
                                          PFguide_tree_t **guides,
                                          PFalg_att_t item,
@@ -890,7 +889,7 @@ PFla_op_t * PFla_guide_step_join_simple (const PFla_op_t *doc,
  * with guide information).
  */
 PFla_op_t * PFla_guide_step_join (const PFla_op_t *doc, const PFla_op_t *n,
-                                  PFalg_axis_t axis, PFty_t seqty,
+                                  PFalg_step_spec_t spec,
                                   unsigned int guide_count,
                                   PFguide_tree_t **guides, int level,
                                   PFalg_att_t item,

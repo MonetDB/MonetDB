@@ -257,7 +257,7 @@
 #define mmult(a,b) PFmil_mmult ((a), (b))
 
 /** arithmetic divide */
-#define div(a,b) PFmil_div ((a), (b))
+#define div_(a,b) PFmil_div ((a), (b))
 
 /** multiplexed arithmetic divide */
 #define mdiv(a,b) PFmil_mdiv ((a), (b))
@@ -279,6 +279,9 @@
 
 /** multiplexed comparison (equality) */
 #define meq(a,b) PFmil_meq ((a), (b))
+
+/** multiplexed and */
+#define mand(a,b) PFmil_mand ((a), (b))
 
 /** multiplexed or */
 #define mor(a,b) PFmil_mor ((a), (b))

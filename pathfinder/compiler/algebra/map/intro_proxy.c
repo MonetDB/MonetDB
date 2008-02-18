@@ -49,16 +49,8 @@
 #include "alg_dag.h"
 #include "algopt.h"
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
-/** ... and so on */
-#define LL(p) (L(L(p)))
-#define RL(p) (L(R(p)))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 #define SEEN(p)  ((p)->bit_dag)
 #define pfIN(p)  ((p)->bit_in)
@@ -1663,8 +1655,7 @@ intro_step_join (PFla_op_t *root,
                             PFla_step_join (
                                 L(step),
                                 proxy_exit,
-                                step->sem.step.axis,
-                                step->sem.step.ty,
+                                step->sem.step.spec,
                                 step->sem.step.level,
                                 item,
                                 item_res),
@@ -1675,8 +1666,7 @@ intro_step_join (PFla_op_t *root,
                             PFla_guide_step_join (
                                 L(step),
                                 proxy_exit,
-                                step->sem.step.axis,
-                                step->sem.step.ty,
+                                step->sem.step.spec,
                                 step->sem.step.guide_count,
                                 step->sem.step.guides,
                                 step->sem.step.level,

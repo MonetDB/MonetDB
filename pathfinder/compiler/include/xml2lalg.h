@@ -32,34 +32,20 @@
  * $Id$
  */
 
-
-
-
 #ifndef XML2ALG_H
 #define XML2ALG_H
-
-
-#include "pathfinder.h"
-
 
 #include "logical.h"
 
 #include "array.h"
 
-
 typedef struct XML2LALGContext XML2LALGContext;
 
-
 struct XML2LALGContext {
-
-    PFarray_t* nodeStore;   
-
-    void* docXPathCtx;
-   
+    PFarray_t*    nodeStore;   
+    void*         docXPathCtx;
     PFalg_att_t (*convert2PFLA_attributeName)(const char* s);
 };
-
-
 
 XML2LALGContext* 
 PFxml2la_xml2lalgContext(void);
@@ -70,7 +56,4 @@ PFxml2la_importXMLFromFile(XML2LALGContext* ctx, const char *filename);
 PFla_op_t* 
 PFxml2la_importXMLFromMemory(XML2LALGContext* ctx, const char* xml, int size);
 
-
-
 #endif
-

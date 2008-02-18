@@ -39,19 +39,8 @@
 #include "oops.h"
 #include "mem.h"
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
-/** starting from p, make a step right, then a step left */
-#define RL(p) L(R(p))
-/** starting from p, make two steps left */
-#define LL(p) L(L(p))
-/** starting from p, make a step left, then a step right */
-#define LR(p) R(L(p))
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 /* worker for PFprop_unq_name* */
 static PFalg_att_t
@@ -258,7 +247,7 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
                argument are replaced by the overall join column name
                and all columns that are also referenced on the other
                side will be renamed by introducing a new unique name.
-               All other column stay unchanged. */
+               All other columns stay unchanged. */
             for (unsigned int i = 0; i < L(n)->schema.count; i++) {
                 ori = L(n)->schema.items[i].name;
                 child_unq = PFprop_unq_name (L(n)->prop, ori);
@@ -282,6 +271,8 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
 
                     add_name_pair (np_list, ori, unq);
                 }
+                else if (child_unq == att2_unq)
+                    add_name_pair (np_list, ori, PFalg_unq_name (ori, id++));
                 else
                     add_name_pair (np_list, ori, child_unq);
 
@@ -311,6 +302,8 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
 
                     add_name_pair (np_list, ori, unq);
                 }
+                else if (child_unq == att1_unq)
+                    add_name_pair (np_list, ori, PFalg_unq_name (ori, id++));
                 else
                     add_name_pair (np_list, ori, child_unq);
 

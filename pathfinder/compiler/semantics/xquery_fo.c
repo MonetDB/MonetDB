@@ -1213,7 +1213,7 @@ PFfun_xquery_fo (void)
         .arity = 0,  .sig_count = 1, .sigs = { {
             .ret_ty = PFty_xs_string () } },
         .alg = NULL }
-    , /* fn:name (node) as string */
+    , /* fn:name (node?) as string */
       { .ns = PFns_fn, .loc = "name",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_node ()) },
@@ -1226,7 +1226,7 @@ PFfun_xquery_fo (void)
         .arity = 0,  .sig_count = 1, .sigs = { {
             .ret_ty = PFty_xs_string () } },
         .alg = NULL }
-    , /* fn:local-name (node) as string */
+    , /* fn:local-name (node?) as string */
       { .ns = PFns_fn, .loc = "local-name",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_node ()) },
@@ -1239,7 +1239,7 @@ PFfun_xquery_fo (void)
         .arity = 0,  .sig_count = 1, .sigs = { {
             .ret_ty = PFty_xs_string () } },
         .alg = NULL }
-    , /* fn:namespace-uri (node) as string */
+    , /* fn:namespace-uri (node?) as string */
       { .ns = PFns_fn, .loc = "namespace-uri",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_node ()) },

@@ -39,7 +39,6 @@ typedef struct PFfun_t PFfun_t;
 
 #define FUNCTIONS_H
 
-#include "pathfinder.h"
 /* PFty_t */
 #include "types.h"
 /* PFenv_t */

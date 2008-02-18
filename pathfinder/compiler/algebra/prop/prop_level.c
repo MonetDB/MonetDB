@@ -38,13 +38,8 @@
 #include "oops.h"
 #include "mem.h"
 
-/*
- * Easily access subtree-parts.
- */
-/** starting from p, make a step left */
-#define L(p) ((p)->child[0])
-/** starting from p, make a step right */
-#define R(p) ((p)->child[1])
+/* Easily access subtree-parts */
+#include "child_mnemonic.h"
 
 #define UNKNOWN_LEVEL -1
 
@@ -268,7 +263,7 @@ infer_level (PFla_op_t *n)
                 PFalg_att_t item_res = n->sem.step.item_res;
                 int level = PFprop_level (R(n)->prop, n->sem.step.item);
                 if (level >= 0)
-                    switch (n->sem.step.axis) {
+                    switch (n->sem.step.spec.axis) {
                         case alg_attr:
                         case alg_chld:
                             mark_level (n->prop, item_res, level+1);
