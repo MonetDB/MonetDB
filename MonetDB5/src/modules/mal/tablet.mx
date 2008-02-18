@@ -1265,7 +1265,7 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err)
 	if ( s == NULL ||
 	     (s == e && fmt->nullstr[0] == 0) ||
 	     (!quote && strcasecmp(s,fmt->nullstr) == 0) ||
-	     (quote && strncasecmp(s+1, fmt->nullstr, e-s-2) == 0)
+	     (quote && strncasecmp(s+1, fmt->nullstr, e-s) == 0)
 		) {
 		adt = fmt->data;
 		memcpy(adt, ATOMnilptr(fmt->adt), fmt->nillen);
