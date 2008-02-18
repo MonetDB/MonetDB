@@ -13,10 +13,10 @@ stdout of test 'seconds2timestamp` in directory 'src/test/bugs` itself:
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:37931/
 # MonetDB/SQL module v2.22.0 loaded
 
+printf("\nReady.\n");
+
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
+quit();
 
 Over..
 
@@ -34,6 +34,32 @@ Over..
 % int # type
 % 10 # length
 [ 1087488000	]
+% . # table_name
+% epoch_single_value # name
+% int # type
+% 10 # length
+[ 1203170400	]
+[ 1	]
+% sys.t10,	sys.t10 # table_name
+% time1,	time2 # name
+% int,	timestamp # type
+% 10,	26 # length
+[ 1202900916,	2008-02-13 11:08:06.000000	]
+% . # table_name
+% epoch_single_value # name
+% timestamp # type
+% 26 # length
+[ 2008-02-16 14:00:00.000000	]
+% sys. # table_name
+% epoch_time1 # name
+% timestamp # type
+% 26 # length
+[ 2008-02-13 11:08:36.000000	]
+% sys. # table_name
+% epoch_time2 # name
+% int # type
+% 10 # length
+[ 1202900886	]
 
 # 22:40:46 >  
 # 22:40:46 >  Done.
