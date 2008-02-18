@@ -516,6 +516,7 @@ AUTHchangeUsername(str *olduser, str *newuser)
 	BUN p, q;
 	str tmp;
 	BATiter useri;
+	oid id;
 
 	rethrow("addUser", tmp, AUTHrequireAdminOrUser(olduser));
 
@@ -536,7 +537,8 @@ AUTHchangeUsername(str *olduser, str *newuser)
 
 	/* ok, just do it! (with force, because sql makes view over it) */
 	useri = bat_iterator(user);
-	BUNinplace(BATmirror(user), p, *newuser, BUNhead(useri, p), TRUE);
+	id = *(oid*)BUNhead(useri, p);
+	BUNinplace(user, p, &id, *newuser, TRUE);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);
@@ -577,7 +579,7 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 	/* cypher the password */
 	rethrow("setPassword", tmp, AUTHcypherValue(&hash, passwd));
 	/* ok, just overwrite the password field for this user */
-	BUNinplace(pass, p, BUNhead(passi, p), hash, FALSE);
+	BUNinplace(pass, p, &id, hash, FALSE);
 	GDKfree(hash);
 	AUTHcommit();
 
@@ -596,7 +598,7 @@ AUTHsetPassword(str *username, str *passwd) {
 	str tmp;
 	str hash;
 	oid id;
-	BATiter useri, passi;
+	BATiter useri;
 
 	rethrow("setPassword", tmp, AUTHrequireAdmin());
 
@@ -627,8 +629,7 @@ AUTHsetPassword(str *username, str *passwd) {
 	/* ok, just overwrite the password field for this user */
 	p = BUNfnd(pass, &id);
 	assert (p != BUN_NONE);
-	passi = bat_iterator(pass);
-	BUNinplace(pass, p, BUNhead(passi, p), hash, FALSE);
+	BUNinplace(pass, p, &id, hash, FALSE);
 	GDKfree(hash);
 	AUTHcommit();
 
