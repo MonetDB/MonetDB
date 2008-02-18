@@ -347,7 +347,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_guide_step_join:
             if (a->sem.step.spec.axis   != b->sem.step.spec.axis
              || a->sem.step.spec.kind   != b->sem.step.spec.kind
-             || !PFqname_eq (a->sem.step.spec.qname, b->sem.step.spec.qname)
+             || PFqname_eq (a->sem.step.spec.qname, b->sem.step.spec.qname)
              || a->sem.step.guide_count != b->sem.step.guide_count
              || a->sem.step.level       != b->sem.step.level
              || a->sem.step.iter        != b->sem.step.iter
