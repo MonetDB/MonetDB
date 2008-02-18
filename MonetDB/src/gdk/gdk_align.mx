@@ -389,6 +389,7 @@ VIEWcombine(BAT *b)
 		bm->H = bn->H;
 		if (bn->T->parentid)
 			BBPshare(bn->T->parentid);
+		ALIGNsetH(bn, b);
 	} else {
 		BATseqbase(bm, bn->hseqbase);
 	}
