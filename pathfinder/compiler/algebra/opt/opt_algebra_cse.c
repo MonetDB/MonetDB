@@ -1215,8 +1215,8 @@ column_eq (unsigned int col1, unsigned int col2,
 
     /* check every item of the column */
     for (i = 0; i < littbl1->sem.lit_tbl.count; i++) {
-        if (!PFalg_atom_comparable (a[i].atoms[col1], b[i].atoms[col2]) ||
-            PFalg_atom_cmp (a[i].atoms[col1], b[i].atoms[col2]) != 0)
+        if (!(PFalg_atom_comparable (a[i].atoms[col1], b[i].atoms[col2]) &&
+              (PFalg_atom_cmp (a[i].atoms[col1], b[i].atoms[col2]) == 0)))
             return false;
     } 
     return true;
