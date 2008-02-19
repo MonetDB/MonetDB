@@ -1049,7 +1049,7 @@ main(int argc, char *argv[])
 	umask(S_IRWXG | S_IRWXO);
 
 	/* hunt for the config file, and read it, allow the caller to
-	 * specify where to look using the MNETDB5CONF environment variable */
+	 * specify where to look using the MONETDB5CONF environment variable */
 	p = getenv("MONETDB5CONF");
 	if (p == NULL)
 		p = MONETDB5_CONFFILE;
