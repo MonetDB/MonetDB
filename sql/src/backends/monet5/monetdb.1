@@ -86,9 +86,9 @@ Triggered by the
 flag, a long listing is used.  This listing spans many rows with on each
 row one property and its value separated by a colon (`:').  The long
 listing includes all information that is available.
-.IP "start [\-a] [database ...]"
-.IP "stop [\-a] [database ...]"
-.IP "kill [\-a] [database ...]"
+.IP "start [\-aw] [database ...]"
+.IP "stop [\-aw] [database ...]"
+.IP "kill [\-aw] [database ...]"
 Starts, stops or kills the given database(s) or, when
 .I \-a
 is supplied, all known databases, if the MonetDB Database Server
@@ -99,6 +99,19 @@ command should only be used as last resort for a database that doesn't
 respond any more to a
 .B stop
 command.  Killing a database may result in (partial) data loss.
+The
+.I \-w
+flag causes the command only to return once it knows the required action
+was taken.  In other words, it waits for the action to be applied.  This
+can be useful when starting large databases that have a long startup
+time.  When the
+.I \-w
+flag is used,
+.BR monetdb (1)
+will output diagnostic messages if the requested action failed.  When
+encountering an error, one should always consult the logfile of
+.BR merovingian (1)
+for more details.
 .IP \-h
 .IP "help [command]"
 Shows general help, or short help for a given command.

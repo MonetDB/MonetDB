@@ -120,19 +120,28 @@ command_help(int argc, char *argv[])
 		printf("  -l  extended information listing\n");
 		printf("  -c  crash statistics listing\n");
 	} else if (strcmp(argv[1], "start") == 0) {
-		printf("Usage: monetdb start [-a] [database ...]\n");
+		printf("Usage: monetdb start [-aw] [database ...]\n");
 		printf("  Starts the given database, if the MonetDB Database Server\n");
 		printf("  is running.\n");
+		printf("Options:\n");
+		printf("  -a  start all known databases\n");
+		printf("  -w  wait for a database to be started instead of returning immediately\n");
 	} else if (strcmp(argv[1], "stop") == 0) {
-		printf("Usage: monetdb stop [-a] [database ...]\n");
+		printf("Usage: monetdb stop [-aw] [database ...]\n");
 		printf("  Stops the given database, if the MonetDB Database Server\n");
 		printf("  is running.\n");
+		printf("Options:\n");
+		printf("  -a  stop all known databases\n");
+		printf("  -w  wait for a database to be stopped instead of returning immediately\n");
 	} else if (strcmp(argv[1], "kill") == 0) {
-		printf("Usage: monetdb kill [-a] [database ...]\n");
+		printf("Usage: monetdb kill [-aw] [database ...]\n");
 		printf("  Kills the given database, if the MonetDB Database Server\n");
 		printf("  is running.  Note: killing a database should only be done\n");
 		printf("  as last resort to stop a database.  A database being\n");
 		printf("  killed may end up with data loss.\n");
+		printf("Options:\n");
+		printf("  -a  kill all known databases\n");
+		printf("  -w  wait for a database to be killed instead of returning immediately\n");
 	} else if (strcmp(argv[1], "help") == 0) {
 		printf("Yeah , help on help, how desparate can you be? ;)\n");
 	} else if (strcmp(argv[1], "version") == 0) {
@@ -475,13 +484,16 @@ static void
 command_merocom(int argc, char *argv[], merocom mode)
 {
 	int doall = 0;
+	int wait = 0;
 	char path[8096];
 	FILE *f;
 	char buf[256];
 	int i;
 	err e;
 	sabdb *stats;
+	sabdb *waitstats = NULL;
 	char *type = NULL;
+	char *p;
 
 	snprintf(path, 8095, "%s/.merovingian_control", dbfarm);
 	path[8095] = '\0';
@@ -509,14 +521,27 @@ command_merocom(int argc, char *argv[], merocom mode)
 	/* time to collect some option flags */
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] == '-') {
-			if (strcmp(&argv[i][1], "a") == 0) {
-				doall = 1;
-			} else if (strcmp(&argv[i][1], "-") == 0) {
-				i = argc;
-			} else {
-				fprintf(stderr, "%s: unknown option: -%c\n", type, argv[i][1]);
-				command_help(2, &argv[-1]);
-				exit(1);
+			for (p = argv[i] + 1; *p != '\0'; p++) {
+				switch (*p) {
+					case 'a':
+						doall = 1;
+					break;
+					case 'w':
+						wait = 1;
+					break;
+					case '-':
+						if (p[1] == '\0') {
+							if (argc - 1 > i) 
+								doall = 0;
+							i = argc;
+							break;
+						}
+					default:
+						fprintf(stderr, "%s: unknown option: -%c\n", type, *p);
+						command_help(2, &argv[-1]);
+						exit(1);
+					break;
+				}
 			}
 			/* make this option no longer available, for easy use
 			 * lateron */
@@ -531,7 +556,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 		exit(1);
 	}
 
-	if ((f = fopen(path, "w")) == NULL) {
+	if ((f = fopen(path, "a")) == NULL) {
 		fprintf(stderr, "%s: cannot write command: %s\n",
 				type, strerror(errno));
 		exit(2);
@@ -548,17 +573,68 @@ command_merocom(int argc, char *argv[], merocom mode)
 		}
 	
 		orig = stats;
-		while (stats != NULL &&
-				(((mode == STOP || mode == KILL)
-				  && stats->state == SABdbRunning) ||
-				(mode == START && stats->state != SABdbRunning)))
-		{
-			snprintf(buf, 256, "%s %s\n", stats->dbname, type);
-			fputs(buf, f);
+		while (stats != NULL) {
+			if (((mode == STOP || mode == KILL)
+				  && stats->state == SABdbRunning))
+			{
+				snprintf(buf, 256, "%s %s\n", stats->dbname, type);
+				fputs(buf, f);
+				fflush(f);
+				if (wait == 1) {
+					do {
+						/* don't spinlock, just wait half a seconds ;) */
+						MT_sleep_ms(500);
+						if (waitstats != NULL)
+							SABAOTHfreeStatus(&waitstats);
+						if ((e = SABAOTHgetStatus(&waitstats, stats->dbname)) != MAL_SUCCEED) {
+							fprintf(stderr, "%s: internal error: %s\n", type, e);
+							GDKfree(e);
+							exit(2);
+						}
+					} while (waitstats->state == SABdbRunning);
+					if (waitstats->state == SABdbCrashed)
+						printf("%s: database %s crashed after shutting down\n",
+								type, stats->dbname);
+					SABAOTHfreeStatus(&waitstats);
+					waitstats = NULL;
+				}
+			} else if (mode == START && stats->state != SABdbRunning) {
+				snprintf(buf, 256, "%s %s\n", stats->dbname, type);
+				fputs(buf, f);
+				fflush(f);
+				if (wait == 1) {
+					do {
+						/* don't spinlock, just wait half a seconds ;) */
+						MT_sleep_ms(500);
+						if (waitstats != NULL)
+							SABAOTHfreeStatus(&waitstats);
+						if ((e = SABAOTHgetStatus(&waitstats, stats->dbname)) != MAL_SUCCEED) {
+							fprintf(stderr, "%s: internal error: %s\n", type, e);
+							GDKfree(e);
+							exit(2);
+						}
+						if (waitstats->state == SABdbRunning &&
+								waitstats->conns != NULL &&
+								waitstats->conns->val != NULL)
+						{
+							break;
+						}
+						/* note: we cannot see the difference between a
+						 * still starting server (inactive) and a server
+						 * that shuts down after startup (inactive),
+						 * hence we don't check for that here */
+					} while (waitstats->state != SABdbCrashed);
+					if (waitstats->state == SABdbCrashed) {
+						printf("%s: database %s crashed during startup\n",
+								type, stats->dbname);
+					}
+					SABAOTHfreeStatus(&waitstats);
+					waitstats = NULL;
+				}
+			}
 			stats = stats->next;
 		}
 
-		fflush(f);
 		fclose(f);
 
 		if (orig != NULL)
@@ -585,8 +661,61 @@ command_merocom(int argc, char *argv[], merocom mode)
 					printf("%s: database is already running: %s\n",
 							type, argv[i]);
 				} else {
-					snprintf(buf, 256, "%s %s\n", stats->dbname, type);
-					fputs(buf, f);
+					if (mode == STOP || mode == KILL) {
+						snprintf(buf, 256, "%s %s\n", stats->dbname, type);
+						fputs(buf, f);
+						fflush(f);
+						if (wait == 1) {
+							do {
+								/* don't spinlock, just wait half a seconds ;) */
+								MT_sleep_ms(500);
+								if (waitstats != NULL)
+									SABAOTHfreeStatus(&waitstats);
+								if ((e = SABAOTHgetStatus(&waitstats, stats->dbname)) != MAL_SUCCEED) {
+									fprintf(stderr, "%s: internal error: %s\n", type, e);
+									GDKfree(e);
+									exit(2);
+								}
+							} while (waitstats->state == SABdbRunning);
+							if (waitstats->state == SABdbCrashed)
+								printf("%s: database %s crashed after shutting down\n",
+										type, stats->dbname);
+							SABAOTHfreeStatus(&waitstats);
+						}
+					} else if (mode == START) {
+						snprintf(buf, 256, "%s %s\n", stats->dbname, type);
+						fputs(buf, f);
+						fflush(f);
+						if (wait == 1) {
+							do {
+								/* don't spinlock, just wait half a seconds ;) */
+								MT_sleep_ms(500);
+								if (waitstats != NULL)
+									SABAOTHfreeStatus(&waitstats);
+								if ((e = SABAOTHgetStatus(&waitstats, stats->dbname)) != MAL_SUCCEED) {
+									fprintf(stderr, "%s: internal error: %s\n", type, e);
+									GDKfree(e);
+									exit(2);
+								}
+								if (waitstats->state == SABdbRunning &&
+										waitstats->conns != NULL &&
+										waitstats->conns->val != NULL)
+								{
+									break;
+								}
+								/* note: we cannot see the difference
+								 * between a still starting server
+								 * (inactive) and a server that shuts
+								 * down after startup (inactive), hence
+								 * we don't check for that here */
+							} while (waitstats->state != SABdbCrashed);
+							if (waitstats->state == SABdbCrashed) {
+								printf("%s: database %s crashed during startup\n",
+										type, stats->dbname);
+							}
+							SABAOTHfreeStatus(&waitstats);
+						}
+					}
 				}
 
 				SABAOTHfreeStatus(&stats);
@@ -594,7 +723,6 @@ command_merocom(int argc, char *argv[], merocom mode)
 		}
 	}
 
-	fflush(f);
 	fclose(f);
 }
 
