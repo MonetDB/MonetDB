@@ -597,6 +597,7 @@ typedef struct stack_item_D si_D;
 
 struct stack_item_D {
     oid iter_idx;       /* index of iter */
+    oid left;           /* oid / pos of left input */
     oid eocs;           /* end of ctx scope (pre + size) */
 };
 
@@ -617,16 +618,16 @@ ws_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* s
     oid *iters_on_stack = 0;
     int stack_size = 0, onstack_size = 0, iters_on_stack_size = 0, j = 0;
     int stack_top = 0;
-    oid pre = 0, ctx = 0, iter_idx = 0, cnd = 0, lst_cnd = GDK_oid_max;
+    oid right = 0, pre = 0, ctx = 0, iter_idx = 0, left = 0, cnd = 0, lst_cnd = GDK_oid_max;
     BUN iter_bun = 0, ctx_bun = 0, ctx_last = 0;
-    oid *cnd_ptr = 0, *cnd_lst = 0;
+    oid *cnd_fst = 0, *cnd_ptr = 0, *cnd_lst = 0;
     oid num_iters = (max_iter - min_iter) + 1, i;
     int OST_bytes = sizeof(OST);
     int OST_bits  = OST_bytes * 8;
     int OST_mask  = OST_bits - 1;
     int OST_shift = 0;
 
-    cnd_ptr = (oid*)Tloc(cand_bat, BUNfirst(cand_bat));
+    cnd_fst = cnd_ptr = (oid*)Tloc(cand_bat, BUNfirst(cand_bat));
     cnd     = *cnd_ptr;
     cnd_lst = (oid*)Tloc(cand_bat, BUNlast(cand_bat) - 1);
     lst_cnd = *cnd_lst;
@@ -665,10 +666,11 @@ ws_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* s
     ctx_last = BUNlast(ctx_bat);
     ctx = *(oid*)BUNtail(ctx_bati,ctx_bun);
     iter_idx = *(oid*)BUNtail(iter_bati,iter_bun) - min_iter;
+    left = *(oid*)BUNhead(iter_bati,iter_bun);
 
 @= sort_iters_on_stack
     for (j = 0 ; j < stack_top ; j++) {
-        iters_on_stack[j] = stack[j].iter_idx + min_iter;
+        iters_on_stack[j] = stack[j].left;
     }
     if (!no_iter_order && stack_top > 1) {
         qsort((void *) iters_on_stack, stack_top, sizeof(oid),
@@ -682,24 +684,18 @@ ws_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* s
 @
 @= skip_cands_before_pre
         if (pre <= lst_cnd) {
-            if (cnd_ptr) {
-                /* poor man's binary search / exploiting forward scan */
-                while (cnd_ptr+1048576 <= cnd_lst && *(cnd_ptr+1048576) < pre)
-                    cnd_ptr += 1048576; /* this avoids mmapped I/O */
-                while (cnd_ptr+32768 <= cnd_lst && *(cnd_ptr+32768) < pre)
-                    cnd_ptr += 32768;
-                while (cnd_ptr+1024 <= cnd_lst && *(cnd_ptr+1024) < pre)
-                    cnd_ptr += 1024;
-                while (cnd_ptr+32 <= cnd_lst && *(cnd_ptr+32) < pre)
-                    cnd_ptr += 32;
-                while (*cnd_ptr < pre)
-                    cnd_ptr++;
-                cnd = *cnd_ptr;
-            } else {
-                if (cnd < pre) {
-                    cnd = pre;
-                }
-            }
+            /* poor man's binary search / exploiting forward scan */
+            while (cnd_ptr+1048576 <= cnd_lst && *(cnd_ptr+1048576) < pre)
+                cnd_ptr += 1048576; /* this avoids mmapped I/O */
+            while (cnd_ptr+32768 <= cnd_lst && *(cnd_ptr+32768) < pre)
+                cnd_ptr += 32768;
+            while (cnd_ptr+1024 <= cnd_lst && *(cnd_ptr+1024) < pre)
+                cnd_ptr += 1024;
+            while (cnd_ptr+32 <= cnd_lst && *(cnd_ptr+32) < pre)
+                cnd_ptr += 32;
+            while (*cnd_ptr < pre)
+                cnd_ptr++;
+            cnd = *cnd_ptr;
         } else {
             cnd = GDK_oid_max;
         }
@@ -719,18 +715,20 @@ ws_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* s
         while (ctx_bun < ctx_last) {
             ctx = *(oid*)BUNtail(ctx_bati,ctx_bun);
             iter_idx = *(oid*)BUNtail(iter_bati,iter_bun) - min_iter;
+            left = *(oid*)BUNhead(iter_bati,iter_bun);
             if (ctx != cur_ctx)
                     break;
             if (!onstack_get(iter_idx)) {
                 si_D new_stack_item;
                 new_stack_item.iter_idx = iter_idx;
+                new_stack_item.left = left;
                 new_stack_item.eocs = ctx + size[ctx];
                 stack[stack_top++] = new_stack_item;
                 onstack_set(iter_idx);
                 if (self) {
                     if (pre == cnd) {
-                        oid iter = min_iter + iter_idx;
-                        bunfastins(res, &iter, &pre);
+                        right = cand_bat->hseqbase + (cnd_ptr - cnd_fst);
+                        bunfastins(res, &left, &right);
                     }
                 }
             }
@@ -798,10 +796,10 @@ ws_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* s
         oid *fst_pre = cnd_ptr;
         oid *lst_pre = (oid*)Tloc(cand_bat, BUNlast(cand_bat));
                         
-        for (cur_pre = fst_pre ; cur_pre < lst_pre && *cur_pre <= lst_ctx; cur_pre++) {
+        for (right = cand_bat->hseqbase + (cnd_ptr - cnd_fst), cur_pre = fst_pre ; cur_pre < lst_pre && *cur_pre <= lst_ctx; cur_pre++, right++) {
             for (j = 0 ; j < stack_top ; j++ ) {
                 *hdst++ = iters_on_stack[j];
-                *tdst++ = *cur_pre;
+                *tdst++ = right;
             }
         }
         BATsetcount(res, hdst-sdst);

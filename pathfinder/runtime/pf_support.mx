@@ -318,11 +318,8 @@ DESCRIPTION:
 returns all nodes on the @1-sibling axis of the ctx-nodes duplicate free for each group."
 @
 @m
-@(
-TDOD:
 @:ws_step_down(descendant)@
 @:ws_step_down(descendant_or_self)@
-@)
 @:ws_step_down(child)@
 
 @= ws_step_down
