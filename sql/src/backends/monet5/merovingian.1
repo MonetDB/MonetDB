@@ -47,10 +47,21 @@ are started as part of the startup of
 requests for them.
 .SH CONFIGURATION
 .B merovingian
-uses the default configuration file for its behaviour.  The following
-options can be found under the 
+defaults to use the configuration file that was placed in the file
+system during installation to control its behavious.  If the environment
+variable
+.I MONETDB5CONF
+is set,
+.B merovingian
+uses the value of this variable as configuration file to load.  In the
+configuration file the following options can be specified.  Most are
+typically to be found under the
 .I Merovingian
-section in the configuration file.
+section in the default configuration file.
+.IP gdk_dbfarm
+The value of this setting determines which local cluster
+.B merovingian
+will monitor.
 .IP mero_msglog
 .IP mero_errlog
 When both options are unset,

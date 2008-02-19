@@ -50,7 +50,7 @@ as error to the connecting client.
 FIXME: actually implement that
 
 @h
-#define MEROV_VERSION   "0.6"
+#define MEROV_VERSION   "0.7"
 #define MEROV_PORT      50000
 
 @c
@@ -58,7 +58,7 @@ FIXME: actually implement that
 #include "merovingian.h"
 #include "mal_sabaoth.h"
 #include <stream_socket.h>
-#include <stdlib.h> /* exit */
+#include <stdlib.h> /* exit, getenv */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
 #include <sys/types.h>
@@ -1048,10 +1048,14 @@ main(int argc, char *argv[])
 	 * our private parts? */
 	umask(S_IRWXG | S_IRWXO);
 
-	/* hunt for the config file, and read it */
-	cnf = fopen(MONETDB5_CONFFILE, "r");
+	/* hunt for the config file, and read it, allow the caller to
+	 * specify where to look using the MNETDB5CONF environment variable */
+	p = getenv("MONETDB5CONF");
+	if (p == NULL)
+		p = MONETDB5_CONFFILE;
+	cnf = fopen(p, "r");
 	if (cnf == NULL) {
-		fprintf(stderr, "cannot open config file %s\n", MONETDB5_CONFFILE);
+		fprintf(stderr, "cannot open config file %s\n", p);
 		fflush(stderr);
 		exit(1);
 	}
