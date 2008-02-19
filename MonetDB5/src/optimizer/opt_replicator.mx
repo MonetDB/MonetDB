@@ -371,10 +371,24 @@ static int findReplica( str sname, str tname, str cname, int tpe, bit tail,
 
 }
 
+/* check if replica should be retained */
+static int checkRetain(lng cnt, lng clk)
+{
+	if( retain <= 1 ) return 1; 	/* 0 keep stat, 1 retain all */
+	if( retain == 2 ) {		/* cost-based */
+		if( clk > 1000) return 1;	/* at least 1 msec spent */
+		else return 0;
+	}
+	if( retain == 3 ) {		/* cost-based per item*/
+		if( cnt && (clk/cnt > 1)) return 1;	/* at least 1 usec spent per tuple*/
+		else return 0;
+	}
+	else return 0;			
+}
 
 
 @-
-The overloaded algebra operator simply calles the
+The overloaded algebra operator simply calls the
 underlying implementation and collects statistics on the
 cost.
 @c
@@ -416,7 +430,7 @@ str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi,
 {
 	int tpe, rr;
 	BAT *bn, *br;
-	lng cnt=0, clk = 0;
+	lng cnt = -1, clk = 0;
 	Replica r;
 	sht ov;
 
@@ -427,7 +441,7 @@ str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi,
 
 	/* execute selection if needed */
 	if((retain == 0) || 	/* normal execution + keep stat */
-	   ((retain == 1) && (ov < 0))){	/* no overlap in exist. repl. */
+	   ((retain > 0) && (ov < 0))){	/* no overlap in exist. repl. */
 		clk = GDKusec();
 		bn = BAT_select_(b, low, hgh, li, hi, tl, FALSE);
 		clk = GDKusec()-clk;
@@ -441,7 +455,7 @@ str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi,
         	else throw(MAL, "REPselectImpl", "GDKerror");
 
 	} else 
-	if ((retain == 1) && (ov > 0)){	/* exec. over subset repl. */ 
+	if ((retain > 0) && (ov > 0)){	/* exec. over subset repl. */ 
                 r = repltable + rr;
        	        r->ucntsub++;
 
@@ -462,36 +476,23 @@ str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi,
                 else throw(MAL, "REPselectImpl", "GDKerror");
 	}
 
-	if( cnt == 0 ) /* don't store empty intermediates */
-		return MAL_SUCCEED;
-		/* update replica table */
-	if( ov < 0 ){			/* new intermed. -> new entry */
-		r = newReplica(sname,tname,cname,tpe,tl);
-		setReplicaRange(r,tpe,low,hgh,li,hi);
-		r->cnt = cnt;
-		r->cost = clk;
-		r->ucnteq = r->ucntsub = 0;
-		if( retain == 1){
-	                r->resbid = *ret;
-			BBPincref(*ret,TRUE);
-		}
-	} else
+	/* update replica table */
 	if(ov == 0 ){		/* equality, reuse replica rr*/
-		r = repltable + rr;
+		r = repltable + rr;	/* no new intermediate */
 		r->ucnteq++;
-		if( retain == 1 ){  
+		if( retain > 0 ){  
         		*ret = r->resbid;
                 	BBPincref(*ret,TRUE);
 		}
-	} else {  	/* reuse replica rr to shrink selection,
-			 make new entry for the result*/
+	} else			/* new intermed. -> ev. new entry */
+ 	if( checkRetain(cnt,clk) ){		
 		r = newReplica(sname,tname,cname,tpe,tl);
 		setReplicaRange(r,tpe,low,hgh,li,hi);
 		r->cnt = cnt;
 		r->cost = clk;
 		r->ucnteq = r->ucntsub = 0;
-		if( retain == 1){
-	         	r->resbid = *ret;
+		if( retain > 0){
+	                r->resbid = *ret;
 			BBPincref(*ret,TRUE);
 		}
 	}
