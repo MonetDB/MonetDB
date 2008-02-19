@@ -4242,7 +4242,7 @@ MT_Lock pf_compiler_lock;
 MT_Lock pf_module_lock;
 MT_Lock pf_cache_lock;
 
-#include "compile_interface.h"
+#include "compiler/include/compile_interface.h"
 
 /*
  * =================== MIL execution ================================
