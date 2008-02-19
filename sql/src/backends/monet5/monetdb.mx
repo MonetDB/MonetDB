@@ -25,13 +25,13 @@ dbfarm.  Creating or deleting databases next to retrieving status
 information about them are the primary goals of this tool.
 
 @h
-#define TOOLKIT_VERSION   "0.2"
+#define TOOLKIT_VERSION   "0.3"
 
 @c
 #include "sql_config.h"
 #include "monetdb.h"
 #include "mal_sabaoth.h"
-#include <stdlib.h> /* exit */
+#include <stdlib.h> /* exit, getenv */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
 #include <string.h> /* strerror */
@@ -968,10 +968,14 @@ main(int argc, char *argv[])
 	 * key around here and all. */
 	umask(S_IRWXG | S_IRWXO);
 
-	/* hunt for the config file, and read it */
-	cnf = fopen(MONETDB5_CONFFILE, "r");
+	/* hunt for the config file, and read it, allow the caller to
+	 * specify where to look using the MNETDB5CONF environment variable */
+	p = getenv("MONETDB5CONF");
+	if (p == NULL)
+		p = MONETDB5_CONFFILE;
+	cnf = fopen(p, "r");
 	if (cnf == NULL) {
-		fprintf(stderr, "cannot open config file %s\n", MONETDB5_CONFFILE);
+		fprintf(stderr, "cannot open config file %s\n", p);
 		exit(1);
 	}
 
