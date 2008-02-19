@@ -628,12 +628,23 @@ rev_act_attribute_ (PFarray_t *map, PFalg_att_t att)
             return (*(actatt_map_t *)PFarray_at (map, i)).ori_att;
     }
 
+#ifndef NDEBUG
+    return att_NULL;
+#endif 
+    
+    PFoops (OOPS_FATAL, "Attribute %s not found", PFatt_str (att));
+
     /* assert ("name not found"); */
     return att_NULL; /* pacify picky compilers */
 }
 
+#ifndef NDEBUG
+#define REVACTATT(n, att)  (assert (rev_act_attribute_ (ACT(n), (att)) != att_NULL), \
+                                    rev_act_attribute ((n), (att)))
+#else
+#define REVACTATT(n, att)  rev_act_attribute ((n), (att))
+#endif 
 
-#define REVACTATT(n, att)   rev_act_attribute ((n), (att))
 /**
  * See 'eff_attribute_ (map, att)' above.
  * Checks the map and returns the effective attribute
@@ -1228,7 +1239,8 @@ column_eq (unsigned int col1, unsigned int col2,
  * in littbl2
  */
 static PFalg_att_t
-littbl_column (PFalg_att_t name, PFla_op_t *littbl1, PFla_op_t *littbl2)
+littbl_column (PFalg_att_t name, PFla_op_t *littbl1, PFla_op_t *littbl2,
+               PFarray_t *seen)
 {
     assert (littbl1->kind == la_lit_tbl);
     assert (littbl2->kind == la_lit_tbl);
@@ -1252,9 +1264,21 @@ littbl_column (PFalg_att_t name, PFla_op_t *littbl1, PFla_op_t *littbl2)
                PFatt_str (name));
 
     /* check for column equality and return the right name */
-    for (unsigned int i = 0; i < littbl2->schema.count; i++)
-       if (column_eq (column, i, littbl1, littbl2))
-           return littbl2->schema.items[i].name;
+    bool match = false;
+    for (unsigned int i = 0; i < littbl2->schema.count; i++) {
+        match = false;
+        if (column_eq (column, i, littbl1, littbl2)) {
+            /* loop over the protocolled columns to check if
+             * if we want to use a column twice */
+            for (unsigned int j = 0; j < PFarray_last (seen); j++)
+                if (littbl2->schema.items[i].name ==
+                    *((PFalg_att_t *)PFarray_at (seen, i)))
+                    match = true; 
+            if (match) continue;
+
+            return littbl2->schema.items[i].name;
+        }
+    }
 
     PFoops (OOPS_FATAL,
             "This should not happen: no equal columns found");
@@ -1965,10 +1989,20 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
         case la_lit_tbl:
         {
             actmap =  create_actatt_map ();
+
+            /* during the creation of the map
+             * we have to protocol the columns
+             * we have just seen, to avoid a column to be
+             * used twice */
+            PFarray_t *seen = PFarray (sizeof(PFalg_att_t));
             for (unsigned int i = 0; i < ori->schema.count; i++) {
+                PFalg_att_t col = littbl_column (ori->schema.items[i].name,
+                                                 ori, cse, seen);
+
+                *((PFalg_att_t *) PFarray_add (seen)) = col; 
+
                 INACTATT (actmap,
-                          actatt (littbl_column (ori->schema.items[i].name,
-                                                 ori, cse),
+                          actatt (col,
                                   ori->schema.items[i].name));
             }
         }   break;     
