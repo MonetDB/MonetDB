@@ -311,10 +311,11 @@ static int findReplica( str sname, str tname, str cname, int tpe, bit tail,
 	int i, minr = -1;
 	size_t minc = (size_t) GDK_lng_max;
 	bit leq, lsub, heq, hsub;
-	int rs[replnr], ri=0; /* subset replicas */
+	int *rs, ri=0; /* subset replicas */
 
 	(void) reuse;
 	(void) rcache;
+	rs = alloca(replnr * sizeof(*rs)); /* was: int rs[replnr]; */
 	cmp= BATatoms[tpe].atomCmp;
 	nilptr = ATOMnilptr(tpe);
 
