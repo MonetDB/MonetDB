@@ -564,6 +564,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 
 	if (doall == 1) {
 		sabdb *orig;
+		int ret = 0;
 		/* don't even look at the arguments, because we are instructed
 		 * to work on all known databases */
 		if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
@@ -592,9 +593,11 @@ command_merocom(int argc, char *argv[], merocom mode)
 							exit(2);
 						}
 					} while (waitstats->state == SABdbRunning);
-					if (waitstats->state == SABdbCrashed)
+					if (waitstats->state == SABdbCrashed) {
 						printf("%s: database %s crashed after shutting down\n",
 								type, stats->dbname);
+						ret = 1;
+					}
 					SABAOTHfreeStatus(&waitstats);
 					waitstats = NULL;
 				}
@@ -627,6 +630,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 					if (waitstats->state == SABdbCrashed) {
 						printf("%s: database %s crashed during startup\n",
 								type, stats->dbname);
+						ret = 1;
 					}
 					SABAOTHfreeStatus(&waitstats);
 					waitstats = NULL;
@@ -639,6 +643,9 @@ command_merocom(int argc, char *argv[], merocom mode)
 
 		if (orig != NULL)
 			SABAOTHfreeStatus(&orig);
+		/* indicate to the caller something went wrong */
+		if (ret != 0)
+			exit(ret);
 		return;
 	}
 
@@ -677,9 +684,13 @@ command_merocom(int argc, char *argv[], merocom mode)
 									exit(2);
 								}
 							} while (waitstats->state == SABdbRunning);
-							if (waitstats->state == SABdbCrashed)
+							if (waitstats->state == SABdbCrashed) {
 								printf("%s: database %s crashed after shutting down\n",
 										type, stats->dbname);
+								SABAOTHfreeStatus(&waitstats);
+								fclose(f);
+								exit(1);
+							}
 							SABAOTHfreeStatus(&waitstats);
 						}
 					} else if (mode == START) {
@@ -712,6 +723,9 @@ command_merocom(int argc, char *argv[], merocom mode)
 							if (waitstats->state == SABdbCrashed) {
 								printf("%s: database %s crashed during startup\n",
 										type, stats->dbname);
+								SABAOTHfreeStatus(&waitstats);
+								fclose(f);
+								exit(1);
 							}
 							SABAOTHfreeStatus(&waitstats);
 						}

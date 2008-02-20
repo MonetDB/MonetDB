@@ -111,7 +111,12 @@ flag is used,
 will output diagnostic messages if the requested action failed.  When
 encountering an error, one should always consult the logfile of
 .BR merovingian (1)
-for more details.
+for more details.  Note that in combination with
+.I \-a
+the return code of
+.BR monetdb (1)
+indicates failure if one of the databases had a failure, even though
+other databases were successful.
 .IP \-h
 .IP "help [command]"
 Shows general help, or short help for a given command.
