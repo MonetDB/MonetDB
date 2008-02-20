@@ -109,6 +109,7 @@ typedef char* err;
 #define NO_ERR (err)0
 
 static str _merovingian_mserver = NULL;
+static str _merovingian_conffile = NULL;
 
 typedef struct _dpair {
 	FILE* fout;       /* where to read stdout messages from */
@@ -461,9 +462,10 @@ forkMserver(str database, sabdb** stats, int force)
 
 	pid = fork();
 	if (pid == 0) {
+		str conffile = alloca(sizeof(char) * 512);
 		str dbname = alloca(sizeof(char) * 512);
 		str vaultkey = alloca(sizeof(char) * 512);
-		str argv[10];	/* for the exec arguments */
+		str argv[11];	/* for the exec arguments */
 		int c = 0;
 
 		/* redirect stdout and stderr to a new pair of fds for
@@ -480,9 +482,11 @@ forkMserver(str database, sabdb** stats, int force)
 		close(0);
 
 		/* ok, now exec that mserver we want */
+		snprintf(conffile, 511, "--config=%s", _merovingian_conffile);
 		snprintf(dbname, 511, "--dbname=%s", database);
 		snprintf(vaultkey, 511, "monet_vault_key=%s/.vaultkey", (*stats)->path);
 		argv[c++] = _merovingian_mserver;
+		argv[c++] = conffile;
 		argv[c++] = dbname;
 		argv[c++] = "--dbinit=include sql;"; /* yep, no quotes needed! */
 		argv[c++] = "--set"; argv[c++] = "daemon=yes";
@@ -1059,6 +1063,8 @@ main(int argc, char *argv[])
 		fflush(stderr);
 		exit(1);
 	}
+	/* store this conffile for later use in forkMserver */
+	_merovingian_conffile = p;
 
 	dbfarm = NULL;
 	msglog = NULL;
