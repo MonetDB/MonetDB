@@ -890,9 +890,11 @@ ws_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* s
 @c
 
     GDKfree(stack);
-    for ( i=0; i<num_iters; i++ ) {
-        if (onstack_get(i)) {
-            GDKwarning("ws_descendant: iter %d still on stack !??\n", i + min_iter);
+    if (free > 0) {
+        for ( i=0; i<num_iters; i++ ) {
+            if (onstack_get(i)) {
+                GDKwarning("ws_descendant: iter %d still on stack !??\n", i + min_iter);
+            }
         }
     }
     GDKfree(onstack);

@@ -956,9 +956,11 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *ca
 @c
 
     GDKfree(stack);
-    for ( i=0; i<num_iters; i++ ) {
-        if (onstack_get(i)) {
-            GDKwarning("ll_descendant: iter %d still on stack !??\n", i + min_iter);
+    if (free > 0) {
+        for ( i=0; i<num_iters; i++ ) {
+            if (onstack_get(i)) {
+                GDKwarning("ll_descendant: iter %d still on stack !??\n", i + min_iter);
+            }
         }
     }
     GDKfree(onstack);
