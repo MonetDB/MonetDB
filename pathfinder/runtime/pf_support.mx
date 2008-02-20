@@ -346,7 +346,7 @@ DESCRIPTION:
 returns an [int,BAT]-BAT with a single BUN;
 head: estimated result size, in case result was cut off; actual result size, otherwise;
 tail: [oid,oid]-BAT with all pairs of positions/IDs ([l_pre.head, r_pre.head]) such that
-(l_pre.tail STEP r_pre.tail) holds and {[l_prune.tail, r_pre.tail]} is distinct."
+      (l_pre.tail STEP r_pre.tail) holds and {[l_prune.tail, r_pre.tail]} is distinct."
 @
 @m
 @:ll_cmd(descendant)@
@@ -361,7 +361,8 @@ tail: [oid,oid]-BAT with all pairs of positions/IDs ([l_pre.head, r_pre.head]) s
                    BAT[void,any] cands,
                    bit one_iter, bit one_ctx,
                    oid min_iter, oid max_iter,
-                   bit no_iter_order, chr kind_test): BAT[oid,oid] = PFll_@1;
+                   bit no_iter_order, chr kind_test,
+                   int cutoff): BAT[int,BAT] = PFll_@1;
 "PARAMETERS:
 BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)
 BAT[void,oid] ctx (context set; sorted on tail)
@@ -374,8 +375,11 @@ bit           one_ctx  (only one ctx node, i.e., the same for all iters?)
 oid           min_iter,max_iter (smallest and largest iter id)
 bit           no_iter_order (descendant & descendant_or_self, only: 
                result will be ordered on item, but not sub-ordered on iter)
+int           cutoff (result size limit; int(nil) or <=0  =>  no limit)
 DESCRIPTION:
-returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group."
+returns an [int,BAT]-BAT with a single BUN;
+head: estimated result size, in case result was cut off; actual result size, otherwise;
+tail: [oid,oid]-BAT with all nodes on the @1 axis of the ctx-nodes duplicate free for each group."
 @
 @m
 @:ll_upwards(parent,parent)@
@@ -1489,10 +1493,10 @@ PROC combine_node_info (any frag1, bat[void,oid] pre1, any attr1,
                     res.chk_order();
                 }
 @= wrap
-PROC ll_@1(BAT[oid,oid] iter, BAT[oid,oid] ctx, BAT[oid,int] pre_size, BAT[void,any] cands, bit one_iter, bit one_ctx, oid min_iter, oid max_iter, bit no_iter_order, chr kind_test) : BAT[oid,oid]
+PROC ll_@1(BAT[oid,oid] iter, BAT[oid,oid] ctx, BAT[oid,int] pre_size, BAT[void,any] cands, bit one_iter, bit one_ctx, oid min_iter, oid max_iter, bit no_iter_order, chr kind_test, int cutoff) : BAT[oid,oid]
 {
         var end_ctx := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
-	return ll_@1(iter, ctx, end_ctx, pre_size, cands, one_iter, one_ctx, min_iter, max_iter, no_iter_order, kind_test);
+	return ll_@1(iter, ctx, end_ctx, pre_size, cands, one_iter, one_ctx, min_iter, max_iter, no_iter_order, kind_test, cutoff);
 }
 ADDHELP("ll_@1", "manegold", "Aug 2007",
 "PARAMETERS:\n\
@@ -1505,8 +1509,11 @@ bit           one_ctx  (only one ctx node, i.e., the same for all iters?)\n\
 oid           min_iter,max_iter (smallest and largest iter id)\n\
 bit           no_iter_order (descendant & descendant_or_self, only: \n\
                result will be ordered on item, but not sub-ordered on iter)\n\
+int           cutoff (result size limit; int(nil) or <=0  =>  no limit)
 DESCRIPTION:\n\
-returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.",
+returns an [int,BAT]-BAT with a single BUN;
+head: estimated result size, in case result was cut off; actual result size, otherwise;
+tail: [oid,oid]-BAT with all nodes on the @1 axis of the ctx-nodes duplicate free for each group.",
 "pf_support");
 
 PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int order, BAT[void,any] cands, chr kind_test) : BAT[void,bat]
@@ -1598,7 +1605,7 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, BAT[oid,oid] end_ctx, oid cont, B
 	# the actual location step
 	if ( isnil(result) ) {
 		var res := ll_@1 (iter, item, end_ctx, pre_size, cands, one_iter, one_item, 
-		                   min_iter, max_iter, (and(order,2) = 0), kind_test);
+		                   min_iter, max_iter, (and(order,2) = 0), kind_test, int(nil)).fetch(0);
                                
                 @:resolve_unique_iters()@
 
