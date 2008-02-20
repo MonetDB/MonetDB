@@ -4366,7 +4366,7 @@ reduce (PFla_op_t * p, int goalnt)
                 col_env_lookup (COLMAP(L(p)), item2, type_of (L(p), item2)),
                 col_env_lookup (COLMAP(L(p)), item1, aat_qname_loc),
                 col_env_lookup (COLMAP(L(p)), item1, aat_qname_uri));
-        }
+        }   break;
         /* Twig:   processi (Rel) */
         case 87:
         {
