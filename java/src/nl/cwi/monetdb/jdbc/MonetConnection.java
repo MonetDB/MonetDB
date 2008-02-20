@@ -1164,7 +1164,17 @@ public class MonetConnection implements Connection {
 			isSet = new boolean[7];
 			this.parent = parent;
 			if (parent.cachesize == 0) {
-				cacheSize = lang == LANG_SQL ? MonetConnection.DEF_FETCHSIZE : tuplecount;
+				/* Below we have to calculate how many "chunks" we need
+				 * to allocate to store the entire result.  However, if
+				 * the user didn't set a cache size, as in this case, we
+				 * need to stick to our defaults.  So far, so good.  Now
+				 * the problem with XQuery is, that it doesn't support
+				 * any block fetching, so we need to always fetch
+				 * everything at once.  For that reason, the cache size
+				 * is here set to the tuplecount, such that we do a full
+				 * fetch at once.  To avoid a division by zero lateron,
+				 * we make sure the cache size is not 0 */
+				cacheSize = lang == LANG_SQL ? MonetConnection.DEF_FETCHSIZE : (tuplecount + 1);
 				cacheSizeSetExplicitly = false;
 			} else {
 				cacheSize = parent.cachesize;
