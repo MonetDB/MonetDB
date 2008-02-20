@@ -403,13 +403,14 @@ static PFsql_t *
 literal (PFalg_atom_t atom)
 {
     switch (atom.type) {
-        case aat_nat:   return lit_int (atom.val.nat_);
-        case aat_int:   return lit_int (atom.val.int_);
-        case aat_str:   return lit_str (atom.val.str);
-        case aat_bln:   return lit_int (atom.val.bln?1:0);
-        case aat_dbl:   return lit_dec (atom.val.dbl);
-        case aat_dec:   return lit_dec (atom.val.dec_);
-        case aat_qname: return lit_str (PFqname_loc (atom.val.int_));
+        case aat_nat:       return lit_int (atom.val.nat_);
+        case aat_int:       return lit_int (atom.val.int_);
+        case aat_str:       return lit_str (atom.val.str);
+        case aat_bln:       return lit_int (atom.val.bln?1:0);
+        case aat_dbl:       return lit_dec (atom.val.dbl);
+        case aat_dec:       return lit_dec (atom.val.dec_);
+        case aat_qname_loc: return lit_str (PFqname_loc (atom.val.int_));
+        case aat_qname_uri: return lit_str (PFqname_uri (atom.val.int_));
         default: break;
     }
 
@@ -540,11 +541,11 @@ col_env_add_full (PFarray_t * env, PFalg_att_t att,
     ty = TYPE_MASK (ty);
 
     /* we can add only the types specified here */
-    assert (ty == aat_nat || ty == aat_int ||
-            ty == aat_dbl || ty == aat_dec ||
-            ty == aat_str || ty == aat_uA ||
-            ty == aat_qname || ty == aat_bln ||
-            ty == aat_pre);
+    assert (ty == aat_nat       || ty == aat_int       ||
+            ty == aat_dbl       || ty == aat_dec       ||
+            ty == aat_str       || ty == aat_uA        ||
+            ty == aat_bln       || ty == aat_pre       ||
+            ty == aat_qname_loc || ty == aat_qname_uri);
 
     *(sql_column_env_t *) PFarray_add (env) =
         (sql_column_env_t) { .type = ty,
@@ -997,6 +998,23 @@ substitute_aliases (PFla_op_t * p)
     }
 }
 
+/* returns a copy of the given @a qname_atom with eiter
+ * aat_qname_loc or aat_qname_uri to represent either the
+ * local part or the uri of the namespace
+ */
+static PFalg_atom_t
+namespace_atom (PFalg_atom_t qname_atom, PFalg_simple_type_t ty)
+{
+    PFalg_atom_t ret;
+    assert (qname_atom.type == aat_qname &&
+            (ty == aat_qname_loc ||
+             ty == aat_qname_uri));
+
+    ret = qname_atom;
+    ret.type = ty;
+    return ret;
+}
+
 
 
 /* .......... Path Step Helper Functions .......... */
@@ -1251,12 +1269,13 @@ step_guide_join (PFla_op_t *p, PFsql_aident_t step,
 
 /* .......... Twig Constructor Helper Functions .......... */
 
-#define construct_simple_twig(p,iter,kind,value,name) \
+#define construct_simple_twig(p,iter,kind,value,name,uri) \
             construct_twig_generic (p, new_alias(), new_alias(), true, \
-                                    NULL, iter, kind, value, name)
+                                    NULL, iter, kind, value, name, uri)
 #define construct_twig(p,content,new_root,sortkey_list) \
             construct_twig_generic (p, content, new_root, false,       \
-                                    sortkey_list, att_iter, 0, NULL, NULL)
+                                    sortkey_list, att_iter, 0,         \
+                                    NULL, NULL, NULL)
 /**
  * Construct a twig binding.
  *
@@ -1272,7 +1291,8 @@ construct_twig_generic (PFla_op_t *p,
                         bool simple,
                         PFsql_t *sortkey_list,
                         PFalg_att_t citer, int kind,
-                        PFsql_t *value, PFsql_t *name)
+                        PFsql_t *value, PFsql_t *name,
+                        PFsql_t *uri)
 {
     PFsql_tident_t      twig_tbl = new_table_name ();
     PFsql_aident_t      max      = new_alias ();
@@ -1302,7 +1322,8 @@ construct_twig_generic (PFla_op_t *p,
                            column_assign (lit_int (0), LEVEL_),
                            column_assign (lit_int (kind), KIND_),
                            column_assign (value, VALUE_),
-                           column_assign (name, NAME_)),
+                           column_assign (name, NAME_),
+                           column_assign (uri, NS_URI_)),
                        from_list (
                            alias_bind (select (
                                            column_assign (max_ (PRE_), MAX_),
@@ -1327,7 +1348,8 @@ construct_twig_generic (PFla_op_t *p,
                            LEVEL(content),
                            KIND(content),
                            VALUE(content),
-                           NAME(content)),
+                           NAME(content),
+                           NS_URI(content)),
                        from_list (
                            alias_bind (select (
                                            column_assign (max_ (PRE_), MAX_),
@@ -1349,7 +1371,8 @@ construct_twig_generic (PFla_op_t *p,
                            LEVEL_,
                            KIND_,
                            VALUE_,
-                           NAME_)),
+                           NAME_,
+                           NS_URI_)),
                    twig));
 
     FRAG(p) = table_name (twig_tbl);
@@ -1392,7 +1415,7 @@ construct_twig_generic (PFla_op_t *p,
  */
 static void
 construct_node (PFla_op_t *p, PFalg_att_t iter, int kind,
-                PFsql_t *value, PFsql_t *name)
+                PFsql_t *value, PFsql_t *name, PFsql_t *uri)
 {
     PFalg_simple_type_t iter_ty = type_of (L(p), iter);
 
@@ -1408,7 +1431,8 @@ construct_node (PFla_op_t *p, PFalg_att_t iter, int kind,
                        column_assign (lit_int (TLEVEL(p)), LEVEL_),
                        column_assign (lit_int (kind), KIND_),
                        column_assign (value, VALUE_),
-                       column_assign (name, NAME_)),
+                       column_assign (name, NAME_),
+                       column_assign (uri, NS_URI_)),
                    transform_frommap (L(p)),
                    transform_wheremap (L(p)));
 }
@@ -1535,8 +1559,9 @@ collect_frag_worker (PFla_op_t * p, PFarray_t *frags)
     }
 }
 
-#define frag_select(f) select (select_list (PRE_, SIZE_, LEVEL_,   \
-                                            KIND_, VALUE_, NAME_), \
+#define frag_select(f) select (select_list (PRE_, SIZE_, LEVEL_,  \
+                                            KIND_, VALUE_, NAME_, \
+                                            NS_URI_),             \
                                f, NULL)
 
 static PFsql_t *
@@ -1843,7 +1868,9 @@ reduce (PFla_op_t * p, int goalnt)
                                ser_map (VALUE_, VALUE_),
                            ser_info_item (
                                ser_map (NAME_, NAME_),
-                           ser_info)))));
+                           ser_info_item (
+                               ser_map (NS_URI_, NS_URI_),
+                           ser_info))))));
 
             /* the item information */
             for (unsigned int i = 0; i < PFarray_last (COLMAP(query)); i++) {
@@ -1956,6 +1983,7 @@ reduce (PFla_op_t * p, int goalnt)
                                          KIND(twig),
                                          VALUE(twig),
                                          NAME(twig),
+                                         NS_URI(twig),
                                          selectlist),
                                      transform_frommap (query),
                                      transform_wheremap (query),
@@ -1974,7 +2002,8 @@ reduce (PFla_op_t * p, int goalnt)
                                       newtable,
                                       column_list (
                                           PRE_, SIZE_, LEVEL_,
-                                          KIND_, VALUE_, NAME_)),
+                                          KIND_, VALUE_, NAME_,
+                                          NS_URI_)),
                                   frags));
                         frags = table_name (newtable);
                     }
@@ -2014,6 +2043,7 @@ reduce (PFla_op_t * p, int goalnt)
                                          KIND(doc2),
                                          VALUE(doc2),
                                          NAME(doc2),
+                                         NS_URI(doc2),
                                          selectlist),
                                      transform_frommap (p),
                                      transform_wheremap (p),
@@ -2041,7 +2071,8 @@ reduce (PFla_op_t * p, int goalnt)
                                   newtable,
                                   column_list (
                                       PRE_, SIZE_, LEVEL_,
-                                      KIND_, VALUE_, NAME_)),
+                                      KIND_, VALUE_, NAME_,
+                                      NS_URI_)),
                               frags));
                     frags = table_name (newtable);
                 }
@@ -2063,7 +2094,8 @@ reduce (PFla_op_t * p, int goalnt)
                                      SIZE(doc2),
                                      KIND(doc2),
                                      VALUE(doc2),
-                                     NAME(doc2)),
+                                     NAME(doc2),
+                                     NS_URI(doc2)),
                                  from_list (
                                      on (left_outer_join (
                                              on (left_outer_join (
@@ -2137,9 +2169,11 @@ reduce (PFla_op_t * p, int goalnt)
                        ser_info_item (
                            ser_map (NAME_, NAME_),
                        ser_info_item (
+                           ser_map (NS_URI_, NS_URI_),
+                       ser_info_item (
                            ser_comment ("END SCHEMA INFORMATION **"
                                         " DO NOT EDIT THESE LINES"),
-                       nil ()))))))));
+                       nil ())))))))));
 
             /* We only need to sort by <pos, pre> if we have a variable
                part (content operator) in the twig constructor. */
@@ -2167,7 +2201,8 @@ reduce (PFla_op_t * p, int goalnt)
                                   LEVEL(content),
                                   KIND(content),
                                   VALUE(content),
-                                  NAME(content)),
+                                  NAME(content),
+                                  NS_URI(content)),
                               from_list (
                                   alias_bind (FRAG(L(RL(p))), alias (content))),
                               NULL,
@@ -2307,14 +2342,20 @@ reduce (PFla_op_t * p, int goalnt)
         break;
 
         /* Rel:    lit_tbl */
-        case 9:
+        case 9: {
+            PFalg_atom_t atom;
             if (p->sem.lit_tbl.count == 1) {
                 PFsql_t * lit;
                 for (unsigned int col = 0; col < p->schema.count; col++)
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & TYPE_MASK (p->schema.items[col].type)) {
-                            lit = literal (p->sem.lit_tbl.tuples[0]
-                                                         .atoms[col]);
+                            atom = p->sem.lit_tbl.tuples[0].atoms[col];
+                            
+                            if (t & aat_qname_loc ||
+                                t & aat_qname_uri)
+                                atom = namespace_atom (atom, t);
+
+                            lit = literal (atom);
                             
                             /* if we have a boolean, generate
                              * a boolean expression */
@@ -2324,9 +2365,7 @@ reduce (PFla_op_t * p, int goalnt)
                                 COLMAP(p),
                                 p->schema.items[col].name,
                                 t,
-                                (t == p->sem.lit_tbl
-                                            .tuples[0]
-                                            .atoms[col].type)
+                                (t == atom.type)
                                 ? lit
                                 : cast (null (), type (t)));
                         }
@@ -2387,14 +2426,15 @@ reduce (PFla_op_t * p, int goalnt)
                         for (PFalg_simple_type_t t = 1; t; t <<= 1)
                             if (t & TYPE_MASK (p->schema.items[col].type)) {
                                 /* found another literal */
-                                list[colcount] = (t == p->sem.lit_tbl
-                                                             .tuples[row]
-                                                             .atoms[col].type)
-                                                  ? literal (p->sem.lit_tbl
-                                                                   .tuples[row]
-                                                                   .atoms[col])
-                                                  : cast (null (), type (t));
+                                atom = p->sem.lit_tbl.tuples[row].atoms[col];
+                                
+                                if (t & aat_qname_loc ||
+                                    t & aat_qname_uri)
+                                    atom = namespace_atom (atom, t);
 
+                                list[colcount] = (t == atom.type)
+                                                 ? literal(atom)
+                                                 : cast (null (), type (t)); 
                                 /* increment the countvariable */
                                 colcount++;
                             }
@@ -2416,7 +2456,7 @@ reduce (PFla_op_t * p, int goalnt)
                 BOUND(p) = true;
             }
 
-            break;
+        }   break;
 
         /* Rel:  ref_tbl */
         case 10:
@@ -2462,10 +2502,28 @@ reduce (PFla_op_t * p, int goalnt)
             copy_cols_from_where (p, L(p));
 
             /* add expression for attach to the column environment */
-            col_env_add (COLMAP(p),
-                         p->sem.attach.res,
-                         p->sem.attach.value.type,
-                         literal (p->sem.attach.value));
+            if (p->sem.attach.value.type == aat_qname) {
+                col_env_add (COLMAP(p),
+                             p->sem.attach.res,
+                             aat_qname_loc,
+                             literal (
+                                 namespace_atom (
+                                     p->sem.attach.value,
+                                     aat_qname_loc)));
+                col_env_add (COLMAP(p),
+                             p->sem.attach.res,
+                             aat_qname_uri,
+                             literal (
+                                 namespace_atom (
+                                     p->sem.attach.value,
+                                     aat_qname_uri)));
+            }
+            else
+                col_env_add (COLMAP(p),
+                             p->sem.attach.res,
+                             p->sem.attach.value.type,
+                             literal (p->sem.attach.value));
+
             break;
 
         /* Rel:    cross (Rel, Rel) */
@@ -3998,22 +4056,36 @@ reduce (PFla_op_t * p, int goalnt)
         /* Constr: twig (docnode (Rel, fcns (nil, nil))) */
         case 72:
             construct_simple_twig (p, L(p)->sem.docnode.iter, DOC,
-                                   lit_str (""), lit_str (""));
+                                   lit_str (""), lit_str (""),
+                                   lit_str (""));
             break;
 
         /* Constr: twig (element (Rel, fcns (nil, nil))) */
         case 73:
         {
             PFalg_att_t item = L(p)->sem.iter_item.item;
+            assert (type_of (LL(p), item) == aat_qname);
 
             construct_simple_twig (
                 p, L(p)->sem.iter_item.iter, ELEM,
                 lit_str (""),
-                col_env_lookup (COLMAP(LL(p)), item, type_of (LL(p), item)));
+                col_env_lookup (COLMAP(LL(p)), item, aat_qname_loc),
+                col_env_lookup (COLMAP(LL(p)), item, aat_qname_uri));
         }   break;
 
         /* Constr: twig (attribute (Rel)) */
         case 74:
+        {
+            PFalg_att_t item1 = L(p)->sem.iter_item1_item2.item1;
+            PFalg_att_t item2 = L(p)->sem.iter_item1_item2.item2;
+
+            construct_simple_twig (
+                p, L(p)->sem.iter_item1_item2.iter,
+                ATTR,
+                col_env_lookup (COLMAP(LL(p)), item2, type_of (LL(p), item2)),
+                col_env_lookup (COLMAP(LL(p)), item1, aat_qname_loc),
+                col_env_lookup (COLMAP(LL(p)), item1, aat_qname_uri));
+        }   break;
         /* Constr: twig (processi (Rel)) */
         case 77:
         {
@@ -4022,9 +4094,10 @@ reduce (PFla_op_t * p, int goalnt)
 
             construct_simple_twig (
                 p, L(p)->sem.iter_item1_item2.iter,
-                L(p)->kind == la_attribute ? ATTR : PI,
+                PI,
                 col_env_lookup (COLMAP(LL(p)), item2, type_of (LL(p), item2)),
-                col_env_lookup (COLMAP(LL(p)), item1, type_of (LL(p), item1)));
+                col_env_lookup (COLMAP(LL(p)), item1, type_of (LL(p), item1)),
+                lit_str (""));
         }   break;
 
         /* Constr: twig (textnode (Rel)) */
@@ -4038,7 +4111,7 @@ reduce (PFla_op_t * p, int goalnt)
                 p, L(p)->sem.iter_item.iter,
                 L(p)->kind == la_textnode ? PF_TEXT : COMM,
                 col_env_lookup (COLMAP(LL(p)), item, type_of (LL(p), item)),
-                lit_str (""));
+                lit_str (""), lit_str (""));
         }   break;
 
         /* List:   fcns (Twig, List) */
@@ -4125,7 +4198,8 @@ reduce (PFla_op_t * p, int goalnt)
                                    column_assign (lit_int (TLEVEL(p)), LEVEL_),
                                    column_assign (lit_int (DOC), KIND_),
                                    column_assign (lit_str (""), VALUE_),
-                                   column_assign (lit_str (""), NAME_)),
+                                   column_assign (lit_str (""), NAME_),
+                                   column_assign (lit_str (""), NS_URI_)),
                                from_list (
                                    on (left_outer_join (
                                            alias_bind (
@@ -4143,7 +4217,8 @@ reduce (PFla_op_t * p, int goalnt)
                 FRAG(p) = union_ (FRAG(p), FRAG(R(p)));
             } else {
                 construct_node (p, p->sem.docnode.iter, DOC,
-                                lit_str (""), lit_str (""));
+                                lit_str (""), lit_str (""),
+                                lit_str (""));
 
                 FRAG(p) = union_ (FRAG(p), FRAG(R(p)));
             }
@@ -4152,7 +4227,8 @@ reduce (PFla_op_t * p, int goalnt)
         /* Twig:   docnode (Rel, fcns (nil, nil)) */
         case 81:
             construct_node (p, p->sem.docnode.iter, DOC,
-                            lit_str (""), lit_str (""));
+                            lit_str (""), lit_str (""),
+                            lit_str (""));
             break;
 
         /* Twig:   element (Rel, List) */
@@ -4162,7 +4238,8 @@ reduce (PFla_op_t * p, int goalnt)
                                 item = p->sem.iter_item.item;
                 sql_from_list_t name_from;
                 PFsql_aident_t  csize_alias;
-                PFsql_t        *iter_col, *item_col, *grpbylist;
+                PFsql_t        *iter_col, *item_col_loc, *item_col_uri,
+                               *grpbylist;
                 bool            item_const = PFprop_const (L(p)->prop, item);
 
                 CSIZE(p) = CSIZE(R(p));
@@ -4192,17 +4269,30 @@ reduce (PFla_op_t * p, int goalnt)
 
                 /* If we have a constant QName we directly use it. */
                 if (item_const) {
-                    item_col  = literal (PFprop_const_val (L(p)->prop, item));
+                    item_col_loc = literal (
+                                       namespace_atom (
+                                           PFprop_const_val (L(p)->prop, item),
+                                           aat_qname_loc));
+                    item_col_uri = literal (
+                                       namespace_atom (
+                                           PFprop_const_val (L(p)->prop, item),
+                                           aat_qname_uri));
                     grpbylist = column_list (iter_col);
                 }
                 /* Otherwise we need to put the item column
                    also into the list of groupby criteria. */
                 else {
-                    item_col = EXT_COLUMN_NAME (
-                                   name_from.alias->sem.alias.name,
-                                   item,
-                                   type_of (L(p), item));
-                    grpbylist = column_list (iter_col, item_col);
+                    assert (type_of (L(p), item) == aat_qname);
+                    item_col_loc = EXT_COLUMN_NAME (
+                                       name_from.alias->sem.alias.name,
+                                       item,
+                                       aat_qname_loc);
+                    item_col_uri = EXT_COLUMN_NAME (
+                                       name_from.alias->sem.alias.name,
+                                       item,
+                                       aat_qname_uri);
+                    grpbylist = column_list (iter_col, item_col_loc,
+                                             item_col_uri);
                 }
 
                 FRAG (p) = PFsql_select (
@@ -4221,7 +4311,8 @@ reduce (PFla_op_t * p, int goalnt)
                                    column_assign (lit_int (TLEVEL(p)), LEVEL_),
                                    column_assign (lit_int (ELEM), KIND_),
                                    column_assign (lit_str (""), VALUE_),
-                                   column_assign (item_col, NAME_)),
+                                   column_assign (item_col_loc, NAME_),
+                                   column_assign (item_col_uri, NS_URI_)),
                                from_list (
                                    on (left_outer_join (
                                            alias_bind (
@@ -4244,7 +4335,8 @@ reduce (PFla_op_t * p, int goalnt)
                 construct_node (
                     p, p->sem.iter_item.iter, ELEM,
                     lit_str (""),
-                    col_env_lookup (COLMAP(L(p)), item, type_of (L(p), item)));
+                    col_env_lookup (COLMAP(L(p)), item, aat_qname_loc),
+                    col_env_lookup (COLMAP(L(p)), item, aat_qname_uri));
 
                 FRAG(p) = union_ (FRAG(p), FRAG(R(p)));
             }
@@ -4258,11 +4350,23 @@ reduce (PFla_op_t * p, int goalnt)
             construct_node (
                 p, p->sem.iter_item.iter, ELEM,
                 lit_str (""),
-                col_env_lookup (COLMAP(L(p)), item, type_of (L(p), item)));
+                col_env_lookup (COLMAP(L(p)), item, aat_qname_loc),
+                col_env_lookup (COLMAP(L(p)), item, aat_qname_uri));
         }   break;
 
         /* Twig:   attribute (Rel) */
         case 84:
+        {
+            PFalg_att_t item1 = p->sem.iter_item1_item2.item1;
+            PFalg_att_t item2 = p->sem.iter_item1_item2.item2;
+
+            construct_node (
+                p, p->sem.iter_item1_item2.iter,
+                ATTR,
+                col_env_lookup (COLMAP(L(p)), item2, type_of (L(p), item2)),
+                col_env_lookup (COLMAP(L(p)), item1, aat_qname_loc),
+                col_env_lookup (COLMAP(L(p)), item1, aat_qname_uri));
+        }
         /* Twig:   processi (Rel) */
         case 87:
         {
@@ -4271,9 +4375,10 @@ reduce (PFla_op_t * p, int goalnt)
 
             construct_node (
                 p, p->sem.iter_item1_item2.iter,
-                p->kind == la_attribute ? ATTR : PI,
+                PI,
                 col_env_lookup (COLMAP(L(p)), item2, type_of (L(p), item2)),
-                col_env_lookup (COLMAP(L(p)), item1, type_of (L(p), item1)));
+                col_env_lookup (COLMAP(L(p)), item1, type_of (L(p), item1)),
+                lit_str (""));
         }   break;
 
         /* Twig:   textnode (Rel) */
@@ -4287,7 +4392,7 @@ reduce (PFla_op_t * p, int goalnt)
                 p, p->sem.iter_item.iter,
                 p->kind == la_textnode ? PF_TEXT : COMM,
                 col_env_lookup (COLMAP(L(p)), item, type_of (L(p), item)),
-                lit_str (""));
+                lit_str (""), lit_str (""));
         }   break;
 
         /* Twig:   content (Frag, Rel) */
@@ -4373,7 +4478,8 @@ reduce (PFla_op_t * p, int goalnt)
                                  LEVEL_),
                              column_assign (KIND(step), KIND_),
                              column_assign (VALUE(step), VALUE_),
-                             column_assign (NAME(step), NAME_));
+                             column_assign (NAME(step), NAME_),
+                             column_assign (NS_URI(step), NS_URI_));
 
             for (unsigned int i = 0; i < PFarray_last (frags); i++) {
                 frag = *(PFsql_t **) PFarray_at (frags, i);
@@ -4392,12 +4498,14 @@ reduce (PFla_op_t * p, int goalnt)
                                content_tbl,
                                column_list (
                                    ITER_, TWIG_PRE_, POS_, PRE_,
-                                   SIZE_, LEVEL_, KIND_, VALUE_, NAME_)),
+                                   SIZE_, LEVEL_, KIND_, VALUE_, NAME_,
+                                   NS_URI_)),
                            content));
 
             FRAG(p) = select (select_list (
                                   ITER_, TWIG_PRE_, POS_, PRE_,
-                                  SIZE_, LEVEL_, KIND_, VALUE_, NAME_),
+                                  SIZE_, LEVEL_, KIND_, VALUE_, NAME_,
+                                  NS_URI_),
                               table_name (content_tbl),
                               NULL);
         }   break;

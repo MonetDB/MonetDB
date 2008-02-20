@@ -1,19 +1,24 @@
 #!/usr/bin/perl -w
-# The contents of this file are subject to the MonetDB Public License
-# Version 1.1 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-#
-# Software distributed under the License is distributed on an "AS IS"
-# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-# License for the specific language governing rights and limitations
-# under the License.
-#
-# The Original Code is the MonetDB Database System.
-#
-# The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2008 CWI.
-# All Rights Reserved.
+# Copyright Notice:
+# -----------------
+# 
+# The contents of this file are subject to the Pathfinder Public License
+# compliance with the License.  You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/PathfinderLicense-1.1.html
+# 
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.  See
+# the License for the specific language governing rights and limitations
+# 
+# The Original Code is the Pathfinder system.
+# 
+# The Original Code has initially been developed by the Database &
+# Information Systems Group at the University of Konstanz, Germany and
+# is now maintained by the Database Systems Group at the Technische
+# Universitaet Muenchen, Germany.  Portions created by the University of
+# Konstanz and the Technische Universitaet Muenchen are Copyright (C)
+# 2000-2005 University of Konstanz and (C) 2005-2008 Technische
+# Universitaet Muenchen, respectively.  All Rights Reserved.
+# $Id$
 
 use strict;
 use warnings;
@@ -89,6 +94,7 @@ sub build_result_map {
         $result_map->{"kind"}  = $schema->{"kind"};
         $result_map->{"value"} = $schema->{"value"};
         $result_map->{"name"}  = $schema->{"name"};
+        $result_map->{"uri"}   = $schema->{"uri"};
     }
 
     return $result_map;
@@ -114,6 +120,54 @@ sub bind_result_columns {
           }
      }
      return $bound_fields;
+}
+
+# get a new namespace prefix if the uri doesn't exists yet
+# or a brand new namespace prefix
+# ns_map is a hash
+#   uri => prefix
+sub namespace_prefix {
+    my $ns_map = shift;
+    my $uri    = shift;
+
+    my $prefix;
+
+    $prefix = $ns_map->{$uri};
+
+    # check if prefix is defined or
+    # if it takes a new prefix
+    if (defined($prefix)) {
+        return $prefix;
+    }
+    else {
+        my @values = values (%$ns_map); 
+    
+        if (@values > 0) {
+            my $idxMax = 0;
+            # find the maximum 
+            $values[$idxMax] > $values[$_] or $idxMax = $_ for 1 .. $#values;
+            $ns_map->{$uri} = ++$values[$idxMax];
+        }
+        else {
+            $ns_map->{$uri} = 0;
+        }
+    } 
+}
+
+# transform a namespace id to a string
+sub namespace_str {
+    my $i = shift;
+    return "pf".$i."";
+}
+
+# wrapper for namespace_str and namespace_prefix
+sub ns_prefix {
+    my $nsmap = shift;
+    my $uri   = shift;
+    return namespace_str(
+               namespace_prefix(
+                          $nsmap,
+                          $uri));
 }
 
 # set the current schema
@@ -162,7 +216,7 @@ sub read_query {
             # these are the strings we look for
             if ($line =~ /\b(Type|
                              Column\s+\((pre|size|kind|
-                                 value|name|item_(int|dec|dbl|str))\)):\s+
+                                 value|name|uri|item_(int|dec|dbl|str))\)):\s+
                              \b(\w+)\b/x) {
 
 
@@ -199,7 +253,8 @@ sub read_query {
                         && defined $schema->{'size'}
                         && defined $schema->{'kind'}
                         && defined $schema->{'value'}
-                        && defined $schema->{'name'}))
+                        && defined $schema->{'name'}
+                        && defined $schema->{'uri'}))
                  && ($schema->{'Type'} eq 'NODES_ONLY'
                     || (($schema->{'Type'} eq 'ATOMIC_ONLY'
                     || $schema->{'Type'} eq 'ATOMIC_AND_NODES')
@@ -209,6 +264,23 @@ sub read_query {
                         || defined $schema->{'item_str'})))));
 }
 
+# check if a namespace uri is in the given array
+# if not even insert the uri 
+sub ns_used {
+    my $usedns = shift;
+    my $uri    = shift;
+
+    foreach my $element(@$usedns) {
+       if ($element eq $uri) {
+           return 1;
+       }
+    } 
+
+    my @temp = @$usedns;
+
+    $usedns->[$#$usedns + 1] = $uri;
+    return 0;
+}
 
 # print the xml-header
 sub print_xml_header {
@@ -230,6 +302,8 @@ sub print_xml {
 
     my @stack = ();       # stack to print all the closing tags
     my $last = 'ELEM';    # assume the last thing we printed was an element
+    my $nsmap = {};
+    my $used_ns = [];     # contains the used namespaces
 
     while ($stmt->fetch ()) {
         # is it a node that we currently print?
@@ -252,14 +326,36 @@ sub print_xml {
                 # remove trailing spaces as they are returned by DB2
                 $row->{'name'} =~ s/ +$//;
 
-                print '<'.$row->{'name'} . '';    # print .tag
+                print '<'.(($row->{uri} ne '')?
+                          ns_prefix($nsmap,$row->{uri}).":":
+                          "")
+                         .$row->{'name'} . '';    # print .tag
+                # print namespace 
+
+                # check if namespace is used in this line
+                if (($row->{uri} ne '') &&
+                    !ns_used ($used_ns, $row->{uri})) {
+                    print " xmlns:".ns_prefix($nsmap,$row->{uri}).
+                          "=\"".$row->{uri}."\""; # print namespace
+                }
+
                 push @stack, [ $row->{'pre'},   # pre
                                $row->{'size'},  # size
-                               $row->{'name'}];   # tag
+                               $row->{'name'},  # tag
+                               $row->{'uri'}];  # uri
                 $last = 'ATTR';
             }
             elsif ($row->{'kind'} == 2) {         #kind == attr
-                print " ".$row->{'name'}."=\"".$row->{'value'}."\"";
+                if (($row->{uri} ne '') &&
+                    !ns_used ($used_ns, $row->{uri})) {
+                    print " xmlns:".ns_prefix($nsmap,$row->{uri}).
+                          "=\"".$row->{uri}."\""; # print namespace
+                }
+                print " ".(($row->{uri} ne '')?
+                          ns_prefix($nsmap,$row->{uri}).":":
+                          "")
+                         .$row->{'name'}."=\"".$row->{'value'}."\"";
+
                 $last = 'ATTR';
             }
             elsif ($row->{'kind'} == 3) {        # kind == text
@@ -284,9 +380,16 @@ sub print_xml {
             # print closing tags if necessary
             while ($#stack >= 0
                     && ($stack[-1][0] + $stack[-1][1]) <= $row->{'pre'}) {
-               if ($last eq 'ATTR') { print '>'; $last = 'ELEM'; next; }
-               print "</".$stack[-1][2].">";
+               if ($last eq 'ATTR') {
+                    print '>';
+                    $last = 'ELEM';
+                    next;
+               }
+               print "</".(($stack[-1][3] ne '')?ns_prefix($nsmap, $stack[-1][3]).":"
+                          :"").$stack[-1][2].">";
+
                pop @stack;
+               $used_ns = [];
                $last = 'ELEM'
             }
         }
