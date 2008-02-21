@@ -71,10 +71,10 @@ req_monetdb_ver='1.22.0'
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
-	if test "x$MONETDBVERS" = "x"; then
+	if test "x$MONETDB_VERSION" = "x"; then
 		AC_MSG_ERROR([MonetDB was not found. MonetDB5 requires at least version $req_monetdb_ver of MonetDB.])
 	else
-		AC_MSG_ERROR([MonetDB5 requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
+		AC_MSG_ERROR([MonetDB5 requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDB_VERSION was found.])
 	fi
 fi
 req_clients_ver='1.22.0'
