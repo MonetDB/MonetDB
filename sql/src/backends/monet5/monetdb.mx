@@ -858,7 +858,11 @@ deletedir(char *dir)
 	if (d == NULL) {
 		/* silently return if we cannot find the directory; it's
 		 * probably already deleted */
-		return(NO_ERR);
+		if (errno == ENOENT)
+			return(NO_ERR);
+		snprintf(data, 8095, "unable to open dir %s: %s",
+				dir, strerror(errno));
+		return(GDKstrdup(data));
 	}
 	while ((e = readdir(d)) != NULL) {
 		snprintf(path, PATHLENGTH, "%s/%s", dir, e->d_name);
