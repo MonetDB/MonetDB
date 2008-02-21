@@ -1387,6 +1387,9 @@ PFsql_simple_type_str (PFalg_simple_type_t type)
         case aat_dbl:
         case aat_dec:
             return "DECIMAL(20,10)";
+        case aat_qname_loc:
+        case aat_qname_uri:
+            return "VARCHAR(100)";
         default:
             PFoops (OOPS_FATAL, "unknown type '0x%X'", type);
     }

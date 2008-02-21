@@ -697,11 +697,7 @@ PFpa_semijoin (PFalg_att_t att1, PFalg_att_t att2,
         ret->schema.items[i] = n1->schema.items[i];
 
     /* ---- SemiJoin: orderings ---- */
-
-    /*
-     * We preserve any ordering of the left operand.
-     */
-    ret->orderings = PFord_unique (n1->orderings);
+    ret->orderings = PFord_set ();
 
     /* ---- SemiJoin: costs ---- */
 

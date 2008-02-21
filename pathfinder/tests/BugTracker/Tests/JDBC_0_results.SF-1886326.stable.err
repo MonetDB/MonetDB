@@ -1,0 +1,22 @@
+stderr of test 'JDBC_0_results.SF-1886326` in directory 'tests/BugTracker` itself:
+
+
+# 21:00:47 >  
+# 21:00:47 >   Mserver "--config=/ufs/fabian/scratch/monetdb/stable/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib64/MonetDB4:/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib64/MonetDB4/lib:/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib64/MonetDB4/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-pegasus.ins.cwi.nl/xquery/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-pegasus.ins.cwi.nl/xquery/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-pegasus.ins.cwi.nl/xquery/xquerylog" --set mapi_open=true --set xrpc_open=true --set mapi_port=31753 --set xrpc_port=42367 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 21:00:47 >  
+
+
+# 21:00:48 >  
+# 21:00:48 >  ./JDBC_0_results.SF-1886326.XQUERY.sh JDBC_0_results.SF-1886326 
+# 21:00:48 >  
+
+
+# 21:00:48 >  
+# 21:00:48 >  java -jar "/ufs/fabian/scratch/monetdb/stable/program-x86_64/share/MonetDB/lib/jdbcclient.jar" -h pegasus -p 31753 -d mTests_tests_BugTracker -l xquery -f JDBC_0_results.SF-1886326.0.xq
+# 21:00:48 >  
+
+
+# 21:00:48 >  
+# 21:00:48 >  Done.
+# 21:00:48 >  
+
