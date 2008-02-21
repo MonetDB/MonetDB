@@ -99,3 +99,5 @@ create_same_temp_tab_after_its_drop.SF-1850809
 local_temp_table.SF-1865953
 table_dependency_inside_union.SF-1884382
 orderby_in_function.SF-1892708
+bug_in_selection.SF-1892413
+case_with_aggr.SF-1876779

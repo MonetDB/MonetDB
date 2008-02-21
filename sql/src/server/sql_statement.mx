@@ -507,7 +507,7 @@ stmt_create(st_type type)
 	s->nr2 = int_nil;
 	s->h = NULL;
 	s->t = NULL;
-	s->optimized = 0;
+	s->optimized = -1;
 	s->rewritten = NULL;
 	return s;
 }
@@ -828,46 +828,83 @@ NIELS: Because the optimizer rewrites partly inplace some parts of the
 	}
 }
 
-list *
-list_list_dependencies(list *l, int depend_type)
-{
-	list * dep_list = NULL;
-	if (l) {
-		node *n = l->h;
+static void stmt_deps( list *dep_list, stmt *s, int depend_type, int dir);
 
-		while (n) {
-			node *t = n;
-			if (dep_list)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(t->data, depend_type), (fdup)NULL);	
-			else
-				dep_list = stmt_list_dependencies(t->data, depend_type);	
-				
-			n = n->next;
-		}
-	}
-	return dep_list;
+static int
+id_cmp(int *id1, int *id2)
+{
+	if (*id1 == *id2)
+		return 0;
+	return -1;
 }
 
-list*
-stmt_list_dependencies(stmt *s, int depend_type)
+static list *
+cond_append( list *l, int *id )
 {
-	list *dep_list = list_create((fdestroy) NULL);
-	switch (s->type) {
+	if (!list_find(l, id, (fcmp)&id_cmp))
+		list_append(l, id);
+	return l;
+}
+
+static void 
+list_deps(list *dep_list, list *l, int depend_type, int dir)
+{
+	if (l) {
+		node *n;
+		for (n = l->h; n; n = n->next) 
+			stmt_deps(dep_list, n->data, depend_type, dir);
+	}
+}
+
+static void 
+list_list_deps(list *dep_list, list *l, int depend_type, int dir)
+{
+	if (l) {
+		node *n;
+		for (n = l->h; n; n = n->next) 
+			list_deps(dep_list, n->data, depend_type, dir);
+	}
+}
+
+#define push(s) stack[top++] = s
+#define pop()	stack[--top]
+static void 
+stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
+{
+	stmt **stack;
+	int top = 0, sz = 1024;
+ 
+	stack = NEW_ARRAY(stmt*, sz+1);
+	if (stack == NULL)
+		return;
+	push(NULL);
+	push(s);
+	while((s=pop()) != NULL) {
+	   if ((dir < 0 && s->optimized < 0) || (dir >=0 && s->optimized >= 0)){
+		switch (s->type) {
+		case st_sets:
+			list_list_deps(dep_list, s->op1.lval, depend_type, dir);
+			break;
+
+		case st_set:
+		case st_list:
 		case st_relselect:
-			dep_list = list_merge_destroy(dep_list,list_list_dependencies(s->op1.lval, depend_type), (fdup)NULL);
+			list_deps(dep_list, s->op1.lval, depend_type, dir);
 			break;
+
 		case st_reljoin:
-			dep_list = list_merge_destroy(dep_list,list_list_dependencies(s->op1.lval, depend_type), (fdup)NULL);
-			dep_list = list_merge_destroy(dep_list,list_list_dependencies(s->op2.lval, depend_type), (fdup)NULL);
+			list_deps(dep_list, s->op1.lval, depend_type, dir);
+			list_deps(dep_list, s->op2.lval, depend_type, dir);
 			break;
-		
+
 		case st_pivot:
 			if (s->op2.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
+				push(s->op2.stval);
 			break;
+
 		case st_sql:
 			if (s->op1.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
+				push(s->op1.stval);
 			break;
 		case st_diff:
 		case st_alias:
@@ -886,41 +923,33 @@ stmt_list_dependencies(stmt *s, int depend_type)
 		case st_return:
 		case st_assign:
 		case st_exception:
-
 			if (s->op1.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
+				push(s->op1.stval);
 			if (s->op2.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
+				push(s->op2.stval);
 			if (s->op3.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
+				push(s->op3.stval);
 			break;
-
-		case st_set:
-		case st_sets:
-		case st_list:
-			dep_list = list_merge_destroy(dep_list, list_list_dependencies(s->op1.lval, depend_type), (fdup)NULL);
 
 		case st_ptable:
 			if (s->op2.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
+				push(s->op2.stval);
 			if (s->op3.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
-			break;
-		case st_var:
+				push(s->op3.stval);
 			break;
 
 			/* reference only independently managed resources */
 		case st_table:
-			dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
+			push(s->op1.stval);
 			break;
 		case st_basetable:
 			if (depend_type == COLUMN_DEPENDENCY) {
-				dep_list = list_append(dep_list, &(s->op1.tval->base.id));	
+				dep_list = cond_append(dep_list, &s->op1.tval->base.id);	
 			}
 			break;
 		case st_table_clear:
 			if(depend_type == TRIGGER_DEPENDENCY) {
-				dep_list = list_append(dep_list, &(s->op1.tval->base.id));
+				dep_list = cond_append(dep_list, &s->op1.tval->base.id);
 			}
 			break;
 		case st_bat:
@@ -928,8 +957,8 @@ stmt_list_dependencies(stmt *s, int depend_type)
 		case st_update_col:
 			if (depend_type == COLUMN_DEPENDENCY) { 
 			    	if (isTable(s->op1.cval->t)) 
-					dep_list = list_append(dep_list, &(s->op1.cval->base.id));
-				dep_list = list_append(dep_list, &(s->op1.cval->t->base.id));
+					dep_list = cond_append(dep_list, &s->op1.cval->base.id);
+				dep_list = cond_append(dep_list, &s->op1.cval->t->base.id);
 			}
 			break;
 		case st_append_idx:
@@ -938,65 +967,58 @@ stmt_list_dependencies(stmt *s, int depend_type)
 		case st_dbat:
 		case st_idxbat:
 		case st_none:
+		case st_var:
+		case st_temp:
+		case st_atom:
 			break;
 
 			/* special cases */
-		case st_temp:
-			if (s->op1.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
-			if (s->op2.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
-			if (s->op3.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
-			break;
 		case st_import:
 		case st_export:
 			if (s->op1.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
+				push(s->op1.stval);
 			if (s->op4.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op4.stval, depend_type), (fdup)NULL);
+				push(s->op4.stval);
 			break;
 		case st_aggr:
 			if (s->op1.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
+				push(s->op1.stval);
 			if (s->op2.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
+				push(s->op2.stval);
 			if (s->op3.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
+				push(s->op3.stval);
 			if (depend_type == FUNC_DEPENDENCY) {
-				dep_list = list_append(dep_list, &(s->op4.funcval->func->base.id));	
+				dep_list = cond_append(dep_list, &s->op4.funcval->func->base.id);	
 			}
 			break;
 		case st_convert:
 			if (s->op1.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
+				push(s->op1.stval);
 			break;
 		case st_op:
 		case st_unop:
 		case st_binop:
 		case st_Nop:
 			if (s->op1.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
+				push(s->op1.stval);
 			if (s->op2.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
+				push(s->op2.stval);
 			if (s->op3.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
+				push(s->op3.stval);
 			if (depend_type == FUNC_DEPENDENCY) {
-				dep_list = list_append(dep_list, &(s->op4.funcval->func->base.id));	
+				dep_list = cond_append(dep_list, &s->op4.funcval->func->base.id);	
 			}
 			break;
-		case st_atom:
 		case st_column:
-			if (s->op1.stval && depend_type == VIEW_DEPENDENCY) 
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
 			if (s->op4.tval && depend_type == VIEW_DEPENDENCY) {
-				dep_list = list_append(dep_list, &(s->op4.tval->base.id));	
+				dep_list = cond_append(dep_list, &s->op4.tval->base.id);	
 			}
+			if (s->op1.stval && depend_type == VIEW_DEPENDENCY) 
+				push(s->op1.stval);
 			break;
 
 			/* simple case of statements of only statements */
 		case st_const:
-			break;
 		case st_mark:
 		case st_gen_group:
 		case st_reverse:
@@ -1018,21 +1040,36 @@ stmt_list_dependencies(stmt *s, int depend_type)
 		case st_uselect2:
 		case st_semijoin:
 		case st_connection:
-
 			if (s->op1.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op1.stval, depend_type), (fdup)NULL);
+				push(s->op1.stval);
 			if (s->op2.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op2.stval, depend_type), (fdup)NULL);
+				push(s->op2.stval);
 			if (s->op3.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op3.stval, depend_type), (fdup)NULL);
+				push(s->op3.stval);
 			if (s->op4.stval)
-				dep_list = list_merge_destroy(dep_list, stmt_list_dependencies(s->op4.stval, depend_type), (fdup)NULL);
+				push(s->op4.stval);
 			break;
+		}
+	    }
+	    if (top+10 >= sz) {
+		sz *= 2;
+		stack = RENEW_ARRAY(stmt*, stack, sz);
+	    }
+	    if (dir < 0)
+		s->optimized = 0;
+	    else
+		s->optimized = -1;
 	}
-
-	return dep_list;
+	_DELETE(stack);
 }
 
+list* stmt_list_dependencies(stmt *s, int depend_type)
+{
+	list *dep_list = list_create((fdestroy) NULL);
+
+	stmt_deps(dep_list, s, depend_type, s->optimized);
+	return dep_list;
+}
 
 stmt *
 stmt_none()
@@ -2958,9 +2995,9 @@ print_stmt(stmt *s, int *nr)
 	case st_column:  s->nr = -print_stmt(s->op1.stval, nr); break;
 	case st_sql: 	 dump1(s, "sql", nr); break;
 				
-	case st_bat: 	 printf("s%d := Column(\"%s\".\"%s\".\"%s\", %d);\n", -s->nr, s->op1.cval->t->s->base.name, s->op1.cval->t->base.name, s->op1.cval->base.name, s->flag); break;
-	case st_dbat:    printf("s%d := Table(\"%s\".\"%s\");\n", -s->nr, s->op1.tval->s->base.name, s->op1.tval->base.name); break;
-	case st_idxbat:  printf("s%d := Index(\"%s\".\"%s\".\"%s\", %d);\n", -s->nr, s->op1.idxval->t->s->base.name, s->op1.idxval->t->base.name, s->op1.idxval->base.name, s->flag); break;
+	case st_bat: 	 printf("s%d = Column(\"%s\".\"%s\".\"%s\", %d);\n", -s->nr, s->op1.cval->t->s->base.name, s->op1.cval->t->base.name, s->op1.cval->base.name, s->flag); break;
+	case st_dbat:    printf("s%d = Table(\"%s\".\"%s\");\n", -s->nr, s->op1.tval->s->base.name, s->op1.tval->base.name); break;
+	case st_idxbat:  printf("s%d = Index(\"%s\".\"%s\".\"%s\", %d);\n", -s->nr, s->op1.idxval->t->s->base.name, s->op1.idxval->t->base.name, s->op1.idxval->base.name, s->flag); break;
 	case st_const: 	 dump2(s, "project", nr); break;
 	case st_mark: 	 dump2(s, "mark", nr); break;
 	case st_gen_group: dump1(s, "group", nr); break;
@@ -3046,8 +3083,9 @@ print_stmt(stmt *s, int *nr)
 	case st_ptable:
 		if (ptable_parent(s)) 
 			print_stmt(ptable_parent(s), nr);
-		printf("s%d = ptable( s%d )\n", -s->nr, 
-			print_stmt(ptable_statements(s), nr));
+		if (ptable_statements(s))
+			printf("s%d = ptable( s%d )\n", -s->nr, 
+				print_stmt(ptable_statements(s), nr));
 		break;
 	case st_pivot:
 		s->nr = -print_stmt(s->op2.stval, nr); break;

@@ -1732,6 +1732,16 @@ proc rand(int v) : int {
 	return rand();
 }
 
+proc {zero_or_one}(BAT[oid,any::1] b, BAT[oid,oid] gp, BAT[oid,oid] gpe) : BAT[oid,any::1] {
+	var g := CTgroup(gp);
+	var e := g.histogram();
+	var m := max(e);
+	if (m > 1) { 
+		ERROR("zero_or_one: cardinality violation (%d>1)", m);
+	}
+	return b;
+}
+
 tzone_local(TIMEZONE("GMT"));
 
 proc sql_server_start() : void {

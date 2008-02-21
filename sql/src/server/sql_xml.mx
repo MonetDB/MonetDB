@@ -70,12 +70,13 @@ sql_xmlelement(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int 
 				if (!c_st) 
 					return NULL;
 
-				if (c->token == SQL_SELECT) {
+				if (f != sql_sel && c->token == SQL_SELECT) {
 					node *o = c_st->op1.lval->h;
 					stmt *oref = stmt_dup(o->next->data);
 					stmt *sqa = stmt_dup(o->data);
 					stmt *h;
 
+					assert(0);
 					if (list_length(c_st->op1.lval) > 2 || !oref->t) {
 						stmt_destroy(oref);
 						stmt_destroy(sqa);

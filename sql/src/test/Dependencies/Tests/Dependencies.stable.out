@@ -1,19 +1,24 @@
 stdout of test 'Dependencies` in directory 'src/test/Dependencies` itself:
 
 
-# 15:33:56 >  
-# 15:33:56 >  Mtimeout -timeout 180  Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set mapi_port=39240 --set xrpc_port=48885 --set monet_prompt= --trace "--dbname=mTests_src_test_Dependencies" --dbinit=" module(sql_server);" ; echo ; echo Over..
-# 15:33:56 >  
+# 08:53:49 >  
+# 08:53:49 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31661 --set xrpc_port=45079 --set monet_prompt= --trace  "--dbname=mTests_src_test_Dependencies" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 08:53:49 >  
 
-# Monet Database Server V4.18.0
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
 
-printf("\nReady.\n");
+
+# MonetDB server v5.4.0, based on kernel v1.22.0
+# Serving database 'mTests_src_test_Dependencies'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:31661/
+# MonetDB/SQL module v2.22.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -71,8 +76,8 @@ Dependencies between database objects
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 4,	2,	8 # length
-[ "name",	"v1",	"DEP_VIEW"	]
 [ "id",	"v1",	"DEP_VIEW"	]
+[ "name",	"v1",	"DEP_VIEW"	]
 [ "age",	"v1",	"DEP_VIEW"	]
 % sys.c,	sys.k,	. # table_name
 % name,	name,	single_value # name
@@ -88,12 +93,13 @@ Dependencies between database objects
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 4,	2,	8 # length
-[ "name",	"f2",	"DEP_FUNC"	]
 [ "id",	"f2",	"DEP_FUNC"	]
+[ "name",	"f2",	"DEP_FUNC"	]
 % sys.c,	sys.tri,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 6,	14,	11 # length
+[ "id",	"trigger_test",	"DEP_TRIGGER"	]
 [ "id_t1",	"trigger_test",	"DEP_TRIGGER"	]
 [ "age_v1",	"trigger_test",	"DEP_TRIGGER"	]
 [ "id",	"trigger_test_4",	"DEP_TRIGGER"	]
@@ -122,9 +128,9 @@ Dependencies between database objects
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 6,	12,	11 # length
-[ "isnull",	"trigger_test",	"DEP_TRIGGER"	]
-[ "count",	"trigger_test",	"DEP_TRIGGER"	]
 [ "<>",	"trigger_test",	"DEP_TRIGGER"	]
+[ "count",	"trigger_test",	"DEP_TRIGGER"	]
+[ "isnull",	"trigger_test",	"DEP_TRIGGER"	]
 % sys.k,	sys.fk,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type

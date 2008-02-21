@@ -1,0 +1,58 @@
+stdout of test 'coalesce3` in directory 'src/test/null` itself:
+
+
+# 09:50:56 >  
+# 09:50:56 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31896 --set xrpc_port=48460 --set monet_prompt= --trace  "--dbname=mTests_src_test_null" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 09:50:56 >  
+
+# MonetDB server v5.4.0, based on kernel v1.22.0
+# Serving database 'mTests_src_test_null'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:31896/
+# MonetDB/SQL module v2.22.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 16:51:40 >  
+# 16:51:40 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=30043  -G
+# 16:51:40 >  
+
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+% sys.x,	sys.y # table_name
+% id,	zero_or_one_col2 # name
+% int,	int # type
+% 2,	1 # length
+[ 1,	1	]
+[ 2,	2	]
+[ 3,	2	]
+[ 4,	3	]
+[ 5,	3	]
+[ 6,	3	]
+[ 7,	NULL	]
+[ 8,	NULL	]
+[ 9,	NULL	]
+[ 10,	NULL	]
+
+# 16:51:40 >  
+# 16:51:40 >  Done.
+# 16:51:40 >  
+

@@ -1,0 +1,25 @@
+stderr of test 'bug_in_selection.SF-1892413` in directory 'src/test/BugTracker` itself:
+
+
+# 10:24:35 >  
+# 10:24:35 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39391 --set xrpc_port=49621 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 10:24:35 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
+
+# 10:24:35 >  
+# 10:24:35 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=39391 
+# 10:24:35 >  
+
+MAPI  = monetdb@koala:39391
+QUERY = SELECT date, (SELECT date from test_subquery where date > t1.date limit 1) as dtNext from test_subquery t1;
+ERROR = !syntax error, unexpected LIMIT, expecting INTERSECT or EXCEPT or UNION or ')' in: "select date, (select date from test_subquery where date > t1.date limit"
+MAPI  = monetdb@koala:39391
+QUERY = SELECT date, (SELECT date from test_subquery where date > t1.date) as dtNext from test_subquery t1;
+ERROR = !SQLException:assert:zero_or_one: cardinality violation (2>1)
+
+# 10:24:35 >  
+# 10:24:35 >  Done.
+# 10:24:35 >  
+

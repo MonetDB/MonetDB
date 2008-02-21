@@ -580,6 +580,18 @@ function batcalc.rank_grp( b:bat[:oid,:any_1]) :bat[:oid,:int];
 	return sql.rank(b);
 end batcalc.rank_grp;
 
+function sql.zero_or_one( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:any_1];
+	(e,g) := group.new(gp);
+	m := aggr.max(e);
+	c := calc.>(m,1);
+	ms := calc.str(m); 
+	msg := str.+("zero_or_one: cardinality violation (", ms);
+	msg := str.+(msg, ">1)");
+	assert(c, msg);
+	return b;
+end sql.zero_or_one;
+
+
 function mmath.rand( v:int ) :int;
 	x := mmath.rand();
 	return x;

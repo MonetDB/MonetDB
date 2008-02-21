@@ -56,19 +56,19 @@ static str logdir = NULL;
 static int mero_running = 0;
 
 static str
-replacePrefix(str s)
+replacePrefix(str s, str prefix)
 {
 	str p;
 	str buf;
 
-	/* unfortunately we have to replace occurences of ${prefix} with
-	 * MONETDB5_PREFIX, which is medieval in this language */
+	/* unfortunately we have to replace occurences of ${prefix}, which
+	 * is medieval in this language */
 	p = strstr(s, "${prefix}");
 	if (p != NULL) {
-		buf = GDKmalloc(sizeof(char) * (strlen(s) + strlen(MONETDB5_PREFIX) + 1));
+		buf = GDKmalloc(sizeof(char) * (strlen(s) + strlen(prefix) + 1));
 		memcpy(buf, s, p - s);
-		memcpy(buf + (p - s), MONETDB5_PREFIX, strlen(MONETDB5_PREFIX));
-		memcpy(buf + (p - s) + strlen(MONETDB5_PREFIX), s + (p - s) + 9, strlen(s) - 9 - (p - s) + 1);
+		memcpy(buf + (p - s), prefix, strlen(prefix));
+		memcpy(buf + (p - s) + strlen(prefix), s + (p - s) + 9, strlen(s) - 9 - (p - s) + 1);
 		return(buf);
 	} else {
 		return(GDKstrdup(s));
@@ -1097,7 +1097,7 @@ command_release(int argc, char *argv[])
 int
 main(int argc, char *argv[])
 {
-	str p;
+	str p, prefix;
 	FILE *cnf = NULL;
 	char buf[1024];
 	int fd;
@@ -1121,15 +1121,21 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
+	prefix = MONETDB5_PREFIX;
 	while (fgets(buf, 1024, cnf) != NULL) {
 		/* eliminate fgets' newline */
 		buf[strlen(buf) - 1] = '\0';
-		if (*buf && strncmp(buf, "gdk_dbfarm=", 11) == 0) {
+		if (*buf && strncmp(buf, "prefix=", 7) == 0) {
+			/* this should always come before it's used, so it's safe
+			 * this way */
 			p = strchr(buf, '=');
-			dbfarm = replacePrefix(++p);
+			prefix = GDKstrdup(++p);
+		} else if (*buf && strncmp(buf, "gdk_dbfarm=", 11) == 0) {
+			p = strchr(buf, '=');
+			dbfarm = replacePrefix(++p, prefix);
 		} else if (*buf && strncmp(buf, "sql_logdir=", 11) == 0) {
 			p = strchr(buf, '=');
-			logdir = replacePrefix(++p);
+			logdir = replacePrefix(++p, prefix);
 		}
 	}
 

@@ -543,6 +543,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 	stmt *res = NULL, *else_stmt = NULL;
 	node *n, *m;
 	exp_kind ek = {type_value, card_column, FALSE};
+	int aggr = 0;
 	
 	if (dn) {
 		stmt *cond = NULL, *result = NULL;
@@ -553,6 +554,8 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 
 			e1 = sql_value_exp(sql, scp, dn->data.sym, grp, subset, f, ek);
 			e2 = sql_value_exp(sql, scp, dn->next->data.sym, grp, subset, f, ek);
+			aggr |= e1->aggr;
+			aggr |= e2->aggr;
 			if (e1 && subset && subset->nrcols && e1->nrcols == 0)
 				e1 = stmt_const(first_subset(subset), e1);
 			if (e1 && e2) {
@@ -569,8 +572,9 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 			   IS NOT NULL THEN e1 ELSE e2 END */
 		} else if (token == SQL_COALESCE) {
 			cond = sql_value_exp(sql, scp, dn->data.sym, grp, subset, f, ek);
+			aggr |= cond->aggr;
 
-			if (cond && subset && subset->nrcols && cond->nrcols == 0)
+			if (cond && subset && subset->nrcols && cond->nrcols == 0 && !cond->aggr)
 				cond = stmt_const(first_subset(subset), cond);
 			if (cond) {
 				sql_subtype *bt = sql_bind_localtype("bit");
@@ -617,8 +621,9 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 
 		if (token == SQL_COALESCE) {
 			cond = sql_value_exp(sql, scp, dn->data.sym, grp, subset, f, ek);
+			aggr |= cond->aggr;
 
-			if (cond && subset && subset->nrcols && cond->nrcols == 0)
+			if (cond && subset && subset->nrcols && cond->nrcols == 0 && !cond->aggr)
 				cond = stmt_const(first_subset(subset), cond);
 			if (cond) {
 				sql_subtype *bt = sql_bind_localtype("bit");
@@ -661,7 +666,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 		}
 		restype = &rtype;
 	}
-	if (subset) {
+	if (subset && (grp || !aggr)) {
 		res = first_subset(subset);
 		if (!res) {
 			list_destroy(conds);
@@ -1699,6 +1704,17 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 					   in the outer */
 					s->aggr = 0;
 				}
+			} else if (f >= sql_sel) { /* normalize subquery */
+				/* flatten subqueries */
+				stmt *h, *v = stmt_dup(s->op1.lval->h->data);
+				stmt *o = stmt_dup(s->op1.lval->h->next->data);
+				stmt_destroy(s);
+				s = stmt_join(stmt_reverse(o), v, cmp_equal);
+				h = stmt_dup(s->h->t);
+				stmt_destroy(s->h);
+				s->h = h;
+				if (f >= sql_sel)   /* make sure we don't lose rows */
+					s = stmt_outerjoin(stmt_mirror(first_subset(subset)), s, cmp_equal);
 			}
 		}
 
@@ -2692,6 +2708,8 @@ _column_exp(mvc *sql, scope *scp, symbol *column_e, group *grp, stmt *subset, in
 			h = stmt_dup(s->h->t);
 			stmt_destroy(s->h);
 			s->h = h;
+			if (f >= sql_sel)   /* make sure we don't lose rows */
+				s = stmt_outerjoin(stmt_mirror(first_subset(subset)), s, cmp_equal);
 		}
 		s = stmt_alias(s, table_name(s), _strdup(l->h->next->data.sval));
 		scope_add_alias(scp, stmt_dup(s), l->h->next->data.sval);
@@ -4017,6 +4035,13 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 				list_append(rl, stmt_join(ss, cs, cmp_all));
 			} else {
 				cs = stmt_dup(cs);
+				if (!cs->aggr && outer && ek.card <= card_column) {
+					sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", tail_type(cs));
+					cs = stmt_aggr(cs, grp_dup(grp), zero_or_one, 1);
+					/* we aggregated in the subquery not 
+					   in the outer */
+					cs->aggr = 0;
+				}
 				list_append(rl, cs);
 			}
 		}

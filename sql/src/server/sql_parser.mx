@@ -4038,7 +4038,7 @@ case_scalar_exp_list2:
 
 
 when_value:
-    WHEN scalar_exp THEN scalar_exp
+    WHEN scalar_exp THEN simple_atom
 			{ $$ = _symbol_create_list( SQL_WHEN,
 			   append_symbol(
 			    append_symbol(
@@ -4053,7 +4053,7 @@ when_value_list:
  ;
 
 when_search:
-    WHEN search_condition THEN scalar_exp
+    WHEN search_condition THEN simple_atom
 			{ $$ = _symbol_create_list( SQL_WHEN,
 			   append_symbol(
 			    append_symbol(

@@ -80,6 +80,8 @@ Over..
 % xml # type
 % 192 # length
 [ <Customer  id="1"><name>WoodWorks</name><city>Baltimore</city><projects><project  id="1"><name>Medusa</name></project></projects></Customer>	]
+[ <Customer  id="2"><name>Software Solutions</name><city>Boston</city><projects></projects></Customer>	]
+[ <Customer  id="3"><name>Food Supplies</name><city>New York</city><projects></projects></Customer>	]
 [ <Customer  id="4"><name>Hardware Shop</name><city>Washington</city><projects><project  id="2"><name>Pegasus</name></project><project  id="8"><name>Typhon</name></project></projects></Customer>	]
 [ <Customer  id="5"><name>Books Inc</name><city>New Orleans</city><projects><project  id="10"><name>Sphinx</name></project></projects></Customer>	]
 % . # table_name

@@ -559,7 +559,7 @@ rel_project(sql_rel *l, list *e)
 	rel->r = NULL;
 	rel->op = op_project;
 	rel->exps = e;
-	rel->card = CARD_ATOM; /* no relation */
+	rel->card = CARD_MULTI; 
 	if (l) {
 		rel->card = l->card;
 		rel->nrcols = l->nrcols;
@@ -571,7 +571,8 @@ rel_project(sql_rel *l, list *e)
 static sql_rel *
 rel_distinct(sql_rel *l) 
 {
-	l->flag |= DISTINCT; 
+	if (l->card > CARD_ATOM)
+		l->flag |= DISTINCT; 
 	return l;
 }
 
@@ -3642,7 +3643,12 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int tople
 			sql_exp *ce = rel_column_exp(sql, &inner, n->data.sym, sql_sel);
 			if (ce && exp_subtype(ce)) {
 				if (rel->card < ce->card) {
-					if (ce->name) {
+					if (outer) {
+						sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", exp_subtype(ce));
+
+						ce = exp_aggr1(ce, zero_or_one, 0, 0, rel->card);
+				
+					} else if (ce->name) {
 						return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", ce->name);
 					} else {
 						return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
