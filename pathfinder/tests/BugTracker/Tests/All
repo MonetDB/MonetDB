@@ -110,6 +110,7 @@ attribute_access_mposjoin_error.SF-1726928
 insert_large_doc.SF-1726954
 32_docs.SF-1730617
 HAVE_MONETDB_JAVAJDBC?JDBC_250_results.SF-1730556
+HAVE_MONETDB_JAVAJDBC?JDBC_0_results.SF-1886326
 crash_on_concatenated_query.SF-1730547
 error_in_preceeding_axis.SF-1731850
 attribute_serialization.SF-1743442

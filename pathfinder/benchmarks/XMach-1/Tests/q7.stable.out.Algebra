@@ -1,0 +1,30 @@
+stdout of test 'q7` in directory 'benchmarks/XMach-1` itself:
+
+
+# 00:17:49 >  
+# 00:17:49 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./PATHFINDER/lib64/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/lib64/MonetDB" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/log" --set mapi_port=37658 --set monet_prompt= --trace "--dbname=mTests_benchmarks_XMach-1" --dbinit="module(pathfinder); pfstart();" ; echo ; echo Over..
+# 00:17:49 >  
+
+# Monet Database Server V4.13.1
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 00:17:50 >  
+# 00:17:50 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=37658 q7.xq
+# 00:17:50 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><docid>d1</docid><docid>d10</docid><docid>d11</docid><docid>d12</docid><docid>d13</docid><docid>d14</docid><docid>d16</docid><docid>d18</docid><docid>d2</docid><docid>d20</docid><docid>d24</docid><docid>d26</docid><docid>d3</docid><docid>d30</docid><docid>d34</docid><docid>d35</docid><docid>d36</docid><docid>d4</docid><docid>d40</docid><docid>d44</docid><docid>d45</docid><docid>d48</docid><docid>d49</docid><docid>d5</docid><docid>d50</docid><docid>d51</docid><docid>d52</docid><docid>d53</docid><docid>d54</docid><docid>d57</docid><docid>d58</docid><docid>d60</docid><docid>d61</docid><docid>d62</docid><docid>d64</docid><docid>d65</docid><docid>d66</docid><docid>d70</docid><docid>d72</docid><docid>d73</docid><docid>d77</docid><docid>d8</docid><docid>d81</docid><docid>d82</docid><docid>d83</docid><docid>d84</docid><docid>d87</docid><docid>d88</docid><docid>d92</docid><docid>d94</docid><docid>d95</docid><docid>d96</docid><docid>d98</docid><docid>d99</docid></XQueryResult>
+
+# 17:36:44 >  
+# 17:36:44 >  Done.
+# 17:36:44 >  
+

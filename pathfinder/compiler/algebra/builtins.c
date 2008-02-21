@@ -1103,7 +1103,7 @@ PFbui_op_le_int (const PFla_op_t *loop, bool ordering,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_str, PFla_gt, args, loop, ordering));
+                  bin_comp (aat_int, PFla_gt, args, loop, ordering));
 }
 
 /**

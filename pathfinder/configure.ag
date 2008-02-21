@@ -64,10 +64,10 @@ req_monetdb_ver='1.22.0'
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
-    if test "x$MONETDBVERS" = x; then
+    if test "x$MONETDB_VERSION" = x; then
         AC_MSG_NOTICE([No MonetDB base installation found.  No runtime support for MonetDB4 and MonetDB5 will be compiled.])
     else
-        AC_MSG_WARN([Your MonetDB base installation is outdated (version $MONETDBVERS, required $req_monetdb_ver).  No runtime support for MonetDB4 and MonetDB5 will be compiled.])
+        AC_MSG_WARN([Your MonetDB base installation is outdated (version $MONETDB_VERSION, required $req_monetdb_ver).  No runtime support for MonetDB4 and MonetDB5 will be compiled.])
     fi
 fi
 
@@ -119,30 +119,30 @@ if test "x$have_monetdb" = xyes; then
 
     dnl Test for MonetDB4
     if test "x$have_monetdb4" != xyes; then
-        if test "x$MONETDB4VERS" = x; then
+        if test "x$MONETDB4_VERSION" = x; then
             AC_MSG_NOTICE([Pathfinder will be compiled without MonetDB4 support])
             AC_MSG_NOTICE([(no installation of MonetDB4 found).])
         else
             AC_MSG_WARN([Pathfinder will be compiled without MonetDB4 support,])
-            AC_MSG_WARN([since your version ($MONETDB4VERS) is outdated])
+            AC_MSG_WARN([since your version ($MONETDB4_VERSION) is outdated])
             AC_MSG_WARN([(Pathfinder requires at least version $req_monetdb4_ver).])
         fi
     else
-        AC_MSG_NOTICE([MonetDB4 support enabled (found version $MONETDB4VERS of MonetDB4).])
+        AC_MSG_NOTICE([MonetDB4 support enabled (found version $MONETDB4_VERSION of MonetDB4).])
     fi
 
     dnl Test for MonetDB5
     if test "x$have_monetdb5" != xyes; then
-        if test "x$MONETDB5VERS" = x; then
+        if test "x$MONETDB5_VERSION" = x; then
             AC_MSG_NOTICE([Pathfinder will be compiled without MonetDB5 support])
             AC_MSG_NOTICE([(no installation of MonetDB5 found).])
         else
             AC_MSG_WARN([Pathfinder will be compiled without MonetDB5 support,])
-            AC_MSG_WARN([since your version ($MONETDB5VERS) is outdated])
+            AC_MSG_WARN([since your version ($MONETDB5_VERSION) is outdated])
             AC_MSG_WARN([(Pathfinder requires at least version $req_monetdb5_ver).])
         fi
     else
-        AC_MSG_NOTICE([MonetDB5 support enabled (found version $MONETDB5VERS of MonetDB5).])
+        AC_MSG_NOTICE([MonetDB5 support enabled (found version $MONETDB5_VERSION of MonetDB5).])
     fi
 
 else

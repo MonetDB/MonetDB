@@ -20,7 +20,7 @@ declare function xmark:q02($doc as xs:string) as xs:anyNode*
 declare function xmark:q03($doc as xs:string) as xs:anyNode* 
 {
   for $b in doc($doc)/descendant::open_auction
-  where exactly-one($b/bidder[1]/increase/text()) * 2 <= $b/bidder[last()]/increase/text()
+  where zero-or-one($b/bidder[1]/increase/text()) * 2 <= $b/bidder[last()]/increase/text()
   return <increase first="{ $b/bidder[1]/increase/text() }"
                    last="{ $b/bidder[last()]/increase/text() }"/>
 };

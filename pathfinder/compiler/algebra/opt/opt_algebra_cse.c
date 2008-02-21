@@ -1947,9 +1947,114 @@ new_operator (PFla_op_t *n)
                     "dummy operators are not allowed");
 
         case la_rec_fix:
+            return PFla_rec_fix (CSE(L(n)), CSE(R(n)));
         case la_rec_param:
-        case la_rec_arg:
+            return PFla_rec_param (CSE(L(n)), CSE(R(n)));  
+        case la_rec_arg: {
+            PFla_op_t *seed   = CSE(L(n));
+            PFla_op_t *result = CSE(R(n));
+
+            PFarray_t *seed_actmap = create_actatt_map ();
+            PFarray_t *res_actmap  = create_actatt_map ();
+           
+            assert (CSE(L(n))->schema.count == 
+                    L(n)->schema.count);
+            assert (CSE(R(n))->schema.count ==
+                    R(n)->schema.count);
+
+            unsigned int i = 0;
+            for (i = 0; i < L(n)->schema.count; i++) {
+                if (L(n)->schema.items[i].name != 
+                    CSE(L(n))->schema.items[i].name)
+                    break;
+            }
+
+
+            /* a projection is needed */
+            if (i < L(n)->schema.count) {
+                PFalg_proj_t *p = (PFalg_proj_t *)
+                    PFmalloc (L(n)->schema.count * sizeof (PFalg_proj_t));
+
+                for (i = 0; i < L(n)->schema.count; i++) {
+                    p[i] = PFalg_proj (
+                              L(n)->schema.items[i].name,
+                              CSE(L(n))->schema.items[i].name); 
+                    INACTATT (seed_actmap,
+                              actatt (L(n)->schema.items[i].name,
+                                      CSE(L(n))->schema.items[i].name));
+                }
+
+                PFla_op_t *prev = seed;
+
+                seed = PFla_project_ (CSE(L(n)), L(n)->schema.count, p);
+
+                /* insert dummy operator in the original plan */
+                PFalg_proj_t *dummy_p = (PFalg_proj_t*)
+                                         PFmalloc (L(n)->schema.count *
+                                                   sizeof (PFalg_proj_t));
+
+                for (unsigned int i = 0; i < L(n)->schema.count; i++) {
+                     dummy_p[i] = PFalg_proj (L(n)->schema.items[i].name,
+                                              L(n)->schema.items[i].name);
+                }
+
+                L(n) = PFla_project_ (L(n), L(n)->schema.count, dummy_p);
+                INACT (L(n), seed_actmap);
+
+                /* map the new operator to the cse operator
+                 * of the previous operator
+                 * to ensure the equality (match ()) */
+                INCSE (L(n), prev);
+            }
+
+            for (i = 0; i < R(n)->schema.count; i++) {
+                if (R(n)->schema.items[i].name != 
+                    CSE(R(n))->schema.items[i].name)
+                    break;
+            }
+
+            /* a projection is needed */
+            if (i <= R(n)->schema.count) {
+                PFalg_proj_t *p = (PFalg_proj_t *)
+                    PFmalloc (R(n)->schema.count * sizeof (PFalg_proj_t));
+
+                for (i = 0; i < R(n)->schema.count; i++) {
+                    p[i] = PFalg_proj (
+                              R(n)->schema.items[i].name,
+                              CSE(R(n))->schema.items[i].name); 
+                    INACTATT (res_actmap,
+                              actatt (R(n)->schema.items[i].name,
+                                      CSE(R(n))->schema.items[i].name));
+                }
+
+                PFla_op_t *prev = result;
+
+                result = PFla_project_ (CSE(R(n)), R(n)->schema.count, p);
+
+                /* insert dummy operator in the original plan */
+                PFalg_proj_t *dummy_p = (PFalg_proj_t*)
+                                         PFmalloc (R(n)->schema.count *
+                                                   sizeof (PFalg_proj_t));
+
+                for (unsigned int i = 0; i < R(n)->schema.count; i++) {
+                     dummy_p[i] = PFalg_proj (R(n)->schema.items[i].name,
+                                              R(n)->schema.items[i].name);
+                }
+
+                R(n) = PFla_project_ (R(n), R(n)->schema.count, dummy_p);
+                INACT (R(n), res_actmap);
+
+                /* map the new operator to the cse operator
+                 * of the previous operator
+                 * to ensure the equality (match ()) */
+                INCSE (R(n), prev);
+            }
+             
+            return PFla_rec_arg (seed, result,
+                                 CSE(n->sem.rec_arg.base));
+        }
         case la_rec_base:
+            return PFla_rec_base (n->schema);
         case la_proxy:
         case la_proxy_base:
         case la_cross_mvd:
@@ -2329,13 +2434,14 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
         case la_trace:
         case la_trace_msg:
         case la_trace_map:
+            assert (!"missing implementation");
         case la_rec_fix:
-            actmap = actatt_map_copy (ACT(L(ori)));
+            actmap = actatt_map_copy (ACT(R(ori)));
             break; 
 
         case la_rec_param:
-            /* this operator doesn't have schema information and this no
-             * projectio list */
+            /* this operator doesn't have schema information and thus no
+             * projection list */
             actmap = create_actatt_map ();
             break;
 
@@ -2344,6 +2450,17 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             break; 
 
         case la_rec_base:
+            actmap = create_actatt_map ();
+
+            assert (ori->schema.count == cse->schema.count);
+
+            for (unsigned int i = 0; i < ori->schema.count; i++) {
+                INACTATT (actmap,
+                          actatt (
+                             cse->schema.items[i].name,
+                             ori->schema.items[i].name));
+            }
+            break;
         case la_proxy:
         case la_proxy_base:
         case la_cross_mvd:
