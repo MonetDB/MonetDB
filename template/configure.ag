@@ -58,10 +58,10 @@ req_monetdb_ver='1.22.0'
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB_COMMON($req_monetdb_ver)
 if test "x$have_monetdb" != xyes; then
-	if test "x$MONETDBVERS" = "x"; then
+	if test "x$MONETDB_VERSION" = "x"; then
 		AC_MSG_ERROR([MonetDB was not found. Template requires at least version $req_monetdb_ver of MonetDB.])
 	else
-		AC_MSG_ERROR([Template requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
+		AC_MSG_ERROR([Template requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDB_VERSION was found.])
 	fi
 fi
 AM_MONETDB_DEFAULTS()
@@ -82,16 +82,16 @@ req_monetdb5_ver='5.4.0'
 AM_MONETDB5($req_monetdb5_ver)
 
 if test "x$have_monetdb4" != xyes -a "x$have_monetdb5" != xyes; then
-	if test "x$MONETDB4VERS" = "x" -a "x$MONETDB5VERS" = "x"; then
+	if test "x$MONETDB4_VERSION" = "x" -a "x$MONETDB5_VERSION" = "x"; then
 		AC_MSG_ERROR([Neither MonetDB4 nor MonetDB5 was not found. Template requires at least version $req_monetdb4_ver of MonetDB4 or version $req_monetdb5_ver of MonetDB5.])
 	else
-		if test "x$MONETDB4VERS" = "x"; then
-			MONETDB4VERS='none'
+		if test "x$MONETDB4_VERSION" = "x"; then
+			MONETDB4_VERSION='none'
 		fi
-		if test "x$MONETDB5VERS" = "x"; then
-			MONETDB5VERS='none'
+		if test "x$MONETDB5_VERSION" = "x"; then
+			MONETDB5_VERSION='none'
 		fi
-		AC_MSG_ERROR([Template requires at least version $req_monetdb4_ver of MonetDB4 (found $MONETDB4VERS) or version $req_monetdb5_ver of MonetDB5 (found $MONETDB5VERS).])
+		AC_MSG_ERROR([Template requires at least version $req_monetdb4_ver of MonetDB4 (found $MONETDB4_VERSION) or version $req_monetdb5_ver of MonetDB5 (found $MONETDB5_VERSION).])
 	fi
 fi
 

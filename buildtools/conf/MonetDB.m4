@@ -641,7 +641,7 @@ case "$GCC-$CC-$host_os-$host-$bits" in
 	;;
 yes-*-solaris*-*-*)
 	case `$bits-$CC -v 2>&1` in
-	32-*|*-*'gcc version '[34]'.'*)	;;
+	32-*|*-*'gcc version '[[34]]'.'*)	;;
 	*)	AC_MSG_ERROR([need GCC version >=3.X for 64 bits]);;
 	esac
 	CC="$CC -m$bits"
@@ -1193,7 +1193,7 @@ if test "x$have_java" != xno; then
     have_java="no"
   fi
 fi
-AC_SUBST(JAVAVERS)
+AC_SUBST(JAVA_VERSION)
 AC_SUBST(JAVA)
 AC_SUBST(JAVAC)
 AC_SUBST(JAR)
