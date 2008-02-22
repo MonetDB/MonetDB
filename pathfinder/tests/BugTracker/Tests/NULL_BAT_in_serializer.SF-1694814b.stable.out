@@ -32,7 +32,7 @@ Over..
 # 17:48:42 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><bug xid="5" xend="81964304895" xstart="81964302336" name="$AttrDef"/></XQueryResult>
+<XQueryResult><bug name="$AttrDef" xstart="81964302336" xend="81964304895" xid="5"/></XQueryResult>
 
 # 02:47:21 >  
 # 02:47:21 >  Done.
