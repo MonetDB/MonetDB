@@ -994,7 +994,7 @@ command_destroy(int argc, char *argv[])
 			/* this is annoying, but till the time we have something
 			 * better, we should do it like this; the logdir is a
 			 * separate directory */
-			snprintf(buf, 8096, "%s/%s", logdir, argv[1]);
+			snprintf(buf, 8096, "%s/%s", logdir, dbname);
 			if ((e = deletedir(buf)) != NULL) {
 				fprintf(stderr, "destroy: failed to destroy '%s': %s\n",
 						argv[1], e);
