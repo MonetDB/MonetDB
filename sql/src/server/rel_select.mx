@@ -3536,12 +3536,26 @@ sql_rel *exp_top_relation(sql_exp *e )
 	return NULL;
 }
 
+static int
+check_correlation_exps( list *exps )
+{
+	node *n;
+
+	for (n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (e->type != e_cmp || e->flag != cmp_equal)
+			return -1;
+	}
+	return 0;
+}
+
 static sql_rel *
 rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int toplevel)
 {
 	int aggr = 0;
 	list *jexps = NULL;
 	sql_rel *inner = NULL;
+	int decorrelated = 0;
 
 	if (!sn->from)
 		return rel_simple_select(sql, rel, sn->where, sn->selection);
@@ -3562,40 +3576,46 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int tople
 			aggr = 1;
 		}
 
+		/* decorrelate if possible */
 		if (outer && rel->op == op_join && rel->l == outer) {
 			node *n;
 			/* correlation expressions */
 			list *ce = list_select(rel->exps, rel, (fcmp) &exp_is_correlation, (fdup)&exp_dup);
-			list *gbexps = new_exp_list();
 
-			assert(ce && list_length(ce));
-			jexps = new_exp_list();
-			for (n = ce->h; n; n = n->next) {
-				sql_exp *e = n->data;
+			if (!ce || list_length(ce) == 0 || check_correlation_exps(ce) != 0) {
+				list_destroy(ce);
+			} else {
+				list *gbexps = new_exp_list();
+
+				decorrelated = 1;
+				jexps = new_exp_list();
+				for (n = ce->h; n; n = n->next) {
+					sql_exp *e = n->data;
 		
-				/* add right expressions to the 
-				   group by exps */
-				append(gbexps, exp_dup(e->r));
+					/* add right expressions to the 
+				   	group by exps */
+					append(gbexps, exp_dup(e->r));
+				}
+	
+				/* now create a groupby on the inner */
+				inner = rel_groupby(rel_dup(rel->r), gbexps);
+				rel_label(inner, ++sql->label);
+				for (n = ce->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					sql_exp *re = e->r;
+	
+					assert(e->type == e_cmp);
+					assert(re->type == e_column);
+					re = exp_column(inner->name, re->r, exp_subtype(re), inner->card);
+					e = exp_compare( exp_dup(e->l), re, e->flag);
+					append(jexps, e);
+				}
+				outer = rel_dup(outer);
+				rel_destroy(rel);
+				rel = inner;
+				inner = NULL;
+				list_destroy(ce);
 			}
-
-			/* now create a groupby on the inner */
-			inner = rel_groupby(rel_dup(rel->r), gbexps);
-			rel_label(inner, ++sql->label);
-			for (n = ce->h; n; n = n->next) {
-				sql_exp *e = n->data;
-				sql_exp *re = e->r;
-
-				assert(e->type == e_cmp);
-				assert(re->type == e_column);
-				re = exp_column(inner->name, re->r, exp_subtype(re), inner->card);
-				e = exp_compare( exp_dup(e->l), re, e->flag);
-				append(jexps, e);
-			}
-			outer = rel_dup(outer);
-			rel_destroy(rel);
-			rel = inner;
-			inner = NULL;
-			list_destroy(ce);
 		}
 	}
 
@@ -3619,12 +3639,13 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int tople
 	if (sn->selection) {
 		dnode *n = sn->selection->h;
 
-		if (!outer)
-/*
-			rel = rel_project(rel, rel_projections(sql, rel, NULL, 1));
-		else
-*/
-			rel = rel_project(rel, new_exp_list());
+		if (!outer || !decorrelated) {
+			if (outer) /* project all of left */
+				rel = rel_project(rel, 
+					rel_projections(sql, outer, NULL, 1));
+			else
+				rel = rel_project(rel, new_exp_list());
+		}
 		/* when we have a 'having clause' we need to lift  the 
 		   group by expressions and aggregates to the outer project */
 		if (!inner)
@@ -3643,6 +3664,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int tople
 			sql_exp *ce = rel_column_exp(sql, &inner, n->data.sym, sql_sel);
 			if (ce && exp_subtype(ce)) {
 				if (rel->card < ce->card) {
+					/* This doesn't work without de-correlations, ie in that case it should be done later */
 					if (outer) {
 						sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", exp_subtype(ce));
 

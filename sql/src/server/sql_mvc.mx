@@ -383,7 +383,7 @@ mvc_commit(mvc *m, int chain, char *name)
 	tr = tr->parent;
 	if (tr->parent) {
 		store_lock();
-		while (tr->parent->parent != NULL && ok == SQL_OK) {
+		while (tr->parent != NULL && ok == SQL_OK) {
 			tr = sql_trans_destroy(tr);
 		}
 		store_unlock();

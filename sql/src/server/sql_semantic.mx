@@ -397,7 +397,8 @@ tvar *
 scope_add_temp_view(scope *scp, stmt *temp_table, char *tname)
 {
 	node *n;
-	tvar *tv = scope_add_table(scp, stmt_dup(temp_table), tname, NULL);
+	stmt *nme = stmt_atom_string(_strdup(tname));
+	tvar *tv = scope_add_table(scp, nme, tname, NULL);
 
 	assert(temp_table->type == st_list);
 
@@ -407,7 +408,7 @@ scope_add_temp_view(scope *scp, stmt *temp_table, char *tname)
 		char *cname = column_name(sc);
 
 		sc = stmt_alias(sc, _strdup(tname), cname);
-		sc = stmt_column(sc, stmt_dup(temp_table), NULL);
+		sc = stmt_column(sc, stmt_dup(nme), NULL);
 		table_add_column(tv, sc, NULL, cname);
 	}
 	return tv;

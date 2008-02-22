@@ -62,7 +62,7 @@ FIXME: actually implement that
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
 #include <sys/types.h>
-#include <wait.h> /* wait */
+#include <sys/wait.h> /* wait */
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
