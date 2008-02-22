@@ -895,8 +895,10 @@ controlRunner(void *d)
 				continue;
 			} else if (pos == -1) {
 				/* we got interrupted ... so what? */
-				if (errno == EINTR)
+				if (errno == EINTR) {
+					pos = 0;
 					continue;
+				}
 				/* hmmm error ... give up */
 				fprintf(stderr, "error reading from control channel: %s\n",
 						strerror(errno));
