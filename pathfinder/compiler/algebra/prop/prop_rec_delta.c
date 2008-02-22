@@ -38,24 +38,27 @@
 #include "alg_dag.h"
 #include "oops.h"
 #include "mem.h"
+#include <stdio.h>
 
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
 #define ITER(n) ((n)->prop->icols)
-#define INNER(n) ((n)->prop->l_icols)
 #define POS(n) ((n)->prop->r_icols)
+#define IN(n) ((n)->prop->set)
 
-#define REFS(n) ((n)->state_label)
-#define NOT_USED(n) ((n)->prop->set)
+#define REFS(n) ((n)->refctr)
 
 /**
  * check the operator @a n based on the properties
  * of its children; worker for prop_check().
  */
 static bool
-check_op (PFla_op_t *n)
+check_op (PFla_op_t *n, bool op_used)
 {
+    if (L(n)) IN(n) |= IN(L(n));
+    if (R(n)) IN(n) |= IN(R(n));
+    
     switch (n->kind) {
         case la_serialize_seq:
         case la_serialize_rel:
@@ -97,6 +100,7 @@ check_op (PFla_op_t *n)
         case la_bool_or:
         case la_bool_not:
         case la_to:
+        case la_rowid:
         case la_type:
         case la_type_assert:
         case la_doc_tbl:
@@ -107,91 +111,73 @@ check_op (PFla_op_t *n)
             /* just propagate all column information */
             ITER (n) = ITER (L(n));
             POS  (n) = POS  (L(n));
-            INNER(n) = INNER(L(n));
             break;
 
         case la_cross:
+            /* don't allow more than a single reference
+               to the recursion variable */
+            if (ITER (L(n)) && ITER (R(n)))
+                return true;
+            /* else fall through */
         case la_disjunion:
         case la_intersect:
             /* just propagate all column information */
             ITER (n) = ITER (L(n)) | ITER (R(n));
             POS  (n) = POS  (L(n)) | POS  (R(n));
-            INNER(n) = INNER(L(n)) | INNER(R(n));
             break;
 
         case la_difference:
             /******************************************************************/
             /*                                                                */
-            /* We can also allow difference operators if R(n) contains        */
-            /* column that is marked ITER if no column in L(n) is marked      */
-            /* ITER.                                                          */
-            /* To make this change effective we need to get rid of distinct   */
-            /* operators (that appear next to the difference operators in     */
-            /* many scenarios -- e.g., exists, empty). Using the required     */
-            /* value property to ignore the unused distinct operator makes    */
-            /* this change effective (see also case difference and the        */
-            /* introduction of NOT_USED in prop_check()).                    .*/
+            /* Ignore conflicts in difference operator if its result is never */
+            /* used. This usage is decided using the required value property. */
+            /* Also look for the introduction of child_used in prop_check.    */
             /*                                                                */
-            /* Applying the difference inside the DELTA approach would not    */
-            /* result in wrong results as each loop relation on the left side */
-            /* of the difference is adjusted during the recursion. Thus we    */
-            /* still maintain the same syntax as the IFP variant:             */
-            /*                                                                */
-            /* R \ (X u Y u Z) = ((R \ X) \ Y) \ Z                            */
-            /*                                                                */
-            /* (The right side of the difference is X in the first recursive  */
-            /* call and Y and Z in the respective second and third recursive  */
-            /* call. Thus the union of X, Y, and Z is the input of the third  */
-            /* recursive call using the IFP variant. The delta variant uses   */
-            /* only Z to calculate the difference. Because the loop relation  */
-            /* is already affected by X and Y in the previous recursive calls */
-            /* the difference operator produces the same result.)             */
+            /* This additional rule extends the XQuery subset that can be     */
+            /* translated using the DELTA approach. It allows more than the   */
+            /* queries that fulfill the syntactic distributivity-safety       */
+            /* property (see also case distinct for further information).     */
             /*                                                                */
             /******************************************************************/
-            /*
-            if (n->schema.count == 1 &&
-                n->schema.items[0].name & ITER(R(n)))
+            if (op_used &&
+                /* check for a reference to iter */
+                (ITER(L(n)) || ITER(R(n))))
                 return true;
-            */
-
-            ITER (n) = ITER (L(n));
-            POS  (n) = POS  (L(n));
-            INNER(n) = INNER(L(n));
+                
+            /* just propagate all column information */
+            ITER (n) = ITER (L(n)) | ITER (R(n));
+            POS  (n) = POS  (L(n)) | POS  (R(n));
             break;
 
         case la_distinct:
             /******************************************************************/
             /*                                                                */
-            /* Ignore conflicts in distinct operator if its result is never   */
-            /* used. This usage is decided using the required value property. */
-            /* Also look for the introduction of NOT_USED in prop_check.      */
-            /*                                                                */
-            /* This additional rule extends the XQuery subset that can be     */
-            /* translated using the DELTA approach. It allows more than the   */
-            /* queries that fulfill the distributivity property (see also     */
-            /* case difference for further information).                      */
+            /* We can also allow distinct operators because the existence     */
+            /* check either does not use the recursion variable or is based   */
+            /* on the recursion variable but only allows nodes to be added    */
+            /* to the result that are independent of the recursion variable.  */
+            /* This is guaranteed by the checks in rule la_cross and          */
+            /* la_eqjoin. The added nodes furthermore can only appear once    */
+            /* in the result (due to duplicate elimination and node           */
+            /* constructors being forbidden for delta). It is thus correct to */
+            /* apply a Delta approach as all nodes are added the first time   */
+            /* the distinct check is true.                                    */
             /*                                                                */
             /******************************************************************/
-            if (!NOT_USED(n) &&
-                /* check for a reference to iter */
-                n->schema.count == 1 &&
-                n->schema.items[0].name & ITER(L(n)))
-                return true;
-            else if (NOT_USED(n) &&
-                n->schema.count == 1 &&
-                n->schema.items[0].name & ITER(L(n)))
-                PFlog ("recursion strategy detection: "
-                       "DISTINCT operator ignored.");
-                /* do not infer the ITER column */
-            else
-                ITER (n) = ITER (L(n));
-
+            ITER (n) = ITER (L(n));
             POS  (n) = POS  (L(n));
-            INNER(n) = INNER(L(n));
             break;
 
         case la_eqjoin:
-            /* get the iter column through the map relation */
+            /* don't allow more than a single reference
+               to the recursion variable */
+            if (ITER(L(n)) && ITER(R(n)))
+                return true;
+
+            ITER(n) = ITER(L(n)) | ITER(R(n));
+            POS  (n) = POS  (L(n)) | POS  (R(n));
+
+            /* get the iter column through the map relations */
             if (n->sem.eqjoin.att1 & ITER(L(n)) &&
                 n->sem.eqjoin.att2 == att_outer &&
                 /* as consistency check make sure the map
@@ -201,7 +187,7 @@ check_op (PFla_op_t *n)
                  R(n)->schema.items[0].name == att_outer) &&
                 (R(n)->schema.items[1].name == att_inner ||
                  R(n)->schema.items[1].name == att_outer))
-                ITER(n) = att_inner;
+                ITER(n) = ITER(n) | att_inner;
             else if (n->sem.eqjoin.att2 & ITER(R(n)) &&
                 n->sem.eqjoin.att1 == att_outer &&
                 /* as consistency check make sure the map
@@ -211,23 +197,25 @@ check_op (PFla_op_t *n)
                  L(n)->schema.items[0].name == att_outer) &&
                 (L(n)->schema.items[1].name == att_inner ||
                  L(n)->schema.items[1].name == att_outer))
-                ITER(n) = att_inner;
-            else
-                ITER(n) = ITER(L(n)) | ITER(R(n));
-
-            POS  (n) = POS  (L(n)) | POS  (R(n));
-            INNER(n) = INNER(L(n)) | INNER(R(n));
+                ITER(n) = ITER(n) | att_inner;
+            /* get the iter column through the map relations */
+            else if (n->sem.eqjoin.att1 & ITER(L(n)) &&
+                n->sem.eqjoin.att2 == att_inner &&
+                PFprop_ocol (R(n), att_outer))
+                ITER(n) = ITER(n) | att_outer;
+            else if (n->sem.eqjoin.att2 & ITER(R(n)) &&
+                n->sem.eqjoin.att1 == att_inner &&
+                PFprop_ocol (L(n), att_outer))
+                ITER(n) = ITER(n) | att_outer;
             break;
 
         case la_project:
-            /* rename ITER, POS and INNER columns */
+            /* rename ITER and POS columns */
             for (unsigned int i = 0; i < n->sem.proj.count; i++) {
                 if (ITER(L(n)) & n->sem.proj.items[i].old)
                     ITER(n) |= n->sem.proj.items[i].new;
                 if (POS(L(n)) & n->sem.proj.items[i].old)
                     POS(n) |= n->sem.proj.items[i].new;
-                if (INNER(L(n)) & n->sem.proj.items[i].old)
-                    INNER(n) |= n->sem.proj.items[i].new;
             }
             break;
 
@@ -251,27 +239,11 @@ check_op (PFla_op_t *n)
         case la_rank:
             ITER (n) = ITER (L(n));
             POS  (n) = POS  (L(n));
-            INNER(n) = INNER(L(n));
 
             /* a numbering indicates a new sequence
                order -- we thus add new position column */
             if (ITER(n))
                 POS(n) |= n->sem.sort.res;
-            break;
-
-        case la_rowid:
-            ITER (n) = ITER (L(n));
-            POS  (n) = POS  (L(n));
-            INNER(n) = INNER(L(n));
-
-            /* mark new iteration column that is generated
-               based on the old input sequence.
-               This column is needed to ensure that we do not
-               use the cardinality to generate new nodes */
-            if ((ITER(L(n)) & att_iter ||
-                 INNER(L(n)) & att_iter) &&
-                n->sem.rowid.res == att_inner)
-                INNER(n) |= att_inner;
             break;
 
         case la_cast:
@@ -281,7 +253,6 @@ check_op (PFla_op_t *n)
 
             ITER (n) = ITER (L(n));
             POS  (n) = POS  (L(n));
-            INNER(n) = INNER(L(n));
             break;
 
         case la_step:
@@ -290,7 +261,6 @@ check_op (PFla_op_t *n)
         case la_doc_access:
             ITER (n) = ITER (R(n));
             POS  (n) = POS  (R(n));
-            INNER(n) = INNER(R(n));
             break;
 
         case la_twig:
@@ -302,8 +272,9 @@ check_op (PFla_op_t *n)
         case la_comment:
         case la_processi:
         case la_content:
-            /* every constructor breaks the delta evaluation */
-            return true;
+            if (IN(n))
+                /* every inside constructor breaks the delta evaluation */
+                return true;
             break;
 
         case la_merge_adjacent:
@@ -313,7 +284,6 @@ check_op (PFla_op_t *n)
 
             ITER (n) = ITER (R(n));
             POS  (n) = POS  (R(n));
-            INNER(n) = INNER(R(n));
             break;
 
         case la_nil:
@@ -326,46 +296,46 @@ check_op (PFla_op_t *n)
         case la_rec_fix:
             if (ITER(L(n)))
                 ITER(n) = att_iter;
-            if (INNER(L(n)))
-                INNER(n) = att_iter;
             break;
 
         case la_rec_param:
-            /* make sure to collect the iter and inner columns */
+            /* make sure to collect the iter columns */
             ITER (n) = ITER (L(n)) | ITER (R(n));
-            INNER(n) = INNER(L(n)) | INNER(R(n));
             break;
 
         case la_rec_arg:
-            /* get the iter and inner columns only from the seeds */
+            /* get the iter columns only from the seeds */
             ITER (n) = ITER (L(n));
-            INNER(n) = INNER(L(n));
             break;
 
         case la_rec_base:
-        {
-            int checks_failed = 3;
-            /* initialize the iter and pos columns for the input
-               relation (thus ignoring loop and result bases). */
-            if (n->schema.count != 3) break;
-
-            for (unsigned int i = 0; i < n->schema.count; i++) {
-                if (n->schema.items[i].name == att_iter) {
-                    ITER(n) = att_iter;
-                    checks_failed--;
-                }
-                else if (n->schema.items[i].name == att_pos) {
-                    POS(n) = att_pos;
-                    checks_failed--;
-                }
-                else if (n->schema.items[i].name == att_item)
-                    checks_failed--;
+            /* loop relation */
+            if (n->schema.count == 1) {
+                if (n->schema.items[0].name == att_iter)
+                    IN(n) = true;
             }
+            /* recursion variable */
+            else if (n->schema.count == 3) {
+                bool iter = false;
+                bool pos  = false;
+                bool item = false;
 
-            /* reset column information */
-            if (checks_failed)
-                ITER(n) = POS(n) = att_NULL;
-        }   break;
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    if (n->schema.items[i].name == att_iter)
+                        iter = true;
+                    else if (n->schema.items[i].name == att_pos)
+                        pos = true;
+                    else if (n->schema.items[i].name == att_item)
+                        item = true;
+                }
+
+                if (iter && pos && item) {
+                    ITER(n) = att_iter;
+                    POS(n) = att_pos;
+                    IN(n) = true;
+                }
+            }
+            break;
 
         case la_fun_call:
         case la_fun_param:
@@ -380,7 +350,6 @@ check_op (PFla_op_t *n)
 
             ITER (n) = ITER (L(n));
             /* no pos available */
-            INNER(n) = INNER(L(n));
             break;
     }
     return false;
@@ -388,20 +357,26 @@ check_op (PFla_op_t *n)
 
 /* worker for PFprop_check_rec_delta */
 static bool
-prop_check (PFla_op_t *n)
+prop_check (PFla_op_t *n, bool op_used)
 {
+    bool child_used = true;
+    
     assert (n);
 
     /* nothing to do if we already visited that node */
     if (n->bit_dag)
         return false;
 
+    /* do not follow fragment information */
+    if (n->kind == la_frag_union)
+        return false;
+
     /******************************************************************/
     /*                                                                */
-    /* Mark distinct operators whose result is filtered out by a      */
-    /* subsequent selection as NOT_USED. This allows us to be less    */
+    /* Mark difference operators whose result is filtered out by a    */
+    /* subsequent selection as unused. This allows us to be less      */
     /* restrictive with the DELTA recursion check. To decide whether  */
-    /* a distinct operator is used we look at the required value      */
+    /* a difference operator is used we look at the required value    */
     /* property. If an attach operator that produces the filtered     */
     /* Boolean value sits on top of the distinct operator the         */
     /* result of the distinct operator will be ignored. (For more     */
@@ -409,12 +384,8 @@ prop_check (PFla_op_t *n)
     /* check_op()).                                                   */
     /*                                                                */
     /******************************************************************/
-    if (L(n) && L(n)->kind == la_distinct) NOT_USED(L(n)) = false;
-    if (R(n) && R(n)->kind == la_distinct) NOT_USED(R(n)) = false;
-
     if (n->kind == la_attach &&
-        L(n)->kind == la_distinct &&
-        n->schema.count == 2 &&
+        L(n)->kind == la_difference &&
         /* this reference is the only one */
         REFS(L(n)) == 1 &&
         /* column item generates a value that may be required */
@@ -422,42 +393,25 @@ prop_check (PFla_op_t *n)
         /* the required value differs from the attached value */
         PFprop_req_bool_val_val (n->prop, n->sem.attach.res) !=
         n->sem.attach.value.val.bln)
-        /* mark the distinct operator as unused */
-        NOT_USED(L(n)) = true;
+        /* mark the difference operator as unused */
+        child_used = false;
+
+    if (n->kind == la_frag_union)
+        return false;
 
     /* check properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        if (prop_check (n->child[i]))
+        if (prop_check (n->child[i], child_used))
             return true;
 
     n->bit_dag = true;
 
-    /* reset ITER, POS, and INNER information */
+    /* reset ITER and POS information */
     ITER (n) = att_NULL;
     POS  (n) = att_NULL;
-    INNER(n) = att_NULL;
+    IN   (n) = false;
 
-    return check_op (n);
-}
-
-/* worker for PFprop_check_rec_delta that counts the number
-   of incoming edges for each operator */
-static void
-prop_count_refs (PFla_op_t *n)
-{
-    REFS(n)++;
-
-    /* nothing to do if we already visited that node */
-    if (n->bit_dag)
-        return;
-    /* otherwise initialize edge counter (first occurrence) */
-    else
-        REFS(n) = 1;
-
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        prop_count_refs (n->child[i]);
-
-    n->bit_dag = true;
+    return check_op (n, op_used);
 }
 
 /**
@@ -470,17 +424,15 @@ PFprop_check_rec_delta (PFla_op_t *root) {
 
     /* infer the required value property to make
        the delta recursion check less restrictive
-       for distinct operators */
+       for difference operators */
     PFprop_infer_reqval (root);
-    PFla_dag_reset (root);
 
     /* infer the number of incoming edges to be
-       sure that we do not mark a distinct operator
-       NOT_USED if it is referenced multiple times */
-    prop_count_refs (root);
-    PFla_dag_reset (root);
+       sure that we do not ignore a difference operator
+       if it is referenced multiple times */
+    PFprop_infer_refctr (root);
 
-    found_conflict = prop_check (root);
+    found_conflict = prop_check (root, true);
     PFla_dag_reset (root);
 
     PFlog ("DELTA recursion strategy: %s",

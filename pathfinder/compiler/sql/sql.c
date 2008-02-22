@@ -1265,7 +1265,7 @@ PFsql_table_str (PFsql_tident_t name)
         default:
         {
             size_t len = sizeof ("t0000");
-            char  *res = (char *) PFmalloc (len);
+            char  *res = (char *) PFmalloc (len+1);
             /* to express table names we use
              * the following format:
              *    t[0-9][0-9][0-9][0-9]
@@ -1296,7 +1296,7 @@ PFsql_alias_name_str (PFsql_aident_t name)
         default:
         {
             size_t len = sizeof ("a0000");
-            char  *res = (char *) PFmalloc (len);
+            char  *res = (char *) PFmalloc (len+1);
             /* to express alias names we use
              * the following format:
              *    a[0-9][0-9][0-9][0-9]
@@ -1349,7 +1349,7 @@ PFsql_column_name_str (PFsql_col_t *name)
             case sql_col_max:        return "max";
             case sql_col_dist:
                 assert (name->ty < 100);
-                res = (char *) PFmalloc (7 * sizeof (char));
+                res = (char *) PFmalloc (8);
                 snprintf (res, 7, "dist%02u", name->ty);
                 return res;
         }
@@ -1358,7 +1358,7 @@ PFsql_column_name_str (PFsql_col_t *name)
         char  *tystr  = PFalg_simple_type_str (name->ty);
         size_t len    = strlen (attstr) + strlen (tystr) + 2;
      
-        res = (char *) PFmalloc (len * sizeof (char));
+        res = (char *) PFmalloc (len + 1);
         snprintf (res, len, "%s_%s", attstr, tystr);
     }
     return res;

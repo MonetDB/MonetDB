@@ -506,6 +506,7 @@ reduce (PFcnode_t * p, int goalnt)
                  */
                 *p = *R(p);
 
+
                 rewritten = true;
                 break;
 
@@ -1433,7 +1434,7 @@ relabel (PFcnode_t *p,  PFcnode_t **kids)
    store the number of references in the same nesting depth. If the
    variables are referenced in a nested scope their counter is set to
    -1 to indicate that the may not be rewritten. */
-static void
+static char
 collect_var_usage (PFcnode_t *c, char base, PFcnode_t *parent, int child)
 {
     switch (c->kind) {
@@ -1464,8 +1465,8 @@ collect_var_usage (PFcnode_t *c, char base, PFcnode_t *parent, int child)
         case c_flwr:
         {
             char old_base = base;
-            collect_var_usage (L(c), base, c, 0);
-            collect_var_usage (R(c), base, c, 1);
+            base = collect_var_usage (L(c), base, c, 0);
+            base = collect_var_usage (R(c), base, c, 1);
             /* reset all new scopes introduced by a for loop */
             base = old_base;
         } break;
@@ -1473,7 +1474,7 @@ collect_var_usage (PFcnode_t *c, char base, PFcnode_t *parent, int child)
         case c_let:
             assert (L(c)->kind == c_letbind);
             
-            collect_var_usage (LR(c), base, L(c), 1);
+            base = collect_var_usage (LR(c), base, L(c), 1);
             
             /* add variable to the environment */
             *((bind_t *) PFarray_add (unused_var_env))
@@ -1485,7 +1486,7 @@ collect_var_usage (PFcnode_t *c, char base, PFcnode_t *parent, int child)
             /* record the current scope */
             LL(c)->sem.var->base = base;
 
-            collect_var_usage (R(c), base, c, 1);
+            base = collect_var_usage (R(c), base, c, 1);
             break;
             
         case c_for:
@@ -1493,7 +1494,7 @@ collect_var_usage (PFcnode_t *c, char base, PFcnode_t *parent, int child)
                     LL(c)->kind == c_forvars &&
                     LLL(c)->kind == c_var);
             
-            collect_var_usage (LR(c), base, L(c), 1);
+            base = collect_var_usage (LR(c), base, L(c), 1);
             
             /* a for loop increases the nesting depth */
             base++;
@@ -1510,30 +1511,43 @@ collect_var_usage (PFcnode_t *c, char base, PFcnode_t *parent, int child)
                 LLR(c)->sem.var->base = base;
             }
             
-            collect_var_usage (R(c), base, c, 1);
+            base = collect_var_usage (R(c), base, c, 1);
             break;
             
         case c_main:
             /* first collect global variables before
                analyzing user-defined functions */
-            collect_var_usage (R(c), base, c, 1);
-            collect_var_usage (L(c), base, c, 0);
+            base = collect_var_usage (R(c), base, c, 1);
+            base = collect_var_usage (L(c), base, c, 0);
             break;
             
         case c_recursion:
             /* ignore recursion variable */
-            collect_var_usage (R(c), base, c, 1);
+            base = collect_var_usage (R(c), base, c, 1);
             break;
+
+        case c_seed:
+        {
+            char old_base = base;
+            base = collect_var_usage (L(c), base, c, 0);
+            base++;
+            /* avoid that let bindings are expanded
+               into the recursion body */
+            base = collect_var_usage (R(c), base, c, 1);
+            /* reset all new scopes introduced by a for loop */
+            base = old_base;
+        }   break;
             
         case c_param: 
             /* ignore used-defined function variables */
-            collect_var_usage (L(c), base, c, 0);
+            base = collect_var_usage (L(c), base, c, 0);
             break;
             
         default:
             for (unsigned int i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
-                collect_var_usage (c->child[i], base, c, i);
+                base = collect_var_usage (c->child[i], base, c, i);
     }
+    return base;
 }
 
 /**
@@ -1583,7 +1597,7 @@ PFcoreopt (PFcnode_t *r)
         collect_var_usage (r, 0, NULL, -1);
 
         /* remove all unused variables and expand variables 
-           that are referenced only once in the same nesting depth*/
+           that are referenced only once in the same nesting depth */
         for (unsigned int i = PFarray_last (unused_var_env); i > 0; i--) {
             var = ((bind_t *) PFarray_at (unused_var_env, i-1))->var;
             p = ((bind_t *) PFarray_at (unused_var_env, i-1))->atom;

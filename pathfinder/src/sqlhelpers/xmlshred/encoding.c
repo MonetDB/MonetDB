@@ -690,7 +690,7 @@ characters (void *ctx, const xmlChar *chars, int n)
 
     if (bufpos < 0 || (unsigned int) bufpos < text_size) {
         snprintf ((char *) buf + bufpos,
-                  MIN (n, BUF_SIZE - bufpos) + 1,
+                  MIN (n, BUF_SIZE - bufpos),
                   "%s",
                   (char *) chars);
         bufpos += MIN (n, BUF_SIZE - bufpos);
@@ -709,7 +709,7 @@ error (void *ctx, const char *msg, ...)
     (void) ctx;
 
     va_start (az, msg);
-    vsnprintf (buf, buf_size, msg, az);
+    vsnprintf (buf, buf_size - 1, msg, az);
     fprintf (err, "%s", buf);
     va_end (az);
 

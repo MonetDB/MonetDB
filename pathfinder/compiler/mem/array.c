@@ -223,7 +223,7 @@ PFarray_vprintf (PFarray_t *a, const char *fmt, va_list mat)
      * ever larger buffers until we do know the size.
      */
     va_copy(tmp, mat);
-    while ((nchars = vsnprintf (try, len, fmt, tmp)) < 0) {
+    while ((nchars = vsnprintf (try, len-1, fmt, tmp)) < 0) {
         len *= 2;
         try = realloc(try, len);
         va_copy(tmp, mat);

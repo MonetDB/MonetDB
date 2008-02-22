@@ -2691,14 +2691,16 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
             /* ------------------- LOOP ------------------- */
 
-            /* for strategy IFP we do not need to update the
-               loop relation ... */
-            if (strategy == IFP || strategy == IFP_OR_DELTA || !loop_used) {
+            /* In case the loop relation was not used
+               we don't need the recursion parameter */
+            if (!loop_used) {
                 loop_rec_param = res_rec_param;
-
-                /* ... instead we have to make sure that the 'real'
-                   loop relation is used already at the beginning */
-                *LOOP = *old_loop;
+            } else if (strategy == IFP || strategy == IFP_OR_DELTA) {
+                /* for IFP the loop doesn't change */
+                loop_rec_param = rec_param (rec_arg (old_loop,
+                                                     base_loop,
+                                                     base_loop),
+                                            res_rec_param);
             } else {
                 /* update the loop relation after the recursion body
                    has been processed ... */

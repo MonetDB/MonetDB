@@ -1,0 +1,30 @@
+stdout of test 'distinct_integers.SF-1312716` in directory 'tests/BugDay_2005-11-09_0.9.3` itself:
+
+
+# 23:54:55 >  
+# 23:54:55 >  Mtimeout -timeout 180 Mserver "--config=/ufs/alink/local/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/alink/src/pathfinder-0.9/Linux/lib/MonetDB:/ufs/alink/local/lib/MonetDB" --set "gdk_dbfarm=/ufs/alink/local/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/alink/local/var/MonetDB/log" --set mapi_port=38270 --set sql_port=41172 --set xquery_port=55096 --set monet_prompt= --trace "--dbname=mTests_tests_BugDay_2005-11-09_0.9.3" --dbinit="module(pathfinder); pfstart();" ; echo ; echo Over..
+# 23:54:55 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 23:54:56 >  
+# 23:54:56 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=55096 distinct_integers.SF-1312716.xq
+# 23:54:56 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>1 2 2.500000 aap 1</XQueryResult>
+
+# 23:54:57 >  
+# 23:54:57 >  Done.
+# 23:54:57 >  
+

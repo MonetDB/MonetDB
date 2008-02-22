@@ -2363,7 +2363,7 @@ append_error(void *ctx, const char *msg, ...) {
     va_list args;
 
     va_start(args, msg);
-    snprintf(buf+len, OOPS_SIZE-len, msg, args);
+    snprintf(buf+len, OOPS_SIZE-len-1, msg, args);
     va_end(args);
 }
 
