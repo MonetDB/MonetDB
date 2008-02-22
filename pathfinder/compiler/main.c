@@ -529,7 +529,7 @@ static const char
                                             sizeof (struct option) - 1,
                                         sizeof (struct option),
                                         cmp_opt)))
-        return snprintf (buf, sizeof (opt_buf), t, l->name), buf;
+        return snprintf (buf, sizeof (opt_buf) - 1, t, l->name), buf;
     else
         return "";
 }

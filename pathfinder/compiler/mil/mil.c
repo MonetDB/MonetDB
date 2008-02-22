@@ -357,7 +357,7 @@ char * PFmil_var_str (PFmil_ident_t name) {
             name -= PF_MIL_RES_VAR_COUNT;
             assert (name < 10000);
             size_t len = sizeof ("a0000");
-            char *res = PFmalloc (len);
+            char *res = PFmalloc (len+1);
             snprintf (res, len, "a%04u", name);
             return res;
         }

@@ -935,7 +935,7 @@ PFatt_str (PFalg_att_t att) {
             if (att & (1 << 3)) {
                 unsigned int id = att >> 4;
                 size_t len = sizeof ("iter0000");
-                char *res = PFmalloc (len);
+                char *res = PFmalloc (len+1);
 
                 assert (id < 10000);
 

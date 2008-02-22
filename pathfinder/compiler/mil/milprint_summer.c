@@ -108,20 +108,20 @@
 static void mps_error(const char *format, ...)
 {
     int j, i = strlen(format) + 80;
-    char *msg = PFmalloc(i);
+    char *msg = PFmalloc(i+1);
     va_list ap;
 
     /* take in a block of MIL statements */
     va_start(ap, format);
     j = vsnprintf(msg, i, format, ap);
     va_end (ap);
-    while (j < 0 || j > i) {
+    while (j < 0 || j >= i) {
             int old_i = i;
             if (j > 0)      /* C99 */
                     i = j + 1;
             else            /* old C */
                     i *= 2;
-            msg = PFrealloc(msg, old_i, i);
+            msg = PFrealloc(msg, old_i+1, i+1);
             va_start(ap, format);
             j = vsnprintf(msg, i, format, ap);
             va_end (ap);
@@ -5255,7 +5255,7 @@ fn_replace (opt_t *f, int code, int cur_level, int counter,
             cur_level);
 
     char buf[128];
-    snprintf(buf, sizeof(buf),
+    snprintf(buf, sizeof(buf)-1,
             "fn:replace (string?, string, string%s) as string",
             hasFlags?", string":"");
 
@@ -6078,15 +6078,15 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
         && !(res->kind == c_var && res->sem.var == LLL(snd)->sem.var)) /* see query11 hack below */
     {
         /* cannot be pushed below theta-join, as 'snd_iter.[lng]()' is needed for 'addValues' (below) */
-        snprintf(rx,32,"nil");
-        snprintf(order_snd,128,
+        snprintf(rx,sizeof(rx)-1,"nil");
+        snprintf(order_snd,sizeof(order_snd)-1,
                 "var order_snd := snd_iter.leftfetchjoin(iter%03u.reverse());\n",
                 snd_var);
     }
     else
     {
-        snprintf(rx,32,"iter%03u.reverse()",snd_var);
-        snprintf(order_snd,128,
+        snprintf(rx,sizeof(rx)-1,"iter%03u.reverse()",snd_var);
+        snprintf(order_snd,sizeof(order_snd)-1,
                 "var order_snd := snd_iter; #.leftfetchjoin(iter%03u.reverse()); pushed below theta-join\n",
                 snd_var);
     }

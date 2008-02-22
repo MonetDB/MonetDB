@@ -250,27 +250,27 @@ static char    *child;
 static char     label[DOT_LABELS];
 
 /** Print node with no content */
-#define L(t, loc)           snprintf (label, DOT_LABELS,                    \
+#define L(t, loc)           snprintf (label, sizeof(label)-1,                    \
 				      "%s\\n(%u,%u-%u,%u)\\r",              \
                                       (t), (loc).first_row, (loc).first_col,\
                                            (loc).last_row, (loc).last_col)
 
 /** Print node with single content */
-#define L2(l1, l2, loc)     snprintf (label, DOT_LABELS,                    \
+#define L2(l1, l2, loc)     snprintf (label, sizeof(label)-1,                    \
 				      "%s [%s]\\n(%u,%u-%u,%u)\\r",         \
                                       (l1), (l2),                           \
                                       (loc).first_row, (loc).first_col,     \
                                       (loc).last_row, (loc).last_col)
 
 /** Print node with two content parts */
-#define L3(l1, l2, l3, loc) snprintf (label, DOT_LABELS,                    \
+#define L3(l1, l2, l3, loc) snprintf (label, sizeof(label)-1,                    \
                                       "%s [%s,%s]\\n(%u,%u-%u,%u)\\r",      \
                                       (l1), (l2), (l3),                     \
                                       (loc).first_row, (loc).first_col,     \
                                       (loc).last_row, (loc).last_col)
 
 /** Print node with two content parts */
-#define L4(l1, l2, l3, l4, loc) snprintf (label, DOT_LABELS,                \
+#define L4(l1, l2, l3, l4, loc) snprintf (label, sizeof(label)-1,                \
                                       "%s [%s,%s,%s]\\n(%u,%u-%u,%u)\\r",   \
                                       (l1), (l2), (l3), (l4),               \
                                       (loc).first_row, (loc).first_col,     \
@@ -286,19 +286,19 @@ static void
 abssyn_dot (FILE *f, PFpnode_t *n, char *node, bool qnames_resolved)
 {
     int c;
-    char s[sizeof ("4294967285")];
+    char s[sizeof ("4294967285") + 1];
 
     switch (n->kind) {
         case p_lit_int:
-            snprintf (s, sizeof (s), LLFMT, n->sem.num);
+            snprintf (s, sizeof (s) - 1, LLFMT, n->sem.num);
             L2 (p_id[n->kind], s, n->loc);
             break;
         case p_lit_dec:
-            snprintf (s, sizeof (s), "%.5g", n->sem.dec);
+            snprintf (s, sizeof (s) - 1, "%.5g", n->sem.dec);
             L2 (p_id[n->kind], s, n->loc);
             break;
         case p_lit_dbl:
-            snprintf (s, sizeof (s), "%.5g", n->sem.dbl);
+            snprintf (s, sizeof (s) - 1, "%.5g", n->sem.dbl);
             L2 (p_id[n->kind], s, n->loc);
             break;
         case p_lit_str:
