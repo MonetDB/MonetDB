@@ -582,6 +582,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 				fputs(buf, f);
 				fflush(f);
 				if (wait == 1) {
+					waitstats = NULL;
 					do {
 						/* don't spinlock, just wait half a seconds ;) */
 						MT_sleep_ms(500);
@@ -599,13 +600,13 @@ command_merocom(int argc, char *argv[], merocom mode)
 						ret = 1;
 					}
 					SABAOTHfreeStatus(&waitstats);
-					waitstats = NULL;
 				}
 			} else if (mode == START && stats->state != SABdbRunning) {
 				snprintf(buf, 256, "%s %s\n", stats->dbname, type);
 				fputs(buf, f);
 				fflush(f);
 				if (wait == 1) {
+					waitstats = NULL;
 					do {
 						/* don't spinlock, just wait half a seconds ;) */
 						MT_sleep_ms(500);
@@ -633,7 +634,6 @@ command_merocom(int argc, char *argv[], merocom mode)
 						ret = 1;
 					}
 					SABAOTHfreeStatus(&waitstats);
-					waitstats = NULL;
 				}
 			}
 			stats = stats->next;
@@ -673,6 +673,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 						fputs(buf, f);
 						fflush(f);
 						if (wait == 1) {
+							waitstats = NULL;
 							do {
 								/* don't spinlock, just wait half a seconds ;) */
 								MT_sleep_ms(500);
@@ -698,6 +699,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 						fputs(buf, f);
 						fflush(f);
 						if (wait == 1) {
+							waitstats = NULL;
 							do {
 								/* don't spinlock, just wait half a seconds ;) */
 								MT_sleep_ms(500);
