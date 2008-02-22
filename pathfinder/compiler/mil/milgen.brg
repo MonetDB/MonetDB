@@ -6336,7 +6336,10 @@ reduce (PFpa_op_t * p, int goalnt)
         case 101: /* fold( */
         {
             PFalg_att_t         att = p->sem.doc_access.att;
+#ifndef NDEBUG
+            /* only used in assertions */
             PFalg_simple_type_t ty  = type_of (L(p), p->sem.doc_access.att);
+#endif
             mvar_t             *str = new_var (p->refctr);
             
             PFmil_t *frag = VAR (L(p)->env, att, aat_frag),
