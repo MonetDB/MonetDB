@@ -894,18 +894,10 @@ controlRunner(void *d)
 				MT_sleep_ms(500);
 				continue;
 			} else if (pos == -1) {
-				if (errno != EAGAIN) {
-					/* hmmm error ... give up */
-					fprintf(stderr, "error reading from control channel: %s\n",
-							strerror(errno));
-					break;
-				} else {
-					/* we have a writer, but the writer didn't flush
-					 * yet, so our O_NONBLOCK returns without waiting */
-					pos = 0;
-					MT_sleep_ms(500);
-					continue;
-				}
+				/* hmmm error ... give up */
+				fprintf(stderr, "error reading from control channel: %s\n",
+						strerror(errno));
+				break;
 			} else {
 				buf[pos] = '\0';
 				pos = 0;
@@ -1381,7 +1373,7 @@ main(int argc, char *argv[])
 
 		/* handle control commands */
 		snprintf(buf, 1024, "%s/.merovingian_control", dbfarm);
-		comfd = open(buf, O_RDONLY | O_NONBLOCK);
+		comfd = open(buf, O_RDONLY);
 		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner, (void *)&comfd) < 0) {
 			fprintf(stderr, "unable to create control command thread\n");
 			ctid = 0;
