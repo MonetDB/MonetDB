@@ -139,7 +139,6 @@ extern char *bname;
 void
 PrPrelude(char *file)
 {
-	extern char *texDocStyle;
 	char *s, *t, full[200];
 
 	/* find out the full name in 'full', the basename in 's', end in 't' */

@@ -411,6 +411,7 @@ FormSub(char *str)
 void
 FormMod(char *str, int mod)
 {
+	(void) mod;
 	mx_title = str;
 
 	FormHeader();
@@ -423,6 +424,8 @@ FormMod(char *str, int mod)
 void
 FormSec(char *str, int mod, int sec)
 {
+	(void) mod;
+	(void) sec;
 	PrCmd("\n@section ");
 
 	PrEnv(E_TEXT);
