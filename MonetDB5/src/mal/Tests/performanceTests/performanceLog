@@ -1065,3 +1065,32 @@ tst400e		 0.357/0.321/0.032	1M incr fcn
 
 tst901a		 0.437/0.349/0.077	[+] call
 tst901b		 1.308/1.178/0.085	[+] call
+======================== 21 Feb 2008 ===================
+Setup on Gio version 5.0-beta2 kernel,
+After new distribution and on FC8.
+The compilation mode for V5 is --enable-optimize --disable-debug
+command: time mserver5 -c perf.conf TST </dev/null >/dev/null
+base		 0.142/0.100/0.042					
+tst400a		 0.220/0.177/0.043	1M loop			
+tst400bHuge	 0.444/0.377/0.067	100k count (io)	
+tst400cHuge	 0.560/0.498/0.064	100k insert(io) 
+tst400d		 0.752/0.630/0.121	1M insert tuple 
+tst400e		 0.801/0.758/0.043	1M incr fcn	
+
+tst901a		 0.910/0.758/0.153	[+] call
+tst901b		 1.408/1.356/0.085	[+] call
+======================== 21 Feb 2008 ===================
+Setup on Gio version 5.0-beta2 kernel,
+After new distribution and on FC8.
+After disabling cpuspeed step on the Athlon
+The compilation mode for V5 is --enable-optimize --disable-debug
+command: time mserver5 -c perf.conf TST </dev/null >/dev/null
+base		 0.074/0.050/0.025					
+tst400a		 0.110/0.088/0.022	1M loop			
+tst400bHuge	 0.234/0.190/0.044	100k count (io)	
+tst400cHuge	 0.293/0.243/0.049	100k insert(io) 
+tst400d		 0.392/0.327/0.064	1M insert tuple 
+tst400e		 0.390/0.366/0.025	1M incr fcn	
+
+tst901a		 0.402/0.274/0.128	[+] call
+tst901b		 1.378/1.282/0.096	[+] call
