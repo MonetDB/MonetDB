@@ -614,17 +614,18 @@ Snprintf(char *buf, size_t buflen, const char *fmt, ...)
 		return (0);
 
 	va_start(ap, fmt);
-	n = vsnprintf(buf, buflen-1, fmt, ap);
+	n = vsnprintf(buf, buflen, fmt, ap);
 	va_end(ap);
 
 	if (n < 0) {
 		elog(ERR_DEBUG, "%s: snprintf returned -1, "
 		     "fmt [%s]", "Snprintf", fmt);
 		n = 0;
-	} else if (n >= (int) buflen - 1) {
+        buf[buflen - 1] = 0;
+	} else if (n >= (int) buflen) {
 		elog(ERR_DEBUG, "%s: truncating from %d to %u [%s]",
-		    "Snprintf", n, buflen - 2, buf);
-		n = buflen - 2;
+		    "Snprintf", n, buflen - 1, buf);
+		n = buflen - 1;
 		buf[n] = '\0';
 	}
 
@@ -757,7 +758,9 @@ elog(enum err_level level, const char *fmt, ...)
 	n = strftime(msg, sizeof(msg),"%d/%b/%Y %H:%M:%S ", localtime(&now));
 
 	va_start(ap, fmt);
-	n += vsnprintf(msg + n, sizeof(msg) - n - 1, fmt, ap);
+	vsnprintf(msg + n, sizeof(msg) - n, fmt, ap);
+    msg[sizeof(msg) - 1] = 0;
+    n = strlen(msg);
 	va_end(ap);
 
 	if (n > sizeof(msg) - 2)
@@ -1258,9 +1261,9 @@ senderr(struct conn *c, int status, const char *descr,
 	    "HTTP/1.1 %d %s\r\n%s%s\r\n%d ",
 	    status, descr, headers, headers[0] == '\0' ? "" : "\r\n", status);
 	va_start(ap, fmt);
-	n += vsnprintf(msg + n, sizeof(msg) - n - 1, fmt, ap);
-	if (n >= (int) sizeof(msg) - 1)
-		n = sizeof(msg) - 1;
+	vsnprintf(msg + n, sizeof(msg) - n, fmt, ap);
+    msg[sizeof(msg) - 1] = 0;
+    n = (int) strlen(msg);
 	va_end(ap);
 	mystrlcpy(c->local.buf, msg, sizeof(c->local.buf));
 	c->local.nread = n;
@@ -1429,14 +1432,16 @@ get_dir(struct conn *c)
 		   strcmp(dp->d_name, HTPASSWD) == 0)
 			continue;
 
-		(void) snprintf(file, sizeof(file)-1,
+		(void) snprintf(file, sizeof(file),
 		    "%s%s%s",c->path, slash, dp->d_name);
+        file[sizeof(file) - 1] = 0;
 		(void) mystat(file, &st);
 		if (S_ISDIR(st.st_mode))
-			snprintf(size,sizeof(size)-1,"        %s","&lt;DIR&gt;");
+			snprintf(size,sizeof(size),"        %s","&lt;DIR&gt;");
 		else
-			(void) snprintf(size, sizeof(size)-1,"%10.2f kB",
+			(void) snprintf(size, sizeof(size),"%10.2f kB",
 			    (float) st.st_size / 1024);
+        size[sizeof(size) - 1] = 0;
 		(void) strftime(mod, sizeof(mod),
 		    "%d-%b-%Y %H:%M", localtime(&st.st_mtime));
 
@@ -1544,8 +1549,9 @@ do_get(struct conn *c)
 	fmt = "%a, %d %b %Y %H:%M:%S GMT";
 	(void) strftime(date, sizeof(date), fmt, localtime(&now));
 	(void) strftime(lm, sizeof(lm), fmt, localtime(&c->st.st_mtime));
-	(void) snprintf(etag, sizeof(etag)-1, "%lx.%lx",
+	(void) snprintf(etag, sizeof(etag), "%lx.%lx",
 	    (unsigned long) c->st.st_mtime, (unsigned long) c->st.st_size);
+    etag[sizeof(etag) - 1] = 0;
 
 	/* Local read buffer should be empty */
 	c->local.nread = c->shlength = Snprintf(c->local.buf,
@@ -1996,6 +2002,7 @@ editpass(const char *fname, const char *domain,
 	FILE		*fp = NULL, *fp2 = NULL;
 
 	(void) snprintf(tmp, sizeof(tmp)-1, "%s.tmp", fname);
+    tmp[sizeof(tmp) - 1] = 0;
 
 	/* Create the file if does not exist */
 	if ((fp = fopen(fname, "a+")))
@@ -2014,8 +2021,9 @@ editpass(const char *fname, const char *domain,
 		    strcmp(domain, d) == 0) {
 			found++;
 			md5(ha1, user, ":", domain, ":", pass, NULL);
-			(void) snprintf(line, sizeof(line)-1,
+			(void) snprintf(line, sizeof(line),
 			    "%s:%s:%s\n", user, domain, ha1);
+            line[sizeof(line) - 1] = 0;
 		}
 		(void) fprintf(fp2, "%s", line);
 	}
@@ -2023,8 +2031,9 @@ editpass(const char *fname, const char *domain,
 	/* If new user, just add it */
 	if (found == 0) {
 		md5(ha1, user, ":", domain, ":", pass, NULL);
-		(void) snprintf(line, sizeof(line)-1,
+		(void) snprintf(line, sizeof(line),
 		    "%s:%s:%s\n", user, domain, ha1);
+        line[sizeof(line) - 1] = 0;
 		(void) fprintf(fp2, "%s", line);
 	}
 
@@ -2144,15 +2153,17 @@ open_auth_file(const char *path)
 
 	if (STROPT(OPT_HTPASSWD)) {
 		/* Use global passwords file */
-		(void) snprintf(name, sizeof(name)-1, "%s", STROPT(OPT_HTPASSWD));
+		(void) snprintf(name, sizeof(name), "%s", STROPT(OPT_HTPASSWD));
+        name[sizeof(name) - 1] = 0;
 	} else {
 		/* Try to find .htpasswd in requested directory */
 		for (p = path, e = p + strlen(p) - 1; e > p; e--)
 			if (*e == '/')
 				break;
 		assert(*e == '/');
-		(void) snprintf(name, sizeof(name)-1, "%.*s/%s",
+		(void) snprintf(name, sizeof(name), "%.*s/%s",
 		    (int) (e - p), p, HTPASSWD);
+        name[sizeof(name) - 1] = 0;
 
 		/* Fix directory separators */
 		copypath(name, name, strlen(name) + 1);
@@ -2269,8 +2280,9 @@ redirect(struct conn *c, char *prog, char *envblk, char **envp)
 	}
 
 	/* Prepare command line */
-	(void) snprintf(cmdline, sizeof(cmdline)-1, "%s%s%s",
+	(void) snprintf(cmdline, sizeof(cmdline), "%s%s%s",
 	    line + 2, line[2] == '\0' ? "" : " ", prog);
+    cmdline[sizeof(cmdline) - 1] = 0;
 #if 0
 	copypath(cmdline, cmdline, strlen(cmdline) + 1);
 #endif
@@ -2554,7 +2566,8 @@ useindex(struct conn *c, char *path, size_t maxpath)
 			mystrlcpy(name, s, sizeof(name));
 		}
 
-		(void) snprintf(ftry, sizeof(ftry)-1, "%s%c%s", path,DIRSEP,name);
+		(void) snprintf(ftry, sizeof(ftry), "%s%c%s", path,DIRSEP,name);
+        ftry[sizeof(ftry) - 1] = 0;
 		if (mystat(ftry, &st) == 0) {
 			/* Found ! */
 			mystrlcpy(path, ftry, maxpath);
@@ -2590,23 +2603,26 @@ handle(struct conn *c)
 		c->query = mystrdup(c->query);
 	}
 	urldecode(c->uri, c->uri);
-	(void) snprintf(path, sizeof(path)-1, "%s%s",STROPT(OPT_DOCROOT),c->uri);
+	(void) snprintf(path, sizeof(path), "%s%s",STROPT(OPT_DOCROOT),c->uri);
+    path[sizeof(path) - 1] = 0;
 	killdots(path + strlen(STROPT(OPT_DOCROOT)));
 
 #if EMBEDDED
 	/* User may use the aliases - check URI for mount point */
 	if ((mp = ismountpoint(c->uri)) != NULL) {
-		(void) snprintf(path, sizeof(path)-1, "%s%s", mp->path,
+		(void) snprintf(path, sizeof(path), "%s%s", mp->path,
 		    c->uri + strlen(mp->mountpoint));
+        path[sizeof(path) - 1] = 0;
 		killdots(path + strlen(mp->path));
 	}
 #endif /* EMBEDDED */
 
 #ifndef NO_AUTH
 	if (checkauth(c, path) != 1) {
-		(void) snprintf(buf, sizeof(buf)-1,
+		(void) snprintf(buf, sizeof(buf),
 		    "WWW-Authenticate: Digest qop=\"auth\", realm=\"%s\", "
 		    "nonce=\"%lu\"", STROPT(OPT_REALM), (unsigned long) now);
+        buf[sizeof(buf) - 1] = 0;
 
 		senderr(c, 401, "Unauthorized", buf, "Authorization required");
 	} else
@@ -2654,7 +2670,8 @@ handle(struct conn *c)
 	} else if (mystat(path, &c->st) != 0) {
 		senderr(c, 404, "Not Found","", "Not Found");
 	} else if (S_ISDIR(c->st.st_mode) && path[strlen(path) - 1] != '/') {
-		(void) snprintf(buf, sizeof(buf)-1, "Location: %s/", c->uri);
+		(void) snprintf(buf, sizeof(buf), "Location: %s/", c->uri);
+        buf[sizeof(buf) - 1] = 0;
 		senderr(c, 301, "Moved Permanently", buf, "Moved, %s", buf);
 	} else if (S_ISDIR(c->st.st_mode) &&
 	    useindex(c, path, sizeof(path) - 1) == -1 &&
@@ -2700,8 +2717,9 @@ parse_request(struct conn *c, const char *s)
 {
 	char	fmt[32];
 
-	(void) snprintf(fmt, sizeof(fmt)-1, "%%" LLFMT "s %%" LLFMT "s %%" LLFMT "s",
+	(void) snprintf(fmt, sizeof(fmt), "%%" LLFMT "s %%" LLFMT "s %%" LLFMT "s",
 	    (long long)sizeof(c->method) - 1, (long long)sizeof(c->uri) - 1, (long long)sizeof(c->proto) - 1);
+    fmt[sizeof(fmt) - 1] = 0;
 
 	/* Get the request line */
 	if (sscanf(s, fmt, c->method, c->uri, c->proto) != 3) {
@@ -3376,7 +3394,8 @@ shttpd_printf(struct conn *conn, const char *fmt, ...)
 	char	buf[IO_MAX];
 
 	va_start(ap, fmt);
-	len = vsnprintf(buf, sizeof(buf) - 1, fmt, ap);
+	len = vsnprintf(buf, sizeof(buf), fmt, ap);
+    buf[sizeof(buf) - 1] = 0;
 	if (len >= (int) sizeof(buf) - 1)
 		len = sizeof(buf) - 1;
 	else if (len == -1)

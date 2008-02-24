@@ -528,8 +528,11 @@ static const char
                                         sizeof (long_options) / 
                                             sizeof (struct option) - 1,
                                         sizeof (struct option),
-                                        cmp_opt)))
-        return snprintf (buf, sizeof (opt_buf) - 1, t, l->name), buf;
+                                        cmp_opt))) {
+        snprintf (buf, sizeof (opt_buf), t, l->name);
+        buf[sizeof (opt_buf) - 1] = 0;
+        return buf;
+    }
     else
         return "";
 }

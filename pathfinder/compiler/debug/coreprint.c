@@ -150,11 +150,11 @@ static char    *child;
 static char     label[32];
 
 /** Print node with no content */
-#define L0(t)           snprintf (label, sizeof(label)-1, (t))
+#define L0(t)           snprintf (label, sizeof(label), (t))
 /** Print node with single content */
-#define L2(l1, l2)     snprintf (label, sizeof(label)-1, "%s [%s]",    (l1), (l2))
+#define L2(l1, l2)     snprintf (label, sizeof(label), "%s [%s]",    (l1), (l2))
 /** Print node with two content parts */
-#define L3(l1, l2, l3) snprintf (label, sizeof(label)-1, "%s [%s,%s]", (l1), (l2), (l3))
+#define L3(l1, l2, l3) snprintf (label, sizeof(label), "%s [%s,%s]", (l1), (l2), (l3))
 
 /**
  * Print core language tree in AT&T dot notation.
@@ -166,26 +166,30 @@ static void
 core_dot (FILE *f, PFcnode_t *n, char *node)
 {
     int c;
-    char s[sizeof ("4294967285") + 1];
+    char s[sizeof ("4294967285")];
     
     switch (n->kind) {
     case c_var:       
         L2 (c_id[n->kind], PFqname_str (n->sem.var->qname));     
         break;
     case c_lit_str:   
-        snprintf (s, sizeof (s) - 1, "%s", PFesc_string (n->sem.str));
+        snprintf (s, sizeof (s), "%s", PFesc_string (n->sem.str));
+        s[sizeof(s) - 1] = 0;
         L2 (c_id[n->kind], s);
         break;
     case c_lit_int:   
-        snprintf (s, sizeof (s) - 1, LLFMT, n->sem.num);
+        snprintf (s, sizeof (s), LLFMT, n->sem.num);
+        s[sizeof(s) - 1] = 0;
         L2 (c_id[n->kind], s);                  
         break;
     case c_lit_dec:   
-        snprintf (s, sizeof (s) - 1, "%.5g", n->sem.dec);
+        snprintf (s, sizeof (s), "%.5g", n->sem.dec);
+        s[sizeof(s) - 1] = 0;
         L2 (c_id[n->kind], s);                
         break;
     case c_lit_dbl:   
-        snprintf (s, sizeof (s) - 1, "%.5g", n->sem.dbl);
+        snprintf (s, sizeof (s), "%.5g", n->sem.dbl);
+        s[sizeof(s) - 1] = 0;
         L2 (c_id[n->kind], s);                
         break;
     case c_apply:     
@@ -212,6 +216,7 @@ core_dot (FILE *f, PFcnode_t *n, char *node)
         L0 (c_id[n->kind]);
         break;
     }
+    label[sizeof(label) - 1] = 0;
     
     fprintf (f, "%s [label=\"%s\"];\n", node, label);
     

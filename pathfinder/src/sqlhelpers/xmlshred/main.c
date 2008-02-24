@@ -101,9 +101,11 @@ static const char
                                         sizeof (long_options) / 
                                             sizeof (struct option) - 1,
                                         sizeof (struct option),
-                                        cmp_opt)))
-        return snprintf (buf, sizeof (opt_buf) - 1, t, l->name), buf;
-    else
+                                        cmp_opt))) {
+        snprintf (buf, sizeof (opt_buf), t, l->name);
+        buf[sizeof(opt_buf) - 1] = 0;
+        return buf;
+    } else
         return "";
 }
 
@@ -287,7 +289,8 @@ main (int argc, char **argv)
         if (status.attributes_separate) {
             /* attribute file */
             char attoutfile[FILENAME_MAX];
-            snprintf (attoutfile, FILENAME_MAX-1, "%s_atts.csv", status.outfile);
+            snprintf (attoutfile, FILENAME_MAX, "%s_atts.csv", status.outfile);
+            attoutfile[sizeof(attoutfile) - 1] = 0;
             attout = SHopen_write (attoutfile);
         }
     
@@ -295,22 +298,26 @@ main (int argc, char **argv)
             /* names file */
             char namesoutfile[FILENAME_MAX];
             char urisoutfile[FILENAME_MAX];
-            snprintf (namesoutfile, FILENAME_MAX-1, "%s_names.csv", status.outfile);
+            snprintf (namesoutfile, FILENAME_MAX, "%s_names.csv", status.outfile);
+            namesoutfile[sizeof(namesoutfile) - 1] = 0;
             namesout = SHopen_write (namesoutfile);
-            snprintf (urisoutfile, FILENAME_MAX-1, "%s_uris.csv", status.outfile);
+            snprintf (urisoutfile, FILENAME_MAX, "%s_uris.csv", status.outfile);
+            urisoutfile[sizeof(urisoutfile) - 1] = 0;
             urisout = SHopen_write (urisoutfile);
         }
     
         if (status.statistics) {
             /* guide file */
             char guideoutfile[FILENAME_MAX];
-            snprintf (guideoutfile, FILENAME_MAX-1, "%s_guide.xml", status.outfile);
+            snprintf (guideoutfile, FILENAME_MAX, "%s_guide.xml", status.outfile);
+            guideoutfile[sizeof(guideoutfile) - 1] = 0;
             guideout = SHopen_write (guideoutfile);
         }
 
         /* encoding file */
         char outfile[FILENAME_MAX];
-        snprintf (outfile, FILENAME_MAX-1, "%s.csv", status.outfile);
+        snprintf (outfile, FILENAME_MAX, "%s.csv", status.outfile);
+        outfile[sizeof(outfile) - 1] = 0;
         shout = SHopen_write (outfile);
     }
     else

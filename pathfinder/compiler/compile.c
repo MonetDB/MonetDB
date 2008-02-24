@@ -222,12 +222,13 @@ char *PFurlcache (char *uri, int keep)
             *q = 0;
         }
         if (p) *p = 0;
-        snprintf(url, sizeof(url)-1, "http://%s:%d/xrpc/%s", uri+7, port, p?(p+1):"");
+        snprintf(url, sizeof(url), "http://%s:%d/xrpc/%s", uri+7, port, p?(p+1):"");
         if (p) *p = '/';
         if (q) *q = ':';
     } else {
-        strncpy(url, uri, 1024);
+        strncpy(url, uri, sizeof(url));
     }
+    url[sizeof(url) - 1] = 0;   /* neither strncpy nor (on Windwos) snprintf guarantee NULL-termination */
 
     if (keep) {
         int len = strlen(url);

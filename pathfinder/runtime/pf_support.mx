@@ -7560,11 +7560,12 @@ int CMDws_bat(BAT **ret, lng* wsid)
         BAT *v = 0, *b = BBPdescriptor(bid);
         if (b) *ret = v = VIEWcreate(b,b);
         BBPunfix(bid);
-	if (v) {
+        if (v) {
             /* give the view a name such that lng(bbname(v)) = lng(bbpname(b)) */
-	    long_str buf;
-            snprintf(buf, sizeof(buf)-1, "%s-%d", BBP_logical(bid), ABS(b->batCacheid));
-	    BBPrename(v->batCacheid, buf);
+            long_str buf;
+            snprintf(buf, sizeof(buf), "%s-%d", BBP_logical(bid), ABS(b->batCacheid));
+            buf[sizeof(buf) - 1] = 0;
+            BBPrename(v->batCacheid, buf);
     	    return GDK_SUCCEED;
         } else
         if (b) {

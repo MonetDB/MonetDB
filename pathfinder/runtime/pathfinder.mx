@@ -4646,10 +4646,18 @@ xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int *mincnt
 
 @= seqbase
     BATseqbase(ctx->@1, @2);
-    if (ctx->mode&XQ_DEBUG) m += snprintf(mil+m, XQUERY_BUFSIZE-m-1, "@1.seqbase(" @3 ");\n");
+    if (ctx->mode&XQ_DEBUG) {
+        snprintf(mil+m, XQUERY_BUFSIZE-m, "@1.seqbase(" @3 ");\n");
+        mil[XQUERY_BUFSIZE - 1] = 0;
+        m += strlen(mil+m);
+    }
 @= bunappend
     if (BUNappend(ctx->@1, @2, FALSE) == NULL) return "xquery_method: allocation error while inserting in @1";
-    if (ctx->mode&XQ_DEBUG) m += snprintf(mil+m, XQUERY_BUFSIZE-m-1, "@1.append(" @4 @5 ");\n", @3 @2);
+    if (ctx->mode&XQ_DEBUG) {
+        snprintf(mil+m, XQUERY_BUFSIZE-m, "@1.append(" @4 @5 ");\n", @3 @2);
+        mil[XQUERY_BUFSIZE - 1] = 0;
+        m += strlen(mil+m);
+    }
 @c
 /*
  * call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).
@@ -4725,13 +4733,15 @@ xquery_function_call(xquery_client *ctx,
             }
 
             /* call UDF */
-            ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil)-1, 
+            ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil), 
                            PFudfMIL(), 
                            fun->proc, 0, 0, 0,0, 0, 0, 0, 0, fun->sig->name, fun->sig->name, 0, 0, 0, 0);
+            mil[XQUERY_BUFSIZE - 1] = 0;
             if (ret > 0) cur += ret;
 
             /* destroy working set */
-            ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil)-1, PFstopMIL(fun->sig->update));
+            ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil), PFstopMIL(fun->sig->update));
+            mil[XQUERY_BUFSIZE - 1] = 0;
             if (ret > 0) cur += ret;
 
             /* done! execute the script */
@@ -5080,7 +5090,8 @@ CMDxquery_start_query_cache(lng *maxsize)
 @= find_bat
 {   Variable v = VARfind(&ctx->stk, "@1");
     char buf[256];
-    snprintf(buf, sizeof(buf)-1, "mapi_%d_@1", ctx->stk);
+    snprintf(buf, sizeof(buf), "mapi_%d_@1", ctx->stk);
+    buf[sizeof(buf) - 1] = 0;
     ctx->@1 = NULL;
     if (v && v->binding.vtype == TYPE_bat) {
         ctx->@1 = BATdescriptor(v->binding.val.bval);
@@ -5876,6 +5887,7 @@ xquery_client_engine(mapi_client *mc)
 
                         /* insert into document collection (p is name)*/
                         snprintf(ctx->buf, ctx->buflen, "shred_stream(Stream(" SZFMT "LL), \"%s\", \"%s\", lng(%d));\n", (size_t) in, dname, cname, perc);
+                        ctx->buf[ctx->buflen - 1] = 0;
                         i = xquery_mil_exec(ctx, ctx->buf); /* use MIL to add it to the repository */
                         GDKfree(dname);
                         if (i < 0) msg = "shred_stream failed"; 

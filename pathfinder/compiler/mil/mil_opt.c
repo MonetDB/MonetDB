@@ -899,7 +899,7 @@ opt_t *opt_open(int optimize) {
 int milprintf(opt_t *o, const char *format, ...)
 {
         int j, i = strlen(format) + 80;
-        char *milbuf = INTERN_MALLOC(i+1);
+        char *milbuf = INTERN_MALLOC(i);
         va_list ap;
 
 	if (milbuf == NULL) return -1;
@@ -915,8 +915,8 @@ int milprintf(opt_t *o, const char *format, ...)
                 else            /* old C */
                         i *= 2;
 
-                milbuf = INTERN_REALLOC(milbuf, old_i+1, i+1);
-		if (milbuf == NULL) return -1;
+                milbuf = INTERN_REALLOC(milbuf, old_i, i);
+                if (milbuf == NULL) return -1;
 
                 va_start(ap, format);
                 j = vsnprintf(milbuf, i, format, ap);

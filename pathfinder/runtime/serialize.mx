@@ -304,7 +304,8 @@ fatal_err(XqueryCtx* ctx, const char *msg, ...)
 
     (void)ctx;
     va_start (msgs, msg);
-    vsnprintf (errmsg, sizeof(errmsg)-1, msg, msgs);
+    vsnprintf (errmsg, sizeof(errmsg), msg, msgs);
+    errmsg[sizeof(errmsg) - 1] = 0;
     va_end (msgs);
 
     GDKerror("XML Generation: %s\n",errmsg);

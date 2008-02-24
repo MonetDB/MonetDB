@@ -1,0 +1,4 @@
+module(unix);
+var TSTSRCDIR := getenv("TSTSRCDIR");
+
+shred_doc(TSTSRCDIR+"/preceding_following-sibling_bug.SF-1850772-2.xml","r_and_j.xml");
