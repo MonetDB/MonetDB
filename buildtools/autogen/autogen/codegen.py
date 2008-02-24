@@ -181,7 +181,7 @@ def readfile(f):
 def readfilepart(f,ext):
     dir,file = os.path.split(f)
     fn,fext = split_filename(file)
-    src = open(f, 'rb')
+    src = open(f, 'r')
     buf = src.read()
     src.close()
     buf2 = ""
