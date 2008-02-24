@@ -1,0 +1,1589 @@
+#module ("pathfinder");
+#module ("mkey");
+var time_load;
+var time_query;
+var time_print;
+time_load := 0;
+time_query := usec ();
+var a0000;
+var a0001;
+var a0002;
+var a0003;
+var a0004;
+var a0005;
+var a0006;
+var a0007;
+var a0008;
+var a0009;
+var a0010;
+var a0011;
+var a0012;
+var a0013;
+var a0014;
+var a0015;
+var a0016;
+var a0017;
+var a0018;
+var a0019;
+var a0020;
+var a0021;
+var a0022;
+var a0023;
+var a0024;
+var a0025;
+var a0026;
+var a0027;
+var a0028;
+var a0029;
+var a0030;
+var a0031;
+var a0032;
+var a0033;
+var a0034;
+var a0035;
+var unused;
+var ws;
+unused := nil;
+# trace structure
+var trace_outer;
+var trace_inner;
+var trace_iter;
+var trace_msg;
+var trace_item;
+var trace_type;
+var trace_rel;
+# Begin rule: "Query: serialize(FragList, Rel)"
+a0002 := CATCH ({
+    ws := ws_create ();
+    # Begin rule: "Rel: rec_fix(Rec, Rel)"
+    # Begin rule (reduce1): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+    # Begin rule: "Rel: lit_tbl"
+    #     a0000: iter(nat)
+    a0000 := new (void, oid).seqbase (0@0);
+    a0000.append (1@0);
+    a0000.access (BAT_READ);
+    #     a0001: item1(str)
+    a0001 := new (void, str).seqbase (0@0);
+    a0001.append ("r_and_j.xml");
+    a0001.access (BAT_READ);
+    # End rule: "Rel: lit_tbl"
+    # Begin rule: "FragRel: doc_tbl(Rel)"
+    #     a0000: iter(nat)
+    a0002 := usec ();
+    #     a0005: item1(pre)
+    #     a0004: item1(pfrag)
+    a0003 := doc_tbl (ws, a0001);
+    ws := a0003.fetch (0);
+    a0005 := a0003.fetch (1);
+    a0004 := a0003.fetch (2);
+    a0003 := unused;
+    time_load := +(time_load, -(usec (), a0002));
+    a0002 := unused;
+    a0001 := unused;
+    # End rule: "FragRel: doc_tbl(Rel)"
+    # Begin rule: "Rel: roots(FragRel)"
+    #     a0000: iter(nat)
+    #     a0005: item1(pre)
+    #     a0004: item1(pfrag)
+    # End rule: "Rel: roots(FragRel)"
+    # Begin rule: "Frag: fragment(FragRel)"
+    # End rule: "Frag: fragment(FragRel)"
+    # Begin rule: "FragList: empty_frag"
+    # End rule: "FragList: empty_frag"
+    # Begin rule: "FragList: frag_union(FragList, Frag)"
+    # End rule: "FragList: frag_union(FragList, Frag)"
+    # Begin rule: "Rel: llscj_desc(FragList, Rel)"
+    a0001 := loop_lifted_descendant_step_with_nsloc_test (a0000, a0005, a0004, ws, 2, "", "SPEECH");
+    a0002 := a0001.fetch (1);
+    a0003 := a0001.fetch (2).materialize (a0002);
+    #     a0002: item1(pre)
+    #     a0003: item1(pfrag)
+    a0006 := a0001.fetch (0).materialize (a0001.fetch (1));
+    #     a0006: iter(nat)
+    a0001 := unused;
+    a0000 := unused;
+    a0005 := unused;
+    a0004 := unused;
+    # End rule: "Rel: llscj_desc(FragList, Rel)"
+    # Begin rule: "Rel: number(Rel)"
+    #     a0002: item1(pre)
+    #     a0003: item1(pfrag)
+    #     a0006: iter(nat)
+    a0000 := a0002.mark (1@0);
+    #     a0000: iter1(nat)
+    # End rule: "Rel: number(Rel)"
+    # Begin rule: "Rel: project(Rel)"
+    #     a0003: item(pfrag)
+    #     a0002: item(pre)
+    #     a0000: iter(nat)
+    # End rule: "Rel: project(Rel)"
+    # Begin rule: "Rel: refine_sort(Rel)"
+    a0001 := a0003;
+    a0001 := a0001.CTrefine (a0002);
+    a0001 := a0001.CTrefine (a0000);
+    a0001 := a0001.mark (0@0).reverse ();
+    #     a0003: item(pfrag)
+    #     a0002: item(pre)
+    a0004 := a0001.leftjoin (a0000);
+    a0004 := a0004.reverse ().mark (0@0).reverse ();
+    #     a0004: iter(nat)
+    a0001 := unused;
+    # End rule: "Rel: refine_sort(Rel)"
+    # Begin rule: "Rel: llscj_prec_sibl(FragList, Rel)"
+    a0001 := loop_lifted_preceding_sibling_step_with_nsloc_test (a0004, a0002, a0003, ws, 3, "", "SPEECH");
+    a0005 := a0001.fetch (1);
+    a0007 := a0001.fetch (2).materialize (a0005);
+    #     a0005: item(pre)
+    #     a0007: item(pfrag)
+    a0008 := a0001.fetch (0).materialize (a0001.fetch (1));
+    #     a0008: iter(nat)
+    a0001 := unused;
+    a0004 := unused;
+    # End rule: "Rel: llscj_prec_sibl(FragList, Rel)"
+    # Begin rule: "Rel: number(Rel)"
+    #     a0005: item(pre)
+    #     a0007: item(pfrag)
+    #     a0008: iter(nat)
+    a0001 := a0008.mark_grp (a0008.reverse ().kunique ().project (1@0));
+    #     a0001: item1(nat)
+    # End rule: "Rel: number(Rel)"
+    # Begin rule: "Rel: cast(Rel)"
+    #     a0008: iter(nat)
+    #     a0007: item(pfrag)
+    #     a0005: item(pre)
+    a0004 := [lng](a0001);
+    if (a0004.reverse ().exist (lng(nil))) {
+        ERROR ("err:FORG0001.");
+    } else {
+    }
+    #     a0004: item2(int)
+    #     a0001: item1(nat)
+    # End rule: "Rel: cast(Rel)"
+    # Begin rule: "Rel: project(Rel)"
+    #     a0008: iter(nat)
+    #     a0007: item(pfrag)
+    #     a0005: item(pre)
+    #     a0004: item2(int)
+    a0001 := unused;
+    # End rule: "Rel: project(Rel)"
+    # Begin rule: "Rel: attach(Rel)"
+    #     a0008: iter(nat)
+    #     a0007: item(pfrag)
+    #     a0005: item(pre)
+    #     a0004: item2(int)
+    #     a0001: item3(int)
+    # End rule: "Rel: attach(Rel)"
+    # Begin rule: "Rel: eq_atom(Rel)"
+    a0009 := [=](a0004, 1LL);
+    #     a0009: item1(bool)
+    #     a0008: iter(nat)
+    #     a0007: item(pfrag)
+    #     a0005: item(pre)
+    #     a0004: item2(int)
+    #     a0001: item3(int)
+    # End rule: "Rel: eq_atom(Rel)"
+    # Begin rule: "Rel: project(Rel)"
+    #     a0008: iter(nat)
+    #     a0007: item(pfrag)
+    #     a0005: item(pre)
+    #     a0009: item1(bool)
+    a0004 := unused;
+    a0001 := unused;
+    # End rule: "Rel: project(Rel)"
+    # Begin rule: "Rel: select(Rel)"
+    a0001 := a0009.select (true).mark (0@0).reverse ();
+    a0004 := a0001.leftjoin (a0008);
+    a0004 := a0004.reverse ().mark (0@0).reverse ();
+    #     a0004: iter(nat)
+    a0010 := a0001.leftjoin (a0007);
+    a0010 := a0010.reverse ().mark (0@0).reverse ();
+    #     a0010: item(pfrag)
+    a0011 := a0001.leftjoin (a0005);
+    a0011 := a0011.reverse ().mark (0@0).reverse ();
+    #     a0011: item(pre)
+    #     a0012: item1(bool)
+    a0001 := unused;
+    a0008 := unused;
+    a0007 := unused;
+    a0005 := unused;
+    a0009 := unused;
+    # End rule: "Rel: select(Rel)"
+    # Begin rule: "Rel: project(Rel)"
+    #     a0004: iter(nat)
+    #     a0010: item(pfrag)
+    #     a0011: item(pre)
+    a0012 := unused;
+    # End rule: "Rel: project(Rel)"
+    # Begin rule: "Rel: append_union(Rel, Rel)"
+    a0001 := a0004.copy ().access (BAT_APPEND);
+    a0001.append (a0000).access (BAT_READ);
+    #     a0001: iter(nat)
+    a0005 := a0010.copy ().access (BAT_APPEND);
+    a0005.append (a0003).access (BAT_READ);
+    #     a0005: item(pfrag)
+    a0007 := a0011.copy ().access (BAT_APPEND);
+    a0007.append (a0002).access (BAT_READ);
+    #     a0007: item(pre)
+    a0004 := unused;
+    a0010 := unused;
+    a0011 := unused;
+    # End rule: "Rel: append_union(Rel, Rel)"
+    # Begin rule: "Rel: sort_distinct(std_sort(Rel))"
+    a0004 := a0005.reverse ().sort ().reverse ();
+    a0004 := a0004.CTrefine (a0007);
+    a0004 := a0004.CTrefine (a0001);
+    a0004 := a0004.reverse ().kunique ().reverse ().mark (0@0).reverse ();
+    a0008 := a0004.leftjoin (a0001);
+    a0008 := a0008.reverse ().mark (0@0).reverse ();
+    #     a0008: iter(nat)
+    a0009 := a0004.leftjoin (a0005);
+    a0009 := a0009.assert_order ();
+    a0009 := a0009.reverse ().mark (0@0).reverse ();
+    #     a0009: item(pfrag)
+    a0010 := a0004.leftjoin (a0007);
+    a0010 := a0010.reverse ().mark (0@0).reverse ();
+    #     a0010: item(pre)
+    a0004 := unused;
+    a0001 := unused;
+    a0005 := unused;
+    a0007 := unused;
+    # End rule: "Rel: sort_distinct(std_sort(Rel))"
+    # Begin rule: "Rel: project(Rel)"
+    #     a0008: iter1(nat)
+    #     a0009: item(pfrag)
+    #     a0010: item(pre)
+    # End rule: "Rel: project(Rel)"
+    a0001 := a0008;
+    #     a0001: iter1(nat)
+    a0004 := a0009;
+    #     a0004: item(pfrag)
+    a0005 := a0010;
+    #     a0005: item(pre)
+    # Begin rule (reduce1): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+    # Begin rule: "Rel: project(Rel)"
+    #     a0000: iter(nat)
+    # End rule: "Rel: project(Rel)"
+    a0007 := a0000;
+    #     a0007: iter(nat)
+    # Begin rule (reduce1): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+    # Begin rule: "Rel: project(Rel)"
+    #     a0008: iter(nat)
+    #     a0009: item1(pfrag)
+    #     a0010: item1(pre)
+    # End rule: "Rel: project(Rel)"
+    a0011 := a0008;
+    #     a0011: iter(nat)
+    a0008 := unused;
+    a0008 := a0009;
+    #     a0008: item1(pfrag)
+    a0009 := unused;
+    a0009 := a0010;
+    #     a0009: item1(pre)
+    a0010 := unused;
+    # Begin rule (reduce1): "Rec: nil"
+    # End rule (reduce1): "Rec: nil"
+    # End rule (reduce1): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+    # End rule (reduce1): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+    # End rule (reduce1): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+    a0010 := -1;
+    a0012 := 0;
+printf("0 ");
+    while (>(a0012, a0010)) {
+        # Begin rule (reduce2): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0001: iter(nat)
+        #     a0004: item(pfrag)
+        #     a0005: item(pre)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0007: iter1(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: sort_distinct(std_sort(Rel))"
+        a0013 := a0007.reverse ().sort ().reverse ();
+        a0013 := a0013.reverse ().kunique ().reverse ().mark (0@0).reverse ();
+        a0014 := a0013.leftjoin (a0007);
+        a0014 := a0014.assert_order ();
+        a0014 := a0014.reverse ().mark (0@0).reverse ();
+        #     a0014: iter1(nat)
+        a0013 := unused;
+        # End rule: "Rel: sort_distinct(std_sort(Rel))"
+        # Begin rule: "Rel: semijoin(Rel, Rel)"
+        a0013 := a0011.reverse ().kintersect (a0014.reverse ());
+        a0013 := a0013.reverse ().mark (0@0).reverse ();
+        a0015 := a0013.leftjoin (a0011);
+        a0015 := a0015.reverse ().mark (0@0).reverse ();
+        #     a0015: iter(nat)
+        a0016 := a0013.leftjoin (a0008);
+        a0016 := a0016.reverse ().mark (0@0).reverse ();
+        #     a0016: item1(pfrag)
+        a0017 := a0013.leftjoin (a0009);
+        a0017 := a0017.reverse ().mark (0@0).reverse ();
+        #     a0017: item1(pre)
+        a0013 := unused;
+        a0014 := unused;
+printf("+ %i ", a0017.count());
+        # End rule: "Rel: semijoin(Rel, Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0015: iter1(nat)
+        #     a0016: item1(pfrag)
+        #     a0017: item1(pre)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: number(Rel)"
+        #     a0015: iter1(nat)
+        #     a0016: item1(pfrag)
+        #     a0017: item1(pre)
+        a0013 := a0015.mark (1@0);
+        #     a0013: iter(nat)
+        # End rule: "Rel: number(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0015: iter1(nat)
+        #     a0013: iter(nat)
+        #     a0013: iter3(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0016: item1(pfrag)
+        #     a0017: item1(pre)
+        #     a0013: iter2(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: std_sort(Rel)"
+        a0014 := a0016.reverse ().sort ().reverse ();
+        a0014 := a0014.CTrefine (a0017);
+        a0014 := a0014.CTrefine (a0013);
+        a0014 := a0014.mark (0@0).reverse ();
+        a0018 := a0014.leftjoin (a0016);
+        a0018 := a0018.assert_order ();
+        a0018 := a0018.reverse ().mark (0@0).reverse ();
+        #     a0018: item1(pfrag)
+        a0019 := a0014.leftjoin (a0017);
+        a0019 := a0019.reverse ().mark (0@0).reverse ();
+        #     a0019: item1(pre)
+        a0020 := a0014.leftjoin (a0013);
+        a0020 := a0020.reverse ().mark (0@0).reverse ();
+        #     a0020: iter2(nat)
+        a0014 := unused;
+        a0016 := unused;
+        a0017 := unused;
+        # End rule: "Rel: std_sort(Rel)"
+        # Begin rule: "Rel: llscj_foll_sibl(FragList, Rel)"
+        a0014 := loop_lifted_following_sibling_step_with_nsloc_test (a0020, a0019, a0018, ws, 3, "", "SPEECH");
+        a0016 := a0014.fetch (1);
+        a0017 := a0014.fetch (2).materialize (a0016);
+        #     a0016: item1(pre)
+        #     a0017: item1(pfrag)
+        a0021 := a0014.fetch (0).materialize (a0014.fetch (1));
+        #     a0021: iter2(nat)
+        a0014 := unused;
+        a0018 := unused;
+        a0019 := unused;
+        a0020 := unused;
+        # End rule: "Rel: llscj_foll_sibl(FragList, Rel)"
+        # Begin rule: "Rel: leftjoin(Rel, Rel)"
+        a0014 := a0021.leftjoin (a0013.reverse ());
+        a0018 := a0014.mark (0@0).reverse ();
+        a0019 := a0014.reverse ().mark (0@0).reverse ();
+        a0014 := unused;
+        a0014 := a0018.leftjoin (a0016);
+        a0014 := a0014.reverse ().mark (0@0).reverse ();
+        #     a0014: item1(pre)
+        a0020 := a0018.leftjoin (a0017);
+        a0020 := a0020.reverse ().mark (0@0).reverse ();
+        #     a0020: item1(pfrag)
+        #     a0022: iter2(nat)
+        a0023 := a0019.leftjoin (a0015);
+        a0023 := a0023.reverse ().mark (0@0).reverse ();
+        #     a0023: iter1(nat)
+        a0024 := a0019.leftjoin (a0013);
+        a0024 := a0024.reverse ().mark (0@0).reverse ();
+        #     a0024: iter(nat)
+        #     a0025: iter3(nat)
+        a0018 := unused;
+        a0019 := unused;
+        a0016 := unused;
+        a0017 := unused;
+        a0021 := unused;
+        a0015 := unused;
+        a0013 := unused;
+        # End rule: "Rel: leftjoin(Rel, Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0020: item1(pfrag)
+        #     a0014: item1(pre)
+        #     a0023: iter1(nat)
+        #     a0024: iter(nat)
+        a0022 := unused;
+        a0025 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: number(Rel)"
+        #     a0020: item1(pfrag)
+        #     a0014: item1(pre)
+        #     a0023: iter1(nat)
+        #     a0024: iter(nat)
+        a0013 := a0024.mark_grp (a0024.reverse ().kunique ().project (1@0));
+        #     a0013: item(nat)
+        # End rule: "Rel: number(Rel)"
+        # Begin rule: "Rel: cast(Rel)"
+        #     a0020: item1(pfrag)
+        #     a0014: item1(pre)
+        #     a0023: iter1(nat)
+        #     a0024: iter(nat)
+        a0015 := [lng](a0013);
+        if (a0015.reverse ().exist (lng(nil))) {
+            ERROR ("err:FORG0001.");
+        } else {
+        }
+        #     a0015: item2(int)
+        #     a0013: item(nat)
+        # End rule: "Rel: cast(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0020: item1(pfrag)
+        #     a0014: item1(pre)
+        #     a0023: iter1(nat)
+        #     a0015: item2(int)
+        a0024 := unused;
+        a0013 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: attach(Rel)"
+        #     a0020: item1(pfrag)
+        #     a0014: item1(pre)
+        #     a0023: iter1(nat)
+        #     a0015: item2(int)
+        #     a0013: item3(int)
+        # End rule: "Rel: attach(Rel)"
+        # Begin rule: "Rel: eq_atom(Rel)"
+        a0016 := [=](a0015, 1LL);
+        #     a0016: item(bool)
+        #     a0020: item1(pfrag)
+        #     a0014: item1(pre)
+        #     a0023: iter1(nat)
+        #     a0015: item2(int)
+        #     a0013: item3(int)
+        # End rule: "Rel: eq_atom(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0020: item1(pfrag)
+        #     a0014: item1(pre)
+        #     a0023: iter1(nat)
+        #     a0016: item(bool)
+        a0015 := unused;
+        a0013 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: select(Rel)"
+        a0013 := a0016.select (true).mark (0@0).reverse ();
+        a0015 := a0013.leftjoin (a0020);
+        a0015 := a0015.reverse ().mark (0@0).reverse ();
+        #     a0015: item1(pfrag)
+        a0017 := a0013.leftjoin (a0014);
+        a0017 := a0017.reverse ().mark (0@0).reverse ();
+        #     a0017: item1(pre)
+        a0018 := a0013.leftjoin (a0023);
+        a0018 := a0018.reverse ().mark (0@0).reverse ();
+        #     a0018: iter1(nat)
+        #     a0019: item(bool)
+        a0013 := unused;
+        a0020 := unused;
+        a0014 := unused;
+        a0023 := unused;
+        a0016 := unused;
+        # End rule: "Rel: select(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0015: item1(pfrag)
+        #     a0017: item1(pre)
+        #     a0018: iter1(nat)
+        a0019 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: number(Rel)"
+        #     a0015: item1(pfrag)
+        #     a0017: item1(pre)
+        #     a0018: iter1(nat)
+        a0013 := a0017.mark (1@0);
+        #     a0013: iter(nat)
+        # End rule: "Rel: number(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0015: item(pfrag)
+        #     a0017: item(pre)
+        #     a0018: iter1(nat)
+        #     a0013: iter2(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0015: item1(pfrag)
+        #     a0017: item1(pre)
+        #     a0013: iter(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: llscj_child(FragList, Rel)"
+        a0014 := loop_lifted_child_step_with_nsloc_test (a0013, a0017, a0015, ws, 3, "", "SPEAKER");
+        a0016 := a0014.fetch (1);
+        a0019 := a0014.fetch (2).materialize (a0016);
+        #     a0016: item1(pre)
+        #     a0019: item1(pfrag)
+        a0020 := a0014.fetch (0).materialize (a0014.fetch (1));
+        #     a0020: iter(nat)
+        a0014 := unused;
+        # End rule: "Rel: llscj_child(FragList, Rel)"
+        # Begin rule: "Rel: leftjoin(Rel, Rel)"
+        a0014 := a0020.leftjoin (a0013.reverse ());
+        a0021 := a0014.mark (0@0).reverse ();
+        a0022 := a0014.reverse ().mark (0@0).reverse ();
+        a0014 := unused;
+        a0014 := a0021.leftjoin (a0016);
+        a0014 := a0014.reverse ().mark (0@0).reverse ();
+        #     a0014: item1(pre)
+        a0023 := a0021.leftjoin (a0019);
+        a0023 := a0023.reverse ().mark (0@0).reverse ();
+        #     a0023: item1(pfrag)
+        #     a0024: iter(nat)
+        a0025 := a0022.leftjoin (a0015);
+        a0025 := a0025.reverse ().mark (0@0).reverse ();
+        #     a0025: item(pfrag)
+        a0026 := a0022.leftjoin (a0017);
+        a0026 := a0026.reverse ().mark (0@0).reverse ();
+        #     a0026: item(pre)
+        a0027 := a0022.leftjoin (a0018);
+        a0027 := a0027.reverse ().mark (0@0).reverse ();
+        #     a0027: iter1(nat)
+        #     a0028: iter2(nat)
+        a0021 := unused;
+        a0022 := unused;
+        a0016 := unused;
+        a0019 := unused;
+        a0020 := unused;
+        a0015 := unused;
+        a0017 := unused;
+        a0018 := unused;
+        a0013 := unused;
+        # End rule: "Rel: leftjoin(Rel, Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0023: item1(pfrag)
+        #     a0014: item1(pre)
+        #     a0025: item(pfrag)
+        #     a0026: item(pre)
+        #     a0027: iter1(nat)
+        a0024 := unused;
+        a0028 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: number(Rel)"
+        #     a0023: item1(pfrag)
+        #     a0014: item1(pre)
+        #     a0025: item(pfrag)
+        #     a0026: item(pre)
+        #     a0027: iter1(nat)
+        a0013 := a0014.mark (1@0);
+        #     a0013: iter(nat)
+        # End rule: "Rel: number(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0013: iter2(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: attach(Rel)"
+        #     a0013: iter2(nat)
+        #     a0015: item(str)
+        a0015 := a0013.project ("");
+        # End rule: "Rel: attach(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0023: item1(pfrag)
+        #     a0014: item1(pre)
+        #     a0013: iter2(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: llscj_desc_self(FragList, Rel)"
+        a0016 := loop_lifted_descendant_or_self_step_with_kind_test (a0013, a0014, a0023, ws, 1, TEXT);
+        a0017 := a0016.fetch (1);
+        a0018 := a0016.fetch (2);
+        #     a0017: item1(pre)
+        #     a0018: item1(pfrag)
+        a0019 := a0016.fetch (0).materialize (a0016.fetch (1));
+        #     a0019: iter2(nat)
+        a0016 := unused;
+        # End rule: "Rel: llscj_desc_self(FragList, Rel)"
+        # Begin rule: "Rel: number(Rel)"
+        #     a0017: item1(pre)
+        #     a0018: item1(pfrag)
+        #     a0019: iter2(nat)
+        #     a0016: pos(nat)
+        # End rule: "Rel: number(Rel)"
+        # Begin rule: "Rel: doc_access(FragList, Rel)"
+        #     a0017: item1(pre)
+        #     a0018: item1(pfrag)
+        #     a0019: iter2(nat)
+        #     a0016: pos(nat)
+        a0020 := mposjoin (mposjoin (a0017, a0018, ws.fetch (PRE_PROP)), mposjoin (a0017, a0018, ws.fetch (PRE_CONT)), ws.fetch (PROP_TEXT));
+        #     a0020: item(str)
+        # End rule: "Rel: doc_access(FragList, Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0019: iter2(nat)
+        #     a0016: pos(nat)
+        #     a0020: item(str)
+        a0017 := unused;
+        a0018 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: string_join(Rel, Rel)"
+        a0017 := string_join(a0019.reverse ().leftjoin (a0020), a0013.reverse ().leftjoin (a0015));
+        a0018 := a0017.mark (0@0).reverse ();
+        a0021 := a0017.reverse ().mark (0@0).reverse ();
+        a0017 := unused;
+        #     a0018: iter2(nat)
+        #     a0021: item(str)
+        a0019 := unused;
+        a0016 := unused;
+        a0020 := unused;
+        a0015 := unused;
+        # End rule: "Rel: string_join(Rel, Rel)"
+        # Begin rule: "Rel: cast(Rel)"
+        #     a0018: iter2(nat)
+        a0015 := [str](a0021);
+        if (a0015.reverse ().exist (str(nil))) {
+            ERROR ("err:FORG0001.");
+        } else {
+        }
+        #     a0015: item1(uA)
+        #     a0021: item(str)
+        # End rule: "Rel: cast(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0018: iter2(nat)
+        #     a0015: item1(uA)
+        a0021 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0025: item(pfrag)
+        #     a0026: item(pre)
+        #     a0027: iter1(nat)
+        #     a0013: iter(nat)
+        a0023 := unused;
+        a0014 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: leftjoin(Rel, Rel)"
+        a0014 := a0013.leftjoin (a0018.reverse ());
+        a0016 := a0014.mark (0@0).reverse ();
+        a0017 := a0014.reverse ().mark (0@0).reverse ();
+        a0014 := unused;
+        a0014 := a0016.leftjoin (a0025);
+        a0014 := a0014.reverse ().mark (0@0).reverse ();
+        #     a0014: item(pfrag)
+        a0019 := a0016.leftjoin (a0026);
+        a0019 := a0019.reverse ().mark (0@0).reverse ();
+        #     a0019: item(pre)
+        a0020 := a0016.leftjoin (a0027);
+        a0020 := a0020.reverse ().mark (0@0).reverse ();
+        #     a0020: iter1(nat)
+        #     a0021: iter(nat)
+        #     a0022: iter2(nat)
+        a0023 := a0017.leftjoin (a0015);
+        a0023 := a0023.reverse ().mark (0@0).reverse ();
+        #     a0023: item1(uA)
+        a0016 := unused;
+        a0017 := unused;
+        a0025 := unused;
+        a0026 := unused;
+        a0027 := unused;
+        a0013 := unused;
+        a0018 := unused;
+        a0015 := unused;
+        # End rule: "Rel: leftjoin(Rel, Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0014: item(pfrag)
+        #     a0019: item(pre)
+        #     a0020: iter1(nat)
+        #     a0023: item1(uA)
+        a0021 := unused;
+        a0022 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: number(Rel)"
+        #     a0014: item(pfrag)
+        #     a0019: item(pre)
+        #     a0020: iter1(nat)
+        #     a0023: item1(uA)
+        a0013 := a0019.mark (1@0);
+        #     a0013: iter(nat)
+        # End rule: "Rel: number(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0014: item3(pfrag)
+        #     a0019: item3(pre)
+        #     a0013: iter2(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: std_sort(Rel)"
+        a0015 := a0014.reverse ().sort ().reverse ();
+        a0015 := a0015.CTrefine (a0019);
+        a0015 := a0015.CTrefine (a0013);
+        a0015 := a0015.mark (0@0).reverse ();
+        a0016 := a0015.leftjoin (a0014);
+        a0016 := a0016.assert_order ();
+        a0016 := a0016.reverse ().mark (0@0).reverse ();
+        #     a0016: item3(pfrag)
+        a0017 := a0015.leftjoin (a0019);
+        a0017 := a0017.reverse ().mark (0@0).reverse ();
+        #     a0017: item3(pre)
+        a0018 := a0015.leftjoin (a0013);
+        a0018 := a0018.reverse ().mark (0@0).reverse ();
+        #     a0018: iter2(nat)
+        a0015 := unused;
+        # End rule: "Rel: std_sort(Rel)"
+        # Begin rule: "Rel: llscj_prec_sibl(FragList, Rel)"
+        a0015 := loop_lifted_preceding_sibling_step_with_nsloc_test (a0018, a0017, a0016, ws, 3, "", "SPEECH");
+        a0021 := a0015.fetch (1);
+        a0022 := a0015.fetch (2).materialize (a0021);
+        #     a0021: item3(pre)
+        #     a0022: item3(pfrag)
+        a0024 := a0015.fetch (0).materialize (a0015.fetch (1));
+        #     a0024: iter2(nat)
+        a0015 := unused;
+        a0016 := unused;
+        a0017 := unused;
+        a0018 := unused;
+        # End rule: "Rel: llscj_prec_sibl(FragList, Rel)"
+        # Begin rule: "Rel: number(Rel)"
+        #     a0021: item3(pre)
+        #     a0022: item3(pfrag)
+        #     a0024: iter2(nat)
+        a0015 := a0024.mark_grp (a0024.reverse ().kunique ().project (1@0));
+        #     a0015: pos(nat)
+        # End rule: "Rel: number(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0024: iter(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0013: iter(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: append_union(hash_count(Rel), attach(difference(Rel, project(hash_count(Rel)))))"
+        a0016 := {count} (a0024.reverse (), a0013.reverse ());
+        a0016 := [lng](a0016);
+        a0017 := a0016.reverse ().mark (0@0).reverse ();
+        a0018 := a0016.mark (0@0).reverse ();
+        #     a0017: item2(int)
+        #     a0018: iter(nat)
+        a0016 := unused;
+        # End rule: "Rel: append_union(hash_count(Rel), attach(difference(Rel, project(hash_count(Rel)))))"
+        # Begin rule: "Rel: leftjoin(Rel, Rel)"
+        a0016 := a0024.leftjoin (a0018.reverse ());
+        a0025 := a0016.mark (0@0).reverse ();
+        a0026 := a0016.reverse ().mark (0@0).reverse ();
+        a0016 := unused;
+        a0016 := a0025.leftjoin (a0021);
+        a0016 := a0016.reverse ().mark (0@0).reverse ();
+        #     a0016: item3(pre)
+        a0027 := a0025.leftjoin (a0022);
+        a0027 := a0027.reverse ().mark (0@0).reverse ();
+        #     a0027: item3(pfrag)
+        a0028 := a0025.leftjoin (a0024);
+        a0028 := a0028.reverse ().mark (0@0).reverse ();
+        #     a0028: iter2(nat)
+        a0029 := a0025.leftjoin (a0015);
+        a0029 := a0029.reverse ().mark (0@0).reverse ();
+        #     a0029: pos(nat)
+        a0030 := a0026.leftjoin (a0017);
+        a0030 := a0030.reverse ().mark (0@0).reverse ();
+        #     a0030: item2(int)
+        #     a0031: iter(nat)
+        a0025 := unused;
+        a0026 := unused;
+        a0021 := unused;
+        a0022 := unused;
+        a0024 := unused;
+        a0015 := unused;
+        a0017 := unused;
+        a0018 := unused;
+        # End rule: "Rel: leftjoin(Rel, Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0028: iter2(nat)
+        #     a0027: item3(pfrag)
+        #     a0016: item3(pre)
+        #     a0029: pos(nat)
+        #     a0030: item2(int)
+        a0031 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0014: item(pfrag)
+        #     a0019: item(pre)
+        #     a0020: iter1(nat)
+        #     a0023: item1(uA)
+        #     a0013: iter(nat)
+        #     a0013: iter3(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: leftjoin(Rel, Rel)"
+        a0015 := a0013.leftjoin (a0028.reverse ());
+        a0017 := a0015.mark (0@0).reverse ();
+        a0018 := a0015.reverse ().mark (0@0).reverse ();
+        a0015 := unused;
+        a0015 := a0017.leftjoin (a0014);
+        a0015 := a0015.reverse ().mark (0@0).reverse ();
+        #     a0015: item(pfrag)
+        a0021 := a0017.leftjoin (a0019);
+        a0021 := a0021.reverse ().mark (0@0).reverse ();
+        #     a0021: item(pre)
+        a0022 := a0017.leftjoin (a0020);
+        a0022 := a0022.reverse ().mark (0@0).reverse ();
+        #     a0022: iter1(nat)
+        a0024 := a0017.leftjoin (a0023);
+        a0024 := a0024.reverse ().mark (0@0).reverse ();
+        #     a0024: item1(uA)
+        a0025 := a0017.leftjoin (a0013);
+        a0025 := a0025.reverse ().mark (0@0).reverse ();
+        #     a0025: iter(nat)
+        #     a0026: iter3(nat)
+        #     a0031: iter2(nat)
+        a0032 := a0018.leftjoin (a0027);
+        a0032 := a0032.reverse ().mark (0@0).reverse ();
+        #     a0032: item3(pfrag)
+        a0033 := a0018.leftjoin (a0016);
+        a0033 := a0033.reverse ().mark (0@0).reverse ();
+        #     a0033: item3(pre)
+        a0034 := a0018.leftjoin (a0029);
+        a0034 := a0034.reverse ().mark (0@0).reverse ();
+        #     a0034: pos(nat)
+        a0035 := a0018.leftjoin (a0030);
+        a0035 := a0035.reverse ().mark (0@0).reverse ();
+        #     a0035: item2(int)
+        a0017 := unused;
+        a0018 := unused;
+        a0014 := unused;
+        a0019 := unused;
+        a0020 := unused;
+        a0023 := unused;
+        a0013 := unused;
+        a0028 := unused;
+        a0027 := unused;
+        a0016 := unused;
+        a0029 := unused;
+        a0030 := unused;
+        # End rule: "Rel: leftjoin(Rel, Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0015: item(pfrag)
+        #     a0021: item(pre)
+        #     a0022: iter1(nat)
+        #     a0024: item1(uA)
+        #     a0025: iter(nat)
+        #     a0032: item3(pfrag)
+        #     a0033: item3(pre)
+        #     a0034: pos(nat)
+        #     a0035: item2(int)
+        a0026 := unused;
+        a0031 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: attach(Rel)"
+        #     a0015: item(pfrag)
+        #     a0021: item(pre)
+        #     a0022: iter1(nat)
+        #     a0024: item1(uA)
+        #     a0025: iter(nat)
+        #     a0032: item3(pfrag)
+        #     a0033: item3(pre)
+        #     a0034: pos(nat)
+        #     a0035: item2(int)
+        #     a0013: item6(int)
+        a0013 := a0015.project (1LL);
+        # End rule: "Rel: attach(Rel)"
+        # Begin rule: "Rel: refine_sort(Rel)"
+        a0014 := a0025;
+        a0014 := a0014.CTrefine (a0034);
+        a0014 := a0014.mark (0@0).reverse ();
+        a0016 := a0014.leftjoin (a0015);
+        a0016 := a0016.reverse ().mark (0@0).reverse ();
+        #     a0016: item(pfrag)
+        a0017 := a0014.leftjoin (a0021);
+        a0017 := a0017.reverse ().mark (0@0).reverse ();
+        #     a0017: item(pre)
+        a0018 := a0014.leftjoin (a0022);
+        a0018 := a0018.reverse ().mark (0@0).reverse ();
+        #     a0018: iter1(nat)
+        a0019 := a0014.leftjoin (a0024);
+        a0019 := a0019.reverse ().mark (0@0).reverse ();
+        #     a0019: item1(uA)
+        #     a0025: iter(nat)
+        a0020 := a0014.leftjoin (a0032);
+        a0020 := a0020.reverse ().mark (0@0).reverse ();
+        #     a0020: item3(pfrag)
+        a0023 := a0014.leftjoin (a0033);
+        a0023 := a0023.reverse ().mark (0@0).reverse ();
+        #     a0023: item3(pre)
+        #     a0026: pos(nat)
+        a0027 := a0014.leftjoin (a0035);
+        a0027 := a0027.reverse ().mark (0@0).reverse ();
+        #     a0027: item2(int)
+        a0028 := a0014.leftjoin (a0013);
+        a0028 := a0028.reverse ().mark (0@0).reverse ();
+        #     a0028: item6(int)
+        a0014 := unused;
+        a0015 := unused;
+        a0021 := unused;
+        a0022 := unused;
+        a0024 := unused;
+        a0032 := unused;
+        a0033 := unused;
+        a0034 := unused;
+        a0035 := unused;
+        a0013 := unused;
+        # End rule: "Rel: refine_sort(Rel)"
+        # Begin rule: "Rel: number(Rel)"
+        #     a0016: item(pfrag)
+        #     a0017: item(pre)
+        #     a0018: iter1(nat)
+        #     a0019: item1(uA)
+        #     a0025: iter(nat)
+        #     a0020: item3(pfrag)
+        #     a0023: item3(pre)
+        #     a0026: pos(nat)
+        #     a0027: item2(int)
+        #     a0028: item6(int)
+        a0013 := a0025.mark_grp (a0025.reverse ().kunique ().project (1@0));
+        #     a0013: item7(nat)
+        # End rule: "Rel: number(Rel)"
+        # Begin rule: "Rel: fun_1to1(Rel)"
+        a0014 := [-](a0027, a0028);
+        #     a0014: item4(int)
+        #     a0016: item(pfrag)
+        #     a0017: item(pre)
+        #     a0018: iter1(nat)
+        #     a0019: item1(uA)
+        #     a0025: iter(nat)
+        #     a0020: item3(pfrag)
+        #     a0023: item3(pre)
+        #     a0026: pos(nat)
+        #     a0027: item2(int)
+        #     a0028: item6(int)
+        #     a0013: item7(nat)
+        # End rule: "Rel: fun_1to1(Rel)"
+        # Begin rule: "Rel: cast(Rel)"
+        #     a0016: item(pfrag)
+        #     a0017: item(pre)
+        #     a0018: iter1(nat)
+        #     a0019: item1(uA)
+        #     a0025: iter(nat)
+        #     a0020: item3(pfrag)
+        #     a0023: item3(pre)
+        #     a0026: pos(nat)
+        #     a0027: item2(int)
+        #     a0028: item6(int)
+        a0015 := [lng](a0013);
+        if (a0015.reverse ().exist (lng(nil))) {
+            ERROR ("err:FORG0001.");
+        } else {
+        }
+        #     a0015: item5(int)
+        #     a0013: item7(nat)
+        #     a0014: item4(int)
+        # End rule: "Rel: cast(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0016: item(pfrag)
+        #     a0017: item(pre)
+        #     a0018: iter1(nat)
+        #     a0019: item1(uA)
+        #     a0020: item3(pfrag)
+        #     a0023: item3(pre)
+        #     a0014: item4(int)
+        #     a0015: item5(int)
+        a0025 := unused;
+        a0026 := unused;
+        a0027 := unused;
+        a0028 := unused;
+        a0013 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: eq(Rel)"
+        a0013 := [=](a0014, a0015);
+        #     a0013: item2(bool)
+        #     a0016: item(pfrag)
+        #     a0017: item(pre)
+        #     a0018: iter1(nat)
+        #     a0019: item1(uA)
+        #     a0020: item3(pfrag)
+        #     a0023: item3(pre)
+        #     a0014: item4(int)
+        #     a0015: item5(int)
+        # End rule: "Rel: eq(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0016: item(pfrag)
+        #     a0017: item(pre)
+        #     a0018: iter1(nat)
+        #     a0019: item1(uA)
+        #     a0020: item3(pfrag)
+        #     a0023: item3(pre)
+        #     a0013: item2(bool)
+        a0014 := unused;
+        a0015 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: select(Rel)"
+        a0014 := a0013.select (true).mark (0@0).reverse ();
+        a0015 := a0014.leftjoin (a0016);
+        a0015 := a0015.reverse ().mark (0@0).reverse ();
+        #     a0015: item(pfrag)
+        a0021 := a0014.leftjoin (a0017);
+        a0021 := a0021.reverse ().mark (0@0).reverse ();
+        #     a0021: item(pre)
+        a0022 := a0014.leftjoin (a0018);
+        a0022 := a0022.reverse ().mark (0@0).reverse ();
+        #     a0022: iter1(nat)
+        a0024 := a0014.leftjoin (a0019);
+        a0024 := a0024.reverse ().mark (0@0).reverse ();
+        #     a0024: item1(uA)
+        a0025 := a0014.leftjoin (a0020);
+        a0025 := a0025.reverse ().mark (0@0).reverse ();
+        #     a0025: item3(pfrag)
+        a0026 := a0014.leftjoin (a0023);
+        a0026 := a0026.reverse ().mark (0@0).reverse ();
+        #     a0026: item3(pre)
+        #     a0027: item2(bool)
+        a0014 := unused;
+        a0016 := unused;
+        a0017 := unused;
+        a0018 := unused;
+        a0019 := unused;
+        a0020 := unused;
+        a0023 := unused;
+        a0013 := unused;
+        # End rule: "Rel: select(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0015: item(pfrag)
+        #     a0021: item(pre)
+        #     a0022: iter1(nat)
+        #     a0024: item1(uA)
+        #     a0025: item3(pfrag)
+        #     a0026: item3(pre)
+        a0027 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: number(Rel)"
+        #     a0015: item(pfrag)
+        #     a0021: item(pre)
+        #     a0022: iter1(nat)
+        #     a0024: item1(uA)
+        #     a0025: item3(pfrag)
+        #     a0026: item3(pre)
+        a0013 := a0021.mark (1@0);
+        #     a0013: iter(nat)
+        # End rule: "Rel: number(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0015: item(pfrag)
+        #     a0021: item(pre)
+        #     a0022: iter1(nat)
+        #     a0024: item1(uA)
+        #     a0013: iter2(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0025: item3(pfrag)
+        #     a0026: item3(pre)
+        #     a0013: iter(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: std_sort(Rel)"
+        a0014 := a0025.reverse ().sort ().reverse ();
+        a0014 := a0014.CTrefine (a0026);
+        a0014 := a0014.CTrefine (a0013);
+        a0014 := a0014.mark (0@0).reverse ();
+        a0016 := a0014.leftjoin (a0025);
+        a0016 := a0016.assert_order ();
+        a0016 := a0016.reverse ().mark (0@0).reverse ();
+        #     a0016: item3(pfrag)
+        a0017 := a0014.leftjoin (a0026);
+        a0017 := a0017.reverse ().mark (0@0).reverse ();
+        #     a0017: item3(pre)
+        a0018 := a0014.leftjoin (a0013);
+        a0018 := a0018.reverse ().mark (0@0).reverse ();
+        #     a0018: iter(nat)
+        a0014 := unused;
+        a0025 := unused;
+        a0026 := unused;
+        # End rule: "Rel: std_sort(Rel)"
+        # Begin rule: "Rel: llscj_child(FragList, Rel)"
+        a0014 := loop_lifted_child_step_with_nsloc_test (a0018, a0017, a0016, ws, 3, "", "SPEAKER");
+        a0019 := a0014.fetch (1);
+        a0020 := a0014.fetch (2).materialize (a0019);
+        #     a0019: item3(pre)
+        #     a0020: item3(pfrag)
+        a0023 := a0014.fetch (0).materialize (a0014.fetch (1));
+        #     a0023: iter(nat)
+        a0014 := unused;
+        a0016 := unused;
+        a0017 := unused;
+        a0018 := unused;
+        # End rule: "Rel: llscj_child(FragList, Rel)"
+        # Begin rule: "Rel: leftjoin(Rel, Rel)"
+        a0014 := a0023.leftjoin (a0013.reverse ());
+        a0016 := a0014.mark (0@0).reverse ();
+        a0017 := a0014.reverse ().mark (0@0).reverse ();
+        a0014 := unused;
+        a0014 := a0016.leftjoin (a0019);
+        a0014 := a0014.reverse ().mark (0@0).reverse ();
+        #     a0014: item3(pre)
+        a0018 := a0016.leftjoin (a0020);
+        a0018 := a0018.reverse ().mark (0@0).reverse ();
+        #     a0018: item3(pfrag)
+        #     a0025: iter(nat)
+        a0026 := a0017.leftjoin (a0015);
+        a0026 := a0026.reverse ().mark (0@0).reverse ();
+        #     a0026: item(pfrag)
+        a0027 := a0017.leftjoin (a0021);
+        a0027 := a0027.reverse ().mark (0@0).reverse ();
+        #     a0027: item(pre)
+        a0028 := a0017.leftjoin (a0022);
+        a0028 := a0028.reverse ().mark (0@0).reverse ();
+        #     a0028: iter1(nat)
+        a0029 := a0017.leftjoin (a0024);
+        a0029 := a0029.reverse ().mark (0@0).reverse ();
+        #     a0029: item1(uA)
+        #     a0030: iter2(nat)
+        a0016 := unused;
+        a0017 := unused;
+        a0019 := unused;
+        a0020 := unused;
+        a0023 := unused;
+        a0015 := unused;
+        a0021 := unused;
+        a0022 := unused;
+        a0024 := unused;
+        a0013 := unused;
+        # End rule: "Rel: leftjoin(Rel, Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0018: item3(pfrag)
+        #     a0014: item3(pre)
+        #     a0026: item(pfrag)
+        #     a0027: item(pre)
+        #     a0028: iter1(nat)
+        #     a0029: item1(uA)
+        a0025 := unused;
+        a0030 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: number(Rel)"
+        #     a0018: item3(pfrag)
+        #     a0014: item3(pre)
+        #     a0026: item(pfrag)
+        #     a0027: item(pre)
+        #     a0028: iter1(nat)
+        #     a0029: item1(uA)
+        a0013 := a0014.mark (1@0);
+        #     a0013: iter(nat)
+        # End rule: "Rel: number(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0013: iter2(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: attach(Rel)"
+        #     a0013: iter2(nat)
+        #     a0015: item2(str)
+        a0015 := a0013.project ("");
+        # End rule: "Rel: attach(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0018: item(pfrag)
+        #     a0014: item(pre)
+        #     a0013: iter2(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: llscj_desc_self(FragList, Rel)"
+        a0016 := loop_lifted_descendant_or_self_step_with_kind_test (a0013, a0014, a0018, ws, 1, TEXT);
+        a0017 := a0016.fetch (1);
+        a0019 := a0016.fetch (2);
+        #     a0017: item(pre)
+        #     a0019: item(pfrag)
+        a0020 := a0016.fetch (0).materialize (a0016.fetch (1));
+        #     a0020: iter2(nat)
+        a0016 := unused;
+        # End rule: "Rel: llscj_desc_self(FragList, Rel)"
+        # Begin rule: "Rel: number(Rel)"
+        #     a0017: item(pre)
+        #     a0019: item(pfrag)
+        #     a0020: iter2(nat)
+        #     a0016: pos(nat)
+        # End rule: "Rel: number(Rel)"
+        # Begin rule: "Rel: doc_access(FragList, Rel)"
+        #     a0017: item(pre)
+        #     a0019: item(pfrag)
+        #     a0020: iter2(nat)
+        #     a0016: pos(nat)
+        a0021 := mposjoin (mposjoin (a0017, a0019, ws.fetch (PRE_PROP)), mposjoin (a0017, a0019, ws.fetch (PRE_CONT)), ws.fetch (PROP_TEXT));
+        #     a0021: item2(str)
+        # End rule: "Rel: doc_access(FragList, Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0020: iter2(nat)
+        #     a0016: pos(nat)
+        #     a0021: item2(str)
+        a0017 := unused;
+        a0019 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: string_join(Rel, Rel)"
+        a0017 := string_join(a0020.reverse ().leftjoin (a0021), a0013.reverse ().leftjoin (a0015));
+        a0019 := a0017.mark (0@0).reverse ();
+        a0022 := a0017.reverse ().mark (0@0).reverse ();
+        a0017 := unused;
+        #     a0019: iter2(nat)
+        #     a0022: item2(str)
+        a0020 := unused;
+        a0016 := unused;
+        a0021 := unused;
+        a0015 := unused;
+        # End rule: "Rel: string_join(Rel, Rel)"
+        # Begin rule: "Rel: leftjoin(Rel, Rel)"
+        a0015 := a0013.leftjoin (a0019.reverse ());
+        a0016 := a0015.mark (0@0).reverse ();
+        a0017 := a0015.reverse ().mark (0@0).reverse ();
+        a0015 := unused;
+        #     a0015: item3(pfrag)
+        #     a0020: item3(pre)
+        a0021 := a0016.leftjoin (a0026);
+        a0021 := a0021.reverse ().mark (0@0).reverse ();
+        #     a0021: item(pfrag)
+        a0023 := a0016.leftjoin (a0027);
+        a0023 := a0023.reverse ().mark (0@0).reverse ();
+        #     a0023: item(pre)
+        a0024 := a0016.leftjoin (a0028);
+        a0024 := a0024.reverse ().mark (0@0).reverse ();
+        #     a0024: iter1(nat)
+        a0025 := a0016.leftjoin (a0029);
+        a0025 := a0025.reverse ().mark (0@0).reverse ();
+        #     a0025: item1(uA)
+        #     a0030: iter(nat)
+        #     a0031: iter2(nat)
+        a0032 := a0017.leftjoin (a0022);
+        a0032 := a0032.reverse ().mark (0@0).reverse ();
+        #     a0032: item2(str)
+        a0016 := unused;
+        a0017 := unused;
+        a0018 := unused;
+        a0014 := unused;
+        a0026 := unused;
+        a0027 := unused;
+        a0028 := unused;
+        a0029 := unused;
+        a0013 := unused;
+        a0019 := unused;
+        a0022 := unused;
+        # End rule: "Rel: leftjoin(Rel, Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0021: item(pfrag)
+        #     a0023: item(pre)
+        #     a0024: iter1(nat)
+        #     a0025: item1(uA)
+        #     a0032: item2(str)
+        a0015 := unused;
+        a0020 := unused;
+        a0030 := unused;
+        a0031 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: cast(Rel)"
+        #     a0021: item(pfrag)
+        #     a0023: item(pre)
+        #     a0024: iter1(nat)
+        #     a0025: item1(uA)
+        a0013 := [str](a0032);
+        if (a0013.reverse ().exist (str(nil))) {
+            ERROR ("err:FORG0001.");
+        } else {
+        }
+        #     a0013: item4(uA)
+        #     a0032: item2(str)
+        # End rule: "Rel: cast(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0021: item(pfrag)
+        #     a0023: item(pre)
+        #     a0024: iter1(nat)
+        #     a0025: item1(uA)
+        #     a0013: item4(uA)
+        a0032 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: cast(Rel)"
+        #     a0021: item(pfrag)
+        #     a0023: item(pre)
+        #     a0024: iter1(nat)
+        a0014 := [str](a0025);
+        if (a0014.reverse ().exist (str(nil))) {
+            ERROR ("err:FORG0001.");
+        } else {
+        }
+        #     a0014: item2(str)
+        #     a0025: item1(uA)
+        #     a0013: item4(uA)
+        # End rule: "Rel: cast(Rel)"
+        # Begin rule: "Rel: cast(Rel)"
+        #     a0021: item(pfrag)
+        #     a0023: item(pre)
+        #     a0024: iter1(nat)
+        #     a0025: item1(uA)
+        a0015 := [str](a0013);
+        if (a0015.reverse ().exist (str(nil))) {
+            ERROR ("err:FORG0001.");
+        } else {
+        }
+        #     a0015: item3(str)
+        #     a0013: item4(uA)
+        #     a0014: item2(str)
+        # End rule: "Rel: cast(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0021: item(pfrag)
+        #     a0023: item(pre)
+        #     a0024: iter1(nat)
+        #     a0014: item2(str)
+        #     a0015: item3(str)
+        a0025 := unused;
+        a0013 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: eq(Rel)"
+        a0013 := [=](a0014, a0015);
+        #     a0013: item1(bool)
+        #     a0021: item(pfrag)
+        #     a0023: item(pre)
+        #     a0024: iter1(nat)
+        #     a0014: item2(str)
+        #     a0015: item3(str)
+        # End rule: "Rel: eq(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0021: item(pfrag)
+        #     a0023: item(pre)
+        #     a0024: iter1(nat)
+        #     a0013: item1(bool)
+        a0014 := unused;
+        a0015 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: select(Rel)"
+        a0014 := a0013.select (true).mark (0@0).reverse ();
+        a0015 := a0014.leftjoin (a0021);
+        a0015 := a0015.reverse ().mark (0@0).reverse ();
+        #     a0015: item(pfrag)
+        a0016 := a0014.leftjoin (a0023);
+        a0016 := a0016.reverse ().mark (0@0).reverse ();
+        #     a0016: item(pre)
+        a0017 := a0014.leftjoin (a0024);
+        a0017 := a0017.reverse ().mark (0@0).reverse ();
+        #     a0017: iter1(nat)
+        #     a0018: item1(bool)
+        a0014 := unused;
+        a0021 := unused;
+        a0023 := unused;
+        a0024 := unused;
+        a0013 := unused;
+        # End rule: "Rel: select(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0015: item(pfrag)
+        #     a0016: item(pre)
+        #     a0017: iter1(nat)
+        a0018 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: sort_distinct(std_sort(Rel))"
+        a0013 := a0017.reverse ().sort ().reverse ();
+        a0013 := a0013.CTrefine (a0015);
+        a0013 := a0013.CTrefine (a0016);
+        a0013 := a0013.reverse ().kunique ().reverse ().mark (0@0).reverse ();
+        a0014 := a0013.leftjoin (a0015);
+        a0014 := a0014.reverse ().mark (0@0).reverse ();
+        #     a0014: item(pfrag)
+        a0018 := a0013.leftjoin (a0016);
+        a0018 := a0018.reverse ().mark (0@0).reverse ();
+        #     a0018: item(pre)
+        a0019 := a0013.leftjoin (a0017);
+        a0019 := a0019.assert_order ();
+        a0019 := a0019.reverse ().mark (0@0).reverse ();
+        #     a0019: iter1(nat)
+        a0013 := unused;
+        a0015 := unused;
+        a0016 := unused;
+        a0017 := unused;
+        # End rule: "Rel: sort_distinct(std_sort(Rel))"
+        # Begin rule: "Rel: difference(Rel, Rel)"
+        a0013 := ds_link (a0014, a0004, a0018, a0005, a0019, a0001);
+        a0013 := a0014.kdiff (a0013).mark (0@0).reverse ();
+        a0015 := a0013.leftjoin (a0014);
+        #     a0015: item(pfrag)
+        a0016 := a0013.leftjoin (a0018);
+        #     a0016: item(pre)
+        a0017 := a0013.leftjoin (a0019);
+        #     a0017: iter1(nat)
+        a0013 := unused;
+        a0014 := unused;
+        a0018 := unused;
+        a0019 := unused;
+        # End rule: "Rel: difference(Rel, Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0015: item(pfrag)
+        #     a0016: item(pre)
+        #     a0017: iter(nat)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: append_union(Rel, Rel)"
+        a0013 := a0015.copy ().access (BAT_APPEND);
+        a0013.append (a0004).access (BAT_READ);
+        #     a0013: item(pfrag)
+        a0014 := a0016.copy ().access (BAT_APPEND);
+        a0014.append (a0005).access (BAT_READ);
+        #     a0014: item(pre)
+        a0018 := a0017.copy ().access (BAT_APPEND);
+        a0018.append (a0001).access (BAT_READ);
+        #     a0018: iter(nat)
+        # End rule: "Rel: append_union(Rel, Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0018: iter1(nat)
+        #     a0013: item(pfrag)
+        #     a0014: item(pre)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule (reduce2): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+        # Begin rule: "Rel: std_sort(Rel)"
+        a0019 := a0017.reverse ().sort ().reverse ();
+        a0019 := a0019.mark (0@0).reverse ();
+        #     a0020: item(pfrag)
+        #     a0021: item(pre)
+        a0022 := a0019.leftjoin (a0017);
+        a0022 := a0022.assert_order ();
+        a0022 := a0022.reverse ().mark (0@0).reverse ();
+        #     a0022: iter1(nat)
+        a0019 := unused;
+        a0015 := unused;
+        a0016 := unused;
+        a0017 := unused;
+        # End rule: "Rel: std_sort(Rel)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0022: iter1(nat)
+        a0020 := unused;
+        a0021 := unused;
+        # End rule: "Rel: project(Rel)"
+        # Begin rule: "Rel: sort_distinct(Rel)"
+        a0015 := a0022.reverse ().sort ().reverse ();
+        a0015 := a0015.reverse ().kunique ().reverse ().mark (0@0).reverse ();
+        a0016 := a0015.leftjoin (a0022);
+        a0016 := a0016.assert_order ();
+        a0016 := a0016.reverse ().mark (0@0).reverse ();
+        #     a0016: iter1(nat)
+        a0015 := unused;
+        a0022 := unused;
+        # End rule: "Rel: sort_distinct(Rel)"
+        # Begin rule: "Rel: semijoin(Rel, Rel)"
+        a0015 := a0007.reverse ().kintersect (a0016.reverse ());
+        a0015 := a0015.reverse ().mark (0@0).reverse ();
+        a0017 := a0015.leftjoin (a0007);
+        a0017 := a0017.reverse ().mark (0@0).reverse ();
+        #     a0017: iter(nat)
+        a0015 := unused;
+        a0016 := unused;
+        # End rule: "Rel: semijoin(Rel, Rel)"
+        # Begin rule (reduce2): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0018: iter(nat)
+        #     a0013: item1(pfrag)
+        #     a0014: item1(pre)
+        # End rule: "Rel: project(Rel)"
+        # Begin rule (reduce2): "Rec: nil"
+        # End rule (reduce2): "Rec: nil"
+        a0011 := a0018;
+        a0008 := a0013;
+        a0009 := a0014;
+        # End rule (reduce2): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+        a0007 := a0017;
+        a0017 := unused;
+        # End rule (reduce2): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+        a0001 := a0018;
+        a0004 := a0013;
+        a0005 := a0014;
+        # End rule (reduce2): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+        # Begin rule: "Rel: project(Rel)"
+        #     a0018: iter2(nat)
+        a0013 := unused;
+        a0014 := unused;
+        # End rule: "Rel: project(Rel)"
+        a0010 := a0012;
+        a0012 := a0018.count ();
+    }
+printf("\n");
+    a0012 := unused;
+    a0010 := unused;
+    #     a0018: iter2(nat)
+    # Begin rule (reduce3): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+    # Begin rule (reduce3): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+    # Begin rule (reduce3): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+    # Begin rule (reduce3): "Rec: nil"
+    # End rule (reduce3): "Rec: nil"
+    a0011 := unused;
+    a0008 := unused;
+    a0009 := unused;
+    # End rule (reduce3): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+    a0007 := unused;
+    # End rule (reduce3): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+    a0001 := unused;
+    a0004 := unused;
+    a0005 := unused;
+    # End rule (reduce3): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
+    a0001 := unused;
+    a0004 := unused;
+    a0005 := unused;
+    # End rule: "Rel: rec_fix(Rec, Rel)"
+    # Begin rule: "Rel: project(Rel)"
+    #     a0000: iter2(nat)
+    # End rule: "Rel: project(Rel)"
+    # Begin rule: "Rel: append_union(hash_count(Rel), attach(difference(Rel, project(hash_count(Rel)))))"
+    a0001 := {count} (a0018.reverse (), a0000.reverse ());
+    a0001 := [lng](a0001);
+    a0004 := a0001.reverse ().mark (0@0).reverse ();
+    a0005 := a0001.mark (0@0).reverse ();
+    #     a0004: item(int)
+    #     a0005: iter2(nat)
+    a0001 := unused;
+    a0018 := unused;
+    # End rule: "Rel: append_union(hash_count(Rel), attach(difference(Rel, project(hash_count(Rel)))))"
+    # Begin rule: "Rel: leftjoin(Rel, Rel)"
+    a0001 := a0000.leftjoin (a0005.reverse ());
+    a0007 := a0001.mark (0@0).reverse ();
+    a0008 := a0001.reverse ().mark (0@0).reverse ();
+    a0001 := unused;
+    #     a0001: item1(pre)
+    #     a0009: item1(pfrag)
+    a0010 := a0007.leftjoin (a0006);
+    a0010 := a0010.reverse ().mark (0@0).reverse ();
+    #     a0010: iter(nat)
+    #     a0011: iter1(nat)
+    a0012 := a0008.leftjoin (a0004);
+    a0012 := a0012.reverse ().mark (0@0).reverse ();
+    #     a0012: item(int)
+    #     a0013: iter2(nat)
+    a0007 := unused;
+    a0008 := unused;
+    a0002 := unused;
+    a0003 := unused;
+    a0006 := unused;
+    a0000 := unused;
+    a0004 := unused;
+    a0005 := unused;
+    # End rule: "Rel: leftjoin(Rel, Rel)"
+    # Begin rule: "Rel: project(Rel)"
+    #     a0010: iter(nat)
+    #     a0012: item(int)
+    a0001 := unused;
+    a0009 := unused;
+    a0011 := unused;
+    a0013 := unused;
+    # End rule: "Rel: project(Rel)"
+    # Begin rule: "Rel: max_(Rel)"
+    a0000 := {max}(a0012.reverse ().join (a0010).reverse ());
+    a0001 := a0000.reverse ().mark (0@0).reverse ();
+    #     a0001: item(int)
+    #     a0002: iter(nat)
+    a0000 := unused;
+    a0010 := unused;
+    a0012 := unused;
+    # End rule: "Rel: max_(Rel)"
+    # Begin rule: "Rel: project(Rel)"
+    #     a0001: item(int)
+    a0002 := unused;
+    # End rule: "Rel: project(Rel)"
+    # Begin rule: "Rel: attach(Rel)"
+    #     a0001: item(int)
+    #     a0000: pos(nat)
+    # End rule: "Rel: attach(Rel)"
+    a0002 := usec ();
+    a0003 := new (lng, void).key (true).reverse ().seqbase (0@0);
+    a0004 := new (dbl, void).key (true).reverse ().seqbase (0@0);
+    a0005 := new (str, void).key (true).reverse ().seqbase (0@0);
+    a0003.append (a0001.select (lng(nil), lng(nil)).reverse ().kunique ().reverse ());
+    a0006 := a0001.leftjoin (a0003.reverse ());
+    a0007 := a0001.project (INT);
+    a0006 := a0006.reverse ().mark (0@0).reverse ();
+    a0007 := a0007.reverse ().mark (0@0).reverse ();
+    print_result ("xml", ws, a0006, a0007, a0003, a0004, a0004, a0005);
+    a0003 := unused;
+    a0004 := unused;
+    a0005 := unused;
+    a0006 := unused;
+    a0007 := unused;
+    time_print := -(usec (), a0002);
+    a0002 := unused;
+});
+if (not(isnil(ws))) {
+    ws_destroy (ws);
+} else {
+}
+if (not(isnil(a0002))) {
+    ERROR (a0002);
+} else {
+}
+a0002 := unused;
+a0001 := unused;
+a0000 := unused;
+# End rule: "Query: serialize(FragList, Rel)"
+time_query := -(usec (), time_query);
+time_query := -(time_query, time_load);
+time_query := -(time_query, time_print);
+time_load := /(dbl(time_load), dbl(1000LL));
+time_query := /(dbl(time_query), dbl(1000LL));
+time_print := /(dbl(time_print), dbl(1000LL));
+#printf("Document loading time:	% 10.3f msec\nQuery time:		% 10.3f msec\nSerialization time:	% 10.3f msec\n", time_load, time_query, time_print);

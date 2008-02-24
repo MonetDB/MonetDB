@@ -101,11 +101,16 @@ static void
 oops_worker (const char *msg, va_list msgs)
 {
     int len = strlen(PFerrbuf);
-    if (len+2 < OOPS_SIZE) {
-        int n = vsnprintf (PFerrbuf+len, OOPS_SIZE-(len+2), msg, msgs);
-        if (n >= 0 && n < OOPS_SIZE-(len+2)) {
+    if (len < OOPS_SIZE - 2) {
+        int n = vsnprintf (PFerrbuf+len, OOPS_SIZE-(len+1), msg, msgs);
+        if (n >= 0 && n < OOPS_SIZE-(len+1)) {
+            /* append newline */
             PFerrbuf[len+n] = '\n';
             PFerrbuf[len+n+1] = 0;
+        } else {
+            /* truncate message */
+            PFerrbuf[OOPS_SIZE - 2] = '\n';
+            PFerrbuf[OOPS_SIZE - 1] = 0;
         }
     }
 }
@@ -153,10 +158,11 @@ oops (PFrc_t rc, bool halt,
     if (msg) {
 	/* generate an error message of the form `<oops_msg>: <msg>' */
 	nmsg = strlen (oops_msg[-rc]);
-	mbuf[nmsg] = ':';
-	mbuf[nmsg + 1] = ' ';
+	mbuf[nmsg++] = ':';
+	mbuf[nmsg++] = ' ';
 
-	vsnprintf (mbuf + nmsg + 2, OOPS_SIZE - nmsg - 2 - 1, msg, msgs);
+	vsnprintf (mbuf + nmsg, OOPS_SIZE - nmsg, msg, msgs);
+	mbuf[OOPS_SIZE - 1] = 0;
 
         oops_worker_call ("%s", mbuf);
     }
@@ -226,9 +232,10 @@ PFoops_loc_ (PFrc_t rc, PFloc_t loc,
     va_list args;
     char    buf[OOPS_SIZE];
 
-    snprintf (buf, sizeof(buf)-1, "at (%u,%u-%u,%u): %s",
+    snprintf (buf, sizeof(buf), "at (%u,%u-%u,%u): %s",
               loc.first_row, loc.first_col,
               loc.last_row, loc.last_col, msg);
+    buf[sizeof(buf) - 1] = 0;
 
     va_start (args, msg);
 
@@ -273,9 +280,10 @@ PFinfo_loc (PFrc_t rc, PFloc_t loc, const char *msg, ...)
     if (PFstate.quiet)
         return;
 
-    snprintf (buf, sizeof(buf)-1, "at (%u,%u-%u,%u): %s",
+    snprintf (buf, sizeof(buf), "at (%u,%u-%u,%u): %s",
               loc.first_row, loc.first_col,
               loc.last_row, loc.last_col, msg);
+    buf[sizeof(buf) - 1] = 0;
 
     va_start (args, msg);
     oops (rc, false, 0, 0, 0, buf, args);

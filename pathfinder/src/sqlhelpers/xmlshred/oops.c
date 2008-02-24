@@ -49,11 +49,13 @@ SHoops_ (int err, const char *fmt, va_list az)
     char puffer[PUFFER_SIZE+1];
 
     vsnprintf (puffer, PUFFER_SIZE, fmt, az);
+    puffer[PUFFER_SIZE] = 0;
     if (err) {
         emsg = strerror (errmsg);
         snprintf (puffer+strlen(puffer), 
-                  PUFFER_SIZE - strlen (emsg), 
-                  ": %s", emsg); 
+                  PUFFER_SIZE - strlen (puffer), 
+                  ": %s", emsg);
+        puffer[PUFFER_SIZE] = 0;
     }
     fflush(stdout); /* if stdout and stderr are equal */
     /* write everything in the puffer to stderr */

@@ -223,7 +223,7 @@ PFarray_vprintf (PFarray_t *a, const char *fmt, va_list mat)
      * ever larger buffers until we do know the size.
      */
     va_copy(tmp, mat);
-    while ((nchars = vsnprintf (try, len-1, fmt, tmp)) < 0) {
+    while ((nchars = vsnprintf (try, len, fmt, tmp)) < 0) {
         len *= 2;
         try = realloc(try, len);
         va_copy(tmp, mat);
@@ -234,7 +234,7 @@ PFarray_vprintf (PFarray_t *a, const char *fmt, va_list mat)
     /* now that we know the actual size, print the formatted material
      * into the array (+ 1 for the trailing '\0' printed by vsprintf)
      */
-    (void) vsprintf ((char *) PFarray_nadd (a, nchars + 1), fmt, mat);
+    (void) vsnprintf ((char *) PFarray_nadd (a, nchars + 1), nchars + 1, fmt, mat);
 
     
     /* overwrite trailing '\0' on next print to this array */

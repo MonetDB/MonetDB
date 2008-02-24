@@ -709,7 +709,8 @@ error (void *ctx, const char *msg, ...)
     (void) ctx;
 
     va_start (az, msg);
-    vsnprintf (buf, buf_size - 1, msg, az);
+    vsnprintf (buf, buf_size, msg, az);
+    buf[buf_size - 1] = 0;
     fprintf (err, "%s", buf);
     va_end (az);
 

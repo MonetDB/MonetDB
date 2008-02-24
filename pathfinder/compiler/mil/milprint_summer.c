@@ -108,7 +108,7 @@
 static void mps_error(const char *format, ...)
 {
     int j, i = strlen(format) + 80;
-    char *msg = PFmalloc(i+1);
+    char *msg = PFmalloc(i);
     va_list ap;
 
     /* take in a block of MIL statements */
@@ -121,11 +121,12 @@ static void mps_error(const char *format, ...)
                     i = j + 1;
             else            /* old C */
                     i *= 2;
-            msg = PFrealloc(msg, old_i+1, i+1);
+            msg = PFrealloc(msg, old_i, i);
             va_start(ap, format);
             j = vsnprintf(msg, i, format, ap);
             va_end (ap);
-    } 
+    }
+    msg[i - 1] = 0;
     PFoops (OOPS_FATAL,
             "The Pathfinder compiler experienced \n"
             "an internal problem in the MIL code generation.\n"
@@ -5255,9 +5256,10 @@ fn_replace (opt_t *f, int code, int cur_level, int counter,
             cur_level);
 
     char buf[128];
-    snprintf(buf, sizeof(buf)-1,
+    snprintf(buf, sizeof(buf),
             "fn:replace (string?, string, string%s) as string",
             hasFlags?", string":"");
+    buf[sizeof(buf) - 1] = 0;
 
     return_str_funs (f, code, cur_level, buf);
     deleteResult_ (f, counter, STR);
@@ -6078,18 +6080,20 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
         && !(res->kind == c_var && res->sem.var == LLL(snd)->sem.var)) /* see query11 hack below */
     {
         /* cannot be pushed below theta-join, as 'snd_iter.[lng]()' is needed for 'addValues' (below) */
-        snprintf(rx,sizeof(rx)-1,"nil");
-        snprintf(order_snd,sizeof(order_snd)-1,
+        snprintf(rx,sizeof(rx),"nil");
+        snprintf(order_snd,sizeof(order_snd),
                 "var order_snd := snd_iter.leftfetchjoin(iter%03u.reverse());\n",
                 snd_var);
     }
     else
     {
-        snprintf(rx,sizeof(rx)-1,"iter%03u.reverse()",snd_var);
-        snprintf(order_snd,sizeof(order_snd)-1,
+        snprintf(rx,sizeof(rx),"iter%03u.reverse()",snd_var);
+        snprintf(order_snd,sizeof(order_snd),
                 "var order_snd := snd_iter; #.leftfetchjoin(iter%03u.reverse()); pushed below theta-join\n",
                 snd_var);
     }
+    rx[sizeof(rx) - 1] = 0;
+    order_snd[sizeof(order_snd) - 1] = 0;
 
     if (lev_snd)
     {

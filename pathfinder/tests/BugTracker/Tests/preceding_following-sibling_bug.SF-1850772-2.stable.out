@@ -1,0 +1,45 @@
+stdout of test 'preceding_following-sibling_bug.SF-1850772-2` in directory 'tests/BugTracker` itself:
+
+
+# 18:01:17 >  
+# 18:01:17 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32881 --set xrpc_port=43134 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit=module(pathfinder); module(mapi); mil_start();" preceding_following-sibling_bug.SF-1850772-2.prologue ; echo ; echo Over..
+# 18:01:17 >  
+
+# MonetDB Server v4.22.1
+# based on GDK   v1.22.1
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.22.1 loaded
+# XRPC administrative console at http://127.0.0.1:43134/admin
+# Elapsed time = 021ms 259us [001us/node]
+# Shredded 1 XML document (r_and_j.xml), total time after commit=0.087s
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 18:01:18 >  
+# 18:01:18 >  mclient -lmil -umonetdb -Pmonetdb --host=corona --port=32881
+# 18:01:18 >  
+
+0 + 1656 + 593 + 469 + 387 + 327 + 283 + 248 + 217 + 190 + 169 + 150 + 132 + 116 + 102 + 91 + 81 + 71 + 61 + 52 + 45 + 38 + 32 + 26 + 21 + 17 + 15 + 13 + 11 + 9 + 7 + 5 + 3 + 1 
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>34</XQueryResult>
+
+# 18:01:20 >  
+# 18:01:20 >  mclient -lmil -umonetdb -Pmonetdb --host=corona --port=32881
+# 18:01:20 >  
+
+0 + 1656 + 1779 + 1876 + 1935 + 1962 + 1981 + 1984 + 1953 + 1900 + 1859 + 1800 + 1716 + 1624 + 1530 + 1456 + 1377 + 1278 + 1159 + 1040 + 945 + 836 + 736 + 624 + 525 + 442 + 405 + 364 + 319 + 270 + 217 + 160 + 99 + 34 
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>34</XQueryResult>
+
+# 18:01:28 >  
+# 18:01:28 >  Done.
+# 18:01:28 >  
+

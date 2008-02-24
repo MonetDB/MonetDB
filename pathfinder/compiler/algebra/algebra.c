@@ -945,6 +945,7 @@ PFatt_str (PFalg_att_t att) {
                     snprintf (res, len, "%s%u", "pos", id);
                 else if (att & att_item)
                     snprintf (res, len, "%s%u", "item", id);
+                res[len] = 0;
 
                 return res;
             }

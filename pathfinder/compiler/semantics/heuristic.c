@@ -279,8 +279,10 @@ var_(PFloc_t loc, int varnum)
     if (r) {
         r->sem.qname_raw.prefix = "#pf";
         r->sem.qname_raw.loc = (char*) PFmalloc(8);
-        if (r->sem.qname_raw.loc)
+        if (r->sem.qname_raw.loc) {
             snprintf(r->sem.qname_raw.loc, 8, "heur%03d", varnum);
+            r->sem.qname_raw.loc[7] = 0;
+        }
     }
     return r; 
 }

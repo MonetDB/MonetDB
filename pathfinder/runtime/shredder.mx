@@ -1198,11 +1198,15 @@ shred_error(void *ctx,
     char buf[PFSHRED_BUFLEN];
 
     if (*print_error_newline) {
-        len += snprintf(buf+len, PFSHRED_BUFLEN-len-1, GDKERROR);
+        snprintf(buf+len, PFSHRED_BUFLEN-len, GDKERROR);
+        buf[PFSHRED_BUFLEN - 1] = 0;
+        len += strlen(buf + len);
     }
 
     va_start(args, msg);
-    len += vsnprintf(buf+len, PFSHRED_BUFLEN-len-1, msg, args);
+    vsnprintf(buf+len, PFSHRED_BUFLEN-len, msg, args);
+    buf[PFSHRED_BUFLEN - 1] = 0;
+    /* len += strlen(buf + len); */
     va_end(args);
 
     *print_error_newline =(strchr(buf,(int)'\n') != NULL);
@@ -1227,11 +1231,15 @@ shred_warning(void *ctx,
     char buf[PFSHRED_BUFLEN];
 
     if (*print_error_newline) {
-        len += snprintf(buf+len, PFSHRED_BUFLEN-len-1, GDKERROR);
+        snprintf(buf+len, PFSHRED_BUFLEN-len, GDKERROR);
+        buf[PFSHRED_BUFLEN - 1] = 0;
+        len += strlen(buf + len);
     }
 
     va_start(args, msg);
-    len += vsnprintf(buf+len, PFSHRED_BUFLEN-len-1, msg, args);
+    vsnprintf(buf+len, PFSHRED_BUFLEN-len, msg, args);
+    buf[PFSHRED_BUFLEN - 1] = 0;
+    /* len += strlen(buf + len); */
     va_end(args);
 
     *print_error_newline =(strchr(buf,(int)'\n') != NULL);

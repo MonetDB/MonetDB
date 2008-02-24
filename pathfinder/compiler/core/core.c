@@ -164,7 +164,7 @@ unsigned int core_vars; /* global for core_new_var (TODO REMOVE) */
 PFvar_t *
 PFcore_new_var (char *prefix)
 {
-    char                vname[VNAME_MAX+1];
+    char                vname[VNAME_MAX];
     int                 l;
 
     /* prefix may not exceed 4 characters */
@@ -172,16 +172,17 @@ PFcore_new_var (char *prefix)
 
     /* construct new var name */
     if (prefix)
-        l = snprintf (vname, sizeof(vname)-1, "%3s_%04u", prefix, core_vars);
+        l = snprintf (vname, sizeof(vname), "%s_%04u", prefix, core_vars);
     else
-        l = snprintf (vname, sizeof(vname)-1, "v_%04u", core_vars);
+        l = snprintf (vname, sizeof(vname), "v_%04u", core_vars);
+    vname[sizeof(vname)-1] = 0;
     
     /* warn if we needed to truncate the variable name
      * (this does not affect the correct core mapping but may
      * confuse the user)
      */
     if ((PFstate.print_dot || PFstate.print_pretty) && 
-        ((size_t) l >= VNAME_MAX || l < 0))
+        ((size_t) l >= sizeof(vname) || l < 0))
         PFinfo (OOPS_NOTICE, "truncated variable name `%s' in core query",
                 vname);
 
