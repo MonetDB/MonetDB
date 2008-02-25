@@ -41,8 +41,8 @@
 
 #include "logical.h"
 
-void PFla_dot (FILE *, PFla_op_t *);
-void PFla_xml (FILE *, PFla_op_t *);
+void PFla_dot (FILE *, PFla_op_t *, char *prop_args);
+void PFla_xml (FILE *, PFla_op_t *, char *prop_args);
 
 #endif  /* LOGDEBUG_H */
 

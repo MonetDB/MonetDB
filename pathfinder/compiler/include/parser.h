@@ -36,17 +36,18 @@
 
 #include <stdio.h>
 #include "abssyn.h"
+#include "pf_xq.h"
 
 /**
  * Parse an XQuery from the main-memory buffer pointed to by @a input.
  */
-int PFparse (char* pfin, PFpnode_t **);
+int PFparse (char* pfin, PFpnode_t **, PFquery_t *PFquery, bool standoff);
 
 /**
  * Load and parse modules listed in working list and put them into
  * the parse tree @a r.
  */
-int PFparse_modules (PFpnode_t *r);
+int PFparse_modules (PFpnode_t *r, bool standoff);
 
 #endif   /* PARSER_H */
 

@@ -639,6 +639,9 @@ SequenceType:           seq_ty (docmgmt_ty (nil))                   = 238 (10);
 /** mnemonic XQuery Core constructors */
 #include "core_mnemonic.h"
 
+/** global query information */
+static PFquery_t *PFquery;
+
 /**
  * The current context items $fs:dot, $fs:position, and $fs:last
  * (see W3C XQuery Formal Semantics 3.1.2)
@@ -1188,17 +1191,17 @@ reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
 
         /* OrderingModeDecl:       ordering_mode */
         case 32:
-            PFquery.ordering = p->sem.tru;
+            PFquery->ordering = p->sem.tru;
             break;
 
         /* EmptyOrderingDecl:      def_order */
         case 33:
-            PFquery.empty_order = p->sem.mode.empty==p_greatest?greatest:least;
+            PFquery->empty_order = p->sem.mode.empty==p_greatest?greatest:least;
             break;
 
         /* InheritNamespacesDecl:  inherit_ns */
         case 34:
-            PFquery.inherit_ns = p->sem.tru;
+            PFquery->inherit_ns = p->sem.tru;
             break;
 
         /* NamespaceDecl:          ns_decl (lit_str) */
@@ -4019,10 +4022,11 @@ function_conversion (const PFcnode_t *e, PFty_t expected)
  * @return the Core equivalent of @a r
  */
 PFcnode_t *
-PFfs (PFpnode_t *r)
+PFfs (PFpnode_t *r, PFquery_t *query)
 {
     assert (r);
 
+    PFquery = query;
     core_vars = 0;
 
     /* initially, there is no function on the current function stack */

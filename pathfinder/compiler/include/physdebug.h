@@ -41,7 +41,7 @@
 
 #include "physical.h"
 
-void PFpa_dot (FILE *, PFpa_op_t *);
+void PFpa_dot (FILE *, PFpa_op_t *, char *prop_args);
 
 #endif  /* PHYSDEBUG_H */
 

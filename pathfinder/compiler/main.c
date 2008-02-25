@@ -478,6 +478,7 @@ static struct option long_options[] = {
     { "mil_2004",                  no_argument,       NULL, 'M' },
     { "optimize",                  optional_argument, NULL, 'O' },
     { "text",                      no_argument,       NULL, 'P' },
+    { "sql",                       no_argument,       NULL, 'S' },
     { "timing",                    no_argument,       NULL, 'T' },
     { "xml",                       no_argument,       NULL, 'X' },
     { "abstract-syntax-tree",      no_argument,       NULL, 'a' },
@@ -491,7 +492,6 @@ static struct option long_options[] = {
 #endif
     { "mil-dead-code-elimination", required_argument, NULL, 'e' },
     { "format",                    required_argument, NULL, 'f' },
-    { "sql",                       no_argument,       NULL, 'g' },
     { "help",                      no_argument,       NULL, 'h' },
     { "logical-algebra-plan",      no_argument,       NULL, 'l' },
     { "optimize-algebra",          required_argument, NULL, 'o' },
@@ -620,11 +620,13 @@ main (int argc, char *argv[])
     }
 
  {
+    PFstate_t  PFstate;
+    PFstate_t* status = &PFstate;
     unsigned int i;
     bool explicit_opt = false;
-
-    PFstate_t* status = &PFstate;
-
+    
+    /** initialize global state of the compiler */
+    PFstate_init (status);
     PFstate.invocation = invoke_cmdline;
 
     /* URL of query file (if present) */
@@ -699,7 +701,7 @@ main (int argc, char *argv[])
                         " (default)"
 #endif
                         "\n",
-                        long_option (opt_buf, ", --%s", 'g'));
+                        long_option (opt_buf, ", --%s", 'S'));
                 printf ("\n");
 
                 printf ("  -I%s: import logical-algebra-plan from xml file"
@@ -1029,6 +1031,13 @@ main (int argc, char *argv[])
         goto failure;
     
     PFmem_destroy ();
+
+    /* If we are supposed to be quiet
+       and did not see any fatal error
+       until now we can savely clear
+       any warning from the error buffer. */
+    if (PFstate.quiet)
+        PFerrbuf[0] = 0;
 
     MAIN_EXIT (EXIT_SUCCESS);
 

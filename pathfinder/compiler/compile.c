@@ -43,6 +43,7 @@
 #include <signal.h>
 #endif
 
+#include "pf_xq.h"        /* Global XQuery information (PFquery_t) */
 #include "compile.h"
 #include "compile_interface.h"
 #include "parser.h"       /* parsing XQuery syntax */
@@ -124,64 +125,53 @@ static char *phases[] = {
     [22]  = "after the MIL program has been serialized"
 };
 
-/* pretty ugly to have such a global, could not entirely remove it yet JF */
-/** global state of the compiler */
-PFstate_t PFstate = {
-    .quiet               = false,
-    .timing              = false,
-    .print_dot           = false,
-    .print_xml           = false,
-    .import_xml          = false,
-    .import_xml_filename = NULL,
-    .print_pretty        = false,
-    .stop_after          = 0,
-    .print_types         = false,
-    .optimize            = 1,
-    .print_parse_tree    = false,
-    .print_core_tree     = false,
-    .print_la_tree       = false,
-    .print_pa_tree       = false,
-    .output_format       = PFoutput_format_not_specified,
-    .dead_code_el        = true,
+/** initialize global state of the compiler */
+void
+PFstate_init (PFstate_t *status)
+{
+    status->quiet               = false;
+    status->timing              = false;
+    status->print_dot           = false;
+    status->print_xml           = false;
+    status->import_xml          = false;
+    status->import_xml_filename = NULL;
+    status->print_pretty        = false;
+    status->stop_after          = 0;
+    status->print_types         = false;
+    status->optimize            = 1;
+    status->print_parse_tree    = false;
+    status->print_core_tree     = false;
+    status->print_la_tree       = false;
+    status->print_pa_tree       = false;
+    status->output_format       = PFoutput_format_not_specified;
+    status->dead_code_el        = true;
 
-    .standoff_axis_steps = false,
+    status->standoff_axis_steps = false;
 
-    .opt_alg             = "OIKDCG_VGO_[J]OKVCG"
-                                "}IM__{_[J]OKVCG"
-                                "}IM__{_[J]OKVCGCG"
-                                "}IM__{_[J]OKVCG"
-                                "}IMTS{_[J]OKVCGCG"
-                                "}IMTS{_[J]OKVCG"
-                                "}IMTS{_[J]OKVCGE[]CGP",
-    .opt_sql             = "OIKDCG_VGO_[J]OKVCG"
-                                "}IM__{_[J]OKVCG"
-                                "}IM__{_[J]OKVCGCG"
-                                "}IM__{_[J]OKVCG"
-                                "}IMTS{_[J]OKVCGUCG"
-                                "}IMTS{_[J]OKVCGU"
-                                "}IMTS{_[J]OKVCGUE[]CGP"
-                           "}IQ[J]}IQ[J]IOKVCGQUCGP",
+    status->opt_alg             = "OIKDCG_VGO_[J]OKVCG"
+                                      "}IM__{_[J]OKVCG"
+                                      "}IM__{_[J]OKVCGCG"
+                                      "}IM__{_[J]OKVCG"
+                                      "}IMTS{_[J]OKVCGCG"
+                                      "}IMTS{_[J]OKVCG"
+                                      "}IMTS{_[J]OKVCGE[]CGP";
+    status->opt_sql             = "OIKDCG_VGO_[J]OKVCG"
+                                      "}IM__{_[J]OKVCG"
+                                      "}IM__{_[J]OKVCGCG"
+                                      "}IM__{_[J]OKVCG"
+                                      "}IMTS{_[J]OKVCGUCG"
+                                      "}IMTS{_[J]OKVCGU"
+                                      "}IMTS{_[J]OKVCGUE[]CGP"
+                                      "}IQ[J]}IQ[J]IOKVCGQUCGP";
 
-    .format              = NULL,
+    status->format              = NULL;
 
 #ifndef NDEBUG
-    .debug = {
-        .subtyping       = false
-    },
+    status->debug.subtyping     = false;
 #endif
 };
 
 jmp_buf PFexitPoint;
-
-PFquery_t PFquery = {
-    .version             = "1.0",
-    .encoding            = NULL,
-    .ordering            = true,  /* implementation defined: ordered */
-    .empty_order         = undefined,
-    .inherit_ns          = false, /* implementation def'd: inherit-ns: no */
-    .pres_boundary_space = false,
-    .revalid             = revalid_strict /* XQ update facility 1.0 [§2.3] */
-};
 
 /** Compilation stage we've last been in. */
 unsigned int last_stage = 0;
@@ -323,6 +313,15 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
    
     PFguide_tree_t *guide_tree = NULL; /* guide tree */
 
+    PFquery_t PFquery = {
+        .version             = "1.0",
+        .encoding            = NULL,
+        .ordering            = true,  /* implementation defined: ordered */
+        .empty_order         = undefined,
+        .inherit_ns          = false, /* implementation def'd: inherit-ns: no */
+        .pres_boundary_space = false,
+        .revalid             = revalid_strict /* XQ update facility 1.0 [§2.3] */
+    };
 
 #if HAVE_SIGNAL_H
     /* setup sementation fault signal handler */
@@ -391,7 +390,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         PFoops (OOPS_FATAL, "unable to load URL `%s'", url);
 
     tm_first = tm = PFtimer_start ();
-    (void) PFparse (xquery, &proot);
+    (void) PFparse (xquery, &proot, &PFquery, status->standoff_axis_steps);
     tm = PFtimer_stop (tm);
     
     if (status->timing)
@@ -400,7 +399,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     STOP_POINT(1);
     
     tm = PFtimer_start ();
-    module_base = PFparse_modules (proot);
+    module_base = PFparse_modules (proot, status->standoff_axis_steps);
     tm = PFtimer_stop (tm);
 
     if (status->timing)
@@ -518,7 +517,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     /* XQuery core mapping
      */
-    croot = PFfs (proot);
+    croot = PFfs (proot, &PFquery);
 
     tm = PFtimer_stop (tm);
     if (status->timing)
@@ -585,7 +584,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
      */
     tm = PFtimer_start ();
 
-    laroot = PFcore2alg (croot);
+    laroot = PFcore2alg (croot, &PFquery);
 
     tm = PFtimer_stop (tm);
     if (status->timing)
@@ -603,7 +602,7 @@ AFTER_CORE2ALG:
      */
     tm = PFtimer_start ();
  
-    laroot = PFalgopt (laroot, status->timing, guide_tree);
+    laroot = PFalgopt (laroot, status->timing, guide_tree, status->opt_alg);
 
     tm = PFtimer_stop (tm);
     if (status->timing)
@@ -774,7 +773,7 @@ AFTER_CORE2ALG:
             if (status->print_pretty) {
                 if (! status->quiet)
                     printf ("Core tree %s:\n", phases[status->stop_after]);
-                PFcore_pretty (pfout, croot);
+                PFcore_pretty (pfout, croot, status->print_types);
             }
             if (status->print_dot)
                 PFcore_dot (pfout, croot);
@@ -792,9 +791,9 @@ AFTER_CORE2ALG:
                         "Cannot prettyprint logical algebra tree. Sorry.");
             }
             if (status->print_dot)
-                PFla_dot (pfout, laroot);
+                PFla_dot (pfout, laroot, status->format);
             if (status->print_xml)
-                PFla_xml (pfout, laroot);
+                PFla_xml (pfout, laroot, status->format);
         }
         else
             PFinfo (OOPS_NOTICE,
@@ -810,7 +809,7 @@ AFTER_CORE2ALG:
                         "Cannot prettyprint physical algebra tree. Sorry.");
             }
             if (status->print_dot)
-                PFpa_dot (pfout, paroot);
+                PFpa_dot (pfout, paroot, status->format);
             if (status->print_xml)
                 PFinfo (OOPS_WARNING,
                         "No xml representation for physical algebra tree."
@@ -842,6 +841,7 @@ AFTER_CORE2ALG:
 char*
 PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char** epilogue, int options)
 {
+        PFstate_t PFstate; 
 	PFpnode_t  *proot  = NULL;
 	PFcnode_t  *croot  = NULL;
         int num_fun;
@@ -857,7 +857,20 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
              *intern_query = NULL,
              *intern_epilogue = NULL;
 
+        PFquery_t PFquery = {
+            .version             = "1.0",
+            .encoding            = NULL,
+            .ordering            = true,  /* implementation defined: ordered */
+            .empty_order         = undefined,
+            .inherit_ns          = false, /* implementation def'd: inherit-ns: no */
+            .pres_boundary_space = false,
+            .revalid             = revalid_strict /* XQ update facility 1.0 [§2.3] */
+        };
+
         PFmem_init ();
+
+        /** initialize global state of the compiler */
+        PFstate_init (&PFstate);
 
         PFstate.invocation = invoke_monetdb;
 
@@ -879,8 +892,9 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         timing = PFtimer_start ();
 
         /* repeat PFcompile, which we can't reuse as we don't want to deal with files here */
-        num_fun = PFparse (xquery, &proot);
-        module_base = PFparse_modules (proot);
+        num_fun = PFparse (xquery, &proot, &PFquery,
+                           PFstate.standoff_axis_steps);
+        module_base = PFparse_modules (proot, PFstate.standoff_axis_steps);
         proot = PFnormalize_abssyn (proot);
         if (PFstate.output_format == PFoutput_format_milprint_summer) {
             /* algebra MIL/MAL generation could/should also use it.. */
@@ -895,7 +909,7 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         PFfun_check (proot);
         PFty_predefined ();
         PFschema_import (proot);
-        croot = PFfs (proot);
+        croot = PFfs (proot, &PFquery);
         croot = PFsimplify (croot);
         croot = PFty_check (croot);
     	croot = PFcoreopt (croot);
@@ -915,10 +929,10 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         strcpy (*epilogue, intern_epilogue);
     } else {
         /* compile into logical algebra */
-        laroot = PFcore2alg (croot);
+        laroot = PFcore2alg (croot, &PFquery);
         /* optimize logical algebra */
         laroot = PFalgopt (laroot, false /* no timing output */, 
-            NULL /* no guide tree */);
+            NULL /* no guide tree */, PFstate.opt_alg);
         /* common subexpression elimination on logical algebra */
         laroot = PFla_cse (laroot);
         /* compile logical into a physical plan */
@@ -957,31 +971,16 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
 RETSIGTYPE
 segfault_handler (int sig)
 {
-    fprintf (stderr, "!ERROR: Segmentation fault.\n");
     fprintf (stderr,
-             "The Pathfinder compiler experienced an internal problem.\n");
-    fprintf (stderr,
-             "You may want to report this problem to the Pathfinder \n");
-    fprintf (stderr,
-             "development team (pathfinder@pathfinder-xquery.org).\n\n");
-    fprintf (stderr,
-             "When reporting problems, please attach your XQuery input,\n");
-    fprintf (stderr,
-             "as well as the following information:\n");
-    fprintf (stderr, "  Invocation: ");
-
-    switch (PFstate.invocation) {
-        case invoke_cmdline: fprintf (stderr, "command line\n");
-                             break;
-        case invoke_monetdb: fprintf (stderr, "MonetDB\n");
-                             break;
-        default:             fprintf (stderr, "unknown\n");
-                             break;
-    }
-
-    fprintf (stderr, "  Compilation stage: %u\n\n", last_stage);
-
-    fprintf (stderr, "We apologize for the inconvenience...\n\n");
+             "!ERROR: Segmentation fault.\n"
+             "The Pathfinder compiler experienced an internal problem.\n"
+             "You may want to report this problem to the Pathfinder \n"
+             "development team (pathfinder@pathfinder-xquery.org).\n\n"
+             "When reporting problems, please attach your XQuery input,\n"
+             "as well as the following information:\n"
+             "  Compilation stage: %u\n\n"
+             "We apologize for the inconvenience...\n\n",
+             last_stage);
 
     signal (sig, SIG_DFL);
     raise (sig);

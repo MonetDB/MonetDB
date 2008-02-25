@@ -39,9 +39,10 @@
 
 #include "core.h"
 #include "abssyn.h"
+#include "pf_xq.h"
 
 /* XQuery core mapping */
-PFcnode_t *PFfs (PFpnode_t *);
+PFcnode_t *PFfs (PFpnode_t *, PFquery_t *PFquery);
 
 #endif
 

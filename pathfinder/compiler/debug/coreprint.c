@@ -275,7 +275,7 @@ indent (FILE *f, int ind, bool nl)
  * @param n core language tree to prettyprint
  */
 static void
-core_pretty (FILE *f, PFcnode_t *n, int i, bool nl)
+core_pretty (FILE *f, PFcnode_t *n, int i, bool nl, bool print_types)
 {
     int c;
     bool topdown = false;
@@ -355,44 +355,44 @@ core_pretty (FILE *f, PFcnode_t *n, int i, bool nl)
         break;
         
     case c_flwr:
-        core_pretty (f, n->child[0], i+6, L(n)->kind != c_nil);
+        core_pretty (f, n->child[0], i+6, L(n)->kind != c_nil, print_types);
         fprintf (f, ",");
-        core_pretty (f, n->child[1], i+6, true);
+        core_pretty (f, n->child[1], i+6, true, print_types);
         topdown = true;
         break;
 
     case c_let:
-        core_pretty (f, L(n), i, false);
+        core_pretty (f, L(n), i, false, print_types);
         fprintf (f, ",");
-        core_pretty (f, R(n), i, true);
+        core_pretty (f, R(n), i, true, print_types);
         topdown = true;
         break;
 
     case c_letbind:
-        core_pretty (f, L(n), i+2, true);
+        core_pretty (f, L(n), i+2, true, print_types);
         fprintf (f, ",");
-        core_pretty (f, R(n), i+2, true);
+        core_pretty (f, R(n), i+2, true, print_types);
         topdown = true;
         break;
 
     case c_for:
-        core_pretty (f, L(n), i, false);
+        core_pretty (f, L(n), i, false, print_types);
         fprintf (f, ",");
-        core_pretty (f, R(n), i, true);
+        core_pretty (f, R(n), i, true, print_types);
         topdown = true;
         break;
 
     case c_forbind:
-        core_pretty (f, L(n), i+2, true);
+        core_pretty (f, L(n), i+2, true, print_types);
         fprintf (f, ",");
-        core_pretty (f, R(n), i+2, true);
+        core_pretty (f, R(n), i+2, true, print_types);
         topdown = true;
         break;
 
     case c_forvars:
-        core_pretty (f, L(n), i, false);
+        core_pretty (f, L(n), i, false, print_types);
         fprintf (f, ", ");
-        core_pretty (f, R(n), i, false);
+        core_pretty (f, R(n), i, false, print_types);
         topdown = true;
         break;
         
@@ -412,43 +412,43 @@ core_pretty (FILE *f, PFcnode_t *n, int i, bool nl)
     case c_select_wide:
     case c_reject_narrow:
     case c_reject_wide:
-        core_pretty (f, L(n), i, false);
+        core_pretty (f, L(n), i, false, print_types);
         topdown = true;
         break;
 
     case c_arg:
-        core_pretty (f, n->child[0], i+5, false);
+        core_pretty (f, n->child[0], i+5, false, print_types);
         fprintf (f, ",");
-        core_pretty (f, n->child[1], i, true);
+        core_pretty (f, n->child[1], i, true, print_types);
         topdown = true;
         break;
 
     case c_typesw:
-        core_pretty (f, L(n), i, false);
+        core_pretty (f, L(n), i, false, print_types);
         fprintf (f, ",");
-        core_pretty (f, R(n), i+2, true);
+        core_pretty (f, R(n), i+2, true, print_types);
         topdown = true;
         break;
 
     case c_cases:
-        core_pretty (f, n->child[0], i+5, true);
+        core_pretty (f, n->child[0], i+5, true, print_types);
         fprintf (f, ",");
-        core_pretty (f, n->child[1], i+5, true);
+        core_pretty (f, n->child[1], i+5, true, print_types);
         topdown = true;
         break;
 
     case c_case:
-        core_pretty (f, L(n), i+2, false);
+        core_pretty (f, L(n), i+2, false, print_types);
         fprintf (f, ",");
-        core_pretty (f, R(n), i+2, true);
+        core_pretty (f, R(n), i+2, true, print_types);
         topdown = true;
         break;
 
     case c_default:
         if (L(n)->kind == c_typesw)
-            core_pretty (f, L(n), i-7, true);
+            core_pretty (f, L(n), i-7, true, print_types);
         else
-            core_pretty (f, L(n), i+2, false);
+            core_pretty (f, L(n), i+2, false, print_types);
         topdown = true;
         break;
 
@@ -465,10 +465,10 @@ core_pretty (FILE *f, PFcnode_t *n, int i, bool nl)
                 fprintf (f, ",");
             comma = true;
             
-            core_pretty (f, n->child[c], i+2, true);
+            core_pretty (f, n->child[c], i+2, true, print_types);
         }
     
-    if (PFstate.print_types)
+    if (print_types)
         fprintf (f, ") {%s}", PFty_str (n->type));
     else
         fprintf (f, ")");
@@ -482,15 +482,15 @@ core_pretty (FILE *f, PFcnode_t *n, int i, bool nl)
  * @param t root of core language tree
  */
 void
-PFcore_pretty (FILE *f, PFcnode_t *t)
+PFcore_pretty (FILE *f, PFcnode_t *t, bool print_types)
 {
-    core_pretty (f, t, 0, false);
+    core_pretty (f, t, 0, false, print_types);
 }
 
 void
 PFcore_stdout (PFcnode_t *t)
 {
-    PFcore_pretty(stdout, t);
+    PFcore_pretty(stdout, t, true);
 }
 
 /* vim:set shiftwidth=4 expandtab: */

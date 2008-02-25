@@ -374,7 +374,7 @@ comp_str (PFalg_comp_t comp) {
  * @param n The current node to print (function is recursive)
  */
 static void
-la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
+la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
 {
     unsigned int c;
     assert(n->node_id);
@@ -987,9 +987,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
                     "only allowed inside mvd optimization!");
     }
 
-    if (PFstate.format) {
+    if (prop_args) {
 
-        char *fmt = PFstate.format;
+        char *fmt = prop_args;
         /* format character '+' overwrites all others */
         bool all = false;
         while (*fmt) {
@@ -1002,7 +1002,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
         /* iterate over all format characters 
            if we haven't found a '+' character */
         if (!all)
-            fmt = PFstate.format;
+            fmt = prop_args;
 
         while (*fmt) {
             if (*fmt == '+' || *fmt == 'A') {
@@ -1304,7 +1304,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
              (n->kind == la_fcns && c == 1 && n->child[c]->kind == la_nil)))
             continue;
         if (!n->child[c]->bit_dag)
-            la_dot (dot, n->child[c], print_frag_info);
+            la_dot (dot, n->child[c], print_frag_info, prop_args);
     }
 }
 
@@ -1314,7 +1314,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info)
  * @param n The current node to print (function is recursive)
  */
 static void 
-la_xml (PFarray_t *xml, PFla_op_t *n)
+la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
 {
     unsigned int c;
 
@@ -1322,7 +1322,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c] != 0; c++)
         if (!n->child[c]->bit_dag)
-            la_xml (xml, n->child[c]);
+            la_xml (xml, n->child[c], prop_args);
 
     /* open up label */
     PFarray_printf (xml,
@@ -1348,9 +1348,9 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
                         xml_literal_list (n->schema.items[i].type));
     PFarray_printf (xml, "    </schema>\n");
 
-    if (PFstate.format) {
+    if (prop_args) {
 
-        char *fmt = PFstate.format;
+        char *fmt = prop_args;
         /* format character '+' overwrites all others */
         bool all = false;
         while (*fmt) {
@@ -1364,7 +1364,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n)
         /* iterate over all format characters 
            if we haven't found a '+' character */
         if (!all)
-            fmt = PFstate.format;
+            fmt = prop_args;
 
         PFarray_printf (xml, "    <properties>\n");
         while (*fmt) {
@@ -2184,7 +2184,7 @@ reset_node_id (PFla_op_t *n)
  * @param root root of abstract syntax tree
  */
 void
-PFla_dot (FILE *f, PFla_op_t *root)
+PFla_dot (FILE *f, PFla_op_t *root, char *prop_args)
 {
     if (root) {
         /* initialize array to hold dot output */
@@ -2202,13 +2202,13 @@ PFla_dot (FILE *f, PFla_op_t *root)
                              "edge [dir=back];\n");
 
         create_node_id (root);
-        la_dot (dot, root, getenv("PF_DEBUG_PRINT_FRAG") != NULL);
+        la_dot (dot, root, getenv("PF_DEBUG_PRINT_FRAG") != NULL, prop_args);
         PFla_dag_reset (root);
         reset_node_id (root);
 
         /* add domain subdomain relationships if required */
-        if (PFstate.format) {
-            char *fmt = PFstate.format;
+        if (prop_args) {
+            char *fmt = prop_args;
             while (*fmt) { 
                 if (*fmt == '+' || *fmt == 'D') {
                         PFprop_write_dom_rel_dot (dot, root->prop);
@@ -2233,7 +2233,7 @@ PFla_dot (FILE *f, PFla_op_t *root)
  * @param root root of logical algebra tree
  */
 void
-PFla_xml (FILE *f, PFla_op_t *root)
+PFla_xml (FILE *f, PFla_op_t *root, char *prop_args)
 {
     if (root) {
 
@@ -2246,8 +2246,8 @@ PFla_xml (FILE *f, PFla_op_t *root)
                         ? "true" : "false");
 
         /* add domain subdomain relationships if required */
-        if (PFstate.format) {
-            char *fmt = PFstate.format;
+        if (prop_args) {
+            char *fmt = prop_args;
             while (*fmt) { 
                 if (*fmt == '+' || *fmt == 'D') {
                         PFprop_write_dom_rel_xml (xml, root->prop);
@@ -2258,7 +2258,7 @@ PFla_xml (FILE *f, PFla_op_t *root)
         }
 
         create_node_id (root);
-        la_xml (xml, root);
+        la_xml (xml, root, prop_args);
         PFla_dag_reset (root);
         reset_node_id (root);
         PFla_dag_reset (root);

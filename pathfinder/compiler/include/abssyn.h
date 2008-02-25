@@ -42,6 +42,9 @@
 /* PFvar_t */
 #include "variable.h"    
 
+/* PFsort_t */
+#include "pf_xq.h"
+
 /** no type of parse tree node will need more than
  *  this many child nodes 
  */

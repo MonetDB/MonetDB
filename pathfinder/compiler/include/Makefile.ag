@@ -73,6 +73,7 @@ EXTRA_DIST = \
 	parser.h \
 	pathfinder.h \
 	pfstrings.h \
+        pf_xq.h \
 	physdebug.h \
 	physical.h \
 	physical_mnemonic.h \

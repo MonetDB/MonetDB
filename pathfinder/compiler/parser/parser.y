@@ -62,6 +62,12 @@ static PFpnode_t *root;
 /* temporay node memory */
 static PFpnode_t *c, *c1;
 
+/** global query information */
+static PFquery_t *PFquery;
+
+/** parse standoff axis steps */
+static bool standoff_axis_steps;
+
 static void add_to_module_wl (char* id, char *ns, char *uri);
 
 /* avoid `implicit declaration of yylex' warning */
@@ -785,22 +791,22 @@ Module                    : VersionDecl MainModule
 
 /* [2] */
 VersionDecl               : /* empty */
-                            { PFquery.version = "1.0";
-                              PFquery.encoding = "UTF-8"; }
+                            { PFquery->version = "1.0";
+                              PFquery->encoding = "UTF-8"; }
                           | "xquery version" StringLiteral OptEncoding_
                             Separator
-                            { PFquery.version = $2; PFquery.encoding = $3; 
-                              if (strcmp (PFquery.version, "1.0")) {
+                            { PFquery->version = $2; PFquery->encoding = $3; 
+                              if (strcmp (PFquery->version, "1.0")) {
                                   PFinfo_loc (OOPS_PARSE, @$,
                                       "only XQuery version '1.0' is supported");
                                   YYERROR;
                               }
-                              if (strcmp (PFquery.encoding, "UTF-8")
-                                  && strcmp (PFquery.encoding, "utf-8")) {
+                              if (strcmp (PFquery->encoding, "UTF-8")
+                                  && strcmp (PFquery->encoding, "utf-8")) {
                                   PFinfo_loc (OOPS_PARSE, @$,
                                       "only XQueries in UTF-8 encoding are "
                                       "supported, not in '%s' encoding",
-                                      PFquery.encoding);
+                                      PFquery->encoding);
                                   YYERROR;
                               }
                             }
@@ -937,11 +943,11 @@ NamespaceDecl             : "declare namespace" NCName "=" URILiteral
 /* [11] */
 BoundarySpaceDecl         : "declare boundary-space preserve"
                             { ($$ = leaf (p_boundspc_decl, @$))->sem.tru = true;
-                              PFquery.pres_boundary_space = true;
+                              PFquery->pres_boundary_space = true;
                             } 
                           | "declare boundary-space strip"
                             { ($$ = leaf (p_boundspc_decl,@$))->sem.tru = false;
-                              PFquery.pres_boundary_space = false;
+                              PFquery->pres_boundary_space = false;
                             }
                           ;
 
@@ -1918,7 +1924,7 @@ BurkStep_                 : BurkAxis_ NodeTest
 
 BurkAxis_                 : "select-narrow::"
                             { 
-                              if (!PFstate.standoff_axis_steps) {
+                              if (!standoff_axis_steps) {
                                 PFoops (OOPS_PARSE,
                                       "invalid character "
                                       "(StandOff was not enabled)");
@@ -1928,7 +1934,7 @@ BurkAxis_                 : "select-narrow::"
                             }
                           | "select-wide::"
                             { 
-                              if (!PFstate.standoff_axis_steps) {
+                              if (!standoff_axis_steps) {
                                 PFoops (OOPS_PARSE,
                                       "invalid character "
                                       "(StandOff was not enabled)");
@@ -1938,7 +1944,7 @@ BurkAxis_                 : "select-narrow::"
                             }
                           | "reject-narrow::"
                             { 
-                              if (!PFstate.standoff_axis_steps) {
+                              if (!standoff_axis_steps) {
                                 PFoops (OOPS_PARSE,
                                       "invalid character "
                                       "(StandOff was not enabled)");
@@ -1948,7 +1954,7 @@ BurkAxis_                 : "select-narrow::"
                             }
                           | "reject-wide::"
                             { 
-                              if (!PFstate.standoff_axis_steps) {
+                              if (!standoff_axis_steps) {
                                 PFoops (OOPS_PARSE,
                                       "invalid character "
                                       "(StandOff was not enabled)");
@@ -2263,7 +2269,7 @@ DirElemContent            : DirectConstructor      { $$ = $1; }
                               *((char *) PFarray_add ($1)) = '\0';
                                              
                               /* xmlspace handling */
-                              if ((! PFquery.pres_boundary_space) &&
+                              if ((! PFquery->pres_boundary_space) &&
                                   (is_whitespace (PFarray_at ($1, 0))))
                                 $$ = leaf (p_empty_seq, @1);
                               else
@@ -2773,9 +2779,9 @@ XRPCCall                  : "execute at" "{" ExprSingle "}" "{" FunctionCall "}"
 
 /** 
  * Check if the input string consists of whitespace only.
- * If this is the case and @c PFquery.pres_boundary_space is set to false, the 
- * abstract syntax tree must be altered, i.e., we do not
- * create a text node but an empty sequence node.
+ * If this is the case and @c PFquery->pres_boundary_space
+ * is set to false, the abstract syntax tree must be altered,
+ * i.e., we do not create a text node but an empty sequence node.
  *
  * @param s string to test for non-whitespace characters
  * @return true if @c s consists of whitespace only
@@ -2874,11 +2880,14 @@ int
 #else
 void
 #endif
-PFparse (char *input, PFpnode_t **r)
+PFparse (char *input, PFpnode_t **r, PFquery_t *query, bool standoff)
 {
 #if YYDEBUG
     pfdebug = 1;
 #endif
+    PFquery = query;
+    standoff_axis_steps = standoff;
+
     /* initialize lexical scanner */
     PFscanner_init (input);
 
@@ -2950,11 +2959,13 @@ int
 #else
 void
 #endif
-PFparse_modules (PFpnode_t *r)
+PFparse_modules (PFpnode_t *r, bool standoff)
 {
     PFpnode_t *module;
     PFloc_t    noloc = (PFloc_t) { .first_row = 0, .first_col = 0,
                                    .last_row  = 0, .last_col  = 0};
+    PFquery = NULL;
+    standoff_axis_steps = standoff;
 
     /* only accept module from now on */
     module_only = true;
