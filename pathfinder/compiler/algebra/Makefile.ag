@@ -55,4 +55,26 @@ lib_algebra = {
                 properties.c
 }
 
+# optimizers needed for pf_opt
+lib_logopt = {
+        NOINST
+        DIR = libdir
+        SOURCES = \
+                algopt.c \
+                load_stats.c \
+                properties.c
+}
+
+# constructors needed for pf_opt
+lib_logical = {
+        NOINST
+        DIR = libdir
+        SOURCES = \
+                algebra_cse.c \
+                logical.c \
+                algebra.c \
+                alg_dag.c \
+                ordering.c
+}
+
 #EXTRA_DIST =

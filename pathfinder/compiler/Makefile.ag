@@ -42,8 +42,16 @@ lib_compiler2 = {
              scope.c \
              timer.c \
              variable.c
-
-
+}
+lib_compiler3 = {
+        NOINST
+        DIR = libdir
+        SOURCES = \
+             env.c \
+             oops.c \
+             pfstrings.c \
+             qname.c \
+             timer.c
 }
 
 bin_pf = {
@@ -74,5 +82,56 @@ bin_pf = {
              main.c
 }
 
+# stand-alone binary that reads in a Logical Algbra plan in XML format,
+# optimizes it and returns it again in XML format.
+#
+# (Note that the linker requires all used symbols to be listed
+#  before their definition, which makes e.g., libmem a good candidate
+#  for the last item of the list.)
+bin_pfopt = {
+        LIBS = \
+                algebra/liblogopt \
+                algebra/map/libmap \
+                algebra/opt/libopt \
+                algebra/prop/libprop \
+                xmlimport/libxmlimport \
+                algebra/liblogical \
+                debug/liblogdebug \
+                libcompiler3 \
+		utils/libstringutils \
+                semantics/libns \
+                mem/libmem \
+                $(LIBGC_LDADD) $(LIBGC_LIBS) \
+                $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
+                $(SOCKET_LIBS) $(DL_LIBS)
+                
+        SOURCES = \
+             main_opt.c
+}
 
+# stand-alone binary that reads in a Logical Algbra plan in XML format
+# and generates SQL Code.
+#
+# (Note that the linker requires all used symbols to be listed
+#  before their definition, which makes e.g., libmem a good candidate
+#  for the last item of the list.)
+bin_pfsql = {
+        LIBS = \
+                algebra/liblogopt \
+                algebra/prop/libprop \
+                xmlimport/libxmlimport \
+                algebra/liblogical \
+                sql/libsql \
+                debug/libprettyp \
+                libcompiler3 \
+		utils/libstringutils \
+                semantics/libns \
+                mem/libmem \
+                $(LIBGC_LDADD) $(LIBGC_LIBS) \
+                $(LIBXML2_LDADD) $(LIBXML2_LIBS) \
+                $(SOCKET_LIBS) $(DL_LIBS)
+                
+        SOURCES = \
+             main_sql.c
+}
 

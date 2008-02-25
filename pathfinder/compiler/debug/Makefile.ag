@@ -26,6 +26,20 @@
 
 INCLUDES = ../include $(MONETDB_INCS)
 
+lib_logdebug = {
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		logdebug.c
+}
+
+lib_prettyp = {
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		prettyp.c
+}
+
 lib_debug = {
 	NOINST
 	DIR = libdir
