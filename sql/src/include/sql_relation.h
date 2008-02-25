@@ -72,6 +72,8 @@ typedef enum operator_type {
 	op_left,
 	op_right,
 	op_full,
+	op_semi,	
+	op_anti,
 	op_union,
 	op_inter,
 	op_except,
@@ -84,7 +86,7 @@ typedef enum operator_type {
 #define is_base(op) \
 	(op == op_basetable || op == op_table)
 #define is_join(op) \
-	(op == op_join || op == op_left || op == op_right || op == op_full)
+	(op == op_join || op == op_left || op == op_right || op == op_full || op == op_semi || op == op_anti)
 #define is_select(op) \
 	(op == op_select)
 #define is_set(op) \
@@ -95,8 +97,31 @@ typedef enum operator_type {
 	(op == op_groupby)
 #define is_sort(rel) \
 	((rel->op == op_project && rel->r) || rel->op == op_topn)
-#define is_distinct(rel) \
-	((rel->flag&DISTINCT))
+
+#define is_no_nil(e) \
+	((e->flag&NO_NIL))
+#define set_no_nil(e) \
+	e->flag |= NO_NIL
+
+#define is_ascending(e) \
+	((e->flag&ASCENDING))
+#define set_direction(e, dir) \
+	e->flag |= (dir?ASCENDING:0)
+
+/* used for expressions and relations */
+#define is_distinct(e) \
+	((e->flag&DISTINCT))
+#define set_distinct(e) \
+	e->flag |= DISTINCT
+
+#define is_processed(rel) \
+	(rel->processed)
+#define set_processed(rel) \
+	rel->processed = 1
+#define is_subquery(rel) \
+	(rel->subquery)
+#define set_subquery(rel) \
+	rel->subquery = 1
 
 typedef struct relation {
 	sql_ref ref;
