@@ -222,7 +222,10 @@ exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, int card )
 	e->card = card;
 	e->l = l;
 	e->f = a; 
-	e->flag = (no_nils<<1) + distinct;
+	if (distinct)
+		set_distinct(e);
+	if (no_nils)
+		set_no_nil(e);
 	return e;
 }
 

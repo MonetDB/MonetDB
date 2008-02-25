@@ -96,6 +96,8 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 	case op_left: 
 	case op_right: 
 	case op_full: 
+	case op_semi: 
+	case op_anti: 
 		/* first right (possible subquery) */
 		c = name_find_column( rel->r, rname, name);
 		if (!c) 
@@ -187,6 +189,9 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_right: 
 	case op_full: 
 
+	case op_semi: 
+	case op_anti: 
+
 	case op_union: 
 	case op_inter: 
 	case op_except: 
@@ -213,6 +218,9 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_left: 
 	case op_right: 
 	case op_full: 
+
+	case op_semi: 
+	case op_anti: 
 
 	case op_union: 
 	case op_inter: 
@@ -245,6 +253,8 @@ get_tables(mvc *sql, sql_rel *rel, list *tables)
 	case op_left: 
 	case op_right: 
 	case op_full: 
+	case op_semi: 
+	case op_anti: 
 	case op_union: 
 	case op_inter: 
 	case op_except: 
@@ -443,6 +453,9 @@ rel_find_table(sql_rel *rel)
 	case op_left: 
 	case op_right: 
 	case op_full: 
+
+	case op_semi: 
+	case op_anti: 
 		return NULL;
 
 	case op_select: 
@@ -975,6 +988,9 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 		case op_right: 
 		case op_full: 
 
+		case op_semi: 
+		case op_anti: 
+
 #ifdef DEBUG
 			rel_print(sql, rel, 0);
 #endif
@@ -1101,6 +1117,9 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter)
 	case op_right: 
 	case op_full: 
 
+	case op_semi: 
+	case op_anti: 
+
 	case op_union: 
 	case op_inter: 
 	case op_except: 
@@ -1145,11 +1164,11 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	/* TODO add optimizer which removes unions 
 		(for example common rels, with only one different expression) */
 
-	if (gp.cnt[op_join])
-		rel = rewrite(sql, rel, &rel_join_order); 
-
 	if (gp.cnt[op_select])
 		rel = rewrite(sql, rel, &rel_push_select_down); 
+
+	if (gp.cnt[op_join])
+		rel = rewrite(sql, rel, &rel_join_order); 
 
 #ifdef DEBUG
 	rel_print(sql, rel, 0);

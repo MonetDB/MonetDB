@@ -28,28 +28,7 @@
 #include "sql_symbol.h"
 #include "sql_scope.h"
 #include "sql_statement.h"
-
-/* value vs predicate (boolean) */
-#define type_value	0
-#define type_predicate	1
-/* cardinality expected by enclosing operator */
-#define card_value	0
-#define card_row 	1
-#define card_column 	2
-#define card_set	3	/* some operators require a set (IN/EXISTS) */
-#define card_relation 	4
-/* allowed to reduce (in the where and having parts we can reduce) */
-
-typedef struct exp_kind_t {
-	chr type;
-	chr card;
-	bit reduce;	
-} exp_kind;
-
-#define sql_from 0	/* nothing */
-#define sql_where 1	/* relate to any column from the from */
-#define sql_having 2	/* special flag which is used within the having fase */
-#define sql_sel   3	/* relate to the pivots (subquery) */
+#include "sql_semantic.h"
 
 extern stmt *selects(mvc *sql, scope *scp, symbol *sym);
 
@@ -2696,21 +2675,22 @@ _column_exp(mvc *sql, scope *scp, symbol *column_e, group *grp, stmt *subset, in
 
 	if (!s)
 		return NULL;
+
+	/* flatten subqueries */
+	if (s->type == st_list && list_length(s->op1.lval) == 2 && f == sql_sel) {
+		stmt *h, *v = stmt_dup(s->op1.lval->h->data);
+		stmt *o = stmt_dup(s->op1.lval->h->next->data);
+
+		stmt_destroy(s);
+		s = stmt_join(stmt_reverse(o), v, cmp_equal);
+		h = stmt_dup(s->h->t);
+		stmt_destroy(s->h);
+		s->h = h;
+		/* make sure we don't lose rows */
+		s = stmt_outerjoin(stmt_mirror(first_subset(subset)), s, cmp_equal);
+	}
 	/* AS name */
 	if (s && l->h->next->data.sval) {
-		/* flatten subqueries */
-		if (s->type == st_list && 
-		    list_length(s->op1.lval) == 2 && f == sql_sel) {
-			stmt *h, *v = stmt_dup(s->op1.lval->h->data);
-			stmt *o = stmt_dup(s->op1.lval->h->next->data);
-			stmt_destroy(s);
-			s = stmt_join(stmt_reverse(o), v, cmp_equal);
-			h = stmt_dup(s->h->t);
-			stmt_destroy(s->h);
-			s->h = h;
-			if (f >= sql_sel)   /* make sure we don't lose rows */
-				s = stmt_outerjoin(stmt_mirror(first_subset(subset)), s, cmp_equal);
-		}
 		s = stmt_alias(s, table_name(s), _strdup(l->h->next->data.sval));
 		scope_add_alias(scp, stmt_dup(s), l->h->next->data.sval);
 	}
@@ -3190,7 +3170,8 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->next->data.sym;
 		char *compare_op = sc->data.lval->h->next->data.sval;
-
+		/* currently we don't handle the (universial and existential) 
+		   quantifiers (all and any/some) */
 		return sql_compare_exp(sql, scp, grp, subset, lo, ro, compare_op, f);
 	}
 		break;

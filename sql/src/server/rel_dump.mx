@@ -116,9 +116,9 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 	case e_aggr: {
 		sql_subaggr *a = e->f;
 		printf("%s", a->aggr->base.name );
-		if (e->flag&DISTINCT)
+		if (is_distinct(e))
 			printf(" unique ");
-		if (e->flag&NO_NIL)
+		if (is_no_nil(e))
 			printf(" no nil ");
 		exps_print( sql, e->l, depth, alias, 1);
 	} 	break;
@@ -141,7 +141,7 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 	default:
 		;
 	}
-	if (e->flag&ASCENDING)
+	if (is_ascending(e))
 		printf(" ASC");
 	if (e->name && alias) {
 		printf(" as ");
@@ -190,6 +190,10 @@ op2string(operator_type op)
 	case op_right: 
 	case op_full: 
 		return "join";
+	case op_semi: 
+		return "semi";
+	case op_anti: 
+		return "anti";
 	case op_union: 
 	case op_inter: 
 	case op_except: 
@@ -237,16 +241,22 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	case op_left: 
 	case op_right: 
 	case op_full: 
+	case op_semi: 
+	case op_anti: 
 	case op_union: 
 	case op_inter: 
 	case op_except: 
 		r = "join";
 		if (rel->op == op_left)
 			r = "left outer join";
-		if (rel->op == op_right)
+		else if (rel->op == op_right)
 			r = "right outer join";
-		if (rel->op == op_full)
+		else if (rel->op == op_full)
 			r = "full outer join";
+		else if (rel->op == op_semi)
+			r = "semijoin";
+		else if (rel->op == op_anti)
+			r = "antijoin";
 		else if (rel->op == op_union)
 			r = "union";
 		else if (rel->op == op_inter)

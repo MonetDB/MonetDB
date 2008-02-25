@@ -423,7 +423,6 @@ int yydebug=1;
 	opt_lang
 	opt_db_alias
 	opt_constraint_name
-	any_all_some
 	non_reserved_word
 	ident
 	authorization_identifier
@@ -536,6 +535,7 @@ int yydebug=1;
 	XML_value_expression_list
 
 %type <ival>
+	any_all_some
 	opt_port
 	drop_action
 	ref_action
@@ -3154,15 +3154,15 @@ all_or_any_predicate:
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_string(l, $2);
-		  append_string(l, $3);
 		  append_symbol(l, $4);
+		  append_int(l, $3);
 		  $$ = _symbol_create_list(SQL_COMPARE, l ); }
  ;
 
 any_all_some:
-    ANY		{ $$ = $1; }
- |  ALL		{ $$ = $1; }
- |  SOME	{ $$ = $1; }
+    ANY		{ $$ = 0; }
+ |  SOME	{ $$ = 0; }
+ |  ALL		{ $$ = 1; }
  ;
 
 existence_test:

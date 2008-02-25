@@ -23,8 +23,9 @@
 #define _REL_XML_H_ 
 
 #include "rel_semantic.h"
+#include "sql_semantic.h"
 
-extern sql_exp *rel_xml(mvc *sql, sql_rel **rel, symbol *s, int f);
+extern sql_exp *rel_xml(mvc *sql, sql_rel **rel, symbol *s, int f, exp_kind knd);
 
 #endif /*_REL_XML_H_ */
 @c
@@ -40,7 +41,7 @@ static sql_subtype xml_type = { NULL, 0, 0, NULL };
 static sql_subtype str_type = { NULL, 0, 0, NULL };
 
 static sql_exp *
-rel_xmlelement(mvc *sql, sql_rel **rel, symbol *sym, int f) 
+rel_xmlelement(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
 {
 	dnode *d = sym->data.lval->h;
 	char *tag = d->data.sval; 
@@ -64,7 +65,7 @@ rel_xmlelement(mvc *sql, sql_rel **rel, symbol *sym, int f)
 			for (n=cl->h; n; n = n->next) {
 				symbol *c = n->data.sym;
 				sql_subtype *st; 
-				sql_exp *c_st = rel_value_exp(sql, rel, c, f);
+				sql_exp *c_st = rel_value_exp(sql, rel, c, f, knd);
 
 				if (!c_st) 
 					return NULL;
@@ -88,12 +89,12 @@ rel_xmlelement(mvc *sql, sql_rel **rel, symbol *sym, int f)
 			}
 		}
 		if (ns) { 
-			ns_st = rel_value_exp(sql, rel, ns, f); 
+			ns_st = rel_value_exp(sql, rel, ns, f, knd); 
 			if (!ns_st)
 				return NULL;
 		}
 		if (attr) {
-			attr_st = rel_value_exp(sql, rel, attr, f); 
+			attr_st = rel_value_exp(sql, rel, attr, f, knd); 
 			if (!attr_st)
 				return NULL;
 		}
@@ -116,7 +117,7 @@ rel_xmlelement(mvc *sql, sql_rel **rel, symbol *sym, int f)
 }
 
 static sql_exp *
-rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f) 
+rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
 {
 	dnode *d = sym->data.lval->h;
 	symbol *ns = d->data.sym;
@@ -129,7 +130,7 @@ rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f)
 	(void)returning;
 
 	if (ns) {
-		ns_st = rel_value_exp(sql, rel, ns, f); 
+		ns_st = rel_value_exp(sql, rel, ns, f, knd); 
 	} else {
 		ns_st = exp_atom(atom_general(&str_type, NULL, 0));
 	}
@@ -144,7 +145,7 @@ rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f)
 			symbol *c = cc->data.sym;
 			str tag = cc->next->data.sval;
 
-			sql_exp *c_st = rel_value_exp(sql, rel, c, f);
+			sql_exp *c_st = rel_value_exp(sql, rel, c, f, knd);
 			sql_subtype *st;
 			if (!c_st) { 
 				exp_destroy(ns_st);
@@ -187,7 +188,7 @@ rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f)
 }
 
 static sql_exp *
-rel_xmlcomment(mvc *sql, sql_rel **rel, symbol *sym, int f) 
+rel_xmlcomment(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
 {
 	dnode *d = sym->data.lval->h;
 	symbol *comment = d->data.sym;
@@ -195,21 +196,21 @@ rel_xmlcomment(mvc *sql, sql_rel **rel, symbol *sym, int f)
 	sql_exp *comment_st;
 
 	(void)returning;
-	comment_st = rel_value_exp(sql, rel, comment, f); 
+	comment_st = rel_value_exp(sql, rel, comment, f, knd); 
 	if (!comment_st)
 		return NULL;
 	return rel_unop_(sql, comment_st, NULL, "comment"); 
 }
 
 static sql_exp *
-rel_xmlattribute(mvc *sql, sql_rel **rel, symbol *sym, int f) 
+rel_xmlattribute(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
 {
 	dnode *d = sym->data.lval->h;
 	char *attr_name = d->data.sval;
 	symbol *attr = d->next->data.sym;
 	sql_exp *attr_st, *attr_name_st = NULL;
 
-	attr_st = rel_value_exp(sql, rel, attr, f); 
+	attr_st = rel_value_exp(sql, rel, attr, f, knd); 
 	if (!attr_st)
 		return NULL;
 	if (!attr_name) {
@@ -222,7 +223,7 @@ rel_xmlattribute(mvc *sql, sql_rel **rel, symbol *sym, int f)
 
 
 static sql_exp *
-rel_xmlconcat(mvc *sql, sql_rel **rel, symbol *sym, int f) 
+rel_xmlconcat(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
 {
 	dnode *d = sym->data.lval->h;
 	dnode *en = d->data.lval->h;
@@ -232,7 +233,7 @@ rel_xmlconcat(mvc *sql, sql_rel **rel, symbol *sym, int f)
 	(void)returning;
 	for (; en; en = en->next) {
 		symbol *c = en->data.sym;
-		concat_st = rel_value_exp(sql, rel, c, f); 
+		concat_st = rel_value_exp(sql, rel, c, f, knd); 
 		if (!concat_st) {
 			exp_destroy(res);
 			return NULL;
@@ -246,7 +247,7 @@ rel_xmlconcat(mvc *sql, sql_rel **rel, symbol *sym, int f)
 }
 
 static sql_exp *
-rel_xmldocument(mvc *sql, sql_rel **rel, symbol *sym, int f) 
+rel_xmldocument(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
 {
 	dnode *d = sym->data.lval->h;
 	symbol *val = d->data.sym;
@@ -254,14 +255,14 @@ rel_xmldocument(mvc *sql, sql_rel **rel, symbol *sym, int f)
 	sql_exp *val_st;
 
 	(void)returning;
-	val_st = rel_value_exp(sql, rel, val, f); 
+	val_st = rel_value_exp(sql, rel, val, f, knd); 
 	if (!val_st)
 		return NULL;
 	return rel_unop_(sql, val_st, NULL, "document"); 
 }
 
 static sql_exp *
-rel_xmlpi(mvc *sql, sql_rel **rel, symbol *sym, int f) 
+rel_xmlpi(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
 {
 	dnode *d = sym->data.lval->h;
 	char *target = d->data.sval;
@@ -272,7 +273,7 @@ rel_xmlpi(mvc *sql, sql_rel **rel, symbol *sym, int f)
 	(void)returning;
 	target_st = exp_atom_str(target, &str_type);
 	if (!val)
-		val_st = rel_value_exp(sql, rel, val, f); 
+		val_st = rel_value_exp(sql, rel, val, f, knd); 
 	else
 		val_st = exp_atom(atom_general(&str_type, NULL, 0));
 	if (!val_st) {
@@ -284,7 +285,7 @@ rel_xmlpi(mvc *sql, sql_rel **rel, symbol *sym, int f)
 
 /* cast string too xml */
 static sql_exp *
-rel_xmltext(mvc *sql, sql_rel **rel, symbol *sym, int f) 
+rel_xmltext(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd) 
 {
 	dnode *d = sym->data.lval->h;
 	symbol *text = d->data.sym;
@@ -292,14 +293,14 @@ rel_xmltext(mvc *sql, sql_rel **rel, symbol *sym, int f)
 	sql_exp *text_st;
 
 	(void)returning;
-	text_st = rel_value_exp(sql, rel, text, f); 
+	text_st = rel_value_exp(sql, rel, text, f, knd); 
 	if (!text_st || (text_st = rel_check_type(sql, &xml_type, text_st, type_equal)) == NULL) 
 		return NULL;
 	return text_st;
 }
 
 sql_exp *
-rel_xml(mvc *sql, sql_rel **rel, symbol *s, int f)
+rel_xml(mvc *sql, sql_rel **rel, symbol *s, int f, exp_kind knd)
 {
 	sql_exp *ret = NULL;
 	sql_type *t = NULL;
@@ -313,28 +314,28 @@ rel_xml(mvc *sql, sql_rel **rel, symbol *s, int f)
 
 	switch (s->token) {
 	case SQL_XMLELEMENT: 
-		ret = rel_xmlelement(sql, rel, s, f);
+		ret = rel_xmlelement(sql, rel, s, f, knd);
 		break;
 	case SQL_XMLFOREST: 
-		ret = rel_xmlforest(sql, rel, s, f);
+		ret = rel_xmlforest(sql, rel, s, f, knd);
 		break;
 	case SQL_XMLCOMMENT: 
-		ret = rel_xmlcomment(sql, rel, s, f);
+		ret = rel_xmlcomment(sql, rel, s, f, knd);
 		break;
 	case SQL_XMLATTRIBUTE: 
-		ret = rel_xmlattribute(sql, rel, s, f);
+		ret = rel_xmlattribute(sql, rel, s, f, knd);
 		break;
 	case SQL_XMLCONCAT: 
-		ret = rel_xmlconcat(sql, rel, s, f);
+		ret = rel_xmlconcat(sql, rel, s, f, knd);
 		break;
 	case SQL_XMLDOCUMENT: 
-		ret = rel_xmldocument(sql, rel, s, f);
+		ret = rel_xmldocument(sql, rel, s, f, knd);
 		break;
 	case SQL_XMLPI: 
-		ret = rel_xmlpi(sql, rel, s, f);
+		ret = rel_xmlpi(sql, rel, s, f, knd);
 		break;
 	case SQL_XMLTEXT: 
-		ret = rel_xmltext(sql, rel, s, f);
+		ret = rel_xmltext(sql, rel, s, f, knd);
 		break;
 	default:
 		return sql_error(sql, 01, "XML statement unknown symbol(%ld)->token = %s", (long) s, token2string(s->token));

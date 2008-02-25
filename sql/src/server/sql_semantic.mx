@@ -29,6 +29,29 @@
 #include "sql_parser.h"
 #include "sql_scope.h"
 
+/* value vs predicate (boolean) */
+#define type_value	0
+#define type_predicate	1
+/* cardinality expected by enclosing operator */
+#define card_value	0
+#define card_row 	1
+#define card_column 	2
+#define card_set	3 /* some operators require only a set (IN/EXISTS) */
+#define card_relation 	4
+/* allowed to reduce (in the where and having parts we can reduce) */
+
+typedef struct exp_kind_t {
+	chr type;
+	chr card;
+	bit reduce;	
+} exp_kind;
+
+#define sql_from 0	/* nothing */
+#define sql_where 1	/* relate to any column from the from */
+#define sql_having 2	/* special flag which is used within the having fase */
+#define sql_sel   3	/* relate to the pivots (subquery) */
+
+
 #define create_string_list() list_create((fdestroy)&GDKfree)
 
 extern stmt *semantic(mvc *sql, scope *scp, symbol *sym);
