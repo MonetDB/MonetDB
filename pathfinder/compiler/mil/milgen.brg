@@ -809,8 +809,8 @@ intersect (PFpa_op_t *p,
     PFalg_simple_type_t lty  = 0,
                         rty  = 0;
     PFmil_t            *args = NULL;
-    mvar_t             *l,
-                       *r;
+    mvar_t             *l = NULL,
+                       *r = NULL;
 
     assert (left.count == right.count);
     
@@ -3082,11 +3082,11 @@ reduce (PFpa_op_t * p, int goalnt)
                         binsert (var (item->name),
                                  var (v->name)),
                         binsert (var (kind->name),
-                                 set_kind (
-                                     leftjoin (
-                                         mirror (var (v->name)),
-                                         VAR (L(p)->env, pa_item, aat_frag)),
-                                     var (PF_MIL_VAR_ATTR))));
+                                 leftjoin (
+                                     mirror (var (v->name)),
+                                     set_kind (
+                                         VAR (L(p)->env, pa_item, aat_frag),
+                                         var (PF_MIL_VAR_ATTR)))));
                     unpin (v, 1);
                 }
 
@@ -3115,13 +3115,14 @@ reduce (PFpa_op_t * p, int goalnt)
                                            VAR (L(p)->env, pa_item, aat_attr)),
                                        lit_bit (true)))),
                         binsert (var (item->name),
-                                 leftjoin (var (v->name), var (v->name))),
+                                 leftjoin (var (v->name),
+                                           VAR (L(p)->env, pa_item, aat_pre))),
                         binsert (var (kind->name),
-                                 set_kind (
-                                     leftjoin (
-                                         var (v->name),
-                                         VAR (L(p)->env, pa_item, aat_frag)),
-                                     var (PF_MIL_VAR_ELEM))));
+                                 leftjoin (
+                                     var (v->name),
+                                     set_kind (
+                                         VAR (L(p)->env, pa_item, aat_frag),
+                                         var (PF_MIL_VAR_ELEM)))));
                     unpin (v, 1);
                 }
                 else if (ty & aat_nkind)
@@ -4900,11 +4901,12 @@ reduce (PFpa_op_t * p, int goalnt)
                                         arg (var (false_oid->name),
                                              arg (lit_str(""),
                                                   var (prefix->name)))))),
+                        /* we know that prefix now contains all rows 
+                           (and thus treat a tmark for a leftjoin) */
                         assgn (var (prefix->name),
-                               leftfetchjoin (
-                                   reverse (
-                                       fetch (var (mu->name), lit_int (0))),
-                                   fetch (var (mu->name), lit_int (1)))),
+                               tmark (
+                                   fetch (var (mu->name), lit_int (1)),
+                                   lit_oid (0))),
                         assgn (var (name->name),
                                madd (var (prefix->name),
                                      mposjoin (tmark (var (id->name),
@@ -7821,7 +7823,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 tmp = env_mvar (L(p)->env, p->sem.ii.item, aat_pre);
                 execute (
                     assgn (var (sel->name),
-                           hmark (select_ (var (attr->name), lit_bit (false)),
+                           hmark (select_ (var (attr->name), lit_bit (true)),
                                   lit_oid (0))),
                     assgn (var (p_item->name),
                            leftfetchjoin (var (sel->name), var (tmp->name))),
@@ -7839,7 +7841,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 tmp = env_mvar (L(p)->env, p->sem.ii.item, aat_attr);
                 execute (
                     assgn (var (sel->name),
-                           hmark (select_ (var (attr->name), lit_bit (true)),
+                           hmark (select_ (var (attr->name), lit_bit (false)),
                                   lit_oid (0))),
                     assgn (var (a_item->name),
                            leftfetchjoin (var (sel->name), var (tmp->name))),

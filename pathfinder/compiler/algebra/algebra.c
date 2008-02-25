@@ -707,6 +707,7 @@ PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
 char *
 PFalg_simple_type_str (PFalg_simple_type_t type) {
     switch (type) {
+        /* the logical types */
         case aat_nat:   return "nat";
         case aat_int:   return "int";
         case aat_str:   return "str";
@@ -718,11 +719,20 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
         case aat_node:  return "node";
         case aat_anode: return "attr";
         case aat_pnode: return "pnode";
-        case aat_qname_id:   return "qname id";
-        case aat_qname_cont: return "qname cont";
+                        
+        /* the bit representation */
+        case aat_qname_id:   return "qname_id";
+        case aat_qname_cont: return "qname_cont";
         case aat_frag:       return "frag";
         case aat_pre:        return "pre";
         case aat_attr:       return "attr";
+        case aat_frag1:      return "target_frag";
+        case aat_pre1:       return "target_pre";
+        case aat_attr1:      return "target_attr";
+        case aat_docmgmt:    return "docmgmt_type";
+        case aat_path:       return "docmgmt_path";
+        case aat_docnm:      return "docmgmt_name";
+        case aat_colnm:      return "docmgmt_coll";
         default:
             if (type & aat_update)
                 return "update";
