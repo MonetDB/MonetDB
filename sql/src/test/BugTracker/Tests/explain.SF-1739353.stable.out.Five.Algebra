@@ -106,10 +106,11 @@ Over..
 |     _48 := sql.resultSet(1,1,_47);                                           |
 |     sql.rsColumn(_48,"sys.tables","name","varchar",1024,0,_47);              |
 |     _47{rows=56:lng,hlb>=0@0:oid,hub<1@0:oid} := nil;                        |
-|     sql.exportResult(_48,"");                                                |
+|     _53 := io.stdout();                                                      |
+|     sql.exportResult(_53,_48,"");                                            |
 | end s1_1;                                                                    |
 +------------------------------------------------------------------------------+
-71 rows
+72 rows
 
 
 # 15:20:44 >  
