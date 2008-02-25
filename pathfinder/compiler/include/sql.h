@@ -304,7 +304,7 @@ typedef struct PFsql_t PFsql_t;
 
 /**
  * Annotations to logical algebra tree nodes. Used during
- * SQL code generation.
+ * SQL code generation. (typedef resides in logical.h.)
  */
 struct PFsql_alg_ann_t {
     unsigned    bound:1;       /**< indicates if the operator has been bound */
@@ -339,7 +339,6 @@ struct PFsql_alg_ann_t {
     PFarray_t   *rank_map;     /**< an internal representation of all
                                     ignored rank operators. */
 };
-typedef struct PFsql_alg_ann_t PFsql_alg_ann_t;
 
 /* .......... General .......... */
 

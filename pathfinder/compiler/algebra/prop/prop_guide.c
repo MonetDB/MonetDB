@@ -35,6 +35,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "mem.h"
 #include "properties.h"
 #include "alg_dag.h"
 

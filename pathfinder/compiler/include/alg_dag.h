@@ -33,7 +33,8 @@
 #ifndef ALG_DAG_H
 #define ALG_DAG_H
 
-#include <logical.h>
+#include "logical.h"
+#include "physical.h"
 
 /*
  * Mark the DAG bit of the logical algebra tree.
