@@ -16,6 +16,7 @@
 # All Rights Reserved.
 
 prefix="@prefix@"
+datarootdir="@datarootdir@"
 jdbcclient_jar="@datadir@/MonetDB/lib/jdbcclient.jar"
 if [ ! -s "$jdbcclient_jar" ] ; then
 	jdbcclient_jar="@QMONETDB_JAVA_BUILD@/jdbcclient.jar"
