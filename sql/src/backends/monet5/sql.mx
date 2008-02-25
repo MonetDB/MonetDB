@@ -560,6 +560,14 @@ command sql.rank(b:bat[:oid,:any_1]) :bat[:oid,:int]
 address sql_rank
 comment "return the rank bat";
 
+command sql.dense_rank_grp(b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int] 
+address sql_dense_rank_grp
+comment "return the densely ranked groups";
+
+command sql.dense_rank(b:bat[:oid,:any_1]) :bat[:oid,:int] 
+address sql_dense_rank
+comment "return the densely ranked bat";
+
 function batcalc.mark_grp( b:bat[:oid,:any_1], a:bat[:any_2,:any_3], g:bat[:oid,:oid]) :bat[:oid,:int]; 
 	x := algebra.mark_grp(a,g,1:oid);
 	return batcalc.int(x);
@@ -579,6 +587,16 @@ end batcalc.rank_grp;
 function batcalc.rank_grp( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
 	return sql.rank(b);
 end batcalc.rank_grp;
+
+function batcalc.dense_rank_grp( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int]; 
+	o := bat.mirror(b);
+	g := algebra.join(o, gp);
+	return sql.dense_rank_grp(b, g, gpe);
+end batcalc.dense_rank_grp;
+
+function batcalc.dense_rank_grp( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
+	return sql.dense_rank(b);
+end batcalc.dense_rank_grp;
 
 function sql.zero_or_one( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:any_1];
 	(e,g) := group.new(gp);
@@ -3123,20 +3141,21 @@ dump_opt_stats(int *r)
 	return MAL_SUCCEED;
 }
 
+@= rnk
 str 
-sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
+sql_@1rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
 {
 	BAT *r, *b, *g;
 	BUN p, q;
 	BATiter bi, gi;
 	int (*ocmp)(ptr, ptr), (*gcmp)(ptr, ptr);
 	ptr oc, gc;
-	int rank = 1, nrank = 1;
+	int rank = 1, nrank = @3;
 
 	if( (b = BATdescriptor(*bid)) == NULL )
-		throw(SQL, "sql.rank_grp", "Cannot access descriptor");
+		throw(SQL, "sql.@1rank_grp", "Cannot access descriptor");
 	if( (g = BATdescriptor(*gid)) == NULL )
-		throw(SQL, "sql.rank_grp", "Cannot access descriptor");
+		throw(SQL, "sql.@1rank_grp", "Cannot access descriptor");
 	(void)gpe;
 	bi = bat_iterator(b);
 	gi = bat_iterator(g);
@@ -3145,24 +3164,25 @@ sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
 	oc = BUNtail(bi, BUNfirst(b));
 	gc = BUNtail(gi, BUNfirst(g));
 	if (!ALIGNsynced(b, g))
-		throw(SQL, "sql.rank_grp", "bats not aligned");
+		throw(SQL, "sql.@1rank_grp", "bats not aligned");
 	if (BATtordered(b) != GDK_SORTED)
-		throw(SQL, "sql.rank_grp", "bat not sorted");
+		throw(SQL, "sql.@1rank_grp", "bat not sorted");
 	r = BATnew(TYPE_oid, TYPE_int, BATcount(b));
 	if (r == NULL)
-		throw(SQL, "sql.rank_grp", "cannot allocate result bat");
+		throw(SQL, "sql.@1rank_grp", "cannot allocate result bat");
 	BATloop(b, p, q) {
 		ptr on = BUNtail(bi, p);
 		ptr gn = BUNtail(gi, p);
+		int c = 0;
 
-		if (ocmp(on, oc) != 0) 
+		if ((c = ocmp(on, oc)) != 0) 
 			rank = nrank;
 		if (gcmp(gn, gc) != 0) 
-			rank = nrank = 1;  
+			c = rank = nrank = 1;  
 		oc = on;
 		gc = gn;
 		BUNins(r, BUNhead(bi,p), &rank, FALSE);
-		nrank++;
+		@2;
 	}
 	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
@@ -3171,25 +3191,25 @@ sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
 }
 
 str
-sql_rank(bat *rid, bat *bid)
+sql_@1rank(bat *rid, bat *bid)
 { 
 	BAT *r, *b;
 	BATiter bi;
 	int (*cmp)(ptr, ptr);
-	ptr c;
+	ptr cur;
 	BUN p, q;
-	int rank = 1, nrank = 1;
+	int rank = 1, nrank = @3;
 
 	if( (b = BATdescriptor(*bid)) == NULL )
-		throw(SQL, "sql.rank", "Cannot access descriptor");
+		throw(SQL, "sql.@1rank", "Cannot access descriptor");
 	if (BATtordered(b) != GDK_SORTED)
-		throw(SQL, "sql.rank", "bat not sorted");
+		throw(SQL, "sql.@1rank", "bat not sorted");
 	bi = bat_iterator(b);
 	cmp = BATatoms[b->ttype].atomCmp;
-	c = BUNtail(bi, BUNfirst(b));
+	cur = BUNtail(bi, BUNfirst(b));
 	r = BATnew(TYPE_oid, TYPE_int, BATcount(b));
 	if (r == NULL)
-		throw(SQL, "sql.rank", "cannot allocate result bat");
+		throw(SQL, "sql.@1rank", "cannot allocate result bat");
 	if (BATtdense(b)) {
 		BATloop(b, p, q) {
 			BUNins(r, BUNhead(bi,p), &rank, FALSE);
@@ -3198,15 +3218,19 @@ sql_rank(bat *rid, bat *bid)
 	} else {
 		BATloop(b, p, q) {
 			ptr n = BUNtail(bi, p);
+			int c = 0;
 	
-			if (cmp(n, c) != 0) 
+			if ((c = cmp(n, cur)) != 0) 
 				rank = nrank; 
-			c = n;
+			cur = n;
 			BUNins(r, BUNhead(bi,p), &rank, FALSE);
-			nrank++;
+			@2;
 		}
 	}
 	BBPunfix(b->batCacheid);
 	BBPkeepref(*rid = r->batCacheid);
 	return MAL_SUCCEED;
 }
+@c
+@:rnk(,nrank++,1)@
+@:rnk(dense_,nrank+=(c?1:0),2)@

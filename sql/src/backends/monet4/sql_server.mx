@@ -270,6 +270,10 @@ stream.
 
 	.COMMAND rank(BAT[oid,any::1] b) : BAT[oid,int] = sql_rank; "return the rank bat"
 
+	.COMMAND dense_rank_grp(BAT[oid,any::1] b, BAT[oid,oid] gp, BAT[oid,oid] gpe) : BAT[oid,int] = sql_dense_rank_grp; "return the dense ranked groups"
+
+	.COMMAND dense_rank(BAT[oid,any::1] b) : BAT[oid,int] = sql_dense_rank; "return the dense ranked bat"
+
 .END sql_server;
 
 @-
@@ -1518,9 +1522,9 @@ int atom_storage(int *t, int *i )
 	return GDK_SUCCEED;
 }
 
-
+@= rnk
 int 
-sql_rank_grp(BAT **RG, BAT *b, BAT *gp, BAT *gpe)
+sql_@1rank_grp(BAT **RG, BAT *b, BAT *gp, BAT *gpe)
 {
 	BAT *r;
 	BATiter bi = bat_iterator(b);
@@ -1530,7 +1534,7 @@ sql_rank_grp(BAT **RG, BAT *b, BAT *gp, BAT *gpe)
 	ptr oc = BUNtail(bi, BUNfirst(b));
 	ptr gc = BUNtail(gi, BUNfirst(gp));
 	BUN p, q;
-	int rank = 1, nrank = 1;
+	int rank = 1, nrank = @3;
 
 	(void)gp;
 	(void)gpe;
@@ -1544,28 +1548,29 @@ sql_rank_grp(BAT **RG, BAT *b, BAT *gp, BAT *gpe)
 	BATloop(b, p, q) {
 		ptr on = BUNtail(bi, p);
 		ptr gn = BUNtail(gi, p);
+		int c = 0;
 
-		if (ocmp(on, oc) != 0) 
+		if ((c = ocmp(on, oc)) != 0) 
 			rank = nrank;
 		if (gcmp(gn, gc) != 0) 
-			rank = nrank = 1;  
+			c = rank = nrank = 1;  
 		oc = on;
 		gc = gn;
 		BUNins(r, BUNhead(bi,p), &rank, FALSE);
-		nrank++;
+		@2;
 	}
 	return GDK_SUCCEED;
 }
 
 int
-sql_rank(BAT **R, BAT *b)
+sql_@1rank(BAT **R, BAT *b)
 { 
 	BAT *r;
 	BATiter bi = bat_iterator(b);
 	int (*cmp)(ptr, ptr) = BATatoms[b->ttype].atomCmp;
-	ptr c = BUNtail(bi, BUNfirst(b));
+	ptr cur = BUNtail(bi, BUNfirst(b));
 	BUN p, q;
-	int rank = 1, nrank = 1;
+	int rank = 1, nrank = @3;
 
 	if (BATtordered(b) != GDK_SORTED)
 		return GDK_FAIL;
@@ -1580,16 +1585,20 @@ sql_rank(BAT **R, BAT *b)
 	} else {
 		BATloop(b, p, q) {
 			ptr n = BUNtail(bi, p);
+			int c = 0;
 	
-			if (cmp(n, c) != 0) 
+			if ((c = cmp(n, cur)) != 0) 
 				rank = nrank; 
-			c = n;
+			cur = n;
 			BUNins(r, BUNhead(bi,p), &rank, FALSE);
-			nrank++;
+			@2;
 		}
 	}
 	return GDK_SUCCEED;
 }
+@c
+@:rnk(,nrank++,1)@
+@:rnk(dense_,nrank+=(c?1:0),2)@
 @-
 An SQL session needs a minimal set of modules, shown below.
 The MIL procs should also be moved to the kernel, despite the
@@ -1727,6 +1736,14 @@ proc [rank_grp](BAT[oid,any::1] b, BAT[oid,oid] gp, BAT[oid,oid] gpe) : BAT[oid,
 }
 proc [rank_grp](BAT[oid,any::1] b) : BAT[oid,int] {
 	return rank(b);
+}
+proc [dense_rank_grp](BAT[oid,any::1] b, BAT[oid,oid] gp, BAT[oid,oid] gpe) : BAT[oid,int] {
+	# make sure we have gp and b aligned
+	gp := b.mirror().join(gp);
+	return dense_rank_grp(b, gp, gpe);
+}
+proc [dense_rank_grp](BAT[oid,any::1] b) : BAT[oid,int] {
+	return dense_rank(b);
 }
 proc rand(int v) : int {
 	return rand();
