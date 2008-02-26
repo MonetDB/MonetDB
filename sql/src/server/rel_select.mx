@@ -3585,8 +3585,12 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 	/* if within the selection, keep the current projections */
 	if (outer && is_project(outer->op) && !is_processed(outer)) {
+		/* keep projections the hard way, ie don't rename them */
 		assert(rel->l == outer);
-		pre_prj = rel_projections(sql, outer, NULL, 1);
+
+		pre_prj = outer->exps;
+		outer->exps = NULL;
+
 		rel->l = rel_dup(outer->l);
 		rel_destroy(outer);
 		outer = rel->l;
