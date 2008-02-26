@@ -164,6 +164,7 @@ static struct serializeFunStruct pftijah_optionsSerializeFun = {
     null_seqEmitBool,
     null_seqEmitInt,
     null_seqEmitDbl,
+    null_seqEmitDec,
     null_seqEmitStr,
     null_handle_attribute,
     null_handle_characters,
@@ -186,6 +187,7 @@ int serialize_pftijah_options_DRIVER(
         BAT*			kind,
         BAT*			intVAL,
         BAT*			dblVAL,
+        BAT*			decVAL,
         BAT*			strVAL) {
 
 	(void)niters;
@@ -221,6 +223,7 @@ int serialize_pftijah_options_DRIVER(
         	kind,
         	intVAL,
         	dblVAL,
+        	decVAL,
         	strVAL);
 #ifdef DEBUG
 	stream_printf(GDKout,"CALLED xquery_print_result_DRIVER: res=%d\n",returnVal);

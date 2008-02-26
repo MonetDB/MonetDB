@@ -48,6 +48,9 @@
 /** literal dbls */
 #define lit_dbl(i) PFmil_lit_dbl (i)
 
+/** literal decimals */
+#define lit_dec(i) PFmil_lit_dec (i)
+
 /** literal bits */
 #define lit_bit(i) PFmil_lit_bit (i)
 

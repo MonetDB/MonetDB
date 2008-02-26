@@ -197,6 +197,7 @@ typedef struct serializeFunStruct {
     bool (*seqEmitBool)(XqueryCtx* ctx, int bv);
     bool (*seqEmitInt)(XqueryCtx* ctx, lng iv);
     bool (*seqEmitDbl)(XqueryCtx* ctx, dbl dv);
+    bool (*seqEmitDec)(XqueryCtx* ctx, lng dv);
     bool (*seqEmitStr)(XqueryCtx* ctx, str sv);
     bool (*seqEmitAttribute)(XqueryCtx* ctx,
                              str prefix, str loc, str value);
@@ -254,6 +255,7 @@ xquery_print_result_DRIVER (
     BAT                *kind,
     BAT                *intVAL,
     BAT                *dblVAL,
+    BAT                *decVAL,
     BAT                *strVAL);
 
 /* hack to allow direct calls in xrpc_client.mx */
@@ -273,6 +275,7 @@ xquery_print_result_driver (
     BAT                *kind,
     BAT                *intVAL,
     BAT                *dblVAL,
+    BAT                *decVAL,
     BAT                *strVAL);
 
 #endif /* SERIALIZE_H */
@@ -1653,7 +1656,7 @@ lookup_bun (BAT *b, oid offset)
  * ws : the working set
  * max_iter : often 1@0. we can also print multiple iters for XRPC or debugging
  * item/item/kind : sequence result BATs (iter as a constant bat)
- * intVAL,dblVAL,strVAL : BATSs containing the values of seq elements
+ * intVAL,dblVAL,decVAL,strVAL : BATSs containing the values of seq elements
  * remainder BATs: contains the data for the document nodes
  *
  * iter and kind may be 'fake' (i.e. constant) bats and quite often are;
@@ -1680,6 +1683,7 @@ xquery_print_result_driver (
     BAT                *kind,
     BAT                *intVAL,
     BAT                *dblVAL,
+    BAT                *decVAL,
     BAT                *strVAL)
 {
     TIMER_START();
@@ -1882,9 +1886,13 @@ xquery_print_result_driver (
                         return GDK_FAIL;
                     break;
                 case DBL:
-                case DEC:
                     findTailValue(res, ctx, dblVAL, valoid);
                     if (!ctx->driverFun->seqEmitDbl(ctx,*(dbl*)res) )
+                        return GDK_FAIL; /* INCOMPLETE ?diff between d and e */
+                    break;
+                case DEC:
+                    findTailValue(res, ctx, decVAL, valoid);
+                    if (!ctx->driverFun->seqEmitDec(ctx,*(lng*)res) )
                         return GDK_FAIL; /* INCOMPLETE ?diff between d and e */
                     break;
                 case INT:
@@ -1958,6 +1966,7 @@ xquery_print_result_DRIVER (
     BAT                *kind,
     BAT                *intVAL,
     BAT                *dblVAL,
+    BAT                *decVAL,
     BAT                *strVAL)
 {
     (void) driverFun;
@@ -1977,6 +1986,7 @@ xquery_print_result_DRIVER (
                kind, /* kind relation */
                intVAL,
                dblVAL,
+               decVAL,
                strVAL);
 }
 

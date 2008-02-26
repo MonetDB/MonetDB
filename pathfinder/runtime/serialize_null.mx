@@ -52,6 +52,7 @@ bool null_handle_attribute (XqueryCtx* ctx, str prefix, str loc, str value);
 bool null_seqEmitBool (XqueryCtx* ctx, int bv);
 bool null_seqEmitInt (XqueryCtx* ctx, lng iv);
 bool null_seqEmitDbl (XqueryCtx* ctx, dbl dv);
+bool null_seqEmitDec (XqueryCtx* ctx, lng dv);
 bool null_seqEmitStr (XqueryCtx* ctx, str sv);
 bool null_seqStart (XqueryCtx* ctx, int count);
 bool null_complete_seqStart (XqueryCtx* ctx);
@@ -281,6 +282,17 @@ null_seqEmitDbl (XqueryCtx* ctx, dbl dv)
 }
 
 /**
+ * Emit a Decimal element of an XQUERY/Pathfinder result sequence
+ */
+bool
+null_seqEmitDec (XqueryCtx* ctx, lng dv)
+{
+    (void) ctx;
+    (void) dv;
+    return SUCCESS;
+}
+
+/**
  * Emit a String element of an XQUERY/Pathfinder result sequence
  */
 bool
@@ -387,6 +399,7 @@ struct serializeFunStruct nullSerializeFun = {
     null_seqEmitBool,
     null_seqEmitInt,
     null_seqEmitDbl,
+    null_seqEmitDec,
     null_seqEmitStr,
     null_handle_attribute,
     null_handle_characters,

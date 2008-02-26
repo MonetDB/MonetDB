@@ -458,7 +458,7 @@ PFalg_lit_str (char *value)
 
 /** construct literal decimal (atom) */
 PFalg_atom_t
-PFalg_lit_dec (float value)
+PFalg_lit_dec (long long int value)
 {
     return (PFalg_atom_t) { .type = aat_dec, .val = { .dec_ = value } };
 }

@@ -84,6 +84,7 @@
 #define lit_int(i)                   PFsql_lit_int(i)
 #define lit_lng(l)                   PFsql_lit_lng(l)
 #define lit_str(s)                   PFsql_lit_str(s)
+#define lit_dbl(d)                   PFsql_lit_dbl(d)
 #define lit_dec(d)                   PFsql_lit_dec(d)
 #define null()                       PFsql_null()
                                      

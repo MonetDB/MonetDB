@@ -1650,6 +1650,12 @@ PFfun_xquery_fo (void)
                                 PFty_node () },
             .ret_ty = PFty_star (PFty_xs_anyElement ()) } },
         .alg = PFbui_fn_idref }
+    , /* fn:doc-available (string?) as boolean */
+      { .ns = PFns_fn, .loc = "doc-available",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = PFbui_fn_doc }
     , /* fn:doc (string?) as document? - FIXME: is type of PFty_doc right? */
       { .ns = PFns_fn, .loc = "doc",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -1841,7 +1847,7 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "put",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_anyNode (), PFty_xs_string () },
-            .ret_ty = PFty_stmt () } } }
+            .ret_ty = PFty_star( PFty_xs_anyNode ()) } } }
     , /* pf:documents () as element()* */
       { .ns = PFns_lib, .loc = "documents",
         .arity = 0, .sig_count = 1, .sigs = { {
@@ -1886,22 +1892,35 @@ PFfun_xquery_fo (void)
         .alg = PFbui_pf_fragment }
     ,  /* pf:attribute (node()*, string, string, string, string, string) as node()* */
       { .ns = PFns_lib, .loc = "attribute",
-        .arity = 6, .sig_count = 1, .sigs = { {
+        .arity = 7, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()),
                                    PFty_xs_string (),
                                    PFty_xs_string (),
                                    PFty_xs_string (),
                                    PFty_xs_string (),
+                                   PFty_xs_boolean (),
                                    PFty_xs_string () },
             .ret_ty = PFty_star( PFty_xs_anyNode ()) } },
         .alg = PFbui_pf_attribute }
     ,  /* pf:text (node()*, string) as node()* */
       { .ns = PFns_lib, .loc = "text",
-        .arity = 2, .sig_count = 1, .sigs = { {
+        .arity = 3, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()),
+                                   PFty_xs_boolean (),
                                    PFty_xs_string () },
             .ret_ty = PFty_star( PFty_xs_anyNode()) } },
         .alg = PFbui_pf_text }
+    ,  /* pf:idxfail () as node() */
+      { .ns = PFns_lib, .loc = "idxfail",
+        .arity = 0, .sig_count = 1, .sigs = { {
+            .ret_ty = PFty_star( PFty_xs_anyNode ()) } },
+        .alg = PFbui_pf_supernode }
+    ,  /* pf:idxfailed (node) as boolean */
+      { .ns = PFns_lib, .loc = "idxfailed",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_anyNode () },
+            .ret_ty = PFty_star( PFty_xs_boolean ()) } },
+        .alg = PFbui_pf_supernode }
     ,  /* pf:supernode (node()*) as node()* */
       { .ns = PFns_lib, .loc = "supernode",
         .arity = 1, .sig_count = 1, .sigs = { {

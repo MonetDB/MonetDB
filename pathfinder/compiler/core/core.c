@@ -235,7 +235,7 @@ PFcore_num (long long int i)
  * @return A new core tree node
  */
 PFcnode_t *
-PFcore_dec (double d)
+PFcore_dec (long long int d)
 {
     PFcnode_t *core;
 

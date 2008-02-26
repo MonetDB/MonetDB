@@ -477,6 +477,8 @@ impl_types (PFalg_simple_type_t ty)
             return mty_str;
             
         case aat_dec:
+            return mty_dec;
+
         case aat_dbl:
             return mty_dbl;
             
@@ -765,7 +767,7 @@ literal_ (PFalg_atom_t atom, PFalg_simple_type_t type)
         case aat_int:  return lit_lng (atom.val.int_);
         case aat_uA:
         case aat_str:  return lit_str (atom.val.str);
-        case aat_dec:  return lit_dbl (atom.val.dec_);
+        case aat_dec:  return lit_dec (atom.val.dec_);
         case aat_dbl:  return lit_dbl (atom.val.dbl);
         case aat_bln:  return lit_bit (atom.val.bln);
         case aat_qname_id:
@@ -3014,7 +3016,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 intVAL = new_var (1);
                 dblVAL = new_var (1);
-                decVAL = dblVAL;
+                decVAL = new_var (1); 
                 strVAL = new_var (1);
                 item   = new_var (1);
                 kind   = new_var (1);
@@ -3032,14 +3034,12 @@ reduce (PFpa_op_t * p, int goalnt)
                                    key (new (type (mty_dbl), type (mty_void)),
                                         true)),
                                lit_oid (0))),
-                    /*
                     assgn (var (decVAL->name),
                            seqbase (
                                reverse (
-                                   key (new (type (mty_dbl), type (mty_void)),
+                                   key (new (type (mty_dec), type (mty_void)),
                                     true)),
                                lit_oid (0))),
-                    */
                     assgn (var (strVAL->name),
                            seqbase (
                                reverse (
@@ -3342,9 +3342,9 @@ reduce (PFpa_op_t * p, int goalnt)
                                              select2 (VAR (L(p)->env,
                                                            pa_item,
                                                            aat_dec),
-                                                      cast (type (mty_dbl),
+                                                      cast (type (mty_dec),
                                                             nil ()),
-                                                      cast (type (mty_dbl),
+                                                      cast (type (mty_dec),
                                                             nil ()))
                                              )))));
                     if (ty == aat_dec) {
@@ -3371,9 +3371,9 @@ reduce (PFpa_op_t * p, int goalnt)
                                 project (select2 (VAR (L(p)->env,
                                                        pa_item,
                                                        aat_dec),
-                                                  cast (type (mty_dbl),
+                                                  cast (type (mty_dec),
                                                         nil ()),
-                                                  cast (type (mty_dbl),
+                                                  cast (type (mty_dec),
                                                         nil ())),
                                          var (PF_MIL_VAR_DEC)))
                         );
@@ -3444,6 +3444,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 unpin (intVAL, 1);
                 unpin (dblVAL, 1);
+                unpin (decVAL, 1);
                 unpin (strVAL, 1);
                 unpin (item, 1);
                 unpin (kind, 1);
@@ -3531,7 +3532,7 @@ reduce (PFpa_op_t * p, int goalnt)
                              lit_oid (0))),
                 assgn (
                     var (decVAL->name),
-                    seqbase (new (type (mty_void), type (mty_dbl)),
+                    seqbase (new (type (mty_void), type (mty_dec)),
                              lit_oid (0))),
                 assgn (
                     var (strVAL->name),
@@ -4618,7 +4619,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     /* because functions are only allowed for dbl
                        we need to cast before and afterwards:
                        res := `input'.[dbl]().[`op']().[`res_type'](); */
-                    if (impl_types (res_type) == mty_dbl)
+                    if (op == PFmil_mabs || impl_types (res_type) != mty_int)
                         execute (
                             assgn (var (res->name),
                                    op (VAR (L(p)->env, att, res_type))));
