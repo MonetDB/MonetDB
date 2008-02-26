@@ -7366,10 +7366,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 cur_level,
                 cur_level);
 
-        /* nil as NaN value doesn't work out, because nil disappears in joins */
+        /* substitute nil by nan */
         milprintf(f,
-                "if (cast_val.texist(dbl_nil))\n"
-                "{    ERROR (\"We do not support the value NaN.\"); }\n");
+                "cast_val.access(BAT_WRITE).inplace([isnil](cast_val).ord_uselect(true).project(dbl(127,255,255,255,255,255,255,255))).access(BAT_READ);\n");
 
         if (!code)
             addValues (f, dbl_container(), "cast_val", "item");

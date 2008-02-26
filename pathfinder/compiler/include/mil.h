@@ -513,6 +513,7 @@ PFmil_t * PFmil_lit_oid (oid o);
 
 /** a literal dbl */
 PFmil_t * PFmil_lit_dbl (double d);
+PFmil_t * PFmil_lit_dbl_ (int d0, int d1, int d2, int d3, int d4, int d5, int d6, int d7);
 
 /** a literal dec */
 PFmil_t * PFmil_lit_dec (long long int l);

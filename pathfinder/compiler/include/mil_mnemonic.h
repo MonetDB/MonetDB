@@ -47,6 +47,7 @@
 
 /** literal dbls */
 #define lit_dbl(i) PFmil_lit_dbl (i)
+#define lit_dbl_(d0,d1,d2,d3,d4,d5,d6,d7) PFmil_lit_dbl_ (d0,d1,d2,d3,d4,d5,d6,d7)
 
 /** literal decimals */
 #define lit_dec(i) PFmil_lit_dec (i)
