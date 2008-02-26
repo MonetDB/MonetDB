@@ -356,6 +356,7 @@ ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		joins[top++] = b;
 	}
 	b= ALGjoinPathBody(top,joins);
+        if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPkeepref(b->batCacheid);
 	*(int *) getArgReference(stk, pci, 0) = b->batCacheid;
 	return MAL_SUCCEED;
