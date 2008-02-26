@@ -1301,7 +1301,7 @@ CTgroup_@1_ordered(BAT *b, BAT **res)
 	if (BAThordered(b)) {
 		bn->tsorted = b->tsorted;
 		histo->hsorted = b->hsorted;
-		histo->tsorted = b->tsorted;
+		histo->tsorted = 0;
 		BATkey(histo, TRUE);
 	}
 	if (b->hkey)
