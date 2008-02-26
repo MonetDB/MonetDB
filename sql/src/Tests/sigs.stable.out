@@ -73,6 +73,8 @@ module 'sql_server'
 [ "dec_round(lng, lng) : lng"								  ]
 [ "dec_round(sht, sht) : sht"								  ]
 [ "declareVariable(mvc, str, any::1) : void"						  ]
+[ "dense_rank(BAT[oid,any::1]) : BAT[oid,int]"						  ]
+[ "dense_rank_grp(BAT[oid,any::1], BAT[oid,oid], BAT[oid,oid]) : BAT[oid,int]"		  ]
 [ "dump_cache() : void "								  ]
 [ "dump_opt_stats() : void "								  ]
 [ "flt(bte) : flt"									  ]
