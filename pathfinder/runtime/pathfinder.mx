@@ -2454,16 +2454,9 @@ PROC ws_docfilter(bat[void,bat] ws,
                   bat[any::1,oid] any_pre,
                   oid cont) : bat[any::1,oid]
 {
-    var cont_coll := ws.fetch(CONT_COLL);
-    var open_cont := ws.fetch(OPEN_CONT);
-    var open_docid:= ws.fetch(OPEN_DOCID);
-    var open_name := ws.fetch(OPEN_NAME);
-    var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
-    var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
-    var pre_nid   := ws.fetch(PRE_NID).fetch(cont);
-    var nid_rid   := ws.fetch(NID_RID).fetch(cont);
     var map_pid   := ws.fetch(MAP_PID).fetch(cont);
-    var frag_root := ws.fetch(FRAG_ROOT).fetch(cont);
+    var nid_rid   := ws.fetch(NID_RID).fetch(cont);
+    var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
 
     # first, ensure sorted PREs
     var isolate := (ttype(map_pid) = oid);
@@ -2476,6 +2469,16 @@ PROC ws_docfilter(bat[void,bat] ws,
         var any_nid := any_pre.tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
         any_pre := reverse(reverse(any_nid).leftfetchjoin(any_pre.hmark(0@0)));
     }
+    if (pre_size.fetch(0) = (count(pre_size) - 2))
+        return any_pre;
+
+    var cont_coll := ws.fetch(CONT_COLL);
+    var open_cont := ws.fetch(OPEN_CONT);
+    var open_docid:= ws.fetch(OPEN_DOCID);
+    var open_name := ws.fetch(OPEN_NAME);
+    var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
+    var pre_nid   := ws.fetch(PRE_NID).fetch(cont);
+    var frag_root := ws.fetch(FRAG_ROOT).fetch(cont);
 
     var one := any_pre.ord_select(1@0); # never returned by index, except special 'give-up' case
     if (count(any_pre) = count(one)) return any_pre;
