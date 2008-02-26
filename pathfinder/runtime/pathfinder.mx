@@ -2292,7 +2292,7 @@ PROC ws_lookup(BAT[void,bat] ws,
         var qn_id := qn_ids.fetch(0);
         valid := ws.fetch(QN_NID_UNQ).fetch(cont).texist(qn_id);
         if (valid) {
-            res := idx.select(qn_id).assert_order();
+            res := reverse(reverse(idx.select(qn_id)).assert_order());
             ins := reverse(ws.fetch(QN_NID_INS).fetch(cont)).select(qn_id);
             del := reverse(ws.fetch(QN_NID_DEL).fetch(cont)).select(qn_id);
         }
