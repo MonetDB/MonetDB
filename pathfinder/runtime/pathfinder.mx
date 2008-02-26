@@ -2469,7 +2469,7 @@ PROC ws_docfilter(bat[void,bat] ws,
         var any_nid := any_pre.tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
         any_pre := reverse(reverse(any_nid).leftfetchjoin(any_pre.hmark(0@0)));
     }
-    if (pre_size.fetch(0) = (count(pre_size) - 2))
+    if (pre_size.fetch(1) = (count(pre_size) - 2))
         return any_pre;
 
     var cont_coll := ws.fetch(CONT_COLL);
