@@ -926,7 +926,7 @@ main (int argc, char *argv[])
                         " (default)"
 #endif
                         "\n",
-                        long_option (opt_buf, ", --%s", 'g'));
+                        long_option (opt_buf, ", --%s", 'S'));
                 printf ("  -X%s: generate XML representation "
                         "of algebraic plan\n",
                         long_option (opt_buf, ", --%s", 'X'));
