@@ -169,7 +169,7 @@ PFstate_init (PFstate_t *status)
 #ifndef NDEBUG
     status->debug.subtyping     = false;
 #endif
-};
+}
 
 jmp_buf PFexitPoint;
 
