@@ -601,11 +601,14 @@ end batcalc.dense_rank_grp;
 function sql.zero_or_one( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:any_1];
 	(e,g) := group.new(gp);
 	m := aggr.max(e);
-	c := calc.>(m,1);
+	c0 := calc.isnil(m);
+	c0 := calc.not(c0);
+	c1 := calc.>(m,1);
+	c1 := calc.and(c0,c1);
 	ms := calc.str(m); 
 	msg := str.+("zero_or_one: cardinality violation (", ms);
 	msg := str.+(msg, ">1)");
-	assert(c, msg);
+	assert(c1, msg);
 	return b;
 end sql.zero_or_one;
 
@@ -3232,5 +3235,5 @@ sql_@1rank(bat *rid, bat *bid)
 	return MAL_SUCCEED;
 }
 @c
-@:rnk(,nrank++,1)@
+@:rnk(,(void)c;nrank++,1)@
 @:rnk(dense_,nrank+=(c?1:0),2)@
