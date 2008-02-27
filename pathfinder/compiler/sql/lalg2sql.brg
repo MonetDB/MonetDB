@@ -2958,7 +2958,7 @@ reduce (PFla_op_t * p, int goalnt)
         /* Rel:    difference (Rel, Rel) */
         case 22:
         {
-            PFsql_t * (*op) (const PFsql_t *, const PFsql_t *);
+            PFsql_t * (*op) (const PFsql_t *, const PFsql_t *) = NULL;
             PFsql_t *selectlist1 = NULL;
             PFsql_t *selectlist2 = NULL;
             PFsql_t *columnlist  = NULL;

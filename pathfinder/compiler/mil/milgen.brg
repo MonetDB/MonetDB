@@ -5370,7 +5370,7 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Rel:      gt (Rel) */
         case 52: /* fold( */
         {
-            PFmil_t * (*op) (const PFmil_t *, const PFmil_t *);
+            PFmil_t * (*op) (const PFmil_t *, const PFmil_t *) = NULL;
             mvar_t *l   = new_var (1),
                    *r   = new_var (1),
                    *res = new_var (p->refctr);
