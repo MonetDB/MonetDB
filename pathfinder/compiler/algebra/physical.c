@@ -997,7 +997,8 @@ PFpa_select (const PFpa_op_t *n, PFalg_att_t att)
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
 
     /* ---- Select: costs ---- */
-    ret->cost = DEFAULT_COST + n->cost;
+    /* make it more expensive than the value select */
+    ret->cost = 2 * DEFAULT_COST + n->cost;
 
     return ret;
 }

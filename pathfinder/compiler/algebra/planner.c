@@ -696,7 +696,8 @@ plan_project (const PFla_op_t *n)
 static PFplanlist_t *
 plan_select (const PFla_op_t *n)
 {
-    PFplanlist_t  *ret  = new_planlist ();
+    PFplanlist_t *ret  = new_planlist ();
+    PFla_op_t    *op   = L(n);
 
     assert (n); assert (n->kind == la_select);
     assert (L(n)); assert (L(n)->plans);
@@ -707,6 +708,49 @@ plan_select (const PFla_op_t *n)
                   select_ (*(plan_t **) PFarray_at (L(n)->plans, r),
                            n->sem.select.att));
 
+    if (op->kind == la_project &&
+        L(op)->kind == la_num_eq &&
+        LL(op)->kind == la_attach &&
+        (L(op)->sem.binary.att1 == LL(op)->sem.attach.res ||
+         L(op)->sem.binary.att2 == LL(op)->sem.attach.res)) {
+        PFalg_att_t res  = LL(op)->sem.attach.res,
+                    att1 = L(op)->sem.binary.att1,
+                    att2 = L(op)->sem.binary.att2,
+                    sel_att = n->sem.select.att;
+        bool val_ref = false;
+
+        /* normalize such that the atom is stored in att2 */
+        if (res == att1) {
+            att1 = att2;
+            att2 = res;
+        }
+        
+        for (unsigned int i = 0; i < op->sem.proj.count; i++)
+            if (sel_att == op->sem.proj.items[i].new)
+                sel_att = op->sem.proj.items[i].old;
+            else if (op->sem.proj.items[i].old == att2)
+                val_ref = true;
+        
+        /* no match -- bail out */
+        if (sel_att != L(op)->sem.binary.res ||
+            val_ref ||
+            LL(op)->sem.attach.value.type == aat_qname)
+            return ret;
+            
+        for (unsigned int r = 0; r < PFarray_last (L(LL(op))->plans); r++)
+            add_plan (ret,
+                      project (
+                          attach (
+                              val_select (
+                                  *(plan_t **) PFarray_at (L(LL(op))->plans, r),
+                                  att1,
+                                  LL(op)->sem.attach.value),
+                              L(op)->sem.binary.res,
+                              PFalg_lit_bln (true)),
+                          op->sem.proj.count,
+                          op->sem.proj.items));
+    }
+        
     return ret;
 }
 
