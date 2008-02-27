@@ -399,7 +399,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     STOP_POINT(1);
     
     tm = PFtimer_start ();
-    module_base = PFparse_modules (proot, status->standoff_axis_steps);
+    module_base = PFparse_modules (proot, &PFquery, status->standoff_axis_steps);
     tm = PFtimer_stop (tm);
 
     if (status->timing)
@@ -894,7 +894,8 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         /* repeat PFcompile, which we can't reuse as we don't want to deal with files here */
         num_fun = PFparse (xquery, &proot, &PFquery,
                            PFstate.standoff_axis_steps);
-        module_base = PFparse_modules (proot, PFstate.standoff_axis_steps);
+        module_base = PFparse_modules (proot, &PFquery,
+                                       PFstate.standoff_axis_steps);
         proot = PFnormalize_abssyn (proot);
         if (PFstate.output_format == PFoutput_format_milprint_summer) {
             /* algebra MIL/MAL generation could/should also use it.. */

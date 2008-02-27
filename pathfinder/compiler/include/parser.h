@@ -47,7 +47,7 @@ int PFparse (char* pfin, PFpnode_t **, PFquery_t *PFquery, bool standoff);
  * Load and parse modules listed in working list and put them into
  * the parse tree @a r.
  */
-int PFparse_modules (PFpnode_t *r, bool standoff);
+int PFparse_modules (PFpnode_t *r, PFquery_t *PFquery, bool standoff);
 
 #endif   /* PARSER_H */
 

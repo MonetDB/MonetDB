@@ -2959,12 +2959,12 @@ int
 #else
 void
 #endif
-PFparse_modules (PFpnode_t *r, bool standoff)
+PFparse_modules (PFpnode_t *r, PFquery_t *query, bool standoff)
 {
     PFpnode_t *module;
     PFloc_t    noloc = (PFloc_t) { .first_row = 0, .first_col = 0,
                                    .last_row  = 0, .last_col  = 0};
-    PFquery = NULL;
+    PFquery = query;
     standoff_axis_steps = standoff;
 
     /* only accept module from now on */
