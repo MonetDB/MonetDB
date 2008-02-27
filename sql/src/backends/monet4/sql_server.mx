@@ -1597,7 +1597,7 @@ sql_@1rank(BAT **R, BAT *b)
 	return GDK_SUCCEED;
 }
 @c
-@:rnk(,nrank++,1)@
+@:rnk(,(void)c;nrank++,1)@
 @:rnk(dense_,nrank+=(c?1:0),2)@
 @-
 An SQL session needs a minimal set of modules, shown below.
@@ -1753,7 +1753,7 @@ proc {zero_or_one}(BAT[oid,any::1] b, BAT[oid,oid] gp, BAT[oid,oid] gpe) : BAT[o
 	var g := CTgroup(gp);
 	var e := g.histogram();
 	var m := max(e);
-	if (m > 1) { 
+	if (and(not(isnil(m)),(m > 1))) { 
 		ERROR("zero_or_one: cardinality violation (%d>1)", m);
 	}
 	return b;
