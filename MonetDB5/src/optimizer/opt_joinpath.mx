@@ -231,13 +231,14 @@ opt_export str ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 The join path optimizer takes a join sequence and
 attempts to minimize the intermediate result.
 The choice depends on a good estimate of intermediate
-results.
+results using properties.
 For the time being, we use a simplistic model, based
 on the assumption that most joins are foreign key joins anyway.
 
 We use a sample based approach for sizeable  tables.
 The model is derived from the select statement. However, we did not succeed.
 The code is now commented for future improvement.
+
 Final conclusion from this exercise is:
 The difference between the join input size and the join output size is not 
 the correct (or unique) metric which should be used to decide which order 
@@ -249,12 +250,15 @@ size_t
 ALGjoinCost(BAT *l, BAT *r)
 {
 	size_t lc, rc;
-/*	size_t lsize,rsize;
-	BAT *lsample, *rsample, *j; */
+#if 0
+	size_t lsize,rsize;
+	BAT *lsample, *rsample, *j; 
+#endif
 
 	lc = BATcount(l);
 	rc = BATcount(r);
 #if 0	
+	/* The sampling method */
 	if( lc > 100000 || rc > 100000){
 		lsize= MIN(lc/100, (1<<SAMPLE_THRESHOLD_lOG)/3);
 		lsample= BATsample(l,lsize);
@@ -268,6 +272,10 @@ ALGjoinCost(BAT *l, BAT *r)
 		return lsize;
 	}
 #endif
+    /* merge joins are by far the cheapest */
+	if( l->tsorted && r->hsorted)
+		return MIN(lc,rc);
+	/* foreign key joins are common */
 	if( l->ttype== TYPE_oid || r->htype== TYPE_oid )
 		return MIN(lc,rc);
 	return lc * rc;
