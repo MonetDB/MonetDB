@@ -357,17 +357,22 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				pushInstruction(mb,p);
 				rep[getArg(p,0)] = 1;
 		} else {	
-		 	if(no_pr && rprof == 1 &&
-				getModuleId(p)== sqlRef && 
-				getFunctionId(p)==resultSetRef){
+		 	if((getModuleId(p)== sqlRef && 
+				getFunctionId(p)==resultSetRef) ||
+				p->token == ENDsymbol){
+				if( rs == 1){
 					q = newStmt(mb,"replicator","stop");	
 					rs = 0;
+				}
+				if (no_pr && rprof == 1){
 					q = newStmt(mb,"profiler","stop");	
 					rprof = 0;
+				}
 			}
 			pushInstruction(mb,p);
 		}
 	}
+
 	for(; i<slimit; i++)
 	if(old[i])
 		freeInstruction(old[i]);

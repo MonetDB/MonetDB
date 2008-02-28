@@ -41,8 +41,12 @@ function user.main():void;	# 0  (main:void)
     mdb.list("user","qry");	# 2 MDBlist3 (_5:void)<-(_3:str)(_4:str)
 end main;	# 3  
 function sql.qry():void;
-    b:bat[:int,:int]  := sql.bind("schema","r","t");
-    t := replicator.select(b,1,10,"schema","r","t");
+    profile.start();
+    replicator.start();
+    b:bat[:int,:int]  := replicator.bind("schema","r","t");
+    t := replicator.select(b,1,10);
+    replicator.stop();
+    profiler.stop();
 end qry;
 
 # 12:06:28 >  
