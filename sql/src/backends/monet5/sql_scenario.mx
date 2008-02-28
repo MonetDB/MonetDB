@@ -219,6 +219,7 @@ SQLinit(Client c)
 	be_funcs.fstack		= &monet5_freestack;
 	be_funcs.fcode		= &monet5_freecode;
 	monet5_user_init(&be_funcs);
+	replicator_sql(&sqlf);
 
 	MTIMEtimezone(&tz, &gmt);
 	(void) tz;

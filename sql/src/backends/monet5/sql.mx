@@ -668,6 +668,8 @@ include sql_bpm;
 #include "sql_scope.h"
 #include "sql_qc.h"
 #include "sql_env.h"
+#include <opt_replicator.h>
+
 @-
 The back-end structure collects the information needed to support
 compilation and execution of the SQL code against the Monet Version 5
@@ -714,6 +716,8 @@ extern BAT *mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int a
 sql5_export str SQLcommit_wrap(int *ret);
 sql5_export str SQLrollback_wrap(int *ret);
 sql5_export str mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access);
+sql5_export void replicator_sql(struct _sql_functions *sqlfp);
+
 sql5_export str mvc_append_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_update_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bind_single_wrap(int *ret, int *bid, str *name);
@@ -1337,6 +1341,13 @@ mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access)
 		return MAL_SUCCEED;
 	}
 	throw(SQL, "mvc_bind", "limitation in transaction scope");
+}
+
+
+void
+replicator_sql(struct _sql_functions *sqlfp)
+{
+        sqlfp->sqlbind = &mvc_bind_wrap;
 }
 
 str
