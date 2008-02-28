@@ -334,6 +334,7 @@ typedef struct VARRECORD {
 #define VAR_INIT		32
 #define VAR_USED		64
 #define VAR_DISABLED	128 /* used for comments and scheduler */
+#define VAR_STORED	256 /* used for replicator */
 
 /* type check status is kept around to improve type checking efficiency */
 #define TYPE_ERROR      -1
@@ -413,6 +414,7 @@ typedef struct MALBLK {
 	int keephistory;	/* do we need the history at all */
 	str marker;			/* history points are marked for backtracking */
 	int maxarg;			/* keep track on the maximal arguments used */
+	ptr replica;
 } *MalBlkPtr, MalBlkRecord;
 
 @-
@@ -456,6 +458,7 @@ for separate name space management.
 @:varProperty(Typedef,TYPEVAR)@
 @:varProperty(UDFtype,UDFTYPE)@
 @:varProperty(Constant,CONSTANT)@
+@:varProperty(Stored,STORED)@
 
 #define getVarConstant(M,I)     ((M)->var[I]->value)
 
@@ -663,6 +666,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->profiler = NULL;
 	mb->ptop = mb->psize = 0;
 	mb->prps = NULL;
+	mb->replica = NULL;
 	return mb;
 }
 
