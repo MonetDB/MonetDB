@@ -223,7 +223,7 @@ On Windows64 you will have to compile libxml2 yourself (with its
 optional prerequisites iconv_ and zlib_, for which see below).
 
 Edit the file ``win32\Makefile.msvc`` and change the one occurrence of
-``zdll.lib`` to ``zlib1.lib``, and then runt the following commands in
+``zdll.lib`` to ``zlib1.lib``, and then run the following commands in
 the ``win32`` subdirectory, substituting the correct locations for the
 iconv and zlib libraries::
 
