@@ -83,3 +83,4 @@ temporal
 seconds2timestamp
 select_not_equal
 case_substring
+zero_or_one_bug

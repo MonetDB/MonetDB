@@ -2677,17 +2677,17 @@ _column_exp(mvc *sql, scope *scp, symbol *column_e, group *grp, stmt *subset, in
 		return NULL;
 
 	/* flatten subqueries */
-	if (s->type == st_list && list_length(s->op1.lval) == 2 && f == sql_sel) {
+	if (s->type == st_list && 
+	    list_length(s->op1.lval) == 2 && f == sql_sel) {
 		stmt *h, *v = stmt_dup(s->op1.lval->h->data);
 		stmt *o = stmt_dup(s->op1.lval->h->next->data);
-
 		stmt_destroy(s);
 		s = stmt_join(stmt_reverse(o), v, cmp_equal);
 		h = stmt_dup(s->h->t);
 		stmt_destroy(s->h);
 		s->h = h;
-		/* make sure we don't lose rows */
-		s = stmt_outerjoin(stmt_mirror(first_subset(subset)), s, cmp_equal);
+		if (f >= sql_sel)   /* make sure we don't lose rows */
+			s = stmt_outerjoin(stmt_mirror(first_subset(subset)), s, cmp_equal);
 	}
 	/* AS name */
 	if (s && l->h->next->data.sval) {
