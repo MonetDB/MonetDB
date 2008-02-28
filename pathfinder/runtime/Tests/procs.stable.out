@@ -440,7 +440,7 @@ procs();
 [ "mem_usage() : BAT[str,lng]"																  ]
 [ "mem_usage(int) : BAT[str,lng]"															  ]
 [ "memory() : BAT[str,wrd]"																											  ]
-[ "merge_adjacent_text_nodes(BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[void,oid]"						  ]
+[ "merge_adjacent_text_nodes(BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[void,BAT]"																	  ]
 [ "mil_ancestor(BAT[void,BAT], oid, oid) : BAT[void,oid]"												  ]
 [ "mil_select(BAT[any::1,any::2], str, ..any..) : BAT[any::1,any::2]"											  ]
 [ "mil_select(BAT[any::1,any::2], str, any::2, any::2) : BAT[any::1,any::2]"										  ]

@@ -5167,7 +5167,7 @@ int
 CMDfetchConvert_@1(ptr res, int *tpe, BAT* b, @1* pos) 
 {
 	int ret = GDK_FAIL;
-	if (@2 ((size_t) *pos) < BATcount(b)) {
+	if (@3 ((size_t) *pos) < BATcount(b)) {
 		BATiter bi = bat_iterator(b);
 		bat bid = *(bat*) BUNtail(bi, BUNfirst(b)+*pos);
 		int fix = BBPfix(bid);
@@ -5185,13 +5185,13 @@ CMDfetchConvert_@1(ptr res, int *tpe, BAT* b, @1* pos)
 			*tpe = TYPE_bat;
 		}
 	} else {
-		GDKerror("fetch(%s) illegal position %d.\n", BBP_logical(b->batCacheid), *pos); 
+		GDKerror("fetch(%s) illegal position @2.\n", BBP_logical(b->batCacheid), *pos); 
 	}
 	return ret;
 }
 @c
-@:fetchconvert(int,*pos >= 0 &&)@
-@:fetchconvert(oid)@
+@:fetchconvert(int,%d,*pos >= 0 &&)@
+@:fetchconvert(oid,"OIDFMT",)@
 
 int
 CMDinsertConvert(BAT** res, BAT *b, ptr h, ptr t, int tpe) 
@@ -7788,7 +7788,7 @@ working set representation.",
 PROC merge_adjacent_text_nodes (BAT[void,oid] iter,
                                 BAT[void,oid] pre,
                                 BAT[void,oid] pcont,
-                                BAT[void,BAT] ws) : BAT[void,oid]
+                                BAT[void,BAT] ws) : BAT[void,BAT]
 {
     # nothing to do if our item sequences are all of length 1
     if (iter.count() = iter.tunique().count())

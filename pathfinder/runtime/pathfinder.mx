@@ -5849,6 +5849,9 @@ xquery_client_engine(mapi_client *mc)
                         break;
                 case 'a': /* enable algebra? */
                         p += sizeof("algebra ") - 1;
+                        /* clear previous state */
+                        ctx->mode &= ~(XQ_ALGEBRA|XQ_MILPRINT_SUMMER);
+                        /* set new state */
                         if (*p == '1')
                             ctx->mode |= XQ_ALGEBRA;
                         if (*p == '0')
