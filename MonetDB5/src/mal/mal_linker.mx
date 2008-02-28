@@ -21,7 +21,9 @@
 The server is bootstrapped by processing a MAL script with
 module definitions or extensions.
 For each module file encountered, the object library 
-lib_<modulename>.so is searched for in @dots{}/lib(64)/MonetDB.
+lib_<modulename>.so is searched for in the location identified
+by monet_mod_path=${exec_prefix}/lib/MonetDB5:${exec_prefix}/lib/MonetDB5/lib:${exec_prefix}/lib/MonetDB5/bin.
+
 The corresponding signature are defined 
 in @dots{}/lib(64)/<modulename>.mal.
 @-
