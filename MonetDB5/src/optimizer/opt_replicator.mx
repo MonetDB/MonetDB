@@ -16,9 +16,38 @@
 
 @f opt_replicator
 @- The replicator
-The replicator is an optimizer and runtime support
-module to re-use operation results against persistent columns.
-It is developed primarilly for the SQL front-end.
+Query optimization and processing in off-the-shelf database systems is often
+still focus on individual queries. The queries are analysed in isolation
+and ran against a kernel regardless opportunities offered by concurrent or
+previous invocations.
+
+This approach is far from optimal and two directions to improve
+are explored: materialized views and (partial) result-set reuse.
+Materialized views are derived from query logs. They represent
+common sub-queries, whose materializaion and storage improves
+subsequent processing time.
+Re-use of (partial) results is used in those cases where a
+zoomin-in or navigational application is at stake.
+
+The Recycler module extends it with a the middle out approach.
+It exploits the materialize-all-intermediate approach MonetDB
+by deciding to keep hold on them as long as deemed benificial.
+
+The approach taken is to modify the MAL program, such that
+a small group of instructions is replaced by an overloaded
+version. Instructions become subject to the Recycler if
+at least one of its arguments is BAT and all others are
+either constants or variables already known in the Recycler.
+
+Upon execution, the Recycler routines first check for
+an up to date result to be picked up at no cost.
+Otherwise. it evaluates the instruction and calls upon
+policy functions to decide if it is worthwhile to
+keep.
+
+The Recycler is developed primarilly for the SQL front-end,
+where we expect significant improvements for running the
+large SkyServer queries.
 
 The following patterns are the target:
 @verbatim
@@ -30,7 +59,7 @@ _22 := algebra.joinPath(_19=<~tmp_33363>bat[:oid,:oid]{57328}, _12=<~tmp_33364>b
 
 @end verbatim
 
-The replicator comes with a few controlling operators
+The Recycler comes with a few controlling operators
 to experiment with its effect in concrete settings.
 @{
 @mal
@@ -40,6 +69,12 @@ pattern optimizer.replicator(mod:str, fcn:str):str
 address OPTreplicator
 comment "Replicator code injection";
 
+@-
+The number of overloaded instructions is kept to a minimum.
+Actually, the Recycler should be a variation of the interpreter
+which inspects the variable table for alternative results.
+[hmm todo]
+@mal
 module replicator;
 
 
@@ -57,7 +92,7 @@ comment "The overloaded select operator for replicated operations";
 
 pattern replicator.select(b:bat[:any_1,:any_2],low:any_2,hgh:any_2,li:bit,hi:bit):bat[:any_1,:any_2]
 address REPselect
-comment "The overloaded select operator for replicated operations";
+cs well as well omment "The overloaded select operator for replicated operations";
 
 pattern replicator.uselect(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:oid ]
 address REPuselect
