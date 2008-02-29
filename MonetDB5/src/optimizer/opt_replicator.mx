@@ -193,7 +193,6 @@ static void assureSpace()
 	int sz;
 	if ( repl == NULL){
 		repl = newMalBlk(1000, 1000);
-		initProfiler(repl);
 		replstat = (StatPtr)GDKzalloc(sizeof(StatRec)* 1000);
 	} else 		/* sync the repl stat */
 		if(repl->vtop + 1>= repl->vsize){
@@ -207,36 +206,38 @@ static void assureSpace()
 
 int* getMap(MalStkPtr s)
 {
-	if( s->blk->replica )
-		return (((ReplicaRec*)s->blk->replica)->vmap);
-	else return NULL;
-}
-
-str
-REPstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
 	Replica r;
 	int i, vc;
 
-	(void) mb;
-	(void) pci;
-	vc = stk->blk->vtop;
-	r = (Replica) stk->blk->replica;
+	r = (Replica) s->blk->replica;
+	vc = s->blk->vtop;
 	if( r == NULL) {	/* first execution */
 		r = (Replica) GDKzalloc(sizeof(ReplicaRec));
 		r->ver = replver;
 		r->vmap = (int*)GDKmalloc(sizeof(int)* vc);
 		for(i=0; i<vc; i++)
 			r->vmap[i] = -1;
-		stk->blk->replica = (ptr) r;
+		s->blk->replica = (ptr) r;
 	} else
-	if( r->ver != replver) { /* replicaRec based on old repl */       
-		GDKfree(r->vmap);	/* reinit var. map */
+	if( r->ver != replver) { /* first execution after change of repl */       
 		r->ver = replver;
-		r->vmap = (int*)GDKmalloc(sizeof(int)* vc);
-		for(i=0; i<vc; i++)
+		for(i=0; i<vc; i++)		/* reinit var. map */
 			r->vmap[i] = -1;
-	}
+	}	
+
+	if( s->blk->replica )
+		return (((Replica)s->blk->replica)->vmap);
+	else return NULL;
+}
+
+str
+REPstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+
+	(void) mb;
+	(void) pci;
+
+	getMap(stk);
 	replref++;
 	return MAL_SUCCEED;
 }
@@ -310,7 +311,7 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		p= old[i];
 		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
 			if(no_pr && rprof ==0){
-				newStmt(mb,"profile","start");	
+				newStmt(mb,"profiler","start");	
 				rprof = 1;
 			}
 			if(rs == 0){
