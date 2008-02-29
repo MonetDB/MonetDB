@@ -92,7 +92,7 @@ comment "The overloaded select operator for replicated operations";
 
 pattern replicator.select(b:bat[:any_1,:any_2],low:any_2,hgh:any_2,li:bit,hi:bit):bat[:any_1,:any_2]
 address REPselect
-cs well as well omment "The overloaded select operator for replicated operations";
+comment "The overloaded select operator for replicated operations";
 
 pattern replicator.uselect(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:oid ]
 address REPuselect
@@ -582,8 +582,6 @@ str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi,
 
   	rv = getArg(p,0); 
 	vmap = getMap(s);
-	if( vmap == NULL)
-		throw(MAL, "REPbind", "Variable map not initialized");
 
 	if( vmap[rv] < 0 ){ 		/*res var not mapped*/
 		ri = findReplica(s,p); 	/* replica instr */
@@ -703,8 +701,6 @@ REPmarkT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	rv = getArg(pci,0); 
 	vmap = getMap(stk);
-	if( vmap == NULL)
-		throw(MAL, "REPbind", "Variable map not initialized");
 	if( vmap[rv] < 0 ){ /*res var not mapped*/
 		ri = findReplica(stk,pci); /* replica instr */
 		if( ri < 0 ){
@@ -739,29 +735,64 @@ str
 REPreverse(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 
-	int *ret, *bid;
-	lng clk = 0;
+	int *ret, *bid, ri, rv, rr, *vmap;
 	BAT *b, *bn = NULL;
 
 	(void) mb;
 	ret= (int*) getArgReference(stk, pci,0);
 	bid= (int*) getArgReference(stk, pci,1);
 
-        if ((b = BATdescriptor(*bid)) == NULL) {
-                throw(MAL, "bat.reverse", "Cannot access descriptor");
-        }
+	rv = getArg(pci,0); 
+	vmap = getMap(stk);
 
-	clk = GDKusec();
-	bn = BATmirror(b);
-	clk = GDKusec()-clk;
+	if( vmap[rv] < 0 ){ 		/*res var not mapped*/
+		ri = findReplica(stk,pci); 	/* replica instr */
+		if(ri >= 0 && isResStored(repl,ri)){		/*reuse */ 
+			rr = getArg(repl->stmt[ri],0);
+			*ret = *(int *)getVarVal(repl,rr);
+			BBPincref(*ret,TRUE);
+			replstat[rr].reuse++;  
+		} else { 			/* compute */
+			if ((b = BATdescriptor(*bid)) == NULL) {
+        	        throw(MAL, "bat.reverse", "Cannot access descriptor");
+		        }
+			bn = BATmirror(b);
+		        if (bn) {
+	                	*ret = bn->batCacheid;
+		                BBPkeepref(bn->batCacheid);
+		        } else
+			throw(MAL, "REPreverse", "GDKerror");
 
-        if (bn) {
-                *ret = bn->batCacheid;
-                BBPkeepref(bn->batCacheid);
-        } else
-		throw(MAL, "bat.reverse", "GDKerror");
+			if( ri < 0 ){	/* add replica item */
+				ri = newReplica(stk,pci,FALSE);
+				rr = getArg(repl->stmt[ri],0);
+			}
+			else rr = getArg(repl->stmt[ri],0);
+		} 
+			/* set mapping after first exec */
+		vmap[rv] = rr;
+	}
+	else {		/* check and reuse mapped var*/
+		rr = vmap[rv];
+		if( isVarStored(repl,rr) ){		/*reuse */ 
+			*ret = *(int *)getVarVal(repl,rr);
+			BBPincref(*ret,TRUE);
+			replstat[rr].reuse++;  
+		}
+		else {				/* recompute */
+			if ((b = BATdescriptor(*bid)) == NULL) {
+        	        	throw(MAL, "bat.reverse", "Cannot access descriptor");
+		        }
+			bn = BATmirror(b);
+		        if (bn) {
+	                	*ret = bn->batCacheid;
+		                BBPkeepref(bn->batCacheid);
+		        } else
+			throw(MAL, "REPreverse", "GDKerror");
+		}
+	}
 
-	newReplica(stk,pci,FALSE);
+/* TODO reuse branch of code can be dropped if we are sure that we never store and reuse reverse results ??*/  
 	return MAL_SUCCEED;
 
 }
@@ -771,19 +802,50 @@ REPjoin(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 
 	int *ret, *lid, *rid;
-	lng clk = 0;
-	str msg;
+	int ri, rv, rr, *vmap, cnt = 0;
+	str msg = MAL_SUCCEED;
 
 	(void) mb;
 	ret = (int*) getArgReference(stk, pci,0);
 	lid = (int*) getArgReference(stk, pci,1);
 	rid = (int*) getArgReference(stk, pci,2);
-	
-	clk = GDKusec();
-	msg = ALGjoin(ret, lid, rid);
-	clk = GDKusec()-clk;
 
-	newReplica(stk,pci,TRUE);
+	rv = getArg(pci,0); 
+	vmap = getMap(stk);
+	
+	if( vmap[rv] < 0 ){ 		/*res var not mapped*/
+		ri = findReplica(stk,pci); 	/* replica instr */
+		if(ri >= 0 && isResStored(repl,ri)){		/*reuse */ 
+			rr = getArg(repl->stmt[ri],0);
+			*ret = *(int *)getVarVal(repl,rr);
+			BBPincref(*ret,TRUE);
+			replstat[rr].reuse++;  
+		} else { /* compute */
+			msg = ALGjoin(ret, lid, rid);
+			if( msg == MAL_SUCCEED )
+				ALGcount_bat(&cnt, ret);
+			if( ri < 0 ){	/* add replica item */
+				ri = newReplica(stk,pci,TRUE);
+				rr = getArg(repl->stmt[ri],0);
+				replstat[rr].cnt = cnt;
+			}
+			else rr = getArg(repl->stmt[ri],0);
+		} 
+			/* set mapping after first exec */
+		vmap[rv] = rr;
+	}
+	else {		/* check and reuse mapped var*/
+		rr = vmap[rv];
+		if( isVarStored(repl,rr) ){		/*reuse */ 
+			*ret = *(int *)getVarVal(repl,rr);
+			BBPincref(*ret,TRUE);
+			replstat[rr].reuse++;  
+		}
+		else {	/* recompute */
+			msg = ALGjoin(ret, lid, rid);	
+		}
+	}
+
 	return msg;
 }
 
@@ -792,19 +854,49 @@ REPsemijoin(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 
 	int *ret, *lid, *rid;
-	lng clk = 0;
-	str msg;
+	int ri, rv, rr, *vmap, cnt = 0;
+	str msg = MAL_SUCCEED;
 
 	(void) mb;
 	ret = (int*) getArgReference(stk, pci,0);
 	lid = (int*) getArgReference(stk, pci,1);
 	rid = (int*) getArgReference(stk, pci,2);
 	
-	clk = GDKusec();
-	msg = ALGsemijoin(ret, lid, rid);
-	clk = GDKusec()-clk;
-
-	newReplica(stk,pci,TRUE);
+	rv = getArg(pci,0); 
+	vmap = getMap(stk);
+	
+	if( vmap[rv] < 0 ){ 		/*res var not mapped*/
+		ri = findReplica(stk,pci); 	/* replica instr */
+		if(ri >= 0 && isResStored(repl,ri)){		/*reuse */ 
+			rr = getArg(repl->stmt[ri],0);
+			*ret = *(int *)getVarVal(repl,rr);
+			BBPincref(*ret,TRUE);
+			replstat[rr].reuse++;  
+		} else { /* compute */
+			msg = ALGsemijoin(ret, lid, rid);
+			if( msg == MAL_SUCCEED )
+				ALGcount_bat(&cnt, ret);
+			if( ri < 0 ){	/* add replica item */
+				ri = newReplica(stk,pci,TRUE);
+				rr = getArg(repl->stmt[ri],0);
+				replstat[rr].cnt = cnt;
+			}
+			else rr = getArg(repl->stmt[ri],0);
+		} 
+			/* set mapping after first exec */
+		vmap[rv] = rr;
+	}
+	else {		/* check and reuse mapped var*/
+		rr = vmap[rv];
+		if( isVarStored(repl,rr) ){		/*reuse */ 
+			*ret = *(int *)getVarVal(repl,rr);
+			BBPincref(*ret,TRUE);
+			replstat[rr].reuse++;  
+		}
+		else {	/* recompute */
+			msg = ALGsemijoin(ret, lid, rid);	
+		}
+	}
 	return msg;
 }
 
