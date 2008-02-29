@@ -132,7 +132,7 @@ opt_export str REPjoin(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str REPsemijoin(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str REPdump(int *ret);
 opt_export str REPstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str REPstop(MalStkPtr stk);
+opt_export str REPstop(void);
 opt_export str REPsetRetain(int *ret, sht *p);
 opt_export str REPsetReuse(int *ret, sht *p);
 opt_export str REPsetCache(int *ret, sht *p);
@@ -242,10 +242,8 @@ REPstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str REPstop(MalStkPtr s)
+str REPstop(void)
 {
-	if( s->blk->replica )
-		GDKfree(((ReplicaRec*)s->blk->replica)->vmap);
 	replref--;
 	return MAL_SUCCEED;
 }
