@@ -265,6 +265,7 @@ REPsetRetain(int *ret, sht *p)
 {
 	(void) ret;
 	retain = *p;
+	(void)retain;
 	return MAL_SUCCEED;
 }
 
@@ -273,6 +274,7 @@ REPsetReuse(int *ret, sht *p)
 {
 	(void) ret;
 	reuse = *p;
+	(void)reuse;
 	return MAL_SUCCEED;
 }
 
@@ -281,6 +283,7 @@ REPsetCache(int *ret, sht *p)
 {
 	(void) ret;
 	rcache = *p;
+	(void)rcache;
 	return MAL_SUCCEED;
 }
 
@@ -288,7 +291,7 @@ static int
 OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, actions=0;
-	InstrPtr *old, q;
+	InstrPtr *old;
 	int limit,slimit, no_pr, rprof = 0, rs =0;
 	sht *rep ;
 
@@ -307,11 +310,11 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		p= old[i];
 		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
 			if(no_pr && rprof ==0){
-				q = newStmt(mb,"profile","start");	
+				newStmt(mb,"profile","start");	
 				rprof = 1;
 			}
 			if(rs == 0){
-				q = newStmt(mb,"replicator","start");	
+				newStmt(mb,"replicator","start");	
 				rs = 1;
 			}
 			setModuleId(p,replicatorRef);
@@ -361,11 +364,11 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				getFunctionId(p)==resultSetRef) ||
 				p->token == ENDsymbol){
 				if( rs == 1){
-					q = newStmt(mb,"replicator","stop");	
+					newStmt(mb,"replicator","stop");	
 					rs = 0;
 				}
 				if (no_pr && rprof == 1){
-					q = newStmt(mb,"profiler","stop");	
+					newStmt(mb,"profiler","stop");	
 					rprof = 0;
 				}
 			}
