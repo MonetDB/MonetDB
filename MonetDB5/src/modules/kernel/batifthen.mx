@@ -335,11 +335,11 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 	bi = bat_iterator(b);
 	t = (bit*)Tloc(b,BUNfirst(b));
 
-	if (ATOMvarsized(TYPE_@1)) {
-		tid = *(@1**)tid;
-		eid = *(@1**)eid;
-		nilptr = (@1*)nilval;
-	}
+#if @2
+	tid = *(@1**)tid;
+	eid = *(@1**)eid;
+	nilptr = (@1*)nilval;
+#endif
 	BATloop(b, p, q) {
 		if (*t == bit_nil) 
 			BUNfastins(bn, BUNhead(bi,p), (ptr)nilptr);
@@ -377,8 +377,9 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 
 	t = (bit*) Tloc(b, BUNfirst(b));
 
-	if (ATOMvarsized(TYPE_@1)) 
-		nilptr = (@1*)nilval;
+#if @2
+	nilptr = (@1*)nilval;
+#endif
 	BATloop(b, p, q) {
 		if (*t == bit_nil) 
 			BUNfastins(bn, BUNhead(bi,p), (ptr)nilptr);
@@ -415,10 +416,10 @@ CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 
 	t = (bit*) Tloc(b,BUNfirst(b));
 
-	if (ATOMvarsized(TYPE_@1)) {
-		val = *(@1**)val;
-		nilptr = (@1*)nilval;
-	}
+#if @2
+	val = *(@1**)val;
+	nilptr = (@1*)nilval;
+#endif
 	BATloop(b, p, q) {
 		if (*t == bit_nil) 
 			BUNfastins(bn, BUNhead(bi,p), (ptr)nilptr);
@@ -454,10 +455,10 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 
 	t = (bit*) Tloc(b,BUNfirst(b));
 	
-	if (ATOMvarsized(TYPE_@1)) {
-		val = *(@1**)val;
-		nilptr = (@1*)nilval;
-	}
+#if @2
+	val = *(@1**)val;
+	nilptr = (@1*)nilval;
+#endif
 	BATloop(b, p, q) {
 		if (*t == bit_nil)
 			BUNfastins(bn, BUNhead(bi,p), (ptr)nilptr);
@@ -472,6 +473,6 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 }
 @:ifthenImpl(@1)@
 @c
-@:ifthenelseDefault(oid)@
-@:ifthenelseDefault(str)@
+@:ifthenelseDefault(oid,0)@
+@:ifthenelseDefault(str,1)@
 @}
