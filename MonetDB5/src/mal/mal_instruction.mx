@@ -318,7 +318,8 @@ typedef struct SYMDEF {
 typedef struct VARRECORD {
 	str name;		/* argname or lexical value repr */
 	malType type;		/* internal type signature */
-	int tmpindex;		/* temporary variable */
+	short tmpindex;		/* temporary variable */
+	short recycle;		/* variable id in the recycler catalog */
 	ValRecord value;
 	short flags;		/* see below, reserve some space */
 	short propc, maxprop;	/* proc count and max number of properties */
@@ -334,7 +335,8 @@ typedef struct VARRECORD {
 #define VAR_INIT		32
 #define VAR_USED		64
 #define VAR_DISABLED	128 /* used for comments and scheduler */
-#define VAR_STORED	256 /* used for replicator */
+#define VAR_RECYCLE		256 /* Recycle control, variable can be recycled  */
+#define VAR_KEPT		512 /* Recycle control, variable is available  */
 
 /* type check status is kept around to improve type checking efficiency */
 #define TYPE_ERROR      -1
@@ -414,7 +416,8 @@ typedef struct MALBLK {
 	int keephistory;	/* do we need the history at all */
 	str marker;			/* history points are marked for backtracking */
 	int maxarg;			/* keep track on the maximal arguments used */
-	ptr replica;
+	int version;		/* recycling version, 0 means no recycling */
+	ptr replica;		/* for the replicator tests */
 } *MalBlkPtr, MalBlkRecord;
 
 @-
@@ -458,9 +461,11 @@ for separate name space management.
 @:varProperty(Typedef,TYPEVAR)@
 @:varProperty(UDFtype,UDFTYPE)@
 @:varProperty(Constant,CONSTANT)@
-@:varProperty(Stored,STORED)@
+@:varProperty(Kept,KEPT)@
+@:varProperty(Recycled,RECYCLE)@
 
-#define getVarConstant(M,I)     ((M)->var[I]->value)
+#define getVarConstant(M,I) ((M)->var[I]->value)
+#define getVarValue(M,I) 	VALget(&(M)->var[I]->value)
 
 #define getDestVar(P)   (P)->argv[0]
 #define setDestVar(P,X)   (P)->argv[0]  =X
@@ -666,7 +671,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->profiler = NULL;
 	mb->ptop = mb->psize = 0;
 	mb->prps = NULL;
-	mb->replica = NULL;
+	mb->version = 0;
 	return mb;
 }
 
@@ -2090,6 +2095,10 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 		mb->ssize += STMT_INCREMENT;
 		GDKfree(mb->stmt);
 		mb->stmt = newblk;
+		/* also extend the storage space for the profiler */
+		/* left to the environment */
+		if( mb->profiler)
+			mb->profiler= NULL;
 	}
 @-
 If the destination variable has not been set, introduce a temporary

@@ -31,7 +31,7 @@ LIBS = {
 		inspect.mx manual.mx \
 		factory.mx mdb.mx  \
 		urlbox.mx mat.mx \
-		sabaoth.mx remote.mx batxml.mx txtsim.mx
+		sabaoth.mx remote.mx batxml.mx txtsim.mx recycle.mx
 		#radix.mx 
 
 	LIBS = ../../mal/libmal ../atoms/lib_xml $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
@@ -149,7 +149,7 @@ headers_h = {
 		inspect.mx manual.mx \
 		factory.mx mdb.mx  \
 		urlbox.mx mat.mx \
-		sabaoth.mx remote.mx batxml.mx 
+		sabaoth.mx remote.mx batxml.mx  recycle.mx
 		#radix.mx 
 
 	HEADERS = h 
@@ -165,7 +165,7 @@ headers_mal = {
 		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
 		urlbox.mx statistics.mx transaction.mx \
 		mal_mapi.mx sabaoth.mx remote.mx \
-		bpm.mx batxml.mx txtsim.mx
+		bpm.mx batxml.mx txtsim.mx recycle.mx
 	#radix.mx
 }
 

@@ -65,6 +65,7 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #include "mal_config.h"
 #include "mal_interpreter.h"
 #include "mal_debugger.h"   /* for mdbStep() */
+#include "mal_recycle.h"
 #include "mal_type.h"
 
 #define SLOW 1
@@ -467,7 +468,10 @@ We rely on optimizing compilers to remove the redundant code.
 			pci = getInstrPtr(mb,stkpc);
 			if( malProfileMode + cntxt->itrace)
 				goto workslow;
-			@:MALinterpret(FAST)@
+			@:MALrecyclerStart@ {
+				@:MALinterpret(FAST)@
+				@:MALrecyclerExit@
+			}
 			@:MALflowofcontrol(FAST)@
 		}
 	} else
@@ -496,7 +500,10 @@ workslow:
 		}
 
 		@:beginProfile@
-		@:MALinterpret(SLOW)@
+		@:MALrecyclerStart@ {
+			@:MALinterpret(SLOW)@
+			@:MALrecyclerExit@
+		}
 		@:MALflowofcontrol(SLOW)@
 		@:endProfile@
 	}
@@ -1452,6 +1459,17 @@ str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc){
 			v->name, getTypeName(v->type), getTypeName(tpe));
 }
 
+@-
+@+ Result Recycler
+An optimization scheme for query sequences is to re-use variables
+as much as possible.
+The recycler works for any variable and relies on policy functions
+registered.
+@= MALrecyclerStart
+	if( !mb->version  || !RECYCLEentry(mb,stk,pci) )
+@= MALrecyclerExit
+	if( mb->version )
+		RECYCLEexit(mb,stk,pci);
 @}
 @-
 @node Garbage Collection, Stack Management, Exception Handling, The MAL Interpreter

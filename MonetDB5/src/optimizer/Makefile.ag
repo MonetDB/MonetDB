@@ -33,7 +33,7 @@ lib_optimizer = {
 		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
-		opt_statistics.mx opt_trace.mx opt_replicator.mx
+		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_replicator.mx
 
 	#SCRIPTS = mal
 	LIBS = ../mal/libmal ../modules/mal/lib_bpm ../modules/kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
@@ -53,7 +53,7 @@ headers_optimizer = {
 		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
-		opt_statistics.mx opt_trace.mx opt_replicator.mx
+		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_replicator.mx
 
 	HEADERS = h 
 }
@@ -71,7 +71,7 @@ headers_mal = {
 		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
-		opt_statistics.mx opt_trace.mx opt_replicator.mx
+		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_replicator.mx
 }
 
 EXTRA_DIST_DIR = Tests

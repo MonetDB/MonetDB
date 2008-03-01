@@ -1,0 +1,91 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2008 CWI.
+@' All Rights Reserved.
+
+@f opt_recycler
+@- The recycler
+The recycler optimizer marks the variables subject to recycling control.
+@{
+@mal
+pattern optimizer.recycler():str
+address OPTrecycler;
+pattern optimizer.recycler(mod:str, fcn:str):str
+address OPTrecycler
+comment "Replicator code injection";
+
+@-
+The number of overloaded instructions is kept to a minimum.
+@h
+#ifndef _OPT_RECYCLER_
+#define _OPT_RECYCLER_
+#include "opt_prelude.h"
+#include "opt_support.h"
+
+#define DEBUG_OPT_RECYCLER  
+@-
+The variables are all checked for being eligible as a variable
+subject to recycling control. A variable my only be assigned
+a value once. The function is an sql.bind() or all arguments
+are already recycle enabled or constant.
+@c
+#include "mal_config.h"
+#include "opt_recycler.h"
+#include "mal_instruction.h"
+
+static int
+OPTrecyclerImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i, j, cnt, actions=0;
+	Lifespan span= newLifespan(mb);
+
+	(void) stk;
+		 /* vars bound to replicator commands */
+
+	setLifespan(mb,span);
+	for (i = 0; i<mb->vtop; i++)
+	if( !isVarRecycled(mb,i)){
+		p= getInstrPtr(mb,i);
+		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
+			setVarRecycled(mb, getArg(p,0));
+			actions++;
+		} else {
+			cnt= 0;
+			for( j=p->retc; j<p->argc; j++)
+			if( isVarRecycled(mb, getArg(p,j)) ||
+				isVarConstant(mb, getArg(p,j)) )
+				cnt++;
+			
+			if( cnt == p->argc-p->retc){
+				actions ++;
+				for( j= 0; j < p->retc; j++)
+				if( getLastUpdate(span, getArg(p,j)) == i ){
+					setVarRecycled(mb, getArg(p,j));
+#ifdef DEBUG_OPT_RECYCLER  
+					stream_printf(GDKout,"recyle %d\n",getArg(p,j));
+#endif
+				}
+			}
+		}
+	}
+	GDKfree(span);
+	return actions;
+}
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(recycler)@
+#endif
+@c
+#include "opt_statistics.h"
+@:wrapOptimizer(recycler,OPT_CHECK_ALL)@

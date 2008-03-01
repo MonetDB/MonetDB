@@ -155,6 +155,7 @@ include box;
 include mal_io;
 include tablet;
 include factory;
+include recycle;
 
 # experimental
 include mat;
@@ -194,6 +195,7 @@ include opt_pushranges;
 include opt_reduce;
 include opt_remap;
 include opt_replicator;
+include opt_recycler;
 include opt_singleton;
 include opt_strengthReduction;
 include opt_statistics;
