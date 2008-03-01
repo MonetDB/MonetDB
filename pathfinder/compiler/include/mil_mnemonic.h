@@ -292,6 +292,9 @@
 /** multiplexed boolean negation */
 #define mnot(a) PFmil_mnot (a)
 
+/** multiplexed roundup function */
+#define mround_up(a) PFmil_mround_up (a)
+
 /** operator `isnil()' */
 #define isnil(a) PFmil_isnil (a)
 

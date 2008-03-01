@@ -3138,7 +3138,7 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_fn_replace:
                 case alg_fun_fn_replace_flag:
                 case alg_fun_fn_substring:
-                case alg_fun_fn_substring_lng:
+                case alg_fun_fn_substring_dbl:
                 case alg_fun_fn_normalize_space:
 
                 case alg_fun_fn_name:

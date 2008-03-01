@@ -4644,10 +4644,14 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (res->name),
                                mstring (
                                    VAR (L(p)->env, att1, aat_str),
-                                   mcast (type (mty_int),
-                                          VAR (L(p)->env, att2, aat_int)))));
+                                   mmax( msub( mcast (type (mty_int),
+                                                      mround_up( VAR (L(p)->env,
+                                                                 att2,
+                                                                 aat_dbl))),
+                                              lit_int(1)),
+                                         lit_int(0)))));
                 }   break; /* fold) */
-                case alg_fun_fn_substring_lng: /* fold( */
+                case alg_fun_fn_substring_dbl: /* fold( */
                 {
                     PFalg_att_t att1, att2, att3;
 
@@ -4660,10 +4664,16 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (res->name),
                                mstring2 (
                                    VAR (L(p)->env, att1, aat_str),
+                                   mmax( msub( mcast (type (mty_int),
+                                                      mround_up( VAR (L(p)->env,
+                                                                 att2,
+                                                                 aat_dbl))),
+                                              lit_int(1)),
+                                         lit_int(0)),
                                    mcast (type (mty_int),
-                                          VAR (L(p)->env, att2, aat_int)),
-                                   mcast (type (mty_int),
-                                          VAR (L(p)->env, att3, aat_int)))));
+                                          mround_up( VAR (L(p)->env,
+                                                     att3,
+                                                     aat_dbl))))));
                 }   break; /* fold) */
                 case alg_fun_fn_string_length: /* fold( */
                 {

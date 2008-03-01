@@ -324,19 +324,19 @@ infer_ocol (PFla_op_t *n)
                 case alg_fun_fn_substring:
                     assert (n->sem.fun_1to1.refs.count == 2);
 
-                    /* make sure both attributes are of type str & int */
+                    /* make sure both attributes are of type str & dbl */
                     assert (ocol_at (L(n), ix[0]).type == aat_str);
-                    assert (ocol_at (L(n), ix[1]).type == aat_int);
+                    assert (ocol_at (L(n), ix[1]).type == aat_dbl);
 
                     res_type = aat_str;
                     break;
 
-                case alg_fun_fn_substring_lng:
+                case alg_fun_fn_substring_dbl:
                     assert (n->sem.fun_1to1.refs.count == 3);
-                    /* make sure both attributes are of type str & int */
+                    /* make sure both attributes are of type str & dbl */
                     assert (ocol_at (L(n), ix[0]).type == aat_str);
-                    assert (ocol_at (L(n), ix[1]).type == aat_int &&
-                            ocol_at (L(n), ix[2]).type == aat_int);
+                    assert (ocol_at (L(n), ix[1]).type == aat_dbl &&
+                            ocol_at (L(n), ix[2]).type == aat_dbl);
 
                     res_type = aat_str;
                     break;

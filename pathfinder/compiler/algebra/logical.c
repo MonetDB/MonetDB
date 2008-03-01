@@ -1307,21 +1307,21 @@ PFla_fun_1to1 (const PFla_op_t *n,
 
         case alg_fun_fn_substring:
             assert (refs.count == 2);
-
-            /* make sure both attributes are of type str & int */
+printf("type = %x", n->schema.items[ix[1]].type);
+            /* make sure both attributes are of type str & dbl */
             assert (n->schema.items[ix[0]].type == aat_str);
-            assert (n->schema.items[ix[1]].type == aat_int);
+            assert (n->schema.items[ix[1]].type == aat_dbl);
 
             res_type = aat_str;
             break;
 
-        case alg_fun_fn_substring_lng:
+        case alg_fun_fn_substring_dbl:
             assert (refs.count == 3);
 
-            /* make sure attributes are of type str & int */
+            /* make sure attributes are of type str & dbl */
             assert (n->schema.items[ix[0]].type == aat_str);
-            assert (n->schema.items[ix[1]].type == aat_int &&
-                    n->schema.items[ix[2]].type == aat_int );
+            assert (n->schema.items[ix[1]].type == aat_dbl &&
+                    n->schema.items[ix[2]].type == aat_dbl );
 
             res_type = aat_str;
             break;
