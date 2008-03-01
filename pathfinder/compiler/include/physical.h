@@ -35,11 +35,8 @@
 #ifndef PHYSICAL_H
 #define PHYSICAL_H
 
-#include "variable.h"
 #include "algebra.h"
-
 #include "ordering.h"
-
 
 /** algebra operator node */
 typedef struct PFpa_op_t PFpa_op_t;
@@ -346,12 +343,6 @@ union PFpa_op_sem_t {
 };
 /** semantic content in physical algebra operators */
 typedef union PFpa_op_sem_t PFpa_op_sem_t;
-
-/**
- * A ``plan list'' is an array of plans.
- */
-typedef PFarray_t PFplanlist_t;
-
 
 /** maximum number of children of a #PFpa_op_t node */
 #define PFPA_OP_MAXCHILD 2

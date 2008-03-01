@@ -187,7 +187,7 @@ comp_str (PFalg_comp_t comp) {
  * @param node_id the next available node id.
  */
 static unsigned int 
-pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
+pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
 {
     unsigned int c;
     assert(n->node_id);
@@ -630,9 +630,9 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
             break;
     }
 
-    if (PFstate.format) {
+    if (prop_args) {
 
-        char *fmt = PFstate.format;
+        char *fmt = prop_args;
         /* format character '+' overwrites all others */
         bool all = false;
         while (*fmt) {
@@ -645,7 +645,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
         /* iterate over all format characters 
            if we haven't found a '+' character */
         if (!all)
-            fmt = PFstate.format;
+            fmt = prop_args;
 
         while (*fmt) {
             if (*fmt == '+' || *fmt == 'A') {
@@ -941,7 +941,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id)
 
     for (c = 0; c < PFPA_OP_MAXCHILD && n->child[c]; c++) {
         if (!n->child[c]->bit_dag)
-            node_id = pa_dot (dot, n->child[c], node_id);
+            node_id = pa_dot (dot, n->child[c], node_id, prop_args);
     }
 
     return node_id;
@@ -970,7 +970,7 @@ reset_node_id (PFpa_op_t *n)
  * @param root root of abstract syntax tree
  */
 void
-PFpa_dot (FILE *f, PFpa_op_t *root)
+PFpa_dot (FILE *f, PFpa_op_t *root, char *prop_args)
 {
     if (root) {
         /* initialize array to hold dot output */
@@ -986,14 +986,14 @@ PFpa_dot (FILE *f, PFpa_op_t *root)
                              "node [fontsize=10];\n");
 
         root->node_id = 1;
-        pa_dot (dot, root, root->node_id + 1);
+        pa_dot (dot, root, root->node_id + 1, prop_args);
         PFpa_dag_reset (root);
         reset_node_id (root);
         PFpa_dag_reset (root);
 
         /* add domain subdomain relationships if required */
-        if (PFstate.format) {
-            char *fmt = PFstate.format;
+        if (prop_args) {
+            char *fmt = prop_args;
             while (*fmt) { 
                 if (*fmt == '+') {
                         PFprop_write_dom_rel_dot (dot, root->prop);

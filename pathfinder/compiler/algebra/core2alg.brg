@@ -3214,7 +3214,7 @@ PFalg_type_occ (PFty_t ty)
  * @return the algebra equivalent of @a r
  */
 PFla_op_t *
-PFcore2alg (PFcnode_t *r)
+PFcore2alg (PFcnode_t *r, PFquery_t *query)
 {
     PFarray_t *options = NULL;
     
@@ -3233,7 +3233,7 @@ PFcore2alg (PFcnode_t *r)
     /* Create a stack for the map relation information */
     ctx.mapping = PFarray (sizeof (map_rel_info_t));
     /* set ordering mode */
-    ctx.ordering = PFquery.ordering;
+    ctx.ordering = query->ordering;
     /* initialize the sequence count with a dummy value */
     ctx.seq_count = 0;
 

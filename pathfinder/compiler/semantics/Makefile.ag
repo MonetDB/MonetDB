@@ -42,4 +42,11 @@ lib_semantics = {
 		xquery_fo.c 
 }
 
+lib_ns = {
+	NOINST
+	DIR = libdir
+	SOURCES = \
+		ns.c
+}
+
 EXTRA_DIST_DIR = tests

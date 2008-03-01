@@ -34,7 +34,7 @@
 #ifndef ALGEBRA_H
 #define ALGEBRA_H
 
-#include "variable.h"
+#include "qname.h"
 
 /* ............... atomic values ............... */
 

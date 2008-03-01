@@ -34,6 +34,7 @@
 #include "pathfinder.h"
 
 #include "oops.h"
+#include "mem.h"
 #include "algebra_cse.h"
 #include "array.h"
 #include "alg_dag.h"

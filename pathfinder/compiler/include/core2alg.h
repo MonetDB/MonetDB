@@ -35,9 +35,10 @@
 #include "array.h"
 
 #include "core.h"
+#include "pf_xq.h"
 
 /** Compile XQuery Core into Relational Algebra */
-struct PFla_op_t *PFcore2alg (PFcnode_t *);
+struct PFla_op_t *PFcore2alg (PFcnode_t *, PFquery_t *PFquery);
 
 
 /* ............. environment entry specification .............. */

@@ -34,17 +34,18 @@
 #define LOGICAL_H
 
 #include "array.h"
-
-#include "variable.h"
 #include "algebra.h"
-#include "physical.h"
-#include "sql.h"
 #include "ordering.h"
-#include "mem.h"
 #include "load_stats.h"
 
-/** algebra operator node */
+/** Logical algebra operator node */
 typedef struct PFla_op_t PFla_op_t;
+
+/** A physical ``plan list'' is an array of plans. */
+typedef PFarray_t PFplanlist_t;
+
+/** A SQL annotation */
+typedef struct PFsql_alg_ann_t PFsql_alg_ann_t;
 
 #include "properties.h"
 

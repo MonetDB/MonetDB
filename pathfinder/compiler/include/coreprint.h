@@ -46,7 +46,7 @@ extern char *c_id[];
 
 void PFcore_dot (FILE *f, PFcnode_t *root);
 
-void PFcore_pretty (FILE *f, PFcnode_t *root);
+void PFcore_pretty (FILE *f, PFcnode_t *root, bool print_types);
 
 #endif     /* COREPRINT_H */
 

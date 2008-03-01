@@ -429,13 +429,6 @@ getPFLA_Ordering(
     xmlNodePtr nodePtr, 
     const char* xpathExpression);
 
-PFty_t
-getPFLA_SeqTy(
-    char *kind,
-    char *prefix,
-    char *uri,
-    char *local);
-
 /******************************************************************************/
 /******************************************************************************/
 
@@ -2835,49 +2828,6 @@ getPFLA_Ordering(
 
     return ordering;
 
-}
-
-
-
-
-
-PFty_t
-getPFLA_SeqTy (char *kind, char *prefix, char *uri, char *local)
-{
-    if (!strcmp (kind, "attribute")) {
-        if (!prefix && !uri && !local)
-            return PFty_xs_anyAttribute ();
-        else
-            return PFty_attr (
-                       PFqname (
-                           (PFns_t) { .prefix = prefix, .uri = uri },
-                           local),
-                       PFty_xs_anySimpleType ());
-    }
-    else if (!strcmp (kind, "element")) {
-        if (!prefix && !uri && !local)
-            return PFty_xs_anyElement ();
-        else
-            return PFty_elem (
-                       PFqname (
-                           (PFns_t) { .prefix = prefix, .uri = uri },
-                           local),
-                       PFty_xs_anyType ());
-    }
-    else if (!strcmp (kind, "textnode"))
-        return PFty_text ();
-    else if (!strcmp (kind, "comment"))
-        return PFty_comm ();
-    else if (!strcmp (kind, "processing-instruction"))
-        return PFty_pi (local);
-    else if (!strcmp (kind, "node"))
-        return PFty_xs_anyNode ();
-    else
-        PFoops (OOPS_FATAL,
-                "Problem with an XPath step: cannot evaluate "
-                "node test");
-
-    return PFty_none(); /* return dummy type */
 }
 
 

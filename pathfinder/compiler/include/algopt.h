@@ -34,7 +34,8 @@
 
 #include "logical.h"
 
-PFla_op_t * PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t *guide_tree);
+PFla_op_t * PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t *guide_tree,
+                      char *opt_args);
 
 /**
  * Infer property for a DAG rooted in root

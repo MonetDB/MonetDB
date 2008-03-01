@@ -59,6 +59,7 @@
 
 #include "mem.h"
 #include "oops.h"
+#include "array.h"
 
 #include "xml2lalg_xpath_utils.h"
  

@@ -88,16 +88,14 @@
  * Invoke algebra optimization.
  */
 PFla_op_t *
-PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
+PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
+          char *opt_args)
 {
     bool debug_opt = getenv("PF_DEBUG_OPTIMIZATIONS") != NULL;
-    assert (PFstate.opt_alg);
     long tm;
     bool const_no_attach = false;
     bool unq_names = false;
     bool proxies_involved = false;
-    char *args = PFstate.opt_alg;
-
 
     if (PFalg_is_unq_name(root->schema.items[0].name))
     {
@@ -108,13 +106,13 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
     if (debug_opt)
         fprintf (stderr, "-o");
 
-    while (*args) {
+    while (*opt_args) {
         root = PFla_cse (root);
 
         if (debug_opt)
-            fputc (*args, stderr);
+            fputc (*opt_args, stderr);
 
-        switch (*args) {
+        switch (*opt_args) {
             case 'A': /* disabled */
                 /*
                 tm = PFtimer_start ();
@@ -447,10 +445,10 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree)
             default:
                 PFinfo (OOPS_WARNING,
                         "discarding unknown optimization option '%c'",
-                        *args);
+                        *opt_args);
                 break;
         }
-        args++;
+        opt_args++;
     }
     if (debug_opt)
         fputc ('\n', stderr);

@@ -41,6 +41,9 @@
 /* PFty_t */
 #include "types.h"
 
+/* PFsort_t */
+#include "pf_xq.h"
+
 typedef struct PFcnode_t PFcnode_t;
 
 /* global for core_new_var (TODO REMOVE) */
