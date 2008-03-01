@@ -1328,7 +1328,7 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 	if (BATcount(b) > 1 &&
 	    BATtordered(b)&1 && 
 	    ATOMtype(b->htype) == TYPE_oid && 
-	    b->ttype <= TYPE_str) {
+	    b->ttype < TYPE_str) {
 		switch(tailtype(b,TRUE)) {
 		case TYPE_bte:
 			histo = CTgroup_bte_ordered(b, &bn);
