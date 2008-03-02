@@ -438,20 +438,15 @@ cost.
 static int newReplica(MalStkPtr s, InstrPtr p, bit keep)
 {
 	int i, j, k, c, bid, r; 
-	ValPtr v, v1;
+	ValPtr v;
 	InstrPtr p1;
 	
 	assureSpace();
 	p1 = copyInstruction(p);
 	for(i = 0; i< p->argc; i++){
 		j = p->argv[i];
-	        v = &s->stk[j];
-		c = fndConstant(repl, v);
-		if ( c < 0 ){ 
-			v1 = VALnew();
-        	        VALcopy(v1,v);
-			c = defConstant(repl, v1->vtype, v1);
-		}
+		v = &s->stk[j];
+		c = defConstant(repl, v->vtype, v);
 	 	setArg(p1,i,c);
 	
 		if ((i > 0) ||
