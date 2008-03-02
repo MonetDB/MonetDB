@@ -19,9 +19,9 @@
 The recycler optimizer marks the variables subject to recycling control.
 @{
 @mal
-pattern optimizer.recycler():str
+pattern optimizer.recycle():str
 address OPTrecycler;
-pattern optimizer.recycler(mod:str, fcn:str):str
+pattern optimizer.recycle(mod:str, fcn:str):str
 address OPTrecycler
 comment "Replicator code injection";
 
@@ -51,34 +51,35 @@ OPTrecyclerImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	Lifespan span= newLifespan(mb);
 
 	(void) stk;
-		 /* vars bound to replicator commands */
-
 	setLifespan(mb,span);
-	for (i = 0; i<mb->vtop; i++)
-	if( !isVarRecycled(mb,i)){
+	for (i = 1; i<mb->stop; i++) {
 		p= getInstrPtr(mb,i);
-		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
-			setVarRecycled(mb, getArg(p,0));
-			actions++;
-		} else {
-			cnt= 0;
-			for( j=p->retc; j<p->argc; j++)
-			if( isVarRecycled(mb, getArg(p,j)) ||
-				isVarConstant(mb, getArg(p,j)) )
-				cnt++;
-			
-			if( cnt == p->argc-p->retc){
-				actions ++;
-				for( j= 0; j < p->retc; j++)
-				if( getLastUpdate(span, getArg(p,j)) == i ){
-					setVarRecycled(mb, getArg(p,j));
+@-
+Functions with side effects can not be subject to recycle actions.
+@c
+		if( hasSideEffects(p,TRUE))
+			continue;
+		cnt= 0;
+		for( j=p->retc; j<p->argc; j++)
+		if( isVarRecycled(mb, getArg(p,j)) ||
+			isVarConstant(mb, getArg(p,j)) )
+			cnt++;
+		
+		if( cnt == p->argc-p->retc){
+			actions ++;
+			p->recycle = 1; /* this instruction is to be monitored */
+			for( j= 0; j < p->retc; j++)
+			if( getLastUpdate(span, getArg(p,j)) == i ){
+				setVarRecycled(mb, getArg(p,j));
 #ifdef DEBUG_OPT_RECYCLER  
-					stream_printf(GDKout,"recyle %d\n",getArg(p,j));
+				stream_printf(GDKout,"recyle %d\n",getArg(p,j));
+				printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
-				}
 			}
 		}
 	}
+	if( actions)
+		mb->version= -1;	/* will trigger the recycler runtime support */
 	GDKfree(span);
 	return actions;
 }

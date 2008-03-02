@@ -363,6 +363,7 @@ typedef struct {
 	bit gc;			/* garbage control flags */
 	bit polymorphic;	/* complex type analysis */
 	bit varargs;		/* variable number of arguments or targets */
+	bit recycle;	/* under the control of the recycler */
 	int jump;		/* controlflow program counter */
 	MALfcn fcn;		/* resolved function address */
 	struct MALBLK *blk;	/* resolved MAL function address */
@@ -964,6 +965,7 @@ newInstruction(MalBlkPtr mb, int kind)
 	p->blk = NULL;
 	p->polymorphic = 0;
 	p->varargs = 0;
+	p->recycle = 0;
 	p->argc = 1;
 	p->retc = 1;
 	p->argv[0] = -1;	/* watch out for direct use in variable table */

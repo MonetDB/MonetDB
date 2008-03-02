@@ -1,17 +1,15 @@
 #test the basics of the replicator
 
 function qry();
-	io.print("qry");
-	b:bat[:oid,:int]:= bat.new(:oid,:int);
-	bat.insert(b,1@0,2);
-	io.print(b);
+	i:=23;
+	j:=i*i;
+	io.print(j);
 end qry;
 
-recycle.start();
+optimizer.recycle("user","qry");
 io.print("start");
 qry();
 io.print("next");
 qry();
 io.print("last");
 qry();
-recycle.stop();

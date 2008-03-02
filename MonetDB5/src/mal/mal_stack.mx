@@ -57,6 +57,10 @@ ensure we are still within safe bounds.
 #include "gdk.h"
 #include "gdk_system.h"
 
+#ifdef HAVE_SYS_TIMES_H
+#include <sys/times.h>
+#endif
+
 #define STACKINCR   128
 #define MAXGLOBALS  4 * STACKINCR
 #define MAXSHARES   2
@@ -68,6 +72,15 @@ typedef struct MALSTK {
 	short keepAlive;	/* do not garbage collect when set */
 	short garbageCollect; /* stack needs garbage collection */
 	MT_Lock stklock;	/* used for parallel processing */
+@-
+It is handy to administer the timing in the stack frame
+for use in profiling and recylcing instructions.
+@h
+#ifdef HAVE_TIMES
+    struct tms timer;   /* timing information */
+#endif
+	time_t clock;		/* seconds since epoch */
+	lng clk;			/* micro seconds */
 	int shares;			/* number of processes locked onto this stack */
 	int childs[MAXSHARES]; /* not used */
 	char cmd;		/* debugger communication */

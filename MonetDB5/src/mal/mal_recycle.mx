@@ -196,6 +196,8 @@ RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
+	if( recycleBlk == 0)
+		return MAL_SUCCEED;
 	mal_set_lock(recycleLock,"recycle");
 	recycleBlk->version = 0;
 	recycleUsers--;
@@ -248,36 +250,34 @@ cost.
 
 static void RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
-	int i, j, c, bid; 
-	ValPtr v, v1;
+	int i, j, c; 
+	ValRecord *v;
 	InstrPtr q;
 	
 	RECYCLEspace();
 	q = copyInstruction(p);
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"add instruction\n");
-	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	stream_printf(GDKout,"RECYLEnew \n");
 #endif
 	for(i = 0; i< p->argc; i++){
 		j = getArg(p,i);
 		v = &s->stk[j];
-		c = fndConstant(recycleBlk, v);
-		if ( c < 0 ){ 
-			v1 = VALnew();
-			VALcopy(v1,v);
-			c = defConstant(recycleBlk, v1->vtype, v1);
-			if (v->vtype == TYPE_bat){
-				bid = *(int*)VALget(v);
-				BBPincref(bid,TRUE);
-			}
-		}
+		c = defConstant(recycleBlk, v->vtype, v);
+		if (v->vtype == TYPE_bat)
+			BBPincref( *(int*)VALget(v), TRUE);
 	 	setArg(q,i,c);
-		if( i < p->retc )
+		if( i < p->retc ){
+			mb->var[j]->recycle= c;
 			setVarKept(mb, j);
+			setVarUsed(mb,j);
+		}
 	}
 	i= recycleBlk->stop;
 	pushInstruction(recycleBlk,q);
 	recycleBlk->profiler[i].counter =1;
+#ifdef _DEBUG_RECYCLE_
+	printFunction(GDKout,recycleBlk,LIST_MAL_ALL);
+#endif
 }
 
 /* compare values in ValRecords, return 0 on equal */
@@ -315,26 +315,21 @@ int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int i, cnt=0;
 	ValPtr lhs,rhs;
 
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"enter RECYCLEentry\n");
-	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
-#endif
 	for(i=0;i< p->retc; i++)
 	if( isVarKept(mb, getArg(p,i)) ){
 		cnt++;
 #ifdef _DEBUG_RECYCLE_
+		printInstruction(GDKout,mb,p, LIST_MAL_ALL);
 		stream_printf(GDKout,"RECYCLEentry found %d -> %d\n",getArg(p,i),
-		 mb->var[i]->recycle);
+			mb->var[getArg(p,i)]->recycle);
 #endif
 		lhs= &stk->stk[getArg(p,i)];
-		rhs= &stk->stk[mb->var[i]->recycle];
+		rhs= &getVarConstant(recycleBlk, mb->var[getArg(p,i)]->recycle);
 		VALcopy(lhs,rhs);
 		if( lhs->vtype == TYPE_bat)
 			BBPincref(lhs->val.br.id, TRUE);
 	}
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLEentry returns %d\n",cnt == p->retc);
-#endif
+	stk->clk= GDKusec();
 	return cnt == p->retc;
 }
 
@@ -347,15 +342,22 @@ is not set, we retain the value.
 void
 RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int i,keepit= FALSE;
+	lng clk;
 	
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"enter RECYCLEexit\n");
-	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
-#endif
 	for(i=0; i<p->retc; i++)
 	if( isVarRecycled(mb, getArg(p,i)) && !isVarKept(mb,getArg(p,i))){
 #ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"keep arg %d \n",i);
+		stream_printf(GDKout,"RECYCLEexit keep arg %d \n",i);
+		printInstruction(GDKout,mb,p, LIST_MAL_ALL);
+#endif
+@-
+This is the place where we should call recycle optimization routines.
+It can use the timing information gathered from the previous call,
+which is stored in the stack frame to avoid concurrency problems.
+@c
+		clk= GDKusec()-stk->clk;
+#ifdef _DEBUG_RECYCLE_
+		stream_printf(GDKout,"RECYCLEexit time %d \n",clk);
 #endif
 		keepit= TRUE;
 	}

@@ -1466,9 +1466,9 @@ as much as possible.
 The recycler works for any variable and relies on policy functions
 registered.
 @= MALrecyclerStart
-	if( !mb->version  || !RECYCLEentry(mb,stk,pci) )
+	if( !pci->recycle  || !mb->version  || !RECYCLEentry(mb,stk,pci) )
 @= MALrecyclerExit
-	if( mb->version )
+	if( pci->recycle && mb->version )
 		RECYCLEexit(mb,stk,pci);
 @}
 @-
@@ -1615,10 +1615,12 @@ See @ref{The MAL Profiler} for more details.
 		if( mb->profiler != NULL && mb->profiler[stkpc].trace)
 		{
 			ppc= stkpc;
-			mb->profiler[ppc].clk= GDKusec();
-			time(&mb->profiler[ppc].clock);
+			stk->clk= GDKusec();
+			time(&stk->clock);
+			mb->profiler[ppc].clock= stk->clock;
 #ifdef HAVE_TIMES
-			times(&mb->profiler[ppc].timer);
+			times(&stk->timer);
+			mb->profiler[ppc].timer= stk->timer;
 #endif
 		}
 	}
@@ -1632,7 +1634,7 @@ See @ref{The MAL Profiler} for more details.
 	{
 		newclk= GDKusec();
 		mb->profiler[ppc].counter++;
-		mb->profiler[ppc].ticks = (long) (newclk - mb->profiler[ppc].clk);
+		mb->profiler[ppc].ticks = (long) (newclk - stk->clk);
 		mb->profiler[ppc].clk += mb->profiler[ppc].clk;
 		if( pci){
 			mb->profiler[ppc].ibytes= getVolume(stk,pci,0);
