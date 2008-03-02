@@ -1,0 +1,362 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2008 CWI.
+@' All Rights Reserved.
+
+@a M. Ivanova, M. Kersten
+@f mal_recycle
+@- The Recycler
+Query optimization and processing in off-the-shelf database systems is often
+still focus on individual queries. The queries are analysed in isolation
+and ran against a kernel regardless opportunities offered by concurrent or
+previous invocations.
+
+This approach is far from optimal and two directions to improve
+are explored: materialized views and (partial) result-set reuse.
+Materialized views are derived from query logs. They represent
+common sub-queries, whose materializaion and storage improves
+subsequent processing time.
+Re-use of (partial) results is used in those cases where a
+zoomin-in or navigational application is at stake.
+
+The Recycler module extends it with a the middle out approach.
+It exploits the materialize-all-intermediate approach MonetDB
+by deciding to keep hold on them as long as deemed benificial.
+
+The approach taken is to mark the variables in MAL program, 
+such that their result is retained in global recycle cache.
+Instructions become subject to the Recycler if
+at least one of its arguments is BAT and all others are
+either constants or variables already known in the Recycler.
+Recycling currently starts with SQL bind instructions.
+
+Upon execution, the Recycler first check for
+an up to date result to be picked up at no cost.
+Otherwise. it evaluates the instruction and calls upon
+policy functions to decide if it is worthwhile to
+keep.
+
+The Recycler comes with a few policy controlling operators
+to experiment with its effect in concrete settings.
+
+A short MAL script to illustrate the working of the
+recycler. Portions of a MAL block can be made subject to
+recycling control. 
+@example
+function qry();
+	recycle.start();
+	_3:= sql.bind();
+	...
+	recycle.stop();
+end qry;
+
+qry();
+qry();
+@end example
+@{
+@-
+The Recycler should be a variation of the interpreter
+which inspects the variable table for alternative results.
+@h
+#ifndef _MAL_RECYCLE_
+#define _MAL_RECYCLE_
+
+#include "mal.h"
+#include "mal_instruction.h"
+
+#define _DEBUG_RECYCLE_ /* trace behavior */
+
+mal_export str RECYCLEdump(int *ret);
+mal_export str RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str RECYCLEsetRetain(int *ret, sht *p);
+mal_export str RECYCLEsetReuse(int *ret, sht *p);
+mal_export str RECYCLEsetCache(int *ret, sht *p);
+
+mal_export int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export void RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#endif
+@-
+@c
+#include "mal_config.h"
+#include "mal_recycle.h"
+#include "mal_exception.h"
+#include "mal_function.h"
+
+#define isResStored(M,i) isVarKept(M, getArg(M->stmt[i],0))
+
+static MT_Lock recycleLock ;
+static MalBlkPtr recycleBlk = NULL;
+static int recycleVersion = 0;  /* version of recycle table */
+static int recycleUsers = 0;  /* queries currently using recycleBlk */
+
+static sht retain = 0;  /* recycle retainment policy
+			0: baseline, keeps stat, no retain, no reuse
+			1: infinite case, retain all
+			2: cost-based, retain if beneficial */
+static sht reuse = 0;	/* recycle reuse policy
+			0: baseline, keeps stat, no retain, no reuse
+			1: reuse smallest covering
+			2: reuse closest covering */
+static sht rcache = 0;  /* recycle cache management policy
+			0: baseline, do nothing
+			1: throw LRU
+			2: cost-based, throw least beneficial */
+
+@-
+The Recycle catalog is a global structure, which should be
+protected with locks when updated.
+The recycle statistics can be kept in the performance table
+associated with the recycle MAL block without problems, because 
+the block is never executed.
+@c
+static void RECYCLEspace()
+{
+	InstrPtr p;
+	ProfPtr old;
+	int osize;
+
+	if ( recycleBlk == NULL) {
+		recycleBlk = newMalBlk(MAXVARS, STMT_INCREMENT);
+		recycleBlk->profiler = (ProfPtr) GDKzalloc(
+			recycleBlk->ssize*sizeof(ProfRecord));
+	}
+	if( recycleBlk->stop +1 >= recycleBlk->ssize){
+		old = recycleBlk->profiler;
+		osize= recycleBlk->ssize;
+		p=newInstruction(recycleBlk, ASSIGNsymbol);
+		pushInstruction(recycleBlk, p);
+		removeInstruction(recycleBlk,p);  /* back to alloc space  */
+		if( recycleBlk->profiler == NULL)
+			recycleBlk->profiler = (ProfPtr) GDKzalloc(
+				recycleBlk->ssize*sizeof(ProfRecord));
+		memcpy((char*) recycleBlk->profiler, (char*) old, 
+			sizeof(ProfRecord)*osize);
+	}
+}
+
+void RECYCLEversion(MalBlkPtr mb)
+{
+	int i;
+
+	if( mb->version != recycleVersion) { 
+		mal_set_lock(recycleLock,"recycle");
+		/* all re-used variables are dropped */
+		for(i=0; i<mb->vtop; i++)		/* reinit recycle */
+			clrVarKept(mb,i);
+		mb->version = recycleVersion;
+		mal_unset_lock(recycleLock,"recycle");
+	}	
+}
+@-
+The recycler is started when the first function is called for its support.
+Upon exit of the last function, the content of the recycle cache is destroyed.
+@c
+str
+RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+
+	(void) pci;
+	(void) stk;
+
+	if( recycleVersion == 0){	
+		MT_lock_init(&recycleLock,"recycle");
+		recycleVersion =1 ;
+	}
+	if( mb->version )
+		/* upgrade to a new version by dropping old info */
+		RECYCLEversion(mb);
+	else{
+		mal_set_lock(recycleLock,"recycle");
+		mb->version= recycleVersion;
+		recycleUsers++;
+		mal_unset_lock(recycleLock,"recycle");
+	}
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLEstart version %d\n",recycleVersion);
+#endif
+	return MAL_SUCCEED;
+}
+
+
+str
+RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	mal_set_lock(recycleLock,"recycle");
+	recycleBlk->version = 0;
+	recycleUsers--;
+	mal_unset_lock(recycleLock,"recycle");
+	return MAL_SUCCEED;
+}
+
+
+str
+RECYCLEdump(int *ret)
+{
+	(void) ret;
+	stream_printf(GDKout,"Recycler  catalog \n");
+	printFunction(GDKout,recycleBlk, LIST_MAL_ALL);
+
+	return MAL_SUCCEED;
+}
+
+str
+RECYCLEsetRetain(int *ret, sht *p)
+{
+	(void) ret;
+	retain = *p;
+	return MAL_SUCCEED;
+}
+
+str
+RECYCLEsetReuse(int *ret, sht *p)
+{
+	(void) ret;
+	reuse = *p;
+	return MAL_SUCCEED;
+}
+
+str
+RECYCLEsetCache(int *ret, sht *p)
+{
+	(void) ret;
+	rcache = *p;
+	return MAL_SUCCEED;
+}
+@-
+The overloaded algebra operator simply calls the
+underlying implementation and collects statistics on the
+cost.
+@c
+
+static void RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
+{
+	int i, j, c, bid; 
+	ValPtr v, v1;
+	InstrPtr q;
+	
+	RECYCLEspace();
+	q = copyInstruction(p);
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"add instruction\n");
+	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif
+	for(i = 0; i< p->argc; i++){
+		j = getArg(p,i);
+		v = &s->stk[j];
+		c = fndConstant(recycleBlk, v);
+		if ( c < 0 ){ 
+			v1 = VALnew();
+			VALcopy(v1,v);
+			c = defConstant(recycleBlk, v1->vtype, v1);
+			if (v->vtype == TYPE_bat){
+				bid = *(int*)VALget(v);
+				BBPincref(bid,TRUE);
+			}
+		}
+	 	setArg(q,i,c);
+		if( i < p->retc )
+			setVarKept(mb, j);
+	}
+	i= recycleBlk->stop;
+	pushInstruction(recycleBlk,q);
+	recycleBlk->profiler[i].counter =1;
+}
+
+/* compare values in ValRecords, return 0 on equal */
+int
+VALcmp(ValPtr p, ValPtr q)
+{
+
+	int (*cmp) (ptr, ptr);
+	int tpe;
+	ptr nilptr, pp, pq;
+
+	if( p ==0 || q == 0 ) return  -1;
+	if( (tpe = p ->vtype) != q->vtype ) return  -1;
+
+	cmp = BATatoms[tpe].atomCmp;
+	nilptr = ATOMnilptr(tpe);
+	pp = VALget(p);
+	pq = VALget(q);
+	if(((*cmp)(pp, nilptr)==0) && ((*cmp)(pq, nilptr)==0)) return 0; /* eq nil val */
+	if(((*cmp)(pp, nilptr)==0) || ((*cmp)(pq, nilptr)==0)) return -1;
+	return ((*cmp)(pp, pq));
+
+}
+@-
+The generic wrappers for accessing the recycle variables
+Before the interpreter loop is allowed to execute the instruction
+we check the recycle table fo variables available.
+
+A few cases should be distinguished. Target variables that have not
+been marked as VAR_RECYCLE are skipped.
+For those marked VAR_KEPT we are done after copying the value
+onto the stack and return success.
+@c
+int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	int i, cnt=0;
+	ValPtr lhs,rhs;
+
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"enter RECYCLEentry\n");
+	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
+#endif
+	for(i=0;i< p->retc; i++)
+	if( isVarKept(mb, getArg(p,i)) ){
+		cnt++;
+#ifdef _DEBUG_RECYCLE_
+		stream_printf(GDKout,"RECYCLEentry found %d -> %d\n",getArg(p,i),
+		 mb->var[i]->recycle);
+#endif
+		lhs= &stk->stk[getArg(p,i)];
+		rhs= &stk->stk[mb->var[i]->recycle];
+		VALcopy(lhs,rhs);
+		if( lhs->vtype == TYPE_bat)
+			BBPincref(lhs->val.br.id, TRUE);
+	}
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLEentry returns %d\n",cnt == p->retc);
+#endif
+	return cnt == p->retc;
+}
+
+@-
+The last instruction is called after the interpreter loop
+itself and has to decide on the results obtainde.
+All variables marked as VAR_RECYCLE but for which VAR_KEPT
+is not set, we retain the value.
+@c
+void
+RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	int i,keepit= FALSE;
+	
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"enter RECYCLEexit\n");
+	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
+#endif
+	for(i=0; i<p->retc; i++)
+	if( isVarRecycled(mb, getArg(p,i)) && !isVarKept(mb,getArg(p,i))){
+#ifdef _DEBUG_RECYCLE_
+		stream_printf(GDKout,"keep arg %d \n",i);
+#endif
+		keepit= TRUE;
+	}
+	if( keepit )
+		RECYCLEnew(mb,stk, p);
+}
+@}
