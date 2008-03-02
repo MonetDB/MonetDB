@@ -146,23 +146,51 @@ structure to compute a group of common aggregates.
 #include <gdk.h>
 #include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 
-/*
-with group OIDs spanning a range of less than SMALL_AGGR_MAX (the actual
+@-
+With group OIDs spanning a range of less than SMALL_AGGR_MAX (the actual
 number of groups might be even less, in case there are "holes" in the group
 OID range), we use a simple array as temporary sum/cnt table on order to
 benefit from positional lookups; with size of sum <= 8 bytes and size of
-cnt == 4 bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
-*/
+cnt == 4 bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache.
+@c
 #define SMALL_AGGR_MAX 1024
 
 @-
-The macro CHKrange is just for array-lookups, analogously to BUNfntVOID &
+The macro CHKrange is just for array-lookups, analogously to BUNfndVOID &
 HASHfnd_oid for void- and hash-lookups, respectively
 @c
 /* if the test succeeds, we must return something not equal to
    BUN_NONE, but the actual value doesn't matter since it is not
    otherwise used */
 #define CHKrange(r, bn, h)	r = (BUN)(*(oid*)(h) >= min && *(oid*)(h) <= max ? 0 : BUN_NONE)
+
+@-
+In case the group OIDs span a range of more than SMALL_AGGR_MAX,
+but the number of groups is less then SCAN_AGGR_MAX,
+we use (backward-) "scan"-lookup (unrolled implementation exploiting
+fall-through in C's switch statment) instead of hash-lookup,
+as the latter turned out to be rather expensive ...
+@c
+#define SCAN_AGGR_MAX 8
+
+@= SCAN_aggr_init
+	oid _h, _j = BATcount(bn);
+	oid *_bnh = (oid*) BUNhloc(bni, BUNfirst(bn));
+	BUN _r = BUNfirst(bn);
+@c
+#define SCANfndOID(r, bn, h)	\
+	_h = *(oid*)(h), _j = BATcount(bn.b);         \
+	r = BUN_NONE;                                     \
+	switch (_j) {                                     \
+	case 8: if (_bnh[7] == _h) { r = _r + 7; break; } \
+	case 7: if (_bnh[6] == _h) { r = _r + 6; break; } \
+	case 6: if (_bnh[5] == _h) { r = _r + 5; break; } \
+	case 5: if (_bnh[4] == _h) { r = _r + 4; break; } \
+	case 4: if (_bnh[3] == _h) { r = _r + 3; break; } \
+	case 3: if (_bnh[2] == _h) { r = _r + 2; break; } \
+	case 2: if (_bnh[1] == _h) { r = _r + 1; break; } \
+	case 1: if (_bnh[0] == _h) { r = _r + 0; break; } \
+	}
 
 @- Result initialization
 @c
@@ -221,13 +249,13 @@ HASHfnd_oid for void- and hash-lookups, respectively
 @- Sum, Product & Average
 @c
 /*	aggrX3_sum
-		e-void-head	e-oid-head	e-oid-head
-		void-lookup	hash-lookup	array-lookup
+		e-void-head	e-oid-head	e-oid-head	e-oid-head
+		void-lookup	array-lookup	scan-lookup	hash-lookup
 
-	@1:	0		0		1		use sums-array?
-	@2:	0		1		0		do BATprepareHash?
-	@3:	BUNfndVOID	HASHfnd_oid	CHKrange	lookup
-	@4:	var		loc		loc		e/bn-head-access
+	@1:	0		1		0		0		use sums-array?
+	@2:	0		0		0		1		do BATprepareHash?
+	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
+	@4:	var		loc		loc		loc		e/bn-head-access
 
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -285,13 +313,13 @@ HASHfnd_oid for void- and hash-lookups, respectively
 @
 @c
 /*	aggrX3_prod
-		e-void-head	e-oid-head	e-oid-head
-		void-lookup	hash-lookup	array-lookup
+		e-void-head	e-oid-head	e-oid-head	e-oid-head
+		void-lookup	array-lookup	scan-lookup	hash-lookup
 
-	@1:	0		0		1		use prods-array?
-	@2:	0		1		0		do BATprepareHash?
-	@3:	BUNfndVOID	HASHfnd_oid	CHKrange	lookup
-	@4:	var		loc		loc		e/bn-head-access
+	@1:	0		1		0		0		use prods-array?
+	@2:	0		0		0		1		do BATprepareHash?
+	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
+	@4:	var		loc		loc		loc		e/bn-head-access
 
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -348,13 +376,13 @@ HASHfnd_oid for void- and hash-lookups, respectively
 @
 @c
 /*	aggrX3_avg
-		e-void-head	e-oid-head	e-oid-head
-		void-lookup	hash-lookup	array-lookup
+		e-void-head	e-oid-head	e-oid-head	e-oid-head
+		void-lookup	array-lookup	scan-lookup	hash-lookup
 
-	@1:	0		0		1		use sums-array?
-	@2:	0		1		0		do BATprepareHash?
-	@3:	BUNfndVOID	HASHfnd_oid	CHKrange	lookup
-	@4:	var		loc		loc		e/bn-head-access
+	@1:	0		1		0		0		use sums-array?
+	@2:	0		0		0		1		do BATprepareHash?
+	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
+	@4:	var		loc		loc		loc		e/bn-head-access
 
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -469,19 +497,27 @@ CMDaggrX3_sum_@1_@3(BAT **ret, BAT *b, BAT *e)
 			@:aggrX3_sum(0,0,BUNfndVOID,var,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3)@
 		}
 	/* e->htype == TYPE_oid */
-	} else if (range > SMALL_AGGR_MAX) {
-		/* hash lookup */
-		if (b->htype == TYPE_void) {
-			@:aggrX3_sum(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),@3)@
-		} else {
-			@:aggrX3_sum(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3)@
-		}
-	} else {
+	} else if (range <= SMALL_AGGR_MAX) {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
 			@:aggrX3_sum(1,0,CHKrange,loc,&bhsb;bhsb++,@1,@2,&sums[(*(oid*)h)-min],@3)@
 		} else {
 			@:aggrX3_sum(1,0,CHKrange,loc,BUNhloc(bi,p),@1,@2,&sums[(*(oid*)h)-min],@3)@
+		}
+	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
+		/* scan lookup */
+		@:SCAN_aggr_init@
+		if (b->htype == TYPE_void) {
+			@:aggrX3_sum(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),@3)@
+		} else {
+			@:aggrX3_sum(0,0,SCANfndOID,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3)@
+		}
+	} else {
+		/* hash lookup */
+		if (b->htype == TYPE_void) {
+			@:aggrX3_sum(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),@3)@
+		} else {
+			@:aggrX3_sum(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3)@
 		}
 	}
 
@@ -525,19 +561,27 @@ CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 			@:aggrX3_prod(0,0,BUNfndVOID,var,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3)@
 		}
 	/* e->htype == TYPE_oid */
-	} else if (range > SMALL_AGGR_MAX) {
-		/* hash lookup */
-		if (b->htype == TYPE_void) {
-			@:aggrX3_prod(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),@3)@
-		} else {
-			@:aggrX3_prod(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3)@
-		}
-	} else {
+	} else if (range <= SMALL_AGGR_MAX) {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
 			@:aggrX3_prod(1,0,CHKrange,loc,&bhsb;bhsb++,@1,@2,&prods[(*(oid*)h)-min],@3)@
 		} else {
 			@:aggrX3_prod(1,0,CHKrange,loc,BUNhloc(bi,p),@1,@2,&prods[(*(oid*)h)-min],@3)@
+		}
+	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
+		/* scan lookup */
+		@:SCAN_aggr_init@
+		if (b->htype == TYPE_void) {
+			@:aggrX3_prod(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),@3)@
+		} else {
+			@:aggrX3_prod(0,0,SCANfndOID,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3)@
+		}
+	} else {
+		/* hash lookup */
+		if (b->htype == TYPE_void) {
+			@:aggrX3_prod(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),@3)@
+		} else {
+			@:aggrX3_prod(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),@3)@
 		}
 	}
 
@@ -606,30 +650,37 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 	range = max - min + 1;
 
 	/* scan b, calculate sums & counts, derive averages */
+	slots = BATcount(e);
 	if (e->htype == TYPE_void) {
 		/* void lookup */
-		slots = BATcount(e);
 		if (b->htype == TYPE_void) {
 			@:aggrX3_avg(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),r-off)@
 		} else {
 			@:aggrX3_avg(0,0,BUNfndVOID,var,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),r-off)@
 		}
 	/* e->htype == TYPE_oid */
-	} else if (range > SMALL_AGGR_MAX) {
-		/* hash lookup */
-		slots = BATcount(e);
-		if (b->htype == TYPE_void) {
-			@:aggrX3_avg(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),r-off)@
-		} else {
-			@:aggrX3_avg(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),r-off)@
-		}
-	} else {
+	} else if (range <= SMALL_AGGR_MAX) {
 		/* array lookup */
 		slots = range;
 		if (b->htype == TYPE_void) {
 			@:aggrX3_avg(1,0,CHKrange,loc,&bhsb;bhsb++,@1,@2,&sums[(*(oid*)h)-min],(*(oid*)h)-min)@
 		} else {
 			@:aggrX3_avg(1,0,CHKrange,loc,BUNhloc(bi,p),@1,@2,&sums[(*(oid*)h)-min],(*(oid*)h)-min)@
+		}
+	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
+		/* scan lookup */
+		@:SCAN_aggr_init@
+		if (b->htype == TYPE_void) {
+			@:aggrX3_avg(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),r-off)@
+		} else {
+			@:aggrX3_avg(0,0,SCANfndOID,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),r-off)@
+		}
+	} else {
+		/* hash lookup */
+		if (b->htype == TYPE_void) {
+			@:aggrX3_avg(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),r-off)@
+		} else {
+			@:aggrX3_avg(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),r-off)@
 		}
 	}
 
@@ -648,13 +699,13 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 @- "Extremes" (Min & Max)
 @c
 /*	aggrX3_minmax_ptr
-		e-void-head	e-oid-head	e-oid-head
-		void-lookup	hash-lookup	array-lookup
+		e-void-head	e-oid-head	e-oid-head	e-oid-head
+		void-lookup	array-lookup	scan-lookup	hash-lookup
 
-	@1:	</>		</>		</>		compare operator: <(min) or >(max)
-	@2:	0		1		0		do BATprepareHash?
-	@3:	BUNfndVOID	HASHfnd_oid	CHKrange	lookup
-	@4:	var		loc		loc		e/bn-head-access
+	@1:	</>		</>		</>		</>		compare operator: <(min) or >(max)
+	@2:	0		0		0		1		do BATprepareHash?
+	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
+	@4:	var		loc		loc		loc		e/bn-head-access
 
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -704,13 +755,13 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 	}
 @c
 /*	aggrX3_minmax_oid
-		e-void-head	e-oid-head	e-oid-head
-		void-lookup	hash-lookup	array-lookup
+		e-void-head	e-oid-head	e-oid-head	e-oid-head
+		void-lookup	array-lookup	scan-lookup	hash-lookup
 
-	@1:	</>		</>		</>		compare operator: <(min) or >(max)
-	@2:	0		1		0		do BATprepareHash?
-	@3:	BUNfndVOID	HASHfnd_oid	CHKrange	lookup
-	@4:	var		loc		loc		e/bn-head-access
+	@1:	</>		</>		</>		</>		compare operator: <(min) or >(max)
+	@2:	0		0		0		1		do BATprepareHash?
+	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
+	@4:	var		loc		loc		loc		e/bn-head-access
 
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -808,20 +859,28 @@ aggrX3_@1_@3_@4_@5(BAT **ret, BAT *b, BAT *e)
 			@:aggrX3_minmax_@5(@2,0,BUNfndVOID,var,BUNhloc(bi,p),@3,@4,r-off,@6)@
 		}
 	/* e->htype == TYPE_oid */
-	} else if (range > SMALL_AGGR_MAX) {
-		/* hash lookup */
-		if (b->htype == TYPE_void) {
-			@:aggrX3_minmax_@5(@2,1,HASHfnd_oid,loc,&bhsb; bhsb++,@3,@4,r-off,@6)@
-		} else {
-			@:aggrX3_minmax_@5(@2,1,HASHfnd_oid,loc,BUNhloc(bi,p),@3,@4,r-off,@6)@
-		}
-	} else {
+	} else if (range <= SMALL_AGGR_MAX) {
 		/* array lookup */
 		slots = range;
 		if (b->htype == TYPE_void) {
 			@:aggrX3_minmax_@5(@2,0,CHKrange,loc,&bhsb; bhsb++,@3,@4,(*(oid*)h)-min,@6)@
 		} else {
 			@:aggrX3_minmax_@5(@2,0,CHKrange,loc,BUNhloc(bi,p),@3,@4,(*(oid*)h)-min,@6)@
+		}
+	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
+		/* scan lookup */
+		@:SCAN_aggr_init@
+		if (b->htype == TYPE_void) {
+			@:aggrX3_minmax_@5(@2,0,SCANfndOID,loc,&bhsb;bhsb++,@3,@4,r-off,@6)@
+		} else {
+			@:aggrX3_minmax_@5(@2,0,SCANfndOID,loc,BUNhloc(bi,p),@3,@4,r-off,@6)@
+		}
+	} else {
+		/* hash lookup */
+		if (b->htype == TYPE_void) {
+			@:aggrX3_minmax_@5(@2,1,HASHfnd_oid,loc,&bhsb; bhsb++,@3,@4,r-off,@6)@
+		} else {
+			@:aggrX3_minmax_@5(@2,1,HASHfnd_oid,loc,BUNhloc(bi,p),@3,@4,r-off,@6)@
 		}
 	}
 	*ret = bn;
@@ -880,13 +939,13 @@ CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e)
 @- Count
 @c
 /*	aggrX3_count
-		e-void-head	e-oid-head	e-oid-head
-		void-lookup	hash-lookup	array-lookup
+		e-void-head	e-oid-head	e-oid-head	e-oid-head
+		void-lookup	array-lookup	scan-lookup	hash-lookup
 
-	@1:	0		0		1		use cnt-array?
-	@2:	0		1		0		do BATprepareHash?
-	@3:	BUNfndVOID	HASHfnd_oid	CHKrange	lookup
-	@4:	var		loc		loc		e/bn-head-access
+	@1:	0		1		0		0		use cnt-array?
+	@2:	0		0		0		1		do BATprepareHash?
+	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
+	@4:	var		loc		loc		loc		e/bn-head-access
 
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -1028,19 +1087,27 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 			@:aggrX3_count(0,0,BUNfndVOID,var,BUNhloc(bi,p),BUNtloc(bni,r))@
 		}
 		/* e->htype == TYPE_oid */
-	} else if (range > SMALL_AGGR_MAX) {
-		/* hash lookup */
-		if (b->htype == TYPE_void) {
-			@:aggrX3_count(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,BUNtloc(bni,r))@
-		} else {
-			@:aggrX3_count(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),BUNtloc(bni,r))@
-		}
-	} else {
+	} else if (range <= SMALL_AGGR_MAX) {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
 			@:aggrX3_count(1,0,CHKrange,loc,&bhsb;bhsb++,&cnt[(*(oid*)h)-min])@
 		} else {
 			@:aggrX3_count(1,0,CHKrange,loc,BUNhloc(bi,p),&cnt[(*(oid*)h)-min])@
+		}
+	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
+		/* scan lookup */
+		@:SCAN_aggr_init@
+		if (b->htype == TYPE_void) {
+			@:aggrX3_count(0,0,SCANfndOID,loc,&bhsb;bhsb++,BUNtloc(bni,r))@
+		} else {
+			@:aggrX3_count(0,0,SCANfndOID,loc,BUNhloc(bi,p),BUNtloc(bni,r))@
+		}
+	} else {
+		/* hash lookup */
+		if (b->htype == TYPE_void) {
+			@:aggrX3_count(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,BUNtloc(bni,r))@
+		} else {
+			@:aggrX3_count(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),BUNtloc(bni,r))@
 		}
 	}
 
@@ -1093,13 +1160,13 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 @- Sum, Product & Average
 @c
 /*	aggrX3_sum3
-		e-void-head	e-oid-head	e-oid-head
-		void-lookup	hash-lookup	array-lookup
+		e-void-head	e-oid-head	e-oid-head	e-oid-head
+		void-lookup	array-lookup	scan-lookup	hash-lookup
 
-	@1:	0		0		1		use sums-array?
-	@2:	0		1		0		do BATprepareHash?
-	@3:	BUNfndVOID	HASHfnd_oid	CHKrange	lookup
-	@4:	var		loc		loc		e/bn-head-access
+	@1:	0		1		0		0		use sums-array?
+	@2:	0		0		0		1		do BATprepareHash?
+	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
+	@4:	var		loc		loc		loc		e/bn-head-access
 
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -1169,13 +1236,13 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 @
 @c
 /*	aggrX3_prod3
-		e-void-head	e-oid-head	e-oid-head
-		void-lookup	hash-lookup	array-lookup
+		e-void-head	e-oid-head	e-oid-head	e-oid-head
+		void-lookup	array-lookup	scan-lookup	hash-lookup
 
-	@1:	0		0		1		use prods-array?
-	@2:	0		1		0		do BATprepareHash?
-	@3:	BUNfndVOID	HASHfnd_oid	CHKrange	lookup
-	@4:	var		loc		loc		e/bn-head-access
+	@1:	0		1		0		0		use prods-array?
+	@2:	0		0		0		1		do BATprepareHash?
+	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
+	@4:	var		loc		loc		loc		e/bn-head-access
 
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -1245,13 +1312,13 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 @
 @c
 /*	aggrX3_avg3
-		e-void-head	e-oid-head	e-oid-head
-		void-lookup	hash-lookup	array-lookup
+		e-void-head	e-oid-head	e-oid-head	e-oid-head
+		void-lookup	array-lookup	scan-lookup	hash-lookup
 
-	@1:	0		0		1		use sums-array?
-	@2:	0		1		0		do BATprepareHash?
-	@3:	BUNfndVOID	HASHfnd_oid	CHKrange	lookup
-	@4:	var		loc		loc		e/bn-head-access
+	@1:	0		1		0		0		use sums-array?
+	@2:	0		0		0		1		do BATprepareHash?
+	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
+	@4:	var		loc		loc		loc		e/bn-head-access
 
 	@5:	"BUNhloc(b,p)"	for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -1411,18 +1478,7 @@ CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 			@:aggrX3_sum3(0,0,BUNfndVOID,var,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2)@
 		}
 	/* e->htype == TYPE_oid */
-	} else if (range > SMALL_AGGR_MAX) {
-		/* hash lookup */
-		if (b->htype == TYPE_void) {
-			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_sum3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2)@
-			} else {
-				@:aggrX3_sum3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2)@
-			}
-		} else {
-			@:aggrX3_sum3(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2)@
-		}
-	} else {
+	} else if (range <= SMALL_AGGR_MAX) {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
 			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
@@ -1432,6 +1488,29 @@ CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 			}
 		} else {
 			@:aggrX3_sum3(1,0,CHKrange,loc,BUNhloc(bi,p),@1,&sums[(*(oid*)h)-min],if (w >= base && w < end),@2)@
+		}
+	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
+		/* scan lookup */
+		@:SCAN_aggr_init@
+		if (b->htype == TYPE_void) {
+			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
+				@:aggrX3_sum3(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2)@
+			} else {
+				@:aggrX3_sum3(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2)@
+			}
+		} else {
+			@:aggrX3_sum3(0,0,SCANfndOID,loc,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2)@
+		}
+	} else {
+		/* hash lookup */
+		if (b->htype == TYPE_void) {
+			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
+				@:aggrX3_sum3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2)@
+			} else {
+				@:aggrX3_sum3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2)@
+			}
+		} else {
+			@:aggrX3_sum3(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2)@
 		}
 	}
 
@@ -1511,18 +1590,7 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 			@:aggrX3_prod3(0,0,BUNfndVOID,var,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2)@
 		}
 	/* e->htype == TYPE_oid */
-	} else if (range > SMALL_AGGR_MAX) {
-		/* hash lookup */
-		if (b->htype == TYPE_void) {
-			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
-				@:aggrX3_prod3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2)@
-			} else {
-				@:aggrX3_prod3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2)@
-			}
-		} else {
-			@:aggrX3_prod3(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2)@
-		}
-	} else {
+	} else if (range <= SMALL_AGGR_MAX) {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
 			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
@@ -1532,6 +1600,29 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 			}
 		} else {
 			@:aggrX3_prod3(1,0,CHKrange,loc,BUNhloc(bi,p),@1,&prods[(*(oid*)h)-min],if (w >= base && w < end),@2)@
+		}
+	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
+		/* scan lookup */
+		@:SCAN_aggr_init@
+		if (b->htype == TYPE_void) {
+			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
+				@:aggrX3_prod3(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2)@
+			} else {
+				@:aggrX3_prod3(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2)@
+			}
+		} else {
+			@:aggrX3_prod3(0,0,SCANfndOID,loc,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2)@
+		}
+	} else {
+		/* hash lookup */
+		if (b->htype == TYPE_void) {
+			if ((g->htype == TYPE_void)&&(BATcount(b)==BATcount(g))&&(b->hseqbase==g->hseqbase)) {
+				@:aggrX3_prod3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),,@2)@
+			} else {
+				@:aggrX3_prod3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,BUNtloc(bni,r),if (w >= base && w < end),@2)@
+			}
+		} else {
+			@:aggrX3_prod3(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2)@
 		}
 	}
 
@@ -1614,30 +1705,37 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	range = max - min + 1;
 
 	/* scan b & g, calculate sums & counts, derive averages */
+	slots = BATcount(e);
 	if (e->htype == TYPE_void) {
 		/* void lookup */
-		slots = BATcount(e);
 		if (b->htype == TYPE_void) {
 			@:aggrX3_avg3(0,0,BUNfndVOID,var,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),r-off)@
 		} else {
 			@:aggrX3_avg3(0,0,BUNfndVOID,var,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),r-off)@
 		}
 	/* e->htype == TYPE_oid */
-	} else if (range > SMALL_AGGR_MAX) {
-		/* hash lookup */
-		slots = BATcount(e);
-		if (b->htype == TYPE_void) {
-			@:aggrX3_avg3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),r-off)@
-		} else {
-			@:aggrX3_avg3(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),r-off)@
-		}
-	} else {
+	} else if (range <= SMALL_AGGR_MAX) {
 		/* array lookup */
 		slots = range;
 		if (b->htype == TYPE_void) {
 			@:aggrX3_avg3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,@2,&sums[(*(oid*)h)-min],(*(oid*)h)-min)@
 		} else {
 			@:aggrX3_avg3(1,0,CHKrange,loc,BUNhloc(bi,p),@1,@2,&sums[(*(oid*)h)-min],(*(oid*)h)-min)@
+		}
+	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
+		/* scan lookup */
+		@:SCAN_aggr_init@
+		if (b->htype == TYPE_void) {
+			@:aggrX3_avg3(0,0,SCANfndOID,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),r-off)@
+		} else {
+			@:aggrX3_avg3(0,0,SCANfndOID,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),r-off)@
+		}
+	} else {
+		/* hash lookup */
+		if (b->htype == TYPE_void) {
+			@:aggrX3_avg3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,@1,@2,BUNt@2(bni,r),r-off)@
+		} else {
+			@:aggrX3_avg3(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),r-off)@
 		}
 	}
 
@@ -1656,13 +1754,13 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 @- "Extremes" (Min & Max)
 @c
 /*	aggrX3_minmax3_ptr
-		e-void-head	e-oid-head	e-oid-head
-		void-lookup	hash-lookup	array-lookup
+		e-void-head	e-oid-head	e-oid-head	e-oid-head
+		void-lookup	array-lookup	scan-lookup	hash-lookup
 
-	@1:	</>		</>		</>		compare operator: <(min) or >(max)
-	@2:	0		1		0		do BATprepareHash?
-	@3:	BUNfndVOID	HASHfnd_oid	CHKrange	lookup
-	@4:	var		loc		loc		e/bn-head-access
+	@1:	</>		</>		</>		</>		compare operator: <(min) or >(max)
+	@2:	0		0		0		1		do BATprepareHash?
+	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
+	@4:	var		loc		loc		loc		e/bn-head-access
 
 	@5:	"BUNhloc(b,p)" for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -1718,13 +1816,13 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	}
 @c
 /*	aggrX3_minmax3_oid
-		e-void-head	e-oid-head	e-oid-head
-		void-lookup	hash-lookup	array-lookup
+		e-void-head	e-oid-head	e-oid-head	e-oid-head
+		void-lookup	array-lookup	scan-lookup	hash-lookup
 
-	@1:	</>		</>		</>		compare operator: <(min) or >(max)
-	@2:	0		1		0		do BATprepareHash?
-	@3:	BUNfndVOID	HASHfnd_oid	CHKrange	lookup
-	@4:	var		loc		loc		e/bn-head-access
+	@1:	</>		</>		</>		</>		compare operator: <(min) or >(max)
+	@2:	0		0		0		1		do BATprepareHash?
+	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
+	@4:	var		loc		loc		loc		e/bn-head-access
 
 	@5:	"BUNhloc(b,p)" for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -1837,20 +1935,28 @@ aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 			@:aggrX3_minmax3_@5(@2,0,BUNfndVOID,var,BUNhloc(bi,p),@3,@4,r-off,@6)@
 		}
 	/* e->htype == TYPE_oid */
-	} else if (range > SMALL_AGGR_MAX) {
-		/* hash lookup */
-		if (b->htype == TYPE_void) {
-			@:aggrX3_minmax3_@5(@2,1,HASHfnd_oid,loc,&bhsb; bhsb++,@3,@4,r-off,@6)@
-		} else {
-			@:aggrX3_minmax3_@5(@2,1,HASHfnd_oid,loc,BUNhloc(bi,p),@3,@4,r-off,@6)@
-		}
-	} else {
+	} else if (range <= SMALL_AGGR_MAX) {
 		/* array lookup */
 		slots = range;
 		if (b->htype == TYPE_void) {
 			@:aggrX3_minmax3_@5(@2,0,CHKrange,loc,&bhsb; bhsb++,@3,@4,(*(oid*)h)-min,@6)@
 		} else {
 			@:aggrX3_minmax3_@5(@2,0,CHKrange,loc,BUNhloc(bi,p),@3,@4,(*(oid*)h)-min,@6)@
+		}
+	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
+		/* scan lookup */
+		@:SCAN_aggr_init@
+		if (b->htype == TYPE_void) {
+			@:aggrX3_minmax3_@5(@2,0,SCANfndOID,loc,&bhsb;bhsb++,@3,@4,r-off,@6)@
+		} else {
+			@:aggrX3_minmax3_@5(@2,0,SCANfndOID,loc,BUNhloc(bi,p),@3,@4,r-off,@6)@
+		}
+	} else {
+		/* hash lookup */
+		if (b->htype == TYPE_void) {
+			@:aggrX3_minmax3_@5(@2,1,HASHfnd_oid,loc,&bhsb; bhsb++,@3,@4,r-off,@6)@
+		} else {
+			@:aggrX3_minmax3_@5(@2,1,HASHfnd_oid,loc,BUNhloc(bi,p),@3,@4,r-off,@6)@
 		}
 	}
 	*ret = bn;
@@ -1914,13 +2020,13 @@ CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e)
 @- Count
 @c
 /*	aggrX3_count3
-		e-void-head	e-oid-head	e-oid-head
-		void-lookup	hash-lookup	array-lookup
+		e-void-head	e-oid-head	e-oid-head	e-oid-head
+		void-lookup	array-lookup	scan-lookup	hash-lookup
 
-	@1:	0		0		1		use cnt-array?
-	@2:	0		1		0		do BATprepareHash?
-	@3:	BUNfndVOID	HASHfnd_oid	CHKrange	lookup
-	@4:	var		loc		loc		e/bn-head-access
+	@1:	0		1		0		0		use cnt-array?
+	@2:	0		0		0		1		do BATprepareHash?
+	@3:	BUNfndVOID	CHKrange	SCANfndOID	HASHfnd_oid	lookup
+	@4:	var		loc		loc		loc		e/bn-head-access
 
 	@5:	"BUNhloc(b,p)" for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
@@ -2080,19 +2186,27 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 			@:aggrX3_count3(0,0,BUNfndVOID,var,BUNhloc(bi,p),BUNtloc(bni,r))@
 		}
 		/* e->htype == TYPE_oid */
-	} else if (range > SMALL_AGGR_MAX) {
-		/* hash lookup */
-		if (b->htype == TYPE_void) {
-			@:aggrX3_count3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,BUNtloc(bni,r))@
-		} else {
-			@:aggrX3_count3(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),BUNtloc(bni,r))@
-		}
-	} else {
+	} else if (range <= SMALL_AGGR_MAX) {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
 			@:aggrX3_count3(1,0,CHKrange,loc,&bhsb;bhsb++,&cnt[(*(oid*)h)-min])@
 		} else {
 			@:aggrX3_count3(1,0,CHKrange,loc,BUNhloc(bi,p),&cnt[(*(oid*)h)-min])@
+		}
+	} else if (BATcount(e) <= SCAN_AGGR_MAX) {
+		/* scan lookup */
+		@:SCAN_aggr_init@
+		if (b->htype == TYPE_void) {
+			@:aggrX3_count3(0,0,SCANfndOID,loc,&bhsb;bhsb++,BUNtloc(bni,r))@
+		} else {
+			@:aggrX3_count3(0,0,SCANfndOID,loc,BUNhloc(bi,p),BUNtloc(bni,r))@
+		}
+	} else {
+		/* hash lookup */
+		if (b->htype == TYPE_void) {
+			@:aggrX3_count3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,BUNtloc(bni,r))@
+		} else {
+			@:aggrX3_count3(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),BUNtloc(bni,r))@
 		}
 	}
 
