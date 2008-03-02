@@ -18,32 +18,32 @@
 @f mal_recycle
 @- The Recycler
 Query optimization and processing in off-the-shelf database systems is often
-still focus on individual queries. The queries are analysed in isolation
+still focussed on individual queries. The queries are analysed in isolation
 and ran against a kernel regardless opportunities offered by concurrent or
 previous invocations.
 
 This approach is far from optimal and two directions to improve
 are explored: materialized views and (partial) result-set reuse.
 Materialized views are derived from query logs. They represent
-common sub-queries, whose materializaion and storage improves
-subsequent processing time.
+common sub-queries, whose materialization improves
+subsequent processing times.
 Re-use of (partial) results is used in those cases where a
-zoomin-in or navigational application is at stake.
+zooming-in or navigational application is at stake.
 
-The Recycler module extends it with a the middle out approach.
-It exploits the materialize-all-intermediate approach MonetDB
-by deciding to keep hold on them as long as deemed benificial.
+The Recycler module extends it with a middle out approach.
+It exploits the materialize-all-intermediate approach of MonetDB
+by deciding to keep a hold on them as long as deemed benificial.
 
-The approach taken is to mark the variables in MAL program, 
-such that their result is retained in global recycle cache.
+The approach taken is to mark the variables in a MAL program, 
+such that their result is retained in a global recycle cache.
 Instructions become subject to the Recycler if
-at least one of its arguments is BAT and all others are
+at least one of its arguments is a BAT and all others are
 either constants or variables already known in the Recycler.
 Recycling currently starts with SQL bind instructions.
 
-Upon execution, the Recycler first check for
+Upon execution, the Recycler first checks for
 an up to date result to be picked up at no cost.
-Otherwise. it evaluates the instruction and calls upon
+Otherwise, it evaluates the instruction and calls upon
 policy functions to decide if it is worthwhile to
 keep.
 
