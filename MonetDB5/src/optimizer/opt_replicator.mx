@@ -492,43 +492,34 @@ VALcmp(ValPtr p, ValPtr q)
 int
 findReplica(MalStkPtr s,InstrPtr p)
 {
-	int i, j, idx, dif = 0;
+	int i, j, idx;
 	int *vmap;
-	InstrPtr *st, q;
-	ValPtr pa, qa;
+	InstrPtr q;
 	
 	if (repl == NULL) return -1;
 	vmap = getMap(s);
 	if( vmap == NULL)
 		GDKerror("Variable map not initialized\n");
-	st = repl->stmt;
 	for (i = 0; i < repl->stop; i++){
-		q = st[i];
+		q = getInstrPtr(repl,i);
 		if((p->argc != q->argc) ||
 		   (getFunctionId(p) != getFunctionId(q)))
 			continue;
-		else{	
-			dif = 0;
-			for (j = 1; j < p->argc; j++){
-				idx = p->argv[j];
-				if( vmap[idx] >=0 ){ /* symbol comp */
-					if( vmap[idx] != getArg(q,j)){
-						dif = 1;
-						break;
-					}
-				} else {	/* value comp */		
-					pa = &s->stk[idx];
-					qa = &getVar(repl,getArg(q,j))->value;
-					if( VALcmp(pa,qa) ){
-						dif = 1;
-						break;
-					}
-				}
-			}
-			if( dif == 0 ) return i;
-		}
-	}
 	
+		for (j = p->retc; j < p->argc; j++){
+			idx = getArg(p,j);
+			if( vmap[idx] >=0 ){ /* symbol comp */
+				if( vmap[idx] != getArg(q,j))
+					goto notfound;
+			} else 
+			if( VALcmp(&s->stk[idx], &getVar(repl,getArg(q,j))->value) )
+				goto notfound;
+		}
+		/* found a match */
+		return i;
+
+		notfound: continue;
+	}
 	return -1;
 
 }
