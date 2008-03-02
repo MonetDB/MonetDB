@@ -219,6 +219,7 @@ RECYCLEsetRetain(int *ret, sht *p)
 {
 	(void) ret;
 	retain = *p;
+	(void)retain;
 	return MAL_SUCCEED;
 }
 
@@ -227,6 +228,7 @@ RECYCLEsetReuse(int *ret, sht *p)
 {
 	(void) ret;
 	reuse = *p;
+	(void)reuse;
 	return MAL_SUCCEED;
 }
 
@@ -235,6 +237,7 @@ RECYCLEsetCache(int *ret, sht *p)
 {
 	(void) ret;
 	rcache = *p;
+	(void)rcache;
 	return MAL_SUCCEED;
 }
 @-
