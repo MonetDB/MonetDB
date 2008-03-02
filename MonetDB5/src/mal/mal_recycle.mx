@@ -301,6 +301,41 @@ VALcmp(ValPtr p, ValPtr q)
 	return ((*cmp)(pp, pq));
 
 }
+
+/* check for replica of instruction p in recycle table */
+int
+RECYCLEfindEntry(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
+{
+	int i, j, ridx;
+	InstrPtr q;
+	
+	if( recycleBlk == 0)
+		return -1;
+
+	for (i = 0; i < recycleBlk->stop; i++){
+		q = getInstrPtr(recycleBlk,i);
+		if((p->argc != q->argc) ||
+		   (getModuleId(p) != getFunctionId(q)) ||
+		   (getModuleId(p) != getModuleId(q)))
+			continue;
+
+		for (j = p->retc; j < p->argc; j++){
+			ridx = mb->var[getArg(p,j)]->recycle;
+			if( ridx != getArg(q,j) )
+					goto notfound;
+			else 
+			if( VALcmp(&s->stk[ridx],
+				&getVarConstant(recycleBlk,getArg(q,j))) )
+					goto notfound;
+		}
+		/* found a match */
+		return i;
+
+		notfound: continue;
+	}
+	return -1;
+
+}
 @-
 The generic wrappers for accessing the recycle variables
 Before the interpreter loop is allowed to execute the instruction
@@ -328,6 +363,13 @@ int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		VALcopy(lhs,rhs);
 		if( lhs->vtype == TYPE_bat)
 			BBPincref(lhs->val.br.id, TRUE);
+	} else
+	if( isVarRecycled(mb, getArg(p,i))){
+		int j= RECYCLEfindEntry(mb,stk,p);
+#ifdef _DEBUG_RECYCLE_
+		stream_printf(GDKout,"RECYCLEentry search %d\n",j);
+#endif
+		/* and from here we should decide how to reuse it */
 	}
 	stk->clk= GDKusec();
 	return cnt == p->retc;
