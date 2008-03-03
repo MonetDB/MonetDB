@@ -37,15 +37,15 @@ command dump():void
 address RECYCLEdump
 comment "Dump summary of recycle table for potential re-use benefits";
 
-command setRetainPolicy(p:sht):void
+command setRetainPolicy(p:int):void
 address RECYCLEsetRetain
 comment "Set recycler retainment policy";
 
-command setReusePolicy(p:sht):void
+command setReusePolicy(p:int):void
 address RECYCLEsetReuse
 comment "Set recycler reuse policy";
 
-command setCachePolicy(p:sht):void
+command setCachePolicy(p:int):void
 address RECYCLEsetCache
 comment "Set recycler cache policy";
 
