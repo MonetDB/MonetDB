@@ -5434,7 +5434,7 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Rel:      bool_or (Rel) */
         case 62: /* fold( */
         {
-            PFmil_t * (*op) (const PFmil_t *, const PFmil_t *);
+            PFmil_t * (*op) (const PFmil_t *, const PFmil_t *) = NULL;
             mvar_t *res = new_var (p->refctr);
             
             assert (aat_bln == type_of (L(p), p->sem.binary.att1));
