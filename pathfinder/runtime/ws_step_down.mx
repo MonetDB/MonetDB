@@ -587,9 +587,13 @@ ws_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
             while (fst_pre <= cand_lst && *(oid*)fst_pre < pre)
                 fst_pre ++;
             if (fst_pre <= cand_lst && *(oid*)fst_pre == pre) {
-                    oid right = cand_bat->hseqbase + (fst_pre - cand_fst);
+                    oid fst_right = cand_bat->hseqbase + (fst_pre - cand_fst);
+                    oid lst_right = fst_right;
+                    while (fst_pre <= cand_lst && *(oid*)fst_pre == pre) {
+                    	lst_right ++;
+                    	fst_pre ++;
+                    }
                     @:inner_loop_child_body(@2,@3)@
-                    fst_pre ++;
             }
         }
         cand_cur = fst_pre;
@@ -612,20 +616,26 @@ ws_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* size,
                  * by upfront ensuring that [iter,item] ([iter,ctx])
                  * is a set, i.e., duplicate free??
                  */
-                *hdst++ = left;
-                *tdst++ = right;
+                oid right;
+                for (right = fst_right; right < lst_right; right++) {
+                    *hdst++ = left;
+                    *tdst++ = right;
+                    free -= decr;
+                }
                 prev_iter = next_iter;
-                free -= decr;
             }
 @
 @= no_duplicates_body
-            *hdst++ = left;
-            *tdst++ = right;
-            free -= decr;
+            oid right;
+            for (right = fst_right; right < lst_right; right++) {
+                *hdst++ = left;
+                *tdst++ = right;
+                free -= decr;
+            }
 @
 @= inner_loop_child_body
         @1
-        size_t grow = (stack[stack_top-1].last - stack[stack_top-1].first) + 1;
+        size_t grow = ((stack[stack_top-1].last - stack[stack_top-1].first) + 1) * (lst_right - fst_right);
         oid *sdst, *hdst, *tdst, left;
 
         /* check, if result buffer is big enough; otherwise extend it */
