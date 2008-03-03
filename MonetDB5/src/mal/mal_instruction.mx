@@ -675,6 +675,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->ptop = mb->psize = 0;
 	mb->prps = NULL;
 	mb->version = 0;
+	mb->replica = NULL;
 	return mb;
 }
 
