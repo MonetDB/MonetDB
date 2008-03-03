@@ -6,6 +6,7 @@ function qry();
 	io.print(j);
 end qry;
 
+recycle.setRetainPolicy(1);
 optimizer.recycle("user","qry");
 io.print("start");
 qry();

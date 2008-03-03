@@ -34,12 +34,12 @@ The Recycler module extends it with a middle out approach.
 It exploits the materialize-all-intermediate approach of MonetDB
 by deciding to keep a hold on them as long as deemed benificial.
 
-The approach taken is to mark the variables in a MAL program, 
-such that their result is retained in a global recycle cache.
+The approach taken is to mark the variables in a MAL program
+using an optimizer call, such that their result is retained 
+in a global recycle cache.
 Instructions become subject to the Recycler if
 at least one of its arguments is a BAT and all others are
 either constants or variables already known in the Recycler.
-Recycling currently starts with SQL bind instructions.
 
 Upon execution, the Recycler first checks for
 an up to date result to be picked up at no cost.
@@ -50,20 +50,6 @@ keep.
 The Recycler comes with a few policy controlling operators
 to experiment with its effect in concrete settings.
 
-A short MAL script to illustrate the working of the
-recycler. Portions of a MAL block can be made subject to
-recycling control. 
-@example
-function qry();
-	recycle.start();
-	_3:= sql.bind();
-	...
-	recycle.stop();
-end qry;
-
-qry();
-qry();
-@end example
 @{
 @-
 The Recycler should be a variation of the interpreter
@@ -101,15 +87,17 @@ static MalBlkPtr recycleBlk = NULL;
 static int recycleVersion = 0;  /* version of recycle table */
 static int recycleUsers = 0;  /* queries currently using recycleBlk */
 
-static sht retain = 0;  /* recycle retainment policy
+static sht retainPolicy = 0;  /* recycle retainment policy
 			0: baseline, keeps stat, no retain, no reuse
 			1: infinite case, retain all
-			2: cost-based, retain if beneficial */
-static sht reuse = 0;	/* recycle reuse policy
+			2: cost-based on semantics, retain if beneficial
+			3: just temporal based, no range matching */
+static sht reusePolicy = 0;	/* recycle reuse policy
 			0: baseline, keeps stat, no retain, no reuse
-			1: reuse smallest covering
-			2: reuse closest covering */
-static sht rcache = 0;  /* recycle cache management policy
+			1: exact covering 
+			2: reuse smallest covering
+			3: reuse closest covering */
+static sht rcachePolicy = 0;  /* recycle cache management policy
 			0: baseline, do nothing
 			1: throw LRU
 			2: cost-based, throw least beneficial */
@@ -220,8 +208,8 @@ str
 RECYCLEsetRetain(int *ret, sht *p)
 {
 	(void) ret;
-	retain = *p;
-	(void)retain;
+	retainPolicy = *p;
+	(void)retainPolicy;
 	return MAL_SUCCEED;
 }
 
@@ -229,8 +217,8 @@ str
 RECYCLEsetReuse(int *ret, sht *p)
 {
 	(void) ret;
-	reuse = *p;
-	(void)reuse;
+	reusePolicy = *p;
+	(void)reusePolicy;
 	return MAL_SUCCEED;
 }
 
@@ -238,8 +226,8 @@ str
 RECYCLEsetCache(int *ret, sht *p)
 {
 	(void) ret;
-	rcache = *p;
-	(void)rcache;
+	rcachePolicy = *p;
+	(void)rcachePolicy;
 	return MAL_SUCCEED;
 }
 @-
@@ -301,10 +289,16 @@ VALcmp(ValPtr p, ValPtr q)
 	return ((*cmp)(pp, pq));
 
 }
-
-/* check for replica of instruction p in recycle table */
+@-
+Searching for useful recycle instructions is the real challenge.
+There are two major approaches. The first approach is to search
+for an identical operation as the target under investigation.
+The second approach uses the semantics of operations and 
+replaces the arguments. For example, a previous result of a scan
+may be used instead.
+@c
 int
-RECYCLEfindEntry(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
+RECYCLEfindEntry(int start, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
 	int i, j, ridx;
 	InstrPtr q;
@@ -312,26 +306,37 @@ RECYCLEfindEntry(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	if( recycleBlk == 0)
 		return -1;
 
-	for (i = 0; i < recycleBlk->stop; i++){
+	for (i = start; i < recycleBlk->stop; i++){
 		q = getInstrPtr(recycleBlk,i);
 		if((p->argc != q->argc) ||
 		   (getModuleId(p) != getFunctionId(q)) ||
 		   (getModuleId(p) != getModuleId(q)))
 			continue;
 
-		for (j = p->retc; j < p->argc; j++){
-			ridx = mb->var[getArg(p,j)]->recycle;
-			if( ridx != getArg(q,j) )
-					goto notfound;
-			else 
-			if( VALcmp(&s->stk[ridx],
-				&getVarConstant(recycleBlk,getArg(q,j))) )
-					goto notfound;
+		switch(reusePolicy){
+		case 0:
+			/* 0: baseline, keeps stat, no retain, no reuse*/
+			return -1;
+		case 1:
+			/* 1: exact covering */
+			for (j = p->retc; j < p->argc; j++){
+				ridx = mb->var[getArg(p,j)]->recycle;
+				if( ridx != getArg(q,j) )
+						goto notfound;
+				else 
+				if( VALcmp(&s->stk[ridx],
+					&getVarConstant(recycleBlk,getArg(q,j))) )
+						goto notfound;
+			}
+			/* found an exact match */
+			return i;
+			notfound: continue;
+		case 2:
+			/* 2: reuse smallest covering */
+		case 3:
+			/* 3: reuse closest covering */
+			return -1;
 		}
-		/* found a match */
-		return i;
-
-		notfound: continue;
 	}
 	return -1;
 
@@ -365,9 +370,10 @@ int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			BBPincref(lhs->val.br.id, TRUE);
 	} else
 	if( isVarRecycled(mb, getArg(p,i))){
-		int j= RECYCLEfindEntry(mb,stk,p);
+		int start=0;
+		start= RECYCLEfindEntry(start,mb,stk,p);
 #ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"RECYCLEentry search %d\n",j);
+		stream_printf(GDKout,"RECYCLEentry search %d\n",start);
 #endif
 		/* and from here we should decide how to reuse it */
 	}
@@ -398,12 +404,25 @@ It can use the timing information gathered from the previous call,
 which is stored in the stack frame to avoid concurrency problems.
 @c
 		clk= GDKusec()-stk->clk;
-#ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"RECYCLEexit time %d \n",clk);
-#endif
 		keepit= TRUE;
 	}
 	if( keepit )
+	switch(retainPolicy){
+	case 0:
+		/* 0: baseline, keeps stat, no retain, no reuse */
+		break;
+	case 1:
+		/* 1: infinite case, retain all*/
 		RECYCLEnew(mb,stk, p);
+		break;
+	case 2:
+		/* 2: cost-based on semantics, retain if beneficial */
+		break;
+	case 3:
+		/* 3: just temporal based, no range matching */
+#ifdef _DEBUG_RECYCLE_
+		stream_printf(GDKout,"RECYCLEexit time %d \n",clk);
+#endif
+	}
 }
 @}
