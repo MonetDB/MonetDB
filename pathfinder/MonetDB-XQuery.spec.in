@@ -112,6 +112,8 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %{_bindir}/pf
+%{_bindir}/pfopt
+%{_bindir}/pfsql
 %{_bindir}/pfshred
 %{_libdir}/MonetDB4/lib/lib_*
 %{_libdir}/MonetDB4/*.mil
