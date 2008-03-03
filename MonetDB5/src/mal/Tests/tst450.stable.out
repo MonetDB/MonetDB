@@ -119,6 +119,7 @@ end main;	# 14
 [ "pcre",	  nil	  ]
 [ "pqueue",	  nil	  ]
 [ "profiler",	  nil	  ]
+[ "recycle",	  nil	  ]
 [ "replicator",	  nil	  ]
 [ "scheduler",	  nil	  ]
 [ "sema",	  nil	  ]
