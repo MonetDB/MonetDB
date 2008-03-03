@@ -390,7 +390,7 @@ is not set, we retain the value.
 void
 RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int i,keepit= FALSE;
-	lng clk;
+	lng clk = 0;
 	
 	for(i=0; i<p->retc; i++)
 	if( isVarRecycled(mb, getArg(p,i)) && !isVarKept(mb,getArg(p,i))){
