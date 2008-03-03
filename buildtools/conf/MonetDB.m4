@@ -1228,7 +1228,7 @@ AM_PROG_LIBTOOL()
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_HEADER_DIRENT
-AC_CHECK_HEADERS([alloca.h getopt.h netdb.h sys/types.h])
+AC_CHECK_HEADERS([alloca.h getopt.h netdb.h sys/types.h sys/times.h])
 
 AC_SYS_LARGEFILE()
 
@@ -1264,7 +1264,7 @@ AC_CHECK_SIZEOF(__int64)
 AC_C_CHAR_UNSIGNED
 
 # Checks for library functions.
-AC_CHECK_FUNCS([ftruncate gettimeofday opendir])
+AC_CHECK_FUNCS([ftruncate gettimeofday opendir times])
 
 dnl AC_PROG_CC_STDC()
 if test -f "$srcdir"/vertoo.data; then
