@@ -94,7 +94,7 @@ AC_PROG_LIBTOOL
 
 dnl Checks for header files.
 AC_HEADER_TIME()
-AC_CHECK_HEADERS([crypt.h fcntl.h ieeefp.h malloc.h sys/resource.h sys/socket.h sys/time.h sys/times.h sys/un.h termios.h time.h xmmintrin.h])
+AC_CHECK_HEADERS([crypt.h fcntl.h ieeefp.h malloc.h sys/resource.h sys/socket.h sys/time.h sys/un.h termios.h time.h xmmintrin.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_TRY_COMPILE([$ac_includes_default
@@ -118,7 +118,7 @@ AC_DEFINE(HAVE___RESTRICT__, 1, [Define if the compiler supports the __restrict_
 
 dnl Checks for library functions.
 AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT, 1, [crypt]))
-AC_CHECK_FUNCS([asctime_r ctime_r fpclass fpclassify ftime isinf localtime_r putenv sbrk setenv setsid sigaction strncasecmp strtoll sysconf times strptime strftime])
+AC_CHECK_FUNCS([asctime_r ctime_r fpclass fpclassify ftime isinf localtime_r putenv sbrk setenv setsid sigaction strncasecmp strtoll sysconf strptime strftime])
 AC_CHECK_DECLS([strtoll])
 
 asctime_r3=yes
