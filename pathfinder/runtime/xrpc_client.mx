@@ -136,18 +136,18 @@ PROC get_rpc_res (
 
     # Get "pre_prop" value of an "sequence" node.
     var seq_prop;
-    var err := CATCH ({ seq_prop := qn_loc.ord_select("sequence").reverse().fetch(0); });
+    var err := CATCH ({ seq_prop := qn_loc.ord_uselect("sequence").reverse().fetch(0); });
     if (not(isnil(err))) {
-        if(count(qn_loc.ord_select("Fault")) = 0) {
+        if(count(qn_loc.uselect("Fault")) = 0) {
             ERROR("get_rpc_res expects at least *one* \"<sequence>\" tag.\n");
         } else {
-            var fault_value_pre := qn_loc.ord_select("Value").reverse().fetch(0);
-                fault_value_pre := pre_prop.ord_select(fault_value_pre).reverse().fetch(0);
+            var fault_value_pre := qn_loc.ord_uselect("Value").reverse().fetch(0);
+                fault_value_pre := pre_prop.ord_uselect(fault_value_pre).reverse().fetch(0);
                 fault_value_pre := pre_prop.fetch(int(fault_value_pre)+1);
             var fault_value     := prop_text.fetch(fault_value_pre);
 
-            var fault_text_pre := qn_loc.ord_select("Text").reverse().fetch(0);
-                fault_text_pre := pre_prop.ord_select(fault_text_pre).reverse().fetch(0);
+            var fault_text_pre := qn_loc.ord_uselect("Text").reverse().fetch(0);
+                fault_text_pre := pre_prop.ord_uselect(fault_text_pre).reverse().fetch(0);
                 fault_text_pre := pre_prop.fetch(int(fault_text_pre)+1);
             var fault_text     := prop_text.fetch(fault_text_pre);
             ERROR("Remote execution failed.\n" +
@@ -158,9 +158,9 @@ PROC get_rpc_res (
     }
 
     # Fetch the position of the first "pre_prop" value of the "sequence"
-    # node.  Must use "ord_select" and "fetch", since the the "pre_prop"
+    # node.  Must use "ord_uselect" and "fetch", since the the "pre_prop"
     # value can appear more than once in the "pre_prop" bat.
-    seq_prop := pre_prop.ord_select(seq_prop).reverse().fetch(0);
+    seq_prop := pre_prop.ord_uselect(seq_prop).reverse().fetch(0);
 
     var seq_node_level :=  pre_level.find(seq_prop).int();
     var tpe_node_level :=  seq_node_level + 1;
@@ -200,12 +200,12 @@ PROC get_rpc_res (
                 }
                 tpe := qn_loc.fetch(prop);
                 if (tpe = "atomic-value") {
-                    var tpe_qn_qn := qn_loc.ord_select("type").mirror();
-                    var tpe_qn_ns := qn_uri.ord_select(xsi_ns);
+                    var tpe_qn_qn := qn_loc.ord_uselect("type").mirror();
+                    var tpe_qn_ns := qn_uri.ord_uselect(xsi_ns);
                     tpe_qn_qn := tpe_qn_qn.join(tpe_qn_ns).mirror();
 
                     var tpe_attr_qn := attr_qn.join(tpe_qn_qn);
-                    var tpe_attr_attr := attr_own.ord_select(pre).mirror();
+                    var tpe_attr_attr := attr_own.ord_uselect(pre).mirror();
                     tpe_attr_attr := tpe_attr_attr.join(tpe_attr_qn).mirror();
                     if (count(tpe_attr_attr) != 1) {
                         ERROR("get_rpc_res (batloop %d): " +

@@ -1670,7 +1670,7 @@ PROC select_term(str name, BAT[oid,str] qenv) : bat[oid,dbl] :=
     var term    := tj_normalizeTerm( toLower(name), stemmer );
     
     # Select the term positions from the global term dictionary.
-    var tids := bat(tj_TermBat(qenv.find(QENV_FTINAME))).select(term).mark(0@0).sort().reverse();
+    var tids := bat(tj_TermBat(qenv.find(QENV_FTINAME))).uselect(term).mark(0@0).sort().reverse();
     
     var result := indexfetchjoin( tids,
     				  bat("tj_" + qenv.find(QENV_FTINAME) + "_TermIndex"),
@@ -2503,11 +2503,11 @@ PROC rm_overlap(bat ctx, BAT[oid,str] qenv) : bat{
  # candidates are nodes that have no descendents or a higher score
  # than all descendents
  var candidates := ctx.kdiff(maxD).access(BAT_APPEND);
- candidates.insert(ctx.[>](maxD).select(true).mirror().join(ctx));
+ candidates.insert(ctx.[>](maxD).uselect(true).mirror().join(ctx));
 
  # keep the candidates without ancestor and w score >= ancestor scores
  var res := candidates.kdiff(maxA).access(BAT_APPEND);
- res.insert(candidates.[>=](maxA).select(true).mirror().join(candidates));
+ res.insert(candidates.[>=](maxA).uselect(true).mirror().join(candidates));
 
  candidates := nil;
  maxA:=nil;maxD:=nil;

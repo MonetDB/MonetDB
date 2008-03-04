@@ -1819,7 +1819,7 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
     /* match one/multiple values per iteration */
     if (qualifier == 0 || qualifier == 1)
         milprintf(f,
-                "var single_iters := histogram(iter).[=](1).select(true).mirror();\n"
+                "var single_iters := histogram(iter).[=](1).uselect(true).mirror();\n"
                 "single_iters := single_iters.leftjoin(iter.reverse());\n"
                 "var matching_iters := single_iters.leftfetchjoin(kind).[=](%s);\n"
                 "single_iters := nil;\n",
@@ -4093,7 +4093,7 @@ string_value (opt_t *f, int code, char *kind)
     milprintf(f,
                 /* get the string value of all comment nodes */
                 "var c_map := mposjoin (item, cont, ws.fetch (PRE_KIND))"
-                                  ".select(COMMENT).hmark(0@0);\n"
+                                  ".uselect(COMMENT).hmark(0@0);\n"
                 "if (c_map.count() > 0) { #process comments \n"
                     "var c_iter := c_map.leftfetchjoin(iter);\n"
                     "var c_item := c_map.leftfetchjoin(item);\n"
@@ -4111,7 +4111,7 @@ string_value (opt_t *f, int code, char *kind)
                 "} # end of comment processing\n"
                 /* get the string value of all processing-instruction nodes */
                 "var pi_map := mposjoin (item, cont, ws.fetch (PRE_KIND))"
-                                   ".select(PI).hmark(0@0);\n"
+                                   ".uselect(PI).hmark(0@0);\n"
                 "if (pi_map.count() > 0) { #process processing-instructions \n"
                     "var pi_iter := pi_map.leftfetchjoin(iter);\n"
                     "var pi_item := pi_map.leftfetchjoin(item);\n"
@@ -4200,7 +4200,7 @@ string_value (opt_t *f, int code, char *kind)
                     "t_iter := iter_item.hmark(0@0);\n"
                     "var t_item_str := iter_item.tmark(0@0);\n"
                     "var c_map := mposjoin (item, cont, ws.fetch (PRE_KIND))"
-                                      ".select(COMMENT).hmark(0@0);\n"
+                                      ".uselect(COMMENT).hmark(0@0);\n"
                     "if (c_map.count() > 0) { #process comments \n"
                         "var c_iter := c_map.leftfetchjoin(iter);\n"
                         "var c_item := c_map.leftfetchjoin(item);\n"
@@ -4218,7 +4218,7 @@ string_value (opt_t *f, int code, char *kind)
                     "} # end of comment processing\n"
                     /* get the string value of all processing-instruction nodes */
                     "var pi_map := mposjoin (item, cont, ws.fetch (PRE_KIND))"
-                                       ".select(PI).hmark(0@0);\n"
+                                       ".uselect(PI).hmark(0@0);\n"
                     "if (pi_map.count() > 0) { #process processing-instructions \n"
                         "var pi_iter := pi_map.leftfetchjoin(iter);\n"
                         "var pi_item := pi_map.leftfetchjoin(item);\n"
