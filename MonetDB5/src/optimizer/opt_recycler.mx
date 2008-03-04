@@ -86,7 +86,6 @@ Functions with side effects can not be subject to recycle actions.
 		){
 			actions ++;
 			p->recycle = 1; /* this instruction is to be monitored */
-			setVarRecycled(mb, getArg(p,0));
 		}
 	}
 	if( actions)
