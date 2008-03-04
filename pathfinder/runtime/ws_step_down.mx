@@ -679,6 +679,19 @@ struct stack_item_D {
     oid eocs;           /* end of ctx scope (pre + size) */
 };
 
+typedef struct iters_on_stack_t ios_t;
+
+struct iters_on_stack_t {
+    oid iter_idx; /* index of iter */
+    oid left;     /* oid / pos of left input */	
+};
+
+static int
+iosCmp(ios_t *l, ios_t *r)
+{
+        return ((l->iter_idx < r->iter_idx) ? -1 : ((l->iter_idx == r->iter_idx) ? 0 : 1));
+}
+
 #define OST unsigned long long		/* type for "onstack" bitvector: "lng" or "chr" */
 
 #define onstack_set(b)	 onstack[(b)>>OST_shift] |=   ((OST)1)<<((b)&OST_mask) 
@@ -693,7 +706,7 @@ ws_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* s
     BAT *res = *result;
     si_D *stack = 0;
     OST *onstack = 0;
-    oid *iters_on_stack = 0;
+    ios_t *iters_on_stack = 0;
     int stack_size = 0, onstack_size = 0, iters_on_stack_size = 0, j = 0;
     int stack_top = 0;
     oid right = 0, pre = 0, ctx = 0, iter_idx = 0, left = 0, cnd = 0, lst_cnd = GDK_oid_max;
@@ -740,8 +753,8 @@ ws_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* s
     memset(onstack, 0, onstack_size);
 
     /* sorted list of all iters that are currently on the stack */
-    iters_on_stack_size = sizeof(oid) * num_iters;
-    iters_on_stack = (oid*)GDKmalloc(iters_on_stack_size);
+    iters_on_stack_size = sizeof(ios_t) * num_iters;
+    iters_on_stack = (ios_t*)GDKmalloc(iters_on_stack_size);
     if (iters_on_stack == NULL) {
         GDKerror("ws_descendant: could not allocate bitvector of size %d.\n", iters_on_stack_size);
         @:ws_fail_descendant@
@@ -757,15 +770,12 @@ ws_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* s
 
 @= sort_iters_on_stack
     for (j = 0 ; j < stack_top ; j++) {
-        iters_on_stack[j] = stack[j].left;
+        iters_on_stack[j].iter_idx = stack[j].iter_idx;
+        iters_on_stack[j].left     = stack[j].left;
     }
     if (!no_iter_order && stack_top > 1) {
-        qsort((void *) iters_on_stack, stack_top, sizeof(oid),
-#if SIZEOF_SIZE_T == SIZEOF_INT
-              (int (*)(const void *, const void *)) intCmp
-#else
-              (int (*)(const void *, const void *)) lngCmp
-#endif
+        qsort((void *) iters_on_stack, stack_top, sizeof(ios_t),
+              (int (*)(const void *, const void *)) iosCmp
         );
     }
 @
@@ -886,7 +896,7 @@ ws_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *cand_bat, int* s
                         
         for (right = cand_bat->hseqbase + (cnd_ptr - cnd_fst), cur_pre = fst_pre ; cur_pre < lst_pre && *cur_pre <= lst_ctx && free > 0; cur_pre++, right++) {
             for (j = 0 ; j < stack_top && free > 0 ; j++ ) {
-                *hdst++ = iters_on_stack[j];
+                *hdst++ = iters_on_stack[j].left;
                 *tdst++ = right;
                 free -= decr;
             }
