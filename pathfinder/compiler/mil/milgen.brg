@@ -4057,7 +4057,7 @@ reduce (PFpa_op_t * p, int goalnt)
             /*
              * For the predicate column c do
              *
-             *  v := c.select (true).mark (0@0).reverse ();
+             *  v := c.uselect (true).mark (0@0).reverse ();
              */
             execute (
                 assgn (
@@ -4093,7 +4093,7 @@ reduce (PFpa_op_t * p, int goalnt)
             /*
              * For the predicate column c do
              *
-             *  v := c.select (atom).mark (0@0).reverse ();
+             *  v := c.uselect (atom).mark (0@0).reverse ();
              */
             execute (
                 assgn (
@@ -7826,7 +7826,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     
                 /* split up by nodes... */
 
-                /* sel    := attr.select(true).hmark(0@0);
+                /* sel    := attr.uselect(true).hmark(0@0);
                    p_item := leftfetchjoin (sel, pre);
                    p_iter := leftfetchjoin (sel, iter);
                    p_cont := leftfetchjoin (sel, frag); */
@@ -7844,7 +7844,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 /* ... and attributes */
 
-                /* sel    := attr.select(false).hmark(0@0);
+                /* sel    := attr.uselect(false).hmark(0@0);
                    a_item := leftfetchjoin (sel, pre);
                    a_iter := leftfetchjoin (sel, iter);
                    a_cont := leftfetchjoin (sel, frag); */
@@ -8277,7 +8277,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     
                 /* split up by nodes... */
 
-                /* sel    := attr.select(true).hmark(0@0);
+                /* sel    := attr.uselect(true).hmark(0@0);
                    p_pre  := leftfetchjoin (sel, pre);
                    p_iter := leftfetchjoin (sel, iter);
                    p_cont := leftfetchjoin (sel, frag); */
@@ -8297,7 +8297,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 /* ... and attributes */
 
-                /* sel    := attr.select(false).hmark(0@0);
+                /* sel    := attr.uselect(false).hmark(0@0);
                    a_pre  := leftfetchjoin (sel, pre);
                    a_attr := leftfetchjoin (sel, attr);
                    a_iter := leftfetchjoin (sel, iter);
