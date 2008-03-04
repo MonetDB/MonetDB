@@ -1,0 +1,21 @@
+#test the basics of the recycler
+# reusing select results
+
+function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
+	return bat.new(:oid,:int);
+end bind;
+
+function qry(low:int, hgh:int);
+	b:= user.bind("schema","table","column",0);
+	s1:= algebra.select(b,low,hgh);
+end qry;
+
+recycle.setRetainPolicy(1);
+recycle.setReusePolicy(2);
+optimizer.recycle("user","qry");
+io.print("start");
+qry(1,10);
+io.print("next");
+qry(1,5);
+io.print("last");
+qry(2,6);

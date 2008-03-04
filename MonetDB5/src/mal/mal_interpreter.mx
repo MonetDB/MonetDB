@@ -468,9 +468,9 @@ We rely on optimizing compilers to remove the redundant code.
 			pci = getInstrPtr(mb,stkpc);
 			if( malProfileMode + cntxt->itrace)
 				goto workslow;
-			@:MALrecyclerStart@ {
+			@:MALrecycleStart@ {
 				@:MALinterpret(FAST)@
-				@:MALrecyclerExit@
+				@:MALrecycleExit@
 			}
 			@:MALflowofcontrol(FAST)@
 		}
@@ -500,9 +500,9 @@ workslow:
 		}
 
 		@:beginProfile@
-		@:MALrecyclerStart@ {
+		@:MALrecycleStart@ {
 			@:MALinterpret(SLOW)@
-			@:MALrecyclerExit@
+			@:MALrecycleExit@
 		}
 		@:MALflowofcontrol(SLOW)@
 		@:endProfile@
@@ -1465,9 +1465,9 @@ An optimization scheme for query sequences is to re-use variables
 as much as possible.
 The recycler works for any variable and relies on policy functions
 registered.
-@= MALrecyclerStart
+@= MALrecycleStart
 	if( !pci->recycle  || !mb->version  || !RECYCLEentry(mb,stk,pci) )
-@= MALrecyclerExit
+@= MALrecycleExit
 	if( pci->recycle && mb->version )
 		RECYCLEexit(mb,stk,pci);
 @}
@@ -1616,6 +1616,7 @@ See @ref{The MAL Profiler} for more details.
 		{
 			ppc= stkpc;
 			stk->clk= GDKusec();
+			mb->profiler[ppc].clk= stk->clk;
 			time(&stk->clock);
 			mb->profiler[ppc].clock= stk->clock;
 #ifdef HAVE_TIMES
