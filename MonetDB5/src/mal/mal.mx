@@ -305,6 +305,7 @@ mal_export void mal_exit(void);
 #include "mal_namespace.h"  /* for initNamespace() */
 #include "mal_client.h"
 #include "mal_sabaoth.h"
+#include "mal_recycle.h"
 
 MT_Lock     mal_contextLock;
 @-
@@ -373,6 +374,7 @@ Before continuing we should make sure that all clients
 		return;
 	}
 #if 0
+{
 	int reruns=0;
 	int freeclient=0, finishing=0, claimed=0, awaiting=0;
 	Client cntxt = mal_clients;
@@ -396,6 +398,7 @@ Before continuing we should make sure that all clients
 		stream_printf(mal_clients->fdout,"#MALexit: server forced exit"
 			" %d finishing %d claimed %d waiting\n", 
 				finishing,claimed,awaiting);
+}
 #endif
 @c
 #if 0
