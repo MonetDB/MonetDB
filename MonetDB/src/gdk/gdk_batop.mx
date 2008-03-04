@@ -442,7 +442,7 @@ BATappend(BAT *b, BAT *n, bit force)
 }
 
 
-#define bundel(b,h,t) if (BUNdel(b,h,t,force) == NULL) return NULL;
+#define bundel(b,h,t) do { if (BUNdel(b,h,t,force) == NULL) { GDKerror("BATdel: BUN does not occur.\n"); return NULL; } } while (0)
 BAT *
 BATdel(BAT *b, BAT *n, bit force)
 {
@@ -458,7 +458,7 @@ BATdel(BAT *b, BAT *n, bit force)
 	return b;
 }
 
-#define bundelhead(b,h,t) if (BUNdelHead(b,h,force) == NULL) return NULL;
+#define bundelhead(b,h,t) do { if (BUNdelHead(b,h,force) == NULL) return NULL; } while (0)
 BAT *
 BATdelHead(BAT *b, BAT *n, bit force)
 {
