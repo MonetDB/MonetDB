@@ -77,6 +77,17 @@ Functions with side effects can not be subject to recycle actions.
 #endif
 			}
 		}
+		/* take care of semantic driven recyling */
+		if( getFunctionId(p)== uselectRef ||
+			getFunctionId(p)== selectRef ||
+			getFunctionId(p)== markTRef ||
+			getFunctionId(p)== joinRef ||
+			getFunctionId(p)== semijoinRef
+		){
+			actions ++;
+			p->recycle = 1; /* this instruction is to be monitored */
+			setVarRecycled(mb, getArg(p,0));
+		}
 	}
 	if( actions)
 		mb->version= -1;	/* will trigger the recycler runtime support */
