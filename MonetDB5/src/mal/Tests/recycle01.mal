@@ -2,7 +2,20 @@
 # reusing select results
 
 function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
-	return bat.new(:oid,:int);
+	b:= bat.new(:oid,:int);
+	bat.insert(b,0@0,0);
+	bat.insert(b,1@0,1);
+	bat.insert(b,2@0,2);
+	bat.insert(b,3@0,3);
+	bat.insert(b,4@0,4);
+	bat.insert(b,5@0,5);
+	bat.insert(b,6@0,6);
+	bat.insert(b,7@0,7);
+	bat.insert(b,8@0,8);
+	bat.insert(b,9@0,9);
+	bat.insert(b,10@0,10);
+	bat.insert(b,11@0,11);
+	return bind:=b;
 end bind;
 
 function qry(low:int, hgh:int);
@@ -11,11 +24,13 @@ function qry(low:int, hgh:int);
 end qry;
 
 recycle.setRetainPolicy(1);
-recycle.setReusePolicy(2);
+recycle.setReusePolicy(1);
 optimizer.recycle("user","qry");
 io.print("start");
 qry(1,10);
-io.print("next");
+io.print("zoom in");
 qry(1,5);
+io.print("next step");
+qry(2,3);
 io.print("last");
-qry(2,6);
+qry(1,11);

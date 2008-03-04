@@ -94,8 +94,8 @@ static sht retainPolicy = 0;  /* recycle retainment policy
 			3: just temporal based, no range matching */
 static sht reusePolicy = 0;	/* recycle reuse policy
 			0: baseline, keeps stat, no retain, no reuse
-			1: exact covering 
-			2: reuse smallest select covering */
+			1: reuse smallest select covering 
+			2: exact covering  */
 static sht rcachePolicy = 0;  /* recycle cache management policy
 			0: baseline, do nothing
 			1: throw LRU
@@ -243,11 +243,8 @@ static void RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	
 	RECYCLEspace();
 	q = copyInstruction(p);
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYLEnew \n");
-#endif
 	for(i = 0; i< p->argc; i++){
-		j = getArg(p,i);
+		j= getArg(p,i);
 		v = &s->stk[j];
 		c = defConstant(recycleBlk, v->vtype, v);
 		if (v->vtype == TYPE_bat)
@@ -255,7 +252,8 @@ static void RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	 	setArg(q,i,c);
 		if( i < p->retc ){
 			mb->var[j]->recycle= c;
-			setVarKept(mb, j);
+			if( isVarRecycled(mb, j))
+				setVarKept(mb, j);
 			setVarUsed(mb,j);
 		}
 	}
@@ -263,12 +261,13 @@ static void RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	pushInstruction(recycleBlk,q);
 	recycleBlk->profiler[i].counter =1;
 #ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLE catalog \n");
 	printFunction(GDKout,recycleBlk,LIST_MAL_ALL);
 #endif
 }
 
 /* compare values in ValRecords, return 0 on equal */
-int
+static int
 VALcmp(ValPtr p, ValPtr q)
 {
 
@@ -301,7 +300,7 @@ or it can be small compared to the target.
 static int
 RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
-	int i, j, ridx;
+	int i, j, nbid, bid= -1 , ridx, idx;
 	InstrPtr q;
 	static str selectRef;
 	static str uselectRef;
@@ -318,7 +317,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	for (i = 0; i < recycleBlk->stop; i++){
 		q = getInstrPtr(recycleBlk,i);
 		if((p->argc != q->argc) ||
-		   (getModuleId(p) != getFunctionId(q)) ||
+		   (getFunctionId(p) != getFunctionId(q)) ||
 		   (getModuleId(p) != getModuleId(q)))
 			continue;
 
@@ -327,7 +326,50 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			/* 0: baseline, keeps stat, no retain, no reuse*/
 			break;
 		case 1:
-			/* 1: exact covering */
+			/* 1: reuse smallest range covering */
+			ridx= mb->var[getArg(p,1)]->recycle;
+			idx= getArg(p,1);
+			if( (getFunctionId(p)== selectRef || 
+				 getFunctionId(p)== uselectRef)   &&
+				getVarConstant(recycleBlk,ridx).val.bval == s->stk[idx].val.bval)
+			{	
+@-
+Time to check for the inclusion constraint
+@c
+				if( VALcmp( &s->stk[getArg(p,2)], 
+							&getVar(recycleBlk,getArg(q,2))->value) >=0 &&
+					VALcmp( &s->stk[getArg(p,3)], 
+							&getVar(recycleBlk,getArg(q,3))->value) <=0 ){
+					BAT *b1, *b2;
+					nbid=getVarConstant(recycleBlk, getArg(q,0)).val.bval; 
+					if( bid == -1){
+						bid = nbid;
+						b1= BATdescriptor(bid);
+						BBPkeepref(bid);
+					printf("counts %d -> %d \n", bid, (int)BATcount(b1));
+					} else {
+						b1= BATdescriptor(bid);
+						b2= BATdescriptor(nbid);
+
+printf("counts %d -> %d %d -> %d\n", bid, (int)BATcount(b1), nbid, (int)BATcount(b2));
+						if( BATcount(b1) > BATcount(b2)){
+							BBPreleaseref(bid);
+							BBPreleaseref(bid);
+							BBPkeepref(nbid);
+							bid= nbid;
+						} else {
+							BBPreleaseref(bid);
+							BBPreleaseref(nbid);
+						}
+					}
+#ifdef _DEBUG_RECYCLE_
+					printf("Inclusive range bid=%d\n", bid);
+					printInstruction(GDKout,recycleBlk,q, LIST_MAL_ALL);
+#endif
+				}
+			}
+		case 2:
+			/* 2: exact covering */
 			for (j = p->retc; j < p->argc; j++){
 				ridx = mb->var[getArg(p,j)]->recycle;
 				if( ridx != getArg(q,j) )
@@ -338,21 +380,17 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 						goto notfound;
 			}
 			/* found an exact match */
-			return 1;
-			notfound: continue;
-		case 2:
-			/* 2: reuse smallest range covering */
-			if( (getFunctionId(p)== selectRef || 
-				 getFunctionId(p)== uselectRef) )
-			{
 #ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"RECYCLEreuse found %d %d\n",
-				mb->var[getArg(p,1)]->recycle,getArg(q,1) );
+		stream_printf(GDKout,"RECYCLEreuse exact\n");
 		printInstruction(GDKout,mb,p, LIST_MAL_ALL);
 #endif
-			}
+			return 1;
+			notfound: continue;
 		}
 	}
+	if( bid >=0)
+		/* replace selection argument */
+		s->stk[getArg(p,1)].val.bval= bid;
 	return 0;
 
 }
@@ -394,32 +432,21 @@ int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @-
 The last instruction is called after the interpreter loop
 itself and has to decide on the results obtainde.
-All variables marked as VAR_RECYCLE but for which VAR_KEPT
-is not set, we retain the value.
+The results variables marked as VAR_RECYCLE of all instructions 
+marked are saved.
+
+This is the place where we should call recycle optimization routines.
+It can use the timing information gathered from the previous call,
+which is stored in the stack frame to avoid concurrency problems.
 @c
 void
 RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	int i,keepit= FALSE;
 	lng clk = 0;
 	
 #ifdef _DEBUG_RECYCLE_
 		stream_printf(GDKout,"RECYCLEexit policy %d \n",retainPolicy);
 #endif
-	for(i=0; i<p->retc; i++)
-	if( isVarRecycled(mb, getArg(p,i)) && !isVarKept(mb,getArg(p,i))){
-#ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"RECYCLEexit keep arg %d \n",i);
-		printInstruction(GDKout,mb,p, LIST_MAL_ALL);
-#endif
-@-
-This is the place where we should call recycle optimization routines.
-It can use the timing information gathered from the previous call,
-which is stored in the stack frame to avoid concurrency problems.
-@c
-		clk= GDKusec()-stk->clk;
-		keepit= TRUE;
-	}
-	if( keepit )
+	clk= GDKusec()-stk->clk;
 	switch(retainPolicy){
 	case 0:
 		/* 0: baseline, keeps stat, no retain, no reuse */
