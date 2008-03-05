@@ -1348,6 +1348,7 @@ void
 replicator_sql(struct _sql_functions *sqlfp)
 {
         sqlfp->sqlbind = &mvc_bind_wrap;
+	sqlfp->sqlbind_idx = &mvc_bind_idxbat_wrap;
 }
 
 str
