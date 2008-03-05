@@ -1073,6 +1073,8 @@ isProcedure(MalBlkPtr mb, InstrPtr p)
 {
 	if (p->retc == 0 || (p->retc == 1 && getArgType(mb,p,0) == TYPE_void))
 		return TRUE;
+/*	if (p->retc == 1 && (varGetProp( q->blk, getArg(p,0), unsafeProp ) != NULL))
+		return TRUE; */
 	return FALSE;
 }
 
@@ -1107,6 +1109,7 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == remapRef ||
 		getModuleId(p) == constraintsRef ||
 		getModuleId(p) == optimizerRef ||
+		getModuleId(p) == replicatorRef ||
 		getModuleId(p) == lockRef ||
 		getModuleId(p) == semaRef ||
 		getModuleId(p) == alarmRef)

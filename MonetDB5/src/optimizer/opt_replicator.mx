@@ -82,6 +82,10 @@ pattern replicator.bind(sname:str,tname:str,cname:str,access:int):bat[:oid,:any_
 address REPbind
 comment "The overloaded bind operator for replicated operations";
 
+pattern replicator.bind_idxbat(sname:str,tname:str,iname:str,access:int):bat[:oid,:any_1]
+address REPbindidx
+comment "The overloaded bind index bat operator for replicated operations";
+
 pattern replicator.select(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:any_2]
 address REPselect
 comment "The overloaded select operator for replicated operations";
@@ -153,12 +157,16 @@ comment "Set replica cache policy";
 @h
 #ifndef _OPT_REPLICATOR_
 #define _OPT_REPLICATOR_
+#include "mal.h"
 #include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
+#include "mal_profiler.h"
+
 
 
 opt_export str REPbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str REPbindidx(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str REPselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str REPuselect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str REPmarkT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -175,15 +183,17 @@ opt_export str REPsetCache(int *ret, sht *p);
 typedef str (*sqlbind_fptr)(int *bid, str *sname, str *tname, str *cname, int *access);
 typedef struct _sql_functions {
 	sqlbind_fptr sqlbind;
+	sqlbind_fptr sqlbind_idx;
 } sql_functions;
 
 opt_export sql_functions sqlf;
 
-/* #define DEBUG_OPT_REPLICATOR  */
+
 @-
 @c
 #include "mal_config.h"
 #include "opt_replicator.h"
+#define _DEBUG_REPLICATOR_
 #define getVarVal(M,i) VALget(&(M)->var[i]->value)
 #define isResStored(M,i) isVarStored(M, getArg(M->stmt[i],0))
 
@@ -197,6 +207,7 @@ typedef struct STAT {
 	lng ticks;		/* micro seconds spent */
 	lng reuse;		/* number of uses */
 	lng cnt;		/* result size in tuples */
+	int instr; 	/*instruction where is return var */
 } *StatPtr, StatRec;
 
 
@@ -288,10 +299,28 @@ str REPstop(void)
 str
 REPdump(int *ret)
 {
-	(void) ret;
-/*	stream_printf(GDKout,"Number of replicas %d\n",replnr);*/
-	printFunction(GDKout,repl, LIST_MAL_ALL);
+	str ps;
+	InstrPtr p;
+	int i, r;
 
+	(void) ret;
+	if ( repl != NULL){
+		stream_printf(GDKout,"Ticks  Cnt  Reuse\tInstr\n");
+		for (i = 0; i < repl->stop; i++){
+			p = getInstrPtr(repl, i);
+			r = getDestVar(p);
+     			ps = instruction2str(repl,p, LIST_MAL_ALL);
+
+			if( isResStored(repl,i))
+		        	stream_printf(GDKout,"%5.2f  %d  %d\t", 
+					replstat[r].ticks, replstat[r].cnt,
+					replstat[r].reuse);
+			else stream_printf(GDKout,"Not stored   \t");
+			stream_printf(GDKout,"%s\n", ps);
+	        	GDKfree(ps);
+		}
+		stream_printf(GDKout,"Replicator entries %d\n", repl->stop);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -330,11 +359,14 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr *old;
 	int limit,slimit, no_pr, rprof = 0, rs =0;
 	sht *rep ;
+	bit t = TRUE;
+	ValRecord v;
 
 	(void) stk;
 		 /* vars bound to replicator commands */
 	rep = (sht*) alloca(sizeof(sht)* mb->vtop);
 	memset((char*) rep, 0, sizeof(sht)* mb->vtop);
+	VALset(&v,TYPE_bit,&t);
 
 	no_pr = (mb->profiler == NULL? 1:0);
 	old= mb->stmt;
@@ -344,14 +376,21 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	for (i = 0; i<limit; i++){
 		p= old[i];
-		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
+		if( getModuleId(p)== sqlRef &&
+			((getFunctionId(p)== bindRef) ||
+			(getFunctionId(p)== bindidxRef)) ){
 			if(no_pr && rprof ==0){
-				newStmt(mb,"profiler","start");	
+				InstrPtr q;
+				q = newStmt(mb,"profiler","start");
+				setDestType(mb,q,TYPE_void);
 				rprof = 1;
 			}
 			if(rs == 0){
-				newStmt(mb,"replicator","start");	
-				rs = 1;
+				InstrPtr q;
+				q = newStmt(mb,"replicator","start");
+				varSetProp(mb, getArg(q,0), unsafeProp, op_eq, &v); 
+				setDestType(mb,q,TYPE_void);
+			        rs = 1;
 			}
 			setModuleId(p,replicatorRef);
 			pushInstruction(mb,p);
@@ -400,11 +439,15 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				getFunctionId(p)==resultSetRef) ||
 				p->token == ENDsymbol){
 				if( rs == 1){
-					newStmt(mb,"replicator","stop");	
+					InstrPtr q;
+					q = newStmt(mb,"replicator","stop");
+					setDestType(mb,q,TYPE_void);	
 					rs = 0;
 				}
 				if (no_pr && rprof == 1){
-					newStmt(mb,"profiler","stop");	
+					InstrPtr q;
+					q = newStmt(mb,"profiler","stop");
+					setDestType(mb,q,TYPE_void);
 					rprof = 0;
 				}
 			}
@@ -466,8 +509,14 @@ static int newReplica(MalStkPtr s, InstrPtr p, bit keep)
 	k = repl->stop;
 	pushInstruction(repl,p1);
 	r = getDestVar(p1);
+	replstat[r].instr = k;
 	if (s->blk->profiler)
 		replstat[r].ticks = s->blk->profiler[k].ticks;
+#ifdef _DEBUG_REPLICATOR_
+        stream_printf(GDKout,"newReplica: %s\n",
+		instruction2str(repl,p1, LIST_MAL_ALL));
+#endif
+
 	return k;
 }
 
@@ -489,6 +538,11 @@ VALcmp(ValPtr p, ValPtr q)
 	pq = VALget(q);
 	if(((*cmp)(pp, nilptr)==0) && ((*cmp)(pq, nilptr)==0)) return 0; /* eq nil val */
 	if(((*cmp)(pp, nilptr)==0) || ((*cmp)(pq, nilptr)==0)) return -1;
+
+/*	if( tpe == TYPE_flt || tpe == TYPE_dbl)
+	return (*pp - *pq)<1E-10? 0 : ((*cmp)(pp, pq)); 
+*/
+
 	return ((*cmp)(pp, pq));
 
 }
@@ -529,8 +583,35 @@ findReplica(MalStkPtr s,InstrPtr p)
 
 }
 
+
+/*checks instruction p against repl. instruction q */
+int
+checkReplica(MalStkPtr s, InstrPtr p)
+{	
+	int j, idx;
+	int *vmap;
+
+	idx = getArg(p,0); 
+	vmap = getMap(s);
+	if( vmap[idx] >= 0 ){
+		InstrPtr q = getInstrPtr(repl,replstat[vmap[idx]].instr);
+		for (j = p->retc; j < p->argc; j++){
+			idx = getArg(p,j);
+			if( vmap[idx] >=0 ){ /* symbol comp */
+				if( vmap[idx] != getArg(q,j))
+				goto notfound;
+			}  
+			if( VALcmp(&s->stk[idx], &getVarConstant(repl,getArg(q,j))))
+				goto notfound;
+		}
+		/* found a match */
+		return 1;
+	}
+	notfound: return 0;
+}
+
 str
-REPbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+REPbind_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx)
 {
 	int *ret, *acc, ri, rv, *vmap;
 	str msg;
@@ -543,15 +624,17 @@ REPbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	cname = (str*) getArgReference(stk, pci,3);
 	acc = (int*) getArgReference(stk, pci,4);
 
-	if( sqlf.sqlbind == NULL)
-		throw(MAL, "REPbind", "sqlbind not set");
+	if(( sqlf.sqlbind == NULL) || ( sqlf.sqlbind_idx == NULL))
+		throw(MAL, "REPbind_wrap", "sqlbind not set");
 		/* always execute cheap bind */
-	msg = sqlf.sqlbind(ret, sname, tname, cname, acc);
+	if( idx == 0 )
+		msg = sqlf.sqlbind(ret, sname, tname, cname, acc);
+	else
+		msg = sqlf.sqlbind_idx(ret, sname, tname, cname, acc);
+
 		/*  res var mapping */
 	rv = getArg(pci,0); 
 	vmap = getMap(stk);
-	if( vmap == NULL)
-		throw(MAL, "REPbind", "Variable map not initialized");
 	if( vmap[rv] < 0 ){ /*res var not mapped*/
 		ri = findReplica(stk,pci); /* replica instr */
 		if( ri < 0 ) 
@@ -561,6 +644,20 @@ REPbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return msg;
 }
+
+
+str
+REPbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return REPbind_wrap(mb, stk, pci, 0);
+}
+
+str
+REPbindidx(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return REPbind_wrap(mb, stk, pci, 1);
+}
+
 
 static 
 str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi, 
@@ -574,6 +671,9 @@ str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi,
   	rv = getArg(p,0); 
 	vmap = getMap(s);
 
+	if( checkReplica(s,p) == 0)
+		vmap[rv] = -1;
+	
 	if( vmap[rv] < 0 ){ 		/*res var not mapped*/
 		ri = findReplica(s,p); 	/* replica instr */
 		if(ri >= 0 && isResStored(repl,ri)){		/*reuse */ 
@@ -692,6 +792,10 @@ REPmarkT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	rv = getArg(pci,0); 
 	vmap = getMap(stk);
+
+	if( checkReplica(stk,pci) == 0)
+		vmap[rv] = -1;
+
 	if( vmap[rv] < 0 ){ /*res var not mapped*/
 		ri = findReplica(stk,pci); /* replica instr */
 		if( ri < 0 ){
@@ -735,6 +839,9 @@ REPreverse(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	rv = getArg(pci,0); 
 	vmap = getMap(stk);
+
+	if( checkReplica(stk,pci) == 0)
+		vmap[rv] = -1;
 
 	if( vmap[rv] < 0 ){ 		/*res var not mapped*/
 		ri = findReplica(stk,pci); 	/* replica instr */
@@ -803,6 +910,9 @@ REPjoin(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	rv = getArg(pci,0); 
 	vmap = getMap(stk);
+
+	if( checkReplica(stk,pci) == 0)
+		vmap[rv] = -1;
 	
 	if( vmap[rv] < 0 ){ 		/*res var not mapped*/
 		ri = findReplica(stk,pci); 	/* replica instr */
@@ -855,6 +965,9 @@ REPsemijoin(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	rv = getArg(pci,0); 
 	vmap = getMap(stk);
+
+	if( checkReplica(stk,pci) == 0)
+		vmap[rv] = -1;
 	
 	if( vmap[rv] < 0 ){ 		/*res var not mapped*/
 		ri = findReplica(stk,pci); 	/* replica instr */
