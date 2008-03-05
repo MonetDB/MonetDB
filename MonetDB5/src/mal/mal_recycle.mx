@@ -471,16 +471,16 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 #endif
 	}
 }
-@}
 @-
 At the end of the session we have to cleanup the recycle cache.
-@
+@c
 str
-RECYLEshutdown(int *ret){
+RECYCLEshutdown(int *ret){
 	InstrPtr q;
 	int i,j;
 	MalBlkPtr mb;
 	
+	(void)ret;
 	if( recycleBlk == NULL)
 		return MAL_SUCCEED;
 
@@ -492,11 +492,12 @@ RECYLEshutdown(int *ret){
 	for(i=0; i< mb->stop; i++){
 		q= getInstrPtr(mb,i);
 		for(j=0; j< q->argc; j++)
-		if( isVarConstant(mb,getArg(q,j)) {
+		if( isVarConstant(mb,getArg(q,j)) ){
 			if( isaBatType(getArgType(mb, q,j)) )
-				BBPreleaseref(getVarConstant(mb,getArg(q,j)).val.bval));
+				BBPreleaseref(getVarConstant(mb,getArg(q,j)).val.bval);
 		}
 	}
 	freeMalBlk(mb);
 	return MAL_SUCCEED;
 }
+@}
