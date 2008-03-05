@@ -157,7 +157,7 @@ comment "Set replica cache policy";
 @h
 #ifndef _OPT_REPLICATOR_
 #define _OPT_REPLICATOR_
-#define _DEBUG_REPLICATOR_
+/*#define _DEBUG_REPLICATOR_*/
 #include "mal.h"
 #include "opt_prelude.h"
 #include "opt_support.h"
@@ -216,6 +216,7 @@ static MalBlkPtr repl = NULL;
 static int replver = 0;  /* version of replica table */
 static int replref = 0;  /* queries currently using repl */
 static StatPtr replstat = NULL;  /* statistics for stored intermediates */
+static int use_profiler = 0;
 
 /*static int replnr = 0;  number of replicas */
 static sht retain = 0;  /* replica retainment policy
@@ -310,7 +311,6 @@ REPdump(int *ret)
 			r = getDestVar(p);
      			ps = instruction2str(repl,p, LIST_MAL_ALL);
 
-			stream_printf(GDKout,"%d %d\t", i,isResStored(repl,i));
 			if( isVarStored(repl,r))
 		        	stream_printf(GDKout,"%5.2f  %d  %d\t", replstat[r].ticks, replstat[r].cnt,replstat[r].reuse);
 			else stream_printf(GDKout,"Not stored   \t");
@@ -357,14 +357,11 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr *old;
 	int limit,slimit, no_pr, rprof = 0, rs =0;
 	sht *rep ;
-	bit t = TRUE;
-	ValRecord v;
 
 	(void) stk;
 		 /* vars bound to replicator commands */
 	rep = (sht*) alloca(sizeof(sht)* mb->vtop);
 	memset((char*) rep, 0, sizeof(sht)* mb->vtop);
-	VALset(&v,TYPE_bit,&t);
 
 	no_pr = (mb->profiler == NULL? 1:0);
 	old= mb->stmt;
@@ -377,7 +374,7 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if( getModuleId(p)== sqlRef &&
 			((getFunctionId(p)== bindRef) ||
 			(getFunctionId(p)== bindidxRef)) ){
-			if(no_pr && rprof ==0){
+			if(no_pr && rprof ==0 && use_profiler){
 				InstrPtr q;
 				q = newStmt(mb,"profiler","start");
 				setDestType(mb,q,TYPE_void);
@@ -386,7 +383,6 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if(rs == 0){
 				InstrPtr q;
 				q = newStmt(mb,"replicator","start");
-				varSetProp(mb, getArg(q,0), unsafeProp, op_eq, &v); 
 				setDestType(mb,q,TYPE_void);
 			        rs = 1;
 			}
@@ -432,6 +428,19 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  				setModuleId(p,replicatorRef);
 				pushInstruction(mb,p);
 				rep[getArg(p,0)] = 1;
+		} else	/* avoid multiple starts of replicator due to inlining */
+		if( getModuleId(p)== replicatorRef && 
+			( getFunctionId(p) == startRef ||
+			  getFunctionId(p) == stopRef)){
+ 				if( rs == 1) freeInstruction(p);
+				else {  pushInstruction(mb,p);
+					rs = 1;
+				}
+		} else	/* avoid multiple starts of profiler due to inlining */
+		if( getModuleId(p)== profilerRef && 
+			( getFunctionId(p) == startRef ||
+			  getFunctionId(p) == stopRef)){
+ 				freeInstruction(p);
 		} else {	
 		 	if((getModuleId(p)== sqlRef && 
 				getFunctionId(p)==resultSetRef) ||
@@ -442,7 +451,7 @@ OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					setDestType(mb,q,TYPE_void);	
 					rs = 0;
 				}
-				if (no_pr && rprof == 1){
+				if (no_pr && rprof == 1 && use_profiler){
 					InstrPtr q;
 					q = newStmt(mb,"profiler","stop");
 					setDestType(mb,q,TYPE_void);
