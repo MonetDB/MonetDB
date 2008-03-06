@@ -814,8 +814,7 @@ materializePartition(Partition p){
 		return MAL_SUCCEED;
 	assureSpace();
 	b= BATdescriptor(p->bid);
-	bn= BAT_select_(b, VALptr(&p->tlow),VALptr(&p->thgh), 
-			TRUE, FALSE, TRUE, FALSE);
+	bn= BATselect_(b, VALptr(&p->tlow),VALptr(&p->thgh), TRUE, FALSE);
 	BBPunfix(b->batCacheid);
 	if( bn== NULL)
 		throw(MAL,"bpm.materialize","Could not create BAT");
@@ -1133,11 +1132,11 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 #endif
 		/* we can enter a new partition */
 		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.splitPartition");
-		if( *bid > 0)
-			bn= BAT_select_(b, val, nilptr, TRUE, FALSE, TRUE, FALSE);
-		else{
-			bn= BAT_select_(BATmirror(b), val, nilptr, TRUE, FALSE, TRUE, FALSE);
-			bn= BATcopy(BATmirror(bn), bn->ttype,bn->htype,1);
+		if( *bid > 0) {
+			bn= BATselect_(b, val, nilptr, TRUE, FALSE);
+		} else {
+			bn= BATselect_(BATmirror(b), val, nilptr, TRUE, FALSE);
+			bn= BATcopy(BATmirror(bn), bn->ttype, bn->htype,1);
 		}
 
 		if( bn == 0){
@@ -1989,7 +1988,7 @@ reversed. Let's prepare this partition and add it.
 Beware, now B contains elements <low and >=hgh.
 So we may have to split it further 
 @c
-		bs2 =  BAT_select_(b, hgh, nilptr, FALSE, FALSE, TRUE, FALSE);
+		bs2 =  BATselect_(b, hgh, nilptr, FALSE, FALSE);
 		if( BATcount(bs2) > 0){
 			BATdel(b,bs2,FALSE);
 			if( BATcount(bs1)==0){
