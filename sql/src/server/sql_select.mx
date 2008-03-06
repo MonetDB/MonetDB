@@ -3219,9 +3219,9 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			return sql_and(sql, scp, j1, j2, f);
 		}
 		res = stmt_uselect2(ls, rs1, rs2, 3
-				    /* aka rs1 <= ls <= rs2 */ );
+			    /* aka ls >= rs1 && ls <= rs2 */ );
 		if (sc->token == SQL_NOT_BETWEEN)
-			res = stmt_diff(stmt_dup(ls), res);
+			res->flag |= ANTI; /* aka ls < rs1 || ls > rs2 */ 
 		return res;
 	}
 	case SQL_LIKE:
@@ -3601,7 +3601,7 @@ sql_logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int 
 		}
 		if (!(s = check_types(sql, bt, s, type_equal)))
 			return NULL;
-		s = stmt_select(t, s, cmp_equal);
+		s = stmt_uselect(t, s, cmp_equal);
 		if (!found)
 			scope_add_alias(scp, stmt_dup(t), "row");
 
@@ -3609,7 +3609,7 @@ sql_logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int 
 		stmt *t = first_subset(subset);
 
 		t = stmt_const(t, stmt_bool(1));
-		return stmt_select(t, s, cmp_equal);
+		return stmt_uselect(t, s, cmp_equal);
 	}
 	return s;
 }

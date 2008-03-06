@@ -146,6 +146,9 @@ typedef enum comp_type {
 	cmp_all = 8
 } comp_type;
 
+/* flag to indicate anti join/select */
+#define ANTI 16
+
 typedef struct stmt {
 	sql_ref ref;
 

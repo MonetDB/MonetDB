@@ -876,7 +876,7 @@ rel_push_select(sql_rel *rel, sql_exp *ls, sql_exp *e)
 		lrel = n->data;
 		
 		/* push down as long as the operators allow this */
-		if (lrel->op != op_select && lrel->op != op_join && 
+		if (!is_select(lrel->op) && lrel->op != op_join && 
 		    lrel->op != op_left)
 			break;
 	        /* pushing through left head of a left join is allowed */
@@ -887,7 +887,7 @@ rel_push_select(sql_rel *rel, sql_exp *ls, sql_exp *e)
 	}
 	if (!lrel)
 		return NULL;
-	if (p && is_select(p->op)) { /* refine old select */
+	if (p && p->op == op_select) { /* refine old select */
 		rel_select_add_exp(p, e);
 	} else {
 		sql_rel *n = rel_select(lrel, e);
@@ -935,7 +935,7 @@ rel_push_join(sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
 			and the relation is equal.
 		 */
 		if (lrel != rrel || 
-		   (lrel->op != op_select && lrel->op != op_join &&
+		   (!is_select(lrel->op) && lrel->op != op_join &&
 		    lrel->op != op_left))
 			break;
 	        /* pushing through left head of a left join is allowed */
@@ -2096,7 +2096,11 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		}
 		if (!e1 || !e2)
 			return NULL;
-		return rel_binop_(sql, e1, e2, NULL, "and");
+		if (sc->token == SQL_NOT_BETWEEN) {
+			return rel_binop_(sql, e1, e2, NULL, "or");
+		} else {
+			return rel_binop_(sql, e1, e2, NULL, "and");
+		}
 	}
 	case SQL_NULL:
 	case SQL_NOT_NULL:
@@ -2393,6 +2397,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		}
 
 		if (sc->token == SQL_NOT_BETWEEN) {
+			/* TODO should be 'or' */
 			rel = rel_compare_exp(sql, rel, le, re1, "<", NULL, f);
 			rel = rel_compare_exp(sql, rel, exp_dup(le), re2, ">", NULL, f);
 		} else {

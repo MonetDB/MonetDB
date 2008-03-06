@@ -356,7 +356,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 				s = stmt_join(l, stmt_reverse(r), (comp_type)e->flag);
 			}
 		} else {
-			s = stmt_select(l, r, (comp_type)e->flag);
+			s = stmt_uselect(l, r, (comp_type)e->flag);
 		}
 	 }	break;
 	default:
@@ -1122,7 +1122,7 @@ rel2bin_select( mvc *sql, sql_rel *rel )
 		if (s->nrcols == 0){ 
 			if (!predicate) 
 				predicate = rel2bin_predicate();
-			predicate = stmt_select(predicate, s, cmp_equal);
+			predicate = stmt_uselect(predicate, s, cmp_equal);
 		} else if (sel) {
 			sel = stmt_semijoin(sel, s);
 		} else {

@@ -271,7 +271,9 @@ cmp_sel2(stmt *sel, st_type *tpe)
 {
 	(void) tpe;		/* Stefan: unsed, but required for list_select() / type fcmp() */
 	if (sel->type == st_select2 || sel->type == st_uselect2) {
-		return 0;
+		/* for now we don't split anti-selects */
+		if ((sel->flag&ANTI) == 0)
+			return 0;
 	}
 	return -1;
 }
@@ -661,7 +663,7 @@ select_hash_key( mvc *sql, sql_idx *i, list *l )
 		}
 	}
 	stmt_destroy(bits);
-	return stmt_select(stmt_idxbat(i, RDONLY), h, cmp_equal);
+	return stmt_uselect(stmt_idxbat(i, RDONLY), h, cmp_equal);
 }
 
 static stmt *
