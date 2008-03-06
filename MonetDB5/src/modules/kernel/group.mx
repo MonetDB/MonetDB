@@ -1325,7 +1325,7 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "group.group", "Cannot access descriptor");
 	}
-	if (BATcount(b) > 1 &&
+	if (!b->tkey && BATcount(b) > 1 &&
 	    BATtordered(b)&1 && 
 	    ATOMtype(b->htype) == TYPE_oid && 
 	    b->ttype < TYPE_str) {
