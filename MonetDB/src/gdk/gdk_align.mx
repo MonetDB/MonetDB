@@ -250,7 +250,7 @@ BAT *
 VIEWcreate_(BAT *h, BAT *t, int slice_view)
 {
 	BAT *bn, *recycled = NULL;
-	bat hp = 0, tp = 0;
+	bat hp = 0, tp = 0, vc = 0;
 
 	BATcheck(h, "VIEWcreate_: bat required");
 	BATcheck(t, "VIEWcreate_: bat required");
@@ -274,6 +274,7 @@ a void. Take care to zero the accelerator data, though.
 	*bn->U = *h->U;
 	*bn->H = *h->H;
 	if (h->H == t->T) {
+		vc = 1;
 		tp = hp;
 		bn->T = bn->H;
 	} else {
@@ -324,6 +325,11 @@ use a copy.
 		bn->T->hash = t->T->hash;
 	if (recycled == NULL) 
 		BBPcacheit(bn);	/* enter in BBP and create mirror */
+	/* View of VIEW combine, ie we need to fix the head of the mirror */ 
+	if (vc) {
+ 		BAT *bm = BATmirror(bn);
+		bm->H = bn->H;
+	}
 	return bn;
 }
 

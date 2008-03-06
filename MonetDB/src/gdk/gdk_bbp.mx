@@ -2438,7 +2438,7 @@ BBPaddtobin(BAT *b)
 	}
 	if ((hp == 0 && tp == 0) && (b->htype | b->ttype)) {
 		/* additional restrictions do not hold for views and void,void bats */
-		/* bat should be of the right size, types and BUN layoutt */
+		/* bat should be of the right size, types and BUN layout */
 		if (b->U->capacity < batcache_minsize ||
 		    b->U->capacity >= (batcache_minsize<<1) ||
 		    BATCACHE_NOTYPE(b->htype) ||
