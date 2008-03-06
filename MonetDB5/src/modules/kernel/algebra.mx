@@ -192,6 +192,16 @@ command uselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:oid]
 address ALGuselect1
 comment "Value select, but returning only the 
 	head values. SEE ALSO:select(bat,val)";
+
+command antiuselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:oid] 
+address ALGantiuselect1
+comment "Value select, but returning only the 
+	head values. SEE ALSO:select(bat,val)";
+
+command antiuselect(b:bat[:any_1,:any_2], low:any_2, high:any_2, 
+		li:bit, hi:bit) :bat[:any_1,:oid] 
+address ALGantiuselectInclusive
+comment "See select() but limited to head values";
 @- Pattern matching
 @mal
 command like(b:bat[:any_1,:str], substr:str) :bat[:any_1,:str]
@@ -928,12 +938,14 @@ algebra_export str ALGBATmaximum(ptr *result, int *bid);
 algebra_export str ALGselect1(int *result, int *bid, ptr value);
 algebra_export str ALGselect1Head(int *result, int *bid, ptr value);
 algebra_export str ALGuselect1(int *result, int *bid, ptr value);
+algebra_export str ALGantiuselect1(int *result, int *bid, ptr value);
 algebra_export str ALGselect(int *result, int *bid, ptr low, ptr high);
 algebra_export str ALGselectHead(int *result, int *bid, ptr low, ptr high);
 algebra_export str ALGuselect(int *result, int *bid, ptr low, ptr high);
 algebra_export str ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 algebra_export str ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 algebra_export str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
+algebra_export str ALGantiuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 algebra_export str ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh);
 algebra_export str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate);
 algebra_export str ALGthetajoin(int *result, int *lid, int *rid, int *opc);
@@ -1334,6 +1346,14 @@ CMDuselect1(BAT **result, BAT *b, ptr value)
 }
 
 int
+CMDantiuselect1(BAT **result, BAT *b, ptr value)
+{
+	ptr v = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) value)->batCacheid : value;
+
+	return (*result = BATantiuselect_(b, v, NULL, FALSE, FALSE)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
 CMDselect(BAT **result, BAT *b, ptr low, ptr high)
 {
 	ptr l = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) low )->batCacheid : low ;
@@ -1406,6 +1426,29 @@ CMDuselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
 }
 
 int
+CMDantiuselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
+{
+	int tt = b->ttype;
+	ptr nil = ATOMnilptr(tt);
+	ptr l = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) low )->batCacheid : low ;
+	ptr h = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) high)->batCacheid : high;
+
+	if (b->ttype == TYPE_bat && l != h ) {
+		GDKerror("CMDantiuselect: range-selects on type BAT are not supported\n");
+		return GDK_FAIL;
+	}
+	if (*l_in == bit_nil && ATOMcmp(tt, l, nil)) {
+		GDKerror("CMDantiuselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
+		return GDK_FAIL;
+	}
+	if (*h_in == bit_nil && ATOMcmp(tt, h, nil)) {
+		GDKerror("CMDantiuselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
+		return GDK_FAIL;
+	}
+	return (*result = BATantiuselect_(b, l, h, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
 CMDfragment(BAT **result, BAT *b, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 {
 	return (*result = BATrestrict(b, hlow, hhigh, tlow, thigh)) ? GDK_SUCCEED : GDK_FAIL;
@@ -1427,6 +1470,12 @@ int
 CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *li, bit *hi)
 {
 	return (*result = BATbandjoin(left, right, minus, plus, *li, *hi)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDrangejoin(BAT **result, BAT *left, BAT *rl, BAT *rh, bit *li, bit *hi)
+{
+	return (*result = BATrangejoin(left, rl, rh, *li, *hi)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 @-
@@ -1781,7 +1830,7 @@ fetch(ptr ret, BAT *b, lng i)
 		return GDK_FAIL;
 	}
 	i += BUNfirst(b);
-	@:putTail(((BUN)i))@
+	@:putTail((BUN)i)@
 @= putTail
 	if (b->ttype && b->theap) {
 		ptr _src = BUNtvar(bi,@1);/*b->theap->base + *(var_t*) BUNtloc(bi,@1);*/
@@ -2397,6 +2446,26 @@ ALGuselect1(int *result, int *bid, ptr value)
 }
 
 str
+ALGantiuselect1(int *result, int *bid, ptr value)
+{
+	BAT *b, *bn = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "algebra.antiuselect", "Cannot access descriptor");
+	}
+	@:derefStr(b,t,value)@
+	CMDantiuselect1(&bn, b, value);
+	BBPreleaseref(b->batCacheid);
+	if (bn) {
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		return MAL_SUCCEED;
+	}
+	throw(MAL, "algebra.antiuselect", "GDKerror");
+}
+
+str
 ALGselect(int *result, int *bid, ptr low, ptr high)
 {
 	BAT *b, *bn = NULL;
@@ -2544,6 +2613,27 @@ ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin
 	@:derefStr(b,t,low);@
 	@:derefStr(b,t,high);@
 	CMDuselect_(&bn, b, low, high, lin, rin);
+	BBPreleaseref(b->batCacheid);
+	if (bn) {
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		return MAL_SUCCEED;
+	}
+	throw(MAL, "algebra.uselect", "GDKerror");
+}
+
+str
+ALGantiuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
+{
+	BAT *b, *bn = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "algebra.select", "Cannot access descriptor");
+	}
+	@:derefStr(b,t,low);@
+	@:derefStr(b,t,high);@
+	CMDantiuselect_(&bn, b, low, high, lin, rin);
 	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
