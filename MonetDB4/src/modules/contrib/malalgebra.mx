@@ -241,10 +241,10 @@ CMDnlthetajoin(BAT **result, BAT *l, BAT *r, int *mode, lng *estimate)
 
 @= selectcmd
 int CMDord_@1select1(BAT **result, BAT* b, ptr value) {
-	return (*result = BAT_select_(b, value, 0, TRUE, TRUE, @2, TRUE))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = BAT_select_(b, value, 0, TRUE, TRUE, @2, FALSE, TRUE))?GDK_SUCCEED:GDK_FAIL;
 }
 int CMDord_@1select(BAT **result, BAT *b, ptr low, ptr high) {
-	return (*result = BAT_select_(b, low, high, TRUE, TRUE, @2, TRUE))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = BAT_select_(b, low, high, TRUE, TRUE, @2, FALSE, TRUE))?GDK_SUCCEED:GDK_FAIL;
 }
 int CMDord_@1select_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_in) {
 	int tt = b->ttype;
@@ -257,7 +257,7 @@ int CMDord_@1select_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_
 		GDKerror("CMDord_@1select: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
 		return GDK_FAIL;
 	}
-	return (*result = BAT_select_(b, low, high, *l_in, *h_in, @2, TRUE))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = BAT_select_(b, low, high, *l_in, *h_in, @2, FALSE, TRUE))?GDK_SUCCEED:GDK_FAIL;
 }
 @c
 @:selectcmd(,TRUE)@

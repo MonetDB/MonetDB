@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 1036 ]
+[ 1038 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 1036 ]
+[ 1038 ]
 
 var All:=0;
 
@@ -156,13 +156,15 @@ Module: ""
 
 Module: "algebra"
 
-[ 153 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 155 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "ADDHELP",	  "PROC:      ",  "ADDHELP(str, str, str, str, str) : void",						  "provide helpful info on a command (author, date, help-text)."																													  ]
 [ "antijoin",			  "COMMAND:   ",  "antijoin(BAT[any::1,any::2], BAT[any::2,any::4]) : BAT[any::1,any::4]",			  "Returns head-value from 'left' and tail-value from 'right'\nfor all BUNs in the cross product of 'left' and 'right' that\ndo not satisfy the equality on remaining columns."																																																							  ]
+[ "antiuselect",		  "COMMAND:   ",  "antiuselect(BAT[any::1,any::2], any::2) : BAT[any::1,void]",			  "Value antiselect, but returning only the head values.\n SEE ALSO: select(bat,val)"																																																										  ]
+[ "antiuselect",		  "COMMAND:   ",  "antiuselect(BAT[any::1,any::2], any::2, any::2, bit, bit) : BAT[any::1,void]", "AntiSelect on tail, returning only the head values.\n SEE ALSO: select(bat,low,high,l_in,h_in)."																																																								  ]
 [ "avg",			  "PROC:      ",  "avg(BAT[any,bte]) : dbl",								  "Gives the average of all tail values."																																																																																  ]
 [ "avg",	  "PROC:      ",  "avg(BAT[any,dbl]) : dbl",								  "Gives the average of all tail values."																																  ]
 [ "avg",	  "PROC:      ",  "avg(BAT[any,flt]) : dbl",								  "Gives the average of all tail values."																																  ]
@@ -1181,7 +1183,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 1036 ]
+[ 1038 ]
 
 quit();
 

@@ -428,7 +428,7 @@ bunins_failed:  BBPreclaim(bn);
 int 
 CMDconstIntersect(BAT **res, BAT *l, ptr val) 
 {
-	*res = BAT_select_(l, val, val, TRUE, TRUE, TRUE, TRUE);
+	*res = BAT_select_(l, val, val, TRUE, TRUE, TRUE, FALSE, TRUE);
 	return (*res)?GDK_SUCCEED:GDK_FAIL;
 }
 @}

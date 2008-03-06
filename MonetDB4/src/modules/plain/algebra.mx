@@ -119,6 +119,11 @@ NOTE 2: as the 'nil' element has no clear place in the ordered domain
 				BAT[any::1, void] = CMDuselect_;
 "Select on tail, returning only the head values.
  SEE ALSO: select(bat,low,high,l_in,h_in)."
+
+.COMMAND antiuselect ( BAT[any::1,any::2] b, any::2 low, any::2 high, bit l_in, bit h_in) :
+				BAT[any::1, void] = CMDantiuselect_;
+"AntiSelect on tail, returning only the head values.
+ SEE ALSO: select(bat,low,high,l_in,h_in)."
 @- value select
 @m
 .COMMAND select ( BAT[any::1,any::2] b, any::2 value) :
@@ -130,6 +135,11 @@ NOTE 2: as the 'nil' element has no clear place in the ordered domain
 .COMMAND uselect ( BAT[any::1,any::2] b, any::2 value) :
 				BAT[any::1, void] = CMDuselect1;
 "Value select, but returning only the head values.
+ SEE ALSO: select(bat,val)"
+
+.COMMAND antiuselect ( BAT[any::1,any::2] b, any::2 value) :
+				BAT[any::1, void] = CMDantiuselect1;
+"Value antiselect, but returning only the head values.
  SEE ALSO: select(bat,val)"
 @m
 .COMMAND fragment ( BAT[any::1,any::2] b,
@@ -1615,6 +1625,14 @@ CMDuselect1(BAT **result, BAT *b, ptr value)
 }
 
 int
+CMDantiuselect1(BAT **result, BAT *b, ptr value)
+{
+	ptr v = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) value)->batCacheid : value;
+
+	return (*result = BATantiuselect_(b, v, NULL, FALSE, FALSE)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
 CMDselect(BAT **result, BAT *b, ptr low, ptr high)
 {
 	ptr l = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) low )->batCacheid : low ;
@@ -1684,6 +1702,29 @@ CMDuselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
 		return GDK_FAIL;
 	}
 	return (*result = BATuselect_(b, l, h, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDantiuselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
+{
+	int tt = b->ttype;
+	ptr nil = ATOMnilptr(tt);
+	ptr l = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) low )->batCacheid : low ;
+	ptr h = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) high)->batCacheid : high;
+
+	if (b->ttype == TYPE_bat && l != h ) {
+		GDKerror("CMDantiuselect: range-selects on type BAT are not supported\n");
+		return GDK_FAIL;
+	}
+	if (*l_in == bit_nil && ATOMcmp(tt, l, nil)) {
+		GDKerror("CMDantiuselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
+		return GDK_FAIL;
+	}
+	if (*h_in == bit_nil && ATOMcmp(tt, h, nil)) {
+		GDKerror("CMDantiuselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
+		return GDK_FAIL;
+	}
+	return (*result = BATantiuselect_(b, l, h, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
