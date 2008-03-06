@@ -267,7 +267,6 @@ str STRbat@1(int *ret, int *l)
 	BAT *bn, *b;
 	BUN p,q;
 	@3 x;
-	str y, *yp = &y;
 
 	prepareOperand(b,l,"@1");
 	prepareResult(bn,b,TYPE_str,"@1");
@@ -276,11 +275,10 @@ str STRbat@1(int *ret, int *l)
 
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi,p);
+		str y = (str)str_nil, *yp = &y;
 
 		x = (@3) BUNtail(bi,p);
-		if (x== 0 || strcmp(x,@3_nil)== 0)
-			y = (str)str_nil;
-		else 
+		if (x != 0 && strcmp(x,@3_nil) != 0) 
 			@2(yp,x);
 		bunfastins(bn, h, y);
 		if (y != str_nil)
@@ -562,7 +560,6 @@ STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 	BAT *bn, *b;
 	BUN p, q;
 	str x, *xp = &x;
-	str y, *yp = &y;
 
 	prepareOperand(b, l, "subString");
 	prepareResult(bn, b, TYPE_int, "subString");
@@ -571,13 +568,11 @@ STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi, p);
+		str y = (str)str_nil, *yp = &y;
 
 		x = (str) BUNtail(bi, p);
-		if (x == 0 || strcmp(x, str_nil) == 0) {
-			y = (str)str_nil;
-		} else {
+		if (x != 0 && strcmp(x, str_nil) != 0)
 			STRSubstitute(yp, xp, arg2, arg3, rep);
-		}
 		bunfastins(bn, h, y);
 		if (y != str_nil)
 			GDKfree(yp);
