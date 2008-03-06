@@ -1109,7 +1109,6 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == remapRef ||
 		getModuleId(p) == constraintsRef ||
 		getModuleId(p) == optimizerRef ||
-		getModuleId(p) == replicatorRef ||
 		getModuleId(p) == lockRef ||
 		getModuleId(p) == semaRef ||
 		getModuleId(p) == alarmRef)
