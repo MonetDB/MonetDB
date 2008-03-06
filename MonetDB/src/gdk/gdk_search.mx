@@ -592,10 +592,7 @@ HASHremove(BAT *b)
 		if (p)
 			hp = BBP_cache(p);
 
-		if (hp && b->H->hash == hp->H->hash) {
-			GDKerror("HASHremove: view-bat cannot remove parent hash-table\n");
-			assert(0);
-		} else {
+		if (!hp || b->H->hash != hp->H->hash) {
 			HEAPfree(b->H->hash->heap);
 			if (b->H->hash->heap->storage & STORE_MMAP)
 				HEAPdelete(b->H->hash->heap, BBP_physical(b->batCacheid), (b->batCacheid > 0) ? "hhash" : "thash");
