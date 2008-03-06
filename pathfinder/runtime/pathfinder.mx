@@ -1427,7 +1427,7 @@ PROC _ws_free(lng wsid) : BAT[void,any]
     reverse(colname_pins).delete(wsid);
  
     # determine whether a cache flush is desired (only count cached bats, those with a timestamp)
-    var cursize := sum(doc_timestamp.select(timestamp_nil,timestamp_nil).mirror().join(collection_size));
+    var cursize := sum(doc_timestamp.uselect(timestamp_nil,timestamp_nil).mirror().join(collection_size));
     var maxsize := (1024LL * 1024LL) * lng(monet_environment.find("xquery_cacheMB"));
     if (cursize > maxsize) del_doc_base(true, doc_name, false);
 

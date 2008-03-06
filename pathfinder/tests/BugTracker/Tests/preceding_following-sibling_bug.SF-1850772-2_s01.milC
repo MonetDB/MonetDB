@@ -191,7 +191,7 @@ a0002 := CATCH ({
     a0001 := unused;
     # End rule: "Rel: project(Rel)"
     # Begin rule: "Rel: select(Rel)"
-    a0001 := a0009.select (true).mark (0@0).reverse ();
+    a0001 := a0009.uselect (true).mark (0@0).reverse ();
     a0004 := a0001.leftjoin (a0008);
     a0004 := a0004.reverse ().mark (0@0).reverse ();
     #     a0004: iter(nat)
@@ -466,7 +466,7 @@ printf("+ %i ", a0017.count());
         a0013 := unused;
         # End rule: "Rel: project(Rel)"
         # Begin rule: "Rel: select(Rel)"
-        a0013 := a0016.select (true).mark (0@0).reverse ();
+        a0013 := a0016.uselect (true).mark (0@0).reverse ();
         a0015 := a0013.leftjoin (a0020);
         a0015 := a0015.reverse ().mark (0@0).reverse ();
         #     a0015: item1(pfrag)
@@ -995,7 +995,7 @@ printf("+ %i ", a0017.count());
         a0015 := unused;
         # End rule: "Rel: project(Rel)"
         # Begin rule: "Rel: select(Rel)"
-        a0014 := a0013.select (true).mark (0@0).reverse ();
+        a0014 := a0013.uselect (true).mark (0@0).reverse ();
         a0015 := a0014.leftjoin (a0016);
         a0015 := a0015.reverse ().mark (0@0).reverse ();
         #     a0015: item(pfrag)
@@ -1321,7 +1321,7 @@ printf("+ %i ", a0017.count());
         a0015 := unused;
         # End rule: "Rel: project(Rel)"
         # Begin rule: "Rel: select(Rel)"
-        a0014 := a0013.select (true).mark (0@0).reverse ();
+        a0014 := a0013.uselect (true).mark (0@0).reverse ();
         a0015 := a0014.leftjoin (a0021);
         a0015 := a0015.reverse ().mark (0@0).reverse ();
         #     a0015: item(pfrag)

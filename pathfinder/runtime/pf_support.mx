@@ -819,7 +819,7 @@ PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, BAT[void,int] kind, BAT[void,
                 var frag_root := ws.fetch(OPEN_DOCID).leftjoin(ws.fetch(FRAG_ROOT).fetch($h));
                     frag_root := frag_root.leftfetchjoin(nid_rid).[swizzle](map_pid).tsort().tmark(0@0);
                 var frag_item := cont.ord_uselect($h).mirror().leftfetchjoin(result);
-                var attr_item := attr_cont.ord_select($h);
+                var attr_item := attr_cont.ord_uselect($h);
                 if (count(attr_item) > 0) {
                         attr_item := attr_item.mirror().leftfetchjoin(item);
                         attr_item := attr_item.leftfetchjoin(ws.fetch(ATTR_OWN).fetch($h));
@@ -992,7 +992,7 @@ PROC trace_scopes (BAT[void,any] ws,
                    BAT[oid,oid] trace_rel,
                    int s, oid id, oid cur_outer) : void
 {
-    var rels := trace_rel.reverse().select(id).mirror();
+    var rels := trace_rel.reverse().uselect(id).mirror();
     var outer_rels := trace_outer.reverse().leftjoin(rels).reverse();
     var inner_rels := trace_inner.reverse().leftjoin(rels).reverse();
 
@@ -1051,7 +1051,7 @@ PROC trace_ops (BAT[void,any] ws,
                 BAT[oid,oid] trace_rel,
                 int s, oid id, oid cur_inner) : void
 {
-    var rels := trace_rel.reverse().select(id).mirror();
+    var rels := trace_rel.reverse().uselect(id).mirror();
     var msg_rels := trace_msg.reverse().leftjoin(rels).reverse();
 
     # iterate over the available trace operators ...
@@ -2879,6 +2879,27 @@ currently checked). Returns the first argument which details the
 changed already made to the BATs in the working set.",
 "pf_support");
 
+
+PROC UpdateTape(
+bat[void, bat] ws,
+bat[void, lng] kind,
+bat[void, oid] pre_tgt, bat[void,int] pre_count_tgt,
+bat[void, oid] attr_tgt, bat[void,int] attr_count_tgt,
+bat[void, str] replace_strings, 
+bat[void, oid] replace_qn_uristrings, bat[void,oid] replace_qn_loc_strings, 
+bat[void, oid] pre_ins, bat[void,int] pre_count_ins,
+bat[void, oid] attr_ins, bat[void,int] attr_count_ins): void
+{
+ kind.print();
+ pre_tgt.print();
+ attr_tgt.print();
+ replace_strings.print();
+ replace_qn_uristrings.print();
+ replace_qn_loc_strings.print();
+ pre_ins.print();
+ attr_ins.print();
+}
+
 PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kind, bat[void,lng] int_values, bat[void,str] str_values) : void
 {
   # [void,oid] list of all conts of affected documents
@@ -4600,7 +4621,7 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
       if (isnil(oldpre)) {
         rid_nid_page := rid_nid_update.reverse().select(rid, oid(lng(rid) + pgsize)).reverse();
       } else {
-        rid_nid_page := pre_nid.reverse().select(oldpre, oid(lng(oldpre) + pgsize)).hmark(rid);
+        rid_nid_page := pre_nid.reverse().uselect(oldpre, oid(lng(oldpre) + pgsize)).hmark(rid);
         var rid_nid_page_update := rid_nid_update.reverse().select(rid, oid(lng(rid) + pgsize));
         rid_nid_page := rid_nid_page.copy().access(BAT_WRITE).key(true).replace(rid_nid_page_update);
       }
@@ -8403,7 +8424,7 @@ PROC merge_adjacent_text_nodes (BAT[void,oid] iter,
 
     var kind := mposjoin (pre, pcont, ws.fetch(PRE_KIND));
     var text := kind.[=](TEXT);
-    var text_sel := text.select(true).hmark(0@0);
+    var text_sel := text.uselect(true).hmark(0@0);
     var text_pre := text_sel.leftfetchjoin(pre).tmark(0@0);
     var text_cont := text_sel.leftfetchjoin(pcont).tmark(0@0);
 

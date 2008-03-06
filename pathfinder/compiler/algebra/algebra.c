@@ -1039,7 +1039,7 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_round:            return "fn:round";
         case alg_fun_fn_concat:           return "fn:concat";
         case alg_fun_fn_substring:        return "fn:substring";
-        case alg_fun_fn_substring_lng:    return "fn:substring";
+        case alg_fun_fn_substring_dbl:    return "fn:substring";
         case alg_fun_fn_string_length:    return "fn:string-length";
         case alg_fun_fn_normalize_space:  return "fn:normalize-space";
         case alg_fun_fn_upper_case:       return "fn:upper-case";
