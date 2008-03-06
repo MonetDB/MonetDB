@@ -335,6 +335,18 @@ be stored under the hash function.
 BAT *
 BAThash(BAT *b, size_t masksize)
 {
+	BAT *o = NULL;
+
+	if (isVIEW(b)) {
+		bat p = VIEWhparent(b);
+		o = b;
+		b = BATdescriptor(p);
+		if (!ALIGNsynced(o,b)) {
+			BBPunfix(b->batCacheid);
+			b = o;
+			o = NULL;
+		}
+	}
 	gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
 	if (b->H->hash == NULL) {
 		unsigned int tpe = ATOMstorage(b->htype);
@@ -346,6 +358,7 @@ BAThash(BAT *b, size_t masksize)
 		str nme = BBP_physical(b->batCacheid);
 		BATiter bi = bat_iterator(b);
 
+		ALGODEBUG THRprintf(GDKout, "#BAThash: create hash(%d);\n", BATcount(b));
 		/* cnt = 0, hopefully there is a proper capacity from which
 		 * we can derive enough information */
 		if (!cnt)
@@ -475,9 +488,16 @@ BAThash(BAT *b, size_t masksize)
 			}
 			break;
 		}
+		if (hp->storage & STORE_MMAP)
+			MT_mmap_pin(hp->base, hp->maxsize);
 		b->H->hash = h;
 	}
 	gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
+	if (o != NULL) {
+		o->H->hash = b->H->hash;
+		BBPunfix(b->batCacheid);
+		b = o;
+	}
 	return b;
 }
 
