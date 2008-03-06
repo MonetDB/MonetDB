@@ -570,8 +570,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 					len = snprintf(buf, BUFSIZ, "var s%d := s%d.%s(s%d);\n", -s->nr, l, cmd, r);
 					break;
 				case cmp_notequal:
-					len = snprintf(buf, BUFSIZ, "var ns%d := s%d.uselect(s%d);\n", -s->nr, l, r);
-					len += snprintf(buf + len, BUFSIZ, "var s%d := s%d.kdiff(s%d.uselect(%s(nil))).project(nil).kdiff(ns%d);\n", -s->nr, l, l, tail_type(s)->type->base.name, -s->nr);
+					len = snprintf(buf, BUFSIZ, "var s%d := s%d.antiuselect(s%d);\n", -s->nr, l, r);
 					break;
 				case cmp_lt:
 					len = snprintf(buf, BUFSIZ, "var s%d := s%d.%s(%s(nil), s%d, FALSE, FALSE);\n", -s->nr, l, cmd, tail_type(s)->type->base.name, r);
@@ -604,10 +603,14 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 			if (s->type == st_select2)
 				cmd = "select";
-			else if (s->type == st_uselect2)
-				cmd = "uselect";
-			else
+			else if (s->type == st_uselect2) {
+				if (s->flag&ANTI) 
+					cmd = "antiuselect";
+				else
+					cmd = "uselect";
+			} else {
 				cmd = "join";
+			}
 
 			buf = NEW_ARRAY(char, BUFSIZ + 1);
 			/* if st_join2 try to convert to bandjoin */
@@ -634,7 +637,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
  					r2 = backend_dumpstmt_(s->op3.stval->op2.stval, nr, sql);
 				cmd = "bandjoin";
 			}
-			switch (s->flag) {
+			switch (s->flag&3) {
 			case 0:
 				bits = ", FALSE, FALSE";
 				break;
