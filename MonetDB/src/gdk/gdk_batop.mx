@@ -599,6 +599,60 @@ We have to do it: create a new BAT and put everything into it.
 	return NULL;
 }
 
+BAT *
+BATslice2(BAT *b, size_t l1, size_t h1, size_t l2, size_t h2)
+{
+	BUN p,q;
+	BAT *bn;
+	BATiter bi = bat_iterator(b);
+	int tt = b->ttype;
+
+	BATcheck(b, "BATslice");
+	if (h2 > BATcount(b))
+		h2 = BATcount(b);
+	if (h1 < l1)
+		h1 = l1;
+	if (h2 < l2)
+		h2 = l2;
+	l1 += BUNfirst(b);
+	l2 += BUNfirst(b);
+	h1 += BUNfirst(b);
+	h2 += BUNfirst(b);
+
+	if (tt == TYPE_void && b->T->seq != oid_nil)
+		tt = TYPE_oid;
+	bn = BATnew(ATOMtype(b->htype), tt, h1 - l1 + h2 - l2);
+	if (bn == NULL) 
+		return bn;
+	for (p = l1, q = h1; p < q; p++ ) {
+		bunfastins(bn, BUNhead(bi, p), BUNtail(bi, p));
+	}
+	for (p = l2, q = h2; p < q; p++ ) {
+		bunfastins(bn, BUNhead(bi, p), BUNtail(bi, p));
+	}
+	bn->hsorted = BAThordered(b);
+	bn->tsorted = BATtordered(b);
+	BATkey(bn, BAThkey(b));
+	BATkey(BATmirror(bn), BATtkey(b));
+	if (bn->hkey && bn->htype == TYPE_oid) {
+		if (BATcount(bn) == 0) {
+			bn->hdense = TRUE;
+			BATseqbase(bn, 0);
+		} 
+	}
+	if (bn->tkey && bn->ttype == TYPE_oid) {
+		if (BATcount(bn) == 0) {
+			bn->tdense = TRUE;
+			BATseqbase(BATmirror(bn), 0);
+		}
+	}
+	return bn;
+      bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+
 @-  Value Selections
 The string search is optimized for the degenerated case
 that th = tl, and double elimination in the string heap.
@@ -735,9 +789,9 @@ the result (as (nil @{<,=,>@} ANY) = bit(nil) != true).
 @{
 @c
 BAT *
-BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit preserve_order)
+BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit anti, bit preserve_order)
 {
-	int hval, lval, equi, t, ht, tt;
+	int hval, lval, equi, nequi=anti, t, ht, tt;
 	size_t offset, batcnt, estimate = 0;
 	ptr nil;
 	BAT *bn;
@@ -760,6 +814,23 @@ Examine type, and values for lower- and higher-bound.
 		hval = 1;	/* equi-select */
 	} else {
 		hval = ATOMcmp(t, th, nil);
+	}
+	if (equi && nequi) {
+		equi = 0;
+		li = !li;
+		hi = !hi;
+	} else if (nequi) { /* swap sub-ranges */
+		if (!lval || !hval) { 
+			ptr tv;
+			bit ti;
+			ti = li;
+			li = hi;
+			hi = ti;
+ 			tv = tl;
+			tl = th; 
+			th = tv;
+			nequi = 0;
+		}
 	}
 
 	/* preliminarily determine result types */
@@ -848,7 +919,12 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 		}
 		ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BATslice(v=%s, low=" SZFMT ", high=" SZFMT ");\n", BATgetId(b), BATgetId(v), low, high);
 
-		bn = BATslice(v, low, high);
+		if (nequi) {
+			BUN first = SORTfndlast(b, nil);
+			bn = BATslice2(v, first, low, high, BUNlast(b));
+		} else {
+			bn = BATslice(v, low, high);
+		}
 		if (!tail) {
 			BBPreclaim(v);
 		}
@@ -869,7 +945,7 @@ Use sampling to determine a good result size, when the bat is large.
 			BAT *tmp2;
 			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): sampling: tmp2 = BAT_select_(tmp1=%s, tl, th, tail);\n", BATgetId(b), BATgetId(tmp1));
 
-			tmp2 = BAT_select_(tmp1, tl, th, li, hi, tail, FALSE);
+			tmp2 = BAT_select_(tmp1, tl, th, li, hi, tail, FALSE, FALSE);
 			if (tmp2) {
 				/* reserve 105% of what has been estimated */
 				estimate = (size_t) ((((lng) BATcount(tmp2)) * (lng) batcnt) / LL_CONSTANT(100));
@@ -901,9 +977,9 @@ Create the result BAT and execute the select algorithm.
 
 			bn = BAT_hashselect(b, bn, tl);
 		} else {
-			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_scanselect(b=%s, bn=%s, tl, th, equi=%d, lval=%d, hval=%d, nocheck=%d);\n", BATgetId(b), BATgetId(b), BATgetId(bn), equi, lval, hval, nocheck);
+			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_scanselect(b=%s, bn=%s, tl, th, equi=%d, nequi=%d, lval=%d, hval=%d, nocheck=%d);\n", BATgetId(b), BATgetId(b), BATgetId(bn), equi, nequi, lval, hval, nocheck);
 
-			bn = BAT_scanselect(b, bn, tl, th, li, hi, equi, lval, hval, nocheck);
+			bn = BAT_scanselect(b, bn, tl, th, li, hi, equi, nequi, lval, hval, nocheck);
 		}
 	}
 	if (bn == NULL) {
@@ -943,31 +1019,37 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 BAT *
 BAT_select(BAT *b, ptr h, ptr t, bit tail)
 {
-	return BAT_select_(b, h, t, TRUE, TRUE, tail, FALSE);
+	return BAT_select_(b, h, t, TRUE, TRUE, tail, FALSE, FALSE);
 }
 
 BAT *
 BATselect_(BAT *b, ptr h, ptr t, bit li, bit hi)
 {
-	return BAT_select_(b, h, t, li, hi, TRUE, FALSE);
+	return BAT_select_(b, h, t, li, hi, TRUE, FALSE, FALSE);
 }
 
 BAT *
 BATuselect_(BAT *b, ptr h, ptr t, bit li, bit hi)
 {
-	return BAT_select_(b, h, t, li, hi, FALSE, FALSE);
+	return BAT_select_(b, h, t, li, hi, FALSE, FALSE, FALSE);
+}
+
+BAT *
+BATantiuselect_(BAT *b, ptr h, ptr t, bit li, bit hi)
+{
+	return BAT_select_(b, h, t, li, hi, FALSE, TRUE, FALSE);
 }
 
 BAT *
 BATselect(BAT *b, ptr h, ptr t)
 {
-	return BAT_select_(b, h, t, TRUE, TRUE, TRUE, FALSE);
+	return BAT_select_(b, h, t, TRUE, TRUE, TRUE, FALSE, FALSE);
 }
 
 BAT *
 BATuselect(BAT *b, ptr h, ptr t)
 {
-	return BAT_select_(b, h, t, TRUE, TRUE, FALSE, FALSE);
+	return BAT_select_(b, h, t, TRUE, TRUE, FALSE, FALSE, FALSE);
 }
 
 @}

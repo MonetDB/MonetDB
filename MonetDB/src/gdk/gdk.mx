@@ -3224,10 +3224,11 @@ look at the head column:@%BATkunion@, @%BATkdiff@, and
 #define JOIN_BAND 3
 
 gdk_export BAT *BATfragment(BAT *b, ptr hl, ptr hh, ptr tl, ptr th);
-gdk_export BAT *BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit preserve_order);
+gdk_export BAT *BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit anti, bit preserve_order);
 gdk_export BAT *BAT_select(BAT *b, ptr tl, ptr th, bit tail);
 gdk_export BAT *BATselect_(BAT *b, ptr tl, ptr th, bit li, bit hi);
 gdk_export BAT *BATuselect_(BAT *b, ptr tl, ptr th, bit li, bit hi);
+gdk_export BAT *BATantiuselect_(BAT *b, ptr tl, ptr th, bit li, bit hi);
 gdk_export BAT *BATselect(BAT *b, ptr tl, ptr th);
 gdk_export BAT *BATuselect(BAT *b, ptr tl, ptr th);
 gdk_export BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th);

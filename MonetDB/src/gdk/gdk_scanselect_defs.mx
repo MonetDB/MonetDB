@@ -248,10 +248,15 @@ In case of a range select we skip all nil.
 */
 @= DEFseqscanIF
 	@:DEFseqscanHTget(eq_@1,@2,@3,if ( @4_EQ(tl ,v,@5)                      ),v,@7)@
+	@:DEFseqscanHTget(ne_@1,@2,@3,if ( @4_NE(tl ,v,@5,@5_nil)                      ),v,@7)@
 	@:DEFseqscanHTget(LH_@1,@2,@3,if ( @4_LE(tl ,v,@5) && @4_LE(v,th,@5) @6 ),v,@7)@
 	@:DEFseqscanHTget(Lh_@1,@2,@3,if ( @4_LE(tl ,v,@5) && @4_LT(v,th,@5) @6 ),v,@7)@
 	@:DEFseqscanHTget(lH_@1,@2,@3,if ( @4_LT(tl ,v,@5) && @4_LE(v,th,@5) @6 ),v,@7)@
 	@:DEFseqscanHTget(lh_@1,@2,@3,if ( @4_LT(tl ,v,@5) && @4_LT(v,th,@5) @6 ),v,@7)@
+	@:DEFseqscanHTget(HL_@1,@2,@3,if ( (!@4_EQ(nil,v,@5) && @4_LT(v,tl,@5)) || (@4_LT(th,v,@5) @6 )),v,@7)@
+	@:DEFseqscanHTget(hL_@1,@2,@3,if ( (!@4_EQ(nil,v,@5) && @4_LE(v,tl,@5)) || (@4_LT(th,v,@5) @6 )),v,@7)@
+	@:DEFseqscanHTget(Hl_@1,@2,@3,if ( (!@4_EQ(nil,v,@5) && @4_LT(v,tl,@5)) || (@4_LE(th,v,@5) @6 )),v,@7)@
+	@:DEFseqscanHTget(hl_@1,@2,@3,if ( (!@4_EQ(nil,v,@5) && @4_LE(v,tl,@5)) || (@4_LE(th,v,@5) @6 )),v,@7)@
 	@:DEFseqscanHTget(Ln_@1,@2,@3,if ( @4_LE(tl ,v,@5)                   @6 ),v,@7)@
 	@:DEFseqscanHTget(ln_@1,@2,@3,if ( @4_LT(tl ,v,@5)                   @6 ),v,@7)@
 	@:DEFseqscanHTget(nH_@1,@2,@3,if (!@4_EQ(nil,v,@5) && @4_LE(v,th,@5)    ),v,@7)@

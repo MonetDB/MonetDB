@@ -367,7 +367,7 @@ For backward compatibility:
 (also to be move to gdk.mx and gdk_bat.mx, respectively)
 @h
 
-BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int lval, int hval, int nocheck);
+BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int nequi, int lval, int hval, int nocheck);
 
 #endif /* _GDK_SCANSELECT_H */
 
@@ -594,10 +594,13 @@ In case of a range select we skip all nil.
 @= seqscanIF
 	if (equi) {
 		@:seqscanHTget(eq_@1,@2,@3,if ( @4_EQ(tl ,v,@5)                      ),v)@
+	} else if (nequi && !hval) {
+		@:seqscanHTget(ne_@1,@2,@3,if ( @4_NE(tl ,v,@5,@5_nil)                      ),v)@
 	/* rangeselect => we always skip nil
 	 * (explicitely by !@4_EQ(nil,v,@5) or @6
 	 *  or implicitely by @4_LE(tl,v,@5)) */
 	} else if (lval && hval) {
+	    if (!nequi) {
 		if (li && hi) {
 			@:seqscanHTget(LH_@1,@2,@3,if ( @4_LE(tl ,v,@5) && @4_LE(v,th,@5) @6 ),v)@
 		} else if (li && !hi) {
@@ -607,6 +610,17 @@ In case of a range select we skip all nil.
 		} else {
 			@:seqscanHTget(lh_@1,@2,@3,if ( @4_LT(tl ,v,@5) && @4_LT(v,th,@5) @6 ),v)@
 		}
+	    } else {
+		if (li && hi) {
+			@:seqscanHTget(HL_@1,@2,@3,if ( (!@4_EQ(nil,v,@5) && @4_LT(v,tl,@5)) || (@4_LT(th,v,@5) @6 )),v)@
+		} else if (li && !hi) {
+			@:seqscanHTget(hL_@1,@2,@3,if ( (!@4_EQ(nil,v,@5) && @4_LE(v,tl,@5)) || (@4_LT(th,v,@5) @6 )),v)@
+		} else if (!li && hi) {
+			@:seqscanHTget(Hl_@1,@2,@3,if ( (!@4_EQ(nil,v,@5) && @4_LT(v,tl,@5)) || (@4_LE(th,v,@5) @6 )),v)@
+		} else {
+			@:seqscanHTget(hl_@1,@2,@3,if ( (!@4_EQ(nil,v,@5) && @4_LE(v,tl,@5)) || (@4_LE(th,v,@5) @6 )),v)@
+		}
+	    }
 	} else if (lval) {
 		if (li) {
 			@:seqscanHTget(Ln_@1,@2,@3,if ( @4_LE(tl ,v,@5)                   @6 ),v)@
@@ -690,7 +704,7 @@ The dispatcher, called from BAT_select (gdk_batop.mx).
 
 @c
 BAT *
-BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int lval, int hval, int nocheck)
+BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int nequi, int lval, int hval, int nocheck)
 {
 	int t = b->ttype;
 
