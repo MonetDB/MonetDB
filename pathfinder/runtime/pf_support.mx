@@ -5552,7 +5552,6 @@ INLINE lng XQH_H(str v) {
           l++;
        } else if ((*c != '-') & (*c != '+') & (*c != '0') & (*c != '.')) {
           val |= 2; break; /* E-bit "ends here" */ 
-          break;
        } 
     }
     val |= digithash & XQH_MSK28(36);
@@ -5574,7 +5573,7 @@ INLINE lng XQH_H(str v) {
 
 @= hash
 int CMD_XQH_H@1(lng *res, str v) {
-    *res = XQH_H(v);
+    *res = XQH_H@1(v);
     return GDK_SUCCEED;
 }
 
