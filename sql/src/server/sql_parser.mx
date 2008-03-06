@@ -1941,7 +1941,7 @@ return_statement:
 return_value:
       select_no_parens_orderby
    |  search_condition
-   |  TABLE '(' select_no_parens ')'	
+   |  TABLE '(' select_no_parens_orderby ')'	
 		{ $$ = _symbol_create_symbol(SQL_TABLE, $3); }
    |  sqlNULL 	{ $$ = _newAtomNode( NULL);  }
    ;
