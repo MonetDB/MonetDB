@@ -61,7 +61,7 @@ which inspects the variable table for alternative results.
 #include "mal.h"
 #include "mal_instruction.h"
 
-#define _DEBUG_RECYCLE_ /* trace behavior */
+/* #define _DEBUG_RECYCLE_  trace behavior */
 
 mal_export str RECYCLEdump(int *ret);
 mal_export str RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -197,10 +197,18 @@ RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 RECYCLEdump(int *ret)
 {
+	int i;
+
 	(void) ret;
 	stream_printf(GDKout,"Recycler  catalog \n");
 	printFunction(GDKout,recycleBlk, LIST_MAL_ALL);
 
+	/* and dump the statistics */
+	for(i=0; i< recycleBlk->stop; i++){
+		stream_printf(GDKout,"#%d count=%d ticks=%d\n", i,
+			recycleBlk->profiler[i].counter,
+			recycleBlk->profiler[i].ticks);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -261,6 +269,7 @@ static void RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	i= recycleBlk->stop;
 	pushInstruction(recycleBlk,q);
 	recycleBlk->profiler[i].counter =1;
+	recycleBlk->profiler[i].ticks = GDKusec()-s->clk;
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE catalog \n");
 	printFunction(GDKout,recycleBlk,LIST_MAL_ALL);
@@ -301,7 +310,7 @@ or it can be small compared to the target.
 static int
 RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
-	int i, j, nbid, bid= -1 , ridx, idx;
+	int i, j, nbid, bid= -1 , ridx, idx,pc = -1;
 	InstrPtr q;
 	static str selectRef;
 	static str uselectRef;
@@ -345,6 +354,7 @@ Time to check for the inclusion constraint
 					nbid=getVarConstant(recycleBlk, getArg(q,0)).val.bval; 
 					if( bid == -1){
 						bid = nbid;
+						pc= i;
 						b1= BATdescriptor(bid);
 						BBPkeepref(bid);
 #ifdef _DEBUG_RECYCLE_
@@ -363,6 +373,7 @@ Time to check for the inclusion constraint
 							BBPreleaseref(bid);
 							BBPkeepref(nbid);
 							bid= nbid;
+							pc= i;
 						} else {
 							BBPreleaseref(bid);
 							BBPreleaseref(nbid);
@@ -390,13 +401,16 @@ Time to check for the inclusion constraint
 		stream_printf(GDKout,"RECYCLEreuse exact\n");
 		printInstruction(GDKout,mb,p, LIST_MAL_ALL);
 #endif
+			recycleBlk->profiler[i].counter++;
 			return 1;
 			notfound: continue;
 		}
 	}
-	if( bid >=0)
+	if( bid >=0){
 		/* replace selection argument */
 		s->stk[getArg(p,1)].val.bval= bid;
+		recycleBlk->profiler[pc].counter++;
+	}
 	return 0;
 
 }
@@ -469,6 +483,7 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 #ifdef _DEBUG_RECYCLE_
 		stream_printf(GDKout,"RECYCLEexit time %d \n",clk);
 #endif
+		;
 	}
 }
 @-

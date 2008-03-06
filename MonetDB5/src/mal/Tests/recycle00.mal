@@ -14,3 +14,4 @@ io.print("next");
 qry();
 io.print("last");
 qry();
+recycle.dump();

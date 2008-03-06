@@ -34,3 +34,4 @@ io.print("next step");
 qry(2,3);
 io.print("last");
 qry(1,11);
+recycle.dump();
