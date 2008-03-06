@@ -530,33 +530,6 @@ static int newReplica(MalStkPtr s, InstrPtr p, bit keep)
 	return k;
 }
 
-/* compare values in ValRecords, return 0 on equal */
-int
-VALcmp(ValPtr p, ValPtr q)
-{
-
-	int (*cmp) (ptr, ptr);
-	int tpe;
-	ptr nilptr, pp, pq;
-
-	if( p ==0 || q == 0 ) return  -1;
-	if( (tpe = p ->vtype) != q->vtype ) return  -1;
-
-	cmp = BATatoms[tpe].atomCmp;
-	nilptr = ATOMnilptr(tpe);
-	pp = VALget(p);
-	pq = VALget(q);
-	if(((*cmp)(pp, nilptr)==0) && ((*cmp)(pq, nilptr)==0)) return 0; /* eq nil val */
-	if(((*cmp)(pp, nilptr)==0) || ((*cmp)(pq, nilptr)==0)) return -1;
-
-/*	if( tpe == TYPE_flt || tpe == TYPE_dbl)
-	return (*pp - *pq)<1E-10? 0 : ((*cmp)(pp, pq)); 
-*/
-
-	return ((*cmp)(pp, pq));
-
-}
-
 /* check for replica of instruction p in repl table */
 int
 findReplica(MalStkPtr s,InstrPtr p)

@@ -20,9 +20,9 @@ The recycler optimizer marks the variables subject to recycling control.
 @{
 @mal
 pattern optimizer.recycle():str
-address OPTrecycler;
+address OPTrecycle;
 pattern optimizer.recycle(mod:str, fcn:str):str
-address OPTrecycler
+address OPTrecycle
 comment "Replicator code injection";
 
 @-
@@ -33,7 +33,7 @@ The number of overloaded instructions is kept to a minimum.
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-#define DEBUG_OPT_RECYCLER  
+/* #define DEBUG_OPT_RECYCLER  */
 @-
 The variables are all checked for being eligible as a variable
 subject to recycling control. A variable my only be assigned
@@ -45,7 +45,7 @@ are already recycle enabled or constant.
 #include "mal_instruction.h"
 
 static int
-OPTrecyclerImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTrecycleImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, j, cnt, actions=0;
 	Lifespan span= newLifespan(mb);
@@ -95,8 +95,8 @@ Functions with side effects can not be subject to recycle actions.
 }
 @include optimizerWrapper.mx
 @h
-@:exportOptimizer(recycler)@
+@:exportOptimizer(recycle)@
 #endif
 @c
 #include "opt_statistics.h"
-@:wrapOptimizer(recycler,OPT_CHECK_ALL)@
+@:wrapOptimizer(recycle,OPT_CHECK_ALL)@

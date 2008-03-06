@@ -49,17 +49,160 @@ command setCachePolicy(p:int):void
 address RECYCLEsetCache
 comment "Set recycler cache policy";
 
+command shutdown():void
+address RECYCLEshutdown
+comment "Clear the recycle cache";
 @h
 #ifndef _RECYCLE_
 #define _RECYCLE_
 
 #include "mal.h"
+#include "mal_instruction.h"
 #include "mal_recycle.h"
+
+#ifdef WIN32
+#ifndef LIBRECYCLE
+#define recycle_export extern __declspec(dllimport)
+#else
+#define recycle_export extern __declspec(dllexport)
+#endif
+#else
+#define recycle_export extern
+#endif
+
+recycle_export str RECYCLEdump(int *ret);
+recycle_export str RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+recycle_export str RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+recycle_export str RECYCLEsetRetain(int *ret, sht *p);
+recycle_export str RECYCLEsetReuse(int *ret, sht *p);
+recycle_export str RECYCLEsetCache(int *ret, sht *p);
+recycle_export str RECYCLEshutdown(int *ret);
 
 #endif
 @-
 @c
 #include "mal_config.h"
+#include "mal_function.h"
 #include "recycle.h"
 
+@-
+The recycler is started when the first function is called for its support.
+Upon exit of the last function, the content of the recycle cache is destroyed.
+@c
+str
+RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+
+	(void) pci;
+	(void) stk;
+
+	if( recycleVersion == 0){	
+		MT_lock_init(&recycleLock,"recycle");
+		recycleVersion =1 ;
+	}
+	if( mb->version )
+		/* upgrade to a new version by dropping old info */
+		RECYCLEversion(mb);
+	else{
+		mal_set_lock(recycleLock,"recycle");
+		mb->version= recycleVersion;
+		recycleUsers++;
+		mal_unset_lock(recycleLock,"recycle");
+	}
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLEstart version %d\n",recycleVersion);
+#endif
+	return MAL_SUCCEED;
+}
+
+
+str
+RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	if( recycleBlk == 0)
+		return MAL_SUCCEED;
+	mal_set_lock(recycleLock,"recycle");
+	recycleBlk->version = 0;
+	recycleUsers--;
+	mal_unset_lock(recycleLock,"recycle");
+	return MAL_SUCCEED;
+}
+
+
+str
+RECYCLEdump(int *ret)
+{
+	int i;
+
+	(void) ret;
+	stream_printf(GDKout,"Recycler  catalog \n");
+	printFunction(GDKout,recycleBlk, LIST_MAL_ALL);
+
+	/* and dump the statistics */
+	for(i=0; i< recycleBlk->stop; i++){
+		stream_printf(GDKout,"#%d count=%d ticks=%d\n", i,
+			recycleBlk->profiler[i].counter,
+			recycleBlk->profiler[i].ticks);
+	}
+	return MAL_SUCCEED;
+}
+
+str
+RECYCLEsetRetain(int *ret, sht *p)
+{
+	(void) ret;
+	retainPolicy = *p;
+	(void)retainPolicy;
+	return MAL_SUCCEED;
+}
+
+str
+RECYCLEsetReuse(int *ret, sht *p)
+{
+	(void) ret;
+	reusePolicy = *p;
+	(void)reusePolicy;
+	return MAL_SUCCEED;
+}
+
+str
+RECYCLEsetCache(int *ret, sht *p)
+{
+	(void) ret;
+	rcachePolicy = *p;
+	(void)rcachePolicy;
+	return MAL_SUCCEED;
+}
+@-
+At the end of the session we have to cleanup the recycle cache.
+@c
+str
+RECYCLEshutdown(int *ret){
+	InstrPtr q;
+	int i,j;
+	MalBlkPtr mb;
+	
+	(void)ret;
+	if( recycleBlk == NULL)
+		return MAL_SUCCEED;
+
+	mal_set_lock(recycleLock,"recycle");
+	mb= recycleBlk;
+	recycleBlk= NULL;
+	mal_unset_lock(recycleLock,"recycle");
+
+	for(i=0; i< mb->stop; i++){
+		q= getInstrPtr(mb,i);
+		for(j=0; j< q->argc; j++)
+		if( isVarConstant(mb,getArg(q,j)) ){
+			if( isaBatType(getArgType(mb, q,j)) )
+				BBPreleaseref(getVarConstant(mb,getArg(q,j)).val.bval);
+		}
+	}
+	freeMalBlk(mb);
+	return MAL_SUCCEED;
+}
 @}

@@ -59,18 +59,20 @@ which inspects the variable table for alternative results.
 #define _MAL_RECYCLE_
 
 #include "mal.h"
+#include "mal_exception.h"
 #include "mal_instruction.h"
 
 /* #define _DEBUG_RECYCLE_  trace behavior */
 
-mal_export str RECYCLEdump(int *ret);
-mal_export str RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str RECYCLEsetRetain(int *ret, sht *p);
-mal_export str RECYCLEsetReuse(int *ret, sht *p);
-mal_export str RECYCLEsetCache(int *ret, sht *p);
-mal_export str RECYCLEshutdown(int *ret);
+extern int retainPolicy;
+extern int reusePolicy;
+extern int rcachePolicy;
+extern int recycleVersion;  /* version of recycle table */
+extern int recycleUsers;
+extern MT_Lock recycleLock;
+extern MalBlkPtr recycleBlk;
 
+mal_export void RECYCLEversion(MalBlkPtr mb);
 mal_export int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif
@@ -83,21 +85,21 @@ mal_export void RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #define isResStored(M,i) isVarKept(M, getArg(M->stmt[i],0))
 
-static MT_Lock recycleLock ;
-static MalBlkPtr recycleBlk = NULL;
-static int recycleVersion = 0;  /* version of recycle table */
-static int recycleUsers = 0;  /* queries currently using recycleBlk */
+MT_Lock recycleLock ;
+int recycleVersion = 0;  /* version of recycle table */
+MalBlkPtr recycleBlk = NULL;
+int recycleUsers=0;
 
-static sht retainPolicy = 0;  /* recycle retainment policy
+int retainPolicy = 0;  /* recycle retainment policy
 			0: baseline, keeps stat, no retain, no reuse
 			1: infinite case, retain all
 			2: cost-based on semantics, retain if beneficial
 			3: just temporal based, no range matching */
-static sht reusePolicy = 0;	/* recycle reuse policy
+int reusePolicy = 0;	/* recycle reuse policy
 			0: baseline, keeps stat, no retain, no reuse
 			1: reuse smallest select covering 
 			2: exact covering  */
-static sht rcachePolicy = 0;  /* recycle cache management policy
+int rcachePolicy = 0;  /* recycle cache management policy
 			0: baseline, do nothing
 			1: throw LRU
 			2: cost-based, throw least beneficial */
@@ -148,97 +150,6 @@ void RECYCLEversion(MalBlkPtr mb)
 	}	
 }
 @-
-The recycler is started when the first function is called for its support.
-Upon exit of the last function, the content of the recycle cache is destroyed.
-@c
-str
-RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-
-	(void) pci;
-	(void) stk;
-
-	if( recycleVersion == 0){	
-		MT_lock_init(&recycleLock,"recycle");
-		recycleVersion =1 ;
-	}
-	if( mb->version )
-		/* upgrade to a new version by dropping old info */
-		RECYCLEversion(mb);
-	else{
-		mal_set_lock(recycleLock,"recycle");
-		mb->version= recycleVersion;
-		recycleUsers++;
-		mal_unset_lock(recycleLock,"recycle");
-	}
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLEstart version %d\n",recycleVersion);
-#endif
-	return MAL_SUCCEED;
-}
-
-
-str
-RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	if( recycleBlk == 0)
-		return MAL_SUCCEED;
-	mal_set_lock(recycleLock,"recycle");
-	recycleBlk->version = 0;
-	recycleUsers--;
-	mal_unset_lock(recycleLock,"recycle");
-	return MAL_SUCCEED;
-}
-
-
-str
-RECYCLEdump(int *ret)
-{
-	int i;
-
-	(void) ret;
-	stream_printf(GDKout,"Recycler  catalog \n");
-	printFunction(GDKout,recycleBlk, LIST_MAL_ALL);
-
-	/* and dump the statistics */
-	for(i=0; i< recycleBlk->stop; i++){
-		stream_printf(GDKout,"#%d count=%d ticks=%d\n", i,
-			recycleBlk->profiler[i].counter,
-			recycleBlk->profiler[i].ticks);
-	}
-	return MAL_SUCCEED;
-}
-
-str
-RECYCLEsetRetain(int *ret, sht *p)
-{
-	(void) ret;
-	retainPolicy = *p;
-	(void)retainPolicy;
-	return MAL_SUCCEED;
-}
-
-str
-RECYCLEsetReuse(int *ret, sht *p)
-{
-	(void) ret;
-	reusePolicy = *p;
-	(void)reusePolicy;
-	return MAL_SUCCEED;
-}
-
-str
-RECYCLEsetCache(int *ret, sht *p)
-{
-	(void) ret;
-	rcachePolicy = *p;
-	(void)rcachePolicy;
-	return MAL_SUCCEED;
-}
-@-
 The overloaded algebra operator simply calls the
 underlying implementation and collects statistics on the
 cost.
@@ -276,27 +187,6 @@ static void RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 #endif
 }
 
-/* compare values in ValRecords, return 0 on equal */
-static int
-VALcmp(ValPtr p, ValPtr q)
-{
-
-	int (*cmp) (ptr, ptr);
-	int tpe;
-	ptr nilptr, pp, pq;
-
-	if( p ==0 || q == 0 ) return  -1;
-	if( (tpe = p ->vtype) != q->vtype ) return  -1;
-
-	cmp = BATatoms[tpe].atomCmp;
-	nilptr = ATOMnilptr(tpe);
-	pp = VALget(p);
-	pq = VALget(q);
-	if(((*cmp)(pp, nilptr)==0) && ((*cmp)(pq, nilptr)==0)) return 0; /* eq nil val */
-	if(((*cmp)(pp, nilptr)==0) || ((*cmp)(pq, nilptr)==0)) return -1;
-	return ((*cmp)(pp, pq));
-
-}
 @-
 Searching for useful recycle instructions is the real challenge.
 There are two major approaches. The first approach is to search
@@ -485,34 +375,5 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 #endif
 		;
 	}
-}
-@-
-At the end of the session we have to cleanup the recycle cache.
-@c
-str
-RECYCLEshutdown(int *ret){
-	InstrPtr q;
-	int i,j;
-	MalBlkPtr mb;
-	
-	(void)ret;
-	if( recycleBlk == NULL)
-		return MAL_SUCCEED;
-
-	mal_set_lock(recycleLock,"recycle");
-	mb= recycleBlk;
-	recycleBlk= NULL;
-	mal_unset_lock(recycleLock,"recycle");
-
-	for(i=0; i< mb->stop; i++){
-		q= getInstrPtr(mb,i);
-		for(j=0; j< q->argc; j++)
-		if( isVarConstant(mb,getArg(q,j)) ){
-			if( isaBatType(getArgType(mb, q,j)) )
-				BBPreleaseref(getVarConstant(mb,getArg(q,j)).val.bval);
-		}
-	}
-	freeMalBlk(mb);
-	return MAL_SUCCEED;
 }
 @}
