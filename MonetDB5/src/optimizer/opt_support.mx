@@ -1187,6 +1187,7 @@ int isFragmentGroup(InstrPtr p){
 				getFunctionId(p)== selectRef ||
 				getFunctionId(p)== selectNotNilRef ||
 				getFunctionId(p)== uselectRef ||
+				getFunctionId(p)== antiuselectRef ||
 				getFunctionId(p)== likeselectRef ||
 				getFunctionId(p)== joinRef ||
 				getFunctionId(p)== semijoinRef ||

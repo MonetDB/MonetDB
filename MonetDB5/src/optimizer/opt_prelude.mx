@@ -131,6 +131,7 @@ opt_export  str unionRef;
 opt_export  str unpackRef;
 opt_export  str updateRef;
 opt_export  str uselectRef;
+opt_export  str antiuselectRef;
 
 opt_export int canBeCrackedProp;	/* binary */
 opt_export int inlineProp;		/* binary */
@@ -266,6 +267,7 @@ str unionRef;
 str unpackRef;
 str updateRef;
 str uselectRef;
+str antiuselectRef;
 
 int canBeCrackedProp;
 int inlineProp;
@@ -396,6 +398,7 @@ void optimizerInit(){
 		unpackRef = putName("unpack",6);
 		updateRef = putName("update",6);
 		uselectRef = putName("uselect",7);
+		antiuselectRef = putName("antiuselect",11);
 
 		canBeCrackedProp = PropertyIndex("canBeCracked");
 		inlineProp = PropertyIndex("inline");
