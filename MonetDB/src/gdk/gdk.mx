@@ -86,9 +86,15 @@ considered in the Goblin runtime system
 [@cite{Goblin}]
 @end tex
 .  A BAT is a
+<<<<<<< gdk.mx
+self-descriptive main-memory structure that represents the @strong{binary
+relationship} between two atomic types.
+
+=======
 self-descriptive main-memory structure that represents the 
 @strong{binary relationship} between two atomic types.
 
+>>>>>>> 1.250
 The association can be defined over:
 @table @code
 @item void:
@@ -781,6 +787,7 @@ gdk_export void VALempty(ValPtr v);
 gdk_export void VALclear(ValPtr v);
 gdk_export ValPtr VALset(ValPtr v, int t, ptr p);
 gdk_export void *VALget(ValPtr v);
+gdk_export int VALcmp(ValPtr p, ValPtr q);
 
 @}
 

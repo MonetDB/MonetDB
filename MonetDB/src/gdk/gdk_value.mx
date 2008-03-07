@@ -698,6 +698,26 @@ VALconvert(int typ, ValPtr t)
 	t->vtype = typ;
 	return p == ILLEGALVALUE ? p : VALptr(t);
 }
+int
+VALcmp(ValPtr p, ValPtr q)
+{
+
+    int (*cmp) (ptr, ptr);
+    int tpe;
+    ptr nilptr, pp, pq;
+
+    if( p ==0 || q == 0 ) return  -1;
+    if( (tpe = p ->vtype) != q->vtype ) return  -1;
+
+    cmp = BATatoms[tpe].atomCmp;
+    nilptr = ATOMnilptr(tpe);
+    pp = VALget(p);
+    pq = VALget(q);
+    if(((*cmp)(pp, nilptr)==0) && ((*cmp)(pq, nilptr)==0)) return 0; /* eq nil val */
+    if(((*cmp)(pp, nilptr)==0) || ((*cmp)(pq, nilptr)==0)) return -1;
+    return ((*cmp)(pp, pq));
+
+}
 
 @}
 @
