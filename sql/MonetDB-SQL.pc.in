@@ -27,7 +27,7 @@ modpath=${libdir}/MonetDB:${libdir}/MonetDB/lib:${libdir}/MonetDB/bin
 Name: ${pkg}
 Description: A SQL/ODBC/JDBC interface to MonetDB.
 Version: @VERSION@
-Requires: MonetDB >= 4.22.0
+Requires: MonetDB >= 4.23.0
 #                    ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
