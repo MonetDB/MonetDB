@@ -86,15 +86,8 @@ considered in the Goblin runtime system
 [@cite{Goblin}]
 @end tex
 .  A BAT is a
-<<<<<<< gdk.mx
 self-descriptive main-memory structure that represents the @strong{binary
 relationship} between two atomic types.
-
-=======
-self-descriptive main-memory structure that represents the 
-@strong{binary relationship} between two atomic types.
-
->>>>>>> 1.250
 The association can be defined over:
 @table @code
 @item void:
