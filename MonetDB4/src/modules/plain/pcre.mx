@@ -772,7 +772,7 @@ sql2pcre(str *r, str pat, str esc_str)
 			}
 			/* not optimal but functional */
 			hasWildcard = 1; 
-		} else if (strchr( ".+*()[]\\", c) != NULL) {
+		} else if (strchr( ".?+*()[]\\", c) != NULL) {
 			*ppat++ = '\\';
 			*ppat++ = c;
 			/* not optimal but functional */
