@@ -2147,7 +2147,7 @@ is extremely dangerous, as the global sync has all the BBPlocks, so no BBPtrim()
 done to free memory when needed. Loading a BAT tends not to be required, since the commit 
 actions mostly involve moving some pointers in the BAT descriptor. However, some column 
 types do require loading the full bat. This is tested by the complexatom() routine. Such 
-columns are those of which the type has an fix/unfix method, or those that have HeapDelete
+columns are those of which the type has a fix/unfix method, or those that have HeapDelete
 methods. The HeapDelete actions are not always required and therefore the BBPquickdesc
 is parametrized.
 @{
@@ -2718,7 +2718,7 @@ heap_move(Heap *hp, str srcdir, str dstdir, str nme, str ext)
 		GDKfilepath(path, srcdir, nme, ext);
 		if (stat(path, &st)) {
 			/* in order to prevent half-saved X files surviving a recover
-			 * we create a dummy file in the BACKUP(dstdir) whose precense
+			 * we create a dummy file in the BACKUP(dstdir) whose presence
 			 * will trigger BBPrecover to remove them. Thus, X.priv will 
 			 * prevail where it otherwise wouldn't have.
 			 */
