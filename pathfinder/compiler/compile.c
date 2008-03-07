@@ -417,18 +417,6 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("normalization:\t\t\t\t %s", PFtimer_str (tm));
 
-    /* Heuristic path-reversal rewrites to start evaluation
-       with indexable expressions. */
-    if (status->output_format == PFoutput_format_milprint_summer) {
-        /* NOTE: algebra MIL/MAL generation could/should also use it.. */
-        tm = PFtimer_start ();
-        proot = PFheuristic_index (proot);
-        tm = PFtimer_stop (tm);
-        if (status->timing)
-            PFlog ("path heuristics:\t\t\t %s", PFtimer_str (tm));
-
-    }
-
     STOP_POINT(3);
     
     /* Initialize data structures in the Namespace department */
@@ -462,6 +450,16 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     PFextract_options (proot);
 
     STOP_POINT(5);
+
+    /* Heuristic path-reversal rewrites to start evaluation
+       with indexable expressions. */
+    if (status->output_format == PFoutput_format_milprint_summer) {
+        tm = PFtimer_start ();
+        proot = PFheuristic_index (proot);
+        tm = PFtimer_stop (tm);
+        if (status->timing)
+            PFlog ("path heuristics:\t\t\t %s", PFtimer_str (tm));
+    }
 
     /* create guide tree */
     guide_tree =  PFguide_tree();

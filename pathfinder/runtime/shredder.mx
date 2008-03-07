@@ -986,6 +986,10 @@ shred_start_element(void *xmlCtx,
         const xmlChar *a_val = atts[i+3];
         const xmlChar *a_end = atts[i+4];
 
+        /* libxml2 apparently does not provide default namespaces for attributes, recover them from the element */
+        if (a_pfx == NULL && e_pfx == NULL && e_uri) 
+            a_uri = e_uri; 
+
 #ifdef DEBUG
         stream_printf(GDKout, "  attr(");
         if (a_uri) stream_printf(GDKout, "uri=%s, ", a_uri);
@@ -994,10 +998,6 @@ shred_start_element(void *xmlCtx,
         stream_printf(GDKout, ", val=\"%s\"", a_val);
         stream_printf(GDKout, ")\n");
 #endif
-        if (!a_pfx && a_uri) { 
-          a_uri = NULL; /* attribute without prefix cannot have a namespace */
-        }
-
         int attrType;
         char* idref_suffix = NULL;
         if ((attrType = attrDB_check(&shredCtx->idrefAttrDB,(char*)e_loc,(char*)a_tag))) {

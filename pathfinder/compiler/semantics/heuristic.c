@@ -38,16 +38,13 @@
  *
  *     (: use pf:text/pf:attribute index-lookup builtins to get candidates :)
  *     $var4 := for $var5 in EXPR1 
- *              return if ($var5 instance of xs:boolean) 
+ *              return if (or($var5 instance of xs:boolean), 
+ *                            $var5 instance of xs:double)), 
  *                     then pf:idxfail() else
- *                          if (($var5 instance of xs:integer) or
- *                              ($var5 instance of xs:decimal) or
- *                              ($var5 instance of xs:double)) 
- *                        (: viz pf:attribute-numeric($var1, $var2 cast as xs:string, "el_ns","el_loc","at_ns","at_loc", :)
- *                          then pf:text-numeric($var1, $var2 cast as xs:string) else 
- *                        (: viz pf:attribute($var1, string(data($var2)), "el_ns","el_loc","at_ns","at_loc", :)
- *                               pf:text($var1, string(data($var2)))
- *
+ *               (: resp.   pf:attribute($var1, "el_ns","el_loc","at_ns","at_loc", :) 
+ *                          pf:text($var1, 
+ *                                  or($var5 instance of xs:integer,
+ *                                     $var5 instance of xs:decimal), string(data($var2)))
  * return
  *     (: if we have candidates, use them, otherwise use the original plan :)
  *     if (some $var6 in $var4 satisfies pf:idxfailed($var6))
@@ -102,7 +99,7 @@
  *
  * let $var1 := doc("foo"),
  *     $var2 := "1",
- *     $var4 := pf:attribute($var1, "*", "b", "*", "id", $var2),
+ *     $var4 := pf:attribute($var1, "", "b", "", "id", true(), $var2),
  * return
  *     if (some $var6 in $var4 satisfies pf:idxfailed($var6))
  *     then (: original plan :)
@@ -123,12 +120,10 @@
  * - pf:idxfail() as node()
  * - pf:idxfailed($ctx as node()) as xs:boolean
  * - pf:supernode($ctx as node()*) as node()*
- * - pf:attribute($frag as node()*, $ns as xs:string, $loc as xs:string, 
- *                $val as xs:string) as node()*
- * - pf:attribute-numeric($frag as node()*, $ns as xs:string, $loc as xs:string, 
- *                        $val as xs:double) as node()*
- * - pf:text($frag as node()*, $val as xs:string) as node()*
- * - pf:text-numeric($frag as node()*, $val as xs:double) as node()*
+ * - pf:attribute($frag as node()*, $eltns as xs:string, $eltloc as xs:string, 
+ *                                  $attns as xs:string, $attloc as xs:string,
+ *                                  $numeric as xs:boolean, $val as xs:string) as node()*
+ * - pf:text($frag as node()*, $numeric as xs:boolean, $val as xs:string) as node()*
  *
  * For each document node in $ctx, pf:supernode() adds its collection-supernode 
  * to the result. Collection supernodes are returned by pf:collection(), and 
@@ -254,16 +249,18 @@
 #define step(a,b)         step_(p->loc, a, b) 
 #define seq_ty(a)         seq_ty_(p->loc, a) 
 
+extern char * ns_lookup (const char *prefix);
+
 static PFpnode_t* 
 var_(PFloc_t loc, int varnum) 
 { 
     PFpnode_t *r = p_leaf(p_varref, loc);  
     if (r) {
-        r->sem.qname_raw.prefix = "#pf";
-        r->sem.qname_raw.loc = (char*) PFmalloc(8);
-        if (r->sem.qname_raw.loc) {
-            snprintf(r->sem.qname_raw.loc, 8, "heur%03d", varnum);
-            r->sem.qname_raw.loc[7] = 0;
+        char *varnme = (char*) PFmalloc(8);
+        if (varnme) {
+            snprintf(varnme, 8, "heur%03d", varnum);
+            varnme[7] = 0;
+            r->sem.qname = PFqname((PFns_t) { .prefix = "#pf", .uri = ns_lookup ("#pf") }, varnme);
         }
     }
     return r; 
@@ -282,8 +279,7 @@ atom_ty_(PFloc_t loc, char *prefix, char *tpe)
 { 
     PFpnode_t *r = p_wire1(p_atom_ty, loc, p_leaf(p_nil, loc));
     if (r) {
-        r->sem.qname_raw.prefix = prefix;
-        r->sem.qname_raw.loc = tpe;
+        r->sem.qname = PFqname((PFns_t) { .prefix = prefix, .uri = ns_lookup (prefix) }, tpe);
     }
     return r; 
 }
@@ -309,8 +305,7 @@ apply_(PFloc_t loc, char *ns, char* fcn, PFpnode_t *a)
 { 
     PFpnode_t *r = p_wire1(p_fun_ref, loc, a);
     if (r) {
-        r->sem.qname_raw.prefix = ns;
-        r->sem.qname_raw.loc = fcn;
+        r->sem.qname = PFqname((PFns_t) { .prefix = ns, .uri = ns_lookup(ns) }, fcn);
     }
     return r;
 }
@@ -456,8 +451,8 @@ revert_locpath(PFpnode_t **root, PFpnode_t* ctx, int gen_preds, int* sum)
         int delta = a.benefit;
         if (LL(p)->kind == p_node_ty && LL(L(p)) &&
             LL(L(p))->kind == p_req_ty && LL(LL(p)) &&
-            LL(LL(p))->kind == p_req_name && LL(LL(p))->sem.qname_raw.loc && 
-            LL(LL(p))->sem.qname_raw.loc[0]) 
+            LL(LL(p))->kind == p_req_name && PFqname_loc(LL(LL(p))->sem.qname) && 
+            PFqname_loc(LL(LL(p))->sem.qname)[0]) 
         {
            delta /= 2; /* specific path is cheaper than a wildcard path */
         }
@@ -492,7 +487,7 @@ var_independent(PFpnode_t *p, PFpnode_t *ignore, PFpnode_t *binds)
         PFpnode_t* b;
         for(b = binds; b->kind == p_binds; b = R(b)) {
             PFpnode_t *v = (L(b)->kind == p_let)?LL(L(b)):LL(LL(b));
-            if (!PFqname_raw_eq(p->sem.qname_raw, v->sem.qname_raw)) return 0;
+            if (!PFqname_eq(p->sem.qname, v->sem.qname)) return 0;
         }
     }
     if (L(p) && !var_independent(L(p), ignore, binds)) return 0;
@@ -509,7 +504,7 @@ var_findbind(PFpnode_t *v, PFpnode_t *EXPR2) {
             LL(v) && LL(v)->kind == p_vars && 
             LL(L(v)) && LL(L(v))->kind == p_var_type && 
             LL(LL(v)) && LL(LL(v))->kind == p_varref &&
-            !PFqname_raw_eq(LL(LL(v))->sem.qname_raw, EXPR2->sem.qname_raw)) return v;
+            !PFqname_eq(LL(LL(v))->sem.qname, EXPR2->sem.qname)) return v;
         v = R(v);
     }
     return NULL; 
@@ -605,7 +600,7 @@ try_rewrite(PFpnode_t **stack, int depth, int curvar)
     if (PATH1_REV) {
         /* get the parameters for the pf:text/pf:attribute call */
         PFpnode_t *arg = args(VAR1, nil);
-        char *prefix = "*", *loc = "*";
+        char *uri = "*", *loc = "*";
         
         if (h->kind == p_locpath && 
             L(h) && L(h)->kind == p_step &&
@@ -614,15 +609,15 @@ try_rewrite(PFpnode_t **stack, int depth, int curvar)
             LL(LL(h)) && LL(LL(h))->kind == p_req_name)
         {
             /* get the element type just before the text/attribute step */
-            loc = LL(LL(h))->sem.qname_raw.loc;
-            prefix = LL(LL(h))->sem.qname_raw.prefix;
+            loc = PFqname_loc(LL(LL(h))->sem.qname);
+            uri = PFqname_uri(LL(LL(h))->sem.qname);
         }
         if (tst == TST_ATTR) {  
             /* pf:attribute() has additional parameters wrt pf:text() */
-            arg = args(lit_str(req_name->sem.qname_raw.loc), 
-                       args(lit_str(req_name->sem.qname_raw.prefix), 
+            arg = args(lit_str(PFqname_loc(req_name->sem.qname)), 
+                       args(lit_str(PFqname_uri(req_name->sem.qname)), 
                             args(lit_str(loc), 
-                                 args(lit_str(prefix), arg))));
+                                 args(lit_str(uri), arg))));
         }
  
         /* create the bindings of our new enclosing flwr block */
