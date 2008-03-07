@@ -895,14 +895,13 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         module_base = PFparse_modules (proot, &PFquery,
                                        PFstate.standoff_axis_steps);
         proot = PFnormalize_abssyn (proot);
-        if (PFstate.output_format == PFoutput_format_milprint_summer) {
-            /* algebra MIL/MAL generation could/should also use it.. */
-            proot = PFheuristic_index (proot);
-        }
         PFns_init ();
         PFqname_init ();
         PFns_resolve (proot);
         PFextract_options (proot);
+        if (PFstate.output_format == PFoutput_format_milprint_summer) {
+            proot = PFheuristic_index (proot);
+        }
         PFvarscope (proot);
         PFfun_xquery_fo ();
         PFfun_check (proot);
