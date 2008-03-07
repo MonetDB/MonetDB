@@ -164,10 +164,13 @@ stream.
 @:mel_round(int)@
 @:mel_round(lng)@
 
-@m
-	.COMMAND dec_round( flt v, flt r ) : flt = flt_dec_round_wrap; "round off the value v to nearests multiple of r"
+@= mel_fround
+	.COMMAND dec_round( @1 v, @1 r ) : @1 = @1_dec_round_wrap; "round off the value v to nearests multiple of r"
 
-	.COMMAND dec_round( dbl v, dbl r ) : dbl = dbl_dec_round_wrap; "round off the value v to nearests multiple of r"
+	.COMMAND round( @1 v, bte r ) : @1 = @1_round_wrap; "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)"
+@m
+@:mel_fround(flt)@
+@:mel_fround(dbl)@
 
 @= mel_cast
  .COMMAND @1( str v ) : @1 = str_2_@1; "cast to @1 and check for overflow"
@@ -312,6 +315,7 @@ extern int SQLdebug;
 #include <algebra.h>
 #include "sql_storage.h"
 #include <store_sequence.h>
+#include <math.h>
 
 @-
 The code heavily depends on the (complex) data structures for
@@ -922,13 +926,15 @@ int
 			*res = (((*v + rnd)/scales[dff])*scales[dff]);
 		else
 			*res = (((*v - rnd)/scales[dff])*scales[dff]);
-	} else if (*r <= 0) {
+	} else if (*r <= 0 && -*r + *s > 0) {
 		int dff = -*r + *s;
 		lng rnd = scales[dff]>>1;
 		if (*v > 0)
 			*res = (((*v + rnd)/scales[dff])*scales[dff]);
 		else
 			*res = (((*v - rnd)/scales[dff])*scales[dff]);
+	} else {
+		*res = *v;
 	}
 	return GDK_SUCCEED;
 }
@@ -1003,6 +1009,33 @@ int
 		val /= *r;
 	}
 	*res = val;
+	return GDK_SUCCEED;
+}
+
+int 
+@1_round_wrap( @1 *res, @1 *v, bte *r )
+{
+	/* shortcut nil */
+	if (*v == @1_nil) {
+		*res = @1_nil;
+	} else if (*r < 0) {
+		int d = -*r;
+		@1 rnd = scales[d]>>1; 
+
+		if (*v > 0)
+			*res = (floor(((*v + rnd)/((@1)(scales[d]))))*scales[d]);
+		else
+			*res = (floor(((*v + rnd)/((@1)(scales[d]))))*scales[d]);
+	} else if (*r > 0) {
+		int d = *r;
+
+		if (*v > 0)
+			*res = (floor(*v*(@1)scales[d]+.5)/scales[d]);
+		else
+			*res = (floor(*v*(@1)scales[d]+.5)/scales[d]);
+	} else {
+		*res = *v;
+	}
 	return GDK_SUCCEED;
 }
 @c

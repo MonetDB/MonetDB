@@ -334,50 +334,34 @@ merely require a different address binding.
 
 The aggregate operations work on doubles by default.
 This calls for casting values around in the process.
+
 @= mal_round
-command dec_round( v:@1, r:@1 ) :@1 
+command sql.dec_round( v:@1, r:@1 ) :@1 
 address @1_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
-
-command round( v:@1, d:int, s:int, r:bte) :@1
+command sql.round( v:@1, d:int, s:int, r:bte) :@1
 address @1_round_wrap
 comment "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)";
-@-
-@{
-command dec_round( v:@1, r:dbl ) :@1 
-address @1_dbl_dec_round_wrap
-comment "round off the value v to nearests multiple of r";
-command dec_round( v:@1, r:int ) :@1 
-address @1_int_dec_round_wrap
-comment "round off the value v to nearests multiple of r";
-@}
+
 @mal
-
-command aggr.exist(b:bat[:any_1,:any_2], h:any_1):bit 
-address ALGexist;
-
 @:mal_round(bte)@
 @:mal_round(sht)@
 @:mal_round(int)@
 @:mal_round(lng)@
 
-command dec_round( v:flt, r:flt ) :flt 
-address flt_flt_dec_round_wrap
+@= mal_fround
+command sql.dec_round( v:@1, r:@1 ) :@1 
+address @1_dec_round_wrap
 comment "round off the value v to nearests multiple of r";
 
-command dec_round( v:dbl, r:dbl ) :dbl 
-address dbl_dbl_dec_round_wrap
-comment "round off the value v to nearests multiple of r";
-@-
-@{
-command dec_round( v:flt, r:int ) :flt 
-address flt_int_dec_round_wrap
-comment "round off the value v to nearests multiple of r";
-command dec_round( v:dbl, r:int ) :dbl
-address dbl_int_dec_round_wrap
-comment "round off the value v to nearests multiple of r";
-@}
+command sql.round( v:@1, r:bte) :@1
+address @1_round_wrap
+comment "round off the floating point v to r digits behind the dot (if r < 0, before the dot)";
+
+@mal
+@:mal_fround(flt)@
+@:mal_fround(dbl)@
 
 @= mal_cast
 command calc.@1( v:str ) :@1 
@@ -567,6 +551,9 @@ comment "return the densely ranked groups";
 command sql.dense_rank(b:bat[:oid,:any_1]) :bat[:oid,:int] 
 address sql_dense_rank
 comment "return the densely ranked bat";
+
+command aggr.exist(b:bat[:any_1,:any_2], h:any_1):bit 
+address ALGexist;
 
 function batcalc.mark_grp( b:bat[:oid,:any_1], a:bat[:any_2,:any_3], g:bat[:oid,:oid]) :bat[:oid,:int]; 
 	x := algebra.mark_grp(a,g,1:oid);
@@ -764,8 +751,6 @@ sql5_export str dump_cache(int *r);
 sql5_export str dump_opt_stats(int *r);
 @= round_export
 sql5_export str @1_dec_round_wrap( @1 *res, @1 *v, @1 *r );
-sql5_export str @1_dbl_dec_round_wrap( @1 *res, @1 *v, dbl *r );
-sql5_export str @1_int_dec_round_wrap( @1 *res, @1 *v, int *r );
 sql5_export str @1_round_wrap( @1 *res, @1 *v, int *d, int *s, bte *r );
 sql5_export str str_2dec_@1( @1 *res, str *val, int *d, int *sc );
 sql5_export str str_2num_@1( @1 *res, str *v, int *len );
@@ -796,12 +781,11 @@ sql5_export str SQL@1_2_str( str *res, @1 *val );
 sql5_export str SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLbatstr_cast(int *r, int *eclass, int *d1, int *s1, int *has_tz, int *v, int *digits );
 @= fround_export
-sql5_export str @1_@2_dec_round_wrap( @1 *res, @1 *v, @2 *r );
+sql5_export str @1_dec_round_wrap( @1 *res, @1 *v, @1 *r );
+sql5_export str @1_round_wrap( @1 *res, @1 *v, bte *r );
 @h
-@:fround_export(flt,flt)@
-@:fround_export(flt,int)@
-@:fround_export(dbl,dbl)@
-@:fround_export(dbl,int)@
+@:fround_export(flt)@
+@:fround_export(dbl)@
 @= c_interval_export
 sql5_export str month_interval_@1( int *ret, @1 *s, int *ek, int *sk );
 sql5_export str second_interval_@1( lng *res, @1 *s, int *ek, int *sk );
@@ -897,6 +881,7 @@ First introduce the routines to be called by the front-end.
 #include <sql_datetime.h>
 #include <rel_optimizer.h>
 #include <rel_bin.h>
+#include <math.h>
 
 backend *
 backend_reset(backend *b)
@@ -2071,29 +2056,17 @@ str
 			*res = (((*v + rnd)/scales[dff])*scales[dff]);
 		else
 			*res = (((*v - rnd)/scales[dff])*scales[dff]);
-	} else if (*r <= 0) {
+	} else if (*r <= 0 && -*r + *s > 0) {
 		int dff = -*r + *s;
 		lng rnd = scales[dff]>>1;
 		if (*v > 0)
 			*res = (((*v + rnd)/scales[dff])*scales[dff]);
 		else
 			*res = (((*v - rnd)/scales[dff])*scales[dff]);
+	} else {
+		*res = *v;
 	}
 	return MAL_SUCCEED;
-}
-
-str 
-@1_dbl_dec_round_wrap( @1 *res, @1 *v, dbl *r )
-{
-	@1 add = *r;	/* lossy conversion */
-	return @1_dec_round_wrap(res,v, &add);
-}
-
-str 
-@1_int_dec_round_wrap( @1 *res, @1 *v, int *r )
-{
-	@1 add = *r;	/* lossy conversion */
-	return @1_dec_round_wrap(res,v, &add);
 }
 
 str
@@ -2212,7 +2185,7 @@ batstr_2num_@1( int *res, int *bid, int *len )
 
 @= fround
 str 
-@1_@2_dec_round_wrap( @1 *res, @1 *v, @2 *r )
+@1_dec_round_wrap( @1 *res, @1 *v, @1 *r )
 {
 	@1 val = *v;
 
@@ -2223,11 +2196,37 @@ str
 	*res = val;
 	return MAL_SUCCEED;
 }
+
+str 
+@1_round_wrap( @1 *res, @1 *v, bte *r )
+{
+	/* shortcut nil */
+	if (*v == @1_nil) {
+		*res = @1_nil;
+	} else if (*r < 0) {
+		int d = -*r;
+		@1 rnd = scales[d]>>1; 
+
+		if (*v > 0)
+			*res = (floor(((*v + rnd)/((@1)(scales[d]))))*scales[d]);
+		else
+			*res = (floor(((*v + rnd)/((@1)(scales[d]))))*scales[d]);
+	} else if (*r > 0) {
+		int d = *r;
+
+		if (*v > 0)
+			*res = (floor(*v*(@1)scales[d]+.5)/scales[d]);
+		else
+			*res = (floor(*v*(@1)scales[d]+.5)/scales[d]);
+	} else {
+		*res = *v;
+	}
+	return MAL_SUCCEED;
+}
+
 @c
-@:fround(flt,flt)@
-@:fround(flt,int)@
-@:fround(dbl,dbl)@
-@:fround(dbl,int)@
+@:fround(flt)@
+@:fround(dbl)@
 
 @= cast
 str

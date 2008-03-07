@@ -745,7 +745,8 @@ mvc_bind_schema(mvc *m, char *sname)
 	if (!tr)
 		return NULL;
 
-	if (m->last && strcmp(m->last->t->s->base.name, sname) == 0)
+	if (m->last && m->last->t->s &&
+		strcmp(m->last->t->s->base.name, sname) == 0)
 		s = m->last->t->s;
 	else 
  		s = find_sql_schema(tr, sname);

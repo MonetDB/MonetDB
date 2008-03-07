@@ -295,7 +295,7 @@ psm_case( mvc *sql, scope *scp, sql_subtype *res, dnode *case_when, int is_func 
 			stmt *case_stmt = NULL;
 
 			if (!when_value || 
-			   (cond = sql_compare(sql, scp, stmt_dup(v), when_value, "=", sql_sel)) == NULL || 
+			   (cond = sql_compare(sql, scp, stmt_dup(v), when_value, "=", sql_sel, ek)) == NULL || 
 			   (if_stmts = sequential_block( sql, scp, res, m->next->data.lval, NULL, is_func)) == NULL ) {
 				stmt_destroy(v);
 				cond_stmt_destroy(else_stmt);

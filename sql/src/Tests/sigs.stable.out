@@ -177,6 +177,8 @@ module 'sql_server'
 [ "rank(BAT[oid,any::1]) : BAT[oid,int]"						  ]
 [ "rank_grp(BAT[oid,any::1], BAT[oid,oid], BAT[oid,oid]) : BAT[oid,int]"		  ]
 [ "round(bte, int, int, bte) : bte"							  ]
+[ "round(dbl, bte) : dbl"								  ]
+[ "round(flt, bte) : flt"								  ]
 [ "round(int, int, int, bte) : int"							  ]
 [ "round(lng, int, int, bte) : lng"							  ]
 [ "round(sht, int, int, bte) : sht"							  ]
