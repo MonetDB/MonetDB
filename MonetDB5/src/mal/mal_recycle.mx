@@ -64,10 +64,14 @@ which inspects the variable table for alternative results.
 
 /* #define _DEBUG_RECYCLE_  trace behavior */
 
-extern int retainPolicy;
-extern int reusePolicy;
-extern int rcachePolicy;
 extern int recycleVersion;  /* version of recycle table */
+extern int retainPolicy;
+extern int retainTime;
+extern size_t retainSize;
+
+extern int reusePolicy;
+
+extern int rcachePolicy;
 extern int recycleClaim;
 extern int recycleCacheLimit;
 extern MT_Lock recycleLock;
@@ -82,6 +86,7 @@ mal_export void RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #include "mal_config.h"
 #include "mal_recycle.h"
 #include "mal_exception.h"
+#include "mal_interpreter.h"
 #include "mal_function.h"
 
 #define isResStored(M,i) isVarKept(M, getArg(M->stmt[i],0))
@@ -89,22 +94,26 @@ mal_export void RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 MT_Lock recycleLock ;
 int recycleVersion = 0;  /* version of recycle table */
 MalBlkPtr recycleBlk = NULL;
-int recycleClaim=0;
-int recycleCacheLimit=0;
 
 int retainPolicy = 0;  /* recycle retainment policy
 			0: baseline, keeps stat, no retain, no reuse
 			1: infinite case, retain all
-			2: cost-based on semantics, retain if beneficial
+			2: time-based semantics, retain if beneficial 
 			3: just temporal based, no range matching */
+int retainTime = 0;
+size_t retainSize = 0;
+
 int reusePolicy = 0;	/* recycle reuse policy
 			0: baseline, keeps stat, no retain, no reuse
 			1: reuse smallest select covering 
 			2: exact covering  */
+
 int rcachePolicy = 0;  /* recycle cache management policy
 			0: baseline, do nothing
-			1: throw LRU
+			1: throw LRU by setting the limit
 			2: cost-based, throw least beneficial */
+int recycleCacheLimit=0;
+int recycleClaim=0;		/* avoid stale tables */
 
 @-
 The Recycle catalog is a global structure, which should be
@@ -163,6 +172,7 @@ the performance record.
 @c
 void RECYCLEcache(){
 	int i, max;
+	InstrPtr pc;
 
 	max= 0;
 	for(i=0; i< recycleBlk->stop; i++){
@@ -175,6 +185,10 @@ void RECYCLEcache(){
 		stream_printf(GDKout,"RECYCLE cache, remove %d \n",max);
 #endif
 		mal_set_lock(recycleLock,"recycle");
+		pc= getInstrPtr(recycleBlk,max);
+		for(i=0; i< pc->argc; i++)
+		if( isaBatType(getVarType(recycleBlk, getArg(pc,i))) )
+			BBPdecref(getVarConstant(recycleBlk,i).val.bval,TRUE);
 		removeInstruction(recycleBlk,getInstrPtr(recycleBlk,max));
 		recycleVersion++;
 		mal_unset_lock(recycleLock,"recycle");
@@ -386,12 +400,11 @@ which is stored in the stack frame to avoid concurrency problems.
 @c
 void
 RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-#ifdef _DEBUG_RECYCLE_
 	lng clk = 0;
-	
+#ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLEexit policy %d \n",retainPolicy);
-	clk= GDKusec()-stk->clk;
 #endif
+	clk= GDKusec()-stk->clk;
 
 	if( recycleCacheLimit)
 		RECYCLEcache();
@@ -404,14 +417,23 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		RECYCLEnew(mb,stk, p);
 		break;
 	case 2:
-		/* 2: cost-based on semantics, retain if beneficial */
+		/* 2: time-based semantics, retain if beneficial */
+		if( clk > retainTime)
+			RECYCLEnew(mb,stk, p);
 		break;
 	case 3:
 		/* 3: just temporal based, no range matching */
 #ifdef _DEBUG_RECYCLE_
 		stream_printf(GDKout,"RECYCLEexit time %d \n",clk);
 #endif
-		;
+		if(retainSize && isaBatType(getArgType(mb,p,0)) ){
+			BAT *b= BATdescriptor(*(int*) getArgReference(stk,p,0));
+			if( b){
+				if( BATcount(b)> retainSize)
+					RECYCLEnew(mb,stk, p);
+				BBPreleaseref(b->batCacheid);
+			}
+		}
 	}
 }
 @}

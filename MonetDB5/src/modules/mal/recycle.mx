@@ -157,6 +157,10 @@ RECYCLEsetRetain(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) mb;
 	retainPolicy = * (int*) getArgReference(stk, p,1);
+	if( retainPolicy == 2 && p->argc >= 2)
+		retainTime = * (int*) getArgReference(stk, p,2);
+	if( retainPolicy == 3 && p->argc >= 2)
+		retainSize = * (size_t*) getArgReference(stk, p,2);
 	(void)retainPolicy;
 	return MAL_SUCCEED;
 }

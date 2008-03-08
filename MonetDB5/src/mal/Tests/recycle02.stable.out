@@ -79,18 +79,18 @@ end qry;	# 7
 #
 function user.main():void;	# 0  (main:void)
 #test the basics of the recycler 	# 1  (_1:str)
-# re-use joins 	# 2  (_2:str)
-    recycle.setRetainPolicy(1);	# 3 RECYCLEsetRetain (_3:void)<-(_4:int)
-    recycle.setReusePolicy(1);	# 4 RECYCLEsetReuse (_5:void)<-(_4:int)
-    io.print("start");	# 5 IOprint_val (_9:void)<-(_10:str)
-    user.qry(1,10);	# 6  (_11:void)<-(_4:int)(_12:int)
-    io.print("zoom in");	# 7 IOprint_val (_13:void)<-(_14:str)
-    user.qry(1,5);	# 8  (_15:void)<-(_4:int)(_16:int)
-    io.print("next step");	# 9 IOprint_val (_17:void)<-(_18:str)
-    user.qry(2,3);	# 10  (_19:void)<-(_20:int)(_21:int)
-    io.print("last");	# 11 IOprint_val (_22:void)<-(_23:str)
-    user.qry(1,11);	# 12  (_24:void)<-(_4:int)(_25:int)
-    recycle.dump();	# 13 RECYCLEdump (_26:void)
+# re-use joins temporal constrainted 	# 2  (_2:str)
+    recycle.setRetainPolicy(2,20);	# 3 RECYCLEsetRetain (_3:void)<-(_4:int)(_5:int)
+    recycle.setReusePolicy(1);	# 4 RECYCLEsetReuse (_6:void)<-(_7:int)
+    io.print("start");	# 5 IOprint_val (_11:void)<-(_12:str)
+    user.qry(1,10);	# 6  (_13:void)<-(_7:int)(_14:int)
+    io.print("zoom in");	# 7 IOprint_val (_15:void)<-(_16:str)
+    user.qry(1,5);	# 8  (_17:void)<-(_7:int)(_18:int)
+    io.print("next step");	# 9 IOprint_val (_19:void)<-(_20:str)
+    user.qry(2,3);	# 10  (_21:void)<-(_4:int)(_22:int)
+    io.print("last");	# 11 IOprint_val (_23:void)<-(_24:str)
+    user.qry(1,11);	# 12  (_25:void)<-(_7:int)(_26:int)
+    recycle.dump();	# 13 RECYCLEdump (_27:void)
 end main;	# 14  
 [ "start" ]
 #-----------------#
@@ -144,25 +144,17 @@ Recycler  catalog
     _0 := user.bind("schema","table","column",0);	# 0  (_0:BAT)<-(_1:str)(_2:str)(_3:str)(_4:int)
     _5 := algebra.select(<tmp_20>,1,10);	# 1 ALGselect (_5:BAT)<-(_0:BAT)(_6:int)(_7:int)
     _8 := algebra.markT(<tmp_20>,0@0);	# 2 ALGtmark (_8:BAT)<-(_0:BAT)(_9:oid)
-    _10 := bat.reverse(<tmp_23>);	# 3 BKCreverse (_10:BAT)<-(_8:BAT)
-    _11 := algebra.join(<~tmp_23>,<tmp_21>);	# 4 ALGjoin (_11:BAT)<-(_10:BAT)(_5:BAT)
-    _12 := algebra.select(<tmp_21>,1,5);	# 5 ALGselect (_12:BAT)<-(_5:BAT)(_6:int)(_13:int)
-    _14 := algebra.join(<~tmp_23>,<tmp_22>);	# 6 ALGjoin (_14:BAT)<-(_10:BAT)(_12:BAT)
-    _15 := algebra.select(<tmp_22>,2,3);	# 7 ALGselect (_15:BAT)<-(_12:BAT)(_16:int)(_17:int)
-    _18 := algebra.join(<~tmp_23>,<tmp_24>);	# 8 ALGjoin (_18:BAT)<-(_10:BAT)(_15:BAT)
-    _19 := algebra.select(<tmp_20>,1,11);	# 9 ALGselect (_19:BAT)<-(_0:BAT)(_6:int)(_20:int)
-    _21 := algebra.join(<~tmp_23>,<tmp_30>);	# 10 ALGjoin (_21:BAT)<-(_10:BAT)(_19:BAT)
-#   0 count=  1 ticks= 103     _0 := user.bind("schema","table","column",0);
-#   1 count=  2 ticks=  53     _5 := algebra.select(<tmp_20>,1,10);
-#   2 count=  1 ticks=  41     _8 := algebra.markT(<tmp_20>,0@0);
-#   3 count=  1 ticks=   5     _10 := bat.reverse(<tmp_23>);
-#   4 count=  1 ticks= 214     _11 := algebra.join(<~tmp_23>,<tmp_21>);
-#   5 count=  2 ticks=  18     _12 := algebra.select(<tmp_21>,1,5);
-#   6 count=  1 ticks=  31     _14 := algebra.join(<~tmp_23>,<tmp_22>);
-#   7 count=  1 ticks=  12     _15 := algebra.select(<tmp_22>,2,3);
-#   8 count=  1 ticks=  29     _18 := algebra.join(<~tmp_23>,<tmp_24>);
-#   9 count=  1 ticks=  24     _19 := algebra.select(<tmp_20>,1,11);
-#  10 count=  1 ticks=  27     _21 := algebra.join(<~tmp_23>,<tmp_30>);
+    _10 := algebra.join(<~tmp_23>,<tmp_21>);	# 3 ALGjoin (_10:BAT)<-(_11:BAT)(_5:BAT)
+    _12 := algebra.join(<~tmp_23>,<tmp_22>);	# 4 ALGjoin (_12:BAT)<-(_11:BAT)(_13:BAT)
+    _14 := algebra.join(<~tmp_23>,<tmp_24>);	# 5 ALGjoin (_14:BAT)<-(_11:BAT)(_15:BAT)
+    _16 := algebra.join(<~tmp_23>,<tmp_30>);	# 6 ALGjoin (_16:BAT)<-(_11:BAT)(_17:BAT)
+#   0 count=  1 ticks=  81     _0 := user.bind("schema","table","column",0);
+#   1 count=  3 ticks=  55     _5 := algebra.select(<tmp_20>,1,10);
+#   2 count=  1 ticks=  42     _8 := algebra.markT(<tmp_20>,0@0);
+#   3 count=  1 ticks=  81     _10 := algebra.join(<~tmp_23>,<tmp_21>);
+#   4 count=  1 ticks=  30     _12 := algebra.join(<~tmp_23>,<tmp_22>);
+#   5 count=  1 ticks=  30     _14 := algebra.join(<~tmp_23>,<tmp_24>);
+#   6 count=  1 ticks=  29     _16 := algebra.join(<~tmp_23>,<tmp_30>);
 
 # 12:49:07 >  
 # 12:49:07 >  Done.

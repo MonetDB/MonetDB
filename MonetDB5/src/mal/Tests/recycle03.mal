@@ -1,5 +1,5 @@
 #test the basics of the recycler
-# re-use joins temporal constrainted
+# re-use joins size constrainted
 
 function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
 	b:= bat.new(:oid,:int);
@@ -27,7 +27,7 @@ function qry(low:int, hgh:int);
 	io.print(j);
 end qry;
 
-recycle.setRetainPolicy(2,20);
+recycle.setRetainPolicy(3,5);
 recycle.setReusePolicy(1);
 optimizer.recycle("user","qry");
 io.print("start");
