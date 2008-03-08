@@ -16,7 +16,45 @@
 
 @f opt_recycler
 @- The recycler
-The recycler optimizer marks the variables subject to recycling control.
+Query optimization and processing in off-the-shelf database systems is often
+still focussed on individual queries. The queries are analysed in isolation
+and ran against a kernel regardless opportunities offered by concurrent or
+previous invocations.
+
+This approach is far from optimal and two directions to improve
+are explored: materialized views and (partial) result-set reuse.
+Materialized views are derived from query logs. They represent
+common sub-queries, whose materialization improves
+subsequent processing times.
+Re-use of (partial) results is used in those cases where a
+zooming-in or navigational application is at stake.
+
+The Recycler optimizer and module extends this with a middle out approach.
+They exploits the materialize-all-intermediate approach of MonetDB
+by deciding to keep a hold on them as long as deemed benificial.
+
+The approach taken is to mark the variables in a MAL program
+using the recycler optimizer call, such that their result is retained
+in a global recycle cache hardwired in the MAL interpreter.
+Instructions become subject to the Recycler if
+at least one of its arguments is a BAT and all others are
+either constants or variables already known in the Recycler.
+
+Upon execution, the recycler is called from the innerloop
+of the MAL interpreter to first check for
+an up-to-date result to be picked up at no cost.
+Otherwise, it evaluates the instruction and calls upon
+policy functions to decide if it is worthwhile to keep.
+
+The Recycler comes with a few policy controlling operators
+to experiment with its effect in concrete settings.
+The retain policy controls when to keep results around,o
+the reuse policy looks after exact duplicate instructions
+or uses semantic knowledge on MAL instructions to detect
+potential reuse gain (e.g. reuse select results).
+And finally, the cache policy looks after the storage space for the 
+intermediate result pool.
+The details are described in the recycle module @ref{}.
 @{
 @mal
 pattern optimizer.recycle():str

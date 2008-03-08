@@ -1050,6 +1050,7 @@ of simple SQL rewrites using the module name as the discriminator.
 * Peephole Optimization::
 * Query Plans::
 * Range Propagation::
+* Recycler::
 * Remote Queries::
 * Singleton Sets ::
 * Stack Reduction::
