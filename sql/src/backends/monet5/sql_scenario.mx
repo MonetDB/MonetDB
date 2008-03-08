@@ -1085,8 +1085,8 @@ In the final phase we add any debugging control
 		SQLsetTimer(c, FALSE);
 
 	if (be->mvc->mode == m_profile ) {
-		be->qry = sql_escape_str(QUERY(m->scanner));
 		be->Tparse = GDKusec() - T0;
+		be->qry = sql_escape_str(QUERY(m->scanner));
 	}
 	scanner_query_processed(&(m->scanner));
 

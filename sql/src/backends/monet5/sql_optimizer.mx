@@ -454,6 +454,7 @@ str defaultPlan=
 	"commonTerms,"
 	"accumulators,"
 	"deadcode,"
+	"recycle,"
 	"reduce,"
 	"garbageCollector," 
 	"multiplex";
