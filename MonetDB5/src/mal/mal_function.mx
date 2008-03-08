@@ -628,6 +628,10 @@ is returned.
 @c
 void printFunction(stream *fd, MalBlkPtr mb, int flg) {
 	int i;
+	if( mb == NULL){
+		stream_printf(fd, "# function definition missing\n");
+		return;
+	}
 	if (flg & LIST_MAPI) {
 		/* a bit dirty, but only here we have the number of lines */
 		stream_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */

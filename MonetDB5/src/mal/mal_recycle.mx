@@ -68,7 +68,8 @@ extern int retainPolicy;
 extern int reusePolicy;
 extern int rcachePolicy;
 extern int recycleVersion;  /* version of recycle table */
-extern int recycleUsers;
+extern int recycleClaim;
+extern int recycleCacheLimit;
 extern MT_Lock recycleLock;
 extern MalBlkPtr recycleBlk;
 
@@ -88,7 +89,8 @@ mal_export void RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 MT_Lock recycleLock ;
 int recycleVersion = 0;  /* version of recycle table */
 MalBlkPtr recycleBlk = NULL;
-int recycleUsers=0;
+int recycleClaim=0;
+int recycleCacheLimit=0;
 
 int retainPolicy = 0;  /* recycle retainment policy
 			0: baseline, keeps stat, no retain, no reuse
@@ -150,6 +152,36 @@ void RECYCLEversion(MalBlkPtr mb)
 	}	
 }
 @-
+The cache of recycled instructions can be kept low.
+Once the cache is filled, we have to drop instructions
+and associated variables. At the same time we should
+invalidate the cache version, such that others can
+re-synchronize.
+
+For the recycle cache LRU scheme we mis-use a field in
+the performance record.
+@c
+void RECYCLEcache(){
+	int i, max;
+
+	max= 0;
+	for(i=0; i< recycleBlk->stop; i++){
+		recycleBlk->profiler[i].ibytes++;
+		if( recycleBlk->profiler[max].ibytes <recycleBlk->profiler[i].ibytes)
+			max = i;
+	}
+	if( recycleBlk->stop > recycleCacheLimit && recycleClaim <= 1){
+#ifdef _DEBUG_RECYCLE_
+		stream_printf(GDKout,"RECYCLE cache, remove %d \n",max);
+#endif
+		mal_set_lock(recycleLock,"recycle");
+		removeInstruction(recycleBlk,getInstrPtr(recycleBlk,max));
+		recycleVersion++;
+		mal_unset_lock(recycleLock,"recycle");
+	}
+}
+
+@-
 The overloaded algebra operator simply calls the
 underlying implementation and collects statistics on the
 cost.
@@ -162,6 +194,9 @@ static void RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	InstrPtr q;
 	
 	RECYCLEspace();
+	if( recycleCacheLimit  &&
+		recycleCacheLimit < recycleBlk->stop)
+			return; /* no more caching */
 	q = copyInstruction(p);
 	for(i = 0; i< p->argc; i++){
 		j= getArg(p,i);
@@ -174,7 +209,7 @@ static void RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			mb->var[j]->recycle= c;
 			if( isVarRecycled(mb, j))
 				setVarKept(mb, j);
-			setVarUsed(mb,j);
+			setVarUsed(recycleBlk,c);
 		}
 	}
 	i= recycleBlk->stop;
@@ -358,6 +393,8 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	clk= GDKusec()-stk->clk;
 #endif
 
+	if( recycleCacheLimit)
+		RECYCLEcache();
 	switch(retainPolicy){
 	case 0:
 		/* 0: baseline, keeps stat, no retain, no reuse */
