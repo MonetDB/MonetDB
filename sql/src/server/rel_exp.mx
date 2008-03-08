@@ -478,6 +478,16 @@ rel_find_exp( sql_rel *rel, sql_exp *e)
 			if (rel->exps && exps_bind_column(rel->exps, e->r)) 
 				ne = e;
 			break;
+		case op_union:
+		case op_except:
+		case op_inter:
+		{
+			if (rel->l)
+				ne = rel_find_exp(rel->l, e);
+			else if (rel->exps)
+				ne = exps_bind_column(rel->exps, e->r);
+		}
+		break;
 		case op_basetable: 
 	    	{
 			sql_table *t = rel->l;
@@ -502,6 +512,7 @@ rel_find_exp( sql_rel *rel, sql_exp *e)
 			}
 			break;
 	    	}
+		
 		default:
 			if (!is_project(rel->op) && rel->l)
 				ne = rel_find_exp(rel->l, e);

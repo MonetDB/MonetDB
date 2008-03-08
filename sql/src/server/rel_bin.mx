@@ -275,7 +275,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 	 }	break;
 	case e_cmp: {
 		stmt *l = NULL, *r = NULL;
-		int swapped = 0;
+		int swapped = 0, sel = 0;
 		sql_exp *re = e->r;
 		prop *p;
 
@@ -339,13 +339,17 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
  			r = exp_bin(sql, e->r, left, NULL, grp);
 		else
  			r = exp_bin(sql, e->r, right, NULL, grp);
+		if (!r && !swapped) {
+ 			r = exp_bin(sql, e->r, left, NULL, grp);
+			sel = 1;
+		}
 		if (!l || !r) {
 			assert(0);
 			if (l) stmt_destroy(l);
 			if (r) stmt_destroy(r);
 			return NULL;
 		}
-		if (left && right && re->card > CARD_ATOM) {
+		if (left && right && re->card > CARD_ATOM && !sel) {
 			if (l->nrcols == 0)
 				l = stmt_const(bin_first_column(swapped?right:left), l); 
 			if (r->nrcols == 0)
@@ -534,6 +538,15 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 			}
 			if (!join) {
 				join = s;
+			} else if (s->type != st_join) {
+				/* handle select expressions */
+				if (s->h == join->h) {
+					join = stmt_semijoin(join,s);
+				} else {
+					join = stmt_reverse(join);
+					join = stmt_semijoin(join,s);
+					join = stmt_reverse(join);
+				}
 			} else {
 				/* break column join */
 				stmt *l = stmt_mark(stmt_reverse(join), 100);

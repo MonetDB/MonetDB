@@ -66,7 +66,7 @@ Over..
 |     _20{rows=109:lng} := nil;                                                |
 |     bat.append(_21,_9,true);                                                 |
 |     _9{rows=1:lng} := nil;                                                   |
-|     _25{rows=56:lng} := algebra.select(_21,nil:sht,2,false,false);           |
+|     _25{rows=56:lng} := algebra.uselect(_21,nil:sht,2,false,false);          |
 |     _21{rows=111:lng} := nil;                                                |
 |     _29{rows=56:lng,tlb>=0@0:oid,tub<1@0:oid} := algebra.markT(_25,0@0);     |
 |     _25{rows=56:lng} := nil;                                                 |

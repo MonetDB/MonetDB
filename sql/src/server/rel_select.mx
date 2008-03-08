@@ -168,6 +168,17 @@ rel_subtype( sql_rel *r )
 	return NULL;
 }
 
+static sql_exp*
+exp_label( sql_exp *e, int nr)
+{
+	char name[16], *nme;
+
+	nme = number2name(name, 16, nr);
+	assert(e->name == NULL);
+	e->name = _strdup(nme);
+	return e;
+}
+
 static void
 rel_label( sql_rel *r, int nr)
 {
@@ -2237,7 +2248,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				if (z) {
 					rl = z;
 				} else {
- 					rl = rel_project_exp(r);
+ 					rl = rel_project_exp(exp_label(r, ++sql->label));
 				}
 				if (right) {
 					rl = rel_setop(right, rl, op_union);

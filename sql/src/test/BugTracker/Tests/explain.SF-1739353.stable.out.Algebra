@@ -64,7 +64,7 @@ Over..
 | var s27 := bte("2");                                                  |
 | var s26 := sht(s27);                                                  |
 | s27 := nil;                                                           |
-| var s8 := s9.select(sht(nil), s26, FALSE, FALSE);                     |
+| var s8 := s9.uselect(sht(nil), s26, FALSE, FALSE);                     |
 | s9 := nil;                                                            |
 | s26 := nil;                                                           |
 | var s28 := oid("0@0");                                                |

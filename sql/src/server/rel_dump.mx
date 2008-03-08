@@ -141,7 +141,7 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 	default:
 		;
 	}
-	if (is_ascending(e))
+	if (e->type != e_atom && is_ascending(e))
 		printf(" ASC");
 	if (e->name && alias) {
 		printf(" as ");
@@ -310,7 +310,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 			printf(" as %s", rel->name);
 		break;
 	default:
-		printf("todo: print %u\n", rel->op);
+		assert(0);
 	}
 	if (!depth)
 		printf("\n");
