@@ -39,7 +39,10 @@ comment "Dump summary of recycle table for potential re-use benefits";
 
 pattern setRetainPolicy(p:int...):void
 address RECYCLEsetRetain
-comment "Set recycler retainment policy";
+comment "Set recycler retainment policy:
+1- nothing to be done
+2- requires a minmal cut off time argument
+3- requires a minimal cut off result size";
 
 pattern setReusePolicy(p:int...):void
 address RECYCLEsetReuse
@@ -47,7 +50,9 @@ comment "Set recycler reuse policy";
 
 pattern setCachePolicy(p:int...):void
 address RECYCLEsetCache
-comment "Set recycler cache policy";
+comment "Set recycler cache policy:
+1- do nothing
+2- LRU scheme with additional cache limit set.";
 
 command shutdown():void
 address RECYCLEshutdown
