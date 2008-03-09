@@ -139,15 +139,7 @@ end main;	# 14
 [ 8@0,	  8	  ]
 [ 9@0,	  9	  ]
 [ 10@0,	  10	  ]
-[ 11@0,	  11	  ]
 Recycler  catalog 
-    _0 := user.bind("schema","table","column",0);	# 0  (_0:BAT)<-(_1:str)(_2:str)(_3:str)(_4:int)
-    _5 := algebra.select(<tmp_20>,1,10);	# 1 ALGselect (_5:BAT)<-(_0:BAT)(_6:int)(_7:int)
-    _8 := algebra.markT(<tmp_20>,0@0);	# 2 ALGtmark (_8:BAT)<-(_0:BAT)(_9:oid)
-    _10 := algebra.join(<~tmp_23>,<tmp_21>);	# 3 ALGjoin (_10:BAT)<-(_11:BAT)(_5:BAT)
-    _12 := algebra.join(<~tmp_23>,<tmp_22>);	# 4 ALGjoin (_12:BAT)<-(_11:BAT)(_13:BAT)
-    _14 := algebra.join(<~tmp_23>,<tmp_24>);	# 5 ALGjoin (_14:BAT)<-(_11:BAT)(_15:BAT)
-    _16 := algebra.join(<~tmp_23>,<tmp_30>);	# 6 ALGjoin (_16:BAT)<-(_11:BAT)(_17:BAT)
 #   0 count=  1 ticks=  81     _0 := user.bind("schema","table","column",0);
 #   1 count=  3 ticks=  55     _5 := algebra.select(<tmp_20>,1,10);
 #   2 count=  1 ticks=  42     _8 := algebra.markT(<tmp_20>,0@0);

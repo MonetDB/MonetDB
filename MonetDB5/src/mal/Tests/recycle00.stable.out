@@ -52,10 +52,8 @@ end main;	# 10
 [ "last" ]
 [ 529 ]
 Recycler  catalog 
-    _0 := 23;	# 0  (_0:int)<-(_0:int)
-    _1 := calc.*(23,23);	# 1 CALCbinaryMULintint (_1:int)<-(_0:int)(_0:int)
-#   0 count=  1 ticks=  15     _0 := 23;
-#   1 count=  1 ticks=   9     _1 := calc.*(23,23);
+#   0 count=  1 ticks=  19     _0 := 23;
+#   1 count=  1 ticks=  12     _1 := calc.*(23,23);
 
 # 12:49:06 >  
 # 12:49:06 >  Done.

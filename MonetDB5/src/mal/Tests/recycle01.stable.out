@@ -89,16 +89,11 @@ end main;	# 14
 [ "next step" ]
 [ "last" ]
 Recycler  catalog 
-    _0 := user.bind("schema","table","column",0);	# 0  (_0:BAT)<-(_1:str)(_2:str)(_3:str)(_4:int)
-    _5 := algebra.select(<tmp_20>,1,10);	# 1 ALGselect (_5:BAT)<-(_0:BAT)(_6:int)(_7:int)
-    _8 := algebra.select(<tmp_21>,1,5);	# 2 ALGselect (_8:BAT)<-(_5:BAT)(_6:int)(_9:int)
-    _10 := algebra.select(<tmp_22>,2,3);	# 3 ALGselect (_10:BAT)<-(_8:BAT)(_11:int)(_12:int)
-    _13 := algebra.select(<tmp_20>,1,11);	# 4 ALGselect (_13:BAT)<-(_0:BAT)(_6:int)(_14:int)
-#   0 count=  1 ticks=  78     _0 := user.bind("schema","table","column",0);
-#   1 count=  2 ticks=  55     _5 := algebra.select(<tmp_20>,1,10);
-#   2 count=  2 ticks=  20     _8 := algebra.select(<tmp_21>,1,5);
-#   3 count=  1 ticks=  14     _10 := algebra.select(<tmp_22>,2,3);
-#   4 count=  1 ticks=  15     _13 := algebra.select(<tmp_20>,1,11);
+#   0 count=  1 ticks=  82     _0 := user.bind("schema","table","column",0);
+#   1 count=  4 ticks=  55     _5 := algebra.select(<tmp_20>,1,10);
+#   2 count=  1 ticks=  22     _8 := algebra.select(<tmp_21>,1,5);
+#   3 count=  1 ticks=  16     _10 := algebra.select(<tmp_21>,2,3);
+#   4 count=  1 ticks=  17     _13 := algebra.select(<tmp_21>,1,11);
 
 # 12:49:07 >  
 # 12:49:07 >  Done.
