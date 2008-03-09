@@ -80,6 +80,7 @@ extern MalBlkPtr recycleBlk;
 mal_export void RECYCLEversion(MalBlkPtr mb);
 mal_export int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export void RECYCLEshutdown();
 #endif
 @-
 @c
@@ -315,7 +316,7 @@ Time to check for the inclusion constraint
 @c
 				if( VALcmp( &s->stk[getArg(p,2)], 
 							&getVar(recycleBlk,getArg(q,2))->value) >=0 &&
-					( p->argc == 3 ||
+					( p->argc == 4 ||
 					  VALcmp( &s->stk[getArg(p,3)], 
 							&getVar(recycleBlk,getArg(q,3))->value) <=0 ) ){
 					BAT *b1, *b2;
@@ -469,5 +470,36 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			}
 		}
 	}
+}
+@-
+At the end of the session we should remove all
+intermediate results forcefully. This only amounts
+to resetting the reference counts of the persistent
+tables, because all others are garbage collected automatically.
+To simplify the code, we just drop all BAT reference counts by one.
+@c
+void
+RECYCLEshutdown(){
+	InstrPtr q;
+	int i,j;
+	MalBlkPtr mb;
+	
+	if( recycleBlk == NULL)
+		return ;
+
+	mal_set_lock(recycleLock,"recycle");
+	mb= recycleBlk;
+	recycleBlk= NULL;
+	mal_unset_lock(recycleLock,"recycle");
+
+	for(i=0; i< mb->stop; i++){
+		q= getInstrPtr(mb,i);
+		for(j=0; j< q->argc; j++)
+		if( isVarConstant(mb,getArg(q,j)) ){
+			if( isaBatType(getArgType(mb, q,j)) )
+				BBPdecref(getVarConstant(mb,getArg(q,j)).val.bval,TRUE);
+		}
+	}
+	freeMalBlk(mb);
 }
 @}

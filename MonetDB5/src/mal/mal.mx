@@ -364,6 +364,7 @@ void mal_exit(void){
  	int t = 0;
 	str err;
 
+	RECYCLEshutdown(); /* remove any left over intermediates */
 @-
 Before continuing we should make sure that all clients
 (except the console) have left the scene.
