@@ -55,7 +55,7 @@ comment "Set recycler cache policy:
 2- LRU scheme with additional cache limit set.";
 
 command shutdown():void
-address RECYCLEshutdown
+address RECYCLEshutdownWrap
 comment "Clear the recycle cache";
 @h
 #ifndef _RECYCLE_
@@ -80,7 +80,7 @@ recycle_export str RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 recycle_export str RECYCLEsetRetain(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEsetReuse(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEsetCache(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-recycle_export str RECYCLEshutdown(int *ret);
+recycle_export str RECYCLEshutdownWrap(int *ret);
 
 #endif
 @-
@@ -193,29 +193,9 @@ RECYCLEsetCache(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 At the end of the session we have to cleanup the recycle cache.
 @c
 str
-RECYCLEshutdown(int *ret){
-	InstrPtr q;
-	int i,j;
-	MalBlkPtr mb;
-	
-	(void)ret;
-	if( recycleBlk == NULL)
-		return MAL_SUCCEED;
-
-	mal_set_lock(recycleLock,"recycle");
-	mb= recycleBlk;
-	recycleBlk= NULL;
-	mal_unset_lock(recycleLock,"recycle");
-
-	for(i=0; i< mb->stop; i++){
-		q= getInstrPtr(mb,i);
-		for(j=0; j< q->argc; j++)
-		if( isVarConstant(mb,getArg(q,j)) ){
-			if( isaBatType(getArgType(mb, q,j)) )
-				BBPdecref(getVarConstant(mb,getArg(q,j)).val.bval,TRUE);
-		}
-	}
-	freeMalBlk(mb);
+RECYCLEshutdownWrap(int *ret){
+	(void) ret;
+	RECYCLEshutdown();
 	return MAL_SUCCEED;
 }
 @}
