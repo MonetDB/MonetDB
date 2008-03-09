@@ -95,7 +95,7 @@ MT_Lock recycleLock ;
 int recycleVersion = 0;  /* version of recycle table */
 MalBlkPtr recycleBlk = NULL;
 
-int retainPolicy = 0;  /* recycle retainment policy
+int retainPolicy = 1;  /* recycle retainment policy
 			0: baseline, keeps stat, no retain, no reuse
 			1: infinite case, retain all
 			2: time-based semantics, retain if beneficial 
@@ -103,7 +103,7 @@ int retainPolicy = 0;  /* recycle retainment policy
 int retainTime = 0;
 size_t retainSize = 0;
 
-int reusePolicy = 0;	/* recycle reuse policy
+int reusePolicy = 2;	/* recycle reuse policy
 			0: baseline, keeps stat, no retain, no reuse
 			1: reuse smallest select covering 
 			2: exact covering  */
@@ -124,26 +124,10 @@ the block is never executed.
 @c
 static void RECYCLEspace()
 {
-	InstrPtr p;
-	ProfPtr old;
-	int osize;
-
 	if ( recycleBlk == NULL) {
 		recycleBlk = newMalBlk(MAXVARS, STMT_INCREMENT);
 		recycleBlk->profiler = (ProfPtr) GDKzalloc(
 			recycleBlk->ssize*sizeof(ProfRecord));
-	}
-	if( recycleBlk->stop +1 >= recycleBlk->ssize){
-		old = recycleBlk->profiler;
-		osize= recycleBlk->ssize;
-		p=newInstruction(recycleBlk, ASSIGNsymbol);
-		pushInstruction(recycleBlk, p);
-		removeInstruction(recycleBlk,p);  /* back to alloc space  */
-		if( recycleBlk->profiler == NULL)
-			recycleBlk->profiler = (ProfPtr) GDKzalloc(
-				recycleBlk->ssize*sizeof(ProfRecord));
-		memcpy((char*) recycleBlk->profiler, (char*) old, 
-			sizeof(ProfRecord)*osize);
 	}
 }
 
@@ -205,17 +189,26 @@ static void RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
 	int i, j, c; 
 	ValRecord *v;
+	ValRecord cst;
 	InstrPtr q;
 	
 	RECYCLEspace();
 	if( recycleCacheLimit  &&
 		recycleCacheLimit < recycleBlk->stop)
 			return; /* no more caching */
+
+	if( p->argc <=1 )	/* add more */
+			return;
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLE new instruction \n");
+	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif
 	q = copyInstruction(p);
 	for(i = 0; i< p->argc; i++){
 		j= getArg(p,i);
 		v = &s->stk[j];
-		c = defConstant(recycleBlk, v->vtype, v);
+		VALcopy(&cst,v);
+		c = defConstant(recycleBlk, v->vtype, &cst);
 		if (v->vtype == TYPE_bat)
 			BBPincref( *(int*)VALget(v), TRUE);
 	 	setArg(q,i,c);
@@ -260,7 +253,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 		stream_printf(GDKout,"RECYCLEreuse policy %d  recycleBlk %d\n",
 			reusePolicy, recycleBlk==0);
 #endif
-	if( recycleBlk == 0)
+	if( recycleBlk == 0 || reusePolicy == 0)
 		return 0;
 
 	for (i = 0; i < recycleBlk->stop; i++){
@@ -272,13 +265,14 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 
 		switch(reusePolicy){
 		case 0:
-			/* 0: baseline, keeps stat, no retain, no reuse*/
+			/* 0: baseline, no retain, no reuse*/
 			break;
 		case 1:
 			/* 1: reuse smallest range covering */
-			ridx= mb->var[getArg(p,1)]->recycle;
+			ridx= getArg(q,1);
 			idx= getArg(p,1);
-			if( (getFunctionId(p)== selectRef || 
+			if( q->argc == p->argc &&
+				(getFunctionId(p)== selectRef || 
 				 getFunctionId(p)== uselectRef)   &&
 				getVarConstant(recycleBlk,ridx).val.bval == s->stk[idx].val.bval)
 			{	

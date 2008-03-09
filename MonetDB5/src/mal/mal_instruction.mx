@@ -2097,13 +2097,19 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 		}
 		memcpy(newblk, mb->stmt, mb->ssize * sizeof(InstrPtr));
 
+		/* also extend the storage space for the profiler */
+		/* left to the environment */
+		if( mb->profiler){
+			ProfPtr old = mb->profiler;
+			int osize = mb->ssize;
+			mb->profiler = (ProfPtr) GDKzalloc(
+				(mb->ssize + STMT_INCREMENT)*sizeof(ProfRecord));
+			memcpy((char*) mb->profiler, (char*) old, sizeof(ProfRecord)*osize);
+			GDKfree(old);
+		}
 		mb->ssize += STMT_INCREMENT;
 		GDKfree(mb->stmt);
 		mb->stmt = newblk;
-		/* also extend the storage space for the profiler */
-		/* left to the environment */
-		if( mb->profiler)
-			mb->profiler= NULL;
 	}
 @-
 If the destination variable has not been set, introduce a temporary
