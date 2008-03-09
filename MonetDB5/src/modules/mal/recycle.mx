@@ -145,7 +145,6 @@ RECYCLEdump(int *ret)
 
 	(void) ret;
 	stream_printf(GDKout,"Recycler  catalog \n");
-	printFunction(GDKout,recycleBlk, LIST_MAL_ALL);
 
 	/* and dump the statistics */
 	for(i=0; i< recycleBlk->stop; i++){
