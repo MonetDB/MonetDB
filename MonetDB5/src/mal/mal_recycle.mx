@@ -315,7 +315,7 @@ Time to check for the inclusion constraint
 @c
 				if( VALcmp( &s->stk[getArg(p,2)], 
 							&getVar(recycleBlk,getArg(q,2))->value) >=0 &&
-					( p->argc ==2 ||
+					( p->argc == 3 ||
 					  VALcmp( &s->stk[getArg(p,3)], 
 							&getVar(recycleBlk,getArg(q,3))->value) <=0 ) ){
 					BAT *b1, *b2;
