@@ -62,7 +62,7 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-/* #define _DEBUG_RECYCLE_  trace behavior */
+/* #define _DEBUG_RECYCLE_   trace behavior */
 
 extern int recycleVersion;  /* version of recycle table */
 extern int retainPolicy;
@@ -238,7 +238,40 @@ The second approach uses the semantics of operations and
 replaces the arguments of the target to make it cheaper to execute.
 For example, a previous result of a scan may be used instead
 or it can be small compared to the target.
+
+We should avoid adding the same operation twice, which
+means it should be easy to find them in the first place.
 @c
+static int
+RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p){
+	int i, j;
+	InstrPtr q;
+
+	(void) mb;
+	if( recycleBlk == 0)
+		return 0;
+
+	for( i=0; i<recycleBlk->stop; i++){
+		q = getInstrPtr(recycleBlk,i);
+		if((p->argc != q->argc) ||
+		   (getFunctionId(p) != getFunctionId(q)) ||
+		   (getModuleId(p) != getModuleId(q)))
+			continue;
+		for( j=p->retc; j<p->argc; j++)
+		if( VALcmp( &s->stk[getArg(p,j)], 
+					&getVar(recycleBlk,getArg(q,j))->value) )
+			break;
+		if( j== q->argc )
+			return i;
+	}
+
+#ifdef _DEBUG_RECYCLE_
+		stream_printf(GDKout,"RECYCLEfind %d\n",i);
+	printInstruction(GDKout, mb,p, LIST_MAL_ALL);
+#endif
+	return 0;
+}
+
 static int
 RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
@@ -247,6 +280,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	static str selectRef;
 	static str uselectRef;
 	
+	(void) mb;
 	if( selectRef == 0) selectRef= getName("select",6);
 	if( uselectRef == 0) uselectRef= getName("uselect",7);
 #ifdef _DEBUG_RECYCLE_
@@ -321,11 +355,7 @@ Time to check for the inclusion constraint
 		case 2:
 			/* 2: exact covering */
 			for (j = p->retc; j < p->argc; j++){
-				ridx = mb->var[getArg(p,j)]->recycle;
-				if( ridx != getArg(q,j) )
-						goto notfound;
-				else 
-				if( VALcmp(&s->stk[ridx],
+				if( VALcmp(&s->stk[getArg(p,j)],
 					&getVarConstant(recycleBlk,getArg(q,j))) )
 						goto notfound;
 			}
@@ -334,6 +364,13 @@ Time to check for the inclusion constraint
 		stream_printf(GDKout,"RECYCLEreuse exact\n");
 		printInstruction(GDKout,mb,p, LIST_MAL_ALL);
 #endif
+			/* get the results on the stack */
+			for( j=0; j<q->retc; j++){
+				VALcopy(&s->stk[getArg(p,j)],
+					&getVarConstant(recycleBlk,getArg(q,j)) );
+				if (s->stk[getArg(p,j)].vtype == TYPE_bat)
+					BBPincref( s->stk[getArg(p,j)].val.bval , TRUE);
+			}
 			recycleBlk->profiler[i].counter++;
 			return 1;
 			notfound: continue;
@@ -407,12 +444,13 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		/* 0: baseline, keeps stat, no retain, no reuse */
 		break;
 	case 1:
-		/* 1: infinite case, retain all*/
-		RECYCLEnew(mb,stk, p);
+		/* 1: infinite case, retain all new instructions */
+		if( !RECYCLEfind(mb,stk,p) )
+			RECYCLEnew(mb,stk, p);
 		break;
 	case 2:
 		/* 2: time-based semantics, retain if beneficial */
-		if( clk > retainTime)
+		if( clk > retainTime && !RECYCLEfind(mb,stk,p))
 			RECYCLEnew(mb,stk, p);
 		break;
 	case 3:
@@ -420,7 +458,8 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 #ifdef _DEBUG_RECYCLE_
 		stream_printf(GDKout,"RECYCLEexit time %d \n",clk);
 #endif
-		if(retainSize && isaBatType(getArgType(mb,p,0)) ){
+		if(	retainSize && isaBatType(getArgType(mb,p,0)) &&
+			!RECYCLEfind(mb,stk,p)){
 			BAT *b= BATdescriptor(*(int*) getArgReference(stk,p,0));
 			if( b){
 				if( BATcount(b)> retainSize)
