@@ -365,34 +365,27 @@ Time to check for the inclusion constraint
 					nbid=getVarConstant(recycleBlk, getArg(q,0)).val.bval; 
 					if( bid == -1){
 						bid = nbid;
-						pc= i;
-						b1= BATdescriptor(bid);
-						BBPkeepref(bid);
+						pc = i;
 #ifdef _DEBUG_RECYCLE_
-					printf("counts %d -> %d \n", bid, (int)BATcount(b1));
+	b1= BBPquickdesc(bid, FALSE);
+	printf("counts %d -> %d \n", bid, (int)BATcount(b1));
 #endif
 					} else {
-						b1= BATdescriptor(bid);
-						b2= BATdescriptor(nbid);
+						b1 = BBPquickdesc(bid, FALSE);
+						b2 = BBPquickdesc(nbid, FALSE);
 
 #ifdef _DEBUG_RECYCLE_
-						printf("counts %d -> %d %d -> %d\n", 
-							bid, (int)BATcount(b1), nbid, (int)BATcount(b2));
+	printf("counts %d -> %d %d -> %d\n", 
+		bid, (int)BATcount(b1), nbid, (int)BATcount(b2));
 #endif
-						if( BATcount(b1) > BATcount(b2)){
-							BBPreleaseref(bid);
-							BBPreleaseref(bid);
-							BBPkeepref(nbid);
-							bid= nbid;
-							pc= i;
-						} else {
-							BBPreleaseref(bid);
-							BBPreleaseref(nbid);
+						if (BATcount(b1) > BATcount(b2)){
+							bid = nbid;
+							pc = i;
 						}
 					}
 #ifdef _DEBUG_RECYCLE_
-					printf("Inclusive range bid=%d\n", bid);
-					printInstruction(GDKout,recycleBlk,q, LIST_MAL_ALL);
+	printf("Inclusive range bid=%d\n", bid);
+		printInstruction(GDKout,recycleBlk,q, LIST_MAL_ALL);
 #endif
 				}
 			}
@@ -423,6 +416,7 @@ Time to check for the inclusion constraint
 	if( bid >=0){
 		/* replace selection argument */
 		s->stk[getArg(p,1)].val.bval= bid;
+		BBPincref(bid, TRUE);
 		recycleBlk->profiler[pc].counter++;
 	}
 	return 0;
