@@ -139,14 +139,17 @@ end main;	# 14
 [ 8@0,	  8	  ]
 [ 9@0,	  9	  ]
 [ 10@0,	  10	  ]
-Recycler  catalog 
-#   0 count=  1 ticks=  81     _0 := user.bind("schema","table","column",0);
-#   1 count=  3 ticks=  55     _5 := algebra.select(<tmp_20>,1,10);
-#   2 count=  1 ticks=  42     _8 := algebra.markT(<tmp_20>,0@0);
-#   3 count=  1 ticks=  81     _10 := algebra.join(<~tmp_23>,<tmp_21>);
-#   4 count=  1 ticks=  30     _12 := algebra.join(<~tmp_23>,<tmp_22>);
-#   5 count=  1 ticks=  30     _14 := algebra.join(<~tmp_23>,<tmp_24>);
-#   6 count=  1 ticks=  29     _16 := algebra.join(<~tmp_23>,<tmp_30>);
+#Recycler  catalog
+#retain= 2 time =20 sze= 0 alpha= 0.500
+#reuse= 1
+#rcache= 0
+#   0 lru= 0 cnt=   1 ticks=  80  vol=    0     _0 := user.bind("schema","table","column",0);
+#   1 lru= 0 cnt=   4 ticks=  55  vol=    0     _5 := algebra.select(<tmp_20>,1,10);
+#   2 lru= 0 cnt=   1 ticks=  43  vol=    0     _8 := algebra.markT(<tmp_20>,0@0);
+#   3 lru= 0 cnt=   1 ticks=  84  vol=    0     _10 := algebra.join(<~tmp_23>,<tmp_21>);
+#   4 lru= 0 cnt=   1 ticks=  31  vol=    0     _12 := algebra.join(<~tmp_23>,<tmp_22>);
+#   5 lru= 0 cnt=   1 ticks=  53  vol=    0     _14 := algebra.join(<~tmp_23>,<tmp_24>);
+#   6 lru= 0 cnt=   1 ticks=  32  vol=    0     _16 := algebra.join(<~tmp_23>,<tmp_26>);
 
 # 12:49:07 >  
 # 12:49:07 >  Done.

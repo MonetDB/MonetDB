@@ -51,9 +51,12 @@ end main;	# 10
 [ 529 ]
 [ "last" ]
 [ 529 ]
-Recycler  catalog 
-#   0 count=  1 ticks=  19     _0 := 23;
-#   1 count=  1 ticks=  12     _1 := calc.*(23,23);
+#Recycler  catalog
+#retain= 1 time =0 sze= 0 alpha= 0.500
+#reuse= 2
+#rcache= 0
+#   0 lru= 0 cnt=   1 ticks=  17  vol=    0     _0 := 23;
+#   1 lru= 0 cnt=   1 ticks=  11  vol=    0     _1 := calc.*(23,23);
 
 # 12:49:06 >  
 # 12:49:06 >  Done.

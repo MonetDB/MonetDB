@@ -88,12 +88,15 @@ end main;	# 14
 [ "zoom in" ]
 [ "next step" ]
 [ "last" ]
-Recycler  catalog 
-#   0 count=  1 ticks=  82     _0 := user.bind("schema","table","column",0);
-#   1 count=  4 ticks=  55     _5 := algebra.select(<tmp_20>,1,10);
-#   2 count=  1 ticks=  22     _8 := algebra.select(<tmp_21>,1,5);
-#   3 count=  1 ticks=  16     _10 := algebra.select(<tmp_21>,2,3);
-#   4 count=  1 ticks=  17     _13 := algebra.select(<tmp_21>,1,11);
+#Recycler  catalog
+#retain= 1 time =0 sze= 0 alpha= 0.500
+#reuse= 1
+#rcache= 0
+#   0 lru= 0 cnt=   1 ticks=  80  vol=    0     _0 := user.bind("schema","table","column",0);
+#   1 lru= 0 cnt=   4 ticks=  57  vol=    0     _5 := algebra.select(<tmp_20>,1,10);
+#   2 lru= 0 cnt=   1 ticks=  22  vol=    0     _8 := algebra.select(<tmp_21>,1,5);
+#   3 lru= 0 cnt=   1 ticks=  16  vol=    0     _10 := algebra.select(<tmp_21>,2,3);
+#   4 lru= 0 cnt=   1 ticks=  18  vol=    0     _13 := algebra.select(<tmp_21>,1,11);
 
 # 12:49:07 >  
 # 12:49:07 >  Done.
