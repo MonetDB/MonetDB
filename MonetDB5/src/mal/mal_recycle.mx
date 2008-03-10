@@ -1,4 +1,4 @@
-@' The contents of this file are subject to the MonetDB Public License
+@ The contents of this file are subject to the MonetDB Public License
 @' Version 1.1 (the "License"); you may not use this file except in
 @' compliance with the License. You may obtain a copy of the License at
 @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
@@ -67,16 +67,33 @@ which inspects the variable table for alternative results.
 
 mal_export int recycleVersion;  /* version of recycle table */
 mal_export int retainPolicy;
+#define RETAIN_NONE		0
+#define RETAIN_ALL	 	1
+#define RETAIN_TIME		2
+#define RETAIN_SIZE		3
+#define RETAIN_VOL		4
+#define RETAIN_ADAPT	5
+
 mal_export int recycleTime;		
 mal_export int recycleVolume;
+#define RU 1024 /* recycle unit in bytes */
 
 mal_export int reusePolicy;
+#define REUSE_NONE	0
+#define REUSE_COVER	1
+#define REUSE_EXACT	2
 
 mal_export int rcachePolicy;
+#define RCACHE_NONE		0
+#define RCACHE_ALL		1
+#define RCACHE_LRU		1
+#define RCACHE_CREDIT 	2
+
 mal_export int recycleClaim;
 mal_export int recycleCacheLimit;
 mal_export MT_Lock recycleLock;
 mal_export MalBlkPtr recycleBlk;
+mal_export double recycleAlpha;
 
 mal_export void RECYCLEversion(MalBlkPtr mb);
 mal_export int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -97,29 +114,29 @@ MT_Lock recycleLock ;
 int recycleVersion = 0;  /* version of recycle table */
 MalBlkPtr recycleBlk = NULL;
 
-int retainPolicy = 1;  /* recycle retainment policy
-			0: baseline, keeps stat, no retain, no reuse
-			1: infinite case, retain all
-			2: time-based semantics, retain if beneficial 
-				a negative value is used to adapt to recycleBlk size
-			3: size cost model 
-			4: volumetric cost model (time x size )*/
-int recycleTime = 0;	/* negative is used to adapt */
+int retainPolicy = RETAIN_ALL;  /* recycle retainment policy
+			RETAIN_NONE: baseline, keeps stat, no retain, no reuse
+			RETAIN_ALL: infinite case, retain all
+			RETAIN_TIME: time-based semantics, retain if beneficial 
+			RETAIN_SIZE: size cost model 
+			RETAIN_VOL: volumetric cost model (time x size )
+			RETAIN_ADAP: adaptive temporal */
+int recycleTime = 0;	
 int recycleVolume = 0;
 
-int reusePolicy = 2;	/* recycle reuse policy
-			0: baseline, keeps stat, no retain, no reuse
-			1: reuse smallest select covering 
-			2: exact covering  */
+int reusePolicy = REUSE_EXACT;	/* recycle reuse policy
+			REUSE_NONE: baseline, keeps stat, no retain, no reuse
+			REUSE_COVER: reuse smallest select covering 
+			REUSE_EXACT: exact covering  */
 
-int rcachePolicy = 0;  /* recycle cache management policy
-			0: baseline, do nothing
-			1: throw LRU by setting the limit
-			2: credit-based LRU scheme */
+int rcachePolicy = RCACHE_NONE;  /* recycle cache management policy
+			RCACHE_NONE: baseline, do nothing
+			RCACHE_LRU: throw LRU by setting the limit
+			RCACHE_CREDIT: credit-based LRU scheme */
 int recycleCacheLimit=0;
-int recycleClaim=0;		/* avoid stale tables */
+int recycleClaim=0;		/* avoid stale tables by letting users mark it */
 @-
-The retaintime is a constant. If negative, it means that
+The retain time is a constant. In adaptive mode, it means that
 it grows as the recycleBlk becomes larger. This way
 we only store results that can be located within a fraction
 of the time of searching for it in the recycleBlk.
@@ -183,10 +200,10 @@ void RECYCLEcache(){
 	max= 0;
 	for(i=0; i< recycleBlk->stop; i++){
 		recycleBlk->profiler[i].clk++;
-		if( rcachePolicy ==1 &&
+		if( rcachePolicy == RCACHE_LRU &&
 			 recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
 			max = i;
-		if( rcachePolicy ==2 && recycleCost(max) < recycleCost(i) )
+		if( rcachePolicy == RCACHE_CREDIT && recycleCost(max) < recycleCost(i) )
 			max = i;
 	}
 	if( recycleBlk->stop > recycleCacheLimit && recycleClaim <= 1){
@@ -324,10 +341,10 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			continue;
 
 		switch(reusePolicy){
-		case 0:
+		case REUSE_NONE:
 			/* 0: baseline, no retain, no reuse*/
 			break;
-		case 1:
+		case REUSE_COVER:
 			/* 1: reuse smallest range covering */
 			ridx= getArg(q,1);
 			idx= getArg(p,1);
@@ -379,7 +396,7 @@ Time to check for the inclusion constraint
 #endif
 				}
 			}
-		case 2:
+		case REUSE_EXACT:
 			/* 2: exact covering */
 			for (j = p->retc; j < p->argc; j++){
 				if( VALcmp(&s->stk[getArg(p,j)],
@@ -468,40 +485,26 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if( recycleCacheLimit)
 		RECYCLEcache();
 	switch(retainPolicy){
-	case 0:
-		/* 0: baseline, keeps stat, no retain, no reuse */
+	case RETAIN_NONE:
+		/* RETAIN_NONE: baseline, keeps stat, no retain, no reuse */
 		break;
-	case 1:
-		/* 1: infinite case, retain all new instructions */
+	case RETAIN_ALL:
+		/* RETAIN_ALL: infinite case, retain all new instructions */
 		if( !RECYCLEfind(mb,stk,p) )
 			(void) RECYCLEnew(mb,stk, p);
 		break;
-	case 2:
+	case RETAIN_TIME:
 		/* 2: time-based semantics, retain if beneficial */
 		if( clk > ABS(recycleTime) && !RECYCLEfind(mb,stk,p))
 			(void) RECYCLEnew(mb,stk, p);
-
-		/* adapt the time watermark based on observed behavior */
-		if( recycleTime < 0 && (exitLoop++ % 99)== 0){
-			clk= GDKusec();
-			(void) RECYCLEfind(mb,stk,p);
-			clk= GDKusec()-clk;
-			if( clk > ABS(recycleTime)){
-#ifdef _DEBUG_RECYCLE_
-				stream_printf(GDKout,"RECYCLEretain time %d adjusted\n",
-					recycleTime);
-#endif
-				recycleTime = -clk;
-			}
-		}
 		break;
-	case 3:
+	case RETAIN_SIZE:
 	{
 		int i;
 		/*	3: size cost model */
 		if(	recycleVolume && !RECYCLEfind(mb,stk,p)){
-			int rd= getVolume(stk,p, 1);
-			int wr= getVolume(stk,p, 0);
+			int rd= getVolume(stk,p, 1)/ RU;
+			int wr= getVolume(stk,p, 0)/ RU;
 
 			if( rd+wr >recycleVolume){
 				i = RECYCLEnew(mb,stk, p);
@@ -513,13 +516,13 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			}
 		}
 	}
-	case 4:
+	case RETAIN_VOL:
 	{
 		int i;
 		/*	4: volumetric cost model (time x size )*/
 		if(	recycleVolume && !RECYCLEfind(mb,stk,p)){
-			int rd= getVolume(stk,p, 1);
-			int wr= getVolume(stk,p, 0);
+			int rd= getVolume(stk,p, 1)/ RU;
+			int wr= getVolume(stk,p, 0)/ RU;
 
 			if( recycleAlpha *(rd+wr) + (1-recycleAlpha)* clk >
 						 recycleVolume * recycleTime){
@@ -531,7 +534,24 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 #endif
 			}
 		}
-	}}
+	}
+	case RETAIN_ADAPT:
+		/* 5: adaptive temporal */
+		if( clk > recycleTime && !RECYCLEfind(mb,stk,p))
+			(void) RECYCLEnew(mb,stk, p);
+		/* adapt the time watermark based on observed behavior */
+		if( recycleTime < 0 && (exitLoop++ % 99)== 0){
+			clk= GDKusec();
+			(void) RECYCLEfind(mb,stk,p);
+			clk= GDKusec()-clk;
+			if( clk > recycleTime){
+#ifdef _DEBUG_RECYCLE_
+				stream_printf(GDKout,"RECYCLEretain time %d adjusted\n", recycleTime);
+#endif
+				recycleTime = clk;
+			}
+		}
+	}
 }
 @-
 At the end of the session we should remove all
