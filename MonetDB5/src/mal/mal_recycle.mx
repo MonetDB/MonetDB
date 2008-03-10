@@ -54,6 +54,7 @@ to experiment with its effect in concrete settings.
 @-
 The Recycler should be a variation of the interpreter
 which inspects the variable table for alternative results.
+
 @h
 #ifndef _MAL_RECYCLE_
 #define _MAL_RECYCLE_
@@ -66,8 +67,8 @@ which inspects the variable table for alternative results.
 
 mal_export int recycleVersion;  /* version of recycle table */
 mal_export int retainPolicy;
-mal_export int retainTime;
-mal_export size_t retainSize;
+mal_export int recycleTime;		
+mal_export int recycleVolume;
 
 mal_export int reusePolicy;
 
@@ -100,9 +101,11 @@ int retainPolicy = 1;  /* recycle retainment policy
 			0: baseline, keeps stat, no retain, no reuse
 			1: infinite case, retain all
 			2: time-based semantics, retain if beneficial 
-			3: just temporal based, no range matching */
-int retainTime = 0;
-size_t retainSize = 0;
+				a negative value is used to adapt to recycleBlk size
+			3: size cost model 
+			4: volumetric cost model (time x size )*/
+int recycleTime = 0;	/* negative is used to adapt */
+int recycleVolume = 0;
 
 int reusePolicy = 2;	/* recycle reuse policy
 			0: baseline, keeps stat, no retain, no reuse
@@ -112,9 +115,27 @@ int reusePolicy = 2;	/* recycle reuse policy
 int rcachePolicy = 0;  /* recycle cache management policy
 			0: baseline, do nothing
 			1: throw LRU by setting the limit
-			2: cost-based, throw least beneficial */
+			2: credit-based LRU scheme */
 int recycleCacheLimit=0;
 int recycleClaim=0;		/* avoid stale tables */
+@-
+The retaintime is a constant. If negative, it means that
+it grows as the recycleBlk becomes larger. This way
+we only store results that can be located within a fraction
+of the time of searching for it in the recycleBlk.
+
+The profiler record is re-used to store recycler information.
+The clk is used by the LRU scheme, counter is the number of
+times this pattern was used, ticks is the clock ticks
+used to produce the result. ibytes+obytes depict the storage
+size of operands and result arguments.
+
+The cost function is a weighted balance between cpu and
+storage cost. Often there is a direct relationship,
+@c
+double recycleAlpha = 0.5;
+
+#define recycleCost(X) recycleAlpha * recycleBlk->profiler[X].ticks + (1-recycleAlpha)* (recycleBlk->profiler[X].ibytes+recycleBlk->profiler[X].obytes)
 
 @-
 The Recycle catalog is a global structure, which should be
@@ -161,8 +182,11 @@ void RECYCLEcache(){
 
 	max= 0;
 	for(i=0; i< recycleBlk->stop; i++){
-		recycleBlk->profiler[i].ibytes++;
-		if( recycleBlk->profiler[max].ibytes <recycleBlk->profiler[i].ibytes)
+		recycleBlk->profiler[i].clk++;
+		if( rcachePolicy ==1 &&
+			 recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
+			max = i;
+		if( rcachePolicy ==2 && recycleCost(max) < recycleCost(i) )
 			max = i;
 	}
 	if( recycleBlk->stop > recycleCacheLimit && recycleClaim <= 1){
@@ -186,7 +210,7 @@ underlying implementation and collects statistics on the
 cost.
 @c
 
-static void RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
+static int RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
 	int i, j, c; 
 	ValRecord *v;
@@ -196,10 +220,10 @@ static void RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	RECYCLEspace();
 	if( recycleCacheLimit  &&
 		recycleCacheLimit < recycleBlk->stop)
-			return; /* no more caching */
+			return -1; /* no more caching */
 
 	if( p->argc <=1 )	/* add more */
-			return;
+			return -1;
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE new instruction \n");
 	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
@@ -228,6 +252,7 @@ static void RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	stream_printf(GDKout,"RECYCLE catalog \n");
 	printFunction(GDKout,recycleBlk,LIST_MAL_ALL);
 #endif
+	return i;
 }
 
 @-
@@ -433,6 +458,7 @@ which is stored in the stack frame to avoid concurrency problems.
 @c
 void
 RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	static int exitLoop=0;
 	lng clk = 0;
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLEexit policy %d \n",retainPolicy);
@@ -448,28 +474,64 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	case 1:
 		/* 1: infinite case, retain all new instructions */
 		if( !RECYCLEfind(mb,stk,p) )
-			RECYCLEnew(mb,stk, p);
+			(void) RECYCLEnew(mb,stk, p);
 		break;
 	case 2:
 		/* 2: time-based semantics, retain if beneficial */
-		if( clk > retainTime && !RECYCLEfind(mb,stk,p))
-			RECYCLEnew(mb,stk, p);
+		if( clk > ABS(recycleTime) && !RECYCLEfind(mb,stk,p))
+			(void) RECYCLEnew(mb,stk, p);
+
+		/* adapt the time watermark based on observed behavior */
+		if( recycleTime < 0 && (exitLoop++ % 99)== 0){
+			clk= GDKusec();
+			(void) RECYCLEfind(mb,stk,p);
+			clk= GDKusec()-clk;
+			if( clk > ABS(recycleTime)){
+#ifdef _DEBUG_RECYCLE_
+				stream_printf(GDKout,"RECYCLEretain time %d adjusted\n",
+					recycleTime);
+#endif
+				recycleTime = -clk;
+			}
+		}
 		break;
 	case 3:
-		/* 3: just temporal based, no range matching */
+	{
+		int i;
+		/*	3: size cost model */
+		if(	recycleVolume && !RECYCLEfind(mb,stk,p)){
+			int rd= getVolume(stk,p, 1);
+			int wr= getVolume(stk,p, 0);
+
+			if( rd+wr >recycleVolume){
+				i = RECYCLEnew(mb,stk, p);
+				recycleBlk->profiler[i].ibytes= rd;
+				recycleBlk->profiler[i].obytes= wr;
 #ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"RECYCLEexit time %d \n",clk);
+				stream_printf(GDKout,"RECYCLEexit size %d \n",rd+wr);
 #endif
-		if(	retainSize && isaBatType(getArgType(mb,p,0)) &&
-			!RECYCLEfind(mb,stk,p)){
-			BAT *b= BATdescriptor(*(int*) getArgReference(stk,p,0));
-			if( b){
-				if( BATcount(b)> retainSize)
-					RECYCLEnew(mb,stk, p);
-				BBPreleaseref(b->batCacheid);
 			}
 		}
 	}
+	case 4:
+	{
+		int i;
+		/*	4: volumetric cost model (time x size )*/
+		if(	recycleVolume && !RECYCLEfind(mb,stk,p)){
+			int rd= getVolume(stk,p, 1);
+			int wr= getVolume(stk,p, 0);
+
+			if( recycleAlpha *(rd+wr) + (1-recycleAlpha)* clk >
+						 recycleVolume * recycleTime){
+				i = RECYCLEnew(mb,stk, p);
+				recycleBlk->profiler[i].ibytes= rd;
+				recycleBlk->profiler[i].obytes= wr;
+#ifdef _DEBUG_RECYCLE_
+				stream_printf(GDKout,"RECYCLEexit volume %d \n",(rd+wr)*clk);
+#endif
+			}
+		}
+	}}
 }
 @-
 At the end of the session we should remove all

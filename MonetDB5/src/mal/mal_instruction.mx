@@ -2569,6 +2569,14 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 			strcat(t, cv);
 			GDKfree(cv);
 			advance(t);
+			if( isaBatType(getVarType(mb,getArg(p,i)) ) ){
+				BAT *d= BATdescriptor(getVarConstant(mb,getArg(p,i)).val.bval);
+				if( d){
+					sprintf(t,"[" SZFMT "]", BATcount(d));
+					BBPdecref(d->batCacheid,TRUE);
+					advance(t);
+				}
+			}
 		} else {
 			if( ! isVarTypedef(mb,getArg(p,i)) ){
 				if (isTmpVar(mb, getArg(p, i))) {
