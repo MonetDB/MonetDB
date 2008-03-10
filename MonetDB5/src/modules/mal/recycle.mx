@@ -147,7 +147,7 @@ RECYCLEdump(int *ret)
 	stream_printf(GDKout,"Recycler  catalog \n");
 
 	/* and dump the statistics */
-	for(i=0; i< recycleBlk->stop; i++){
+	for(i=0; recycleBlk && i< recycleBlk->stop; i++){
 		stream_printf(GDKout,"#%4d count=%3d ticks=%4d %s\n", i,
 			recycleBlk->profiler[i].counter,
 			recycleBlk->profiler[i].ticks,
