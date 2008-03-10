@@ -1,0 +1,25 @@
+stderr of test 'coalesce_equal_coalesce.SF-1907905` in directory 'src/test/BugTracker` itself:
+
+
+# 00:33:50 >  
+# 00:33:50 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39578 --set xrpc_port=40023 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 00:33:50 >  
+
+#warning: please don't forget to set your vault key!
+#(see /ufs/goncalve/scratch/MonetDB/Stable/MonetDB5/etc/monetdb5.conf)
+
+# 00:33:51 >  
+# 00:33:51 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=39578 
+# 00:33:51 >  
+
+MAPI  = monetdb@amelia:39578
+QUERY = CREATE FUNCTION fDocColumnsWithRank(TableName varchar(400))
+ERROR = !SELECT: no such operator 'columnproperty'
+MAPI  = monetdb@amelia:39578
+QUERY = drop function fDocColumnsWithRank;
+ERROR = !DROP FUNCTION: no such function 'fdoccolumnswithrank'
+
+# 00:33:51 >  
+# 00:33:51 >  Done.
+# 00:33:51 >  
+

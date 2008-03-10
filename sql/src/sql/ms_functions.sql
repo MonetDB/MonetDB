@@ -15,8 +15,8 @@ END;
 CREATE FUNCTION MS_ROUND(num float, precision int, truncat int)
 RETURNS float
 BEGIN
-	IF (truncat = 0)
-		THEN RETURN ROUND(num, precision);
-		ELSE RETURN TRUNCATE(num, precision);
-	END IF;
+        IF (truncat = 0)
+                THEN RETURN ROUND(num, precision);
+                ELSE RETURN ROUND(FLOOR(num), precision);
+        END IF;
 END;

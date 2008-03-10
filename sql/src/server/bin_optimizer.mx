@@ -267,12 +267,12 @@ bin_optimizer(mvc *c, stmt *s)
 
 		/* try to push the limit through the (fetch) join */
 		j = s->op1.stval;
-		/* equi join on same base table */
+
+		/* push through the projection joins */
+		/* TODO put limit under (and keep above) cross products */
 		if (s->flag == 0 &&
-		    j->type == st_join && 
-		  ((j->flag == cmp_equal && 
-		    j->op1.stval->t && j->op1.stval->t == j->op2.stval->h) || 
-		    j->flag == cmp_all)) {
+		    j->type == st_join && j->flag == cmp_equal && 
+		    j->op1.stval->t && j->op1.stval->t == j->op2.stval->h) {
 			stmt *l = stmt_dup(j->op1.stval);
 			stmt *r = stmt_dup(j->op2.stval);
 

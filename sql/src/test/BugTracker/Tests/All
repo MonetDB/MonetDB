@@ -103,3 +103,11 @@ bug_in_selection.SF-1892413
 case_with_aggr.SF-1876779
 with_row_number.SF-1898089
 savepoint-SF.1898533
+range_select.SF-1907006
+huge_math_expre.SF-1907048
+join_table_with_floats.SF-1907060
+ms_round.SF-1907063
+decl_sec_tab_in_func_body.SF-1907858
+coalesce_equal_coalesce.SF-1907905
+like_perl.SF-1907051
+sql_prepare_prob.SF-1909638
