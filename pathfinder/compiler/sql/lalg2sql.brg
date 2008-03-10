@@ -2535,14 +2535,73 @@ reduce (PFla_op_t * p, int goalnt)
         {
             assert (kids[0] && nts[0]);
             assert (kids[1] && nts[1]);
+
             /* reduce the first child */
             reduce (kids[0], nts[0]);
+
+            if (p->kind == la_eqjoin) {
+                 PFalg_simple_type_t l_ty;
+
+                 l_ty = type_of (p, p->sem.eqjoin.att1);
+
+                 assert (monomorphic (l_ty));
+
+                 /* if the the eqjoin joins over boolean values
+                  * we have to bind the underlying node */
+                 if (l_ty == aat_bln && !BOUND(L(p)))
+                     bind_operator (L(p), false);
+            }
+            else if (p->kind == la_thetajoin) {
+                PFalg_simple_type_t l_ty;
+
+                /* iterate over all predicates and add them to the wherelist */
+                for (unsigned int i = 0; i < p->sem.thetajoin.count; i++) {
+
+                    l_ty   = type_of (p, p->sem.thetajoin.pred[i].left);
+
+                    assert (monomorphic (l_ty));
+                    
+                    /* if the thetajoin joins over boolean values
+                     * we have to bind the underlying node */
+                    if (l_ty == aat_bln && !BOUND (L(p)))
+                        bind_operator (L(p), false);
+                }
+            }
 
             /* copy all existing column, from, and where lists
                of the left child */
             copy_cols_from_where (p, L(p));
 
             reduce (kids[1], nts[1]);
+
+            if (p->kind == la_eqjoin) {
+                 PFalg_simple_type_t r_ty;
+
+                 r_ty = type_of (p, p->sem.eqjoin.att2);
+
+                 assert (monomorphic (r_ty));
+
+                 /* if the the eqjoin joins over boolean values
+                  * we have to bind the underlying node */
+                 if (r_ty == aat_bln && !BOUND(R(p)))
+                     bind_operator (R(p), false);
+            }
+            else if (p->kind == la_thetajoin) {
+                PFalg_simple_type_t r_ty;
+
+                /* iterate over all predicates and add them to the wherelist */
+                for (unsigned int i = 0; i < p->sem.thetajoin.count; i++) {
+
+                    r_ty   = type_of (p, p->sem.thetajoin.pred[i].right);
+
+                    assert (monomorphic (r_ty));
+                    
+                    /* if the thetajoin joins over boolean values
+                     * we have to bind the underlying node */
+                    if (r_ty == aat_bln && !BOUND (R(p)))
+                        bind_operator (R(p), false);
+                }
+            }
 
             /* copy all existing expression from right child */
             for (unsigned int i = 0; i < PFarray_last (COLMAP(R(p))); i++) {
