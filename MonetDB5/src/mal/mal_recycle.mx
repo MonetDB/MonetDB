@@ -64,18 +64,18 @@ which inspects the variable table for alternative results.
 
 /* #define _DEBUG_RECYCLE_   trace behavior */
 
-extern int recycleVersion;  /* version of recycle table */
-extern int retainPolicy;
-extern int retainTime;
-extern size_t retainSize;
+mal_export int recycleVersion;  /* version of recycle table */
+mal_export int retainPolicy;
+mal_export int retainTime;
+mal_export size_t retainSize;
 
-extern int reusePolicy;
+mal_export int reusePolicy;
 
-extern int rcachePolicy;
-extern int recycleClaim;
-extern int recycleCacheLimit;
-extern MT_Lock recycleLock;
-extern MalBlkPtr recycleBlk;
+mal_export int rcachePolicy;
+mal_export int recycleClaim;
+mal_export int recycleCacheLimit;
+mal_export MT_Lock recycleLock;
+mal_export MalBlkPtr recycleBlk;
 
 mal_export void RECYCLEversion(MalBlkPtr mb);
 mal_export int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
