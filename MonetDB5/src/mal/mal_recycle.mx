@@ -243,42 +243,44 @@ void RECYCLEcache(int k){
 	InstrPtr pc;
 	int mem= RECYCLEfootprint() > recycleMemory;
 
-	recycleBlk->profiler[k].clk= 1; /* most recently used */
-	max= 0;
-	for(i=0; i< recycleBlk->stop; i++){
-		recycleBlk->profiler[i].clk++;
-		switch(rcachePolicy){
-		case RCACHE_LRU:
-			if( recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
-				max = i;
-			break;
-		case RCACHE_CREDIT:
-			if( recycleBlk->profiler[max].counter * recycleCost(max) > 
-					recycleBlk->profiler[i].counter * recycleCost(i) )
-				max = i;
-			break;
-		case RCACHE_MEMLRU:
-			if(mem && recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
-				max = i;
-			break;
-		case RCACHE_MEMCRD:
-			if(mem && recycleBlk->profiler[max].counter * recycleCost(max) > 
-					recycleBlk->profiler[i].counter * recycleCost(i) )
-				max = i;
+	if (recycleBlk) {
+		recycleBlk->profiler[k].clk= 1; /* most recently used */
+		max= 0;
+		for(i=0; i< recycleBlk->stop; i++){
+			recycleBlk->profiler[i].clk++;
+			switch(rcachePolicy){
+				case RCACHE_LRU:
+					if( recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
+						max = i;
+					break;
+				case RCACHE_CREDIT:
+					if( recycleBlk->profiler[max].counter * recycleCost(max) > 
+							recycleBlk->profiler[i].counter * recycleCost(i) )
+						max = i;
+					break;
+				case RCACHE_MEMLRU:
+					if(mem && recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
+						max = i;
+					break;
+				case RCACHE_MEMCRD:
+					if(mem && recycleBlk->profiler[max].counter * recycleCost(max) > 
+							recycleBlk->profiler[i].counter * recycleCost(i) )
+						max = i;
+			}
 		}
-	}
-	if( recycleBlk->stop > recycleCacheLimit && recycleClaim <= 1){
+		if( recycleBlk->stop > recycleCacheLimit && recycleClaim <= 1){
 #ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"RECYCLE cache, remove %d \n",max);
+			stream_printf(GDKout,"RECYCLE cache, remove %d \n",max);
 #endif
-		mal_set_lock(recycleLock,"recycle");
-		pc= getInstrPtr(recycleBlk,max);
-		for(i=0; i< pc->argc; i++)
-		if( isaBatType(getVarType(recycleBlk, getArg(pc,i))) )
-			BBPdecref(getVarConstant(recycleBlk,i).val.bval,TRUE);
-		removeInstruction(recycleBlk,getInstrPtr(recycleBlk,max));
-		recycleVersion++;
-		mal_unset_lock(recycleLock,"recycle");
+			mal_set_lock(recycleLock,"recycle");
+			pc= getInstrPtr(recycleBlk,max);
+			for(i=0; i< pc->argc; i++)
+				if( isaBatType(getVarType(recycleBlk, getArg(pc,i))) )
+					BBPdecref(getVarConstant(recycleBlk,i).val.bval,TRUE);
+			removeInstruction(recycleBlk,getInstrPtr(recycleBlk,max));
+			recycleVersion++;
+			mal_unset_lock(recycleLock,"recycle");
+		}
 	}
 }
 
