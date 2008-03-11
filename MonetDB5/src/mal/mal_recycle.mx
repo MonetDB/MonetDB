@@ -114,6 +114,19 @@ MT_Lock recycleLock ;
 int recycleVersion = 0;  /* version of recycle table */
 MalBlkPtr recycleBlk = NULL;
 
+@-
+The retention policies currently implemented are:
+RETAIN_ALL, where all results are in principle retained.
+RETAIN_TIME, uses a highwater mark defined by the user.
+All results whose time to produce are lower then the
+highwater mark are dropped without further consideration.
+RETAIN_SIZE, is similar and takes the volume (in RU units)
+as a decision.
+RETAIN_VOL is a volumetric model, which balances time and
+volume using a user defined parameter RETAIN_ALPHA.
+RETAIN_ADAP is an adaptive scheme, which monitors the cost
+of scanning the recycler pool to derive the time high-water mark.
+@c
 int retainPolicy = RETAIN_ALL;  /* recycle retainment policy
 			RETAIN_NONE: baseline, keeps stat, no retain, no reuse
 			RETAIN_ALL: infinite case, retain all
@@ -124,23 +137,32 @@ int retainPolicy = RETAIN_ALL;  /* recycle retainment policy
 int recycleTime = 0;	
 int recycleVolume = 0;
 
+@-
+RETAIN_EXACT only looks at precisely matching instructions.
+RETAIN_COVER exploits potentional overlap in range selects
+to reduce the amount of scanning.
+@c
 int reusePolicy = REUSE_EXACT;	/* recycle reuse policy
 			REUSE_NONE: baseline, keeps stat, no retain, no reuse
 			REUSE_COVER: reuse smallest select covering 
 			REUSE_EXACT: exact covering  */
 
+@-
+The recycler pool behaves as a cache and we may want to
+limit its resource requirements. Either in terms of
+a simple LRU scheme, which monitors touching the 
+cache for update. The alternative is RCACHE_CREDIT,
+which uses the volumetric cost in combination with their
+reuse count to retain expensive
+instructions as long as possible.
+@c
 int rcachePolicy = RCACHE_NONE;  /* recycle cache management policy
 			RCACHE_NONE: baseline, do nothing
 			RCACHE_LRU: throw LRU by setting the limit
 			RCACHE_CREDIT: credit-based LRU scheme */
 int recycleCacheLimit=0;
 int recycleClaim=0;		/* avoid stale tables by letting users mark it */
-@-
-The retain time is a constant. In adaptive mode, it means that
-it grows as the recycleBlk becomes larger. This way
-we only store results that can be located within a fraction
-of the time of searching for it in the recycleBlk.
-
+@=
 The profiler record is re-used to store recycler information.
 The clk is used by the LRU scheme, counter is the number of
 times this pattern was used, ticks is the clock ticks
@@ -203,7 +225,9 @@ void RECYCLEcache(){
 		if( rcachePolicy == RCACHE_LRU &&
 			 recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
 			max = i;
-		if( rcachePolicy == RCACHE_CREDIT && recycleCost(max) > recycleCost(i) )
+		if( rcachePolicy == RCACHE_CREDIT && 
+				recycleBlk->profiler[max].counter * recycleCost(max) > 
+				recycleBlk->profiler[i].counter * recycleCost(i) )
 			max = i;
 	}
 	if( recycleBlk->stop > recycleCacheLimit && recycleClaim <= 1){
