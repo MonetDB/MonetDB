@@ -230,7 +230,7 @@ For the recycle cache LRU scheme we mis-use a field in
 the performance record.
 @c
 long RECYCLEfootprint(){
-	long cnt;
+	long cnt = 0;
 	int i;
 	for( i=0; i<recycleBlk->stop; i++)
 		cnt += recycleBlk->profiler[i].obytes;
