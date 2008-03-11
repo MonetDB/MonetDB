@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2008 CWI.
 @' All Rights Reserved.
 
-@a M. Ivanova, M. Kersten
+@a M. Ivanova, M. Kersten, N. Nes
 @f mal_recycle
 @- The Recycler
 Query optimization and processing in off-the-shelf database systems is often
@@ -63,7 +63,7 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-/* #define _DEBUG_RECYCLE_   trace behavior */
+/* #define _DEBUG_RECYCLE_  trace behavior */
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -95,6 +95,8 @@ mal_export int rcachePolicy;
 #define RCACHE_CREDIT 	2
 #define RCACHE_MEMLRU 	3
 #define RCACHE_MEMCRD 	4
+
+mal_export int monitorRecycler;
 
 mal_export int recycleClaim;
 mal_export int recycleCacheLimit;
@@ -190,6 +192,13 @@ double recycleAlpha = 0.5;
 
 #define recycleCost(X) recycleAlpha * recycleBlk->profiler[X].ticks + (1-recycleAlpha)* (recycleBlk->profiler[X].ibytes+recycleBlk->profiler[X].obytes)
 
+@- Monitoring the Recycler
+@c
+lng recyclerUsedMemory = 0;
+int recycled = 0;
+int savedTime = 0;	/* sum of all recycled clk's */
+int monitorRecycler = 0;
+
 @-
 The Recycle catalog is a global structure, which should be
 protected with locks when updated.
@@ -199,7 +208,7 @@ the block is never executed.
 @c
 static void RECYCLEspace()
 {
-	if ( recycleBlk == NULL) {
+	if (recycleBlk == NULL) {
 		recycleBlk = newMalBlk(MAXVARS, STMT_INCREMENT);
 		recycleBlk->profiler = (ProfPtr) GDKzalloc(
 			recycleBlk->ssize*sizeof(ProfRecord));
@@ -229,19 +238,12 @@ re-synchronize.
 For the recycle cache LRU scheme we mis-use a field in
 the performance record.
 @c
-long RECYCLEfootprint(){
-	long cnt = 0;
-	int i;
-	if (recycleBlk)
-		for( i=0; i<recycleBlk->stop; i++)
-			cnt += recycleBlk->profiler[i].obytes;
-	return cnt;
-}
-
-void RECYCLEcache(int k){
+static void 
+RECYCLEcache(int k)
+{
 	int i, max;
 	InstrPtr pc;
-	int mem= RECYCLEfootprint() > recycleMemory;
+	int mem = recyclerUsedMemory > recycleMemory;
 
 	if (recycleBlk) {
 		recycleBlk->profiler[k].clk= 1; /* most recently used */
@@ -249,23 +251,23 @@ void RECYCLEcache(int k){
 		for(i=0; i< recycleBlk->stop; i++){
 			recycleBlk->profiler[i].clk++;
 			switch(rcachePolicy){
-				case RCACHE_LRU:
-					if( recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
-						max = i;
-					break;
-				case RCACHE_CREDIT:
-					if( recycleBlk->profiler[max].counter * recycleCost(max) > 
-							recycleBlk->profiler[i].counter * recycleCost(i) )
-						max = i;
-					break;
-				case RCACHE_MEMLRU:
-					if(mem && recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
-						max = i;
-					break;
-				case RCACHE_MEMCRD:
-					if(mem && recycleBlk->profiler[max].counter * recycleCost(max) > 
-							recycleBlk->profiler[i].counter * recycleCost(i) )
-						max = i;
+			case RCACHE_LRU:
+				if( recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
+					max = i;
+				break;
+			case RCACHE_CREDIT:
+				if( recycleBlk->profiler[max].counter * recycleCost(max) > 
+						recycleBlk->profiler[i].counter * recycleCost(i) )
+					max = i;
+				break;
+			case RCACHE_MEMLRU:
+				if(mem && recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
+					max = i;
+				break;
+			case RCACHE_MEMCRD:
+				if(mem && recycleBlk->profiler[max].counter * recycleCost(max) > 
+						recycleBlk->profiler[i].counter * recycleCost(i) )
+					max = i;
 			}
 		}
 		if( recycleBlk->stop > recycleCacheLimit && recycleClaim <= 1){
@@ -277,7 +279,12 @@ void RECYCLEcache(int k){
 			for(i=0; i< pc->argc; i++)
 				if( isaBatType(getVarType(recycleBlk, getArg(pc,i))) )
 					BBPdecref(getVarConstant(recycleBlk,i).val.bval,TRUE);
+			recyclerUsedMemory -= recycleBlk->profiler[max].obytes;
 			removeInstruction(recycleBlk,getInstrPtr(recycleBlk,max));
+			if (monitorRecycler)
+				fprintf(stderr, "memory=%lld, stop=%d, recycled=%d, saved=%d\n",
+					recyclerUsedMemory, recycleBlk->stop,
+					recycled, savedTime);
 			recycleVersion++;
 			mal_unset_lock(recycleLock,"recycle");
 		}
@@ -290,7 +297,8 @@ underlying implementation and collects statistics on the
 cost.
 @c
 
-static int RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
+static int 
+RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 {
 	int i, j, c; 
 	ValRecord *v;
@@ -332,6 +340,13 @@ static int RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	pushInstruction(recycleBlk,q);
 	recycleBlk->profiler[i].counter =1;
 	recycleBlk->profiler[i].ticks = GDKusec()-s->clk;
+	recycleBlk->profiler[i].ibytes = rd;
+	recycleBlk->profiler[i].obytes = wr;
+	recyclerUsedMemory += wr;
+	if (monitorRecycler) 
+		fprintf(stderr, "memory=%lld, stop=%d, recycled=%d, saved=%d\n",
+				recyclerUsedMemory, recycleBlk->stop,
+				recycled, savedTime);
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE catalog \n");
 	printFunction(GDKout,recycleBlk,LIST_MAL_ALL);
@@ -353,7 +368,8 @@ We should avoid adding the same operation twice, which
 means it should be easy to find them in the first place.
 @c
 static int
-RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p){
+RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
+{
 	int i, j;
 	InstrPtr q;
 
@@ -409,51 +425,45 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 
 		switch(reusePolicy){
 		case REUSE_NONE:
-			/* 0: baseline, no retain, no reuse*/
+			/* 0: baseline, no reuse */
 			break;
 		case REUSE_COVER:
 			/* 1: reuse smallest range covering */
 			ridx= getArg(q,1);
 			idx= getArg(p,1);
-			if( q->argc == p->argc &&
-				(getFunctionId(p)== selectRef || 
-				 getFunctionId(p)== uselectRef)   &&
-				getVarConstant(recycleBlk,ridx).val.bval == s->stk[idx].val.bval)
+			if (q->argc == p->argc &&
+			   (getFunctionId(p) == selectRef || 
+			    getFunctionId(p) == uselectRef)   &&
+			    getVarConstant(recycleBlk, ridx).val.bval == s->stk[idx].val.bval)
 			{	
 @-
 Time to check for the inclusion constraint
 @c
-				int leftbound=VALcmp( &s->stk[getArg(p,2)],
-                            &getVar(recycleBlk,getArg(q,2))->value) >=0;
-				int rightbound= p->argc== 3 || VALcmp( &s->stk[getArg(p,3)],
-                            &getVar(recycleBlk,getArg(q,3))->value) <=0;
+				int leftbound = VALcmp( &s->stk[getArg(p,2)], &getVar(recycleBlk,getArg(q,2))->value) >=0;
+				int rightbound = p->argc == 3 || VALcmp( &s->stk[getArg(p,3)], &getVar(recycleBlk,getArg(q,3))->value) <=0;
 
-				if( p->argc == 6){
+				if (p->argc == 6){
 						/* inclusion bounds */
-						leftbound &= 
-							VALcmp( &s->stk[getArg(p,4)],
-										&getVar(recycleBlk,getArg(q,4))->value)==0;
-						rightbound &= 
-							VALcmp( &s->stk[getArg(p,5)],
-										&getVar(recycleBlk,getArg(q,5))->value)==0;
+						leftbound &= VALcmp( &s->stk[getArg(p,4)], &getVar(recycleBlk,getArg(q,4))->value)==0;
+						rightbound &= VALcmp( &s->stk[getArg(p,5)], &getVar(recycleBlk,getArg(q,5))->value)==0;
 				}
-				if( leftbound && rightbound){
+				if (leftbound && rightbound){
 					BAT *b1, *b2;
-					nbid=getVarConstant(recycleBlk, getArg(q,0)).val.bval; 
+					nbid = getVarConstant(recycleBlk, getArg(q,0)).val.bval; 
 					if( bid == -1){
 						bid = nbid;
 						pc = i;
 #ifdef _DEBUG_RECYCLE_
-						b1= BBPquickdesc(bid, FALSE);
-						printf("counts %d -> %d \n", bid, (int)BATcount(b1));
+	b1 = BBPquickdesc(bid, FALSE);
+	printf("counts %d -> %d \n", bid, (int)BATcount(b1));
 #endif
 					} else {
 						b1 = BBPquickdesc(bid, FALSE);
 						b2 = BBPquickdesc(nbid, FALSE);
 
 #ifdef _DEBUG_RECYCLE_
-						printf("counts %d -> %d %d -> %d\n", 
-						bid, (int)BATcount(b1), nbid, (int)BATcount(b2));
+	printf("counts %d -> %d %d -> %d\n", 
+		bid, (int)BATcount(b1), nbid, (int)BATcount(b2));
 #endif
 						if (BATcount(b1) > BATcount(b2)){
 							bid = nbid;
@@ -461,8 +471,8 @@ Time to check for the inclusion constraint
 						}
 					}
 #ifdef _DEBUG_RECYCLE_
-						printf("Inclusive range bid=%d\n", bid);
-						printInstruction(GDKout,recycleBlk,q, LIST_MAL_ALL);
+	printf("Inclusive range bid=%d\n", bid);
+	printInstruction(GDKout,recycleBlk,q, LIST_MAL_ALL);
 #endif
 				}
 			}
@@ -475,8 +485,8 @@ Time to check for the inclusion constraint
 			}
 			/* found an exact match */
 #ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"RECYCLEreuse exact\n");
-		printInstruction(GDKout,mb,p, LIST_MAL_ALL);
+	stream_printf(GDKout,"RECYCLEreuse exact\n");
+	printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
 			/* get the results on the stack */
 			for( j=0; j<q->retc; j++){
@@ -487,11 +497,13 @@ Time to check for the inclusion constraint
 				getVar(mb,getArg(p,j))->recycle= getArg(q,j);
 			}
 			recycleBlk->profiler[i].counter++;
+			recycled++;
+			savedTime += recycleBlk->profiler[i].ticks;
 			return i;
 			notfound: continue;
 		}
 	}
-	if( bid >=0){
+	if (bid >=0) {
 		/* replace selection argument */
 		s->stk[getArg(p,1)].val.bval= bid;
 		BBPincref(bid, TRUE);
@@ -510,32 +522,35 @@ been marked as VAR_RECYCLE are skipped.
 For those marked VAR_KEPT we are done after copying the value
 onto the stack and return success.
 @c
-int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+int 
+RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
 	int i, cnt=0;
 	ValPtr lhs,rhs;
 
-	for(i=0;i< p->retc; i++)
-	if( isVarKept(mb, getArg(p,i)) ){
-		cnt++;
+	for(i=0;i< p->retc; i++) {
+		if(isVarKept(mb, getArg(p,i)) ){
+			cnt++;
 #ifdef _DEBUG_RECYCLE_
-		printInstruction(GDKout,mb,p, LIST_MAL_ALL);
-		stream_printf(GDKout,"RECYCLEentry found %d -> %d\n",getArg(p,i),
-			mb->var[getArg(p,i)]->recycle);
+	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
+	stream_printf(GDKout,"RECYCLEentry found %d -> %d\n",getArg(p,i),
+		mb->var[getArg(p,i)]->recycle);
 #endif
-		lhs= &stk->stk[getArg(p,i)];
-		rhs= &getVarConstant(recycleBlk, mb->var[getArg(p,i)]->recycle);
-		VALcopy(lhs,rhs);
-		if( lhs->vtype == TYPE_bat)
-			BBPincref(lhs->val.br.id, TRUE);
-	} 
+			lhs= &stk->stk[getArg(p,i)];
+			rhs= &getVarConstant(recycleBlk, mb->var[getArg(p,i)]->recycle);
+			VALcopy(lhs,rhs);
+			if( lhs->vtype == TYPE_bat)
+				BBPincref(lhs->val.br.id, TRUE);
+		} 
+	}
 
-	if( cnt != p->retc  && (i= RECYCLEreuse(mb,stk,p)) >= 0 )
-		cnt= p->retc;
+	if (cnt != p->retc && (i = RECYCLEreuse(mb,stk,p)) >= 0 )
+		cnt = p->retc;
 	stk->clk= GDKusec();
 @-
 update the cache before leaving.
 @c
-	if( recycleCacheLimit && i>=0)
+	if (recycleCacheLimit && i>=0)
 		RECYCLEcache(i);
 	return cnt == p->retc;
 }
@@ -554,6 +569,9 @@ void
 RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	static int exitLoop=0;
 	lng clk = 0;
+	int rd = getVolume(stk,p, 1)/ RU;
+	int wr = getVolume(stk,p, 0)/ RU;
+
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLEexit policy %d \n",retainPolicy);
 #endif
@@ -566,25 +584,19 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	case RETAIN_ALL:
 		/* RETAIN_ALL: infinite case, retain all new instructions */
 		if( !RECYCLEfind(mb,stk,p) )
-			(void) RECYCLEnew(mb,stk, p);
+			(void) RECYCLEnew(mb, stk, p, rd, wr);
 		break;
 	case RETAIN_TIME:
 		/* 2: time-based semantics, retain if beneficial */
 		if( clk > ABS(recycleTime) && !RECYCLEfind(mb,stk,p))
-			(void) RECYCLEnew(mb,stk, p);
+			(void) RECYCLEnew(mb, stk, p, rd, wr);
 		break;
 	case RETAIN_SIZE:
 	{
-		int i;
-		/*	3: size cost model */
+		/* 3: size cost model */
 		if(	recycleVolume && !RECYCLEfind(mb,stk,p)){
-			int rd = getVolume(stk,p, 1)/ RU;
-			int wr = getVolume(stk,p, 0)/ RU;
-
 			if( rd+wr >recycleVolume){
-				i = RECYCLEnew(mb,stk, p);
-				recycleBlk->profiler[i].ibytes= rd;
-				recycleBlk->profiler[i].obytes= wr;
+				(void) RECYCLEnew(mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
 				stream_printf(GDKout,"RECYCLEexit size %d \n",rd+wr);
 #endif
@@ -593,17 +605,11 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	}
 	case RETAIN_VOL:
 	{
-		int i;
-		/*	4: volumetric cost model (time x size )*/
-		if(	recycleVolume && !RECYCLEfind(mb,stk,p)){
-			int rd = getVolume(stk,p, 1)/ RU;
-			int wr = getVolume(stk,p, 0)/ RU;
-
+		/* 4: volumetric cost model (time x size )*/
+		if(recycleVolume && !RECYCLEfind(mb,stk,p)){
 			if( recycleAlpha *(rd+wr) + (1-recycleAlpha)* clk >
 						 recycleVolume * recycleTime){
-				i = RECYCLEnew(mb,stk, p);
-				recycleBlk->profiler[i].ibytes= rd;
-				recycleBlk->profiler[i].obytes= wr;
+				(void) RECYCLEnew(mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
 				stream_printf(GDKout,"RECYCLEexit volume %d \n",(rd+wr)*clk);
 #endif
@@ -613,7 +619,7 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	case RETAIN_ADAPT:
 		/* 5: adaptive temporal */
 		if( clk > recycleTime && !RECYCLEfind(mb,stk,p))
-			(void) RECYCLEnew(mb,stk, p);
+			(void) RECYCLEnew(mb, stk, p, rd, wr);
 		/* adapt the time watermark based on observed behavior */
 		if( recycleTime < 0 && (exitLoop++ % 99)== 0){
 			clk= GDKusec();
