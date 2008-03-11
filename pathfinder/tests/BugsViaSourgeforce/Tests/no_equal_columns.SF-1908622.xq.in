@@ -1,0 +1,1 @@
+doc("$TSTSRCDIR/ID.1908622.xml")//*[@a and @b and (d[. = "noot"])]

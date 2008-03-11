@@ -1,0 +1,25 @@
+<root>
+  <element1 a="1" b="2" c="11"/>
+
+  <element2 a="1" b="2" c="13">
+    <d>noot</d>
+  </element2>
+
+  <element3 a="1" c="10">
+    <d>noot</d>
+  </element3>
+
+  <element4 a="1" b="2">
+    <d>foo</d>
+  </element4>
+
+  <element5 b="2" c="7"/>
+
+  <element6 a="1" c="20"/>
+
+  <element7 a="13" b="10" c="11">
+    <d>noot</d>
+    <e>foo</e>
+    <d>bar</d>
+  </element7>
+</root>
