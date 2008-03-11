@@ -169,8 +169,8 @@ void showErrors() {
 	}
 }
 @-
-The bigfoot memory tracker keeps track on the space
-occupancy of BATs. It ignores for the time being the heaps.
+The bigfoot memory tracker keeps track on the space occupancy of BATs. 
+It ignores for the time being the heaps for the variable sized atoms.
 @c
 static INLINE void 
 updateBigFoot(Client cntxt, int bid, int add)
@@ -178,18 +178,21 @@ updateBigFoot(Client cntxt, int bid, int add)
 	BAT *b;
 
 	if (bid != bat_nil && BBP_lrefs(bid) == 1){
+		int cnt = 0;
 		b= BATdescriptor(bid);
-		if( b==0) return;
+		if (b == NULL) 
+			return;
 		/* count it once ! */
-		if( add){
-			cntxt->vmfoot += headsize(b,BATcount(b));
-			cntxt->vmfoot += tailsize(b,BATcount(b));
+		cnt = BATcount(b);
+		if (add) {
+			cntxt->vmfoot += VIEWhparent(b)?0:headsize(b,cnt);
+			cntxt->vmfoot += VIEWtparent(b)?0:tailsize(b,cnt);
 		} else {
-			cntxt->vmfoot -= headsize(b,BATcount(b));
-			cntxt->vmfoot -= tailsize(b,BATcount(b));
+			cntxt->vmfoot -= VIEWhparent(b)?0:headsize(b,cnt);
+			cntxt->vmfoot -= VIEWtparent(b)?0:tailsize(b,cnt);
 		}
-		if( cntxt->vmfoot > cntxt->bigfoot)
-			cntxt->bigfoot= cntxt->vmfoot;
+		if (cntxt->vmfoot > cntxt->bigfoot)
+			cntxt->bigfoot = cntxt->vmfoot;
 		BBPunfix(b->batCacheid);
 	}
 }
@@ -1031,7 +1034,6 @@ the bind(namespace, batname, mode) operation. [todo]
 			bat bid = stk->stk[getArg(pci,i)].val.br.id;
 			/* update the bigfoot information */
 			updateBigFoot(cntxt, bid, TRUE);
-			/* BAT *b;*/
 			if (backup[i]){
 				if (backup[i] != bid) {
 					/* possible garbage collect the variable */
@@ -1046,6 +1048,7 @@ This property setting facility leads to a performance
 loss of a factor 4(?) on the micro benchmarks.
 It does not belong here, but should be propagated 
 to the operators.
+			BAT *b;
 			if ((b = BATdescriptor(bid)) != NULL) {
 				BATsettrivprop(b);
 				BBPunfix(bid);
@@ -1608,7 +1611,7 @@ See @ref{The MAL Profiler} for more details.
 #endif
 @= beginProfile
 #ifdef MALprofiler
-	if( malProfileMode == 0)
+	if (malProfileMode == 0)
 		/* mostly true */;
 	else {
 		setFilterOnBlock(mb, 0, 0);
@@ -1701,16 +1704,29 @@ int getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 {
 	int i, limit, vol=0;
 	BAT *b;
+	int isview = 0;
 
-	limit= rd ==0? pci->retc: pci->argc;
-	i= rd? pci->retc:0;
-	for(; i<limit; i++)
-	if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
-		b= BATdescriptor( stk->stk[getArg(pci,i)].val.br.id);
-		if( b==0) continue;
-		vol += headsize(b,BATcount(b));
-		vol += tailsize(b,BATcount(b));
+	limit = rd == 0?pci->retc:pci->argc;
+	i = rd?pci->retc:0;
+	
+	if( stk->stk[getArg(pci,0)].vtype == TYPE_bat){
+		b = BATdescriptor(stk->stk[getArg(pci,i)].val.br.id);
+		isview = isVIEW(b);
 		BBPunfix(b->batCacheid);
+	}
+	for(; i<limit; i++) {
+		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+			int cnt = 0;
+			b = BATdescriptor(stk->stk[getArg(pci,i)].val.br.id);
+			if (b==NULL) 
+				continue;
+			cnt = BATcount(b);
+			/* Usually reading views cost as much as full bats. 
+			   But when we output a slice that is not the case. */
+			vol += ((rd && !isview) || !VIEWhparent(b))?headsize(b,cnt):0;
+			vol += ((rd && !isview) || !VIEWtparent(b))?tailsize(b,cnt):0;
+			BBPunfix(b->batCacheid);
+		}
 	}
 	return vol;
 }

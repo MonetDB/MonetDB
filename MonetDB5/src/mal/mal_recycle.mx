@@ -227,7 +227,7 @@ long RECYCLEfootprint(){
 	long cnt;
 	int i;
 	for( i=0; i<recycleBlk->stop; i++)
-		cnt += recycleBlk->profiler[i].sbytes;
+		cnt += recycleBlk->profiler[i].obytes;
 	return cnt;
 }
 
@@ -561,8 +561,8 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		int i;
 		/*	3: size cost model */
 		if(	recycleVolume && !RECYCLEfind(mb,stk,p)){
-			int rd= getVolume(stk,p, 1)/ RU;
-			int wr= getVolume(stk,p, 0)/ RU;
+			int rd = getVolume(stk,p, 1)/ RU;
+			int wr = getVolume(stk,p, 0)/ RU;
 
 			if( rd+wr >recycleVolume){
 				i = RECYCLEnew(mb,stk, p);
@@ -579,8 +579,8 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		int i;
 		/*	4: volumetric cost model (time x size )*/
 		if(	recycleVolume && !RECYCLEfind(mb,stk,p)){
-			int rd= getVolume(stk,p, 1)/ RU;
-			int wr= getVolume(stk,p, 0)/ RU;
+			int rd = getVolume(stk,p, 1)/ RU;
+			int wr = getVolume(stk,p, 0)/ RU;
 
 			if( recycleAlpha *(rd+wr) + (1-recycleAlpha)* clk >
 						 recycleVolume * recycleTime){

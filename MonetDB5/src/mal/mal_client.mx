@@ -131,22 +131,22 @@ information should be dealt with separately.[TODO]
 	str     oldscenario;
 	void    *state[7], *oldstate[7];
 	MALfcn  phase[7], oldphase[7];
-	sht		stage;		/* keep track of the phase being ran */
-	char    itrace;     /* trace execution using interactive mdb */
+	sht	stage;	   /* keep track of the phase being ran */
+	char    itrace;    /* trace execution using interactive mdb */
 						/* if set to 'S' it will put the process to sleep */
 	short   debugOptimizer,debugScheduler;
 @-
 For program debugging we need information on the timer and memory
 usage patterns.
 @h
-	sht		flags;	/* resource tracing flags */
-	lng     timer;  /* trace time in usec */
-	lng		bigfoot; /* maximum virtual memory use */
-	lng		vmfoot; /* virtual memory use */
+	sht	flags;	 /* resource tracing flags */
+	lng     timer;   /* trace time in usec */
+	lng	bigfoot; /* maximum virtual memory use */
+	lng	vmfoot;  /* virtual memory use */
 
 #define timerFlag	1
 #define memoryFlag	2
-#define ioFlag	4
+#define ioFlag		4
 #define flowFlag	8
 #define bigfootFlag	16
 @-
