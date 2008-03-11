@@ -1,5 +1,20 @@
-START TRANSACTION;
+--START TRANSACTION;
 
+DROP FUNCTION fDocColumnsWithRank;
+DROP FUNCTION fDocColumns;
+DROP FUNCTION fDocFunctionParams; 
+DROP FUNCTION fPhotoDescription;
+DROP FUNCTION fStripeOfRun;
+DROP FUNCTION fStripOfRun;
+DROP FUNCTION fGetDiagChecksum;
+DROP FUNCTION fSpecDescription;
+DROP FUNCTION fFirstFieldBit();
+DROP FUNCTION fRegionFuzz;
+DROP FUNCTION fRegionsContainingPointXYZ;
+DROP FUNCTION fRegionsContainingPointEq;
+DROP FUNCTION fFootprintEq;
+DROP FUNCTION fGetUrlFitsCFrame;
+DROP FUNCTION fGetUrlFitsMask;
 DROP FUNCTION fSDSS;
 DROP FUNCTION fSkyVersion;
 DROP FUNCTION fRerun;
@@ -89,12 +104,11 @@ DROP FUNCTION fHtmXyz;
 DROP FUNCTION fHtmEq;
 DROP FUNCTION fHtmLookupEq;
 DROP FUNCTION fHtmLookupXyz;
-DROP FUNCTION fPhotoDescription;
+DROP FUNCTION fHtmLookup;
 DROP FUNCTION fPhotoStatusN;
 DROP FUNCTION fPhotoFlagsN;
 DROP FUNCTION fPhotoFlags;
-DROP FUNCTION fStripeOfRun;
-DROP FUNCTION fStripOfRun;
-DROP FUNCTION fGetDiagChecksum;
+DROP FUNCTION fIndexName;
+DROP FUNCTION fTileFileName;
 
-COMMIT;
+--COMMIT;
