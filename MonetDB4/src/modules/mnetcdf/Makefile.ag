@@ -25,7 +25,6 @@ LIB_mnetcdf = {
 	SEP = _
 	COND = HAVE_NETCDF
 	SOURCES = mnetcdf.mx 
-	HEADERS = h proto.h m
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
 		../../monet/libmonet ../plain/lib_algebra \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \

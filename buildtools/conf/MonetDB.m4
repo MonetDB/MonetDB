@@ -2409,45 +2409,6 @@ esac
 
 AC_SUBST(SOCKET_LIBS)
 
-dnl check for NetCDF io library (default /usr and /usr/local)
-have_netcdf=$dft_netcdf
-NETCDF_CFLAGS=""
-NETCDF_LIBS=""
-AC_ARG_WITH(netcdf,
-	AC_HELP_STRING([--with-netcdf=DIR],
-		[netcdf library is installed in DIR]),
-	have_netcdf="$withval")
-case "$have_netcdf" in
-yes|no|auto)
-	;;
-*)
-	NETCDF_CFLAGS="-I$withval/include"
-	NETCDF_LIBS="-L$withval/lib"
-	;;
-esac
-if test "x$have_netcdf" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $NETCDF_CFLAGS"
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $NETCDF_LIBS -lnetcdf"
-	AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <netcdf.h>], [(void) nc_open("",0,(int*)0);]),
-		NETCDF_LIBS="$NETCDF_LIBS -lnetcdf",
-		[ if test "x$have_netcdf" != xauto; then AC_MSG_ERROR([netcdf library not found]); fi; have_netcdf=no ])
-	LIBS="$save_LIBS"
-	CPPFLAGS="$save_CPPFLAGS"
-fi
-if test "x$have_netcdf" != xno; then
-	AC_DEFINE(HAVE_LIBNETCDF, 1, [Define if you have the netcdf library])
-else
-	NETCDF_CFLAGS=""
-	NETCDF_LIBS=""
-fi
-AC_SUBST(NETCDF_CFLAGS)
-AC_SUBST(NETCDF_LIBS)
-AM_CONDITIONAL(HAVE_NETCDF, test "x$have_netcdf" != xno)
-NETCDF=$have_netcdf
-AC_SUBST(NETCDF)
-
 dnl check for z (de)compression library (default /usr and /usr/local)
 have_z=auto
 Z_CFLAGS=""
