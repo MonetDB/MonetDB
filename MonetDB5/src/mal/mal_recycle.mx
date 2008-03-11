@@ -203,7 +203,7 @@ void RECYCLEcache(){
 		if( rcachePolicy == RCACHE_LRU &&
 			 recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
 			max = i;
-		if( rcachePolicy == RCACHE_CREDIT && recycleCost(max) < recycleCost(i) )
+		if( rcachePolicy == RCACHE_CREDIT && recycleCost(max) > recycleCost(i) )
 			max = i;
 	}
 	if( recycleBlk->stop > recycleCacheLimit && recycleClaim <= 1){
@@ -356,27 +356,37 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 @-
 Time to check for the inclusion constraint
 @c
-				if( VALcmp( &s->stk[getArg(p,2)], 
-							&getVar(recycleBlk,getArg(q,2))->value) >=0 &&
-					( p->argc == 4 ||
-					  VALcmp( &s->stk[getArg(p,3)], 
-							&getVar(recycleBlk,getArg(q,3))->value) <=0 ) ){
+				int leftbound=VALcmp( &s->stk[getArg(p,2)],
+                            &getVar(recycleBlk,getArg(q,2))->value) >=0;
+				int rightbound= p->argc== 3 || VALcmp( &s->stk[getArg(p,3)],
+                            &getVar(recycleBlk,getArg(q,3))->value) <=0;
+
+				if( p->argc == 6){
+						/* inclusion bounds */
+						leftbound &= 
+							VALcmp( &s->stk[getArg(p,4)],
+										&getVar(recycleBlk,getArg(q,4))->value)==0;
+						rightbound &= 
+							VALcmp( &s->stk[getArg(p,5)],
+										&getVar(recycleBlk,getArg(q,5))->value)==0;
+				}
+				if( leftbound && rightbound){
 					BAT *b1, *b2;
 					nbid=getVarConstant(recycleBlk, getArg(q,0)).val.bval; 
 					if( bid == -1){
 						bid = nbid;
 						pc = i;
 #ifdef _DEBUG_RECYCLE_
-	b1= BBPquickdesc(bid, FALSE);
-	printf("counts %d -> %d \n", bid, (int)BATcount(b1));
+						b1= BBPquickdesc(bid, FALSE);
+						printf("counts %d -> %d \n", bid, (int)BATcount(b1));
 #endif
 					} else {
 						b1 = BBPquickdesc(bid, FALSE);
 						b2 = BBPquickdesc(nbid, FALSE);
 
 #ifdef _DEBUG_RECYCLE_
-	printf("counts %d -> %d %d -> %d\n", 
-		bid, (int)BATcount(b1), nbid, (int)BATcount(b2));
+						printf("counts %d -> %d %d -> %d\n", 
+						bid, (int)BATcount(b1), nbid, (int)BATcount(b2));
 #endif
 						if (BATcount(b1) > BATcount(b2)){
 							bid = nbid;
@@ -384,8 +394,8 @@ Time to check for the inclusion constraint
 						}
 					}
 #ifdef _DEBUG_RECYCLE_
-	printf("Inclusive range bid=%d\n", bid);
-		printInstruction(GDKout,recycleBlk,q, LIST_MAL_ALL);
+						printf("Inclusive range bid=%d\n", bid);
+						printInstruction(GDKout,recycleBlk,q, LIST_MAL_ALL);
 #endif
 				}
 			}
@@ -407,6 +417,7 @@ Time to check for the inclusion constraint
 					&getVarConstant(recycleBlk,getArg(q,j)) );
 				if (s->stk[getArg(p,j)].vtype == TYPE_bat)
 					BBPincref( s->stk[getArg(p,j)].val.bval , TRUE);
+				getVar(mb,getArg(p,j))->recycle= getArg(q,j);
 			}
 			recycleBlk->profiler[i].counter++;
 			return 1;
