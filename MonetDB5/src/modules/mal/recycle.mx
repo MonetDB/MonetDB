@@ -47,10 +47,15 @@ comment "Set recycler retainment policy:
 4- RETAIN_VOL: volumetric cost model (time x size )
 5- RETAIN_ADAP: adaptive temporal";
 
+command getRetainPolicy():int
+address RECYCLEgetRetain;
 
 pattern setReusePolicy(p:int...):void
 address RECYCLEsetReuse
 comment "Set recycler reuse policy";
+
+command getReusePolicy():int
+address RECYCLEgetReuse;
 
 pattern setCachePolicy(p:int...):void
 address RECYCLEsetCache
@@ -62,10 +67,16 @@ comment "Set recycler cache policy:
 4- RCACHE_MEMCRD: reduce the storage overhead 
 optional arguments are [ instruction-, [memory -]] limit";
 
+command getCachePolicy():int
+address RECYCLEgetCache;
 
 command shutdown():void
 address RECYCLEshutdownWrap
 comment "Clear the recycle cache";
+
+command monitor(f:int):void
+address RECYCLEmonitor
+comment "start/stop the monitoring (printing) of the recycler info (storage size used and number of statements retained)"
 @h
 #ifndef _RECYCLE_
 #define _RECYCLE_
@@ -89,7 +100,11 @@ recycle_export str RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 recycle_export str RECYCLEsetRetain(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEsetReuse(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEsetCache(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+recycle_export str RECYCLEgetRetain(int *p);
+recycle_export str RECYCLEgetReuse(int *p);
+recycle_export str RECYCLEgetCache(int *p);
 recycle_export str RECYCLEshutdownWrap(int *ret);
+recycle_export str RECYCLEmonitor(int *d, int *p);
 
 #endif
 @-
@@ -191,7 +206,6 @@ RECYCLEsetRetain(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	if(p->argc >3)
 		recycleAlpha = 1.0/  *(int*) getArgReference(stk, p,4);
-	(void)retainPolicy;
 	return MAL_SUCCEED;
 }
 
@@ -200,7 +214,6 @@ RECYCLEsetReuse(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) mb;
 	reusePolicy = * (int*) getArgReference(stk, p,1);
-	(void)reusePolicy;
 	return MAL_SUCCEED;
 }
 
@@ -213,9 +226,30 @@ RECYCLEsetCache(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		recycleCacheLimit = * (int*) getArgReference(stk, p,2);
 	if( rcachePolicy && p->argc >= 3)
 		recycleMemory= * (int*) getArgReference(stk, p,2);
-	(void)recycleCacheLimit;
 	return MAL_SUCCEED;
 }
+
+str 
+RECYCLEgetRetain(int *p)
+{
+	*p = retainPolicy;
+	return MAL_SUCCEED;
+}
+
+str 
+RECYCLEgetReuse(int *p)
+{
+	*p = reusePolicy;
+	return MAL_SUCCEED;
+}
+
+str 
+RECYCLEgetCache(int *p)
+{
+	*p = rcachePolicy;
+	return MAL_SUCCEED;
+}
+
 @-
 At the end of the session we have to cleanup the recycle cache.
 @c
@@ -223,6 +257,13 @@ str
 RECYCLEshutdownWrap(int *ret){
 	(void) ret;
 	RECYCLEshutdown();
+	return MAL_SUCCEED;
+}
+str 
+RECYCLEmonitor(int *ret, int *p)
+{
+	(void) ret;
+	monitorRecycler = *p;
 	return MAL_SUCCEED;
 }
 @}
