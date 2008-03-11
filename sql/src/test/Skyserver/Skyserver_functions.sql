@@ -1568,6 +1568,154 @@ END;
 
 -------------------------DOCUMENTATION------------------------
 
+CREATE FUNCTION fDocColumnsWithRank(tabname varchar(400))
+RETURNS TABLE (
+	enum	varchar(64),
+	nme		varchar(64),
+	type 		varchar(32),
+	length	int,
+	unit		varchar(64),
+	ucd		varchar(64),
+	description	varchar(2048),
+	rank		int
+)
+BEGIN
+    RETURN TABLE(
+    select  enum, nme, type, length, unit, ucd, description, rank 
+    from ( SELECT	
+	--distinct convert(sysnme,c.nme) as nme,
+			c.nme as nme,
+			t.nme as type,
+			coalesce(d.length, c.length) as length,
+			c.colid as ColNumber,
+			m.unit,
+			m.enum,
+			m.ucd,
+			m.description,
+			m.rank
+		FROM 	sysobjects o,
+			sysusers u,
+   			spt_datatype_info d,
+			systypes t,
+			syscolumns c,
+			DBColumns m
+		WHERE o.nme = tabname
+		    AND o.uid = u.uid
+		    AND c.id = o.id
+		    AND t.xtype = c.xtype
+		    AND d.ss_dtype = c.xtype
+ --		    AND coalesce(d."AUTO_INCREMENT",0) = 
+--		    	coalesce(ColumnProperty (c.id, c.nme, 'IsIdentity'),0)
+		    AND (m.tablename = tabname 
+			OR (m.tablename IN 
+				(select distinct b.parent from DBViewCols a, DBViewCols b 
+				where a.viewname = tabname AND a.parent = b.viewname)
+				) 
+			OR (m.tablename IN 
+				(select distinct parent 
+				from DBViewCols where viewname = tabname )
+			)
+		    )
+		    AND m.name  = c.nme
+		) as "Column"
+	order by ColNumber);
+END;
+
+CREATE FUNCTION fDocColumns(tabname varchar(400))
+RETURNS TABLE (
+	enum	varchar(64),
+	nme		varchar(64),
+	type 		varchar(32),
+	length	int,
+	unit		varchar(64),
+	ucd		varchar(64),
+	description	varchar(2048)
+)
+BEGIN
+    RETURN TABLE(
+    select  enum, nme, type, length, unit, ucd, description
+    from ( SELECT	
+	--distinct convert(sysnme,c.nme) as nme,
+			c.nme as nme,
+			t.nme as type,
+			coalesce(d.length, c.length) as length,
+			c.colid as ColNumber,
+			m.unit,
+			m.enum,
+			m.ucd,
+			m.description
+		FROM 	sysobjects o,
+			sysusers u,
+   			spt_datatype_info d,
+			systypes t,
+			syscolumns c,
+			DBColumns m
+		WHERE o.nme = tabname
+		    AND o.uid = u.uid
+		    AND c.id = o.id
+		    AND t.xtype = c.xtype
+		    AND d.ss_dtype = c.xtype
+ --		    AND coalesce(d."AUTO_INCREMENT",0) = 
+--		    	coalesce(ColumnProperty (c.id, c.nme, 'IsIdentity'),0)
+		    AND (m.tablename = tabname 
+			OR (m.tablename IN 
+				(select distinct b.parent from DBViewCols a, DBViewCols b 
+				where a.viewname = tabname AND a.parent = b.viewname)
+				) 
+			OR (m.tablename IN 
+				(select distinct parent 
+				from DBViewCols where viewname = tabname )
+			)
+		    )
+		    AND m.name  = c.nme
+		) as "Column"
+	order by ColNumber);
+END;
+
+CREATE FUNCTION fDocFunctionParams (FunctionName varchar(400))
+RETURNS TABLE (
+	nme		varchar(64),
+	type 		varchar(32),
+	length	int,
+	inout		varchar(8),
+	pnum		int
+)
+BEGIN
+    RETURN TABLE(
+    SELECT  nme, type, length, 
+	(case output when 'yes' then 'output' else 'input' end) as inout,
+	pnum
+    FROM ( 
+	SELECT	
+	--distinct convert(sysnme,c.nme) as nme,
+			c.nme as nme,
+		t.nme as type,
+		coalesce(d.length, c.length) as length, 
+		case (substring(c.nme,1,1)) 
+			when '' then 'yes' else 'no' end as input,   
+		case isoutparam  
+			when 1 then 'yes' else 
+			    case substring(c.nme,1,1)  
+				when '' then 'no' else 'yes' end
+			end as output,
+		c.colid as pnum 
+		FROM 	sysobjects o,
+			sysusers u,
+   			spt_datatype_info d,
+			systypes t,
+			syscolumns c
+		WHERE o.nme =FunctionName
+		  AND o.uid = u.uid
+		  AND c.id = o.id
+		  AND t.xtype = c.xtype
+		  AND d.ss_dtype = c.xtype
+ 	--	  AND coalesce(d."AUTO_INCREMENT",0) = 
+	--	    	coalesce(ColumnProperty (c.id, c.nme, 'IsIdentity'),0)
+		) as Param
+	order by output, pnum asc);
+END;
+
+
 
 ----------------------------------OTHERS------------------------------------
 
@@ -1600,5 +1748,271 @@ CREATE FUNCTION fGetDiagChecksum()
 RETURNS BIGINT
 BEGIN
 	RETURN (select sum(count)+count(*) from "Diagnostics");
+END;
+
+
+CREATE FUNCTION fSpecDescription(specId bigint)
+RETURNS varchar(1000)
+BEGIN
+	DECLARE itClass bigint, itZStatus bigint, itZWarning bigint ;
+	--
+	SET itClass  = (SELECT specClass FROM SpecObjAll WHERE specObjId=specId);
+	SET itZStatus = (SELECT zStatus   FROM SpecObjAll WHERE specObjId=specId);
+	SET itZWarning  = (SELECT zWarning  FROM SpecObjAll WHERE specObjId=specId);
+	RETURN 	(select fSpecClassN(itClass)) ||'| '
+		||(select fSpecZStatusN(itZStatus))||'|'
+		||(select fSpecZWarningN(itZWarning))||'|';
+END;
+
+
+--CREATE FUNCTION fEnum(
+--	val binary(8), 
+--	type varchar(32), 
+--	length int)
+--RETURNS varchar(64)
+--BEGIN
+--    DECLARE vstr varchar(64),
+--	vbin4 binary(4),
+--	vint int;
+--   SET vbin4 = CAST(value as binary(4));
+--    SET vint  = cAST(value as int);
+    --	
+--    IF type<>'binary'
+--	THEN SET vstr = CAST(vint as varchar(64));
+--    ELSE 
+--        IF length = 8
+--	   THEN EXEC master..xp_varbintohexstr val, vstr OUTPUT;	
+--        ELSE  
+--	    EXEC master..xp_varbintohexstr vbin4, vstr OUTPUT;
+          -- also handle the tinyint and smallint cases
+--            IF length = 2
+--               THEN SET vstr = CAST(vstr as varchar(6));
+--            ELSE 
+--                IF length=1
+--		    THEN SET vstr = CAST(vstr as varchar(4));
+--	        END IF;
+--            END IF;
+--        END IF;
+--    END IF;
+--    RETURN vstr;
+--END;
+
+CREATE FUNCTION fFirstFieldBit()
+RETURNS BIGINT
+BEGIN
+    RETURN cast(0x0000000010000000 as bigint);
+END;
+
+--CREATE FUNCTION fObjID(objID bigint)
+--RETURNS BIGINT
+--BEGIN
+--    DECLARE firstfieldbit bigint;
+--    SET firstfieldbit = 0x0000000010000000;
+--    SET objID = objID & ~firstfieldbit;
+--    IF (select count_big(*) from PhotoTag WITH (nolock) where objID = objID) > 0
+--        THEN RETURN objID;
+--    	ELSE(
+--        	SET objID = objID + firstfieldbit;
+--        	IF (select count_big(*) from PhotoTag WITH (nolock) where objID = objID) > 0
+--            		THEN RETURN objID;
+--		END IF;
+--	);
+--    END IF;
+--    RETURN cast(0 as bigint);
+--END;
+
+--CREATE FUNCTION fPrimaryObjID(objID bigint)
+--RETURNS BIGINT
+--BEGIN
+--    DECLARE firstfieldbit bigint;
+--    SET firstfieldbit = 0x0000000010000000;
+--    SET objID = objID & ~firstfieldbit;
+--    IF (select count_big(*) from PhotoPrimary WITH (nolock) where objID = objID) > 0
+--        THEN RETURN objID;
+--    	ELSE (
+--	        SET objID = objID + firstfieldbit;
+--       		IF (select count_big(*) from PhotoPrimary WITH (nolock) where objID = objID) > 0
+--            		THEN RETURN objID;
+--		END IF;
+--	);
+--    END IF;
+--    RETURN cast(0 as bigint);
+--END;
+
+--CREATE FUNCTION  fDatediffSec(strt date, now1 date) 
+--RETURNS float
+--BEGIN
+--  RETURN(datediff(millisecond, strt, now1)/1000.0);
+--END;   			-- End fDatediffSec()
+
+CREATE FUNCTION fRegionFuzz(d float, buffer float) 
+RETURNS float
+BEGIN 
+	DECLARE fuzzR float;
+	SET fuzzR = RADIANS(buffer/60.00000000);
+	-----------------------------------------
+	-- convert it to a normal form (blank separated trailing blank, upper case)
+	-----------------------------------------
+	IF d >  1 
+		THEN SET d = 1;
+	END IF;
+	IF d < -1 
+		THEN SET d = -1;
+	END IF;
+	CASE WHEN ACOS(d) + fuzzR <PI() 
+	  	THEN SET d = COS(ACOS(d)+fuzzR);
+	  	ELSE SET d = -1 ;
+	END CASE;
+	RETURN d;
+END;
+
+-----Missing Ones-----
+
+CREATE FUNCTION fRegionsContainingPointXYZ(x float, y float, z float, types VARCHAR(1000), buffer float)
+RETURNS TABLE(	RegionID bigint, type varchar(16))
+BEGIN
+	----------------------------------------------------
+	DECLARE TABLE region(
+		regionid bigint,
+		type varchar(16)
+	);
+	--
+		RETURN TABLE (SELECT R.regionID, R.type
+                    FROM  region as R);
+END;
+
+--CREATE FUNCTION fRegionsContainingPointXYZ(x float, y float, z float, types VARCHAR(1000), buffer float)
+--RETURNS TABLE(	RegionID bigint, type varchar(16))
+--BEGIN
+	----------------------------------------------------
+--	DECLARE TABLE typesTable(
+--		type varchar(16) 
+--	);
+--	DECLARE TABLE region(
+--		regionid bigint,
+--		type varchar(16)
+--	);
+	----------------------------------------------------
+--	SET types = REPLACE(types,',',' ');
+--	INSERT into typesTable (type)
+--	    SELECT * FROM fTokenStringToTable(types);
+--	DECLARE rowcount int;
+--	SELECT count(*) into rowcount from fTokenStringToTable(types);
+--	IF (rowcount = 0) 
+--		THEN RETURN TABLE (SELECT R.regionID, R.type
+--                    FROM  region as R);
+--	END IF;
+	--
+--	INSERT into region
+--	SELECT regionid, min(type)
+--	FROM (
+--	    select regionid, convexId, patch, type 
+--	    from RegionConvex 
+--	    where type in (select type from typesTable)
+--	      and dbo.fDistanceArcminXYZ(x,y,z,x,y,z) <radius+buffer
+ --	      and 2*DEGREES(ASIN(sqrt(power(x-x,2)+power(y-y,2)+power(z-z,2))/2)) <(radius+buffer)/60
+--	    ) o
+--	GROUP BY regionid;
+	----------------------------------------------------
+--	IF buffer = 0.0
+--	    THEN
+	    -------------------------------------------------
+--		RETURN (
+--		    SELECT R.regionID, R.type
+--		    FROM  region as R 
+--		    WHERE EXISTS (
+--			select convexid from Halfspace
+--			where regionid=R.regionid
+--			and convexid not in (
+--			    select convexid from HalfSpace h
+--			    where regionid=R.regionid
+--			    and x*h.x+y*h.y+z*h.z<h.c
+--			    )
+--			));
+	    -------------------------------------------------
+--	END IF;
+	    
+	    -------------------------------------------------
+--	RETURN (
+--	    SELECT R.regionID, R.type
+--	    FROM  region as R 
+--	    WHERE EXISTS (
+--		select convexid from Halfspace
+--		where regionid=R.regionid
+--		and convexid not in (
+--		    select convexid from HalfSpace h
+--		    where regionid=R.regionid
+--		    and x*h.x+y*h.y+z*h.z<fRegionFuzz(h.c,buffer)
+--		    )
+--		));
+	    -------------------------------------------------
+--END;
+
+CREATE FUNCTION fRegionsContainingPointEq( ra float, deci float, types varchar(1000), buffer float)
+RETURNS TABLE(	regionid bigint, type varchar(16))
+BEGIN
+	--------------------------------
+	-- transform to xyz coordinates
+	--------------------------------
+	DECLARE x float, y float, z float;
+	SET x  = COS(RADIANS(deci))*COS(RADIANS(ra));
+	SET y  = COS(RADIANS(deci))*SIN(RADIANS(ra));
+	SET z  = SIN(RADIANS(deci));
+	-- call the xyz function
+	Return TABLE(
+	    SELECT RegionID, type FROM fRegionsContainingPointXYZ(x,y,z,types,buffer) o);
+END
+
+;
+
+CREATE FUNCTION fFootprintEq(ra float, deci float, radius float)
+RETURNS TABLE ("type" varchar(16))
+BEGIN
+	RETURN TABLE (SELECT distinct type
+	  FROM fRegionsContainingPointEq(ra, deci,'CHUNK,PRIMARY,TILE,SECTOR',radius) n);
+END;
+
+CREATE FUNCTION fGetUrlFitsCFrame(fiel bigint, filter varchar(4))
+RETURNS varchar(128)
+BEGIN
+	DECLARE link varchar(128), runn varchar(8), rerunn varchar(8),
+		camcoll varchar(8), fieldd varchar(8), run6 varchar(10);
+	SET link = (select value from SiteConstants where name='DataServerURL');
+	SET link = link || 'imaging/';
+	SELECT cast(run as varchar(8)) into runn
+	    FROM Field WHERE fieldId=fiel;
+	SELECT cast(rerun as varchar(8)) into rerunn
+	    FROM Field WHERE fieldId=fiel;
+	SELECT cast(camcol as varchar(8)) into camcoll
+	    FROM Field WHERE fieldId=fiel;
+	SELECT cast(field as varchar(8)) into fieldd
+	    FROM Field WHERE fieldId=fiel;
+	SET run6   = substring('000000',1,6-length(runn)) + runn;
+	SET fieldd = substring('0000',1,4-length(fieldd)) + fieldd;
+	RETURN 	 link || runn || '/' || rerunn || '/corr/' || camcoll || '/fpC-' || run6 || '-' || filter || camcoll || '-' || fieldd ||'.fit.gz';
+END;
+
+CREATE FUNCTION fGetUrlFitsMask(fielId bigint, filter varchar(4))
+RETURNS varchar(128)
+BEGIN
+	DECLARE link varchar(128), runn varchar(8), rerunn varchar(8),
+		camcoll varchar(8), fieldd varchar(8), run6 varchar(10);
+	select value into link from SiteConstants where name='DataServerURL';
+	SET link = link || 'imaging/';
+	SELECT  cast(run as varchar(8)) into runn
+	    FROM Field
+	    WHERE fieldId=fielId;
+	Select cast(rerun as varchar(8)) into rerunn
+	    FROM Field
+	    WHERE fieldId=fielId;
+	SELECT cast(camcol as varchar(8)) into camcoll
+	    FROM Field
+	    WHERE fieldId=fielId;
+	SELECT cast(field as varchar(8)) into fieldd
+	    FROM Field
+	    WHERE fieldId=fielId;
+	SET run6   = substring('000000',1,6-length(runn)) || runn;
+	SET fieldd = substring('0000',1,4-length(fieldd)) || fieldd;
+	RETURN 	 link || runn || '/' || rerunn || '/objcs/'||camcoll||'/fpM-'||run6||'-'||filter||camcoll||'-'||fieldd||'.fit.gz';
 END;
 
