@@ -42,7 +42,9 @@ address RECYCLEsetRetain
 comment "Set recycler retainment policy:
 1- nothing to be done
 2- requires a minmal cut off time argument
-3- requires a minimal cut off result size";
+   a negative start triggers adaptive learning 
+3- size cost model 
+4- volumetric cost model (time x size) ";
 
 pattern setReusePolicy(p:int...):void
 address RECYCLEsetReuse
@@ -144,16 +146,21 @@ RECYCLEdump(int *ret)
 	int i;
 
 	(void) ret;
-	stream_printf(GDKout,"Recycler  catalog \n");
+	stream_printf(GDKout,"#Recycler  catalog\n");
+	stream_printf(GDKout,"#retain= %d time =%d sze= %d alpha= %4.3f\n",
+		retainPolicy, recycleTime, recycleVolume, recycleAlpha);
+	stream_printf(GDKout,"#reuse= %d\n", reusePolicy);
+	stream_printf(GDKout,"#rcache= %d\n", recycleCacheLimit);
 
 	/* and dump the statistics */
-	if (recycleBlk) {
-		for(i=0; i< recycleBlk->stop; i++){
-			stream_printf(GDKout,"#%4d count=%3d ticks=%4d %s\n", i,
-					recycleBlk->profiler[i].counter,
-					recycleBlk->profiler[i].ticks,
-					instruction2str(recycleBlk,getInstrPtr(recycleBlk,i),TRUE));
-		}
+	if (recycleBlk)
+	for(i=0; i< recycleBlk->stop; i++){
+		stream_printf(GDKout,"#%4d lru= %d cnt= %3d ticks=%4d  vol= %4d %s\n", i,
+			recycleBlk->profiler[i].clk,
+			recycleBlk->profiler[i].counter,
+			recycleBlk->profiler[i].ticks,
+			recycleBlk->profiler[i].ibytes+recycleBlk->profiler[i].obytes,
+			instruction2str(recycleBlk,getInstrPtr(recycleBlk,i),TRUE));
 	}
 	return MAL_SUCCEED;
 }
@@ -163,10 +170,20 @@ RECYCLEsetRetain(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) mb;
 	retainPolicy = * (int*) getArgReference(stk, p,1);
-	if( retainPolicy == 2 && p->argc >= 2)
-		retainTime = * (int*) getArgReference(stk, p,2);
-	if( retainPolicy == 3 && p->argc >= 2)
-		retainSize = * (size_t*) getArgReference(stk, p,2);
+	if( p->argc >= 2)
+	switch(retainPolicy){
+	case RETAIN_VOL:
+		if( p->argc >= 3)
+			recycleVolume = * (int*) getArgReference(stk, p,3);
+	case RETAIN_TIME:
+	case RETAIN_ADAPT:
+		recycleTime = * (int*) getArgReference(stk, p,2);
+		break;
+	case RETAIN_SIZE:
+		recycleVolume = * (int*) getArgReference(stk, p,2);
+	}
+	if(p->argc >3)
+		recycleAlpha = 1.0/  *(int*) getArgReference(stk, p,4);
 	(void)retainPolicy;
 	return MAL_SUCCEED;
 }
