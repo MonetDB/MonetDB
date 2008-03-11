@@ -40,11 +40,13 @@ comment "Dump summary of recycle table for potential re-use benefits";
 pattern setRetainPolicy(p:int...):void
 address RECYCLEsetRetain
 comment "Set recycler retainment policy:
-1- nothing to be done
-2- requires a minmal cut off time argument
-   a negative start triggers adaptive learning 
-3- size cost model 
-4- volumetric cost model (time x size) ";
+0- RETAIN_NONE: baseline, keeps stat, no retain, no reuse
+1- RETAIN_ALL: infinite case, retain all
+2- RETAIN_TIME: time-based semantics, retain if beneficial
+3- RETAIN_SIZE: size cost model
+4- RETAIN_VOL: volumetric cost model (time x size )
+5- RETAIN_ADAP: adaptive temporal";
+
 
 pattern setReusePolicy(p:int...):void
 address RECYCLEsetReuse
@@ -53,8 +55,13 @@ comment "Set recycler reuse policy";
 pattern setCachePolicy(p:int...):void
 address RECYCLEsetCache
 comment "Set recycler cache policy:
-1- do nothing
-2- LRU scheme with additional cache limit set.";
+0- RCACHE_ALL: baseline, do nothing
+1- RCACHE_LRU: throw LRU by setting the limit
+2- RCACHE_CREDIT: credit-based LRU scheme
+3- RCACHE_MEMLRU: reduce the storage overhead
+4- RCACHE_MEMCRD: reduce the storage overhead 
+optional arguments are [ instruction-, [memory -]] limit";
+
 
 command shutdown():void
 address RECYCLEshutdownWrap
@@ -204,6 +211,8 @@ RECYCLEsetCache(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	rcachePolicy = * (int*) getArgReference(stk, p,1);
 	if( rcachePolicy && p->argc >= 2)
 		recycleCacheLimit = * (int*) getArgReference(stk, p,2);
+	if( rcachePolicy && p->argc >= 3)
+		recycleMemory= * (int*) getArgReference(stk, p,2);
 	(void)recycleCacheLimit;
 	return MAL_SUCCEED;
 }
