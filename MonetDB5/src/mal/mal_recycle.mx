@@ -232,8 +232,9 @@ the performance record.
 long RECYCLEfootprint(){
 	long cnt = 0;
 	int i;
-	for( i=0; i<recycleBlk->stop; i++)
-		cnt += recycleBlk->profiler[i].obytes;
+	if (recycleBlk)
+		for( i=0; i<recycleBlk->stop; i++)
+			cnt += recycleBlk->profiler[i].obytes;
 	return cnt;
 }
 
