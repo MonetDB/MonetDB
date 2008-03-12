@@ -284,6 +284,7 @@ RECYCLEcache(int k)
 					BBPdecref(getVarConstant(recycleBlk,i).val.bval,TRUE);
 			recyclerUsedMemory -= recycleBlk->profiler[max].obytes;
 			removeInstruction(recycleBlk,getInstrPtr(recycleBlk,max));
+			trimMalVariables(recycleBlk);
 			if (monitorRecycler)
 				fprintf(stderr, "memory=%lld, stop=%d, recycled=%d(%d), saved=%d\n",
 					recyclerUsedMemory, recycleBlk->stop,

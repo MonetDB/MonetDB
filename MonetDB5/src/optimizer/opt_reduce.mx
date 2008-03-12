@@ -97,79 +97,15 @@ void MRconstant(MalBlkPtr mb){
 static int
 OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int *vars, *used;
-	int cnt = 0, i, j;
-	InstrPtr q;
 	int actions = 0;
 	(void)stk;
 	(void) p;
 
-	vars= (int *) alloca(mb->vtop * sizeof(int));
-	used= (int *) alloca(mb->vtop * sizeof(int));
-	memset((char*) vars, 0, mb->vtop * sizeof(int));
-	memset((char*) used, 0, mb->vtop * sizeof(int));
-
 	/* reduce constant list */
 	MRconstant(mb);
-	/* build the use table */
-	for(i=0; i<mb->stop; i++){
-		q= getInstrPtr(mb,i);
-
-		for(j=0; j<q->argc; j++)
-			used[getArg(q,j)] = 1;
-	}
-	for (i=0; i<mb->ptop; i++) {
-		if (mb->prps[i].var)
-			used[mb->prps[i].var] = 1;
-	}
-	/* build the alias table */
-	for (i = 0; i < mb->vtop; i++) {
-		if (used[i] == 0){
-			clearVariable(mb, i);
-			continue;
-		}
-
-		/* valgrind finds a leak when we move these variable 
-		   record pointers around. */
-		if (i>cnt) {
-			/* remap temporary variables */
-			VarRecord *t = mb->var[cnt];
-			if (isTmpVar(mb,i))
-				getVarTmp(mb,i) = cnt;
-			mb->var[cnt] = mb->var[i];
-			mb->var[i] = t;
-			t = NULL;
-			resetVarName(mb,cnt);
-		}
-		vars[i] = cnt;
-		cnt++;
-	}
-	actions = mb->vtop - cnt;
-#ifdef DEBUG_OPT_REDUCE
-	stream_printf(GDKout, "Reduction %d -> %d\n", mb->vtop, cnt);
-	for(i=0; i<mb->vtop;i++)
-		stream_printf(GDKout,"map %d->%d\n",i, vars[i]);
-#endif
-
-	/* remap all variable references to their new position. */
-	if (actions) {
-		for (i = 1; i < mb->stop; i++) {
-			q = getInstrPtr(mb, i);
-			for (j = 0; j < q->argc; j++)
-				getArg(q, j) = vars[getArg(q, j)];
-		}
-		for( i=0; i< mb->ptop; i++){
-			MalProp *p= mb->prps+i;
-
-			if (p->var)
-				p->var = vars[p->var];
-		}
-	}
-#ifdef DEBUG_OPT_REDUCE
-	stream_printf(GDKout, "After reduction \n");
-	printFunction(GDKout,mb,0);
-#endif
-	mb->vtop = cnt;
+	actions = mb->vtop;
+	trimMalVariables(mb);
+	actions = actions - mb->vtop;
 	return actions;
 }
 @include optimizerWrapper.mx
