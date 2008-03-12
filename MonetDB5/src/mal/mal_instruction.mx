@@ -336,9 +336,8 @@ typedef struct VARRECORD {
 #define VAR_INIT	32
 #define VAR_USED	64
 #define VAR_DISABLED	128 /* used for comments and scheduler */
-#define VAR_STORED	256 /* Recycle control, variable can be recycled  */
-#define VAR_RECYCLE	512 /* Recycle control, variable can be recycled  */
-#define VAR_KEPT	1024 /* Recycle control, variable is available  */
+#define VAR_RECYCLE	256 /* Recycle control, variable can be recycled  */
+#define VAR_KEPT	512 /* Recycle control, variable is available  */
 
 /* type check status is kept around to improve type checking efficiency */
 #define TYPE_ERROR      -1
@@ -464,7 +463,6 @@ for separate name space management.
 @:varProperty(Typedef,TYPEVAR)@
 @:varProperty(UDFtype,UDFTYPE)@
 @:varProperty(Constant,CONSTANT)@
-@:varProperty(Stored,STORED)@
 @:varProperty(Kept,KEPT)@
 @:varProperty(Recycled,RECYCLE)@
 
