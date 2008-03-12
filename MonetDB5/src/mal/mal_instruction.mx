@@ -1625,6 +1625,7 @@ trimMalVariables(MalBlkPtr mb)
 		vars[i] = cnt;
 		cnt++;
 	}
+	actions = mb->vtop - cnt;
 #ifdef DEBUG_REDUCE
 	stream_printf(GDKout, "Variable reduction %d -> %d\n", mb->vtop, cnt);
 	for(i=0; i<mb->vtop;i++)
