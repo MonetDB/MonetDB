@@ -224,11 +224,11 @@ str
 RECYCLEsetCache(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) mb;
-	rcachePolicy = * (int*) getArgReference(stk, p,1);
+	rcachePolicy = * (int*) getArgReference(stk, p, 1);
 	if( rcachePolicy && p->argc >= 2)
-		recycleCacheLimit = * (int*) getArgReference(stk, p,2);
+		recycleCacheLimit = * (int*) getArgReference(stk, p, 2);
 	if( rcachePolicy && p->argc >= 3)
-		recycleMemory= * (int*) getArgReference(stk, p,2);
+		recycleMemory= * (int*) getArgReference(stk, p, 3);
 	return MAL_SUCCEED;
 }
 
