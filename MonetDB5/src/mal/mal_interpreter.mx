@@ -1711,8 +1711,10 @@ int getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	
 	if( stk->stk[getArg(pci,0)].vtype == TYPE_bat){
 		b = BATdescriptor(stk->stk[getArg(pci,0)].val.br.id);
-		isview = isVIEW(b);
-		BBPunfix(b->batCacheid);
+		if (b) {
+			isview = isVIEW(b);
+			BBPunfix(b->batCacheid);
+		}
 	}
 	for(; i<limit; i++) {
 		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
