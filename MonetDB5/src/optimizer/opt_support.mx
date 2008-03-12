@@ -1115,11 +1115,10 @@ hasSideEffects(InstrPtr p, int strict)
 		getModuleId(p) == alarmRef)
 			return TRUE;
 
-	if( getModuleId(p) == sqlRef){
-		if( getFunctionId(p) == bindRef) return FALSE;
-		if( getFunctionId(p) == bindidxRef) return FALSE;
-		if( getFunctionId(p) == binddbatRef) return FALSE;
-		if( getFunctionId(p) == resultSetRef) return FALSE;
+	if (getModuleId(p) == sqlRef){
+		if (getFunctionId(p) == bindRef) return FALSE;
+		if (getFunctionId(p) == bindidxRef) return FALSE;
+		if (getFunctionId(p) == binddbatRef) return FALSE;
 		return TRUE;
 	}
 	if( getModuleId(p) == languageRef){
@@ -1136,7 +1135,7 @@ hasSideEffects(InstrPtr p, int strict)
 		if( getFunctionId(p) == disconnectRef)
 			return TRUE;
 	}
-	if (strict && getFunctionId(p)==newRef)
+	if (strict && getModuleId(p) != groupRef && getFunctionId(p)==newRef)
 		return TRUE;
 	return FALSE;
 }
