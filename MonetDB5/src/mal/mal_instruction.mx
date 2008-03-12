@@ -301,7 +301,8 @@ instruction in the source.]
 #endif
 #endif
 
-/* #define DEBUG_MAL_INSTR*/
+#define DEBUG_MAL_INSTR
+/* #define DEBUG_REDUCE */
 #define MAXARG 4		/* BEWARE the code depends on this knowledge */
 #define STMT_INCREMENT 32
 #define STMT_MAXIMUM  1<<16
@@ -1626,7 +1627,7 @@ trimMalVariables(MalBlkPtr mb)
 		vars[i] = cnt;
 		cnt++;
 	}
-#ifdef DEBUG_MAL_INSTR
+#ifdef DEBUG_REDUCE
 	stream_printf(GDKout, "Variable reduction %d -> %d\n", mb->vtop, cnt);
 	for(i=0; i<mb->vtop;i++)
 		stream_printf(GDKout,"map %d->%d\n",i, vars[i]);
@@ -1646,7 +1647,7 @@ trimMalVariables(MalBlkPtr mb)
 				p->var = vars[p->var];
 		}
 	}
-#ifdef DEBUG_MAL_INSTR
+#ifdef DEBUG_REDUCE
 	stream_printf(GDKout, "After reduction \n");
 	printFunction(GDKout,mb,0);
 #endif
