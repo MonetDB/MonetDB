@@ -301,7 +301,7 @@ instruction in the source.]
 #endif
 #endif
 
-#define DEBUG_MAL_INSTR
+/* #define DEBUG_MAL_INSTR*/
 #define MAXARG 4		/* BEWARE the code depends on this knowledge */
 #define STMT_INCREMENT 32
 #define STMT_MAXIMUM  1<<16
