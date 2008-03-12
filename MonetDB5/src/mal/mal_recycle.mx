@@ -64,7 +64,7 @@ which inspects the variable table for alternative results.
 #include "mal_instruction.h"
 
 /* #define _DEBUG_RECYCLE_  trace behavior */
-#define _DEBUG_RECYCLE_REUSE 
+//#define _DEBUG_RECYCLE_REUSE 
 @-
 We need some hard limits to not run out of datastructure
 spaces.
