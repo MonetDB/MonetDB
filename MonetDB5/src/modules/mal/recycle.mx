@@ -179,7 +179,7 @@ RECYCLEdump(int *ret)
 	/* and dump the statistics */
 	if (recycleBlk)
 	for(i=0; i< recycleBlk->stop; i++){
-		stream_printf(GDKout,"#%4d lru= %d cnt= %3d ticks=%4d  rd= %4d  wr= %4d %s\n", i,
+		stream_printf(GDKout,"# %4d lru= %8d cnt= %8d ticks= %9d  rd= %9d  wr= %9d %s\n", i,
 			recycleBlk->profiler[i].clk,
 			recycleBlk->profiler[i].counter,
 			recycleBlk->profiler[i].ticks,
