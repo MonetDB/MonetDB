@@ -179,11 +179,12 @@ RECYCLEdump(int *ret)
 	/* and dump the statistics */
 	if (recycleBlk)
 	for(i=0; i< recycleBlk->stop; i++){
-		stream_printf(GDKout,"#%4d lru= %d cnt= %3d ticks=%4d  vol= %4d %s\n", i,
+		stream_printf(GDKout,"#%4d lru= %d cnt= %3d ticks=%4d  rd= %4d  wr= %4d %s\n", i,
 			recycleBlk->profiler[i].clk,
 			recycleBlk->profiler[i].counter,
 			recycleBlk->profiler[i].ticks,
-			recycleBlk->profiler[i].ibytes+recycleBlk->profiler[i].obytes,
+			recycleBlk->profiler[i].ibytes,
+			recycleBlk->profiler[i].obytes,
 			instruction2str(recycleBlk,getInstrPtr(recycleBlk,i),TRUE));
 	}
 	return MAL_SUCCEED;
