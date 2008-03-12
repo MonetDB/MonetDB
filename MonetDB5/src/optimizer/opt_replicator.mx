@@ -194,7 +194,7 @@ opt_export sql_functions sqlf;
 @c
 #include "mal_config.h"
 #include "opt_replicator.h"
-#define isResStored(M,i) isVarStored(M, getArg(M->stmt[i],0))
+#define isResStored(M,i) isVarKept(M, getArg(M->stmt[i],0))
 
 /* repl. bookkeeping for current query execution */
 typedef struct REPLICAREC {
@@ -311,7 +311,7 @@ REPdump(int *ret)
 			r = getDestVar(p);
      			ps = instruction2str(repl,p, LIST_MAL_ALL);
 
-			if( isVarStored(repl,r))
+			if( isVarKept(repl,r))
 		        	stream_printf(GDKout,"%5.2f  %d  %d\t", replstat[r].ticks, replstat[r].cnt,replstat[r].reuse);
 			else stream_printf(GDKout,"Not stored   \t");
 			stream_printf(GDKout,"%s\n", ps);
@@ -518,8 +518,8 @@ static int newReplica(MalStkPtr s, InstrPtr p, bit keep)
 	r = getDestVar(p1);
 	replstat[r].instr = k;
 	if ( keep )
-		setVarStored(repl,r); 
-	else clrVarStored(repl,r); 
+		setVarKept(repl,r); 
+	else clrVarKept(repl,r); 
 	if (s->blk->profiler)
 		replstat[r].ticks = s->blk->profiler[getPC(s->blk,p)].ticks;
 #ifdef _DEBUG_REPLICATOR_
@@ -688,7 +688,7 @@ str REPselectImpl(int *ret, BAT *b, ptr low, ptr hgh, bit li, bit hi,
 	}
 	else {		/* check and reuse mapped var*/
 		rr = vmap[rv];
-		if( isVarStored(repl,rr) ){		/*reuse */ 
+		if( isVarKept(repl,rr) ){		/*reuse */ 
 			*ret = *(int *)getVarValue(repl,rr);
 			BBPincref(*ret,TRUE);
 			replstat[rr].reuse++;  
@@ -792,7 +792,7 @@ REPmarkT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ri = newReplica(stk,pci,FALSE);
 		} else {
 			rr = getArg(repl->stmt[ri],0);
-			if( isVarStored(repl,rr) )
+			if( isVarKept(repl,rr) )
 				msg = ALGtmark(ret, bid, base);
 			else {			/*reuse */ 
 				*ret = *(int *)getVarValue(repl,rr);
@@ -803,7 +803,7 @@ REPmarkT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		vmap[rv] = getArg(repl->stmt[ri],0); /*1st exec always maps */
 	} else{
 		rr = vmap[rv];
-		if( isVarStored(repl,rr) ){		/*reuse */ 
+		if( isVarKept(repl,rr) ){		/*reuse */ 
 			*ret = *(int *)getVarValue(repl,rr);
 			BBPincref(*ret,TRUE);
 			replstat[rr].reuse++;  
@@ -861,7 +861,7 @@ REPreverse(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	else {		/* check and reuse mapped var*/
 		rr = vmap[rv];
-		if( isVarStored(repl,rr) ){		/*reuse */ 
+		if( isVarKept(repl,rr) ){		/*reuse */ 
 			*ret = *(int *)getVarValue(repl,rr);
 			BBPincref(*ret,TRUE);
 			replstat[rr].reuse++;  
@@ -926,7 +926,7 @@ REPjoin(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	else {		/* check and reuse mapped var*/
 		rr = vmap[rv];
-		if( isVarStored(repl,rr) ){		/*reuse */ 
+		if( isVarKept(repl,rr) ){		/*reuse */ 
 			*ret = *(int *)getVarValue(repl,rr);
 			BBPincref(*ret,TRUE);
 			replstat[rr].reuse++;  
@@ -981,7 +981,7 @@ REPsemijoin(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	else {		/* check and reuse mapped var*/
 		rr = vmap[rv];
-		if( isVarStored(repl,rr) ){		/*reuse */ 
+		if( isVarKept(repl,rr) ){		/*reuse */ 
 			*ret = *(int *)getVarValue(repl,rr);
 			BBPincref(*ret,TRUE);
 			replstat[rr].reuse++;  
