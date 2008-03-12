@@ -68,8 +68,12 @@ which inspects the variable table for alternative results.
 We need some hard limits to not run out of datastructure
 spaces.
 @h
+#define RU 1024 /* recycle unit in bytes */
+#define GIGA (long)(1024*1024*1024)
+
 #define HARDLIMIT_VAR 25000
 #define HARDLIMIT_STMT 4000	/* roughly 5/line needed */
+#define HARDLIMIT_MEM 8 * GIGA/RU	/* avoid memory overflow */
 
 mal_export int recycleVersion;  /* version of recycle table */
 mal_export int retainPolicy;
@@ -82,7 +86,6 @@ mal_export int retainPolicy;
 
 mal_export int recycleTime;		
 mal_export int recycleVolume;
-#define RU 1024 /* recycle unit in bytes */
 
 mal_export int reusePolicy;
 #define REUSE_NONE	0
@@ -310,7 +313,8 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 		recycleCacheLimit < recycleBlk->stop)
 			return -1; /* no more caching */
 	if( recycleBlk->vtop >= HARDLIMIT_VAR ||
-		recycleBlk->stop >= HARDLIMIT_STMT)
+		recycleBlk->stop >= HARDLIMIT_STMT ||
+		recycleMemory > HARDLIMIT_MEM)
 			return -1; /* no more caching */
 
 
