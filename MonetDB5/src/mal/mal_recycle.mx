@@ -198,6 +198,7 @@ double recycleAlpha = 0.5;
 @- Monitoring the Recycler
 @c
 lng recyclerUsedMemory = 0;
+int statements = 0;
 int recycled = 0;
 int savedTime = 0;	/* sum of all recycled clk's */
 int monitorRecycler = 0;
@@ -285,9 +286,9 @@ RECYCLEcache(int k)
 			recyclerUsedMemory -= recycleBlk->profiler[max].obytes;
 			removeInstruction(recycleBlk,getInstrPtr(recycleBlk,max));
 			if (monitorRecycler)
-				fprintf(stderr, "memory=%lld, stop=%d, recycled=%d, saved=%d\n",
+				fprintf(stderr, "memory=%lld, stop=%d, recycled=%d(%d), saved=%d\n",
 					recyclerUsedMemory, recycleBlk->stop,
-					recycled, savedTime);
+					recycled, statements, savedTime);
 			recycleVersion++;
 			mal_unset_lock(recycleLock,"recycle");
 		}
@@ -348,9 +349,10 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 	recycleBlk->profiler[i].obytes = wr;
 	recyclerUsedMemory += wr;
 	if (monitorRecycler) 
-		fprintf(stderr, "memory=%lld, stop=%d, recycled=%d, saved=%d\n",
-				recyclerUsedMemory, recycleBlk->stop,
-				recycled, savedTime);
+		fprintf(stderr, 
+			"memory=%lld, stop=%d, recycled=%d(%d), saved=%d\n",
+			recyclerUsedMemory, recycleBlk->stop,
+			recycled, statements, savedTime);
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE catalog \n");
 	printFunction(GDKout,recycleBlk,LIST_MAL_ALL);
@@ -501,7 +503,6 @@ Time to check for the inclusion constraint
 				getVar(mb,getArg(p,j))->recycle= getArg(q,j);
 			}
 			recycleBlk->profiler[i].counter++;
-			recycled++;
 			savedTime += recycleBlk->profiler[i].ticks;
 			return i;
 			notfound: continue;
@@ -556,6 +557,8 @@ update the cache before leaving.
 @c
 	if (recycleCacheLimit && i>=0)
 		RECYCLEcache(i);
+	statements++;
+	recycled += cnt==p->retc;
 	return cnt == p->retc;
 }
 
