@@ -64,6 +64,7 @@ which inspects the variable table for alternative results.
 #include "mal_instruction.h"
 
 /* #define _DEBUG_RECYCLE_  trace behavior */
+//#define _DEBUG_RECYCLE_REUSE 
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -121,8 +122,6 @@ mal_export void RECYCLEshutdown(void);
 #include "mal_interpreter.h"
 #include "mal_function.h"
 
-#define isResStored(M,i) isVarKept(M, getArg(M->stmt[i],0))
-
 MT_Lock recycleLock ;
 int recycleVersion = 0;  /* version of recycle table */
 MalBlkPtr recycleBlk = NULL;
@@ -179,9 +178,9 @@ int rcachePolicy = RCACHE_LRU;  /* recycle cache management policy
 			RCACHE_MEMLRU: reduce the storage overhead 
 			RCACHE_MEMCRD: reduce the storage overhead */
 int recycleCacheLimit= 100;
-int recycleClaim=0;		/* avoid stale tables by letting users mark it */
+int recycleClaim=0;	/* avoid stale tables by letting users mark it */
 long recycleMemory=0;	/* Units of memory permitted */
-@=
+@-
 The profiler record is re-used to store recycler information.
 The clk is used by the LRU scheme, counter is the number of
 times this pattern was used, ticks is the clock ticks
@@ -296,12 +295,6 @@ RECYCLEcache(int k)
 	}
 }
 
-@-
-The overloaded algebra operator simply calls the
-underlying implementation and collects statistics on the
-cost.
-@c
-
 static int 
 RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 {
@@ -311,23 +304,21 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 	InstrPtr q;
 	
 	RECYCLEspace();
-	if( recycleCacheLimit  &&
-		recycleCacheLimit < recycleBlk->stop)
-			return -1; /* no more caching */
-	if( recycleBlk->vtop >= HARDLIMIT_VAR ||
-		recycleBlk->stop >= HARDLIMIT_STMT ||
-		recycleMemory > HARDLIMIT_MEM)
-			return -1; /* no more caching */
-
+	if (recycleCacheLimit && recycleCacheLimit < recycleBlk->stop)
+		return -1; /* no more caching */
+	if (recycleBlk->vtop >= HARDLIMIT_VAR ||
+	    recycleBlk->stop >= HARDLIMIT_STMT ||
+	    recycleMemory > HARDLIMIT_MEM)
+		return -1; /* no more caching */
 
 	if( p->argc <=1 )	/* add more */
-			return -1;
+		return -1;
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE new instruction \n");
 	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
 	q = copyInstruction(p);
-	for(i = 0; i< p->argc; i++){
+	for (i = 0; i< p->argc; i++) {
 		j= getArg(p,i);
 		v = &s->stk[j];
 		VALcopy(&cst,v);
@@ -335,9 +326,9 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 		if (v->vtype == TYPE_bat)
 			BBPincref( *(int*)VALget(v), TRUE);
 	 	setArg(q,i,c);
-		if( i < p->retc ){
-			mb->var[j]->recycle= c;
-			if( isVarRecycled(mb, j))
+		if (i < p->retc) {
+			mb->var[j]->recycle = c;
+			if (isVarRecycled(mb, j)) 
 				setVarKept(mb, j);
 			setVarUsed(recycleBlk,c);
 		}
@@ -384,17 +375,16 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	if( recycleBlk == 0)
 		return 0;
 
-	for( i=0; i<recycleBlk->stop; i++){
+	for (i=0; i<recycleBlk->stop; i++) {
 		q = getInstrPtr(recycleBlk,i);
-		if((p->argc != q->argc) ||
+		if ((p->argc != q->argc) ||
 		   (getFunctionId(p) != getFunctionId(q)) ||
 		   (getModuleId(p) != getModuleId(q)))
 			continue;
-		for( j=p->retc; j<p->argc; j++)
-		if( VALcmp( &s->stk[getArg(p,j)], 
-					&getVar(recycleBlk,getArg(q,j))->value) )
-			break;
-		if( j== q->argc )
+		for (j=p->retc; j<p->argc; j++)
+			if( VALcmp( &s->stk[getArg(p,j)], &getVar(recycleBlk,getArg(q,j))->value))
+				break;
+		if (j == q->argc)
 			return i;
 	}
 
@@ -408,24 +398,26 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 static int
 RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
-	int i, j, nbid, bid= -1 , ridx, idx,pc = -1;
+	int i, j, nbid, bid = -1, ridx, idx, pc = -1;
 	InstrPtr q;
 	static str selectRef;
 	
-	(void) mb;
-	if( selectRef == 0) selectRef= getName("select",6);
-#ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"RECYCLEreuse policy %d  recycleBlk %d\n",
-			reusePolicy, recycleBlk==0);
+	if (selectRef == 0) 
+		selectRef= getName("select",6);
+
+#ifdef _DEBUG_RECYCLE_REUSE
+	stream_printf(GDKout,"RECYCLEreuse(_%d=%s.%s) policy %d recycleBlk %d\n",
+		p->argv[0], getModuleId(p), getFunctionId(p), 
+		reusePolicy, recycleBlk==0);
 #endif
 	if( recycleBlk == 0 || reusePolicy == 0)
 		return -1;
 
 	for (i = 0; i < recycleBlk->stop; i++){
 		q = getInstrPtr(recycleBlk,i);
-		if((p->argc != q->argc) ||
-		   (getFunctionId(p) != getFunctionId(q)) ||
-		   (getModuleId(p) != getModuleId(q)))
+		if ((p->argc != q->argc) ||
+		    (getFunctionId(p) != getFunctionId(q)) ||
+		    (getModuleId(p) != getModuleId(q)))
 			continue;
 
 		switch(reusePolicy){
@@ -440,9 +432,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			    getFunctionId(p) == selectRef   &&
 			    getVarConstant(recycleBlk, ridx).val.bval == s->stk[idx].val.bval)
 			{	
-@-
-Time to check for the inclusion constraint
-@c
+				/* Time to check for the inclusion constraint */
 				int leftbound = VALcmp( &s->stk[getArg(p,2)], &getVar(recycleBlk,getArg(q,2))->value) >=0;
 				int rightbound = p->argc == 3 || VALcmp( &s->stk[getArg(p,3)], &getVar(recycleBlk,getArg(q,3))->value) <=0;
 
@@ -483,12 +473,11 @@ Time to check for the inclusion constraint
 		case REUSE_EXACT:
 			/* 2: exact covering */
 			for (j = p->retc; j < p->argc; j++){
-				if( VALcmp(&s->stk[getArg(p,j)],
-					&getVarConstant(recycleBlk,getArg(q,j))) )
-						goto notfound;
+				if (VALcmp(&s->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
+					goto notfound;
 			}
 			/* found an exact match */
-#ifdef _DEBUG_RECYCLE_
+#ifdef _DEBUG_RECYCLE_REUSE
 	stream_printf(GDKout,"RECYCLEreuse exact\n");
 	printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
@@ -498,7 +487,7 @@ Time to check for the inclusion constraint
 					&getVarConstant(recycleBlk,getArg(q,j)) );
 				if (s->stk[getArg(p,j)].vtype == TYPE_bat)
 					BBPincref( s->stk[getArg(p,j)].val.bval , TRUE);
-				getVar(mb,getArg(p,j))->recycle= getArg(q,j);
+				getVar(mb,getArg(p,j))->recycle = getArg(q,j);
 			}
 			recycleBlk->profiler[i].counter++;
 			savedTime += recycleBlk->profiler[i].ticks;
@@ -508,7 +497,7 @@ Time to check for the inclusion constraint
 	}
 	if (bid >=0) {
 		/* replace selection argument */
-		s->stk[getArg(p,1)].val.bval= bid;
+		s->stk[getArg(p,1)].val.bval = bid;
 		BBPincref(bid, TRUE);
 		recycleBlk->profiler[pc].counter++;
 	}
@@ -516,12 +505,14 @@ Time to check for the inclusion constraint
 
 }
 @-
-The generic wrappers for accessing the recycle variables
+The generic wrappers for accessing the recycle variables.
 Before the interpreter loop is allowed to execute the instruction
-we check the recycle table fo variables available.
+we check the recycle table for available variables.
 
+TODO remove the need for VAR_RECYCLE!
 A few cases should be distinguished. Target variables that have not
-been marked as VAR_RECYCLE are skipped.
+been marked as VAR_RECYCLE are skipped. 
+
 For those marked VAR_KEPT we are done after copying the value
 onto the stack and return success.
 @c
@@ -532,7 +523,7 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	ValPtr lhs,rhs;
 
 	for(i=0;i< p->retc; i++) {
-		if(isVarKept(mb, getArg(p,i)) ){
+		if (isVarKept(mb, getArg(p,i))) {
 			cnt++;
 #ifdef _DEBUG_RECYCLE_
 	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
@@ -550,9 +541,6 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (cnt != p->retc && (i = RECYCLEreuse(mb,stk,p)) >= 0 )
 		cnt = p->retc;
 	stk->clk= GDKusec();
-@-
-update the cache before leaving.
-@c
 	if (recycleCacheLimit && i>=0)
 		RECYCLEcache(i);
 	statements++;
@@ -561,11 +549,8 @@ update the cache before leaving.
 }
 
 @-
-The last instruction is called after the interpreter loop
-itself and has to decide on the results obtainde.
-The results variables marked as VAR_RECYCLE of all instructions 
-marked are saved.
-
+The 'exit' instruction is called after the interpreter loop
+itself and has to decide on the results obtaint.
 This is the place where we should call recycle optimization routines.
 It can use the timing information gathered from the previous call,
 which is stored in the stack frame to avoid concurrency problems.
@@ -588,19 +573,19 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		break;
 	case RETAIN_ALL:
 		/* RETAIN_ALL: infinite case, retain all new instructions */
-		if( !RECYCLEfind(mb,stk,p) )
+		if (!RECYCLEfind(mb,stk,p) )
 			(void) RECYCLEnew(mb, stk, p, rd, wr);
 		break;
 	case RETAIN_TIME:
 		/* 2: time-based semantics, retain if beneficial */
-		if( clk > ABS(recycleTime) && !RECYCLEfind(mb,stk,p))
+		if (clk > ABS(recycleTime) && !RECYCLEfind(mb,stk,p))
 			(void) RECYCLEnew(mb, stk, p, rd, wr);
 		break;
 	case RETAIN_SIZE:
 	{
 		/* 3: size cost model */
-		if(	recycleVolume && !RECYCLEfind(mb,stk,p)){
-			if( rd+wr >recycleVolume){
+		if (recycleVolume && !RECYCLEfind(mb,stk,p)){
+			if (rd+wr > recycleVolume){
 				(void) RECYCLEnew(mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
 				stream_printf(GDKout,"RECYCLEexit size %d \n",rd+wr);
@@ -611,9 +596,8 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	case RETAIN_VOL:
 	{
 		/* 4: volumetric cost model (time x size )*/
-		if(recycleVolume && !RECYCLEfind(mb,stk,p)){
-			if( recycleAlpha *(rd+wr) + (1-recycleAlpha)* clk >
-						 recycleVolume * recycleTime){
+		if (recycleVolume && !RECYCLEfind(mb,stk,p)){
+			if (recycleAlpha *(rd+wr) + (1-recycleAlpha)* clk > recycleVolume * recycleTime){
 				(void) RECYCLEnew(mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
 				stream_printf(GDKout,"RECYCLEexit volume %d \n",(rd+wr)*clk);
@@ -623,10 +607,10 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	}
 	case RETAIN_ADAPT:
 		/* 5: adaptive temporal */
-		if( clk > recycleTime && !RECYCLEfind(mb,stk,p))
+		if (clk > recycleTime && !RECYCLEfind(mb,stk,p))
 			(void) RECYCLEnew(mb, stk, p, rd, wr);
 		/* adapt the time watermark based on observed behavior */
-		if( recycleTime < 0 && (exitLoop++ % 99)== 0){
+		if (recycleTime < 0 && (exitLoop++ % 99)== 0){
 			clk= GDKusec();
 			(void) RECYCLEfind(mb,stk,p);
 			clk= GDKusec()-clk;
@@ -663,7 +647,7 @@ RECYCLEshutdown(void){
 	for(i=0; i< mb->stop; i++){
 		q= getInstrPtr(mb,i);
 		for(j=0; j< q->argc; j++)
-		if( isVarConstant(mb,getArg(q,j)) ){
+		if (isVarConstant(mb,getArg(q,j)) ){
 			if( isaBatType(getArgType(mb, q,j)) )
 				BBPdecref(getVarConstant(mb,getArg(q,j)).val.bval,TRUE);
 		}
