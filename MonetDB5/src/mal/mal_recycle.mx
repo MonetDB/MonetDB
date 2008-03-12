@@ -64,7 +64,7 @@ which inspects the variable table for alternative results.
 #include "mal_instruction.h"
 
 /* #define _DEBUG_RECYCLE_  trace behavior */
-//#define _DEBUG_RECYCLE_REUSE 
+#define _DEBUG_RECYCLE_REUSE 
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -78,11 +78,11 @@ spaces.
 
 mal_export int recycleVersion;  /* version of recycle table */
 mal_export int retainPolicy;
-#define RETAIN_NONE		0
-#define RETAIN_ALL	 	1
-#define RETAIN_TIME		2
-#define RETAIN_SIZE		3
-#define RETAIN_VOL		4
+#define RETAIN_NONE	0
+#define RETAIN_ALL 	1
+#define RETAIN_TIME	2
+#define RETAIN_SIZE	3
+#define RETAIN_VOL	4
 #define RETAIN_ADAPT	5
 
 mal_export int recycleTime;		
@@ -242,15 +242,17 @@ For the recycle cache LRU scheme we mis-use a field in
 the performance record.
 @c
 static void 
-RECYCLEcache(int k)
+RECYCLEcache(int k, int wr)
 {
 	int i, max;
 	InstrPtr pc;
-	int mem = recyclerUsedMemory > recycleMemory;
+	int mem = (recycleMemory && recyclerUsedMemory + wr > recycleMemory);
+	int size = (recycleCacheLimit && recycleBlk->stop + (k>0) > recycleCacheLimit);
 
 	if (recycleBlk) {
-		recycleBlk->profiler[k].clk= 1; /* most recently used */
-		max= 0;
+		if (k>=0)
+			recycleBlk->profiler[k].clk= 1; /* most recently used */
+		max = 0;
 		for(i=0; i< recycleBlk->stop; i++){
 			recycleBlk->profiler[i].clk++;
 			switch(rcachePolicy){
@@ -273,7 +275,7 @@ RECYCLEcache(int k)
 					max = i;
 			}
 		}
-		if( recycleBlk->stop > recycleCacheLimit && recycleClaim <= 1){
+		if (mem || (size && recycleClaim <= 1)){
 #ifdef _DEBUG_RECYCLE_
 			stream_printf(GDKout,"RECYCLE cache, remove %d \n",max);
 #endif
@@ -283,8 +285,10 @@ RECYCLEcache(int k)
 				if( isaBatType(getVarType(recycleBlk, getArg(pc,i))) )
 					BBPdecref(getVarConstant(recycleBlk,i).val.bval,TRUE);
 			recyclerUsedMemory -= recycleBlk->profiler[max].obytes;
+			for(i=max; i < recycleBlk->stop-1; i++)
+				recycleBlk->profiler[i] = recycleBlk->profiler[i+1]; 
 			removeInstruction(recycleBlk,getInstrPtr(recycleBlk,max));
-			trimMalVariables(recycleBlk);
+			//trimMalVariables(recycleBlk);
 			if (monitorRecycler)
 				fprintf(stderr, "memory=%lld, stop=%d, recycled=%d(%d), saved=%d\n",
 					recyclerUsedMemory, recycleBlk->stop,
@@ -292,7 +296,6 @@ RECYCLEcache(int k)
 			recycleVersion++;
 			mal_unset_lock(recycleLock,"recycle");
 		}
-		/* TODO when we evict one we should evict all depending on it, etc */
 	}
 }
 
@@ -542,8 +545,8 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (cnt != p->retc && (i = RECYCLEreuse(mb,stk,p)) >= 0 )
 		cnt = p->retc;
 	stk->clk= GDKusec();
-	if (recycleCacheLimit && i>=0)
-		RECYCLEcache(i);
+	if ((recycleCacheLimit || recycleMemory) && i>=0)
+		RECYCLEcache(i, 0);
 	statements++;
 	recycled += cnt==p->retc;
 	return cnt == p->retc;
@@ -568,7 +571,9 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 #endif
 	clk= GDKusec()-stk->clk;
 
-	switch(retainPolicy){
+	while ((recycleMemory && recyclerUsedMemory + wr > recycleMemory))
+		RECYCLEcache(-1, wr);
+	switch(retainPolicy) {
 	case RETAIN_NONE:
 		/* RETAIN_NONE: baseline, keeps stat, no retain, no reuse */
 		break;
@@ -578,13 +583,13 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			(void) RECYCLEnew(mb, stk, p, rd, wr);
 		break;
 	case RETAIN_TIME:
-		/* 2: time-based semantics, retain if beneficial */
+		/* RETAIN_TIME: time-based semantics, retain if beneficial */
 		if (clk > ABS(recycleTime) && !RECYCLEfind(mb,stk,p))
 			(void) RECYCLEnew(mb, stk, p, rd, wr);
 		break;
 	case RETAIN_SIZE:
 	{
-		/* 3: size cost model */
+		/* RETAIN_SIZE: size cost model */
 		if (recycleVolume && !RECYCLEfind(mb,stk,p)){
 			if (rd+wr > recycleVolume){
 				(void) RECYCLEnew(mb, stk, p, rd, wr);
@@ -596,7 +601,7 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	}
 	case RETAIN_VOL:
 	{
-		/* 4: volumetric cost model (time x size )*/
+		/* RETAIN_VOL: volumetric cost model (time x size )*/
 		if (recycleVolume && !RECYCLEfind(mb,stk,p)){
 			if (recycleAlpha *(rd+wr) + (1-recycleAlpha)* clk > recycleVolume * recycleTime){
 				(void) RECYCLEnew(mb, stk, p, rd, wr);
@@ -607,7 +612,7 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		}
 	}
 	case RETAIN_ADAPT:
-		/* 5: adaptive temporal */
+		/* RETAIN_ADAPT: adaptive temporal */
 		if (clk > recycleTime && !RECYCLEfind(mb,stk,p))
 			(void) RECYCLEnew(mb, stk, p, rd, wr);
 		/* adapt the time watermark based on observed behavior */
