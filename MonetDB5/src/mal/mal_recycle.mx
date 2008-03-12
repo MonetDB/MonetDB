@@ -292,6 +292,7 @@ RECYCLEcache(int k)
 			recycleVersion++;
 			mal_unset_lock(recycleLock,"recycle");
 		}
+		/* TODO when we evict one we should evict all depending on it, etc */
 	}
 }
 
@@ -410,11 +411,9 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	int i, j, nbid, bid= -1 , ridx, idx,pc = -1;
 	InstrPtr q;
 	static str selectRef;
-	static str uselectRef;
 	
 	(void) mb;
 	if( selectRef == 0) selectRef= getName("select",6);
-	if( uselectRef == 0) uselectRef= getName("uselect",7);
 #ifdef _DEBUG_RECYCLE_
 		stream_printf(GDKout,"RECYCLEreuse policy %d  recycleBlk %d\n",
 			reusePolicy, recycleBlk==0);
@@ -438,8 +437,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			ridx= getArg(q,1);
 			idx= getArg(p,1);
 			if (q->argc == p->argc &&
-			   (getFunctionId(p) == selectRef || 
-			    getFunctionId(p) == uselectRef)   &&
+			    getFunctionId(p) == selectRef   &&
 			    getVarConstant(recycleBlk, ridx).val.bval == s->stk[idx].val.bval)
 			{	
 @-
