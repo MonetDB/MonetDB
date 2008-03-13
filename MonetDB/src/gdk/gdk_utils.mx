@@ -1428,6 +1428,19 @@ GDKinit(opt *set, int setlen)
 	opt *n;
 	int i, j, nlen = 0;
 
+	/* some sanity checks (should also find if symbols are not defined) */
+	assert(sizeof(char) == SIZEOF_CHAR);
+	assert(sizeof(short) == SIZEOF_SHORT);
+	assert(sizeof(int) == SIZEOF_INT);
+	assert(sizeof(long) == SIZEOF_LONG);
+	assert(sizeof(lng) == SIZEOF_LNG);
+	assert(sizeof(oid) == SIZEOF_OID);
+	assert(sizeof(void *) == SIZEOF_VOID_P);
+	assert(sizeof(wrd) == SIZEOF_WRD);
+	assert(sizeof(size_t) == SIZEOF_SIZE_T);
+	assert(sizeof(ptrdiff_t) == SIZEOF_PTRDIFF_T);
+	assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG);
+
 	gdk_alloc_map = strcasecmp(alloc_map, "yes") == 0;
 	errno = 0;
 	dbfarm = mo_substitute(set, setlen, dbfarm);
