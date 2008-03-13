@@ -881,12 +881,13 @@ controlRunner(void *d)
 	char buf[256];
 	char *p, *q;
 	sabdb *stats;
-	int fd = *((int *)d);
+	int fd;
 	int pos = 0;
 
 	/* Try to handle control signals.  We can get race conditions due to
 	 * clients coming in at the same time.  We might need to fix this
 	 * situation sometime. */
+	fd = open((char *)d, O_RDONLY); /* note: this blocks */
 	while (_keepListening == 1) {
 		if (pos == 0) {
 			if ((pos = read(fd, buf, 255)) == 0) {
@@ -1378,8 +1379,7 @@ main(int argc, char *argv[])
 
 		/* handle control commands */
 		snprintf(buf, 1024, "%s/.merovingian_control", dbfarm);
-		comfd = open(buf, O_RDONLY);
-		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner, (void *)&comfd) < 0) {
+		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner, (void *)buf) < 0) {
 			fprintf(stderr, "unable to create control command thread\n");
 			ctid = 0;
 		}
