@@ -623,6 +623,11 @@ typedef int socklen_t;
 /* The size of a `long', as computed by sizeof. */
 #define SIZEOF_LONG 4
 
+#ifdef HAVE_LONG_LONG
+/* The size of a `long long', as computed by sizeof. */
+#define SIZEOF_LONG_LONG 8
+#endif
+
 /* The size of a `short', as computed by sizeof. */
 #define SIZEOF_SHORT 2
 
