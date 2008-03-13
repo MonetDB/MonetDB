@@ -244,58 +244,55 @@ the performance record.
 static void 
 RECYCLEcache(int k, int wr)
 {
-	int i, max;
+	int i, max = 0, mem, size;
 	InstrPtr pc;
-	int mem = (recycleMemory && recyclerUsedMemory + wr > recycleMemory);
-	int size = (recycleCacheLimit && recycleBlk->stop + (k>0) > recycleCacheLimit);
 
-	if (recycleBlk) {
-		if (k>=0)
-			recycleBlk->profiler[k].clk= 1; /* most recently used */
-		max = 0;
-		for(i=0; i< recycleBlk->stop; i++){
-			recycleBlk->profiler[i].clk++;
-			switch(rcachePolicy){
-			case RCACHE_LRU:
-				if( recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
+	if (!recycleBlk) 
+		return;
+	mem = (recycleMemory && recyclerUsedMemory + wr > recycleMemory);
+	size = (recycleCacheLimit && recycleBlk->stop + (k>0) > recycleCacheLimit);
+	if (k>=0)
+		recycleBlk->profiler[k].clk= 1; /* most recently used */
+	for(i=0; i< recycleBlk->stop; i++){
+		recycleBlk->profiler[i].clk++;
+		switch(rcachePolicy){
+		case RCACHE_LRU:
+			if( recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
+				max = i;
+			break;
+		case RCACHE_CREDIT:
+			if (recycleBlk->profiler[max].counter * recycleCost(max) > recycleBlk->profiler[i].counter * recycleCost(i))
 					max = i;
-				break;
-			case RCACHE_CREDIT:
-				if( recycleBlk->profiler[max].counter * recycleCost(max) > 
-						recycleBlk->profiler[i].counter * recycleCost(i) )
-					max = i;
-				break;
-			case RCACHE_MEMLRU:
-				if(mem && recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
-					max = i;
-				break;
-			case RCACHE_MEMCRD:
-				if(mem && recycleBlk->profiler[max].counter * recycleCost(max) > 
-						recycleBlk->profiler[i].counter * recycleCost(i) )
-					max = i;
-			}
+			break;
+		case RCACHE_MEMLRU:
+			if (mem && recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
+				max = i;
+			break;
+		case RCACHE_MEMCRD:
+			if(mem && recycleBlk->profiler[max].counter * recycleCost(max) > recycleBlk->profiler[i].counter * recycleCost(i) )
+				max = i;
 		}
-		if (mem || (size && recycleClaim <= 1)){
+	}
+	if (mem || (size && recycleClaim <= 1)){
 #ifdef _DEBUG_RECYCLE_
-			stream_printf(GDKout,"RECYCLE cache, remove %d \n",max);
+		stream_printf(GDKout,"RECYCLE cache, remove %d \n",max);
 #endif
-			mal_set_lock(recycleLock,"recycle");
-			pc= getInstrPtr(recycleBlk,max);
-			for(i=0; i< pc->argc; i++)
-				if( isaBatType(getVarType(recycleBlk, getArg(pc,i))) )
-					BBPdecref(getVarConstant(recycleBlk,i).val.bval,TRUE);
-			recyclerUsedMemory -= recycleBlk->profiler[max].obytes;
-			for(i=max; i < recycleBlk->stop-1; i++)
-				recycleBlk->profiler[i] = recycleBlk->profiler[i+1]; 
-			removeInstruction(recycleBlk,getInstrPtr(recycleBlk,max));
-			//trimMalVariables(recycleBlk);
-			if (monitorRecycler)
-				stream_printf(GDKerr, "#memory=%lld, stop=%d, recycled=%d(%d), saved=%d\n",
-					recyclerUsedMemory, recycleBlk->stop,
-					recycled, statements, savedTime);
-			recycleVersion++;
-			mal_unset_lock(recycleLock,"recycle");
-		}
+		mal_set_lock(recycleLock,"recycle");
+		pc = getInstrPtr(recycleBlk,max);
+		for (i=0; i< pc->argc; i++)
+			if( isaBatType(getVarType(recycleBlk, getArg(pc,i))))
+				BBPdecref(getVarConstant(recycleBlk,i).val.bval,TRUE);
+		recyclerUsedMemory -= recycleBlk->profiler[max].obytes;
+		for (i=max; i < recycleBlk->stop-1; i++)
+			recycleBlk->profiler[i] = recycleBlk->profiler[i+1]; 
+		removeInstruction(recycleBlk,getInstrPtr(recycleBlk,max));
+		trimMalVariables(recycleBlk);
+		if (monitorRecycler)
+			stream_printf(GDKerr, "#memory=%lld, stop=%d, recycled=%d(%d), saved=%d\n",
+				recyclerUsedMemory, recycleBlk->stop,
+				recycled, statements, savedTime);
+		recycleVersion++;
+		mal_unset_lock(recycleLock,"recycle");
 	}
 }
 
