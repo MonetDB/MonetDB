@@ -1064,9 +1064,11 @@ removeInstruction(MalBlkPtr mb, InstrPtr p)
 	if (i == mb->stop)
 		return;
 
-	for (; i < mb->stop - 1; i++)
+	for (; i < mb->stop - 1; i++){
 		mb->stmt[i] = mb->stmt[i + 1];
-
+		if (mb->profiler)
+			mb->profiler[i]= mb->profiler[i + 1];
+	}
 	mb->stop--;
 	assert(i==mb->stop);
 

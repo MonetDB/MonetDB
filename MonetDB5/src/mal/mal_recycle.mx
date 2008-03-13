@@ -63,7 +63,7 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-/* #define _DEBUG_RECYCLE_  trace behavior */
+#define _DEBUG_RECYCLE_  /* trace behavior */
 //#define _DEBUG_RECYCLE_REUSE 
 @-
 We need some hard limits to not run out of datastructure
@@ -240,11 +240,69 @@ re-synchronize.
 
 For the recycle cache LRU scheme we mis-use a field in
 the performance record.
+
+Removal of instructions should be done with care.
+First, there may be references kept around to 
+variables in the recycle cache. They should be
+invalidated.
+Second, for each (BAT) variable removed, we
+should also remove the dependent instructions.
 @c
+static void RECYCLEremove(int pc){
+	int k,j,i;
+	InstrPtr p;
+	InstrPtr *old;
+	int limit;
+	char *used;
+
+	old = recycleBlk->stmt;
+	limit = recycleBlk->stop;
+	newMalBlkStmt(recycleBlk,recycleBlk->ssize);
+
+	used= alloca(recycleBlk->vtop);
+	bzero(used, recycleBlk->vtop);
+
+	/* set all used variables */
+	for (i = 0; i < pc; i++){
+		p= old[i];
+		pushInstruction(recycleBlk,p);
+		for( j = 0 ; j< p->argc; j++)
+			used[getArg(p,j)] = 1;
+	}
+
+	/* ditch the selected one */
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLEremove %d \n",i);
+	printInstruction(GDKout,recycleBlk, old[i], LIST_MAL_ALL);
+#endif
+	freeInstruction(old[i]);
+	k= i;
+
+	/* propagate the droppings */
+	for (i ++; i < limit; i++){
+		p= old[i];
+		for( j = p->retc; j< p->argc; j++)
+		if( used[getArg(p,j)] ==0){
+#ifdef _DEBUG_RECYCLE_
+			stream_printf(GDKout,"RECYCLEremove %d \n",i);
+			printInstruction(GDKout,recycleBlk, old[i], LIST_MAL_ALL);
+#endif
+			freeInstruction(old[i]);
+			goto skip;
+		}
+		pushInstruction(recycleBlk,p);
+		recycleBlk->profiler[k++]= recycleBlk->profiler[i];
+		/* the instruction args are safed */
+		for( j = 0 ; j< p->argc; j++)
+			used[getArg(p,j)] = 1;
+	skip:;
+	}
+}
+
 static void 
 RECYCLEcache(int k, int wr)
 {
-	int i, max = 0, mem, size;
+	int i, max = -1, mem, size;
 	InstrPtr pc;
 
 	if (!recycleBlk) 
@@ -273,7 +331,8 @@ RECYCLEcache(int k, int wr)
 				max = i;
 		}
 	}
-	if (mem || (size && recycleClaim <= 1)){
+
+	if (max >= 0 && (mem || (size && recycleClaim <= 1)) ){
 #ifdef _DEBUG_RECYCLE_
 		stream_printf(GDKout,"RECYCLE cache, remove %d \n",max);
 #endif
@@ -283,9 +342,7 @@ RECYCLEcache(int k, int wr)
 			if( isaBatType(getVarType(recycleBlk, getArg(pc,i))))
 				BBPdecref(getVarConstant(recycleBlk,i).val.bval,TRUE);
 		recyclerUsedMemory -= recycleBlk->profiler[max].obytes;
-		for (i=max; i < recycleBlk->stop-1; i++)
-			recycleBlk->profiler[i] = recycleBlk->profiler[i+1]; 
-		removeInstruction(recycleBlk,getInstrPtr(recycleBlk,max));
+		RECYCLEremove(max);
 		trimMalVariables(recycleBlk);
 		if (monitorRecycler)
 			stream_printf(GDKerr, "#memory=%lld, stop=%d, recycled=%d(%d), saved=%d\n",
@@ -299,7 +356,7 @@ RECYCLEcache(int k, int wr)
 static int 
 RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 {
-	int i, j, c; 
+	int i, j, c;
 	ValRecord *v;
 	ValRecord cst;
 	InstrPtr q;
