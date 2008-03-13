@@ -16,7 +16,7 @@ monet_version(void)
 			"based on kernel v%s (" SZFMT "-bit oids)\n",
 			(size_t) (sizeof(ptr) * 8), GDKversion(),
 			(size_t) (sizeof(oid) * 8));
-	printf("Copyright (c) 1993-2007 CWI, all rights reserved\n");
+	printf("Copyright (c) 1993-2008 CWI, all rights reserved\n");
 	printf("Visit http://monetdb.cwi.nl/ for further information\n");
 	printf("Configured for prefix: " MONETDB5_PREFIX "\n");
 	printf("Libraries:\n");
