@@ -70,7 +70,7 @@ We need some hard limits to not run out of datastructure
 spaces.
 @h
 #define RU 1024 /* recycle unit in bytes */
-#define GIGA (long)(1024*1024*1024)
+#define GIGA (lng)(1024*1024*1024)
 
 #define HARDLIMIT_VAR 25000
 #define HARDLIMIT_STMT 4000	/* roughly 5/line needed */
@@ -104,7 +104,7 @@ mal_export int monitorRecycler;
 
 mal_export int recycleClaim;
 mal_export int recycleCacheLimit;
-mal_export long recycleMemory;	/* Units of memory permitted */
+mal_export lng recycleMemory;	/* Units of memory permitted */
 mal_export MT_Lock recycleLock;
 mal_export MalBlkPtr recycleBlk;
 mal_export double recycleAlpha;
@@ -179,7 +179,7 @@ int rcachePolicy = RCACHE_LRU;  /* recycle cache management policy
 			RCACHE_MEMCRD: reduce the storage overhead */
 int recycleCacheLimit= 100;
 int recycleClaim=0;	/* avoid stale tables by letting users mark it */
-long recycleMemory=0;	/* Units of memory permitted */
+lng recycleMemory=0;	/* Units of memory permitted */
 @-
 The profiler record is re-used to store recycler information.
 The clk is used by the LRU scheme, counter is the number of
@@ -491,13 +491,18 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			    getVarConstant(recycleBlk, ridx).val.bval == s->stk[idx].val.bval)
 			{	
 				/* Time to check for the inclusion constraint */
-				int leftbound = VALcmp( &s->stk[getArg(p,2)], &getVar(recycleBlk,getArg(q,2))->value) >=0;
-				int rightbound = p->argc == 3 || VALcmp( &s->stk[getArg(p,3)], &getVar(recycleBlk,getArg(q,3))->value) <=0;
+				int leftbound = VALcmp( &s->stk[getArg(p,2)], 
+								&getVar(recycleBlk,getArg(q,2))->value) >=0;
+				int rightbound = p->argc == 3 || 
+						VALcmp( &s->stk[getArg(p,3)], 
+								&getVar(recycleBlk,getArg(q,3))->value) <=0;
 
 				if (p->argc == 6){
 						/* inclusion bounds */
-						leftbound &= VALcmp( &s->stk[getArg(p,4)], &getVar(recycleBlk,getArg(q,4))->value)==0;
-						rightbound &= VALcmp( &s->stk[getArg(p,5)], &getVar(recycleBlk,getArg(q,5))->value)==0;
+						leftbound &= VALcmp( &s->stk[getArg(p,4)], 
+								&getVar(recycleBlk,getArg(q,4))->value)==0;
+						rightbound &= VALcmp( &s->stk[getArg(p,5)], 
+								&getVar(recycleBlk,getArg(q,5))->value)==0;
 				}
 				if (leftbound && rightbound){
 					BAT *b1, *b2;
@@ -568,6 +573,8 @@ Before the interpreter loop is allowed to execute the instruction
 we check the recycle table for available variables.
 
 TODO remove the need for VAR_RECYCLE!
+No, there is a distinction to keep a variable and actually doing it.
+A variable marked RECYCLE and not KEPT, calls for a re-evaluation.
 A few cases should be distinguished. Target variables that have not
 been marked as VAR_RECYCLE are skipped. 
 
