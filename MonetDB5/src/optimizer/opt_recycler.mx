@@ -125,11 +125,12 @@ For the time being for all possible selects encountered.
 @c
 		/* take care of semantic driven recyling */
 		if( p->recycle &&
-			getFunctionId(p)== selectRef &&
+			getFunctionId(p)== uselectRef &&
 			!ATOMvarsized( getGDKType( getArgType(mb,p,1)))
 		){
 			setFunctionId(p, selectRef);
-			typeChecker(MCgetClient()->nspace,mb,p,TRUE);
+			/* this requires a complete type check again */
+			clrAllTypes(mb);
 		}
 	}
 	if( actions)
@@ -143,4 +144,4 @@ For the time being for all possible selects encountered.
 #endif
 @c
 #include "opt_statistics.h"
-@:wrapOptimizer(recycle,OPT_CHECK_ALL)@
+@:wrapOptimizer(recycle,OPT_CHECK_TYPES)@
