@@ -95,7 +95,7 @@ OPTrecycleImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @-
 Functions with side effects can not be subject to recycle actions.
 @c
-		if( hasSideEffects(p,TRUE))
+		if( hasSideEffects(p,TRUE) || isUnsafeFunction(p))
 			continue;
 		cnt= 0;
 		for( j=p->retc; j<p->argc; j++)
@@ -115,15 +115,21 @@ Functions with side effects can not be subject to recycle actions.
 #endif
 			}
 		}
+@-
+The expected gain is largest if we can re-use selections
+on the base tables in SQL. These, however, are marked as
+uselect() calls, which only produces the oid head.
+For cheap types we re-map uselect() back into select().
+For the time being for all possible selects encountered.
+(keeping track of the sql.bind() dependency is more work)
+@c
 		/* take care of semantic driven recyling */
-		if( getFunctionId(p)== uselectRef ||
-			getFunctionId(p)== selectRef ||
-			getFunctionId(p)== markTRef ||
-			getFunctionId(p)== joinRef ||
-			getFunctionId(p)== semijoinRef
+		if( p->recycle &&
+			getFunctionId(p)== selectRef &&
+			!ATOMvarsized( getGDKType( getArgType(mb,p,1)))
 		){
-			actions ++;
-			p->recycle = 1; /* this instruction is to be monitored */
+			setFunctionId(p, selectRef);
+			typeChecker(MCgetClient()->nspace,mb,p,TRUE);
 		}
 	}
 	if( actions)
