@@ -87,6 +87,7 @@ res_col_create(sql_trans *tr, res_table *t, char *tn, char *name, char *typename
 		c->p = ATOMdup(mtype, val);
 	}
 	t->cur_col++;
+	assert(t->cur_col <= t->nr_cols);
 	return c;
 }
 
