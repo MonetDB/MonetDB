@@ -86,34 +86,34 @@ static int
 OPTrecycleImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, j, cnt, actions=0;
-	Lifespan span= newLifespan(mb);
+	Lifespan span = newLifespan(mb);
 
 	(void) stk;
 	setLifespan(mb,span);
 	for (i = 1; i<mb->stop; i++) {
-		p= getInstrPtr(mb,i);
+		p = getInstrPtr(mb,i);
 @-
 Functions with side effects can not be subject to recycle actions.
 @c
-		if( hasSideEffects(p,TRUE) || isUnsafeFunction(p))
+		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p))
 			continue;
-		cnt= 0;
-		for( j=p->retc; j<p->argc; j++)
-		if( isVarRecycled(mb, getArg(p,j)) ||
-			isVarConstant(mb, getArg(p,j)) )
-			cnt++;
+		cnt = 0;
+		for (j=p->retc; j<p->argc; j++)
+			if (isVarRecycled(mb, getArg(p,j)) || 
+			    isVarConstant(mb, getArg(p,j)))
+				cnt++;
 		
-		if( cnt == p->argc-p->retc){
+		if (cnt == p->argc-p->retc) {
 			actions ++;
 			p->recycle = 1; /* this instruction is to be monitored */
-			for( j= 0; j < p->retc; j++)
-			if( getLastUpdate(span, getArg(p,j)) == i ){
-				setVarRecycled(mb, getArg(p,j));
+			for (j= 0; j < p->retc; j++)
+				if(getLastUpdate(span, getArg(p,j)) == i ){
+					setVarRecycled(mb, getArg(p,j));
 #ifdef DEBUG_OPT_RECYCLER  
-				stream_printf(GDKout,"recyle %d\n",getArg(p,j));
-				printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	stream_printf(GDKout,"recyle %d\n",getArg(p,j));
+	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
-			}
+				}
 		}
 @-
 The expected gain is largest if we can re-use selections
@@ -133,8 +133,8 @@ For the time being for all possible selects encountered.
 			clrAllTypes(mb);
 		}
 	}
-	if( actions)
-		mb->version= -1;	/* will trigger the recycler runtime support */
+	if (actions)
+		mb->version = -1;	/* will trigger the recycler runtime support */
 	GDKfree(span);
 	return actions;
 }
