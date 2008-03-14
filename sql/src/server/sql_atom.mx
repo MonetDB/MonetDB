@@ -44,6 +44,7 @@ extern atom *atom_general( sql_subtype *tpe, char *val, int destroy);
 extern atom *atom_dec( sql_subtype *tpe, lng val, double dval);
 
 extern int atom_neg( atom *a );
+extern unsigned int atom_num_digits( atom *a );
 
 /* duplicate atom */
 extern atom *atom_dup( atom *a);
@@ -409,7 +410,7 @@ atom_copy(atom *a, sql_allocator *sa)
 	return na;
 }
 
-static unsigned int
+unsigned int
 atom_num_digits( atom *a ) 
 {
 	lng v = 0;

@@ -351,8 +351,10 @@ static list *
 rel_bind_path(sql_rel *rel, sql_exp *e )
 {
 	list *path = new_rel_list(); 
+
+	if (e->type == e_convert) 
+		e = e->l;
 	if (e->type == e_column) {
-	
 		if (rel) {
 			if (!rel_bind_path_(rel, e, path)) {
 				/* something is wrong */
@@ -1718,7 +1720,7 @@ rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_
 		}
 		e = exp_compare( ls, rs, type );
 	} else {
-		e = exp_like( ls, rs, esc, type );
+		e = exp_compare2( ls, rs, esc, type );
 	}
 
 	/* atom or row => select */

@@ -1565,6 +1565,7 @@ sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *a
 		dnode *n;
 		list *l;
 		stmt **updates, *rows_affected;
+		exp_kind ek = {type_value, card_column, TRUE};
 
 		scp = scope_open(scp);
 		if (temp_table) 
@@ -1573,7 +1574,7 @@ sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *a
 			tv = scope_add_table_columns(sql, scp, t, t->base.name, RDONLY);
 
 		if (opt_where) {
-			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL, sql_where);
+			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL, sql_where, ek);
 			if (s && s->type != st_set && s->type != st_sets) {
 				s = stmt_set(s);
 			}
@@ -1906,6 +1907,7 @@ delete_table(mvc *sql, scope *scp, dlist *qname, symbol *opt_where)
 	} else {
 		tvar *tv = NULL;
 		stmt *s = NULL;
+		exp_kind ek = {type_value, card_column, TRUE};
 
 		scp = scope_open(scp);
 		if (temp_table) 
@@ -1914,7 +1916,7 @@ delete_table(mvc *sql, scope *scp, dlist *qname, symbol *opt_where)
 			tv = scope_add_table_columns(sql, scp, t, t->base.name, RDONLY);
 		if (opt_where) {
 			stmt *subset = NULL;
-			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL, sql_where);
+			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL, sql_where, ek);
 			if (s && s->type == st_filter) { /* filter on table ? */
 				ptable_statements(scp->ptable) = stmt_set(s);
 				s = stmt_dup(scope_first_column(scp)->s);

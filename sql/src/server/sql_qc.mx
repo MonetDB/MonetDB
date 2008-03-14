@@ -87,6 +87,7 @@ extern int qc_size(qc *cache);
 
 #include "sql_qc.h"
 #include "sql_scope.h"
+#include "sql_atom.h"
 
 qc *
 qc_create(int clientid)
@@ -175,34 +176,34 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen)
 	if (!typelist || !atoms)
 		return -1;
 	for (i=0; i < plen; i++) {
-		sql_subtype *t1 = typelist + i;
-		atom *a2 = atoms[i];
+		sql_subtype *tp = typelist + i;
+		atom *a = atoms[i];
 
 		/* NULL values match any type */
-		if (!atom_null(a2) && param_cmp(t1, atom_type(a2)) != 0) {
-			sql_subtype *at = atom_type(a2);
+		if (!atom_null(a) && param_cmp(tp, atom_type(a)) != 0) {
+			sql_subtype *at = atom_type(a);
 
 			/* FLT == DEC/NUM and DEC/NUM are equal */
-			if ((!(t1->type->eclass == EC_FLT && 
-			    (at->type->eclass == EC_DEC ||
-			     at->type->eclass == EC_NUM))) &&
-			   (!(EC_VARCHAR(t1->type->eclass) &&
-			      EC_VARCHAR(atom_type(a2)->type->eclass) &&
-			      (!t1->digits ||
-			       t1->digits >= atom_type(a2)->digits))) &&
-			   (!(t1->type->eclass == EC_DEC &&
+			if ((!((at->type->eclass == EC_DEC ||
+			        at->type->eclass == EC_NUM) &&
+			       tp->type->eclass == EC_FLT)) &&
+			   (!(EC_VARCHAR(tp->type->eclass) &&
+			      EC_VARCHAR(at->type->eclass) &&
+			      (!tp->digits ||
+			       tp->digits >= at->digits))) &&
+			   (!(tp->type->eclass == EC_DEC &&
 			      at->type->eclass == EC_NUM &&
-			      t1->type->localtype >= at->type->localtype)) &&
+			      tp->type->localtype >= at->type->localtype &&
+		             (at->digits <= tp->digits || atom_num_digits(a) <= tp->digits) && at->scale <= tp->scale)) &&
 			/*
-			   (!(t1->type->eclass == EC_DEC &&
+			   (!(tp->type->eclass == EC_DEC &&
 			      at->type->eclass == EC_DEC &&
-			      t1->type->localtype >= at->type->localtype &&
-			      at->digits <= t1->digits &&
-			      at->scale <= t1->scale)) &&
+			      tp->type->localtype >= at->type->localtype &&
+			      at->digits <= tp->digits &&
+			      at->scale <= tp->scale)) &&
 			*/
-			   (!(t1->type->eclass == EC_NUM &&
-			      atom_type(a2)->type->eclass == EC_NUM &&
-			       t1->type->localtype >= atom_type(a2)->type->localtype)))
+			   (!(at->type->eclass == EC_NUM && tp->type->eclass == EC_NUM && 
+			      at->type->localtype <= tp->type->localtype)))
 				return -1;
 		}
 	}

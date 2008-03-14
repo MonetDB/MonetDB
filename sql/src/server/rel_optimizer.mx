@@ -297,23 +297,28 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 	case e_cmp:
 		switch (e->flag) {
 		case cmp_equal:
+			*cnt += 20;
+			return 20;
+		case cmp_notequal:
 			*cnt += 10;
 			return 10;
 		case cmp_gt:
 		case cmp_gte:
 		case cmp_lt:
 		case cmp_lte:
+			*cnt += 4;
+			return 4;
 		case cmp_like:
 		case cmp_notlike:
-			*cnt += 1;
-			return 1;
+			*cnt += 2;
+			return 2;
 		default:
 			return 0;
 		}
 	default:
-		return 0;
+		return -5;
 	}
-	return 0;
+	return -5;
 }
 
 static int
@@ -834,7 +839,7 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		return e;
 	case e_cmp: 
 		if (e->f) 
-			return exp_like( exp_push_down(sql, e->l, f, t), exp_push_down(sql, e->r, f, t), exp_push_down(sql, e->f, f, t), e->flag);
+			return exp_compare2( exp_push_down(sql, e->l, f, t), exp_push_down(sql, e->r, f, t), exp_push_down(sql, e->f, f, t), e->flag);
 		else
 			return exp_compare( exp_push_down(sql, e->l, f, t), exp_push_down(sql, e->r, f, t), e->flag);
 	case e_convert:

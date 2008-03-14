@@ -32,7 +32,7 @@ extern sql_exp *exp_dup(sql_exp* e);
 extern void exp_destroy(sql_exp* e);
 
 extern sql_exp *exp_compare( sql_exp *l, sql_exp *r, int cmptype);
-extern sql_exp *exp_like( sql_exp *l, sql_exp *r, sql_exp *esc, int like);
+extern sql_exp *exp_compare2( sql_exp *l, sql_exp *r, sql_exp *h, int cmptype);
 
 #define exp_fromtype(e)	((list*)e->r)->h->data
 #define exp_totype(e)	((list*)e->r)->h->next->data
@@ -166,15 +166,15 @@ exp_compare( sql_exp *l, sql_exp *r, int cmptype)
 }
 
 sql_exp * 
-exp_like( sql_exp *l, sql_exp *r, sql_exp *esc, int like) 
+exp_compare2( sql_exp *l, sql_exp *r, sql_exp *h, int cmptype) 
 {
 	sql_exp *e = exp_create(e_cmp);
 	e->card = l->card;
 	e->l = l;
 	e->r = r;
-	if (esc)
-		e->f = esc;
-	e->flag = like;
+	if (h)
+		e->f = h;
+	e->flag = cmptype;
 	return e;
 }
 

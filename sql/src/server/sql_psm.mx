@@ -195,8 +195,9 @@ psm_while_do( mvc *sql, scope *scp, sql_subtype *res, dnode *w, int is_func )
 	if (w->type == type_symbol) { 
 		stmt *cond, *whilestmts;
 		dnode *n = w;
+		exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = sql_logical_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel); 
+		cond = sql_logical_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel, ek); 
 		n = n->next;
 		whilestmts = sequential_block(sql, scp, res, n->data.lval, n->next->data.sval, is_func);
 
@@ -224,8 +225,9 @@ psm_if_then_else( mvc *sql, scope *scp, sql_subtype *res, dnode *elseif, int is_
 	if (elseif->next && elseif->type == type_symbol) { /* if or elseif */
 		stmt *cond, *ifstmts, *elsestmts;
 		dnode *n = elseif;
+		exp_kind ek = {type_value, card_value, FALSE };
 
-		cond = sql_logical_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel); 
+		cond = sql_logical_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel, ek); 
 		n = n->next;
 		ifstmts = sequential_block(sql, scp, res, n->data.lval, NULL, is_func);
 		n = n->next;
@@ -328,7 +330,7 @@ psm_case( mvc *sql, scope *scp, sql_subtype *res, dnode *case_when, int is_func 
 		n = whenlist->h;
 		while(n) {
 			dnode *m = n->data.sym->data.lval->h;
-			stmt *cond = sql_logical_exp(sql, scp, m->data.sym, NULL, NULL, sql_sel);
+			stmt *cond = sql_logical_exp(sql, scp, m->data.sym, NULL, NULL, sql_sel, ek);
 			stmt *if_stmts = NULL;
 			stmt *case_stmt = NULL;
 
@@ -450,24 +452,30 @@ sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *
 }
 
 static sql_subtype *
-result_type(mvc *sql, char *fname, symbol *res ) 
+result_type(mvc *sql, char *fname, symbol *res, int instantiate ) 
 {
 	if (res->token == SQL_TYPE) {
 		return &res->data.lval->h->data.typeval;
 	} else if (res->token == SQL_TABLE) {
-
 		/* here we create a new table-type */
 		sql_subtype *t = NEW(sql_subtype);
 		sql_table *tbl;
-		dnode *n = res->data.lval->h;
 		char *tnme = NEW_ARRAY(char, strlen(fname) + 2);
 
 		tnme[0] = '#';
 		strcpy(tnme+1, fname);
-		tbl = mvc_create_generated(sql, sql->session->schema, tnme, NULL, 1 /* system ?*/);
-		for(;n; n = n->next->next) {
-			sql_subtype *ct = &n->next->data.typeval;
-		    	mvc_create_column(sql, tbl, n->data.sval, ct);
+		if (instantiate) {
+			tbl = mvc_bind_table(sql, sql->session->schema, tnme);
+			if (!tbl)
+				return NULL;
+		} else {
+			dnode *n = res->data.lval->h;
+
+			tbl = mvc_create_generated(sql, sql->session->schema, tnme, NULL, 1 /* system ?*/);
+			for(;n; n = n->next->next) {
+				sql_subtype *ct = &n->next->data.typeval;
+		    		mvc_create_column(sql, tbl, n->data.sval, ct);
+			}
 		}
 		_DELETE(tnme);
 
@@ -537,7 +545,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 		s = cur_schema(sql);
 
 	if (res)
-		restype = result_type(sql, fname, res);
+		restype = result_type(sql, fname, res, instantiate);
 
 	if (params)
 		type_list = create_type_list(params, 1);

@@ -249,6 +249,8 @@ select_count(stmt *s)
 			return -20;
 		else if (s->flag == cmp_equal)
 			return select_count(s->op1.stval) + 20;	/* point */
+		else if (s->flag == cmp_notequal)
+			return select_count(s->op1.stval) + 10;	/* point */
 		else if (s->flag == cmp_like || s->flag == cmp_notlike)
 			return select_count(s->op1.stval) + 2;	/* like==scan */
 		/* ranges */
