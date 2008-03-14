@@ -1166,6 +1166,18 @@ PFsql_selectivity (PFsql_t *pred, PFsql_t *sel)
 }
 
 /**
+ * Create a DB2 runtime error
+ */
+PFsql_t * PFsql_raise_error (PFsql_t *state, PFsql_t *message)
+{
+     assert (state->kind   == sql_lit_str &&
+             message->kind == sql_lit_str);
+
+     return wire2 (sql_db2_raise_error, state, message);
+}
+
+
+/**
  * Duplicate a given SQL tree.
  */
 PFsql_t *
@@ -1349,6 +1361,7 @@ PFsql_column_name_str (PFsql_col_t *name)
             case sql_col_pos:        return "pos";
             case sql_col_guide:      return "guide";
             case sql_col_max:        return "max";
+            case sql_col_err:        return "err";
             case sql_col_dist:
                 assert (name->ty < 100);
                 res = (char *) PFmalloc (7);

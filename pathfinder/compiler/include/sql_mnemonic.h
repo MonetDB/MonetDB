@@ -152,6 +152,7 @@
 #define when(be,e)                   PFsql_when(be,e)
 #define else_(e)                     PFsql_else(e)
 #define selectivity(pred,sel)        PFsql_selectivity(pred,sel)
+#define raise_error(s,m)             PFsql_raise_error((s),(m))
 
 #define duplicate(e)                 PFsql_op_duplicate(e)
 

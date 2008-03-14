@@ -545,6 +545,20 @@ print_window_clause (PFsql_t *n)
 }
 
 static void
+print_raise_error (PFsql_t *n)
+{
+    assert (n);
+    assert (L(n) && R(n));
+    assert (n->kind == sql_db2_raise_error);
+
+    PFprettyprintf ("raise_error (");
+    print_literal  (L(n));
+    PFprettyprintf (",");
+    print_literal  (R(n));
+    PFprettyprintf (")");
+}
+
+static void
 print_case (PFsql_t *n)
 {
     assert (n);
@@ -559,12 +573,18 @@ print_case (PFsql_t *n)
             PFprettyprintf ("WHEN ");
             print_condition (L(n));
             PFprettyprintf (" THEN ");
-            print_statement (R(n));
+            if (R(n)->kind != sql_db2_raise_error)
+                print_statement (R(n));
+            else
+                print_raise_error (R(n));
             break;
             
         case sql_else:
             PFprettyprintf (" ELSE ");
-            print_statement (L(n));
+            if (L(n)->kind != sql_db2_raise_error)
+                print_statement (L(n));
+            else
+                print_raise_error (L(n));
             break;
             
         case sql_nil:
@@ -862,7 +882,7 @@ print_from_list (FILE *f, PFsql_t *n, int i)
         case sql_tbl_name:
             print_tablereference (f, n, i);
             break;
-
+        
         case sql_on:
             print_join (f, n, i);
             break;

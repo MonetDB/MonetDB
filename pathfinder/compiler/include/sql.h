@@ -52,6 +52,7 @@ enum PFsql_special_t {
     , sql_col_pos
     , sql_col_guide
     , sql_col_max
+    , sql_col_err
     , sql_col_dist
 };
 typedef enum PFsql_special_t PFsql_special_t;
@@ -210,6 +211,7 @@ enum PFsql_kind_t {
     , sql_else              /* ELSE .. clause */
     , sql_values            /* Table Functions */
     , sql_db2_selectivity   /* DB2 selectivity hint */
+    , sql_db2_raise_error    /* DB2 runtime errors */
 };
 /* SQL operator kinds. */
 typedef enum PFsql_kind_t PFsql_kind_t;
@@ -949,6 +951,10 @@ PFsql_t * PFsql_else (PFsql_t *expr);
  * Create a DB2 selectivity hint.
  */
 PFsql_t * PFsql_selectivity (PFsql_t *pred, PFsql_t *sel);
+/**
+ * Create a DB2 runtime error
+ */
+PFsql_t * PFsql_raise_error (PFsql_t *state, PFsql_t *message);
 /**
  * Duplicate a given SQL tree.
  */

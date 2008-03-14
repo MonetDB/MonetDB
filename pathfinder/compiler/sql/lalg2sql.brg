@@ -470,6 +470,7 @@ special_col (PFsql_special_t spc)
 #define POS_        column_name (special_col (sql_col_pos))
 #define MAX_        column_name (special_col (sql_col_max))
 #define DIST_       column_name (special_col (sql_col_dist))
+#define ERR_        column_name (special_col (sql_col_err))
 
 #define PRE(n)        ext_column_name (n, special_col (sql_col_pre))
 #define SIZE(n)       ext_column_name (n, special_col (sql_col_size))
@@ -4580,12 +4581,73 @@ reduce (PFla_op_t * p, int goalnt)
             break;
 
         /* Rel:    cond_err (Rel, Rel) */
-        case 99:
+
+        /********************************************************/
+        /*            cond_err                                  */
+        /*             /    \                                   */
+        /*            /      \                                  */
+        /*           /\      /\                                 */
+        /*          /q1\    /q2\                                */      
+        /*         ------  ------                               */
+        /* We will translate this plan into the following       */
+        /* SQL query.                                           */
+        /*                                                      */
+        /* SELECT q.*                                           */
+        /*   FROM q1 AS q, (SELECT CASE                         */
+        /*                             WHEN MIN(CASE            */
+        /*                                      WHEN att THEN 1 */
+        /*                                      ELSE 0          */
+        /*                                      END) < 1        */
+        /*                                  THEN raise_error    */
+        /*                             ELSE 1 END               */
+        /*                  FROM q2 AS err) AS foo;             */
+        /********************************************************/
+        case 99: {
+#define ERR_SQLSTATE "70001"
+            assert (kids[0] && nts[0]);
+            assert (kids[1] && nts[1]);
+
+            PFsql_t *expr = NULL,
+                    *n = NULL;
+            PFalg_simple_type_t ty;
+            char *msg = p->sem.err.str;
+
             reduce (kids[0], nts[0]);
 
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, L(p));
-            break;
+
+            reduce (kids[1], nts[1]);
+
+            ty = type_of (R(p), p->sem.err.att);
+            assert (monomorphic (ty) && ty == aat_bln);
+            expr = col_env_lookup (COLMAP(R(p)),
+                                   p->sem.err.att,
+                                   ty);
+
+            n = expr;
+
+            /* if the underlying relation containing is bound,
+             * we can directly using the column */
+            n = (n->kind == sql_column_name ||
+                 n->kind == sql_lit_int)
+                 ? n
+                 : case_ (when (n, TRUE_INT), else_ (FALSE_INT));
+
+            n = case_ (when (gt (TRUE_INT, min_ (n)),
+                             raise_error (lit_str (ERR_SQLSTATE),
+                                          lit_str (msg))),
+                       else_ (TRUE_INT));
+                                                           
+            PFsql_aident_t nalias = new_alias ();
+
+            from_list_add (FROMLIST (p),
+                           select (
+                               column_assign (n, ERR_),
+                               transform_frommap (R(p)),
+                               transform_wheremap (R(p))
+                           ), alias (nalias));
+        }   break;
 
         /* Rel:    trace (Rel, Msg) */
         case 100:
