@@ -248,13 +248,13 @@ MALstartDataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *ret;
 	str msg= MAL_SUCCEED;
 
-	ret= (int*) getArgReference(stk,pci,0);
-	if( pci == NULL || stk == NULL){
+	ret = (int*) getArgReference(stk,pci,0);
+	if (pci == NULL || stk == NULL) {
 		*ret = 1; /* ignore dataflow request */
 		return MAL_SUCCEED;
 	}
-	msg= runMALdataflow(MCgetClient(), mb, getPC(mb,pci), pci->jump, stk,0,0);
-	if( msg == MAL_SUCCEED)
+	msg = runMALdataflow(MCgetClient(), mb, getPC(mb,pci), pci->jump, stk, 0, 0);
+	if (msg == MAL_SUCCEED)
 		*ret = 0;
 	return MAL_SUCCEED;
 }

@@ -374,8 +374,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
 	int i;
 	ValPtr lhs,rhs;
 	InstrPtr pci= getInstrPtr(mb,0);
-	@:performanceVariables@
 	int stkpc=0;
+	@:performanceVariables@
 
 #ifdef DEBUG_CALLMAL
 	stream_printf(GDKout,"callMAL\n");
@@ -466,10 +466,10 @@ The code currently does not statically checks the mode change.
 Preferrably we should introduce a itrace flag PROFILE
 We rely on optimizing compilers to remove the redundant code.
 @c
-	if( malProfileMode == 0 && cntxt->itrace==0 && cntxt->flags == 0 && GDKdebug == 0){
+	if (malProfileMode == 0 && cntxt->itrace==0 && cntxt->flags == 0 && GDKdebug == 0) {
 		while(stkpc < mb->stop && stkpc != stoppc ){
 			pci = getInstrPtr(mb,stkpc);
-			if( malProfileMode + cntxt->itrace)
+			if (malProfileMode + cntxt->itrace)
 				goto workslow;
 			@:MALrecycleStart@ {
 				@:MALinterpret(FAST)@
@@ -532,7 +532,7 @@ mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 typedef struct{
 	InstrPtr p;
 	int pending;
-	lng	cost;
+	lng cost;
 } *FlowStep, FlowStepRec;
 
 #define DEBUG_FLOW
@@ -607,12 +607,12 @@ nxtMALflowStep(FlowStep flow, int first, int last, MalBlkPtr mb){
 	int i;
 	FlowStepRec f;
 
-	for( i= first; i<last; i++)
-	if( flow[i].pending == 0 && flow[first].cost > flow[i].cost){
-		f= flow[first];
-		flow[first]= flow[i];
-		flow[i]= f;
-	}
+	for (i = first; i<last; i++)
+		if (flow[i].pending == 0 && flow[first].cost > flow[i].cost){
+			f = flow[first];
+			flow[first]= flow[i];
+			flow[i]= f;
+		}
 #ifdef DEBUG_FLOW
 	stream_printf(GDKout,"#next instruction %d: cost %d pending %d\n",
 		first, flow[first].cost,flow[first].pending);
@@ -650,18 +650,18 @@ arguments.
 	FlowStep flow;
 	char *pending;
 
-	(void) env;
+	(void)env;
 	(void)pcicaller;
 
 	assert(stoppc > startpc);
-	flow= (FlowStep) alloca(sizeof(FlowStepRec) * (stoppc-startpc+1));
-	pending= (char*) alloca(sizeof(mb->vtop));
+	flow = (FlowStep) alloca(sizeof(FlowStepRec) * (stoppc-startpc+1));
+	pending = (char*) alloca(sizeof(mb->vtop));
 	memset((char*) pending, 0, sizeof(mb->vtop));
 
-	for(n=0, i= startpc+1; i<stoppc; i++,n++)
+	for (n=0, i= startpc+1; i<stoppc; i++,n++)
 		addMALflowStep(flow,n,pending, mb,stk,getInstrPtr(mb,i));
 
-	if( cntxt->flags & timerFlag)
+	if (cntxt->flags & timerFlag)
 		oldtimer= cntxt->timer= GDKusec();
 	oldMemory.arena= 0;
 @-
@@ -669,21 +669,21 @@ Construct the flow relation ship and collect
 the eligible instructions. [TODO]
 @c
 	/* select the first eligible instruction */
-	stkpc= -1;
+	stkpc = -1;
 	exceptionVar = -1;
-	while( ++stkpc < n ){
+	while (++stkpc < n) {
 		nxtMALflowStep(flow, stkpc,n,mb);
 		pci = flow[stkpc].p;
-		if( stk->cmd  ) {
+		if (stk->cmd) {
 			lng t=0;
 			if( oldtimer)
 				t= GDKusec();
 			mdbStep(cntxt,mb,stk,getPC(mb,pci));
-			if( stk->cmd == 'x') {
+			if (stk->cmd == 'x') {
 				stkpc= mb->stop;
 				continue;
 			}
-			if( oldtimer ) {
+			if (oldtimer ) {
 				/* ignore debugger waiting time*/
 				t= GDKusec()-t;
 				oldtimer += t;
@@ -700,7 +700,7 @@ the eligible instructions. [TODO]
 The number of instructions allowed is severely
 limited.
 @c
-		switch( pci->token){
+		switch (pci->token){
 		case ASSIGNsymbol: @:assignStmt(SLOW)@ break;
 		case PATcall: @:patterncall(SLOW)@ break;
 		case CMDcall: @:commandcall(SLOW)@ break;
