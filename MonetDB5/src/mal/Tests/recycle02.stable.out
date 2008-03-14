@@ -80,17 +80,17 @@ end qry;	# 7
 function user.main():void;	# 0  (main:void)
 #test the basics of the recycler 	# 1  (_1:str)
 # re-use joins temporal constrainted 	# 2  (_2:str)
-    recycle.setRetainPolicy(2,20);	# 3 RECYCLEsetRetain (_3:void)<-(_4:int)(_5:int)
-    recycle.setReusePolicy(1);	# 4 RECYCLEsetReuse (_6:void)<-(_7:int)
-    io.print("start");	# 5 IOprint_val (_11:void)<-(_12:str)
-    user.qry(1,10);	# 6  (_13:void)<-(_7:int)(_14:int)
-    io.print("zoom in");	# 7 IOprint_val (_15:void)<-(_16:str)
-    user.qry(1,5);	# 8  (_17:void)<-(_7:int)(_18:int)
-    io.print("next step");	# 9 IOprint_val (_19:void)<-(_20:str)
-    user.qry(2,3);	# 10  (_21:void)<-(_4:int)(_22:int)
-    io.print("last");	# 11 IOprint_val (_23:void)<-(_24:str)
-    user.qry(1,11);	# 12  (_25:void)<-(_7:int)(_26:int)
-    recycle.dump();	# 13 RECYCLEdump (_27:void)
+    recycle.setRetainPolicy(2,2);	# 3 RECYCLEsetRetain (_3:void)<-(_4:int)(_4:int)
+    recycle.setReusePolicy(1);	# 4 RECYCLEsetReuse (_5:void)<-(_6:int)
+    io.print("start");	# 5 IOprint_val (_10:void)<-(_11:str)
+    user.qry(1,10);	# 6  (_12:void)<-(_6:int)(_13:int)
+    io.print("zoom in");	# 7 IOprint_val (_14:void)<-(_15:str)
+    user.qry(1,5);	# 8  (_16:void)<-(_6:int)(_17:int)
+    io.print("next step");	# 9 IOprint_val (_18:void)<-(_19:str)
+    user.qry(2,3);	# 10  (_20:void)<-(_4:int)(_21:int)
+    io.print("last");	# 11 IOprint_val (_22:void)<-(_23:str)
+    user.qry(1,11);	# 12  (_24:void)<-(_6:int)(_25:int)
+    recycle.dump();	# 13 RECYCLEdump (_26:void)
 end main;	# 14  
 [ "start" ]
 #-----------------#
@@ -139,6 +139,7 @@ end main;	# 14
 [ 8@0,	  8	  ]
 [ 9@0,	  9	  ]
 [ 10@0,	  10	  ]
+[ 11@0,	  11	  ]
 #Recycler  catalog
 #retain= 2 time =20 sze= 0 alpha= 0.500
 #reuse= 1
