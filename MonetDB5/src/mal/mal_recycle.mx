@@ -63,7 +63,7 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-/* #define _DEBUG_RECYCLE_  trace behavior */
+/* #define _DEBUG_RECYCLE_    trace behavior */
 /* #define _DEBUG_RECYCLE_REUSE */
 @-
 We need some hard limits to not run out of datastructure
@@ -539,7 +539,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 		case REUSE_EXACT:
 			/* 2: exact covering */
 			for (j = p->retc; j < p->argc; j++){
-				if (VALcmp(&s->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
+				if ( VALcmp(&s->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 					goto notfound;
 			}
 			/* found an exact match */
@@ -566,6 +566,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 		s->stk[getArg(p,1)].val.bval = bid;
 		BBPincref(bid, TRUE);
 		recycleBlk->profiler[pc].counter++;
+		return -1;
 	}
 	return pc;
 
@@ -583,6 +584,10 @@ been marked as VAR_RECYCLE are skipped.
 
 For those marked VAR_KEPT we are done after copying the value
 onto the stack and return success.
+
+Just looking at a kept result target is not good enough.
+You have to sure that the arguments are also the same.
+This outrules function arguments.
 @c
 int 
 RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -591,12 +596,12 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	ValPtr lhs,rhs;
 
 	for(i=0;i< p->retc; i++) {
-		if (isVarKept(mb, getArg(p,i))) {
+		if (isVarKept(mb, getArg(p,i)) && isVarRecycled(mb, getArg(p,i)) ){
 			cnt++;
 #ifdef _DEBUG_RECYCLE_
-	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
 	stream_printf(GDKout,"RECYCLEentry found %d -> %d\n",getArg(p,i),
 		mb->var[getArg(p,i)]->recycle);
+	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
 #endif
 			lhs= &stk->stk[getArg(p,i)];
 			rhs= &getVarConstant(recycleBlk, mb->var[getArg(p,i)]->recycle);
