@@ -1,0 +1,46 @@
+stdout of test 'sql_prepare_prob.SF-1909638` in directory 'src/test/BugTracker` itself:
+
+
+# 13:44:40 >  
+# 13:44:40 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36740 --set xrpc_port=42018 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 13:44:40 >  
+
+# MonetDB server v5.5.0, based on kernel v1.23.0
+# Serving database 'mTests_src_test_BugTracker'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:36740/
+# MonetDB/SQL module v2.23.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 13:44:41 >  
+# 13:44:41 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=36740 
+# 13:44:41 >  
+
+% . # table_name
+% feq_single_value # name
+% int # type
+% 1 # length
+[ 0	]
+% . # table_name
+% feq_single_value # name
+% int # type
+% 1 # length
+[ 0	]
+% . # table_name
+% feq_single_value # name
+% int # type
+% 1 # length
+[ 0	]
+
+# 13:44:41 >  
+# 13:44:41 >  Done.
+# 13:44:41 >  
+
