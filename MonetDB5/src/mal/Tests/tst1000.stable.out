@@ -22,13 +22,13 @@ stdout of test 'tst1000` in directory 'src/mal` itself:
 #x:= bbp.getNames();
 #print(x);
 #
-function user.main():void;	# 0  (main:void)
-#Access BATs  	# 1  (_1:str)
-    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
-    bat.insert(b,1,2);	# 3 BKCinsert_bun (_4:void)<-(b:bat[:int,:int])(_5:int)(_6:int)
-    bat.setName(b,"mybat");	# 4 BKCsetName (_7:void)<-(b:bat[:int,:int])(_8:str)
-    c:bat[:int,:int]  := bbp.bind("mybat");	# 5 CMDbbpbind (c:bat[:int,:int])<-(_8:str)
-    io.print(c);	# 6 IOprint_val (_10:void)<-(c:bat[:int,:int])
+function user.main():void;              #  0 main:void {G}
+#Access BATs  
+    b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    bat.insert(b,1,2);                  #  3 _4:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) 
+    bat.setName(b,"mybat");             #  4 _7:void := BKCsetName(b:bat[:int,:int], _8:str) 
+    c:bat[:int,:int]  := bbp.bind("mybat");#  5 c:bat[:int,:int] := CMDbbpbind(_8:str) {G}
+    io.print(c);                        #  6 _10:void := IOprint_val(c:bat[:int,:int]) 
 end main;	# 7  
 #-----------------#
 # h	mybat	  # name

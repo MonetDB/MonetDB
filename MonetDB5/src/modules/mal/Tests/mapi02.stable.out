@@ -37,32 +37,32 @@ stdout of test 'mapi02` in directory 'src/modules/mal` itself:
 !SyntaxException:parseError:^';' expected
 #
 #
-function user.main():void;	# 0  (main:void)
-#this example tests recieving tuple values as part of the 	# 1  unknown (_1:str)
-#MAL interface. 	# 2  unknown (_2:str)
-# now in a remote setting 	# 3  unknown (_3:str)
-#remote.prelude(); 	# 4  unknown (_4:str)
-# ideally we would like to do this, however that's unfortunately 	# 5  unknown (_5:str)
-# impossible since variadic stuff doesn't work in functions 	# 6  unknown (_6:str)
-#function exec(conn:str, ident:str...):any; 	# 7  unknown (_7:str)
-#	id := remote.exec(conn, ident, ...); 	# 8  unknown (_8:str)
-#	ret := remote.get(conn, id); 	# 9  unknown (_9:str)
-#	return(ret); 	# 10  unknown (_10:str)
-#end exec; 	# 11  unknown (_11:str)
-# for testweb, we need to ask the server itself how it is available, use 	# 12  unknown (_12:str)
-# sabaoth for that 	# 13  unknown (_13:str)
-#sabaoth.prelude(); 	# 14  unknown (_14:str)
-    h := sabaoth.getLocalConnectionHost();	# 15  unknown (h:any)
-    p := sabaoth.getLocalConnectionPort();	# 16  unknown (p:any)
-# create a connecton to ourself 	# 17  unknown (_17:str)
-    remote.create("test",h,p,nil:str,"monetdb","monetdb");	# 18  unknown (_18:any)<-(_19:str)(h:any)(p:any)(_20:str)(_21:str)(_21:str)
-    b := bat.new(:oid,:str);	# 19  unknown (b:any)<-(_23:oid)(_24:str)
-    bat.insert(0@0,"hello");	# 20  unknown (_25:any)<-(_26:oid)(_27:str)
-    bat.insert(0@0,"world");	# 21  unknown (_28:any)<-(_26:oid)(_29:str)
-# store the values 	# 22  unknown (_30:str)
-    remote.send("test",b);	# 23  unknown (_31:any)<-(_19:str)(b:any)
-    c := remote.query("test","io.print(b);");	# 24  unknown (c:any)<-(_19:str)(_33:str)
-end main;	# 25  unknown 
+function user.main():void;              #  0 main:void 
+#this example tests recieving tuple values as part of the 
+#MAL interface. 
+# now in a remote setting 
+#remote.prelude(); 
+# ideally we would like to do this, however that's unfortunately 
+# impossible since variadic stuff doesn't work in functions 
+#function exec(conn:str, ident:str...):any; 
+#	id := remote.exec(conn, ident, ...); 
+#	ret := remote.get(conn, id); 
+#	return(ret); 
+#end exec; 
+# for testweb, we need to ask the server itself how it is available, use 
+# sabaoth for that 
+#sabaoth.prelude(); 
+    h := sabaoth.getLocalConnectionHost();# 15 h:any {U}
+    p := sabaoth.getLocalConnectionPort();# 16 p:any {U}
+# create a connecton to ourself 
+    remote.create("test",h,p,nil:str,"monetdb","monetdb");# 18 _18:any := remote.create(_19:str, h:any, p:any, _20:str, _21:str, _21:str) {U}
+    b := bat.new(:oid,:str);            # 19 b:any := bat.new(_23:oid, _24:str) {U}
+    bat.insert(0@0,"hello");            # 20 _25:any := bat.insert(_26:oid, _27:str) {U}
+    bat.insert(0@0,"world");            # 21 _28:any := bat.insert(_26:oid, _29:str) {U}
+# store the values 
+    remote.send("test",b);              # 23 _31:any := remote.send(_19:str, b:any) {U}
+    c := remote.query("test","io.print(b);");# 24 c:any := remote.query(_19:str, _33:str) {U}
+end main;                               # 25  {U}
 
 # 04:46:54 >  
 # 04:46:54 >  Done.

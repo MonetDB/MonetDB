@@ -17,10 +17,10 @@ stdout of test 'register00` in directory 'src/modules/mal` itself:
 #mal.register("user","mytest","io.print(\"hello world\");","first test");
 #mdb.list("user","mytest");
 #
-function user.main():void;	# 0  (main:void)
-#see if we can register functions 	# 1  (_1:str)
-    language.register("user","mytest","io.print(\"hello world\");","first test");	# 2 CMDregisterFunction (_2:void)<-(_3:str)(_4:str)(_5:str)(_6:str)
-    mdb.list("user","mytest");	# 3 MDBlist3 (_7:void)<-(_3:str)(_4:str)
+function user.main():void;              #  0 main:void 
+#see if we can register functions 
+    language.register("user","mytest","io.print(\"hello world\");","first test");#  2 _2:void := CMDregisterFunction(_3:str, _4:str, _5:str, _6:str) 
+    mdb.list("user","mytest");          #  3 _7:void := MDBlist3(_3:str, _4:str) 
 end main;	# 4  
 REGISTER FUNCTIOn user.main
 #function user.main():int;

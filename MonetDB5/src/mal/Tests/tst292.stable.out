@@ -18,12 +18,12 @@ stdout of test 'tst292` in directory 'src/mal` itself:
 #bat.insert(b, nil, 0:bit);
 #io.print(b);
 #
-function user.main():void;	# 0  (main:void)
-# check coercion of bit coercions on big/little endian platforms 	# 1  (_1:str)
-    b := bat.new(:oid,:bit);	# 2 CMDBATnew (b:bat[:oid,:bit])<-(_3:oid)(_4:bit)
-    bat.insert(b,nil:oid,true:bit);	# 3 BKCinsert_bun (_5:void)<-(b:bat[:oid,:bit])(_6:oid)(_7:bit)
-    bat.insert(b,nil:oid,false:bit);	# 4 BKCinsert_bun (_8:void)<-(b:bat[:oid,:bit])(_6:oid)(_9:bit)
-    io.print(b);	# 5 IOprint_val (_10:void)<-(b:bat[:oid,:bit])
+function user.main():void;              #  0 main:void {G}
+# check coercion of bit coercions on big/little endian platforms 
+    b := bat.new(:oid,:bit);            #  2 b:bat[:oid,:bit] := CMDBATnew(_3:oid, _4:bit) {G}
+    bat.insert(b,nil:oid,true:bit);     #  3 _5:void := BKCinsert_bun(b:bat[:oid,:bit], _6:oid, _7:bit) 
+    bat.insert(b,nil:oid,false:bit);    #  4 _8:void := BKCinsert_bun(b:bat[:oid,:bit], _6:oid, _9:bit) 
+    io.print(b);                        #  5 _10:void := IOprint_val(b:bat[:oid,:bit]) 
 end main;	# 6  
 #-----------------#
 # h	t	  # name

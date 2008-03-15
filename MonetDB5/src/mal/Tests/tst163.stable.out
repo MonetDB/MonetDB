@@ -20,12 +20,12 @@ stdout of test 'tst163` in directory 'src/mal` itself:
 #io.print(j);
 #
 !TypeException:user.main[3]:'calc.+' undefined in: j:any := calc.+(i:myint, _5:int)
-function user.main():void;	# 0  (main:void)
-#multiple atomary types 	# 1  (_1:str)
-    i := 1:myint;	# 2  (i:myint)<-(_3:myint)
-    j := calc.+(i,3);	# 3  unknown (j:any)<-(i:myint)(_5:int)
-    io.print(i);	# 4 IOprint_val (_6:void)<-(i:myint)
-    io.print(j);	# 5 IOprint_val (_7:void)<-(j:any)
+function user.main():void;              #  0 main:void 
+#multiple atomary types 
+    i := 1:myint;                       #  2 i:myint := _3:myint 
+    j := calc.+(i,3);                   #  3 j:any := calc.+(i:myint, _5:int) {U}
+    io.print(i);                        #  4 _6:void := IOprint_val(i:myint) 
+    io.print(j);                        #  5 _7:void := IOprint_val(j:any) 
 end main;	# 6  
 
 # 20:46:32 >  

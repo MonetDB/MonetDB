@@ -16,8 +16,8 @@ stdout of test 'tst802` in directory 'src/mal` itself:
 #function tst(b:bat[:any_1,:any_2]):bat;
 #	return b;
 #end tst;
-function user.tst(b:bat[:any_1,:any_2]):BAT;	# 0  (tst:BAT)<-(b:bat[:any_1,:any_2])
-    return tst := b;	# 1  (tst:BAT)<-(b:bat[:any_1,:any_2])
+function user.tst(b:bat[:any_1,:any_2]):BAT;#  0 tst:BAT := user.tst(b:bat[:any_1,:any_2]) {PG}
+    return tst := b;                    #  1 tst:BAT := b:bat[:any_1,:any_2] {G}
 end tst;	# 2  
 #
 #z:= bat.new(:int,:int);
@@ -27,14 +27,14 @@ end tst;	# 2
 #c:= tst(b);
 #io.print(c);
 #
-function user.main():void;	# 0  (main:void)
-#testing simple stuff around type BAT 	# 1  (_1:str)
-    z := bat.new(:int,:int);	# 2 CMDBATnew (z:bat[:int,:int])<-(_3:int)(_3:int)
-    b := nil:BAT;	# 3  (b:BAT)<-(_5:BAT)
-    b := z;	# 4  (b:BAT)<-(z:bat[:int,:int])
-#io.print(b); 	# 5  (_6:str)
-    c := user.tst(b);	# 6  (c:BAT)<-(b:BAT)
-#io.print(c); 	# 7  (_8:str)
+function user.main():void;              #  0 main:void {G}
+#testing simple stuff around type BAT 
+    z := bat.new(:int,:int);            #  2 z:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    b := nil:BAT;                       #  3 b:BAT := _5:BAT {G}
+    b := z;                             #  4 b:BAT := z:bat[:int,:int] {G}
+#io.print(b); 
+    c := user.tst(b);                   #  6 c:BAT := user.tst(b:BAT) {G}
+#io.print(c); 
 end main;	# 8  
 
 # 14:58:46 >  

@@ -20,14 +20,14 @@ stdout of test 'tst014` in directory 'src/mal` itself:
 #	redo b:= <(i,3);
 #exit 	b;
 #
-function user.main():void;	# 0  (main:void)
-# conditionally redo a block 	# 1  (_1:str)
-    i := 1;	# 2  (i:int)<-(_3:int)
-barrier b := calc.==(i,1);	# 3 CALCcompEQintint (b:bit)<-(i:int)(_3:int) jump 7
-    i := calc.+(i,1);	# 4 CALCbinaryADDintint (i:int)<-(i:int)(_3:int)
-    io.print(i);	# 5 IOprint_val (_5:void)<-(i:int)
-    redo b := calc.<(i,3);	# 6 CALCcompLTintint (b:bit)<-(i:int)(_6:int) jump 4
-exit b;	# 7  (b:bit)
+function user.main():void;              #  0 main:void 
+# conditionally redo a block 
+    i := 1;                             #  2 i:int := _3:int 
+barrier b := calc.==(i,1);              #  3 b:bit := CALCcompEQintint(i:int, _3:int) {J7}
+    i := calc.+(i,1);                   #  4 i:int := CALCbinaryADDintint(i:int, _3:int) 
+    io.print(i);                        #  5 _5:void := IOprint_val(i:int) 
+    redo b := calc.<(i,3);              #  6 b:bit := CALCcompLTintint(i:int, _6:int) {J4}
+exit b;                                 #  7 b:bit 
 end main;	# 8  
 [ 2 ]
 [ 3 ]

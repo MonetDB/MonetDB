@@ -17,8 +17,8 @@ stdout of test 'tst103` in directory 'src/mal` itself:
 #function f(a:any$1, b:any$2):bat[:any$2,:any$1] ;
 #	return f:=bbp.new(:any$2,:any$1); 
 #end f;
-function user.f(a:any_1,b:any_2):bat[:any_2,:any_1];	# 0  dynamic (f:bat[:any_2,:any_1])<-(a:any_1)(b:any_2)
-    return f := bat.new(:any_2,:any_1);	# 1 CMDBATnew (f:bat[:any_2,:any_1])<-(_3:any_2)(_4:any_1)
+function user.f(a:any_1,b:any_2):bat[:any_2,:any_1];#  0 f:bat[:any_2,:any_1] := user.f(a:any_1, b:any_2) {UPG}
+    return f := bat.new(:any_2,:any_1); #  1 f:bat[:any_2,:any_1] := CMDBATnew(_3:any_2, _4:any_1) {PG}
 end f;	# 2  
 #
 #a:= f(1,"hello");
@@ -26,12 +26,12 @@ end f;	# 2
 #c:= f(1.0, -3);
 #d:= f(true,false);
 #
-function user.main():void;	# 0  (main:void)
-# check propagation of type variables over bats 	# 1  (_1:str)
-    a := user.f(1,"hello");	# 2  (a:bat[:str,:int])<-(_3:int)(_4:str)
-    b := user.f(1,"world");	# 3  (b:bat[:str,:int])<-(_3:int)(_6:str)
-    c := user.f(1,-3);	# 4  (c:bat[:int,:flt])<-(_8:flt)(_9:int)
-    d := user.f(true,false);	# 5  (d:bat[:bit,:bit])<-(_11:bit)(_12:bit)
+function user.main():void;              #  0 main:void {G}
+# check propagation of type variables over bats #  1 
+    a := user.f(1,"hello");             #  2 a:bat[:str,:int] := user.f(_3:int, _4:str) {G}
+    b := user.f(1,"world");             #  3 b:bat[:str,:int] := user.f(_3:int, _6:str) {G}
+    c := user.f(1,-3);                  #  4 c:bat[:int,:flt] := user.f(_8:flt, _9:int) {G}
+    d := user.f(true,false);            #  5 d:bat[:bit,:bit] := user.f(_11:bit, _12:bit) {G}
 end main;	# 6  
 
 # 07:58:55 >  

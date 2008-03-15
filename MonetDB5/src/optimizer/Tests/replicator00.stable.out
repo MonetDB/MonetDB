@@ -18,27 +18,27 @@ stdout of test 'replicator00` in directory 'src/optimizer` itself:
 #	b:= bat.new(:int,:int);
 #	return bind:= b;
 #end bind;
-function sql.bind(s:str,r:str,c:str):bat[:int,:int];	# 0  (bind:bat[:int,:int])<-(s:str)(r:str)(c:str)
-    b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_5:int)(_5:int)
-    return bind := b;	# 2  (bind:bat[:int,:int])<-(b:bat[:int,:int])
+function sql.bind(s:str,r:str,c:str):bat[:int,:int];#  0 bind:bat[:int,:int] := sql.bind(s:str, r:str, c:str) {G}
+    b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_5:int, _5:int) {G}
+    return bind := b;                   #  2 bind:bat[:int,:int] := b:bat[:int,:int] {G}
 end bind;	# 3  
 #
 #function qry();
 #	b:bat[:int,:int]:= sql.bind("schema","r","t");
 #	t:= algebra.select(b,1,10);
 #end qry;
-function sql.qry():void;	# 0  (qry:void)
-    b:bat[:int,:int]  := sql.bind("schema","r","t");	# 1  (b:bat[:int,:int])<-(_2:str)(_3:str)(_4:str)
-    t := algebra.select(b,1,10);	# 2 ALGselect (t:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_7:int)
+function sql.qry():void;                #  0 qry:void {G}
+    b:bat[:int,:int]  := sql.bind("schema","r","t");#  1 b:bat[:int,:int] := sql.bind(_2:str, _3:str, _4:str) {G}
+    t := algebra.select(b,1,10);        #  2 t:bat[:int,:int] := ALGselect(b:bat[:int,:int], _6:int, _7:int) {G}
 end qry;	# 3  
 #
 #
 #optimizer.replicator("user","qry");
 #mdb.list("user","qry");
 #
-function user.main():void;	# 0  (main:void)
-#test the basics of the replicator 	# 1  (_1:str)
-    mdb.list("user","qry");	# 2 MDBlist3 (_5:void)<-(_3:str)(_4:str)
+function user.main():void;              #  0 main:void {G}
+#test the basics of the replicator 
+    mdb.list("user","qry");             #  2 _5:void := MDBlist3(_3:str, _4:str) 
 end main;	# 3  
 function sql.qry():void;
     replicator.start();

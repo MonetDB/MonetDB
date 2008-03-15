@@ -15,11 +15,11 @@ stdout of test 'rename_bat_hyphen.SF-1152369` in directory 'tests/BugDay_2005-10
 #
 ##bat("x-").print();
 #
-function user.main():void;	# 0  (main:void)
-    a := bat.new(:int,:int);	# 1 CMDBATnew (a:bat[:int,:int])<-(_2:int)(_2:int)
-    bat.setName(a,"x-");	# 2 BKCsetName (_3:void)<-(a:bat[:int,:int])(_4:str)
-    io.print(a);	# 3 IOprint_val (_5:void)<-(a:bat[:int,:int])
-#bat("x-").print(); 	# 4  (_6:str)
+function user.main():void;              #  0 main:void {G}
+    a := bat.new(:int,:int);            #  1 a:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
+    bat.setName(a,"x-");                #  2 _3:void := BKCsetName(a:bat[:int,:int], _4:str) 
+    io.print(a);                        #  3 _5:void := IOprint_val(a:bat[:int,:int]) 
+#bat("x-").print(); 
 end main;	# 5  
 #-----------------#
 # h	t	  # name

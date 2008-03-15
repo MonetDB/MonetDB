@@ -25,17 +25,16 @@ stdout of test 'tst900` in directory 'src/mal` itself:
 !SyntaxException:parseError:a:= b [+] b;
 
 !SyntaxException:parseError:     ^operator expected
+function user.main():void;              #  0 main:void 
+# the multiplex code blocks. Testing syntax errors 
+    b := bat.new(:lng,:lng);            #  2 b:any := bat.new(_3:lng, _3:lng) {U}
+    x := multiplex.+(b,b);              #  3 x:any := multiplex.+(b:any, b:any) {U}
+    d;                                  #  4 d:any {U}
+# parser bug 
+    a := b;                             #  6 a:any := b:any {U}
+end main;                               #  7  {U}
 
-function user.main():void;	# 0  (main:void)
-# the multiplex code blocks. Testing syntax errors 	# 1  unknown (_1:str)
-    b := bat.new(:lng,:lng);	# 2  unknown (b:any)<-(_3:lng)(_3:lng)
-    x := multiplex.+(b,b);	# 3  unknown (x:any)<-(b:any)(b:any)
-    d;	# 4  unknown (d:any)
-# parser bug 	# 5  unknown ($9:str)
-    a := b;	# 6  unknown (a:any)<-(b:any)
-end main;	# 7  unknown 
-
-# 08:01:32 >  
-# 08:01:32 >  Done.
-# 08:01:32 >  
+# 12:41:59 >  
+# 12:41:59 >  Done.
+# 12:41:59 >  
 

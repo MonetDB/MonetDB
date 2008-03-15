@@ -28,21 +28,21 @@ stdout of test 'tst057` in directory 'src/mal` itself:
 #exit always;
 #	io.print("left always 2");
 #
-function user.main():void;	# 0  (main:void)
-#leave tests 	# 1  (_1:str)
-    i := 1;	# 2  (i:int)<-(_3:int)
-barrier always := true;	# 3  (always:bit)<-(_5:bit) jump 7
-    io.print("enter always");	# 4 IOprint_val (_6:void)<-(_7:str)
-    leave always := calc.==(i,1);	# 5 CALCcompEQintint (always:bit)<-(i:int)(_3:int) jump 7
-    io.print("didn't leave properly");	# 6 IOprint_val (_8:void)<-(_9:str)
-exit always;	# 7  (always:bit)
-    io.print("left always 1");	# 8 IOprint_val (_10:void)<-(_11:str)
-barrier always := true;	# 9  (always:bit)<-(_5:bit) jump 13
-    io.print("enter always 2");	# 10 IOprint_val (_12:void)<-(_13:str)
-    leave always := calc.!=(i,2);	# 11 CALCcompNEQintint (always:bit)<-(i:int)(_14:int) jump 13
-    io.print("didn't leave properly");	# 12 IOprint_val (_15:void)<-(_9:str)
-exit always;	# 13  (always:bit)
-    io.print("left always 2");	# 14 IOprint_val (_16:void)<-(_17:str)
+function user.main():void;              #  0 main:void 
+#leave tests 
+    i := 1;                             #  2 i:int := _3:int 
+barrier always := true;                 #  3 always:bit := _5:bit {J7}
+    io.print("enter always");           #  4 _6:void := IOprint_val(_7:str) 
+    leave always := calc.==(i,1);       #  5 always:bit := CALCcompEQintint(i:int, _3:int) {J7}
+    io.print("didn't leave properly");  #  6 _8:void := IOprint_val(_9:str) 
+exit always;                            #  7 always:bit 
+    io.print("left always 1");          #  8 _10:void := IOprint_val(_11:str) 
+barrier always := true;                 #  9 always:bit := _5:bit {J13}
+    io.print("enter always 2");         # 10 _12:void := IOprint_val(_13:str) 
+    leave always := calc.!=(i,2);       # 11 always:bit := CALCcompNEQintint(i:int, _14:int) {J13}
+    io.print("didn't leave properly");  # 12 _15:void := IOprint_val(_9:str) 
+exit always;                            # 13 always:bit 
+    io.print("left always 2");          # 14 _16:void := IOprint_val(_17:str) 
 end main;	# 15  
 [ "enter always" ]
 [ "left always 1" ]

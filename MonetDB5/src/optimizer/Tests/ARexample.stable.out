@@ -25,15 +25,15 @@ stdout of test 'ARexample` in directory 'src/optimizer` itself:
 #	io.print(b);
 #optimizer.aliasRemoval();
 #
-function user.main():void;	# 0  (main:void)
-    i := 0;	# 1  (i:int)<-(_2:int)
-barrier go := true;	# 2  (go:bit)<-(_6:bit) jump 7
-    c := calc.+(i,1);	# 3 CALCbinaryADDintint (c:int)<-(i:int)(_8:int)
-    io.print("step");	# 4 IOprint_val (_12:void)<-(_10:str)
-    i := c;	# 5  (i:int)<-(c:int)
-    redo go := calc.<(i,2);	# 6 CALCcompLTintint (go:bit)<-(i:int)(_13:int) jump 3
-exit go;	# 7  (go:bit)
-    io.print("done");	# 8 IOprint_val (_14:void)<-(_4:str)
+function user.main():void;              #  0 main:void {G}
+    i := 0;                             #  1 i:int := _2:int 
+barrier go := true;                     #  2 go:bit := _6:bit {J7}
+    c := calc.+(i,1);                   #  3 c:int := CALCbinaryADDintint(i:int, _8:int) 
+    io.print("step");                   #  4 _12:void := IOprint_val(_10:str) 
+    i := c;                             #  5 i:int := c:int 
+    redo go := calc.<(i,2);             #  6 go:bit := CALCcompLTintint(i:int, _13:int) {J3}
+exit go;                                #  7 go:bit 
+    io.print("done");                   #  8 _14:void := IOprint_val(_4:str) 
 end main;	# 9  
 [ "step" ]
 [ "step" ]

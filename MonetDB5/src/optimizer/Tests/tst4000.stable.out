@@ -30,18 +30,18 @@ stdout of test 'tst4000` in directory 'src/optimizer` itself:
 #l3:= l2+k1;             # replace the alias
 #
 #
-function user.main():void;	# 0  (main:void)
-# The 4000 series deals with strategic optimizer constructs 	# 1  (_1:str)
-# common subexpression evaluation 	# 2  (_2:str)
-    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_7:int)(_7:int)
-    c := bat.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_7:int)(_7:int)
-# identical until insert takes place 	# 5  (_9:str)
-    d := algebra.select(b,0,100);	# 6 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])(_11:int)(_12:int)
-# mapped onto one instruction 	# 7  (_14:str)
-    l := calc.+(24,27);	# 8 CALCbinaryADDintint (l:int)<-(_16:int)(_18:int)
-# mapped to l 	# 9  (_21:str)
-    l3 := calc.+(l,24);	# 10 CALCbinaryADDintint (l3:int)<-(l:int)(_16:int)
-# replace the alias 	# 11  (_23:str)
+function user.main():void;              #  0 main:void {G}
+# The 4000 series deals with strategic optimizer constructs 
+# common subexpression evaluation 
+    b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_7:int, _7:int) {G}
+    c := bat.new(:int,:int);            #  4 c:bat[:int,:int] := CMDBATnew(_7:int, _7:int) {G}
+# identical until insert takes place 
+    d := algebra.select(b,0,100);       #  6 d:bat[:int,:int] := ALGselect(b:bat[:int,:int], _11:int, _12:int) {G}
+# mapped onto one instruction 
+    l := calc.+(24,27);                 #  8 l:int := CALCbinaryADDintint(_16:int, _18:int) 
+# mapped to l 
+    l3 := calc.+(l,24);                 # 10 l3:int := CALCbinaryADDintint(l:int, _16:int) 
+# replace the alias 
 end main;	# 12  
 
 # 23:52:51 >  

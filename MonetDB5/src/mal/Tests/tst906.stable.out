@@ -38,30 +38,30 @@ stdout of test 'tst906` in directory 'src/mal` itself:
 #io.print(z);
 #
 #
-function user.main():void;	# 0  (main:void)
-# the multiplex code blocks. 	# 1  (_1:str)
-# check detection of the underlying fast implementations 	# 2  (_2:str)
-    b := bat.new(:oid,:lng);	# 3 CMDBATnew (b:bat[:oid,:lng])<-(_4:oid)(_5:lng)
-barrier (v,i):= language.newRange(0:lng);	# 4 RNGnewRange_lng (v:bit)(i:lng)<-(_8:lng) jump 7
-    bat.append(b,i);	# 5 BKCappend_val_wrap (_9:void)<-(b:bat[:oid,:lng])(i:lng)
-    redo (v,i):= language.nextElement(1:lng,10:lng);	# 6 RNGnextElement_lng (v:bit)(i:lng)<-(_10:lng)(_11:lng) jump 5
-exit (v,i);	# 7  (v:bit)(i:lng)
-    c := algebra.copy(b);	# 8 ALGcopy (c:bat[:oid,:lng])<-(b:bat[:oid,:lng])
-    io.print(c);	# 9 IOprint_val (_13:void)<-(c:bat[:oid,:lng])
-    x := batcalc.+(b,c);	# 10 CMDbatADD_lng_lng_lng (x:bat[:oid,:lng])<-(b:bat[:oid,:lng])(c:bat[:oid,:lng])
-    io.print(x);	# 11 IOprint_val (_15:void)<-(x:bat[:oid,:lng])
-    x := batcalc.+(b,1:lng);	# 12 CMDbatADDcst_lng_lng_lng (x:bat[:oid,:lng])<-(b:bat[:oid,:lng])(_10:lng)
-    io.print(x);	# 13 IOprint_val (_16:void)<-(x:bat[:oid,:lng])
-    x := batcalc./(b,1:lng);	# 14 CMDbatDIVcst_lng_lng_lng (x:bat[:oid,:lng])<-(b:bat[:oid,:lng])(_10:lng)
-    io.print(x);	# 15 IOprint_val (_17:void)<-(x:bat[:oid,:lng])
-    x := batcalc.*(b,c);	# 16 CMDbatMUL_lng_lng_lng (x:bat[:oid,:lng])<-(b:bat[:oid,:lng])(c:bat[:oid,:lng])
-    io.print(x);	# 17 IOprint_val (_18:void)<-(x:bat[:oid,:lng])
-    y := batcalc.==(b,b);	# 18 CMD_EQ_lng (y:bat[:oid,:bit])<-(b:bat[:oid,:lng])(b:bat[:oid,:lng])
-    io.print(y);	# 19 IOprint_val (_20:void)<-(y:bat[:oid,:bit])
-    y := batcalc.==(b,x);	# 20 CMD_EQ_lng (y:bat[:oid,:bit])<-(b:bat[:oid,:lng])(x:bat[:oid,:lng])
-    io.print(y);	# 21 IOprint_val (_21:void)<-(y:bat[:oid,:bit])
-    z := batcalc.not(y);	# 22 CMDbitbatNOT (z:bat[:oid,:bit])<-(y:bat[:oid,:bit])
-    io.print(z);	# 23 IOprint_val (_23:void)<-(z:bat[:oid,:bit])
+function user.main():void;              #  0 main:void {G}
+# the multiplex code blocks. 
+# check detection of the underlying fast implementations 
+    b := bat.new(:oid,:lng);            #  3 b:bat[:oid,:lng] := CMDBATnew(_4:oid, _5:lng) {G}
+barrier (v,i):= language.newRange(0:lng);#  4 (v:bit, i:lng) := RNGnewRange_lng(_8:lng) {J7}
+    bat.append(b,i);                    #  5 _9:void := BKCappend_val_wrap(b:bat[:oid,:lng], i:lng) 
+    redo (v,i):= language.nextElement(1:lng,10:lng);#  6 (v:bit, i:lng) := RNGnextElement_lng(_10:lng, _11:lng) {J5}
+exit (v,i);                             #  7 (v:bit, i:lng 
+    c := algebra.copy(b);               #  8 c:bat[:oid,:lng] := ALGcopy(b:bat[:oid,:lng]) {G}
+    io.print(c);                        #  9 _13:void := IOprint_val(c:bat[:oid,:lng]) 
+    x := batcalc.+(b,c);                # 10 x:bat[:oid,:lng] := CMDbatADD_lng_lng_lng(b:bat[:oid,:lng], c:bat[:oid,:lng]) {G}
+    io.print(x);                        # 11 _15:void := IOprint_val(x:bat[:oid,:lng]) 
+    x := batcalc.+(b,1:lng);            # 12 x:bat[:oid,:lng] := CMDbatADDcst_lng_lng_lng(b:bat[:oid,:lng], _10:lng) {G}
+    io.print(x);                        # 13 _16:void := IOprint_val(x:bat[:oid,:lng]) 
+    x := batcalc./(b,1:lng);            # 14 x:bat[:oid,:lng] := CMDbatDIVcst_lng_lng_lng(b:bat[:oid,:lng], _10:lng) {G}
+    io.print(x);                        # 15 _17:void := IOprint_val(x:bat[:oid,:lng]) 
+    x := batcalc.*(b,c);                # 16 x:bat[:oid,:lng] := CMDbatMUL_lng_lng_lng(b:bat[:oid,:lng], c:bat[:oid,:lng]) {G}
+    io.print(x);                        # 17 _18:void := IOprint_val(x:bat[:oid,:lng]) 
+    y := batcalc.==(b,b);               # 18 y:bat[:oid,:bit] := CMD_EQ_lng(b:bat[:oid,:lng], b:bat[:oid,:lng]) {G}
+    io.print(y);                        # 19 _20:void := IOprint_val(y:bat[:oid,:bit]) 
+    y := batcalc.==(b,x);               # 20 y:bat[:oid,:bit] := CMD_EQ_lng(b:bat[:oid,:lng], x:bat[:oid,:lng]) {G}
+    io.print(y);                        # 21 _21:void := IOprint_val(y:bat[:oid,:bit]) 
+    z := batcalc.not(y);                # 22 z:bat[:oid,:bit] := CMDbitbatNOT(y:bat[:oid,:bit]) {G}
+    io.print(z);                        # 23 _23:void := IOprint_val(z:bat[:oid,:bit]) 
 end main;	# 24  
 #-----------------#
 # h	t	  # name

@@ -14,8 +14,8 @@ stdout of test 'ADT_not_available.SF-850137` in directory 'tests/BugDay_2005-10-
 !TypeException:user.main[1]:'url.new' undefined in: u:any := url.new(void:any, url:any)
 !TypeException:user.main[1]:'void' may not be used before being initialized
 !TypeException:user.main[1]:'url' may not be used before being initialized
-function user.main():void;	# 0  (main:void)
-    u := url.new(void,url);	# 1  unknown (u:any)<-(void:any)(url:any)
+function user.main():void;              #  0 main:void 
+    u := url.new(void,url);             #  1 u:any := url.new(void:any, url:any) {U}
 end main;	# 2  
 
 # 14:38:21 >  

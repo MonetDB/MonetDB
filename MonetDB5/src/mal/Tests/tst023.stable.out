@@ -18,16 +18,16 @@ stdout of test 'tst023` in directory 'src/mal` itself:
 #	b:= inspect.getDefinition("transaction","help");
 #	print(b);
 #end help
-function transaction.help():void;	# 0  (help:void)
-    io.print("added function to specific module");	# 1 IOprint_val (_1:void)<-(_2:str)
-    b := inspect.getDefinition("transaction","help");	# 2 INSPECTgetDefinition (b:bat[:str,:str])<-(_4:str)(_5:str)
-    io.print(b);	# 3 IOprint_val (_6:void)<-(b:bat[:str,:str])
+function transaction.help():void;       #  0 help:void {G}
+    io.print("added function to specific module");#  1 _1:void := IOprint_val(_2:str) 
+    b := inspect.getDefinition("transaction","help");#  2 b:bat[:str,:str] := INSPECTgetDefinition(_4:str, _5:str) {G}
+    io.print(b);                        #  3 _6:void := IOprint_val(b:bat[:str,:str]) 
 end help;	# 4  
 #transaction.help();
 #
-function user.main():void;	# 0  (main:void)
-#test addition of a function to a known module 	# 1  (_1:str)
-    transaction.help();	# 2  (_2:void)
+function user.main():void;              #  0 main:void 
+#test addition of a function to a known module 
+    transaction.help();                 #  2 _2:void 
 end main;	# 3  
 [ "added function to specific module" ]
 #-------------------------------------------------------------------------#

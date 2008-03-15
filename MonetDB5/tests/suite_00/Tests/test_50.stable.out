@@ -73,65 +73,65 @@ stdout of test 'test_50` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	ra_a := clients.quit();
 #
-function user.main():void;	# 0  (main:void)
-# Monet Mil to Mal compiler 	# 1  (_1:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
-#Predefined code segment 	# 3  (_3:str)
-#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
-#A few guidelines to maximize usefullness. 	# 6  (_6:str)
-#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
-#use the "mil_schema" for additional support routines 	# 9  (_9:str)
-#	io.print("setoid(oid(20000000));"); 	# 10  (_10:str)
-    aa_a := calc.oid(20000000);	# 11 CALCint2oid (aa_a:oid)<-(_12:int)
-    ba_a := calc.setoid(aa_a);	# 12 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-#	io.print("# Selfcontained test of delta operations\n"); 	# 13  (_14:str)
-#	io.print("var b:=new(int,int);"); 	# 14  (_15:str)
-    b := bat.new(nil:int,nil:int);	# 15 CMDBATnew (b:bat[:int,:int])<-(_17:int)(_17:int)
-#	io.print("var bi:=new(int,int);"); 	# 16  (_18:str)
-    bi := bat.new(nil:int,nil:int);	# 17 CMDBATnew (bi:bat[:int,:int])<-(_17:int)(_17:int)
-#	io.print("var bd:=new(int,int);"); 	# 18  (_20:str)
-    bd := bat.new(nil:int,nil:int);	# 19 CMDBATnew (bd:bat[:int,:int])<-(_17:int)(_17:int)
-#	io.print("insert(b,1,2);"); 	# 20  (_22:str)
-    ca_a := bat.insert(b,1,2);	# 21 BKCinsert_bun (ca_a:void)<-(b:bat[:int,:int])(_24:int)(_25:int)
-#	io.print("insert(b,2,3);"); 	# 22  (_26:str)
-    da_a := bat.insert(b,2,3);	# 23 BKCinsert_bun (da_a:void)<-(b:bat[:int,:int])(_25:int)(_28:int)
-#	io.print("bd:=b.delta();"); 	# 24  (_29:str)
-    bd := transaction.delta(b);	# 25 TRNtrans_delta (bd:bat[:int,:int])<-(b:bat[:int,:int])
-#	io.print("print(bd);"); 	# 26  (_30:str)
-    ea_a := io.print(bd);	# 27 IOprint_val (ea_a:void)<-(bd:bat[:int,:int])
-#	io.print("var a:= b.alpha();"); 	# 28  (_32:str)
-    a := transaction.alpha(b);	# 29 TRNtrans_alpha (a:bat[:int,:int])<-(b:bat[:int,:int])
-#	io.print("a.print();"); 	# 30  (_34:str)
-    fa_a := io.print(a);	# 31 IOprint_val (fa_a:void)<-(a:bat[:int,:int])
-#	io.print("#commit the changes and repeat the action\n"); 	# 32  (_36:str)
-    ga_a := bat.delete(bd);	# 33 BKCdelete_all (ga_a:void)<-(bd:bat[:int,:int])
-#	io.print("commit(b);"); 	# 34  (_38:str)
-    ha_a := transaction.commit(b);	# 35 TRNtrans_commit (ha_a:void)<-(b:bat[:int,:int])
-#	io.print("b.alpha().print();"); 	# 36  (_40:str)
-    ia_a := transaction.alpha(b);	# 37 TRNtrans_alpha (ia_a:bat[:int,:int])<-(b:bat[:int,:int])
-    ja_a := io.print(ia_a);	# 38 IOprint_val (ja_a:void)<-(ia_a:bat[:int,:int])
-#	io.print("insert(b,4,5);"); 	# 39  (_43:str)
-    ka_a := bat.insert(b,4,5);	# 40 BKCinsert_bun (ka_a:void)<-(b:bat[:int,:int])(_45:int)(_46:int)
-#	io.print("delete(b,2,3);"); 	# 41  (_47:str)
-    la_a := bat.delete(b,2,3);	# 42 BKCdelete_bun (la_a:void)<-(b:bat[:int,:int])(_25:int)(_28:int)
-#	io.print("print(b);"); 	# 43  (_49:str)
-    ma_a := io.print(b);	# 44 IOprint_val (ma_a:void)<-(b:bat[:int,:int])
-#	io.print("bd:=b.delta();"); 	# 45  (_29:str)
-    bd := transaction.delta(b);	# 46 TRNtrans_delta (bd:bat[:int,:int])<-(b:bat[:int,:int])
-#	io.print("print(bd);"); 	# 47  (_30:str)
-    na_a := io.print(bd);	# 48 IOprint_val (na_a:void)<-(bd:bat[:int,:int])
-#	io.print("a:= b.alpha();"); 	# 49  (_52:str)
-    a := transaction.alpha(b);	# 50 TRNtrans_alpha (a:bat[:int,:int])<-(b:bat[:int,:int])
-#	io.print("a.print();"); 	# 51  (_34:str)
-    oa_a := io.print(a);	# 52 IOprint_val (oa_a:void)<-(a:bat[:int,:int])
-#	io.print("abort(b);"); 	# 53  (_54:str)
-    pa_a := transaction.abort(b);	# 54 TRNtrans_abort (pa_a:void)<-(b:bat[:int,:int])
-#	io.print("print(b);"); 	# 55  (_49:str)
-    qa_a := io.print(b);	# 56 IOprint_val (qa_a:void)<-(b:bat[:int,:int])
-#	io.print("quit();"); 	# 57  (_57:str)
-    ra_a := clients.quit();	# 58 CLTquit (ra_a:void)
+function user.main():void;              #  0 main:void {G}
+# Monet Mil to Mal compiler 
+# Copyright (c) 2001-2004, CWI. All rights reserved. 
+#Predefined code segment 
+#The compiler can not guarantee an accurate compilation, 
+#because MIL unlike MAL is a dynamically typed language. 
+#A few guidelines to maximize usefullness. 
+#- make the type of variables explicit, in particular 'nil' 
+#- upon advice of M2m to remap identifiers, change it in your program directly 
+#use the "mil_schema" for additional support routines 
+#	io.print("setoid(oid(20000000));"); 
+    aa_a := calc.oid(20000000);         # 11 aa_a:oid := CALCint2oid(_12:int) 
+    ba_a := calc.setoid(aa_a);          # 12 ba_a:oid := CALCsetoidInc(aa_a:oid) 
+#	io.print("# Selfcontained test of delta operations\n"); 
+#	io.print("var b:=new(int,int);"); 
+    b := bat.new(nil:int,nil:int);      # 15 b:bat[:int,:int] := CMDBATnew(_17:int, _17:int) {G}
+#	io.print("var bi:=new(int,int);"); 
+    bi := bat.new(nil:int,nil:int);     # 17 bi:bat[:int,:int] := CMDBATnew(_17:int, _17:int) {G}
+#	io.print("var bd:=new(int,int);"); 
+    bd := bat.new(nil:int,nil:int);     # 19 bd:bat[:int,:int] := CMDBATnew(_17:int, _17:int) {G}
+#	io.print("insert(b,1,2);"); 
+    ca_a := bat.insert(b,1,2);          # 21 ca_a:void := BKCinsert_bun(b:bat[:int,:int], _24:int, _25:int) 
+#	io.print("insert(b,2,3);"); 
+    da_a := bat.insert(b,2,3);          # 23 da_a:void := BKCinsert_bun(b:bat[:int,:int], _25:int, _28:int) 
+#	io.print("bd:=b.delta();"); 
+    bd := transaction.delta(b);         # 25 bd:bat[:int,:int] := TRNtrans_delta(b:bat[:int,:int]) {G}
+#	io.print("print(bd);"); 
+    ea_a := io.print(bd);               # 27 ea_a:void := IOprint_val(bd:bat[:int,:int]) 
+#	io.print("var a:= b.alpha();"); 
+    a := transaction.alpha(b);          # 29 a:bat[:int,:int] := TRNtrans_alpha(b:bat[:int,:int]) {G}
+#	io.print("a.print();"); 
+    fa_a := io.print(a);                # 31 fa_a:void := IOprint_val(a:bat[:int,:int]) 
+#	io.print("#commit the changes and repeat the action\n"); 
+    ga_a := bat.delete(bd);             # 33 ga_a:void := BKCdelete_all(bd:bat[:int,:int]) 
+#	io.print("commit(b);"); 
+    ha_a := transaction.commit(b);      # 35 ha_a:void := TRNtrans_commit(b:bat[:int,:int]) 
+#	io.print("b.alpha().print();"); 
+    ia_a := transaction.alpha(b);       # 37 ia_a:bat[:int,:int] := TRNtrans_alpha(b:bat[:int,:int]) {G}
+    ja_a := io.print(ia_a);             # 38 ja_a:void := IOprint_val(ia_a:bat[:int,:int]) 
+#	io.print("insert(b,4,5);"); 
+    ka_a := bat.insert(b,4,5);          # 40 ka_a:void := BKCinsert_bun(b:bat[:int,:int], _45:int, _46:int) 
+#	io.print("delete(b,2,3);"); 
+    la_a := bat.delete(b,2,3);          # 42 la_a:void := BKCdelete_bun(b:bat[:int,:int], _25:int, _28:int) 
+#	io.print("print(b);"); 
+    ma_a := io.print(b);                # 44 ma_a:void := IOprint_val(b:bat[:int,:int]) 
+#	io.print("bd:=b.delta();"); 
+    bd := transaction.delta(b);         # 46 bd:bat[:int,:int] := TRNtrans_delta(b:bat[:int,:int]) {G}
+#	io.print("print(bd);"); 
+    na_a := io.print(bd);               # 48 na_a:void := IOprint_val(bd:bat[:int,:int]) 
+#	io.print("a:= b.alpha();"); 
+    a := transaction.alpha(b);          # 50 a:bat[:int,:int] := TRNtrans_alpha(b:bat[:int,:int]) {G}
+#	io.print("a.print();"); 
+    oa_a := io.print(a);                # 52 oa_a:void := IOprint_val(a:bat[:int,:int]) 
+#	io.print("abort(b);"); 
+    pa_a := transaction.abort(b);       # 54 pa_a:void := TRNtrans_abort(b:bat[:int,:int]) 
+#	io.print("print(b);"); 
+    qa_a := io.print(b);                # 56 qa_a:void := IOprint_val(b:bat[:int,:int]) 
+#	io.print("quit();"); 
+    ra_a := clients.quit();             # 58 ra_a:void 
 end main;	# 59  
 #-----------------#
 # h	t	  # name

@@ -50,40 +50,40 @@ stdout of test 'intersect_diff_nil` in directory 'tests/gdkTests` itself:
 #ka:= algebra.sdifference(b,a);
 #io.print(ka);
 #
-function user.main():void;	# 0  (main:void)
-    a := bat.new(:int,:int);	# 1 CMDBATnew (a:bat[:int,:int])<-(_2:int)(_2:int)
-    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
-    n := nil:int;	# 3  (n:int)<-(_5:int)
-    bat.insert(a,1,1);	# 4 BKCinsert_bun (_6:void)<-(a:bat[:int,:int])(_7:int)(_7:int)
-    bat.insert(a,n,2);	# 5 BKCinsert_bun (_8:void)<-(a:bat[:int,:int])(n:int)(_9:int)
-    bat.insert(a,3,3);	# 6 BKCinsert_bun (_10:void)<-(a:bat[:int,:int])(_11:int)(_11:int)
-    bat.insert(a,n,n);	# 7 BKCinsert_bun (_12:void)<-(a:bat[:int,:int])(n:int)(n:int)
-    bat.insert(a,5,5);	# 8 BKCinsert_bun (_13:void)<-(a:bat[:int,:int])(_14:int)(_14:int)
-    bat.insert(a,6,n);	# 9 BKCinsert_bun (_15:void)<-(a:bat[:int,:int])(_16:int)(n:int)
-    bat.insert(a,7,7);	# 10 BKCinsert_bun (_17:void)<-(a:bat[:int,:int])(_18:int)(_18:int)
-    bat.insert(b,-1,-1);	# 11 BKCinsert_bun (_19:void)<-(b:bat[:int,:int])(_20:int)(_20:int)
-    bat.insert(b,n,2);	# 12 BKCinsert_bun (_21:void)<-(b:bat[:int,:int])(n:int)(_9:int)
-    bat.insert(b,-3,-3);	# 13 BKCinsert_bun (_22:void)<-(b:bat[:int,:int])(_23:int)(_23:int)
-    bat.insert(b,n,n);	# 14 BKCinsert_bun (_24:void)<-(b:bat[:int,:int])(n:int)(n:int)
-    bat.insert(b,-5,-5);	# 15 BKCinsert_bun (_25:void)<-(b:bat[:int,:int])(_26:int)(_26:int)
-    bat.insert(b,6,n);	# 16 BKCinsert_bun (_27:void)<-(b:bat[:int,:int])(_16:int)(n:int)
-    bat.insert(b,-7,-7);	# 17 BKCinsert_bun (_28:void)<-(b:bat[:int,:int])(_29:int)(_29:int)
-    ka := algebra.kintersect(a,b);	# 18 ALGsemijoin (ka:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])
-    io.print(ka);	# 19 IOprint_val (_31:void)<-(ka:bat[:int,:int])
-    ka := algebra.kintersect(b,a);	# 20 ALGsemijoin (ka:bat[:int,:int])<-(b:bat[:int,:int])(a:bat[:int,:int])
-    io.print(ka);	# 21 IOprint_val (_32:void)<-(ka:bat[:int,:int])
-    ka := algebra.sintersect(a,b);	# 22 ALGsintersect (ka:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])
-    io.print(ka);	# 23 IOprint_val (_33:void)<-(ka:bat[:int,:int])
-    ka := algebra.sintersect(b,a);	# 24 ALGsintersect (ka:bat[:int,:int])<-(b:bat[:int,:int])(a:bat[:int,:int])
-    io.print(ka);	# 25 IOprint_val (_34:void)<-(ka:bat[:int,:int])
-    ka := algebra.kdifference(a,b);	# 26 ALGkdiff (ka:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])
-    io.print(ka);	# 27 IOprint_val (_35:void)<-(ka:bat[:int,:int])
-    ka := algebra.kdifference(b,a);	# 28 ALGkdiff (ka:bat[:int,:int])<-(b:bat[:int,:int])(a:bat[:int,:int])
-    io.print(ka);	# 29 IOprint_val (_36:void)<-(ka:bat[:int,:int])
-    ka := algebra.sdifference(a,b);	# 30 ALGsdiff (ka:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])
-    io.print(ka);	# 31 IOprint_val (_37:void)<-(ka:bat[:int,:int])
-    ka := algebra.sdifference(b,a);	# 32 ALGsdiff (ka:bat[:int,:int])<-(b:bat[:int,:int])(a:bat[:int,:int])
-    io.print(ka);	# 33 IOprint_val (_38:void)<-(ka:bat[:int,:int])
+function user.main():void;              #  0 main:void {G}
+    a := bat.new(:int,:int);            #  1 a:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
+    b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
+    n := nil:int;                       #  3 n:int := _5:int 
+    bat.insert(a,1,1);                  #  4 _6:void := BKCinsert_bun(a:bat[:int,:int], _7:int, _7:int) 
+    bat.insert(a,n,2);                  #  5 _8:void := BKCinsert_bun(a:bat[:int,:int], n:int, _9:int) 
+    bat.insert(a,3,3);                  #  6 _10:void := BKCinsert_bun(a:bat[:int,:int], _11:int, _11:int) 
+    bat.insert(a,n,n);                  #  7 _12:void := BKCinsert_bun(a:bat[:int,:int], n:int, n:int) 
+    bat.insert(a,5,5);                  #  8 _13:void := BKCinsert_bun(a:bat[:int,:int], _14:int, _14:int) 
+    bat.insert(a,6,n);                  #  9 _15:void := BKCinsert_bun(a:bat[:int,:int], _16:int, n:int) 
+    bat.insert(a,7,7);                  # 10 _17:void := BKCinsert_bun(a:bat[:int,:int], _18:int, _18:int) 
+    bat.insert(b,-1,-1);                # 11 _19:void := BKCinsert_bun(b:bat[:int,:int], _20:int, _20:int) 
+    bat.insert(b,n,2);                  # 12 _21:void := BKCinsert_bun(b:bat[:int,:int], n:int, _9:int) 
+    bat.insert(b,-3,-3);                # 13 _22:void := BKCinsert_bun(b:bat[:int,:int], _23:int, _23:int) 
+    bat.insert(b,n,n);                  # 14 _24:void := BKCinsert_bun(b:bat[:int,:int], n:int, n:int) 
+    bat.insert(b,-5,-5);                # 15 _25:void := BKCinsert_bun(b:bat[:int,:int], _26:int, _26:int) 
+    bat.insert(b,6,n);                  # 16 _27:void := BKCinsert_bun(b:bat[:int,:int], _16:int, n:int) 
+    bat.insert(b,-7,-7);                # 17 _28:void := BKCinsert_bun(b:bat[:int,:int], _29:int, _29:int) 
+    ka := algebra.kintersect(a,b);      # 18 ka:bat[:int,:int] := ALGsemijoin(a:bat[:int,:int], b:bat[:int,:int]) {G}
+    io.print(ka);                       # 19 _31:void := IOprint_val(ka:bat[:int,:int]) 
+    ka := algebra.kintersect(b,a);      # 20 ka:bat[:int,:int] := ALGsemijoin(b:bat[:int,:int], a:bat[:int,:int]) {G}
+    io.print(ka);                       # 21 _32:void := IOprint_val(ka:bat[:int,:int]) 
+    ka := algebra.sintersect(a,b);      # 22 ka:bat[:int,:int] := ALGsintersect(a:bat[:int,:int], b:bat[:int,:int]) {G}
+    io.print(ka);                       # 23 _33:void := IOprint_val(ka:bat[:int,:int]) 
+    ka := algebra.sintersect(b,a);      # 24 ka:bat[:int,:int] := ALGsintersect(b:bat[:int,:int], a:bat[:int,:int]) {G}
+    io.print(ka);                       # 25 _34:void := IOprint_val(ka:bat[:int,:int]) 
+    ka := algebra.kdifference(a,b);     # 26 ka:bat[:int,:int] := ALGkdiff(a:bat[:int,:int], b:bat[:int,:int]) {G}
+    io.print(ka);                       # 27 _35:void := IOprint_val(ka:bat[:int,:int]) 
+    ka := algebra.kdifference(b,a);     # 28 ka:bat[:int,:int] := ALGkdiff(b:bat[:int,:int], a:bat[:int,:int]) {G}
+    io.print(ka);                       # 29 _36:void := IOprint_val(ka:bat[:int,:int]) 
+    ka := algebra.sdifference(a,b);     # 30 ka:bat[:int,:int] := ALGsdiff(a:bat[:int,:int], b:bat[:int,:int]) {G}
+    io.print(ka);                       # 31 _37:void := IOprint_val(ka:bat[:int,:int]) 
+    ka := algebra.sdifference(b,a);     # 32 ka:bat[:int,:int] := ALGsdiff(b:bat[:int,:int], a:bat[:int,:int]) {G}
+    io.print(ka);                       # 33 _38:void := IOprint_val(ka:bat[:int,:int]) 
 end main;	# 34  
 #-----------------#
 # h	t	  # name

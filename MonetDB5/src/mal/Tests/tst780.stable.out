@@ -17,8 +17,8 @@ stdout of test 'tst780` in directory 'src/mal` itself:
 #macro user.hello():void;
 #	io.print("hello world\n");
 #end hello;
-function dummy.hello():void;	# 0  (hello:void)
-    io.print("hello world\n");	# 1 IOprint_val (_1:void)<-(_2:str)
+function dummy.hello():void;            #  0 hello:void 
+    io.print("hello world\n");          #  1 _1:void := IOprint_val(_2:str) 
 end hello;	# 2  
 #
 #macro user.doit(i:int, j:str):int;
@@ -26,20 +26,20 @@ end hello;	# 2
 #	io.print(j);
 #	doit:= 3;
 #end doit;
-function dummy.doit(i:int,j:str):int;	# 0  (doit:int)<-(i:int)(j:str)
-    io.print(i);	# 1 IOprint_val (_3:void)<-(i:int)
-    io.print(j);	# 2 IOprint_val (_4:void)<-(j:str)
-    return doit := 3;	# 3  (doit:int)<-(_5:int)
+function dummy.doit(i:int,j:str):int;   #  0 doit:int := dummy.doit(i:int, j:str) {G}
+    io.print(i);                        #  1 _3:void := IOprint_val(i:int) 
+    io.print(j);                        #  2 _4:void := IOprint_val(j:str) 
+    return doit := 3;                   #  3 doit:int := _5:int 
 end doit;	# 4  
 #
 #user.hello();
 #z:=user.doit(1,"help");
 #
 #
-function user.main():void;	# 0  (main:void)
-#some tests to illustrate function inlining for a module 	# 1  (_1:str)
-    io.print("hello world\n");	# 2 IOprint_val (_10:void)<-(_11:str)
-    z := dummy.doit(1,"help");	# 3  (z:int)<-(_4:int)(_5:str)
+function user.main():void;              #  0 main:void 
+#some tests to illustrate function inlining for a module 
+    io.print("hello world\n");          #  2 _10:void := IOprint_val(_11:str) 
+    z := dummy.doit(1,"help");          #  3 z:int := dummy.doit(_4:int, _5:str) 
 end main;	# 4  
 [ "hello world\n" ]
 [ 1 ]

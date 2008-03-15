@@ -73,127 +73,131 @@ stdout of test 'tst1602` in directory 'src/mal` itself:
 #exit	sj_b;
 #
 #        t := alarm.time();
-#        ug_b := reverse(M2);
-#        vg_b := join(M2,ug_b);
-#        wg_b := count(vg_b);
-#        xg_b := printf("#count %d = ",wg_b);
+#        ug_b := bat.reverse(M2);
+#        vg_b := algebra.join(M2,ug_b);
+#        wg_b := aggr.count(vg_b);
+#        xg_b := io.printf("#count %d = ",wg_b);
 #        x:= alarm.time();
-#        yg_b := -(x,t);                                                                ah_b := printf("%d ms\n",yg_b);
+#        yg_b := calc.-(x,t);
+#       ah_b := io.printf("%d ms\n",yg_b);
 #
 #
 #        t := alarm.time();
-#        ug_b := reverse(M2);
-#        vg_b := join(M2,ug_b);
-#        wg_b := count(vg_b);
-#        xg_b := printf("#count %d = ",wg_b);
+#        ug_b := bat.reverse(M2);
+#        vg_b := algebra.join(M2,ug_b);
+#        wg_b := aggr.count(vg_b);
+#        xg_b := io.printf("#count %d = ",wg_b);
 #        x:= alarm.time();
-#        yg_b := -(x,t);                                                                ah_b := printf("%d ms\n",yg_b);
+#        yg_b := calc.-(x,t);
+#       ah_b := io.printf("%d ms\n",yg_b);
 #
 #        t := alarm.time();
-#        ug_b := reverse(M2);
-#        vg_b := join(M2,ug_b);
-#        wg_b := count(vg_b);
-#        xg_b := printf("#count %d = ",wg_b);
+#        ug_b := bat.reverse(M2);
+#        vg_b := algebra.join(M2,ug_b);
+#        wg_b := aggr.count(vg_b);
+#        xg_b := io.printf("#count %d = ",wg_b);
 #        x:= alarm.time();
-#        yg_b := -(x,t);                                                                ah_b := printf("%d ms\n",yg_b);
+#        yg_b := calc.-(x,t);
+#       ah_b := io.printf("%d ms\n",yg_b);
 #
 #
 #        t := alarm.time();
-#        ug_b := reverse(M2);
-#        vg_b := join(M2,ug_b);
-#        wg_b := count(vg_b);
-#        xg_b := printf("#count %d = ",wg_b);
+#        ug_b := bat.reverse(M2);
+#        vg_b := algebra.join(M2,ug_b);
+#        wg_b := aggr.count(vg_b);
+#        xg_b := io.printf("#count %d = ",wg_b);
 #        x:= alarm.time();
-#        yg_b := -(x,t);                                                                ah_b := printf("%d ms\n",yg_b);
+#        yg_b := calc.-(x,t);
+#      ah_b := io.printf("%d ms\n",yg_b);
 #
 #
-function user.main():void;	# 0  (main:void)
-    int_1M := bat.new(:oid,:lng,1000000);	# 1 CMDBATnewint (int_1M:bat[:oid,:lng])<-(_2:oid)(_3:lng)(_4:int)
-    i := 1000000:lng;	# 2  (i:lng)<-(_6:lng)
-barrier sj_a := true;	# 3  (sj_a:bit)<-(_8:bit) jump 11
-    i := calc.-(i,1);	# 4 CALCbinarySUBlngint (i:lng)<-(i:lng)(_9:int)
-    uj_a := i;	# 5  (uj_a:lng)<-(i:lng)
-    vj_a := calc.>=(uj_a,0);	# 6 CALCcompGElngint (vj_a:bit)<-(uj_a:lng)(_12:int)
-barrier tj_a := vj_a;	# 7  (tj_a:bit)<-(vj_a:bit) jump 10
-    xj_a := bat.insert(int_1M,nil:oid,i);	# 8 BKCinsert_bun (xj_a:void)<-(int_1M:bat[:oid,:lng])(_15:oid)(i:lng)
-    redo sj_a;	# 9  (sj_a:bit) jump 4
-exit tj_a;	# 10  (tj_a:bit)
-exit sj_a;	# 11  (sj_a:bit)
-    t := alarm.time();	# 12 ALARMtime (t:int)
-    ug_a := bat.reverse(int_1M);	# 13 BKCreverse (ug_a:bat[:lng,:oid])<-(int_1M:bat[:oid,:lng])
-    vg_a := algebra.join(int_1M,ug_a);	# 14 ALGjoin (vg_a:bat[:oid,:oid])<-(int_1M:bat[:oid,:lng])(ug_a:bat[:lng,:oid])
-    wg_a := aggr.count(vg_a);	# 15 ALGcount_bat (wg_a:int)<-(vg_a:bat[:oid,:oid])
-    xg_a := io.printf("#count %d = ",wg_a);	# 16 IOprint_formatted_int (xg_a:void)<-(_21:str)(wg_a:int)
-    x := alarm.time();	# 17 ALARMtime (x:int)
-    yg_a := calc.-(x,t);	# 18 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
-    ah_a := io.printf("%d ms\n",yg_a);	# 19 IOprint_formatted_int (ah_a:void)<-(_25:str)(yg_a:int)
-    t := alarm.time();	# 20 ALARMtime (t:int)
-    ug_a := bat.reverse(int_1M);	# 21 BKCreverse (ug_a:bat[:lng,:oid])<-(int_1M:bat[:oid,:lng])
-    vg_a := algebra.join(int_1M,ug_a);	# 22 ALGjoin (vg_a:bat[:oid,:oid])<-(int_1M:bat[:oid,:lng])(ug_a:bat[:lng,:oid])
-    wg_a := aggr.count(vg_a);	# 23 ALGcount_bat (wg_a:int)<-(vg_a:bat[:oid,:oid])
-    xg_a := io.printf("#count %d = ",wg_a);	# 24 IOprint_formatted_int (xg_a:void)<-(_21:str)(wg_a:int)
-    x := alarm.time();	# 25 ALARMtime (x:int)
-    yg_a := calc.-(x,t);	# 26 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
-    ah_a := io.printf("%d ms\n",yg_a);	# 27 IOprint_formatted_int (ah_a:void)<-(_25:str)(yg_a:int)
-    t := alarm.time();	# 28 ALARMtime (t:int)
-    ug_a := bat.reverse(int_1M);	# 29 BKCreverse (ug_a:bat[:lng,:oid])<-(int_1M:bat[:oid,:lng])
-    vg_a := algebra.join(int_1M,ug_a);	# 30 ALGjoin (vg_a:bat[:oid,:oid])<-(int_1M:bat[:oid,:lng])(ug_a:bat[:lng,:oid])
-    wg_a := aggr.count(vg_a);	# 31 ALGcount_bat (wg_a:int)<-(vg_a:bat[:oid,:oid])
-    xg_a := io.printf("#count %d = ",wg_a);	# 32 IOprint_formatted_int (xg_a:void)<-(_21:str)(wg_a:int)
-    x := alarm.time();	# 33 ALARMtime (x:int)
-    yg_a := calc.-(x,t);	# 34 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
-    ah_a := io.printf("%d ms\n",yg_a);	# 35 IOprint_formatted_int (ah_a:void)<-(_25:str)(yg_a:int)
-    t := alarm.time();	# 36 ALARMtime (t:int)
-    ug_a := bat.reverse(int_1M);	# 37 BKCreverse (ug_a:bat[:lng,:oid])<-(int_1M:bat[:oid,:lng])
-    vg_a := algebra.join(int_1M,ug_a);	# 38 ALGjoin (vg_a:bat[:oid,:oid])<-(int_1M:bat[:oid,:lng])(ug_a:bat[:lng,:oid])
-    wg_a := aggr.count(vg_a);	# 39 ALGcount_bat (wg_a:int)<-(vg_a:bat[:oid,:oid])
-    xg_a := io.printf("#count %d = ",wg_a);	# 40 IOprint_formatted_int (xg_a:void)<-(_21:str)(wg_a:int)
-    x := alarm.time();	# 41 ALARMtime (x:int)
-    yg_a := calc.-(x,t);	# 42 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
-    ah_a := io.printf("%d ms\n",yg_a);	# 43 IOprint_formatted_int (ah_a:void)<-(_25:str)(yg_a:int)
-    M2 := bat.new(:lng,:lng,1000000);	# 44 CMDBATnewint (M2:bat[:lng,:lng])<-(_3:lng)(_3:lng)(_4:int)
-    i := 1000000:lng;	# 45  (i:lng)<-(_6:lng)
-barrier sj_b := true;	# 46  (sj_b:bit)<-(_8:bit) jump 54
-    i := calc.-(i,1);	# 47 CALCbinarySUBlngint (i:lng)<-(i:lng)(_9:int)
-    uj_b := i;	# 48  (uj_b:lng)<-(i:lng)
-    vj_b := calc.>=(uj_b,0);	# 49 CALCcompGElngint (vj_b:bit)<-(uj_b:lng)(_12:int)
-barrier tj_b := vj_b;	# 50  (tj_b:bit)<-(vj_b:bit) jump 53
-    xj_b := bat.insert(M2,i,i);	# 51 BKCinsert_bun (xj_b:void)<-(M2:bat[:lng,:lng])(i:lng)(i:lng)
-    redo sj_b;	# 52  (sj_b:bit) jump 47
-exit tj_b;	# 53  (tj_b:bit)
-exit sj_b;	# 54  (sj_b:bit)
-    t := alarm.time();	# 55 ALARMtime (t:int)
-    ug_b := bat.reverse(M2);	# 56 BKCreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
-    vg_b := algebra.join(M2,ug_b);	# 57 ALGjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
-    wg_b := aggr.count(vg_b);	# 58 ALGcount_bat (wg_b:int)<-(vg_b:bat[:lng,:lng])
-    xg_b := io.printf("#count %d = ",wg_b);	# 59 IOprint_formatted_int (xg_b:void)<-(_21:str)(wg_b:int)
-    x := alarm.time();	# 60 ALARMtime (x:int)
-    yg_b := calc.-(x,t);	# 61 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
-    ah_b := io.printf("%d ms\n",yg_b);	# 62 IOprint_formatted_int (ah_b:void)<-(_25:str)(yg_b:int)
-    t := alarm.time();	# 63 ALARMtime (t:int)
-    ug_b := bat.reverse(M2);	# 64 BKCreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
-    vg_b := algebra.join(M2,ug_b);	# 65 ALGjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
-    wg_b := aggr.count(vg_b);	# 66 ALGcount_bat (wg_b:int)<-(vg_b:bat[:lng,:lng])
-    xg_b := io.printf("#count %d = ",wg_b);	# 67 IOprint_formatted_int (xg_b:void)<-(_21:str)(wg_b:int)
-    x := alarm.time();	# 68 ALARMtime (x:int)
-    yg_b := calc.-(x,t);	# 69 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
-    ah_b := io.printf("%d ms\n",yg_b);	# 70 IOprint_formatted_int (ah_b:void)<-(_25:str)(yg_b:int)
-    t := alarm.time();	# 71 ALARMtime (t:int)
-    ug_b := bat.reverse(M2);	# 72 BKCreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
-    vg_b := algebra.join(M2,ug_b);	# 73 ALGjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
-    wg_b := aggr.count(vg_b);	# 74 ALGcount_bat (wg_b:int)<-(vg_b:bat[:lng,:lng])
-    xg_b := io.printf("#count %d = ",wg_b);	# 75 IOprint_formatted_int (xg_b:void)<-(_21:str)(wg_b:int)
-    x := alarm.time();	# 76 ALARMtime (x:int)
-    yg_b := calc.-(x,t);	# 77 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
-    ah_b := io.printf("%d ms\n",yg_b);	# 78 IOprint_formatted_int (ah_b:void)<-(_25:str)(yg_b:int)
-    t := alarm.time();	# 79 ALARMtime (t:int)
-    ug_b := bat.reverse(M2);	# 80 BKCreverse (ug_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])
-    vg_b := algebra.join(M2,ug_b);	# 81 ALGjoin (vg_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(ug_b:bat[:lng,:lng])
-    wg_b := aggr.count(vg_b);	# 82 ALGcount_bat (wg_b:int)<-(vg_b:bat[:lng,:lng])
-    xg_b := io.printf("#count %d = ",wg_b);	# 83 IOprint_formatted_int (xg_b:void)<-(_21:str)(wg_b:int)
-    x := alarm.time();	# 84 ALARMtime (x:int)
-    yg_b := calc.-(x,t);	# 85 CALCbinarySUBintint (yg_b:int)<-(x:int)(t:int)
-    ah_b := io.printf("%d ms\n",yg_b);	# 86 IOprint_formatted_int (ah_b:void)<-(_25:str)(yg_b:int)
+function user.main():void;              #  0 main:void {G}
+    int_1M := bat.new(:oid,:lng,1000000);#  1 int_1M:bat[:oid,:lng] := CMDBATnewint(_2:oid, _3:lng, _4:int) {G}
+    i := 1000000:lng;                   #  2 i:lng := _6:lng 
+barrier sj_a := true;                   #  3 sj_a:bit := _8:bit {J11}
+    i := calc.-(i,1);                   #  4 i:lng := CALCbinarySUBlngint(i:lng, _9:int) 
+    uj_a := i;                          #  5 uj_a:lng := i:lng 
+    vj_a := calc.>=(uj_a,0);            #  6 vj_a:bit := CALCcompGElngint(uj_a:lng, _12:int) 
+barrier tj_a := vj_a;                   #  7 tj_a:bit := vj_a:bit {J10}
+    xj_a := bat.insert(int_1M,nil:oid,i);#  8 xj_a:void := BKCinsert_bun(int_1M:bat[:oid,:lng], _15:oid, i:lng) 
+    redo sj_a;                          #  9 sj_a:bit {J4}
+exit tj_a;                              # 10 tj_a:bit 
+exit sj_a;                              # 11 sj_a:bit 
+    t := alarm.time();                  # 12 t:int 
+    ug_a := bat.reverse(int_1M);        # 13 ug_a:bat[:lng,:oid] := BKCreverse(int_1M:bat[:oid,:lng]) {G}
+    vg_a := algebra.join(int_1M,ug_a);  # 14 vg_a:bat[:oid,:oid] := ALGjoin(int_1M:bat[:oid,:lng], ug_a:bat[:lng,:oid]) {G}
+    wg_a := aggr.count(vg_a);           # 15 wg_a:int := ALGcount_bat(vg_a:bat[:oid,:oid]) 
+    xg_a := io.printf("#count %d = ",wg_a);# 16 xg_a:void := IOprint_formatted_int(_21:str, wg_a:int) 
+    x := alarm.time();                  # 17 x:int 
+    yg_a := calc.-(x,t);                # 18 yg_a:int := CALCbinarySUBintint(x:int, t:int) 
+    ah_a := io.printf("%d ms\n",yg_a);  # 19 ah_a:void := IOprint_formatted_int(_25:str, yg_a:int) 
+    t := alarm.time();                  # 20 t:int 
+    ug_a := bat.reverse(int_1M);        # 21 ug_a:bat[:lng,:oid] := BKCreverse(int_1M:bat[:oid,:lng]) {G}
+    vg_a := algebra.join(int_1M,ug_a);  # 22 vg_a:bat[:oid,:oid] := ALGjoin(int_1M:bat[:oid,:lng], ug_a:bat[:lng,:oid]) {G}
+    wg_a := aggr.count(vg_a);           # 23 wg_a:int := ALGcount_bat(vg_a:bat[:oid,:oid]) 
+    xg_a := io.printf("#count %d = ",wg_a);# 24 xg_a:void := IOprint_formatted_int(_21:str, wg_a:int) 
+    x := alarm.time();                  # 25 x:int 
+    yg_a := calc.-(x,t);                # 26 yg_a:int := CALCbinarySUBintint(x:int, t:int) 
+    ah_a := io.printf("%d ms\n",yg_a);  # 27 ah_a:void := IOprint_formatted_int(_25:str, yg_a:int) 
+    t := alarm.time();                  # 28 t:int 
+    ug_a := bat.reverse(int_1M);        # 29 ug_a:bat[:lng,:oid] := BKCreverse(int_1M:bat[:oid,:lng]) {G}
+    vg_a := algebra.join(int_1M,ug_a);  # 30 vg_a:bat[:oid,:oid] := ALGjoin(int_1M:bat[:oid,:lng], ug_a:bat[:lng,:oid]) {G}
+    wg_a := aggr.count(vg_a);           # 31 wg_a:int := ALGcount_bat(vg_a:bat[:oid,:oid]) 
+    xg_a := io.printf("#count %d = ",wg_a);# 32 xg_a:void := IOprint_formatted_int(_21:str, wg_a:int) 
+    x := alarm.time();                  # 33 x:int 
+    yg_a := calc.-(x,t);                # 34 yg_a:int := CALCbinarySUBintint(x:int, t:int) 
+    ah_a := io.printf("%d ms\n",yg_a);  # 35 ah_a:void := IOprint_formatted_int(_25:str, yg_a:int) 
+    t := alarm.time();                  # 36 t:int 
+    ug_a := bat.reverse(int_1M);        # 37 ug_a:bat[:lng,:oid] := BKCreverse(int_1M:bat[:oid,:lng]) {G}
+    vg_a := algebra.join(int_1M,ug_a);  # 38 vg_a:bat[:oid,:oid] := ALGjoin(int_1M:bat[:oid,:lng], ug_a:bat[:lng,:oid]) {G}
+    wg_a := aggr.count(vg_a);           # 39 wg_a:int := ALGcount_bat(vg_a:bat[:oid,:oid]) 
+    xg_a := io.printf("#count %d = ",wg_a);# 40 xg_a:void := IOprint_formatted_int(_21:str, wg_a:int) 
+    x := alarm.time();                  # 41 x:int 
+    yg_a := calc.-(x,t);                # 42 yg_a:int := CALCbinarySUBintint(x:int, t:int) 
+    ah_a := io.printf("%d ms\n",yg_a);  # 43 ah_a:void := IOprint_formatted_int(_25:str, yg_a:int) 
+    M2 := bat.new(:lng,:lng,1000000);   # 44 M2:bat[:lng,:lng] := CMDBATnewint(_3:lng, _3:lng, _4:int) {G}
+    i := 1000000:lng;                   # 45 i:lng := _6:lng 
+barrier sj_b := true;                   # 46 sj_b:bit := _8:bit {J54}
+    i := calc.-(i,1);                   # 47 i:lng := CALCbinarySUBlngint(i:lng, _9:int) 
+    uj_b := i;                          # 48 uj_b:lng := i:lng 
+    vj_b := calc.>=(uj_b,0);            # 49 vj_b:bit := CALCcompGElngint(uj_b:lng, _12:int) 
+barrier tj_b := vj_b;                   # 50 tj_b:bit := vj_b:bit {J53}
+    xj_b := bat.insert(M2,i,i);         # 51 xj_b:void := BKCinsert_bun(M2:bat[:lng,:lng], i:lng, i:lng) 
+    redo sj_b;                          # 52 sj_b:bit {J47}
+exit tj_b;                              # 53 tj_b:bit 
+exit sj_b;                              # 54 sj_b:bit 
+    t := alarm.time();                  # 55 t:int 
+    ug_b := bat.reverse(M2);            # 56 ug_b:bat[:lng,:lng] := BKCreverse(M2:bat[:lng,:lng]) {G}
+    vg_b := algebra.join(M2,ug_b);      # 57 vg_b:bat[:lng,:lng] := ALGjoin(M2:bat[:lng,:lng], ug_b:bat[:lng,:lng]) {G}
+    wg_b := aggr.count(vg_b);           # 58 wg_b:int := ALGcount_bat(vg_b:bat[:lng,:lng]) 
+    xg_b := io.printf("#count %d = ",wg_b);# 59 xg_b:void := IOprint_formatted_int(_21:str, wg_b:int) 
+    x := alarm.time();                  # 60 x:int 
+    yg_b := calc.-(x,t);                # 61 yg_b:int := CALCbinarySUBintint(x:int, t:int) 
+    ah_b := io.printf("%d ms\n",yg_b);  # 62 ah_b:void := IOprint_formatted_int(_25:str, yg_b:int) 
+    t := alarm.time();                  # 63 t:int 
+    ug_b := bat.reverse(M2);            # 64 ug_b:bat[:lng,:lng] := BKCreverse(M2:bat[:lng,:lng]) {G}
+    vg_b := algebra.join(M2,ug_b);      # 65 vg_b:bat[:lng,:lng] := ALGjoin(M2:bat[:lng,:lng], ug_b:bat[:lng,:lng]) {G}
+    wg_b := aggr.count(vg_b);           # 66 wg_b:int := ALGcount_bat(vg_b:bat[:lng,:lng]) 
+    xg_b := io.printf("#count %d = ",wg_b);# 67 xg_b:void := IOprint_formatted_int(_21:str, wg_b:int) 
+    x := alarm.time();                  # 68 x:int 
+    yg_b := calc.-(x,t);                # 69 yg_b:int := CALCbinarySUBintint(x:int, t:int) 
+    ah_b := io.printf("%d ms\n",yg_b);  # 70 ah_b:void := IOprint_formatted_int(_25:str, yg_b:int) 
+    t := alarm.time();                  # 71 t:int 
+    ug_b := bat.reverse(M2);            # 72 ug_b:bat[:lng,:lng] := BKCreverse(M2:bat[:lng,:lng]) {G}
+    vg_b := algebra.join(M2,ug_b);      # 73 vg_b:bat[:lng,:lng] := ALGjoin(M2:bat[:lng,:lng], ug_b:bat[:lng,:lng]) {G}
+    wg_b := aggr.count(vg_b);           # 74 wg_b:int := ALGcount_bat(vg_b:bat[:lng,:lng]) 
+    xg_b := io.printf("#count %d = ",wg_b);# 75 xg_b:void := IOprint_formatted_int(_21:str, wg_b:int) 
+    x := alarm.time();                  # 76 x:int 
+    yg_b := calc.-(x,t);                # 77 yg_b:int := CALCbinarySUBintint(x:int, t:int) 
+    ah_b := io.printf("%d ms\n",yg_b);  # 78 ah_b:void := IOprint_formatted_int(_25:str, yg_b:int) 
+    t := alarm.time();                  # 79 t:int 
+    ug_b := bat.reverse(M2);            # 80 ug_b:bat[:lng,:lng] := BKCreverse(M2:bat[:lng,:lng]) {G}
+    vg_b := algebra.join(M2,ug_b);      # 81 vg_b:bat[:lng,:lng] := ALGjoin(M2:bat[:lng,:lng], ug_b:bat[:lng,:lng]) {G}
+    wg_b := aggr.count(vg_b);           # 82 wg_b:int := ALGcount_bat(vg_b:bat[:lng,:lng]) 
+    xg_b := io.printf("#count %d = ",wg_b);# 83 xg_b:void := IOprint_formatted_int(_21:str, wg_b:int) 
+    x := alarm.time();                  # 84 x:int 
+    yg_b := calc.-(x,t);                # 85 yg_b:int := CALCbinarySUBintint(x:int, t:int) 
+    ah_b := io.printf("%d ms\n",yg_b);  # 86 ah_b:void := IOprint_formatted_int(_25:str, yg_b:int) 
 end main;	# 87  
 #count 1000000 = 203 ms
 #count 1000000 = 165 ms

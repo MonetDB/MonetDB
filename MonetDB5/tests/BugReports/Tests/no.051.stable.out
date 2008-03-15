@@ -77,22 +77,22 @@ stdout of test 'no.051` in directory 'tests/BugReports` itself:
 ##	mil.line("        return a;");
 #	return ea_a :=a;
 #end create;
-function user.create(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];	# 0  dynamic (create:bat[:any_1,:any_2])<-(b:bat[:any_1,:any_2])
-#	mil.line("        var a := new (oid,flt);"); 	# 1  (_2:str)
-    a := bat.new(nil:oid,nil:flt);	# 2 CMDBATnew (a:bat[:oid,:flt])<-(_4:oid)(_5:flt)
-#	io.print("        b@batloop(){"); 	# 3  (_6:str)
-barrier (aa_a,aa_aH,aa_aT):= bat.newIterator(b);	# 4 CHPbunIterator (aa_a:lng)(aa_aH:any)(aa_aT:any)<-(b:bat[:any_1,:any_2]) jump 13
-#	io.print("                if (a.count() = 0)"); 	# 5  (_10:str)
-    ba_a := aggr.count(a);	# 6 ALGcount_bat (ba_a:int)<-(a:bat[:oid,:flt])
-barrier ca_a := calc.==(ba_a,0);	# 7 CALCcompEQintint (ca_a:bit)<-(ba_a:int)(_13:int) jump 11
-#	mil.line("                        return a;"); 	# 8  (_14:str)
-    return da_a := a;	# 9  (da_a:bat[:oid,:flt])<-(a:bat[:oid,:flt])
-#	mil.line("        }"); 	# 10  (_16:str)
-exit ca_a;	# 11  (ca_a:bit)
-    redo (aa_a,aa_aH,aa_aT):= bat.hasMoreElements(b);	# 12 CHPbunHasMoreElements (aa_a:lng)(aa_aH:any)(aa_aT:any)<-(b:bat[:any_1,:any_2]) jump 5
-exit (aa_a,aa_aH,aa_aT);	# 13  (aa_a:lng)(aa_aH:any)(aa_aT:any)
-#	io.print("        return a;"); 	# 14  (_17:str)
-    return ea_a := a;	# 15  (ea_a:bat[:oid,:flt])<-(a:bat[:oid,:flt])
+function user.create(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];#  0 create:bat[:any_1,:any_2] := user.create(b:bat[:any_1,:any_2]) {UPG}
+#	io.print("        var a := new (oid,flt);"); 
+    a := bat.new(nil:oid,nil:flt);      #  2 a:bat[:oid,:flt] := CMDBATnew(_4:oid, _5:flt) {G}
+#	io.print("        b@batloop(){"); 
+barrier (aa_a,aa_aH,aa_aT):= bat.newIterator(b);#  4 (aa_a:lng, aa_aH:any, aa_aT:any) := CHPbunIterator(b:bat[:any_1,:any_2]) {PJ13}
+#	io.print("                if (a.count() = 0)"); 
+    ba_a := aggr.count(a);              #  6 ba_a:int := ALGcount_bat(a:bat[:oid,:flt]) 
+barrier ca_a := calc.==(ba_a,0);        #  7 ca_a:bit := CALCcompEQintint(ba_a:int, _13:int) {J11}
+#	io.print("                        return a;"); 
+    return da_a := a;                   #  9 da_a:bat[:oid,:flt] := a:bat[:oid,:flt] {G}
+#	io.print("        }"); 
+exit ca_a;                              # 11 ca_a:bit 
+    redo (aa_a,aa_aH,aa_aT):= bat.hasMoreElements(b);# 12 (aa_a:lng, aa_aH:any, aa_aT:any) := CHPbunHasMoreElements(b:bat[:any_1,:any_2]) {PJ5}
+exit (aa_a,aa_aH,aa_aT);                # 13 (aa_a:lng, aa_aH:any, aa_aT:any 
+#	io.print("        return a;"); 
+    return ea_a := a;                   # 15 ea_a:bat[:oid,:flt] := a:bat[:oid,:flt] {G}
 end create;	# 16  
 ##	mil.line("var b := new (oid,flt);");
 #	b := bat.new(nil:oid,nil:flt);
@@ -114,72 +114,72 @@ end create;	# 16
 ##	mil.line("quit();");
 #	na_a := clients.quit();
 #
-function user.main():void;	# 0  (main:void)
-# Monet Mil to Mal compiler 	# 1  (_1:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
-#Predefined code segment 	# 3  (_3:str)
-#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
-#A few guidelines to maximize usefullness. 	# 6  (_6:str)
-#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
-#use the "mil_schema" for additional support routines 	# 9  (_9:str)
-#	io.print("# >Number:         51\n"); 	# 10  (_10:str)
-#	io.print("# >Category:       MIL\n"); 	# 11  (_11:str)
-#	io.print("# >Synopsis:       returns from within a batloop\n"); 	# 12  (_12:str)
-#	io.print("# >Confidential:   no\n"); 	# 13  (_13:str)
-#	io.print("# >Severity:       serious\n"); 	# 14  (_14:str)
-#	io.print("# >Priority:       medium\n"); 	# 15  (_15:str)
-#	io.print("# >Responsible:    boncz\n"); 	# 16  (_16:str)
-#	io.print("# >State:          closed\n"); 	# 17  (_17:str)
-#	io.print("# >Class:          sw-bug\n"); 	# 18  (_18:str)
-#	io.print("# >Submitter-Id:   unknown\n"); 	# 19  (_19:str)
-#	io.print("# >Arrival-Date:   Wed Oct 15 13:50:27 1997\n"); 	# 20  (_20:str)
-#	io.print("# >Originator:     niels\n"); 	# 21  (_21:str)
-#	io.print("# >Organization:\n"); 	# 22  (_22:str)
-#	io.print("# >Release:        971007\n"); 	# 23  (_23:str)
-#	io.print("# >Environment:\n"); 	# 24  (_24:str)
-#	io.print("# SOLARIS 2.5.1\n"); 	# 25  (_25:str)
-#	io.print("# >Description:\n"); 	# 26  (_26:str)
-#	io.print("# When a bat is returned from with a batloop the return value\n"); 	# 27  (_27:str)
-#	io.print("# is incorrect. \n"); 	# 28  (_28:str)
-#	io.print("# proc create(b) : bat {\n"); 	# 29  (_29:str)
-#	io.print("#         var a := new (oid,flt);\n"); 	# 30  (_30:str)
-#	io.print("#         b@batloop(){\n"); 	# 31  (_31:str)
-#	io.print("#                 if (a.count = 0)\n"); 	# 32  (_32:str)
-#	io.print("#                         return a;\n"); 	# 33  (_33:str)
-#	io.print("#         }\n"); 	# 34  (_34:str)
-#	io.print("#         return a;\n"); 	# 35  (_35:str)
-#	io.print("# }\n"); 	# 36  (_36:str)
-#	io.print("# \n"); 	# 37  (_37:str)
-#	io.print("# b := new (oid,flt);\n"); 	# 38  (_38:str)
-#	io.print("# b.insert(oid(1),flt(2));\n"); 	# 39  (_39:str)
-#	io.print("# var c := create(b);\n"); 	# 40  (_40:str)
-#	io.print("# b.semijoin(c).print;\n"); 	# 41  (_41:str)
-#	io.print("# #output\n"); 	# 42  (_42:str)
-#	io.print("# !WARNING: BATdescriptor: range error\n"); 	# 43  (_43:str)
-#	io.print("# !ERROR: interpret command/proc: 2nd param: invalid BAT.\n"); 	# 44  (_44:str)
-#	io.print("# [ nil ]\n"); 	# 45  (_45:str)
-#	io.print("proc create(bat b) : bat {"); 	# 46  (_46:str)
-#	io.print("var b := new (oid,flt);"); 	# 47  (_47:str)
-    b := bat.new(nil:oid,nil:flt);	# 48 CMDBATnew (b:bat[:oid,:flt])<-(_49:oid)(_50:flt)
-#	io.print("b.insert(oid(1),flt(2));"); 	# 49  (_51:str)
-    fa_a := calc.oid(1);	# 50 CALCint2oid (fa_a:oid)<-(_53:int)
-    ga_a := calc.flt(2);	# 51 CALCint2flt (ga_a:flt)<-(_55:int)
-    ha_a := bat.insert(b,fa_a,ga_a);	# 52 BKCinsert_bun (ha_a:void)<-(b:bat[:oid,:flt])(fa_a:oid)(ga_a:flt)
-#	io.print("b.print();"); 	# 53  (_57:str)
-    ia_a := io.print(b);	# 54 IOprint_val (ia_a:void)<-(b:bat[:oid,:flt])
-#	io.print("var c := create(b);"); 	# 55  (_59:str)
-    c := user.create(b);	# 56  (c:bat[:oid,:flt])<-(b:bat[:oid,:flt])
-#	io.print("b.print();"); 	# 57  (_57:str)
-    ja_a := io.print(b);	# 58 IOprint_val (ja_a:void)<-(b:bat[:oid,:flt])
-#	io.print("c.print();"); 	# 59  (_62:str)
-    ka_a := io.print(c);	# 60 IOprint_val (ka_a:void)<-(c:bat[:oid,:flt])
-#	io.print("b.semijoin(c).print();"); 	# 61  (_64:str)
-    la_a := algebra.semijoin(b,c);	# 62 ALGsemijoin (la_a:bat[:oid,:flt])<-(b:bat[:oid,:flt])(c:bat[:oid,:flt])
-    ma_a := io.print(la_a);	# 63 IOprint_val (ma_a:void)<-(la_a:bat[:oid,:flt])
-#	io.print("quit();"); 	# 64  (_67:str)
-    na_a := clients.quit();	# 65 CLTquit (na_a:void)
+function user.main():void;              #  0 main:void {G}
+# Monet Mil to Mal compiler 
+# Copyright (c) 2001-2004, CWI. All rights reserved. 
+#Predefined code segment 
+#The compiler can not guarantee an accurate compilation, 
+#because MIL unlike MAL is a dynamically typed language. 
+#A few guidelines to maximize usefullness. 
+#- make the type of variables explicit, in particular 'nil' 
+#- upon advice of M2m to remap identifiers, change it in your program directly 
+#use the "mil_schema" for additional support routines 
+#	io.print("# >Number:         51\n"); 
+#	io.print("# >Category:       MIL\n"); 
+#	io.print("# >Synopsis:       returns from within a batloop\n"); 
+#	io.print("# >Confidential:   no\n"); 
+#	io.print("# >Severity:       serious\n"); 
+#	io.print("# >Priority:       medium\n"); 
+#	io.print("# >Responsible:    boncz\n"); 
+#	io.print("# >State:          closed\n"); 
+#	io.print("# >Class:          sw-bug\n"); 
+#	io.print("# >Submitter-Id:   unknown\n"); 
+#	io.print("# >Arrival-Date:   Wed Oct 15 13:50:27 1997\n"); 
+#	io.print("# >Originator:     niels\n"); 
+#	io.print("# >Organization:\n"); 
+#	io.print("# >Release:        971007\n"); 
+#	io.print("# >Environment:\n"); 
+#	io.print("# SOLARIS 2.5.1\n"); 
+#	io.print("# >Description:\n"); 
+#	io.print("# When a bat is returned from with a batloop the return value\n"); 
+#	io.print("# is incorrect. \n"); 
+#	io.print("# proc create(b) : bat {\n"); 
+#	io.print("#         var a := new (oid,flt);\n"); 
+#	io.print("#         b@batloop(){\n"); 
+#	io.print("#                 if (a.count = 0)\n"); 
+#	io.print("#                         return a;\n"); 
+#	io.print("#         }\n"); 
+#	io.print("#         return a;\n"); 
+#	io.print("# }\n"); 
+#	io.print("# \n"); 
+#	io.print("# b := new (oid,flt);\n"); 
+#	io.print("# b.insert(oid(1),flt(2));\n"); 
+#	io.print("# var c := create(b);\n"); 
+#	io.print("# b.semijoin(c).print;\n"); 
+#	io.print("# #output\n"); 
+#	io.print("# !WARNING: BATdescriptor: range error\n"); 
+#	io.print("# !ERROR: interpret command/proc: 2nd param: invalid BAT.\n"); 
+#	io.print("# [ nil ]\n"); 
+#	io.print("proc create(bat b) : bat {"); 
+#	io.print("var b := new (oid,flt);"); 
+    b := bat.new(nil:oid,nil:flt);      # 48 b:bat[:oid,:flt] := CMDBATnew(_49:oid, _50:flt) {G}
+#	io.print("b.insert(oid(1),flt(2));"); 
+    fa_a := calc.oid(1);                # 50 fa_a:oid := CALCint2oid(_53:int) 
+    ga_a := calc.flt(2);                # 51 ga_a:flt := CALCint2flt(_55:int) 
+    ha_a := bat.insert(b,fa_a,ga_a);    # 52 ha_a:void := BKCinsert_bun(b:bat[:oid,:flt], fa_a:oid, ga_a:flt) 
+#	io.print("b.print();"); 
+    ia_a := io.print(b);                # 54 ia_a:void := IOprint_val(b:bat[:oid,:flt]) 
+#	io.print("var c := create(b);"); 
+    c := user.create(b);                # 56 c:bat[:oid,:flt] := user.create(b:bat[:oid,:flt]) {G}
+#	io.print("b.print();"); 
+    ja_a := io.print(b);                # 58 ja_a:void := IOprint_val(b:bat[:oid,:flt]) 
+#	io.print("c.print();"); 
+    ka_a := io.print(c);                # 60 ka_a:void := IOprint_val(c:bat[:oid,:flt]) 
+#	io.print("b.semijoin(c).print();"); 
+    la_a := algebra.semijoin(b,c);      # 62 la_a:bat[:oid,:flt] := ALGsemijoin(b:bat[:oid,:flt], c:bat[:oid,:flt]) {G}
+    ma_a := io.print(la_a);             # 63 ma_a:void := IOprint_val(la_a:bat[:oid,:flt]) 
+#	io.print("quit();"); 
+    na_a := clients.quit();             # 65 na_a:void 
 end main;	# 66  
 #-----------------#
 # h	t	  # name

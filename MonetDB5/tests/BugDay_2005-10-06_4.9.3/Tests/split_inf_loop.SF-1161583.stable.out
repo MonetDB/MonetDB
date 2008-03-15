@@ -13,9 +13,9 @@ stdout of test 'split_inf_loop.SF-1161583` in directory 'tests/BugDay_2005-10-06
 #io.print(z);
 #
 !TypeException:user.main[1]:'str.split' undefined in: z:any := str.split(_2:str, _3:str)
-function user.main():void;	# 0  (main:void)
-    z := str.split("foo","");	# 1  unknown (z:any)<-(_2:str)(_3:str)
-    io.print(z);	# 2 IOprint_val (_4:void)<-(z:any)
+function user.main():void;              #  0 main:void 
+    z := str.split("foo","");           #  1 z:any := str.split(_2:str, _3:str) {U}
+    io.print(z);                        #  2 _4:void := IOprint_val(z:any) 
 end main;	# 3  
 
 # 20:07:24 >  

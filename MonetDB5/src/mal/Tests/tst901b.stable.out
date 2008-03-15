@@ -48,44 +48,44 @@ stdout of test 'tst901b` in directory 'src/mal` itself:
 #io.printf("compiled multiplex %d\n",d3);
 ##profiler.stop();
 #
-function user.main():void;	# 0  (main:void)
-# what is the overhead of MAL in multiplex situations 	# 1  (_1:str)
-# using a BATloop !! This is 40x slower as the V4.3 multiplex implementation 	# 2  (_2:str)
-#profiler.setAll(); 	# 3  (_3:str)
-#profiler.setLogFile("/tmp/MonetProfile.xml"); 	# 4  (_4:str)
-    b := bat.new(:oid,:lng);	# 5 CMDBATnew (b:bat[:oid,:lng])<-(_6:oid)(_7:lng)
-    t0 := alarm.usec();	# 6 ALARMusec (t0:lng)
-barrier (v,i):= language.newRange(0:lng);	# 7 RNGnewRange_lng (v:bit)(i:lng)<-(_11:lng) jump 11
-    o := calc.oid(i);	# 8 CALClng2oid (o:oid)<-(i:lng)
-    bat.insert(b,o,i);	# 9 BKCinsert_bun (_13:void)<-(b:bat[:oid,:lng])(o:oid)(i:lng)
-    redo (v,i):= language.nextElement(1:lng,1000000:lng);	# 10 RNGnextElement_lng (v:bit)(i:lng)<-(_14:lng)(_15:lng) jump 8
-exit (v,i);	# 11  (v:bit)(i:lng)
-    t1 := alarm.usec();	# 12 ALARMusec (t1:lng)
-    c := algebra.copy(b);	# 13 ALGcopy (c:bat[:oid,:lng])<-(b:bat[:oid,:lng])
-    t2 := alarm.usec();	# 14 ALARMusec (t2:lng)
-    d := bat.new(:oid,:lng);	# 15 CMDBATnew (d:bat[:oid,:lng])<-(_6:oid)(_7:lng)
-barrier (mloop,h,t):= bat.newIterator(b);	# 16 CHPbunIterator (mloop:lng)(h:oid)(t:lng)<-(b:bat[:oid,:lng]) jump 25
-    zz := algebra.find(b,h);	# 17 ALGfind (zz:lng)<-(b:bat[:oid,:lng])(h:oid)
-    z := algebra.find(c,h);	# 18 ALGfind (z:lng)<-(c:bat[:oid,:lng])(h:oid)
-    cr := calc.+(zz,z);	# 19 CALCbinaryADDlnglng (cr:lng)<-(zz:lng)(z:lng)
-    bat.insert(d,h,cr);	# 20 BKCinsert_bun (_26:void)<-(d:bat[:oid,:lng])(h:oid)(cr:lng)
-catch GDKerror:str ;	# 21  (GDKerror:str) jump 23
-    leave mloop;	# 22  (mloop:lng) jump 25
-exit GDKerror:str ;	# 23  (GDKerror:str)
-    redo (mloop,h,t):= bat.hasMoreElements(b);	# 24 CHPbunHasMoreElements (mloop:lng)(h:oid)(t:lng)<-(b:bat[:oid,:lng]) jump 17
-exit (mloop,h,t);	# 25  (mloop:lng)(h:oid)(t:lng)
-    t3 := alarm.usec();	# 26 ALARMusec (t3:lng)
-#CMD000(b,b); 	# 27  (_29:str)
-    t4 := alarm.usec();	# 28 ALARMusec (t4:lng)
-    d1 := calc.-(t1,t0);	# 29 CALCbinarySUBlnglng (d1:lng)<-(t1:lng)(t0:lng)
-    d2 := calc.-(t3,t2);	# 30 CALCbinarySUBlnglng (d2:lng)<-(t3:lng)(t2:lng)
-    d3 := calc.-(t4,t3);	# 31 CALCbinarySUBlnglng (d3:lng)<-(t4:lng)(t3:lng)
-    cnt := aggr.count(d);	# 32 ALGcount_bat (cnt:int)<-(d:bat[:oid,:lng])
-    io.printf("#cnt %d ",cnt);	# 33 IOprint_formatted_int (_35:void)<-(_36:str)(cnt:int)
-    io.printf("#make %d ",d1);	# 34 IOprint_formatted_lng (_37:void)<-(_38:str)(d1:lng)
-    io.printf("#multiplex %d\n",d2);	# 35 IOprint_formatted_lng (_39:void)<-(_40:str)(d2:lng)
-    io.printf("#compiled multiplex %d\n",d3);	# 36 IOprint_formatted_lng (_41:void)<-(_42:str)(d3:lng)
-#profiler.stop(); 	# 37  (_43:str)
+function user.main():void;              #  0 main:void {G}
+# what is the overhead of MAL in multiplex situations 
+# using a BATloop !! This is 40x slower as the V4.3 multiplex implementation 
+#profiler.setAll(); 
+#profiler.setLogFile("/tmp/MonetProfile.xml"); 
+    b := bat.new(:oid,:lng);            #  5 b:bat[:oid,:lng] := CMDBATnew(_6:oid, _7:lng) {G}
+    t0 := alarm.usec();                 #  6 t0:lng 
+barrier (v,i):= language.newRange(0:lng);#  7 (v:bit, i:lng) := RNGnewRange_lng(_11:lng) {J11}
+    o := calc.oid(i);                   #  8 o:oid := CALClng2oid(i:lng) 
+    bat.insert(b,o,i);                  #  9 _13:void := BKCinsert_bun(b:bat[:oid,:lng], o:oid, i:lng) 
+    redo (v,i):= language.nextElement(1:lng,1000000:lng);# 10 (v:bit, i:lng) := RNGnextElement_lng(_14:lng, _15:lng) {J8}
+exit (v,i);                             # 11 (v:bit, i:lng 
+    t1 := alarm.usec();                 # 12 t1:lng 
+    c := algebra.copy(b);               # 13 c:bat[:oid,:lng] := ALGcopy(b:bat[:oid,:lng]) {G}
+    t2 := alarm.usec();                 # 14 t2:lng 
+    d := bat.new(:oid,:lng);            # 15 d:bat[:oid,:lng] := CMDBATnew(_6:oid, _7:lng) {G}
+barrier (mloop,h,t):= bat.newIterator(b);# 16 (mloop:lng, h:oid, t:lng) := CHPbunIterator(b:bat[:oid,:lng]) {J25}
+    zz := algebra.find(b,h);            # 17 zz:lng := ALGfind(b:bat[:oid,:lng], h:oid) 
+    z := algebra.find(c,h);             # 18 z:lng := ALGfind(c:bat[:oid,:lng], h:oid) 
+    cr := calc.+(zz,z);                 # 19 cr:lng := CALCbinaryADDlnglng(zz:lng, z:lng) 
+    bat.insert(d,h,cr);                 # 20 _26:void := BKCinsert_bun(d:bat[:oid,:lng], h:oid, cr:lng) 
+catch GDKerror:str ;                    # 21 GDKerror:str {J23}
+    leave mloop;                        # 22 mloop:lng {J25}
+exit GDKerror:str ;                     # 23 GDKerror:str 
+    redo (mloop,h,t):= bat.hasMoreElements(b);# 24 (mloop:lng, h:oid, t:lng) := CHPbunHasMoreElements(b:bat[:oid,:lng]) {J17}
+exit (mloop,h,t);                       # 25 (mloop:lng, h:oid, t:lng 
+    t3 := alarm.usec();                 # 26 t3:lng 
+#CMD000(b,b); 
+    t4 := alarm.usec();                 # 28 t4:lng 
+    d1 := calc.-(t1,t0);                # 29 d1:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
+    d2 := calc.-(t3,t2);                # 30 d2:lng := CALCbinarySUBlnglng(t3:lng, t2:lng) 
+    d3 := calc.-(t4,t3);                # 31 d3:lng := CALCbinarySUBlnglng(t4:lng, t3:lng) 
+    cnt := aggr.count(d);               # 32 cnt:int := ALGcount_bat(d:bat[:oid,:lng]) 
+    io.printf("#cnt %d ",cnt);          # 33 _35:void := IOprint_formatted_int(_36:str, cnt:int) 
+    io.printf("#make %d ",d1);          # 34 _37:void := IOprint_formatted_lng(_38:str, d1:lng) 
+    io.printf("#multiplex %d\n",d2);    # 35 _39:void := IOprint_formatted_lng(_40:str, d2:lng) 
+    io.printf("#compiled multiplex %d\n",d3);# 36 _41:void := IOprint_formatted_lng(_42:str, d3:lng) 
+#profiler.stop(); 
 end main;	# 38  
 #cnt 1000000 #make 782279 #multiplex 1936981
 #compiled multiplex 4

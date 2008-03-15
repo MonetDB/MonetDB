@@ -49,32 +49,32 @@ stdout of test 'reload` in directory 'tests/gdkTests` itself:
 #
 #clients.quit();
 #
-function user.main():void;	# 0  (main:void)
-    MMO_location := bat.new(:oid,:str);	# 1 CMDBATnew (MMO_location:bat[:oid,:str])<-(_2:oid)(_3:str)
-    bat.setName(MMO_location,"MMO_location");	# 2 BKCsetName (_4:void)<-(MMO_location:bat[:oid,:str])(_5:str)
-    bat.setPersistent(MMO_location);	# 3 BKCsetPersistent (_6:void)<-(MMO_location:bat[:oid,:str])
-    b0:bat[:oid,:str]  := bbp.bind("MMO_location");	# 4 CMDbbpbind (b0:bat[:oid,:str])<-(_5:str)
-    bat.insert(b0,0@0:oid,"http://www.metacrawler.com/");	# 5 BKCinsert_bun (_8:void)<-(b0:bat[:oid,:str])(_9:oid)(_10:str)
-    bat.insert(b0,1@0:oid,"http://www.yahoo.com/");	# 6 BKCinsert_bun (_11:void)<-(b0:bat[:oid,:str])(_12:oid)(_13:str)
-    bat.insert(b0,2@0:oid,"http://www.altavista.com/");	# 7 BKCinsert_bun (_14:void)<-(b0:bat[:oid,:str])(_15:oid)(_16:str)
-    bat.insert(b0,3@0:oid,"http://www.searchengineshowdown.com/");	# 8 BKCinsert_bun (_17:void)<-(b0:bat[:oid,:str])(_18:oid)(_19:str)
-    io.print(b0);	# 9 IOprint_val (_20:void)<-(b0:bat[:oid,:str])
-    transaction.commit();	# 10 TRNglobal_commit (_21:bit)
-    MMO_location := nil;	# 11  (MMO_location:bat[:oid,:str])<-(_37:BAT)
-    b0:bat[:oid,:str]  := nil;	# 12  (b0:bat[:oid,:str])<-(_37:BAT)
-    b1:bat[:oid,:str]  := bbp.bind("MMO_location");	# 13 CMDbbpbind (b1:bat[:oid,:str])<-(_5:str)
-    bat.delete(b1,0@0:oid);	# 14 BKCdelete (_24:void)<-(b1:bat[:oid,:str])(_9:oid)
-    bat.delete(b1,2@0:oid);	# 15 BKCdelete (_25:void)<-(b1:bat[:oid,:str])(_15:oid)
-    bat.insert(b1,0@0:oid,"http://www.metacrawler.com/");	# 16 BKCinsert_bun (_26:void)<-(b1:bat[:oid,:str])(_9:oid)(_10:str)
-    bat.insert(b1,2@0:oid,"http://www.altavista.com/");	# 17 BKCinsert_bun (_27:void)<-(b1:bat[:oid,:str])(_15:oid)(_16:str)
-    io.print(b1);	# 18 IOprint_val (_28:void)<-(b1:bat[:oid,:str])
-    transaction.commit();	# 19 TRNglobal_commit (_29:bit)
-    b1:bat[:oid,:str]  := bbp.bind("MMO_location");	# 20 CMDbbpbind (b1:bat[:oid,:str])<-(_5:str)
-    z := bat.unload("MMO_location");	# 21 BKCunload (z:bit)<-(_5:str)
-    io.print(z);	# 22 IOprint_val (_31:void)<-(z:bit)
-    bat.insert(b1,4@0:oid,"http://www.ibiblio.org/javafaq/");	# 23 BKCinsert_bun (_32:void)<-(b1:bat[:oid,:str])(_33:oid)(_34:str)
-    io.print(b1);	# 24 IOprint_val (_35:void)<-(b1:bat[:oid,:str])
-    clients.quit();	# 25 CLTquit (_36:void)
+function user.main():void;              #  0 main:void {G}
+    MMO_location := bat.new(:oid,:str); #  1 MMO_location:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
+    bat.setName(MMO_location,"MMO_location");#  2 _4:void := BKCsetName(MMO_location:bat[:oid,:str], _5:str) 
+    bat.setPersistent(MMO_location);    #  3 _6:void := BKCsetPersistent(MMO_location:bat[:oid,:str]) 
+    b0:bat[:oid,:str]  := bbp.bind("MMO_location");#  4 b0:bat[:oid,:str] := CMDbbpbind(_5:str) {G}
+    bat.insert(b0,0@0:oid,"http://www.metacrawler.com/");#  5 _8:void := BKCinsert_bun(b0:bat[:oid,:str], _9:oid, _10:str) 
+    bat.insert(b0,1@0:oid,"http://www.yahoo.com/");#  6 _11:void := BKCinsert_bun(b0:bat[:oid,:str], _12:oid, _13:str) 
+    bat.insert(b0,2@0:oid,"http://www.altavista.com/");#  7 _14:void := BKCinsert_bun(b0:bat[:oid,:str], _15:oid, _16:str) 
+    bat.insert(b0,3@0:oid,"http://www.searchengineshowdown.com/");#  8 _17:void := BKCinsert_bun(b0:bat[:oid,:str], _18:oid, _19:str) 
+    io.print(b0);                       #  9 _20:void := IOprint_val(b0:bat[:oid,:str]) 
+    transaction.commit();               # 10 _21:bit 
+    MMO_location := nil;                # 11 MMO_location:bat[:oid,:str] := _37:BAT {G}
+    b0:bat[:oid,:str]  := nil;          # 12 b0:bat[:oid,:str] := _37:BAT {G}
+    b1:bat[:oid,:str]  := bbp.bind("MMO_location");# 13 b1:bat[:oid,:str] := CMDbbpbind(_5:str) {G}
+    bat.delete(b1,0@0:oid);             # 14 _24:void := BKCdelete(b1:bat[:oid,:str], _9:oid) 
+    bat.delete(b1,2@0:oid);             # 15 _25:void := BKCdelete(b1:bat[:oid,:str], _15:oid) 
+    bat.insert(b1,0@0:oid,"http://www.metacrawler.com/");# 16 _26:void := BKCinsert_bun(b1:bat[:oid,:str], _9:oid, _10:str) 
+    bat.insert(b1,2@0:oid,"http://www.altavista.com/");# 17 _27:void := BKCinsert_bun(b1:bat[:oid,:str], _15:oid, _16:str) 
+    io.print(b1);                       # 18 _28:void := IOprint_val(b1:bat[:oid,:str]) 
+    transaction.commit();               # 19 _29:bit 
+    b1:bat[:oid,:str]  := bbp.bind("MMO_location");# 20 b1:bat[:oid,:str] := CMDbbpbind(_5:str) {G}
+    z := bat.unload("MMO_location");    # 21 z:bit := BKCunload(_5:str) 
+    io.print(z);                        # 22 _31:void := IOprint_val(z:bit) 
+    bat.insert(b1,4@0:oid,"http://www.ibiblio.org/javafaq/");# 23 _32:void := BKCinsert_bun(b1:bat[:oid,:str], _33:oid, _34:str) 
+    io.print(b1);                       # 24 _35:void := IOprint_val(b1:bat[:oid,:str]) 
+    clients.quit();                     # 25 _36:void 
 end main;	# 26  
 #-------------------------------------------------#
 # h	t					  # name

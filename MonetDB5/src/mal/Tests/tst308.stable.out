@@ -20,16 +20,16 @@ stdout of test 'tst308` in directory 'src/mal` itself:
 #	io.print(NotDefineException);
 #exit NotDefinedException;
 #end foo;
-function user.foo():void;	# 0  (foo:void)
-catch NotDefinedException:str ;	# 1  (NotDefinedException:str) jump 4
-    io.print("Shouldn't do this");	# 2 IOprint_val (_2:void)<-(_3:str)
-    io.print(NotDefinedException);	# 3 IOprint_val (_4:void)<-(NotDefinedException:str)
-exit NotDefinedException:str ;	# 4  (NotDefinedException:str)
+function user.foo():void;               #  0 foo:void 
+catch NotDefinedException:str ;         #  1 NotDefinedException:str {J4}
+    io.print("Shouldn't do this");      #  2 _2:void := IOprint_val(_3:str) 
+    io.print(NotDefinedException);      #  3 _4:void := IOprint_val(NotDefinedException:str) 
+exit NotDefinedException:str ;          #  4 NotDefinedException:str 
 end foo;	# 5  
 #
-function user.main():void;	# 0  (main:void)
-# exception variables are implicitly defined 	# 1  (_1:str)
-# by the catch statement. 	# 2  (_2:str)
+function user.main():void;              #  0 main:void 
+# exception variables are implicitly defined 
+# by the catch statement. 
 end main;	# 3  
 
 # 09:52:07 >  

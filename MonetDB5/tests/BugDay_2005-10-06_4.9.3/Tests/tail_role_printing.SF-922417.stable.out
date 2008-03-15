@@ -16,13 +16,13 @@ stdout of test 'tail_role_printing.SF-922417` in directory 'tests/BugDay_2005-10
 #bat.setRole(c,"A","C");
 #io.print(b,c);
 #
-function user.main():void;	# 0  (main:void)
-    b := bat.new(:oid,:oid);	# 1 CMDBATnew (b:bat[:oid,:oid])<-(_2:oid)(_2:oid)
-    bat.setRole(b,"A","B");	# 2 BKCsetRole (_3:void)<-(b:bat[:oid,:oid])(_4:str)(_5:str)
-    io.print(b);	# 3 IOprint_val (_6:void)<-(b:bat[:oid,:oid])
-    c := bat.new(:oid,:oid);	# 4 CMDBATnew (c:bat[:oid,:oid])<-(_2:oid)(_2:oid)
-    bat.setRole(c,"A","C");	# 5 BKCsetRole (_8:void)<-(c:bat[:oid,:oid])(_4:str)(_9:str)
-    io.print(b,c);	# 6 IOtable (_10:void)<-(b:bat[:oid,:oid])(c:bat[:oid,:oid])
+function user.main():void;              #  0 main:void {G}
+    b := bat.new(:oid,:oid);            #  1 b:bat[:oid,:oid] := CMDBATnew(_2:oid, _2:oid) {G}
+    bat.setRole(b,"A","B");             #  2 _3:void := BKCsetRole(b:bat[:oid,:oid], _4:str, _5:str) 
+    io.print(b);                        #  3 _6:void := IOprint_val(b:bat[:oid,:oid]) 
+    c := bat.new(:oid,:oid);            #  4 c:bat[:oid,:oid] := CMDBATnew(_2:oid, _2:oid) {G}
+    bat.setRole(c,"A","C");             #  5 _8:void := BKCsetRole(c:bat[:oid,:oid], _4:str, _9:str) 
+    io.print(b,c);                      #  6 _10:void := IOtable(b:bat[:oid,:oid], c:bat[:oid,:oid]) 
 end main;	# 7  
 #-----------------#
 # A	B	  # name

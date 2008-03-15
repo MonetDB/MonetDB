@@ -74,111 +74,111 @@ stdout of test 'qsort` in directory 'tests/gdkTests` itself:
 #Zi_o2:= algebra.sortReverse(i_o); io.print(Zi_o2);
 #Zi_o3:= algebra.copy(i_o);bat.setWriteMode(Zi_o3); bat.orderReverse(Zi_o3); io.print(Zi_o3);
 #
-function user.main():void;	# 0  (main:void)
-    b := bat.new(:int,:int,10);	# 1 CMDBATnewint (b:bat[:int,:int])<-(_2:int)(_2:int)(_3:int)
-    bat.insert(b,2,3);	# 2 BKCinsert_bun (_4:void)<-(b:bat[:int,:int])(_5:int)(_6:int)
-    bat.insert(b,1,9);	# 3 BKCinsert_bun (_7:void)<-(b:bat[:int,:int])(_8:int)(_9:int)
-    bat.insert(b,9,8);	# 4 BKCinsert_bun (_10:void)<-(b:bat[:int,:int])(_9:int)(_11:int)
-    bat.insert(b,6,4);	# 5 BKCinsert_bun (_12:void)<-(b:bat[:int,:int])(_13:int)(_14:int)
-    bat.insert(b,5,2);	# 6 BKCinsert_bun (_15:void)<-(b:bat[:int,:int])(_16:int)(_5:int)
-    bat.insert(b,3,0);	# 7 BKCinsert_bun (_17:void)<-(b:bat[:int,:int])(_6:int)(_18:int)
-    bat.insert(b,0,1);	# 8 BKCinsert_bun (_19:void)<-(b:bat[:int,:int])(_18:int)(_8:int)
-    bat.insert(b,8,6);	# 9 BKCinsert_bun (_20:void)<-(b:bat[:int,:int])(_11:int)(_13:int)
-    bat.insert(b,4,5);	# 10 BKCinsert_bun (_21:void)<-(b:bat[:int,:int])(_14:int)(_16:int)
-    bat.insert(b,7,7);	# 11 BKCinsert_bun (_22:void)<-(b:bat[:int,:int])(_23:int)(_23:int)
-    bat.setReadMode(b);	# 12 BKCsetReadMode (_24:bat[:int,:int])<-(b:bat[:int,:int])
-    io.print(b);	# 13 IOprint_val (_25:void)<-(b:bat[:int,:int])
-    ma := algebra.markT(b,nil:oid);	# 14 ALGtmark (ma:bat[:int,:oid])<-(b:bat[:int,:int])(_27:oid)
-    i_n := algebra.copy(ma);	# 15 ALGcopy (i_n:bat[:int,:oid])<-(ma:bat[:int,:oid])
-    ra := bat.reverse(i_n);	# 16 BKCreverse (ra:bat[:oid,:int])<-(i_n:bat[:int,:oid])
-    n_i := algebra.copy(ra);	# 17 ALGcopy (n_i:bat[:oid,:int])<-(ra:bat[:oid,:int])
-    ba := algebra.markT(b,0@0:oid);	# 18 ALGtmark (ba:bat[:int,:oid])<-(b:bat[:int,:int])(_32:oid)
-    i_v := algebra.copy(ba);	# 19 ALGcopy (i_v:bat[:int,:oid])<-(ba:bat[:int,:oid])
-    ir := bat.reverse(i_v);	# 20 BKCreverse (ir:bat[:oid,:int])<-(i_v:bat[:int,:oid])
-    v_i := algebra.copy(ir);	# 21 ALGcopy (v_i:bat[:oid,:int])<-(ir:bat[:oid,:int])
-    bo := batcalc.oid(b);	# 22 CMDconvert_int_oid (bo:bat[:int,:oid])<-(b:bat[:int,:int])
-    i_o := algebra.copy(bo);	# 23 ALGcopy (i_o:bat[:int,:oid])<-(bo:bat[:int,:oid])
-    or := bat.reverse(i_o);	# 24 BKCreverse (or:bat[:oid,:int])<-(i_o:bat[:int,:oid])
-    o_i := algebra.copy(or);	# 25 ALGcopy (o_i:bat[:oid,:int])<-(or:bat[:oid,:int])
-    io.print(n_i);	# 26 IOprint_val (_40:void)<-(n_i:bat[:oid,:int])
-    Zn_i := algebra.sort(n_i);	# 27 ALGhsort (Zn_i:bat[:oid,:int])<-(n_i:bat[:oid,:int])
-    io.print(Zn_i);	# 28 IOprint_val (_42:void)<-(Zn_i:bat[:oid,:int])
-    Zn_i1 := algebra.copy(n_i);	# 29 ALGcopy (Zn_i1:bat[:oid,:int])<-(n_i:bat[:oid,:int])
-    bat.setWriteMode(Zn_i1);	# 30 BKCsetWriteMode (_44:bat[:oid,:int])<-(Zn_i1:bat[:oid,:int])
-    bat.order(Zn_i1);	# 31 BKCorder (_45:bat[:oid,:int])<-(Zn_i1:bat[:oid,:int])
-    io.print(Zn_i1);	# 32 IOprint_val (_46:void)<-(Zn_i1:bat[:oid,:int])
-    Zn_i2 := algebra.sortReverse(n_i);	# 33 ALGhsort_rev (Zn_i2:bat[:oid,:int])<-(n_i:bat[:oid,:int])
-    io.print(Zn_i2);	# 34 IOprint_val (_48:void)<-(Zn_i2:bat[:oid,:int])
-    Zn_i3 := algebra.copy(n_i);	# 35 ALGcopy (Zn_i3:bat[:oid,:int])<-(n_i:bat[:oid,:int])
-    bat.setWriteMode(Zn_i3);	# 36 BKCsetWriteMode (_50:bat[:oid,:int])<-(Zn_i3:bat[:oid,:int])
-    bat.orderReverse(Zn_i3);	# 37 BKCorder_rev (_51:bat[:oid,:int])<-(Zn_i3:bat[:oid,:int])
-    io.print(Zn_i3);	# 38 IOprint_val (_52:void)<-(Zn_i3:bat[:oid,:int])
-    io.print(i_n);	# 39 IOprint_val (_53:void)<-(i_n:bat[:int,:oid])
-    Zi_n := algebra.sort(i_n);	# 40 ALGhsort (Zi_n:bat[:int,:oid])<-(i_n:bat[:int,:oid])
-    io.print(Zi_n);	# 41 IOprint_val (_55:void)<-(Zi_n:bat[:int,:oid])
-    Zi_n := algebra.copy(i_n);	# 42 ALGcopy (Zi_n:bat[:int,:oid])<-(i_n:bat[:int,:oid])
-    bat.setWriteMode(Zi_n);	# 43 BKCsetWriteMode (_56:bat[:int,:oid])<-(Zi_n:bat[:int,:oid])
-    bat.order(Zi_n);	# 44 BKCorder (_57:bat[:int,:oid])<-(Zi_n:bat[:int,:oid])
-    io.print(Zi_n);	# 45 IOprint_val (_58:void)<-(Zi_n:bat[:int,:oid])
-    Zi_n := algebra.sortReverse(i_n);	# 46 ALGhsort_rev (Zi_n:bat[:int,:oid])<-(i_n:bat[:int,:oid])
-    io.print(Zi_n);	# 47 IOprint_val (_59:void)<-(Zi_n:bat[:int,:oid])
-    Zi_n := algebra.copy(i_n);	# 48 ALGcopy (Zi_n:bat[:int,:oid])<-(i_n:bat[:int,:oid])
-    bat.setWriteMode(Zi_n);	# 49 BKCsetWriteMode (_60:bat[:int,:oid])<-(Zi_n:bat[:int,:oid])
-    bat.orderReverse(Zi_n);	# 50 BKCorder_rev (_61:bat[:int,:oid])<-(Zi_n:bat[:int,:oid])
-    io.print(Zi_n);	# 51 IOprint_val (_62:void)<-(Zi_n:bat[:int,:oid])
-    io.print(v_i);	# 52 IOprint_val (_63:void)<-(v_i:bat[:oid,:int])
-    Zv_i := algebra.sort(v_i);	# 53 ALGhsort (Zv_i:bat[:oid,:int])<-(v_i:bat[:oid,:int])
-    io.print(Zv_i);	# 54 IOprint_val (_65:void)<-(Zv_i:bat[:oid,:int])
-    Zv_i := algebra.copy(v_i);	# 55 ALGcopy (Zv_i:bat[:oid,:int])<-(v_i:bat[:oid,:int])
-    bat.setWriteMode(Zv_i);	# 56 BKCsetWriteMode (_66:bat[:oid,:int])<-(Zv_i:bat[:oid,:int])
-    bat.order(Zv_i);	# 57 BKCorder (_67:bat[:oid,:int])<-(Zv_i:bat[:oid,:int])
-    io.print(Zv_i);	# 58 IOprint_val (_68:void)<-(Zv_i:bat[:oid,:int])
-    Zv_i := algebra.sortReverse(v_i);	# 59 ALGhsort_rev (Zv_i:bat[:oid,:int])<-(v_i:bat[:oid,:int])
-    io.print(Zv_i);	# 60 IOprint_val (_69:void)<-(Zv_i:bat[:oid,:int])
-    Zv_i := algebra.copy(v_i);	# 61 ALGcopy (Zv_i:bat[:oid,:int])<-(v_i:bat[:oid,:int])
-    bat.setWriteMode(Zv_i);	# 62 BKCsetWriteMode (_70:bat[:oid,:int])<-(Zv_i:bat[:oid,:int])
-    bat.orderReverse(Zv_i);	# 63 BKCorder_rev (_71:bat[:oid,:int])<-(Zv_i:bat[:oid,:int])
-    io.print(Zv_i);	# 64 IOprint_val (_72:void)<-(Zv_i:bat[:oid,:int])
-    io.print(i_v);	# 65 IOprint_val (_73:void)<-(i_v:bat[:int,:oid])
-    Zi_v := algebra.sort(i_v);	# 66 ALGhsort (Zi_v:bat[:int,:oid])<-(i_v:bat[:int,:oid])
-    io.print(Zi_v);	# 67 IOprint_val (_75:void)<-(Zi_v:bat[:int,:oid])
-    Zi_v := algebra.copy(i_v);	# 68 ALGcopy (Zi_v:bat[:int,:oid])<-(i_v:bat[:int,:oid])
-    bat.setWriteMode(Zi_v);	# 69 BKCsetWriteMode (_76:bat[:int,:oid])<-(Zi_v:bat[:int,:oid])
-    bat.order(Zi_v);	# 70 BKCorder (_77:bat[:int,:oid])<-(Zi_v:bat[:int,:oid])
-    io.print(Zi_v);	# 71 IOprint_val (_78:void)<-(Zi_v:bat[:int,:oid])
-    Zi_v := algebra.sortReverse(i_v);	# 72 ALGhsort_rev (Zi_v:bat[:int,:oid])<-(i_v:bat[:int,:oid])
-    io.print(Zi_v);	# 73 IOprint_val (_79:void)<-(Zi_v:bat[:int,:oid])
-    Zi_v := algebra.copy(i_v);	# 74 ALGcopy (Zi_v:bat[:int,:oid])<-(i_v:bat[:int,:oid])
-    bat.setWriteMode(Zi_v);	# 75 BKCsetWriteMode (_80:bat[:int,:oid])<-(Zi_v:bat[:int,:oid])
-    bat.orderReverse(Zi_v);	# 76 BKCorder_rev (_81:bat[:int,:oid])<-(Zi_v:bat[:int,:oid])
-    io.print(Zi_v);	# 77 IOprint_val (_82:void)<-(Zi_v:bat[:int,:oid])
-    io.print(o_i);	# 78 IOprint_val (_83:void)<-(o_i:bat[:oid,:int])
-    Zo_i := algebra.sort(o_i);	# 79 ALGhsort (Zo_i:bat[:oid,:int])<-(o_i:bat[:oid,:int])
-    io.print(Zo_i);	# 80 IOprint_val (_85:void)<-(Zo_i:bat[:oid,:int])
-    Zo_i := algebra.copy(o_i);	# 81 ALGcopy (Zo_i:bat[:oid,:int])<-(o_i:bat[:oid,:int])
-    bat.setWriteMode(Zo_i);	# 82 BKCsetWriteMode (_86:bat[:oid,:int])<-(Zo_i:bat[:oid,:int])
-    bat.order(Zo_i);	# 83 BKCorder (_87:bat[:oid,:int])<-(Zo_i:bat[:oid,:int])
-    io.print(Zo_i);	# 84 IOprint_val (_88:void)<-(Zo_i:bat[:oid,:int])
-    Zo_i := algebra.sortReverse(o_i);	# 85 ALGhsort_rev (Zo_i:bat[:oid,:int])<-(o_i:bat[:oid,:int])
-    io.print(Zo_i);	# 86 IOprint_val (_89:void)<-(Zo_i:bat[:oid,:int])
-    Zo_i := algebra.copy(o_i);	# 87 ALGcopy (Zo_i:bat[:oid,:int])<-(o_i:bat[:oid,:int])
-    bat.setWriteMode(Zo_i);	# 88 BKCsetWriteMode (_90:bat[:oid,:int])<-(Zo_i:bat[:oid,:int])
-    bat.orderReverse(Zo_i);	# 89 BKCorder_rev (_91:bat[:oid,:int])<-(Zo_i:bat[:oid,:int])
-    io.print(Zo_i);	# 90 IOprint_val (_92:void)<-(Zo_i:bat[:oid,:int])
-    io.print(i_o);	# 91 IOprint_val (_93:void)<-(i_o:bat[:int,:oid])
-    Zi_o := algebra.sort(i_o);	# 92 ALGhsort (Zi_o:bat[:int,:oid])<-(i_o:bat[:int,:oid])
-    io.print(Zi_o);	# 93 IOprint_val (_95:void)<-(Zi_o:bat[:int,:oid])
-    Zi_o1 := algebra.copy(i_o);	# 94 ALGcopy (Zi_o1:bat[:int,:oid])<-(i_o:bat[:int,:oid])
-    bat.setWriteMode(Zi_o1);	# 95 BKCsetWriteMode (_97:bat[:int,:oid])<-(Zi_o1:bat[:int,:oid])
-    bat.order(Zi_o1);	# 96 BKCorder (_98:bat[:int,:oid])<-(Zi_o1:bat[:int,:oid])
-    io.print(Zi_o1);	# 97 IOprint_val (_99:void)<-(Zi_o1:bat[:int,:oid])
-    Zi_o2 := algebra.sortReverse(i_o);	# 98 ALGhsort_rev (Zi_o2:bat[:int,:oid])<-(i_o:bat[:int,:oid])
-    io.print(Zi_o2);	# 99 IOprint_val (_101:void)<-(Zi_o2:bat[:int,:oid])
-    Zi_o3 := algebra.copy(i_o);	# 100 ALGcopy (Zi_o3:bat[:int,:oid])<-(i_o:bat[:int,:oid])
-    bat.setWriteMode(Zi_o3);	# 101 BKCsetWriteMode (_103:bat[:int,:oid])<-(Zi_o3:bat[:int,:oid])
-    bat.orderReverse(Zi_o3);	# 102 BKCorder_rev (_104:bat[:int,:oid])<-(Zi_o3:bat[:int,:oid])
-    io.print(Zi_o3);	# 103 IOprint_val (_105:void)<-(Zi_o3:bat[:int,:oid])
-end main;	# 104  
+function user.main():void;              #  0 main:void {G}
+    b := bat.new(:int,:int,10);         #  1 b:bat[:int,:int] := CMDBATnewint(_2:int, _2:int, _3:int) {G}
+    bat.insert(b,2,3);                  #  2 _4:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) 
+    bat.insert(b,1,9);                  #  3 _7:void := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) 
+    bat.insert(b,9,8);                  #  4 _10:void := BKCinsert_bun(b:bat[:int,:int], _9:int, _11:int) 
+    bat.insert(b,6,4);                  #  5 _12:void := BKCinsert_bun(b:bat[:int,:int], _13:int, _14:int) 
+    bat.insert(b,5,2);                  #  6 _15:void := BKCinsert_bun(b:bat[:int,:int], _16:int, _5:int) 
+    bat.insert(b,3,0);                  #  7 _17:void := BKCinsert_bun(b:bat[:int,:int], _6:int, _18:int) 
+    bat.insert(b,0,1);                  #  8 _19:void := BKCinsert_bun(b:bat[:int,:int], _18:int, _8:int) 
+    bat.insert(b,8,6);                  #  9 _20:void := BKCinsert_bun(b:bat[:int,:int], _11:int, _13:int) 
+    bat.insert(b,4,5);                  # 10 _21:void := BKCinsert_bun(b:bat[:int,:int], _14:int, _16:int) 
+    bat.insert(b,7,7);                  # 11 _22:void := BKCinsert_bun(b:bat[:int,:int], _23:int, _23:int) 
+    bat.setReadMode(b);                 # 12 _24:bat[:int,:int] := BKCsetReadMode(b:bat[:int,:int]) {G}
+    io.print(b);                        # 13 _25:void := IOprint_val(b:bat[:int,:int]) 
+    ma := algebra.markT(b,nil:oid);     # 14 ma:bat[:int,:oid] := ALGtmark(b:bat[:int,:int], _27:oid) {G}
+    i_n := algebra.copy(ma);            # 15 i_n:bat[:int,:oid] := ALGcopy(ma:bat[:int,:oid]) {G}
+    ra := bat.reverse(i_n);             # 16 ra:bat[:oid,:int] := BKCreverse(i_n:bat[:int,:oid]) {G}
+    n_i := algebra.copy(ra);            # 17 n_i:bat[:oid,:int] := ALGcopy(ra:bat[:oid,:int]) {G}
+    ba := algebra.markT(b,0@0:oid);     # 18 ba:bat[:int,:oid] := ALGtmark(b:bat[:int,:int], _32:oid) {G}
+    i_v := algebra.copy(ba);            # 19 i_v:bat[:int,:oid] := ALGcopy(ba:bat[:int,:oid]) {G}
+    ir := bat.reverse(i_v);             # 20 ir:bat[:oid,:int] := BKCreverse(i_v:bat[:int,:oid]) {G}
+    v_i := algebra.copy(ir);            # 21 v_i:bat[:oid,:int] := ALGcopy(ir:bat[:oid,:int]) {G}
+    bo := batcalc.oid(b);               # 22 bo:bat[:int,:oid] := CMDconvert_int_oid(b:bat[:int,:int]) {G}
+    i_o := algebra.copy(bo);            # 23 i_o:bat[:int,:oid] := ALGcopy(bo:bat[:int,:oid]) {G}
+    or := bat.reverse(i_o);             # 24 or:bat[:oid,:int] := BKCreverse(i_o:bat[:int,:oid]) {G}
+    o_i := algebra.copy(or);            # 25 o_i:bat[:oid,:int] := ALGcopy(or:bat[:oid,:int]) {G}
+    io.print(n_i);                      # 26 _40:void := IOprint_val(n_i:bat[:oid,:int]) 
+    Zn_i := algebra.sort(n_i);          # 27 Zn_i:bat[:oid,:int] := ALGhsort(n_i:bat[:oid,:int]) {G}
+    io.print(Zn_i);                     # 28 _42:void := IOprint_val(Zn_i:bat[:oid,:int]) 
+    Zn_i1 := algebra.copy(n_i);         # 29 Zn_i1:bat[:oid,:int] := ALGcopy(n_i:bat[:oid,:int]) {G}
+    bat.setWriteMode(Zn_i1);            # 30 _44:bat[:oid,:int] := BKCsetWriteMode(Zn_i1:bat[:oid,:int]) {G}
+    bat.order(Zn_i1);                   # 31 _45:bat[:oid,:int] := BKCorder(Zn_i1:bat[:oid,:int]) {G}
+    io.print(Zn_i1);                    # 32 _46:void := IOprint_val(Zn_i1:bat[:oid,:int]) 
+    Zn_i2 := algebra.sortReverse(n_i);  # 33 Zn_i2:bat[:oid,:int] := ALGhsort_rev(n_i:bat[:oid,:int]) {G}
+    io.print(Zn_i2);                    # 34 _48:void := IOprint_val(Zn_i2:bat[:oid,:int]) 
+    Zn_i3 := algebra.copy(n_i);         # 35 Zn_i3:bat[:oid,:int] := ALGcopy(n_i:bat[:oid,:int]) {G}
+    bat.setWriteMode(Zn_i3);            # 36 _50:bat[:oid,:int] := BKCsetWriteMode(Zn_i3:bat[:oid,:int]) {G}
+    bat.orderReverse(Zn_i3);            # 37 _51:bat[:oid,:int] := BKCorder_rev(Zn_i3:bat[:oid,:int]) {G}
+    io.print(Zn_i3);                    # 38 _52:void := IOprint_val(Zn_i3:bat[:oid,:int]) 
+    io.print(i_n);                      # 39 _53:void := IOprint_val(i_n:bat[:int,:oid]) 
+    Zi_n := algebra.sort(i_n);          # 40 Zi_n:bat[:int,:oid] := ALGhsort(i_n:bat[:int,:oid]) {G}
+    io.print(Zi_n);                     # 41 _55:void := IOprint_val(Zi_n:bat[:int,:oid]) 
+    Zi_n := algebra.copy(i_n);          # 42 Zi_n:bat[:int,:oid] := ALGcopy(i_n:bat[:int,:oid]) {G}
+    bat.setWriteMode(Zi_n);             # 43 _56:bat[:int,:oid] := BKCsetWriteMode(Zi_n:bat[:int,:oid]) {G}
+    bat.order(Zi_n);                    # 44 _57:bat[:int,:oid] := BKCorder(Zi_n:bat[:int,:oid]) {G}
+    io.print(Zi_n);                     # 45 _58:void := IOprint_val(Zi_n:bat[:int,:oid]) 
+    Zi_n := algebra.sortReverse(i_n);   # 46 Zi_n:bat[:int,:oid] := ALGhsort_rev(i_n:bat[:int,:oid]) {G}
+    io.print(Zi_n);                     # 47 _59:void := IOprint_val(Zi_n:bat[:int,:oid]) 
+    Zi_n := algebra.copy(i_n);          # 48 Zi_n:bat[:int,:oid] := ALGcopy(i_n:bat[:int,:oid]) {G}
+    bat.setWriteMode(Zi_n);             # 49 _60:bat[:int,:oid] := BKCsetWriteMode(Zi_n:bat[:int,:oid]) {G}
+    bat.orderReverse(Zi_n);             # 50 _61:bat[:int,:oid] := BKCorder_rev(Zi_n:bat[:int,:oid]) {G}
+    io.print(Zi_n);                     # 51 _62:void := IOprint_val(Zi_n:bat[:int,:oid]) 
+    io.print(v_i);                      # 52 _63:void := IOprint_val(v_i:bat[:oid,:int]) 
+    Zv_i := algebra.sort(v_i);          # 53 Zv_i:bat[:oid,:int] := ALGhsort(v_i:bat[:oid,:int]) {G}
+    io.print(Zv_i);                     # 54 _65:void := IOprint_val(Zv_i:bat[:oid,:int]) 
+    Zv_i := algebra.copy(v_i);          # 55 Zv_i:bat[:oid,:int] := ALGcopy(v_i:bat[:oid,:int]) {G}
+    bat.setWriteMode(Zv_i);             # 56 _66:bat[:oid,:int] := BKCsetWriteMode(Zv_i:bat[:oid,:int]) {G}
+    bat.order(Zv_i);                    # 57 _67:bat[:oid,:int] := BKCorder(Zv_i:bat[:oid,:int]) {G}
+    io.print(Zv_i);                     # 58 _68:void := IOprint_val(Zv_i:bat[:oid,:int]) 
+    Zv_i := algebra.sortReverse(v_i);   # 59 Zv_i:bat[:oid,:int] := ALGhsort_rev(v_i:bat[:oid,:int]) {G}
+    io.print(Zv_i);                     # 60 _69:void := IOprint_val(Zv_i:bat[:oid,:int]) 
+    Zv_i := algebra.copy(v_i);          # 61 Zv_i:bat[:oid,:int] := ALGcopy(v_i:bat[:oid,:int]) {G}
+    bat.setWriteMode(Zv_i);             # 62 _70:bat[:oid,:int] := BKCsetWriteMode(Zv_i:bat[:oid,:int]) {G}
+    bat.orderReverse(Zv_i);             # 63 _71:bat[:oid,:int] := BKCorder_rev(Zv_i:bat[:oid,:int]) {G}
+    io.print(Zv_i);                     # 64 _72:void := IOprint_val(Zv_i:bat[:oid,:int]) 
+    io.print(i_v);                      # 65 _73:void := IOprint_val(i_v:bat[:int,:oid]) 
+    Zi_v := algebra.sort(i_v);          # 66 Zi_v:bat[:int,:oid] := ALGhsort(i_v:bat[:int,:oid]) {G}
+    io.print(Zi_v);                     # 67 _75:void := IOprint_val(Zi_v:bat[:int,:oid]) 
+    Zi_v := algebra.copy(i_v);          # 68 Zi_v:bat[:int,:oid] := ALGcopy(i_v:bat[:int,:oid]) {G}
+    bat.setWriteMode(Zi_v);             # 69 _76:bat[:int,:oid] := BKCsetWriteMode(Zi_v:bat[:int,:oid]) {G}
+    bat.order(Zi_v);                    # 70 _77:bat[:int,:oid] := BKCorder(Zi_v:bat[:int,:oid]) {G}
+    io.print(Zi_v);                     # 71 _78:void := IOprint_val(Zi_v:bat[:int,:oid]) 
+    Zi_v := algebra.sortReverse(i_v);   # 72 Zi_v:bat[:int,:oid] := ALGhsort_rev(i_v:bat[:int,:oid]) {G}
+    io.print(Zi_v);                     # 73 _79:void := IOprint_val(Zi_v:bat[:int,:oid]) 
+    Zi_v := algebra.copy(i_v);          # 74 Zi_v:bat[:int,:oid] := ALGcopy(i_v:bat[:int,:oid]) {G}
+    bat.setWriteMode(Zi_v);             # 75 _80:bat[:int,:oid] := BKCsetWriteMode(Zi_v:bat[:int,:oid]) {G}
+    bat.orderReverse(Zi_v);             # 76 _81:bat[:int,:oid] := BKCorder_rev(Zi_v:bat[:int,:oid]) {G}
+    io.print(Zi_v);                     # 77 _82:void := IOprint_val(Zi_v:bat[:int,:oid]) 
+    io.print(o_i);                      # 78 _83:void := IOprint_val(o_i:bat[:oid,:int]) 
+    Zo_i := algebra.sort(o_i);          # 79 Zo_i:bat[:oid,:int] := ALGhsort(o_i:bat[:oid,:int]) {G}
+    io.print(Zo_i);                     # 80 _85:void := IOprint_val(Zo_i:bat[:oid,:int]) 
+    Zo_i := algebra.copy(o_i);          # 81 Zo_i:bat[:oid,:int] := ALGcopy(o_i:bat[:oid,:int]) {G}
+    bat.setWriteMode(Zo_i);             # 82 _86:bat[:oid,:int] := BKCsetWriteMode(Zo_i:bat[:oid,:int]) {G}
+    bat.order(Zo_i);                    # 83 _87:bat[:oid,:int] := BKCorder(Zo_i:bat[:oid,:int]) {G}
+    io.print(Zo_i);                     # 84 _88:void := IOprint_val(Zo_i:bat[:oid,:int]) 
+    Zo_i := algebra.sortReverse(o_i);   # 85 Zo_i:bat[:oid,:int] := ALGhsort_rev(o_i:bat[:oid,:int]) {G}
+    io.print(Zo_i);                     # 86 _89:void := IOprint_val(Zo_i:bat[:oid,:int]) 
+    Zo_i := algebra.copy(o_i);          # 87 Zo_i:bat[:oid,:int] := ALGcopy(o_i:bat[:oid,:int]) {G}
+    bat.setWriteMode(Zo_i);             # 88 _90:bat[:oid,:int] := BKCsetWriteMode(Zo_i:bat[:oid,:int]) {G}
+    bat.orderReverse(Zo_i);             # 89 _91:bat[:oid,:int] := BKCorder_rev(Zo_i:bat[:oid,:int]) {G}
+    io.print(Zo_i);                     # 90 _92:void := IOprint_val(Zo_i:bat[:oid,:int]) 
+    io.print(i_o);                      # 91 _93:void := IOprint_val(i_o:bat[:int,:oid]) 
+    Zi_o := algebra.sort(i_o);          # 92 Zi_o:bat[:int,:oid] := ALGhsort(i_o:bat[:int,:oid]) {G}
+    io.print(Zi_o);                     # 93 _95:void := IOprint_val(Zi_o:bat[:int,:oid]) 
+    Zi_o1 := algebra.copy(i_o);         # 94 Zi_o1:bat[:int,:oid] := ALGcopy(i_o:bat[:int,:oid]) {G}
+    bat.setWriteMode(Zi_o1);            # 95 _97:bat[:int,:oid] := BKCsetWriteMode(Zi_o1:bat[:int,:oid]) {G}
+    bat.order(Zi_o1);                   # 96 _98:bat[:int,:oid] := BKCorder(Zi_o1:bat[:int,:oid]) {G}
+    io.print(Zi_o1);                    # 97 _99:void := IOprint_val(Zi_o1:bat[:int,:oid]) 
+    Zi_o2 := algebra.sortReverse(i_o);  # 98 Zi_o2:bat[:int,:oid] := ALGhsort_rev(i_o:bat[:int,:oid]) {G}
+    io.print(Zi_o2);                    # 99 _101:void := IOprint_val(Zi_o2:bat[:int,:oid]) 
+    Zi_o3 := algebra.copy(i_o);         #100 Zi_o3:bat[:int,:oid] := ALGcopy(i_o:bat[:int,:oid]) {G}
+    bat.setWriteMode(Zi_o3);            #101 _103:bat[:int,:oid] := BKCsetWriteMode(Zi_o3:bat[:int,:oid]) {G}
+    bat.orderReverse(Zi_o3);            #102 _104:bat[:int,:oid] := BKCorder_rev(Zi_o3:bat[:int,:oid]) {G}
+    io.print(Zi_o3);                    #103 _105:void := IOprint_val(Zi_o3:bat[:int,:oid]) 
+end main;                               #104  
 #-----------------#
 # h	t	  # name
 # int	int	  # type

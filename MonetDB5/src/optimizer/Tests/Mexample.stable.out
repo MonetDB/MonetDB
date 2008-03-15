@@ -17,20 +17,20 @@ stdout of test 'Mexample` in directory 'src/optimizer` itself:
 #	c:bat[:int,:int]:=optimizer.multiplex("calc.+",b,1);
 #	mdb.list();
 #
-function user.main():void;	# 0  (main:void)
-    b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
-    bat.insert(b,1,1);	# 2 BKCinsert_bun (_3:void)<-(b:bat[:int,:int])(_4:int)(_4:int)
-    _10 := bat.new(nil:int,nil:int);	# 3 CMDBATnew (_10:bat[:int,:int])<-(_11:int)(_11:int)
-barrier (_13,_14,_15):= bat.newIterator(b);	# 4 CHPbunIterator (_13:lng)(_14:int)(_15:int)<-(b:bat[:int,:int]) jump 11
-    _17 := calc.+(_15,1);	# 5 CALCbinaryADDintint (_17:int)<-(_15:int)(_4:int)
-    bat.insert(_10,_14,_17);	# 6 BKCinsert_bun (_18:void)<-(_10:bat[:int,:int])(_14:int)(_17:int)
-    redo (_13,_14,_15):= bat.hasMoreElements(b);	# 7 CHPbunHasMoreElements (_13:lng)(_14:int)(_15:int)<-(b:bat[:int,:int]) jump 5
-catch MALException:str ;	# 8  (MALException:str) jump 10
-    redo (_13,_14,_15):= bat.hasMoreElements(b);	# 9 CHPbunHasMoreElements (_13:lng)(_14:int)(_15:int)<-(b:bat[:int,:int]) jump 5
-exit MALException:str ;	# 10  (MALException:str)
-exit (_13,_14,_15);	# 11  (_13:lng)(_14:int)(_15:int)
-    c:bat[:int,:int]  := _10;	# 12  (c:bat[:int,:int])<-(_10:bat[:int,:int])
-    mdb.list();	# 13 MDBlist (_9:void)
+function user.main():void;              #  0 main:void {G}
+    b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
+    bat.insert(b,1,1);                  #  2 _3:void := BKCinsert_bun(b:bat[:int,:int], _4:int, _4:int) 
+    _10 := bat.new(nil:int,nil:int);    #  3 _10:bat[:int,:int] := CMDBATnew(_11:int, _11:int) {G}
+barrier (_13,_14,_15):= bat.newIterator(b);#  4 (_13:lng, _14:int, _15:int) := CHPbunIterator(b:bat[:int,:int]) {J11}
+    _17 := calc.+(_15,1);               #  5 _17:int := CALCbinaryADDintint(_15:int, _4:int) 
+    bat.insert(_10,_14,_17);            #  6 _18:void := BKCinsert_bun(_10:bat[:int,:int], _14:int, _17:int) 
+    redo (_13,_14,_15):= bat.hasMoreElements(b);#  7 (_13:lng, _14:int, _15:int) := CHPbunHasMoreElements(b:bat[:int,:int]) {J5}
+catch MALException:str ;                #  8 MALException:str {J10}
+    redo (_13,_14,_15):= bat.hasMoreElements(b);#  9 (_13:lng, _14:int, _15:int) := CHPbunHasMoreElements(b:bat[:int,:int]) {J5}
+exit MALException:str ;                 # 10 MALException:str 
+exit (_13,_14,_15);                     # 11 (_13:lng, _14:int, _15:int 
+    c:bat[:int,:int]  := _10;           # 12 c:bat[:int,:int] := _10:bat[:int,:int] {G}
+    mdb.list();                         # 13 _9:void 
 end main;	# 14  
 function user.main():void;
     b := bat.new(:int,:int);

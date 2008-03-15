@@ -36,32 +36,32 @@ stdout of test 'tst042` in directory 'src/mal` itself:
 #v:= getTypeName(bbt); printf("bat %s\n",v);
 #
 #
-function user.main():void;	# 0  (main:void)
-    s := "hello";	# 1  (s:str)<-(_2:str)
-    i := 1;	# 2  (i:int)<-(_4:int)
-    f := 3.1400001;	# 3  (f:flt)<-(_6:flt)
-    c := 'a';	# 4  (c:chr)<-(_8:chr)
-    b := true;	# 5  (b:bit)<-(_10:bit)
-    w := 1:wrd;	# 6  (w:wrd)<-(_12:wrd)
-    B := 2:bte;	# 7  (B:bte)<-(_14:bte)
-    bb := bat.new(:oid,:str);	# 8 CMDBATnew (bb:bat[:oid,:str])<-(_16:oid)(_17:str)
-    st := inspect.getType(s);	# 9 INSPECTtypeName (st:str)<-(s:str)
-    io.printf("%s\n",st);	# 10 IOprint_formatted_str (_19:void)<-(_20:str)(st:str)
-    it := inspect.getType(i);	# 11 INSPECTtypeName (it:str)<-(i:int)
-    io.printf("%s\n",it);	# 12 IOprint_formatted_str (_22:void)<-(_20:str)(it:str)
-    ft := inspect.getType(f);	# 13 INSPECTtypeName (ft:str)<-(f:flt)
-    io.printf("%s\n",ft);	# 14 IOprint_formatted_str (_24:void)<-(_20:str)(ft:str)
-    ct := inspect.getType(c);	# 15 INSPECTtypeName (ct:str)<-(c:chr)
-    io.printf("%s\n",ct);	# 16 IOprint_formatted_str (_26:void)<-(_20:str)(ct:str)
-    bt := inspect.getType(b);	# 17 INSPECTtypeName (bt:str)<-(b:bit)
-    io.printf("%s\n",bt);	# 18 IOprint_formatted_str (_28:void)<-(_20:str)(bt:str)
-    wt := inspect.getType(w);	# 19 INSPECTtypeName (wt:str)<-(w:wrd)
-    io.printf("%s\n",wt);	# 20 IOprint_formatted_str (_30:void)<-(_20:str)(wt:str)
-    Bt := inspect.getType(B);	# 21 INSPECTtypeName (Bt:str)<-(B:bte)
-    io.printf("%s\n",Bt);	# 22 IOprint_formatted_str (_32:void)<-(_20:str)(Bt:str)
-    (ht,tt):= inspect.getType(bb);	# 23 INSPECTtypeName (ht:str)(tt:str)<-(bb:bat[:oid,:str])
-    io.printf("bat  head %s\n",ht);	# 24 IOprint_formatted_str (_35:void)<-(_36:str)(ht:str)
-    io.printf("bat  head %s\n",tt);	# 25 IOprint_formatted_str (_37:void)<-(_36:str)(tt:str)
+function user.main():void;              #  0 main:void {G}
+    s := "hello";                       #  1 s:str := _2:str {G}
+    i := 1;                             #  2 i:int := _4:int 
+    f := 3.1400001;                     #  3 f:flt := _6:flt 
+    c := 'a';                           #  4 c:chr := _8:chr 
+    b := true;                          #  5 b:bit := _10:bit 
+    w := 1:wrd;                         #  6 w:wrd := _12:wrd 
+    B := 2:bte;                         #  7 B:bte := _14:bte 
+    bb := bat.new(:oid,:str);           #  8 bb:bat[:oid,:str] := CMDBATnew(_16:oid, _17:str) {G}
+    st := inspect.getType(s);           #  9 st:str := INSPECTtypeName(s:str) {G}
+    io.printf("%s\n",st);               # 10 _19:void := IOprint_formatted_str(_20:str, st:str) 
+    it := inspect.getType(i);           # 11 it:str := INSPECTtypeName(i:int) {G}
+    io.printf("%s\n",it);               # 12 _22:void := IOprint_formatted_str(_20:str, it:str) 
+    ft := inspect.getType(f);           # 13 ft:str := INSPECTtypeName(f:flt) {G}
+    io.printf("%s\n",ft);               # 14 _24:void := IOprint_formatted_str(_20:str, ft:str) 
+    ct := inspect.getType(c);           # 15 ct:str := INSPECTtypeName(c:chr) {G}
+    io.printf("%s\n",ct);               # 16 _26:void := IOprint_formatted_str(_20:str, ct:str) 
+    bt := inspect.getType(b);           # 17 bt:str := INSPECTtypeName(b:bit) {G}
+    io.printf("%s\n",bt);               # 18 _28:void := IOprint_formatted_str(_20:str, bt:str) 
+    wt := inspect.getType(w);           # 19 wt:str := INSPECTtypeName(w:wrd) {G}
+    io.printf("%s\n",wt);               # 20 _30:void := IOprint_formatted_str(_20:str, wt:str) 
+    Bt := inspect.getType(B);           # 21 Bt:str := INSPECTtypeName(B:bte) {G}
+    io.printf("%s\n",Bt);               # 22 _32:void := IOprint_formatted_str(_20:str, Bt:str) 
+    (ht,tt):= inspect.getType(bb);      # 23 (ht:str, tt:str) := INSPECTtypeName(bb:bat[:oid,:str]) {G}
+    io.printf("bat  head %s\n",ht);     # 24 _35:void := IOprint_formatted_str(_36:str, ht:str) 
+    io.printf("bat  head %s\n",tt);     # 25 _37:void := IOprint_formatted_str(_36:str, tt:str) 
 end main;	# 26  
 str
 int

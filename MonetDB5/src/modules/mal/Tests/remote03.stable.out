@@ -33,38 +33,38 @@ stdout of test 'remote03` in directory 'src/modules/mal` itself:
 ## shutdown
 #remote.destroy("test");
 #
-function user.main():void;	# 0  (main:void)
-#remote.prelude(); 	# 1  (_1:str)
-# ideally we would like to do this, however that's unfortunately 	# 2  (_2:str)
-# impossible since variadic stuff doesn't work in functions 	# 3  (_3:str)
-#function exec(conn:str, ident:str...):any; 	# 4  (_4:str)
-#	id := remote.exec(conn, ident, ...); 	# 5  (_5:str)
-#	ret := remote.get(conn, id); 	# 6  (_6:str)
-#	return(ret); 	# 7  (_7:str)
-#end exec; 	# 8  (_8:str)
-# for testweb, we need to ask the server itself how it is available, use 	# 9  (_9:str)
-# sabaoth for that 	# 10  (_10:str)
-#sabaoth.prelude(); 	# 11  (_11:str)
-    h := sabaoth.getLocalConnectionHost();	# 12 SABgetLocalConnectionHost (h:str)
-    p := sabaoth.getLocalConnectionPort();	# 13 SABgetLocalConnectionPort (p:int)
-# create a connecton to ourself 	# 14  (_14:str)
-    remote.create("test",h,p,nil:str,"monetdb","monetdb");	# 15 RMTcreate (_15:void)<-(_16:str)(h:str)(p:int)(_17:str)(_18:str)(_18:str)
-# this is invalid, as io.print is an invalid module, and bla will be 	# 16  (_19:str)
-# taken as function 	# 17  (_20:str)
-    f := remote.exec("test","io.print","bla");	# 18 RMTexec (f:any)<-(_16:str)(_22:str)(_23:str)
-    io.print(f);	# 19 IOprint_val (_24:void)<-(f:any)
-catch MALException:str ;	# 20  (MALException:str) jump 22
-    io.printf("!%s\n",MALException);	# 21 IOprint_formatted_str (_26:void)<-(_27:str)(MALException:str)
-exit MALException:str ;	# 22  (MALException:str)
-# io.print only outputs things, but returns nothing 	# 23  (_28:str)
-    a := remote.exec("test","io","print","bla");	# 24 RMTexec (a:any)<-(_16:str)(_30:str)(_31:str)(_23:str)
-    io.print(a);	# 25 IOprint_val (_32:void)<-(a:any)
-# now do it with a function that returns something (a BAT in this case) 	# 26  (_33:str)
-    b := remote.exec("test","inspect","getAtomNames");	# 27 RMTexec (b:any)<-(_16:str)(_35:str)(_36:str)
-    io.print(b);	# 28 IOprint_val (_37:void)<-(b:any)
-# help testweb a bit, since currently no cleanup is done on server 	# 29  (_38:str)
-# shutdown 	# 30  (_39:str)
-    remote.destroy("test");	# 31 RMTdestroy (_40:void)<-(_16:str)
+function user.main():void;              #  0 main:void {G}
+#remote.prelude(); 
+# ideally we would like to do this, however that's unfortunately 
+# impossible since variadic stuff doesn't work in functions 
+#function exec(conn:str, ident:str...):any; 
+#	id := remote.exec(conn, ident, ...); 
+#	ret := remote.get(conn, id); 
+#	return(ret); 
+#end exec; 
+# for testweb, we need to ask the server itself how it is available, use 
+# sabaoth for that 
+#sabaoth.prelude(); 
+    h := sabaoth.getLocalConnectionHost();# 12 h:str {G}
+    p := sabaoth.getLocalConnectionPort();# 13 p:int 
+# create a connecton to ourself 
+    remote.create("test",h,p,nil:str,"monetdb","monetdb");# 15 _15:void := RMTcreate(_16:str, h:str, p:int, _17:str, _18:str, _18:str) 
+# this is invalid, as io.print is an invalid module, and bla will be 
+# taken as function 
+    f := remote.exec("test","io.print","bla");# 18 f:any := RMTexec(_16:str, _22:str, _23:str) 
+    io.print(f);                        # 19 _24:void := IOprint_val(f:any) 
+catch MALException:str ;                # 20 MALException:str {J22}
+    io.printf("!%s\n",MALException);    # 21 _26:void := IOprint_formatted_str(_27:str, MALException:str) 
+exit MALException:str ;                 # 22 MALException:str 
+# io.print only outputs things, but returns nothing 
+    a := remote.exec("test","io","print","bla");# 24 a:any := RMTexec(_16:str, _30:str, _31:str, _23:str) 
+    io.print(a);                        # 25 _32:void := IOprint_val(a:any) 
+# now do it with a function that returns something (a BAT in this case) 
+    b := remote.exec("test","inspect","getAtomNames");# 27 b:any := RMTexec(_16:str, _35:str, _36:str) 
+    io.print(b);                        # 28 _37:void := IOprint_val(b:any) 
+# help testweb a bit, since currently no cleanup is done on server 
+# shutdown 
+    remote.destroy("test");             # 31 _40:void := RMTdestroy(_16:str) 
 end main;	# 32  
 !MALException:remote.exec:remote_put_object_0 := io.print.bla();
 !SyntaxException:parseError:                              ^'(' expected

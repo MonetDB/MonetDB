@@ -19,10 +19,10 @@ stdout of test 'tst4611` in directory 'src/optimizer` itself:
 #    zz:= algebra.join(z,c);
 #	return zz;
 #end joinPath;
-function user.joinPath(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];	# 0  dynamic (joinPath:bat[:any_1,:any_4])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])(c:bat[:any_3,:any_4])
-    z := algebra.join(a,b);	# 1 ALGjoin (z:bat[:any,:any])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])
-    zz := algebra.join(z,c);	# 2 ALGjoin (zz:bat[:any,:any])<-(z:bat[:any,:any])(c:bat[:any_3,:any_4])
-    return joinPath := zz;	# 3  (joinPath:bat[:any_1,:any_4])<-(zz:bat[:any,:any])
+function user.joinPath(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];#  0 joinPath:bat[:any_1,:any_4] := user.joinPath(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], c:bat[:any_3,:any_4]) {UPG}
+    z := algebra.join(a,b);             #  1 z:bat[:any,:any] := ALGjoin(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3]) {PG}
+    zz := algebra.join(z,c);            #  2 zz:bat[:any,:any] := ALGjoin(z:bat[:any,:any], c:bat[:any_3,:any_4]) {PG}
+    return joinPath := zz;              #  3 joinPath:bat[:any_1,:any_4] := zz:bat[:any,:any] {G}
 end joinPath;	# 4  
 #
 #optimizer.macroContraction("algebra","joinPath");
@@ -35,13 +35,13 @@ end joinPath;	# 4
 #
 #mdb.list();
 #
-function user.main():void;	# 0  (main:void)
-# the first test for macro expansions and inversions 	# 1  (_1:str)
-    a := bat.new(:int,:int);	# 2 CMDBATnew (a:bat[:int,:int])<-(_3:int)(_3:int)
-    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
-    c := bat.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_3:int)(_3:int)
-    h := user.joinPath(a,b,c);	# 5  (h:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])(c:bat[:int,:int])
-    mdb.list();	# 6 MDBlist (_11:void)
+function user.main():void;              #  0 main:void {G}
+# the first test for macro expansions and inversions 
+    a := bat.new(:int,:int);            #  2 a:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    c := bat.new(:int,:int);            #  4 c:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    h := user.joinPath(a,b,c);          #  5 h:bat[:int,:int] := user.joinPath(a:bat[:int,:int], b:bat[:int,:int], c:bat[:int,:int]) {PG}
+    mdb.list();                         #  6 _11:void 
 function user.main():void;
 # the first test for macro expansions and inversions 
     a := bat.new(:int,:int);

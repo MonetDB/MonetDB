@@ -23,13 +23,13 @@ stdout of test 'tst4001` in directory 'src/optimizer` itself:
 #   l:= k+i;
 #   return z;
 #end qry;
-function user.qry(i:dbl):dbl;	# 0  (qry:dbl)<-(i:dbl)
-    i := 1:dbl;	# 1  (i:dbl)<-(_2:dbl)
-    z := mmath.sin(i);	# 2 MATHunary_SINdbl (z:dbl)<-(i:dbl)
-    j := 1:dbl;	# 3  (j:dbl)<-(_2:dbl)
-    k := mmath.sin(j);	# 4 MATHunary_SINdbl (k:dbl)<-(j:dbl)
-    l := calc.+(k,i);	# 5 CALCbinaryADDdbldbl (l:dbl)<-(k:dbl)(i:dbl)
-    return qry := z;	# 6  (qry:dbl)<-(z:dbl)
+function user.qry(i:dbl):dbl;           #  0 qry:dbl := user.qry(i:dbl) 
+    i := 1:dbl;                         #  1 i:dbl := _2:dbl 
+    z := mmath.sin(i);                  #  2 z:dbl := MATHunary_SINdbl(i:dbl) 
+    j := 1:dbl;                         #  3 j:dbl := _2:dbl 
+    k := mmath.sin(j);                  #  4 k:dbl := MATHunary_SINdbl(j:dbl) 
+    l := calc.+(k,i);                   #  5 l:dbl := CALCbinaryADDdbldbl(k:dbl, i:dbl) 
+    return qry := z;                    #  6 qry:dbl := z:dbl 
 end qry;	# 7  
 #t0:= alarm.usec();
 #optimizer.aliasRemoval("user","qry");
@@ -43,18 +43,18 @@ end qry;	# 7
 #mdb.list("user","qry");
 #mdb.list("user","main");
 #
-function user.main():void;	# 0  (main:void)
-#tesing the optimizers 	# 1  (_2:str)
-#setDebug(); 	# 2  (_4:str)
-    t0 := alarm.usec();	# 3 ALARMusec (t0:lng)
-    t1 := alarm.usec();	# 4 ALARMusec (t1:lng)
-    t2 := calc.-(t1,t0);	# 5 CALCbinarySUBlnglng (t2:lng)<-(t1:lng)(t0:lng)
-    io.print("execute");	# 6 IOprint_val (_11:void)<-(_12:str)
-    z := user.qry(0:dbl);	# 7  (z:dbl)<-(_14:dbl)
-    io.print(z);	# 8 IOprint_val (_15:void)<-(z:dbl)
-    io.print("done");	# 9 IOprint_val (_16:void)<-(_17:str)
-    mdb.list("user","qry");	# 10 MDBlist3 (_18:void)<-(_5:str)(_6:str)
-    mdb.list();	# 11 MDBlist (_19:void)
+function user.main():void;              #  0 main:void {G}
+#tesing the optimizers 
+#setDebug(); 
+    t0 := alarm.usec();                 #  3 t0:lng 
+    t1 := alarm.usec();                 #  4 t1:lng 
+    t2 := calc.-(t1,t0);                #  5 t2:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
+    io.print("execute");                #  6 _11:void := IOprint_val(_12:str) 
+    z := user.qry(0:dbl);               #  7 z:dbl := user.qry(_14:dbl) 
+    io.print(z);                        #  8 _15:void := IOprint_val(z:dbl) 
+    io.print("done");                   #  9 _16:void := IOprint_val(_17:str) 
+    mdb.list("user","qry");             # 10 _18:void := MDBlist3(_5:str, _6:str) 
+    mdb.list();                         # 11 _19:void 
 end main;	# 12  
 [ "execute" ]
 [ 0.8414709848078965 ]

@@ -53,50 +53,50 @@ stdout of test 'tst270` in directory 'src/mal` itself:
 #profiler.stop();
 #profiler.closeStream();
 #
-function user.main():void;	# 0  (main:void)
-#Same as tst200, but includes testing of the profiler 	# 1  (_1:str)
-#profiler.setAll(); 	# 2  (_2:str)
-    profiler.activate("ticks");	# 3 CMDactivateProfiler (_3:void)<-(_4:str)
-    profiler.activate("pc");	# 4 CMDactivateProfiler (_5:void)<-(_6:str)
-    profiler.activate("statement");	# 5 CMDactivateProfiler (_7:void)<-(_8:str)
-#profiler.setFilter("*","*"); 	# 6  (_9:str)
-    profiler.setFilter("*","insert");	# 7 CMDsetFilterProfiler (_10:void)<-(_11:str)(_12:str)
-    profiler.openStream("/tmp/MonetEvents");	# 8 CMDsetProfilerFile (_13:void)<-(_14:str)
-    o := calc.oid(20000000);	# 9 CALCint2oid (o:oid)<-(_16:int)
-    calc.setoid(o);	# 10 CALCsetoidInc (_17:oid)<-(o:oid)
-#test basic functionality of the BAT library. 	# 11  (_18:str)
-#focussed on integers 	# 12  (_19:str)
-#it includes insertions,deletions,selections, and joins. 	# 13  (_20:str)
-    b := bat.new(:int,:int);	# 14 CMDBATnew (b:bat[:int,:int])<-(_22:int)(_23:int)
-    io.printf("#~BeginVariableOutput~#\n");	# 15 IOprint_str (_24:void)<-(_25:str)
-    binfo := bat.info(b);	# 16 BKCinfo (binfo:bat[:str,:str])<-(b:bat[:int,:int])
-    io.print(binfo);	# 17 IOprint_val (_27:void)<-(binfo:bat[:str,:str])
-    io.printf("#~EndVariableOutput~#\n");	# 18 IOprint_str (_28:void)<-(_29:str)
-    profiler.start();	# 19 CMDstartProfiler (_30:void)
-    err := bat.insert(b,1,15);	# 20 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_32:int)(_33:int)
-    err := bat.insert(b,2,4);	# 21 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_34:int)(_35:int)
-    n0 := calc.int(nil:void);	# 22 CALCnil2int (n0:int)<-(_37:void)
-    err := bat.insert(b,3,n0);	# 23 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_38:int)(n0:int)
-    err := bat.insert(b,4,16);	# 24 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_35:int)(_39:int)
-    err := bat.insert(b,5,25);	# 25 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_40:int)(_41:int)
-    err := bat.insert(b,6,36);	# 26 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_42:int)(_43:int)
-    err := bat.insert(b,7,49);	# 27 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_44:int)(_45:int)
-    err := bat.insert(b,8,64);	# 28 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_46:int)(_47:int)
-    err := bat.insert(b,9,n0);	# 29 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_48:int)(n0:int)
-    err := bat.insert(b,n0,n0);	# 30 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)(n0:int)
-    err := bat.insert(b,n0,81);	# 31 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)(_49:int)
-    io.print(b);	# 32 IOprint_val (_50:void)<-(b:bat[:int,:int])
-    io.print(b,b,b);	# 33 IOtable (_51:void)<-(b:bat[:int,:int])(b:bat[:int,:int])(b:bat[:int,:int])
-    profiler.stop();	# 34 CMDstopProfiler (_52:void)
-    profiler.closeStream();	# 35 CMDcloseProfilerStream (_53:void)
-    profiler.cleanup();	# 36 CMDcleanup (_54:void)
+function user.main():void;              #  0 main:void {G}
+#Same as tst200, but includes testing of the profiler 
+#profiler.setAll(); 
+    profiler.activate("ticks");         #  3 _3:void := CMDactivateProfiler(_4:str) 
+    profiler.activate("pc");            #  4 _5:void := CMDactivateProfiler(_6:str) 
+    profiler.activate("statement");     #  5 _7:void := CMDactivateProfiler(_8:str) 
+#profiler.setFilter("*","*"); 
+    profiler.setFilter("*","insert");   #  7 _10:void := CMDsetFilterProfiler(_11:str, _12:str) 
+    profiler.openStream("/tmp/MonetEvents");#  8 _13:void := CMDsetProfilerFile(_14:str) 
+    o := calc.oid(20000000);            #  9 o:oid := CALCint2oid(_16:int) 
+    calc.setoid(o);                     # 10 _17:oid := CALCsetoidInc(o:oid) 
+#test basic functionality of the BAT library. 
+#focussed on integers 
+#it includes insertions,deletions,selections, and joins. 
+    b := bat.new(:int,:int);            # 14 b:bat[:int,:int] := CMDBATnew(_22:int, _23:int) {G}
+    io.printf("#~BeginVariableOutput~#\n");# 15 _24:void := IOprint_str(_25:str) 
+    binfo := bat.info(b);               # 16 binfo:bat[:str,:str] := BKCinfo(b:bat[:int,:int]) {G}
+    io.print(binfo);                    # 17 _27:void := IOprint_val(binfo:bat[:str,:str]) 
+    io.printf("#~EndVariableOutput~#\n");# 18 _28:void := IOprint_str(_29:str) 
+    profiler.start();                   # 19 _30:void 
+    err := bat.insert(b,1,15);          # 20 err:void := BKCinsert_bun(b:bat[:int,:int], _32:int, _33:int) 
+    err := bat.insert(b,2,4);           # 21 err:void := BKCinsert_bun(b:bat[:int,:int], _34:int, _35:int) 
+    n0 := calc.int(nil:void);           # 22 n0:int := CALCnil2int(_37:void) 
+    err := bat.insert(b,3,n0);          # 23 err:void := BKCinsert_bun(b:bat[:int,:int], _38:int, n0:int) 
+    err := bat.insert(b,4,16);          # 24 err:void := BKCinsert_bun(b:bat[:int,:int], _35:int, _39:int) 
+    err := bat.insert(b,5,25);          # 25 err:void := BKCinsert_bun(b:bat[:int,:int], _40:int, _41:int) 
+    err := bat.insert(b,6,36);          # 26 err:void := BKCinsert_bun(b:bat[:int,:int], _42:int, _43:int) 
+    err := bat.insert(b,7,49);          # 27 err:void := BKCinsert_bun(b:bat[:int,:int], _44:int, _45:int) 
+    err := bat.insert(b,8,64);          # 28 err:void := BKCinsert_bun(b:bat[:int,:int], _46:int, _47:int) 
+    err := bat.insert(b,9,n0);          # 29 err:void := BKCinsert_bun(b:bat[:int,:int], _48:int, n0:int) 
+    err := bat.insert(b,n0,n0);         # 30 err:void := BKCinsert_bun(b:bat[:int,:int], n0:int, n0:int) 
+    err := bat.insert(b,n0,81);         # 31 err:void := BKCinsert_bun(b:bat[:int,:int], n0:int, _49:int) 
+    io.print(b);                        # 32 _50:void := IOprint_val(b:bat[:int,:int]) 
+    io.print(b,b,b);                    # 33 _51:void := IOtable(b:bat[:int,:int], b:bat[:int,:int], b:bat[:int,:int]) 
+    profiler.stop();                    # 34 _52:void 
+    profiler.closeStream();             # 35 _53:void 
+    profiler.cleanup();                 # 36 _54:void 
 end main;	# 37  
 #~BeginVariableOutput~#
 #-------------------------------------------------#
 # h				tmp_5		  # name
 # str				str		  # type
 #-----------------------------------------#
-[ "version",		  "25105"	  ]
+[ "version",		  "25106"	  ]
 [ "batId",		  "tmp_10"	  ]
 [ "batCacheid",		  "8"		  ]
 [ "hparentid",		  "0"		  ]

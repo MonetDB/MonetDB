@@ -32,29 +32,29 @@ stdout of test 'tst034` in directory 'src/mal` itself:
 #z:= algebra.betweenOC(b,0,2); io.print(z);
 #z:= algebra.betweenOO(b,0,2); io.print(z);
 #
-function user.main():void;	# 0  (main:void)
-# test the reference counting scheme 	# 1  (_1:str)
-    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
-    bat.insert(b,0,0);	# 3 BKCinsert_bun (_4:void)<-(b:bat[:int,:int])(_5:int)(_5:int)
-    bat.insert(b,1,1);	# 4 BKCinsert_bun (_6:void)<-(b:bat[:int,:int])(_7:int)(_7:int)
-    bat.insert(b,2,2);	# 5 BKCinsert_bun (_8:void)<-(b:bat[:int,:int])(_9:int)(_9:int)
-    bat.insert(b,3,3);	# 6 BKCinsert_bun (_10:void)<-(b:bat[:int,:int])(_11:int)(_11:int)
-    i := bbp.getLRefCount(b);	# 7 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:int])
-    io.printf("start of selections %d [1]\n",i);	# 8 IOprint_formatted_int (_13:void)<-(_14:str)(i:int)
-    z := algebra.select(b,0,2);	# 9 ALGselect (z:bat[:int,:int])<-(b:bat[:int,:int])(_5:int)(_9:int)
-    io.print(z);	# 10 IOprint_val (_16:void)<-(z:bat[:int,:int])
-    i := bbp.getLRefCount(z);	# 11 CMDgetBATlrefcnt (i:int)<-(z:bat[:int,:int])
-    io.printf("z select %d [1]\n",i);	# 12 IOprint_formatted_int (_17:void)<-(_18:str)(i:int)
-    i := bbp.getLRefCount(b);	# 13 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:int])
-    io.printf("select %d [1]\n",i);	# 14 IOprint_formatted_int (_19:void)<-(_20:str)(i:int)
-    z := algebra.select(b,0,2,true,false);	# 15 ALGselectInclusive (z:bat[:int,:int])<-(b:bat[:int,:int])(_5:int)(_9:int)(_21:bit)(_22:bit)
-    io.print(z);	# 16 IOprint_val (_23:void)<-(z:bat[:int,:int])
-    i := bbp.getLRefCount(b);	# 17 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:int])
-    io.printf("select %d [1]\n",i);	# 18 IOprint_formatted_int (_24:void)<-(_20:str)(i:int)
-    z := algebra.select(b,0,2,false,true);	# 19 ALGselectInclusive (z:bat[:int,:int])<-(b:bat[:int,:int])(_5:int)(_9:int)(_22:bit)(_21:bit)
-    io.print(z);	# 20 IOprint_val (_25:void)<-(z:bat[:int,:int])
-    z := algebra.select(b,0,2,false,false);	# 21 ALGselectInclusive (z:bat[:int,:int])<-(b:bat[:int,:int])(_5:int)(_9:int)(_22:bit)(_22:bit)
-    io.print(z);	# 22 IOprint_val (_26:void)<-(z:bat[:int,:int])
+function user.main():void;              #  0 main:void {G}
+# test the reference counting scheme 
+    b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    bat.insert(b,0,0);                  #  3 _4:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _5:int) 
+    bat.insert(b,1,1);                  #  4 _6:void := BKCinsert_bun(b:bat[:int,:int], _7:int, _7:int) 
+    bat.insert(b,2,2);                  #  5 _8:void := BKCinsert_bun(b:bat[:int,:int], _9:int, _9:int) 
+    bat.insert(b,3,3);                  #  6 _10:void := BKCinsert_bun(b:bat[:int,:int], _11:int, _11:int) 
+    i := bbp.getLRefCount(b);           #  7 i:int := CMDgetBATlrefcnt(b:bat[:int,:int]) 
+    io.printf("start of selections %d [1]\n",i);#  8 _13:void := IOprint_formatted_int(_14:str, i:int) 
+    z := algebra.select(b,0,2);         #  9 z:bat[:int,:int] := ALGselect(b:bat[:int,:int], _5:int, _9:int) {G}
+    io.print(z);                        # 10 _16:void := IOprint_val(z:bat[:int,:int]) 
+    i := bbp.getLRefCount(z);           # 11 i:int := CMDgetBATlrefcnt(z:bat[:int,:int]) 
+    io.printf("z select %d [1]\n",i);   # 12 _17:void := IOprint_formatted_int(_18:str, i:int) 
+    i := bbp.getLRefCount(b);           # 13 i:int := CMDgetBATlrefcnt(b:bat[:int,:int]) 
+    io.printf("select %d [1]\n",i);     # 14 _19:void := IOprint_formatted_int(_20:str, i:int) 
+    z := algebra.select(b,0,2,true,false);# 15 z:bat[:int,:int] := ALGselectInclusive(b:bat[:int,:int], _5:int, _9:int, _21:bit, _22:bit) {G}
+    io.print(z);                        # 16 _23:void := IOprint_val(z:bat[:int,:int]) 
+    i := bbp.getLRefCount(b);           # 17 i:int := CMDgetBATlrefcnt(b:bat[:int,:int]) 
+    io.printf("select %d [1]\n",i);     # 18 _24:void := IOprint_formatted_int(_20:str, i:int) 
+    z := algebra.select(b,0,2,false,true);# 19 z:bat[:int,:int] := ALGselectInclusive(b:bat[:int,:int], _5:int, _9:int, _22:bit, _21:bit) {G}
+    io.print(z);                        # 20 _25:void := IOprint_val(z:bat[:int,:int]) 
+    z := algebra.select(b,0,2,false,false);# 21 z:bat[:int,:int] := ALGselectInclusive(b:bat[:int,:int], _5:int, _9:int, _22:bit, _22:bit) {G}
+    io.print(z);                        # 22 _26:void := IOprint_val(z:bat[:int,:int]) 
 end main;	# 23  
 start of selections 1 [1]
 #-----------------#

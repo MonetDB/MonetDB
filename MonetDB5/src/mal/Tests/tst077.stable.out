@@ -18,9 +18,9 @@ stdout of test 'tst077` in directory 'src/mal` itself:
 #        return (a,x);
 #
 #end swap;
-function user.swap(x:bat[:any_1,:int],y:bat[:int,:int]) (a:str,b:bat[:any_1,:int]);	# 0  (a:str)(b:bat[:any_1,:int])<-(x:bat[:any_1,:int])(y:bat[:int,:int])
-    a := "done";	# 1  (a:str)<-(_5:str)
-    return (a,b):= (a,x);	# 2  (a:str)(b:bat[:any_1,:int])<-(a:str)(x:bat[:any_1,:int])
+function user.swap(x:bat[:any_1,:int],y:bat[:int,:int]) (a:str,b:bat[:any_1,:int]);#  0 (a:str, b:bat[:any_1,:int]) := user.swap(x:bat[:any_1,:int], y:bat[:int,:int]) {PG}
+    a := "done";                        #  1 a:str := _5:str {G}
+    return (a,b):= (a,x);               #  2 (a:str, b:bat[:any_1,:int]) := a:str, x:bat[:any_1,:int] {G}
 end swap;	# 3  
 #
 #X:= new(:int,:int);
@@ -32,15 +32,15 @@ end swap;	# 3
 #print(y);
 #
 #
-function user.main():void;	# 0  (main:void)
-# parsing operations with multi-assignments 	# 1  (_1:str)
-    X := bat.new(:int,:int);	# 2 CMDBATnew (X:bat[:int,:int])<-(_3:int)(_3:int)
-    bat.insert(X,1,1);	# 3 BKCinsert_bun (_4:void)<-(X:bat[:int,:int])(_5:int)(_5:int)
-    Y := bat.new(:int,:int);	# 4 CMDBATnew (Y:bat[:int,:int])<-(_3:int)(_3:int)
-    bat.insert(Y,2,2);	# 5 BKCinsert_bun (_7:void)<-(Y:bat[:int,:int])(_8:int)(_8:int)
-    (x,y):= user.swap(X,Y);	# 6  (x:str)(y:bat[:int,:int])<-(X:bat[:int,:int])(Y:bat[:int,:int])
-    io.print(x);	# 7 IOprint_val (_11:void)<-(x:str)
-    io.print(y);	# 8 IOprint_val (_12:void)<-(y:bat[:int,:int])
+function user.main():void;              #  0 main:void {G}
+# parsing operations with multi-assignments 
+    X := bat.new(:int,:int);            #  2 X:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    bat.insert(X,1,1);                  #  3 _4:void := BKCinsert_bun(X:bat[:int,:int], _5:int, _5:int) 
+    Y := bat.new(:int,:int);            #  4 Y:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    bat.insert(Y,2,2);                  #  5 _7:void := BKCinsert_bun(Y:bat[:int,:int], _8:int, _8:int) 
+    (x,y):= user.swap(X,Y);             #  6 (x:str, y:bat[:int,:int]) := user.swap(X:bat[:int,:int], Y:bat[:int,:int]) {G}
+    io.print(x);                        #  7 _11:void := IOprint_val(x:str) 
+    io.print(y);                        #  8 _12:void := IOprint_val(y:bat[:int,:int]) 
 end main;	# 9  
 [ "done" ]
 #-----------------#

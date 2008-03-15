@@ -24,19 +24,19 @@ stdout of test 'scanselect` in directory 'tests/gdkTests` itself:
 #z:=algebra.select(y,1,2);
 #io.print(z);
 #
-function user.main():void;	# 0  (main:void)
-    x := bat.new(:void,:int);	# 1 CMDBATnew (x:bat[:void,:int])<-(_2:void)(_3:int)
-    bat.append(x,1);	# 2 BKCappend_val_wrap (_4:void)<-(x:bat[:void,:int])(_5:int)
-    bat.append(x,2);	# 3 BKCappend_val_wrap (_6:void)<-(x:bat[:void,:int])(_7:int)
-    bat.append(x,1);	# 4 BKCappend_val_wrap (_8:void)<-(x:bat[:void,:int])(_5:int)
-    y := algebra.markH(x,0@0);	# 5 ALGmarkHead (y:bat[:oid,:int])<-(x:bat[:void,:int])(_10:oid)
-    io.print(y);	# 6 IOprint_val (_11:void)<-(y:bat[:oid,:int])
-    z := algebra.select(y,1);	# 7 ALGselect1 (z:bat[:oid,:int])<-(y:bat[:oid,:int])(_5:int)
-    io.print(z);	# 8 IOprint_val (_13:void)<-(z:bat[:oid,:int])
-    z := algebra.select(y,2);	# 9 ALGselect1 (z:bat[:oid,:int])<-(y:bat[:oid,:int])(_7:int)
-    io.print(z);	# 10 IOprint_val (_14:void)<-(z:bat[:oid,:int])
-    z := algebra.select(y,1,2);	# 11 ALGselect (z:bat[:oid,:int])<-(y:bat[:oid,:int])(_5:int)(_7:int)
-    io.print(z);	# 12 IOprint_val (_15:void)<-(z:bat[:oid,:int])
+function user.main():void;              #  0 main:void {G}
+    x := bat.new(:void,:int);           #  1 x:bat[:void,:int] := CMDBATnew(_2:void, _3:int) {G}
+    bat.append(x,1);                    #  2 _4:void := BKCappend_val_wrap(x:bat[:void,:int], _5:int) 
+    bat.append(x,2);                    #  3 _6:void := BKCappend_val_wrap(x:bat[:void,:int], _7:int) 
+    bat.append(x,1);                    #  4 _8:void := BKCappend_val_wrap(x:bat[:void,:int], _5:int) 
+    y := algebra.markH(x,0@0);          #  5 y:bat[:oid,:int] := ALGmarkHead(x:bat[:void,:int], _10:oid) {G}
+    io.print(y);                        #  6 _11:void := IOprint_val(y:bat[:oid,:int]) 
+    z := algebra.select(y,1);           #  7 z:bat[:oid,:int] := ALGselect1(y:bat[:oid,:int], _5:int) {G}
+    io.print(z);                        #  8 _13:void := IOprint_val(z:bat[:oid,:int]) 
+    z := algebra.select(y,2);           #  9 z:bat[:oid,:int] := ALGselect1(y:bat[:oid,:int], _7:int) {G}
+    io.print(z);                        # 10 _14:void := IOprint_val(z:bat[:oid,:int]) 
+    z := algebra.select(y,1,2);         # 11 z:bat[:oid,:int] := ALGselect(y:bat[:oid,:int], _5:int, _7:int) {G}
+    io.print(z);                        # 12 _15:void := IOprint_val(z:bat[:oid,:int]) 
 end main;	# 13  
 #-----------------#
 # t	h	  # name

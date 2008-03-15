@@ -17,15 +17,14 @@ stdout of test 'tst105a` in directory 'src/mal` itself:
 #module bat;
 #command new(h:any_1,t:any_2):bat[:any_1,:any_2]
 !MALException:MAL.getAddress:address of 'bbp.GDKbatnew' not found
-command bbp.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;	# 0  dynamic (new:bat[:any_1,:any_2])<-(h:any_1)(t:any_2)
+command bbp.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;#  0 new:bat[:any_1,:any_2] := bbp.new(h:any_1, t:any_2) {UP}
 #
 #b:= bbp.new(:str,:int);
 #
 !TypeException:user.main[2]:'bbp.new' undefined in: b:bat[:str,:int] := bbp.new(_3:str, _4:int)
-
-function user.main():void;	# 0  (main:void)
-# check classification of functions in the proper module 	# 1  (_1:str)
-    b := bbp.new(:str,:int);	# 2  unknown (b:bat[:str,:int])<-(_3:str)(_4:int)
+function user.main():void;              #  0 main:void {G}
+# check classification of functions in the proper module #  1 
+    b := bbp.new(:str,:int);            #  2 b:bat[:str,:int] := bbp.new(_3:str, _4:int) {UG}
 end main;	# 3  
 
 # 07:58:57 >  

@@ -55,47 +55,47 @@ stdout of test 'no.150` in directory 'tests/BugReports` itself:
 ##	mil.line("quit();");
 #	ca_a := clients.quit();
 #
-function user.main():void;	# 0  (main:void)
-# Monet Mil to Mal compiler 	# 1  (_1:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
-#Predefined code segment 	# 3  (_3:str)
-#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
-#A few guidelines to maximize usefullness. 	# 6  (_6:str)
-#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
-#use the "mil_schema" for additional support routines 	# 9  (_9:str)
-#	io.print("# >Number:         150\n"); 	# 10  (_10:str)
-#	io.print("# >Category:       MIL\n"); 	# 11  (_11:str)
-#	io.print("# >Synopsis:       Mserver crashes on non-existing module.\n"); 	# 12  (_12:str)
-#	io.print("# >Confidential:   no\n"); 	# 13  (_13:str)
-#	io.print("# >Severity:       critical\n"); 	# 14  (_14:str)
-#	io.print("# >Priority:       high\n"); 	# 15  (_15:str)
-#	io.print("# >Responsible:    boncz (Peter Boncz)\n"); 	# 16  (_16:str)
-#	io.print("# >State:          open\n"); 	# 17  (_17:str)
-#	io.print("# >Class:          sw-bug\n"); 	# 18  (_18:str)
-#	io.print("# >Submitter-Id:   unknown\n"); 	# 19  (_19:str)
-#	io.print("# >Arrival-Date:   Wed Apr  8 16:48:12 1998\n"); 	# 20  (_20:str)
-#	io.print("# >Originator:     quak@cwi.nl\n"); 	# 21  (_21:str)
-#	io.print("# >Organization:\n"); 	# 22  (_22:str)
-#	io.print("# UvA\n"); 	# 23  (_23:str)
-#	io.print("# >Release:        980101\n"); 	# 24  (_24:str)
-#	io.print("# >Environment:\n"); 	# 25  (_25:str)
-#	io.print("# solaris\n"); 	# 26  (_26:str)
-#	io.print("# >Description:\n"); 	# 27  (_27:str)
-#	io.print("# On solaris if you load a module which does not exist,\n"); 	# 28  (_28:str)
-#	io.print("# the Mserver crashes. How to repeat:\n"); 	# 29  (_29:str)
-#	io.print("# \n"); 	# 30  (_30:str)
-#	io.print("# Mclient\n"); 	# 31  (_31:str)
-#	io.print("# > module(\"jabberwocky\");\n"); 	# 32  (_32:str)
-#	io.print("# \n"); 	# 33  (_33:str)
-#	io.print("# (Under the assumption that the module \"jabberwocky\"\n"); 	# 34  (_34:str)
-#	io.print("# does not exist\n"); 	# 35  (_35:str)
-#	io.print("setoid(oid(20000000));"); 	# 36  (_36:str)
-    aa_a := calc.oid(20000000);	# 37 CALCint2oid (aa_a:oid)<-(_38:int)
-    ba_a := calc.setoid(aa_a);	# 38 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-#	io.print("quit();"); 	# 39  (_39:str)
-    ca_a := clients.quit();	# 40 CLTquit (ca_a:void)
+function user.main():void;              #  0 main:void 
+# Monet Mil to Mal compiler 
+# Copyright (c) 2001-2004, CWI. All rights reserved. 
+#Predefined code segment 
+#The compiler can not guarantee an accurate compilation, 
+#because MIL unlike MAL is a dynamically typed language. 
+#A few guidelines to maximize usefullness. 
+#- make the type of variables explicit, in particular 'nil' 
+#- upon advice of M2m to remap identifiers, change it in your program directly 
+#use the "mil_schema" for additional support routines 
+#	io.print("# >Number:         150\n"); 
+#	io.print("# >Category:       MIL\n"); 
+#	io.print("# >Synopsis:       Mserver crashes on non-existing module.\n"); 
+#	io.print("# >Confidential:   no\n"); 
+#	io.print("# >Severity:       critical\n"); 
+#	io.print("# >Priority:       high\n"); 
+#	io.print("# >Responsible:    boncz (Peter Boncz)\n"); 
+#	io.print("# >State:          open\n"); 
+#	io.print("# >Class:          sw-bug\n"); 
+#	io.print("# >Submitter-Id:   unknown\n"); 
+#	io.print("# >Arrival-Date:   Wed Apr  8 16:48:12 1998\n"); 
+#	io.print("# >Originator:     quak@cwi.nl\n"); 
+#	io.print("# >Organization:\n"); 
+#	io.print("# UvA\n"); 
+#	io.print("# >Release:        980101\n"); 
+#	io.print("# >Environment:\n"); 
+#	io.print("# solaris\n"); 
+#	io.print("# >Description:\n"); 
+#	io.print("# On solaris if you load a module which does not exist,\n"); 
+#	io.print("# the Mserver crashes. How to repeat:\n"); 
+#	io.print("# \n"); 
+#	io.print("# Mclient\n"); 
+#	io.print("# > module(\"jabberwocky\");\n"); 
+#	io.print("# \n"); 
+#	io.print("# (Under the assumption that the module \"jabberwocky\"\n"); 
+#	io.print("# does not exist\n"); 
+#	io.print("setoid(oid(20000000));"); 
+    aa_a := calc.oid(20000000);         # 37 aa_a:oid := CALCint2oid(_38:int) 
+    ba_a := calc.setoid(aa_a);          # 38 ba_a:oid := CALCsetoidInc(aa_a:oid) 
+#	io.print("quit();"); 
+    ca_a := clients.quit();             # 40 ca_a:void 
 end main;	# 41  
 
 # 07:27:15 >  

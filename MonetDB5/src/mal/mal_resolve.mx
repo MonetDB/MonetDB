@@ -636,7 +636,7 @@ In those cases, the detailed analysis is performed upon an actual call.
 			if( !silent) {
 				char errsig[BUFSIZ];
 
-				recognizedCall(mb,p,errsig);
+				instructionCall(mb,p,errsig);
 				showScriptException(mb,getPC(mb,p),TYPE,
 						"'%s%s%s' undefined in: %s", 
 						(getModuleId(p)?getModuleId(p):""),
@@ -784,10 +784,7 @@ void chkTypes(Module s, MalBlkPtr mb){
 	for(i=0;i<mb->stop;i++) {
 		p= getInstrPtr(mb,i);
 		if(p== NULL) continue;
-		if( p->typechk == TYPE_BIND) 
-			fcnBinder(s,mb,p);
-		else /*  not ready if( p->typechk != TYPE_RESOLVED)*/
-			typeChecker(s,mb,p,FALSE);
+		typeChecker(s,mb,p,FALSE);
 
 		if( getFunctionId(p) ){
 			if(p->fcn != NULL && p->typechk== TYPE_RESOLVED) chk++;
@@ -823,7 +820,7 @@ to type check the function upon each call.
 int typeKind(MalBlkPtr mb, InstrPtr p, int i){
 	malType t= getArgType(mb,p,i);
 	if(t == TYPE_any || isAnyExpression(t) ) {
-		return TYPE_DYNAMIC;
+		return TYPE_UNKNOWN;
 	}
 	return TYPE_RESOLVED;
 }

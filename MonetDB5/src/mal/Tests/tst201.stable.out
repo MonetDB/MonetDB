@@ -174,158 +174,158 @@ stdout of test 'tst201` in directory 'src/mal` itself:
 ##b.reverse.like(" fox").print;
 ##quit;
 #
-function user.main():void;	# 0  (main:void)
-# Mil compiler Version 1.0) 	# 1  (_1:str)
-# Copyright (c) 1993-2001, CWI. All rights reserved. 	# 2  (_2:str)
-# Predefined code segment 	# 3  (_3:str)
-#use "mal/iterator";		CAUSES an ERROR!! 	# 4  (_4:str)
-    v0 := calc.oid(20000000);	# 5 CALCint2oid (v0:oid)<-(_6:int)
-    v1 := calc.setoid(v0);	# 6 CALCsetoidInc (v1:oid)<-(v0:oid)
-#setoid(oid(20000000)); 	# 7  (_8:str)
-##test basic functionality of the BAT library. 	# 8  (_9:str)
-##focussed on strings 	# 9  (_10:str)
-##it includes bat.insertions,deletions,selections, and joins. 	# 10  (_11:str)
-    v2 := bat.new(:str,:oid);	# 11 CMDBATnew (v2:bat[:str,:oid])<-(_13:str)(_14:oid)
-    b := v2;	# 12  (b:bat[:str,:oid])<-(v2:bat[:str,:oid])
-#b:= new(str,int); 	# 13  (_16:str)
-    v3 := bat.insert(b,"the",1@0);	# 14 BKCinsert_bun (v3:void)<-(b:bat[:str,:oid])(_18:str)(_19:oid)
-#b.insert("the",1); 	# 15  (_20:str)
-    v4 := bat.insert(b,"quick",2@0);	# 16 BKCinsert_bun (v4:void)<-(b:bat[:str,:oid])(_22:str)(_23:oid)
-#b.insert("quick",2); 	# 17  (_24:str)
-    v5 := bat.insert(b,"brown",3@0);	# 18 BKCinsert_bun (v5:void)<-(b:bat[:str,:oid])(_26:str)(_27:oid)
-#b.insert("brown",3); 	# 19  (_28:str)
-    v6 := bat.insert(b,"fox",4@0);	# 20 BKCinsert_bun (v6:void)<-(b:bat[:str,:oid])(_30:str)(_31:oid)
-#b.insert("fox",4); 	# 21  (_32:str)
-    v7 := bat.insert(b,"jumps",5@0);	# 22 BKCinsert_bun (v7:void)<-(b:bat[:str,:oid])(_34:str)(_35:oid)
-#b.insert("jumps",5); 	# 23  (_36:str)
-    v8 := bat.insert(b,"over",6@0);	# 24 BKCinsert_bun (v8:void)<-(b:bat[:str,:oid])(_38:str)(_39:oid)
-#b.insert("over",6); 	# 25  (_40:str)
-    v9 := bat.insert(b,"lazy",7@0);	# 26 BKCinsert_bun (v9:void)<-(b:bat[:str,:oid])(_42:str)(_43:oid)
-#b.insert("lazy",7); 	# 27  (_44:str)
-    v10 := bat.insert(b,"dog",8@0);	# 28 BKCinsert_bun (v10:void)<-(b:bat[:str,:oid])(_46:str)(_47:oid)
-#b.insert("dog",8); 	# 29  (_48:str)
-    v11 := calc.str(nil:void);	# 30 CALCnil2str (v11:str)<-(_50:void)
-    v12 := bat.insert(b,v11,9@0);	# 31 BKCinsert_bun (v12:void)<-(b:bat[:str,:oid])(v11:str)(_52:oid)
-#b.insert(str(nil),9); 	# 32  (_53:str)
-    v13 := bat.insert(b,".",10@0);	# 33 BKCinsert_bun (v13:void)<-(b:bat[:str,:oid])(_55:str)(_56:oid)
-#b.insert(".",10); 	# 34  (_57:str)
-    v14 := calc.oid(nil:void);	# 35 CALCnil2oid (v14:oid)<-(_50:void)
-    v15 := bat.insert(b,"",v14);	# 36 BKCinsert_bun (v15:void)<-(b:bat[:str,:oid])(_60:str)(v14:oid)
-#b.insert("",int(nil)); 	# 37  (_61:str)
-    v16 := calc.str(nil:void);	# 38 CALCnil2str (v16:str)<-(_50:void)
-    v17 := calc.oid(nil:void);	# 39 CALCnil2oid (v17:oid)<-(_50:void)
-    v18 := bat.insert(b,v16,v17);	# 40 BKCinsert_bun (v18:void)<-(b:bat[:str,:oid])(v16:str)(v17:oid)
-#b.insert(str(nil),int(nil)); 	# 41  (_65:str)
-    v19 := io.print(b);	# 42 IOprint_val (v19:void)<-(b:bat[:str,:oid])
-#b.print; 	# 43  (_67:str)
-## Testing simple retrievals 	# 44  (_68:str)
-    v20 := algebra.find(b,"the");	# 45 ALGfind (v20:oid)<-(b:bat[:str,:oid])(_70:str)
-    v21 := io.print(v20);	# 46 IOprint_val (v21:void)<-(v20:oid)
-#b.find("the").print; 	# 47  (_72:str)
-    v22 := algebra.find(b,"fox");	# 48 ALGfind (v22:oid)<-(b:bat[:str,:oid])(_74:str)
-    v23 := io.print(v22);	# 49 IOprint_val (v23:void)<-(v22:oid)
-#b.find("fox").print; 	# 50  (_76:str)
-    v24 := calc.str(nil:void);	# 51 CALCnil2str (v24:str)<-(_50:void)
-    v25 := algebra.find(b,v24);	# 52 ALGfind (v25:oid)<-(b:bat[:str,:oid])(v24:str)
-    v26 := io.print(v25);	# 53 IOprint_val (v26:void)<-(v25:oid)
-#b.find(str(nil)).print; 	# 54  (_80:str)
-## This should cause an error 	# 55  (_81:str)
-    v27 := algebra.find(b,"cat");	# 56 ALGfind (v27:oid)<-(b:bat[:str,:oid])(_83:str)
-    v28 := io.print(v27);	# 57 IOprint_val (v28:void)<-(v27:oid)
-catch MALException:str ;	# 58  (MALException:str) jump 60
-    io.print(MALException);	# 59 IOprint_val (_86:void)<-(MALException:str)
-exit MALException:str ;	# 60  (MALException:str)
-#b.find("cat").print; 	# 61  (_87:str)
-## Can we bat.delete them and re-insert them later on 	# 62  (_88:str)
-    v29 := bat.delete(b,"fox",4@0);	# 63 BKCdelete_bun (v29:void)<-(b:bat[:str,:oid])(_74:str)(_90:oid)
-#b.delete("fox",4); 	# 64  (_91:str)
-    v30 := bat.delete(b,"the",1@0);	# 65 BKCdelete_bun (v30:void)<-(b:bat[:str,:oid])(_70:str)(_93:oid)
-#b.delete("the",1); 	# 66  (_94:str)
-    v31 := bat.delete(b,".",10@0);	# 67 BKCdelete_bun (v31:void)<-(b:bat[:str,:oid])(_96:str)(_97:oid)
-#b.delete(".",10); 	# 68  (_98:str)
-    v32 := io.print(b);	# 69 IOprint_val (v32:void)<-(b:bat[:str,:oid])
-#b.print; 	# 70  (_67:str)
-    v33 := bat.insert(b,"fox",4@0);	# 71 BKCinsert_bun (v33:void)<-(b:bat[:str,:oid])(_74:str)(_90:oid)
-#b.insert("fox",4); 	# 72  (_102:str)
-    v34 := bat.insert(b,"the",1@0);	# 73 BKCinsert_bun (v34:void)<-(b:bat[:str,:oid])(_104:str)(_93:oid)
-#b.insert("the",1); 	# 74  (_105:str)
-    v35 := bat.insert(b,".",10@0);	# 75 BKCinsert_bun (v35:void)<-(b:bat[:str,:oid])(_96:str)(_97:oid)
-#b.insert(".",10); 	# 76  (_105:str)
-    v36 := aggr.count(b);	# 77 ALGcount_bat (v36:int)<-(b:bat[:str,:oid])
-    v37 := io.print(v36);	# 78 IOprint_val (v37:void)<-(v36:int)
-#b.count.print; 	# 79  (_110:str)
-## Lets cut out a few sections 	# 80  (_111:str)
-    v38 := algebra.select(b,2@0,4@0);	# 81 ALGselect (v38:bat[:str,:oid])<-(b:bat[:str,:oid])(_113:oid)(_90:oid)
-    v39 := io.print(v38);	# 82 IOprint_val (v39:void)<-(v38:bat[:str,:oid])
-#b.select(2,4).print; 	# 83  (_115:str)
-    v40 := calc.oid(nil:void);	# 84 CALCnil2oid (v40:oid)<-(_117:void)
-    v41 := algebra.select(b,7@0,v40);	# 85 ALGselect (v41:bat[:str,:oid])<-(b:bat[:str,:oid])(_119:oid)(v40:oid)
-    v42 := io.print(v41);	# 86 IOprint_val (v42:void)<-(v41:bat[:str,:oid])
-#b.select(7,int(nil)).print; 	# 87  (_121:str)
-    v43 := calc.oid(nil:void);	# 88 CALCnil2oid (v43:oid)<-(_117:void)
-    v44 := calc.oid(nil:void);	# 89 CALCnil2oid (v44:oid)<-(_117:void)
-    v45 := algebra.select(b,v43,v44);	# 90 ALGselect (v45:bat[:str,:oid])<-(b:bat[:str,:oid])(v43:oid)(v44:oid)
-    v46 := io.print(v45);	# 91 IOprint_val (v46:void)<-(v45:bat[:str,:oid])
-#b.select(int(nil),int(nil)).print; 	# 92  (_126:str)
-## A 2-dimensional cut 	# 93  (_127:str)
-    v47 := algebra.fragment(b,"fox","quick",1@0,5@0);	# 94 ALGfragment (v47:bat[:str,:oid])<-(b:bat[:str,:oid])(_129:str)(_130:str)(_131:oid)(_132:oid)
-    bns := v47;	# 95  (bns:bat[:str,:oid])<-(v47:bat[:str,:oid])
-    v48 := io.print(bns);	# 96 IOprint_val (v48:void)<-(bns:bat[:str,:oid])
-#bns:=b.fragment("fox","quick",1,5);bns.print; 	# 97  (_135:str)
-    v49 := calc.str(nil:void);	# 98 CALCnil2str (v49:str)<-(_117:void)
-    v50 := algebra.fragment(b,"fox",v49,1@0,5@0);	# 99 ALGfragment (v50:bat[:str,:oid])<-(b:bat[:str,:oid])(_129:str)(v49:str)(_131:oid)(_132:oid)
-    v51 := io.print(v50);	# 100 IOprint_val (v51:void)<-(v50:bat[:str,:oid])
-#b.fragment("fox",str(nil),1,5).print; 	# 101  (_139:str)
-    v52 := calc.str(nil:void);	# 102 CALCnil2str (v52:str)<-(_117:void)
-    v53 := calc.oid(nil:void);	# 103 CALCnil2oid (v53:oid)<-(_117:void)
-    v54 := calc.oid(nil:void);	# 104 CALCnil2oid (v54:oid)<-(_117:void)
-    v55 := algebra.fragment(b,"fox",v52,v53,v54);	# 105 ALGfragment (v55:bat[:str,:oid])<-(b:bat[:str,:oid])(_129:str)(v52:str)(v53:oid)(v54:oid)
-    v56 := io.print(v55);	# 106 IOprint_val (v56:void)<-(v55:bat[:str,:oid])
-#b.fragment("fox",str(nil),int(nil),int(nil)).print; 	# 107  (_145:str)
-    v57 := calc.str(nil:void);	# 108 CALCnil2str (v57:str)<-(_117:void)
-    v58 := calc.oid(nil:void);	# 109 CALCnil2oid (v58:oid)<-(_117:void)
-    v59 := calc.oid(nil:void);	# 110 CALCnil2oid (v59:oid)<-(_117:void)
-    v60 := algebra.fragment(b,v57,"f",v58,v59);	# 111 ALGfragment (v60:bat[:str,:oid])<-(b:bat[:str,:oid])(v57:str)(_150:str)(v58:oid)(v59:oid)
-    v61 := io.print(v60);	# 112 IOprint_val (v61:void)<-(v60:bat[:str,:oid])
-#b.fragment(str(nil),"f",int(nil),int(nil)).print; 	# 113  (_150:str)
-    v62 := bat.reverse(b);	# 114 BKCreverse (v62:bat[:oid,:str])<-(b:bat[:str,:oid])
-    v63 := calc.oid(nil:void);	# 115 CALCnil2oid (v63:oid)<-(_155:void)
-    v64 := calc.oid(nil:void);	# 116 CALCnil2oid (v64:oid)<-(_155:void)
-    v65 := calc.str(nil:void);	# 117 CALCnil2str (v65:str)<-(_155:void)
-    v66 := algebra.fragment(v62,v63,v64,v65,"f");	# 118 ALGfragment (v66:bat[:oid,:str])<-(v62:bat[:oid,:str])(v63:oid)(v64:oid)(v65:str)(_150:str)
-    v67 := io.print(v66);	# 119 IOprint_val (v67:void)<-(v66:bat[:oid,:str])
-#b.reverse.fragment(int(nil),int(nil),str(nil),"f").print; 	# 120  (_158:str)
-    v68 := bat.reverse(bns);	# 121 BKCreverse (v68:bat[:oid,:str])<-(bns:bat[:str,:oid])
-    v69 := algebra.join(b,v68);	# 122 ALGjoin (v69:bat[:str,:str])<-(b:bat[:str,:oid])(v68:bat[:oid,:str])
-    bnj := v69;	# 123  (bnj:bat[:str,:str])<-(v69:bat[:str,:str])
-#bnj:= b.join(bns.reverse); 	# 124  (_162:str)
-    v70 := io.print(bnj);	# 125 IOprint_val (v70:void)<-(bnj:bat[:str,:str])
-#bnj.print; 	# 126  (_164:str)
-    v71 := bat.reverse(bnj);	# 127 BKCreverse (v71:bat[:str,:str])<-(bnj:bat[:str,:str])
-    v72 := algebra.semijoin(b,v71);	# 128 ALGsemijoin (v72:bat[:str,:oid])<-(b:bat[:str,:oid])(v71:bat[:str,:str])
-    bnk := v72;	# 129  (bnk:bat[:str,:oid])<-(v72:bat[:str,:oid])
-#bnk:= b.semijoin(bnj.reverse); 	# 130  (_168:str)
-    v73 := io.print(bnk);	# 131 IOprint_val (v73:void)<-(bnk:bat[:str,:oid])
-#bnk.print; 	# 132  (_170:str)
-## testing the algebra.like command 	# 133  (_171:str)
-    v74 := bat.reverse(b);	# 134 BKCreverse (v74:bat[:oid,:str])<-(b:bat[:str,:oid])
-    v75 := algebra.like(v74,"ox");	# 135 ALGlike (v75:bat[:oid,:str])<-(v74:bat[:oid,:str])(_176:str)
-    v76 := io.print(v75);	# 136 IOprint_val (v76:void)<-(v75:bat[:oid,:str])
-#b.reverse.like("ox").print; 	# 137  (_176:str)
-    v77 := bat.reverse(b);	# 138 BKCreverse (v77:bat[:oid,:str])<-(b:bat[:str,:oid])
-    v78 := algebra.like(v77,"fo");	# 139 ALGlike (v78:bat[:oid,:str])<-(v77:bat[:oid,:str])(_181:str)
-    v79 := io.print(v78);	# 140 IOprint_val (v79:void)<-(v78:bat[:oid,:str])
-#b.reverse.like("fo").print; 	# 141  (_181:str)
-    v80 := bat.reverse(b);	# 142 BKCreverse (v80:bat[:oid,:str])<-(b:bat[:str,:oid])
-    v81 := algebra.like(v80,"fox");	# 143 ALGlike (v81:bat[:oid,:str])<-(v80:bat[:oid,:str])(_186:str)
-    v82 := io.print(v81);	# 144 IOprint_val (v82:void)<-(v81:bat[:oid,:str])
-#b.reverse.like("fox").print; 	# 145  (_186:str)
-    v83 := bat.reverse(b);	# 146 BKCreverse (v83:bat[:oid,:str])<-(b:bat[:str,:oid])
-    v84 := algebra.like(v83," fox");	# 147 ALGlike (v84:bat[:oid,:str])<-(v83:bat[:oid,:str])(_191:str)
-    v85 := io.print(v84);	# 148 IOprint_val (v85:void)<-(v84:bat[:oid,:str])
-#b.reverse.like(" fox").print; 	# 149  (_191:str)
-#quit; 	# 150  (_192:str)
-end main;	# 151  
+function user.main():void;              #  0 main:void {G}
+# Mil compiler Version 1.0) 
+# Copyright (c) 1993-2001, CWI. All rights reserved. 
+# Predefined code segment 
+#use "mal/iterator";		CAUSES an ERROR!! 
+    v0 := calc.oid(20000000);           #  5 v0:oid := CALCint2oid(_6:int) 
+    v1 := calc.setoid(v0);              #  6 v1:oid := CALCsetoidInc(v0:oid) 
+#setoid(oid(20000000)); 
+##test basic functionality of the BAT library. 
+##focussed on strings 
+##it includes bat.insertions,deletions,selections, and joins. 
+    v2 := bat.new(:str,:oid);           # 11 v2:bat[:str,:oid] := CMDBATnew(_13:str, _14:oid) {G}
+    b := v2;                            # 12 b:bat[:str,:oid] := v2:bat[:str,:oid] {G}
+#b:= new(str,int); 
+    v3 := bat.insert(b,"the",1@0);      # 14 v3:void := BKCinsert_bun(b:bat[:str,:oid], _18:str, _19:oid) 
+#b.insert("the",1); 
+    v4 := bat.insert(b,"quick",2@0);    # 16 v4:void := BKCinsert_bun(b:bat[:str,:oid], _22:str, _23:oid) 
+#b.insert("quick",2); 
+    v5 := bat.insert(b,"brown",3@0);    # 18 v5:void := BKCinsert_bun(b:bat[:str,:oid], _26:str, _27:oid) 
+#b.insert("brown",3); 
+    v6 := bat.insert(b,"fox",4@0);      # 20 v6:void := BKCinsert_bun(b:bat[:str,:oid], _30:str, _31:oid) 
+#b.insert("fox",4); 
+    v7 := bat.insert(b,"jumps",5@0);    # 22 v7:void := BKCinsert_bun(b:bat[:str,:oid], _34:str, _35:oid) 
+#b.insert("jumps",5); 
+    v8 := bat.insert(b,"over",6@0);     # 24 v8:void := BKCinsert_bun(b:bat[:str,:oid], _38:str, _39:oid) 
+#b.insert("over",6); 
+    v9 := bat.insert(b,"lazy",7@0);     # 26 v9:void := BKCinsert_bun(b:bat[:str,:oid], _42:str, _43:oid) 
+#b.insert("lazy",7); 
+    v10 := bat.insert(b,"dog",8@0);     # 28 v10:void := BKCinsert_bun(b:bat[:str,:oid], _46:str, _47:oid) 
+#b.insert("dog",8); 
+    v11 := calc.str(nil:void);          # 30 v11:str := CALCnil2str(_50:void) {G}
+    v12 := bat.insert(b,v11,9@0);       # 31 v12:void := BKCinsert_bun(b:bat[:str,:oid], v11:str, _52:oid) 
+#b.insert(str(nil),9); 
+    v13 := bat.insert(b,".",10@0);      # 33 v13:void := BKCinsert_bun(b:bat[:str,:oid], _55:str, _56:oid) 
+#b.insert(".",10); 
+    v14 := calc.oid(nil:void);          # 35 v14:oid := CALCnil2oid(_50:void) 
+    v15 := bat.insert(b,"",v14);        # 36 v15:void := BKCinsert_bun(b:bat[:str,:oid], _60:str, v14:oid) 
+#b.insert("",int(nil)); 
+    v16 := calc.str(nil:void);          # 38 v16:str := CALCnil2str(_50:void) {G}
+    v17 := calc.oid(nil:void);          # 39 v17:oid := CALCnil2oid(_50:void) 
+    v18 := bat.insert(b,v16,v17);       # 40 v18:void := BKCinsert_bun(b:bat[:str,:oid], v16:str, v17:oid) 
+#b.insert(str(nil),int(nil)); 
+    v19 := io.print(b);                 # 42 v19:void := IOprint_val(b:bat[:str,:oid]) 
+#b.print; 
+## Testing simple retrievals 
+    v20 := algebra.find(b,"the");       # 45 v20:oid := ALGfind(b:bat[:str,:oid], _70:str) 
+    v21 := io.print(v20);               # 46 v21:void := IOprint_val(v20:oid) 
+#b.find("the").print; 
+    v22 := algebra.find(b,"fox");       # 48 v22:oid := ALGfind(b:bat[:str,:oid], _74:str) 
+    v23 := io.print(v22);               # 49 v23:void := IOprint_val(v22:oid) 
+#b.find("fox").print; 
+    v24 := calc.str(nil:void);          # 51 v24:str := CALCnil2str(_50:void) {G}
+    v25 := algebra.find(b,v24);         # 52 v25:oid := ALGfind(b:bat[:str,:oid], v24:str) 
+    v26 := io.print(v25);               # 53 v26:void := IOprint_val(v25:oid) 
+#b.find(str(nil)).print; 
+## This should cause an error 
+    v27 := algebra.find(b,"cat");       # 56 v27:oid := ALGfind(b:bat[:str,:oid], _83:str) 
+    v28 := io.print(v27);               # 57 v28:void := IOprint_val(v27:oid) 
+catch MALException:str ;                # 58 MALException:str {J60}
+    io.print(MALException);             # 59 _86:void := IOprint_val(MALException:str) 
+exit MALException:str ;                 # 60 MALException:str 
+#b.find("cat").print; 
+## Can we bat.delete them and re-insert them later on 
+    v29 := bat.delete(b,"fox",4@0);     # 63 v29:void := BKCdelete_bun(b:bat[:str,:oid], _74:str, _90:oid) 
+#b.delete("fox",4); 
+    v30 := bat.delete(b,"the",1@0);     # 65 v30:void := BKCdelete_bun(b:bat[:str,:oid], _70:str, _93:oid) 
+#b.delete("the",1); 
+    v31 := bat.delete(b,".",10@0);      # 67 v31:void := BKCdelete_bun(b:bat[:str,:oid], _96:str, _97:oid) 
+#b.delete(".",10); 
+    v32 := io.print(b);                 # 69 v32:void := IOprint_val(b:bat[:str,:oid]) 
+#b.print; 
+    v33 := bat.insert(b,"fox",4@0);     # 71 v33:void := BKCinsert_bun(b:bat[:str,:oid], _74:str, _90:oid) 
+#b.insert("fox",4); 
+    v34 := bat.insert(b,"the",1@0);     # 73 v34:void := BKCinsert_bun(b:bat[:str,:oid], _104:str, _93:oid) 
+#b.insert("the",1); 
+    v35 := bat.insert(b,".",10@0);      # 75 v35:void := BKCinsert_bun(b:bat[:str,:oid], _96:str, _97:oid) 
+#b.insert(".",10); 
+    v36 := aggr.count(b);               # 77 v36:int := ALGcount_bat(b:bat[:str,:oid]) 
+    v37 := io.print(v36);               # 78 v37:void := IOprint_val(v36:int) 
+#b.count.print; 
+## Lets cut out a few sections 
+    v38 := algebra.select(b,2@0,4@0);   # 81 v38:bat[:str,:oid] := ALGselect(b:bat[:str,:oid], _113:oid, _90:oid) {G}
+    v39 := io.print(v38);               # 82 v39:void := IOprint_val(v38:bat[:str,:oid]) 
+#b.select(2,4).print; 
+    v40 := calc.oid(nil:void);          # 84 v40:oid := CALCnil2oid(_117:void) 
+    v41 := algebra.select(b,7@0,v40);   # 85 v41:bat[:str,:oid] := ALGselect(b:bat[:str,:oid], _119:oid, v40:oid) {G}
+    v42 := io.print(v41);               # 86 v42:void := IOprint_val(v41:bat[:str,:oid]) 
+#b.select(7,int(nil)).print; 
+    v43 := calc.oid(nil:void);          # 88 v43:oid := CALCnil2oid(_117:void) 
+    v44 := calc.oid(nil:void);          # 89 v44:oid := CALCnil2oid(_117:void) 
+    v45 := algebra.select(b,v43,v44);   # 90 v45:bat[:str,:oid] := ALGselect(b:bat[:str,:oid], v43:oid, v44:oid) {G}
+    v46 := io.print(v45);               # 91 v46:void := IOprint_val(v45:bat[:str,:oid]) 
+#b.select(int(nil),int(nil)).print; 
+## A 2-dimensional cut 
+    v47 := algebra.fragment(b,"fox","quick",1@0,5@0);# 94 v47:bat[:str,:oid] := ALGfragment(b:bat[:str,:oid], _129:str, _130:str, _131:oid, _132:oid) {G}
+    bns := v47;                         # 95 bns:bat[:str,:oid] := v47:bat[:str,:oid] {G}
+    v48 := io.print(bns);               # 96 v48:void := IOprint_val(bns:bat[:str,:oid]) 
+#bns:=b.fragment("fox","quick",1,5);bns.print; 
+    v49 := calc.str(nil:void);          # 98 v49:str := CALCnil2str(_117:void) {G}
+    v50 := algebra.fragment(b,"fox",v49,1@0,5@0);# 99 v50:bat[:str,:oid] := ALGfragment(b:bat[:str,:oid], _129:str, v49:str, _131:oid, _132:oid) {G}
+    v51 := io.print(v50);               #100 v51:void := IOprint_val(v50:bat[:str,:oid]) 
+#b.fragment("fox",str(nil),1,5).print; 
+    v52 := calc.str(nil:void);          #102 v52:str := CALCnil2str(_117:void) {G}
+    v53 := calc.oid(nil:void);          #103 v53:oid := CALCnil2oid(_117:void) 
+    v54 := calc.oid(nil:void);          #104 v54:oid := CALCnil2oid(_117:void) 
+    v55 := algebra.fragment(b,"fox",v52,v53,v54);#105 v55:bat[:str,:oid] := ALGfragment(b:bat[:str,:oid], _129:str, v52:str, v53:oid, v54:oid) {G}
+    v56 := io.print(v55);               #106 v56:void := IOprint_val(v55:bat[:str,:oid]) 
+#b.fragment("fox",str(nil),int(nil),int(nil)).print; 
+    v57 := calc.str(nil:void);          #108 v57:str := CALCnil2str(_117:void) {G}
+    v58 := calc.oid(nil:void);          #109 v58:oid := CALCnil2oid(_117:void) 
+    v59 := calc.oid(nil:void);          #110 v59:oid := CALCnil2oid(_117:void) 
+    v60 := algebra.fragment(b,v57,"f",v58,v59);#111 v60:bat[:str,:oid] := ALGfragment(b:bat[:str,:oid], v57:str, _150:str, v58:oid, v59:oid) {G}
+    v61 := io.print(v60);               #112 v61:void := IOprint_val(v60:bat[:str,:oid]) 
+#b.fragment(str(nil),"f",int(nil),int(nil)).print; 
+    v62 := bat.reverse(b);              #114 v62:bat[:oid,:str] := BKCreverse(b:bat[:str,:oid]) {G}
+    v63 := calc.oid(nil:void);          #115 v63:oid := CALCnil2oid(_155:void) 
+    v64 := calc.oid(nil:void);          #116 v64:oid := CALCnil2oid(_155:void) 
+    v65 := calc.str(nil:void);          #117 v65:str := CALCnil2str(_155:void) {G}
+    v66 := algebra.fragment(v62,v63,v64,v65,"f");#118 v66:bat[:oid,:str] := ALGfragment(v62:bat[:oid,:str], v63:oid, v64:oid, v65:str, _150:str) {G}
+    v67 := io.print(v66);               #119 v67:void := IOprint_val(v66:bat[:oid,:str]) 
+#b.reverse.fragment(int(nil),int(nil),str(nil),"f").print; 
+    v68 := bat.reverse(bns);            #121 v68:bat[:oid,:str] := BKCreverse(bns:bat[:str,:oid]) {G}
+    v69 := algebra.join(b,v68);         #122 v69:bat[:str,:str] := ALGjoin(b:bat[:str,:oid], v68:bat[:oid,:str]) {G}
+    bnj := v69;                         #123 bnj:bat[:str,:str] := v69:bat[:str,:str] {G}
+#bnj:= b.join(bns.reverse); 
+    v70 := io.print(bnj);               #125 v70:void := IOprint_val(bnj:bat[:str,:str]) 
+#bnj.print; 
+    v71 := bat.reverse(bnj);            #127 v71:bat[:str,:str] := BKCreverse(bnj:bat[:str,:str]) {G}
+    v72 := algebra.semijoin(b,v71);     #128 v72:bat[:str,:oid] := ALGsemijoin(b:bat[:str,:oid], v71:bat[:str,:str]) {G}
+    bnk := v72;                         #129 bnk:bat[:str,:oid] := v72:bat[:str,:oid] {G}
+#bnk:= b.semijoin(bnj.reverse); 
+    v73 := io.print(bnk);               #131 v73:void := IOprint_val(bnk:bat[:str,:oid]) 
+#bnk.print; 
+## testing the algebra.like command 
+    v74 := bat.reverse(b);              #134 v74:bat[:oid,:str] := BKCreverse(b:bat[:str,:oid]) {G}
+    v75 := algebra.like(v74,"ox");      #135 v75:bat[:oid,:str] := ALGlike(v74:bat[:oid,:str], _176:str) {G}
+    v76 := io.print(v75);               #136 v76:void := IOprint_val(v75:bat[:oid,:str]) 
+#b.reverse.like("ox").print; 
+    v77 := bat.reverse(b);              #138 v77:bat[:oid,:str] := BKCreverse(b:bat[:str,:oid]) {G}
+    v78 := algebra.like(v77,"fo");      #139 v78:bat[:oid,:str] := ALGlike(v77:bat[:oid,:str], _181:str) {G}
+    v79 := io.print(v78);               #140 v79:void := IOprint_val(v78:bat[:oid,:str]) 
+#b.reverse.like("fo").print; 
+    v80 := bat.reverse(b);              #142 v80:bat[:oid,:str] := BKCreverse(b:bat[:str,:oid]) {G}
+    v81 := algebra.like(v80,"fox");     #143 v81:bat[:oid,:str] := ALGlike(v80:bat[:oid,:str], _186:str) {G}
+    v82 := io.print(v81);               #144 v82:void := IOprint_val(v81:bat[:oid,:str]) 
+#b.reverse.like("fox").print; 
+    v83 := bat.reverse(b);              #146 v83:bat[:oid,:str] := BKCreverse(b:bat[:str,:oid]) {G}
+    v84 := algebra.like(v83," fox");    #147 v84:bat[:oid,:str] := ALGlike(v83:bat[:oid,:str], _191:str) {G}
+    v85 := io.print(v84);               #148 v85:void := IOprint_val(v84:bat[:oid,:str]) 
+#b.reverse.like(" fox").print; 
+#quit; 
+end main;                               #151  
 #-------------------------#
 # h		t	  # name
 # str		oid	  # type

@@ -50,40 +50,40 @@ stdout of test 'tst130` in directory 'src/mal` itself:
 #fc:= batcalc.isnil(bc);
 #io.print(fc);
 #
-function user.main():void;	# 0  (main:void)
-# testing batcalc isnull versions 	# 1  (_1:str)
-    bi := bat.new(:int,:int);	# 2 CMDBATnew (bi:bat[:int,:int])<-(_3:int)(_3:int)
-    bat.insert(bi,1,2);	# 3 BKCinsert_bun (_4:void)<-(bi:bat[:int,:int])(_5:int)(_6:int)
-    bat.insert(bi,1,nil:int);	# 4 BKCinsert_bun (_7:void)<-(bi:bat[:int,:int])(_5:int)(_8:int)
-    zi := batcalc.isnil(bi);	# 5 CMDunaryISNIL (zi:bat[:int,:bit])<-(bi:bat[:int,:int])
-    io.print(zi);	# 6 IOprint_val (_10:void)<-(zi:bat[:int,:bit])
-    bb := bat.new(:int,:bit);	# 7 CMDBATnew (bb:bat[:int,:bit])<-(_3:int)(_12:bit)
-    bat.insert(bb,2,true);	# 8 BKCinsert_bun (_13:void)<-(bb:bat[:int,:bit])(_6:int)(_14:bit)
-    bat.insert(bb,2,nil:bit);	# 9 BKCinsert_bun (_15:void)<-(bb:bat[:int,:bit])(_6:int)(_16:bit)
-    bat.insert(bb,2,false);	# 10 BKCinsert_bun (_17:void)<-(bb:bat[:int,:bit])(_6:int)(_18:bit)
-    zb := batcalc.isnil(bb);	# 11 CMDunaryISNIL (zb:bat[:int,:bit])<-(bb:bat[:int,:bit])
-    io.print(zb);	# 12 IOprint_val (_20:void)<-(zb:bat[:int,:bit])
-    bf := bat.new(:int,:flt);	# 13 CMDBATnew (bf:bat[:int,:flt])<-(_3:int)(_22:flt)
-    bat.insert(bf,3,2);	# 14 BKCinsert_bun (_23:void)<-(bf:bat[:int,:flt])(_24:int)(_25:flt)
-    bat.insert(bf,3,nil:flt);	# 15 BKCinsert_bun (_26:void)<-(bf:bat[:int,:flt])(_24:int)(_27:flt)
-    fi := batcalc.isnil(bf);	# 16 CMDunaryISNIL (fi:bat[:int,:bit])<-(bf:bat[:int,:flt])
-    io.print(fi);	# 17 IOprint_val (_29:void)<-(fi:bat[:int,:bit])
-    bs := bat.new(:int,:str);	# 18 CMDBATnew (bs:bat[:int,:str])<-(_3:int)(_31:str)
-    bat.insert(bs,4,"hello");	# 19 BKCinsert_bun (_32:void)<-(bs:bat[:int,:str])(_33:int)(_34:str)
-    bat.insert(bs,4,nil:str);	# 20 BKCinsert_bun (_35:void)<-(bs:bat[:int,:str])(_33:int)(_36:str)
-    bat.insert(bs,4,"");	# 21 BKCinsert_bun (_37:void)<-(bs:bat[:int,:str])(_33:int)(_38:str)
-    zs := batcalc.isnil(bs);	# 22 CMDunaryISNIL (zs:bat[:int,:bit])<-(bs:bat[:int,:str])
-    io.print(zs);	# 23 IOprint_val (_40:void)<-(zs:bat[:int,:bit])
-    bo := bat.new(:int,:oid);	# 24 CMDBATnew (bo:bat[:int,:oid])<-(_3:int)(_42:oid)
-    bat.insert(bo,5,0@0);	# 25 BKCinsert_bun (_43:void)<-(bo:bat[:int,:oid])(_44:int)(_45:oid)
-    bat.insert(bo,5,nil:oid);	# 26 BKCinsert_bun (_46:void)<-(bo:bat[:int,:oid])(_44:int)(_47:oid)
-    fo := batcalc.isnil(bo);	# 27 CMDunaryISNIL (fo:bat[:int,:bit])<-(bo:bat[:int,:oid])
-    io.print(fo);	# 28 IOprint_val (_49:void)<-(fo:bat[:int,:bit])
-    bc := bat.new(:int,:chr);	# 29 CMDBATnew (bc:bat[:int,:chr])<-(_3:int)(_51:chr)
-    bat.insert(bc,6,'a');	# 30 BKCinsert_bun (_52:void)<-(bc:bat[:int,:chr])(_53:int)(_54:chr)
-    bat.insert(bc,6,nil:chr);	# 31 BKCinsert_bun (_55:void)<-(bc:bat[:int,:chr])(_53:int)(_56:chr)
-    fc := batcalc.isnil(bc);	# 32 CMDunaryISNIL (fc:bat[:int,:chr])<-(bc:bat[:int,:chr])
-    io.print(fc);	# 33 IOprint_val (_58:void)<-(fc:bat[:int,:chr])
+function user.main():void;              #  0 main:void {G}
+# testing batcalc isnull versions 
+    bi := bat.new(:int,:int);           #  2 bi:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    bat.insert(bi,1,2);                 #  3 _4:void := BKCinsert_bun(bi:bat[:int,:int], _5:int, _6:int) 
+    bat.insert(bi,1,nil:int);           #  4 _7:void := BKCinsert_bun(bi:bat[:int,:int], _5:int, _8:int) 
+    zi := batcalc.isnil(bi);            #  5 zi:bat[:int,:bit] := CMDunaryISNIL(bi:bat[:int,:int]) {G}
+    io.print(zi);                       #  6 _10:void := IOprint_val(zi:bat[:int,:bit]) 
+    bb := bat.new(:int,:bit);           #  7 bb:bat[:int,:bit] := CMDBATnew(_3:int, _12:bit) {G}
+    bat.insert(bb,2,true);              #  8 _13:void := BKCinsert_bun(bb:bat[:int,:bit], _6:int, _14:bit) 
+    bat.insert(bb,2,nil:bit);           #  9 _15:void := BKCinsert_bun(bb:bat[:int,:bit], _6:int, _16:bit) 
+    bat.insert(bb,2,false);             # 10 _17:void := BKCinsert_bun(bb:bat[:int,:bit], _6:int, _18:bit) 
+    zb := batcalc.isnil(bb);            # 11 zb:bat[:int,:bit] := CMDunaryISNIL(bb:bat[:int,:bit]) {G}
+    io.print(zb);                       # 12 _20:void := IOprint_val(zb:bat[:int,:bit]) 
+    bf := bat.new(:int,:flt);           # 13 bf:bat[:int,:flt] := CMDBATnew(_3:int, _22:flt) {G}
+    bat.insert(bf,3,2);                 # 14 _23:void := BKCinsert_bun(bf:bat[:int,:flt], _24:int, _25:flt) 
+    bat.insert(bf,3,nil:flt);           # 15 _26:void := BKCinsert_bun(bf:bat[:int,:flt], _24:int, _27:flt) 
+    fi := batcalc.isnil(bf);            # 16 fi:bat[:int,:bit] := CMDunaryISNIL(bf:bat[:int,:flt]) {G}
+    io.print(fi);                       # 17 _29:void := IOprint_val(fi:bat[:int,:bit]) 
+    bs := bat.new(:int,:str);           # 18 bs:bat[:int,:str] := CMDBATnew(_3:int, _31:str) {G}
+    bat.insert(bs,4,"hello");           # 19 _32:void := BKCinsert_bun(bs:bat[:int,:str], _33:int, _34:str) 
+    bat.insert(bs,4,nil:str);           # 20 _35:void := BKCinsert_bun(bs:bat[:int,:str], _33:int, _36:str) 
+    bat.insert(bs,4,"");                # 21 _37:void := BKCinsert_bun(bs:bat[:int,:str], _33:int, _38:str) 
+    zs := batcalc.isnil(bs);            # 22 zs:bat[:int,:bit] := CMDunaryISNIL(bs:bat[:int,:str]) {G}
+    io.print(zs);                       # 23 _40:void := IOprint_val(zs:bat[:int,:bit]) 
+    bo := bat.new(:int,:oid);           # 24 bo:bat[:int,:oid] := CMDBATnew(_3:int, _42:oid) {G}
+    bat.insert(bo,5,0@0);               # 25 _43:void := BKCinsert_bun(bo:bat[:int,:oid], _44:int, _45:oid) 
+    bat.insert(bo,5,nil:oid);           # 26 _46:void := BKCinsert_bun(bo:bat[:int,:oid], _44:int, _47:oid) 
+    fo := batcalc.isnil(bo);            # 27 fo:bat[:int,:bit] := CMDunaryISNIL(bo:bat[:int,:oid]) {G}
+    io.print(fo);                       # 28 _49:void := IOprint_val(fo:bat[:int,:bit]) 
+    bc := bat.new(:int,:chr);           # 29 bc:bat[:int,:chr] := CMDBATnew(_3:int, _51:chr) {G}
+    bat.insert(bc,6,'a');               # 30 _52:void := BKCinsert_bun(bc:bat[:int,:chr], _53:int, _54:chr) 
+    bat.insert(bc,6,nil:chr);           # 31 _55:void := BKCinsert_bun(bc:bat[:int,:chr], _53:int, _56:chr) 
+    fc := batcalc.isnil(bc);            # 32 fc:bat[:int,:chr] := CMDunaryISNIL(bc:bat[:int,:chr]) {G}
+    io.print(fc);                       # 33 _58:void := IOprint_val(fc:bat[:int,:chr]) 
 end main;	# 34  
 #-----------------#
 # h	t	  # name

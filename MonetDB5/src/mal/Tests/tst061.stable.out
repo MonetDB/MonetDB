@@ -28,20 +28,20 @@ stdout of test 'tst061` in directory 'src/mal` itself:
 #z:= <(d1,2.0:dbl);
 #print(z);
 #
-function user.main():void;	# 0  (main:void)
-# type coercion and creation 	# 1  (_1:str)
-    o := calc.oid("999@0");	# 2 CALCstr2oid (o:oid)<-(_3:str)
-    os := calc.str(o);	# 3 CALCoid2str (os:str)<-(o:oid)
-    i := calc.sht(1);	# 4 CALCint2sht (i:sht)<-(_6:int)
-    l := calc.lng(2);	# 5 CALCint2lng (l:lng)<-(_8:int)
-    f := calc.flt(3.4000001);	# 6 CALCflt2flt (f:flt)<-(_10:flt)
-    j := calc.sht("1");	# 7 CALCstr2sht (j:sht)<-(_12:str)
-    d0 := calc.dbl(1);	# 8 CALCflt2dbl (d0:dbl)<-(_14:flt)
-    d1 := calc.dbl(2);	# 9 CALCflt2dbl (d1:dbl)<-(_16:flt)
-    z := calc.<(d0,2:dbl);	# 10 CALCcompLTdbldbl (z:bit)<-(d0:dbl)(_18:dbl)
-    io.print(z);	# 11 IOprint_val (_19:void)<-(z:bit)
-    z := calc.<(d1,2:dbl);	# 12 CALCcompLTdbldbl (z:bit)<-(d1:dbl)(_18:dbl)
-    io.print(z);	# 13 IOprint_val (_20:void)<-(z:bit)
+function user.main():void;              #  0 main:void {G}
+# type coercion and creation 
+    o := calc.oid("999@0");             #  2 o:oid := CALCstr2oid(_3:str) 
+    os := calc.str(o);                  #  3 os:str := CALCoid2str(o:oid) {G}
+    i := calc.sht(1);                   #  4 i:sht := CALCint2sht(_6:int) 
+    l := calc.lng(2);                   #  5 l:lng := CALCint2lng(_8:int) 
+    f := calc.flt(3.4000001);           #  6 f:flt := CALCflt2flt(_10:flt) 
+    j := calc.sht("1");                 #  7 j:sht := CALCstr2sht(_12:str) 
+    d0 := calc.dbl(1);                  #  8 d0:dbl := CALCflt2dbl(_14:flt) 
+    d1 := calc.dbl(2);                  #  9 d1:dbl := CALCflt2dbl(_16:flt) 
+    z := calc.<(d0,2:dbl);              # 10 z:bit := CALCcompLTdbldbl(d0:dbl, _18:dbl) 
+    io.print(z);                        # 11 _19:void := IOprint_val(z:bit) 
+    z := calc.<(d1,2:dbl);              # 12 z:bit := CALCcompLTdbldbl(d1:dbl, _18:dbl) 
+    io.print(z);                        # 13 _20:void := IOprint_val(z:bit) 
 end main;	# 14  
 [ true ]
 [ false ]

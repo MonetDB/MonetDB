@@ -24,19 +24,19 @@ stdout of test 'tst2550` in directory 'src/mal` itself:
 #exit L;
 #	return (noes,val):=(false,seed);
 #end;
-factory user.random(seed:int) (noes:bit,val:int);	# 0  (noes:bit)(val:int)<-(seed:int)
-    i := seed;	# 1  (i:int)<-(seed:int)
-barrier L := true;	# 2  (L:bit)<-(_6:bit) jump 7
-    i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-(_7:int)(i:int)
-    i := calc.%(i,32767);	# 4 CALCbinarycheckMODintint (i:int)<-(i:int)(_8:int)
-    yield (noes,val):= (true,i);	# 5  (noes:bit)(val:int)<-(_6:bit)(i:int)
-    redo L;	# 6  (L:bit) jump 3
-exit L;	# 7  (L:bit)
-    return (noes,val):= (false,seed);	# 8  (noes:bit)(val:int)<-(_9:bit)(seed:int)
+factory user.random(seed:int) (noes:bit,val:int);#  0 (noes:bit, val:int) := user.random(seed:int) 
+    i := seed;                          #  1 i:int := seed:int 
+barrier L := true;                      #  2 L:bit := _6:bit {J7}
+    i := calc.*(125,i);                 #  3 i:int := CALCbinaryMULintint(_7:int, i:int) 
+    i := calc.%(i,32767);               #  4 i:int := CALCbinarycheckMODintint(i:int, _8:int) 
+    yield (noes,val):= (true,i);        #  5 (noes:bit, val:int) := _6:bit, i:int 
+    redo L;                             #  6 L:bit {J3}
+exit L;                                 #  7 L:bit 
+    return (noes,val):= (false,seed);   #  8 (noes:bit, val:int) := _9:bit, seed:int 
 end random;	# 9  
 #
-function user.main():void;	# 0  (main:void)
-# Factory functions seem to provide a better control structure 	# 1  (_2:str)
+function user.main():void;              #  0 main:void 
+# Factory functions seem to provide a better control structure 
 end main;	# 2  
 
 # 08:01:09 >  

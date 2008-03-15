@@ -25,16 +25,16 @@ stdout of test 'tst4630` in directory 'src/optimizer` itself:
 #	xx:= algebra.join(yy,c1);
 #    return qry:= xx;
 #end qry;
-function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];	# 0  dynamic (qry:bat[:any_1,:any_4])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])(c:bat[:any_3,:any_4])
-    a1 := a;	# 1  (a1:bat[:any_1,:any_2])<-(a:bat[:any_1,:any_2])
-    b1 := b;	# 2  (b1:bat[:any_2,:any_3])<-(b:bat[:any_2,:any_3])
-    c1 := c;	# 3  (c1:bat[:any_3,:any_4])<-(c:bat[:any_3,:any_4])
-    z := algebra.join(a,b);	# 4 ALGjoin (z:bat[:any,:any])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])
-    zz := algebra.join(z,c);	# 5 ALGjoin (zz:bat[:any,:any])<-(z:bat[:any,:any])(c:bat[:any_3,:any_4])
-    ww := algebra.join(z,a1);	# 6 ALGjoin (ww:bat[:any,:any])<-(z:bat[:any,:any])(a1:bat[:any_1,:any_2])
-    yy := algebra.join(ww,b1);	# 7 ALGjoin (yy:bat[:any,:any])<-(ww:bat[:any,:any])(b1:bat[:any_2,:any_3])
-    xx := algebra.join(yy,c1);	# 8 ALGjoin (xx:bat[:any,:any])<-(yy:bat[:any,:any])(c1:bat[:any_3,:any_4])
-    return qry := xx;	# 9  (qry:bat[:any_1,:any_4])<-(xx:bat[:any,:any])
+function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];#  0 qry:bat[:any_1,:any_4] := user.qry(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], c:bat[:any_3,:any_4]) {UPG}
+    a1 := a;                            #  1 a1:bat[:any_1,:any_2] := a:bat[:any_1,:any_2] {PG}
+    b1 := b;                            #  2 b1:bat[:any_2,:any_3] := b:bat[:any_2,:any_3] {PG}
+    c1 := c;                            #  3 c1:bat[:any_3,:any_4] := c:bat[:any_3,:any_4] {PG}
+    z := algebra.join(a,b);             #  4 z:bat[:any,:any] := ALGjoin(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3]) {PG}
+    zz := algebra.join(z,c);            #  5 zz:bat[:any,:any] := ALGjoin(z:bat[:any,:any], c:bat[:any_3,:any_4]) {PG}
+    ww := algebra.join(z,a1);           #  6 ww:bat[:any,:any] := ALGjoin(z:bat[:any,:any], a1:bat[:any_1,:any_2]) {G}
+    yy := algebra.join(ww,b1);          #  7 yy:bat[:any,:any] := ALGjoin(ww:bat[:any,:any], b1:bat[:any_2,:any_3]) {G}
+    xx := algebra.join(yy,c1);          #  8 xx:bat[:any,:any] := ALGjoin(yy:bat[:any,:any], c1:bat[:any_3,:any_4]) {G}
+    return qry := xx;                   #  9 qry:bat[:any_1,:any_4] := xx:bat[:any,:any] {G}
 end qry;	# 10  
 #
 #optimizer.joinPath("user","qry");
@@ -42,10 +42,10 @@ end qry;	# 10
 #mdb.list("user","qry");
 #
 #
-function user.main():void;	# 0  (main:void)
-# testing join path optimizations 	# 1  (_1:str)
-# the common part should not be replicated 	# 2  (_2:str)
-    mdb.list("user","qry");	# 3 MDBlist3 (_7:void)<-(_4:str)(_5:str)
+function user.main():void;              #  0 main:void {G}
+# testing join path optimizations 
+# the common part should not be replicated 
+    mdb.list("user","qry");             #  3 _7:void := MDBlist3(_4:str, _5:str) 
 end main;	# 4  
 function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];
     z := algebra.join(a,b);

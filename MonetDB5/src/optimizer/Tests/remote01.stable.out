@@ -49,40 +49,40 @@ stdout of test 'remote01` in directory 'src/optimizer` itself:
 #mapi.disconnect(mid);
 #optimizer.remoteQueries();
 #
-function user.main():void;	# 0  (main:void)
-# First test of the remoteQueries optimizer 	# 1  (_1:str)
-# we create a remote bat and fake a bind operation. 	# 2  (_2:str)
-    cat := inspect.getEnvironment();	# 3 INSPECTgetEnvironment (cat:bat[:str,:str])
-    fs := algebra.find(cat,"mapi_port");	# 4 ALGfind (fs:str)<-(cat:bat[:str,:str])(_5:str)
-    port := calc.int(fs);	# 5 CALCstr2int (port:int)<-(fs:str)
-#io.printf("port %d\n",port); 	# 6  (_7:str)
-    mid := mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");	# 7 SERVERreconnectAlias (mid:int)<-(_9:str)(port:int)(_10:str)(_11:str)(_11:str)(_12:str)
-    mapi.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\");");	# 8 SERVERquery (_13:void)<-(mid:int)(_14:str)
-    mapi.rpc(mid,"bat.insert(rb,1,1);");	# 9 SERVERquery (_15:void)<-(mid:int)(_16:str)
-    mapi.rpc(mid,"bat.insert(rb,3,3);");	# 10 SERVERquery (_17:void)<-(mid:int)(_18:str)
-    mapi.rpc(mid,"bat.insert(rb,5,5);");	# 11 SERVERquery (_19:void)<-(mid:int)(_20:str)
-    mapi.rpc(mid,"bat.insert(rb,6,6);");	# 12 SERVERquery (_21:void)<-(mid:int)(_22:str)
-    mapi.rpc(mid,"bat.insert(rb,7,7);");	# 13 SERVERquery (_23:void)<-(mid:int)(_24:str)
-    mapi.rpc(mid,"c:=algebra.select(rb,0,12);");	# 14 SERVERquery (_25:void)<-(mid:int)(_26:str)
-    c:bat[:int,:int]  := mapi.rpc(mid,"io.print(c);");	# 15 SERVERmapi_rpc_bat (c:bat[:int,:int])<-(mid:int)(_28:str)
-    io.print(c);	# 16 IOprint_val (_29:void)<-(c:bat[:int,:int])
-    mapi.rpc(mid,"c:=algebra.select(rb,0,4);");	# 17 SERVERquery (_30:void)<-(mid:int)(_31:str)
-    c:bat[:int,:int]  := mapi.rpc(mid,"io.print(c);");	# 18 SERVERmapi_rpc_bat (c:bat[:int,:int])<-(mid:int)(_28:str)
-    io.print(c);	# 19 IOprint_val (_32:void)<-(c:bat[:int,:int])
-    b:bat[:int,:int]  := mapi.bind(mid,"rbat");	# 20 SERVERbindBAT (b:bat[:int,:int])<-(mid:int)(_34:str)
-    io.print(b);	# 21 IOprint_val (_35:void)<-(b:bat[:int,:int])
-# see if we can do some remote selections. 	# 22  (_36:str)
-    mapi.rpc(mid,"d:=algebra.select(b,5,10);");	# 23 SERVERquery (_37:void)<-(mid:int)(_38:str)
-    low := calc.+(5,1);	# 24 CALCbinaryADDintint (low:int)<-(_40:int)(_41:int)
-    mapi.put(mid,"low",low);	# 25 SERVERput (_42:void)<-(mid:int)(_43:str)(low:int)
-    mapi.rpc(mid,"e:=algebra.select(d,low,7);");	# 26 SERVERquery (_44:void)<-(mid:int)(_45:str)
-    mapi.rpc(mid,"i:=aggr.count(d);");	# 27 SERVERquery (_46:void)<-(mid:int)(_47:str)
-    i:lng  := mapi.rpc(mid,"io.print(i);");	# 28 SERVERmapi_rpc_single_row (i:lng)<-(mid:int)(_49:str)
-    io.printf(" count %d\n",i);	# 29 IOprint_formatted_lng (_50:void)<-(_51:str)(i:lng)
-    d:bat[:int,:int]  := mapi.rpc(mid,"io.print(d);");	# 30 SERVERmapi_rpc_bat (d:bat[:int,:int])<-(mid:int)(_53:str)
-    io.print(d);	# 31 IOprint_val (_54:void)<-(d:bat[:int,:int])
-    mapi.disconnect(mid);	# 32 SERVERdisconnect (_55:void)<-(mid:int)
-#optimizer.remoteQueries(); 	# 33  (_56:str)
+function user.main():void;              #  0 main:void {G}
+# First test of the remoteQueries optimizer 
+# we create a remote bat and fake a bind operation. 
+    cat := inspect.getEnvironment();    #  3 cat:bat[:str,:str] {G}
+    fs := algebra.find(cat,"mapi_port");#  4 fs:str := ALGfind(cat:bat[:str,:str], _5:str) {G}
+    port := calc.int(fs);               #  5 port:int := CALCstr2int(fs:str) 
+#io.printf("port %d\n",port); 
+    mid := mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");#  7 mid:int := SERVERreconnectAlias(_9:str, port:int, _10:str, _11:str, _11:str, _12:str) 
+    mapi.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\");");#  8 _13:void := SERVERquery(mid:int, _14:str) 
+    mapi.rpc(mid,"bat.insert(rb,1,1);");#  9 _15:void := SERVERquery(mid:int, _16:str) 
+    mapi.rpc(mid,"bat.insert(rb,3,3);");# 10 _17:void := SERVERquery(mid:int, _18:str) 
+    mapi.rpc(mid,"bat.insert(rb,5,5);");# 11 _19:void := SERVERquery(mid:int, _20:str) 
+    mapi.rpc(mid,"bat.insert(rb,6,6);");# 12 _21:void := SERVERquery(mid:int, _22:str) 
+    mapi.rpc(mid,"bat.insert(rb,7,7);");# 13 _23:void := SERVERquery(mid:int, _24:str) 
+    mapi.rpc(mid,"c:=algebra.select(rb,0,12);");# 14 _25:void := SERVERquery(mid:int, _26:str) 
+    c:bat[:int,:int]  := mapi.rpc(mid,"io.print(c);");# 15 c:bat[:int,:int] := SERVERmapi_rpc_bat(mid:int, _28:str) {G}
+    io.print(c);                        # 16 _29:void := IOprint_val(c:bat[:int,:int]) 
+    mapi.rpc(mid,"c:=algebra.select(rb,0,4);");# 17 _30:void := SERVERquery(mid:int, _31:str) 
+    c:bat[:int,:int]  := mapi.rpc(mid,"io.print(c);");# 18 c:bat[:int,:int] := SERVERmapi_rpc_bat(mid:int, _28:str) {G}
+    io.print(c);                        # 19 _32:void := IOprint_val(c:bat[:int,:int]) 
+    b:bat[:int,:int]  := mapi.bind(mid,"rbat");# 20 b:bat[:int,:int] := SERVERbindBAT(mid:int, _34:str) {G}
+    io.print(b);                        # 21 _35:void := IOprint_val(b:bat[:int,:int]) 
+# see if we can do some remote selections. 
+    mapi.rpc(mid,"d:=algebra.select(b,5,10);");# 23 _37:void := SERVERquery(mid:int, _38:str) 
+    low := calc.+(5,1);                 # 24 low:int := CALCbinaryADDintint(_40:int, _41:int) 
+    mapi.put(mid,"low",low);            # 25 _42:void := SERVERput(mid:int, _43:str, low:int) 
+    mapi.rpc(mid,"e:=algebra.select(d,low,7);");# 26 _44:void := SERVERquery(mid:int, _45:str) 
+    mapi.rpc(mid,"i:=aggr.count(d);");  # 27 _46:void := SERVERquery(mid:int, _47:str) 
+    i:lng  := mapi.rpc(mid,"io.print(i);");# 28 i:lng := SERVERmapi_rpc_single_row(mid:int, _49:str) 
+    io.printf(" count %d\n",i);         # 29 _50:void := IOprint_formatted_lng(_51:str, i:lng) 
+    d:bat[:int,:int]  := mapi.rpc(mid,"io.print(d);");# 30 d:bat[:int,:int] := SERVERmapi_rpc_bat(mid:int, _53:str) {G}
+    io.print(d);                        # 31 _54:void := IOprint_val(d:bat[:int,:int]) 
+    mapi.disconnect(mid);               # 32 _55:void := SERVERdisconnect(mid:int) 
+#optimizer.remoteQueries(); 
 end main;	# 34  
 #-----------------#
 # h	t	  # name

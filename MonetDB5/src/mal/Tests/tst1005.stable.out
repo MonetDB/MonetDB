@@ -42,29 +42,29 @@ stdout of test 'tst1005` in directory 'src/mal` itself:
 ##exit MALException;
 ##print("done");
 #
-function user.main():void;	# 0  (main:void)
-# the first of a series of BBP test cases 	# 1  (_1:str)
-# make sure you can bind to a BAT through the box 	# 2  (_2:str)
-    bbp.open();	# 3 CMDbbpopen (_3:void)
-    b := bat.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-(_5:int)(_5:int)
-    bat.insert(b,1,2);	# 5 BKCinsert_bun (_6:void)<-(b:bat[:int,:int])(_7:int)(_8:int)
-    bat.setName(b,"myfirstlocalbat");	# 6 BKCsetName (_9:void)<-(b:bat[:int,:int])(_10:str)
-    c := bbp.bind("myfirstbat");	# 7 CMDbbpbind (c:bat[:any,:any])<-(_12:str)
-    io.print(c);	# 8 IOprint_val (_13:void)<-(c:bat[:any,:any])
-    bbp.close();	# 9 CMDbbpclose (_14:void)
-# at the end of the session, the BBP should have discarded 	# 10  (_15:str)
-# the temporary bats of the user 	# 11  (_16:str)
-    bbp.open();	# 12 CMDbbpopen (_17:void)
-    v := bbp.take("myfirstbat");	# 13 CMDbbptake (v:bat[:any,:any])<-(_12:str)
-catch MALException:str ;	# 14  (MALException:str) jump 16
-    io.printf("%s\n",MALException);	# 15 IOprint_formatted_str (_20:void)<-(_21:str)(MALException:str)
-exit MALException:str ;	# 16  (MALException:str)
-    io.print("v");	# 17 IOprint_val (_22:void)<-(_23:str)
-    io.print(v);	# 18 IOprint_val (_24:void)<-(v:bat[:any,:any])
-    x := bbp.getObjects();	# 19 CMDbbpGetObjects (x:bat[:int,:str])
-    io.print("getObjects");	# 20 IOprint_val (_26:void)<-(_27:str)
-    io.print(x);	# 21 IOprint_val (_28:void)<-(x:bat[:int,:str])
-    bbp.close();	# 22 CMDbbpclose (_29:void)
+function user.main():void;              #  0 main:void {G}
+# the first of a series of BBP test cases 
+# make sure you can bind to a BAT through the box 
+    bbp.open();                         #  3 _3:void 
+    b := bat.new(:int,:int);            #  4 b:bat[:int,:int] := CMDBATnew(_5:int, _5:int) {G}
+    bat.insert(b,1,2);                  #  5 _6:void := BKCinsert_bun(b:bat[:int,:int], _7:int, _8:int) 
+    bat.setName(b,"myfirstlocalbat");   #  6 _9:void := BKCsetName(b:bat[:int,:int], _10:str) 
+    c := bbp.bind("myfirstbat");        #  7 c:bat[:any,:any] := CMDbbpbind(_12:str) {G}
+    io.print(c);                        #  8 _13:void := IOprint_val(c:bat[:any,:any]) 
+    bbp.close();                        #  9 _14:void 
+# at the end of the session, the BBP should have discarded 
+# the temporary bats of the user 
+    bbp.open();                         # 12 _17:void 
+    v := bbp.take("myfirstbat");        # 13 v:bat[:any,:any] := CMDbbptake(_12:str) {G}
+catch MALException:str ;                # 14 MALException:str {J16}
+    io.printf("%s\n",MALException);     # 15 _20:void := IOprint_formatted_str(_21:str, MALException:str) 
+exit MALException:str ;                 # 16 MALException:str 
+    io.print("v");                      # 17 _22:void := IOprint_val(_23:str) 
+    io.print(v);                        # 18 _24:void := IOprint_val(v:bat[:any,:any]) 
+    x := bbp.getObjects();              # 19 x:bat[:int,:str] {G}
+    io.print("getObjects");             # 20 _26:void := IOprint_val(_27:str) 
+    io.print(x);                        # 21 _28:void := IOprint_val(x:bat[:int,:str]) 
+    bbp.close();                        # 22 _29:void 
 end main;	# 23  
 MALException:bbp.bind:failed to locate object in box
 [ "v" ]

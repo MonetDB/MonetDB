@@ -24,16 +24,16 @@ stdout of test 'tst4015` in directory 'src/optimizer` itself:
 #io.print(t);
 #optimizer.peephole();
 #
-function user.main():void;	# 0  (main:void)
-# testing repeatative reverse optimalisation 	# 1  (_1:str)
-    r := bat.new(:int,:int);	# 2 CMDBATnew (r:bat[:int,:int])<-(_3:int)(_3:int)
-    bat.insert(r,5:int,1:int);	# 3 BKCinsert_bun (_4:void)<-(r:bat[:int,:int])(_5:int)(_6:int)
-    o := 0@0:oid;	# 4  (o:oid)<-(_8:oid)
-    rr := bat.reverse(r);	# 5 BKCreverse (rr:bat[:int,:int])<-(r:bat[:int,:int])
-    z := algebra.markT(rr,o);	# 6 ALGtmark (z:bat[:int,:oid])<-(rr:bat[:int,:int])(o:oid)
-    t := r;	# 7  (t:bat[:int,:int])<-(r:bat[:int,:int])
-    k := 23:int;	# 8  (k:int)<-(_14:int)
-    io.print(t);	# 9 IOprint_val (_15:void)<-(t:bat[:int,:int])
+function user.main():void;              #  0 main:void {G}
+# testing repeatative reverse optimalisation 
+    r := bat.new(:int,:int);            #  2 r:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    bat.insert(r,5:int,1:int);          #  3 _4:void := BKCinsert_bun(r:bat[:int,:int], _5:int, _6:int) 
+    o := 0@0:oid;                       #  4 o:oid := _8:oid 
+    rr := bat.reverse(r);               #  5 rr:bat[:int,:int] := BKCreverse(r:bat[:int,:int]) {G}
+    z := algebra.markT(rr,o);           #  6 z:bat[:int,:oid] := ALGtmark(rr:bat[:int,:int], o:oid) {G}
+    t := r;                             #  7 t:bat[:int,:int] := r:bat[:int,:int] {G}
+    k := 23:int;                        #  8 k:int := _14:int 
+    io.print(t);                        #  9 _15:void := IOprint_val(t:bat[:int,:int]) 
 end main;	# 10  
 #-----------------#
 # h	t	  # name

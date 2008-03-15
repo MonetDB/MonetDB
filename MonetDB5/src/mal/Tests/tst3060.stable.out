@@ -17,18 +17,18 @@ stdout of test 'tst3060` in directory 'src/mal` itself:
 #	io.print(a);
 #	return tst:=a;
 #end tst;
-function user.tst(a:any_1{type="int,flt"}):any_1;	# 0  dynamic (tst:any_1)<-(a:any_1)
-    io.print(a);	# 1 IOprint_val (_3:void)<-(a:any_1)
-    return tst := a;	# 2  (tst:any_1)<-(a:any_1)
+function user.tst(a:any_1{type="int,flt"}):any_1;#  0 tst:any_1 := user.tst(a:any_1) {UP}
+    io.print(a);                        #  1 _3:void := IOprint_val(a:any_1) {P}
+    return tst := a;                    #  2 tst:any_1 := a:any_1 {P}
 end tst;	# 3  
 #
 #user.tst(1);
 #user.tst("wrong");
 #
-function user.main():void;	# 0  (main:void)
-# The direction for future expansion of the properties 	# 1  (_1:str)
-    user.tst(1);	# 2  (_2:int)<-(_3:int)
-    user.tst("wrong");	# 3  (_4:str)<-(_5:str)
+function user.main():void;              #  0 main:void {G}
+# The direction for future expansion of the properties 
+    user.tst(1);                        #  2 _2:int := user.tst(_3:int) 
+    user.tst("wrong");                  #  3 _4:str := user.tst(_5:str) {G}
 end main;	# 4  
 [ 1 ]
 [ "wrong" ]

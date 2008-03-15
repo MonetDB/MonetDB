@@ -31,27 +31,27 @@ stdout of test 'ID.914159` in directory 'tests/BugsViaSourgeforce` itself:
 #	aa_a := io.print(unknown);
 #end crash;
 !TypeException:user.crash[2]:'mil.take' undefined in: unknown:any := mil.take(_3:str)
-function user.crash():void;	# 0  (crash:void)
-#	mil.line("\tprint($t);\n"); 	# 1  (_1:str)
-    unknown := mil.take("unknown");	# 2  unknown (unknown:any)<-(_3:str)
-    aa_a := io.print(unknown);	# 3 IOprint_val (aa_a:void)<-(unknown:any)
+function user.crash():void;             #  0 crash:void 
+#	io.print("\tprint($t);\n"); 
+    unknown := mil.take("unknown");     #  2 unknown:any := mil.take(_3:str) {U}
+    aa_a := io.print(unknown);          #  3 aa_a:void := IOprint_val(unknown:any) 
 end crash;	# 4  
 ##	io.print("crash();");
 #	ba_a := user.crash();
 #
-function user.main():void;	# 0  (main:void)
-# Monet Mil to Mal compiler 	# 1  (_1:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
-#Predefined code segment 	# 3  (_3:str)
-#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
-#A few guidelines to maximize usefullness. 	# 6  (_6:str)
-#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
-#use the "mil_schema" for additional support routines 	# 9  (_9:str)
-#	io.print("PROC crash() : void"); 	# 10  (_10:str)
-#	io.print("crash();"); 	# 11  (_11:str)
-    ba_a := user.crash();	# 12  (ba_a:void)
+function user.main():void;              #  0 main:void 
+# Monet Mil to Mal compiler 
+# Copyright (c) 2001-2004, CWI. All rights reserved. 
+#Predefined code segment 
+#The compiler can not guarantee an accurate compilation, 
+#because MIL unlike MAL is a dynamically typed language. 
+#A few guidelines to maximize usefullness. 
+#- make the type of variables explicit, in particular 'nil' 
+#- upon advice of M2m to remap identifiers, change it in your program directly 
+#use the "mil_schema" for additional support routines 
+#	io.print("PROC crash() : void"); 
+#	io.print("crash();"); 
+    ba_a := user.crash();               # 12 ba_a:void 
 end main;	# 13  
 !MALException:user.crash[0]:Syntax error in script
 

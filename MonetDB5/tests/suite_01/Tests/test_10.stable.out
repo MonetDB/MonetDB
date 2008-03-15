@@ -37,29 +37,29 @@ stdout of test 'test_10` in directory 'tests/suite_01` itself:
 #	mil.line("quit();");
 #	da_a := clients.quit();
 #
-function user.main():void;	# 0  (main:void)
-# Monet Mil to Mal compiler 	# 1  (_1:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
-#Predefined code segment 	# 3  (_3:str)
-#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
-#A few guidelines to maximize usefullness. 	# 6  (_6:str)
-#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
-#use the "mil_schema" for additional support routines 	# 9  (_9:str)
-#	io.print("setoid(oid(20000000));"); 	# 10  (_10:str)
-    aa_a := calc.oid(20000000);	# 11 CALCint2oid (aa_a:oid)<-(_12:int)
-    ba_a := calc.setoid(aa_a);	# 12 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-#	io.print("# long string problems in the Monet parser\n"); 	# 13  (_14:str)
-    a := "asdfdsfasdfadfadfa";	# 14  (a:str)<-(_16:str)
-#	io.print("var b:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01\";"); 	# 15  (_17:str)
-    b := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01";	# 16  (b:str)<-(_19:str)
-#	io.print("var c:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789\";"); 	# 17  (_20:str)
-    c := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";	# 18  (c:str)<-(_22:str)
-#	io.print("c.print();"); 	# 19  (_23:str)
-    ca_a := io.print(c);	# 20 IOprint_val (ca_a:void)<-(c:str)
-#	io.print("quit();"); 	# 21  (_25:str)
-    da_a := clients.quit();	# 22 CLTquit (da_a:void)
+function user.main():void;              #  0 main:void {G}
+# Monet Mil to Mal compiler 
+# Copyright (c) 2001-2004, CWI. All rights reserved. 
+#Predefined code segment 
+#The compiler can not guarantee an accurate compilation, 
+#because MIL unlike MAL is a dynamically typed language. 
+#A few guidelines to maximize usefullness. 
+#- make the type of variables explicit, in particular 'nil' 
+#- upon advice of M2m to remap identifiers, change it in your program directly 
+#use the "mil_schema" for additional support routines 
+#	io.print("setoid(oid(20000000));"); 
+    aa_a := calc.oid(20000000);         # 11 aa_a:oid := CALCint2oid(_12:int) 
+    ba_a := calc.setoid(aa_a);          # 12 ba_a:oid := CALCsetoidInc(aa_a:oid) 
+#	io.print("# long string problems in the Monet parser\n"); 
+    a := "asdfdsfasdfadfadfa";          # 14 a:str := _16:str {G}
+#	io.print("var b:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01\";"); 
+    b := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x01";# 16 b:str := _19:str {G}
+#	io.print("var c:=\"01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789\";"); 
+    c := "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789";# 18 c:str := _22:str {G}
+#	io.print("c.print();"); 
+    ca_a := io.print(c);                # 20 ca_a:void := IOprint_val(c:str) 
+#	io.print("quit();"); 
+    da_a := clients.quit();             # 22 da_a:void 
 end main;	# 23  
 [ "01234567890123456789012345678901234567890123456789012345678901234567890123456789xxadf jakdfjahfjklhflkjahdflkjadh ljkh j faljks fljka fkjla fad fj fhja fjkla fljkadsfljka dflja fljadd x x x x x x xx x0123456789" ]
 #quit();

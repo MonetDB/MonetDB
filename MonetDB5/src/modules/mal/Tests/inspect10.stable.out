@@ -19,13 +19,12 @@ stdout of test 'inspect10` in directory 'src/modules/mal` itself:
 #	io.print(b);
 #	mdb.showFunction();
 #end dummy;
-!TypeException:user.dummy[4]:'mdb.showFunction' undefined in: _5:any := mdb.showFunction()
 
-function user.dummy(i:int):void;	# 0  (dummy:void)<-(i:int)
-    io.print(i);	# 1 IOprint_val (_2:void)<-(i:int)
-    b := mdb.getDefinition();	# 2 MDBgetDefinition (b:bat[:void,:str])
-    io.print(b);	# 3 IOprint_val (_4:void)<-(b:bat[:void,:str])
-    mdb.showFunction();	# 4  unknown (_5:any)
+function user.dummy(i:int):void;        #  0 dummy:void := user.dummy(i:int) {G}
+    io.print(i);                        #  1 _2:void := IOprint_val(i:int) 
+    b := mdb.getDefinition();           #  2 b:bat[:void,:str] {G}
+    io.print(b);                        #  3 _4:void := IOprint_val(b:bat[:void,:str]) 
+    mdb.showFunction();                 #  4 _5:any {U}
 end dummy;	# 5  
 #
 #user.dummy(1);
@@ -37,14 +36,13 @@ end dummy;	# 5
 #mdb.showFunction("user","dummy");
 #
 !TypeException:user.main[6]:'mdb.showFunction' undefined in: _10:any := mdb.showFunction(_7:str, _8:str)
-
-function user.main():void;	# 0  (main:void)
-#self inspection of the code base 	# 1  (_1:str)
-    user.dummy(1);	# 2  (_2:void)<-(_3:int)
-    io.printf("get function properties\n");	# 3 IOprint_str (_4:void)<-(_5:str)
-    l := inspect.getSignature("user","dummy");	# 4 INSPECTgetSignature (l:bat[:str,:str])<-(_7:str)(_8:str)
-    io.print(l);	# 5 IOprint_val (_9:void)<-(l:bat[:str,:str])
-    mdb.showFunction("user","dummy");	# 6  unknown (_10:any)<-(_7:str)(_8:str)
+function user.main():void;              #  0 main:void {G}
+#self inspection of the code base 
+    user.dummy(1);                      #  2 _2:void := user.dummy(_3:int) 
+    io.printf("get function properties\n");#  3 _4:void := IOprint_str(_5:str) 
+    l := inspect.getSignature("user","dummy");#  4 l:bat[:str,:str] := INSPECTgetSignature(_7:str, _8:str) {G}
+    io.print(l);                        #  5 _9:void := IOprint_val(l:bat[:str,:str]) 
+    mdb.showFunction("user","dummy");   #  6 _10:any := mdb.showFunction(_7:str, _8:str) {U}
 end main;	# 7  
 
 # 00:03:56 >  

@@ -15,12 +15,12 @@ stdout of test 'tst840` in directory 'src/mal` itself:
 #s:= "\nline1\n\
 #io.printf("%s",s);
 #
-function user.main():void;	# 0  (main:void)
-# raw IO may screw up the front-end 	# 1  (_1:str)
-    s := " \nline1\n\nline2\n";	# 2  (s:str)<-(_3:str)
-    io.printf("----\n");	# 3 IOprint_str (_4:void)<-(_5:str)
-    io.printf("%s",s);	# 4 IOprint_formatted_str (_6:void)<-(_7:str)(s:str)
-    io.printf("----\n");	# 5 IOprint_str (_8:void)<-(_5:str)
+function user.main():void;              #  0 main:void {G}
+# raw IO may screw up the front-end 
+    s := " \nline1\n\nline2\n";         #  2 s:str := _3:str {G}
+    io.printf("----\n");                #  3 _4:void := IOprint_str(_5:str) 
+    io.printf("%s",s);                  #  4 _6:void := IOprint_formatted_str(_7:str, s:str) 
+    io.printf("----\n");                #  5 _8:void := IOprint_str(_5:str) 
 end main;	# 6  
 ----
  

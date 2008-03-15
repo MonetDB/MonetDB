@@ -26,18 +26,18 @@ stdout of test 'tst252` in directory 'src/mal` itself:
 #
 #
 #
-function user.main():void;	# 0  (main:void)
-#Testing a loop over string bats 	# 1  (_1:str)
-    b := bat.new(:str,:str);	# 2 CMDBATnew (b:bat[:str,:str])<-(_3:str)(_4:str)
-    bat.insert(b,"one","red");	# 3 BKCinsert_bun (_5:void)<-(b:bat[:str,:str])(_6:str)(_7:str)
-    bat.insert(b,"two","green");	# 4 BKCinsert_bun (_8:void)<-(b:bat[:str,:str])(_9:str)(_10:str)
-    io.print(b);	# 5 IOprint_val (_11:void)<-(b:bat[:str,:str])
-barrier (v,h,t):= bat.newIterator(b);	# 6 CHPbunIterator (v:lng)(h:str)(t:str)<-(b:bat[:str,:str]) jump 11
-    io.print(v);	# 7 IOprint_val (_15:void)<-(v:lng)
-    io.print(h);	# 8 IOprint_val (_16:void)<-(h:str)
-    io.print(t);	# 9 IOprint_val (_17:void)<-(t:str)
-    redo (v,h,t):= bat.hasMoreElements(b);	# 10 CHPbunHasMoreElements (v:lng)(h:str)(t:str)<-(b:bat[:str,:str]) jump 7
-exit v;	# 11  (v:lng)
+function user.main():void;              #  0 main:void {G}
+#Testing a loop over string bats 
+    b := bat.new(:str,:str);            #  2 b:bat[:str,:str] := CMDBATnew(_3:str, _4:str) {G}
+    bat.insert(b,"one","red");          #  3 _5:void := BKCinsert_bun(b:bat[:str,:str], _6:str, _7:str) 
+    bat.insert(b,"two","green");        #  4 _8:void := BKCinsert_bun(b:bat[:str,:str], _9:str, _10:str) 
+    io.print(b);                        #  5 _11:void := IOprint_val(b:bat[:str,:str]) 
+barrier (v,h,t):= bat.newIterator(b);   #  6 (v:lng, h:str, t:str) := CHPbunIterator(b:bat[:str,:str]) {GJ11}
+    io.print(v);                        #  7 _15:void := IOprint_val(v:lng) 
+    io.print(h);                        #  8 _16:void := IOprint_val(h:str) 
+    io.print(t);                        #  9 _17:void := IOprint_val(t:str) 
+    redo (v,h,t):= bat.hasMoreElements(b);# 10 (v:lng, h:str, t:str) := CHPbunHasMoreElements(b:bat[:str,:str]) {GJ7}
+exit v;                                 # 11 v:lng 
 end main;	# 12  
 #-------------------------#
 # h	tmp_4		  # name

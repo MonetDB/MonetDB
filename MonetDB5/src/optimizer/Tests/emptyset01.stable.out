@@ -19,13 +19,13 @@ stdout of test 'emptyset01` in directory 'src/optimizer` itself:
 #exit MALException;
 #exit(x,y,z);
 #end do;
-function user.do{inline}(V1:bat[:oid,:int]):void;	# 0  (do:void)<-(V1:bat[:oid,:int])
-barrier (x,y,z):= bat.newIterator(V1);	# 1 CHPbunIterator (x:lng)(y:oid)(z:int)<-(V1:bat[:oid,:int]) jump 6
-    io.print("loop");	# 2 IOprint_val (_5:void)<-(_6:str)
-catch MALException:str ;	# 3  (MALException:str) jump 5
-    io.print(MALException);	# 4 IOprint_val (_8:void)<-(MALException:str)
-exit MALException:str ;	# 5  (MALException:str)
-exit (x,y,z);	# 6  (x:lng)(y:oid)(z:int)
+function user.do{inline}(V1:bat[:oid,:int]):void;#  0 do:void := user.do(V1:bat[:oid,:int]) {G}
+barrier (x,y,z):= bat.newIterator(V1);  #  1 (x:lng, y:oid, z:int) := CHPbunIterator(V1:bat[:oid,:int]) {J6}
+    io.print("loop");                   #  2 _5:void := IOprint_val(_6:str) 
+catch MALException:str ;                #  3 MALException:str {J5}
+    io.print(MALException);             #  4 _8:void := IOprint_val(MALException:str) 
+exit MALException:str ;                 #  5 MALException:str 
+exit (x,y,z);                           #  6 (x:lng, y:oid, z:int 
 end do;	# 7  
 #
 #function tst();
@@ -40,43 +40,43 @@ end do;	# 7
 #	do(V1);
 #	io.print("done");
 #end tst;
-function user.tst():void;	# 0  (tst:void)
-    V1 := bat.new(:oid,:int);	# 1 CMDBATnew (V1:bat[:oid,:int])<-(_2:oid)(_3:int)
-    V7 := bat.new(:oid,:int);	# 2 CMDBATnew (V7:bat[:oid,:int])<-(_2:oid)(_3:int)
-    V10{rows=0:lng} := bat.new(:int,:oid);	# 3 CMDBATnew (V10:bat[:int,:oid])<-(_3:int)(_2:oid)
-    V11 := bat.reverse(V10);	# 4 BKCreverse (V11:bat[:oid,:int])<-(V10:bat[:int,:oid])
-    V12 := algebra.kdifference(V7,V11);	# 5 ALGkdiff (V12:bat[:oid,:int])<-(V7:bat[:oid,:int])(V11:bat[:oid,:int])
-    V16 := algebra.markT(V12);	# 6 ALGtmark_default (V16:bat[:oid,:oid])<-(V12:bat[:oid,:int])
-    V17 := algebra.join(V16,V7);	# 7 ALGjoin (V17:bat[:oid,:int])<-(V16:bat[:oid,:oid])(V7:bat[:oid,:int])
-    bat.append(V1,V17);	# 8 BKCappend_wrap (_11:void)<-(V1:bat[:oid,:int])(V17:bat[:oid,:int])
-    user.do(V1);	# 9  (_12:void)<-(V1:bat[:oid,:int])
-    io.print("done");	# 10 IOprint_val (_13:void)<-(_14:str)
+function user.tst():void;               #  0 tst:void {G}
+    V1 := bat.new(:oid,:int);           #  1 V1:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    V7 := bat.new(:oid,:int);           #  2 V7:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    V10{rows=0:lng} := bat.new(:int,:oid);#  3 V10:bat[:int,:oid] := CMDBATnew(_3:int, _2:oid) {G}
+    V11 := bat.reverse(V10);            #  4 V11:bat[:oid,:int] := BKCreverse(V10:bat[:int,:oid]) {G}
+    V12 := algebra.kdifference(V7,V11); #  5 V12:bat[:oid,:int] := ALGkdiff(V7:bat[:oid,:int], V11:bat[:oid,:int]) {G}
+    V16 := algebra.markT(V12);          #  6 V16:bat[:oid,:oid] := ALGtmark_default(V12:bat[:oid,:int]) {G}
+    V17 := algebra.join(V16,V7);        #  7 V17:bat[:oid,:int] := ALGjoin(V16:bat[:oid,:oid], V7:bat[:oid,:int]) {G}
+    bat.append(V1,V17);                 #  8 _11:void := BKCappend_wrap(V1:bat[:oid,:int], V17:bat[:oid,:int]) 
+    user.do(V1);                        #  9 _12:void := user.do(V1:bat[:oid,:int]) 
+    io.print("done");                   # 10 _13:void := IOprint_val(_14:str) 
 end tst;	# 11  
 #    optimizer.inline("user","tst");
 #    optimizer.costModel("user","tst");
 #    optimizer.emptySet("user","tst");
 #	mdb.List("user","tst");
 #
-function user.main():void;	# 0  (main:void)
-#beware that the ESoptimizer does not remove the type of MALException 	# 1  (_1:str)
-    mdb.List("user","tst");	# 2 MDBlist3Detail (_7:void)<-(_3:str)(_4:str)
+function user.main():void;              #  0 main:void {G}
+#beware that the ESoptimizer does not remove the type of MALException 
+    mdb.List("user","tst");             #  2 _7:void := MDBlist3Detail(_3:str, _4:str) 
 end main;	# 3  
-function user.tst():void;	# 0  (tst:void)
-    V1 := bat.new(:oid,:int);	# 1 CMDBATnew (V1:bat[:oid,:int])<-(_2:oid)(_3:int)
-    V7 := bat.new(:oid,:int);	# 2 CMDBATnew (V7:bat[:oid,:int])<-(_2:oid)(_3:int)
-    V10{rows=0:lng} := bat.new(:int,:oid);	# 3 CMDBATnew (V10:bat[:int,:oid])<-(_3:int)(_2:oid)
-    V11{rows=0:lng} := bat.reverse(V10);	# 4 BKCreverse (V11:bat[:oid,:int])<-(V10:bat[:int,:oid])
-    V12 := V7;	# 5  (V12:bat[:oid,:int])<-(V7:bat[:oid,:int])
-    V16 := algebra.markT(V12);	# 6 ALGtmark_default (V16:bat[:oid,:oid])<-(V12:bat[:oid,:int])
-    V17 := algebra.join(V16,V7);	# 7 ALGjoin (V17:bat[:oid,:int])<-(V16:bat[:oid,:oid])(V7:bat[:oid,:int])
-    bat.append(V1,V17);	# 8 BKCappend_wrap (_11:void)<-(V1:bat[:oid,:int])(V17:bat[:oid,:int])
-barrier (_17,_18,_19):= bat.newIterator(V1);	# 9 CHPbunIterator (_17:lng)(_18:oid)(_19:int)<-(V1:bat[:oid,:int]) jump 14
-    io.print("loop");	# 10 IOprint_val (_20:void)<-(_21:str)
-catch MALException:str ;	# 11  (MALException:str) jump 13
-    io.print(MALException);	# 12 IOprint_val (_23:void)<-(MALException:str)
-exit MALException:str ;	# 13  (MALException:str)
-exit (_17,_18,_19);	# 14  (_17:lng)(_18:oid)(_19:int)
-    io.print("done");	# 15 IOprint_val (_13:void)<-(_14:str)
+function user.tst():void;               #  0 tst:void {G}
+    V1 := bat.new(:oid,:int);           #  1 V1:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    V7 := bat.new(:oid,:int);           #  2 V7:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    V10{rows=0:lng} := bat.new(:int,:oid);#  3 V10:bat[:int,:oid] := CMDBATnew(_3:int, _2:oid) {G}
+    V11{rows=0:lng} := bat.reverse(V10);#  4 V11:bat[:oid,:int] := BKCreverse(V10:bat[:int,:oid]) {G}
+    V12 := V7;                          #  5 V12:bat[:oid,:int] := V7:bat[:oid,:int] {G}
+    V16 := algebra.markT(V12);          #  6 V16:bat[:oid,:oid] := ALGtmark_default(V12:bat[:oid,:int]) {G}
+    V17 := algebra.join(V16,V7);        #  7 V17:bat[:oid,:int] := ALGjoin(V16:bat[:oid,:oid], V7:bat[:oid,:int]) {G}
+    bat.append(V1,V17);                 #  8 _11:void := BKCappend_wrap(V1:bat[:oid,:int], V17:bat[:oid,:int]) 
+barrier (_17,_18,_19):= bat.newIterator(V1);#  9 (_17:lng, _18:oid, _19:int) := CHPbunIterator(V1:bat[:oid,:int]) {J14}
+    io.print("loop");                   # 10 _20:void := IOprint_val(_21:str) 
+catch MALException:str ;                # 11 MALException:str {J13}
+    io.print(MALException);             # 12 _23:void := IOprint_val(MALException:str) 
+exit MALException:str ;                 # 13 MALException:str 
+exit (_17,_18,_19);                     # 14 (_17:lng, _18:oid, _19:int 
+    io.print("done");                   # 15 _13:void := IOprint_val(_14:str) 
 end tst;	# 16  
 
 # 08:05:29 >  

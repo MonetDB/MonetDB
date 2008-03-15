@@ -16,8 +16,8 @@ stdout of test 'tst3030` in directory 'src/mal` itself:
 ## note the use of the first parameter to obtain property set
 #function newsemijoin(A:bat[:int,:any_1], 
 #end newsemijoin;
-function user.newsemijoin(A:bat[:int,:any_1],B:bat[:int,:any_2]):bat[:int,:any_1];	# 0  dynamic (newsemijoin:bat[:int,:any_1])<-(A:bat[:int,:any_1])(B:bat[:int,:any_2])
-    return newsemijoin := nil;	# 1  (newsemijoin:bat[:int,:any_1])<-(_4:BAT)
+function user.newsemijoin(A:bat[:int,:any_1],B:bat[:int,:any_2]):bat[:int,:any_1];#  0 newsemijoin:bat[:int,:any_1] := user.newsemijoin(A:bat[:int,:any_1], B:bat[:int,:any_2]) {UPG}
+    return newsemijoin := nil;          #  1 newsemijoin:bat[:int,:any_1] := _4:BAT {G}
 end newsemijoin;	# 2  
 #z:= bat.new(:int{sorted=true},:int);
 #w:= bat.new(:int{sequence=true},:int);
@@ -29,16 +29,15 @@ end newsemijoin;	# 2
 !TypeException:user.main[6]:'algebra.sort' undefined in: y:int := algebra.sort(w:bat[:int,:int])
 
 !TypeException:user.main[8]:'algebra.sort' undefined in: y:int := algebra.sort(w:bat[:int,:int])
-
-function user.main():void;	# 0  (main:void)
-#Parsing properties and keeping them around 	# 1  (_1:str)
-# note the use of the first parameter to obtain property set 	# 2  (_2:str)
-    z := bat.new(:int,:int);	# 3 CMDBATnew (z:bat[:int,:int])<-(_4:int)(_4:int)
-    w:bat[:int,:int]{sorted=true,dense=true}  := bat.new(:int,:int);	# 4 CMDBATnew (w:bat[:int,:int])<-(_4:int)(_4:int)
-    w:bat[:int,:int]{sorted=true,dense=true}  := bat.new(:int,:int);	# 5 CMDBATnew (w:bat[:int,:int])<-(_4:int)(_4:int)
-    y:int{sorted=true}  := algebra.sort(w);	# 6  unknown (y:int)<-(w:bat[:int,:int])
-    io.print(1);	# 7 IOprint_val (_8:void)<-(_9:int)
-    y:int{sorted=true}  := algebra.sort(w);	# 8  unknown (y:int)<-(w:bat[:int,:int])
+function user.main():void;              #  0 main:void {G}
+#Parsing properties and keeping them around 
+# note the use of the first parameter to obtain property set 
+    z := bat.new(:int,:int);            #  3 z:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
+    w:bat[:int,:int]{sorted=true,dense=true}  := bat.new(:int,:int);#  4 w:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
+    w:bat[:int,:int]{sorted=true,dense=true}  := bat.new(:int,:int);#  5 w:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
+    y:int{sorted=true}  := algebra.sort(w);#  6 y:int := algebra.sort(w:bat[:int,:int]) {U}
+    io.print(1);                        #  7 _8:void := IOprint_val(_9:int) 
+    y:int{sorted=true}  := algebra.sort(w);#  8 y:int := algebra.sort(w:bat[:int,:int]) {U}
 end main;	# 9  
 
 # 08:01:16 >  

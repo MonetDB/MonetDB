@@ -23,28 +23,28 @@ stdout of test 'SRexample` in directory 'src/optimizer` itself:
 #optimizer.strengthReduction();
 #mdb.list();
 #
-function user.main():void;	# 0  (main:void)
-    i := 23;	# 1  (i:int)<-(_9:int)
-# simple strength reduction 	# 2  (_1:str)
-    j := "hello world";	# 3  (j:str)<-(_3:str)
-    k := nil:str;	# 4  (k:str)<-(_5:str)
-barrier go := true;	# 5  (go:bit)<-(_7:bit) jump 10
-    j := "not moved";	# 6  (j:str)<-(_10:str)
-    k := j;	# 7  (k:str)<-(j:str)
-    io.print(i);	# 8 IOprint_val (_11:void)<-(i:int)
-    redo go := false;	# 9  (go:bit)<-(_12:bit) jump 6
-exit go;	# 10  (go:bit)
-    z := j;	# 11  (z:str)<-(j:str)
-# This shows it should not work for blocks in general 	# 12  (_14:str)
-    r := "hello world";	# 13  (r:str)<-(_3:str)
-barrier go := true;	# 14  (go:bit)<-(_7:bit) jump 19
-    s := 23;	# 15  (s:int)<-(_9:int)
-    r := "not moved";	# 16  (r:str)<-(_10:str)
-    k := r;	# 17  (k:str)<-(r:str)
-    io.print(s);	# 18 IOprint_val (_17:void)<-(s:int)
-exit go;	# 19  (go:bit)
-    z := r;	# 20  (z:str)<-(r:str)
-    mdb.list();	# 21 MDBlist (_19:void)
+function user.main():void;              #  0 main:void {G}
+    i := 23;                            #  1 i:int := _9:int 
+# simple strength reduction 
+    j := "hello world";                 #  3 j:str := _3:str {G}
+    k := nil:str;                       #  4 k:str := _5:str {G}
+barrier go := true;                     #  5 go:bit := _7:bit {J10}
+    j := "not moved";                   #  6 j:str := _10:str {G}
+    k := j;                             #  7 k:str := j:str {G}
+    io.print(i);                        #  8 _11:void := IOprint_val(i:int) 
+    redo go := false;                   #  9 go:bit := _12:bit {J6}
+exit go;                                # 10 go:bit 
+    z := j;                             # 11 z:str := j:str {G}
+# This shows it should not work for blocks in general 
+    r := "hello world";                 # 13 r:str := _3:str {G}
+barrier go := true;                     # 14 go:bit := _7:bit {J19}
+    s := 23;                            # 15 s:int := _9:int 
+    r := "not moved";                   # 16 r:str := _10:str {G}
+    k := r;                             # 17 k:str := r:str {G}
+    io.print(s);                        # 18 _17:void := IOprint_val(s:int) 
+exit go;                                # 19 go:bit 
+    z := r;                             # 20 z:str := r:str {G}
+    mdb.list();                         # 21 _19:void 
 end main;	# 22  
 [ 23 ]
 [ 23 ]

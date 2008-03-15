@@ -20,26 +20,26 @@ stdout of test 'tst905` in directory 'src/mal` itself:
 #	redo (v,i):= nextElement(1:lng,10:lng);
 #exit (v,i);
 #
-function user.main():void;	# 0  (main:void)
-# the multiplex code blocks. 	# 1  (_1:str)
-    b := bat.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-(_3:lng)(_3:lng)
-barrier (v,i):= language.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-(_6:lng) jump 6
-    bat.insert(b,i,i);	# 4 BKCinsert_bun (_7:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
-    redo (v,i):= language.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-(_8:lng)(_9:lng) jump 4
-exit (v,i);	# 6  (v:bit)(i:lng)
-    c := algebra.copy(b);	# 7 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
-    _15 := bat.new(nil:lng,nil:lng);	# 8 CMDBATnew (_15:bat[:lng,:lng])<-(_16:lng)(_16:lng)
-barrier (_18,_19,_20):= bat.newIterator(b);	# 9 CHPbunIterator (_18:lng)(_19:lng)(_20:lng)<-(b:bat[:lng,:lng]) jump 17
-    _22 := algebra.find(c,_19);	# 10 ALGfind (_22:lng)<-(c:bat[:lng,:lng])(_19:lng)
-    _24 := calc.+(_20,_22);	# 11 CALCbinaryADDlnglng (_24:lng)<-(_20:lng)(_22:lng)
-    bat.insert(_15,_19,_24);	# 12 BKCinsert_bun (_25:void)<-(_15:bat[:lng,:lng])(_19:lng)(_24:lng)
-    redo (_18,_19,_20):= bat.hasMoreElements(b);	# 13 CHPbunHasMoreElements (_18:lng)(_19:lng)(_20:lng)<-(b:bat[:lng,:lng]) jump 10
-catch MALException:str ;	# 14  (MALException:str) jump 16
-    redo (_18,_19,_20):= bat.hasMoreElements(b);	# 15 CHPbunHasMoreElements (_18:lng)(_19:lng)(_20:lng)<-(b:bat[:lng,:lng]) jump 10
-exit MALException:str ;	# 16  (MALException:str)
-exit (_18,_19,_20);	# 17  (_18:lng)(_19:lng)(_20:lng)
-    x:bat[:lng,:lng]  := _15;	# 18  (x:bat[:lng,:lng])<-(_15:bat[:lng,:lng])
-    io.print(x);	# 19 IOprint_val (_14:void)<-(x:bat[:lng,:lng])
+function user.main():void;              #  0 main:void {G}
+# the multiplex code blocks. 
+    b := bat.new(:lng,:lng);            #  2 b:bat[:lng,:lng] := CMDBATnew(_3:lng, _3:lng) {G}
+barrier (v,i):= language.newRange(0:lng);#  3 (v:bit, i:lng) := RNGnewRange_lng(_6:lng) {J6}
+    bat.insert(b,i,i);                  #  4 _7:void := BKCinsert_bun(b:bat[:lng,:lng], i:lng, i:lng) 
+    redo (v,i):= language.nextElement(1:lng,10:lng);#  5 (v:bit, i:lng) := RNGnextElement_lng(_8:lng, _9:lng) {J4}
+exit (v,i);                             #  6 (v:bit, i:lng 
+    c := algebra.copy(b);               #  7 c:bat[:lng,:lng] := ALGcopy(b:bat[:lng,:lng]) {G}
+    _15 := bat.new(nil:lng,nil:lng);    #  8 _15:bat[:lng,:lng] := CMDBATnew(_16:lng, _16:lng) {G}
+barrier (_18,_19,_20):= bat.newIterator(b);#  9 (_18:lng, _19:lng, _20:lng) := CHPbunIterator(b:bat[:lng,:lng]) {J17}
+    _22 := algebra.find(c,_19);         # 10 _22:lng := ALGfind(c:bat[:lng,:lng], _19:lng) 
+    _24 := calc.+(_20,_22);             # 11 _24:lng := CALCbinaryADDlnglng(_20:lng, _22:lng) 
+    bat.insert(_15,_19,_24);            # 12 _25:void := BKCinsert_bun(_15:bat[:lng,:lng], _19:lng, _24:lng) 
+    redo (_18,_19,_20):= bat.hasMoreElements(b);# 13 (_18:lng, _19:lng, _20:lng) := CHPbunHasMoreElements(b:bat[:lng,:lng]) {J10}
+catch MALException:str ;                # 14 MALException:str {J16}
+    redo (_18,_19,_20):= bat.hasMoreElements(b);# 15 (_18:lng, _19:lng, _20:lng) := CHPbunHasMoreElements(b:bat[:lng,:lng]) {J10}
+exit MALException:str ;                 # 16 MALException:str 
+exit (_18,_19,_20);                     # 17 (_18:lng, _19:lng, _20:lng 
+    x:bat[:lng,:lng]  := _15;           # 18 x:bat[:lng,:lng] := _15:bat[:lng,:lng] {G}
+    io.print(x);                        # 19 _14:void := IOprint_val(x:bat[:lng,:lng]) 
 end main;	# 20  
 #-----------------#
 # h	tmp_6	  # name

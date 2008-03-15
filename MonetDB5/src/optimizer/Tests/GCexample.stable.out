@@ -22,20 +22,20 @@ stdout of test 'GCexample` in directory 'src/optimizer` itself:
 #	optimizer.garbageCollector();
 #	mdb.list();
 #
-function user.main():void;	# 0  (main:void)
-    t1 := bat.new(:oid,:int);	# 1 CMDBATnew (t1:bat[:oid,:int])<-(_2:oid)(_3:int)
-    t2 := array.grid(132000,8,1,0);	# 2 ARRAYgrid_int (t2:bat[:oid,:int])<-(_5:int)(_6:int)(_7:int)(_8:int)
-    t3 := array.grid(1,100,10560,0);	# 3 ARRAYgrid_int (t3:bat[:oid,:int])<-(_7:int)(_10:int)(_11:int)(_8:int)
-    t4 := array.grid(1,100,10560,0,8);	# 4 ARRAYgridShift_int (t4:bat[:oid,:int])<-(_7:int)(_10:int)(_11:int)(_8:int)(_6:int)
-    t5 := batcalc.+(t2,t4);	# 5 CMDbatADD_int_int_int (t5:bat[:oid,:int])<-(t2:bat[:oid,:int])(t4:bat[:oid,:int])
-    t2 := nil;	# 6  (t2:bat[:oid,:int])<-(_18:BAT)
-    t4 := nil;	# 7  (t4:bat[:oid,:int])<-(_18:BAT)
-    t6 := batcalc.oid(t5);	# 8 CMDconvert_int_oid (t6:bat[:oid,:oid])<-(t5:bat[:oid,:int])
-    t5 := nil;	# 9  (t5:bat[:oid,:int])<-(_18:BAT)
-    t7 := algebra.join(t6,t1);	# 10 ALGjoin (t7:bat[:oid,:int])<-(t6:bat[:oid,:oid])(t1:bat[:oid,:int])
-    t6 := nil;	# 11  (t6:bat[:oid,:oid])<-(_18:BAT)
-    t1 := nil;	# 12  (t1:bat[:oid,:int])<-(_18:BAT)
-    mdb.list();	# 13 MDBlist (_17:void)
+function user.main():void;              #  0 main:void {G}
+    t1 := bat.new(:oid,:int);           #  1 t1:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    t2 := array.grid(132000,8,1,0);     #  2 t2:bat[:oid,:int] := ARRAYgrid_int(_5:int, _6:int, _7:int, _8:int) {G}
+    t3 := array.grid(1,100,10560,0);    #  3 t3:bat[:oid,:int] := ARRAYgrid_int(_7:int, _10:int, _11:int, _8:int) {G}
+    t4 := array.grid(1,100,10560,0,8);  #  4 t4:bat[:oid,:int] := ARRAYgridShift_int(_7:int, _10:int, _11:int, _8:int, _6:int) {G}
+    t5 := batcalc.+(t2,t4);             #  5 t5:bat[:oid,:int] := CMDbatADD_int_int_int(t2:bat[:oid,:int], t4:bat[:oid,:int]) {G}
+    t2 := nil;                          #  6 t2:bat[:oid,:int] := _18:BAT {G}
+    t4 := nil;                          #  7 t4:bat[:oid,:int] := _18:BAT {G}
+    t6 := batcalc.oid(t5);              #  8 t6:bat[:oid,:oid] := CMDconvert_int_oid(t5:bat[:oid,:int]) {G}
+    t5 := nil;                          #  9 t5:bat[:oid,:int] := _18:BAT {G}
+    t7 := algebra.join(t6,t1);          # 10 t7:bat[:oid,:int] := ALGjoin(t6:bat[:oid,:oid], t1:bat[:oid,:int]) {G}
+    t6 := nil;                          # 11 t6:bat[:oid,:oid] := _18:BAT {G}
+    t1 := nil;                          # 12 t1:bat[:oid,:int] := _18:BAT {G}
+    mdb.list();                         # 13 _17:void 
 end main;	# 14  
 function user.main():void;
     t1 := bat.new(:oid,:int);

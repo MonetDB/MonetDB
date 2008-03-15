@@ -30,19 +30,18 @@ stdout of test 'tst108` in directory 'src/mal` itself:
 !SyntaxException:user.main[9]:label 't' not in guarded block
 
 !SyntaxException:user.main[10]:exit-label 't' without begin-label
-
-function user.main():void;	# 0  (main:void)
-# analyse the basic interpreter loop 	# 1  (_1:str)
-    i := 0;	# 2  (i:int)<-(_3:int)
-barrier v := 1;	# 3  (v:int)<-(_5:int) jump 7
-    leave v;	# 4  (v:int) jump 7
-    i := 1;	# 5  (i:int)<-(_5:int)
-barrier t := calc.<(i,3);	# 6 CALCcompLTintint (t:bit)<-(i:int)(_7:int)
-exit v;	# 7  (v:int)
-    i := calc.+(i,1);	# 8 CALCbinaryADDintint (i:int)<-(i:int)(_5:int)
-    redo t;	# 9  (t:bit)
-exit t;	# 10  (t:bit)
-    i := 0;	# 11  (i:int)<-(_3:int)
+function user.main():void;              #  0 main:void 
+# analyse the basic interpreter loop 
+    i := 0;                             #  2 i:int := _3:int 
+barrier v := 1;                         #  3 v:int := _5:int {J7}
+    leave v;                            #  4 v:int {J7}
+    i := 1;                             #  5 i:int := _5:int 
+barrier t := calc.<(i,3);               #  6 t:bit := CALCcompLTintint(i:int, _7:int) 
+exit v;                                 #  7 v:int 
+    i := calc.+(i,1);                   #  8 i:int := CALCbinaryADDintint(i:int, _5:int) 
+    redo t;                             #  9 t:bit 
+exit t;                                 # 10 t:bit 
+    i := 0;                             # 11 i:int := _3:int 
 end main;	# 12  
 
 # 07:58:58 >  

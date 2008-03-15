@@ -19,12 +19,12 @@ stdout of test 'tst030` in directory 'src/mal` itself:
 #	print(w);
 #exit	w;
 #
-function user.main():void;	# 0  (main:void)
-# check testing for illegal assigments to control variables 	# 1  (_1:str)
-barrier w := calc.>(1,0);	# 2 CALCcompGTintint (w:bit)<-(_3:int)(_4:int) jump 5
-    w := false;	# 3  (w:bit)<-(_5:bit)
-    io.print(w);	# 4 IOprint_val (_6:void)<-(w:bit)
-exit w;	# 5  (w:bit)
+function user.main():void;              #  0 main:void 
+# check testing for illegal assigments to control variables 
+barrier w := calc.>(1,0);               #  2 w:bit := CALCcompGTintint(_3:int, _4:int) {J5}
+    w := false;                         #  3 w:bit := _5:bit 
+    io.print(w);                        #  4 _6:void := IOprint_val(w:bit) 
+exit w;                                 #  5 w:bit 
 end main;	# 6  
 [ false ]
 

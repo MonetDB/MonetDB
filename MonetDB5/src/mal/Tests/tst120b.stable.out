@@ -14,13 +14,13 @@ stdout of test 'tst120b` in directory 'src/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 #module bottom;
 #function first(i:str):int; c:=1; return c; end first;
-function bottom.first(i:str):int;	# 0  (first:int)<-(i:str)
-    c := 1;	# 1  (c:int)<-(_3:int)
-    return first := c;	# 2  (first:int)<-(c:int)
+function bottom.first(i:str):int;       #  0 first:int := bottom.first(i:str) {G}
+    c := 1;                             #  1 c:int := _3:int 
+    return first := c;                  #  2 first:int := c:int 
 end first;	# 3  
 #function second(i:str):int; return second:=1; end second;
-function bottom.second(i:str):int;	# 0  (second:int)<-(i:str)
-    return second := 1;	# 1  (second:int)<-(_2:int)
+function bottom.second(i:str):int;      #  0 second:int := bottom.second(i:str) {G}
+    return second := 1;                 #  1 second:int := _2:int 
 end second;	# 2  
 #
 

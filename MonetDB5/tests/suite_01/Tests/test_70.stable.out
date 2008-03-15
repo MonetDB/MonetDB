@@ -51,43 +51,43 @@ stdout of test 'test_70` in directory 'tests/suite_01` itself:
 #	mil.line("quit();");
 #	ha_a := clients.quit();
 #
-function user.main():void;	# 0  (main:void)
-# Monet Mil to Mal compiler 	# 1  (_1:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
-#Predefined code segment 	# 3  (_3:str)
-#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
-#A few guidelines to maximize usefullness. 	# 6  (_6:str)
-#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
-#use the "mil_schema" for additional support routines 	# 9  (_9:str)
-#	io.print("setoid(oid(20000000));"); 	# 10  (_10:str)
-    aa_a := calc.oid(20000000);	# 11 CALCint2oid (aa_a:oid)<-(_12:int)
-    ba_a := calc.setoid(aa_a);	# 12 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-#	io.print("# The Monet interpreter supports type casts\n"); 	# 13  (_14:str)
-    p := calc.int("21");	# 14 CALCstr2int (p:int)<-(_16:str)
-#	io.print("p.io.print();"); 	# 15  (_17:str)
-    ca_a := io.print(p);	# 16 IOprint_val (ca_a:void)<-(p:int)
-#	io.print("var pf:= flt(\"23\");"); 	# 17  (_19:str)
-    pf := calc.flt("23");	# 18 CALCstr2flt (pf:flt)<-(_21:str)
-#	io.print("pf.io.print();"); 	# 19  (_22:str)
-    da_a := io.print(pf);	# 20 IOprint_val (da_a:void)<-(pf:flt)
-#	io.print("var pb:= bit(1);"); 	# 21  (_24:str)
-    pb := calc.bit(1);	# 22 CALCint2bit (pb:bit)<-(_26:int)
-#	io.print("pb.io.print();"); 	# 23  (_27:str)
-    ea_a := io.print(pb);	# 24 IOprint_val (ea_a:void)<-(pb:bit)
-#	io.print("var z:= int(p);"); 	# 25  (_29:str)
-    z := calc.int(p);	# 26 CALCint2int (z:int)<-(p:int)
-#	io.print("z.io.print();"); 	# 27  (_31:str)
-    fa_a := io.print(z);	# 28 IOprint_val (fa_a:void)<-(z:int)
-#	io.print("var pi:= bit(0);"); 	# 29  (_33:str)
-    pi := calc.bit(0);	# 30 CALCint2bit (pi:bit)<-(_35:int)
-#	io.print("pi.io.print();"); 	# 31  (_36:str)
-    ga_a := io.print(pi);	# 32 IOprint_val (ga_a:void)<-(pi:bit)
-#	io.print("var ps:= str(1);"); 	# 33  (_38:str)
-    ps := calc.str(1);	# 34 CALCint2str (ps:str)<-(_26:int)
-#	io.print("quit();"); 	# 35  (_40:str)
-    ha_a := clients.quit();	# 36 CLTquit (ha_a:void)
+function user.main():void;              #  0 main:void {G}
+# Monet Mil to Mal compiler 
+# Copyright (c) 2001-2004, CWI. All rights reserved. 
+#Predefined code segment 
+#The compiler can not guarantee an accurate compilation, 
+#because MIL unlike MAL is a dynamically typed language. 
+#A few guidelines to maximize usefullness. 
+#- make the type of variables explicit, in particular 'nil' 
+#- upon advice of M2m to remap identifiers, change it in your program directly 
+#use the "mil_schema" for additional support routines 
+#	io.print("setoid(oid(20000000));"); 
+    aa_a := calc.oid(20000000);         # 11 aa_a:oid := CALCint2oid(_12:int) 
+    ba_a := calc.setoid(aa_a);          # 12 ba_a:oid := CALCsetoidInc(aa_a:oid) 
+#	io.print("# The Monet interpreter supports type casts\n"); 
+    p := calc.int("21");                # 14 p:int := CALCstr2int(_16:str) 
+#	io.print("p.io.print();"); 
+    ca_a := io.print(p);                # 16 ca_a:void := IOprint_val(p:int) 
+#	io.print("var pf:= flt(\"23\");"); 
+    pf := calc.flt("23");               # 18 pf:flt := CALCstr2flt(_21:str) 
+#	io.print("pf.io.print();"); 
+    da_a := io.print(pf);               # 20 da_a:void := IOprint_val(pf:flt) 
+#	io.print("var pb:= bit(1);"); 
+    pb := calc.bit(1);                  # 22 pb:bit := CALCint2bit(_26:int) 
+#	io.print("pb.io.print();"); 
+    ea_a := io.print(pb);               # 24 ea_a:void := IOprint_val(pb:bit) 
+#	io.print("var z:= int(p);"); 
+    z := calc.int(p);                   # 26 z:int := CALCint2int(p:int) 
+#	io.print("z.io.print();"); 
+    fa_a := io.print(z);                # 28 fa_a:void := IOprint_val(z:int) 
+#	io.print("var pi:= bit(0);"); 
+    pi := calc.bit(0);                  # 30 pi:bit := CALCint2bit(_35:int) 
+#	io.print("pi.io.print();"); 
+    ga_a := io.print(pi);               # 32 ga_a:void := IOprint_val(pi:bit) 
+#	io.print("var ps:= str(1);"); 
+    ps := calc.str(1);                  # 34 ps:str := CALCint2str(_26:int) {G}
+#	io.print("quit();"); 
+    ha_a := clients.quit();             # 36 ha_a:void 
 end main;	# 37  
 [ 21 ]
 #var pf:= flt(\"23\");

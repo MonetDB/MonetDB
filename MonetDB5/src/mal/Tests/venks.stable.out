@@ -75,65 +75,65 @@ stdout of test 'venks` in directory 'src/mal` itself:
 #io.printf("#count %d\n",v);
 ##io.print(j);
 #
-function user.main():void;	# 0  (main:void)
-# test an expensive kintersect 	# 1  (_1:str)
-# it illustrates weakness of the kintersect routine. 	# 2  (_2:str)
-    t0 := alarm.usec();	# 3 ALARMusec (t0:lng)
-    l := 0:sht;	# 4  (l:sht)<-(_5:sht)
-    large := bat.new(:oid,:sht);	# 5 CMDBATnew (large:bat[:oid,:sht])<-(_7:oid)(_8:sht)
-barrier (go,i):= language.newRange(0:lng);	# 6 RNGnewRange_lng (go:bit)(i:lng)<-(_11:lng) jump 11
-    k := mmath.rand();	# 7 MATHrandint (k:int)
-    l := calc.sht(k);	# 8 CALCint2sht (l:sht)<-(k:int)
-    bat.append(large,l);	# 9 BKCappend_val_wrap (_13:void)<-(large:bat[:oid,:sht])(l:sht)
-    redo (go,i):= language.nextElement(1:lng,1000000:lng);	# 10 RNGnextElement_lng (go:bit)(i:lng)<-(_14:lng)(_15:lng) jump 7
-exit (go,i);	# 11  (go:bit)(i:lng)
-    small := bat.new(:oid,:sht);	# 12 CMDBATnew (small:bat[:oid,:sht])<-(_7:oid)(_17:sht)
-#m:= aggr.min(b); 	# 13  (_18:str)
-    m := mmath.rand();	# 14 MATHrandint (m:int)
-    l := calc.sht(m);	# 15 CALCint2sht (l:sht)<-(m:int)
-    bat.insert(small,1@0,l);	# 16 BKCinsert_bun (_20:void)<-(small:bat[:oid,:sht])(_21:oid)(l:sht)
-#m:= aggr.max(b); 	# 17  (_22:str)
-    m := mmath.rand();	# 18 MATHrandint (m:int)
-    l := calc.sht(m);	# 19 CALCint2sht (l:sht)<-(m:int)
-    bat.insert(small,4@0,l);	# 20 BKCinsert_bun (_23:void)<-(small:bat[:oid,:sht])(_24:oid)(l:sht)
-#disturb order 	# 21  (_25:str)
-    m := mmath.rand();	# 22 MATHrandint (m:int)
-    l := calc.sht(m);	# 23 CALCint2sht (l:sht)<-(m:int)
-    bat.insert(small,3@0,l);	# 24 BKCinsert_bun (_26:void)<-(small:bat[:oid,:sht])(_27:oid)(l:sht)
-    largeR := bat.reverse(large);	# 25 BKCreverse (largeR:bat[:sht,:oid])<-(large:bat[:oid,:sht])
-    smallR := bat.reverse(small);	# 26 BKCreverse (smallR:bat[:sht,:oid])<-(small:bat[:oid,:sht])
-    t0 := alarm.usec();	# 27 ALARMusec (t0:lng)
-    sj := algebra.kintersect(largeR,smallR);	# 28 ALGsemijoin (sj:bat[:sht,:oid])<-(largeR:bat[:sht,:oid])(smallR:bat[:sht,:oid])
-    t1 := alarm.usec();	# 29 ALARMusec (t1:lng)
-    d0 := calc.-(t1,t0);	# 30 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#kintersect(largeRev,smallRev) %d\n",d0);	# 31 IOprint_formatted_lng (_33:void)<-(_34:str)(d0:lng)
-    v := aggr.count(sj);	# 32 ALGcount_bat (v:int)<-(sj:bat[:sht,:oid])
-    io.printf("#count %d\n",v);	# 33 IOprint_formatted_int (_36:void)<-(_37:str)(v:int)
-#io.print(sj); 	# 34  (_38:str)
-    t0 := alarm.usec();	# 35 ALARMusec (t0:lng)
-    j := algebra.join(large,smallR);	# 36 ALGjoin (j:bat[:oid,:oid])<-(large:bat[:oid,:sht])(smallR:bat[:sht,:oid])
-    t1 := alarm.usec();	# 37 ALARMusec (t1:lng)
-    d0 := calc.-(t1,t0);	# 38 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#join(large,smallRev) %d\n",d0);	# 39 IOprint_formatted_lng (_40:void)<-(_41:str)(d0:lng)
-    v := aggr.count(j);	# 40 ALGcount_bat (v:int)<-(j:bat[:oid,:oid])
-    io.printf("#count %d\n",v);	# 41 IOprint_formatted_int (_42:void)<-(_37:str)(v:int)
-#io.print(j); 	# 42  (_43:str)
-    t0 := alarm.usec();	# 43 ALARMusec (t0:lng)
-    sj2 := algebra.kintersect(smallR,largeR);	# 44 ALGsemijoin (sj2:bat[:sht,:oid])<-(smallR:bat[:sht,:oid])(largeR:bat[:sht,:oid])
-    t1 := alarm.usec();	# 45 ALARMusec (t1:lng)
-    d0 := calc.-(t1,t0);	# 46 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#kintersect(smallRev,largeRev) %d\n",d0);	# 47 IOprint_formatted_lng (_45:void)<-(_46:str)(d0:lng)
-    v := aggr.count(sj2);	# 48 ALGcount_bat (v:int)<-(sj2:bat[:sht,:oid])
-    io.printf("#count %d\n",v);	# 49 IOprint_formatted_int (_47:void)<-(_37:str)(v:int)
-#io.print(sj2); 	# 50  (_48:str)
-    t0 := alarm.usec();	# 51 ALARMusec (t0:lng)
-    j := algebra.join(small,smallR);	# 52 ALGjoin (j:bat[:oid,:oid])<-(small:bat[:oid,:sht])(smallR:bat[:sht,:oid])
-    t1 := alarm.usec();	# 53 ALARMusec (t1:lng)
-    d0 := calc.-(t1,t0);	# 54 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#join(small,largeRev) %d\n",d0);	# 55 IOprint_formatted_lng (_49:void)<-(_50:str)(d0:lng)
-    v := aggr.count(j);	# 56 ALGcount_bat (v:int)<-(j:bat[:oid,:oid])
-    io.printf("#count %d\n",v);	# 57 IOprint_formatted_int (_51:void)<-(_37:str)(v:int)
-#io.print(j); 	# 58  (_52:str)
+function user.main():void;              #  0 main:void {G}
+# test an expensive kintersect 
+# it illustrates weakness of the kintersect routine. 
+    t0 := alarm.usec();                 #  3 t0:lng 
+    l := 0:sht;                         #  4 l:sht := _5:sht 
+    large := bat.new(:oid,:sht);        #  5 large:bat[:oid,:sht] := CMDBATnew(_7:oid, _8:sht) {G}
+barrier (go,i):= language.newRange(0:lng);#  6 (go:bit, i:lng) := RNGnewRange_lng(_11:lng) {J11}
+    k := mmath.rand();                  #  7 k:int 
+    l := calc.sht(k);                   #  8 l:sht := CALCint2sht(k:int) 
+    bat.append(large,l);                #  9 _13:void := BKCappend_val_wrap(large:bat[:oid,:sht], l:sht) 
+    redo (go,i):= language.nextElement(1:lng,1000000:lng);# 10 (go:bit, i:lng) := RNGnextElement_lng(_14:lng, _15:lng) {J7}
+exit (go,i);                            # 11 (go:bit, i:lng 
+    small := bat.new(:oid,:sht);        # 12 small:bat[:oid,:sht] := CMDBATnew(_7:oid, _17:sht) {G}
+#m:= aggr.min(b); 
+    m := mmath.rand();                  # 14 m:int 
+    l := calc.sht(m);                   # 15 l:sht := CALCint2sht(m:int) 
+    bat.insert(small,1@0,l);            # 16 _20:void := BKCinsert_bun(small:bat[:oid,:sht], _21:oid, l:sht) 
+#m:= aggr.max(b); 
+    m := mmath.rand();                  # 18 m:int 
+    l := calc.sht(m);                   # 19 l:sht := CALCint2sht(m:int) 
+    bat.insert(small,4@0,l);            # 20 _23:void := BKCinsert_bun(small:bat[:oid,:sht], _24:oid, l:sht) 
+#disturb order 
+    m := mmath.rand();                  # 22 m:int 
+    l := calc.sht(m);                   # 23 l:sht := CALCint2sht(m:int) 
+    bat.insert(small,3@0,l);            # 24 _26:void := BKCinsert_bun(small:bat[:oid,:sht], _27:oid, l:sht) 
+    largeR := bat.reverse(large);       # 25 largeR:bat[:sht,:oid] := BKCreverse(large:bat[:oid,:sht]) {G}
+    smallR := bat.reverse(small);       # 26 smallR:bat[:sht,:oid] := BKCreverse(small:bat[:oid,:sht]) {G}
+    t0 := alarm.usec();                 # 27 t0:lng 
+    sj := algebra.kintersect(largeR,smallR);# 28 sj:bat[:sht,:oid] := ALGsemijoin(largeR:bat[:sht,:oid], smallR:bat[:sht,:oid]) {G}
+    t1 := alarm.usec();                 # 29 t1:lng 
+    d0 := calc.-(t1,t0);                # 30 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
+    io.printf("#kintersect(largeRev,smallRev) %d\n",d0);# 31 _33:void := IOprint_formatted_lng(_34:str, d0:lng) 
+    v := aggr.count(sj);                # 32 v:int := ALGcount_bat(sj:bat[:sht,:oid]) 
+    io.printf("#count %d\n",v);         # 33 _36:void := IOprint_formatted_int(_37:str, v:int) 
+#io.print(sj); 
+    t0 := alarm.usec();                 # 35 t0:lng 
+    j := algebra.join(large,smallR);    # 36 j:bat[:oid,:oid] := ALGjoin(large:bat[:oid,:sht], smallR:bat[:sht,:oid]) {G}
+    t1 := alarm.usec();                 # 37 t1:lng 
+    d0 := calc.-(t1,t0);                # 38 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
+    io.printf("#join(large,smallRev) %d\n",d0);# 39 _40:void := IOprint_formatted_lng(_41:str, d0:lng) 
+    v := aggr.count(j);                 # 40 v:int := ALGcount_bat(j:bat[:oid,:oid]) 
+    io.printf("#count %d\n",v);         # 41 _42:void := IOprint_formatted_int(_37:str, v:int) 
+#io.print(j); 
+    t0 := alarm.usec();                 # 43 t0:lng 
+    sj2 := algebra.kintersect(smallR,largeR);# 44 sj2:bat[:sht,:oid] := ALGsemijoin(smallR:bat[:sht,:oid], largeR:bat[:sht,:oid]) {G}
+    t1 := alarm.usec();                 # 45 t1:lng 
+    d0 := calc.-(t1,t0);                # 46 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
+    io.printf("#kintersect(smallRev,largeRev) %d\n",d0);# 47 _45:void := IOprint_formatted_lng(_46:str, d0:lng) 
+    v := aggr.count(sj2);               # 48 v:int := ALGcount_bat(sj2:bat[:sht,:oid]) 
+    io.printf("#count %d\n",v);         # 49 _47:void := IOprint_formatted_int(_37:str, v:int) 
+#io.print(sj2); 
+    t0 := alarm.usec();                 # 51 t0:lng 
+    j := algebra.join(small,smallR);    # 52 j:bat[:oid,:oid] := ALGjoin(small:bat[:oid,:sht], smallR:bat[:sht,:oid]) {G}
+    t1 := alarm.usec();                 # 53 t1:lng 
+    d0 := calc.-(t1,t0);                # 54 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
+    io.printf("#join(small,largeRev) %d\n",d0);# 55 _49:void := IOprint_formatted_lng(_50:str, d0:lng) 
+    v := aggr.count(j);                 # 56 v:int := ALGcount_bat(j:bat[:oid,:oid]) 
+    io.printf("#count %d\n",v);         # 57 _51:void := IOprint_formatted_int(_37:str, v:int) 
+#io.print(j); 
 end main;	# 59  
 #kintersect(largeRev,smallRev) 16600
 #count 41

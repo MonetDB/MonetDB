@@ -36,19 +36,19 @@ stdout of test 'tst4004` in directory 'src/optimizer` itself:
 #optimizer.deadCodeRemoval();
 #
 #
-function user.main():void;	# 0  (main:void)
-    A := 23;	# 1  (A:int)<-(_3:int)
-    D := 22;	# 2  (D:int)<-(_5:int)
-    B := true;	# 3  (B:bit)<-(_9:bit)
-barrier c := B;	# 4  (c:bit)<-(B:bit) jump 7
-    A := 1;	# 5  (A:int)<-(_7:int)
-    D := 3;	# 6  (D:int)<-(_11:int)
-exit c;	# 7  (c:bit)
-barrier c := calc.not(B);	# 8 CALCunarybitNOT (c:bit)<-(B:bit) jump 10
-    A := 2;	# 9  (A:int)<-(_17:int)
-exit c;	# 10  (c:bit)
-    io.print(A);	# 11 IOprint_val (_20:void)<-(A:int)
-    io.print(D);	# 12 IOprint_val (_21:void)<-(D:int)
+function user.main():void;              #  0 main:void {G}
+    A := 23;                            #  1 A:int := _3:int 
+    D := 22;                            #  2 D:int := _5:int 
+    B := true;                          #  3 B:bit := _9:bit 
+barrier c := B;                         #  4 c:bit := B:bit {J7}
+    A := 1;                             #  5 A:int := _7:int 
+    D := 3;                             #  6 D:int := _11:int 
+exit c;                                 #  7 c:bit 
+barrier c := calc.not(B);               #  8 c:bit := CALCunarybitNOT(B:bit) {J10}
+    A := 2;                             #  9 A:int := _17:int 
+exit c;                                 # 10 c:bit 
+    io.print(A);                        # 11 _20:void := IOprint_val(A:int) 
+    io.print(D);                        # 12 _21:void := IOprint_val(D:int) 
 end main;	# 13  
 [ 1 ]
 [ 3 ]

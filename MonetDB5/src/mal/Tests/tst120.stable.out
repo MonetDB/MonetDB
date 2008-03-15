@@ -36,16 +36,15 @@ stdout of test 'tst120` in directory 'src/mal` itself:
 !TypeException:user.main[7]:'bottom.first' undefined in: d:any := bottom.first(_11:str)
 
 !TypeException:user.main[8]:'top.first' undefined in: e:any := top.first(_13:sht)
-
-function user.main():void;	# 0  (main:void)
-#define 2 modules and check location of routines 	# 1  (_1:str)
-# lookup DBHOME/mal/tst120a.mal 	# 2  (_2:str)
-# does not do anything 	# 3  (_3:str)
-    a := bottom.second("hh");	# 4  unknown (a:any)<-(_5:str)
-    b := top.first(1);	# 5  unknown (b:any)<-(_7:int)
-    c := top.first(1:sht);	# 6  unknown (c:any)<-(_9:sht)
-    d := bottom.first("hello world");	# 7  unknown (d:any)<-(_11:str)
-    e := top.first(2:sht);	# 8  unknown (e:any)<-(_13:sht)
+function user.main():void;              #  0 main:void 
+#define 2 modules and check location of routines 
+# lookup DBHOME/mal/tst120a.mal 
+# does not do anything 
+    a := bottom.second("hh");           #  4 a:any := bottom.second(_5:str) {U}
+    b := top.first(1);                  #  5 b:any := top.first(_7:int) {U}
+    c := top.first(1:sht);              #  6 c:any := top.first(_9:sht) {U}
+    d := bottom.first("hello world");   #  7 d:any := bottom.first(_11:str) {U}
+    e := top.first(2:sht);              #  8 e:any := top.first(_13:sht) {U}
 end main;	# 9  
 
 # 17:25:37 >  

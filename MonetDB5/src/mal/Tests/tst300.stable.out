@@ -21,20 +21,20 @@ stdout of test 'tst300` in directory 'src/mal` itself:
 #	printf("catched exception\n");
 #exit	myNewException;
 #end tst;
-function user.tst():void;	# 0  (tst:void)
-    raise myNewException:str  := "new exception";	# 1  (myNewException:str)<-(_2:str)
-    io.printf("should not come here\n");	# 2 IOprint_str (_3:void)<-(_4:str)
-#exception block; 	# 3  (_5:str)
-catch myNewException:str ;	# 4  (myNewException:str) jump 6
-    io.printf("catched exception\n");	# 5 IOprint_str (_6:void)<-(_7:str)
-exit myNewException:str ;	# 6  (myNewException:str)
+function user.tst():void;               #  0 tst:void {G}
+    raise myNewException:str  := "new exception";#  1 myNewException:str := _2:str {G}
+    io.printf("should not come here\n");#  2 _3:void := IOprint_str(_4:str) 
+#exception block; 
+catch myNewException:str ;              #  4 myNewException:str {J6}
+    io.printf("catched exception\n");   #  5 _6:void := IOprint_str(_7:str) 
+exit myNewException:str ;               #  6 myNewException:str 
 end tst;	# 7  
 #
 #tst();
 #
-function user.main():void;	# 0  (main:void)
-# Exception identifiers can be introduced at any place 	# 1  (_1:str)
-    user.tst();	# 2  (_2:void)
+function user.main():void;              #  0 main:void 
+# Exception identifiers can be introduced at any place 
+    user.tst();                         #  2 _2:void 
 end main;	# 3  
 catched exception
 

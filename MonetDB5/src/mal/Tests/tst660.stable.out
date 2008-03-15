@@ -13,9 +13,9 @@ stdout of test 'tst660` in directory 'src/mal` itself:
 ##Testing variable argument lists
 #
 #pattern fi(i:int...)
-pattern user.fi(i:int...):void address MDBdummy;	# 0  (fi:void)<-(i:int)
+pattern user.fi(i:int...):void address MDBdummy;#  0 fi:void := user.fi(i:int) {P}
 #pattern fs(i:int,s:str...)
-pattern user.fs(i:int,s:str...):void address MDBdummy;	# 0  (fs:void)<-(i:int)(s:str)
+pattern user.fs(i:int,s:str...):void address MDBdummy;#  0 fs:void := user.fs(i:int, s:str) {PG}
 #
 #fi(1);
 #fi(1,2);
@@ -25,14 +25,14 @@ pattern user.fs(i:int,s:str...):void address MDBdummy;	# 0  (fs:void)<-(i:int)(s
 #fs(1,"a","b");
 #fs(1,"a","b","c");
 #
-function user.main():void;	# 0  (main:void)
-#Testing variable argument lists 	# 1  (_1:str)
-    user.fi(1);	# 2 MDBdummy (_2:void)<-(_3:int)
-    user.fi(1,2);	# 3 MDBdummy (_4:void)<-(_3:int)(_5:int)
-    user.fi(1,2,3);	# 4 MDBdummy (_6:void)<-(_3:int)(_5:int)(_7:int)
-    user.fs(1,"a");	# 5 MDBdummy (_8:void)<-(_3:int)(_9:str)
-    user.fs(1,"a","b");	# 6 MDBdummy (_10:void)<-(_3:int)(_9:str)(_11:str)
-    user.fs(1,"a","b","c");	# 7 MDBdummy (_12:void)<-(_3:int)(_9:str)(_11:str)(_13:str)
+function user.main():void;              #  0 main:void 
+#Testing variable argument lists 
+    user.fi(1);                         #  2 _2:void := MDBdummy(_3:int) 
+    user.fi(1,2);                       #  3 _4:void := MDBdummy(_3:int, _5:int) 
+    user.fi(1,2,3);                     #  4 _6:void := MDBdummy(_3:int, _5:int, _7:int) 
+    user.fs(1,"a");                     #  5 _8:void := MDBdummy(_3:int, _9:str) 
+    user.fs(1,"a","b");                 #  6 _10:void := MDBdummy(_3:int, _9:str, _11:str) 
+    user.fs(1,"a","b","c");             #  7 _12:void := MDBdummy(_3:int, _9:str, _11:str, _13:str) 
 end main;	# 8  
 !MALException:mdb.dummy:Dummy routine called
 

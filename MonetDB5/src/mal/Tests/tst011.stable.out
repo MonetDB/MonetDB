@@ -20,14 +20,14 @@ stdout of test 'tst011` in directory 'src/mal` itself:
 #exit 	k:=11;
 #	print(k);
 #
-function user.main():void;	# 0  (main:void)
-# exit value of a barrier 	# 1  (_1:str)
-barrier k := 12;	# 2  (k:int)<-(_3:int) jump 6
-    io.print(k);	# 3 IOprint_val (_4:void)<-(k:int)
-    leave k;	# 4  (k:int) jump 6
-    io.print("not possible");	# 5 IOprint_val (_5:void)<-(_6:str)
-exit k := 11;	# 6  (k:int)<-(_7:int)
-    io.print(k);	# 7 IOprint_val (_8:void)<-(k:int)
+function user.main():void;              #  0 main:void 
+# exit value of a barrier 
+barrier k := 12;                        #  2 k:int := _3:int {J6}
+    io.print(k);                        #  3 _4:void := IOprint_val(k:int) 
+    leave k;                            #  4 k:int {J6}
+    io.print("not possible");           #  5 _5:void := IOprint_val(_6:str) 
+exit k := 11;                           #  6 k:int := _7:int 
+    io.print(k);                        #  7 _8:void := IOprint_val(k:int) 
 end main;	# 8  
 [ 12 ]
 [ 11 ]

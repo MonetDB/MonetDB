@@ -24,17 +24,17 @@ stdout of test 'JPexample` in directory 'src/optimizer` itself:
 #optimizer.joinPath();
 #mdb.list();
 #
-function user.main():void;	# 0  (main:void)
-# test the joinpath expander 	# 1  (_1:str)
-    a := bat.new(:void,:oid);	# 2 CMDBATnew (a:bat[:void,:oid])<-(_3:void)(_4:oid)
-    b := bat.new(:oid,:oid);	# 3 CMDBATnew (b:bat[:oid,:oid])<-(_4:oid)(_4:oid)
-    c := bat.new(:oid,:str);	# 4 CMDBATnew (c:bat[:oid,:str])<-(_4:oid)(_7:str)
-    j1 := algebra.join(a,b);	# 5 ALGjoin (j1:bat[:void,:oid])<-(a:bat[:void,:oid])(b:bat[:oid,:oid])
-    j2 := algebra.joinPath(a,b,c);	# 6 ALGjoinPath (j2:bat[:void,:str])<-(a:bat[:void,:oid])(b:bat[:oid,:oid])(c:bat[:oid,:str])
-    j3 := algebra.join(b,b);	# 7 ALGjoin (j3:bat[:oid,:oid])<-(b:bat[:oid,:oid])(b:bat[:oid,:oid])
-    _14 := algebra.join(b,b);	# 8 ALGjoin (_14:bat[:oid,:oid])<-(b:bat[:oid,:oid])(b:bat[:oid,:oid])
-    j4 := algebra.join(_14,b);	# 9 ALGjoin (j4:bat[:oid,:oid])<-(_14:bat[:oid,:oid])(b:bat[:oid,:oid])
-    mdb.list();	# 10 MDBlist (_13:void)
+function user.main():void;              #  0 main:void {G}
+# test the joinpath expander 
+    a := bat.new(:void,:oid);           #  2 a:bat[:void,:oid] := CMDBATnew(_3:void, _4:oid) {G}
+    b := bat.new(:oid,:oid);            #  3 b:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
+    c := bat.new(:oid,:str);            #  4 c:bat[:oid,:str] := CMDBATnew(_4:oid, _7:str) {G}
+    j1 := algebra.join(a,b);            #  5 j1:bat[:void,:oid] := ALGjoin(a:bat[:void,:oid], b:bat[:oid,:oid]) {G}
+    j2 := algebra.joinPath(a,b,c);      #  6 j2:bat[:void,:str] := ALGjoinPath(a:bat[:void,:oid], b:bat[:oid,:oid], c:bat[:oid,:str]) {G}
+    j3 := algebra.join(b,b);            #  7 j3:bat[:oid,:oid] := ALGjoin(b:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
+    _14 := algebra.join(b,b);           #  8 _14:bat[:oid,:oid] := ALGjoin(b:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
+    j4 := algebra.join(_14,b);          #  9 j4:bat[:oid,:oid] := ALGjoin(_14:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
+    mdb.list();                         # 10 _13:void 
 end main;	# 11  
 function user.main():void;
 # test the joinpath expander 

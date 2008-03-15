@@ -31,25 +31,25 @@ stdout of test 'tst700` in directory 'src/mal` itself:
 #	printf("%6.2f\n",pi);
 #	printf("single line %s \n","hello");
 #
-function user.main():void;	# 0  (main:void)
-# A few system calls 	# 1  (_1:str)
-    io.print('c');	# 2 IOprint_val (_2:void)<-(_3:chr)
-    io.print("hello world");	# 3 IOprint_val (_4:void)<-(_5:str)
-    io.print(0);	# 4 IOprint_val (_6:void)<-(_7:int)
-    io.print(1:lng);	# 5 IOprint_val (_8:void)<-(_9:lng)
-    io.print('c');	# 6 IOprint_val (_10:void)<-(_3:chr)
-    io.print(true);	# 7 IOprint_val (_11:void)<-(_12:bit)
-    pi := 3.14700007;	# 8  (pi:flt)<-(_14:flt)
-    x := 1;	# 9  (x:int)<-(_16:int)
-    io.print(x);	# 10 IOprint_val (_17:void)<-(x:int)
-    io.print(pi);	# 11 IOprint_val (_18:void)<-(pi:flt)
-    io.printf("hello\n");	# 12 IOprint_str (_19:void)<-(_20:str)
-    io.printf("%5d\n",0);	# 13 IOprint_formatted_int (_21:void)<-(_22:str)(_7:int)
-    io.printf("%5d\n",1:lng);	# 14 IOprint_formatted_lng (_23:void)<-(_22:str)(_9:lng)
-    io.printf("%c\n",'c');	# 15 IOprint_formatted_chr (_24:void)<-(_25:str)(_3:chr)
-    io.printf("%-8s\n",true);	# 16 IOprint_formatted_bit (_26:void)<-(_27:str)(_12:bit)
-    io.printf("%6.2f\n",pi);	# 17 IOprint_formatted_flt (_28:void)<-(_29:str)(pi:flt)
-    io.printf("single line %s \n","hello");	# 18 IOprint_formatted_str (_30:void)<-(_31:str)(_32:str)
+function user.main():void;              #  0 main:void 
+# A few system calls 
+    io.print('c');                      #  2 _2:void := IOprint_val(_3:chr) 
+    io.print("hello world");            #  3 _4:void := IOprint_val(_5:str) 
+    io.print(0);                        #  4 _6:void := IOprint_val(_7:int) 
+    io.print(1:lng);                    #  5 _8:void := IOprint_val(_9:lng) 
+    io.print('c');                      #  6 _10:void := IOprint_val(_3:chr) 
+    io.print(true);                     #  7 _11:void := IOprint_val(_12:bit) 
+    pi := 3.14700007;                   #  8 pi:flt := _14:flt 
+    x := 1;                             #  9 x:int := _16:int 
+    io.print(x);                        # 10 _17:void := IOprint_val(x:int) 
+    io.print(pi);                       # 11 _18:void := IOprint_val(pi:flt) 
+    io.printf("hello\n");               # 12 _19:void := IOprint_str(_20:str) 
+    io.printf("%5d\n",0);               # 13 _21:void := IOprint_formatted_int(_22:str, _7:int) 
+    io.printf("%5d\n",1:lng);           # 14 _23:void := IOprint_formatted_lng(_22:str, _9:lng) 
+    io.printf("%c\n",'c');              # 15 _24:void := IOprint_formatted_chr(_25:str, _3:chr) 
+    io.printf("%-8s\n",true);           # 16 _26:void := IOprint_formatted_bit(_27:str, _12:bit) 
+    io.printf("%6.2f\n",pi);            # 17 _28:void := IOprint_formatted_flt(_29:str, pi:flt) 
+    io.printf("single line %s \n","hello");# 18 _30:void := IOprint_formatted_str(_31:str, _32:str) 
 end main;	# 19  
 [ 'c' ]
 [ "hello world" ]

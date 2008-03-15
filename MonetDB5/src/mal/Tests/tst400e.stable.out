@@ -17,9 +17,9 @@ stdout of test 'tst400e` in directory 'src/mal` itself:
 #	z:= z+1:lng;
 #	return z;
 #end simple;
-function user.simple(z:lng):lng;	# 0  (simple:lng)<-(z:lng)
-    z := calc.+(z,1:lng);	# 1 CALCbinaryADDlnglng (z:lng)<-(z:lng)(_2:lng)
-    return simple := z;	# 2  (simple:lng)<-(z:lng)
+function user.simple(z:lng):lng;        #  0 simple:lng := user.simple(z:lng) 
+    z := calc.+(z,1:lng);               #  1 z:lng := CALCbinaryADDlnglng(z:lng, _2:lng) 
+    return simple := z;                 #  2 simple:lng := z:lng 
 end simple;	# 3  
 #
 #	k:= 0:lng;
@@ -29,15 +29,15 @@ end simple;	# 3
 #exit	v;
 #io.print(k);
 #
-function user.main():void;	# 0  (main:void)
-# simple test of a function call  	# 1  (_1:str)
-# performance evaluation, how expensive are 100k calls? 	# 2  (_2:str)
-    k := 0:lng;	# 3  (k:lng)<-(_4:lng)
-barrier v := calc.<(k,1000000:lng);	# 4 CALCcompLTlnglng (v:bit)<-(k:lng)(_6:lng) jump 7
-    k := user.simple(k);	# 5  (k:lng)<-(k:lng)
-    redo v := calc.<(k,1000000:lng);	# 6 CALCcompLTlnglng (v:bit)<-(k:lng)(_6:lng) jump 5
-exit v;	# 7  (v:bit)
-    io.print(k);	# 8 IOprint_val (_7:void)<-(k:lng)
+function user.main():void;              #  0 main:void 
+# simple test of a function call  
+# performance evaluation, how expensive are 100k calls? 
+    k := 0:lng;                         #  3 k:lng := _4:lng 
+barrier v := calc.<(k,1000000:lng);     #  4 v:bit := CALCcompLTlnglng(k:lng, _6:lng) {J7}
+    k := user.simple(k);                #  5 k:lng := user.simple(k:lng) 
+    redo v := calc.<(k,1000000:lng);    #  6 v:bit := CALCcompLTlnglng(k:lng, _6:lng) {J5}
+exit v;                                 #  7 v:bit 
+    io.print(k);                        #  8 _7:void := IOprint_val(k:lng) 
 end main;	# 9  
 [ 1000000 ]
 

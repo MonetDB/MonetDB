@@ -19,12 +19,12 @@ stdout of test 'bat_replace` in directory 'tests/gdkTests` itself:
 #bat.replace(a,0@0,2@0);
 #io.print(a);
 #
-function user.main():void;	# 0  (main:void)
-    a := bat.new(:oid,:oid);	# 1 CMDBATnew (a:bat[:oid,:oid])<-(_2:oid)(_2:oid)
-    bat.append(a,1@0);	# 2 BKCappend_val_wrap (_3:void)<-(a:bat[:oid,:oid])(_4:oid)
-# this used to give the error BATpropcheck: BAT tmp_XX is dense but not key!? 	# 3  (_5:str)
-    bat.replace(a,0@0,2@0);	# 4 BKCreplace_bun (_6:void)<-(a:bat[:oid,:oid])(_7:oid)(_8:oid)
-    io.print(a);	# 5 IOprint_val (_9:void)<-(a:bat[:oid,:oid])
+function user.main():void;              #  0 main:void {G}
+    a := bat.new(:oid,:oid);            #  1 a:bat[:oid,:oid] := CMDBATnew(_2:oid, _2:oid) {G}
+    bat.append(a,1@0);                  #  2 _3:void := BKCappend_val_wrap(a:bat[:oid,:oid], _4:oid) 
+# this used to give the error BATpropcheck: BAT tmp_XX is dense but not key!? 
+    bat.replace(a,0@0,2@0);             #  4 _6:void := BKCreplace_bun(a:bat[:oid,:oid], _7:oid, _8:oid) 
+    io.print(a);                        #  5 _9:void := IOprint_val(a:bat[:oid,:oid]) 
 end main;	# 6  
 #-----------------#
 # h	t	  # name

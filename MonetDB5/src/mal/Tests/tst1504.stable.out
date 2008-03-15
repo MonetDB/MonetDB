@@ -22,16 +22,16 @@ stdout of test 'tst1504` in directory 'src/mal` itself:
 #print("result?");
 #	print(y);
 #
-function user.main():void;	# 0  (main:void)
-    x := bat.new(:oid,:chr);	# 1 CMDBATnew (x:bat[:oid,:chr])<-(_2:oid)(_3:chr)
-    de_a := bat.insert(x,1@0,'a');	# 2 BKCinsert_bun (de_a:void)<-(x:bat[:oid,:chr])(_5:oid)(_6:chr)
-    ee_a := bat.insert(x,2@0,'a');	# 3 BKCinsert_bun (ee_a:void)<-(x:bat[:oid,:chr])(_8:oid)(_6:chr)
-    y := bat.new(:chr,:oid);	# 4 CMDBATnew (y:bat[:chr,:oid])<-(_3:chr)(_2:oid)
-    xr := bat.reverse(x);	# 5 BKCreverse (xr:bat[:chr,:oid])<-(x:bat[:oid,:chr])
-    io.print(xr);	# 6 IOprint_val (_11:void)<-(xr:bat[:chr,:oid])
-    bat.insert(y,xr);	# 7 BKCinsert_bat (_12:void)<-(y:bat[:chr,:oid])(xr:bat[:chr,:oid])
-    io.print("result?");	# 8 IOprint_val (_13:void)<-(_14:str)
-    io.print(y);	# 9 IOprint_val (_15:void)<-(y:bat[:chr,:oid])
+function user.main():void;              #  0 main:void {G}
+    x := bat.new(:oid,:chr);            #  1 x:bat[:oid,:chr] := CMDBATnew(_2:oid, _3:chr) {G}
+    de_a := bat.insert(x,1@0,'a');      #  2 de_a:void := BKCinsert_bun(x:bat[:oid,:chr], _5:oid, _6:chr) 
+    ee_a := bat.insert(x,2@0,'a');      #  3 ee_a:void := BKCinsert_bun(x:bat[:oid,:chr], _8:oid, _6:chr) 
+    y := bat.new(:chr,:oid);            #  4 y:bat[:chr,:oid] := CMDBATnew(_3:chr, _2:oid) {G}
+    xr := bat.reverse(x);               #  5 xr:bat[:chr,:oid] := BKCreverse(x:bat[:oid,:chr]) {G}
+    io.print(xr);                       #  6 _11:void := IOprint_val(xr:bat[:chr,:oid]) 
+    bat.insert(y,xr);                   #  7 _12:void := BKCinsert_bat(y:bat[:chr,:oid], xr:bat[:chr,:oid]) 
+    io.print("result?");                #  8 _13:void := IOprint_val(_14:str) 
+    io.print(y);                        #  9 _15:void := IOprint_val(y:bat[:chr,:oid]) 
 end main;	# 10  
 #-----------------#
 # t	tmp_4	  # name

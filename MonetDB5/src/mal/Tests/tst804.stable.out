@@ -16,16 +16,16 @@ stdout of test 'tst804` in directory 'src/mal` itself:
 !SyntaxException:parseError:                      ^<module> not defined
 #end message;
 !SyntaxException:wrong.message[0]:RETURN missing
-function wrong.message():any;	# 0  dynamic (message:any)
-    io.print("shouldn't come here");	# 1 IOprint_val (_1:void)<-(_2:str)
+function wrong.message():any;           #  0 message:any {U}
+    io.print("shouldn't come here");    #  1 _1:void := IOprint_val(_2:str) 
 end message;	# 2  
 #wrong.message();
 #wrongTo.message();
 #
-function user.main():void;	# 0  (main:void)
-# test definiton of a function in a unknown module 	# 1  (_1:str)
-    wrong.message();	# 2  (_2:any)
-    wrongTo.message();	# 3  (_3:any)
+function user.main():void;              #  0 main:void 
+# test definiton of a function in a unknown module 
+    wrong.message();                    #  2 _2:any 
+    wrongTo.message();                  #  3 _3:any 
 end main;	# 4  
 !MALException:wrong.message[0]:Syntax error in script
 

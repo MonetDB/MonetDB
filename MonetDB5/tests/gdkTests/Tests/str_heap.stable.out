@@ -38,22 +38,22 @@ stdout of test 'str_heap` in directory 'tests/gdkTests` itself:
 #bat.setPersistent(c,false);
 #clients.quit();
 #
-function user.main():void;	# 0  (main:void)
-    b := bat.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-(_2:int)(_3:str)
-    bat.setPersistent(b);	# 2 BKCsetPersistent (_4:void)<-(b:bat[:int,:str])
-    bat.setName(b,"DRUID_sample");	# 3 BKCsetName (_5:void)<-(b:bat[:int,:str])(_6:str)
-    bat.insert(b,1,"Medicina e salute Malattie , Medicina , Terapie ... Risorse Biblioteche , Dizionari ... Scienza e tecnologia Archeologia , Biologia , Astronomia ... Scienze umane e sociali Economia , Storia , Psicologia ... Società e culture A tavola , Religione , Ambiente ... Sport e tempo libero Calcio , Basket , Ciclismo , Viaggi ... Nelle notizie · Iraq, nuovi attacchi USA · Clandestini, sbarchi continui in Puglia · Kosovo: \"cruciale il supporto italiano\" · Europee, Paolo Rossi con AN · Terremoto in");	# 4 BKCinsert_bun (_7:void)<-(b:bat[:int,:str])(_8:int)(_9:str)
-    bat.insert(b,2,"Software ... Geisteswissenschaften Psychologie , Geschichte , Sprachen ... Gesellschaft & Soziales Umwelt , Religion , Museen ... Gesundheit Medizin , Krankheiten , Ernährung ... Handel & Wirtschaft Firmen , Finanzen , Jobs , Shopping ... Kunst & Kultur Kunst , Literatur , Theater ... Nachrichten & Medien Spezial , TV , Zeitschriften , Zeitungen ... Nachschlagewerke Bibliotheken , Wörterbücher , Postinfos ... Naturwissenschaft & Technik Ingenieurwesen , Astronomie , Biologie ... Sport & Freizeit");	# 5 BKCinsert_bun (_10:void)<-(b:bat[:int,:str])(_11:int)(_12:str)
-    bat.insert(b,3,"");	# 6 BKCinsert_bun (_13:void)<-(b:bat[:int,:str])(_14:int)(_15:str)
-    bat.insert(b,4,"Taxes ... Health [ Xtra! ] Medicine , Drugs , Diseases , Fitness ... News and Media [ Xtra! ] Current Events , Magazines , TV , Newspapers ... Recreation and Sports [ Xtra! ] Sports , Games , Travel , Autos , Outdoors ... Reference Libraries , Dictionaries , Phone Numbers ... Regional Countries , Regions , U.S. States ... Science CS , Biology , Astronomy , Engineering ... Social Science Anthropology , Sociology , Economics ... Society and Culture People , Environment , Religion ... What's New -");	# 7 BKCinsert_bun (_16:void)<-(b:bat[:int,:str])(_17:int)(_18:str)
-    bat.insert(b,5,"laune · Débats et mesures sur la sécurité · Nouvelle escalade dans le ciel irakien · Le procès Clinton · Tremblement de terre en Colombie · Open d'Australie [ Tous les titres ] EtsurYahoo! · BD: festival d'Angoulême · La sélection de la semaine · Mon Yahoo! : votre Yahoo! à vous! · Yahoo! recrute [ Tout sur Yahoo! ] Yahoo! Europe  Allemagne - Danemark - Espagne - Italie - Norvège - R.U. & Irlande - Suède Yahoo! Monde Yahoo! (US) - Asie - Australie & N.Z. - Canada - Corée - Japon - chinois -");	# 8 BKCinsert_bun (_19:void)<-(b:bat[:int,:str])(_20:int)(_21:str)
-    io.print(b);	# 9 IOprint_val (_22:void)<-(b:bat[:int,:str])
-    bat.unload("DRUID_sample");	# 10 BKCunload (_23:bit)<-(_6:str)
-    bat.load("DRUID_sample");	# 11 BKCload (_24:bat[:any,:any])<-(_6:str)
-    c:bat[:int,:str]  := bbp.bind("DRUID_sample");	# 12 CMDbbpbind (c:bat[:int,:str])<-(_6:str)
-    io.print(c);	# 13 IOprint_val (_26:void)<-(c:bat[:int,:str])
-    bat.setPersistent(c,false);	# 14 BKCpersists (_27:void)<-(c:bat[:int,:str])(_28:bit)
-    clients.quit();	# 15 CLTquit (_29:void)
+function user.main():void;              #  0 main:void {G}
+    b := bat.new(:int,:str);            #  1 b:bat[:int,:str] := CMDBATnew(_2:int, _3:str) {G}
+    bat.setPersistent(b);               #  2 _4:void := BKCsetPersistent(b:bat[:int,:str]) 
+    bat.setName(b,"DRUID_sample");      #  3 _5:void := BKCsetName(b:bat[:int,:str], _6:str) 
+    bat.insert(b,1,"Medicina e salute Malattie , Medicina , Terapie ... Risorse Biblioteche , Dizionari ... Scienza e tecnologia Archeologia , Biologia , Astronomia ... Scienze umane e sociali Economia , Storia , Psicologia ... Società e culture A tavola , Religione , Ambiente ... Sport e tempo libero Calcio , Basket , Ciclismo , Viaggi ... Nelle notizie · Iraq, nuovi attacchi USA · Clandestini, sbarchi continui in Puglia · Kosovo: \"cruciale il supporto italiano\" · Europee, Paolo Rossi con AN · Terremoto in");#  4 _7:void := BKCinsert_bun(b:bat[:int,:str], _8:int, _9:str) 
+    bat.insert(b,2,"Software ... Geisteswissenschaften Psychologie , Geschichte , Sprachen ... Gesellschaft & Soziales Umwelt , Religion , Museen ... Gesundheit Medizin , Krankheiten , Ernährung ... Handel & Wirtschaft Firmen , Finanzen , Jobs , Shopping ... Kunst & Kultur Kunst , Literatur , Theater ... Nachrichten & Medien Spezial , TV , Zeitschriften , Zeitungen ... Nachschlagewerke Bibliotheken , Wörterbücher , Postinfos ... Naturwissenschaft & Technik Ingenieurwesen , Astronomie , Biologie ... Sport & Freizeit");#  5 _10:void := BKCinsert_bun(b:bat[:int,:str], _11:int, _12:str) 
+    bat.insert(b,3,"");                 #  6 _13:void := BKCinsert_bun(b:bat[:int,:str], _14:int, _15:str) 
+    bat.insert(b,4,"Taxes ... Health [ Xtra! ] Medicine , Drugs , Diseases , Fitness ... News and Media [ Xtra! ] Current Events , Magazines , TV , Newspapers ... Recreation and Sports [ Xtra! ] Sports , Games , Travel , Autos , Outdoors ... Reference Libraries , Dictionaries , Phone Numbers ... Regional Countries , Regions , U.S. States ... Science CS , Biology , Astronomy , Engineering ... Social Science Anthropology , Sociology , Economics ... Society and Culture People , Environment , Religion ... What's New -");#  7 _16:void := BKCinsert_bun(b:bat[:int,:str], _17:int, _18:str) 
+    bat.insert(b,5,"laune · Débats et mesures sur la sécurité · Nouvelle escalade dans le ciel irakien · Le procès Clinton · Tremblement de terre en Colombie · Open d'Australie [ Tous les titres ] EtsurYahoo! · BD: festival d'Angoulême · La sélection de la semaine · Mon Yahoo! : votre Yahoo! à vous! · Yahoo! recrute [ Tout sur Yahoo! ] Yahoo! Europe  Allemagne - Danemark - Espagne - Italie - Norvège - R.U. & Irlande - Suède Yahoo! Monde Yahoo! (US) - Asie - Australie & N.Z. - Canada - Corée - Japon - chinois -");#  8 _19:void := BKCinsert_bun(b:bat[:int,:str], _20:int, _21:str) 
+    io.print(b);                        #  9 _22:void := IOprint_val(b:bat[:int,:str]) 
+    bat.unload("DRUID_sample");         # 10 _23:bit := BKCunload(_6:str) 
+    bat.load("DRUID_sample");           # 11 _24:bat[:any,:any] := BKCload(_6:str) {G}
+    c:bat[:int,:str]  := bbp.bind("DRUID_sample");# 12 c:bat[:int,:str] := CMDbbpbind(_6:str) {G}
+    io.print(c);                        # 13 _26:void := IOprint_val(c:bat[:int,:str]) 
+    bat.setPersistent(c,false);         # 14 _27:void := BKCpersists(c:bat[:int,:str], _28:bit) 
+    clients.quit();                     # 15 _29:void 
 end main;	# 16  
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h	t																																																																	  # name

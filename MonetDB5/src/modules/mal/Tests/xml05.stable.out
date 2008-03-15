@@ -27,19 +27,19 @@ stdout of test 'xml05` in directory 'src/modules/mal` itself:
 #as:= xml.str(aa);
 #io.print(as);
 #
-function user.main():void;	# 0  (main:void)
-    b := bat.new(:oid,:str);	# 1 CMDBATnew (b:bat[:oid,:str])<-(_2:oid)(_3:str)
-    bat.insert(b,0@0,"Mary Ann Walker");	# 2 BKCinsert_bun (_4:void)<-(b:bat[:oid,:str])(_5:oid)(_6:str)
-    bat.insert(b,1@0,"Annie Chapman");	# 3 BKCinsert_bun (_7:void)<-(b:bat[:oid,:str])(_8:oid)(_9:str)
-    h := bat.new(:oid,:str);	# 4 CMDBATnew (h:bat[:oid,:str])<-(_2:oid)(_3:str)
-    bat.insert(h,0@0,"brown");	# 5 BKCinsert_bun (_11:void)<-(h:bat[:oid,:str])(_5:oid)(_12:str)
-    bat.insert(h,1@0,"curly dark brown");	# 6 BKCinsert_bun (_13:void)<-(h:bat[:oid,:str])(_8:oid)(_14:str)
-    io.print(b);	# 7 IOprint_val (_15:void)<-(b:bat[:oid,:str])
-    bs := xml.xml(b);	# 8 BATXMLstr2xml (bs:bat[:oid,:xml])<-(b:bat[:oid,:str])
-    bc := xml.element("name",bs);	# 9 BATXMLtag (bc:bat[:oid,:xml])<-(_18:str)(bs:bat[:oid,:xml])
-    aa := xml.root(bc,"version1.0","no");	# 10 BATXMLroot (aa:bat[:oid,:xml])<-(bc:bat[:oid,:xml])(_20:str)(_21:str)
-    as := xml.str(aa);	# 11 BATXMLxml2str (as:bat[:oid,:str])<-(aa:bat[:oid,:xml])
-    io.print(as);	# 12 IOprint_val (_23:void)<-(as:bat[:oid,:str])
+function user.main():void;              #  0 main:void {G}
+    b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
+    bat.insert(b,0@0,"Mary Ann Walker");#  2 _4:void := BKCinsert_bun(b:bat[:oid,:str], _5:oid, _6:str) 
+    bat.insert(b,1@0,"Annie Chapman");  #  3 _7:void := BKCinsert_bun(b:bat[:oid,:str], _8:oid, _9:str) 
+    h := bat.new(:oid,:str);            #  4 h:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
+    bat.insert(h,0@0,"brown");          #  5 _11:void := BKCinsert_bun(h:bat[:oid,:str], _5:oid, _12:str) 
+    bat.insert(h,1@0,"curly dark brown");#  6 _13:void := BKCinsert_bun(h:bat[:oid,:str], _8:oid, _14:str) 
+    io.print(b);                        #  7 _15:void := IOprint_val(b:bat[:oid,:str]) 
+    bs := xml.xml(b);                   #  8 bs:bat[:oid,:xml] := BATXMLstr2xml(b:bat[:oid,:str]) {G}
+    bc := xml.element("name",bs);       #  9 bc:bat[:oid,:xml] := BATXMLtag(_18:str, bs:bat[:oid,:xml]) {G}
+    aa := xml.root(bc,"version1.0","no");# 10 aa:bat[:oid,:xml] := BATXMLroot(bc:bat[:oid,:xml], _20:str, _21:str) {G}
+    as := xml.str(aa);                  # 11 as:bat[:oid,:str] := BATXMLxml2str(aa:bat[:oid,:xml]) {G}
+    io.print(as);                       # 12 _23:void := IOprint_val(as:bat[:oid,:str]) 
 end main;	# 13  
 #---------------------------------#
 # h	t			  # name

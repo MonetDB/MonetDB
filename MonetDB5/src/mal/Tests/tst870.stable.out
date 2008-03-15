@@ -33,27 +33,27 @@ stdout of test 'tst870` in directory 'src/mal` itself:
 #h:= group.max(b);
 #io.print(h);
 #
-function user.main():void;	# 0  (main:void)
-#testing the multiplex operations on simple groups 	# 1  (_1:str)
-    b := bat.new(:oid,:oid);	# 2 CMDBATnew (b:bat[:oid,:oid])<-(_3:oid)(_3:oid)
-    bat.insert(b,0@0,0@0);	# 3 BKCinsert_bun (_4:void)<-(b:bat[:oid,:oid])(_5:oid)(_5:oid)
-    bat.insert(b,1@0,1@0);	# 4 BKCinsert_bun (_6:void)<-(b:bat[:oid,:oid])(_7:oid)(_7:oid)
-    bat.insert(b,1@0,2@0);	# 5 BKCinsert_bun (_8:void)<-(b:bat[:oid,:oid])(_7:oid)(_9:oid)
-    bat.insert(b,1@0,3@0);	# 6 BKCinsert_bun (_10:void)<-(b:bat[:oid,:oid])(_7:oid)(_11:oid)
-    bat.insert(b,2@0,2@0);	# 7 BKCinsert_bun (_12:void)<-(b:bat[:oid,:oid])(_9:oid)(_9:oid)
-    bat.insert(b,2@0,0@0);	# 8 BKCinsert_bun (_13:void)<-(b:bat[:oid,:oid])(_9:oid)(_5:oid)
-    bat.insert(b,2@0,3@0);	# 9 BKCinsert_bun (_14:void)<-(b:bat[:oid,:oid])(_9:oid)(_11:oid)
-    bat.insert(b,3@0,nil:oid);	# 10 BKCinsert_bun (_15:void)<-(b:bat[:oid,:oid])(_11:oid)(_16:oid)
-    bat.insert(b,3@0,1@0);	# 11 BKCinsert_bun (_17:void)<-(b:bat[:oid,:oid])(_11:oid)(_7:oid)
-    io.print(b);	# 12 IOprint_val (_18:void)<-(b:bat[:oid,:oid])
-    ma_a := io.printf("#~BeginVariableOutput~#\n");	# 13 IOprint_str (ma_a:void)<-(_20:str)
-    na_a := bat.info(b);	# 14 BKCinfo (na_a:bat[:str,:str])<-(b:bat[:oid,:oid])
-    oa_a := io.print(na_a);	# 15 IOprint_val (oa_a:void)<-(na_a:bat[:str,:str])
-    pa_a := io.printf("#~EndVariableOutput~#\n");	# 16 IOprint_str (pa_a:void)<-(_24:str)
-    g := group.min(b);	# 17 GRPmin_oid_oid (g:bat[:oid,:oid])<-(b:bat[:oid,:oid])
-    io.print(g);	# 18 IOprint_val (_26:void)<-(g:bat[:oid,:oid])
-    h := group.max(b);	# 19 GRPmax_oid_oid (h:bat[:oid,:oid])<-(b:bat[:oid,:oid])
-    io.print(h);	# 20 IOprint_val (_28:void)<-(h:bat[:oid,:oid])
+function user.main():void;              #  0 main:void {G}
+#testing the multiplex operations on simple groups 
+    b := bat.new(:oid,:oid);            #  2 b:bat[:oid,:oid] := CMDBATnew(_3:oid, _3:oid) {G}
+    bat.insert(b,0@0,0@0);              #  3 _4:void := BKCinsert_bun(b:bat[:oid,:oid], _5:oid, _5:oid) 
+    bat.insert(b,1@0,1@0);              #  4 _6:void := BKCinsert_bun(b:bat[:oid,:oid], _7:oid, _7:oid) 
+    bat.insert(b,1@0,2@0);              #  5 _8:void := BKCinsert_bun(b:bat[:oid,:oid], _7:oid, _9:oid) 
+    bat.insert(b,1@0,3@0);              #  6 _10:void := BKCinsert_bun(b:bat[:oid,:oid], _7:oid, _11:oid) 
+    bat.insert(b,2@0,2@0);              #  7 _12:void := BKCinsert_bun(b:bat[:oid,:oid], _9:oid, _9:oid) 
+    bat.insert(b,2@0,0@0);              #  8 _13:void := BKCinsert_bun(b:bat[:oid,:oid], _9:oid, _5:oid) 
+    bat.insert(b,2@0,3@0);              #  9 _14:void := BKCinsert_bun(b:bat[:oid,:oid], _9:oid, _11:oid) 
+    bat.insert(b,3@0,nil:oid);          # 10 _15:void := BKCinsert_bun(b:bat[:oid,:oid], _11:oid, _16:oid) 
+    bat.insert(b,3@0,1@0);              # 11 _17:void := BKCinsert_bun(b:bat[:oid,:oid], _11:oid, _7:oid) 
+    io.print(b);                        # 12 _18:void := IOprint_val(b:bat[:oid,:oid]) 
+    ma_a := io.printf("#~BeginVariableOutput~#\n");# 13 ma_a:void := IOprint_str(_20:str) 
+    na_a := bat.info(b);                # 14 na_a:bat[:str,:str] := BKCinfo(b:bat[:oid,:oid]) {G}
+    oa_a := io.print(na_a);             # 15 oa_a:void := IOprint_val(na_a:bat[:str,:str]) 
+    pa_a := io.printf("#~EndVariableOutput~#\n");# 16 pa_a:void := IOprint_str(_24:str) 
+    g := group.min(b);                  # 17 g:bat[:oid,:oid] := GRPmin_oid_oid(b:bat[:oid,:oid]) {G}
+    io.print(g);                        # 18 _26:void := IOprint_val(g:bat[:oid,:oid]) 
+    h := group.max(b);                  # 19 h:bat[:oid,:oid] := GRPmax_oid_oid(b:bat[:oid,:oid]) {G}
+    io.print(h);                        # 20 _28:void := IOprint_val(h:bat[:oid,:oid]) 
 end main;	# 21  
 #-----------------#
 # h	t	  # name
@@ -73,7 +73,7 @@ end main;	# 21
 # h			t		  # name
 # str			str		  # type
 #-----------------------------------------#
-[ "version",		  "25105"	  ]
+[ "version",		  "25106"	  ]
 [ "batId",		  "tmp_10"	  ]
 [ "batCacheid",		  "8"		  ]
 [ "hparentid",		  "0"		  ]
@@ -116,9 +116,9 @@ end main;	# 21
 [ "batFirst",		  "0"		  ]
 [ "htop",		  "72"		  ]
 [ "ttop",		  "72"		  ]
-[ "batStamp",		  "4"		  ]
-[ "lastUsed",		  "167"		  ]
-[ "curStamp",		  "5"		  ]
+[ "batStamp",		  "5"		  ]
+[ "lastUsed",		  "168"		  ]
+[ "curStamp",		  "6"		  ]
 [ "batCopiedtodisk",	  "0"		  ]
 [ "batDirtydesc",	  "dirty"	  ]
 [ "H->heap.dirty",	  "dirty"	  ]

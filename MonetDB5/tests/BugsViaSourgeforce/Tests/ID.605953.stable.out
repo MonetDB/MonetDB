@@ -67,55 +67,55 @@ stdout of test 'ID.605953` in directory 'tests/BugsViaSourgeforce` itself:
 #	mb_a := io.print(lb_a);
 ##Identifer 'seqbase' mapped to 'bat.setSequenceBase'
 #
-function user.main():void;	# 0  (main:void)
-# Monet Mil to Mal compiler 	# 1  (_1:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
-#Predefined code segment 	# 3  (_3:str)
-#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
-#A few guidelines to maximize usefullness. 	# 6  (_6:str)
-#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
-#use the "mil_schema" for additional support routines 	# 9  (_9:str)
-    t := bat.new(nil:oid,nil:str);	# 10 CMDBATnew (t:bat[:oid,:str])<-(_11:oid)(_12:str)
-    aa_a := calc.oid(0);	# 11 CALCint2oid (aa_a:oid)<-(_14:int)
-    ba_a := bat.insert(t,aa_a,"a");	# 12 BKCinsert_bun (ba_a:void)<-(t:bat[:oid,:str])(aa_a:oid)(_16:str)
-    ca_a := calc.oid(1);	# 13 CALCint2oid (ca_a:oid)<-(_18:int)
-    da_a := bat.insert(t,ca_a,"b");	# 14 BKCinsert_bun (da_a:void)<-(t:bat[:oid,:str])(ca_a:oid)(_20:str)
-    ea_a := calc.oid(2);	# 15 CALCint2oid (ea_a:oid)<-(_22:int)
-    fa_a := bat.insert(t,ea_a,"c");	# 16 BKCinsert_bun (fa_a:void)<-(t:bat[:oid,:str])(ea_a:oid)(_24:str)
-    ga_a := calc.oid(3);	# 17 CALCint2oid (ga_a:oid)<-(_26:int)
-    ha_a := bat.insert(t,ga_a,"d");	# 18 BKCinsert_bun (ha_a:void)<-(t:bat[:oid,:str])(ga_a:oid)(_28:str)
-    ia_a := calc.oid(4);	# 19 CALCint2oid (ia_a:oid)<-(_30:int)
-    ja_a := bat.insert(t,ia_a,"e");	# 20 BKCinsert_bun (ja_a:void)<-(t:bat[:oid,:str])(ia_a:oid)(_32:str)
-    ka_a := calc.oid(5);	# 21 CALCint2oid (ka_a:oid)<-(_34:int)
-    la_a := bat.insert(t,ka_a,"f");	# 22 BKCinsert_bun (la_a:void)<-(t:bat[:oid,:str])(ka_a:oid)(_36:str)
-    ma_a := calc.oid(6);	# 23 CALCint2oid (ma_a:oid)<-(_38:int)
-    na_a := bat.insert(t,ma_a,"g");	# 24 BKCinsert_bun (na_a:void)<-(t:bat[:oid,:str])(ma_a:oid)(_40:str)
-    oa_a := calc.oid(7);	# 25 CALCint2oid (oa_a:oid)<-(_42:int)
-    pa_a := bat.insert(t,oa_a,"h");	# 26 BKCinsert_bun (pa_a:void)<-(t:bat[:oid,:str])(oa_a:oid)(_44:str)
-    qa_a := algebra.markT(t,nil:oid);	# 27 ALGtmark (qa_a:bat[:oid,:oid])<-(t:bat[:oid,:str])(_46:oid)
-    ra_a := io.print(t);	# 28 IOprint_val (ra_a:void)<-(t:bat[:oid,:str])
-    t2 := bat.new(nil:void,nil:str);	# 29 CMDBATnew (t2:bat[:void,:str])<-(_49:void)(_50:str)
-    ua_a := nil:void;	# 30  (ua_a:void)<-(_49:void)
-    va_a := bat.insert(t2,ua_a,"a");	# 31 BKCinsert_bun (va_a:void)<-(t2:bat[:void,:str])(ua_a:void)(_53:str)
-    wa_a := nil:void;	# 32  (wa_a:void)<-(_49:void)
-    xa_a := bat.insert(t2,wa_a,"b");	# 33 BKCinsert_bun (xa_a:void)<-(t2:bat[:void,:str])(wa_a:void)(_56:str)
-    ya_a := nil:void;	# 34  (ya_a:void)<-(_49:void)
-    ab_a := bat.insert(t2,ya_a,"c");	# 35 BKCinsert_bun (ab_a:void)<-(t2:bat[:void,:str])(ya_a:void)(_59:str)
-    bb_a := nil:void;	# 36  (bb_a:void)<-(_49:void)
-    cb_a := bat.insert(t2,bb_a,"d");	# 37 BKCinsert_bun (cb_a:void)<-(t2:bat[:void,:str])(bb_a:void)(_62:str)
-    db_a := nil:void;	# 38  (db_a:void)<-(_49:void)
-    eb_a := bat.insert(t2,db_a,"e");	# 39 BKCinsert_bun (eb_a:void)<-(t2:bat[:void,:str])(db_a:void)(_65:str)
-    fb_a := nil:void;	# 40  (fb_a:void)<-(_49:void)
-    gb_a := bat.insert(t2,fb_a,"f");	# 41 BKCinsert_bun (gb_a:void)<-(t2:bat[:void,:str])(fb_a:void)(_36:str)
-    hb_a := nil:void;	# 42  (hb_a:void)<-(_49:void)
-    ib_a := bat.insert(t2,hb_a,"g");	# 43 BKCinsert_bun (ib_a:void)<-(t2:bat[:void,:str])(hb_a:void)(_40:str)
-    jb_a := nil:void;	# 44  (jb_a:void)<-(_49:void)
-    kb_a := bat.insert(t2,jb_a,"h");	# 45 BKCinsert_bun (kb_a:void)<-(t2:bat[:void,:str])(jb_a:void)(_44:str)
-    lb_a := algebra.markT(t2,nil:oid);	# 46 ALGtmark (lb_a:bat[:void,:oid])<-(t2:bat[:void,:str])(_46:oid)
-    mb_a := io.print(lb_a);	# 47 IOprint_val (mb_a:void)<-(lb_a:bat[:void,:oid])
-#Identifer 'seqbase' mapped to 'bat.setSequenceBase' 	# 48  (_69:str)
+function user.main():void;              #  0 main:void {G}
+# Monet Mil to Mal compiler 
+# Copyright (c) 2001-2004, CWI. All rights reserved. 
+#Predefined code segment 
+#The compiler can not guarantee an accurate compilation, 
+#because MIL unlike MAL is a dynamically typed language. 
+#A few guidelines to maximize usefullness. 
+#- make the type of variables explicit, in particular 'nil' 
+#- upon advice of M2m to remap identifiers, change it in your program directly 
+#use the "mil_schema" for additional support routines 
+    t := bat.new(nil:oid,nil:str);      # 10 t:bat[:oid,:str] := CMDBATnew(_11:oid, _12:str) {G}
+    aa_a := calc.oid(0);                # 11 aa_a:oid := CALCint2oid(_14:int) 
+    ba_a := bat.insert(t,aa_a,"a");     # 12 ba_a:void := BKCinsert_bun(t:bat[:oid,:str], aa_a:oid, _16:str) 
+    ca_a := calc.oid(1);                # 13 ca_a:oid := CALCint2oid(_18:int) 
+    da_a := bat.insert(t,ca_a,"b");     # 14 da_a:void := BKCinsert_bun(t:bat[:oid,:str], ca_a:oid, _20:str) 
+    ea_a := calc.oid(2);                # 15 ea_a:oid := CALCint2oid(_22:int) 
+    fa_a := bat.insert(t,ea_a,"c");     # 16 fa_a:void := BKCinsert_bun(t:bat[:oid,:str], ea_a:oid, _24:str) 
+    ga_a := calc.oid(3);                # 17 ga_a:oid := CALCint2oid(_26:int) 
+    ha_a := bat.insert(t,ga_a,"d");     # 18 ha_a:void := BKCinsert_bun(t:bat[:oid,:str], ga_a:oid, _28:str) 
+    ia_a := calc.oid(4);                # 19 ia_a:oid := CALCint2oid(_30:int) 
+    ja_a := bat.insert(t,ia_a,"e");     # 20 ja_a:void := BKCinsert_bun(t:bat[:oid,:str], ia_a:oid, _32:str) 
+    ka_a := calc.oid(5);                # 21 ka_a:oid := CALCint2oid(_34:int) 
+    la_a := bat.insert(t,ka_a,"f");     # 22 la_a:void := BKCinsert_bun(t:bat[:oid,:str], ka_a:oid, _36:str) 
+    ma_a := calc.oid(6);                # 23 ma_a:oid := CALCint2oid(_38:int) 
+    na_a := bat.insert(t,ma_a,"g");     # 24 na_a:void := BKCinsert_bun(t:bat[:oid,:str], ma_a:oid, _40:str) 
+    oa_a := calc.oid(7);                # 25 oa_a:oid := CALCint2oid(_42:int) 
+    pa_a := bat.insert(t,oa_a,"h");     # 26 pa_a:void := BKCinsert_bun(t:bat[:oid,:str], oa_a:oid, _44:str) 
+    qa_a := algebra.markT(t,nil:oid);   # 27 qa_a:bat[:oid,:oid] := ALGtmark(t:bat[:oid,:str], _46:oid) {G}
+    ra_a := io.print(t);                # 28 ra_a:void := IOprint_val(t:bat[:oid,:str]) 
+    t2 := bat.new(nil:void,nil:str);    # 29 t2:bat[:void,:str] := CMDBATnew(_49:void, _50:str) {G}
+    ua_a := nil:void;                   # 30 ua_a:void := _49:void {G}
+    va_a := bat.insert(t2,ua_a,"a");    # 31 va_a:void := BKCinsert_bun(t2:bat[:void,:str], ua_a:void, _53:str) 
+    wa_a := nil:void;                   # 32 wa_a:void := _49:void {G}
+    xa_a := bat.insert(t2,wa_a,"b");    # 33 xa_a:void := BKCinsert_bun(t2:bat[:void,:str], wa_a:void, _56:str) 
+    ya_a := nil:void;                   # 34 ya_a:void := _49:void {G}
+    ab_a := bat.insert(t2,ya_a,"c");    # 35 ab_a:void := BKCinsert_bun(t2:bat[:void,:str], ya_a:void, _59:str) 
+    bb_a := nil:void;                   # 36 bb_a:void := _49:void {G}
+    cb_a := bat.insert(t2,bb_a,"d");    # 37 cb_a:void := BKCinsert_bun(t2:bat[:void,:str], bb_a:void, _62:str) 
+    db_a := nil:void;                   # 38 db_a:void := _49:void {G}
+    eb_a := bat.insert(t2,db_a,"e");    # 39 eb_a:void := BKCinsert_bun(t2:bat[:void,:str], db_a:void, _65:str) 
+    fb_a := nil:void;                   # 40 fb_a:void := _49:void {G}
+    gb_a := bat.insert(t2,fb_a,"f");    # 41 gb_a:void := BKCinsert_bun(t2:bat[:void,:str], fb_a:void, _36:str) 
+    hb_a := nil:void;                   # 42 hb_a:void := _49:void {G}
+    ib_a := bat.insert(t2,hb_a,"g");    # 43 ib_a:void := BKCinsert_bun(t2:bat[:void,:str], hb_a:void, _40:str) 
+    jb_a := nil:void;                   # 44 jb_a:void := _49:void {G}
+    kb_a := bat.insert(t2,jb_a,"h");    # 45 kb_a:void := BKCinsert_bun(t2:bat[:void,:str], jb_a:void, _44:str) 
+    lb_a := algebra.markT(t2,nil:oid);  # 46 lb_a:bat[:void,:oid] := ALGtmark(t2:bat[:void,:str], _46:oid) {G}
+    mb_a := io.print(lb_a);             # 47 mb_a:void := IOprint_val(lb_a:bat[:void,:oid]) 
+#Identifer 'seqbase' mapped to 'bat.setSequenceBase' 
 end main;	# 49  
 #-----------------#
 # h	t	  # name

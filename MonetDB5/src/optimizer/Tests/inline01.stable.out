@@ -28,43 +28,43 @@ stdout of test 'inline01` in directory 'src/optimizer` itself:
 #exit MALException;
 #exit (x,y,z);
 #end help;
-function user.help{inline}():void;	# 0  (help:void)
-    b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
-    c := bat.new(:int,:int);	# 2 CMDBATnew (c:bat[:int,:int])<-(_2:int)(_2:int)
-    z:int  := 1;	# 3  (z:int)<-(_5:int)
-    bat.insert(b,1,1);	# 4 BKCinsert_bun (_6:void)<-(b:bat[:int,:int])(_5:int)(_5:int)
-barrier (x,y,z:int ):= bat.newIterator(b);	# 5 CHPbunIterator (x:lng)(y:int)(z:int)<-(b:bat[:int,:int]) jump 9
-    io.print(x);	# 6 IOprint_val (_9:void)<-(x:lng)
-catch MALException:str ;	# 7  (MALException:str) jump 8
-exit MALException:str ;	# 8  (MALException:str)
-exit (x,y,z:int );	# 9  (x:lng)(y:int)(z:int)
-barrier (x,y,z:int ):= bat.newIterator(c);	# 10 CHPbunIterator (x:lng)(y:int)(z:int)<-(c:bat[:int,:int]) jump 15
-    io.print(x);	# 11 IOprint_val (_11:void)<-(x:lng)
-    redo (x,y,z:int ):= bat.hasMoreElements(c);	# 12 CHPbunHasMoreElements (x:lng)(y:int)(z:int)<-(c:bat[:int,:int]) jump 11
-catch MALException:str ;	# 13  (MALException:str) jump 14
-exit MALException:str ;	# 14  (MALException:str)
-exit (x,y,z:int );	# 15  (x:lng)(y:int)(z:int)
+function user.help{inline}():void;      #  0 help:void {G}
+    b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
+    c := bat.new(:int,:int);            #  2 c:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
+    z:int  := 1;                        #  3 z:int := _5:int 
+    bat.insert(b,1,1);                  #  4 _6:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _5:int) 
+barrier (x,y,z:int ):= bat.newIterator(b);#  5 (x:lng, y:int, z:int) := CHPbunIterator(b:bat[:int,:int]) {J9}
+    io.print(x);                        #  6 _9:void := IOprint_val(x:lng) 
+catch MALException:str ;                #  7 MALException:str {J8}
+exit MALException:str ;                 #  8 MALException:str 
+exit (x,y,z:int );                      #  9 (x:lng, y:int, z:int 
+barrier (x,y,z:int ):= bat.newIterator(c);# 10 (x:lng, y:int, z:int) := CHPbunIterator(c:bat[:int,:int]) {J15}
+    io.print(x);                        # 11 _11:void := IOprint_val(x:lng) 
+    redo (x,y,z:int ):= bat.hasMoreElements(c);# 12 (x:lng, y:int, z:int) := CHPbunHasMoreElements(c:bat[:int,:int]) {J11}
+catch MALException:str ;                # 13 MALException:str {J14}
+exit MALException:str ;                 # 14 MALException:str 
+exit (x,y,z:int );                      # 15 (x:lng, y:int, z:int 
 end help;	# 16  
 #
 #function user.qry1{inline}();
 #	user.help();
 #end qry1;
-function user.qry1{inline}():void;	# 0  (qry1:void)
-    user.help();	# 1  (_1:void)
+function user.qry1{inline}():void;      #  0 qry1:void 
+    user.help();                        #  1 _1:void 
 end qry1;	# 2  
 #
 #function user.qry();
 #	user.qry1();
 #end qry;
-function user.qry():void;	# 0  (qry:void)
-    user.qry1();	# 1  (_1:void)
+function user.qry():void;               #  0 qry:void 
+    user.qry1();                        #  1 _1:void 
 end qry;	# 2  
 #
 #optimizer.inline("user","qry");
 #mdb.list("user","qry");
 #
-function user.main():void;	# 0  (main:void)
-    mdb.list("user","qry");	# 1 MDBlist3 (_5:void)<-(_2:str)(_3:str)
+function user.main():void;              #  0 main:void {G}
+    mdb.list("user","qry");             #  1 _5:void := MDBlist3(_2:str, _3:str) 
 end main;	# 2  
 function user.qry():void;
     _5 := bat.new(:int,:int);

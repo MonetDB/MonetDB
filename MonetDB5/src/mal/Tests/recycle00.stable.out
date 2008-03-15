@@ -18,10 +18,10 @@ stdout of test 'recycle00` in directory 'src/mal` itself:
 #	j:=i*i;
 #	io.print(j);
 #end qry;
-function user.qry():void;	# 0  (qry:void)
-    i := 23;	# 1  (i:int)<-(_2:int)
-    j := calc.*(i,i);	# 2 CALCbinaryMULintint (j:int)<-(i:int)(i:int)
-    io.print(j);	# 3 IOprint_val (_4:void)<-(j:int)
+function user.qry():void;               #  0 qry:void 
+    i := 23;                            #  1 i:int := _2:int 
+    j := calc.*(i,i);                   #  2 j:int := CALCbinaryMULintint(i:int, i:int) 
+    io.print(j);                        #  3 _4:void := IOprint_val(j:int) 
 end qry;	# 4  
 #
 #recycle.setRetainPolicy(1);
@@ -34,16 +34,16 @@ end qry;	# 4
 #qry();
 #recycle.dump();
 #
-function user.main():void;	# 0  (main:void)
-#test the basics of the replicator 	# 1  (_1:str)
-    recycle.setRetainPolicy(1);	# 2 RECYCLEsetRetain (_2:void)<-(_3:int)
-    io.print("start");	# 3 IOprint_val (_7:void)<-(_8:str)
-    user.qry();	# 4  (_9:void)
-    io.print("next");	# 5 IOprint_val (_10:void)<-(_11:str)
-    user.qry();	# 6  (_12:void)
-    io.print("last");	# 7 IOprint_val (_13:void)<-(_14:str)
-    user.qry();	# 8  (_15:void)
-    recycle.dump();	# 9 RECYCLEdump (_16:void)
+function user.main():void;              #  0 main:void {G}
+#test the basics of the replicator 
+    recycle.setRetainPolicy(1);         #  2 _2:void := RECYCLEsetRetain(_3:int) 
+    io.print("start");                  #  3 _7:void := IOprint_val(_8:str) 
+    user.qry();                         #  4 _9:void 
+    io.print("next");                   #  5 _10:void := IOprint_val(_11:str) 
+    user.qry();                         #  6 _12:void 
+    io.print("last");                   #  7 _13:void := IOprint_val(_14:str) 
+    user.qry();                         #  8 _15:void 
+    recycle.dump();                     #  9 _16:void 
 end main;	# 10  
 [ "start" ]
 [ 529 ]

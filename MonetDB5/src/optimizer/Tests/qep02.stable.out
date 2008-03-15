@@ -30,15 +30,15 @@ barrier b;
         c := algebra.select(T3,0,5);
             T3 := bat.new(:int,:int);
 exit b;
-function user.main():void;	# 0  (main:void)
-    b := true;	# 1  (b:bit)<-(_2:bit)
-    T1 := bat.new(:int,:int);	# 2 CMDBATnew (T1:bat[:int,:int])<-(_4:int)(_4:int)
-    T3 := bat.new(:int,:int);	# 3 CMDBATnew (T3:bat[:int,:int])<-(_4:int)(_4:int)
-barrier b;	# 4  (b:bit) jump 8
-    a := algebra.select(T1,1,3);	# 5 ALGselect (a:bat[:int,:int])<-(T1:bat[:int,:int])(_7:int)(_8:int)
-    c := algebra.select(T3,0,5);	# 6 ALGselect (c:bat[:int,:int])<-(T3:bat[:int,:int])(_10:int)(_11:int)
-    e := algebra.join(a,c);	# 7 ALGjoin (e:bat[:int,:int])<-(a:bat[:int,:int])(c:bat[:int,:int])
-exit b;	# 8  (b:bit)
+function user.main():void;              #  0 main:void {G}
+    b := true;                          #  1 b:bit := _2:bit 
+    T1 := bat.new(:int,:int);           #  2 T1:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
+    T3 := bat.new(:int,:int);           #  3 T3:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
+barrier b;                              #  4 b:bit {J8}
+    a := algebra.select(T1,1,3);        #  5 a:bat[:int,:int] := ALGselect(T1:bat[:int,:int], _7:int, _8:int) {G}
+    c := algebra.select(T3,0,5);        #  6 c:bat[:int,:int] := ALGselect(T3:bat[:int,:int], _10:int, _11:int) {G}
+    e := algebra.join(a,c);             #  7 e:bat[:int,:int] := ALGjoin(a:bat[:int,:int], c:bat[:int,:int]) {G}
+exit b;                                 #  8 b:bit 
 end main;	# 9  
 
 # 18:42:45 >  

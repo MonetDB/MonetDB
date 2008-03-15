@@ -21,17 +21,17 @@ stdout of test 'inspect05` in directory 'src/modules/mal` itself:
 #a:= inspect.getAddresses();
 #io.table(fs,k,m,s,a);
 #
-function user.main():void;	# 0  (main:void)
-#Illustrate the modules loaded after start 	# 1  (_1:str)
-    k := inspect.getKind();	# 2 INSPECTgetkind (k:bat[:oid,:str])
-    m := inspect.getModule();	# 3 INSPECTgetAllModules (m:bat[:oid,:str])
-    f := inspect.getFunction();	# 4 INSPECTgetAllFunctions (f:bat[:oid,:str])
-    f1 := bat.reverse(f);	# 5 BKCreverse (f1:bat[:str,:oid])<-(f:bat[:oid,:str])
-    f2 := algebra.ssort(f1);	# 6 ALGssort (f2:bat[:str,:oid])<-(f1:bat[:str,:oid])
-    fs := bat.reverse(f2);	# 7 BKCreverse (fs:bat[:oid,:str])<-(f2:bat[:str,:oid])
-    s := inspect.getSignatures();	# 8 INSPECTgetAllSignatures (s:bat[:oid,:str])
-    a := inspect.getAddresses();	# 9 INSPECTgetAllAddresses (a:bat[:oid,:str])
-    io.table(fs,k,m,s,a);	# 10 IOttable (_10:void)<-(fs:bat[:oid,:str])(k:bat[:oid,:str])(m:bat[:oid,:str])(s:bat[:oid,:str])(a:bat[:oid,:str])
+function user.main():void;              #  0 main:void {G}
+#Illustrate the modules loaded after start 
+    k := inspect.getKind();             #  2 k:bat[:oid,:str] {G}
+    m := inspect.getModule();           #  3 m:bat[:oid,:str] {G}
+    f := inspect.getFunction();         #  4 f:bat[:oid,:str] {G}
+    f1 := bat.reverse(f);               #  5 f1:bat[:str,:oid] := BKCreverse(f:bat[:oid,:str]) {G}
+    f2 := algebra.ssort(f1);            #  6 f2:bat[:str,:oid] := ALGssort(f1:bat[:str,:oid]) {G}
+    fs := bat.reverse(f2);              #  7 fs:bat[:oid,:str] := BKCreverse(f2:bat[:str,:oid]) {G}
+    s := inspect.getSignatures();       #  8 s:bat[:oid,:str] {G}
+    a := inspect.getAddresses();        #  9 a:bat[:oid,:str] {G}
+    io.table(fs,k,m,s,a);               # 10 _10:void := IOttable(fs:bat[:oid,:str], k:bat[:oid,:str], m:bat[:oid,:str], s:bat[:oid,:str], a:bat[:oid,:str]) 
 end main;	# 11  
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h					symbol		symbol		 symbol															 symbol						  # name

@@ -13,11 +13,11 @@ stdout of test 'MapiClient_hang_on_rename.SF-852148` in directory 'tests/BugDay_
 #b:= bat.new(:int,:int); bat.setName(b,"a");
 #
 #
-function user.main():void;	# 0  (main:void)
-    a := bat.new(:int,:int);	# 1 CMDBATnew (a:bat[:int,:int])<-(_2:int)(_2:int)
-    bat.setName(a,"a");	# 2 BKCsetName (_3:void)<-(a:bat[:int,:int])(_4:str)
-    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
-    bat.setName(b,"a");	# 4 BKCsetName (_6:void)<-(b:bat[:int,:int])(_4:str)
+function user.main():void;              #  0 main:void {G}
+    a := bat.new(:int,:int);            #  1 a:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
+    bat.setName(a,"a");                 #  2 _3:void := BKCsetName(a:bat[:int,:int], _4:str) 
+    b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
+    bat.setName(b,"a");                 #  4 _6:void := BKCsetName(b:bat[:int,:int], _4:str) 
 end main;	# 5  
 
 # 10:05:56 >  

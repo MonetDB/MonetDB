@@ -25,16 +25,16 @@ stdout of test 'tst1002` in directory 'src/mal` itself:
 #	print(MALException);
 #exit MALException;
 #
-function user.main():void;	# 0  (main:void)
-# the first of a series of BBP test cases 	# 1  (_1:str)
-# the temporary bat produced in tst1000 should not exist anymore 	# 2  (_2:str)
-    bbp.open();	# 3 CMDbbpopen (_3:void)
-    c := bbp.take("myfirstbat");	# 4 CMDbbptake (c:bat[:any,:any])<-(_5:str)
-    io.print(c);	# 5 IOprint_val (_6:void)<-(c:bat[:any,:any])
-    bbp.close();	# 6 CMDbbpclose (_7:void)
-catch MALException:str ;	# 7  (MALException:str) jump 9
-    io.printf("%s\n",MALException);	# 8 IOprint_formatted_str (_9:void)<-(_10:str)(MALException:str)
-exit MALException:str ;	# 9  (MALException:str)
+function user.main():void;              #  0 main:void {G}
+# the first of a series of BBP test cases 
+# the temporary bat produced in tst1000 should not exist anymore 
+    bbp.open();                         #  3 _3:void 
+    c := bbp.take("myfirstbat");        #  4 c:bat[:any,:any] := CMDbbptake(_5:str) {G}
+    io.print(c);                        #  5 _6:void := IOprint_val(c:bat[:any,:any]) 
+    bbp.close();                        #  6 _7:void 
+catch MALException:str ;                #  7 MALException:str {J9}
+    io.printf("%s\n",MALException);     #  8 _9:void := IOprint_formatted_str(_10:str, MALException:str) 
+exit MALException:str ;                 #  9 MALException:str 
 end main;	# 10  
 MALException:bbp.take:failed to take object from box
 

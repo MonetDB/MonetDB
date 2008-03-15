@@ -102,94 +102,94 @@ stdout of test 'test_70` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	nb_a := clients.quit();
 #
-function user.main():void;	# 0  (main:void)
-# Monet Mil to Mal compiler 	# 1  (_1:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
-#Predefined code segment 	# 3  (_3:str)
-#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
-#A few guidelines to maximize usefullness. 	# 6  (_6:str)
-#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
-#use the "mil_schema" for additional support routines 	# 9  (_9:str)
-#	io.print("setoid(oid(20000000));"); 	# 10  (_10:str)
-    aa_a := calc.oid(20000000);	# 11 CALCint2oid (aa_a:oid)<-(_12:int)
-    ba_a := calc.setoid(aa_a);	# 12 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-#	io.print("#This collection of examples is geared at the support\n"); 	# 13  (_14:str)
-#	io.print("#of the data mining tool\n"); 	# 14  (_15:str)
-#	io.print("var b:= bat.new(int,int);"); 	# 15  (_16:str)
-    b := bat.new(nil:int,nil:int);	# 16 CMDBATnew (b:bat[:int,:int])<-(_18:int)(_18:int)
-#	io.print("b.insert(1,15);"); 	# 17  (_19:str)
-    ca_a := bat.insert(b,1,15);	# 18 BKCinsert_bun (ca_a:void)<-(b:bat[:int,:int])(_21:int)(_22:int)
-#	io.print("b.insert(2,15);"); 	# 19  (_23:str)
-    da_a := bat.insert(b,2,15);	# 20 BKCinsert_bun (da_a:void)<-(b:bat[:int,:int])(_25:int)(_22:int)
-#	io.print("b.sum().print();"); 	# 21  (_26:str)
-    ea_a := aggr.sum(b);	# 22 ALGsum_int_dbl (ea_a:dbl)<-(b:bat[:int,:int])
-    fa_a := io.print(ea_a);	# 23 IOprint_val (fa_a:void)<-(ea_a:dbl)
-#	io.print("b.insert(3,int(nil));"); 	# 24  (_29:str)
-    ga_a := calc.int(nil:void);	# 25 CALCnil2int (ga_a:int)<-(_31:void)
-    ha_a := bat.insert(b,3,ga_a);	# 26 BKCinsert_bun (ha_a:void)<-(b:bat[:int,:int])(_33:int)(ga_a:int)
-#	io.print("b.sum().print();"); 	# 27  (_26:str)
-    ia_a := aggr.sum(b);	# 28 ALGsum_int_dbl (ia_a:dbl)<-(b:bat[:int,:int])
-    ja_a := io.print(ia_a);	# 29 IOprint_val (ja_a:void)<-(ia_a:dbl)
-#	io.print("b.insert(4,15);"); 	# 30  (_37:str)
-    ka_a := bat.insert(b,4,15);	# 31 BKCinsert_bun (ka_a:void)<-(b:bat[:int,:int])(_39:int)(_22:int)
-#	io.print("b.insert(5,25);"); 	# 32  (_40:str)
-    la_a := bat.insert(b,5,25);	# 33 BKCinsert_bun (la_a:void)<-(b:bat[:int,:int])(_42:int)(_43:int)
-#	io.print("b.insert(6,36);"); 	# 34  (_44:str)
-    ma_a := bat.insert(b,6,36);	# 35 BKCinsert_bun (ma_a:void)<-(b:bat[:int,:int])(_46:int)(_47:int)
-#	io.print("b.insert(7,49);"); 	# 36  (_48:str)
-    na_a := bat.insert(b,7,49);	# 37 BKCinsert_bun (na_a:void)<-(b:bat[:int,:int])(_50:int)(_51:int)
-#	io.print("b.insert(8,64);"); 	# 38  (_52:str)
-    oa_a := bat.insert(b,8,64);	# 39 BKCinsert_bun (oa_a:void)<-(b:bat[:int,:int])(_54:int)(_55:int)
-#	io.print("b.insert(9,int(nil));"); 	# 40  (_56:str)
-    pa_a := calc.int(nil:void);	# 41 CALCnil2int (pa_a:int)<-(_31:void)
-    qa_a := bat.insert(b,9,pa_a);	# 42 BKCinsert_bun (qa_a:void)<-(b:bat[:int,:int])(_59:int)(pa_a:int)
-#	io.print("var t:= b.histogram();"); 	# 43  (_60:str)
-    t := aggr.histogram(b);	# 44 ALGhistogram (t:bat[:int,:int])<-(b:bat[:int,:int])
-#	io.print("t.print();"); 	# 45  (_61:str)
-    ra_a := io.print(t);	# 46 IOprint_val (ra_a:void)<-(t:bat[:int,:int])
-#	io.print("commit();"); 	# 47  (_63:str)
-    sa_a := transaction.commit();	# 48 TRNglobal_commit (sa_a:bit)
-#	io.print("var s:= bat.new(int,str);"); 	# 49  (_66:str)
-    s := bat.new(nil:int,nil:str);	# 50 CMDBATnew (s:bat[:int,:str])<-(_68:int)(_69:str)
-#	io.print("insert(s,1,\"hello\");"); 	# 51  (_70:str)
-    ta_a := bat.insert(s,1,"hello");	# 52 BKCinsert_bun (ta_a:void)<-(s:bat[:int,:str])(_72:int)(_73:str)
-#	io.print("insert(s,2,\"hello\");"); 	# 53  (_74:str)
-    ua_a := bat.insert(s,2,"hello");	# 54 BKCinsert_bun (ua_a:void)<-(s:bat[:int,:str])(_76:int)(_73:str)
-#	io.print("insert(s,3,\"hello\");"); 	# 55  (_77:str)
-    va_a := bat.insert(s,3,"hello");	# 56 BKCinsert_bun (va_a:void)<-(s:bat[:int,:str])(_79:int)(_73:str)
-#	io.print("insert(s,4,\"dello\");"); 	# 57  (_80:str)
-    wa_a := bat.insert(s,4,"dello");	# 58 BKCinsert_bun (wa_a:void)<-(s:bat[:int,:str])(_82:int)(_83:str)
-#	io.print("insert(s,5,\"eello\");"); 	# 59  (_84:str)
-    xa_a := bat.insert(s,5,"eello");	# 60 BKCinsert_bun (xa_a:void)<-(s:bat[:int,:str])(_86:int)(_87:str)
-#	io.print("insert(s,6,\"fello\");"); 	# 61  (_88:str)
-    ya_a := bat.insert(s,6,"fello");	# 62 BKCinsert_bun (ya_a:void)<-(s:bat[:int,:str])(_90:int)(_91:str)
-#	io.print("insert(s,7,\"fello\");"); 	# 63  (_92:str)
-    ab_a := bat.insert(s,7,"fello");	# 64 BKCinsert_bun (ab_a:void)<-(s:bat[:int,:str])(_94:int)(_91:str)
-#	io.print("insert(s,8,\"fello\");"); 	# 65  (_95:str)
-    bb_a := bat.insert(s,8,"fello");	# 66 BKCinsert_bun (bb_a:void)<-(s:bat[:int,:str])(_97:int)(_91:str)
-#	io.print("var t2:= s.histogram();"); 	# 67  (_98:str)
-    t2 := aggr.histogram(s);	# 68 ALGhistogram (t2:bat[:str,:int])<-(s:bat[:int,:str])
-#	io.print("t2.print();"); 	# 69  (_99:str)
-    cb_a := io.print(t2);	# 70 IOprint_val (cb_a:void)<-(t2:bat[:str,:int])
-#	io.print("#It requires a few additional routines\n"); 	# 71  (_102:str)
-    c := bat.new(nil:int,nil:int);	# 72 CMDBATnew (c:bat[:int,:int])<-(_104:int)(_104:int)
-#	io.print("c.insert(1,15);"); 	# 73  (_105:str)
-    db_a := bat.insert(c,1,15);	# 74 BKCinsert_bun (db_a:void)<-(c:bat[:int,:int])(_107:int)(_108:int)
-#	io.print("c.insert(2,15);"); 	# 75  (_109:str)
-    eb_a := bat.insert(c,2,15);	# 76 BKCinsert_bun (eb_a:void)<-(c:bat[:int,:int])(_111:int)(_108:int)
-#	io.print("c.insert(3,int(nil));"); 	# 77  (_112:str)
-    fb_a := calc.int(nil:void);	# 78 CALCnil2int (fb_a:int)<-(_114:void)
-    gb_a := bat.insert(c,3,fb_a);	# 79 BKCinsert_bun (gb_a:void)<-(c:bat[:int,:int])(_116:int)(fb_a:int)
-#	io.print("c.insert(4,0);"); 	# 80  (_117:str)
-    hb_a := bat.insert(c,4,0);	# 81 BKCinsert_bun (hb_a:void)<-(c:bat[:int,:int])(_119:int)(_120:int)
-#	io.print("c.insert(5,30);"); 	# 82  (_121:str)
-    ib_a := bat.insert(c,5,30);	# 83 BKCinsert_bun (ib_a:void)<-(c:bat[:int,:int])(_123:int)(_124:int)
-#	io.print("c.print();"); 	# 84  (_125:str)
-    jb_a := io.print(c);	# 85 IOprint_val (jb_a:void)<-(c:bat[:int,:int])
-#	io.print("quit();"); 	# 86  (_120:str)
-    nb_a := clients.quit();	# 87 CLTquit (nb_a:void)
+function user.main():void;              #  0 main:void {G}
+# Monet Mil to Mal compiler 
+# Copyright (c) 2001-2004, CWI. All rights reserved. 
+#Predefined code segment 
+#The compiler can not guarantee an accurate compilation, 
+#because MIL unlike MAL is a dynamically typed language. 
+#A few guidelines to maximize usefullness. 
+#- make the type of variables explicit, in particular 'nil' 
+#- upon advice of M2m to remap identifiers, change it in your program directly 
+#use the "mil_schema" for additional support routines 
+#	io.print("setoid(oid(20000000));"); 
+    aa_a := calc.oid(20000000);         # 11 aa_a:oid := CALCint2oid(_12:int) 
+    ba_a := calc.setoid(aa_a);          # 12 ba_a:oid := CALCsetoidInc(aa_a:oid) 
+#	io.print("#This collection of examples is geared at the support\n"); 
+#	io.print("#of the data mining tool\n"); 
+#	io.print("var b:= bat.new(int,int);"); 
+    b := bat.new(nil:int,nil:int);      # 16 b:bat[:int,:int] := CMDBATnew(_18:int, _18:int) {G}
+#	io.print("b.insert(1,15);"); 
+    ca_a := bat.insert(b,1,15);         # 18 ca_a:void := BKCinsert_bun(b:bat[:int,:int], _21:int, _22:int) 
+#	io.print("b.insert(2,15);"); 
+    da_a := bat.insert(b,2,15);         # 20 da_a:void := BKCinsert_bun(b:bat[:int,:int], _25:int, _22:int) 
+#	io.print("b.sum().print();"); 
+    ea_a := aggr.sum(b);                # 22 ea_a:dbl := ALGsum_int_dbl(b:bat[:int,:int]) 
+    fa_a := io.print(ea_a);             # 23 fa_a:void := IOprint_val(ea_a:dbl) 
+#	io.print("b.insert(3,int(nil));"); 
+    ga_a := calc.int(nil:void);         # 25 ga_a:int := CALCnil2int(_31:void) 
+    ha_a := bat.insert(b,3,ga_a);       # 26 ha_a:void := BKCinsert_bun(b:bat[:int,:int], _33:int, ga_a:int) 
+#	io.print("b.sum().print();"); 
+    ia_a := aggr.sum(b);                # 28 ia_a:dbl := ALGsum_int_dbl(b:bat[:int,:int]) 
+    ja_a := io.print(ia_a);             # 29 ja_a:void := IOprint_val(ia_a:dbl) 
+#	io.print("b.insert(4,15);"); 
+    ka_a := bat.insert(b,4,15);         # 31 ka_a:void := BKCinsert_bun(b:bat[:int,:int], _39:int, _22:int) 
+#	io.print("b.insert(5,25);"); 
+    la_a := bat.insert(b,5,25);         # 33 la_a:void := BKCinsert_bun(b:bat[:int,:int], _42:int, _43:int) 
+#	io.print("b.insert(6,36);"); 
+    ma_a := bat.insert(b,6,36);         # 35 ma_a:void := BKCinsert_bun(b:bat[:int,:int], _46:int, _47:int) 
+#	io.print("b.insert(7,49);"); 
+    na_a := bat.insert(b,7,49);         # 37 na_a:void := BKCinsert_bun(b:bat[:int,:int], _50:int, _51:int) 
+#	io.print("b.insert(8,64);"); 
+    oa_a := bat.insert(b,8,64);         # 39 oa_a:void := BKCinsert_bun(b:bat[:int,:int], _54:int, _55:int) 
+#	io.print("b.insert(9,int(nil));"); 
+    pa_a := calc.int(nil:void);         # 41 pa_a:int := CALCnil2int(_31:void) 
+    qa_a := bat.insert(b,9,pa_a);       # 42 qa_a:void := BKCinsert_bun(b:bat[:int,:int], _59:int, pa_a:int) 
+#	io.print("var t:= b.histogram();"); 
+    t := aggr.histogram(b);             # 44 t:bat[:int,:int] := ALGhistogram(b:bat[:int,:int]) {G}
+#	io.print("t.print();"); 
+    ra_a := io.print(t);                # 46 ra_a:void := IOprint_val(t:bat[:int,:int]) 
+#	io.print("commit();"); 
+    sa_a := transaction.commit();       # 48 sa_a:bit 
+#	io.print("var s:= bat.new(int,str);"); 
+    s := bat.new(nil:int,nil:str);      # 50 s:bat[:int,:str] := CMDBATnew(_68:int, _69:str) {G}
+#	io.print("insert(s,1,\"hello\");"); 
+    ta_a := bat.insert(s,1,"hello");    # 52 ta_a:void := BKCinsert_bun(s:bat[:int,:str], _72:int, _73:str) 
+#	io.print("insert(s,2,\"hello\");"); 
+    ua_a := bat.insert(s,2,"hello");    # 54 ua_a:void := BKCinsert_bun(s:bat[:int,:str], _76:int, _73:str) 
+#	io.print("insert(s,3,\"hello\");"); 
+    va_a := bat.insert(s,3,"hello");    # 56 va_a:void := BKCinsert_bun(s:bat[:int,:str], _79:int, _73:str) 
+#	io.print("insert(s,4,\"dello\");"); 
+    wa_a := bat.insert(s,4,"dello");    # 58 wa_a:void := BKCinsert_bun(s:bat[:int,:str], _82:int, _83:str) 
+#	io.print("insert(s,5,\"eello\");"); 
+    xa_a := bat.insert(s,5,"eello");    # 60 xa_a:void := BKCinsert_bun(s:bat[:int,:str], _86:int, _87:str) 
+#	io.print("insert(s,6,\"fello\");"); 
+    ya_a := bat.insert(s,6,"fello");    # 62 ya_a:void := BKCinsert_bun(s:bat[:int,:str], _90:int, _91:str) 
+#	io.print("insert(s,7,\"fello\");"); 
+    ab_a := bat.insert(s,7,"fello");    # 64 ab_a:void := BKCinsert_bun(s:bat[:int,:str], _94:int, _91:str) 
+#	io.print("insert(s,8,\"fello\");"); 
+    bb_a := bat.insert(s,8,"fello");    # 66 bb_a:void := BKCinsert_bun(s:bat[:int,:str], _97:int, _91:str) 
+#	io.print("var t2:= s.histogram();"); 
+    t2 := aggr.histogram(s);            # 68 t2:bat[:str,:int] := ALGhistogram(s:bat[:int,:str]) {G}
+#	io.print("t2.print();"); 
+    cb_a := io.print(t2);               # 70 cb_a:void := IOprint_val(t2:bat[:str,:int]) 
+#	io.print("#It requires a few additional routines\n"); 
+    c := bat.new(nil:int,nil:int);      # 72 c:bat[:int,:int] := CMDBATnew(_104:int, _104:int) {G}
+#	io.print("c.insert(1,15);"); 
+    db_a := bat.insert(c,1,15);         # 74 db_a:void := BKCinsert_bun(c:bat[:int,:int], _107:int, _108:int) 
+#	io.print("c.insert(2,15);"); 
+    eb_a := bat.insert(c,2,15);         # 76 eb_a:void := BKCinsert_bun(c:bat[:int,:int], _111:int, _108:int) 
+#	io.print("c.insert(3,int(nil));"); 
+    fb_a := calc.int(nil:void);         # 78 fb_a:int := CALCnil2int(_114:void) 
+    gb_a := bat.insert(c,3,fb_a);       # 79 gb_a:void := BKCinsert_bun(c:bat[:int,:int], _116:int, fb_a:int) 
+#	io.print("c.insert(4,0);"); 
+    hb_a := bat.insert(c,4,0);          # 81 hb_a:void := BKCinsert_bun(c:bat[:int,:int], _119:int, _120:int) 
+#	io.print("c.insert(5,30);"); 
+    ib_a := bat.insert(c,5,30);         # 83 ib_a:void := BKCinsert_bun(c:bat[:int,:int], _123:int, _124:int) 
+#	io.print("c.print();"); 
+    jb_a := io.print(c);                # 85 jb_a:void := IOprint_val(c:bat[:int,:int]) 
+#	io.print("quit();"); 
+    nb_a := clients.quit();             # 87 nb_a:void 
 end main;	# 88  
 [ 30 ]
 #b.insert(3,int(nil));

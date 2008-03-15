@@ -59,45 +59,45 @@ stdout of test 'intersect_diff_void` in directory 'tests/gdkTests` itself:
 #i  := bat.getSequenceBase(a1r);
 #io.print(i);
 #
-function user.main():void;	# 0  (main:void)
-    a := bat.new(:oid,:oid);	# 1 CMDBATnew (a:bat[:oid,:oid])<-(_2:oid)(_2:oid)
-    bat.insert(a,1@0,1@0);	# 2 BKCinsert_bun (_3:void)<-(a:bat[:oid,:oid])(_4:oid)(_4:oid)
-    ar := bat.reverse(a);	# 3 BKCreverse (ar:bat[:oid,:oid])<-(a:bat[:oid,:oid])
-    b := bat.new(:oid,:oid);	# 4 CMDBATnew (b:bat[:oid,:oid])<-(_2:oid)(_2:oid)
-    bat.insert(b,2@0,2@0);	# 5 BKCinsert_bun (_7:void)<-(b:bat[:oid,:oid])(_8:oid)(_8:oid)
-    br := bat.reverse(b);	# 6 BKCreverse (br:bat[:oid,:oid])<-(b:bat[:oid,:oid])
-    a0 := algebra.kintersect(a,b);	# 7 ALGsemijoin (a0:bat[:oid,:oid])<-(a:bat[:oid,:oid])(b:bat[:oid,:oid])
-    a0r := bat.reverse(a0);	# 8 BKCreverse (a0r:bat[:oid,:oid])<-(a0:bat[:oid,:oid])
-    i := bat.getSequenceBase(a0r);	# 9 BKCgetSequenceBase (i:oid)<-(a0r:bat[:oid,:oid])
-    io.print(i);	# 10 IOprint_val (_13:void)<-(i:oid)
-    a0 := algebra.kintersect(b,a);	# 11 ALGsemijoin (a0:bat[:oid,:oid])<-(b:bat[:oid,:oid])(a:bat[:oid,:oid])
-    a0r := bat.reverse(a0);	# 12 BKCreverse (a0r:bat[:oid,:oid])<-(a0:bat[:oid,:oid])
-    i := bat.getSequenceBase(a0r);	# 13 BKCgetSequenceBase (i:oid)<-(a0r:bat[:oid,:oid])
-    io.print(i);	# 14 IOprint_val (_14:void)<-(i:oid)
-    a0 := algebra.sintersect(a,b);	# 15 ALGsintersect (a0:bat[:oid,:oid])<-(a:bat[:oid,:oid])(b:bat[:oid,:oid])
-    a0r := bat.reverse(a0);	# 16 BKCreverse (a0r:bat[:oid,:oid])<-(a0:bat[:oid,:oid])
-    i := bat.getSequenceBase(a0r);	# 17 BKCgetSequenceBase (i:oid)<-(a0r:bat[:oid,:oid])
-    io.print(i);	# 18 IOprint_val (_15:void)<-(i:oid)
-    a0 := algebra.sintersect(b,a);	# 19 ALGsintersect (a0:bat[:oid,:oid])<-(b:bat[:oid,:oid])(a:bat[:oid,:oid])
-    a0r := bat.reverse(a0);	# 20 BKCreverse (a0r:bat[:oid,:oid])<-(a0:bat[:oid,:oid])
-    i := bat.getSequenceBase(a0r);	# 21 BKCgetSequenceBase (i:oid)<-(a0r:bat[:oid,:oid])
-    io.print(i);	# 22 IOprint_val (_16:void)<-(i:oid)
-    a1 := algebra.kdifference(a,b);	# 23 ALGkdiff (a1:bat[:oid,:oid])<-(a:bat[:oid,:oid])(b:bat[:oid,:oid])
-    a1r := bat.reverse(a1);	# 24 BKCreverse (a1r:bat[:oid,:oid])<-(a1:bat[:oid,:oid])
-    i := bat.getSequenceBase(a1r);	# 25 BKCgetSequenceBase (i:oid)<-(a1r:bat[:oid,:oid])
-    io.print(i);	# 26 IOprint_val (_19:void)<-(i:oid)
-    a1 := algebra.kdifference(b,a);	# 27 ALGkdiff (a1:bat[:oid,:oid])<-(b:bat[:oid,:oid])(a:bat[:oid,:oid])
-    a1r := bat.reverse(a1);	# 28 BKCreverse (a1r:bat[:oid,:oid])<-(a1:bat[:oid,:oid])
-    i := bat.getSequenceBase(a1r);	# 29 BKCgetSequenceBase (i:oid)<-(a1r:bat[:oid,:oid])
-    io.print(i);	# 30 IOprint_val (_20:void)<-(i:oid)
-    a1 := algebra.sdifference(a,b);	# 31 ALGsdiff (a1:bat[:oid,:oid])<-(a:bat[:oid,:oid])(b:bat[:oid,:oid])
-    a1r := bat.reverse(a1);	# 32 BKCreverse (a1r:bat[:oid,:oid])<-(a1:bat[:oid,:oid])
-    i := bat.getSequenceBase(a1r);	# 33 BKCgetSequenceBase (i:oid)<-(a1r:bat[:oid,:oid])
-    io.print(i);	# 34 IOprint_val (_21:void)<-(i:oid)
-    a1 := algebra.sdifference(b,a);	# 35 ALGsdiff (a1:bat[:oid,:oid])<-(b:bat[:oid,:oid])(a:bat[:oid,:oid])
-    a1r := bat.reverse(a1);	# 36 BKCreverse (a1r:bat[:oid,:oid])<-(a1:bat[:oid,:oid])
-    i := bat.getSequenceBase(a1r);	# 37 BKCgetSequenceBase (i:oid)<-(a1r:bat[:oid,:oid])
-    io.print(i);	# 38 IOprint_val (_22:void)<-(i:oid)
+function user.main():void;              #  0 main:void {G}
+    a := bat.new(:oid,:oid);            #  1 a:bat[:oid,:oid] := CMDBATnew(_2:oid, _2:oid) {G}
+    bat.insert(a,1@0,1@0);              #  2 _3:void := BKCinsert_bun(a:bat[:oid,:oid], _4:oid, _4:oid) 
+    ar := bat.reverse(a);               #  3 ar:bat[:oid,:oid] := BKCreverse(a:bat[:oid,:oid]) {G}
+    b := bat.new(:oid,:oid);            #  4 b:bat[:oid,:oid] := CMDBATnew(_2:oid, _2:oid) {G}
+    bat.insert(b,2@0,2@0);              #  5 _7:void := BKCinsert_bun(b:bat[:oid,:oid], _8:oid, _8:oid) 
+    br := bat.reverse(b);               #  6 br:bat[:oid,:oid] := BKCreverse(b:bat[:oid,:oid]) {G}
+    a0 := algebra.kintersect(a,b);      #  7 a0:bat[:oid,:oid] := ALGsemijoin(a:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
+    a0r := bat.reverse(a0);             #  8 a0r:bat[:oid,:oid] := BKCreverse(a0:bat[:oid,:oid]) {G}
+    i := bat.getSequenceBase(a0r);      #  9 i:oid := BKCgetSequenceBase(a0r:bat[:oid,:oid]) 
+    io.print(i);                        # 10 _13:void := IOprint_val(i:oid) 
+    a0 := algebra.kintersect(b,a);      # 11 a0:bat[:oid,:oid] := ALGsemijoin(b:bat[:oid,:oid], a:bat[:oid,:oid]) {G}
+    a0r := bat.reverse(a0);             # 12 a0r:bat[:oid,:oid] := BKCreverse(a0:bat[:oid,:oid]) {G}
+    i := bat.getSequenceBase(a0r);      # 13 i:oid := BKCgetSequenceBase(a0r:bat[:oid,:oid]) 
+    io.print(i);                        # 14 _14:void := IOprint_val(i:oid) 
+    a0 := algebra.sintersect(a,b);      # 15 a0:bat[:oid,:oid] := ALGsintersect(a:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
+    a0r := bat.reverse(a0);             # 16 a0r:bat[:oid,:oid] := BKCreverse(a0:bat[:oid,:oid]) {G}
+    i := bat.getSequenceBase(a0r);      # 17 i:oid := BKCgetSequenceBase(a0r:bat[:oid,:oid]) 
+    io.print(i);                        # 18 _15:void := IOprint_val(i:oid) 
+    a0 := algebra.sintersect(b,a);      # 19 a0:bat[:oid,:oid] := ALGsintersect(b:bat[:oid,:oid], a:bat[:oid,:oid]) {G}
+    a0r := bat.reverse(a0);             # 20 a0r:bat[:oid,:oid] := BKCreverse(a0:bat[:oid,:oid]) {G}
+    i := bat.getSequenceBase(a0r);      # 21 i:oid := BKCgetSequenceBase(a0r:bat[:oid,:oid]) 
+    io.print(i);                        # 22 _16:void := IOprint_val(i:oid) 
+    a1 := algebra.kdifference(a,b);     # 23 a1:bat[:oid,:oid] := ALGkdiff(a:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
+    a1r := bat.reverse(a1);             # 24 a1r:bat[:oid,:oid] := BKCreverse(a1:bat[:oid,:oid]) {G}
+    i := bat.getSequenceBase(a1r);      # 25 i:oid := BKCgetSequenceBase(a1r:bat[:oid,:oid]) 
+    io.print(i);                        # 26 _19:void := IOprint_val(i:oid) 
+    a1 := algebra.kdifference(b,a);     # 27 a1:bat[:oid,:oid] := ALGkdiff(b:bat[:oid,:oid], a:bat[:oid,:oid]) {G}
+    a1r := bat.reverse(a1);             # 28 a1r:bat[:oid,:oid] := BKCreverse(a1:bat[:oid,:oid]) {G}
+    i := bat.getSequenceBase(a1r);      # 29 i:oid := BKCgetSequenceBase(a1r:bat[:oid,:oid]) 
+    io.print(i);                        # 30 _20:void := IOprint_val(i:oid) 
+    a1 := algebra.sdifference(a,b);     # 31 a1:bat[:oid,:oid] := ALGsdiff(a:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
+    a1r := bat.reverse(a1);             # 32 a1r:bat[:oid,:oid] := BKCreverse(a1:bat[:oid,:oid]) {G}
+    i := bat.getSequenceBase(a1r);      # 33 i:oid := BKCgetSequenceBase(a1r:bat[:oid,:oid]) 
+    io.print(i);                        # 34 _21:void := IOprint_val(i:oid) 
+    a1 := algebra.sdifference(b,a);     # 35 a1:bat[:oid,:oid] := ALGsdiff(b:bat[:oid,:oid], a:bat[:oid,:oid]) {G}
+    a1r := bat.reverse(a1);             # 36 a1r:bat[:oid,:oid] := BKCreverse(a1:bat[:oid,:oid]) {G}
+    i := bat.getSequenceBase(a1r);      # 37 i:oid := BKCgetSequenceBase(a1r:bat[:oid,:oid]) 
+    io.print(i);                        # 38 _22:void := IOprint_val(i:oid) 
 end main;	# 39  
 [ 2@0 ]
 [ 2@0 ]

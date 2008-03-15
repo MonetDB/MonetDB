@@ -31,23 +31,22 @@ stdout of test 'tst013` in directory 'src/mal` itself:
 !SyntaxException:user.main[3]:label '_4' not in guarded block
 
 !SyntaxException:user.main[14]:label 't' not in guarded block
-
-function user.main():void;	# 0  (main:void)
-# incomplete barrier blocks. Resolve them when unambigous 	# 1  (_1:str)
-barrier z := true;	# 2  (z:bit)<-(_3:bit) jump 4
-    leave _4;	# 3  (_4:any)
-exit z;	# 4  (z:bit)
-barrier i := 1;	# 5  (i:int)<-(_6:int) jump 15
-    i := calc.+(i,1);	# 6 CALCbinaryADDintint (i:int)<-(i:int)(_6:int)
-    io.print(i);	# 7 IOprint_val (_7:void)<-(i:int)
-barrier t := calc.>(i,3);	# 8 CALCcompGTintint (t:bit)<-(i:int)(_9:int) jump 13
-# new envelop 	# 9  (_10:str)
-    io.print("leave loop");	# 10 IOprint_val (_11:void)<-(_12:str)
-    leave i;	# 11  (i:int) jump 15
-# leave outer envelop 	# 12  ($17:str)
-exit t;	# 13  (t:bit)
-    redo t;	# 14  (t:bit)
-exit i;	# 15  (i:int)
+function user.main():void;              #  0 main:void 
+# incomplete barrier blocks. Resolve them when unambigous 
+barrier z := true;                      #  2 z:bit := _3:bit {J4}
+    leave _4;                           #  3 _4:any 
+exit z;                                 #  4 z:bit 
+barrier i := 1;                         #  5 i:int := _6:int {J15}
+    i := calc.+(i,1);                   #  6 i:int := CALCbinaryADDintint(i:int, _6:int) 
+    io.print(i);                        #  7 _7:void := IOprint_val(i:int) 
+barrier t := calc.>(i,3);               #  8 t:bit := CALCcompGTintint(i:int, _9:int) {J13}
+# new envelop 
+    io.print("leave loop");             # 10 _11:void := IOprint_val(_12:str) 
+    leave i;                            # 11 i:int {J15}
+# leave outer envelop 
+exit t;                                 # 13 t:bit 
+    redo t;                             # 14 t:bit 
+exit i;                                 # 15 i:int 
 end main;	# 16  
 
 # 07:58:37 >  

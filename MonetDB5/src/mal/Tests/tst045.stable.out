@@ -19,13 +19,13 @@ stdout of test 'tst045` in directory 'src/mal` itself:
 #function dummy();
 #	pi:=0:int;
 #end dummy;
-function user.dummy():void;	# 0  (dummy:void)
-    pi := 0:int;	# 1  (pi:int)<-(_2:int)
+function user.dummy():void;             #  0 dummy:void 
+    pi := 0:int;                        #  1 pi:int := _2:int 
 end dummy;	# 2  
 #
-function user.main():void;	# 0  (main:void)
-# test variable scope resolution 	# 1  (_1:str)
-    pi := 3.14700007:flt;	# 2  (pi:flt)<-(_3:flt)
+function user.main():void;              #  0 main:void 
+# test variable scope resolution 
+    pi := 3.14700007:flt;               #  2 pi:flt := _3:flt 
 end main;	# 3  
 
 # 07:58:45 >  

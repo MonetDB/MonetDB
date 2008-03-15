@@ -20,12 +20,12 @@ stdout of test 'tst610` in directory 'src/mal` itself:
 #    gl:=bbp.getLRefCount();
 #    print(g,gr,gl);
 #end refs;
-function user.refs():void;	# 0  (refs:void)
-    g := bbp.getNames();	# 1 CMDbbpNames (g:bat[:int,:str])
-    gs := algebra.sort(g);	# 2 ALGhsort (gs:bat[:int,:str])<-(g:bat[:int,:str])
-    gr := bbp.getRefCount();	# 3 CMDbbpRefCount (gr:bat[:int,:int])
-    gl := bbp.getLRefCount();	# 4 CMDbbpLRefCount (gl:bat[:int,:int])
-    io.table(gs,gr,gl);	# 5 IOttable (_5:void)<-(gs:bat[:int,:str])(gr:bat[:int,:int])(gl:bat[:int,:int])
+function user.refs():void;              #  0 refs:void {G}
+    g := bbp.getNames();                #  1 g:bat[:int,:str] {G}
+    gs := algebra.sort(g);              #  2 gs:bat[:int,:str] := ALGhsort(g:bat[:int,:str]) {G}
+    gr := bbp.getRefCount();            #  3 gr:bat[:int,:int] {G}
+    gl := bbp.getLRefCount();           #  4 gl:bat[:int,:int] {G}
+    io.table(gs,gr,gl);                 #  5 _5:void := IOttable(gs:bat[:int,:str], gr:bat[:int,:int], gl:bat[:int,:int]) 
 end refs;	# 6  
 #
 #b:= new(:int,:int);
@@ -68,48 +68,48 @@ end refs;	# 6
 #print("BAT was removed from the box");
 #exit MALException;
 #
-function user.main():void;	# 0  (main:void)
-#this test is used to monitor reference count setting 	# 1  (_1:str)
-#create a persistent bat and destroy it in test 612 	# 2  (_2:str)
-    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
-#refs(); 	# 4  (_5:str)
-    bat.insert(b,23,32);	# 5 BKCinsert_bun (_6:void)<-(b:bat[:int,:int])(_7:int)(_8:int)
-#refs(); 	# 6  (_9:str)
-    bat.setName(b,"tasks");	# 7 BKCsetName (_10:void)<-(b:bat[:int,:int])(_11:str)
-#refs(); 	# 8  (_12:str)
-    bat.setPersistent(b,true);	# 9 BKCpersists (_13:void)<-(b:bat[:int,:int])(_14:bit)
-#refs(); 	# 10  (_15:str)
-# it is committed  	# 11  (_16:str)
-    io.print("open box");	# 12 IOprint_val (_17:void)<-(_18:str)
-    bbp.open();	# 13 CMDbbpopen (_19:void)
-#user.refs(); 	# 14  (_20:str)
-    t:bat[:int,:int]  := bbp.bind("tasks");	# 15 CMDbbpbind (t:bat[:int,:int])<-(_11:str)
-    io.print(t);	# 16 IOprint_val (_22:void)<-(t:bat[:int,:int])
-    bbp.release(t);	# 17 CMDbbpreleaseBAT (_23:void)<-(t:bat[:int,:int])
-#user.refs(); 	# 18  (_24:str)
-    io.print(t);	# 19 IOprint_val (_25:void)<-(t:bat[:int,:int])
-catch MALException:str ;	# 20  (MALException:str) jump 22
-    io.print("BAT was released");	# 21 IOprint_val (_27:void)<-(_28:str)
-exit MALException:str ;	# 22  (MALException:str)
-# the bat is still visible, because the destroy only 	# 23  (_29:str)
-# marks it for deletion at the end of session or 	# 24  (_30:str)
-# when the reference counters drop to zero 	# 25  (_31:str)
-    t:bat[:int,:int]  := bbp.bind("tasks");	# 26 CMDbbpbind (t:bat[:int,:int])<-(_11:str)
-#user.refs(); 	# 27  (_32:str)
-# to really remove, we get rid of the current 	# 28  (_33:str)
-# references as well 	# 29  (_34:str)
-    bbp.destroy(t,true);	# 30 CMDbbpdestroyBAT (_35:void)<-(t:bat[:int,:int])(_14:bit)
-#user.refs(); 	# 31  (_36:str)
-    io.print(t);	# 32 IOprint_val (_37:void)<-(t:bat[:int,:int])
-catch MALException:str ;	# 33  (MALException:str) jump 35
-    io.print("BAT was destroyed");	# 34 IOprint_val (_38:void)<-(_39:str)
-exit MALException:str ;	# 35  (MALException:str)
-    z:bat[:any,:any]  := bbp.bind("tasks");	# 36 CMDbbpbind (z:bat[:any,:any])<-(_11:str)
-    io.print(z);	# 37 IOprint_val (_41:void)<-(z:bat[:any,:any])
-#it is not in the box anymore either 	# 38  (_42:str)
-catch MALException:str ;	# 39  (MALException:str) jump 41
-    io.print("BAT was removed from the box");	# 40 IOprint_val (_43:void)<-(_44:str)
-exit MALException:str ;	# 41  (MALException:str)
+function user.main():void;              #  0 main:void {G}
+#this test is used to monitor reference count setting 
+#create a persistent bat and destroy it in test 612 
+    b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
+#refs(); 
+    bat.insert(b,23,32);                #  5 _6:void := BKCinsert_bun(b:bat[:int,:int], _7:int, _8:int) 
+#refs(); 
+    bat.setName(b,"tasks");             #  7 _10:void := BKCsetName(b:bat[:int,:int], _11:str) 
+#refs(); 
+    bat.setPersistent(b,true);          #  9 _13:void := BKCpersists(b:bat[:int,:int], _14:bit) 
+#refs(); 
+# it is committed  
+    io.print("open box");               # 12 _17:void := IOprint_val(_18:str) 
+    bbp.open();                         # 13 _19:void 
+#user.refs(); 
+    t:bat[:int,:int]  := bbp.bind("tasks");# 15 t:bat[:int,:int] := CMDbbpbind(_11:str) {G}
+    io.print(t);                        # 16 _22:void := IOprint_val(t:bat[:int,:int]) 
+    bbp.release(t);                     # 17 _23:void := CMDbbpreleaseBAT(t:bat[:int,:int]) 
+#user.refs(); 
+    io.print(t);                        # 19 _25:void := IOprint_val(t:bat[:int,:int]) 
+catch MALException:str ;                # 20 MALException:str {J22}
+    io.print("BAT was released");       # 21 _27:void := IOprint_val(_28:str) 
+exit MALException:str ;                 # 22 MALException:str 
+# the bat is still visible, because the destroy only 
+# marks it for deletion at the end of session or 
+# when the reference counters drop to zero 
+    t:bat[:int,:int]  := bbp.bind("tasks");# 26 t:bat[:int,:int] := CMDbbpbind(_11:str) {G}
+#user.refs(); 
+# to really remove, we get rid of the current 
+# references as well 
+    bbp.destroy(t,true);                # 30 _35:void := CMDbbpdestroyBAT(t:bat[:int,:int], _14:bit) 
+#user.refs(); 
+    io.print(t);                        # 32 _37:void := IOprint_val(t:bat[:int,:int]) 
+catch MALException:str ;                # 33 MALException:str {J35}
+    io.print("BAT was destroyed");      # 34 _38:void := IOprint_val(_39:str) 
+exit MALException:str ;                 # 35 MALException:str 
+    z:bat[:any,:any]  := bbp.bind("tasks");# 36 z:bat[:any,:any] := CMDbbpbind(_11:str) {PG}
+    io.print(z);                        # 37 _41:void := IOprint_val(z:bat[:any,:any]) {P}
+#it is not in the box anymore either 
+catch MALException:str ;                # 39 MALException:str {J41}
+    io.print("BAT was removed from the box");# 40 _43:void := IOprint_val(_44:str) 
+exit MALException:str ;                 # 41 MALException:str 
 end main;	# 42  
 [ "open box" ]
 #-----------------#

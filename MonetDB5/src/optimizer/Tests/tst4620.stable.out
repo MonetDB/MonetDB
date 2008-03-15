@@ -18,10 +18,10 @@ stdout of test 'tst4620` in directory 'src/optimizer` itself:
 #    zz:= algebra.join(z,c);
 #    return zz;
 #end joinPath;
-function algebra.joinPath(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];	# 0  dynamic (joinPath:bat[:any_1,:any_4])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])(c:bat[:any_3,:any_4])
-    z := algebra.join(a,b);	# 1 ALGjoin (z:bat[:any,:any])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])
-    zz := algebra.join(z,c);	# 2 ALGjoin (zz:bat[:any,:any])<-(z:bat[:any,:any])(c:bat[:any_3,:any_4])
-    return joinPath := zz;	# 3  (joinPath:bat[:any_1,:any_4])<-(zz:bat[:any,:any])
+function algebra.joinPath(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];#  0 joinPath:bat[:any_1,:any_4] := algebra.joinPath(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], c:bat[:any_3,:any_4]) {UPG}
+    z := algebra.join(a,b);             #  1 z:bat[:any,:any] := ALGjoin(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3]) {PG}
+    zz := algebra.join(z,c);            #  2 zz:bat[:any,:any] := ALGjoin(z:bat[:any,:any], c:bat[:any_3,:any_4]) {PG}
+    return joinPath := zz;              #  3 joinPath:bat[:any_1,:any_4] := zz:bat[:any,:any] {G}
 end joinPath;	# 4  
 #
 #b:= bat.new(:int,:int);
@@ -48,26 +48,26 @@ end joinPath;	# 4
 #io.print(i);
 #mdb.list();
 #
-function user.main():void;	# 0  (main:void)
-#some join operations 	# 1  (_1:str)
-    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
-barrier (k,v):= language.newRange(0:int);	# 3 RNGnewRange_int (k:bit)(v:int)<-(_6:int) jump 6
-    bat.insert(b,v,v);	# 4 BKCinsert_bun (_7:void)<-(b:bat[:int,:int])(v:int)(v:int)
-    redo (k,v):= language.nextElement(1:int,100:int);	# 5 RNGnextElement_int (k:bit)(v:int)<-(_8:int)(_9:int) jump 4
-exit (k,v);	# 6  (k:bit)(v:int)
-    i := aggr.count(b);	# 7 ALGcount_bat (i:int)<-(b:bat[:int,:int])
-    io.print(i);	# 8 IOprint_val (_11:void)<-(i:int)
-    c := algebra.select(b,0:int,9:int);	# 9 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_13:int)
-    i := aggr.count(c);	# 10 ALGcount_bat (i:int)<-(c:bat[:int,:int])
-    io.print(i);	# 11 IOprint_val (_14:void)<-(i:int)
-    d := algebra.select(b,0:int,49:int);	# 12 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_16:int)
-    i := aggr.count(d);	# 13 ALGcount_bat (i:int)<-(d:bat[:int,:int])
-    io.print(i);	# 14 IOprint_val (_17:void)<-(i:int)
-#to be detected by join inversion 	# 15  (_21:str)
-    zz := algebra.joinPath(b,c,d);	# 16  (zz:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])(d:bat[:int,:int])
-    i := aggr.count(zz);	# 17 ALGcount_bat (i:int)<-(zz:bat[:int,:int])
-    io.print(i);	# 18 IOprint_val (_24:void)<-(i:int)
-    mdb.list();	# 19 MDBlist (_25:void)
+function user.main():void;              #  0 main:void {G}
+#some join operations 
+    b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+barrier (k,v):= language.newRange(0:int);#  3 (k:bit, v:int) := RNGnewRange_int(_6:int) {J6}
+    bat.insert(b,v,v);                  #  4 _7:void := BKCinsert_bun(b:bat[:int,:int], v:int, v:int) 
+    redo (k,v):= language.nextElement(1:int,100:int);#  5 (k:bit, v:int) := RNGnextElement_int(_8:int, _9:int) {J4}
+exit (k,v);                             #  6 (k:bit, v:int 
+    i := aggr.count(b);                 #  7 i:int := ALGcount_bat(b:bat[:int,:int]) 
+    io.print(i);                        #  8 _11:void := IOprint_val(i:int) 
+    c := algebra.select(b,0:int,9:int); #  9 c:bat[:int,:int] := ALGselect(b:bat[:int,:int], _6:int, _13:int) {G}
+    i := aggr.count(c);                 # 10 i:int := ALGcount_bat(c:bat[:int,:int]) 
+    io.print(i);                        # 11 _14:void := IOprint_val(i:int) 
+    d := algebra.select(b,0:int,49:int);# 12 d:bat[:int,:int] := ALGselect(b:bat[:int,:int], _6:int, _16:int) {G}
+    i := aggr.count(d);                 # 13 i:int := ALGcount_bat(d:bat[:int,:int]) 
+    io.print(i);                        # 14 _17:void := IOprint_val(i:int) 
+#to be detected by join inversion 
+    zz := algebra.joinPath(b,c,d);      # 16 zz:bat[:int,:int] := algebra.joinPath(b:bat[:int,:int], c:bat[:int,:int], d:bat[:int,:int]) {PG}
+    i := aggr.count(zz);                # 17 i:int := ALGcount_bat(zz:bat[:int,:int]) 
+    io.print(i);                        # 18 _24:void := IOprint_val(i:int) 
+    mdb.list();                         # 19 _25:void 
 [ 100 ]
 [ 10 ]
 [ 50 ]

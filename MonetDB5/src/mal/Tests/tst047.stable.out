@@ -28,20 +28,20 @@ stdout of test 'tst047` in directory 'src/mal` itself:
 #l1:= copy(br);
 #print(l1);
 #
-function user.main():void;	# 0  (main:void)
-#testing copying and counting reversals 	# 1  (_1:str)
-#to test reversal handling 	# 2  (_2:str)
-    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
-    bat.insert(b,1,1);	# 4 BKCinsert_bun (_5:void)<-(b:bat[:int,:int])(_6:int)(_6:int)
-    bat.insert(b,2,4);	# 5 BKCinsert_bun (_7:void)<-(b:bat[:int,:int])(_8:int)(_9:int)
-    bat.insert(b,3,9);	# 6 BKCinsert_bun (_10:void)<-(b:bat[:int,:int])(_11:int)(_12:int)
-    io.print(b);	# 7 IOprint_val (_13:void)<-(b:bat[:int,:int])
-    br := bat.reverse(b);	# 8 BKCreverse (br:bat[:int,:int])<-(b:bat[:int,:int])
-    io.print(br);	# 9 IOprint_val (_15:void)<-(br:bat[:int,:int])
-    l0 := algebra.copy(b);	# 10 ALGcopy (l0:bat[:int,:int])<-(b:bat[:int,:int])
-    io.print(l0);	# 11 IOprint_val (_17:void)<-(l0:bat[:int,:int])
-    l1 := algebra.copy(br);	# 12 ALGcopy (l1:bat[:int,:int])<-(br:bat[:int,:int])
-    io.print(l1);	# 13 IOprint_val (_19:void)<-(l1:bat[:int,:int])
+function user.main():void;              #  0 main:void {G}
+#testing copying and counting reversals 
+#to test reversal handling 
+    b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
+    bat.insert(b,1,1);                  #  4 _5:void := BKCinsert_bun(b:bat[:int,:int], _6:int, _6:int) 
+    bat.insert(b,2,4);                  #  5 _7:void := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) 
+    bat.insert(b,3,9);                  #  6 _10:void := BKCinsert_bun(b:bat[:int,:int], _11:int, _12:int) 
+    io.print(b);                        #  7 _13:void := IOprint_val(b:bat[:int,:int]) 
+    br := bat.reverse(b);               #  8 br:bat[:int,:int] := BKCreverse(b:bat[:int,:int]) {G}
+    io.print(br);                       #  9 _15:void := IOprint_val(br:bat[:int,:int]) 
+    l0 := algebra.copy(b);              # 10 l0:bat[:int,:int] := ALGcopy(b:bat[:int,:int]) {G}
+    io.print(l0);                       # 11 _17:void := IOprint_val(l0:bat[:int,:int]) 
+    l1 := algebra.copy(br);             # 12 l1:bat[:int,:int] := ALGcopy(br:bat[:int,:int]) {G}
+    io.print(l1);                       # 13 _19:void := IOprint_val(l1:bat[:int,:int]) 
 end main;	# 14  
 #-----------------#
 # h	tmp_4	  # name

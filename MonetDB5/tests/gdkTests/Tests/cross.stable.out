@@ -81,67 +81,67 @@ stdout of test 'cross` in directory 'tests/gdkTests` itself:
 #ba:= algebra.crossproduct(b,ar);
 #io.print(ba);
 #
-function user.main():void;	# 0  (main:void)
-    a := bat.new(:oid,:int);	# 1 CMDBATnew (a:bat[:oid,:int])<-(_2:oid)(_3:int)
-    ar := bat.reverse(a);	# 2 BKCreverse (ar:bat[:int,:oid])<-(a:bat[:oid,:int])
-    io.print(ar);	# 3 IOprint_val (_5:void)<-(ar:bat[:int,:oid])
-    b := bat.new(:oid,:int);	# 4 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
-    io.print(b);	# 5 IOprint_val (_7:void)<-(b:bat[:oid,:int])
-    ar := bat.reverse(a);	# 6 BKCreverse (ar:bat[:int,:oid])<-(a:bat[:oid,:int])
-    c := algebra.crossproduct(ar,ar);	# 7 ALGcross (c:bat[:int,:oid])<-(ar:bat[:int,:oid])(ar:bat[:int,:oid])
-    io.print(c);	# 8 IOprint_val (_9:void)<-(c:bat[:int,:oid])
-    bb := algebra.crossproduct(b,b);	# 9 ALGcross (bb:bat[:oid,:int])<-(b:bat[:oid,:int])(b:bat[:oid,:int])
-    io.print(bb);	# 10 IOprint_val (_11:void)<-(bb:bat[:oid,:int])
-    ab := algebra.crossproduct(ar,b);	# 11 ALGcross (ab:bat[:int,:int])<-(ar:bat[:int,:oid])(b:bat[:oid,:int])
-    io.print(ab);	# 12 IOprint_val (_13:void)<-(ab:bat[:int,:int])
-    ba := algebra.crossproduct(b,ar);	# 13 ALGcross (ba:bat[:oid,:oid])<-(b:bat[:oid,:int])(ar:bat[:int,:oid])
-    io.print(ba);	# 14 IOprint_val (_15:void)<-(ba:bat[:oid,:oid])
-    bat.append(a,1);	# 15 BKCappend_val_wrap (_16:void)<-(a:bat[:oid,:int])(_17:int)
-    ar := bat.reverse(a);	# 16 BKCreverse (ar:bat[:int,:oid])<-(a:bat[:oid,:int])
-    io.print(ar);	# 17 IOprint_val (_18:void)<-(ar:bat[:int,:oid])
-    ar := bat.reverse(a);	# 18 BKCreverse (ar:bat[:int,:oid])<-(a:bat[:oid,:int])
-    c := algebra.crossproduct(ar,ar);	# 19 ALGcross (c:bat[:int,:oid])<-(ar:bat[:int,:oid])(ar:bat[:int,:oid])
-    io.print(c);	# 20 IOprint_val (_19:void)<-(c:bat[:int,:oid])
-    bb := algebra.crossproduct(b,b);	# 21 ALGcross (bb:bat[:oid,:int])<-(b:bat[:oid,:int])(b:bat[:oid,:int])
-    io.print(bb);	# 22 IOprint_val (_20:void)<-(bb:bat[:oid,:int])
-    ab := algebra.crossproduct(ar,b);	# 23 ALGcross (ab:bat[:int,:int])<-(ar:bat[:int,:oid])(b:bat[:oid,:int])
-    io.print(ab);	# 24 IOprint_val (_21:void)<-(ab:bat[:int,:int])
-    ba := algebra.crossproduct(b,ar);	# 25 ALGcross (ba:bat[:oid,:oid])<-(b:bat[:oid,:int])(ar:bat[:int,:oid])
-    io.print(ba);	# 26 IOprint_val (_22:void)<-(ba:bat[:oid,:oid])
-    bat.append(b,11);	# 27 BKCappend_val_wrap (_23:void)<-(b:bat[:oid,:int])(_24:int)
-    io.print(b);	# 28 IOprint_val (_25:void)<-(b:bat[:oid,:int])
-    ar := bat.reverse(a);	# 29 BKCreverse (ar:bat[:int,:oid])<-(a:bat[:oid,:int])
-    c := algebra.crossproduct(ar,ar);	# 30 ALGcross (c:bat[:int,:oid])<-(ar:bat[:int,:oid])(ar:bat[:int,:oid])
-    io.print(c);	# 31 IOprint_val (_26:void)<-(c:bat[:int,:oid])
-    bb := algebra.crossproduct(b,b);	# 32 ALGcross (bb:bat[:oid,:int])<-(b:bat[:oid,:int])(b:bat[:oid,:int])
-    io.print(bb);	# 33 IOprint_val (_27:void)<-(bb:bat[:oid,:int])
-    ab := algebra.crossproduct(ar,b);	# 34 ALGcross (ab:bat[:int,:int])<-(ar:bat[:int,:oid])(b:bat[:oid,:int])
-    io.print(ab);	# 35 IOprint_val (_28:void)<-(ab:bat[:int,:int])
-    ba := algebra.crossproduct(b,ar);	# 36 ALGcross (ba:bat[:oid,:oid])<-(b:bat[:oid,:int])(ar:bat[:int,:oid])
-    io.print(ba);	# 37 IOprint_val (_29:void)<-(ba:bat[:oid,:oid])
-    bat.append(a,2);	# 38 BKCappend_val_wrap (_30:void)<-(a:bat[:oid,:int])(_31:int)
-    ar := bat.reverse(a);	# 39 BKCreverse (ar:bat[:int,:oid])<-(a:bat[:oid,:int])
-    io.print(ar);	# 40 IOprint_val (_32:void)<-(ar:bat[:int,:oid])
-    ar := bat.reverse(a);	# 41 BKCreverse (ar:bat[:int,:oid])<-(a:bat[:oid,:int])
-    c := algebra.crossproduct(ar,ar);	# 42 ALGcross (c:bat[:int,:oid])<-(ar:bat[:int,:oid])(ar:bat[:int,:oid])
-    io.print(c);	# 43 IOprint_val (_33:void)<-(c:bat[:int,:oid])
-    bb := algebra.crossproduct(b,b);	# 44 ALGcross (bb:bat[:oid,:int])<-(b:bat[:oid,:int])(b:bat[:oid,:int])
-    io.print(bb);	# 45 IOprint_val (_34:void)<-(bb:bat[:oid,:int])
-    ab := algebra.crossproduct(ar,b);	# 46 ALGcross (ab:bat[:int,:int])<-(ar:bat[:int,:oid])(b:bat[:oid,:int])
-    io.print(ab);	# 47 IOprint_val (_35:void)<-(ab:bat[:int,:int])
-    ba := algebra.crossproduct(b,ar);	# 48 ALGcross (ba:bat[:oid,:oid])<-(b:bat[:oid,:int])(ar:bat[:int,:oid])
-    io.print(ba);	# 49 IOprint_val (_36:void)<-(ba:bat[:oid,:oid])
-    bat.append(b,22);	# 50 BKCappend_val_wrap (_37:void)<-(b:bat[:oid,:int])(_38:int)
-    io.print(b);	# 51 IOprint_val (_39:void)<-(b:bat[:oid,:int])
-    ar := bat.reverse(a);	# 52 BKCreverse (ar:bat[:int,:oid])<-(a:bat[:oid,:int])
-    c := algebra.crossproduct(ar,ar);	# 53 ALGcross (c:bat[:int,:oid])<-(ar:bat[:int,:oid])(ar:bat[:int,:oid])
-    io.print(c);	# 54 IOprint_val (_40:void)<-(c:bat[:int,:oid])
-    bb := algebra.crossproduct(b,b);	# 55 ALGcross (bb:bat[:oid,:int])<-(b:bat[:oid,:int])(b:bat[:oid,:int])
-    io.print(bb);	# 56 IOprint_val (_41:void)<-(bb:bat[:oid,:int])
-    ab := algebra.crossproduct(ar,b);	# 57 ALGcross (ab:bat[:int,:int])<-(ar:bat[:int,:oid])(b:bat[:oid,:int])
-    io.print(ab);	# 58 IOprint_val (_42:void)<-(ab:bat[:int,:int])
-    ba := algebra.crossproduct(b,ar);	# 59 ALGcross (ba:bat[:oid,:oid])<-(b:bat[:oid,:int])(ar:bat[:int,:oid])
-    io.print(ba);	# 60 IOprint_val (_43:void)<-(ba:bat[:oid,:oid])
+function user.main():void;              #  0 main:void {G}
+    a := bat.new(:oid,:int);            #  1 a:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    ar := bat.reverse(a);               #  2 ar:bat[:int,:oid] := BKCreverse(a:bat[:oid,:int]) {G}
+    io.print(ar);                       #  3 _5:void := IOprint_val(ar:bat[:int,:oid]) 
+    b := bat.new(:oid,:int);            #  4 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    io.print(b);                        #  5 _7:void := IOprint_val(b:bat[:oid,:int]) 
+    ar := bat.reverse(a);               #  6 ar:bat[:int,:oid] := BKCreverse(a:bat[:oid,:int]) {G}
+    c := algebra.crossproduct(ar,ar);   #  7 c:bat[:int,:oid] := ALGcross(ar:bat[:int,:oid], ar:bat[:int,:oid]) {G}
+    io.print(c);                        #  8 _9:void := IOprint_val(c:bat[:int,:oid]) 
+    bb := algebra.crossproduct(b,b);    #  9 bb:bat[:oid,:int] := ALGcross(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
+    io.print(bb);                       # 10 _11:void := IOprint_val(bb:bat[:oid,:int]) 
+    ab := algebra.crossproduct(ar,b);   # 11 ab:bat[:int,:int] := ALGcross(ar:bat[:int,:oid], b:bat[:oid,:int]) {G}
+    io.print(ab);                       # 12 _13:void := IOprint_val(ab:bat[:int,:int]) 
+    ba := algebra.crossproduct(b,ar);   # 13 ba:bat[:oid,:oid] := ALGcross(b:bat[:oid,:int], ar:bat[:int,:oid]) {G}
+    io.print(ba);                       # 14 _15:void := IOprint_val(ba:bat[:oid,:oid]) 
+    bat.append(a,1);                    # 15 _16:void := BKCappend_val_wrap(a:bat[:oid,:int], _17:int) 
+    ar := bat.reverse(a);               # 16 ar:bat[:int,:oid] := BKCreverse(a:bat[:oid,:int]) {G}
+    io.print(ar);                       # 17 _18:void := IOprint_val(ar:bat[:int,:oid]) 
+    ar := bat.reverse(a);               # 18 ar:bat[:int,:oid] := BKCreverse(a:bat[:oid,:int]) {G}
+    c := algebra.crossproduct(ar,ar);   # 19 c:bat[:int,:oid] := ALGcross(ar:bat[:int,:oid], ar:bat[:int,:oid]) {G}
+    io.print(c);                        # 20 _19:void := IOprint_val(c:bat[:int,:oid]) 
+    bb := algebra.crossproduct(b,b);    # 21 bb:bat[:oid,:int] := ALGcross(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
+    io.print(bb);                       # 22 _20:void := IOprint_val(bb:bat[:oid,:int]) 
+    ab := algebra.crossproduct(ar,b);   # 23 ab:bat[:int,:int] := ALGcross(ar:bat[:int,:oid], b:bat[:oid,:int]) {G}
+    io.print(ab);                       # 24 _21:void := IOprint_val(ab:bat[:int,:int]) 
+    ba := algebra.crossproduct(b,ar);   # 25 ba:bat[:oid,:oid] := ALGcross(b:bat[:oid,:int], ar:bat[:int,:oid]) {G}
+    io.print(ba);                       # 26 _22:void := IOprint_val(ba:bat[:oid,:oid]) 
+    bat.append(b,11);                   # 27 _23:void := BKCappend_val_wrap(b:bat[:oid,:int], _24:int) 
+    io.print(b);                        # 28 _25:void := IOprint_val(b:bat[:oid,:int]) 
+    ar := bat.reverse(a);               # 29 ar:bat[:int,:oid] := BKCreverse(a:bat[:oid,:int]) {G}
+    c := algebra.crossproduct(ar,ar);   # 30 c:bat[:int,:oid] := ALGcross(ar:bat[:int,:oid], ar:bat[:int,:oid]) {G}
+    io.print(c);                        # 31 _26:void := IOprint_val(c:bat[:int,:oid]) 
+    bb := algebra.crossproduct(b,b);    # 32 bb:bat[:oid,:int] := ALGcross(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
+    io.print(bb);                       # 33 _27:void := IOprint_val(bb:bat[:oid,:int]) 
+    ab := algebra.crossproduct(ar,b);   # 34 ab:bat[:int,:int] := ALGcross(ar:bat[:int,:oid], b:bat[:oid,:int]) {G}
+    io.print(ab);                       # 35 _28:void := IOprint_val(ab:bat[:int,:int]) 
+    ba := algebra.crossproduct(b,ar);   # 36 ba:bat[:oid,:oid] := ALGcross(b:bat[:oid,:int], ar:bat[:int,:oid]) {G}
+    io.print(ba);                       # 37 _29:void := IOprint_val(ba:bat[:oid,:oid]) 
+    bat.append(a,2);                    # 38 _30:void := BKCappend_val_wrap(a:bat[:oid,:int], _31:int) 
+    ar := bat.reverse(a);               # 39 ar:bat[:int,:oid] := BKCreverse(a:bat[:oid,:int]) {G}
+    io.print(ar);                       # 40 _32:void := IOprint_val(ar:bat[:int,:oid]) 
+    ar := bat.reverse(a);               # 41 ar:bat[:int,:oid] := BKCreverse(a:bat[:oid,:int]) {G}
+    c := algebra.crossproduct(ar,ar);   # 42 c:bat[:int,:oid] := ALGcross(ar:bat[:int,:oid], ar:bat[:int,:oid]) {G}
+    io.print(c);                        # 43 _33:void := IOprint_val(c:bat[:int,:oid]) 
+    bb := algebra.crossproduct(b,b);    # 44 bb:bat[:oid,:int] := ALGcross(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
+    io.print(bb);                       # 45 _34:void := IOprint_val(bb:bat[:oid,:int]) 
+    ab := algebra.crossproduct(ar,b);   # 46 ab:bat[:int,:int] := ALGcross(ar:bat[:int,:oid], b:bat[:oid,:int]) {G}
+    io.print(ab);                       # 47 _35:void := IOprint_val(ab:bat[:int,:int]) 
+    ba := algebra.crossproduct(b,ar);   # 48 ba:bat[:oid,:oid] := ALGcross(b:bat[:oid,:int], ar:bat[:int,:oid]) {G}
+    io.print(ba);                       # 49 _36:void := IOprint_val(ba:bat[:oid,:oid]) 
+    bat.append(b,22);                   # 50 _37:void := BKCappend_val_wrap(b:bat[:oid,:int], _38:int) 
+    io.print(b);                        # 51 _39:void := IOprint_val(b:bat[:oid,:int]) 
+    ar := bat.reverse(a);               # 52 ar:bat[:int,:oid] := BKCreverse(a:bat[:oid,:int]) {G}
+    c := algebra.crossproduct(ar,ar);   # 53 c:bat[:int,:oid] := ALGcross(ar:bat[:int,:oid], ar:bat[:int,:oid]) {G}
+    io.print(c);                        # 54 _40:void := IOprint_val(c:bat[:int,:oid]) 
+    bb := algebra.crossproduct(b,b);    # 55 bb:bat[:oid,:int] := ALGcross(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
+    io.print(bb);                       # 56 _41:void := IOprint_val(bb:bat[:oid,:int]) 
+    ab := algebra.crossproduct(ar,b);   # 57 ab:bat[:int,:int] := ALGcross(ar:bat[:int,:oid], b:bat[:oid,:int]) {G}
+    io.print(ab);                       # 58 _42:void := IOprint_val(ab:bat[:int,:int]) 
+    ba := algebra.crossproduct(b,ar);   # 59 ba:bat[:oid,:oid] := ALGcross(b:bat[:oid,:int], ar:bat[:int,:oid]) {G}
+    io.print(ba);                       # 60 _43:void := IOprint_val(ba:bat[:oid,:oid]) 
 end main;	# 61  
 #-----------------#
 # t	h	  # name

@@ -6,14 +6,15 @@
 # are on top.  Please keep the status of items up-to-date, e.g. OPEN,
 # DONE, PARTIAL.
 # Please append the date at each state change.
+deal with the NIL values in url.
 
-*MonetDB 5.8 (Jan 2008)
+*MonetDB 5.8 (Spring 2008)
 
   23 Jul 2006; Martin Kersten <mlkersten>; OPEN
   The X100 subsystem with its buffer manager and
   compression scheme is integrated in the software stack.
 
-*MonetDB 5.6 (Sep 2007)
+*MonetDB 5.4 (Spring 2008)
 
   23 Jul 2006; Martin Kersten <mlkersten>; OPEN
   XQuery/XUpdate is ported to MonetDB Version 5 using
@@ -21,9 +22,7 @@
   The main bottleneck is the translation of the MIL 
   procedures into MAL.
 
-*MonetDB 5.4 (May 2007)
-
-*MonetDB 5.2 (Jan 2007)
+*MonetDB 5.2 (May 2007)
 
   23 Jul 2006; Romulo Concalves <romulog>; OPEN
   The system supports remote materialized SQL views
@@ -32,9 +31,76 @@
   optimizer into local/remote calls, minimizing the 
   amount of data traffic.
 
+  25 Apr 2007; Martin Kersten <mlkersten>; CLOSED
+  The interpreter has become poluted with extra
+  property setting. This should be moved to
+  the operations to avoid binding overhead.
+  Interpreter is split into a fast/slow mode.
+
+  20 Apr 2007; Martin Kersten <mlkersten>; OPEN
+  The locking information in the kernel can be used
+  to make all BATs private to their processing thread.
+  This will improve concurrent processing.
+
+  10 Apr 2007; Martin Kersten <mlkersten>; OPEN
+  Implement the remote call scheme using mod.fcn@site
+  and mod@site.fcn
+
+  10 Apr 2007; Martin Kersten <mlkersten>; OPEN
+  Support module cloning as a basis for better re-use.
+
+  13 Sep 2007; Martin Kersten <mlkersten>; CLOSED
+  Command completion on the server console has been
+  completed.
+
+  1 Sep 2007; Martin Kersten <mlkersten>; CLOSED
+  Rendering of output in mclient has been extended
+  to include tabular format.
+
+  1 Sep 2007; Martin Kersten <mlkersten>; CLOSED
+  The storage requirements of MAL instructions has been
+  reduced.
+
+  8 Apr 2007; Martin Kersten <mlkersten>; CLOSED
+  Continous queries are MAL programs run in parallel
+  with the mainstream interface. They share the output
+  channel until it is redirected.
+
+  8 Apr 2007; Martin Kersten <mlkersten>; CLOSED
+  Move all sql cached queries into the default session
+  container for MAL blocks.
+
+  7 Mar 2007; Martin Kersten <mlkersten>; CLOSED
+  Patterns with a polymorphic argument lists are
+  properly resolved now.
+
+  5 Mar 2007; Martin Kersten <mlkersten>; OPEN
+  Make it possible to attach a MAL debugger to
+  any running client process. Needs proper switching
+  of the IO descriptors (in the context of mclients)
+
+  7 Mar 2007; Martin Kersten <mlkersten>; OPEN
+  Create a java gui version of the stethoscope
+  based on tuple streams. Solve filtering.
+
+  3 Mar 2007; Martin Kersten <mlkersten>; CLOSED
+  Extend performance monitoring to capture rd/wr
+  descriptors, monitor BBP diskspace, and BAT oriented
+  counters. Created stethoscope to monitor a running
+  server.
+
+  18 Jan 2007; Martin Kersten <mlkersten>; OPEN
+  Empty set and join select optimizers are disabled
+  due to errors in the plan, as signalled by trigger tests.
+
   12 Jan 2007; Martin Kersten <mlkersten>; OPEN
   Introduce the notion of module boxes as the equivalent of
   globally scoped variables. 
+
+  3 Feb 2007; Martin Kersten <mlkersten>/Milena Ivanova; OPEN
+  The partitioned BATs module is revived to provide
+  both range- and hash-based partitioning. The target
+  is to adapt while processing using performance data gathered.
 
 *MonetDB 5.0 (Dec 2006)
   27 Dec 2006; Martin Kersten <mlkersten>; OPEN

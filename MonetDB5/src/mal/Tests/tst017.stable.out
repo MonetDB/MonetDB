@@ -21,15 +21,15 @@ stdout of test 'tst017` in directory 'src/mal` itself:
 #	b := join(b,b);
 #	print(b);
 #
-function user.main():void;	# 0  (main:void)
-# reference setting tables 	# 1  (_1:str)
-    b := bat.new(nil:int,nil:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
-    aa_a := bat.insert(b,1,2);	# 3 BKCinsert_bun (aa_a:void)<-(b:bat[:int,:int])(_5:int)(_6:int)
-    ba_a := bat.insert(b,2,3);	# 4 BKCinsert_bun (ba_a:void)<-(b:bat[:int,:int])(_6:int)(_8:int)
-    z := bbp.getLRefCount(b);	# 5 CMDgetBATlrefcnt (z:int)<-(b:bat[:int,:int])
-    io.print(z);	# 6 IOprint_val (_10:void)<-(z:int)
-    b := algebra.join(b,b);	# 7 ALGjoin (b:bat[:int,:int])<-(b:bat[:int,:int])(b:bat[:int,:int])
-    io.print(b);	# 8 IOprint_val (_11:void)<-(b:bat[:int,:int])
+function user.main():void;              #  0 main:void {G}
+# reference setting tables 
+    b := bat.new(nil:int,nil:int);      #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    aa_a := bat.insert(b,1,2);          #  3 aa_a:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) 
+    ba_a := bat.insert(b,2,3);          #  4 ba_a:void := BKCinsert_bun(b:bat[:int,:int], _6:int, _8:int) 
+    z := bbp.getLRefCount(b);           #  5 z:int := CMDgetBATlrefcnt(b:bat[:int,:int]) 
+    io.print(z);                        #  6 _10:void := IOprint_val(z:int) 
+    b := algebra.join(b,b);             #  7 b:bat[:int,:int] := ALGjoin(b:bat[:int,:int], b:bat[:int,:int]) {G}
+    io.print(b);                        #  8 _11:void := IOprint_val(b:bat[:int,:int]) 
 end main;	# 9  
 [ 1 ]
 #-----------------#

@@ -19,13 +19,13 @@ stdout of test 'tst401` in directory 'src/mal` itself:
 #	redo (v1,i) :=nextElement(1.3:flt,2.5:flt);
 #exit	(v1,i) ;
 #
-function user.main():void;	# 0  (main:void)
-# testing the simple iterators on builtin types 	# 1  (_1:str)
-barrier (v1,i):= language.newRange(0:flt);	# 2 RNGnewRange_flt (v1:bit)(i:flt)<-(_4:flt) jump 6
-    io.print(i);	# 3 IOprint_val (_5:void)<-(i:flt)
-    v := "do something";	# 4  (v:str)<-(_7:str)
-    redo (v1,i):= language.nextElement(1.29999995:flt,2.5:flt);	# 5 RNGnextElement_flt (v1:bit)(i:flt)<-(_8:flt)(_9:flt) jump 3
-exit (v1,i);	# 6  (v1:bit)(i:flt)
+function user.main():void;              #  0 main:void {G}
+# testing the simple iterators on builtin types 
+barrier (v1,i):= language.newRange(0:flt);#  2 (v1:bit, i:flt) := RNGnewRange_flt(_4:flt) {J6}
+    io.print(i);                        #  3 _5:void := IOprint_val(i:flt) 
+    v := "do something";                #  4 v:str := _7:str {G}
+    redo (v1,i):= language.nextElement(1.29999995:flt,2.5:flt);#  5 (v1:bit, i:flt) := RNGnextElement_flt(_8:flt, _9:flt) {J3}
+exit (v1,i);                            #  6 (v1:bit, i:flt 
 end main;	# 7  
 [ 0 ]
 [ 1.29999995 ]

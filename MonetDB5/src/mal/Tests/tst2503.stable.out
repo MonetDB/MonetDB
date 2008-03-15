@@ -23,15 +23,15 @@ stdout of test 'tst2503` in directory 'src/mal` itself:
 #	redo always;
 #exit always;
 #end;
-factory user.random(seed:int):int;	# 0  (random:int)<-(seed:int)
-    i := seed;	# 1  (i:int)<-(seed:int)
-barrier always := true;	# 2  (always:bit)<-(_4:bit) jump 7
-    i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-(_5:int)(i:int)
-    i := calc.%(i,32767);	# 4 CALCbinarycheckMODintint (i:int)<-(i:int)(_6:int)
-    yield random := i;	# 5  (random:int)<-(i:int)
-    redo always;	# 6  (always:bit) jump 3
-exit always;	# 7  (always:bit)
-    return random := 0;	# 8  (random:int)<-(_7:int)
+factory user.random(seed:int):int;      #  0 random:int := user.random(seed:int) 
+    i := seed;                          #  1 i:int := seed:int 
+barrier always := true;                 #  2 always:bit := _4:bit {J7}
+    i := calc.*(125,i);                 #  3 i:int := CALCbinaryMULintint(_5:int, i:int) 
+    i := calc.%(i,32767);               #  4 i:int := CALCbinarycheckMODintint(i:int, _6:int) 
+    yield random := i;                  #  5 random:int := i:int 
+    redo always;                        #  6 always:bit {J3}
+exit always;                            #  7 always:bit 
+    return random := 0;                 #  8 random:int := _7:int 
 end random;	# 9  
 #
 #r1:= random(1);
@@ -47,20 +47,20 @@ end random;	# 9
 #r2:= random(2);
 #print(r2);
 #
-function user.main():void;	# 0  (main:void)
-# The prototypical factory construct 	# 1  (_1:str)
-    r1 := user.random(1);	# 2  (r1:int)<-(_3:int)
-    io.print(r1);	# 3 IOprint_val (_4:void)<-(r1:int)
-    r2 := user.random(34);	# 4  (r2:int)<-(_6:int)
-    io.print(r2);	# 5 IOprint_val (_7:void)<-(r2:int)
-    r2 := user.random(2);	# 6  (r2:int)<-(_8:int)
-    io.print(r2);	# 7 IOprint_val (_9:void)<-(r2:int)
-    r2 := user.random(2);	# 8  (r2:int)<-(_8:int)
-    io.print(r2);	# 9 IOprint_val (_10:void)<-(r2:int)
-    r2 := user.random(2);	# 10  (r2:int)<-(_8:int)
-    io.print(r2);	# 11 IOprint_val (_11:void)<-(r2:int)
-    r2 := user.random(2);	# 12  (r2:int)<-(_8:int)
-    io.print(r2);	# 13 IOprint_val (_12:void)<-(r2:int)
+function user.main():void;              #  0 main:void 
+# The prototypical factory construct 
+    r1 := user.random(1);               #  2 r1:int := user.random(_3:int) 
+    io.print(r1);                       #  3 _4:void := IOprint_val(r1:int) 
+    r2 := user.random(34);              #  4 r2:int := user.random(_6:int) 
+    io.print(r2);                       #  5 _7:void := IOprint_val(r2:int) 
+    r2 := user.random(2);               #  6 r2:int := user.random(_8:int) 
+    io.print(r2);                       #  7 _9:void := IOprint_val(r2:int) 
+    r2 := user.random(2);               #  8 r2:int := user.random(_8:int) 
+    io.print(r2);                       #  9 _10:void := IOprint_val(r2:int) 
+    r2 := user.random(2);               # 10 r2:int := user.random(_8:int) 
+    io.print(r2);                       # 11 _11:void := IOprint_val(r2:int) 
+    r2 := user.random(2);               # 12 r2:int := user.random(_8:int) 
+    io.print(r2);                       # 13 _12:void := IOprint_val(r2:int) 
 end main;	# 14  
 [ 125 ]
 [ 15625 ]

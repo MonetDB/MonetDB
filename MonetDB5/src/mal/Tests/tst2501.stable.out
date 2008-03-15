@@ -22,14 +22,14 @@ stdout of test 'tst2501` in directory 'src/mal` itself:
 #	redo always;
 #exit always;
 #end;
-factory user.random(seed:int):int;	# 0  (random:int)<-(seed:int)
-    i := seed;	# 1  (i:int)<-(seed:int)
-barrier always := true;	# 2  (always:bit)<-(_4:bit) jump 6
-    i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-(_5:int)(i:int)
-    yield i := calc.%(i,32767);	# 4 CALCbinarycheckMODintint (i:int)<-(i:int)(_6:int)
-    redo always;	# 5  (always:bit) jump 3
-exit always;	# 6  (always:bit)
-    return random := 0;	# 7  (random:int)<-(_7:int)
+factory user.random(seed:int):int;      #  0 random:int := user.random(seed:int) 
+    i := seed;                          #  1 i:int := seed:int 
+barrier always := true;                 #  2 always:bit := _4:bit {J6}
+    i := calc.*(125,i);                 #  3 i:int := CALCbinaryMULintint(_5:int, i:int) 
+    yield i := calc.%(i,32767);         #  4 i:int := CALCbinarycheckMODintint(i:int, _6:int) 
+    redo always;                        #  5 always:bit {J3}
+exit always;                            #  6 always:bit 
+    return random := 0;                 #  7 random:int := _7:int 
 end random;	# 8  
 #
 #r1:= random(1);
@@ -37,12 +37,12 @@ end random;	# 8
 #r2:= random(1);
 #print(r2);
 #
-function user.main():void;	# 0  (main:void)
-# The prototypical factory construct 	# 1  (_1:str)
-    r1 := user.random(1);	# 2  (r1:int)<-(_3:int)
-    io.print(r1);	# 3 IOprint_val (_4:void)<-(r1:int)
-    r2 := user.random(1);	# 4  (r2:int)<-(_3:int)
-    io.print(r2);	# 5 IOprint_val (_6:void)<-(r2:int)
+function user.main():void;              #  0 main:void 
+# The prototypical factory construct 
+    r1 := user.random(1);               #  2 r1:int := user.random(_3:int) 
+    io.print(r1);                       #  3 _4:void := IOprint_val(r1:int) 
+    r2 := user.random(1);               #  4 r2:int := user.random(_3:int) 
+    io.print(r2);                       #  5 _6:void := IOprint_val(r2:int) 
 end main;	# 6  
 [ 125 ]
 [ 15625 ]

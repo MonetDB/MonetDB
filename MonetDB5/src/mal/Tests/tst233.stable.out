@@ -20,18 +20,18 @@ stdout of test 'tst233` in directory 'src/mal` itself:
 #	dn:= bbp.getNames();
 #	io.print(dn,d,dl);
 #end dir;
-function user.dir():void;	# 0  (dir:void)
-    d := bbp.getRefCount();	# 1 CMDbbpRefCount (d:bat[:int,:int])
-    dl := bbp.getLRefCount();	# 2 CMDbbpLRefCount (dl:bat[:int,:int])
-    dn := bbp.getNames();	# 3 CMDbbpNames (dn:bat[:int,:str])
-    ds := algebra.sort(dn);	# 4 ALGhsort (ds:bat[:int,:str])<-(dn:bat[:int,:str])
-    io.table(ds,d,dl);	# 5 IOttable (_5:void)<-(ds:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
+function user.dir():void;               #  0 dir:void {G}
+    d := bbp.getRefCount();             #  1 d:bat[:int,:int] {G}
+    dl := bbp.getLRefCount();           #  2 dl:bat[:int,:int] {G}
+    dn := bbp.getNames();               #  3 dn:bat[:int,:str] {G}
+    ds := algebra.sort(dn);             #  4 ds:bat[:int,:str] := ALGhsort(dn:bat[:int,:str]) {G}
+    io.table(ds,d,dl);                  #  5 _5:void := IOttable(ds:bat[:int,:str], d:bat[:int,:int], dl:bat[:int,:int]) 
 end dir;	# 6  
 #
 #
 #function tmp1(b:bat[:any_1,:any_2]):void;
 #end tmp1;
-function user.tmp1(b:bat[:any_1,:any_2]):void;	# 0  (tmp1:void)<-(b:bat[:any_1,:any_2])
+function user.tmp1(b:bat[:any_1,:any_2]):void;#  0 tmp1:void := user.tmp1(b:bat[:any_1,:any_2]) {PG}
 end tmp1;	# 1  
 #
 #b:= bat.new(:int,:int);
@@ -40,12 +40,12 @@ end tmp1;	# 1
 #dir();
 ##lrefcnt of b should be 1
 #
-function user.main():void;	# 0  (main:void)
-# dealing with BAT references in functions 	# 1  (_1:str)
-    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
-    i := bbp.getLRefCount(b);	# 3 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:int])
-    io.print(i);	# 4 IOprint_val (_5:void)<-(i:int)
-#lrefcnt of b should be 1 	# 5  (_6:str)
+function user.main():void;              #  0 main:void {G}
+# dealing with BAT references in functions 
+    b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    i := bbp.getLRefCount(b);           #  3 i:int := CMDgetBATlrefcnt(b:bat[:int,:int]) 
+    io.print(i);                        #  4 _5:void := IOprint_val(i:int) 
+#lrefcnt of b should be 1 
 end main;	# 6  
 [ 1 ]
 

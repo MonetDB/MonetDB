@@ -45,33 +45,33 @@ stdout of test 'binsemijoin2` in directory 'tests/gdkTests` itself:
 #z:= algebra.semijoin(left,right);
 #io.print(z);
 #
-function user.main():void;	# 0  (main:void)
-# Test provided as bug-report by  	# 1  (_1:str)
-# Maurice van Keulen <keulen@fmi.uni-konstanz.de> 	# 2  (_2:str)
-# Torsten Grust <grust@fmi.uni-konstanz.de> 	# 3  (_3:str)
-    left := bat.new(:oid,:oid);	# 4 CMDBATnew (left:bat[:oid,:oid])<-(_5:oid)(_5:oid)
-    right := bat.new(:oid,:oid);	# 5 CMDBATnew (right:bat[:oid,:oid])<-(_5:oid)(_5:oid)
-    i := 0;	# 6  (i:int)<-(_8:int)
-barrier go := calc.<(i,12);	# 7 CALCcompLTintint (go:bit)<-(i:int)(_10:int) jump 12
-    o := calc.oid(i);	# 8 CALCint2oid (o:oid)<-(i:int)
-    bat.append(left,o);	# 9 BKCappend_val_wrap (_12:void)<-(left:bat[:oid,:oid])(o:oid)
-    i := calc.+(i,1);	# 10 CALCbinaryADDintint (i:int)<-(i:int)(_13:int)
-    redo go := calc.<(i,12);	# 11 CALCcompLTintint (go:bit)<-(i:int)(_10:int) jump 8
-exit go;	# 12  (go:bit)
-    i := 0;	# 13  (i:int)<-(_8:int)
-barrier go := calc.<(i,200);	# 14 CALCcompLTintint (go:bit)<-(i:int)(_14:int) jump 20
-    j := calc.*(i,2);	# 15 CALCbinaryMULintint (j:int)<-(i:int)(_16:int)
-    oj := calc.oid(j);	# 16 CALCint2oid (oj:oid)<-(j:int)
-    bat.insert(right,oj,nil:oid);	# 17 BKCinsert_bun (_18:void)<-(right:bat[:oid,:oid])(oj:oid)(_19:oid)
-    i := calc.+(i,1);	# 18 CALCbinaryADDintint (i:int)<-(i:int)(_13:int)
-    redo go := calc.<(i,200);	# 19 CALCcompLTintint (go:bit)<-(i:int)(_14:int) jump 15
-exit go;	# 20  (go:bit)
-    io.print(left);	# 21 IOprint_val (_20:void)<-(left:bat[:oid,:oid])
-    io.print(right);	# 22 IOprint_val (_21:void)<-(right:bat[:oid,:oid])
-    bat.order(right);	# 23 BKCorder (_22:bat[:oid,:oid])<-(right:bat[:oid,:oid])
-    io.print(right);	# 24 IOprint_val (_23:void)<-(right:bat[:oid,:oid])
-    z := algebra.semijoin(left,right);	# 25 ALGsemijoin (z:bat[:oid,:oid])<-(left:bat[:oid,:oid])(right:bat[:oid,:oid])
-    io.print(z);	# 26 IOprint_val (_25:void)<-(z:bat[:oid,:oid])
+function user.main():void;              #  0 main:void {G}
+# Test provided as bug-report by  
+# Maurice van Keulen <keulen@fmi.uni-konstanz.de> 
+# Torsten Grust <grust@fmi.uni-konstanz.de> 
+    left := bat.new(:oid,:oid);         #  4 left:bat[:oid,:oid] := CMDBATnew(_5:oid, _5:oid) {G}
+    right := bat.new(:oid,:oid);        #  5 right:bat[:oid,:oid] := CMDBATnew(_5:oid, _5:oid) {G}
+    i := 0;                             #  6 i:int := _8:int 
+barrier go := calc.<(i,12);             #  7 go:bit := CALCcompLTintint(i:int, _10:int) {J12}
+    o := calc.oid(i);                   #  8 o:oid := CALCint2oid(i:int) 
+    bat.append(left,o);                 #  9 _12:void := BKCappend_val_wrap(left:bat[:oid,:oid], o:oid) 
+    i := calc.+(i,1);                   # 10 i:int := CALCbinaryADDintint(i:int, _13:int) 
+    redo go := calc.<(i,12);            # 11 go:bit := CALCcompLTintint(i:int, _10:int) {J8}
+exit go;                                # 12 go:bit 
+    i := 0;                             # 13 i:int := _8:int 
+barrier go := calc.<(i,200);            # 14 go:bit := CALCcompLTintint(i:int, _14:int) {J20}
+    j := calc.*(i,2);                   # 15 j:int := CALCbinaryMULintint(i:int, _16:int) 
+    oj := calc.oid(j);                  # 16 oj:oid := CALCint2oid(j:int) 
+    bat.insert(right,oj,nil:oid);       # 17 _18:void := BKCinsert_bun(right:bat[:oid,:oid], oj:oid, _19:oid) 
+    i := calc.+(i,1);                   # 18 i:int := CALCbinaryADDintint(i:int, _13:int) 
+    redo go := calc.<(i,200);           # 19 go:bit := CALCcompLTintint(i:int, _14:int) {J15}
+exit go;                                # 20 go:bit 
+    io.print(left);                     # 21 _20:void := IOprint_val(left:bat[:oid,:oid]) 
+    io.print(right);                    # 22 _21:void := IOprint_val(right:bat[:oid,:oid]) 
+    bat.order(right);                   # 23 _22:bat[:oid,:oid] := BKCorder(right:bat[:oid,:oid]) {G}
+    io.print(right);                    # 24 _23:void := IOprint_val(right:bat[:oid,:oid]) 
+    z := algebra.semijoin(left,right);  # 25 z:bat[:oid,:oid] := ALGsemijoin(left:bat[:oid,:oid], right:bat[:oid,:oid]) {G}
+    io.print(z);                        # 26 _25:void := IOprint_val(z:bat[:oid,:oid]) 
 end main;	# 27  
 #-----------------#
 # h	t	  # name

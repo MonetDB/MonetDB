@@ -43,34 +43,34 @@ stdout of test 'ID.642344` in directory 'tests/BugsViaSourgeforce` itself:
 #	ba_a := io.print(aa_a);
 #
 !TypeException:user.main[26]:'user.varval' undefined in: aa_a:any := user.varval(_28:str)
-function user.main():void;	# 0  (main:void)
-# Monet Mil to Mal compiler 	# 1  (_1:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
-#Predefined code segment 	# 3  (_3:str)
-#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
-#A few guidelines to maximize usefullness. 	# 6  (_6:str)
-#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
-#use the "mil_schema" for additional support routines 	# 9  (_9:str)
-#	io.print("# Date:\t\t2002-11-22 16:58\n"); 	# 10  (_10:str)
-#	io.print("# Category: \tNone\n"); 	# 11  (_11:str)
-#	io.print("# Group: \tNone\n"); 	# 12  (_12:str)
-#	io.print("# Status: \tOpen\n"); 	# 13  (_13:str)
-#	io.print("# Resolution: \tNone\n"); 	# 14  (_14:str)
-#	io.print("# Priority: \t5\n"); 	# 15  (_15:str)
-#	io.print("# Submitted By: Maurice van Keulen (mvankeulen)\n"); 	# 16  (_16:str)
-#	io.print("# Assigned to: \tNobody/Anonymous (nobody)\n"); 	# 17  (_17:str)
-#	io.print("# Summary: \tRefcount warnings in \"varval\"\n"); 	# 18  (_18:str)
-#	io.print("#\n"); 	# 19  (_19:str)
-#	io.print("# Initial Comment:\n"); 	# 20  (_20:str)
-#	io.print("# The \"varval\"-function apparently contains a bug\n"); 	# 21  (_21:str)
-#	io.print("# regarding reference counting. See example below:\n"); 	# 22  (_22:str)
-#	io.print(""); 	# 23  (_23:str)
-    bar := bat.new(nil:int,nil:int);	# 24 CMDBATnew (bar:bat[:int,:int])<-(_25:int)(_25:int)
-#	io.print("var bar:=new(int,int);"); 	# 25  (_26:str)
-    aa_a := user.varval("bar");	# 26  unknown (aa_a:any)<-(_28:str)
-    ba_a := io.print(aa_a);	# 27 IOprint_val (ba_a:void)<-(aa_a:any)
+function user.main():void;              #  0 main:void {G}
+# Monet Mil to Mal compiler 
+# Copyright (c) 2001-2004, CWI. All rights reserved. 
+#Predefined code segment 
+#The compiler can not guarantee an accurate compilation, 
+#because MIL unlike MAL is a dynamically typed language. 
+#A few guidelines to maximize usefullness. 
+#- make the type of variables explicit, in particular 'nil' 
+#- upon advice of M2m to remap identifiers, change it in your program directly 
+#use the "mil_schema" for additional support routines 
+#	io.print("# Date:\t\t2002-11-22 16:58\n"); 
+#	io.print("# Category: \tNone\n"); 
+#	io.print("# Group: \tNone\n"); 
+#	io.print("# Status: \tOpen\n"); 
+#	io.print("# Resolution: \tNone\n"); 
+#	io.print("# Priority: \t5\n"); 
+#	io.print("# Submitted By: Maurice van Keulen (mvankeulen)\n"); 
+#	io.print("# Assigned to: \tNobody/Anonymous (nobody)\n"); 
+#	io.print("# Summary: \tRefcount warnings in \"varval\"\n"); 
+#	io.print("#\n"); 
+#	io.print("# Initial Comment:\n"); 
+#	io.print("# The \"varval\"-function apparently contains a bug\n"); 
+#	io.print("# regarding reference counting. See example below:\n"); 
+#	io.print(""); 
+    bar := bat.new(nil:int,nil:int);    # 24 bar:bat[:int,:int] := CMDBATnew(_25:int, _25:int) {G}
+#	io.print("var bar:=new(int,int);"); 
+    aa_a := user.varval("bar");         # 26 aa_a:any := user.varval(_28:str) {U}
+    ba_a := io.print(aa_a);             # 27 ba_a:void := IOprint_val(aa_a:any) 
 end main;	# 28  
 
 # 07:27:17 >  

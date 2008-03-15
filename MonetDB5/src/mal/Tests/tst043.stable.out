@@ -31,20 +31,20 @@ stdout of test 'tst043` in directory 'src/mal` itself:
 #l:= calc.lng(nil);	
 #io.printf("formatted lng %5d\n",d);
 #
-function user.main():void;	# 0  (main:void)
-# this sequence tests nil type management  	# 1  (_1:str)
-    a := calc.int(nil:void);	# 2 CALCnil2int (a:int)<-(_3:void)
-    io.printf("formatted int %-3d\n",a);	# 3 IOprint_formatted_int (_4:void)<-(_5:str)(a:int)
-    b := calc.bit(nil:void);	# 4 CALCnil2bit (b:bit)<-(_3:void)
-    io.printf("formatted bit %s\n",b);	# 5 IOprint_formatted_bit (_7:void)<-(_8:str)(b:bit)
-    c := calc.chr(nil:void);	# 6 CALCnil2chr (c:chr)<-(_3:void)
-    io.printf("formatted chr %c\n",c);	# 7 IOprint_formatted_chr (_10:void)<-(_11:str)(c:chr)
-    d := calc.flt(nil:void);	# 8 CALCnil2flt (d:flt)<-(_3:void)
-    io.printf("formatted flt %3.2f\n",d);	# 9 IOprint_formatted_flt (_13:void)<-(_14:str)(d:flt)
-    e := calc.str(nil:void);	# 10 CALCnil2str (e:str)<-(_3:void)
-    io.printf("formatted str %+4s\n",e);	# 11 IOprint_formatted_str (_16:void)<-(_17:str)(e:str)
-    l := calc.lng(nil:void);	# 12 CALCnil2lng (l:lng)<-(_3:void)
-    io.printf("formatted lng %5d\n",d);	# 13 IOprint_formatted_flt (_19:void)<-(_20:str)(d:flt)
+function user.main():void;              #  0 main:void {G}
+# this sequence tests nil type management  
+    a := calc.int(nil:void);            #  2 a:int := CALCnil2int(_3:void) 
+    io.printf("formatted int %-3d\n",a);#  3 _4:void := IOprint_formatted_int(_5:str, a:int) 
+    b := calc.bit(nil:void);            #  4 b:bit := CALCnil2bit(_3:void) 
+    io.printf("formatted bit %s\n",b);  #  5 _7:void := IOprint_formatted_bit(_8:str, b:bit) 
+    c := calc.chr(nil:void);            #  6 c:chr := CALCnil2chr(_3:void) 
+    io.printf("formatted chr %c\n",c);  #  7 _10:void := IOprint_formatted_chr(_11:str, c:chr) 
+    d := calc.flt(nil:void);            #  8 d:flt := CALCnil2flt(_3:void) 
+    io.printf("formatted flt %3.2f\n",d);#  9 _13:void := IOprint_formatted_flt(_14:str, d:flt) 
+    e := calc.str(nil:void);            # 10 e:str := CALCnil2str(_3:void) {G}
+    io.printf("formatted str %+4s\n",e);# 11 _16:void := IOprint_formatted_str(_17:str, e:str) 
+    l := calc.lng(nil:void);            # 12 l:lng := CALCnil2lng(_3:void) 
+    io.printf("formatted lng %5d\n",d); # 13 _19:void := IOprint_formatted_flt(_20:str, d:flt) 
 end main;	# 14  
 formatted int nil
 formatted bit nil

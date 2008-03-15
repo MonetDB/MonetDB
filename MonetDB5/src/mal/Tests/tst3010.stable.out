@@ -17,30 +17,30 @@ stdout of test 'tst3010` in directory 'src/mal` itself:
 #	j:= j+i;
 #	return j;
 #end add;
-function user.add{writeable,safe}(i:int{readonly},j:int{readonly}):int;	# 0  (add:int)<-(i:int)(j:int)
-    j{readonly} := calc.+(j,i);	# 1 CALCbinaryADDintint (j:int)<-(j:int)(i:int)
-    return add{writeable,safe} := j;	# 2  (add:int)<-(j:int)
+function user.add{writeable,safe}(i:int{readonly},j:int{readonly}):int;#  0 add:int := user.add(i:int, j:int) 
+    j{readonly} := calc.+(j,i);         #  1 j:int := CALCbinaryADDintint(j:int, i:int) 
+    return add{writeable,safe} := j;    #  2 add:int := j:int 
 end add;	# 3  
 #
 #function add2(i:int,j:int):int{safe};
 #	k:= j+i;
 #	return k;
 #end ;
-function user.add2{safe}(i:int,j:int):int;	# 0  (add2:int)<-(i:int)(j:int)
-    k := calc.+(j,i);	# 1 CALCbinaryADDintint (k:int)<-(j:int)(i:int)
-    return add2{safe} := k;	# 2  (add2:int)<-(k:int)
+function user.add2{safe}(i:int,j:int):int;#  0 add2:int := user.add2(i:int, j:int) 
+    k := calc.+(j,i);                   #  1 k:int := CALCbinaryADDintint(j:int, i:int) 
+    return add2{safe} := k;             #  2 add2:int := k:int 
 end add2;	# 3  
 #
 #i{cost=23}:= 23;
 #z:= user.add(i,i); #violates properties
 #kk:= user.add2(i,i);
 #
-function user.main():void;	# 0  (main:void)
-#Parsing properties and keeping them around 	# 1  (_1:str)
-    i{cost=23} := 23;	# 2  (i:int)<-(_3:int)
-    z := user.add(i,i);	# 3  (z:int)<-(i:int)(i:int)
-#violates properties 	# 4  (_5:str)
-    kk := user.add2(i,i);	# 5  (kk:int)<-(i:int)(i:int)
+function user.main():void;              #  0 main:void 
+#Parsing properties and keeping them around 
+    i{cost=23} := 23;                   #  2 i:int := _3:int 
+    z := user.add(i,i);                 #  3 z:int := user.add(i:int, i:int) 
+#violates properties 
+    kk := user.add2(i,i);               #  5 kk:int := user.add2(i:int, i:int) 
 end main;	# 6  
 
 # 07:49:49 >  

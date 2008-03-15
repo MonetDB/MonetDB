@@ -14,23 +14,23 @@ stdout of test 'tst150` in directory 'src/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 #command user.lookup(nme:str):bat[:str,:str] 
 !MALException:MAL.getAddress:address of 'user.CMDlookup' not found
-command user.lookup(nme:str):bat[:str,:str] address CMDlookup;	# 0  (lookup:bat[:str,:str])<-(nme:str)
-#function sample(nme:str, val:any):bit;
-#   b := lookup(nme); #find a bat
-#   h := select(b,val,val);
-#   t := count(h);
-#   x := print(t);
-#   y := print(val);
+command user.lookup(nme:str):bat[:str,:str] address CMDlookup;#  0 lookup:bat[:str,:str] := user.lookup(nme:str) {G}
+#function sample(nme:str, val:any_1):bit;
+#   b := user.lookup(nme); #find a bat
+#   h := algebra.select(b,val,val);
+#   t := aggr.count(h);
+#   x := io.print(t);
+#   y := io.print(val);
 #   return sample:=true;
 #end sample;
-function user.sample(nme:str,val:any_1):bit;	# 0  (sample:bit)<-(nme:str)(val:any_1)
-    b := user.lookup(nme);	# 1  (b:bat[:str,:str])<-(nme:str)
-#find a bat 	# 2  (_5:str)
-    h := algebra.select(b,val,val);	# 3  (h:any)<-(b:bat[:str,:str])(val:any_1)(val:any_1)
-    t := aggr.count(h);	# 4  (t:any)<-(h:any)
-    x := io.print(t);	# 5 IOprint_val (x:void)<-(t:any)
-    y := io.print(val);	# 6 IOprint_val (y:void)<-(val:any_1)
-    return sample := true;	# 7  (sample:bit)<-(_9:bit)
+function user.sample(nme:str,val:any_1):bit;#  0 sample:bit := user.sample(nme:str, val:any_1) {PG}
+    b := user.lookup(nme);              #  1 b:bat[:str,:str] := user.lookup(nme:str) {G}
+#find a bat 
+    h := algebra.select(b,val,val);     #  3 h:any := algebra.select(b:bat[:str,:str], val:any_1, val:any_1) {P}
+    t := aggr.count(h);                 #  4 t:any := aggr.count(h:any) 
+    x := io.print(t);                   #  5 x:void := IOprint_val(t:any) 
+    y := io.print(val);                 #  6 y:void := IOprint_val(val:any_1) {P}
+    return sample := true;              #  7 sample:bit := _9:bit 
 end sample;	# 8  
 #user.sample("hello","world");
 #user.sample("hello",1);
@@ -38,10 +38,9 @@ end sample;	# 8
 !TypeException:user.main[1]:'user.sample' undefined in: _1:bit := user.sample(_2:str, _3:str)
 
 !TypeException:user.main[2]:'user.sample' undefined in: _4:bit := user.sample(_2:str, _5:int)
-
-function user.main():void;	# 0  (main:void)
-    user.sample("hello","world");	# 1  unknown (_1:bit)<-(_2:str)(_3:str)
-    user.sample("hello",1);	# 2  unknown (_4:bit)<-(_2:str)(_5:int)
+function user.main():void;              #  0 main:void 
+    user.sample("hello","world");       #  1 _1:bit := user.sample(_2:str, _3:str) {U}
+    user.sample("hello",1);             #  2 _4:bit := user.sample(_2:str, _5:int) {U}
 end main;	# 3  
 
 # 07:59:05 >  

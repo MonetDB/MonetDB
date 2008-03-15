@@ -27,20 +27,20 @@ stdout of test 'tst607` in directory 'src/mal` itself:
 #io.print("attempt twice to release");
 #const.release("roomnumber"); # failure? done twice or implicit take?
 #
-function user.main():void;	# 0  (main:void)
-# using spaces 	# 1  (_1:str)
-    u:str  := const.take("user");	# 2 CSTtake (u:str)<-(_3:str)
-    io.printf("#User bound to %s\n",u);	# 3 IOprint_formatted_str (_4:void)<-(_5:str)(u:str)
-    roomnumber := 321;	# 4  (roomnumber:int)<-(_7:int)
-    const.deposit("roomnumber",roomnumber);	# 5 CSTdeposit (_8:void)<-(_9:str)(roomnumber:int)
-    v:int  := const.take("roomnumber");	# 6 CSTtake (v:int)<-(_9:str)
-    io.print(v);	# 7 IOprint_val (_11:void)<-(v:int)
-    v:int  := 123;	# 8  (v:int)<-(_12:int)
-    v:int  := calc.+(v,1);	# 9 CALCbinaryADDintint (v:int)<-(v:int)(_13:int)
-    const.release("roomnumber");	# 10 CSTrelease (_14:void)<-(_9:str)
-    io.print("attempt twice to release");	# 11 IOprint_val (_15:void)<-(_16:str)
-    const.release("roomnumber");	# 12 CSTrelease (_17:void)<-(_9:str)
-# failure? done twice or implicit take? 	# 13  (_18:str)
+function user.main():void;              #  0 main:void {G}
+# using spaces 
+    u:str  := const.take("user");       #  2 u:str := CSTtake(_3:str) {G}
+    io.printf("#User bound to %s\n",u); #  3 _4:void := IOprint_formatted_str(_5:str, u:str) 
+    roomnumber := 321;                  #  4 roomnumber:int := _7:int 
+    const.deposit("roomnumber",roomnumber);#  5 _8:void := CSTdeposit(_9:str, roomnumber:int) 
+    v:int  := const.take("roomnumber"); #  6 v:int := CSTtake(_9:str) 
+    io.print(v);                        #  7 _11:void := IOprint_val(v:int) 
+    v:int  := 123;                      #  8 v:int := _12:int 
+    v:int  := calc.+(v,1);              #  9 v:int := CALCbinaryADDintint(v:int, _13:int) 
+    const.release("roomnumber");        # 10 _14:void := CSTrelease(_9:str) 
+    io.print("attempt twice to release");# 11 _15:void := IOprint_val(_16:str) 
+    const.release("roomnumber");        # 12 _17:void := CSTrelease(_9:str) 
+# failure? done twice or implicit take? 
 end main;	# 14  
 #User bound to mk
 [ 321 ]

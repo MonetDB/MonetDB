@@ -20,12 +20,12 @@ stdout of test 'tst234` in directory 'src/mal` itself:
 #	dn:= bbp.getNames();
 #	io.print(dn,d,dl);
 #end dir;
-function user.dir():void;	# 0  (dir:void)
-    d := bbp.getRefCount();	# 1 CMDbbpRefCount (d:bat[:int,:int])
-    dl := bbp.getLRefCount();	# 2 CMDbbpLRefCount (dl:bat[:int,:int])
-    dn := bbp.getNames();	# 3 CMDbbpNames (dn:bat[:int,:str])
-    ds := algebra.sort(dn);	# 4 ALGhsort (ds:bat[:int,:str])<-(dn:bat[:int,:str])
-    io.table(ds,d,dl);	# 5 IOttable (_5:void)<-(ds:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
+function user.dir():void;               #  0 dir:void {G}
+    d := bbp.getRefCount();             #  1 d:bat[:int,:int] {G}
+    dl := bbp.getLRefCount();           #  2 dl:bat[:int,:int] {G}
+    dn := bbp.getNames();               #  3 dn:bat[:int,:str] {G}
+    ds := algebra.sort(dn);             #  4 ds:bat[:int,:str] := ALGhsort(dn:bat[:int,:str]) {G}
+    io.table(ds,d,dl);                  #  5 _5:void := IOttable(ds:bat[:int,:str], d:bat[:int,:int], dl:bat[:int,:int]) 
 end dir;	# 6  
 #
 #
@@ -35,12 +35,12 @@ end dir;	# 6
 #	user.dir();
 #	return tmp1;
 #end tmp1;
-function user.tmp1(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];	# 0  dynamic (tmp1:bat[:any_1,:any_2])<-(b:bat[:any_1,:any_2])
-    tmp1 := algebra.copy(b);	# 1 ALGcopy (tmp1:bat[:any_1,:any_2])<-(b:bat[:any_1,:any_2])
-    io.print("inside tmp1");	# 2 IOprint_val (_2:void)<-(_3:str)
-    i := bbp.getLRefCount(b);	# 3 CMDgetBATlrefcnt (i:int)<-(b:bat[:any_1,:any_2])
-    io.print(i);	# 4 IOprint_val (_5:void)<-(i:int)
-    return tmp1 := tmp1;	# 5  (tmp1:bat[:any_1,:any_2])<-(tmp1:bat[:any_1,:any_2])
+function user.tmp1(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];#  0 tmp1:bat[:any_1,:any_2] := user.tmp1(b:bat[:any_1,:any_2]) {UPG}
+    tmp1 := algebra.copy(b);            #  1 tmp1:bat[:any_1,:any_2] := ALGcopy(b:bat[:any_1,:any_2]) {PG}
+    io.print("inside tmp1");            #  2 _2:void := IOprint_val(_3:str) 
+    i := bbp.getLRefCount(b);           #  3 i:int := CMDgetBATlrefcnt(b:bat[:any_1,:any_2]) {P}
+    io.print(i);                        #  4 _5:void := IOprint_val(i:int) 
+    return tmp1 := tmp1;                #  5 tmp1:bat[:any_1,:any_2] := tmp1:bat[:any_1,:any_2] {G}
 end tmp1;	# 6  
 #
 #b:= bat.new(:int,:int);
@@ -50,15 +50,15 @@ end tmp1;	# 6
 #d:= user.tmp1(d);
 #dir();
 #
-function user.main():void;	# 0  (main:void)
-# dealing with BAT references in functions 	# 1  (_1:str)
-    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
-    d := user.tmp1(b);	# 3  (d:bat[:int,:int])<-(b:bat[:int,:int])
-    i := bbp.getLRefCount(d);	# 4 CMDgetBATlrefcnt (i:int)<-(d:bat[:int,:int])
-    io.print(i);	# 5 IOprint_val (_6:void)<-(i:int)
-    d := user.tmp1(d);	# 6  (d:bat[:int,:int])<-(d:bat[:int,:int])
-    i := bbp.getLRefCount(d);	# 7 CMDgetBATlrefcnt (i:int)<-(d:bat[:int,:int])
-    io.print(i);	# 8 IOprint_val (_7:void)<-(i:int)
+function user.main():void;              #  0 main:void {G}
+# dealing with BAT references in functions 
+    b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    d := user.tmp1(b);                  #  3 d:bat[:int,:int] := user.tmp1(b:bat[:int,:int]) {G}
+    i := bbp.getLRefCount(d);           #  4 i:int := CMDgetBATlrefcnt(d:bat[:int,:int]) 
+    io.print(i);                        #  5 _6:void := IOprint_val(i:int) 
+    d := user.tmp1(d);                  #  6 d:bat[:int,:int] := user.tmp1(d:bat[:int,:int]) {G}
+    i := bbp.getLRefCount(d);           #  7 i:int := CMDgetBATlrefcnt(d:bat[:int,:int]) 
+    io.print(i);                        #  8 _7:void := IOprint_val(i:int) 
 end main;	# 9  
 [ "inside tmp1" ]
 [ 2 ]

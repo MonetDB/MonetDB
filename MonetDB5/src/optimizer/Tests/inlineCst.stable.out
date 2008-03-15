@@ -15,9 +15,9 @@ stdout of test 'inlineCst` in directory 'src/optimizer` itself:
 #   i:= 213;
 #   return foo:=i;
 #end foo;
-function user.foo{inline}(b:int):int;	# 0  (foo:int)<-(b:int)
-    i := 213;	# 1  (i:int)<-(_3:int)
-    return foo{inline} := i;	# 2  (foo:int)<-(i:int)
+function user.foo{inline}(b:int):int;   #  0 foo:int := user.foo(b:int) 
+    i := 213;                           #  1 i:int := _3:int 
+    return foo{inline} := i;            #  2 foo:int := i:int 
 end foo;	# 3  
 #
 #function qry();
@@ -28,13 +28,13 @@ end foo;	# 3
 #	r:bat[:oid,:int]:= mal.multiplex("user","foo",b);
 #	io.print(r);
 #end qry;
-function user.qry():void;	# 0  (qry:void)
-    b := bat.new(:oid,:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
-    bat.append(b,1);	# 2 BKCappend_val_wrap (_4:void)<-(b:bat[:oid,:int])(_5:int)
-    bat.append(b,10);	# 3 BKCappend_val_wrap (_6:void)<-(b:bat[:oid,:int])(_7:int)
-    bat.append(b,20);	# 4 BKCappend_val_wrap (_8:void)<-(b:bat[:oid,:int])(_9:int)
-    r:bat[:oid,:int]  := mal.multiplex("user","foo",b);	# 5 OPTremapMultiplex (r:bat[:oid,:int])<-(_11:str)(_12:str)(b:bat[:oid,:int])
-    io.print(r);	# 6 IOprint_val (_13:void)<-(r:bat[:oid,:int])
+function user.qry():void;               #  0 qry:void {G}
+    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    bat.append(b,1);                    #  2 _4:void := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) 
+    bat.append(b,10);                   #  3 _6:void := BKCappend_val_wrap(b:bat[:oid,:int], _7:int) 
+    bat.append(b,20);                   #  4 _8:void := BKCappend_val_wrap(b:bat[:oid,:int], _9:int) 
+    r:bat[:oid,:int]  := mal.multiplex("user","foo",b);#  5 r:bat[:oid,:int] := OPTremapMultiplex(_11:str, _12:str, b:bat[:oid,:int]) {G}
+    io.print(r);                        #  6 _13:void := IOprint_val(r:bat[:oid,:int]) 
 end qry;	# 7  
 #
 #qry();
@@ -42,9 +42,9 @@ end qry;	# 7
 #optimizer.remap("user","qry");
 #mdb.list("user","qry");
 #
-function user.main():void;	# 0  (main:void)
-    user.qry();	# 1  (_1:void)
-    mdb.list("user","qry");	# 2 MDBlist3 (_6:void)<-(_3:str)(_4:str)
+function user.main():void;              #  0 main:void {G}
+    user.qry();                         #  1 _1:void 
+    mdb.list("user","qry");             #  2 _6:void := MDBlist3(_3:str, _4:str) 
 end main;	# 3  
 #-----------------#
 # h	t	  # name

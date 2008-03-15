@@ -17,12 +17,12 @@ stdout of test 'tst236` in directory 'src/mal` itself:
 #        dn:= bbp.getNames();
 #        io.print(dn,d,dl);
 #end dir;
-function user.dir():void;	# 0  (dir:void)
-    d := bbp.getRefCount();	# 1 CMDbbpRefCount (d:bat[:int,:int])
-    dl := bbp.getLRefCount();	# 2 CMDbbpLRefCount (dl:bat[:int,:int])
-    dn := bbp.getNames();	# 3 CMDbbpNames (dn:bat[:int,:str])
-    ds := algebra.sort(dn);	# 4 ALGhsort (ds:bat[:int,:str])<-(dn:bat[:int,:str])
-    io.table(ds,d,dl);	# 5 IOttable (_5:void)<-(ds:bat[:int,:str])(d:bat[:int,:int])(dl:bat[:int,:int])
+function user.dir():void;               #  0 dir:void {G}
+    d := bbp.getRefCount();             #  1 d:bat[:int,:int] {G}
+    dl := bbp.getLRefCount();           #  2 dl:bat[:int,:int] {G}
+    dn := bbp.getNames();               #  3 dn:bat[:int,:str] {G}
+    ds := algebra.sort(dn);             #  4 ds:bat[:int,:str] := ALGhsort(dn:bat[:int,:str]) {G}
+    io.table(ds,d,dl);                  #  5 _5:void := IOttable(ds:bat[:int,:str], d:bat[:int,:int], dl:bat[:int,:int]) 
 end dir;	# 6  
 #
 #function createBAT(name:str):bat;
@@ -31,11 +31,11 @@ end dir;	# 6
 #	i:= calc.getBATidentifier(res);
 #	return i;
 #end createBAT;
-function user.createBAT(name:str):BAT;	# 0  (createBAT:BAT)<-(name:str)
-    res := bat.new(:int,:int);	# 1 CMDBATnew (res:bat[:int,:int])<-(_3:int)(_3:int)
-    bat.setName(res,name);	# 2 BKCsetName (_4:void)<-(res:bat[:int,:int])(name:str)
-    i := calc.getBATidentifier(res);	# 3 CALCbat2batid (i:BAT)<-(res:bat[:int,:int])
-    return createBAT := i;	# 4  (createBAT:BAT)<-(i:BAT)
+function user.createBAT(name:str):BAT;  #  0 createBAT:BAT := user.createBAT(name:str) {G}
+    res := bat.new(:int,:int);          #  1 res:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    bat.setName(res,name);              #  2 _4:void := BKCsetName(res:bat[:int,:int], name:str) 
+    i := calc.getBATidentifier(res);    #  3 i:BAT := CALCbat2batid(res:bat[:int,:int]) {G}
+    return createBAT := i;              #  4 createBAT:BAT := i:BAT {G}
 end createBAT;	# 5  
 #m:= bat.new(:oid,:str);
 #bat.insert(m,10:oid,"ten");
@@ -45,22 +45,22 @@ end createBAT;	# 5
 #dir();
 #io.print(r);
 #
-function user.main():void;	# 0  (main:void)
-# check reference counting and multiplex 	# 1  (_1:str)
-    m := bat.new(:oid,:str);	# 2 CMDBATnew (m:bat[:oid,:str])<-(_3:oid)(_4:str)
-    bat.insert(m,10@0:oid,"ten");	# 3 BKCinsert_bun (_5:void)<-(m:bat[:oid,:str])(_6:oid)(_7:str)
-    bat.insert(m,20@0:oid,"twenty");	# 4 BKCinsert_bun (_8:void)<-(m:bat[:oid,:str])(_9:oid)(_10:str)
-    _15 := bat.new(nil:oid,nil:BAT);	# 5 CMDBATnew (_15:bat[:oid,:BAT])<-(_16:oid)(_17:BAT)
-barrier (_19,_20,_21):= bat.newIterator(m);	# 6 CHPbunIterator (_19:lng)(_20:oid)(_21:str)<-(m:bat[:oid,:str]) jump 13
-    _23 := user.createBAT(_21);	# 7  (_23:BAT)<-(_21:str)
-    bat.insert(_15,_20,_23);	# 8 BKCinsert_bun (_24:void)<-(_15:bat[:oid,:BAT])(_20:oid)(_23:BAT)
-    redo (_19,_20,_21):= bat.hasMoreElements(m);	# 9 CHPbunHasMoreElements (_19:lng)(_20:oid)(_21:str)<-(m:bat[:oid,:str]) jump 7
-catch MALException:str ;	# 10  (MALException:str) jump 12
-    redo (_19,_20,_21):= bat.hasMoreElements(m);	# 11 CHPbunHasMoreElements (_19:lng)(_20:oid)(_21:str)<-(m:bat[:oid,:str]) jump 7
-exit MALException:str ;	# 12  (MALException:str)
-exit (_19,_20,_21);	# 13  (_19:lng)(_20:oid)(_21:str)
-    r:bat[:oid,:BAT]  := _15;	# 14  (r:bat[:oid,:BAT])<-(_15:bat[:oid,:BAT])
-    io.print(r);	# 15 IOprint_val (_14:void)<-(r:bat[:oid,:BAT])
+function user.main():void;              #  0 main:void {G}
+# check reference counting and multiplex 
+    m := bat.new(:oid,:str);            #  2 m:bat[:oid,:str] := CMDBATnew(_3:oid, _4:str) {G}
+    bat.insert(m,10@0:oid,"ten");       #  3 _5:void := BKCinsert_bun(m:bat[:oid,:str], _6:oid, _7:str) 
+    bat.insert(m,20@0:oid,"twenty");    #  4 _8:void := BKCinsert_bun(m:bat[:oid,:str], _9:oid, _10:str) 
+    _15 := bat.new(nil:oid,nil:BAT);    #  5 _15:bat[:oid,:BAT] := CMDBATnew(_16:oid, _17:BAT) {G}
+barrier (_19,_20,_21):= bat.newIterator(m);#  6 (_19:lng, _20:oid, _21:str) := CHPbunIterator(m:bat[:oid,:str]) {GJ13}
+    _23 := user.createBAT(_21);         #  7 _23:BAT := user.createBAT(_21:str) {G}
+    bat.insert(_15,_20,_23);            #  8 _24:void := BKCinsert_bun(_15:bat[:oid,:BAT], _20:oid, _23:BAT) 
+    redo (_19,_20,_21):= bat.hasMoreElements(m);#  9 (_19:lng, _20:oid, _21:str) := CHPbunHasMoreElements(m:bat[:oid,:str]) {GJ7}
+catch MALException:str ;                # 10 MALException:str {J12}
+    redo (_19,_20,_21):= bat.hasMoreElements(m);# 11 (_19:lng, _20:oid, _21:str) := CHPbunHasMoreElements(m:bat[:oid,:str]) {GJ7}
+exit MALException:str ;                 # 12 MALException:str 
+exit (_19,_20,_21);                     # 13 (_19:lng, _20:oid, _21:str 
+    r:bat[:oid,:BAT]  := _15;           # 14 r:bat[:oid,:BAT] := _15:bat[:oid,:BAT] {G}
+    io.print(r);                        # 15 _14:void := IOprint_val(r:bat[:oid,:BAT]) 
 end main;	# 16  
 #-------------------------#
 # h	t		  # name

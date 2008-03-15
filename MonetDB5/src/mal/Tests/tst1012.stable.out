@@ -39,36 +39,36 @@ stdout of test 'tst1012` in directory 'src/mal` itself:
 #print(v);
 #bbp.close();
 #
-function user.main():void;	# 0  (main:void)
-# the first of a series of BBP test cases 	# 1  (_1:str)
-    bbp.open();	# 2 CMDbbpopen (_2:void)
-    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
-    bat.insert(b,1,2);	# 4 BKCinsert_bun (_5:void)<-(b:bat[:int,:int])(_6:int)(_7:int)
-    bbp.deposit("mysecondbat",b);	# 5 CMDbbpdeposit (_8:void)<-(_9:str)(b:bat[:int,:int])
-    c := bbp.take("mysecondbat");	# 6 CMDbbptake (c:bat[:any,:any])<-(_9:str)
-    io.print(c);	# 7 IOprint_val (_11:void)<-(c:bat[:any,:any])
-    bat.setPersistent(b);	# 8 BKCsetPersistent (_12:void)<-(b:bat[:int,:int])
-    x := bat.isPersistent(b);	# 9 BKCisPersistent (x:bit)<-(b:bat[:int,:int])
-    z := bat.isTransient(b);	# 10 BKCisTransient (z:bit)<-(b:bat[:int,:int])
-    io.print(x);	# 11 IOprint_val (_15:void)<-(x:bit)
-    io.print(z);	# 12 IOprint_val (_16:void)<-(z:bit)
-    io.print("");	# 13 IOprint_val (_17:void)<-(_18:str)
-    bat.setTransient(b);	# 14 BKCsetTransient (_19:void)<-(b:bat[:int,:int])
-    x := bat.isPersistent(b);	# 15 BKCisPersistent (x:bit)<-(b:bat[:int,:int])
-    z := bat.isTransient(b);	# 16 BKCisTransient (z:bit)<-(b:bat[:int,:int])
-    io.print(x);	# 17 IOprint_val (_20:void)<-(x:bit)
-    io.print(z);	# 18 IOprint_val (_21:void)<-(z:bit)
-    io.print("");	# 19 IOprint_val (_22:void)<-(_18:str)
-    bbp.close();	# 20 CMDbbpclose (_23:void)
-# at the end of the session, the BBP should have discarded 	# 21  (_24:str)
-# the temporary bats of the user 	# 22  (_25:str)
-# aug 02 this does not work, because the transaction is 	# 23  (_26:str)
-# not properly closed. This means that a temporary bat 	# 24  (_27:str)
-#remains in store. 	# 25  (_28:str)
-    bbp.open();	# 26 CMDbbpopen (_29:void)
-    v := bbp.take("mysecondbat");	# 27 CMDbbptake (v:bat[:any,:any])<-(_9:str)
-    io.print(v);	# 28 IOprint_val (_31:void)<-(v:bat[:any,:any])
-    bbp.close();	# 29 CMDbbpclose (_32:void)
+function user.main():void;              #  0 main:void {G}
+# the first of a series of BBP test cases 
+    bbp.open();                         #  2 _2:void 
+    b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
+    bat.insert(b,1,2);                  #  4 _5:void := BKCinsert_bun(b:bat[:int,:int], _6:int, _7:int) 
+    bbp.deposit("mysecondbat",b);       #  5 _8:void := CMDbbpdeposit(_9:str, b:bat[:int,:int]) 
+    c := bbp.take("mysecondbat");       #  6 c:bat[:any,:any] := CMDbbptake(_9:str) {G}
+    io.print(c);                        #  7 _11:void := IOprint_val(c:bat[:any,:any]) 
+    bat.setPersistent(b);               #  8 _12:void := BKCsetPersistent(b:bat[:int,:int]) 
+    x := bat.isPersistent(b);           #  9 x:bit := BKCisPersistent(b:bat[:int,:int]) 
+    z := bat.isTransient(b);            # 10 z:bit := BKCisTransient(b:bat[:int,:int]) 
+    io.print(x);                        # 11 _15:void := IOprint_val(x:bit) 
+    io.print(z);                        # 12 _16:void := IOprint_val(z:bit) 
+    io.print("");                       # 13 _17:void := IOprint_val(_18:str) 
+    bat.setTransient(b);                # 14 _19:void := BKCsetTransient(b:bat[:int,:int]) 
+    x := bat.isPersistent(b);           # 15 x:bit := BKCisPersistent(b:bat[:int,:int]) 
+    z := bat.isTransient(b);            # 16 z:bit := BKCisTransient(b:bat[:int,:int]) 
+    io.print(x);                        # 17 _20:void := IOprint_val(x:bit) 
+    io.print(z);                        # 18 _21:void := IOprint_val(z:bit) 
+    io.print("");                       # 19 _22:void := IOprint_val(_18:str) 
+    bbp.close();                        # 20 _23:void 
+# at the end of the session, the BBP should have discarded 
+# the temporary bats of the user 
+# aug 02 this does not work, because the transaction is 
+# not properly closed. This means that a temporary bat 
+#remains in store. 
+    bbp.open();                         # 26 _29:void 
+    v := bbp.take("mysecondbat");       # 27 v:bat[:any,:any] := CMDbbptake(_9:str) {G}
+    io.print(v);                        # 28 _31:void := IOprint_val(v:bat[:any,:any]) 
+    bbp.close();                        # 29 _32:void 
 end main;	# 30  
 #-----------------#
 # h	tmp_4	  # name

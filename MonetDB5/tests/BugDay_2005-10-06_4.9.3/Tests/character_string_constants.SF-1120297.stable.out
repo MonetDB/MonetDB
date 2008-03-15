@@ -14,11 +14,11 @@ stdout of test 'character_string_constants.SF-1120297` in directory 'tests/BugDa
 ##print(type("s")); not supported
 ##print(type('c')); not supported
 #
-function user.main():void;	# 0  (main:void)
-    io.print('c');	# 1 IOprint_val (_1:void)<-(_2:chr)
-    io.print("s");	# 2 IOprint_val (_3:void)<-(_4:str)
-#print(type("s")); not supported 	# 3  (_5:str)
-#print(type('c')); not supported 	# 4  (_6:str)
+function user.main():void;              #  0 main:void 
+    io.print('c');                      #  1 _1:void := IOprint_val(_2:chr) 
+    io.print("s");                      #  2 _3:void := IOprint_val(_4:str) 
+#print(type("s")); not supported 
+#print(type('c')); not supported 
 end main;	# 5  
 [ 'c' ]
 [ "s" ]

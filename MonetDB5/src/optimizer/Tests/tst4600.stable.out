@@ -21,13 +21,13 @@ stdout of test 'tst4600` in directory 'src/optimizer` itself:
 #    redo j:= i<lim;
 #exit j;
 #end welcome;
-function user.welcome(lim:int):void;	# 0  (welcome:void)<-(lim:int)
-    i := 0;	# 1  (i:int)<-(_3:int)
-barrier j := calc.<(i,lim);	# 2 CALCcompLTintint (j:bit)<-(i:int)(lim:int) jump 6
-    io.print("Welcome");	# 3 IOprint_val (_5:void)<-(_6:str)
-    i := calc.+(i,1);	# 4 CALCbinaryADDintint (i:int)<-(i:int)(_7:int)
-    redo j := calc.<(i,lim);	# 5 CALCcompLTintint (j:bit)<-(i:int)(lim:int) jump 3
-exit j;	# 6  (j:bit)
+function user.welcome(lim:int):void;    #  0 welcome:void := user.welcome(lim:int) 
+    i := 0;                             #  1 i:int := _3:int 
+barrier j := calc.<(i,lim);             #  2 j:bit := CALCcompLTintint(i:int, lim:int) {J6}
+    io.print("Welcome");                #  3 _5:void := IOprint_val(_6:str) 
+    i := calc.+(i,1);                   #  4 i:int := CALCbinaryADDintint(i:int, _7:int) 
+    redo j := calc.<(i,lim);            #  5 j:bit := CALCcompLTintint(i:int, lim:int) {J3}
+exit j;                                 #  6 j:bit 
 end welcome;	# 7  
 #
 #optimizer.macroExpansion("user","welcome");
@@ -36,16 +36,16 @@ end welcome;	# 7
 #user.welcome(2);
 #mdb.list();
 #
-function user.main():void;	# 0  (main:void)
-# the first test for macro expansions and inversions 	# 1  (_1:str)
-    io.print("test expansion");	# 2 IOprint_val (_5:void)<-(_6:str)
-    _12 := 0;	# 3  (_12:int)<-(_13:int)
-barrier _14 := calc.<(_12,2);	# 4 CALCcompLTintint (_14:bit)<-(_12:int)(_8:int) jump 8
-    io.print("Welcome");	# 5 IOprint_val (_15:void)<-(_16:str)
-    _12 := calc.+(_12,1);	# 6 CALCbinaryADDintint (_12:int)<-(_12:int)(_17:int)
-    redo _14 := calc.<(_12,2);	# 7 CALCcompLTintint (_14:bit)<-(_12:int)(_8:int) jump 5
-exit _14;	# 8  (_14:bit)
-    mdb.list();	# 9 MDBlist (_9:void)
+function user.main():void;              #  0 main:void 
+# the first test for macro expansions and inversions 
+    io.print("test expansion");         #  2 _5:void := IOprint_val(_6:str) 
+    _12 := 0;                           #  3 _12:int := _13:int 
+barrier _14 := calc.<(_12,2);           #  4 _14:bit := CALCcompLTintint(_12:int, _8:int) {J8}
+    io.print("Welcome");                #  5 _15:void := IOprint_val(_16:str) 
+    _12 := calc.+(_12,1);               #  6 _12:int := CALCbinaryADDintint(_12:int, _17:int) 
+    redo _14 := calc.<(_12,2);          #  7 _14:bit := CALCcompLTintint(_12:int, _8:int) {J5}
+exit _14;                               #  8 _14:bit 
+    mdb.list();                         #  9 _9:void 
 end main;	# 10  
 [ "test expansion" ]
 [ "Welcome" ]

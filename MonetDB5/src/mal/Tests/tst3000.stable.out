@@ -28,23 +28,23 @@ stdout of test 'tst3000` in directory 'src/mal` itself:
 ## k:= "whatever"; {k.blah:=true;k.freeze:=true;}
 ## n:= new(int,int);{n.cost:=12;}
 #
-function user.main():void;	# 0  (main:void)
-# testing simple property assignments 	# 1  (_1:str)
-    i{constant=true} := 1;	# 2  (i:int)<-(_4:int)
-    j{blah=3} := "kk";	# 3  (j:str)<-(_7:str)
-    k{blah=4,freeze=1} := "whatever";	# 4  (k:str)<-(_10:str)
-    n{cost=12} := bat.new(:int,:int);	# 5 CMDBATnew (n:bat[:int,:int])<-(_13:int)(_14:int)
-    m{grp="person"} := bbp.take("person_name");	# 6 CMDbbptake (m:bat[:any,:any])<-(_17:str)
-    j{blah=3} := "ll";	# 7  (j:str)<-(_19:str)
-# second one overwrites first 	# 8  (_20:str)
-    z{sorted} := bat.new(:int,:int);	# 9 CMDBATnew (z:bat[:int,:int])<-(_22:int)(_23:int)
-#q:= 1:int{frozen}; 	# 10  (_24:str)
-#Alternative format using post-predicates 	# 11  (_25:str)
-#default interpretation for i.prop is boolean value true 	# 12  (_26:str)
-# i:= 1;		{i.constant:=true;} 	# 13  (_27:str)
-# j:= "kk"; 	{j.constant:=true;} 	# 14  (_28:str)
-# k:= "whatever"; {k.blah:=true;k.freeze:=true;} 	# 15  (_29:str)
-# n:= bat.new(int,int);{n.cost:=12;} 	# 16  (_30:str)
+function user.main():void;              #  0 main:void {G}
+# testing simple property assignments 
+    i{constant=true} := 1;              #  2 i:int := _4:int 
+    j{blah=3} := "kk";                  #  3 j:str := _7:str {G}
+    k{blah=4,freeze=1} := "whatever";   #  4 k:str := _10:str {G}
+    n{cost=12} := bat.new(:int,:int);   #  5 n:bat[:int,:int] := CMDBATnew(_13:int, _14:int) {G}
+    m{grp="person"} := bbp.take("person_name");#  6 m:bat[:any,:any] := CMDbbptake(_17:str) {G}
+    j{blah=3} := "ll";                  #  7 j:str := _19:str {G}
+# second one overwrites first 
+    z{sorted} := bat.new(:int,:int);    #  9 z:bat[:int,:int] := CMDBATnew(_22:int, _23:int) {G}
+#q:= 1:int{frozen}; 
+#Alternative format using post-predicates 
+#default interpretation for i.prop is boolean value true 
+# i:= 1;		{i.constant:=true;} 
+# j:= "kk"; 	{j.constant:=true;} 
+# k:= "whatever"; {k.blah:=true;k.freeze:=true;} 
+# n:= bat.new(int,int);{n.cost:=12;} 
 end main;	# 17  
 !MALException:bbp.take:failed to take object from box
 

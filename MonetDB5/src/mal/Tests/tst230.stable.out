@@ -34,25 +34,25 @@ stdout of test 'tst230` in directory 'src/mal` itself:
 #	printf("lrefcount =%d\n",j);
 #
 #
-function user.main():void;	# 0  (main:void)
-# a test checking BAT reference counting under various situations 	# 1  (_1:str)
-    b := bat.new(:int,:str);	# 2 CMDBATnew (b:bat[:int,:str])<-(_3:int)(_4:str)
-    i := bbp.getRefCount(b);	# 3 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("refcount =%d\n",i);	# 4 IOprint_formatted_int (_6:void)<-(_7:str)(i:int)
-    j := bbp.getLRefCount(b);	# 5 CMDgetBATlrefcnt (j:int)<-(b:bat[:int,:str])
-    io.printf("lrefcount =%d\n",j);	# 6 IOprint_formatted_int (_9:void)<-(_10:str)(j:int)
-    bat.insert(b,1,"bat B");	# 7 BKCinsert_bun (_11:void)<-(b:bat[:int,:str])(_12:int)(_13:str)
-    io.print(b);	# 8 IOprint_val (_14:void)<-(b:bat[:int,:str])
-    i := bbp.getRefCount(b);	# 9 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("second refcount =%d\n",i);	# 10 IOprint_formatted_int (_15:void)<-(_16:str)(i:int)
-    j := bbp.getLRefCount(b);	# 11 CMDgetBATlrefcnt (j:int)<-(b:bat[:int,:str])
-    io.printf("lrefcount =%d\n",j);	# 12 IOprint_formatted_int (_17:void)<-(_10:str)(j:int)
-# referenceing through mirroring 	# 13  (_18:str)
-    b5 := bat.reverse(b);	# 14 BKCreverse (b5:bat[:str,:int])<-(b:bat[:int,:str])
-    i := bbp.getRefCount(b);	# 15 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("after reverse assignment refcount =%d\n",i);	# 16 IOprint_formatted_int (_20:void)<-(_21:str)(i:int)
-    j := bbp.getLRefCount(b);	# 17 CMDgetBATlrefcnt (j:int)<-(b:bat[:int,:str])
-    io.printf("lrefcount =%d\n",j);	# 18 IOprint_formatted_int (_22:void)<-(_10:str)(j:int)
+function user.main():void;              #  0 main:void {G}
+# a test checking BAT reference counting under various situations 
+    b := bat.new(:int,:str);            #  2 b:bat[:int,:str] := CMDBATnew(_3:int, _4:str) {G}
+    i := bbp.getRefCount(b);            #  3 i:int := CMDgetBATrefcnt(b:bat[:int,:str]) 
+    io.printf("refcount =%d\n",i);      #  4 _6:void := IOprint_formatted_int(_7:str, i:int) 
+    j := bbp.getLRefCount(b);           #  5 j:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
+    io.printf("lrefcount =%d\n",j);     #  6 _9:void := IOprint_formatted_int(_10:str, j:int) 
+    bat.insert(b,1,"bat B");            #  7 _11:void := BKCinsert_bun(b:bat[:int,:str], _12:int, _13:str) 
+    io.print(b);                        #  8 _14:void := IOprint_val(b:bat[:int,:str]) 
+    i := bbp.getRefCount(b);            #  9 i:int := CMDgetBATrefcnt(b:bat[:int,:str]) 
+    io.printf("second refcount =%d\n",i);# 10 _15:void := IOprint_formatted_int(_16:str, i:int) 
+    j := bbp.getLRefCount(b);           # 11 j:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
+    io.printf("lrefcount =%d\n",j);     # 12 _17:void := IOprint_formatted_int(_10:str, j:int) 
+# referenceing through mirroring 
+    b5 := bat.reverse(b);               # 14 b5:bat[:str,:int] := BKCreverse(b:bat[:int,:str]) {G}
+    i := bbp.getRefCount(b);            # 15 i:int := CMDgetBATrefcnt(b:bat[:int,:str]) 
+    io.printf("after reverse assignment refcount =%d\n",i);# 16 _20:void := IOprint_formatted_int(_21:str, i:int) 
+    j := bbp.getLRefCount(b);           # 17 j:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
+    io.printf("lrefcount =%d\n",j);     # 18 _22:void := IOprint_formatted_int(_10:str, j:int) 
 end main;	# 19  
 refcount =1
 lrefcount =1

@@ -76,48 +76,48 @@ stdout of test 'tst007` in directory 'src/mal` itself:
 !TypeException:user.foo[9]:'b' may not be used before being initialized
 !TypeException:user.foo[16]:'entry_or_exittest' may not be used before being initialized
 !TypeException:user.foo[29]:'booleanexpr' may not be used before being initialized
-function user.foo():void;	# 0  (foo:void)
-barrier H := batoperatie;	# 1  (H:any)<-(batoperatie:any) jump 5
-    Tail := algebra.fetch(b,H);	# 2  unknown (Tail:any)<-(b:any)(H:any)
-#body 	# 3  (_5:str)
-    redo H;	# 4  (H:any) jump 2
-exit H;	# 5  (H:any)
-# de andere loops zijn eenvoudig. 'goto' is altijd beperkt tot 	# 6  (_6:str)
-# 'randen' van het blok. (redo L, leave L) 	# 7  (_7:str)
-# een while loop 	# 8  (_8:str)
-barrier L := chop.hasMoreElements(b);	# 9  unknown (L:any)<-(b:any) jump 13
-    H := chop.head(b);	# 10  unknown (H:any)<-(b:any)
-    v := chop.nextElement(b);	# 11  unknown (v:any)<-(b:any)
-    redo L;	# 12  (L:any) jump 10
-exit L;	# 13  (L:any)
-#een do-while loop 	# 14  (_11:str)
-    entry := true;	# 15  (entry:bit)<-(_13:bit)
-barrier M := entry_or_exittest;	# 16  (M:any)<-(entry_or_exittest:any) jump 20
-    entry := false;	# 17  (entry:bit)<-(_16:bit)
-# rest 	# 18  (_17:str)
-    redo M;	# 19  (M:any) jump 17
-exit M;	# 20  (M:any)
-#een for-loop  	# 21  (_18:str)
-    i := 1;	# 22  (i:int)<-(_20:int)
-barrier N := calc.<(i,10);	# 23 CALCcompLTintint (N:bit)<-(i:int)(_22:int) jump 27
-#body 	# 24  (_23:str)
-    i := calc.+(i,1);	# 25 CALCbinaryADDintint (i:int)<-(i:int)(_20:int)
-    redo N;	# 26  (N:bit) jump 24
-exit N;	# 27  (N:bit)
-# de if-then en if-then-else constructies 	# 28  (_24:str)
-barrier FT := booleanexpr;	# 29  (FT:any)<-(booleanexpr:any) jump 31
-# thenpart 	# 30  (_27:str)
-exit FT;	# 31  (FT:any)
-barrier FTE := booleanexpr;	# 32  (FTE:any)<-(booleanexpr:any) jump 34
-# thenpart 	# 33  (_29:str)
-exit FTE;	# 34  (FTE:any)
-barrier FS := batcalc.not(FTE);	# 35  unknown (FS:any)<-(FTE:any) jump 37
-#elsepart 	# 36  (_31:str)
-exit FS;	# 37  (FS:any)
+function user.foo():void;               #  0 foo:void 
+barrier H := batoperatie;               #  1 H:any := batoperatie:any {J5}
+    Tail := algebra.fetch(b,H);         #  2 Tail:any := algebra.fetch(b:any, H:any) {U}
+#body                                   #  3 
+    redo H;                             #  4 H:any {J2}
+exit H;                                 #  5 H:any 
+# de andere loops zijn eenvoudig. 'goto' is altijd beperkt tot #  6 
+# 'randen' van het blok. (redo L, leave L) #  7 
+# een while loop                        #  8 
+barrier L := chop.hasMoreElements(b);   #  9 L:any := chop.hasMoreElements(b:any) {UJ13}
+    H := chop.head(b);                  # 10 H:any := chop.head(b:any) {U}
+    v := chop.nextElement(b);           # 11 v:any := chop.nextElement(b:any) {U}
+    redo L;                             # 12 L:any {J10}
+exit L;                                 # 13 L:any 
+#een do-while loop 
+    entry := true;                      # 15 entry:bit := _13:bit 
+barrier M := entry_or_exittest;         # 16 M:any := entry_or_exittest:any {J20}
+    entry := false;                     # 17 entry:bit := _16:bit 
+# rest 
+    redo M;                             # 19 M:any {J17}
+exit M;                                 # 20 M:any 
+#een for-loop  
+    i := 1;                             # 22 i:int := _20:int 
+barrier N := calc.<(i,10);              # 23 N:bit := CALCcompLTintint(i:int, _22:int) {J27}
+#body 
+    i := calc.+(i,1);                   # 25 i:int := CALCbinaryADDintint(i:int, _20:int) 
+    redo N;                             # 26 N:bit {J24}
+exit N;                                 # 27 N:bit 
+# de if-then en if-then-else constructies 
+barrier FT := booleanexpr;              # 29 FT:any := booleanexpr:any {J31}
+# thenpart 
+exit FT;                                # 31 FT:any 
+barrier FTE := booleanexpr;             # 32 FTE:any := booleanexpr:any {J34}
+# thenpart 
+exit FTE;                               # 34 FTE:any 
+barrier FS := batcalc.not(FTE);         # 35 FS:any := batcalc.not(FTE:any) {UJ37}
+#elsepart                               # 36 
+exit FS;                                # 37 FS:any 
 end foo;	# 38  
 #
-function user.main():void;	# 0  (main:void)
-# A collection of forloops, which should not execute 	# 1  (_1:str)
+function user.main():void;              #  0 main:void 
+# A collection of forloops, which should not execute 
 end main;	# 2  
 
 # 07:58:34 >  

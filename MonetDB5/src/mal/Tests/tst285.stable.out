@@ -22,14 +22,14 @@ stdout of test 'tst285` in directory 'src/mal` itself:
 #z2:= match(b,".*[ly].*");
 #print(z2);
 #
-function user.main():void;	# 0  (main:void)
-    b := bat.new(:oid,:str);	# 1 CMDBATnew (b:bat[:oid,:str])<-(_2:oid)(_3:str)
-    bat.append(b,"hello");	# 2 BKCappend_val_wrap (_4:void)<-(b:bat[:oid,:str])(_5:str)
-    bat.append(b,"goodbye");	# 3 BKCappend_val_wrap (_6:void)<-(b:bat[:oid,:str])(_7:str)
-    z1 := batstr.like(b,"%hel%");	# 4 STRbatlike2 (z1:bat[:oid,:oid])<-(b:bat[:oid,:str])(_9:str)
-    io.print(z1);	# 5 IOprint_val (_10:void)<-(z1:bat[:oid,:oid])
-    z2 := pcre.uselect(".*[ly].*",b);	# 6 PCREuselect (z2:bat[:oid,:void])<-(_12:str)(b:bat[:oid,:str])
-    io.print(z2);	# 7 IOprint_val (_13:void)<-(z2:bat[:oid,:void])
+function user.main():void;              #  0 main:void {G}
+    b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
+    bat.append(b,"hello");              #  2 _4:void := BKCappend_val_wrap(b:bat[:oid,:str], _5:str) 
+    bat.append(b,"goodbye");            #  3 _6:void := BKCappend_val_wrap(b:bat[:oid,:str], _7:str) 
+    z1 := batstr.like(b,"%hel%");       #  4 z1:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _9:str) {G}
+    io.print(z1);                       #  5 _10:void := IOprint_val(z1:bat[:oid,:oid]) 
+    z2 := pcre.uselect(".*[ly].*",b);   #  6 z2:bat[:oid,:void] := PCREuselect(_12:str, b:bat[:oid,:str]) {G}
+    io.print(z2);                       #  7 _13:void := IOprint_val(z2:bat[:oid,:void]) 
 end main;	# 8  
 #-----------------#
 # h	tmp_5	  # name

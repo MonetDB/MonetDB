@@ -20,16 +20,16 @@ stdout of test 'tst024` in directory 'src/mal` itself:
 #_5:=23;
 #io.print(_5);
 #
-function user.main():void;	# 0  (main:void)
-#detect illegal use of temporary variables 	# 1  (_1:str)
-    i := 12;	# 2  (i:int)<-(_3:int)
-# internal location of i is 3 	# 3  (_4:str)
-    X2 := 55;	# 4  (X2:int)<-(_6:int)
-# acceptable 	# 5  (_7:str)
-    X3 := 23;	# 6  (X3:int)<-(_9:int)
-# error, overwriting non-temp 	# 7  (_10:str)
-    X5 := 23;	# 8  (X5:int)<-(_9:int)
-    io.print(X5);	# 9 IOprint_val (_12:void)<-(X5:int)
+function user.main():void;              #  0 main:void 
+#detect illegal use of temporary variables 
+    i := 12;                            #  2 i:int := _3:int 
+# internal location of i is 3 
+    X2 := 55;                           #  4 X2:int := _6:int 
+# acceptable 
+    X3 := 23;                           #  6 X3:int := _9:int 
+# error, overwriting non-temp 
+    X5 := 23;                           #  8 X5:int := _9:int 
+    io.print(X5);                       #  9 _12:void := IOprint_val(X5:int) 
 end main;	# 10  
 [ 23 ]
 

@@ -22,15 +22,15 @@ stdout of test 'tst255` in directory 'src/mal` itself:
 #o:= oid(z1);
 #print(o);
 #
-function user.main():void;	# 0  (main:void)
-# testing void to oid coercion 	# 1  (_1:str)
-    z1 := bat.new(:oid,:int);	# 2 CMDBATnew (z1:bat[:oid,:int])<-(_3:oid)(_4:int)
-    bat.append(z1,0);	# 3 BKCappend_val_wrap (_5:void)<-(z1:bat[:oid,:int])(_6:int)
-    bat.append(z1,1);	# 4 BKCappend_val_wrap (_7:void)<-(z1:bat[:oid,:int])(_8:int)
-    bat.append(z1,2);	# 5 BKCappend_val_wrap (_9:void)<-(z1:bat[:oid,:int])(_10:int)
-    io.print(z1);	# 6 IOprint_val (_11:void)<-(z1:bat[:oid,:int])
-    o := batcalc.oid(z1);	# 7 CMDconvert_int_oid (o:bat[:oid,:oid])<-(z1:bat[:oid,:int])
-    io.print(o);	# 8 IOprint_val (_13:void)<-(o:bat[:oid,:oid])
+function user.main():void;              #  0 main:void {G}
+# testing void to oid coercion 
+    z1 := bat.new(:oid,:int);           #  2 z1:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
+    bat.append(z1,0);                   #  3 _5:void := BKCappend_val_wrap(z1:bat[:oid,:int], _6:int) 
+    bat.append(z1,1);                   #  4 _7:void := BKCappend_val_wrap(z1:bat[:oid,:int], _8:int) 
+    bat.append(z1,2);                   #  5 _9:void := BKCappend_val_wrap(z1:bat[:oid,:int], _10:int) 
+    io.print(z1);                       #  6 _11:void := IOprint_val(z1:bat[:oid,:int]) 
+    o := batcalc.oid(z1);               #  7 o:bat[:oid,:oid] := CMDconvert_int_oid(z1:bat[:oid,:int]) {G}
+    io.print(o);                        #  8 _13:void := IOprint_val(o:bat[:oid,:oid]) 
 end main;	# 9  
 #-----------------#
 # h	tmp_4	  # name

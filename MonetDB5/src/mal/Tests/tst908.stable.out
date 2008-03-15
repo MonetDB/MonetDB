@@ -22,11 +22,11 @@ stdout of test 'tst908` in directory 'src/mal` itself:
 #	reduce:= multiplex.tactics("/",b,div);
 #	print(reduce);
 #end perftst;
-function user.perftst(b:bat[:any_1,:any_2],div:any_2):void;	# 0  (perftst:void)<-(b:bat[:any_1,:any_2])(div:any_2)
-    io.print("perftst");	# 1 IOprint_val (_3:void)<-(_4:str)
-    io.print(div);	# 2 IOprint_val (_5:void)<-(div:any_2)
-    reduce := batcalc./(b,div);	# 3  (reduce:any)<-(b:bat[:any_1,:any_2])(div:any_2)
-    io.print(reduce);	# 4 IOprint_val (_7:void)<-(reduce:any)
+function user.perftst(b:bat[:any_1,:any_2],div:any_2):void;#  0 perftst:void := user.perftst(b:bat[:any_1,:any_2], div:any_2) {PG}
+    io.print("perftst");                #  1 _3:void := IOprint_val(_4:str) 
+    io.print(div);                      #  2 _5:void := IOprint_val(div:any_2) {P}
+    reduce := batcalc./(b,div);         #  3 reduce:any := batcalc./(b:bat[:any_1,:any_2], div:any_2) {P}
+    io.print(reduce);                   #  4 _7:void := IOprint_val(reduce:any) 
 end perftst;	# 5  
 #
 #
@@ -36,14 +36,14 @@ end perftst;	# 5
 #        redo (v,i):= nextElement(1:lng,10:lng);
 #exit (v,i);
 #
-function user.main():void;	# 0  (main:void)
-# the multiplex code blocks. 	# 1  (_1:str)
-    b := bat.new(:oid,:lng);	# 2 CMDBATnew (b:bat[:oid,:lng])<-(_3:oid)(_4:lng)
-barrier (v,i):= language.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-(_7:lng) jump 6
-    bat.append(b,i);	# 4 BKCappend_val_wrap (_8:void)<-(b:bat[:oid,:lng])(i:lng)
-    redo (v,i):= language.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-(_9:lng)(_10:lng) jump 4
-exit (v,i);	# 6  (v:bit)(i:lng)
-    user.perftst(b,1:lng);	# 7  (_11:void)<-(b:bat[:oid,:lng])(_9:lng)
+function user.main():void;              #  0 main:void {G}
+# the multiplex code blocks. 
+    b := bat.new(:oid,:lng);            #  2 b:bat[:oid,:lng] := CMDBATnew(_3:oid, _4:lng) {G}
+barrier (v,i):= language.newRange(0:lng);#  3 (v:bit, i:lng) := RNGnewRange_lng(_7:lng) {J6}
+    bat.append(b,i);                    #  4 _8:void := BKCappend_val_wrap(b:bat[:oid,:lng], i:lng) 
+    redo (v,i):= language.nextElement(1:lng,10:lng);#  5 (v:bit, i:lng) := RNGnextElement_lng(_9:lng, _10:lng) {J4}
+exit (v,i);                             #  6 (v:bit, i:lng 
+    user.perftst(b,1:lng);              #  7 _11:void := user.perftst(b:bat[:oid,:lng], _9:lng) 
 end main;	# 8  
 [ "perftst" ]
 [ 1 ]

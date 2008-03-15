@@ -26,15 +26,15 @@ stdout of test 'tst4010` in directory 'src/optimizer` itself:
 #bat.insert(d,2,2);
 #
 #
-function user.main():void;	# 0  (main:void)
-# testing the library for unsafe instructions 	# 1  (_1:str)
-# bat C can still be shared with B 	# 2  (_2:str)
-    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_7:int)(_7:int)
-    c := bat.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_7:int)(_7:int)
-    bat.insert(b,1,1);	# 5 BKCinsert_bun (_9:void)<-(b:bat[:int,:int])(_10:int)(_10:int)
-# in this case D should be left alone 	# 6  (_11:str)
-    d := bat.new(:int,:int);	# 7 CMDBATnew (d:bat[:int,:int])<-(_7:int)(_7:int)
-    bat.insert(d,2,2);	# 8 BKCinsert_bun (_13:void)<-(d:bat[:int,:int])(_14:int)(_14:int)
+function user.main():void;              #  0 main:void {G}
+# testing the library for unsafe instructions 
+# bat C can still be shared with B 
+    b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_7:int, _7:int) {G}
+    c := bat.new(:int,:int);            #  4 c:bat[:int,:int] := CMDBATnew(_7:int, _7:int) {G}
+    bat.insert(b,1,1);                  #  5 _9:void := BKCinsert_bun(b:bat[:int,:int], _10:int, _10:int) 
+# in this case D should be left alone 
+    d := bat.new(:int,:int);            #  7 d:bat[:int,:int] := CMDBATnew(_7:int, _7:int) {G}
+    bat.insert(d,2,2);                  #  8 _13:void := BKCinsert_bun(d:bat[:int,:int], _14:int, _14:int) 
 end main;	# 9  
 
 # 23:52:52 >  

@@ -11,8 +11,8 @@ stdout of test 'error.998332` in directory 'tests/BugDay_2005-10-06_4.9.3` itsel
 # Visit http://monetdb.cwi.nl/ for further information.
 #  raise SQLerror:= "this is an error ";
 #
-function user.main():void;	# 0  (main:void)
-    raise SQLerror := "this is an error ";	# 1  (SQLerror:str)<-(_2:str)
+function user.main():void;              #  0 main:void {G}
+    raise SQLerror := "this is an error ";#  1 SQLerror:str := _2:str {G}
 end main;	# 2  
 !MALException:user.main[1]:this is an error 
 !MALException:user.main[2]:Exception not catched

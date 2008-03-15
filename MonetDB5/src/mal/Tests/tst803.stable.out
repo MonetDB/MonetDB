@@ -20,14 +20,13 @@ stdout of test 'tst803` in directory 'src/mal` itself:
 #io.print(b);
 #
 !TypeException:user.main[5]:'bat.insert' undefined in: _6:any := bat.insert(b:BAT, _7:int, _8:int)
-
-function user.main():void;	# 0  (main:void)
-# you can not insert against an arbitrary BAT identifier 	# 1  (_1:str)
-# because you don't know its type. 	# 2  (_2:str)
-    z := bat.new(:int,:int);	# 3 CMDBATnew (z:bat[:int,:int])<-(_4:int)(_4:int)
-    b := calc.getBATidentifier(z);	# 4 CALCbat2batid (b:BAT)<-(z:bat[:int,:int])
-    bat.insert(b,1,2);	# 5  unknown (_6:any)<-(b:BAT)(_7:int)(_8:int)
-    io.print(b);	# 6 IOprint_val (_9:void)<-(b:BAT)
+function user.main():void;              #  0 main:void {G}
+# you can not insert against an arbitrary BAT identifier 
+# because you don't know its type. 
+    z := bat.new(:int,:int);            #  3 z:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
+    b := calc.getBATidentifier(z);      #  4 b:BAT := CALCbat2batid(z:bat[:int,:int]) {G}
+    bat.insert(b,1,2);                  #  5 _6:any := bat.insert(b:BAT, _7:int, _8:int) {U}
+    io.print(b);                        #  6 _9:void := IOprint_val(b:BAT) 
 end main;	# 7  
 
 # 15:26:49 >  

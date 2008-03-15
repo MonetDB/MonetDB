@@ -23,19 +23,19 @@ stdout of test 'tst039` in directory 'src/mal` itself:
 #   y := print(val);
 #   return sample:=true;
 #end sample;
-function user.sample(nme:str,val:any_1):bit;	# 0  (sample:bit)<-(nme:str)(val:any_1)
-    c := calc.*(2,3);	# 1 CALCbinaryMULintint (c:int)<-(_4:int)(_5:int)
-    b:bat[:void,:int]  := bbp.bind(nme);	# 2 CMDbbpbind (b:bat[:void,:int])<-(nme:str)
-#find a BAT 	# 3  (_7:str)
-    h := algebra.select(b,val,val);	# 4  (h:any)<-(b:bat[:void,:int])(val:any_1)(val:any_1)
-    t := aggr.count(h);	# 5  (t:any)<-(h:any)
-    x := io.print(t);	# 6 IOprint_val (x:void)<-(t:any)
-    y := io.print(val);	# 7 IOprint_val (y:void)<-(val:any_1)
-    return sample := true;	# 8  (sample:bit)<-(_12:bit)
+function user.sample(nme:str,val:any_1):bit;#  0 sample:bit := user.sample(nme:str, val:any_1) {PG}
+    c := calc.*(2,3);                   #  1 c:int := CALCbinaryMULintint(_4:int, _5:int) 
+    b:bat[:void,:int]  := bbp.bind(nme);#  2 b:bat[:void,:int] := CMDbbpbind(nme:str) {G}
+#find a BAT                             #  3 
+    h := algebra.select(b,val,val);     #  4 h:any := algebra.select(b:bat[:void,:int], val:any_1, val:any_1) {P}
+    t := aggr.count(h);                 #  5 t:any := aggr.count(h:any) 
+    x := io.print(t);                   #  6 x:void := IOprint_val(t:any) 
+    y := io.print(val);                 #  7 y:void := IOprint_val(val:any_1) {P}
+    return sample := true;              #  8 sample:bit := _12:bit 
 end sample;	# 9  
 #
-function user.main():void;	# 0  (main:void)
-# complex analysis 	# 1  (_2:str)
+function user.main():void;              #  0 main:void 
+# complex analysis 
 end main;	# 2  
 
 # 07:58:43 >  

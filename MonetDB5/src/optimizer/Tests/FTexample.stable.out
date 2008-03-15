@@ -20,19 +20,19 @@ stdout of test 'FTexample` in directory 'src/optimizer` itself:
 #	i:= aggr.count(z);
 #	return i;
 #end test;
-function user.test(s:str):int;	# 0  (test:int)<-(s:str)
-    b := bat.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-(_3:int)(_4:str)
-    bat.insert(b,1,"hello");	# 2 BKCinsert_bun (_5:void)<-(b:bat[:int,:str])(_6:int)(_7:str)
-    z := algebra.select(b,s,s);	# 3 ALGselect (z:bat[:int,:str])<-(b:bat[:int,:str])(s:str)(s:str)
-    i := aggr.count(z);	# 4 ALGcount_bat (i:int)<-(z:bat[:int,:str])
-    return test := i;	# 5  (test:int)<-(i:int)
+function user.test(s:str):int;          #  0 test:int := user.test(s:str) {G}
+    b := bat.new(:int,:str);            #  1 b:bat[:int,:str] := CMDBATnew(_3:int, _4:str) {G}
+    bat.insert(b,1,"hello");            #  2 _5:void := BKCinsert_bun(b:bat[:int,:str], _6:int, _7:str) 
+    z := algebra.select(b,s,s);         #  3 z:bat[:int,:str] := ALGselect(b:bat[:int,:str], s:str, s:str) {G}
+    i := aggr.count(z);                 #  4 i:int := ALGcount_bat(z:bat[:int,:str]) 
+    return test := i;                   #  5 test:int := i:int 
 end test;	# 6  
 #optimizer.factorize("user","test");
 #mdb.list("user","test");
 #
-function user.main():void;	# 0  (main:void)
-#Code factorization 	# 1  (_1:str)
-    mdb.list("user","test");	# 2 MDBlist3 (_5:void)<-(_3:str)(_4:str)
+function user.main():void;              #  0 main:void {G}
+#Code factorization 
+    mdb.list("user","test");            #  2 _5:void := MDBlist3(_3:str, _4:str) 
 end main;	# 3  
 factory user.test(s:str):int;
     b := bat.new(:int,:str);

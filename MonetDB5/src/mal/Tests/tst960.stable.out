@@ -47,43 +47,43 @@ stdout of test 'tst960` in directory 'src/mal` itself:
 #print(rtrim);
 #
 #srch:= batstr.search(S,S); 
-#print(srch);
-#plus:= batstr.+(S,S); 
-#print(plus);
+#io.print(srch);
+#plus:= batcalc.+(S,S); 
+#io.print(plus);
 #
-function user.main():void;	# 0  (main:void)
-# the chunk mechanism 	# 1  (_1:str)
-    S := bat.new(:oid,:str);	# 2 CMDBATnew (S:bat[:oid,:str])<-(_3:oid)(_4:str)
-    bat.append(S,"hello");	# 3 BKCappend_val_wrap (_5:void)<-(S:bat[:oid,:str])(_6:str)
-    bat.append(S,"brave");	# 4 BKCappend_val_wrap (_7:void)<-(S:bat[:oid,:str])(_8:str)
-    bat.append(S,"new");	# 5 BKCappend_val_wrap (_9:void)<-(S:bat[:oid,:str])(_10:str)
-    bat.append(S,"world");	# 6 BKCappend_val_wrap (_11:void)<-(S:bat[:oid,:str])(_12:str)
-    io.print(S);	# 7 IOprint_val (_13:void)<-(S:bat[:oid,:str])
-    L := batstr.length(S);	# 8 STRbatLength (L:bat[:oid,:int])<-(S:bat[:oid,:str])
-    io.print(L);	# 9 IOprint_val (_15:void)<-(L:bat[:oid,:int])
-    L := batstr.nbytes(S);	# 10 STRbatBytes (L:bat[:oid,:int])<-(S:bat[:oid,:str])
-    io.print(L);	# 11 IOprint_val (_16:void)<-(L:bat[:oid,:int])
-    B := batcalc.==(S,"hello");	# 12 STRbatEqualCst (B:bat[:oid,:bit])<-(S:bat[:oid,:str])(_6:str)
-    io.print(B);	# 13 IOprint_val (_18:void)<-(B:bat[:oid,:bit])
-    C := batstr.like(S,"hello");	# 14 STRbatlike2 (C:bat[:oid,:oid])<-(S:bat[:oid,:str])(_6:str)
-    io.print(C);	# 15 IOprint_val (_20:void)<-(C:bat[:oid,:oid])
-    U := batstr.toUpper(S);	# 16 STRbatUpper (U:bat[:oid,:str])<-(S:bat[:oid,:str])
-    io.print(U);	# 17 IOprint_val (_22:void)<-(U:bat[:oid,:str])
-    l := batstr.toLower(U);	# 18 STRbatLower (l:bat[:oid,:str])<-(U:bat[:oid,:str])
-    io.print(l);	# 19 IOprint_val (_24:void)<-(l:bat[:oid,:str])
-    trim := batstr.trim(S);	# 20 STRbatStrip (trim:bat[:oid,:str])<-(S:bat[:oid,:str])
-    io.print(trim);	# 21 IOprint_val (_26:void)<-(trim:bat[:oid,:str])
-    ltrim := batstr.ltrim(S);	# 22 STRbatLtrim (ltrim:bat[:oid,:str])<-(S:bat[:oid,:str])
-    io.print(ltrim);	# 23 IOprint_val (_28:void)<-(ltrim:bat[:oid,:str])
-    rtrim := batstr.rtrim(S);	# 24 STRbatRtrim (rtrim:bat[:oid,:str])<-(S:bat[:oid,:str])
-    io.print(rtrim);	# 25 IOprint_val (_30:void)<-(rtrim:bat[:oid,:str])
-    io.print("Start searches");	# 26 IOprint_val (_31:void)<-(_32:str)
-    srch := batstr.search(S,"hello");	# 27 STRbatstrSearchcst (srch:bat[:oid,:int])<-(S:bat[:oid,:str])(_6:str)
-    io.print(srch);	# 28 IOprint_val (_34:void)<-(srch:bat[:oid,:int])
-    srch := batstr.search(S,S);	# 29 STRbatstrSearch (srch:bat[:oid,:int])<-(S:bat[:oid,:str])(S:bat[:oid,:str])
-    io.print(srch);	# 30 IOprint_val (_35:void)<-(srch:bat[:oid,:int])
-    plus := batcalc.+(S,S);	# 31 STRbatConcat (plus:bat[:oid,:str])<-(S:bat[:oid,:str])(S:bat[:oid,:str])
-    io.print(plus);	# 32 IOprint_val (_37:void)<-(plus:bat[:oid,:str])
+function user.main():void;              #  0 main:void {G}
+# the chunk mechanism 
+    S := bat.new(:oid,:str);            #  2 S:bat[:oid,:str] := CMDBATnew(_3:oid, _4:str) {G}
+    bat.append(S,"hello");              #  3 _5:void := BKCappend_val_wrap(S:bat[:oid,:str], _6:str) 
+    bat.append(S,"brave");              #  4 _7:void := BKCappend_val_wrap(S:bat[:oid,:str], _8:str) 
+    bat.append(S,"new");                #  5 _9:void := BKCappend_val_wrap(S:bat[:oid,:str], _10:str) 
+    bat.append(S,"world");              #  6 _11:void := BKCappend_val_wrap(S:bat[:oid,:str], _12:str) 
+    io.print(S);                        #  7 _13:void := IOprint_val(S:bat[:oid,:str]) 
+    L := batstr.length(S);              #  8 L:bat[:oid,:int] := STRbatLength(S:bat[:oid,:str]) {G}
+    io.print(L);                        #  9 _15:void := IOprint_val(L:bat[:oid,:int]) 
+    L := batstr.nbytes(S);              # 10 L:bat[:oid,:int] := STRbatBytes(S:bat[:oid,:str]) {G}
+    io.print(L);                        # 11 _16:void := IOprint_val(L:bat[:oid,:int]) 
+    B := batcalc.==(S,"hello");         # 12 B:bat[:oid,:bit] := STRbatEqualCst(S:bat[:oid,:str], _6:str) {G}
+    io.print(B);                        # 13 _18:void := IOprint_val(B:bat[:oid,:bit]) 
+    C := batstr.like(S,"hello");        # 14 C:bat[:oid,:oid] := STRbatlike2(S:bat[:oid,:str], _6:str) {G}
+    io.print(C);                        # 15 _20:void := IOprint_val(C:bat[:oid,:oid]) 
+    U := batstr.toUpper(S);             # 16 U:bat[:oid,:str] := STRbatUpper(S:bat[:oid,:str]) {G}
+    io.print(U);                        # 17 _22:void := IOprint_val(U:bat[:oid,:str]) 
+    l := batstr.toLower(U);             # 18 l:bat[:oid,:str] := STRbatLower(U:bat[:oid,:str]) {G}
+    io.print(l);                        # 19 _24:void := IOprint_val(l:bat[:oid,:str]) 
+    trim := batstr.trim(S);             # 20 trim:bat[:oid,:str] := STRbatStrip(S:bat[:oid,:str]) {G}
+    io.print(trim);                     # 21 _26:void := IOprint_val(trim:bat[:oid,:str]) 
+    ltrim := batstr.ltrim(S);           # 22 ltrim:bat[:oid,:str] := STRbatLtrim(S:bat[:oid,:str]) {G}
+    io.print(ltrim);                    # 23 _28:void := IOprint_val(ltrim:bat[:oid,:str]) 
+    rtrim := batstr.rtrim(S);           # 24 rtrim:bat[:oid,:str] := STRbatRtrim(S:bat[:oid,:str]) {G}
+    io.print(rtrim);                    # 25 _30:void := IOprint_val(rtrim:bat[:oid,:str]) 
+    io.print("Start searches");         # 26 _31:void := IOprint_val(_32:str) 
+    srch := batstr.search(S,"hello");   # 27 srch:bat[:oid,:int] := STRbatstrSearchcst(S:bat[:oid,:str], _6:str) {G}
+    io.print(srch);                     # 28 _34:void := IOprint_val(srch:bat[:oid,:int]) 
+    srch := batstr.search(S,S);         # 29 srch:bat[:oid,:int] := STRbatstrSearch(S:bat[:oid,:str], S:bat[:oid,:str]) {G}
+    io.print(srch);                     # 30 _35:void := IOprint_val(srch:bat[:oid,:int]) 
+    plus := batcalc.+(S,S);             # 31 plus:bat[:oid,:str] := STRbatConcat(S:bat[:oid,:str], S:bat[:oid,:str]) {G}
+    io.print(plus);                     # 32 _37:void := IOprint_val(plus:bat[:oid,:str]) 
 end main;	# 33  
 #-------------------------#
 # h	tmp_13		  # name

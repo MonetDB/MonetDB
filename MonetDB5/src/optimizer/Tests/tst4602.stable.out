@@ -23,14 +23,14 @@ stdout of test 'tst4602` in directory 'src/optimizer` itself:
 #    return i;
 #exit j;
 #end welcome;
-function user.welcome(lim:int):int;	# 0  (welcome:int)<-(lim:int)
-    i := 0;	# 1  (i:int)<-(_3:int)
-barrier j := calc.<(i,lim);	# 2 CALCcompLTintint (j:bit)<-(i:int)(lim:int) jump 7
-    io.print("Welcome");	# 3 IOprint_val (_5:void)<-(_6:str)
-    i := calc.+(i,1);	# 4 CALCbinaryADDintint (i:int)<-(i:int)(_7:int)
-    redo j := calc.<(i,lim);	# 5 CALCcompLTintint (j:bit)<-(i:int)(lim:int) jump 3
-    return welcome := i;	# 6  (welcome:int)<-(i:int)
-exit j;	# 7  (j:bit)
+function user.welcome(lim:int):int;     #  0 welcome:int := user.welcome(lim:int) 
+    i := 0;                             #  1 i:int := _3:int 
+barrier j := calc.<(i,lim);             #  2 j:bit := CALCcompLTintint(i:int, lim:int) {J7}
+    io.print("Welcome");                #  3 _5:void := IOprint_val(_6:str) 
+    i := calc.+(i,1);                   #  4 i:int := CALCbinaryADDintint(i:int, _7:int) 
+    redo j := calc.<(i,lim);            #  5 j:bit := CALCcompLTintint(i:int, lim:int) {J3}
+    return welcome := i;                #  6 welcome:int := i:int 
+exit j;                                 #  7 j:bit 
 end welcome;	# 8  
 #
 #optimizer.macroExpansion("user","welcome");

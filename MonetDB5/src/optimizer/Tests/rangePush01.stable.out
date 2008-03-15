@@ -24,17 +24,17 @@ stdout of test 'rangePush01` in directory 'src/optimizer` itself:
 #optimizer.rangePush();
 #mdb.list();
 #
-function user.main():void;	# 0  (main:void)
-# detect empty ranges 	# 1  (_1:str)
-    b := bat.new(:void,:int);	# 2 CMDBATnew (b:bat[:void,:int])<-(_3:void)(_4:int)
-    s1 := algebra.select(b,80,90);	# 3 ALGselect (s1:bat[:void,:int])<-(b:bat[:void,:int])(_6:int)(_7:int)
-    s2{rows=0:lng} := bat.new(:void,:int);	# 4 CMDBATnew (s2:bat[:void,:int])<-(_3:void)(_4:int)
-    s3 := algebra.select(b,80,80);	# 5 ALGselect (s3:bat[:void,:int])<-(b:bat[:void,:int])(_6:int)(_6:int)
-    s4 := algebra.select(b,80,80,true,true);	# 6 ALGselectInclusive (s4:bat[:void,:int])<-(b:bat[:void,:int])(_6:int)(_6:int)(_11:bit)(_11:bit)
-    s5{rows=0:lng} := bat.new(:void,:int);	# 7 CMDBATnew (s5:bat[:void,:int])<-(_3:void)(_4:int)
-    s6{rows=0:lng} := bat.new(:void,:int);	# 8 CMDBATnew (s6:bat[:void,:int])<-(_3:void)(_4:int)
-    s7{rows=0:lng} := bat.new(:void,:int);	# 9 CMDBATnew (s7:bat[:void,:int])<-(_3:void)(_4:int)
-    mdb.list();	# 10 MDBlist (_17:void)
+function user.main():void;              #  0 main:void {G}
+# detect empty ranges 
+    b := bat.new(:void,:int);           #  2 b:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
+    s1 := algebra.select(b,80,90);      #  3 s1:bat[:void,:int] := ALGselect(b:bat[:void,:int], _6:int, _7:int) {G}
+    s2{rows=0:lng} := bat.new(:void,:int);#  4 s2:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
+    s3 := algebra.select(b,80,80);      #  5 s3:bat[:void,:int] := ALGselect(b:bat[:void,:int], _6:int, _6:int) {G}
+    s4 := algebra.select(b,80,80,true,true);#  6 s4:bat[:void,:int] := ALGselectInclusive(b:bat[:void,:int], _6:int, _6:int, _11:bit, _11:bit) {G}
+    s5{rows=0:lng} := bat.new(:void,:int);#  7 s5:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
+    s6{rows=0:lng} := bat.new(:void,:int);#  8 s6:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
+    s7{rows=0:lng} := bat.new(:void,:int);#  9 s7:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
+    mdb.list();                         # 10 _17:void 
 end main;	# 11  
 function user.main():void;
 # detect empty ranges 

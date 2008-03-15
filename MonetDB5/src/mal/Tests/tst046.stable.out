@@ -29,19 +29,19 @@ stdout of test 'tst046` in directory 'src/mal` itself:
 #i:= int(f);
 #print(i);
 #
-function user.main():void;	# 0  (main:void)
-#testing flt/lng/int coercions 	# 1  (_1:str)
-    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
-    bat.insert(b,1,1);	# 3 BKCinsert_bun (_4:void)<-(b:bat[:int,:int])(_5:int)(_5:int)
-    bat.insert(b,2,4);	# 4 BKCinsert_bun (_6:void)<-(b:bat[:int,:int])(_7:int)(_8:int)
-    bat.insert(b,3,9);	# 5 BKCinsert_bun (_9:void)<-(b:bat[:int,:int])(_10:int)(_11:int)
-    io.print(b);	# 6 IOprint_val (_12:void)<-(b:bat[:int,:int])
-    f := batcalc.flt(b);	# 7 CMDconvert_int_flt (f:bat[:int,:flt])<-(b:bat[:int,:int])
-    io.print(f);	# 8 IOprint_val (_14:void)<-(f:bat[:int,:flt])
-    l := batcalc.lng(b);	# 9 CMDconvert_int_lng (l:bat[:int,:lng])<-(b:bat[:int,:int])
-    io.print(l);	# 10 IOprint_val (_16:void)<-(l:bat[:int,:lng])
-    i := batcalc.int(f);	# 11 CMDconvert_flt_int (i:bat[:int,:int])<-(f:bat[:int,:flt])
-    io.print(i);	# 12 IOprint_val (_18:void)<-(i:bat[:int,:int])
+function user.main():void;              #  0 main:void {G}
+#testing flt/lng/int coercions 
+    b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    bat.insert(b,1,1);                  #  3 _4:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _5:int) 
+    bat.insert(b,2,4);                  #  4 _6:void := BKCinsert_bun(b:bat[:int,:int], _7:int, _8:int) 
+    bat.insert(b,3,9);                  #  5 _9:void := BKCinsert_bun(b:bat[:int,:int], _10:int, _11:int) 
+    io.print(b);                        #  6 _12:void := IOprint_val(b:bat[:int,:int]) 
+    f := batcalc.flt(b);                #  7 f:bat[:int,:flt] := CMDconvert_int_flt(b:bat[:int,:int]) {G}
+    io.print(f);                        #  8 _14:void := IOprint_val(f:bat[:int,:flt]) 
+    l := batcalc.lng(b);                #  9 l:bat[:int,:lng] := CMDconvert_int_lng(b:bat[:int,:int]) {G}
+    io.print(l);                        # 10 _16:void := IOprint_val(l:bat[:int,:lng]) 
+    i := batcalc.int(f);                # 11 i:bat[:int,:int] := CMDconvert_flt_int(f:bat[:int,:flt]) {G}
+    io.print(i);                        # 12 _18:void := IOprint_val(i:bat[:int,:int]) 
 end main;	# 13  
 #-----------------#
 # h	tmp_4	  # name

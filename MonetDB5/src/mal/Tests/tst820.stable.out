@@ -20,12 +20,12 @@ stdout of test 'tst820` in directory 'src/mal` itself:
 #	address_str := new(:oid,:str);
 #	address_city:= new(:oid,:str);
 #
-function user.main():void;	# 0  (main:void)
-# how does an SQL schema become accessible. 	# 1  (_1:str)
-    person_key_name := bat.new(:oid,:str);	# 2 CMDBATnew (person_key_name:bat[:oid,:str])<-(_3:oid)(_4:str)
-    person_key_age := bat.new(:oid,:int);	# 3 CMDBATnew (person_key_age:bat[:oid,:int])<-(_3:oid)(_6:int)
-    address_str := bat.new(:oid,:str);	# 4 CMDBATnew (address_str:bat[:oid,:str])<-(_3:oid)(_8:str)
-    address_city := bat.new(:oid,:str);	# 5 CMDBATnew (address_city:bat[:oid,:str])<-(_3:oid)(_10:str)
+function user.main():void;              #  0 main:void {G}
+# how does an SQL schema become accessible. 
+    person_key_name := bat.new(:oid,:str);#  2 person_key_name:bat[:oid,:str] := CMDBATnew(_3:oid, _4:str) {G}
+    person_key_age := bat.new(:oid,:int);#  3 person_key_age:bat[:oid,:int] := CMDBATnew(_3:oid, _6:int) {G}
+    address_str := bat.new(:oid,:str);  #  4 address_str:bat[:oid,:str] := CMDBATnew(_3:oid, _8:str) {G}
+    address_city := bat.new(:oid,:str); #  5 address_city:bat[:oid,:str] := CMDBATnew(_3:oid, _10:str) {G}
 end main;	# 6  
 
 # 08:01:31 >  

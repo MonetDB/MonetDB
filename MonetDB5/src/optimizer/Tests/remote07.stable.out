@@ -37,28 +37,28 @@ stdout of test 'remote07` in directory 'src/optimizer` itself:
 #io.print(d);
 #optimizer.remoteQueries();
 #
-function user.main():void;	# 0  (main:void)
-# First test of the remoteQueries optimizer 	# 1  (_1:str)
-# we create a remote bat and fake a bind operation. 	# 2  (_2:str)
-    cat := inspect.getEnvironment();	# 3 INSPECTgetEnvironment (cat:bat[:str,:str])
-    fs := algebra.find(cat,"mapi_port");	# 4 ALGfind (fs:str)<-(cat:bat[:str,:str])(_5:str)
-    port := calc.int(fs);	# 5 CALCstr2int (port:int)<-(fs:str)
-#io.printf("port %d\n",port); 	# 6  (_7:str)
-    mid := mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");	# 7 SERVERreconnectAlias (mid:int)<-(_9:str)(port:int)(_10:str)(_11:str)(_11:str)(_12:str)
-    mapi.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\");");	# 8 SERVERquery (_13:void)<-(mid:int)(_14:str)
-    mapi.rpc(mid,"bat.insert(rb,1,1);");	# 9 SERVERquery (_15:void)<-(mid:int)(_16:str)
-    mapi.rpc(mid,"bat.insert(rb,3,3);");	# 10 SERVERquery (_17:void)<-(mid:int)(_18:str)
-    mapi.rpc(mid,"bat.insert(rb,5,5);");	# 11 SERVERquery (_19:void)<-(mid:int)(_20:str)
-    mapi.rpc(mid,"bat.insert(rb,6,6);");	# 12 SERVERquery (_21:void)<-(mid:int)(_22:str)
-    mapi.rpc(mid,"bat.insert(rb,7,7);");	# 13 SERVERquery (_23:void)<-(mid:int)(_24:str)
-    mapi.rpc(mid,"c:=algebra.select(rb,0,12);");	# 14 SERVERquery (_25:void)<-(mid:int)(_26:str)
-    low := calc.+(5,1);	# 15 CALCbinaryADDintint (low:int)<-(_28:int)(_29:int)
-    mapi.put(mid,"low",low);	# 16 SERVERput (_30:void)<-(mid:int)(_31:str)(low:int)
-    i:lng  := mapi.rpc(mid,"e:=algebra.select(rb,low,7); i:=aggr.count(e); io.print(i);");	# 17 SERVERmapi_rpc_single_row (i:lng)<-(mid:int)(_33:str)
-    io.printf(" count %d\n",i);	# 18 IOprint_formatted_lng (_34:void)<-(_35:str)(i:lng)
-    d:bat[:int,:int]  := mapi.rpc(mid,"io.print(i);");	# 19 SERVERmapi_rpc_bat (d:bat[:int,:int])<-(mid:int)(_37:str)
-    io.print(d);	# 20 IOprint_val (_38:void)<-(d:bat[:int,:int])
-    mapi.disconnect(mid);	# 21 SERVERdisconnect (_39:void)<-(mid:int)
+function user.main():void;              #  0 main:void {G}
+# First test of the remoteQueries optimizer 
+# we create a remote bat and fake a bind operation. 
+    cat := inspect.getEnvironment();    #  3 cat:bat[:str,:str] {G}
+    fs := algebra.find(cat,"mapi_port");#  4 fs:str := ALGfind(cat:bat[:str,:str], _5:str) {G}
+    port := calc.int(fs);               #  5 port:int := CALCstr2int(fs:str) 
+#io.printf("port %d\n",port); 
+    mid := mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");#  7 mid:int := SERVERreconnectAlias(_9:str, port:int, _10:str, _11:str, _11:str, _12:str) 
+    mapi.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\");");#  8 _13:void := SERVERquery(mid:int, _14:str) 
+    mapi.rpc(mid,"bat.insert(rb,1,1);");#  9 _15:void := SERVERquery(mid:int, _16:str) 
+    mapi.rpc(mid,"bat.insert(rb,3,3);");# 10 _17:void := SERVERquery(mid:int, _18:str) 
+    mapi.rpc(mid,"bat.insert(rb,5,5);");# 11 _19:void := SERVERquery(mid:int, _20:str) 
+    mapi.rpc(mid,"bat.insert(rb,6,6);");# 12 _21:void := SERVERquery(mid:int, _22:str) 
+    mapi.rpc(mid,"bat.insert(rb,7,7);");# 13 _23:void := SERVERquery(mid:int, _24:str) 
+    mapi.rpc(mid,"c:=algebra.select(rb,0,12);");# 14 _25:void := SERVERquery(mid:int, _26:str) 
+    low := calc.+(5,1);                 # 15 low:int := CALCbinaryADDintint(_28:int, _29:int) 
+    mapi.put(mid,"low",low);            # 16 _30:void := SERVERput(mid:int, _31:str, low:int) 
+    i:lng  := mapi.rpc(mid,"e:=algebra.select(rb,low,7); i:=aggr.count(e); io.print(i);");# 17 i:lng := SERVERmapi_rpc_single_row(mid:int, _33:str) 
+    io.printf(" count %d\n",i);         # 18 _34:void := IOprint_formatted_lng(_35:str, i:lng) 
+    d:bat[:int,:int]  := mapi.rpc(mid,"io.print(i);");# 19 d:bat[:int,:int] := SERVERmapi_rpc_bat(mid:int, _37:str) {G}
+    io.print(d);                        # 20 _38:void := IOprint_val(d:bat[:int,:int]) 
+    mapi.disconnect(mid);               # 21 _39:void := SERVERdisconnect(mid:int) 
 end main;	# 22  
  count 2
 #-----------------#

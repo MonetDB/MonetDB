@@ -88,80 +88,80 @@ stdout of test 'test_40` in directory 'tests/suite_00` itself:
 #	kb_a := clients.quit();
 ##Identifer 'rename' mapped to 'bat.setName'
 #
-function user.main():void;	# 0  (main:void)
-# Monet Mil to Mal compiler 	# 1  (_1:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
-#Predefined code segment 	# 3  (_3:str)
-#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
-#A few guidelines to maximize usefullness. 	# 6  (_6:str)
-#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
-#use the "mil_schema" for additional support routines 	# 9  (_9:str)
-#	io.print("setoid(oid(20000000));"); 	# 10  (_10:str)
-    aa_a := calc.oid(20000000);	# 11 CALCint2oid (aa_a:oid)<-(_12:int)
-    ba_a := calc.setoid(aa_a);	# 12 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-#	io.print("# Some applications may wish to directly access the buns\n"); 	# 13  (_14:str)
-#	io.print("# i.e. they use a BAT like an array.\n"); 	# 14  (_15:str)
-    b := bat.new(nil:int,nil:int);	# 15 CMDBATnew (b:bat[:int,:int])<-(_17:int)(_17:int)
-#	io.print("b.rename(\"b\");"); 	# 16  (_18:str)
-    ca_a := bat.setName(b,"b");	# 17 BKCsetName (ca_a:void)<-(b:bat[:int,:int])(_20:str)
-#	io.print("b.insert(1,15);"); 	# 18  (_21:str)
-    da_a := bat.insert(b,1,15);	# 19 BKCinsert_bun (da_a:void)<-(b:bat[:int,:int])(_23:int)(_24:int)
-#	io.print("b.insert(2,4);"); 	# 20  (_25:str)
-    ea_a := bat.insert(b,2,4);	# 21 BKCinsert_bun (ea_a:void)<-(b:bat[:int,:int])(_27:int)(_28:int)
-#	io.print("b.insert(3,int(nil));"); 	# 22  (_29:str)
-    fa_a := calc.int(nil:void);	# 23 CALCnil2int (fa_a:int)<-(_31:void)
-    ga_a := bat.insert(b,3,fa_a);	# 24 BKCinsert_bun (ga_a:void)<-(b:bat[:int,:int])(_33:int)(fa_a:int)
-#	io.print("b.insert(4,16);"); 	# 25  (_34:str)
-    ha_a := bat.insert(b,4,16);	# 26 BKCinsert_bun (ha_a:void)<-(b:bat[:int,:int])(_28:int)(_36:int)
-#	io.print("b.insert(5,25);"); 	# 27  (_37:str)
-    ia_a := bat.insert(b,5,25);	# 28 BKCinsert_bun (ia_a:void)<-(b:bat[:int,:int])(_39:int)(_40:int)
-#	io.print("b.insert(6,36);"); 	# 29  (_41:str)
-    ja_a := bat.insert(b,6,36);	# 30 BKCinsert_bun (ja_a:void)<-(b:bat[:int,:int])(_43:int)(_44:int)
-#	io.print("b.insert(7,49);"); 	# 31  (_45:str)
-    ka_a := bat.insert(b,7,49);	# 32 BKCinsert_bun (ka_a:void)<-(b:bat[:int,:int])(_47:int)(_48:int)
-#	io.print("b.insert(8,64);"); 	# 33  (_49:str)
-    la_a := bat.insert(b,8,64);	# 34 BKCinsert_bun (la_a:void)<-(b:bat[:int,:int])(_51:int)(_52:int)
-#	io.print("b.insert(9,int(nil));"); 	# 35  (_53:str)
-    ma_a := calc.int(nil:void);	# 36 CALCnil2int (ma_a:int)<-(_31:void)
-    na_a := bat.insert(b,9,ma_a);	# 37 BKCinsert_bun (na_a:void)<-(b:bat[:int,:int])(_56:int)(ma_a:int)
-#	io.print("b.insert(int(nil),int(nil));"); 	# 38  (_57:str)
-    oa_a := calc.int(nil:void);	# 39 CALCnil2int (oa_a:int)<-(_31:void)
-    pa_a := calc.int(nil:void);	# 40 CALCnil2int (pa_a:int)<-(_31:void)
-    qa_a := bat.insert(b,oa_a,pa_a);	# 41 BKCinsert_bun (qa_a:void)<-(b:bat[:int,:int])(oa_a:int)(pa_a:int)
-#	io.print("b.insert(int(nil),81);"); 	# 42  (_61:str)
-    ra_a := calc.int(nil:void);	# 43 CALCnil2int (ra_a:int)<-(_31:void)
-    sa_a := bat.insert(b,ra_a,81);	# 44 BKCinsert_bun (sa_a:void)<-(b:bat[:int,:int])(ra_a:int)(_64:int)
-#	io.print("#b.rename(\"b\");\n"); 	# 45  (_65:str)
-#	io.print("b.save();"); 	# 46  (_66:str)
-    ta_a := bat.save(b);	# 47 BKCsave2 (ta_a:void)<-(b:bat[:int,:int])
-#	io.print("load(\"b\");"); 	# 48  (_68:str)
-    ua_a := bat.load("b");	# 49 BKCload (ua_a:bat[:any,:any])<-(_70:str)
-#	io.print("b.position(4).print();"); 	# 50  (_71:str)
-    va_a := algebra.position(b,4);	# 51 ALGposition (va_a:wrd)<-(b:bat[:int,:int])(_73:int)
-    wa_a := io.print(va_a);	# 52 IOprint_val (wa_a:void)<-(va_a:wrd)
-#	io.print("b.fetch(5).print();"); 	# 53  (_75:str)
-    xa_a := algebra.fetch(b,5);	# 54 ALGfetchint (xa_a:int)<-(b:bat[:int,:int])(_77:int)
-    ya_a := io.print(xa_a);	# 55 IOprint_val (ya_a:void)<-(xa_a:int)
-#	io.print("b.fetch(8).print();"); 	# 56  (_79:str)
-    ab_a := algebra.fetch(b,8);	# 57 ALGfetchint (ab_a:int)<-(b:bat[:int,:int])(_51:int)
-    bb_a := io.print(ab_a);	# 58 IOprint_val (bb_a:void)<-(ab_a:int)
-#	io.print("b.slice(5,8).print();"); 	# 59  (_82:str)
-    cb_a := algebra.slice(b,5,8);	# 60 ALGslice_int (cb_a:bat[:int,:int])<-(b:bat[:int,:int])(_77:int)(_84:int)
-    db_a := io.print(cb_a);	# 61 IOprint_val (db_a:void)<-(cb_a:bat[:int,:int])
-#	io.print("# errors\n"); 	# 62  (_86:str)
-    eb_a := algebra.position(b,111);	# 63 ALGposition (eb_a:wrd)<-(b:bat[:int,:int])(_88:int)
-    fb_a := io.print(eb_a);	# 64 IOprint_val (fb_a:void)<-(eb_a:wrd)
-#	io.print("b.fetch(-1).print();"); 	# 65  (_90:str)
-    gb_a := algebra.fetch(b,-1);	# 66 ALGfetchint (gb_a:int)<-(b:bat[:int,:int])(_92:int)
-    hb_a := io.print(gb_a);	# 67 IOprint_val (hb_a:void)<-(gb_a:int)
-#	io.print("b.slice(8,5).print();"); 	# 68  (_94:str)
-    ib_a := algebra.slice(b,8,5);	# 69 ALGslice_int (ib_a:bat[:int,:int])<-(b:bat[:int,:int])(_84:int)(_77:int)
-    jb_a := io.print(ib_a);	# 70 IOprint_val (jb_a:void)<-(ib_a:bat[:int,:int])
-#	io.print("quit();"); 	# 71  (_97:str)
-    kb_a := clients.quit();	# 72 CLTquit (kb_a:void)
-#Identifer 'rename' mapped to 'bat.setName' 	# 73  (_99:str)
+function user.main():void;              #  0 main:void {G}
+# Monet Mil to Mal compiler 
+# Copyright (c) 2001-2004, CWI. All rights reserved. 
+#Predefined code segment 
+#The compiler can not guarantee an accurate compilation, 
+#because MIL unlike MAL is a dynamically typed language. 
+#A few guidelines to maximize usefullness. 
+#- make the type of variables explicit, in particular 'nil' 
+#- upon advice of M2m to remap identifiers, change it in your program directly 
+#use the "mil_schema" for additional support routines 
+#	io.print("setoid(oid(20000000));"); 
+    aa_a := calc.oid(20000000);         # 11 aa_a:oid := CALCint2oid(_12:int) 
+    ba_a := calc.setoid(aa_a);          # 12 ba_a:oid := CALCsetoidInc(aa_a:oid) 
+#	io.print("# Some applications may wish to directly access the buns\n"); 
+#	io.print("# i.e. they use a BAT like an array.\n"); 
+    b := bat.new(nil:int,nil:int);      # 15 b:bat[:int,:int] := CMDBATnew(_17:int, _17:int) {G}
+#	io.print("b.rename(\"b\");"); 
+    ca_a := bat.setName(b,"b");         # 17 ca_a:void := BKCsetName(b:bat[:int,:int], _20:str) 
+#	io.print("b.insert(1,15);"); 
+    da_a := bat.insert(b,1,15);         # 19 da_a:void := BKCinsert_bun(b:bat[:int,:int], _23:int, _24:int) 
+#	io.print("b.insert(2,4);"); 
+    ea_a := bat.insert(b,2,4);          # 21 ea_a:void := BKCinsert_bun(b:bat[:int,:int], _27:int, _28:int) 
+#	io.print("b.insert(3,int(nil));"); 
+    fa_a := calc.int(nil:void);         # 23 fa_a:int := CALCnil2int(_31:void) 
+    ga_a := bat.insert(b,3,fa_a);       # 24 ga_a:void := BKCinsert_bun(b:bat[:int,:int], _33:int, fa_a:int) 
+#	io.print("b.insert(4,16);"); 
+    ha_a := bat.insert(b,4,16);         # 26 ha_a:void := BKCinsert_bun(b:bat[:int,:int], _28:int, _36:int) 
+#	io.print("b.insert(5,25);"); 
+    ia_a := bat.insert(b,5,25);         # 28 ia_a:void := BKCinsert_bun(b:bat[:int,:int], _39:int, _40:int) 
+#	io.print("b.insert(6,36);"); 
+    ja_a := bat.insert(b,6,36);         # 30 ja_a:void := BKCinsert_bun(b:bat[:int,:int], _43:int, _44:int) 
+#	io.print("b.insert(7,49);"); 
+    ka_a := bat.insert(b,7,49);         # 32 ka_a:void := BKCinsert_bun(b:bat[:int,:int], _47:int, _48:int) 
+#	io.print("b.insert(8,64);"); 
+    la_a := bat.insert(b,8,64);         # 34 la_a:void := BKCinsert_bun(b:bat[:int,:int], _51:int, _52:int) 
+#	io.print("b.insert(9,int(nil));"); 
+    ma_a := calc.int(nil:void);         # 36 ma_a:int := CALCnil2int(_31:void) 
+    na_a := bat.insert(b,9,ma_a);       # 37 na_a:void := BKCinsert_bun(b:bat[:int,:int], _56:int, ma_a:int) 
+#	io.print("b.insert(int(nil),int(nil));"); 
+    oa_a := calc.int(nil:void);         # 39 oa_a:int := CALCnil2int(_31:void) 
+    pa_a := calc.int(nil:void);         # 40 pa_a:int := CALCnil2int(_31:void) 
+    qa_a := bat.insert(b,oa_a,pa_a);    # 41 qa_a:void := BKCinsert_bun(b:bat[:int,:int], oa_a:int, pa_a:int) 
+#	io.print("b.insert(int(nil),81);"); 
+    ra_a := calc.int(nil:void);         # 43 ra_a:int := CALCnil2int(_31:void) 
+    sa_a := bat.insert(b,ra_a,81);      # 44 sa_a:void := BKCinsert_bun(b:bat[:int,:int], ra_a:int, _64:int) 
+#	io.print("#b.rename(\"b\");\n"); 
+#	io.print("b.save();"); 
+    ta_a := bat.save(b);                # 47 ta_a:void := BKCsave2(b:bat[:int,:int]) 
+#	io.print("load(\"b\");"); 
+    ua_a := bat.load("b");              # 49 ua_a:bat[:any,:any] := BKCload(_70:str) {G}
+#	io.print("b.position(4).print();"); 
+    va_a := algebra.position(b,4);      # 51 va_a:wrd := ALGposition(b:bat[:int,:int], _73:int) 
+    wa_a := io.print(va_a);             # 52 wa_a:void := IOprint_val(va_a:wrd) 
+#	io.print("b.fetch(5).print();"); 
+    xa_a := algebra.fetch(b,5);         # 54 xa_a:int := ALGfetchint(b:bat[:int,:int], _77:int) 
+    ya_a := io.print(xa_a);             # 55 ya_a:void := IOprint_val(xa_a:int) 
+#	io.print("b.fetch(8).print();"); 
+    ab_a := algebra.fetch(b,8);         # 57 ab_a:int := ALGfetchint(b:bat[:int,:int], _51:int) 
+    bb_a := io.print(ab_a);             # 58 bb_a:void := IOprint_val(ab_a:int) 
+#	io.print("b.slice(5,8).print();"); 
+    cb_a := algebra.slice(b,5,8);       # 60 cb_a:bat[:int,:int] := ALGslice_int(b:bat[:int,:int], _77:int, _84:int) {G}
+    db_a := io.print(cb_a);             # 61 db_a:void := IOprint_val(cb_a:bat[:int,:int]) 
+#	io.print("# errors\n"); 
+    eb_a := algebra.position(b,111);    # 63 eb_a:wrd := ALGposition(b:bat[:int,:int], _88:int) 
+    fb_a := io.print(eb_a);             # 64 fb_a:void := IOprint_val(eb_a:wrd) 
+#	io.print("b.fetch(-1).print();"); 
+    gb_a := algebra.fetch(b,-1);        # 66 gb_a:int := ALGfetchint(b:bat[:int,:int], _92:int) 
+    hb_a := io.print(gb_a);             # 67 hb_a:void := IOprint_val(gb_a:int) 
+#	io.print("b.slice(8,5).print();"); 
+    ib_a := algebra.slice(b,8,5);       # 69 ib_a:bat[:int,:int] := ALGslice_int(b:bat[:int,:int], _84:int, _77:int) {G}
+    jb_a := io.print(ib_a);             # 70 jb_a:void := IOprint_val(ib_a:bat[:int,:int]) 
+#	io.print("quit();"); 
+    kb_a := clients.quit();             # 72 kb_a:void 
+#Identifer 'rename' mapped to 'bat.setName' 
 end main;	# 74  
 [ 3 ]
 #b.fetch(5).print();

@@ -25,18 +25,18 @@ stdout of test 'tst032` in directory 'src/mal` itself:
 #io.print(b);
 #
 #
-function user.main():void;	# 0  (main:void)
-# testing the void semantics 	# 1  (_1:str)
-    b := bat.new(:oid,:int);	# 2 CMDBATnew (b:bat[:oid,:int])<-(_3:oid)(_4:int)
-    bat.insert(b,nil:oid,0);	# 3 BKCinsert_bun (_5:void)<-(b:bat[:oid,:int])(_6:oid)(_7:int)
-    bat.insert(b,nil:oid,1);	# 4 BKCinsert_bun (_8:void)<-(b:bat[:oid,:int])(_6:oid)(_9:int)
-    bat.insert(b,nil:oid,2);	# 5 BKCinsert_bun (_10:void)<-(b:bat[:oid,:int])(_6:oid)(_11:int)
-    io.print(b);	# 6 IOprint_val (_12:void)<-(b:bat[:oid,:int])
-    k := 1@0;	# 7  (k:oid)<-(_14:oid)
-    bat.replace(b,k,3);	# 8 BKCreplace_bun (_15:void)<-(b:bat[:oid,:int])(k:oid)(_16:int)
-    io.print(b);	# 9 IOprint_val (_17:void)<-(b:bat[:oid,:int])
-    bat.delete(b,k);	# 10 BKCdelete (_18:void)<-(b:bat[:oid,:int])(k:oid)
-    io.print(b);	# 11 IOprint_val (_19:void)<-(b:bat[:oid,:int])
+function user.main():void;              #  0 main:void {G}
+# testing the void semantics 
+    b := bat.new(:oid,:int);            #  2 b:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
+    bat.insert(b,nil:oid,0);            #  3 _5:void := BKCinsert_bun(b:bat[:oid,:int], _6:oid, _7:int) 
+    bat.insert(b,nil:oid,1);            #  4 _8:void := BKCinsert_bun(b:bat[:oid,:int], _6:oid, _9:int) 
+    bat.insert(b,nil:oid,2);            #  5 _10:void := BKCinsert_bun(b:bat[:oid,:int], _6:oid, _11:int) 
+    io.print(b);                        #  6 _12:void := IOprint_val(b:bat[:oid,:int]) 
+    k := 1@0;                           #  7 k:oid := _14:oid 
+    bat.replace(b,k,3);                 #  8 _15:void := BKCreplace_bun(b:bat[:oid,:int], k:oid, _16:int) 
+    io.print(b);                        #  9 _17:void := IOprint_val(b:bat[:oid,:int]) 
+    bat.delete(b,k);                    # 10 _18:void := BKCdelete(b:bat[:oid,:int], k:oid) 
+    io.print(b);                        # 11 _19:void := IOprint_val(b:bat[:oid,:int]) 
 end main;	# 12  
 #-----------------#
 # h	t	  # name

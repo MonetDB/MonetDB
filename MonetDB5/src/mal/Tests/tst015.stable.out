@@ -31,23 +31,23 @@ stdout of test 'tst015` in directory 'src/mal` itself:
 #exit	c;
 #
 #
-function user.main():void;	# 0  (main:void)
-# Testing barriers with variables, constants and expressions 	# 1  (_1:str)
-    b := true;	# 2  (b:bit)<-(_3:bit)
-barrier b;	# 3  (b:bit) jump 5
-    io.printf("1 Correctly entered barrier\n");	# 4 IOprint_str (_4:void)<-(_5:str)
-exit b;	# 5  (b:bit)
-    b := false;	# 6  (b:bit)<-(_6:bit)
-barrier b;	# 7  (b:bit) jump 9
-    io.printf("1 Incorrectly entered barrier\n");	# 8 IOprint_str (_7:void)<-(_8:str)
-exit b;	# 9  (b:bit)
-    i := 1;	# 10  (i:int)<-(_10:int)
-barrier c := calc.==(i,1);	# 11 CALCcompEQintint (c:bit)<-(i:int)(_10:int) jump 13
-    io.printf("2 Correctly entered barrier\n");	# 12 IOprint_str (_12:void)<-(_13:str)
-exit c;	# 13  (c:bit)
-barrier c := calc.==(i,0);	# 14 CALCcompEQintint (c:bit)<-(i:int)(_14:int) jump 16
-    io.printf("2 Incorrectly entered barrier\n");	# 15 IOprint_str (_15:void)<-(_16:str)
-exit c;	# 16  (c:bit)
+function user.main():void;              #  0 main:void 
+# Testing barriers with variables, constants and expressions 
+    b := true;                          #  2 b:bit := _3:bit 
+barrier b;                              #  3 b:bit {J5}
+    io.printf("1 Correctly entered barrier\n");#  4 _4:void := IOprint_str(_5:str) 
+exit b;                                 #  5 b:bit 
+    b := false;                         #  6 b:bit := _6:bit 
+barrier b;                              #  7 b:bit {J9}
+    io.printf("1 Incorrectly entered barrier\n");#  8 _7:void := IOprint_str(_8:str) 
+exit b;                                 #  9 b:bit 
+    i := 1;                             # 10 i:int := _10:int 
+barrier c := calc.==(i,1);              # 11 c:bit := CALCcompEQintint(i:int, _10:int) {J13}
+    io.printf("2 Correctly entered barrier\n");# 12 _12:void := IOprint_str(_13:str) 
+exit c;                                 # 13 c:bit 
+barrier c := calc.==(i,0);              # 14 c:bit := CALCcompEQintint(i:int, _14:int) {J16}
+    io.printf("2 Incorrectly entered barrier\n");# 15 _15:void := IOprint_str(_16:str) 
+exit c;                                 # 16 c:bit 
 end main;	# 17  
 1 Correctly entered barrier
 2 Correctly entered barrier

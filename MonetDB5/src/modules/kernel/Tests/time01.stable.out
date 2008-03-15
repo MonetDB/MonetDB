@@ -7,10 +7,10 @@ stdout of test 'time01` in directory 'src/modules/kernel` itself:
 
 
 
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_modules_kernel
+# MonetDB server v5.5.0, based on kernel v1.23.0
+# Serving database 'mTests_src_modules_kernel'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 #
 #x0 := mtime.daytime("10:00:00");
@@ -34,23 +34,23 @@ stdout of test 'time01` in directory 'src/modules/kernel` itself:
 #c := batcalc.==(b2, b1);
 #io.print(c);
 #
-function user.main():void;	# 0  (main:void)
-    x0 := mtime.daytime("10:00:00");	# 1 MTIMEdaytime_fromstr (x0:daytime)<-(_2:str)
-    x1 := mtime.daytime("10:00:20");	# 2 MTIMEdaytime_fromstr (x1:daytime)<-(_4:str)
-    x2 := mtime.daytime("10:00:50");	# 3 MTIMEdaytime_fromstr (x2:daytime)<-(_6:str)
-    b0 := bat.new(:oid,:daytime);	# 4 CMDBATnew (b0:bat[:oid,:daytime])<-(_8:oid)(_9:daytime)
-    bat.insert(b0,0@0:oid,x0);	# 5 BKCinsert_bun (_10:void)<-(b0:bat[:oid,:daytime])(_11:oid)(x0:daytime)
-    bat.insert(b0,2@0:oid,x1);	# 6 BKCinsert_bun (_12:void)<-(b0:bat[:oid,:daytime])(_13:oid)(x1:daytime)
-    bat.insert(b0,1@0:oid,x2);	# 7 BKCinsert_bun (_14:void)<-(b0:bat[:oid,:daytime])(_15:oid)(x2:daytime)
-    b2 := algebra.sort(b0);	# 8 ALGhsort (b2:bat[:oid,:daytime])<-(b0:bat[:oid,:daytime])
-    b1 := bat.new(:oid,:daytime);	# 9 CMDBATnew (b1:bat[:oid,:daytime])<-(_8:oid)(_9:daytime)
-    bat.append(b1,x0);	# 10 BKCappend_val_wrap (_18:void)<-(b1:bat[:oid,:daytime])(x0:daytime)
-    bat.append(b1,x1);	# 11 BKCappend_val_wrap (_19:void)<-(b1:bat[:oid,:daytime])(x1:daytime)
-    bat.append(b1,x2);	# 12 BKCappend_val_wrap (_20:void)<-(b1:bat[:oid,:daytime])(x2:daytime)
-    io.print(b2);	# 13 IOprint_val (_21:void)<-(b2:bat[:oid,:daytime])
-    io.print(b1);	# 14 IOprint_val (_22:void)<-(b1:bat[:oid,:daytime])
-    c := batcalc.==(b2,b1);	# 15 MTIMEdaytimebat_EQ (c:bat[:oid,:bit])<-(b2:bat[:oid,:daytime])(b1:bat[:oid,:daytime])
-    io.print(c);	# 16 IOprint_val (_24:void)<-(c:bat[:oid,:bit])
+function user.main():void;              #  0 main:void {G}
+    x0 := mtime.daytime("10:00:00");    #  1 x0:daytime := MTIMEdaytime_fromstr(_2:str) 
+    x1 := mtime.daytime("10:00:20");    #  2 x1:daytime := MTIMEdaytime_fromstr(_4:str) 
+    x2 := mtime.daytime("10:00:50");    #  3 x2:daytime := MTIMEdaytime_fromstr(_6:str) 
+    b0 := bat.new(:oid,:daytime);       #  4 b0:bat[:oid,:daytime] := CMDBATnew(_8:oid, _9:daytime) {G}
+    bat.insert(b0,0@0:oid,x0);          #  5 _10:void := BKCinsert_bun(b0:bat[:oid,:daytime], _11:oid, x0:daytime) 
+    bat.insert(b0,2@0:oid,x1);          #  6 _12:void := BKCinsert_bun(b0:bat[:oid,:daytime], _13:oid, x1:daytime) 
+    bat.insert(b0,1@0:oid,x2);          #  7 _14:void := BKCinsert_bun(b0:bat[:oid,:daytime], _15:oid, x2:daytime) 
+    b2 := algebra.sort(b0);             #  8 b2:bat[:oid,:daytime] := ALGhsort(b0:bat[:oid,:daytime]) {G}
+    b1 := bat.new(:oid,:daytime);       #  9 b1:bat[:oid,:daytime] := CMDBATnew(_8:oid, _9:daytime) {G}
+    bat.append(b1,x0);                  # 10 _18:void := BKCappend_val_wrap(b1:bat[:oid,:daytime], x0:daytime) 
+    bat.append(b1,x1);                  # 11 _19:void := BKCappend_val_wrap(b1:bat[:oid,:daytime], x1:daytime) 
+    bat.append(b1,x2);                  # 12 _20:void := BKCappend_val_wrap(b1:bat[:oid,:daytime], x2:daytime) 
+    io.print(b2);                       # 13 _21:void := IOprint_val(b2:bat[:oid,:daytime]) 
+    io.print(b1);                       # 14 _22:void := IOprint_val(b1:bat[:oid,:daytime]) 
+    c := batcalc.==(b2,b1);             # 15 c:bat[:oid,:bit] := MTIMEdaytimebat_EQ(b2:bat[:oid,:daytime], b1:bat[:oid,:daytime]) {G}
+    io.print(c);                        # 16 _24:void := IOprint_val(c:bat[:oid,:bit]) 
 end main;	# 17  
 #-------------------------#
 # h	t		  # name

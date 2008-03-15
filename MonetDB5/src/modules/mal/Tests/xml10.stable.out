@@ -66,60 +66,60 @@ stdout of test 'xml10` in directory 'src/modules/mal` itself:
 #doc:= xml.element("books",be);
 #io.print(doc);
 #
-function user.main():void;	# 0  (main:void)
-# produce a more complex structure 	# 1  (_1:str)
-# such as  	# 2  (_2:str)
-#<books> 	# 3  (_3:str)
-#  <author> john 	# 4  (_4:str)
-#  <title> spring</title> 	# 5  (_5:str)
-#  <title> summer</title> 	# 6  (_6:str)
-#  </author> 	# 7  (_7:str)
-#  <author> mary 	# 8  (_8:str)
-#  <title> autum</title> 	# 9  (_9:str)
-#  </author> 	# 10  (_10:str)
-#</books> 	# 11  (_11:str)
-# the intermediate tabular result produced by SQL 	# 12  (_12:str)
-    a := bat.new(:oid,:str);	# 13 CMDBATnew (a:bat[:oid,:str])<-(_14:oid)(_15:str)
-    bat.insert(a,0@0,"john");	# 14 BKCinsert_bun (_16:void)<-(a:bat[:oid,:str])(_17:oid)(_18:str)
-    bat.insert(a,1@0,"john");	# 15 BKCinsert_bun (_19:void)<-(a:bat[:oid,:str])(_20:oid)(_18:str)
-    bat.insert(a,2@0,"marie");	# 16 BKCinsert_bun (_21:void)<-(a:bat[:oid,:str])(_22:oid)(_23:str)
-    t := bat.new(:oid,:str);	# 17 CMDBATnew (t:bat[:oid,:str])<-(_14:oid)(_25:str)
-    bat.insert(t,0@0,"spring");	# 18 BKCinsert_bun (_26:void)<-(t:bat[:oid,:str])(_17:oid)(_27:str)
-    bat.insert(t,1@0,"summer");	# 19 BKCinsert_bun (_28:void)<-(t:bat[:oid,:str])(_20:oid)(_29:str)
-    bat.insert(t,2@0,"autum");	# 20 BKCinsert_bun (_30:void)<-(t:bat[:oid,:str])(_22:oid)(_31:str)
-# SQL rendering request 	# 21  (_32:str)
-#xmlelement('books', 	# 22  (_33:str)
-#	xmlelement('author',a, 	# 23  (_34:str)
-#			xmlagg(xmlelement('title',t)) 	# 24  (_35:str)
-#   ) ) 	# 25  (_36:str)
-# every nesting implies a groupby 	# 26  (_37:str)
-    ax := xml.xml(a);	# 27 BATXMLstr2xml (ax:bat[:oid,:xml])<-(a:bat[:oid,:str])
-    tx := xml.xml(t);	# 28 BATXMLstr2xml (tx:bat[:oid,:xml])<-(t:bat[:oid,:str])
-    te := xml.element("title",tx);	# 29 BATXMLtag (te:bat[:oid,:xml])<-(_41:str)(tx:bat[:oid,:xml])
-    g := bat.new(:oid,:oid);	# 30 CMDBATnew (g:bat[:oid,:oid])<-(_14:oid)(_14:oid)
-    bat.insert(g,0@0,0@0);	# 31 BKCinsert_bun (_43:void)<-(g:bat[:oid,:oid])(_17:oid)(_17:oid)
-    bat.insert(g,1@0,0@0);	# 32 BKCinsert_bun (_44:void)<-(g:bat[:oid,:oid])(_20:oid)(_17:oid)
-    bat.insert(g,2@0,1@0);	# 33 BKCinsert_bun (_45:void)<-(g:bat[:oid,:oid])(_22:oid)(_20:oid)
-    k := algebra.join(g,te);	# 34 ALGjoin (k:bat[:oid,:xml])<-(g:bat[:oid,:oid])(te:bat[:oid,:xml])
-    io.print(k);	# 35 IOprint_val (_47:void)<-(k:bat[:oid,:xml])
-    l := algebra.sort(k);	# 36 ALGhsort (l:bat[:oid,:xml])<-(k:bat[:oid,:xml])
-    io.print(l);	# 37 IOprint_val (_49:void)<-(l:bat[:oid,:xml])
-    ag := xml.agg(te,g);	# 38 BATXMLagg (ag:bat[:oid,:xml])<-(te:bat[:oid,:xml])(g:bat[:oid,:oid])
-    io.print(ag);	# 39 IOprint_val (_51:void)<-(ag:bat[:oid,:xml])
-    gr := bat.reverse(g);	# 40 BKCreverse (gr:bat[:oid,:oid])<-(g:bat[:oid,:oid])
-    j2 := algebra.join(gr,ax);	# 41 ALGjoin (j2:bat[:oid,:xml])<-(gr:bat[:oid,:oid])(ax:bat[:oid,:xml])
-    k2 := algebra.kunique(j2);	# 42 ALGkunique (k2:bat[:oid,:xml])<-(j2:bat[:oid,:xml])
-    io.print(k2);	# 43 IOprint_val (_55:void)<-(k2:bat[:oid,:xml])
-    cc := xml.concat(k2,ag);	# 44 BATXMLconcat (cc:bat[:oid,:xml])<-(k2:bat[:oid,:xml])(ag:bat[:oid,:xml])
-    io.print(cc);	# 45 IOprint_val (_57:void)<-(cc:bat[:oid,:xml])
-    io.print("author construction");	# 46 IOprint_val (_58:void)<-(_59:str)
-    ae := xml.element("author",cc);	# 47 BATXMLtag (ae:bat[:oid,:xml])<-(_61:str)(cc:bat[:oid,:xml])
-    io.print(ae);	# 48 IOprint_val (_62:void)<-(ae:bat[:oid,:xml])
-    io.print("book construction");	# 49 IOprint_val (_63:void)<-(_64:str)
-    be := xml.agg(ae);	# 50 BATXMLgroup (be:bat[:oid,:xml])<-(ae:bat[:oid,:xml])
-    io.print(be);	# 51 IOprint_val (_66:void)<-(be:bat[:oid,:xml])
-    doc := xml.element("books",be);	# 52 BATXMLtag (doc:bat[:oid,:xml])<-(_68:str)(be:bat[:oid,:xml])
-    io.print(doc);	# 53 IOprint_val (_69:void)<-(doc:bat[:oid,:xml])
+function user.main():void;              #  0 main:void {G}
+# produce a more complex structure 
+# such as  
+#<books> 
+#  <author> john 
+#  <title> spring</title> 
+#  <title> summer</title> 
+#  </author> 
+#  <author> mary 
+#  <title> autum</title> 
+#  </author> 
+#</books> 
+# the intermediate tabular result produced by SQL 
+    a := bat.new(:oid,:str);            # 13 a:bat[:oid,:str] := CMDBATnew(_14:oid, _15:str) {G}
+    bat.insert(a,0@0,"john");           # 14 _16:void := BKCinsert_bun(a:bat[:oid,:str], _17:oid, _18:str) 
+    bat.insert(a,1@0,"john");           # 15 _19:void := BKCinsert_bun(a:bat[:oid,:str], _20:oid, _18:str) 
+    bat.insert(a,2@0,"marie");          # 16 _21:void := BKCinsert_bun(a:bat[:oid,:str], _22:oid, _23:str) 
+    t := bat.new(:oid,:str);            # 17 t:bat[:oid,:str] := CMDBATnew(_14:oid, _25:str) {G}
+    bat.insert(t,0@0,"spring");         # 18 _26:void := BKCinsert_bun(t:bat[:oid,:str], _17:oid, _27:str) 
+    bat.insert(t,1@0,"summer");         # 19 _28:void := BKCinsert_bun(t:bat[:oid,:str], _20:oid, _29:str) 
+    bat.insert(t,2@0,"autum");          # 20 _30:void := BKCinsert_bun(t:bat[:oid,:str], _22:oid, _31:str) 
+# SQL rendering request 
+#xmlelement('books', 
+#	xmlelement('author',a, 
+#			xmlagg(xmlelement('title',t)) 
+#   ) ) 
+# every nesting implies a groupby 
+    ax := xml.xml(a);                   # 27 ax:bat[:oid,:xml] := BATXMLstr2xml(a:bat[:oid,:str]) {G}
+    tx := xml.xml(t);                   # 28 tx:bat[:oid,:xml] := BATXMLstr2xml(t:bat[:oid,:str]) {G}
+    te := xml.element("title",tx);      # 29 te:bat[:oid,:xml] := BATXMLtag(_41:str, tx:bat[:oid,:xml]) {G}
+    g := bat.new(:oid,:oid);            # 30 g:bat[:oid,:oid] := CMDBATnew(_14:oid, _14:oid) {G}
+    bat.insert(g,0@0,0@0);              # 31 _43:void := BKCinsert_bun(g:bat[:oid,:oid], _17:oid, _17:oid) 
+    bat.insert(g,1@0,0@0);              # 32 _44:void := BKCinsert_bun(g:bat[:oid,:oid], _20:oid, _17:oid) 
+    bat.insert(g,2@0,1@0);              # 33 _45:void := BKCinsert_bun(g:bat[:oid,:oid], _22:oid, _20:oid) 
+    k := algebra.join(g,te);            # 34 k:bat[:oid,:xml] := ALGjoin(g:bat[:oid,:oid], te:bat[:oid,:xml]) {G}
+    io.print(k);                        # 35 _47:void := IOprint_val(k:bat[:oid,:xml]) 
+    l := algebra.sort(k);               # 36 l:bat[:oid,:xml] := ALGhsort(k:bat[:oid,:xml]) {G}
+    io.print(l);                        # 37 _49:void := IOprint_val(l:bat[:oid,:xml]) 
+    ag := xml.agg(te,g);                # 38 ag:bat[:oid,:xml] := BATXMLagg(te:bat[:oid,:xml], g:bat[:oid,:oid]) {G}
+    io.print(ag);                       # 39 _51:void := IOprint_val(ag:bat[:oid,:xml]) 
+    gr := bat.reverse(g);               # 40 gr:bat[:oid,:oid] := BKCreverse(g:bat[:oid,:oid]) {G}
+    j2 := algebra.join(gr,ax);          # 41 j2:bat[:oid,:xml] := ALGjoin(gr:bat[:oid,:oid], ax:bat[:oid,:xml]) {G}
+    k2 := algebra.kunique(j2);          # 42 k2:bat[:oid,:xml] := ALGkunique(j2:bat[:oid,:xml]) {G}
+    io.print(k2);                       # 43 _55:void := IOprint_val(k2:bat[:oid,:xml]) 
+    cc := xml.concat(k2,ag);            # 44 cc:bat[:oid,:xml] := BATXMLconcat(k2:bat[:oid,:xml], ag:bat[:oid,:xml]) {G}
+    io.print(cc);                       # 45 _57:void := IOprint_val(cc:bat[:oid,:xml]) 
+    io.print("author construction");    # 46 _58:void := IOprint_val(_59:str) 
+    ae := xml.element("author",cc);     # 47 ae:bat[:oid,:xml] := BATXMLtag(_61:str, cc:bat[:oid,:xml]) {G}
+    io.print(ae);                       # 48 _62:void := IOprint_val(ae:bat[:oid,:xml]) 
+    io.print("book construction");      # 49 _63:void := IOprint_val(_64:str) 
+    be := xml.agg(ae);                  # 50 be:bat[:oid,:xml] := BATXMLgroup(ae:bat[:oid,:xml]) {G}
+    io.print(be);                       # 51 _66:void := IOprint_val(be:bat[:oid,:xml]) 
+    doc := xml.element("books",be);     # 52 doc:bat[:oid,:xml] := BATXMLtag(_68:str, be:bat[:oid,:xml]) {G}
+    io.print(doc);                      # 53 _69:void := IOprint_val(doc:bat[:oid,:xml]) 
 end main;	# 54  
 #---------------------------------#
 # h	t							  # name

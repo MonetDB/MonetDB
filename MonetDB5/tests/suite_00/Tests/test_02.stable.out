@@ -76,68 +76,68 @@ stdout of test 'test_02` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	ab_a := clients.quit();
 #
-function user.main():void;	# 0  (main:void)
-# Monet Mil to Mal compiler 	# 1  (_1:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
-#Predefined code segment 	# 3  (_3:str)
-#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
-#A few guidelines to maximize usefullness. 	# 6  (_6:str)
-#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
-#use the "mil_schema" for additional support routines 	# 9  (_9:str)
-#	io.print("setoid(oid(20000000));"); 	# 10  (_10:str)
-    aa_a := calc.oid(20000000);	# 11 CALCint2oid (aa_a:oid)<-(_12:int)
-    ba_a := calc.setoid(aa_a);	# 12 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-#	io.print("var s:= bat.new(str,int);"); 	# 13  (_14:str)
-    s := bat.new(nil:str,nil:int);	# 14 CMDBATnew (s:bat[:str,:int])<-(_16:str)(_17:int)
-#	io.print("insert(s,\"hello\",1);"); 	# 15  (_18:str)
-    ca_a := bat.insert(s,"hello",1);	# 16 BKCinsert_bun (ca_a:void)<-(s:bat[:str,:int])(_20:str)(_21:int)
-#	io.print("print(find(s,\"hello\"));"); 	# 17  (_22:str)
-    da_a := algebra.find(s,"hello");	# 18 ALGfind (da_a:int)<-(s:bat[:str,:int])(_20:str)
-    ea_a := io.print(da_a);	# 19 IOprint_val (ea_a:void)<-(da_a:int)
-#	io.print("insert(s,\"bello\",2);"); 	# 20  (_25:str)
-    fa_a := bat.insert(s,"bello",2);	# 21 BKCinsert_bun (fa_a:void)<-(s:bat[:str,:int])(_27:str)(_28:int)
-#	io.print("insert(s,\"cello\",3);"); 	# 22  (_29:str)
-    ga_a := bat.insert(s,"cello",3);	# 23 BKCinsert_bun (ga_a:void)<-(s:bat[:str,:int])(_31:str)(_32:int)
-#	io.print("insert(s,\"dello\",4);"); 	# 24  (_33:str)
-    ha_a := bat.insert(s,"dello",4);	# 25 BKCinsert_bun (ha_a:void)<-(s:bat[:str,:int])(_35:str)(_36:int)
-#	io.print("insert(s,\"eello\",5);"); 	# 26  (_37:str)
-    ia_a := bat.insert(s,"eello",5);	# 27 BKCinsert_bun (ia_a:void)<-(s:bat[:str,:int])(_39:str)(_40:int)
-#	io.print("insert(s,\"fello\",6);"); 	# 28  (_41:str)
-    ja_a := bat.insert(s,"fello",6);	# 29 BKCinsert_bun (ja_a:void)<-(s:bat[:str,:int])(_43:str)(_44:int)
-#	io.print("insert(s,\"gello\",7);"); 	# 30  (_45:str)
-    ka_a := bat.insert(s,"gello",7);	# 31 BKCinsert_bun (ka_a:void)<-(s:bat[:str,:int])(_47:str)(_48:int)
-#	io.print("insert(s,\"hello\",8);"); 	# 32  (_49:str)
-    la_a := bat.insert(s,"hello",8);	# 33 BKCinsert_bun (la_a:void)<-(s:bat[:str,:int])(_20:str)(_51:int)
-#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); info(s).print(); printf(\"#~EndVariableOutput~#\\n\");"); 	# 34  (_52:str)
-    ma_a := io.printf("#~BeginVariableOutput~#\n");	# 35 IOprint_str (ma_a:void)<-(_54:str)
-    na_a := bat.info(s);	# 36 BKCinfo (na_a:bat[:str,:str])<-(s:bat[:str,:int])
-    oa_a := io.print(na_a);	# 37 IOprint_val (oa_a:void)<-(na_a:bat[:str,:str])
-    pa_a := io.printf("#~EndVariableOutput~#\n");	# 38 IOprint_str (pa_a:void)<-(_58:str)
-#	io.print("print(find(s,\"cello\"));"); 	# 39  (_59:str)
-    qa_a := algebra.find(s,"cello");	# 40 ALGfind (qa_a:int)<-(s:bat[:str,:int])(_31:str)
-    ra_a := io.print(qa_a);	# 41 IOprint_val (ra_a:void)<-(qa_a:int)
-#	io.print("delete(s,\"cello\",3);"); 	# 42  (_62:str)
-    sa_a := bat.delete(s,"cello",3);	# 43 BKCdelete_bun (sa_a:void)<-(s:bat[:str,:int])(_64:str)(_65:int)
-#	io.print("print(s);"); 	# 44  (_66:str)
-    ta_a := io.print(s);	# 45 IOprint_val (ta_a:void)<-(s:bat[:str,:int])
-#	io.print("var sn:= algebra.select(s,1,5);"); 	# 46  (_68:str)
-    sn := algebra.select(s,1,5);	# 47 ALGselect (sn:bat[:str,:int])<-(s:bat[:str,:int])(_70:int)(_40:int)
-#	io.print("print(sn);"); 	# 48  (_71:str)
-    ua_a := io.print(sn);	# 49 IOprint_val (ua_a:void)<-(sn:bat[:str,:int])
-#	io.print("var s2:= semijoin(s.reverse(),sn.reverse());"); 	# 50  (_71:str)
-    va_a := bat.reverse(s);	# 51 BKCreverse (va_a:bat[:int,:str])<-(s:bat[:str,:int])
-    wa_a := bat.reverse(sn);	# 52 BKCreverse (wa_a:bat[:int,:str])<-(sn:bat[:str,:int])
-    s2 := algebra.semijoin(va_a,wa_a);	# 53 ALGsemijoin (s2:bat[:int,:str])<-(va_a:bat[:int,:str])(wa_a:bat[:int,:str])
-#	io.print("print(s2);"); 	# 54  (_75:str)
-    xa_a := io.print(s2);	# 55 IOprint_val (xa_a:void)<-(s2:bat[:int,:str])
-#	io.print("var x:= algebra.join(s,s2);"); 	# 56  (_77:str)
-    x := algebra.join(s,s2);	# 57 ALGjoin (x:bat[:str,:str])<-(s:bat[:str,:int])(s2:bat[:int,:str])
-#	io.print("print(x);"); 	# 58  (_79:str)
-    ya_a := io.print(x);	# 59 IOprint_val (ya_a:void)<-(x:bat[:str,:str])
-#	io.print("quit();"); 	# 60  (_81:str)
-    ab_a := clients.quit();	# 61 CLTquit (ab_a:void)
+function user.main():void;              #  0 main:void {G}
+# Monet Mil to Mal compiler 
+# Copyright (c) 2001-2004, CWI. All rights reserved. 
+#Predefined code segment 
+#The compiler can not guarantee an accurate compilation, 
+#because MIL unlike MAL is a dynamically typed language. 
+#A few guidelines to maximize usefullness. 
+#- make the type of variables explicit, in particular 'nil' 
+#- upon advice of M2m to remap identifiers, change it in your program directly 
+#use the "mil_schema" for additional support routines 
+#	io.print("setoid(oid(20000000));"); 
+    aa_a := calc.oid(20000000);         # 11 aa_a:oid := CALCint2oid(_12:int) 
+    ba_a := calc.setoid(aa_a);          # 12 ba_a:oid := CALCsetoidInc(aa_a:oid) 
+#	io.print("var s:= bat.new(str,int);"); 
+    s := bat.new(nil:str,nil:int);      # 14 s:bat[:str,:int] := CMDBATnew(_16:str, _17:int) {G}
+#	io.print("insert(s,\"hello\",1);"); 
+    ca_a := bat.insert(s,"hello",1);    # 16 ca_a:void := BKCinsert_bun(s:bat[:str,:int], _20:str, _21:int) 
+#	io.print("print(find(s,\"hello\"));"); 
+    da_a := algebra.find(s,"hello");    # 18 da_a:int := ALGfind(s:bat[:str,:int], _20:str) 
+    ea_a := io.print(da_a);             # 19 ea_a:void := IOprint_val(da_a:int) 
+#	io.print("insert(s,\"bello\",2);"); 
+    fa_a := bat.insert(s,"bello",2);    # 21 fa_a:void := BKCinsert_bun(s:bat[:str,:int], _27:str, _28:int) 
+#	io.print("insert(s,\"cello\",3);"); 
+    ga_a := bat.insert(s,"cello",3);    # 23 ga_a:void := BKCinsert_bun(s:bat[:str,:int], _31:str, _32:int) 
+#	io.print("insert(s,\"dello\",4);"); 
+    ha_a := bat.insert(s,"dello",4);    # 25 ha_a:void := BKCinsert_bun(s:bat[:str,:int], _35:str, _36:int) 
+#	io.print("insert(s,\"eello\",5);"); 
+    ia_a := bat.insert(s,"eello",5);    # 27 ia_a:void := BKCinsert_bun(s:bat[:str,:int], _39:str, _40:int) 
+#	io.print("insert(s,\"fello\",6);"); 
+    ja_a := bat.insert(s,"fello",6);    # 29 ja_a:void := BKCinsert_bun(s:bat[:str,:int], _43:str, _44:int) 
+#	io.print("insert(s,\"gello\",7);"); 
+    ka_a := bat.insert(s,"gello",7);    # 31 ka_a:void := BKCinsert_bun(s:bat[:str,:int], _47:str, _48:int) 
+#	io.print("insert(s,\"hello\",8);"); 
+    la_a := bat.insert(s,"hello",8);    # 33 la_a:void := BKCinsert_bun(s:bat[:str,:int], _20:str, _51:int) 
+#	io.print("printf(\"#~BeginVariableOutput~#\\n\"); info(s).print(); printf(\"#~EndVariableOutput~#\\n\");"); 
+    ma_a := io.printf("#~BeginVariableOutput~#\n");# 35 ma_a:void := IOprint_str(_54:str) 
+    na_a := bat.info(s);                # 36 na_a:bat[:str,:str] := BKCinfo(s:bat[:str,:int]) {G}
+    oa_a := io.print(na_a);             # 37 oa_a:void := IOprint_val(na_a:bat[:str,:str]) 
+    pa_a := io.printf("#~EndVariableOutput~#\n");# 38 pa_a:void := IOprint_str(_58:str) 
+#	io.print("print(find(s,\"cello\"));"); 
+    qa_a := algebra.find(s,"cello");    # 40 qa_a:int := ALGfind(s:bat[:str,:int], _31:str) 
+    ra_a := io.print(qa_a);             # 41 ra_a:void := IOprint_val(qa_a:int) 
+#	io.print("delete(s,\"cello\",3);"); 
+    sa_a := bat.delete(s,"cello",3);    # 43 sa_a:void := BKCdelete_bun(s:bat[:str,:int], _64:str, _65:int) 
+#	io.print("print(s);"); 
+    ta_a := io.print(s);                # 45 ta_a:void := IOprint_val(s:bat[:str,:int]) 
+#	io.print("var sn:= algebra.select(s,1,5);"); 
+    sn := algebra.select(s,1,5);        # 47 sn:bat[:str,:int] := ALGselect(s:bat[:str,:int], _70:int, _40:int) {G}
+#	io.print("print(sn);"); 
+    ua_a := io.print(sn);               # 49 ua_a:void := IOprint_val(sn:bat[:str,:int]) 
+#	io.print("var s2:= semijoin(s.reverse(),sn.reverse());"); 
+    va_a := bat.reverse(s);             # 51 va_a:bat[:int,:str] := BKCreverse(s:bat[:str,:int]) {G}
+    wa_a := bat.reverse(sn);            # 52 wa_a:bat[:int,:str] := BKCreverse(sn:bat[:str,:int]) {G}
+    s2 := algebra.semijoin(va_a,wa_a);  # 53 s2:bat[:int,:str] := ALGsemijoin(va_a:bat[:int,:str], wa_a:bat[:int,:str]) {G}
+#	io.print("print(s2);"); 
+    xa_a := io.print(s2);               # 55 xa_a:void := IOprint_val(s2:bat[:int,:str]) 
+#	io.print("var x:= algebra.join(s,s2);"); 
+    x := algebra.join(s,s2);            # 57 x:bat[:str,:str] := ALGjoin(s:bat[:str,:int], s2:bat[:int,:str]) {G}
+#	io.print("print(x);"); 
+    ya_a := io.print(x);                # 59 ya_a:void := IOprint_val(x:bat[:str,:str]) 
+#	io.print("quit();"); 
+    ab_a := clients.quit();             # 61 ab_a:void 
 end main;	# 62  
 [ 1 ]
 #insert(s,\"bello\",2);
@@ -153,7 +153,7 @@ end main;	# 62
 # h			t		  # name
 # str			str		  # type
 #-----------------------------------------#
-[ "version",		  "25105"	  ]
+[ "version",		  "25106"	  ]
 [ "batId",		  "tmp_10"	  ]
 [ "batCacheid",		  "8"		  ]
 [ "hparentid",		  "0"		  ]

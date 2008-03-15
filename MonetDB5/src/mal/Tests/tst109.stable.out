@@ -31,20 +31,19 @@ stdout of test 'tst109` in directory 'src/mal` itself:
 !SyntaxException:user.main[10]:label 't' not in guarded block
 
 !SyntaxException:user.main[11]:exit-label 't' without begin-label
-
-function user.main():void;	# 0  (main:void)
-# Error, illegal block weaveing  	# 1  (_1:str)
-# analyse the basic interpreter loop 	# 2  (_2:str)
-    i := 0;	# 3  (i:int)<-(_4:int)
-barrier v := 1;	# 4  (v:int)<-(_6:int) jump 9
-    leave v;	# 5  (v:int) jump 9
-    i := 1;	# 6  (i:int)<-(_6:int)
-barrier t := calc.<(i,3);	# 7 CALCcompLTintint (t:bit)<-(i:int)(_8:int)
-    i := calc.+(i,1);	# 8 CALCbinaryADDintint (i:int)<-(i:int)(_6:int)
-exit v;	# 9  (v:int)
-    redo t;	# 10  (t:bit)
-exit t;	# 11  (t:bit)
-    i := 0;	# 12  (i:int)<-(_4:int)
+function user.main():void;              #  0 main:void 
+# Error, illegal block weaveing  
+# analyse the basic interpreter loop 
+    i := 0;                             #  3 i:int := _4:int 
+barrier v := 1;                         #  4 v:int := _6:int {J9}
+    leave v;                            #  5 v:int {J9}
+    i := 1;                             #  6 i:int := _6:int 
+barrier t := calc.<(i,3);               #  7 t:bit := CALCcompLTintint(i:int, _8:int) 
+    i := calc.+(i,1);                   #  8 i:int := CALCbinaryADDintint(i:int, _6:int) 
+exit v;                                 #  9 v:int 
+    redo t;                             # 10 t:bit 
+exit t;                                 # 11 t:bit 
+    i := 0;                             # 12 i:int := _4:int 
 end main;	# 13  
 
 # 07:58:59 >  

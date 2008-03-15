@@ -29,16 +29,16 @@ stdout of test 'clients01` in directory 'src/modules/mal` itself:
 #
 #
 #
-function user.main():void;	# 0  (main:void)
-# inspect the clients population 	# 1  (_2:str)
-    d := clients.getId();	# 2 CLTgetClientId (d:int)
-    io.print(d);	# 3 IOprint_val (_3:void)<-(d:int)
-    i := clients.getInfo();	# 4 CLTInfo (i:bat[:str,:str])
-#io.print(i); 	# 5  (_5:str)
-#u:= clients.getUsers(); 	# 6  (_6:str)
-#io.print(u); 	# 7  (_7:str)
-#l:= clients.getLogins(); 	# 8  (_8:str)
-#io.print(l); 	# 9  (_9:str)
+function user.main():void;              #  0 main:void {G}
+# inspect the clients population 
+    d := clients.getId();               #  2 d:int 
+    io.print(d);                        #  3 _3:void := IOprint_val(d:int) 
+    i := clients.getInfo();             #  4 i:bat[:str,:str] {G}
+#io.print(i); 
+#u:= clients.getUsers(); 
+#io.print(u); 
+#l:= clients.getLogins(); 
+#io.print(l); 
 end main;	# 10  
 [ 0 ]
 

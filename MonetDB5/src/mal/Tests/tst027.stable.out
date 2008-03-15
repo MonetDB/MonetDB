@@ -15,20 +15,19 @@ stdout of test 'tst027` in directory 'src/mal` itself:
 #function test(s:str, b:bat[:any_1,:any_2]...);
 #	io.print(s);
 #end test;
-function user.test(s:str,b:bat[:any_1,:any_2]...):void;	# 0  (test:void)<-(s:str)(b:bat[:any_1,:any_2])
-    io.print(s);	# 1 IOprint_val (_3:void)<-(s:str)
+function user.test(s:str,b:bat[:any_1,:any_2]...):void;#  0 test:void := user.test(s:str, b:bat[:any_1,:any_2]) {PG}
+    io.print(s);                        #  1 _3:void := IOprint_val(s:str) 
 end test;	# 2  
 #b:= bbp.new(:int,:int);
 #c:= bbp.new(:int,:int);
 #user.test("hello",b,c);
 #
 !TypeException:user.main[4]:'user.test' undefined in: _5:any := user.test(_6:str, b:bat[:int,:int], c:bat[:int,:int])
-
-function user.main():void;	# 0  (main:void)
-#variable arguments are only allowed in patterns 	# 1  (_1:str)
-    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
-    c := bat.new(:int,:int);	# 3 CMDBATnew (c:bat[:int,:int])<-(_3:int)(_3:int)
-    user.test("hello",b,c);	# 4  unknown (_5:any)<-(_6:str)(b:bat[:int,:int])(c:bat[:int,:int])
+function user.main():void;              #  0 main:void {G}
+#variable arguments are only allowed in patterns 
+    b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    c := bat.new(:int,:int);            #  3 c:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    user.test("hello",b,c);             #  4 _5:any := user.test(_6:str, b:bat[:int,:int], c:bat[:int,:int]) {U}
 end main;	# 5  
 
 # 07:58:40 >  

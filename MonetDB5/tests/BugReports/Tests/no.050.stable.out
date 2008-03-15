@@ -76,68 +76,68 @@ stdout of test 'no.050` in directory 'tests/BugReports` itself:
 ##	mil.line("quit();");
 #	oa_a := clients.quit();
 #
-function user.main():void;	# 0  (main:void)
-# Monet Mil to Mal compiler 	# 1  (_1:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
-#Predefined code segment 	# 3  (_3:str)
-#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
-#A few guidelines to maximize usefullness. 	# 6  (_6:str)
-#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
-#use the "mil_schema" for additional support routines 	# 9  (_9:str)
-#	io.print("# >Number:         50\n"); 	# 10  (_10:str)
-#	io.print("# >Category:       MIL\n"); 	# 11  (_11:str)
-#	io.print("# >Confidential:   no\n"); 	# 12  (_12:str)
-#	io.print("# >Severity:       critical\n"); 	# 13  (_13:str)
-#	io.print("# >Priority:       high\n"); 	# 14  (_14:str)
-#	io.print("# >Responsible:    boncz\n"); 	# 15  (_15:str)
-#	io.print("# >State:          closed\n"); 	# 16  (_16:str)
-#	io.print("# >Class:          sw-bug\n"); 	# 17  (_17:str)
-#	io.print("# >Submitter-Id:   unknown\n"); 	# 18  (_18:str)
-#	io.print("# >Arrival-Date:   Wed Oct 15 10:23:33 1997\n"); 	# 19  (_19:str)
-#	io.print("# >Originator:     niels\n"); 	# 20  (_20:str)
-#	io.print("# >Organization:\n"); 	# 21  (_21:str)
-#	io.print("# >Release:        971007\n"); 	# 22  (_22:str)
-#	io.print("# >Environment:\n"); 	# 23  (_23:str)
-#	io.print("# SunOS5.5.1\n"); 	# 24  (_24:str)
-#	io.print("# >Description:\n"); 	# 25  (_25:str)
-#	io.print("# a := new (oid,int);\n"); 	# 26  (_26:str)
-#	io.print("# a.insert( calc.oid(1), 100 );\n"); 	# 27  (_27:str)
-#	io.print("# a.insert( calc.oid(2), 1000 );\n"); 	# 28  (_28:str)
-#	io.print("# a.insert( calc.oid(4), 10 );\n"); 	# 29  (_29:str)
-#	io.print("# a.insert( calc.oid(5), 15 );\n"); 	# 30  (_30:str)
-#	io.print("# a.select( 94, 110 ).print;\n"); 	# 31  (_31:str)
-#	io.print("# #output\n"); 	# 32  (_32:str)
-#	io.print("# #-----------------#\n"); 	# 33  (_33:str)
-#	io.print("# # oid   | tmp_27  #\n"); 	# 34  (_34:str)
-#	io.print("# #-----------------#\n"); 	# 35  (_35:str)
-#	io.print("# [ 1@0,    100     ]\n"); 	# 36  (_36:str)
-#	io.print("# [ 2@0,    1000    ]\n"); 	# 37  (_37:str)
-#	io.print("var a := new (oid,int);"); 	# 38  (_38:str)
-    a := bat.new(nil:oid,nil:int);	# 39 CMDBATnew (a:bat[:oid,:int])<-(_40:oid)(_41:int)
-#	io.print("a.insert( calc.oid(1), 100 );"); 	# 40  (_42:str)
-    aa_a := calc.oid(1);	# 41 CALCint2oid (aa_a:oid)<-(_44:int)
-    ba_a := bat.insert(a,aa_a,100);	# 42 BKCinsert_bun (ba_a:void)<-(a:bat[:oid,:int])(aa_a:oid)(_46:int)
-#	io.print("a.insert( calc.oid(2), 1000 );"); 	# 43  (_47:str)
-    ca_a := calc.oid(2);	# 44 CALCint2oid (ca_a:oid)<-(_49:int)
-    da_a := bat.insert(a,ca_a,1000);	# 45 BKCinsert_bun (da_a:void)<-(a:bat[:oid,:int])(ca_a:oid)(_51:int)
-#	io.print("a.insert( calc.oid(4), 10 );"); 	# 46  (_52:str)
-    ea_a := calc.oid(4);	# 47 CALCint2oid (ea_a:oid)<-(_54:int)
-    fa_a := bat.insert(a,ea_a,10);	# 48 BKCinsert_bun (fa_a:void)<-(a:bat[:oid,:int])(ea_a:oid)(_56:int)
-#	io.print("a.insert( calc.oid(5), 15 );"); 	# 49  (_57:str)
-    ga_a := calc.oid(5);	# 50 CALCint2oid (ga_a:oid)<-(_59:int)
-    ha_a := bat.insert(a,ga_a,15);	# 51 BKCinsert_bun (ha_a:void)<-(a:bat[:oid,:int])(ga_a:oid)(_61:int)
-#	io.print("a.print();"); 	# 52  (_62:str)
-    ia_a := io.print(a);	# 53 IOprint_val (ia_a:void)<-(a:bat[:oid,:int])
-    ja_a := bat.reverse(a);	# 54 BKCreverse (ja_a:bat[:int,:oid])<-(a:bat[:oid,:int])
-#	io.print("a.print();"); 	# 55  (_61:str)
-    la_a := io.print(a);	# 56 IOprint_val (la_a:void)<-(a:bat[:oid,:int])
-#	io.print("a.select( 94, 110 ).print();"); 	# 57  (_67:str)
-    ma_a := algebra.select(a,94,110);	# 58 ALGselect (ma_a:bat[:oid,:int])<-(a:bat[:oid,:int])(_69:int)(_70:int)
-    na_a := io.print(ma_a);	# 59 IOprint_val (na_a:void)<-(ma_a:bat[:oid,:int])
-#	io.print("quit();"); 	# 60  (_70:str)
-    oa_a := clients.quit();	# 61 CLTquit (oa_a:void)
+function user.main():void;              #  0 main:void {G}
+# Monet Mil to Mal compiler 
+# Copyright (c) 2001-2004, CWI. All rights reserved. 
+#Predefined code segment 
+#The compiler can not guarantee an accurate compilation, 
+#because MIL unlike MAL is a dynamically typed language. 
+#A few guidelines to maximize usefullness. 
+#- make the type of variables explicit, in particular 'nil' 
+#- upon advice of M2m to remap identifiers, change it in your program directly 
+#use the "mil_schema" for additional support routines 
+#	io.print("# >Number:         50\n"); 
+#	io.print("# >Category:       MIL\n"); 
+#	io.print("# >Confidential:   no\n"); 
+#	io.print("# >Severity:       critical\n"); 
+#	io.print("# >Priority:       high\n"); 
+#	io.print("# >Responsible:    boncz\n"); 
+#	io.print("# >State:          closed\n"); 
+#	io.print("# >Class:          sw-bug\n"); 
+#	io.print("# >Submitter-Id:   unknown\n"); 
+#	io.print("# >Arrival-Date:   Wed Oct 15 10:23:33 1997\n"); 
+#	io.print("# >Originator:     niels\n"); 
+#	io.print("# >Organization:\n"); 
+#	io.print("# >Release:        971007\n"); 
+#	io.print("# >Environment:\n"); 
+#	io.print("# SunOS5.5.1\n"); 
+#	io.print("# >Description:\n"); 
+#	io.print("# a := new (oid,int);\n"); 
+#	io.print("# a.insert( calc.oid(1), 100 );\n"); 
+#	io.print("# a.insert( calc.oid(2), 1000 );\n"); 
+#	io.print("# a.insert( calc.oid(4), 10 );\n"); 
+#	io.print("# a.insert( calc.oid(5), 15 );\n"); 
+#	io.print("# a.select( 94, 110 ).print;\n"); 
+#	io.print("# #output\n"); 
+#	io.print("# #-----------------#\n"); 
+#	io.print("# # oid   | tmp_27  #\n"); 
+#	io.print("# #-----------------#\n"); 
+#	io.print("# [ 1@0,    100     ]\n"); 
+#	io.print("# [ 2@0,    1000    ]\n"); 
+#	io.print("var a := new (oid,int);"); 
+    a := bat.new(nil:oid,nil:int);      # 39 a:bat[:oid,:int] := CMDBATnew(_40:oid, _41:int) {G}
+#	io.print("a.insert( calc.oid(1), 100 );"); 
+    aa_a := calc.oid(1);                # 41 aa_a:oid := CALCint2oid(_44:int) 
+    ba_a := bat.insert(a,aa_a,100);     # 42 ba_a:void := BKCinsert_bun(a:bat[:oid,:int], aa_a:oid, _46:int) 
+#	io.print("a.insert( calc.oid(2), 1000 );"); 
+    ca_a := calc.oid(2);                # 44 ca_a:oid := CALCint2oid(_49:int) 
+    da_a := bat.insert(a,ca_a,1000);    # 45 da_a:void := BKCinsert_bun(a:bat[:oid,:int], ca_a:oid, _51:int) 
+#	io.print("a.insert( calc.oid(4), 10 );"); 
+    ea_a := calc.oid(4);                # 47 ea_a:oid := CALCint2oid(_54:int) 
+    fa_a := bat.insert(a,ea_a,10);      # 48 fa_a:void := BKCinsert_bun(a:bat[:oid,:int], ea_a:oid, _56:int) 
+#	io.print("a.insert( calc.oid(5), 15 );"); 
+    ga_a := calc.oid(5);                # 50 ga_a:oid := CALCint2oid(_59:int) 
+    ha_a := bat.insert(a,ga_a,15);      # 51 ha_a:void := BKCinsert_bun(a:bat[:oid,:int], ga_a:oid, _61:int) 
+#	io.print("a.print();"); 
+    ia_a := io.print(a);                # 53 ia_a:void := IOprint_val(a:bat[:oid,:int]) 
+    ja_a := bat.reverse(a);             # 54 ja_a:bat[:int,:oid] := BKCreverse(a:bat[:oid,:int]) {G}
+#	io.print("a.print();"); 
+    la_a := io.print(a);                # 56 la_a:void := IOprint_val(a:bat[:oid,:int]) 
+#	io.print("a.select( 94, 110 ).print();"); 
+    ma_a := algebra.select(a,94,110);   # 58 ma_a:bat[:oid,:int] := ALGselect(a:bat[:oid,:int], _69:int, _70:int) {G}
+    na_a := io.print(ma_a);             # 59 na_a:void := IOprint_val(ma_a:bat[:oid,:int]) 
+#	io.print("quit();"); 
+    oa_a := clients.quit();             # 61 oa_a:void 
 end main;	# 62  
 #-----------------#
 # h	t	  # name

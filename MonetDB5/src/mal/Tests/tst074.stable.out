@@ -16,17 +16,17 @@ stdout of test 'tst074` in directory 'src/mal` itself:
 #function swap(x:str):str;
 #	return x;
 #end swap;
-function user.swap(x:str):str;	# 0  (swap:str)<-(x:str)
-    return swap := x;	# 1  (swap:str)<-(x:str)
+function user.swap(x:str):str;          #  0 swap:str := user.swap(x:str) {G}
+    return swap := x;                   #  1 swap:str := x:str {G}
 end swap;	# 2  
 #
 #x:= swap("world hello");
 #print(x);
 #
-function user.main():void;	# 0  (main:void)
-# parsing operations with multi-assignments 	# 1  (_1:str)
-    x := user.swap("world hello");	# 2  (x:str)<-(_3:str)
-    io.print(x);	# 3 IOprint_val (_4:void)<-(x:str)
+function user.main():void;              #  0 main:void {G}
+# parsing operations with multi-assignments #  1 
+    x := user.swap("world hello");      #  2 x:str := user.swap(_3:str) {G}
+    io.print(x);                        #  3 _4:void := IOprint_val(x:str) 
 end main;	# 4  
 [ "world hello" ]
 

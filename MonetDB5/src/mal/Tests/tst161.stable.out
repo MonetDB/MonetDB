@@ -18,17 +18,17 @@ stdout of test 'tst161` in directory 'src/mal` itself:
 #function l():mytype;
 #    return l:= 0:mytype;
 #end l;
-function mytype.l():mytype;	# 0  (l:mytype)
-    return l := 0:mytype;	# 1  (l:mytype)<-(_1:mytype)
+function mytype.l():mytype;             #  0 l:mytype 
+    return l := 0:mytype;               #  1 l:mytype := _1:mytype 
 end l;	# 2  
 #
 #z:= l();
 #print(z);
 #
-function user.main():void;	# 0  (main:void)
-# testing definition of new atom type based on ptr 	# 1  (_2:str)
-    z := mytype.l();	# 2  (z:mytype)
-    io.print(z);	# 3 IOprint_val (_3:void)<-(z:mytype)
+function user.main():void;              #  0 main:void 
+# testing definition of new atom type based on ptr 
+    z := mytype.l();                    #  2 z:mytype 
+    io.print(z);                        #  3 _3:void := IOprint_val(z:mytype) 
 end main;	# 4  
 [ 0 ]
 #

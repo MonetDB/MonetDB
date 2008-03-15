@@ -21,15 +21,15 @@ stdout of test 'union_semantics.SF-1192348` in directory 'tests/BugDay_2005-10-0
 #u:= algebra.kunion(x,y);
 #io.print(u);
 #
-function user.main():void;	# 0  (main:void)
-    x := bat.new(:oid,:int);	# 1 CMDBATnew (x:bat[:oid,:int])<-(_2:oid)(_3:int)
-    y := bat.new(:oid,:int);	# 2 CMDBATnew (y:bat[:oid,:int])<-(_2:oid)(_3:int)
-    bat.insert(x,0@0,1);	# 3 BKCinsert_bun (_5:void)<-(x:bat[:oid,:int])(_6:oid)(_7:int)
-    bat.insert(x,1@0,2);	# 4 BKCinsert_bun (_8:void)<-(x:bat[:oid,:int])(_9:oid)(_10:int)
-    bat.insert(y,1@0,3);	# 5 BKCinsert_bun (_11:void)<-(y:bat[:oid,:int])(_9:oid)(_12:int)
-    bat.insert(y,2@0,4);	# 6 BKCinsert_bun (_13:void)<-(y:bat[:oid,:int])(_14:oid)(_15:int)
-    u := algebra.kunion(x,y);	# 7 ALGkunion (u:bat[:oid,:int])<-(x:bat[:oid,:int])(y:bat[:oid,:int])
-    io.print(u);	# 8 IOprint_val (_17:void)<-(u:bat[:oid,:int])
+function user.main():void;              #  0 main:void {G}
+    x := bat.new(:oid,:int);            #  1 x:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    y := bat.new(:oid,:int);            #  2 y:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    bat.insert(x,0@0,1);                #  3 _5:void := BKCinsert_bun(x:bat[:oid,:int], _6:oid, _7:int) 
+    bat.insert(x,1@0,2);                #  4 _8:void := BKCinsert_bun(x:bat[:oid,:int], _9:oid, _10:int) 
+    bat.insert(y,1@0,3);                #  5 _11:void := BKCinsert_bun(y:bat[:oid,:int], _9:oid, _12:int) 
+    bat.insert(y,2@0,4);                #  6 _13:void := BKCinsert_bun(y:bat[:oid,:int], _14:oid, _15:int) 
+    u := algebra.kunion(x,y);           #  7 u:bat[:oid,:int] := ALGkunion(x:bat[:oid,:int], y:bat[:oid,:int]) {G}
+    io.print(u);                        #  8 _17:void := IOprint_val(u:bat[:oid,:int]) 
 end main;	# 9  
 #-----------------#
 # h	t	  # name

@@ -20,14 +20,14 @@ stdout of test 'tst029` in directory 'src/mal` itself:
 #s:= algebra.fetch(b,2);
 #io.printf("%s\n",s);
 #
-function user.main():void;	# 0  (main:void)
-    b := bat.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-(_2:int)(_3:str)
-    bat.insert(b,1,"io.print(1);");	# 2 BKCinsert_bun (_4:void)<-(b:bat[:int,:str])(_5:int)(_6:str)
-    bat.insert(b,2,"io.print(\"hello\");");	# 3 BKCinsert_bun (_7:void)<-(b:bat[:int,:str])(_8:int)(_9:str)
-    bat.insert(b,3,"s:=\"goodbye\";io.print(s);");	# 4 BKCinsert_bun (_10:void)<-(b:bat[:int,:str])(_11:int)(_12:str)
-    io.print(b);	# 5 IOprint_val (_13:void)<-(b:bat[:int,:str])
-    s := algebra.fetch(b,2);	# 6 ALGfetchint (s:str)<-(b:bat[:int,:str])(_8:int)
-    io.printf("%s\n",s);	# 7 IOprint_formatted_str (_15:void)<-(_16:str)(s:str)
+function user.main():void;              #  0 main:void {G}
+    b := bat.new(:int,:str);            #  1 b:bat[:int,:str] := CMDBATnew(_2:int, _3:str) {G}
+    bat.insert(b,1,"io.print(1);");     #  2 _4:void := BKCinsert_bun(b:bat[:int,:str], _5:int, _6:str) 
+    bat.insert(b,2,"io.print(\"hello\");");#  3 _7:void := BKCinsert_bun(b:bat[:int,:str], _8:int, _9:str) 
+    bat.insert(b,3,"s:=\"goodbye\";io.print(s);");#  4 _10:void := BKCinsert_bun(b:bat[:int,:str], _11:int, _12:str) 
+    io.print(b);                        #  5 _13:void := IOprint_val(b:bat[:int,:str]) 
+    s := algebra.fetch(b,2);            #  6 s:str := ALGfetchint(b:bat[:int,:str], _8:int) {G}
+    io.printf("%s\n",s);                #  7 _15:void := IOprint_formatted_str(_16:str, s:str) 
 end main;	# 8  
 #-----------------------------------------#
 # h	t				  # name

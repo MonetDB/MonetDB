@@ -24,17 +24,17 @@ stdout of test 'bat_insert` in directory 'tests/gdkTests` itself:
 #		io.printf("!ERROR: wrote %d BUNs beyond capacity\n",overflow);
 #exit errors;
 #end check_cap;
-function user.check_cap(b:bat[:any_1,:any_2]):void;	# 0  (check_cap:void)<-(b:bat[:any_1,:any_2])
-    inserted := aggr.count(b);	# 1 ALGcount_bat (inserted:int)<-(b:bat[:any_1,:any_2])
-    d := bat.getDelta(b);	# 2 BKCgetDelta (d:bat[:any,:any])<-(b:bat[:any_1,:any_2])
-    d1 := aggr.count(d);	# 3 ALGcount_bat (d1:int)<-(d:bat[:any,:any])
-    deleted := calc.lng(d1);	# 4 CALCint2lng (deleted:lng)<-(d1:int)
-    cap := bat.getCapacity(b);	# 5 BKCgetCapacity (cap:lng)<-(b:bat[:any_1,:any_2])
-    overflow := calc.+(inserted,deleted);	# 6 CALCbinaryADDintlng (overflow:lng)<-(inserted:int)(deleted:lng)
-    overflow := calc.-(overflow,cap);	# 7 CALCbinarySUBlnglng (overflow:lng)<-(overflow:lng)(cap:lng)
-barrier errors := calc.>(overflow,0:lng);	# 8 CALCcompGTlnglng (errors:bit)<-(overflow:lng)(_9:lng) jump 10
-    io.printf("!ERROR: wrote %d BUNs beyond capacity\n",overflow);	# 9 IOprint_formatted_lng (_10:void)<-(_11:str)(overflow:lng)
-exit errors;	# 10  (errors:bit)
+function user.check_cap(b:bat[:any_1,:any_2]):void;#  0 check_cap:void := user.check_cap(b:bat[:any_1,:any_2]) {PG}
+    inserted := aggr.count(b);          #  1 inserted:int := ALGcount_bat(b:bat[:any_1,:any_2]) {P}
+    d := bat.getDelta(b);               #  2 d:bat[:any,:any] := BKCgetDelta(b:bat[:any_1,:any_2]) {PG}
+    d1 := aggr.count(d);                #  3 d1:int := ALGcount_bat(d:bat[:any,:any]) 
+    deleted := calc.lng(d1);            #  4 deleted:lng := CALCint2lng(d1:int) 
+    cap := bat.getCapacity(b);          #  5 cap:lng := BKCgetCapacity(b:bat[:any_1,:any_2]) {P}
+    overflow := calc.+(inserted,deleted);#  6 overflow:lng := CALCbinaryADDintlng(inserted:int, deleted:lng) 
+    overflow := calc.-(overflow,cap);   #  7 overflow:lng := CALCbinarySUBlnglng(overflow:lng, cap:lng) 
+barrier errors := calc.>(overflow,0:lng);#  8 errors:bit := CALCcompGTlnglng(overflow:lng, _9:lng) {J10}
+    io.printf("!ERROR: wrote %d BUNs beyond capacity\n",overflow);#  9 _10:void := IOprint_formatted_lng(_11:str, overflow:lng) 
+exit errors;                            # 10 errors:bit 
 end check_cap;	# 11  
 #
 #b := bat.new(:oid,:oid);
@@ -82,43 +82,43 @@ end check_cap;	# 11
 #
 #clients.quit();
 #
-function user.main():void;	# 0  (main:void)
-    o := nil:oid;	# 1  (o:oid)<-(_2:oid)
-    b := bat.new(:oid,:oid);	# 2 CMDBATnew (b:bat[:oid,:oid])<-(_4:oid)(_5:oid)
-    bat.setName(b,"b");	# 3 BKCsetName (_6:void)<-(b:bat[:oid,:oid])(_7:str)
-    bat.setPersistent(b,true);	# 4 BKCpersists (_8:void)<-(b:bat[:oid,:oid])(_9:bit)
-    cap := bat.getCapacity(b);	# 5 BKCgetCapacity (cap:lng)<-(b:bat[:oid,:oid])
-    cap := calc./(cap,4);	# 6 CALCbinarycheckDIVlngint (cap:lng)<-(cap:lng)(_11:int)
-    ci := calc.int(cap);	# 7 CALClng2int (ci:int)<-(cap:lng)
-    ci := calc.+(ci,1);	# 8 CALCbinaryADDintint (ci:int)<-(ci:int)(_13:int)
-    i := calc.*(ci,3);	# 9 CALCbinaryMULintint (i:int)<-(ci:int)(_15:int)
-barrier go := calc.>(i,0);	# 10 CALCcompGTintint (go:bit)<-(i:int)(_17:int) jump 15
-    o := calc.oid(i);	# 11 CALCint2oid (o:oid)<-(i:int)
-    bat.insert(b,o,o);	# 12 BKCinsert_bun (_18:void)<-(b:bat[:oid,:oid])(o:oid)(o:oid)
-    i := calc.-(i,1);	# 13 CALCbinarySUBintint (i:int)<-(i:int)(_13:int)
-    redo go := calc.>(i,0);	# 14 CALCcompGTintint (go:bit)<-(i:int)(_17:int) jump 11
-exit go;	# 15  (go:bit)
-    transaction.commit();	# 16 TRNglobal_commit (_19:bit)
-    i := calc.*(ci,2);	# 17 CALCbinaryMULintint (i:int)<-(ci:int)(_20:int)
-barrier go := calc.>(i,0);	# 18 CALCcompGTintint (go:bit)<-(i:int)(_17:int) jump 23
-    o := calc.oid(i);	# 19 CALCint2oid (o:oid)<-(i:int)
-    bat.delete(b,o);	# 20 BKCdelete (_21:void)<-(b:bat[:oid,:oid])(o:oid)
-    i := calc.-(i,1);	# 21 CALCbinarySUBintint (i:int)<-(i:int)(_13:int)
-    redo go := calc.>(i,0);	# 22 CALCcompGTintint (go:bit)<-(i:int)(_17:int) jump 19
-exit go;	# 23  (go:bit)
-    c := bat.new(:oid,:oid);	# 24 CMDBATnew (c:bat[:oid,:oid])<-(_23:oid)(_24:oid)
-    i := calc.*(ci,2);	# 25 CALCbinaryMULintint (i:int)<-(ci:int)(_20:int)
-barrier go := calc.>(i,0);	# 26 CALCcompGTintint (go:bit)<-(i:int)(_17:int) jump 31
-    o := calc.oid(i);	# 27 CALCint2oid (o:oid)<-(i:int)
-    bat.insert(c,o,o);	# 28 BKCinsert_bun (_25:void)<-(c:bat[:oid,:oid])(o:oid)(o:oid)
-    i := calc.-(i,1);	# 29 CALCbinarySUBintint (i:int)<-(i:int)(_13:int)
-    redo go := calc.>(i,0);	# 30 CALCcompGTintint (go:bit)<-(i:int)(_17:int) jump 27
-exit go;	# 31  (go:bit)
-    bat.insert(b,c);	# 32 BKCinsert_bat (_26:void)<-(b:bat[:oid,:oid])(c:bat[:oid,:oid])
-    user.check_cap(b);	# 33  (_27:void)<-(b:bat[:oid,:oid])
-    bat.setPersistent(b,false);	# 34 BKCpersists (_28:void)<-(b:bat[:oid,:oid])(_29:bit)
-    transaction.commit();	# 35 TRNglobal_commit (_30:bit)
-    clients.quit();	# 36 CLTquit (_31:void)
+function user.main():void;              #  0 main:void {G}
+    o := nil:oid;                       #  1 o:oid := _2:oid 
+    b := bat.new(:oid,:oid);            #  2 b:bat[:oid,:oid] := CMDBATnew(_4:oid, _5:oid) {G}
+    bat.setName(b,"b");                 #  3 _6:void := BKCsetName(b:bat[:oid,:oid], _7:str) 
+    bat.setPersistent(b,true);          #  4 _8:void := BKCpersists(b:bat[:oid,:oid], _9:bit) 
+    cap := bat.getCapacity(b);          #  5 cap:lng := BKCgetCapacity(b:bat[:oid,:oid]) 
+    cap := calc./(cap,4);               #  6 cap:lng := CALCbinarycheckDIVlngint(cap:lng, _11:int) 
+    ci := calc.int(cap);                #  7 ci:int := CALClng2int(cap:lng) 
+    ci := calc.+(ci,1);                 #  8 ci:int := CALCbinaryADDintint(ci:int, _13:int) 
+    i := calc.*(ci,3);                  #  9 i:int := CALCbinaryMULintint(ci:int, _15:int) 
+barrier go := calc.>(i,0);              # 10 go:bit := CALCcompGTintint(i:int, _17:int) {J15}
+    o := calc.oid(i);                   # 11 o:oid := CALCint2oid(i:int) 
+    bat.insert(b,o,o);                  # 12 _18:void := BKCinsert_bun(b:bat[:oid,:oid], o:oid, o:oid) 
+    i := calc.-(i,1);                   # 13 i:int := CALCbinarySUBintint(i:int, _13:int) 
+    redo go := calc.>(i,0);             # 14 go:bit := CALCcompGTintint(i:int, _17:int) {J11}
+exit go;                                # 15 go:bit 
+    transaction.commit();               # 16 _19:bit 
+    i := calc.*(ci,2);                  # 17 i:int := CALCbinaryMULintint(ci:int, _20:int) 
+barrier go := calc.>(i,0);              # 18 go:bit := CALCcompGTintint(i:int, _17:int) {J23}
+    o := calc.oid(i);                   # 19 o:oid := CALCint2oid(i:int) 
+    bat.delete(b,o);                    # 20 _21:void := BKCdelete(b:bat[:oid,:oid], o:oid) 
+    i := calc.-(i,1);                   # 21 i:int := CALCbinarySUBintint(i:int, _13:int) 
+    redo go := calc.>(i,0);             # 22 go:bit := CALCcompGTintint(i:int, _17:int) {J19}
+exit go;                                # 23 go:bit 
+    c := bat.new(:oid,:oid);            # 24 c:bat[:oid,:oid] := CMDBATnew(_23:oid, _24:oid) {G}
+    i := calc.*(ci,2);                  # 25 i:int := CALCbinaryMULintint(ci:int, _20:int) 
+barrier go := calc.>(i,0);              # 26 go:bit := CALCcompGTintint(i:int, _17:int) {J31}
+    o := calc.oid(i);                   # 27 o:oid := CALCint2oid(i:int) 
+    bat.insert(c,o,o);                  # 28 _25:void := BKCinsert_bun(c:bat[:oid,:oid], o:oid, o:oid) 
+    i := calc.-(i,1);                   # 29 i:int := CALCbinarySUBintint(i:int, _13:int) 
+    redo go := calc.>(i,0);             # 30 go:bit := CALCcompGTintint(i:int, _17:int) {J27}
+exit go;                                # 31 go:bit 
+    bat.insert(b,c);                    # 32 _26:void := BKCinsert_bat(b:bat[:oid,:oid], c:bat[:oid,:oid]) 
+    user.check_cap(b);                  # 33 _27:void := user.check_cap(b:bat[:oid,:oid]) 
+    bat.setPersistent(b,false);         # 34 _28:void := BKCpersists(b:bat[:oid,:oid], _29:bit) 
+    transaction.commit();               # 35 _30:bit 
+    clients.quit();                     # 36 _31:void 
 end main;	# 37  
 
 # 20:34:11 >  

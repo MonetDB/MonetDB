@@ -33,25 +33,25 @@ stdout of test 'tst232` in directory 'src/mal` itself:
 #	print("bat was destroyed");
 #exit MALException;
 #
-function user.main():void;	# 0  (main:void)
-# a test checking BAT reference counting under various situations 	# 1  (_1:str)
-    bbp.open();	# 2 CMDbbpopen (_2:void)
-    b := bat.new(:int,:str);	# 3 CMDBATnew (b:bat[:int,:str])<-(_4:int)(_5:str)
-    i := bbp.getRefCount(b);	# 4 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("refcount =%d\n",i);	# 5 IOprint_formatted_int (_7:void)<-(_8:str)(i:int)
-    j := bbp.getLRefCount(b);	# 6 CMDgetBATlrefcnt (j:int)<-(b:bat[:int,:str])
-    io.printf("lrefcount =%d\n",j);	# 7 IOprint_formatted_int (_10:void)<-(_11:str)(j:int)
-    bat.insert(b,1,"bat B");	# 8 BKCinsert_bun (_12:void)<-(b:bat[:int,:str])(_13:int)(_14:str)
-    io.print(b);	# 9 IOprint_val (_15:void)<-(b:bat[:int,:str])
-    i := bbp.getRefCount(b);	# 10 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("refcount =%d\n",i);	# 11 IOprint_formatted_int (_16:void)<-(_8:str)(i:int)
-    j := bbp.getLRefCount(b);	# 12 CMDgetBATlrefcnt (j:int)<-(b:bat[:int,:str])
-    io.printf("lrefcount =%d\n",j);	# 13 IOprint_formatted_int (_17:void)<-(_11:str)(j:int)
-    bbp.destroy(b);	# 14 CMDbbpdestroyBAT1 (_18:void)<-(b:bat[:int,:str])
-    i := bbp.getRefCount(b);	# 15 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
-catch MALException:str ;	# 16  (MALException:str) jump 18
-    io.print("bat was destroyed");	# 17 IOprint_val (_20:void)<-(_21:str)
-exit MALException:str ;	# 18  (MALException:str)
+function user.main():void;              #  0 main:void {G}
+# a test checking BAT reference counting under various situations 
+    bbp.open();                         #  2 _2:void 
+    b := bat.new(:int,:str);            #  3 b:bat[:int,:str] := CMDBATnew(_4:int, _5:str) {G}
+    i := bbp.getRefCount(b);            #  4 i:int := CMDgetBATrefcnt(b:bat[:int,:str]) 
+    io.printf("refcount =%d\n",i);      #  5 _7:void := IOprint_formatted_int(_8:str, i:int) 
+    j := bbp.getLRefCount(b);           #  6 j:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
+    io.printf("lrefcount =%d\n",j);     #  7 _10:void := IOprint_formatted_int(_11:str, j:int) 
+    bat.insert(b,1,"bat B");            #  8 _12:void := BKCinsert_bun(b:bat[:int,:str], _13:int, _14:str) 
+    io.print(b);                        #  9 _15:void := IOprint_val(b:bat[:int,:str]) 
+    i := bbp.getRefCount(b);            # 10 i:int := CMDgetBATrefcnt(b:bat[:int,:str]) 
+    io.printf("refcount =%d\n",i);      # 11 _16:void := IOprint_formatted_int(_8:str, i:int) 
+    j := bbp.getLRefCount(b);           # 12 j:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
+    io.printf("lrefcount =%d\n",j);     # 13 _17:void := IOprint_formatted_int(_11:str, j:int) 
+    bbp.destroy(b);                     # 14 _18:void := CMDbbpdestroyBAT1(b:bat[:int,:str]) 
+    i := bbp.getRefCount(b);            # 15 i:int := CMDgetBATrefcnt(b:bat[:int,:str]) 
+catch MALException:str ;                # 16 MALException:str {J18}
+    io.print("bat was destroyed");      # 17 _20:void := IOprint_val(_21:str) 
+exit MALException:str ;                 # 18 MALException:str 
 end main;	# 19  
 refcount =1
 lrefcount =1

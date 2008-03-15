@@ -28,20 +28,20 @@ stdout of test 'tst267` in directory 'src/mal` itself:
 #g:= array.*(a,b);
 #print(g);
 #
-function user.main():void;	# 0  (main:void)
-# Grouped sums 	# 1  (_1:str)
-    a := bat.new(:oid,:int);	# 2 CMDBATnew (a:bat[:oid,:int])<-(_3:oid)(_4:int)
-    b := bat.new(:oid,:int);	# 3 CMDBATnew (b:bat[:oid,:int])<-(_3:oid)(_4:int)
-    bat.append(a,1);	# 4 BKCappend_val_wrap (_6:void)<-(a:bat[:oid,:int])(_7:int)
-    bat.append(a,2);	# 5 BKCappend_val_wrap (_8:void)<-(a:bat[:oid,:int])(_9:int)
-    bat.append(b,5);	# 6 BKCappend_val_wrap (_10:void)<-(b:bat[:oid,:int])(_11:int)
-    bat.append(b,6);	# 7 BKCappend_val_wrap (_12:void)<-(b:bat[:oid,:int])(_13:int)
-    bat.append(b,7);	# 8 BKCappend_val_wrap (_14:void)<-(b:bat[:oid,:int])(_15:int)
-    bat.append(b,8);	# 9 BKCappend_val_wrap (_16:void)<-(b:bat[:oid,:int])(_17:int)
-    io.print(a);	# 10 IOprint_val (_18:void)<-(a:bat[:oid,:int])
-    io.print(b);	# 11 IOprint_val (_19:void)<-(b:bat[:oid,:int])
-    g := array.product(a,b);	# 12 ARRAYproduct (g:bat[:int,:int])<-(a:bat[:oid,:int])(b:bat[:oid,:int])
-    io.print(g);	# 13 IOprint_val (_21:void)<-(g:bat[:int,:int])
+function user.main():void;              #  0 main:void {G}
+# Grouped sums 
+    a := bat.new(:oid,:int);            #  2 a:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
+    b := bat.new(:oid,:int);            #  3 b:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
+    bat.append(a,1);                    #  4 _6:void := BKCappend_val_wrap(a:bat[:oid,:int], _7:int) 
+    bat.append(a,2);                    #  5 _8:void := BKCappend_val_wrap(a:bat[:oid,:int], _9:int) 
+    bat.append(b,5);                    #  6 _10:void := BKCappend_val_wrap(b:bat[:oid,:int], _11:int) 
+    bat.append(b,6);                    #  7 _12:void := BKCappend_val_wrap(b:bat[:oid,:int], _13:int) 
+    bat.append(b,7);                    #  8 _14:void := BKCappend_val_wrap(b:bat[:oid,:int], _15:int) 
+    bat.append(b,8);                    #  9 _16:void := BKCappend_val_wrap(b:bat[:oid,:int], _17:int) 
+    io.print(a);                        # 10 _18:void := IOprint_val(a:bat[:oid,:int]) 
+    io.print(b);                        # 11 _19:void := IOprint_val(b:bat[:oid,:int]) 
+    g := array.product(a,b);            # 12 g:bat[:int,:int] := ARRAYproduct(a:bat[:oid,:int], b:bat[:oid,:int]) {G}
+    io.print(g);                        # 13 _21:void := IOprint_val(g:bat[:int,:int]) 
 end main;	# 14  
 #-----------------#
 # h	tmp_13	  # name

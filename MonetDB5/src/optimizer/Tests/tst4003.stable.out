@@ -22,14 +22,14 @@ stdout of test 'tst4003` in directory 'src/optimizer` itself:
 #e:= algebra.select(b,"hello","world");    # mapped onto one instruction
 #
 #
-function user.main():void;	# 0  (main:void)
-# The 4000 series deals with strategic optimizer constructs 	# 1  (_1:str)
-# common subexpression evaluation 	# 2  (_2:str)
-    b := bat.new(:str,:str);	# 3 CMDBATnew (b:bat[:str,:str])<-(_6:str)(_7:str)
-    c := bat.new(:str,:str);	# 4 CMDBATnew (c:bat[:str,:str])<-(_9:str)(_10:str)
-# identical until insert takes place 	# 5  (_11:str)
-    d := algebra.select(b,"hello","world");	# 6 ALGselect (d:bat[:str,:str])<-(b:bat[:str,:str])(_13:str)(_14:str)
-# mapped onto one instruction 	# 7  (_16:str)
+function user.main():void;              #  0 main:void {G}
+# The 4000 series deals with strategic optimizer constructs 
+# common subexpression evaluation 
+    b := bat.new(:str,:str);            #  3 b:bat[:str,:str] := CMDBATnew(_6:str, _7:str) {G}
+    c := bat.new(:str,:str);            #  4 c:bat[:str,:str] := CMDBATnew(_9:str, _10:str) {G}
+# identical until insert takes place 
+    d := algebra.select(b,"hello","world");#  6 d:bat[:str,:str] := ALGselect(b:bat[:str,:str], _13:str, _14:str) {G}
+# mapped onto one instruction 
 end main;	# 8  
 
 # 23:52:51 >  

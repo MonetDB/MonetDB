@@ -24,14 +24,14 @@ stdout of test 'tst2505` in directory 'src/mal` itself:
 #	i:= i % 32767;
 #	return i;
 #end;
-factory user.random(seed:int):int;	# 0  (random:int)<-(seed:int)
-    i := seed;	# 1  (i:int)<-(seed:int)
-    i := calc.*(125,i);	# 2 CALCbinaryMULintint (i:int)<-(_3:int)(i:int)
-    i := calc.%(i,32767);	# 3 CALCbinarycheckMODintint (i:int)<-(i:int)(_4:int)
-    yield random := i;	# 4  (random:int)<-(i:int)
-    i := calc.*(125,i);	# 5 CALCbinaryMULintint (i:int)<-(_3:int)(i:int)
-    i := calc.%(i,32767);	# 6 CALCbinarycheckMODintint (i:int)<-(i:int)(_4:int)
-    return random := i;	# 7  (random:int)<-(i:int)
+factory user.random(seed:int):int;      #  0 random:int := user.random(seed:int) 
+    i := seed;                          #  1 i:int := seed:int 
+    i := calc.*(125,i);                 #  2 i:int := CALCbinaryMULintint(_3:int, i:int) 
+    i := calc.%(i,32767);               #  3 i:int := CALCbinarycheckMODintint(i:int, _4:int) 
+    yield random := i;                  #  4 random:int := i:int 
+    i := calc.*(125,i);                 #  5 i:int := CALCbinaryMULintint(_3:int, i:int) 
+    i := calc.%(i,32767);               #  6 i:int := CALCbinarycheckMODintint(i:int, _4:int) 
+    return random := i;                 #  7 random:int := i:int 
 end random;	# 8  
 #
 #r1:= random(1);
@@ -43,17 +43,17 @@ end random;	# 8
 #r2:= random(2);
 #print(r2);
 #
-function user.main():void;	# 0  (main:void)
-# The prototypical factory construct 	# 1  (_1:str)
-# test factory return and restart 	# 2  (_2:str)
-    r1 := user.random(1);	# 3  (r1:int)<-(_4:int)
-    io.print(r1);	# 4 IOprint_val (_5:void)<-(r1:int)
-    r2 := user.random(34);	# 5  (r2:int)<-(_7:int)
-    io.print(r2);	# 6 IOprint_val (_8:void)<-(r2:int)
-    r2 := user.random(2);	# 7  (r2:int)<-(_9:int)
-    io.print(r2);	# 8 IOprint_val (_10:void)<-(r2:int)
-    r2 := user.random(24);	# 9  (r2:int)<-(_11:int)
-    io.print(r2);	# 10 IOprint_val (_12:void)<-(r2:int)
+function user.main():void;              #  0 main:void 
+# The prototypical factory construct 
+# test factory return and restart 
+    r1 := user.random(1);               #  3 r1:int := user.random(_4:int) 
+    io.print(r1);                       #  4 _5:void := IOprint_val(r1:int) 
+    r2 := user.random(34);              #  5 r2:int := user.random(_7:int) 
+    io.print(r2);                       #  6 _8:void := IOprint_val(r2:int) 
+    r2 := user.random(2);               #  7 r2:int := user.random(_9:int) 
+    io.print(r2);                       #  8 _10:void := IOprint_val(r2:int) 
+    r2 := user.random(24);              #  9 r2:int := user.random(_11:int) 
+    io.print(r2);                       # 10 _12:void := IOprint_val(r2:int) 
 end main;	# 11  
 [ 125 ]
 [ 15625 ]

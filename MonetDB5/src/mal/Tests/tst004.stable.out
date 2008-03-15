@@ -22,19 +22,19 @@ stdout of test 'tst004` in directory 'src/mal` itself:
 #exit	m:= 4;
 #	io.print(m);
 #end foo;
-function user.foo():void;	# 0  (foo:void)
-barrier l := 1;	# 1  (l:int)<-(_2:int) jump 3
-    io.print(l);	# 2 IOprint_val (_3:void)<-(l:int)
-exit l := 2;	# 3  (l:int)<-(_4:int)
-    io.print(l);	# 4 IOprint_val (_5:void)<-(l:int)
-barrier m := 3;	# 5  (m:int)<-(_7:int) jump 7
-    leave m;	# 6  (m:int) jump 7
-exit m := 4;	# 7  (m:int)<-(_8:int)
-    io.print(m);	# 8 IOprint_val (_9:void)<-(m:int)
+function user.foo():void;               #  0 foo:void 
+barrier l := 1;                         #  1 l:int := _2:int {J3}
+    io.print(l);                        #  2 _3:void := IOprint_val(l:int) 
+exit l := 2;                            #  3 l:int := _4:int 
+    io.print(l);                        #  4 _5:void := IOprint_val(l:int) 
+barrier m := 3;                         #  5 m:int := _7:int {J7}
+    leave m;                            #  6 m:int {J7}
+exit m := 4;                            #  7 m:int := _8:int 
+    io.print(m);                        #  8 _9:void := IOprint_val(m:int) 
 end foo;	# 9  
 #
-function user.main():void;	# 0  (main:void)
-# minimal barrier 	# 1  (_1:str)
+function user.main():void;              #  0 main:void 
+# minimal barrier 
 end main;	# 2  
 
 # 07:58:33 >  

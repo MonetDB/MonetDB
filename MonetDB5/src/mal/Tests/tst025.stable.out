@@ -26,18 +26,18 @@ stdout of test 'tst025` in directory 'src/mal` itself:
 #io.print(b);
 #
 #
-function user.main():void;	# 0  (main:void)
-# Wrong behavior of self-deletion, it works on M4 	# 1  (_1:str)
-    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
-    bat.insert(b,5140046,1804289383);	# 3 BKCinsert_bun (_4:void)<-(b:bat[:int,:int])(_5:int)(_6:int)
-    bat.insert(b,5442033,846930886);	# 4 BKCinsert_bun (_7:void)<-(b:bat[:int,:int])(_8:int)(_9:int)
-    bat.insert(b,5645862,1681692777);	# 5 BKCinsert_bun (_10:void)<-(b:bat[:int,:int])(_11:int)(_12:int)
-    io.print(b);	# 6 IOprint_val (_13:void)<-(b:bat[:int,:int])
-# it left one behind 	# 7  (_14:str)
-    bat.delete(b,b);	# 8 BKCdelete_bat_bun (_15:void)<-(b:bat[:int,:int])(b:bat[:int,:int])
-    io.print(b);	# 9 IOprint_val (_16:void)<-(b:bat[:int,:int])
-    bat.delete(b,b);	# 10 BKCdelete_bat_bun (_17:void)<-(b:bat[:int,:int])(b:bat[:int,:int])
-    io.print(b);	# 11 IOprint_val (_18:void)<-(b:bat[:int,:int])
+function user.main():void;              #  0 main:void {G}
+# Wrong behavior of self-deletion, it works on M4 
+    b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    bat.insert(b,5140046,1804289383);   #  3 _4:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) 
+    bat.insert(b,5442033,846930886);    #  4 _7:void := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) 
+    bat.insert(b,5645862,1681692777);   #  5 _10:void := BKCinsert_bun(b:bat[:int,:int], _11:int, _12:int) 
+    io.print(b);                        #  6 _13:void := IOprint_val(b:bat[:int,:int]) 
+# it left one behind 
+    bat.delete(b,b);                    #  8 _15:void := BKCdelete_bat_bun(b:bat[:int,:int], b:bat[:int,:int]) 
+    io.print(b);                        #  9 _16:void := IOprint_val(b:bat[:int,:int]) 
+    bat.delete(b,b);                    # 10 _17:void := BKCdelete_bat_bun(b:bat[:int,:int], b:bat[:int,:int]) 
+    io.print(b);                        # 11 _18:void := IOprint_val(b:bat[:int,:int]) 
 end main;	# 12  
 #---------------------------------#
 # h		t		  # name

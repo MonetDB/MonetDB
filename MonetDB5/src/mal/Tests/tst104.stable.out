@@ -17,18 +17,17 @@ stdout of test 'tst104` in directory 'src/mal` itself:
 #
 #command f(a:any_1, b:bat[:any_2,:any_1],c:any_2):any_3
 !MALException:MAL.getAddress:address of 'user.dummy' not found
-command user.f(a:any_1,b:bat[:any_2,:any_1],c:any_2):any_3 address dummy;	# 0  dynamic (f:any_3)<-(a:any_1)(b:bat[:any_2,:any_1])(c:any_2)
+command user.f(a:any_1,b:bat[:any_2,:any_1],c:any_2):any_3 address dummy;#  0 f:any_3 := user.f(a:any_1, b:bat[:any_2,:any_1], c:any_2) {UPG}
 #
 #b:= new(:str,:int);
 #a:= f(1,b,"hello");
 #
 !TypeException:user.main[4]:'user.f' undefined in: a:any := user.f(_7:int, b:bat[:str,:int], _8:str)
-
-function user.main():void;	# 0  (main:void)
-# check propagation of type variables over bats 	# 1  (_1:str)
-# can be checked after bat module has been added 	# 2  (_2:str)
-    b := bat.new(:str,:int);	# 3 CMDBATnew (b:bat[:str,:int])<-(_4:str)(_5:int)
-    a := user.f(1,b,"hello");	# 4  unknown (a:any)<-(_7:int)(b:bat[:str,:int])(_8:str)
+function user.main():void;              #  0 main:void {G}
+# check propagation of type variables over bats 
+# can be checked after bat module has been added 
+    b := bat.new(:str,:int);            #  3 b:bat[:str,:int] := CMDBATnew(_4:str, _5:int) {G}
+    a := user.f(1,b,"hello");           #  4 a:any := user.f(_7:int, b:bat[:str,:int], _8:str) {U}
 end main;	# 5  
 
 # 07:58:56 >  

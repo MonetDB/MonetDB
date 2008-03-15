@@ -136,129 +136,129 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	pc_a := clients.quit();
 #
-function user.main():void;	# 0  (main:void)
-# Monet Mil to Mal compiler 	# 1  (_1:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
-#Predefined code segment 	# 3  (_3:str)
-#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
-#A few guidelines to maximize usefullness. 	# 6  (_6:str)
-#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
-#use the "mil_schema" for additional support routines 	# 9  (_9:str)
-#	io.print("setoid(oid(20000000));"); 	# 10  (_10:str)
-    aa_a := calc.oid(20000000);	# 11 CALCint2oid (aa_a:oid)<-(_12:int)
-    ba_a := calc.setoid(aa_a);	# 12 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-#	io.print("# test the new set operations\n"); 	# 13  (_14:str)
-#	io.print("var b := bat.new(int,int);"); 	# 14  (_15:str)
-    b := bat.new(nil:int,nil:int);	# 15 CMDBATnew (b:bat[:int,:int])<-(_17:int)(_17:int)
-#	io.print("var c := bat.new(int,int);"); 	# 16  (_18:str)
-    c := bat.new(nil:int,nil:int);	# 17 CMDBATnew (c:bat[:int,:int])<-(_17:int)(_17:int)
-#	io.print("b.insert(3,5);"); 	# 18  (_20:str)
-    ca_a := bat.insert(b,3,5);	# 19 BKCinsert_bun (ca_a:void)<-(b:bat[:int,:int])(_22:int)(_23:int)
-#	io.print("b.insert(3,6);"); 	# 20  (_24:str)
-    da_a := bat.insert(b,3,6);	# 21 BKCinsert_bun (da_a:void)<-(b:bat[:int,:int])(_22:int)(_26:int)
-#	io.print("b.insert(4,5);"); 	# 22  (_27:str)
-    ea_a := bat.insert(b,4,5);	# 23 BKCinsert_bun (ea_a:void)<-(b:bat[:int,:int])(_29:int)(_23:int)
-#	io.print("b.insert(4,6);"); 	# 24  (_30:str)
-    fa_a := bat.insert(b,4,6);	# 25 BKCinsert_bun (fa_a:void)<-(b:bat[:int,:int])(_29:int)(_26:int)
-#	io.print("b.insert(8,10);"); 	# 26  (_32:str)
-    ga_a := bat.insert(b,8,10);	# 27 BKCinsert_bun (ga_a:void)<-(b:bat[:int,:int])(_34:int)(_35:int)
-#	io.print("b.insert(8,11);"); 	# 28  (_36:str)
-    ha_a := bat.insert(b,8,11);	# 29 BKCinsert_bun (ha_a:void)<-(b:bat[:int,:int])(_34:int)(_38:int)
-#	io.print("b.insert(9,10);"); 	# 30  (_39:str)
-    ia_a := bat.insert(b,9,10);	# 31 BKCinsert_bun (ia_a:void)<-(b:bat[:int,:int])(_41:int)(_35:int)
-#	io.print("b.insert(9,11);"); 	# 32  (_42:str)
-    ja_a := bat.insert(b,9,11);	# 33 BKCinsert_bun (ja_a:void)<-(b:bat[:int,:int])(_41:int)(_38:int)
-#	io.print("b.insert(9,11);"); 	# 34  (_42:str)
-    ka_a := bat.insert(b,9,11);	# 35 BKCinsert_bun (ka_a:void)<-(b:bat[:int,:int])(_41:int)(_38:int)
-#	io.print("c.insert(3,10);"); 	# 36  (_45:str)
-    la_a := bat.insert(c,3,10);	# 37 BKCinsert_bun (la_a:void)<-(c:bat[:int,:int])(_22:int)(_35:int)
-#	io.print("c.insert(3,5);"); 	# 38  (_47:str)
-    ma_a := bat.insert(c,3,5);	# 39 BKCinsert_bun (ma_a:void)<-(c:bat[:int,:int])(_22:int)(_23:int)
-#	io.print("c.insert(8,10);"); 	# 40  (_49:str)
-    na_a := bat.insert(c,8,10);	# 41 BKCinsert_bun (na_a:void)<-(c:bat[:int,:int])(_34:int)(_35:int)
-#	io.print("c.insert(8,5);"); 	# 42  (_51:str)
-    oa_a := bat.insert(c,8,5);	# 43 BKCinsert_bun (oa_a:void)<-(c:bat[:int,:int])(_34:int)(_23:int)
-#	io.print("b.sunique().print();"); 	# 44  (_53:str)
-    pa_a := algebra.sunique(b);	# 45 ALGsunique (pa_a:bat[:int,:int])<-(b:bat[:int,:int])
-    qa_a := io.print(pa_a);	# 46 IOprint_val (qa_a:void)<-(pa_a:bat[:int,:int])
-#	io.print("b.kunique().print();"); 	# 47  (_56:str)
-    ra_a := algebra.kunique(b);	# 48 ALGkunique (ra_a:bat[:int,:int])<-(b:bat[:int,:int])
-    sa_a := io.print(ra_a);	# 49 IOprint_val (sa_a:void)<-(ra_a:bat[:int,:int])
-#	io.print("sintersect(c,b).print();"); 	# 50  (_59:str)
-    ta_a := algebra.sintersect(c,b);	# 51 ALGsintersect (ta_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
-    ua_a := io.print(ta_a);	# 52 IOprint_val (ua_a:void)<-(ta_a:bat[:int,:int])
-#	io.print("kintersect(c,b).print();"); 	# 53  (_62:str)
-    va_a := algebra.kintersect(c,b);	# 54 ALGsemijoin (va_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
-    wa_a := io.print(va_a);	# 55 IOprint_val (wa_a:void)<-(va_a:bat[:int,:int])
-#	io.print("kintersect(b,c).print();"); 	# 56  (_65:str)
-    xa_a := algebra.kintersect(b,c);	# 57 ALGsemijoin (xa_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
-    ya_a := io.print(xa_a);	# 58 IOprint_val (ya_a:void)<-(xa_a:bat[:int,:int])
-#	io.print("sdifference(c,b).print();"); 	# 59  (_68:str)
-    ab_a := algebra.sdifference(c,b);	# 60 ALGsdiff (ab_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
-    bb_a := io.print(ab_a);	# 61 IOprint_val (bb_a:void)<-(ab_a:bat[:int,:int])
-#	io.print("kdifference(b,c).print();"); 	# 62  (_71:str)
-    cb_a := algebra.kdifference(b,c);	# 63 ALGkdiff (cb_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
-    db_a := io.print(cb_a);	# 64 IOprint_val (db_a:void)<-(cb_a:bat[:int,:int])
-#	io.print("sdifference(b,c).print();"); 	# 65  (_74:str)
-    eb_a := algebra.sdifference(b,c);	# 66 ALGsdiff (eb_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
-    fb_a := io.print(eb_a);	# 67 IOprint_val (fb_a:void)<-(eb_a:bat[:int,:int])
-#	io.print("kdifference(b,c).print();"); 	# 68  (_71:str)
-    gb_a := algebra.kdifference(b,c);	# 69 ALGkdiff (gb_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
-    hb_a := io.print(gb_a);	# 70 IOprint_val (hb_a:void)<-(gb_a:bat[:int,:int])
-#	io.print("sunion(c,b).print();"); 	# 71  (_79:str)
-    ib_a := algebra.sunion(c,b);	# 72 ALGsunion (ib_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
-    jb_a := io.print(ib_a);	# 73 IOprint_val (jb_a:void)<-(ib_a:bat[:int,:int])
-#	io.print("kunion(c,b).print();"); 	# 74  (_82:str)
-    kb_a := algebra.kunion(c,b);	# 75 ALGkunion (kb_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
-    lb_a := io.print(kb_a);	# 76 IOprint_val (lb_a:void)<-(kb_a:bat[:int,:int])
-#	io.print("kunion(b,c).print();"); 	# 77  (_85:str)
-    mb_a := algebra.kunion(b,c);	# 78 ALGkunion (mb_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
-    nb_a := io.print(mb_a);	# 79 IOprint_val (nb_a:void)<-(mb_a:bat[:int,:int])
-#	io.print("b.insert(0,0);"); 	# 80  (_90:str)
-    ob_a := bat.insert(b,0,0);	# 81 BKCinsert_bun (ob_a:void)<-(b:bat[:int,:int])(_92:int)(_92:int)
-#	io.print("c.insert(0,0);"); 	# 82  (_93:str)
-    pb_a := bat.insert(c,0,0);	# 83 BKCinsert_bun (pb_a:void)<-(c:bat[:int,:int])(_92:int)(_92:int)
-#	io.print("b.sunique().print();"); 	# 84  (_95:str)
-    qb_a := algebra.sunique(b);	# 85 ALGsunique (qb_a:bat[:int,:int])<-(b:bat[:int,:int])
-    rb_a := io.print(qb_a);	# 86 IOprint_val (rb_a:void)<-(qb_a:bat[:int,:int])
-#	io.print("b.kunique().print();"); 	# 87  (_96:str)
-    sb_a := algebra.kunique(b);	# 88 ALGkunique (sb_a:bat[:int,:int])<-(b:bat[:int,:int])
-    tb_a := io.print(sb_a);	# 89 IOprint_val (tb_a:void)<-(sb_a:bat[:int,:int])
-#	io.print("sintersect(c,b).print();"); 	# 90  (_99:str)
-    ub_a := algebra.sintersect(c,b);	# 91 ALGsintersect (ub_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
-    vb_a := io.print(ub_a);	# 92 IOprint_val (vb_a:void)<-(ub_a:bat[:int,:int])
-#	io.print("kintersect(c,b).print();"); 	# 93  (_102:str)
-    wb_a := algebra.kintersect(c,b);	# 94 ALGsemijoin (wb_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
-    xb_a := io.print(wb_a);	# 95 IOprint_val (xb_a:void)<-(wb_a:bat[:int,:int])
-#	io.print("kintersect(b,c).print();"); 	# 96  (_105:str)
-    yb_a := algebra.kintersect(b,c);	# 97 ALGsemijoin (yb_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
-    ac_a := io.print(yb_a);	# 98 IOprint_val (ac_a:void)<-(yb_a:bat[:int,:int])
-#	io.print("sdifference(c,b).print();"); 	# 99  (_108:str)
-    bc_a := algebra.sdifference(c,b);	# 100 ALGsdiff (bc_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
-    cc_a := io.print(bc_a);	# 101 IOprint_val (cc_a:void)<-(bc_a:bat[:int,:int])
-#	io.print("kdifference(b,c).print();"); 	# 102  (_111:str)
-    dc_a := algebra.kdifference(b,c);	# 103 ALGkdiff (dc_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
-    ec_a := io.print(dc_a);	# 104 IOprint_val (ec_a:void)<-(dc_a:bat[:int,:int])
-#	io.print("sdifference(b,c).print();"); 	# 105  (_114:str)
-    fc_a := algebra.sdifference(b,c);	# 106 ALGsdiff (fc_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
-    gc_a := io.print(fc_a);	# 107 IOprint_val (gc_a:void)<-(fc_a:bat[:int,:int])
-#	io.print("kdifference(b,c).print();"); 	# 108  (_111:str)
-    hc_a := algebra.kdifference(b,c);	# 109 ALGkdiff (hc_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
-    ic_a := io.print(hc_a);	# 110 IOprint_val (ic_a:void)<-(hc_a:bat[:int,:int])
-#	io.print("sunion(c,b).print();"); 	# 111  (_119:str)
-    jc_a := algebra.sunion(c,b);	# 112 ALGsunion (jc_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
-    kc_a := io.print(jc_a);	# 113 IOprint_val (kc_a:void)<-(jc_a:bat[:int,:int])
-#	io.print("kunion(c,b).print();"); 	# 114  (_122:str)
-    lc_a := algebra.kunion(c,b);	# 115 ALGkunion (lc_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
-    mc_a := io.print(lc_a);	# 116 IOprint_val (mc_a:void)<-(lc_a:bat[:int,:int])
-#	io.print("kunion(b,c).print();"); 	# 117  (_125:str)
-    nc_a := algebra.kunion(b,c);	# 118 ALGkunion (nc_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
-    oc_a := io.print(nc_a);	# 119 IOprint_val (oc_a:void)<-(nc_a:bat[:int,:int])
-#	io.print("quit();"); 	# 120  (_128:str)
-    pc_a := clients.quit();	# 121 CLTquit (pc_a:void)
-end main;	# 122  
+function user.main():void;              #  0 main:void {G}
+# Monet Mil to Mal compiler 
+# Copyright (c) 2001-2004, CWI. All rights reserved. 
+#Predefined code segment 
+#The compiler can not guarantee an accurate compilation, 
+#because MIL unlike MAL is a dynamically typed language. 
+#A few guidelines to maximize usefullness. 
+#- make the type of variables explicit, in particular 'nil' 
+#- upon advice of M2m to remap identifiers, change it in your program directly 
+#use the "mil_schema" for additional support routines 
+#	io.print("setoid(oid(20000000));"); 
+    aa_a := calc.oid(20000000);         # 11 aa_a:oid := CALCint2oid(_12:int) 
+    ba_a := calc.setoid(aa_a);          # 12 ba_a:oid := CALCsetoidInc(aa_a:oid) 
+#	io.print("# test the new set operations\n"); 
+#	io.print("var b := bat.new(int,int);"); 
+    b := bat.new(nil:int,nil:int);      # 15 b:bat[:int,:int] := CMDBATnew(_17:int, _17:int) {G}
+#	io.print("var c := bat.new(int,int);"); 
+    c := bat.new(nil:int,nil:int);      # 17 c:bat[:int,:int] := CMDBATnew(_17:int, _17:int) {G}
+#	io.print("b.insert(3,5);"); 
+    ca_a := bat.insert(b,3,5);          # 19 ca_a:void := BKCinsert_bun(b:bat[:int,:int], _22:int, _23:int) 
+#	io.print("b.insert(3,6);"); 
+    da_a := bat.insert(b,3,6);          # 21 da_a:void := BKCinsert_bun(b:bat[:int,:int], _22:int, _26:int) 
+#	io.print("b.insert(4,5);"); 
+    ea_a := bat.insert(b,4,5);          # 23 ea_a:void := BKCinsert_bun(b:bat[:int,:int], _29:int, _23:int) 
+#	io.print("b.insert(4,6);"); 
+    fa_a := bat.insert(b,4,6);          # 25 fa_a:void := BKCinsert_bun(b:bat[:int,:int], _29:int, _26:int) 
+#	io.print("b.insert(8,10);"); 
+    ga_a := bat.insert(b,8,10);         # 27 ga_a:void := BKCinsert_bun(b:bat[:int,:int], _34:int, _35:int) 
+#	io.print("b.insert(8,11);"); 
+    ha_a := bat.insert(b,8,11);         # 29 ha_a:void := BKCinsert_bun(b:bat[:int,:int], _34:int, _38:int) 
+#	io.print("b.insert(9,10);"); 
+    ia_a := bat.insert(b,9,10);         # 31 ia_a:void := BKCinsert_bun(b:bat[:int,:int], _41:int, _35:int) 
+#	io.print("b.insert(9,11);"); 
+    ja_a := bat.insert(b,9,11);         # 33 ja_a:void := BKCinsert_bun(b:bat[:int,:int], _41:int, _38:int) 
+#	io.print("b.insert(9,11);"); 
+    ka_a := bat.insert(b,9,11);         # 35 ka_a:void := BKCinsert_bun(b:bat[:int,:int], _41:int, _38:int) 
+#	io.print("c.insert(3,10);"); 
+    la_a := bat.insert(c,3,10);         # 37 la_a:void := BKCinsert_bun(c:bat[:int,:int], _22:int, _35:int) 
+#	io.print("c.insert(3,5);"); 
+    ma_a := bat.insert(c,3,5);          # 39 ma_a:void := BKCinsert_bun(c:bat[:int,:int], _22:int, _23:int) 
+#	io.print("c.insert(8,10);"); 
+    na_a := bat.insert(c,8,10);         # 41 na_a:void := BKCinsert_bun(c:bat[:int,:int], _34:int, _35:int) 
+#	io.print("c.insert(8,5);"); 
+    oa_a := bat.insert(c,8,5);          # 43 oa_a:void := BKCinsert_bun(c:bat[:int,:int], _34:int, _23:int) 
+#	io.print("b.sunique().print();"); 
+    pa_a := algebra.sunique(b);         # 45 pa_a:bat[:int,:int] := ALGsunique(b:bat[:int,:int]) {G}
+    qa_a := io.print(pa_a);             # 46 qa_a:void := IOprint_val(pa_a:bat[:int,:int]) 
+#	io.print("b.kunique().print();"); 
+    ra_a := algebra.kunique(b);         # 48 ra_a:bat[:int,:int] := ALGkunique(b:bat[:int,:int]) {G}
+    sa_a := io.print(ra_a);             # 49 sa_a:void := IOprint_val(ra_a:bat[:int,:int]) 
+#	io.print("sintersect(c,b).print();"); 
+    ta_a := algebra.sintersect(c,b);    # 51 ta_a:bat[:int,:int] := ALGsintersect(c:bat[:int,:int], b:bat[:int,:int]) {G}
+    ua_a := io.print(ta_a);             # 52 ua_a:void := IOprint_val(ta_a:bat[:int,:int]) 
+#	io.print("kintersect(c,b).print();"); 
+    va_a := algebra.kintersect(c,b);    # 54 va_a:bat[:int,:int] := ALGsemijoin(c:bat[:int,:int], b:bat[:int,:int]) {G}
+    wa_a := io.print(va_a);             # 55 wa_a:void := IOprint_val(va_a:bat[:int,:int]) 
+#	io.print("kintersect(b,c).print();"); 
+    xa_a := algebra.kintersect(b,c);    # 57 xa_a:bat[:int,:int] := ALGsemijoin(b:bat[:int,:int], c:bat[:int,:int]) {G}
+    ya_a := io.print(xa_a);             # 58 ya_a:void := IOprint_val(xa_a:bat[:int,:int]) 
+#	io.print("sdifference(c,b).print();"); 
+    ab_a := algebra.sdifference(c,b);   # 60 ab_a:bat[:int,:int] := ALGsdiff(c:bat[:int,:int], b:bat[:int,:int]) {G}
+    bb_a := io.print(ab_a);             # 61 bb_a:void := IOprint_val(ab_a:bat[:int,:int]) 
+#	io.print("kdifference(b,c).print();"); 
+    cb_a := algebra.kdifference(b,c);   # 63 cb_a:bat[:int,:int] := ALGkdiff(b:bat[:int,:int], c:bat[:int,:int]) {G}
+    db_a := io.print(cb_a);             # 64 db_a:void := IOprint_val(cb_a:bat[:int,:int]) 
+#	io.print("sdifference(b,c).print();"); 
+    eb_a := algebra.sdifference(b,c);   # 66 eb_a:bat[:int,:int] := ALGsdiff(b:bat[:int,:int], c:bat[:int,:int]) {G}
+    fb_a := io.print(eb_a);             # 67 fb_a:void := IOprint_val(eb_a:bat[:int,:int]) 
+#	io.print("kdifference(b,c).print();"); 
+    gb_a := algebra.kdifference(b,c);   # 69 gb_a:bat[:int,:int] := ALGkdiff(b:bat[:int,:int], c:bat[:int,:int]) {G}
+    hb_a := io.print(gb_a);             # 70 hb_a:void := IOprint_val(gb_a:bat[:int,:int]) 
+#	io.print("sunion(c,b).print();"); 
+    ib_a := algebra.sunion(c,b);        # 72 ib_a:bat[:int,:int] := ALGsunion(c:bat[:int,:int], b:bat[:int,:int]) {G}
+    jb_a := io.print(ib_a);             # 73 jb_a:void := IOprint_val(ib_a:bat[:int,:int]) 
+#	io.print("kunion(c,b).print();"); 
+    kb_a := algebra.kunion(c,b);        # 75 kb_a:bat[:int,:int] := ALGkunion(c:bat[:int,:int], b:bat[:int,:int]) {G}
+    lb_a := io.print(kb_a);             # 76 lb_a:void := IOprint_val(kb_a:bat[:int,:int]) 
+#	io.print("kunion(b,c).print();"); 
+    mb_a := algebra.kunion(b,c);        # 78 mb_a:bat[:int,:int] := ALGkunion(b:bat[:int,:int], c:bat[:int,:int]) {G}
+    nb_a := io.print(mb_a);             # 79 nb_a:void := IOprint_val(mb_a:bat[:int,:int]) 
+#	io.print("b.insert(0,0);"); 
+    ob_a := bat.insert(b,0,0);          # 81 ob_a:void := BKCinsert_bun(b:bat[:int,:int], _92:int, _92:int) 
+#	io.print("c.insert(0,0);"); 
+    pb_a := bat.insert(c,0,0);          # 83 pb_a:void := BKCinsert_bun(c:bat[:int,:int], _92:int, _92:int) 
+#	io.print("b.sunique().print();"); 
+    qb_a := algebra.sunique(b);         # 85 qb_a:bat[:int,:int] := ALGsunique(b:bat[:int,:int]) {G}
+    rb_a := io.print(qb_a);             # 86 rb_a:void := IOprint_val(qb_a:bat[:int,:int]) 
+#	io.print("b.kunique().print();"); 
+    sb_a := algebra.kunique(b);         # 88 sb_a:bat[:int,:int] := ALGkunique(b:bat[:int,:int]) {G}
+    tb_a := io.print(sb_a);             # 89 tb_a:void := IOprint_val(sb_a:bat[:int,:int]) 
+#	io.print("sintersect(c,b).print();"); 
+    ub_a := algebra.sintersect(c,b);    # 91 ub_a:bat[:int,:int] := ALGsintersect(c:bat[:int,:int], b:bat[:int,:int]) {G}
+    vb_a := io.print(ub_a);             # 92 vb_a:void := IOprint_val(ub_a:bat[:int,:int]) 
+#	io.print("kintersect(c,b).print();"); 
+    wb_a := algebra.kintersect(c,b);    # 94 wb_a:bat[:int,:int] := ALGsemijoin(c:bat[:int,:int], b:bat[:int,:int]) {G}
+    xb_a := io.print(wb_a);             # 95 xb_a:void := IOprint_val(wb_a:bat[:int,:int]) 
+#	io.print("kintersect(b,c).print();"); 
+    yb_a := algebra.kintersect(b,c);    # 97 yb_a:bat[:int,:int] := ALGsemijoin(b:bat[:int,:int], c:bat[:int,:int]) {G}
+    ac_a := io.print(yb_a);             # 98 ac_a:void := IOprint_val(yb_a:bat[:int,:int]) 
+#	io.print("sdifference(c,b).print();"); 
+    bc_a := algebra.sdifference(c,b);   #100 bc_a:bat[:int,:int] := ALGsdiff(c:bat[:int,:int], b:bat[:int,:int]) {G}
+    cc_a := io.print(bc_a);             #101 cc_a:void := IOprint_val(bc_a:bat[:int,:int]) 
+#	io.print("kdifference(b,c).print();"); 
+    dc_a := algebra.kdifference(b,c);   #103 dc_a:bat[:int,:int] := ALGkdiff(b:bat[:int,:int], c:bat[:int,:int]) {G}
+    ec_a := io.print(dc_a);             #104 ec_a:void := IOprint_val(dc_a:bat[:int,:int]) 
+#	io.print("sdifference(b,c).print();"); 
+    fc_a := algebra.sdifference(b,c);   #106 fc_a:bat[:int,:int] := ALGsdiff(b:bat[:int,:int], c:bat[:int,:int]) {G}
+    gc_a := io.print(fc_a);             #107 gc_a:void := IOprint_val(fc_a:bat[:int,:int]) 
+#	io.print("kdifference(b,c).print();"); 
+    hc_a := algebra.kdifference(b,c);   #109 hc_a:bat[:int,:int] := ALGkdiff(b:bat[:int,:int], c:bat[:int,:int]) {G}
+    ic_a := io.print(hc_a);             #110 ic_a:void := IOprint_val(hc_a:bat[:int,:int]) 
+#	io.print("sunion(c,b).print();"); 
+    jc_a := algebra.sunion(c,b);        #112 jc_a:bat[:int,:int] := ALGsunion(c:bat[:int,:int], b:bat[:int,:int]) {G}
+    kc_a := io.print(jc_a);             #113 kc_a:void := IOprint_val(jc_a:bat[:int,:int]) 
+#	io.print("kunion(c,b).print();"); 
+    lc_a := algebra.kunion(c,b);        #115 lc_a:bat[:int,:int] := ALGkunion(c:bat[:int,:int], b:bat[:int,:int]) {G}
+    mc_a := io.print(lc_a);             #116 mc_a:void := IOprint_val(lc_a:bat[:int,:int]) 
+#	io.print("kunion(b,c).print();"); 
+    nc_a := algebra.kunion(b,c);        #118 nc_a:bat[:int,:int] := ALGkunion(b:bat[:int,:int], c:bat[:int,:int]) {G}
+    oc_a := io.print(nc_a);             #119 oc_a:void := IOprint_val(nc_a:bat[:int,:int]) 
+#	io.print("quit();"); 
+    pc_a := clients.quit();             #121 pc_a:void 
+end main;                               #122  
 #-----------------#
 # h	t	  # name
 # int	int	  # type

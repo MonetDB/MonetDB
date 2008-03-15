@@ -60,48 +60,48 @@ stdout of test 'batcalc-convert_on_void_view.SF-1573060` in directory 'tests/Bug
 #is:= algebra.sortTail(i);
 #io.print(is);
 #
-function user.main():void;	# 0  (main:void)
-# head: oid 	# 1  (_1:str)
-# a:=microbenchmark.uniform(0:oid,9,9); platform dependent 	# 2  (_2:str)
-    a := bat.new(:oid,:int);	# 3 CMDBATnew (a:bat[:oid,:int])<-(_4:oid)(_5:int)
-    bat.insert(a,3@0,0);	# 4 BKCinsert_bun (_6:void)<-(a:bat[:oid,:int])(_7:oid)(_8:int)
-    bat.insert(a,0@0,1);	# 5 BKCinsert_bun (_9:void)<-(a:bat[:oid,:int])(_10:oid)(_11:int)
-    bat.insert(a,2@0,2);	# 6 BKCinsert_bun (_12:void)<-(a:bat[:oid,:int])(_13:oid)(_14:int)
-    bat.insert(a,5@0,3);	# 7 BKCinsert_bun (_15:void)<-(a:bat[:oid,:int])(_16:oid)(_17:int)
-    bat.insert(a,7@0,4);	# 8 BKCinsert_bun (_18:void)<-(a:bat[:oid,:int])(_19:oid)(_20:int)
-    bat.insert(a,8@0,5);	# 9 BKCinsert_bun (_21:void)<-(a:bat[:oid,:int])(_22:oid)(_23:int)
-    bat.insert(a,1@0,6);	# 10 BKCinsert_bun (_24:void)<-(a:bat[:oid,:int])(_25:oid)(_26:int)
-    bat.insert(a,6@0,7);	# 11 BKCinsert_bun (_27:void)<-(a:bat[:oid,:int])(_28:oid)(_29:int)
-    bat.insert(a,4@0,8);	# 12 BKCinsert_bun (_30:void)<-(a:bat[:oid,:int])(_31:oid)(_32:int)
-    as := algebra.sortTail(a);	# 13 ALGtsort (as:bat[:oid,:int])<-(a:bat[:oid,:int])
-    io.print(as);	# 14 IOprint_val (_34:void)<-(as:bat[:oid,:int])
-    b := batcalc.sht(a);	# 15 CMDconvert_int_sht (b:bat[:oid,:sht])<-(a:bat[:oid,:int])
-    bs := algebra.sortTail(b);	# 16 ALGtsort (bs:bat[:oid,:sht])<-(b:bat[:oid,:sht])
-    io.print(bs);	# 17 IOprint_val (_37:void)<-(bs:bat[:oid,:sht])
-    c := batcalc.lng(a);	# 18 CMDconvert_int_lng (c:bat[:oid,:lng])<-(a:bat[:oid,:int])
-    cs := algebra.sortTail(c);	# 19 ALGtsort (cs:bat[:oid,:lng])<-(c:bat[:oid,:lng])
-    io.print(cs);	# 20 IOprint_val (_40:void)<-(cs:bat[:oid,:lng])
-# head: void view on oid 	# 21  (_41:str)
-    d := algebra.markH(a,10@0:oid);	# 22 ALGmarkHead (d:bat[:oid,:int])<-(a:bat[:oid,:int])(_43:oid)
-    ds := algebra.sortTail(d);	# 23 ALGtsort (ds:bat[:oid,:int])<-(d:bat[:oid,:int])
-    io.print(ds);	# 24 IOprint_val (_45:void)<-(ds:bat[:oid,:int])
-    e := batcalc.sht(d);	# 25 CMDconvert_int_sht (e:bat[:oid,:sht])<-(d:bat[:oid,:int])
-    es := algebra.sortTail(e);	# 26 ALGtsort (es:bat[:oid,:sht])<-(e:bat[:oid,:sht])
-    io.print(es);	# 27 IOprint_val (_48:void)<-(es:bat[:oid,:sht])
-    f := batcalc.lng(d);	# 28 CMDconvert_int_lng (f:bat[:oid,:lng])<-(d:bat[:oid,:int])
-    fs := algebra.sortTail(f);	# 29 ALGtsort (fs:bat[:oid,:lng])<-(f:bat[:oid,:lng])
-    io.print(fs);	# 30 IOprint_val (_51:void)<-(fs:bat[:oid,:lng])
-# head: physically void 	# 31  (_52:str)
-    g := algebra.markH(a,20@0:oid);	# 32 ALGmarkHead (g:bat[:oid,:int])<-(a:bat[:oid,:int])(_54:oid)
-    g := algebra.copy(g);	# 33 ALGcopy (g:bat[:oid,:int])<-(g:bat[:oid,:int])
-    gs := algebra.sortTail(g);	# 34 ALGtsort (gs:bat[:oid,:int])<-(g:bat[:oid,:int])
-    io.print(gs);	# 35 IOprint_val (_56:void)<-(gs:bat[:oid,:int])
-    h := batcalc.sht(g);	# 36 CMDconvert_int_sht (h:bat[:oid,:sht])<-(g:bat[:oid,:int])
-    hs := algebra.sortTail(h);	# 37 ALGtsort (hs:bat[:oid,:sht])<-(h:bat[:oid,:sht])
-    io.print(hs);	# 38 IOprint_val (_59:void)<-(hs:bat[:oid,:sht])
-    i := batcalc.lng(g);	# 39 CMDconvert_int_lng (i:bat[:oid,:lng])<-(g:bat[:oid,:int])
-    is := algebra.sortTail(i);	# 40 ALGtsort (is:bat[:oid,:lng])<-(i:bat[:oid,:lng])
-    io.print(is);	# 41 IOprint_val (_62:void)<-(is:bat[:oid,:lng])
+function user.main():void;              #  0 main:void {G}
+# head: oid 
+# a:=microbenchmark.uniform(0:oid,9,9); platform dependent 
+    a := bat.new(:oid,:int);            #  3 a:bat[:oid,:int] := CMDBATnew(_4:oid, _5:int) {G}
+    bat.insert(a,3@0,0);                #  4 _6:void := BKCinsert_bun(a:bat[:oid,:int], _7:oid, _8:int) 
+    bat.insert(a,0@0,1);                #  5 _9:void := BKCinsert_bun(a:bat[:oid,:int], _10:oid, _11:int) 
+    bat.insert(a,2@0,2);                #  6 _12:void := BKCinsert_bun(a:bat[:oid,:int], _13:oid, _14:int) 
+    bat.insert(a,5@0,3);                #  7 _15:void := BKCinsert_bun(a:bat[:oid,:int], _16:oid, _17:int) 
+    bat.insert(a,7@0,4);                #  8 _18:void := BKCinsert_bun(a:bat[:oid,:int], _19:oid, _20:int) 
+    bat.insert(a,8@0,5);                #  9 _21:void := BKCinsert_bun(a:bat[:oid,:int], _22:oid, _23:int) 
+    bat.insert(a,1@0,6);                # 10 _24:void := BKCinsert_bun(a:bat[:oid,:int], _25:oid, _26:int) 
+    bat.insert(a,6@0,7);                # 11 _27:void := BKCinsert_bun(a:bat[:oid,:int], _28:oid, _29:int) 
+    bat.insert(a,4@0,8);                # 12 _30:void := BKCinsert_bun(a:bat[:oid,:int], _31:oid, _32:int) 
+    as := algebra.sortTail(a);          # 13 as:bat[:oid,:int] := ALGtsort(a:bat[:oid,:int]) {G}
+    io.print(as);                       # 14 _34:void := IOprint_val(as:bat[:oid,:int]) 
+    b := batcalc.sht(a);                # 15 b:bat[:oid,:sht] := CMDconvert_int_sht(a:bat[:oid,:int]) {G}
+    bs := algebra.sortTail(b);          # 16 bs:bat[:oid,:sht] := ALGtsort(b:bat[:oid,:sht]) {G}
+    io.print(bs);                       # 17 _37:void := IOprint_val(bs:bat[:oid,:sht]) 
+    c := batcalc.lng(a);                # 18 c:bat[:oid,:lng] := CMDconvert_int_lng(a:bat[:oid,:int]) {G}
+    cs := algebra.sortTail(c);          # 19 cs:bat[:oid,:lng] := ALGtsort(c:bat[:oid,:lng]) {G}
+    io.print(cs);                       # 20 _40:void := IOprint_val(cs:bat[:oid,:lng]) 
+# head: void view on oid 
+    d := algebra.markH(a,10@0:oid);     # 22 d:bat[:oid,:int] := ALGmarkHead(a:bat[:oid,:int], _43:oid) {G}
+    ds := algebra.sortTail(d);          # 23 ds:bat[:oid,:int] := ALGtsort(d:bat[:oid,:int]) {G}
+    io.print(ds);                       # 24 _45:void := IOprint_val(ds:bat[:oid,:int]) 
+    e := batcalc.sht(d);                # 25 e:bat[:oid,:sht] := CMDconvert_int_sht(d:bat[:oid,:int]) {G}
+    es := algebra.sortTail(e);          # 26 es:bat[:oid,:sht] := ALGtsort(e:bat[:oid,:sht]) {G}
+    io.print(es);                       # 27 _48:void := IOprint_val(es:bat[:oid,:sht]) 
+    f := batcalc.lng(d);                # 28 f:bat[:oid,:lng] := CMDconvert_int_lng(d:bat[:oid,:int]) {G}
+    fs := algebra.sortTail(f);          # 29 fs:bat[:oid,:lng] := ALGtsort(f:bat[:oid,:lng]) {G}
+    io.print(fs);                       # 30 _51:void := IOprint_val(fs:bat[:oid,:lng]) 
+# head: physically void 
+    g := algebra.markH(a,20@0:oid);     # 32 g:bat[:oid,:int] := ALGmarkHead(a:bat[:oid,:int], _54:oid) {G}
+    g := algebra.copy(g);               # 33 g:bat[:oid,:int] := ALGcopy(g:bat[:oid,:int]) {G}
+    gs := algebra.sortTail(g);          # 34 gs:bat[:oid,:int] := ALGtsort(g:bat[:oid,:int]) {G}
+    io.print(gs);                       # 35 _56:void := IOprint_val(gs:bat[:oid,:int]) 
+    h := batcalc.sht(g);                # 36 h:bat[:oid,:sht] := CMDconvert_int_sht(g:bat[:oid,:int]) {G}
+    hs := algebra.sortTail(h);          # 37 hs:bat[:oid,:sht] := ALGtsort(h:bat[:oid,:sht]) {G}
+    io.print(hs);                       # 38 _59:void := IOprint_val(hs:bat[:oid,:sht]) 
+    i := batcalc.lng(g);                # 39 i:bat[:oid,:lng] := CMDconvert_int_lng(g:bat[:oid,:int]) {G}
+    is := algebra.sortTail(i);          # 40 is:bat[:oid,:lng] := ALGtsort(i:bat[:oid,:lng]) {G}
+    io.print(is);                       # 41 _62:void := IOprint_val(is:bat[:oid,:lng]) 
 end main;	# 42  
 #-----------------#
 # t	h	  # name

@@ -24,24 +24,24 @@ stdout of test 'tst044` in directory 'src/mal` itself:
 #b:= 0.345e1:dbl; io.print(b);
 #b:= 3.415e-1:dbl; io.print(b);
 #
-function user.main():void;	# 0  (main:void)
-#testing floating point numbers; 	# 1  (_1:str)
-    a := 3.14499998:flt;	# 2  (a:flt)<-(_3:flt)
-    io.print(a);	# 3 IOprint_val (_4:void)<-(a:flt)
-    a := -3.14499998:flt;	# 4  (a:flt)<-(_5:flt)
-    io.print(a);	# 5 IOprint_val (_6:void)<-(a:flt)
-    a := 3.45000005:flt;	# 6  (a:flt)<-(_7:flt)
-    io.print(a);	# 7 IOprint_val (_8:void)<-(a:flt)
-    a := 0.341500014:flt;	# 8  (a:flt)<-(_9:flt)
-    io.print(a);	# 9 IOprint_val (_10:void)<-(a:flt)
-    b := 3.1449999809265137:dbl;	# 10  (b:dbl)<-(_12:dbl)
-    io.print(b);	# 11 IOprint_val (_13:void)<-(b:dbl)
-    b := -3.1449999809265137:dbl;	# 12  (b:dbl)<-(_14:dbl)
-    io.print(b);	# 13 IOprint_val (_15:void)<-(b:dbl)
-    b := 3.4500000476837158:dbl;	# 14  (b:dbl)<-(_16:dbl)
-    io.print(b);	# 15 IOprint_val (_17:void)<-(b:dbl)
-    b := 0.34150001406669617:dbl;	# 16  (b:dbl)<-(_18:dbl)
-    io.print(b);	# 17 IOprint_val (_19:void)<-(b:dbl)
+function user.main():void;              #  0 main:void 
+#testing floating point numbers; 
+    a := 3.14499998:flt;                #  2 a:flt := _3:flt 
+    io.print(a);                        #  3 _4:void := IOprint_val(a:flt) 
+    a := -3.14499998:flt;               #  4 a:flt := _5:flt 
+    io.print(a);                        #  5 _6:void := IOprint_val(a:flt) 
+    a := 3.45000005:flt;                #  6 a:flt := _7:flt 
+    io.print(a);                        #  7 _8:void := IOprint_val(a:flt) 
+    a := 0.341500014:flt;               #  8 a:flt := _9:flt 
+    io.print(a);                        #  9 _10:void := IOprint_val(a:flt) 
+    b := 3.1449999809265137:dbl;        # 10 b:dbl := _12:dbl 
+    io.print(b);                        # 11 _13:void := IOprint_val(b:dbl) 
+    b := -3.1449999809265137:dbl;       # 12 b:dbl := _14:dbl 
+    io.print(b);                        # 13 _15:void := IOprint_val(b:dbl) 
+    b := 3.4500000476837158:dbl;        # 14 b:dbl := _16:dbl 
+    io.print(b);                        # 15 _17:void := IOprint_val(b:dbl) 
+    b := 0.34150001406669617:dbl;       # 16 b:dbl := _18:dbl 
+    io.print(b);                        # 17 _19:void := IOprint_val(b:dbl) 
 end main;	# 18  
 [ 3.14499998 ]
 [ -3.14499998 ]

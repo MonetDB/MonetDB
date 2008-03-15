@@ -31,24 +31,24 @@ stdout of test 'tst605` in directory 'src/mal` itself:
 #	redo (b,nme):= const.hasMoreElements();
 #exit b;
 #
-function user.main():void;	# 0  (main:void)
-# Testing global consts defined for all users 	# 1  (_1:str)
-# It should travers the nested spaces looking for the correct variable 	# 2  (_2:str)
-# take a local copy 	# 3  (_3:str)
-    version:str  := const.take("version");	# 4 CSTtake (version:str)<-(_5:str)
-    user:str  := const.take("user");	# 5 CSTtake (user:str)<-(_7:str)
-    dbname:str  := const.take("dbname");	# 6 CSTtake (dbname:str)<-(_9:str)
-    dbfarm:str  := const.take("dbfarm");	# 7 CSTtake (dbfarm:str)<-(_11:str)
-#	dd:str:= const.take(distribution); 	# 8  (_12:str)
-#	bb:bat[void,str] := const.take(environment); 	# 9  (_13:str)
-# how to obtain a copy of all objects in a space? 	# 10  (_14:str)
-    io.print("Contents of the 'const' box");	# 11 IOprint_val (_15:void)<-(_16:str)
-barrier (b,nme):= const.newIterator();	# 12 CSTnewIterator (b:lng)(nme:str) jump 17
-    io.printf("# %s=",nme);	# 13 IOprint_formatted_str (_19:void)<-(_20:str)(nme:str)
-    val:str  := const.toString(nme);	# 14 CSTtoString (val:str)<-(nme:str)
-    io.printf("%s\n",val);	# 15 IOprint_formatted_str (_22:void)<-(_23:str)(val:str)
-    redo (b,nme):= const.hasMoreElements();	# 16 CSThasMoreElements (b:lng)(nme:str) jump 13
-exit b;	# 17  (b:lng)
+function user.main():void;              #  0 main:void {G}
+# Testing global consts defined for all users 
+# It should traverse the nested spaces looking for the correct variable 
+# take a local copy 
+    version:str  := const.take("version");#  4 version:str := CSTtake(_5:str) {G}
+    user:str  := const.take("user");    #  5 user:str := CSTtake(_7:str) {G}
+    dbname:str  := const.take("dbname");#  6 dbname:str := CSTtake(_9:str) {G}
+    dbfarm:str  := const.take("dbfarm");#  7 dbfarm:str := CSTtake(_11:str) {G}
+#	dd:str:= const.take(distribution); 
+#	bb:bat[void,str] := const.take(environment); 
+# how to obtain a copy of all objects in a space? 
+    io.print("Contents of the 'const' box");# 11 _15:void := IOprint_val(_16:str) 
+barrier (b,nme):= const.newIterator();  # 12 (b:lng, nme:str {GJ17}
+    io.printf("# %s=",nme);             # 13 _19:void := IOprint_formatted_str(_20:str, nme:str) 
+    val:str  := const.toString(nme);    # 14 val:str := CSTtoString(nme:str) {G}
+    io.printf("%s\n",val);              # 15 _22:void := IOprint_formatted_str(_23:str, val:str) 
+    redo (b,nme):= const.hasMoreElements();# 16 (b:lng, nme:str {GJ13}
+exit b;                                 # 17 b:lng 
 end main;	# 18  
 [ "Contents of the 'const' box" ]
 # user=Admin

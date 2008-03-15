@@ -23,20 +23,20 @@ stdout of test 'tst450` in directory 'src/mal` itself:
 #n:= manual.help("algebra","insert"); io.print(n);
 #d:= inspect.getDefinition("inspect","dir"); io.print(d);
 #
-function user.main():void;	# 0  (main:void)
-#testing the inspect module for help information 	# 1  (_2:str)
-    a := inspect.getAtomNames();	# 2 INSPECTatom_names (a:bat[:int,:str])
-    io.print(a);	# 3 IOprint_val (_3:void)<-(a:bat[:int,:str])
-    m := inspect.getModule();	# 4 INSPECTgetAllModules (m:bat[:oid,:str])
-    mr := bat.reverse(m);	# 5 BKCreverse (mr:bat[:str,:oid])<-(m:bat[:oid,:str])
-    m1 := algebra.kunique(mr);	# 6 ALGkunique (m1:bat[:str,:oid])<-(mr:bat[:str,:oid])
-    z := algebra.project(m1);	# 7 ALGprojectNIL (z:bat[:str,:oid])<-(m1:bat[:str,:oid])
-    zs := algebra.sortHT(z);	# 8 ALGhtsort (zs:bat[:str,:oid])<-(z:bat[:str,:oid])
-    io.print(zs);	# 9 IOprint_val (_9:void)<-(zs:bat[:str,:oid])
-    stmt := inspect.getDefinition("algebra","select");	# 10 INSPECTgetDefinition (stmt:bat[:str,:str])<-(_11:str)(_12:str)
-    sig := inspect.getSignature("algebra","select");	# 11 INSPECTgetSignature (sig:bat[:str,:str])<-(_11:str)(_12:str)
-    n := manual.search("insert");	# 12 MANUALsearch (n:void)<-(_15:str)
-    io.print(n);	# 13 IOprint_val (_16:void)<-(n:void)
+function user.main():void;              #  0 main:void {G}
+#testing the inspect module for help information 
+    a := inspect.getAtomNames();        #  2 a:bat[:int,:str] {G}
+    io.print(a);                        #  3 _3:void := IOprint_val(a:bat[:int,:str]) 
+    m := inspect.getModule();           #  4 m:bat[:oid,:str] {G}
+    mr := bat.reverse(m);               #  5 mr:bat[:str,:oid] := BKCreverse(m:bat[:oid,:str]) {G}
+    m1 := algebra.kunique(mr);          #  6 m1:bat[:str,:oid] := ALGkunique(mr:bat[:str,:oid]) {G}
+    z := algebra.project(m1);           #  7 z:bat[:str,:oid] := ALGprojectNIL(m1:bat[:str,:oid]) {G}
+    zs := algebra.sortHT(z);            #  8 zs:bat[:str,:oid] := ALGhtsort(z:bat[:str,:oid]) {G}
+    io.print(zs);                       #  9 _9:void := IOprint_val(zs:bat[:str,:oid]) 
+    stmt := inspect.getDefinition("algebra","select");# 10 stmt:bat[:str,:str] := INSPECTgetDefinition(_11:str, _12:str) {G}
+    sig := inspect.getSignature("algebra","select");# 11 sig:bat[:str,:str] := INSPECTgetSignature(_11:str, _12:str) {G}
+    n := manual.search("insert");       # 12 n:void := MANUALsearch(_15:str) 
+    io.print(n);                        # 13 _16:void := IOprint_val(n:void) 
 end main;	# 14  
 #-------------------------#
 # view	atom		  # name

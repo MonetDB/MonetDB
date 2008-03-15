@@ -21,16 +21,16 @@ stdout of test 'STexample` in directory 'src/optimizer` itself:
 #optimizer.singleton();
 #mdb.list();
 #
-function user.main():void;	# 0  (main:void)
-    b := bat.new(:oid,:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
-    bat.insert(b,1@0,2);	# 2 BKCinsert_bun (_4:void)<-(b:bat[:oid,:int])(_5:oid)(_6:int)
-#many more inserts 	# 3  (_7:str)
-    c{singleton} := algebra.select(b,0,4);	# 4 ALGselect (c:bat[:oid,:int])<-(b:bat[:oid,:int])(_9:int)(_10:int)
-    (_15,_16):= bat.unpack(c);	# 5 CMDbatunpack (_15:oid)(_16:int)<-(c:bat[:oid,:int])
-    (_19,_20):= (0@0,_16);	# 6 ALGmarkHead_default (_19:oid)(_20:int)<-(_18:oid)(_16:int)
-    d := bat.pack(_19,_20);	# 7 CMDbatpack (d:bat[:oid,:int])<-(_19:oid)(_20:int)
-    io.print(d);	# 8 IOprint_val (_12:void)<-(d:bat[:oid,:int])
-    mdb.list();	# 9 MDBlist (_14:void)
+function user.main():void;              #  0 main:void {G}
+    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    bat.insert(b,1@0,2);                #  2 _4:void := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) 
+#many more inserts 
+    c{singleton} := algebra.select(b,0,4);#  4 c:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], _9:int, _10:int) {G}
+    (_15,_16):= bat.unpack(c);          #  5 (_15:oid, _16:int) := CMDbatunpack(c:bat[:oid,:int]) 
+    (_19,_20):= (0@0,_16);              #  6 (_19:oid, _20:int) := ALGmarkHead_default(_18:oid, _16:int) {G}
+    d := bat.pack(_19,_20);             #  7 d:bat[:oid,:int] := CMDbatpack(_19:oid, _20:int) {G}
+    io.print(d);                        #  8 _12:void := IOprint_val(d:bat[:oid,:int]) 
+    mdb.list();                         #  9 _14:void 
 end main;	# 10  
 #-----------------#
 # h	t	  # name

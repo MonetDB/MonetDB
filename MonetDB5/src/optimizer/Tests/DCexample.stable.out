@@ -24,9 +24,9 @@ stdout of test 'DCexample` in directory 'src/optimizer` itself:
 #optimizer.deadCodeRemoval();
 #mdb.list();
 #
-function user.main():void;	# 0  (main:void)
-    io.print("done");	# 1 IOprint_val (_10:void)<-(_11:str)
-    mdb.list();	# 2 MDBlist (_13:void)
+function user.main():void;              #  0 main:void {G}
+    io.print("done");                   #  1 _10:void := IOprint_val(_11:str) 
+    mdb.list();                         #  2 _13:void 
 end main;	# 3  
 [ "done" ]
 function user.main():void;

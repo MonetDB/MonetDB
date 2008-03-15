@@ -31,22 +31,22 @@ stdout of test 'xml100` in directory 'src/modules/atoms` itself:
 #xs:= xml.str(xx);
 #io.print(xs);
 #
-function user.main():void;	# 0  (main:void)
-    b := "Mary Ann Walker";	# 1  (b:str)<-(_2:str)
-    c := "brown";	# 2  (c:str)<-(_4:str)
-    n := nil:xml;	# 3  (n:xml)<-(_6:xml)
-    io.print(n);	# 4 IOprint_val (_7:void)<-(n:xml)
-    ns := xml.str(n);	# 5 XMLxml2str (ns:str)<-(n:xml)
-    io.print(ns);	# 6 IOprint_val (_9:void)<-(ns:str)
-    bx := xml.xml(b);	# 7 XMLstr2xml (bx:xml)<-(b:str)
-    cx := xml.xml(c);	# 8 XMLstr2xml (cx:xml)<-(c:str)
-    xp := xml.element("person",bx);	# 9 XMLelementSmall (xp:xml)<-(_13:str)(bx:xml)
-    io.print(xp);	# 10 IOprint_val (_14:void)<-(xp:xml)
-    xh := xml.element("hair",nil:str,nil:xml,cx);	# 11 XMLelement (xh:xml)<-(_16:str)(_17:str)(_6:xml)(cx:xml)
-    io.print(xh);	# 12 IOprint_val (_18:void)<-(xh:xml)
-    xx := xml.forest(xp,xh);	# 13 XMLforest (xx:xml)<-(xp:xml)(xh:xml)
-    xs := xml.str(xx);	# 14 XMLxml2str (xs:str)<-(xx:xml)
-    io.print(xs);	# 15 IOprint_val (_21:void)<-(xs:str)
+function user.main():void;              #  0 main:void {G}
+    b := "Mary Ann Walker";             #  1 b:str := _2:str {G}
+    c := "brown";                       #  2 c:str := _4:str {G}
+    n := nil:xml;                       #  3 n:xml := _6:xml {G}
+    io.print(n);                        #  4 _7:void := IOprint_val(n:xml) 
+    ns := xml.str(n);                   #  5 ns:str := XMLxml2str(n:xml) {G}
+    io.print(ns);                       #  6 _9:void := IOprint_val(ns:str) 
+    bx := xml.xml(b);                   #  7 bx:xml := XMLstr2xml(b:str) {G}
+    cx := xml.xml(c);                   #  8 cx:xml := XMLstr2xml(c:str) {G}
+    xp := xml.element("person",bx);     #  9 xp:xml := XMLelementSmall(_13:str, bx:xml) {G}
+    io.print(xp);                       # 10 _14:void := IOprint_val(xp:xml) 
+    xh := xml.element("hair",nil:str,nil:xml,cx);# 11 xh:xml := XMLelement(_16:str, _17:str, _6:xml, cx:xml) {G}
+    io.print(xh);                       # 12 _18:void := IOprint_val(xh:xml) 
+    xx := xml.forest(xp,xh);            # 13 xx:xml := XMLforest(xp:xml, xh:xml) {G}
+    xs := xml.str(xx);                  # 14 xs:str := XMLxml2str(xx:xml) {G}
+    io.print(xs);                       # 15 _21:void := IOprint_val(xs:str) 
 end main;	# 16  
 [  ]
 [ nil ]

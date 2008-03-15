@@ -17,10 +17,10 @@ stdout of test 'inline07` in directory 'src/optimizer` itself:
 #	c:= a+s;
 #	return foo:=c;
 #end foo;
-function user.foo{inline}(a:int,b:bat[:oid,:int]):dbl;	# 0  (foo:dbl)<-(a:int)(b:bat[:oid,:int])
-    s := aggr.sum(b);	# 1 ALGsum_int_dbl (s:dbl)<-(b:bat[:oid,:int])
-    c := calc.+(a,s);	# 2 CALCbinaryADDintdbl (c:dbl)<-(a:int)(s:dbl)
-    return foo{inline} := c;	# 3  (foo:dbl)<-(c:dbl)
+function user.foo{inline}(a:int,b:bat[:oid,:int]):dbl;#  0 foo:dbl := user.foo(a:int, b:bat[:oid,:int]) {G}
+    s := aggr.sum(b);                   #  1 s:dbl := ALGsum_int_dbl(b:bat[:oid,:int]) 
+    c := calc.+(a,s);                   #  2 c:dbl := CALCbinaryADDintdbl(a:int, s:dbl) 
+    return foo{inline} := c;            #  3 foo:dbl := c:dbl 
 end foo;	# 4  
 #
 #function qry();
@@ -28,19 +28,19 @@ end foo;	# 4
 #	bat.insert(b,0@0,1);
 #	z:bat[:oid,:dbl]:= mal.multiplex("user","foo",b,b);
 #end qry;
-function user.qry():void;	# 0  (qry:void)
-    b := bat.new(:oid,:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
-    bat.insert(b,0@0,1);	# 2 BKCinsert_bun (_4:void)<-(b:bat[:oid,:int])(_5:oid)(_6:int)
-    z:bat[:oid,:dbl]  := mal.multiplex("user","foo",b,b);	# 3 OPTremapMultiplex (z:bat[:oid,:dbl])<-(_8:str)(_9:str)(b:bat[:oid,:int])(b:bat[:oid,:int])
+function user.qry():void;               #  0 qry:void {G}
+    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    bat.insert(b,0@0,1);                #  2 _4:void := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) 
+    z:bat[:oid,:dbl]  := mal.multiplex("user","foo",b,b);#  3 z:bat[:oid,:dbl] := OPTremapMultiplex(_8:str, _9:str, b:bat[:oid,:int], b:bat[:oid,:int]) {G}
 end qry;	# 4  
 #
 #	optimizer.inline("user","qry");
 #	optimizer.remap("user","qry");
 #	mdb.list("user","qry");
 #
-function user.main():void;	# 0  (main:void)
-# remapping inline functions 	# 1  (_1:str)
-    mdb.list("user","qry");	# 2 MDBlist3 (_6:void)<-(_3:str)(_4:str)
+function user.main():void;              #  0 main:void {G}
+# remapping inline functions 
+    mdb.list("user","qry");             #  2 _6:void := MDBlist3(_3:str, _4:str) 
 end main;	# 3  
 function user.qry():void;
     b := bat.new(:oid,:int);

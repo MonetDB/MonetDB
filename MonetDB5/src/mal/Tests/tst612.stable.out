@@ -17,11 +17,11 @@ stdout of test 'tst612` in directory 'src/mal` itself:
 #bat.setPersistent(b,false);
 #transaction.commit();
 #
-function user.main():void;	# 0  (main:void)
-    b := bbp.bind("test");	# 1 CMDbbpbind (b:bat[:any,:any])<-(_2:str)
-    io.print(b);	# 2 IOprint_val (_3:void)<-(b:bat[:any,:any])
-    bat.setPersistent(b,false);	# 3 BKCpersists (_4:void)<-(b:bat[:any,:any])(_5:bit)
-    transaction.commit();	# 4 TRNglobal_commit (_6:bit)
+function user.main():void;              #  0 main:void {G}
+    b := bbp.bind("test");              #  1 b:bat[:any,:any] := CMDbbpbind(_2:str) {G}
+    io.print(b);                        #  2 _3:void := IOprint_val(b:bat[:any,:any]) 
+    bat.setPersistent(b,false);         #  3 _4:void := BKCpersists(b:bat[:any,:any], _5:bit) 
+    transaction.commit();               #  4 _6:bit 
 end main;	# 5  
 !MALException:bbp.bind:failed to locate object in box
 

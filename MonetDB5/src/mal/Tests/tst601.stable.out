@@ -25,19 +25,19 @@ stdout of test 'tst601` in directory 'src/mal` itself:
 #const.close();	# save the content on persistent store
 #print(p2);
 #
-function user.main():void;	# 0  (main:void)
-# Testing the box interfaces 	# 1  (_1:str)
-# open de const box and store a constant  	# 2  (_2:str)
-# This operation should actually be limited to the system administrator 	# 3  (_3:str)
-# who can open any box. 	# 4  (_4:str)
-    const.open();	# 5 CSTopen (_5:void)
-    pi := 3.14700007:flt;	# 6  (pi:flt)<-(_7:flt)
-    const.deposit("pi",pi);	# 7 CSTdeposit (_8:void)<-(_9:str)(pi:flt)
-    p2:flt  := const.take("pi");	# 8 CSTtake (p2:flt)<-(_9:str)
-    io.print(p2);	# 9 IOprint_val (_11:void)<-(p2:flt)
-    const.close();	# 10 CSTclose (_12:void)
-# save the content on persistent store 	# 11  (_13:str)
-    io.print(p2);	# 12 IOprint_val (_14:void)<-(p2:flt)
+function user.main():void;              #  0 main:void 
+# Testing the box interfaces 
+# open de const box and store a constant  
+# This operation should actually be limited to the system administrator 
+# who can open any box. 
+    const.open();                       #  5 _5:void 
+    pi := 3.14700007:flt;               #  6 pi:flt := _7:flt 
+    const.deposit("pi",pi);             #  7 _8:void := CSTdeposit(_9:str, pi:flt) 
+    p2:flt  := const.take("pi");        #  8 p2:flt := CSTtake(_9:str) 
+    io.print(p2);                       #  9 _11:void := IOprint_val(p2:flt) 
+    const.close();                      # 10 _12:void 
+# save the content on persistent store 
+    io.print(p2);                       # 12 _14:void := IOprint_val(p2:flt) 
 end main;	# 13  
 [ 3.14700007 ]
 [ 3.14700007 ]

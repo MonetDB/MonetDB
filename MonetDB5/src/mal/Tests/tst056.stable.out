@@ -21,15 +21,15 @@ stdout of test 'tst056` in directory 'src/mal` itself:
 #ox1  := 0@1;    
 #print(ox1);
 #
-function user.main():void;	# 0  (main:void)
-    zxx := 0@0;	# 1  (zxx:oid)<-(_2:oid)
-    io.print(zxx);	# 2 IOprint_val (_3:void)<-(zxx:oid)
-    o1x := 1@0;	# 3  (o1x:oid)<-(_5:oid)
-    io.print(o1x);	# 4 IOprint_val (_6:void)<-(o1x:oid)
-    o11 := 1@0;	# 5  (o11:oid)<-(_5:oid)
-    io.print(o11);	# 6 IOprint_val (_8:void)<-(o11:oid)
-    ox1 := 0@0;	# 7  (ox1:oid)<-(_2:oid)
-    io.print(ox1);	# 8 IOprint_val (_10:void)<-(ox1:oid)
+function user.main():void;              #  0 main:void 
+    zxx := 0@0;                         #  1 zxx:oid := _2:oid 
+    io.print(zxx);                      #  2 _3:void := IOprint_val(zxx:oid) 
+    o1x := 1@0;                         #  3 o1x:oid := _5:oid 
+    io.print(o1x);                      #  4 _6:void := IOprint_val(o1x:oid) 
+    o11 := 1@0;                         #  5 o11:oid := _5:oid 
+    io.print(o11);                      #  6 _8:void := IOprint_val(o11:oid) 
+    ox1 := 0@0;                         #  7 ox1:oid := _2:oid 
+    io.print(ox1);                      #  8 _10:void := IOprint_val(ox1:oid) 
 end main;	# 9  
 [ 0@0 ]
 [ 1@0 ]

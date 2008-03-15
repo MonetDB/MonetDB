@@ -26,24 +26,24 @@ stdout of test 'inspect00` in directory 'src/modules/mal` itself:
 #	# next one is illegal
 #	b1:= mdb.getStackFrame(2);
 #end tst;
-function user.tst():void;	# 0  (tst:void)
-    i := mdb.getStackDepth();	# 1 MDBStkDepth (i:int)
-    io.printf("stack depth %d\n",i);	# 2 IOprint_formatted_int (_2:void)<-(_3:str)(i:int)
-    t := mdb.getStackTrace();	# 3 MDBStkTrace (t:bat[:void,:str])
-    io.print(t);	# 4 IOprint_val (_5:void)<-(t:bat[:void,:str])
-    b0 := mdb.getStackFrame(0);	# 5 MDBgetStackFrameN (b0:bat[:str,:str])<-(_7:int)
-    io.print(b0);	# 6 IOprint_val (_8:void)<-(b0:bat[:str,:str])
-    b1 := mdb.getStackFrame(1);	# 7 MDBgetStackFrameN (b1:bat[:str,:str])<-(_10:int)
-    io.print(b1);	# 8 IOprint_val (_11:void)<-(b1:bat[:str,:str])
-# next one is illegal 	# 9  (_12:str)
-    b1 := mdb.getStackFrame(2);	# 10 MDBgetStackFrameN (b1:bat[:str,:str])<-(_13:int)
+function user.tst():void;               #  0 tst:void {G}
+    i := mdb.getStackDepth();           #  1 i:int 
+    io.printf("stack depth %d\n",i);    #  2 _2:void := IOprint_formatted_int(_3:str, i:int) 
+    t := mdb.getStackTrace();           #  3 t:bat[:void,:str] {G}
+    io.print(t);                        #  4 _5:void := IOprint_val(t:bat[:void,:str]) 
+    b0 := mdb.getStackFrame(0);         #  5 b0:bat[:str,:str] := MDBgetStackFrameN(_7:int) {G}
+    io.print(b0);                       #  6 _8:void := IOprint_val(b0:bat[:str,:str]) 
+    b1 := mdb.getStackFrame(1);         #  7 b1:bat[:str,:str] := MDBgetStackFrameN(_10:int) {G}
+    io.print(b1);                       #  8 _11:void := IOprint_val(b1:bat[:str,:str]) 
+# next one is illegal 
+    b1 := mdb.getStackFrame(2);         # 10 b1:bat[:str,:str] := MDBgetStackFrameN(_13:int) {G}
 end tst;	# 11  
 #
 #user.tst();
 #
-function user.main():void;	# 0  (main:void)
-# test analysis of stack frames 	# 1  (_1:str)
-    user.tst();	# 2  (_2:void)
+function user.main():void;              #  0 main:void 
+# test analysis of stack frames 
+    user.tst();                         #  2 _2:void 
 end main;	# 3  
 stack depth 2
 #---------------------------------------------------------#

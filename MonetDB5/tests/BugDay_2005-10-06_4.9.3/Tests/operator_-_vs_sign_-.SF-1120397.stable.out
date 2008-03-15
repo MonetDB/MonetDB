@@ -20,27 +20,27 @@ stdout of test 'operator_-_vs_sign_-.SF-1120397` in directory 'tests/BugDay_2005
 #z:=(1)+1; io.print(z);
 #z:=(1)-1; io.print(z);
 #
-function user.main():void;	# 0  (main:void)
-    z := calc.+(1,1);	# 1 CALCbinaryADDintint (z:int)<-(_2:int)(_2:int)
-    io.print(z);	# 2 IOprint_val (_3:void)<-(z:int)
-    z := calc.-(1,1);	# 3 CALCbinarySUBintint (z:int)<-(_2:int)(_2:int)
-    io.print(z);	# 4 IOprint_val (_4:void)<-(z:int)
-    z := 1;	# 5  (z:int)<-(_2:int)
-    io.print(z);	# 6 IOprint_val (_5:void)<-(z:int)
-    z := 1;	# 7  (z:int)<-(_2:int)
-    io.print(z);	# 8 IOprint_val (_6:void)<-(z:int)
-    z := 1;	# 9  (z:int)<-(_2:int)
-    io.print(z);	# 10 IOprint_val (_7:void)<-(z:int)
-    z := 1;	# 11  (z:int)<-(_2:int)
-    io.print(z);	# 12 IOprint_val (_8:void)<-(z:int)
-    z := 1;	# 13  (z:int)<-(_2:int)
-    io.print(z);	# 14 IOprint_val (_9:void)<-(z:int)
-    z := 1;	# 15  (z:int)<-(_2:int)
-    io.print(z);	# 16 IOprint_val (_10:void)<-(z:int)
-    z := 1;	# 17  (z:int)<-(_2:int)
-    io.print(z);	# 18 IOprint_val (_11:void)<-(z:int)
-    z := 1;	# 19  (z:int)<-(_2:int)
-    io.print(z);	# 20 IOprint_val (_12:void)<-(z:int)
+function user.main():void;              #  0 main:void 
+    z := calc.+(1,1);                   #  1 z:int := CALCbinaryADDintint(_2:int, _2:int) 
+    io.print(z);                        #  2 _3:void := IOprint_val(z:int) 
+    z := calc.-(1,1);                   #  3 z:int := CALCbinarySUBintint(_2:int, _2:int) 
+    io.print(z);                        #  4 _4:void := IOprint_val(z:int) 
+    z := 1;                             #  5 z:int := _2:int 
+    io.print(z);                        #  6 _5:void := IOprint_val(z:int) 
+    z := 1;                             #  7 z:int := _2:int 
+    io.print(z);                        #  8 _6:void := IOprint_val(z:int) 
+    z := 1;                             #  9 z:int := _2:int 
+    io.print(z);                        # 10 _7:void := IOprint_val(z:int) 
+    z := 1;                             # 11 z:int := _2:int 
+    io.print(z);                        # 12 _8:void := IOprint_val(z:int) 
+    z := 1;                             # 13 z:int := _2:int 
+    io.print(z);                        # 14 _9:void := IOprint_val(z:int) 
+    z := 1;                             # 15 z:int := _2:int 
+    io.print(z);                        # 16 _10:void := IOprint_val(z:int) 
+    z := 1;                             # 17 z:int := _2:int 
+    io.print(z);                        # 18 _11:void := IOprint_val(z:int) 
+    z := 1;                             # 19 z:int := _2:int 
+    io.print(z);                        # 20 _12:void := IOprint_val(z:int) 
 end main;	# 21  
 [ 2 ]
 [ 0 ]

@@ -37,28 +37,28 @@ stdout of test 'TMsubcommit` in directory 'tests/gdkTests` itself:
 #bat.setPersistent(b,false);
 #transaction.commit();
 #
-function user.main():void;	# 0  (main:void)
-#turn the debugger on to see details 	# 1  (_1:str)
-#mdb.setDebug(19); 	# 2  (_2:str)
-    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
-    bat.insert(b,1,2);	# 4 BKCinsert_bun (_5:void)<-(b:bat[:int,:int])(_6:int)(_7:int)
-    bat.setName(b,"b");	# 5 BKCsetName (_8:void)<-(b:bat[:int,:int])(_9:str)
-    bat.setPersistent(b,true);	# 6 BKCpersists (_10:void)<-(b:bat[:int,:int])(_11:bit)
-    transaction.commit();	# 7 TRNglobal_commit (_12:bit)
-    c := bat.new(:int,:int);	# 8 CMDBATnew (c:bat[:int,:int])<-(_4:int)(_4:int)
-    bat.insert(c,3,4);	# 9 BKCinsert_bun (_14:void)<-(c:bat[:int,:int])(_15:int)(_16:int)
-    bat.setName(c,"a");	# 10 BKCsetName (_17:void)<-(c:bat[:int,:int])(_18:str)
-    bat.setPersistent(c,true);	# 11 BKCpersists (_19:void)<-(c:bat[:int,:int])(_11:bit)
-    d := bat.new(:int,:str);	# 12 CMDBATnew (d:bat[:int,:str])<-(_4:int)(_21:str)
-    bat.insert(d,0,"a");	# 13 BKCinsert_bun (_22:void)<-(d:bat[:int,:str])(_23:int)(_18:str)
-    transaction.subcommit(d);	# 14 TRNsubcommit (_24:bit)<-(d:bat[:int,:str])
-    tmp := bat.new(:int,:str);	# 15 CMDBATnew (tmp:bat[:int,:str])<-(_4:int)(_26:str)
-    bat.insert(tmp,0,"a");	# 16 BKCinsert_bun (_27:void)<-(tmp:bat[:int,:str])(_23:int)(_18:str)
-    da:bat[:int,:int]  := bbp.bind("a");	# 17 CMDbbpbind (da:bat[:int,:int])<-(_18:str)
-    bat.setPersistent(da,false);	# 18 BKCpersists (_29:void)<-(da:bat[:int,:int])(_30:bit)
-    transaction.subcommit(tmp);	# 19 TRNsubcommit (_31:bit)<-(tmp:bat[:int,:str])
-    bat.setPersistent(b,false);	# 20 BKCpersists (_32:void)<-(b:bat[:int,:int])(_30:bit)
-    transaction.commit();	# 21 TRNglobal_commit (_33:bit)
+function user.main():void;              #  0 main:void {G}
+#turn the debugger on to see details 
+#mdb.setDebug(19); 
+    b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
+    bat.insert(b,1,2);                  #  4 _5:void := BKCinsert_bun(b:bat[:int,:int], _6:int, _7:int) 
+    bat.setName(b,"b");                 #  5 _8:void := BKCsetName(b:bat[:int,:int], _9:str) 
+    bat.setPersistent(b,true);          #  6 _10:void := BKCpersists(b:bat[:int,:int], _11:bit) 
+    transaction.commit();               #  7 _12:bit 
+    c := bat.new(:int,:int);            #  8 c:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
+    bat.insert(c,3,4);                  #  9 _14:void := BKCinsert_bun(c:bat[:int,:int], _15:int, _16:int) 
+    bat.setName(c,"a");                 # 10 _17:void := BKCsetName(c:bat[:int,:int], _18:str) 
+    bat.setPersistent(c,true);          # 11 _19:void := BKCpersists(c:bat[:int,:int], _11:bit) 
+    d := bat.new(:int,:str);            # 12 d:bat[:int,:str] := CMDBATnew(_4:int, _21:str) {G}
+    bat.insert(d,0,"a");                # 13 _22:void := BKCinsert_bun(d:bat[:int,:str], _23:int, _18:str) 
+    transaction.subcommit(d);           # 14 _24:bit := TRNsubcommit(d:bat[:int,:str]) 
+    tmp := bat.new(:int,:str);          # 15 tmp:bat[:int,:str] := CMDBATnew(_4:int, _26:str) {G}
+    bat.insert(tmp,0,"a");              # 16 _27:void := BKCinsert_bun(tmp:bat[:int,:str], _23:int, _18:str) 
+    da:bat[:int,:int]  := bbp.bind("a");# 17 da:bat[:int,:int] := CMDbbpbind(_18:str) {G}
+    bat.setPersistent(da,false);        # 18 _29:void := BKCpersists(da:bat[:int,:int], _30:bit) 
+    transaction.subcommit(tmp);         # 19 _31:bit := TRNsubcommit(tmp:bat[:int,:str]) 
+    bat.setPersistent(b,false);         # 20 _32:void := BKCpersists(b:bat[:int,:int], _30:bit) 
+    transaction.commit();               # 21 _33:bit 
 end main;	# 22  
 
 # 22:05:38 >  

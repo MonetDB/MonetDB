@@ -65,39 +65,39 @@ stdout of test 'test_01` in directory 'tests/suite_06` itself:
 #	mil.line("quit();");
 #	oa_a := clients.quit();
 #
-function user.main():void;	# 0  (main:void)
-# Monet Mil to Mal compiler 	# 1  (_1:str)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  (_2:str)
-#Predefined code segment 	# 3  (_3:str)
-#The compiler can not guarantee an accurate compilation, 	# 4  (_4:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 5  (_5:str)
-#A few guidelines to maximize usefullness. 	# 6  (_6:str)
-#- make the type of variables explicit, in particular 'nil' 	# 7  (_7:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  (_8:str)
-#include "mil_prelude"; 	# 9  (_9:str)
-#	io.print("setoid(oid(20000000));"); 	# 10  (_10:str)
-    aa_a := calc.oid(20000000);	# 11 CALCint2oid (aa_a:oid)<-(_12:int)
-    ba_a := calc.setoid(aa_a);	# 12 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-#	io.print("#check out arithmatic against using Multi-cast operator\n"); 	# 13  (_14:str)
-#	io.print(""); 	# 14  (_15:str)
-#	io.print("var t:= new(int, int);"); 	# 15  (_16:str)
-    t := bat.new(:oid,nil:int);	# 16 CMDBATnew (t:bat[:oid,:int])<-(_18:oid)(_19:int)
-    ca_a := bat.insert(t,1@0,2);	# 17 BKCinsert_bun (ca_a:void)<-(t:bat[:oid,:int])(_21:oid)(_22:int)
-    da_a := bat.insert(t,3@0,6);	# 18 BKCinsert_bun (da_a:void)<-(t:bat[:oid,:int])(_24:oid)(_25:int)
-    ea_a := bat.insert(t,13@0,14);	# 19 BKCinsert_bun (ea_a:void)<-(t:bat[:oid,:int])(_27:oid)(_28:int)
-    fa_a := bat.insert(t,17@0,16);	# 20 BKCinsert_bun (fa_a:void)<-(t:bat[:oid,:int])(_30:oid)(_31:int)
-    ga_a := bat.insert(t,19@0,18);	# 21 BKCinsert_bun (ga_a:void)<-(t:bat[:oid,:int])(_33:oid)(_34:int)
-    ha_a := bat.insert(t,5@0,8);	# 22 BKCinsert_bun (ha_a:void)<-(t:bat[:oid,:int])(_36:oid)(_37:int)
-    ia_a := bat.insert(t,7@0,10);	# 23 BKCinsert_bun (ia_a:void)<-(t:bat[:oid,:int])(_39:oid)(_40:int)
-    ja_a := bat.insert(t,2@0,4);	# 24 BKCinsert_bun (ja_a:void)<-(t:bat[:oid,:int])(_42:oid)(_43:int)
-    ka_a := bat.insert(t,11@0,12);	# 25 BKCinsert_bun (ka_a:void)<-(t:bat[:oid,:int])(_45:oid)(_46:int)
-    z := batcalc.+(t,t);	# 26 CMDbatADD_int_int_int (z:bat[:oid,:int])<-(t:bat[:oid,:int])(t:bat[:oid,:int])
-    la_a := io.print(z);	# 27 IOprint_val (la_a:void)<-(z:bat[:oid,:int])
-    z := batcalc.*(t,z);	# 28 CMDbatMUL_int_int_int (z:bat[:oid,:int])<-(t:bat[:oid,:int])(z:bat[:oid,:int])
-    ma_a := io.print(z);	# 29 IOprint_val (ma_a:void)<-(z:bat[:oid,:int])
-    z := batcalc./(t,t);	# 30 CMDbatDIV_int_int_int (z:bat[:oid,:int])<-(t:bat[:oid,:int])(t:bat[:oid,:int])
-    na_a := io.print(z);	# 31 IOprint_val (na_a:void)<-(z:bat[:oid,:int])
-    oa_a := clients.quit();	# 32 CLTquit (oa_a:void)
+function user.main():void;              #  0 main:void {G}
+# Monet Mil to Mal compiler 
+# Copyright (c) 2001-2004, CWI. All rights reserved. 
+#Predefined code segment 
+#The compiler can not guarantee an accurate compilation, 
+#because MIL unlike MAL is a dynamically typed language. 
+#A few guidelines to maximize usefullness. 
+#- make the type of variables explicit, in particular 'nil' 
+#- upon advice of M2m to remap identifiers, change it in your program directly 
+#include "mil_prelude"; 
+#	io.print("setoid(oid(20000000));"); 
+    aa_a := calc.oid(20000000);         # 11 aa_a:oid := CALCint2oid(_12:int) 
+    ba_a := calc.setoid(aa_a);          # 12 ba_a:oid := CALCsetoidInc(aa_a:oid) 
+#	io.print("#check out arithmatic against using Multi-cast operator\n"); 
+#	io.print(""); 
+#	io.print("var t:= new(int, int);"); 
+    t := bat.new(:oid,nil:int);         # 16 t:bat[:oid,:int] := CMDBATnew(_18:oid, _19:int) {G}
+    ca_a := bat.insert(t,1@0,2);        # 17 ca_a:void := BKCinsert_bun(t:bat[:oid,:int], _21:oid, _22:int) 
+    da_a := bat.insert(t,3@0,6);        # 18 da_a:void := BKCinsert_bun(t:bat[:oid,:int], _24:oid, _25:int) 
+    ea_a := bat.insert(t,13@0,14);      # 19 ea_a:void := BKCinsert_bun(t:bat[:oid,:int], _27:oid, _28:int) 
+    fa_a := bat.insert(t,17@0,16);      # 20 fa_a:void := BKCinsert_bun(t:bat[:oid,:int], _30:oid, _31:int) 
+    ga_a := bat.insert(t,19@0,18);      # 21 ga_a:void := BKCinsert_bun(t:bat[:oid,:int], _33:oid, _34:int) 
+    ha_a := bat.insert(t,5@0,8);        # 22 ha_a:void := BKCinsert_bun(t:bat[:oid,:int], _36:oid, _37:int) 
+    ia_a := bat.insert(t,7@0,10);       # 23 ia_a:void := BKCinsert_bun(t:bat[:oid,:int], _39:oid, _40:int) 
+    ja_a := bat.insert(t,2@0,4);        # 24 ja_a:void := BKCinsert_bun(t:bat[:oid,:int], _42:oid, _43:int) 
+    ka_a := bat.insert(t,11@0,12);      # 25 ka_a:void := BKCinsert_bun(t:bat[:oid,:int], _45:oid, _46:int) 
+    z := batcalc.+(t,t);                # 26 z:bat[:oid,:int] := CMDbatADD_int_int_int(t:bat[:oid,:int], t:bat[:oid,:int]) {G}
+    la_a := io.print(z);                # 27 la_a:void := IOprint_val(z:bat[:oid,:int]) 
+    z := batcalc.*(t,z);                # 28 z:bat[:oid,:int] := CMDbatMUL_int_int_int(t:bat[:oid,:int], z:bat[:oid,:int]) {G}
+    ma_a := io.print(z);                # 29 ma_a:void := IOprint_val(z:bat[:oid,:int]) 
+    z := batcalc./(t,t);                # 30 z:bat[:oid,:int] := CMDbatDIV_int_int_int(t:bat[:oid,:int], t:bat[:oid,:int]) {G}
+    na_a := io.print(z);                # 31 na_a:void := IOprint_val(z:bat[:oid,:int]) 
+    oa_a := clients.quit();             # 32 oa_a:void 
 end main;	# 33  
 #-----------------#
 # h	t	  # name

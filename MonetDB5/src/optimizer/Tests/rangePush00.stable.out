@@ -21,11 +21,11 @@ stdout of test 'rangePush00` in directory 'src/optimizer` itself:
 #optimizer.deadcode();
 #mdb.list();
 #
-function user.main():void;	# 0  (main:void)
-    b := bat.new(:void,:int);	# 1 CMDBATnew (b:bat[:void,:int])<-(_3:void)(_4:int)
-    s2 := algebra.select(b,1,75);	# 2 ALGselect (s2:bat[:void,:int])<-(b:bat[:void,:int])(_6:int)(_10:int)
-    io.print(s2);	# 3 IOprint_val (_11:void)<-(s2:bat[:void,:int])
-    mdb.list();	# 4 MDBlist (_14:void)
+function user.main():void;              #  0 main:void {G}
+    b := bat.new(:void,:int);           #  1 b:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
+    s2 := algebra.select(b,1,75);       #  2 s2:bat[:void,:int] := ALGselect(b:bat[:void,:int], _6:int, _10:int) {G}
+    io.print(s2);                       #  3 _11:void := IOprint_val(s2:bat[:void,:int]) 
+    mdb.list();                         #  4 _14:void 
 end main;	# 5  
 #-----------------#
 # h	t	  # name

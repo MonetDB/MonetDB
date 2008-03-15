@@ -30,25 +30,25 @@ stdout of test 'tst1204` in directory 'src/mal` itself:
 #exit	lf_a;
 ##}
 #
-function user.main():void;	# 0  (main:void)
-## test dayofweek and weeknumber using more than two years as consecutive days 	# 1  (_1:str)
-    date_00 := mtime.date(2000,1,1);	# 2 MTIMEdate_create (date_00:date)<-(_3:int)(_4:int)(_4:int)
-    date_seq := bat.new(:int,:date);	# 3 CMDBATnew (date_seq:bat[:int,:date])<-(_6:int)(_7:date)
-#var date_seq := bat.new(int, date); 	# 4  (_8:str)
-    i := -375;	# 5  (i:int)<-(_10:int)
-#var i := -375; 	# 6  (_11:str)
-barrier lf_a := true;	# 7  (lf_a:bit)<-(_13:bit) jump 17
-    i := calc.+(i,1);	# 8 CALCbinaryADDintint (i:int)<-(i:int)(_4:int)
-    of_a := calc.<(i,375);	# 9 CALCcompLTintint (of_a:bit)<-(i:int)(_15:int)
-barrier mf_a := of_a;	# 10  (mf_a:bit)<-(of_a:bit) jump 16
-#while ((i :+= 1) < 375) { 	# 11  (_17:str)
-    pf_a := mtime.adddays(date_00,i);	# 12 MTIMEdate_adddays (pf_a:date)<-(date_00:date)(i:int)
-    bat.insert(date_seq,i,pf_a);	# 13 BKCinsert_bun (_19:void)<-(date_seq:bat[:int,:date])(i:int)(pf_a:date)
-#	date_seq.bat.insert(i,adddays(date_00,i)); 	# 14  (_20:str)
-    redo lf_a;	# 15  (lf_a:bit) jump 8
-exit mf_a;	# 16  (mf_a:bit)
-exit lf_a;	# 17  (lf_a:bit)
-#} 	# 18  (_21:str)
+function user.main():void;              #  0 main:void {G}
+## test dayofweek and weeknumber using more than two years as consecutive days 
+    date_00 := mtime.date(2000,1,1);    #  2 date_00:date := MTIMEdate_create(_3:int, _4:int, _4:int) 
+    date_seq := bat.new(:int,:date);    #  3 date_seq:bat[:int,:date] := CMDBATnew(_6:int, _7:date) {G}
+#var date_seq := bat.new(int, date); 
+    i := -375;                          #  5 i:int := _10:int 
+#var i := -375; 
+barrier lf_a := true;                   #  7 lf_a:bit := _13:bit {J17}
+    i := calc.+(i,1);                   #  8 i:int := CALCbinaryADDintint(i:int, _4:int) 
+    of_a := calc.<(i,375);              #  9 of_a:bit := CALCcompLTintint(i:int, _15:int) 
+barrier mf_a := of_a;                   # 10 mf_a:bit := of_a:bit {J16}
+#while ((i :+= 1) < 375) { 
+    pf_a := mtime.adddays(date_00,i);   # 12 pf_a:date := MTIMEdate_adddays(date_00:date, i:int) 
+    bat.insert(date_seq,i,pf_a);        # 13 _19:void := BKCinsert_bun(date_seq:bat[:int,:date], i:int, pf_a:date) 
+#	date_seq.bat.insert(i,adddays(date_00,i)); 
+    redo lf_a;                          # 15 lf_a:bit {J8}
+exit mf_a;                              # 16 mf_a:bit 
+exit lf_a;                              # 17 lf_a:bit 
+#} 
 end main;	# 19  
 
 # 23:39:01 >  

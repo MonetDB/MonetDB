@@ -29,20 +29,20 @@ stdout of test 'tst253` in directory 'src/mal` itself:
 #f:= algebra.markH(b);
 #io.print(f);
 #
-function user.main():void;	# 0  (main:void)
-# testing void bats 	# 1  (_1:str)
-    b := bat.new(:oid,:str);	# 2 CMDBATnew (b:bat[:oid,:str])<-(_3:oid)(_4:str)
-    bat.insert(b,nil:oid,"hello");	# 3 BKCinsert_bun (_5:void)<-(b:bat[:oid,:str])(_6:oid)(_7:str)
-    bat.insert(b,nil:oid,"world");	# 4 BKCinsert_bun (_8:void)<-(b:bat[:oid,:str])(_6:oid)(_9:str)
-    io.print(b);	# 5 IOprint_val (_10:void)<-(b:bat[:oid,:str])
-#materialize header 	# 6  (_11:str)
-    c := bat.reverse(b);	# 7 BKCreverse (c:bat[:str,:oid])<-(b:bat[:oid,:str])
-    io.print(c);	# 8 IOprint_val (_13:void)<-(c:bat[:str,:oid])
-    d := algebra.markT(c);	# 9 ALGtmark_default (d:bat[:str,:oid])<-(c:bat[:str,:oid])
-    io.print(d);	# 10 IOprint_val (_15:void)<-(d:bat[:str,:oid])
-#perform header marking 	# 11  (_16:str)
-    f := algebra.markH(b);	# 12 ALGmarkHead_default (f:bat[:oid,:str])<-(b:bat[:oid,:str])
-    io.print(f);	# 13 IOprint_val (_18:void)<-(f:bat[:oid,:str])
+function user.main():void;              #  0 main:void {G}
+# testing void bats 
+    b := bat.new(:oid,:str);            #  2 b:bat[:oid,:str] := CMDBATnew(_3:oid, _4:str) {G}
+    bat.insert(b,nil:oid,"hello");      #  3 _5:void := BKCinsert_bun(b:bat[:oid,:str], _6:oid, _7:str) 
+    bat.insert(b,nil:oid,"world");      #  4 _8:void := BKCinsert_bun(b:bat[:oid,:str], _6:oid, _9:str) 
+    io.print(b);                        #  5 _10:void := IOprint_val(b:bat[:oid,:str]) 
+#materialize header 
+    c := bat.reverse(b);                #  7 c:bat[:str,:oid] := BKCreverse(b:bat[:oid,:str]) {G}
+    io.print(c);                        #  8 _13:void := IOprint_val(c:bat[:str,:oid]) 
+    d := algebra.markT(c);              #  9 d:bat[:str,:oid] := ALGtmark_default(c:bat[:str,:oid]) {G}
+    io.print(d);                        # 10 _15:void := IOprint_val(d:bat[:str,:oid]) 
+#perform header marking 
+    f := algebra.markH(b);              # 12 f:bat[:oid,:str] := ALGmarkHead_default(b:bat[:oid,:str]) {G}
+    io.print(f);                        # 13 _18:void := IOprint_val(f:bat[:oid,:str]) 
 end main;	# 14  
 #-------------------------#
 # h	tmp_4		  # name

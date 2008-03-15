@@ -24,20 +24,20 @@ stdout of test 'CTrefine_not_sorted.981374` in directory 'tests/BugDay_2005-10-0
 #sorting := group.refine(vu_fid,vu_vid);
 #io.print(sorting);
 #
-function user.main():void;	# 0  (main:void)
-    var_usage := bat.new(:oid,:oid);	# 1 CMDBATnew (var_usage:bat[:oid,:oid])<-(_2:oid)(_2:oid)
-    bat.insert(var_usage,0@0,1@0);	# 2 BKCinsert_bun (_3:void)<-(var_usage:bat[:oid,:oid])(_4:oid)(_5:oid)
-    bat.insert(var_usage,1@0,1@0);	# 3 BKCinsert_bun (_6:void)<-(var_usage:bat[:oid,:oid])(_5:oid)(_5:oid)
-# without the next line it doesn't crash 	# 4  (_7:str)
-    var_usage0 := algebra.unique(var_usage);	# 5 ALGsunique (var_usage0:bat[:oid,:oid])<-(var_usage:bat[:oid,:oid])
-    var_usage := bat.reverse(var_usage0);	# 6 BKCreverse (var_usage:bat[:oid,:oid])<-(var_usage0:bat[:oid,:oid])
-    vu_vid0 := bat.reverse(var_usage);	# 7 BKCreverse (vu_vid0:bat[:oid,:oid])<-(var_usage:bat[:oid,:oid])
-    vu_vid1 := algebra.markT(vu_vid0,1000@0);	# 8 ALGtmark (vu_vid1:bat[:oid,:oid])<-(vu_vid0:bat[:oid,:oid])(_11:oid)
-    vu_vid := bat.reverse(vu_vid1);	# 9 BKCreverse (vu_vid:bat[:oid,:oid])<-(vu_vid1:bat[:oid,:oid])
-    vu_fid0 := algebra.markT(var_usage,1000@0);	# 10 ALGtmark (vu_fid0:bat[:oid,:oid])<-(var_usage:bat[:oid,:oid])(_11:oid)
-    vu_fid := bat.reverse(vu_fid0);	# 11 BKCreverse (vu_fid:bat[:oid,:oid])<-(vu_fid0:bat[:oid,:oid])
-    sorting := group.refine(vu_fid,vu_vid);	# 12 GRPrefine (sorting:bat[:oid,:oid])<-(vu_fid:bat[:oid,:oid])(vu_vid:bat[:oid,:oid])
-    io.print(sorting);	# 13 IOprint_val (_16:void)<-(sorting:bat[:oid,:oid])
+function user.main():void;              #  0 main:void {G}
+    var_usage := bat.new(:oid,:oid);    #  1 var_usage:bat[:oid,:oid] := CMDBATnew(_2:oid, _2:oid) {G}
+    bat.insert(var_usage,0@0,1@0);      #  2 _3:void := BKCinsert_bun(var_usage:bat[:oid,:oid], _4:oid, _5:oid) 
+    bat.insert(var_usage,1@0,1@0);      #  3 _6:void := BKCinsert_bun(var_usage:bat[:oid,:oid], _5:oid, _5:oid) 
+# without the next line it doesn't crash 
+    var_usage0 := algebra.unique(var_usage);#  5 var_usage0:bat[:oid,:oid] := ALGsunique(var_usage:bat[:oid,:oid]) {G}
+    var_usage := bat.reverse(var_usage0);#  6 var_usage:bat[:oid,:oid] := BKCreverse(var_usage0:bat[:oid,:oid]) {G}
+    vu_vid0 := bat.reverse(var_usage);  #  7 vu_vid0:bat[:oid,:oid] := BKCreverse(var_usage:bat[:oid,:oid]) {G}
+    vu_vid1 := algebra.markT(vu_vid0,1000@0);#  8 vu_vid1:bat[:oid,:oid] := ALGtmark(vu_vid0:bat[:oid,:oid], _11:oid) {G}
+    vu_vid := bat.reverse(vu_vid1);     #  9 vu_vid:bat[:oid,:oid] := BKCreverse(vu_vid1:bat[:oid,:oid]) {G}
+    vu_fid0 := algebra.markT(var_usage,1000@0);# 10 vu_fid0:bat[:oid,:oid] := ALGtmark(var_usage:bat[:oid,:oid], _11:oid) {G}
+    vu_fid := bat.reverse(vu_fid0);     # 11 vu_fid:bat[:oid,:oid] := BKCreverse(vu_fid0:bat[:oid,:oid]) {G}
+    sorting := group.refine(vu_fid,vu_vid);# 12 sorting:bat[:oid,:oid] := GRPrefine(vu_fid:bat[:oid,:oid], vu_vid:bat[:oid,:oid]) {G}
+    io.print(sorting);                  # 13 _16:void := IOprint_val(sorting:bat[:oid,:oid]) 
 end main;	# 14  
 #-----------------#
 # h	t	  # name

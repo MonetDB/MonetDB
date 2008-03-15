@@ -24,16 +24,16 @@ stdout of test 'tst2500` in directory 'src/mal` itself:
 #exit always;
 #	return random:= 0;
 #end;
-factory user.random(seed:int):int;	# 0  (random:int)<-(seed:int)
-    mdb.setTrace(true);	# 1 MDBsetTrace (_2:void)<-(_3:bit)
-    i := seed;	# 2  (i:int)<-(seed:int)
-barrier always := true;	# 3  (always:bit)<-(_3:bit) jump 8
-    i := calc.*(125,i);	# 4 CALCbinaryMULintint (i:int)<-(_6:int)(i:int)
-    i := calc.%(i,32767);	# 5 CALCbinarycheckMODintint (i:int)<-(i:int)(_7:int)
-    yield random := i;	# 6  (random:int)<-(i:int)
-    redo always;	# 7  (always:bit) jump 4
-exit always;	# 8  (always:bit)
-    return random := 0;	# 9  (random:int)<-(_8:int)
+factory user.random(seed:int):int;      #  0 random:int := user.random(seed:int) 
+    mdb.setTrace(true);                 #  1 _2:void := MDBsetTrace(_3:bit) 
+    i := seed;                          #  2 i:int := seed:int 
+barrier always := true;                 #  3 always:bit := _3:bit {J8}
+    i := calc.*(125,i);                 #  4 i:int := CALCbinaryMULintint(_6:int, i:int) 
+    i := calc.%(i,32767);               #  5 i:int := CALCbinarycheckMODintint(i:int, _7:int) 
+    yield random := i;                  #  6 random:int := i:int 
+    redo always;                        #  7 always:bit {J4}
+exit always;                            #  8 always:bit 
+    return random := 0;                 #  9 random:int := _8:int 
 end random;	# 10  
 #
 #r1:= random(1);
@@ -41,12 +41,12 @@ end random;	# 10
 #r2:= random(1);
 #print(r2);
 #
-function user.main():void;	# 0  (main:void)
-# The prototypical factory construct 	# 1  (_1:str)
-    r1 := user.random(1);	# 2  (r1:int)<-(_3:int)
-    io.print(r1);	# 3 IOprint_val (_4:void)<-(r1:int)
-    r2 := user.random(1);	# 4  (r2:int)<-(_3:int)
-    io.print(r2);	# 5 IOprint_val (_6:void)<-(r2:int)
+function user.main():void;              #  0 main:void 
+# The prototypical factory construct 
+    r1 := user.random(1);               #  2 r1:int := user.random(_3:int) 
+    io.print(r1);                       #  3 _4:void := IOprint_val(r1:int) 
+    r2 := user.random(1);               #  4 r2:int := user.random(_3:int) 
+    io.print(r2);                       #  5 _6:void := IOprint_val(r2:int) 
 end main;	# 6  
 [ 125 ]
 [ 15625 ]

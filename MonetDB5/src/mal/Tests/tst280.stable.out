@@ -17,10 +17,10 @@ stdout of test 'tst280` in directory 'src/mal` itself:
 #	printf("result %d\n",z);
 #	return z;
 #end pow;
-function user.pow(i:int,j:int):int;	# 0  (pow:int)<-(i:int)(j:int)
-    z := calc.+(i,j);	# 1 CALCbinaryADDintint (z:int)<-(i:int)(j:int)
-    io.printf("result %d\n",z);	# 2 IOprint_formatted_int (_4:void)<-(_5:str)(z:int)
-    return pow := z;	# 3  (pow:int)<-(z:int)
+function user.pow(i:int,j:int):int;     #  0 pow:int := user.pow(i:int, j:int) 
+    z := calc.+(i,j);                   #  1 z:int := CALCbinaryADDintint(i:int, j:int) 
+    io.printf("result %d\n",z);         #  2 _4:void := IOprint_formatted_int(_5:str, z:int) 
+    return pow := z;                    #  3 pow:int := z:int 
 end pow;	# 4  
 #function tst(A2:bat[:void,:int],A3:bat[:void,:int]):bat[:void,:int]; 
 #	print(A2);
@@ -44,38 +44,38 @@ end pow;	# 4
 #  
 #        return resB;    
 #end tst;   
-function user.tst(A2:bat[:oid,:int],A3:bat[:oid,:int]):bat[:oid,:int];	# 0  (tst:bat[:oid,:int])<-(A2:bat[:oid,:int])(A3:bat[:oid,:int])
-    io.print(A2);	# 1 IOprint_val (_3:void)<-(A2:bat[:oid,:int])
-    resB := bat.new(:oid,:int);	# 2 CMDBATnew (resB:bat[:oid,:int])<-(_5:oid)(_6:int)
-    lim := aggr.count(A2);	# 3 ALGcount_bat (lim:int)<-(A2:bat[:oid,:int])
-    io.printf("count %d\n",lim);	# 4 IOprint_formatted_int (_8:void)<-(_9:str)(lim:int)
-    l := calc.lng(lim);	# 5 CALCint2lng (l:lng)<-(lim:int)
-barrier (mloop,m):= language.newRange(0:lng);	# 6 RNGnewRange_lng (mloop:bit)(m:lng)<-(_13:lng) jump 17
-    io.printf("loopindex %d\n",m);	# 7 IOprint_formatted_lng (_14:void)<-(_15:str)(m:lng)
-    B2 := algebra.fetch(A2,m);	# 8 ALGfetch (B2:int)<-(A2:bat[:oid,:int])(m:lng)
-    io.printf("B2 value %d\n",B2);	# 9 IOprint_formatted_int (_17:void)<-(_18:str)(B2:int)
-    B3 := algebra.fetch(A3,m);	# 10 ALGfetch (B3:int)<-(A3:bat[:oid,:int])(m:lng)
-    io.printf("B3 value %d\n",B3);	# 11 IOprint_formatted_int (_20:void)<-(_21:str)(B3:int)
-    cr := user.pow(B2,B3);	# 12  (cr:int)<-(B2:int)(B3:int)
-    bat.append(resB,cr);	# 13 BKCappend_val_wrap (_23:void)<-(resB:bat[:oid,:int])(cr:int)
-    redo (mloop,m):= language.nextElement(1:lng,l);	# 14 RNGnextElement_lng (mloop:bit)(m:lng)<-(_24:lng)(l:lng) jump 7
-catch MALException:str ;	# 15  (MALException:str) jump 16
-exit MALException:str ;	# 16  (MALException:str)
-exit (mloop,m);	# 17  (mloop:bit)(m:lng)
-    return tst := resB;	# 18  (tst:bat[:oid,:int])<-(resB:bat[:oid,:int])
+function user.tst(A2:bat[:oid,:int],A3:bat[:oid,:int]):bat[:oid,:int];#  0 tst:bat[:oid,:int] := user.tst(A2:bat[:oid,:int], A3:bat[:oid,:int]) {G}
+    io.print(A2);                       #  1 _3:void := IOprint_val(A2:bat[:oid,:int]) 
+    resB := bat.new(:oid,:int);         #  2 resB:bat[:oid,:int] := CMDBATnew(_5:oid, _6:int) {G}
+    lim := aggr.count(A2);              #  3 lim:int := ALGcount_bat(A2:bat[:oid,:int]) 
+    io.printf("count %d\n",lim);        #  4 _8:void := IOprint_formatted_int(_9:str, lim:int) 
+    l := calc.lng(lim);                 #  5 l:lng := CALCint2lng(lim:int) 
+barrier (mloop,m):= language.newRange(0:lng);#  6 (mloop:bit, m:lng) := RNGnewRange_lng(_13:lng) {J17}
+    io.printf("loopindex %d\n",m);      #  7 _14:void := IOprint_formatted_lng(_15:str, m:lng) 
+    B2 := algebra.fetch(A2,m);          #  8 B2:int := ALGfetch(A2:bat[:oid,:int], m:lng) 
+    io.printf("B2 value %d\n",B2);      #  9 _17:void := IOprint_formatted_int(_18:str, B2:int) 
+    B3 := algebra.fetch(A3,m);          # 10 B3:int := ALGfetch(A3:bat[:oid,:int], m:lng) 
+    io.printf("B3 value %d\n",B3);      # 11 _20:void := IOprint_formatted_int(_21:str, B3:int) 
+    cr := user.pow(B2,B3);              # 12 cr:int := user.pow(B2:int, B3:int) 
+    bat.append(resB,cr);                # 13 _23:void := BKCappend_val_wrap(resB:bat[:oid,:int], cr:int) 
+    redo (mloop,m):= language.nextElement(1:lng,l);# 14 (mloop:bit, m:lng) := RNGnextElement_lng(_24:lng, l:lng) {J7}
+catch MALException:str ;                # 15 MALException:str {J16}
+exit MALException:str ;                 # 16 MALException:str 
+exit (mloop,m);                         # 17 (mloop:bit, m:lng 
+    return tst := resB;                 # 18 tst:bat[:oid,:int] := resB:bat[:oid,:int] {G}
 end tst;	# 19  
 #
 #
-function user.main():void;	# 0  (main:void)
-    b := bat.new(:oid,:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
-    bat.append(b,1);	# 2 BKCappend_val_wrap (_4:void)<-(b:bat[:oid,:int])(_5:int)
-    bat.append(b,2);	# 3 BKCappend_val_wrap (_6:void)<-(b:bat[:oid,:int])(_7:int)
-    e := algebra.fetch(b,1:lng);	# 4 ALGfetch (e:int)<-(b:bat[:oid,:int])(_9:lng)
-    io.print(e);	# 5 IOprint_val (_10:void)<-(e:int)
-    io.print(b);	# 6 IOprint_val (_11:void)<-(b:bat[:oid,:int])
-    c := algebra.copy(b);	# 7 ALGcopy (c:bat[:oid,:int])<-(b:bat[:oid,:int])
-    z := user.tst(b,c);	# 8  (z:bat[:oid,:int])<-(b:bat[:oid,:int])(c:bat[:oid,:int])
-    io.print(z);	# 9 IOprint_val (_14:void)<-(z:bat[:oid,:int])
+function user.main():void;              #  0 main:void {G}
+    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    bat.append(b,1);                    #  2 _4:void := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) 
+    bat.append(b,2);                    #  3 _6:void := BKCappend_val_wrap(b:bat[:oid,:int], _7:int) 
+    e := algebra.fetch(b,1:lng);        #  4 e:int := ALGfetch(b:bat[:oid,:int], _9:lng) 
+    io.print(e);                        #  5 _10:void := IOprint_val(e:int) 
+    io.print(b);                        #  6 _11:void := IOprint_val(b:bat[:oid,:int]) 
+    c := algebra.copy(b);               #  7 c:bat[:oid,:int] := ALGcopy(b:bat[:oid,:int]) {G}
+    z := user.tst(b,c);                 #  8 z:bat[:oid,:int] := user.tst(b:bat[:oid,:int], c:bat[:oid,:int]) {G}
+    io.print(z);                        #  9 _14:void := IOprint_val(z:bat[:oid,:int]) 
 end main;	# 10  
 [ 2 ]
 #-----------------#

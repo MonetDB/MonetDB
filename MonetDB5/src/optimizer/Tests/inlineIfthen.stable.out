@@ -18,12 +18,12 @@ stdout of test 'inlineIfthen` in directory 'src/optimizer` itself:
 #exit go;
 #   return foo;
 #end foo;
-function user.foo{inline}(b:int):int;	# 0  (foo:int)<-(b:int)
-    foo{inline} := 0;	# 1  (foo:int)<-(_2:int)
-barrier go := calc.<(b,10);	# 2 CALCcompLTintint (go:bit)<-(b:int)(_4:int) jump 4
-    foo{inline} := 1;	# 3  (foo:int)<-(_5:int)
-exit go;	# 4  (go:bit)
-    return foo{inline} := foo;	# 5  (foo:int)<-(foo:int)
+function user.foo{inline}(b:int):int;   #  0 foo:int := user.foo(b:int) 
+    foo{inline} := 0;                   #  1 foo:int := _2:int 
+barrier go := calc.<(b,10);             #  2 go:bit := CALCcompLTintint(b:int, _4:int) {J4}
+    foo{inline} := 1;                   #  3 foo:int := _5:int 
+exit go;                                #  4 go:bit 
+    return foo{inline} := foo;          #  5 foo:int := foo:int 
 end foo;	# 6  
 #
 #function qry();
@@ -34,21 +34,21 @@ end foo;	# 6
 #	r:bat[:oid,:int]:= mal.multiplex("user","foo",b);
 #	io.print(r);
 #end qry;
-function user.qry():void;	# 0  (qry:void)
-    b := bat.new(:oid,:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
-    bat.append(b,1);	# 2 BKCappend_val_wrap (_4:void)<-(b:bat[:oid,:int])(_5:int)
-    bat.append(b,10);	# 3 BKCappend_val_wrap (_6:void)<-(b:bat[:oid,:int])(_7:int)
-    bat.append(b,20);	# 4 BKCappend_val_wrap (_8:void)<-(b:bat[:oid,:int])(_9:int)
-    r:bat[:oid,:int]  := mal.multiplex("user","foo",b);	# 5 OPTremapMultiplex (r:bat[:oid,:int])<-(_11:str)(_12:str)(b:bat[:oid,:int])
-    io.print(r);	# 6 IOprint_val (_13:void)<-(r:bat[:oid,:int])
+function user.qry():void;               #  0 qry:void {G}
+    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    bat.append(b,1);                    #  2 _4:void := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) 
+    bat.append(b,10);                   #  3 _6:void := BKCappend_val_wrap(b:bat[:oid,:int], _7:int) 
+    bat.append(b,20);                   #  4 _8:void := BKCappend_val_wrap(b:bat[:oid,:int], _9:int) 
+    r:bat[:oid,:int]  := mal.multiplex("user","foo",b);#  5 r:bat[:oid,:int] := OPTremapMultiplex(_11:str, _12:str, b:bat[:oid,:int]) {G}
+    io.print(r);                        #  6 _13:void := IOprint_val(r:bat[:oid,:int]) 
 end qry;	# 7  
 #
 #optimizer.inline("user","qry");
 #optimizer.remap("user","qry");
 #mdb.list("user","qry");
 #
-function user.main():void;	# 0  (main:void)
-    mdb.list("user","qry");	# 1 MDBlist3 (_5:void)<-(_2:str)(_3:str)
+function user.main():void;              #  0 main:void {G}
+    mdb.list("user","qry");             #  1 _5:void := MDBlist3(_2:str, _3:str) 
 end main;	# 2  
 function user.qry():void;
     b := bat.new(:oid,:int);

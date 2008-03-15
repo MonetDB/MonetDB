@@ -16,9 +16,9 @@ stdout of test 'inline02` in directory 'src/optimizer` itself:
 #	c:= a+b;
 #	return foo:=c;
 #end foo;
-function user.foo{inline}(a:int,b:int):int;	# 0  (foo:int)<-(a:int)(b:int)
-    c := calc.+(a,b);	# 1 CALCbinaryADDintint (c:int)<-(a:int)(b:int)
-    return foo{inline} := c;	# 2  (foo:int)<-(c:int)
+function user.foo{inline}(a:int,b:int):int;#  0 foo:int := user.foo(a:int, b:int) 
+    c := calc.+(a,b);                   #  1 c:int := CALCbinaryADDintint(a:int, b:int) 
+    return foo{inline} := c;            #  2 foo:int := c:int 
 end foo;	# 3  
 #
 #function qry();
@@ -29,23 +29,23 @@ end foo;	# 3
 #	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,b);
 #	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,2);
 #end qry;
-function user.qry():void;	# 0  (qry:void)
-    b := bat.new(:oid,:int);	# 1 CMDBATnew (b:bat[:oid,:int])<-(_2:oid)(_3:int)
-    bat.insert(b,0@0,1);	# 2 BKCinsert_bun (_4:void)<-(b:bat[:oid,:int])(_5:oid)(_6:int)
-    zz := user.foo(1,2);	# 3  (zz:int)<-(_6:int)(_8:int)
-# base line test for inlining 	# 4  (_9:str)
-    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,b);	# 5 OPTremapMultiplex (z:bat[:oid,:int])<-(_11:str)(_12:str)(b:bat[:oid,:int])(b:bat[:oid,:int])
-    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,2);	# 6 OPTremapMultiplex (z:bat[:oid,:int])<-(_11:str)(_12:str)(b:bat[:oid,:int])(_8:int)
+function user.qry():void;               #  0 qry:void {G}
+    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    bat.insert(b,0@0,1);                #  2 _4:void := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) 
+    zz := user.foo(1,2);                #  3 zz:int := user.foo(_6:int, _8:int) 
+# base line test for inlining 
+    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,b);#  5 z:bat[:oid,:int] := OPTremapMultiplex(_11:str, _12:str, b:bat[:oid,:int], b:bat[:oid,:int]) {G}
+    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,2);#  6 z:bat[:oid,:int] := OPTremapMultiplex(_11:str, _12:str, b:bat[:oid,:int], _8:int) {G}
 end qry;	# 7  
 #
 #	optimizer.inline("user","qry");
 #	optimizer.remap("user","qry");
 #	mdb.list("user","qry");
 #
-function user.main():void;	# 0  (main:void)
-# remapping inline functions 	# 1  (_1:str)
-# inspired by SQL module 	# 2  (_2:str)
-    mdb.list("user","qry");	# 3 MDBlist3 (_7:void)<-(_4:str)(_5:str)
+function user.main():void;              #  0 main:void {G}
+# remapping inline functions 
+# inspired by SQL module 
+    mdb.list("user","qry");             #  3 _7:void := MDBlist3(_4:str, _5:str) 
 end main;	# 4  
 function user.qry():void;
     b := bat.new(:oid,:int);

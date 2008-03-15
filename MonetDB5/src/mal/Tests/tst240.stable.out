@@ -22,15 +22,15 @@ stdout of test 'tst240` in directory 'src/mal` itself:
 #io.print(g);
 #io.print(h);
 #
-function user.main():void;	# 0  (main:void)
-# testing pack/unpack of bats 	# 1  (_1:str)
-    i := 1;	# 2  (i:int)<-(_3:int)
-    j := 2;	# 3  (j:int)<-(_5:int)
-    b := bat.pack(i,j);	# 4 CMDbatpack (b:bat[:int,:int])<-(i:int)(j:int)
-    io.print(b);	# 5 IOprint_val (_7:void)<-(b:bat[:int,:int])
-    (g,h):= bat.unpack(b);	# 6 CMDbatunpack (g:int)(h:int)<-(b:bat[:int,:int])
-    io.print(g);	# 7 IOprint_val (_10:void)<-(g:int)
-    io.print(h);	# 8 IOprint_val (_11:void)<-(h:int)
+function user.main():void;              #  0 main:void {G}
+# testing pack/unpack of bats 
+    i := 1;                             #  2 i:int := _3:int 
+    j := 2;                             #  3 j:int := _5:int 
+    b := bat.pack(i,j);                 #  4 b:bat[:int,:int] := CMDbatpack(i:int, j:int) {G}
+    io.print(b);                        #  5 _7:void := IOprint_val(b:bat[:int,:int]) 
+    (g,h):= bat.unpack(b);              #  6 (g:int, h:int) := CMDbatunpack(b:bat[:int,:int]) 
+    io.print(g);                        #  7 _10:void := IOprint_val(g:int) 
+    io.print(h);                        #  8 _11:void := IOprint_val(h:int) 
 end main;	# 9  
 #-----------------#
 # h	t	  # name

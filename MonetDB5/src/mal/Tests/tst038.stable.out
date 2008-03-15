@@ -16,8 +16,8 @@ stdout of test 'tst038` in directory 'src/mal` itself:
 #function tst2(b:bat[:any_1,:any_2]);
 #	bat.insert(b,"hello",1);
 #end tst2;
-function user.tst2(b:bat[:any_1,:any_2]):void;	# 0  (tst2:void)<-(b:bat[:any_1,:any_2])
-    bat.insert(b,"hello",1);	# 1 BKCinsert_bun (_2:void)<-(b:bat[:any_1,:any_2])(_3:str)(_4:int)
+function user.tst2(b:bat[:any_1,:any_2]):void;#  0 tst2:void := user.tst2(b:bat[:any_1,:any_2]) {PG}
+    bat.insert(b,"hello",1);            #  1 _2:void := BKCinsert_bun(b:bat[:any_1,:any_2], _3:str, _4:int) {P}
 end tst2;	# 2  
 #
 #b:=new(:int,:str);
@@ -30,13 +30,12 @@ end tst2;	# 2
 !MALException:user.tst2[0]:Error in cloned function
 
 !TypeException:user.main[4]:'user.tst2' undefined in: _6:void := user.tst2(b:bat[:int,:str])
-
-function user.main():void;	# 0  (main:void)
-#test the capability to deal with unspecified bats. 	# 1  (_1:str)
-    b := bat.new(:int,:str);	# 2 CMDBATnew (b:bat[:int,:str])<-(_3:int)(_4:str)
-#The call to tst2 fails at runtime 	# 3  (_5:str)
-    user.tst2(b);	# 4  unknown (_6:void)<-(b:bat[:int,:str])
-    io.print("shouldn't come here\n");	# 5 IOprint_val (_7:void)<-(_8:str)
+function user.main():void;              #  0 main:void {G}
+#test the capability to deal with unspecified bats. 
+    b := bat.new(:int,:str);            #  2 b:bat[:int,:str] := CMDBATnew(_3:int, _4:str) {G}
+#The call to tst2 fails at runtime      #  3 
+    user.tst2(b);                       #  4 _6:void := user.tst2(b:bat[:int,:str]) {U}
+    io.print("shouldn't come here\n");  #  5 _7:void := IOprint_val(_8:str) 
 end main;	# 6  
 
 # 07:58:43 >  
