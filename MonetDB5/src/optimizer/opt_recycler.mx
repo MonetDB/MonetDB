@@ -71,12 +71,21 @@ The number of overloaded instructions is kept to a minimum.
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_RECYCLER  */
+/* #define DEBUG_OPT_RECYCLER */
 @-
 The variables are all checked for being eligible as a variable
 subject to recycling control. A variable my only be assigned
 a value once. The function is an sql.bind() or all arguments
 are already recycle enabled or constant.
+
+The arguments of the function can not be recycled.
+They change with each called. This does not mean
+that the instructions using them can not be a
+target of recycling.
+
+Just looking at a kept result target is not good enough.
+You have to sure that the arguments are also the same.
+This outrules function arguments.
 @c
 #include "mal_config.h"
 #include "opt_recycler.h"
@@ -90,30 +99,29 @@ OPTrecycleImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) stk;
 	setLifespan(mb,span);
+
 	for (i = 1; i<mb->stop; i++) {
 		p = getInstrPtr(mb,i);
-@-
-Functions with side effects can not be subject to recycle actions.
-@c
 		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p))
 			continue;
-		cnt = 0;
-		for (j=p->retc; j<p->argc; j++)
-			if (isVarRecycled(mb, getArg(p,j)) || 
-			    isVarConstant(mb, getArg(p,j)))
-				cnt++;
+
+		cnt= 0;
+		for( j=p->retc; j<p->argc; j++)
+		if( isVarRecycled(mb, getArg(p,j)) ||
+			isVarConstant(mb, getArg(p,j)) )
+			cnt++;
+#ifdef DEBUG_OPT_RECYCLER  
+		stream_printf(GDKout,"recyle ? %d\n",cnt);
+		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif
 		
 		if (cnt == p->argc-p->retc) {
 			actions ++;
 			p->recycle = 1; /* this instruction is to be monitored */
-			for (j= 0; j < p->retc; j++)
-				if(getLastUpdate(span, getArg(p,j)) == i ){
-					setVarRecycled(mb, getArg(p,j));
-#ifdef DEBUG_OPT_RECYCLER  
-	stream_printf(GDKout,"recyle %d\n",getArg(p,j));
-	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-#endif
-				}
+			for( j= 0; j < p->retc; j++)
+			if( getLastUpdate(span, getArg(p,j)) == i ){
+				setVarRecycled(mb, getArg(p,j));
+			}
 		}
 @-
 The expected gain is largest if we can re-use selections
@@ -124,13 +132,15 @@ For the time being for all possible selects encountered.
 (keeping track of the sql.bind() dependency is more work)
 @c
 		/* take care of semantic driven recyling */
-		if( p->recycle &&
-			getFunctionId(p)== uselectRef &&
+		if( getFunctionId(p)== selectRef )
+			p->recycle = 1;
+		if( getFunctionId(p)== uselectRef &&
 			!ATOMvarsized( getGDKType( getArgType(mb,p,1)))
 		){
 			setFunctionId(p, selectRef);
 			/* this requires a complete type check again */
 			clrAllTypes(mb);
+			p->recycle = 1;
 		}
 	}
 	if (actions)
