@@ -637,8 +637,8 @@ typedef int socklen_t;
 
 /* The size of a `size_t', as computed by sizeof. */
 #define SIZEOF_SIZE_T 8
-typedef __int64 ssize_t;
 
+typedef __int64 ssize_t;
 /* The size of a `ssize_t', as computed by sizeof. */
 #define SIZEOF_SSIZE_T 8
 
@@ -651,15 +651,12 @@ typedef __int64 ssize_t;
 /* The size of a `size_t', as computed by sizeof. */
 #define SIZEOF_SIZE_T 4
 
+typedef int ssize_t;
 /* The size of a `ssize_t', as computed by sizeof. */
 #define SIZEOF_SSIZE_T 4
 
 /* The size of a `void *', as computed by sizeof. */
 #define SIZEOF_VOID_P 4
-
-/* The size of a `ssize_t', as computed by sizeof. */
-#define SIZEOF_SSIZE_T SIZEOF_SIZE_T
-typedef int ssize_t;
 #endif
 
 /* The size of a `__int64', as computed by sizeof. */
