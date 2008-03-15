@@ -260,7 +260,7 @@ static void RECYCLEremove(int pc){
 	newMalBlkStmt(recycleBlk,recycleBlk->ssize);
 
 	used= alloca(recycleBlk->vtop);
-	bzero(used, recycleBlk->vtop);
+	memset(used,0, recycleBlk->vtop);
 
 	/* set all used variables */
 	for (i = 0; i < pc; i++){
