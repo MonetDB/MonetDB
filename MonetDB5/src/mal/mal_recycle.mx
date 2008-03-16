@@ -1,4 +1,4 @@
-@ The contents of this file are subject to the MonetDB Public License
+@' The contents of this file are subject to the MonetDB Public License
 @' Version 1.1 (the "License"); you may not use this file except in
 @' compliance with the License. You may obtain a copy of the License at
 @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
@@ -63,8 +63,8 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-/* #define _DEBUG_RECYCLE_*/
-/* #define _DEBUG_RECYCLE_REUSE*/
+/* #define _DEBUG_RECYCLE_
+#define _DEBUG_RECYCLE_REUSE*/
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -109,8 +109,8 @@ mal_export MT_Lock recycleLock;
 mal_export MalBlkPtr recycleBlk;
 mal_export double recycleAlpha;
 
-mal_export int statements;
-mal_export int recycled;
+mal_export int statements;	/* total number of statemetns executed */
+mal_export int recycled;	/* total number of statements recycled */
 mal_export int savedTime;	/* sum of all recycled clk's */
 mal_export int monitorRecycler;
 
@@ -202,8 +202,8 @@ double recycleAlpha = 0.5;
 @- Monitoring the Recycler
 @c
 lng recyclerUsedMemory = 0;
-int statements = 0;
-int recycled = 0;
+int statements = 0;	/* total number of statemetns executed */
+int recycled = 0;	/* total number of statements recycled */
 int savedTime = 0;	/* sum of all recycled clk's */
 int monitorRecycler = 0;
 
@@ -403,6 +403,7 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 	}
 	i= recycleBlk->stop;
 	pushInstruction(recycleBlk,q);
+	recycleBlk->profiler[i].clk =0;
 	recycleBlk->profiler[i].counter =1;
 	recycleBlk->profiler[i].ticks = GDKusec()-s->clk;
 	recycleBlk->profiler[i].ibytes = rd;
@@ -522,14 +523,14 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 						pc = i;
 #ifdef _DEBUG_RECYCLE_
 	b1 = BBPquickdesc(bid, FALSE);
-	stream_printf(GDKout,"counts %d -> %d \n", bid, (int)BATcount(b1));
+	stream_printf(GDKout,"counts A %d -> %d \n", bid, (int)BATcount(b1));
 #endif
 					} else {
 						b1 = BBPquickdesc(bid, FALSE);
 						b2 = BBPquickdesc(nbid, FALSE);
 
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"counts %d -> %d %d -> %d\n", 
+	stream_printf(GDKout,"counts B %d -> %d %d -> %d\n", 
 		bid, (int)BATcount(b1), nbid, (int)BATcount(b2));
 #endif
 						if (BATcount(b1) > BATcount(b2)){
@@ -550,10 +551,6 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 					goto notfound;
 			}
 			/* found an exact match */
-#ifdef _DEBUG_RECYCLE_REUSE
-	stream_printf(GDKout,"RECYCLEreuse exact\n");
-	printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-#endif
 			/* get the results on the stack */
 			for( j=0; j<q->retc; j++){
 				VALcopy(&s->stk[getArg(p,j)],
@@ -565,19 +562,39 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			recycleBlk->profiler[i].counter++;
 			savedTime += recycleBlk->profiler[i].ticks;
 			return i;
-			notfound: continue;
+			notfound: 
+#ifdef _DEBUG_RECYCLE_REUSE
+	stream_printf(GDKout,"RECYCLEreuse exact failed\n");
+	printInstruction(GDKout, mb, q, LIST_MAL_ALL);
+#endif
+				continue;
 		}
 	}
+@-
+We have a candidate table from which we can draw a subsection.
+We execute it in place and safe the result upon need.
+@c
 	if (bid >=0) {
-		/* replace selection argument */
+		i= getPC(mb,p);
+#ifdef _DEBUG_RECYCLE_REUSE
+	stream_printf(GDKout,"RECYCLEreuse subselect %d\n",pc);
+#endif
 		s->stk[getArg(p,1)].val.bval = bid;
 		BBPincref(bid, TRUE);
+		/* make sure the garbage collector is not called */
+		j=s->keepAlive ;
+		s->keepAlive= TRUE;
+		(void) reenterMAL(MCgetClient(),mb,i,i+1,s,0,0);
+		/* RECYCLEexit(mb, s, p); */
+		/* restore the situation */
+		s->keepAlive= j;
+		s->stk[getArg(p,1)].val.bval = nbid;
+		BBPincref(nbid, TRUE);
 		savedTime += recycleBlk->profiler[pc].ticks;
 		recycleBlk->profiler[pc].counter++;
-		return -1;
+		return i;
 	}
 	return pc;
-
 }
 @-
 The generic wrappers for accessing the recycle variables.
