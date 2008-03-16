@@ -25,172 +25,320 @@ stdout of test 'tst1202` in directory 'src/mal` itself:
 ##        rule_dec:= rule(12,-31,0,75);
 ##        rule_feb:= rule("first fRiDaY on or after february 30@01:15");
 #
-function user.main():void;	# 0  (main:void)
-# Mil compiler Version 1.0) 	# 1  (_1:str)
-# Copyright (c) 1993-2001, CWI. All rights reserved. 	# 2  (_2:str)
-# Predefined code segment 	# 3  (_3:str)
-##line 531 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx" 	# 4  (_4:str)
-#module(monettime,alarm); 	# 5  (_5:str)
-    lzone := mtime.timezone("GMT+1");	# 6 MTIMEtzone_fromstr (lzone:timezone)<-(_7:str)
-    mtime.timezone_local(lzone);	# 7 MTIMEtzone_set_local (_8:void)<-(lzone:timezone)
-##line 535 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx" 	# 8  (_9:str)
-## test the various ways to create rules 	# 9  (_10:str)
-    rule_jan := mtime.rule("1st MON from start of JAN@01:15");	# 10 MTIMErule_fromstr (rule_jan:zrule)<-(_12:str)
-#var rule_jan := mtime.rule("1st MON from start of JAN@01:15"); 	# 11  (_13:str)
-    rule_mar := mtime.rule("first WEDNE on or after march 10@01:15");	# 12 MTIMErule_fromstr (rule_mar:zrule)<-(_15:str)
-#var rule_mar := mtime.rule("first WEDNE on or after march 10@01:15"); 	# 13  (_16:str)
-    rule_apr := mtime.rule("last THU on or before aPr 1@01:15");	# 14 MTIMErule_fromstr (rule_apr:zrule)<-(_18:str)
-#var rule_apr := mtime.rule("last THU on or before aPr 1@01:15"); 	# 15  (_19:str)
-    rule_may := mtime.rule("MAY 26@01:15");	# 16 MTIMErule_fromstr (rule_may:zrule)<-(_21:str)
-#var rule_may := mtime.rule("MAY 26@01:15"); 	# 17  (_22:str)
-    rule_jun := mtime.rule("2nd TUE from end of june@01:15");	# 18 MTIMErule_fromstr (rule_jun:zrule)<-(_24:str)
-#var rule_jun := mtime.rule("2nd TUE from end of june@01:15"); 	# 19  (_25:str)
-    rule_jul := mtime.rule(7,1,1,75);	# 20 MTIMErule_create (rule_jul:zrule)<-(_27:int)(_28:int)(_28:int)(_29:int)
-#var rule_jul := mtime.rule(7,1,1,75); 	# 21  (_30:str)
-    rule_aug := mtime.rule(8,-1,1,75);	# 22 MTIMErule_create (rule_aug:zrule)<-(_32:int)(_33:int)(_28:int)(_29:int)
-#var rule_aug := mtime.rule(8,-1,1,75); 	# 23  (_34:str)
-    rule_sep := mtime.rule(9,-10,3,75);	# 24 MTIMErule_create (rule_sep:zrule)<-(_36:int)(_37:int)(_38:int)(_29:int)
-#var rule_sep := mtime.rule(9,-10,3,75); 	# 25  (_39:str)
-    rule_oct := mtime.rule(10,31,0,75);	# 26 MTIMErule_create (rule_oct:zrule)<-(_41:int)(_42:int)(_43:int)(_29:int)
-#var rule_oct := mtime.rule(10,31,0,75); 	# 27  (_44:str)
-    rule_nov := mtime.rule(11,-10,-4,75);	# 28 MTIMErule_create (rule_nov:zrule)<-(_46:int)(_37:int)(_47:int)(_29:int)
-#var rule_nov := mtime.rule(11,-10,-4,75); 	# 29  (_48:str)
-## nil rules 	# 30  (_49:str)
-    rule_dec := mtime.rule(12,-31,0,75);	# 31 MTIMErule_create (rule_dec:zrule)<-(_51:int)(_52:int)(_43:int)(_29:int)
-#var rule_dec := mtime.rule(12,-31,0,75); 	# 32  (_53:str)
-    rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15");	# 33 MTIMErule_fromstr (rule_feb:zrule)<-(_55:str)
-#var rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15"); 	# 34  (_56:str)
-#  	# 35  (_57:str)
-    rule_bat := bat.new(:str,:zrule,10);	# 36 CMDBATnewint (rule_bat:bat[:str,:zrule])<-(_59:str)(_60:zrule)(_41:int)
-#var rule_bat := bat.new(str,rule,10); 	# 37  (_61:str)
-    bat.insert(rule_bat,"jan",rule_jan);	# 38 BKCinsert_bun (_62:void)<-(rule_bat:bat[:str,:zrule])(_63:str)(rule_jan:zrule)
-    bat.insert(rule_bat,"feb",rule_feb);	# 39 BKCinsert_bun (_64:void)<-(rule_bat:bat[:str,:zrule])(_65:str)(rule_feb:zrule)
-    bat.insert(rule_bat,"mar",rule_mar);	# 40 BKCinsert_bun (_66:void)<-(rule_bat:bat[:str,:zrule])(_67:str)(rule_mar:zrule)
-    bat.insert(rule_bat,"apr",rule_apr);	# 41 BKCinsert_bun (_68:void)<-(rule_bat:bat[:str,:zrule])(_69:str)(rule_apr:zrule)
-#rule_bat.bat.insert("jan",rule_jan).insert("feb",rule_feb).insert("mar",rule_mar).insert("apr",rule_apr); 	# 42  (_70:str)
-    bat.insert(rule_bat,"may",rule_may);	# 43 BKCinsert_bun (_71:void)<-(rule_bat:bat[:str,:zrule])(_72:str)(rule_may:zrule)
-    bat.insert(rule_bat,"jun",rule_jun);	# 44 BKCinsert_bun (_73:void)<-(rule_bat:bat[:str,:zrule])(_74:str)(rule_jun:zrule)
-    bat.insert(rule_bat,"jul",rule_jul);	# 45 BKCinsert_bun (_75:void)<-(rule_bat:bat[:str,:zrule])(_76:str)(rule_jul:zrule)
-    bat.insert(rule_bat,"aug",rule_aug);	# 46 BKCinsert_bun (_77:void)<-(rule_bat:bat[:str,:zrule])(_78:str)(rule_aug:zrule)
-#rule_bat.bat.insert("may",rule_may).insert("jun",rule_jun).insert("jul",rule_jul).insert("aug",rule_aug); 	# 47  (_79:str)
-    bat.insert(rule_bat,"sep",rule_sep);	# 48 BKCinsert_bun (_80:void)<-(rule_bat:bat[:str,:zrule])(_81:str)(rule_sep:zrule)
-    bat.insert(rule_bat,"oct",rule_oct);	# 49 BKCinsert_bun (_82:void)<-(rule_bat:bat[:str,:zrule])(_83:str)(rule_oct:zrule)
-    bat.insert(rule_bat,"nov",rule_nov);	# 50 BKCinsert_bun (_84:void)<-(rule_bat:bat[:str,:zrule])(_85:str)(rule_nov:zrule)
-    bat.insert(rule_bat,"dec",rule_dec);	# 51 BKCinsert_bun (_86:void)<-(rule_bat:bat[:str,:zrule])(_87:str)(rule_dec:zrule)
-#rule_bat.bat.insert("sep",rule_sep).insert("oct",rule_oct).insert("nov",rule_nov).insert("dec",rule_dec); 	# 52  (_88:str)
-##line 580 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx" 	# 53  (_89:str)
-## test the various ways to create timezones, using some of the above created rules 	# 54  (_90:str)
-    tzone_00 := mtime.timezone("GMT");	# 55 MTIMEtzone_fromstr (tzone_00:timezone)<-(_92:str)
-#var tzone_00 := mtime.timezone("GMT"); 	# 56  (_93:str)
-    tzone_01 := mtime.timezone("GMT+01:00");	# 57 MTIMEtzone_fromstr (tzone_01:timezone)<-(_95:str)
-#var tzone_01 := mtime.timezone("GMT+01:00"); 	# 58  (_96:str)
-    tzone_02 := mtime.timezone("GMT+0100");	# 59 MTIMEtzone_fromstr (tzone_02:timezone)<-(_98:str)
-#var tzone_02 := mtime.timezone("GMT+0100"); 	# 60  (_99:str)
-    tzone_03 := mtime.timezone(60,rule_oct,rule_mar);	# 61 MTIMEtzone_create_dst (tzone_03:timezone)<-(_101:int)(rule_oct:zrule)(rule_mar:zrule)
-#var tzone_03 := mtime.timezone(60, rule_oct, rule_mar); 	# 62  (_102:str)
-    tzone_04 := mtime.timezone(0,rule_jan,rule_aug);	# 63 MTIMEtzone_create_dst (tzone_04:timezone)<-(_104:int)(rule_jan:zrule)(rule_aug:zrule)
-#var tzone_04 := mtime.timezone(0, rule_jan, rule_aug); 	# 64  (_105:str)
-    tzone_05 := mtime.timezone(-97,rule_oct,rule_apr);	# 65 MTIMEtzone_create_dst (tzone_05:timezone)<-(_107:int)(rule_oct:zrule)(rule_apr:zrule)
-#var tzone_05 := mtime.timezone(-97, rule_oct, rule_apr); 	# 66  (_108:str)
-    tzone_06 := mtime.timezone(-97,rule_may,rule_sep);	# 67 MTIMEtzone_create_dst (tzone_06:timezone)<-(_107:int)(rule_may:zrule)(rule_sep:zrule)
-#var tzone_06 := mtime.timezone(-97, rule_may, rule_sep); 	# 68  (_110:str)
-    mc_a := calc.*(23,60);	# 69 CALCbinaryMULintint (mc_a:int)<-(_112:int)(_101:int)
-    tzone_07 := mtime.timezone(mc_a,rule_apr,rule_nov);	# 70 MTIMEtzone_create_dst (tzone_07:timezone)<-(mc_a:int)(rule_apr:zrule)(rule_nov:zrule)
-#var tzone_07 := mtime.timezone(23*60, rule_apr, rule_nov); 	# 71  (_114:str)
-    nc_a := calc.*(-23,59);	# 72 CALCbinaryMULintint (nc_a:int)<-(_116:int)(_117:int)
-    oc_a := calc.-(nc_a,59);	# 73 CALCbinarySUBintint (oc_a:int)<-(nc_a:int)(_117:int)
-    tzone_08 := mtime.timezone(oc_a);	# 74 MTIMEtzone_create (tzone_08:timezone)<-(oc_a:int)
-#var tzone_08 := mtime.timezone((-23*59) - 59); 	# 75  (_120:str)
-    tzone_09 := mtime.timezone(0);	# 76 MTIMEtzone_create (tzone_09:timezone)<-(_104:int)
-#var tzone_09 := mtime.timezone(0); 	# 77  (_122:str)
-    tzone_10 := mtime.timezone(-60);	# 78 MTIMEtzone_create (tzone_10:timezone)<-(_124:int)
-#var tzone_10 := mtime.timezone(-60); 	# 79  (_125:str)
-    pc_a := calc.*(23,60);	# 80 CALCbinaryMULintint (pc_a:int)<-(_112:int)(_101:int)
-    qc_a := calc.+(pc_a,59);	# 81 CALCbinaryADDintint (qc_a:int)<-(pc_a:int)(_117:int)
-    tzone_11 := mtime.timezone(qc_a);	# 82 MTIMEtzone_create (tzone_11:timezone)<-(qc_a:int)
-#var tzone_11 := mtime.timezone((23*60)+59); 	# 83  (_129:str)
-    tzone_12 := mtime.timezone(60);	# 84 MTIMEtzone_create (tzone_12:timezone)<-(_101:int)
-#var tzone_12 := mtime.timezone(60); 	# 85  (_131:str)
-## nil tzones 	# 86  (_132:str)
-    tzone_13 := mtime.timezone(60,rule_feb,rule_dec);	# 87 MTIMEtzone_create_dst (tzone_13:timezone)<-(_134:int)(rule_feb:zrule)(rule_dec:zrule)
-#var tzone_13 := mtime.timezone(60, rule_feb, rule_dec); 	# 88  (_135:str)
-    rc_a := calc.*(24,60);	# 89 CALCbinaryMULintint (rc_a:int)<-(_137:int)(_134:int)
-    tzone_15 := mtime.timezone(rc_a,rule_apr,rule_nov);	# 90 MTIMEtzone_create_dst (tzone_15:timezone)<-(rc_a:int)(rule_apr:zrule)(rule_nov:zrule)
-#var tzone_15 := mtime.timezone(24*60, rule_apr, rule_nov); 	# 91  (_139:str)
-    tzone_bat := bat.new(:oid,:timezone);	# 92 CMDBATnew (tzone_bat:bat[:oid,:timezone])<-(_141:oid)(_142:timezone)
-#var tzone_bat := bat.new(oid,tzone); 	# 93  (_143:str)
-    bat.insert(tzone_bat,0@0,tzone_00);	# 94 BKCinsert_bun (_144:void)<-(tzone_bat:bat[:oid,:timezone])(_145:oid)(tzone_00:timezone)
-    bat.insert(tzone_bat,1@0,tzone_01);	# 95 BKCinsert_bun (_146:void)<-(tzone_bat:bat[:oid,:timezone])(_147:oid)(tzone_01:timezone)
-    bat.insert(tzone_bat,2@0,tzone_02);	# 96 BKCinsert_bun (_148:void)<-(tzone_bat:bat[:oid,:timezone])(_149:oid)(tzone_02:timezone)
-#tzone_bat.bat.insert(0@0, tzone_00).insert(1@0, tzone_01).insert(2@0, tzone_02); 	# 97  (_150:str)
-    bat.insert(tzone_bat,3@0,tzone_03);	# 98 BKCinsert_bun (_151:void)<-(tzone_bat:bat[:oid,:timezone])(_152:oid)(tzone_03:timezone)
-    bat.insert(tzone_bat,4@0,tzone_04);	# 99 BKCinsert_bun (_153:void)<-(tzone_bat:bat[:oid,:timezone])(_154:oid)(tzone_04:timezone)
-    bat.insert(tzone_bat,5@0,tzone_05);	# 100 BKCinsert_bun (_155:void)<-(tzone_bat:bat[:oid,:timezone])(_156:oid)(tzone_05:timezone)
-#tzone_bat.bat.insert(3@0, tzone_03).insert(4@0, tzone_04).insert(5@0, tzone_05); 	# 101  (_157:str)
-    bat.insert(tzone_bat,6@0,tzone_06);	# 102 BKCinsert_bun (_158:void)<-(tzone_bat:bat[:oid,:timezone])(_159:oid)(tzone_06:timezone)
-    bat.insert(tzone_bat,7@0,tzone_07);	# 103 BKCinsert_bun (_160:void)<-(tzone_bat:bat[:oid,:timezone])(_161:oid)(tzone_07:timezone)
-    bat.insert(tzone_bat,8@0,tzone_08);	# 104 BKCinsert_bun (_162:void)<-(tzone_bat:bat[:oid,:timezone])(_163:oid)(tzone_08:timezone)
-#tzone_bat.bat.insert(6@0, tzone_06).insert(7@0, tzone_07).insert(8@0, tzone_08); 	# 105  (_164:str)
-    bat.insert(tzone_bat,9@0,tzone_09);	# 106 BKCinsert_bun (_165:void)<-(tzone_bat:bat[:oid,:timezone])(_166:oid)(tzone_09:timezone)
-    bat.insert(tzone_bat,10@0,tzone_10);	# 107 BKCinsert_bun (_167:void)<-(tzone_bat:bat[:oid,:timezone])(_168:oid)(tzone_10:timezone)
-    bat.insert(tzone_bat,11@0,tzone_11);	# 108 BKCinsert_bun (_169:void)<-(tzone_bat:bat[:oid,:timezone])(_170:oid)(tzone_11:timezone)
-#tzone_bat.bat.insert(9@0, tzone_09).insert(10@0, tzone_10).insert(11@0, tzone_11); 	# 109  (_171:str)
-    bat.insert(tzone_bat,12@0,tzone_12);	# 110 BKCinsert_bun (_172:void)<-(tzone_bat:bat[:oid,:timezone])(_173:oid)(tzone_12:timezone)
-    bat.insert(tzone_bat,13@0,tzone_13);	# 111 BKCinsert_bun (_174:void)<-(tzone_bat:bat[:oid,:timezone])(_175:oid)(tzone_13:timezone)
-    bat.insert(tzone_bat,15@0,tzone_15);	# 112 BKCinsert_bun (_176:void)<-(tzone_bat:bat[:oid,:timezone])(_177:oid)(tzone_15:timezone)
-#tzone_bat.bat.insert(12@0, tzone_12).insert(13@0, tzone_13).insert(15@0, tzone_15); 	# 113  (_178:str)
-## test the operations on tzones 	# 114  (_179:str)
-    bat.setName(tzone_bat,"timezone");	# 115 BKCsetName (_180:void)<-(tzone_bat:bat[:oid,:timezone])(_181:str)
-#io.print(tzone_bat); 	# 116  (_182:str)
-#io.print("start error"); 	# 117  (_183:str)
-#x:= getRefCount(tzone_bat); 	# 118  (_184:str)
-#io.print(x); 	# 119  (_185:str)
-#jd_a := io.print(tzone_bat); 	# 120  (_186:str)
-#io.print("end"); 	# 121  (_187:str)
-#io.print(x); 	# 122  (_188:str)
-#x:= getRefCount(tzone_bat); 	# 123  (_189:str)
-    io.print("tzone_bat");	# 124 IOprint_val (_190:void)<-(_191:str)
-    io.print(tzone_bat);	# 125 IOprint_val (_192:void)<-(tzone_bat:bat[:oid,:timezone])
-#io.print(tzone_bat.bat.setColumn("tzone")); 	# 126  (_193:str)
-    _210 := bat.new(nil:oid,nil:int);	# 127 CMDBATnew (_210:bat[:oid,:int])<-(_211:oid)(_212:int)
-barrier (_214,_215,_216):= bat.newIterator(tzone_bat);	# 128 CHPbunIterator (_214:lng)(_215:oid)(_216:timezone)<-(tzone_bat:bat[:oid,:timezone]) jump 135
-    _218 := mtime.minutes(_216);	# 129 MTIMEtzone_extract_minutes (_218:int)<-(_216:timezone)
-    bat.insert(_210,_215,_218);	# 130 BKCinsert_bun (_219:void)<-(_210:bat[:oid,:int])(_215:oid)(_218:int)
-    redo (_214,_215,_216):= bat.hasMoreElements(tzone_bat);	# 131 CHPbunHasMoreElements (_214:lng)(_215:oid)(_216:timezone)<-(tzone_bat:bat[:oid,:timezone]) jump 129
-catch MALException:str ;	# 132  (MALException:str) jump 134
-    redo (_214,_215,_216):= bat.hasMoreElements(tzone_bat);	# 133 CHPbunHasMoreElements (_214:lng)(_215:oid)(_216:timezone)<-(tzone_bat:bat[:oid,:timezone]) jump 129
-exit MALException:str ;	# 134  (MALException:str)
-exit (_214,_215,_216);	# 135  (_214:lng)(_215:oid)(_216:timezone)
-    kd_a:bat[:oid,:int]  := _210;	# 136  (kd_a:bat[:oid,:int])<-(_210:bat[:oid,:int])
-    bat.setColumn(kd_a,"minutes");	# 137 BKCsetColumn (_197:void)<-(kd_a:bat[:oid,:int])(_196:str)
-#io.print([minutes](tzone_bat).bat.setColumn("minutes"), 	# 138  (_198:str)
-    _225 := bat.new(nil:oid,nil:zrule);	# 139 CMDBATnew (_225:bat[:oid,:zrule])<-(_211:oid)(_226:zrule)
-barrier (_228,_229,_230):= bat.newIterator(tzone_bat);	# 140 CHPbunIterator (_228:lng)(_229:oid)(_230:timezone)<-(tzone_bat:bat[:oid,:timezone]) jump 147
-    _232 := mtime.start_dst(_230);	# 141 MTIMEtzone_extract_start (_232:zrule)<-(_230:timezone)
-    bat.insert(_225,_229,_232);	# 142 BKCinsert_bun (_233:void)<-(_225:bat[:oid,:zrule])(_229:oid)(_232:zrule)
-    redo (_228,_229,_230):= bat.hasMoreElements(tzone_bat);	# 143 CHPbunHasMoreElements (_228:lng)(_229:oid)(_230:timezone)<-(tzone_bat:bat[:oid,:timezone]) jump 141
-catch MALException:str ;	# 144  (MALException:str) jump 146
-    redo (_228,_229,_230):= bat.hasMoreElements(tzone_bat);	# 145 CHPbunHasMoreElements (_228:lng)(_229:oid)(_230:timezone)<-(tzone_bat:bat[:oid,:timezone]) jump 141
-exit MALException:str ;	# 146  (MALException:str)
-exit (_228,_229,_230);	# 147  (_228:lng)(_229:oid)(_230:timezone)
-    md_a:bat[:oid,:zrule]  := _225;	# 148  (md_a:bat[:oid,:zrule])<-(_225:bat[:oid,:zrule])
-    bat.setColumn(md_a,"start_dst");	# 149 BKCsetColumn (_201:void)<-(md_a:bat[:oid,:zrule])(_200:str)
-#      [start_dst](tzone_bat).bat.setColumn("start_dst"), 	# 150  (_202:str)
-    _239 := bat.new(nil:oid,nil:zrule);	# 151 CMDBATnew (_239:bat[:oid,:zrule])<-(_211:oid)(_226:zrule)
-barrier (_241,_242,_243):= bat.newIterator(tzone_bat);	# 152 CHPbunIterator (_241:lng)(_242:oid)(_243:timezone)<-(tzone_bat:bat[:oid,:timezone]) jump 159
-    _245 := mtime.end_dst(_243);	# 153 MTIMEtzone_extract_end (_245:zrule)<-(_243:timezone)
-    bat.insert(_239,_242,_245);	# 154 BKCinsert_bun (_246:void)<-(_239:bat[:oid,:zrule])(_242:oid)(_245:zrule)
-    redo (_241,_242,_243):= bat.hasMoreElements(tzone_bat);	# 155 CHPbunHasMoreElements (_241:lng)(_242:oid)(_243:timezone)<-(tzone_bat:bat[:oid,:timezone]) jump 153
-catch MALException:str ;	# 156  (MALException:str) jump 158
-    redo (_241,_242,_243):= bat.hasMoreElements(tzone_bat);	# 157 CHPbunHasMoreElements (_241:lng)(_242:oid)(_243:timezone)<-(tzone_bat:bat[:oid,:timezone]) jump 153
-exit MALException:str ;	# 158  (MALException:str)
-exit (_241,_242,_243);	# 159  (_241:lng)(_242:oid)(_243:timezone)
-    od_a:bat[:oid,:zrule]  := _239;	# 160  (od_a:bat[:oid,:zrule])<-(_239:bat[:oid,:zrule])
-    bat.setColumn(od_a,"end_dst");	# 161 BKCsetColumn (_205:void)<-(od_a:bat[:oid,:zrule])(_204:str)
-    io.print("print(kd_a,md_a,od_a)");	# 162 IOprint_val (_206:void)<-(_207:str)
-    qd_a := io.print(kd_a,md_a,od_a);	# 163 IOtable (qd_a:void)<-(kd_a:bat[:oid,:int])(md_a:bat[:oid,:zrule])(od_a:bat[:oid,:zrule])
-#      [end_dst](tzone_bat).bat.setColumn("end_dst")); 	# 164  (_206:str)
-end main;	# 165  
+## Predefined code segment
+##
+###line 531 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+##module(monettime,alarm);
+##
+##
+##
+#lzone:= mtime.timezone("GMT+1");
+#mtime.timezone_local(lzone);
+###line 535 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+### test the various ways to create rules
+#	rule_jan:= mtime.rule("1st MON from start of JAN@01:15");
+##var rule_jan := mtime.rule("1st MON from start of JAN@01:15");
+#	rule_mar:= mtime.rule("first WEDNE on or after march 10@01:15");
+##var rule_mar := mtime.rule("first WEDNE on or after march 10@01:15");
+#	rule_apr:= mtime.rule("last THU on or before aPr 1@01:15");
+##var rule_apr := mtime.rule("last THU on or before aPr 1@01:15");
+#	rule_may:= mtime.rule("MAY 26@01:15");
+##var rule_may := mtime.rule("MAY 26@01:15");
+#	rule_jun:= mtime.rule("2nd TUE from end of june@01:15");
+##var rule_jun := mtime.rule("2nd TUE from end of june@01:15");
+#	rule_jul:= mtime.rule(7,1,1,75);
+##var rule_jul := mtime.rule(7,1,1,75);
+#	rule_aug:= mtime.rule(8,-1,1,75);
+##var rule_aug := mtime.rule(8,-1,1,75);
+#	rule_sep:= mtime.rule(9,-10,3,75);
+##var rule_sep := mtime.rule(9,-10,3,75);
+#	rule_oct:= mtime.rule(10,31,0,75);
+##var rule_oct := mtime.rule(10,31,0,75);
+#	rule_nov:= mtime.rule(11,-10,-4,75);
+##var rule_nov := mtime.rule(11,-10,-4,75);
+### nil rules
+#	rule_dec:= mtime.rule(12,-31,0,75);
+##var rule_dec := mtime.rule(12,-31,0,75);
+#	rule_feb:= mtime.rule("first fRiDaY on or after february 30@01:15");
+##var rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15");
+## 
+#	rule_bat:= bat.new(:str,:zrule,10);
+##var rule_bat := bat.new(str,rule,10);
+#	bat.insert(rule_bat,"jan",rule_jan);
+#	bat.insert(rule_bat,"feb",rule_feb);
+#	bat.insert(rule_bat,"mar",rule_mar);
+#	bat.insert(rule_bat,"apr",rule_apr);
+##rule_bat.bat.insert("jan",rule_jan).insert("feb",rule_feb).insert("mar",rule_mar).insert("apr",rule_apr);
+#	bat.insert(rule_bat,"may",rule_may);
+#	bat.insert(rule_bat,"jun",rule_jun);
+#	bat.insert(rule_bat,"jul",rule_jul);
+#	bat.insert(rule_bat,"aug",rule_aug);
+##rule_bat.bat.insert("may",rule_may).insert("jun",rule_jun).insert("jul",rule_jul).insert("aug",rule_aug);
+#	bat.insert(rule_bat,"sep",rule_sep);
+#	bat.insert(rule_bat,"oct",rule_oct);
+#	bat.insert(rule_bat,"nov",rule_nov);
+#	bat.insert(rule_bat,"dec",rule_dec);
+##rule_bat.bat.insert("sep",rule_sep).insert("oct",rule_oct).insert("nov",rule_nov).insert("dec",rule_dec);
+##
+##
+###line 580 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
+### test the various ways to create timezones, using some of the above created rules
+#	tzone_00:= mtime.timezone("GMT");
+##var tzone_00 := mtime.timezone("GMT");
+#	tzone_01:= mtime.timezone("GMT+01:00");
+##var tzone_01 := mtime.timezone("GMT+01:00");
+#	tzone_02:= mtime.timezone("GMT+0100");
+##var tzone_02 := mtime.timezone("GMT+0100");
+#	tzone_03:= mtime.timezone(60,rule_oct,rule_mar);
+##var tzone_03 := mtime.timezone(60, rule_oct, rule_mar);
+#	tzone_04:= mtime.timezone(0,rule_jan,rule_aug);
+##var tzone_04 := mtime.timezone(0, rule_jan, rule_aug);
+#	tzone_05:= mtime.timezone(-97,rule_oct,rule_apr);
+##var tzone_05 := mtime.timezone(-97, rule_oct, rule_apr);
+#	tzone_06:= mtime.timezone(-97,rule_may,rule_sep);
+##var tzone_06 := mtime.timezone(-97, rule_may, rule_sep);
+#	mc_a := calc.*(23,60);
+#	tzone_07:= mtime.timezone(mc_a,rule_apr,rule_nov);
+##var tzone_07 := mtime.timezone(23*60, rule_apr, rule_nov);
+#	nc_a := calc.*(-23,59);
+#	oc_a := calc.-(nc_a,59);
+#	tzone_08:= mtime.timezone(oc_a);
+##var tzone_08 := mtime.timezone((-23*59) - 59);
+#	tzone_09:= mtime.timezone(0);
+##var tzone_09 := mtime.timezone(0);
+#	tzone_10:= mtime.timezone(-60);
+##var tzone_10 := mtime.timezone(-60);
+#	pc_a := calc.*(23,60);
+#	qc_a := calc.+(pc_a,59);
+#	tzone_11:= mtime.timezone(qc_a);
+##var tzone_11 := mtime.timezone((23*60)+59);
+#	tzone_12:= mtime.timezone(60);
+##var tzone_12 := mtime.timezone(60);
+### nil tzones
+#	tzone_13:= mtime.timezone(60,rule_feb,rule_dec);
+##var tzone_13 := mtime.timezone(60, rule_feb, rule_dec);
+#	rc_a := calc.*(24,60);
+#	tzone_15:= mtime.timezone(rc_a,rule_apr,rule_nov);
+##var tzone_15 := mtime.timezone(24*60, rule_apr, rule_nov);
+##
+##
+#	tzone_bat:= bat.new(:oid,:timezone);
+##var tzone_bat := bat.new(oid,tzone);
+#	bat.insert(tzone_bat,0@0,tzone_00);
+#	bat.insert(tzone_bat,1@0,tzone_01);
+#	bat.insert(tzone_bat,2@0,tzone_02);
+##tzone_bat.bat.insert(0@0, tzone_00).insert(1@0, tzone_01).insert(2@0, tzone_02);
+#	bat.insert(tzone_bat,3@0,tzone_03);
+#	bat.insert(tzone_bat,4@0,tzone_04);
+#	bat.insert(tzone_bat,5@0,tzone_05);
+##tzone_bat.bat.insert(3@0, tzone_03).insert(4@0, tzone_04).insert(5@0, tzone_05);
+#	bat.insert(tzone_bat,6@0,tzone_06);
+#	bat.insert(tzone_bat,7@0,tzone_07);
+#	bat.insert(tzone_bat,8@0,tzone_08);
+##tzone_bat.bat.insert(6@0, tzone_06).insert(7@0, tzone_07).insert(8@0, tzone_08);
+#	bat.insert(tzone_bat,9@0,tzone_09);
+#	bat.insert(tzone_bat,10@0,tzone_10);
+#	bat.insert(tzone_bat,11@0,tzone_11);
+##tzone_bat.bat.insert(9@0, tzone_09).insert(10@0, tzone_10).insert(11@0, tzone_11);
+#	bat.insert(tzone_bat,12@0,tzone_12);
+#	bat.insert(tzone_bat,13@0,tzone_13);
+#	bat.insert(tzone_bat,15@0,tzone_15);
+##tzone_bat.bat.insert(12@0, tzone_12).insert(13@0, tzone_13).insert(15@0, tzone_15);
+##
+### test the operations on tzones
+#	bat.setName(tzone_bat,"timezone");
+##io.print(tzone_bat);
+##io.print("start error");
+#	#x:= getRefCount(tzone_bat);
+##io.print(x);
+#	#jd_a := io.print(tzone_bat);
+##io.print("end");
+##io.print(x);
+#	#x:= getRefCount(tzone_bat);
+#io.print("tzone_bat");
+#	io.print(tzone_bat);
+##io.print(tzone_bat.bat.setColumn("tzone"));
+#	kd_a:bat[:oid,:int] := mal.multiplex("mtime","minutes",tzone_bat);
+#	bat.setColumn(kd_a,"minutes");
+##io.print([minutes](tzone_bat).bat.setColumn("minutes"),
+#	md_a:bat[:oid,:zrule] := mal.multiplex("mtime","start_dst",tzone_bat);
+#	bat.setColumn(md_a,"start_dst");
+##      [start_dst](tzone_bat).bat.setColumn("start_dst"),
+#	od_a:bat[:oid,:zrule] := mal.multiplex("mtime","end_dst",tzone_bat);
+#	bat.setColumn(od_a,"end_dst");
+#io.print("print(kd_a,md_a,od_a)");
+#	qd_a := io.print(kd_a,md_a,od_a);
+##      [end_dst](tzone_bat).bat.setColumn("end_dst"));
+##
+##
+##
+#
+function user.main():void;              #  0 main:void {G}
+# Mil compiler Version 1.0) 
+# Copyright (c) 1993-2001, CWI. All rights reserved. 
+# Predefined code segment 
+##line 531 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx" 
+#module(monettime,alarm); 
+    lzone := mtime.timezone("GMT+1");   #  6 lzone:timezone := MTIMEtzone_fromstr(_7:str) 
+    mtime.timezone_local(lzone);        #  7 _8:void := MTIMEtzone_set_local(lzone:timezone) 
+##line 535 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx" 
+## test the various ways to create rules 
+    rule_jan := mtime.rule("1st MON from start of JAN@01:15");# 10 rule_jan:zrule := MTIMErule_fromstr(_12:str) 
+#var rule_jan := mtime.rule("1st MON from start of JAN@01:15"); 
+    rule_mar := mtime.rule("first WEDNE on or after march 10@01:15");# 12 rule_mar:zrule := MTIMErule_fromstr(_15:str) 
+#var rule_mar := mtime.rule("first WEDNE on or after march 10@01:15"); 
+    rule_apr := mtime.rule("last THU on or before aPr 1@01:15");# 14 rule_apr:zrule := MTIMErule_fromstr(_18:str) 
+#var rule_apr := mtime.rule("last THU on or before aPr 1@01:15"); 
+    rule_may := mtime.rule("MAY 26@01:15");# 16 rule_may:zrule := MTIMErule_fromstr(_21:str) 
+#var rule_may := mtime.rule("MAY 26@01:15"); 
+    rule_jun := mtime.rule("2nd TUE from end of june@01:15");# 18 rule_jun:zrule := MTIMErule_fromstr(_24:str) 
+#var rule_jun := mtime.rule("2nd TUE from end of june@01:15"); 
+    rule_jul := mtime.rule(7,1,1,75);   # 20 rule_jul:zrule := MTIMErule_create(_27:int, _28:int, _28:int, _29:int) 
+#var rule_jul := mtime.rule(7,1,1,75); 
+    rule_aug := mtime.rule(8,-1,1,75);  # 22 rule_aug:zrule := MTIMErule_create(_32:int, _33:int, _28:int, _29:int) 
+#var rule_aug := mtime.rule(8,-1,1,75); 
+    rule_sep := mtime.rule(9,-10,3,75); # 24 rule_sep:zrule := MTIMErule_create(_36:int, _37:int, _38:int, _29:int) 
+#var rule_sep := mtime.rule(9,-10,3,75); 
+    rule_oct := mtime.rule(10,31,0,75); # 26 rule_oct:zrule := MTIMErule_create(_41:int, _42:int, _43:int, _29:int) 
+#var rule_oct := mtime.rule(10,31,0,75); 
+    rule_nov := mtime.rule(11,-10,-4,75);# 28 rule_nov:zrule := MTIMErule_create(_46:int, _37:int, _47:int, _29:int) 
+#var rule_nov := mtime.rule(11,-10,-4,75); 
+## nil rules 
+    rule_dec := mtime.rule(12,-31,0,75);# 31 rule_dec:zrule := MTIMErule_create(_51:int, _52:int, _43:int, _29:int) 
+#var rule_dec := mtime.rule(12,-31,0,75); 
+    rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15");# 33 rule_feb:zrule := MTIMErule_fromstr(_55:str) 
+#var rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15"); 
+#  
+    rule_bat := bat.new(:str,:zrule,10);# 36 rule_bat:bat[:str,:zrule] := CMDBATnewint(_59:str, _60:zrule, _41:int) {G}
+#var rule_bat := bat.new(str,rule,10); 
+    bat.insert(rule_bat,"jan",rule_jan);# 38 _62:void := BKCinsert_bun(rule_bat:bat[:str,:zrule], _63:str, rule_jan:zrule) 
+    bat.insert(rule_bat,"feb",rule_feb);# 39 _64:void := BKCinsert_bun(rule_bat:bat[:str,:zrule], _65:str, rule_feb:zrule) 
+    bat.insert(rule_bat,"mar",rule_mar);# 40 _66:void := BKCinsert_bun(rule_bat:bat[:str,:zrule], _67:str, rule_mar:zrule) 
+    bat.insert(rule_bat,"apr",rule_apr);# 41 _68:void := BKCinsert_bun(rule_bat:bat[:str,:zrule], _69:str, rule_apr:zrule) 
+#rule_bat.bat.insert("jan",rule_jan).insert("feb",rule_feb).insert("mar",rule_mar).insert("apr",rule_apr); 
+    bat.insert(rule_bat,"may",rule_may);# 43 _71:void := BKCinsert_bun(rule_bat:bat[:str,:zrule], _72:str, rule_may:zrule) 
+    bat.insert(rule_bat,"jun",rule_jun);# 44 _73:void := BKCinsert_bun(rule_bat:bat[:str,:zrule], _74:str, rule_jun:zrule) 
+    bat.insert(rule_bat,"jul",rule_jul);# 45 _75:void := BKCinsert_bun(rule_bat:bat[:str,:zrule], _76:str, rule_jul:zrule) 
+    bat.insert(rule_bat,"aug",rule_aug);# 46 _77:void := BKCinsert_bun(rule_bat:bat[:str,:zrule], _78:str, rule_aug:zrule) 
+#rule_bat.bat.insert("may",rule_may).insert("jun",rule_jun).insert("jul",rule_jul).insert("aug",rule_aug); 
+    bat.insert(rule_bat,"sep",rule_sep);# 48 _80:void := BKCinsert_bun(rule_bat:bat[:str,:zrule], _81:str, rule_sep:zrule) 
+    bat.insert(rule_bat,"oct",rule_oct);# 49 _82:void := BKCinsert_bun(rule_bat:bat[:str,:zrule], _83:str, rule_oct:zrule) 
+    bat.insert(rule_bat,"nov",rule_nov);# 50 _84:void := BKCinsert_bun(rule_bat:bat[:str,:zrule], _85:str, rule_nov:zrule) 
+    bat.insert(rule_bat,"dec",rule_dec);# 51 _86:void := BKCinsert_bun(rule_bat:bat[:str,:zrule], _87:str, rule_dec:zrule) 
+#rule_bat.bat.insert("sep",rule_sep).insert("oct",rule_oct).insert("nov",rule_nov).insert("dec",rule_dec); 
+##line 580 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx" 
+## test the various ways to create timezones, using some of the above created rules 
+    tzone_00 := mtime.timezone("GMT");  # 55 tzone_00:timezone := MTIMEtzone_fromstr(_92:str) 
+#var tzone_00 := mtime.timezone("GMT"); 
+    tzone_01 := mtime.timezone("GMT+01:00");# 57 tzone_01:timezone := MTIMEtzone_fromstr(_95:str) 
+#var tzone_01 := mtime.timezone("GMT+01:00"); 
+    tzone_02 := mtime.timezone("GMT+0100");# 59 tzone_02:timezone := MTIMEtzone_fromstr(_98:str) 
+#var tzone_02 := mtime.timezone("GMT+0100"); 
+    tzone_03 := mtime.timezone(60,rule_oct,rule_mar);# 61 tzone_03:timezone := MTIMEtzone_create_dst(_101:int, rule_oct:zrule, rule_mar:zrule) 
+#var tzone_03 := mtime.timezone(60, rule_oct, rule_mar); 
+    tzone_04 := mtime.timezone(0,rule_jan,rule_aug);# 63 tzone_04:timezone := MTIMEtzone_create_dst(_104:int, rule_jan:zrule, rule_aug:zrule) 
+#var tzone_04 := mtime.timezone(0, rule_jan, rule_aug); 
+    tzone_05 := mtime.timezone(-97,rule_oct,rule_apr);# 65 tzone_05:timezone := MTIMEtzone_create_dst(_107:int, rule_oct:zrule, rule_apr:zrule) 
+#var tzone_05 := mtime.timezone(-97, rule_oct, rule_apr); 
+    tzone_06 := mtime.timezone(-97,rule_may,rule_sep);# 67 tzone_06:timezone := MTIMEtzone_create_dst(_107:int, rule_may:zrule, rule_sep:zrule) 
+#var tzone_06 := mtime.timezone(-97, rule_may, rule_sep); 
+    mc_a := calc.*(23,60);              # 69 mc_a:int := CALCbinaryMULintint(_112:int, _101:int) 
+    tzone_07 := mtime.timezone(mc_a,rule_apr,rule_nov);# 70 tzone_07:timezone := MTIMEtzone_create_dst(mc_a:int, rule_apr:zrule, rule_nov:zrule) 
+#var tzone_07 := mtime.timezone(23*60, rule_apr, rule_nov); 
+    nc_a := calc.*(-23,59);             # 72 nc_a:int := CALCbinaryMULintint(_116:int, _117:int) 
+    oc_a := calc.-(nc_a,59);            # 73 oc_a:int := CALCbinarySUBintint(nc_a:int, _117:int) 
+    tzone_08 := mtime.timezone(oc_a);   # 74 tzone_08:timezone := MTIMEtzone_create(oc_a:int) 
+#var tzone_08 := mtime.timezone((-23*59) - 59); 
+    tzone_09 := mtime.timezone(0);      # 76 tzone_09:timezone := MTIMEtzone_create(_104:int) 
+#var tzone_09 := mtime.timezone(0); 
+    tzone_10 := mtime.timezone(-60);    # 78 tzone_10:timezone := MTIMEtzone_create(_124:int) 
+#var tzone_10 := mtime.timezone(-60); 
+    pc_a := calc.*(23,60);              # 80 pc_a:int := CALCbinaryMULintint(_112:int, _101:int) 
+    qc_a := calc.+(pc_a,59);            # 81 qc_a:int := CALCbinaryADDintint(pc_a:int, _117:int) 
+    tzone_11 := mtime.timezone(qc_a);   # 82 tzone_11:timezone := MTIMEtzone_create(qc_a:int) 
+#var tzone_11 := mtime.timezone((23*60)+59); 
+    tzone_12 := mtime.timezone(60);     # 84 tzone_12:timezone := MTIMEtzone_create(_101:int) 
+#var tzone_12 := mtime.timezone(60); 
+## nil tzones 
+    tzone_13 := mtime.timezone(60,rule_feb,rule_dec);# 87 tzone_13:timezone := MTIMEtzone_create_dst(_134:int, rule_feb:zrule, rule_dec:zrule) 
+#var tzone_13 := mtime.timezone(60, rule_feb, rule_dec); 
+    rc_a := calc.*(24,60);              # 89 rc_a:int := CALCbinaryMULintint(_137:int, _134:int) 
+    tzone_15 := mtime.timezone(rc_a,rule_apr,rule_nov);# 90 tzone_15:timezone := MTIMEtzone_create_dst(rc_a:int, rule_apr:zrule, rule_nov:zrule) 
+#var tzone_15 := mtime.timezone(24*60, rule_apr, rule_nov); 
+    tzone_bat := bat.new(:oid,:timezone);# 92 tzone_bat:bat[:oid,:timezone] := CMDBATnew(_141:oid, _142:timezone) {G}
+#var tzone_bat := bat.new(oid,tzone); 
+    bat.insert(tzone_bat,0@0,tzone_00); # 94 _144:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _145:oid, tzone_00:timezone) 
+    bat.insert(tzone_bat,1@0,tzone_01); # 95 _146:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _147:oid, tzone_01:timezone) 
+    bat.insert(tzone_bat,2@0,tzone_02); # 96 _148:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _149:oid, tzone_02:timezone) 
+#tzone_bat.bat.insert(0@0, tzone_00).insert(1@0, tzone_01).insert(2@0, tzone_02); 
+    bat.insert(tzone_bat,3@0,tzone_03); # 98 _151:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _152:oid, tzone_03:timezone) 
+    bat.insert(tzone_bat,4@0,tzone_04); # 99 _153:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _154:oid, tzone_04:timezone) 
+    bat.insert(tzone_bat,5@0,tzone_05); #100 _155:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _156:oid, tzone_05:timezone) 
+#tzone_bat.bat.insert(3@0, tzone_03).insert(4@0, tzone_04).insert(5@0, tzone_05); 
+    bat.insert(tzone_bat,6@0,tzone_06); #102 _158:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _159:oid, tzone_06:timezone) 
+    bat.insert(tzone_bat,7@0,tzone_07); #103 _160:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _161:oid, tzone_07:timezone) 
+    bat.insert(tzone_bat,8@0,tzone_08); #104 _162:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _163:oid, tzone_08:timezone) 
+#tzone_bat.bat.insert(6@0, tzone_06).insert(7@0, tzone_07).insert(8@0, tzone_08); 
+    bat.insert(tzone_bat,9@0,tzone_09); #106 _165:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _166:oid, tzone_09:timezone) 
+    bat.insert(tzone_bat,10@0,tzone_10);#107 _167:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _168:oid, tzone_10:timezone) 
+    bat.insert(tzone_bat,11@0,tzone_11);#108 _169:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _170:oid, tzone_11:timezone) 
+#tzone_bat.bat.insert(9@0, tzone_09).insert(10@0, tzone_10).insert(11@0, tzone_11); 
+    bat.insert(tzone_bat,12@0,tzone_12);#110 _172:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _173:oid, tzone_12:timezone) 
+    bat.insert(tzone_bat,13@0,tzone_13);#111 _174:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _175:oid, tzone_13:timezone) 
+    bat.insert(tzone_bat,15@0,tzone_15);#112 _176:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _177:oid, tzone_15:timezone) 
+#tzone_bat.bat.insert(12@0, tzone_12).insert(13@0, tzone_13).insert(15@0, tzone_15); 
+## test the operations on tzones 
+    bat.setName(tzone_bat,"timezone");  #115 _180:void := BKCsetName(tzone_bat:bat[:oid,:timezone], _181:str) 
+#io.print(tzone_bat); 
+#io.print("start error"); 
+#x:= getRefCount(tzone_bat); 
+#io.print(x); 
+#jd_a := io.print(tzone_bat); 
+#io.print("end"); 
+#io.print(x); 
+#x:= getRefCount(tzone_bat); 
+    io.print("tzone_bat");              #124 _190:void := IOprint_val(_191:str) 
+    io.print(tzone_bat);                #125 _192:void := IOprint_val(tzone_bat:bat[:oid,:timezone]) 
+#io.print(tzone_bat.bat.setColumn("tzone")); 
+    _210 := bat.new(nil:oid,nil:int);   #127 _210:bat[:oid,:int] := CMDBATnew(_211:oid, _212:int) {G}
+barrier (_214,_215,_216):= bat.newIterator(tzone_bat);#128 (_214:lng, _215:oid, _216:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J135}
+    _218 := mtime.minutes(_216);        #129 _218:int := MTIMEtzone_extract_minutes(_216:timezone) 
+    bat.insert(_210,_215,_218);         #130 _219:void := BKCinsert_bun(_210:bat[:oid,:int], _215:oid, _218:int) 
+    redo (_214,_215,_216):= bat.hasMoreElements(tzone_bat);#131 (_214:lng, _215:oid, _216:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J129}
+catch MALException:str ;                #132 MALException:str {J134}
+    redo (_214,_215,_216):= bat.hasMoreElements(tzone_bat);#133 (_214:lng, _215:oid, _216:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J129}
+exit MALException:str ;                 #134 MALException:str 
+exit (_214,_215,_216);                  #135 (_214:lng, _215:oid, _216:timezone 
+    kd_a:bat[:oid,:int]  := _210;       #136 kd_a:bat[:oid,:int] := _210:bat[:oid,:int] {G}
+    bat.setColumn(kd_a,"minutes");      #137 _197:void := BKCsetColumn(kd_a:bat[:oid,:int], _196:str) 
+#io.print([minutes](tzone_bat).bat.setColumn("minutes"), 
+    _225 := bat.new(nil:oid,nil:zrule); #139 _225:bat[:oid,:zrule] := CMDBATnew(_211:oid, _226:zrule) {G}
+barrier (_228,_229,_230):= bat.newIterator(tzone_bat);#140 (_228:lng, _229:oid, _230:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J147}
+    _232 := mtime.start_dst(_230);      #141 _232:zrule := MTIMEtzone_extract_start(_230:timezone) 
+    bat.insert(_225,_229,_232);         #142 _233:void := BKCinsert_bun(_225:bat[:oid,:zrule], _229:oid, _232:zrule) 
+    redo (_228,_229,_230):= bat.hasMoreElements(tzone_bat);#143 (_228:lng, _229:oid, _230:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J141}
+catch MALException:str ;                #144 MALException:str {J146}
+    redo (_228,_229,_230):= bat.hasMoreElements(tzone_bat);#145 (_228:lng, _229:oid, _230:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J141}
+exit MALException:str ;                 #146 MALException:str 
+exit (_228,_229,_230);                  #147 (_228:lng, _229:oid, _230:timezone 
+    md_a:bat[:oid,:zrule]  := _225;     #148 md_a:bat[:oid,:zrule] := _225:bat[:oid,:zrule] {G}
+    bat.setColumn(md_a,"start_dst");    #149 _201:void := BKCsetColumn(md_a:bat[:oid,:zrule], _200:str) 
+#      [start_dst](tzone_bat).bat.setColumn("start_dst"), 
+    _239 := bat.new(nil:oid,nil:zrule); #151 _239:bat[:oid,:zrule] := CMDBATnew(_211:oid, _226:zrule) {G}
+barrier (_241,_242,_243):= bat.newIterator(tzone_bat);#152 (_241:lng, _242:oid, _243:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J159}
+    _245 := mtime.end_dst(_243);        #153 _245:zrule := MTIMEtzone_extract_end(_243:timezone) 
+    bat.insert(_239,_242,_245);         #154 _246:void := BKCinsert_bun(_239:bat[:oid,:zrule], _242:oid, _245:zrule) 
+    redo (_241,_242,_243):= bat.hasMoreElements(tzone_bat);#155 (_241:lng, _242:oid, _243:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J153}
+catch MALException:str ;                #156 MALException:str {J158}
+    redo (_241,_242,_243):= bat.hasMoreElements(tzone_bat);#157 (_241:lng, _242:oid, _243:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J153}
+exit MALException:str ;                 #158 MALException:str 
+exit (_241,_242,_243);                  #159 (_241:lng, _242:oid, _243:timezone 
+    od_a:bat[:oid,:zrule]  := _239;     #160 od_a:bat[:oid,:zrule] := _239:bat[:oid,:zrule] {G}
+    bat.setColumn(od_a,"end_dst");      #161 _205:void := BKCsetColumn(od_a:bat[:oid,:zrule], _204:str) 
+    io.print("print(kd_a,md_a,od_a)");  #162 _206:void := IOprint_val(_207:str) 
+    qd_a := io.print(kd_a,md_a,od_a);   #163 qd_a:void := IOtable(kd_a:bat[:oid,:int], md_a:bat[:oid,:zrule], od_a:bat[:oid,:zrule]) 
+#      [end_dst](tzone_bat).bat.setColumn("end_dst")); 
+end main;                               #165  
 [ "tzone_bat" ]
 #-----------------------------------------------------------------------------------------------------------------#
 # h	t													  # name

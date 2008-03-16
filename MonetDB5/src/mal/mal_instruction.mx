@@ -2263,7 +2263,6 @@ instructionCall(MalBlkPtr mb, InstrPtr p, str s)
 				sprintf(s, "%s.%s(", getModuleId(p),getFunctionId(p) );
 				closing= 1;
 			}
-			advance(s);
 		}
 		if (p->argv[i] >= 0) {
 			str nme;
@@ -2277,13 +2276,12 @@ instructionCall(MalBlkPtr mb, InstrPtr p, str s)
 				nme = getArgName(mb, p, i);
 			sprintf(s, "%s:%s", (nme ? nme : "nil"), tpe);
 			advance(s);
-			if (i != p->retc-1 && i< p->argc-1){
+			if (i != p->retc-1 && i< p->argc-1)
 				sprintf(s, ", ");
-				advance(s);
-			}
 
 			GDKfree(tpe);
 		}
+		advance(s);
 	}
 	if( closing)
 		*s++= ')';
