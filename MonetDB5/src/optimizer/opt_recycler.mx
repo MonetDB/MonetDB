@@ -150,6 +150,7 @@ are marked for re-use.
 			q= copyInstruction(p);
 			getArg(q,0)= newTmpVariable(mb,TYPE_any);
 			setFunctionId(q, selectRef);
+			q->recycle = 1;
 			pushInstruction(mb,q);
 			getArg(p,1)= getArg(q,0);
 			setFunctionId(p,markTRef);
