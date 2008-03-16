@@ -96,14 +96,22 @@ OPTrecycleImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, j, cnt, actions=0;
 	Lifespan span = newLifespan(mb);
+	InstrPtr *old, q;
+	int limit;
 
 	(void) stk;
 	setLifespan(mb,span);
+	limit= mb->stop;
+	old = mb->stmt;
+	newMalBlkStmt(mb, mb->ssize);
+	pushInstruction(mb,old[0]);
 
-	for (i = 1; i<mb->stop; i++) {
-		p = getInstrPtr(mb,i);
-		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p))
+	for (i = 1; i<limit; i++) {
+		p = old[i];
+		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)){
+			pushInstruction(mb,p);
 			continue;
+		}
 
 		cnt= 0;
 		for( j=p->retc; j<p->argc; j++)
@@ -127,8 +135,10 @@ OPTrecycleImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 The expected gain is largest if we can re-use selections
 on the base tables in SQL. These, however, are marked as
 uselect() calls, which only produces the oid head.
-For cheap types we re-map uselect() back into select().
-For the time being for all possible selects encountered.
+For cheap types we preselect using select() and re-map uselect() back 
+over this temporary.
+For the time being for all possible selects encountered
+are marked for re-use.
 (keeping track of the sql.bind() dependency is more work)
 @c
 		/* take care of semantic driven recyling */
@@ -137,15 +147,21 @@ For the time being for all possible selects encountered.
 		if( getFunctionId(p)== uselectRef &&
 			!ATOMvarsized( getGDKType( getArgType(mb,p,1)))
 		){
-			setFunctionId(p, selectRef);
-			/* this requires a complete type check again */
-			clrAllTypes(mb);
+			q= copyInstruction(p);
+			getArg(q,0)= newTmpVariable(mb,TYPE_any);
+			setFunctionId(q, selectRef);
+			pushInstruction(mb,q);
+			getArg(p,1)= getArg(q,0);
+			setFunctionId(p,markTRef);
+			p->argc=2;
 			p->recycle = 1;
 		}
+		pushInstruction(mb,p);
 	}
 	if (actions)
 		mb->version = -1;	/* will trigger the recycler runtime support */
 	GDKfree(span);
+	GDKfree(old);
 	return actions;
 }
 @include optimizerWrapper.mx
