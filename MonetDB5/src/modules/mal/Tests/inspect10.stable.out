@@ -19,7 +19,7 @@ stdout of test 'inspect10` in directory 'src/modules/mal` itself:
 #	io.print(b);
 #	mdb.showFunction();
 #end dummy;
-
+!TypeException:user.dummy[4]:'mdb.showFunction' undefined in: _5:any
 function user.dummy(i:int):void;        #  0 dummy:void := user.dummy(i:int) {G}
     io.print(i);                        #  1 _2:void := IOprint_val(i:int) 
     b := mdb.getDefinition();           #  2 b:bat[:void,:str] {G}
