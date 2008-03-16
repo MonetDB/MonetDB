@@ -1,0 +1,160 @@
+stdout of test 'recycle03` in directory 'src/mal` itself:
+
+
+# 13:39:17 >  
+# 13:39:17 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36045 --set xrpc_port=42853 --set monet_prompt= --trace  --dbname=mTests_src_mal  recycle03.mal
+# 13:39:17 >  
+
+# MonetDB server v5.5.0, based on kernel v1.23.0
+# Serving database 'mTests_src_mal'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:36045/
+##test the basics of the recycler
+## re-use joins size constrainted
+#
+#function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
+#	b:= bat.new(:oid,:int);
+#	bat.insert(b,0@0,0);
+#	bat.insert(b,1@0,1);
+#	bat.insert(b,2@0,2);
+#	bat.insert(b,3@0,3);
+#	bat.insert(b,4@0,4);
+#	bat.insert(b,5@0,5);
+#	bat.insert(b,6@0,6);
+#	bat.insert(b,7@0,7);
+#	bat.insert(b,8@0,8);
+#	bat.insert(b,9@0,9);
+#	bat.insert(b,10@0,10);
+#	bat.insert(b,11@0,11);
+#	return bind:=b;
+#end bind;
+function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];#  0 bind:bat[:oid,:int] := user.bind(s:str, t:str, c:str, i:int) {G}
+    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_6:oid, _7:int) {G}
+    bat.insert(b,0@0,0);                #  2 _8:void := BKCinsert_bun(b:bat[:oid,:int], _9:oid, _10:int) 
+    bat.insert(b,1@0,1);                #  3 _11:void := BKCinsert_bun(b:bat[:oid,:int], _12:oid, _13:int) 
+    bat.insert(b,2@0,2);                #  4 _14:void := BKCinsert_bun(b:bat[:oid,:int], _15:oid, _16:int) 
+    bat.insert(b,3@0,3);                #  5 _17:void := BKCinsert_bun(b:bat[:oid,:int], _18:oid, _19:int) 
+    bat.insert(b,4@0,4);                #  6 _20:void := BKCinsert_bun(b:bat[:oid,:int], _21:oid, _22:int) 
+    bat.insert(b,5@0,5);                #  7 _23:void := BKCinsert_bun(b:bat[:oid,:int], _24:oid, _25:int) 
+    bat.insert(b,6@0,6);                #  8 _26:void := BKCinsert_bun(b:bat[:oid,:int], _27:oid, _28:int) 
+    bat.insert(b,7@0,7);                #  9 _29:void := BKCinsert_bun(b:bat[:oid,:int], _30:oid, _31:int) 
+    bat.insert(b,8@0,8);                # 10 _32:void := BKCinsert_bun(b:bat[:oid,:int], _33:oid, _34:int) 
+    bat.insert(b,9@0,9);                # 11 _35:void := BKCinsert_bun(b:bat[:oid,:int], _36:oid, _37:int) 
+    bat.insert(b,10@0,10);              # 12 _38:void := BKCinsert_bun(b:bat[:oid,:int], _39:oid, _40:int) 
+    bat.insert(b,11@0,11);              # 13 _41:void := BKCinsert_bun(b:bat[:oid,:int], _42:oid, _43:int) 
+    return bind := b;                   # 14 bind:bat[:oid,:int] := b:bat[:oid,:int] {G}
+end bind;	# 15  
+#
+#function qry(low:int, hgh:int);
+#	b:= user.bind("schema","table","column",0);
+#	s1:= algebra.select(b,low,hgh);
+#	m0:= algebra.markT(b, 0@0);
+#	mr:= bat.reverse(m0);
+#	j:= algebra.join(mr,s1);
+#	io.print(j);
+#end qry;
+function user.qry(low:int,hgh:int):void;#  0 qry:void := user.qry(low:int, hgh:int) {G}
+    b := user.bind("schema","table","column",0);#  1 b:bat[:oid,:int] := user.bind(_4:str, _5:str, _6:str, _7:int) {G}
+    s1 := algebra.select(b,low,hgh);    #  2 s1:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], low:int, hgh:int) {G}
+    m0 := algebra.markT(b,0@0);         #  3 m0:bat[:oid,:oid] := ALGtmark(b:bat[:oid,:int], _10:oid) {G}
+    mr := bat.reverse(m0);              #  4 mr:bat[:oid,:oid] := BKCreverse(m0:bat[:oid,:oid]) {G}
+    j := algebra.join(mr,s1);           #  5 j:bat[:oid,:int] := ALGjoin(mr:bat[:oid,:oid], s1:bat[:oid,:int]) {G}
+    io.print(j);                        #  6 _13:void := IOprint_val(j:bat[:oid,:int]) 
+end qry;	# 7  
+#
+#recycle.setRetainPolicy(3,5);
+#recycle.setReusePolicy(1);
+#optimizer.recycle("user","qry");
+#io.print("start");
+#qry(1,10);
+#io.print("zoom in");
+#qry(1,5);
+#io.print("next step");
+#qry(2,3);
+#io.print("last");
+#qry(1,11);
+#recycle.dump();
+#
+function user.main():void;              #  0 main:void {G}
+#test the basics of the recycler 
+# re-use joins size constrainted 
+    recycle.setRetainPolicy(3,5);       #  3 _3:void := RECYCLEsetRetain(_4:int, _5:int) 
+    recycle.setReusePolicy(1);          #  4 _6:void := RECYCLEsetReuse(_7:int) 
+    io.print("start");                  #  5 _11:void := IOprint_val(_12:str) 
+    user.qry(1,10);                     #  6 _13:void := user.qry(_7:int, _14:int) 
+    io.print("zoom in");                #  7 _15:void := IOprint_val(_16:str) 
+    user.qry(1,5);                      #  8 _17:void := user.qry(_7:int, _5:int) 
+    io.print("next step");              #  9 _18:void := IOprint_val(_19:str) 
+    user.qry(2,3);                      # 10 _20:void := user.qry(_21:int, _4:int) 
+    io.print("last");                   # 11 _22:void := IOprint_val(_23:str) 
+    user.qry(1,11);                     # 12 _24:void := user.qry(_7:int, _25:int) 
+    recycle.dump();                     # 13 _26:void 
+end main;	# 14  
+[ "start" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  9	  ]
+[ 10@0,	  10	  ]
+[ "zoom in" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ "next step" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ "last" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  9	  ]
+[ 10@0,	  10	  ]
+[ 11@0,	  11	  ]
+#Recycler  catalog
+#retain= 3 time =0 sze= 5 alpha= 0.500
+#reuse= 1
+#rcache= 1 limit= 100 
+#hard stmt = 4000 hard var = 25000 mem= 8388608
+#    0 lru=        0 cnt=        1 ticks=        83  rd=         0  wr=         0     _0 := user.bind("schema","table","column",0);
+#    1 lru=        0 cnt=        1 ticks=        93  rd=         0  wr=         0     _0 := user.bind("schema","table","column",0);
+#    2 lru=        0 cnt=        3 ticks=        58  rd=         0  wr=         0     _5 := algebra.select(<tmp_20>,1,10);
+#    3 lru=        0 cnt=        1 ticks=        44  rd=         0  wr=         0     _8 := algebra.markT(<tmp_20>,0@0);
+#    4 lru=        0 cnt=        1 ticks=         8  rd=         0  wr=         0     _10 := bat.reverse(<tmp_23>);
+#    5 lru=        0 cnt=        1 ticks=        15  rd=         0  wr=         0     _11 := algebra.select(<tmp_21>,1,5);
+#    6 lru=        0 cnt=        1 ticks=        16  rd=         0  wr=         0     _13 := algebra.select(<tmp_21>,2,3);
+#    7 lru=        0 cnt=        1 ticks=        20  rd=         0  wr=         0     _16 := algebra.select(<tmp_20>,1,11);
+
+# 13:39:17 >  
+# 13:39:17 >  Done.
+# 13:39:17 >  
+
