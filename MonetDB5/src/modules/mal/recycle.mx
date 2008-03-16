@@ -173,8 +173,10 @@ RECYCLEdump(int *ret)
 		retainPolicy, recycleTime, recycleVolume, recycleAlpha);
 	stream_printf(GDKout,"#reuse= %d\n", reusePolicy);
 	stream_printf(GDKout,"#rcache= %d limit= %d \n", rcachePolicy, recycleCacheLimit);
-	stream_printf(GDKout,"#hard stmt = %d hard var = %d mem= %d\n",
+	stream_printf(GDKout,"#hard stmt = %d hard var = %d hard mem= %d\n",
 		 HARDLIMIT_STMT, HARDLIMIT_VAR, HARDLIMIT_MEM);
+	stream_printf(GDKout,"#recycled = %d statements = %d saved time= %d memory= %d\n",
+		 recycled, statements, savedTime,monitorRecycler);
 
 	/* and dump the statistics */
 	if (recycleBlk)
