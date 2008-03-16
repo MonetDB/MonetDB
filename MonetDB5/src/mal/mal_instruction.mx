@@ -2079,7 +2079,13 @@ clrAllTypes(MalBlkPtr mb)
 	}
 	for(i=1; i<mb->stop-1; i++){
 		p= getInstrPtr(mb,i);
+		p->typechk= TYPE_UNKNOWN;
+		p->fcn= 0;
+		p->blk= NULL;
+
 		switch(p->token){
+		default:
+			p->token= ASSIGNsymbol;
 		case RAISEsymbol:
 		case CATCHsymbol:
 		case RETURNsymbol:
@@ -2090,11 +2096,6 @@ clrAllTypes(MalBlkPtr mb)
 			break;
 		case ENDsymbol:
 			return;
-		default:
-			p->token= ASSIGNsymbol;
-			p->typechk= TYPE_UNKNOWN;
-			p->fcn= 0;
-			p->blk= NULL;
 		}
 	}
 }
@@ -2263,6 +2264,7 @@ instructionCall(MalBlkPtr mb, InstrPtr p, str s)
 				sprintf(s, "%s.%s(", getModuleId(p),getFunctionId(p) );
 				closing= 1;
 			}
+			advance(s);
 		}
 		if (p->argv[i] >= 0) {
 			str nme;

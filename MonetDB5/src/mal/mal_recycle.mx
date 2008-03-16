@@ -63,8 +63,8 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-/* #define _DEBUG_RECYCLE_    trace behavior */
-/* #define _DEBUG_RECYCLE_REUSE */
+/* #define _DEBUG_RECYCLE_*/
+/* #define _DEBUG_RECYCLE_REUSE*/
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -109,6 +109,11 @@ mal_export MT_Lock recycleLock;
 mal_export MalBlkPtr recycleBlk;
 mal_export double recycleAlpha;
 
+mal_export int statements;
+mal_export int recycled;
+mal_export int savedTime;	/* sum of all recycled clk's */
+mal_export int monitorRecycler;
+
 mal_export void RECYCLEversion(MalBlkPtr mb);
 mal_export int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -139,7 +144,7 @@ volume using a user defined parameter RETAIN_ALPHA.
 RETAIN_ADAP is an adaptive scheme, which monitors the cost
 of scanning the recycler pool to derive the time high-water mark.
 @c
-int retainPolicy = RETAIN_NONE;  /* recycle retainment policy
+int retainPolicy = RETAIN_ALL;  /* recycle retainment policy
 			RETAIN_NONE: baseline, keeps stat, no retain, no reuse
 			RETAIN_ALL: infinite case, retain all
 			RETAIN_TIME: time-based semantics, retain if beneficial 
@@ -154,7 +159,7 @@ RETAIN_EXACT only looks at precisely matching instructions.
 RETAIN_COVER exploits potentional overlap in range selects
 to reduce the amount of scanning.
 @c
-int reusePolicy = REUSE_NONE;	/* recycle reuse policy
+int reusePolicy = REUSE_COVER;	/* recycle reuse policy
 			REUSE_NONE: baseline, keeps stat, no retain, no reuse
 			REUSE_COVER: reuse smallest select covering 
 			REUSE_EXACT: exact covering  */
@@ -177,7 +182,7 @@ int rcachePolicy = RCACHE_LRU;  /* recycle cache management policy
 			RCACHE_CREDIT: credit-based LRU scheme
 			RCACHE_MEMLRU: reduce the storage overhead 
 			RCACHE_MEMCRD: reduce the storage overhead */
-int recycleCacheLimit= 100;
+int recycleCacheLimit= 1000;
 int recycleClaim=0;	/* avoid stale tables by letting users mark it */
 lng recycleMemory=0;	/* Units of memory permitted */
 @-
@@ -285,7 +290,6 @@ static void RECYCLEremove(int pc){
 		if( used[getArg(p,j)] ==0){
 #ifdef _DEBUG_RECYCLE_
 			stream_printf(GDKout,"RECYCLEremove %d \n",i);
-			printInstruction(GDKout,recycleBlk, old[i], LIST_MAL_ALL);
 #endif
 			freeInstruction(old[i]);
 			goto skip;
@@ -299,52 +303,55 @@ static void RECYCLEremove(int pc){
 	}
 }
 
+static lng lruclock=0;
 static void 
-RECYCLEcache(int k, int wr)
+RECYCLEcache(int target, int wr)
 {
-	int i, max = -1, mem, size;
+	int i, victim = 0, mem, size;
 	InstrPtr pc;
 
 	if (!recycleBlk) 
 		return;
 	mem = (recycleMemory && recyclerUsedMemory + wr > recycleMemory);
-	size = (recycleCacheLimit && recycleBlk->stop + (k>0) > recycleCacheLimit);
+	size = (recycleCacheLimit && recycleBlk->stop + (target>0) > recycleCacheLimit);
 	if (!mem && !size)
 		return;
-	if (k>=0)
-		recycleBlk->profiler[k].clk= 1; /* most recently used */
-	for(i=0; i< recycleBlk->stop; i++){
-		recycleBlk->profiler[i].clk++;
+
+	if (target>=0)
+		recycleBlk->profiler[target].clk= ++lruclock; /* most recently used */
+
+	for(i=0; i< recycleBlk->stop; i++)
+	if (i != target){
 		switch(rcachePolicy){
 		case RCACHE_LRU:
-			if( recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
-				max = i;
+			if( recycleBlk->profiler[victim].clk >recycleBlk->profiler[i].clk)
+				victim = i;
 			break;
 		case RCACHE_CREDIT:
-			if (recycleBlk->profiler[max].counter * recycleCost(max) > recycleBlk->profiler[i].counter * recycleCost(i))
-					max = i;
+			if (recycleBlk->profiler[victim].counter * recycleCost(victim) > recycleBlk->profiler[i].counter * recycleCost(i))
+					victim = i;
 			break;
 		case RCACHE_MEMLRU:
-			if (mem && recycleBlk->profiler[max].clk <recycleBlk->profiler[i].clk)
-				max = i;
+			if (mem && recycleBlk->profiler[victim].clk >recycleBlk->profiler[i].clk)
+				victim = i;
 			break;
 		case RCACHE_MEMCRD:
-			if(mem && recycleBlk->profiler[max].counter * recycleCost(max) > recycleBlk->profiler[i].counter * recycleCost(i) )
-				max = i;
+			if(mem && recycleBlk->profiler[victim].counter * recycleCost(victim) > recycleBlk->profiler[i].counter * recycleCost(i) )
+				victim = i;
 		}
 	}
 
-	if (max >= 0 && (mem || (size && recycleClaim <= 1)) ){
+	if (victim!= target && (mem || (size && recycleClaim <= 1)) ){
 #ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"RECYCLE cache, remove %d \n",max);
+		stream_printf(GDKout,"RECYCLE cache, remove %d \n",victim);
 #endif
 		mal_set_lock(recycleLock,"recycle");
-		pc = getInstrPtr(recycleBlk,max);
+		pc = getInstrPtr(recycleBlk,victim);
 		for (i=0; i< pc->argc; i++)
 			if( isaBatType(getVarType(recycleBlk, getArg(pc,i))))
 				BBPdecref(getVarConstant(recycleBlk,i).val.bval,TRUE);
-		recyclerUsedMemory -= recycleBlk->profiler[max].obytes;
-		RECYCLEremove(max);
+		recyclerUsedMemory -= recycleBlk->profiler[victim].obytes;
+		RECYCLEremove(victim);
 		trimMalVariables(recycleBlk);
 		if (monitorRecycler)
 			fprintf(stderr, 
@@ -515,14 +522,14 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 						pc = i;
 #ifdef _DEBUG_RECYCLE_
 	b1 = BBPquickdesc(bid, FALSE);
-	printf("counts %d -> %d \n", bid, (int)BATcount(b1));
+	stream_printf(GDKout,"counts %d -> %d \n", bid, (int)BATcount(b1));
 #endif
 					} else {
 						b1 = BBPquickdesc(bid, FALSE);
 						b2 = BBPquickdesc(nbid, FALSE);
 
 #ifdef _DEBUG_RECYCLE_
-	printf("counts %d -> %d %d -> %d\n", 
+	stream_printf(GDKout,"counts %d -> %d %d -> %d\n", 
 		bid, (int)BATcount(b1), nbid, (int)BATcount(b2));
 #endif
 						if (BATcount(b1) > BATcount(b2)){
@@ -531,7 +538,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 						}
 					}
 #ifdef _DEBUG_RECYCLE_
-	printf("Inclusive range bid=%d\n", bid);
+	stream_printf(GDKout,"Inclusive range bid=%d\n", bid);
 	printInstruction(GDKout,recycleBlk,q, LIST_MAL_ALL);
 #endif
 				}
@@ -565,6 +572,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 		/* replace selection argument */
 		s->stk[getArg(p,1)].val.bval = bid;
 		BBPincref(bid, TRUE);
+		savedTime += recycleBlk->profiler[pc].ticks;
 		recycleBlk->profiler[pc].counter++;
 		return -1;
 	}
