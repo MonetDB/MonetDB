@@ -1083,13 +1083,15 @@ CMDsum_@1_@2(@2* res, BAT *b)
 	@2 result=@3;
 
 	BATcheck(b,"BATsum_@1_@2");
+	if (!BATcount(b))
+		result = @2_nil;
 	BATloop(b, p, q) {
 		@1 *value = (@1*) BUNtloc(bi, p);
 		if (*value == @1_nil) {
 			result = @2_nil;
 			break;
 		} else {
-			result += (@2) *value;
+			result += *value;
 		}
 	}
 	*res = result;
@@ -1110,6 +1112,8 @@ CMDprod_@1_@2(@2* res, BAT *b)
 	@2 result=@3;
 
 	BATcheck(b,"BATprodInt");
+	if (!BATcount(b))
+		result = @2_nil;
 	BATloop(b, p, q) {
 		@1 *value = (@1*) BUNtloc(bi, p);
 		if (*value == @1_nil) {
@@ -3793,10 +3797,15 @@ int
 CMDavg_@1(dbl* res, BAT *b)
 {
 	int cnt = BATcount(b);
-	dbl result=0.0;
 
-	CMDsum_@1_dbl(&result, b);
-	*res = result/cnt;
+	if (cnt) {
+		dbl result=0;
+
+		CMDsum_@1_dbl(&result, b);
+		*res = result/cnt;
+	} else {
+		*res = dbl_nil;
+	}
 	return GDK_SUCCEED;
 }
 
