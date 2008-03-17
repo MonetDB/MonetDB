@@ -160,7 +160,7 @@ RETAIN_EXACT only looks at precisely matching instructions.
 RETAIN_COVER exploits potentional overlap in range selects
 to reduce the amount of scanning.
 @c
-int reusePolicy = REUSE_COVER;	/* recycle reuse policy
+int reusePolicy = REUSE_NONE;	/* recycle reuse policy
 			REUSE_NONE: baseline, keeps stat, no retain, no reuse
 			REUSE_COVER: reuse smallest select covering 
 			REUSE_EXACT: exact covering  */
@@ -480,7 +480,8 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 
 	for (i = 0; i < recycleBlk->stop; i++){
 		q = getInstrPtr(recycleBlk,i);
-		if ((p->argc != q->argc) ||
+
+		if ((p->argc > q->argc) ||
 		    (getFunctionId(p) != getFunctionId(q)) ||
 		    (getModuleId(p) != getModuleId(q)))
 			continue;
@@ -493,7 +494,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			/* 1: reuse smallest range covering */
 			ridx= getArg(q,1);
 			idx= getArg(p,1);
-			if ( q->argc > 3 &&
+			if (q->argc > 3 && q->argc <= 4 && p->argc <= 4 &&
 			    getFunctionId(p) == selectRef   &&
 			    getVarConstant(recycleBlk, ridx).val.bval == s->stk[idx].val.bval &&
 				BATatoms[getArgType(recycleBlk,q,2)].linear )
@@ -546,7 +547,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 		case REUSE_EXACT:
 			/* 2: exact covering */
 			for (j = p->retc; j < p->argc; j++)
-				if ( VALcmp(&s->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
+				if (VALcmp(&s->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 					goto notfound;
 			
 			/* found an exact match */
