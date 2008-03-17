@@ -1413,6 +1413,16 @@ PROC ws_id(BAT[void,bat] ws) : lng
     return lng(bbpname(ws));
 }
 
+PROC old_sum(BAT[any,lng] b) : lng 
+{
+        var s := sum(b);
+        if (isnil(s)) {
+                return lng(0);
+        } else {
+                return s;
+        }
+}
+
 PROC _ws_free(lng wsid) : BAT[void,any]
 {
     # remove the dependencies of this query (modifies ws_overlaps_ws) 
@@ -1427,7 +1437,7 @@ PROC _ws_free(lng wsid) : BAT[void,any]
     reverse(colname_pins).delete(wsid);
  
     # determine whether a cache flush is desired (only count cached bats, those with a timestamp)
-    var cursize := sum(doc_timestamp.uselect(timestamp_nil,timestamp_nil).mirror().join(collection_size));
+    var cursize := old_sum(doc_timestamp.uselect(timestamp_nil,timestamp_nil).mirror().join(collection_size));
     var maxsize := (1024LL * 1024LL) * lng(monet_environment.find("xquery_cacheMB"));
     if (cursize > maxsize) del_doc_base(true, doc_name, false);
 
@@ -1735,7 +1745,7 @@ PROC _ws_opencoll(lng wsid,
         # check sizes of all indices, stuffed in the seqbase of the UNQ bats
         var indices := [count](reverse(colname_runtime).mirror()).ord_uselect(RT_QN_NID_UNQ, int_nil);
         if (bit(count(indices))) {
-            var totsize := [fetch](reverse(indices), RT_QN_NID_UNQ).[seqbase]().[lng]().sum();
+            var totsize := [fetch](reverse(indices), RT_QN_NID_UNQ).[seqbase]().[lng]().old_sum();
             if (totsize > (mem_maxsize()/4LL)) _runtime_flush();
         }
     }
@@ -3400,10 +3410,10 @@ PROC _shred_into_docBAT(BAT[str,bat] docBAT,
         coll_oid := docid_base;
         if (collection_name.texist(colname)) ERROR("_shred_doc: collection name should be globally unique\n");
         collection_name.insert(coll_oid, colname);
-        collection_size.insert(coll_oid, sum([batdsksize](docBAT)));
+        collection_size.insert(coll_oid, old_sum([batdsksize](docBAT)));
         [persists]([rename](docBAT, [+](str(int(coll_oid)), mirror(docBAT))), true);
     } else {
-        collection_size.replace(coll_oid, sum([batdsksize](docBAT)));
+        collection_size.replace(coll_oid, old_sum([batdsksize](docBAT)));
     }
 
     # all documents to the doc_* table
