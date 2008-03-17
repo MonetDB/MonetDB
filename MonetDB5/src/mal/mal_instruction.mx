@@ -2478,6 +2478,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 	int low, high;
 	char nmebuf[PATHLENGTH];
 	str pstring = 0;
+	char *tnme;
 
 	len = 64*1024;
 	s = GDKmalloc(len);
@@ -2674,7 +2675,7 @@ Dump the type and value information.
 			   !isaBatType(getArgType(mb, p, i)) &&
 			  (isVarUDFtype(mb, getArg(p, i)) ||
 			   ATOMcmp(getArgGDKType(mb,p,i), ATOMnilptr(getArgType(mb,p,i)), VALptr(&getVar(mb, getArg(p, i))->value) ) == 0))) {
-			char *tnme = getTypeName(getArgType(mb, p, i));
+			tnme = getTypeName(getArgType(mb, p, i));
 
 			sprintf(t, ":%s", tnme);
 			GDKfree(tnme);

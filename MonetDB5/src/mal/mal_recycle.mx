@@ -64,7 +64,7 @@ which inspects the variable table for alternative results.
 #include "mal_instruction.h"
 
 /* #define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE*/
+#define _DEBUG_RECYCLE_REUSE */
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -228,6 +228,9 @@ void RECYCLEversion(MalBlkPtr mb)
 	int i;
 
 	if( mb->version != recycleVersion) { 
+#ifdef _DEBUG_RECYCLE_
+		stream_printf(GDKout,"reshuffle the version admin\n");
+#endif
 		mal_set_lock(recycleLock,"recycle");
 		/* all re-used variables are dropped */
 		for(i=0; i<mb->vtop; i++)		/* reinit recycle */
@@ -502,11 +505,21 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			    getVarConstant(recycleBlk, ridx).val.bval == s->stk[idx].val.bval)
 			{	
 				/* Time to check for the inclusion constraint */
-				int leftbound = VALcmp( &s->stk[getArg(p,2)], 
-								&getVar(recycleBlk,getArg(q,2))->value) >=0;
-				int rightbound = p->argc == 3 || 
-						VALcmp( &s->stk[getArg(p,3)], 
-								&getVar(recycleBlk,getArg(q,3))->value) <=0;
+				int leftbound, rightbound;
+				if( p->argc ==3 &&
+					VALcmp( &s->stk[getArg(p,2)], 
+								&getVar(recycleBlk,getArg(q,2))->value) ==0){
+#ifdef _DEBUG_RECYCLE_REUSE
+					stream_printf(GDKout,"RECYCLEreuse exact found\n");
+					printInstruction(GDKout, recycleBlk, q, LIST_MAL_ALL);
+#endif
+					goto foundmatch;
+				} 
+				leftbound= VALcmp( &s->stk[getArg(p,2)], 
+							&getVar(recycleBlk,getArg(q,2))->value) >=0;
+				rightbound = p->argc == 3 || 
+					VALcmp( &s->stk[getArg(p,3)], 
+							&getVar(recycleBlk,getArg(q,3))->value) <=0;
 
 				if (p->argc == 6){
 						/* inclusion bounds */
@@ -546,11 +559,12 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			}
 		case REUSE_EXACT:
 			/* 2: exact covering */
-			for (j = p->retc; j < p->argc; j++){
+			for (j = p->retc; j < p->argc; j++)
 				if ( VALcmp(&s->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 					goto notfound;
-			}
+			
 			/* found an exact match */
+		foundmatch:
 			/* get the results on the stack */
 			for( j=0; j<q->retc; j++){
 				VALcopy(&s->stk[getArg(p,j)],
@@ -565,7 +579,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			notfound: 
 #ifdef _DEBUG_RECYCLE_REUSE
 	stream_printf(GDKout,"RECYCLEreuse exact failed\n");
-	printInstruction(GDKout, mb, q, LIST_MAL_ALL);
+	printInstruction(GDKout, recycleBlk, q, LIST_MAL_ALL);
 #endif
 				continue;
 		}
@@ -578,13 +592,20 @@ We execute it in place and safe the result upon need.
 		i= getPC(mb,p);
 #ifdef _DEBUG_RECYCLE_REUSE
 	stream_printf(GDKout,"RECYCLEreuse subselect %d\n",pc);
+	stream_printf(GDKout,">>>");
+	printInstruction(GDKout, recycleBlk, getInstrPtr(recycleBlk,pc), LIST_MAL_ALL);
+
+	stream_printf(GDKout,">>>");
+	printTraceCall(GDKout, mb, s,i, LIST_MAL_ALL);
 #endif
 		s->stk[getArg(p,1)].val.bval = bid;
 		BBPincref(bid, TRUE);
 		/* make sure the garbage collector is not called */
 		j=s->keepAlive ;
 		s->keepAlive= TRUE;
+		p->recycle= FALSE;
 		(void) reenterMAL(MCgetClient(),mb,i,i+1,s,0,0);
+		p->recycle= TRUE;
 		/* RECYCLEexit(mb, s, p); */
 		/* restore the situation */
 		s->keepAlive= j;
@@ -619,6 +640,8 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, cnt=0;
 	ValPtr lhs,rhs;
+
+	RECYCLEversion(mb);
 
 	for(i=0;i< p->retc; i++) {
 		if (isVarKept(mb, getArg(p,i)) && isVarRecycled(mb, getArg(p,i)) ){
@@ -663,6 +686,7 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLEexit policy %d \n",retainPolicy);
 #endif
+	RECYCLEversion(mb);
 	clk= GDKusec()-stk->clk;
 
 	while ((recycleMemory && recyclerUsedMemory + wr > recycleMemory))
