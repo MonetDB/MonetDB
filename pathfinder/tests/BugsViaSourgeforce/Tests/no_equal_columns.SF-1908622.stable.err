@@ -1,0 +1,17 @@
+stderr of test 'no_equal_columns.SF-1908622` in directory 'tests/BugsViaSourgeforce` itself:
+
+
+# 09:12:14 >  
+# 09:12:14 >   Mserver "--config=/home/mayrm/develop/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/mayrm/develop/lib/MonetDB4:/home/mayrm/develop/lib/MonetDB4/lib:/home/mayrm/develop/lib/MonetDB4/bin" --set "gdk_dbfarm=/home/mayrm/develop/var/MonetDB4/dbfarm" --set "sql_logdir=/home/mayrm/develop/var/MonetDB4/sql_logs" --set "xquery_logdir=/home/mayrm/develop/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=39822 --set xrpc_port=42704 --set monet_prompt= --trace  "--dbname=mTests_tests_BugsViaSourgeforce" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 09:12:14 >  
+
+
+# 09:12:15 >  
+# 09:12:15 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper21 --port=39822 no_equal_columns.SF-1908622.xq
+# 09:12:15 >  
+
+
+# 09:12:15 >  
+# 09:12:15 >  Done.
+# 09:12:15 >  
+

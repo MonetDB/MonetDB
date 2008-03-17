@@ -1,0 +1,42 @@
+stdout of test 'no_equal_columns.SF-1908622` in directory 'tests/BugsViaSourgeforce` itself:
+
+
+# 09:12:14 >  
+# 09:12:14 >   Mserver "--config=/home/mayrm/develop/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/mayrm/develop/lib/MonetDB4:/home/mayrm/develop/lib/MonetDB4/lib:/home/mayrm/develop/lib/MonetDB4/bin" --set "gdk_dbfarm=/home/mayrm/develop/var/MonetDB4/dbfarm" --set "sql_logdir=/home/mayrm/develop/var/MonetDB4/sql_logs" --set "xquery_logdir=/home/mayrm/develop/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=39822 --set xrpc_port=42704 --set monet_prompt= --trace  "--dbname=mTests_tests_BugsViaSourgeforce" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 09:12:14 >  
+
+
+
+# MonetDB Server v4.22.0
+# based on GDK   v1.22.0
+# Copyright (c) 1993-2007, CWI. All rights reserved.
+# Compiled for i686-pc-linux-gnu/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.23.0 loaded
+# XRPC administrative console at http://127.0.0.1:42704/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 09:12:15 >  
+# 09:12:15 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper21 --port=39822 no_equal_columns.SF-1908622.xq
+# 09:12:15 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><element2 c="13" b="2" a="1">
+    <d>noot</d>
+  </element2><element7 c="11" b="10" a="13">
+    <d>noot</d>
+    <e>foo</e>
+    <d>bar</d>
+  </element7></XQueryResult>
+
+# 09:12:15 >  
+# 09:12:15 >  Done.
+# 09:12:15 >  
+
