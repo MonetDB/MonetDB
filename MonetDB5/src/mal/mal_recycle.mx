@@ -63,8 +63,8 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-#define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE
+/*#define _DEBUG_RECYCLE_
+#define _DEBUG_RECYCLE_REUSE*/
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -111,6 +111,7 @@ mal_export double recycleAlpha;
 
 mal_export int statements;	/* total number of statemetns executed */
 mal_export int recycled;	/* total number of statements recycled */
+mal_export int retained;	/* total number of statements retained */
 mal_export int savedTime;	/* sum of all recycled clk's */
 mal_export int monitorRecycler;
 
@@ -204,6 +205,7 @@ double recycleAlpha = 0.5;
 lng recyclerUsedMemory = 0;
 int statements = 0;	/* total number of statemetns executed */
 int recycled = 0;	/* total number of statements recycled */
+int retained = 0;	/* total number of statements retained */
 int savedTime = 0;	/* sum of all recycled clk's */
 int monitorRecycler = 0;
 
@@ -357,9 +359,9 @@ RECYCLEcache(int target, int wr)
 		trimMalVariables(recycleBlk);
 		if (monitorRecycler)
 			fprintf(stderr, 
-				"#memory=%lld, stop=%d, recycled=%d(%d), saved=%d\n",
+				"#memory=%lld, stop=%d, recycled=%d, retained=%d executed=%d saved=%d\n",
 				recyclerUsedMemory, recycleBlk->stop,
-				recycled, statements, savedTime);
+				recycled, retained, statements, savedTime);
 		recycleVersion++;
 		mal_unset_lock(recycleLock,"recycle");
 	}
@@ -413,9 +415,10 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 	recyclerUsedMemory += wr;
 	if (monitorRecycler) 
 		fprintf(stderr, 
-			"#memory=%lld, stop=%d, recycled=%d(%d), saved=%d\n",
+			"#memory=%lld, stop=%d, recycled=%d, retained=%d executed=%d saved=%d\n",
 			recyclerUsedMemory, recycleBlk->stop,
-			recycled, statements, savedTime);
+			recycled, retained, statements, savedTime);
+	retained++;
 	return i;
 }
 
