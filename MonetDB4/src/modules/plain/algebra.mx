@@ -1362,6 +1362,8 @@ CMDsum_@1_@2(@2* res, BAT *b)
 	@2 result=@3;
 
 	BATcheck(b,"BATsum_@1_@2");
+	if (!BATcount(b))
+		result = @2_nil;
 	BATloop(b, p, q) {
 		@1 *value = (@1*) BUNtloc(bi, p);
 		if (*value == @1_nil) {
@@ -1389,6 +1391,8 @@ CMDprod_@1_@2(@2* res, BAT *b)
 	@2 result=@3;
 
 	BATcheck(b,"BATprodInt");
+	if (!BATcount(b))
+		result = @2_nil;
 	BATloop(b, p, q) {
 		@1 *value = (@1*) BUNtloc(bi, p);
 		if (*value == @1_nil) {
