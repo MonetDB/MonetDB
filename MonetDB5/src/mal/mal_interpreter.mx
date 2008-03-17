@@ -635,6 +635,8 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	lng oldtimer=0;
 	struct Mallinfo oldMemory;
 	int stkpc=0;
+	FlowStep flow;
+	char *pending;
 
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
@@ -647,8 +649,6 @@ First step is to collect all instructions into a multistack.
 The instructions are sorted by dependency on enabled input
 arguments.
 @c
-	FlowStep flow;
-	char *pending;
 
 	(void)env;
 	(void)pcicaller;
@@ -1608,24 +1608,27 @@ See @ref{The MAL Profiler} for more details.
 #ifdef MALprofiler
 	lng newclk=0;
 	int ppc= -1;
+	if (malProfileMode)
+		setFilterOnBlock(mb, 0, 0);
 #endif
 @= beginProfile
 #ifdef MALprofiler
 	if (malProfileMode == 0)
 		/* mostly true */;
 	else {
-		setFilterOnBlock(mb, 0, 0);
-		if( mb->profiler != NULL && mb->profiler[stkpc].trace)
-		{
-			ppc= stkpc;
+		if( mb->profiler != NULL ){
 			stk->clk= GDKusec();
-			mb->profiler[ppc].clk= stk->clk;
-			time(&stk->clock);
-			mb->profiler[ppc].clock= stk->clock;
+			if( mb->profiler[stkpc].trace)
+			{
+				ppc= stkpc;
+				mb->profiler[ppc].clk= stk->clk;
+				time(&stk->clock);
+				mb->profiler[ppc].clock= stk->clock;
 #ifdef HAVE_TIMES
-			times(&stk->timer);
-			mb->profiler[ppc].timer= stk->timer;
+				times(&stk->timer);
+				mb->profiler[ppc].timer= stk->timer;
 #endif
+			}
 		}
 	}
 #endif
