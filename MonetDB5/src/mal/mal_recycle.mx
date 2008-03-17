@@ -64,7 +64,7 @@ which inspects the variable table for alternative results.
 #include "mal_instruction.h"
 
 /* #define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE  */
+#define _DEBUG_RECYCLE_REUSE */
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -128,7 +128,7 @@ mal_export void RECYCLEshutdown(void);
 #include "mal_function.h"
 
 MT_Lock recycleLock ;
-int recycleVersion = 0;  /* version of recycle table */
+int recycleVersion = 1;  /* version of recycle table */
 MalBlkPtr recycleBlk = NULL;
 
 @-
@@ -320,8 +320,10 @@ RECYCLEcache(int target, int wr)
 	if (!mem && !size)
 		return;
 
-	if (target>=0)
+	if (target>=0) {
 		recycleBlk->profiler[target].clk= ++lruclock; /* most recently used */
+		return;
+	}
 
 	for(i=0; i< recycleBlk->stop; i++)
 	if (i != target){
@@ -641,6 +643,8 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i, cnt=0;
 	ValPtr lhs,rhs;
 
+	if( recycleVersion == 0)
+		return 0;
 	RECYCLEversion(mb);
 
 	for(i=0;i< p->retc; i++) {
@@ -661,9 +665,9 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	if (cnt != p->retc && (i = RECYCLEreuse(mb,stk,p)) >= 0 )
 		cnt = p->retc;
-	stk->clk= GDKusec();
 	if ((recycleCacheLimit || recycleMemory) && i>=0)
 		RECYCLEcache(i, 0);
+	stk->clk= GDKusec();
 	statements++;
 	recycled += cnt==p->retc;
 	return cnt == p->retc;

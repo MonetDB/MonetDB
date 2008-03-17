@@ -1469,7 +1469,7 @@ as much as possible.
 The recycler works for any variable and relies on policy functions
 registered.
 @= MALrecycleStart
-	if( !mb->version  || !RECYCLEentry(mb,stk,pci) )
+	if( mb->version== 0 || !RECYCLEentry(mb,stk,pci) )
 @= MALrecycleExit
 	if( pci->recycle )
 		RECYCLEexit(mb,stk,pci);
@@ -1616,7 +1616,7 @@ See @ref{The MAL Profiler} for more details.
 	if (malProfileMode == 0)
 		/* mostly true */;
 	else {
-		if( mb->profiler != NULL ){
+		if( mb->profiler != NULL && stk ){
 			stk->clk= GDKusec();
 			if( mb->profiler[stkpc].trace)
 			{
@@ -1637,7 +1637,7 @@ See @ref{The MAL Profiler} for more details.
 	if( malProfileMode == 0)
 		/* mostly true */;
 	else
-	if(ppc!= -1 && mb->profiler != NULL && mb->profiler[ppc].trace)
+	if(ppc!= -1 && mb->profiler != NULL && mb->profiler[ppc].trace && stk)
 	{
 		newclk= GDKusec();
 		mb->profiler[ppc].counter++;
