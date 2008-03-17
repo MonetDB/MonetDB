@@ -3156,6 +3156,8 @@ BBPrecover_subdir(void)
 		if (ret < 0)
 			break;
 	}
+	closedir(dirp);
+
 	/* delete the directory */
 	if (ret == 0) {
 		ret = GDKremovedir(SUBDIR);
