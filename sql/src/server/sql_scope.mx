@@ -368,7 +368,7 @@ find_table_column(list *columns, char *tname, char *cname)
 	for (; n; n = n->next) {
 		cvar *c = n->data;
 
-		if (strcmp(c->tname, tname) == 0 && strcmp(c->cname, cname) == 0) {
+		if (c->tname && strcmp(c->tname, tname) == 0 && strcmp(c->cname, cname) == 0) {
 			return c;
 		}
 	}

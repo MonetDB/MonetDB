@@ -104,7 +104,7 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int a
 		node *m;
 		stmt *s = inserts[0]->op2.stval;
 		sql_subaggr *sum;
-		stmt *count_sum = NULL;
+		stmt *ssum = NULL;
 
 		/* 1st stage: find out if original contains same values */
 		if (s->key && s->nrcols == 0) {
@@ -142,9 +142,9 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int a
 			}
 
 			sum = sql_bind_aggr(sql->session->schema, "not_unique", tail_type(ss));
-			count_sum = stmt_aggr(ss, NULL, sum, 1);
+			ssum = stmt_aggr(ss, NULL, sum, 1);
 			/* combine results */
-			s = stmt_binop(s, count_sum, or);
+			s = stmt_binop(s, ssum, or);
 		}
 
 		if (k->type == pkey) {
@@ -188,6 +188,7 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int a
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_aggr(sql->session->schema, "sum", tail_type(ss));
 			ssum = stmt_aggr(ss, NULL, sum, 1);
+			ssum = sql_Nop_(sql, "ifthenelse", sql_unop_(sql, NULL, "isnull", ssum), stmt_atom_lng(0), stmt_dup(ssum), NULL);
 			count_sum = stmt_binop(check_types(sql, tail_type(ssum), stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt), 1), type_equal), ssum, sql_dup_func(ne));
 
 			/* combine results */
@@ -582,7 +583,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 		/* 2e stage: find out if the updated are unique */
 		if (idx_updates->nrcols) {	/* update columns not atoms */
 			sql_subaggr *sum;
-			stmt *count_sum = NULL;
+			stmt *count_sum = NULL, *ssum;
 			group *g = NULL;
 			stmt *ss;
 			sql_subfunc *or = sql_bind_func_result(sql->session->schema, "or", bt, bt, bt);
@@ -606,7 +607,9 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 			grp_destroy(g);
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_aggr(sql->session->schema, "sum", tail_type(ss));
-			count_sum = stmt_binop(stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt), 1), check_types(sql, it, stmt_aggr(ss, NULL, sum, 1), type_equal), sql_dup_func(ne));
+			ssum = stmt_aggr(ss, NULL, sum, 1);
+			ssum = sql_Nop_(sql, "ifthenelse", sql_unop_(sql, NULL, "isnull", ssum), stmt_atom_lng(0), stmt_dup(ssum), NULL);
+			count_sum = stmt_binop(stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt), 1), check_types(sql, it, ssum, type_equal), sql_dup_func(ne));
 
 			/* combine results */
 			s = stmt_binop(s, count_sum, or);
@@ -642,6 +645,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_aggr(sql->session->schema, "sum", tail_type(ss));
 			ssum = stmt_aggr(ss, NULL, sum, 1);
+			ssum = sql_Nop_(sql, "ifthenelse", sql_unop_(sql, NULL, "isnull", ssum), stmt_atom_lng(0), stmt_dup(ssum), NULL);
 			count_sum = stmt_binop(check_types(sql, tail_type(ssum), stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt), 1), type_equal), ssum, sql_dup_func(ne));
 
 			/* combine results */
