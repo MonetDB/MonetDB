@@ -292,13 +292,7 @@ ns_lookup (const char *prefix)
 static PFns_map_t *
 copy_ns_env (const PFns_map_t *src)
 {
-    PFns_map_t *dest = PFarray (sizeof (PFns_t));
-
-    for (unsigned int i = 0; i < PFarray_last (src); i++)
-        *((PFns_t *) PFarray_add (dest))
-            = *((PFns_t *) PFarray_at ((PFns_map_t *) src, i));
-
-    return dest;
+    return PFarray_copy ((PFns_map_t *) src);
 }
 
 
@@ -553,7 +547,7 @@ ns_resolve (PFpnode_t *n)
             PFns_t         old_fns       = fns;
             PFns_t         old_target_ns = target_ns;
 
-            stat_known_ns = PFarray (sizeof (PFns_t));
+            stat_known_ns = PFarray (sizeof (PFns_t), 50 /* assume initially 50 namespaces */);
 
             /* bring the default NS into scope */
             ns_add (PFns_xml);
@@ -1024,7 +1018,7 @@ ns_resolve (PFpnode_t *n)
 void
 PFns_init (void)
 {
-    stat_known_ns = PFarray (sizeof (PFns_t));
+    stat_known_ns = PFarray (sizeof (PFns_t), 50 /* assume initially 50 namespaces */);
 
     /* bring the default NS into scope */
     ns_add (PFns_xml);

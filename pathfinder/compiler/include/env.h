@@ -45,7 +45,8 @@
 typedef PFarray_t PFenv_t;
 
 /* create a new environment */
-PFenv_t *PFenv (void);
+PFenv_t *PFenv_ (unsigned int initial_slots);
+#define PFenv() (PFenv_ (20))
 
 /* bind key to value in environment 
  * (return 0 if key was unbound, value otherwise) 

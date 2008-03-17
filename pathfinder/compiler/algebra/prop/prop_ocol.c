@@ -154,7 +154,8 @@ infer_ocol (PFla_op_t *n)
 
         case la_project:
         {
-            PFarray_t *proj_list = PFarray (sizeof (PFalg_proj_t));
+            PFarray_t *proj_list = PFarray (sizeof (PFalg_proj_t),
+                                            n->sem.proj.count);
 
             /* prune projection list according to
                the ocols of its argument */

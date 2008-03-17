@@ -271,7 +271,7 @@ PFscanner_init (char *buf)
 {
     /* initialize lexical stack */
     lexical_sp = 0; 
-    lexical_stack = PFarray (sizeof (int));
+    lexical_stack = PFarray_default (sizeof (int));
 
     /*
      * In case yyin/pfin is not set, initialize it to /dev/null (Unix)
@@ -1168,7 +1168,7 @@ extract_string (const char *s)
 {
     unsigned int   start = 0;
     unsigned int   end = 0;
-    PFarray_t     *ret = PFarray (sizeof (char));
+    PFarray_t     *ret = PFarray (sizeof (char), 512);
     char          *endptr;
     char          *entity;
     unsigned int   i = 0;

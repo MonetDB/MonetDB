@@ -125,7 +125,7 @@ static char *a_id[]  = {
 static char *
 literal (PFalg_atom_t a)
 {
-    PFarray_t *s = PFarray (sizeof (char));
+    PFarray_t *s = PFarray (sizeof (char), 50);
 
     switch (a.type) {
 
@@ -974,7 +974,7 @@ PFpa_dot (FILE *f, PFpa_op_t *root, char *prop_args)
 {
     if (root) {
         /* initialize array to hold dot output */
-        PFarray_t *dot = PFarray (sizeof (char));
+        PFarray_t *dot = PFarray (sizeof (char), 32000);
 
         PFarray_printf (dot, "digraph XQueryPhysicalAlgebra {\n"
                              "ordering=out;\n"

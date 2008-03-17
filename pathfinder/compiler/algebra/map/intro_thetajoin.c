@@ -700,7 +700,7 @@ collect_select_nodes (PFla_op_t *n, PFarray_t *select_nodes)
 PFla_op_t *
 PFintro_thetajoins (PFla_op_t *root)
 {
-    PFarray_t *select_nodes = PFarray (sizeof (PFla_op_t *));
+    PFarray_t *select_nodes = PFarray (sizeof (PFla_op_t *), 20);
     PFla_op_t *select, *join;
 
     /* collect the select nodes */

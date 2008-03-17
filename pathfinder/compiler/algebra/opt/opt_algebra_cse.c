@@ -56,6 +56,8 @@
 /* checks if an attribute is NULL */
 #define IS_NULL(a) (a == att_NULL)
 
+#define DEF_WIDTH 10
+
 /* Operator names */
 static char *ID[] = {
       [la_serialize_seq]   = "la_serialize_seq"
@@ -518,7 +520,7 @@ lookup_actatts (PFarray_t *map, PFla_op_t *ori)
 static PFarray_t *
 create_actatt_map (void)
 {
-    return PFarray (sizeof(actatt_map_t));
+    return PFarray (sizeof(actatt_map_t), DEF_WIDTH);
 }
 
 /*........... Handling of actual attributes .........*/
@@ -2100,7 +2102,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
              * we have to protocol the columns
              * we have just seen, to avoid a column to be
              * used twice */
-            PFarray_t *seen = PFarray (sizeof(PFalg_att_t));
+            PFarray_t *seen = PFarray (sizeof(PFalg_att_t), DEF_WIDTH);
             for (unsigned int i = 0; i < ori->schema.count; i++) {
                 PFalg_att_t col = littbl_column (ori->schema.items[i].name,
                                                  ori, cse, seen);
@@ -2532,7 +2534,7 @@ la_cse (PFla_op_t *n)
 
     if (!a)
         *(PFarray_t **) PFarray_at (subexps, n->kind)
-            = a = PFarray (sizeof (PFla_op_t *));
+            = a = PFarray (sizeof (PFla_op_t *), 15);
 
     PFla_op_t *temp = NULL;
 
@@ -2622,12 +2624,12 @@ PFla_op_t *
 PFalgopt_cse (PFla_op_t *n)
 {
     /* initialize maps */
-    cse_map = PFarray (sizeof (ori_cse_map_t));
-    actatt_map = PFarray (sizeof (ori_actatt_map_t));
-    ori_map = PFarray (sizeof (cse_ori_map_t));
+    cse_map = PFarray (sizeof (ori_cse_map_t), 256);
+    actatt_map = PFarray (sizeof (ori_actatt_map_t), 256);
+    ori_map = PFarray (sizeof (cse_ori_map_t), 256);
  
-    /* initialize subexpression array */
-    subexps = PFarray (sizeof (PFarray_t *));
+    /* initialize subexpression array (and clear it) */
+    subexps = PFcarray (sizeof (PFarray_t *), 128);
 
     PFla_op_t *res = NULL;
 

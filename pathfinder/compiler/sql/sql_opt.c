@@ -225,9 +225,9 @@ remove_duplicate_documentnode_references (PFsql_t *n)
     unsigned int i, j;
     PFsql_aident_t new_alias, old_alias;
     PFsql_t *where;
-    PFarray_t *aliases   = PFarray (sizeof (PFsql_t *)),
-              *names     = PFarray (sizeof (PFsql_t *)),
-              *tmp_names = PFarray (sizeof (PFsql_t *));
+    PFarray_t *aliases   = PFarray (sizeof (PFsql_t *), 10),
+              *names     = PFarray (sizeof (PFsql_t *), 10),
+              *tmp_names = PFarray (sizeof (PFsql_t *), 10);
     
     assert (n->kind == sql_select);
 

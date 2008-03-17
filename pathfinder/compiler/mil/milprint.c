@@ -1551,7 +1551,7 @@ milprintf (char * fmt, ...)
 PFarray_t *
 PFmil_serialize (PFmil_t * m)
 {
-    out = PFarray (sizeof (char));
+    out = PFarray (sizeof (char), 64000);
 
     /* `statements' is the top rule of our grammar */
     print_statements (m);

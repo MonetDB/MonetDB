@@ -2429,7 +2429,7 @@ intro_internal_thetajoin (PFla_op_t *p)
     /* replace original thetajoin operators by the internal
        variant */
     if (p->kind == la_thetajoin) {
-        PFarray_t *pred = PFarray (sizeof (pred_struct));
+        PFarray_t *pred = PFarray (sizeof (pred_struct), 5);
 
         for (i = 0; i < p->sem.thetajoin.count; i++)
             *(pred_struct *) PFarray_add (pred) =

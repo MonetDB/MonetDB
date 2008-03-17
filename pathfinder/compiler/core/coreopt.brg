@@ -1566,12 +1566,12 @@ PFcoreopt (PFcnode_t *r)
 
     /* set up variable replacement environment */
     for (unsigned short i = 0; i < HASH_BUCKETS; i++)
-        var_env[i] = PFarray (sizeof (bind_t));
+        var_env[i] = PFarray (sizeof (bind_t), 128);
 
     /* set up a variable environment to record unused variables */
-    unused_var_env = PFarray (sizeof (bind_t)),
+    unused_var_env = PFarray (sizeof (bind_t), 128),
     /* set up a variable environment to record variable references */
-    used_var_env = PFarray (sizeof (bind_t)),
+    used_var_env = PFarray (sizeof (bind_t), HASH_BUCKETS * 128),
 
     /* label the Core tree bottom up */
     PFcoreopt_label (r);

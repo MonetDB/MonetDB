@@ -211,12 +211,12 @@ PFqname (PFns_t ns, const char *loc)
 void
 PFqname_init (void)
 {
-    qnames = PFarray (sizeof (qname_internal_t));
-    qname_hash = PFarray (sizeof (PFarray_t *));
+    qnames = PFarray (sizeof (qname_internal_t), 400);
+    qname_hash = PFarray (sizeof (PFarray_t *), HASH_BUCKETS);
 
     for (unsigned int i = 0; i < HASH_BUCKETS; i++)
         *((PFarray_t **) PFarray_at (qname_hash, i))
-            = PFarray (sizeof (qname_hash_entry_t));
+            = PFarray (sizeof (qname_hash_entry_t), 50);
 }
 
 /**

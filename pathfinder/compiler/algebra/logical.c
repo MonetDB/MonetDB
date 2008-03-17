@@ -472,7 +472,7 @@ PFla_ref_tbl_ (const char* name, PFalg_schema_t schema, PFarray_t* tatts,
     ret->sem.ref_tbl.name = PFstrdup(name);
 
     /* deep copy the "original column names" of the referenced table*/
-    ret->sem.ref_tbl.tatts = PFarray(sizeof (char*));
+    ret->sem.ref_tbl.tatts = PFarray(sizeof (char*), PFarray_last (tatts));
     for (unsigned int i = 0; i < PFarray_last (tatts); i++)
     {
             char* value = *(char**) PFarray_at (tatts, i);
@@ -3365,7 +3365,7 @@ PFla_frag_extract (const PFla_op_t *n, unsigned int col_pos)
 PFla_set_t *
 PFla_empty_set (void)
 {
-    return PFarray (sizeof (PFla_op_t *));
+    return PFarray (sizeof (PFla_op_t *), 0);
 }
 
 /**
@@ -3374,7 +3374,7 @@ PFla_empty_set (void)
 PFla_set_t *
 PFla_set (const PFla_op_t *n)
 {
-    PFarray_t *ret = PFarray (sizeof (PFla_op_t *));
+    PFarray_t *ret = PFarray (sizeof (PFla_op_t *), 1);
 
     /* add node */
     *((PFla_op_t **) PFarray_add (ret)) = (PFla_op_t *) n;
@@ -3392,7 +3392,9 @@ PFla_set_union (PFla_set_t *frag1, PFla_set_t *frag2)
     unsigned int i, j;
     PFla_op_t *n1;
     PFla_op_t *n2;
-    PFarray_t *ret = PFarray (sizeof (PFla_op_t *));
+    PFarray_t *ret = PFarray (sizeof (PFla_op_t *),
+                              PFarray_last (frag1) +
+                              PFarray_last (frag2));
 
     for (i = 0; i < PFarray_last (frag1); i++) {
         n1 = *((PFla_op_t **) PFarray_at (frag1, i));

@@ -2236,7 +2236,7 @@ AttributeValueContTexts_  : AttributeValueContText_
                                  * initialize new dynamic array and insert
                                  * one (UTF-8) character
                                  */
-                                $$ = PFarray (sizeof (char));
+                                $$ = PFarray (sizeof (char), 512);
                                 while (*($1)) {
                                     *((char *) PFarray_add ($$)) = *($1);
                                     ($1)++;
@@ -2290,7 +2290,7 @@ ElementContentTexts_      : ElementContentText_
                                  * initialize new dynamic array and insert
                                  * one (UTF-8) character
                                  */
-                                $$ = PFarray (sizeof (char));
+                                $$ = PFarray (sizeof (char), 512);
                                 while (*($1)) {
                                     *((char *) PFarray_add ($$)) = *($1);
                                     ($1)++;
@@ -2334,7 +2334,7 @@ Characters_               : Chars_
 /* collect single characters in a dynamic array */
 Chars_                    : /* empty */
                             { /* initialize new dynamic array */
-                              $$ = PFarray (sizeof (char)); }
+                              $$ = PFarray (sizeof (char), 512); }
                           | Chars_ PFChar
                             {   /* append one (UTF-8) charater to array */
                                 while (*($2)) {
@@ -2892,7 +2892,7 @@ PFparse (char *input, PFpnode_t **r, PFquery_t *query, bool standoff)
     PFscanner_init (input);
 
     /* initialize work list of modules to load */
-    modules = PFarray (sizeof (module_t));
+    modules = PFarray_default (sizeof (module_t));
     
     /* we don't explicitly ask for modules */
     module_only = false;

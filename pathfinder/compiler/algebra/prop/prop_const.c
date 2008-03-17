@@ -131,6 +131,7 @@ PFalg_atom_t
 PFprop_const_val_left (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
+    assert (prop->l_constants);
 
     return const_val (prop->l_constants, attr);
 }
@@ -145,6 +146,7 @@ PFalg_atom_t
 PFprop_const_val_right (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
+    assert (prop->r_constants);
 
     return const_val (prop->r_constants, attr);
 }
@@ -767,17 +769,24 @@ prop_infer (PFla_op_t *n)
     if (n->prop->constants)
         PFarray_last (n->prop->constants) = 0;
     else
-        n->prop->constants   = PFarray (sizeof (const_t));
+        /* prepare the property for 10 constants */
+        n->prop->constants   = PFarray (sizeof (const_t), 10);
 
-    if (n->prop->l_constants)
-        PFarray_last (n->prop->l_constants) = 0;
-    else
-        n->prop->l_constants = PFarray (sizeof (const_t));
+    if (L(n)) {
+        if (n->prop->l_constants)
+            PFarray_last (n->prop->l_constants) = 0;
+        else
+            /* prepare the property for 10 constants */
+            n->prop->l_constants = PFarray (sizeof (const_t), 10);
+    }
 
-    if (n->prop->r_constants)
-        PFarray_last (n->prop->r_constants) = 0;
-    else
-        n->prop->r_constants = PFarray (sizeof (const_t));
+    if (R(n)) {
+        if (n->prop->r_constants)
+            PFarray_last (n->prop->r_constants) = 0;
+        else
+            /* prepare the property for 10 constants */
+            n->prop->r_constants = PFarray (sizeof (const_t), 10);
+    }
 
     /* infer information on constant columns */
     infer_const (n);

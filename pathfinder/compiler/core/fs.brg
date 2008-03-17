@@ -3924,7 +3924,8 @@ two_arg_fun_worker (PFpnode_t *p, PFfun_t *fun)
 static PFty_t *
 parameter_types (PFpnode_t *paramlist)
 {
-    PFarray_t *par_ty = PFarray (sizeof (PFty_t));
+    /* we assume functions to have less than 15 parameters */
+    PFarray_t *par_ty = PFarray (sizeof (PFty_t), 15);
     PFpnode_t *n = paramlist;
 
     assert (paramlist);
@@ -4030,13 +4031,13 @@ PFfs (PFpnode_t *r, PFquery_t *query)
     core_vars = 0;
 
     /* initially, there is no function on the current function stack */
-    funs = PFarray (sizeof (PFfun_t *));
+    funs = PFarray (sizeof (PFfun_t *), 20);
 
     /* initially, there is no argument list on the current arguments stack */
-    args = PFarray (sizeof (PFcnode_t *));
+    args = PFarray (sizeof (PFcnode_t *), 20);
 
     /* initially, there nothing on the current argument number stack */
-    arg_num = PFarray (sizeof (short));
+    arg_num = PFarray (sizeof (short), 20);
 
     /* initially, the context item is undefined */
     fs_dot = NULL;

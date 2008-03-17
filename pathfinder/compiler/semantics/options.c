@@ -98,7 +98,7 @@ PFextract_options (PFpnode_t *root)
 {
     assert (root);
 
-    PFoptions = PFenv ();
+    PFoptions = PFenv_ (400);
 
     recurse (root);
 

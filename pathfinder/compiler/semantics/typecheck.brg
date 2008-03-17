@@ -1270,7 +1270,7 @@ static void fun_not_found (PFqname_t qn, PFcnode_t *args)
     /* construct (error) message listing the actual argument types:
      * ": t1; t2; ...; tn" (NB: n >= 1 is guaranteed here)
      */
-    PFarray_t *args_str = PFarray (sizeof (char));
+    PFarray_t *args_str = PFarray (sizeof (char), 128);
     char semi = ':';
 
     do {
@@ -1293,7 +1293,7 @@ static void fun_not_found (PFqname_t qn, PFcnode_t *args)
         PFfun_t *fn       = *(PFfun_t **) PFarray_at (fns, i);
 	
 	for (unsigned j = 0; j < fn->sig_count; j++) {
-	     args_str = PFarray (sizeof (char));
+	     args_str = PFarray (sizeof (char), 512);
 
 	     PFfun_sig_t *sig = fn->sigs + j;
 

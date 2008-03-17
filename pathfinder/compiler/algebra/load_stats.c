@@ -166,7 +166,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
         /* insert new guide node in the child list */
         if (!current_guide_node->child_list)
             current_guide_node->child_list = 
-                PFarray (sizeof (PFguide_tree_t**));
+                PFarray (sizeof (PFguide_tree_t**), 10);
         
         *(PFguide_tree_t**)
             PFarray_add (current_guide_node->child_list) =

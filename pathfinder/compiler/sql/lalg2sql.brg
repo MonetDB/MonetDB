@@ -527,7 +527,7 @@ typedef struct sql_column_env_t sql_column_env_t;
 /**
  * Returns a new column environment.
  */
-#define col_env_new() (PFarray (sizeof (sql_column_env_t)))
+#define col_env_new() (PFarray (sizeof (sql_column_env_t), 20))
 
 /**
  * Adds a (attribute/type -> expression)
@@ -776,7 +776,7 @@ typedef struct sql_from_list_t sql_from_list_t;
 /**
  * Returns a new fromlist.
  */
-#define from_list_new() (PFarray (sizeof (sql_from_list_t)))
+#define from_list_new() (PFarray (sizeof (sql_from_list_t), 10))
 
 /**
  * Add a (table, alias) pair to the fromlist.
@@ -834,7 +834,7 @@ transform_frommap_ext (PFla_op_t *p, PFsql_t *tbl)
 /**
  * Returns a new wherelist.
  */
-#define where_list_new() (PFarray (sizeof (PFsql_t *)))
+#define where_list_new() (PFarray (sizeof (PFsql_t *), 10))
 
 /**
  * Add a predicate to the wherelist.
@@ -1568,7 +1568,7 @@ collect_frag_worker (PFla_op_t * p, PFarray_t *frags)
 static PFsql_t *
 collect_fragments (PFla_op_t * p)
 {
-    PFarray_t *frags = PFarray (sizeof (PFsql_t *));
+    PFarray_t *frags = PFarray (sizeof (PFsql_t *), 5);
 
     collect_frag_worker (p, frags);
 
@@ -3780,7 +3780,7 @@ reduce (PFla_op_t * p, int goalnt)
                 PFord_ordering_t sortby = p->sem.sort.sortby;
                 unsigned int     i, j, k;
                 PFalg_att_t      ord;
-                PFarray_t       *srtbylist = PFarray (sizeof (PFsql_t *));
+                PFarray_t       *srtbylist = PFarray (sizeof (PFsql_t *), 10);
                 bool             asc, cols_added;
                 rank_map_t      *rank_map;
 
@@ -3818,7 +3818,7 @@ reduce (PFla_op_t * p, int goalnt)
 
                 /* initialize rankmap */
                 if (!RANK_MAP(p))
-                    RANK_MAP(p) = PFarray (sizeof (rank_map_t *));
+                    RANK_MAP(p) = PFarray (sizeof (rank_map_t *), 2);
 
                 /* add new entry to the rank map */
                 rank_map = PFmalloc (sizeof (rank_map_t));
@@ -4471,7 +4471,7 @@ reduce (PFla_op_t * p, int goalnt)
                     *iter_size = NULL, *content = NULL,
                     *frag, *sel, *selectlist;
 
-            PFarray_t *frags = PFarray (sizeof (PFsql_t *));
+            PFarray_t *frags = PFarray (sizeof (PFsql_t *), 5);
             /* collect the duplicate free list of fragment references */
             collect_frag_worker (L(p), frags);
             assert (PFarray_last (frags));
@@ -4699,7 +4699,9 @@ reduce (PFla_op_t * p, int goalnt)
                 unsigned int i;                                               \
                 if (RANK_MAP(src)) {                                          \
                     if (!RANK_MAP(dest))                                      \
-                        RANK_MAP(dest) = PFarray (sizeof (rank_map_t *));     \
+                        RANK_MAP(dest) = PFarray (                            \
+                                             sizeof (rank_map_t *),           \
+                                             PFarray_last (RANK_MAP(src)));   \
                     for (i = 0; i < PFarray_last (RANK_MAP(src)); i++)        \
                         *(rank_map_t **) PFarray_add (RANK_MAP(dest))         \
                             = *(rank_map_t **) PFarray_at (RANK_MAP(src), i); \
@@ -5089,7 +5091,7 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
 static void
 infer_ser_info (PFla_op_t * p)
 {
-    PFarray_t *twigs = PFarray (sizeof (PFla_op_t*)),
+    PFarray_t *twigs = PFarray (sizeof (PFla_op_t*), 2),
               *ranks;
     bool twig_only = false;
 
@@ -5102,7 +5104,7 @@ infer_ser_info (PFla_op_t * p)
         return;
 
     /* prepare a list for the rank operators */
-    ranks = PFarray (sizeof(PFla_op_t*));
+    ranks = PFarray (sizeof(PFla_op_t*), 2);
 
     /* infer the serialization info */
     ser_info_worker (R(p), twigs, ranks);

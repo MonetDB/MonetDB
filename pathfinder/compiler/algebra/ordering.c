@@ -48,7 +48,7 @@ typedef struct PFalg_order_item_t PFalg_order_item_t;
 PFord_ordering_t
 PFordering (void)
 {
-    return PFarray (sizeof (PFalg_order_item_t));
+    return PFarray (sizeof (PFalg_order_item_t), 10);
 }
 
 PFord_ordering_t
@@ -68,7 +68,7 @@ PFord_order_intro_ (unsigned int count, PFalg_att_t *atts)
 PFord_set_t
 PFord_set (void)
 {
-    return PFarray (sizeof (PFord_ordering_t));
+    return PFarray (sizeof (PFord_ordering_t), 20);
 }
 
 PFord_ordering_t
@@ -157,7 +157,7 @@ PFord_common_prefix (const PFord_ordering_t a, const PFord_ordering_t b)
 char *
 PFord_str (const PFord_ordering_t o)
 {
-    PFarray_t *a = PFarray (sizeof (char));
+    PFarray_t *a = PFarray (sizeof (char), 100);
 
     PFarray_printf (a, "<");
 

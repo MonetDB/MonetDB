@@ -53,6 +53,8 @@
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
+#define ARRAY_SIZE(n) ((n)->schema.count > 10 ? (n)->schema.count : 10)
+
 /* reuse the icols field to maintain the bitlist of free variables */
 #define FREE(n) ((n)->prop->l_icols)
 /* initial value for lists that encode free variables */
@@ -714,14 +716,27 @@ reset_fun (PFla_op_t *n)
     EDGE(n) = 0;
 
     /* reset the original name information */
-    if (n->prop->name_pairs) PFarray_last (n->prop->name_pairs) = 0;
-    else n->prop->name_pairs = PFarray (sizeof (name_pair_t));
+    if (n->prop->name_pairs)
+        PFarray_last (n->prop->name_pairs) = 0;
+    else
+        n->prop->name_pairs = PFarray (sizeof (name_pair_t),
+                                       ARRAY_SIZE(n));
 
-    if (n->prop->l_name_pairs) PFarray_last (n->prop->l_name_pairs) = 0;
-    else n->prop->l_name_pairs = PFarray (sizeof (name_pair_t));
+    if (L(n)) {
+        if (n->prop->l_name_pairs)
+            PFarray_last (n->prop->l_name_pairs) = 0;
+        else
+            n->prop->l_name_pairs = PFarray (sizeof (name_pair_t),
+                                             ARRAY_SIZE(L(n)));
+    }
 
-    if (n->prop->r_name_pairs) PFarray_last (n->prop->r_name_pairs) = 0;
-    else n->prop->r_name_pairs = PFarray (sizeof (name_pair_t));
+    if (R(n)) {
+        if (n->prop->r_name_pairs)
+            PFarray_last (n->prop->r_name_pairs) = 0;
+        else
+            n->prop->r_name_pairs = PFarray (sizeof (name_pair_t),
+                                             ARRAY_SIZE(R(n)));
+    }
 
     /* reset the list of available column names */
     FREE(n) = ALL;
@@ -741,7 +756,7 @@ PFprop_infer_ori_names (PFla_op_t *root)
 
     /* infer new original names property */
     infer_ori_names (root,
-                     PFarray (sizeof (name_pair_t)));
+                     PFarray (sizeof (name_pair_t), 0));
 }
 
 /* vim:set shiftwidth=4 expandtab: */

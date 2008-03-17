@@ -225,7 +225,7 @@ PFxml2la_xpath_getAttributeValuesFromAttributeNodes(
     xmlXPathObjectPtr xpathObjectPtr)
 {
 
-    PFarray_t * values = PFarray (sizeof (char*));
+    PFarray_t * values = PFarray (sizeof (char*), 20);
 
     int nodeCount = PFxml2la_xpath_getNodeCount(xpathObjectPtr);
 

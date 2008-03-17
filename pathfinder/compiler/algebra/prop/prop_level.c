@@ -119,7 +119,7 @@ mark_level (PFprop_t *prop, PFalg_att_t attr, int level)
     assert (prop);
 
     if (!prop->level_mapping)
-        prop->level_mapping = PFarray (sizeof (level_t));
+        prop->level_mapping = PFarray (sizeof (level_t), 5);
 
     *(level_t *) PFarray_add (prop->level_mapping)
         = (level_t) { .attr = attr, .level = level };

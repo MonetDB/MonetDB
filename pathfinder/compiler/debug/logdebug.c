@@ -213,7 +213,7 @@ static char *xml_id[]  = {
 static char *
 literal (PFalg_atom_t a)
 {
-    PFarray_t *s = PFarray (sizeof (char));
+    PFarray_t *s = PFarray (sizeof (char), 50);
 
     switch (a.type) {
 
@@ -257,7 +257,7 @@ literal (PFalg_atom_t a)
 static char *
 xml_literal (PFalg_atom_t a)
 {
-    PFarray_t *s = PFarray (sizeof (char));
+    PFarray_t *s = PFarray (sizeof (char), 50);
 
     if (a.type == aat_nat)
         PFarray_printf (
@@ -309,7 +309,7 @@ static char *
 xml_literal_list (PFalg_simple_type_t ty)
 {
     bool first = true;
-    PFarray_t *s = PFarray (sizeof (char));
+    PFarray_t *s = PFarray (sizeof (char), 50);
 
     if (ty & aat_update)
         PFarray_printf (s, "update");
@@ -2188,7 +2188,7 @@ PFla_dot (FILE *f, PFla_op_t *root, char *prop_args)
 {
     if (root) {
         /* initialize array to hold dot output */
-        PFarray_t *dot = PFarray (sizeof (char));
+        PFarray_t *dot = PFarray (sizeof (char), 32000);
 
         PFarray_printf (dot, "digraph XQueryAlgebra {\n"
                              "ordering=out;\n"
@@ -2238,7 +2238,7 @@ PFla_xml (FILE *f, PFla_op_t *root, char *prop_args)
     if (root) {
 
         /* initialize array to hold dot output */
-        PFarray_t *xml = PFarray (sizeof (char));
+        PFarray_t *xml = PFarray (sizeof (char), 64000);
 
         PFarray_printf (xml, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         PFarray_printf (xml, "<logical_query_plan unique_names=\"%s\">\n",

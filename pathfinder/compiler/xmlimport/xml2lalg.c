@@ -464,7 +464,7 @@ PFxml2la_xml2lalgContext(void)
    
     ctx = (XML2LALGContext*) PFmalloc (sizeof (XML2LALGContext));
 
-    ctx->nodeStore = PFarray(sizeof (PFla_op_t*));
+    ctx->nodeStore = PFarray(sizeof (PFla_op_t*), 200);
 
     return ctx;  
 }
@@ -2533,7 +2533,7 @@ getPFLA_KeyInfos(
     </key>)+
     */
 
-    PFarray_t * keyPositions = PFarray (sizeof (int));
+    PFarray_t * keyPositions = PFarray (sizeof (int), 5);
 
 
     xmlXPathObjectPtr keys_xml =  XPATH(xpathExpression);

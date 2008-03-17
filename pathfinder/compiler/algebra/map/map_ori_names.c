@@ -1015,7 +1015,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
 PFla_op_t *
 PFmap_ori_names (PFla_op_t *root)
 {
-    PFarray_t *map = PFarray (sizeof (ori_unq_map));
+    PFarray_t *map = PFarray (sizeof (ori_unq_map), 300);
 
     /* infer original bit-encoded names */
     PFprop_infer_ori_names (root);

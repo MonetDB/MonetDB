@@ -528,7 +528,7 @@ typedef struct env_t env_t;
 static PFarray_t *
 new_env (void)
 {
-    return PFarray (sizeof (env_t));
+    return PFarray (sizeof (env_t), 10);
 }
 
 /** @brief Add an item to environment for #env_t entries. */
@@ -803,7 +803,7 @@ intersect (PFpa_op_t *p,
            PFalg_schema_t left, PFalg_schema_t right,
            mvar_t *res)
 { /* fold( */
-    PFarray_t          *helper_vars = PFarray (sizeof (mvar_t *));
+    PFarray_t          *helper_vars = PFarray (sizeof (mvar_t *), 10);
     PFalg_att_t         latt,
                         ratt;
     PFalg_simple_type_t lty  = 0,
@@ -6444,8 +6444,8 @@ reduce (PFpa_op_t * p, int goalnt)
             twig_state->parent       = 0;
             twig_state->size         = 0;
             twig_state->level        = 0;
-            twig_state->elem_vars    = PFarray (sizeof (mvar_t *));
-            twig_state->attr_vars    = PFarray (sizeof (mvar_t *));
+            twig_state->elem_vars    = PFarray (sizeof (mvar_t *), 10);
+            twig_state->attr_vars    = PFarray (sizeof (mvar_t *), 10);
             twig_state->loop         = NULL;
             twig_state->elem_content = false;
 
@@ -8562,7 +8562,7 @@ reduce (PFpa_op_t * p, int goalnt)
             PFmil_t *oldmilprog, *bodymilprog;
             PFarray_t *res_env;
             mvar_t *old_count, *new_count;
-            PFarray_t *border_vars = PFarray (sizeof (mvar_t *));
+            PFarray_t *border_vars = PFarray (sizeof (mvar_t *), 10);
 
             /* Generate code for the seeds and bind them to the new variables.
                In addition generate code for all expressions that are
@@ -8686,7 +8686,7 @@ reduce (PFpa_op_t * p, int goalnt)
             old_fun_params = fun_params;
 
             /* We will collect the parameters here */
-            fun_params = PFarray (sizeof (PFpa_op_t **));
+            fun_params = PFarray (sizeof (PFpa_op_t **), 10);
 
             /* Top-down processing puts all parameters into this array */
             reduce (kids[1], nts[1]);
@@ -8915,7 +8915,7 @@ PFmilgen (PFpa_op_t *n)
                     new (type (mty_oid), type (mty_oid))));
 
     /* initialize list of variables we use */
-    mvars = PFarray (sizeof (mvar_t));
+    mvars = PFarray (sizeof (mvar_t), 100);
 
     /* dummy initializations */
     twig_state      = NULL;

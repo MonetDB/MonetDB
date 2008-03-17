@@ -7,8 +7,8 @@
  * does not yield an error but lets the array grow as needed.
  *
  * Basic interface:
- * - #PFarray (s)       create new array with elements of s bytes length each,
- *                      set array ``append index'' to 0
+ *  - PFarray (s,sl)    create new array with elements of s bytes length each
+ *                      and initially sl slots, set array ``append index'' to 0
  * - #PFarray_at (a, i) address of ith element in array a (a grows as needed)
  * - #PFarray_last (a)  ``append index'': where to append to this array (r/w)
  *
@@ -70,10 +70,16 @@
 #include "oops.h"
 
 /** 
- * size (in bytes) allocated whenever a fresh array is allocated or
+ * size (in bytes) rounded up to whenever a fresh array is allocated or
  * an out-of-bounds index has been accessed 
  */
-#define ACHUNK 2048U
+#define ACHUNK 8U
+
+#ifndef NDEBUG
+/* switch to turn debug printing
+   of memory reallocations on/off */
+bool debug_memory; 
+#endif
 
 /**
  * Create a fresh dynamic array, prepared to hold elements of byte size
@@ -83,20 +89,24 @@
  * @return fresh dynamic array (or 0 in case of errors)
  */
 PFarray_t *
-PFarray (size_t s)
+PFarray_ (size_t s, unsigned int slots, bool clear)
 {
   PFarray_t *a;
   size_t nbytes;
 
   a = (PFarray_t *) PFmalloc (sizeof (PFarray_t));
 
-  /* round up to nearest multiple of ACHUNK larger than s */
-  nbytes = (s + ACHUNK) & (~ACHUNK + 1);
+  /* round up to nearest multiple of ACHUNK larger than s * slots */
+  nbytes = (s * slots + ACHUNK) & (~ACHUNK + 1);
 
   a->base = PFmalloc (nbytes);
 
+  if (clear)
+      memset (a->base, 0, nbytes);
+
   a->bound = nbytes / s;
   a->esize = s;
+  a->clear = clear;
 
   /* 0 indicates emptiness (see macro PFarray_empty ()) */
   a->appi  = 0;
@@ -113,22 +123,47 @@ PFarray (size_t s)
  * @return array element address (or 0, in case of errors)
  */
 void * 
-PFarray_at (PFarray_t *a, unsigned int i) 
+#ifndef NDEBUG
+PFarray_at_ (PFarray_t *a, unsigned int i,
+             const char *file, const char *func, const int line) 
+#else
+PFarray_at (PFarray_t *a, unsigned int i)
+#endif
 { 
   size_t nbytes;
 
   assert (a);
 
   if (i >= a->bound) {
-    /* out-of-bounds index access, 
-     * grow array such that index position i becomes valid 
-     */
-    nbytes = ((i + 1) * a->esize + ACHUNK) & (~ACHUNK + 1);
+#ifndef NDEBUG
+      if (debug_memory &&
+          /* The following functions have been checked and the initial
+             sizes appear to be bigger than the average sizes. */
+          strcmp (func, "la_cse") != 0 &&
+          strcmp (func, "PFarray_nadd") != 0 &&
+          strcmp (func, "add_subdom") != 0)
+          PFlog ("array not big enough"
+                 " in %s, %s(), line %d"
+                 " (required slots: %i; got: %i)",
+                 file, func, line, i, a->bound-1);
+#endif
 
-    assert(a->base);
-    a->base = PFrealloc (a->base, a->bound*a->esize, nbytes);
+      if (i > 2 * a->bound)
+          /* out-of-bounds index access, 
+           * grow array such that index position i becomes valid 
+           */
+          nbytes = ((i + 1) * a->esize + ACHUNK) & (~ACHUNK + 1);
+      else
+          /* amortize reallocation costs for small chunks */
+          nbytes = 2 * a->bound * a->esize;
 
-    a->bound = nbytes / a->esize;
+      assert(a->base);
+      a->base = PFrealloc (a->base, a->bound*a->esize, nbytes);
+
+      if (a->clear)
+          memset (a->base, 0, nbytes);
+
+      a->bound = nbytes / a->esize;
   }
 
   /* return address of requested index position i */
@@ -287,7 +322,7 @@ PFarray_copy (PFarray_t *input)
     assert (input);
 
     unsigned size = PFarray_last (input);
-    PFarray_t *output = PFarray (input->esize);
+    PFarray_t *output = PFarray_ (input->esize, input->bound, input->clear);
 
     if (size) {
         PFarray_nadd (output, size);
@@ -312,5 +347,15 @@ void PFarray_del(PFarray_t *a)
         /* decrement the current array append index */
         (a->appi)--;
 }
+
+#ifndef NDEBUG
+/**
+ * Look up the environment variable only once.
+ */
+void PFarray_init (void)
+{
+    debug_memory = getenv("PF_DEBUG_MEMORY") != NULL;
+}
+#endif
 
 /* vim:set shiftwidth=4 expandtab: */

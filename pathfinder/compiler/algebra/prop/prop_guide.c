@@ -95,7 +95,7 @@ copy_guide_mapping(PFguide_mapping_t *guide_mapping)
     /* initialize new PF_guide_mapping element */
     *new_guide_mapping = (PFguide_mapping_t) {
         .column = guide_mapping->column,
-        .guide_list = PFarray(sizeof(PFguide_tree_t**)),
+        .guide_list = PFarray(sizeof(PFguide_tree_t**), 20),
     };
 
     /* insert all PFguide_tree_t** elements in the new list */
@@ -118,7 +118,7 @@ deep_copy_guide_mapping_list(PFarray_t *guide_mapping_list)
         return NULL;
 
     /* new list that will be the copy of guide_mapping list */
-    PFarray_t *new_guide_mapping_list = PFarray(sizeof(PFguide_mapping_t**));
+    PFarray_t *new_guide_mapping_list = PFarray(sizeof(PFguide_mapping_t**), 20);
     /* PFguide_mapping_t elements to copy */
     PFguide_mapping_t *guide_mapping_element = NULL;
 
@@ -194,7 +194,7 @@ getAncestorFromGuide (PFguide_tree_t *n, PFalg_step_spec_t spec)
 {
     assert(n);
 
-    PFarray_t      *ancestors = PFarray(sizeof(PFguide_tree_t**));
+    PFarray_t      *ancestors = PFarray(sizeof(PFguide_tree_t**), 20);
     PFguide_tree_t *node      = n->parent;
 
     /* compute ancestors */
@@ -238,7 +238,7 @@ getDescendantFromGuideRec (PFguide_tree_t *n, PFalg_step_spec_t spec,
 static PFarray_t *
 getDescendantFromGuide(PFguide_tree_t *n, PFalg_step_spec_t spec)
 {
-    PFarray_t *descendant = PFarray (sizeof (PFguide_tree_t **));
+    PFarray_t *descendant = PFarray (sizeof (PFguide_tree_t **), 100);
     getDescendantFromGuideRec (n, spec, descendant);
     return descendant;
 }
@@ -302,7 +302,7 @@ add_guide(PFarray_t *guide_mapping_list, PFguide_tree_t  *guide,
 
     /* Create new array of PFguide_mapping_t*/
     if(guide_mapping_list == NULL)
-        guide_mapping_list = PFarray(sizeof(PFguide_mapping_t**));
+        guide_mapping_list = PFarray(sizeof(PFguide_mapping_t**), 20);
 
     /* look up if the column just exist */
     for(unsigned int i = 0; i < PFarray_last(guide_mapping_list); i++) {
@@ -327,7 +327,7 @@ add_guide(PFarray_t *guide_mapping_list, PFguide_tree_t  *guide,
     guide_mapping = (PFguide_mapping_t*)PFmalloc(sizeof(PFguide_mapping_t));
     *guide_mapping = (PFguide_mapping_t) {
         .column = column,
-        .guide_list = PFarray(sizeof(PFguide_tree_t**)),
+        .guide_list = PFarray(sizeof(PFguide_tree_t**), 20),
     };
 
     /* insert values in PFguide_mapping_t */
@@ -377,7 +377,7 @@ copy_project(PFla_op_t *n)
     assert(PROP(L(n)));
 
     PFarray_t *guide_mapping_list = MAPPING_LIST(L(n)),
-            *new_guide_mapping_list = PFarray(sizeof(PFguide_mapping_t**));
+            *new_guide_mapping_list = PFarray(sizeof(PFguide_mapping_t**), 20);
     PFguide_mapping_t *guide_mapping = NULL;
     PFalg_att_t new_column, old_column;
 
@@ -425,7 +425,7 @@ remove_duplicate(PFla_op_t *n)
     PFguide_mapping_t  *guide_mapping = NULL;
     PFarray_t *guide_list = NULL;
     /* array without duplicate elements*/
-    PFarray_t  *new_guide_list = PFarray(sizeof(PFguide_tree_t**));
+    PFarray_t  *new_guide_list = PFarray(sizeof(PFguide_tree_t**), 20);
     PFguide_tree_t  *element = NULL, *element2 = NULL;
     bool add_element_bool = true; /* if true add the guide */
 
@@ -512,7 +512,7 @@ copy_step(PFla_op_t *n)
     /* get array of guide nodes */
     guide_list = guide_mapping->guide_list;
     if(guide_list == NULL) {
-        MAPPING_LIST(n) = PFarray(sizeof(PFguide_mapping_t**));;
+        MAPPING_LIST(n) = PFarray(sizeof(PFguide_mapping_t**), 20);
         return;
     }
 

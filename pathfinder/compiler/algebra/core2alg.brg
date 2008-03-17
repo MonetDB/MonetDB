@@ -953,7 +953,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                           att_pos, lit_nat (1));
 
             /* create new environment */
-            ENV = PFarray (sizeof (PFla_env_t));
+            ENV = PFarray (sizeof (PFla_env_t), 50);
 
             /* insert $v and "its document" into NEW environment */
             *((PFla_env_t *) PFarray_add (ENV))
@@ -1185,7 +1185,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             old_env = ENV;
 
             /* update the environment for translation of e2 */
-            ENV = PFarray (sizeof (PFla_env_t));
+            ENV = PFarray (sizeof (PFla_env_t), 50);
 
             for (i = 0; i < PFarray_last (old_env); i++) {
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
@@ -1220,7 +1220,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                             proj (att_iter, att_iter));
 
             /* update the environment for translation of e3 */
-            ENV = PFarray (sizeof (PFla_env_t));
+            ENV = PFarray (sizeof (PFla_env_t), 50);
 
             for (i = 0; i < PFarray_last (old_env); i++) {
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
@@ -1628,7 +1628,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
             /* map variable environment */
             old_env = ENV;
-            ENV = PFarray (sizeof (PFla_env_t));
+            ENV = PFarray (sizeof (PFla_env_t), 50);
 
             for (i = 0; i < PFarray_last (old_env); i++) {
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
@@ -1662,7 +1662,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                      att_notsub),
                             proj (att_iter, att_iter));
 
-            ENV = PFarray (sizeof (PFla_env_t));
+            ENV = PFarray (sizeof (PFla_env_t), 50);
 
             for (i = 0; i < PFarray_last (old_env); i++) {
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
@@ -2085,7 +2085,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                and create new ones. */
             old_env = ENV;
 
-            ENV = PFarray (sizeof (PFla_env_t));
+            ENV = PFarray (sizeof (PFla_env_t), 50);
 
             for (unsigned int i = 0; i < PFarray_last (old_env); i++)
                 *((PFla_env_t *) PFarray_add (ENV))
@@ -2094,7 +2094,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             old_fun_args = FUN_ARGS;
 
             /* We will collect the argument values here */
-            FUN_ARGS = PFarray (sizeof (struct PFla_pair_t));
+            FUN_ARGS = PFarray (sizeof (struct PFla_pair_t), 10);
 
             /* (2) Enter bindings for function parameters.
              *     We do this by reducing our child nodes in a
@@ -2208,7 +2208,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                 else if (FUN_ACTIVE_AT(i).count < ctx->recursion_depth) {
                     unsigned int j, k;
                     PFarray_t *old_core2alg_map = CORE2ALG_MAP;
-                    CORE2ALG_MAP = PFarray (sizeof (core2alg_map_t));
+                    CORE2ALG_MAP = PFarray (sizeof (core2alg_map_t), 50);
 
                     /* replace the variables that are not visible
                        anymore due to the recursive call */
@@ -2321,7 +2321,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                and create new ones. */
             old_env = ENV;
 
-            ENV = PFarray (sizeof (PFla_env_t));
+            ENV = PFarray (sizeof (PFla_env_t), 50);
 
             for (unsigned int i = 0; i < PFarray_last (old_env); i++)
                 *((PFla_env_t *) PFarray_add (ENV))
@@ -2330,7 +2330,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             old_fun_args = FUN_ARGS;
 
             /* We will collect the argument values here */
-            FUN_ARGS = PFarray (sizeof (struct PFla_pair_t));
+            FUN_ARGS = PFarray (sizeof (struct PFla_pair_t), 10);
 
             /* (2) Enter bindings for function parameters.
              *     We do this by reducing our child nodes in a
@@ -2584,7 +2584,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                 old_env = ENV;
 
                 /* create new environment */
-                ENV = PFarray (sizeof (PFla_env_t));
+                ENV = PFarray (sizeof (PFla_env_t), 50);
 
                 /* update all variable bindings in old environment and put
                  * them into new environment */
@@ -3227,11 +3227,11 @@ PFcore2alg (PFcnode_t *r, PFquery_t *query)
     PFcore2alg_label (r);
 
     /* get empty environment */
-    ctx.env  = PFarray (sizeof (PFla_env_t));
+    ctx.env  = PFarray (sizeof (PFla_env_t), 50);
     /* loop is initially a table with just one tuple */
     ctx.loop = lit_tbl (attlist (att_iter), tuple (lit_nat (1)));
     /* Create a stack for the map relation information */
-    ctx.mapping = PFarray (sizeof (map_rel_info_t));
+    ctx.mapping = PFarray (sizeof (map_rel_info_t), 50);
     /* set ordering mode */
     ctx.ordering = query->ordering;
     /* initialize the sequence count with a dummy value */
@@ -3253,7 +3253,7 @@ PFcore2alg (PFcnode_t *r, PFquery_t *query)
     }
     
     /* Initialize stack recording the active user-defined functions */
-    ctx.fun_active = PFarray (sizeof (fun_active_t));
+    ctx.fun_active = PFarray (sizeof (fun_active_t), 50);
 
     /* initially do not memorize algebra translations */
     ctx.core2alg_map = NULL;

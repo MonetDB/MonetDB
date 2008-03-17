@@ -327,6 +327,11 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     /* setup sementation fault signal handler */
     signal (SIGSEGV, segfault_handler);
 #endif
+    
+#ifndef NDEBUG
+    PFarray_init ();
+#endif
+    
     /*******************************************/
     /* Split Point: Logical Algebra XML Import */
     /*******************************************/
@@ -464,7 +469,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     STOP_POINT(5);
 
     /* create guide tree */
-    guide_tree =  PFguide_tree();
+    guide_tree =  PFguide_tree ();
   
     STOP_POINT(6);
 
@@ -869,6 +874,9 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
 
         PFmem_init ();
 
+#ifndef NDEBUG
+        PFarray_init ();
+#endif
         /** initialize global state of the compiler */
         PFstate_init (&PFstate);
 

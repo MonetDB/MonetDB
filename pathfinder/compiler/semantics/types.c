@@ -772,7 +772,7 @@ PFty_defn (PFty_t t)
     PFarray_t *ts;
 
     /* the (empty) set of named types seen so far */
-    ts = PFarray (sizeof (PFty_t));
+    ts = PFarray_default (sizeof (PFty_t));
     assert (ts);
 
     return *(defn (t, ts));
@@ -914,7 +914,7 @@ ty_printf (PFarray_t *s, const char *fmt, ...)
 static char *
 ty_str (PFty_t t, int prec)
 {
-    PFarray_t *s = PFarray (sizeof (char));
+    PFarray_t *s = PFarray (sizeof (char), 128);
 
     assert (s);
 
@@ -1100,7 +1100,7 @@ PFty_predefined (void)
     unsigned int n;
 
     /* initialize the XML Schema symbol spaces */
-    PFtype_defns      = PFenv ();
+    PFtype_defns      = PFenv_ (200);
     PFelem_decls      = PFenv ();
     PFattr_decls      = PFenv ();
     PFgroup_defns     = PFenv ();

@@ -2383,7 +2383,7 @@ PFmil_t *
 PFmil_comment (const char *fmt, ...)
 {
     PFmil_t *ret = leaf (m_comment);
-    PFarray_t *a = PFarray(sizeof (char));
+    PFarray_t *a = PFarray(sizeof (char), 60);
     va_list args;
 
     va_start (args, fmt);

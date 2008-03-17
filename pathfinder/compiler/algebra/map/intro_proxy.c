@@ -1176,7 +1176,7 @@ nest_proxy (PFla_op_t *root,
        of the left branch. It will be later used to replace
        the rowid operator. (We thus do not need the
        list of exit references for both branches.) */
-    left_exit_refs = PFarray (sizeof (PFla_op_t *));
+    left_exit_refs = PFarray (sizeof (PFla_op_t *), 10);
     (void) exit_refs;
 
     /* mark nodes in the left branch as INside and
@@ -2625,7 +2625,7 @@ unnest_proxy (PFla_op_t *root,
         cur_col = proxy1->sem.proxy.req_cols.atts[i];
         req_col_names[i] = PFalg_proj (cur_col, cur_col);
     }
-    new_col_names = PFarray (sizeof (PFalg_att_t));
+    new_col_names = PFarray (sizeof (PFalg_att_t), 10);
 
     /* In req_col_names we store the mappings of the required column
        names (collect_mappings updates the columns names as side effect)
@@ -2989,8 +2989,8 @@ intro_proxy_kind (PFla_op_t *root,
                   PFarray_t *checked_nodes)
 {
     PFla_op_t *proxy_entry, *proxy_exit;
-    PFarray_t *exit_refs     = PFarray (sizeof (PFla_op_t *));
-    PFarray_t *conflict_list = PFarray (sizeof (PFla_op_t *));
+    PFarray_t *exit_refs     = PFarray (sizeof (PFla_op_t *), 10);
+    PFarray_t *conflict_list = PFarray (sizeof (PFla_op_t *), 10);
 
     bool found_proxy = true;
     bool rewrote_proxy = false;
@@ -3062,7 +3062,7 @@ intro_proxy_kind (PFla_op_t *root,
 PFla_op_t *
 PFintro_proxies (PFla_op_t *root)
 {
-    PFarray_t *checked_nodes = PFarray (sizeof (PFla_op_t *));
+    PFarray_t *checked_nodes = PFarray (sizeof (PFla_op_t *), 50);
 
     /* remove all semijoin operators as most of our
        proxies cannot cope with semijoins and thus

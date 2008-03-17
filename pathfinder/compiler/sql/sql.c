@@ -383,7 +383,7 @@ PFsql_comment (const char *fmt, ...)
     /* create a new comment tree node */
     PFsql_t *ret = leaf (sql_comment);
  
-    PFarray_t *a = PFarray (sizeof (char));
+    PFarray_t *a = PFarray (sizeof (char), 60);
  
     /* create the formatted string */
     va_list args;
