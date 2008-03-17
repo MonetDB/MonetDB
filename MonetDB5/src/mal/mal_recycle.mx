@@ -63,8 +63,8 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-/* #define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE */
+#define _DEBUG_RECYCLE_
+#define _DEBUG_RECYCLE_REUSE
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -280,7 +280,7 @@ static void RECYCLEremove(int pc){
 
 	/* ditch the selected one */
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLEremove %d \n",i);
+	stream_printf(GDKout,"RECYCLEremove %d ",i);
 	printInstruction(GDKout,recycleBlk, old[i], LIST_MAL_ALL);
 #endif
 	freeInstruction(old[i]);
@@ -291,9 +291,6 @@ static void RECYCLEremove(int pc){
 		p= old[i];
 		for( j = p->retc; j< p->argc; j++)
 		if( used[getArg(p,j)] ==0){
-#ifdef _DEBUG_RECYCLE_
-			stream_printf(GDKout,"RECYCLEremove %d \n",i);
-#endif
 			freeInstruction(old[i]);
 			goto skip;
 		}
@@ -387,8 +384,8 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 	if( p->argc <=1 )	/* add more */
 		return -1;
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE new instruction \n");
-	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	stream_printf(GDKout,"RECYCLE add ");
+	printTraceCall( GDKout,mb,s,getPC(mb,p),LIST_MAL_ALL);
 #endif
 	q = copyInstruction(p);
 	for (i = 0; i< p->argc; i++) {
@@ -419,10 +416,6 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 			"#memory=%lld, stop=%d, recycled=%d(%d), saved=%d\n",
 			recyclerUsedMemory, recycleBlk->stop,
 			recycled, statements, savedTime);
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE catalog \n");
-	printFunction(GDKout,recycleBlk,LIST_MAL_ALL);
-#endif
 	return i;
 }
 
@@ -463,7 +456,7 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	}
 
 #ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"RECYCLEfind %d\n",i);
+		stream_printf(GDKout,"RECYCLEfind ");
 	printInstruction(GDKout, mb,p, LIST_MAL_ALL);
 #endif
 	return 0;
@@ -479,11 +472,6 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	if (selectRef == 0) 
 		selectRef= getName("select",6);
 
-#ifdef _DEBUG_RECYCLE_REUSE
-	stream_printf(GDKout,"RECYCLEreuse(_%d=%s.%s) policy %d recycleBlk %d\n",
-		p->argv[0], getModuleId(p), getFunctionId(p), 
-		reusePolicy, recycleBlk==0);
-#endif
 	if( recycleBlk == 0 || reusePolicy == 0)
 		return -1;
 
@@ -502,21 +490,14 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			/* 1: reuse smallest range covering */
 			ridx= getArg(q,1);
 			idx= getArg(p,1);
-			if (q->argc == p->argc &&
+			if ( q->argc > 3 &&
 			    getFunctionId(p) == selectRef   &&
-			    getVarConstant(recycleBlk, ridx).val.bval == s->stk[idx].val.bval)
+			    getVarConstant(recycleBlk, ridx).val.bval == s->stk[idx].val.bval &&
+				BATatoms[getArgType(recycleBlk,q,2)].linear )
+
 			{	
 				/* Time to check for the inclusion constraint */
 				int leftbound, rightbound;
-				if( p->argc ==3 &&
-					VALcmp( &s->stk[getArg(p,2)], 
-								&getVar(recycleBlk,getArg(q,2))->value) ==0){
-#ifdef _DEBUG_RECYCLE_REUSE
-					stream_printf(GDKout,"RECYCLEreuse exact found\n");
-					printInstruction(GDKout, recycleBlk, q, LIST_MAL_ALL);
-#endif
-					goto foundmatch;
-				} 
 				leftbound= VALcmp( &s->stk[getArg(p,2)], 
 							&getVar(recycleBlk,getArg(q,2))->value) >=0;
 				rightbound = p->argc == 3 || 
@@ -554,7 +535,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 						}
 					}
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"Inclusive range bid=%d\n", bid);
+	stream_printf(GDKout,"Inclusive range bid=%d ", bid);
 	printInstruction(GDKout,recycleBlk,q, LIST_MAL_ALL);
 #endif
 				}
@@ -566,7 +547,6 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 					goto notfound;
 			
 			/* found an exact match */
-		foundmatch:
 			/* get the results on the stack */
 			for( j=0; j<q->retc; j++){
 				VALcopy(&s->stk[getArg(p,j)],
@@ -579,10 +559,6 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			savedTime += recycleBlk->profiler[i].ticks;
 			return i;
 			notfound: 
-#ifdef _DEBUG_RECYCLE_REUSE
-	stream_printf(GDKout,"RECYCLEreuse exact failed\n");
-	printInstruction(GDKout, recycleBlk, q, LIST_MAL_ALL);
-#endif
 				continue;
 		}
 	}
@@ -593,8 +569,7 @@ We execute it in place and safe the result upon need.
 	if (bid >=0) {
 		i= getPC(mb,p);
 #ifdef _DEBUG_RECYCLE_REUSE
-	stream_printf(GDKout,"RECYCLEreuse subselect %d\n",pc);
-	stream_printf(GDKout,">>>");
+	stream_printf(GDKout,"RECYCLEreuse subselect ");
 	printInstruction(GDKout, recycleBlk, getInstrPtr(recycleBlk,pc), LIST_MAL_ALL);
 
 	stream_printf(GDKout,">>>");
@@ -687,9 +662,6 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int rd = getVolume(stk,p, 1)/ RU;
 	int wr = getVolume(stk,p, 0)/ RU;
 
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLEexit policy %d \n",retainPolicy);
-#endif
 	RECYCLEversion(mb);
 	clk= GDKusec()-stk->clk;
 
