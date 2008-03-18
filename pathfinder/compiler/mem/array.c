@@ -161,7 +161,9 @@ PFarray_at (PFarray_t *a, unsigned int i)
       a->base = PFrealloc (a->base, a->bound*a->esize, nbytes);
 
       if (a->clear)
-          memset (a->base, 0, nbytes);
+          memset ((void*)((char*) a->base + (a->bound*a->esize)),
+                  0,
+                  nbytes - (a->bound*a->esize));
 
       a->bound = nbytes / a->esize;
   }
