@@ -106,6 +106,8 @@ OPTrecycleImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	newMalBlkStmt(mb, mb->ssize);
 	pushInstruction(mb,old[0]);
 
+	/* create a handle for recycler */
+	q= newFcnCall(mb,"recycle","prelude");
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)){
@@ -157,6 +159,8 @@ are marked for re-use.
 			p->argc=2;
 			p->recycle = 1;
 		}
+		if( p->token== ENDsymbol)
+			q= newFcnCall(mb,"recycle","epilogue");
 		pushInstruction(mb,p);
 	}
 	if (actions)
