@@ -1293,23 +1293,48 @@ PROC ll_htordered_unique_thetajoin( int mode,
 PROC combine_node_info (any frag1, bat[void,oid] pre1, any attr1,
                         any frag2, bat[void,oid] pre2, any attr2) : bat[void,bat]
 {
-    var flen, plen, alen, maxlen;
+    var flen, plen, alen, maxlen, tmp1, tmp2;
     var res := bat (void, bat, 2).seqbase(0@0);
 
     # nothing to do if we have no nodes
     if (pre1.count() = 0) return res.append(pre1).append(pre1);
     if (pre2.count() = 0) return res.append(pre2).append(pre2);
 
-    plen := max (log2 (lng (max(pre1))), log2 (lng (max(pre2))));
+    tmp1 := lng(max(pre1)); 
+    tmp2 := lng(max(pre2));
+    if (tmp1 > tmp2) {
+        plen := tmp1;
+    }
+    else {
+        plen := tmp2;
+    }
+    if (plen = 0LL) {
+        plen := 0;
+    }
+    else {
+        plen := log2 (plen);
+    }
     
     if (type(frag1) = bat) {
         if ((frag1.count() != pre1.count()) or 
             (frag1.seqbase() != pre1.seqbase()))
             ERROR("combine_node_info(): pre and frag (of the first input) are not aligned.\n");
-        flen := log2 (lng (max(frag1)));
+        tmp1 := lng(max(frag1));
+        if (tmp1 = 0LL) {
+            flen := 0;
+        }
+        else {
+            flen := log2 (tmp1);
+        }
     } else {
         if (type(frag1) = oid) {
-            flen := log2 (lng (frag1));
+            tmp1 := max(lng(frag1));
+            if (tmp1 = 0LL) {
+                flen := 0;
+            }
+            else {
+                flen := log2 (tmp1);
+            }
         } else {
             ERROR("combine_node_info(): frag value(s) expected.\n");
         }
@@ -1319,10 +1344,22 @@ PROC combine_node_info (any frag1, bat[void,oid] pre1, any attr1,
         if ((pre1.count() != attr1.count()) or
             (pre1.seqbase() != attr1.seqbase()))
             ERROR("combine_node_info(): pre and attr (of the first input) are not aligned.\n");
-        alen := log2 (lng (max(attr1)));
+        tmp1 := lng(max(attr1));
+        if (tmp1 = 0LL) {
+            alen := 0;
+        }
+        else {
+            alen := log2 (tmp1);
+        }
     } else {
         if (type(attr1) = oid) {
-            alen := log2 (lng (attr1));
+            tmp1 := max(lng(attr1));
+            if (tmp1 = 0LL) {
+                alen := 0;
+            }
+            else {
+                alen := log2 (tmp1);
+            }
         } else {
             alen := 0;
         }
@@ -1332,10 +1369,24 @@ PROC combine_node_info (any frag1, bat[void,oid] pre1, any attr1,
         if ((frag2.count() != pre2.count()) or
              (frag2.seqbase() != pre2.seqbase()))
             ERROR("combine_node_info(): pre and frag (of the second input) are not aligned.\n");
-        flen := max (flen, log2 (lng (max(frag2))));
+        tmp1 := lng(max(frag2));
+        if (tmp1 = 0LL) {
+            tmp2 := 0;
+        }
+        else {
+            tmp2 := log2 (tmp1);
+        }
+        flen := max (flen, tmp2);
     } else {
         if (type(frag2) = oid) {
-            flen := max (flen, log2 (lng (frag2)));
+            tmp1 := max(lng(frag2));
+            if (tmp1 = 0LL) {
+                tmp2 := 0;
+            }
+            else {
+                tmp2 := log2 (tmp1);
+            }
+            flen := max (flen, tmp2);
         } else {
             ERROR("combine_node_info(): frag value(s) expected.\n");
         }
@@ -1345,10 +1396,24 @@ PROC combine_node_info (any frag1, bat[void,oid] pre1, any attr1,
         if ((pre2.count() != attr2.count()) or
             (pre2.seqbase() != attr2.seqbase()))
             ERROR("combine_node_info(): pre and attr (of the second input) are not aligned.\n");
-        alen := max (alen, log2 (lng (max(attr2))));
+        tmp1 := lng(max(attr2));
+        if (tmp1 = 0LL) {
+            tmp2 := 0;
+        }
+        else {
+            tmp2 := log2 (tmp1);
+        }
+        alen := max (alen, tmp2);
     } else {
         if (type(attr2) = oid) {
-            alen := max (alen, log2 (lng (attr2)));
+            tmp1 := max(lng(attr2));
+            if (tmp1 = 0LL) {
+                tmp2 := 0;
+            }
+            else {
+                tmp2 := log2 (tmp1);
+            }
+            alen := max (alen, tmp2);
         } else {
             alen := max (alen, 0);
         }
@@ -7042,6 +7107,14 @@ CMDinvalid_qname(str *ret, BAT *b)
                       (*r == '_') || (*r == '.') || (*r == '-') || (*r >= '0' && *r <= '9')) r++;
                 if (*r == 0) continue; /* ok */
             }
+            /* prefix --- local part delimiter ':' */
+            if (*r == ':') r++;
+	    if ((*r >= 'a' && *r <= 'z') || (*r >= 'A' && *r <= 'Z') || *(unsigned char*) r >= 128) {
+                r++;
+                while((*r >= 'a' && *r <= 'z') || (*r >= 'A' && *r <= 'Z') || (*(unsigned char*) r >= 128) ||
+                      (*r == '_') || (*r == '.') || (*r == '-') || (*r >= '0' && *r <= '9')) r++;
+                if (*r == 0) continue; /* ok */
+            }
 	    s = (str) BUNtail(bi,p); break;
 	}
 	*ret = GDKstrdup(s);
@@ -7877,9 +7950,9 @@ PROC merge_adjacent_text_nodes (BAT[void,oid] iter,
 }
 ADDHELP("merge_adjacent_text_nodes", "tsheyar", "Oct 2005",
         "PARAMETERS:\n\
-BAT[void,str] iter : prefix of qname\n\
-BAT[void,str] pre  : URI of the qname\n\
-BAT[void,str] cont : local part of the qname\n\
+BAT[void,oid] iter : iter references\n\
+BAT[void,oid] pre  : pre values\n\
+BAT[void,oid] cont : container id which the pre values refer to\n\
 BAT[void,BAT] ws   : working set that stores the qname\n\
 DESCRIPTION:\n\
 merge_adjacent_text_nodes takes an iter|pre|cont schema and\n\
