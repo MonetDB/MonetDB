@@ -76,7 +76,15 @@ comment "Clear the recycle cache";
 
 command monitor(f:int):void
 address RECYCLEmonitor
-comment "start/stop the monitoring (printing) of the recycler info (storage size used and number of statements retained)"
+comment "start/stop the monitoring (printing) of the recycler info (storage size used and number of statements retained)";
+
+pattern prelude():void
+address RECYCLEprelude
+comment "Called at the start of a recycle controlled function";
+
+pattern epilogue():void
+address RECYCLEepilogue
+comment "Called at the start of a recycle controlled function";
 @h
 #ifndef _RECYCLE_
 #define _RECYCLE_
@@ -269,6 +277,21 @@ RECYCLEmonitor(int *ret, int *p)
 {
 	(void) ret;
 	monitorRecycler = *p;
+	return MAL_SUCCEED;
+}
+
+str 
+RECYCLEprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	(void) stk;
+	(void) p;
+	RECYCLEversion(mb);
+	return MAL_SUCCEED;
+}
+str 
+RECYCLEepilogue(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	(void) mb;
+	(void) stk;
+	(void) p;
 	return MAL_SUCCEED;
 }
 @}
