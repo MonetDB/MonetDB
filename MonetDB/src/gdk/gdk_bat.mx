@@ -343,14 +343,6 @@ BATgrows(BAT *b)
 		newcap = (size_t) ((double) newcap * BATMARGIN);
 	if (newcap == oldcap)
 		newcap += 10;
-
-	/* if we can extend in reserved space, do not miss the opportunity 
-	if (b->H->heap.size + Hsize(b) <= b->H->heap.maxsize) {
-		size_t rescap = oldcap + (b->H->heap.maxsize - b->H->heap.size) / Hsize(b);
-
-		newcap = MIN(newcap, rescap);
-	}
-	*/
 	return newcap;
 }
 

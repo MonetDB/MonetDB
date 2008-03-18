@@ -527,13 +527,14 @@ TODO synced/key case..
 			p1 = 0;
 			q1 = BATcount(l);
 			while(p1 < q1) {
-				BUN r1 = p1 + 65536;
-				if (r1 > q1) r1 = q1;
-				if (o + 65536 > BATcapacity(bn)){	
+				BUN r1;
+				if (p1 + 1 > BATcapacity(bn)){	
 					BATsetcount(bn, o);
-					if (BATextend(bn, BATcapacity(bn)+65536) == NULL)
+					if (BATextend(bn, BATgrows(bn)) == NULL)
 						goto bunins_failed; 
 				}
+				r1 = p1 + BATcapacity(bn) - BUNlast(bn);
+				if (r1 > q1) r1 = q1;
 				bnh = (@4*)Hloc(bn,0);
 				bnt = (oid*)Tloc(bn,0);
 				for (; p1<r1; p1++, b++){ 
@@ -556,16 +557,17 @@ TODO synced/key case..
 			p1 = BUNfirst(l);
 			q1 = BUNlast(l);
 			while(p1 < q1) {
-				BUN r1 = p1 + 65536;
-				if (r1 > q1) r1 = q1;
-				if (BUNlast(bn) + 65536 > BATcapacity(bn)){	
+				BUN r1;
+				if (BUNlast(bn) + 1 > BATcapacity(bn)){	
 					if (BATextend(bn, BATcapacity(bn)+65536) == NULL)
 						goto bunins_failed; 
 				}
+				r1 = p1 + BATcapacity(bn) - BUNlast(bn);
+				if (r1 > q1) r1 = q1;
 				for (; p1<r1; p1++) { 
 					i = hash_@4(H, h+p1);
 					if (d[i] != 0 && @7(h+p1, rh+d[i]-1) &&
-				    	EQUAL@5(BUNtail(li,p1), BUNtail(ri, d[i]-1))) {
+				    	    EQUAL@5(BUNtail(li,p1), BUNtail(ri, d[i]-1))) {
 						HIT@1_nocheck(h+p1, BUNtail(li, p1));
 					} else {
 						MISS@1_nocheck(h+p1, BUNtail(li, p1));
