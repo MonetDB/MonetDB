@@ -1656,351 +1656,6 @@ aggr_function (PFmil_t * (*op) (const PFmil_t *),
      }
 } /* fold) */
 
-/* fold( llscj_*() / llscj() function */
-/** helper to handle staircase join steps with node test `node()' */
-static PFmil_t *
-llscj_node (PFalg_axis_t axis, const PFmil_t *iter, const PFmil_t *item,
-            const PFmil_t *frag, const PFmil_t *ws, const PFmil_t *ord)
-{ /* fold( */
-    switch (axis) {
-        case alg_self:
-            break;
-        case alg_attr:
-            break;
-        case alg_anc:
-            return llscj_anc (iter, item, frag, ws, ord);
-        case alg_anc_s:
-            return llscj_anc_self (iter, item, frag, ws, ord);
-        case alg_chld:
-            return llscj_child (iter, item, frag, ws, ord);
-        case alg_desc:
-            return llscj_desc (iter, item, frag, ws, ord);
-        case alg_desc_s:
-            return llscj_desc_self (iter, item, frag, ws, ord);
-        case alg_fol:
-            return llscj_foll (iter, item, frag, ws, ord);
-        case alg_fol_s:
-            return llscj_foll_sibl (iter, item, frag, ws, ord);
-        case alg_par:
-            return llscj_parent (iter, item, frag, ws, ord);
-        case alg_prec:
-            return llscj_prec (iter, item, frag, ws, ord);
-        case alg_prec_s:
-            return llscj_prec_sibl (iter, item, frag, ws, ord);
-    }
-
-    assert (!"problem in llscj_node()");
-    return NULL; /* pacify picky compilers */
-} /* fold) */
-
-/** helper to handle staircase join steps with node test `element()' */
-static PFmil_t *
-llscj_elem (PFalg_axis_t axis, const PFmil_t *iter, const PFmil_t *item,
-            const PFmil_t *frag, const PFmil_t *ws, const PFmil_t *ord)
-{ /* fold( */
-    switch (axis) {
-        case alg_self:
-            break;
-        case alg_attr:
-            break;
-        case alg_anc:
-            return llscj_anc_elem (iter, item, frag, ws, ord);
-        case alg_anc_s:
-            return llscj_anc_self_elem (iter, item, frag, ws, ord);
-        case alg_chld:
-            return llscj_child_elem (iter, item, frag, ws, ord);
-        case alg_desc:
-            return llscj_desc_elem (iter, item, frag, ws, ord);
-        case alg_desc_s:
-            return llscj_desc_self_elem (iter, item, frag, ws, ord);
-        case alg_fol:
-            return llscj_foll_elem (iter, item, frag, ws, ord);
-        case alg_fol_s:
-            return llscj_foll_sibl_elem (iter, item, frag, ws, ord);
-        case alg_par:
-            return llscj_parent_elem (iter, item, frag, ws, ord);
-        case alg_prec:
-            return llscj_prec_elem (iter, item, frag, ws, ord);
-        case alg_prec_s:
-            return llscj_prec_sibl_elem (iter, item, frag, ws, ord);
-    }
-
-    assert (!"problem in llscj_elem()");
-    return NULL; /* pacify picky compilers */
-} /* fold) */
-
-/** helper to handle staircase join steps with node test `text()' */
-static PFmil_t *
-llscj_text (PFalg_axis_t axis, const PFmil_t *iter, const PFmil_t *item,
-            const PFmil_t *frag, const PFmil_t *ws, const PFmil_t *ord)
-{ /* fold( */
-    switch (axis) {
-        case alg_self:
-            break;
-        case alg_attr:
-            break;
-        case alg_anc:
-            return llscj_anc_text (iter, item, frag, ws, ord);
-        case alg_anc_s:
-            return llscj_anc_self_text (iter, item, frag, ws, ord);
-        case alg_chld:
-            return llscj_child_text (iter, item, frag, ws, ord);
-        case alg_desc:
-            return llscj_desc_text (iter, item, frag, ws, ord);
-        case alg_desc_s:
-            return llscj_desc_self_text (iter, item, frag, ws, ord);
-        case alg_fol:
-            return llscj_foll_text (iter, item, frag, ws, ord);
-        case alg_fol_s:
-            return llscj_foll_sibl_text (iter, item, frag, ws, ord);
-        case alg_par:
-            return llscj_parent_text (iter, item, frag, ws, ord);
-        case alg_prec:
-            return llscj_prec_text (iter, item, frag, ws, ord);
-        case alg_prec_s:
-            return llscj_prec_sibl_text (iter, item, frag, ws, ord);
-    }
-
-    assert (!"problem in llscj_text()");
-    return NULL; /* pacify picky compilers */
-} /* fold) */
-
-/** helper to handle staircase join steps with node test `comment()' */
-static PFmil_t *
-llscj_comm (PFalg_axis_t axis, const PFmil_t *iter, const PFmil_t *item,
-            const PFmil_t *frag, const PFmil_t *ws, const PFmil_t *ord)
-{ /* fold( */
-    switch (axis) {
-        case alg_self:
-            break;
-        case alg_attr:
-            break;
-        case alg_anc:
-            return llscj_anc_comm (iter, item, frag, ws, ord);
-        case alg_anc_s:
-            return llscj_anc_self_comm (iter, item, frag, ws, ord);
-        case alg_chld:
-            return llscj_child_comm (iter, item, frag, ws, ord);
-        case alg_desc:
-            return llscj_desc_comm (iter, item, frag, ws, ord);
-        case alg_desc_s:
-            return llscj_desc_self_comm (iter, item, frag, ws, ord);
-        case alg_fol:
-            return llscj_foll_comm (iter, item, frag, ws, ord);
-        case alg_fol_s:
-            return llscj_foll_sibl_comm (iter, item, frag, ws, ord);
-        case alg_par:
-            return llscj_parent_comm (iter, item, frag, ws, ord);
-        case alg_prec:
-            return llscj_prec_comm (iter, item, frag, ws, ord);
-        case alg_prec_s:
-            return llscj_prec_sibl_comm (iter, item, frag, ws, ord);
-    }
-
-    assert (!"problem in llscj_comm()");
-    return NULL; /* pacify picky compilers */
-} /* fold) */
-
-/** helper to handle staircase join steps with node test `processing-instr()' */
-static PFmil_t *
-llscj_pi (PFalg_axis_t axis, const PFmil_t *iter, const PFmil_t *item,
-            const PFmil_t *frag, const PFmil_t *ws, const PFmil_t *ord)
-{ /* fold( */
-    switch (axis) {
-        case alg_self:
-            break;
-        case alg_attr:
-            break;
-        case alg_anc:
-            return llscj_anc_pi (iter, item, frag, ws, ord);
-        case alg_anc_s:
-            return llscj_anc_self_pi (iter, item, frag, ws, ord);
-        case alg_chld:
-            return llscj_child_pi (iter, item, frag, ws, ord);
-        case alg_desc:
-            return llscj_desc_pi (iter, item, frag, ws, ord);
-        case alg_desc_s:
-            return llscj_desc_self_pi (iter, item, frag, ws, ord);
-        case alg_fol:
-            return llscj_foll_pi (iter, item, frag, ws, ord);
-        case alg_fol_s:
-            return llscj_foll_sibl_pi (iter, item, frag, ws, ord);
-        case alg_par:
-            return llscj_parent_pi (iter, item, frag, ws, ord);
-        case alg_prec:
-            return llscj_prec_pi (iter, item, frag, ws, ord);
-        case alg_prec_s:
-            return llscj_prec_sibl_pi (iter, item, frag, ws, ord);
-    }
-
-    assert (!"problem in llscj_pi()");
-    return NULL; /* pacify picky compilers */
-} /* fold) */
-
-/**
- * helper to handle staircase join steps where the node test is an
- * element test for some local name, but a wildcard namespace
- */
-static PFmil_t *
-llscj_elem_loc (PFalg_axis_t axis, const PFmil_t *iter, const PFmil_t *item,
-                const PFmil_t *frag, const PFmil_t *ws, const PFmil_t *ord,
-                const PFmil_t *loc)
-{ /* fold( */
-    switch (axis) {
-        case alg_self:
-            break;
-        case alg_attr:
-            break;
-        case alg_anc:
-            return llscj_anc_elem_loc (iter, item, frag, ws, ord, loc);
-        case alg_anc_s:
-            return llscj_anc_self_elem_loc (iter, item, frag, ws, ord, loc);
-        case alg_chld:
-            return llscj_child_elem_loc (iter, item, frag, ws, ord, loc);
-        case alg_desc:
-            return llscj_desc_elem_loc (iter, item, frag, ws, ord, loc);
-        case alg_desc_s:
-            return llscj_desc_self_elem_loc (iter, item, frag, ws, ord, loc);
-        case alg_fol:
-            return llscj_foll_elem_loc (iter, item, frag, ws, ord, loc);
-        case alg_fol_s:
-            return llscj_foll_sibl_elem_loc (iter, item, frag, ws, ord, loc);
-        case alg_par:
-            return llscj_parent_elem_loc (iter, item, frag, ws, ord, loc);
-        case alg_prec:
-            return llscj_prec_elem_loc (iter, item, frag, ws, ord, loc);
-        case alg_prec_s:
-            return llscj_prec_sibl_elem_loc (iter, item, frag, ws, ord, loc);
-    }
-
-    assert (0); /* we should never come here! */
-    return NULL; /* pacify picky compilers */
-} /* fold) */
-
-/**
- * helper to handle staircase join steps where the node test is an
- * element test for some namespace, but a wildcard local name
- */
-static PFmil_t *
-llscj_elem_ns (PFalg_axis_t axis, const PFmil_t *iter, const PFmil_t *item,
-               const PFmil_t *frag, const PFmil_t *ws, const PFmil_t *ord,
-               const PFmil_t *ns)
-{ /* fold( */
-    switch (axis) {
-        case alg_self:
-            break;
-        case alg_attr:
-            break;
-        case alg_anc:
-            return llscj_anc_elem_ns (iter, item, frag, ws, ord, ns);
-        case alg_anc_s:
-            return llscj_anc_self_elem_ns (iter, item, frag, ws, ord, ns);
-        case alg_chld:
-            return llscj_child_elem_ns (iter, item, frag, ws, ord, ns);
-        case alg_desc:
-            return llscj_desc_elem_ns (iter, item, frag, ws, ord, ns);
-        case alg_desc_s:
-            return llscj_desc_self_elem_ns (iter, item, frag, ws, ord, ns);
-        case alg_fol:
-            return llscj_foll_elem_ns (iter, item, frag, ws, ord, ns);
-        case alg_fol_s:
-            return llscj_foll_sibl_elem_ns (iter, item, frag, ws, ord, ns);
-        case alg_par:
-            return llscj_parent_elem_ns (iter, item, frag, ws, ord, ns);
-        case alg_prec:
-            return llscj_prec_elem_ns (iter, item, frag, ws, ord, ns);
-        case alg_prec_s:
-            return llscj_prec_sibl_elem_ns (iter, item, frag, ws, ord, ns);
-    }
-
-    assert (0); /* we should never come here! */
-    return NULL; /* pacify picky compilers */
-} /* fold) */
-
-/**
- * helper to handle staircase join steps where the node test is an
- * element test with a fully qualified QName
- */
-static PFmil_t *
-llscj_elem_nsloc (PFalg_axis_t axis, const PFmil_t *iter, const PFmil_t *item,
-                  const PFmil_t *frag, const PFmil_t *ws, const PFmil_t *ord,
-                  const PFmil_t *ns, const PFmil_t *loc)
-{ /* fold( */
-    switch (axis) {
-        case alg_self:
-            break;
-        case alg_attr:
-            break;
-        case alg_anc:
-            return llscj_anc_elem_nsloc (iter, item, frag, ws, ord, ns, loc);
-        case alg_anc_s:
-            return llscj_anc_self_elem_nsloc (iter, item, frag, ws, ord, ns,
-                                              loc);
-        case alg_chld:
-            return llscj_child_elem_nsloc (iter, item, frag, ws, ord, ns, loc);
-        case alg_desc:
-            return llscj_desc_elem_nsloc (iter, item, frag, ws, ord, ns, loc);
-        case alg_desc_s:
-            return llscj_desc_self_elem_nsloc (iter, item, frag, ws, ord, ns,
-                                               loc);
-        case alg_fol:
-            return llscj_foll_elem_nsloc (iter, item, frag, ws, ord, ns, loc);
-        case alg_fol_s:
-            return llscj_foll_sibl_elem_nsloc (iter, item, frag, ws, ord, ns,
-                                               loc);
-        case alg_par:
-            return llscj_parent_elem_nsloc (iter, item, frag, ws, ord, ns, loc);
-        case alg_prec:
-            return llscj_prec_elem_nsloc (iter, item, frag, ws, ord, ns, loc);
-        case alg_prec_s:
-            return llscj_prec_sibl_elem_nsloc (iter, item, frag, ws, ord, ns,
-                                               loc);
-    }
-
-    assert (0); /* we should never come here! */
-    return NULL; /* pacify picky compilers */
-} /* fold) */
-
-/**
- * helper to handle staircase join steps where the node test is a
- * processing-instruction test with a given target
- */
-static PFmil_t *
-llscj_pi_targ (PFalg_axis_t axis, const PFmil_t *iter, const PFmil_t *item,
-                  const PFmil_t *frag, const PFmil_t *ws, const PFmil_t *ord,
-                  const PFmil_t *target)
-{ /* fold( */
-    switch (axis) {
-        case alg_self:
-            break;
-        case alg_attr:
-            break;
-        case alg_anc:
-            return llscj_anc_pi_targ (iter, item, frag, ws, ord, target);
-        case alg_anc_s:
-            return llscj_anc_self_pi_targ (iter, item, frag, ws, ord, target);
-        case alg_chld:
-            return llscj_child_pi_targ (iter, item, frag, ws, ord, target);
-        case alg_desc:
-            return llscj_desc_pi_targ (iter, item, frag, ws, ord, target);
-        case alg_desc_s:
-            return llscj_desc_self_pi_targ (iter, item, frag, ws, ord, target);
-        case alg_fol:
-            return llscj_foll_pi_targ (iter, item, frag, ws, ord, target);
-        case alg_fol_s:
-            return llscj_foll_sibl_pi_targ (iter, item, frag, ws, ord, target);
-        case alg_par:
-            return llscj_parent_pi_targ (iter, item, frag, ws, ord, target);
-        case alg_prec:
-            return llscj_prec_pi_targ (iter, item, frag, ws, ord, target);
-        case alg_prec_s:
-            return llscj_prec_sibl_pi_targ (iter, item, frag, ws, ord, target);
-    }
-
-    assert (0); /* we should never come here! */
-    return NULL; /* pacify picky compilers */
-} /* fold) */
-
 /**
  * Translate loop-lifted staircase joins.
  */
@@ -2011,22 +1666,26 @@ llscj (const PFpa_op_t *p)
     PFord_ordering_t in  = p->sem.scjoin.in;
     PFord_ordering_t out = p->sem.scjoin.out;
 
-    char *uri = PFqname_uri (p->sem.scjoin.spec.qname),
-         *loc = PFqname_loc (p->sem.scjoin.spec.qname);
+    char *qn_uri = PFqname_uri (p->sem.scjoin.spec.qname),
+         *qn_loc = PFqname_loc (p->sem.scjoin.spec.qname);
 
-    /* MIL equivalents of input expression */
-    PFmil_t *iter;
-    PFmil_t *item;
-    PFmil_t *frag;
-
-    int      o;           /* helper to compute order specifier */
-    PFmil_t *order;       /* order specifier for llscj MIL functions */
-    PFmil_t *scj = NULL;  /* MIL expression that evaluates llscj */
-
-    mvar_t  *tmp, *tmp2;  /* helper variables */
-    mvar_t  *ret_iter;    /* variable to which we assign the `iter' result */
-    mvar_t  *ret_pre;     /* variable to which we assign the `pre' result */
-    mvar_t  *ret_frag;    /* variable to which we assign the `kind' result */
+    PFmil_t *iter,    /* MIL equivalents of input iter expression */
+            *item,    /* MIL equivalents of input item expression */
+            *frag,    /* MIL equivalents of input frag expression */
+            *axis,    /* axis specifier */
+            *code,    /* code indicating which additional tests
+                         have to be applied (name or kind) */
+            *order,   /* order specifier */
+            *kind,    /* kind specifier */
+            *uri,     /* namespace specifier */
+            *loc,     /* local name specifier */
+            *tgt;     /* target name specifier */
+    int      o;       /* helper to compute order specifier */
+    mvar_t  *step     = new_var (1),         /* the step result variable */
+            *map      = new_var (1),         /* mapping helper variable */
+            *ret_iter = new_var (p->refctr), /* the `iter' result variable */
+            *ret_pre  = new_var (p->refctr), /* the `pre' result variable */
+            *ret_frag = new_var (p->refctr); /* the `frag' result variable */
 
     PFalg_att_t pa_iter = p->sem.scjoin.iter;
     PFalg_att_t pa_item = p->sem.scjoin.item;
@@ -2037,30 +1696,52 @@ llscj (const PFpa_op_t *p)
     assert (iter_ty == aat_nat);
     assert (p); assert (L(p)); assert (L(p)->env);
     
-    tmp2 = new_var (1);
+    /* add the result variables to the environment */
+    env_add (p->env, pa_iter, aat_nat, ret_iter);
+    env_add (p->env, pa_item, aat_pre, ret_pre);
+    env_add (p->env, pa_item, aat_frag, ret_frag);
+
     /*
      * Determine generic input arguments.
      */
     if (item_ty & aat_attr) {
         /* We need to get rid of attribute context nodes */
         execute (
-            assgn (var (tmp2->name),
+            assgn (var (map->name),
                    hmark (
-                       select_ (
+                       uselect (
                            misnil (VAR (L(p)->env, pa_item, aat_attr)),
                            lit_bit (true)),
                    lit_oid (0))));
-        iter = leftfetchjoin (var (tmp2->name),
+        iter = leftfetchjoin (var (map->name),
                               VAR (L(p)->env, pa_iter, iter_ty));
-        item = leftfetchjoin (var (tmp2->name),
+        item = leftfetchjoin (var (map->name),
                               VAR (L(p)->env, pa_item, aat_pre));
-        frag = leftfetchjoin (var (tmp2->name),
+        frag = leftfetchjoin (var (map->name),
                               VAR (L(p)->env, pa_item, aat_frag));
     }
     else {
         iter = VAR (L(p)->env, pa_iter, iter_ty);
         item = VAR (L(p)->env, pa_item, aat_pre);
         frag = VAR (L(p)->env, pa_item, aat_frag);
+    }
+
+    /* collect all information to check *//* fold( */
+    /* translate axis information */
+    axis = NULL;
+    switch (p->sem.scjoin.spec.axis) {
+        case alg_anc:    axis = var (PF_MIL_VAR_AXIS_ANC);    break;
+        case alg_anc_s:  axis = var (PF_MIL_VAR_AXIS_ANC_S);  break;
+        case alg_chld:   axis = var (PF_MIL_VAR_AXIS_CHLD);   break;
+        case alg_desc:   axis = var (PF_MIL_VAR_AXIS_DESC);   break;
+        case alg_desc_s: axis = var (PF_MIL_VAR_AXIS_DESC_S); break;
+        case alg_fol:    axis = var (PF_MIL_VAR_AXIS_FOL);    break;
+        case alg_fol_s:  axis = var (PF_MIL_VAR_AXIS_FOL_S);  break;
+        case alg_par:    axis = var (PF_MIL_VAR_AXIS_PAR);    break;
+        case alg_prec:   axis = var (PF_MIL_VAR_AXIS_PREC);   break;
+        case alg_prec_s: axis = var (PF_MIL_VAR_AXIS_PREC_S); break;
+        case alg_self:   axis = var (PF_MIL_VAR_AXIS_SELF);   break;
+        case alg_attr:   axis = var (PF_MIL_VAR_AXIS_ATTR);   break;
     }
 
     /*
@@ -2084,112 +1765,91 @@ llscj (const PFpa_op_t *p)
 
     order = lit_int (o);
 
-    if (p->sem.scjoin.spec.kind == node_kind_elem) {
-        /* This is a test for element nodes */
+    /* initialize the code */
+    code = var (PF_MIL_VAR_CODE_KIND); 
+    /* translate kind information */
+    kind = NULL;
+    switch (p->sem.scjoin.spec.kind) {
+        case node_kind_elem: kind = var (PF_MIL_VAR_KIND_ELEM);    break;
+        case node_kind_attr: kind = cast (type (mty_chr), nil ()); break;
+        case node_kind_text: kind = var (PF_MIL_VAR_KIND_TEXT);    break;
+        case node_kind_pi:   kind = var (PF_MIL_VAR_KIND_PI);      break;
+        case node_kind_comm: kind = var (PF_MIL_VAR_KIND_COM);     break;
+        case node_kind_doc:  kind = var (PF_MIL_VAR_KIND_DOC);     break;
+        case node_kind_node: kind = cast (type (mty_chr), nil ());
+        /* overwrite code */ code = var (PF_MIL_VAR_CODE_NONE);
+    }
 
-        if (uri && loc)
-            /* A test on element kind and full QName? */
-            scj = llscj_elem_nsloc (
-                    p->sem.scjoin.spec.axis,
-                    iter, item, frag, var (PF_MIL_VAR_WS), order,
-                    lit_str (uri), lit_str (loc));
-        else if (uri)
-            /* Or maybe a test on element kind and namespace only? */
-            scj = llscj_elem_ns (p->sem.scjoin.spec.axis, iter, item, frag,
-                                 var (PF_MIL_VAR_WS), order,
-                                 lit_str (uri));
-        else if (loc)
-            /* Is it a test on element kind and local name only? */
-            scj = llscj_elem_loc (p->sem.scjoin.spec.axis, iter, item, frag,
-                                  var (PF_MIL_VAR_WS), order,
-                                  lit_str (loc));
-        else
-            /* Is it just a generic element kind test? (e.g. .../element()) */
-            scj = llscj_elem (p->sem.scjoin.spec.axis, iter, item, frag,
-                              var (PF_MIL_VAR_WS), order);
+    /* translate name information and extend testing code */
+    if (p->sem.scjoin.spec.kind == node_kind_pi && qn_loc) {
+        code = var (PF_MIL_VAR_CODE_TARGET);
+        uri  = cast (type (mty_str), nil ());
+        loc  = cast (type (mty_str), nil ());
+        tgt  = lit_str (qn_loc);
     }
-    /* If the node test wasn't some element test, maybe it is a text() test? */
-    else if (p->sem.scjoin.spec.kind == node_kind_text) {
-        scj = llscj_text (p->sem.scjoin.spec.axis,
-                          iter, item, frag, var (PF_MIL_VAR_WS), order);
+    else if (qn_uri && qn_loc) {
+        code = var (PF_MIL_VAR_CODE_NSLOC);
+        uri  = lit_str (qn_uri);
+        loc  = lit_str (qn_loc);
+        tgt  = cast (type (mty_str), nil ());
     }
-    /* or a comment() test? */
-    else if (p->sem.scjoin.spec.kind == node_kind_comm) {
-        scj = llscj_comm (p->sem.scjoin.spec.axis,
-                          iter, item, frag, var (PF_MIL_VAR_WS), order);
+    else if (qn_uri) {
+        code = var (PF_MIL_VAR_CODE_NS);
+        uri  = lit_str (qn_uri);
+        loc  = cast (type (mty_str), nil ());
+        tgt  = cast (type (mty_str), nil ());
     }
-    /* some test for processing-instructions? */
-    else if (p->sem.scjoin.spec.kind == node_kind_pi) {
-        /* maybe we look for _any_ pi, regardless of its target? */
-        if (!loc)
-            scj = llscj_pi (p->sem.scjoin.spec.axis,
-                            iter, item, frag, var (PF_MIL_VAR_WS), order);
-        /* or was there a target specified? */
-        else
-            scj = llscj_pi_targ (
-                    p->sem.scjoin.spec.axis,
-                    iter, item, frag, var (PF_MIL_VAR_WS), order,
-                    lit_str (loc));
+    else if (qn_loc) {
+        code = var (PF_MIL_VAR_CODE_LOC);
+        uri  = cast (type (mty_str), nil ());
+        loc  = lit_str (qn_loc);
+        tgt  = cast (type (mty_str), nil ());
     }
-    /* If all these cases did not apply, it is probably a node() test. */
-    else if (p->sem.scjoin.spec.kind == node_kind_node) {
-        scj = llscj_node (p->sem.scjoin.spec.axis,
-                          iter, item, frag, var (PF_MIL_VAR_WS), order);
+    else {
+        uri  = cast (type (mty_str), nil ());
+        loc  = cast (type (mty_str), nil ());
+        tgt  = cast (type (mty_str), nil ());
     }
-    /* If we still couldn't find out, we probably need to give up. */
-    else
-        PFoops (OOPS_FATAL,
-                "Problem with an XPath step: cannot evaluate "
-                "node test `%s'",
-                PFalg_node_kind_str (p->sem.scjoin.spec.kind));
-
-    assert (scj);
-
+    /* end of collect all information to check *//* fold) */
+        
     /*
-     * tmp  := scj (...);            # constructed just before
-     * iter := tmp.fetch (0);
-     * pre  := tmp.fetch (1);
-     * kind := tmp.fetch (2);
+     * step := step (...);
+     * iter := step.fetch (0);
+     * pre  := step.fetch (1);
+     * frag := step.fetch (2);
      */
-    tmp = new_var (1);
-
-    /*
-     * Should we actually do materialize at runtime? In most cases
-     * we should be able to see at compile time if columns are guaranteed
-     * to be constant. We could then avoid carrying around the column at
-     * all.
-     *
-     * Problem is: We do consider a `constant' property in our algebra
-     * (not fully, yet, but the ideas are there). This property, however
-     * only looks at ``real'' algebra columns. Here, materialize operates
-     * on only part of a ``real'' column. The ``real'' column `item' is
-     * implemented as `pre|kind' for nodes. And while kind may be constant,
-     * pre probably won't.
-     */
-    execute (assgn (var (tmp->name), scj));
-    unpin (tmp2, 1);
-
-    ret_pre  = new_var (p->refctr);
-    ret_frag = new_var (p->refctr);
     execute (
-         assgn (var (ret_pre->name), fetch (var (tmp->name), lit_int (1))),
+         assgn (var (step->name), 
+                step (axis, code,
+                      iter, item, frag,
+                      var (PF_MIL_VAR_WS),
+                      order, kind,
+                      uri, loc, tgt)),
+         assgn (var (ret_pre->name), fetch (var (step->name), lit_int (1))),
+         /*
+          * Should we actually do materialize at runtime? In most cases
+          * we should be able to see at compile time if columns are guaranteed
+          * to be constant. We could then avoid carrying around the column at
+          * all.
+          *
+          * Problem is: We do consider a `constant' property in our algebra
+          * (not fully, yet, but the ideas are there). This property, however
+          * only looks at ``real'' algebra columns. Here, materialize operates
+          * on only part of a ``real'' column. The ``real'' column `item' is
+          * implemented as `pre|kind' for nodes. And while kind may be constant,
+          * pre probably won't.
+          */
          assgn (var (ret_frag->name),
-                materialize (fetch (var (tmp->name), lit_int (2)),
-                             var (ret_pre->name))));
-    env_add (p->env, pa_item, aat_pre, ret_pre);
-    env_add (p->env, pa_item, aat_frag, ret_frag);
-
-    ret_iter = new_var (p->refctr);
-    execute (
+                materialize (fetch (var (step->name), lit_int (2)),
+                             var (ret_pre->name))),
          assgn (var (ret_iter->name),
-                materialize (fetch (var (tmp->name), lit_int (0)),
-                             fetch (var (tmp->name), lit_int (1)))));
-    env_add (p->env, pa_iter, aat_nat, ret_iter);
-
-    unpin (tmp, 1);
+                materialize (fetch (var (step->name), lit_int (0)),
+                             fetch (var (step->name), lit_int (1)))));
+    
+    unpin (step, 1);
+    unpin (map, 1);
 
 } /* fold) */
-/* fold) */
 
 /***********************************/
 /* fold) end reduce helper functions */
@@ -6060,8 +5720,6 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Rel:      llscjoin (Rel) */
         /* FIXME: This code needs to be cleaned up. */
         case 80: /* fold( */
-            if (p->sem.scjoin.spec.axis == alg_self)
-                PFoops (OOPS_FATAL, "self step not implemented yet.");
             if (p->sem.scjoin.spec.axis != alg_attr)
                 llscj (p);
             else
@@ -7916,8 +7574,10 @@ reduce (PFpa_op_t * p, int goalnt)
                 scj_res  = new_var (1);
                 /* evaluate descendant-or-self::node() step:
                    unq_iter := p_iter.mirror();
-                   scj_res := loop_lifted_descendant_or_self_step (
-                                  p_iter, p_item, p_cont, ws, 0);
+                   scj_res := step (AXIS_descendant_or_self,
+                                    TEST_none,
+                                    p_iter, p_item, p_cont, ws, 0,
+                                    chr(nil), str(nil), str(nil), str(nil));
                    iter := scj_res.fetch(0);
                    item := scj_res.fetch(1);
                    # cont is probably a fake project
@@ -7930,12 +7590,17 @@ reduce (PFpa_op_t * p, int goalnt)
                         mirror (var (p_iter->name))),
                     assgn (
                         var (scj_res->name),
-                        llscj_desc_self (
-                            var (unq_iter->name),
-                            var (p_item->name),
-                            var (p_cont->name),
-                            var (PF_MIL_VAR_WS),
-                            lit_int (0))),
+                        step (var (PF_MIL_VAR_AXIS_DESC_S),
+                              var (PF_MIL_VAR_CODE_NONE),
+                              var (unq_iter->name),
+                              var (p_item->name),
+                              var (p_cont->name),
+                              var (PF_MIL_VAR_WS),
+                              lit_int (0),
+                              cast (type (mty_chr), nil ()),
+                              cast (type (mty_str), nil ()),
+                              cast (type (mty_str), nil ()),
+                              cast (type (mty_str), nil ()))),
                     assgn (
                         var (iter->name),
                         fetch(var (scj_res->name), lit_int (0))),
