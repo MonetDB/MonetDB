@@ -517,18 +517,22 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 	} else {
 		@:accumCst(@3,@1,@4,@5)@ 
 	}
-	if (@6 == 2)
+	if (@6 & 1) {
 		bn->tsorted = BATtordered(b);
-#if @7
-	else if (@6 == 3) {
-		if (*(@5*)cst >= 0) 
-			bn->tsorted = BATtordered(b);
-		else
+	} else
+	if (@6 & 4) {
+		bn->tsorted = REVERT_SORTED(BATtordered(b));
+	} else
+	if (@6 & 16) { 
+#if @7 /* skip this for TYPE_oid */
+		if (*(@5*)cst < 0)
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
-	} 
+		else
 #endif
-	else
+			bn->tsorted = BATtordered(b);
+	} else {
 		bn->tsorted = 0;
+	}
 	BATkey(BATmirror(bn),FALSE);
 
 	BBPkeepref(*ret = bn->batCacheid);
@@ -551,18 +555,22 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *l, void *cst, int *r)
 	} else {
 		@:accumCstLeft(@3,@1,@4,@5)@ 
 	}
-	if (@6 == 2)
+	if (@6 & 2) {
 		bn->tsorted = BATtordered(b);
-#if @7
-	else if (@6 == 3) {
-		if (*(@4*)cst >= 0) 
-			bn->tsorted = BATtordered(b);
-		else
+	} else
+	if (@6 & 8) {
+		bn->tsorted = REVERT_SORTED(BATtordered(b));
+	} else
+	if (@6 & 32) { 
+#if @7 /* skip this for TYPE_oid */
+		if (*(@5*)cst < 0)
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
-	} 
+		else
 #endif
-	else
+			bn->tsorted = BATtordered(b);
+	} else {
 		bn->tsorted = 0;
+	}
 	BATkey(BATmirror(bn),FALSE);
 
 	BBPkeepref(*ret = bn->batCacheid);
@@ -589,18 +597,22 @@ str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 		@:accumCst(@3,@1,@4,@5)@ 
 	}
 	BATsetcount(bn, BATcount(b));
-	if (@6 == 2)
+	if (@6 & 1) {
 		bn->tsorted = BATtordered(b);
-#if @7
-	else if (@6 == 3) {
-		if (*(@5*)cst >= 0) 
-			bn->tsorted = BATtordered(b);
-		else
+	} else
+	if (@6 & 4) {
+		bn->tsorted = REVERT_SORTED(BATtordered(b));
+	} else
+	if (@6 & 16) { 
+#if @7 /* skip this for TYPE_oid */
+		if (*(@5*)cst < 0)
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
-	} 
+		else
 #endif
-	else
+			bn->tsorted = BATtordered(b);
+	} else {
 		bn->tsorted = 0;
+	}
 	BATkey(BATmirror(bn),FALSE);
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
@@ -630,18 +642,22 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 		@:accumCstLeft(@3,@1,@4,@5)@ 
 	}
 	BATsetcount(bn, BATcount(b));
-	if (@6 == 2)
+	if (@6 & 2) {
 		bn->tsorted = BATtordered(b);
-#if @7
-	else if (@6 == 3) {
-		if (*(@5*)cst >= 0) 
-			bn->tsorted = BATtordered(b);
-		else
+	} else
+	if (@6 & 8) {
+		bn->tsorted = REVERT_SORTED(BATtordered(b));
+	} else
+	if (@6 & 32) { 
+#if @7 /* skip this for TYPE_oid */
+		if (*(@5*)cst < 0)
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
-	} 
+		else
 #endif
-	else
+			bn->tsorted = BATtordered(b);
+	} else {
 		bn->tsorted = 0;
+	}
 	BATkey(BATmirror(bn),FALSE);
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
@@ -683,10 +699,21 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 @:arithmeticImpl(@1,@2,int,int,int,@3,1)@
 
 @c
-@:arithGrpImpl(/,DIV,0)@
-@:arithGrpImpl(*,MUL,3)@
-@:arithGrpImpl(-,SUB,2)@
-@:arithGrpImpl(+,ADD,2)@
+/*
+@1:   +,   -,   *,   /     basic arithmetic operator symbol
+@2:   ADD, SUB, MUL, DIV   basic arithmetic operator name
+@3:     (bit pattern)      disable/enable sorting propagation
+                            1 propagate as-is on bat,const
+                            2 propagate as-is on const,bat
+                            4 propagate reverted on bat,const (not required/used!)
+                            8 propagate reverted on const,bat
+                           16 propagate as-is / reverted on bat,const if const >=0 / <0
+                           32 propagate as-is / reverted on const,bat if const >=0 / <0
+*/
+@:arithGrpImpl(/,DIV,16)@
+@:arithGrpImpl(*,MUL,(16|32))@
+@:arithGrpImpl(-,SUB,(1|8))@
+@:arithGrpImpl(+,ADD,(1|2))@
 
 @-  Modulo arithmetic
 The Modulo function doesn;t work on all types. Therefore we 
