@@ -86,6 +86,11 @@ target of recycling.
 Just looking at a kept result target is not good enough.
 You have to sure that the arguments are also the same.
 This outrules function arguments.
+
+The recycler is targeted towards a query only database.
+Any update statement invalidates the recycle cache at
+the end of the query. Moreover, it does not perform
+any cach lookup.
 @c
 #include "mal_config.h"
 #include "opt_recycler.h"
@@ -94,7 +99,7 @@ This outrules function arguments.
 static int
 OPTrecycleImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, j, cnt, actions=0;
+	int i, j, cnt, actions=0, update=0;
 	Lifespan span = newLifespan(mb);
 	InstrPtr *old, q;
 	int limit;
@@ -111,6 +116,8 @@ OPTrecycleImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)){
+			if( isUpdateInstruction(p))
+				update++;
 			pushInstruction(mb,p);
 			continue;
 		}
@@ -159,11 +166,15 @@ are marked for re-use.
 			p->argc=2;
 			p->recycle = 1;
 		}
-		if( p->token== ENDsymbol)
+		if( p->token== ENDsymbol){
+			if (update)
+				q= newFcnCall(mb,"recycle","shutdown");
+
 			q= newFcnCall(mb,"recycle","epilogue");
+		}
 		pushInstruction(mb,p);
 	}
-	if (actions)
+	if (actions && update==0)
 		mb->version = -1;	/* will trigger the recycler runtime support */
 	GDKfree(span);
 	GDKfree(old);

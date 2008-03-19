@@ -526,6 +526,7 @@ opt_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 opt_export int isUpdated(MalBlkPtr mb, int pc);
 opt_export int hasCommonResults(InstrPtr p, InstrPtr q);
 opt_export int isProcedure(MalBlkPtr mb, InstrPtr p);
+opt_export int isUpdateInstruction(InstrPtr p);
 opt_export int hasSideEffects(InstrPtr p, int strict);
 opt_export int isSideEffectFree(MalBlkPtr mb);
 opt_export int isBlocking(InstrPtr p);
@@ -1080,15 +1081,9 @@ isProcedure(MalBlkPtr mb, InstrPtr p)
 }
 
 int
-hasSideEffects(InstrPtr p, int strict)
-{
-	if( getFunctionId(p) == NULL) return FALSE;
-
-	if ( getModuleId(p) == algebraRef &&
-		 getFunctionId(p) == reuseRef)
-			return TRUE;
+isUpdateInstruction(InstrPtr p){
 	if ( getModuleId(p) == batRef &&
-	       (getFunctionId(p) == insertRef ||
+	   (getFunctionId(p) == insertRef ||
 		getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
 		getFunctionId(p) == updateRef ||
@@ -1096,6 +1091,18 @@ hasSideEffects(InstrPtr p, int strict)
 		getFunctionId(p) == setWriteModeRef ||
 		getFunctionId(p) == replaceRef ||
 		getFunctionId(p) == deleteRef))
+		return TRUE;
+	return FALSE;
+}
+int
+hasSideEffects(InstrPtr p, int strict)
+{
+	if( getFunctionId(p) == NULL) return FALSE;
+
+	if ( getModuleId(p) == algebraRef &&
+		 getFunctionId(p) == reuseRef)
+			return TRUE;
+	if( isUpdateInstruction(p) )
 		return TRUE;
 
 	if (getFunctionId(p) == depositRef) 
