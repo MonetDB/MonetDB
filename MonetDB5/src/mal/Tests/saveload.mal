@@ -1,0 +1,21 @@
+# save/load tests
+
+a:= bat.new(:int,:int);
+bat.insert(a,0,123);
+bat.insert(a,0,321);
+bat.setName(a,"aaa");
+io.print(a);
+
+b:= bat.new(:oid,:str);
+bat.insert(b,0@0,"hello");
+bat.insert(b,1@0,"world");
+bat.setName(b,"bbb");
+io.print(b);
+
+bat.save(a);
+bat.save(b);
+
+ar:bat[:int,:int]:= bat.load("aaa");
+io.print(ar);
+br:bat[:oid,:str]:= bat.load("bbb");
+io.print(br);
