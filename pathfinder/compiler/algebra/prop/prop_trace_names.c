@@ -43,10 +43,6 @@
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
-/* store the number of incoming edges for each operator
-   in the refctr field */
-#define EDGE(n) ((n)->refctr)
-
 #define CUR_AT(n,i) (((name_pair_t *) PFarray_at ((n), (i)))->unq)
 #define ORI_AT(n,i) (((name_pair_t *) PFarray_at ((n), (i)))->ori)
 
@@ -131,8 +127,8 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
 
     /* nothing to do if we haven't collected
        all incoming name pair lists of that node */
-    EDGE(n)++;
-    if (EDGE(n) < PFprop_refctr (n))
+    PFprop_refctr (n) = PFprop_refctr (n) - 1;
+    if (PFprop_refctr (n) > 0)
         return;
 
     /* If we reached our goal we can return.
@@ -475,8 +471,6 @@ find_goal (PFla_op_t *n, PFla_op_t *goal)
 static void
 reset_fun (PFla_op_t *n)
 {
-    EDGE(n) = 0;
-
     /* reset the name mapping structure */
     if (n->prop->name_pairs)
         PFarray_last (n->prop->name_pairs) = 0;
