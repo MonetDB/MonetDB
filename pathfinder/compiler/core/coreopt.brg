@@ -1369,6 +1369,8 @@ reduce (PFcnode_t * p, int goalnt)
             /* remove bogus steps starting from attribute nodes */
             assert (p->kind == c_locsteps);
             if (L(p)->kind != c_parent &&
+                L(p)->kind != c_ancestor &&
+                L(p)->kind != c_ancestor_or_self &&
                 PFty_subtype (TY(R(p)), PFty_star (PFty_xs_anyAttribute ()))) {
                 *p = *empty ();
                 TY(p) = PFty_empty ();
