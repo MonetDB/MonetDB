@@ -60,8 +60,8 @@
 /* initial value for lists that encode free variables */
 #define ALL (~att_NULL)
 /* store the number of incoming edges for each operator
-   in the state_label field */
-#define EDGE(n) ((n)->state_label)
+   in the refctr field */
+#define EDGE(n) ((n)->refctr)
 
 /* worker for PFprop_ori_name* */
 static PFalg_att_t

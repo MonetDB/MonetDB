@@ -44,8 +44,8 @@
 #include "child_mnemonic.h"
 
 /* store the number of incoming edges for each operator
-   in the state_label field */
-#define EDGE(n) ((n)->state_label)
+   in the refctr field */
+#define EDGE(n) ((n)->refctr)
 
 #define CUR_AT(n,i) (((name_pair_t *) PFarray_at ((n), (i)))->unq)
 #define ORI_AT(n,i) (((name_pair_t *) PFarray_at ((n), (i)))->ori)

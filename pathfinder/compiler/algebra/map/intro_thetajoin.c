@@ -63,7 +63,7 @@
 #include "child_mnemonic.h"
 
 #define SEEN(n)       (n)->bit_dag
-#define EDGE(n)       (n)->state_label
+#define EDGE(n)       (n)->refctr
 
 #define BOOL_COLS(n)  (n)->prop->icols
 #define LEFT_COLS(n)  (n)->prop->l_icols
