@@ -235,10 +235,10 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 		bn->tsorted = REVERT_SORTED(BATtordered(b));
 	} else
 	if (@6 & 32) { 
-		if (*v >= 0)
-			bn->tsorted = BATtordered(b);
-		else
+		if (*v < 0)
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
+		else
+			bn->tsorted = BATtordered(b);
 	} else {
 		bn->tsorted = 0;
 	}
@@ -280,10 +280,10 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 		b->tsorted = REVERT_SORTED(BATtordered(b));
 	} else
 	if (@6 & 32) { 
-		if (*v >= 0)
-			b->tsorted = BATtordered(b);
-		else
+		if (*v < 0)
 			b->tsorted = REVERT_SORTED(BATtordered(b));
+		else
+			b->tsorted = BATtordered(b);
 	} else {
 		b->tsorted = 0;
 	}
@@ -338,10 +338,10 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 		bn->tsorted = REVERT_SORTED(BATtordered(b));
 	} else
 	if (@6 & 16) { 
-		if (*v >= 0)
-			bn->tsorted = BATtordered(b);
-		else
+		if (*v < 0)
 			bn->tsorted = REVERT_SORTED(BATtordered(b));
+		else
+			bn->tsorted = BATtordered(b);
 	} else {
 		bn->tsorted = 0;
 	}
@@ -384,10 +384,10 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 		b->tsorted = REVERT_SORTED(BATtordered(b));
 	} else
 	if (@6 & 16) { 
-		if (*v >= 0)
-			b->tsorted = BATtordered(b);
-		else
+		if (*v < 0)
 			b->tsorted = REVERT_SORTED(BATtordered(b));
+		else
+			b->tsorted = BATtordered(b);
 	} else {
 		b->tsorted = 0;
 	}
