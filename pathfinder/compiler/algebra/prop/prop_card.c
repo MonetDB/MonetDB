@@ -52,6 +52,9 @@ PFprop_card (const PFprop_t *prop)
     return prop->card;
 }
 
+
+static void prop_infer (PFla_op_t *n);
+
 /**
  * Infer properties about cardinalities; worker for prop_infer().
  */
@@ -208,13 +211,39 @@ infer_card (PFla_op_t *n)
             /* recursion parameters do not have properties */
             break;
 
-        case la_rec_arg:
+        case la_rec_arg: {
+            PFla_op_t *base = n->sem.rec_arg.base;
+            /* infer the cardinality of the left child */
+            prop_infer (L(n));
+
+            /* set the base to the just inferred cardinality */
+            base->prop->card = L(n)->prop->card;
+            
+            /* infer the cardinality of the body under the
+             * new circumstances */
+            prop_infer (R(n));
+
+            /* if the inferred cardinality is the same as
+             * the cardinality inferred for the base,
+             * we are sure that the recursion will return
+             * a result in any case */
+            if ((R(n)->prop) &&
+                (R(n)->prop->card == base->prop->card)) {
+                n->prop->card = R(n)->prop->card;
+                break;
+            }
+
+            /* in every other case we infer the cardinality
+             * like before: we infer nothing about the cardinality
+             * of the seed operator and infer the cardinality of
+             * the recursion body again */
+            base->prop->card = 0;
+            prop_infer (R(n));
             n->prop->card = R(n)->prop->card;
-            break;
+        }   break;
 
         case la_rec_base:
-            /* infer no properties of the seed */
-            n->prop->card = 0;
+            /* do nothing, magic happens in rec_arg */
             break;
 
         case la_fun_call:
@@ -229,15 +258,24 @@ infer_card (PFla_op_t *n)
 static void
 prop_infer (PFla_op_t *n)
 {
+    bool topdown;
     assert (n);
 
     /* nothing to do if we already visited that node */
     if (n->bit_dag)
         return;
 
+    switch (n->kind) {
+        case la_rec_arg:
+            topdown = true;
+        default:
+            topdown = false;
+    }
+
     /* infer properties for children */
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        prop_infer (n->child[i]);
+    if (!topdown)
+        for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+            prop_infer (n->child[i]);
 
     n->bit_dag = true;
 

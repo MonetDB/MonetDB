@@ -37,6 +37,7 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "compile.h"
 #include "oops.h"
 #include "core.h"
 #include "subtyping.h"
@@ -388,6 +389,45 @@ static PFalg_simple_type_t PFalg_type (PFty_t ty);
 
 /* Extract occurrence indicator from the XQuery type.  */
 static PFalg_occ_ind_t PFalg_type_occ (PFty_t ty);
+
+
+typedef PFla_op_t * (rec_strategy_t) (
+                                 int strategy,
+                                 PFla_op_t *body,
+                                 PFla_op_t *seed,
+                                 PFla_op_t *res_seed,
+                                 PFla_op_t *base,
+                                 PFla_op_t *base_res,
+                                 bool x_used,
+                                 bool loop_used,
+                                 PFla_op_t *old_loop,
+                                 PFla_op_t *base_loop);
+
+/* recursion translation strategy for SQL */
+static PFla_op_t *recursion_sql (int strategy,
+                                 PFla_op_t *body,
+                                 PFla_op_t *seed,
+                                 PFla_op_t *res_seed,
+                                 PFla_op_t *base,
+                                 PFla_op_t *base_res,
+                                 bool x_used,
+                                 bool loop_used,
+                                 PFla_op_t *old_loop,
+                                 PFla_op_t *base_loop);
+
+/* recursion translation strategy for Monet */
+static PFla_op_t *recursion_mil (int strategy,
+                                 PFla_op_t *body,
+                                 PFla_op_t *seed,
+                                 PFla_op_t *res_seed,
+                                 PFla_op_t *base,
+                                 PFla_op_t *base_res,
+                                 bool x_used,
+                                 bool loop_used,
+                                 PFla_op_t *old_loop,
+                                 PFla_op_t *base_loop);
+
+enum PFoutput_format_t PFoutput_format;
 
 /**
  * Reducer function. This is the heart of this source file. It
@@ -2506,11 +2546,12 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 #define DELTA 1
 #define TC 2
 #define IFP 3
-#define TC_OR_DELTA 4
-#define IFP_OR_DELTA 5
+#define SQL 4
+#define TC_OR_DELTA 5
+#define IFP_OR_DELTA 6
 /* different strategies to include the seed */
-#define STAR 6
-#define PLUS 7
+#define STAR 7
+#define PLUS 8
 
 /* check whether variable strategy is allowed or not */
 #define VAR_STRATEGY(i) ((i) >= TC_OR_DELTA)
@@ -2520,17 +2561,22 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 #define RESULT STAR
 
             unsigned int   i;
-            int            strategy = STRATEGY;
+            int            strategy = (PFoutput_format == PFoutput_format_sql)
+                                      ? SQL
+                                      : IFP_OR_DELTA;
+            /* recursion strategy depending on the output format */
+            rec_strategy_t *recursion_strategy = (strategy == SQL)
+                                                ? recursion_sql
+                                                : recursion_mil;
+
             bool           x_used, loop_used;
             PFla_env_t     e;
             PFarray_t     *old_env;
             PFalg_schema_t schema, res_schema;
             PFla_op_t     *base_x, *base_res;
-            PFla_op_t     *res_seed, *res_body, *delta, *res;
-            PFla_op_t     *seed;
+            PFla_op_t     *seed, *res_seed;
             PFla_op_t     *new_map;
-            PFla_op_t     *old_loop, *base_loop, *updated_loop;
-            PFla_op_t     *res_rec_param, *loop_rec_param, *x_rec_param, *body;
+            PFla_op_t     *old_loop, *base_loop;
 
             /* initiate translation of e1 */
             reduce (ctx, kids[0], nts[0]);
@@ -2620,12 +2666,6 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
              */
             reduce (ctx, kids[1], nts[1]);
 
-            /* check whether we may modify the strategy and
-               if the DELTA approach is allowed */
-            if (VAR_STRATEGY(strategy) &&
-                PFprop_check_rec_delta (A(RR(p)).rel))
-                strategy = DELTA;
-
             /* check whether $x and loop are used
                (the result of the checks are used later
                to discard recursion parameters if possible) */
@@ -2634,116 +2674,26 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             loop_used = SEEN(base_loop);
             PFla_dag_reset (A(RR(p)).rel);
 
-            /* the result of the recursion body */
-            res_body = distinct (project (A(RR(p)).rel,
-                                          proj (att_iter, att_iter),
-                                          proj (att_item, att_item)));
-
-            /* get the really new nodes */
-            delta = difference (res_body,
-                                project (base_res,
-                                         proj (att_iter, att_iter),
-                                         proj (att_item, att_item)));
-
-            /* add the new nodes (of this recursion step)
-               to our already collected result */
-            res = disjunion (delta,
-                             project (base_res,
-                                      proj (att_iter, att_iter),
-                                      proj (att_item, att_item)));
-
-            /* ------------------- BODY ------------------- */
-
-            /* using 'distinct (delta)' or 'distinct (res_body)'
-               instead of 'res' changes the evaluation strategy:
-                - 'delta': only the really new nodes are the input
-                  for the next recursion
-                - 'res_body': the result of the current recursion
-                  is the input for the next recursion
-                - 'res': the whole result collected until now
-                  is input to the next recurstion step */
-            if (strategy == DELTA)
-                body = delta;
-            else if (strategy == TC ||
-                strategy == TC_OR_DELTA)
-                body = res_body;
-            else if (strategy == IFP ||
-                strategy == IFP_OR_DELTA)
-                body = res;
-            else
-                PFoops (OOPS_FATAL,
-                        "unknown strategy in algebra translation "
-                        "of the recursion primitive");
-
-            /* ------------------ RESULT ------------------ */
 #if RESULT == STAR
-            res_seed = seed;
+    res_seed = seed;
 #else /* PLUS */
-            /* create a new result seed */
-            res_seed = PFla_empty_tbl_ (res_schema);
+    /* create a new result seed */
+    res_seed = PFla_empty_tbl_ (res_schema);
 #endif
-            res_rec_param = rec_param (
-                                rec_arg (
-                                    res_seed,
-                                    res,
-                                    base_res),
-                                nil ());
-
-            /* ------------------- LOOP ------------------- */
-
-            /* In case the loop relation was not used
-               we don't need the recursion parameter */
-            if (!loop_used) {
-                loop_rec_param = res_rec_param;
-            } else if (strategy == IFP || strategy == IFP_OR_DELTA) {
-                /* for IFP the loop doesn't change */
-                loop_rec_param = rec_param (rec_arg (old_loop,
-                                                     base_loop,
-                                                     base_loop),
-                                            res_rec_param);
-            } else {
-                /* update the loop relation after the recursion body
-                   has been processed ... */
-                updated_loop = project (eqjoin (distinct (
-                                                    project (delta,
-                                                             proj (att_iter1,
-                                                                   att_iter))),
-                                                base_loop,
-                                                att_iter1,
-                                                att_iter),
-                                        proj (att_iter, att_iter));
-
-                /* ... and integrate the loop maintenance in the recursion */
-                loop_rec_param = rec_param (rec_arg (old_loop,
-                                                     updated_loop,
-                                                     base_loop),
-                                            res_rec_param);
-            }
-
-            /* -------------------- $x -------------------- */
-            if (x_used)
-                x_rec_param = rec_param (
-                                  rec_arg (
-                                      rank (
-                                          seed,
-                                          att_pos,
-                                          sortby (att_item)),
-                                      rank (
-                                          body,
-                                          att_pos,
-                                          sortby (att_item)),
-                                      base_x),
-                                  loop_rec_param);
-            else
-                x_rec_param = loop_rec_param;
-
-            /* ---------------- RECURSION ----------------- */
 
             A(p) = (struct PFla_pair_t) {
-                     .rel = rank (
-                                rec_fix (x_rec_param, res),
-                                att_pos, sortby (att_item)),
-                     .frag = A(RR(p)).frag };
+                        .rel  = recursion_strategy (strategy,
+                                                    A(RR(p)).rel,
+                                                    seed,
+                                                    res_seed,
+                                                    base_x,
+                                                    base_res,
+                                                    x_used,
+                                                    loop_used,
+                                                    old_loop,
+                                                    base_loop),
+                        .frag = A(RR(p)).frag
+                   }; 
 
             /* clean up environment and loop relation */
             if (strategy != IFP) {
@@ -2832,6 +2782,216 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
            can consistently patch the changes again. */
         *((core2alg_map_t *) PFarray_add (CORE2ALG_MAP))
             = (core2alg_map_t) { .core = p, .rel = rel, .frag = frag};
+}
+
+/* recursion strategy for SQL */
+static PFla_op_t * 
+recursion_sql (int strategy,
+               PFla_op_t *body,
+               PFla_op_t *seed,
+               PFla_op_t *res_seed,
+               PFla_op_t *base,
+               PFla_op_t *base_res,
+               bool x_used,
+               bool loop_used,
+               PFla_op_t *old_loop,
+               PFla_op_t *base_loop)
+{
+    (void)strategy;
+    (void)base_res;
+    (void)x_used;
+    (void)res_seed;
+    assert (strategy == SQL);
+
+
+    /* check whether we may modify the strategy and
+       if the DELTA approach is allowed */
+    if (!PFprop_check_rec_delta (body))
+        PFoops (OOPS_FATAL, "SQL cannot cope with this query"); 
+
+    PFla_op_t *res_body = NULL;    
+    PFla_op_t *res_rec_param = NULL;
+    PFla_op_t *loop_rec_param = NULL;
+
+    /* the result of the recursion body */
+    res_body = distinct (
+                   project (body,
+                       proj (att_iter, att_iter),
+                       proj (att_item, att_item)));
+
+    /* ------------------- BODY ----------------- */ 
+
+    res_rec_param = rec_param (
+                        rec_arg (
+                            attach (seed,
+                                    att_pos,
+                                    lit_int (RANK_DUMMY)),
+                            attach (res_body,
+                                    att_pos,
+                                    lit_int (RANK_DUMMY)),
+                            base
+                        ),
+                        nil ());
+
+    /* ------------------ LOOP ------------------ */
+
+    if (loop_used)
+        /* for SQL the LOOP doesn't change */
+        loop_rec_param = rec_param (
+                            rec_arg (old_loop,
+                                     base_loop,
+                                     base_loop),
+                            res_rec_param);
+    else
+        loop_rec_param = res_rec_param;
+                                  
+    /* ---------------RECURSION ---------------- */ 
+    return rank (
+               project (
+                   rec_fix (
+                       loop_rec_param,
+                       res_body),
+                   proj (att_iter, att_iter),
+                   proj (att_item, att_item)),
+               att_pos,
+               sortby (att_item));
+}
+
+/* recursion strategy for Monet */
+static PFla_op_t *
+recursion_mil (int strategy,
+               PFla_op_t *body,
+               PFla_op_t *seed,
+               PFla_op_t *res_seed,
+               PFla_op_t *base,
+               PFla_op_t *base_res,
+               bool x_used,
+               bool loop_used,
+               PFla_op_t *old_loop,
+               PFla_op_t *base_loop)
+{
+    PFla_op_t  *res_body,
+               *delta,
+               *res;
+    PFla_op_t  *res_rec_param,
+               *loop_rec_param,
+               *x_rec_param;
+    PFla_op_t  *updated_loop;
+
+    (void)strategy;
+    assert (strategy == DELTA       ||
+            strategy == TC          ||
+            strategy == IFP         ||
+            strategy == TC_OR_DELTA ||
+            strategy == IFP_OR_DELTA);
+
+    /* check whether we may modify the strategy and
+       if the DELTA approach is allowed */
+    if (VAR_STRATEGY(strategy) &&
+        PFprop_check_rec_delta (body))
+        strategy = DELTA;
+
+    /* the result of the recursion body */
+    res_body = distinct (project (body,
+                                  proj (att_iter, att_iter),
+                                  proj (att_item, att_item)));
+
+    /* get the really new nodes */
+    delta = difference (res_body,
+                        project (base_res,
+                                 proj (att_iter, att_iter),
+                                 proj (att_item, att_item)));
+
+    /* add the new nodes (of this recursion step)
+       to our already collected result */
+    res = disjunion (delta,
+                     project (base_res,
+                              proj (att_iter, att_iter),
+                              proj (att_item, att_item)));
+
+    /* ------------------- BODY ------------------- */
+
+    /* using 'distinct (delta)' or 'distinct (res_body)'
+       instead of 'res' changes the evaluation strategy:
+        - 'delta': only the really new nodes are the input
+          for the next recursion
+        - 'res_body': the result of the current recursion
+          is the input for the next recursion
+        - 'res': the whole result collected until now
+          is input to the next recurstion step */
+    if (strategy == DELTA)
+        body = delta;
+    else if (strategy == TC ||
+        strategy == TC_OR_DELTA)
+        body = res_body;
+    else if (strategy == IFP ||
+        strategy == IFP_OR_DELTA)
+        body = res;
+    else
+        PFoops (OOPS_FATAL,
+                "unknown strategy in algebra translation "
+                "of the recursion primitive");
+
+    /* ------------------ RESULT ------------------ */
+    res_rec_param = rec_param (
+                        rec_arg (
+                            res_seed,
+                            res,
+                            base_res),
+                        nil ());
+
+    /* ------------------- LOOP ------------------- */
+
+    /* In case the loop relation was not used
+       we don't need the recursion parameter */
+    if (!loop_used) {
+        loop_rec_param = res_rec_param;
+    } else if (strategy == IFP || strategy == IFP_OR_DELTA) {
+        /* for IFP the loop doesn't change */
+        loop_rec_param = rec_param (rec_arg (old_loop,
+                                             base_loop,
+                                             base_loop),
+                                    res_rec_param);
+    } else {
+        /* update the loop relation after the recursion body
+           has been processed ... */
+        updated_loop = project (eqjoin (distinct (
+                                            project (delta,
+                                                     proj (att_iter1,
+                                                           att_iter))),
+                                        base_loop,
+                                        att_iter1,
+                                        att_iter),
+                                proj (att_iter, att_iter));
+
+        /* ... and integrate the loop maintenance in the recursion */
+        loop_rec_param = rec_param (rec_arg (old_loop,
+                                             updated_loop,
+                                             base_loop),
+                                    res_rec_param);
+    }
+
+    /* -------------------- $x -------------------- */
+    if (x_used)
+        x_rec_param = rec_param (
+                          rec_arg (
+                              rank (
+                                  seed,
+                                  att_pos,
+                                  sortby (att_item)),
+                              rank (
+                                  body,
+                                  att_pos,
+                                  sortby (att_item)),
+                              base),
+                          loop_rec_param);
+    else
+        x_rec_param = loop_rec_param;
+
+    /* ---------------- RECURSION ----------------- */
+    return rank (
+                rec_fix (x_rec_param, res),
+                att_pos, sortby (att_item));
 }
 
 /**
@@ -3214,7 +3374,8 @@ PFalg_type_occ (PFty_t ty)
  * @return the algebra equivalent of @a r
  */
 PFla_op_t *
-PFcore2alg (PFcnode_t *r, PFquery_t *query)
+PFcore2alg (PFcnode_t *r, PFquery_t *query,
+            enum PFoutput_format_t output_format)
 {
     PFarray_t *options = NULL;
     
@@ -3257,7 +3418,11 @@ PFcore2alg (PFcnode_t *r, PFquery_t *query)
 
     /* initially do not memorize algebra translations */
     ctx.core2alg_map = NULL;
-    
+
+    /* depending on the output format we choose a different
+     * recursion strategy */
+    PFoutput_format = output_format;
+
     /* invoke compilation */
     reduce (&ctx, r, 1);
 

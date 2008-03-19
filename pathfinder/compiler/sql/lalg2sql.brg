@@ -289,17 +289,27 @@ Msg:    trace_msg (Rel, Map)                         = 101 (10);
 Map:    trace_map (Rel, Map)                         = 102 (10);
 Map:    nil                                          = 103 (10);
 
-Rel:    rec_fix (Rec, Rel)                           = 105 (10);
-Rel:    rec_base                                     = 106 (10);
-Rec:    rec_param (Arg, Rec)                         = 107 (10);
-Rec:    nil                                          = 108 (10);
-Arg:    rec_arg (Rel, Rel)                           = 109 (10);
+Rel:    rec_base                                     = 105 (10);
+Rec:    nil                                          = 106 (10);
+Arg:    rec_arg (Rel, Rel)                           = 107 (10);
+Arg:    rec_arg (Rel, distinct (Rel))                = 108 (10); 
 
-Rel:    dummy (Rel)                                  = 110 (10);
-Rel:    proxy (Rel)                                  = 111 (10);
-Rel:    proxy_base (Rel)                             = 112 (10);
-Rel:    eqjoin_unq (Rel, Rel)                        = 113 (10);
-Rel:    cross_mvd (Rel, Rel)                         = 114 (10);
+Rel:    rec_fix (
+           rec_param (
+              rec_arg (Rel, Rel), 
+              rec_param(
+                  Arg,
+                  nil)), Rel)                        = 109 (10);
+Rel:    rec_fix (
+           rec_param (
+              Arg, 
+              nil), Rel)                             = 110 (10);
+
+Rel:    dummy (Rel)                                  = 115 (10);
+Rel:    proxy (Rel)                                  = 116 (10);
+Rel:    proxy_base (Rel)                             = 117 (10);
+Rel:    eqjoin_unq (Rel, Rel)                        = 118 (10);
+Rel:    cross_mvd (Rel, Rel)                         = 119 (10);
 
 %%
 
@@ -315,6 +325,11 @@ Rel:    cross_mvd (Rel, Rel)                         = 114 (10);
  * We collect the SQL statements during compilation here.
  */
 static PFsql_t *sql_stmts = NULL;
+
+/**
+ * true if we are in a recursion branch
+ */
+static bool rec_branch = false;
 
 /**
  * Generate DB2 SELECTIVITY hints;
@@ -1619,6 +1634,143 @@ cast_from_bool (PFsql_t * expr, PFalg_simple_type_t res_ty)
     return NULL; /* satisfy picky compilers */
 }
 
+#define FRAG_OP(p) (/* fragment related operators */ \
+                    (p)->kind == la_frag_union    || \
+                    (p)->kind == la_empty_frag    || \
+                    (p)->kind == la_fragment      || \
+                    /* and operators that are     */ \
+                    /* referenced by 'roots' and  */ \
+                    /* 'fragment' only            */ \
+                    (p)->kind == la_doc_tbl       || \
+                    (p)->kind == la_twig          || \
+                    (p)->kind == la_merge_adjacent)
+
+/**
+ * This functions tells us during the generation of
+ * the recursion branch if recursion is allowed
+ */
+static bool
+rec_allowed (PFla_op_t *p)
+{
+    /* check if we have to bind this operator */
+    if (bind_multi_ref && REFCTR(p) > 1 && !FRAG_OP(p))
+        return false;
+
+    switch (p->kind) {
+        case la_serialize_seq:
+        case la_serialize_rel:
+            PFoops (OOPS_FATAL, "serializing during recursion is not possible");
+        case la_lit_tbl:
+            return (p->sem.lit_tbl.count > 1);
+        case la_empty_tbl:
+        case la_ref_tbl:
+        case la_attach:
+            return true;
+        case la_cross:
+        case la_eqjoin:
+            return true;
+        case la_semijoin:
+            /* FIXME */
+            assert (!"FIXME");
+        case la_thetajoin:
+        case la_project:
+        case la_select:
+            return true;
+        case la_pos_select:
+            return false;
+        case la_disjunion:
+        case la_intersect:
+        case la_difference:
+        case la_distinct:
+            return false;
+        case la_fun_1to1:
+        case la_num_eq:
+        case la_num_gt:
+        case la_bool_and:
+        case la_bool_or:
+        case la_bool_not:
+            return true;
+        case la_to:
+            return false;
+        case la_avg:
+        case la_max:
+        case la_min:
+        case la_sum:
+        case la_count:
+        case la_all:
+            return (!p->sem.aggr.part);
+        case la_rownum:
+        case la_rowrank:
+        case la_rank:
+        case la_rowid:
+            return false;
+        case la_type:
+        case la_type_assert:
+        case la_seqty1:
+            /* FIXME */
+            assert (!"not yet implemented");
+            break;
+        case la_cast:
+            return true;
+        case la_step:
+        case la_step_join:
+        case la_guide_step:
+        case la_guide_step_join:
+            return true; /* PFprop_set (p->prop); */
+        case la_doc_index_join:
+            /* FIXME */
+            assert (!"not yet implemented");
+            break;
+        case la_doc_tbl:
+        case la_doc_access:
+            return true;
+        case la_twig:
+        case la_fcns:
+        case la_docnode:
+        case la_element:
+        case la_attribute:
+        case la_textnode:
+        case la_comment:
+        case la_processi:
+        case la_content:
+        case la_merge_adjacent:
+            return false;
+        case la_roots:
+        case la_fragment:
+        case la_frag_union:
+        case la_empty_frag:
+        case la_error:
+        case la_cond_err:
+            return true;
+        case la_nil:
+            /* FIXME */
+            assert (!"not yet implemented");
+            break;
+        case la_trace:
+        case la_trace_msg:
+        case la_trace_map:
+            /* FIXME */
+            assert (!"not yet implemented");
+            break;
+        case la_string_join:
+        case la_dummy:
+        case la_rec_fix:
+        case la_rec_param:
+        case la_rec_arg:
+            return false;
+        case la_rec_base:
+            return true;
+        case la_proxy:
+        case la_proxy_base:
+        case la_cross_mvd:
+        case la_eqjoin_unq:
+            return false;
+        default:
+            PFoops (OOPS_FATAL, "This operation is unknown");
+    }
+    return false;
+}
+
 /**
  * A cast to boolean is has to provide a boolean expression.
  */
@@ -1707,6 +1859,9 @@ reduce (PFla_op_t * p, int goalnt)
     /* guard against too deep recursion */
     PFrecursion_fence ();
 
+    if (rec_branch && !rec_allowed (p))
+        PFoops (OOPS_FATAL, "SQL cannot cope with this recursion");
+
     if (SEEN(p)) {
         substitute_aliases (p);
         return;
@@ -1740,6 +1895,22 @@ reduce (PFla_op_t * p, int goalnt)
         case 43:
         /* Rel:    cond_err (Rel, Rel) */
         case 99:
+        /* Arg:    rec_arg (Rel, Rel) */
+        case 107:
+        /* Arg;    rec_arg (Rel, distinct (Rel)) */
+        case 108:
+        /* Rel:    rec_fix (
+                       rec_param (
+                          rec_arg (Rel, Rel), 
+                          rec_param(
+                              Arg,
+                              nil)), Rel) */
+        case 109:
+        /* Rel:    rec_fix (
+                       rec_param (
+                          Arg, 
+                          nil), Rel) */
+        case 110:
             /* top-down translation */
             break;
         default:
@@ -3969,7 +4140,7 @@ reduce (PFla_op_t * p, int goalnt)
                 COLMAP(p) = colmap;
 
                 /* dump the relation if a distinct is required */
-                if (!PFprop_set (p->prop)) {
+                if (!PFprop_set (p->prop) && !rec_branch) {
                     distinct = true;
                     bind = true;
                     execute (comment ("binding due to %sstep operator",
@@ -4657,33 +4828,200 @@ reduce (PFla_op_t * p, int goalnt)
         case 102:
         /* Map:    nil */
         case 103:
-        /* Rel:    rec_fix (Rec, Rel) */
-        case 105:
-        /* Rel:    rec_base */
-        case 106:
-        /* Rec:    rec_param (Arg, Rec) */
-        case 107:
-        /* Rec:    nil */
-        case 108:
-        /* Arg:    rec_arg (Rel, Rel) */
-        case 109:
             /* FIXME: implementation is missing */
             PFoops (OOPS_FATAL,
                     "SQLgen: Translation for the logical "
                     "algebra pattern (%s) is still missing.",
                     PFlalg2sql_string[rule]);
             break;
+        /* Rel:    rec_base */
+        case 105:
+            /* do nothing, the magic happens in rec_arg */
+            break;
+        /* Rec:    nil */
+        case 106:
+            /* FIXME: implementation is missing */
+            PFoops (OOPS_FATAL,
+                    "SQLgen: Translation for the logical "
+                    "algebra pattern (%s) is still missing.",
+                    PFlalg2sql_string[rule]);
+            break;
+        /* Arg:    rec_arg (Rel, Rel) */
+        case 107: 
+        /* Arg:    rec_arg (Rel, distinct (Rel)) */
+        case 108: {
+            /** TOPDOWN **/
+            PFla_op_t *base = p->sem.rec_arg.base;
+            PFla_op_t *seed = L(p);
+            PFla_op_t *recursion = (rule == 107)
+                                   ? R(p)
+                                   : RL(p);
+            /* if we are in rule 107, the operator under
+             * distinct must have the set property */
+            assert (!(rule == 108) || (PFprop_set (RL(p)->prop)));
 
+            PFsql_t *columnlist = NULL;
+            PFsql_t *rec_selectlist = NULL;
+
+            PFsql_col_t *colname = NULL;
+            
+            /* generate SQL code for the seed branch */
+            reduce (kids[0], nts[0]);
+
+            /* for the recursion we have to create a new binding */
+            PFsql_tident_t basetable = new_table_name ();
+            /* new correlation name for bounded table */
+            PFsql_aident_t basealias = new_alias ();
+
+            /* clear colmap */
+            PFarray_last (COLMAP(base)) = 0;
+
+            for (unsigned int i = 0; i < base->schema.count; i++) {
+                for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                    if (t & TYPE_MASK (p->schema.items[i].type)) {
+                        colname = new_col (base->schema.items[i].name,
+                                           t);
+
+                        /* prepare the column list */ 
+                        columnlist = column_list (
+                                         columnlist,
+                                         column_name (colname));
+                        
+                        col_env_add (COLMAP(base),
+                                     base->schema.items[i].name,
+                                     t,
+                                     ext_column_name (basealias, colname));    
+                        col_env_add (COLMAP(p),
+                                     base->schema.items[i].name,
+                                     t,
+                                     ext_column_name (basealias, colname));    
+
+                    }
+            }
+
+            /* clear from and where list */
+            PFarray_last (FROMLIST(base)) = 0;
+            PFarray_last (WHERELIST(base)) = 0; 
+            PFarray_last (FROMLIST(p)) = 0;
+            PFarray_last (WHERELIST(p)) = 0;
+            
+            /* add the new binding to the fromlist */
+            from_list_add (FROMLIST (base), 
+                           table_name (basetable),
+                           alias (basealias));
+
+            /* add the new binding to the fromlist */
+            from_list_add (FROMLIST (p), 
+                           table_name (basetable),
+                           alias (basealias));
+
+
+            /* generate SQL code for the recursion branch */ 
+            rec_branch = true;
+            reduce (kids[1], nts[1]);
+            rec_branch = false;
+            
+            for (unsigned int i = 0; i < base->schema.count; i++) {
+                for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                    if (t & TYPE_MASK (p->schema.items[i].type)) {
+                        rec_selectlist = select_list (
+                                             rec_selectlist,
+                                             col_env_lookup (COLMAP(recursion),
+                                                             p->schema.items[i].name,
+                                                             t)); 
+                    }
+            }
+
+            execute (comment ("============="));
+            execute (comment ("= RECURSION ="));
+            execute (comment ("============="));
+            execute (bind (table_def (
+                            basetable, 
+                            columnlist),
+                     union_ (
+                     PFsql_select (
+                        false,
+                        transform_selectlist (COLMAP(seed)),
+                        transform_frommap (seed),
+                        transform_wheremap (seed),
+                        NULL,
+                        NULL),
+                     PFsql_select (
+                        false,
+                        rec_selectlist,
+                        transform_frommap (recursion),
+                        transform_wheremap (recursion),
+                        NULL,
+                        NULL))));
+
+            copy_cols_from_where (recursion, p);
+        }   break;
+
+        /* Rel:    rec_fix (
+                       rec_param (
+                          rec_arg (Rel, Rel), 
+                          rec_param(
+                              Arg,
+                              nil)), Rel) */
+        case 109: {
+            /*** TOPDOWN ***/
+            PFla_op_t *loop_param = LL(p),
+                      *base  = LL(p)->sem.rec_arg.base;
+
+            PFla_op_t *overall_result = R(p);
+            PFla_op_t *recarg = LRL(p);
+
+            /* if we are sure, that the loop returns
+             * results in any case, and the base is
+             * used only once, we can continue the 
+             * translation, since we are sure the
+             * loop is not needed anywhere */
+            if (!(PFprop_card(loop_param->prop)) ||
+                !(REFCTR(base) == 1))
+                PFoops (OOPS_FATAL, "SQL cannot cope with this "
+                                    "query");
+
+            reduce (kids[2], nts[2]);
+
+            /* manually decrement the reference counter,
+             * of the overall_result since we don't need
+             * this edge */
+            REFCTR(overall_result)--;
+
+            copy_cols_from_where (p, recarg);
+            bind = true; distinct = true;
+            execute (comment ("Binding due to recursion"));
+        } break;
+        /* Rel:    rec_fix (
+                       rec_param (
+                          Arg, 
+                          nil), Rel) */
+        case 110: {
+            /*** TOPDOWN ***/
+            PFla_op_t *overall_result = R(p);
+            PFla_op_t *recarg = LL(p);
+
+            reduce (kids[0], nts[0]);
+
+            /* manually decrement the reference counter,
+             * of the overall_result since we don't need
+             * this edge */
+            REFCTR(overall_result)--;
+
+            copy_cols_from_where (p, recarg);
+            bind = true; distinct = true;
+            execute (comment ("Binding due to recursion"));
+        }   break;
         /* Rel:    dummy (Rel) */
-        case 110:
+        case 115:
         /* Rel:    proxy (Rel) */
-        case 111:
+        case 116:
         /* Rel:    proxy_base (Rel) */
-        case 112:
+        case 117:
         /* Rel:    eqjoin_unq (Rel, Rel) */
-        case 113:
+        case 118:
         /* Rel:    cross_mvd (Rel, Rel) */
-        case 114:
+        case 119:
 
         default:
             PFoops (OOPS_FATAL,
@@ -4757,17 +5095,6 @@ reduce (PFla_op_t * p, int goalnt)
         default:
            break;
     }
-
-#define FRAG_OP(p) (/* fragment related operators */ \
-                    (p)->kind == la_frag_union    || \
-                    (p)->kind == la_empty_frag    || \
-                    (p)->kind == la_fragment      || \
-                    /* and operators that are     */ \
-                    /* referenced by 'roots' and  */ \
-                    /* 'fragment' only            */ \
-                    (p)->kind == la_doc_tbl       || \
-                    (p)->kind == la_twig          || \
-                    (p)->kind == la_merge_adjacent)
 
     /* BINDING: execute the statement at the end
        if the node is dirty, and bind it to a new SQL variable.

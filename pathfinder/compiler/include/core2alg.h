@@ -32,13 +32,16 @@
 #ifndef CORE2ALG_H
 #define CORE2ALG_H
 
+#include "compile.h"
+
 #include "array.h"
 
 #include "core.h"
 #include "pf_xq.h"
 
 /** Compile XQuery Core into Relational Algebra */
-struct PFla_op_t *PFcore2alg (PFcnode_t *, PFquery_t *PFquery);
+struct PFla_op_t *PFcore2alg (PFcnode_t *, PFquery_t *PFquery,
+                              enum PFoutput_format_t output_format);
 
 
 /* ............. environment entry specification .............. */

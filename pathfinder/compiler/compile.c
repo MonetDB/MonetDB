@@ -589,7 +589,8 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
      */
     tm = PFtimer_start ();
 
-    laroot = PFcore2alg (croot, &PFquery);
+    laroot = PFcore2alg (croot, &PFquery,
+                         status->output_format);
 
     tm = PFtimer_stop (tm);
     if (status->timing)
@@ -938,7 +939,8 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         strcpy (*epilogue, intern_epilogue);
     } else {
         /* compile into logical algebra */
-        laroot = PFcore2alg (croot, &PFquery);
+        laroot = PFcore2alg (croot, &PFquery,
+                             PFstate.output_format);
         /* optimize logical algebra */
         laroot = PFalgopt (laroot, false /* no timing output */, 
             NULL /* no guide tree */, PFstate.opt_alg);
