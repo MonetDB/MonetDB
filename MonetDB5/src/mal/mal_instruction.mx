@@ -371,8 +371,8 @@ upon destruction of the definition. They are part of the global namespace.
 @h
 	str modname;		/* module context */
 	str fcnname;		/* function name */
-	short argc, retc, maxarg;	/* total and result argument count */
-	short argv[];		/* at least a few entries */
+	int argc, retc, maxarg;	/* total and result argument count */
+	int argv[];		/* at least a few entries */
 } *InstrPtr, InstrRecord;
 
 @-
@@ -1019,7 +1019,7 @@ void
 clrInstruction(InstrPtr p)
 {
 	clrFunction(p);
-	memset((char *) p, 0, sizeof(InstrRecord) + p->maxarg * sizeof(short));
+	memset((char *) p, 0, sizeof(InstrRecord) + p->maxarg * sizeof(p->argv[0]));
 }
 
 void
@@ -1038,7 +1038,7 @@ oldmoveInstruction(InstrPtr new, InstrPtr p)
 {
 	int space;
 
-	space = sizeof(InstrRecord) + p->maxarg * sizeof(short);
+	space = sizeof(InstrRecord) + p->maxarg * sizeof(p->argv[0]);
 	memcpy((char *) new, (char *) p, space);
 	setFunctionId(new, getFunctionId(p));
 	setModuleId(new, getModuleId(p));
@@ -1947,7 +1947,7 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 	if (p->argc == p->maxarg) {
 		InstrPtr pn;
 		int pc = 0,pclimit;
-		int space = p->maxarg * sizeof(short) + sizeof(InstrRecord);
+		int space = p->maxarg * sizeof(p->argv[0]) + sizeof(InstrRecord);
 		pn = GDKmalloc(space + MAXARG * sizeof(p->maxarg));
 		memcpy((char *) pn, (char *) p, space);
 		pn->maxarg += MAXARG;
