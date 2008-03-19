@@ -145,7 +145,7 @@ PFarray_at (PFarray_t *a, unsigned int i)
           PFlog ("array not big enough"
                  " in %s, %s(), line %d"
                  " (required slots: %i; got: %i)",
-                 file, func, line, i, a->bound-1);
+                 file, func, line, i+1, a->bound);
 #endif
 
       if (i > 2 * a->bound)
