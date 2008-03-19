@@ -111,3 +111,4 @@ decl_sec_tab_in_func_body.SF-1907858
 coalesce_equal_coalesce.SF-1907905
 like_perl.SF-1907051
 sql_prepare_prob.SF-1909638
+BETWEEN_error.SF-1911991
