@@ -51,7 +51,10 @@ function user.main():void;              #  0 main:void {G}
     io.print(ar);                       # 15 _27:void := IOprint_val(ar:bat[:int,:int]) 
     br:bat[:oid,:str]  := bat.load("bbb");# 16 br:bat[:oid,:str] := BKCload(_22:str) {G}
     io.print(br);                       # 17 _29:void := IOprint_val(br:bat[:oid,:str]) 
-end main;                               # 18  
+#and an error 
+    er:bat[:int,:int]  := bbp.bind("bbb");# 19 er:bat[:int,:int] := CMDbbpbind(_22:str) {G}
+    io.print(er);                       # 20 _32:void := IOprint_val(er:bat[:int,:int]) 
+end main;                               # 21  
 #-----------------#
 # h	t	  # name
 # int	int	  # type
@@ -76,6 +79,7 @@ end main;                               # 18
 #-------------------------#
 [ 0@0,	  "hello"	  ]
 [ 1@0,	  "world"	  ]
+
 
 # 20:31:51 >  
 # 20:31:51 >  Done.

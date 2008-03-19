@@ -19,3 +19,8 @@ ar:bat[:int,:int]:= bat.load("aaa");
 io.print(ar);
 br:bat[:oid,:str]:= bat.load("bbb");
 io.print(br);
+
+
+#and an error
+er:bat[:int,:int]:= bbp.bind("bbb");
+io.print(er);
