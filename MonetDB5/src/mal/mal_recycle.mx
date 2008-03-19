@@ -156,8 +156,8 @@ int recycleTime = 0;
 int recycleVolume = 0;
 
 @-
-RETAIN_EXACT only looks at precisely matching instructions.
-RETAIN_COVER exploits potentional overlap in range selects
+REUSE_EXACT only looks at precisely matching instructions.
+REUSE_COVER exploits potentional overlap in range selects
 to reduce the amount of scanning.
 @c
 int reusePolicy = REUSE_NONE;	/* recycle reuse policy

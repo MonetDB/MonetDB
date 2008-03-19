@@ -1074,7 +1074,7 @@ during the final phase reshuffle the return values to the beginning (?)
 		}
 		/* re-arrange the parameters, results first*/
 		max= curInstr->maxarg;
-		newarg= (short*)GDKmalloc(max*sizeof(short));
+		newarg= (short*)GDKmalloc(max*sizeof(curInstr->argv[0]));
 		for(i1= retc; i1<curInstr->argc; i1++)
 			newarg[i2++]= curInstr->argv[i1];
 		curInstr->retc= curInstr->argc-retc;

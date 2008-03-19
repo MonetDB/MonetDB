@@ -955,7 +955,7 @@ newInstruction(MalBlkPtr mb, int kind)
 		mb->stmt[mb->stop] = NULL;
 	}
 	if (p == NULL) {
-		p = GDKmalloc(MAXARG * sizeof(short) + sizeof(InstrRecord));
+		p = GDKmalloc(MAXARG * sizeof(p->maxarg) + sizeof(InstrRecord));
 		p->maxarg = MAXARG;
 	}
 	p->typechk = TYPE_UNKNOWN;
@@ -1002,7 +1002,7 @@ InstrPtr
 copyInstruction(InstrPtr p)
 {
 	InstrPtr new;
-	new = (InstrPtr) GDKmalloc(sizeof(InstrRecord) + p->maxarg * sizeof(short));
+	new = (InstrPtr) GDKmalloc(sizeof(InstrRecord) + p->maxarg * sizeof(p->maxarg));
 	oldmoveInstruction(new, p);
 	return new;
 }
@@ -1948,7 +1948,7 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 		InstrPtr pn;
 		int pc = 0,pclimit;
 		int space = p->maxarg * sizeof(short) + sizeof(InstrRecord);
-		pn = GDKmalloc(space + MAXARG * sizeof(short));
+		pn = GDKmalloc(space + MAXARG * sizeof(p->maxarg));
 		memcpy((char *) pn, (char *) p, space);
 		pn->maxarg += MAXARG;
 		/* instructions are either created in isolation or
