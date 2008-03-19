@@ -1,0 +1,83 @@
+stdout of test 'saveload` in directory 'src/mal` itself:
+
+
+# 20:31:51 >  
+# 20:31:51 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=35708 --set xrpc_port=42614 --set monet_prompt= --trace  --dbname=mTests_src_mal  saveload.mal
+# 20:31:51 >  
+
+# MonetDB server v5.5.0, based on kernel v1.23.0
+# Serving database 'mTests_src_mal'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:35708/
+## save/load tests
+#
+#a:= bat.new(:int,:int);
+#bat.insert(a,0,123);
+#bat.insert(a,0,321);
+#bat.setName(a,"aaa");
+#io.print(a);
+#
+#b:= bat.new(:oid,:str);
+#bat.insert(b,0@0,"hello");
+#bat.insert(b,1@0,"world");
+#bat.setName(b,"bbb");
+#io.print(b);
+#
+#bat.save(a);
+#bat.save(b);
+#
+#ar:bat[:int,:int]:= bat.load("aaa");
+#io.print(ar);
+#br:bat[:oid,:str]:= bat.load("bbb");
+#io.print(br);
+#
+function user.main():void;              #  0 main:void {G}
+# save/load tests 
+    a := bat.new(:int,:int);            #  2 a:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    bat.insert(a,0,123);                #  3 _4:void := BKCinsert_bun(a:bat[:int,:int], _5:int, _6:int) 
+    bat.insert(a,0,321);                #  4 _7:void := BKCinsert_bun(a:bat[:int,:int], _5:int, _8:int) 
+    bat.setName(a,"aaa");               #  5 _9:void := BKCsetName(a:bat[:int,:int], _10:str) 
+    io.print(a);                        #  6 _11:void := IOprint_val(a:bat[:int,:int]) 
+    b := bat.new(:oid,:str);            #  7 b:bat[:oid,:str] := CMDBATnew(_13:oid, _14:str) {G}
+    bat.insert(b,0@0,"hello");          #  8 _15:void := BKCinsert_bun(b:bat[:oid,:str], _16:oid, _17:str) 
+    bat.insert(b,1@0,"world");          #  9 _18:void := BKCinsert_bun(b:bat[:oid,:str], _19:oid, _20:str) 
+    bat.setName(b,"bbb");               # 10 _21:void := BKCsetName(b:bat[:oid,:str], _22:str) 
+    io.print(b);                        # 11 _23:void := IOprint_val(b:bat[:oid,:str]) 
+    bat.save(a);                        # 12 _24:void := BKCsave2(a:bat[:int,:int]) 
+    bat.save(b);                        # 13 _25:void := BKCsave2(b:bat[:oid,:str]) 
+    ar:bat[:int,:int]  := bat.load("aaa");# 14 ar:bat[:int,:int] := BKCload(_10:str) {G}
+    io.print(ar);                       # 15 _27:void := IOprint_val(ar:bat[:int,:int]) 
+    br:bat[:oid,:str]  := bat.load("bbb");# 16 br:bat[:oid,:str] := BKCload(_22:str) {G}
+    io.print(br);                       # 17 _29:void := IOprint_val(br:bat[:oid,:str]) 
+end main;                               # 18  
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 0,	  123	  ]
+[ 0,	  321	  ]
+#-------------------------#
+# h	t		  # name
+# void	str		  # type
+#-------------------------#
+[ 0@0,	  "hello"	  ]
+[ 1@0,	  "world"	  ]
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 0,	  123	  ]
+[ 0,	  321	  ]
+#-------------------------#
+# h	t		  # name
+# void	str		  # type
+#-------------------------#
+[ 0@0,	  "hello"	  ]
+[ 1@0,	  "world"	  ]
+
+# 20:31:51 >  
+# 20:31:51 >  Done.
+# 20:31:51 >  
+
