@@ -59,9 +59,6 @@
 #define FREE(n) ((n)->prop->l_icols)
 /* initial value for lists that encode free variables */
 #define ALL (~att_NULL)
-/* store the number of incoming edges for each operator
-   in the refctr field */
-#define EDGE(n) ((n)->refctr)
 
 /* worker for PFprop_ori_name* */
 static PFalg_att_t
@@ -214,10 +211,10 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             }
     }
 
-    EDGE(n)++;
+    PFprop_refctr (n) = PFprop_refctr (n) - 1;
     /* nothing to do if we haven't collected
        all incoming name pair lists of that node */
-    if (EDGE(n) < PFprop_refctr (n)) {
+    if (PFprop_refctr (n) > 0) {
         /* return the current mappings to the parent operator */
         return np_list;
     }
@@ -713,8 +710,6 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
 static void
 reset_fun (PFla_op_t *n)
 {
-    EDGE(n) = 0;
-
     /* reset the original name information */
     if (n->prop->name_pairs)
         PFarray_last (n->prop->name_pairs) = 0;
