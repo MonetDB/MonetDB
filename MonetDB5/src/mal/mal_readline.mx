@@ -464,9 +464,9 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 			case '?':
 				if( line[1] && line[1]!='\n'){
 					showHelp( MCgetClient()->nspace,line+1, MCgetClient()->fdout);
-					line= NULL;
 				} else
 					showCommands();
+				line= NULL;
 				continue;
 			}
 		}
