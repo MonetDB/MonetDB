@@ -1368,10 +1368,25 @@ reduce (PFcnode_t * p, int goalnt)
         case 29:
             /* remove bogus steps starting from attribute nodes */
             assert (p->kind == c_locsteps);
-            if (L(p)->kind != c_parent &&
-                L(p)->kind != c_ancestor &&
-                L(p)->kind != c_ancestor_or_self &&
-                PFty_subtype (TY(R(p)), PFty_star (PFty_xs_anyAttribute ()))) {
+            if (/* the typing infers that the result
+                   does not provide any results */
+                PFty_subtype (TY(p), PFty_empty ()) ||
+                /* the axis provides no result for attribute inputs */
+                ((L(p)->kind == c_attribute ||
+                  L(p)->kind == c_child ||
+                  L(p)->kind == c_descendant ||
+                  L(p)->kind == c_following ||
+                  L(p)->kind == c_following_sibling ||
+                  L(p)->kind == c_preceding ||
+                  L(p)->kind == c_preceding_sibling) &&
+                 PFty_subtype (TY(R(p)),
+                               PFty_star (PFty_xs_anyAttribute ()))) ||
+                /* the kind test does not match the attribute input */
+                ((L(p)->kind == c_self ||
+                  L(p)->kind == c_descendant_or_self) &&
+                 PFty_subtype (TY(R(p)),
+                               PFty_star (PFty_xs_anyAttribute ())) &&
+                 !PFty_subtype (TY(R(p)), PFty_star(TY(L(p)))))) {
                 *p = *empty ();
                 TY(p) = PFty_empty ();
                 rewritten = true;

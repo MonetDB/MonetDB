@@ -798,14 +798,24 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* LocationStep:       attribute (SequenceType) */
         case 28:
-            /*
+            /* attribute::node() maps to attribute::attribute() */
+            if (PFty_subtype (PFty_xs_anyNode(), TY(L(p))))
+                TY(p) = PFty_xs_anyAttribute();
+
+            /* all other kind tests (elem|text|doc|pi|comment)
+               provide empty results */
+            else if (!PFty_subtype (TY(L(p)), PFty_xs_anyAttribute()))
+                TY(p) = PFty_empty ();
+            
+            /* the following cases handle only attribute kind tests */
+
+            /* 
              * For attribute steps that do not contain any wildcards,
              * we know that there can be at most one match for each
              * context node.
              */
-            assert (TY(L(p)).type == ty_attr);
-            if (! (PFQNAME_NS_WILDCARD (TY(L(p)).name)
-                   || PFQNAME_LOC_WILDCARD (TY(L(p)).name)))
+            else if (! (PFQNAME_NS_WILDCARD (TY(L(p)).name)
+                        || PFQNAME_LOC_WILDCARD (TY(L(p)).name)))
                 TY(p) = PFty_opt (TY(L(p)));
             else
                 TY(p) = PFty_star (TY(L(p)));
