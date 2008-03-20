@@ -1,0 +1,17 @@
+stderr of test 'step_parent10` in directory 'tests/XQuery` itself:
+
+
+# 11:18:11 >  
+# 11:18:11 >   Mserver "--config=/local_tmp/work/MonetDB4/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/local_tmp/work/pathfinder/Linux/lib/MonetDB4:/local_tmp/work/pathfinder/Linux/lib/MonetDB4/lib:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4/lib:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4/bin" --set "gdk_dbfarm=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/dbfarm" --set "sql_logdir=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/sql_logs" --set "xquery_logdir=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=37154 --set xrpc_port=48116 --set monet_prompt= --trace  "--dbname=mTests_tests_XQuery" --set sql_debug=16384 --set xquery_backend=algebra "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 11:18:11 >  
+
+
+# 11:18:12 >  
+# 11:18:12 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper08 --port=37154 -G step_parent10.xq
+# 11:18:12 >  
+
+
+# 11:18:12 >  
+# 11:18:12 >  Done.
+# 11:18:12 >  
+

@@ -33,7 +33,7 @@
 #define MIL_H
 
 /** maximum number of children of a MIL tree node */
-#define MIL_MAXCHILD 11
+#define MIL_MAXCHILD 12
 
 /** MIL oid's are unsigned integers */
 typedef unsigned int oid;
@@ -797,11 +797,11 @@ PFmil_t * PFmil_error (const PFmil_t *);
 
 /* ---------- general purpose staircase join ---------- */
 PFmil_t * PFmil_step (const PFmil_t *axis, const PFmil_t *test,
-                      const PFmil_t *iter, const PFmil_t *item,
-                      const PFmil_t *frag, const PFmil_t *ws,
-                      const PFmil_t *ord,  const PFmil_t *kind,
-                      const PFmil_t *ns,   const PFmil_t *loc,
-                      const PFmil_t *tgt);
+                      const PFmil_t *iter, const PFmil_t *frag,
+                      const PFmil_t *pre,  const PFmil_t *attr,
+                      const PFmil_t *ws,   const PFmil_t *ord,
+                      const PFmil_t *kind, const PFmil_t *ns,
+                      const PFmil_t *loc,  const PFmil_t *tgt);
 
 PFmil_t * PFmil_merge_adjacent (const PFmil_t *, const PFmil_t *,
                                 const PFmil_t *, const PFmil_t *);

@@ -379,8 +379,8 @@
 #define mpcre_replace(a,b,c,d) PFmil_mpcre_replace ((a),(b),(c),(d))
 
 /** general purpose staircase join */
-#define step(a,b,c,d,e,f,g,h,i,j,k) \
-    PFmil_step ((a), (b), (c), (d), (e), (f), (g), (h), (i), (j), (k))
+#define step(a,b,c,d,e,f,g,h,i,j,k,l) \
+    PFmil_step ((a), (b), (c), (d), (e), (f), (g), (h), (i), (j), (k), (l))
 
 #define merge_adjacent(a,b,c,d) PFmil_merge_adjacent ((a), (b), (c), (d))
 #define string_join(a,b) PFmil_string_join ((a), (b))

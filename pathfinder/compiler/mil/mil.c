@@ -1469,24 +1469,25 @@ PFmil_mvaljoin (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
 /* ---------- general purpose staircase join ---------- */
 PFmil_t *
 PFmil_step (const PFmil_t *axis, const PFmil_t *test,
-            const PFmil_t *iter, const PFmil_t *item,
-            const PFmil_t *frag, const PFmil_t *ws,
-            const PFmil_t *ord,  const PFmil_t *kind,
-            const PFmil_t *ns,   const PFmil_t *loc,
-            const PFmil_t *tgt)
+            const PFmil_t *iter, const PFmil_t *frag,
+            const PFmil_t *pre,  const PFmil_t *attr,
+            const PFmil_t *ws,   const PFmil_t *ord,
+            const PFmil_t *kind, const PFmil_t *ns,
+            const PFmil_t *loc,  const PFmil_t *tgt)
 {
     PFmil_t *ret = leaf (m_step);
     ret->child[ 0] = (PFmil_t *) axis;
     ret->child[ 1] = (PFmil_t *) test;
     ret->child[ 2] = (PFmil_t *) iter;
-    ret->child[ 3] = (PFmil_t *) item;
-    ret->child[ 4] = (PFmil_t *) frag;
-    ret->child[ 5] = (PFmil_t *) ws;
-    ret->child[ 6] = (PFmil_t *) ord;
-    ret->child[ 7] = (PFmil_t *) kind;
-    ret->child[ 8] = (PFmil_t *) ns;
-    ret->child[ 9] = (PFmil_t *) loc;
-    ret->child[10] = (PFmil_t *) tgt;
+    ret->child[ 3] = (PFmil_t *) frag;
+    ret->child[ 4] = (PFmil_t *) pre;
+    ret->child[ 5] = (PFmil_t *) attr;
+    ret->child[ 6] = (PFmil_t *) ws;
+    ret->child[ 7] = (PFmil_t *) ord;
+    ret->child[ 8] = (PFmil_t *) kind;
+    ret->child[ 9] = (PFmil_t *) ns;
+    ret->child[10] = (PFmil_t *) loc;
+    ret->child[11] = (PFmil_t *) tgt;
     return ret;
 }
 

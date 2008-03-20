@@ -1841,45 +1841,273 @@ CONST TEST_loc    := 3;
 CONST TEST_nsloc  := 4;
 CONST TEST_target := 5;
 
-PROC step (int axis, int test, bat[void,oid] iter, bat[void,oid] item, bat[void,oid] cont, bat[void,bat] ws, int order, chr kind, str ns, str loc, str tgt) : bat[void,bat]
+PROC step (int axis,
+           int test,
+           bat[void,oid] iter,
+           bat[void,oid] cont,
+           bat[void,oid] pre,
+           any           attr,
+           bat[void,bat] ws,
+           int order,
+           chr kind,
+           str ns,
+           str loc,
+           str tgt) : bat[void,bat]
 {
-	if (isnil(order)) order := 0;
+    var step_res,
+        attr_iter,
+        attr_cont,
+        attr_pre,
+        merge := false;
+                
+    if (isnil(order)) {
+        ERROR ("PROC step(): Unknown order '%d' !", order);
+    }
+    if ((test < TEST_none) or (test > TEST_target)) {
+        ERROR ("PROC step(): Unknown test '%d' !", test);
+    }
 
-	if ((axis < AXIS_ancestor) or (axis > AXIS_attribute)) {
-		ERROR ("PROC step(): Unknown axis '%d' !", axis);
-	} else if ((test < TEST_none) or (test > TEST_target)) {
-		ERROR ("PROC step(): Unknown test '%d' !", test);
-@= PROC_step
-	} else if (axis = AXIS_@1) {
-		       if (test = TEST_none  ) {
-			return loop_lifted_@1_step                  (iter, item, cont, ws, order);
-		} else if (test = TEST_kind  ) {
-			return loop_lifted_@1_step_with_kind_test   (iter, item, cont, ws, order, kind);
-		} else if (test = TEST_ns    ) {
-			return loop_lifted_@1_step_with_ns_test     (iter, item, cont, ws, order, ns);
-		} else if (test = TEST_loc   ) {
-			return loop_lifted_@1_step_with_loc_test    (iter, item, cont, ws, order, loc);
-		} else if (test = TEST_nsloc ) {
-			return loop_lifted_@1_step_with_nsloc_test  (iter, item, cont, ws, order, ns, loc);
-		} else if (test = TEST_target) {
-			return loop_lifted_@1_step_with_target_test (iter, item, cont, ws, order, tgt);
-		}
+    if (type(attr) = bat) {
+        # consistency check to ensure that attr is of type bat[void,oid]
+        if ((attr.count() != iter.count()) or 
+            (attr.htype() != void) or
+            ((attr.ttype() != void) and (attr.ttype() != oid)) or
+            (attr.seqbase() != iter.seqbase()))
+            ERROR("PROC step(): attr relation is not aligned.\n");
+
+        var attr_tuple := [isnil](attr);
+        var map := attr_tuple.ord_uselect(false).mirror();
+        var map_count := map.count();
+
+        if (map_count = iter.count()) { # only attr values
+            if (axis = AXIS_parent) {
+@= PROC_step_attr_parent
+                map := leftfetchjoin (map, pre).select(oid(nil),oid(nil))
+                                               .hmark(0@0);
+                attr_iter := leftfetchjoin (map, iter);
+                attr_cont := leftfetchjoin (map, cont);
+                attr_pre  := leftfetchjoin (map, pre);
 @mil
-	@:PROC_step(ancestor)@
-	@:PROC_step(ancestor_or_self)@
-	@:PROC_step(child)@
-	@:PROC_step(descendant)@
-	@:PROC_step(descendant_or_self)@
-	@:PROC_step(following)@
-	@:PROC_step(following_sibling)@
-	@:PROC_step(parent)@
-	@:PROC_step(preceding)@
-	@:PROC_step(preceding_sibling)@
-	} else if (axis = AXIS_self) {
-		ERROR ("PROC step(): AXIS_self not supported, yet!");
-	} else if (axis = AXIS_attribute) {
-		ERROR ("PROC step(): AXIS_attribute not supported, yet!");
-	}
+                @:PROC_step_attr_parent()@
+                return bat (void,bat,3).seqbase(0@0)
+                                       .append(attr_iter.chk_order()) # iter
+                                       .append(attr_cont.chk_order()) # cont
+                                       .append(attr_pre.chk_order() ) # pre
+                                       .access(BAT_READ);
+            }
+            else if ((axis = AXIS_ancestor) or
+                     (axis = AXIS_ancestor_or_self)) {
+                @:PROC_step_attr_parent()@
+                iter := attr_iter;
+                cont := attr_cont;
+                pre  := attr_pre;
+                # the parents (the new start nodes)
+                # also belong into the result
+                axis := AXIS_ancestor_or_self;
+            }
+            else {
+                attr_iter := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+                attr_cont := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+                attr_pre  := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+                return bat (void,bat,3).seqbase(0@0)
+                                       .append(attr_iter.chk_order()) # iter
+                                       .append(attr_cont.chk_order()) # cont
+                                       .append(attr_pre.chk_order() ) # pre
+                                       .access(BAT_READ);
+            }
+        }
+        else if (map_count != 0) { # mixed pre and attr values
+            if (axis = AXIS_parent) {
+                # we need to merge the step result
+                # and the attribute owners afterwards
+                merge := true;
+                @:PROC_step_attr_parent()@
+                @:PROC_step_pre@
+            }
+            else if (axis = AXIS_ancestor) {
+                # we need to merge the step result
+                # and the attribute owners afterwards
+                merge := true;
+                @:PROC_step_attr_parent()@
+                @:PROC_step_pre@
+@= PROC_step_attr_merge
+                iter.access(BAT_APPEND).append(attr_iter).access(BAT_READ);
+                cont.access(BAT_APPEND).append(attr_cont).access(BAT_READ);
+                pre.access(BAT_APPEND).append(attr_pre).access(BAT_READ);
+                map := cont.tsort().CTrefine(pre).CTrefine(iter).hmark(0@0);
+                iter := leftfetchjoin (map, iter);
+                cont := leftfetchjoin (map, cont);
+                pre  := leftfetchjoin (map, pre);
+                order := or (order, 1); # now ordered by item, iter
+@mil
+                @:PROC_step_attr_merge()@
+            }
+            else if (axis = AXIS_ancestor_or_self) {
+                @:PROC_step_attr_parent()@
+                @:PROC_step_pre@
+                @:PROC_step_attr_merge()@
+            }
+            else {
+                # ignore attr start nodes for non-upward axis */
+@= PROC_step_pre
+                map := attr_tuple.ord_uselect(true).hmark(0@0);
+                iter := leftfetchjoin (map, iter);
+                cont := leftfetchjoin (map, cont);
+                pre  := leftfetchjoin (map, pre);
+@mil
+            }
+        }
+        # else iter, cont, and pre are only represent pre values
+    }
+    
+    if ((axis < AXIS_ancestor) or (axis > AXIS_attribute)) {
+        ERROR ("PROC step(): Unknown axis '%d' !", axis);
+@= PROC_step
+    } else if (axis = AXIS_@1) {
+               if (test = TEST_none  ) {
+            step_res := loop_lifted_@1_step                  (iter, pre, cont, ws, order);
+        } else if (test = TEST_kind  ) {
+            step_res := loop_lifted_@1_step_with_kind_test   (iter, pre, cont, ws, order, kind);
+        } else if (test = TEST_ns    ) {
+            step_res := loop_lifted_@1_step_with_ns_test     (iter, pre, cont, ws, order, ns);
+        } else if (test = TEST_loc   ) {
+            step_res := loop_lifted_@1_step_with_loc_test    (iter, pre, cont, ws, order, loc);
+        } else if (test = TEST_nsloc ) {
+            step_res := loop_lifted_@1_step_with_nsloc_test  (iter, pre, cont, ws, order, ns, loc);
+        } else if (test = TEST_target) {
+            step_res := loop_lifted_@1_step_with_target_test (iter, pre, cont, ws, order, tgt);
+        }
+@= PROC_step_merge
+        # merge the result of the step with the attribute owners
+        if (merge) {
+            var map;
+            pre  := step_res.fetch(1);
+            iter := materialize (step_res.fetch(0), pre);
+            cont := materialize (step_res.fetch(2), pre);
+            
+            iter.access(BAT_APPEND).append(attr_iter).access(BAT_READ);
+            cont.access(BAT_APPEND).append(attr_cont).access(BAT_READ);
+            pre.access(BAT_APPEND).append(attr_pre).access(BAT_READ);
+            
+            # sort output
+            if (and(order,2) = 2) {
+                map := cont.tsort().CTrefine(pre).CTrefine(iter).hmark(0@0);
+            }
+            else if (and(order,2) = 0) {
+                map := iter.tsort().CTrefine(cont).CTrefine(pre).hmark(0@0);
+            }
+            else {
+                ERROR ("PROC step(): Unknown order '%d' !", order);
+            }
+
+            iter := leftfetchjoin (map, iter).chk_order();
+            cont := leftfetchjoin (map, cont).chk_order();
+            pre  := leftfetchjoin (map, pre).chk_order();
+            return bat (void,bat,3).seqbase(0@0)
+                                   .append(iter) # iter
+                                   .append(cont) # cont
+                                   .append(pre)  # pre
+                                   .access(BAT_READ);
+        }
+@= PROC_step_result
+        # change the column order to (iter, cont, pre)
+        return bat (void,bat,3).seqbase(0@0)
+                               .append(step_res.fetch(0)) # iter
+                               .append(step_res.fetch(2)) # cont
+                               .append(step_res.fetch(1)) # pre
+                               .access(BAT_READ);
+@mil
+    @:PROC_step(ancestor)@           @:PROC_step_merge()@ @:PROC_step_result()@
+    @:PROC_step(ancestor_or_self)@                        @:PROC_step_result()@
+    @:PROC_step(child)@                                   @:PROC_step_result()@
+    @:PROC_step(descendant)@                              @:PROC_step_result()@
+    @:PROC_step(descendant_or_self)@                      @:PROC_step_result()@
+    @:PROC_step(following)@                               @:PROC_step_result()@
+    @:PROC_step(following_sibling)@                       @:PROC_step_result()@
+    @:PROC_step(parent)@             @:PROC_step_merge()@ @:PROC_step_result()@
+    @:PROC_step(preceding)@                               @:PROC_step_result()@
+    @:PROC_step(preceding_sibling)@                       @:PROC_step_result()@
+    } else if (axis = AXIS_self) {
+        ERROR ("PROC step(): AXIS_self not supported, yet!");
+    } else if (axis = AXIS_attribute) {
+        var map, ref;
+        
+        # non-matching kind tests result in an empty result
+        if (or (and ((test = TEST_kind), not (isnil(kind))), # non-attribute nodes
+                test = TEST_target)) {                       # pi nodes
+            iter := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+            cont := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+            pre  := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+            attr := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+            return bat (void,bat,4).seqbase(0@0)
+                                   .append(iter.chk_order()) # iter
+                                   .append(cont.chk_order()) # cont
+                                   .append(pre.chk_order() ) # pre
+                                   .append(attr.chk_order()) # attr
+                                   .access(BAT_READ);
+        }
+
+        # lookup the attribute ids
+        map  := get_attr_own (ws, mposjoin(pre, cont, ws.fetch(PRE_NID)), cont);
+        attr := map.tmark(0@0);
+        ref  := map.hmark(0@0);
+        cont := leftfetchjoin (ref, cont);
+        
+        if (test = TEST_ns) {
+            map  := mposjoin (mposjoin (attr, cont, ws.fetch (ATTR_QN)),
+                              mposjoin (attr, cont, ws.fetch (ATTR_CONT)),
+                              ws.fetch (QN_URI));
+            map  := map.ord_uselect(ns).hmark(0@0);
+            cont := leftfetchjoin (map, cont);
+            attr := leftfetchjoin (map, attr);
+            ref  := leftfetchjoin (map, ref);
+        }
+        else if (test = TEST_loc) {
+            map  := mposjoin (mposjoin (attr, cont, ws.fetch (ATTR_QN)),
+                              mposjoin (attr, cont, ws.fetch (ATTR_CONT)),
+                              ws.fetch (QN_LOC));
+            map  := map.ord_uselect(loc).hmark(0@0);
+            cont := leftfetchjoin (map, cont);
+            attr := leftfetchjoin (map, attr);
+            ref  := leftfetchjoin (map, ref);
+        }
+        else if (test = TEST_nsloc) {
+            map  := mposjoin (mposjoin (attr, cont, ws.fetch (ATTR_QN)),
+                              mposjoin (attr, cont, ws.fetch (ATTR_CONT)),
+                              ws.fetch (QN_URI_LOC));
+            map  := map.ord_uselect(ns + NS_ACCEL_SEP + loc).hmark(0@0);
+            cont := leftfetchjoin (map, cont);
+            attr := leftfetchjoin (map, attr);
+            ref  := leftfetchjoin (map, ref);
+        }
+        
+        iter := leftfetchjoin (ref, iter);
+        pre  := leftfetchjoin (ref, pre);
+        
+        # sort output as we don't know anything about the attribute
+        # output order of mvaljoin (called by get_attr_own())
+        if (and(order,2) = 2) {
+            map := cont.tsort().CTrefine(pre).CTrefine(attr).CTrefine(iter).hmark(0@0);
+        }
+        else if (and(order,2) = 0) {
+            map := iter.tsort().CTrefine(cont).CTrefine(pre).CTrefine(attr).hmark(0@0);
+        }
+        else {
+            ERROR ("PROC step(): Unknown order '%d' !", order);
+        }
+
+        iter := leftfetchjoin (map, iter);
+        cont := leftfetchjoin (map, cont);
+        pre  := leftfetchjoin (map, pre);
+        attr := leftfetchjoin (map, attr);
+
+        return bat (void,bat,4).seqbase(0@0)
+                               .append(iter.chk_order()) # iter
+                               .append(cont.chk_order()) # cont
+                               .append(pre.chk_order() ) # pre
+                               .append(attr.chk_order()) # attr
+                               .access(BAT_READ);
+    }
 }
 
 @:loop_lifted_scj_step1(parent)@

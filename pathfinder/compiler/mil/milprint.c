@@ -161,8 +161,8 @@
                  | 'multi_merged_union (' expr ')'          <m_multi_mu>
                  | 'ds_link (' args ')'                     <m_mc_intersect>
 
-                 | 'step (' e ',' e ',' e ',' e ',' e ',' e ',
-                          ' e ',' e ',' e ',' e ',' e ')'   <m_step>
+                 | 'step (' e ',' e ',' e ',' e ',' e ',' e ', e
+                        ',' e ',' e ',' e ',' e ',' e ')'   <m_step>
 
    args          : args ',' args                            <m_arg>
                  | expression                               <otherwise>
@@ -1081,6 +1081,8 @@ print_expression (PFmil_t * n)
             print_expression (n->child[9]);
             milprintf (", ");
             print_expression (n->child[10]);
+            milprintf (", ");
+            print_expression (n->child[11]);
             milprintf (")");
             break;
 

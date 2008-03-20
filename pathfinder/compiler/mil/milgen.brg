@@ -1669,10 +1669,7 @@ llscj (const PFpa_op_t *p)
     char *qn_uri = PFqname_uri (p->sem.scjoin.spec.qname),
          *qn_loc = PFqname_loc (p->sem.scjoin.spec.qname);
 
-    PFmil_t *iter,    /* MIL equivalents of input iter expression */
-            *item,    /* MIL equivalents of input item expression */
-            *frag,    /* MIL equivalents of input frag expression */
-            *axis,    /* axis specifier */
+    PFmil_t *axis,    /* axis specifier */
             *code,    /* code indicating which additional tests
                          have to be applied (name or kind) */
             *order,   /* order specifier */
@@ -1684,8 +1681,9 @@ llscj (const PFpa_op_t *p)
     mvar_t  *step     = new_var (1),         /* the step result variable */
             *map      = new_var (1),         /* mapping helper variable */
             *ret_iter = new_var (p->refctr), /* the `iter' result variable */
+            *ret_frag = new_var (p->refctr), /* the `frag' result variable */
             *ret_pre  = new_var (p->refctr), /* the `pre' result variable */
-            *ret_frag = new_var (p->refctr); /* the `frag' result variable */
+            *ret_attr = NULL;                /* the `attr' result variable */
 
     PFalg_att_t pa_iter = p->sem.scjoin.iter;
     PFalg_att_t pa_item = p->sem.scjoin.item;
@@ -1700,30 +1698,9 @@ llscj (const PFpa_op_t *p)
     env_add (p->env, pa_iter, aat_nat, ret_iter);
     env_add (p->env, pa_item, aat_pre, ret_pre);
     env_add (p->env, pa_item, aat_frag, ret_frag);
-
-    /*
-     * Determine generic input arguments.
-     */
-    if (item_ty & aat_attr) {
-        /* We need to get rid of attribute context nodes */
-        execute (
-            assgn (var (map->name),
-                   hmark (
-                       uselect (
-                           misnil (VAR (L(p)->env, pa_item, aat_attr)),
-                           lit_bit (true)),
-                   lit_oid (0))));
-        iter = leftfetchjoin (var (map->name),
-                              VAR (L(p)->env, pa_iter, iter_ty));
-        item = leftfetchjoin (var (map->name),
-                              VAR (L(p)->env, pa_item, aat_pre));
-        frag = leftfetchjoin (var (map->name),
-                              VAR (L(p)->env, pa_item, aat_frag));
-    }
-    else {
-        iter = VAR (L(p)->env, pa_iter, iter_ty);
-        item = VAR (L(p)->env, pa_item, aat_pre);
-        frag = VAR (L(p)->env, pa_item, aat_frag);
+    if (p->sem.scjoin.spec.axis == alg_attr) {
+        ret_attr = new_var (p->refctr);
+        env_add (p->env, pa_item, aat_attr, ret_attr);
     }
 
     /* collect all information to check *//* fold( */
@@ -1815,17 +1792,22 @@ llscj (const PFpa_op_t *p)
     /*
      * step := step (...);
      * iter := step.fetch (0);
-     * pre  := step.fetch (1);
-     * frag := step.fetch (2);
+     * frag := step.fetch (1);
+     * pre  := step.fetch (2);
      */
     execute (
          assgn (var (step->name), 
                 step (axis, code,
-                      iter, item, frag,
+                      VAR (L(p)->env, pa_iter, iter_ty),
+                      VAR (L(p)->env, pa_item, aat_frag),
+                      VAR (L(p)->env, pa_item, aat_pre),
+                      item_ty & aat_attr
+                      ? VAR (L(p)->env, pa_item, aat_attr)
+                      : nil (),
                       var (PF_MIL_VAR_WS),
                       order, kind,
                       uri, loc, tgt)),
-         assgn (var (ret_pre->name), fetch (var (step->name), lit_int (1))),
+         assgn (var (ret_pre->name), fetch (var (step->name), lit_int (2))),
          /*
           * Should we actually do materialize at runtime? In most cases
           * we should be able to see at compile time if columns are guaranteed
@@ -1840,11 +1822,16 @@ llscj (const PFpa_op_t *p)
           * pre probably won't.
           */
          assgn (var (ret_frag->name),
-                materialize (fetch (var (step->name), lit_int (2)),
+                materialize (fetch (var (step->name), lit_int (1)),
                              var (ret_pre->name))),
          assgn (var (ret_iter->name),
                 materialize (fetch (var (step->name), lit_int (0)),
-                             fetch (var (step->name), lit_int (1)))));
+                             var (ret_pre->name))));
+
+    if (p->sem.scjoin.spec.axis == alg_attr)
+        execute (
+             assgn (var (ret_attr->name),
+                    fetch (var (step->name), lit_int (3))));
     
     unpin (step, 1);
     unpin (map, 1);
@@ -5718,250 +5705,9 @@ reduce (PFpa_op_t * p, int goalnt)
         }   break; /* fold) */
 
         /* Rel:      llscjoin (Rel) */
-        /* FIXME: This code needs to be cleaned up. */
         case 80: /* fold( */
-            if (p->sem.scjoin.spec.axis != alg_attr)
-                llscj (p);
-            else
-        {
-            char *uri = PFqname_uri (p->sem.scjoin.spec.qname),
-                 *loc = PFqname_loc (p->sem.scjoin.spec.qname);
-
-            /* MIL equivalents of input expression */
-            PFmil_t *iter;
-            PFmil_t *pre;
-            PFmil_t *frag;
-
-            mvar_t  *tmp, *tmp2; /* helper variables */
-            mvar_t  *ret_iter; /* var to which we assign the `iter' result */
-            mvar_t  *ret_pre;  /* var to which we assign the `pre' result */
-            mvar_t  *ret_attr; /* var to which we assign the `attr' result */
-            mvar_t  *ret_frag; /* var to which we assign the `kind' result */
-
-            PFalg_att_t pa_iter = p->sem.scjoin.iter;
-            PFalg_att_t pa_item = p->sem.scjoin.item;
-
-            PFalg_simple_type_t item_ty = type_of (L(p), pa_item),
-                                iter_ty = type_of (L(p), pa_iter);
-
-            assert (iter_ty == aat_nat);
-
-            assert (p); assert (L(p)); assert (L(p)->env);
-
-            tmp2 = new_var (1);
-            /*
-             * Determine generic input arguments.
-             */
-            if (item_ty & aat_attr) {
-                /* We need to get rid of attribute context nodes */
-                execute (
-                    assgn (var (tmp2->name),
-                           hmark (
-                               select_ (
-                                   misnil (VAR (L(p)->env, pa_item, aat_attr)),
-                                   lit_bit (true)),
-                           lit_oid (0))));
-                iter = leftfetchjoin (var (tmp2->name),
-                                      VAR (L(p)->env, pa_iter, iter_ty));
-                pre  = leftfetchjoin (var (tmp2->name),
-                                      VAR (L(p)->env, pa_item, aat_pre));
-                frag = leftfetchjoin (var (tmp2->name),
-                                      VAR (L(p)->env, pa_item, aat_frag));
-            }
-            else {
-                iter = VAR (L(p)->env, pa_iter, iter_ty);
-                pre  = VAR (L(p)->env, pa_item, aat_pre);
-                frag = VAR (L(p)->env, pa_item, aat_frag);
-            }
-
-            tmp      = new_var (1);
-            ret_iter = new_var (p->refctr);
-            ret_pre  = new_var (p->refctr);
-            ret_attr = new_var (p->refctr);
-            ret_frag = new_var (p->refctr);
-
-            /* first get all attribute nodes... */
-            execute (
-                assgn (var (tmp->name),
-                       mvaljoin (pre, frag, fetch (var (PF_MIL_VAR_WS),
-                                                   var (PF_MIL_VAR_ATTR_OWN)))),
-                assgn (var (ret_attr->name),
-                       reverse (mark (reverse (var (tmp->name)), lit_oid (0)))),
-                assgn (var (ret_pre->name),
-                       leftjoin (reverse (mark (var (tmp->name), lit_oid (0))),
-                                 pre)),
-                assgn (var (ret_frag->name),
-                       leftjoin (reverse (mark (var (tmp->name), lit_oid (0))),
-                                 frag)),
-                assgn (var (ret_iter->name),
-                       leftjoin (reverse (mark (var (tmp->name), lit_oid (0))),
-                                 iter)));
-
-            unpin (tmp2, 1);
-
-            assert (p->sem.scjoin.spec.kind == node_kind_attr);
-
-            /* Is it a test on attribute kind and local name only? */
-            if (loc && !uri)
-                execute (
-                    assgn (var (tmp->name),
-                           mposjoin (
-                               mposjoin (
-                                   var (ret_attr->name),
-                                   var (ret_frag->name),
-                                   fetch (var (PF_MIL_VAR_WS),
-                                          var (PF_MIL_VAR_ATTR_QN))),
-                               mposjoin (
-                                   var (ret_attr->name),
-                                   var (ret_frag->name),
-                                   fetch (var (PF_MIL_VAR_WS),
-                                          var (PF_MIL_VAR_ATTR_CONT))),
-                           fetch (var (PF_MIL_VAR_WS),
-                                  var (PF_MIL_VAR_QN_LOC)))),
-                    assgn (var (tmp->name),
-                           uselect (var (tmp->name),
-                                    lit_str (loc))),
-                    assgn (var (tmp->name),
-                           reverse (mark (var (tmp->name), lit_oid (0)))),
-                    assgn (var (ret_attr->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_attr->name))),
-                    assgn (var (ret_pre->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_pre->name))),
-                    assgn (var (ret_frag->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_frag->name))),
-                    assgn (var (ret_iter->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_iter->name))));
-            /* Or maybe a test on attribute kind and namespace only? */
-            else if (!loc && uri)
-                execute (
-                    assgn (var (tmp->name),
-                           mposjoin (
-                               mposjoin (var (ret_attr->name),
-                                         var (ret_frag->name),
-                                         fetch (var (PF_MIL_VAR_WS),
-                                                var (PF_MIL_VAR_ATTR_QN))),
-                               mposjoin (
-                                   var (ret_attr->name),
-                                   var (ret_frag->name),
-                                   fetch (var (PF_MIL_VAR_WS),
-                                          var (PF_MIL_VAR_ATTR_CONT))),
-                               fetch (var (PF_MIL_VAR_WS),
-                                      var (PF_MIL_VAR_QN_URI)))),
-                    assgn (var (tmp->name),
-                           uselect (var (tmp->name),
-                                    lit_str (uri))),
-                    assgn (var (tmp->name),
-                           reverse (mark (var (tmp->name), lit_oid (0)))),
-                    assgn (var (ret_attr->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_attr->name))),
-                    assgn (var (ret_frag->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_frag->name))),
-                    assgn (var (ret_iter->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_iter->name))));
-            /* A test on attribute kind and full QName? */
-            else if (loc && uri)
-                execute (
-                    assgn (var (tmp->name),
-                           mposjoin (
-                              mposjoin (var (ret_attr->name),
-                                        var (ret_frag->name),
-                                        fetch (var (PF_MIL_VAR_WS),
-                                               var (PF_MIL_VAR_ATTR_QN))),
-                              mposjoin (var (ret_attr->name),
-                                        var (ret_frag->name),
-                                        fetch (var (PF_MIL_VAR_WS),
-                                               var (PF_MIL_VAR_ATTR_CONT))),
-                              fetch (var (PF_MIL_VAR_WS),
-                                     var (PF_MIL_VAR_QN_LOC)))),
-                    assgn (var (tmp->name),
-                           uselect (var (tmp->name),
-                                    lit_str (loc))),
-                    assgn (var (tmp->name),
-                           reverse (mark (var (tmp->name), lit_oid (0)))),
-                    assgn (var (ret_attr->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_attr->name))),
-                    assgn (var (ret_pre->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_pre->name))),
-                    assgn (var (ret_frag->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_frag->name))),
-                    assgn (var (ret_iter->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_iter->name))),
-                    assgn (var (tmp->name),
-                           mposjoin (
-                               mposjoin (var (ret_attr->name),
-                                         var (ret_frag->name),
-                                         fetch (var (PF_MIL_VAR_WS),
-                                                var (PF_MIL_VAR_ATTR_QN))),
-                               mposjoin (
-                                   var (ret_attr->name),
-                                   var (ret_frag->name),
-                                   fetch (var (PF_MIL_VAR_WS),
-                                          var (PF_MIL_VAR_ATTR_CONT))),
-                               fetch (var (PF_MIL_VAR_WS),
-                                      var (PF_MIL_VAR_QN_URI)))),
-                    assgn (var (tmp->name),
-                           uselect (var (tmp->name),
-                                    lit_str (uri))),
-                    assgn (var (tmp->name),
-                           reverse (mark (var (tmp->name), lit_oid (0)))),
-                    assgn (var (ret_attr->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_attr->name))),
-                    assgn (var (ret_pre->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_pre->name))),
-                    assgn (var (ret_frag->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_frag->name))),
-                    assgn (var (ret_iter->name),
-                           leftjoin (var (tmp->name),
-                                     var (ret_iter->name))));
-
-            /* because leftjoin does not know that we have
-               exactly one match for each tuple in v,
-               we need to make the heads void ourselves */
-            execute (
-                assgn (var (ret_attr->name),
-                       reverse (mark (reverse (var (ret_attr->name)),
-                                      lit_oid (0)))),
-                assgn (var (ret_pre->name),
-                       reverse (mark (reverse (var (ret_pre->name)),
-                                      lit_oid (0)))),
-                assgn (var (ret_frag->name),
-                       reverse (mark (reverse (var (ret_frag->name)),
-                                      lit_oid (0)))),
-                assgn (var (ret_iter->name),
-                       reverse (mark (reverse (var (ret_iter->name)),
-                                      lit_oid (0)))));
-
-            /* The implementation of the attribute path step has to be
-               checked in respect to the input and output orderings.
-               As long as the check has not be done we choose the safe
-               variant of using chk_order instead of assert_order. */
-            if (PFord_implies (p->sem.scjoin.out, sortby (p->sem.scjoin.iter)))
-                execute (
-                    assgn (var (ret_iter->name),
-                           chk_order (var (ret_iter->name))));
-
-            env_add (p->env, p->sem.scjoin.iter, aat_nat, ret_iter);
-
-            env_add (p->env, p->sem.scjoin.item, aat_pre, ret_pre);
-            env_add (p->env, p->sem.scjoin.item, aat_attr, ret_attr);
-            env_add (p->env, p->sem.scjoin.item, aat_frag, ret_frag);
-
-            unpin (tmp, 1);
-        }   break; /* fold) */
+            llscj (p);
+            break; /* fold) */
 
         /* Rel:      doc_tbl (Rel) */
         case 100: /* fold( */
@@ -7576,12 +7322,12 @@ reduce (PFpa_op_t * p, int goalnt)
                    unq_iter := p_iter.mirror();
                    scj_res := step (AXIS_descendant_or_self,
                                     TEST_none,
-                                    p_iter, p_item, p_cont, ws, 0,
+                                    p_iter, p_cont, p_item, nil, ws, 0,
                                     chr(nil), str(nil), str(nil), str(nil));
                    iter := scj_res.fetch(0);
-                   item := scj_res.fetch(1);
+                   item := scj_res.fetch(2);
                    # cont is probably a fake project
-                   cont := scj_res.fetch(2);
+                   cont := scj_res.fetch(1);
                    # avoid iter being a fake project
                    iter := materialize(iter, item); */
                 execute (
@@ -7593,8 +7339,9 @@ reduce (PFpa_op_t * p, int goalnt)
                         step (var (PF_MIL_VAR_AXIS_DESC_S),
                               var (PF_MIL_VAR_CODE_NONE),
                               var (unq_iter->name),
-                              var (p_item->name),
                               var (p_cont->name),
+                              var (p_item->name),
+                              nil (),
                               var (PF_MIL_VAR_WS),
                               lit_int (0),
                               cast (type (mty_chr), nil ()),
@@ -7606,10 +7353,10 @@ reduce (PFpa_op_t * p, int goalnt)
                         fetch(var (scj_res->name), lit_int (0))),
                     assgn (
                         var (item->name),
-                        fetch(var (scj_res->name), lit_int (1))),
+                        fetch(var (scj_res->name), lit_int (2))),
                     assgn (
                         var (cont->name),
-                        fetch(var (scj_res->name), lit_int (2))),
+                        fetch(var (scj_res->name), lit_int (1))),
                     assgn (
                         var (iter->name),
                         materialize (
