@@ -272,10 +272,12 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port, bit *ssl) {
 		/* emit a warning if we are in maintenance mode */
 		rethrow("sabaoth.getMyStatus", tmp,
 				SABAOTHgetMyStatus(&stats));
-		if (stats->locked == 1)
-			fprintf(stderr, "#warning: database is running in "
-					"maintenance mode\n");
-		SABAOTHfreeStatus(&stats);
+		if (stats) {
+			if (stats->locked == 1)
+				fprintf(stderr, "#warning: database is running in "
+						"maintenance mode\n");
+			SABAOTHfreeStatus(&stats);
+		}
 		return(MAL_SUCCEED);
 	}
 	throw(IO, "sabaoth.marchConnection",
