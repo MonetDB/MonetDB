@@ -2563,7 +2563,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             unsigned int   i;
             int            strategy = (PFoutput_format == PFoutput_format_sql)
                                       ? SQL
-                                      : IFP_OR_DELTA;
+                                      : STRATEGY;
             /* recursion strategy depending on the output format */
             rec_strategy_t *recursion_strategy = (strategy == SQL)
                                                 ? recursion_sql
@@ -2571,7 +2571,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
             bool           x_used, loop_used;
             PFla_env_t     e;
-            PFarray_t     *old_env;
+            PFarray_t     *old_env = NULL;
             PFalg_schema_t schema, res_schema;
             PFla_op_t     *base_x, *base_res;
             PFla_op_t     *seed, *res_seed;
