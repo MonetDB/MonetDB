@@ -1449,6 +1449,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 		} break;
 		case st_import:{
+			char *sname = s->op1.stval->op1.tval->s->base.name;
 			char *tname = s->op1.stval->op1.tval->base.name;
 			node *n = s->op2.lval->h;
 			char *sep = n->data;
@@ -1483,6 +1484,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt1(mb, sqlRef, "importTable");
 				q = pushArgument(mb, q, bs);
+				q = pushStr(mb, q, sname);
 				q = pushStr(mb, q, tname);
 				q = pushStr(mb, q, sep);
 				q = pushStr(mb, q, rsep);
@@ -1504,6 +1506,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt1(mb, sqlRef, "importTable");
 				q = pushArgument(mb, q, io_stdin);
+				q = pushStr(mb, q, sname);
 				q = pushStr(mb, q, tname);
 				q = pushStr(mb, q, sep);
 				q = pushStr(mb, q, rsep);

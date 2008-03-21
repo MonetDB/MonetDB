@@ -1188,6 +1188,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			dump_2(sql, s, "find", nr);
 			break;
 		case st_import:{
+			char *sname = s->op1.stval->op1.tval->s->base.name;
 			char *tname = s->op1.stval->op1.tval->base.name;
 			node *n = s->op2.lval->h;
 			char *sep = n->data;
@@ -1207,14 +1208,14 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				assert(len <= buflen);
 				len += snprintf(buf + len, buflen - len, "var f%d := bstream_create(f%ds, 1024*1024);\n", file, file);
 				assert(len <= buflen);
-				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, f%d, \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", %d, %d);\n", -s->nr, file, tname, sep, rsep, ssep, ns, nr_rec, offset);
+				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, f%d, \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", %d, %d);\n", -s->nr, file, sname, tname, sep, rsep, ssep, ns, nr_rec, offset);
 				assert(len <= buflen);
 				len += snprintf(buf + len, buflen - len, "bstream_destroy(f%d);\n", file);
 				assert(len <= buflen);
 				len += snprintf(buf + len, buflen - len, "stream_close(f%ds);\n", file);
 				assert(len <= buflen);
 			} else {
-				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, Input, \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", %d, %d);\n", -s->nr, tname, sep, rsep, ssep, ns, nr_rec, offset);
+				len += snprintf(buf + len, buflen - len, "var s%d := mvc_import_table( myc, Input, \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", %d, %d);\n", -s->nr, sname, tname, sep, rsep, ssep, ns, nr_rec, offset);
 				assert(len <= buflen);
 			}
 			dump(sql, buf, len, -s->nr);

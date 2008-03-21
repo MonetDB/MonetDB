@@ -85,3 +85,4 @@ select_not_equal
 case_substring
 zero_or_one_bug
 ifthenelse_bug
+copy_into_with_schema

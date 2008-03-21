@@ -150,7 +150,7 @@ stream.
 	.COMMAND mvc_export_value(mvc m, Stream s, int qtype, str tname, str name, str typename, int digits, int scale, int eclass, any val, str w) =
 		mvc_export_value_wrap; "export a single value onto the stream s"
 
-	.COMMAND mvc_import_table( mvc c, Bstream s, str tname, str sep, str rsep, str ssep, str ns, int nr, int offset) : BAT[str,BAT] = mvc_import_table_wrap; 
+	.COMMAND mvc_import_table( mvc c, Bstream s, str sname, str tname, str sep, str rsep, str ssep, str ns, int nr, int offset) : BAT[str,BAT] = mvc_import_table_wrap; 
 		"import a table from stream s with the given tuple and record seperators (sep/rsep)"
 
 @= mel_round
@@ -806,9 +806,9 @@ mvc_result_value_wrap(mvc *M, str tn, str name, str type, int *digits, int *scal
 }
 
 int
-mvc_import_table_wrap(BAT **res, mvc *c, Bstream *s, str tname, str sep, str rsep, str ssep, str ns, int *sz, int *offset)
+mvc_import_table_wrap(BAT **res, mvc *c, Bstream *s, str sname, str tname, str sep, str rsep, str ssep, str ns, int *sz, int *offset)
 {
-	*res = mvc_import_table(*(mvc **) c, *(bstream **) s, tname, sep, rsep, ssep, ns, *sz, *offset);
+	*res = mvc_import_table(*(mvc **) c, *(bstream **) s, sname, tname, sep, rsep, ssep, ns, *sz, *offset);
 	if (*res == NULL) {
 		GDKerror("importTable: failed to import table");
 		return GDK_FAIL;

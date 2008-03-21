@@ -202,7 +202,7 @@ pattern exportValue(qtype:int, tname:str, name:str, typename:str, digits:int, sc
 address mvc_export_value_wrap 
 comment "export a single value onto the stream s";
 
-command importTable( s:bstream, tname:str, 
+command importTable( s:bstream, sname:str, tname:str, 
 	sep:str, rsep:str, ssep:str, ns:str, nr:int, offset:int) :bat[:str,:bat] 
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
@@ -731,7 +731,7 @@ sql5_export str mvc_affected_rows_wrap(int *r, lng *nr, str *w);
 sql5_export str mvc_export_result_wrap(int *ret, stream **s, int *res_id, str *w);
 sql5_export str mvc_export_operation_wrap(int *ret, str *w);
 sql5_export str mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_import_table_wrap(int *res, bstream **s, str *tname, unsigned char* *sep, unsigned char* *rsep, unsigned char* *ssep, unsigned char* *ns, int *sz, int *offset);
+sql5_export str mvc_import_table_wrap(int *res, bstream **s, str *sname, str *tname, unsigned char* *sep, unsigned char* *rsep, unsigned char* *ssep, unsigned char* *ns, int *sz, int *offset);
 sql5_export str bathash_wrap(int *res, int *bid );
 sql5_export str hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 sql5_export str setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1774,7 +1774,7 @@ mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-mvc_import_table_wrap(int *res, bstream **s, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char * *N, int *sz, int *offset)
+mvc_import_table_wrap(int *res, bstream **s, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char * *N, int *sz, int *offset)
 {
 	BAT *b;
 	mvc *m = NULL;
@@ -1792,7 +1792,7 @@ mvc_import_table_wrap(int *res, bstream **s, str *tname, unsigned char* *T, unsi
 	GDKstrFromStr(ssep=GDKmalloc(len+1), *S, len); len = 0;
 	len = strlen((char*)(*N));
 	GDKstrFromStr(ns=GDKmalloc(len+1), *N, len); len = 0;
-	b = mvc_import_table(m, *s, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset);
+	b = mvc_import_table(m, *s, *sname, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset);
 	GDKfree(tsep);
 	GDKfree(rsep);
 	GDKfree(ssep);
