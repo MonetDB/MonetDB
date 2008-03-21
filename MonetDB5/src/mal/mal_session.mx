@@ -299,22 +299,20 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 				GDKfree(command);
 				return;
 			}
-			if (stats) {	
-				if (stats->locked == 1) {
-					if (uid == 0) {
-						stream_printf(fout, "#server is running in "
-								"maintenance mode\n");
-					} else {
-						stream_printf(fout, "!server is running in "
-								"maintenance mode, please try again later\n");
-						stream_flush(fout);
-						SABAOTHfreeStatus(&stats);
-						GDKfree(command);
-						return;
-					}
+			if (stats->locked == 1) {
+				if (uid == 0) {
+					stream_printf(fout, "#server is running in "
+							"maintenance mode\n");
+				} else {
+					stream_printf(fout, "!server is running in "
+							"maintenance mode, please try again later\n");
+					stream_flush(fout);
+					SABAOTHfreeStatus(&stats);
+					GDKfree(command);
+					return;
 				}
-				SABAOTHfreeStatus(&stats);
 			}
+			SABAOTHfreeStatus(&stats);
 		}
 
 		/* find and reactivate client */

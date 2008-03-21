@@ -272,12 +272,10 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port, bit *ssl) {
 		/* emit a warning if we are in maintenance mode */
 		rethrow("sabaoth.getMyStatus", tmp,
 				SABAOTHgetMyStatus(&stats));
-		if (stats) {
-			if (stats->locked == 1)
-				fprintf(stderr, "#warning: database is running in "
-						"maintenance mode\n");
-			SABAOTHfreeStatus(&stats);
-		}
+		if (stats->locked == 1)
+			fprintf(stderr, "#warning: database is running in "
+					"maintenance mode\n");
+		SABAOTHfreeStatus(&stats);
 		return(MAL_SUCCEED);
 	}
 	throw(IO, "sabaoth.marchConnection",
@@ -431,8 +429,20 @@ typedef struct Ssabdb {
 
 mal_export str SABAOTHgetMyStatus(sabdb** ret);
 @c
+/**
+ * Returns the status as NULL terminated sabdb struct list for the
+ * current database.  Since the current database should always exist,
+ * this function never returns NULL.
+ */
 str SABAOTHgetMyStatus(sabdb** ret) {
-	return(SABAOTHgetStatus(ret, _sabaoth_internal_dbname));
+	str err;
+	if (_sabaoth_internal_dbname == NULL)
+		throw(MAL, "sabaoth.assert", "Cannot use this function when no database is active");
+	str err = SABAOTHgetStatus(ret, _sabaoth_internal_dbname);
+	if (err != NULL)
+		return(err);
+	if (*ret == NULL)
+		throw(MAL, "sabaoth.assert", "SABAOTHgetMyStatus couldn't find a database for %s!", _sabaoth_internal_dbname);
 }
 
 @h
@@ -446,6 +456,12 @@ mal_export str SABAOTHgetStatus(sabdb** ret, str dbname);
 #define MAINTENANCEFILE ".maintenance"
 @c
 /**
+ * Returns a list of populated sabdb structs.  If dbname == NULL, the
+ * list contains sabdb structs for all found databases in the dbfarm.
+ * Otherwise, at most one sabdb struct is returned for the database from
+ * the dbfarm that matches dbname.
+ * If no database could be found, an empty list is returned.  Each list
+ * is terminated by a NULL entry.
  */
 str SABAOTHgetStatus(sabdb** ret, str dbname) {
 	DIR *d;
