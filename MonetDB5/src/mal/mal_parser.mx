@@ -723,7 +723,7 @@ parseTypeId(Client cntxt, int defaultType)
 	return defaultType;
 }
 
-INLINE int typeElm(Client cntxt, int def)
+static INLINE int typeElm(Client cntxt, int def)
 {
 	if (currChar(cntxt) != ':')
 		return def;	/* no type qualifier */
