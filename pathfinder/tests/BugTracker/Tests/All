@@ -141,3 +141,4 @@ for_variable.SF-1887055
 Alignment_error.SF-1886994
 ALGsegfault.SF-1894964a
 ALGsegfault.SF-1894964b
+NOT_WIN32?update-stress.SF-1896755

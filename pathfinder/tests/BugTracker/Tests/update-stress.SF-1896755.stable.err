@@ -1,0 +1,17 @@
+stderr of test 'update-stress.SF-1896755` in directory 'tests/BugTracker` itself:
+
+
+# 17:30:46 >  
+# 17:30:46 >   Mserver "--config=/ufs/sjoerd/Monet-virgin-stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/runtime/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/runtime:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4/lib:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=31593 --set xrpc_port=42271 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 17:30:46 >  
+
+
+# 17:30:46 >  
+# 17:30:46 >  ./update-stress.SF-1896755.XQUERY.sh update-stress.SF-1896755 
+# 17:30:46 >  
+
+
+# 17:31:02 >  
+# 17:31:02 >  Done.
+# 17:31:02 >  
+

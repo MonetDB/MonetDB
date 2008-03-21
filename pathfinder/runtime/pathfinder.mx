@@ -1484,6 +1484,8 @@ PROC ws_destroy(BAT[void,bat] ws) : void
         }
     }
     ws_free(ws_id(ws)); # deregister working set from meta tables
+    if (ws_log_active)
+        ws_log(ws, "===================== END TRANSACTION");
 }
 
 PROC __ws_opencoll(BAT[void,BAT] ws,
@@ -1721,6 +1723,11 @@ PROC _ws_opencoll(lng wsid,
     var runtime := _runtime_get(colname);
 
     if (and(wsid, WSID_UPDATE) != 0LL) {
+        # all queries using colname constitute new dependencies
+        var dep := _ws_pinnedcoll(wsid, colname);
+        ws_overlaps_ws.insert(dep);           # A overlaps B
+        ws_overlaps_ws.insert(reverse(dep));  # B overlaps A (overlapping is reflexive)
+
         # clean up the query change lists (pages, attributes) by removing no longer overlapping queries
         if (count(runtime) > RT_ATTR_WS) {
             var page_ws := runtime.fetch(RT_PAGE_WS);
@@ -1733,11 +1740,6 @@ PROC _ws_opencoll(lng wsid,
                 attr_ws.deleteBuns(tdiff(attr_ws, all_ws));
             }
         }
-
-        # all other queries using colname now constitute new dependencies
-        var dep := _ws_pinnedcoll(wsid, colname);
-        ws_overlaps_ws.insert(dep);           # A overlaps B
-        ws_overlaps_ws.insert(reverse(dep));  # B overlaps A (overlapping is reflexive)
     }
 
     # index memory control, done when a persistent collection is opened for the first time  
