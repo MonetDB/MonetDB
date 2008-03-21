@@ -113,6 +113,8 @@ recycle_export str RECYCLEgetReuse(int *p);
 recycle_export str RECYCLEgetCache(int *p);
 recycle_export str RECYCLEshutdownWrap(int *ret);
 recycle_export str RECYCLEmonitor(int *d, int *p);
+recycle_export str RECYCLEprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+recycle_export str RECYCLEepilogue(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif
 @-
