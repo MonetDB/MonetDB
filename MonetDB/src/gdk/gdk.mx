@@ -857,7 +857,7 @@ typedef struct {
 	unsigned int
 	 copiedtodisk:1,	/* once written */
 	 dirty:2,		/* dirty wrt disk? */
-	 dirtyflushed:1,	/* was dirty before commt started? */
+	 dirtyflushed:1,	/* was dirty before commit started? */
 	 descdirty:1,		/* bat descriptor dirty marker */
 	 lview:1,		/* bat is a *logical* view on parentid */
 	 unused:26;		/* value=0 for now */
@@ -950,10 +950,9 @@ typedef int (*GDKfcn) ();
 #define batPersistence	P->persistence
 #define batCopiedtodisk	P->copiedtodisk
 #define batSet		P->set
-#define batDirtyflushed	P->dirtyflushed
 #define batDirty	P->dirty
 #define batConvert	P->convert
-#define batDirtyflushed P->dirtyflushed
+#define batDirtyflushed	P->dirtyflushed
 #define batDirtydesc	P->descdirty
 #define batFirst	U->first
 #define batInserted	U->inserted
