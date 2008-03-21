@@ -112,3 +112,5 @@ coalesce_equal_coalesce.SF-1907905
 like_perl.SF-1907051
 sql_prepare_prob.SF-1909638
 BETWEEN_error.SF-1911991
+count_crash.SF-1918780
+table_function_column_crash.SF-1913572

@@ -229,6 +229,9 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 		}
 		if (!as) 
 			return NULL;	
+
+		if (as->nrcols <= 0 && left) 
+			as = stmt_const(bin_first_column(left), as);
 		/* inconsistent sql requires NULL != NULL and NULL <> NULL, ie unknown
 		 * but also NULL means no values, which means 'ignore'
 		 *
