@@ -1322,10 +1322,16 @@ BBPshare(bat parent)
 }
 
 static INLINE int
-decref(bat i, int logical, int lock)
+decref(bat i, int logical, int releaseShare)
 {
 	int refs = 0, swap = 0, swap_unloading = 0;
 	BAT *b;
+
+	gdk_set_lock(GDKswapLock(i), "BBPdecref");
+	if (releaseShare && --BBP_cache(i)->batSharecnt > 0) {
+		gdk_unset_lock(GDKswapLock(i), "BBPdecref");
+		return refs;
+	}
 
 	/* decrement references by one */
 	if (logical) {
@@ -1365,12 +1371,11 @@ decref(bat i, int logical, int lock)
 	}
 
 	/* unlock before re-locking in unload; as saving a dirty persistent bat may take a long time */
-	if (lock)
-		gdk_unset_lock(GDKswapLock(i), "BBPdecref");
+	gdk_unset_lock(GDKswapLock(i), "BBPdecref");
 
 	if (swap_unloading) {
 		BBPspin(i, "BBPdecref", BBPUNLOADING);	/* wait for unload to complete */
-		decref(i, logical, lock);	/* and just try again */
+		decref(i, logical, FALSE);	/* and just try again */
 	} else if (swap) {
 		int destroy = BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0;
 
@@ -1388,16 +1393,12 @@ decref(bat i, int logical, int lock)
 int
 BBPdecref(bat i, int logical)
 {
-	int lock = locked_by ? BBP_getpid() != locked_by : 1;
-
 	if (BBPcheck(i, "BBPdecref") == 0) {
 		return -1;
 	}
 	if (i < 0)
 		i = -i;
-	if (lock)
-		gdk_set_lock(GDKswapLock(i), "BBPdecref");
-	return decref(i, logical, lock);
+	return decref(i, logical, FALSE);
 }
 
 @-
@@ -1495,16 +1496,9 @@ BBPreleaseref(bat i)
 static INLINE void
 unshare(bat parent)
 {
-	int lock = locked_by ? BBP_getpid() != locked_by : 1;
-
 	if (parent < 0)
 		parent = -parent;
-	if (lock)
-		gdk_set_lock(GDKswapLock(parent), "BBPunshare");
-	if (--BBP_cache(parent)->batSharecnt == 0) 
-		(void) decref(parent, FALSE, 0);
-	if (lock) 
-		gdk_unset_lock(GDKswapLock(parent), "BBPunshare");
+	(void) decref(parent, FALSE, TRUE);
 }
 
 void
