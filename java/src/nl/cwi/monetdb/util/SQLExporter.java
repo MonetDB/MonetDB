@@ -57,7 +57,7 @@ public class SQLExporter extends Exporter {
 	{
 		if (useSchema) changeSchema(schema);
 
-		// hande views directly
+		// handle views directly
 		if (type.indexOf("VIEW") != -1) {
 			String[] types = new String[1];
 			types[0] = type;
