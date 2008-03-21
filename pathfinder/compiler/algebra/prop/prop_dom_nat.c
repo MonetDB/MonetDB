@@ -82,9 +82,9 @@ common_super_dom (const PFprop_t *prop, dom_t dom1, dom_t dom2)
     /* collect all the super domains for each input */
 
     /* start with the input domains as seed */
-    domains1 = PFarray (sizeof (dom_t));
+    domains1 = PFarray (sizeof (dom_t), 10);
     *(dom_t *) PFarray_add (domains1) = dom1;
-    domains2 = PFarray (sizeof (dom_t));
+    domains2 = PFarray (sizeof (dom_t), 10);
     *(dom_t *) PFarray_add (domains2) = dom2;
 
     for (unsigned int i = PFarray_last (prop->subdoms); i > 0; i--) {
@@ -117,7 +117,7 @@ common_super_dom (const PFprop_t *prop, dom_t dom1, dom_t dom2)
     }
 
     /* intersect both domain lists */
-    merge_doms = PFarray (sizeof (dom_t));
+    merge_doms = PFarray (sizeof (dom_t), 10);
     for (unsigned int i = 0; i < PFarray_last (domains1); i++) {
         dom1 = *(dom_t *) PFarray_at (domains1, i);
         for (unsigned int j = 0; j < PFarray_last (domains2); j++) {
@@ -938,17 +938,24 @@ prop_infer (PFla_op_t *n, PFarray_t *subdoms, PFarray_t *disjdoms,
     if (n->prop->domains)
         PFarray_last (n->prop->domains) = 0;
     else
-        n->prop->domains   = PFarray (sizeof (dom_pair_t));
+        /* prepare the property for 10 columns */
+        n->prop->domains   = PFarray (sizeof (dom_pair_t), 10);
 
-    if (n->prop->l_domains)
-        PFarray_last (n->prop->l_domains) = 0;
-    else
-        n->prop->l_domains = PFarray (sizeof (dom_pair_t));
+    if (L(n)) {
+        if (n->prop->l_domains)
+            PFarray_last (n->prop->l_domains) = 0;
+        else
+            /* prepare the property for 10 columns */
+            n->prop->l_domains = PFarray (sizeof (dom_pair_t), 10);
+    }
 
-    if (n->prop->r_domains)
-        PFarray_last (n->prop->r_domains) = 0;
-    else
-        n->prop->r_domains = PFarray (sizeof (dom_pair_t));
+    if (R(n)) {
+        if (n->prop->r_domains)
+            PFarray_last (n->prop->r_domains) = 0;
+        else
+            /* prepare the property for 10 columns */
+            n->prop->r_domains = PFarray (sizeof (dom_pair_t), 10);
+    }
 
     /* copy all children domains */
     copy_child_domains (n);
@@ -969,8 +976,8 @@ PFprop_infer_nat_dom (PFla_op_t *root)
      * Initialize domain property inference with an empty domain
      * relation list,
      */
-    PFarray_t *subdoms  = PFarray (sizeof (subdom_t));
-    PFarray_t *disjdoms = PFarray (sizeof (disjdom_t));
+    PFarray_t *subdoms  = PFarray (sizeof (subdom_t), 50);
+    PFarray_t *disjdoms = PFarray (sizeof (disjdom_t), 50);
 
     prop_infer (root, subdoms, disjdoms, 2);
 

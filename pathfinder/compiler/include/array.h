@@ -7,8 +7,8 @@
  * does not yield an error but lets the array grow as needed.
  *
  * Basic interface:
- *  - PFarray (s)       create new array with elements of s bytes length each,
- *                      set array ``append index'' to 0
+ *  - PFarray (s,sl)    create new array with elements of s bytes length each
+ *                      and initially sl slots, set array ``append index'' to 0
  *  - PFarray_at (a, i) address of ith element in array a (a grows as needed)
  *  - PFarray_last (a)  ``append index'': where to append to this array (r/w)
  *
@@ -71,11 +71,24 @@ struct PFarray_t {
   unsigned int bound;  /**< current index bound (index 0...bound - 1 OK) */
   unsigned int appi;   /**< current array append index */
   size_t       esize;  /**< array element size */
+  bool         clear;  /**< initially cleared array */
 };
 
-PFarray_t *PFarray (size_t);
+PFarray_t *PFarray_ (size_t, unsigned int slots, bool clear);
+#define PFarray_default(s)  (PFarray_((s), 20, false))
+#define PFcarray_default(s) (PFarray_((s), 20, true))
+#define PFarray(s,sl)       (PFarray_((s), sl, false)) 
+#define PFcarray(s,sl)      (PFarray_((s), sl, true))
 
+/* Wrapper to get information about the caller
+   (can be used to fine-tune the memory allocation of arrays) */
+#ifndef NDEBUG
+void *PFarray_at_ (PFarray_t *, unsigned int,
+                   const char *, const char *, const int);
+#define PFarray_at(a,i) (PFarray_at_((a),(i), __FILE__, __func__, __LINE__))
+#else
 void *PFarray_at (PFarray_t *, unsigned int);
+#endif
 
 /**
  * Append index of array @c a (may be written to).
@@ -134,6 +147,10 @@ PFarray_t *PFarray_copy (PFarray_t *input);
  * Array deletion.  Delete the array's front element.
  */
 void PFarray_del (PFarray_t *);
+
+#ifndef NDEBUG
+void PFarray_init (void);
+#endif
 
 #endif
 

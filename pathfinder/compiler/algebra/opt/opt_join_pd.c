@@ -2355,7 +2355,7 @@ clean_up_eqjoin (PFla_op_t *p)
 PFla_op_t *
 PFalgopt_join_pd (PFla_op_t *root)
 {
-    PFarray_t *clean_up_list = PFarray (sizeof (PFla_op_t *));
+    PFarray_t *clean_up_list = PFarray (sizeof (PFla_op_t *), 40);
     unsigned int tries = 0, max_tries = 0;
     bool modified = true;
 

@@ -1,0 +1,217 @@
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+let $cnt := count(doc("update-stress.SF-1896755.xml")//*)
+let $offset := ((($cnt * 69069) mod 365363) mod $cnt) + 1
+return
+do insert <aap xid="1">
+        <noot name="hazel"/>
+        <mies prefix="dum"/>
+</aap>
+as first into exactly-one((doc("update-stress.SF-1896755.xml")//*)[$offset])
+<>
+count(doc("update-stress.SF-1896755.xml")//aap[not(@xid)]) + count(doc("update-stress.SF-1896755.xml")//noot[not(@name)]) + count(doc("update-stress.SF-1896755.xml")//mies[not(@prefix)])

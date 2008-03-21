@@ -83,10 +83,10 @@ PFscope (void)
 
     /* set up the entry hash table and its buckets */
     for (i = 0; i < SCOPE_HASH_SZ; i++)
-        s->hash[i] = PFarray (sizeof (entry_t));
+        s->hash[i] = PFarray (sizeof (entry_t), 20);
 
     /* set up undo stack to maintain nested scopes */
-    s->undo = PFarray (sizeof (int));
+    s->undo = PFarray (sizeof (int), 20);
 
     return s;
 }

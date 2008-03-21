@@ -732,7 +732,7 @@ PFsimplify (PFcnode_t *r)
 
     /* set up variable replacement environment */
     for (unsigned short i = 0; i < HASH_BUCKETS; i++)
-        var_env[i] = PFarray (sizeof (bind_t));
+        var_env[i] = PFarray (sizeof (bind_t), 128);
 
     /* label the Core tree bottom up */
     PFsimplify_label (r);

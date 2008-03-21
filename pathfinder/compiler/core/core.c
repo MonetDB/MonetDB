@@ -1391,7 +1391,8 @@ PFcore_apply_ (PFfun_t *fn, ...)
 
     assert (fn);
 
-    args = PFarray (sizeof (PFcnode_t *));
+    /* we assume functions to have less than 15 parameters */
+    args = PFarray (sizeof (PFcnode_t *), 15);
 
     va_start (arglist, fn);
     while ((a = va_arg (arglist, PFcnode_t *)))

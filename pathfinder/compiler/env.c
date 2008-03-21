@@ -78,9 +78,13 @@ struct binding_t {
  * @return pointer to environment
  */
 PFenv_t *
-PFenv (void)
+PFenv_ (unsigned int initial_slots)
 {
-    return (PFenv_t *) PFarray (sizeof (binding_t));
+    /*
+     * We rely on array cells automatically being initialized
+     * with NULL (PFcarray).
+     */
+    return (PFenv_t *) PFcarray (sizeof (binding_t), initial_slots);
 }
 
 /**
@@ -94,15 +98,6 @@ PFenv (void)
 PFarray_t *
 PFenv_lookup (PFenv_t *e, PFqname_t key)
 {
-    /*
-     * The PFarray_... functions do not automatically adjust the
-     * last information, except for the PFarray_add() and PFarray_del()
-     * functions.  We rely on array cells automatically being initialized
-     * with NULL and, hence, take care of this initialization here.
-     */
-    while (PFarray_last (e) <= key)
-        *((PFarray_t **) PFarray_add (e)) = NULL;
-
     return *((PFarray_t **) PFarray_at (e, key));
 }
 
@@ -121,19 +116,11 @@ PFenv_bind (PFenv_t *e, PFqname_t key, void *value)
 
     assert (e);
 
-    /*
-     * The PFarray_... functions do not automatically adjust the
-     * last information, except for the PFarray_add() and PFarray_del()
-     * functions.  We rely on array cells automatically being initialized
-     * with NULL and, hence, take care of this here.
-     */
-    while (PFarray_last (e) <= key)
-        *((PFarray_t **) PFarray_add (e)) = NULL;
-
     a = *((PFarray_t **) PFarray_at (e, key));
 
     if (! a)
-        *((PFarray_t **) PFarray_at (e, key)) = PFarray (sizeof (void *));
+        *((PFarray_t **) PFarray_at (e, key))
+            = PFarray_default (sizeof (void *));
 
     *((void **) PFarray_add (*((PFarray_t **) PFarray_at (e, key)))) = value;
 

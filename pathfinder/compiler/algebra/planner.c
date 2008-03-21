@@ -144,7 +144,7 @@ static bool better_or_equal (const plan_t *a, const plan_t *b);
 static PFplanlist_t *
 new_planlist (void)
 {
-    return PFarray (sizeof (plan_t *));
+    return PFarray (sizeof (plan_t *), 50);
 }
 
 /**
@@ -2320,7 +2320,7 @@ clean_up_body_plans_worker (PFla_op_t *n, PFarray_t *bases)
 static bool
 clean_up_body_plans (PFla_op_t *n)
 {
-    PFarray_t *bases = PFarray (sizeof (PFla_op_t *));
+    PFarray_t *bases = PFarray (sizeof (PFla_op_t *), 3);
     PFla_op_t *cur;
     bool code;
 

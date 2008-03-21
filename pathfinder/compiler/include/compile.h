@@ -33,6 +33,8 @@
 #ifndef COMPILE_H
 #define COMPILE_H
 
+#include <stdio.h>
+
 /**
  * Has the Pathfinder compiler been invoked on the command line,
  * or from within MonetDB?

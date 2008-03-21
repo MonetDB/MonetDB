@@ -576,7 +576,7 @@ attributes (void *ctx, const xmlChar **atts)
     PFqname_raw_t  qn_raw;
     PFarray_t     *attrs;
 
-    attrs = PFarray (sizeof (char *));
+    attrs = PFarray_default (sizeof (char *));
 
     /* push namespace scope marker */
     push_ns (NULL);
@@ -2393,16 +2393,16 @@ schema_import (PFns_t ns, char *xsd_loc)
     state = 0;
 
     /* creates a new stack (state stack) */
-    state_stack = PFarray (sizeof (int));
+    state_stack = PFarray_default (sizeof (int));
     /* pushes a first dummy element on the state stack */
     push_state (-1);
 
     /* creates a new stack (pf_type stack) */
-    type_stack = PFarray (sizeof (PFty_t));
+    type_stack = PFarray_default (sizeof (PFty_t));
     /* creates a new stack (attr_stack) */
-    attr_stack = PFarray (sizeof (PFarray_t*));
+    attr_stack = PFarray_default (sizeof (PFarray_t*));
     /* creates a new stack (ns_stack) */
-    ns_stack = PFarray (sizeof (PFns_t*));
+    ns_stack = PFarray_default (sizeof (PFns_t*));
 
     /* temporarily: ignore any libxml2 errors */
     xmlSetGenericErrorFunc (0, silent_error);

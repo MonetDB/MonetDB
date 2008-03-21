@@ -130,7 +130,7 @@ static char (*trivial)[ty_types][ty_types];
  * @note These sets store pointers to their element types.
  */
 typedef PFarray_t *ty_set_t;
-#define ty_set()          ((ty_set_t) PFarray (sizeof (PFty_t *)))
+#define ty_set()          ((ty_set_t) PFarray_default (sizeof (PFty_t *)))
 #define ty_set_card(s)    (PFarray_last (s))
 #define ty_set_elem(s, n) (*(PFty_t **) PFarray_at ((s), (n)))
 #define ty_set_ins(s, t)  ((*(PFty_t **) PFarray_add (s)) = (t))
@@ -153,7 +153,7 @@ typedef struct ty_pair_t ty_pair_t;
  * @note These sets store pointers to their element pairs.
  */
 typedef PFarray_t *ty_pair_set_t;
-#define ty_pair_set()          ((ty_pair_set_t )PFarray (sizeof (ty_pair_t *)))
+#define ty_pair_set()          ((ty_pair_set_t )PFarray_default (sizeof (ty_pair_t *)))
 #define ty_pair_set_card(s)    (PFarray_last (s))
 #define ty_pair_set_elem(s, n) (*(ty_pair_t **) PFarray_at ((s), (n)))
 #define ty_pair_set_ins(s, p)  ((*(ty_pair_t **) PFarray_add (s)) = (p))
@@ -175,7 +175,7 @@ typedef struct pd_ineq_t pd_ineq_t;
  * @note These sets store pointers to their partial derivatives.
  */
 typedef PFarray_t *pd_ineq_set_t;
-#define pd_ineq_set()          ((pd_ineq_set_t) PFarray (sizeof (pd_ineq_t *)))
+#define pd_ineq_set()          ((pd_ineq_set_t) PFarray_default (sizeof (pd_ineq_t *)))
 #define pd_ineq_set_card(s)    (PFarray_last (s))
 #define pd_ineq_set_elem(s, n) (*(pd_ineq_t **) PFarray_at ((s), (n)))
 #define pd_ineq_set_ins(s, p)  ((*(pd_ineq_t **) PFarray_add (s)) = (p))
@@ -246,7 +246,7 @@ nub (PFarray_t *a, bool (equal) (void *, void *))
 
     assert (a);
 
-    s = PFarray (sizeof (void *));
+    s = PFarray_default (sizeof (void *));
 
     if (PFarray_last (a)) 
         for (n = 0; n < PFarray_last (a); n++) {

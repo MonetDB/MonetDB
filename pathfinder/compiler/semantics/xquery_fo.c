@@ -2327,7 +2327,7 @@ PFfun_xquery_fo (void)
     PFqname_t    qn;
     unsigned int n;
 
-    PFfun_env = PFenv ();
+    PFfun_env = PFenv_ (350);
 
     for (n = 0; xquery_fo[n].loc; n++) {
         assert (xquery_fo[n].sig_count <= XQUERY_FO_MAX_SIGS);

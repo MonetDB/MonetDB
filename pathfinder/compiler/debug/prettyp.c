@@ -156,7 +156,7 @@ static void
 init (stack *s)
 {
     s->sp   = 0;
-    s->lifo = PFarray (sizeof (int));
+    s->lifo = PFarray_default (sizeof (int));
 
     assert (s->lifo);
 }
@@ -417,9 +417,9 @@ PFprettyprintf (const char *rep, ...)
      * first material to be printed
      */
     if (! collect) {
-        collect = PFarray (sizeof (char));
-        stream  = PFarray (sizeof (char *));
-        size    = PFarray (sizeof (int));
+        collect = PFarray (sizeof (char), 512);
+        stream  = PFarray (sizeof (char *), 50);
+        size    = PFarray (sizeof (int), 50);
 
         assert (collect && stream && size);
     }

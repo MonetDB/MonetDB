@@ -547,7 +547,7 @@ la_cse (PFla_op_t *n)
 
     if (!a)
         *(PFarray_t **) PFarray_at (subexps, n->kind)
-            = a = PFarray (sizeof (PFla_op_t *));
+            = a = PFarray (sizeof (PFla_op_t *), 50);
 
     /* see if we already saw that subexpression */
     for (unsigned int i = 0; i < PFarray_last (a); i++)
@@ -578,7 +578,7 @@ PFla_cse (PFla_op_t *n)
 {
     PFla_op_t *res;
 
-    subexps = PFarray (sizeof (PFarray_t *));
+    subexps = PFcarray (sizeof (PFarray_t *), 125);
 
     res = la_cse (n);
     PFla_dag_reset (res);

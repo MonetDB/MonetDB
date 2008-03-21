@@ -196,7 +196,7 @@ introduce_rec_borders (PFpa_op_t *n)
     {
         case pa_rec_fix:
         {
-            PFarray_t *bases = PFarray (sizeof (PFpa_op_t *));
+            PFarray_t *bases = PFarray (sizeof (PFpa_op_t *), 3);
             PFpa_op_t *cur;
 
             /* collect base operators */

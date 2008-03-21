@@ -56,6 +56,8 @@
 /* checks if an attribute is NULL */
 #define IS_NULL(a) (a == att_NULL)
 
+#define DEF_WIDTH 10
+
 /* Operator names */
 static char *ID[] = {
       [la_serialize_seq]   = "la_serialize_seq"
@@ -123,6 +125,9 @@ static char *ID[] = {
     , [la_rec_param]       = "la_rec_param"
     , [la_rec_arg]         = "la_rec_arg"
     , [la_rec_base]        = "la_rec_base"
+    , [la_fun_call]        = "la_fun_call"
+    , [la_fun_param]       = "la_fun_param"
+    , [la_fun_frag_param]  = "la_fun_frag_param"
     , [la_proxy]           = "la_proxy"
     , [la_proxy_base]      = "la_proxy_base"
     , [la_cross_mvd]       = "la_cross_mvd"
@@ -518,7 +523,7 @@ lookup_actatts (PFarray_t *map, PFla_op_t *ori)
 static PFarray_t *
 create_actatt_map (void)
 {
-    return PFarray (sizeof(actatt_map_t));
+    return PFarray (sizeof(actatt_map_t), DEF_WIDTH);
 }
 
 /*........... Handling of actual attributes .........*/
@@ -1174,6 +1179,11 @@ match (PFla_op_t *a, PFla_op_t *b)
         case la_rec_param:
         case la_rec_arg:
         case la_rec_base:
+        case la_fun_call:
+        case la_fun_param:
+        case la_fun_frag_param:
+            return false;
+
         case la_proxy:
         case la_proxy_base:
         case la_cross_mvd:
@@ -2056,6 +2066,46 @@ new_operator (PFla_op_t *n)
         }
         case la_rec_base:
             return PFla_rec_base (n->schema);
+        
+        case la_fun_call: {
+            PFalg_schema_t schema; 
+            schema.count = n->schema.count;
+            schema.items = (struct PFalg_schm_item_t*)
+                           PFmalloc (schema.count *
+                                     sizeof (struct PFalg_schm_item_t));
+
+            /* not needed to change the schema */
+            for (unsigned int i = 0; i < schema.count; i++)
+                schema.items[i] = n->schema.items[i];
+
+            return PFla_fun_call (CSE(L(n)), CSE(R(n)),
+                                  schema, n->sem.fun_call.kind,
+                                  n->sem.fun_call.qname, n->sem.fun_call.ctx,
+                                  ACTATT (L(n), n->sem.fun_call.iter),
+                                  n->sem.fun_call.occ_ind);
+        }
+        case la_fun_param: {
+            /* copy the schema */
+            PFalg_schema_t schema; 
+            schema.count = n->schema.count;
+            schema.items = (struct PFalg_schm_item_t *)
+                           PFmalloc (schema.count * 
+                                     sizeof (struct PFalg_schm_item_t));
+
+            for (unsigned int i = 0; i < schema.count; i++)
+                schema.items[i] = (struct PFalg_schm_item_t) {
+                                      .name = ACTATT (L(n), n->schema.items[i].name),
+                                      .type = n->schema.items[i].type
+                                  };
+
+            return PFla_fun_param (
+                        CSE (L(n)), CSE(R(n)),
+                        schema);
+        }
+        case la_fun_frag_param:
+            return PFla_fun_frag_param (
+                        CSE (L(n)), CSE(R(n)),
+                        n->sem.col_ref.pos);
         case la_proxy:
         case la_proxy_base:
         case la_cross_mvd:
@@ -2100,7 +2150,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
              * we have to protocol the columns
              * we have just seen, to avoid a column to be
              * used twice */
-            PFarray_t *seen = PFarray (sizeof(PFalg_att_t));
+            PFarray_t *seen = PFarray (sizeof(PFalg_att_t), DEF_WIDTH);
             for (unsigned int i = 0; i < ori->schema.count; i++) {
                 PFalg_att_t col = littbl_column (ori->schema.items[i].name,
                                                  ori, cse, seen);
@@ -2462,6 +2512,26 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                              ori->schema.items[i].name));
             }
             break;
+
+        case la_fun_call:
+            actmap = create_actatt_map ();
+            /* the schema doesn't change for this operator */
+            for (unsigned int i = 0; i < ori->schema.count; i++) {
+                INACTATT (actmap,
+                          actatt (
+                             ori->schema.items[i].name,
+                             ori->schema.items[i].name));
+            }
+            break;
+        case la_fun_param:
+            /* simply copy the schema of the left operator */
+            actmap = actatt_map_copy (ACT(L(ori)));
+            break;
+        case la_fun_frag_param:
+            /* since this operator doesn't has an associated schema,
+             * we create an empty map */
+            actmap = create_actatt_map (); 
+            break;
         case la_proxy:
         case la_proxy_base:
         case la_cross_mvd:
@@ -2532,7 +2602,7 @@ la_cse (PFla_op_t *n)
 
     if (!a)
         *(PFarray_t **) PFarray_at (subexps, n->kind)
-            = a = PFarray (sizeof (PFla_op_t *));
+            = a = PFarray (sizeof (PFla_op_t *), 15);
 
     PFla_op_t *temp = NULL;
 
@@ -2622,12 +2692,12 @@ PFla_op_t *
 PFalgopt_cse (PFla_op_t *n)
 {
     /* initialize maps */
-    cse_map = PFarray (sizeof (ori_cse_map_t));
-    actatt_map = PFarray (sizeof (ori_actatt_map_t));
-    ori_map = PFarray (sizeof (cse_ori_map_t));
+    cse_map = PFarray (sizeof (ori_cse_map_t), 256);
+    actatt_map = PFarray (sizeof (ori_actatt_map_t), 256);
+    ori_map = PFarray (sizeof (cse_ori_map_t), 256);
  
-    /* initialize subexpression array */
-    subexps = PFarray (sizeof (PFarray_t *));
+    /* initialize subexpression array (and clear it) */
+    subexps = PFcarray (sizeof (PFarray_t *), 128);
 
     PFla_op_t *res = NULL;
 

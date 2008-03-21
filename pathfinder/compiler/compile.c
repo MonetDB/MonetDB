@@ -327,6 +327,11 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     /* setup sementation fault signal handler */
     signal (SIGSEGV, segfault_handler);
 #endif
+    
+#ifndef NDEBUG
+    PFarray_init ();
+#endif
+    
     /*******************************************/
     /* Split Point: Logical Algebra XML Import */
     /*******************************************/
@@ -462,7 +467,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     }
 
     /* create guide tree */
-    guide_tree =  PFguide_tree();
+    guide_tree =  PFguide_tree ();
   
     STOP_POINT(6);
 
@@ -582,7 +587,8 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
      */
     tm = PFtimer_start ();
 
-    laroot = PFcore2alg (croot, &PFquery);
+    laroot = PFcore2alg (croot, &PFquery,
+                         status->output_format);
 
     tm = PFtimer_stop (tm);
     if (status->timing)
@@ -867,6 +873,9 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
 
         PFmem_init ();
 
+#ifndef NDEBUG
+        PFarray_init ();
+#endif
         /** initialize global state of the compiler */
         PFstate_init (&PFstate);
 
@@ -927,7 +936,8 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         strcpy (*epilogue, intern_epilogue);
     } else {
         /* compile into logical algebra */
-        laroot = PFcore2alg (croot, &PFquery);
+        laroot = PFcore2alg (croot, &PFquery,
+                             PFstate.output_format);
         /* optimize logical algebra */
         laroot = PFalgopt (laroot, false /* no timing output */, 
             NULL /* no guide tree */, PFstate.opt_alg);

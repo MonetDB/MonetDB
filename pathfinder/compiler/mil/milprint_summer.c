@@ -10240,7 +10240,7 @@ create_var_info (PFcnode_t *parent, PFvar_t *id, int act_lev)
     var_info *vi;
     vi = (var_info *) PFmalloc (sizeof (var_info));
 
-    PFarray_t *reflist = PFarray (sizeof (var_info *));
+    PFarray_t *reflist = PFarray (sizeof (var_info *), 100);
 
     vi->parent = parent;
     vi->id = id;
@@ -10680,7 +10680,7 @@ static int test_join_pattern(PFcnode_t *for_node,
     } /* end else (!res) */
 
     /* find referenced variables from outer scopes in first comparison side */
-    fst_reflist = PFarray (sizeof (var_info *));
+    fst_reflist = PFarray (sizeof (var_info *), 20);
     fst_reflist = collect_vars(fst_inner, active_vlist, fst_reflist);
     /* search for-loop variable in first argument */
     found_in_fst = 0;
@@ -10707,7 +10707,7 @@ static int test_join_pattern(PFcnode_t *for_node,
     }
 
     /* find referenced variables from outer scopes in second comparison side */
-    snd_reflist = PFarray (sizeof (var_info *));
+    snd_reflist = PFarray (sizeof (var_info *), 20);
     snd_reflist = collect_vars(snd_inner, active_vlist, snd_reflist);
     /* search for-loop variable in second argument */
     found_in_snd = 0;
@@ -10814,7 +10814,7 @@ static int test_join_pattern(PFcnode_t *for_node,
         {
             /* evaluate right side in the inner-most common scope
                (cur_level stays the same) */
-            PFarray_t *new_active_vlist = PFarray (sizeof (var_info *));
+            PFarray_t *new_active_vlist = PFarray (sizeof (var_info *), 20);
             *(var_info **) PFarray_add (new_active_vlist)
                     = create_var_info(vi->parent, vi->id, cur_level);
             if (vipos)
@@ -10834,11 +10834,11 @@ static int test_join_pattern(PFcnode_t *for_node,
 
             recognize_join (snd_inner,
                             new_active_vlist,
-                            PFarray (sizeof (var_info *)),
+                            PFarray (sizeof (var_info *), 20),
                             cur_level);
         } else {
             /* evaluate right side in scope 0 (cur_level is set back to 1) */
-            PFarray_t *new_active_vlist = PFarray (sizeof (var_info *));
+            PFarray_t *new_active_vlist = PFarray (sizeof (var_info *), 20);
             *(var_info **) PFarray_add (new_active_vlist)
                     = create_var_info(vi->parent, vi->id, 1);
             if (vipos)
@@ -10857,7 +10857,7 @@ static int test_join_pattern(PFcnode_t *for_node,
 
             recognize_join (snd_inner,
                             new_active_vlist,
-                            PFarray (sizeof (var_info *)),
+                            PFarray (sizeof (var_info *), 20),
                             1);
         }
 
@@ -11493,7 +11493,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
                  milprintf(f, "proc_vid.insert(\"%s\", %dLL);\n", c->sem.fun->sig, f->module_base+first);
                  f->num_fun--;
         }
-        counter = get_var_usage (f, R(c), PFarray (sizeof (int)), counter);
+        counter = get_var_usage (f, R(c), PFarray (sizeof (int), 20), counter);
     }
     /* apply mapping correctly for user defined function calls */    
     else if (c->kind == c_apply && 
@@ -11513,7 +11513,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
            again check UDFs to map all global variables correctly */
         *(int *) PFarray_add (way) = c->sem.fun->fid;
         /* create a new stack with active UDFs to avoid endless recursion */
-        PFarray_t *active_funs = PFarray (sizeof (PFvar_t *));
+        PFarray_t *active_funs = PFarray (sizeof (PFvar_t *), 50);
         *(PFfun_t **) PFarray_add (active_funs) = c->sem.fun;
 
         counter = walk_through_UDF (f, c->sem.fun->core, 
@@ -11814,8 +11814,8 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long t
     f->module_base = module_base; /* only generate mil module; no query */
     f->url = url; /* url of this query / module definition */ 
 
-    way = PFarray (sizeof (int));
-    counter = PFarray (sizeof (int));
+    way = PFarray (sizeof (int), 20);
+    counter = PFarray (sizeof (int), 20);
     *(int *) PFarray_add (counter) = 0;  
     *(int *) PFarray_add (counter) = 0; 
     *(int *) PFarray_add (counter) = 0;
@@ -11828,8 +11828,8 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long t
     simplifyCoreTree (c);
 
     recognize_join (c,
-                    PFarray (sizeof (var_info *)),
-                    PFarray (sizeof (var_info *)),
+                    PFarray (sizeof (var_info *), 20),
+                    PFarray (sizeof (var_info *), 20),
                     0);
 
     if (module_base == 0 && num_fun == -1) {

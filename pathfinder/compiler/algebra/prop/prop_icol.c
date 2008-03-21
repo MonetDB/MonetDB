@@ -43,6 +43,9 @@
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
+#define SEEN(n)       (n)->bit_dag
+#define EDGE(n)       (n)->refctr
+
 /**
  * Test if @a attr is in the list of icol columns in container @a prop
  */
@@ -194,7 +197,7 @@ static bool first_twig_child;
 /**
  * worker for PFprop_infer
  * infers the icols property during the second run
- * (uses edge counter stored in n->state_label from the first run)
+ * (uses edge counter stored in EDGE(n) from the first run)
  */
 static void
 prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
@@ -210,8 +213,8 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
     /* nothing to do if we haven't collected
        all incoming icols lists of that node */
-    if (n->state_label > 1) {
-        n->state_label--;
+    if (EDGE(n) > 1) {
+        EDGE(n)--;
         return;
     }
 
@@ -815,20 +818,20 @@ prop_infer (PFla_op_t *n)
 
     /* count number of incoming edges
        (during first run) */
-    n->state_label++;
+    EDGE(n)++;
 
     /* nothing to do if we already visited that node */
-    if (n->bit_dag)
+    if (SEEN(n))
         return;
     /* otherwise initialize edge counter (first occurrence) */
     else
-        n->state_label = 1;
+        EDGE(n) = 1;
 
     /* infer properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
         prop_infer (n->child[i]);
 
-    n->bit_dag = true;
+    SEEN(n) = true;
 
     /* reset icols property */
     n->prop->icols = 0;

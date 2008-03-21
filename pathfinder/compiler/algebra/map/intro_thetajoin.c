@@ -63,7 +63,6 @@
 #include "child_mnemonic.h"
 
 #define SEEN(n)       (n)->bit_dag
-#define EDGE(n)       (n)->state_label
 
 #define BOOL_COLS(n)  (n)->prop->icols
 #define LEFT_COLS(n)  (n)->prop->l_icols
@@ -134,10 +133,10 @@ find_join_worker (PFla_op_t *n,
     LEFT_COLS(n)  = union_ (LEFT_COLS(n), left_cols);
     RIGHT_COLS(n) = union_ (RIGHT_COLS(n), right_cols);
 
-    EDGE(n)++;
+    PFprop_refctr (n) = PFprop_refctr (n) - 1;
     /* nothing to do if we haven't collected
        all incoming column lists of that node */
-    if (EDGE(n) < PFprop_refctr (n))
+    if (PFprop_refctr (n) > 0)
         return false;
 
     /* remove all unnecessary columns from our structure */
@@ -614,8 +613,6 @@ find_join_worker (PFla_op_t *n,
 static void
 reset_fun (PFla_op_t *n)
 {
-    EDGE(n) = 0;
-
     /* reset the referenced column information */
     BOOL_COLS(n)  = 0;
     LEFT_COLS(n)  = 0;
@@ -700,7 +697,7 @@ collect_select_nodes (PFla_op_t *n, PFarray_t *select_nodes)
 PFla_op_t *
 PFintro_thetajoins (PFla_op_t *root)
 {
-    PFarray_t *select_nodes = PFarray (sizeof (PFla_op_t *));
+    PFarray_t *select_nodes = PFarray (sizeof (PFla_op_t *), 20);
     PFla_op_t *select, *join;
 
     /* collect the select nodes */

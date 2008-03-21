@@ -43,10 +43,6 @@
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
-/* store the number of incoming edges for each operator
-   in the state_label field */
-#define EDGE(n) ((n)->state_label)
-
 #define CUR_AT(n,i) (((name_pair_t *) PFarray_at ((n), (i)))->unq)
 #define ORI_AT(n,i) (((name_pair_t *) PFarray_at ((n), (i)))->ori)
 
@@ -92,6 +88,12 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
     assert (np_list);
     assert (par_np_list);
 
+    /* we do not trace along fragment edges */
+    if (n->kind == la_frag_union ||
+        n->kind == la_empty_frag ||
+        n->kind == la_fragment)
+        ;
+    else
     /* collect all name pair lists of the parent operators and
        include (possibly) new matching columns in the name pairs list */
     if (!PFarray_last (np_list))
@@ -125,8 +127,8 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
 
     /* nothing to do if we haven't collected
        all incoming name pair lists of that node */
-    EDGE(n)++;
-    if (EDGE(n) < PFprop_refctr (n))
+    PFprop_refctr (n) = PFprop_refctr (n) - 1;
+    if (PFprop_refctr (n) > 0)
         return;
 
     /* If we reached our goal we can return.
@@ -195,7 +197,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             unsigned int j;
             /* if we have no additional name pair list then create one */
             if (!n->prop->l_name_pairs)
-               n->prop->l_name_pairs = PFarray (sizeof (name_pair_t));
+               n->prop->l_name_pairs = PFarray (sizeof (name_pair_t), 10);
 
             /* mark all columns that we do not see in the left child
                as unknown */
@@ -469,11 +471,11 @@ find_goal (PFla_op_t *n, PFla_op_t *goal)
 static void
 reset_fun (PFla_op_t *n)
 {
-    EDGE(n) = 0;
-
     /* reset the name mapping structure */
-    if (n->prop->name_pairs) PFarray_last (n->prop->name_pairs) = 0;
-    else n->prop->name_pairs = PFarray (sizeof (name_pair_t));
+    if (n->prop->name_pairs)
+        PFarray_last (n->prop->name_pairs) = 0;
+    else
+        n->prop->name_pairs = PFarray (sizeof (name_pair_t), 10);
     
     if (n->prop->l_name_pairs) PFarray_last (n->prop->l_name_pairs) = 0;
 }
@@ -489,7 +491,7 @@ PFprop_trace_names (PFla_op_t *start,
 {
     PFalg_attlist_t new_list;
     unsigned int    j;
-    PFarray_t      *map_list = PFarray (sizeof (name_pair_t)),
+    PFarray_t      *map_list = PFarray (sizeof (name_pair_t), list.count),
                    *new_map_list;
 
     /* collect number of incoming edges (parents) */

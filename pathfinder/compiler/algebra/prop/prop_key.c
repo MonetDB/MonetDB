@@ -742,17 +742,21 @@ prop_infer (PFla_op_t *n, bool with_guide_info)
     if (n->prop->keys)
         PFarray_last (n->prop->keys) = 0;
     else
-        n->prop->keys   = PFarray (sizeof (PFalg_att_t));
+        n->prop->keys   = PFarray (sizeof (PFalg_att_t), 10);
 
-    if (n->prop->l_keys)
-        PFarray_last (n->prop->l_keys) = 0;
-    else
-        n->prop->l_keys = PFarray (sizeof (PFalg_att_t));
+    if (L(n)) {
+        if (n->prop->l_keys)
+            PFarray_last (n->prop->l_keys) = 0;
+        else
+            n->prop->l_keys = PFarray (sizeof (PFalg_att_t), 10);
+    }
 
-    if (n->prop->r_keys)
-        PFarray_last (n->prop->r_keys) = 0;
-    else
-        n->prop->r_keys = PFarray (sizeof (PFalg_att_t));
+    if (R(n)) {
+        if (n->prop->r_keys)
+            PFarray_last (n->prop->r_keys) = 0;
+        else
+            n->prop->r_keys = PFarray (sizeof (PFalg_att_t), 10);
+    }
 
     /* infer information on key columns */
     infer_key (n, with_guide_info);

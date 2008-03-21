@@ -465,6 +465,7 @@ procs();
 [ "neg_select(BAT[any::1,any::2], str, ..any..) : BAT[any::1,any::2]"											  ]
 [ "new(BAT[any,any], BAT[any,any], int) : BAT[any,any]"													  ]
 [ "nodes(BAT[oid,any], BAT[oid,str]) : BAT[oid,any]"													  ]
+[ "old_sum(BAT[any,lng]) : lng"																						  ]
 [ "or_exp(BAT[any,any], BAT[any,any], int) : BAT[any,any]"																					  ]
 [ "or_max(BAT[any,any], BAT[any,any]) : BAT[any,any]"																						  ]
 [ "or_min(BAT[any,any], BAT[any,any]) : BAT[any,any]"																						  ]

@@ -782,7 +782,8 @@ prop_infer (PFla_op_t *n)
     if (n->prop->ckeys)
         PFarray_last (n->prop->ckeys) = 0;
     else
-        n->prop->ckeys   = PFarray (sizeof (PFalg_att_t));
+        /* prepare the property for 10 composite keys */
+        n->prop->ckeys   = PFarray (sizeof (PFalg_att_t), 10);
 
     /* infer information on composite key columns */
     infer_ckey (n);

@@ -59,7 +59,7 @@ typedef uint8_t bitset_unit;
 
 PFbitset_t *PFbitset (void) 
 {
-    return PFarray (sizeof (bitset_unit)); 
+    return PFarray (sizeof (bitset_unit), 128 /* start with 1024 bits */);
 }
 
 void PFbitset_set (PFbitset_t *b, unsigned int pos, bool value)

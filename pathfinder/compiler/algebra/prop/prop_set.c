@@ -45,6 +45,9 @@
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
+#define SEEN(n)       (n)->bit_dag
+#define EDGE(n)       (n)->refctr
+
 /**
  * Test if an operator referenced via its container @a prop
  * may result a set of tuples instead of a bag of tuples.
@@ -58,7 +61,7 @@ PFprop_set (const PFprop_t *prop)
 /**
  * worker for PFprop_infer_set
  * infers the set property during the second run
- * (uses edge counter stored in n->state_label from the first run)
+ * (uses edge counter stored in EDGE(n) from the first run)
  */
 static void
 prop_infer_set (PFla_op_t *n, bool set)
@@ -73,8 +76,8 @@ prop_infer_set (PFla_op_t *n, bool set)
 
     /* nothing to do if we haven't collected
        all incoming set properties of the parents */
-    if (n->state_label > 1) {
-        n->state_label--;
+    if (EDGE(n) > 1) {
+        EDGE(n)--;
         return;
     }
 
@@ -254,20 +257,20 @@ prop_infer (PFla_op_t *n)
 
     /* count number of incoming edges
        (during first run) */
-    n->state_label++;
+    EDGE(n)++;
 
     /* nothing to do if we already visited that node */
-    if (n->bit_dag)
+    if (SEEN(n))
         return;
     /* otherwise initialize edge counter (first occurrence) */
     else
-        n->state_label = 1;
+        EDGE(n) = 1;
 
     /* infer properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
         prop_infer (n->child[i]);
 
-    n->bit_dag = true;
+    SEEN(n) = true;
 
     /* reset set property */
     n->prop->set = true;

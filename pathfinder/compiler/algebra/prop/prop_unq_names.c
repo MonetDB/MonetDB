@@ -42,6 +42,8 @@
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
+#define ARRAY_SIZE(n) ((n)->schema.count > 10 ? (n)->schema.count : 10)
+
 /* worker for PFprop_unq_name* */
 static PFalg_att_t
 find_unq_name (PFarray_t *np_list, PFalg_att_t attr)
@@ -175,8 +177,10 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             PFarray_t *left_np_list, *right_np_list;
 
             /* initialize left and right name pair list */
-            n->prop->l_name_pairs = PFarray (sizeof (name_pair_t));
-            n->prop->r_name_pairs = PFarray (sizeof (name_pair_t));
+            n->prop->l_name_pairs = PFarray (sizeof (name_pair_t),
+                                             ARRAY_SIZE(L(n)));
+            n->prop->r_name_pairs = PFarray (sizeof (name_pair_t),
+                                             ARRAY_SIZE(R(n)));
 
             left_np_list  = n->prop->l_name_pairs;
             right_np_list = n->prop->r_name_pairs;
@@ -235,8 +239,10 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
                 join_unq = att2_unq;
 
             /* initialize left and right name pair list */
-            n->prop->l_name_pairs = PFarray (sizeof (name_pair_t));
-            n->prop->r_name_pairs = PFarray (sizeof (name_pair_t));
+            n->prop->l_name_pairs = PFarray (sizeof (name_pair_t),
+                                             ARRAY_SIZE(L(n)));
+            n->prop->r_name_pairs = PFarray (sizeof (name_pair_t),
+                                             ARRAY_SIZE(R(n)));
 
             left_np_list  = n->prop->l_name_pairs;
             right_np_list = n->prop->r_name_pairs;
@@ -315,7 +321,8 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             bulk_add_name_pairs (np_list, L(n));
 
             /* make sure to know the name of the right join argument */
-            n->prop->r_name_pairs = PFarray (sizeof (name_pair_t));
+            n->prop->r_name_pairs = PFarray (sizeof (name_pair_t),
+                                             ARRAY_SIZE(R(n)));
             add_name_pair (n->prop->r_name_pairs,
                            n->sem.eqjoin.att2,
                            PFprop_unq_name (R(n)->prop,
@@ -349,8 +356,10 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
                a list of name pairs for each operand. */
             PFalg_att_t ori, unq, l_unq, r_unq;
 
-            n->prop->l_name_pairs = PFarray (sizeof (name_pair_t));
-            n->prop->r_name_pairs = PFarray (sizeof (name_pair_t));
+            n->prop->l_name_pairs = PFarray (sizeof (name_pair_t),
+                                             ARRAY_SIZE(L(n)));
+            n->prop->r_name_pairs = PFarray (sizeof (name_pair_t),
+                                             ARRAY_SIZE(R(n)));
 
             for (unsigned int i = 0; i < n->schema.count; i++) {
                 ori = n->schema.items[i].name;
@@ -610,7 +619,8 @@ reset_property (PFla_op_t *n)
     if (n->prop->name_pairs)
         PFarray_last (n->prop->name_pairs) = 0;
     else
-        n->prop->name_pairs = PFarray (sizeof (name_pair_t));
+        n->prop->name_pairs = PFarray (sizeof (name_pair_t),
+                                       ARRAY_SIZE(n));
 
     n->prop->l_name_pairs = NULL;
     n->prop->r_name_pairs = NULL;

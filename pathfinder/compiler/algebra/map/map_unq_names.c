@@ -928,7 +928,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 PFla_op_t *
 PFmap_unq_names (PFla_op_t *root)
 {
-    PFarray_t *map = PFarray (sizeof (ori_unq_map));
+    PFarray_t *map = PFarray (sizeof (ori_unq_map), 300);
 
     /* infer unique names */
     PFprop_infer_unq_names (root);

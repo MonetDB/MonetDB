@@ -47,7 +47,7 @@
 #define SEEN(p) ((p)->bit_dag)
 
 /* store the number of incoming edges for each operator
-   in the state_label field */
+   in the refctr field */
 #define EDGE(n) ((n)->refctr)
 
 #define empty_list 0

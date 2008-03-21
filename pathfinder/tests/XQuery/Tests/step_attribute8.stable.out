@@ -1,0 +1,34 @@
+stdout of test 'step_attribute8` in directory 'tests/XQuery` itself:
+
+
+# 10:58:24 >  
+# 10:58:24 >   Mserver "--config=/local_tmp/work/MonetDB4/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/local_tmp/work/pathfinder/Linux/lib/MonetDB4:/local_tmp/work/pathfinder/Linux/lib/MonetDB4/lib:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4/lib:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4/bin" --set "gdk_dbfarm=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/dbfarm" --set "sql_logdir=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/sql_logs" --set "xquery_logdir=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=37972 --set xrpc_port=46682 --set monet_prompt= --trace  "--dbname=mTests_tests_XQuery" --set sql_debug=16384 --set xquery_backend=algebra "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 10:58:24 >  
+
+# MonetDB Server v4.23.0
+# based on GDK   v1.23.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.23.0 loaded
+# XRPC administrative console at http://127.0.0.1:46682/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 10:58:24 >  
+# 10:58:24 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper08 --port=37972 -G step_attribute8.xq
+# 10:58:24 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+
+# 10:58:24 >  
+# 10:58:24 >  Done.
+# 10:58:24 >  
+
