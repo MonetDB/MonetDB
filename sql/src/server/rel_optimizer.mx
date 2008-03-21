@@ -241,6 +241,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	}
 }
 
+#if 0
 static void
 get_tables(mvc *sql, sql_rel *rel, list *tables) 
 {
@@ -269,6 +270,7 @@ get_tables(mvc *sql, sql_rel *rel, list *tables)
 		break;
 	}
 }
+#endif
 
 static void
 get_relations(sql_rel *rel, list *rels)
@@ -751,6 +753,7 @@ printf("AFTER\n");
 	return rel;
 }
 
+#if 0
 static sql_exp *
 exp_remove_alias(sql_exp *e, list *exps) 
 {
@@ -798,6 +801,7 @@ exp_remove_alias(sql_exp *e, list *exps)
 	}
 	return NULL;
 }
+#endif
 
 /*
 static sql_exp *
@@ -807,6 +811,7 @@ exps_remove_alias(sql_exp *e, list *exps)
 }
 */
 
+#if 0
 /* push the expression down, ie translate colum references from relation f into expression of relation t */ 
 static sql_exp *
 exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) 
@@ -870,6 +875,7 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	}
 	return NULL;
 }
+#endif
 
 sql_rel *
 rel_push_select_down(mvc *sql, sql_rel *rel) 
