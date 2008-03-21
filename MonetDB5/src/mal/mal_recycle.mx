@@ -622,7 +622,7 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i, cnt=0;
 	ValPtr lhs,rhs;
 
-	if( recycleVersion == 0)
+	if (recycleVersion == 0 || recycleBlk == NULL)
 		return 0;
 	RECYCLEversion(mb);
 
@@ -634,8 +634,8 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		mb->var[getArg(p,i)]->recycle);
 	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
 #endif
-			lhs= &stk->stk[getArg(p,i)];
-			rhs= &getVarConstant(recycleBlk, mb->var[getArg(p,i)]->recycle);
+			lhs = &stk->stk[getArg(p,i)];
+			rhs = &getVarConstant(recycleBlk, mb->var[getArg(p,i)]->recycle);
 			VALcopy(lhs,rhs);
 			if( lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.br.id, TRUE);
