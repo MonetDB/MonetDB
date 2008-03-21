@@ -438,11 +438,12 @@ str SABAOTHgetMyStatus(sabdb** ret) {
 	str err;
 	if (_sabaoth_internal_dbname == NULL)
 		throw(MAL, "sabaoth.assert", "Cannot use this function when no database is active");
-	str err = SABAOTHgetStatus(ret, _sabaoth_internal_dbname);
+	err = SABAOTHgetStatus(ret, _sabaoth_internal_dbname);
 	if (err != NULL)
 		return(err);
 	if (*ret == NULL)
 		throw(MAL, "sabaoth.assert", "SABAOTHgetMyStatus couldn't find a database for %s!", _sabaoth_internal_dbname);
+	return(MAL_SUCCEED);
 }
 
 @h
