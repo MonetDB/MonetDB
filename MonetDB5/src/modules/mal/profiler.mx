@@ -106,7 +106,7 @@ comment "Generate an event record for all
 pattern setFilter(v:any):void
 address CMDsetFilterVariable
 comment "Generate an event record for
-	every instruction where v is used;"
+	every instruction where v is used.";
 
 command clrFilter(mod:str,fcn:str):void
 address CMDclrFilterProfiler
