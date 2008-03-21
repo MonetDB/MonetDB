@@ -122,23 +122,21 @@ OPTrecycleImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		}
 
-		cnt= 0;
-		for( j=p->retc; j<p->argc; j++)
-		if( isVarRecycled(mb, getArg(p,j)) ||
-			isVarConstant(mb, getArg(p,j)) )
-			cnt++;
+		cnt = 0;
+		for (j=p->retc; j<p->argc; j++)
+			if(isVarRecycled(mb, getArg(p,j)) ||
+				isVarConstant(mb, getArg(p,j)) )
+				cnt++;
 #ifdef DEBUG_OPT_RECYCLER  
 		stream_printf(GDKout,"recyle ? %d\n",cnt);
 		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif
-		
 		if (cnt == p->argc-p->retc) {
 			actions ++;
 			p->recycle = 1; /* this instruction is to be monitored */
-			for( j= 0; j < p->retc; j++)
-			if( getLastUpdate(span, getArg(p,j)) == i ){
-				setVarRecycled(mb, getArg(p,j));
-			}
+			for (j= 0; j < p->retc; j++)
+				if (getLastUpdate(span, getArg(p,j)) == i)
+					setVarRecycled(mb, getArg(p,j));
 		}
 @-
 The expected gain is largest if we can re-use selections
