@@ -1035,6 +1035,7 @@ mat_mark(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	freeInstruction(p);
 	return r;
 }
+#if 0
 static void 
 MATcollect(int m, mat_t *mat, int mtop, int *newvar, int *n){
 	int i,j,k;
@@ -1049,6 +1050,7 @@ MATcollect(int m, mat_t *mat, int mtop, int *newvar, int *n){
 		}
 	}
 }
+#endif
 
 static int
 MATcount(InstrPtr p, mat_t *mat, int mtop)
