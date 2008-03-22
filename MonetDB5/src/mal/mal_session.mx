@@ -570,16 +570,16 @@ MALparser(Client c)
 		/* catched errors */
 		showErrors();
 		@:restoreState@
+		/* now the parsing is done we should advance the stream */
+		c->fdin->pos += c->yycur;
+		c->yycur = 0;
 		throw(SYNTAX, "MAL.parser", "Syntax errors detected");
 
-		/* now the parsing is done we should advance the stream */
-        	c->fdin->pos += c->yycur;
-        	c->yycur = 0;
 	}
 
 	/* now the parsing is done we should advance the stream */
-        c->fdin->pos += c->yycur;
-        c->yycur = 0;
+	c->fdin->pos += c->yycur;
+	c->yycur = 0;
 
 	/* check for unfinished blocks */
 	if (c->blkmode)
