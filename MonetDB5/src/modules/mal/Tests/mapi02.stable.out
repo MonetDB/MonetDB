@@ -62,7 +62,9 @@ function user.main():void;              #  0 main:void
 # store the values 
     remote.send("test",b);              # 23 _31:any := remote.send(_19:str, b:any) {U}
     c := remote.query("test","io.print(b);");# 24 c:any := remote.query(_19:str, _33:str) {U}
-end main;                               # 25  {U}
+# shutdown 
+    remote.destroy("test");             # 26 _35:any := remote.destroy(_19:str) {U}
+end main;                               # 27  {U}
 
 # 04:46:54 >  
 # 04:46:54 >  Done.
