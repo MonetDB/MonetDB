@@ -410,8 +410,8 @@ or comment terminated by a new line
 INLINE void 
 skipToEnd(Client cntxt)
 {	char c;
-	while( (c= *CURRENT(cntxt)) != ';' && c) nextChar(cntxt);
-	if(c) nextChar(cntxt);
+	while( (c= *CURRENT(cntxt)) != ';' && c && c !='\n') nextChar(cntxt);
+	if(c && c != '\n') nextChar(cntxt);
 }
 @-
 The lexical analyser for constants is a little more complex.
@@ -654,11 +654,13 @@ simpleTypeId(Client cntxt)
 	l = typeidLength(cntxt);
 	if (l == 0) {
 		parseError(cntxt, "Type identifier expected\n");
+		cntxt->yycur--; /* keep it */
 		return -1;
 	}
 	tpe = getTypeIndex(CURRENT(cntxt), l, -1);
 	if (tpe < 0) {
 		parseError(cntxt, "Type identifier expected\n");
+		cntxt->yycur-= l; /* keep it */
 		return TYPE_void;
 	}
 	advance(cntxt, l);
@@ -723,7 +725,7 @@ parseTypeId(Client cntxt, int defaultType)
 	return defaultType;
 }
 
-static INLINE int typeElm(Client cntxt, int def)
+INLINE int typeElm(Client cntxt, int def)
 {
 	if (currChar(cntxt) != ':')
 		return def;	/* no type qualifier */
@@ -1214,7 +1216,7 @@ help information.
 	if( MALkeyword(cntxt,"comment",7)){
 		if( (l= stringLength(cntxt))){
 			@1 = strCopy(cntxt,l);
-			advance(cntxt,l);
+			advance(cntxt,l-1);
 		} else {
 			parseError(cntxt,"<string> expected\n");
 		}
@@ -1432,13 +1434,17 @@ parseAssign(Client cntxt, int cntrl)
 			l= idLength(cntxt);
 			if( l==0) {
 				 parseError(cntxt,"<identifier> expected\n"); 
-				 pushInstruction(curBlk,curInstr);
+				 skipToEnd(cntxt);
+				 if( curInstr->retc )
+					 pushInstruction(curBlk,curInstr);
 				 return;
 			}
 			@:GETvariable@
 			if( currChar(cntxt)==':') {
 				setVarUDFtype(curBlk,varid);
 				type = typeElm(cntxt,getVarType(curBlk,varid));
+				if( type<0)
+					goto part3;
 				setPolymorphic(curInstr, type, FALSE); 
 				setVarType(curBlk,varid,type);
 			}
@@ -1471,10 +1477,11 @@ parseAssign(Client cntxt, int cntrl)
 					parseError(cntxt,"<identifier> expected\n"); 
 				skipToEnd(cntxt);
 				return;
-				 }
+			 }
 			getArg(curInstr,0)= newTmpVariable(curBlk,TYPE_any);
 			pushInstruction(curBlk,curInstr);
 			parseError(cntxt,"<identifier> expected\n"); 
+			skipToEnd(cntxt);
 			return;
 		}  
 		/* Check if we are dealing with module.fcn call*/
@@ -1489,6 +1496,8 @@ parseAssign(Client cntxt, int cntrl)
 			if( currChar(cntxt)==':') {
 				setVarUDFtype(curBlk,varid);
 				type = typeElm(cntxt,getVarType(curBlk,varid));
+				if( type<0)
+					goto part3;
 				setPolymorphic(curInstr, type, FALSE);
 				setVarType(curBlk,varid,type);
 			}
@@ -1538,6 +1547,8 @@ This code is used in both positions of the expression
 			advance(cntxt,i);
 			if( currChar(cntxt)==':') {
 				csttpe = typeElm(cntxt,getVarType(curBlk,cstidx));
+				if( csttpe<0)
+					goto part3;
 				if(csttpe == getVarType(curBlk,cstidx) ){
 					setVarUDFtype(curBlk,cstidx);
 				} else {
@@ -1562,6 +1573,8 @@ This code is used in both positions of the expression
 			advance(cntxt,i);
 			flag= currChar(cntxt)==':';
 			csttpe = typeElm(cntxt,cst.vtype);
+			if( csttpe<0)
+				goto part3;
 			cstidx = defConstant(curBlk,csttpe,&cst);
 			setPolymorphic(curInstr,csttpe, FALSE);
 			if( flag )
@@ -1573,18 +1586,24 @@ This code is used in both positions of the expression
 		if( (idx=findVariableLength(curBlk,CURRENT(cntxt),i)) == -1){
 			v= idCopy(cntxt,i);
 			i= typeElm(cntxt,TYPE_any);
+			if( i<0)
+				goto part3;
 			setPolymorphic(curInstr,i, FALSE);
 			idx = newVariable(curBlk, v, i);
 			@:propList(idx)@
 		} else {
 			advance(cntxt,i);
 			i = typeElm(cntxt,getVarType(curBlk,idx));
+			if( i<0)
+				goto part3;
 			setPolymorphic(curInstr,i,FALSE);
 			@:propList(idx)@
 		}
 		curInstr= pushArgument(curBlk,curInstr,idx);
 	} else if (currChar(cntxt) == ':'){
 		i = typeElm(cntxt,TYPE_any);
+		if( i<0)
+			goto part3;
 		setPolymorphic(curInstr,i,FALSE);
 		idx = newTypeVariable(curBlk, i );
 		@:propList(idx)@
@@ -1599,6 +1618,7 @@ while( currChar(cntxt)!= ')'){
 	 else { 
 		idx = 0;
 		parseError(cntxt,"<factor> expected\n");
+		skipToEnd(cntxt);
 		pushInstruction(curBlk,curInstr);
 		return @1;
 	}
@@ -1636,12 +1656,14 @@ FCNcallparse2:
 			advance(cntxt,i);
 		} else {
 			 parseError(cntxt,"<functionname> expected\n");
+			 skipToEnd(cntxt);
 			 pushInstruction(curBlk,curInstr);
 			 return;
 		}
 		skipSpace(cntxt);
 		if (currChar(cntxt) != '(') {
 			parseError(cntxt,"'(' expected\n");
+			skipToEnd(cntxt);
 			pushInstruction(curBlk,curInstr);
 			return;
 		}
@@ -1669,6 +1691,7 @@ part2:  /* consume <operator><term> part of expression */
 		} 
 		{@:term(goto part3)@}
 		parseError(cntxt,"<term> expected\n");
+		skipToEnd(cntxt);
 		pushInstruction(curBlk,curInstr);
 		return;
 	} else  {

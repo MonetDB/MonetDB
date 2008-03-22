@@ -23,22 +23,16 @@ function transaction.help():void;       #  0 help:void {G}
     b := inspect.getDefinition("transaction","help");#  2 b:bat[:str,:str] := INSPECTgetDefinition(_4:str, _5:str) {G}
     io.print(b);                        #  3 _6:void := IOprint_val(b:bat[:str,:str]) 
 end help;	# 4  
+#comment "this is a commentary";
+!SyntaxException:parseError:comment "this is a commentary";
+!SyntaxException:parseError:       ^';' expected
 #transaction.help();
 #
 function user.main():void;              #  0 main:void 
 #test addition of a function to a known module 
-    transaction.help();                 #  2 _2:void 
-end main;	# 3  
-[ "added function to specific module" ]
-#-------------------------------------------------------------------------#
-# view	fcn								  # name
-# str			str								  # type
-#-----------------------------------------------------------------------------------------#
-[ "transaction.help",	  "function transaction.help():void;"				  ]
-[ "transaction.help",	  "    io.print(\"added function to specific module\");"	  ]
-[ "transaction.help",	  "    b := inspect.getDefinition(\"transaction\",\"help\");"	  ]
-[ "transaction.help",	  "    io.print(b);"						  ]
-[ "transaction.help",	  "end help;"							  ]
+    comment;                            #  2 comment:any {U}
+    transaction.help();                 #  3 _3:any {U}
+end main;                               #  4  {U}
 
 # 07:58:39 >  
 # 07:58:39 >  Done.

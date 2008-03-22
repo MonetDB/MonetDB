@@ -79,6 +79,7 @@ end main;                               # 21
 #-------------------------#
 [ 0@0,	  "hello"	  ]
 [ 1@0,	  "world"	  ]
+!MALException:bbp.bind:Actual type does not match required type
 
 
 
