@@ -318,7 +318,7 @@ Myyfree(YYSTREE yytree)
 }
 
 char** yy_sync = NULL;
-size_t yy_backup = sizeof(char*);
+size_t yy_backup = sizeof(lng);
 
 void 
 Myylogpush(void) 
@@ -341,7 +341,7 @@ Myylogpop(void)
 	/* clean up all allocated node contents (e.g. MIL syntax error) */
 	while(TRUE) {
 		char *next = cur[0];
-		for(off = (cur==yy_sync)?yy_backup:sizeof(char*); 
+		for(off = (cur==yy_sync)?yy_backup:sizeof(lng); 
                     off + sizeof(yystree) <= lim; 
 		    off += sizeof(yystree)) 
 		{
