@@ -326,7 +326,7 @@ append_bat( sql_delta *bat, BAT *i )
 {
 	BAT *b = temp_descriptor(bat->ibid);
 
-	if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void){
+	if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void && bat->ibase == i->H->seq){
 		temp_destroy(bat->ibid);
 		bat->ibid = temp_create(i);
 		BATseqbase(i, bat->ibase);
