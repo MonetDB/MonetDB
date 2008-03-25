@@ -233,8 +233,8 @@ def calculate_diff(entry, contextlines):
             difftype = "-C " + str(contextlines)
         else:
             difftype = "-u"
-        diffcmd = "/usr/bin/cvs -f diff -kk %s --minimal -r %s -r %s %s" \
-                  % (difftype, oldrev, newrev, filestr)
+        diffcmd = "/usr/bin/cvs -f update -kk -r %s %s; /usr/bin/cvs -f diff -kk %s --minimal -r %s -r %s %s" \
+                  % (newrev, filestr, difftype, oldrev, newrev, filestr)
         fp = os.popen(diffcmd)
         lines = fp.readlines()
         # ignore the error code, it always seems to be 1 :(
