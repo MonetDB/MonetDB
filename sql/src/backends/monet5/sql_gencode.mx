@@ -1911,9 +1911,9 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	pushEndInstruction(curBlk);
 
 	if (cq){
-		be->Toptimize = GDKusec();
+		be->mvc->Toptimize = GDKusec();
 		addQueryToCache(c);
-		be->Toptimize = GDKusec()- be->Toptimize;
+		be->mvc->Toptimize = GDKusec()- be->mvc->Toptimize;
 	}
 	
 /* not yet used

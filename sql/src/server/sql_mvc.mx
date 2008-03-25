@@ -115,6 +115,12 @@ typedef struct mvc {
 #ifdef HAVE_TIMES
 	struct tms times;
 #endif	
+@-
+Some statistics are gathered during the execution of a query
+and added to the SQL history table for post analysis when the
+query has been successfully executed.
+@h
+	lng Tparse, Toptimize, Tschedule, Texec;
 } mvc;
 
 extern int mvc_init(int debug, store_type store, backend_stack stk);

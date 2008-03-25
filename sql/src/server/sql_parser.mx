@@ -732,6 +732,7 @@ sqlstmt:
 #ifdef HAVE_TIMES	
 	  		  times(&m->times);
 #endif	
+			  m->Tparse = GDKusec();
 			}
 	sql SCOLON 	{ mvc *m = (mvc*)parm;
 		  	  m->sym = $$ = $3; YYACCEPT; 

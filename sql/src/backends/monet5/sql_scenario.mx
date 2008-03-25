@@ -464,7 +464,7 @@ void
 SQLcacheRefresh(mvc *m){
 	if (m && !m->session->active) {
 		int schema_changed = mvc_trans(m);
-		if (m->cache && (schema_changed || m->qc->id > 1000)){
+		if (m->cache && (schema_changed || m->qc->id > 10000)){
 			if (m->qc)
 				qc_destroy(m->qc);
 			m->qc = qc_create(m->clientid);
@@ -881,7 +881,6 @@ SQLparser(Client c)
 	backend *be;
 	mvc *m;
 	int oldvtop,oldstop;
-	lng T0 = 0;
 	int pstatus = 0;
 	int err = 0;
 
@@ -969,13 +968,6 @@ SQLparser(Client c)
 	} 
 	if (be->language != 'S' ) {
 		throw(SQL, "SQLparser", "Unrecognized language prefix");
-	}
-
-	if( be->mvc->mode == m_profile ) {
-		T0 = GDKusec();
-#ifdef HAVE_TIMES	
-		times(&be->mvc->times);
-#endif	
 	}
 
 	if ((err = sqlparse(m)) && m->debug&1){
@@ -1090,7 +1082,7 @@ In the final phase we add any debugging control
 		SQLsetTimer(c, FALSE);
 
 	if (be->mvc->mode == m_profile ) {
-		be->Tparse = GDKusec() - T0;
+		be->mvc->Tparse = GDKusec() - be->mvc->Tparse;
 		be->qry = sql_escape_str(QUERY(m->scanner));
 	}
 	scanner_query_processed(&(m->scanner));
@@ -1250,7 +1242,7 @@ backend_profile( backend *be, char *query, lng parse, lng optimize, lng exec, ln
 	(void)ret;
 	c->mode = mode;
 	c->explain = explain;
-	be->Tparse= be->Toptimize = be->Tschedule = be->Texec = 0;
+	be->mvc->Tparse= be->mvc->Toptimize = be->mvc->Tschedule = be->mvc->Texec = 0;
 	return msg;
 }
 
@@ -1369,9 +1361,9 @@ unless auto_commit has been set.
 	if (m->mode== m_profile) {
 		int tcks_per_sec = sysconf(_SC_CLK_TCK);
 		struct tms t1;
-		lng tot = be->Tparse; 
+		lng tot = be->mvc->Tparse; 
 
-		tot += be->Texec = GDKusec() - T0;
+		tot += be->mvc->Texec = GDKusec() - T0;
 #ifdef HAVE_TIMES	
 		times(&t1);
 		stream_printf(
@@ -1382,7 +1374,7 @@ unless auto_commit has been set.
 			(lng) (t1.tms_stime - be->mvc->times.tms_stime),
 			tcks_per_sec);
 #endif	
-		msg = backend_profile(be, be->qry, be->Tparse-be->Toptimize, be->Toptimize, be->Texec, tot);
+		msg = backend_profile(be, be->qry, be->mvc->Tparse-be->mvc->Toptimize, be->mvc->Toptimize, be->mvc->Texec, tot);
 		be->qry = NULL;
 	}
 

@@ -680,12 +680,6 @@ typedef struct backend {
 	sql_idx *currIndex;
 	int	vtop;		/* top of the variable stack before the current function */
 	cq *q;			/* pointer to the cached query */
-@-
-Some statistics are gathered during the execution of a query
-and added to the SQL history table for post analysis when the
-query has been successfully executed.
-@h
-	lng Tparse, Toptimize, Tschedule, Texec;
 	str qry;
 } backend;
 
@@ -895,7 +889,6 @@ backend_reset(backend *b)
 	b->currKey = NULL;
 	b->currIndex = NULL;
 	b->vtop = 0;
-	b->Tparse = b->Toptimize = b->Tschedule = b->Texec = 0;
 	b->qry = NULL;
 	b->q = NULL;
 	return b;
