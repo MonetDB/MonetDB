@@ -690,7 +690,7 @@ characters (void *ctx, const xmlChar *chars, int n)
 
     if (bufpos < 0 || (unsigned int) bufpos < text_size) {
         snprintf ((char *) buf + bufpos,
-                  MIN (n, BUF_SIZE - bufpos),
+                  MIN (n, BUF_SIZE - bufpos) + 1,
                   "%s",
                   (char *) chars);
         bufpos += MIN (n, BUF_SIZE - bufpos);
