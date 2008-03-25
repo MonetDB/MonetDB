@@ -1011,7 +1011,7 @@ produce code.
 			SQLsetTimer(c, TRUE);
 		if( m->mode == m_debug)
 			SQLsetDebugger(c, m, m->mode == m_debug); 
-		if( m->mode != m_debug  && m->mode!= m_explain && m->mode!= m_trace)
+		if( m->mode != m_debug  && m->mode!= m_explain && m->mode!= m_trace && m->mode != m_profile)
 			m->mode = m_inplace;
 	} else {
 		stmt *s;
