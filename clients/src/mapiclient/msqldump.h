@@ -16,5 +16,5 @@
  * All Rights Reserved.
  */
 
-extern int dump_table(Mapi mid, char *tname, stream *toConsole, int describe);
+extern int dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe);
 extern int dump_tables(Mapi mid, stream *toConsole);
