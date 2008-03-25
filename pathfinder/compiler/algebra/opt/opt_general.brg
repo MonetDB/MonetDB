@@ -1271,6 +1271,7 @@ relabel_worker (PFla_op_t *p,  PFla_op_t **kids, unsigned int counter)
     }
 
     assert (STATE_LABEL (p));
+    assert (0 <= STATE_LABEL (p) && STATE_LABEL (p) <= PFopt_general_Max_state);
 
     assert (counter <= 50 &&
             "tree relabeling in general optimization phase " &&
@@ -1333,6 +1334,7 @@ label (PFla_op_t *p)
     SEEN(p) = true;
 
     assert (STATE_LABEL (p));
+    assert (0 <= STATE_LABEL (p) && STATE_LABEL (p) <= PFopt_general_Max_state);
 }
 
 /**
