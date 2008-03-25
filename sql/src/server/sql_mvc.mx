@@ -34,6 +34,9 @@
 #include <sql_storage.h>
 #include <sql_keyword.h>
 #include <sql_atom.h>
+#ifdef HAVE_SYS_TIMES_H
+#include <sys/times.h>
+#endif
 
 #include <mapilib/Mapi.h>
 
@@ -109,6 +112,9 @@ typedef struct mvc {
 	int result_id;
 	res_table *results;
 	sql_column *last; 	/* last accessed column */
+#ifdef HAVE_TIMES
+	struct tms times;
+#endif	
 } mvc;
 
 extern int mvc_init(int debug, store_type store, backend_stack stk);

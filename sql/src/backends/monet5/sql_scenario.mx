@@ -83,6 +83,7 @@ we update its context descriptor to denote an SQL scenario.
 #include <mtime.h>
 #include "optimizer.h"
 #include "opt_statistics.h"
+#include <unistd.h>
 
 static int SQLinitialized = 0;
 static int SQLdebug = 0;
@@ -970,8 +971,12 @@ SQLparser(Client c)
 		throw(SQL, "SQLparser", "Unrecognized language prefix");
 	}
 
-	if( be->mvc->mode== m_profile )
+	if( be->mvc->mode == m_profile ) {
 		T0 = GDKusec();
+#ifdef HAVE_TIMES	
+		times(&be->mvc->times);
+#endif	
+	}
 
 	if ((err = sqlparse(m)) && m->debug&1){
 		/* switch to different language mode */
@@ -1362,9 +1367,21 @@ unless auto_commit has been set.
 @c
 	c->glb = oldglb;
 	if (m->mode== m_profile) {
+		int tcks_per_sec = sysconf(_SC_CLK_TCK);
+		struct tms t1;
 		lng tot = be->Tparse; 
 
 		tot += be->Texec = GDKusec() - T0;
+#ifdef HAVE_TIMES	
+		times(&t1);
+		stream_printf(
+			c->fdout,
+			"%%times real %lld, user %lld, system %lld, %d\n",
+			tot, 
+			(lng) (t1.tms_utime - be->mvc->times.tms_utime),
+			(lng) (t1.tms_stime - be->mvc->times.tms_stime),
+			tcks_per_sec);
+#endif	
 		msg = backend_profile(be, be->qry, be->Tparse-be->Toptimize, be->Toptimize, be->Texec, tot);
 		be->qry = NULL;
 	}

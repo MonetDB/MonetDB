@@ -729,6 +729,9 @@ sqlstmt:
 		  	  m->mode = m_profile;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
+#ifdef HAVE_TIMES	
+	  		  times(&m->times);
+#endif	
 			}
 	sql SCOLON 	{ mvc *m = (mvc*)parm;
 		  	  m->sym = $$ = $3; YYACCEPT; 
