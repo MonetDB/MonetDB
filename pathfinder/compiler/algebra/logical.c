@@ -95,6 +95,7 @@ la_op_leaf (PFla_op_kind_t kind)
     for (i = 0; i < PFLA_OP_MAXCHILD; i++)
         ret->child[i] = NULL;
 
+    ret->state_label   = 0;
     ret->plans         = NULL;
     ret->sql_ann       = NULL;
     ret->prop          = PFprop ();
@@ -2589,6 +2590,16 @@ PFla_step (const PFla_op_t *doc, const PFla_op_t *n,
         ret->schema.items[1]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = aat_anode };
+    else if (ret->sem.step.spec.axis == alg_anc_s)
+        ret->schema.items[1]
+            = (struct PFalg_schm_item_t) { .name = item_res,
+                                           .type = PFprop_type_of (n, item)
+                                                   | aat_pnode };
+    else if (ret->sem.step.spec.axis == alg_desc_s ||
+             ret->sem.step.spec.axis == alg_self)
+        ret->schema.items[1]
+            = (struct PFalg_schm_item_t) { .name = item_res,
+                                           .type = PFprop_type_of (n, item) };
     else
         ret->schema.items[1]
             = (struct PFalg_schm_item_t) { .name = item_res,
@@ -2668,6 +2679,16 @@ PFla_step_join (const PFla_op_t *doc, const PFla_op_t *n,
         ret->schema.items[i]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = aat_anode };
+    else if (ret->sem.step.spec.axis == alg_anc_s)
+        ret->schema.items[1]
+            = (struct PFalg_schm_item_t) { .name = item_res,
+                                           .type = PFprop_type_of (n, item)
+                                                   | aat_pnode };
+    else if (ret->sem.step.spec.axis == alg_desc_s ||
+             ret->sem.step.spec.axis == alg_self)
+        ret->schema.items[1]
+            = (struct PFalg_schm_item_t) { .name = item_res,
+                                           .type = PFprop_type_of (n, item) };
     else
         ret->schema.items[i]
             = (struct PFalg_schm_item_t) { .name = item_res,
@@ -2755,6 +2776,16 @@ PFla_guide_step (const PFla_op_t *doc, const PFla_op_t *n,
         ret->schema.items[1]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = aat_anode };
+    else if (ret->sem.step.spec.axis == alg_anc_s)
+        ret->schema.items[1]
+            = (struct PFalg_schm_item_t) { .name = item_res,
+                                           .type = PFprop_type_of (n, item)
+                                                   | aat_pnode };
+    else if (ret->sem.step.spec.axis == alg_desc_s ||
+             ret->sem.step.spec.axis == alg_self)
+        ret->schema.items[1]
+            = (struct PFalg_schm_item_t) { .name = item_res,
+                                           .type = PFprop_type_of (n, item) };
     else
         ret->schema.items[1]
             = (struct PFalg_schm_item_t) { .name = item_res,
@@ -2845,6 +2876,16 @@ PFla_guide_step_join (const PFla_op_t *doc, const PFla_op_t *n,
         ret->schema.items[i]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = aat_anode };
+    else if (ret->sem.step.spec.axis == alg_anc_s)
+        ret->schema.items[1]
+            = (struct PFalg_schm_item_t) { .name = item_res,
+                                           .type = PFprop_type_of (n, item)
+                                                   | aat_pnode };
+    else if (ret->sem.step.spec.axis == alg_desc_s ||
+             ret->sem.step.spec.axis == alg_self)
+        ret->schema.items[1]
+            = (struct PFalg_schm_item_t) { .name = item_res,
+                                           .type = PFprop_type_of (n, item) };
     else
         ret->schema.items[i]
             = (struct PFalg_schm_item_t) { .name = item_res,

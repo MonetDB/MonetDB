@@ -716,6 +716,9 @@ infer_ocol (PFla_op_t *n)
                         "wrong item type '0x%X' in the input of a path step",
                         PFprop_type_of (R(n), n->sem.step.item));
 #endif
+        {
+            PFalg_simple_type_t ty;
+            
             new_ocols (n, 2);
 
             ocol_at (n, 0)
@@ -725,14 +728,18 @@ infer_ocol (PFla_op_t *n)
                                                     n->sem.step.iter) };
 
             if (n->sem.step.spec.axis == alg_attr)
-                ocol_at (n, 1)
-                    = (PFalg_schm_item_t) { .name = n->sem.step.item_res,
-                                            .type = aat_anode };
+                ty = aat_anode;
+            else if (n->sem.step.spec.axis == alg_anc_s)
+                ty = PFprop_type_of (R(n), n->sem.step.item) | aat_pnode;
+            else if (n->sem.step.spec.axis == alg_desc_s ||
+                     n->sem.step.spec.axis == alg_self)
+                ty = PFprop_type_of (R(n), n->sem.step.item);
             else
-                ocol_at (n, 1)
-                    = (PFalg_schm_item_t) { .name = n->sem.step.item_res,
-                                            .type = aat_pnode };
-            break;
+                ty = aat_pnode;
+
+            ocol_at (n, 1) = (PFalg_schm_item_t) { .name = n->sem.step.item_res,
+                                                   .type = ty };
+        }   break;
 
         case la_step_join:
         case la_guide_step_join:
@@ -751,17 +758,25 @@ infer_ocol (PFla_op_t *n)
                         "wrong item type '0x%X' in the input of a path step",
                         PFprop_type_of (R(n), n->sem.step.item));
 #endif
+        {
+            PFalg_simple_type_t ty;
+            
             ocols (n) = copy_ocols (ocols (R(n)), ocols_count (R(n)) + 1);
             if (n->sem.step.spec.axis == alg_attr)
-                ocol_at (n, ocols_count (n))
-                    = (PFalg_schm_item_t) { .name = n->sem.step.item_res,
-                                            .type = aat_anode };
+                ty = aat_anode;
+            else if (n->sem.step.spec.axis == alg_anc_s)
+                ty = PFprop_type_of (R(n), n->sem.step.item) | aat_pnode;
+            else if (n->sem.step.spec.axis == alg_desc_s ||
+                     n->sem.step.spec.axis == alg_self)
+                ty = PFprop_type_of (R(n), n->sem.step.item);
             else
-                ocol_at (n, ocols_count (n))
-                    = (PFalg_schm_item_t) { .name = n->sem.step.item_res,
-                                            .type = aat_pnode };
+                ty = aat_pnode;
+
+            ocol_at (n, ocols_count (n))
+                = (PFalg_schm_item_t) { .name = n->sem.step.item_res,
+                                        .type = ty };
             ocols_count (n)++;
-            break;
+        }   break;
 
         case la_doc_index_join:
 #ifndef NDEBUG
