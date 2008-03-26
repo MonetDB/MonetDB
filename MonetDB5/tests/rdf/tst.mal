@@ -1,0 +1,66 @@
+include rdf;
+
+rdf.importGraph("file:///ufs/antonell/workspace/rdf-load/resources/ladspa.rdfs", "db", "g"); 
+#rdf.importGraph("url", "db", "g");
+#b := algebra.fetchjoin(bbp.getNames(); 
+#io.print(b);'
+
+map:bat[:oid,:str] := bbp.bind("db_g_map");
+  s:bat[:oid,:str] := map;
+  p:bat[:oid,:str] := map;
+  o:bat[:oid,:str] := map;
+io.print(map);
+
+Spo:bat[:oid,:oid] := bbp.bind("db_g_Spo");
+sPo:bat[:oid,:oid] := bbp.bind("db_g_sPo");
+spO:bat[:oid,:oid] := bbp.bind("db_g_spO");
+s := algebra.fetchjoin(Spo,map); 
+p := algebra.fetchjoin(sPo,map); 
+o := algebra.fetchjoin(spO,map); 
+io.print("order: SPO");
+tablet.page(Spo,sPo,spO,s,p,o);
+
+Sop:bat[:oid,:oid] := bbp.bind("db_g_Sop");
+sOp:bat[:oid,:oid] := bbp.bind("db_g_sOp");
+soP:bat[:oid,:oid] := bbp.bind("db_g_soP");
+s := algebra.fetchjoin(Sop,map); 
+p := algebra.fetchjoin(soP,map); 
+o := algebra.fetchjoin(sOp,map); 
+io.print("order: SOP");
+tablet.page(Sop,soP,sOp,s,p,o);
+
+Pso:bat[:oid,:oid] := bbp.bind("db_g_Pso");
+pSo:bat[:oid,:oid] := bbp.bind("db_g_pSo");
+psO:bat[:oid,:oid] := bbp.bind("db_g_psO");
+s := algebra.fetchjoin(pSo,map); 
+p := algebra.fetchjoin(Pso,map); 
+o := algebra.fetchjoin(psO,map); 
+io.print("order: PSO");
+tablet.page(pSo,Pso,psO,s,p,o);
+
+Pos:bat[:oid,:oid] := bbp.bind("db_g_Pos");
+pOs:bat[:oid,:oid] := bbp.bind("db_g_pOs");
+poS:bat[:oid,:oid] := bbp.bind("db_g_poS");
+s := algebra.fetchjoin(poS,map); 
+p := algebra.fetchjoin(Pos,map); 
+o := algebra.fetchjoin(pOs,map); 
+io.print("order: POS");
+tablet.page(poS,Pos,pOs,s,p,o);
+
+Ops:bat[:oid,:oid] := bbp.bind("db_g_Ops");
+oPs:bat[:oid,:oid] := bbp.bind("db_g_oPs");
+opS:bat[:oid,:oid] := bbp.bind("db_g_opS");
+s := algebra.fetchjoin(opS,map); 
+p := algebra.fetchjoin(oPs,map); 
+o := algebra.fetchjoin(Ops,map); 
+io.print("order: OPS");
+tablet.page(opS,oPs,Ops,s,p,o);
+
+Osp:bat[:oid,:oid] := bbp.bind("db_g_Osp");
+oSp:bat[:oid,:oid] := bbp.bind("db_g_oSp");
+osP:bat[:oid,:oid] := bbp.bind("db_g_osP");
+s := algebra.fetchjoin(oSp,map); 
+p := algebra.fetchjoin(osP,map); 
+o := algebra.fetchjoin(Osp,map); 
+io.print("order: OSP");
+tablet.page(oSp,osP,Osp,s,p,o);
