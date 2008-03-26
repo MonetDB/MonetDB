@@ -1995,10 +1995,12 @@ if test "x$enable_optim" = xyes; then
       dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.*.
       x86_64-*-*-8.*)  CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
       x86_64-*-*-9.*)  CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
-      x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1 -O0 -restrict -unroll                     -axWPT  ";;
+#     x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1 -O1 -restrict -unroll                     -axWPT  ";;
+      x86_64-*-*-10.*) CFLAGS="$CFLAGS                                                        ";;
       i*86-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       i*86-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
-      i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O0 -restrict -unroll                     -axWPT  ";;
+#     i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O1 -restrict -unroll                     -axWPT  ";;
+      i*86-*-*-10.*)   CFLAGS="$CFLAGS                                                        ";;
       ia64-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       ia64-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll                     -mcpu=itanium2";;
@@ -2946,10 +2948,6 @@ then
         then
             AC_MSG_ERROR([MonetDB Buildtools could not be found,
                           although you requested to use them.])
-        else
-            AC_MSG_WARN([MonetDB Buildtools could not be found.
-                         You won't be able to compile $PACKAGE_NAME
-                         from CVS sources.])
         fi
 
     else
@@ -2960,14 +2958,11 @@ then
         BUILDTOOLS_CONFDIR=`"$BUILDTOOLS_CONFIG" --pkgdatadir`
         AC_SUBST(BUILDTOOLS_CONFDIR)
         rules_mk=$BUILDTOOLS_CONFDIR/rules.mk
-	if test -e $rules_mk; then
-		have_buildtools=yes;
-	else
-		have_buildtools=no;
-            	AC_MSG_WARN([$rules_mk could not be found.
-                          You won't be able to compile $PACKAGE_NAME
-                          from CVS sources.]);
-	fi
+        if test -e $rules_mk; then
+            have_buildtools=yes;
+        else
+            have_buildtools=no;
+        fi
     fi
 fi
 
