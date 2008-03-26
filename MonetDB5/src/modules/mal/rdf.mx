@@ -1,0 +1,601 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2008 CWI.
+@' All Rights Reserved.
+
+@f rdf
+@a M. Antonelli
+@+ Raptor (librdf.org) library interface
+Raptor is a free software / Open Source C library that provides a set
+of parsers and serializers that generate Resource Description Framework
+(RDF) triples by parsing syntaxes or serialize the triples into a syntax.
+The supported parsing syntaxes are RDF/XML, N-Triples, TRiG, Turtle, RSS
+tag soup including all versions of RSS, Atom 1.0 and 0.3, GRDDL and
+microformats for HTML, XHTML and XML. The serializing syntaxes are RDF/XML
+(regular, and abbreviated), N-Triples, RSS 1.0, Atom 1.0 and Adobe XMP.
+@{
+@mal
+module rdf;
+
+command import(url:str, map:bat[:str,:oid])(:bat[:oid,:oid],:bat[:oid,:oid],:bat[:oid,:oid])
+address RDFimport 
+comment "import a url with RDF, put the triples in the three new returned bats. 
+         The map is used and extended to map URI/literals to oids";
+
+command export( url:str, map:bat[:str,:oid], o:bat[:oid,:oid], p:bat[:oid,:oid], s:bat[:oid,:oid]) : void
+address RDFexport
+comment "export a triple table to some file url";
+
+command importGraph( url:str, db:str, graph:str) : void
+address RDFimportGraph
+comment "import a graph in a named rdf db";
+
+command exportGraph( url:str, db:str, graph:str) : void
+address RDFexportGraph
+comment "export a graph in a named rdf db";
+
+
+@+ Implementation
+
+@c
+#include "mal_config.h"
+#include "mal.h"
+#include "mal_exception.h"
+
+#include <gdk_bbp.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
+#include <raptor.h>
+
+#define rdf_export extern
+
+typedef struct {
+	lng *cur;
+	lng *lim;
+	BAT *map;
+	BAT *ob;
+	BAT *pb;
+	BAT *sb;
+	oid *o;
+	oid *p;
+	oid *s;
+	str ret;
+} triple_handler_vars;
+//TODO
+//static lng RDFestimate(str url) {
+//	url=NULL;
+//	return 8048;
+//}
+
+static str RDFimport_fail(BAT* map, BAT* ob, BAT* pb, BAT *sb) {
+    if (map) BBPunfix(map->batCacheid);
+    if (ob) BBPreclaim(ob);
+    if (pb) BBPreclaim(pb);
+    if (sb) BBPreclaim(sb);
+    throw(MAL, "RDFimport", "allocation failure"); 
+}
+
+void message_handler(void *user_data, raptor_locator *locator, const char *message)
+{
+	unsigned int maxlength = 2048;
+	char finalmessage[maxlength];
+	size_t length = 0;
+	char *msg = finalmessage;
+	str *ret = (str *)user_data;
+	if (locator->uri)
+	{
+		snprintf(msg, maxlength, "In URI location \"%s\": ", raptor_uri_as_string(locator->uri));
+		length = strlen(finalmessage);
+		msg = finalmessage + length*(sizeof(char));
+	}
+	if (locator->line >=0 && length < maxlength-1)
+	{
+		snprintf(msg, maxlength-length, "at line %d: ", locator->line);
+		length = strlen(finalmessage);
+		msg = finalmessage + length*(sizeof(char));
+	}
+	if (locator->column >=0 && length < maxlength-1)
+	{
+		snprintf(msg, maxlength-length, "at column %d: ", locator->column);
+		length = strlen(finalmessage);
+		msg = finalmessage + length*(sizeof(char));
+	}
+	if (message && length < maxlength-1)
+	{
+		snprintf(msg, maxlength-length, "%s\n", message);
+	}
+	*ret=finalmessage;
+}
+
+@= RDFins
+	HASHfnd_str(bun, mi, @1v);//bun is returned, is an index.
+    if (bun == BUN_NONE)
+    {
+    	if (map->T->hash == NULL || BATcount(map) > 4 * map->T->hash->mask)
+    	{
+		HASHdestroy(map); /* keeps hash performance in check */
+	        BAThash(BATmirror(map), 2*BATcount(map));
+    	}
+        bun = (BUN) map->batCount;
+        if (!BUNappend(map,(ptr)@1v, TRUE)) {
+            GDKerror("RDFimport: @1[" LLFMT "] = %s, BUNappend fails\n", cur, @1v);
+            data->ret = RDFimport_fail(map,ob,pb,sb);
+        }
+   }
+   /* s,p,o[cur] are set to the virtual oid which is bun s p and o are arrays of oid */
+   @1[*cur] = (oid) bun;
+@c
+void
+triples_handler(void* user_data, const raptor_statement* triple) 
+{
+	triple_handler_vars *data = (triple_handler_vars *)user_data;
+	lng *cur = data->cur;
+	lng *lim = data->lim;
+	str ov, pv, sv;
+	BAT *map = data->map;
+	BAT *sb = data->sb;
+	BAT *pb = data->pb;
+	BAT *ob = data->ob;
+	oid *o = data->o;
+	oid *p = data->p;
+	oid *s = data->s;
+	BATiter mi = bat_iterator(BATmirror(map));
+	BUN bun;
+	if (data->ret!=MAL_SUCCEED)
+		return;
+	/* get the subject */
+	if (triple->subject_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE)
+		sv = (str)raptor_uri_as_string((raptor_uri *)triple->subject);
+	else if (triple->subject_type == RAPTOR_IDENTIFIER_TYPE_ANONYMOUS)
+		sv = (str)triple->subject;
+	else
+	{
+		data->ret="Unexpected subject type";
+		return;
+	}
+	
+	/* get the predicate */
+	if(triple->predicate_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE)
+	    pv = (str)raptor_uri_as_string((raptor_uri *)triple->predicate);
+	else
+	{
+		data->ret="Unexpected predicate type";
+		return;
+	}
+	
+	/* get the object */
+	if(triple->object_type == RAPTOR_IDENTIFIER_TYPE_LITERAL)
+	{
+		//if(triple->object_literal_datatype)
+	    	//ov = (str)raptor_uri_as_string((raptor_uri*)triple->object_literal_datatype);
+	    ov = (str)triple->object;// TODO concatenate?
+	}
+	else if(triple->object_type == RAPTOR_IDENTIFIER_TYPE_ANONYMOUS)
+		ov = (str)triple->object;
+	else if (triple->object_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE)
+		ov = (str)raptor_uri_as_string((raptor_uri*)triple->object);
+	else
+	{
+		data->ret="Unexpected object type";
+		return;
+	}
+	
+	@:RDFins(o)@
+	if (data->ret == MAL_SUCCEED)
+	{
+	    @:RDFins(p)@
+	    if (data->ret == MAL_SUCCEED)
+	    {
+	    	@:RDFins(s)@
+	    	if (data->ret == MAL_SUCCEED)
+	    	{
+			    if (++(*cur) > *lim) {
+			        *lim *= 2;
+			        ob = BATextend(ob, *lim);
+			        pb = BATextend(pb, *lim);
+			        sb = BATextend(sb, *lim);
+			        if (ob == NULL || pb == NULL || sb == NULL)
+			            data->ret = RDFimport_fail(map,ob,pb,sb);
+			        o = (oid *) Tloc(ob, BUNfirst(ob));
+			        p = (oid *) Tloc(pb, BUNfirst(pb));
+			        s = (oid *) Tloc(sb, BUNfirst(sb));
+			    }
+	    	}
+	    }
+	}
+}
+
+static str 
+RDFimport_(BAT** S, BAT** P, BAT **O, str url, BAT *map) {
+	raptor_parser *parser;
+	raptor_uri *rdf_file;
+	raptor_init();
+	parser = raptor_new_parser("rdfxml");
+	if (parser)
+	{
+		rdf_file = raptor_new_uri((unsigned char*)url);
+		if (rdf_file)
+		{
+			BAT *ob, *pb, *sb;
+			oid *o,*p,*s;
+			triple_handler_vars *data;
+			lng *cur;
+			lng *lim;
+			*cur = 0;
+			*lim = 8000;//RDFestimate(url);
+			ob = *O = BATnew(TYPE_void, TYPE_oid, *lim);
+		    pb = *P = BATnew(TYPE_void, TYPE_oid, *lim);
+		    sb = *S = BATnew(TYPE_void, TYPE_oid, *lim);
+		    o = (oid *) Tloc(ob, BUNfirst(ob));
+		    p = (oid *) Tloc(pb, BUNfirst(pb));
+		    s = (oid *) Tloc(sb, BUNfirst(sb));
+		    
+		    //char obuf[20],*op, pbuf[20],*pp, sbuf[20],*sp;
+		    //str ov, pv, sv;
+		    
+		    if (map == NULL || ob == NULL || pb == NULL || sb == NULL)
+		        return RDFimport_fail(map,ob,pb,sb);
+		
+		    
+		
+//		    strcpy(obuf, "object");    for(ov=op=obuf; *op; op++); op[1]=0;
+//		    strcpy(pbuf, "predicate"); for(pv=pp=pbuf; *pp; pp++); pp[1]=0;
+//		    strcpy(sbuf, "subject");   for(sv=sp=sbuf; *sp; sp++); sp[1]=0;
+//		    while (cur < 8 /*redland gives me (ov,pv,sv)*/  ) {
+//		        *op = (cur & 4)?'1':'0';
+//		        *pp = (cur & 2)?'1':'0';
+//		        *sp = (cur & 1)?'1':'0'; 
+//		    	RDFins(o) /* mx macros*/
+//		        RDFins(p)
+//		        RDFins(s)
+//		
+//		        if (++cur > lim) {
+//		            lim *= 2;
+//		            ob = BATextend(ob, lim);
+//		            pb = BATextend(pb, lim);
+//		            sb = BATextend(sb, lim);
+//		            if (ob == NULL || pb == NULL || sb == NULL)
+//		                return RDFimport_fail(map,ob,pb,sb);
+//		            o = (oid *) Tloc(ob, BUNfirst(ob));
+//		            p = (oid *) Tloc(pb, BUNfirst(pb));
+//		            s = (oid *) Tloc(sb, BUNfirst(sb));
+//		        }
+//		    }
+		    
+		    data = malloc(sizeof(triple_handler_vars));
+		    if (data)
+		    {
+		    	data->cur = cur;
+		    	data->lim = lim;
+		    	data->map =map;
+		    	data->sb = sb;
+		    	data->pb = pb;
+		    	data->ob = ob;
+		    	data->s = s;
+		    	data->p = p;
+		    	data->o = o;
+		    	data->ret = MAL_SUCCEED;
+		    	raptor_set_statement_handler(parser, data, triples_handler);
+				raptor_set_fatal_error_handler(parser, &data->ret, message_handler);
+				raptor_set_error_handler(parser, &data->ret, message_handler);
+				raptor_set_warning_handler(parser, &data->ret, message_handler);
+				//raptor_set_parser_strict(parser, TRUE);
+			    
+			    if (raptor_parse_file(parser, rdf_file, NULL) == 0)
+			    {
+				    /* do something with redland */
+				    if (data->ret == MAL_SUCCEED)
+				    {
+					    BATseqbase(ob, 0);
+					    BATseqbase(pb, 0);
+					    BATseqbase(sb, 0);
+					    BATsetcount(ob, *cur);
+					    BATsetcount(pb, *cur);
+					    BATsetcount(sb, *cur);
+					    ob->tsorted = 0;
+					    pb->tsorted = 0;
+					    sb->tsorted = 0;
+					    BATkey(BATmirror(ob), FALSE);
+					    BATkey(BATmirror(sb), FALSE);
+					    BATkey(BATmirror(pb), FALSE);
+					    
+					    free(data);
+					    raptor_free_parser(parser);
+						raptor_free_uri(rdf_file);
+						raptor_finish();
+						return MAL_SUCCEED;
+				    }
+				    else
+				    	throw(MAL, "rdf.import", data->ret);
+			    }
+			    else
+			    	throw(MAL, "rdf.import", "RDF parsing error");
+		    }
+		    else
+		    	throw(MAL, "rdf.import", "triple_handler_vars malloc failed");
+		}
+		else
+			throw(MAL, "rdf.import", "Unexistent file: \"%s\"", url);
+	}
+	else
+		throw(MAL, "rdf.import", "Could not create a Redland parser");
+}
+
+rdf_export str RDFimport(int* S, int* P, int* O, str *url, bat m)
+{
+    BAT *sb = NULL, *ob=NULL, *pb = NULL, *map = BATdescriptor(m);
+    str ret;
+    if (map) {
+        RDFimport_(&sb, &pb, &ob, *url, map);
+        if (ret == MAL_SUCCEED) {
+            BBPkeepref(*O = ob->batCacheid);//changes physical reference to logical
+            BBPkeepref(*P = pb->batCacheid);
+            BBPkeepref(*S = sb->batCacheid);
+        }
+        BBPreleaseref(map->batCacheid);
+    }
+    return ret;
+}
+
+static str 
+RDFexport_(str url, bat M, bat S, bat P, bat O) {
+    str ret = "RDFexport failed to obtain bats";
+    BAT *map = BATdescriptor(M);
+    if (map) {
+        BAT *sb = BATdescriptor(S);
+        if (sb) {
+            BAT *pb = BATdescriptor(P);
+            if (pb) {
+                BAT *ob = BATdescriptor(O);
+                if (ob) {
+                    lng i, cnt = BATcount(ob);
+                    oid *o = (oid *) Tloc(ob, BUNfirst(ob));
+                    oid *p = (oid *) Tloc(pb, BUNfirst(pb));
+                    oid *s = (oid *) Tloc(sb, BUNfirst(sb));
+                    //var_t position in heap
+                    var_t *off = (var_t *) Tloc(map, BUNfirst(map));
+                    str base = (str) map->T->vheap->base;//heap first position
+    
+                    for(i=0; i <cnt; i++) {
+                        str ov = base + off[o[i]];
+                        str pv = base + off[p[i]];
+                        str sv = base + off[s[i]];
+                        stream_printf(GDKout, "'%s' '%s' '%s' '%s'\n", ov, pv, sv, url);
+                    }
+                    ret = MAL_SUCCEED;
+                    BBPreleaseref(ob->batCacheid);
+                }                
+                BBPreleaseref(pb->batCacheid);
+            }                
+            BBPreleaseref(sb->batCacheid);
+        }                
+        BBPreleaseref(map->batCacheid);
+    }                
+    return ret;
+}
+
+str 
+RDFexport(str *url, bat M, bat S, bat P, bat O) {
+    str ret = RDFexport_(*url, M, S, P, O);
+    if (ret != MAL_SUCCEED)
+        throw(MAL, "RDFexport", ret);
+    return MAL_SUCCEED;
+}
+
+int CTrefine(BAT **ret, BAT *b, BAT *a);
+BAT * BATmalleftfetchjoin(BAT *l, BAT *r);
+static str
+RDFsort(BAT *commit,
+		BAT *S, BAT *sb, BAT *pb, BAT *ob,
+		BAT **Spo, BAT **sPo, BAT **spO,
+		str Spo_nme, str sPo_nme, str spO_nme, str db, str graph)
+{
+    BAT *SPO, *SP;
+    str ret = "RDFsort: allocation failure";
+    CTrefine(&SP, S, pb);
+    if (SP) {
+        CTrefine(&SPO, SP, ob);
+        BBPreclaim(SP);
+        if (SPO) {
+            BAT *piv = BATmirror(BATmark(SPO, 0));
+            BBPreclaim(SPO);
+            if (piv) {
+            	/*BATleftfetchjoin wants also a size_t estimate
+            	 * BATmalleftfetchjoin not. Which has to be used?
+            	 * TODO*/ 
+                *Spo = BATleftfetchjoin(piv, sb, oid_nil);
+                if (Spo) {
+                    *sPo = BATleftfetchjoin(piv, pb, oid_nil);
+                    if (sPo) {
+                        *spO = BATleftfetchjoin(piv, ob, oid_nil);
+                        if (spO) {
+                            char Spo_buf[1024], sPo_buf[1024], spO_buf[1024];
+                            snprintf(Spo_buf, 1024, "%s_%s_%s", db, graph, Spo_nme);
+                            snprintf(sPo_buf, 1024, "%s_%s_%s", db, graph, sPo_nme);
+                            snprintf(spO_buf, 1024, "%s_%s_%s", db, graph, spO_nme);
+    
+                            ret = "RDFsort: BATname failure";
+                            if (BATname(*Spo, Spo_buf) == 0 &&
+                                BATname(*sPo, sPo_buf) == 0 &&
+                                BATname(*spO, spO_buf) == 0) 
+                            {
+                                ret = "RDFsort: BATmode failure";
+                                if (BATmode(*Spo, PERSISTENT) &&
+                                    BATmode(*sPo, PERSISTENT) &&
+                                    BATmode(*spO, PERSISTENT))
+                                {
+                                    BBPreclaim(piv);
+                                    BUNfastins(commit, &((*Spo)->batCacheid), Spo_buf);
+                                    BUNfastins(commit, &((*sPo)->batCacheid), sPo_buf);
+                                    BUNfastins(commit, &((*spO)->batCacheid), spO_buf);
+
+                                    // physical reference, i.e. memory pressure
+                                    BBPreleaseref((*Spo)->batCacheid);
+                                    BBPreleaseref((*sPo)->batCacheid);
+                                    BBPreleaseref((*spO)->batCacheid);
+                                    return MAL_SUCCEED;
+                                } else {
+                                    BATmode(*Spo, TRANSIENT);
+                                    BATmode(*sPo, TRANSIENT);
+                                    BATmode(*spO, TRANSIENT);
+                                }
+                            }
+                            BBPreclaim(*spO);
+                        }
+                        BBPreclaim(*sPo);
+                    }
+                    BBPreclaim(*Spo);
+                }
+                BBPreclaim(piv);
+            }
+        } 
+    }	
+    return ret;
+}
+
+@= sort
+RDFsort(commit, sorted, @1,@2,@3,&@4,&@5,&@6,"@4","@5","@6",*db,*graph);
+@c
+str RDFimportGraph(int *d, str *url, str *db, str *graph)
+{
+    BAT *map = NULL, *sb = NULL, *ob=NULL, *pb = NULL, *commit = BATnew(TYPE_bat, TYPE_str, 20);
+    str ret = "RDFimportGraph failed to obtain bats";
+    (void)d;
+    if (commit) {
+        char map_buf[1024];
+        int mapIndex;
+        snprintf(map_buf, 1024, "%s_%s_map", *db, *graph);
+        mapIndex = BBPindex(map_buf);
+        if (mapIndex) {
+            map = BATdescriptor(mapIndex);
+        } else {
+            map = BATnew(TYPE_void, TYPE_str, 8192);
+            if (map && (BATname(map, map_buf) == 0) && BATmode(map, PERSISTENT)) {
+                /*
+                 * inserts in commit a pointer to map in the left column
+                 * and the map name (map_buf) in the right one
+                 */
+		BATseqbase(map, 0);
+            	BUNfastins(commit, &(map->batCacheid), map_buf);
+            } else if (map) {
+                BBPreclaim(map);
+                map = NULL;
+            }
+        }
+    }
+    if (map) {
+        ret = RDFimport_(&sb, &pb, &ob, *url, map);
+        if (ret == MAL_SUCCEED) {
+            BAT *Spo = NULL, *sPo = NULL, *spO = NULL; 
+            BAT *Sop = NULL, *sOp = NULL, *soP = NULL; 
+            BAT *Pos = NULL, *pOs = NULL, *poS = NULL; 
+            BAT *Pso = NULL, *pSo = NULL, *psO = NULL; 
+            BAT *Ops = NULL, *oPs = NULL, *opS = NULL; 
+            BAT *Osp = NULL, *oSp = NULL, *osP = NULL; 
+            
+            BATiter ci = bat_iterator(commit);
+            BUN p, q;
+            BAT *sorted = BATmirror(BATsort(BATmirror(sb)));
+
+            ret = "RDFimportGraph: sorting failed";
+            if (sorted) {
+            	ret = @:sort(sb, pb, ob, Spo, sPo, spO)@
+                if (ret  == MAL_SUCCEED) {
+                	ret = @:sort(sb, ob, pb, Sop, sOp, soP)@
+                    if (ret == MAL_SUCCEED) {
+                        BBPreclaim(sorted);
+                        sorted = BATmirror(BATsort(BATmirror(pb)));
+                        if (sorted) {
+                        	ret = @:sort(pb, ob,sb,Pos,pOs,poS)@
+                            if (ret == MAL_SUCCEED) {
+                            	ret = @:sort(pb, sb,ob,Pso,pSo,psO)@
+                                if (ret == MAL_SUCCEED) {
+                                    BBPreclaim(sorted);
+                                    sorted = BATmirror(BATsort(BATmirror(ob)));
+                                    if (sorted) {
+                                    	ret = @:sort(ob, pb, sb, Ops, oPs, opS)@
+                                        if (ret == MAL_SUCCEED) {
+                                        	ret = @:sort(ob, sb, pb,Osp,oSp,osP)@
+                                            if (ret == MAL_SUCCEED) {
+                                                ret = MAL_SUCCEED;
+                                                goto succeed;
+                                            }
+                                            BBPreclaim(Ops); BBPreclaim(oPs); BBPreclaim(opS);
+                                        }
+                                        BBPreclaim(sorted);
+                                    } 
+                                    BBPreclaim(psO); BBPreclaim(pSo); BBPreclaim(psO);
+                                } 
+                                BBPreclaim(Pos); BBPreclaim(pOs); BBPreclaim(poS);
+                            } 
+                        }
+                        BBPreclaim(Sop); BBPreclaim(sOp); BBPreclaim(soP);
+                    } 
+                    BBPreclaim(Spo); BBPreclaim(sPo); BBPreclaim(spO);
+                } 
+            }
+succeed:    if (ret == MAL_SUCCEED && TMsubcommit(commit)) {
+                ret = "RDFimportGraph: commit failed";
+            }
+	    if (ret != MAL_SUCCEED) {
+                /* we failed to create everything succesfully and commit. destroy all bats */
+                BATloop(commit, p, q) { 
+                    bat bid = *(bat*) BUNhead(ci,p);
+                    BAT *b = BATdescriptor(bid);
+                    if (b) {
+                        BATmode(b, TRANSIENT);
+                        BBPreleaseref(bid);
+                    }
+                }
+            }
+            BBPreleaseref(sb->batCacheid);// release physical ref
+            BBPreleaseref(pb->batCacheid);
+            BBPreleaseref(ob->batCacheid);
+        }
+        BBPreclaim(commit); // will release logical refs on all bats (if they are persistent, they will stay alive)  
+    }
+    if (ret != MAL_SUCCEED)
+        throw(MAL, "RDFimportGraph", ret);
+    return MAL_SUCCEED;
+}
+str RDFexportGraph(str *url, str *db, str *graph) {
+    char m_buf[1024], o_buf[1024], p_buf[1024], s_buf[1024];
+    bat map, ob, pb, sb;
+    str ret = "RDFexportGraph failed to obtain bats";
+
+    snprintf(m_buf, 1024, "%s_%s_map", *db, *graph);
+    snprintf(p_buf, 1024, "%s_%s_Ops", *db, *graph);
+    snprintf(o_buf, 1024, "%s_%s_oPs", *db, *graph);
+    snprintf(s_buf, 1024, "%s_%s_opS", *db, *graph);
+    map = BBPindex(m_buf);
+    if (map) {
+        sb = BBPindex(s_buf);
+        if (sb) {
+            pb = BBPindex(p_buf);
+            if (pb) {
+                ob = BBPindex(o_buf);
+                if (ob) {
+                    ret = RDFexport_(*url, map, sb, pb, ob);
+                }
+            }
+        }
+    }
+    if (ret != MAL_SUCCEED)
+        throw(MAL, "RDFexportGraph", ret);
+    return MAL_SUCCEED;
+}
+@}
