@@ -572,7 +572,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 PFprop_level_right (n->prop, n->sem.step.item) >= 0 &&
                 (n->sem.step.spec.axis == alg_desc ||
                  n->sem.step.spec.axis == alg_desc_s) &&
-                PFprop_guide_count (R(n)->prop, n->sem.step.item) &&
+                PFprop_guide (R(n)->prop, n->sem.step.item) &&
                 find_guide_max_rec (
                     n->sem.step.guide_count,
                     n->sem.step.guides,
