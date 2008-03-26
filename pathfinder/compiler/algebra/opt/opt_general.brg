@@ -468,6 +468,7 @@ reduce (PFla_op_t *p, int goalnt)
 
             *p = *PFla_lit_tbl_ (PFalg_attlist_ (acount, atts), tcount, tuples);
             SEEN(p) = false;
+            label (p)
         }   break;
 
         /* Rel:    cross (lit_tbl, lit_tbl) */
@@ -663,6 +664,7 @@ reduce (PFla_op_t *p, int goalnt)
 
             *p = *PFla_lit_tbl_ (PFalg_attlist_ (acount, atts), tcount, tuples);
             SEEN(p) = false;
+            label (p)
         }   break;
 
         /* Rel:    select_ (Rel) */
@@ -879,6 +881,7 @@ reduce (PFla_op_t *p, int goalnt)
 
             *p = *PFla_lit_tbl_ (PFalg_attlist_ (acount, atts), tcount, tuples);
             SEEN(p) = false;
+            label (p)
         }   break;
 
         /* Rel:    disjunion (EmptyRel, Rel) */
@@ -1170,7 +1173,7 @@ reduce (PFla_op_t *p, int goalnt)
              */
             *p = *PFla_empty_tbl_ (p->schema);
             SEEN(p) = true;
-            relabel (p, kids);
+            label (p);
         } break;
 
         default:
