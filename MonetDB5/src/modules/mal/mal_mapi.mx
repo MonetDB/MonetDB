@@ -641,7 +641,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 		sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (sock < 0)
 			throw(IO, "mal_mapi.listen",
-					"Creation of stream socket failedi: %s",
+					"Creation of stream socket failed: %s",
 					strerror(errno));
 
 		/* In auto-sensing mode, start at the default */
