@@ -1,24 +1,21 @@
 stdout of test 'MapiClient-dump.SF-905851` in directory 'src/test/BugDay_2005-10-06_2.8` itself:
 
 
-# 18:56:02 >  
-# 18:56:02 >  Mtimeout -timeout 360  mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//dbfarm" --set "sql_logdir=/ufs/mk/monet5//dblogs/logs/sql" --set "xquery_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=30232 --set xrpc_port=43644 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --dbinit=' include sql;' ; echo ; echo Over..
-# 18:56:02 >  
+# 11:26:15 >  
+# 11:26:15 >   Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=39069 --set xrpc_port=40740 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" "--dbinit= module(sql_server);" ; echo ; echo Over..
+# 11:26:15 >  
 
-# MonetDB server v5.1.0, based on kernel v1.19.0
-# Serving database 'mTests_src_test_BugDay_2005-10-06_2.8'
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:30232/
-# MonetDB/SQL module v2.19.0 loaded
+# MonetDB Server v4.22.0
+# based on GDK   v1.22.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# MonetDB/SQL module v2.22.1 loaded
+
+printf("\nReady.\n");
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
-#Client 1 1
-#MALexit: clients still active
+quit();
 
 Over..
 
@@ -77,10 +74,10 @@ CREATE TABLE "sys"."allnewtriples" (
 	CONSTRAINT "allnewtriples_id_pkey" PRIMARY KEY ("id"),
 	CONSTRAINT "unique_key" UNIQUE ("subject", "predicate", "object")
 );
-CREATE INDEX "allnewtriples_object_idx" ON "allnewtriples" ("object");
-CREATE INDEX "allnewtriples_predicate_idx" ON "allnewtriples" ("predicate");
-CREATE INDEX "allnewtriples_subject_idx" ON "allnewtriples" ("subject");
-COPY 7 RECORDS INTO "allnewtriples" FROM stdin USING DELIMITERS '\t';
+CREATE INDEX "allnewtriples_object_idx" ON "sys"."allnewtriples" ("object");
+CREATE INDEX "allnewtriples_predicate_idx" ON "sys"."allnewtriples" ("predicate");
+CREATE INDEX "allnewtriples_subject_idx" ON "sys"."allnewtriples" ("subject");
+COPY 7 RECORDS INTO "sys"."allnewtriples" FROM stdin USING DELIMITERS '\t';
 1	1	1	1	false
 2	1	1	2	false
 3	1	2	1	false
@@ -96,7 +93,7 @@ CREATE TABLE "sys"."foreign" (
 	CONSTRAINT "foreign_id_fkey" FOREIGN KEY ("id") REFERENCES "allnewtriples" ("id"),
 	CONSTRAINT "foreign_subject_predicate_object_fkey" FOREIGN KEY ("subject", "predicate", "object") REFERENCES "allnewtriples" ("subject", "predicate", "object")
 );
-COPY 7 RECORDS INTO "foreign" FROM stdin USING DELIMITERS '\t';
+COPY 7 RECORDS INTO "sys"."foreign" FROM stdin USING DELIMITERS '\t';
 1	1	1	1
 2	2	2	2
 3	1	2	2
@@ -112,13 +109,13 @@ CREATE TABLE "sys"."triples" (
 	"explicit" boolean NOT NULL,
 	CONSTRAINT "triples_subject_predicate_object_unique" UNIQUE ("subject", "predicate", "object")
 );
-CREATE INDEX "triples_object_idx" ON "triples" ("object");
-CREATE INDEX "triples_predicate_idx" ON "triples" ("predicate");
-CREATE INDEX "triples_predicate_object_idx" ON "triples" ("predicate", "object");
-CREATE INDEX "triples_subject_idx" ON "triples" ("subject");
-CREATE INDEX "triples_subject_object_idx" ON "triples" ("subject", "object");
-CREATE INDEX "triples_subject_predicate_idx" ON "triples" ("subject", "predicate");
-COPY 0 RECORDS INTO "triples" FROM stdin USING DELIMITERS '\t';
+CREATE INDEX "triples_object_idx" ON "sys"."triples" ("object");
+CREATE INDEX "triples_predicate_idx" ON "sys"."triples" ("predicate");
+CREATE INDEX "triples_predicate_object_idx" ON "sys"."triples" ("predicate", "object");
+CREATE INDEX "triples_subject_idx" ON "sys"."triples" ("subject");
+CREATE INDEX "triples_subject_object_idx" ON "sys"."triples" ("subject", "object");
+CREATE INDEX "triples_subject_predicate_idx" ON "sys"."triples" ("subject", "predicate");
+COPY 0 RECORDS INTO "sys"."triples" FROM stdin USING DELIMITERS '\t';
 COMMIT;
 
 # 15:55:38 >  

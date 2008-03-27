@@ -155,32 +155,6 @@ rel_setsubquery(sql_rel*r)
 	set_subquery(r);
 }
 
-#if 0
-static sql_subtype *
-rel_subtype( sql_rel *r )
-{
-	if (is_project(r->op)) {
-		list *exps = r->exps;
-		if (exps && list_length(exps) >= 1) 
-			return exp_subtype(exps->t->data);
-	} else if (r->op == op_union) {
-		return rel_subtype(r->l);
-	}
-	return NULL;
-}
-#endif
-
-static sql_exp*
-exp_label( sql_exp *e, int nr)
-{
-	char name[16], *nme;
-
-	nme = number2name(name, 16, nr);
-	assert(e->name == NULL);
-	e->name = _strdup(nme);
-	return e;
-}
-
 static void
 rel_label( sql_rel *r, int nr)
 {

@@ -293,7 +293,7 @@ list_order(list *l, fcmp cmp, fdup dup)
 	/* use simple insert sort */
 	for (n = l->h; n; n = n->next) {
 		int append = 1;
-		for (m = res->h; m; m = m->next) {
+		for (m = res->h; m && append; m = m->next) {
 			if (cmp(n->data, m->data) > 0) {
 				list_append_before(res, m, dup(n->data));
 				append = 0;

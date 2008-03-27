@@ -1,22 +1,21 @@
 stdout of test 'count_crash.SF-1918780` in directory 'src/test/BugTracker` itself:
 
 
-# 08:55:17 >  
-# 08:55:17 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=37612 --set xrpc_port=47617 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 08:55:17 >  
+# 11:28:08 >  
+# 11:28:08 >   Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=39069 --set xrpc_port=40740 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" "--dbinit= module(sql_server);" ; echo ; echo Over..
+# 11:28:08 >  
 
-# MonetDB server v5.4.0, based on kernel v1.22.0
-# Serving database 'mTests_src_test_BugTracker'
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:37612/
-# MonetDB/SQL module v2.22.0 loaded
+# MonetDB Server v4.22.0
+# based on GDK   v1.22.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# MonetDB/SQL module v2.22.1 loaded
+
+printf("\nReady.\n");
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
+quit();
 
 Over..
 
@@ -28,7 +27,7 @@ Over..
 % count_no_nil_single_value # name
 % int # type
 % 2 # length
-[ 35	]
+[ 34	]
 
 # 08:55:17 >  
 # 08:55:17 >  Done.
