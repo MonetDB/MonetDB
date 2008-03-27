@@ -992,8 +992,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_02D9972BD07B43A5BB5A1E3A7629B04B"
             {
-            "SourcePath" = "8:share\\MonetDB\\lib\\monetdb-1.2-mcl.jar"
-            "TargetName" = "8:monetdb-1.2-mcl.jar"
+            "SourcePath" = "8:share\\MonetDB\\lib\\monetdb-1.3-mcl.jar"
+            "TargetName" = "8:monetdb-1.3-mcl.jar"
             "Tag" = "8:"
             "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"
