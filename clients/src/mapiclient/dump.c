@@ -685,11 +685,12 @@ dump_tables(Mapi mid, stream *toConsole)
 {
 	const char *start = "START TRANSACTION";
 	const char *end = "COMMIT";
-	const char *schemas = "SELECT \"name\" FROM \"sys\".\"schemas\"";
+	const char *schemas = "SELECT \"name\" FROM \"sys\".\"schemas\" ORDER BY \"name\"";
 	const char *sequences1 = "SELECT \"sch\".\"name\",\"seq\".\"name\" "
 		"FROM \"sys\".\"schemas\" \"sch\", "
 		     "\"sys\".\"sequences\" \"seq\" "
-		"WHERE \"sch\".\"id\" = \"seq\".\"schema_id\"";
+		"WHERE \"sch\".\"id\" = \"seq\".\"schema_id\" "
+		"ORDER BY \"sch\".\"name\",\"seq\".\"name\"";
 	const char *sequences2 = "SELECT \"s\".\"name\","
 		     "\"seq\".\"name\","
 		     "get_value_for(\"s\".\"name\",\"seq\".\"name\"),"
@@ -699,13 +700,15 @@ dump_tables(Mapi mid, stream *toConsole)
 		     "\"seq\".\"cycle\" "
 		"FROM \"sys\".\"sequences\" \"seq\", "
 		     "\"sys\".\"schemas\" \"s\" "
-		"WHERE \"s\".\"id\" = \"seq\".\"schema_id\"";
-	const char *tables = "SELECT s.\"name\",t.\"name\" "
+		"WHERE \"s\".\"id\" = \"seq\".\"schema_id\" "
+		"ORDER BY \"s\".\"name\",\"seq\".\"name\"";;
+	const char *tables = "SELECT \"s\".\"name\",\"t\".\"name\" "
 		"FROM \"sys\".\"schemas\" \"s\","
 		     "\"sys\".\"_tables\" \"t\" "
 		"WHERE \"t\".\"type\" = 0 AND "
 		      "\"t\".\"system\" = FALSE AND "
-		      "\"s\".\"id\" = \"t\".\"schema_id\"";
+		      "\"s\".\"id\" = \"t\".\"schema_id\" "
+		"ORDER BY \"s\".\"name\",\"t\".\"name\"";
 	const char *views = "SELECT \"s\".\"name\","
 		    "\"t\".\"name\","
 		    "\"t\".\"query\" "
@@ -713,12 +716,14 @@ dump_tables(Mapi mid, stream *toConsole)
 		     "\"sys\".\"_tables\" \"t\" "
 		"WHERE \"t\".\"type\" = 1 AND "
 		      "\"t\".\"system\" = FALSE AND "
-		      "\"s\".\"id\" = \"t\".\"schema_id\"";
+		      "\"s\".\"id\" = \"t\".\"schema_id\" "
+		"ORDER BY \"s\".\"name\",\"t\".\"name\"";
 	const char *functions = "SELECT \"s\".\"name\",\"f\".\"func\" "
 		"FROM \"sys\".\"schemas\" \"s\","
 		     "\"sys\".\"functions\" \"f\" "
 		"WHERE \"f\".\"sql\" = TRUE AND "
-		      "\"s\".\"id\" = \"f\".\"schema_id\"";
+		      "\"s\".\"id\" = \"f\".\"schema_id\" "
+		"ORDER BY \"s\".\"name\",\"f\".\"func\"";
 	char *sname;
 	MapiHdl hdl;
 	int rc = 0;
