@@ -155,6 +155,17 @@ rel_setsubquery(sql_rel*r)
 	set_subquery(r);
 }
 
+static sql_exp*
+exp_label( sql_exp *e, int nr)
+{
+	char name[16], *nme;
+
+	nme = number2name(name, 16, nr);
+	assert(e->name == NULL);
+	e->name = _strdup(nme);
+	return e;
+}
+
 static void
 rel_label( sql_rel *r, int nr)
 {
