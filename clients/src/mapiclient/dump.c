@@ -701,7 +701,7 @@ dump_tables(Mapi mid, stream *toConsole)
 		"FROM \"sys\".\"sequences\" \"seq\", "
 		     "\"sys\".\"schemas\" \"s\" "
 		"WHERE \"s\".\"id\" = \"seq\".\"schema_id\" "
-		"ORDER BY \"s\".\"name\",\"seq\".\"name\"";;
+		"ORDER BY \"s\".\"name\",\"seq\".\"name\"";
 	const char *tables = "SELECT \"s\".\"name\",\"t\".\"name\" "
 		"FROM \"sys\".\"schemas\" \"s\","
 		     "\"sys\".\"_tables\" \"t\" "
