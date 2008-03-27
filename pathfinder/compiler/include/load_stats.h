@@ -32,7 +32,7 @@
 #ifndef LOAD_STATS_H
 #define LOAD_STATS_H
 
-#include "ordering.h"
+#include "qname.h"
 
 /* Kind of a guide node */
 enum PFguide_kind_t {
@@ -54,16 +54,9 @@ struct PFguide_tree_t {
     unsigned int    max;        /* maximum number of occurrences */
     int             level;      /* level of the node */
     PFguide_kind_t  kind;       /* kind of the node */
-    char           *tag_name;   /* name of the node */
+    PFqname_t       name;       /* name of the node */
     PFguide_tree_t *parent;     /* parent of the node */
     PFarray_t      *child_list; /* all childs of the node */
-};
-
-/* Maps a list of guides to a column */
-typedef struct PFguide_mapping_t PFguide_mapping_t;
-struct PFguide_mapping_t {
-    PFalg_att_t   column;        /* name of the column */
-    PFarray_t    *guide_list;    /* list of guide nodes */
 };
 
 /* create a guide tree from a file */

@@ -2486,6 +2486,14 @@ PFpa_llscjoin (const PFpa_op_t *ctx,
     if (spec.axis == alg_attr)
         ret->schema.items[1]
             = (PFalg_schm_item_t) { .name = item, .type = aat_anode };
+    else if (spec.axis == alg_anc_s)
+        ret->schema.items[1]
+            = (PFalg_schm_item_t) { .name = item,
+                                    .type = type_of (ctx, item) | aat_pnode };
+    else if (spec.axis == alg_desc_s || spec.axis == alg_self)
+        ret->schema.items[1]
+            = (PFalg_schm_item_t) { .name = item,
+                                    .type = type_of (ctx, item) };
     else
         ret->schema.items[1]
             = (PFalg_schm_item_t) { .name = item, .type = aat_pnode };

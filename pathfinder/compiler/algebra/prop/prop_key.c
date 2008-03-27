@@ -413,7 +413,6 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             break;
 
         case la_select:
-        case la_pos_select:
         case la_difference:
         case la_type_assert:
         case la_roots:
@@ -421,6 +420,16 @@ infer_key (PFla_op_t *n, bool with_guide_info)
         case la_cond_err:
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
+            break;
+            
+        case la_pos_select:
+            /* key columns are propagated */
+            copy (n->prop->keys, L(n)->prop->keys);
+            
+            /* propagate the partition column as there can
+               be only one matching position for every partition */
+            if (n->sem.pos_sel.part)
+                union_ (n->prop->keys, n->sem.pos_sel.part);
             break;
 
         case la_intersect:
@@ -537,7 +546,10 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             break;
 
         case la_guide_step:
-            if ((n->sem.step.spec.axis == alg_chld ||
+            /* copy the iter key if it exists and the cardinality
+               does not change */               
+            if (PFprop_key (R(n)->prop, n->sem.step.iter) &&
+                (n->sem.step.spec.axis == alg_chld ||
                  n->sem.step.spec.axis == alg_attr ||
                  n->sem.step.spec.axis == alg_self) &&
                 find_guide_max (n->sem.step.guide_count,
@@ -562,6 +574,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             break;
 
         case la_guide_step_join:
+            /* copy existing keys if the cardinality does not change */
             if ((n->sem.step.spec.axis == alg_chld ||
                  n->sem.step.spec.axis == alg_attr ||
                  n->sem.step.spec.axis == alg_self) &&
@@ -572,7 +585,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 PFprop_level_right (n->prop, n->sem.step.item) >= 0 &&
                 (n->sem.step.spec.axis == alg_desc ||
                  n->sem.step.spec.axis == alg_desc_s) &&
-                PFprop_guide_count (R(n)->prop, n->sem.step.item) &&
+                PFprop_guide (R(n)->prop, n->sem.step.item) &&
                 find_guide_max_rec (
                     n->sem.step.guide_count,
                     n->sem.step.guides,

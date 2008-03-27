@@ -80,6 +80,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
                                        of the same nodes */
     unsigned int   kind_int = 0;    /* read kind as integer */
     PFguide_kind_t kind     = text; /* kind if the guide node */
+    char          *tag_uri  = NULL; /* tag uri of the guide node */
     char          *tag_name = NULL; /* tag name of the guide node */
     char          *attribute_name; 
 
@@ -117,6 +118,9 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
                 }
             }
     
+            if (strcmp (attribute_name, "uri") == 0)
+                tag_uri = (char*) atts[1];
+    
             if (strcmp (attribute_name, "name") == 0)
                 tag_name = (char*) atts[1];
     
@@ -124,9 +128,13 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
         }
     }
     
+    /* consistency checks */
     switch (kind) {
         case elem:
         case attr:
+            if (!tag_uri)
+                 PFoops (OOPS_FATAL, "Guide optimization - "
+                        "uri of a guide is NULL when it is required\n");
         case doc:
         case pi:
             if (!tag_name)
@@ -146,18 +154,31 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
         .max   = max,
         .level = level,
         .kind  = kind,
-        .tag_name = tag_name != NULL ? 
-            (char*)PFmalloc(sizeof(char)*(strlen(tag_name)+1)) : 
-            NULL,
+        .name  = PFqname (PFns_wild, NULL),
         .parent = current_guide_node,
         .child_list = NULL,
     };
 
-    /* copy the string, otherwise it will be lost */
-    if (new_guide_node->tag_name != NULL)
-        new_guide_node->tag_name = strncpy(new_guide_node->tag_name,
-                                           tag_name,
-                                           strlen(tag_name));
+    /* copy the strings, otherwise they will be lost */
+    if (tag_name != NULL) {
+        PFns_t ns;
+        char *name_copy;
+        name_copy = (char *) PFmalloc (sizeof (char) * (strlen (tag_name) + 1));
+        name_copy = strncpy (name_copy, tag_name, strlen (tag_name));
+
+        if (tag_uri) {
+            ns.prefix = "";
+            char *uri_copy;
+            uri_copy = (char *) PFmalloc (sizeof (char) *
+                                          (strlen (tag_uri) + 1));
+            uri_copy = strncpy (uri_copy, tag_uri, strlen (tag_uri));
+            ns.uri = uri_copy;
+        }
+        else
+            ns = PFns_wild;
+    
+        new_guide_node->name = PFqname (ns, name_copy);
+    }
 
     /* create association between parent and child */
     if (current_guide_node) {
@@ -253,6 +274,7 @@ PFguide_tree()
                 "<!ATTLIST node min CDATA #REQUIRED>"
                 "<!ATTLIST node max CDATA #REQUIRED>"
                 "<!ATTLIST node kind (1|2|3|4|5|6) #REQUIRED>"
+                "<!ATTLIST node uri CDATA #IMPLIED>"
                 "<!ATTLIST node name CDATA #IMPLIED>";
 
     /* Context pointer */

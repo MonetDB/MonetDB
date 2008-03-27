@@ -468,6 +468,7 @@ reduce (PFla_op_t *p, int goalnt)
 
             *p = *PFla_lit_tbl_ (PFalg_attlist_ (acount, atts), tcount, tuples);
             SEEN(p) = false;
+            label (p);
         }   break;
 
         /* Rel:    cross (lit_tbl, lit_tbl) */
@@ -663,6 +664,7 @@ reduce (PFla_op_t *p, int goalnt)
 
             *p = *PFla_lit_tbl_ (PFalg_attlist_ (acount, atts), tcount, tuples);
             SEEN(p) = false;
+            label (p);
         }   break;
 
         /* Rel:    select_ (Rel) */
@@ -879,6 +881,7 @@ reduce (PFla_op_t *p, int goalnt)
 
             *p = *PFla_lit_tbl_ (PFalg_attlist_ (acount, atts), tcount, tuples);
             SEEN(p) = false;
+            label (p);
         }   break;
 
         /* Rel:    disjunion (EmptyRel, Rel) */
@@ -1170,7 +1173,7 @@ reduce (PFla_op_t *p, int goalnt)
              */
             *p = *PFla_empty_tbl_ (p->schema);
             SEEN(p) = true;
-            relabel (p, kids);
+            label (p);
         } break;
 
         default:
@@ -1271,6 +1274,7 @@ relabel_worker (PFla_op_t *p,  PFla_op_t **kids, unsigned int counter)
     }
 
     assert (STATE_LABEL (p));
+    assert (0 <= STATE_LABEL (p) && STATE_LABEL (p) <= PFopt_general_Max_state);
 
     assert (counter <= 50 &&
             "tree relabeling in general optimization phase " &&
@@ -1333,6 +1337,7 @@ label (PFla_op_t *p)
     SEEN(p) = true;
 
     assert (STATE_LABEL (p));
+    assert (0 <= STATE_LABEL (p) && STATE_LABEL (p) <= PFopt_general_Max_state);
 }
 
 /**

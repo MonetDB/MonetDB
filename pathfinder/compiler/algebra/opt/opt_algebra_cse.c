@@ -139,16 +139,16 @@ static char *ID[] = {
 /**
  * maps original subtrees to their corresponding cse subtrees
  */
-PFarray_t *cse_map;
+static PFarray_t *cse_map;
 /**
  *maps ori subtrees to their corresponding actual attributes
  */
-PFarray_t *actatt_map;
+static PFarray_t *actatt_map;
 /**
  * maps cse subtrees to their original subtrees, triggered the
  * creation of the cse node
  */ 
-PFarray_t *ori_map;
+static PFarray_t *ori_map;
 
 /**
  * Subexpressions that we already saw.
@@ -1283,7 +1283,7 @@ littbl_column (PFalg_att_t name, PFla_op_t *littbl1, PFla_op_t *littbl2,
              * if we want to use a column twice */
             for (unsigned int j = 0; j < PFarray_last (seen); j++)
                 if (littbl2->schema.items[i].name ==
-                    *((PFalg_att_t *)PFarray_at (seen, i)))
+                    *((PFalg_att_t *)PFarray_at (seen, j)))
                     match = true; 
             if (match) continue;
 
