@@ -1,8 +1,8 @@
 RELEASE NOTES
-MonetDB JDBC driver version 1.7 (Canephora_p2/MCL-1.2)
+MonetDB JDBC driver version 1.7 (Canephora_p2/MCL-1.3)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2008-02-04
+Release date: 2008-03-27
 
 
 This JDBC driver is designed for use with MonetDB, a main-memory

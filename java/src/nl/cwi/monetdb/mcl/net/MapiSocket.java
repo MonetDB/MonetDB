@@ -74,7 +74,7 @@ import nl.cwi.monetdb.mcl.parser.*;
  * geared towards the format of the data.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 3.0
+ * @version 4.0
  */
 public final class MapiSocket {
 	/** The TCP Socket to mserver */
@@ -203,23 +203,34 @@ public final class MapiSocket {
 	public List connect(String host, int port, String user, String pass) 
 		throws IOException, MCLParseException, MCLException
 	{
+		// Wrap around the internal connect that needs to know if it
+		// should really make a TCP connection or not.
+		return(connect(host, port, user, pass, true));
+	}
+
+	private List connect(String host, int port, String user, String pass,
+			boolean makeConnection) 
+		throws IOException, MCLParseException, MCLException
+	{
 		if (ttl-- <= 0)
 			throw new MCLException("Maximum number of redirects reached, aborting connection attempt.  Sorry.");
 
-		con = new Socket(host, port);
-		// set nodelay, as it greatly speeds up small messages (like we
-		// often do)
-		con.setTcpNoDelay(true);
+		if (makeConnection) {
+			con = new Socket(host, port);
+			// set nodelay, as it greatly speeds up small messages (like we
+			// often do)
+			con.setTcpNoDelay(true);
 
-		fromMonet = new BlockInputStream(con.getInputStream());
-		toMonet = new BlockOutputStream(con.getOutputStream());
-		try {
-			reader = new BufferedMCLReader(fromMonet, "UTF-8");
-			writer = new BufferedMCLWriter(toMonet, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new AssertionError(e.toString());
+			fromMonet = new BlockInputStream(con.getInputStream());
+			toMonet = new BlockOutputStream(con.getOutputStream());
+			try {
+				reader = new BufferedMCLReader(fromMonet, "UTF-8");
+				writer = new BufferedMCLWriter(toMonet, "UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				throw new AssertionError(e.toString());
+			}
+			writer.registerReader(reader);
 		}
-		writer.registerReader(reader);
 
 		// do the login ritual, read challenge, send response
 		String c = reader.readLine();
@@ -260,20 +271,14 @@ public final class MapiSocket {
 			throw new MCLException(err.trim());
 		}
 		if (redirects != null) {
-			// avoid the debug log being closed
-			if (debug) {
-				debug = false;
-				close();
-				debug = true;
-			} else {
-				close();
-			}
 			if (followRedirects) {
 				// Ok, server wants us to go somewhere else.  The list
 				// might have multiple clues on where to go.  For now we
 				// don't support anything intelligent but trying the
 				// first one.  URI should be in form of:
 				// "mapi:monetdb://host:port/database?args=value"
+				// or
+				// "mapi:merovingian:proxy?args=value"
 				String suri = redirects.get(0).toString();
 				if (!suri.startsWith("mapi:"))
 					throw new MCLException("unsupported redirect: " + suri);
@@ -285,11 +290,31 @@ public final class MapiSocket {
 					throw new MCLParseException(e.toString());
 				}
 
-				int p = u.getPort();
-				List w = connect(u.getHost(), p == -1 ? port : p, user, pass);
-				warns.add("Redirect by " + host + ":" + port + " to " + suri);
-				if (w != null)
-					warns.addAll(w);
+				List w = null;
+				if (u.getScheme().equals("monetdb")) {
+					// this is a redirect to another (monetdb) server,
+					// which means a full reconnect
+					// avoid the debug log being closed
+					if (debug) {
+						debug = false;
+						close();
+						debug = true;
+					} else {
+						close();
+					}
+					int p = u.getPort();
+					w = connect(u.getHost(), p == -1 ? port : p,
+							user, pass, true);
+					warns.add("Redirect by " + host + ":" + port + " to " + suri);
+					if (w != null)
+						warns.addAll(w);
+				} else if (u.getScheme().equals("merovingian")) {
+					// reuse this connection to inline connect to the
+					// right database that Merovingian proxies for us
+					w = connect(host, port, user, pass, false);
+				} else {
+					throw new MCLException("unsupported scheme in redirect: " + suri);
+				}
 			} else {
 				String msg = "The server sent a redirect for this connection:";
 				for (Iterator it = redirects.iterator(); it.hasNext(); ) {

@@ -30,7 +30,7 @@ EXTRA_DIST_DIR = NT \
 ant_distjdbc = {
 	COND = HAVE_JAVAJDBC
 	DIR = datadir/MonetDB/lib
-	FILES = monetdb-1.2-mcl.jar monetdb-1.7-jdbc.jar jdbcclient.jar
+	FILES = monetdb-1.3-mcl.jar monetdb-1.7-jdbc.jar jdbcclient.jar
 }
 
 ant_distxrpc = {
