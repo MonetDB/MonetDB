@@ -2757,10 +2757,17 @@ reduce (PFpa_op_t * p, int goalnt)
                     mvar_t *v = new_var (1);
                     execute (
                         assgn (var (v->name),
+                               select2 (
+                                   VAR (L(p)->env, pa_item, aat_pre),
+                                   cast (type (mty_oid), nil ()),
+                                   cast (type (mty_oid), nil ()))),
+                        assgn (var (v->name),
                                mirror (
                                    select_ (
                                        misnil (
-                                           VAR (L(p)->env, pa_item, aat_attr)),
+                                           leftjoin (
+                                               mirror (var (v->name)),
+                                               VAR (L(p)->env, pa_item, aat_attr))),
                                        lit_bit (true)))),
                         binsert (var (item->name),
                                  leftjoin (var (v->name),
