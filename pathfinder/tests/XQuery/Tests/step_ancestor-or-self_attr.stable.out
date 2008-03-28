@@ -26,7 +26,7 @@ Over..
 # 11:14:40 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult foo2="bar"><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b>textnode</XQueryResult>
+<XQueryResult foo2="bar"><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b>textnode<c foo2="bar"/></XQueryResult>
 
 # 11:14:41 >  
 # 11:14:41 >  Done.
