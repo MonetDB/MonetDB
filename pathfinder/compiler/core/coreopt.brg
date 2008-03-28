@@ -1384,9 +1384,15 @@ reduce (PFcnode_t * p, int goalnt)
                 /* the kind test does not match the attribute input */
                 ((L(p)->kind == c_self ||
                   L(p)->kind == c_descendant_or_self) &&
+                 /* input is of type attribute()* */
                  PFty_subtype (TY(R(p)),
                                PFty_star (PFty_xs_anyAttribute ())) &&
-                 !PFty_subtype (TY(R(p)), PFty_star(TY(L(p)))))) {
+                 /* expected is neither type node()* */
+                 !PFty_subtype (PFty_star (PFty_xs_anyNode ()),
+                                TY(L(p))) &&
+                 /* nor type attribute()* */
+                 !PFty_subtype (TY(L(p)),
+                                PFty_star (PFty_xs_anyAttribute ())))) {
                 *p = *empty ();
                 TY(p) = PFty_empty ();
                 rewritten = true;
