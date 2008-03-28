@@ -740,7 +740,7 @@ static void reduce (PFpa_op_t * p, int goalnt);
 /***********************************/
 /** @brief Lookup the type of the @a att column in the schema of node @a n. */
 static PFalg_simple_type_t
-type_of (PFpa_op_t *n, PFalg_att_t att)
+type_of (const PFpa_op_t *n, PFalg_att_t att)
 { /* fold( */
     assert (n);
 
@@ -1682,27 +1682,18 @@ llscj (const PFpa_op_t *p)
             *map      = new_var (1),         /* mapping helper variable */
             *ret_iter = new_var (p->refctr), /* the `iter' result variable */
             *ret_frag = new_var (p->refctr), /* the `frag' result variable */
-            *ret_pre  = new_var (p->refctr), /* the `pre' result variable */
-            *ret_attr = NULL;                /* the `attr' result variable */
+            *ret_pre  = new_var (p->refctr); /* the `pre' result variable */
 
     PFalg_att_t pa_iter = p->sem.scjoin.iter;
     PFalg_att_t pa_item = p->sem.scjoin.item;
 
-    PFalg_simple_type_t item_ty = type_of (L(p), pa_item),
-                        iter_ty = type_of (L(p), pa_iter);
+    PFalg_simple_type_t iter_ty     = type_of (L(p), pa_iter),
+                        item_ty     = type_of (L(p), pa_item),
+                        item_res_ty = type_of (p, pa_item);
 
     assert (iter_ty == aat_nat);
     assert (p); assert (L(p)); assert (L(p)->env);
     
-    /* add the result variables to the environment */
-    env_add (p->env, pa_iter, aat_nat, ret_iter);
-    env_add (p->env, pa_item, aat_pre, ret_pre);
-    env_add (p->env, pa_item, aat_frag, ret_frag);
-    if (p->sem.scjoin.spec.axis == alg_attr) {
-        ret_attr = new_var (p->refctr);
-        env_add (p->env, pa_item, aat_attr, ret_attr);
-    }
-
     /* collect all information to check *//* fold( */
     /* translate axis information */
     axis = NULL;
@@ -1828,10 +1819,20 @@ llscj (const PFpa_op_t *p)
                 materialize (fetch (var (step->name), lit_int (0)),
                              var (ret_pre->name))));
 
-    if (p->sem.scjoin.spec.axis == alg_attr)
+    /* add the result variables to the environment */
+    env_add (p->env, pa_iter, aat_nat, ret_iter);
+    env_add (p->env, pa_item, aat_pre, ret_pre);
+    env_add (p->env, pa_item, aat_frag, ret_frag);
+
+    if (item_res_ty & aat_attr) {
+        mvar_t *ret_attr = new_var (p->refctr);
+        
         execute (
              assgn (var (ret_attr->name),
                     fetch (var (step->name), lit_int (3))));
+        
+        env_add (p->env, pa_item, aat_attr, ret_attr);
+    }
     
     unpin (step, 1);
     unpin (map, 1);
