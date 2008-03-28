@@ -2164,6 +2164,12 @@ connect_to_server(Mapi mid)
 	check_stream(mid, mid->to, "Cannot open socket for writing", "mapi_reconnect", mid->error);
 	check_stream(mid, mid->from, "Cannot open socket for reading", "mapi_reconnect", mid->error);
 
+	mid->to = block_stream(mid->to);
+	check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
+
+	mid->from = block_stream(mid->from);
+	check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
+
 	mid->connected = 1;
 
 	return MOK;
@@ -2180,12 +2186,6 @@ mapi_start_talking(Mapi mid)
 	char *server;
 	char *protover;
 	char *rest;
-
-	mid->to = block_stream(mid->to);
-	check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
-
-	mid->from = block_stream(mid->from);
-	check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
 
 	/* consume server challenge */
 	len = stream_read_block(mid->from, buf, 1, BLOCK);
@@ -2402,7 +2402,9 @@ mapi_start_talking(Mapi mid)
 					char *tmp2 = "", *p = NULL, *db = NULL;
 
 					/* redirect, looks like:
-					 * ^mapi:monetdb://localhost:50001/test?lang=sql&user=monetdb */
+					 * ^mapi:monetdb://localhost:50001/test?lang=sql&user=monetdb
+					 * or
+					 * ^mapi:merovingian:proxy */
 
 					/* first see if we reached our redirection limit */
 					if (mid->redircnt > 10) {
@@ -2412,38 +2414,51 @@ mapi_start_talking(Mapi mid)
 					}
 					/* see if we can possibly handle the redirect */
 					tmp++;
-					if (strncmp("mapi:monetdb", tmp, 12) != 0)
-						goto err;
-					/* parse components (we store the args
-					 * immediately in the mid... ok, that's dirty */
-					tmp += strlen("mapi:monetdb://");
-					p = tmp;
-					if ((tmp = strchr(tmp, ':')) != NULL) {
-						*tmp++ = '\0';
-						tmp2 = tmp;
-					} else {
-						tmp = p;
-					}
-					if ((tmp = strchr(tmp, '/')) != NULL) {
-						*tmp++ = '\0';
-						mid->port = atoi(tmp2);
-						if (mid->port == 0)
-							goto err;
-						db = tmp;
-					} else {
-						tmp = p;
-						goto err;
-					}
-					if (mid->hostname)
-						free(mid->hostname);
-					mid->hostname = strdup(p);
-					if ((tmp = strchr(tmp, '?')) != NULL) {
-						char *tmp3;
-
-						*tmp++ = '\0';
-						tmp2 = tmp;
-						while ((tmp = strchr(tmp, '&')) != NULL) {
+					if (strncmp("mapi:monetdb", tmp, 12) == 0) {
+						/* parse components (we store the args
+						 * immediately in the mid... ok, that's dirty */
+						tmp += strlen("mapi:monetdb://");
+						p = tmp;
+						if ((tmp = strchr(tmp, ':')) != NULL) {
 							*tmp++ = '\0';
+							tmp2 = tmp;
+						} else {
+							tmp = p;
+						}
+						if ((tmp = strchr(tmp, '/')) != NULL) {
+							*tmp++ = '\0';
+							mid->port = atoi(tmp2);
+							if (mid->port == 0)
+								mid->port = 50000; /* hardwired default */
+							db = tmp;
+						} else {
+							tmp = p;
+							db = NULL;
+						}
+						if (mid->hostname)
+							free(mid->hostname);
+						mid->hostname = strdup(p);
+						if ((tmp = strchr(tmp, '?')) != NULL) {
+							char *tmp3;
+
+							*tmp++ = '\0';
+							tmp2 = tmp;
+							while ((tmp = strchr(tmp, '&')) != NULL) {
+								*tmp++ = '\0';
+								if ((tmp3 = strchr(tmp2, '=')) != NULL) {
+									*tmp3++ = '\0';
+									/* tmp2 = key, tmp3 = val */
+									if (strcmp("user", tmp2) == 0) {
+										free(mid->username);
+										mid->username = strdup(tmp3);
+									} else if (strcmp("lang", tmp2) == 0) {
+										free(mid->language);
+										mid->language = strdup(tmp3);
+									} /* else ignore */
+								} /* else ignore */
+								tmp2 = tmp;
+							}
+							tmp = tmp2;
 							if ((tmp3 = strchr(tmp2, '=')) != NULL) {
 								*tmp3++ = '\0';
 								/* tmp2 = key, tmp3 = val */
@@ -2453,41 +2468,29 @@ mapi_start_talking(Mapi mid)
 								} else if (strcmp("lang", tmp2) == 0) {
 									free(mid->language);
 									mid->language = strdup(tmp3);
-								} else
-									goto err;
-							} else
-								goto err;
-							tmp2 = tmp;
-						}
-						tmp = tmp2;
-						if ((tmp3 = strchr(tmp2, '=')) != NULL) {
-							*tmp3++ = '\0';
-							/* tmp2 = key, tmp3 = val */
-							if (strcmp("user", tmp2) == 0) {
-								free(mid->username);
-								mid->username = strdup(tmp3);
-							} else if (strcmp("lang", tmp2) == 0) {
-								free(mid->language);
-								mid->language = strdup(tmp3);
-							} else
-								goto err;
-						} else
-							goto err;
-					}	/* no optional arguments (weird) */
-					if (mid->database) 
-						free(mid->database);
-					mid->database = (db)?strdup(db):NULL;
+								} /* else ignore */
+							} /* else ignore */
+						}	/* no optional arguments (weird) */
+						if (mid->database) 
+							free(mid->database);
+						mid->database = db != NULL ? strdup(db) : NULL;
 
-					mid->redircnt++;
-					mapi_close_handle(hdl);
-					/* reconnect using the new values */
-					return (mapi_reconnect(mid));
-				      err:
-					tmp2 = alloca(sizeof(char) * (strlen(tmp) + 50));
-					sprintf(tmp2, "error while parsing redirect: %s", tmp);
-					mapi_close_handle(hdl);
-					mapi_setError(mid, tmp2, "mapi_start_talking", MERROR);
-					return (mid->error);
+						mid->redircnt++;
+						mapi_close_handle(hdl);
+						/* reconnect using the new values */
+						return (mapi_reconnect(mid));
+					} else if (strncmp("mapi:merovingian", tmp, 16) == 0) {
+						/* this is a proxy "offer", it means we should
+						 * restart the login ritual, without
+						 * disconnecting */
+						return mapi_start_talking(mid);
+					} else {
+						tmp2 = alloca(sizeof(char) * (strlen(tmp) + 50));
+						sprintf(tmp2, "error while parsing redirect: %s\n", tmp);
+						mapi_close_handle(hdl);
+						mapi_setError(mid, tmp2, "mapi_start_talking", MERROR);
+						return (mid->error);
+					}
 				}
 				}
 			}
