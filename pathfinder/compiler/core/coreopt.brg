@@ -1388,7 +1388,7 @@ reduce (PFcnode_t * p, int goalnt)
                  PFty_subtype (TY(R(p)),
                                PFty_star (PFty_xs_anyAttribute ())) &&
                  /* expected is neither type node()* */
-                 !PFty_subtype (PFty_star (PFty_xs_anyNode ()),
+                 !PFty_subtype (PFty_xs_anyNode (),
                                 TY(L(p))) &&
                  /* nor type attribute()* */
                  !PFty_subtype (TY(L(p)),
