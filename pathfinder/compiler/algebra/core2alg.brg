@@ -984,7 +984,19 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             /* initiate translation of e1 */
             reduce (ctx, kids[1], nts[1]);
 
-            rowid = rowid (A(LR(p)).rel, att_inner);
+            /*
+             * Add 'real' positions and the new iter values.
+             * (Note: We add the positions outside as some proxy rewrites
+             *        expect that no rownum can escape its 'scope'. The
+             *        result of the rownum operator is discarded in the
+             *        first icols optimization if no positional variable
+             *        exists.)
+             */
+            rowid = rowid (rownum (A(LR(p)).rel,
+                                   att_pos1,
+                                   sortby (att_pos),
+                                   att_iter),
+                           att_inner);
 
             /* translate $v */
             var = attach (project (rowid,
@@ -1009,19 +1021,18 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                proj (att_inner, att_inner));
 
             /*
-             * handle optional variable ($p); we need map operator
-             * for this purpose
-             * note that the rownum () routine is used to create
-             * the 'item' column of $p's operator; since this
-             * column must be of type integer instead of nat, we
-             * cast it accordingly
+             * Handle optional variable ($p).
+             * (Note: The rownum () routine was used to create
+             *        the 'item' column of $p's operator. Since this
+             *        column must be of type integer instead of nat, we
+             *        cast it accordingly.)
              */
             if (LLR(p)->kind == c_var) {
                 assert (LLR(p)->sem.var);
-                opt_var = attach (project (cast (rownum (var_map, att_item,
-                                                         sortby (att_sort),
-                                                         att_outer),
-                                                 att_cast, att_item, aat_int),
+                opt_var = attach (project (cast (rowid,
+                                                 att_cast,
+                                                 att_pos1,
+                                                 aat_int),
                                            proj (att_iter, att_inner),
                                            proj (att_item, att_cast)),
                                   att_pos, lit_nat (1));
