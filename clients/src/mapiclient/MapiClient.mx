@@ -1870,7 +1870,7 @@ main(int argc, char **argv)
 		if( trace)
 			mapi_explain(mid, stderr);
 		else
-			fprintf(stderr,"%s",mapi_error_str(mid));
+			fprintf(stderr,"%s\n",mapi_error_str(mid));
 		exit(2);
 	}
 	if (dump) {
