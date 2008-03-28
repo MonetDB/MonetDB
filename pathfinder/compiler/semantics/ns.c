@@ -156,6 +156,12 @@ PFns_t PFns_lib = { .prefix = "pf",
 PFns_t PFns_tijah = { .prefix = "tijah",  
                       .uri    = "http://dbappl.cs.utwente.nl/pftijah/" };
 
+/** 
+ * Pathfinder's namespace for XRPC extension.
+ */ 
+PFns_t PFns_xrpc = { .prefix = "xrpc",  
+                      .uri    = "http://monetdb.cwi.nl/XQuery" };
+
 #ifdef HAVE_PROBXML
 /**
  * Pathfinder's namespace for additional pxml support functions (pxmlsup:...)
@@ -558,6 +564,7 @@ ns_resolve (PFpnode_t *n)
             ns_add (PFns_local);
             ns_add (PFns_lib);
             ns_add (PFns_tijah);
+            ns_add (PFns_xrpc);
 #ifdef HAVE_PROBXML
             ns_add (PFns_pxmlsup);
 #endif
@@ -1029,6 +1036,7 @@ PFns_init (void)
     ns_add (PFns_local);
     ns_add (PFns_lib);
     ns_add (PFns_tijah);
+    ns_add (PFns_xrpc);
 #ifdef HAVE_PROBXML
     ns_add (PFns_pxmlsup);
 #endif

@@ -102,6 +102,11 @@ extern PFns_t PFns_lib;
  */ 
 extern PFns_t PFns_tijah;
 
+/**
+ * Pathfinder's namespace for XRPC extension.
+ */ 
+extern PFns_t PFns_xrpc;
+
 #ifdef HAVE_PROBXML
 /**
  * Pathfinder's namespace for additional pxml support functions (pxmlsup:...)

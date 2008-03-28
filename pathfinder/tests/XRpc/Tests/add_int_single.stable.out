@@ -1,0 +1,30 @@
+stdout of test 'add_int_single` in directory 'tests/XRpc` itself:
+
+
+# 11:42:23 >  
+# 11:42:23 >  Mtimeout -timeout 180 Mserver "--config=/ufs/zhang/scratch/monet-dev-install/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/zhang/scratch/monet-dev-install/lib/MonetDB" --set "gdk_dbfarm=/ufs/zhang/scratch/monet-dev-install/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/zhang/scratch/monet-dev-install/var/MonetDB/log" --set mapi_port=35728 --set sql_port=44330 --set xquery_port=50652 --set monet_prompt= --trace "--dbname=mTests_tests_XRpc" --dbinit="module(pathfinder); pfstart();" add_int.prologue ; echo ; echo Over..
+# 11:42:23 >  
+
+# Monet Database Server V4.11.0
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 11:42:23 >  
+# 11:42:23 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=50652 add_int.xq
+# 11:42:23 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>140.000000 70.000000 240.000000 70.000000 150.000000 80.000000 250.000000 80.000000</XQueryResult>
+
+# 11:42:23 >  
+# 11:42:23 >  Done.
+# 11:42:23 >  
+

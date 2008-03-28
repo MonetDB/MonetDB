@@ -1,0 +1,17 @@
+stderr of test 'emptySeq3_single` in directory 'tests/XRpc` itself:
+
+
+# 23:00:29 >  
+# 23:00:29 >  Mtimeout -timeout 180 Mserver "--config=/ufs/zhang/scratch/monet/dev-install/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/zhang/scratch/monet/dev-install/lib/MonetDB" --set "gdk_dbfarm=/ufs/zhang/scratch/monet/dev-install/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/zhang/scratch/monet/dev-install/var/MonetDB/log" --set mapi_port=30384 --set monet_prompt= --trace "--dbname=mTests_tests_XRpc" --dbinit="module(pathfinder); pfstart();" emptySeq1.prologue ; echo ; echo Over..
+# 23:00:29 >  
+
+
+# 23:00:30 >  
+# 23:00:30 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=50652 emptySeq3.xq
+# 23:00:30 >  
+
+
+# 23:00:30 >  
+# 23:00:30 >  Done.
+# 23:00:30 >  
+

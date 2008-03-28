@@ -1,0 +1,7 @@
+import module namespace xf = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
+
+declare option xrpc:bulkrpc "no";
+
+for $i in (1, 2)
+    return execute at {"$HOST:$XRPCPORT"}
+        {xf:returnFollowingSibling(doc("hello.xml"))}

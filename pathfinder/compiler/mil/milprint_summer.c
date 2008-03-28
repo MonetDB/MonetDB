@@ -61,6 +61,8 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h> /* errno */
+#include <limits.h> /* LONG_MAX */
 
 #include "milprint_summer.h"
 #include "compile_interface.h"
@@ -72,6 +74,7 @@
 #include "timer.h"
 #include "subtyping.h"
 #include "mil_opt.h"
+#include "options.h"  /* xrpc:* options */
 
 /* accessors to left and right child node */
 #define LEFT_CHILD(p)  ((p)->child[0])
@@ -6249,11 +6252,18 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 static void
 translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
 {
-    int i = 0, rc = NORMAL, updCall = PFqueryType(xrpc) == 0 ? 0 : 1;
-    PFcnode_t *dsts = L(xrpc);
-    PFcnode_t *funApp = R(xrpc);
+    int i = 0, rc = NORMAL, updCall = 0, timeout = 0;
+    PFcnode_t *dsts = NULL, *funApp = NULL;
     PFfun_t   *fun  = NULL;
     PFcnode_t *args = NULL;
+    PFarray_t *opt = NULL;
+    char *bulkRPC = NULL, *isoLevel = NULL;
+
+    assert(f && xrpc);
+
+    updCall = PFqueryType(xrpc) == 0 ? 0 : 1;
+    dsts = L(xrpc);
+    funApp = R(xrpc);
 
     /* Find function application */
     while(funApp->kind != c_apply) funApp = R(funApp);
@@ -6266,52 +6276,45 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
     }
 
     if (fun->builtin){
-        PFoops (OOPS_NOTSUPPORTED,
-                "RPC calls to built-in functions not supported by XRPC.");
+        PFoops (OOPS_NOTSUPPORTED, "RPC calls to built-in functions not supported by XRPC.");
     } else if (PFqname_uri (fun->qname) == NULL) {
-        PFoops (OOPS_NOTSUPPORTED,
-                "RPC calls to in-line functions not supported by XRPC.");
+        PFoops (OOPS_NOTSUPPORTED, "RPC calls to in-line functions not supported by XRPC.");
     }
 
-    milprintf(f, "{ # begin of XRPC function call\n");
 
     /* The extra parameter 'dst' of an RPC call is not listed in
      * fun->params[], so translate it separately. 
      * 'rpc_iter' contains the real total number of iterations. */
-    milprintf(f, "  # begin of translate URIs\n");
+    milprintf(f, "{ # begin of XRPC function call\n"
+                 "  # begin of translate URIs\n");
     rc = translate2MIL (f, VALUES, cur_level, counter, dsts);
     if (rc == NORMAL){
         /* retrieve all URIs from str_values as indicated in item */
-        milprintf(f, 
-                "  item := item.materialize(ipik);\n"
-                "  var rpc_dsts := item%s;\n", val_join(STR));
+        milprintf(f, "  item := item.materialize(ipik);\n"
+                     "  var rpc_dsts := item%s;\n", val_join(STR));
     } else {
-        milprintf(f, 
-                "  item%s := item%s.materialize(ipik);\n"
-                "  var rpc_dsts := item%s;\n",
+        milprintf(f, "  item%s := item%s.materialize(ipik);\n"
+                     "  var rpc_dsts := item%s;\n",
                 kind_str(STR), kind_str(STR),
                 kind_str(STR));
     }
     /* Assign each destination its corresponding iter. number.  rpc_dsts
      * now becomes [oid,str], with the iter numbers in * its head column
      */
-    milprintf(f, 
-            "  var rpc_iter := iter.materialize(ipik);\n"
-            "  rpc_dsts := rpc_iter.reverse().join(rpc_dsts);\n"
-            "  # end of translate URIs\n");
-
-    milprintf(f,
-            "  # begin of add args in XRPC function call\n"
-            "  var fun_base%03u := proc_vid.find(\"%s\");\n"
-            "  var fun_vid%03u  := bat(void,oid);\n"
-            "  var fun_iter%03u := bat(void,oid);\n"
-            "  var fun_item%03u := bat(void,oid);\n"
-            "  var fun_kind%03u := bat(void,int);\n",
-            counter, fun->sig,
-            counter,
-            counter,
-            counter,
-            counter);
+    milprintf(f, "  var rpc_iter := iter.materialize(ipik);\n"
+                 "  rpc_dsts := rpc_iter.reverse().join(rpc_dsts);\n"
+                 "  # end of translate URIs\n\n"
+                 "  # begin of add args in XRPC function call\n"
+                 "  var fun_base%03u := proc_vid.find(\"%s\");\n"
+                 "  var fun_vid%03u  := bat(void,oid);\n"
+                 "  var fun_iter%03u := bat(void,oid);\n"
+                 "  var fun_item%03u := bat(void,oid);\n"
+                 "  var fun_kind%03u := bat(void,int);\n",
+                 counter, fun->sig,
+                 counter,
+                 counter,
+                 counter,
+                 counter);
 
     while ((args->kind != c_nil) && (fun->params[i]))
     {
@@ -6332,15 +6335,61 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
         args = R(args);
         i++;
     }
-    milprintf(f, "  # end of add arg in XRPC function call\n");
+    milprintf(f, "  # end of add arg in XRPC function call\n"
+                 "  fun_vid%03u := fun_vid%03u.tmark(0@0);\n"
+                 "  fun_iter%03u := fun_iter%03u.tmark(0@0);\n"
+                 "  fun_item%03u := fun_item%03u.tmark(0@0);\n"
+                 "  fun_kind%03u := fun_kind%03u.tmark(0@0);\n",
+                 counter, counter, counter, counter,
+                 counter, counter, counter, counter);
 
-    milprintf(f,
-            "  fun_vid%03u := fun_vid%03u.tmark(0@0);\n"
-            "  fun_iter%03u := fun_iter%03u.tmark(0@0);\n"
-            "  fun_item%03u := fun_item%03u.tmark(0@0);\n"
-            "  fun_kind%03u := fun_kind%03u.tmark(0@0);\n",
-            counter, counter, counter, counter,
-            counter, counter, counter, counter);
+    /* get options declared by "declare option" */
+    opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "bulkrpc")); 
+    if(!opt) {
+        bulkRPC = "yes"; /* default value of option 'xrpc:bulkrpc' */
+    } else {
+        if(PFarray_last(opt) > 1)
+            PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:bulkrpc' not allowed!");
+        bulkRPC = *((char **) PFarray_top (opt));
+        if(strcmp(bulkRPC, "yes") !=0 && strcmp(bulkRPC, "no") != 0)
+            PFoops(OOPS_FATAL, "Invalid value of option 'xrpc:bulkrpc': \"%s\".", bulkRPC);
+    }
+
+    opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "isolation")); 
+    if(!opt) {
+        isoLevel = "none"; /* default value of option 'xrpc:isolation' */
+    } else {
+        if(PFarray_last(opt) > 1)
+            PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:isolation' not allowed!");
+        isoLevel = *((char **) PFarray_top (opt));
+        if(strcmp(isoLevel, "none") !=0 && strcmp(isoLevel, "repeatable") != 0)
+            PFoops(OOPS_FATAL, "Invalid value of option 'xrpc:isolation': \"%s\".", isoLevel);
+
+
+        if(strcmp(isoLevel, "none") != 0)
+            PFoops(OOPS_NOTSUPPORTED, "XRPC isolation level \"repeatable\" is not implemented yet.");
+    }
+
+    opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "timeout")); 
+    if(!opt) {
+        timeout = 30; /* sec, default value of option 'xrpc:timeout' */
+    } else {
+        if(PFarray_last(opt) > 1)
+            PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:timeout' not allowed!");
+        errno = 0;
+        timeout = strtol(*((char **) PFarray_top (opt)), NULL, 10);
+        if(errno == EINVAL)
+            PFoops(OOPS_FATAL, "Invalid value of option 'xrpc:timeout': \"%s\".",
+                    *((char **) PFarray_top (opt)));
+        else if(errno == ERANGE)
+            PFoops(OOPS_FATAL, "Value of option 'xrpc:timeout' out-of-range (> %ld).",
+                    LONG_MAX);
+        else if(timeout < 0)
+            PFoops(OOPS_FATAL, "Value of option 'xrpc:timeout' may not be negative.");
+        else if(timeout == 0 && strcmp(isoLevel, "none") != 0)
+            PFoops(OOPS_FATAL, "Value of option 'xrpc:timeout' must be positive "
+                    "when the isloation level \"repeatable\" is required.");
+    }
 
     /* Define a variable to hold the results of a function call.
      * call rpc_sender => cont~=kind
@@ -6354,14 +6403,15 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
              * message, we need the offsets of each non-empty
              * parameters. */
             "  fun_vid%03u := ([-](fun_vid%03u.[lng](), fun_base%03u)).[oid]();\n"
-            "  var res := doLoopLiftedRPC(genType,\n"
-            "                             \"%s\", \"%s\", \"%s\",\n"
-            "                             %d, %d, iterc_total,\n"
-            "                             ws, rpc_dsts,\n"
-            "                             fun_vid%03u, fun_iter%03u,\n"
-            "                             fun_item%03u, fun_kind%03u,\n"
-            "                             int_values, dbl_values,\n"
-            "                             dec_values, str_values);\n"
+            "  var res := %s(genType,\n"
+            "                \"%s\", %d,\n" /* isoLevel, timeout */
+            "                \"%s\", \"%s\", \"%s\",\n" /* module, location, method */
+            "                %d, %d, iterc_total,\n" /* updCall, arity */
+            "                ws, rpc_dsts,\n"
+            "                fun_vid%03u, fun_iter%03u,\n"
+            "                fun_item%03u, fun_kind%03u,\n"
+            "                int_values, dbl_values,\n"
+            "                dec_values, str_values);\n"
             "  iter := res.fetch(0);\n"
             "  item := res.fetch(1);\n"
             "  kind := res.fetch(2);\n"
@@ -6376,6 +6426,8 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
             "  }\n"
             "} # end of XRPC function call\n",
         counter, counter, counter,
+        strcmp(bulkRPC, "yes") == 0 ? "doLoopLiftedRPC" : "doIterativeRPC",
+        isoLevel, timeout,
         PFqname_uri (fun->qname), fun->atURI?fun->atURI:f->url, PFqname_loc (fun->qname),    
         updCall, fun->arity,
         counter, counter, counter, counter);

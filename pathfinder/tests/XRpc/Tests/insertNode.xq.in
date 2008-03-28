@@ -1,5 +1,5 @@
-import module namespace tf = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
+import module namespace xf = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
 
-execute at { "$HOST:$XRPCPORT" } { tf:insertNode(<a/>) }
+execute at { "$HOST:$XRPCPORT" } {xf:insertNode(<a/>) }
 <>
 doc("hello.xml")

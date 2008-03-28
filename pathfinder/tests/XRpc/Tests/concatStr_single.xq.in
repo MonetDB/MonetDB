@@ -1,0 +1,6 @@
+import module namespace xf = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
+
+declare option xrpc:bulkrpc "no";
+
+for $i in ("First", "Second")
+    return execute at {"$HOST:$XRPCPORT"} {xf:concatStr($i, " string.")}

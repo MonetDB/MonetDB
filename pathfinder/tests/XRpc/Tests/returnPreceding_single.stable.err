@@ -1,0 +1,17 @@
+stderr of test 'returnPreceding_single` in directory 'tests/XRpc` itself:
+
+
+# 17:06:05 >  
+# 17:06:05 >  Mtimeout -timeout 180 Mserver "--config=/ufs/zhang/scratch/monet-dev-install/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/zhang/scratch/monet-dev-install/lib/MonetDB" --set "gdk_dbfarm=/ufs/zhang/scratch/monet-dev-install/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/zhang/scratch/monet-dev-install/var/MonetDB/log" --set mapi_port=39096 --set monet_prompt= --trace "--dbname=mTests_tests_XRpc" --dbinit="module(pathfinder); pfstart();" returnPreceding.prologue ; echo ; echo Over..
+# 17:06:05 >  
+
+
+# 17:06:06 >  
+# 17:06:06 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=39096 returnPreceding.xq
+# 17:06:06 >  
+
+
+# 17:06:06 >  
+# 17:06:06 >  Done.
+# 17:06:06 >  
+

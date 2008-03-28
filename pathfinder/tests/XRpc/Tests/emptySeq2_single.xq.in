@@ -1,0 +1,8 @@
+import module namespace xf = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
+
+declare option xrpc:bulkrpc "no";
+
+(: the middle parameter is sometimes empty :)
+for $i in (<a/>, (), <b/>)
+    return execute at {"$HOST:$XRPCPORT"}
+        {xf:echoVoidWithParams(("abc", (), "xyz"), $i, 100)}

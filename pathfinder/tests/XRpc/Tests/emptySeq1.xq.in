@@ -1,6 +1,6 @@
-import module namespace xrpc = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
+import module namespace xf = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
 
 (: the middle parameter is always empty :)
 for $i in (1, 2)
     return execute at {"$HOST:$XRPCPORT"}
-        {xrpc:echoVoidWithParams(("abc", "xyz"), (), $i)}
+        {xf:echoVoidWithParams(("abc", "xyz"), (), $i)}
