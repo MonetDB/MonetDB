@@ -118,6 +118,8 @@ step_ancestor-or-self11
 step_ancestor-or-self_attr
 step_descendant-or-self_attr
 step_self_attr
+step_duplicates
+step_attr_nametest
 transient_upward_steps
 bool1
 bool2
