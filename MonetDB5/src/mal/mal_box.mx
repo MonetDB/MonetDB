@@ -453,7 +453,7 @@ takeBox(Box box, str name, ValPtr val, int tpe)
 	}
 	VALcopy(val, &box->val->stk[i]);
 	if (val->vtype == TYPE_bat)
-		BBPincref(val->val.br.id, TRUE);
+		BBPincref(val->val.bval, TRUE);
 
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout, "takeBox:'%s' from '%s'\n", name, box->name);
@@ -478,13 +478,13 @@ bindBAT(Box box, str name, str location)
 	if (i < 0)
 		i = newVariable(box->sym, GDKstrdup(name), TYPE_any);
 	v = &box->val->stk[i];
-	v->val.br.id = BBPindex(location);
+	v->val.bval = BBPindex(location);
 
-	if (v->val.br.id == 0)
+	if (v->val.bval == 0)
 		return -1;
 	v->vtype = TYPE_bat;
 #ifdef DEBUG_MAL_BOX
-	stream_printf(GDKout, "bindBox:'%s' to '%s' [%d] in '%s'\n", name, location, v->val.br.id, box->name);
+	stream_printf(GDKout, "bindBox:'%s' to '%s' [%d] in '%s'\n", name, location, v->val.bval, box->name);
 #endif
 	return 0;
 }
@@ -681,12 +681,12 @@ saveBox(Box box, int flag)
 	for (i = 0; i < box->sym->vtop; i++) {
 		v = &box->val->stk[i];
 		if (v->vtype == TYPE_bat) {
-			BAT *b = (BAT *) BBPgetdesc(v->val.br.id);
+			BAT *b = (BAT *) BBPgetdesc(v->val.bval);
 
 			if (b && b->batPersistence & PERSISTENT){
 				stream_printf(f, "%s.bind(\"%s\",\"%s\");\n", 
 					box->name, getVarName(box->sym, i), 
-					BBPname(v->val.br.id));
+					BBPname(v->val.bval));
 				BATcommit(b);
 			}
 		} else {

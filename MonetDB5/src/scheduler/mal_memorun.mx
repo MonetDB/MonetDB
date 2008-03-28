@@ -259,7 +259,7 @@ RUNpickResult(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				*lhs = *rhs; 
 			else VALcopy(lhs,rhs);
 			if( lhs->vtype == TYPE_bat)
-				BBPincref(lhs->val.br.id, TRUE);
+				BBPincref(lhs->val.bval, TRUE);
 			return MAL_SUCCEED;
 		}
 	throw(MAL,"scheduler.pick","No result available");

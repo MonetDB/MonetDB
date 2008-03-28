@@ -97,7 +97,7 @@ tstagain:
 	case TYPE_bit: val= (ptr) & v->val.cval[0]; break;
 	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
 	case TYPE_sht: val= (ptr) & v->val.shval; break;
-	case TYPE_bat: val= (ptr) & v->val.br.id; break;
+	case TYPE_bat: val= (ptr) & v->val.bval; break;
 	case TYPE_int: val= (ptr) & v->val.ival; break;
 	case TYPE_wrd: val= (ptr) & v->val.wval; break;
 	case TYPE_bte: val= (ptr) & v->val.btval; break;
@@ -137,7 +137,7 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 	case TYPE_bit: ret= (ptr) & v->val.cval[0]; break;
 	case TYPE_chr: ret= (ptr) & v->val.cval[0]; break;
 	case TYPE_sht: ret= (ptr) & v->val.shval; break;
-	case TYPE_bat: ret= (ptr) & v->val.br.id; break;
+	case TYPE_bat: ret= (ptr) & v->val.bval; break;
 	case TYPE_int: ret= (ptr) & v->val.ival; break;
 	case TYPE_wrd: ret= (ptr) & v->val.wval; break;
 	case TYPE_bte: ret= (ptr) & v->val.btval; break;
@@ -304,7 +304,7 @@ of the return statement.
 			rhs = &env->stk[pci->argv[i]];
 			VALcopy(lhs,rhs);
 			if( lhs->vtype == TYPE_bat)
-				BBPincref(lhs->val.br.id, TRUE);
+				BBPincref(lhs->val.bval, TRUE);
 		}
 		stk->up = env;
 		env->down = stk;
@@ -406,7 +406,7 @@ all arguments and return values.
 			lhs= &stk->stk[pci->argv[i]];
 			VALcopy(lhs, argv[i]);
 			if( lhs->vtype == TYPE_bat)
-				BBPincref(lhs->val.br.id,TRUE);
+				BBPincref(lhs->val.bval,TRUE);
 		}
 		stk->cmd = debug;
 		ret = runMALsequence(cntxt, mb, 1,  0, stk, 0, 0);
@@ -914,7 +914,7 @@ switch(pci->barrier){
 					lhs = &env->stk[pci->argv[i]];
 					VALcopy(lhs,rhs);
 					if( lhs->vtype == TYPE_bat )
-						BBPincref(lhs->val.br.id, TRUE); 
+						BBPincref(lhs->val.bval, TRUE); 
 				}
 				if( garbageControl(getInstrPtr(mb,0)) )
 					garbageCollector(mb, stk, TRUE);
@@ -951,7 +951,7 @@ cause errors in multi-assignment statements.
 		rhs = &stk->stk[pci->argv[i]];
 		VALcopy(lhs,rhs);
 		if( lhs->vtype == TYPE_bat)
-			BBPincref(lhs->val.br.id, TRUE);
+			BBPincref(lhs->val.bval, TRUE);
 	}
 	@:restoreTarget(@1)@
 	ret = 0;
@@ -1008,7 +1008,7 @@ the bind(namespace, batname, mode) operation. [todo]
 			sbackup[i]= 0;  
 			backup[i]= 0;  
 			if( stk->stk[getArg(pci,i)].vtype == TYPE_bat) {
-				backup[i]= stk->stk[getArg(pci,i)].val.br.id;
+				backup[i]= stk->stk[getArg(pci,i)].val.bval;
 				stamp= BBPcurstamp();
 			} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str) {
 				backup[i]= stk->stk[getArg(pci,i)].len;
@@ -1031,7 +1031,7 @@ the bind(namespace, batname, mode) operation. [todo]
 	if( needsCleanup(pci) ){ 
 		for(i=0; i<pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
-			bat bid = stk->stk[getArg(pci,i)].val.br.id;
+			bat bid = stk->stk[getArg(pci,i)].val.bval;
 			/* update the bigfoot information */
 			updateBigFoot(cntxt, bid, TRUE);
 			if (backup[i]){
@@ -1072,8 +1072,8 @@ to the operators.
 
 		for( i=0; i< pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat &&
-				stk->stk[getArg(pci,i)].val.br.id ){
-			b= BATdescriptor(stk->stk[getArg(pci,i)].val.br.id);
+				stk->stk[getArg(pci,i)].val.bval ){
+			b= BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
 			if( b == NULL)
 				continue;
 			if( cntxt->errbuf && cntxt->errbuf[0]){
@@ -1581,7 +1581,7 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 #endif
    do{
 		for(k=0;k<mb->vtop; k++) 
-		if( stk->stk[k].vtype== TYPE_bat && abs(stk->stk[k].val.br.id)==bid) {
+		if( stk->stk[k].vtype== TYPE_bat && abs(stk->stk[k].val.bval)==bid) {
 			BBPdecref(bid,TRUE);
 			stk->stk[k].val.ival= 0;
 		}
@@ -1713,7 +1713,7 @@ int getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	i = rd?pci->retc:0;
 	
 	if( stk->stk[getArg(pci,0)].vtype == TYPE_bat){
-		b = BATdescriptor(stk->stk[getArg(pci,0)].val.br.id);
+		b = BATdescriptor(stk->stk[getArg(pci,0)].val.bval);
 		if (b) {
 			isview = isVIEW(b);
 			BBPunfix(b->batCacheid);
@@ -1722,7 +1722,7 @@ int getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	for(; i<limit; i++) {
 		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			int cnt = 0;
-			b = BATdescriptor(stk->stk[getArg(pci,i)].val.br.id);
+			b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
 			if (b==NULL) 
 				continue;
 			cnt = BATcount(b);
