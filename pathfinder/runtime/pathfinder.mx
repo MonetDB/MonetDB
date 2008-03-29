@@ -615,9 +615,9 @@ const ws_update := bat(int,str)
 # (i.e. these are the ones that need to be registered in the logger)
 const logger_bats := [+]("_", ws_update.tmark(0@0).slice(0,20)).rename("logger_bats");
 
-PROC pf_checkpoint(BAT[void,str] commitBAT) : bit 
+PROC pf_checkpoint(BAT[void,str] commitBAT, bit cleanup) : bit 
 {
-    if (count(commitBAT) = 0) return false;
+    if ((cleanup = false) and (count(commitBAT) = 0)) return false;
     commitBAT := commitBAT.access(BAT_WRITE);
     commitBAT.append("xquery_catalog");
     commitBAT.append("xquery_seqs");
@@ -732,7 +732,7 @@ if (isnil(CATCH(bat("doc_name").count()))) {
     uri_lifetime    := new(str,lng).insert("tmp", 1LL).persists(true).rename("uri_lifetime");
     doc_collection.insert(DOCID_CURID_HACK, DOCID_MIN); # hack: store next oid as in invalid tuple
     doc_collection.insert(DOCID_PGBIT_HACK, oid(REMAP_PAGE_BITS)); # hack: store pagesize also
-    pf_checkpoint(bat(void,str).append("uri_lifetime"));
+    pf_checkpoint(bat(void,str).append("uri_lifetime"), true);
 }
 
 # initialize uri_lifetime
@@ -849,7 +849,7 @@ PROC collection_cleanup(BAT[str,str] delBAT) : void
         delBAT@batloop() {
             if (isnil(CATCH(persists(bat($t), false)))) commitBAT.append($t); 
         }
-        pf_checkpoint(commitBAT);
+        pf_checkpoint(commitBAT, false);
     }
 }
 
@@ -1566,10 +1566,10 @@ PROC __ws_indexcoll(BAT[void,bat] ws,
 
         # only index element qnames that occur <M times, such that M.log(M) < N
         var cnt   := ws.fetch(QN_HISTOGRAM).fetch(cont);
-        var N     := count(ws.fetch(PRE_SIZE).fetch(cont));
-        var MlogM := [*](cnt,[log]([dbl](cnt)));
+        # DISABLE for PFROX var N     := count(ws.fetch(PRE_SIZE).fetch(cont));
+        # DISABLE for PFROX var MlogM := [*](cnt,[log]([dbl](cnt)));
         # DISABLE for PFROX  unq := reverse(ord_uselect(MlogM, dbl_nil, dbl(N)));
-        unq := reverse(ord_uselect(MlogM, dbl_nil, dbl_nil));
+        unq := cnt.hmark(0@0);
 
         # create the QN_NID and HSH_NID indices
         idx := __runtime_index(coll_oid, ws.fetch(PRE_SIZE).fetch(cont),
@@ -2069,9 +2069,10 @@ PROC __runtime_index(oid coll_oid,
 
             # get attribute values for this pre-range (use min/max to select only the relevant subsets)      
             tmp := [and]([<=](pre,ath),[>=](lim,atl)).ord_uselect(true).hmark(0@0).leftfetchjoin(atr);
-            tmp := [ord_select](tmp, pre, lim);
+        if (count(tmp) > 0) {
+            tmp := [ord_select](tmp, const pre, const lim);
             [insert](const (vxp := bat(oid, oid, sum([count](tmp)))), tmp);
-
+        }
             tmp := vxp.hmark(0@0);
             vxp := [lng](vxp.tmark(0@0).leftfetchjoin(prp)).access(BAT_WRITE); 
             vxp := [:xquery_hash_xor=](vxp, tmp.leftfetchjoin(attr_qn), 7);
@@ -2085,19 +2086,19 @@ PROC __runtime_index(oid coll_oid,
 
     # order vxm [hash,pre] on value; profit from binary search selections with sliced view results
     var vxm := bat(lng, oid, ((sum([count](val)))*8)/7);
-    [insert](const vxm, val);
+    val := [insert](const vxm, val);
     vxm := vxm.access(BAT_WRITE).order().access(BAT_READ);
 
     # idx [qn,pre] lexico-ordered (thanks to stable-sort); thus for a qn-equi-select, pre-s are ordered
     var idx := bat(oid, oid, (sum([count](elt))*8)/7);
-    [insert](const idx, elt);
+    elt := [insert](const idx, elt);
     idx := idx.access(BAT_WRITE).sorder().access(BAT_READ);
 
     if (not(updatable) and (coll_oid >= DOCID_MIN)) { 
         # persistent read-only case: indices are made persistent
         idx.rename(nme).mmap(1).persists(true);
         vxm.rename(vx_nme).mmap(1).persists(true); 
-        if (pre = 1@0) CATCH(pf_checkpoint(bat(void,str).append(nme).append(vx_nme))); # immediate commit
+        if (pre = 1@0) CATCH(pf_checkpoint(bat(void,str).append(nme).append(vx_nme), false)); # immediate commit
     }
     return new(void,bat).insert(nil,idx).insert(nil,vxm);
 }
@@ -2121,17 +2122,17 @@ PROC __runtime_maintain(lng wsid,
     var ins := runtime.fetch(RT_QN_NID_INS);
     var del := runtime.fetch(RT_QN_NID_DEL);
     var unq := runtime.fetch(RT_QN_NID_UNQ);
-    var flush_deletes := ((count(del)*8) > count(idx));
+    var rebuild := (count(ins)+count(del)) > (count(idx)/8);
 
     var vxm := runtime.fetch(RT_VX_HSH_NID);
     var vxi := runtime.fetch(RT_VX_HSH_NID_INS);
     var vxd := runtime.fetch(RT_VX_HSH_NID_DEL);
-    var vx_flush_deletes := ((count(vxd)*8) > count(vxm));
+    var vx_rebuild := (count(vxi)+count(vxd)) > (count(vxm)/8);
 
-    # nsloc index only contains qn-s from unq (ignore the rest)
-    unq.append(new_qn, true);
-    ins_qn_nid := ins_qn_nid.kintersect(reverse(unq));
-    del_qn_nid := del_qn_nid.kintersect(reverse(unq));
+    # DISABLED FOR PFROX # nsloc index only contains qn-s from unq (ignore the rest)
+    # DISABLED FOR PFROX unq.append(new_qn, true);
+    # DISABLED FOR PFROX ins_qn_nid := ins_qn_nid.kintersect(reverse(unq));
+    # DISABLED FOR PFROX del_qn_nid := del_qn_nid.kintersect(reverse(unq));
 
     # register the new deltas
     ins.insert(ins_qn_nid);
@@ -2139,44 +2140,31 @@ PROC __runtime_maintain(lng wsid,
     vxi.insert(ins_vx);
     vxd.insert(del_vx);
 
+    # to reduce memory consumption, we have switched from hash-tables to fully sorted indices. 
     if (coast_clear) {
         # coast is clear, unite als ins, all del and apply them to the master
- 
-         # do not maintain the hash table on qn under deletes, rather
-         # accumulate del-s until a full rebuild of the hash
-         if (flush_deletes) { 
-            # The problem is not so much finding the BUN to delete (by NID), but
-            # maintaining the hash-table on qn. 
-            # This hash table has a long coll list that unites all equal qn-s
-            # the length is often |N|/8, i.e. linear in #nodes (*really* long)
-            # As the collision list is singly linked, deleting in the middle 
-            # requires a traverse.
-            idx := idx.access(BAT_WRITE).insert(ins).deleteBuns(del);
-            idx := idx.order().access(BAT_READ); # this hurtzzz!
+        if (rebuild) { 
+            idx.access(BAT_WRITE).insert(ins).deleteBuns(del).order().access(BAT_READ);
             ins.delete();
             del.delete();
-         }
-         # we now keep idx ordered, even under updates
-         # idx.accbuild("hash");  the hash table on qn ensures fast nsloc lookup
- 
-         # do the same for value index
-         if (vx_flush_deletes) { 
-            var ignores := vxm.uselect(1@0);
-            vxi.delete(ignores); # ignore hash-codes marked nil (too frequent)
-            vxd.delete(ignores); # idem
-            vxm := vxm.access(BAT_WRITE).insert(vxi).deleteBuns(vxd);
-            vxm := vxm.order().access(BAT_READ); # this hurtzzz!
+        } else {
+            ins.accbuild("hash");
+            del.accbuild("hash");
+        }
+        # do the same for value index
+        if (vx_rebuild) { 
+            vxm.access(BAT_WRITE).insert(vxi).deleteBuns(vxd).order().access(BAT_READ);
             vxi.delete();
             vxd.delete();
-         }
-         # we now keep vxm ordered, even under updates
-         # vxm.accbuild("hash"); the hash table on (qn,str) code ensures fast value lookup
-     }
-
-    # store the new size in the UNQ seqbase
-    var totsize := batsize(idx) + batsize(ins) + batsize(del) + 
-                   batsize(vxm) + batsize(vxi) + batsize(vxd);
-    unq.seqbase(oid(totsize));
+        } else {
+            vxi.accbuild("hash");
+            vxd.accbuild("hash");
+        }
+        if (rebuild or vx_rebuild) { # store the new size in the UNQ seqbase
+            var totsize := batsize(idx) + batsize(vxm);
+            unq.seqbase(oid(totsize));
+        }
+    }
 
     if (ws_log_active)
       ws_log(wsid, sprintf("maintain(idx-%d unq-%d ins-%d del-%d _unq-%d _ins-%d _del-%d) %s %s",
@@ -2355,15 +2343,24 @@ PROC vx_lookup_qns(BAT[void,bat] ws, oid cont, BAT[oid,oid] elt_qns, BAT[oid,oid
     return reverse(attr).leftfetchjoin([lng](pivot.hmark(0@0)).access(BAT_WRITE).[:xquery_hash_xor=](attr, 7));
 }
 
-PROC idxjoin(BAT[oid,lng] l, BAT[lng,oid] r, bit numeric) : BAT[oid,oid] 
+PROC idxjoin(BAT[oid,lng] l, BAT[lng,oid] r, bit numeric, bit estimate) : BAT[oid,oid]
 {
     var res;
     if (numeric) {
         # help Niels's bandjoin (why doesn't it use binary search??)
         r := reverse(reverse(r).select(min(l),max(l) + 68719476735LL));
-        res := bandjoin(l, r, 68719476735LL, 0LL);
+        if (estimate and (count(l) = 1)) {
+            var val := l.fetch(0);
+            res := reverse(ord_uselect(reverse(r), val, val+68719476735LL)); # return a view 
+        } else {
+            res := bandjoin(l, r, 68719476735LL, 0LL);
+        }
     } else {
-        res := leftjoin(l, r);
+        if (estimate and (count(l) = 1)) {
+            res := reverse(ord_uselect(reverse(r), l.fetch(0))); # return a view 
+        } else {
+            res := leftjoin(l, r);
+        }
     }
     return res;
 }
@@ -2392,18 +2389,18 @@ PROC vx_lookup(BAT[void,bat] ws, oid cont, BAT[void,lng] iter_val, BAT[oid,lng] 
     # now we are going to assemble a list of candidate NIDs (of the elements we are looking for)
     if (numeric) 
         iter_hsh  := iter_hsh.tsort();
-        iter_cand := iter_hsh.idxjoin(vx_hsh_nid, numeric); # main lookup
+        iter_cand := iter_hsh.idxjoin(vx_hsh_nid, numeric, estimate); # main lookup
 
     if (estimate) return iter_cand; # do not consider the delta bats (so we just return views..)
 
     # ins/del data structures are private to the transaction (no lock needed)
     var iter_ins  := empty_bat;
     var iter_del  := empty_bat;
-    if (count(vx_hsh_nid_ins) > 0) iter_ins := iter_hsh.idxjoin(vx_hsh_nid_ins, numeric);
-    if (count(vx_hsh_nid_del) > 0) iter_del := sintersect(iter_hsh.idxjoin(vx_hsh_nid_del, numeric), iter_cand);
+    if (count(vx_hsh_nid_ins) > 0) iter_ins := iter_hsh.idxjoin(vx_hsh_nid_ins, numeric, estimate);
+    if (count(vx_hsh_nid_del) > 0) iter_del := sintersect(iter_hsh.idxjoin(vx_hsh_nid_del, numeric), iter_cand, estimate);
     if (bit(count(iter_ins) + count(iter_del))) {
         # avoid doing this when ins/del are empty: res maybe a view on idx (readonly case)
-        #iter_cand.access(BAT_WRITE).insert(iter_ins).deleteBuns(iter_del).access(BAT_READ);
+        iter_cand.access(BAT_WRITE).insert(iter_ins).deleteBuns(iter_del).access(BAT_READ);
     }
     return iter_cand; # [iter,pre]
 }
@@ -2436,8 +2433,8 @@ PROC vx_lookup(bat[void,bat] ws,
         var key_id  := id_val.hmark(0@0);
         var key_val := id_val.tmark(0@0);
         var key_nid := vx_lookup(ws, $h, key_val, qns, getattr, bit(numeric), false);
-        if ((count(id_pre) + count(key_nid)) > (10*count(iter_val))) {
-            id_pre := id_iter.project(1@0); break;
+        if ((count(id_pre) + count(key_nid)) > max(IDX_MAGICAL_CONST, 10*count(iter_val))) {
+            return id_iter.project(1@0);
         }
         var key_pre := ws_docfilter(ws, key_nid, $h).ssort(); # sort on [iter,pre]
         id_pre.insert(reverse(reverse(key_pre).leftfetchjoin(key_id)));
@@ -2451,7 +2448,7 @@ PROC vx_lookup(bat[void,bat] ws,
                bat[void,oid] id_item,
                bat[void,int] id_kind,
                bat[void,str] iter_val,
-               str elt_uri, str elt_loc, str attr_uri, str attr_loc, bit getattr, BAT[void,bit] numeric) : BAT[oid,oid]
+               str elt_uri, str elt_loc, str attr_uri, str attr_loc, bit getattr, BAT[void,oid] numeric) : BAT[oid,oid]
 {
     if ((numeric.count() = 0) or (numeric.tunique().count() > 1)) 
         return id_iter.project(1@0);
@@ -2460,8 +2457,8 @@ PROC vx_lookup(bat[void,bat] ws,
 
 
 
-# routine that filters out pre-s that belong to deleted collection documents 
-# also makes sure that documents from which surviving pre-s stem are added to OPEN_DOCID ws entry
+# routine that converts NIDs to PREs and filters out pre-s that belong to deleted collection documents 
+# also makes sure that returned documents get an OPEN_DOCID ws entry
 PROC ws_docfilter(bat[void,bat] ws,
                   bat[any::1,oid] any_pre,
                   oid cont) : bat[any::1,oid]
@@ -2469,6 +2466,10 @@ PROC ws_docfilter(bat[void,bat] ws,
     var map_pid   := ws.fetch(MAP_PID).fetch(cont);
     var nid_rid   := ws.fetch(NID_RID).fetch(cont);
     var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
+    var frag_root := ws.fetch(FRAG_ROOT).fetch(cont);
+    var open_cont := ws.fetch(OPEN_CONT);
+    var open_docid:= ws.fetch(OPEN_DOCID);
+    var open_name := ws.fetch(OPEN_NAME);
 
     # first, ensure sorted PREs
     var isolate := (ttype(map_pid) = oid);
@@ -2481,75 +2482,34 @@ PROC ws_docfilter(bat[void,bat] ws,
         var any_nid := any_pre.tmark(0@0).leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
         any_pre := reverse(reverse(any_nid).leftfetchjoin(any_pre.hmark(0@0)));
     }
-    if (pre_size.fetch(1) = (count(pre_size) - 2))
-        return any_pre;
 
-    var cont_coll := ws.fetch(CONT_COLL);
-    var open_cont := ws.fetch(OPEN_CONT);
-    var open_docid:= ws.fetch(OPEN_DOCID);
-    var open_name := ws.fetch(OPEN_NAME);
-    var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
-    var pre_nid   := ws.fetch(PRE_NID).fetch(cont);
-    var frag_root := ws.fetch(FRAG_ROOT).fetch(cont);
+    # get the list of new documents and their root nodes of which we have received nodes
+    var docpre_new := any_pre.docsused(frag_root, nid_rid, map_pid, pre_size).tdiff(open_docid);
 
-    var one := any_pre.ord_select(1@0); # never returned by index, except special 'give-up' case
-    if (count(any_pre) = count(one)) return any_pre;
-    var cur := count(one); # ignore bogus nodes 
-    var tot := count(any_pre);
-    var res := bat(one.htype(), oid, tot);
-    if (one.htype() = void) {
-        res := res.seqbase(one.seqbase());
-    }
-        res := res.insert(one); # final result (copied excluding deleted docs)
-    var opt := true;
-    var anc := bat(void,oid).append(1@0); # start opportunistically with first (potential) doc 1@0
+    if (count(docpre_new) > 0) {
+        # lock to access the meta tables for checking whether the new docs still exists
+        lock_set(pf_short);
+        var err := CATCH(docpre_new := docpre_new.outerjoin(doc_name));
+        lock_unset(pf_short);
+        if (not(isnil(err))) ERROR(err);
 
-    while(cur < tot) {
-        var doc_bat := bat(oid,bat); 
-        anc@batloop() {
-            # get all any_pre tuples in this document. any_pre is tsorted, ord_select => SLICE VIEW.
-            var new_bat := any_pre.slice(cur,tot).ord_select(oid_nil, oid(lng($t) + pre_size.fetch($t))); 
+        # remove results that correspond to already deleted documents (if any)
+        var docpre_nme := docpre_new.ord_select(str_nil,str_nil);
+        if (count(docpre_nme) < count(docpre_new)) {
+            var del := bat(void,oid,count(any_pre));
+            var pre := any_pre.tmark(oid_nil);
 
-            # fill bat-of-bats, note that it is limited to max IDX_MAGICAL_CONST bats
-            var cnt := count(new_bat); 
-            if (cnt > 0) doc_bat.insert(reverse(frag_root).find($t), new_bat); 
-            cur :+= cnt; # skips document (nice if any_pre has >> IDX_MAGICAL_CONST nodes from it!)
-        }
-
-        # only if we saw a yet unopened document, check its continued existence
-        var doc_new := doc_bat.kdiff(reverse(open_docid));
-        if (count(doc_new) > 0) {
-            # have to access the meta tables to check whether the docs still exists
-            lock_set(pf_short);
-            var doc_nme, err := CATCH(doc_nme := mirror(doc_bat).leftjoin(doc_name));
-            lock_unset(pf_short);
-            if (not(isnil(err))) ERROR(err);
-
-            # add new documents as open in working set 
-            doc_nme := doc_nme.ord_select(str_nil,str_nil);
-            doc_new := mirror(doc_new).leftjoin(doc_nme);
-            open_name.append(doc_new.tmark(0@0));
-            open_cont.append(doc_new.tmark(0@0).project(cont));
-            open_docid.append(doc_new.hmark(0@0));
-
-            if (count(doc_nme) < count(doc_bat)) { # some documents did not exist!
-                doc_bat := mirror(doc_nme).leftjoin(doc_bat);
-                opt := false;
+            docpre_new.kdiff(docpre_nme)@batloop() {
+                del.append(pre.ord_select($h,oid(lng($h) + pre_size.fetch($h))));
             }
+            any_pre := any_pre.tdiff(del);
         }
-        # if in the first ancestor batch, we found everything: no res construction is needed
-        if (opt and (cur = tot)) return any_pre; # most code should get here
-
-        # add all 'ok' any_pre tuples to the result
-        [insert](const res, doc_bat); 
-        if (count(res) > 0) opt := false;
-
-        # give *multiple* next tuples to ancestor (nice if we have nodes from many docs)
-        anc := any_pre.slice(cur,cur+IDX_MAGICAL_CONST).tmark(0@0); 
-        anc := ll_ancestor(mirror(anc), anc, pre_size, pre_level);
-        anc := {min}(anc).tunique().mirror().leftfetchjoin(pre_nid); # reduce to unique doc nodes
+        # register the newly opened documents 
+        open_name.append(docpre_nme.tmark(0@0));
+        open_cont.append(docpre_nme.tmark(0@0).project(cont));
+        open_docid.append(docpre_nme.hmark(0@0));
     }
-    return res.access(BAT_READ);
+    return assert_order(any_pre);
 }
 
 
@@ -3199,7 +3159,7 @@ PROC ws_open(BAT[void,BAT] ws,
             commitBAT.append([bbpname](docBAT).tmark(0@0));
         
         # commit the new collections
-        pf_checkpoint(commitBAT);
+        pf_checkpoint(commitBAT, false);
         lock_set(pf_short);
         doc_undo.delete(doc_undo.select(wsid)); # if these remain, ws_destroy() would remove the new documents
         lock_unset(pf_short);
@@ -3694,7 +3654,7 @@ PROC shred_doc_base(bit cleanup,
     }
     # checkpoint the new bats
     if (pf_commit_docmgt)
-    if (pf_checkpoint(commitBAT) or cleanup) {
+    if (pf_checkpoint(commitBAT, cleanup) or cleanup) {
         # remove the in-memory undo log; and trim collection
         lock_set(pf_short);
         err := CATCH(commitBAT := _shred_doc_cleanup(wsid, cleanup));
