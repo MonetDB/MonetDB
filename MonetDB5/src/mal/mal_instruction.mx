@@ -1363,10 +1363,7 @@ Beware, the symbol table structure assumes that it is relatively
 cheap to perform a linear search to a variable or constant.
 
 @= makeVarSpace
-	if( mb->vtop >= (1<<15)-2 ){
-		mb->vtop = (1<<15)-2 ;
-		GDKerror("newVariable: too many variables\n");
-	} else if (mb->vtop >= mb->vsize){
+	if (mb->vtop >= mb->vsize){
 		VarPtr *new;
 		int s= mb->vtop + MAXVARS;
 
@@ -2794,8 +2791,8 @@ void showMalBlkHistory(MalBlkPtr mb)
 void
 varSetProp(MalBlkPtr mb, int var, int prop, int op, ValPtr cst)
 {
-	VarPtr v = getVar(mb, var);
-	int i, propid = -1, reset = 0;
+	VarPtr v = getVar(mb, var), vnew;
+	int i, propid = -1, reset = 0, size;
 
 	for(i=0; i<v->propc; i++){
 		MalProp *p = mb->prps+v->prps[i];
@@ -2808,14 +2805,14 @@ varSetProp(MalBlkPtr mb, int var, int prop, int op, ValPtr cst)
 	}
 	if (propid < 0) {
 		if (mb->ptop >= mb->psize){
-        		mb->psize += MAXVARS;
-        		mb->prps = (MalProp*) GDKrealloc(mb->prps, mb->psize * sizeof(MalProp));
-        		if (mb->prps == NULL) {
-            			mb->errors++;
+			mb->psize += MAXVARS;
+			mb->prps = (MalProp*) GDKrealloc(mb->prps, mb->psize * sizeof(MalProp));
+			if (mb->prps == NULL) {
+				mb->errors++;
 				assert(0);
-            			showScriptException(mb, 0, MAL, "varSetProp: no storage left\n");
-        		}
-    		}
+				showScriptException(mb, 0, MAL, "varSetProp: no storage left\n");
+			}
+		}
 		propid = mb->ptop++;
 	}
 
@@ -2827,7 +2824,15 @@ varSetProp(MalBlkPtr mb, int var, int prop, int op, ValPtr cst)
 
 	/* here we need to add the new property to the variable */
 	if (!reset) {
-		assert(v->propc < v->maxprop); /* Hard limit for now */
+		if( v->propc == v->maxprop){
+			size= sizeof(VarRecord)+(v->maxprop-1) *sizeof(int);
+        	vnew= (VarPtr) GDKzalloc(size+MAXARG *sizeof(int));
+			memcpy((char*) vnew, (char*) v, size);
+			v->maxprop+= MAXARG;
+			mb->var[var]= vnew;
+			GDKfree(v);
+			v= getVar(mb,var);
+		}
 		v->prps[v->propc++] = propid;
 	}
 }
