@@ -2807,11 +2807,7 @@ varSetProp(MalBlkPtr mb, int var, int prop, int op, ValPtr cst)
 		}
 	}
 	if (propid < 0) {
-		if (mb->ptop >= (1<<15)-2 ){
-			mb->ptop = (1<<15)-2;
-			GDKerror("varSetProp: too many properties\n");
-			assert(0);
-		} else if (mb->ptop >= mb->psize){
+		if (mb->ptop >= mb->psize){
         		mb->psize += MAXVARS;
         		mb->prps = (MalProp*) GDKrealloc(mb->prps, mb->psize * sizeof(MalProp));
         		if (mb->prps == NULL) {
