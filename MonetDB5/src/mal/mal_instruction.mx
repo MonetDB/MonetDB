@@ -305,7 +305,6 @@ instruction in the source.]
 /* #define DEBUG_REDUCE */
 #define MAXARG 4		/* BEWARE the code depends on this knowledge */
 #define STMT_INCREMENT 32
-#define STMT_MAXIMUM  1<<16
 #define MAXVARS 32
 
 typedef struct SYMDEF {
@@ -319,12 +318,12 @@ typedef struct SYMDEF {
 typedef struct VARRECORD {
 	str name;		/* argname or lexical value repr */
 	malType type;		/* internal type signature */
-	short tmpindex;		/* temporary variable */
-	short recycle;		/* variable id in the recycler catalog */
+	int flags;		/* see below, reserve some space */
+	int tmpindex;		/* temporary variable */
+	int recycle;		/* variable id in the recycler catalog */
 	ValRecord value;
-	short flags;		/* see below, reserve some space */
-	short propc, maxprop;	/* proc count and max number of properties */
-	short prps[];		/* property array */
+	int propc, maxprop;	/* proc count and max number of properties */
+	int prps[];			/* property array */
 } *VarPtr, VarRecord;
 
 /* Variable properties */
@@ -1409,10 +1408,10 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	}
 	n = mb->vtop;
 	if (getVar(mb, n) == NULL)
-		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + 2*MAXARG * sizeof(short));
+		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + MAXARG * sizeof(int));
 	mb->var[n]->name = name;
 	mb->var[n]->propc = 0;
-	mb->var[n]->maxprop = 2*MAXARG;
+	mb->var[n]->maxprop = MAXARG;
 
 	setVarType(mb, n, type);
 	clrVarConstant(mb, n);
@@ -1457,11 +1456,11 @@ newTmpVariable(MalBlkPtr mb, malType type)
 	@:makeVarSpace@
 	n = mb->vtop;
 	if (getVar(mb, n) == NULL)
-		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + 2*MAXARG * sizeof(short));
+		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + MAXARG * sizeof(int));
 	getVarTmp(mb, n) = n;
 	setVarType(mb, n, type);
 	mb->var[n]->propc = 0;
-	mb->var[n]->maxprop = 2*MAXARG;
+	mb->var[n]->maxprop = MAXARG;
 	mb->vtop++;
 	return n;
 }
@@ -1506,7 +1505,7 @@ copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v)
 	VarPtr w;
 
 	(void) src;		/* fool the compiler */
-	w = (VarPtr) GDKzalloc(sizeof(VarRecord) + v->maxprop * sizeof(short));
+	w = (VarPtr) GDKzalloc(sizeof(VarRecord) + v->maxprop * sizeof(int));
 	w->name = v->name ? GDKstrdup(v->name) : 0;
 	w->type = v->type;
 	w->flags = v->flags;

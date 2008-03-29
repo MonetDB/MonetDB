@@ -292,7 +292,7 @@ The MAL language uses a few defaults, recognizable as properties
 typedef struct MalProp {
 	bte idx;
 	bte op;
-	short var;
+	int var;
 } *MalPropPtr, MalProp;
 
 typedef enum prop_op_t {
