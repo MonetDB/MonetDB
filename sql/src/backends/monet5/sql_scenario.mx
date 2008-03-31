@@ -1359,8 +1359,14 @@ unless auto_commit has been set.
 @c
 	c->glb = oldglb;
 	if (m->mode== m_profile) {
+#ifdef HAVE_TIMES
+#if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
 		int tcks_per_sec = sysconf(_SC_CLK_TCK);
+#else
+		int tcks_per_sec = CLK_TCK;
+#endif
 		struct tms t1;
+#endif
 		lng T1 = GDKusec();
 		lng tot = T1 - be->mvc->Tstart; 
 
@@ -1369,7 +1375,7 @@ unless auto_commit has been set.
 		times(&t1);
 		stream_printf(
 			c->fdout,
-			"%%times real %lld, user %lld, system %lld, %d\n",
+			"%%times real " LLFMT ", user " LLFMT ", system " LLFMT ", %d\n",
 			tot, 
 			(lng) (t1.tms_utime - be->mvc->times.tms_utime),
 			(lng) (t1.tms_stime - be->mvc->times.tms_stime),
