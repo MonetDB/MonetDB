@@ -514,14 +514,6 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 # include <sys/times.h>
 #endif
 
-#ifndef NATIVE_WIN32
-# ifndef HZ
-#  if !defined(HAVE_SYSCONF) || !defined(_SC_CLK_TCK)
-#   define HZ CLK_TCK
-#  endif
-# endif
-#endif
-
 #define PARAM(x)        (argv+x)
 #define RETVAL          (argv)
 
@@ -1302,7 +1294,7 @@ Note that in multi threaded mode the routine prints the elapsed
 time since the beginning of each process.
 @{
 @c
-#ifndef NATIVE_WIN32
+#ifdef HAVE_TIMES
 static time_t clk = 0;
 static struct tms state;
 #endif
@@ -1310,22 +1302,27 @@ static struct tms state;
 int
 view_gdk_cpu(BAT **retval)
 {
-#ifndef NATIVE_WIN32
-	struct tms newst;
-#endif
 	int i;
 	BAT *b;
-#if !defined(NATIVE_WIN32) && !defined(HZ) && defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
+#ifdef HAVE_TIMES
+	struct tms newst;
+#ifndef HZ
 	static int HZ;
 
-	if (HZ == 0)
-			HZ = sysconf(_SC_CLK_TCK);
+	if (HZ == 0) {
+#if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
+		HZ = sysconf(_SC_CLK_TCK);
+#else
+		HZ = CLK_TCK;
+#endif
+	}
+#endif
 #endif
 
 	*retval = b = BATnew(TYPE_str, TYPE_int, 32);
 	if (b == 0)
 		return GDK_FAIL;
-#ifndef NATIVE_WIN32
+#ifdef HAVE_TIMES
 	if (clk == 0) {
 		clk = time(0);
 		times(&state);
