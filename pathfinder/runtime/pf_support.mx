@@ -4052,8 +4052,8 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
       # insertcont - container from which to insert an element
       # insertitem - item to insert
       var idx := $h; # to ease debugging
-      var insertcont := batcont.fetch(idx);
       var insertitem := $t;
+      var insertcont := batcont.fetch(idx);
 
       if (not(isnil(ws.fetch(PRE_KIND).find(insertcont).find(insertitem)))) { # do not insert holes
         # insertsize - size of item to be inserted
@@ -4270,7 +4270,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             var npages := ((insertsize - holeatend) + int(REMAP_PAGE_MASK)) >> REMAP_PAGE_BITS;
             # the size of the hole we are going to insert
             # we move the bit after the insert point to the last inserted page
-            var shiftsize := npages << REMAP_PAGE_BITS;
+            var shiftsize;
 
             var newpages := new(void, oid, npages);
             var lastpage;
@@ -4314,24 +4314,28 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               }
               cpwhere_rid := oid(lng(newpages.fetch(0)) << REMAP_PAGE_BITS);
               newholeatend := holeatend;
+              shiftsize := npages << REMAP_PAGE_BITS;
             } else {
               # insert new pages after current
               newpages := newpages.seqbase(oid(lng(pageno) + 1));
               map_pid_update.replace([oid]([+]([int](map_pid_update.select(pageno, oid_nil, false, true)), npages)), true);
               map_pid_update.myupdate(newpages.reverse());
-              # we need to copy the data at the end to the end of the last new page
+              # we need to copy the data at the end to the last new page
               cpstart_rid := docinsertbefore_rid;
               cpsize := datasize;
-              var pgstart := oid(lng(lastpage) << REMAP_PAGE_BITS);
-              # (insertsize - datasize - holeatend) is what gets inserted after the current page;
-              # ANDing that with REMAP_PAGE_MASK gives us how much gets inserted on the last page
-              if (insertsize <= (datasize + holeatend)) {
-                # no new data needs to go to the new page, just move the old data to the start of the new page
-                cpwhere_rid := pgstart;
-              } else {
-                cpwhere_rid := oid(int(pgstart) + (((insertsize - datasize) - holeatend) and int(REMAP_PAGE_MASK)));
+              # start with shifting insertsize
+              var cpwhere_pre := oid(int(docinsertbefore_newpre) + insertsize);
+              var laststart_pre := swizzle(oid(lng(lastpage) << REMAP_PAGE_BITS), map_pid_update);
+              # if this ends up on last-but-one page, move up to start of last page
+              if (cpwhere_pre < laststart_pre) {
+                cpwhere_pre := laststart_pre;
               }
+              # calculate how much we shift the data
+              shiftsize := int(cpwhere_pre) - int(docinsertbefore_newpre);
+              # convert to RID
+              cpwhere_rid := antiswizzle(cpwhere_pre, map_pid_update);
 
+              var pgstart := oid((int(cpwhere_rid) >> REMAP_PAGE_BITS) << REMAP_PAGE_BITS);
               if (cpwhere_rid > pgstart) {
                 # fix up hole at start of last page since it does not
                 # extend to the end of the page anymore (this will be
@@ -4345,7 +4349,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               newholeatend := int(REMAP_PAGE_SIZE) - ((int(cpwhere_rid) + cpsize) and int(REMAP_PAGE_MASK));
             }
 
-            # move data after insert point to end of last inserted page
+            # move data to inserted page
             if (cpsize > 0) {
               var rid_size_data;
               var rid_level_data;
@@ -4447,17 +4451,17 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             # select those that start before and end inside the moved data
             var indata := ancestors_end.uselect(docinsertbefore_newpre, oid(lng(docinsertbefore_newpre) + datasize), true, false);
             if (indata.count() > 0) {
-              new_size.insert([+](indata.mirror().join(ancestors_size), (shiftsize + holeatend) - newholeatend));
+              new_size.insert([+](indata.mirror().join(ancestors_size), shiftsize));
             }
             # select those that end inside the hole at the end
             var inhole := ancestors_end.uselect(oid(lng(docinsertbefore_newpre) + datasize), oid(lng(docinsertbefore_newpre) + datasize + holeatend), true, false);
             if (inhole.count() > 0) {
-              new_size.insert([int]([-](((((lng(docinsertbefore_newpre) + datasize) - 1) + (shiftsize + holeatend)) - newholeatend), [lng](inhole.mirror().join(ancestors_newpre)))));
+              new_size.insert([int]([-]((((lng(docinsertbefore_newpre) + datasize) - 1) + shiftsize), [lng](inhole.mirror().join(ancestors_newpre)))));
             }
             # select those that end after the moved data
             var behind := ancestors_end.uselect(oid(lng(docinsertbefore_newpre) + datasize + holeatend), oid_nil);
             if (behind.count() > 0) {
-              new_size.insert([+](behind.mirror().join(ancestors_size), shiftsize));
+              new_size.insert([+](behind.mirror().join(ancestors_size), npages << REMAP_PAGE_BITS));
             }
             # figure out new and old pages since they need to be updated differently and apply
             var upd_pages := [oid]([>>]([lng](new_size.mirror().join(ancestors_newrid)), REMAP_PAGE_BITS));

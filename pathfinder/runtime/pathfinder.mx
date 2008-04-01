@@ -2868,9 +2868,8 @@ PROC ws_newpage(BAT[void,BAT] ws,
 
             var pages_free := reverse(runtime.fetch(RT_LOCK_FREELIST));
             page_id := oid(new_pid);
-            new_pid :+= 1;
             # create a new [nil,oid] bat with densely descending tail values, ending at new_pid
-            var newpids := densebat(wrd(last_pid - new_pid)).seqbase(oid(new_pid)).reverse().seqbase(oid(nil)).access(BAT_WRITE).revert(); # put in reverse order to give the pages out in order 
+            var newpids := densebat(wrd(last_pid - new_pid)).seqbase(oid(new_pid + 1)).reverse().seqbase(oid(nil)).access(BAT_WRITE).revert(); # put in reverse order to give the pages out in order 
 
             # add extra created pages to the freelist
             if (isnil(err)) {
