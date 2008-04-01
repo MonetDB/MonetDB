@@ -2457,10 +2457,10 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         assgn (var (pre_tgt->name),
                                project (var (upd_kind->name),
-                                        nil())),
+                                        cast (type (mty_oid), nil()))),
                         assgn (var (pre_cont_tgt->name),
                                project (var (upd_kind->name),
-                                        nil())));
+                                        cast (type (mty_oid), nil()))));
 
                 /* consider attribute tgt */
                 if (ty & aat_anode1)
@@ -2476,10 +2476,10 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         assgn (var (attr_tgt->name),
                                project (var (upd_kind->name),
-                                        nil())),
+                                        cast (type (mty_oid), nil()))),
                         assgn (var (attr_cont_tgt->name),
                                project (var (upd_kind->name),
-                                        nil())));
+                                        cast (type (mty_oid), nil()))));
 
                 /* consider strings  (which are arriving as aat_uA...) */
                 if (ty & aat_uA)
@@ -2490,7 +2490,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         assgn (var (replace_strings->name),
                                project (var (upd_kind->name),
-                                        nil())));
+                                        cast (type (mty_str), nil()))));
 
                 /* consider qnames */
                 if (ty & aat_qname)
@@ -2515,10 +2515,10 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         assgn (var (replace_qn_uristrings->name),
                                project (var (upd_kind->name),
-                                        nil())),
+                                        cast (type (mty_str), nil()))),
                         assgn (var (replace_qn_loc_strings->name),
                                project (var (upd_kind->name),
-                                        nil())));
+                                        cast (type (mty_str), nil()))));
 
                 /* consider node ins */
                 if (ty & aat_pnode)
@@ -2534,10 +2534,10 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         assgn (var (pre_ins->name),
                                project (var (upd_kind->name),
-                                        nil())),
+                                        cast (type (mty_oid), nil()))),
                         assgn (var (pre_cont_ins->name),
                                project (var (upd_kind->name),
-                                        nil())));
+                                        cast (type (mty_oid), nil()))));
 
                 /* consider attribute ins */
                 if (ty & aat_anode)
@@ -2553,10 +2553,10 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         assgn (var (attr_ins->name),
                                project (var (upd_kind->name),
-                                        nil())),
+                                        cast (type (mty_oid), nil()))),
                         assgn (var (attr_cont_ins->name),
                                project (var (upd_kind->name),
-                                        nil())));
+                                        cast (type (mty_oid), nil()))));
 
                 /* execute update_tape */
                 execute (
