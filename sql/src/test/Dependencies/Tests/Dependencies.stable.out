@@ -1,13 +1,13 @@
 stdout of test 'Dependencies` in directory 'src/test/Dependencies` itself:
 
 
-# 08:53:49 >  
-# 08:53:49 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31661 --set xrpc_port=45079 --set monet_prompt= --trace  "--dbname=mTests_src_test_Dependencies" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 08:53:49 >  
+# 13:47:13 >  
+# 13:47:13 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/debug/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/debug/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/debug/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/debug/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/debug/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/debug/MonetDB5/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33596 --set xrpc_port=44201 --set monet_prompt= --trace  "--dbname=mTests_src_test_Dependencies" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 13:47:13 >  
 
 
 
-# MonetDB server v5.4.0, based on kernel v1.22.0
+# MonetDB server v5.5.0, based on kernel v1.23.0
 # Serving database 'mTests_src_test_Dependencies'
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
@@ -129,8 +129,8 @@ Dependencies between database objects
 % varchar,	varchar,	char # type
 % 6,	12,	11 # length
 [ "<>",	"trigger_test",	"DEP_TRIGGER"	]
-[ "count",	"trigger_test",	"DEP_TRIGGER"	]
 [ "isnull",	"trigger_test",	"DEP_TRIGGER"	]
+[ "count",	"trigger_test",	"DEP_TRIGGER"	]
 % sys.k,	sys.fk,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
