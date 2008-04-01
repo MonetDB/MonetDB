@@ -154,6 +154,7 @@ pcre_export void pcre_del(Heap *h, var_t *index);
 pcre_export int pcre_length(pcre * p);
 pcre_export void pcre_heap(Heap *heap, size_t capacity);
 pcre_export var_t pcre_put(Heap *h, var_t *bun, pcre * val);
+pcre_export str PCREsql2pcre(str *ret, str *pat, str *esc);
 pcre_export str PCRElike3(bit *ret, str *s, str *pat, str *esc);
 pcre_export str PCRElike2(bit *ret, str *s, str *pat);
 pcre_export str PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
