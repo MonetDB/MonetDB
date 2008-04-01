@@ -1264,7 +1264,7 @@ AC_CHECK_SIZEOF(__int64)
 AC_C_CHAR_UNSIGNED
 
 # Checks for library functions.
-AC_CHECK_FUNCS([ftruncate gettimeofday opendir times])
+AC_CHECK_FUNCS([ftruncate gettimeofday opendir sysconf times])
 
 dnl AC_PROG_CC_STDC()
 if test -f "$srcdir"/vertoo.data; then

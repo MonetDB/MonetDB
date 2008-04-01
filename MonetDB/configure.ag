@@ -92,7 +92,7 @@ AC_COMPILE_IFELSE(AC_LANG_SOURCE([int foo(int * restrict p) { return *p; }]),
 # Checks for library functions.
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([memset])
-AC_CHECK_FUNCS([fcntl ftime getopt getrlimit getuid kill lockf madvise nanosleep pipe posix_fadvise posix_madvise setenv shutdown strdup strtof sysconf uname strtoll fsync fdatasync])
+AC_CHECK_FUNCS([fcntl ftime getopt getrlimit getuid kill lockf madvise nanosleep pipe posix_fadvise posix_madvise setenv shutdown strdup strtof uname strtoll fsync fdatasync])
 AC_CHECK_DECLS([strdup, strtof])
 
 
