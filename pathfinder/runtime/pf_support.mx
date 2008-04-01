@@ -408,6 +408,9 @@ but does this in a single scan."
 .COMMAND ws_bat(lng wsid) : BAT[void,bat] = CMDws_bat; 
  "retrieve BAT ws that belongs to wsid; note that you must be sure that it is still alive"
 
+.COMMAND docsused(BAT[any,oid] any_pre, BAT[oid,oid] frag_root, BAT[void,oid] nid_rid,
+                 BAT[void,oid] map_pid, BAT[void,int] pre_size) : BAT[oid,oid] = CMDdocsused;
+ "find out the list of [rootpre,docid] in frag_root[docid,rootnid] that have nodes in any_pre (nids are swizzled on demand)"
 
 .PRELUDE = pf_support_prelude;
 .EPILOGUE = pf_support_epilogue;
@@ -8143,6 +8146,57 @@ int CMDws_bat(BAT **ret, lng* wsid)
         GDKerror("CMDws_bat: BBPfix(%d) failed.\n", (int)bid);
     }
     return GDK_FAIL;
+}
+
+#define SWIZZLE(idx) ((map[idx >> REMAP_PAGE_BITS] << REMAP_PAGE_BITS) | (idx & REMAP_PAGE_MASK))
+
+int
+CMDdocsused(BAT** res, BAT* input, BAT* frag_root, BAT* nid_rid, BAT* map_pid, BAT* pre_size) {
+    oid* docid = (oid*) Hloc(frag_root, BUNfirst(frag_root));
+    oid* root = (oid*) Tloc(frag_root, BUNfirst(frag_root));
+    int* size = (int*) Tloc(pre_size, BUNfirst(pre_size));
+    BATiter inputi = bat_iterator(input);
+    oid* map = (oid*) Tloc(map_pid, BUNfirst(map_pid));
+    oid* rid = (oid*) Tloc(nid_rid, BUNfirst(nid_rid));
+    size_t i=0,j=0, n=BATcount(input), m=BATcount(frag_root);
+
+    *res = BATnew(TYPE_oid, TYPE_oid, 100);
+    if (*res == NULL)
+        return GDK_FAIL;
+    BATseqbase(*res, 0);
+
+    while (i<n) {
+        oid delta, docpre, cur = * (oid *) BUNtail(inputi, i);
+
+        /* skip all documents before cur */
+        if (map_pid->ttype == TYPE_void) {
+            for (delta = (m-j) >> 4; delta > 40; delta >>= 4)
+                while (j+delta < m && cur > (docpre=root[j+delta]) + size[docpre])
+                    j += delta;
+            while (j < m && cur > (docpre=root[j]) + size[docpre])
+                j++;
+        } else {
+            /* we need swizzling */
+            for (delta = (m-j) >> 4; delta > 40; delta >>= 4)
+                while (j+delta < m && cur > (docpre=SWIZZLE(rid[root[j+delta]])) + size[docpre])
+                    j += delta;
+            while (j < m && cur > (docpre=SWIZZLE(rid[root[j]])) + size[docpre])
+                j++;
+        }
+        assert(j < m);
+
+        /* insert docid */
+        BUNins(*res, &docpre, &docid[j], FALSE);
+
+        /* skip all nodes of this document */
+        docpre = docpre + size[docpre];
+        for (delta = (n-i) >> 4; delta > 40; delta >>= 4)
+            while (i+delta < n && * (oid *) BUNtail(inputi, i+delta) <= docpre)
+                i += delta;
+        while (i < n && * (oid *) BUNtail(inputi, i) <= docpre)
+            i++;
+    }
+    return GDK_SUCCEED;
 }
 
 #include "serialize.h"

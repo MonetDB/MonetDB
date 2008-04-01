@@ -2405,22 +2405,19 @@ PROC vx_lookup(bat[void,bat] ws,
     return id_pre;
 }
 
-# routine that filters out pre-s that belong to deleted collection documents 
-# also makes sure that documents from which surviving pre-s stem are added to OPEN_DOCID ws entry
+# routine that converts NIDs to PREs and filters out pre-s that belong to deleted collection documents
+# also makes sure that returned documents get an OPEN_DOCID ws entry
 PROC ws_docfilter(bat[void,bat] ws,
                   bat[any::1,oid] any_pre,
                   oid cont) : bat[any::1,oid]
 {
-    var cont_coll := ws.fetch(CONT_COLL);
+    var map_pid   := ws.fetch(MAP_PID).fetch(cont);
+    var nid_rid   := ws.fetch(NID_RID).fetch(cont);
+    var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
+    var frag_root := ws.fetch(FRAG_ROOT).fetch(cont);
     var open_cont := ws.fetch(OPEN_CONT);
     var open_docid:= ws.fetch(OPEN_DOCID);
     var open_name := ws.fetch(OPEN_NAME);
-    var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
-    var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
-    var pre_nid   := ws.fetch(PRE_NID).fetch(cont);
-    var nid_rid   := ws.fetch(NID_RID).fetch(cont);
-    var map_pid   := ws.fetch(MAP_PID).fetch(cont);
-    var frag_root := ws.fetch(FRAG_ROOT).fetch(cont);
 
     # first, ensure sorted PREs
     var isolate := (ttype(map_pid) = oid);
@@ -2434,66 +2431,34 @@ PROC ws_docfilter(bat[void,bat] ws,
         any_pre := reverse(reverse(any_nid).leftfetchjoin(any_pre.hmark(0@0)));
     }
 
-    var one := any_pre.ord_select(1@0); # never returned by index, except special 'give-up' case
-    if (count(any_pre) = count(one)) return any_pre;
-    var cur := count(one); # ignore bogus nodes 
-    var tot := count(any_pre);
-    var res := bat(one.htype(), oid, tot);
-    if (one.htype() = void) {
-        res := res.seqbase(one.seqbase());
-    }
-        res := res.insert(one); # final result (copied excluding deleted docs)
-    var opt := true;
-    var anc := bat(void,oid).append(1@0); # start opportunistically with first (potential) doc 1@0
+    # get the list of new documents and their root nodes of which we have received nodes
+    var docpre_new := any_pre.docsused(frag_root, nid_rid, map_pid, pre_size).tdiff(open_docid);
 
-    while(cur < tot) {
-        var doc_bat := bat(oid,bat); 
-        anc@batloop() {
-            # get all any_pre tuples in this document. any_pre is tsorted, ord_select => SLICE VIEW.
-            var new_bat := any_pre.slice(cur,tot).ord_select(oid_nil, oid(lng($t) + pre_size.fetch($t))); 
+    if (count(docpre_new) > 0) {
+        # lock to access the meta tables for checking whether the new docs still exists
+        lock_set(pf_short);
+        var err := CATCH(docpre_new := docpre_new.outerjoin(doc_name));
+        lock_unset(pf_short);
+        if (not(isnil(err))) ERROR(err);
 
-            # fill bat-of-bats, note that it is limited to max IDX_MAGICAL_CONST bats
-            var cnt := count(new_bat); 
-            if (cnt > 0) doc_bat.insert(reverse(frag_root).find($t), new_bat); 
-            cur :+= cnt; # skips document (nice if any_pre has >> IDX_MAGICAL_CONST nodes from it!)
-        }
+        # remove results that correspond to already deleted documents (if any)
+        var docpre_nme := docpre_new.ord_select(str_nil,str_nil);
+        if (count(docpre_nme) < count(docpre_new)) {
+            var del := bat(void,oid,count(any_pre));
+            var pre := any_pre.tmark(oid_nil);
 
-        # only if we saw a yet unopened document, check its continued existence
-        var doc_new := doc_bat.kdiff(reverse(open_docid));
-        if (count(doc_new) > 0) {
-            # have to access the meta tables to check whether the docs still exists
-            lock_set(pf_short);
-            var doc_nme, err := CATCH(doc_nme := mirror(doc_bat).leftjoin(doc_name));
-            lock_unset(pf_short);
-            if (not(isnil(err))) ERROR(err);
-
-            # add new documents as open in working set 
-            doc_nme := doc_nme.ord_select(str_nil,str_nil);
-            doc_new := mirror(doc_new).leftjoin(doc_nme);
-            open_name.append(doc_new.tmark(0@0));
-            open_cont.append(doc_new.tmark(0@0).project(cont));
-            open_docid.append(doc_new.hmark(0@0));
-
-            if (count(doc_nme) < count(doc_bat)) { # some documents did not exist!
-                doc_bat := mirror(doc_nme).leftjoin(doc_bat);
-                opt := false;
+            docpre_new.kdiff(docpre_nme)@batloop() {
+                del.append(pre.ord_select($h,oid(lng($h) + pre_size.fetch($h))));
             }
+            any_pre := any_pre.tdiff(del);
         }
-        # if in the first ancestor batch, we found everything: no res construction is needed
-        if (opt and (cur = tot)) return any_pre; # most code should get here
-
-        # add all 'ok' any_pre tuples to the result
-        [insert](const res, doc_bat); 
-        if (count(res) > 0) opt := false;
-
-        # give *multiple* next tuples to ancestor (nice if we have nodes from many docs)
-        anc := any_pre.slice(cur,cur+IDX_MAGICAL_CONST).tmark(0@0); 
-        anc := ll_ancestor(mirror(anc), anc, pre_size, pre_level);
-        anc := {min}(anc).tunique().mirror().leftfetchjoin(pre_nid); # reduce to unique doc nodes
+        # register the newly opened documents
+        open_name.append(docpre_nme.tmark(0@0));
+        open_cont.append(docpre_nme.tmark(0@0).project(cont));
+        open_docid.append(docpre_nme.hmark(0@0));
     }
-    return res.access(BAT_READ);
+    return assert_order(any_pre);
 }
-
 
 # find node pre numbers by ID (/NID) or IDREF. 
 # ID/IDREF lookup uses the value index (vx), using the same method as attribute lookup
