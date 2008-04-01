@@ -486,6 +486,7 @@ special_col (PFsql_special_t spc)
 #define MAX_        column_name (special_col (sql_col_max))
 #define DIST_       column_name (special_col (sql_col_dist))
 #define ERR_        column_name (special_col (sql_col_err))
+#define SEP_        column_name (special_col (sql_col_sep))
 
 #define PRE(n)        ext_column_name (n, special_col (sql_col_pre))
 #define SIZE(n)       ext_column_name (n, special_col (sql_col_size))
@@ -499,6 +500,7 @@ special_col (PFsql_special_t spc)
 #define ITER(n)       ext_column_name (n, special_col (sql_col_iter))
 #define POS(n)        ext_column_name (n, special_col (sql_col_pos))
 #define MAX(n)        ext_column_name (n, special_col (sql_col_max))
+#define SEP(n)        ext_column_name (n, special_col (sql_col_sep))
 
 #define TRUE_STR       lit_str("true")
 #define FALSE_STR      lit_str("false")
@@ -1891,8 +1893,6 @@ reduce (PFla_op_t * p, int goalnt)
         case 14:
         /* Rel:    thetajoin (Rel, Rel) */
         case 15:
-        /* Rel:    string_join (Rel, Rel) */
-        case 43:
         /* Rel:    cond_err (Rel, Rel) */
         case 99:
         /* Arg:    rec_arg (Rel, Rel) */
@@ -3857,37 +3857,207 @@ reduce (PFla_op_t * p, int goalnt)
         /* Rel:    string_join (Rel, Rel) */
         case 43:
         {
-            PFalg_att_t iter = p->sem.string_join.iter_res,
-                        item = p->sem.string_join.item_res;
-            PFalg_simple_type_t iter_ty = type_of (p, iter),
-                                item_ty = type_of (p, item);
+            /* TOPDOWN */
+            PFalg_att_t txt_iter = p->sem.string_join.iter,
+                        txt_pos  = p->sem.string_join.pos,
+                        txt_item = p->sem.string_join.item;
 
-            /* FIXME: string_join is implemented as identity operator,
-               so it will handle most of the queries */
+            PFalg_att_t sep_iter = p->sem.string_join.iter_sep,
+                        sep_item = p->sem.string_join.item_sep;
+
+            PFsql_t *srtbylist = NULL, 
+                    *partlist = NULL;
+
             reduce (kids[0], nts[0]);
+            /* collect all sorting criteria */
 
-            col_env_add_full (COLMAP(p), iter, iter_ty,
-                              col_env_lookup (COLMAP(L(p)), iter, iter_ty),
-                              col_env_lookup_step (
-                                  COLMAP(L(p)),
-                                  p->sem.string_join.iter,
-                                  type_of (p, p->sem.string_join.iter)),
-                              col_env_lookup_step_leaf (
-                                  COLMAP(L(p)),
-                                  p->sem.string_join.iter,
-                                  type_of (p, p->sem.string_join.iter)));
-                                      
-            col_env_add (COLMAP(p), item, item_ty,
-                         col_env_lookup (COLMAP(L(p)),
-                                         p->sem.string_join.item,
-                                         type_of (p, p->sem.string_join.item)));
+            PFsql_tident_t numbering_tbl = new_table_name ();;
+            PFsql_aident_t numbering_alias = new_alias ();;
 
-            /* copy fromlist */
-            from_list_copy (FROMLIST(p), FROMLIST(L(p)));
-            /* copy wherelist */
-            where_list_copy (WHERELIST(p), WHERELIST(L(p)));
+            PFsql_tident_t strjoin_tbl = new_table_name ();;
+            PFsql_aident_t strjoin_alias = new_alias ();;
+
+            PFsql_tident_t interm_tbl = new_table_name ();;
+            PFsql_aident_t interm_alias = new_alias ();
+
+            /* first of all ensure the pos column in
+             * the string table is a dense sequence */
+            partlist = partition (
+                           column_list (
+                                col_env_lookup (
+                                    COLMAP(L(p)),
+                                    txt_iter,
+                                    type_of (L(p), txt_iter))));
+
+            srtbylist = sortkey_list (
+                            sortkey_item (
+                                col_env_lookup (
+                                    COLMAP(L(p)),
+                                    txt_pos,
+                                    type_of (L(p), txt_pos)), DIR_ASC),
+                            srtbylist);
+
+            PFsql_t *txt_iter_col = column_name (
+                                        new_col (txt_iter,
+                                                 type_of (L(p), txt_iter))),
+                    *txt_pos_col  = column_name (
+                                        new_col (txt_pos,
+                                                 type_of (L(p), txt_pos))),
+                    *txt_item_col = column_name (
+                                        new_col (txt_item,
+                                                 type_of (L(p), txt_item)));
+
+            execute (comment ("====================="));
+            execute (comment ("==== String-Join ===="));
+            execute (comment ("====================="));
+            execute (bind (table_def (numbering_tbl,
+                                      column_list (txt_iter_col, 
+                                                   txt_pos_col,
+                                                   txt_item_col)),
+                           select (
+                               select_list (
+                                   column_assign (
+                                       col_env_lookup (
+                                           COLMAP (L(p)),
+                                           txt_iter,
+                                           type_of (L(p), txt_iter)),
+                                       txt_iter_col),
+                                   column_assign (
+                                       over (row_number (),
+                                             window_clause (
+                                                 partlist,
+                                                 order_by (
+                                                     srtbylist))),
+                                       txt_pos_col),
+                                   column_assign (
+                                      col_env_lookup (
+                                         COLMAP (L(p)),
+                                         txt_item,
+                                         type_of (L(p), txt_item)),
+                                      txt_item_col)
+                                ),
+                               transform_frommap (L(p)),
+                               transform_wheremap (L(p))
+                           )));
+
+            reduce (kids[1], nts[1]);
+
+#define COL(alias,col)  EXT_COLUMN_NAME ( \
+                         alias,           \
+                         col,             \
+                         type_of (L(p), col))
+
+            /* calculate the stringjoin in a recursion */
+            execute (bind (table_def (
+                            strjoin_tbl, 
+                              column_list (txt_iter_col, 
+                                           txt_pos_col,
+                                           txt_item_col,
+                                           SEP_)),
+                     union_ (
+                     PFsql_select (
+                        false,
+                        select_list (
+                            column_assign (COL(numbering_alias, txt_iter),
+                                           txt_iter_col),
+                            column_assign (COL(numbering_alias, txt_pos),
+                                           txt_pos_col),
+                            column_assign (COL(numbering_alias, txt_item),
+                                           txt_item_col),
+                            column_assign (col_env_lookup (
+                                               COLMAP (R(p)),
+                                               sep_item,
+                                               type_of (R(p), sep_item)),
+                                           SEP_)
+                        ),
+                        from_list (transform_frommap (R(p)),
+                                       alias_bind (table_name (numbering_tbl),
+                                           alias (numbering_alias))),
+                        where_list (transform_wheremap (R(p)), 
+                                    eq (col_env_lookup (
+                                               COLMAP (R(p)),
+                                               sep_iter,
+                                               type_of (R(p), sep_iter)),
+                                        COL (numbering_alias, txt_iter)),
+                                    eq (txt_pos_col, lit_int (1))), 
+                        NULL,
+                        NULL),
+                     PFsql_select (
+                        false,
+                        select_list (
+                            column_assign (COL(strjoin_alias, txt_iter),
+                                           txt_iter_col),
+                            column_assign (COL (strjoin_alias, txt_pos),
+                                           txt_pos_col),
+                            column_assign (COL (strjoin_alias, txt_item),
+                                           txt_item_col),
+                            column_assign (concat (
+                                               col_env_lookup (
+                                                   COLMAP (R(p)),
+                                                   sep_item,
+                                                   type_of (R(p), sep_item)),
+                                               concat (
+                                                   SEP(strjoin_alias),
+                                                   COL(numbering_alias, txt_item))),
+                                           SEP_)),
+                        from_list (alias_bind (table_name (strjoin_tbl),
+                                               alias (strjoin_alias)),
+                                   alias_bind (table_name (numbering_tbl),
+                                               alias (numbering_alias))),
+                        where_list (eq (COL(strjoin_alias, txt_iter),
+                                        COL(numbering_alias, txt_iter)),
+                                    eq (COL(strjoin_alias, txt_pos),
+                                        sub (COL(numbering_alias, txt_pos),
+                                             lit_int (1)))),
+                        NULL,
+                        NULL))
+                       ));
+
+            /* filter only relevant tuples, since the recursion returns more values
+             * than we need for the final result */
+            execute (bind (table_def (
+                            interm_tbl, 
+                              column_list (txt_iter_col, 
+                                           txt_pos_col)),
+                     PFsql_select (
+                         false,
+                         select_list (
+                             column_assign (COL(strjoin_alias, txt_iter),
+                                            txt_iter_col),
+                             column_assign (max_ (COL(strjoin_alias, txt_pos)),
+                                            txt_pos_col)),
+                         from_list (alias_bind (table_name (strjoin_tbl),
+                                                alias (strjoin_alias))),
+                         NULL,
+                         NULL,
+                         column_list (COL (strjoin_alias, txt_iter))
+                     )
+                    ));
+
+            col_env_add (COLMAP (p),
+                         p->sem.string_join.iter_res,
+                         type_of (p, p->sem.string_join.iter_res),
+                         COL (strjoin_alias, txt_iter)
+                        );
+
+            col_env_add (COLMAP (p),
+                         p->sem.string_join.item_res,
+                         type_of (p, p->sem.string_join.item_res),
+                         COL (strjoin_alias, txt_item)
+                        );
+ 
+            from_list_add (FROMLIST(p), 
+                           table_name (interm_tbl), alias (interm_alias));
+            from_list_add (FROMLIST(p),
+                           table_name (strjoin_tbl), alias (strjoin_alias));
+
+            where_list_add (WHERELIST(p),
+                            eq (COL (strjoin_alias, txt_iter),
+                                COL (interm_alias, txt_iter)));
+            where_list_add (WHERELIST (p),
+                            eq (COL (strjoin_alias, txt_pos),
+                                COL (interm_alias, txt_pos)));
         }   break;
-
         /* Rel:    rownum (Rel) */
         case 50:
         {
