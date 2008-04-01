@@ -265,7 +265,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	char *typename;
 	stmt *r = NULL;
 	lng sec = 0;
-	bit T = TRUE, F = FALSE;
+	bit T = TRUE;
 	ValRecord src;
 
  	typename = "int";
@@ -273,9 +273,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("debug", &sql->debug);
 
 	typename = "varchar";
-	sql_find_subtype(&ctype, typename, 8, 0);
-	SQLglobal("explain", "");
-
 	sql_find_subtype(&ctype, typename, 1024, 0);
 	SQLglobal("current_schema", schema);
 	SQLglobal("current_user", user);
@@ -289,8 +286,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	typename = "boolean";
 	sql_find_subtype(&ctype, typename, 0, 0);
 	SQLglobal("cache", &T);
-	SQLglobal("profile", &F);
-	SQLglobal("trace", &F);
 	return 0;
 }
 
@@ -391,7 +386,7 @@ SQLinitClient(Client c)
 	} else {
 		m = c->state[MAL_SCENARIO_OPTIMIZE];
 		be = c->state[MAL_SCENARIO_PARSER];
-		mvc_reset(m, c->fdin, c->fdout, SQLdebug, 10);
+		mvc_reset(m, c->fdin, c->fdout, SQLdebug, 7);
 		backend_reset(be);
 	}
 	/* pass through credentials of the user if not console */
@@ -771,7 +766,7 @@ The former comes with readline functionality.
 
 			/* The rules of auto_commit require us to finish 
 			   and start a transaction on the start of a new statement (s A;B; case) */
-			if( m->mode != m_debug )
+			if (!(m->emod & mod_debug))
 				go = SQLautocommit(c,m);
 
 			if (go && ((!blocked && stream_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || stream_flush(c->fdout))) {
@@ -832,7 +827,7 @@ A future version may analyze the parameter settings in more detail.
 void
 SQLsetDebugger(Client c, mvc *m, int onoff)
 {
-	if (m == 0 || m->mode != m_debug)
+	if (m == 0 || !(m->emod & mod_debug))
 		return;
 	c->itrace='n';
 	if( onoff){
@@ -854,10 +849,6 @@ SQLsetTimer(Client c, int onoff)
 	c->itrace='c';
 	q = newStmt(c->curprg->def,"mdb","setTimer");
 	pushBit(c->curprg->def,q,onoff);
-/*
-	q = newStmt(c->curprg->def,"mdb","setFlow");
-	pushBit(c->curprg->def,q,onoff);
-*/
 }
 
 void
@@ -894,7 +885,7 @@ SQLparser(Client c)
 	be->vtop = oldvtop;
 #ifdef _SQL_PARSER_DEBUG
 	stream_printf(GDKout, "#SQL compilation \n");
-	printf("debugger? %d\n", be->mvc->mode);
+	printf("debugger? %d(%d)\n", (int)be->mvc->emode, (int)be->mvc->emod);
 #endif
 	m = be->mvc;
 	m->type = Q_PARSE;
@@ -906,7 +897,8 @@ SQLparser(Client c)
 	if (!m->sa)
 		m->sa = sa_create();
 
-	m->mode = m->explain;
+	m->emode = m_normal;
+	m->emod = mod_none;
 	if (be->language == 'X') {
 		int n = 0, v, off, len;
 
@@ -996,7 +988,7 @@ Now is the time to also perform the semantic analysis, optimize and
 produce code.
 @c
 	be->q = NULL;
-	if (m->mode == m_execute) {
+	if (m->emode == m_execute) {
 		be->q = qc_find(m->qc, m->sym->data.lval->h->data.ival);
 		if (!be->q) {
 			err = -1;
@@ -1004,15 +996,14 @@ produce code.
 			sqlcleanup(m, err);
 			goto finalize;
 		}
-		m->mode = m_inplace;
-	} else 
-	if( (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key))){
-		if( m->mode == m_trace || m->explain == m_trace)
+		m->emode = m_inplace;
+	} else if ((be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key))) {
+		if (m->emod & mod_trace)
 			SQLsetTimer(c, TRUE);
-		if( m->mode == m_debug)
-			SQLsetDebugger(c, m, m->mode == m_debug); 
-		if( m->mode != m_debug  && m->mode!= m_explain && m->mode!= m_trace && m->mode != m_profile)
-			m->mode = m_inplace;
+		if (m->emod & mod_debug)
+			SQLsetDebugger(c, m, TRUE); 
+		if (m->emode != m_explain && !(m->emod & (mod_debug|mod_trace)))
+			m->emode = m_inplace;
 	} else {
 		stmt *s;
 
@@ -1026,16 +1017,16 @@ produce code.
 		}
 		assert(s);
 		/* generate and call the MAL code */
-		if( m->explain == m_explain)
+		if (m->emode == m_explain)
 			SQLshowPlan(c);
-		if( m->mode == m_trace || m->explain == m_trace)
+		if (m->emod & mod_trace)
 			SQLsetTimer(c, TRUE);
-		if( m->mode == m_debug)
-			SQLsetDebugger(c, m, m->mode == m_debug); 
-		if ((m->mode != m_inplace && m->mode != m_prepare && !m->cache && m->mode!= m_explain) || s->type == st_none){
+		if (m->emod & mod_debug)
+			SQLsetDebugger(c, m, TRUE); 
+		if ((m->emode != m_inplace && m->emode != m_prepare && !m->cache && m->emode != m_explain) || s->type == st_none){
 			backend_callinline(be, c, s );
-			if( m->mode == m_inplace)
-				m->mode = m_normal; 
+			if( m->emode == m_inplace)
+				m->emode = m_normal; 
 		} else {
 			/* generate a factory instantiation */
 			be->q = qc_insert(m->qc, 
@@ -1052,8 +1043,8 @@ produce code.
 			be->q->stk = 0;
 			/* register name in the namespace */
 			be->q->name = putName(be->q->name, strlen(be->q->name));
-			if( m->mode == m_normal)
-				m->mode = m_inplace; 
+			if( m->emode == m_normal)
+				m->emode = m_inplace; 
 			m->sa = NULL;
 			m->sym = NULL;
 		} 
@@ -1063,10 +1054,10 @@ produce code.
 	else
 		stream_printf(GDKout, "#parse result %d\n", err);
 #endif
-	if( be->q ){
-		if (m->mode == m_prepare)
+	if (be->q){
+		if (m->emode == m_prepare)
 			err = mvc_export_prepare(m, c->fdout, be->q, "");
-		else if (m->mode == m_inplace ){
+		else if (m->emode == m_inplace ){
 			/* everything ready for a fast call */
 		} else /* call procedure generation (only in cache mode) */
 			backend_call(be, c, be->q);
@@ -1076,14 +1067,13 @@ produce code.
 In the final phase we add any debugging control
 @c
 	/* turn off debugger */
-	if( m->mode == m_debug ) 
+	if (m->emod & mod_debug) 
 		SQLsetDebugger(c, m, FALSE);
-	if( m->mode == m_trace )
+	if (m->emod & mod_trace)
 		SQLsetTimer(c, FALSE);
-
-	if (be->mvc->mode == m_profile ) {
-		be->mvc->Tparse = GDKusec() - be->mvc->Tstart;
-		be->qry = sql_escape_str(QUERY(m->scanner));
+	if (m->emod & (mod_profile | mod_record)) {
+		be->mvc->Tparse = GDKusec() - be->mvc->Tparse;
+                be->qry = sql_escape_str(QUERY(m->scanner) + m->scanner.as);
 	}
 	scanner_query_processed(&(m->scanner));
 
@@ -1099,7 +1089,7 @@ query block.
 		/* we know more in this case then
 			chkProgram(c->nspace, c->curprg->def); */
 		if (c->curprg->def->errors) {
-			if( m->mode == m_debug){
+			if (m->emod & mod_debug) {
 				/* switch to differnt language mode */
 				char oldlang= be->language;
 				be->language= 'D';
@@ -1118,7 +1108,7 @@ query block.
 Inspect the variables for post code-generation actions.
 @c
 finalize:
-	if(m->mode== m_explain  && be->q && be->q->code)
+	if (m->emode == m_explain  && be->q && be->q->code)
 		printFunction(GDKout, ((Symbol)(be->q->code))->def, LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI );
 @-
 Gather the statistics for post analysis. It should preferably
@@ -1195,7 +1185,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 		}
 	}
 	glb = (MalStkPtr)(q->stk);
-	ret= callMAL(c, mb, &glb, argv, (m->mode == m_debug?'n':0));
+	ret= callMAL(c, mb, &glb, argv, (m->emod & mod_debug?'n':0));
 	if (ret && SQLdebug&16) 
 		printFunction(c->fdout, mb, 
 			      LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
@@ -1214,35 +1204,56 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 }
 
 str 
-backend_profile( backend *be, char *query, lng parse, lng optimize, lng exec, lng total )
+backend_record( backend *be, char *query, lng parse, lng optimize, lng exec, lng total)
 {
 	int ret;
 	str msg = NULL;
 	mvc *c = be->mvc;
-	modes_t mode = c->mode;
-	modes_t explain = c->explain;
+	char emode = c->emode;
+	char emod = c->emod;
 	char *q = query;
-
 	char buf[BUFSIZ], *stmt = buf;
+
+#ifdef HAVE_TIMES	
+	if (emod & mod_profile) {
+#if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
+		int tcks_per_sec = sysconf(_SC_CLK_TCK);
+#else
+		int tcks_per_sec = CLK_TCK;
+#endif
+		struct tms t1;
+
+		times(&t1);
+		stream_printf(
+			c->scanner.ws,
+			"#times real " LLFMT ", user " LLFMT ", system " LLFMT ", %d\n",
+			total, 
+			(lng) (t1.tms_utime - be->mvc->times.tms_utime),
+			(lng) (t1.tms_stime - be->mvc->times.tms_stime),
+			tcks_per_sec);
+	}
+#endif	
+
+	if (!(emod & mod_record))
+		return msg;
 
 	/* ltrim query */
 	while(isspace((int)(*q))) 
 		q++;
 
 	/* TODO use sql_prepare/execute */
-	snprintf(buf, BUFSIZ, "INSERT INTO \"profile\" "
+	snprintf(buf, BUFSIZ, "INSERT INTO \"history\" "
 		 "VALUES(now,'%s',"LLFMT","LLFMT","LLFMT","LLFMT",USER);\n",
 		 q, parse, optimize, exec, total);
 	_DELETE(query);
 
-	/* switch of explain to prevent recursion */
-	c->mode = m_normal;
-	c->explain = m_normal;
+	c->emode = m_normal;
+	c->emode = mod_none;
 	msg = SQLstatement(&ret, &stmt);
 	(void)ret;
-	c->mode = mode;
-	c->explain = explain;
-	be->mvc->Tstart =  be->mvc->Tparse = be->mvc->Toptimize = be->mvc->Tschedule = be->mvc->Texec = 0;
+	c->emode = emode;
+	c->emod = emod;
+	be->mvc->Tstart = be->mvc->Tparse = be->mvc->Toptimize = be->mvc->Tschedule = be->mvc->Texec = 0;
 	return msg;
 }
 
@@ -1264,7 +1275,7 @@ SQLengineIntern(Client c, backend *be)
 		return MAL_SUCCEED;
 	}
 
-	if (m->mode == m_explain) {
+	if (m->emode == m_explain) {
 		sqlcleanup(be->mvc, 0);
 		goto cleanup_engine;
 	}
@@ -1280,15 +1291,15 @@ SQLengineIntern(Client c, backend *be)
 		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}
-	if( m->mode == m_profile)
+	if( m->emod & mod_record)
 		T0 = GDKusec();
-	if (m->mode == m_inplace) {
-		msg= SQLexecutePrepared(c, be, be->q );
+	if (m->emode == m_inplace) {
+		msg = SQLexecutePrepared(c, be, be->q );
 		goto cleanup_engine;
 	}
-	if( m->mode == m_prepare){
+	if( m->emode == m_prepare){
 		goto cleanup_engine;
-	} else if( m->mode == m_explain ){
+	} else if( m->emode == m_explain ){
 @-
 If you want to see the detailed code, we have to pick it up from
 the cache as well. This calls for finding the call to the
@@ -1358,33 +1369,14 @@ Any error encountered during execution should block further processing
 unless auto_commit has been set.
 @c
 	c->glb = oldglb;
-	if (m->mode== m_profile) {
-#ifdef HAVE_TIMES
-#if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
-		int tcks_per_sec = sysconf(_SC_CLK_TCK);
-#else
-		int tcks_per_sec = CLK_TCK;
-#endif
-		struct tms t1;
-#endif
+	if (m->emod & (mod_profile | mod_record)) {
 		lng T1 = GDKusec();
 		lng tot = T1 - be->mvc->Tstart; 
 
 		be->mvc->Texec = T1 - T0;
-#ifdef HAVE_TIMES	
-		times(&t1);
-		stream_printf(
-			c->fdout,
-			"%%times real " LLFMT ", user " LLFMT ", system " LLFMT ", %d\n",
-			tot, 
-			(lng) (t1.tms_utime - be->mvc->times.tms_utime),
-			(lng) (t1.tms_stime - be->mvc->times.tms_stime),
-			tcks_per_sec);
-#endif	
-		msg = backend_profile(be, be->qry, be->mvc->Tparse, be->mvc->Toptimize, be->mvc->Texec, tot);
+		msg = backend_record(be, be->qry, be->mvc->Tparse, be->mvc->Toptimize, be->mvc->Texec, tot);
 		be->qry = NULL;
 	}
-
 	return msg;
 }
 

@@ -528,7 +528,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 	char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
-	int instantiate = (sql->mode == m_execute);
+	int instantiate = (sql->emode == m_instantiate);
 
 	dlist *columns = trigger_event->data.lval;
 	char *old_name = NULL, *new_name = NULL; 
@@ -723,7 +723,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	int instantiate = (sql->mode == m_execute || !persistent);
+	int instantiate = (sql->emode == m_instantiate || !persistent);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "CREATE VIEW: no such schema '%s'", sname);
@@ -1269,7 +1269,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				char *msg = NULL;
 
 				msg = sql_message("select %s;", cs->def);
-				sq = scope_sqlparse(sql, NULL, msg, sql->mode);
+				sq = scope_sqlparse(sql, NULL, msg, sql->emode);
 				_DELETE(msg);
 				if (!sq || sq->type != st_list || list_length(sq->op1.lval) != 1) {
 					cond_stmt_destroy(sq);
@@ -1845,7 +1845,7 @@ schemas(mvc *sql, symbol *s)
 
 	/* TODO everything should be done via the backend language */ 
 /*
-	if (!QUERY_MODE(sql->mode))
+	if (!QUERY_MODE(sql->emode))
 		return sql_error(sql, 05, "Schema statements are directly executed and therefor cannot be debugged, explained, profiled, traced or used in a prepare statement");
 */
 

@@ -1,21 +1,22 @@
 stdout of test 'MapiClient-dump.SF-905851` in directory 'src/test/BugDay_2005-10-06_2.8` itself:
 
 
-# 11:26:15 >  
-# 11:26:15 >   Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=39069 --set xrpc_port=40740 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" "--dbinit= module(sql_server);" ; echo ; echo Over..
-# 11:26:15 >  
+# 16:00:07 >  
+# 16:00:07 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64-gcc/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64-gcc/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64-gcc/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64-gcc/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64-gcc/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64-gcc/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=35465 --set xrpc_port=40937 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 16:00:07 >  
 
-# MonetDB Server v4.22.0
-# based on GDK   v1.22.0
-# Copyright (c) 1993-2008, CWI. All rights reserved.
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-# MonetDB/SQL module v2.22.1 loaded
-
-printf("\nReady.\n");
+# MonetDB server v5.5.0, based on kernel v1.23.0
+# Serving database 'mTests_src_test_BugDay_2005-10-06_2.8'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:35465/
+# MonetDB/SQL module v2.23.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 

@@ -31,18 +31,8 @@ Over..
 % int # type
 % 1 # length
 [ 0	]
-% . # table_name
-% single_value # name
-% varchar # type
-% 0 # length
-[ ""	]
-% . # table_name
-% single_value # name
-% varchar # type
-% 0 # length
-[ ""	]
 
-# 17:12:03 >  
-# 17:12:03 >  Done.
-# 17:12:03 >  
+# 10:42:20 >  
+# 10:42:20 >  Done.
+# 10:42:20 >  
 

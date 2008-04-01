@@ -55,7 +55,7 @@ users
 user_role
 auths
 privileges
-profile
+history
 id	name	schema_id	query	type	system	commit_action	temporary	
 986	schemas	985		0	true	0	0	
 991	types	985		0	true	0	0	
@@ -83,7 +83,7 @@ id	name	schema_id	query	type	system	commit_action	temporary
 3861	user_role	985		0	true	0	0	
 3864	auths	985		0	true	0	0	
 3868	privileges	985		0	true	0	0	
-3874	profile	1086		0	true	2	0	
+3874	history	1086		0	true	2	0	
 
 # 23:00:36 >  
 # 23:00:36 >  Done.

@@ -45,7 +45,8 @@ typedef struct expression {
 	char *rname;
 	void *l;
 	void *r;
-	void *f; 	/* =,!=, but also func's and aggr's and column type */
+	void *f; 	/* func's and aggr's and column type */
+			/* e_cmp may have have 2 arguments */
 	int  flag;	/* DISTINCT, NO_NIL, ASCENDING */
 	char card;	/* card 
 				(0 truth value!)

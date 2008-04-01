@@ -62,7 +62,7 @@ extern ptr sql_frontend(void);
 #include <bin_optimizer.h>
 #include <sql_qc.h>
 #include <sql_parser.h>		/* for sqlparse() */
-#include <sql_env.h>		/* explain,debug,reply_size,auto_commit etc */
+#include <sql_env.h>		/* debug,reply_size,auto_commit etc */
 #include <sql_storage.h>
 #include <mapi/mapi.h>
 
@@ -183,31 +183,52 @@ sqlcleanup(mvc *c, int err)
 	return err;
 }
 
-void backend_profile( backend *be, char *query, lng parse, lng optimize, lng exec, lng total )
+void backend_record( backend *be, char *query, lng parse, lng optimize, lng exec, lng total)
 {
 	mvc *c = be->mvc;
-	modes_t mode = c->mode;
-	modes_t explain = c->explain;
+	char emode = c->emode;
+	char emod = c->emod;
 	char *q = query;
-
 	char buf[BUFSIZ];
+
+#ifdef HAVE_TIMES	
+	if (emod & mod_profile) {
+#if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
+		int tcks_per_sec = sysconf(_SC_CLK_TCK);
+#else
+		int tcks_per_sec = CLK_TCK;
+#endif
+		struct tms t1;
+
+		times(&t1);
+		stream_printf(
+			be->mvc->scanner.ws,
+			"#times real " LLFMT ", user " LLFMT ", system "LLFMT", %d\n",
+			total, 
+			(lng) (t1.tms_utime - be->mvc->times.tms_utime),
+			(lng) (t1.tms_stime - be->mvc->times.tms_stime),
+			tcks_per_sec);
+	}
+#endif	
+
+	if (!(emod & mod_record)) 
+		return ;
 
 	/* ltrim query */
 	while(isspace((int)(*q))) 
 		q++;
 
 	/* TODO use sql_prepare/execute */
-	snprintf(buf, BUFSIZ, "INSERT INTO \"profile\" "
+	snprintf(buf, BUFSIZ, "INSERT INTO \"history\" "
 		 "VALUES(now,'%s',"LLFMT","LLFMT","LLFMT","LLFMT",USER);\n",
 		 q, parse, optimize, exec, total);
 	_DELETE(query);
 
-	/* switch of explain to prevent recursion */
-	c->mode = m_normal;
-	c->explain = m_normal;
+	c->emode = m_normal;
+	c->emod = mod_none;
 	(void) mvc_sql(c, buf);
-	c->mode = mode;
-	c->explain = explain;
+	c->emode = emode;
+	c->emod = emod;
 }
 
 int
@@ -215,7 +236,7 @@ sqlexecute(backend *be, stream *out)
 {
 	mvc *c = be->mvc;
 	char *query = NULL;
-	lng T0 = 0, Tparse = 0, Tmil = 0;
+	lng Tparse = 0, Tmil = 0;
 	int err = 0;
 	cq *q = NULL;
 
@@ -232,9 +253,6 @@ sqlexecute(backend *be, stream *out)
 	if (!c->sa)
 		c->sa = sa_create();
 
-	if (c->mode == m_profile)
-		T0 = GDKusec();
-
 	if ((err = sqlparse(c)) ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(c) && c->type != Q_TRANS) || !c->sym) {
@@ -243,10 +261,9 @@ sqlexecute(backend *be, stream *out)
 		return sqlcleanup(c, err);
 	}
 
-	if (c->mode == m_profile)
+	if (c->emod & mod_record)
 		Tparse = GDKusec();
-
-	if (c->mode == m_execute) {
+	if (c->emode == m_execute) {
 		q = qc_find(c->qc, c->sym->data.lval->h->data.ival);
 		if (!q) {
 			err = -1;
@@ -256,14 +273,14 @@ sqlexecute(backend *be, stream *out)
 		}
 		if (err)
 			return sqlcleanup(c, err);
-	} else if (c->mode == m_inplace || c->mode == m_explain || !c->cache || 
+	} else if (c->emode == m_inplace || c->emode == m_explain || !c->cache || 
 	           !(q = qc_match(c->qc, c->sym, c->args, c->argc, c->scanner.key))) {
 		stmt *s = sql_symbol2stmt(c);
 
 		if (!s && (err = mvc_status(c))) /* semantic errors */
 			return sqlcleanup(c, err);
 		assert(s);
-		if (c->mode == m_explain) {
+		if (c->emode == m_explain) {
 			err = backend_explain(be, s, out);
 		} else {
 			if (c->cache && s->type != st_none) {
@@ -279,14 +296,14 @@ sqlexecute(backend *be, stream *out)
 			return sqlcleanup(c, err);
 	}
 
-	if (c->mode == m_profile) {
+	if (c->emod & mod_record) {
 		query = sql_escape_str(QUERY(c->scanner) + c->scanner.as);
 		Tmil = GDKusec();
 	}
 
 	scanner_query_processed(&(c->scanner));
 
-	if (q && c->mode == m_prepare) {
+	if (q && c->emode == m_prepare) {
 		int len;
 		if (c->params && (len = list_length(c->params)) > MAXPARAMS) {
 			sql_error(c, 2, "Too many parameters in prepared statement (%d>%d)\n", len, MAXPARAMS);
@@ -299,9 +316,9 @@ sqlexecute(backend *be, stream *out)
 	} else if (q) {
 		err = backend_fastpath(be, c, q);
 	}
-	if (!err && c->mode == m_profile) {
+	if (!err && c->emod & (mod_profile | mod_record)) {
 		lng T = GDKusec();
-		backend_profile(be, query, Tparse-T0, Tmil-Tparse, T-Tmil,T0-T);
+		backend_record(be, query, Tparse-be->mvc->Tparse, Tmil-Tparse, T-Tmil,T-be->mvc->Tparse);
 	}
 	return sqlcleanup(c, err);
 }
@@ -498,7 +515,8 @@ query string with "M".
 		if (m->session->active)
 			pstatus = m->session->status;
 
-		m->mode = m->explain;
+		m->emode = m_normal;
+		m->emode = mod_none;
 		err = sqlexecute(sql, out);
 		if (err) /* output error */
 			go = handle_error(m, out, pstatus);
@@ -727,7 +745,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	char *typename;
 	stmt *r = NULL;
 	lng sec = 0;
-	bit T = TRUE, F = FALSE;
+	bit T = TRUE;
 	ValRecord src;
 
  	typename = "int";
@@ -735,9 +753,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("debug", &sql->debug);
 
 	typename = "varchar";
-	sql_find_subtype(&ctype, typename, 8, 0);
-	SQLglobal("explain", "");
-
 	sql_find_subtype(&ctype, typename, 1024, 0);
 	SQLglobal("current_schema", schema);
 	SQLglobal("current_user", user);
@@ -751,8 +766,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	typename = "boolean";
 	sql_find_subtype(&ctype, typename, 0, 0);
 	SQLglobal("cache", &T);
-	SQLglobal("profile", &F);
-	SQLglobal("trace", &F);
 	return 0;
 }
 
@@ -922,7 +935,7 @@ sql_client_init(mapi_client *fc)
 	Variable v;
 
 	rs = bstream_create(fc->c->fdin, 128 * BLOCK);
-	mvc_reset(m, rs, fc->c->fdout, SQLdebug, 10);
+	mvc_reset(m, rs, fc->c->fdout, SQLdebug, 7);
 	schema = mvc_login(m, fc->c->user, fc->c->passwd);
 	if (!schema) {
 		char *res = "schema authorization error";

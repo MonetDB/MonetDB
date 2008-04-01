@@ -42,7 +42,6 @@ struct scanner {
 	int yycur;		/* next char in the queue */
 	char yybak;		/* sometimes its needed to write an EOS marker */
 	int as;			/* start of query part of view's etc */
-	int view_end;		/* end of query part of view */
 	int key;		/* query hash */
 	int started;		/* found at least one token */
 	prot mode;		/* which mode (line (1,N), blocked) */
@@ -312,6 +311,7 @@ scanner_init_keywords(void)
 
 	keywords_insert("EXPLAIN", SQL_EXPLAIN);
 	keywords_insert("PROFILE", SQL_PROFILE);
+	keywords_insert("RECORD", SQL_RECORD);
 	keywords_insert("DEBUG", SQL_DEBUG);
 	keywords_insert("TRACE", SQL_TRACE);
 	keywords_insert("PREPARE", PREPARE);
@@ -402,7 +402,7 @@ scanner_init(struct scanner *s, bstream *rs, stream *ws)
 
 	s->key = 0;		/* keep a hash key of the query */
 	s->started = 0;
-	s->as = s->view_end = 0;
+	s->as = 0;
 
 	s->mode = LINE_N;
 	s->schema = NULL;
@@ -429,7 +429,7 @@ scanner_query_processed(struct scanner *s)
 	s->yycur = 0;
 	s->key = 0;		/* keep a hash key of the query */
 	s->started = 0;
-	s->as = s->view_end = 0;
+	s->as = 0;
 	s->schema = NULL;
 }
 
@@ -1009,8 +1009,6 @@ sqllex(YYSTYPE * yylval, void *parm)
 			lc->yycur -= prev;
 			assert(lc->yycur >= 0);
 		}
-	} else if (token == WITH || token == USING) {
-		lc->view_end = pos;
 	}
 
 	if (lc->log) 

@@ -10,6 +10,12 @@ stderr of test 'variables.SF-1508160` in directory 'src/test/BugTracker` itself:
 # 17:12:03 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38749  < variables.SF-1508160.sql
 # 17:12:03 >  
 
+MAPI  = monetdb@koala:32418
+QUERY = select explain;
+ERROR = !SELECT: identifier 'explain' unknown
+MAPI  = monetdb@koala:32418
+QUERY = select @explain;
+ERROR = !SELECT: '@explain' unknown
 
 # 17:12:03 >  
 # 17:12:03 >  Done.

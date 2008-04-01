@@ -48,15 +48,15 @@ command eval(cmd:str):void
 address SQLstatement
 comment "Compile and execute a single sql statement";
 
-pattern assert(b:bit,msg:str):void
+pattern assert{unsafe}(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";
 
-pattern assert(b:int,msg:str):void
+pattern assert{unsafe}(b:int,msg:str):void
 address SQLassertInt
 comment "Generate an exception when b!=0";
 
-pattern assert(b:lng,msg:str):void
+pattern assert{unsafe}(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
 @-
@@ -91,7 +91,7 @@ pattern getVariable( varname:str ):any_1
 address getVariable
 comment "Get the value of a session variable";
 
-command logfile(filename:str):void 
+command logfile{unsafe}(filename:str):void 
 address mvc_logfile
 comment "Enable/disable saving the sql statement traces";
 
@@ -107,7 +107,7 @@ command get_value( sname:str, sequence:str ):lng
 address mvc_get_value
 comment "return the current value of the sequence";
 
-command restart( sname:str, sequence:str, start:lng ):lng
+command restart{unsafe}( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
 
@@ -125,19 +125,19 @@ command bind(sname:str, tname:str, cname:str, access:int ):bat[:oid,:any_1]
 address mvc_bind_wrap
 comment "Bind the bat tname.cname into the focus with specific access mode";
 
-pattern append(sname:str, tname:str, cname:str, ins:any ):void
+pattern append{unsafe}(sname:str, tname:str, cname:str, ins:any ):void
 address mvc_append_wrap
 comment "Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname";
 
-pattern update(sname:str, tname:str, cname:str, ins:any ):void
+pattern update{unsafe}(sname:str, tname:str, cname:str, ins:any ):void
 address mvc_update_wrap
 comment "Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname";
 
-command clear_table(sname:str, tname:str) :lng
+command clear_table{unsafe}(sname:str, tname:str) :lng
 address mvc_clear_table_wrap
 comment "Clear table";
 
-pattern delete(sname:str, tname:str, b:any) :void 
+pattern delete{unsafe}(sname:str, tname:str, b:any) :void 
 address mvc_delete_wrap
 comment "delete from table";
 
@@ -149,61 +149,61 @@ comment "Bind the column bat into the focus ";
 The Monet 5 code generator uses several SQL specific wrapper functions.
 They are not present in V4
 @mal
-command resultSet( nr_cols:int, sep:str, rsep:str, ssep:str, ns:str, order:bat[:oid,:any_1] ) :int 
+command resultSet{unsafe}( nr_cols:int, sep:str, rsep:str, ssep:str, ns:str, order:bat[:oid,:any_1] ) :int 
 address mvc_result_file_wrap
 comment "Prepare a file result set"; 
 
-command resultSet( nr_cols:int, qtype:int, order:bat[:oid,:any_1] ) :int 
+command resultSet{unsafe}( nr_cols:int, qtype:int, order:bat[:oid,:any_1] ) :int 
 address mvc_result_table_wrap
 comment "Prepare a table result set"; 
 
-command resultSet( nr_cols:int, qtype:int, order:any_1 ) :int 
+command resultSet{unsafe}( nr_cols:int, qtype:int, order:any_1 ) :int 
 address mvc_result_row_wrap
 comment "Prepare a row result set"; 
 
-command resultSet( nr_cols:int, qtype:int, order:bat[:oid,:any_1] ) :int 
+command resultSet{unsafe}( nr_cols:int, qtype:int, order:bat[:oid,:any_1] ) :int 
 address mvc_result_table_wrap
 comment "Prepare a table result set"; 
 
-pattern rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:any_1 ) :void
+pattern rsColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:any_1 ) :void
 address mvc_result_value_wrap
 comment "Add the value to the row query result";
 
-command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, col:bat[:oid,:any_1] ) :void
+command rsColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, col:bat[:oid,:any_1] ) :void
 address mvc_result_column_wrap
 comment "Add the colunm to the table query result";
 
-command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:bte ) :void
+command rsColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:bte ) :void
 address mvc_result_value_bte;
-command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:sht ) :void
+command rsColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:sht ) :void
 address mvc_result_value_sht;
-command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:lng ) :void
+command rsColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:lng ) :void
 address mvc_result_value_lng;
-command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:int ) :void
+command rsColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:int ) :void
 address mvc_result_value_int;
 
-command exportResult(s:streams, res_id:int, w:str) :void
+command exportResult{unsafe}(s:streams, res_id:int, w:str) :void
 address mvc_export_result_wrap
 comment "Export a result (in order) to stream s"; 
 
-command exportOperation(w:str) :void
+command exportOperation{unsafe}(w:str) :void
 address mvc_export_operation_wrap
 comment "Export result of schema/transaction queries"; 
 
-command affectedRows(nr:int, w:str) :void
+command affectedRows{unsafe}(nr:int, w:str) :void
 address mvc_affected_rows_int
 comment "export the number of affected rows by the current query";
 
-command affectedRows(nr:lng, w:str) :void
+command affectedRows{unsafe}(nr:lng, w:str) :void
 address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
-pattern exportValue(qtype:int, tname:str, name:str, typename:str, digits:int, scale:int, eclass:int, val:any_1, w:str):void
+pattern exportValue{unsafe}(qtype:int, tname:str, name:str, typename:str, digits:int, scale:int, eclass:int, val:any_1, w:str):void
 address mvc_export_value_wrap 
 comment "export a single value onto the stream s";
 
-command importTable( s:bstream, sname:str, tname:str, 
-	sep:str, rsep:str, ssep:str, ns:str, nr:int, offset:int) :bat[:str,:bat] 
+command importTable{unsafe}( s:bstream, sname:str, tname:str, 
+	sep:str, rsep:str, ssep:str, ns:str, nr:int, offset:int) :bat[:str,:bat]
 address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";

@@ -83,7 +83,7 @@ extern stmt *check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe);
 extern stmt *fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always);
 extern stmt *sum_scales(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
 extern stmt *scale_algebra(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
-extern stmt *scope_sqlparse(mvc *m, scope *scp, char *query, modes_t mode);
+extern stmt *scope_sqlparse(mvc *m, scope *scp, char *query, char mode);
 
 extern stmt *first_subset(stmt *subset);
 
@@ -304,7 +304,7 @@ qname_catalog(dlist *qname)
 }
 
 stmt *
-scope_sqlparse(mvc *m, scope *scp, char *query, modes_t mode)
+scope_sqlparse(mvc *m, scope *scp, char *query, char mode)
 {
 	mvc *o = NULL;
 	stmt *sq = NULL;
@@ -325,7 +325,7 @@ scope_sqlparse(mvc *m, scope *scp, char *query, modes_t mode)
 	m->last = NULL;
 
 	m->cache = 0;
-	m->mode = mode;
+	m->emode = mode;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
@@ -445,7 +445,7 @@ scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int acc
 
 	if (isView(t)) {
 
-		stmt *sq = scope_sqlparse(sql, NULL, t->query, m_execute);
+		stmt *sq = scope_sqlparse(sql, NULL, t->query, m_instantiate);
 
 		if (!sq)
 			return NULL;

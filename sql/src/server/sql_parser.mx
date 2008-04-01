@@ -672,7 +672,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE 
-%token SQL_EXPLAIN SQL_PROFILE SQL_DEBUG SQL_TRACE PREPARE EXECUTE
+%token SQL_EXPLAIN SQL_PROFILE SQL_RECORD SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
 %token PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -710,7 +710,7 @@ sqlstmt:
 	}
 
  | PREPARE 		{ mvc *m = (mvc*)parm;
-		  	  m->mode = m_prepare; 
+		  	  m->emode = m_prepare; 
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 			}
@@ -718,7 +718,7 @@ sqlstmt:
 		  	  m->sym = $$ = $3; YYACCEPT; 
 			}
  | SQL_EXPLAIN 		{ mvc *m = (mvc*)parm;
-		  	  m->mode = m_explain;
+		  	  m->emode = m_explain;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 			}
@@ -726,7 +726,11 @@ sqlstmt:
 		  	  m->sym = $$ = $3; YYACCEPT; 
 			}
  | SQL_PROFILE 		{ mvc *m = (mvc*)parm;
-		  	  m->mode = m_profile;
+			  if (m->scanner.mode == LINE_1) {
+				yyerror("We do not support profiling SQL in interactive mode");
+				YYABORT;
+			  }
+		  	  m->emod |= mod_profile;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 #ifdef HAVE_TIMES	
@@ -734,33 +738,34 @@ sqlstmt:
 #endif	
 			  m->Tstart = GDKusec();
 			}
-	sql SCOLON 	{ mvc *m = (mvc*)parm;
-		  	  m->sym = $$ = $3; YYACCEPT; 
+   sqlstmt		{ $$ = $3; YYACCEPT; }
+ | SQL_RECORD 		{ mvc *m = (mvc*)parm;
+		  	  m->emod |= mod_record;
+			  m->scanner.as = m->scanner.yycur; 
+			  m->scanner.key = 0;
+			  m->Tparse = GDKusec();
 			}
+   sqlstmt		{ $$ = $3; YYACCEPT; }
  | SQL_DEBUG 		{ mvc *m = (mvc*)parm;
 			  if (m->scanner.mode == LINE_1) {
 				yyerror("We only support debugging SQL in interactive mode");
 				YYABORT;
 			  }
-		  	  m->mode = m_debug;
+		  	  m->emod |= mod_debug;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 			}
-	sql SCOLON 	{ mvc *m = (mvc*)parm;
-		  	  m->sym = $$ = $3; YYACCEPT; 
-			}
+   sqlstmt		{ $$ = $3; YYACCEPT; }
  | SQL_TRACE 		{ mvc *m = (mvc*)parm;
 			  if (m->scanner.mode == LINE_1) {
 				yyerror("We do not support tracing SQL in interactive mode");
 				YYABORT;
 			  }
-		  	  m->mode = m_trace;
+		  	  m->emod |= mod_trace;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 			}
-	sql SCOLON 	{ mvc *m = (mvc*)parm;
-		  	  m->sym = $$ = $3; YYACCEPT; 
-			}
+   sqlstmt		{ $$ = $3; YYACCEPT; }
  | exec SCOLON		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = $1; YYACCEPT; }
  | /*empty*/		{ mvc *m = (mvc*)parm;
@@ -776,17 +781,17 @@ sqlstmt:
 
 create:
     CREATE 		{ mvc *m = (mvc*)parm;
-			  if (m->mode == m_normal)
-		  	  	m->mode = m_inplace; }
+			  if (m->emode == m_normal)
+		  	  	m->emode = m_inplace; }
 set:
     SET 		{ mvc *m = (mvc*)parm;
-			  if (m->mode == m_normal)
-		  	  	m->mode = m_inplace; }
+			  if (m->emode == m_normal)
+		  	  	m->emode = m_inplace; }
 
 declare:
     DECLARE 		{ mvc *m = (mvc*)parm;
-			  if (m->mode == m_normal)
-		  	  	m->mode = m_inplace; }
+			  if (m->emode == m_normal)
+		  	  	m->emode = m_inplace; }
 
 	/* schema definition language */
 sql:
@@ -1254,11 +1259,8 @@ opt_restart:
   |	RESTART		{ $$ = append_int(L(), 0); }
   | 	RESTART WITH 
 	nonzero 	{ $$ = append_int(append_int(L(), 2), $3); }
-  | 	RESTART WITH	{ mvc *m = (mvc*)parm;
-			  m->scanner.as = m->scanner.yycur; }
-    	subquery	{ mvc *m = (mvc*)parm;
-			  $$ = append_symbol(append_int(L(), 1), $4);
-			  m->scanner.view_end = m->scanner.yycur; }
+  | 	RESTART WITH	
+    	subquery	{ $$ = append_symbol(append_int(L(), 1), $3); }
   ;
 
 /*
@@ -2602,7 +2604,7 @@ null:
 	 { 
 	   mvc *m = (mvc*)parm;
 
-	   if (CACHE_MODE(m->mode) && 
+	   if (m->emode == m_normal && 
 	      (!m->argfixed || m->argc < MAXPARAMS-2) && m->cache){
 		/* replace by argument */
 		atom *a = atom_general( sql_bind_localtype("str"), NULL, 0);
@@ -3493,7 +3495,7 @@ atom:
 	{ 
 	  mvc *m = (mvc*)parm;
 	
-	  if (CACHE_MODE(m->mode) && 
+	  if (m->emode == m_normal && 
 	      (!m->argfixed || m->argc < MAXPARAMS-2) && m->cache){
 	  	/* replace by argument */
 	  	AtomNode *an = (AtomNode*)$1;
@@ -4341,6 +4343,7 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 |  EXECUTE	{ $$ = sa_strdup(SA, "execute"); }
 |  SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
 |  SQL_PROFILE	{ $$ = sa_strdup(SA, "profile"); }
+|  SQL_RECORD	{ $$ = sa_strdup(SA, "record"); }
 |  SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 |  SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 |  AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
@@ -4414,7 +4417,7 @@ string:
 exec:
      EXECUTE exec_ref
 		{ mvc *m = (mvc*)parm;
-		  m->mode = m_execute;
+		  m->emode = m_execute;
 		  $$ = $2; }
  ;
 

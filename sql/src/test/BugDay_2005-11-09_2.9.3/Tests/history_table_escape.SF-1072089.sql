@@ -1,7 +1,6 @@
 START TRANSACTION;
-SET explain='profile';
 
-DELETE FROM profile;
-SELECT 1;
-SELECT 'test';
-SELECT query FROM profile;
+DELETE FROM history;
+record SELECT 1;
+record SELECT 'test';
+SELECT query FROM history;

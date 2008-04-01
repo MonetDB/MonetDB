@@ -536,7 +536,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	list *l = list_create((fdestroy) &arg_destroy), *type_list = NULL;
 	list *id_func_l = NULL, *id_col_l = NULL, *view_id_l = NULL;
 	sql_subtype *restype = NULL;
-	int instantiate = (sql->mode == m_execute);
+	int instantiate = (sql->emode == m_instantiate);
 	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))

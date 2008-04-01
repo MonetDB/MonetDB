@@ -1264,10 +1264,10 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 		if (tableref->data.lval->h->next->data.sym) {	/* AS */
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
 		}
-		if (isView(t) && sql->mode != m_execute) { 
+		if (isView(t) && sql->emode != m_instantiate) { 
 		   	/* instantiate base view */
 			node *n,*m;
-			sql_rel *rel = rel_parse(sql, t->query, m_execute);
+			sql_rel *rel = rel_parse(sql, t->query, m_instantiate);
 
 			if (!rel)
 				return rel;
@@ -3380,7 +3380,7 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		/* turn a subquery into a tabular result */
 		return rel_table_func_exp(sql, rel, se->data.sym, ek);
 	case SQL_PARAMETER:{
-		if (sql->mode != m_prepare) 
+		if (sql->emode != m_prepare) 
 			return sql_error(sql, 02, "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
 		return exp_atom_ref(se->data.ival, NULL);
 	}
@@ -4239,8 +4239,8 @@ rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, i
 	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	int instantiate = (sql->mode == m_execute || !persistent);
-	modes_t mode = sql->mode;
+	int instantiate = (sql->emode == m_instantiate || !persistent);
+	char emode = sql->emode;
 
 	(void) check;		/* Stefan: unused!? */
 	(void)column_spec;
@@ -4269,9 +4269,9 @@ rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, i
 		}
 
 		if (!instantiate)
-			sql->mode = m_execute;
+			sql->emode = m_instantiate;
 		sq = rel_subquery(sql, NULL, query, ek);
-		sql->mode = mode;
+		sql->emode = emode;
 		if (!sq)
 			return NULL;
 

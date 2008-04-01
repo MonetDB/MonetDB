@@ -49,7 +49,7 @@ Over..
 [ "user_role",	"str",	1	]
 [ "auths",	"str",	1	]
 [ "privileges",	"str",	1	]
-[ "profile",	"str",	1	]
+[ "history",	"str",	1	]
 [ "test_update",	"str",	1	]
 [ " ",	"str",	1	]
 [ "pwprijs",	"str",	1	]

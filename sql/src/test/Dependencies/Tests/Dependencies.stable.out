@@ -7,6 +7,8 @@ stdout of test 'Dependencies` in directory 'src/test/Dependencies` itself:
 
 
 
+
+
 # MonetDB server v5.5.0, based on kernel v1.23.0
 # Serving database 'mTests_src_test_Dependencies'
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -129,8 +131,8 @@ Dependencies between database objects
 % varchar,	varchar,	char # type
 % 6,	12,	11 # length
 [ "<>",	"trigger_test",	"DEP_TRIGGER"	]
-[ "isnull",	"trigger_test",	"DEP_TRIGGER"	]
 [ "count",	"trigger_test",	"DEP_TRIGGER"	]
+[ "isnull",	"trigger_test",	"DEP_TRIGGER"	]
 % sys.k,	sys.fk,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type

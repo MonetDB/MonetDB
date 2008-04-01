@@ -1709,7 +1709,7 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 	}
 		break;
 	case SQL_PARAMETER:{
-		if (sql->mode != m_prepare) 
+		if (sql->emode != m_prepare) 
 			return sql_error(sql, 02, "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
 		return stmt_varnr(se->data.ival, NULL);
 	}

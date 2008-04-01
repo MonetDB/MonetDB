@@ -42,19 +42,20 @@
 
 #define ERRSIZE 8192
 
-typedef enum modes_t {
-	m_normal = 0,
-	m_prepare = 1,
-	m_execute = 2,
-	m_explain = 3,
-	m_profile = 4,
-	m_debug = 5,
-	m_trace = 6,
-	m_inplace = 7
-} modes_t;
+/* different query execution modes (emode) */
+#define m_normal 0
+#define m_inplace 1 
+#define m_execute 2
+#define m_prepare 3
+#define m_instantiate 4
+#define m_explain 5 
 
-#define CACHE_MODE(m) (m==m_normal||m==m_profile||m==m_debug||m==m_trace)
-#define QUERY_MODE(m) (m==m_normal||m==m_inplace||m==m_execute)
+/* different query execution modifiers (emod) */
+#define mod_none 0
+#define mod_profile 1
+#define mod_debug 2
+#define mod_trace 4
+#define mod_record 8
 
 typedef struct sql_var {
 	struct stmt *s;
@@ -97,8 +98,8 @@ typedef struct mvc {
 	int reply_size;		/* reply size */ 
 	int debug;
 
-	modes_t mode;		
-	modes_t explain; 	/* set explain starts after that statement */ 
+	char emode;		/* execution mode */
+	char emod;		/* execution modifier */		
 
 	sql_session *session;	
 
@@ -297,7 +298,7 @@ mvc_init(int debug, store_type store, backend_stack stk)
 
 		s = m->session->schema = mvc_bind_schema(m, "tmp");
 		assert(m->session->schema != NULL);
-		sql_create_profile(m, s);
+		sql_create_history(m, s);
 
 		if (mvc_commit(m, 0, NULL) < 0) {
 			fprintf(stderr, "!mvc_init: unable to commit system tables\n");
@@ -575,8 +576,8 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->timezone = 0;
 	m->clientid = clientid;
 
-	m->mode = m_normal;
-	m->explain = m_normal;
+	m->emode = m_normal;
+	m->emod = mod_none;
 	m->reply_size = 100;
 	m->debug = debug;
 	m->cache = 1;
@@ -634,10 +635,8 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	m->sym = NULL;
 
 	m->role_id = m->user_id = m->last_id = -1;
-	m->mode = m_normal;
-	if (m->explain != m_normal)
-		stack_set_number(m, "explain", m_normal);
-	m->explain = m_normal;
+	m->emode = m_normal;
+	m->emod = mod_none;
 	if (m->reply_size != 100)
 		stack_set_number(m, "reply_size", 100);
 	m->reply_size = 100;

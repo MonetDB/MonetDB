@@ -450,7 +450,7 @@ sql_insert_triggers(mvc *sql, sql_table *t, stmt **inserts, list *l)
 			if (!n) n = "new"; 
 	
 			scope_add_inserted(scp, inserts, t, n);
-			s = scope_sqlparse(sql, scp, trigger->statement, m_execute);
+			s = scope_sqlparse(sql, scp, trigger->statement, m_instantiate);
 
 			scope_close(scp);
 			
@@ -765,7 +765,7 @@ sql_delete_set_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, stmt *rows, int a
 			if (fc->c->def) {
 				stmt *sq;
 				char *msg = sql_message( "select %s;", fc->c->def);
-				sq = scope_sqlparse(sql, NULL, msg, sql->mode);
+				sq = scope_sqlparse(sql, NULL, msg, sql->emode);
 				_DELETE(msg);
 				if (!sq || sq->type != st_list || list_length(sq->op1.lval) != 1) {
 					cleanup_stmts(new_updates, len);
@@ -834,7 +834,7 @@ sql_update_cascade_Fkeys(mvc *sql, sql_schema *schema, sql_key *k, int updcol, s
 			if (fc->c->def) {
 				stmt *sq;
 				char *msg = sql_message( "select %s;", fc->c->def);
-				sq = scope_sqlparse(sql, NULL, msg, sql->mode);
+				sq = scope_sqlparse(sql, NULL, msg, sql->emode);
 				_DELETE(msg);
 				if (!sq || sq->type != st_list || list_length(sq->op1.lval) != 1) {
 					cleanup_stmts(new_updates, len);
@@ -1111,7 +1111,7 @@ sql_update_triggers(mvc *sql, sql_table *t, stmt **updates, list *l, int time )
 			if (!o) o = "old"; 
 	
 			scope_add_updated(scp, updates, t, o, n);
-			s = scope_sqlparse(sql, scp, trigger->statement, m_execute);
+			s = scope_sqlparse(sql, scp, trigger->statement, m_instantiate);
 
 			scope_close(scp);
 
@@ -1341,7 +1341,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 					if (c->def) {
 						stmt *sq;
 						char *msg = sql_message( "select %s;", c->def);
-						sq = scope_sqlparse(sql, NULL, msg, sql->mode);
+						sq = scope_sqlparse(sql, NULL, msg, sql->emode);
 						_DELETE(msg);
 						if (!sq || sq->type != st_list || list_length(sq->op1.lval) != 1) {
 							cond_stmt_destroy(sq);
@@ -1741,7 +1741,7 @@ sql_delete_triggers(mvc *sql, sql_table *t, stmt *deletes, list *l)
 			if (!o) o = "old"; 
 		
 			scope_add_deleted(scp, deletes, t, o);
-			s = scope_sqlparse(sql, scp, trigger->statement, m_execute);
+			s = scope_sqlparse(sql, scp, trigger->statement, m_instantiate);
 
 			scope_close(scp);
 

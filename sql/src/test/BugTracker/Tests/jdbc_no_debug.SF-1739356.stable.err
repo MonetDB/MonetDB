@@ -17,6 +17,7 @@ stderr of test 'jdbc_no_debug.SF-1739356` in directory 'src/test/BugTracker` its
 
 Error on line 1: We only support debugging SQL in interactive mode in: "debug"
 Error on line 2: We do not support tracing SQL in interactive mode in: "trace"
+Error on line 3: We do not support profiling SQL in interactive mode in: "profile"
 
 # 09:34:53 >  
 # 09:34:53 >  Done.

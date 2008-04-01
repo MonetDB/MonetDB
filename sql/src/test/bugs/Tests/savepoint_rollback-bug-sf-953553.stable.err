@@ -10,10 +10,10 @@ stderr of test 'savepoint_rollback-bug-sf-953553` in directory 'src/test/bugs` i
 # 14:39:28 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40084  < savepoint_rollback-bug-sf-953553.sql
 # 14:39:28 >  
 
-MAPI  = monetdb@koala:39606
+MAPI  = monetdb@koala:32916
 QUERY = ROLLBACK TO SAVEPOINT a2;
-ERROR = !ROLLBACK TO SAVEPOINT: (a2) failed
-        !ERROR: rollback savepoint a2 doesn't exists
+ERROR = !ERROR: rollback savepoint a2 doesn't exists
+        !ROLLBACK TO SAVEPOINT: (a2) failed
 
 # 14:39:28 >  
 # 14:39:28 >  Done.
