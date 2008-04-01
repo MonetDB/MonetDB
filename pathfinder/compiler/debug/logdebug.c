@@ -1098,6 +1098,35 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                         fst = false;
                     }
                 }
+                
+                /* node properties */
+
+                fst = true;
+                /* node content queried */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t att = n->schema.items[i].name;
+                    if (PFprop_node_property (n->prop, att) &&
+                        PFprop_node_content_queried (n->prop, att)) {
+                        PFarray_printf (
+                            dot, 
+                            fst ? "\\nnode content queried: %s" : ", %s",
+                            PFatt_str (att));
+                        fst = false;
+                    }
+                }
+                fst = true;
+                /* node and its subtree serialized */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t att = n->schema.items[i].name;
+                    if (PFprop_node_property (n->prop, att) &&
+                        PFprop_node_serialize (n->prop, att)) {
+                        PFarray_printf (
+                            dot, 
+                            fst ? "\\nnode serialized: %s" : ", %s",
+                            PFatt_str (att));
+                        fst = false;
+                    }
+                }
             }
             if (*fmt == '+' || *fmt == 'D') {
                 /* list attributes and their corresponding domains */

@@ -334,6 +334,7 @@ main (int argc, char *argv[])
                   false /* composite key */,
                   true  /* key */,
                   false /* ocols */, 
+                  true  /* req_node */,
                   false /* reqval */,
                   true  /* level */,
                   true  /* refctr */,

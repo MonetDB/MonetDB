@@ -1784,7 +1784,7 @@ plan_content (const PFla_op_t *n)
                        *(plan_t **) PFarray_at (R(n)->plans, i),
                        sortby (iter, pos)));
 
-    if (false /* magic flag to enable shallow content constructors */)
+    if (!PFprop_node_content_queried (n->prop, att_item))
         /* for each plan, generate a constructor */
         for (unsigned int i = 0; i < PFarray_last (ordered_in); i++)
             add_plan (ret,

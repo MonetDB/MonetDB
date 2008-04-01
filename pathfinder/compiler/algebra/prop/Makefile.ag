@@ -45,6 +45,7 @@ lib_prop = {
                 prop_ocol.c \
                 prop_ori_names.c \
                 prop_rec_delta.c \
+                prop_req_node.c \
                 prop_reqval.c \
                 prop_set.c \
                 prop_trace_names.c \
