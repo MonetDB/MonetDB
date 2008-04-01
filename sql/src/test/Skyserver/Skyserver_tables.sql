@@ -2545,5 +2545,36 @@ CREATE TABLE Chunk(
 )
 );
 
+CREATE TABLE sysobjects(
+        id int,
+        uid int,
+        nme char(100)
+);
+CREATE TABLE sysusers(
+        id int,
+        uid int,
+        nme char(100)
+);
+CREATE TABLE systypes(
+        id int,
+        uid int,
+        nme char(100),
+        xtype char(100)
+);
+CREATE TABLE syscolumns(
+        id int,
+        colid int,
+        isoutparam int,
+        length int,
+        uid int,
+        nme char(100),
+        xtype char(100)
+);
+CREATE TABLE spt_datatype_info(
+        length int,
+        ss_dtype varchar(100),
+        "AUTO_INCREMENT" varchar(100)
+);
+
 COMMIT;
 

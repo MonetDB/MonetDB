@@ -79,5 +79,11 @@ DROP TABLE Neighbors;
 DROP TABLE Zone;
 DROP TABLE FileGroupMap;
 DROP TABLE Chunk;
+DROP TABLE sysobjects;
+DROP TABLE sysusers;
+DROP TABLE systypes;
+DROP TABLE syscolumns;
+DROP TABLE spt_datatype_info;
+
 
 COMMIT;
