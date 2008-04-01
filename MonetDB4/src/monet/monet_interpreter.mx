@@ -112,8 +112,8 @@ typedef struct {
 	bit merge_opt;		/* multiplex applicable for merge opt */
 
 	/* BIT SIGNATURE -- we misuse words[0] for storing nbits and argc */
-#define monetsig_nbits(s)	((sht*)	(s)->words)[0]
-#define monetsig_argc(s)	((sht*)	(s)->words)[1]
+#define monetsig_nbits(s)	(((s)->words[0] >> 16) & 0xFFFF)
+#define monetsig_argc(s)	((s)->words[0] & 0xFFFF)
 	int words[1];		/* allocate the rest dynamically */
 } monet_sig_t;
 
@@ -166,7 +166,8 @@ monet_sig_pack(monet_sig_t *s, int argc, ValPtr argv)
 {
 	int i = 1, bitoffset = 0, *wordptr = s->words + 1;
 
-	monetsig_argc(s) = argc - 1;
+	/* setting up monetsig_argc(s) */
+	s->words[0] = (s->words[0] & 0xFFFF0000) | (argc - 1);
 	for (*wordptr = 0; i < argc; i++) {
 		BAT *b;
 
@@ -189,7 +190,8 @@ monet_sig_pack(monet_sig_t *s, int argc, ValPtr argv)
 		      @:pack_type(argv[i].vtype)@
 		}
 	}
-	monetsig_nbits(s) = (sht) (bitoffset + ((wordptr - (s->words + 1)) << 5));
+	/* setting up monetsig_nbits(s) */
+	s->words[0] = (s->words[0] & 0xFFFF) | (bitoffset + ((wordptr - (s->words + 1)) << 5)) << 16;
 	return 0;
 }
 
