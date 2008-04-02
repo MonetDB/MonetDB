@@ -2,7 +2,7 @@
 
 /**
  * @file mem.c
- * Garbage collected memory and string allocation 
+ * Garbage collected memory and string allocation
  * (@a no allocation of specific objects [parse tree nodes, etc.] here!)
  *
  *
@@ -48,12 +48,12 @@ typedef struct PFmem_allocator {
     size_t size;
     size_t nr;
     char **blks;
-    size_t used; 	/* memory used in last block */
+    size_t used;        /* memory used in last block */
 } PFmem_allocator;
 
 #define SA_BLOCK (4*1024*1024)
 
-PFmem_allocator *pf_alloc = NULL;
+static PFmem_allocator *pf_alloc = NULL;
 
 void
 PFmem_init(void)
@@ -61,7 +61,7 @@ PFmem_init(void)
     assert (!pf_alloc);
 
     pf_alloc = (PFmem_allocator*)malloc(sizeof(PFmem_allocator));
-    
+
     pf_alloc->size = 64;
     pf_alloc->nr = 1;
     pf_alloc->blks = (char**)malloc(pf_alloc->size*sizeof(char*));
@@ -129,7 +129,7 @@ mem_alloc (PFmem_allocator *pa, size_t sz)
 }
 
 char *
-mem_realloc (PFmem_allocator *pa, char *p, size_t old_n, size_t n) 
+mem_realloc (PFmem_allocator *pa, char *p, size_t old_n, size_t n)
 {
         char *r = mem_alloc( pa, n);
         size_t i;
@@ -141,7 +141,7 @@ mem_realloc (PFmem_allocator *pa, char *p, size_t old_n, size_t n)
  * Worker for #PFmalloc ().
  */
 void *
-PFmalloc_ (size_t n, const char *file, const char *func, const int line) 
+PFmalloc_ (size_t n, const char *file, const char *func, const int line)
 {
     void *mem;
     /* allocate garbage collected heap memory of requested size */
@@ -149,7 +149,7 @@ PFmalloc_ (size_t n, const char *file, const char *func, const int line)
 
     if (mem == 0) {
         /* don't use PFoops () here as it tries to allocate even more memory */
-        PFlog ("fatal error: insufficient memory (allocating "SZFMT" bytes failed) in %s (%s), line %d", 
+        PFlog ("fatal error: insufficient memory (allocating "SZFMT" bytes failed) in %s (%s), line %d",
                 n, file, func, line);
         PFexit(-OOPS_FATAL);
     }
@@ -162,14 +162,14 @@ PFmalloc_ (size_t n, const char *file, const char *func, const int line)
  */
 void *
 PFrealloc_ (void *mem, size_t old_n, size_t n,
-	    const char *file, const char *func, const int line) 
+            const char *file, const char *func, const int line)
 {
     /* resize garbage collected heap memory to requested size */
     mem = mem_realloc (pf_alloc, mem, old_n, n);
 
     if (mem == 0) {
         /* don't use PFoops () here as it tries to allocate even more memory */
-        PFlog ("fatal error: insufficient memory (re-allocating "SZFMT" bytes failed) in %s (%s), line %d", 
+        PFlog ("fatal error: insufficient memory (re-allocating "SZFMT" bytes failed) in %s (%s), line %d",
                 n, file, func, line);
         PFexit(-OOPS_FATAL);
     }
@@ -179,7 +179,7 @@ PFrealloc_ (void *mem, size_t old_n, size_t n,
 
 /**
  * Allocates enough memory to hold a copy of @a str
- * and return a pointer to this copy 
+ * and return a pointer to this copy
  * If you specify @a n != 0, the copy will hold @a n characters (+ the
  * trailing '\\0') only.
  * @param str string to copy
@@ -213,6 +213,5 @@ PFstrdup (const char *str)
 {
     return PFstrndup (str, strlen (str));
 }
-
 
 /* vim:set shiftwidth=4 expandtab: */

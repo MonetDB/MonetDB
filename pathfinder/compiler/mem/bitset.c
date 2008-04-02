@@ -7,7 +7,7 @@
  *
  * Basic interface:
  * - #PFbitset ()            Create a new bitset, with all values set to false.
- * - #PFbitset_set (a, n, b) Set the n-th bit to the value b. 
+ * - #PFbitset_set (a, n, b) Set the n-th bit to the value b.
  * - #PFbitset_get (a, n)    Get the n-th bit bit.
  *
  * Copyright Notice:
@@ -57,7 +57,7 @@ typedef uint8_t bitset_unit;
 #define UNIT_IDX(x) ((x) >> ADDR_BITS_PER_UNIT)
 #define BITSET_UNIT_AT(a, b) (*((bitset_unit *)PFarray_at ((a), (b))))
 
-PFbitset_t *PFbitset (void) 
+PFbitset_t *PFbitset (void)
 {
     return PFarray (sizeof (bitset_unit), 128 /* start with 1024 bits */);
 }
@@ -68,7 +68,7 @@ void PFbitset_set (PFbitset_t *b, unsigned int pos, bool value)
     unsigned int unit_pos = UNIT_IDX (pos);
 
     if (unit_pos >= size)
-        PFarray_nadd (b, unit_pos - size + 1); 
+        PFarray_nadd (b, unit_pos - size + 1);
 
     /* Initialize new allocated part of array */
     for (unsigned int i = size; i <= unit_pos; i++)
@@ -80,7 +80,7 @@ void PFbitset_set (PFbitset_t *b, unsigned int pos, bool value)
         BITSET_UNIT_AT (b, unit_pos) &= ~BIT (pos);
 }
 
-bool PFbitset_get (PFbitset_t *b, unsigned int pos) 
+bool PFbitset_get (PFbitset_t *b, unsigned int pos)
 {
     unsigned int size = PFarray_last (b);
     unsigned int unit_pos = UNIT_IDX (pos);
@@ -98,7 +98,7 @@ void PFbitset_or (PFbitset_t *base, PFbitset_t *ext) {
     unsigned int base_size = PFarray_last (base);
     if (ext_size > base_size)
         /* ensure capacity */
-        PFarray_nadd (base, ext_size - base_size); 
+        PFarray_nadd (base, ext_size - base_size);
     for (unsigned int i = 0; i < ext_size; i++)
         BITSET_UNIT_AT (base, i) |= BITSET_UNIT_AT (ext, i);
 }

@@ -12,7 +12,7 @@
  * - #PFarray_at (a, i) address of ith element in array a (a grows as needed)
  * - #PFarray_last (a)  ``append index'': where to append to this array (r/w)
  *
- * More complex operations may be constructed using 
+ * More complex operations may be constructed using
  * the basic interface, e.g.,
  * - append one element e to array a (available as #PFarray_add):
  *   @code
@@ -69,16 +69,16 @@
 #include "mem.h"
 #include "oops.h"
 
-/** 
+/**
  * size (in bytes) rounded up to whenever a fresh array is allocated or
- * an out-of-bounds index has been accessed 
+ * an out-of-bounds index has been accessed
  */
 #define ACHUNK 8U
 
 #ifndef NDEBUG
 /* switch to turn debug printing
    of memory reallocations on/off */
-bool debug_memory; 
+bool debug_memory;
 #endif
 
 /**
@@ -116,20 +116,20 @@ PFarray_ (size_t s, unsigned int slots, bool clear)
 
 /**
  * Compute the address of element position @c i of array @c a (if @c i
- * is an out-of-bounds index, grow @a as needed). 
+ * is an out-of-bounds index, grow @a as needed).
  *
  * @param a array
  * @param i array index
  * @return array element address (or 0, in case of errors)
  */
-void * 
+void *
 #ifndef NDEBUG
 PFarray_at_ (PFarray_t *a, unsigned int i,
-             const char *file, const char *func, const int line) 
+             const char *file, const char *func, const int line)
 #else
 PFarray_at (PFarray_t *a, unsigned int i)
 #endif
-{ 
+{
   size_t nbytes;
 
   assert (a);
@@ -149,8 +149,8 @@ PFarray_at (PFarray_t *a, unsigned int i)
 #endif
 
       if (i > 2 * a->bound)
-          /* out-of-bounds index access, 
-           * grow array such that index position i becomes valid 
+          /* out-of-bounds index access,
+           * grow array such that index position i becomes valid
            */
           nbytes = ((i + 1) * a->esize + ACHUNK) & (~ACHUNK + 1);
       else
@@ -273,7 +273,7 @@ PFarray_vprintf (PFarray_t *a, const char *fmt, va_list mat)
      */
     (void) vsnprintf ((char *) PFarray_nadd (a, nchars + 1), nchars + 1, fmt, mat);
 
-    
+
     /* overwrite trailing '\0' on next print to this array */
     PFarray_last (a)--;
 
@@ -282,8 +282,8 @@ PFarray_vprintf (PFarray_t *a, const char *fmt, va_list mat)
 }
 
 /**
- * Array concatenation.  The entries of a2 are inserted 
- * into a1 (at end).  
+ * Array concatenation.  The entries of a2 are inserted
+ * into a1 (at end).
  *
  * @attention NB. this makes sense only if both arrays have entries of
  *   the same size.
@@ -313,7 +313,7 @@ PFarray_concat (PFarray_t *a1, PFarray_t *a2)
 
 /**
  * Array copy.  The entries of input are inserted
- * into a new array output.  
+ * into a new array output.
  *
  * @param input input array (unchanged)
  * @return array @a output with a copy of the entries of @a input
