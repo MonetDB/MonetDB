@@ -2436,7 +2436,6 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 ty = type_of (L(p), pa_item);
 
-
                 /* consider update kind */
                 execute (
                     assgn (var (upd_kind->name),
@@ -2449,10 +2448,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (pre_tgt->name),
                                VAR (L(p)->env, pa_item, aat_pre1)),
                         assgn (var (pre_cont_tgt->name),
-                               set_kind (VAR (L(p)->env,
-                                              pa_item,
-                                              aat_frag1),
-                                         var (PF_MIL_VAR_ELEM))));
+                               VAR (L(p)->env, pa_item, aat_frag1)));
                 else
                     execute (
                         assgn (var (pre_tgt->name),
@@ -2468,10 +2464,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (attr_tgt->name),
                                VAR (L(p)->env, pa_item, aat_attr1)),
                         assgn (var (attr_cont_tgt->name),
-                               set_kind (VAR (L(p)->env,
-                                              pa_item,
-                                              aat_frag1),
-                                         var (PF_MIL_VAR_ATTR))));
+                               VAR (L(p)->env, pa_item, aat_frag1)));
                 else
                     execute (
                         assgn (var (attr_tgt->name),
@@ -2526,10 +2519,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (pre_ins->name),
                                VAR (L(p)->env, pa_item, aat_pre)),
                         assgn (var (pre_cont_ins->name),
-                               set_kind (VAR (L(p)->env,
-                                              pa_item,
-                                              aat_frag),
-                                         var (PF_MIL_VAR_ELEM))));
+                               VAR (L(p)->env, pa_item, aat_frag)));
                 else
                     execute (
                         assgn (var (pre_ins->name),
@@ -2545,10 +2535,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (attr_ins->name),
                                VAR (L(p)->env, pa_item, aat_attr)),
                         assgn (var (attr_cont_ins->name),
-                               set_kind (VAR (L(p)->env,
-                                              pa_item,
-                                              aat_frag),
-                                         var (PF_MIL_VAR_ATTR))));
+                               VAR (L(p)->env, pa_item, aat_frag)));
                 else
                     execute (
                         assgn (var (attr_ins->name),
