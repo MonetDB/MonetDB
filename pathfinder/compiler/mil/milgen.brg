@@ -589,14 +589,22 @@ env_mvar_unsafe (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
  *        of attribute (@a att) and type (@a ty) as the search key.
  */
 static mvar_t *
+#ifndef NDEBUG
+#define env_mvar(e,a,t) (env_mvar_ ((e), (a), (t), __func__, __LINE__))
+env_mvar_ (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty,
+           const char *func, const int line)
+#else
 env_mvar (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
+#endif
 {
     mvar_t *mvar = env_mvar_unsafe (env, att, ty);
     if (mvar)
         return mvar;
 
 #ifndef NDEBUG
-    fprintf (stderr, "looking for att: %s, ty: 0x%X\n", PFatt_str (att), ty);
+    fprintf (stderr,
+             "looking for att: %s, ty: 0x%X in function %s (line %i)\n",
+             PFatt_str (att), ty, func, line);
     fprintf (stderr, "environment looks like:\n");
     for (unsigned int i = 0; i < PFarray_last (env); i++) {
         env_t entry = *(env_t *) PFarray_at ((PFarray_t *) env, i);
@@ -607,7 +615,6 @@ env_mvar (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
     }
 #endif
 
-    /* FIXME: */ assert(0);
     PFoops (OOPS_FATAL,
             "attribute '%s' with type '0x%X' not found in environment",
             PFatt_str (att), ty);
