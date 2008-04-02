@@ -48,7 +48,7 @@
  * @subsection parsing Parsing
  *
  * In the parsing phase, the input query is analyzed according to the
- * XQuery grammar rules. The parser is implemented with 
+ * XQuery grammar rules. The parser is implemented with
  * <a href="http://www.gnu.org/software/bison/bison.html">bison</a> (see
  * file parser/XQuery.y). The implementation closely follows the grammar
  * described in the
@@ -189,7 +189,7 @@
  * Type inference walks the core expression, inferring a type for each
  * node.  Types are attached to the core tree nodes to facilitate type
  * checking.
- * 
+ *
  * PFty_check() decorates the core tree with type annotations but
  * lets the tree alone otherwise (almost).
  *
@@ -233,7 +233,7 @@
  * operations.
  *
  * @subsection algebra_cse Algebra Common Subexpression Elimination (CSE)
- * 
+ *
  * The algebra code generated in the previous step contains @em many
  * redundancies. To avoid re-computation of the same expression, the
  * code in algebra_cse.c rewrites the algebra expression @em tree into
@@ -284,7 +284,7 @@
  *
  * MIL is Pathfinder's target language. The code in mil/milgen.brg
  * translates a physical algebra tree into MIL. We do not, however,
- * directly generate a serialized MIl program, but assemble an 
+ * directly generate a serialized MIl program, but assemble an
  * internal MIL syntax tree first. This MIL tree is serialized to
  * ``real'' MIL afterwards in mil/milprint.c. This serializer
  * follows some grammar that we define on our MIL trees, which at
@@ -331,7 +331,7 @@
  *
  * @subsection what_to_print Data Structures that may be Printed
  *
- * The command line switches <code>-a</code>, <code>-c</code>, 
+ * The command line switches <code>-a</code>, <code>-c</code>,
  * <code>-l</code>, and <code>-p</code> request printing of abstract
  * syntax tree (aka. parse tree), Core language tree, logical and
  * physical algebra expression tree, respectively.
@@ -401,7 +401,7 @@
  * <a href='http://www.tum.de'>Technische Universit&auml;t M&uuml;nchen</a>.
  * Several students from U Konstanz have been involved in this
  * project, namely
- * 
+ *
  *  - Gerlinde Adam
  *  - Natalia Fibich
  *  - Guenther Hagleitner
@@ -433,7 +433,7 @@
  * Software is distributed as the "MonetDB/XQuery" system at
  * <a href='http://www.monetdb-xquery.org/'>http://www.monetdb-xquery.org/</a>.
  */
-  
+
 #include "pathfinder.h"
 
 #include <stdlib.h>
@@ -508,8 +508,8 @@ static struct option long_options[] = {
  */
 static char opt_buf[sizeof ("mil-dead-code-elimination") + 10];
 
-static int 
-cmp_opt (const void *o1, const void *o2) 
+static int
+cmp_opt (const void *o1, const void *o2)
 {
     return ((struct option *)o1)->val - ((struct option *)o2)->val;
 }
@@ -518,14 +518,14 @@ cmp_opt (const void *o1, const void *o2)
  * map a one-character command line option to its equivalent
  * long form
  */
-static const char 
-*long_option (char *buf, char *t, char o) 
+static const char
+*long_option (char *buf, char *t, char o)
 {
     struct option key = { 0, 0, 0, o };
     struct option *l;
 
     if ((l = (struct option *) bsearch (&key, long_options,
-                                        sizeof (long_options) / 
+                                        sizeof (long_options) /
                                             sizeof (struct option) - 1,
                                         sizeof (struct option),
                                         cmp_opt))) {
@@ -539,7 +539,7 @@ static const char
 
 #else
 
-#ifndef HAVE_GETOPT_H 
+#ifndef HAVE_GETOPT_H
 
 #include "win32_getopt.c" /* fall back on a standalone impl */
 
@@ -589,16 +589,9 @@ static char *phases[] = {
     [22]  = "after the MIL program has been serialized"
 };
 
-/**
- * @c basename(argv[0]) is stored here later. The basename() call may
- * modify its argument (according to the man page). To avoid modifying
- * @c argv[0] we make a copy first and store it here.
- */
-static char *progname = 0;
-
-#define MAIN_EXIT(rtrn)	\
-	fputs (PFerrbuf, stderr);\
-	exit (rtrn);
+#define MAIN_EXIT(rtrn) \
+        fputs (PFerrbuf, stderr);\
+        exit (rtrn);
 
 /**
  * Entry point to the Pathfinder compiler,
@@ -609,7 +602,7 @@ int
 main (int argc, char *argv[])
 {
 
-   
+
     /* Call setjmp() before variables are declared;
      * otherwise, some compilers complain about clobbered variables.
      */
@@ -620,11 +613,18 @@ main (int argc, char *argv[])
     }
 
  {
+    /**
+     * @c basename(argv[0]) is stored here later. The basename() call may
+     * modify its argument (according to the man page). To avoid modifying
+     * @c argv[0] we make a copy first and store it here.
+     */
+    char *progname = 0;
+
     PFstate_t  PFstate;
     PFstate_t* status = &PFstate;
     unsigned int i;
     bool explicit_opt = false;
-    
+
     /** initialize global state of the compiler */
     PFstate_init (status);
     PFstate.invocation = invoke_cmdline;
@@ -647,6 +647,10 @@ main (int argc, char *argv[])
 #endif
     /*pathname = dirname (PFstrdup (argv[0]));*/ /* StM: unused! */
 
+#ifndef HAVE_GETOPT_H
+    win32_getopt_reset();
+#endif
+    
     /* getopt-based command line parsing */
     while (true) {
         int c;
@@ -657,7 +661,7 @@ main (int argc, char *argv[])
 #ifndef NDEBUG
                                      "d:"
 #endif
-                                     "e:f:Shlo:pqrs:t", 
+                                     "e:f:Shlo:pqrs:t",
                          long_options, &option_index);
 #else
         c = getopt (argc, argv, "ADHIMO::PTXabc"
@@ -682,7 +686,7 @@ main (int argc, char *argv[])
                 printf ("Pathfinder XQuery Compiler "
                         "($Revision$, $Date$)\n");
                 printf ("(c) Database Group, Technische Universitaet Muenchen\n\n");
-                printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
+                printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);
                 printf ("  Reads from standard input if FILE is omitted.\n\n");
                 printf ("  -A%s: generate MIL code"
 #if ALGEBRA_IS_DEFAULT
@@ -709,7 +713,7 @@ main (int argc, char *argv[])
                         long_option (opt_buf, ", --%s", 'I'));
                 printf ("\n");
 
-                
+
                 printf ("  -D%s: print internal tree structure in AT&T dot notation\n",
                         long_option (opt_buf, ", --%s", 'D'));
                 printf ("  -P%s: print internal tree structure in "
@@ -845,7 +849,7 @@ main (int argc, char *argv[])
                 if (!explicit_opt)
                     status->opt_alg = status->opt_sql;
                 break;
-                
+
             case 'T':
                 status->timing = true;
                 break;
@@ -853,7 +857,7 @@ main (int argc, char *argv[])
             case 'X':
                 if (status->output_format == PFoutput_format_not_specified)
                     status->output_format = PFoutput_format_xml;
-                
+
                 status->print_xml = true;
                 break;
 
@@ -895,7 +899,7 @@ main (int argc, char *argv[])
                 if (!status->format)
                     status->format = PFstrdup (optarg);
                 else {
-                    status->format = PFrealloc (status->format, 
+                    status->format = PFrealloc (status->format,
                                                 strlen (status->format)+1,
                                                 strlen (status->format)
                                                     + strlen (optarg) +1);
@@ -907,7 +911,7 @@ main (int argc, char *argv[])
                 printf ("Pathfinder XQuery Compiler "
                         "($Revision$, $Date$)\n");
                 printf ("(c) Database Group, Technische Universitaet Muenchen\n\n");
-                printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
+                printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);
                 printf ("  Reads from standard input if FILE is omitted.\n\n");
                 printf ("  -A%s: generate MIL code"
 #if ALGEBRA_IS_DEFAULT
@@ -1018,18 +1022,18 @@ main (int argc, char *argv[])
              * fixing/locating this validation-errors unneccessary hard)
              */
             status->import_xml_filename = argv[optind];
-        } 
+        }
         else
         {
             url = argv[optind];
         }
     }
-        
+
 
     /* Now call the main compiler driver */
     if ( PFcompile(url, stdout, status) < 0 )
         goto failure;
-    
+
     PFmem_destroy ();
 
     /* If we are supposed to be quiet

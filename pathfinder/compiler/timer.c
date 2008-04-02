@@ -61,6 +61,8 @@
 #include <windows.h>
 #endif
 
+#include "mem.h"
+
 static long
 PFgettime (void)
 {
@@ -72,16 +74,16 @@ PFgettime (void)
             (long) st.wMilliseconds) * 1000;
 #else
 #ifdef HAVE_GETTIMEOFDAY
-	struct timeval tp;
+        struct timeval tp;
 
-	gettimeofday(&tp, NULL);
-	return (long) tp.tv_sec * 1000000 + (long) tp.tv_usec;
+        gettimeofday(&tp, NULL);
+        return (long) tp.tv_sec * 1000000 + (long) tp.tv_usec;
 #else
 #ifdef HAVE_FTIME
-	struct timeb tb;
+        struct timeb tb;
 
-	ftime(&tb);
-	return (long) tb.time * 1000000 + (long) tb.millitm * 1000;
+        ftime(&tb);
+        return (long) tb.time * 1000000 + (long) tb.millitm * 1000;
 #endif
 #endif
 #endif
@@ -96,9 +98,9 @@ PFgettime (void)
  *
  * @return timer value to be passed to PFtimer_stop ()
  */
-long 
+long
 PFtimer_start (void)
-{ 
+{
     return PFgettime();
 }
 
@@ -131,21 +133,22 @@ PFtimer_stop (long start)
 char *
 PFtimer_str (long elapsed)
 {
-    static char tm[sizeof ("000h 00m 00s 000ms")] = "";
+    char *tm = PFmalloc (sizeof (char) * (sizeof ("000h 00m 00s 000ms") + 1));
     char *str;
 
+    tm[0] = '\0';
     str = tm;
 
     if (elapsed / 3600000000UL) {
         str += sprintf (str, "%03luh ", elapsed / 3600000000UL);
         elapsed %= 3600000000UL;
     }
-  
+
     if (elapsed / 60000000UL) {
         str += sprintf (str, "%02lum ", elapsed / 60000000UL);
         elapsed %= 60000000UL;
     }
-  
+
     if (elapsed / 1000000UL) {
         str += sprintf (str, "%02lus ", elapsed / 1000000UL);
         elapsed %= 1000000UL;

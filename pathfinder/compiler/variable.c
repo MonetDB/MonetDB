@@ -56,7 +56,7 @@
  *     pointer to the original QName is stored in the new node. The
  *     QName may not be modified from outside after this function has
  *     been called.
- * @return Pointer to the new @c PFvar_t 
+ * @return Pointer to the new @c PFvar_t
  */
 PFvar_t *
 PFnew_var (PFqname_t varname)

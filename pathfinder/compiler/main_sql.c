@@ -77,8 +77,8 @@ static struct option long_options[] = {
  */
 static char opt_buf[sizeof ("optimize-algebra") + 10];
 
-static int 
-cmp_opt (const void *o1, const void *o2) 
+static int
+cmp_opt (const void *o1, const void *o2)
 {
     return ((struct option *)o1)->val - ((struct option *)o2)->val;
 }
@@ -87,14 +87,14 @@ cmp_opt (const void *o1, const void *o2)
  * map a one-character command line option to its equivalent
  * long form
  */
-static const char 
-*long_option (char *buf, char *t, char o) 
+static const char
+*long_option (char *buf, char *t, char o)
 {
     struct option key = { 0, 0, 0, o };
     struct option *l;
 
     if ((l = (struct option *) bsearch (&key, long_options,
-                                        sizeof (long_options) / 
+                                        sizeof (long_options) /
                                             sizeof (struct option) - 1,
                                         sizeof (struct option),
                                         cmp_opt))) {
@@ -108,7 +108,7 @@ static const char
 
 #else
 
-#ifndef HAVE_GETOPT_H 
+#ifndef HAVE_GETOPT_H
 
 #include "win32_getopt.c" /* fall back on a standalone impl */
 
@@ -170,16 +170,9 @@ jmp_buf PFexitPoint;
 #include "sqlprint.h"
 
 
-/**
- * @c basename(argv[0]) is stored here later. The basename() call may
- * modify its argument (according to the man page). To avoid modifying
- * @c argv[0] we make a copy first and store it here.
- */
-static char *progname = 0;
-
-#define MAIN_EXIT(rtrn)	\
-	fputs (PFerrbuf, stderr);\
-	exit (rtrn);
+#define MAIN_EXIT(rtrn) \
+        fputs (PFerrbuf, stderr);\
+        exit (rtrn);
 
 /**
  * Entry point to the Pathfinder compiler,
@@ -190,7 +183,7 @@ int
 main (int argc, char *argv[])
 {
 
-   
+
     /* Call setjmp() before variables are declared;
      * otherwise, some compilers complain about clobbered variables.
      */
@@ -201,6 +194,13 @@ main (int argc, char *argv[])
     }
 
  {
+    /**
+     * @c basename(argv[0]) is stored here later. The basename() call may
+     * modify its argument (according to the man page). To avoid modifying
+     * @c argv[0] we make a copy first and store it here.
+     */
+    static char *progname = 0;
+
     /* URL of query file (if present) */
     char *url = "-";
 
@@ -219,6 +219,10 @@ main (int argc, char *argv[])
 #endif
     /*pathname = dirname (PFstrdup (argv[0]));*/ /* StM: unused! */
 
+#ifndef HAVE_GETOPT_H
+    win32_getopt_reset();
+#endif
+    
     /* getopt-based command line parsing */
     while (true) {
         int c;
@@ -239,7 +243,7 @@ main (int argc, char *argv[])
                         "Compiles Logical Algebra Dag in XML Format to SQL.\n\n"
                         "($Revision$, $Date$)\n");
                 printf ("(c) Database Group, Technische Universitaet Muenchen\n\n");
-                printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
+                printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);
                 printf ("  Reads from standard input if FILE is omitted.\n\n");
                 printf ("  -h%s: print this help message\n",
                         long_option (opt_buf, ", --%s", 'h'));
@@ -256,14 +260,14 @@ main (int argc, char *argv[])
 
     PFla_op_t  *laroot  = NULL;
     PFsql_t    *sqlroot = NULL;
-    
+
 #if HAVE_SIGNAL_H
     /* setup sementation fault signal handler */
     signal (SIGSEGV, segfault_handler);
 #endif
 
     XML2LALGContext *ctx = PFxml2la_xml2lalgContext();
-    
+
     /* Initialize data structures in the Namespace department */
     PFns_init ();
 
@@ -288,10 +292,10 @@ main (int argc, char *argv[])
     }
     else {
         /**
-         * Note, that we don't get explicit error-positions (line 
-         * numbers of the xml-input) from the parser in case of 
-         * validation errors... 
-         * 
+         * Note, that we don't get explicit error-positions (line
+         * numbers of the xml-input) from the parser in case of
+         * validation errors...
+         *
          * Call PF from the command line with an explicit filename
          * (instead of using stdin/pipelining) if you want to get
          * explicit error positions (line numbers) from the xml-parser
@@ -333,7 +337,7 @@ main (int argc, char *argv[])
                   false /* icol */,
                   false /* composite key */,
                   true  /* key */,
-                  false /* ocols */, 
+                  false /* ocols */,
                   true  /* req_node */,
                   false /* reqval */,
                   true  /* level */,

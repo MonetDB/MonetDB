@@ -187,9 +187,11 @@ typedef struct _urlcache_t {
     struct _urlcache_t *next;
     xmlParserInputBufferPtr  buf;
     char url[1];
-} urlcache_t; 
+} urlcache_t;
 
+/* NOTE: variable is re-used in subsequent pf runs (in server-side setup) */
 urlcache_t *urlcache = NULL;
+/* NOTE: variable is re-used in subsequent pf runs (in server-side setup) */
 int xrpc_port = 80;
 
 /**
@@ -200,7 +202,7 @@ char *PFurlcache (char *uri, int keep)
     int         num_read = -1;
     urlcache_t *cache = urlcache;
     xmlParserInputBufferPtr  buf;
-    char *ret, url[1024];  
+    char *ret, url[1024];
 
     /* support for the xrpc://x.y.z/URI naming scheme (maps to http://x.y.z:<xrpc_port>/xrpc/URI) */
     if (strncmp(uri, "xrpc://", 7) == 0) {
@@ -222,10 +224,10 @@ char *PFurlcache (char *uri, int keep)
 
     if (keep) {
         int len = strlen(url);
-    	/* 
-    	 * URI that ends in .mil is converted into a .xq
-    	 */
-    	if (len > 4 && url[len-4] == '.' && url[len-3] == 'm' && url[len-2] == 'i' && url[len-1] == 'l') {
+        /*
+         * URI that ends in .mil is converted into a .xq
+         */
+        if (len > 4 && url[len-4] == '.' && url[len-3] == 'm' && url[len-2] == 'i' && url[len-1] == 'l') {
             url[len-3] = 'x'; url[len-2] = 'q'; url[len-1] = 0;
         }
     }
@@ -234,8 +236,8 @@ char *PFurlcache (char *uri, int keep)
      * first try the cache
      */
     while(cache) {
-        if (strcmp(cache->url, url) == 0) 
-    	    return (char*) cache->buf->buffer->content;
+        if (strcmp(cache->url, url) == 0)
+            return (char*) cache->buf->buffer->content;
         cache = cache->next;
     }
 
@@ -254,7 +256,7 @@ char *PFurlcache (char *uri, int keep)
             /* empty */;
     }
     if (num_read < 0) {
-	if (buf) free(buf);
+        if (buf) free(buf);
         return NULL;
     }
     ret = (char*) buf->buffer->content;
@@ -269,7 +271,7 @@ char *PFurlcache (char *uri, int keep)
         }
     } else {
         buf->buffer->content = NULL; /* otherwise it will be deleted */
-    	xmlFreeParserInputBuffer (buf);
+        xmlFreeParserInputBuffer (buf);
     }
     return ret;
 }
@@ -280,16 +282,16 @@ char *PFurlcache (char *uri, int keep)
 void PFurlcache_flush(void) {
     urlcache_t *cache = urlcache;
     while(cache) {
-	urlcache_t *del = cache;
+        urlcache_t *del = cache;
         cache = cache->next;
 
-    	/* free resource allocated by libxml2 file reader */
-    	xmlFreeParserInputBuffer (del->buf);
-	free(del);
+        /* free resource allocated by libxml2 file reader */
+        xmlFreeParserInputBuffer (del->buf);
+        free(del);
     }
     urlcache = NULL;
 }
-   
+
 
 /**
  * Compiler driver of the Pathfinder compiler,
@@ -299,18 +301,18 @@ void PFurlcache_flush(void) {
 int
 PFcompile (char *url, FILE *pfout, PFstate_t *status)
 {
-    PFpnode_t  *proot  = NULL;
-    PFcnode_t  *croot  = NULL;
-    PFla_op_t  *laroot  = NULL;
-    PFpa_op_t  *paroot = NULL;
-    PFmil_t    *mroot  = NULL;
-    PFarray_t  *mil_program = NULL;
-    char       *xquery = NULL;
+    PFpnode_t *proot  = NULL;
+    PFcnode_t *croot  = NULL;
+    PFla_op_t *laroot  = NULL;
+    PFpa_op_t *paroot = NULL;
+    PFmil_t   *mroot  = NULL;
+    PFarray_t *mil_program = NULL;
+    char      *xquery = NULL;
     int        module_base;
-    
+
     /* elapsed time for compiler phase */
     long tm, tm_first = 0;
-   
+
     PFguide_tree_t *guide_tree = NULL; /* guide tree */
 
     PFquery_t PFquery = {
@@ -327,11 +329,11 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     /* setup sementation fault signal handler */
     signal (SIGSEGV, segfault_handler);
 #endif
-    
+
 #ifndef NDEBUG
     PFarray_init ();
 #endif
-    
+
     /*******************************************/
     /* Split Point: Logical Algebra XML Import */
     /*******************************************/
@@ -340,10 +342,10 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
        /* todo: init-stuff */
        /* e.g. qnameInit */
        /* e.g namespaceInit */
-            
+
         XML2LALGContext *ctx = PFxml2la_xml2lalgContext();
         PFla_op_t       *rootOp;
-        
+
         /* Initialize data structures in the Namespace department */
         PFns_init ();
 
@@ -368,10 +370,10 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         }
         else {
             /**
-             * Note, that we don't get explicit error-positions (line 
-             * numbers of the xml-input) from the parser in case of 
-             * validation errors... 
-             * 
+             * Note, that we don't get explicit error-positions (line
+             * numbers of the xml-input) from the parser in case of
+             * validation errors...
+             *
              * Call PF from the command line with an explicit filename
              * (instead of using stdin/pipelining) if you want to get
              * explicit error positions (line numbers) from the xml-parser
@@ -384,10 +386,10 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
         laroot = rootOp;
 
-        goto AFTER_CORE2ALG; 
+        goto AFTER_CORE2ALG;
     }
 
-    /* compiler chain below 
+    /* compiler chain below
      */
     xquery = PFurlcache (url, 1);
 
@@ -397,12 +399,12 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     tm_first = tm = PFtimer_start ();
     (void) PFparse (xquery, &proot, &PFquery, status->standoff_axis_steps);
     tm = PFtimer_stop (tm);
-    
+
     if (status->timing)
         PFlog ("parsing:\t\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(1);
-    
+
     tm = PFtimer_start ();
     module_base = PFparse_modules (proot, &PFquery, status->standoff_axis_steps);
     tm = PFtimer_stop (tm);
@@ -411,10 +413,10 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         PFlog ("module import:\t\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(2);
-    
+
     tm = PFtimer_start ();
 
-    /* Abstract syntax tree normalization 
+    /* Abstract syntax tree normalization
      */
     proot = PFnormalize_abssyn (proot);
 
@@ -435,7 +437,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     }
 
     STOP_POINT(3);
-    
+
     /* Initialize data structures in the Namespace department */
     PFns_init ();
 
@@ -457,7 +459,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
      *       to change the value further down.
      */
     STOP_POINT(4);
- 
+
     /*
      * Extract option declarations from the abstract syntax tree
      * and read them into a mapping table.  This table may then be
@@ -470,7 +472,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     /* create guide tree */
     guide_tree =  PFguide_tree ();
-  
+
     STOP_POINT(6);
 
     /* Check variable scoping and replace QNames by PFvar_t pointers */
@@ -483,7 +485,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     STOP_POINT(8);
 
-    /* Resolve function usage 
+    /* Resolve function usage
      */
     PFfun_check (proot);
 
@@ -497,7 +499,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     /* Load XML Schema/XQuery predefined types into the type environment */
     PFty_predefined ();
-    
+
     STOP_POINT(10);
 
     /* XML Schema import */
@@ -543,7 +545,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     /* Type inference and check */
     tm = PFtimer_start ();
-  
+
     croot = PFty_check (croot);
 
     tm = PFtimer_stop (tm);
@@ -554,7 +556,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     /* Core tree optimization */
     tm = PFtimer_start ();
-  
+
     croot = PFcoreopt (croot);
 
     tm = PFtimer_stop (tm);
@@ -570,7 +572,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->output_format == PFoutput_format_milprint_summer) {
         char *prologue = NULL, *query = NULL, *epilogue = NULL;
         tm = PFtimer_start ();
-        if (PFprintMILtemp (croot, status->optimize, module_base, -1, tm_first, 
+        if (PFprintMILtemp (croot, status->optimize, module_base, -1, tm_first,
                             &prologue, &query, &epilogue, url, status->standoff_axis_steps))
             goto failure;
         fputs(prologue, pfout);
@@ -607,7 +609,7 @@ AFTER_CORE2ALG:
      * Rewrite/optimize algebra tree
      */
     tm = PFtimer_start ();
- 
+
     laroot = PFalgopt (laroot, status->timing, guide_tree, status->opt_alg);
 
     tm = PFtimer_stop (tm);
@@ -617,7 +619,7 @@ AFTER_CORE2ALG:
 
     STOP_POINT(17);
 
-    /* 
+    /*
      * common subexpression elimination in the algebra tree
      */
     tm = PFtimer_start ();
@@ -641,7 +643,7 @@ AFTER_CORE2ALG:
         tm = PFtimer_stop (tm);
         if (status->timing)
             PFlog ("Compilation to SQL:\t\t\t %s", PFtimer_str (tm));
-        
+
         STOP_POINT(19);
 
         if (status->dead_code_el) {
@@ -654,7 +656,7 @@ AFTER_CORE2ALG:
         }
 
         STOP_POINT(20);
-        
+
         /* serialize the internal SQL query tree */
         tm = PFtimer_start ();
         PFsql_print (pfout, sqlroot);
@@ -716,12 +718,12 @@ AFTER_CORE2ALG:
                                PFmil_var (
                                    PF_MIL_VAR_TIME_PRINT)));
     }
-    
+
     if (status->dead_code_el) {
         tm = PFtimer_start ();
 
         mroot = PFmil_dce (mroot);
-   
+
         tm = PFtimer_stop (tm);
         if (status->timing)
             PFlog ("dead code elimination:\t\t\t %s", PFtimer_str (tm));
@@ -729,7 +731,7 @@ AFTER_CORE2ALG:
 
     STOP_POINT(21);
 
-    /* Render MIL program in Monet MIL syntax 
+    /* Render MIL program in Monet MIL syntax
      */
     tm = PFtimer_start ();
     mil_program = PFmil_serialize (mroot);
@@ -835,21 +837,21 @@ AFTER_CORE2ALG:
 
 /**
  * Compiler driver of the Pathfinder compiler interface for usage
- * by the Monet Runtime environment. 
- * 
- * MonetDB actually would like pathfinder to 
- * - be thread-safe (now there are global vars all over the place) 
+ * by the Monet Runtime environment.
+ *
+ * MonetDB actually would like pathfinder to
+ * - be thread-safe (now there are global vars all over the place)
  * - use string input/output rather than files.
  *
  * This interface fixes the second issue. For the moment, the MonetDB
- * Runtime environment uses a lock to stay stable under concurrent requests. 
+ * Runtime environment uses a lock to stay stable under concurrent requests.
  */
 char*
 PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char** epilogue, int options)
 {
-        PFstate_t PFstate; 
-	PFpnode_t  *proot  = NULL;
-	PFcnode_t  *croot  = NULL;
+        PFstate_t PFstate;
+        PFpnode_t  *proot  = NULL;
+        PFcnode_t  *croot  = NULL;
         int num_fun;
         long timing;
         int module_base;
@@ -889,7 +891,7 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
                 PFstate.output_format = PFoutput_format_milprint_summer;
         }
 
-        /* the state of the standoff_axis_steps support should be 
+        /* the state of the standoff_axis_steps support should be
          * passed through the function-arguments.
          */
         PFstate.standoff_axis_steps = (options & COMPILE_OPTION_STANDOFF);
@@ -922,14 +924,14 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         croot = PFfs (proot, &PFquery);
         croot = PFsimplify (croot);
         croot = PFty_check (croot);
-    	croot = PFcoreopt (croot);
+        croot = PFcoreopt (croot);
 
     if (PFstate.output_format == PFoutput_format_milprint_summer) {
-        (void)  PFprintMILtemp (croot, 1, module_base, num_fun, timing, 
+        (void)  PFprintMILtemp (croot, 1, module_base, num_fun, timing,
                                 &intern_prologue, &intern_query, &intern_epilogue,
                                 url, PFstate.standoff_axis_steps);
 
-        /* make sure that we do NOT use memory that lies 
+        /* make sure that we do NOT use memory that lies
            in the pathfinder heap -- MonetDB will use (and free) it */
         *prologue = malloc (strlen (intern_prologue) + 1);
         *query    = malloc (strlen (intern_query) + 1);
@@ -942,7 +944,7 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         laroot = PFcore2alg (croot, &PFquery,
                              PFstate.output_format);
         /* optimize logical algebra */
-        laroot = PFalgopt (laroot, false /* no timing output */, 
+        laroot = PFalgopt (laroot, false /* no timing output */,
             NULL /* no guide tree */, PFstate.opt_alg);
         /* common subexpression elimination on logical algebra */
         laroot = PFla_cse (laroot);

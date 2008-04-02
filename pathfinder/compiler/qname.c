@@ -16,7 +16,7 @@
  *    #PFqname_raw_t entries into #PFqname_t entries.  #PFqname_t
  *    is actually just an integer.  The full QName information (prefix,
  *    URI, and local name) are held in the array #qnames located in
- *    this file (and only visible here).  The #PFqname_t integer is 
+ *    this file (and only visible here).  The #PFqname_t integer is
  *    an index into this array.
  *
  * To operate on #PFqname_raw_t types, use the PFqname_raw... functions
@@ -273,7 +273,7 @@ PFqname_str (PFqname_t q)
         else
             /* otherwise no prefix to print */
             ns = PFstrdup ("");
-    
+
     s = (char *) PFmalloc (strlen (ns) + (qn.loc ? strlen (qn.loc) : 1) + 1);
 
     sprintf (s, "%s%s", ns, qn.loc ? qn.loc : "*");
@@ -296,7 +296,7 @@ PFqname_uri_str (PFqname_t q)
     qname_internal_t qn
         = *((qname_internal_t *) PFarray_at (qnames, q));
 
-    s = (char *) PFmalloc ((qn.ns.uri ? strlen (qn.ns.uri) + 1 : 0) 
+    s = (char *) PFmalloc ((qn.ns.uri ? strlen (qn.ns.uri) + 1 : 0)
                            + strlen (qn.loc) + 1);
 
     return strcat (qn.ns.uri ? strcat (strcpy (s, qn.ns.uri), ":") : s,
@@ -400,7 +400,7 @@ PFqname_raw (const char *n)
     else {
         /* QName = loc */
         qn.prefix = PFstrdup ("");
-        qn.loc    = nsloc; 
+        qn.loc    = nsloc;
     }
 
     /*
@@ -469,7 +469,7 @@ PFqname_raw_str (PFqname_raw_t q)
         else
             /* otherwise no prefix to print */
             ns = PFstrdup ("");
-    
+
     s = (char *) PFmalloc (strlen (ns) + (q.loc ? strlen (q.loc) : 1) + 1);
 
     sprintf (s, "%s%s", ns, q.loc ? q.loc : "*");
