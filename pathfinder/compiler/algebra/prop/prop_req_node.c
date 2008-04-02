@@ -442,9 +442,9 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             break;
             
         case la_cast:
+            assert ((type_of (n, n->sem.type.att) & aat_node) == 0);
         case la_type:
             assert ((type_of (n, n->sem.type.res) & aat_node) == 0);
-            assert ((type_of (n, n->sem.type.att) & aat_node) == 0);
             break;
 
         case la_type_assert:
