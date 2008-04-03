@@ -197,8 +197,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
     assert (p);
 
 #define LP (p->child[lp_child])
-/* check whether a column att is already generated */
-#define GEN(att) (!is_join_att (p, (att)) && PFprop_ocol (rp, (att)))
 
     /* only process equi-joins */
     assert (p->kind == la_eqjoin_unq);
@@ -265,165 +263,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
            afterwards */
         if (LEFT(lp) && RIGHT(lp))
             continue;
-
-        /* Throw away lp whenever lp creates a column
-           that is also in the schema of rp. In this case
-           the new column is also created in the subtree
-           of rp. (Pushing lp above the eqjoin would result
-           in conflicting columns otherwise.) */
-        switch (lp->kind) {
-            case la_serialize_seq:
-            case la_serialize_rel:
-            case la_lit_tbl:
-            case la_empty_tbl:
-            case la_ref_tbl:
-            case la_cross:
-            case la_eqjoin:
-            case la_eqjoin_unq:
-            case la_semijoin:
-            case la_thetajoin:
-            case la_project:
-            case la_select:
-            case la_pos_select:
-            case la_disjunion:
-            case la_intersect:
-            case la_difference:
-            case la_distinct:
-            case la_to:
-            case la_avg:
-            case la_max:
-            case la_min:
-            case la_sum:
-            case la_count:
-            case la_type_assert:
-            case la_seqty1:
-            case la_all:
-            case la_step:
-            case la_guide_step:
-            case la_twig:
-            case la_fcns:
-            case la_docnode:
-            case la_element:
-            case la_attribute:
-            case la_textnode:
-            case la_comment:
-            case la_processi:
-            case la_content:
-            case la_merge_adjacent:
-            case la_roots:
-            case la_fragment:
-            case la_frag_extract:
-            case la_frag_union:
-            case la_empty_frag:
-            case la_error:
-            case la_cond_err:
-            case la_nil:
-            case la_trace:
-            case la_trace_msg:
-            case la_trace_map:
-            case la_rec_fix:
-            case la_rec_param:
-            case la_rec_arg:
-            case la_rec_base:
-            case la_fun_call:
-            case la_fun_param:
-            case la_fun_frag_param:
-            case la_proxy:
-            case la_proxy_base:
-            case la_cross_mvd:
-            case la_string_join:
-                /* nothing to do -- can't throw away lp */
-                break;
-
-            case la_attach:
-                if ((modified = GEN(lp->sem.attach.res))) LP = L(lp);
-                break;
-
-            case la_fun_1to1:
-                if ((modified = GEN(lp->sem.fun_1to1.res))) LP = L(lp);
-                break;
-
-            case la_num_eq:
-            case la_num_gt:
-            case la_bool_and:
-            case la_bool_or:
-                if ((modified = GEN(lp->sem.binary.res))) LP = L(lp);
-                break;
-
-            case la_bool_not:
-                if ((modified = GEN(lp->sem.unary.res))) LP = L(lp);
-                break;
-
-            case la_rownum:
-                if (!PFprop_key (rp->prop, ratt) ||
-                    !PFprop_subdom (rp->prop,
-                                    PFprop_dom (lp->prop, latt),
-                                    PFprop_dom (rp->prop, ratt)))
-                    /* Ensure that the values of the left join argument
-                       are a subset of the values of the right join argument
-                       and that the right join argument is keyed. These
-                       two tests make sure that we have exactly one match per
-                       tuple in the left relation and thus the result of the
-                       rownum operator stays stable. */
-                    break;
-
-                if ((modified = GEN(lp->sem.sort.res))) LP = L(lp);
-                break;
-
-            case la_rowrank:
-            case la_rank:
-                if ((modified = GEN(lp->sem.sort.res))) LP = L(lp);
-                break;
-
-            case la_rowid:
-                if (!PFprop_key (rp->prop, ratt) ||
-                    !PFprop_subdom (rp->prop,
-                                    PFprop_dom (lp->prop, latt),
-                                    PFprop_dom (rp->prop, ratt)))
-                    /* Ensure that the values of the left join argument
-                       are a subset of the values of the right join argument
-                       and that the right join argument is keyed. These
-                       two tests make sure that we have exactly one match per
-                       tuple in the left relation and thus the result of the
-                       rowid operator stays stable. */
-                    break;
-
-                if ((modified = GEN(lp->sem.rowid.res))) LP = L(lp);
-                break;
-
-            case la_type:
-            case la_cast:
-                if ((modified = GEN(lp->sem.type.res))) LP = L(lp);
-                break;
-
-            case la_step_join:
-            case la_guide_step_join:
-                if ((modified = GEN(lp->sem.step.item_res))) LP = R(lp);
-                break;
-
-            case la_doc_index_join:
-                if ((modified = GEN(lp->sem.doc_join.item_res))) LP = R(lp);
-                break;
-
-            case la_doc_tbl:
-                if ((modified = GEN(lp->sem.doc_tbl.res))) LP = L(lp);
-                break;
-
-            case la_doc_access:
-                if ((modified = GEN(lp->sem.doc_access.res))) LP = R(lp);
-                break;
-
-            case la_dummy:
-                LP = L(lp);
-                next_join = p;
-                break;
-        }
-        /* If a child of p was replaced ... */
-        if (modified) {
-            /* ... start another round with p. */
-            join_pushdown_worker (p, clean_up_list);
-            return true;
-        }
 
         switch (lp->kind) {
             case la_serialize_seq:
@@ -980,7 +819,8 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                    reason as the missing transformation of join-join
                    patterns we skip this alternative here. */
             {
-                bool renamed = false;
+                bool renamed = false,
+                     name_conflict = false;
 
                 /* check for renaming */
                 for (unsigned int i = 0; i < lp->sem.proj.count; i++)
@@ -988,7 +828,16 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                               (lp->sem.proj.items[i].new
                                != lp->sem.proj.items[i].old);
 
-                if (!renamed) {
+                for (unsigned int i = 0; i < L(lp)->schema.count; i++)
+                    for (unsigned int j = 0; j < rp->schema.count; j++)
+                        if (L(lp)->schema.items[i].name ==
+                            rp->schema.items[i].name &&
+                            rp->schema.items[i].name != ratt) {
+                            name_conflict = true;
+                            break;
+                        }
+
+                if (!renamed && !name_conflict) {
                     PFalg_att_t cur;
                     PFalg_proj_t *proj_list;
                     unsigned int count = 0;
