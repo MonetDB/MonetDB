@@ -519,6 +519,8 @@ modify_binary_op (PFla_op_t *p,
         bool switch_right = PFprop_ocol (LR(p), p->sem.binary.att1) &&
                             PFprop_ocol (LR(p), p->sem.binary.att2);
 
+        /* Pushing down the operator twice is only allowed
+           if it doesn't affect the cardinality. */
         if (switch_left && switch_right) {
             resolve_name_conflict (L(p), p->sem.binary.res);
             *p = *(thetajoin_opt (
@@ -1176,6 +1178,8 @@ opt_mvd (PFla_op_t *p)
                                                 p->sem.fun_1to1.refs.atts[i]);
                 }
 
+                /* Pushing down the operator twice is only allowed
+                   if it doesn't affect the cardinality. */
                 if (switch_left && switch_right) {
                     resolve_name_conflict (L(p), p->sem.fun_1to1.res);
                     *p = *(thetajoin_opt (
@@ -1235,6 +1239,8 @@ opt_mvd (PFla_op_t *p)
                 bool switch_left = PFprop_ocol (LL(p), p->sem.unary.att);
                 bool switch_right = PFprop_ocol (LR(p), p->sem.unary.att);
 
+                /* Pushing down the operator twice is only allowed
+                   if it doesn't affect the cardinality. */
                 if (switch_left && switch_right) {
                     resolve_name_conflict (L(p), p->sem.unary.res);
                     *p = *(thetajoin_opt (
@@ -1548,6 +1554,8 @@ opt_mvd (PFla_op_t *p)
                 bool switch_left = PFprop_ocol (LL(p), p->sem.type.att);
                 bool switch_right = PFprop_ocol (LR(p), p->sem.type.att);
 
+                /* Pushing down the operator twice is only allowed
+                   if it doesn't affect the cardinality. */
                 if (switch_left && switch_right) {
                     resolve_name_conflict (L(p), p->sem.type.res);
                     *p = *(thetajoin_opt (type (LL(p),
@@ -1589,6 +1597,8 @@ opt_mvd (PFla_op_t *p)
                 bool switch_left = PFprop_ocol (LL(p), p->sem.type.att);
                 bool switch_right = PFprop_ocol (LR(p), p->sem.type.att);
 
+                /* Pushing down the operator twice is only allowed
+                   if it doesn't affect the cardinality. */
                 if (switch_left && switch_right) {
                     *p = *(thetajoin_opt (type_assert_pos (
                                               LL(p),
@@ -1627,6 +1637,8 @@ opt_mvd (PFla_op_t *p)
                 bool switch_left = PFprop_ocol (LL(p), p->sem.type.att);
                 bool switch_right = PFprop_ocol (LR(p), p->sem.type.att);
 
+                /* Pushing down the operator twice is only allowed
+                   if it doesn't affect the cardinality. */
                 if (switch_left && switch_right) {
                     resolve_name_conflict (L(p), p->sem.type.res);
                     *p = *(thetajoin_opt (cast (LL(p),
@@ -1672,26 +1684,7 @@ opt_mvd (PFla_op_t *p)
                 bool switch_left = PFprop_ocol (RL(p), p->sem.step.item);
                 bool switch_right = PFprop_ocol (RR(p), p->sem.step.item);
 
-                if (switch_left && switch_right) {
-                    resolve_name_conflict (R(p), p->sem.step.item_res);
-                    *p = *(thetajoin_opt (step_join (
-                                                L(p),
-                                                RL(p),
-                                                p->sem.step.spec,
-                                                p->sem.step.level,
-                                                p->sem.step.item,
-                                                p->sem.step.item_res),
-                                          step_join (
-                                                L(p),
-                                                RR(p),
-                                                p->sem.step.spec,
-                                                p->sem.step.level,
-                                                p->sem.step.item,
-                                                p->sem.step.item_res),
-                                          R(p)->sem.thetajoin_opt.pred));
-                    modified = true;
-                }
-                else if (switch_left) {
+                if (switch_left) {
                     resolve_name_conflict (R(p), p->sem.step.item_res);
                     *p = *(thetajoin_opt (step_join (
                                                 L(p), RL(p),
@@ -1724,30 +1717,7 @@ opt_mvd (PFla_op_t *p)
                 bool switch_left = PFprop_ocol (RL(p), p->sem.step.item);
                 bool switch_right = PFprop_ocol (RR(p), p->sem.step.item);
 
-                if (switch_left && switch_right) {
-                    resolve_name_conflict (R(p), p->sem.step.item_res);
-                    *p = *(thetajoin_opt (guide_step_join (
-                                                L(p),
-                                                RL(p),
-                                                p->sem.step.spec,
-                                                p->sem.step.guide_count,
-                                                p->sem.step.guides,
-                                                p->sem.step.level,
-                                                p->sem.step.item,
-                                                p->sem.step.item_res),
-                                          guide_step_join (
-                                                L(p),
-                                                RR(p),
-                                                p->sem.step.spec,
-                                                p->sem.step.guide_count,
-                                                p->sem.step.guides,
-                                                p->sem.step.level,
-                                                p->sem.step.item,
-                                                p->sem.step.item_res),
-                                          R(p)->sem.thetajoin_opt.pred));
-                    modified = true;
-                }
-                else if (switch_left) {
+                if (switch_left) {
                     resolve_name_conflict (R(p), p->sem.step.item_res);
                     *p = *(thetajoin_opt (guide_step_join (
                                                 L(p), RL(p),
@@ -1787,26 +1757,7 @@ opt_mvd (PFla_op_t *p)
                 switch_right = PFprop_ocol (RR(p), p->sem.doc_join.item) &&
                                PFprop_ocol (RR(p), p->sem.doc_join.item_doc);
 
-                if (switch_left && switch_right) {
-                    resolve_name_conflict (R(p), p->sem.doc_join.item_res);
-                    *p = *(thetajoin_opt (doc_index_join (
-                                                L(p),
-                                                RL(p),
-                                                p->sem.doc_join.kind,
-                                                p->sem.doc_join.item,
-                                                p->sem.doc_join.item_res,
-                                                p->sem.doc_join.item_doc),
-                                          doc_index_join (
-                                                L(p),
-                                                RR(p),
-                                                p->sem.doc_join.kind,
-                                                p->sem.doc_join.item,
-                                                p->sem.doc_join.item_res,
-                                                p->sem.doc_join.item_doc),
-                                          R(p)->sem.thetajoin_opt.pred));
-                    modified = true;
-                }
-                else if (switch_left) {
+                if (switch_left) {
                     resolve_name_conflict (R(p), p->sem.doc_join.item_res);
                     *p = *(thetajoin_opt (doc_index_join (
                                                 L(p), RL(p),
@@ -1844,20 +1795,7 @@ opt_mvd (PFla_op_t *p)
                 bool switch_left = PFprop_ocol (RL(p), p->sem.doc_access.att);
                 bool switch_right = PFprop_ocol (RR(p), p->sem.doc_access.att);
 
-                if (switch_left && switch_right) {
-                    resolve_name_conflict (R(p), p->sem.doc_access.res);
-                    *p = *(thetajoin_opt (doc_access (L(p), RL(p),
-                                                p->sem.doc_access.res,
-                                                p->sem.doc_access.att,
-                                                p->sem.doc_access.doc_col),
-                                          doc_access (L(p), RR(p),
-                                                p->sem.doc_access.res,
-                                                p->sem.doc_access.att,
-                                                p->sem.doc_access.doc_col),
-                                          R(p)->sem.thetajoin_opt.pred));
-                    modified = true;
-                }
-                else if (switch_left) {
+                if (switch_left) {
                     resolve_name_conflict (R(p), p->sem.doc_access.res);
                     *p = *(thetajoin_opt (doc_access (L(p), RL(p),
                                                 p->sem.doc_access.res,
