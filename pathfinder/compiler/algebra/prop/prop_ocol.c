@@ -718,7 +718,7 @@ infer_ocol (PFla_op_t *n)
 #endif
         {
             PFalg_simple_type_t ty;
-            
+
             new_ocols (n, 2);
 
             ocol_at (n, 0)
@@ -760,7 +760,7 @@ infer_ocol (PFla_op_t *n)
 #endif
         {
             PFalg_simple_type_t ty;
-            
+
             ocols (n) = copy_ocols (ocols (R(n)), ocols_count (R(n)) + 1);
             if (n->sem.step.spec.axis == alg_attr)
                 ty = aat_anode;
@@ -931,7 +931,7 @@ infer_ocol (PFla_op_t *n)
                 if (ocol_at (n, i).name == n->sem.err.att)
                     ocol_at (n, i).type = ty;
         }   break;
-            
+
         case la_cond_err:
         case la_trace:
         case la_trace_msg:

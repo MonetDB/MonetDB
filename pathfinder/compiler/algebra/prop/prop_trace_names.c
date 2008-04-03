@@ -168,7 +168,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
         case la_project:
         {
             unsigned int j;
-            for (unsigned int i = 0; i < PFarray_last (np_list); i++) { 
+            for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
                 /* Adjust all current column names for the columns
                    in the projection list. */
                 for (j = 0; j < n->sem.proj.count; j++)
@@ -214,7 +214,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             }
             map_names (L(n), goal, n->prop->l_name_pairs, att_NULL);
             PFarray_last (n->prop->l_name_pairs) = 0;
-            
+
             if (n->kind == la_semijoin)
                 /* mark all columns in the right child as unknown */
                 for (unsigned int i = 0; i < PFarray_last (np_list); i++)
@@ -238,7 +238,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             map_names (R(n), goal, n->prop->l_name_pairs, att_NULL);
             PFarray_last (n->prop->l_name_pairs) = 0;
         }   return;
-        
+
         case la_fun_1to1:
             diff_np (np_list, n->sem.fun_1to1.res);
             break;
@@ -315,7 +315,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
                 /* Adjust all current column names for the loop columns. */
                 if (twig_iter == CUR_AT(np_list, i))
                     CUR_AT(np_list, i) = n->sem.docnode.iter;
-                
+
             /* infer properties for children and
                return the resulting mapping */
             map_names (L(n), goal, np_list, att_NULL);
@@ -327,7 +327,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
                 /* Adjust all current column names for the loop columns. */
                 if (twig_iter == CUR_AT(np_list, i))
                     CUR_AT(np_list, i) = n->sem.iter_item.iter;
-                
+
             /* infer properties for children and
                return the resulting mapping */
             map_names (L(n), goal, np_list, att_NULL);
@@ -340,7 +340,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
                 /* Adjust all current column names for the loop columns. */
                 if (twig_iter == CUR_AT(np_list, i))
                     CUR_AT(np_list, i) = n->sem.iter_item.iter;
-                
+
             /* infer properties for children and
                return the resulting mapping */
             map_names (L(n), goal, np_list, att_NULL);
@@ -352,7 +352,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
                 /* Adjust all current column names for the loop columns. */
                 if (twig_iter == CUR_AT(np_list, i))
                     CUR_AT(np_list, i) = n->sem.iter_item1_item2.iter;
-                
+
             /* infer properties for children and
                return the resulting mapping */
             map_names (L(n), goal, np_list, att_NULL);
@@ -363,7 +363,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
                 /* Adjust all current column names for the loop columns. */
                 if (twig_iter == CUR_AT(np_list, i))
                     CUR_AT(np_list, i) = n->sem.iter_pos_item.iter;
-                
+
             /* infer properties for children and
                return the resulting mapping */
             map_names (R(n), goal, np_list, att_NULL);
@@ -412,7 +412,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
                     "The column name tracing cannot "
                     "handle recursion operator.");
             break;
-            
+
         case la_fun_call:
         case la_fun_param:
         case la_fun_frag_param:
@@ -476,7 +476,7 @@ reset_fun (PFla_op_t *n)
         PFarray_last (n->prop->name_pairs) = 0;
     else
         n->prop->name_pairs = PFarray (sizeof (name_pair_t), 10);
-    
+
     if (n->prop->l_name_pairs) PFarray_last (n->prop->l_name_pairs) = 0;
 }
 

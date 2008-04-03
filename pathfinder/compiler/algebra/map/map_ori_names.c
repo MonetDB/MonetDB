@@ -249,7 +249,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                         { .name = ONAME(p, p->schema.items[i].name),
                           .type = p->schema.items[i].type };
 
-            res = PFla_ref_tbl_ (p->sem.ref_tbl.name, 
+            res = PFla_ref_tbl_ (p->sem.ref_tbl.name,
                                  schema,
                                  p->sem.ref_tbl.tatts,
                                  p->sem.ref_tbl.keys);
@@ -948,7 +948,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                     (struct PFalg_schm_item_t)
                         { .name = ONAME(p, p->schema.items[i].name),
                           .type = p->schema.items[i].type };
-    
+
             res = fun_call (O(L(p)), O(R(p)),
                             schema,
                             p->sem.fun_call.kind,
@@ -957,7 +957,7 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                             ONAME(L(p), p->sem.fun_call.iter),
                             p->sem.fun_call.occ_ind);
         }   break;
-        
+
         case la_fun_param:
         {
             PFalg_schema_t schema;
@@ -970,14 +970,14 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                     (struct PFalg_schm_item_t)
                         { .name = ONAME(p, p->schema.items[i].name),
                           .type = p->schema.items[i].type };
-    
+
             res = fun_param (PROJ(LEFT, p), O(R(p)), schema);
         }   break;
-        
+
         case la_fun_frag_param:
             res = fun_frag_param (O(L(p)), O(R(p)), p->sem.col_ref.pos);
             break;
-            
+
         case la_proxy:
         case la_proxy_base:
             PFoops (OOPS_FATAL,
@@ -1024,7 +1024,7 @@ PFmap_ori_names (PFla_op_t *root)
     map_ori_names (root, map);
 
     /* return algebra DAG with original bit-encoded names */
-    return O (root);
+    return O(root);
 }
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */

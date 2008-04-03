@@ -420,7 +420,7 @@ PFalgopt_join_graph (PFla_op_t *root, PFguide_tree_t *guide_tree)
     if (root->kind == la_serialize_seq) {
         PFla_op_t *p = root;
         PFalg_att_t item = p->sem.ser_seq.item;
-        
+
         /* introduce a new distinct operator on top of the plan if the
            input already forms a key, ... */
         if (PFprop_key (p->prop, item) &&
@@ -442,7 +442,7 @@ PFalgopt_join_graph (PFla_op_t *root, PFguide_tree_t *guide_tree)
             }
             if (frag->kind != la_frag_union) {
                 assert (frag->kind == la_empty_frag);
-            
+
                 /* introduce distinct */
                 R(p) = PFla_distinct (R(p));
             }
@@ -450,7 +450,7 @@ PFalgopt_join_graph (PFla_op_t *root, PFguide_tree_t *guide_tree)
     }
 
     /* PHASE 2: optimize based on top-down set property */
-    
+
     /* Infer set property once more */
     PFprop_infer_set (root);
     /* and evaluate all optimization on the top-down
@@ -465,7 +465,7 @@ PFalgopt_join_graph (PFla_op_t *root, PFguide_tree_t *guide_tree)
     root = PFalgopt_icol (root);
 
     /* PHASE 3: optimize based on bottom-up properties */
-    
+
     /* Infer key, icols, set, and composite key
        properties first */
     PFprop_infer_composite_key (root);

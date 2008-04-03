@@ -374,7 +374,7 @@ opt_icol (PFla_op_t *p)
             if (L(p)->kind == la_twig &&
                 !PFprop_icol (p->prop, L(p)->sem.iter_item.item))
                 switch (LL(p)->kind) {
-                            
+
                     case la_docnode:
                         *p = *PFla_project (
                                   LLL(p),

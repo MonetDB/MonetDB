@@ -218,7 +218,7 @@ infer_card (PFla_op_t *n)
 
             /* set the base to the just inferred cardinality */
             base->prop->card = L(n)->prop->card;
-            
+
             /* infer the cardinality of the body under the
              * new circumstances */
             prop_infer (R(n));

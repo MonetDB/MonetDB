@@ -120,7 +120,7 @@ add_guide_mapping (PFarray_t *map_list,
 {
     if (map_list == NULL)
         map_list = PFarray (sizeof (PFguide_mapping_t *), 5);
-    
+
     GUIDE_MAP_ADD (map_list) = guide_mapping;
 
     return map_list;
@@ -156,7 +156,7 @@ static PFarray_t *
 deep_copy_guide_mapping_list (PFarray_t *map_list)
 {
     PFarray_t *new_map_list;
-    
+
     if (map_list == NULL) return NULL;
 
     /* new mapping list that will be the copy of the map_list list
@@ -178,7 +178,7 @@ deep_copy_guide_mapping_list (PFarray_t *map_list)
  * structure (@a guide_order) to keep the guides ordered and thus
  * the duplicate elimination cheaper.
  *
- * We always try to insert new guide nodes in reverse pre-order 
+ * We always try to insert new guide nodes in reverse pre-order
  * of their guide id to keep the number of lookups for the duplicate
  * elimination traversal of the list small.
  */
@@ -189,11 +189,11 @@ add_guide (PFguide_mapping_t *mapping, PFguide_tree_t *guide)
     int          index,
                  prev_index = -1,
                  new_index;
-   
+
     assert (mapping);
     if (guide == NULL)
         return;
-    
+
     guide_id = guide->guide;
     index    = mapping->first_guide;
 
@@ -214,7 +214,7 @@ add_guide (PFguide_mapping_t *mapping, PFguide_tree_t *guide)
         mapping->first_guide = new_index;
         return;
     }
-    
+
     while (index >= 0) {
         assert (index < (int) PFarray_last (mapping->guide_order));
 
@@ -336,7 +336,7 @@ copy_intersect (PFla_op_t  *n)
 
         left_count  = PFarray_last (left_mapping->guide_list);
         right_count = PFarray_last (right_mapping->guide_list);
-        
+
         /* compute intersection */
         for (unsigned int j = 0; j < left_count; j++) {
             left_guide = GUIDE_AT(left_mapping->guide_list, j);
@@ -388,7 +388,7 @@ copy_disunion (PFla_op_t  *n)
 
         left_count  = PFarray_last (left_mapping->guide_list);
         right_count = PFarray_last (right_mapping->guide_list);
-        
+
         /* Create new mapping because left and right mappings are not NULL,
            so at least will be returned a guide mapping with no guide nodes */
         if (left_count == 0)
@@ -428,7 +428,7 @@ node_test_ (PFguide_tree_t *n, PFalg_step_spec_t spec, bool return_attr)
 
         case node_kind_doc:
             return n->kind == doc;
-            
+
         case node_kind_elem:
             if (n->kind != elem)
                 return false;
@@ -440,7 +440,7 @@ node_test_ (PFguide_tree_t *n, PFalg_step_spec_t spec, bool return_attr)
             return PFQNAME_LOC_WILDCARD(spec.qname) ||
                    strcmp (PFqname_loc (spec.qname),
                            PFqname_loc (n->name)) == 0;
-            
+
         case node_kind_attr:
             /* an attribute kind test for axis that cannot
                return attributes is always evaluated to false */
@@ -456,13 +456,13 @@ node_test_ (PFguide_tree_t *n, PFalg_step_spec_t spec, bool return_attr)
             return PFQNAME_LOC_WILDCARD(spec.qname) ||
                    strcmp (PFqname_loc (spec.qname),
                            PFqname_loc (n->name)) == 0;
-            
+
         case node_kind_text:
             return n->kind == text;
-            
+
         case node_kind_comm:
             return n->kind == comm;
-            
+
         case node_kind_pi:
             if (n->kind != pi)
                 return false;
@@ -568,10 +568,10 @@ copy_step (PFla_op_t *n)
     guides = mapping->guide_list;
     if (guides == NULL)
         return; /* return an empty mapping */
-    
-    /* lookup the number of guides */ 
+
+    /* lookup the number of guides */
     guide_count = PFarray_last (guides);
-    
+
     if (guide_count == 0)
         return; /* return an empty mapping */
 
@@ -581,7 +581,7 @@ copy_step (PFla_op_t *n)
         axis != alg_self && axis != alg_anc_s && axis != alg_desc_s &&
         n->sem.step.spec.kind == node_kind_attr)
         return; /* return an empty mapping */
-    
+
     switch (axis) {
         /* attribute axis */
         case (alg_attr):
@@ -594,7 +594,7 @@ copy_step (PFla_op_t *n)
 
                 if (children == NULL)
                     continue;
-                
+
                 /* apply node test for all children (and collect children
                    in reverse document order) */
                 for (unsigned int j = PFarray_last (children); j > 0; j--) {
@@ -609,7 +609,7 @@ copy_step (PFla_op_t *n)
         case (alg_self):
             for (unsigned int i = 0; i < guide_count; i++) {
                 guide = GUIDE_AT(guides, i);
-                
+
                 /* apply node test for all guides */
                 if (node_test_attr (guide, n->sem.step.spec))
                     add_guide (new_mapping, guide);
@@ -620,7 +620,7 @@ copy_step (PFla_op_t *n)
         case (alg_anc_s):
             for (unsigned int i = 0; i < guide_count; i++) {
                 guide = GUIDE_AT(guides, i);
-                
+
                 /* apply node test for all guides */
                 if (node_test_attr (guide, n->sem.step.spec))
                     add_guide (new_mapping, guide);
@@ -634,25 +634,25 @@ copy_step (PFla_op_t *n)
                 getAncestorFromGuide (guide, n->sem.step.spec, new_mapping);
             }
             break;
-            
+
         /* parent axis */
         case (alg_par):
             for (unsigned int i = 0; i < guide_count; i++) {
                 guide = GUIDE_AT(guides, i);
-                
+
                 if (guide->parent == NULL)
                     break;
-                
+
                 if (node_test (guide->parent, n->sem.step.spec))
                     add_guide (new_mapping, guide->parent);
             }
             break;
-            
+
         /* descendant-or-self axis */
         case (alg_desc_s):
             for (unsigned int i = 0; i < guide_count; i++) {
                 guide = GUIDE_AT(guides, i);
-                
+
                 /* apply node test for all guides */
                 if (node_test_attr (guide, n->sem.step.spec))
                     add_guide (new_mapping, guide);
@@ -665,7 +665,7 @@ copy_step (PFla_op_t *n)
                 getDescendantFromGuide (guide, n->sem.step.spec, new_mapping);
             }
             break;
-            
+
         default:
             break;
     }
@@ -843,18 +843,18 @@ infer_guide (PFla_op_t *n, PFguide_tree_t *guide)
         case la_step_join:
             /* Deep copy of right children guide_mapping_list */
             MAPPING_LIST(n) = deep_copy_guide_mapping_list (MAPPING_LIST(R(n)));
-            
+
             copy_step (n);
             break;
 
         case la_guide_step:
             copy_guide_step (n);
             break;
-            
+
         case la_guide_step_join:
             /* Deep copy of right children guide_mapping_list */
             MAPPING_LIST(n) = deep_copy_guide_mapping_list (MAPPING_LIST(R(n)));
-            
+
             copy_guide_step (n);
             break;
 
@@ -862,7 +862,7 @@ infer_guide (PFla_op_t *n, PFguide_tree_t *guide)
         case la_doc_tbl:
             /* Deep copy of left children guide_mapping_list */
             MAPPING_LIST(n) = deep_copy_guide_mapping_list (MAPPING_LIST(L(n)));
-            
+
             copy_doc_tbl (n, guide);
             break;
     }
@@ -946,7 +946,7 @@ PFprop_guide_count (PFprop_t *prop, PFalg_att_t column)
 
     /* get guide_mapping to column */
     mapping = get_guide_mapping (prop->guide_mapping_list, column);
-    
+
     /* get guide_mapping */
     if (mapping == NULL) return 0;
 
@@ -971,7 +971,7 @@ PFprop_guide_elements (PFprop_t *prop, PFalg_att_t column)
 
     /* get guide_mapping to column */
     mapping = get_guide_mapping (prop->guide_mapping_list, column);
-    
+
     /* get guide_mapping */
     if (mapping == NULL) return NULL;
 

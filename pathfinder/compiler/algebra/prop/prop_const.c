@@ -679,7 +679,7 @@ infer_const (PFla_op_t *n)
                         n->schema.items[0].name,
                         PFprop_const_val (L(n)->prop, n->sem.fun_call.iter));
             break;
-                
+
         case la_fun_param:
             copy (n->prop->constants, L(n)->prop->constants);
             break;

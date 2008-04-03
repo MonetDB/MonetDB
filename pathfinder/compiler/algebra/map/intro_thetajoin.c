@@ -548,7 +548,7 @@ find_join_worker (PFla_op_t *n,
             LEFT_COLS(n)  = att_NULL;
             RIGHT_COLS(n) = att_NULL;
             break;
-            
+
         case la_proxy:
         case la_proxy_base:
             break;

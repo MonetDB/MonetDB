@@ -185,8 +185,8 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                         { .name = UNAME(p, p->schema.items[i].name),
                           .type = p->schema.items[i].type };
 
-    
-            res = PFla_ref_tbl_ (p->sem.ref_tbl.name, 
+
+            res = PFla_ref_tbl_ (p->sem.ref_tbl.name,
                                  schema,
                                  p->sem.ref_tbl.tatts,
                                  p->sem.ref_tbl.keys);
@@ -858,7 +858,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                     (struct PFalg_schm_item_t)
                         { .name = UNAME(p, p->schema.items[i].name),
                           .type = p->schema.items[i].type };
-    
+
             res = fun_call (U(L(p)), U(R(p)),
                             schema,
                             p->sem.fun_call.kind,
@@ -867,7 +867,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                             UNAME(L(p), p->sem.fun_call.iter),
                             p->sem.fun_call.occ_ind);
         }   break;
-        
+
         case la_fun_param:
         {
             PFalg_schema_t schema;
@@ -880,14 +880,14 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                     (struct PFalg_schm_item_t)
                         { .name = UNAME(p, p->schema.items[i].name),
                           .type = p->schema.items[i].type };
-    
+
             res = fun_param (U(L(p)), U(R(p)), schema);
         }   break;
-        
+
         case la_fun_frag_param:
             res = fun_frag_param (U(L(p)), U(R(p)), p->sem.col_ref.pos);
             break;
-            
+
         case la_proxy:
         case la_proxy_base:
             PFoops (OOPS_FATAL,
@@ -939,7 +939,7 @@ PFmap_unq_names (PFla_op_t *root)
     map_unq_names (root, map);
 
     /* return algebra DAG with unique names */
-    return U (root);
+    return U(root);
 }
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */

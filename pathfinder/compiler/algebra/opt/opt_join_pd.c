@@ -1242,7 +1242,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 if (p->sem.eqjoin_unq.res != latt &&
                     p->sem.eqjoin_unq.res != ratt)
                     break;
-                        
+
                 /* We have to look at the union operator in conjunction
                    with its renaming projection operators underneath as
                    we otherwise state that the input is the same -- the
@@ -1257,7 +1257,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                  *proj_list2;
                     PFalg_att_t   cur;
                     unsigned int  count = 0;
-                    
+
                     /* create projection list */
                     proj_list1 = PFmalloc (p->schema.count *
                                            sizeof (*(proj_list1)));
@@ -1283,7 +1283,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                             count++;
                         }
                     }
-                    
+
                     /* Extend the projection list with the columns of
                        the right join input (again discarding the join
                        column. */
@@ -1299,11 +1299,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                         if (count == p->schema.count)
                             break;
                     }
-                    
+
                     /* Skip rewrite if we have duplicate columns. */
                     if (count != p->schema.count - 1)
                         break;
-                    
+
                     assert (latt1);
                     assert (latt2);
 
@@ -1315,7 +1315,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     proj_list1[count] = proj (p->sem.eqjoin_unq.res, res1);
                     proj_list2[count] = proj (p->sem.eqjoin_unq.res, res2);
                     count++;
-                    
+
                     /* This rewrite is only correct if the union operator
                        is implemented as a union all operation. */
                     *p = *disjunion (PFla_project_ (
@@ -1435,7 +1435,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
 
                     eqjoin = eqjoin_unq (L(lp), rp, latt, ratt,
                                          p->sem.eqjoin_unq.res);
-                    
+
                     /* make sure that frag and roots see
                        the new attribute node */
                     if (lp->kind == la_rownum)
@@ -1452,7 +1452,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                         *p = *(rowrank (eqjoin, lp->sem.sort.res, sortby));
                     else if (lp->kind == la_rank)
                         *p = *(rank (eqjoin, lp->sem.sort.res, sortby));
-                    
+
                     /* the schema of the new operator has to be pruned
                        to maintain the schema of the original rownum, rowrank,
                        or rank operator -- its pointer is replaced */
@@ -1680,7 +1680,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     next_join = L(p);
                 }
                 break;
-                
+
             case la_doc_access:
                 if (!is_join_att (p, lp->sem.doc_access.res)) {
                     *p = *(doc_access (L(lp),
@@ -1809,7 +1809,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 /* do not rewrite anything
                    that has to do with function application */
                 break;
-                
+
             case la_proxy:
             case la_proxy_base:
                 PFoops (OOPS_FATAL,

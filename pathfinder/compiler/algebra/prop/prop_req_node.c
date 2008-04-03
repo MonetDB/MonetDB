@@ -57,7 +57,7 @@
 /* required node property list */
 struct req_node_t {
     PFalg_att_t col;       /* column name ... */
-    
+
     /* ... and the corresponding property that tests if ... */
 
     bool        serialize; /* ... the node may be used (indirectly) for
@@ -88,7 +88,7 @@ typedef struct req_node_t req_node_t;
 #define AXIS_UP_AT(n,i)   (((req_node_t *) PFarray_at ((n), (i)))->axis_up)
 #define AXIS_SELF_AT(n,i) (((req_node_t *) PFarray_at ((n), (i)))->axis_self)
 #define CONSTR_AT(n,i)    (((req_node_t *) PFarray_at ((n), (i)))->constr)
-    
+
 /**
  * @brief look up the property mapping (in @a l) for a given column @a attr.
  */
@@ -119,13 +119,13 @@ add_map_ (PFla_op_t *n, PFalg_att_t attr,
 
     /* lookup the mapping (if present) */
     map = find_map (MAP_LIST(n), attr);
-    
+
     /* add a new mapping */
     if (!map) {
         /* create a new mapping list if not already available */
         if (!MAP_LIST(n))
             MAP_LIST(n) = PFarray (sizeof (req_node_t), 3);
-    
+
         *((req_node_t *) PFarray_add (MAP_LIST(n)))
             = (req_node_t) { .col       = attr,
                              .serialize = serialize,
@@ -231,7 +231,7 @@ static void
 prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
 {
     req_node_t *map;
-    
+
     assert (n);
 
     /* initialize the mapping list if we need it
@@ -277,7 +277,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                 ADD(MAP_LIST(n), MAP_AT(req_node_vals, i));
         }
     }
-                
+
     /* nothing to do if we haven't collected
        all incoming required node property lists of that node */
     if (EDGE(n) > 1) {
@@ -292,7 +292,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
 
             if (type_of (n, n->sem.ser_seq.pos) & aat_node)
                 add_order_map (n, n->sem.ser_seq.pos);
-                
+
             prop_infer_req_node_vals (L(n), NULL); /* fragments */
             prop_infer_req_node_vals (R(n), MAP_LIST(n));
             return; /* only infer once */
@@ -300,7 +300,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         case la_serialize_rel:
             if (type_of (n, n->sem.ser_rel.pos) & aat_node)
                 add_order_map (n, n->sem.ser_rel.pos);
-            
+
             for (unsigned int i = 0; i < n->sem.ser_rel.items.count; i++)
                 if (type_of (n, n->sem.ser_rel.items.atts[i]) & aat_node)
                     add_serialize_map (n, n->sem.ser_rel.items.atts[i]);
@@ -366,7 +366,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             for (unsigned int i = 0; i < PFord_count (sortby); i++)
                 if (type_of (n, PFord_order_col_at (sortby, i)) & aat_node)
                     add_order_map (n, PFord_order_col_at (sortby, i));
-            
+
             if (n->sem.pos_sel.part &&
                 type_of (n, n->sem.pos_sel.part) & aat_node)
                 add_id_map (n, n->sem.pos_sel.part);
@@ -374,7 +374,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
 
         case la_disjunion:
             break;
-            
+
         case la_intersect:
         case la_difference:
         case la_distinct:
@@ -382,7 +382,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                 if (n->schema.items[i].type & aat_node)
                     add_id_map (n, n->schema.items[i].name);
             break;
-            
+
         case la_fun_1to1:
             /* mark the input columns as access columns */
             for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
@@ -397,7 +397,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                 add_id_map (n, n->sem.binary.att2);
             }
             break;
-            
+
         case la_to:
         case la_bool_or:
         case la_bool_and:
@@ -431,16 +431,16 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             for (unsigned int i = 0; i < PFord_count (sortby); i++)
                 if (type_of (n, PFord_order_col_at (sortby, i)) & aat_node)
                     add_order_map (n, PFord_order_col_at (sortby, i));
-            
+
             if (n->sem.sort.part &&
                 type_of (n, n->sem.sort.part) & aat_node)
                 add_id_map (n, n->sem.sort.part);
         }   break;
-            
+
         case la_rowid:
             /* the output cannot be of type node */
             break;
-            
+
         case la_cast:
             assert ((type_of (n, n->sem.type.att) & aat_node) == 0);
         case la_type:
@@ -456,7 +456,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         {
             PFarray_t *new_map = PFarray (sizeof (req_node_t), 1),
                       *old_map;
-            
+
             map = find_map (MAP_LIST(n), n->sem.step.item_res);
 
             /* inherit the properties of the output */
@@ -465,11 +465,11 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                 map_item.col = n->sem.step.item;
                 ADD(new_map, map_item);
             }
-            
+
             /* replace current map by new_map and store the current */
             old_map = MAP_LIST(n);
             MAP_LIST(n) = new_map;
-            
+
             switch (n->sem.step.spec.axis) {
                 case alg_anc_s:
                     add_axis_self_map (n, n->sem.step.item);
@@ -485,22 +485,22 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                 case alg_desc:
                     add_axis_down_map (n, n->sem.step.item);
                     break;
-                    
+
                 case alg_fol:
                 case alg_fol_s:
                 case alg_prec:
                 case alg_prec_s:
                     add_axis_side_map (n, n->sem.step.item);
                     break;
-                                 
+
                 case alg_self:
                     add_axis_self_map (n, n->sem.step.item);
                     break;
             }
-            
+
             /* switch back */
             MAP_LIST(n) = old_map;
-            
+
             prop_infer_req_node_vals (L(n), NULL); /* fragments */
             prop_infer_req_node_vals (R(n), new_map);
         }   return; /* only infer once */
@@ -515,7 +515,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                 map_item.col = n->sem.step.item;
                 ADD(MAP_LIST(n), map_item);
             }
-            
+
             switch (n->sem.step.spec.axis) {
                 case alg_anc_s:
                     add_axis_self_map (n, n->sem.step.item);
@@ -531,19 +531,19 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                 case alg_desc:
                     add_axis_down_map (n, n->sem.step.item);
                     break;
-                    
+
                 case alg_fol:
                 case alg_fol_s:
                 case alg_prec:
                 case alg_prec_s:
                     add_axis_side_map (n, n->sem.step.item);
                     break;
-                                 
+
                 case alg_self:
                     add_axis_self_map (n, n->sem.step.item);
                     break;
             }
-            
+
             prop_infer_req_node_vals (L(n), NULL); /* fragments */
             prop_infer_req_node_vals (R(n), MAP_LIST(n));
             return; /* only infer once */
@@ -557,10 +557,10 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                 map_item.col = n->sem.step.item;
                 ADD(MAP_LIST(n), map_item);
             }
-            
+
             /* we need to look up the ids in a special relation */
             add_id_map (n, n->sem.step.item);
-            
+
             prop_infer_req_node_vals (L(n), NULL); /* fragments */
             prop_infer_req_node_vals (R(n), MAP_LIST(n));
             return; /* only infer once */
@@ -581,7 +581,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         case la_doc_access:
             assert ((type_of (n, n->sem.doc_access.res) & aat_node) == 0);
             add_access_map (n, n->sem.doc_access.att);
-            
+
             prop_infer_req_node_vals (L(n), NULL); /* fragments */
             prop_infer_req_node_vals (R(n), MAP_LIST(n));
             return; /* only infer once */
@@ -589,7 +589,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         case la_twig:
             if (MAP_LIST(n) != NULL && PFarray_last (MAP_LIST(n)) > 0) {
                 PFarray_t *new_map = PFarray (sizeof (req_node_t), 2);
-                
+
                 map = find_map (MAP_LIST(n), n->sem.iter_item.iter);
 
                 /* inherit the properties of the iter column */
@@ -598,7 +598,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                     map_item.col = att_iter;
                     ADD(new_map, map_item);
                 }
-                
+
                 map = find_map (MAP_LIST(n), n->sem.iter_item.item);
 
                 /* inherit the properties of the item column */
@@ -614,22 +614,22 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                         map_item.order  = false;
                         map_item.access = false;
                     }
-                    
+
                     ADD(new_map, map_item);
                 }
-                
+
                 prop_infer_req_node_vals (L(n), new_map);
                 return; /* only infer once */
             }
             break;
-            
+
         case la_fcns:
             break;
 
         case la_docnode:
             if (MAP_LIST(n) != NULL && PFarray_last (MAP_LIST(n)) > 0) {
                 PFarray_t *new_map = PFarray (sizeof (req_node_t), 1);
-                
+
                 map = find_map (MAP_LIST(n), att_iter);
 
                 /* inherit the properties of the iter column */
@@ -638,7 +638,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                     map_item.col = n->sem.docnode.iter;
                     ADD(new_map, map_item);
                 }
-                
+
                 prop_infer_req_node_vals (L(n), new_map);
                 return; /* only infer once */
             }
@@ -647,7 +647,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         case la_element:
             if (MAP_LIST(n) != NULL && PFarray_last (MAP_LIST(n)) > 0) {
                 PFarray_t *new_map = PFarray (sizeof (req_node_t), 1);
-                
+
                 map = find_map (MAP_LIST(n), att_iter);
 
                 /* inherit the properties of the iter column */
@@ -656,7 +656,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                     map_item.col = n->sem.iter_item.iter;
                     ADD(new_map, map_item);
                 }
-                
+
                 prop_infer_req_node_vals (L(n), new_map);
                 prop_infer_req_node_vals (R(n), MAP_LIST(n));
                 return; /* only infer once */
@@ -667,7 +667,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         case la_comment:
             if (MAP_LIST(n) != NULL && PFarray_last (MAP_LIST(n)) > 0) {
                 PFarray_t *new_map = PFarray (sizeof (req_node_t), 1);
-                
+
                 map = find_map (MAP_LIST(n), att_iter);
 
                 /* inherit the properties of the iter column */
@@ -676,7 +676,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                     map_item.col = n->sem.iter_item.iter;
                     ADD(new_map, map_item);
                 }
-                
+
                 prop_infer_req_node_vals (L(n), new_map);
                 return; /* only infer once */
             }
@@ -686,7 +686,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         case la_processi:
             if (MAP_LIST(n) != NULL && PFarray_last (MAP_LIST(n)) > 0) {
                 PFarray_t *new_map = PFarray (sizeof (req_node_t), 2);
-                
+
                 map = find_map (MAP_LIST(n), att_iter);
 
                 /* inherit the properties of the iter column */
@@ -695,7 +695,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                     map_item.col = n->sem.iter_item1_item2.iter;
                     ADD(new_map, map_item);
                 }
-                
+
                 prop_infer_req_node_vals (L(n), new_map);
                 return; /* only infer once */
             }
@@ -705,7 +705,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         {
             PFarray_t *new_map = PFarray (sizeof (req_node_t), 2),
                       *old_map;
-            
+
             map = find_map (MAP_LIST(n), att_iter);
 
             /* inherit the properties of the iter column */
@@ -714,7 +714,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                 map_item.col = n->sem.iter_pos_item.iter;
                 ADD(new_map, map_item);
             }
-            
+
             map = find_map (MAP_LIST(n), att_item);
 
             /* inherit the properties of the iter column */
@@ -727,12 +727,12 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             /* replace current map by new_map and store the current */
             old_map = MAP_LIST(n);
             MAP_LIST(n) = new_map;
-            
+
             add_constr_map (n, n->sem.iter_pos_item.item);
-            
+
             /* switch back */
             MAP_LIST(n) = old_map;
-            
+
             prop_infer_req_node_vals (L(n), NULL); /* fragments */
             prop_infer_req_node_vals (R(n), new_map);
             return; /* only infer once */
@@ -740,7 +740,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
 
         case la_merge_adjacent:
             add_constr_map (n, n->sem.merge_adjacent.item_in);
-            
+
             prop_infer_req_node_vals (L(n), NULL); /* fragments */
             prop_infer_req_node_vals (R(n), MAP_LIST(n));
             return; /* only infer once */
@@ -752,7 +752,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         case la_error:
             /* propagate required property list to left subtree */
             break;
-            
+
         case la_fragment:
         case la_frag_extract:
             prop_infer_req_node_vals (L(n), NULL); /* fragments */
@@ -772,7 +772,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         case la_trace:
             if (type_of (n, n->sem.iter_pos_item.item) & aat_node)
                 add_serialize_map (n, n->sem.iter_pos_item.item);
-            
+
             prop_infer_req_node_vals (L(n), MAP_LIST(n));
             prop_infer_req_node_vals (R(n), NULL); /* trace */
             return; /* only infer once */
@@ -794,20 +794,20 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         {
             PFarray_t *new_map = PFarray (sizeof (req_node_t),
                                           n->schema.count);
-            
+
             for (unsigned int i = 0; i < n->schema.count; i++)
                 if (n->schema.items[i].type & aat_node) {
                     req_node_t map_item;
-                    map_item.col       = n->schema.items[i].name; 
-                    map_item.serialize = true; 
-                    map_item.id        = true; 
-                    map_item.order     = true; 
-                    map_item.access    = true; 
-                    map_item.axis_down = true; 
-                    map_item.axis_side = true; 
-                    map_item.axis_up   = true; 
-                    map_item.axis_self = true; 
-                    map_item.constr    = true; 
+                    map_item.col       = n->schema.items[i].name;
+                    map_item.serialize = true;
+                    map_item.id        = true;
+                    map_item.order     = true;
+                    map_item.access    = true;
+                    map_item.axis_down = true;
+                    map_item.axis_side = true;
+                    map_item.axis_up   = true;
+                    map_item.axis_self = true;
+                    map_item.constr    = true;
 
                     ADD(new_map, map_item);
                 }
@@ -825,20 +825,20 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         {
             PFarray_t *new_map = PFarray (sizeof (req_node_t),
                                           n->schema.count);
-            
+
             for (unsigned int i = 0; i < n->schema.count; i++)
                 if (n->schema.items[i].type & aat_node) {
                     req_node_t map_item;
-                    map_item.col       = n->schema.items[i].name; 
-                    map_item.serialize = true; 
-                    map_item.id        = true; 
-                    map_item.order     = true; 
-                    map_item.access    = true; 
-                    map_item.axis_down = true; 
-                    map_item.axis_side = true; 
-                    map_item.axis_up   = true; 
-                    map_item.axis_self = true; 
-                    map_item.constr    = true; 
+                    map_item.col       = n->schema.items[i].name;
+                    map_item.serialize = true;
+                    map_item.id        = true;
+                    map_item.order     = true;
+                    map_item.access    = true;
+                    map_item.axis_down = true;
+                    map_item.axis_side = true;
+                    map_item.axis_up   = true;
+                    map_item.axis_self = true;
+                    map_item.constr    = true;
 
                     ADD(new_map, map_item);
                 }
@@ -849,31 +849,31 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
 
         case la_rec_base:
             break;
-            
+
         case la_fun_call:
             assert ((type_of (n, n->sem.fun_call.iter) & aat_node) == 0);
             prop_infer_req_node_vals (L(n), NULL);
             prop_infer_req_node_vals (R(n), NULL); /* function param */
             return; /* only infer once */
-            
+
         case la_fun_param:
         {
             PFarray_t *new_map = PFarray (sizeof (req_node_t),
                                           n->schema.count);
-            
+
             for (unsigned int i = 0; i < n->schema.count; i++)
                 if (n->schema.items[i].type & aat_node) {
                     req_node_t map_item;
-                    map_item.col       = n->schema.items[i].name; 
-                    map_item.serialize = true; 
-                    map_item.id        = true; 
-                    map_item.order     = true; 
-                    map_item.access    = true; 
-                    map_item.axis_down = true; 
-                    map_item.axis_side = true; 
-                    map_item.axis_up   = true; 
-                    map_item.axis_self = true; 
-                    map_item.constr    = true; 
+                    map_item.col       = n->schema.items[i].name;
+                    map_item.serialize = true;
+                    map_item.id        = true;
+                    map_item.order     = true;
+                    map_item.access    = true;
+                    map_item.axis_down = true;
+                    map_item.axis_side = true;
+                    map_item.axis_up   = true;
+                    map_item.axis_self = true;
+                    map_item.constr    = true;
 
                     ADD(new_map, map_item);
                 }
@@ -881,7 +881,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             prop_infer_req_node_vals (L(n), new_map);
             prop_infer_req_node_vals (R(n), NULL); /* function param */
         }   return; /* only infer once */
-            
+
         case la_fun_frag_param:
             prop_infer_req_node_vals (L(n), NULL); /* fragments */
             prop_infer_req_node_vals (R(n), NULL); /* function param */
@@ -896,11 +896,11 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             PFoops (OOPS_FATAL,
                     "clone column aware equi-join operator is "
                     "only allowed with unique attribute names!");
-            
+
         case la_string_join:
             if (MAP_LIST(n) != NULL && PFarray_last (MAP_LIST(n)) > 0) {
                 PFarray_t *new_map = PFarray (sizeof (req_node_t), 1);
-                
+
                 map = find_map (MAP_LIST(n), n->sem.string_join.iter_res);
 
                 /* inherit the properties of the iter column */
@@ -909,18 +909,18 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                     map_item.col = n->sem.string_join.iter;
                     ADD(new_map, map_item);
                 }
-                
+
                 prop_infer_req_node_vals (L(n), new_map);
 
                 PFarray_last (new_map) = 0;
-                
+
                 /* inherit the properties of the iter column */
                 if (map) {
                     req_node_t map_item = *map;
                     map_item.col = n->sem.string_join.iter_sep;
                     ADD(new_map, map_item);
                 }
-                
+
                 prop_infer_req_node_vals (R(n), new_map);
                 return; /* only infer once */
             }

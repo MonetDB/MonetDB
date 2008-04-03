@@ -122,7 +122,7 @@ static PFalg_att_t
 schema2collist (PFla_op_t *n)
 {
     PFalg_att_t res = empty_list;
-    
+
     for (unsigned int i = 0; i < n->schema.count; i++) {
         res |= n->schema.items[i].name;
     }
@@ -224,7 +224,7 @@ prop_infer_reqvals (PFla_op_t *n,
     /* in the first call we use the required values of the caller */
     if (!SEEN(n)) {
         n->prop->req_bool_vals = req_bool_vals;
-        
+
         oc = intersect (cols, order_cols);
         bc = intersect (cols, bijective_cols);
         mc = intersect (cols, multi_col_cols);
@@ -235,7 +235,7 @@ prop_infer_reqvals (PFla_op_t *n,
         bc = n->prop->req_bijective_cols;
         mc = n->prop->req_multi_col_cols;
         vc = n->prop->req_value_cols;
-    
+
         /* collect all columns whose order is necessary */
         oc = union_ (oc, intersect (cols, order_cols));
         /* collect all columns whose bijective value mapping is necessary */
@@ -249,7 +249,7 @@ prop_infer_reqvals (PFla_op_t *n,
         /* collect all columns whose real value is necessary */
         vc = union_ (vc, intersect (cols, value_cols));
     }
-    /* store the combined lists */ 
+    /* store the combined lists */
     n->prop->req_order_cols     = oc;
     n->prop->req_bijective_cols = bc;
     n->prop->req_multi_col_cols = mc;
@@ -314,7 +314,7 @@ prop_infer_reqvals (PFla_op_t *n,
             bc = empty_list;
             mc = diff (diff (cols, n->sem.ser_rel.iter), n->sem.ser_rel.pos);
             vc = union_ (vc, n->sem.ser_rel.iter);
-            
+
             for (unsigned int i = 0; i < n->sem.ser_rel.items.count; i++) {
                 mc = diff (mc, n->sem.ser_rel.items.atts[i]);
                 vc = union_ (vc, n->sem.ser_rel.items.atts[i]);
@@ -409,12 +409,12 @@ prop_infer_reqvals (PFla_op_t *n,
                 vc = union_ (vc, n->sem.eqjoin.att1);
                 vc_right = union_ (empty_list, n->sem.eqjoin.att2);
             }
-            
+
             /* remove columns as we cannot split up the join column */
             mc = diff (mc, n->sem.eqjoin.att1);
 
             prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
-            
+
             cols = union_ (empty_list, n->sem.eqjoin.att2);
             rv.name = empty_list;
             rv.val = empty_list;
@@ -428,7 +428,7 @@ prop_infer_reqvals (PFla_op_t *n,
             for (unsigned int i = 0; i < n->sem.thetajoin.count; i++) {
                 PFalg_att_t left  = n->sem.thetajoin.pred[i].left,
                             right = n->sem.thetajoin.pred[i].right;
-                
+
                 if (n->sem.thetajoin.pred[i].comp == alg_comp_eq &&
                     (PFprop_subdom (n->prop,
                                     PFprop_dom_right (n->prop,
@@ -471,7 +471,7 @@ prop_infer_reqvals (PFla_op_t *n,
             vc = empty_list;
             cols = empty_list;
             /* and fill them again based on the original stored values */
-            
+
             /* rename reqvals columns from new to old */
             for (unsigned int i = 0; i < n->sem.proj.count; i++) {
                 if (in (n->prop->req_bool_vals.name,
@@ -502,7 +502,7 @@ prop_infer_reqvals (PFla_op_t *n,
                                                  n->sem.select.att);
             rv.name = union_ (rv.name, n->sem.select.att);
             rv.val = union_ (rv.val, n->sem.select.att);
-            
+
             /* we have a real value column here */
             oc = diff (oc, n->sem.select.att);
             bc = diff (bc, n->sem.select.att);
@@ -519,7 +519,7 @@ prop_infer_reqvals (PFla_op_t *n,
                  oc = union_ (oc, PFord_order_col_at (sortby, i));
                  mc = union_ (mc, PFord_order_col_at (sortby, i));
             }
-            
+
             if (n->sem.pos_sel.part) {
                 /* we only have to provide the same groups */
                 bc = union_ (bc, n->sem.pos_sel.part);
@@ -536,7 +536,7 @@ prop_infer_reqvals (PFla_op_t *n,
             oc = empty_list;
             bc = empty_list;
             mc = empty_list;
-            
+
             /* Keep order columns, bijective value columns and multi
                column columns if they stem from the same operator.
                For all other columns we require the real values. */
@@ -555,14 +555,14 @@ prop_infer_reqvals (PFla_op_t *n,
                         bc = union_ (bc, cur);
                     if (in (n->prop->req_multi_col_cols, cur))
                         mc = union_ (mc, cur);
-                    
+
                     if (!in (oc, cur) && !in (bc, cur) && !in (mc, cur))
                         vc  = union_ (vc,  cur);
                 } else
                     vc  = union_ (vc,  cur);
             }
             break;
-            
+
         case la_difference:
             /* We have to apply a natural join here which means
                the values should be comparable. (Including domain
@@ -570,7 +570,7 @@ prop_infer_reqvals (PFla_op_t *n,
             oc = empty_list;
             bc = empty_list;
             mc = empty_list;
-            
+
             for (unsigned int i = 0; i < n->schema.count; i++) {
                 PFalg_att_t cur = n->schema.items[i].name;
                 if ((PFprop_subdom (n->prop,
@@ -586,31 +586,31 @@ prop_infer_reqvals (PFla_op_t *n,
                         bc = union_ (bc, cur);
                     if (in (n->prop->req_multi_col_cols, cur))
                         mc = union_ (mc, cur);
-                    
+
                     if (!in (oc, cur) && !in (bc, cur) && !in (mc, cur))
                         vc  = union_ (vc,  cur);
                 } else
                     vc  = union_ (vc,  cur);
             }
-            
+
             prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
 
             rv.name = empty_list;
             rv.val = empty_list;
             prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
             return; /* only infer once */
-            
+
         case la_distinct:
             /* for all columns where we do not need the real values
                we need at least the bijectivity of the values */
             bc = diff (cols, vc);
             mc = diff (cols, vc);
             break;
-            
+
         case la_fun_1to1:
             rv.name = diff (rv.name, n->sem.fun_1to1.res);
             rv.val = diff (rv.val, n->sem.fun_1to1.res);
-            
+
             /* mark the input columns as value columns */
             for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
                 vc = union_ (vc, n->sem.fun_1to1.refs.atts[i]);
@@ -624,7 +624,7 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_to:
             rv.name = diff (rv.name, n->sem.binary.res);
             rv.val = diff (rv.val, n->sem.binary.res);
-            
+
             /* mark the input columns as value columns */
             vc = union_ (union_ (vc, n->sem.binary.att1), n->sem.binary.att2);
 
@@ -640,7 +640,7 @@ prop_infer_reqvals (PFla_op_t *n,
                 rv.name = union_ (rv.name, n->sem.binary.att2);
                 rv.val = union_ (rv.val, n->sem.binary.att2);
             }
-            
+
             /* mark the input columns as value columns */
             vc = union_ (union_ (vc, n->sem.binary.att1), n->sem.binary.att2);
 
@@ -656,7 +656,7 @@ prop_infer_reqvals (PFla_op_t *n,
                 rv.name = union_ (rv.name, n->sem.binary.att2);
                 rv.val = diff (rv.val, n->sem.binary.att2);
             }
-            
+
             /* mark the input columns as value columns */
             vc = union_ (union_ (vc, n->sem.binary.att1), n->sem.binary.att2);
 
@@ -676,7 +676,7 @@ prop_infer_reqvals (PFla_op_t *n,
             }
             rv.name = diff (rv.name, n->sem.unary.res);
             rv.val = diff (rv.val, n->sem.unary.res);
-            
+
             /* mark the input columns as value columns */
             vc = union_ (vc, n->sem.unary.att);
 
@@ -693,7 +693,7 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_all:
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             /* mark the input columns as value columns */
             vc = union_ (diff (vc, n->sem.aggr.res), n->sem.aggr.att);
 
@@ -703,7 +703,7 @@ prop_infer_reqvals (PFla_op_t *n,
                 /* we cannot split up a partition column */
                 mc = diff (mc, n->sem.aggr.part);
             }
-            
+
             /* make the new column invisible for the children */
             cols = diff (cols, n->sem.aggr.res);
 
@@ -724,7 +724,7 @@ prop_infer_reqvals (PFla_op_t *n,
                  oc = union_ (oc , PFord_order_col_at (sortby, i));
                  mc = union_ (mc, PFord_order_col_at (sortby, i));
             }
-            
+
             if (n->sem.sort.part) {
                 /* we only have to provide the same groups */
                 bc = union_ (bc, n->sem.sort.part);
@@ -734,12 +734,12 @@ prop_infer_reqvals (PFla_op_t *n,
             /* make the new column invisible for the children */
             cols = diff (cols, n->sem.sort.res);
         }   break;
-            
+
         case la_rowid:
             /* make the new column invisible for the children */
             cols = diff (cols, n->sem.rowid.res);
             break;
-            
+
         case la_cast:
             if (n->sem.type.ty == aat_bln) {
                 bool att_bln = false;
@@ -757,10 +757,10 @@ prop_infer_reqvals (PFla_op_t *n,
             }
             rv.name = diff (rv.name, n->sem.type.res);
             rv.val = diff (rv.val, n->sem.type.res);
-            
+
             if (!in (vc, n->sem.type.res) &&
                 !in (bc, n->sem.type.res) &&
-                in (oc, n->sem.type.res)) 
+                in (oc, n->sem.type.res))
                 /* mark the input column as order column if
                    not used differently */
                 oc = union_ (oc, n->sem.type.att);
@@ -775,7 +775,7 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_type:
             rv.name = diff (rv.name, n->sem.type.res);
             rv.val = diff (rv.val, n->sem.type.res);
-            
+
             /* mark the input columns as value columns */
             vc = union_ (vc, n->sem.type.att);
 
@@ -794,7 +794,7 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_guide_step:
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             /* to make up for the schema change
                we add the input columns by hand */
             cols = union_ (union_ (empty_list, n->sem.step.iter),
@@ -803,7 +803,7 @@ prop_infer_reqvals (PFla_op_t *n,
             bc   = empty_list;
             mc   = empty_list;
             vc   = cols;
-            
+
             prop_infer_reqvals_empty (L(n)); /* fragments */
             prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
             return; /* only infer once */
@@ -812,13 +812,13 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_guide_step_join:
             rv.name = diff (rv.name, n->sem.step.item_res);
             rv.val = diff (rv.val, n->sem.step.item_res);
-            
+
             /* mark the input columns as value columns */
             vc = union_ (vc, n->sem.step.item);
 
             /* make the new column invisible for the children */
             cols = diff (cols, n->sem.step.item_res);
-            
+
             prop_infer_reqvals_empty (L(n)); /* fragments */
             prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
             return; /* only infer once */
@@ -833,7 +833,7 @@ prop_infer_reqvals (PFla_op_t *n,
 
             /* make the new column invisible for the children */
             cols = diff (cols, n->sem.doc_join.item_res);
-            
+
             prop_infer_reqvals_empty (L(n)); /* fragments */
             prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
             return; /* only infer once */
@@ -841,7 +841,7 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_doc_tbl:
             rv.name = diff (rv.name, n->sem.doc_tbl.res);
             rv.val = diff (rv.val, n->sem.doc_tbl.res);
-            
+
             /* mark the input columns as value columns */
             vc = union_ (vc, n->sem.doc_tbl.att);
 
@@ -852,13 +852,13 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_doc_access:
             rv.name = diff (rv.name, n->sem.doc_access.res);
             rv.val = diff (rv.val, n->sem.doc_access.res);
-            
+
             /* mark the input columns as value columns */
             vc = union_ (vc, n->sem.doc_access.att);
 
             /* make the new column invisible for the children */
             cols = diff (cols, n->sem.doc_access.res);
-            
+
             prop_infer_reqvals_empty (L(n)); /* fragments */
             prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
             return; /* only infer once */
@@ -874,7 +874,7 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_docnode:
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             /* to make up for the schema change
                we add the input columns by hand */
             cols = union_ (empty_list, n->sem.docnode.iter);
@@ -882,7 +882,7 @@ prop_infer_reqvals (PFla_op_t *n,
             bc   = empty_list;
             mc   = empty_list;
             vc   = cols;
-            
+
             prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
             prop_infer_reqvals_empty (R(n)); /* constructor */
             return; /* only infer once */
@@ -890,7 +890,7 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_element:
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             /* to make up for the schema change
                we add the input columns by hand */
             cols = union_ (union_ (empty_list, n->sem.iter_item.iter),
@@ -899,7 +899,7 @@ prop_infer_reqvals (PFla_op_t *n,
             bc   = empty_list;
             mc   = empty_list;
             vc   = cols;
-            
+
             prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
             prop_infer_reqvals_empty (R(n)); /* constructor */
             return; /* only infer once */
@@ -908,7 +908,7 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_comment:
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             /* to make up for the schema change
                we add the input columns by hand */
             cols = union_ (union_ (empty_list, n->sem.iter_item.iter),
@@ -918,15 +918,15 @@ prop_infer_reqvals (PFla_op_t *n,
             mc   = empty_list;
             vc   = cols;
             break;
-            
+
         case la_attribute:
         case la_processi:
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             /* to make up for the schema change
                we add the input columns by hand */
-            cols = union_ (union_ (union_ (empty_list, 
+            cols = union_ (union_ (union_ (empty_list,
                                            n->sem.iter_item1_item2.iter),
                                    n->sem.iter_item1_item2.item1),
                            n->sem.iter_item1_item2.item2);
@@ -939,10 +939,10 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_content:
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             /* to make up for the schema change
                we add the input columns by hand */
-            cols = union_ (union_ (union_ (empty_list, 
+            cols = union_ (union_ (union_ (empty_list,
                                            n->sem.iter_pos_item.iter),
                                    n->sem.iter_pos_item.pos),
                            n->sem.iter_pos_item.item);
@@ -950,7 +950,7 @@ prop_infer_reqvals (PFla_op_t *n,
             bc   = empty_list;
             mc   = empty_list;
             vc   = cols;
-            
+
             prop_infer_reqvals_empty (L(n)); /* fragments */
             prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
             return; /* only infer once */
@@ -958,10 +958,10 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_merge_adjacent:
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             /* to make up for the schema change
                we add the input columns by hand */
-            cols = union_ (union_ (union_ (empty_list, 
+            cols = union_ (union_ (union_ (empty_list,
                                            n->sem.merge_adjacent.iter_in),
                                    n->sem.merge_adjacent.pos_in),
                            n->sem.merge_adjacent.item_in);
@@ -969,7 +969,7 @@ prop_infer_reqvals (PFla_op_t *n,
             bc   = empty_list;
             mc   = empty_list;
             vc   = cols;
-            
+
             prop_infer_reqvals_empty (L(n)); /* fragments */
             prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
             return; /* only infer once */
@@ -981,7 +981,7 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_error:
             /* propagate required values list to left subtree */
             break;
-            
+
         case la_fragment:
         case la_frag_extract:
             prop_infer_reqvals_empty (L(n)); /* fragments */
@@ -997,7 +997,7 @@ prop_infer_reqvals (PFla_op_t *n,
 
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             /* to make up for the schema change
                we add the input columns by hand */
             cols = union_ (empty_list, n->sem.err.att);
@@ -1005,17 +1005,17 @@ prop_infer_reqvals (PFla_op_t *n,
             bc   = empty_list;
             mc   = empty_list;
             vc   = cols;
-            
+
             prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
             return; /* only infer once */
 
         case la_trace:
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             /* to make up for the schema change
                we add the input columns by hand */
-            cols = union_ (union_ (union_ (empty_list, 
+            cols = union_ (union_ (union_ (empty_list,
                                            n->sem.iter_pos_item.iter),
                                    n->sem.iter_pos_item.pos),
                            n->sem.iter_pos_item.item);
@@ -1023,7 +1023,7 @@ prop_infer_reqvals (PFla_op_t *n,
             bc   = empty_list;
             mc   = empty_list;
             vc   = cols;
-            
+
             prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
             prop_infer_reqvals_empty (R(n)); /* trace */
             return; /* only infer once */
@@ -1031,7 +1031,7 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_trace_msg:
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             /* to make up for the schema change
                we add the input columns by hand */
             cols = union_ (union_ (empty_list, n->sem.iter_item.iter),
@@ -1040,7 +1040,7 @@ prop_infer_reqvals (PFla_op_t *n,
             bc   = empty_list;
             mc   = empty_list;
             vc   = cols;
-            
+
             prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
             prop_infer_reqvals_empty (R(n)); /* trace */
             return; /* only infer once */
@@ -1048,7 +1048,7 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_trace_map:
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             /* to make up for the schema change
                we add the input columns by hand */
             cols = union_ (union_ (empty_list, n->sem.trace_map.inner),
@@ -1057,7 +1057,7 @@ prop_infer_reqvals (PFla_op_t *n,
             bc   = empty_list;
             mc   = empty_list;
             vc   = cols;
-            
+
             prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
             prop_infer_reqvals_empty (R(n)); /* trace */
             return; /* only infer once */
@@ -1066,12 +1066,12 @@ prop_infer_reqvals (PFla_op_t *n,
             /* infer no required values */
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
             vc  = cols;
-            
+
             prop_infer_reqvals_empty (L(n)); /* recursion param */
             prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
             return; /* only infer once */
@@ -1085,24 +1085,24 @@ prop_infer_reqvals (PFla_op_t *n,
             /* infer no required values */
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
             vc  = cols;
-            
+
             prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
             prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
             return; /* only infer once */
 
         case la_rec_base:
             break;
-            
+
         case la_fun_call:
             /* infer no required values */
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             /* to make up for the schema change
                we add the input columns by hand */
             oc   = empty_list;
@@ -1110,25 +1110,25 @@ prop_infer_reqvals (PFla_op_t *n,
             mc   = empty_list;
             cols = union_ (empty_list, n->sem.fun_call.iter);
             vc   = cols;
-            
+
             prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
             prop_infer_reqvals_empty (R(n)); /* function param */
             return; /* only infer once */
-            
+
         case la_fun_param:
             /* infer no required values */
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
             vc   = cols;
-            
+
             prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
             prop_infer_reqvals_empty (R(n)); /* function param */
             return; /* only infer once */
-            
+
         case la_fun_frag_param:
             prop_infer_reqvals_empty (L(n)); /* fragments */
             prop_infer_reqvals_empty (R(n)); /* function param */
@@ -1143,11 +1143,11 @@ prop_infer_reqvals (PFla_op_t *n,
             PFoops (OOPS_FATAL,
                     "clone column aware equi-join operator is "
                     "only allowed with unique attribute names!");
-            
+
         case la_string_join:
             rv.name = empty_list;
             rv.val = empty_list;
-            
+
             /* to make up for the schema change
                we add the input columns by hand */
             cols = union_ (union_ (union_ (empty_list,
@@ -1158,15 +1158,15 @@ prop_infer_reqvals (PFla_op_t *n,
             bc   = empty_list;
             mc   = empty_list;
             vc   = cols;
-            
+
             prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
-            
+
             /* to make up for the schema change
                we add the input columns by hand */
             cols = union_ (union_ (empty_list, n->sem.string_join.iter_sep),
                            n->sem.string_join.item_sep);
             vc   = cols;
-            
+
             prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
             return; /* only infer once */
     }
@@ -1218,7 +1218,7 @@ PFprop_infer_reqval (PFla_op_t *root) {
     /* We need the domain property to detect more bijective
        columns (in operators with two children). */
        PFprop_infer_nat_dom (root);
-        
+
     /* collect number of incoming edges (parents) */
     prop_infer (root);
     PFla_dag_reset (root);
@@ -1229,4 +1229,4 @@ PFprop_infer_reqval (PFla_op_t *root) {
     PFla_dag_reset (root);
 }
 
-
+/* vim:set shiftwidth=4 expandtab filetype=c: */

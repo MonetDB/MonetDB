@@ -320,7 +320,7 @@ resolve_name_conflicts (PFla_op_t *n, PFalg_schema_t schema)
     used_cols = conf_cols;
     for (i = 0; i < n->schema.count; i++)
         used_cols = used_cols | n->schema.items[i].name;
-    
+
     /* check for conflicts */
     for (i = 0; i < PFarray_last (pred); i++) {
         if (LEFT_AT(pred, i) & conf_cols) {
@@ -361,7 +361,7 @@ resolve_name_conflicts (PFla_op_t *n, PFalg_schema_t schema)
                 used_cols = used_cols | new_col;
 
                 proj[i] = PFalg_proj (new_col, cur_col);
-                
+
                 /* update all the references in the predicate list */
                 for (j = 0; j < PFarray_last (pred); j++)
                     if (LEFT_AT(pred, j) == cur_col)
@@ -393,7 +393,7 @@ resolve_name_conflicts (PFla_op_t *n, PFalg_schema_t schema)
                 used_cols = used_cols | new_col;
 
                 proj[i] = PFalg_proj (new_col, cur_col);
-                
+
                 /* update all the references in the predicate list */
                 for (j = 0; j < PFarray_last (pred); j++)
                     if (RIGHT_AT(pred, j) == cur_col)
@@ -581,7 +581,7 @@ modify_binary_op (PFla_op_t *p,
            in the thetajoin operator */
         if (match) {
             PFarray_t *pred = PFarray_copy (L(p)->sem.thetajoin_opt.pred);
-            
+
             /* add a new predicate ... */
             *(pred_struct *) PFarray_add (pred) =
                 (pred_struct) {
@@ -594,7 +594,7 @@ modify_binary_op (PFla_op_t *p,
                     .right_vis = true,
                     .res_vis   = true
                 };
-            
+
             /* ... and create a new thetajoin operator */
             *p = *(thetajoin_opt (LL(p), LR(p), pred));
 
@@ -1277,10 +1277,10 @@ opt_mvd (PFla_op_t *p)
 
                     /* make sure that column res is not used as join argument */
                     resolve_name_conflict (L(p), res);
-                    
+
                     /* copy the predicates ... */
                     pred = PFarray_copy (L(p)->sem.thetajoin_opt.pred);
-                    
+
                     /* ... and introduce a new predicate that makes
                        the result column visible (as we do not know
                        the comparison kind as well as the arguments
@@ -1968,7 +1968,7 @@ opt_mvd (PFla_op_t *p)
             /* do not rewrite anything
                that has to do with function application */
             break;
-                
+
         case la_proxy:
             /**
              * ATTENTION: The proxies (especially the kind=1 version) are

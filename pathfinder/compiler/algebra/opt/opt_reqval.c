@@ -129,7 +129,7 @@ opt_reqvals (PFla_op_t *p)
     if (p->kind == la_rowrank &&
         !PFprop_req_value_col (p->prop, p->sem.sort.res))
         *p = *PFla_rank (L(p), p->sem.sort.res, p->sem.sort.sortby);
-                
+
     /* infer properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         opt_reqvals (p->child[i]);
