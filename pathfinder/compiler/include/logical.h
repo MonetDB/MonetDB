@@ -76,8 +76,8 @@ enum PFla_op_kind_t {
     , la_difference      = 18 /**< difference of two relations w/ same schema */
     , la_distinct        = 19 /**< duplicate elimination operator */
     , la_fun_1to1        = 20 /**< generic operator that extends the schema with
-                                   a new column where each value is determined 
-                                   by the values of a single row (cardinality 
+                                   a new column where each value is determined
+                                   by the values of a single row (cardinality
                                    stays the same) */
     , la_num_eq          = 25 /**< numeric equal operator */
     , la_num_gt          = 26 /**< numeric greater-than operator */
@@ -119,14 +119,14 @@ enum PFla_op_kind_t {
     , la_all             = 45 /**< test if all items in an iteration are true */
     , la_step            = 50 /**< XPath location step */
     , la_step_join       = 51 /**< duplicate generating path step */
-    , la_guide_step      = 52 /**< XPath location step 
+    , la_guide_step      = 52 /**< XPath location step
                                    (with guide information) */
-    , la_guide_step_join = 53 /**< duplicate generating path step 
+    , la_guide_step_join = 53 /**< duplicate generating path step
                                    (with guide information) */
     , la_doc_index_join  = 54 /**< Operator representing a join with a document
                                    index relation */
     , la_doc_tbl         = 55 /**< document relation (is also a fragment) */
-    , la_doc_access      = 56 /**< document access necessary 
+    , la_doc_access      = 56 /**< document access necessary
                                    for pf:string-value */
     , la_twig            = 60 /**< twig root operator */
     , la_fcns            = 61 /**< twig constructor sequence */
@@ -150,7 +150,7 @@ enum PFla_op_kind_t {
     , la_frag_union      = 73 /**< special node type used to form an algebraic
                                    union of fragments */
     , la_empty_frag      = 74 /**< representation of an empty fragment */
-          
+
     , la_error           = 79 /**< error operator for the fn:error function*/
     , la_cond_err        = 80 /**< facility to trigger runtime errors */
     , la_nil             = 81 /**< end of the list of parameters */
@@ -162,20 +162,20 @@ enum PFla_op_kind_t {
     , la_rec_arg         = 87 /**< reference to the arguments of a parameter
                                    in the recursion */
     , la_rec_base        = 88 /**< base of the DAG describing the recursion */
-                         
+
     , la_fun_call        = 90 /**< function application */
     , la_fun_param       = 91 /**< function application parameter */
     , la_fun_frag_param  = 92 /**< function application parameter */
 
     , la_proxy           = 96 /**< proxy operator that represents a group
                                    of operators */
-    , la_proxy_base      = 97 /**< completes the content of the proxy 
+    , la_proxy_base      = 97 /**< completes the content of the proxy
                                    (a virtual base table) */
     , la_cross_mvd       = 98 /**< clone column aware cross product */
     , la_eqjoin_unq      = 99 /**< clone column aware equi-join */
     /* builtin support for XQuery functions */
     , la_string_join     =102 /**< fn:string-join */
-                         
+
     , la_dummy           =120 /**< dummy operator that does nothing */
 
 
@@ -219,7 +219,7 @@ union PFla_op_sem_t {
     struct {
         char* name;
         PFarray_t*      tatts;    /**< array holding the original attr.names */
-        PFarray_t*      keys;     /**< array holding the *positions* 
+        PFarray_t*      keys;     /**< array holding the *positions*
                                       (w.r.t. the schema) of key attributes */
     } ref_tbl;                    /**< semantic content for tableref operator */
 
@@ -249,7 +249,7 @@ union PFla_op_sem_t {
         PFalg_sel_t    *pred;     /**< predicate list */
     } thetajoin;
 
-    /* semantic content for theta-join operator 
+    /* semantic content for theta-join operator
        (used during thetajoin optimization) */
     struct {
         PFarray_t      *pred;     /**< internal list of predicates
@@ -281,7 +281,7 @@ union PFla_op_sem_t {
     struct {
         PFalg_fun_t     kind;     /**< kind of the function */
         PFalg_att_t     res;      /**< attribute to hold the result */
-        PFalg_attlist_t refs;     /**< list of attributes required 
+        PFalg_attlist_t refs;     /**< list of attributes required
                                        to compute attribute res */
     } fun_1to1;
 
@@ -299,7 +299,7 @@ union PFla_op_sem_t {
     } unary;
 
     /*
-     * semantic content for operators applying a 
+     * semantic content for operators applying a
      * (partitioned) aggregation function (count, sum, min, max and avg)
      * on a column
      * or a boolean grouping function (seqty1, all,...)
@@ -330,7 +330,7 @@ union PFla_op_sem_t {
         PFalg_att_t     att;      /**< name of type-tested, casted or type
                                        asserted attribute */
         PFalg_simple_type_t ty;   /**< comparison, cast, and restriction type */
-        PFalg_att_t     res;      /**< column to store result of type test 
+        PFalg_att_t     res;      /**< column to store result of type test
                                        or cast */
                              /* Note that 'res' is ignored by la_type_assert */
     } type;
@@ -349,12 +349,12 @@ union PFla_op_sem_t {
     /* store the semantic information for fn:id, fn:idref, pf:text,
        and pf:attr */
     struct {
-        PFla_doc_join_kind_t kind; /**< kind of the operator */     
+        PFla_doc_join_kind_t kind; /**< kind of the operator */
         PFalg_att_t     item_res; /**< column to store the resulting nodes */
         PFalg_att_t     item;     /**< column to look up the context nodes */
         PFalg_att_t     item_doc; /**< column to store the fragment info */
     } doc_join;
-    
+
     /* store the column names necessary for document lookup */
     struct {
         PFalg_att_t     res;      /**< column to store the document nodes */
@@ -380,7 +380,7 @@ union PFla_op_sem_t {
 
     /* store the column names necessary for a constructor content operator */
     /* semantic content for debug operator */
-    struct { 
+    struct {
         PFalg_att_t     iter;     /**< name of iter column */
         PFalg_att_t     pos;      /**< name of pos column */
         PFalg_att_t     item;     /**< name of item column */
@@ -438,7 +438,7 @@ union PFla_op_sem_t {
                                        iter column of the result
                                        (used for optimizations) */
     } fun_call;
-    
+
     /* semantic content of the function call fragment paramter and
        the fragment extraction operator */
     struct {
@@ -538,9 +538,9 @@ PFla_op_t * PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left,
 #define PFla_op_clone(a) PFla_op_duplicate((a),(a)->child[0],(a)->child[1])
 
 /**
- * A dummy operator that is generated whenever some rewrite 
+ * A dummy operator that is generated whenever some rewrite
  * throws away an operator (e.g., '*p = *L(p);') and the replacement
- * is an already existing node that may not be split into multiple 
+ * is an already existing node that may not be split into multiple
  * operators (e.g. a rowid operator).
  */
 PFla_op_t * PFla_dummy (PFla_op_t *n);
@@ -596,7 +596,7 @@ PFla_op_t *PFla_empty_tbl_ (PFalg_schema_t s);
  */
 PFla_op_t *
 PFla_ref_tbl_ (const char* name,
-               PFalg_schema_t schema, 
+               PFalg_schema_t schema,
                PFarray_t* tatts,
                PFarray_t* keys);
 
@@ -675,13 +675,32 @@ PFla_op_t * PFla_eqjoin_clone (const PFla_op_t *n1, const PFla_op_t *n2,
  * be available under the abbreviated name #project(). The
  * projection list items can then be constructed using #proj().
  */
-#define PFla_project(n,...)                                        \
-    PFla_project_ ((n),                                            \
-                   (sizeof ((PFalg_proj_t[]) { __VA_ARGS__ })      \
-                       / sizeof (PFalg_proj_t)),                   \
+#ifndef NDEBUG
+
+#define PFla_project(n,...)                                       \
+    PFla_project__ ((n),                                          \
+                    (sizeof ((PFalg_proj_t[]) { __VA_ARGS__ })    \
+                        / sizeof (PFalg_proj_t)),                 \
+                    (PFalg_proj_t[]) { __VA_ARGS__ },             \
+                    __FILE__, __func__, __LINE__)
+
+#define PFla_project_(n,c,p) (PFla_project__ ((n), (c), (p),      \
+                                              __FILE__, __func__, \
+                                              __LINE__))
+PFla_op_t *PFla_project__ (const PFla_op_t *n,
+                           unsigned int count, PFalg_proj_t *p,
+                           const char *, const char *, const int);
+#else
+
+#define PFla_project(n,...)                                       \
+    PFla_project_ ((n),                                           \
+                   (sizeof ((PFalg_proj_t[]) { __VA_ARGS__ })     \
+                       / sizeof (PFalg_proj_t)),                  \
                    (PFalg_proj_t[]) { __VA_ARGS__ } )
+
 PFla_op_t *PFla_project_ (const PFla_op_t *n,
                           unsigned int count, PFalg_proj_t *p);
+#endif
 
 /** Constructor for selection of not-0 column values. */
 PFla_op_t * PFla_select (const PFla_op_t *n, PFalg_att_t att);
@@ -711,7 +730,7 @@ PFla_op_t * PFla_difference (const PFla_op_t *, const PFla_op_t *);
 /** Constructor for duplicate elimination operator. */
 PFla_op_t * PFla_distinct (const PFla_op_t *n);
 
-/** Constructor for generic operator that extends the schema 
+/** Constructor for generic operator that extends the schema
     with a new column where each value is determined by the values
     of a single row (cardinality stays the same) */
 PFla_op_t * PFla_fun_1to1 (const PFla_op_t *n, PFalg_fun_t kind,
@@ -757,17 +776,17 @@ PFla_op_t * PFla_or (const PFla_op_t *n, PFalg_att_t res,
 PFla_op_t * PFla_not (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att);
 
 /** Constructor for op:to operator. */
-PFla_op_t * PFla_to (const PFla_op_t *n, 
+PFla_op_t * PFla_to (const PFla_op_t *n,
                      PFalg_att_t res,
                      PFalg_att_t att1,
                      PFalg_att_t att2);
 
-/** 
- * Constructor for operators forming the application of a 
+/**
+ * Constructor for operators forming the application of a
  * (partitioned) aggregation function (sum, min, max and avg) on a column.
  */
 PFla_op_t * PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n,
-		       PFalg_att_t res, PFalg_att_t att, PFalg_att_t part);
+                       PFalg_att_t res, PFalg_att_t att, PFalg_att_t part);
 
 /** Constructor for (partitioned) row counting operators. */
 PFla_op_t * PFla_count (const PFla_op_t *n, PFalg_att_t res,
@@ -945,7 +964,7 @@ PFla_op_t * PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
  * Access to (persistently stored) XML documents, the fn:doc()
  * function.  Returns a (frag, result) pair.
  */
-PFla_op_t * PFla_doc_tbl (const PFla_op_t *rel, 
+PFla_op_t * PFla_doc_tbl (const PFla_op_t *rel,
                           PFalg_att_t res, PFalg_att_t att);
 
 /** Constructor for string access of loaded documents */
@@ -963,7 +982,7 @@ PFla_op_t * PFla_twig (const PFla_op_t *twig,
 /** Constructor for twig constructor sequence operators. */
 PFla_op_t * PFla_fcns (const PFla_op_t *fc,
                        const PFla_op_t *ns);
-                          
+
 /** Constructor for document node operators. */
 PFla_op_t * PFla_docnode (const PFla_op_t *scope,
                           const PFla_op_t *fcns,
@@ -982,7 +1001,7 @@ PFla_op_t * PFla_attribute (const PFla_op_t *cont,
                             PFalg_att_t val);
 
 /** Constructor for text node operators. */
-PFla_op_t * PFla_textnode (const PFla_op_t *cont, 
+PFla_op_t * PFla_textnode (const PFla_op_t *cont,
                            PFalg_att_t iter,
                            PFalg_att_t item);
 
@@ -1179,7 +1198,7 @@ PFla_op_t *PFla_fun_call (const PFla_op_t *loop,
 PFla_op_t *PFla_fun_param (const PFla_op_t *argument,
                            const PFla_op_t *param_list,
                            PFalg_schema_t schema);
-                                   
+
 /**
  * Constructor for the fragment information of a list item
  * of a parameter list related to function application
@@ -1187,7 +1206,7 @@ PFla_op_t *PFla_fun_param (const PFla_op_t *argument,
 PFla_op_t *PFla_fun_frag_param (const PFla_op_t *argument,
                                 const PFla_op_t *param_list,
                                 unsigned int col_pos);
-                                   
+
 /****************************************************************/
 
 /**

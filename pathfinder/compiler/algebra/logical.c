@@ -946,7 +946,12 @@ PFla_thetajoin_opt_internal (const PFla_op_t *n1, const PFla_op_t *n2,
  *   specifictions.
  */
 PFla_op_t *
+#ifndef NDEBUG
+PFla_project__ (const PFla_op_t *n, unsigned int count, PFalg_proj_t *proj,
+                const char *file, const char *func, const int line)
+#else
 PFla_project_ (const PFla_op_t *n, unsigned int count, PFalg_proj_t *proj)
+#endif
 {
     PFla_op_t     *ret = la_op_wire1 (la_project, n);
     unsigned int   i;
@@ -981,18 +986,60 @@ PFla_project_ (const PFla_op_t *n, unsigned int count, PFalg_proj_t *proj)
             }
 
         /* did we find the attribute? */
-        if (j >= n->schema.count)
+        if (j >= n->schema.count) {
+#ifndef NDEBUG
+            fprintf (stderr,
+                    "\nThe following error is triggered"
+                    " in line %i of function %s() in file %s\n"
+                    "The input is of kind %i and has the schema (",
+                    line, func, file, n->kind);
+            for (unsigned int k = 0; k < n->schema.count; k++)
+                fprintf (stderr, "%s%s",
+                         k ? ", " : "",
+                         PFatt_str (n->schema.items[k].name));
+            fprintf (stderr,
+                     ")\nThe projection list contains"
+                     " the following mappings (");
+            for (unsigned int k = 0; k < count; k++)
+                fprintf (stderr, "%s%s:%s",
+                         k ? ", " : "",
+                         PFatt_str (proj[k].new),
+                         PFatt_str (proj[k].old));
+            fprintf (stderr, ")\n\n");
+#endif
             PFoops (OOPS_FATAL,
                     "attribute `%s' referenced in projection not found",
                     PFatt_str (ret->sem.proj.items[i].old));
+        }
 
         /* see if we have duplicate attributes now */
         for (j = 0; j < i; j++)
-            if (ret->sem.proj.items[i].new == ret->sem.proj.items[j].new)
+            if (ret->sem.proj.items[i].new == ret->sem.proj.items[j].new) {
+#ifndef NDEBUG
+                fprintf (stderr,
+                        "\nThe following error is triggered"
+                        " in line %i of function %s() in file %s\n"
+                        "The input is of kind %i and has the schema (",
+                        line, func, file, n->kind);
+                for (unsigned int k = 0; k < n->schema.count; k++)
+                    fprintf (stderr, "%s%s",
+                             k ? ", " : "",
+                             PFatt_str (n->schema.items[k].name));
+                fprintf (stderr,
+                         ")\nThe projection list contains"
+                         " the following mappings (");
+                for (unsigned int k = 0; k < count; k++)
+                    fprintf (stderr, "%s%s:%s",
+                             k ? ", " : "",
+                             PFatt_str (proj[k].new),
+                             PFatt_str (proj[k].old));
+                fprintf (stderr, ")\n\n");
+#endif
                 PFoops (OOPS_FATAL,
                         "projection results in duplicate attribute `%s' "
                         "(attributes %i and %i)",
                         PFatt_str (ret->sem.proj.items[i].new), i+1, j+1);
+            }
     }
 
     return ret;
