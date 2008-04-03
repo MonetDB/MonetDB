@@ -359,14 +359,14 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_AXIS_PREC_S: return "AXIS_preceding_sibling";
         case PF_MIL_VAR_AXIS_SELF:   return "AXIS_self";
         case PF_MIL_VAR_AXIS_ATTR:   return "AXIS_attribute";
-                                    
+
         case PF_MIL_VAR_CODE_NONE:   return "TEST_none";
         case PF_MIL_VAR_CODE_KIND:   return "TEST_kind";
         case PF_MIL_VAR_CODE_NS:     return "TEST_ns";
         case PF_MIL_VAR_CODE_LOC:    return "TEST_loc";
         case PF_MIL_VAR_CODE_NSLOC:  return "TEST_nsloc";
         case PF_MIL_VAR_CODE_TARGET: return "TEST_target";
-        
+
         case PF_MIL_VAR_TIME_LOAD:   return "time_load";
         case PF_MIL_VAR_TIME_QUERY:  return "time_query";
         case PF_MIL_VAR_TIME_PRINT:  return "time_print";

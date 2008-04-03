@@ -428,10 +428,10 @@ print_statements (PFmil_t *n)
             break;
 
         case m_comment:
-	    milprintf ("# ");
-	    /* FIXME: What if c contains \n's? */
-	    milprintf ("%s\n", n->sem.s);
-	    break;
+            milprintf ("# ");
+            /* FIXME: What if c contains \n's? */
+            milprintf ("%s\n", n->sem.s);
+            break;
 
         /* statements : statement ';' */
         default:
@@ -696,9 +696,9 @@ print_expression (PFmil_t * n)
         case m_avg:
         /* expression : expression '.max' */
         case m_max:
-	/* expression : expression '.min' */
+        /* expression : expression '.min' */
         case m_min:
-	/* expression : expression '.sum' */
+        /* expression : expression '.sum' */
         case m_sum:
         /* expression : expression 'bat()' */
         case m_bat:
