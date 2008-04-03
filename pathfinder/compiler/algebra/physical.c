@@ -924,7 +924,7 @@ PFpa_project (const PFpa_op_t *n, unsigned int count, PFalg_proj_t *proj)
 
         /* did we find the attribute? */
         if (j >= n->schema.count)
-	     PFoops (OOPS_FATAL,
+             PFoops (OOPS_FATAL,
                     "attribute `%s' referenced in projection not found",
                     PFatt_str (ret->sem.proj.items[i].old));
     }

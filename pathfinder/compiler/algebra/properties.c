@@ -61,9 +61,9 @@ PFprop (void)
     PFprop_t *ret = PFmalloc (sizeof (PFprop_t));
 
     /* initialize different slots for constant property*/
-    ret->constants   = NULL; 
-    ret->l_constants = NULL; 
-    ret->r_constants = NULL; 
+    ret->constants   = NULL;
+    ret->l_constants = NULL;
+    ret->r_constants = NULL;
 
     /* initialize set property */
     ret->set      = false;
@@ -105,7 +105,7 @@ PFprop (void)
     ret->level_mapping = NULL;
     ret->l_level_mapping = NULL;
     ret->r_level_mapping = NULL;
-    
+
     /* initialize guide mapping list */
     ret->guide_mapping_list = NULL;
 
@@ -176,7 +176,7 @@ prop_reset (PFla_op_t *n, void (*reset_fun) (PFla_op_t *))
         return;
     else
         SEEN(n) = true;
-    
+
     reset_fun (n);
 
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
@@ -210,7 +210,7 @@ create_prop (PFla_op_t *n)
 
 /**
  * Create new property fields for a DAG rooted in @a root.
- * 
+ *
  * This is required if the property of copied nodes
  * is not copied in place (e.g. '*p = *L(p);').
  */
@@ -240,7 +240,7 @@ prop_infer_refctr (PFla_op_t *n)
         SEEN(n) = true;
         n->refctr = 1;
     }
-    
+
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
         prop_infer_refctr (n->child[i]);
 }

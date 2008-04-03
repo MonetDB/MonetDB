@@ -178,7 +178,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
 
 
         case la_ref_tbl:
-    
+
             return  (strcmp(a->sem.ref_tbl.name, b->sem.ref_tbl.name) == 0);
             break;
 
@@ -492,7 +492,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
              */
             return false;
             break;
-            
+
         case la_proxy:
         case la_proxy_base:
             /* we assume that we do not split up proxy nodes */

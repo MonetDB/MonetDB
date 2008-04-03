@@ -2434,7 +2434,7 @@ PFbui_fn_name (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
                              proj (att_iter, att_iter),
                              proj (att_pos, att_pos),
                              proj (att_item, att_res));
-    
+
     PFla_op_t *res = disjunion (
                          strings,
                          attach (
@@ -2472,7 +2472,7 @@ PFbui_fn_local_name (const PFla_op_t *loop, bool ordering,
                              proj (att_iter, att_iter),
                              proj (att_pos, att_pos),
                              proj (att_item, att_res));
-    
+
     PFla_op_t *res = disjunion (
                          strings,
                          attach (
@@ -2510,7 +2510,7 @@ PFbui_fn_namespace_uri (const PFla_op_t *loop, bool ordering,
                              proj (att_iter, att_iter),
                              proj (att_pos, att_pos),
                              proj (att_item, att_res));
-    
+
     PFla_op_t *res = disjunion (
                          strings,
                          attach (

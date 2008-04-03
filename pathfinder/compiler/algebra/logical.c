@@ -152,7 +152,8 @@ la_op_wire2 (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
  * is an already existing node that may not be split into multiple
  * operators (e.g. a number operator).
  */
-PFla_op_t * PFla_dummy (PFla_op_t *n)
+PFla_op_t *
+PFla_dummy (PFla_op_t *n)
 {
     /* always create the dummy node as otherwise
        the general optimization will relabel quite
@@ -1219,7 +1220,8 @@ PFla_difference (const PFla_op_t *n1, const PFla_op_t *n2)
 
 
 /** Constructor for duplicate elimination operators. */
-PFla_op_t * PFla_distinct (const PFla_op_t *n)
+PFla_op_t *
+PFla_distinct (const PFla_op_t *n)
 {
     PFla_op_t    *ret = la_op_wire1 (la_distinct, n);
     unsigned int  i;
@@ -1954,8 +1956,9 @@ PFla_to (const PFla_op_t *n, PFalg_att_t res,
  * The partitioning (group by) attribute is represented by @a part.
  * The result is stored in attribute @a res.
  */
-PFla_op_t * PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
-                      PFalg_att_t att, PFalg_att_t part)
+PFla_op_t *
+PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
+           PFalg_att_t att, PFalg_att_t part)
 {
     /* build a new aggr node */
     PFla_op_t    *ret = la_op_wire1 (kind, n);
@@ -3034,9 +3037,8 @@ PFla_doc_access (const PFla_op_t *doc, const PFla_op_t *n,
 /**
  * Constructor for twig root operators.
  */
-PFla_op_t * PFla_twig (const PFla_op_t *n,
-                       PFalg_att_t iter,
-                       PFalg_att_t item)
+PFla_op_t *
+PFla_twig (const PFla_op_t *n, PFalg_att_t iter, PFalg_att_t item)
 {
     PFalg_simple_type_t iter_type = 0;
     PFla_op_t *ret = la_op_wire1 (la_twig, n);
@@ -3097,8 +3099,8 @@ PFla_op_t * PFla_twig (const PFla_op_t *n,
  * @a fc is the next 'first' child operator and @a ns is the
  * next sibling in the constructor sequence operator list.
  */
-PFla_op_t * PFla_fcns (const PFla_op_t *fc,
-                       const PFla_op_t *ns)
+PFla_op_t *
+PFla_fcns (const PFla_op_t *fc, const PFla_op_t *ns)
 {
     PFla_op_t *ret = la_op_wire2 (la_fcns, fc, ns);
 
@@ -3116,8 +3118,8 @@ PFla_op_t * PFla_fcns (const PFla_op_t *fc,
  * @a scope is the current scope the document node is constructed in
  * and @a fcns is the content of the node.
  */
-PFla_op_t * PFla_docnode (const PFla_op_t *scope, const PFla_op_t *fcns,
-                          PFalg_att_t iter)
+PFla_op_t *
+PFla_docnode (const PFla_op_t *scope, const PFla_op_t *fcns, PFalg_att_t iter)
 {
     PFla_op_t *ret = la_op_wire2 (la_docnode, scope, fcns);
 
@@ -3138,10 +3140,9 @@ PFla_op_t * PFla_docnode (const PFla_op_t *scope, const PFla_op_t *fcns,
  * @a tag constructs the elements' tag names, and @a fcns
  * is the content of the new elements.
  */
-PFla_op_t * PFla_element (const PFla_op_t *tag,
-                          const PFla_op_t *fcns,
-                          PFalg_att_t iter,
-                          PFalg_att_t item)
+PFla_op_t *
+PFla_element (const PFla_op_t *tag, const PFla_op_t *fcns,
+              PFalg_att_t iter, PFalg_att_t item)
 {
     PFla_op_t *ret = la_op_wire2 (la_element, tag, fcns);
 
@@ -3163,8 +3164,9 @@ PFla_op_t * PFla_element (const PFla_op_t *tag,
  * @a cont stores the name-value relation of the attribute. @a iter, @a qn,
  * and @a val reference the iter, qname, and value input columns, respectively.
  */
-PFla_op_t * PFla_attribute (const PFla_op_t *cont,
-                            PFalg_att_t iter, PFalg_att_t qn, PFalg_att_t val)
+PFla_op_t *
+PFla_attribute (const PFla_op_t *cont,
+                PFalg_att_t iter, PFalg_att_t qn, PFalg_att_t val)
 {
     PFla_op_t *ret = la_op_wire1 (la_attribute, cont);
 
@@ -3236,10 +3238,9 @@ PFla_comment (const PFla_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
  * @a iter, @a target, and @a val reference the iter, target, and value
  * input columns, respectively.
  */
-PFla_op_t * PFla_processi (const PFla_op_t *cont,
-                           PFalg_att_t iter,
-                           PFalg_att_t target,
-                           PFalg_att_t val)
+PFla_op_t *
+PFla_processi (const PFla_op_t *cont,
+               PFalg_att_t iter, PFalg_att_t target, PFalg_att_t val)
 {
     PFla_op_t *ret = la_op_wire1 (la_processi, cont);
 
@@ -3267,11 +3268,9 @@ PFla_op_t * PFla_processi (const PFla_op_t *cont,
  * - @a doc:  none (as it is a node fragment)
  * - @a cont: iter | pos | item
  */
-PFla_op_t * PFla_content (const PFla_op_t *doc,
-                          const PFla_op_t *cont,
-                          PFalg_att_t iter,
-                          PFalg_att_t pos,
-                          PFalg_att_t item)
+PFla_op_t *
+PFla_content (const PFla_op_t *doc, const PFla_op_t *cont,
+              PFalg_att_t iter, PFalg_att_t pos, PFalg_att_t item)
 {
     PFla_op_t *ret = la_op_wire2 (la_content, doc, cont);
 
@@ -3761,7 +3760,8 @@ PFla_trace_map (const PFla_op_t *n1,
 /**
  * Constructor for the last item of a parameter list
  */
-PFla_op_t *PFla_nil (void)
+PFla_op_t *
+PFla_nil (void)
 {
     PFla_op_t     *ret;
 
@@ -3779,8 +3779,8 @@ PFla_op_t *PFla_nil (void)
 /**
  * Constructor for a tail recursion operator
  */
-PFla_op_t *PFla_rec_fix (const PFla_op_t *paramList,
-                         const PFla_op_t *res)
+PFla_op_t *
+PFla_rec_fix (const PFla_op_t *paramList, const PFla_op_t *res)
 {
     PFla_op_t     *ret;
     unsigned int   i;
@@ -3808,8 +3808,8 @@ PFla_op_t *PFla_rec_fix (const PFla_op_t *paramList,
  * Constructor for a list item of a parameter list
  * related to recursion
  */
-PFla_op_t *PFla_rec_param (const PFla_op_t *arguments,
-                           const PFla_op_t *paramList)
+PFla_op_t *
+PFla_rec_param (const PFla_op_t *arguments, const PFla_op_t *paramList)
 {
     PFla_op_t     *ret;
 
@@ -3833,9 +3833,9 @@ PFla_op_t *PFla_rec_param (const PFla_op_t *arguments,
  * Constructor for the arguments of a parameter (seed and recursion
  * will be the input relations for the base operator)
  */
-PFla_op_t *PFla_rec_arg (const PFla_op_t *seed,
-                         const PFla_op_t *recursion,
-                         const PFla_op_t *base)
+PFla_op_t *
+PFla_rec_arg (const PFla_op_t *seed, const PFla_op_t *recursion,
+              const PFla_op_t *base)
 {
     PFla_op_t     *ret;
     unsigned int   i, j;
@@ -3901,7 +3901,8 @@ PFla_op_t *PFla_rec_arg (const PFla_op_t *seed,
  * operator representing the seed relation as well as the argument
  * computed in the recursion).
  */
-PFla_op_t *PFla_rec_base (PFalg_schema_t schema)
+PFla_op_t *
+PFla_rec_base (PFalg_schema_t schema)
 {
     PFla_op_t     *ret;
     unsigned int   i;

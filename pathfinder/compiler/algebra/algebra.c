@@ -719,7 +719,7 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
         case aat_node:  return "node";
         case aat_anode: return "attr";
         case aat_pnode: return "pnode";
-                        
+
         /* the bit representation */
         case aat_qname_id:   return "qname_id";
         case aat_qname_cont: return "qname_cont";

@@ -724,19 +724,19 @@ plan_select (const PFla_op_t *n)
             att1 = att2;
             att2 = res;
         }
-        
+
         for (unsigned int i = 0; i < op->sem.proj.count; i++)
             if (sel_att == op->sem.proj.items[i].new)
                 sel_att = op->sem.proj.items[i].old;
             else if (op->sem.proj.items[i].old == att2)
                 val_ref = true;
-        
+
         /* no match -- bail out */
         if (sel_att != L(op)->sem.binary.res ||
             val_ref ||
             LL(op)->sem.attach.value.type == aat_qname)
             return ret;
-            
+
         for (unsigned int r = 0; r < PFarray_last (L(LL(op))->plans); r++)
             add_plan (ret,
                       project (
@@ -750,7 +750,7 @@ plan_select (const PFla_op_t *n)
                           op->sem.proj.count,
                           op->sem.proj.items));
     }
-        
+
     return ret;
 }
 
@@ -1985,13 +1985,13 @@ plan_fun_call (const PFla_op_t *n)
     for (i = 0; i < n->schema.count; i++)
         if (n->schema.items[i].type & aat_node)
             break;
-    
+
     if (i == n->schema.count)
         return ret;
     else {
         PFplanlist_t  *single_plan   = new_planlist ();
         plan_t        *cheapest_plan = NULL;
-        
+
         /* find the cheapest plan */
         for (unsigned int i = 0; i < PFarray_last (ret); i++)
             if (!cheapest_plan
@@ -2831,14 +2831,14 @@ plan_subexpression (PFla_op_t *n)
             plan_subexpression (L(n));
             plan_subexpression (R(n));
             plans = plan_fun_call (n);
-            
+
             fun_call_kind = old_fun_call_kind;
         } break;
 
-        case la_fun_param:      plans = plan_fun_param (n);    break;  
+        case la_fun_param:      plans = plan_fun_param (n);    break;
         /* copy the plans from the rest of the list */
-        case la_fun_frag_param: plans = R(n)->plans;           break;  
-        
+        case la_fun_frag_param: plans = R(n)->plans;           break;
+
         case la_string_join:    plans = plan_string_join (n);  break;
 
         default:
