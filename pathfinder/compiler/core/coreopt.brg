@@ -1573,6 +1573,21 @@ collect_var_usage (PFcnode_t *c, char base, PFcnode_t *parent, int child)
     return base;
 }
 
+/* initialize global variables */
+static void
+PFcoreopt_init (void)
+{
+    /* set up variable replacement environment */
+    for (unsigned short i = 0; i < HASH_BUCKETS; i++)
+        var_env[i] = PFarray (sizeof (bind_t), 128);
+
+    /* set up a variable environment to record unused variables */
+    unused_var_env = PFarray (sizeof (bind_t), 128);
+    /* set up a variable environment to record variable references */
+    used_var_env = PFarray (sizeof (bind_t), HASH_BUCKETS * 128);
+}
+
+
 /**
  * Optimize Core tree, with static type information available.
  *
@@ -1587,14 +1602,8 @@ PFcoreopt (PFcnode_t *r)
 
     assert (r);
 
-    /* set up variable replacement environment */
-    for (unsigned short i = 0; i < HASH_BUCKETS; i++)
-        var_env[i] = PFarray (sizeof (bind_t), 128);
-
-    /* set up a variable environment to record unused variables */
-    unused_var_env = PFarray (sizeof (bind_t), 128),
-    /* set up a variable environment to record variable references */
-    used_var_env = PFarray (sizeof (bind_t), HASH_BUCKETS * 128),
+    /* initialize global variables */
+    PFcoreopt_init ();
 
     /* label the Core tree bottom up */
     PFcoreopt_label (r);

@@ -324,21 +324,21 @@ Rel:    cross_mvd (Rel, Rel)                         = 119 (10);
 /**
  * We collect the SQL statements during compilation here.
  */
-static PFsql_t *sql_stmts = NULL;
+static PFsql_t *sql_stmts;
 
 /**
  * true if we are in a recursion branch
  */
-static bool rec_branch = false;
+static bool rec_branch;
 
 /**
  * Generate DB2 SELECTIVITY hints;
  */
-bool selectivity;
+static bool selectivity;
 /**
  * Generate bindings for operators with multiple references.
  */
-bool bind_multi_ref;
+static bool bind_multi_ref;
 
 /* The execute is used to construct the sequence
  * of `common table expressions'.
@@ -350,7 +350,7 @@ bool bind_multi_ref;
 /**
  * We define the fragment with the maximum pre value here.
  */
-static PFsql_t *max_pre_frag = NULL;
+static PFsql_t *max_pre_frag;
 
 /* we "mask out" the flags regarding the generation of attributes,
  * up to now we don't support attributes */
@@ -437,16 +437,20 @@ literal (PFalg_atom_t atom)
     return NULL; /* satisfy picky compilers */
 }
 
+/* static variable that holds the actual table-number */
+static unsigned int table_varno = PF_SQL_RES_TABLE_COUNT;
+
 /**
  * Returns a new table name.
  */
 static PFsql_tident_t
 new_table_name ()
 {
-    /* static variable that holds the actual variable-number */
-    static unsigned int varno = PF_SQL_RES_TABLE_COUNT;
-    return varno++;
+    return table_varno++;
 }
+
+/* static variable that holds the actual alias-number */
+static unsigned int alias_varno = PF_SQL_RES_ALIAS_COUNT;
 
 /**
  * Returns a new alias.
@@ -454,8 +458,7 @@ new_table_name ()
 static PFsql_aident_t
 new_alias (void)
 {
-    static unsigned int varno = PF_SQL_RES_ALIAS_COUNT;
-    return varno++;
+    return alias_varno++;
 }
 
 /**
@@ -509,6 +512,10 @@ special_col (PFsql_special_t spc)
 #define TRUE_INT       lit_int(1)
 #define FALSE_INT      lit_int(0)
 
+
+/* static variable that holds the current col-number */
+static unsigned int col_varno = PF_SQL_RES_COLUMN_COUNT;
+
 /**
  * Returns a new column name
  * (also storing its logical algebra name and its type).
@@ -516,11 +523,10 @@ special_col (PFsql_special_t spc)
 static PFsql_col_t *
 new_col (PFalg_att_t att, PFalg_simple_type_t ty)
 {
-    static unsigned int varno = PF_SQL_RES_COLUMN_COUNT;
     PFsql_col_t *ret = (PFsql_col_t *) PFmalloc (sizeof (PFsql_col_t));
     ret->att = att;
     ret->ty  = ty;
-    ret->id  = varno++;
+    ret->id  = col_varno++;
     return ret;
 }
 
@@ -5690,18 +5696,37 @@ assign_twig_info (PFla_op_t *n, unsigned int twig_pre, unsigned int level)
     return twig_pre;
 }
 
+
+/* initializing global variables */    
+static void 
+PFsql_init (void)
+{
+    sql_stmts      = NULL;
+    max_pre_frag   = NULL;
+    rec_branch     = false; 
+    selectivity    = false;
+    bind_multi_ref = false;
+    table_varno    = PF_SQL_RES_TABLE_COUNT;
+    alias_varno    = PF_SQL_RES_ALIAS_COUNT;
+    col_varno      = PF_SQL_RES_COLUMN_COUNT;
+}
+ 
+
 PFsql_t *
 PFlalg2sql (PFla_op_t * n)
 {
+    /* initializing global variables */    
+    PFsql_init ();
+
     /* read in environment variables */
     char *selectivity_str = getenv ("PFSQL_USE_DB2_SELECTIVITY");
     char *bind_str        = getenv ("PFSQL_BIND_MULTIPLE_REFERENCES");
+
+
     /* interpret environment variables */
     selectivity    = selectivity_str && !strcmp (selectivity_str, "1");
     bind_multi_ref = bind_str && !strcmp (bind_str, "1");
-    
-    sql_stmts = NULL;
- 
+
     assert (n);
  
     if ((n->kind != la_serialize_seq) && (n->kind != la_serialize_rel))

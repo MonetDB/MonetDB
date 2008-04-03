@@ -718,6 +718,14 @@ relabel (PFcnode_t *p,  PFcnode_t **kids)
 
 }
 
+/* initialize global  variables */
+static void
+PFsimplify_init (void)
+{
+    /* set up variable replacement environment */
+    for (unsigned short i = 0; i < HASH_BUCKETS; i++)
+        var_env[i] = PFarray (sizeof (bind_t), 128);
+}
 
 /**
  * Simplify XQuery Core tree.
@@ -730,9 +738,8 @@ PFsimplify (PFcnode_t *r)
 {
     assert (r);
 
-    /* set up variable replacement environment */
-    for (unsigned short i = 0; i < HASH_BUCKETS; i++)
-        var_env[i] = PFarray (sizeof (bind_t), 128);
+    /* initialize global  variables */
+    PFsimplify_init ();
 
     /* label the Core tree bottom up */
     PFsimplify_label (r);

@@ -66,6 +66,7 @@
 #include "types.h"        /* type system */
 #include "import.h"       /* XML Schema import */
 #include "simplify.h"     /* core simplification */
+#include "core.h"
 #include "coreopt.h"
 #include "typecheck.h"    /* type inference and check */
 #include "core2alg.h"     /* Compile Core to Relational Algebra */
@@ -324,6 +325,9 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         .pres_boundary_space = false,
         .revalid             = revalid_strict /* XQ update facility 1.0 [§2.3] */
     };
+
+    /* Initialize data structures in the Core department */
+    PFcore_init ();
 
 #if HAVE_SIGNAL_H
     /* setup sementation fault signal handler */
@@ -876,6 +880,9 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         };
 
         PFmem_init ();
+
+        /* initialize the datastructures in the Core department */
+        PFcore_init ();
 
 #ifndef NDEBUG
         PFarray_init ();
