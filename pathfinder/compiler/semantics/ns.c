@@ -1068,5 +1068,4 @@ PFns_resolve (PFpnode_t *root)
     ns_resolve (root); 
 }
 
-
 /* vim:set shiftwidth=4 expandtab: */

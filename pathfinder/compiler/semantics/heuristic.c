@@ -411,13 +411,13 @@ typedef struct {
  PFpaxis_t id;
 } rev_axis_t;
 
-rev_axis_t rev_axis[] = {
-    { -8, p_descendant },      
-    { -8, p_descendant_or_self },   
+static rev_axis_t rev_axis[] = {
+    { -8, p_descendant },
+    { -8, p_descendant_or_self },
     {  0, p_attribute },
     {  2, p_parent },
     {  8, p_ancestor },
-    {  8, p_ancestor_or_self }, 
+    {  8, p_ancestor_or_self },
     { -8, p_preceding },
     { -4, p_preceding_sibling },
     { -2, p_child },
@@ -427,7 +427,7 @@ rev_axis_t rev_axis[] = {
     {  0, p_attribute },
     {  0, p_attribute },
     {  0, p_attribute },
-    {  0, p_attribute } 
+    {  0, p_attribute }
 };
 
 #define skip_over_emptyseq(p) skip(p,0)
@@ -731,4 +731,5 @@ PFheuristic_index (PFpnode_t *root)
     }
     return root;
 }
-/* vim:set shiftwidth=4 expandtab filetype=c: */
+
+/* vim:set shiftwidth=4 expandtab: */

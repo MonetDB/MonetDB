@@ -328,6 +328,12 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     /* Initialize data structures in the Core department */
     PFcore_init ();
+    /* Initialize data structures in the Functions department */
+    PFfunctions_init ();
+    /* Initialize data structures in the Options department */
+    PFoptions_init ();
+    /* Initialize data structures in the Varscope department */
+    PFvarscope_init ();  
 
 #if HAVE_SIGNAL_H
     /* setup sementation fault signal handler */
@@ -883,6 +889,13 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
 
         /* initialize the datastructures in the Core department */
         PFcore_init ();
+        /* Initialize data structures in the functions department */
+        PFfunctions_init ();
+        /* Initialize data structures in the Options department */
+        PFoptions_init ();
+        /* Initialize data structures in the Varscope department */
+        PFvarscope_init ();
+        
 
 #ifndef NDEBUG
         PFarray_init ();

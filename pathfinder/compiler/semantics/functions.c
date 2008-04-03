@@ -50,7 +50,7 @@
 #include "mem.h"
 
 /* "at"-hint of the module that we are currently checking */
-static char *current_atURI = NULL;
+static char *current_atURI;
 
 /* add a single user-defined function definition to the list */
 static void add_ufun (PFpnode_t *n);
@@ -63,7 +63,7 @@ static void fun_add_user (PFqname_t qname, unsigned int arity,
 /**
  * Environment of functions known to Pathfinder.
  */
-PFenv_t *PFfun_env = NULL;
+PFenv_t *PFfun_env;
 
 /* activate debugging code */
 /* #define DEBUG_FUNCTIONS */
@@ -573,6 +573,15 @@ PFfun_check (PFpnode_t * root)
 
     /* now traverse the whole tree and check all function usages */
     check_fun_usage (root);
+}
+
+/* initialize global variables */
+void
+PFfunctions_init (void)
+{
+    current_atURI = NULL;
+
+    PFfun_env = NULL;
 }
 
 /* vim:set shiftwidth=4 expandtab: */

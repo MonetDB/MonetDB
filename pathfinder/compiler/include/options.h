@@ -40,6 +40,9 @@
 
 extern PFenv_t *PFoptions;
 
+/* initialize global variables */
+void PFoptions_init (void);
+
 void PFextract_options (PFpnode_t *root);
 
 #endif  /* OPTIONS_H */
