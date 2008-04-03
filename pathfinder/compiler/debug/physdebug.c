@@ -2,7 +2,7 @@
 
 /**
  * @file
- * 
+ *
  * Debugging: dump physical algebra tree in AY&T dot format.
  *
  * Copyright Notice:
@@ -136,7 +136,7 @@ literal (PFalg_atom_t a)
         case aat_int:
             PFarray_printf (s, LLFMT, a.val.int_);
             break;
-            
+
         case aat_str:
         case aat_uA:
             PFarray_printf (s, "\\\"%s\\\"", PFesc_string (a.val.str));
@@ -186,7 +186,7 @@ comp_str (PFalg_comp_t comp) {
  * @param n The current node to print (function is recursive)
  * @param node_id the next available node id.
  */
-static unsigned int 
+static unsigned int
 pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
 {
     unsigned int c;
@@ -278,7 +278,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                             PFatt_str (n->schema.items[0].name));
 
             for (c = 1; c < n->schema.count;c++)
-                PFarray_printf (dot, " | %s", 
+                PFarray_printf (dot, " | %s",
                                 PFatt_str (n->schema.items[c].name));
 
             PFarray_printf (dot, ")");
@@ -302,7 +302,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                             PFatt_str (n->schema.items[0].name));
 
             for (c = 1; c < n->schema.count;c++)
-                PFarray_printf (dot, " | %s", 
+                PFarray_printf (dot, " | %s",
                                 PFatt_str (n->schema.items[c].name));
 
             PFarray_printf (dot, ")");
@@ -322,7 +322,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                             PFatt_str (n->sem.eqjoin.att1),
                             PFatt_str (n->sem.eqjoin.att2));
             break;
-            
+
         case pa_thetajoin:
             PFarray_printf (dot, "%s", a_id[n->kind]);
 
@@ -332,7 +332,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                                 comp_str (n->sem.thetajoin.pred[c].comp),
                                 PFatt_str (n->sem.thetajoin.pred[c].right));
             break;
-            
+
         case pa_unq2_thetajoin:
             PFarray_printf (dot, "%s:\\n(%s %s %s)\\ndist (%s, %s)",
                             a_id[n->kind],
@@ -354,7 +354,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                             PFatt_str (n->sem.unq_thetajoin.right),
                             PFatt_str (n->sem.unq_thetajoin.ldist));
             break;
-            
+
         case pa_project:
             if (n->sem.proj.items[0].new != n->sem.proj.items[0].old)
                 PFarray_printf (dot, "%s (%s:%s", a_id[n->kind],
@@ -370,7 +370,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                                     PFatt_str (n->sem.proj.items[c].new),
                                     PFatt_str (n->sem.proj.items[c].old));
                 else
-                    PFarray_printf (dot, ",%s", 
+                    PFarray_printf (dot, ",%s",
                                     PFatt_str (n->sem.proj.items[c].old));
 
             PFarray_printf (dot, ")");
@@ -408,12 +408,12 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                             PFalg_fun_str (n->sem.fun_1to1.kind),
                             PFatt_str (n->sem.fun_1to1.res));
             for (c = 0; c < n->sem.fun_1to1.refs.count;c++)
-                PFarray_printf (dot, "%s%s", 
+                PFarray_printf (dot, "%s%s",
                                 c ? ", " : "",
                                 PFatt_str (n->sem.fun_1to1.refs.atts[c]));
             PFarray_printf (dot, ">)");
             break;
-            
+
         case pa_eq:
         case pa_gt:
         case pa_bool_and:
@@ -465,7 +465,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             PFarray_printf (dot, "%s (%s", a_id[n->kind],
                             PFatt_str (n->sem.mark.res));
             if (n->sem.mark.part != att_NULL)
-                PFarray_printf (dot, "/%s", 
+                PFarray_printf (dot, "/%s",
                                 PFatt_str (n->sem.mark.part));
 
             PFarray_printf (dot, ")");
@@ -475,7 +475,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             PFarray_printf (dot, "%s (%s)", a_id[n->kind],
                             PFatt_str (n->sem.rank.res));
             break;
-            
+
         case pa_type:
             PFarray_printf (dot, "%s (%s:<%s>), type: %s", a_id[n->kind],
                             PFatt_str (n->sem.type.res),
@@ -555,13 +555,13 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                             PFatt_str (n->sem.ii.iter),
                             PFatt_str (n->sem.ii.item));
             break;
-        
+
         case pa_docnode:
             PFarray_printf (dot, "%s (%s)",
                             a_id[n->kind],
                             PFatt_str (n->sem.ii.iter));
             break;
-        
+
         case pa_attribute:
         case pa_processi:
             PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
@@ -587,7 +587,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                             PFatt_str (n->sem.trace_map.inner),
                             PFatt_str (n->sem.trace_map.outer));
             break;
-        
+
         case pa_fun_call:
             PFarray_printf (dot,
                             "%s function \\\"%s\\\" (",
@@ -601,7 +601,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                             ")\\n(loop: %s)",
                             PFatt_str (n->sem.fun_call.iter));
             break;
-            
+
         case pa_fun_param:
             PFarray_printf (dot, "%s (", a_id[n->kind]);
             for (unsigned int i = 0; i < n->schema.count; i++)
@@ -610,7 +610,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                                 PFatt_str (n->schema.items[i].name));
             PFarray_printf (dot, ")");
             break;
-            
+
         case pa_serialize:
         case pa_cross:
         case pa_append_union:
@@ -642,7 +642,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             }
             fmt++;
         }
-        /* iterate over all format characters 
+        /* iterate over all format characters
            if we haven't found a '+' character */
         if (!all)
             fmt = prop_args;
@@ -685,7 +685,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                     PFalg_att_t att = n->schema.items[i].name;
                     if (PFprop_req_bool_val (n->prop, att)) {
                         PFarray_printf (
-                            dot, 
+                            dot,
                             fst ? "\\nreq. val: %s=%s " : ", %s=%s ",
                             PFatt_str (att),
                             PFprop_req_bool_val_val (n->prop, att)
@@ -699,7 +699,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                     PFalg_att_t att = n->schema.items[i].name;
                     if (PFprop_req_order_col (n->prop, att)) {
                         PFarray_printf (
-                            dot, 
+                            dot,
                             fst ? "\\norder col: %s" : ", %s",
                             PFatt_str (att));
                         fst = false;
@@ -711,7 +711,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                     PFalg_att_t att = n->schema.items[i].name;
                     if (PFprop_req_bijective_col (n->prop, att)) {
                         PFarray_printf (
-                            dot, 
+                            dot,
                             fst ? "\\nbijective col: %s" : ", %s",
                             PFatt_str (att));
                         fst = false;
@@ -723,7 +723,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                     PFalg_att_t att = n->schema.items[i].name;
                     if (PFprop_req_multi_col_col (n->prop, att)) {
                         PFarray_printf (
-                            dot, 
+                            dot,
                             fst ? "\\nmulti-col col: %s" : ", %s",
                             PFatt_str (att));
                         fst = false;
@@ -735,7 +735,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                     PFalg_att_t att = n->schema.items[i].name;
                     if (PFprop_req_value_col (n->prop, att)) {
                         PFarray_printf (
-                            dot, 
+                            dot,
                             fst ? "\\nvalue col: %s" : ", %s",
                             PFatt_str (att));
                         fst = false;
@@ -749,7 +749,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                         PFarray_printf (dot, i ? ", %s " : "\\ndom: %s ",
                                         PFatt_str (n->schema.items[i].name));
                         PFprop_write_domain (
-                            dot, 
+                            dot,
                             PFprop_dom (n->prop, n->schema.items[i].name));
                     }
             }
@@ -770,7 +770,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
 
                         if (l_unq && l_unq != unq && r_unq && r_unq != unq)
                             PFarray_printf (dot,
-                                            " [%s|%s]", 
+                                            " [%s|%s]",
                                             PFatt_str(l_unq),
                                             PFatt_str(r_unq));
                         else if (l_unq && l_unq != unq)
@@ -797,7 +797,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
 
                         if (l_ori && l_ori != ori && r_ori && r_ori != ori)
                             PFarray_printf (dot,
-                                            " [%s|%s]", 
+                                            " [%s|%s]",
                                             PFatt_str(l_ori),
                                             PFatt_str(r_ori));
                         else if (l_ori && l_ori != ori)
@@ -810,7 +810,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             if (*fmt == '+' || *fmt == 'S') {
                 /* print whether columns do have to respect duplicates */
                 if (PFprop_set (n->prop))
-                    PFarray_printf (dot, "\\nset"); 
+                    PFarray_printf (dot, "\\nset");
             }
             if (*fmt == '+' || *fmt == 'L') {
                 /* print columns that have a level information attached */
@@ -834,16 +834,16 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                 PFalg_att_t att;
                 unsigned int i, j, count;
                 bool first = true;
-                
+
                 for (i = 0; i < n->schema.count; i++) {
                     att = n->schema.items[i].name;
                     if (PFprop_guide (n->prop, att)) {
-                    
-                        PFarray_printf (dot, "%s %s:", 
+
+                        PFarray_printf (dot, "%s %s:",
                                         first ? "\\nGUIDE:" : ",",
                                         PFatt_str(att));
                         first = false;
-                        
+
                         /* print guides */
                         count  = PFprop_guide_count (n->prop, att);
                         guides = PFprop_guide_elements (n->prop, att);
@@ -857,7 +857,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                     PFalg_attlist_t list;
                     unsigned int i, j;
                     bool first = true;
-                    
+
                     PFarray_printf (dot, "\\ncomposite keys:");
 
                     for (i = 0; i < PFprop_ckeys_count (n->prop); i++) {
@@ -871,7 +871,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                         }
                         PFarray_printf (dot, ">");
                     }
-                } 
+                }
             }
             if (*fmt == '+' || *fmt == 'c') {
                 PFarray_printf (dot, "\\ncost: %lu", n->cost);
@@ -898,7 +898,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
     /* close up label */
     PFarray_printf (dot, "\", color=%s ];\n", color[n->kind]);
 
-    for (c = 0; c < PFPA_OP_MAXCHILD && n->child[c]; c++) {      
+    for (c = 0; c < PFPA_OP_MAXCHILD && n->child[c]; c++) {
 
         /*
          * Label for child node has already been built, such that
@@ -918,13 +918,13 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             if (n->sem.rec_arg.base) {
                 if (n->sem.rec_arg.base->node_id == 0)
                     n->sem.rec_arg.base->node_id = node_id++;
-                
-                PFarray_printf (dot, 
+
+                PFarray_printf (dot,
                                 "node%i -> node%i "
                                 "[style=dashed label=seed dir=back];\n",
                                 n->sem.rec_arg.base->node_id,
                                 n->child[0]->node_id);
-                PFarray_printf (dot, 
+                PFarray_printf (dot,
                                 "node%i -> node%i "
                                 "[style=dashed label=recurse];\n",
                                 n->child[1]->node_id,
@@ -994,7 +994,7 @@ PFpa_dot (FILE *f, PFpa_op_t *root, char *prop_args)
         /* add domain subdomain relationships if required */
         if (prop_args) {
             char *fmt = prop_args;
-            while (*fmt) { 
+            while (*fmt) {
                 if (*fmt == '+') {
                         PFprop_write_dom_rel_dot (dot, root->prop);
                         break;

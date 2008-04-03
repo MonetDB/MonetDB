@@ -2,7 +2,7 @@
 
 /**
  * @file
- * 
+ *
  * Debugging: dump XQuery core language tree in
  * AT&T dot format or human readable
  *
@@ -55,7 +55,7 @@
 
 /** Node names to print out for all the abstract syntax tree nodes. */
 char *c_id[]  = {
-    
+
     [c_var]                = "var"
   , [c_lit_str]            = "lit_str"
   , [c_lit_int]            = "lit_int"
@@ -115,11 +115,11 @@ char *c_id[]  = {
 /* [/STANDOFF] */
 
   , [c_elem]               = "elem"
-  , [c_attr]               = "attr" 
+  , [c_attr]               = "attr"
   , [c_text]               = "text"
-  , [c_doc]                = "doc" 
-  , [c_comment]            = "comment" 
-  , [c_pi]                 = "pi"  
+  , [c_doc]                = "doc"
+  , [c_comment]            = "comment"
+  , [c_pi]                 = "pi"
   , [c_tag]                = "tag"
 
   , [c_true]               = "true"
@@ -143,9 +143,7 @@ char *c_id[]  = {
 };
 
 /** Current node id */
-static unsigned no = 0;
-/** Temporary variable to allocate mem for node names */
-static char    *child;
+static unsigned no;
 /** Temporary variable for node labels in dot tree */
 static char     label[32];
 
@@ -162,44 +160,44 @@ static char     label[32];
  * @param n The current node to print (function is recursive)
  * @param node Name of the parent node.
  */
-static void 
+static void
 core_dot (FILE *f, PFcnode_t *n, char *node)
 {
     int c;
     char s[sizeof ("4294967285")];
-    
+
     switch (n->kind) {
-    case c_var:       
-        L2 (c_id[n->kind], PFqname_str (n->sem.var->qname));     
+    case c_var:
+        L2 (c_id[n->kind], PFqname_str (n->sem.var->qname));
         break;
-    case c_lit_str:   
+    case c_lit_str:
         snprintf (s, sizeof (s), "%s", PFesc_string (n->sem.str));
         s[sizeof(s) - 1] = 0;
         L2 (c_id[n->kind], s);
         break;
-    case c_lit_int:   
+    case c_lit_int:
         snprintf (s, sizeof (s), LLFMT, n->sem.num);
         s[sizeof(s) - 1] = 0;
-        L2 (c_id[n->kind], s);                  
+        L2 (c_id[n->kind], s);
         break;
-    case c_lit_dec:   
+    case c_lit_dec:
         snprintf (s, sizeof (s), "%.5g", n->sem.dec);
         s[sizeof(s) - 1] = 0;
-        L2 (c_id[n->kind], s);                
+        L2 (c_id[n->kind], s);
         break;
-    case c_lit_dbl:   
+    case c_lit_dbl:
         snprintf (s, sizeof (s), "%.5g", n->sem.dbl);
         s[sizeof(s) - 1] = 0;
-        L2 (c_id[n->kind], s);                
+        L2 (c_id[n->kind], s);
         break;
-    case c_apply:     
-    case c_fun_decl:     
+    case c_apply:
+    case c_fun_decl:
         L2 (c_id[n->kind], PFqname_str (n->sem.fun->qname));
         break;
     case c_tag:
         L2 (c_id[n->kind], PFqname_str (n->sem.qname));
         break;
-    case c_seqtype:      
+    case c_seqtype:
         L2 (c_id[n->kind], PFty_str (n->sem.type));
         break;
 
@@ -212,22 +210,21 @@ core_dot (FILE *f, PFcnode_t *n, char *node)
             n->sem.mode.dir == p_desc ? "descending" :"ascending");
         break;
 
-    default:          
+    default:
         L0 (c_id[n->kind]);
         break;
     }
     label[sizeof(label) - 1] = 0;
-    
+
     fprintf (f, "%s [label=\"%s\"];\n", node, label);
-    
-    for (c = 0;
-         c < PFCNODE_MAXCHILD && n->child[c] != 0;
-         c++) {      
-        child = (char *) PFmalloc (sizeof ("node4294967296"));
-        
+
+    for (c = 0; c < PFCNODE_MAXCHILD && n->child[c] != 0; c++) {
+        /* Temporary variable to allocate mem for node names */
+        char *child = (char *) PFmalloc (sizeof ("node4294967296"));
+
         sprintf (child, "node%u", ++no);
         fprintf (f, "%s -> %s;\n", node, child);
-        
+
         core_dot (f, n->child[c], child);
     }
 }
@@ -244,14 +241,15 @@ void
 PFcore_dot (FILE *f, PFcnode_t *root)
 {
     if (root) {
+        no = 0;
         fprintf (f, "digraph XQueryCore {\n");
         core_dot (f, root, "node0");
         fprintf (f, "}\n");
-    }    
+    }
 }
 
 /**
- * Break the current line and indent the next line 
+ * Break the current line and indent the next line
  * by @a ind characters.
  *
  * @param f file to print to
@@ -261,7 +259,7 @@ static void
 indent (FILE *f, int ind, bool nl)
 {
     if (!nl) return;
-    
+
     fputc ('\n', f);
 
     while (ind-- > 0)
@@ -280,10 +278,10 @@ core_pretty (FILE *f, PFcnode_t *n, int i, bool nl, bool print_types)
     int c;
     bool topdown = false;
     bool comma;
-    
+
     if (!n)
         return;
-    
+
     switch (n->kind) {
         case c_for:
             indent (f, i - 5, nl);
@@ -304,43 +302,43 @@ core_pretty (FILE *f, PFcnode_t *n, int i, bool nl, bool print_types)
             indent (f, i - 4, nl);
             fprintf (f, "%s (", c_id[n->kind]);
             break;
-            
+
         case c_default:
             indent (f, i - 7, nl);
             fprintf (f, "%s (", c_id[n->kind]);
             break;
-            
+
         default:
             indent (f, i, nl);
             fprintf (f, "%s (", c_id[n->kind]);
             break;
     }
-    
+
     comma = true;
-    
+
     switch (n->kind) {
-    case c_var:         
+    case c_var:
         fprintf (f, "%s", PFqname_str (n->sem.var->qname));
         break;
-    case c_lit_str:     
+    case c_lit_str:
         fprintf (f, "\"%s\"", PFesc_string (n->sem.str));
         break;
-    case c_lit_int:     
+    case c_lit_int:
         fprintf (f, LLFMT, n->sem.num);
         break;
-    case c_lit_dec:     
+    case c_lit_dec:
         fprintf (f, "%.5g", n->sem.dec);
         break;
-    case c_lit_dbl:     
+    case c_lit_dbl:
         fprintf (f, "%.5g", n->sem.dbl);
         break;
-    case c_apply:       
+    case c_apply:
         fprintf (f, "%s", PFqname_str (n->sem.fun->qname));
         break;
-    case c_seqtype:        
+    case c_seqtype:
         fprintf (f, "%s", PFty_str (n->sem.type));
         break;
-    case c_tag:       
+    case c_tag:
         fprintf (f, "%s", PFqname_str (n->sem.qname));
         break;
     case c_orderby:
@@ -353,7 +351,7 @@ core_pretty (FILE *f, PFcnode_t *n, int i, bool nl, bool print_types)
                                       n->sem.mode.empty == p_greatest ?
                                       "greatest" : "least");
         break;
-        
+
     case c_flwr:
         core_pretty (f, n->child[0], i+6, L(n)->kind != c_nil, print_types);
         fprintf (f, ",");
@@ -395,7 +393,7 @@ core_pretty (FILE *f, PFcnode_t *n, int i, bool nl, bool print_types)
         core_pretty (f, R(n), i, false, print_types);
         topdown = true;
         break;
-        
+
     case c_ancestor:
     case c_ancestor_or_self:
     case c_attribute:
@@ -452,11 +450,11 @@ core_pretty (FILE *f, PFcnode_t *n, int i, bool nl, bool print_types)
         topdown = true;
         break;
 
-    default:            
+    default:
         comma = false;
         break;
     }
-    
+
     if (!topdown)
         for (c = 0;
              c < PFCNODE_MAXCHILD && n->child[c] != 0;
@@ -464,10 +462,10 @@ core_pretty (FILE *f, PFcnode_t *n, int i, bool nl, bool print_types)
             if (comma)
                 fprintf (f, ",");
             comma = true;
-            
+
             core_pretty (f, n->child[c], i+2, true, print_types);
         }
-    
+
     if (print_types)
         fprintf (f, ") {%s}", PFty_str (n->type));
     else

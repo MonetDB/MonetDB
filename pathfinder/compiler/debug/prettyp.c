@@ -97,9 +97,9 @@ static stack S1;   /**< see #S */
 static void indent (FILE *f, int indentation);
 
 /**
- * @var left see #stream 
- * @var right see #stream 
- * @var righttotal see #stream 
+ * @var left see #stream
+ * @var right see #stream
+ * @var righttotal see #stream
  */
 static int left, right, righttotal;
 
@@ -143,7 +143,7 @@ switch_color (FILE *f, char color)
  * What follows is a faithful implementation of the prettyprinting
  * algorithm discussed in [Oppen80].  The code below is designed to
  * match the description in [Oppen80] as closely as possible.
- * 
+ *
  * (We have augmented the `print' routine to be able to cope with
  * color switching codes.)
  *
@@ -174,7 +174,7 @@ pop (stack *s)
 {
     if (! empty (s))
         return *((int *) PFarray_at (s->lifo, --(s->sp)));
-    
+
     PFoops (OOPS_NOTPRETTY, "missing START_BLOCK?");
 
     /* just to pacify picky compilers; never reached due to "exit" in PFoops */
@@ -187,7 +187,7 @@ top (stack *s)
 {
     if (! empty (s))
         return *((int *) PFarray_at (s->lifo, s->sp - 1));
-    
+
     PFoops (OOPS_NOTPRETTY, "missing START_BLOCK?");
 
     /* just to pacify picky compilers; never reached due to "exit" in PFoops */
@@ -195,7 +195,7 @@ top (stack *s)
 }
 
 /** Push an element onto the stack */
-static void 
+static void
 push (stack *s, int n)
 {
     *((int *) PFarray_at (s->lifo, (s->sp)++)) = n;
@@ -203,7 +203,7 @@ push (stack *s, int n)
 
 
 /**
- * Break the current line and indent the next line 
+ * Break the current line and indent the next line
  * by @a ind characters.
  *
  * @param f file to print to
@@ -230,7 +230,7 @@ indent (FILE *f, int ind)
  * @param x characters to print
  * @param l length of string to print
  */
-static void 
+static void
 print (FILE *f, char *x, int l)
 {
     switch (*x) {
@@ -294,7 +294,7 @@ receive (void)
             char *string;
 
             /* a string, s marks it start, e marks its end */
-            do 
+            do
                 e = (char *) PFarray_add (collect);
             while (*e && ! isspace ((int)(*e)) && *e != START_BLOCK && *e != END_BLOCK);
             PFarray_last (collect)--;
@@ -322,13 +322,13 @@ scan (FILE *f)
 
     while (true) {
         x = receive ();
-    
+
         switch (*x) {
         case '\0':
             return;
 
         case START_BLOCK:
-            if (empty (&S1)) 
+            if (empty (&S1))
                 left = right = righttotal = 1;
             else
                 right = right + 1;
@@ -391,10 +391,10 @@ scan (FILE *f)
  * buffer is well-formed, iff either (1) or (2) holds:
  *
  * (1) it contains a string
- *     (NB. if the  string contains white space, be sure to embrace it 
+ *     (NB. if the  string contains white space, be sure to embrace it
  *      with START_BLOCK...END_BLOCK, because the pretty printer will try
  *      to break long lines at white space positions)
- * (2) it contains 
+ * (2) it contains
  *
  * @verbatim
          START_BLOCK b1 <blank> b2 <blank> ... <blank> bk END_BLOCK
@@ -442,24 +442,26 @@ void
 PFprettyp (FILE *f)
 {
     /* has material been collected yet? */
-    if (collect) {
+    if (collect && PFarray_last (collect)) {
         init (&S);
         init (&S1);
-    
+
         margin    = 6;
         indent_by = 2;
         offset    = 0;
 
         space = margin;
-   
+
         /* scan the collected material from its beginning and prettyprint */
         PFarray_last (collect) = 0;
         scan (f);
 
         /* collect buffer has been printed, re-initialize for next
-         * prettyprint job 
+         * prettyprint job
          */
-        collect = 0;
+        PFarray_last (collect) = 0;
+        PFarray_last (stream) = 0;
+        PFarray_last (size) = 0;
     }
 }
 
@@ -473,24 +475,26 @@ void
 PFprettyp_extended (FILE *f, unsigned int width, unsigned int indent)
 {
     /* has material been collected yet? */
-    if (collect) {
+    if (collect && PFarray_last (collect)) {
         init (&S);
         init (&S1);
-    
+
         margin    = width;
         indent_by = 0;
         offset    = indent;
 
         space = margin;
-   
+
         /* scan the collected material from its beginning and prettyprint */
         PFarray_last (collect) = 0;
         scan (f);
 
         /* collect buffer has been printed, re-initialize for next
-         * prettyprint job 
+         * prettyprint job
          */
-        collect = 0;
+        PFarray_last (collect) = 0;
+        PFarray_last (stream) = 0;
+        PFarray_last (size) = 0;
     }
 }
 
