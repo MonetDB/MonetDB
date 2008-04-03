@@ -326,6 +326,8 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         .revalid             = revalid_strict /* XQ update facility 1.0 [§2.3] */
     };
 
+    /* initialize data structures in the Parser department */
+    PFparser_init ();
     /* Initialize data structures in the Core department */
     PFcore_init ();
     /* Initialize data structures in the Functions department */
