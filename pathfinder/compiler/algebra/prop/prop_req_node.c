@@ -480,10 +480,18 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
 
         case la_step:
         case la_guide_step:
-            assert ((type_of (n, n->sem.step.iter) & aat_node) == 0);
         {
             PFarray_t *new_map = PFarray (sizeof (req_node_t), 1),
                       *old_map;
+
+            map = find_map (MAP_LIST(n), n->sem.step.iter);
+
+            /* inherit the properties of the output */
+            if (map) {
+                req_node_t map_item = *map;
+                map_item.col = n->sem.step.iter;
+                ADD(new_map, map_item);
+            }
 
             map = find_map (MAP_LIST(n), n->sem.step.item_res);
 
