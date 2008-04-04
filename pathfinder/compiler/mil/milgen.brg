@@ -378,16 +378,17 @@ new_var (unsigned int pins)
     assert (varno < 10000);
 
     for (unsigned int i = 0; i < PFarray_last (mvars); i++)
-        if ((var = (mvar_t *) PFarray_at (mvars, i))->pins == 0) {
+        if ((var = *(mvar_t **) PFarray_at (mvars, i))->pins == 0) {
             var->pins = pins;
             return var;
         }
 
     /* If we were not successful, create a new entry */
-    var = (mvar_t *) PFarray_add (mvars);
-
+    var = PFmalloc (sizeof (mvar_t));
     var->name = varno++;
     var->pins = pins;
+    
+    *(mvar_t **) PFarray_add (mvars) = var;
 
     return var;
 }
@@ -8333,7 +8334,7 @@ PFmilgen (PFpa_op_t *n)
                     new (type (mty_oid), type (mty_oid))));
 
     /* initialize list of variables we use */
-    mvars = PFarray (sizeof (mvar_t), 100);
+    mvars = PFarray (sizeof (mvar_t *), 100);
 
     /* initialize the variable name counter
        with the first free variable number */
@@ -8352,7 +8353,7 @@ PFmilgen (PFpa_op_t *n)
 #ifndef NDEBUG
     mvar_t *var = NULL;
     for (unsigned int i = 0; i < PFarray_last (mvars); i++)
-        if ((var = (mvar_t *) PFarray_at (mvars, i))->pins) {
+        if ((var = *(mvar_t **) PFarray_at (mvars, i))->pins) {
             if (var->pins == 1)
                 PFinfo (OOPS_WARNING,
                         "variable %s stilled pinned once.",
@@ -8380,7 +8381,7 @@ PFmilgen (PFpa_op_t *n)
     for (unsigned int i = 0; i < PFarray_last (mvars); i++)
         milprog = seq (milprog,
                        declare (
-                           var (((mvar_t *) PFarray_at (mvars, i))->name)));
+                           var ((*(mvar_t **) PFarray_at (mvars, i))->name)));
 
     milprog = seq (milprog,
                    bodymilprog,
