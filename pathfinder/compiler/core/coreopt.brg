@@ -315,7 +315,7 @@ LocationStep:       reject_wide (SequenceType)                  =   72(10);
 LocationSteps:      locsteps (LocationStep, LocationSteps)      =   75(10);
 LocationSteps:      locsteps (LocationStep, CoreExpr)           =   76(10);
                                                                      
-CoreExpr:           elem (TagName, CoreExpr)                    =   77(10);
+CoreExpr:           elem (TagName, CoreExpr)                    =  30 (10);
 CoreExpr:           elem (TagName, seq (CoreExpr, CoreExpr))    =  22 (10);
 CoreExpr:           attr (TagName, CoreExpr)                    =   78(10);
 CoreExpr:           text (CoreExpr)                             =   79(10);
@@ -774,6 +774,11 @@ reduce (PFcnode_t * p, int goalnt)
             rewritten = true;
             break;
 
+        /* CoreExpr:           elem (TagName, CoreExpr) */
+        case 30:
+            /* after some rewrites the local re-labeling might
+               not detect bigger patterns any more */
+            if (R(p)->kind != c_seq) break;
         /* CoreExpr:           twig_seq (CoreExpr, seq (CoreExpr, CoreExpr)) */
         case 18:
         /* CoreExpr:           elem (TagName, seq (CoreExpr, CoreExpr)) */
