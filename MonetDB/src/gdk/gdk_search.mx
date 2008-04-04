@@ -337,7 +337,7 @@ BAThash(BAT *b, size_t masksize)
 {
 	BAT *o = NULL;
 
-	if (isVIEW(b)) {
+	if (VIEWhparent(b)) {
 		bat p = VIEWhparent(b);
 		o = b;
 		b = BATdescriptor(p);

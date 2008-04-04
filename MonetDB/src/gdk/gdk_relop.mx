@@ -1089,6 +1089,18 @@ BATleftfetchjoin(BAT *l, BAT *r, size_t estimate)
 	return batfetchjoin(l, r, estimate, FALSE, TRUE);
 }
 
+static int
+isPersistent(BAT *b)
+{
+	BAT *v = NULL;
+
+	if (b->batPersistence == PERSISTENT || (VIEWhparent(b) && 
+	    ALIGNsynced(b, (v = BBPdescriptor(VIEWhparent(b)))) && 
+	    v->batPersistence == PERSISTENT)) 
+		return 1; 
+	return 0;
+}
+
 @-
 This routine does the join optimization. TODO: it should be expressed in MIL.
 @c
@@ -1156,7 +1168,12 @@ loop binary search (both implemented by BATmergejoin).
 @-
 hash join: the bread&butter join of monet
 @c
-	if (swap && (rsize < lsize)) {	/* assume largest fits memory */
+	/* In normal operation we only build hash tables on the smallest bat. 
+	   If the larger is a persisent bat we prefer that as it will pay off
+	   later. We assume largest fits memory */
+	if (swap && ((isPersistent(BATmirror(l)) && !isPersistent(r)) || 
+	    /* both persistent (or not) then choose smallest */
+            (isPersistent(BATmirror(l)) == isPersistent(r) && rsize > lsize))) {
 		ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmirror(BAThashjoin(BATmirror(r), BATmirror(l)," SZFMT "));\n", estimate);
 
 		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), estimate));
@@ -2014,6 +2031,7 @@ BATfetch(BAT *l, BAT *r)
 The BATsemijoin chooses between various alternatives.
 TODO: this should be moved to MIL.
 @c
+
 BAT *
 BATsemijoin(BAT *l, BAT *r)
 {
