@@ -104,7 +104,7 @@ static char *a_id[]  = {
     , [pa_comment]         = "COMMENT"          /* lawn \"#00FF00\" */
     , [pa_processi]        = "PI"               /* lawn \"#00FF00\" */
     , [pa_content]         = "CONTENT"          /* lawn \"#00FF00\" */
-    , [pa_slim_content]    = "content"          /* lawn \"#00FF00\" */
+    , [pa_slim_content]    = "slim content"     /* lawn \"#00FF00\" */
     , [pa_merge_adjacent]  = "#pf:merge-adjacent-text-nodes"
     , [pa_error]           = "!ERROR"
     , [pa_cond_err]        = "!ERROR"
@@ -245,6 +245,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         , [pa_comment]         = "\"#00FC59\""
         , [pa_processi]        = "\"#00FC59\""
         , [pa_content]         = "\"#00FC59\""
+        , [pa_slim_content]    = "\"#AAFC59\""
         , [pa_merge_adjacent]  = "\"#00D000\""
         , [pa_error]           = "\"#C0C0C0\""
         , [pa_cond_err]        = "\"#C0C0C0\""
