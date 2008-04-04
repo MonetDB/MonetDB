@@ -195,6 +195,34 @@ PFprop_node_property (const PFprop_t *prop, PFalg_att_t attr)
 }
 
 /**
+ * @brief Test if the node ids of column @a attr are required.
+ */
+bool
+PFprop_node_id_required (const PFprop_t *prop, PFalg_att_t attr)
+{
+    req_node_t *map = find_map (prop->req_node_vals, attr);
+
+    if (!map)
+        return true;
+    else
+        return map->id;
+}
+
+/**
+ * @brief Test if the node order of column @a attr are required.
+ */
+bool
+PFprop_node_order_required (const PFprop_t *prop, PFalg_att_t attr)
+{
+    req_node_t *map = find_map (prop->req_node_vals, attr);
+
+    if (!map)
+        return true;
+    else
+        return map->order;
+}
+
+/**
  * @brief Test if the subtree of column @a attr is queried.
  */
 bool
@@ -739,11 +767,41 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         }
 
         case la_merge_adjacent:
-            add_constr_map (n, n->sem.merge_adjacent.item_in);
+        {
+            PFarray_t *new_map = PFarray (sizeof (req_node_t), 3);
+
+            map = find_map (MAP_LIST(n), n->sem.merge_adjacent.iter_res);
+
+            /* inherit the properties of the iter column */
+            if (map) {
+                req_node_t map_item = *map;
+                map_item.col = n->sem.merge_adjacent.iter_in;
+                ADD(new_map, map_item);
+            }
+
+            map = find_map (MAP_LIST(n), n->sem.merge_adjacent.pos_res);
+
+            /* inherit the properties of the pos column */
+            if (map) {
+                req_node_t map_item = *map;
+                map_item.col = n->sem.merge_adjacent.pos_in;
+                ADD(new_map, map_item);
+            }
+
+            map = find_map (MAP_LIST(n), n->sem.merge_adjacent.item_res);
+            assert (map);
+
+            /* inherit the properties of the item column */
+            if (map) {
+                req_node_t map_item = *map;
+                map_item.col = n->sem.merge_adjacent.item_in;
+                assert (map_item.constr == true);
+                ADD(new_map, map_item);
+            }
 
             prop_infer_req_node_vals (L(n), NULL); /* fragments */
-            prop_infer_req_node_vals (R(n), MAP_LIST(n));
-            return; /* only infer once */
+            prop_infer_req_node_vals (R(n), new_map);
+        }   return; /* only infer once */
 
         case la_roots:
         case la_proxy:

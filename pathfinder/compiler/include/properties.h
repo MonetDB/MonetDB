@@ -482,6 +482,16 @@ bool PFprop_req_value_col (const PFprop_t *prop, PFalg_att_t attr);
 bool PFprop_node_property (const PFprop_t *prop, PFalg_att_t attr);
 
 /**
+ * @brief Test if the node ids of column @a attr are required.
+ */
+bool PFprop_node_id_required (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * @brief Test if the node order of column @a attr are required.
+ */
+bool PFprop_node_order_required (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
  * Test if the subtree of column @a attr is queried.
  */
 bool PFprop_node_content_queried (const PFprop_t *prop, PFalg_att_t attr);

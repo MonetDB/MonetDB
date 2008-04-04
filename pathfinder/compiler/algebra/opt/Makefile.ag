@@ -43,6 +43,7 @@ lib_opt = {
                 opt_join_pd.c \
                 opt_key.c \
                 opt_mvd.c \
+                opt_req_node.c \
                 opt_reqval.c \
                 opt_set.c \
                 opt_thetajoin.c \

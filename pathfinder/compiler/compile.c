@@ -149,14 +149,14 @@ PFstate_init (PFstate_t *status)
 
     status->standoff_axis_steps = false;
 
-    status->opt_alg             = "OIKDCG_VGO_[J]OKVCG"
+    status->opt_alg             = "OIKDCG_VGO_[J]OKVCGN"
                                       "}IM__{_[J]OKVCG"
                                       "}IM__{_[J]OKVCGCG"
                                       "}IM__{_[J]OKVCG"
                                       "}IMTS{_[J]OKVCGCG"
                                       "}IMTS{_[J]OKVCG"
                                       "}IMTS{_[J]OKVCGE[]CGP";
-    status->opt_sql             = "OIKDCG_VGO_[J]OKVCG"
+    status->opt_sql             = "OIKDCG_VGO_[J]OKVCGN"
                                       "}IM__{_[J]OKVCG"
                                       "}IM__{_[J]OKVCGCG"
                                       "}IM__{_[J]OKVCG"

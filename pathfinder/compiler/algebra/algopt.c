@@ -258,6 +258,19 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                            PFtimer_str (tm));
                 break;
 
+            case 'N':
+                MAP_ORI_NAMES("required nodes optimization")
+
+                tm = PFtimer_start ();
+
+                root = PFalgopt_req_node (root);
+
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("   required nodes optimization:\t    %s",
+                           PFtimer_str (tm));
+                break;
+
             case 'Q':
                 MAP_ORI_NAMES("join-graph optimization")
                 proxies_involved = false;

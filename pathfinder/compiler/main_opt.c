@@ -200,7 +200,7 @@ main (int argc, char *argv[])
      */
     static char *progname = 0;
 
-    char *opt_args  = "OIKDCG_VGO_[J]OKVCG"
+    char *opt_args  = "OIKDCG_VGO_[J]OKVCGN"
                           "}IM__{_[J]OKVCG"
                           "}IM__{_[J]OKVCGCG"
                           "}IM__{_[J]OKVCG"
