@@ -32,6 +32,8 @@
 #include "logical.h"
 #include "sql.h"
 
+/* Translate the logical algebra to 
+ * SQL statements */
 PFsql_t* PFlalg2sql(PFla_op_t *p);
 
 #endif /* LALG_2_SQL */

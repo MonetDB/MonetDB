@@ -1363,6 +1363,7 @@ PFsql_column_name_str (PFsql_col_t *name)
             case sql_col_max:        return "max";
             case sql_col_err:        return "err";
             case sql_col_sep:        return "sep";
+            case sql_col_sur:        return "sur";
             case sql_col_dist:
                 assert (name->ty < 100);
                 res = (char *) PFmalloc (7);

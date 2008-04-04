@@ -209,6 +209,7 @@ Rel:    thetajoin (Rel, Rel)                         =  15 (10);
 Rel:    project (Rel)                                =  16 (10);
 Rel:    select_ (Rel)                                =  17 (10);
 Rel:    pos_select (Rel)                             =  18 (10);
+Rel:    to (Rel)                                     =  19 (10);
 
 Rel:    disjunion (Rel, Rel)                         =  20 (10);
 Rel:    intersect (Rel, Rel)                         =  21 (10);
@@ -490,6 +491,7 @@ special_col (PFsql_special_t spc)
 #define DIST_       column_name (special_col (sql_col_dist))
 #define ERR_        column_name (special_col (sql_col_err))
 #define SEP_        column_name (special_col (sql_col_sep))
+#define SUR_        column_name (special_col (sql_col_sur))
 
 #define PRE(n)        ext_column_name (n, special_col (sql_col_pre))
 #define SIZE(n)       ext_column_name (n, special_col (sql_col_size))
@@ -504,6 +506,7 @@ special_col (PFsql_special_t spc)
 #define POS(n)        ext_column_name (n, special_col (sql_col_pos))
 #define MAX(n)        ext_column_name (n, special_col (sql_col_max))
 #define SEP(n)        ext_column_name (n, special_col (sql_col_sep))
+#define SUR(n)        ext_column_name (n, special_col (sql_col_sur))
 
 #define TRUE_STR       lit_str("true")
 #define FALSE_STR      lit_str("false")
@@ -2053,8 +2056,7 @@ reduce (PFla_op_t * p, int goalnt)
             /* the item information */
             for (unsigned int i = 0; i < PFarray_last (COLMAP(query)); i++) {
                 sql_column_env_t entry = col_env_at (COLMAP(query), i);
-                if (((entry.att == item) && !(entry.type & aat_node)) &&
-                    (entry.att != pos)) {
+                if (((entry.att == item) && !(entry.type & aat_node))) {
                     sername = COLUMN_NAME (att_item, entry.type);
                     colexpr = transform_expression (entry.expression, sername);
 
@@ -3187,6 +3189,201 @@ reduce (PFla_op_t * p, int goalnt)
                 PFarray_del (COLMAP(p));
             }
             break;
+
+        /* Rel:     to (Rel) */
+        case 19:
+        {
+              unsigned int c = 0;
+
+              PFsql_col_t *rescol = NULL;
+
+              PFsql_t *columnlist = NULL;
+              PFsql_t *selectlist = NULL;
+              PFsql_t *fromlist   = NULL;
+              PFsql_t *wherelist  = NULL;
+
+              PFsql_t *att1 = NULL;
+              PFsql_t *key  = NULL;
+
+              /* lists for the recursion to
+               * simulate a relational-loop */
+              PFsql_t *recselectlist = NULL;
+              PFsql_t *recfromlist = NULL;
+              PFsql_t *recwherelist = NULL;
+
+              PFsql_t *reckey  = NULL;
+              PFsql_t *recatt2 = NULL;
+
+              PFsql_tident_t totbl   = new_table_name (); 
+              PFsql_aident_t toalias = new_alias ();
+              
+              rescol = new_col (
+                           p->sem.binary.res,
+                           type_of (p, p->sem.binary.res));
+
+              /* check if there is a key we can use */
+              for (c = 0; c < L(p)->schema.count; c++)
+                  if (PFprop_key (L(p)->prop, L(p)->schema.items[c].name))
+                      break;
+
+              /* initialize lists with the items
+               * from the underlying node */
+              columnlist = transform_columnlist (COLMAP(L(p)));
+              selectlist = transform_selectlist (COLMAP(L(p)));
+              fromlist   = transform_frommap    (L(p));
+              wherelist  = transform_wheremap   (L(p));
+
+              att1 = col_env_lookup (COLMAP(L(p)),
+                         p->sem.binary.att1,
+                         type_of (p, p->sem.binary.att1));
+             
+              for (unsigned int i = 0;
+                   i < PFarray_last (COLMAP(L(p))); i++) {
+
+                  sql_column_env_t entry = col_env_at (COLMAP(L(p)), i);
+                  PFsql_col_t *newcolumn = new_col (entry.att, entry.type);
+
+                  recselectlist = select_list (recselectlist,
+                                   ext_column_name (
+                                       toalias,
+                                       newcolumn));
+                  col_env_add (COLMAP(p), entry.att, entry.type,
+                               ext_column_name (
+                                       toalias,
+                                       newcolumn));
+              }
+              
+              recfromlist = fromlist;
+
+              /* if there is no key present, create an artificial key
+               * key with rownumber functionality */ 
+              if (c >= L(p)->schema.count) {
+                  PFsql_tident_t keytbl = new_table_name ();
+                  PFsql_aident_t keyalias = new_alias ();
+
+                  columnlist = column_list (columnlist, SUR_);
+
+                  execute (bind (
+                      table_def (keytbl,
+                                columnlist),
+                      select (
+                          select_list (
+                               selectlist,
+                               column_assign (
+                                   over (row_number (),
+                                         window_clause (NULL, NULL)),
+                                   SUR_)),
+                          fromlist,
+                          wherelist)));
+
+                  /* since we have a new base table now we have to
+                   * modify the list structures */
+
+                  selectlist = NULL;
+                  fromlist = NULL;
+                  wherelist = NULL;
+
+                  for (unsigned int i = 0;
+                       i < PFarray_last (COLMAP(L(p))); i++) {
+
+                      sql_column_env_t entry = col_env_at (COLMAP(L(p)), i);
+                      selectlist = select_list (selectlist,
+                                       ext_column_name (
+                                           keyalias,
+                                           new_col (entry.att, entry.type)));
+                  }
+                  selectlist = select_list (selectlist,
+                                    SUR(keyalias));
+
+                  fromlist = from_list (
+                                 alias_bind (table_name (keytbl),
+                                             alias (keyalias)));
+
+                  att1 = ext_column_name (
+                              keyalias,
+                              new_col (
+                                  p->sem.binary.att1,
+                                  type_of (L(p), p->sem.binary.att1)));
+
+                  key = SUR(keyalias);
+                              
+
+                  recselectlist = select_list (
+                                       recselectlist,
+                                       SUR (toalias));
+
+                  recfromlist = from_list (
+                                       alias_bind (table_name (keytbl),
+                                                   alias (keyalias)));
+
+                  reckey = SUR(toalias);
+              } else {
+                  key = col_env_lookup (COLMAP (L(p)),
+                             L(p)->schema.items[c].name,
+                             type_of (L(p),
+                                 L(p)->schema.items[c].name));
+                  reckey = ext_column_name (
+                               toalias,
+                               new_col (
+                                   L(p)->schema.items[c].name,
+                                   type_of (L(p),
+                                       L(p)->schema.items[c].name)));
+              }
+
+              /* prepare the lists for the recursion */
+              columnlist = column_list (
+                               columnlist,
+                               column_name (rescol));
+
+              selectlist = select_list (selectlist, 
+                                 column_assign (
+                                      att1,
+                                      column_name (rescol)));
+
+              recselectlist = select_list (recselectlist,
+                                   column_assign (
+                                       add (ext_column_name (
+                                               toalias,
+                                               rescol),
+                                            lit_int (1)),
+                                       column_name (rescol)));
+
+              recatt2 = ext_column_name (
+                            toalias,
+                            new_col (p->sem.binary.att2,
+                                type_of (L(p), p->sem.binary.att2)));
+
+              execute (bind (
+                  table_def (totbl, columnlist),
+                  union_ (
+                    select (
+                        selectlist,
+                        fromlist,
+                        wherelist),
+                    select (
+                        recselectlist,
+                        from_list (recfromlist,
+                            alias_bind (
+                                table_name (totbl),
+                                alias (toalias))),
+                        where_list (recwherelist,
+                              eq (reckey, key),
+                              gt (recatt2,
+                                  ext_column_name (
+                                      toalias,rescol)))))));
+                         
+            col_env_add (COLMAP(p), 
+                         p->sem.binary.res, 
+                         type_of (p, p->sem.binary.res),
+                         ext_column_name (
+                             toalias, rescol));
+
+            from_list_add (FROMLIST (p),
+                          table_name (totbl),
+                          alias (toalias));
+
+            BOUND (p) = true;
+        }   break;
 
         /* Rel:    disjunion (Rel, Rel) */
         case 20:

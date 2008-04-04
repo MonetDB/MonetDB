@@ -54,6 +54,7 @@ enum PFsql_special_t {
     , sql_col_max
     , sql_col_err
     , sql_col_sep
+    , sql_col_sur
     , sql_col_dist
 };
 typedef enum PFsql_special_t PFsql_special_t;
