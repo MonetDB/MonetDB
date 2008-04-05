@@ -433,7 +433,7 @@ unpin (mvar_t *v, unsigned int count)
 /* fold( TYPE_MASK() / type_bit_check() / impl_types() / implty() definition */
 
 /** @brief ``mask out'' the flags identifying non-attribute nodes */
-#define TYPE_MASK(t)  ((t) & ~(aat_nkind))
+#define TYPE_MASK(t)  ((t) & ~(aat_nkind | aat_nkind1))
 
 /**
  * @brief Check if the algebra type represents only a single type bit
@@ -2455,7 +2455,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 );
 
                 /* consider node tgt */
-                if (ty & aat_pnode1)
+                if (ty & aat_nkind)
                     execute (
                         assgn (var (pre_tgt->name),
                                VAR (L(p)->env, pa_item, aat_pre1)),
@@ -2471,7 +2471,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                         cast (type (mty_oid), nil()))));
 
                 /* consider attribute tgt */
-                if (ty & aat_anode1)
+                if (ty & aat_attr)
                     execute (
                         assgn (var (attr_tgt->name),
                                VAR (L(p)->env, pa_item, aat_attr1)),
@@ -2526,7 +2526,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                         cast (type (mty_str), nil()))));
 
                 /* consider node ins */
-                if (ty & aat_pnode)
+                if (ty & aat_nkind)
                     execute (
                         assgn (var (pre_ins->name),
                                VAR (L(p)->env, pa_item, aat_pre)),
@@ -2542,7 +2542,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                         cast (type (mty_oid), nil()))));
 
                 /* consider attribute ins */
-                if (ty & aat_anode)
+                if (ty & aat_attr)
                     execute (
                         assgn (var (attr_ins->name),
                                VAR (L(p)->env, pa_item, aat_attr)),
