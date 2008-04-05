@@ -190,13 +190,10 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 *rp;
     PFalg_att_t  latt,
                  ratt;
-    unsigned int lp_child;
     PFla_op_t   *next_join = NULL;
     bool         modified  = false;
 
     assert (p);
-
-#define LP (p->child[lp_child])
 
     /* only process equi-joins */
     assert (p->kind == la_eqjoin_unq);
@@ -239,13 +236,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             rp = R(p);
             latt = p->sem.eqjoin_unq.att1;
             ratt = p->sem.eqjoin_unq.att2;
-            lp_child = 0;
         } else {
             lp = R(p);
             rp = L(p);
             latt = p->sem.eqjoin_unq.att2;
             ratt = p->sem.eqjoin_unq.att1;
-            lp_child = 1;
         }
 
         /* In case the join does nothing we may safely discard it. */
