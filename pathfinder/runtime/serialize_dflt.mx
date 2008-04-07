@@ -1002,13 +1002,15 @@ typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
 static bool
 xrpc_startSerialize(XqueryCtx *ctx)
 {
+    stream_write(ctx->out, "HTTP/1.1 200 OK\r\n"
+            "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n", 1, 60);
+
     /* We need to prepend "=" to each line, so make sure
        that we print one after each newline (encoded in
        newline string 'newline')->
        In addition we print one '=' at the beginning-> */
-    if (ctx->modes & MODE_MAPI){
+    if (ctx->modes & MODE_MAPI)
         stream_write (ctx->out, &e_, 1, 1);
-    }
 
     stream_printf(ctx->out, 
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>%s"

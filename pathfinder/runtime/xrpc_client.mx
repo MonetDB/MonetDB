@@ -137,25 +137,8 @@ PROC get_rpc_res (
     # Get "pre_prop" value of an "sequence" node.
     var seq_prop;
     var err := CATCH ({ seq_prop := qn_loc.ord_uselect("sequence").reverse().fetch(0); });
-    if (not(isnil(err))) {
-        if(count(qn_loc.uselect("Fault")) = 0) {
-            ERROR("get_rpc_res expects at least *one* \"<sequence>\" tag.\n");
-        } else {
-            var fault_value_pre := qn_loc.ord_uselect("Value").reverse().fetch(0);
-                fault_value_pre := pre_prop.ord_uselect(fault_value_pre).reverse().fetch(0);
-                fault_value_pre := pre_prop.fetch(int(fault_value_pre)+1);
-            var fault_value     := prop_text.fetch(fault_value_pre);
-
-            var fault_text_pre := qn_loc.ord_uselect("Text").reverse().fetch(0);
-                fault_text_pre := pre_prop.ord_uselect(fault_text_pre).reverse().fetch(0);
-                fault_text_pre := pre_prop.fetch(int(fault_text_pre)+1);
-            var fault_text     := prop_text.fetch(fault_text_pre);
-            ERROR("Remote execution failed.\n" +
-                  "SOAP Fault Code: %s\n" +
-                  "SOAP Fault Reason:\n%s\n",
-                  fault_value, fault_text);
-        }
-    }
+    if (not(isnil(err)))
+        ERROR("get_rpc_res expects at least *one* \"<sequence>\" tag.\n");
 
     # Fetch the position of the first "pre_prop" value of the "sequence"
     # node.  Must use "ord_uselect" and "fetch", since the the "pre_prop"
@@ -572,6 +555,10 @@ PROC doIterativeRPC(
                 time_xrpcClntDeSeria);
     }
 
+    if(isnil(res_bats)) {
+        ERROR("doIterativeRPC: execution of all iterations failed");
+    }
+
     return res_bats;
 }
 ADDHELP("doIterativeRPC", "zhang", "April 2006",
@@ -908,7 +895,7 @@ response2bat(int sock,
              int updCall,
              lng *time_xrpcClntDeSeria)
 {
-    char *strptr = NULL, respStatus[1024];
+    char respStatus[1024];
     int ret;
     stream *in;
     BAT *shredBAT;
@@ -928,14 +915,12 @@ response2bat(int sock,
     }
 
     /* We only speak HTTP/1.1 */
-    if( ((strptr = strstr(respStatus, "HTTP/1.1 ")) != respStatus) ||
-        (respStatus[8] != ' ') || (respStatus[12] != ' ') ||
-        /* the '\n' is not returned by stream_readline() */
-        (respStatus[ret -1] != '\r') ) {
-        GDKerror("response2bat: invalid response from %s%d\n",
-                host, port);
-        /* read and print everything we can receive */
-        do{
+    if( ret < 13 || /* we should have at least "HTTP/1.1 nnn ", 13 chars */
+        strstr(respStatus, "HTTP/1.1 ") != respStatus ||
+        respStatus[12] != ' ' ||
+        respStatus[ret -1] != '\r' ) { /* the '\n' is not returned by stream_readline() */
+        GDKerror("response2bat: invalid response from %s%d\n", host, port);
+        do{ /* read and print everything we can receive */
             respStatus[ret -1] = '\0'; /* overwrite '\r' */
             GDKerror("%s\n", respStatus);
             ret = stream_readline(in, respStatus, 1024);
@@ -960,9 +945,8 @@ response2bat(int sock,
     }
 
     /* Now, we can check the response status */
-    strptr = strchr(respStatus, ' '); assert(strptr);
-    if (strncmp(++strptr, "200", 3) != 0) {
-        GDKerror("HTTP Error Code  : %s\n", strptr);
+    if(respStatus[9] != '2' || respStatus[10] != '0' || respStatus[11] != '0') {
+        GDKerror("HTTP Error Code  : %s\n", respStatus+9);
 
         b->pos = 0;
         do{ /* read the SOAP Fault message */
@@ -990,31 +974,13 @@ response2bat(int sock,
         return NULL;
     }
 
-    if (updCall) {
-        b->pos = 0;
-        do{ /* Check for error message */
-            errno = 0;
-            ret = stream_read(in, (b->buf + b->pos), 1, (b->len - b->pos));
-            if (ret > 0) b->pos += ret;
-        } while (ret > 0);
-        b->buf[b->pos] = 0;
-        stream_close(in); stream_destroy(in);
-
-        if(b->pos == 0){ /* no error message => operation succeeded */
-            *time_xrpcClntDeSeria = GDKusec() - *time_xrpcClntDeSeria;
-            return shredBAT;
-        } else {
-            handle_error_msg(b->buf);
+    if (!updCall) {
+        if(shred(shredBAT, NULL, NULL, in, 0, NULL, NULL, NULL) ==GDK_FAIL) {
+            GDKerror("response2bat: invalid XRPC response received\n");
             BBPreclaim(shredBAT);
+            stream_close(in); stream_destroy(in);
             return NULL;
         }
-    }
-
-    if(shred(shredBAT, NULL, NULL, in, 0, NULL, NULL, NULL) ==GDK_FAIL) {
-        GDKerror("response2bat: invalid XRPC response received\n");
-        BBPreclaim(shredBAT);
-        stream_close(in); stream_destroy(in);
-        return NULL;
     }
 
     /* Stop timing Client DeSerialisation */
@@ -1081,7 +1047,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     b->pos = snprintf(b->buf, b->len, XRPC_HEADER,
             SOAP_NS, XRPC_NS, XDT_NS, XS_NS, XSI_NS, XRPC_NS, XRPC_LOC,
             rpc_module, rpc_uri, rpc_method, argc, iterc,
-            updCall?"true":"false");
+            *updCall?"true":"false");
 
     if (!(argcnt = GDKmalloc(iterc * sizeof(lng*)))) {
         GDKerror("CMDhttp_post: failed to malloc argcnt\n");
@@ -1359,13 +1325,8 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     /* Stop timing Network Send Client2Server */
     time_xrpcClnt2Serv= GDKusec() - time_xrpcClnt2Serv;
 
-    shredBAT = response2bat(sock, dst, port, b, *updCall,
-                                &time_xrpcClntDeSeria);
+    shredBAT = response2bat(sock, dst, port, b, *updCall, &time_xrpcClntDeSeria);
     clean_up(-1, out, bs, b, argcnt, iterc);
-
-    if(!shredBAT) {
-        return GDK_FAIL;
-    }
 
     if (options && strstr(options, "timing")) {
         stream_printf(GDKout,
@@ -1378,6 +1339,9 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                 bytes_sent,
                 time_xrpcClntDeSeria);
     }
+
+    if(!shredBAT)
+        return GDK_FAIL;
 
     *res = shredBAT;
     return GDK_SUCCEED;
