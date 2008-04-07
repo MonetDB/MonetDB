@@ -120,21 +120,21 @@ command_help(int argc, char *argv[])
 		printf("  -l  extended information listing\n");
 		printf("  -c  crash statistics listing\n");
 	} else if (strcmp(argv[1], "start") == 0) {
-		printf("Usage: monetdb start [-aw] [database ...]\n");
+		printf("Usage: monetdb start [-aw] database [database ...]\n");
 		printf("  Starts the given database, if the MonetDB Database Server\n");
 		printf("  is running.\n");
 		printf("Options:\n");
 		printf("  -a  start all known databases\n");
 		printf("  -w  wait for a database to be started instead of returning immediately\n");
 	} else if (strcmp(argv[1], "stop") == 0) {
-		printf("Usage: monetdb stop [-aw] [database ...]\n");
+		printf("Usage: monetdb stop [-aw] database [database ...]\n");
 		printf("  Stops the given database, if the MonetDB Database Server\n");
 		printf("  is running.\n");
 		printf("Options:\n");
 		printf("  -a  stop all known databases\n");
 		printf("  -w  wait for a database to be stopped instead of returning immediately\n");
 	} else if (strcmp(argv[1], "kill") == 0) {
-		printf("Usage: monetdb kill [-aw] [database ...]\n");
+		printf("Usage: monetdb kill [-aw] database [database ...]\n");
 		printf("  Kills the given database, if the MonetDB Database Server\n");
 		printf("  is running.  Note: killing a database should only be done\n");
 		printf("  as last resort to stop a database.  A database being\n");
