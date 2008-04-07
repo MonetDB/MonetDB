@@ -78,7 +78,7 @@ replacePrefix(str s, str prefix)
 static void
 command_help(int argc, char *argv[])
 {
-	if (argc != 2) {
+	if (argc < 2) {
 		printf("Usage: monetdb command [command-options-and-arguments]\n");
 		printf("  where command is one of:\n");
 		printf("    create, destroy, lock, release\n");
