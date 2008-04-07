@@ -583,22 +583,24 @@ command_merocom(int argc, char *argv[], merocom mode)
 				fflush(f);
 				if (wait == 1) {
 					waitstats = NULL;
+					printf("%sing database '%s'... ", type, stats->dbname);
+					fflush(stdout);
 					do {
 						/* don't spinlock, just wait half a seconds ;) */
 						MT_sleep_ms(500);
 						if (waitstats != NULL)
 							SABAOTHfreeStatus(&waitstats);
 						if ((e = SABAOTHgetStatus(&waitstats, stats->dbname)) != MAL_SUCCEED) {
-							fprintf(stderr, "%s: internal error: %s\n", type, e);
+							fprintf(stderr, "\n%s: internal error: %s\n", type, e);
 							GDKfree(e);
 							exit(2);
 						}
 					} while (waitstats->state == SABdbRunning);
 					if (waitstats->state == SABdbCrashed) {
-						printf("%s: database %s crashed after shutting down\n",
-								type, stats->dbname);
+						printf("CRASHED after shutting down!\n");
 						ret = 1;
 					}
+					printf("done\n");
 					SABAOTHfreeStatus(&waitstats);
 				}
 			} else if (mode == START && stats->state != SABdbRunning) {
@@ -607,13 +609,15 @@ command_merocom(int argc, char *argv[], merocom mode)
 				fflush(f);
 				if (wait == 1) {
 					waitstats = NULL;
+					printf("%sing database '%s'... ", type, stats->dbname);
+					fflush(stdout);
 					do {
 						/* don't spinlock, just wait half a seconds ;) */
 						MT_sleep_ms(500);
 						if (waitstats != NULL)
 							SABAOTHfreeStatus(&waitstats);
 						if ((e = SABAOTHgetStatus(&waitstats, stats->dbname)) != MAL_SUCCEED) {
-							fprintf(stderr, "%s: internal error: %s\n", type, e);
+							fprintf(stderr, "\n%s: internal error: %s\n", type, e);
 							GDKfree(e);
 							exit(2);
 						}
@@ -629,10 +633,10 @@ command_merocom(int argc, char *argv[], merocom mode)
 						 * hence we don't check for that here */
 					} while (waitstats->state != SABdbCrashed);
 					if (waitstats->state == SABdbCrashed) {
-						printf("%s: database %s crashed during startup\n",
-								type, stats->dbname);
+						printf("CRASHED during startup!\n");
 						ret = 1;
 					}
+					printf("done\n");
 					SABAOTHfreeStatus(&waitstats);
 				}
 			}
@@ -674,24 +678,27 @@ command_merocom(int argc, char *argv[], merocom mode)
 						fflush(f);
 						if (wait == 1) {
 							waitstats = NULL;
+							printf("%sing database '%s'... ",
+									type, stats->dbname);
+							fflush(stdout);
 							do {
 								/* don't spinlock, just wait half a seconds ;) */
 								MT_sleep_ms(500);
 								if (waitstats != NULL)
 									SABAOTHfreeStatus(&waitstats);
 								if ((e = SABAOTHgetStatus(&waitstats, stats->dbname)) != MAL_SUCCEED) {
-									fprintf(stderr, "%s: internal error: %s\n", type, e);
+									fprintf(stderr, "\n%s: internal error: %s\n", type, e);
 									GDKfree(e);
 									exit(2);
 								}
 							} while (waitstats->state == SABdbRunning);
 							if (waitstats->state == SABdbCrashed) {
-								printf("%s: database %s crashed after shutting down\n",
-										type, stats->dbname);
+								printf("CRASHED after shutting down!\n");
 								SABAOTHfreeStatus(&waitstats);
 								fclose(f);
 								exit(1);
 							}
+							printf("done\n");
 							SABAOTHfreeStatus(&waitstats);
 						}
 					} else if (mode == START) {
@@ -700,13 +707,16 @@ command_merocom(int argc, char *argv[], merocom mode)
 						fflush(f);
 						if (wait == 1) {
 							waitstats = NULL;
+							printf("%sing database '%s'... ",
+									type, stats->dbname);
+							fflush(stdout);
 							do {
 								/* don't spinlock, just wait half a seconds ;) */
 								MT_sleep_ms(500);
 								if (waitstats != NULL)
 									SABAOTHfreeStatus(&waitstats);
 								if ((e = SABAOTHgetStatus(&waitstats, stats->dbname)) != MAL_SUCCEED) {
-									fprintf(stderr, "%s: internal error: %s\n", type, e);
+									fprintf(stderr, "\n%s: internal error: %s\n", type, e);
 									GDKfree(e);
 									exit(2);
 								}
@@ -723,12 +733,12 @@ command_merocom(int argc, char *argv[], merocom mode)
 								 * we don't check for that here */
 							} while (waitstats->state != SABdbCrashed);
 							if (waitstats->state == SABdbCrashed) {
-								printf("%s: database %s crashed during startup\n",
-										type, stats->dbname);
+								printf("CRASHED during startup!\n");
 								SABAOTHfreeStatus(&waitstats);
 								fclose(f);
 								exit(1);
 							}
+							printf("done\n");
 							SABAOTHfreeStatus(&waitstats);
 						}
 					}
