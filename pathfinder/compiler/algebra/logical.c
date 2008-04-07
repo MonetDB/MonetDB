@@ -991,7 +991,7 @@ PFla_project_ (const PFla_op_t *n, unsigned int count, PFalg_proj_t *proj)
             fprintf (stderr,
                     "\nThe following error is triggered"
                     " in line %i of function %s() in file %s\n"
-                    "The input is of kind %i and has the schema (",
+                    "The input is of kind %d and has the schema (",
                     line, func, file, n->kind);
             for (unsigned int k = 0; k < n->schema.count; k++)
                 fprintf (stderr, "%s%s",
@@ -1019,7 +1019,7 @@ PFla_project_ (const PFla_op_t *n, unsigned int count, PFalg_proj_t *proj)
                 fprintf (stderr,
                         "\nThe following error is triggered"
                         " in line %i of function %s() in file %s\n"
-                        "The input is of kind %i and has the schema (",
+                        "The input is of kind %d and has the schema (",
                         line, func, file, n->kind);
                 for (unsigned int k = 0; k < n->schema.count; k++)
                     fprintf (stderr, "%s%s",
