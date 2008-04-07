@@ -1087,6 +1087,18 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     }
                 }
                 fst = true;
+                /* list filter columns */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t att = n->schema.items[i].name;
+                    if (PFprop_req_filter_col (n->prop, att)) {
+                        PFarray_printf (
+                            dot,
+                            fst ? "\\nfilter col: %s" : ", %s",
+                            PFatt_str (att));
+                        fst = false;
+                    }
+                }
+                fst = true;
                 /* list value columns */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
                     PFalg_att_t att = n->schema.items[i].name;

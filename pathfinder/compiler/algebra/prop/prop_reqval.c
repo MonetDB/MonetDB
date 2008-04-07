@@ -106,6 +106,16 @@ PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_att_t attr)
 }
 
 /**
+ * Test if @a attr is in the list of filter columns
+ * in container @a prop
+ */
+bool
+PFprop_req_filter_col (const PFprop_t *prop, PFalg_att_t attr)
+{
+    return in (prop->req_filter_cols, attr);
+}
+
+/**
  * Test if @a attr is in the list of value columns
  * in container @a prop
  */
@@ -162,7 +172,7 @@ diff (PFalg_att_t a, PFalg_att_t b)
                            (req_bool_val_t) { .name = empty_list,  \
                                               .val = empty_list }, \
                            empty_list, empty_list, empty_list,     \
-                           empty_list, empty_list)
+                           empty_list, empty_list, empty_list)
 
 /**
  * worker for PFprop_infer_req_bool_val
@@ -176,12 +186,14 @@ prop_infer_reqvals (PFla_op_t *n,
                     PFalg_att_t    order_cols,
                     PFalg_att_t    bijective_cols,
                     PFalg_att_t    multi_col_cols,
+                    PFalg_att_t    filter_cols,
                     PFalg_att_t    value_cols)
 {
     req_bool_val_t rv; /* list of required boolean values */
     PFalg_att_t    oc, /* list of order columns */
                    bc, /* list of bijective columns */
                    mc, /* list of multi column columns */
+                   fc, /* list of filter columns */
                    vc; /* list of value columns */
     assert (n);
 
@@ -228,12 +240,14 @@ prop_infer_reqvals (PFla_op_t *n,
         oc = intersect (cols, order_cols);
         bc = intersect (cols, bijective_cols);
         mc = intersect (cols, multi_col_cols);
+        fc = intersect (cols, filter_cols);
         vc = intersect (cols, value_cols);
         SEEN(n) = true;
     } else {
         oc = n->prop->req_order_cols;
         bc = n->prop->req_bijective_cols;
         mc = n->prop->req_multi_col_cols;
+        fc = n->prop->req_filter_cols;
         vc = n->prop->req_value_cols;
 
         /* collect all columns whose order is necessary */
@@ -245,7 +259,13 @@ prop_infer_reqvals (PFla_op_t *n,
            columns that are not referenced (not in cols).
            (comparison is done on common columns only) */
         mc = union_ (intersect (intersect (mc, cols), multi_col_cols),
-                      diff (mc, cols));
+                     diff (mc, cols));
+        /* Keep only non-conflicting columns by matching the columns
+           from the new input and the exisiting ones thus keeping the
+           columns that are not referenced (not in cols).
+           (comparison is done on common columns only) */
+        fc = union_ (intersect (intersect (fc, cols), filter_cols),
+                     diff (fc, cols));
         /* collect all columns whose real value is necessary */
         vc = union_ (vc, intersect (cols, value_cols));
     }
@@ -253,6 +273,7 @@ prop_infer_reqvals (PFla_op_t *n,
     n->prop->req_order_cols     = oc;
     n->prop->req_bijective_cols = bc;
     n->prop->req_multi_col_cols = mc;
+    n->prop->req_filter_cols    = fc;
     n->prop->req_value_cols     = vc;
 
     /* nothing to do if we haven't collected
@@ -303,16 +324,18 @@ prop_infer_reqvals (PFla_op_t *n,
             oc = union_ (empty_list, n->sem.ser_seq.pos);
             bc = empty_list;
             mc = diff (diff (cols, n->sem.ser_seq.pos), n->sem.ser_seq.item);
+            fc = empty_list;
             vc = union_ (vc, n->sem.ser_seq.item);
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
             return; /* only infer once */
 
         case la_serialize_rel:
             oc = union_ (empty_list, n->sem.ser_rel.pos);
             bc = empty_list;
             mc = diff (diff (cols, n->sem.ser_rel.iter), n->sem.ser_rel.pos);
+            fc = empty_list;
             vc = union_ (vc, n->sem.ser_rel.iter);
 
             for (unsigned int i = 0; i < n->sem.ser_rel.items.count; i++) {
@@ -338,8 +361,10 @@ prop_infer_reqvals (PFla_op_t *n,
             break;
 
         case la_cross:
-            prop_infer_reqvals (L(n), rv, schema2collist(L(n)), oc, bc, mc, vc);
-            prop_infer_reqvals (R(n), rv, schema2collist(R(n)), oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, schema2collist(L(n)),
+                                oc, bc, mc, fc, vc);
+            prop_infer_reqvals (R(n), rv, schema2collist(R(n)),
+                                oc, bc, mc, fc, vc);
             return; /* only infer once */
 
         case la_eqjoin:
@@ -375,16 +400,19 @@ prop_infer_reqvals (PFla_op_t *n,
                              n->sem.eqjoin.att2);
             }
 
-            prop_infer_reqvals (L(n), rv, schema2collist(L(n)), oc, bc, mc, vc);
-            prop_infer_reqvals (R(n), rv, schema2collist(R(n)), oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, schema2collist(L(n)),
+                                oc, bc, mc, fc, vc);
+            prop_infer_reqvals (R(n), rv, schema2collist(R(n)),
+                                oc, bc, mc, fc, vc);
             return; /* only infer once */
 
         case la_semijoin:
         {
             PFalg_att_t oc_right = empty_list,
                         bc_right = empty_list,
-                        vc_right = empty_list,
-                        mc_right = empty_list;
+                        mc_right = empty_list,
+                        fc_right = empty_list,
+                        vc_right = empty_list;
 
             /* Check whether the join columns can be marked as bijective value
                columns or if they have to produce the exact values. */
@@ -413,14 +441,14 @@ prop_infer_reqvals (PFla_op_t *n,
             /* remove columns as we cannot split up the join column */
             mc = diff (mc, n->sem.eqjoin.att1);
 
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
 
             cols = union_ (empty_list, n->sem.eqjoin.att2);
             rv.name = empty_list;
             rv.val = empty_list;
 
             prop_infer_reqvals (R(n), rv, cols, oc_right,
-                                bc_right, mc_right, vc_right);
+                                bc_right, mc_right, fc_right, vc_right);
         }   return; /* only infer once */
 
         case la_thetajoin:
@@ -453,12 +481,16 @@ prop_infer_reqvals (PFla_op_t *n,
                        by a one with two condititions (using a theta-join). */
                     mc = union_ (union_ (mc, left), right);
                 } else {
+                    if (n->sem.thetajoin.pred[i].comp == alg_comp_eq)
+                        fc = union_ (union_ (fc, left), right);
                     vc  = union_ (union_ (vc, left), right);
                 }
             }
 
-            prop_infer_reqvals (L(n), rv, schema2collist(L(n)), oc, bc, mc, vc);
-            prop_infer_reqvals (R(n), rv, schema2collist(R(n)), oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, schema2collist(L(n)),
+                                oc, bc, mc, fc, vc);
+            prop_infer_reqvals (R(n), rv, schema2collist(R(n)),
+                                oc, bc, mc, fc, vc);
             return; /* only infer once */
 
         case la_project:
@@ -468,6 +500,7 @@ prop_infer_reqvals (PFla_op_t *n,
             oc = empty_list;
             bc = empty_list;
             mc = empty_list;
+            fc = empty_list;
             vc = empty_list;
             cols = empty_list;
             /* and fill them again based on the original stored values */
@@ -488,6 +521,8 @@ prop_infer_reqvals (PFla_op_t *n,
                     bc = union_ (bc, n->sem.proj.items[i].old);
                 if (in (n->prop->req_multi_col_cols, n->sem.proj.items[i].new))
                     mc = union_ (mc, n->sem.proj.items[i].old);
+                if (in (n->prop->req_filter_cols, n->sem.proj.items[i].new))
+                    fc = union_ (fc, n->sem.proj.items[i].old);
                 if (in (n->prop->req_value_cols, n->sem.proj.items[i].new))
                     vc = union_ (vc, n->sem.proj.items[i].old);
                 cols = union_ (cols, n->sem.proj.items[i].old);
@@ -593,11 +628,11 @@ prop_infer_reqvals (PFla_op_t *n,
                     vc  = union_ (vc,  cur);
             }
 
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
 
             rv.name = empty_list;
             rv.val = empty_list;
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
             return; /* only infer once */
 
         case la_distinct:
@@ -620,6 +655,9 @@ prop_infer_reqvals (PFla_op_t *n,
             break;
 
         case la_num_eq:
+            if (in (rv.name, n->sem.binary.res))
+                fc = union_ (union_ (fc, n->sem.binary.att1),
+                             n->sem.binary.att2);
         case la_num_gt:
         case la_to:
             rv.name = diff (rv.name, n->sem.binary.res);
@@ -802,10 +840,11 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc   = cols;
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
             return; /* only infer once */
 
         case la_step_join:
@@ -820,7 +859,7 @@ prop_infer_reqvals (PFla_op_t *n,
             cols = diff (cols, n->sem.step.item_res);
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
             return; /* only infer once */
 
         case la_doc_index_join:
@@ -835,7 +874,7 @@ prop_infer_reqvals (PFla_op_t *n,
             cols = diff (cols, n->sem.doc_join.item_res);
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
             return; /* only infer once */
 
         case la_doc_tbl:
@@ -860,7 +899,7 @@ prop_infer_reqvals (PFla_op_t *n,
             cols = diff (cols, n->sem.doc_access.res);
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
             return; /* only infer once */
 
         case la_twig:
@@ -881,9 +920,10 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc   = cols;
 
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
             prop_infer_reqvals_empty (R(n)); /* constructor */
             return; /* only infer once */
 
@@ -898,9 +938,10 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc   = cols;
 
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
             prop_infer_reqvals_empty (R(n)); /* constructor */
             return; /* only infer once */
 
@@ -916,6 +957,7 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc   = cols;
             break;
 
@@ -933,6 +975,7 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc   = cols;
             break;
 
@@ -949,10 +992,11 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc   = cols;
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
             return; /* only infer once */
 
         case la_merge_adjacent:
@@ -968,10 +1012,11 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc   = cols;
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
             return; /* only infer once */
 
         case la_roots:
@@ -993,7 +1038,7 @@ prop_infer_reqvals (PFla_op_t *n,
             return; /* only infer once */
 
         case la_cond_err:
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
 
             rv.name = empty_list;
             rv.val = empty_list;
@@ -1004,9 +1049,10 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc   = cols;
 
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
             return; /* only infer once */
 
         case la_trace:
@@ -1022,9 +1068,10 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc   = cols;
 
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
             prop_infer_reqvals_empty (R(n)); /* trace */
             return; /* only infer once */
 
@@ -1039,9 +1086,10 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc   = cols;
 
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
             prop_infer_reqvals_empty (R(n)); /* trace */
             return; /* only infer once */
 
@@ -1056,9 +1104,10 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc   = cols;
 
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
             prop_infer_reqvals_empty (R(n)); /* trace */
             return; /* only infer once */
 
@@ -1070,10 +1119,11 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc  = cols;
 
             prop_infer_reqvals_empty (L(n)); /* recursion param */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
             return; /* only infer once */
 
         case la_rec_param:
@@ -1089,10 +1139,11 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc  = cols;
 
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
             return; /* only infer once */
 
         case la_rec_base:
@@ -1108,10 +1159,11 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             cols = union_ (empty_list, n->sem.fun_call.iter);
             vc   = cols;
 
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
             prop_infer_reqvals_empty (R(n)); /* function param */
             return; /* only infer once */
 
@@ -1123,9 +1175,10 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc   = cols;
 
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
             prop_infer_reqvals_empty (R(n)); /* function param */
             return; /* only infer once */
 
@@ -1157,9 +1210,10 @@ prop_infer_reqvals (PFla_op_t *n,
             oc   = empty_list;
             bc   = empty_list;
             mc   = empty_list;
+            fc   = empty_list;
             vc   = cols;
 
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
 
             /* to make up for the schema change
                we add the input columns by hand */
@@ -1167,12 +1221,12 @@ prop_infer_reqvals (PFla_op_t *n,
                            n->sem.string_join.item_sep);
             vc   = cols;
 
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
+            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
             return; /* only infer once */
     }
 
-    if (L(n)) prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, vc);
-    if (R(n)) prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, vc);
+    if (L(n)) prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
+    if (R(n)) prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
 }
 
 /* worker for PFprop_infer_reqval */
@@ -1225,7 +1279,8 @@ PFprop_infer_reqval (PFla_op_t *root) {
 
     /* second run infers required values properties */
     prop_infer_reqvals (root, init, schema2collist(root),
-                        empty_list, empty_list, empty_list, empty_list);
+                        empty_list, empty_list, empty_list,
+                        empty_list, empty_list);
     PFla_dag_reset (root);
 }
 

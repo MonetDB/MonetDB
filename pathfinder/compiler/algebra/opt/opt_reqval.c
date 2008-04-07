@@ -129,7 +129,15 @@ opt_reqvals (PFla_op_t *p)
     if (p->kind == la_rowrank &&
         !PFprop_req_value_col (p->prop, p->sem.sort.res))
         *p = *PFla_rank (L(p), p->sem.sort.res, p->sem.sort.sortby);
-
+    
+    /* if the resulting value of fn:number is only used in a predicate
+       we can use the lax variant that ignores NaN values */
+    if (p->kind == la_fun_1to1 &&
+        p->sem.fun_1to1.kind == alg_fun_fn_number &&
+        PFprop_req_filter_col (p->prop, p->sem.fun_1to1.res))
+        /* Note: the debug printing does not show this difference */
+        p->sem.fun_1to1.kind = alg_fun_fn_number_lax;
+    
     /* infer properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         opt_reqvals (p->child[i]);

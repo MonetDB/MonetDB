@@ -76,6 +76,8 @@ struct PFprop_t {
                                        to fulfill any bijective function. */
     PFalg_att_t  req_multi_col_cols; /**< List of columns that can be
                                        split up into multiple columns. */
+    PFalg_att_t  req_filter_cols; /**< List of columns whose values are
+                                       used for filtering only. */
     PFalg_att_t  req_value_cols;  /**< List of columns whose values are
                                        important for the query evaluation. */
     PFarray_t   *req_node_vals;   /**< List of columns and their associated
@@ -467,6 +469,12 @@ bool PFprop_req_bijective_col (const PFprop_t *prop, PFalg_att_t attr);
  * in container @a prop
  */
 bool PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Test if @a attr is in the list of filter columns
+ * in container @a prop
+ */
+bool PFprop_req_filter_col (const PFprop_t *prop, PFalg_att_t attr);
 
 /**
  * Test if @a attr is in the list of value columns
