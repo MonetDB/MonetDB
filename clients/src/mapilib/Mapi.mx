@@ -2164,12 +2164,6 @@ connect_to_server(Mapi mid)
 	check_stream(mid, mid->to, "Cannot open socket for writing", "mapi_reconnect", mid->error);
 	check_stream(mid, mid->from, "Cannot open socket for reading", "mapi_reconnect", mid->error);
 
-	mid->to = block_stream(mid->to);
-	check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
-
-	mid->from = block_stream(mid->from);
-	check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
-
 	mid->connected = 1;
 
 	return MOK;
@@ -2186,6 +2180,12 @@ mapi_start_talking(Mapi mid)
 	char *server;
 	char *protover;
 	char *rest;
+
+	mid->to = block_stream(mid->to);
+	check_stream(mid, mid->to, stream_error(mid->to), "mapi_start_talking", mid->error);
+
+	mid->from = block_stream(mid->from);
+	check_stream(mid, mid->from, stream_error(mid->from), "mapi_start_talking", mid->error);
 
 	/* consume server challenge */
 	len = stream_read_block(mid->from, buf, 1, BLOCK);
