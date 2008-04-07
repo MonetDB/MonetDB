@@ -20,7 +20,7 @@ utility are
 .B create, destroy, lock, release, status, start, stop, kill, help, version.
 The commands facilitate adding, removing, maintaining, starting and
 stopping a database inside the MonetDB Database Server.
-.IP "create [\-l] database"
+.IP "create [\-l] database [database ...]"
 Initialises a new database in the MonetDB Database Server.  A database
 created with this command makes it available for use by clients under
 its database name.
@@ -32,7 +32,7 @@ its creation.  A database created like this is guaranteed not to be
 automatically started by
 .BR merovingian (1)
 upon a client request during its creation time.
-.IP "destroy [\-f] database"
+.IP "destroy [\-f] database [database ...]"
 Removes the given database, including all its data and logfiles.  Once
 destroy has completed, all data is lost.  Be careful when using this
 command.
@@ -44,7 +44,7 @@ right away.  Note that you cannot destroy a running database, bring it
 down first using the
 .B stop
 command.
-.IP "lock database"
+.IP "lock database [database ...]"
 Puts the given database in maintenance mode.  A database under
 maintenance can only be connected to by an administrator account
 (by default the 
@@ -58,7 +58,7 @@ command to bring the database back for normal usage.  To start a
 database which is under maintenance for administrator access, the
 .B start
 command can be used.
-.IP "release database"
+.IP "release database [database ...]"
 Brings back a database from maintenance mode.  A released database is
 available again for normal use by any client, and is started on demand.
 Use the

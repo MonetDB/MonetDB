@@ -86,28 +86,28 @@ command_help(int argc, char *argv[])
 		printf("    help, version\n");
 		printf("  use the help command to get help for a particular command\n");
 	} else if (strcmp(argv[1], "create") == 0) {
-		printf("Usage: monetdb create [-l] database\n");
+		printf("Usage: monetdb create [-l] database [database ...]\n");
 		printf("  Initialises a new database in the MonetDB Server.  A\n");
 		printf("  database created with this command makes it available\n");
 		printf("  for use.\n");
 		printf("Options:\n");
 		printf("  -l  put the database in maintenance mode after creation\n");
 	} else if (strcmp(argv[1], "destroy") == 0) {
-		printf("Usage: monetdb destroy [-f] database\n");
+		printf("Usage: monetdb destroy [-f] database [database ...]\n");
 		printf("  Removes the given database, including all its data and\n");
 		printf("  logfiles.  Once destroy has completed, all data is lost.\n");
 		printf("  Be careful when using this command.\n");
 		printf("Options:\n");
 		printf("  -f  do not ask for confirmation, destroy right away\n");
 	} else if (strcmp(argv[1], "lock") == 0) {
-		printf("Usage: monetdb lock database\n");
+		printf("Usage: monetdb lock database [database ...]\n");
 		printf("  Puts the given database in maintenance mode.  A database\n");
 		printf("  under maintenance can only be connected to by the DBA.\n");
 		printf("  A database which is under maintenance is not started\n");
 		printf("  automatically.  Use the \"release\" command to bring\n");
 		printf("  the database back for normal usage.\n");
 	} else if (strcmp(argv[1], "release") == 0) {
-		printf("Usage: monetdb release database\n");
+		printf("Usage: monetdb release database [database ...]\n");
 		printf("  Brings back a database from maintenance mode.  A released\n");
 		printf("  database is available again for normal use.  Use the\n");
 		printf("  \"lock\" command to take a database under maintenance.\n");
@@ -751,32 +751,43 @@ static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 static void
 command_create(int argc, char *argv[])
 {
-	if (argc == 1 || argc >= 4) {
+	int i;
+	int maintenance = 0;  /* create locked databases */
+	int state = 0;        /* return status */
+	int hadwork = 0;      /* if we actually did something */
+
+	if (argc == 1) {
 		/* print help message for this command */
 		command_help(2, &argv[-1]);
 		exit(1);
-	} else if (argc == 2 || argc == 3) {
-		sabdb *stats;
-		err e;
-		char *dbname;
-		int maintenance = 0;
-
-		if (strcmp(argv[1], "-l") == 0) {
-			if (argc == 2) {
-				command_help(2, &argv[-1]);
+	}
+	
+	/* walk through the arguments and hunt for "options" */
+	for (i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--") == 0) {
+			argv[i][0] = '\0';
+			break;
+		}
+		if (argv[i][0] == '-') {
+			if (argv[i][1] == 'l') {
+				maintenance = 1;
+				argv[i][0] = '\0';
+			} else {
+				fprintf(stderr, "create: unknown option: %s\n", argv[i]);
+				command_help(argc + 1, &argv[-1]);
 				exit(1);
 			}
-			maintenance = 1;
-			dbname = argv[2];
-		} else if (argc == 3 && strcmp(argv[2], "-l") == 0) {
-			maintenance = 1;
-			dbname = argv[1];
-		} else if (argc == 2) {
-			dbname = argv[1];
-		} else {
-			command_help(2, &argv[-1]);
-			exit(1);
 		}
+	}
+
+	/* do for each listed database */
+	for (i = 1; i < argc; i++) {
+		sabdb *stats;
+		err e;
+		char *dbname = argv[i];
+
+		if (dbname[0] == '\0')
+			continue;
 
 		/* the argument is the database to create, see what Sabaoth can
 		 * tell us about it */
@@ -798,7 +809,10 @@ command_create(int argc, char *argv[])
 			if (mkdir(path, 0755) == -1) {
 				fprintf(stderr, "create: unable to create %s: %s\n",
 						argv[1], strerror(errno));
-				exit(1);
+
+				SABAOTHfreeStatus(&stats);
+				state |= 1;
+				continue;
 			}
 			/* if we should put this database in maintenance, make sure
 			 * no race condition ever can happen, by putting it into
@@ -837,11 +851,20 @@ command_create(int argc, char *argv[])
 			printf("successfully created database '%s'%s\n", dbname,
 					(maintenance == 1 ? " in maintenance mode" : ""));
 		} else {
-			SABAOTHfreeStatus(&stats);
 			fprintf(stderr, "create: database '%s' already exists\n", dbname);
-			exit(1);
+
+			SABAOTHfreeStatus(&stats);
+			state |= 1;
 		}
+
+		hadwork = 1;
 	}
+
+	if (hadwork == 0) {
+		command_help(2, &argv[-1]);
+		state |= 1;
+	}
+	exit(state);
 }
 
 /* recursive helper function to delete a directory */
@@ -912,36 +935,43 @@ deletedir(char *dir)
 static void
 command_destroy(int argc, char *argv[])
 {
-	if (argc == 1 || argc >= 4) {
+	int i;
+	int force = 0;    /* ask for confirmation */
+	int state = 0;    /* return status */
+	int hadwork = 0;  /* did we do anything useful? */
+
+	if (argc == 1) {
 		/* print help message for this command */
 		command_help(argc + 1, &argv[-1]);
 		exit(1);
-	} else if (argc >= 2) {
-		sabdb *stats;
-		err e;
-		char *dbname;
-		int force;
+	}
 
-		if (argc == 2) {
-			force = 0;
-			if (strcmp(argv[1], "-f") == 0) {
-				command_help(argc + 1, &argv[-1]);
-				exit(1);
-			}
-			dbname = argv[1];
-		} else {
-			if (strcmp(argv[1], "-f") == 0) {
+	/* walk through the arguments and hunt for "options" */
+	for (i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--") == 0) {
+			argv[i][0] = '\0';
+			break;
+		}
+		if (argv[i][0] == '-') {
+			if (argv[i][1] == 'f') {
 				force = 1;
-				/* we accept -f -f, stupid user who uses it */
-				dbname = argv[2];
-			} else if (strcmp(argv[2], "-f") == 0) {
-				force = 1;
-				dbname = argv[1];
+				argv[i][0] = '\0';
 			} else {
+				fprintf(stderr, "create: unknown option: %s\n", argv[i]);
 				command_help(argc + 1, &argv[-1]);
 				exit(1);
 			}
 		}
+	}
+
+	/* do for each listed database */
+	for (i = 1; i < argc; i++) {
+		sabdb *stats;
+		err e;
+		char *dbname = argv[i];
+
+		if (dbname[0] == '\0')
+			continue;
 
 		/* the argument is the database to destroy, see what Sabaoth can
 		 * tell us about it */
@@ -959,13 +989,15 @@ command_destroy(int argc, char *argv[])
 				fprintf(stderr, "destroy: database '%s' is still running, "
 						"stop database first\n", dbname);
 				SABAOTHfreeStatus(&stats);
-				exit(1);
+				state |= 1;
+				continue;
 			}
 			if (stats->locked == 1) {
 				fprintf(stderr, "destroy: database '%s' is under maintenance"
 						", release database first\n", dbname);
 				SABAOTHfreeStatus(&stats);
-				exit(1);
+				state |= 1;
+				continue;
 			}
 
 			if (force == 0) {
@@ -988,7 +1020,9 @@ command_destroy(int argc, char *argv[])
 						argv[1], e);
 				GDKfree(e);
 				SABAOTHfreeStatus(&stats);
-				exit(1);
+				state |= 1;
+				hadwork = 1;
+				continue;
 			}
 			SABAOTHfreeStatus(&stats);
 			/* this is annoying, but till the time we have something
@@ -999,27 +1033,44 @@ command_destroy(int argc, char *argv[])
 				fprintf(stderr, "destroy: failed to destroy '%s': %s\n",
 						argv[1], e);
 				GDKfree(e);
-				exit(1);
+				state |= 1;
+				hadwork = 1;
+				continue;
 			}
 			printf("successfully destroyed database '%s'\n", dbname);
 		} else {
 			fprintf(stderr, "destroy: no such database: %s\n", dbname);
-			exit(1);
+			state |= 1;
 		}
+
+		hadwork = 1;
 	}
+
+	if (hadwork == 0) {
+		command_help(2, &argv[-1]);
+		state |= 1;
+	}
+	exit(state);
 }
 
 static void
 command_lock(int argc, char *argv[])
 {
-	if (argc == 1 || argc > 2) {
+	int i;
+	int state = 0;    /* return status */
+	int hadwork = 0;  /* did we do anything useful? */
+
+	if (argc == 1) {
 		/* print help message for this command */
 		command_help(argc + 1, &argv[-1]);
 		exit(1);
-	} else if (argc == 2) {
+	}
+
+	/* do for each listed database */
+	for (i = 1; i < argc; i++) {
 		sabdb *stats;
 		err e;
-		char *dbname = argv[1];
+		char *dbname = argv[i];
 
 		/* the argument is the database to take under maintenance, see
 		 * what Sabaoth can tell us about it */
@@ -1036,7 +1087,9 @@ command_lock(int argc, char *argv[])
 				fprintf(stderr, "lock: database '%s' already is "
 						"under maintenance\n", dbname);
 				SABAOTHfreeStatus(&stats);
-				exit(1);
+				hadwork = 1;
+				state |= 1;
+				continue;
 			}
 
 			/* put this database in maintenance mode */
@@ -1046,22 +1099,36 @@ command_lock(int argc, char *argv[])
 			SABAOTHfreeStatus(&stats);
 		} else {
 			fprintf(stderr, "lock: no such database: %s\n", dbname);
-			exit(1);
+			state |= 1;
 		}
+		hadwork = 1;
 	}
+
+	if (hadwork == 0) {
+		command_help(2, &argv[-1]);
+		state |= 1;
+	}
+	exit(state);
 }
 
 static void
 command_release(int argc, char *argv[])
 {
-	if (argc == 1 || argc > 2) {
+	int i;
+	int state = 0;    /* return status */
+	int hadwork = 0;  /* did we do anything useful? */
+
+	if (argc == 1) {
 		/* print help message for this command */
 		command_help(argc + 1, &argv[-1]);
 		exit(1);
-	} else if (argc == 2) {
+	}
+
+	/* do for each listed database */
+	for (i = 1; i < argc; i++) {
 		sabdb *stats;
 		err e;
-		char *dbname = argv[1];
+		char *dbname = argv[i];
 
 		/* the argument is the database to take under maintenance, see
 		 * what Sabaoth can tell us about it */
@@ -1078,7 +1145,9 @@ command_release(int argc, char *argv[])
 				fprintf(stderr, "release: database '%s' is not "
 						"under maintenance\n", dbname);
 				SABAOTHfreeStatus(&stats);
-				exit(1);
+				hadwork = 1;
+				state |= 1;
+				continue;
 			}
 
 			/* put this database in maintenance mode */
@@ -1087,16 +1156,25 @@ command_release(int argc, char *argv[])
 				fprintf(stderr, "failed to take database '%s' out of "
 						" maintenance mode: %s\n", dbname, strerror(errno));
 				SABAOTHfreeStatus(&stats);
-				exit(1);
+				hadwork = 1;
+				state |= 1;
+				continue;
 			}
 			printf("database '%s' has been taken out of maintenance mode\n",
 					dbname);
 			SABAOTHfreeStatus(&stats);
 		} else {
 			fprintf(stderr, "release: no such database: %s\n", dbname);
-			exit(1);
+			state |= 1;
 		}
+		hadwork = 1;
 	}
+
+	if (hadwork == 0) {
+		command_help(2, &argv[-1]);
+		state |= 1;
+	}
+	exit(state);
 }
 
 
