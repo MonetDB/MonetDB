@@ -4664,7 +4664,8 @@ reduce (PFpa_op_t * p, int goalnt)
 
                     res_type = aat_str;
                 }   break; /* fold) */
-                case alg_fun_fn_number: /* fold( */
+                case alg_fun_fn_number:
+                case alg_fun_fn_number_lax: /* fold( */
                 {
                     PFalg_att_t         att   = p->sem.fun_1to1.refs.atts[0];
                     PFalg_simple_type_t ty    = type_of (L(p), att);
@@ -4701,15 +4702,16 @@ reduce (PFpa_op_t * p, int goalnt)
                                                     var (res->name))));
                         }
 
-                    /* As we do not support the value NaN we need to generate
-                       an error for all tuples that cannot be casted (instead
-                       of generating NaN). */
-                    execute (
-                        if_ (exist (reverse (var (res->name)),
-                                    cast (implty (res_type), nil ())),
-                             error (
-                                 lit_str ("We do not support the value NaN.")),
-                             nop ()));
+                    if (p->sem.fun_1to1.kind == alg_fun_fn_number)
+                        /* As we do not support the value NaN we need to generate
+                           an error for all tuples that cannot be casted (instead
+                           of generating NaN). */
+                        execute (
+                            if_ (exist (reverse (var (res->name)),
+                                        cast (implty (res_type), nil ())),
+                                 error (
+                                     lit_str ("We do not support the value NaN.")),
+                                 nop ()));
                 }   break; /* fold) */
                 case alg_fun_fn_qname: /* fold( */
                 {

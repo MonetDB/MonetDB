@@ -341,6 +341,7 @@ enum PFalg_fun_t {
     , alg_fun_fn_local_name       /**< fn:local-name */
     , alg_fun_fn_namespace_uri    /**< fn:namespace-uri */
     , alg_fun_fn_number           /**< fn:number */
+    , alg_fun_fn_number_lax       /**< fn:number (ignoring NaN) */
     , alg_fun_fn_qname            /**< fn:QName */
     , alg_fun_pf_fragment         /**< #pf:fragment */
     , alg_fun_pf_supernode        /**< #pf:supernode */

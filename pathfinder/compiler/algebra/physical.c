@@ -1640,6 +1640,7 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             break;
 
         case alg_fun_fn_number:
+        case alg_fun_fn_number_lax:
             assert (refs.count == 1);
             res_type = aat_dbl;
             break;

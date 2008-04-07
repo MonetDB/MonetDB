@@ -3550,6 +3550,7 @@ reduce (PFla_op_t * p, int goalnt)
                     res_expr = concat (expr[0], expr[1]); break;
                 /**< fn:number */
                 case alg_fun_fn_number:
+                case alg_fun_fn_number_lax:
                     res_expr = cast_ (expr[0], ty[0], aat_dbl); break;
                 /**< fn:round */
                 case alg_fun_fn_round:

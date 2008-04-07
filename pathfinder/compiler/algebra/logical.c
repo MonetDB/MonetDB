@@ -1460,6 +1460,7 @@ printf("type = %x", n->schema.items[ix[1]].type);
             break;
 
         case alg_fun_fn_number:
+        case alg_fun_fn_number_lax:
             assert (refs.count == 1);
             res_type = aat_dbl;
             break;

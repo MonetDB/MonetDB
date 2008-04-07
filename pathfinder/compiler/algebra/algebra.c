@@ -1058,6 +1058,7 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_local_name:       return "fn:local-name";
         case alg_fun_fn_namespace_uri:    return "fn:namespace-uri";
         case alg_fun_fn_number:           return "fn:number";
+        case alg_fun_fn_number_lax:       return "fn:number";
         case alg_fun_fn_qname:            return "fn:QName";
         case alg_fun_pf_fragment:         return "#pf:fragment";
         case alg_fun_pf_supernode:        return "#pf:supernode";
