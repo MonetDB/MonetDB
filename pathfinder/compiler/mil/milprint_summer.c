@@ -6281,7 +6281,6 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
         PFoops (OOPS_NOTSUPPORTED, "RPC calls to in-line functions not supported by XRPC.");
     }
 
-
     /* The extra parameter 'dst' of an RPC call is not listed in
      * fun->params[], so translate it separately.
      * 'rpc_iter' contains the real total number of iterations. */
@@ -6365,14 +6364,13 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
         if(strcmp(isoLevel, "none") !=0 && strcmp(isoLevel, "repeatable") != 0)
             PFoops(OOPS_FATAL, "Invalid value of option 'xrpc:isolation': \"%s\".", isoLevel);
 
-
         if(strcmp(isoLevel, "none") != 0)
             PFoops(OOPS_NOTSUPPORTED, "XRPC isolation level \"repeatable\" is not implemented yet.");
     }
 
     opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "timeout"));
     if(!opt) {
-        timeout = 30; /* sec, default value of option 'xrpc:timeout' */
+        timeout = 30000; /* msec, default value of option 'xrpc:timeout' */
     } else {
         if(PFarray_last(opt) > 1)
             PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:timeout' not allowed!");
@@ -6385,10 +6383,15 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
             PFoops(OOPS_FATAL, "Value of option 'xrpc:timeout' out-of-range (> %ld).",
                     LONG_MAX);
         else if(timeout < 0)
-            PFoops(OOPS_FATAL, "Value of option 'xrpc:timeout' may not be negative.");
-        else if(timeout == 0 && strcmp(isoLevel, "none") != 0)
-            PFoops(OOPS_FATAL, "Value of option 'xrpc:timeout' must be positive "
-                    "when the isloation level \"repeatable\" is required.");
+            PFoops(OOPS_FATAL, "Invalid value of option 'xrpc:timeout': may not be negative.");
+
+        if(strcmp(isoLevel, "none") != 0) { /* isoLevel == "repeatable" */
+                if(timeout == 0)
+                    PFoops(OOPS_FATAL, "Invalid value of option 'xrpc:timeout': must be positive "
+                            "when the isloation level \"repeatable\" is required.");
+        } else { /* isoLevel == "none" */
+            PFoops(OOPS_WARNING, "The option 'xrpc:timeout' does not have effect in isolation level \"none\", discarded.");
+        }
     }
 
     /* Define a variable to hold the results of a function call.
