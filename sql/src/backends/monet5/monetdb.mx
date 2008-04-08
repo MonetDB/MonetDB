@@ -494,6 +494,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 	sabdb *waitstats = NULL;
 	char *type = NULL;
 	char *p;
+	int ret = 0;
 
 	snprintf(path, 8095, "%s/.merovingian_control", dbfarm);
 	path[8095] = '\0';
@@ -564,7 +565,6 @@ command_merocom(int argc, char *argv[], merocom mode)
 
 	if (doall == 1) {
 		sabdb *orig;
-		int ret = 0;
 		/* don't even look at the arguments, because we are instructed
 		 * to work on all known databases */
 		if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
@@ -599,8 +599,9 @@ command_merocom(int argc, char *argv[], merocom mode)
 					if (waitstats->state == SABdbCrashed) {
 						printf("CRASHED after shutting down!\n");
 						ret = 1;
+					} else {
+						printf("done\n");
 					}
-					printf("done\n");
 					SABAOTHfreeStatus(&waitstats);
 				}
 			} else if (mode == START && stats->state != SABdbRunning) {
@@ -635,8 +636,9 @@ command_merocom(int argc, char *argv[], merocom mode)
 					if (waitstats->state == SABdbCrashed) {
 						printf("CRASHED during startup!\n");
 						ret = 1;
+					} else {
+						printf("done\n");
 					}
-					printf("done\n");
 					SABAOTHfreeStatus(&waitstats);
 				}
 			}
@@ -647,10 +649,8 @@ command_merocom(int argc, char *argv[], merocom mode)
 
 		if (orig != NULL)
 			SABAOTHfreeStatus(&orig);
-		/* indicate to the caller something went wrong */
-		if (ret != 0)
-			exit(ret);
-		return;
+
+		exit(ret);
 	}
 
 	for (i = 1; i < argc; i++) {
@@ -694,11 +694,10 @@ command_merocom(int argc, char *argv[], merocom mode)
 							} while (waitstats->state == SABdbRunning);
 							if (waitstats->state == SABdbCrashed) {
 								printf("CRASHED after shutting down!\n");
-								SABAOTHfreeStatus(&waitstats);
-								fclose(f);
-								exit(1);
+								ret = 1;
+							} else {
+								printf("done\n");
 							}
-							printf("done\n");
 							SABAOTHfreeStatus(&waitstats);
 						}
 					} else if (mode == START) {
@@ -734,11 +733,10 @@ command_merocom(int argc, char *argv[], merocom mode)
 							} while (waitstats->state != SABdbCrashed);
 							if (waitstats->state == SABdbCrashed) {
 								printf("CRASHED during startup!\n");
-								SABAOTHfreeStatus(&waitstats);
-								fclose(f);
-								exit(1);
+								ret = 1;
+							} else {
+								printf("done\n");
 							}
-							printf("done\n");
 							SABAOTHfreeStatus(&waitstats);
 						}
 					}
@@ -750,6 +748,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 	}
 
 	fclose(f);
+	exit(ret);
 }
 
 static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
