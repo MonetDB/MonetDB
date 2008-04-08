@@ -443,7 +443,7 @@ getCallValues(stream *out,
     bit isSimpleParam = 1;
     bool updCall = FALSE;
     lng argc = 0, iterc = 0, nr_args = 0;
-    lng **argcnt;
+    lng **argcnt = NULL;
     lng i = 0, j = 0, k = 0, max_args = 0;
     str *argtpe = NULL, *argval = NULL;
     char *arity_str = NULL, *itercnt_str = NULL;
