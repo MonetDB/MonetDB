@@ -621,6 +621,7 @@ QMclient(Request start, Client c)
 Dequeuing a request cascades to its dependents (in all directions).
 This way the user need not keep track of all requests generated on the fly.
 @c
+#if 0
 static void
 QMdequeue(int qkey)
 {
@@ -643,6 +644,7 @@ QMdequeue(int qkey)
 	}
 	PARDEBUG THRprintf(GDKerr, "QMdequeue: qkey %d not found\n", qkey);
 }
+#endif
 
 @-
 A request can be activated using the queue key.
