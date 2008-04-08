@@ -8099,7 +8099,8 @@ reduce (PFpa_op_t * p, int goalnt)
         /* FunRel:   fun_call (Rel, Param) */
         case 151: /* fold( */
         {   /* TOPDOWN */
-            PFarray_t     *old_fun_params;
+            PFarray_t *old_fun_params;
+            PFpa_op_t *param;
 
             /* Collect the destinations */
             reduce (kids[0], nts[0]);
@@ -8124,7 +8125,6 @@ reduce (PFpa_op_t * p, int goalnt)
                 PFcnode_t *core_apply = (PFcnode_t *) p->sem.fun_call.ctx;
 
                 /* do XRPC stuff here */
-                (void)* fun_params;
                 (void)* core_apply;
 
                 /* dummy stub to fill the environment */
@@ -8152,6 +8152,15 @@ reduce (PFpa_op_t * p, int goalnt)
 
             }
 
+            /* Unpin all MIL variables that represent the function parameters.
+               (They have 1 additional pin (see rule fun_param) to ensure
+                their visibility in this operator.) */
+            for (unsigned int i = 0; i < PFarray_last (fun_params); i++) {
+                param = *((PFpa_op_t **) PFarray_at (fun_params, i));
+                for (unsigned int j = 0; j < PFarray_last (param->env); j++)
+                    unpin (((env_t *) PFarray_at (param->env, j))->mvar, 1);
+            }
+            
             /* restore the function arguments */
             fun_params = old_fun_params;
         }   break; /* fold) */
@@ -8166,6 +8175,11 @@ reduce (PFpa_op_t * p, int goalnt)
             /* copy the complete environment of the argument */
             env_copy (p, L(p)->env);
 
+            /* Add an extra pin to every function argument to ensure
+               that they are only free'ed AFTER the fun_call operator. */
+            for (unsigned int i = 0; i < PFarray_last (p->env); i++)
+                pin (((env_t *) PFarray_at (p->env, i))->mvar, 1);
+            
             /* Append the new parameter to function parameter list */
             *((PFpa_op_t **) PFarray_add (fun_params)) = p;
 
