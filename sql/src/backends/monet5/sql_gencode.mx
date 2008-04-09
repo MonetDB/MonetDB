@@ -224,6 +224,46 @@ convertOperator(str op)
 	return op;
 }
 
+int
+range_join_convertable(stmt *s, stmt **base, stmt **L, stmt **H) 
+{
+	int ls = 0, hs = 0;
+	stmt *l = NULL, *h = NULL;
+	stmt *bl = s->op2.stval, *bh = s->op3.stval;
+
+	if (s->op2.stval->type == st_binop) {
+		bl = s->op2.stval->op1.stval;
+		l  = s->op2.stval->op2.stval;
+	} else if (s->op2.stval->type == st_Nop && 
+	    list_length(s->op2.stval->op1.stval->op1.lval) == 2) {
+		bl = s->op2.stval->op1.stval->op1.lval->h->data;
+		l  = s->op2.stval->op1.stval->op1.lval->h->next->data;
+	}
+	if (s->op3.stval->type == st_binop) {
+		bh = s->op3.stval->op1.stval;
+		h  = s->op3.stval->op2.stval;
+	}
+	else if (s->op3.stval->type == st_Nop && 
+	    list_length(s->op3.stval->op1.stval->op1.lval) == 2) {
+		bh = s->op3.stval->op1.stval->op1.lval->h->data;
+		h  = s->op3.stval->op1.stval->op1.lval->h->next->data;
+	}
+
+	if ((ls = (l &&
+	    strcmp(s->op2.stval->op4.funcval->func->base.name, "sql_sub")==0 &&
+	    l->nrcols == 0) || 
+
+	    (hs = (h &&
+	    strcmp(s->op3.stval->op4.funcval->func->base.name, "sql_add")==0 && 
+	    h->nrcols == 0))) && (ls || hs) && bl == bh) {
+		*base = bl;
+		*L = l;
+		*H = h;
+		return 1;
+	}
+	return 0;
+}
+
 void
 dump_1(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 {
@@ -783,7 +823,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_select2:
 		case st_join2:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
-			int r1, r2, ls = 0, hs = 0;
+			stmt *base, *low = NULL, *high = NULL;
+			int r1, r2;
 			int rs = 0;
 
 			char *cmd = 
@@ -796,28 +837,20 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* ie check if we substract/add a constant, to the
 			   same column */
 			if (s->type == st_join2 &&
-			   ((ls = (s->op2.stval->type == st_binop && 
-			    strcmp(s->op2.stval->op4.funcval->func->base.name, "sql_sub")==0 &&
-			    s->op2.stval->op2.stval->nrcols == 0)) || 
-			    (hs = (s->op3.stval->type == st_binop && 
-			    strcmp(s->op3.stval->op4.funcval->func->base.name, "sql_add")==0 && 
-			    s->op3.stval->op2.stval->nrcols == 0))) &&
-			    ((ls && hs && s->op2.stval->op1.stval == s->op3.stval->op1.stval) ||
-			     (ls && !hs && s->op2.stval->op1.stval == s->op3.stval) ||
-			     (!ls && hs && s->op2.stval == s->op3.stval->op1.stval)) ) {
-				stmt *r = (!ls)?s->op2.stval:s->op2.stval->op1.stval;
-				rs = _dumpstmt(sql, mb, r);
+			    range_join_convertable(s, &base, &low, &high)) {
+				int tt = tail_type(base)->type->localtype;
+				rs = _dumpstmt(sql, mb, base);
 				q = newStmt2(mb, batRef, reverseRef);
 				q = pushArgument(mb, q, rs);
 				rs = getDestVar(q);
-				if (ls) 
-					r1 = _dumpstmt(sql, mb, s->op2.stval->op2.stval);
+				if (low) 
+					r1 = _dumpstmt(sql, mb, low);
 				else
-					r1 = argumentZero(mb, tail_type(r)->type->localtype);
-				if (hs)
-					r2 = _dumpstmt(sql, mb, s->op3.stval->op2.stval);
+					r1 = argumentZero(mb, tt);
+				if (high)
+					r2 = _dumpstmt(sql, mb, high);
 				else
-					r2 = argumentZero(mb, tail_type(r)->type->localtype);
+					r2 = argumentZero(mb, tt);
 				cmd = bandjoinRef;
 			}
 

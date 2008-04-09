@@ -181,6 +181,46 @@ write_result(backend *sql, char *buf)
 	}
 }
 
+int
+range_join_convertable(stmt *s, stmt **base, stmt **L, stmt **H) 
+{
+	int ls = 0, hs = 0;
+	stmt *l = NULL, *h = NULL;
+	stmt *bl = s->op2.stval, *bh = s->op3.stval;
+
+	if (s->op2.stval->type == st_binop) {
+		bl = s->op2.stval->op1.stval;
+		l  = s->op2.stval->op2.stval;
+	} else if (s->op2.stval->type == st_Nop && 
+	    list_length(s->op2.stval->op1.stval->op1.lval) == 2) {
+		bl = s->op2.stval->op1.stval->op1.lval->h->data;
+		l  = s->op2.stval->op1.stval->op1.lval->h->next->data;
+	}
+	if (s->op3.stval->type == st_binop) {
+		bh = s->op3.stval->op1.stval;
+		h  = s->op3.stval->op2.stval;
+	}
+	else if (s->op3.stval->type == st_Nop && 
+	    list_length(s->op3.stval->op1.stval->op1.lval) == 2) {
+		bh = s->op3.stval->op1.stval->op1.lval->h->data;
+		h  = s->op3.stval->op1.stval->op1.lval->h->next->data;
+	}
+
+	if ((ls = (l &&
+	    strcmp(s->op2.stval->op4.funcval->func->base.name, "sql_sub")==0 &&
+	    l->nrcols == 0) || 
+
+	    (hs = (h &&
+	    strcmp(s->op3.stval->op4.funcval->func->base.name, "sql_add")==0 && 
+	    h->nrcols == 0))) && (ls || hs) && bl == bh) {
+		*base = bl;
+		*L = l;
+		*H = h;
+		return 1;
+	}
+	return 0;
+}
+
 static void
 dump(backend *sql, char *buf, int len, int nr)
 {
@@ -597,7 +637,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_select2:
 		case st_uselect2:
 		case st_join2:{
-			int l, r1 = 0, r2 = 0, ls = 0, hs = 0, rs = 0;
+			int l, r1 = 0, r2 = 0, rs = 0;
+			stmt *base, *low = NULL, *high = NULL;
 			char *bits = NULL;
 			char *cmd, *tpe = NULL;
 
@@ -616,25 +657,16 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			/* if st_join2 try to convert to bandjoin */
 			/* ie check if we substract/add a constant, to the
 			   same column */
-			if (s->type == st_join2 && 
-			   ((ls = (s->op2.stval->type == st_binop && 
-			    strcmp(s->op2.stval->op4.funcval->func->base.name, "sql_sub")==0 &&
-			    s->op2.stval->op2.stval->nrcols == 0)) || 
-			    (hs = (s->op3.stval->type == st_binop && 
-			    strcmp(s->op3.stval->op4.funcval->func->base.name, "sql_add")==0 && 
-			    s->op3.stval->op2.stval->nrcols == 0))) &&
-			    ((ls && hs && s->op2.stval->op1.stval == s->op3.stval->op1.stval) ||
-			     (ls && !hs && s->op2.stval->op1.stval == s->op3.stval) ||
-			     (!ls && hs && s->op2.stval == s->op3.stval->op1.stval)) ) {
-				stmt *r = (!ls)?s->op2.stval:s->op2.stval->op1.stval;
-				tpe = tail_type(r)->type->base.name;
- 				rs = backend_dumpstmt_(r, nr, sql);
+			if (s->type == st_join2 &&
+			    range_join_convertable(s, &base, &low, &high)) {
+				tpe = tail_type(base)->type->base.name;
+ 				rs = backend_dumpstmt_(base, nr, sql);
 				len = snprintf(buf, BUFSIZ, "var rs%d := s%d.reverse();\n", rs, rs);
 
-				if (ls) 
- 					r1 = backend_dumpstmt_(s->op2.stval->op2.stval, nr, sql);
-				if (hs)
- 					r2 = backend_dumpstmt_(s->op3.stval->op2.stval, nr, sql);
+				if (low) 
+ 					r1 = backend_dumpstmt_(low, nr, sql);
+				if (high)
+ 					r2 = backend_dumpstmt_(high, nr, sql);
 				cmd = "bandjoin";
 			}
 			switch (s->flag&3) {
@@ -660,11 +692,11 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				char r1buf[64];
 				char r2buf[64];
 
-				if (r1)
+				if (low)
 					snprintf(r1buf, 64, "s%d", r1);
 				else
 					snprintf(r1buf, 64, "%s(0)", tpe);
-				if (r2)
+				if (high)
 					snprintf(r2buf, 64, "s%d", r2);
 				else
 					snprintf(r2buf, 64, "%s(0)", tpe);

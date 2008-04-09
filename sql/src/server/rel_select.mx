@@ -1652,21 +1652,62 @@ is_atom( sql_exp *e )
 }
 
 static sql_rel *
-rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_op, sql_exp *esc, int f )
+rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti )
 {
 	sql_exp *L = ls, *R = rs, *e = NULL;
+
+	if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0 ||
+	   (rs2 && rel_convert_types(sql, &ls, &rs2, 1, type_equal) < 0)) {
+		exp_destroy(ls);
+		exp_destroy(rs);
+		exp_destroy(rs2);
+		return NULL;
+	}
+	if (!rs2 && type != cmp_like && type != cmp_notlike) {
+		if (ls->card < rs->card) {
+			sql_exp *swap = ls;
+	
+			ls = rs;
+			rs = swap;
+
+			swap = L; 
+			L = R; 
+			R = swap;
+
+			type = swap_compare(type);
+		}
+		e = exp_compare( ls, rs, type );
+	} else {
+		e = exp_compare2( ls, rs, rs2, type );
+	}
+	if (anti)
+		set_anti(e);
+
+	/* atom or row => select */
+	if (ls->card > rel->card)
+		return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", ls->name);
+	if (rs->card > rel->card) 
+		return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", rs->name);
+	if (rs->card <= CARD_ATOM && is_atom(rs)) {
+		if (ls->card == rs->card)  /* bin compare op */
+			return rel_select(rel, e);
+
+		/* push select into the given relation */
+		return rel_push_select(rel, L, e);
+	} else { /* join */
+		return rel_push_join(rel, L, R, e);
+	}
+	return rel;
+}
+
+static sql_rel *
+rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_op, sql_exp *esc, int f )
+{
 	comp_type type = cmp_equal;
 
 	if (!ls || !rs)
 		return NULL;
 
-	if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0) {
-		if (ls)
-			exp_destroy(ls);
-		if (rs)
-			exp_destroy(rs);
-		return NULL;
-	}
 	if (!rel || f == sql_sel || (ls->card <= CARD_ATOM && rs->card <= CARD_ATOM)) {
 		sql_exp *e;
 
@@ -1674,6 +1715,11 @@ rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_
 			compare_op = "like";
 		if (compare_op[0] == 'n') 
 			compare_op = "not_like";
+		if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0) {
+			exp_destroy(ls);
+			exp_destroy(rs);
+			return NULL;
+		}
 		e = rel_binop_(sql, ls, rs, NULL, compare_op);
 
 		if (!e)
@@ -1692,39 +1738,7 @@ rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_
 		}
 	}
 	type = compare_str2type(compare_op);
-	if (type != cmp_like && type != cmp_notlike) {
-		if (ls->card < rs->card) {
-			sql_exp *swap = ls;
-	
-			ls = rs;
-			rs = swap;
-
-			swap = L; 
-			L = R; 
-			R = swap;
-
-			type = swap_compare(type);
-		}
-		e = exp_compare( ls, rs, type );
-	} else {
-		e = exp_compare2( ls, rs, esc, type );
-	}
-
-	/* atom or row => select */
-	if (ls->card > rel->card)
-		return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", ls->name);
-	if (rs->card > rel->card) 
-		return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", rs->name);
-	if (rs->card <= CARD_ATOM && is_atom(rs)) {
-		if (ls->card == rs->card)  /* bin compare op */
-			return rel_select(rel, e);
-
-		/* push select into the given relation */
-		return rel_push_select(rel, L, e);
-	} else { /* join */
-		return rel_push_join(rel, L, R, e);
-	}
-	return rel;
+	return rel_compare_exp_(sql, rel, ls, rs, esc, type, 0);
 }
 
 static sql_rel *
@@ -2397,12 +2411,9 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		}
 
 		if (sc->token == SQL_NOT_BETWEEN) {
-			/* TODO should be 'or' */
-			rel = rel_compare_exp(sql, rel, le, re1, "<", NULL, f);
-			rel = rel_compare_exp(sql, rel, exp_dup(le), re2, ">", NULL, f);
+			rel = rel_compare_exp_(sql, rel, le, re1, re2, 3, 1);
 		} else {
-			rel = rel_compare_exp(sql, rel, le, re1, ">=", NULL, f);
-			rel = rel_compare_exp(sql, rel, exp_dup(le), re2, "<=", NULL, f);
+			rel = rel_compare_exp_(sql, rel, le, re1, re2, 3, 0);
 		}
 		return rel;
 	}

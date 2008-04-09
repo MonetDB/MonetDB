@@ -545,7 +545,7 @@ exp_is_correlation(sql_exp *e, sql_rel *r )
 sql_exp *
 exps_bind_column( list *exps, char *cname ) 
 {
-	if (exps) {
+	if (exps && cname) {
 		node *en;
 
 		for (en = exps->h; en; en = en->next ) {

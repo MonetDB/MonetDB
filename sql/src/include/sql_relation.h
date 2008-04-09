@@ -47,7 +47,7 @@ typedef struct expression {
 	void *r;
 	void *f; 	/* func's and aggr's and column type */
 			/* e_cmp may have have 2 arguments */
-	int  flag;	/* DISTINCT, NO_NIL, ASCENDING */
+	int  flag;	/* DISTINCT, NO_NIL, ASCENDING, cmp types */
 	char card;	/* card 
 				(0 truth value!)
 				(1 atoms) 
@@ -61,6 +61,7 @@ typedef struct expression {
 #define NO_NIL		2
 /* ASCENDING > 8 else we have problems with cmp types */
 #define ASCENDING	16
+#define ANTISEL	32
  
 #define MAXOPS 16
 
@@ -108,6 +109,11 @@ typedef enum operator_type {
 	((e->flag&ASCENDING))
 #define set_direction(e, dir) \
 	e->flag |= (dir?ASCENDING:0)
+
+#define is_anti(e) \
+	((e->flag&ANTISEL))
+#define set_anti(e) \
+	e->flag |= ANTISEL
 
 /* used for expressions and relations */
 #define is_distinct(e) \

@@ -131,6 +131,8 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 	 	break;
 	case e_cmp: 
 		exp_print(sql, e->l, depth+1, 0, 0);
+		if (is_anti(e))
+			printf(" ! ");
 		cmp_print(sql, e->flag );
 		exp_print(sql, e->r, depth+1, 0, 0);
 		if (e->f) {

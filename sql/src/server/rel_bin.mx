@@ -277,9 +277,9 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 		}
 	 }	break;
 	case e_cmp: {
-		stmt *l = NULL, *r = NULL;
+		stmt *l = NULL, *r = NULL, *r2 = NULL;
 		int swapped = 0, sel = 0;
-		sql_exp *re = e->r;
+		sql_exp *re = e->r, *re2 = e->f;
 		prop *p;
 
 		/* here we handle join indices */
@@ -319,25 +319,6 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
  			l = exp_bin(sql, e->l, right, NULL, grp);
 			swapped = 1;
 		}
-		/* the escape charachter of like is in the right expression */
-		if (e->flag == cmp_notlike || e->flag == cmp_like) {
-			stmt *escape = NULL;
-
- 			r = exp_bin(sql, e->r, left, right, grp);
-			if (e->f) {
- 				escape = exp_bin(sql, e->f, left, right, grp);
-			} else {
-				escape = stmt_atom_string(_strdup(""));
-			}
-			if (!l || !r || !escape) {
-				assert(0);
-				if (l) stmt_destroy(l);
-				if (r) stmt_destroy(r);
-				if (escape) stmt_destroy(escape);
-				return NULL;
-			}
-			return stmt_likeselect(l, r, escape, (comp_type)e->flag);
-		}
 		if (swapped || !right)
  			r = exp_bin(sql, e->r, left, NULL, grp);
 		else
@@ -346,11 +327,28 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
  			r = exp_bin(sql, e->r, left, NULL, grp);
 			sel = 1;
 		}
-		if (!l || !r) {
+		if (re2)
+ 			r2 = exp_bin(sql, e->f, left, right, grp);
+		if (!l || !r || (re2 && !r2)) {
 			assert(0);
 			if (l) stmt_destroy(l);
 			if (r) stmt_destroy(r);
+			if (r2) stmt_destroy(r2);
 			return NULL;
+		}
+
+		/* the escape charachter of like is in the right expression */
+		if (e->flag == cmp_notlike || e->flag == cmp_like) {
+			if (!e->f)
+				r2 = stmt_atom_string(_strdup(""));
+			if (!l || !r || !r2) {
+				assert(0);
+				if (l) stmt_destroy(l);
+				if (r) stmt_destroy(r);
+				if (r2) stmt_destroy(r2);
+				return NULL;
+			}
+			return stmt_likeselect(l, r, r2, (comp_type)e->flag);
 		}
 		if (left && right && re->card > CARD_ATOM && !sel) {
 			if (l->nrcols == 0)
@@ -359,12 +357,20 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 				r = stmt_const(bin_first_column(swapped?left:right), r); 
 			if (swapped) {
 				s = stmt_join(r, stmt_reverse(l), swap_compare((comp_type)e->flag));
+			} else if (r2) {
+				s = stmt_join2(l, r, r2, (comp_type)e->flag);
 			} else {
 				s = stmt_join(l, stmt_reverse(r), (comp_type)e->flag);
 			}
 		} else {
-			s = stmt_uselect(l, r, (comp_type)e->flag);
+			if (r2) {
+				s = stmt_uselect2(l, r, r2, (comp_type)e->flag);
+			} else {
+				s = stmt_uselect(l, r, (comp_type)e->flag);
+			}
 		}
+		if (is_anti(e))
+			s->flag |= ANTI;
 	 }	break;
 	default:
 		;
@@ -541,7 +547,7 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 			}
 			if (!join) {
 				join = s;
-			} else if (s->type != st_join) {
+			} else if (s->type != st_join && s->type != st_join2) {
 				/* handle select expressions */
 				if (s->h == join->h) {
 					join = stmt_semijoin(join,s);
@@ -555,24 +561,38 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 				stmt *l = stmt_mark(stmt_reverse(join), 100);
 				stmt *r = stmt_mark(stmt_dup(join), 100);
 				stmt *ld = stmt_dup(s->op1.stval);
-				stmt *rd = stmt_reverse(stmt_dup(s->op2.stval));
 				stmt *le = stmt_join(l, ld, cmp_equal);
-				stmt *re = stmt_join(r, rd, cmp_equal);
+				if (s->type == st_join2) {
+					stmt *rd = stmt_dup(s->op2.stval);
+					stmt *re = stmt_join(r, rd, cmp_equal);
+					stmt *r2 = stmt_dup(s->op3.stval);
+					stmt *re2 = stmt_join(stmt_dup(r), r2, cmp_equal);
+					comp_type c1 = s->flag&2?cmp_gte:cmp_gt;
+					comp_type c2 = s->flag&1?cmp_lte:cmp_lt;
+					stmt *v1 = stmt_uselect(le, re, c1);
+					stmt *v2 = stmt_uselect(stmt_dup(le), re2, c2);
+					l = stmt_semijoin(stmt_dup(l), stmt_dup(v1));
+					l = stmt_semijoin(l, stmt_dup(v2));
+					r = stmt_semijoin(stmt_dup(r), v1);
+					r = stmt_semijoin(r, v2);
+					join = stmt_join(stmt_reverse(l), r, cmp_equal);
+					stmt_destroy(s);
+				} else {
+					stmt *rd = stmt_reverse(stmt_dup(s->op2.stval));
+					stmt *re = stmt_join(r, rd, cmp_equal);
+					sql_subfunc *f = sql_bind_func(sql->session->schema, compare_func((comp_type)s->flag), tail_type(le), tail_type(le));
+					stmt * cmp;
+	
+					assert(f);
 
-				sql_subfunc *f = sql_bind_func(sql->session->schema, compare_func((comp_type)s->flag), tail_type(le), tail_type(le));
-				stmt * cmp;
+					cmp = stmt_binop(le, re, f);
+					cmp = stmt_uselect(cmp, stmt_bool(1), cmp_equal);
 
-				assert(f);
-
-
-				cmp = stmt_binop(le, re, f);
-
-				cmp = stmt_uselect(cmp, stmt_bool(1), cmp_equal);
-
-				l = stmt_semijoin(stmt_dup(l), stmt_dup(cmp));
-				r = stmt_semijoin(stmt_dup(r), cmp);
-				join = stmt_join(stmt_reverse(l), r, cmp_equal);
-				stmt_destroy(s);
+					l = stmt_semijoin(stmt_dup(l), stmt_dup(cmp));
+					r = stmt_semijoin(stmt_dup(r), cmp);
+					join = stmt_join(stmt_reverse(l), r, cmp_equal);
+					stmt_destroy(s);
+				}
 			}
 		}
 	} else {

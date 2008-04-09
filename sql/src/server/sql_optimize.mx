@@ -377,11 +377,11 @@ stmt_intersect(stmt *op1, stmt *op2)
 	 * without unique head identifiers + semijoin is wrong
 	 */
 	if (!reverse) {
+		stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
+		stmt *mr = stmt_mark(stmt_dup(op1), 50);
+		stmt *l = stmt_join(stmt_dup(ml),
+			    	stmt_dup(op2->op1.stval), cmp_equal);
 		if (op2->type == st_join2) {
-			stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
-			stmt *mr = stmt_mark(stmt_dup(op1), 50);
-			stmt *l = stmt_join(stmt_dup(ml),
-				    	stmt_dup(op2->op1.stval), cmp_equal);
 			stmt *r1 = stmt_join(stmt_dup(mr),
 				    	stmt_dup(op2->op2.stval), cmp_equal);
 			stmt *r2 = stmt_join(stmt_dup(mr),
@@ -395,10 +395,6 @@ stmt_intersect(stmt *op1, stmt *op2)
 			ml = stmt_semijoin(ml, v2);
 			res = stmt_join(stmt_reverse(ml), mr, cmp_equal);
 		} else {
-			stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
-			stmt *mr = stmt_mark(stmt_dup(op1), 50);
-			stmt *l = stmt_join(stmt_dup(ml),
-				    	stmt_dup(op2->op1.stval), cmp_equal);
 			stmt *r = stmt_join(stmt_dup(mr),
 				    	stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
 			stmt *v = stmt_uselect(l, r, (comp_type) op2->flag);

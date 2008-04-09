@@ -299,17 +299,21 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 	case e_cmp:
 		switch (e->flag) {
 		case cmp_equal:
-			*cnt += 20;
-			return 20;
-		case cmp_notequal:
 			*cnt += 10;
 			return 10;
+		case cmp_notequal:
+			*cnt += 7;
+			return 7;
 		case cmp_gt:
 		case cmp_gte:
 		case cmp_lt:
 		case cmp_lte:
-			*cnt += 4;
-			return 4;
+			*cnt += 6;
+			if (e->f){ /* range */
+				*cnt += 6;
+				return 12;
+			}
+			return 6;
 		case cmp_like:
 		case cmp_notlike:
 			*cnt += 2;
@@ -491,7 +495,7 @@ order_joins(list *rels, list *exps)
 	sql_exp *cje;
 	node *djn;
 	list *sdje, *n_rels = list_create(NULL);
-	int fnd;
+	int fnd = 0;
 
 	/* first find the distinct join expressions */
 	list *aje = list_select(exps, (void*)1, (fcmp) &exp_is_join, (fdup)exp_dup);
@@ -591,33 +595,33 @@ order_joins(list *rels, list *exps)
 	/* find the involved relations */
 	l = find_rel(rels, cje->l);
 	r = find_rel(rels, cje->r);
-	list_remove_data(rels, l);
-	list_remove_data(rels, r);
-	list_append(n_rels, l);
-	list_append(n_rels, r);
+	if (l && r) {
+		list_remove_data(rels, l);
+		list_remove_data(rels, r);
+		list_append(n_rels, l);
+		list_append(n_rels, r);
 
-	/* Create a relation between l and r. Since the calling 
-	   functions rewrote the join tree, into a list of expressions 
-	   and a list of (simple) relations, there are no outer joins 
-	   involved, we can simply do a crossproduct here.
-	 */
-	top = rel_crossproduct(l, r, op_join);
-	rel_join_add_exp(top, exp_dup(cje));
+		/* Create a relation between l and r. Since the calling 
+	   	   functions rewrote the join tree, into a list of expressions 
+	   	   and a list of (simple) relations, there are no outer joins 
+	   	   involved, we can simply do a crossproduct here.
+	 	 */
+		top = rel_crossproduct(l, r, op_join);
+		rel_join_add_exp(top, exp_dup(cje));
 
-	/* all other join expressions on these 2 relations */
-	while((djn = list_find(exps, n_rels, (fcmp)&exp_joins_rels)) != NULL) {
-		sql_exp *e = djn->data;
+		/* all other join expressions on these 2 relations */
+		while((djn = list_find(exps, n_rels, (fcmp)&exp_joins_rels)) != NULL) {
+			sql_exp *e = djn->data;
 
-		rel_join_add_exp(top, exp_dup(e));
-		list_remove_data(exps, e);
+			rel_join_add_exp(top, exp_dup(e));
+			list_remove_data(exps, e);
+		}
+		/* Remove other joins on the current 'n_rels' set in the distinct list too */
+		while((djn = list_find(sdje, n_rels, (fcmp)&exp_joins_rels)) != NULL) 
+			list_remove_data(sdje, djn->data);
+		fnd = 1;
 	}
-	/* Remove other joins on the current 'n_rels' 
-	   set in the distinct list too */
-	while((djn = list_find(sdje, n_rels, (fcmp)&exp_joins_rels)) != NULL) 
-		list_remove_data(sdje, djn->data);
-
 	/* build join tree using the ordered list */
-	fnd = 1;
 	while(list_length(exps) && fnd) {
 		fnd = 0;
 		/* find the first expression which could be added */
@@ -671,8 +675,12 @@ order_joins(list *rels, list *exps)
 	}
 	if (list_length(rels)) { /* more relations */
 		node *n;
-		for(n=rels->h; n; n = n->next) 
-			top = rel_crossproduct(top, n->data, op_join);
+		for(n=rels->h; n; n = n->next) {
+			if (top)
+				top = rel_crossproduct(top, n->data, op_join);
+			else 
+				top = n->data;
+		}
 	}
 	if (list_length(exps)) { /* more expressions */
 		node *n;
