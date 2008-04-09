@@ -917,7 +917,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             break;
 
         case la_fun_call:
-            assert ((type_of (n, n->sem.fun_call.iter) & aat_node) == 0);
+            assert ((type_of (L(n), n->sem.fun_call.iter) & aat_node) == 0);
             prop_infer_req_node_vals (L(n), NULL);
             prop_infer_req_node_vals (R(n), NULL); /* function param */
             return; /* only infer once */
