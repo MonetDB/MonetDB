@@ -212,7 +212,7 @@ monet_init(opt *set, int setlen)
 		return 0;
 
 	monet_daemon = GDKembedded;
-	if (GDKgetenv_isyes("monet_daemon") || GDKgetenv_isyes("daemon")) {
+	if (GDKgetenv_isyes("monet_daemon")) {
 		monet_daemon = 1;
 #ifdef HAVE_SETSID
 		setsid();
@@ -346,7 +346,7 @@ faster system start.
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "daemon") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_daemon", optarg);
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "monet_daemon", optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "version") == 0) {
