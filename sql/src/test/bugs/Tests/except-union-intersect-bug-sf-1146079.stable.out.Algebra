@@ -10,8 +10,10 @@ stdout of test 'except-union-intersect-bug-sf-1146079` in directory 'src/test/bu
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -320,9 +322,6 @@ SELECT class FROM a EXCEPT ALL SELECT 16; -- all but one 16 (will have 16 in out
 |    17 |
 |    17 |
 |     2 |
-|    11 |
-|    18 |
-|    18 |
 |    16 |
 |    16 |
 |    16 |
@@ -330,6 +329,9 @@ SELECT class FROM a EXCEPT ALL SELECT 16; -- all but one 16 (will have 16 in out
 |    16 |
 |    16 |
 |    16 |
+|     11 |
+|     18 |
+|     18 |
 +-------+
 15 rows
 
@@ -394,14 +396,14 @@ SELECT class FROM a EXCEPT ALL SELECT class FROM b; -- a minus the elements from
 +-------+
 | class |
 +=======+
-|    11 |
-|    18 |
-|    18 |
 |    16 |
 |    16 |
 |    16 |
 |    16 |
 |    16 |
+|     11 |
+|     18 |
+|     18 |
 +-------+
 8 rows
 
