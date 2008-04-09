@@ -68,12 +68,6 @@ static PFla_op_t *
 boolean_op (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t att1,
             PFalg_att_t att2, PFalg_att_t res);
 
-/* Encapsulates initialization stuff common to unary operators. */
-static PFla_op_t *
-unary_op (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t att,
-          PFalg_att_t res);
-
-
 /**
  * Create a logical algebra operator (leaf) node.
  *
@@ -991,8 +985,8 @@ PFla_project_ (const PFla_op_t *n, unsigned int count, PFalg_proj_t *proj)
             fprintf (stderr,
                     "\nThe following error is triggered"
                     " in line %i of function %s() in file %s\n"
-                    "The input is of kind %d and has the schema (",
-                    line, func, file, n->kind);
+                    "The input has the schema (",
+                    line, func, file);
             for (unsigned int k = 0; k < n->schema.count; k++)
                 fprintf (stderr, "%s%s",
                          k ? ", " : "",
@@ -1019,8 +1013,8 @@ PFla_project_ (const PFla_op_t *n, unsigned int count, PFalg_proj_t *proj)
                 fprintf (stderr,
                         "\nThe following error is triggered"
                         " in line %i of function %s() in file %s\n"
-                        "The input is of kind %d and has the schema (",
-                        line, func, file, n->kind);
+                        "The input has the schema (",
+                        line, func, file);
                 for (unsigned int k = 0; k < n->schema.count; k++)
                     fprintf (stderr, "%s%s",
                              k ? ", " : "",
@@ -1737,7 +1731,47 @@ PFla_or (const PFla_op_t *n,
 PFla_op_t *
 PFla_not (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att)
 {
-    return unary_op (la_bool_not, n, res, att);
+    PFla_op_t    *ret;
+    unsigned int  i;
+
+    assert (n);
+
+    /* verify that 'att' is an attribute of n ... */
+    if (!PFprop_ocol (n, att))
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in not operation not found",
+                PFatt_str (att));
+
+    assert (!PFprop_ocol (n, res));
+
+    /* assert that 'att' is of correct type */
+    assert (PFprop_type_of (n, att) == aat_bln);
+
+    /* create new unary operator node */
+    ret = la_op_wire1 (la_bool_not, n);
+
+    /* insert semantic value (operand attribute and result attribute)
+     * into the result
+     */
+    ret->sem.unary.att = att;
+    ret->sem.unary.res = res;
+
+    /* allocate memory for the result schema (schema(n) + 'res') */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from 'n' argument */
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* add the information on the 'res' attribute; it has the same type
+     * as attribute 'att', but a different name
+     */
+    ret->schema.items[ret->schema.count - 1].name = res;
+    ret->schema.items[ret->schema.count - 1].type = aat_bln;
+
+    return ret;
 }
 
 
@@ -1885,69 +1919,6 @@ boolean_op (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
     return ret;
 }
 
-
-/**
- * Encapsulates initialization stuff common to unary operators.
- *
- * Depending on the @a kind parameter, we process the value of
- * column @a att and stores the result in newly created attribute
- * @a res. @a res gets the same data type as @a att. The result
- * schema corresponds to the schema of the input relation @a n plus
- * @a res.
- */
-static PFla_op_t *
-unary_op(PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
-         PFalg_att_t att)
-{
-    PFla_op_t    *ret;
-    unsigned int  i;
-    unsigned int  ix = 0;
-
-    assert (n);
-
-    /* verify that 'att' is an attribute of n ... */
-    for (i = 0; i < n->schema.count; i++)
-        if (att == n->schema.items[i].name) {
-            ix = i;                /* remember array index of att */
-            break;
-        }
-
-    /* did we find attribute 'att'? */
-    if (i >= n->schema.count)
-        PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in unary operation not found",
-                PFatt_str (att));
-
-    /* assert that 'att' is of correct type */
-    if (kind == la_bool_not)
-        assert (n->schema.items[ix].type == aat_bln);
-
-    /* create new unary operator node */
-    ret = la_op_wire1 (kind, n);
-
-    /* insert semantic value (operand attribute and result attribute)
-     * into the result
-     */
-    ret->sem.unary.att = att;
-    ret->sem.unary.res = res;
-
-    /* allocate memory for the result schema (schema(n) + 'res') */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from 'n' argument */
-    for (i = 0; i < n->schema.count; i++)
-        ret->schema.items[i] = n->schema.items[i];
-
-    /* add the information on the 'res' attribute; it has the same type
-     * as attribute 'att', but a different name
-     */
-    ret->schema.items[ret->schema.count - 1] = n->schema.items[ix];
-    ret->schema.items[ret->schema.count - 1].name = res;
-
-    return ret;
-}
 
 /**
  * Constructor for op:to operator
@@ -4308,7 +4279,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                                n->sem.binary.att2);
 
         case la_bool_not:
-            return unary_op (n->kind, left,
+            return PFla_not (left,
                              n->sem.unary.res,
                              n->sem.unary.att);
 
