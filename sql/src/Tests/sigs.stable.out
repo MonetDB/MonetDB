@@ -159,7 +159,7 @@ module 'sql_server'
 [ "mvc_export_result(mvc, Stream, int, str) : void"					  ]
 [ "mvc_export_value(mvc, Stream, int, str, str, str, int, int, int, any, str) : void"	  ]
 [ "mvc_get_value(mvc, str, str) : lng"							  ]
-[ "mvc_import_table(mvc, Bstream, str, str, str, str, str, int, int) : BAT[str,BAT]"	  ]
+[ "mvc_import_table(mvc, Bstream, str, str, str, str, str, str, int, int) : BAT[str,BAT]"	  ]
 [ "mvc_logfile(mvc, str) : void"							  ]
 [ "mvc_new() : mvc "							  ]
 [ "mvc_next_value(mvc, str, str) : lng"							  ]
