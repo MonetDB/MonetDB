@@ -516,7 +516,7 @@ query string with "M".
 			pstatus = m->session->status;
 
 		m->emode = m_normal;
-		m->emode = mod_none;
+		m->emod = mod_none;
 		err = sqlexecute(sql, out);
 		if (err) /* output error */
 			go = handle_error(m, out, pstatus);
