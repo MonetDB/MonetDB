@@ -887,8 +887,7 @@ put it into the EXPANSIONS tree.
 		YYSTREE op, opcache = lt->yysons[1], tt = opcache;
 		int argc, deref_fcn = (lt->cnt >= 3);
 		ValRecord local[MAXPARAMS+1], *argv = local;
-		int *buf;
-		monet_sig_t *sig;
+		monet_sig_t *sig, *buf;
 		str fcn_nme;
 
 @-
@@ -922,8 +921,7 @@ phase 1: resolve 'nme' in (*nme)(), {*nme}(), and [*nme]()
 		} else {
 			fcn_nme = lt->yyval.val.sval;
 		}
-		buf = (int *) alloca(MONETSIG_TOTSIZE(MONETSIG_MAXWORDS));
-		sig = (monet_sig_t *) buf;
+		sig = buf = (monet_sig_t *) alloca(MONETSIG_TOTSIZE(MONETSIG_MAXWORDS));
 
 
 @-
