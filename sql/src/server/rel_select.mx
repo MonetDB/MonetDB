@@ -1674,7 +1674,7 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 			L = R; 
 			R = swap;
 
-			type = swap_compare(type);
+			type = (int)swap_compare((comp_type)type);
 		}
 		e = exp_compare( ls, rs, type );
 	} else {
