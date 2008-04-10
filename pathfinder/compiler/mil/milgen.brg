@@ -84,6 +84,7 @@
 #include "pathfinder.h"
 
 #include <assert.h>
+#include <string.h>
 #include <stdio.h>
 
 #include "oops.h"
@@ -603,6 +604,7 @@ env_mvar (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
 #endif
 {
     mvar_t *mvar = env_mvar_unsafe (env, att, ty);
+
     if (mvar)
         return mvar;
 
@@ -2301,6 +2303,89 @@ reduce3 (PFpa_op_t * p, int goalnt)
 } /* fold) */
 /* fold) */
 
+#ifdef HAVE_PFTIJAH
+
+/* PFTIJAH helper functions */
+
+mvar_t
+*pft_create_pfop(PFpa_op_t *p, PFalg_simple_type_t t)
+{
+	mvar_t *res;
+	if ( p ) {
+	    // res  = new_var (p->refctr);
+	    res  = new_var (1);
+	    mvar_t *p_iter = env_mvar (p->env, att_iter, aat_nat);
+	    // fprintf(stderr,"p_iter = %d, pin = %d.\n",p_iter->name-83,p_iter->pins);
+	    mvar_t *p_item = env_mvar (p->env, att_item, t);
+	    // fprintf(stderr,"p_item = %d, pin = %d.\n",p_item->name-83,p_item->pins);
+	    mvar_t *p_frag;
+	    if ( t == aat_pre ) {
+	        p_frag = env_mvar (p->env, att_item, aat_frag);
+	    } else {
+	        p_frag = new_var (1);
+		execute(
+                    assgn (var (p_frag->name), lit_int(0))
+		);
+	    }
+	    // fprintf(stderr,"p_frag = %d, pin = %d.\n",p_frag->name-83,p_frag->pins);
+	    mvar_t *p_pos  = env_mvar (p->env, att_pos , aat_nat);
+
+	    if ( !(p_iter && p_item && p_frag && p_pos) )
+		fprintf(stderr,"# XXXXXXXXXXX [%d,%d,%d,%d] not found.\n",(int)p_iter,(int)p_item,(int)p_frag,(int)p_pos);
+	    execute (
+                assgn (var (res->name), 
+                          tj_pfop(var (p_iter->name),var(p_item->name),var(p_frag->name),var(p_pos->name)))
+	    );
+	    if ( t != aat_pre )
+	        unpin(p_frag,1);
+	} else {
+	    res  = new_var (1);
+	    execute (
+                assgn (var (res->name), 
+                          seqbase (new (type (mty_void), type(mty_bat) ),
+                                            lit_oid (0)))
+	    );
+	}
+	return res;
+}
+
+void
+pft_unpack_pfop(PFpa_op_t* dest, mvar_t *pack,
+		     PFalg_att_t a_iter,
+		     PFalg_att_t a_item, PFalg_simple_type_t t_item,
+		     PFalg_att_t a_frag,
+		     PFalg_att_t a_pos
+		    )
+{
+	mvar_t *v_iter  = new_var (dest->refctr);
+	execute (
+	    assgn (var (v_iter->name),
+		fetch (var (pack->name), lit_int (0))));
+	env_add (dest->env, a_iter, aat_nat, v_iter);
+
+	mvar_t *v_item  = new_var (dest->refctr);
+	execute (
+	    assgn (var (v_item->name),
+		fetch (var (pack->name), lit_int (1))));
+	env_add (dest->env, a_item, t_item, v_item);
+
+	if ( a_frag ) {
+	    mvar_t *v_frag  = new_var (dest->refctr);
+	    execute (
+	        assgn (var (v_frag->name),
+		    fetch (var (pack->name), lit_int (2))));
+	    env_add (dest->env, a_frag, aat_frag, v_frag);
+	}
+
+	mvar_t *v_pos  = new_var (dest->refctr);
+	execute (
+	    assgn (var (v_pos->name),
+		fetch (var (pack->name), lit_int (3))));
+	env_add (dest->env, a_pos, aat_nat, v_pos);
+}
+
+#endif
+
 /**
  * @brief Reducer function.
  *
@@ -2640,6 +2725,20 @@ reduce (PFpa_op_t * p, int goalnt)
                                     arg (var (colname->name),
                                          var (docmgmt->name)))))));
 
+#ifdef HAVE_PFTIJAH
+		// INCOMPLETE, when the print is removed it is optimized out
+                execute (
+		   if_(
+		   	tj_docmgmt_tape (
+			    var(PF_MIL_TIJAH_FTI_TAPE),
+                            var (PF_MIL_VAR_WS),
+                            var (filepath->name),
+                            var (docname->name),
+                            var (colname->name),
+                            var (docmgmt->name)),
+			 nil(),print(lit_str("INCOMPLETE fooled MIL optimizer")))
+		);
+#endif
                 unpin (docmgmt, 1);
                 unpin (docname, 1);
                 unpin (colname, 1);
@@ -4329,6 +4428,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                                      att3,
                                                      aat_dbl))))));
                 }   break; /* fold) */
+
                 case alg_fun_fn_string_length: /* fold( */
                 {
                     PFalg_att_t att;
@@ -8121,6 +8221,8 @@ reduce (PFpa_op_t * p, int goalnt)
             /*                                 */
             /***********************************/
 
+            // PFalg_att_t funcall_loop = p->sem.fun_call.iter;
+
             if (p->sem.fun_call.kind == alg_fun_call_xrpc) {
                 PFcnode_t *core_apply = (PFcnode_t *) p->sem.fun_call.ctx;
 
@@ -8149,8 +8251,305 @@ reduce (PFpa_op_t * p, int goalnt)
                             env_add (p->env, p->schema.items[i].name, t, v);
                         }
                 }
+            } else if (p->sem.fun_call.kind == alg_fun_call_tijah) {
+#ifdef HAVE_PFTIJAH
 
-            }
+/*
+ * PFTIJAH defines. I decided not make a seperate include file for
+ * pftijah so ensure that these defines are exactly the same as in
+ * ../algebra/builtins.c 
+ */
+
+#define MYNODEKIND  aat_pnode
+#define DOCMGMTTYPE aat_docmgmt
+
+#define PFT_FUN(F)              (strncmp(F,"pftijah_",8)==0)
+
+#define PFT_QUERY_N_XX "pftijah_query_n_xx"
+#define PFT_QUERY_N_SX "pftijah_query_n_sx"
+#define PFT_QUERY_N_XO "pftijah_query_n_xo"
+#define PFT_QUERY_N_SO "pftijah_query_n_so"
+#define PFT_QUERY_I_XX "pftijah_query_i_xx"
+#define PFT_QUERY_I_SX "pftijah_query_i_sx"
+#define PFT_QUERY_I_XO "pftijah_query_i_xo"
+#define PFT_QUERY_I_SO "pftijah_query_i_so"
+
+#define PTF_QUERY_NODES(N)      (N[14]=='n')
+#define PTF_QUERY_STARTNODES(N) (N[16]=='s')
+#define PTF_QUERY_OPTIONS(N)    (N[17]=='o')
+
+#define PFT_FUN_QUERY(F)        (strncmp(F,"pftijah_query_",14)==0)
+
+#define PFT_MANAGE_FTI_C_XX "pftijah_manage_fti_c_xx"
+#define PFT_MANAGE_FTI_C_CX "pftijah_manage_fti_c_cx"
+#define PFT_MANAGE_FTI_C_XO "pftijah_manage_fti_c_xo"
+#define PFT_MANAGE_FTI_C_CO "pftijah_manage_fti_c_co"
+#define PFT_MANAGE_FTI_E_CX "pftijah_manage_fti_e_cx"
+#define PFT_MANAGE_FTI_E_CO "pftijah_manage_fti_e_co"
+#define PFT_MANAGE_FTI_R_XX "pftijah_manage_fti_r_xx"
+#define PFT_MANAGE_FTI_R_XO "pftijah_manage_fti_r_xo"
+
+#define PFT_FUN_MANAGE(F)        (strncmp(F,"pftijah_manage_",15)==0)
+#define PFT_FUN_MANAGE_KIND(F)   (F[19])
+#define PFT_FUN_MANAGE_COLL(F)   (F[21] == 'c')
+#define PFT_FUN_MANAGE_OPT(F)    (F[22] == 'o')
+
+#define PFT_SCORE      "pftijah_score"
+#define PFT_NODES      "pftijah_nodes"
+#define PFT_INFO       "pftijah_info"
+#define PFT_TOKENIZE   "pftijah_tokenize"
+#define PFT_RESSIZE    "pftijah_ressize"
+
+	    const char* fcname = PFqname_loc(p->sem.fun_call.qname);
+
+	    PFalg_att_t fc_iter_a = p->schema.items[0].name; /* fixed */
+	    PFalg_att_t fc_pos_a  = p->schema.items[1].name; /* fixed */
+	    PFalg_att_t fc_item_a = p->schema.items[2].name; /* fixed */
+
+
+	    if ( PFT_FUN(fcname) ) {
+
+	        /* handle pftijah functions here */
+
+#ifdef FUNCALL_DEBUG
+	    	fprintf(stderr,"# PFTIJAH fun_call() HANDLER START\n");
+		fprintf(stderr,"# Called function is: %s\n",fcname);
+		fprintf(stderr,"# number of args is: %d\n",PFarray_last(fun_params));
+
+                fprintf(stderr,"#FUNCALL/SCHEMA:\n");
+		for (unsigned int qq=0; qq < p->schema.count; qq++) {
+		    struct PFalg_schm_item_t s_item = p->schema.items[qq];
+                    fprintf(stderr,"#.ITEM[%d]=(%s:%d)\n",qq,PFatt_str(s_item.name),s_item.type);
+
+		}
+		for (unsigned int ii=0; ii<PFarray_last(fun_params); ii++) {
+                    fprintf(stderr,"#FUNCALL/ENV[%d]\n",ii);
+		    const PFarray_t *env = (*(PFpa_op_t **)PFarray_at (fun_params,ii))->env; 
+                    for (unsigned int iii = 0; iii < PFarray_last (env); iii++) {
+
+                       env_t entry = *(env_t *) PFarray_at ((PFarray_t *) env, iii);
+                       fprintf(stderr,"#.BAT[a%d] pin=%d\n",entry.mvar->name-83,entry.mvar->pins);
+		    }
+                }
+#endif /* FUNCALL_DEBUG */
+
+	        mvar_t *fc_loop = env_mvar (L(p)->env, p->sem.fun_call.iter , aat_nat);
+
+		if ( PFT_FUN_QUERY(fcname) ) {
+		    int fcci = 0;
+		    PFalg_simple_type_t restype;
+		    int returnNodes = PTF_QUERY_NODES(fcname);
+
+		    mvar_t *retNodes    = new_var (1);
+		    if ( returnNodes ) {
+		        execute (assgn(var(retNodes->name),lit_bit(false)));
+			restype = aat_pre;
+		    } else {
+		        execute (assgn(var(retNodes->name),lit_bit(true)));
+			restype = aat_int;
+		    }
+
+		    mvar_t *pfop_sn, *pfop_query, *pfop_opt;
+
+		    if ( PTF_QUERY_STARTNODES(fcname) ) {
+		        pfop_sn    = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_pre);
+			fcci++;
+		    } else {
+		        pfop_sn    = pft_create_pfop(NULL,aat_pre);
+		    }
+
+		    pfop_query = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_str);
+		    fcci++;
+
+		    if ( PTF_QUERY_OPTIONS(fcname) ) {
+		        pfop_opt   = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_pre);
+		    } else {
+		        pfop_opt   = pft_create_pfop(NULL,aat_pre);
+		    }
+
+		    mvar_t *tjqres = new_var(1);
+		    execute(
+		        assgn(var(tjqres->name),
+			    tj_query_handler(
+			    	var(retNodes->name),
+				var(pfop_sn->name),
+				var(pfop_query->name),
+				var(pfop_opt->name),
+				var(fc_loop->name),
+				var (PF_MIL_VAR_WS),
+				var (PF_MIL_TIJAH_SCORE_DB)
+			    )
+			)
+		    );
+		    unpin(retNodes,1);
+
+		    unpin(pfop_sn,1);
+		    unpin(pfop_query,1);
+		    unpin(pfop_opt,1);
+
+		    pft_unpack_pfop(p,tjqres,fc_iter_a,fc_item_a,restype,fc_item_a,fc_pos_a);
+
+		    unpin(tjqres,1);
+		} else if ( PFT_FUN_MANAGE(fcname) ) {
+		    int fcci = 0;
+
+		    char* opkind;
+		    
+		    switch (PFT_FUN_MANAGE_KIND(fcname) ) {
+		     case 'c':	opkind = "create";
+		     		break;
+		     case 'e':	opkind = "extend";
+		     		break;
+		     case 'r':	opkind = "remove";
+		     		break;
+		     default:   opkind = "error";
+		    }
+
+		    mvar_t *pfop_coll, *pfop_opt;
+
+		    if ( PFT_FUN_MANAGE_COLL(fcname) ) {
+		        pfop_coll    = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_str);
+			fcci++;
+		    } else {
+		        pfop_coll    = pft_create_pfop(NULL,aat_pre);
+		    }
+		    if ( PFT_FUN_MANAGE_OPT(fcname) ) {
+		        pfop_opt    = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_pre);
+			fcci++;
+		    } else {
+		        pfop_opt    = pft_create_pfop(NULL,aat_pre);
+		    }
+
+                    execute (
+                        assgn (var (PF_MIL_TIJAH_FTI_TAPE),
+		 	       tj_add_fti_tape(
+			           lit_str(opkind),
+				   var(pfop_coll->name),
+				   var(pfop_opt->name),
+				   var(fc_loop->name),
+				   var(PF_MIL_VAR_WS),
+			           var(PF_MIL_TIJAH_FTI_TAPE)
+			       )));
+
+		    unpin(pfop_coll,1);
+		    unpin(pfop_opt,1);
+
+                    mvar_t *p_iter  = new_var (p->refctr);
+                    execute (
+                       assgn (var (p_iter->name),
+                          seqbase (new (type (mty_void), type(mty_oid) ),
+                                            lit_oid (0))));
+                    env_add (p->env, fc_iter_a, aat_nat, p_iter);
+
+                    mvar_t *p_item1 = new_var (p->refctr);
+                    execute (
+                       assgn (var (p_item1->name),
+                          seqbase (new (type (mty_void), type(mty_lng) ),
+                                            lit_oid (0))));
+                    env_add (p->env, fc_item_a, aat_docmgmt, p_item1);
+
+                    mvar_t *p_item2 = new_var (p->refctr);
+                    execute (
+                       assgn (var (p_item2->name),
+                          seqbase (new (type (mty_void), type(mty_str) ),
+                                            lit_oid (0))));
+                    env_add (p->env, fc_item_a, aat_docnm, p_item2);
+
+                    mvar_t *p_pos  = new_var (p->refctr);
+                    execute (
+                       assgn (var (p_pos->name),
+                          seqbase (new (type (mty_void), type(mty_oid) ),
+                                            lit_oid (0))));
+                    env_add (p->env, fc_pos_a, aat_nat, p_pos);
+		} else if (strcmp(fcname,PFT_SCORE) == 0 ) {
+		    mvar_t *pfop_id;
+		    mvar_t *pfop_nodes;
+
+		    pfop_id = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,0),aat_int);
+		    pfop_nodes = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,1),aat_pre);
+
+		    mvar_t *tjsres = new_var(1);
+		    execute(
+		        assgn(var(tjsres->name),
+			    tj_query_score(
+				var(fc_loop->name),
+				var(pfop_id->name),
+				var(pfop_nodes->name),
+				var (PF_MIL_TIJAH_SCORE_DB)
+			    )
+			)
+		    );
+		    unpin(pfop_id,1);
+		    unpin(pfop_nodes,1);
+
+		    pft_unpack_pfop(p,tjsres,fc_iter_a,fc_item_a,aat_dbl,0,fc_pos_a);
+
+		    unpin(tjsres,1);
+		} else if (strcmp(fcname,PFT_NODES) == 0 ) {
+		    mvar_t *pfop_id;
+
+		    pfop_id = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,0),aat_int);
+
+		    mvar_t *tjnres = new_var(1);
+		    execute(
+		        assgn(var(tjnres->name),
+			    tj_query_nodes(
+				var(fc_loop->name),
+				var(pfop_id->name),
+				var (PF_MIL_TIJAH_SCORE_DB)
+			    )
+			)
+		    );
+		    unpin(pfop_id,1);
+
+		    pft_unpack_pfop(p,tjnres,fc_iter_a,fc_item_a,aat_pre,fc_item_a,fc_pos_a);
+
+		    unpin(tjnres,1);
+		} else if (strcmp(fcname,PFT_INFO) == 0 ) {
+		    PFoops (OOPS_FATAL,"milgen.brg: tijah:ft-index-info () temporary not supported.\n");
+		} else if ( (strcmp(fcname,PFT_TOKENIZE) == 0) ||
+			    (strcmp(fcname,PFT_RESSIZE) == 0) ) {
+		    PFpa_op_t* op1 = *(PFpa_op_t **)PFarray_at(fun_params,0);
+
+		    // copy the iter bat
+	            mvar_t *p_iter = env_mvar (op1->env, att_iter, aat_nat);
+		    pin(p_iter,1);
+                    env_add (p->env, fc_iter_a, aat_nat, p_iter);
+
+                    mvar_t *new_item  = new_var (p->refctr);
+		    if ( strcmp(fcname,PFT_TOKENIZE) == 0 ) {
+	                mvar_t *p_item = env_mvar (op1->env, att_item, aat_str);
+                        execute (
+                           assgn (var (new_item->name),
+		               tj_tokenize( var(p_item->name) ) ) );
+                        env_add (p->env, fc_item_a, aat_str, new_item);
+		    } else {
+		        // must be RESSIZE
+	                mvar_t *p_item = env_mvar (op1->env, att_item, aat_int);
+			// "var res := item%s.join(tijah_scoreDB.fetch(4@0));\n"
+                        execute (
+                           assgn (var (new_item->name),
+		               join( var(p_item->name), 
+			       	     fetch( var(PF_MIL_TIJAH_SCORE_DB),
+				         lit_int(4)) ) ) );
+                        env_add (p->env, fc_item_a, aat_int, new_item);
+		    }
+
+		    // copy the pos bat
+	            mvar_t *p_pos  = env_mvar (op1->env, att_iter, aat_nat);
+		    pin(p_pos,1);
+                    env_add (p->env, fc_pos_a, aat_nat, p_pos);
+		} else {
+	    	    PFoops (OOPS_FATAL,"milgen.brg: PFTIJAH fun_call() bad function[%s]!!!\n",fcname);
+		}
+	    } else {
+	    	    PFoops (OOPS_FATAL,"milgen.brg: PFTIJAH fun_call() bad function[%s]!!!\n",fcname);
+	    }
+#endif /* PFTIJAH */
+
+	    } else {
+	        // ERROR? do not know how to handle
+	    }
 
             /* Unpin all MIL variables that represent the function parameters.
                (They have 1 additional pin (see rule fun_param) to ensure
@@ -8160,7 +8559,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 for (unsigned int j = 0; j < PFarray_last (param->env); j++)
                     unpin (((env_t *) PFarray_at (param->env, j))->mvar, 1);
             }
-            
+
             /* restore the function arguments */
             fun_params = old_fun_params;
         }   break; /* fold) */
@@ -8186,7 +8585,6 @@ reduce (PFpa_op_t * p, int goalnt)
             /* go on to next arguments */
             reduce (kids[1], nts[1]);
         }   break; /* fold) */
-
         /* Param:    nil */
         case 154:
             /* end of parameter list */
@@ -8385,6 +8783,30 @@ PFmilgen (PFpa_op_t *n)
 
     milprog = seq (module (lit_str ("pathfinder")),
                    module (lit_str ("mkey")),
+#ifdef HAVE_PFTIJAH
+		   /* create pftijah score db */
+    		   declare (var (PF_MIL_TIJAH_SCORE_DB)),
+                   assgn (var (PF_MIL_TIJAH_SCORE_DB), 
+                          seqbase (new (type (mty_void), type(mty_bat) ),
+                                            lit_oid (0))),
+		   append (var (PF_MIL_TIJAH_SCORE_DB),
+		          seqbase (new (type (mty_void), type(mty_oid) ),
+			           lit_oid (0))),
+		   append (var (PF_MIL_TIJAH_SCORE_DB),
+		          seqbase (new (type (mty_void), type(mty_oid) ),
+			           lit_oid (0))),
+		   append (var (PF_MIL_TIJAH_SCORE_DB),
+		          seqbase (new (type (mty_void), type(mty_oid) ),
+			           lit_oid (0))),
+		   append (var (PF_MIL_TIJAH_SCORE_DB),
+		          seqbase (new (type (mty_void), type(mty_dbl) ),
+			           lit_oid (0))),
+		   append (var (PF_MIL_TIJAH_SCORE_DB),
+		          new (type (mty_lng), type(mty_lng) ) ),
+    		   declare (var (PF_MIL_TIJAH_FTI_TAPE)),
+                   assgn (var (PF_MIL_TIJAH_FTI_TAPE), 
+                          (new (type (mty_str), type(mty_bat) ))),
+#endif
                    /* add timing information */
                    declare (var (PF_MIL_VAR_TIME_LOAD)),
                    declare (var (PF_MIL_VAR_TIME_QUERY)),

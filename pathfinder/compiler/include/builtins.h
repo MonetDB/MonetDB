@@ -657,6 +657,7 @@ struct PFla_pair_t PFbui_pf_del_doc (const PFla_op_t *loop, bool ordering,
                                      struct PFla_pair_t *args);
 
 
+
 /* #3. UPDATE FUNCTIONS */
 struct PFla_pair_t PFbui_upd_rename (const PFla_op_t *loop, bool ordering,
                                      struct PFla_pair_t *args);
@@ -695,6 +696,84 @@ struct PFla_pair_t PFbui_upd_replace_element (const PFla_op_t *loop,
 struct PFla_pair_t PFbui_upd_replace_node (const PFla_op_t *loop,
                                            bool ordering,
                                            struct PFla_pair_t *args);
+
+#ifdef HAVE_PFTIJAH
+/* #3. PFTIJAH SPECIFIC FUNCTIONS */
+
+/*
+ * The fti management functions
+ */
+struct PFla_pair_t PFbui_manage_fti_c_xx(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_c_cx(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_c_xo(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_c_co(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_e_cx(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_e_co(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_r_xx(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_r_xo(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+
+/*
+ * The main query functions
+ */
+struct PFla_pair_t PFbui_tijah_query_i_xx (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_query_i_xo (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_query_i_sx (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_query_i_so (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_query_n_xx (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_query_n_xo (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_query_n_sx (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_query_n_so (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_nodes      (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_score      (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_ft_index_info      (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_ft_index_info_s      (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_tokenize   (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_resultsize (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+#endif
 
 #endif   /* BUITLINS_H */
 

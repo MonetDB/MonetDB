@@ -220,6 +220,12 @@
 /* Constructor for debug relation map operator */
 #define trace_map(a,b,c,d) PFla_trace_map ((a),(b),(c),(d))
 
+#ifdef HAVE_PFTIJAH
+/* Constructor for pftijah operations */
+#define pft_options(a,b)   PFla_pft_options ((a),(b))
+#define pft_query(a,b,c)   PFla_pft_query ((a),(b),(c))
+#endif
+
 /* recursion operators */
 #define rec_fix(a,b) PFla_rec_fix ((a),(b))
 #define rec_param(a,b) PFla_rec_param ((a),(b))

@@ -99,6 +99,11 @@ typedef unsigned int PFmil_ident_t;
 #define PF_MIL_VAR_TRACE_TYPE  55
 #define PF_MIL_VAR_TRACE_REL   56
 
+#ifdef HAVE_PFTIJAH
+#define PF_MIL_TIJAH_SCORE_DB  58
+#define PF_MIL_TIJAH_FTI_TAPE  59
+#endif
+
 #define PF_MIL_VAR_AXIS_ANC    60
 #define PF_MIL_VAR_AXIS_ANC_S  61
 #define PF_MIL_VAR_AXIS_CHLD   62
@@ -358,6 +363,15 @@ enum PFmil_kind_t {
 
     , m_update_tape  /**< play update tape function */ 
     , m_docmgmt_tape /**< play docmgmt tape function */ 
+#ifdef HAVE_PFTIJAH
+    , m_tj_pfop
+    , m_tj_tokenize
+    , m_tj_query_handler
+    , m_tj_query_score
+    , m_tj_query_nodes
+    , m_tj_add_fti_tape
+    , m_tj_docmgmt_tape
+#endif
 };
 typedef enum PFmil_kind_t PFmil_kind_t;
 
@@ -854,6 +868,24 @@ PFmil_t * PFmil_docmgmt (const PFmil_t *);
     PFmil_seq_ (sizeof ((PFmil_t *[]) { __VA_ARGS__} ) / sizeof (PFmil_t *), \
                 (const PFmil_t *[]) { __VA_ARGS__ } )
 PFmil_t *PFmil_seq_ (int count, const PFmil_t **stmts);
+
+#ifdef HAVE_PFTIJAH
+
+PFmil_t * PFmil_tj_query_handler (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f, const PFmil_t *g);
+
+PFmil_t * PFmil_tj_query_score (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d);
+
+PFmil_t * PFmil_tj_query_nodes (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c);
+
+PFmil_t * PFmil_tj_pfop (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d);
+
+PFmil_t * PFmil_tj_docmgmt_tape (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f);
+
+PFmil_t * PFmil_tj_add_fti_tape (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f);
+
+PFmil_t * PFmil_tj_tokenize (const PFmil_t *a);
+#endif
+
 
 #endif   /* MIL_H */
 

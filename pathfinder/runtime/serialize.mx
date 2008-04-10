@@ -1980,9 +1980,7 @@ xquery_print_result_DRIVER (
                strVAL);
 }
 
-#ifdef HAVE_PROBXML
-
-#define EQDEBUG 0
+#define FNDEEPEQTRACE 0
 
 #define DACH(CTX) ((struct DuplAttrChk*)CTX->_private)
 
@@ -2042,7 +2040,7 @@ dach_finish_check(struct DuplAttrChk* dach) {
     if ( dach->equal ) { /* still equal */
 	for(int i=0; i<dach->alist_cur; i++) {
 	    if (dach->alist[i] ) {
-    	        if (EQDEBUG) stream_printf(GDKout,"#eqdebug: no corresponding left attr: <%s ... %s\n",dach->elname, dach->alist[i]);
+    	        if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: no corresponding left attr: <%s ... %s\n",dach->elname, dach->alist[i]);
 	        dach->equal = 0; /* not deep equal */
 	    }
         }
@@ -2104,12 +2102,12 @@ dach_handle_attribute (XqueryCtx* ctx, str prefix, str loc, str value)
 	}
 	if ( (i==dach->alist_cur) && dach->equal) {
 	    /* did not find attr, so not deep equal */
-    	    if (EQDEBUG) stream_printf(GDKout,"#eqdebug: no corresponding right attr: <%s ... %s\n",dach->elname, newattr);
+    	    if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: no corresponding right attr: <%s ... %s\n",dach->elname, newattr);
 	    dach->equal = 0;
 	}
 	dach->abuff_cur = start; /* reclaim string space */
     }
-    if (0) stream_printf(GDKout,"#eqdebug: dach_handle_attribute[%s](%s)\n",(dach->building?"build":"check"),newattr);
+    if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: dach_handle_attribute[%s](%s)\n",(dach->building?"build":"check"),newattr);
     return SUCCESS;
 }
 
@@ -2119,7 +2117,7 @@ dach_handle_attribute (XqueryCtx* ctx, str prefix, str loc, str value)
  */
 
 static int
-probxml_deep_eq_scan(XqueryCtx* ctx, oid* pre, oid to, BAT* pre_cont, oid cont, int* vCONT)
+fn_deep_eq_scan(XqueryCtx* ctx, oid* pre, oid to, BAT* pre_cont, oid cont, int* vCONT)
 {
     ptr res;
     chr kind;
@@ -2175,7 +2173,7 @@ probxml_deep_eq_scan(XqueryCtx* ctx, oid* pre, oid to, BAT* pre_cont, oid cont, 
                 }
             default:
                 fatal_err (ctx,
-                           "Unknow kind %d IN probxml_deep_eq_scan",
+                           "Unknow kind %d IN fn_deep_eq_scan",
                            (int)kind);
                 return PROBLEM;
         }
@@ -2191,7 +2189,7 @@ probxml_deep_eq_scan(XqueryCtx* ctx, oid* pre, oid to, BAT* pre_cont, oid cont, 
 }
 
 static int
-probxml_deep_eq_range(
+fn_deep_eq_range(
 	XqueryCtx* ctx,
 	oid lpre, oid lto, BAT* lpre_cont, oid lcont,
 	oid rpre, oid rto, BAT* rpre_cont, oid rcont
@@ -2201,15 +2199,15 @@ probxml_deep_eq_range(
 	ptr res;
         int lvCONT, rvCONT;
 
-        int lkind = probxml_deep_eq_scan(ctx,&lpre,lto,lpre_cont,lcont,&lvCONT);
-        int rkind = probxml_deep_eq_scan(ctx,&rpre,rto,rpre_cont,rcont,&rvCONT);
+        int lkind = fn_deep_eq_scan(ctx,&lpre,lto,lpre_cont,lcont,&lvCONT);
+        int rkind = fn_deep_eq_scan(ctx,&rpre,rto,rpre_cont,rcont,&rvCONT);
 
 	if ( lkind != rkind ) {
-    	    if (EQDEBUG) stream_printf(GDKout,"#eqdebug: not eq range_king(%d,%d).\n",lkind,rkind);
+    	    if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: not eq range_king(%d,%d).\n",lkind,rkind);
 	    return 0;
 	}
 	if ( lkind == 9999 ) {
-    	    if (0) stream_printf(GDKout,"#eqdebug: end of range for both sides.\n");
+    	    if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: end of range for both sides.\n");
 	    return 1; /* end of range, equal */
 	} else {
             getWsValue(res,ctx,lcont,PRE_PROP,lpre);
@@ -2230,17 +2228,17 @@ probxml_deep_eq_range(
                 getWsValue (res, ctx, rvCONT, QN_LOC, rprop);
                 str rname   = (str) res;
 		/* */
-    	        if (0) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>,<%s>).\n",lname,rname);
+    	        if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>,<%s>).\n",lname,rname);
 		if ( strcmp(lname,rname) != 0 ) {
-    	            if (EQDEBUG) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>,<%s>) FAILS.\n",lname,rname);
+    	            if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>,<%s>) FAILS.\n",lname,rname);
 	 	    return 0;
 		}
 		if ( ((luri && ruri) && strcmp(luri,ruri) != 0) || (luri && !ruri) || (!luri && ruri) )  {
-    	            if (EQDEBUG) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>) URI(%s,%s) FAILS.\n",lname,luri,ruri);
+    	            if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>) URI(%s,%s) FAILS.\n",lname,luri,ruri);
 		    return 0;
 		}
 		if ( ((lprefix && rprefix) && strcmp(lprefix,rprefix) != 0) || (lprefix && !rprefix) || (!lprefix && rprefix) )  {
-    	            if (EQDEBUG) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>) PREFIX(%s,%s) FAILS.\n",lname,lprefix,rprefix);
+    	            if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: comparing ELEMENTS(<%s>) PREFIX(%s,%s) FAILS.\n",lname,lprefix,rprefix);
 		    return 0;
 		}
 		/* now handle the attributes of the node */
@@ -2257,9 +2255,9 @@ probxml_deep_eq_range(
 		str lstr = (str)res;
                 getWsValue(res,ctx,rvCONT,PROP_TEXT,rprop);
 		str rstr = (str)res;
-    	        if (0) stream_printf(GDKout,"#eqdebug: comparing STR(\"%s\",\"%s\").\n",lstr,rstr);
+    	        if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: comparing STR(\"%s\",\"%s\").\n",lstr,rstr);
 		if ( strcmp(lstr,rstr) != 0 ) {
-    	            if (EQDEBUG) stream_printf(GDKout,"#eqdebug: deep-equal STR(\"%s\",\"%s\") == FALSE.\n",lstr,rstr);
+    	            if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: deep-equal STR(\"%s\",\"%s\") == FALSE.\n",lstr,rstr);
 	 	    return 0;
 	        }
 	     } else if (lkind == 2 ) { /* COMMENT */
@@ -2268,7 +2266,7 @@ probxml_deep_eq_range(
                 getWsValue(res,ctx,rvCONT,PROP_COM,rprop);
 		str rcom = (str)res;
 		if ( strcmp(lcom,rcom) != 0 ) {
-    	            if (EQDEBUG) stream_printf(GDKout,"#eqdebug: deep-equal COMMENT(\"%s\",\"%s\") == FALSE.\n",lcom,rcom);
+    	            if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: deep-equal COMMENT(\"%s\",\"%s\") == FALSE.\n",lcom,rcom);
 	 	    return 0;
 		}
 	     } else if (lkind == 3 ) { /* PI */
@@ -2281,7 +2279,7 @@ probxml_deep_eq_range(
                     getWsValue(res,ctx,rvCONT,PROP_INS,rprop);
                     str rdata = (str) res;
 		if ( strcmp(ltarget,rtarget) != 0 || strcmp(ldata,rdata) != 0) {
-    	            if (EQDEBUG) stream_printf(GDKout,"#eqdebug: deep-equal PI(%s,%s),PI(%s,%s) == FALSE.\n",ltarget,ldata,rtarget,rdata);
+    	            if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: deep-equal PI(%s,%s),PI(%s,%s) == FALSE.\n",ltarget,ldata,rtarget,rdata);
 	 	    return 0;
 		}
 	     } else {
@@ -2296,7 +2294,7 @@ probxml_deep_eq_range(
 }
 
 static int 
-probxml_deep_eq_node(XqueryCtx* ctx, int lcont, oid loid, int rcont, oid roid) {
+fn_deep_eq_node(XqueryCtx* ctx, int lcont, oid loid, int rcont, oid roid) {
     ptr res;
 
     if ( (loid == roid) && (lcont == rcont) ) /* nodes are identical */
@@ -2329,7 +2327,7 @@ probxml_deep_eq_node(XqueryCtx* ctx, int lcont, oid loid, int rcont, oid roid) {
 	    str rstr = (str)res;
 	    /* */
 	    if ( strcmp(lstr,rstr) != 0 ) {
-    	        if (EQDEBUG) stream_printf(GDKout,"#eqdebug: not eq STR(%s,%s).\n",lstr,rstr);
+    	        if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: not eq STR(%s,%s).\n",lstr,rstr);
 		return 0;
 	    }
 	} else {
@@ -2347,22 +2345,28 @@ probxml_deep_eq_node(XqueryCtx* ctx, int lcont, oid loid, int rcont, oid roid) {
 	    BATiter rbi;
             getWsBAT(rb, rbi, ctx, rcont, PRE_CONT);
 
-            return probxml_deep_eq_range(
+            return fn_deep_eq_range(
 	    		ctx, 
                         lpre, lpre_size, IS_FAKE_PROJECT(lb)?NULL:lb, lcont,
                         rpre, rpre_size, IS_FAKE_PROJECT(rb)?NULL:rb, rcont
 		   );
 	}
     } else {
-    	if (EQDEBUG) stream_printf(GDKout,"#eqdebug: kind not equal.\n");
+    	if (FNDEEPEQTRACE) stream_printf(GDKout,"#eqdebug: kind not equal.\n");
 	return 0;
     }
     return 1;
 }
 
 int
-CMDprobxml_deep_eq(BAT** resbat, BAT* ws, BAT* litem, BAT* lkind, BAT* ritem, BAT*rkind)
+CMDfn_deep_eq(BAT** resbat, BAT* ws, BAT* litem, BAT* lkind, BAT* ritem, BAT* rkind)
 {
+    /* TODO
+     * - ignore namespaces and URI's, surprising?
+     * - check length of both args
+     * - do eq() for basevalues in parameter sequences
+     * - comments and pi's in nodes ??
+     */
     struct serializeFunStruct mySerializeFun;
     memcpy(&mySerializeFun,&nullSerializeFun,sizeof(struct serializeFunStruct));
     mySerializeFun.handle_attribute = dach_handle_attribute;
@@ -2421,7 +2425,7 @@ CMDprobxml_deep_eq(BAT** resbat, BAT* ws, BAT* litem, BAT* lkind, BAT* ritem, BA
 
         bit eq;
 
-	if ( probxml_deep_eq_node(ctx,lcont,loid,rcont,roid) ) {
+	if ( fn_deep_eq_node(ctx,lcont,loid,rcont,roid) ) {
 	    eq = TRUE;
 	} else {
 	    eq = FALSE;
@@ -2439,5 +2443,3 @@ CMDprobxml_deep_eq(BAT** resbat, BAT* ws, BAT* litem, BAT* lkind, BAT* ritem, BA
     }
     return  GDK_SUCCEED;
 }
-
-#endif /* HAVE_PROBXML */

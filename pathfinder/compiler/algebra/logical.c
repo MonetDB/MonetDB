@@ -1388,7 +1388,6 @@ printf("type = %x", n->schema.items[ix[1]].type);
 
             res_type = aat_int;
             break;
-
         case alg_fun_fn_normalize_space:
         case alg_fun_fn_upper_case:
         case alg_fun_fn_lower_case:

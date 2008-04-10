@@ -347,6 +347,11 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_TRACE_TYPE:  return "trace_type";
         case PF_MIL_VAR_TRACE_REL:   return "trace_rel";
 
+#ifdef HAVE_PFTIJAH
+        case PF_MIL_TIJAH_SCORE_DB:  return "tijah_scoreDB";
+        case PF_MIL_TIJAH_FTI_TAPE:  return "tijah_ftiTape";
+#endif
+
         case PF_MIL_VAR_AXIS_ANC:    return "AXIS_ancestor";
         case PF_MIL_VAR_AXIS_ANC_S:  return "AXIS_ancestor_or_self";
         case PF_MIL_VAR_AXIS_CHLD:   return "AXIS_child";
@@ -1667,5 +1672,53 @@ PFmil_docmgmt (const PFmil_t *args)
 {
     return wire1 (m_docmgmt_tape, args);
 }
+
+#ifdef HAVE_PFTIJAH
+
+PFmil_t *
+PFmil_tj_tokenize (const PFmil_t *a)
+{
+    return wire1 (m_tj_tokenize, a);
+}
+
+/** pftijah algebra argument  constructor */
+PFmil_t *
+PFmil_tj_pfop (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d)
+{
+    return wire4 (m_tj_pfop, a, b, c, d);
+}
+
+PFmil_t *
+PFmil_tj_query_score (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d)
+{
+    return wire4 (m_tj_query_score, a, b, c, d);
+}
+
+PFmil_t *
+PFmil_tj_query_nodes (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
+{
+    return wire3 (m_tj_query_nodes, a, b, c);
+}
+
+/** pftijah main query handler */
+PFmil_t *
+PFmil_tj_query_handler (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f, const PFmil_t *g)
+{
+    return wire7 (m_tj_query_handler, a, b, c, d, e, f, g);
+}
+
+PFmil_t *
+PFmil_tj_add_fti_tape (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f)
+{
+    return wire6 (m_tj_add_fti_tape, a, b, c, d, e, f);
+}
+
+PFmil_t *
+PFmil_tj_docmgmt_tape (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f)
+{
+    return wire6 (m_tj_docmgmt_tape, a, b, c, d, e, f);
+}
+
+#endif
 
 /* vim:set shiftwidth=4 expandtab: */

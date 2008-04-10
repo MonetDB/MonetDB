@@ -3648,8 +3648,6 @@ evaluateOp (opt_t *f, int rcode, int rc1, int rc2,
     milprintf(f, "} # end of '%s' calculation\n", operator);
 }
 
-#ifdef HAVE_PROBXML
-
 static int
 translateDeepEq (opt_t *f, int cur_level, int counter, char *comp, PFcnode_t *args)
 {
@@ -3662,7 +3660,8 @@ translateDeepEq (opt_t *f, int cur_level, int counter, char *comp, PFcnode_t *ar
     translate2MIL (f, VALUES, cur_level, counter, RL(args));
 
     milprintf(f, "{ # pxmlsup:deep-equal calculation\n");
-    milprintf(f, "var val_fst := probxml_deep_eq(ws,item%03u,kind%03u,item,kind);\n", counter,counter);
+    // INCOMPLETE implement loop-lifted version
+    milprintf(f, "var val_fst := fn_deep_eq(ws,item%03u,constant2bat(kind%03u),item,constant2bat(kind));\n", counter,counter);
     milprintf(f, "item := val_fst.[oid]();\n");
     milprintf(f, "kind := BOOL;\n");
     milprintf(f, "} # end of pxmlsup:deep-equal\n");
@@ -3672,7 +3671,6 @@ translateDeepEq (opt_t *f, int cur_level, int counter, char *comp, PFcnode_t *ar
 
     return NORMAL;
 }
-#endif /*HAVE_PROBXML */
 
 /**
  * evaluateOpOpt evaluates a operation and gives back a new
@@ -8375,9 +8373,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
           ctx_counter = counter;
 
           /* get query string */
-          rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+	  rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+#ifdef REMOVE
           if (rc == NORMAL)
              milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+#endif
           add_empty_strings (f, STR, cur_level);
           saveResult_ (f, ++counter, STR);
           str_counter = counter;
@@ -8413,157 +8413,62 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
           } else {
              rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
           }
+#ifdef REMOVE
           if (rc == NORMAL)
              milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+#endif
           add_empty_strings (f, STR, cur_level);
           saveResult_ (f, ++counter, STR);
           str_counter = counter;
         } else if (fun->arity == 1) {
           /* get query string */
-          rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+	  rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+#ifdef REMOVE
           if (rc == NORMAL)
              milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+#endif
           add_empty_strings (f, STR, cur_level);
           saveResult_ (f, ++counter, STR);
-          str_counter = counter;
-        }
-        if ( storeScore )
-          milprintf(f,
-                "var result_id := new(void,lng).seqbase(0@0);");
-        else
-          milprintf(f,
-                "var result_iter := new(void,oid).seqbase(0@0);"
-                "var result_item := new(void,oid).seqbase(0@0);"
-                "var result_pos := new(void,oid).seqbase(0@0);"
-                "var result_frag := new(void,oid).seqbase(0@0);");
-
-        /* generate the serialization code */
-        milprintf(f,
-                "loop%03u@batloop() { # begin batloop over queries\n"
-                , cur_level);
-        if (opt_counter)
-          milprintf(f,
-                "    iter := iter%03u.select($t);\n"
-                "    item := item%03u.materialize(ipik%03u).semijoin(iter);\n"
-                "    kind := kind%03u.materialize(ipik%03u).semijoin(iter);\n"
-                "    iter := iter.tmark(0@0);\n"
-                "    item := item.tmark(0@0);\n"
-                "    kind := kind.tmark(0@0);\n"
-                "    var optbat := serialize_tijah_opt(ws,1,iter,iter,item,kind,int_values,dbl_values,str_values);\n"
-                ,opt_counter,opt_counter, opt_counter,opt_counter,opt_counter);
-        else
-          milprintf(f,
-                "    var optbat := new(str,str,32);\n");
-
-        milprintf(f,
-                "    var ftindex := tj_get_ft_index(optbat,true);\n"
-                "    tijah_lock := tj_get_collection_lock(ftindex);\n"
-                "    lock_set(tijah_lock);\n"
-          );
-          if ( ctx_counter ) {
-            milprintf(f,
-                "    var startNodes;\n"
-                "    iter := iter%03u.materialize(ipik%03u);\n"
-                "    var iteration := iter%03u.fetch(int($h));\n"
-                "    iter := iter.select(iteration);\n"
-                "    iteration := nil;\n"
-                "    item := item%03u.materialize(ipik%03u).semijoin(iter);\n"
-                "    kind := kind%03u.materialize(ipik%03u).semijoin(iter);\n"
-                "    iter := iter.tmark(0@0);\n"
-                "    item := item.tmark(0@0);\n"
-                "    kind := kind.tmark(0@0);\n"
-                "    var xdoc_name := bat(\"tj_\" + ftindex + \"_doc_name\");\n"
-                "    var xdoc_firstpre := bat(\"tj_\" + ftindex + \"_doc_firstpre\");\n"
-                "    var xpfpre := bat(\"tj_\" + ftindex + \"_pfpre\");\n"
-                "    var doc_loaded := reverse(ws.fetch(OPEN_CONT)).leftfetchjoin(ws.fetch(OPEN_NAME));\n"
-                "    startNodes := pf2tijah_node(xdoc_name,xdoc_firstpre,xpfpre,item,kind,doc_loaded);\n"
-                , ctx_counter, ctx_counter, str_counter, ctx_counter, ctx_counter, ctx_counter, ctx_counter);
-        } else {
-          milprintf(f,"    var startNodes := new(void,oid);\n");
-        }
-        /* execute tijah query */
-        milprintf(f,
-                "    var nexi_allscores := run_tijah_query(ftindex,optbat,%s,startNodes,item%s%03u.fetch(int($h)));\n"
-                "    var nexi_score;\n"
-                "    if ( optbat.exist(\"returnNumber\") ) {\n"
-                "        var retNum := int(optbat.find(\"returnNumber\"));\n"
-                "        nexi_score := nexi_allscores.slice(0, retNum - 1);\n"
-                "    } else {\n"
-                "        nexi_score := nexi_allscores;\n"
-                "    }\n"
-                , (ctx_counter?"true":"false"),item_ext, str_counter);
-            /* translate tijah_pre to pf-pre */
-            milprintf(f,
-                "    var docpre := bat(\"tj_\" + ftindex + \"_doc_firstpre\").[oid]();\n"
-                "    var pfpre :=  bat(\"tj_\" + ftindex + \"_pfpre\");\n"
-                "    item  := nexi_score.hmark(0@0);\n"
-                "    var frag := [find_lower](const docpre.reverse().mark(0@0), item);\n"
-                "    item := item.join(pfpre).sort().tmark();\n"
-                "    var needed_docs := bat(\"tj_\" + ftindex + \"_doc_name\").semijoin(frag.tunique());\n"
-                "    lock_unset(tijah_lock); tijah_lock := lock_nil;\n"
-                "    var loaded_docs := ws.fetch(OPEN_NAME).reverse();\n"
-                "    var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);\n"
-                "    ws_opendoc(ws, docs_to_load);\n"
-                "    docs_to_load := nil;\n"
-                "    loaded_docs := nil;\n"
-                "    var doc_loaded := reverse(ws.fetch(OPEN_CONT)).leftfetchjoin(ws.fetch(OPEN_NAME));\n"
-                "    var fid_pffid := needed_docs.join(doc_loaded.reverse());\n"
-                "    frag := frag.join(fid_pffid).sort().tmark();\n");
-
-        if ( storeScore ) {
-            /* store scores and nodes */
-            milprintf(f,
-                "    tID := oid(int(tID) + 1);\n"
-                "    tijah_resultsz.insert(lng(tID),lng(nexi_allscores.count()));\n"
-                "    tijah_tID.append(item.project(tID));\n"
-                "    tijah_frag.append(frag);\n"
-                "    tijah_pre.append(item);\n"
-                "    tijah_score.append(nexi_score.tmark());\n"
-                "    result_id.append(lng(tID));\n"
-                "} # end batloop over queries\n");
-
-            /* return query identifier */
-            item_ext = (code)?kind_str(INT):"";
-            if (code)
-                milprintf(f, "item%s := result_id;\n", item_ext);
-            else
-                addValues (f, int_container(), "result_id", "item");
-
-            milprintf(f,
-                "iter := loop%03u.tmark(oid(0));\n"
-                "ipik := iter;\n"
-                "pos := oid(1);\n"
-                "kind := INT;\n"
-                , cur_level);
-        } else {
-            /* do not store score, return nodes instead */
-            milprintf(f,
-                "    result_iter.append(item.project($t));\n"
-                "    result_pos.append(item.mark(1@0));\n"
-                "    result_frag.append(frag);\n"
-                "    result_item.append(item);\n"
-                "} # end batloop over queries\n");
-            milprintf(f,
-                "iter := result_iter;\n"
-                "result_iter := nil;\n"
-                "pos := result_pos;\n"
-                "result_pos := nil;\n"
-                "kind := set_kind(result_frag, ELEM);\n"
-                "result_frag := nil;\n"
-                "item := result_item;\n"
-                "result_item := nil;\n"
-                "ipik := iter;\n"
-                );
-        }
-
-        /* clean up */
-        if ( opt_counter )
-            deleteResult(f, opt_counter);
+	  str_counter = counter;
+	} 
+	/* PARAMETER COMPUTATION */
+	milprintf(f,
+		"var pfop_query := tj_pfop(iter%03u.materialize(ipik%03u),item%s%03u.materialize(ipik%03u),kind%03u.materialize(ipik%03u),pos%03u.materialize(ipik%03u));\n"
+		,str_counter,str_counter,item_ext,str_counter,str_counter,str_counter,str_counter,str_counter,str_counter);
+	if ( opt_counter )
+	  milprintf(f,
+		"var pfop_opt := tj_pfop(iter%03u.materialize(ipik%03u),item%03u.materialize(ipik%03u),kind%03u.materialize(ipik%03u),pos%03u.materialize(ipik%03u));\n"
+		,opt_counter,opt_counter,opt_counter,opt_counter,opt_counter,opt_counter,opt_counter,opt_counter);
+	else
+	  milprintf(f,
+		"var pfop_opt := new(void,bat);\n");
+	if ( ctx_counter )
+	  milprintf(f,
+		"var pfop_sn := tj_pfop(iter%03u.materialize(ipik%03u),item%03u.materialize(ipik%03u),kind%03u.materialize(ipik%03u),pos%03u.materialize(ipik%03u));\n"
+		,ctx_counter,ctx_counter,ctx_counter,ctx_counter,ctx_counter,ctx_counter,ctx_counter,ctx_counter);
+	else
+	  milprintf(f,
+		"var pfop_sn := new(void,bat);\n");
+	milprintf(f,
+		"# call the tijah query handler\n"
+		" var res := tj_query_handler(%s, pfop_sn, pfop_query, pfop_opt, loop%03u, ws, int_values, dbl_values, str_values, tijah_scoreDB);\n"
+		,(storeScore?"TRUE":"FALSE"),cur_level);
+	milprintf(f,
+		"# unpack the returned result\n"
+		"iter := res.fetch(0@0);\n"
+		"item := res.fetch(1@0);\n"
+		"kind := res.fetch(2@0);\n"
+		"pos  := res.fetch(3@0);\n"
+	);
+	/* END OF SCRIPT */
+	/* clean up */
+	if ( opt_counter )
+	    deleteResult(f, opt_counter);
         deleteResult_ (f, str_counter, STR);
         if ( ctx_counter )
             deleteResult(f, ctx_counter);
         milprintf(f, "} # end of translate tijah:query[all][-id]\n");
-        return (code && storeScore)?INT:NORMAL;
+        return NORMAL;
     }
     else if ( !PFqname_eq(fnQname, PFqname (PFns_tijah,"nodes")) )
     {
@@ -8587,15 +8492,15 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var frag := new(void,oid).seqbase(0@0);"
                 "loop%03u@batloop() { # begin of query batloop\n"
                 "    var qid := oid(item%s.fetch(int($h)));\n"
-                "    var tmp := tijah_tID.ord_uselect(qid);\n"
-                "    item.append(tmp.mirror().leftfetchjoin(tijah_pre));\n"
-                "    iter.append(tmp.project(loop%03u.fetch(int($h))));\n"
-                "    frag.append(tmp.mirror().leftfetchjoin(tijah_frag));\n"
-                "    pos.append(tmp.mark(1@0));\n"
-                "} # end of query batloop \n"
-                , cur_level, item_int, cur_level);
-
-        milprintf(f,
+		"    var tmp := tijah_scoreDB.fetch(0@0).ord_uselect(qid);\n"
+		"    item.append(tmp.mirror().leftfetchjoin(tijah_scoreDB.fetch(2@0)));\n"
+		"    iter.append(tmp.project(loop%03u.fetch(int($h))));\n"
+		"    frag.append(tmp.mirror().leftfetchjoin(tijah_scoreDB.fetch(1@0)));\n"
+	        "    pos.append(tmp.mark(1@0));\n"
+	        "} # end of query batloop \n"
+	        , cur_level, item_int, cur_level);
+        
+	milprintf(f,
                 "kind := set_kind(frag, ELEM);\n"
                 "ipik := iter;\n"
                 "} # end of translate pf:tijah_nodes\n");
@@ -8618,35 +8523,35 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
         /* get node */
         rc = translate2MIL (f, code, cur_level, counter, RL(args));
-
-        /* get scores */
-        milprintf(f,
-                "var score := new(oid,dbl);\n"
-                "var tmp := [<<]([lng](tijah_frag), const 32);\n"
-                "var tijah_fragpre := [+](tmp, [lng](tijah_pre));\n"
-                "tmp := nil;\n"
-                "var item1_unique := item%s%03u.tunique();\n"
-                "item := item.materialize(ipik);"
-                "kind := kind.materialize(ipik);"
+        
+	/* get scores */
+        milprintf(f, 
+		"var score := new(oid,dbl);\n"
+		"var tmp := [<<]([lng](tijah_scoreDB.fetch(1@0)), const 32);\n"
+		"var tijah_fragpre := [+](tmp, [lng](tijah_scoreDB.fetch(2@0)));\n"
+		"tmp := nil;\n"
+		"var item1_unique := item%s%03u.tunique();\n"
+		"item := item.materialize(ipik);"
+		"kind := kind.materialize(ipik);"
                 "item1_unique@batloop() { # begin query batloop\n"
-                "    var item_part := item.semijoin(item%s%03u.uselect($h));\n"
-                "    var frag_part := kind.semijoin(item_part).get_container();\n"
-                "    frag_part := [<<]([lng](frag_part), const 32);\n"
-                "    var fragpre_part := [+](frag_part, [lng](item_part));\n"
-                "    item_part := nil;\n"
-                "    frag_part := nil;\n"
-                "    tmp := tijah_tID.uselect(oid($h));\n"
-                "    tmp := tmp.mirror().leftfetchjoin(tijah_fragpre);\n"
-                "    tmp := tmp.join(fragpre_part.reverse());\n"
-                "    score.insert(tmp.reverse().leftfetchjoin(tijah_score));\n"
-                "} # end query batloop\n"
-                "var xitem := kdiff(item,score).project(dbl(0));\n"
-                "score.insert(xitem);\n"
-                "xitem := nil;\n"
-                "score := score.sort().tmark(0@0);\n"
-                , item_int, counter, item_int, counter);
-
-        /* return score */
+		"    var item_part := item.semijoin(item%s%03u.uselect($h));\n"
+		"    var frag_part := kind.semijoin(item_part).get_container();\n"
+		"    frag_part := [<<]([lng](frag_part), const 32);\n"
+		"    var fragpre_part := [+](frag_part, [lng](item_part));\n"
+		"    item_part := nil;\n"
+		"    frag_part := nil;\n"
+		"    tmp := tijah_scoreDB.fetch(0@0).uselect(oid($h));\n"
+		"    tmp := tmp.mirror().leftfetchjoin(tijah_fragpre);\n"
+		"    tmp := tmp.join(fragpre_part.reverse());\n"
+		"    score.insert(tmp.reverse().leftfetchjoin(tijah_scoreDB.fetch(3@0)));\n"
+		"} # end query batloop\n"
+		"var xitem := kdiff(item,score).project(dbl(0));\n"
+		"score.insert(xitem);\n"
+		"xitem := nil;\n"
+		"score := score.sort().tmark(0@0);\n"
+		, item_int, counter, item_int, counter);
+	
+	/* return score */
         item_ext = (code)?kind_str(DBL):"";
         if (code)
             milprintf(f, "item%s := score;\n", item_ext);
@@ -8719,8 +8624,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
         milprintf(f,
                 "if (ipik.count() != 0) { # tijah:resultsize\n"
-                "var res := item%s.join(tijah_resultsz);\n"
-                ,item_ext);
+                "var res := item%s.join(tijah_scoreDB.fetch(4@0));\n"
+		,item_ext);
         if (code)
             milprintf(f, "item%s := res;\n", item_ext);
         else
@@ -8740,7 +8645,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         translateIntersect (f, "diff", cur_level, counter, args);
         return NORMAL;
     }
-    else if (!PFqname_eq(fnQname,PFqname (PFns_pxmlsup,"deep-equal")))
+    else if (!PFqname_eq(fnQname,PFqname (PFns_pxmlsup,"deep-equal")) ||
+    	     !PFqname_eq(fnQname,PFqname (PFns_fn,"deep-equal")) )
     {
         return translateDeepEq (f, cur_level, counter, "deep-equal", args);
     }
@@ -11534,13 +11440,13 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 const char* PFinitMIL(void) {
     return
 #ifdef HAVE_PFTIJAH
-        "var tID := 9999@0; # start counter at an arbitrary number\n"
-        "var tijah_tID   := new(void,oid).seqbase(0@0);\n"
-        "var tijah_frag  := new(void,oid).seqbase(0@0);\n"
-        "var tijah_pre   := new(void,oid).seqbase(0@0);\n"
-        "var tijah_score := new(void,dbl).seqbase(0@0);\n"
-        "var tijah_resultsz := new(lng,lng);\n"
-        "var tijah_lock  := lock_nil; # pftijah collection lock\n"
+	"var tijah_scoreDB  := new(void,bat).seqbase(0@0);\n"
+	"tijah_scoreDB.append(new(void,oid).seqbase(0@0));\n" // 0@0 tijah_tID
+	"tijah_scoreDB.append(new(void,oid).seqbase(0@0));\n" // 1@0 tijah_frag
+	"tijah_scoreDB.append(new(void,oid).seqbase(0@0));\n" // 2@0 tijah_pre
+	"tijah_scoreDB.append(new(void,dbl).seqbase(0@0));\n" // 3@0 tijah_score
+	"tijah_scoreDB.append(new(lng,lng));\n"               // 4@0 tijah_resultsz
+	"var tijah_lock  := lock_nil; # pftijah collection lock\n"
 #endif
 #ifdef HAVE_PROBXML
    "module(\"probxml\");\n"

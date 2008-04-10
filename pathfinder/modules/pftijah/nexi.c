@@ -91,8 +91,16 @@ TijahParserContext* parserCtx = &parserCtxStruct;
 
 extern int old_main(BAT* optbat, char* startNodes_name);
 
-char* tijahParse(BAT* optbat, char* startNodes_name, char* query, char** errBUFF) {
+char* tijahParse(BAT* optbat, char* startNodes_name, char** errBUFF) {
   /* setup TijahParserContext structure */
+  BUN bun;
+  if ( (bun = BUNfnd(optbat,"_query")) == BUN_NONE ) {
+      stream_printf(GDKerr,"Error: cannot find \"_query\" tag.\n");
+      return FALSE;
+  }
+  BATiter bi = bat_iterator(optbat);
+  str query = (str)BUNtail(bi,bun);
+
   LOGPRINTF(LOGFILE,"- tijahParse([%s])\n",query);
   parserCtx->collection   = "DFLT_FT_INDEX";
   parserCtx->queryText    = query;
@@ -274,6 +282,8 @@ int old_main(BAT* optbat, char* startNodes_name)
 	        SET_TDEBUG(v);
 	        if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting debug value to %d.\n",v);
 	    }
+        } else if (strcmp(optName, "_query") == 0) {
+	        /* OK, this is the regular query transfer option */
 	} else if ( strcmp(optName,"timing") == 0 ) {
             if ( strcasecmp(optVal,"TRUE") == 0 ) {
                 MILPRINTF(MILOUT, "timing := TRUE;\n" );

@@ -82,7 +82,11 @@ percentage - a number [0,100] indicating the amount of free space to reserve for
                             void = xquery_print_result_file;
  "C interface to Workset result print routine, but print to a file"
 
-
+.COMMAND fn_deep_eq(BAT[void,bat] ws,
+		    BAT[void,oid] litem, BAT[void,int] lkind,
+		    BAT[void,oid] ritem, BAT[void,int] rkind) : 
+                            BAT[void,bit] = CMDfn_deep_eq;
+ "C interface to fn:deep_eq() implementation using the serializer"
 
 @- Multi Join
 @m

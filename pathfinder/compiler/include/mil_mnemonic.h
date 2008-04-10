@@ -410,4 +410,29 @@
 /** play docmgmt tape function */
 #define docmgmt_tape(a) PFmil_docmgmt (a)
 
+#ifdef HAVE_PFTIJAH
+
+/** pftijah main query handler */
+#define tj_query_handler(a,b,c,d,e,f,g) PFmil_tj_query_handler ((a), (b), (c), (d), (e), (f), (g))
+
+/** pftijah computes nodes from id's */
+#define tj_query_nodes(a,b,c)   PFmil_tj_query_nodes ((a), (b), (c) )
+
+/** pftijah computes score from id's and nodes */
+#define tj_query_score(a,b,c,d) PFmil_tj_query_score ((a), (b), (c), (d))
+
+/** pftijah helper fun to pack algebra operands */
+#define tj_pfop(a,b,c,d) PFmil_tj_pfop ((a), (b), (c), (d) )
+
+/** pftijah function  to handle documents and ft-index modifications at the
+ *  then end of a transaction */
+#define tj_docmgmt_tape(a,b,c,d,e,f) PFmil_tj_docmgmt_tape ((a), (b), (c), (d), (e), (f))
+
+/** add an ft-index event to the tape to be handled later by tj_docmgmt_tape function */
+#define tj_add_fti_tape(a,b,c,d,e,f) PFmil_tj_add_fti_tape ((a), (b), (c), (d), (e), (f))
+
+#define tj_tokenize(a) PFmil_tj_tokenize ((a))
+
+#endif
+
 /* vim:set shiftwidth=4 expandtab: */

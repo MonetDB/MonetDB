@@ -67,6 +67,8 @@ PFprop_ocol (const PFla_op_t *n, PFalg_att_t attr)
     return false;
 }
 
+#include <stdio.h>
+
 /**
  * Return the type of @a attr in the list of ocol columns
  */
@@ -78,6 +80,7 @@ PFprop_type_of (const PFla_op_t *n, PFalg_att_t attr)
         if (attr == n->schema.items[i].name)
             return n->schema.items[i].type;
 
+    fprintf(stderr,"LOGICAL OP = %d.\n",n->kind);
     /* you should never get there */
     PFoops (OOPS_FATAL,
                  "Type of %s not found in schema", PFatt_str (attr));

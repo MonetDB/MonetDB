@@ -44,6 +44,7 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "mem.h"
 #include "builtins.h"
 
 #include "logical.h"
@@ -4619,6 +4620,471 @@ PFbui_pf_supernode (const PFla_op_t *loop, bool ordering,
                         proj (att_item, att_res)),
         .frag = args[0].frag };
 }
+
+#ifdef HAVE_PFTIJAH
+/* ----------------------------------------------------- */
+/* #4. PFTIJAH SPECIFIC FUNCTIONS                        */
+/* ----------------------------------------------------- */
+
+/*
+ * PFTIJAH defines. I decided not make a seperate include file for
+ * pftijah so ensure that these defines are exactly the same as in
+ * ../mil/milgen.brg
+ */
+
+#define MYNODEKIND  aat_pnode
+#define DOCMGMTTYPE aat_docmgmt
+
+#define PFT_FUN(F)              (strncmp(F,"pftijah_",8)==0)
+
+#define PFT_QUERY_N_XX "pftijah_query_n_xx"
+#define PFT_QUERY_N_SX "pftijah_query_n_sx"
+#define PFT_QUERY_N_XO "pftijah_query_n_xo"
+#define PFT_QUERY_N_SO "pftijah_query_n_so"
+#define PFT_QUERY_I_XX "pftijah_query_i_xx"
+#define PFT_QUERY_I_SX "pftijah_query_i_sx"
+#define PFT_QUERY_I_XO "pftijah_query_i_xo"
+#define PFT_QUERY_I_SO "pftijah_query_i_so"
+
+#define PTF_QUERY_NODES(N)      (N[14]=='n')
+#define PTF_QUERY_STARTNODES(N) (N[16]=='s')
+#define PTF_QUERY_OPTIONS(N)    (N[17]=='o')
+
+#define PFT_FUN_QUERY(F)        (strncmp(F,"pftijah_query_",14)==0)
+
+#define PFT_MANAGE_FTI_C_XX "pftijah_manage_fti_c_xx"
+#define PFT_MANAGE_FTI_C_CX "pftijah_manage_fti_c_cx"
+#define PFT_MANAGE_FTI_C_XO "pftijah_manage_fti_c_xo"
+#define PFT_MANAGE_FTI_C_CO "pftijah_manage_fti_c_co"
+#define PFT_MANAGE_FTI_E_CX "pftijah_manage_fti_e_cx"
+#define PFT_MANAGE_FTI_E_CO "pftijah_manage_fti_e_co"
+#define PFT_MANAGE_FTI_R_XX "pftijah_manage_fti_r_xx"
+#define PFT_MANAGE_FTI_R_XO "pftijah_manage_fti_r_xo"
+
+#define PFT_FUN_MANAGE(F)        (strncmp(F,"pftijah_manage_",15)==0)
+#define PFT_FUN_MANAGE_KIND(F)   (F[19])
+#define PFT_FUN_MANAGE_COLL(F)   (F[21] == 'c')
+#define PFT_FUN_MANAGE_OPT(F)    (F[22] == 'o')
+
+#define PFT_SCORE      "pftijah_score"
+#define PFT_NODES      "pftijah_nodes"
+#define PFT_INFO       "pftijah_info"
+#define PFT_TOKENIZE   "pftijah_tokenize"
+#define PFT_RESSIZE    "pftijah_ressize"
+
+PFalg_schema_t pft_empty_schema(PFalg_simple_type_t item_t) {
+    PFalg_schema_t schema;
+    schema.count = 3;
+    // INCOMPLETE, what about freeing this space
+    schema.items = PFmalloc (3 * sizeof (PFalg_schema_t));
+
+    schema.items[0].name = att_iter;
+    schema.items[0].type = aat_nat;
+    schema.items[1].name = att_pos;
+    schema.items[1].type = aat_nat;
+    schema.items[2].name = att_item;
+    schema.items[2].type = item_t;
+
+    return schema;
+}
+
+struct PFla_pair_t pft_query_param0() {
+    return (struct PFla_pair_t) {
+    	.rel  = nil(),
+	.frag = PFla_empty_set () };
+}
+
+struct PFla_pair_t pft_query_param1(struct PFla_pair_t *p1,PFalg_simple_type_t itemType) {
+    return (struct PFla_pair_t) {
+    	.rel  = fun_param(
+			p1->rel,
+			nil(),
+			pft_empty_schema(itemType)), 
+	.frag = PFla_empty_set () };
+}
+
+struct PFla_pair_t pft_query_param2(struct PFla_pair_t *p1, PFalg_simple_type_t itemType1, struct PFla_pair_t *p2, PFalg_simple_type_t itemType2) {
+    return (struct PFla_pair_t) {
+    	.rel  = fun_param(
+			p1->rel,
+			fun_param(
+				p2->rel,
+				nil(),
+				pft_empty_schema(itemType2)), 
+			pft_empty_schema(itemType1)), 
+	.frag = PFla_empty_set () };
+}
+
+struct PFla_pair_t pft_query_param3(struct PFla_pair_t *p1, PFalg_simple_type_t itemType1, struct PFla_pair_t *p2, PFalg_simple_type_t itemType2,  struct PFla_pair_t *p3, PFalg_simple_type_t itemType3) {
+    return (struct PFla_pair_t) {
+    	.rel  = fun_param(
+			p1->rel,
+			fun_param(
+				p2->rel,
+				fun_param(
+					p3->rel,
+					nil(),
+					pft_empty_schema(itemType3)), 
+				pft_empty_schema(itemType2)), 
+			pft_empty_schema(itemType1)), 
+	.frag = PFla_empty_set () };
+}
+
+/*
+ * The main query function
+ */
+
+struct PFla_pair_t
+PFbui_tijah_query_HANDLER(
+		const PFla_op_t *loop,
+		bool ordering,
+		char* query_name,
+		PFalg_simple_type_t funcall_t,
+		PFla_pair_t p_fun_param)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel =  fun_call(
+		    loop,
+		    p_fun_param.rel,
+		    pft_empty_schema(funcall_t),
+		    alg_fun_call_tijah,
+		    PFqname (PFns_wild, query_name),
+		    NULL, /* ctx */
+		    att_iter, /* iter */
+		    alg_occ_one_or_more  /* occ_ind */
+		),
+        .frag = PFla_empty_set () };
+}
+
+/*
+ * param creation helper functions
+ */
+
+
+/*
+ * The 'id' returning functions
+ */
+
+struct PFla_pair_t
+PFbui_tijah_query_i_xx(const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    return PFbui_tijah_query_HANDLER(
+    		loop,
+		ordering,
+		PFT_QUERY_I_XX,
+		aat_int,
+    		pft_query_param1(&args[0],aat_str)
+		);
+}
+
+struct PFla_pair_t
+PFbui_tijah_query_i_sx(const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    return PFbui_tijah_query_HANDLER(
+    		loop,
+		ordering,
+		PFT_QUERY_I_SX,
+		aat_int,
+     		pft_query_param2(&args[0],MYNODEKIND,&args[1],aat_str)
+		);
+}
+
+struct PFla_pair_t
+PFbui_tijah_query_i_xo(const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    return PFbui_tijah_query_HANDLER(
+    		loop,
+		ordering,
+		PFT_QUERY_I_XO,
+		aat_int,
+    		pft_query_param2(&args[0],aat_str,&args[1],MYNODEKIND)
+		);
+}
+
+struct PFla_pair_t
+PFbui_tijah_query_i_so(const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    return PFbui_tijah_query_HANDLER(
+    		loop,
+		ordering,
+		PFT_QUERY_I_SO,
+		aat_int,
+    		pft_query_param3(&args[0],MYNODEKIND,&args[1],aat_str,&args[2],MYNODEKIND)
+		);
+}
+
+/*
+ * The node returning functions
+ */
+
+struct PFla_pair_t
+PFbui_tijah_query_n_xx(const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    return PFbui_tijah_query_HANDLER(
+    		loop,
+		ordering,
+		PFT_QUERY_N_XX,
+		MYNODEKIND,
+    		pft_query_param1(&args[0],aat_str)
+		);
+}
+
+struct PFla_pair_t
+PFbui_tijah_query_n_sx(const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    return PFbui_tijah_query_HANDLER(
+    		loop,
+		ordering,
+		PFT_QUERY_N_SX,
+		MYNODEKIND,
+     		pft_query_param2(&args[0],MYNODEKIND,&args[1],aat_str)
+		);
+}
+
+struct PFla_pair_t
+PFbui_tijah_query_n_xo(const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    return PFbui_tijah_query_HANDLER(
+    		loop,
+		ordering,
+		PFT_QUERY_N_XO,
+		MYNODEKIND,
+    		pft_query_param2(&args[0],aat_str,&args[1],MYNODEKIND)
+		);
+}
+
+struct PFla_pair_t
+PFbui_tijah_query_n_so(const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    return PFbui_tijah_query_HANDLER(
+    		loop,
+		ordering,
+		PFT_QUERY_N_SO,
+		MYNODEKIND,
+    		pft_query_param3(&args[0],MYNODEKIND,&args[1],aat_str,&args[2],MYNODEKIND)
+		);
+}
+
+/*
+ *
+ */
+
+struct PFla_pair_t
+PFbui_tijah_manage_fti_HANDLER(
+		const PFla_op_t *loop,
+		bool ordering,
+		char* fun_name,
+		PFla_pair_t p_fun_param)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel =  fun_call(
+		    loop,
+		    p_fun_param.rel,
+		    pft_empty_schema(DOCMGMTTYPE),
+		    alg_fun_call_tijah,
+		    PFqname (PFns_wild, fun_name),
+		    NULL, /* ctx */
+		    att_iter, /* iter */
+		    alg_occ_one_or_more  /* occ_ind */
+		),
+        .frag = PFla_empty_set () };
+}
+
+struct PFla_pair_t PFbui_manage_fti_c_xx(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args)
+{
+	(void)args;
+	return PFbui_tijah_manage_fti_HANDLER(
+		    loop,
+		    ordering,
+		    PFT_MANAGE_FTI_C_XX,
+		    pft_query_param0()
+	       );
+}
+
+struct PFla_pair_t PFbui_manage_fti_c_cx(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args)
+{
+	return PFbui_tijah_manage_fti_HANDLER(
+		    loop,
+		    ordering,
+		    PFT_MANAGE_FTI_C_CX,
+    		    pft_query_param1(&args[0],aat_str)
+	       );
+}
+
+struct PFla_pair_t PFbui_manage_fti_c_xo(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args)
+{
+	return PFbui_tijah_manage_fti_HANDLER(
+		    loop,
+		    ordering,
+		    PFT_MANAGE_FTI_C_XO,
+    		    pft_query_param1(&args[0],MYNODEKIND)
+	       );
+}
+
+struct PFla_pair_t PFbui_manage_fti_c_co(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args)
+{
+	return PFbui_tijah_manage_fti_HANDLER(
+		    loop,
+		    ordering,
+		    PFT_MANAGE_FTI_C_CO,
+    		    pft_query_param2(&args[0],aat_str,&args[1],MYNODEKIND)
+	       );
+}
+
+struct PFla_pair_t PFbui_manage_fti_e_cx(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args)
+{
+	return PFbui_tijah_manage_fti_HANDLER(
+		    loop,
+		    ordering,
+		    PFT_MANAGE_FTI_E_CX,
+    		    pft_query_param1(&args[0],aat_str)
+	       );
+}
+
+struct PFla_pair_t PFbui_manage_fti_e_co(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args)
+{
+	return PFbui_tijah_manage_fti_HANDLER(
+		    loop,
+		    ordering,
+		    PFT_MANAGE_FTI_E_CO,
+    		    pft_query_param2(&args[0],aat_str,&args[1],MYNODEKIND)
+	       );
+}
+
+struct PFla_pair_t PFbui_manage_fti_r_xx(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args)
+{
+	(void)args;
+	return PFbui_tijah_manage_fti_HANDLER(
+		    loop,
+		    ordering,
+		    PFT_MANAGE_FTI_R_XX,
+    		    pft_query_param0()
+	       );
+}
+
+struct PFla_pair_t PFbui_manage_fti_r_xo(const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args)
+{
+	return PFbui_tijah_manage_fti_HANDLER(
+		    loop,
+		    ordering,
+		    PFT_MANAGE_FTI_R_XO,
+    		    pft_query_param1(&args[0],MYNODEKIND)
+	       );
+}
+
+/*
+ *
+ */
+
+struct PFla_pair_t
+PFbui_tijah_score(const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    return PFbui_tijah_query_HANDLER(
+    		loop,
+		ordering,
+		PFT_SCORE,
+		aat_dbl,
+    		pft_query_param2(&args[0],aat_int,&args[1],MYNODEKIND)
+		);
+}
+
+struct PFla_pair_t
+PFbui_tijah_nodes(const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    return PFbui_tijah_query_HANDLER(
+    		loop,
+		ordering,
+		PFT_NODES,
+		MYNODEKIND,
+    		pft_query_param1(&args[0],aat_int)
+		);
+}
+
+struct PFla_pair_t
+PFbui_tijah_ft_index_info(const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    (void)args;
+
+    return PFbui_tijah_query_HANDLER(
+    		loop,
+		ordering,
+		PFT_INFO,
+		MYNODEKIND,
+    		pft_query_param0()
+		);
+}
+
+struct PFla_pair_t
+PFbui_tijah_ft_index_info_s(const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    return PFbui_tijah_query_HANDLER(
+    		loop,
+		ordering,
+		PFT_INFO,
+		MYNODEKIND,
+    		pft_query_param1(&args[0],aat_str)
+		);
+}
+
+struct PFla_pair_t
+PFbui_tijah_tokenize(const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    return PFbui_tijah_query_HANDLER(
+    		loop,
+		ordering,
+		PFT_TOKENIZE,
+		aat_str,
+    		pft_query_param1(&args[0],aat_str)
+		);
+}
+
+struct PFla_pair_t
+PFbui_tijah_resultsize(const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    return PFbui_tijah_query_HANDLER(
+    		loop,
+		ordering,
+		PFT_RESSIZE,
+		aat_int,
+    		pft_query_param1(&args[0],aat_int)
+		);
+}
+
+#endif /* PFTIJAH */
 
 /**
  * Built-in function pf:add-doc(string, string)
