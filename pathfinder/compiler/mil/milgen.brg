@@ -89,6 +89,7 @@
 
 #include "oops.h"
 #include "mem.h"
+
 #include "physical.h"
 #include "alg_dag.h"
 #include "properties.h"
@@ -1853,6 +1854,89 @@ llscj (const PFpa_op_t *p)
 
 } /* fold) */
 
+#ifdef HAVE_PFTIJAH
+
+/* PFTIJAH helper functions */
+
+static mvar_t
+*pft_create_pfop(PFpa_op_t *p, PFalg_simple_type_t t)
+{
+	mvar_t *res;
+	if ( p ) {
+	    // res  = new_var (p->refctr);
+	    res  = new_var (1);
+	    mvar_t *p_iter = env_mvar (p->env, att_iter, aat_nat);
+	    // fprintf(stderr,"p_iter = %d, pin = %d.\n",p_iter->name-83,p_iter->pins);
+	    mvar_t *p_item = env_mvar (p->env, att_item, t);
+	    // fprintf(stderr,"p_item = %d, pin = %d.\n",p_item->name-83,p_item->pins);
+	    mvar_t *p_frag;
+	    if ( t == aat_pre ) {
+	        p_frag = env_mvar (p->env, att_item, aat_frag);
+	    } else {
+	        p_frag = new_var (1);
+		execute(
+                    assgn (var (p_frag->name), lit_int(0))
+		);
+	    }
+	    // fprintf(stderr,"p_frag = %d, pin = %d.\n",p_frag->name-83,p_frag->pins);
+	    mvar_t *p_pos  = env_mvar (p->env, att_pos , aat_nat);
+
+	    if ( !(p_iter && p_item && p_frag && p_pos) )
+		fprintf(stderr,"# XXXXXXXXXXX [%d,%d,%d,%d] not found.\n",(int)p_iter,(int)p_item,(int)p_frag,(int)p_pos);
+	    execute (
+                assgn (var (res->name), 
+                          tj_pfop(var (p_iter->name),var(p_item->name),var(p_frag->name),var(p_pos->name)))
+	    );
+	    if ( t != aat_pre )
+	        unpin(p_frag,1);
+	} else {
+	    res  = new_var (1);
+	    execute (
+                assgn (var (res->name), 
+                          seqbase (new (type (mty_void), type(mty_bat) ),
+                                            lit_oid (0)))
+	    );
+	}
+	return res;
+}
+
+static void
+pft_unpack_pfop(PFpa_op_t* dest, mvar_t *pack,
+		     PFalg_att_t a_iter,
+		     PFalg_att_t a_item, PFalg_simple_type_t t_item,
+		     PFalg_att_t a_frag,
+		     PFalg_att_t a_pos
+		    )
+{
+	mvar_t *v_iter  = new_var (dest->refctr);
+	execute (
+	    assgn (var (v_iter->name),
+		fetch (var (pack->name), lit_int (0))));
+	env_add (dest->env, a_iter, aat_nat, v_iter);
+
+	mvar_t *v_item  = new_var (dest->refctr);
+	execute (
+	    assgn (var (v_item->name),
+		fetch (var (pack->name), lit_int (1))));
+	env_add (dest->env, a_item, t_item, v_item);
+
+	if ( a_frag ) {
+	    mvar_t *v_frag  = new_var (dest->refctr);
+	    execute (
+	        assgn (var (v_frag->name),
+		    fetch (var (pack->name), lit_int (2))));
+	    env_add (dest->env, a_frag, aat_frag, v_frag);
+	}
+
+	mvar_t *v_pos  = new_var (dest->refctr);
+	execute (
+	    assgn (var (v_pos->name),
+		fetch (var (pack->name), lit_int (3))));
+	env_add (dest->env, a_pos, aat_nat, v_pos);
+}
+
+#endif
+
 /***********************************/
 /* fold) end reduce helper functions */
 /***********************************/
@@ -2303,89 +2387,6 @@ reduce3 (PFpa_op_t * p, int goalnt)
 } /* fold) */
 /* fold) */
 
-#ifdef HAVE_PFTIJAH
-
-/* PFTIJAH helper functions */
-
-mvar_t
-*pft_create_pfop(PFpa_op_t *p, PFalg_simple_type_t t)
-{
-	mvar_t *res;
-	if ( p ) {
-	    // res  = new_var (p->refctr);
-	    res  = new_var (1);
-	    mvar_t *p_iter = env_mvar (p->env, att_iter, aat_nat);
-	    // fprintf(stderr,"p_iter = %d, pin = %d.\n",p_iter->name-83,p_iter->pins);
-	    mvar_t *p_item = env_mvar (p->env, att_item, t);
-	    // fprintf(stderr,"p_item = %d, pin = %d.\n",p_item->name-83,p_item->pins);
-	    mvar_t *p_frag;
-	    if ( t == aat_pre ) {
-	        p_frag = env_mvar (p->env, att_item, aat_frag);
-	    } else {
-	        p_frag = new_var (1);
-		execute(
-                    assgn (var (p_frag->name), lit_int(0))
-		);
-	    }
-	    // fprintf(stderr,"p_frag = %d, pin = %d.\n",p_frag->name-83,p_frag->pins);
-	    mvar_t *p_pos  = env_mvar (p->env, att_pos , aat_nat);
-
-	    if ( !(p_iter && p_item && p_frag && p_pos) )
-		fprintf(stderr,"# XXXXXXXXXXX [%d,%d,%d,%d] not found.\n",(int)p_iter,(int)p_item,(int)p_frag,(int)p_pos);
-	    execute (
-                assgn (var (res->name), 
-                          tj_pfop(var (p_iter->name),var(p_item->name),var(p_frag->name),var(p_pos->name)))
-	    );
-	    if ( t != aat_pre )
-	        unpin(p_frag,1);
-	} else {
-	    res  = new_var (1);
-	    execute (
-                assgn (var (res->name), 
-                          seqbase (new (type (mty_void), type(mty_bat) ),
-                                            lit_oid (0)))
-	    );
-	}
-	return res;
-}
-
-void
-pft_unpack_pfop(PFpa_op_t* dest, mvar_t *pack,
-		     PFalg_att_t a_iter,
-		     PFalg_att_t a_item, PFalg_simple_type_t t_item,
-		     PFalg_att_t a_frag,
-		     PFalg_att_t a_pos
-		    )
-{
-	mvar_t *v_iter  = new_var (dest->refctr);
-	execute (
-	    assgn (var (v_iter->name),
-		fetch (var (pack->name), lit_int (0))));
-	env_add (dest->env, a_iter, aat_nat, v_iter);
-
-	mvar_t *v_item  = new_var (dest->refctr);
-	execute (
-	    assgn (var (v_item->name),
-		fetch (var (pack->name), lit_int (1))));
-	env_add (dest->env, a_item, t_item, v_item);
-
-	if ( a_frag ) {
-	    mvar_t *v_frag  = new_var (dest->refctr);
-	    execute (
-	        assgn (var (v_frag->name),
-		    fetch (var (pack->name), lit_int (2))));
-	    env_add (dest->env, a_frag, aat_frag, v_frag);
-	}
-
-	mvar_t *v_pos  = new_var (dest->refctr);
-	execute (
-	    assgn (var (v_pos->name),
-		fetch (var (pack->name), lit_int (3))));
-	env_add (dest->env, a_pos, aat_nat, v_pos);
-}
-
-#endif
-
 /**
  * @brief Reducer function.
  *
@@ -2726,7 +2727,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                          var (docmgmt->name)))))));
 
 #ifdef HAVE_PFTIJAH
-		// INCOMPLETE, when the print is removed it is optimized out
+		/* INCOMPLETE, when the print is removed it is optimized out */
                 execute (
 		   if_(
 		   	tj_docmgmt_tape (
@@ -8221,7 +8222,7 @@ reduce (PFpa_op_t * p, int goalnt)
             /*                                 */
             /***********************************/
 
-            // PFalg_att_t funcall_loop = p->sem.fun_call.iter;
+            /* PFalg_att_t funcall_loop = p->sem.fun_call.iter; */
 
             if (p->sem.fun_call.kind == alg_fun_call_xrpc) {
                 PFcnode_t *core_apply = (PFcnode_t *) p->sem.fun_call.ctx;
@@ -8511,7 +8512,7 @@ reduce (PFpa_op_t * p, int goalnt)
 			    (strcmp(fcname,PFT_RESSIZE) == 0) ) {
 		    PFpa_op_t* op1 = *(PFpa_op_t **)PFarray_at(fun_params,0);
 
-		    // copy the iter bat
+		    /* copy the iter bat */
 	            mvar_t *p_iter = env_mvar (op1->env, att_iter, aat_nat);
 		    pin(p_iter,1);
                     env_add (p->env, fc_iter_a, aat_nat, p_iter);
@@ -8524,9 +8525,9 @@ reduce (PFpa_op_t * p, int goalnt)
 		               tj_tokenize( var(p_item->name) ) ) );
                         env_add (p->env, fc_item_a, aat_str, new_item);
 		    } else {
-		        // must be RESSIZE
+		        /* must be RESSIZE */
 	                mvar_t *p_item = env_mvar (op1->env, att_item, aat_int);
-			// "var res := item%s.join(tijah_scoreDB.fetch(4@0));\n"
+			/* "var res := item%s.join(tijah_scoreDB.fetch(4@0));\n" */
                         execute (
                            assgn (var (new_item->name),
 		               join( var(p_item->name), 
@@ -8535,7 +8536,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         env_add (p->env, fc_item_a, aat_int, new_item);
 		    }
 
-		    // copy the pos bat
+		    /* copy the pos bat */
 	            mvar_t *p_pos  = env_mvar (op1->env, att_iter, aat_nat);
 		    pin(p_pos,1);
                     env_add (p->env, fc_pos_a, aat_nat, p_pos);
@@ -8548,7 +8549,7 @@ reduce (PFpa_op_t * p, int goalnt)
 #endif /* PFTIJAH */
 
 	    } else {
-	        // ERROR? do not know how to handle
+	        /* ERROR? do not know how to handle */
 	    }
 
             /* Unpin all MIL variables that represent the function parameters.

@@ -3648,6 +3648,8 @@ evaluateOp (opt_t *f, int rcode, int rc1, int rc2,
     milprintf(f, "} # end of '%s' calculation\n", operator);
 }
 
+#ifdef HAVE_PROBXML
+
 static int
 translateDeepEq (opt_t *f, int cur_level, int counter, char *comp, PFcnode_t *args)
 {
@@ -3671,6 +3673,8 @@ translateDeepEq (opt_t *f, int cur_level, int counter, char *comp, PFcnode_t *ar
 
     return NORMAL;
 }
+
+#endif
 
 /**
  * evaluateOpOpt evaluates a operation and gives back a new
