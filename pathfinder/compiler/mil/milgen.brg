@@ -1882,7 +1882,7 @@ static mvar_t
 	    mvar_t *p_pos  = env_mvar (p->env, att_pos , aat_nat);
 
 	    if ( !(p_iter && p_item && p_frag && p_pos) )
-		fprintf(stderr,"# XXXXXXXXXXX [%d,%d,%d,%d] not found.\n",(int)p_iter,(int)p_item,(int)p_frag,(int)p_pos);
+		//fprintf(stderr,"# XXXXXXXXXXX [%d,%d,%d,%d] not found.\n",(int)p_iter,(int)p_item,(int)p_frag,(int)p_pos);
 	    execute (
                 assgn (var (res->name), 
                           tj_pfop(var (p_iter->name),var(p_item->name),var(p_frag->name),var(p_pos->name)))
