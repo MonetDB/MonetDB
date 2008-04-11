@@ -523,12 +523,6 @@ PFalg_sel_t PFalg_sel (PFalg_comp_t comp,
                        PFalg_att_t left,
                        PFalg_att_t right);
 
-/*
- * PFTIJAH defines. I decided not make a seperate include file for
- * pftijah so ensure that these defines are exactly the same as in
- * ../mil/milgen.brg
- */
-
 #ifdef HAVE_PFTIJAH
 
 /*
@@ -551,11 +545,12 @@ PFalg_sel_t PFalg_sel (PFalg_comp_t comp,
 #define PFT_QUERY_I_XO "pftijah_query_i_xo"
 #define PFT_QUERY_I_SO "pftijah_query_i_so"
 
+#define PFT_FUN_QUERY(F)        (strncmp(F,"pftijah_query_",14)==0)
+
 #define PTF_QUERY_NODES(N)      (N[14]=='n')
 #define PTF_QUERY_STARTNODES(N) (N[16]=='s')
 #define PTF_QUERY_OPTIONS(N)    (N[17]=='o')
 
-#define PFT_FUN_QUERY(F)        (strncmp(F,"pftijah_query_",14)==0)
 
 #define PFT_MANAGE_FTI_C_XX "pftijah_manage_fti_c_xx"
 #define PFT_MANAGE_FTI_C_CX "pftijah_manage_fti_c_cx"
@@ -567,6 +562,7 @@ PFalg_sel_t PFalg_sel (PFalg_comp_t comp,
 #define PFT_MANAGE_FTI_R_XO "pftijah_manage_fti_r_xo"
 
 #define PFT_FUN_MANAGE(F)        (strncmp(F,"pftijah_manage_",15)==0)
+
 #define PFT_FUN_MANAGE_KIND(F)   (F[19])
 #define PFT_FUN_MANAGE_COLL(F)   (F[21] == 'c')
 #define PFT_FUN_MANAGE_OPT(F)    (F[22] == 'o')
