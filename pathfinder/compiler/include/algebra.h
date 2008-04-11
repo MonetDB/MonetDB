@@ -523,6 +523,62 @@ PFalg_sel_t PFalg_sel (PFalg_comp_t comp,
                        PFalg_att_t left,
                        PFalg_att_t right);
 
+/*
+ * PFTIJAH defines. I decided not make a seperate include file for
+ * pftijah so ensure that these defines are exactly the same as in
+ * ../mil/milgen.brg
+ */
+
+#ifdef HAVE_PFTIJAH
+
+/*
+ * PFTIJAH defines used by the pftijah funcall interface. In the future
+ * the parameters will be implemented using their private context structure
+ * instead of decoding info in the function name.
+ */
+
+#define MYNODEKIND  aat_pnode
+#define DOCMGMTTYPE aat_docmgmt
+
+#define PFT_FUN(F)              (strncmp(F,"pftijah_",8)==0)
+
+#define PFT_QUERY_N_XX "pftijah_query_n_xx"
+#define PFT_QUERY_N_SX "pftijah_query_n_sx"
+#define PFT_QUERY_N_XO "pftijah_query_n_xo"
+#define PFT_QUERY_N_SO "pftijah_query_n_so"
+#define PFT_QUERY_I_XX "pftijah_query_i_xx"
+#define PFT_QUERY_I_SX "pftijah_query_i_sx"
+#define PFT_QUERY_I_XO "pftijah_query_i_xo"
+#define PFT_QUERY_I_SO "pftijah_query_i_so"
+
+#define PTF_QUERY_NODES(N)      (N[14]=='n')
+#define PTF_QUERY_STARTNODES(N) (N[16]=='s')
+#define PTF_QUERY_OPTIONS(N)    (N[17]=='o')
+
+#define PFT_FUN_QUERY(F)        (strncmp(F,"pftijah_query_",14)==0)
+
+#define PFT_MANAGE_FTI_C_XX "pftijah_manage_fti_c_xx"
+#define PFT_MANAGE_FTI_C_CX "pftijah_manage_fti_c_cx"
+#define PFT_MANAGE_FTI_C_XO "pftijah_manage_fti_c_xo"
+#define PFT_MANAGE_FTI_C_CO "pftijah_manage_fti_c_co"
+#define PFT_MANAGE_FTI_E_CX "pftijah_manage_fti_e_cx"
+#define PFT_MANAGE_FTI_E_CO "pftijah_manage_fti_e_co"
+#define PFT_MANAGE_FTI_R_XX "pftijah_manage_fti_r_xx"
+#define PFT_MANAGE_FTI_R_XO "pftijah_manage_fti_r_xo"
+
+#define PFT_FUN_MANAGE(F)        (strncmp(F,"pftijah_manage_",15)==0)
+#define PFT_FUN_MANAGE_KIND(F)   (F[19])
+#define PFT_FUN_MANAGE_COLL(F)   (F[21] == 'c')
+#define PFT_FUN_MANAGE_OPT(F)    (F[22] == 'o')
+
+#define PFT_SCORE      "pftijah_score"
+#define PFT_NODES      "pftijah_nodes"
+#define PFT_INFO       "pftijah_info"
+#define PFT_TOKENIZE   "pftijah_tokenize"
+#define PFT_RESSIZE    "pftijah_ressize"
+
+#endif /* HAVE_PFTIJAH */
+
 #endif  /* ALGEBRA_H */
 
 /* vim:set shiftwidth=4 expandtab: */
