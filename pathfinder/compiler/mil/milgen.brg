@@ -85,7 +85,6 @@
 
 #include <assert.h>
 #include <string.h>
-#include <stdio.h>
 
 #include "oops.h"
 #include "mem.h"
@@ -1863,12 +1862,9 @@ static mvar_t
 {
 	mvar_t *res;
 	if ( p ) {
-	    // res  = new_var (p->refctr);
 	    res  = new_var (1);
 	    mvar_t *p_iter = env_mvar (p->env, att_iter, aat_nat);
-	    // fprintf(stderr,"p_iter = %d, pin = %d.\n",p_iter->name-83,p_iter->pins);
 	    mvar_t *p_item = env_mvar (p->env, att_item, t);
-	    // fprintf(stderr,"p_item = %d, pin = %d.\n",p_item->name-83,p_item->pins);
 	    mvar_t *p_frag;
 	    if ( t == aat_pre ) {
 	        p_frag = env_mvar (p->env, att_item, aat_frag);
@@ -1878,11 +1874,10 @@ static mvar_t
                     assgn (var (p_frag->name), lit_int(0))
 		);
 	    }
-	    // fprintf(stderr,"p_frag = %d, pin = %d.\n",p_frag->name-83,p_frag->pins);
 	    mvar_t *p_pos  = env_mvar (p->env, att_pos , aat_nat);
 
 	    if ( !(p_iter && p_item && p_frag && p_pos) )
-		//fprintf(stderr,"# XXXXXXXXXXX [%d,%d,%d,%d] not found.\n",(int)p_iter,(int)p_item,(int)p_frag,(int)p_pos);
+		PFoops(OOPS_FATAL,"pft_create_pfop: missing [iter|item|frag|pos] child");
 	    execute (
                 assgn (var (res->name), 
                           tj_pfop(var (p_iter->name),var(p_item->name),var(p_frag->name),var(p_pos->name)))
@@ -8373,28 +8368,6 @@ reduce (PFpa_op_t * p, int goalnt)
 	    if ( PFT_FUN(fcname) ) {
 
 	        /* handle pftijah functions here */
-
-#ifdef FUNCALL_DEBUG
-	    	fprintf(stderr,"# PFTIJAH fun_call() HANDLER START\n");
-		fprintf(stderr,"# Called function is: %s\n",fcname);
-		fprintf(stderr,"# number of args is: %d\n",PFarray_last(fun_params));
-
-                fprintf(stderr,"#FUNCALL/SCHEMA:\n");
-		for (unsigned int qq=0; qq < p->schema.count; qq++) {
-		    struct PFalg_schm_item_t s_item = p->schema.items[qq];
-                    fprintf(stderr,"#.ITEM[%d]=(%s:%d)\n",qq,PFatt_str(s_item.name),s_item.type);
-
-		}
-		for (unsigned int ii=0; ii<PFarray_last(fun_params); ii++) {
-                    fprintf(stderr,"#FUNCALL/ENV[%d]\n",ii);
-		    const PFarray_t *env = (*(PFpa_op_t **)PFarray_at (fun_params,ii))->env; 
-                    for (unsigned int iii = 0; iii < PFarray_last (env); iii++) {
-
-                       env_t entry = *(env_t *) PFarray_at ((PFarray_t *) env, iii);
-                       fprintf(stderr,"#.BAT[a%d] pin=%d\n",entry.mvar->name-83,entry.mvar->pins);
-		    }
-                }
-#endif /* FUNCALL_DEBUG */
 
 	        mvar_t *fc_loop = env_mvar (L(p)->env, p->sem.fun_call.iter , aat_nat);
 
