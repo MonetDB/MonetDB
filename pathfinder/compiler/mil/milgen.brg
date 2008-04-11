@@ -2647,7 +2647,6 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (replace_qn_uristrings->name),
                             mposjoin (VAR (L(p)->env, pa_item, aat_qname_id),
                                       VAR (L(p)->env, pa_item, aat_qname_cont),
-                                      var (PF_MIL_VAR_QN_URI_LOC)
                                       fetch (var (PF_MIL_VAR_WS),
                                              var (PF_MIL_VAR_QN_URI)))),
                         assgn (var (replace_qn_loc_strings->name),
