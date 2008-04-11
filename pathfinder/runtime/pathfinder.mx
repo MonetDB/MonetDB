@@ -3169,6 +3169,15 @@ PROC ws_opendoc(BAT[void,BAT] ws, BAT[void,str] idx_names) : BAT[oid,oid]
                                                  bat(void,oid).seqbase(0@0), true); 
 }
 
+PROC ws_docavailable(BAT[void,BAT] ws, BAT[void,str] idx_names) : BAT[void,bit]
+{
+    var ret := bat(void,bit).seqbase(0@0);
+    idx_names@batloop() { # try to open the documents now so there are no atomicity issues
+       ret.append(isnil(CATCH(ws_opendoc(ws,bat(void,str).append($t))))); # failure means: unavailable
+    }
+    return ret;
+}
+
 # pf:collection(), get 'collection root' as a single startpoint to query an entire collection
 PROC ws_collection_root(BAT[void,BAT] ws, BAT[void,str] colnames) : BAT[oid,oid]
 {
