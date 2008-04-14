@@ -3243,23 +3243,32 @@ changed already made to the BATs in the working set.",
 
 
 PROC UpdateTape(
-bat[void, bat] ws,
-bat[void, lng] kind,
-bat[void, oid] pre_tgt, bat[void,int] pre_count_tgt,
-bat[void, oid] attr_tgt, bat[void,int] attr_count_tgt,
-bat[void, str] replace_strings, 
-bat[void, oid] replace_qn_uristrings, bat[void,oid] replace_qn_loc_strings, 
-bat[void, oid] pre_ins, bat[void,int] pre_count_ins,
-bat[void, oid] attr_ins, bat[void,int] attr_count_ins): void
+bat[oid, bat] ws,
+bat[oid, lng] kind,
+bat[oid, oid] pre_tgt, 
+bat[oid, oid] pre_cont_tgt,
+bat[oid, oid] attr_tgt,
+bat[oid, oid] attr_cont_tgt,
+bat[oid, str] replace_strings, 
+bat[oid, str] replace_qn_uristrings,
+bat[oid, str] replace_qn_loc_strings, 
+bat[oid, oid] pre_ins,
+bat[oid, oid] pre_cont_ins,
+bat[oid, oid] attr_ins,
+bat[oid, oid] attr_cont_ins): void
 {
  kind.print();
  pre_tgt.print();
+ pre_cont_tgt.print();
  attr_tgt.print();
+ attr_cont_tgt.print();
  replace_strings.print();
  replace_qn_uristrings.print();
  replace_qn_loc_strings.print();
  pre_ins.print();
+ pre_cont_ins.print();
  attr_ins.print();
+ attr_cont_ins.print();
 }
 
 PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kind, bat[void,lng] int_values, bat[void,str] str_values) : void

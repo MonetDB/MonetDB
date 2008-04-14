@@ -2970,7 +2970,9 @@ reduce (PFpa_op_t * p, int goalnt)
                                        misnil (
                                            leftjoin (
                                                mirror (var (v->name)),
-                                               VAR (L(p)->env, pa_item, aat_attr))),
+                                               VAR (L(p)->env,
+                                                    pa_item,
+                                                    aat_attr))),
                                        lit_bit (true)))),
                         binsert (var (item->name),
                                  leftjoin (var (v->name),
@@ -5166,6 +5168,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     PFalg_att_t tgt     = p->sem.fun_1to1.refs.atts[0],
                                 changes = p->sem.fun_1to1.refs.atts[1];
                     mvar_t *loop = NULL;
+                    
                     int update_str;
 
                     assert (env_count (L(p)->env));
@@ -5229,6 +5232,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                project (
                                    var (loop->name),
                                    lit_lng(update_str))));
+
                 }   break; /* fold) */
             }
 

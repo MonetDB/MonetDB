@@ -4512,6 +4512,118 @@ PFbui_pf_string_value (const PFla_op_t *loop, bool ordering,
 /* ----------------------------------------------------- */
 
 /**
+ *  Build in function pf:documents() as element()*
+ */
+struct PFla_pair_t 
+PFbui_pf_documents (const PFla_op_t *loop, bool ordering,
+                    struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) args;
+
+    return (struct PFla_pair_t) {
+        .rel = NULL,
+        .frag = NULL };
+}
+
+/**
+ *  Build in function pf:documents-unsafe() as element()*
+ */
+struct PFla_pair_t
+PFbui_pf_documents_unsafe (const PFla_op_t *loop, bool ordering,
+                           struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) args;
+
+    return (struct PFla_pair_t) {
+        .rel = NULL,
+        .frag = NULL };
+}
+
+/**
+ *  Build in function pf:documents(string*) as element()*
+ */
+struct PFla_pair_t
+PFbui_pf_documents_str (const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) args;
+
+    return (struct PFla_pair_t) {
+        .rel = NULL,
+        .frag = NULL };
+}
+
+/**
+ *  Build in function pf:documents-unsafe(string*) as element()*
+ */
+struct PFla_pair_t
+PFbui_pf_documents_str_unsafe (const PFla_op_t *loop, bool ordering,
+                               struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) args;
+
+    return (struct PFla_pair_t) {
+        .rel = NULL,
+        .frag = NULL };
+}
+
+/**
+ *  Build in function pf:docname(node*) as string*
+ */
+struct PFla_pair_t
+PFbui_pf_docname (const PFla_op_t *loop, bool ordering,
+                  struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) args;
+
+    return (struct PFla_pair_t) {
+        .rel = NULL,
+        .frag = NULL };
+}
+
+/**
+ *  Build in function pf:collection(string) as node
+ */
+struct PFla_pair_t
+PFbui_pf_collection (const PFla_op_t *loop, bool ordering,
+                     struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) args;
+
+    return (struct PFla_pair_t) {
+        .rel = NULL,
+        .frag = NULL };
+}
+
+/**
+ *  Build in function pf:collections() as element()*
+ */
+struct PFla_pair_t
+PFbui_pf_collections (const PFla_op_t *loop, bool ordering,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) args;
+
+    return (struct PFla_pair_t) {
+        .rel = NULL,
+        .frag = NULL };
+}
+
+/**
+ *  Build in function pf:collections-unsafe() as element()*
+ */
+struct PFla_pair_t
+PFbui_pf_collections_unsafe (const PFla_op_t *loop, bool ordering,
+                             struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) args;
+
+    return (struct PFla_pair_t) {
+        .rel = NULL,
+        .frag = NULL };
+}
+
+/**
  * Build up operator tree for built-in function '#pf:fragment'.
  */
 struct PFla_pair_t

@@ -636,27 +636,66 @@ struct PFla_pair_t PFbui_pf_string_value (const PFla_op_t *loop,
                                           struct PFla_pair_t *args);
 
 /* #2. PATHFINDER SPECIFIC DOCUMENT MANAGEMENT FUNCTIONS */
+
+struct PFla_pair_t PFbui_pf_documents (const PFla_op_t *loop,
+                                       bool ordering,
+                                       struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_pf_documents_unsafe (const PFla_op_t *loop,
+                                              bool ordering,
+                                              struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_pf_documents_str (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_pf_documents_str_unsafe (const PFla_op_t *loop,
+                                                  bool ordering,
+                                                  struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_pf_docname (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_pf_collection (const PFla_op_t *loop,
+                                        bool ordering,
+                                        struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_pf_collections (const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_pf_collections_unsafe (const PFla_op_t *loop,
+                                                bool ordering,
+                                                struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_pf_fragment (const PFla_op_t *loop, bool ordering,
                                       struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_pf_attribute (const PFla_op_t *loop, bool ordering,
                                        struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_pf_text (const PFla_op_t *loop, bool ordering,
                                   struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_pf_supernode (const PFla_op_t *loop, bool ordering,
                                        struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_pf_add_doc (const PFla_op_t *loop, bool ordering,
                                      struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_pf_add_doc_str (const PFla_op_t *loop, bool ordering,
                                          struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_pf_add_doc_int (const PFla_op_t *loop, bool ordering,
                                          struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_pf_add_doc_str_int (const PFla_op_t *loop,
                                              bool ordering,
                                              struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_pf_del_doc (const PFla_op_t *loop, bool ordering,
                                      struct PFla_pair_t *args);
-
-
 
 /* #3. UPDATE FUNCTIONS */
 struct PFla_pair_t PFbui_upd_rename (const PFla_op_t *loop, bool ordering,
@@ -761,15 +800,15 @@ struct PFla_pair_t PFbui_tijah_nodes      (const PFla_op_t *loop,
 struct PFla_pair_t PFbui_tijah_score      (const PFla_op_t *loop,
                                            bool ordering,
                                            struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_tijah_ft_index_info      (const PFla_op_t *loop,
-                                           bool ordering,
-                                           struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_tijah_ft_index_info_s      (const PFla_op_t *loop,
-                                           bool ordering,
-                                           struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_tijah_tokenize   (const PFla_op_t *loop,
-                                           bool ordering,
-                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_ft_index_info (const PFla_op_t *loop,
+                                              bool ordering,
+                                              struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_ft_index_info_s (const PFla_op_t *loop,
+                                                bool ordering,
+                                                struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_tijah_tokenize (const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_tijah_resultsize (const PFla_op_t *loop,
                                            bool ordering,
                                            struct PFla_pair_t *args);
