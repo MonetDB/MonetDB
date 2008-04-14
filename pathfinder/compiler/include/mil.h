@@ -361,8 +361,14 @@ enum PFmil_kind_t {
 
     , m_module       /**< module loading */
 
-    , m_update_tape  /**< play update tape function */ 
-    , m_docmgmt_tape /**< play docmgmt tape function */ 
+    , m_update_tape  /**< play update tape function  */ 
+    , m_docmgmt_tape /**< play docmgmt tape function */
+    , m_ws_collection_root /**< mil document function for collection */
+    , m_ws_documents       /**< mil document function for documents  */
+    , m_ws_documents_str   /**< mil document function
+                                for documents in a specified collection */
+    , m_ws_docname         /**< mil document function for  docname      */
+    , m_ws_collections     /**< mil document function for collections   */
 #ifdef HAVE_PFTIJAH
     , m_tj_pfop
     , m_tj_tokenize
@@ -863,6 +869,39 @@ PFmil_t * PFmil_module (const PFmil_t *);
 PFmil_t * PFmil_upd (const PFmil_t *);
 
 PFmil_t * PFmil_docmgmt (const PFmil_t *);
+
+/** 
+ * mil document function:
+ * ws_collection_root(BAT[void,BAT], BAT[void,str]) : BAT[oid,oid]  
+ */
+PFmil_t * PFmil_ws_collection_root (const PFmil_t *, const PFmil_t *);
+
+/** 
+ * mil document function:
+ * ws_documents(BAT[void,BAT], bit) : BAT[void,oid]
+ */
+PFmil_t * PFmil_ws_documents (const PFmil_t *, const PFmil_t *);
+
+/** 
+ * mil document function:
+ * ws_documents(BAT[void,BAT], BAT[any,str], bit) : BAT[oid,oid] 
+ */
+PFmil_t * PFmil_ws_documents_str (const PFmil_t *, const PFmil_t *,
+                                  const PFmil_t *);
+
+/** 
+ * mil document function:
+ * ws_docname(BAT[void,BAT], BAT[void,oid], BAT[void,oid], BAT[void,int])
+ *                                                             : BAT[oid,str]
+ */
+PFmil_t * PFmil_ws_docname (const PFmil_t *, const PFmil_t *,
+                            const PFmil_t *, const PFmil_t *);
+
+/** 
+ * mil document function:
+ * ws_collections(BAT[void,BAT], bit) : BAT[void,oid]
+ */
+PFmil_t * PFmil_ws_collections (const PFmil_t *, const PFmil_t *);
 
 #define PFmil_seq(...) \
     PFmil_seq_ (sizeof ((PFmil_t *[]) { __VA_ARGS__} ) / sizeof (PFmil_t *), \

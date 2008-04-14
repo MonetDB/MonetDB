@@ -302,10 +302,16 @@ typedef enum PFalg_occ_ind_t PFalg_occ_ind_t;
 
 /** function call representatives */
 enum PFalg_fun_call_t {
-      alg_fun_call_dft           /**< normal function call */
-    , alg_fun_call_xrpc          /**< XRPC function call */
-    , alg_fun_call_xrpc_helpers  /**< function call for XRPC helpers */
-    , alg_fun_call_tijah         /**< Tijah function call */
+      alg_fun_call_pf_documents            /**< pf:documents               */
+    , alg_fun_call_pf_documents_unsafe     /**< pf:documents_unsafe        */
+    , alg_fun_call_pf_documents_str        /**< pf:documents_str           */
+    , alg_fun_call_pf_documents_str_unsafe /**< pf:documents_str_unsafe    */
+    , alg_fun_call_pf_docname              /**< pf:docname                 */
+    , alg_fun_call_pf_collections          /**< pf:collections             */
+    , alg_fun_call_pf_collections_unsafe   /**< pf:collections_unsafe      */
+    , alg_fun_call_xrpc                    /**< XRPC function call         */
+    , alg_fun_call_xrpc_helpers            /**< func call for XRPC helpers */
+    , alg_fun_call_tijah                   /**< Tijah function call        */
 };
 typedef enum PFalg_fun_call_t PFalg_fun_call_t;
 

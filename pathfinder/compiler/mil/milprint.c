@@ -163,6 +163,11 @@
 
                  | 'step (' e ',' e ',' e ',' e ',' e ',' e ', e
                         ',' e ',' e ',' e ',' e ',' e ')'   <m_step>
+                 | 'ws_collection_root('exp','exp')'      <m_ws_collection_root>
+                 | 'ws_documents('exp','exp')'             <m_ws_documents>
+                 | 'ws_documents('exp',' exp','exp')'      <m_ws_documents_str>
+                 | 'ws_docname('exp','exp','exp','exp')'   <m_ws_docname>
+                 | 'ws_collections('exp','exp')'           <m_ws_collections>
 
    args          : args ',' args                            <m_arg>
                  | expression                               <otherwise>
@@ -326,6 +331,11 @@ static char *ID[] = {
     , [m_add_content]  = "add_content"
     , [m_chk_qnames]   = "invalid_qname"
     , [m_step]         = "step"
+    , [m_ws_collection_root] = "ws_collection_root"
+    , [m_ws_documents]       = "ws_documents"
+    , [m_ws_documents_str]   = "ws_documents"
+    , [m_ws_docname]         = "ws_docname"
+    , [m_ws_collections]     = "ws_collections"
 
     , [m_merge_adjacent]   = "merge_adjacent_text_nodes"
     , [m_string_join]      = "string_join"
@@ -815,6 +825,12 @@ print_expression (PFmil_t * n)
         case m_mor:
         /* expression : 'enumerate(' expression ',' expression ')' */
         case m_enum:
+        /* expression : 'ws_collection_root(' expression ',' expression ')' */
+        case m_ws_collection_root:
+        /* expression : 'ws_documents(' expression ',' expression ')' */
+        case m_ws_documents:
+        /* expression : 'ws_collections(' expression ',' expression ')' */
+        case m_ws_collections:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");
@@ -828,6 +844,8 @@ print_expression (PFmil_t * n)
         case m_mstring2:
         /* expression : '[ifthenelse](' expr ',' expr ',' expr ')' */
         case m_mifthenelse:
+        /* expression : 'ws_documents(' expr ',' expr ',' expr ')' */
+        case m_ws_documents_str:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");
@@ -839,6 +857,8 @@ print_expression (PFmil_t * n)
 
         /* expression: '[pcre_replace](' expr ',' expr ',' expr ',' expr ')' */
         case m_mpcre_replace:
+        /* expression: 'ws_docname(' expr ',' expr ',' expr ',' expr ')' */
+        case m_ws_docname:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");

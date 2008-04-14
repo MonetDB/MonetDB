@@ -1013,10 +1013,17 @@ char *
 PFalg_fun_call_kind_str (PFalg_fun_call_t kind)
 {
     switch (kind) {
-        case alg_fun_call_dft:          return "";
-        case alg_fun_call_xrpc:         return "XRPC";
-        case alg_fun_call_xrpc_helpers: return "XRPC helper";
-        case alg_fun_call_tijah:        return "Tijah";
+        case alg_fun_call_pf_documents:          return "pf:documents";
+        case alg_fun_call_pf_documents_unsafe:   return "pf:documents_unsafe";
+        case alg_fun_call_pf_documents_str:      return "pf:documents_str";
+        case alg_fun_call_pf_documents_str_unsafe: 
+                                               return "pf:documents_str_unsafe";
+        case alg_fun_call_pf_docname:            return "pf:docname";
+        case alg_fun_call_pf_collections:        return "pf:collections";
+        case alg_fun_call_pf_collections_unsafe: return "pf:collections_unsafe";
+        case alg_fun_call_xrpc:                  return "XRPC";
+        case alg_fun_call_xrpc_helpers:          return "XRPC helper";
+        case alg_fun_call_tijah:                 return "Tijah";
     }
     return NULL;
 }

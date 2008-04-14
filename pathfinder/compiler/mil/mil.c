@@ -1673,6 +1673,52 @@ PFmil_docmgmt (const PFmil_t *args)
     return wire1 (m_docmgmt_tape, args);
 }
 
+/** 
+ * function ws_collection_root(a, b)
+ */
+PFmil_t * 
+PFmil_ws_collection_root (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_ws_collection_root, a, b);
+}
+
+/** 
+ * function ws_documents(a, b)
+ */
+PFmil_t *
+PFmil_ws_documents (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_ws_documents, a, b);
+}
+
+/** 
+ * function ws_documents(a, b, c)
+ */
+PFmil_t *
+PFmil_ws_documents_str (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
+{
+    return wire3 (m_ws_documents_str, a , b, c);
+}
+
+/** 
+ * function ws_docname(a, b, c, d)
+ */
+PFmil_t *
+PFmil_ws_docname (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c,
+                                                      const PFmil_t *d)
+{
+    return wire4 (m_ws_docname, a, b, c, d);
+}
+
+/** 
+ * function ws_collections(a, b)
+ */
+PFmil_t *
+PFmil_ws_collections (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_ws_collections, a, b);
+}
+
 #ifdef HAVE_PFTIJAH
 
 PFmil_t *

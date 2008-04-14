@@ -8332,35 +8332,59 @@ reduce (PFpa_op_t * p, int goalnt)
 
             /* PFalg_att_t funcall_loop = p->sem.fun_call.iter; */
 
-            if (p->sem.fun_call.kind == alg_fun_call_xrpc) {
-                PFcnode_t *core_apply = (PFcnode_t *) p->sem.fun_call.ctx;
+            switch (p->sem.fun_call.kind) { /* fold( */
+                
+                /* Simple NtoN functions */
+                case alg_fun_call_pf_documents:
+                case alg_fun_call_pf_documents_unsafe:
+                case alg_fun_call_pf_documents_str:
+                case alg_fun_call_pf_documents_str_unsafe:
+                case alg_fun_call_pf_docname:
+                case alg_fun_call_pf_collections:
+                case alg_fun_call_pf_collections_unsafe:
+                {
+                }   break;
 
-                /* do XRPC stuff here */
-                (void)* core_apply;
+                /* XRPC function */
+                case alg_fun_call_xrpc: /* fold( */
+                {
+                    PFcnode_t *core_apply = (PFcnode_t *) p->sem.fun_call.ctx;
 
-                /* dummy stub to fill the environment */
+                    /* do XRPC stuff here */
+                    (void)* core_apply;
 
-                /* create dummy temp variable */
-                mvar_t *v  = new_var (1);
-                /* add more references to v */
-                pin (v, 1);
-                /* release all pins */
-                unpin (v, 2);
+                    /* dummy stub to fill the environment */
 
-                /* fill the environment for all attributes and columns */
-                for (unsigned int i = 0; i < p->schema.count; i++) {
-                    for (PFalg_simple_type_t t = 1; t; t <<= 1)
-                        if (t & TYPE_MASK(p->schema.items[i].type)) {
-                            /* create new variable */
-                            mvar_t *v  = new_var (p->refctr);
-                            /* dummy assignment */
-                            execute (
-                                assgn (var (v->name),
-                                       nil ()));
-                            env_add (p->env, p->schema.items[i].name, t, v);
+                    /* create dummy temp variable */
+                    mvar_t *v  = new_var (1);
+                    /* add more references to v */
+                    pin (v, 1);
+                    /* release all pins */
+                    unpin (v, 2);
+
+                    /* fill the environment for all attributes and columns */
+                    for (unsigned int i = 0; i < p->schema.count; i++) {
+                        for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                            if (t & TYPE_MASK(p->schema.items[i].type)) {
+                                /* create new variable */
+                                mvar_t *v  = new_var (p->refctr);
+                                /* dummy assignment */
+                                execute (
+                                    assgn (var (v->name),
+                                           nil ()));
+                                env_add (p->env, p->schema.items[i].name, t, v);
+                            }
                         }
-                }
-            } else if (p->sem.fun_call.kind == alg_fun_call_tijah) {
+                }   break; /* fold) */
+
+                /* XRPC helpers function */
+                case alg_fun_call_xrpc_helpers:
+                {
+                }   break;
+
+                /* Tijah function */
+                case alg_fun_call_tijah: /* fold( */ 
+                {
 #ifdef HAVE_PFTIJAH
 	    const char* fcname = PFqname_loc(p->sem.fun_call.qname);
 
@@ -8373,7 +8397,9 @@ reduce (PFpa_op_t * p, int goalnt)
 
 	        /* handle pftijah functions here */
 
-	        mvar_t *fc_loop = env_mvar (L(p)->env, p->sem.fun_call.iter , aat_nat);
+	        mvar_t *fc_loop = env_mvar (L(p)->env,
+                                            p->sem.fun_call.iter,
+                                            aat_nat);
 
 		if ( PFT_FUN_QUERY(fcname) ) {
 		    int fcci = 0;
@@ -8586,10 +8612,8 @@ reduce (PFpa_op_t * p, int goalnt)
 	    	    PFoops (OOPS_FATAL,"milgen.brg: PFTIJAH fun_call() bad function[%s]!!!\n",fcname);
 	    }
 #endif /* PFTIJAH */
-
-	    } else {
-	        /* ERROR? do not know how to handle */
-	    }
+                }   break; /* fold) */
+            } /* fold) */
 
             /* Unpin all MIL variables that represent the function parameters.
                (They have 1 additional pin (see rule fun_param) to ensure

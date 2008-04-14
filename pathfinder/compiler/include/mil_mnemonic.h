@@ -410,6 +410,13 @@
 /** play docmgmt tape function */
 #define docmgmt_tape(a) PFmil_docmgmt (a)
 
+/** mil document functions */
+#define ws_collection_root(a,b) PFmil_ws_collection_root ((a), (b))
+#define ws_documents(a,b) PFmil_ws_documents ((a), (b))
+#define ws_documents_str(a,b,c) PFmil_ws_documents ((a), (b), (c))
+#define ws_docname(a,b,c,d) PFmil_ws_docname ((a), (b), (c), (d))
+#define ws_collections(a,b) PFmil_ws_collections ((a), (b))
+
 #ifdef HAVE_PFTIJAH
 
 /** pftijah main query handler */
