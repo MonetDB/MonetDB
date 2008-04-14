@@ -271,6 +271,8 @@ Expand on tail type
 	@:T_BUNfastins(@1,@2,@3,sht,SIMPLE,sht)@
 	@:T_BUNfastins(@1,@2,@3,int,SIMPLE,int)@
 	@:T_BUNfastins(@1,@2,@3,lng,SIMPLE,lng)@
+	@:T_BUNfastins(@1,@2,@3,flt,SIMPLE,flt)@
+	@:T_BUNfastins(@1,@2,@3,dbl,SIMPLE,dbl)@
 	@:T_BUNfastins(@1,@2,@3,fix,FIXEDATOM,(b)->ttype)@
 	@:T_BUNfastins(@1,@2,@3,var,VARATOM,(b)->ttype)@
 @-
@@ -282,6 +284,8 @@ Expand on head type
 @:H_BUNfastins(sht,SIMPLE,sht)@
 @:H_BUNfastins(int,SIMPLE,int)@
 @:H_BUNfastins(lng,SIMPLE,lng)@
+@:H_BUNfastins(flt,SIMPLE,flt)@
+@:H_BUNfastins(dbl,SIMPLE,dbl)@
 @:H_BUNfastins(vid,VID,vid)@
 @:H_BUNfastins(fix,FIXEDATOM,(b)->htype)@
 @:H_BUNfastins(var,VARATOM,(b)->htype)@
@@ -296,21 +300,6 @@ Type-mappers for convenience
 #define @2@1_bunfastins_nocheck(b, p, h, t, hs, ts)    @3@1_bunfastins_nocheck(b, p, h, t, hs, ts)
 #define @2@1_bunfastins(b, h, t)                  @3@1_bunfastins(b, h, t)
 @h
-@:HT_bunfastins_typemap(void,flt,int)@
-@:HT_bunfastins_typemap(chr,flt,int)@
-@:HT_bunfastins_typemap(sht,flt,int)@
-@:HT_bunfastins_typemap(int,flt,int)@
-@:HT_bunfastins_typemap(lng,flt,int)@
-@:HT_bunfastins_typemap(fix,flt,int)@
-@:HT_bunfastins_typemap(var,flt,int)@
-@:HT_bunfastins_typemap(void,dbl,lng)@
-@:HT_bunfastins_typemap(chr,dbl,lng)@
-@:HT_bunfastins_typemap(sht,dbl,lng)@
-@:HT_bunfastins_typemap(int,dbl,lng)@
-@:HT_bunfastins_typemap(lng,dbl,lng)@
-@:HT_bunfastins_typemap(fix,dbl,lng)@
-@:HT_bunfastins_typemap(var,dbl,lng)@
-
 #if SIZEOF_OID == SIZEOF_INT
 @:HT_bunfastins_typemap(void,oid,int)@
 @:HT_bunfastins_typemap(chr,oid,int)@
