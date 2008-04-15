@@ -63,4 +63,7 @@
 /** item in the projection list */
 #define proj(a,b)       PFalg_proj ((a),(b))
 
+/** simple schema constructor iter|pos|item*/
+#define empty_schema(a) PFalg_empty_schema((a))
+
 /* vim:set shiftwidth=4 expandtab: */

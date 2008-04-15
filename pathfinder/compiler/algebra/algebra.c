@@ -664,6 +664,27 @@ PFalg_schema_diff_ (PFalg_schema_t schema, unsigned int count,
 }
 
 /**
+ * Return a schema of iter|pos|item where item type is item_t
+ * FIXME: the implementation should cope with more than one item_t.
+ */
+PFalg_schema_t
+PFalg_empty_schema(PFalg_simple_type_t item_t)
+{
+    PFalg_schema_t schema;
+    schema.count = 3;
+    schema.items = PFmalloc (3 * sizeof (PFalg_schema_t));
+
+    schema.items[0].name = att_iter;
+    schema.items[0].type = aat_nat;
+    schema.items[1].name = att_pos;
+    schema.items[1].type = aat_nat;
+    schema.items[2].name = att_item;
+    schema.items[2].type = item_t;
+
+    return schema;
+}
+
+/**
  * Test if two atomic values are comparable
  */
 bool

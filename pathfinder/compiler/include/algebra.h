@@ -461,6 +461,11 @@ PFalg_attlist_t PFalg_attlist_ (unsigned int count, PFalg_att_t *atts);
 PFalg_schema_t PFalg_schema_diff_(PFalg_schema_t schema,
                         unsigned int count, PFalg_att_t *atts);
 
+/** 
+ * Constructor for an empty schema with iter|pos|item and item of type item_t
+ */
+PFalg_schema_t PFalg_empty_schema(PFalg_simple_type_t item_t);
+
 /** Constructor for projection list item */
 PFalg_proj_t PFalg_proj (PFalg_att_t new, PFalg_att_t old);
 
