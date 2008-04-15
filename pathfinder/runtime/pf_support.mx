@@ -5577,11 +5577,6 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
 #include <plain/algebra.h> /* needed for result size estimation in CMDenumerate */
 #include <math.h> /* needed for round_up */
 
-#if SIZEOF_OID == SIZEOF_INT
-#define oidoid_bunfastins(b,h,t) intint_bunfastins(b,h,t);
-#else
-#define oidoid_bunfastins(b,h,t) lnglng_bunfastins(b,h,t);
-#endif
 @c
 /* delete a file from the local tmp/ directory in the dbfarm; protect against abuse */
 int CMDcleantmpdir(lng *lim) {

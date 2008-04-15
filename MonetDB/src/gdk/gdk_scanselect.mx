@@ -270,8 +270,10 @@ Expand on tail type
 	@:T_BUNfastins(@1,@2,@3,bte,SIMPLE,bte)@
 	@:T_BUNfastins(@1,@2,@3,sht,SIMPLE,sht)@
 	@:T_BUNfastins(@1,@2,@3,int,SIMPLE,int)@
-	@:T_BUNfastins(@1,@2,@3,lng,SIMPLE,lng)@
 	@:T_BUNfastins(@1,@2,@3,flt,SIMPLE,flt)@
+	@:T_BUNfastins(@1,@2,@3,oid,SIMPLE,oid)@
+	@:T_BUNfastins(@1,@2,@3,wrd,SIMPLE,wrd)@
+	@:T_BUNfastins(@1,@2,@3,lng,SIMPLE,lng)@
 	@:T_BUNfastins(@1,@2,@3,dbl,SIMPLE,dbl)@
 	@:T_BUNfastins(@1,@2,@3,fix,FIXEDATOM,(b)->ttype)@
 	@:T_BUNfastins(@1,@2,@3,var,VARATOM,(b)->ttype)@
@@ -283,77 +285,18 @@ Expand on head type
 @:H_BUNfastins(bte,SIMPLE,bte)@
 @:H_BUNfastins(sht,SIMPLE,sht)@
 @:H_BUNfastins(int,SIMPLE,int)@
-@:H_BUNfastins(lng,SIMPLE,lng)@
 @:H_BUNfastins(flt,SIMPLE,flt)@
+@:H_BUNfastins(oid,SIMPLE,oid)@
+@:H_BUNfastins(wrd,SIMPLE,wrd)@
+@:H_BUNfastins(lng,SIMPLE,lng)@
 @:H_BUNfastins(dbl,SIMPLE,dbl)@
 @:H_BUNfastins(vid,VID,vid)@
 @:H_BUNfastins(fix,FIXEDATOM,(b)->htype)@
 @:H_BUNfastins(var,VARATOM,(b)->htype)@
 
 @-
-Type-mappers for convenience
-@= HT_bunfastins_typemap
-#define @1@2_bunfastins_nocheck_noinc(b, p, h, t) @1@3_bunfastins_nocheck_noinc(b, p, h, t)
-#define @1@2_bunfastins_nocheck(b, p, h, t, hs, ts)    @1@3_bunfastins_nocheck(b, p, h, t, hs, ts)
-#define @1@2_bunfastins(b, h, t)                  @1@3_bunfastins(b, h, t)
-#define @2@1_bunfastins_nocheck_noinc(b, p, h, t) @3@1_bunfastins_nocheck_noinc(b, p, h, t)
-#define @2@1_bunfastins_nocheck(b, p, h, t, hs, ts)    @3@1_bunfastins_nocheck(b, p, h, t, hs, ts)
-#define @2@1_bunfastins(b, h, t)                  @3@1_bunfastins(b, h, t)
-@h
-#if SIZEOF_OID == SIZEOF_INT
-@:HT_bunfastins_typemap(void,oid,int)@
-@:HT_bunfastins_typemap(chr,oid,int)@
-@:HT_bunfastins_typemap(bte,oid,int)@
-@:HT_bunfastins_typemap(sht,oid,int)@
-@:HT_bunfastins_typemap(int,oid,int)@
-@:HT_bunfastins_typemap(wrd,oid,int)@
-@:HT_bunfastins_typemap(lng,oid,int)@
-@:HT_bunfastins_typemap(flt,oid,int)@
-@:HT_bunfastins_typemap(dbl,oid,int)@
-@:HT_bunfastins_typemap(fix,oid,int)@
-@:HT_bunfastins_typemap(var,oid,int)@
-#define oidoid_bunfastins_nocheck_noinc(b,p,h,t) intint_bunfastins_nocheck_noinc(b,p,h,t);
-#else
-@:HT_bunfastins_typemap(void,oid,lng)@
-@:HT_bunfastins_typemap(chr,oid,lng)@
-@:HT_bunfastins_typemap(bte,oid,lng)@
-@:HT_bunfastins_typemap(sht,oid,lng)@
-@:HT_bunfastins_typemap(int,oid,lng)@
-@:HT_bunfastins_typemap(wrd,oid,lng)@
-@:HT_bunfastins_typemap(lng,oid,lng)@
-@:HT_bunfastins_typemap(flt,oid,lng)@
-@:HT_bunfastins_typemap(dbl,oid,lng)@
-@:HT_bunfastins_typemap(fix,oid,lng)@
-@:HT_bunfastins_typemap(var,oid,lng)@
-#define oidoid_bunfastins_nocheck_noinc(b,p,h,t) lnglng_bunfastins_nocheck_noinc(b,p,h,t);
-#endif /* SIZEOF_OID == SIZEOF_INT */
-
-#if SIZEOF_WRD == SIZEOF_INT
-@:HT_bunfastins_typemap(void,wrd,int)@
-@:HT_bunfastins_typemap(chr,wrd,int)@
-/*@:HT_bunfastins_typemap(bte,wrd,int)@*/
-@:HT_bunfastins_typemap(sht,wrd,int)@
-@:HT_bunfastins_typemap(int,wrd,int)@
-@:HT_bunfastins_typemap(lng,wrd,int)@
-/*@:HT_bunfastins_typemap(flt,wrd,int)@*/
-/*@:HT_bunfastins_typemap(dbl,wrd,int)@*/
-@:HT_bunfastins_typemap(fix,wrd,int)@
-@:HT_bunfastins_typemap(var,wrd,int)@
-#else
-@:HT_bunfastins_typemap(void,wrd,lng)@
-@:HT_bunfastins_typemap(chr,wrd,lng)@
-/*@:HT_bunfastins_typemap(bte,wrd,lng)@*/
-@:HT_bunfastins_typemap(sht,wrd,lng)@
-@:HT_bunfastins_typemap(int,wrd,lng)@
-@:HT_bunfastins_typemap(lng,wrd,lng)@
-/*@:HT_bunfastins_typemap(flt,wrd,lng)@*/
-/*@:HT_bunfastins_typemap(dbl,wrd,lng)@*/
-@:HT_bunfastins_typemap(fix,wrd,lng)@
-@:HT_bunfastins_typemap(var,wrd,lng)@
-#endif /* SIZEOF_WRD == SIZEOF_INT */
-@-
 For backward compatibility:
-(also to be move to gdk.mx and gdk_bat.mx, respectively)
+(also to be moved to gdk.mx and gdk_bat.mx, respectively)
 @h
 
 BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int nequi, int lval, int hval, int nocheck);
