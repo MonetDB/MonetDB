@@ -451,7 +451,7 @@ getCallValues(stream *out,
 
     BATiter shredBATi, prop_vali, qn_puli;
     BAT *pre_size = NULL, *pre_level = NULL, *pre_kind = NULL,  *pre_prop = NULL;
-    BAT *qn_loc   = NULL, *qn_uri = NULL, *qn_uri_loc = NULL;
+    BAT *qn_loc   = NULL, *qn_uri_loc = NULL;
     BAT *prop_val = NULL,  *prop_text = NULL, *qn_prefix_uri_loc = NULL;
     BAT *attr_own = NULL,  *attr_qn = NULL, *attr_prop = NULL;
     BAT *frag_root = NULL;
@@ -462,7 +462,6 @@ getCallValues(stream *out,
     oid   *pre_propT = NULL;
     var_t *prop_textT = NULL;
 
-    oid last_pre = 0;
     oid req_node_pre = 0, val_node_pre = 0;
     oid call_node_pre = 0,  seq_node_pre = 0,  tpe_node_pre = 0;
     oid next_call_node_pre = 0, next_seq_node_pre = 0, next_tpe_node_pre = 0;
@@ -488,8 +487,8 @@ getCallValues(stream *out,
     text_base  = BBP_cache(*(bat*)BUNtail(shredBATi,i+PROP_TEXT))->theap->base;
     prop_val   = BBP_cache(*(bat*)BUNtail(shredBATi,i+PROP_VAL) );
     qn_prefix_uri_loc =BBP_cache(*(bat*)BUNtail(shredBATi,i+QN_PREFIX_URI_LOC));
+    qn_uri_loc = BBP_cache(*(bat*)BUNtail(shredBATi,i+QN_URI_LOC)   );
     qn_loc     = BBP_cache(*(bat*)BUNtail(shredBATi,i+QN_LOC)   );
-    qn_uri     = BBP_cache(*(bat*)BUNtail(shredBATi,i+QN_URI)   );
     frag_root  = BBP_cache(*(bat*)BUNtail(shredBATi,i+FRAG_ROOT));
     attr_own   = BBP_cache(*(bat*)BUNtail(shredBATi,i+ATTR_OWN) );
     attr_qn    = BBP_cache(*(bat*)BUNtail(shredBATi,i+ATTR_QN)  );
@@ -510,8 +509,6 @@ getCallValues(stream *out,
     pre_level  = BATsetaccess(pre_level, BAT_WRITE);
     frag_root  = BATsetaccess(frag_root, BAT_APPEND);
     nattrs     = BATcount(attr_prop);
-    last_pre   = (oid)pre_sizeT[0]; /* last 'pre' number, save it before
-                                       it is overwritten. */
 
     /* There are at least two nodes before "request", namely "Envelope"
      * and "Body" (a "Header" node is optional). There are at least one
