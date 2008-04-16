@@ -26,7 +26,7 @@ LIBS = {
 	#SCRIPTS = mal
 	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmonetdb5
 }
 
 lib__str = {
@@ -38,7 +38,7 @@ lib__str = {
 	LIBS = $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
-		$(ICONV_LIBS) ../../mal/libmal
+		$(ICONV_LIBS) ../../mal/libmonetdb5
 }
 
 headers_h = {

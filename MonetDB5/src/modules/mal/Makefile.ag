@@ -34,7 +34,7 @@ LIBS = {
 		sabaoth.mx remote.mx batxml.mx txtsim.mx recycle.mx
 		#radix.mx 
 
-	LIBS = ../../mal/libmal ../atoms/lib_xml $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
+	LIBS = ../../mal/libmonetdb5 ../atoms/lib_xml $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
                 $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
@@ -44,7 +44,7 @@ lib_batExtensions = {
 	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = batExtensions.mx
-	LIBS = ../../mal/libmal ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
+	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
@@ -53,7 +53,7 @@ lib_bpm = {
 	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = bpm.mx
-	LIBS = ../../mal/libmal ../kernel/lib_bat5 ../kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
+	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 ../kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
@@ -62,7 +62,7 @@ lib_mal_mapi = {
 	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = mal_mapi.mx
-	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
+	LIBS = ../../mal/libmonetdb5 $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
                 $(OPENSSL_LIBS) $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
@@ -71,7 +71,7 @@ lib_mal_io = {
 	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = mal_io.mx 
-	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
+	LIBS = ../../mal/libmonetdb5 $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
@@ -81,7 +81,7 @@ lib__clients = {
 	SOURCES = clients.mx
 
 	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
+	LIBS = ../../mal/libmonetdb5 $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(READLINE_LIBS) 
 }
@@ -91,7 +91,7 @@ lib__pcre = {
 	SOURCES = pcre.mx
 
 	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
+	LIBS = ../../mal/libmonetdb5 $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(PCRE_LIBS) 
 }
@@ -101,7 +101,7 @@ lib__bbp = {
 	SOURCES = bbp.mx
 
 	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmal ../kernel/lib_bat5 \
+	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 \
 		$(MONETDB_LIBS) -lbat -lstream \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
@@ -112,7 +112,7 @@ lib__tablet = {
 	SOURCES = tablet.mx
 
 	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmal ../kernel/lib_algebra \
+	LIBS = ../../mal/libmonetdb5 ../kernel/lib_algebra \
 		$(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
@@ -123,7 +123,7 @@ lib__transaction = {
 	SOURCES = transaction.mx
 
 	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmal ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream \
+	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
@@ -133,7 +133,7 @@ lib__statistics = {
 	SOURCES = statistics.mx
 
 	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmal ../kernel/lib_algebra \
+	LIBS = ../../mal/libmonetdb5 ../kernel/lib_algebra \
 		$(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)

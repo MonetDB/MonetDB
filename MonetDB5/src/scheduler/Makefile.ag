@@ -29,7 +29,7 @@ LIBS = {
 	mal_isolation.mx mal_scheduler.mx mal_mes.mx mal_memorun.mx
 
 	#SCRIPTS = mal
-	LIBS = ../mal/libmal ../optimizer/lib_optimizer $(MONETDB_LIBS) -lbat -lstream \
+	LIBS = ../mal/libmonetdb5 ../optimizer/lib_optimizer $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }

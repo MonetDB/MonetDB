@@ -20,7 +20,7 @@ INCLUDES = -I../mal $(CLIENTS_INCS) $(MONETDB_INCS) $(OPENSSL_INCS) $(PCRE_CFLAG
 
 bin_mserver5 = {
 	SOURCES = mserver5.mx monet_version.h monet_version.c.in
-	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) \
+	LIBS = ../mal/libmonetdb5 @SHARED_LIBS@ $(MONETDB_LIBS) \
                 -lbat -lmutils -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
@@ -37,14 +37,14 @@ bin_stethoscope = {
 
 lib_embeddedmal = {
 	SOURCES = embeddedclient.mx
-	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream $(CLIENTS_LIBS) -lMapi \
+	LIBS = ../mal/libmonetdb5 @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
 bin_Mbeddedmal = {
 	SOURCES = prog.c
-	LIBS = libembeddedmal ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream $(CLIENTS_LIBS) -lMapi \
+	LIBS = libembeddedmal ../mal/libmonetdb5 @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }

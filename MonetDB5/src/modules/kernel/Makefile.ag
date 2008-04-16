@@ -33,7 +33,7 @@ LIBS = {
 	#SCRIPTS = mal mil ""
 	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmonetdb5
 }
 
 lib__batstr = {
@@ -43,14 +43,14 @@ lib__batstr = {
 	#SCRIPTS = mil ""
 	LIBS = ../atoms/lib_str $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmonetdb5
 }
 lib__batmtime = {
 	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = batmtime.mx
 	#SCRIPTS = mil ""
-	LIBS = ../atoms/lib_str ../atoms/lib_mtime ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
+	LIBS = ../atoms/lib_str ../atoms/lib_mtime ../../mal/libmonetdb5 $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
@@ -62,7 +62,7 @@ lib__batcolor = {
 	#SCRIPTS = mil ""
 	LIBS = ../atoms/lib_color $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmonetdb5
 }
 
 lib__group = {
@@ -72,7 +72,7 @@ lib__group = {
 	#SCRIPTS = mil ""
 	LIBS = ./lib_algebra $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmonetdb5
 }
 
 lib__array = {
@@ -82,7 +82,7 @@ lib__array = {
 	#SCRIPTS = mil ""
 	LIBS = ./lib_algebra $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmonetdb5
 }
 
 lib__logger = {
@@ -93,7 +93,7 @@ lib__logger = {
 	LIBS = $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
-		../../mal/libmal ./lib_bat5
+		../../mal/libmonetdb5 ./lib_bat5
 		
 }
 

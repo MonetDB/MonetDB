@@ -109,7 +109,7 @@ req_monetdb4_ver='4.22.0'
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB4($req_monetdb4_ver)
 
-req_monetdb5_ver='5.4.0'
+req_monetdb5_ver='5.4.1'
 #                 ^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

@@ -33,7 +33,7 @@ lib__sql = {
 		sql_readline.mx \
 		sql_bpm.mx
 	LIBS = ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/restrict/librestrictstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
-		$(MONETDB5_MODS) -l_blob -l_logger -l_mtime -l_bat5 -l_optimizer -l_tablet -l_bpm $(MONETDB5_LIBS) -lmal -l_mal_mapi \
+		$(MONETDB5_MODS) -l_blob -l_logger -l_mtime -l_bat5 -l_optimizer -l_tablet -l_bpm $(MONETDB5_LIBS) -lmonetdb5 -l_mal_mapi \
 		$(MONETDB_LIBS) -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
@@ -41,14 +41,14 @@ lib__sql = {
 lib_embeddedsql5 = {
 	SOURCES = embeddedclient.mx
 	LIBS = ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/restrict/librestrictstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
-		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet -l_bpm $(MONETDB5_LIBS) -lmal \
+		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet -l_bpm $(MONETDB5_LIBS) -lmonetdb5 \
 		$(CLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
 bin_Mbeddedsql5 = {
 	SOURCES = prog.c
 	LIBS = libembeddedsql5 ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/restrict/librestrictstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
-		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet -l_bpm $(MONETDB5_LIBS) -lmal \
+		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet -l_bpm $(MONETDB5_LIBS) -lmonetdb5 \
 		$(CLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
@@ -67,7 +67,7 @@ headers_mal = {
 bin_merovingian = {
 	COND = NOT_WIN32
 	SOURCES = merovingian.mx
-	LIBS = $(MONETDB5_LIBS) -lmal @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lstream \
+	LIBS = $(MONETDB5_LIBS) -lmonetdb5 @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lstream \
 		   $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		   $(MALLOC_LIBS)
 }
@@ -75,7 +75,7 @@ bin_merovingian = {
 bin_monetdb = {
 	COND = NOT_WIN32
 	SOURCES = monetdb.mx
-	LIBS = $(MONETDB5_LIBS) -lmal @SHARED_LIBS@ $(MONETDB_LIBS) -lbat \
+	LIBS = $(MONETDB5_LIBS) -lmonetdb5 @SHARED_LIBS@ $(MONETDB_LIBS) -lbat \
 	       $(MALLOC_LIBS)
 }
 

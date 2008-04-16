@@ -19,7 +19,7 @@ INCLUDES = -I../optimizer -I../scheduler -I../modules/kernel \
 MTSAFE
 
 lib_mal = {
-	NAME = mal
+	NAME = monetdb5
 	SOURCES = \
 	mal.mx mal_utils.mx mal_type.mx mal_instruction.mx mal_box.mx \
 	mal_module.mx mal_stack.mx mal_import.mx mal_session.mx \
