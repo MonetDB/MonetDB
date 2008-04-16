@@ -464,7 +464,12 @@ PFalg_schema_t PFalg_schema_diff_(PFalg_schema_t schema,
 /** 
  * Constructor for an empty schema with iter|pos|item and item of type item_t
  */
-PFalg_schema_t PFalg_empty_schema(PFalg_simple_type_t item_t);
+PFalg_schema_t PFalg_iter_pos_item_schema(PFalg_simple_type_t item_t);
+
+/** 
+ * Constructor for an empty schema with iter|item and item of type item_t
+ */
+PFalg_schema_t PFalg_iter_item_schema(PFalg_simple_type_t item_t);
 
 /** Constructor for projection list item */
 PFalg_proj_t PFalg_proj (PFalg_att_t new, PFalg_att_t old);

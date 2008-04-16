@@ -4518,11 +4518,23 @@ struct PFla_pair_t
 PFbui_pf_documents (const PFla_op_t *loop, bool ordering,
                     struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) args;
+    (void) ordering; (void) args;
+  
+    PFla_op_t *res = fun_call (loop,                       /* loop relation */
+                               nil(),                      /* param_list    */
+                               ii_schema(aat_pnode),    /* iter_item schema */
+                               alg_fun_call_pf_documents,  /* function kind */
+                               PFqname (PFns_wild, NULL),  /* qname         */
+                               NULL,                       /* ctx           */
+                               att_iter,                   /* iter          */
+                               alg_occ_unknown);    /* occurrence indicator */
 
     return (struct PFla_pair_t) {
-        .rel = NULL,
-        .frag = NULL };
+        .rel = rank (res,
+                     att_pos,
+                     sortby (att_item)),
+        /* FIXME: if uncomment the next line there is a seqmentation fault */
+        .frag = PFla_empty_set() }; /* PFla_set (frag_extract (res, 2)) }; */
 }
 
 /**
@@ -4738,6 +4750,14 @@ PFbui_pf_supernode (const PFla_op_t *loop, bool ordering,
 /* #4. PFTIJAH SPECIFIC FUNCTIONS                        */
 /* ----------------------------------------------------- */
 
+/*
+ * Since this function is very usefull and outside pftijah I moved the same
+ * implementation to the algebra.c file. The signature of the function is
+ * PFalg_schema_t
+ * PFalg_iter_pos_item_schema(PFalg_simple_type_t item_t)
+ * and the mnemonic ipi_schema(a).
+ * FIXME: PFtijah can also use the generic one.
+ */
 PFalg_schema_t pft_empty_schema(PFalg_simple_type_t item_t) {
     PFalg_schema_t schema;
     schema.count = 3;

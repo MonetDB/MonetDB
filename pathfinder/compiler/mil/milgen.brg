@@ -8337,6 +8337,52 @@ reduce (PFpa_op_t * p, int goalnt)
                 /* Simple NtoN functions */
                 case alg_fun_call_pf_documents:
                 case alg_fun_call_pf_documents_unsafe:
+                {
+                    bool safe = true;
+                    mvar_t *nodes    = new_var(1);
+                    mvar_t *res_item = new_var (p->refctr);
+                    mvar_t *res_iter = new_var (p->refctr);
+                    mvar_t *res_frag = new_var (p->refctr);
+	            PFalg_att_t iter = p->schema.items[0].name;
+	            PFalg_att_t item = p->schema.items[1].name;
+                    mvar_t *loop = env_mvar (L(p)->env,
+                                             p->sem.fun_call.iter,
+                                             aat_nat);
+
+
+
+                    switch (p->sem.fun_call.kind) {
+                        case alg_fun_call_pf_documents:
+                            safe = true; break;
+                        case alg_fun_call_pf_documents_unsafe:
+                            safe = false; break;
+                        default:
+                            assert(!"should never reach here");
+                    }
+
+                    execute (assgn (var (nodes->name),
+                                    cross (var (loop->name),
+                                           ws_documents (var (PF_MIL_VAR_WS), 
+                                                         lit_bit(safe)))));
+
+                    execute (
+                             assgn (var (res_item->name),
+                                    tmark (var(nodes->name),
+                                           lit_oid(0))),
+                             assgn (var (res_iter->name),
+                                    hmark (var(nodes->name),
+                                           lit_oid(0))),
+                             assgn (var (res_frag->name),
+                                    project (var (res_item->name),
+                                             var (PF_MIL_VAR_WS_CONT))));
+
+                    env_add (p->env, item, aat_pre, res_item);
+                    env_add (p->env, item, aat_frag, res_frag);
+                    env_add (p->env, iter, aat_nat, res_iter);
+
+                    unpin(nodes, 1);
+                }   break;
+
                 case alg_fun_call_pf_documents_str:
                 case alg_fun_call_pf_documents_str_unsafe:
                 case alg_fun_call_pf_docname:
