@@ -1478,7 +1478,7 @@ PROC ALG_tj_query_nodes(
         if ( verbose ) printf("# ALG_tj_query_nodes: START.\n");
 	var item := new(void,oid).seqbase(0@0);
 	var iter := new(void,oid).seqbase(0@0);
-	var pos := new(void,oid).seqbase(0@0);
+	var pos  := new(void,oid).seqbase(0@0);
 	var frag := new(void,oid).seqbase(0@0);
 	par_loop@batloop() { # begin of query batloop
 	    var qid := oid(pfop_id.fetch(1).fetch(int($h)));
@@ -1570,13 +1570,13 @@ PROC ALG_tj_query_handler(
       if ( verbose ) printf("# ALG_tj_query_handler: loop start, id=%d.\n",$t);
       if ( has_options ) {
        if ( verbose ) printf("# ALG_tj_query_handler: running option handler.\n");
-       iter := pfop_opt.fetch(0@0).select($t);
-       item := pfop_opt.fetch(1@0).semijoin(iter);
-       kind := pfop_opt.fetch(2@0).semijoin(iter);
-       iter := iter.tmark(0@0);
-       item := item.tmark(0@0);
-       kind := kind.tmark(0@0);
-       optbat := serialize_tijah_opt(par_ws,1,iter,iter,item,set_kind(kind,ELEM),new(void,lng),new(void,dbl),new(void,str));
+       var opt_iter := pfop_opt.fetch(0@0).select($t);
+       var opt_item := pfop_opt.fetch(1@0).semijoin(opt_iter);
+       var opt_kind := pfop_opt.fetch(2@0).semijoin(opt_iter);
+       opt_iter := opt_iter.tmark(0@0);
+       opt_item := opt_item.tmark(0@0);
+       opt_kind := opt_kind.tmark(0@0);
+       optbat := serialize_tijah_opt(par_ws,1,opt_iter,opt_iter,opt_item,set_kind(opt_kind,ELEM),new(void,lng),new(void,dbl),new(void,str));
        if ( verbose ) optbat.print();
       } else {
        optbat := new(str,str,32);
@@ -1718,13 +1718,13 @@ PROC ALG_tj_add_fti_tape(
 	    var optbat;
             if ( has_opt ) {
        	        if ( verbose ) printf("# ALG_tj_add_fti_tape: running option handler.\n");
-       		var iter := pfop_opt.fetch(0@0).select($t);
-       		var item := pfop_opt.fetch(1@0).semijoin(iter);
-       		var kind := pfop_opt.fetch(2@0).semijoin(iter);
-       		iter := iter.tmark(0@0);
-       		item := item.tmark(0@0);
-       		kind := kind.tmark(0@0);
-       		optbat := serialize_tijah_opt(par_ws,1,iter,iter,item,set_kind(kind,ELEM),new(void,lng),new(void,dbl),new(void,str));
+       		var opt_iter := pfop_opt.fetch(0@0).select($t);
+       		var opt_item := pfop_opt.fetch(1@0).semijoin(opt_iter);
+       		var opt_kind := pfop_opt.fetch(2@0).semijoin(opt_iter);
+       		opt_iter := opt_iter.tmark(0@0);
+       		opt_item := opt_item.tmark(0@0);
+       		opt_kind := opt_kind.tmark(0@0);
+       		optbat := serialize_tijah_opt(par_ws,1,opt_iter,opt_iter,opt_item,set_kind(opt_kind,ELEM),new(void,lng),new(void,dbl),new(void,str));
        		if ( verbose ) optbat.print();
             } else {
        	        if ( verbose ) printf("# ALG_tj_add_fti_tape: no options.\n");
