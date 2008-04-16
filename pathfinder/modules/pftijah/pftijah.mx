@@ -1587,20 +1587,20 @@ PROC ALG_tj_query_handler(
       lock_set(tijah_lock);
       var startNodes;
       if ( has_sn ) {
-       iter := pfop_sn.fetch(0@0);
-       var iteration := pfop_query.fetch(0@0).fetch(int($h));
-       iter := iter.select(iteration);
-       item := pfop_sn.fetch(1@0).semijoin(iter);
-       kind := pfop_sn.fetch(2@0).semijoin(iter);
-       item := item.tmark(0@0);
-       kind := kind.tmark(0@0);
+       var sn_iter := pfop_sn.fetch(0@0);
+       var sn_iteration := pfop_query.fetch(0@0).fetch(int($h));
+       sn_iter := sn_iter.select(sn_iteration);
+       var sn_item := pfop_sn.fetch(1@0).semijoin(sn_iter);
+       var sn_kind := pfop_sn.fetch(2@0).semijoin(sn_iter);
+       sn_item := sn_item.tmark(0@0);
+       sn_kind := sn_kind.tmark(0@0);
 
        var xdoc_name := bat("tj_" + ftindex + "_doc_name");
        var xdoc_firstpre := bat("tj_" + ftindex + "_doc_firstpre");
        var xpfpre := bat("tj_" + ftindex + "_pfpre");
        var doc_loaded := reverse(par_ws.fetch(OPEN_CONT)).leftfetchjoin(par_ws.fetch(OPEN_NAME));
        if ( verbose ) printf("# ALG_tj_query_handler: compute startnodes\n");
-       startNodes := pf2tijah_node(xdoc_name,xdoc_firstpre,xpfpre,item,[int](kind),doc_loaded);
+       startNodes := pf2tijah_node(xdoc_name,xdoc_firstpre,xpfpre,sn_item,[int](sn_kind),doc_loaded);
       } else {
        startNodes := new(void,oid);
       }
@@ -3323,6 +3323,8 @@ int CMDtijah_query(BAT** res, BAT* optbat, bit* use_startnodes, BAT* startNodes)
 	        return GDK_FAIL;
 	    }
 	    startNodes_name = &nameBUFF[0];
+	    if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: using startnodes.\n");
+	    if (TDEBUG(2)) BATprintf(GDKout,startNodes);
 	} else {
 	    startNodes_name = NULL;
 	}
