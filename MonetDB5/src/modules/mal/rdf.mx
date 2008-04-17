@@ -48,10 +48,26 @@ comment "export a graph in a named rdf db";
 
 @+ Implementation
 
+@h
+typedef enum
+{
+	BLANK,
+	URI,
+	PLAIN,
+	INTEGER,
+	DECIMAL,
+	DOUBLE,
+	BOOLEAN,
+	FLOAT,
+	STRING,
+	DATETIME,
+	UNKNOWN
+} rdf_type;
 @c
 #include "mal_config.h"
 #include "mal.h"
 #include "mal_exception.h"
+#include "rdf.h"
 
 #include <gdk_bbp.h>
 #include <stdio.h>
@@ -71,9 +87,11 @@ typedef struct {
 	BAT *ob;
 	BAT *pb;
 	BAT *sb;
+	BAT *tb;
 	oid *o;
 	oid *p;
 	oid *s;
+	chr *t;
 	str *ret;
 } triple_handler_vars;
 //TODO
@@ -82,11 +100,82 @@ typedef struct {
 //	return 8048;
 //}
 
-static str RDFimport_fail(BAT* map, BAT* ob, BAT* pb, BAT *sb) {
+
+
+static chr RDFtypeToChar(rdf_type t)
+{
+	chr c;
+	switch (t)
+	{
+	case BLANK:
+		c = 'l';
+		break;
+	case URI:
+		c = 'u';
+		break;
+	case PLAIN:
+		c = 'p';
+		break;
+	case INTEGER:
+		c = 'i';
+		break;
+	case DECIMAL:
+		c = 'm';
+		break;
+	case DOUBLE:
+		c = 'd';
+		break;
+	case BOOLEAN:
+		c = 'b';
+		break;
+	case FLOAT:
+		c = 'f';
+		break;
+	case STRING:
+		c = 's';
+		break;
+	case DATETIME:
+		c = 't';
+		break;
+	case UNKNOWN:
+		c = '\0';
+	}
+	return c;
+}
+
+static rdf_type RDFparseXsdDataType(char *uri)
+{
+	rdf_type ret;
+	if (uri == NULL)
+		ret = PLAIN;
+	else if (	strcmp(uri, "http://www.w3.org/2001/XMLSchema#int") ||
+				strcmp(uri, "http://www.w3.org/2001/XMLSchema#integer"))
+		ret = INTEGER;
+	else if (strcmp(uri, "http://www.w3.org/2001/XMLSchema#decimal"))
+		ret = DECIMAL;
+	else if (strcmp(uri, "http://www.w3.org/2001/XMLSchema#double"))
+		ret = DOUBLE;
+	else if (strcmp(uri, "http://www.w3.org/2001/XMLSchema#boolean"))
+		ret = BOOLEAN;
+	else if (strcmp(uri, "http://www.w3.org/2001/XMLSchema#float"))
+		ret = FLOAT;
+	else if (strcmp(uri, "http://www.w3.org/2001/XMLSchema#string"))
+		ret = STRING;
+	else if (strcmp(uri, "http://www.w3.org/2001/XMLSchema#dateTime"))
+		ret = DATETIME;
+	else
+		ret = UNKNOWN;
+	
+	raptor_free_memory(uri);
+	return ret;
+}
+
+static str RDFimport_fail(BAT* map, BAT* ob, BAT* pb, BAT *sb, BAT *tb) {
     if (map) BBPunfix(map->batCacheid);
     if (ob) BBPreclaim(ob);
     if (pb) BBPreclaim(pb);
     if (sb) BBPreclaim(sb);
+    if (tb) BBPreclaim(tb);
     throw(MAL, "RDFimport", "allocation failure"); 
 }
 
@@ -131,7 +220,7 @@ void message_handler(void *user_data, raptor_locator *locator, const char *messa
         bun = (BUN) map->batCount;
         if (!BUNappend(map,(ptr)@1v, TRUE)) {
             GDKerror("RDFimport: @1[" LLFMT "] = %s, BUNappend fails\n", cur, @1v);
-            *(data->ret) = RDFimport_fail(map,ob,pb,sb);
+            *(data->ret) = RDFimport_fail(map,ob,pb,sb,tb);
         }
    }
    /* s,p,o[cur] are set to the virtual oid which is bun s p and o are arrays of oid */
@@ -144,16 +233,20 @@ triples_handler(void* user_data, const raptor_statement* triple)
 	lng *cur = data->cur;
 	lng *lim = data->lim;
 	str ov, pv, sv;
+	chr tv;
 	BAT *map = data->map;
 	BAT *sb = data->sb;
 	BAT *pb = data->pb;
 	BAT *ob = data->ob;
+	BAT *tb = data->tb;
 	oid *o = data->o;
 	oid *p = data->p;
 	oid *s = data->s;
+	chr *t = data->t;
 	str *ret = data->ret;
 	BATiter mi = bat_iterator(BATmirror(map));
 	BUN bun;
+	*t = 'a';
 	if (strlen(*ret)!=0)
 		return;
 	/* get the subject */
@@ -177,18 +270,33 @@ triples_handler(void* user_data, const raptor_statement* triple)
 	}
 	
 	/* get the object */
-	if(triple->object_type == RAPTOR_IDENTIFIER_TYPE_LITERAL)
+	
+	switch (triple->object_type)
 	{
-		//if(triple->object_literal_datatype)
-	    	//ov = (str)raptor_uri_as_string((raptor_uri*)triple->object_literal_datatype);
-	    ov = (str)triple->object;// TODO concatenate?
-	}
-	else if(triple->object_type == RAPTOR_IDENTIFIER_TYPE_ANONYMOUS)
-		ov = (str)triple->object;
-	else if (triple->object_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE)
+	unsigned char *datatype_uri;
+	rdf_type literal_type;
+	case RAPTOR_IDENTIFIER_TYPE_RESOURCE:
 		ov = (str)raptor_uri_as_string((raptor_uri*)triple->object);
-	else
-	{
+		tv = RDFtypeToChar(URI);
+		break;
+	case RAPTOR_IDENTIFIER_TYPE_ANONYMOUS:
+		ov = (str)triple->subject;//TODO correct??
+		tv = RDFtypeToChar(BLANK);
+		break;
+	case RAPTOR_IDENTIFIER_TYPE_LITERAL:
+		datatype_uri = raptor_uri_to_string(triple->object_literal_datatype);
+		literal_type = RDFparseXsdDataType((char *)datatype_uri);
+		raptor_free_memory(datatype_uri);
+		if (literal_type == UNKNOWN)
+		{
+			*ret = "Unexpected object literal type";
+			return;
+		}
+		tv = RDFtypeToChar(literal_type);
+		//TODO lang
+		ov = (str)triple->object;
+		break;
+	default:
 		*ret="Unexpected object type";
 		return;
 	}
@@ -202,13 +310,15 @@ triples_handler(void* user_data, const raptor_statement* triple)
 	    	@:RDFins(s)@
 	    	if (strlen(*ret)==0)
 	    	{
+	    		t[*cur] = tv;
+	    		
 			    if (++(*cur) > *lim) {
 			        *lim *= 2;
 			        ob = BATextend(ob, *lim);
 			        pb = BATextend(pb, *lim);
 			        sb = BATextend(sb, *lim);
 			        if (ob == NULL || pb == NULL || sb == NULL)
-			            *ret = RDFimport_fail(map,ob,pb,sb);
+			            *ret = RDFimport_fail(map,ob,pb,sb,tb);
 			        o = (oid *) Tloc(ob, BUNfirst(ob));
 			        p = (oid *) Tloc(pb, BUNfirst(pb));
 			        s = (oid *) Tloc(sb, BUNfirst(sb));
@@ -219,7 +329,7 @@ triples_handler(void* user_data, const raptor_statement* triple)
 }
 
 static str 
-RDFimport_(BAT** S, BAT** P, BAT **O, str url, BAT *map) {
+RDFimport_(BAT** S, BAT** P, BAT **O, BAT **T, str url, BAT *map) {
 	raptor_parser *parser;
 	raptor_uri *rdf_file;
 	str ret;
@@ -230,22 +340,27 @@ RDFimport_(BAT** S, BAT** P, BAT **O, str url, BAT *map) {
 		rdf_file = raptor_new_uri((unsigned char*)url);
 		if (rdf_file)
 		{
-			BAT *ob, *pb, *sb;
+			BAT *ob, *pb, *sb, *tb;
 			oid *o,*p,*s;
+			chr *t;
 			triple_handler_vars *data;
 			lng *cur;
 			lng *lim;
 			*cur = 0;
-			*lim = 8000;//RDFestimate(url);
+			*lim = 8192;//TODO RDFestimate(url);
+			
 			ob = *O = BATnew(TYPE_void, TYPE_oid, *lim);
 		    pb = *P = BATnew(TYPE_void, TYPE_oid, *lim);
 		    sb = *S = BATnew(TYPE_void, TYPE_oid, *lim);
+		    tb = *T = BATnew(TYPE_void, TYPE_chr, *lim);
+		    
 		    o = (oid *) Tloc(ob, BUNfirst(ob));
 		    p = (oid *) Tloc(pb, BUNfirst(pb));
 		    s = (oid *) Tloc(sb, BUNfirst(sb));
+		    t = (chr *) Tloc(sb, BUNfirst(sb));
 		    
-		    if (map == NULL || ob == NULL || pb == NULL || sb == NULL)
-		        return RDFimport_fail(map,ob,pb,sb);
+		    if (map == NULL || ob == NULL || pb == NULL || sb == NULL || tb == NULL)
+		        return RDFimport_fail(map,ob,pb,sb,tb);
 		    
 		    data = GDKmalloc(sizeof(triple_handler_vars));
 		    if (data)
@@ -259,9 +374,11 @@ RDFimport_(BAT** S, BAT** P, BAT **O, str url, BAT *map) {
 		    	data->sb = sb;
 		    	data->pb = pb;
 		    	data->ob = ob;
+		    	data->tb = tb;
 		    	data->s = s;
 		    	data->p = p;
 		    	data->o = o;
+		    	data->t = t;
 		    	data->ret = &ret_ptr;
 		    	raptor_set_statement_handler(parser, data, triples_handler);
 				raptor_set_fatal_error_handler(parser, &ret_ptr, message_handler);
@@ -312,10 +429,10 @@ RDFimport_(BAT** S, BAT** P, BAT **O, str url, BAT *map) {
 rdf_export
 str RDFimport(int* S, int* P, int* O, str *url, bat m)
 {
-    BAT *sb = NULL, *ob=NULL, *pb = NULL, *map = BATdescriptor(m);
+    BAT *sb = NULL, *ob=NULL, *pb = NULL, *tb = NULL, *map = BATdescriptor(m);
     str ret;
     if (map) {
-        RDFimport_(&sb, &pb, &ob, *url, map);
+        RDFimport_(&sb, &pb, &ob, &tb, *url, map);
         if (ret == MAL_SUCCEED) {
             BBPkeepref(*O = ob->batCacheid);//changes physical reference to logical
             BBPkeepref(*P = pb->batCacheid);
@@ -511,7 +628,8 @@ RDFsort(commit, sorted, @1,@2,@3,&@4,&@5,&@6,"@4","@5","@6",*db,*graph);
 @c
 str RDFimportGraph(int *d, str *url, str *db, str *graph)
 {
-    BAT *map = NULL, *sb = NULL, *ob=NULL, *pb = NULL, *commit = BATnew(TYPE_bat, TYPE_str, 20);
+    BAT *map = NULL, *sb = NULL, *ob=NULL,
+    	*pb = NULL, *tb = NULL, *commit = BATnew(TYPE_bat, TYPE_str, 20);
     str ret = "RDFimportGraph failed to obtain bats";
     (void)d;
     if (commit) {
@@ -522,7 +640,7 @@ str RDFimportGraph(int *d, str *url, str *db, str *graph)
         if (mapIndex) {
             map = BATdescriptor(mapIndex);
         } else {
-            map = BATnew(TYPE_void, TYPE_str, 8192);
+            map = BATnew(TYPE_void, TYPE_str, 8192);//TODO fix constant
             if (map && (BATname(map, map_buf) == 0) && BATmode(map, PERSISTENT)) {
                 /*
                  * inserts in commit a pointer to map in the left column
@@ -537,7 +655,7 @@ str RDFimportGraph(int *d, str *url, str *db, str *graph)
         }
     }
     if (map) {
-        ret = RDFimport_(&sb, &pb, &ob, *url, map);
+        ret = RDFimport_(&sb, &pb, &ob, &tb, *url, map);
         if (ret == MAL_SUCCEED) {
             BAT *Spo = NULL, *sPo = NULL, *spO = NULL; 
             BAT *Sop = NULL, *sOp = NULL, *soP = NULL; 
