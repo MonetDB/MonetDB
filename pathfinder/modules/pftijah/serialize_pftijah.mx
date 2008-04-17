@@ -25,11 +25,6 @@
 @t serialize_pftijah
 
 @h
-/*
- * TODO: whitelist/blacklist tags implementeren
- *
- */
-
 struct tijahContextStruct;
 
 extern int handleTijahTerm(struct tijahContextStruct *ctx, char* term);
@@ -229,8 +224,10 @@ typedef struct tijahContextStruct {
 	int		max_doc_height;
 	/* The BAT's for the tag selection and associated counters
 	 */
-	BAT* b_selectTags;	/* [void,str] BAT containing select tags */
-	int  selTagDepth;	/* current selection tag depth, 0 = skip */
+	BAT* b_filtering;	/* [void,str] BAT containing select tags */
+	int  filterDepth;	/* */
+	int  whitelisting;	/* bool, if not: blacklisting */
+	int  emitting;		/* boolean indicating emit */
 	/* The tagStartStack[] contains the starting Tijah oid of an element
 	 * and is used to compute the size of an element in the Tijah
 	 * pre-post-plane.
@@ -247,7 +244,7 @@ typedef struct tijahContextStruct {
 	oid	lastStopWord;
 } tjCtx;
 
-#define DOEMIT(TJCTX)	((TJCTX)->selTagDepth)
+#define DOEMIT(TJCTX)	((TJCTX)->emitting)
 
 static INLINE int
 tj_pushTag(tjCtx* tjctx, oid start, oid tagoid) {
@@ -379,7 +376,6 @@ int
 handleTijahTerm(struct tijahContextStruct *tjctx, char* term) {
     oid termOid, tjPre;
 
-    /* is this DOEMIT here really necessary ??? */
     if ( DOEMIT(tjctx) ) {
         if ( (termOid = tj_checkTerm(tjctx, term)) == oid_nil ) {
           if ( tjctx->stemCtx->stem) {
@@ -431,27 +427,38 @@ handle_sizeHint(XqueryCtx* ctx, int hinted_size) {
 
 const char* delchars2 = " \t\n\r,";
 
-static int loadSelectionTagList(tjCtx* tjctx, char *l) {
+static int init_tagFiltering(tjCtx* tjctx, char* kind, char *l) {
     char *t;
     int  cnt=0;
 
-    tjctx->b_selectTags = NULL; /* no selection tags specified is default */
-    tjctx->selTagDepth  = 99;
+    (void)kind;
+
+    /* determine kind of filtering */
+    if ( strcmp(kind,"whitelist")==0 )
+    	tjctx->whitelisting = 1;
+    else 
+        tjctx->whitelisting = 0;
+
+    /* read the tags */
     if ( (t = strtok(l,delchars2)) ) do {
 	/* not the empty string here */
 	if ( cnt++ == 0 ) {
-    	    tjctx->selTagDepth  = 0;
-	    tjctx->b_selectTags = BATmirror(BAThash(BATmirror(
+	    tjctx->b_filtering = BATmirror(BAThash(BATmirror(
 	     		BATnew(TYPE_void, TYPE_str,32)),0));
-	    if ( !tjctx->b_selectTags ) {
+	    if ( !tjctx->b_filtering ) {
 	    	return 0;
 	    }
 	}
 	str v = (str)t;
 	oid my_oid_nil = oid_nil;
-	if ( !BUNins(tjctx->b_selectTags, &my_oid_nil, v, FALSE) )
+	if ( !BUNins(tjctx->b_filtering, &my_oid_nil, v, FALSE) )
 	     return 0;
     } while ( (t=strtok(NULL,delchars2)) );
+
+    /* set runtime status variables */
+    tjctx->filterDepth = 0;
+    tjctx->emitting    = !(tjctx->whitelisting);
+
     return 1;
 }
 
@@ -520,7 +527,7 @@ static int setPreSize(tjCtx* tjCtx, oid newSize) {
 } 
 
 static tjCtx*
-loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
+loadTijahContext(BAT* tjCtx_BAT) {
 	tjCtx* res;
 
 #ifdef TJ_TRACE
@@ -589,6 +596,26 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 		return NULL;
 	if ( res->stemCtx->init && !res->stemCtx->init(res->stemCtx,NULL) )
 			return NULL;
+
+	res->emitting     = 1;
+        res->b_filtering  = NULL;
+
+	str wl = readCollParam(res,"whitelist");
+	str bl = readCollParam(res,"blacklist");
+	if ( wl != str_nil || bl != str_nil ) {
+	    if ( wl != str_nil ) {
+	    	if ( bl != str_nil ) {
+		    GDKerror("Unable to mix whitelist/blacklist tag filters");
+		    return NULL;
+		}
+		if ( !init_tagFiltering(res,"whitelist",wl) )
+			return NULL;
+	    } else {
+		if ( !init_tagFiltering(res,"blacklist",bl) )
+			return NULL;
+	    }
+	}
+
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) {
 	   stream_printf(GDKout,"C[%s]: loadTijahContext() options read\n",res->name);
@@ -667,7 +694,6 @@ loadTijahContext(BAT* tjCtx_BAT, char* selTagList) {
 	if ( dbat_init("b_collSize", &res->dbat_collSize, res->b_collSize) < -1 )
 		return NULL;
 	if ( !(res->b_collPfPre   = getBAT(tjCtx_BAT,"_pfpre")) ) return NULL;
-	if ( !loadSelectionTagList(res,selTagList) ) return NULL;
 	/* */
 	res->tagStackPtr = 0;
 
@@ -792,7 +818,7 @@ freeTijahContext(tjCtx* tjctx) {
 		return GDK_FAIL;
 	free(tjctx);
 #ifdef TJ_TRACE
-	if ( TJ_TRACE ) stream_printf(GDKout,"C[{}]:FINISH: CMDtj_throw2collection()\n");
+	if ( TJ_TRACE ) stream_printf(GDKout,"C[{}]:FINISH: add2collection_handler()\n");
 #endif
 	return GDK_SUCCEED;
 }
@@ -923,19 +949,17 @@ pftijah_handle_attribute(XqueryCtx* ctx, str prefix, str loc, str value) {
     return 1;
 }
 
-static int checkSelectTag(tjCtx* tjctx, str t, int plusormin) {
-    if ( !tjctx->b_selectTags ) {
-        return 1;
-    } else {
-        BAT* mb = BATmirror(tjctx->b_selectTags);
+static int checkFilterTag(tjCtx* tjctx, str t) {
+        BAT* mb = BATmirror(tjctx->b_filtering);
 
         BUN bun;
         bun = BUNfnd(mb,t);
-        if ( bun != BUN_NONE ) { /* found */
-    		tjctx->selTagDepth += plusormin;
+        if ( bun != BUN_NONE ) {
+	    /* hit a filter tag */
+	    tjctx->emitting = tjctx->whitelisting;
+	    tjctx->filterDepth = 1;
     	}
         return 1;
-    }
 }
 
 #define EMPTY_CHECK 
@@ -952,8 +976,14 @@ pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
 
     if ( ++tjctx->doc_height > tjctx->max_doc_height )
         tjctx->max_doc_height = tjctx->doc_height;
-    if ( tjctx->b_selectTags && !checkSelectTag(tjctx,name,1) ) return 0;
-    /* if ( DOEMIT(tjctx) ) { */
+
+    if ( tjctx->b_filtering ) {
+    	if ( tjctx->filterDepth )
+    	    tjctx->filterDepth++;
+	else
+	    checkFilterTag(tjctx,name);
+    }
+    if ( DOEMIT(tjctx) ) {
         if ( (termOid = tj_tagOid(tjctx, name)) == oid_nil )
     	    return 0;
         if ( (tjPre = tj_newPre(tjctx) ) == oid_nil )
@@ -964,7 +994,7 @@ pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
         if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:startElement: \"%s\", termoid=%d, Tijah pre#=%d, Pathfinder pre#=%d\n",tjctx->name,name,termOid,tjPre,pre);
 #endif
         if ( !BUNins(tjctx->b_collPfPre, &tjPre, &pre, FALSE) ) return 0;
-    /* } */
+    }
     return 1;
 }
 
@@ -973,12 +1003,22 @@ pftijah_complete_startElementEmpty(XqueryCtx* ctx) {
     EMPTY_CHECK;
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
     --tjctx->doc_height;
-    oid start = tj_popTag(tjctx); /* oid of the first node of the element */
-    int size  = tjctx->tijahPre - start - 1; /* the Tijah element size */
-    dbat_set_int(&tjctx->dbat_collSize,(int)start,size);
+    if ( DOEMIT(tjctx) ) {
+        oid start = tj_popTag(tjctx); /* oid of the first node of the element */
+        int size  = tjctx->tijahPre - start - 1; /* the Tijah element size */
+        dbat_set_int(&tjctx->dbat_collSize,(int)start,size);
+    };
 #ifdef TJ_TRACE
     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:empty_endElement: \"%s\"\n", tjctx->name,"");
 #endif
+    if ( tjctx->b_filtering && tjctx->filterDepth ) {
+        /* a filter is currently 'on' */
+        if ( --tjctx->filterDepth == 0 ) {
+		/* end of filter */
+	        tjctx->emitting = !(tjctx->whitelisting);
+
+	}
+    }
     return 1;
 }
 
@@ -992,15 +1032,21 @@ pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name) {
     EMPTY_CHECK;
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
     --tjctx->doc_height;
-    /* if ( DOEMIT(tjctx) ) { */
+    if ( DOEMIT(tjctx) ) {
         oid start = tj_popTag(tjctx); /* oid of the first node of the element */
         int size  = tjctx->tijahPre - start - 1; /* the Tijah element size */
 	dbat_set_int(&tjctx->dbat_collSize,(int)start,size);
 #ifdef TJ_TRACE
         if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:endElement: \"%s\"\n", tjctx->name,name);
 #endif
-    /* } */
-    if ( tjctx->b_selectTags && !checkSelectTag(tjctx,name,-1) ) return 0;
+    }
+    if ( tjctx->b_filtering && tjctx->filterDepth ) {
+        /* a filter is currently 'on' */
+        if ( --tjctx->filterDepth == 0 ) {
+		/* end of filter */
+	        tjctx->emitting = !(tjctx->whitelisting);
+	}
+    }
     return 1;
 }
 
@@ -1128,14 +1174,15 @@ struct serializeFunStruct pftijahSerializeFun = {
  */
 
 static int
-MAINtj_throw2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
+add2collection_handler(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName) {
 	tjCtx* tjctx;
 
 #ifdef TJ_TRACE
-	if ( TJ_TRACE ) stream_printf(GDKout,"C[{}]:START: CMDtj_throw2collection(%s)\n",docName);
+	if ( TJ_TRACE ) stream_printf(GDKout,"C[{}]:START: add2collection_handler(%s)\n",docName);
 #endif
-	if ( !(tjctx = loadTijahContext(tjCtx_BAT, selTagList)) )
+	if ( !(tjctx = loadTijahContext(tjCtx_BAT)) )
 		return GDK_FAIL;
+
 	/* return the main plane, the caller should check if the main plane
 	 * has changed and this one should be added.
 	 */ 
@@ -1143,7 +1190,7 @@ MAINtj_throw2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:LOADED CONTEXT\n",tjctx->name);
 #endif
 	if ( tijahDocIndex(tjctx,docName) != oid_nil ) {
-	    stream_printf(GDKerr,"CMDtj_throw2collection(CTX,%s) already in collection\n",docName);
+	    stream_printf(GDKerr,"add2collection_handler(CTX,%s) already in collection\n",docName);
 	    return GDK_FAIL;
 	}
 	oid start_oid = tjctx->tijahPre;
@@ -1210,13 +1257,14 @@ MAINtj_throw2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str
 }
 
 int
-CMDtj_throw2collection(BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
-    return  MAINtj_throw2collection(0,tjCtx_BAT,ws,docName,selTagList);
+CMDtj_throw2collection(BAT* tjCtx_BAT, BAT* ws, str docName, str dummy) {
+    (void)dummy;
+    return  add2collection_handler(0,tjCtx_BAT,ws,docName);
 }
 
 int
 CMDtj_throw2collection_index(BAT* tjCtx_BAT, str locName) {
-    return  MAINtj_throw2collection(1,tjCtx_BAT,NULL,locName,"");
+    return  add2collection_handler(1,tjCtx_BAT,NULL,locName);
 }
 
 /* vim:set shiftwidth=4 expandtab: */
