@@ -2835,7 +2835,6 @@ reduce (PFpa_op_t * p, int goalnt)
 		/* added m_tj_docmgmt_tape to the non removable expressions  */
 		/* in mil_dce() but now the system crashed with a fatal()    */
                 execute (
-		   if_(
 		   	tj_docmgmt_tape (
 			    var(PF_MIL_TIJAH_FTI_TAPE),
                             var (PF_MIL_VAR_WS),
@@ -2843,7 +2842,6 @@ reduce (PFpa_op_t * p, int goalnt)
                             var (docname->name),
                             var (colname->name),
                             var (docmgmt->name))
-			 , nil(),print(lit_str("INCOMPLETE fooled MIL optimizer")))
 		);
 #endif
                 unpin (docmgmt, 1);

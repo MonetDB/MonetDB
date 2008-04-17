@@ -585,7 +585,23 @@ print_statement (PFmil_t * n)
             print_args (n->child[0]);
             milprintf (")");
             break;
-
+#ifdef HAVE_PFTIJAH
+        case m_tj_docmgmt_tape:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", ");
+            print_expression (n->child[5]);
+            milprintf (")");
+            break;
+#endif
         default:
             debug_output;     /* Print MIL code so far when in debug mode. */
 #ifndef NDEBUG
@@ -1184,21 +1200,7 @@ print_expression (PFmil_t * n)
             print_expression (n->child[5]);
             milprintf (")");
             break;
-        case m_tj_docmgmt_tape:
-            milprintf ("%s (", ID[n->kind]);
-            print_expression (n->child[0]);
-            milprintf (", ");
-            print_expression (n->child[1]);
-            milprintf (", ");
-            print_expression (n->child[2]);
-            milprintf (", ");
-            print_expression (n->child[3]);
-            milprintf (", ");
-            print_expression (n->child[4]);
-            milprintf (", ");
-            print_expression (n->child[5]);
-            milprintf (")");
-            break;
+
 #endif
         default:
             debug_output;     /* Print MIL code so far when in debug mode. */
