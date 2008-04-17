@@ -888,6 +888,7 @@ AUTHdecypherValue(str *ret, str *value) {
 	str r = GDKmalloc(sizeof(char) * (strlen(*value) + 1));
 	str w = r;
 	str s = *value;
+	char t = '\0';
 	int escaped = 0;
 	/* we default to some garbage key, just to make password unreadable
 	 * (a space would only uppercase the password) */
@@ -900,15 +901,15 @@ AUTHdecypherValue(str *ret, str *value) {
 
 	/* XOR all characters.  If we encounter a 'one' char after the XOR
 	 * operation, it is an escape, so replace it with the next char. */
-	for (; *s != '\0'; s++) {
-		if (*s == '\1' && escaped == 0) {
+	for (; (t = *s) != '\0'; s++) {
+		if (t == '\1' && escaped == 0) {
 			escaped = 1;
 			continue;
 		} else if (escaped != 0) {
-			*s -= 1;
+			t -= 1;
 			escaped = 0;
 		}
-		*w = *s ^ vaultKey[(w - r) % keylen];
+		*w = t ^ vaultKey[(w - r) % keylen];
 		w++;
 	}
 	*w = '\0';
