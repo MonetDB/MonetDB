@@ -138,7 +138,7 @@ AC_SUBST(ODBC_LIBS)
 
 # Checks for header files.
 AC_HEADER_TIME
-AC_CHECK_HEADERS([crypt.h pwd.h sys/ioctl.h sys/un.h])
+AC_CHECK_HEADERS([crypt.h pwd.h sys/ioctl.h sys/un.h termios.h])
 
 # Checks for library functions.
 AC_CHECK_FUNCS([crypt ftime getlogin gethostname localtime_r popen strcasecmp strncasecmp strtod strtof strtoll strtoull])
