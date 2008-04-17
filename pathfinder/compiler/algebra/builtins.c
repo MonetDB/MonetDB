@@ -4564,7 +4564,7 @@ PFbui_pf_documents_unsafe (const PFla_op_t *loop, bool ordering,
 }
 
 /**
- *  Build in function pf:documents(string*) as element()*
+ *  Build in function pf:documents(string) as element()*
  */
 struct PFla_pair_t
 PFbui_pf_documents_str (const PFla_op_t *loop, bool ordering,
@@ -4589,7 +4589,7 @@ PFbui_pf_documents_str (const PFla_op_t *loop, bool ordering,
 }
 
 /**
- *  Build in function pf:documents-unsafe(string*) as element()*
+ *  Build in function pf:documents-unsafe(string) as element()*
  */
 struct PFla_pair_t
 PFbui_pf_documents_str_unsafe (const PFla_op_t *loop, bool ordering,
@@ -4637,8 +4637,21 @@ PFbui_pf_collection (const PFla_op_t *loop, bool ordering,
     (void) loop; (void) ordering; (void) args;
 
     return (struct PFla_pair_t) {
-        .rel = NULL,
-        .frag = NULL };
+
+        .rel = rank (fun_call (loop,
+                               fun_param (args[0].rel,
+                                          nil(),
+                                          ipi_schema(aat_str)),
+                               ii_schema(aat_pnode),
+                               alg_fun_call_pf_collection,
+                               PFqname (PFns_wild, NULL),
+                               NULL,
+                               att_iter,
+                               alg_occ_unknown),
+                     att_pos,
+                     sortby (att_item)),
+
+        .frag = PFla_empty_set () };
 }
 
 /**

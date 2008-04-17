@@ -309,6 +309,7 @@ enum PFalg_fun_call_t {
     , alg_fun_call_pf_docname              /**< pf:docname                 */
     , alg_fun_call_pf_collections          /**< pf:collections             */
     , alg_fun_call_pf_collections_unsafe   /**< pf:collections_unsafe      */
+    , alg_fun_call_pf_collection           /**< pf:collection */
     , alg_fun_call_xrpc                    /**< XRPC function call         */
     , alg_fun_call_xrpc_helpers            /**< func call for XRPC helpers */
     , alg_fun_call_tijah                   /**< Tijah function call        */

@@ -1059,6 +1059,7 @@ PFalg_fun_call_kind_str (PFalg_fun_call_t kind)
         case alg_fun_call_pf_docname:            return "pf:docname";
         case alg_fun_call_pf_collections:        return "pf:collections";
         case alg_fun_call_pf_collections_unsafe: return "pf:collections_unsafe";
+        case alg_fun_call_pf_collection:         return "pf:collection";
         case alg_fun_call_xrpc:                  return "XRPC";
         case alg_fun_call_xrpc_helpers:          return "XRPC helper";
         case alg_fun_call_tijah:                 return "Tijah";

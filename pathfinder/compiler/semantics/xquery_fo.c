@@ -1858,17 +1858,13 @@ PFfun_xquery_fo (void)
         .arity = 0, .sig_count = 1, .sigs = { {
             .ret_ty = PFty_star( PFty_xs_anyElement ()) } },
         .alg = PFbui_pf_documents_unsafe }
-    , /* pf:documents (string*) as element()* */
-      /* FIXME: although the signature asks for string*, here is
-       *        not defined with PFty_star()                   */  
+    , /* pf:documents (string) as element()* */
       { .ns = PFns_lib, .loc = "documents",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string () },
             .ret_ty = PFty_star( PFty_xs_anyElement ()) } },
         .alg = PFbui_pf_documents_str }
-    , /* pf:documents-unsafe (string*) as element()* */
-      /* FIXME: although the signature asks for string*, here is
-       *        not defined with PFty_star()                   */ 
+    , /* pf:documents-unsafe (string) as element()* */
       { .ns = PFns_lib, .loc = "documents-unsafe",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string () },
