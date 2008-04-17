@@ -913,7 +913,12 @@ opt_complex (PFla_op_t *p)
 
             if (cur->kind != la_eqjoin ||
                 (att_join1 != cur->sem.eqjoin.att1 &&
-                 att_join1 != cur->sem.eqjoin.att2))
+                 att_join1 != cur->sem.eqjoin.att2) ||
+                /* Make sure that both join arguments are key as
+                   otherwise placing the distinct operator above
+                   the plan fragment is incorrect. */
+                !PFprop_key_left (cur->prop, cur->sem.eqjoin.att1) ||
+                !PFprop_key_right (cur->prop, cur->sem.eqjoin.att2))
                 break;
 
             if (PFprop_ocol (L(cur), att_sel_in1) &&
