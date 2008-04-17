@@ -20,7 +20,7 @@ INCLUDES = $(MONETDB_INCS) $(MONETDB5_INCS) $(GEOS_INCS) -I../lib
 lib__geom = {
 	DIR = libdir/MonetDB5
 	SOURCES = geom.mx
-	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MONETDB5_LIBS) -lmal \
+	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MONETDB5_LIBS) -lmonetdb5 \
 	       $(GEOS_LIBS) ../lib/libgeom
 }
 
