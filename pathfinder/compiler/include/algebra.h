@@ -547,7 +547,7 @@ PFalg_sel_t PFalg_sel (PFalg_comp_t comp,
  * instead of decoding info in the function name.
  */
 
-#define MYNODEKIND  aat_pnode
+#define PFTIJAH_NODEKIND  aat_pnode
 #define DOCMGMTTYPE aat_docmgmt
 
 #define PFT_FUN(F)              (strncmp(F,"pftijah_",8)==0)

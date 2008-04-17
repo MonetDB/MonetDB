@@ -2832,6 +2832,8 @@ reduce (PFpa_op_t * p, int goalnt)
 
 #ifdef HAVE_PFTIJAH
 		/* INCOMPLETE, when the print is removed it is optimized out */
+		/* added m_tj_docmgmt_tape to the non removable expressions  */
+		/* in mil_dce() but now the system crashed with a fatal()    */
                 execute (
 		   if_(
 		   	tj_docmgmt_tape (
@@ -2840,8 +2842,8 @@ reduce (PFpa_op_t * p, int goalnt)
                             var (filepath->name),
                             var (docname->name),
                             var (colname->name),
-                            var (docmgmt->name)),
-			 nil(),print(lit_str("INCOMPLETE fooled MIL optimizer")))
+                            var (docmgmt->name))
+			 , nil(),print(lit_str("INCOMPLETE fooled MIL optimizer")))
 		);
 #endif
                 unpin (docmgmt, 1);
