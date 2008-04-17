@@ -118,6 +118,7 @@ typedef struct _dpair {
 	pid_t pid;        /* this process' id */
 	char* dbname;     /* the database that this server serves */
 	pthread_t tid;    /* thread id used when terminating this server */
+	char started;     /* is it started? (and can be terminated) */
 	struct _dpair* next;
 }* dpair;
 static dpair topdp = NULL;
@@ -490,7 +491,7 @@ forkMserver(str database, sabdb** stats, int force)
 		argv[c++] = conffile;
 		argv[c++] = dbname;
 		argv[c++] = "--dbinit=include sql;"; /* yep, no quotes needed! */
-		argv[c++] = "--set"; argv[c++] = "daemon=yes";
+		argv[c++] = "--set"; argv[c++] = "monet_daemon=yes";
 		argv[c++] = "--set"; argv[c++] = "mapi_open=true";
 		argv[c++] = "--set"; argv[c++] = "mapi_port=0"; /* force autosensing! */
 		argv[c++] = "--set"; argv[c++] = vaultkey;
@@ -518,9 +519,12 @@ forkMserver(str database, sabdb** stats, int force)
 		dp->next = NULL;
 		dp->pid = pid;
 		dp->dbname = GDKstrdup(database);
+		dp->started = 0;
 
 		/* wait for the child to open up a communication channel */
 		for (i = 0; i < 20; i++) {	/* wait up to 10 seconds */
+			/* give the database a break */
+			MT_sleep_ms(500);
 			/* stats cannot be NULL, as we don't allow starting not
 			 * existing databases */
 			SABAOTHfreeStatus(stats);
@@ -539,19 +543,28 @@ forkMserver(str database, sabdb** stats, int force)
 			{
 				break;
 			}
-			MT_sleep_ms(500);
 		}
-		if (i > 20) {
-			/* we've never found a connection */
+		/* if we've never found a connection, try to figure out why */
+		if (i >= 20) {
 			switch ((*stats)->state) {
 				case SABdbRunning:
 					/* not sure what's going on with it, but its not
 					 * like we want to have it, so kill it */
-					terminateProcess(&dp);
+					terminateProcess(dp);
+					/* allow the logger to catch up */
+					MT_sleep_ms(100);
+					/* remove from the list again */
+					GDKfree(dp->dbname);
+					GDKfree(dp);
+					dp->next = NULL;
 					return(newErr(
 								"timeout when waiting for database '%s' to "
 								"open up a communication channel", database));
 				case SABdbCrashed:
+					/* remove from the list again */
+					GDKfree(dp->dbname);
+					GDKfree(dp);
+					dp->next = NULL;
 					return(newErr(
 								"database '%s' has crashed after starting, "
 								"manual intervention needed", database));
@@ -562,12 +575,22 @@ forkMserver(str database, sabdb** stats, int force)
 					 * in this case GDK may still be trying to start up,
 					 * or that it indeed cleanly shut itself down after
 					 * starting... kill it in any case. */
-					terminateProcess(&dp);
+					terminateProcess(dp);
+					/* allow the logger to catch up */
+					MT_sleep_ms(100);
+					/* remove from the list again */
+					GDKfree(dp->dbname);
+					GDKfree(dp);
+					dp->next = NULL;
 					return(newErr(
 								"database '%s' either needs a longer timeout "
 								"to start up, or appears to cleanly shut "
 								"itself down after starting", database));
 				default:
+					/* remove from the list again */
+					GDKfree(dp->dbname);
+					GDKfree(dp);
+					dp->next = NULL;
 					return(newErr("unknown state: %d", (int)(*stats)->state));
 			}
 		}
@@ -575,6 +598,9 @@ forkMserver(str database, sabdb** stats, int force)
 			merlog("database '%s' has been put into maintenance "
 					"mode during startup", database);
 		}
+
+		/* from now on the SIGCHLD handler can find this database */
+		dp->started = 1;
 
 		return(NO_ERR);
 	}
@@ -1098,8 +1124,13 @@ controlRunner(void *d)
 		} else {
 			*p++ = '\0';
 			if (strcmp(p, "start") == 0) {
+				err e;
 				merlog("starting database %s due to control signal", q);
-				forkMserver(q, &stats, 1);
+				if ((e = forkMserver(q, &stats, 1)) != NO_ERR) {
+					fprintf(stderr, "failed to fork mserver: %s\n",
+							getErrMsg(e));
+					freeErr(e);
+				}
 				if (stats != NULL)
 					SABAOTHfreeStatus(&stats);
 			} else if (strcmp(p, "stop") == 0 ||
@@ -1194,7 +1225,7 @@ childhandler(int sig, siginfo_t *si, void *unused)
 		if (p->pid == si->si_pid) {
 			/* wait a little (we're not in a hurry anyway, are we?) such
 			 * that the logger catches the messages (if any). */
-			MT_sleep_ms(40);
+			MT_sleep_ms(100);
 			/* remove it, disconnect first, then free (because the
 			 * logger might access it otherwise after the free) */
 			q->next = p->next;
@@ -1208,6 +1239,9 @@ childhandler(int sig, siginfo_t *si, void *unused)
 				merlog("database '%s' (%d) has crashed (dumped core)",
 						p->dbname, p->pid);
 			}
+			/* if we're starting up, don't clean up */
+			if (p->started == 0)
+				return;
 			if (p->dbname)
 				GDKfree(p->dbname);
 			GDKfree(p);
