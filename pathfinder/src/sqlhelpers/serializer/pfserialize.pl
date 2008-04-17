@@ -78,7 +78,7 @@ sub build_result_map {
     # collect them
     if (($querytype eq 'ATOMIC_AND_NODES')
         || ($querytype eq 'ATOMIC_ONLY')) {
-        foreach my $t ('int', 'str', 'dbl', 'dec') {
+        foreach my $t ('int', 'str', 'dbl', 'dec', 'bool') {
             if (defined $schema->{"item_$t"}) {
                 $result_map->{"item_$t"} = $schema->{"item_$t"};
             }
@@ -182,6 +182,16 @@ sub set_schema {
 
 ############################### Utils #####################################
 
+# implements semantics of boolean columns 
+sub boolean {
+    my $boolval = shift;
+
+    ($boolval == 0 or $boolval == 1) 
+       or die "wrong boolean value";
+
+    return (($boolval == 0)?"false":"true");
+}
+
 # read query from stdin or a file
 sub read_query {
     my $schema = shift;
@@ -216,7 +226,7 @@ sub read_query {
             # these are the strings we look for
             if ($line =~ /\b(Type|
                              Column\s+\((pre|size|kind|
-                                 value|name|uri|item_(int|dec|dbl|str))\)):\s+
+                                 value|name|uri|item_(int|dec|dbl|str|bool))\)):\s+
                              \b(\w+)\b/x) {
 
 
@@ -261,7 +271,8 @@ sub read_query {
                     && (defined $schema->{'item_int'}
                         || defined $schema->{'item_dec'}
                         || defined $schema->{'item_dbl'} 
-                        || defined $schema->{'item_str'})))));
+                        || defined $schema->{'item_str'}
+                        || defined $schema->{'item_bool'})))));
 }
 
 # check if a namespace uri is in the given array
@@ -400,10 +411,12 @@ sub print_xml {
                 print ' ';
             }
 
-            foreach my $t ('int', 'str', 'dbl', 'dec') {
+            foreach my $t ('int', 'str', 'dbl', 'dec', 'bool') {
 
                 if (defined $row->{"item_$t"} && defined $row->{"item_$t"}) {
-                    print $row->{"item_$t"};
+                    # boolean values are stored as integers in
+                    # the SQL backend, and we have to deal differently with them
+                    print (($t eq "bool")?boolean($row->{"item_bool"}):$row->{"item_$t"});
                     $last = 'ATOM';
                 }
             }

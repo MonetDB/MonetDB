@@ -941,7 +941,7 @@ combine_all (PFarray_t *unused)
 {
     /*   t1   -->   t2 & t1
      *   t2
-     */ 
+     */
 
     PFty_t t1;
     PFty_t t2;
@@ -1944,7 +1944,7 @@ static xmlSAXHandler schema_import_sax = {
   , .processingInstruction = 0
   , .comment               = 0
   , .warning               = 0
-  , .fatalError            = 0 
+  , .fatalError            = 0
   , .getParameterEntity    = 0
   , .cdataBlock            = 0
   , .externalSubset        = 0
@@ -2353,7 +2353,7 @@ silent_error (void *ctx, const char *msg, ...)
  * @ctx:  an error context
  * @msg:  the message to display/transmit
  * @...:  extra parameters for the message display
- * 
+ *
  * Default handler for out of context error messages.
  */
 void
@@ -2413,7 +2413,7 @@ schema_import (PFns_t ns, char *xsd_loc)
     if (! ctx)
         PFoops (OOPS_SCHEMAIMPORT,
                 "failed to open XML Schema file at URI `%s'", xsd_loc);
-               
+
     /* hook in the callbacks driving the type mapping DFA */
     ctx->sax = &schema_import_sax;
 

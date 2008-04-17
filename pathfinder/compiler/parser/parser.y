@@ -109,7 +109,7 @@ extern unsigned int  cur_row;
  * the parser for each imported module.  In that case we _only_ allow
  * modules to be read and refuse query scripts.
  */
-static bool module_only = false;
+static bool module_only;
 
 #ifdef ENABLE_MILPRINT_SUMMER
 
@@ -118,14 +118,14 @@ static bool module_only = false;
  * and variable numbers in milprint_summer (so scope numbers of 
  * different modules that are compiled separately don't collide).
  */
-static unsigned int module_base = 0;
+static unsigned int module_base;
 
 /*
  * the number of functions declared in a query. Used in milprint_summer to
  * be able to suppress code generation for all functions defined
  * in modules;
  */
-static int num_fun = 0;
+static int num_fun;
 
 #endif
 
@@ -136,14 +136,14 @@ static int num_fun = 0;
  * namespace given in the "import module" statement.  If this variable
  * is != NULL, we only accept modules with the given namespace.
  */
-static char *req_module_ns = NULL;
+static char *req_module_ns;
 
 /**
  * URI of the module that we are currently parsing.
  *
  * Only set for imported modules, NULL otherwise.
  */
-static char *current_uri = NULL;
+static char *current_uri;
 
 /**
  * Work list of modules that we have to load.
@@ -152,7 +152,7 @@ static char *current_uri = NULL;
  * the list (if it is not in there already).  We process the work list
  * after parsing the main query file.
  */
-static PFarray_t *modules = NULL;
+static PFarray_t *modules;
 
 /**
  * Each item in the work list is a id/namespace/URI triple.  The URI
@@ -2948,6 +2948,22 @@ parse_module (char *ns, char *uri)
         PFoops (OOPS_PARSE, "error parsing module from %s", uri);
 
     return root;
+}
+
+/* initialize global variables */
+void
+PFparser_init (void)
+{
+    module_only = false;
+
+#ifdef ENABLE_MILPRINT_SUMMER
+    module_base = 0;
+    num_fun = 0;
+#endif
+
+    req_module_ns = NULL;
+    current_uri = NULL;
+    modules = NULL;
 }
 
 /**

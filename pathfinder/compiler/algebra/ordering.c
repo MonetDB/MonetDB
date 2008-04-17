@@ -72,7 +72,7 @@ PFord_set (void)
 }
 
 PFord_ordering_t
-PFord_refine (const PFord_ordering_t ordering, 
+PFord_refine (const PFord_ordering_t ordering,
               const PFalg_att_t attribute,
               const bool direction)
 {
@@ -84,7 +84,7 @@ PFord_refine (const PFord_ordering_t ordering,
         *((PFalg_order_item_t *) PFarray_add (ret))
             = *((PFalg_order_item_t *) PFarray_at (ordering, i));
 
-    *((PFalg_order_item_t *) PFarray_add (ret)) 
+    *((PFalg_order_item_t *) PFarray_add (ret))
         = (PFalg_order_item_t) { .name = attribute, .dir = direction };
 
     return ret;
@@ -162,7 +162,7 @@ PFord_str (const PFord_ordering_t o)
     PFarray_printf (a, "<");
 
     for (unsigned int i = 0; i < PFord_count (o); i++)
-        PFarray_printf (a, "%s%s (%s)", i ? "," : "", 
+        PFarray_printf (a, "%s%s (%s)", i ? "," : "",
                         PFatt_str (PFord_order_col_at (o, i)),
                         PFord_order_dir_at (o, i) == DIR_ASC
                         ? "asc" : "desc");
@@ -344,7 +344,7 @@ PFord_permutations (const PFord_ordering_t ordering)
      */
     if (PFord_count (ordering) == 0)
         return PFord_set_add (ret, PFordering ());
-    
+
     for (unsigned int i = 0; i < PFord_count (ordering); i++) {
 
         /* Compute all permutations with attribute at position i removed. */

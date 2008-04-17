@@ -2,8 +2,8 @@
 
 /**
  * @file
- * 
- * Some generic String Utilities 
+ *
+ * Some generic String Utilities
  *
  *
  * Copyright Notice:
@@ -29,7 +29,7 @@
  * 2000-2005 University of Konstanz and (C) 2005-2008 Technische
  * Universitaet Muenchen, respectively.  All Rights Reserved.
  *
- * $Id$ 
+ * $Id$
  */
 
 
@@ -82,7 +82,7 @@ ascii_tolower (int c)
 
 
 
-char * 
+char *
 PFstrUtils_substring (const char *start, const char *end)
 {
   char *result = malloc (end - start + 1);
@@ -97,13 +97,13 @@ PFstrUtils_substring (const char *start, const char *end)
 }
 
 
-/*	Function Name: SkipSpaces
- *	Arguments:     str -- string
- *	Description:   Skips the spaces in the head of str
- *	Returns:       A pointer to the first non space character in the string
+/*      Function Name: SkipSpaces
+ *      Arguments:     str -- string
+ *      Description:   Skips the spaces in the head of str
+ *      Returns:       A pointer to the first non space character in the string
  */
 
-char* 
+char*
 PFstrUtils_skipSpaces(char* str)
 {
   while (*str++ == ' ');
@@ -112,29 +112,29 @@ PFstrUtils_skipSpaces(char* str)
 
 
 
-/*	Function Name: SkipUntilSubString
- *	Arguments:     str        -- string
+/*      Function Name: SkipUntilSubString
+ *      Arguments:     str        -- string
  *                     sub_string -- substring until to skip
- *	Description:   Find a substring in str and skip to the next character
- *	Returns:       A pointer to the first character after the substring, the
+ *      Description:   Find a substring in str and skip to the next character
+ *      Returns:       A pointer to the first character after the substring, the
  *                     same string str if the substring is not found
  */
 
-char* 
+char*
 PFstrUtils_skipUntilSubString(char* str, char* sub_string)
 {
   char* initial_str;
   char* initial_sub_string;
   char current_char;
-  
+
   initial_str = str;
   initial_sub_string = sub_string;
   current_char = *str++;
   while (current_char != '\0') {
     while(current_char == *sub_string++ &&
-	  current_char != '\0'){
-      if (*sub_string == '\0') 
-	return(str);
+          current_char != '\0'){
+      if (*sub_string == '\0')
+        return(str);
       current_char = *str++;
     }
     sub_string = initial_sub_string;
@@ -144,26 +144,26 @@ PFstrUtils_skipUntilSubString(char* str, char* sub_string)
 }
 
 
-/*	Function Name: DupUntil
- *	Arguments:     from_str   -- the string to duplicate
+/*      Function Name: DupUntil
+ *      Arguments:     from_str   -- the string to duplicate
  *                     until_char -- char delimiter
- *	Description:   Returns the substring from the begining of from_str
+ *      Description:   Returns the substring from the begining of from_str
  *                     to the char delimeter (without including it).
- *                     Returns the null string if until_char is not found. 
- *	Returns:       The duplicate string
+ *                     Returns the null string if until_char is not found.
+ *      Returns:       The duplicate string
  */
 
-char* 
+char*
 PFstrUtils_dupUntil(char* from_str, char until_char)
 {
   char* initial_string;
   char* return_string;
-  
+
   initial_string = from_str;
   while(*from_str != until_char && *from_str != '\0') {
     from_str++;
   }
-  if (*from_str == '\0') 
+  if (*from_str == '\0')
     return(strdup(""));
   *from_str = '\0';
   return_string = strdup(initial_string);
@@ -172,14 +172,14 @@ PFstrUtils_dupUntil(char* from_str, char until_char)
 }
 
 
-/*	Function Name: BeginsWith
- *	Arguments:     str1 -- greater string
+/*      Function Name: BeginsWith
+ *      Arguments:     str1 -- greater string
  *          str2 -- smaller string
- *	Description:   Compares the beginnings of both string
- *	Returns:       True if str1 begins with str2
+ *      Description:   Compares the beginnings of both string
+ *      Returns:       True if str1 begins with str2
  */
 
-bool 
+bool
 PFstrUtils_beginsWith(const char* str1, const char* str2)
 {
 
@@ -224,7 +224,7 @@ PFstrUtils_memistr (const void *buffer, size_t buflen, const char *sub)
           t = buf;
           s = (const unsigned char *)sub ;
           n = buflen;
-	}
+        }
     }
   return NULL;
 }
@@ -241,17 +241,17 @@ PFstrUtils_trim_spaces( char *str )
     string = str;
     /* find first non space character */
     for( p=string; *p && isspace( *(byte*)p ) ; p++ )
-	;
+        ;
     /* move characters */
     for( (mark = NULL); (*string = *p); string++, p++ )
-	if( isspace( *(byte*)p ) ) {
-	    if( !mark )
-		mark = string ;
-	}
-	else
-	    mark = NULL ;
+        if( isspace( *(byte*)p ) ) {
+            if( !mark )
+                mark = string ;
+        }
+        else
+            mark = NULL ;
     if( mark )
-	*mark = '\0' ;  /* remove trailing spaces */
+        *mark = '\0' ;  /* remove trailing spaces */
 
     return str ;
 }
@@ -265,18 +265,17 @@ PFstrUtils_trim_trailing_spaces( char *string )
     char *p, *mark;
 
     for( mark = NULL, p = string; *p; p++ ) {
-	if( isspace( *(byte*)p ) ) {
-	    if( !mark )
-		mark = p;
-	}
-	else
-	    mark = NULL;
+        if( isspace( *(byte*)p ) ) {
+            if( !mark )
+                mark = p;
+        }
+        else
+            mark = NULL;
     }
     if( mark )
-	*mark = '\0' ;
+        *mark = '\0' ;
 
     return string ;
 }
 
-
-         
+/* vim:set shiftwidth=4 expandtab: */

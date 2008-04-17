@@ -81,12 +81,18 @@ static char *oops_msg[] = {
 };
 
 /**
- * global buffer for collecting all errors 
+ * global buffer for collecting all errors
+ * (made visible to the outside world in include/compile_interface.h)
+ *
+ * NOTE: variable is re-used in subsequent pf runs (in server-side setup)
  */
 char *PFerrbuf = NULL;
 
 /**
  * global stack threshold to guard against too deep recursions
+ * (made visible to the outside world in include/oops.h)
+ *
+ * NOTE: variable is re-used in subsequent pf runs (in server-side setup)
  */
 char *PFmaxstack = NULL;
 
@@ -146,7 +152,7 @@ PFlog (const char *msg, ...)
  * Does the work for #PFoops and #PFoops_loc.
  */
 void
-oops (PFrc_t rc, bool halt, 
+oops (PFrc_t rc, bool halt,
       const char *file, const char *func, const int line,
       const char *msg, va_list msgs)
 {
@@ -156,13 +162,13 @@ oops (PFrc_t rc, bool halt,
     mbuf = PFstrndup (oops_msg[-rc], OOPS_SIZE);
 
     if (msg) {
-	/* generate an error message of the form `<oops_msg>: <msg>' */
-	nmsg = strlen (oops_msg[-rc]);
-	mbuf[nmsg++] = ':';
-	mbuf[nmsg++] = ' ';
+        /* generate an error message of the form `<oops_msg>: <msg>' */
+        nmsg = strlen (oops_msg[-rc]);
+        mbuf[nmsg++] = ':';
+        mbuf[nmsg++] = ' ';
 
-	vsnprintf (mbuf + nmsg, OOPS_SIZE - nmsg, msg, msgs);
-	mbuf[OOPS_SIZE - 1] = 0;
+        vsnprintf (mbuf + nmsg, OOPS_SIZE - nmsg, msg, msgs);
+        mbuf[OOPS_SIZE - 1] = 0;
 
         oops_worker_call ("%s", mbuf);
     }
@@ -176,10 +182,10 @@ oops (PFrc_t rc, bool halt,
          */
         oops_worker_call ("# halted in %s (%s), line %d", file, func, line);
 #else
-	/* fool compilers that otherwise complain about unused parameters */
-	(void)file;
-	(void)func;
-	(void)line;
+        /* fool compilers that otherwise complain about unused parameters */
+        (void)file;
+        (void)func;
+        (void)line;
 #endif
         PFexit(-rc);
     }
@@ -187,14 +193,14 @@ oops (PFrc_t rc, bool halt,
 
 
 /**
- * Logs message code @a rc and message string @a msg, then halts 
+ * Logs message code @a rc and message string @a msg, then halts
  * the compiler.
  *
  * You are expected to call this function whenever you encounter a
  * failure or error condition you cannot handle locally: @a rc
  * describes the general kind of the error (see oops.h for known
  * error kinds OOPS_*), @a msg is meant to be a detailed description of
- * the failure (you may use `printf'-like formatting).  
+ * the failure (you may use `printf'-like formatting).
  *
  * NB. DOES NOT RETURN.
  *
@@ -206,7 +212,7 @@ oops (PFrc_t rc, bool halt,
  * @return Returns rc
  */
 void
-PFoops_ (PFrc_t rc, 
+PFoops_ (PFrc_t rc,
          const char *file, const char *func, const int line,
          const char *msg, ...)
 {
@@ -216,7 +222,7 @@ PFoops_ (PFrc_t rc,
 
     /* does not return */
     oops (rc, true, file, func, line, msg, args);
-    
+
     PFexit(EXIT_FAILURE);
 }
 
@@ -225,7 +231,7 @@ PFoops_ (PFrc_t rc,
  * as @a loc. The resulting string looks like "at (1,1-3,7): ...".
  */
 void
-PFoops_loc_ (PFrc_t rc, PFloc_t loc, 
+PFoops_loc_ (PFrc_t rc, PFloc_t loc,
              const char *file, const char *func, const int line,
              const char *msg, ...)
 {
@@ -258,7 +264,7 @@ PFinfo (PFrc_t rc, const char *msg, ...)
     va_list args;
 
     va_start (args, msg);
-    oops (rc, false, 0, 0, 0, msg, args); 
+    oops (rc, false, 0, 0, 0, msg, args);
     va_end (args);
 }
 

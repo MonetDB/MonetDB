@@ -4016,6 +4016,36 @@ function_conversion (const PFcnode_t *e, PFty_t expected)
 }
 
 
+/* initialize global values */
+void 
+PFfs_init (void)
+{
+    PFquery = NULL;
+
+    /* initially, the context item is undefined */
+    fs_dot = NULL;
+    fs_position = NULL;
+    fs_last = NULL;
+
+    /* initially, there is no function on the current function stack */
+    funs = PFarray (sizeof (PFfun_t *), 20);
+
+    /* initially, there is no argument list on the current arguments stack */
+    args = PFarray (sizeof (PFcnode_t *), 20);
+
+    /* initially, there nothing on the current argument number stack */
+    arg_num = PFarray (sizeof (short), 20);
+
+    /* We collect function signatures in the query prolog here. */
+    fun_sigs = nil ();
+
+    /* We collect variable declarations in the query prolog
+     * in a root/hole pair. */
+    var_decls.root = var_decls.hole = NULL;
+
+    any = PFty_xs_anyType ();
+}
+
 /**
  * Compile parse tree into XQuery Core tree.
  *
@@ -4027,29 +4057,8 @@ PFfs (PFpnode_t *r, PFquery_t *query)
 {
     assert (r);
 
+    PFfs_init ();
     PFquery = query;
-    core_vars = 0;
-
-    /* initially, there is no function on the current function stack */
-    funs = PFarray (sizeof (PFfun_t *), 20);
-
-    /* initially, there is no argument list on the current arguments stack */
-    args = PFarray (sizeof (PFcnode_t *), 20);
-
-    /* initially, there nothing on the current argument number stack */
-    arg_num = PFarray (sizeof (short), 20);
-
-    /* initially, the context item is undefined */
-    fs_dot = NULL;
-    fs_position = NULL;
-    fs_last = NULL;
-
-    /* We collect function signatures in the query prolog here. */
-    fun_sigs = nil ();
-
-    /* We collect variable declarations in the query prolog
-     * in a root/hole pair. */
-    var_decls.root = var_decls.hole = NULL;
 
     /* label the parse tree bottom up */
     PFfs_label (r);

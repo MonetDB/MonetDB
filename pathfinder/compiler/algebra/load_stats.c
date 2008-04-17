@@ -2,8 +2,8 @@
 
 /**
  * @file
- * Create a guide tree from a given file. The DTD of the guide tree is 
- * hardcoded in this file and is: 
+ * Create a guide tree from a given file. The DTD of the guide tree is
+ * hardcoded in this file and is:
  *      <!ELEMENT node (EMPTY | node*)>
  *      <!ATTLIST node guide CDATA #REQUIRED>
  *      <!ATTLIST node count CDATA #REQUIRED>
@@ -40,7 +40,7 @@
  */
 
 
-#include "pathfinder.h"	
+#include "pathfinder.h" 
 
 #include <stdio.h>
 #ifdef HAVE_STDBOOL_H
@@ -59,12 +59,12 @@
 #include "options.h"
 
 /* Current node in the XML file */
-PFguide_tree_t  *current_guide_node;
+static PFguide_tree_t *current_guide_node;
 
 /* Root guide node in the XML file */
-PFguide_tree_t  *root_guide_node;
+static PFguide_tree_t *root_guide_node;
 
-int level;
+static int level;
 
 /* start of a XML element */
 static void
@@ -82,29 +82,29 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
     PFguide_kind_t kind     = text; /* kind if the guide node */
     char          *tag_uri  = NULL; /* tag uri of the guide node */
     char          *tag_name = NULL; /* tag name of the guide node */
-    char          *attribute_name; 
+    char          *attribute_name;
 
     (void) ctx;                 /* pacify compiler */
     (void) tagname;             /* pacify compiler */
-    
+
     /* get attributes */
     if ((atts != NULL) && *atts) {
         while (*atts) {
-            /* get attribute name */ 
+            /* get attribute name */
             attribute_name = (char*)atts[0];
-     
+
             if (strcmp (attribute_name, "guide") == 0)
                 guide = (unsigned int) atoi((char *)atts[1]);
-    
+
             if (strcmp (attribute_name, "count") == 0)
-                count = (unsigned int) atoi((char *)atts[1]); 
-    
+                count = (unsigned int) atoi((char *)atts[1]);
+
             if (strcmp (attribute_name, "min") == 0)
-                min = (unsigned int) atoi((char *)atts[1]); 
-    
+                min = (unsigned int) atoi((char *)atts[1]);
+
             if (strcmp (attribute_name, "max") == 0)
-                max = (unsigned int) atoi((char *)atts[1]); 
-    
+                max = (unsigned int) atoi((char *)atts[1]);
+
             if (strcmp (attribute_name, "kind") == 0) {
                 kind_int = (unsigned int) atoi ((char *) atts[1]);
                 switch(kind_int) {
@@ -117,17 +117,17 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
                     default: assert (0); break;
                 }
             }
-    
+
             if (strcmp (attribute_name, "uri") == 0)
                 tag_uri = (char*) atts[1];
-    
+
             if (strcmp (attribute_name, "name") == 0)
                 tag_name = (char*) atts[1];
-    
+
             atts += 2;
         }
     }
-    
+
     /* consistency checks */
     switch (kind) {
         case elem:
@@ -176,7 +176,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
         }
         else
             ns = PFns_wild;
-    
+
         new_guide_node->name = PFqname (ns, name_copy);
     }
 
@@ -186,9 +186,9 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
 
         /* insert new guide node in the child list */
         if (!current_guide_node->child_list)
-            current_guide_node->child_list = 
+            current_guide_node->child_list =
                 PFarray (sizeof (PFguide_tree_t**), 10);
-        
+
         *(PFguide_tree_t**)
             PFarray_add (current_guide_node->child_list) =
                 new_guide_node;
@@ -197,7 +197,7 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
     }
 
     /* set actual node as current node */
-    current_guide_node = new_guide_node;        
+    current_guide_node = new_guide_node;
     /* increase level */
     level++;
 }
@@ -247,7 +247,7 @@ static xmlSAXHandler saxhandler = {
 };
 
 /* create the guide tree and return it */
-PFguide_tree_t* 
+PFguide_tree_t*
 PFguide_tree()
 {
 
@@ -255,7 +255,7 @@ PFguide_tree()
     char  *filename = NULL;
     /* Read guide filename as option */
     PFarray_t *options = NULL;
-    
+
     /* get the filename */
     options = PFenv_lookup (PFoptions,
         PFqname (PFns_lib, "guide"));
@@ -265,7 +265,7 @@ PFguide_tree()
     } else {
         /* it will be used the first item only to create the guide */
         filename = *((char **) PFarray_at (options, 0));
-    } 
+    }
 
     /* DTD of the guide XML file */
     char *dtd = "<!ELEMENT node (EMPTY | node*)>"
@@ -283,8 +283,8 @@ PFguide_tree()
     xmlDtdPtr                dtdPtr;
     /* to read the DTD from memory */
     xmlParserInputBufferPtr  inputBuffer;
-    /* the resulting document tree */    
-    xmlDocPtr doc;  
+    /* the resulting document tree */
+    xmlDocPtr doc;
     /* result of parsing */
     int result = 0;
 
@@ -295,18 +295,18 @@ PFguide_tree()
     doc = xmlRecoverFile(filename);
 
     /* Create a buffered parser input from memory */
-    inputBuffer = xmlParserInputBufferCreateMem(dtd, strlen(dtd), 
+    inputBuffer = xmlParserInputBufferCreateMem(dtd, strlen(dtd),
         XML_CHAR_ENCODING_NONE);
 
     /* Load and parse a DTD */
-    dtdPtr = xmlIOParseDTD(NULL, inputBuffer, 
+    dtdPtr = xmlIOParseDTD(NULL, inputBuffer,
         XML_CHAR_ENCODING_NONE);
 
     /* Try to validate the document against the dtd */
     result = xmlValidateDtd(validCtxt, doc, dtdPtr);
-    
+
     if (!result)
-        PFoops (OOPS_FATAL, "Guide optimization - XML input is invalid.\n");  
+        PFoops (OOPS_FATAL, "Guide optimization - XML input is invalid.\n");
 
     /* start XML parsing */
     xmlParserCtxtPtr   ctx;
@@ -314,6 +314,7 @@ PFguide_tree()
     ctx = xmlCreateFileParserCtxt (filename);
     ctx->sax = &saxhandler;
 
+    /* initialize global variables */
     current_guide_node = NULL;
     root_guide_node    = NULL;
     level              = 0;
@@ -322,7 +323,7 @@ PFguide_tree()
 
     /* Document is not well-formed */
     if (!ctx->wellFormed)
-        PFoops (OOPS_FATAL, "Guide optimization - " 
+        PFoops (OOPS_FATAL, "Guide optimization - "
                 "XML input is not well-formed.\n");
 
     return root_guide_node;

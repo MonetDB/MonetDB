@@ -83,8 +83,8 @@ Usage: pf [OPTION] [FILE]
          {  remove proxy operators
          P  infer all properties
          _  does nothing (used for structuring the options)
-            (default for option -A is: '-o OIKDCG_VGO_[J]OKVCG}IM__{_[J]OKVCG}IM__{_[J]OKVCGCG}IM__{_[J]OKVCG}IMTS{_[J]OKVCGCG}IMTS{_[J]OKVCG}IMTS{_[J]OKVCGE[]CGP')
-            (default for option -S is: '-o OIKDCG_VGO_[J]OKVCG}IM__{_[J]OKVCG}IM__{_[J]OKVCGCG}IM__{_[J]OKVCG}IMTS{_[J]OKVCGUCG}IMTS{_[J]OKVCGU}IMTS{_[J]OKVCGUE[]CGP}IQ[J]}IQ[J]IOKVCGQUCGP')
+            (default for option -A is: '-o OIKDCG_VGO_[J]OKVCGN}IM__{_[J]OKVCG}IM__{_[J]OKVCGCG}IM__{_[J]OKVCG}IMTS{_[J]OKVCGCG}IMTS{_[J]OKVCG}IMTS{_[J]OKVCGE[]CGP')
+            (default for option -S is: '-o OIKDCG_VGO_[J]OKVCGN}IM__{_[J]OKVCG}IM__{_[J]OKVCGCG}IM__{_[J]OKVCG}IMTS{_[J]OKVCGUCG}IMTS{_[J]OKVCGU}IMTS{_[J]OKVCGUE[]CGP}IQ[J]}IQ[J]IOKVCGQUCGP')
 
 = -e[0|1], --mil-dead-code-elimination=[0|1]: dead code elimination (on the MIL level):
          0  disable dead code elimination

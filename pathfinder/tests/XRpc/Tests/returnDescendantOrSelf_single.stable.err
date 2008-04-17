@@ -1,0 +1,17 @@
+stderr of test 'returnDescendantOrSelf_single` in directory 'tests/XRpc` itself:
+
+
+# 17:11:50 >  
+# 17:11:50 >  Mtimeout -timeout 180 Mserver "--config=/ufs/zhang/scratch/monet-dev-install/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/zhang/scratch/monet-dev-install/lib/MonetDB" --set "gdk_dbfarm=/ufs/zhang/scratch/monet-dev-install/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/zhang/scratch/monet-dev-install/var/MonetDB/log" --set mapi_port=39455 --set monet_prompt= --trace "--dbname=mTests_tests_XRpc" --dbinit="module(pathfinder); pfstart();" returnDescendantOrSelf.prologue ; echo ; echo Over..
+# 17:11:50 >  
+
+
+# 17:11:51 >  
+# 17:11:51 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=39455 returnDescendantOrSelf.xq
+# 17:11:51 >  
+
+
+# 17:11:51 >  
+# 17:11:51 >  Done.
+# 17:11:51 >  
+

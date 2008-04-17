@@ -68,12 +68,6 @@ static PFla_op_t *
 boolean_op (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t att1,
             PFalg_att_t att2, PFalg_att_t res);
 
-/* Encapsulates initialization stuff common to unary operators. */
-static PFla_op_t *
-unary_op (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t att,
-          PFalg_att_t res);
-
-
 /**
  * Create a logical algebra operator (leaf) node.
  *
@@ -152,7 +146,8 @@ la_op_wire2 (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
  * is an already existing node that may not be split into multiple
  * operators (e.g. a number operator).
  */
-PFla_op_t * PFla_dummy (PFla_op_t *n)
+PFla_op_t *
+PFla_dummy (PFla_op_t *n)
 {
     /* always create the dummy node as otherwise
        the general optimization will relabel quite
@@ -945,7 +940,12 @@ PFla_thetajoin_opt_internal (const PFla_op_t *n1, const PFla_op_t *n2,
  *   specifictions.
  */
 PFla_op_t *
+#ifndef NDEBUG
+PFla_project__ (const PFla_op_t *n, unsigned int count, PFalg_proj_t *proj,
+                const char *file, const char *func, const int line)
+#else
 PFla_project_ (const PFla_op_t *n, unsigned int count, PFalg_proj_t *proj)
+#endif
 {
     PFla_op_t     *ret = la_op_wire1 (la_project, n);
     unsigned int   i;
@@ -980,18 +980,60 @@ PFla_project_ (const PFla_op_t *n, unsigned int count, PFalg_proj_t *proj)
             }
 
         /* did we find the attribute? */
-        if (j >= n->schema.count)
+        if (j >= n->schema.count) {
+#ifndef NDEBUG
+            fprintf (stderr,
+                    "\nThe following error is triggered"
+                    " in line %i of function %s() in file %s\n"
+                    "The input has the schema (",
+                    line, func, file);
+            for (unsigned int k = 0; k < n->schema.count; k++)
+                fprintf (stderr, "%s%s",
+                         k ? ", " : "",
+                         PFatt_str (n->schema.items[k].name));
+            fprintf (stderr,
+                     ")\nThe projection list contains"
+                     " the following mappings (");
+            for (unsigned int k = 0; k < count; k++)
+                fprintf (stderr, "%s%s:%s",
+                         k ? ", " : "",
+                         PFatt_str (proj[k].new),
+                         PFatt_str (proj[k].old));
+            fprintf (stderr, ")\n\n");
+#endif
             PFoops (OOPS_FATAL,
                     "attribute `%s' referenced in projection not found",
                     PFatt_str (ret->sem.proj.items[i].old));
+        }
 
         /* see if we have duplicate attributes now */
         for (j = 0; j < i; j++)
-            if (ret->sem.proj.items[i].new == ret->sem.proj.items[j].new)
+            if (ret->sem.proj.items[i].new == ret->sem.proj.items[j].new) {
+#ifndef NDEBUG
+                fprintf (stderr,
+                        "\nThe following error is triggered"
+                        " in line %i of function %s() in file %s\n"
+                        "The input has the schema (",
+                        line, func, file);
+                for (unsigned int k = 0; k < n->schema.count; k++)
+                    fprintf (stderr, "%s%s",
+                             k ? ", " : "",
+                             PFatt_str (n->schema.items[k].name));
+                fprintf (stderr,
+                         ")\nThe projection list contains"
+                         " the following mappings (");
+                for (unsigned int k = 0; k < count; k++)
+                    fprintf (stderr, "%s%s:%s",
+                             k ? ", " : "",
+                             PFatt_str (proj[k].new),
+                             PFatt_str (proj[k].old));
+                fprintf (stderr, ")\n\n");
+#endif
                 PFoops (OOPS_FATAL,
                         "projection results in duplicate attribute `%s' "
                         "(attributes %i and %i)",
                         PFatt_str (ret->sem.proj.items[i].new), i+1, j+1);
+            }
     }
 
     return ret;
@@ -1219,7 +1261,8 @@ PFla_difference (const PFla_op_t *n1, const PFla_op_t *n2)
 
 
 /** Constructor for duplicate elimination operators. */
-PFla_op_t * PFla_distinct (const PFla_op_t *n)
+PFla_op_t *
+PFla_distinct (const PFla_op_t *n)
 {
     PFla_op_t    *ret = la_op_wire1 (la_distinct, n);
     unsigned int  i;
@@ -1345,7 +1388,6 @@ printf("type = %x", n->schema.items[ix[1]].type);
 
             res_type = aat_int;
             break;
-
         case alg_fun_fn_normalize_space:
         case alg_fun_fn_upper_case:
         case alg_fun_fn_lower_case:
@@ -1411,6 +1453,7 @@ printf("type = %x", n->schema.items[ix[1]].type);
             break;
 
         case alg_fun_fn_number:
+        case alg_fun_fn_number_lax:
             assert (refs.count == 1);
             res_type = aat_dbl;
             break;
@@ -1687,7 +1730,47 @@ PFla_or (const PFla_op_t *n,
 PFla_op_t *
 PFla_not (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att)
 {
-    return unary_op (la_bool_not, n, res, att);
+    PFla_op_t    *ret;
+    unsigned int  i;
+
+    assert (n);
+
+    /* verify that 'att' is an attribute of n ... */
+    if (!PFprop_ocol (n, att))
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in not operation not found",
+                PFatt_str (att));
+
+    assert (!PFprop_ocol (n, res));
+
+    /* assert that 'att' is of correct type */
+    assert (PFprop_type_of (n, att) == aat_bln);
+
+    /* create new unary operator node */
+    ret = la_op_wire1 (la_bool_not, n);
+
+    /* insert semantic value (operand attribute and result attribute)
+     * into the result
+     */
+    ret->sem.unary.att = att;
+    ret->sem.unary.res = res;
+
+    /* allocate memory for the result schema (schema(n) + 'res') */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from 'n' argument */
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* add the information on the 'res' attribute; it has the same type
+     * as attribute 'att', but a different name
+     */
+    ret->schema.items[ret->schema.count - 1].name = res;
+    ret->schema.items[ret->schema.count - 1].type = aat_bln;
+
+    return ret;
 }
 
 
@@ -1837,69 +1920,6 @@ boolean_op (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
 
 
 /**
- * Encapsulates initialization stuff common to unary operators.
- *
- * Depending on the @a kind parameter, we process the value of
- * column @a att and stores the result in newly created attribute
- * @a res. @a res gets the same data type as @a att. The result
- * schema corresponds to the schema of the input relation @a n plus
- * @a res.
- */
-static PFla_op_t *
-unary_op(PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
-         PFalg_att_t att)
-{
-    PFla_op_t    *ret;
-    unsigned int  i;
-    unsigned int  ix = 0;
-
-    assert (n);
-
-    /* verify that 'att' is an attribute of n ... */
-    for (i = 0; i < n->schema.count; i++)
-        if (att == n->schema.items[i].name) {
-            ix = i;                /* remember array index of att */
-            break;
-        }
-
-    /* did we find attribute 'att'? */
-    if (i >= n->schema.count)
-        PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in unary operation not found",
-                PFatt_str (att));
-
-    /* assert that 'att' is of correct type */
-    if (kind == la_bool_not)
-        assert (n->schema.items[ix].type == aat_bln);
-
-    /* create new unary operator node */
-    ret = la_op_wire1 (kind, n);
-
-    /* insert semantic value (operand attribute and result attribute)
-     * into the result
-     */
-    ret->sem.unary.att = att;
-    ret->sem.unary.res = res;
-
-    /* allocate memory for the result schema (schema(n) + 'res') */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from 'n' argument */
-    for (i = 0; i < n->schema.count; i++)
-        ret->schema.items[i] = n->schema.items[i];
-
-    /* add the information on the 'res' attribute; it has the same type
-     * as attribute 'att', but a different name
-     */
-    ret->schema.items[ret->schema.count - 1] = n->schema.items[ix];
-    ret->schema.items[ret->schema.count - 1].name = res;
-
-    return ret;
-}
-
-/**
  * Constructor for op:to operator
  */
 PFla_op_t *
@@ -1954,8 +1974,9 @@ PFla_to (const PFla_op_t *n, PFalg_att_t res,
  * The partitioning (group by) attribute is represented by @a part.
  * The result is stored in attribute @a res.
  */
-PFla_op_t * PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
-                      PFalg_att_t att, PFalg_att_t part)
+PFla_op_t *
+PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
+           PFalg_att_t att, PFalg_att_t part)
 {
     /* build a new aggr node */
     PFla_op_t    *ret = la_op_wire1 (kind, n);
@@ -2680,13 +2701,13 @@ PFla_step_join (const PFla_op_t *doc, const PFla_op_t *n,
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = aat_anode };
     else if (ret->sem.step.spec.axis == alg_anc_s)
-        ret->schema.items[1]
+        ret->schema.items[i]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = PFprop_type_of (n, item)
                                                    | aat_pnode };
     else if (ret->sem.step.spec.axis == alg_desc_s ||
              ret->sem.step.spec.axis == alg_self)
-        ret->schema.items[1]
+        ret->schema.items[i]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = PFprop_type_of (n, item) };
     else
@@ -2877,13 +2898,13 @@ PFla_guide_step_join (const PFla_op_t *doc, const PFla_op_t *n,
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = aat_anode };
     else if (ret->sem.step.spec.axis == alg_anc_s)
-        ret->schema.items[1]
+        ret->schema.items[i]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = PFprop_type_of (n, item)
                                                    | aat_pnode };
     else if (ret->sem.step.spec.axis == alg_desc_s ||
              ret->sem.step.spec.axis == alg_self)
-        ret->schema.items[1]
+        ret->schema.items[i]
             = (struct PFalg_schm_item_t) { .name = item_res,
                                            .type = PFprop_type_of (n, item) };
     else
@@ -3034,9 +3055,8 @@ PFla_doc_access (const PFla_op_t *doc, const PFla_op_t *n,
 /**
  * Constructor for twig root operators.
  */
-PFla_op_t * PFla_twig (const PFla_op_t *n,
-                       PFalg_att_t iter,
-                       PFalg_att_t item)
+PFla_op_t *
+PFla_twig (const PFla_op_t *n, PFalg_att_t iter, PFalg_att_t item)
 {
     PFalg_simple_type_t iter_type = 0;
     PFla_op_t *ret = la_op_wire1 (la_twig, n);
@@ -3097,8 +3117,8 @@ PFla_op_t * PFla_twig (const PFla_op_t *n,
  * @a fc is the next 'first' child operator and @a ns is the
  * next sibling in the constructor sequence operator list.
  */
-PFla_op_t * PFla_fcns (const PFla_op_t *fc,
-                       const PFla_op_t *ns)
+PFla_op_t *
+PFla_fcns (const PFla_op_t *fc, const PFla_op_t *ns)
 {
     PFla_op_t *ret = la_op_wire2 (la_fcns, fc, ns);
 
@@ -3116,8 +3136,8 @@ PFla_op_t * PFla_fcns (const PFla_op_t *fc,
  * @a scope is the current scope the document node is constructed in
  * and @a fcns is the content of the node.
  */
-PFla_op_t * PFla_docnode (const PFla_op_t *scope, const PFla_op_t *fcns,
-                          PFalg_att_t iter)
+PFla_op_t *
+PFla_docnode (const PFla_op_t *scope, const PFla_op_t *fcns, PFalg_att_t iter)
 {
     PFla_op_t *ret = la_op_wire2 (la_docnode, scope, fcns);
 
@@ -3138,10 +3158,9 @@ PFla_op_t * PFla_docnode (const PFla_op_t *scope, const PFla_op_t *fcns,
  * @a tag constructs the elements' tag names, and @a fcns
  * is the content of the new elements.
  */
-PFla_op_t * PFla_element (const PFla_op_t *tag,
-                          const PFla_op_t *fcns,
-                          PFalg_att_t iter,
-                          PFalg_att_t item)
+PFla_op_t *
+PFla_element (const PFla_op_t *tag, const PFla_op_t *fcns,
+              PFalg_att_t iter, PFalg_att_t item)
 {
     PFla_op_t *ret = la_op_wire2 (la_element, tag, fcns);
 
@@ -3163,8 +3182,9 @@ PFla_op_t * PFla_element (const PFla_op_t *tag,
  * @a cont stores the name-value relation of the attribute. @a iter, @a qn,
  * and @a val reference the iter, qname, and value input columns, respectively.
  */
-PFla_op_t * PFla_attribute (const PFla_op_t *cont,
-                            PFalg_att_t iter, PFalg_att_t qn, PFalg_att_t val)
+PFla_op_t *
+PFla_attribute (const PFla_op_t *cont,
+                PFalg_att_t iter, PFalg_att_t qn, PFalg_att_t val)
 {
     PFla_op_t *ret = la_op_wire1 (la_attribute, cont);
 
@@ -3236,10 +3256,9 @@ PFla_comment (const PFla_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
  * @a iter, @a target, and @a val reference the iter, target, and value
  * input columns, respectively.
  */
-PFla_op_t * PFla_processi (const PFla_op_t *cont,
-                           PFalg_att_t iter,
-                           PFalg_att_t target,
-                           PFalg_att_t val)
+PFla_op_t *
+PFla_processi (const PFla_op_t *cont,
+               PFalg_att_t iter, PFalg_att_t target, PFalg_att_t val)
 {
     PFla_op_t *ret = la_op_wire1 (la_processi, cont);
 
@@ -3267,11 +3286,9 @@ PFla_op_t * PFla_processi (const PFla_op_t *cont,
  * - @a doc:  none (as it is a node fragment)
  * - @a cont: iter | pos | item
  */
-PFla_op_t * PFla_content (const PFla_op_t *doc,
-                          const PFla_op_t *cont,
-                          PFalg_att_t iter,
-                          PFalg_att_t pos,
-                          PFalg_att_t item)
+PFla_op_t *
+PFla_content (const PFla_op_t *doc, const PFla_op_t *cont,
+              PFalg_att_t iter, PFalg_att_t pos, PFalg_att_t item)
 {
     PFla_op_t *ret = la_op_wire2 (la_content, doc, cont);
 
@@ -3761,7 +3778,8 @@ PFla_trace_map (const PFla_op_t *n1,
 /**
  * Constructor for the last item of a parameter list
  */
-PFla_op_t *PFla_nil (void)
+PFla_op_t *
+PFla_nil (void)
 {
     PFla_op_t     *ret;
 
@@ -3779,8 +3797,8 @@ PFla_op_t *PFla_nil (void)
 /**
  * Constructor for a tail recursion operator
  */
-PFla_op_t *PFla_rec_fix (const PFla_op_t *paramList,
-                         const PFla_op_t *res)
+PFla_op_t *
+PFla_rec_fix (const PFla_op_t *paramList, const PFla_op_t *res)
 {
     PFla_op_t     *ret;
     unsigned int   i;
@@ -3808,8 +3826,8 @@ PFla_op_t *PFla_rec_fix (const PFla_op_t *paramList,
  * Constructor for a list item of a parameter list
  * related to recursion
  */
-PFla_op_t *PFla_rec_param (const PFla_op_t *arguments,
-                           const PFla_op_t *paramList)
+PFla_op_t *
+PFla_rec_param (const PFla_op_t *arguments, const PFla_op_t *paramList)
 {
     PFla_op_t     *ret;
 
@@ -3833,9 +3851,9 @@ PFla_op_t *PFla_rec_param (const PFla_op_t *arguments,
  * Constructor for the arguments of a parameter (seed and recursion
  * will be the input relations for the base operator)
  */
-PFla_op_t *PFla_rec_arg (const PFla_op_t *seed,
-                         const PFla_op_t *recursion,
-                         const PFla_op_t *base)
+PFla_op_t *
+PFla_rec_arg (const PFla_op_t *seed, const PFla_op_t *recursion,
+              const PFla_op_t *base)
 {
     PFla_op_t     *ret;
     unsigned int   i, j;
@@ -3901,7 +3919,8 @@ PFla_op_t *PFla_rec_arg (const PFla_op_t *seed,
  * operator representing the seed relation as well as the argument
  * computed in the recursion).
  */
-PFla_op_t *PFla_rec_base (PFalg_schema_t schema)
+PFla_op_t *
+PFla_rec_base (PFalg_schema_t schema)
 {
     PFla_op_t     *ret;
     unsigned int   i;
@@ -4259,7 +4278,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                                n->sem.binary.att2);
 
         case la_bool_not:
-            return unary_op (n->kind, left,
+            return PFla_not (left,
                              n->sem.unary.res,
                              n->sem.unary.att);
 

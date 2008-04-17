@@ -285,7 +285,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 int keyPos =  *(int*) PFarray_at (n->sem.ref_tbl.keys, 0);
 
                 assert(keyPos >= 0);
-                
+
                 PFalg_schm_item_t schemaItem = n->schema.items[keyPos];
                 PFalg_att_t key = schemaItem.name;
 
@@ -421,11 +421,11 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
             break;
-            
+
         case la_pos_select:
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
-            
+
             /* propagate the partition column as there can
                be only one matching position for every partition */
             if (n->sem.pos_sel.part)
@@ -518,7 +518,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
 
-            /* propagate the result column as key 
+            /* propagate the result column as key
                if one of the sort criteria is already a key */
             for (unsigned int i = 0; i < PFord_count (n->sem.sort.sortby); i++)
                 if (key_worker (L(n)->prop->keys,
@@ -547,7 +547,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
 
         case la_guide_step:
             /* copy the iter key if it exists and the cardinality
-               does not change */               
+               does not change */
             if (PFprop_key (R(n)->prop, n->sem.step.iter) &&
                 (n->sem.step.spec.axis == alg_chld ||
                  n->sem.step.spec.axis == alg_attr ||
@@ -706,7 +706,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 key_worker (L(n)->prop->keys, n->sem.fun_call.iter))
                 union_ (n->prop->keys, n->schema.items[0].name);
             break;
-                
+
         case la_fun_param:
             copy (n->prop->keys, L(n)->prop->keys);
             break;

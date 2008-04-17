@@ -128,7 +128,11 @@ percentage - a number [0,100] indicating the amount of free space to reserve for
                             void = xquery_print_result_file;
  "C interface to Workset result print routine, but print to a file"
 
-
+.COMMAND fn_deep_eq(BAT[void,bat] ws,
+		    BAT[void,oid] litem, BAT[void,int] lkind,
+		    BAT[void,oid] ritem, BAT[void,int] rkind) : 
+                            BAT[void,bit] = CMDfn_deep_eq;
+ "C interface to fn:deep_eq() implementation using the serializer"
 
 @- Multi Join
 @m
@@ -2040,9 +2044,8 @@ PROC step (int axis,
            str tgt) : bat[void,bat]
 {
     var step_res,
-        attr_iter,
-        attr_cont,
-        attr_pre,
+        attr_iter, attr_cont, attr_pre,
+        self_iter, self_cont, self_pre, self_attr,
         merge := false;
                 
     if (isnil(order)) {
@@ -2052,6 +2055,12 @@ PROC step (int axis,
         ERROR ("PROC step(): Unknown test '%d' !", test);
     }
 
+    # Our input comes with attribute nodes.
+    #
+    # Here we have to make sure that attribute nodes are treated
+    # correctly for
+    #  - upward axes (parent, ancestor, ancestor-or-self) and
+    #  - *self axes (self, ancestor-or-self, descendant-or-self).
     if (type(attr) = bat) {
         # consistency check to ensure that attr is of type bat[void,oid]
         if ((attr.count() != iter.count()) or 
@@ -2060,12 +2069,14 @@ PROC step (int axis,
             (attr.seqbase() != iter.seqbase()))
             ERROR("PROC step(): attr relation is not aligned.\n");
 
+        # select all attribute nodes
         var attr_tuple := [isnil](attr);
         var map := attr_tuple.ord_uselect(false).mirror();
         var map_count := map.count();
 
         if (map_count = iter.count()) { # only attr values
             if (axis = AXIS_parent) {
+                # return the owner (stored in the pre column)
 @= PROC_step_attr_parent
                 map := leftfetchjoin (map, pre).select(oid(nil),oid(nil))
                                                .hmark(0@0);
@@ -2074,23 +2085,113 @@ PROC step (int axis,
                 attr_pre  := leftfetchjoin (map, pre);
 @mil
                 @:PROC_step_attr_parent()@
+                @:PROC_step_self_nametest(attr_)@
+
+@= PROC_step_sort_distinct
+                # remove duplicates (as a side effect ensure the output order)
+                if (and(order,2) = 2) {
+                    map := @1cont.tsort()
+                               .CTrefine(@1pre)
+                               # '@2' is used to disable the attribute column
+                               @2.CTrefine(@1attr)
+                               .CTrefine(@1iter)
+                               .reverse()
+                               .kunique()
+                               .tmark(0@0);
+                }
+                else if (and(order,2) = 0) {
+                    map := @1iter.tsort()
+                               .CTrefine(@1cont)
+                               .CTrefine(@1pre)
+                               # '@2' is used to disable the attribute column
+                               @2.CTrefine(@1attr)
+                               .reverse()
+                               .kunique()
+                               .tmark(0@0);
+                }
+                else {
+                    ERROR ("PROC step(): Unknown order '%d' !", order);
+                }
+                @1iter := leftfetchjoin (map, @1iter);
+                @1cont := leftfetchjoin (map, @1cont);
+                @1pre  := leftfetchjoin (map, @1pre);
+                # '@2' is used to disable the attribute column
+                @2@1attr := leftfetchjoin (map, @1attr);
+@mil
+                @:PROC_step_sort_distinct(attr_,#)@
+                
                 return bat (void,bat,3).seqbase(0@0)
                                        .append(attr_iter.chk_order()) # iter
                                        .append(attr_cont.chk_order()) # cont
                                        .append(attr_pre.chk_order() ) # pre
                                        .access(BAT_READ);
             }
-            else if ((axis = AXIS_ancestor) or
-                     (axis = AXIS_ancestor_or_self)) {
+            else if (axis = AXIS_ancestor) {
+                # lookup the owner (stored in the pre column) ...
                 @:PROC_step_attr_parent()@
+                # ... and start an ancestor-or-self from the owner
+                # (the parents also belong into the result)
+                axis := AXIS_ancestor_or_self;
+                
+                # apply the ancestor-or-self path step
                 iter := attr_iter;
                 cont := attr_cont;
                 pre  := attr_pre;
-                # the parents (the new start nodes)
-                # also belong into the result
-                axis := AXIS_ancestor_or_self;
+            }
+            else if (axis = AXIS_ancestor_or_self) {
+                # lookup the owner (stored in the pre column)
+                # and start an ancestor-or-self from the owner
+                @:PROC_step_attr_parent()@
+                
+                # apply the kind and nametest to the attribute context
+                # nodes and later merge them with the result of path step
+@= PROC_step_attr_self
+                merge := true; # see macro PROC_step_merge() 
+
+                # apply the kind test
+                if (not (isnil(kind))) { # test for non-attribute nodes
+                    self_iter := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+                    self_cont := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+                    self_pre  := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+                    self_attr := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+                }
+                else {
+                    self_iter := iter;
+                    self_cont := cont;
+                    self_pre  := pre;
+                    self_attr := attr;
+
+                    # apply the nametest
+                    @:PROC_step_attr_nametest()@
+                }
+@mil
+                @:PROC_step_attr_self()@
+
+                # apply the ancestor-or-self path step
+                iter := attr_iter;
+                cont := attr_cont;
+                pre  := attr_pre;
+            }
+            else if (or ((axis = AXIS_self), 
+                         (axis = AXIS_descendant_or_self))) {
+                # apply the kind and nametest to the attribute context
+                # nodes and return them (as we had only attribute context
+                # nodes)
+                @:PROC_step_attr_self()@
+                
+                # remove duplicates
+                @:PROC_step_sort_distinct(self_,)@
+                
+                return bat (void,bat,4).seqbase(0@0)
+                                       .append(self_iter.chk_order()) # iter
+                                       .append(self_cont.chk_order()) # cont
+                                       .append(self_pre.chk_order() ) # pre
+                                       .append(self_attr.chk_order()) # attr
+                                       .access(BAT_READ);
             }
             else {
+                # In all other cases a step starting from only attribute
+                # context nodes generates an empty result.
                 attr_iter := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
                 attr_cont := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
                 attr_pre  := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
@@ -2105,16 +2206,23 @@ PROC step (int axis,
             if (axis = AXIS_parent) {
                 # we need to merge the step result
                 # and the attribute owners afterwards
-                merge := true;
+                merge := true; # see macro PROC_step_merge() 
                 @:PROC_step_attr_parent()@
+                @:PROC_step_self_nametest(attr_)@
+                
+                # filter out the attribute nodes
                 @:PROC_step_pre@
             }
             else if (axis = AXIS_ancestor) {
                 # we need to merge the step result
                 # and the attribute owners afterwards
-                merge := true;
+                merge := true; # see macro PROC_step_merge()
                 @:PROC_step_attr_parent()@
+                @:PROC_step_self_nametest(attr_)@
+                
+                # filter out the attribute nodes ...
                 @:PROC_step_pre@
+                # ... and add the owners to the non-attribute context nodes
 @= PROC_step_attr_merge
                 iter.access(BAT_APPEND).append(attr_iter).access(BAT_READ);
                 cont.access(BAT_APPEND).append(attr_cont).access(BAT_READ);
@@ -2128,12 +2236,57 @@ PROC step (int axis,
                 @:PROC_step_attr_merge()@
             }
             else if (axis = AXIS_ancestor_or_self) {
+                # lookup the owner (stored in the pre column)
+                # and start an ancestor-or-self from the owner
                 @:PROC_step_attr_parent()@
+                
+                # (Recreate the content of map as it was overwritten
+                # by the macro PROC_step_attr_parent() and we want
+                # to use the orginal content once more.)
+                map := attr_tuple.ord_uselect(false);
+                
+                # apply the kind and nametest to the attribute context
+                # nodes and later merge them with the result of path step
+@= PROC_step_attr_self_filtered
+                merge := true; # see macro PROC_step_merge() 
+                
+                # apply the kind test
+                if (not (isnil(kind))) { # test for non-attribute nodes
+                    self_iter := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+                    self_cont := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+                    self_pre  := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+                    self_attr := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+                }
+                else {
+                    # filter the attribute nodes
+                    map := map.hmark(0@0);
+                    self_iter := leftfetchjoin (map, iter);
+                    self_cont := leftfetchjoin (map, cont);
+                    self_pre  := leftfetchjoin (map, pre);
+                    self_attr := leftfetchjoin (map, attr);
+
+                    # apply the nametest
+                    @:PROC_step_attr_nametest()@
+                }
+@mil
+                @:PROC_step_attr_self_filtered()@
+
+                # filter out the attribute nodes ...
                 @:PROC_step_pre@
+                # ... and add the owners to the non-attribute context nodes
                 @:PROC_step_attr_merge()@
             }
+            else if (or ((axis = AXIS_self), 
+                         (axis = AXIS_descendant_or_self))) {
+                # apply the kind and nametest to the attribute context
+                # nodes and later merge them with the result of path step
+                @:PROC_step_attr_self_filtered()@
+
+                # filter out the attribute nodes ...
+                @:PROC_step_pre@
+            }
             else {
-                # ignore attr start nodes for non-upward axis */
+                # ignore attr start nodes for non-upward axis
 @= PROC_step_pre
                 map := attr_tuple.ord_uselect(true).hmark(0@0);
                 iter := leftfetchjoin (map, iter);
@@ -2151,6 +2304,15 @@ PROC step (int axis,
     } else if (axis = AXIS_@1) {
                if (test = TEST_none  ) {
             step_res := loop_lifted_@1_step                  (iter, pre, cont, ws, order);
+        } else if (isnil (kind)) { # either node() (tested already above) or attribute()
+            iter     := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+            cont     := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+            pre      := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+            step_res := bat (void,bat,3).seqbase(0@0)
+                                        .append(iter.chk_order()) # iter
+                                        .append(pre.chk_order() ) # pre
+                                        .append(cont.chk_order()) # cont
+                                        .access(BAT_READ);
         } else if (test = TEST_kind  ) {
             step_res := loop_lifted_@1_step_with_kind_test   (iter, pre, cont, ws, order, kind);
         } else if (test = TEST_ns    ) {
@@ -2169,29 +2331,26 @@ PROC step (int axis,
             pre  := step_res.fetch(1);
             iter := materialize (step_res.fetch(0), pre);
             cont := materialize (step_res.fetch(2), pre);
+            # '@2' is used to disable the attribute column
+            @2attr := pre.project(oid(nil));
             
-            iter.access(BAT_APPEND).append(attr_iter).access(BAT_READ);
-            cont.access(BAT_APPEND).append(attr_cont).access(BAT_READ);
-            pre.access(BAT_APPEND).append(attr_pre).access(BAT_READ);
+            iter.access(BAT_APPEND).append(@1_iter).access(BAT_READ);
+            cont.access(BAT_APPEND).append(@1_cont).access(BAT_READ);
+            pre.access(BAT_APPEND).append(@1_pre).access(BAT_READ);
+            # '@2' is used to disable the attribute column
+            @2attr.access(BAT_APPEND).append(@1_attr).access(BAT_READ);
             
-            # sort output
-            if (and(order,2) = 2) {
-                map := cont.tsort().CTrefine(pre).CTrefine(iter).hmark(0@0);
-            }
-            else if (and(order,2) = 0) {
-                map := iter.tsort().CTrefine(cont).CTrefine(pre).hmark(0@0);
-            }
-            else {
-                ERROR ("PROC step(): Unknown order '%d' !", order);
-            }
-
-            iter := leftfetchjoin (map, iter).chk_order();
-            cont := leftfetchjoin (map, cont).chk_order();
-            pre  := leftfetchjoin (map, pre).chk_order();
-            return bat (void,bat,3).seqbase(0@0)
-                                   .append(iter) # iter
-                                   .append(cont) # cont
-                                   .append(pre)  # pre
+            # remove duplicates
+            @:PROC_step_sort_distinct(,@2)@
+                
+            # We overestimate the size with 4 result tuples.
+            # In some situations the result will only contain 3 tuples.
+            return bat (void,bat,4).seqbase(0@0)
+                                   .append(iter.chk_order()) # iter
+                                   .append(cont.chk_order()) # cont
+                                   .append(pre.chk_order())  # pre
+                                   # '@2' is used to disable the attribute column
+                                   @2.append(attr.chk_order()) # attr
                                    .access(BAT_READ);
         }
 @= PROC_step_result
@@ -2202,24 +2361,114 @@ PROC step (int axis,
                                .append(step_res.fetch(1)) # pre
                                .access(BAT_READ);
 @mil
-    @:PROC_step(ancestor)@           @:PROC_step_merge()@ @:PROC_step_result()@
-    @:PROC_step(ancestor_or_self)@                        @:PROC_step_result()@
-    @:PROC_step(child)@                                   @:PROC_step_result()@
-    @:PROC_step(descendant)@                              @:PROC_step_result()@
-    @:PROC_step(descendant_or_self)@                      @:PROC_step_result()@
-    @:PROC_step(following)@                               @:PROC_step_result()@
-    @:PROC_step(following_sibling)@                       @:PROC_step_result()@
-    @:PROC_step(parent)@             @:PROC_step_merge()@ @:PROC_step_result()@
-    @:PROC_step(preceding)@                               @:PROC_step_result()@
-    @:PROC_step(preceding_sibling)@                       @:PROC_step_result()@
+    @:PROC_step(ancestor)@           @:PROC_step_merge(attr,#)@ @:PROC_step_result()@
+    @:PROC_step(ancestor_or_self)@   @:PROC_step_merge(self,)@  @:PROC_step_result()@
+    @:PROC_step(child)@                                         @:PROC_step_result()@
+    @:PROC_step(descendant)@                                    @:PROC_step_result()@
+    @:PROC_step(descendant_or_self)@ @:PROC_step_merge(self,)@  @:PROC_step_result()@
+    @:PROC_step(following)@                                     @:PROC_step_result()@
+    @:PROC_step(following_sibling)@                             @:PROC_step_result()@
+    @:PROC_step(parent)@             @:PROC_step_merge(attr,#)@ @:PROC_step_result()@
+    @:PROC_step(preceding)@                                     @:PROC_step_result()@
+    @:PROC_step(preceding_sibling)@                             @:PROC_step_result()@
     } else if (axis = AXIS_self) {
-        ERROR ("PROC step(): AXIS_self not supported, yet!");
+        var map;
+@= PROC_step_self_nametest
+               if (test = TEST_none  ) {
+            # nothing to do
+        } else if (isnil (kind)) { # either node() (tested already above) or attribute()
+            @1iter := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+            @1cont := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+            @1pre  := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+        } else if (test = TEST_kind  ) {
+            map    := mposjoin (@1pre, @1cont, ws.fetch (PRE_KIND));
+            map    := map.ord_uselect(kind).hmark(0@0);
+            @1iter := leftfetchjoin (map, @1iter);
+            @1cont := leftfetchjoin (map, @1cont);
+            @1pre  := leftfetchjoin (map, @1pre);
+        } else if (test = TEST_ns    ) {
+            map    := mposjoin (@1pre, @1cont, ws.fetch (PRE_KIND));
+            map    := map.ord_uselect(ELEMENT).hmark(0@0);
+            @1iter := leftfetchjoin (map, @1iter);
+            @1cont := leftfetchjoin (map, @1cont);
+            @1pre  := leftfetchjoin (map, @1pre);
+            map    := mposjoin (mposjoin (@1pre, @1cont, ws.fetch (PRE_PROP)),
+                                mposjoin (@1pre, @1cont, ws.fetch (PRE_CONT)),
+                                ws.fetch (QN_URI));
+            map    := map.ord_uselect(ns).hmark(0@0);
+            @1iter := leftfetchjoin (map, @1iter);
+            @1cont := leftfetchjoin (map, @1cont);
+            @1pre  := leftfetchjoin (map, @1pre);
+        } else if (test = TEST_loc   ) {
+            map    := mposjoin (@1pre, @1cont, ws.fetch (PRE_KIND));
+            map    := map.ord_uselect(ELEMENT).hmark(0@0);
+            @1iter := leftfetchjoin (map, @1iter);
+            @1cont := leftfetchjoin (map, @1cont);
+            @1pre  := leftfetchjoin (map, @1pre);
+            map    := mposjoin (mposjoin (@1pre, @1cont, ws.fetch (PRE_PROP)),
+                                mposjoin (@1pre, @1cont, ws.fetch (PRE_CONT)),
+                                ws.fetch (QN_LOC));
+            map    := map.ord_uselect(loc).hmark(0@0);
+            @1iter := leftfetchjoin (map, @1iter);
+            @1cont := leftfetchjoin (map, @1cont);
+            @1pre  := leftfetchjoin (map, @1pre);
+        } else if (test = TEST_nsloc ) {
+            map    := mposjoin (@1pre, @1cont, ws.fetch (PRE_KIND));
+            map    := map.ord_uselect(ELEMENT).hmark(0@0);
+            @1iter := leftfetchjoin (map, @1iter);
+            @1cont := leftfetchjoin (map, @1cont);
+            @1pre  := leftfetchjoin (map, @1pre);
+            map    := mposjoin (mposjoin (@1pre, @1cont, ws.fetch (PRE_PROP)),
+                                mposjoin (@1pre, @1cont, ws.fetch (PRE_CONT)),
+                                ws.fetch (QN_URI_LOC));
+            map    := map.ord_uselect(ns + NS_ACCEL_SEP + loc).hmark(0@0);
+            @1iter := leftfetchjoin (map, @1iter);
+            @1cont := leftfetchjoin (map, @1cont);
+            @1pre  := leftfetchjoin (map, @1pre);
+        } else if (test = TEST_target) {
+            map    := mposjoin (@1pre, @1cont, ws.fetch (PRE_KIND));
+            map    := map.ord_uselect(PI).hmark(0@0);
+            @1iter := leftfetchjoin (map, @1iter);
+            @1cont := leftfetchjoin (map, @1cont);
+            @1pre  := leftfetchjoin (map, @1pre);
+            map    := mposjoin (mposjoin (@1pre, @1cont, ws.fetch (PRE_PROP)),
+                                mposjoin (@1pre, @1cont, ws.fetch (PRE_CONT)),
+                                ws.fetch (PROP_TGT));
+            map    := map.ord_uselect(tgt).hmark(0@0);
+            @1iter := leftfetchjoin (map, @1iter);
+            @1cont := leftfetchjoin (map, @1cont);
+            @1pre  := leftfetchjoin (map, @1pre);
+        }
+@mil
+        @:PROC_step_self_nametest()@
+        
+        if (not (merge)) {
+            # remove duplicates
+            @:PROC_step_sort_distinct(,#)@
+            
+            return bat (void,bat,3).seqbase(0@0)
+                                   .append(iter.chk_order()) # iter
+                                   .append(cont.chk_order()) # cont
+                                   .append(pre.chk_order() ) # pre
+                                   .access(BAT_READ);
+        }
+                                   
+        # Add the result in the ``wrong'' (iter|pre|cont) order.
+        # (This way the following macro works correctly.)
+        step_res := bat (void,bat,3).seqbase(0@0)
+                                    .append(iter)
+                                    .append(pre)
+                                    .append(cont)
+                                    .access(BAT_READ);
+        # add the filtered attribute context nodes
+        @:PROC_step_merge(self,,4)@
+        
+        ERROR ("PROC step(): problem in self step (AXIS_self).");
     } else if (axis = AXIS_attribute) {
-        var map, ref;
+        var map;
         
         # non-matching kind tests result in an empty result
-        if (or (and ((test = TEST_kind), not (isnil(kind))), # non-attribute nodes
-                test = TEST_target)) {                       # pi nodes
+        if (not (isnil(kind))) { # non-attribute nodes
             iter := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
             cont := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
             pre  := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
@@ -2234,63 +2483,62 @@ PROC step (int axis,
 
         # lookup the attribute ids
         map  := get_attr_own (ws, mposjoin(pre, cont, ws.fetch(PRE_NID)), cont);
-        attr := map.tmark(0@0);
-        ref  := map.hmark(0@0);
-        cont := leftfetchjoin (ref, cont);
         
+        self_attr := map.tmark(0@0);
+        map       := map.hmark(0@0);
+        self_iter := leftfetchjoin (map, iter);
+        self_cont := leftfetchjoin (map, cont);
+        self_pre  := leftfetchjoin (map, pre);
+@= PROC_step_attr_nametest
+        # apply the nametest
         if (test = TEST_ns) {
-            map  := mposjoin (mposjoin (attr, cont, ws.fetch (ATTR_QN)),
-                              mposjoin (attr, cont, ws.fetch (ATTR_CONT)),
+            map  := mposjoin (mposjoin (self_attr, self_cont, ws.fetch (ATTR_QN)),
+                              mposjoin (self_attr, self_cont, ws.fetch (ATTR_CONT)),
                               ws.fetch (QN_URI));
             map  := map.ord_uselect(ns).hmark(0@0);
-            cont := leftfetchjoin (map, cont);
-            attr := leftfetchjoin (map, attr);
-            ref  := leftfetchjoin (map, ref);
+
+            self_iter := leftfetchjoin (map, self_iter);
+            self_cont := leftfetchjoin (map, self_cont);
+            self_pre  := leftfetchjoin (map, self_pre);
+            self_attr := leftfetchjoin (map, self_attr);
         }
         else if (test = TEST_loc) {
-            map  := mposjoin (mposjoin (attr, cont, ws.fetch (ATTR_QN)),
-                              mposjoin (attr, cont, ws.fetch (ATTR_CONT)),
+            map  := mposjoin (mposjoin (self_attr, self_cont, ws.fetch (ATTR_QN)),
+                              mposjoin (self_attr, self_cont, ws.fetch (ATTR_CONT)),
                               ws.fetch (QN_LOC));
             map  := map.ord_uselect(loc).hmark(0@0);
-            cont := leftfetchjoin (map, cont);
-            attr := leftfetchjoin (map, attr);
-            ref  := leftfetchjoin (map, ref);
+                  
+            self_iter := leftfetchjoin (map, self_iter);
+            self_cont := leftfetchjoin (map, self_cont);
+            self_pre  := leftfetchjoin (map, self_pre);
+            self_attr := leftfetchjoin (map, self_attr);
         }
         else if (test = TEST_nsloc) {
-            map  := mposjoin (mposjoin (attr, cont, ws.fetch (ATTR_QN)),
-                              mposjoin (attr, cont, ws.fetch (ATTR_CONT)),
+            map  := mposjoin (mposjoin (self_attr, self_cont, ws.fetch (ATTR_QN)),
+                              mposjoin (self_attr, self_cont, ws.fetch (ATTR_CONT)),
                               ws.fetch (QN_URI_LOC));
             map  := map.ord_uselect(ns + NS_ACCEL_SEP + loc).hmark(0@0);
-            cont := leftfetchjoin (map, cont);
-            attr := leftfetchjoin (map, attr);
-            ref  := leftfetchjoin (map, ref);
-        }
-        
-        iter := leftfetchjoin (ref, iter);
-        pre  := leftfetchjoin (ref, pre);
-        
-        # sort output as we don't know anything about the attribute
-        # output order of mvaljoin (called by get_attr_own())
-        if (and(order,2) = 2) {
-            map := cont.tsort().CTrefine(pre).CTrefine(attr).CTrefine(iter).hmark(0@0);
-        }
-        else if (and(order,2) = 0) {
-            map := iter.tsort().CTrefine(cont).CTrefine(pre).CTrefine(attr).hmark(0@0);
-        }
-        else {
-            ERROR ("PROC step(): Unknown order '%d' !", order);
-        }
 
-        iter := leftfetchjoin (map, iter);
-        cont := leftfetchjoin (map, cont);
-        pre  := leftfetchjoin (map, pre);
-        attr := leftfetchjoin (map, attr);
-
+            self_iter := leftfetchjoin (map, self_iter);
+            self_cont := leftfetchjoin (map, self_cont);
+            self_pre  := leftfetchjoin (map, self_pre);
+            self_attr := leftfetchjoin (map, self_attr);
+        }
+@mil
+        @:PROC_step_attr_nametest()@
+        
+        # Sort output as we don't know anything about the attribute
+        # output order of mvaljoin (called by get_attr_own()).
+        # This is done as a side effect of the following duplicate elimination
+        
+        # remove duplicates
+        @:PROC_step_sort_distinct(self_,)@
+            
         return bat (void,bat,4).seqbase(0@0)
-                               .append(iter.chk_order()) # iter
-                               .append(cont.chk_order()) # cont
-                               .append(pre.chk_order() ) # pre
-                               .append(attr.chk_order()) # attr
+                               .append(self_iter.chk_order()) # iter
+                               .append(self_cont.chk_order()) # cont
+                               .append(self_pre.chk_order() ) # pre
+                               .append(self_attr.chk_order()) # attr
                                .access(BAT_READ);
     }
 }
@@ -3177,23 +3425,32 @@ changed already made to the BATs in the working set.",
 
 
 PROC UpdateTape(
-bat[void, bat] ws,
-bat[void, lng] kind,
-bat[void, oid] pre_tgt, bat[void,int] pre_count_tgt,
-bat[void, oid] attr_tgt, bat[void,int] attr_count_tgt,
-bat[void, str] replace_strings, 
-bat[void, oid] replace_qn_uristrings, bat[void,oid] replace_qn_loc_strings, 
-bat[void, oid] pre_ins, bat[void,int] pre_count_ins,
-bat[void, oid] attr_ins, bat[void,int] attr_count_ins): void
+bat[oid, bat] ws,
+bat[oid, lng] kind,
+bat[oid, oid] pre_tgt, 
+bat[oid, oid] pre_cont_tgt,
+bat[oid, oid] attr_tgt,
+bat[oid, oid] attr_cont_tgt,
+bat[oid, str] replace_strings, 
+bat[oid, str] replace_qn_uristrings,
+bat[oid, str] replace_qn_loc_strings, 
+bat[oid, oid] pre_ins,
+bat[oid, oid] pre_cont_ins,
+bat[oid, oid] attr_ins,
+bat[oid, oid] attr_cont_ins): void
 {
  kind.print();
  pre_tgt.print();
+ pre_cont_tgt.print();
  attr_tgt.print();
+ attr_cont_tgt.print();
  replace_strings.print();
  replace_qn_uristrings.print();
  replace_qn_loc_strings.print();
  pre_ins.print();
+ pre_cont_ins.print();
  attr_ins.print();
+ attr_cont_ins.print();
 }
 
 PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kind, bat[void,lng] int_values, bat[void,str] str_values) : void
@@ -3990,8 +4247,8 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
       # insertcont - container from which to insert an element
       # insertitem - item to insert
       var idx := $h; # to ease debugging
-      var insertcont := batcont.fetch(idx);
       var insertitem := $t;
+      var insertcont := batcont.fetch(idx);
 
       if (not(isnil(ws.fetch(PRE_KIND).find(insertcont).find(insertitem)))) { # do not insert holes
         # insertsize - size of item to be inserted
@@ -4208,7 +4465,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             var npages := ((insertsize - holeatend) + int(REMAP_PAGE_MASK)) >> REMAP_PAGE_BITS;
             # the size of the hole we are going to insert
             # we move the bit after the insert point to the last inserted page
-            var shiftsize := npages << REMAP_PAGE_BITS;
+            var shiftsize;
 
             var newpages := new(void, oid, npages);
             var lastpage;
@@ -4252,24 +4509,28 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               }
               cpwhere_rid := oid(lng(newpages.fetch(0)) << REMAP_PAGE_BITS);
               newholeatend := holeatend;
+              shiftsize := npages << REMAP_PAGE_BITS;
             } else {
               # insert new pages after current
               newpages := newpages.seqbase(oid(lng(pageno) + 1));
               map_pid_update.replace([oid]([+]([int](map_pid_update.select(pageno, oid_nil, false, true)), npages)), true);
               map_pid_update.myupdate(newpages.reverse());
-              # we need to copy the data at the end to the end of the last new page
+              # we need to copy the data at the end to the last new page
               cpstart_rid := docinsertbefore_rid;
               cpsize := datasize;
-              var pgstart := oid(lng(lastpage) << REMAP_PAGE_BITS);
-              # (insertsize - datasize - holeatend) is what gets inserted after the current page;
-              # ANDing that with REMAP_PAGE_MASK gives us how much gets inserted on the last page
-              if (insertsize <= (datasize + holeatend)) {
-                # no new data needs to go to the new page, just move the old data to the start of the new page
-                cpwhere_rid := pgstart;
-              } else {
-                cpwhere_rid := oid(int(pgstart) + (((insertsize - datasize) - holeatend) and int(REMAP_PAGE_MASK)));
+              # start with shifting insertsize
+              var cpwhere_pre := oid(int(docinsertbefore_newpre) + insertsize);
+              var laststart_pre := swizzle(oid(lng(lastpage) << REMAP_PAGE_BITS), map_pid_update);
+              # if this ends up on last-but-one page, move up to start of last page
+              if (cpwhere_pre < laststart_pre) {
+                cpwhere_pre := laststart_pre;
               }
+              # calculate how much we shift the data
+              shiftsize := int(cpwhere_pre) - int(docinsertbefore_newpre);
+              # convert to RID
+              cpwhere_rid := antiswizzle(cpwhere_pre, map_pid_update);
 
+              var pgstart := oid((int(cpwhere_rid) >> REMAP_PAGE_BITS) << REMAP_PAGE_BITS);
               if (cpwhere_rid > pgstart) {
                 # fix up hole at start of last page since it does not
                 # extend to the end of the page anymore (this will be
@@ -4283,7 +4544,7 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
               newholeatend := int(REMAP_PAGE_SIZE) - ((int(cpwhere_rid) + cpsize) and int(REMAP_PAGE_MASK));
             }
 
-            # move data after insert point to end of last inserted page
+            # move data to inserted page
             if (cpsize > 0) {
               var rid_size_data;
               var rid_level_data;
@@ -4385,17 +4646,17 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
             # select those that start before and end inside the moved data
             var indata := ancestors_end.uselect(docinsertbefore_newpre, oid(lng(docinsertbefore_newpre) + datasize), true, false);
             if (indata.count() > 0) {
-              new_size.insert([+](indata.mirror().join(ancestors_size), (shiftsize + holeatend) - newholeatend));
+              new_size.insert([+](indata.mirror().join(ancestors_size), shiftsize));
             }
             # select those that end inside the hole at the end
             var inhole := ancestors_end.uselect(oid(lng(docinsertbefore_newpre) + datasize), oid(lng(docinsertbefore_newpre) + datasize + holeatend), true, false);
             if (inhole.count() > 0) {
-              new_size.insert([int]([-](((((lng(docinsertbefore_newpre) + datasize) - 1) + (shiftsize + holeatend)) - newholeatend), [lng](inhole.mirror().join(ancestors_newpre)))));
+              new_size.insert([int]([-]((((lng(docinsertbefore_newpre) + datasize) - 1) + shiftsize), [lng](inhole.mirror().join(ancestors_newpre)))));
             }
             # select those that end after the moved data
             var behind := ancestors_end.uselect(oid(lng(docinsertbefore_newpre) + datasize + holeatend), oid_nil);
             if (behind.count() > 0) {
-              new_size.insert([+](behind.mirror().join(ancestors_size), shiftsize));
+              new_size.insert([+](behind.mirror().join(ancestors_size), npages << REMAP_PAGE_BITS));
             }
             # figure out new and old pages since they need to be updated differently and apply
             var upd_pages := [oid]([>>]([lng](new_size.mirror().join(ancestors_newrid)), REMAP_PAGE_BITS));
@@ -5710,11 +5971,6 @@ int BATlng_as_dec(BAT **res, BAT *b) {
 }
 
 
-#if SIZEOF_OID == SIZEOF_INT
-#define oidoid_bunfastins(b,h,t) intint_bunfastins(b,h,t);
-#else
-#define oidoid_bunfastins(b,h,t) lnglng_bunfastins(b,h,t);
-#endif
 @c
 /* delete a file from the local tmp/ directory in the dbfarm; protect against abuse */
 int CMDcleantmpdir(lng *lim) {
@@ -8506,28 +8762,33 @@ CMDdocsused(BAT** res, BAT* input, BAT* frag_root, BAT* nid_rid, BAT* map_pid, B
     oid* docid = (oid*) Hloc(frag_root, BUNfirst(frag_root));
     oid* root = (oid*) Tloc(frag_root, BUNfirst(frag_root));
     int* size = (int*) Tloc(pre_size, BUNfirst(pre_size));
-    oid* pre = (oid*) Tloc(input, BUNfirst(input));
+    BATiter inputi = bat_iterator(input);
     oid* map = (oid*) Tloc(map_pid, BUNfirst(map_pid));
     oid* rid = (oid*) Tloc(nid_rid, BUNfirst(nid_rid));
     size_t i=0,j=0, n=BATcount(input), m=BATcount(frag_root);
 
     *res = BATnew(TYPE_oid, TYPE_oid, 100);
-    if (*res == NULL) return GDK_FAIL;
+    if (*res == NULL)
+        return GDK_FAIL;
     BATseqbase(*res, 0);
 
-    while(i<n) {
-        oid delta, docpre, cur = pre[i];
+    while (i<n) {
+        oid delta, docpre, cur = * (oid *) BUNtail(inputi, i);
 
         /* skip all documents before cur */
         if (map_pid->ttype == TYPE_void) {
-            for(delta = (m-j) >> 4; delta > 40; delta >>= 4)
-                while(j+delta < m && cur > (docpre=root[j+delta]) + size[docpre]) j+=delta;
-            while(j < m && cur > (docpre=root[j]) + size[docpre]) j++;
+            for (delta = (m-j) >> 4; delta > 40; delta >>= 4)
+                while (j+delta < m && cur > (docpre=root[j+delta]) + size[docpre])
+                    j += delta;
+            while (j < m && cur > (docpre=root[j]) + size[docpre])
+                j++;
         } else {
             /* we need swizzling */
-            for(delta = (m-j) >> 4; delta > 40; delta >>= 4)
-                while(j+delta < m && cur > (docpre=SWIZZLE(rid[root[j+delta]])) + size[docpre]) j+=delta;
-            while(j < m && cur > (docpre=SWIZZLE(rid[root[j]])) + size[docpre]) j++;
+            for (delta = (m-j) >> 4; delta > 40; delta >>= 4)
+                while (j+delta < m && cur > (docpre=SWIZZLE(rid[root[j+delta]])) + size[docpre])
+                    j += delta;
+            while (j < m && cur > (docpre=SWIZZLE(rid[root[j]])) + size[docpre])
+                j++;
         }
         assert(j < m);
 
@@ -8535,10 +8796,12 @@ CMDdocsused(BAT** res, BAT* input, BAT* frag_root, BAT* nid_rid, BAT* map_pid, B
         BUNins(*res, &docpre, &docid[j], FALSE);
 
         /* skip all nodes of this document */
-        docpre = docpre + size[docpre]; 
-        for(delta = (n-i) >> 4; delta > 40; delta >>= 4)
-            while(i+delta < n && pre[i+delta] <= docpre) i+=delta;
-        while(i < n && pre[i] <= docpre) i++;
+        docpre = docpre + size[docpre];
+        for (delta = (n-i) >> 4; delta > 40; delta >>= 4)
+            while (i+delta < n && * (oid *) BUNtail(inputi, i+delta) <= docpre)
+                i += delta;
+        while (i < n && * (oid *) BUNtail(inputi, i) <= docpre)
+            i++;
     }
     return GDK_SUCCEED;
 }

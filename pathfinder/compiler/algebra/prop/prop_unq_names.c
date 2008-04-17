@@ -563,9 +563,13 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
         case la_rec_arg:
             /* The both inputs (seed and recursion) do not use
                the same column names. Thus we live with inconsistent
-               unique names and introduce a renaming projection
-               (Schema R -> Schema L) during name mapping. */
-            bulk_add_name_pairs (np_list, L(n));
+               unique names and introduce renaming projections
+               (Schema R -> new and Schema L -> new) during the name
+               mapping. */
+
+            /* create new unique names for all attributes */
+            for (unsigned int i = 0; i < n->schema.count; i++)
+                new_name_pair (np_list, n->schema.items[i].name, id++);
             break;
 
         case la_rec_base:
@@ -641,24 +645,32 @@ prop_infer_rec_seed (PFla_op_t *n, unsigned int cur_col_id)
             /* infer the unique names of the arguments */
             cur_col_id = prop_infer_rec_seed (L(n), cur_col_id);
             cur_col_id = prop_infer_rec_seed (R(n), cur_col_id);
+
+            /* recursion parameters do not have properties */
+            reset_property (n);
             break;
 
         case la_rec_arg:
             /* infer the unique names of the seed */
             cur_col_id = prop_infer (L(n), cur_col_id);
 
+            reset_property (n);
+
+            /* infer unique name columns */
+            cur_col_id = infer_unq_names (n, cur_col_id);
+
             n->sem.rec_arg.base->bit_dag = true;
             reset_property (n->sem.rec_arg.base);
 
-            /* copy the mapping of the unique column names of the seed
-               to its base. */
-            bulk_add_name_pairs (n->sem.rec_arg.base->prop->name_pairs,
-                                 L(n));
+            /* copy the mapping of the unique column names of the recursion
+               argument to its base. */
+            bulk_add_name_pairs (n->sem.rec_arg.base->prop->name_pairs, n);
 
-            /* The both inputs (seed and recursion) now do not use
-               the same column names: the unique names are inconsistent.
-               Thus the name mapping has to introduce a renaming projection
-               (Schema R -> Schema L). */
+            /* The both inputs (seed and recursion) do not use
+               the same column names. Thus we live with inconsistent
+               unique names and introduce renaming projections
+               (Schema R -> new and Schema L -> new) during the name
+               mapping. */
             break;
 
         case la_nil:
@@ -691,10 +703,11 @@ prop_infer_rec_body (PFla_op_t *n, unsigned int cur_col_id)
             /* infer the unique names of the recursion body */
             cur_col_id = prop_infer (R(n), cur_col_id);
 
-            /* The both inputs (seed and recursion) now do not use
-               the same column names: the unique names are inconsistent.
-               Thus the name mapping has to introduce a renaming projection
-               (Schema R -> Schema L). */
+            /* The both inputs (seed and recursion) do not use
+               the same column names. Thus we live with inconsistent
+               unique names and introduce renaming projections
+               (Schema R -> new and Schema L -> new) during the name
+               mapping. */
             break;
 
         case la_nil:
@@ -708,11 +721,6 @@ prop_infer_rec_body (PFla_op_t *n, unsigned int cur_col_id)
     }
 
     n->bit_dag = true;
-    reset_property (n);
-
-    /* infer unique name columns */
-    cur_col_id = infer_unq_names (n, cur_col_id);
-
     return cur_col_id;
 }
 

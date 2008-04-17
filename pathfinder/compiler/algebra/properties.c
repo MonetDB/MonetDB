@@ -61,9 +61,9 @@ PFprop (void)
     PFprop_t *ret = PFmalloc (sizeof (PFprop_t));
 
     /* initialize different slots for constant property*/
-    ret->constants   = NULL; 
-    ret->l_constants = NULL; 
-    ret->r_constants = NULL; 
+    ret->constants   = NULL;
+    ret->l_constants = NULL;
+    ret->r_constants = NULL;
 
     /* initialize set property */
     ret->set      = false;
@@ -105,7 +105,7 @@ PFprop (void)
     ret->level_mapping = NULL;
     ret->l_level_mapping = NULL;
     ret->r_level_mapping = NULL;
-    
+
     /* initialize guide mapping list */
     ret->guide_mapping_list = NULL;
 
@@ -122,9 +122,9 @@ PFprop (void)
 void
 PFprop_infer (bool card, bool const_, bool set,
               bool dom, bool icol, bool ckey,
-              bool key, bool ocols, bool reqval, 
-              bool level, bool refctr, bool guides,
-              bool ori_names, bool unq_names,
+              bool key, bool ocols, bool req_node,
+              bool reqval, bool level, bool refctr,
+              bool guides, bool ori_names, bool unq_names,
               PFla_op_t *root, PFguide_tree_t *guide)
 {
     PFprop_create_prop (root);
@@ -145,6 +145,8 @@ PFprop_infer (bool card, bool const_, bool set,
         PFprop_infer_guide (root, guide);
     if (const_)
         PFprop_infer_const (root);
+    if (req_node)
+        PFprop_infer_req_node (root);
     if (reqval)
         PFprop_infer_reqval (root);
     if (dom)
@@ -174,7 +176,7 @@ prop_reset (PFla_op_t *n, void (*reset_fun) (PFla_op_t *))
         return;
     else
         SEEN(n) = true;
-    
+
     reset_fun (n);
 
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
@@ -208,7 +210,7 @@ create_prop (PFla_op_t *n)
 
 /**
  * Create new property fields for a DAG rooted in @a root.
- * 
+ *
  * This is required if the property of copied nodes
  * is not copied in place (e.g. '*p = *L(p);').
  */
@@ -238,7 +240,7 @@ prop_infer_refctr (PFla_op_t *n)
         SEEN(n) = true;
         n->refctr = 1;
     }
-    
+
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
         prop_infer_refctr (n->child[i]);
 }

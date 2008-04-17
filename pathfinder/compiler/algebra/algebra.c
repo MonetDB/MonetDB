@@ -664,6 +664,44 @@ PFalg_schema_diff_ (PFalg_schema_t schema, unsigned int count,
 }
 
 /**
+ * Return a schema of iter|pos|item where item type is item_t
+ */
+PFalg_schema_t
+PFalg_iter_pos_item_schema(PFalg_simple_type_t item_t)
+{
+    PFalg_schema_t schema;
+    schema.count = 3;
+    schema.items = PFmalloc (3 * sizeof (PFalg_schema_t));
+
+    schema.items[0].name = att_iter;
+    schema.items[0].type = aat_nat;
+    schema.items[1].name = att_pos;
+    schema.items[1].type = aat_nat;
+    schema.items[2].name = att_item;
+    schema.items[2].type = item_t;
+
+    return schema;
+}
+
+/**
+ * Return a schema of iter|item where item type is item_t
+ */
+PFalg_schema_t
+PFalg_iter_item_schema(PFalg_simple_type_t item_t)
+{
+    PFalg_schema_t schema;
+    schema.count = 2;
+    schema.items = PFmalloc (2 * sizeof (PFalg_schema_t));
+
+    schema.items[0].name = att_iter;
+    schema.items[0].type = aat_nat;
+    schema.items[1].name = att_item;
+    schema.items[1].type = item_t;
+
+    return schema;
+}
+
+/**
  * Test if two atomic values are comparable
  */
 bool
@@ -719,7 +757,7 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
         case aat_node:  return "node";
         case aat_anode: return "attr";
         case aat_pnode: return "pnode";
-                        
+
         /* the bit representation */
         case aat_qname_id:   return "qname_id";
         case aat_qname_cont: return "qname_cont";
@@ -1013,10 +1051,17 @@ char *
 PFalg_fun_call_kind_str (PFalg_fun_call_t kind)
 {
     switch (kind) {
-        case alg_fun_call_dft:          return "";
-        case alg_fun_call_xrpc:         return "XRPC";
-        case alg_fun_call_xrpc_helpers: return "XRPC helper";
-        case alg_fun_call_tijah:        return "Tijah";
+        case alg_fun_call_pf_documents:          return "pf:documents";
+        case alg_fun_call_pf_documents_unsafe:   return "pf:documents_unsafe";
+        case alg_fun_call_pf_documents_str:      return "pf:documents_str";
+        case alg_fun_call_pf_documents_str_unsafe: 
+                                               return "pf:documents_str_unsafe";
+        case alg_fun_call_pf_docname:            return "pf:docname";
+        case alg_fun_call_pf_collections:        return "pf:collections";
+        case alg_fun_call_pf_collections_unsafe: return "pf:collections_unsafe";
+        case alg_fun_call_xrpc:                  return "XRPC";
+        case alg_fun_call_xrpc_helpers:          return "XRPC helper";
+        case alg_fun_call_tijah:                 return "Tijah";
     }
     return NULL;
 }
@@ -1058,6 +1103,7 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_local_name:       return "fn:local-name";
         case alg_fun_fn_namespace_uri:    return "fn:namespace-uri";
         case alg_fun_fn_number:           return "fn:number";
+        case alg_fun_fn_number_lax:       return "fn:number";
         case alg_fun_fn_qname:            return "fn:QName";
         case alg_fun_pf_fragment:         return "#pf:fragment";
         case alg_fun_pf_supernode:        return "#pf:supernode";

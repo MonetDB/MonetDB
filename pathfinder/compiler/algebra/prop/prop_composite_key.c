@@ -733,7 +733,7 @@ infer_ckey (PFla_op_t *n)
                 key_worker (L(n)->prop->ckeys, n->sem.fun_call.iter))
                 union_ (n->prop->ckeys, n->schema.items[0].name);
             break;
-                
+
         case la_fun_param:
             copy (n->prop->ckeys, L(n)->prop->ckeys);
             break;

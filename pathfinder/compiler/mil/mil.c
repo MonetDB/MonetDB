@@ -380,6 +380,11 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_TRACE_TYPE:  return "trace_type";
         case PF_MIL_VAR_TRACE_REL:   return "trace_rel";
 
+#ifdef HAVE_PFTIJAH
+        case PF_MIL_TIJAH_SCORE_DB:  return "tijah_scoreDB";
+        case PF_MIL_TIJAH_FTI_TAPE:  return "tijah_ftiTape";
+#endif
+
         case PF_MIL_VAR_AXIS_ANC:    return "AXIS_ancestor";
         case PF_MIL_VAR_AXIS_ANC_S:  return "AXIS_ancestor_or_self";
         case PF_MIL_VAR_AXIS_CHLD:   return "AXIS_child";
@@ -392,14 +397,14 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_AXIS_PREC_S: return "AXIS_preceding_sibling";
         case PF_MIL_VAR_AXIS_SELF:   return "AXIS_self";
         case PF_MIL_VAR_AXIS_ATTR:   return "AXIS_attribute";
-                                    
+
         case PF_MIL_VAR_CODE_NONE:   return "TEST_none";
         case PF_MIL_VAR_CODE_KIND:   return "TEST_kind";
         case PF_MIL_VAR_CODE_NS:     return "TEST_ns";
         case PF_MIL_VAR_CODE_LOC:    return "TEST_loc";
         case PF_MIL_VAR_CODE_NSLOC:  return "TEST_nsloc";
         case PF_MIL_VAR_CODE_TARGET: return "TEST_target";
-        
+
         case PF_MIL_VAR_TIME_LOAD:   return "time_load";
         case PF_MIL_VAR_TIME_QUERY:  return "time_query";
         case PF_MIL_VAR_TIME_PRINT:  return "time_print";
@@ -1700,5 +1705,99 @@ PFmil_docmgmt (const PFmil_t *args)
 {
     return wire1 (m_docmgmt_tape, args);
 }
+
+/** 
+ * function ws_collection_root(a, b)
+ */
+PFmil_t * 
+PFmil_ws_collection_root (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_ws_collection_root, a, b);
+}
+
+/** 
+ * function ws_documents(a, b)
+ */
+PFmil_t *
+PFmil_ws_documents (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_ws_documents, a, b);
+}
+
+/** 
+ * function ws_documents(a, b, c)
+ */
+PFmil_t *
+PFmil_ws_documents_str (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
+{
+    return wire3 (m_ws_documents_str, a , b, c);
+}
+
+/** 
+ * function ws_docname(a, b, c, d)
+ */
+PFmil_t *
+PFmil_ws_docname (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c,
+                                                      const PFmil_t *d)
+{
+    return wire4 (m_ws_docname, a, b, c, d);
+}
+
+/** 
+ * function ws_collections(a, b)
+ */
+PFmil_t *
+PFmil_ws_collections (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_ws_collections, a, b);
+}
+
+#ifdef HAVE_PFTIJAH
+
+PFmil_t *
+PFmil_tj_tokenize (const PFmil_t *a)
+{
+    return wire1 (m_tj_tokenize, a);
+}
+
+/** pftijah algebra argument  constructor */
+PFmil_t *
+PFmil_tj_pfop (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d)
+{
+    return wire4 (m_tj_pfop, a, b, c, d);
+}
+
+PFmil_t *
+PFmil_tj_query_score (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d)
+{
+    return wire4 (m_tj_query_score, a, b, c, d);
+}
+
+PFmil_t *
+PFmil_tj_query_nodes (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
+{
+    return wire3 (m_tj_query_nodes, a, b, c);
+}
+
+/** pftijah main query handler */
+PFmil_t *
+PFmil_tj_query_handler (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f, const PFmil_t *g)
+{
+    return wire7 (m_tj_query_handler, a, b, c, d, e, f, g);
+}
+
+PFmil_t *
+PFmil_tj_add_fti_tape (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f)
+{
+    return wire6 (m_tj_add_fti_tape, a, b, c, d, e, f);
+}
+
+PFmil_t *
+PFmil_tj_docmgmt_tape (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f)
+{
+    return wire6 (m_tj_docmgmt_tape, a, b, c, d, e, f);
+}
+
+#endif
 
 /* vim:set shiftwidth=4 expandtab: */

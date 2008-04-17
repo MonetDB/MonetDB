@@ -147,7 +147,7 @@ static PFarray_t *actatt_map;
 /**
  * maps cse subtrees to their original subtrees, triggered the
  * creation of the cse node
- */ 
+ */
 static PFarray_t *ori_map;
 
 /**
@@ -316,7 +316,7 @@ lookup_ori (PFarray_t *map, PFla_op_t *cse)
 #ifndef NDEBUG
     return NULL;
 #endif
- 
+
     PFoops (OOPS_FATAL, "Could not look up node (%s) (ori subtrees)",
             ID[cse->kind]);
 
@@ -399,7 +399,7 @@ insert_actatts (PFarray_t *map, PFla_op_t *ori, PFarray_t *proj)
 
     if (temp) {
         PFoops (OOPS_FATAL,
-                "No operator should be remapped");  
+                "No operator should be remapped");
     }
 
     *(ori_actatt_map_t *) PFarray_add (map) =
@@ -498,7 +498,7 @@ create_unq_name (PFalg_schema_t schema, PFalg_att_t att)
  * Worker for 'ACT(p)': based on the original
  * subtree looks up the corresponding subtree
  * with already annotated effective attributes.
- */ 
+ */
 static PFarray_t *
 lookup_actatts (PFarray_t *map, PFla_op_t *ori)
 {
@@ -508,7 +508,7 @@ lookup_actatts (PFarray_t *map, PFla_op_t *ori)
     }
 
 #ifndef NDEBUG
-    return NULL;   
+    return NULL;
 #endif
 
     PFoops (OOPS_FATAL, "actual attributes of the "
@@ -533,7 +533,7 @@ create_actatt_map (void)
                                  act_attribute ((n), (att)))
 #else
 #define ACTATT(n, att)  act_attribute ((n), (att))
-#endif 
+#endif
 
 #define INACTATT(map,...)                                          \
     insert_act_attribute ((map),                                   \
@@ -553,7 +553,7 @@ insert_act_attribute (PFarray_t *map, unsigned int count, actatt_map_t *act)
     for (i = 0; i < count; i++) {
         act_ori = act[i].ori_att;
         for (j = 0; j < PFarray_last (map); j++) {
-            if ((*(actatt_map_t *) PFarray_at (map, j)).ori_att ==  act_ori) 
+            if ((*(actatt_map_t *) PFarray_at (map, j)).ori_att ==  act_ori)
                 assert (!"remapping not allowed");
         }
     }
@@ -579,7 +579,7 @@ act_attribute_ (PFarray_t *map, PFalg_att_t att)
 
 #ifndef NDEBUG
     return att_NULL;
-#endif 
+#endif
 
     PFoops (OOPS_FATAL, "Attribute %s not found", PFatt_str (att));
 
@@ -599,16 +599,16 @@ act_attribute (PFla_op_t *n, PFalg_att_t att)
 }
 
 /**
- * Creates a new mapping item for 
+ * Creates a new mapping item for
  * original and actual attribute.
  */
 static actatt_map_t
 actatt (PFalg_att_t new, PFalg_att_t old)
 {
-    return (actatt_map_t) { 
+    return (actatt_map_t) {
                 .ori_att = old,
                 .act_att = new
-           }; 
+           };
 }
 
 /**
@@ -618,7 +618,7 @@ actatt (PFalg_att_t new, PFalg_att_t old)
 static PFarray_t *
 actatt_map_copy (PFarray_t *actmap)
 {
-    return PFarray_copy (actmap);    
+    return PFarray_copy (actmap);
 }
 
 /**
@@ -636,8 +636,8 @@ rev_act_attribute_ (PFarray_t *map, PFalg_att_t att)
 
 #ifndef NDEBUG
     return att_NULL;
-#endif 
-    
+#endif
+
     PFoops (OOPS_FATAL, "Attribute %s not found", PFatt_str (att));
 
     /* assert ("name not found"); */
@@ -649,7 +649,7 @@ rev_act_attribute_ (PFarray_t *map, PFalg_att_t att)
                                     rev_act_attribute ((n), (att)))
 #else
 #define REVACTATT(n, att)  rev_act_attribute ((n), (att))
-#endif 
+#endif
 
 /**
  * See 'eff_attribute_ (map, att)' above.
@@ -669,11 +669,11 @@ rev_act_attribute (PFla_op_t *n, PFalg_att_t att)
 static PFalg_attlist_t
 create_attlist (PFalg_schema_t schema)
 {
-    PFalg_attlist_t ret;    
+    PFalg_attlist_t ret;
     ret.count = schema.count;
-    
+
     ret.atts = (PFalg_att_t *) PFmalloc (ret.count * sizeof(PFalg_att_t));
-    
+
     for (unsigned int i = 0; i < ret.count; i++) {
         ret.atts[i] = schema.items[i].name;
     }
@@ -701,9 +701,9 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
 
     for (i = 0; i < a.count; i++) {
         /* check the equivalence */
-        mismatch = !(PFalg_atom_comparable (a.atoms[i], b.atoms[i]) && 
-                     (PFalg_atom_cmp (a.atoms[i], b.atoms[i]) == 0)); 
-        
+        mismatch = !(PFalg_atom_comparable (a.atoms[i], b.atoms[i]) &&
+                     (PFalg_atom_cmp (a.atoms[i], b.atoms[i]) == 0));
+
         if (mismatch)
             break;
     }
@@ -748,7 +748,7 @@ match (PFla_op_t *a, PFla_op_t *b)
 
     /* both nodes must have identical children in terms of
      * their underlying cse plans (C pointers) */
-    if (L(a)) 
+    if (L(a))
         if (!(CSE (L (a)) == CSE (L (b))))
             return false;
 
@@ -769,7 +769,7 @@ match (PFla_op_t *a, PFla_op_t *b)
                 (ACTATT (R(a), a->sem.ser_seq.item) &&
                  ACTATT (R(b), b->sem.ser_seq.item)))
                 return true;
-            break;   
+            break;
 
         case la_serialize_rel:
         case la_lit_tbl:
@@ -780,8 +780,8 @@ match (PFla_op_t *a, PFla_op_t *b)
             if (a->schema.count !=
                 b->schema.count)
                 return false;
-            
-            
+
+
             /* the items must have the same ordering,
              * in relations the order of tuples is not relevant,
              * but it keeps things simpler for us */
@@ -804,10 +804,10 @@ match (PFla_op_t *a, PFla_op_t *b)
 
         case la_ref_tbl:
             if (strcmp (a->sem.ref_tbl.name,
-                         b->sem.ref_tbl.name)) 
+                         b->sem.ref_tbl.name))
                 return false;
 
-            if (PFarray_last (a->sem.ref_tbl.tatts) != 
+            if (PFarray_last (a->sem.ref_tbl.tatts) !=
                 PFarray_last (b->sem.ref_tbl.tatts))
                 return false;
 
@@ -829,7 +829,7 @@ match (PFla_op_t *a, PFla_op_t *b)
                  i < PFarray_last (a->sem.ref_tbl.keys); i++) {
                  if (*(int *) PFarray_at (a->sem.ref_tbl.keys, i) !=
                      *(int *) PFarray_at (b->sem.ref_tbl.keys, i))
-                     return false; 
+                     return false;
             }
 
             return true;
@@ -842,7 +842,7 @@ match (PFla_op_t *a, PFla_op_t *b)
             if (PFalg_atom_cmp (a->sem.attach.value,
                                 b->sem.attach.value) != 0)
                 return false;
-            
+
             return true;
 
         case la_cross:
@@ -856,7 +856,7 @@ match (PFla_op_t *a, PFla_op_t *b)
                 (ACTATT (R(a), a->sem.eqjoin.att2) ==
                  ACTATT (R(b), b->sem.eqjoin.att2)))
                 return true;
-            
+
             return false;
 
         case la_thetajoin:
@@ -877,12 +877,12 @@ match (PFla_op_t *a, PFla_op_t *b)
                  if (j >= b->sem.thetajoin.count)
                      return false;
             }
-                 
+
             return true;
         }
 
         case la_project:
-            if (a->sem.proj.count != b->sem.proj.count) 
+            if (a->sem.proj.count != b->sem.proj.count)
                 return false;
 
             for (unsigned int i = 0;  i < a->sem.proj.count; i++) {
@@ -894,7 +894,7 @@ match (PFla_op_t *a, PFla_op_t *b)
             return true;
 
         case la_select:
-            if (ACTATT (L(a), a->sem.select.att) == 
+            if (ACTATT (L(a), a->sem.select.att) ==
                 ACTATT (L(b), b->sem.select.att))
                 return true;
 
@@ -907,7 +907,7 @@ match (PFla_op_t *a, PFla_op_t *b)
                     ACTATT (L(a), a->sem.pos_sel.part) !=
                 IS_NULL(b->sem.pos_sel.part)?att_NULL:
                     ACTATT (L(b), b->sem.pos_sel.part))
-                return false; 
+                return false;
 
             if (a->sem.pos_sel.pos != b->sem.pos_sel.pos)
                 return false;
@@ -916,7 +916,7 @@ match (PFla_op_t *a, PFla_op_t *b)
             for (unsigned int i = 0;
                  i < PFord_count (a->sem.sort.sortby); i++) {
                 PFalg_att_t aitem = PFord_order_col_at (a->sem.sort.sortby, i);
-                PFalg_att_t bitem = PFord_order_col_at (b->sem.sort.sortby, i); 
+                PFalg_att_t bitem = PFord_order_col_at (b->sem.sort.sortby, i);
                 bool adir         = PFord_order_dir_at (a->sem.sort.sortby, i);
                 bool bdir         = PFord_order_dir_at (b->sem.sort.sortby, i);
                 if (!((ACTATT (L(a), aitem) == ACTATT (L(b), bitem)) &&
@@ -937,17 +937,17 @@ match (PFla_op_t *a, PFla_op_t *b)
             return true;
 
         case la_fun_1to1:
-            if (a->sem.fun_1to1.kind != 
+            if (a->sem.fun_1to1.kind !=
                 b->sem.fun_1to1.kind)
                 return false;
 
             if (a->sem.fun_1to1.refs.count !=
                 b->sem.fun_1to1.refs.count)
-                return false; 
+                return false;
 
             for (unsigned int i = 0;
                  a->sem.fun_1to1.refs.count; i++)
-                 if (a->sem.fun_1to1.refs.atts[i] != 
+                 if (a->sem.fun_1to1.refs.atts[i] !=
                      b->sem.fun_1to1.refs.atts[i])
                      return false;
 
@@ -963,14 +963,14 @@ match (PFla_op_t *a, PFla_op_t *b)
                 (ACTATT (L(a), a->sem.binary.att2) &&
                  ACTATT (L(b), b->sem.binary.att2)))
                 return true ;
-            
+
             return false;
 
         case la_bool_not:
             if (ACTATT (L(a), a->sem.unary.att) ==
                 ACTATT (L(b), b->sem.unary.att))
                 return true;
-            
+
             return false;
 
         case la_avg:
@@ -983,22 +983,22 @@ match (PFla_op_t *a, PFla_op_t *b)
                     ACTATT (L(a), a->sem.aggr.part) !=
                 IS_NULL(b->sem.aggr.part)?att_NULL:
                     ACTATT (L(b), b->sem.aggr.part))
-                return false; 
-                        
+                return false;
+
 
             /* even att is not necesserily set */
             if (IS_NULL(a->sem.aggr.att)?att_NULL:
                     ACTATT (L(a), a->sem.aggr.att) !=
                 IS_NULL(b->sem.aggr.att)?att_NULL:
                     ACTATT (L(b), b->sem.aggr.att))
-                return false; 
-            
+                return false;
+
             return true;
 
         case la_rownum:
         case la_rowrank:
         case la_rank:
-                        
+
             if (PFord_count (a->sem.sort.sortby) !=
                 PFord_count (b->sem.sort.sortby))
                 return false;
@@ -1007,9 +1007,9 @@ match (PFla_op_t *a, PFla_op_t *b)
             for (unsigned int i = 0;
                  i < PFord_count (a->sem.sort.sortby); i++) {
                 PFalg_att_t aitem = PFord_order_col_at (a->sem.sort.sortby, i);
-                PFalg_att_t bitem = PFord_order_col_at (b->sem.sort.sortby, i); 
-                bool adir         = PFord_order_dir_at (a->sem.sort.sortby, i); 
-                bool bdir         = PFord_order_dir_at (b->sem.sort.sortby, i); 
+                PFalg_att_t bitem = PFord_order_col_at (b->sem.sort.sortby, i);
+                bool adir         = PFord_order_dir_at (a->sem.sort.sortby, i);
+                bool bdir         = PFord_order_dir_at (b->sem.sort.sortby, i);
                 if (!((ACTATT (L(a), aitem) == ACTATT (L(b), bitem)) &&
                       (adir == bdir)))
                     return false;
@@ -1025,7 +1025,7 @@ match (PFla_op_t *a, PFla_op_t *b)
             return true;
 
         case la_rowid:
-            return true; 
+            return true;
 
         case la_type:
         case la_type_assert:
@@ -1083,8 +1083,8 @@ match (PFla_op_t *a, PFla_op_t *b)
                 (a->sem.step.level == b->sem.step.level) &&
                 (a->sem.step.guide_count == b->sem.step.guide_count)))
                 return false;
-            
-            /* we assume the guides are aligned */ 
+
+            /* we assume the guides are aligned */
             for (unsigned int i = 0;
                  i < a->sem.step.guide_count; i++) {
                  if (a->sem.step.guides[i]->guide !=
@@ -1102,13 +1102,13 @@ match (PFla_op_t *a, PFla_op_t *b)
                 (a->sem.doc_join.kind ==
                  b->sem.doc_join.kind))
                 return true;
-                
+
             return false;
 
         case la_doc_tbl:
             if ((ACTATT (L(a), a->sem.doc_tbl.res) ==
-                 ACTATT (L(b), b->sem.doc_tbl.res))  && 
-                (ACTATT (L(a), a->sem.doc_tbl.att) == 
+                 ACTATT (L(b), b->sem.doc_tbl.res))  &&
+                (ACTATT (L(a), a->sem.doc_tbl.att) ==
                  ACTATT (L(b), b->sem.doc_tbl.att)))
                 return true;
 
@@ -1119,7 +1119,7 @@ match (PFla_op_t *a, PFla_op_t *b)
                  ACTATT (R(b), b->sem.doc_access.att)) &&
                 a->sem.doc_access.doc_col == b->sem.doc_access.doc_col)
                 return true;
-            
+
             return false;
 
         case la_twig:
@@ -1145,7 +1145,7 @@ match (PFla_op_t *a, PFla_op_t *b)
             return false;
 
         case la_roots:
-            return true; 
+            return true;
 
         case la_fragment:
         case la_frag_union:
@@ -1158,7 +1158,7 @@ match (PFla_op_t *a, PFla_op_t *b)
                 PFprop_type_of (a, a->sem.err.att) ==
                 PFprop_type_of (b, b->sem.err.att))
                 return true;
-            
+
             return false;
 
         case la_cond_err:
@@ -1223,7 +1223,7 @@ static bool
 column_eq (unsigned int col1, unsigned int col2,
            PFla_op_t *littbl1, PFla_op_t *littbl2)
 {
-    assert (littbl1->kind == la_lit_tbl);  
+    assert (littbl1->kind == la_lit_tbl);
     assert (littbl2->kind == la_lit_tbl);
 
     if (littbl1->sem.lit_tbl.count !=
@@ -1231,7 +1231,7 @@ column_eq (unsigned int col1, unsigned int col2,
         return false;
 
     unsigned int i;
-   
+
     PFalg_tuple_t *a = littbl1->sem.lit_tbl.tuples;
     PFalg_tuple_t *b = littbl2->sem.lit_tbl.tuples;
 
@@ -1240,7 +1240,7 @@ column_eq (unsigned int col1, unsigned int col2,
         if (!(PFalg_atom_comparable (a[i].atoms[col1], b[i].atoms[col2]) &&
               (PFalg_atom_cmp (a[i].atoms[col1], b[i].atoms[col2]) == 0)))
             return false;
-    } 
+    }
     return true;
 }
 
@@ -1260,13 +1260,13 @@ littbl_column (PFalg_att_t name, PFla_op_t *littbl1, PFla_op_t *littbl2,
     assert (littbl1->sem.lit_tbl.count ==
             littbl2->sem.lit_tbl.count);
 
-    unsigned int column; 
+    unsigned int column;
 
     /* check if schema name is at least in table1 */
     for (column = 0; column < littbl1->schema.count; column++) {
         if (littbl1->schema.items[column].name == name)
             break;
-    } 
+    }
 
     /* if column name is not in table1 */
     if (column >= littbl1->schema.count)
@@ -1284,7 +1284,7 @@ littbl_column (PFalg_att_t name, PFla_op_t *littbl1, PFla_op_t *littbl2,
             for (unsigned int j = 0; j < PFarray_last (seen); j++)
                 if (littbl2->schema.items[i].name ==
                     *((PFalg_att_t *)PFarray_at (seen, j)))
-                    match = true; 
+                    match = true;
             if (match) continue;
 
             return littbl2->schema.items[i].name;
@@ -1309,13 +1309,13 @@ new_operator (PFla_op_t *n)
         case la_serialize_seq:
             return PFla_serialize_seq (CSE(L(n)), CSE(R(n)),
                                 ACTATT(R(n), n->sem.ser_seq.pos),
-                                ACTATT(R(n), n->sem.ser_seq.item));  
+                                ACTATT(R(n), n->sem.ser_seq.item));
 
         case la_serialize_rel:
             return PFla_serialize_rel (CSE(L(n)),
                                 ACTATT (L(n), n->sem.ser_rel.iter),
                                 ACTATT (L(n), n->sem.ser_rel.pos),
-                                n->sem.ser_rel.items); 
+                                n->sem.ser_rel.items);
 
         case la_lit_tbl:
             return PFla_lit_tbl_ (create_attlist (n->schema),
@@ -1335,7 +1335,7 @@ new_operator (PFla_op_t *n)
             return PFla_attach (CSE(L(n)),
                                 create_unq_name (CSE(L(n))->schema,
                                                  n->sem.attach.res),
-                                n->sem.attach.value); 
+                                n->sem.attach.value);
 
         case la_cross:
         case la_eqjoin:
@@ -1361,11 +1361,11 @@ new_operator (PFla_op_t *n)
                     break;
                 }
             }
-            
+
             if (projection) {
                 p = (PFalg_proj_t *) PFmalloc (CSE(R(n))->schema.count *
                                                sizeof(PFalg_proj_t));
-                
+
                 /* create projection */
                 for (unsigned int i = 0; i < CSE(R(n))->schema.count; i++) {
                     /* check for conflicting columns */
@@ -1381,8 +1381,8 @@ new_operator (PFla_op_t *n)
                        p[i] = PFalg_proj (t, CSE(R(n))->schema.items[i].name);
                        INACTATT (actmap,
                                  actatt (t,
-                                         R(n)->schema.items[i].name)); 
-                        
+                                         R(n)->schema.items[i].name));
+
                         /* add new created name to used_cols */
                         used_cols = used_cols | t;
                     }
@@ -1393,12 +1393,12 @@ new_operator (PFla_op_t *n)
                         INACTATT (actmap,
                                   actatt (CSE(R(n))->schema.items[i].name,
                                           R(n)->schema.items[i].name));
-                        
+
                         /* add new name to conflicting column */
                         used_cols = used_cols | CSE(R(n))->schema.items[i].name;
                     }
                 }
-                
+
                 PFla_op_t *prev = proj;
 
                 proj = PFla_project_ (proj, CSE(R(n))->schema.count, p);
@@ -1413,11 +1413,11 @@ new_operator (PFla_op_t *n)
                                      R(n)->schema.items[i].name);
                 }
 
-                /* insert projection and actual attributes 
+                /* insert projection and actual attributes
                  * in the original plan */
                 R(n) = PFla_project_ (R(n), R(n)->schema.count, dummy_p);
                 INACT (R(n), actmap);
-                
+
                 /* map the new operator to the cse operator
                  * of the previous operator
                  * to ensure the equality (match ()) */
@@ -1428,12 +1428,12 @@ new_operator (PFla_op_t *n)
                 case la_cross:  return PFla_cross  (CSE(L(n)), proj);
 
                 case la_eqjoin:
-                    return PFla_eqjoin (CSE(L(n)), proj, 
+                    return PFla_eqjoin (CSE(L(n)), proj,
                                         ACTATT (L(n), n->sem.eqjoin.att1),
                                         ACTATT (R(n), n->sem.eqjoin.att2));
 
-                case la_semijoin: 
-                    return PFla_semijoin (CSE(L(n)), proj, 
+                case la_semijoin:
+                    return PFla_semijoin (CSE(L(n)), proj,
                                           ACTATT (L(n), n->sem.eqjoin.att1),
                                           ACTATT (R(n), n->sem.eqjoin.att2));
 
@@ -1446,15 +1446,15 @@ new_operator (PFla_op_t *n)
                     /* copy sel_list */
                     for (unsigned int i = 0; i < n->sem.thetajoin.count; i++)
                         sel[i] = (PFalg_sel_t) {
-                                       .comp =  n->sem.thetajoin.pred[i].comp, 
+                                       .comp =  n->sem.thetajoin.pred[i].comp,
                                        .left =  ACTATT (L(n),
                                                  n->sem.thetajoin.pred[i].left),
                                        .right = ACTATT (R(n),
                                                  n->sem.thetajoin.pred[i].right)
                                  };
-                         
+
                      return PFla_thetajoin (CSE(L(n)), proj,
-                                            n->sem.thetajoin.count, sel); 
+                                            n->sem.thetajoin.count, sel);
                 }
 
                 default:
@@ -1475,7 +1475,7 @@ new_operator (PFla_op_t *n)
                                  .new = n->sem.proj.items[i].new,
                                  .old = ACTATT (L(n), n->sem.proj.items[i].old)
                              };
-            
+
             return PFla_project_ (CSE(L(n)), count, newproj);
         }
 
@@ -1489,7 +1489,7 @@ new_operator (PFla_op_t *n)
             for (unsigned int i = 0;
                  i < PFarray_last (n->sem.sort.sortby); i++) {
                  sortby = PFord_refine (
-                               sortby, 
+                               sortby,
                                ACTATT(L(n),
                                       PFord_order_col_at (
                                            n->sem.sort.sortby, i)),
@@ -1565,7 +1565,7 @@ new_operator (PFla_op_t *n)
                                                L(n)->schema.items[i].name),
                                             REVACTATT (R(n),
                                                CSE(R(n))->schema.items[j]
-                                                   .name))); 
+                                                   .name)));
                             }
                             else {
                                 p[i] = PFalg_proj (
@@ -1631,7 +1631,7 @@ new_operator (PFla_op_t *n)
             attlist.count = n->sem.fun_1to1.refs.count;
             attlist.atts  = (PFalg_att_t *) PFmalloc (
                                   attlist.count * sizeof(PFalg_att_t));
-            
+
             /* get the actual attribute from underlying node */
             for (unsigned int i = 0; i < attlist.count; i++) {
                 attlist.atts[i] = ACTATT(L(n), n->sem.fun_1to1.refs.atts[i]);
@@ -1649,7 +1649,7 @@ new_operator (PFla_op_t *n)
         case la_bool_or:
         case la_to:
         {
-            PFla_op_t * (*comp) (const PFla_op_t *n, PFalg_att_t res, 
+            PFla_op_t * (*comp) (const PFla_op_t *n, PFalg_att_t res,
                                  PFalg_att_t att1, PFalg_att_t att2);
 
             switch (n->kind) {
@@ -1704,7 +1704,7 @@ new_operator (PFla_op_t *n)
             for (unsigned int i = 0;
                  i < PFarray_last (n->sem.sort.sortby); i++) {
                    sortby = PFord_refine (
-                                    sortby, 
+                                    sortby,
                                     ACTATT(L(n),
                                            PFord_order_col_at (
                                                   n->sem.sort.sortby, i)),
@@ -1713,14 +1713,14 @@ new_operator (PFla_op_t *n)
             }
 
             switch (n->kind) {
-                case la_rownum: 
+                case la_rownum:
                     return PFla_rownum (CSE(L(n)),
                                  create_unq_name (CSE(L(n))->schema,
                                                   n->sem.sort.res),
                                  sortby,
                                  (n->sem.sort.part == att_NULL)?
                                  att_NULL:
-                                 ACTATT (L(n), n->sem.sort.part)); 
+                                 ACTATT (L(n), n->sem.sort.part));
                 case la_rowrank:
                     return PFla_rowrank (CSE(L(n)),
                                  create_unq_name (CSE(L(n))->schema,
@@ -1770,7 +1770,7 @@ new_operator (PFla_op_t *n)
                                 ACTATT (L(n), n->sem.aggr.att),
                                 (n->sem.aggr.part == att_NULL)?
                                 att_NULL:
-                                ACTATT (L(n), n->sem.aggr.part)); 
+                                ACTATT (L(n), n->sem.aggr.part));
 
         case la_all:
             return PFla_all (CSE(L(n)),
@@ -1779,7 +1779,7 @@ new_operator (PFla_op_t *n)
                              ACTATT (L(n), n->sem.aggr.att),
                              (n->sem.aggr.part == att_NULL)?
                              att_NULL:
-                             ACTATT (L(n), n->sem.aggr.part)); 
+                             ACTATT (L(n), n->sem.aggr.part));
 
         case la_step:
             return PFla_step (CSE(L(n)), CSE(R(n)),
@@ -1890,11 +1890,11 @@ new_operator (PFla_op_t *n)
             return PFla_pf_merge_adjacent_text_nodes (CSE(L(n)), CSE(R(n)),
                                  ACTATT (R(n), n->sem.merge_adjacent.iter_in),
                                  ACTATT (R(n), n->sem.merge_adjacent.pos_in),
-                                 ACTATT (R(n), n->sem.merge_adjacent.item_in), 
+                                 ACTATT (R(n), n->sem.merge_adjacent.item_in),
                                  ACTATT (R(n), n->sem.merge_adjacent.iter_in),
                                  ACTATT (R(n), n->sem.merge_adjacent.pos_in),
                                  ACTATT (R(n), n->sem.merge_adjacent.item_in));
-            break; 
+            break;
 
         case la_roots:
             return PFla_roots (CSE(L(n)));
@@ -1960,22 +1960,22 @@ new_operator (PFla_op_t *n)
         case la_rec_fix:
             return PFla_rec_fix (CSE(L(n)), CSE(R(n)));
         case la_rec_param:
-            return PFla_rec_param (CSE(L(n)), CSE(R(n)));  
+            return PFla_rec_param (CSE(L(n)), CSE(R(n)));
         case la_rec_arg: {
             PFla_op_t *seed   = CSE(L(n));
             PFla_op_t *result = CSE(R(n));
 
             PFarray_t *seed_actmap = create_actatt_map ();
             PFarray_t *res_actmap  = create_actatt_map ();
-           
-            assert (CSE(L(n))->schema.count == 
+
+            assert (CSE(L(n))->schema.count ==
                     L(n)->schema.count);
             assert (CSE(R(n))->schema.count ==
                     R(n)->schema.count);
 
             unsigned int i = 0;
             for (i = 0; i < L(n)->schema.count; i++) {
-                if (L(n)->schema.items[i].name != 
+                if (L(n)->schema.items[i].name !=
                     CSE(L(n))->schema.items[i].name)
                     break;
             }
@@ -1989,7 +1989,7 @@ new_operator (PFla_op_t *n)
                 for (i = 0; i < L(n)->schema.count; i++) {
                     p[i] = PFalg_proj (
                               L(n)->schema.items[i].name,
-                              CSE(L(n))->schema.items[i].name); 
+                              CSE(L(n))->schema.items[i].name);
                     INACTATT (seed_actmap,
                               actatt (L(n)->schema.items[i].name,
                                       CSE(L(n))->schema.items[i].name));
@@ -2019,7 +2019,7 @@ new_operator (PFla_op_t *n)
             }
 
             for (i = 0; i < R(n)->schema.count; i++) {
-                if (R(n)->schema.items[i].name != 
+                if (R(n)->schema.items[i].name !=
                     CSE(R(n))->schema.items[i].name)
                     break;
             }
@@ -2032,7 +2032,7 @@ new_operator (PFla_op_t *n)
                 for (i = 0; i < R(n)->schema.count; i++) {
                     p[i] = PFalg_proj (
                               R(n)->schema.items[i].name,
-                              CSE(R(n))->schema.items[i].name); 
+                              CSE(R(n))->schema.items[i].name);
                     INACTATT (res_actmap,
                               actatt (R(n)->schema.items[i].name,
                                       CSE(R(n))->schema.items[i].name));
@@ -2060,15 +2060,15 @@ new_operator (PFla_op_t *n)
                  * to ensure the equality (match ()) */
                 INCSE (R(n), prev);
             }
-             
+
             return PFla_rec_arg (seed, result,
                                  CSE(n->sem.rec_arg.base));
         }
         case la_rec_base:
             return PFla_rec_base (n->schema);
-        
+
         case la_fun_call: {
-            PFalg_schema_t schema; 
+            PFalg_schema_t schema;
             schema.count = n->schema.count;
             schema.items = (struct PFalg_schm_item_t*)
                            PFmalloc (schema.count *
@@ -2086,10 +2086,10 @@ new_operator (PFla_op_t *n)
         }
         case la_fun_param: {
             /* copy the schema */
-            PFalg_schema_t schema; 
+            PFalg_schema_t schema;
             schema.count = n->schema.count;
             schema.items = (struct PFalg_schm_item_t *)
-                           PFmalloc (schema.count * 
+                           PFmalloc (schema.count *
                                      sizeof (struct PFalg_schm_item_t));
 
             for (unsigned int i = 0; i < schema.count; i++)
@@ -2114,7 +2114,7 @@ new_operator (PFla_op_t *n)
                     "Logical operator cloning does not"
                     "support node kind (%s).",
                     ID[n->kind]);
-            break;     
+            break;
         default:
            return NULL;
     }
@@ -2155,13 +2155,13 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                 PFalg_att_t col = littbl_column (ori->schema.items[i].name,
                                                  ori, cse, seen);
 
-                *((PFalg_att_t *) PFarray_add (seen)) = col; 
+                *((PFalg_att_t *) PFarray_add (seen)) = col;
 
                 INACTATT (actmap,
                           actatt (col,
                                   ori->schema.items[i].name));
             }
-        }   break;     
+        }   break;
 
         case la_empty_tbl:
         {
@@ -2174,26 +2174,26 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                           actatt (cse->schema.items[i].name,
                                   ori->schema.items[i].name));
             }
-        }   break;  
+        }   break;
 
         case la_ref_tbl:
             actmap = create_actatt_map ();
-           
+
             assert (ori->schema.count == cse->schema.count);
-            
+
             /* we assume that columns are aligned, see match () */
             for (unsigned int i = 0; i < ori->schema.count; i++) {
                  INACTATT (actmap,
                            actatt (cse->schema.items[i].name,
                                    ori->schema.items[i].name));
-            } 
-            break;  
+            }
+            break;
 
         case la_attach:
             actmap = actatt_map_copy (ACT(L(ori)));
             INACTATT(actmap,
                      actatt (cse->sem.attach.res, ori->sem.attach.res));
-            break;  
+            break;
 
         case la_cross:
         case la_eqjoin:
@@ -2236,22 +2236,22 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                                        ori->sem.proj.items[i].new));
                  }
             }
-        }   break; 
+        }   break;
 
         case la_select:
         case la_pos_select:
             actmap = actatt_map_copy (ACT(L(ori)));
-            break; 
+            break;
 
         case la_disjunion:
         case la_intersect:
         case la_difference:
             actmap = actatt_map_copy (ACT(L(ori)));
-            break; 
+            break;
 
         case la_distinct:
             actmap = actatt_map_copy (ACT(L(ori)));
-            break;  
+            break;
 
         case la_fun_1to1:
             actmap = actatt_map_copy (ACT(L(ori)));
@@ -2268,7 +2268,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             actmap = actatt_map_copy (ACT(L(ori)));
             INACTATT(actmap,
                      actatt (cse->sem.binary.res, ori->sem.binary.res));
-            break; 
+            break;
 
         case la_bool_not:
             actmap = actatt_map_copy (ACT(L(ori)));
@@ -2284,16 +2284,16 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             INACTATT (actmap,
                       actatt (cse->sem.aggr.res, ori->sem.aggr.res),
                       actatt (cse->sem.aggr.att, ori->sem.aggr.att));
-            
+
             assert ((cse->sem.aggr.part == att_NULL &&
                      ori->sem.aggr.part == att_NULL) ||
                     (cse->sem.aggr.part != att_NULL &&
                      ori->sem.aggr.part != att_NULL));
-            
+
             if (cse->sem.aggr.part != att_NULL)
                 INACTATT (actmap,
                           actatt (cse->sem.aggr.part, ori->sem.aggr.part));
-                      
+
             break;
 
         case la_count:
@@ -2309,14 +2309,14 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             if (ori->sem.aggr.part != att_NULL)
                 INACTATT (actmap,
                            actatt (cse->sem.aggr.part, ori->sem.aggr.part));
-            break; 
+            break;
 
         case la_rownum:
         case la_rowrank:
         case la_rank:
            actmap = actatt_map_copy (ACT(L(ori)));
            INACTATT (actmap,
-                     actatt (cse->sem.sort.res, ori->sem.sort.res)); 
+                     actatt (cse->sem.sort.res, ori->sem.sort.res));
            break;
 
         case la_rowid:
@@ -2333,13 +2333,13 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
 
         case la_type_assert:
             actmap = actatt_map_copy (ACT(L(ori)));
-            break;     
+            break;
 
         case la_cast:
-            actmap = actatt_map_copy (ACT(L(ori))); 
+            actmap = actatt_map_copy (ACT(L(ori)));
             INACTATT (actmap,
                       actatt (cse->sem.type.res, ori->sem.type.res));
-            break;           
+            break;
 
         case la_seqty1:
         case la_all:
@@ -2355,8 +2355,8 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             if (cse->sem.aggr.part != att_NULL)
                 INACTATT (actmap,
                     actatt (cse->sem.aggr.part, ori->sem.aggr.part));
-            
-            break;        
+
+            break;
 
         case la_step:
         case la_guide_step:
@@ -2364,14 +2364,14 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             INACTATT (actmap,
                       actatt (cse->sem.step.item_res, ori->sem.step.item_res),
                       actatt (cse->sem.step.iter, ori->sem.step.iter));
-            break;  
+            break;
 
         case la_step_join:
         case la_guide_step_join:
             actmap = actatt_map_copy (ACT(R(ori)));
             INACTATT (actmap,
                       actatt (cse->sem.step.item_res, ori->sem.step.item_res));
-            break; 
+            break;
 
         case la_doc_index_join:
             actmap = actatt_map_copy (ACT(R(ori)));
@@ -2387,7 +2387,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                       actatt (
                           cse->sem.doc_tbl.res,
                           ori->sem.doc_tbl.res));
-            break;   
+            break;
 
         case la_doc_access:
             actmap = actatt_map_copy (ACT(R(ori)));
@@ -2395,7 +2395,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                       actatt (
                           cse->sem.doc_access.res,
                           ori->sem.doc_access.res));
-            break; 
+            break;
 
         case la_twig:
             actmap = create_actatt_map ();
@@ -2404,7 +2404,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                           cse->sem.iter_item.item, ori->sem.iter_item.item),
                       actatt (
                           cse->sem.iter_item.iter, ori->sem.iter_item.iter));
-            break; 
+            break;
 
         case la_fcns:
             actmap = create_actatt_map ();
@@ -2420,13 +2420,13 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                               ori->sem.iter_item1_item2.item2),
                       actatt (cse->sem.iter_item1_item2.iter,
                               ori->sem.iter_item1_item2.iter));
-            break; 
+            break;
 
         case la_docnode:
             actmap = create_actatt_map ();
             INACTATT (actmap,
                       actatt (cse->sem.docnode.iter, ori->sem.docnode.iter));
-            break; 
+            break;
 
         case la_content:
             actmap = create_actatt_map ();
@@ -2437,7 +2437,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                               ori->sem.iter_pos_item.pos),
                       actatt (cse->sem.iter_pos_item.iter,
                               ori->sem.iter_pos_item.iter));
-            break; 
+            break;
 
         case la_element:
         case la_textnode:
@@ -2448,7 +2448,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                           cse->sem.iter_item.item, ori->sem.iter_item.item),
                       actatt (
                           cse->sem.iter_item.iter, ori->sem.iter_item.iter));
-            break; 
+            break;
 
         case la_merge_adjacent:
             actmap = create_actatt_map ();
@@ -2458,12 +2458,12 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                       actatt (cse->sem.merge_adjacent.pos_res,
                               ori->sem.merge_adjacent.pos_res),
                       actatt (cse->sem.merge_adjacent.item_res,
-                              ori->sem.merge_adjacent.item_res)); 
-            break; 
+                              ori->sem.merge_adjacent.item_res));
+            break;
 
         case la_roots:
             actmap = actatt_map_copy (ACT(L(ori)));
-            break;           
+            break;
 
         case la_fragment:
         case la_empty_frag:
@@ -2471,7 +2471,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             /* this operator doesn't have schema information and thus no
              * projection list */
             actmap = create_actatt_map ();
-            break; 
+            break;
 
         case la_error:
         case la_cond_err:
@@ -2480,7 +2480,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
 
         case la_nil:
             actmap = create_actatt_map ();
-            break;    
+            break;
 
         case la_trace:
         case la_trace_msg:
@@ -2488,7 +2488,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             assert (!"missing implementation");
         case la_rec_fix:
             actmap = actatt_map_copy (ACT(R(ori)));
-            break; 
+            break;
 
         case la_rec_param:
             /* this operator doesn't have schema information and thus no
@@ -2498,7 +2498,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
 
         case la_rec_arg:
             actmap = actatt_map_copy (ACT(L(ori)));
-            break; 
+            break;
 
         case la_rec_base:
             actmap = create_actatt_map ();
@@ -2530,7 +2530,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
         case la_fun_frag_param:
             /* since this operator doesn't has an associated schema,
              * we create an empty map */
-            actmap = create_actatt_map (); 
+            actmap = create_actatt_map ();
             break;
         case la_proxy:
         case la_proxy_base:
@@ -2549,13 +2549,13 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                       actatt (
                           cse->sem.string_join.iter_res,
                           ori->sem.string_join.iter_res));
-            break;     
+            break;
 
         case la_dummy:
             /* there should be no dummy operator in this plan */
             PFoops (OOPS_FATAL,
                     "In this plan dummy operators should not occur");
-            break; 
+            break;
 
         default:
              PFoops (OOPS_FATAL,
@@ -2621,19 +2621,19 @@ la_cse (PFla_op_t *n)
          * not set */
         temp = new_operator (n);
 
-        /* consistency check, no attribute in the schema 
+        /* consistency check, no attribute in the schema
          * has the name att_NULL*/
         for (unsigned int i = 0; i < temp->schema.count; i++) {
              if (temp->schema.items[i].name == att_NULL)
                  PFoops (OOPS_FATAL,
-                         "(NULL) found in schema of %s", ID[temp->kind]); 
+                         "(NULL) found in schema of %s", ID[temp->kind]);
         }
 
         /* if we haven't seen it add it to
          * the seen expressions */
         *(PFla_op_t **) PFarray_add (a) = temp;
-        
-        
+
+
         /* mark n as the original node triggered the
          * insertion of the cse node temp */
         INORI (temp, n);
@@ -2669,7 +2669,7 @@ remove_dummies (PFla_op_t *n)
         while (n->child[i]->kind == la_dummy)
             n->child[i] = n->child[i]->child[0];
 
-        n->child[i] = remove_dummies (n->child[i]); 
+        n->child[i] = remove_dummies (n->child[i]);
     }
 
     SEEN (n) = true;
@@ -2695,7 +2695,7 @@ PFalgopt_cse (PFla_op_t *n)
     cse_map = PFarray (sizeof (ori_cse_map_t), 256);
     actatt_map = PFarray (sizeof (ori_actatt_map_t), 256);
     ori_map = PFarray (sizeof (cse_ori_map_t), 256);
- 
+
     /* initialize subexpression array (and clear it) */
     subexps = PFcarray (sizeof (PFarray_t *), 128);
 

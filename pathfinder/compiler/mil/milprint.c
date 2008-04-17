@@ -163,6 +163,11 @@
 
                  | 'step (' e ',' e ',' e ',' e ',' e ',' e ', e
                         ',' e ',' e ',' e ',' e ',' e ')'   <m_step>
+                 | 'ws_collection_root('exp','exp')'      <m_ws_collection_root>
+                 | 'ws_documents('exp','exp')'             <m_ws_documents>
+                 | 'ws_documents('exp',' exp','exp')'      <m_ws_documents_str>
+                 | 'ws_docname('exp','exp','exp','exp')'   <m_ws_docname>
+                 | 'ws_collections('exp','exp')'           <m_ws_collections>
 
    args          : args ',' args                            <m_arg>
                  | expression                               <otherwise>
@@ -326,6 +331,11 @@ static char *ID[] = {
     , [m_add_content]  = "add_content"
     , [m_chk_qnames]   = "invalid_qname"
     , [m_step]         = "step"
+    , [m_ws_collection_root] = "ws_collection_root"
+    , [m_ws_documents]       = "ws_documents"
+    , [m_ws_documents_str]   = "ws_documents"
+    , [m_ws_docname]         = "ws_docname"
+    , [m_ws_collections]     = "ws_collections"
 
     , [m_merge_adjacent]   = "merge_adjacent_text_nodes"
     , [m_string_join]      = "string_join"
@@ -355,6 +365,15 @@ static char *ID[] = {
     , [m_catch]    = "CATCH"
     , [m_error]    = "ERROR"
     , [m_col_name] = "col_name"
+#ifdef HAVE_PFTIJAH
+    , [m_tj_pfop]          = "ALG_tj_pfop"
+    , [m_tj_query_score]   = "ALG_tj_query_score"
+    , [m_tj_query_nodes]   = "ALG_tj_query_nodes"
+    , [m_tj_tokenize]      = "[tijah_tokenize]"
+    , [m_tj_query_handler] = "ALG_tj_query_handler"
+    , [m_tj_add_fti_tape]  = "ALG_tj_add_fti_tape"
+    , [m_tj_docmgmt_tape ] = "ALG_tj_docmgmt_tape"
+#endif
 
 };
 
@@ -428,10 +447,10 @@ print_statements (PFmil_t *n)
             break;
 
         case m_comment:
-	    milprintf ("# ");
-	    /* FIXME: What if c contains \n's? */
-	    milprintf ("%s\n", n->sem.s);
-	    break;
+            milprintf ("# ");
+            /* FIXME: What if c contains \n's? */
+            milprintf ("%s\n", n->sem.s);
+            break;
 
         /* statements : statement ';' */
         default:
@@ -566,7 +585,23 @@ print_statement (PFmil_t * n)
             print_args (n->child[0]);
             milprintf (")");
             break;
-
+#ifdef HAVE_PFTIJAH
+        case m_tj_docmgmt_tape:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", ");
+            print_expression (n->child[5]);
+            milprintf (")");
+            break;
+#endif
         default:
             debug_output;     /* Print MIL code so far when in debug mode. */
 #ifndef NDEBUG
@@ -696,9 +731,9 @@ print_expression (PFmil_t * n)
         case m_avg:
         /* expression : expression '.max' */
         case m_max:
-	/* expression : expression '.min' */
+        /* expression : expression '.min' */
         case m_min:
-	/* expression : expression '.sum' */
+        /* expression : expression '.sum' */
         case m_sum:
         /* expression : expression 'bat()' */
         case m_bat:
@@ -806,6 +841,12 @@ print_expression (PFmil_t * n)
         case m_mor:
         /* expression : 'enumerate(' expression ',' expression ')' */
         case m_enum:
+        /* expression : 'ws_collection_root(' expression ',' expression ')' */
+        case m_ws_collection_root:
+        /* expression : 'ws_documents(' expression ',' expression ')' */
+        case m_ws_documents:
+        /* expression : 'ws_collections(' expression ',' expression ')' */
+        case m_ws_collections:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");
@@ -819,6 +860,8 @@ print_expression (PFmil_t * n)
         case m_mstring2:
         /* expression : '[ifthenelse](' expr ',' expr ',' expr ')' */
         case m_mifthenelse:
+        /* expression : 'ws_documents(' expr ',' expr ',' expr ')' */
+        case m_ws_documents_str:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");
@@ -830,6 +873,8 @@ print_expression (PFmil_t * n)
 
         /* expression: '[pcre_replace](' expr ',' expr ',' expr ',' expr ')' */
         case m_mpcre_replace:
+        /* expression: 'ws_docname(' expr ',' expr ',' expr ',' expr ')' */
+        case m_ws_docname:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");
@@ -1087,6 +1132,77 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+#ifdef HAVE_PFTIJAH
+        case m_tj_tokenize:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (")");
+	    break;
+        case m_tj_query_score:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (")");
+            break;
+        case m_tj_query_nodes:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (")");
+            break;
+        case m_tj_pfop:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (")");
+            break;
+        case m_tj_query_handler:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", ");
+            print_expression (n->child[5]);
+            milprintf (", ");
+            print_expression (n->child[6]);
+            milprintf (")");
+            break;
+        case m_tj_add_fti_tape:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", ");
+            print_expression (n->child[5]);
+            milprintf (")");
+            break;
+
+#endif
         default:
             debug_output;     /* Print MIL code so far when in debug mode. */
 #ifndef NDEBUG

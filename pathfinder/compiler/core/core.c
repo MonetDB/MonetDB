@@ -158,7 +158,7 @@ PFcore_nil (void)
  *   a three digit, zero-padded integer number
  * @return the new variable
  */
-unsigned int core_vars; /* global for core_new_var (TODO REMOVE) */
+static unsigned int core_vars; /* global for core_new_var (TODO REMOVE) */
 
 
 PFvar_t *
@@ -1715,6 +1715,13 @@ PFcore_ebv (const PFcnode_t *n)
     assert (n);
 
     return APPLY (PFcore_function (PFqname (PFns_fn, "boolean")), n);
+}
+
+/* initializing global variables */
+void
+PFcore_init (void)
+{
+     core_vars = 0;
 }
 
 /* vim:set shiftwidth=4 expandtab: */

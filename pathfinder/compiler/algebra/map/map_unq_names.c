@@ -185,8 +185,8 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                         { .name = UNAME(p, p->schema.items[i].name),
                           .type = p->schema.items[i].type };
 
-    
-            res = PFla_ref_tbl_ (p->sem.ref_tbl.name, 
+
+            res = PFla_ref_tbl_ (p->sem.ref_tbl.name,
                                  schema,
                                  p->sem.ref_tbl.tatts,
                                  p->sem.ref_tbl.keys);
@@ -797,17 +797,22 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
         case la_rec_arg:
         /* The results of the left (seed) and the right (recursion) argument
-           have different result schemas. Thus we introduce a mapping
-           projection that transforms the recursion schema into the seed
-           (and base) schema. */
+           have different result schemas. Thus we introduce mapping
+           projections that transform the seed and the recursion schema into
+           the base schema. */
         {
             PFla_op_t *base = NULL;
-            PFalg_proj_t *projlist = PFmalloc (p->schema.count *
-                                               sizeof (PFalg_proj_t));
+            PFalg_proj_t *seed_projlist = PFmalloc (p->schema.count *
+                                                    sizeof (PFalg_proj_t));
+            PFalg_proj_t *rec_projlist = PFmalloc (p->schema.count *
+                                                   sizeof (PFalg_proj_t));
 
-            for (unsigned int i = 0; i < p->schema.count; i++)
-                projlist[i] = proj (UNAME(p, p->schema.items[i].name),
-                                    UNAME(R(p), p->schema.items[i].name));
+            for (unsigned int i = 0; i < p->schema.count; i++) {
+                seed_projlist[i] = proj (UNAME(p, p->schema.items[i].name),
+                                         UNAME(L(p), p->schema.items[i].name));
+                rec_projlist[i] = proj (UNAME(p, p->schema.items[i].name),
+                                        UNAME(R(p), p->schema.items[i].name));
+            }
 
             /* In case the recursion base is not referenced anymore
                we do not need to include the recursion argument. */
@@ -819,10 +824,12 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                 }
 
             if (base)
-                res = rec_arg (U(L(p)),
+                res = rec_arg (PFla_project_ (U(L(p)), 
+                                              p->schema.count,
+                                              seed_projlist),
                                PFla_project_ (U(R(p)),
                                               p->schema.count,
-                                              projlist),
+                                              rec_projlist),
                                base);
             else
                 return;
@@ -858,7 +865,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                     (struct PFalg_schm_item_t)
                         { .name = UNAME(p, p->schema.items[i].name),
                           .type = p->schema.items[i].type };
-    
+
             res = fun_call (U(L(p)), U(R(p)),
                             schema,
                             p->sem.fun_call.kind,
@@ -867,7 +874,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                             UNAME(L(p), p->sem.fun_call.iter),
                             p->sem.fun_call.occ_ind);
         }   break;
-        
+
         case la_fun_param:
         {
             PFalg_schema_t schema;
@@ -880,14 +887,14 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                     (struct PFalg_schm_item_t)
                         { .name = UNAME(p, p->schema.items[i].name),
                           .type = p->schema.items[i].type };
-    
+
             res = fun_param (U(L(p)), U(R(p)), schema);
         }   break;
-        
+
         case la_fun_frag_param:
             res = fun_frag_param (U(L(p)), U(R(p)), p->sem.col_ref.pos);
             break;
-            
+
         case la_proxy:
         case la_proxy_base:
             PFoops (OOPS_FATAL,
@@ -939,7 +946,7 @@ PFmap_unq_names (PFla_op_t *root)
     map_unq_names (root, map);
 
     /* return algebra DAG with unique names */
-    return U (root);
+    return U(root);
 }
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */

@@ -58,7 +58,7 @@ check_op (PFla_op_t *n, bool op_used)
 {
     if (L(n)) IN(n) |= IN(L(n));
     if (R(n)) IN(n) |= IN(R(n));
-    
+
     switch (n->kind) {
         case la_serialize_seq:
         case la_serialize_rel:
@@ -143,7 +143,7 @@ check_op (PFla_op_t *n, bool op_used)
                 /* check for a reference to iter */
                 (ITER(L(n)) || ITER(R(n))))
                 return true;
-                
+
             /* just propagate all column information */
             ITER (n) = ITER (L(n)) | ITER (R(n));
             POS  (n) = POS  (L(n)) | POS  (R(n));
@@ -360,7 +360,7 @@ static bool
 prop_check (PFla_op_t *n, bool op_used)
 {
     bool child_used = true;
-    
+
     assert (n);
 
     /* nothing to do if we already visited that node */

@@ -545,8 +545,6 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
                 prop_infer_icols (L(n), n->prop->icols);
                 twig_needed = true;
                 prop_infer_icols (R(n), 0);
-                twig_needed = true;
-                prop_infer_icols (R(n), 0);
             } else if (first_twig_child) {
                 first_twig_child = false;
                 n->prop->icols = n->sem.docnode.iter;
@@ -678,7 +676,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->l_icols = n->prop->icols;
             n->prop->l_icols = union_ (n->prop->l_icols, n->sem.err.att);
             break;
-            
+
         case la_cond_err:
             /* infer incoming icols for input relation */
             n->prop->l_icols = n->prop->icols;
@@ -763,13 +761,13 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
         case la_fun_call:
             n->prop->l_icols = n->sem.fun_call.iter;
             break;
-            
+
         case la_fun_param:
             for (unsigned int i = 0; i < n->schema.count; i++)
                 n->prop->l_icols = union_ (n->prop->l_icols,
                                            n->schema.items[i].name);
             break;
-            
+
         case la_proxy:
         case la_proxy_base:
             /* infer incoming icols for input relation */
@@ -861,4 +859,4 @@ PFprop_infer_icol (PFla_op_t *root) {
     PFprop_infer_icol_specific (root, 0);
 }
 
-
+/* vim:set shiftwidth=4 expandtab: */

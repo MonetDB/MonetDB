@@ -274,7 +274,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
                 if (n->schema.items[i].type == aat_nat)
                     add_dom (n->prop, n->schema.items[i].name, id++);
             break;
-    
+
 
         case la_attach:
             bulk_add_dom (n->prop, L(n));
@@ -876,13 +876,13 @@ infer_dom (PFla_op_t *n, unsigned int id)
                 add_dom (n->prop, n->schema.items[0].name, id++);
                 i++;
             }
-                
+
             /* create new domains for all (remaining) attributes */
             for (; i < n->schema.count; i++)
                 if (n->schema.items[i].type == aat_nat)
                     add_dom (n->prop, n->schema.items[i].name, id++);
         }   break;
-                
+
         case la_fun_param:
             bulk_add_dom (n->prop, L(n));
             break;

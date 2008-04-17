@@ -37,6 +37,9 @@
 
 #include "abssyn.h"
 
+/* initialize global variables */
+void PFvarscope_init (void);
+
 /* Check variable scoping rules */
 void PFvarscope (PFpnode_t *);
 

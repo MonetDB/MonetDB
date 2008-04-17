@@ -2,7 +2,7 @@
 
 /**
  * @file mem.c
- * Garbage collected memory and string allocation 
+ * Garbage collected memory and string allocation
  * (@a no allocation of specific objects [parse tree nodes, etc.] here!)
  *
  *
@@ -35,12 +35,12 @@
 #include "pathfinder.h"
 
 #if !HAVE_GC
-/* we need a fallback solution in case 
+/* we need a fallback solution in case
    we have no garbage collector */
 #include "mem.c"
 
 #else
-/* we have a garbage collector 
+/* we have a garbage collector
    (thus use it to implement the memory interface) */
 
 #include <string.h>
@@ -66,7 +66,7 @@ PFmem_destroy(void)
  * Worker for #PFmalloc ().
  */
 void *
-PFmalloc_ (size_t n, const char *file, const char *func, const int line) 
+PFmalloc_ (size_t n, const char *file, const char *func, const int line)
 {
     void *mem;
     /* allocate garbage collected heap memory of requested size */
@@ -74,7 +74,7 @@ PFmalloc_ (size_t n, const char *file, const char *func, const int line)
 
     if (mem == 0) {
         /* don't use PFoops () here as it tries to allocate even more memory */
-        PFlog ("fatal error: insufficient memory (allocating "SZFMT" bytes failed) in %s (%s), line %d", 
+        PFlog ("fatal error: insufficient memory (allocating "SZFMT" bytes failed) in %s (%s), line %d",
                 n, file, func, line);
         PFexit(-OOPS_FATAL);
     }
@@ -87,7 +87,7 @@ PFmalloc_ (size_t n, const char *file, const char *func, const int line)
  */
 void *
 PFrealloc_ (void *mem, size_t old_n, size_t n,
-	    const char *file, const char *func, const int line) 
+            const char *file, const char *func, const int line)
 {
     (void) old_n;
     /* resize garbage collected heap memory to requested size */
@@ -95,7 +95,7 @@ PFrealloc_ (void *mem, size_t old_n, size_t n,
 
     if (mem == 0) {
         /* don't use PFoops () here as it tries to allocate even more memory */
-        PFlog ("fatal error: insufficient memory (re-allocating "SZFMT" bytes failed) in %s (%s), line %d", 
+        PFlog ("fatal error: insufficient memory (re-allocating "SZFMT" bytes failed) in %s (%s), line %d",
                 n, file, func, line);
         PFexit(-OOPS_FATAL);
     }
@@ -105,7 +105,7 @@ PFrealloc_ (void *mem, size_t old_n, size_t n,
 
 /**
  * Allocates enough memory to hold a copy of @a str
- * and return a pointer to this copy 
+ * and return a pointer to this copy
  * If you specify @a n != 0, the copy will hold @a n characters (+ the
  * trailing '\\0') only.
  * @param str string to copy

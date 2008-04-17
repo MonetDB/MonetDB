@@ -46,9 +46,6 @@
 
 typedef struct PFcnode_t PFcnode_t;
 
-/* global for core_new_var (TODO REMOVE) */
-extern unsigned int core_vars;
-
 /* PFfun_t */
 #include "functions.h"
 
@@ -227,6 +224,9 @@ struct PFcnode_t {
 
 /* PFp..._t */
 #include "abssyn.h"
+
+/* initialize global variables */
+void PFcore_init (void);
 
 /** 
  * Core constructor functions below.

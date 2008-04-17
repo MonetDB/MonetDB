@@ -25,6 +25,11 @@
 @t serialize_pftijah
 
 @h
+/*
+ * TODO: whitelist/blacklist tags implementeren
+ *
+ */
+
 struct tijahContextStruct;
 
 extern int handleTijahTerm(struct tijahContextStruct *ctx, char* term);

@@ -52,6 +52,9 @@ typedef struct PFfun_t PFfun_t;
 
 #include "core2alg.h"
 
+/* initialize global variables */
+void PFfunctions_init (void);
+
 /** Data structure to hold information about XQuery functions.  */
 /* typedef struct PFfun_t PFfun_t; */
 

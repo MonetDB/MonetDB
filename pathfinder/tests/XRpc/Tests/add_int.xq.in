@@ -1,5 +1,5 @@
-import module namespace xrpc = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
+import module namespace xf = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
 
 for $i in (40, 50)
     for $j in (100, 200)
-    return execute at {"$HOST:$XRPCPORT"} {xrpc:add($i, ($j, 30))}
+    return execute at {"$HOST:$XRPCPORT"} {xf:add($i, ($j, 30))}

@@ -1,0 +1,30 @@
+stdout of test 'returnFollowingSibling_single` in directory 'tests/XRpc` itself:
+
+
+# 17:05:59 >  
+# 17:05:59 >  Mtimeout -timeout 180 Mserver "--config=/ufs/zhang/scratch/monet-dev-install/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/zhang/scratch/monet-dev-install/lib/MonetDB" --set "gdk_dbfarm=/ufs/zhang/scratch/monet-dev-install/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/zhang/scratch/monet-dev-install/var/MonetDB/log" --set mapi_port=39096 --set monet_prompt= --trace "--dbname=mTests_tests_XRpc" --dbinit="module(pathfinder); pfstart();" returnFollowingSibling.prologue ; echo ; echo Over..
+# 17:05:59 >  
+
+# Monet Database Server V4.11.3
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 17:06:00 >  
+# 17:06:00 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=39096 returnFollowingSibling.xq
+# 17:06:00 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+
+# 17:06:00 >  
+# 17:06:00 >  Done.
+# 17:06:00 >  
+

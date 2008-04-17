@@ -913,7 +913,12 @@ opt_complex (PFla_op_t *p)
 
             if (cur->kind != la_eqjoin ||
                 (att_join1 != cur->sem.eqjoin.att1 &&
-                 att_join1 != cur->sem.eqjoin.att2))
+                 att_join1 != cur->sem.eqjoin.att2) ||
+                /* Make sure that both join arguments are key as
+                   otherwise placing the distinct operator above
+                   the plan fragment is incorrect. */
+                !PFprop_key_left (cur->prop, cur->sem.eqjoin.att1) ||
+                !PFprop_key_right (cur->prop, cur->sem.eqjoin.att2))
                 break;
 
             if (PFprop_ocol (L(cur), att_sel_in1) &&
@@ -1020,7 +1025,7 @@ opt_complex (PFla_op_t *p)
                 if (PFord_order_dir_at (p->sem.sort.sortby, 0) == DIR_DESC &&
                     PFprop_req_order_col (p->prop, p->sem.sort.res))
                     break;
-                
+
                 /* copy the child schema (as we cannot be sure that
                    the schema of the rownum operator is still valid) ...*/
                 for (unsigned int i = 0; i < L(p)->schema.count; i++)
@@ -1038,7 +1043,7 @@ opt_complex (PFla_op_t *p)
                 *p = *PFla_project_ (L(p), L(p)->schema.count + 1, proj_list);
             }
             break;
-            
+
         case la_rank:
             /* match the pattern rank - (project -) rank and
                try to merge both rank operators if the nested
@@ -1186,7 +1191,7 @@ opt_complex (PFla_op_t *p)
                 *p = *PFla_project_ (L(p), p->schema.count, proj);
             }
             break;
-            
+
         case la_step:
             if (p->sem.step.level < 0)
                 p->sem.step.level = PFprop_level (p->prop,

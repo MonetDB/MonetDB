@@ -36,7 +36,7 @@ lib__xquery = {
                 $(PF_LIBS) \
                 $(MONETDB5_MODS) -l_optimizer -l_bat5 \
 		../runtime/libserialize ../runtime/libpf \
-		$(MONETDB_LIBS) $(MONETDB5_LIBS) -lmal -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
+		$(MONETDB_LIBS) $(MONETDB5_LIBS) -lmonetdb5 -lbat -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
 }
 
 headers_mal = {

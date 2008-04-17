@@ -2504,14 +2504,13 @@ PROC ws_docfilter(bat[void,bat] ws,
             }
             any_pre := any_pre.tdiff(del);
         }
-        # register the newly opened documents 
+        # register the newly opened documents
         open_name.append(docpre_nme.tmark(0@0));
         open_cont.append(docpre_nme.tmark(0@0).project(cont));
         open_docid.append(docpre_nme.hmark(0@0));
     }
     return assert_order(any_pre);
 }
-
 
 # find node pre numbers by ID (/NID) or IDREF. 
 # ID/IDREF lookup uses the value index (vx), using the same method as attribute lookup
@@ -2922,9 +2921,8 @@ PROC ws_newpage(BAT[void,BAT] ws,
 
             var pages_free := reverse(runtime.fetch(RT_LOCK_FREELIST));
             page_id := oid(new_pid);
-            new_pid :+= 1;
             # create a new [nil,oid] bat with densely descending tail values, ending at new_pid
-            var newpids := densebat(wrd(last_pid - new_pid)).seqbase(oid(new_pid)).reverse().seqbase(oid(nil)).access(BAT_WRITE).revert(); # put in reverse order to give the pages out in order 
+            var newpids := densebat(wrd(last_pid - new_pid)).seqbase(oid(new_pid + 1)).reverse().seqbase(oid(nil)).access(BAT_WRITE).revert(); # put in reverse order to give the pages out in order 
 
             # add extra created pages to the freelist
             if (isnil(err)) {
@@ -3224,9 +3222,9 @@ PROC ws_opendoc(BAT[void,BAT] ws, BAT[void,str] idx_names) : BAT[oid,oid]
                                                  bat(void,oid).seqbase(0@0), true); 
 }
 
-PROC ws_docavailable(BAT[void,BAT] ws, BAT[void,str] idx_names) : BAT[void,bit] 
-{   
-    var ret := bat(void,bit).seqbase(0@0); 
+PROC ws_docavailable(BAT[void,BAT] ws, BAT[void,str] idx_names) : BAT[void,bit]
+{
+    var ret := bat(void,bit).seqbase(0@0);
     idx_names@batloop() { # try to open the documents now so there are no atomicity issues
        ret.append(isnil(CATCH(ws_opendoc(ws,bat(void,str).append($t))))); # failure means: unavailable
     }

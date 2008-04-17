@@ -105,4 +105,11 @@ PFextract_options (PFpnode_t *root)
     return;
 }
 
+/* initialize global variables */
+void
+PFoptions_init (void)
+{
+    PFoptions = NULL;
+}
+
 /* vim:set shiftwidth=4 expandtab: */

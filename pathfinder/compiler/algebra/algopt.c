@@ -102,7 +102,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
         root = PFmap_ori_names (root);
 
     }
-    
+
     if (debug_opt)
         fprintf (stderr, "-o");
 
@@ -116,9 +116,9 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
             case 'A': /* disabled */
                 /*
                 tm = PFtimer_start ();
-                
+
                 root = PFalgopt_card (root);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   cardinality optimization:\t    %s",
@@ -131,9 +131,9 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 REMOVE_PROXIES("complex optimization")
 
                 tm = PFtimer_start ();
-                
+
                 root = PFalgopt_complex (root);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   complex optimization:\t    %s",
@@ -158,9 +158,9 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 REMOVE_PROXIES("constant optimization")
 
                 tm = PFtimer_start ();
-                
+
                 root = PFalgopt_const (root, const_no_attach);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   constant optimization:\t    %s",
@@ -174,9 +174,9 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 REMOVE_PROXIES("domain optimization")
 
                 tm = PFtimer_start ();
-                
+
                 root = PFalgopt_dom (root);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   domain optimization:\t\t    %s",
@@ -187,9 +187,9 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 REMOVE_PROXIES("general optimization")
 
                 tm = PFtimer_start ();
-                
+
                 root = PFalgopt_general (root);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   general optimization:\t    %s",
@@ -200,9 +200,9 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 MAP_ORI_NAMES("icol optimization")
 
                 tm = PFtimer_start ();
-                
+
                 root = PFalgopt_icol (root);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   icol optimization:\t\t    %s",
@@ -220,9 +220,9 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 REMOVE_PROXIES("equi-join pushdown")
 
                 tm = PFtimer_start ();
-                
+
                 root = PFalgopt_join_pd (root);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   equi-join pushdown:\t\t    %s",
@@ -234,9 +234,9 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 REMOVE_PROXIES("key optimization")
 
                 tm = PFtimer_start ();
-                
+
                 root = PFalgopt_key (root);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   key optimization:\t\t    %s",
@@ -251,10 +251,23 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 /* give up rewriting after 20 noneffective
                    cross product - cross product rewrites. */
                 root = PFalgopt_mvd (root, 20);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   mvd optimization:\t\t    %s",
+                           PFtimer_str (tm));
+                break;
+
+            case 'N':
+                MAP_ORI_NAMES("required nodes optimization")
+
+                tm = PFtimer_start ();
+
+                root = PFalgopt_req_node (root);
+
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("   required nodes optimization:\t    %s",
                            PFtimer_str (tm));
                 break;
 
@@ -265,7 +278,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 tm = PFtimer_start ();
 
                 root = PFalgopt_join_graph (root, guide_tree);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   join-graph optimization:\t    %s",
@@ -273,14 +286,14 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 break;
 
             case 'S':
-                /* we need the icols property and thus cannot 
+                /* we need the icols property and thus cannot
                    apply the optimization if our names are unique */
                 MAP_ORI_NAMES("set optimization")
-                    
+
                 tm = PFtimer_start ();
-                
+
                 root = PFalgopt_set (root);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   set optimization:\t\t    %s",
@@ -289,12 +302,12 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
 
             case 'T':
                 MAP_ORI_NAMES("thetajoin optimization")
-                    
+
                 tm = PFtimer_start ();
-                
+
                 root = PFintro_thetajoins (root);
                 root = PFalgopt_thetajoin (root);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   thetajoin optimization:\t    %s",
@@ -306,7 +319,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 tm = PFtimer_start ();
 
                 root = PFalgopt_guide (root, guide_tree);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   guide optimization:\t    %s",
@@ -318,9 +331,9 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 REMOVE_PROXIES("required value optimization")
 
                 tm = PFtimer_start ();
-                
+
                 root = PFalgopt_reqval (root);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   required value optimization:\t    %s",
@@ -329,7 +342,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
 
             case 'P':
                 tm = PFtimer_start ();
-                
+
                 if (unq_names)
                     PFprop_infer (true  /* card */,
                                   true  /* const */,
@@ -338,7 +351,8 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                                   false /* icol */,
                                   false /* composite key */,
                                   true  /* key */,
-                                  false /* ocols */, 
+                                  false /* ocols */,
+                                  false /* req_node */,
                                   false /* reqval */,
                                   true  /* level */,
                                   true  /* refctr */,
@@ -346,7 +360,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                                   true  /* original names */,
                                   false /* unique names */,
                                   root, guide_tree);
-                
+
                 else
                     PFprop_infer (true  /* card */,
                                   true  /* const */,
@@ -355,7 +369,8 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                                   true  /* icol */,
                                   true  /* composite key */,
                                   true  /* key */,
-                                  true  /* ocols */, 
+                                  true  /* ocols */,
+                                  true  /* req_node */,
                                   true  /* reqval */,
                                   true  /* level */,
                                   true  /* refctr */,
@@ -363,7 +378,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                                   false /* original names */,
                                   true  /* unique names */,
                                   root, guide_tree);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   complete property inference:\t    %s",
@@ -379,9 +394,9 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 REMOVE_PROXIES("variable name mapping")
 
                 tm = PFtimer_start ();
-                
+
                 root = PFmap_unq_names (root);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   map to unique attribute names:   %s",
@@ -399,9 +414,9 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 REMOVE_PROXIES("variable name mapping")
 
                 tm = PFtimer_start ();
-                
+
                 root = PFmap_ori_names (root);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   map to original attribute names: %s",
@@ -416,9 +431,9 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 proxies_involved = true;
 
                 tm = PFtimer_start ();
-                
+
                 root = PFintro_proxies (root);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   introduce proxy operators:\t    %s",
@@ -429,9 +444,9 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 proxies_involved = false;
 
                 tm = PFtimer_start ();
-                
+
                 root = PFresolve_proxies (root);
-                
+
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   resolve proxy operators:\t    %s",

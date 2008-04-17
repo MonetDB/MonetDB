@@ -77,7 +77,7 @@ introduce_rec_borders_worker (PFpa_op_t *n, PFarray_t *bases)
         case pa_rec_arg:
             base_path = introduce_rec_borders_worker (L(n), bases);
             break;
-            
+
         /* if the base operator belongs to the currently searched
            recursion mark the node as inside the recursion */
         case pa_rec_base:
@@ -110,12 +110,12 @@ introduce_rec_borders_worker (PFpa_op_t *n, PFarray_t *bases)
              }
              break;
 
-        case pa_fun_param:             
+        case pa_fun_param:
              /* only collect the base paths */
              base_path = introduce_rec_borders_worker (L(n), bases) ||
                          introduce_rec_borders_worker (R(n), bases);
              break;
-            
+
         case pa_fcns:
             /* this also skips the introduction of a rec_border
                operator for the content of an empty elements:
@@ -166,17 +166,17 @@ in_reset (PFpa_op_t *n)
         return;
     else
         pfIN(n) = false;
-    
+
     for (i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
         in_reset (n->child[i]);
 }
 
 /**
- * Walk down the DAG and for each recursion operator 
+ * Walk down the DAG and for each recursion operator
  * introduce border operators.
  *
  * We mark all operators that lie on the path from the
- * result (or the recursion arguments) to the base 
+ * result (or the recursion arguments) to the base
  * operators of the recursion as inside the recursion body.
  *
  * A border is introduced between nodes (a) and (b) where
@@ -202,14 +202,14 @@ introduce_rec_borders (PFpa_op_t *n)
             /* collect base operators */
             cur = L(n);
             while (cur->kind != pa_nil) {
-                assert (cur->kind == pa_rec_param && 
+                assert (cur->kind == pa_rec_param &&
                         L(cur)->kind == pa_rec_arg);
                 *(PFpa_op_t **) PFarray_add (bases) = L(cur)->sem.rec_arg.base;
                 cur = R(cur);
             }
 
-            /* call the path traversal worker, that introduces 
-               the border operator and marks all 'inside' nodes, 
+            /* call the path traversal worker, that introduces
+               the border operator and marks all 'inside' nodes,
                for all recursion arguments as well as the result */
             cur = L(n);
             while (cur->kind != pa_nil) {

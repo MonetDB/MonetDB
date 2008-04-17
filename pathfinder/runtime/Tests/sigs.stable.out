@@ -42,6 +42,7 @@ module 'pf_support'
 [ "descendant_or_self(BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], oid, BAT[oid,BAT], int, BAT[void,any], chr) : BAT[void,BAT]"					  ]
 [ "descendant_or_self(BAT[oid,oid], BAT[oid,oid], oid, BAT[oid,BAT], int, BAT[void,any], chr) : BAT[void,BAT]"						  ]
 [ "doc_tbl(BAT[void,BAT], BAT[void,str]) : BAT[void,BAT]"												  ]
+[ "docsused(BAT[any,oid], BAT[oid,oid], BAT[void,oid], BAT[void,oid], BAT[void,int]) : BAT[oid,oid]"								  ]
 [ "ebv(BAT[oid,bit]) : BAT[oid,bit]"													  ]
 [ "elem_constr(BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[oid,oid], BAT[oid,oid], BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[void,BAT]"	  ]
 [ "elem_constr_empty(BAT[void,oid], BAT[void,BAT]) : BAT[void,BAT]"											  ]

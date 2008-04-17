@@ -104,7 +104,7 @@ static PFvar_t *find_var (PFqname_t);
  *
  * global (TODO: remove)
  */
-static bool scoping_failed = false;
+static bool scoping_failed;
 
 static void scope_var_decls (PFpnode_t *n);
 
@@ -660,5 +660,13 @@ PFvarscope (PFpnode_t * root)
                 "erroneous variable references reported above");
 }
 
+/* initialize global variables */
+void
+PFvarscope_init (void)
+{
+    /* initialize with empty scope */
+    var_env = PFscope ();
+    scoping_failed = false;
+}
 
 /* vim:set shiftwidth=4 expandtab: */

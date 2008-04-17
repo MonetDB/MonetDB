@@ -1,0 +1,31 @@
+stdout of test 'emptySeq2_single` in directory 'tests/XRpc` itself:
+
+
+# 23:00:29 >  
+# 23:00:29 >  Mtimeout -timeout 180 Mserver "--config=/ufs/zhang/scratch/monet/dev-install/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/zhang/scratch/monet/dev-install/lib/MonetDB" --set "gdk_dbfarm=/ufs/zhang/scratch/monet/dev-install/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/zhang/scratch/monet/dev-install/var/MonetDB/log" --set mapi_port=30384 --set monet_prompt= --trace "--dbname=mTests_tests_XRpc_basic_queries" --dbinit="module(pathfinder); pfstart();" emptySeq2.prologue ; echo ; echo Over..
+# 23:00:29 >  
+
+# Monet Database Server V4.13.1
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 23:00:30 >  
+# 23:00:30 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=50652 emptySeq2.xq
+# 23:00:30 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+
+# 23:00:30 >  
+# 23:00:30 >  Done.
+# 23:00:30 >  
+

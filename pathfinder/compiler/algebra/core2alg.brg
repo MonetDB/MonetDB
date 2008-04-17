@@ -329,7 +329,7 @@ typedef struct core2alg_map_t core2alg_map_t;
                                                             (i)))
 
 /**
- * structure to collect the active recursive functions 
+ * structure to collect the active recursive functions
  * and their current ``unfold'' count
  */
 struct fun_active_t {
@@ -532,7 +532,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
         /* CoreExpr:           xrpc (CoreExpr, apply (FunctionArgs)) */
         case 61:
-            
+
         /* FunctionArgs:       arg (FunctionArg, FunctionArgs) */
         case 501:
 
@@ -2236,10 +2236,10 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
                     /* (3) invoke compilation of the function body. */
                     reduce (ctx, p->sem.fun->core, 1);
-                    
+
                     /* remove function from the active ones */
                     PFarray_del (ctx->fun_active);
-                    
+
                     A(p) = A(p->sem.fun->core);
                 }
                 /* cope with recursive functions */
@@ -2277,18 +2277,18 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                                 NULL,
                                                 curr_arg.frag);
                                 break;
-                            } 
+                            }
                     }
 
                     /* add function once more to the active ones */
                     FUN_ACTIVE_AT(i).count += 1;
-                    
+
                     /* (3) Invoke compilation of the function body. */
                     reduce (ctx, p->sem.fun->core, 1);
-                    
+
                     /* remove function once from the active ones */
                     FUN_ACTIVE_AT(i).count -= 1;
-                    
+
                     /* store the resulting algebra expression */
                     PFla_op_t *res_rel  = A(p->sem.fun->core).rel;
                     PFarray_t *res_frag = A(p->sem.fun->core).frag;
@@ -2300,7 +2300,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                             (struct PFla_pair_t) {
                                 .rel  = CORE2ALG_MAP_AT(j).rel,
                                 .frag = CORE2ALG_MAP_AT(j).frag };
-                            
+
                     CORE2ALG_MAP = old_core2alg_map;
 
                     A(p) = (struct PFla_pair_t) {
@@ -2339,7 +2339,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             PFalg_schema_t schema;
             PFarray_t     *old_env;
             PFarray_t     *old_fun_args;
-            
+
             /* prepare the standard in/output schema */
             schema.count = 3;
             schema.items = PFmalloc (schema.count *
@@ -2351,12 +2351,12 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             schema.items[2].name = att_item;
             /* Note: the item type has to be adjusted for each parameter */
             schema.items[2].type = 0;
-            
+
             PFty_t ty = p->type;
 
             /* Collect the destinations */
             reduce (ctx, kids[0], nts[0]);
-            
+
             /*
              * Function application:
              *
@@ -2396,7 +2396,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             /* (3) Transform the function parameters into an XRPC function
              *     call.
              */
-            
+
             /* Create a linked list of parameters. */
             for (unsigned int i = R(p)->sem.fun->arity; i > 0; i--) {
                 PFla_pair_t curr_arg
@@ -2406,7 +2406,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                 schema.items[2].type = PFprop_type_of (curr_arg.rel, att_item);
                 /* create a new parameter */
                 param_list = fun_param (curr_arg.rel, param_list, schema);
-                
+
                 /* create a new fragment parameter if the parameter
                    represents a sequence with nodes */
                 if (schema.items[2].type & aat_node)
@@ -2419,7 +2419,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             /* As the top-most argument add the XRPC destination strings */
             schema.items[2].type = PFprop_type_of (A(L(p)).rel, att_item);
             param_list = fun_param (A(L(p)).rel, param_list, schema);
-            
+
             /* Collect all result types */
             schema.items[2].type = PFalg_type (ty);
 
@@ -2433,7 +2433,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                  att_iter,             /* loop column */
                                  PFalg_type_occ (ty)); /* occurrence
                                                           indicator */
-                
+
             /* To correctly reference the fragment information of
                resulting items of kind node we introduce an additional
                frag_extract operator that refers to column item */
@@ -2450,7 +2450,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             ENV = old_env;
             FUN_ARGS = old_fun_args;
         } break;
-            
+
         /* FunctionArgs:       nil */
         case 500:
             break;
@@ -2704,7 +2704,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                                     old_loop,
                                                     base_loop),
                         .frag = A(RR(p)).frag
-                   }; 
+                   };
 
             /* clean up environment and loop relation */
             if (strategy != IFP) {
@@ -2783,7 +2783,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                         p->kind);
         }
     }
-    
+
     /* In case we recursively generate the algebra plan
        we need to record the mappings that have changed
        to ensure that we are able to clean up the side
@@ -2796,7 +2796,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 }
 
 /* recursion strategy for SQL */
-static PFla_op_t * 
+static PFla_op_t *
 recursion_sql (int strategy,
                PFla_op_t *body,
                PFla_op_t *seed,
@@ -2818,9 +2818,9 @@ recursion_sql (int strategy,
     /* check whether we may modify the strategy and
        if the DELTA approach is allowed */
     if (!PFprop_check_rec_delta (body))
-        PFoops (OOPS_FATAL, "SQL cannot cope with this query"); 
+        PFoops (OOPS_FATAL, "SQL cannot cope with this query");
 
-    PFla_op_t *res_body = NULL;    
+    PFla_op_t *res_body = NULL;
     PFla_op_t *res_rec_param = NULL;
     PFla_op_t *loop_rec_param = NULL;
 
@@ -2830,7 +2830,7 @@ recursion_sql (int strategy,
                        proj (att_iter, att_iter),
                        proj (att_item, att_item)));
 
-    /* ------------------- BODY ----------------- */ 
+    /* ------------------- BODY ----------------- */
 
     res_rec_param = rec_param (
                         rec_arg (
@@ -2855,8 +2855,8 @@ recursion_sql (int strategy,
                             res_rec_param);
     else
         loop_rec_param = res_rec_param;
-                                  
-    /* ---------------RECURSION ---------------- */ 
+
+    /* ---------------RECURSION ---------------- */
     return rank (
                project (
                    rec_fix (
@@ -3018,7 +3018,7 @@ locstep (core2alg_ctx_t *ctx,
     spec.axis = axis;
     /* missing QName */
     spec.qname = PFqname (PFns_wild, NULL);
-    
+
     if (PFty_subtype (ty, PFty_xs_anyAttribute ())) {
         /* This is a test for attribute nodes */
         spec.kind = node_kind_attr;
@@ -3389,7 +3389,7 @@ PFcore2alg (PFcnode_t *r, PFquery_t *query,
             enum PFoutput_format_t output_format)
 {
     PFarray_t *options = NULL;
-    
+
     /* create a new context */
     core2alg_ctx_t ctx;
 
@@ -3423,7 +3423,7 @@ PFcore2alg (PFcnode_t *r, PFquery_t *query,
 
         ctx.recursion_depth = atoi (*((char **) PFarray_top (options)));
     }
-    
+
     /* Initialize stack recording the active user-defined functions */
     ctx.fun_active = PFarray (sizeof (fun_active_t), 50);
 
@@ -3439,6 +3439,5 @@ PFcore2alg (PFcnode_t *r, PFquery_t *query,
 
     return A(r).rel;
 }
-
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */

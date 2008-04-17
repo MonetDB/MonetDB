@@ -38,6 +38,10 @@
 #include "abssyn.h"
 #include "pf_xq.h"
 
+
+/* initialize global variables */
+void PFparser_init (void);
+
 /**
  * Parse an XQuery from the main-memory buffer pointed to by @a input.
  */

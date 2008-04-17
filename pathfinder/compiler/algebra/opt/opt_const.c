@@ -97,6 +97,7 @@ opt_const (PFla_op_t *p, bool no_attach)
     if (no_attach)
         switch (p->kind) {
             case la_eqjoin:
+            case la_thetajoin:
             case la_select:
             case la_disjunion:
             case la_difference:
@@ -136,20 +137,20 @@ opt_const (PFla_op_t *p, bool no_attach)
 
     case la_serialize_rel:
             {
-                /* Introduce (superfluous) attach-ops for constant attributes. 
-                   This rewrite ensures, that constants are introduced at 
+                /* Introduce (superfluous) attach-ops for constant attributes.
+                   This rewrite ensures, that constants are introduced at
                    the latest possible point in the plan.
                 */
-    
+
                 /* Rewrite for the iter-attribute. */
                 if (PFprop_const_left (p->prop, p->sem.ser_rel.iter)) {
                     L(p) = add_attach (L(p), p->sem.ser_rel.iter,
                                        PFprop_const_val_left (
                                            p->prop,
                                            p->sem.ser_rel.iter));
-    
+
                 }
-    
+
                 /* Rewrite for the pos-attribute. */
                 if (PFprop_const_left (p->prop, p->sem.ser_rel.pos)) {
                     L(p) = add_attach (L(p), p->sem.ser_rel.pos,
@@ -157,7 +158,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                                            p->prop,
                                            p->sem.ser_rel.pos));
                 }
-    
+
                 /* Rewrite for the item-attributes. */
                 PFalg_attlist_t items = p->sem.ser_rel.items;
                 unsigned int count = items.count;
@@ -377,6 +378,37 @@ opt_const (PFla_op_t *p, bool no_attach)
                 SEEN(p) = true;
             }
         }   break;
+
+        case la_thetajoin:
+            /* simple variant that can be extended much more if necessary */
+            if (p->sem.thetajoin.count > 1) {
+                PFalg_sel_t *pred = p->sem.thetajoin.pred;
+                PFalg_att_t  l,
+                             r;
+                for (unsigned int i = 0; i < p->sem.thetajoin.count; i++) {
+                    l = pred[i].left;
+                    r = pred[i].right;
+                    /* check if the predicate is an equality predicate
+                       on constant and matching columns */
+                    if (pred[i].comp == alg_comp_eq &&
+                        PFprop_const_left (p->prop, l) &&
+                        PFprop_const_right (p->prop, r) &&
+                        PFalg_atom_comparable (
+                            PFprop_const_val_left (p->prop, l),
+                            PFprop_const_val_right (p->prop, r)) &&
+                        !PFalg_atom_cmp (
+                            PFprop_const_val_left (p->prop, l),
+                            PFprop_const_val_right (p->prop, r)) &&
+                        p->sem.thetajoin.count > 1) {
+                        /* remove the current predicate
+                           (by overwriting it with the last predicate) */
+                        pred[i] = pred[p->sem.thetajoin.count-1];
+                        i--;
+                        p->sem.thetajoin.count--;
+                    }
+                }
+            }
+            break;
 
         case la_select:
             /**

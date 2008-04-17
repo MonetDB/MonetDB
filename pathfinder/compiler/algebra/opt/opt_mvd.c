@@ -105,6 +105,8 @@ modify_binary_op (PFla_op_t *p,
         bool switch_right = att_present (LR(p), p->sem.binary.att1) &&
                             att_present (LR(p), p->sem.binary.att2);
 
+        /* Pushing down the operator twice is only allowed
+           if it doesn't affect the cardinality. */
         if (switch_left && switch_right) {
             *p = *(cross_can (op (LL(p),
                                   p->sem.binary.res,
@@ -149,6 +151,8 @@ modify_unary_op (PFla_op_t *p,
         bool switch_left = att_present (LL(p), p->sem.unary.att);
         bool switch_right = att_present (LR(p), p->sem.unary.att);
 
+        /* Pushing down the operator twice is only allowed
+           if it doesn't affect the cardinality. */
         if (switch_left && switch_right) {
             *p = *(cross_can (op (LL(p),
                                   p->sem.unary.res,
@@ -787,6 +791,8 @@ opt_mvd (PFla_op_t *p)
                                             p->sem.fun_1to1.refs.atts[i]);
             }
 
+            /* Pushing down the operator twice is only allowed
+               if it doesn't affect the cardinality. */
             if (switch_left && switch_right) {
                 *p = *(cross_can (fun_1to1 (LL(p),
                                             p->sem.fun_1to1.kind,
@@ -1037,6 +1043,8 @@ opt_mvd (PFla_op_t *p)
             bool switch_left = att_present (LL(p), p->sem.type.att);
             bool switch_right = att_present (LR(p), p->sem.type.att);
 
+            /* Pushing down the operator twice is only allowed
+               if it doesn't affect the cardinality. */
             if (switch_left && switch_right) {
                 *p = *(cross_can (type (LL(p),
                                         p->sem.type.res,
@@ -1072,6 +1080,8 @@ opt_mvd (PFla_op_t *p)
             bool switch_left = att_present (LL(p), p->sem.type.att);
             bool switch_right = att_present (LR(p), p->sem.type.att);
 
+            /* Pushing down the operator twice is only allowed
+               if it doesn't affect the cardinality. */
             if (switch_left && switch_right) {
                 *p = *(cross_can (type_assert_pos (
                                       LL(p),
@@ -1107,6 +1117,8 @@ opt_mvd (PFla_op_t *p)
             bool switch_left = att_present (LL(p), p->sem.type.att);
             bool switch_right = att_present (LR(p), p->sem.type.att);
 
+            /* Pushing down the operator twice is only allowed
+               if it doesn't affect the cardinality. */
             if (switch_left && switch_right) {
                 *p = *(cross_can (cast (LL(p),
                                         p->sem.type.res,
@@ -1235,24 +1247,7 @@ opt_mvd (PFla_op_t *p)
             bool switch_left = att_present (RL(p), p->sem.step.item);
             bool switch_right = att_present (RR(p), p->sem.step.item);
 
-            if (switch_left && switch_right) {
-                *p = *(cross_can (step_join (
-                                        L(p),
-                                        RL(p),
-                                        p->sem.step.spec,
-                                        p->sem.step.level,
-                                        p->sem.step.item,
-                                        p->sem.step.item_res),
-                                  step_join (
-                                        L(p),
-                                        RR(p),
-                                        p->sem.step.spec,
-                                        p->sem.step.level,
-                                        p->sem.step.item,
-                                        p->sem.step.item_res)));
-                modified = true;
-            }
-            else if (switch_left) {
+            if (switch_left) {
                 *p = *(cross_can (step_join (
                                         L(p), RL(p),
                                         p->sem.step.spec,
@@ -1322,28 +1317,7 @@ opt_mvd (PFla_op_t *p)
             bool switch_left = att_present (RL(p), p->sem.step.item);
             bool switch_right = att_present (RR(p), p->sem.step.item);
 
-            if (switch_left && switch_right) {
-                *p = *(cross_can (guide_step_join (
-                                        L(p),
-                                        RL(p),
-                                        p->sem.step.spec,
-                                        p->sem.step.guide_count,
-                                        p->sem.step.guides,
-                                        p->sem.step.level,
-                                        p->sem.step.item,
-                                        p->sem.step.item_res),
-                                  guide_step_join (
-                                        L(p),
-                                        RR(p),
-                                        p->sem.step.spec,
-                                        p->sem.step.guide_count,
-                                        p->sem.step.guides,
-                                        p->sem.step.level,
-                                        p->sem.step.item,
-                                        p->sem.step.item_res)));
-                modified = true;
-            }
-            else if (switch_left) {
+            if (switch_left) {
                 *p = *(cross_can (guide_step_join (
                                         L(p), RL(p),
                                         p->sem.step.spec,
@@ -1378,24 +1352,7 @@ opt_mvd (PFla_op_t *p)
             bool switch_right = att_present (RR(p), p->sem.doc_join.item) &&
                                 att_present (RR(p), p->sem.doc_join.item_doc);
 
-            if (switch_left && switch_right) {
-                *p = *(cross_can (doc_index_join (
-                                        L(p),
-                                        RL(p),
-                                        p->sem.doc_join.kind,
-                                        p->sem.doc_join.item,
-                                        p->sem.doc_join.item_res,
-                                        p->sem.doc_join.item_doc),
-                                  doc_index_join (
-                                        L(p),
-                                        RR(p),
-                                        p->sem.doc_join.kind,
-                                        p->sem.doc_join.item,
-                                        p->sem.doc_join.item_res,
-                                        p->sem.doc_join.item_doc)));
-                modified = true;
-            }
-            else if (switch_left) {
+            if (switch_left) {
                 *p = *(cross_can (doc_index_join (
                                         L(p), RL(p),
                                         p->sem.doc_join.kind,
@@ -1429,18 +1386,7 @@ opt_mvd (PFla_op_t *p)
             bool switch_left = att_present (RL(p), p->sem.doc_access.att);
             bool switch_right = att_present (RR(p), p->sem.doc_access.att);
 
-            if (switch_left && switch_right) {
-                *p = *(cross_can (doc_access (L(p), RL(p),
-                                        p->sem.doc_access.res,
-                                        p->sem.doc_access.att,
-                                        p->sem.doc_access.doc_col),
-                                  doc_access (L(p), RR(p),
-                                        p->sem.doc_access.res,
-                                        p->sem.doc_access.att,
-                                        p->sem.doc_access.doc_col)));
-                modified = true;
-            }
-            else if (switch_left) {
+            if (switch_left) {
                 *p = *(cross_can (doc_access (L(p), RL(p),
                                         p->sem.doc_access.res,
                                         p->sem.doc_access.att,

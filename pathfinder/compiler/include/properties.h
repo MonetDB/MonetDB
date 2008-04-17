@@ -76,8 +76,12 @@ struct PFprop_t {
                                        to fulfill any bijective function. */
     PFalg_att_t  req_multi_col_cols; /**< List of columns that can be
                                        split up into multiple columns. */
+    PFalg_att_t  req_filter_cols; /**< List of columns whose values are
+                                       used for filtering only. */
     PFalg_att_t  req_value_cols;  /**< List of columns whose values are
                                        important for the query evaluation. */
+    PFarray_t   *req_node_vals;   /**< List of columns and their associated
+                                       node usage information. */
     PFarray_t   *name_pairs; /**< List of attributes with their corresponding
                                   unique names. */
     PFarray_t   *level_mapping; /**< List of attributes annotated with
@@ -171,9 +175,9 @@ PFprop_t *PFprop (void);
  */
 void PFprop_infer (bool card, bool const_, bool set, 
                    bool dom, bool icols, bool ckey,
-                   bool key, bool ocols, bool reqval, 
-                   bool level, bool refctr, bool guides,
-                   bool ori_names, bool unq_names,
+                   bool key, bool ocols, bool req_node,
+                   bool reqval, bool level, bool refctr,
+                   bool guides, bool ori_names, bool unq_names,
                    PFla_op_t *root, PFguide_tree_t *guide);
 
 /**
@@ -200,6 +204,7 @@ void PFprop_infer_nat_dom (PFla_op_t *root);
 void PFprop_infer_icol (PFla_op_t *root);
 void PFprop_infer_key (PFla_op_t *root);
 void PFprop_infer_ocol (PFla_op_t *root);
+void PFprop_infer_req_node (PFla_op_t *root);
 void PFprop_infer_reqval (PFla_op_t *root);
 void PFprop_infer_unq_names (PFla_op_t *root);
 void PFprop_infer_ori_names (PFla_op_t *root);
@@ -466,10 +471,43 @@ bool PFprop_req_bijective_col (const PFprop_t *prop, PFalg_att_t attr);
 bool PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_att_t attr);
 
 /**
+ * Test if @a attr is in the list of filter columns
+ * in container @a prop
+ */
+bool PFprop_req_filter_col (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
  * Test if @a attr is in the list of value columns
  * in container @a prop
  */
 bool PFprop_req_value_col (const PFprop_t *prop, PFalg_att_t attr);
+
+/* -------------------- required node property accessors ------------------- */
+
+/**
+ * @brief Test if column @a attr is linked to any node properties.
+ */
+bool PFprop_node_property (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * @brief Test if the node ids of column @a attr are required.
+ */
+bool PFprop_node_id_required (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * @brief Test if the node order of column @a attr are required.
+ */
+bool PFprop_node_order_required (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Test if the subtree of column @a attr is queried.
+ */
+bool PFprop_node_content_queried (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Test if the nodes of column @a attr are serialized.
+ */
+bool PFprop_node_serialize (const PFprop_t *prop, PFalg_att_t attr);
 
 /* --------------------- unique names property accessors ------------------- */
 
