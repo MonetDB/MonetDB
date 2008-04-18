@@ -1566,6 +1566,15 @@ main(int argc, char *argv[])
 		return(1);
 	}
 
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = SIG_IGN;
+	if (sigaction(SIGPIPE, &sa, NULL) == -1) {
+		fprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
+		MERO_EXIT(1);
+		return(1);
+	}
+
 	sa.sa_flags = SA_SIGINFO;
 	sigemptyset(&sa.sa_mask);
 	sa.sa_sigaction = childhandler;
