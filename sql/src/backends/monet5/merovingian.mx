@@ -682,7 +682,8 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 
 	/* quick 'n' dirty parsing */
 	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) == 0) {
-		conn = GDKstrdup(url);
+		conn = alloca(sizeof(char) * (strlen(url) + 1));
+		memcpy(conn, url, strlen(url) + 1);
 		conn += sizeof("mapi:monetdb://") - 1;
 		/* drop anything off after the hostname */
 		if ((port = strchr(conn, ':')) != NULL) {
