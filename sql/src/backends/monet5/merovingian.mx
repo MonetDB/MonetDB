@@ -457,6 +457,8 @@ forkMserver(str database, sabdb** stats, int force)
 		return(newErr("unable to create pipe: %s", strerror(errno)));
 	}
 	if (pipe(pfde) == -1) {
+		close(pfdo[0]);
+		close(pfdo[1]);
 		SABAOTHfreeStatus(stats);
 		*stats = NULL;
 		return(newErr("unable to create pipe: %s", strerror(errno)));
@@ -1244,6 +1246,9 @@ childhandler(int sig, siginfo_t *si, void *unused)
 			/* remove it, disconnect first, then free (because the
 			 * logger might access it otherwise after the free) */
 			q->next = p->next;
+			/* close the descriptors */
+			fclose(p->fout);
+			fclose(p->ferr);
 			if (si->si_code == CLD_EXITED) {
 				merlog("database '%s' (%d) has exited with exit status %d",
 						p->dbname, p->pid, si->si_status);
@@ -1686,6 +1691,8 @@ main(int argc, char *argv[])
 	/* clean up dbpair structs */
 	while (d != NULL) {
 		topdp = d->next;
+		fclose(d->fout);
+		fclose(d->ferr);
 		if (d->dbname != NULL)
 			GDKfree(d->dbname);
 		GDKfree(d);
