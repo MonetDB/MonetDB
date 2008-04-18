@@ -122,16 +122,6 @@ usage(char *prog)
 {
 	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
 	fprintf(stderr, "    --dbname=<database_name> \n");
-	fprintf(stderr, "    --dbfarm=<database_directory> \n");
-    fprintf(stderr,"     --version                 \n");
-    fprintf(stderr,"     --help        for more details\n");
-	exit(0);
-}
-void
-usage2(char *prog)
-{
-	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
-	fprintf(stderr, "    --dbname=<database_name> \n");
 	fprintf(stderr, "    --dbfarm=<directory> \n");
 	fprintf(stderr, "    --dbinit=<stmt>           Server prepare statement\n");
 	fprintf(stderr, "    --config=<config_file> \n");
@@ -420,10 +410,6 @@ faster system start.
 			*/
 			break;
 		case 'h':
-			if(strcmp(long_options[option_index].name, "help") == 0) {
-				usage2(prog);
-				break;
-			}
 		case '?':
 			usage(prog);
 		default:

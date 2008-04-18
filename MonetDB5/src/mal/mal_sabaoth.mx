@@ -603,13 +603,13 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 		snprintf(buf, PATHLENGTH, "%s/%s/%s", path, e->d_name, MAINTENANCEFILE);
 		f = fopen(buf, "r");
 		if (f != NULL) {
-			fclose(f);
+			(void)fclose(f);
 			sdb->locked = 1;
 		} else {
 			sdb->locked = 0;
 		}
 	}
-	(void) closedir(d);
+	(void)closedir(d);
 
 	*ret = top;
 	return(MAL_SUCCEED);
@@ -777,12 +777,14 @@ str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
 			}
 			(void)fclose(f);
 		} else {
+			(void)closedir(d);
 			throw(IO, "sabaoth.getUplogInfo", "unable to open file %s: %s",
 					log, strerror(errno));
 		}
 
 		break;
 	}
+	(void)closedir(d);
 
 	return(MAL_SUCCEED);
 }
