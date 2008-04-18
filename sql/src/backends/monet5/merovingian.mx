@@ -620,6 +620,7 @@ typedef struct _merovingian_proxy {
 	stream *co_out;  /* the output stream of the co-thread,
 	                    don't write to this stream!  close only */
 	char *name;      /* a description to log when this thread ends */
+	pthread_t co_thr;/* the other proxyThread */
 } merovingian_proxy;
 
 static void
@@ -639,11 +640,11 @@ proxyThread(void *d)
 			break;
 	}
 
-	stream_close(p->co_out);     /* out towards target B */
-	stream_close(p->in);         /* related in from target B */
+	stream_close(p->co_out);  /* out towards target B */
+	stream_close(p->in);      /* related in from target B */
 
-	stream_close(p->out);        /* out towards target A */
-	stream_close(p->co_in);      /* related in from target A */
+	stream_close(p->out);     /* out towards target A */
+	stream_close(p->co_in);   /* related in from target A */
 
 	if (p->name != NULL) {
 		/* name is only set on the client-to-server thread */
@@ -653,7 +654,16 @@ proxyThread(void *d)
 			merlog("server has terminated proxy connection, disconnecting client %s", p->name);
 		}
 		GDKfree(p->name);
+
+		/* wait for the other thread to finish, after which we can
+		 * finally destroy the streams */
+		pthread_join(p->co_thr, NULL);
+		stream_destroy(p->co_out);
+		stream_destroy(p->in);
+		stream_destroy(p->out);
+		stream_destroy(p->co_in);
 	}
+
 	GDKfree(p);
 }
 
@@ -668,7 +678,6 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 	char *port, *t;
 	char *conn;
 	stream *sfdin, *sfout;
-	pthread_t ctos = 0, stoc = 0; /* actually not used */
 	merovingian_proxy *pctos, *pstoc;
 
 	/* quick 'n' dirty parsing */
@@ -712,8 +721,8 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 	sfout = block_stream(socket_wastream(ssock, "merovingian->server (proxy write)"));
 
 	if (sfdin == 0 || sfout == 0) {
-		stream_close(sfout);
-		stream_close(sfdin);
+		close_stream(sfout);
+		close_stream(sfdin);
 		return(newErr("merovingian-server inputstream or outputstream problems"));
 	}
 
@@ -745,17 +754,20 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 	pstoc->co_out = sfout;
 	pstoc->name   = NULL;  /* we want only one log-message on disconnect */
 
-	if (pthread_create(&stoc, NULL, (void *(*)(void *))proxyThread, (void *)pstoc) < 0)
+	if (pthread_create(&pctos->co_thr, NULL,
+				(void *(*)(void *))proxyThread, (void *)pstoc) < 0)
 	{
-		stream_close(cfout);
-		stream_close(cfdin);
+		close_stream(sfout);
+		close_stream(sfdin);
 		return(newErr("failed to create proxy thread"));
 	}
 
-	if (pthread_create(&ctos, NULL, (void *(*)(void *))proxyThread, (void *)pctos) < 0)
+	if (pthread_create(&pstoc->co_thr, NULL,
+				(void *(*)(void *))proxyThread, (void *)pctos) < 0)
 	{
-		stream_close(cfout);
-		stream_close(cfdin);
+		/* if we destroy here, the first thread will cause a crash */
+		stream_close(sfout);
+		stream_close(sfdin);
 		return(newErr("failed to create proxy thread"));
 	}
 
@@ -776,14 +788,17 @@ handleClient(int sock)
 	socklen_t saddrlen = sizeof(struct sockaddr_in);
 	err e;
 
-	fdin = block_stream(socket_rastream(sock, "merovingian<-client (read)"));
-	fout = block_stream(socket_wastream(sock, "merovingian->client (write)"));
+	fdin = socket_rastream(sock, "merovingian<-client (read)");
+	if (fdin == 0)
+		return(newErr("merovingian-client inputstream problems"));
+	fdin = block_stream(fdin);
 
-	if (fdin == 0 || fout == 0) {
-		stream_close(fout);
-		stream_close(fdin);
-		return(newErr("merovingian-client inputstream or outputstream problems"));
+	fout = socket_wastream(sock, "merovingian->client (write)");
+	if (fout == 0) {
+		close_stream(fdin);
+		return(newErr("merovingian-client outputstream problems"));
 	}
+	fout = block_stream(fout);
 
 	/* note that we claim to speak proto 8 here */
 	stream_printf(fout, "%s:merovingian:8:%s:%s",
@@ -802,8 +817,8 @@ handleClient(int sock)
 		e = newErr("client sent challenge in incomplete block: %s", buf);
 		stream_printf(fout, "!client sent something this server could not understand, sorry\n", user);
 		stream_flush(fout);
-		stream_close(fout);
-		stream_close(fdin);
+		close_stream(fout);
+		close_stream(fdin);
 		return(e);
 	}
 
@@ -820,9 +835,8 @@ handleClient(int sock)
 	} else {
 		e = newErr("client challenge error: %s", buf);
 		stream_printf(fout, "!incomplete challenge '%s'\n", user);
-		stream_flush(fout);
-		stream_close(fout);
-		stream_close(fdin);
+		close_stream(fout);
+		close_stream(fdin);
 		return(e);
 	}
 
@@ -836,8 +850,8 @@ handleClient(int sock)
 			e = newErr("client challenge error: %s", buf);
 			stream_printf(fout, "!invalid password entry\n");
 			stream_flush(fout);
-			stream_close(fout);
-			stream_close(fdin);
+			close_stream(fout);
+			close_stream(fdin);
 			return(e);
 		}
 		algo = passwd + 1;
@@ -846,8 +860,8 @@ handleClient(int sock)
 			e = newErr("client challenge error: %s", buf);
 			stream_printf(fout, "!invalid password entry\n");
 			stream_flush(fout);
-			stream_close(fout);
-			stream_close(fdin);
+			close_stream(fout);
+			close_stream(fdin);
 			return(e);
 		}
 		*s = 0;
@@ -856,8 +870,8 @@ handleClient(int sock)
 		e = newErr("client challenge error: %s", buf);
 		stream_printf(fout, "!incomplete challenge '%s'\n", user);
 		stream_flush(fout);
-		stream_close(fout);
-		stream_close(fdin);
+		close_stream(fout);
+		close_stream(fdin);
 		return(e);
 	}
 
@@ -870,8 +884,8 @@ handleClient(int sock)
 		e = newErr("client challenge error: %s", buf);
 		stream_printf(fout, "!incomplete challenge, missing language\n");
 		stream_flush(fout);
-		stream_close(fout);
-		stream_close(fdin);
+		close_stream(fout);
+		close_stream(fdin);
 		return(e);
 	}
 
@@ -891,8 +905,8 @@ handleClient(int sock)
 		 * complain */
 		stream_printf(fout, "!please specify a database\n");
 		stream_flush(fout);
-		stream_close(fout);
-		stream_close(fdin);
+		close_stream(fout);
+		close_stream(fdin);
 		return(newErr("no database specified"));
 	} else {
 		if ((e = forkMserver(database, &top, 0)) != NO_ERR) {
@@ -902,8 +916,8 @@ handleClient(int sock)
 				stream_printf(fout, "!internal error while starting a new mserver\n");
 			}
 			stream_flush(fout);
-			stream_close(fout);
-			stream_close(fdin);
+			close_stream(fout);
+			close_stream(fdin);
 			return(e);
 		}
 		stat = top;
@@ -914,8 +928,8 @@ handleClient(int sock)
 		e = newErr("database '%s' does not allow connections", stat->dbname);
 		stream_printf(fout, "!database '%s' does not allow connections\n", stat->dbname);
 		stream_flush(fout);
-		stream_close(fout);
-		stream_close(fdin);
+		close_stream(fout);
+		close_stream(fdin);
 		SABAOTHfreeStatus(&top);
 		return(e);
 	}
@@ -951,8 +965,8 @@ handleClient(int sock)
 	if ((e = startProxy(fdin, fout, stat->conns->val, host)) != NO_ERR) {
 		stream_printf(fout, "!an internal error has occurred, please try again later\n");
 		stream_flush(fout);
-		stream_close(fout);
-		stream_close(fdin);
+		close_stream(fout);
+		close_stream(fdin);
 		merlog("starting a proxy failed: %s", e);
 		SABAOTHfreeStatus(&top);
 		return(e);
@@ -1330,7 +1344,7 @@ main(int argc, char *argv[])
 	errlog = NULL;
 	timeout = 0;
 	pidfilename = NULL;
-	prefix = MONETDB5_PREFIX;
+	prefix = GDKstrdup(MONETDB5_PREFIX);
 	while (fgets(buf, 1024, cnf) != NULL) {
 		/* eliminate fgets' newline */
 		buf[strlen(buf) - 1] = '\0';
@@ -1338,6 +1352,7 @@ main(int argc, char *argv[])
 			/* this should always come before it's used, so it's safe
 			 * this way */
 			p = strchr(buf, '=');
+			GDKfree(prefix);
 			prefix = GDKstrdup(++p);
 		} else if (*buf && strncmp(buf, "gdk_dbfarm=", 11) == 0) {
 			p = strchr(buf, '=');
@@ -1391,6 +1406,10 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 		return(1);
 	}
+
+	/* we no longer need prefix */
+	GDKfree(prefix);
+	prefix = NULL;
 
 	/* we need a dbfarm */
 	if (dbfarm == NULL) {
@@ -1488,6 +1507,7 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 		return(1);
 	}
+	GDKfree(pidfilename);
 
 	/* redirect stdout */
 	if (pipe(pfd) == -1) {
