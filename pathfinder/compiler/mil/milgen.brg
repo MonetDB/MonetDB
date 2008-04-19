@@ -2688,7 +2688,7 @@ reduce (PFpa_op_t * p, int goalnt)
                             mposjoin (var (qn_id_no_nil->name),
                                       var (qn_cont_no_nil->name),
                                       fetch (var (PF_MIL_VAR_WS),
-                                             var (PF_MIL_VAR_QN_URI)))),
+                                             var (PF_MIL_VAR_QN_PREFIX)))),
                         assgn (var (replace_qn_locale->name),
                             mposjoin (var (qn_id_no_nil->name),
                                       var (qn_cont_no_nil->name),
