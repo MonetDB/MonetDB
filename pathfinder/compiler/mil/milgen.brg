@@ -2520,8 +2520,9 @@ reduce (PFpa_op_t * p, int goalnt)
                        *attr_tgt               = new_var (1),
                        *attr_cont_tgt          = new_var (1),
                        *replace_strings        = new_var (1),
-                       *replace_qn_uristrings  = new_var (1),
-                       *replace_qn_loc_strings = new_var (1),
+                       *replace_qn_uri         = new_var (1),
+                       *replace_qn_prefix      = new_var (1),
+                       *replace_qn_locale      = new_var (1),
                        *pre_ins                = new_var (1),
                        *pre_cont_ins           = new_var (1),
                        *attr_ins               = new_var (1),
@@ -2566,13 +2567,17 @@ reduce (PFpa_op_t * p, int goalnt)
                                                     aat_attr1))),
                                        lit_bit (true)))),
                         assgn (var (pre_tgt->name),
-                               leftjoin (
-                                   var (v->name),
-                                   VAR (L(p)->env, pa_item, aat_pre1))),
+                               outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   leftjoin (
+                                       var (v->name),
+                                       VAR (L(p)->env, pa_item, aat_pre1)))),
                         assgn (var (pre_cont_tgt->name),
-                               leftjoin (
-                                   var (v->name),
-                                   VAR (L(p)->env, pa_item, aat_frag1))));
+                                outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   leftjoin (
+                                       var (v->name),
+                                       VAR (L(p)->env, pa_item, aat_frag1)))));
                     unpin (v, 1);
                 }
                 else {
@@ -2606,11 +2611,15 @@ reduce (PFpa_op_t * p, int goalnt)
                                    cast (type (mty_oid), nil ()),
                                    cast (type (mty_oid), nil ()))),
                         assgn (var (attr_tgt->name),
-                               var (v->name)),
+                               outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   var (v->name))),
                         assgn (var (attr_cont_tgt->name),
-                               leftjoin (
-                                   mirror (var (v->name)),
-                                   VAR (L(p)->env, pa_item, aat_frag1))));
+                               outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   leftjoin (
+                                       mirror (var (v->name)),
+                                       VAR (L(p)->env, pa_item, aat_frag1)))));
                     unpin (v, 1);
                 }
                 else {
@@ -2637,24 +2646,87 @@ reduce (PFpa_op_t * p, int goalnt)
                                         cast (type (mty_str), nil()))));
 
                 /* consider qnames */ 
-                if (ty & aat_qname)
+                if (ty & aat_qname) {
+
+                    mvar_t *qn_id_no_nil   = new_var(1);
+                    mvar_t *qn_cont_no_nil = new_var(1);
+                    mvar_t *map            = new_var(1);
+
                     execute (
-                        assgn (var (replace_qn_uristrings->name),
-                            mposjoin (VAR (L(p)->env, pa_item, aat_qname_id),
-                                      VAR (L(p)->env, pa_item, aat_qname_cont),
+                        /* a range select(a,nil,nil) will return all BUNS
+                         * that dont have nil on the tail                */
+                        assgn (var (qn_id_no_nil->name),
+                               select2 (VAR (L(p)->env,
+                                             pa_item,
+                                             aat_qname_id),
+                                        cast (type (mty_oid), nil()),
+                                        cast (type (mty_oid), nil()))),
+                        assgn (var (qn_cont_no_nil->name),
+                               select2 (VAR (L(p)->env,
+                                             pa_item,
+                                             aat_qname_cont),
+                                        cast (type (mty_oid), nil()),
+                                        cast (type (mty_oid), nil()))),
+                        /* keep a map of the head oids [oid-h,void]*/
+                        assgn (var (map->name),
+                               mark (var (qn_id_no_nil->name),
+                                     lit_oid(0))),
+                        /* make the head dense for the mposjoin [void,oid-t]*/
+                        assgn (var (qn_id_no_nil->name),
+                               tmark (var (qn_id_no_nil->name),
+                                      lit_oid(0))),
+                        assgn (var (qn_cont_no_nil->name),
+                               tmark (var (qn_cont_no_nil->name),
+                                      lit_oid(0))),
+                        /* finaly is time for the mposjoin */
+                        assgn (var (replace_qn_uri->name),
+                            mposjoin (var (qn_id_no_nil->name),
+                                      var (qn_cont_no_nil->name),
                                       fetch (var (PF_MIL_VAR_WS),
                                              var (PF_MIL_VAR_QN_URI)))),
-                        assgn (var (replace_qn_loc_strings->name),
-                            mposjoin (VAR (L(p)->env, pa_item, aat_qname_id),
-                                      VAR (L(p)->env, pa_item, aat_qname_cont),
+                        assgn (var (replace_qn_prefix->name),
+                            mposjoin (var (qn_id_no_nil->name),
+                                      var (qn_cont_no_nil->name),
                                       fetch (var (PF_MIL_VAR_WS),
-                                             var (PF_MIL_VAR_QN_LOC)))));
-                else
+                                             var (PF_MIL_VAR_QN_URI)))),
+                        assgn (var (replace_qn_locale->name),
+                            mposjoin (var (qn_id_no_nil->name),
+                                      var (qn_cont_no_nil->name),
+                                      fetch (var (PF_MIL_VAR_WS),
+                                             var (PF_MIL_VAR_QN_LOC)))),
+                        /* now he have to map back and restore the nil tails
+                         * producing a [oid-h,oid-t]. Then join back with the
+                         * upd_kind bat to get the nil values.*/
+                        assgn (var (replace_qn_uri->name),
+                               outerjoin (mirror (var (upd_kind->name)),
+                                          leftjoin (
+                                              var (map->name),
+                                              var (replace_qn_uri->name)))),
+                        assgn (var (replace_qn_prefix->name),
+                               outerjoin (mirror (var (upd_kind->name)),
+                                          leftjoin (
+                                              var (map->name),
+                                              var (replace_qn_prefix->name)))),
+                        assgn (var (replace_qn_locale->name),
+                               outerjoin (mirror (var (upd_kind->name)),
+                                          leftjoin (
+                                              var (map->name),
+                                              var (replace_qn_locale->name))))
+                    ); /* end of execute */
+
+                    unpin (qn_id_no_nil, 1);
+                    unpin (qn_cont_no_nil, 1);
+                    unpin (map, 1);
+
+                } else
                     execute (
-                        assgn (var (replace_qn_uristrings->name),
+                        assgn (var (replace_qn_uri->name),
                                project (var (upd_kind->name),
                                         cast (type (mty_str), nil()))),
-                        assgn (var (replace_qn_loc_strings->name),
+                        assgn (var (replace_qn_prefix->name),
+                               project (var (upd_kind->name),
+                                        cast (type (mty_str), nil()))),
+                        assgn (var (replace_qn_locale->name),
                                project (var (upd_kind->name),
                                         cast (type (mty_str), nil()))));
 
@@ -2689,13 +2761,17 @@ reduce (PFpa_op_t * p, int goalnt)
                                                     aat_attr))),
                                        lit_bit (true)))),
                         assgn (var (pre_ins->name),
-                               leftjoin (
-                                   var (v->name),
-                                   VAR (L(p)->env, pa_item, aat_pre))),
+                               outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   leftjoin (
+                                       var (v->name),
+                                       VAR (L(p)->env, pa_item, aat_pre)))),
                         assgn (var (pre_cont_ins->name),
-                               leftjoin (
-                                   var (v->name),
-                                   VAR (L(p)->env, pa_item, aat_frag))));
+                               outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   leftjoin (
+                                       var (v->name),
+                                       VAR (L(p)->env, pa_item, aat_frag)))));
                     unpin (v, 1);
                 }
                 else {
@@ -2729,11 +2805,15 @@ reduce (PFpa_op_t * p, int goalnt)
                                    cast (type (mty_oid), nil ()),
                                    cast (type (mty_oid), nil ()))),
                         assgn (var (attr_ins->name),
-                               var (v->name)),
+                               outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   var (v->name))),
                         assgn (var (attr_cont_ins->name),
-                               leftjoin (
-                                   mirror (var (v->name)),
-                                   VAR (L(p)->env, pa_item, aat_frag))));
+                               outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   leftjoin (
+                                       mirror (var (v->name)),
+                                       VAR (L(p)->env, pa_item, aat_frag)))));
                     unpin (v, 1);
                 }
                 else {
@@ -2757,13 +2837,14 @@ reduce (PFpa_op_t * p, int goalnt)
                                         arg (var (attr_tgt->name),
                                             arg (var (attr_cont_tgt->name),
                         arg (var (replace_strings->name),
-                            arg (var (replace_qn_uristrings->name),
-                                arg (var (replace_qn_loc_strings->name),
-                                    arg (var (pre_ins->name),
-                                        arg (var (pre_cont_ins->name),
-                                            arg (var (attr_ins->name),
-                                                 var (attr_cont_ins->name)
-                        ))))))))))))));  /* end of play update tape      */
+                            arg (var (replace_qn_uri->name),
+                                arg (var (replace_qn_prefix->name),
+                                    arg (var (replace_qn_locale->name),
+                                        arg (var (pre_ins->name),
+                                            arg (var (pre_cont_ins->name),
+                                                arg (var (attr_ins->name),
+                                                     var (attr_cont_ins->name)
+                        )))))))))))))));  /* end of play update tape      */
 
                 unpin (upd_kind, 1);
                 unpin (pre_tgt, 1);
@@ -2771,8 +2852,9 @@ reduce (PFpa_op_t * p, int goalnt)
                 unpin (attr_tgt, 1);
                 unpin (attr_cont_tgt, 1);
                 unpin (replace_strings, 1);
-                unpin (replace_qn_uristrings, 1);
-                unpin (replace_qn_loc_strings, 1);
+                unpin (replace_qn_uri, 1);
+                unpin (replace_qn_prefix, 1);
+                unpin (replace_qn_locale, 1);
                 unpin (pre_ins, 1);
                 unpin (pre_cont_ins, 1);
                 unpin (attr_ins, 1);

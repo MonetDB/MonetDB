@@ -145,6 +145,9 @@
 /** leftjoin() operator */
 #define leftjoin(a,b) PFmil_leftjoin((a), (b))
 
+/** outerjoin() operator */
+#define outerjoin(a,b) PFmil_outerjoin((a), (b))
+
 /** leftfetchjoin() operator */
 #define leftfetchjoin(a,b) PFmil_leftfetchjoin((a), (b))
 

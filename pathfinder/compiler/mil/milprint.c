@@ -43,6 +43,7 @@
                  | expression '.cross (' expression ')'     <m_cross>
                  | expression '.join (' expression ')'      <m_join>
                  | expression '.leftjoin (' expression ')'  <m_leftjoin>
+                 | expression '.outerjoin (' expression ')' <m_outerjoin>
                  | expression '.leftfetchjoin (' expr ')'   <m_leftfetchjoin>
                  | 'thetajoin ('exp','exp','exp','exp')'    <m_thetajoin>
                  | 'htordered_unique_thetajoin ('
@@ -246,6 +247,7 @@ static char *ID[] = {
     , [m_cross]        = "cross"
     , [m_join]         = "join"
     , [m_leftjoin]     = "leftjoin"
+    , [m_outerjoin]    = "outerjoin"
     , [m_leftfetchjoin]= "leftfetchjoin"
     , [m_thetajoin]    = "thetajoin"
     , [m_unq2_tjoin]   = "htordered_unique_thetajoin"
@@ -679,6 +681,8 @@ print_expression (PFmil_t * n)
         case m_join:
         /* expression : expression '.leftjoin (' expression ')' */
         case m_leftjoin:
+        /* expression : expression '.outerjoin (' expression ')' */
+        case m_outerjoin:
         /* expression : expression '.leftfetchjoin (' expression ')' */
         case m_leftfetchjoin:
         /* expression : expression '.CTrefine (' expression ')' */

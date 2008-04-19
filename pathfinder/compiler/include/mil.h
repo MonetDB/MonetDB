@@ -179,6 +179,7 @@ enum PFmil_kind_t {
     , m_cross        /**< MIL join operator */
     , m_join         /**< MIL join operator */
     , m_leftjoin     /**< MIL leftjoin operator */
+    , m_outerjoin    /**< MIL outerjoin operator */
     , m_leftfetchjoin/**< MIL leftfetchjoin operation */
     , m_thetajoin    /**< MIL thetajoin operator */
     , m_unq2_tjoin   /**< MIL htordered_unique_thetajoin PROC
@@ -551,6 +552,9 @@ PFmil_t * PFmil_join (const PFmil_t *, const PFmil_t *);
 
 /** MIL leftjoin() operator ensures ordering by left operand */
 PFmil_t * PFmil_leftjoin (const PFmil_t *, const PFmil_t *);
+
+/** MIL outerjoin() operator ensures ordering by left operand */
+PFmil_t * PFmil_outerjoin (const PFmil_t *, const PFmil_t *);
 
 /** MIL leftfetchjoin() operator */
 PFmil_t * PFmil_leftfetchjoin (const PFmil_t *, const PFmil_t *);

@@ -703,6 +703,15 @@ PFmil_leftjoin (const PFmil_t *a, const PFmil_t *b)
  * Monet join operator
  */
 PFmil_t *
+PFmil_outerjoin (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_outerjoin, a, b);
+}
+
+/**
+ * Monet join operator
+ */
+PFmil_t *
 PFmil_leftfetchjoin (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_leftfetchjoin, a, b);
