@@ -15,6 +15,12 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_02ECAA9A1B2041838D4FD9A0740DC997"
+        "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -33,14 +39,14 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_5CCCB992693C48C0BFEF4B0EFBBD884A"
+        "MsmKey" = "8:_4F0D2367141846EFA634DA35B05CDA4D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_775FED10B57C4AC993E2919745C8FEDC"
-        "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
+        "MsmKey" = "8:_5CCCB992693C48C0BFEF4B0EFBBD884A"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -76,6 +82,12 @@
         "Entry"
         {
         "MsmKey" = "8:_E78854C05F3D4756B29D929C6E751845"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EFD5DB74C69346079F5F78C16182F0F9"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -224,6 +236,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4F0D2367141846EFA634DA35B05CDA4D"
+            {
+            "SourcePath" = "8:C:\\zlib-1.2.3.win32\\bin\\zlib1.dll"
+            "TargetName" = "8:zlib1.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5CCCB992693C48C0BFEF4B0EFBBD884A"
             {
             "SourcePath" = "8:license.rtf"
@@ -348,6 +380,26 @@
             {
             "SourcePath" = "8:lib\\libMonetODBC.dll"
             "TargetName" = "8:libMonetODBC.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_EFD5DB74C69346079F5F78C16182F0F9"
+            {
+            "SourcePath" = "8:C:\\iconv-1.9.2.win32\\bin\\iconv.dll"
+            "TargetName" = "8:iconv.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
             "Condition" = "8:"
@@ -1077,11 +1129,11 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_3517E482BC7F4EFC88537C979178E768"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_02ECAA9A1B2041838D4FD9A0740DC997"
             {
             "UseDynamicProperties" = "11:TRUE"
-            "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86.msm"
+            "IsDependency" = "11:TRUE"
+            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86.msm"
                 "Properties"
                 {
                 }
@@ -1091,11 +1143,11 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_775FED10B57C4AC993E2919745C8FEDC"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_3517E482BC7F4EFC88537C979178E768"
             {
             "UseDynamicProperties" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86.msm"
+            "IsDependency" = "11:FALSE"
+            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86.msm"
                 "Properties"
                 {
                 }
