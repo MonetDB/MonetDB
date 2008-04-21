@@ -838,6 +838,7 @@ handleClient(int sock)
 	} else {
 		e = newErr("client challenge error: %s", buf);
 		stream_printf(fout, "!incomplete challenge '%s'\n", user);
+		stream_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
 		return(e);
@@ -1432,6 +1433,7 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 		return(1);
 	}
+	GDKfree(pidfilename);
 
 	snprintf(buf, 1024, "%s/.merovingian_lock", dbfarm);
 	/* lock such that we are alone on this world */
