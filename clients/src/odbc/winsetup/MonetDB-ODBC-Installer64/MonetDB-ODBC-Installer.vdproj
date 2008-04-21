@@ -27,7 +27,19 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_362C5398847E4FE6847CC6874039BB4D"
+        "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_42425D9BCD9641D3ABC839D5A29358DE"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_53E87680864A4C9DB17A3856539DC3C5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -57,8 +69,8 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_C5A2B8EA408B4A3ABD0A837C4E447C32"
-        "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
+        "MsmKey" = "8:_BFB0FD9086A74421B49B94FB05D1B877"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -224,6 +236,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_53E87680864A4C9DB17A3856539DC3C5"
+            {
+            "SourcePath" = "8:C:\\zlib-1.2.3.win64\\bin\\zlib1.dll"
+            "TargetName" = "8:zlib1.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5CCCB992693C48C0BFEF4B0EFBBD884A"
             {
             "SourcePath" = "8:license.rtf"
@@ -288,6 +320,26 @@
             {
             "SourcePath" = "8:lib\\libstream.dll"
             "TargetName" = "8:libstream.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BFB0FD9086A74421B49B94FB05D1B877"
+            {
+            "SourcePath" = "8:C:\\iconv-1.9.2.win64\\bin\\iconv.dll"
+            "TargetName" = "8:iconv.dll"
             "Tag" = "8:"
             "Folder" = "8:_376EC0506E4F452CA2C78ACE11515435"
             "Condition" = "8:"
@@ -1091,7 +1143,7 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_C5A2B8EA408B4A3ABD0A837C4E447C32"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_362C5398847E4FE6847CC6874039BB4D"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
