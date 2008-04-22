@@ -187,9 +187,7 @@ def escape(x, conv=None):
         for a in x:
             if conv.has_key(type(a)):
                 y.append(conv[type(a)](a, conv))
-        if type(x) is types.TupleType:
-            y = tuple(y)
-        return y
+        return tuple(y)
     if type(x) is types.DictType:
         for a in x:
             if conv.has_key(type(x[a])):
