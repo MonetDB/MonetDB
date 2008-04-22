@@ -553,7 +553,9 @@ forkMserver(str database, sabdb** stats, int force)
 		if (i >= 20) {
 			int state = (*stats)->state;
 
+			/* starting failed, don't return the struct */
 			SABAOTHfreeStatus(stats);
+			*stats = NULL;
 
 			switch (state) {
 				case SABdbRunning:
@@ -607,8 +609,6 @@ forkMserver(str database, sabdb** stats, int force)
 			merlog("database '%s' has been put into maintenance "
 					"mode during startup", database);
 		}
-
-		SABAOTHfreeStatus(stats);
 
 		/* from now on the SIGCHLD handler can find this database */
 		dp->started = 1;
