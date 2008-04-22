@@ -507,10 +507,12 @@ forkMserver(str database, sabdb** stats, int force)
 		exit(1);
 	} else if (pid > 0) {
 		int i;
+		dpair pdp;
 
 		/* parent: fine, let's add the pipes for this child */
 		while (dp->next != NULL)
 			dp = dp->next;
+		pdp = dp;
 		dp = dp->next = GDKmalloc(sizeof(struct _dpair));
 		dp->fout = fdopen(pfdo[0], "r");
 		fcntl(pfdo[0], F_SETFL, O_NONBLOCK);
@@ -558,7 +560,7 @@ forkMserver(str database, sabdb** stats, int force)
 					/* remove from the list again */
 					GDKfree(dp->dbname);
 					GDKfree(dp);
-					dp->next = NULL;
+					pdp->next = NULL;
 					return(newErr(
 								"timeout when waiting for database '%s' to "
 								"open up a communication channel", database));
@@ -566,7 +568,7 @@ forkMserver(str database, sabdb** stats, int force)
 					/* remove from the list again */
 					GDKfree(dp->dbname);
 					GDKfree(dp);
-					dp->next = NULL;
+					pdp->next = NULL;
 					return(newErr(
 								"database '%s' has crashed after starting, "
 								"manual intervention needed", database));
@@ -583,7 +585,7 @@ forkMserver(str database, sabdb** stats, int force)
 					/* remove from the list again */
 					GDKfree(dp->dbname);
 					GDKfree(dp);
-					dp->next = NULL;
+					pdp->next = NULL;
 					return(newErr(
 								"database '%s' either needs a longer timeout "
 								"to start up, or appears to cleanly shut "
@@ -592,7 +594,7 @@ forkMserver(str database, sabdb** stats, int force)
 					/* remove from the list again */
 					GDKfree(dp->dbname);
 					GDKfree(dp);
-					dp->next = NULL;
+					pdp->next = NULL;
 					return(newErr("unknown state: %d", (int)(*stats)->state));
 			}
 		}
