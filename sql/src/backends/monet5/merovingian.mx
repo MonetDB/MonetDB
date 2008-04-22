@@ -530,7 +530,8 @@ forkMserver(str database, sabdb** stats, int force)
 			/* give the database a break */
 			MT_sleep_ms(500);
 			/* stats cannot be NULL, as we don't allow starting not
-			 * existing databases */
+			 * existing databases, note that we need to run this loop at
+			 * least once not to leak */
 			SABAOTHfreeStatus(stats);
 			er = SABAOTHgetStatus(stats, database);
 			if (er != MAL_SUCCEED) {
@@ -550,7 +551,11 @@ forkMserver(str database, sabdb** stats, int force)
 		}
 		/* if we've never found a connection, try to figure out why */
 		if (i >= 20) {
-			switch ((*stats)->state) {
+			int state = (*stats)->state;
+
+			SABAOTHfreeStatus(stats);
+
+			switch (state) {
 				case SABdbRunning:
 					/* not sure what's going on with it, but its not
 					 * like we want to have it, so kill it */
@@ -602,6 +607,8 @@ forkMserver(str database, sabdb** stats, int force)
 			merlog("database '%s' has been put into maintenance "
 					"mode during startup", database);
 		}
+
+		SABAOTHfreeStatus(stats);
 
 		/* from now on the SIGCHLD handler can find this database */
 		dp->started = 1;
