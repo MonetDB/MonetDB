@@ -1442,7 +1442,6 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 		return(1);
 	}
-	GDKfree(pidfilename);
 
 	snprintf(buf, 1024, "%s/.merovingian_lock", dbfarm);
 	/* lock such that we are alone on this world */
