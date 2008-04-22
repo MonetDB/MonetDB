@@ -1106,6 +1106,7 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_number:           return "fn:number";
         case alg_fun_fn_number_lax:       return "fn:number";
         case alg_fun_fn_qname:            return "fn:QName";
+        case alg_fun_fn_doc_available:    return "fn:doc-available";
         case alg_fun_pf_fragment:         return "#pf:fragment";
         case alg_fun_pf_supernode:        return "#pf:supernode";
         case alg_fun_pf_add_doc_str:      return "pf:add-doc";

@@ -580,6 +580,10 @@ struct PFla_pair_t PFbui_fn_doc (const PFla_op_t *loop,
                                  bool ordering,
                                  struct PFla_pair_t *args);
 
+struct PFla_pair_t PFbui_fn_doc_available (const PFla_op_t *loop,
+                                           bool ordering,
+                                           struct PFla_pair_t *args);
+
 /* 16. CONTEXT FUNCTIONS */
 /* 16.1. fn:position */
 

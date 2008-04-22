@@ -370,6 +370,7 @@ enum PFmil_kind_t {
                                 for documents in a specified collection */
     , m_ws_docname         /**< mil document function for  docname      */
     , m_ws_collections     /**< mil document function for collections   */
+    , m_ws_docavailable    /**< mil document function for doc-available */
 #ifdef HAVE_PFTIJAH
     , m_tj_pfop
     , m_tj_tokenize
@@ -906,6 +907,12 @@ PFmil_t * PFmil_ws_docname (const PFmil_t *, const PFmil_t *,
  * ws_collections(BAT[void,BAT], bit) : BAT[void,oid]
  */
 PFmil_t * PFmil_ws_collections (const PFmil_t *, const PFmil_t *);
+
+/** 
+ * mil document function:
+ * ws_docavailable(BAT[void,BAT], BAT[void,str]) : BAT[void,bit]
+ */
+PFmil_t * PFmil_ws_docavailable (const PFmil_t *, const PFmil_t *);
 
 #define PFmil_seq(...) \
     PFmil_seq_ (sizeof ((PFmil_t *[]) { __VA_ARGS__} ) / sizeof (PFmil_t *), \

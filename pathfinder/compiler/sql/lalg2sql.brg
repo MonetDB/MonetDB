@@ -3581,6 +3581,7 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_fn_namespace_uri:
 
                 case alg_fun_fn_qname:
+                case alg_fun_fn_doc_available:
                 case alg_fun_pf_fragment:
                 case alg_fun_pf_supernode:
 

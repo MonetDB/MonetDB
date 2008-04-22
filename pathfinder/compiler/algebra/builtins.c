@@ -3797,6 +3797,38 @@ PFbui_fn_doc (const PFla_op_t *loop, bool ordering,
         .frag = PFla_set (fragment (doc)) };
 }
 
+/*
+ *  function fn:doc-available (string?) as boolean
+ */
+struct PFla_pair_t
+PFbui_fn_doc_available (const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       disjunion (
+                           args[0].rel,
+                           attach (
+                               attach (
+                               difference (
+                                   loop,
+                                   project (
+                                       args[0].rel,
+                                       proj (att_iter, att_iter))),
+                               att_pos, lit_nat (1)),
+                           att_item, lit_str (""))),
+                       alg_fun_fn_doc_available,
+                       att_res,
+                       attlist(att_item)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = PFla_empty_set () };
+}
+
 /* --------------------- */
 /* 16. CONTEXT FUNCTIONS */
 /* --------------------- */

@@ -5083,6 +5083,21 @@ reduce (PFpa_op_t * p, int goalnt)
 
                     res_type = aat_qname_id;
                 }   break; /* fold) */
+                case alg_fun_fn_doc_available: /* fold( */
+                {
+                    PFalg_att_t att;
+
+                    att = p->sem.fun_1to1.refs.atts[0];
+                    res_type = aat_bln;
+
+                    execute (
+                        assgn (var (res->name),
+                               ws_docavailable ( var (PF_MIL_VAR_WS),
+                                                 VAR (L(p)->env,
+                                                      att,
+                                                      aat_str))));
+
+                } break; /* fold) */
                 case alg_fun_pf_fragment: /* fold( */
                 {
                     res_type = aat_frag;

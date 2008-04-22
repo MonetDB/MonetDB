@@ -169,6 +169,7 @@
                  | 'ws_documents('exp',' exp','exp')'      <m_ws_documents_str>
                  | 'ws_docname('exp','exp','exp','exp')'   <m_ws_docname>
                  | 'ws_collections('exp','exp')'           <m_ws_collections>
+                 | 'ws_docavailable('exp','exp')'          <m_ws_docavailable>
 
    args          : args ',' args                            <m_arg>
                  | expression                               <otherwise>
@@ -338,6 +339,7 @@ static char *ID[] = {
     , [m_ws_documents_str]   = "ws_documents"
     , [m_ws_docname]         = "ws_docname"
     , [m_ws_collections]     = "ws_collections"
+    , [m_ws_docavailable]    = "ws_docavailable"
 
     , [m_merge_adjacent]   = "merge_adjacent_text_nodes"
     , [m_string_join]      = "string_join"
@@ -851,6 +853,8 @@ print_expression (PFmil_t * n)
         case m_ws_documents:
         /* expression : 'ws_collections(' expression ',' expression ')' */
         case m_ws_collections:
+        /* expression : 'ws_docavailable(' expression ',' expression ')' */
+        case m_ws_docavailable:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");

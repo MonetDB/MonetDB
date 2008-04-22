@@ -1728,6 +1728,15 @@ PFmil_ws_collections (const PFmil_t *a, const PFmil_t *b)
     return wire2 (m_ws_collections, a, b);
 }
 
+/** 
+ * function ws_docavailable(a, b)
+ */
+PFmil_t *
+PFmil_ws_docavailable (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_ws_docavailable, a, b);
+}
+
 #ifdef HAVE_PFTIJAH
 
 PFmil_t *

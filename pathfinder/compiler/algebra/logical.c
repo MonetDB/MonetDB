@@ -1467,6 +1467,14 @@ printf("type = %x", n->schema.items[ix[1]].type);
             res_type = aat_qname;
             break;
 
+        case alg_fun_fn_doc_available:
+            assert (refs.count == 1);
+            /* make sure attribute is of type string */
+            assert (n->schema.items[ix[0]].type == aat_str);
+
+            res_type = aat_bln;
+            break;
+
         case alg_fun_pf_fragment:
             assert (refs.count == 1);
             /* make sure attribute is of type node */

@@ -1662,6 +1662,12 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
             .ret_ty = PFty_opt (PFty_doc (PFty_xs_anyNode ())) } },
         .alg = PFbui_fn_doc }
+    , /* fn:doc-available (string?) as boolean */
+      { .ns = PFns_fn, .loc = "doc-available",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = PFbui_fn_doc_available }
     , /* fn:collection (string) as node* */
       { .ns = PFns_fn, .loc = "collection",
         .arity = 1, .sig_count = 1, .sigs = { {
