@@ -8457,9 +8457,9 @@ reduce (PFpa_op_t * p, int goalnt)
                     }
 
                     execute (assgn (var (nodes->name),
-                             cross (var (loop->name),
-                                    ws_documents (var (PF_MIL_VAR_WS), 
-                                                  lit_bit(safe)))));
+                                 cross (reverse (var (loop->name)),
+                                        ws_documents (var (PF_MIL_VAR_WS), 
+                                                      lit_bit(safe)))));
 
                     execute (
                              assgn (var (res_item->name),
@@ -8506,7 +8506,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     }
 
                     execute (assgn (var (nodes->name),
-                             cross (var (loop->name),
+                             leftjoin (reverse (var (loop->name)),
                                     ws_documents_str (
                                          var (PF_MIL_VAR_WS), 
                                          VAR (param_1->env,
