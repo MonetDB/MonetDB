@@ -690,6 +690,7 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 	char *conn;
 	stream *sfdin, *sfout;
 	merovingian_proxy *pctos, *pstoc;
+	pthread_t ptid;
 
 	/* quick 'n' dirty parsing */
 	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) == 0) {
@@ -752,21 +753,15 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 	 * stoc: in = D, out = C, co_in = A, co_out = B
 	 */
 
-	pctos = GDKmalloc(sizeof(merovingian_proxy));
-	pctos->in     = cfdin;
-	pctos->out    = sfout;
-	pctos->co_in  = sfdin;
-	pctos->co_out = cfout;
-	pctos->name   = GDKstrdup(client);
-
 	pstoc = GDKmalloc(sizeof(merovingian_proxy));
 	pstoc->in     = sfdin;
 	pstoc->out    = cfout;
 	pstoc->co_in  = cfdin;
 	pstoc->co_out = sfout;
 	pstoc->name   = NULL;  /* we want only one log-message on disconnect */
+	pstoc->co_thr = 0;
 
-	if (pthread_create(&pctos->co_thr, NULL,
+	if (pthread_create(&ptid, NULL,
 				(void *(*)(void *))proxyThread, (void *)pstoc) < 0)
 	{
 		close_stream(sfout);
@@ -774,12 +769,19 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 		return(newErr("failed to create proxy thread"));
 	}
 
-	if (pthread_create(&pstoc->co_thr, NULL,
+	pctos = GDKmalloc(sizeof(merovingian_proxy));
+	pctos->in     = cfdin;
+	pctos->out    = sfout;
+	pctos->co_in  = sfdin;
+	pctos->co_out = cfout;
+	pctos->name   = GDKstrdup(client);
+	pctos->co_thr = ptid;
+
+	if (pthread_create(&ptid, NULL,
 				(void *(*)(void *))proxyThread, (void *)pctos) < 0)
 	{
-		/* if we destroy here, the first thread will cause a crash */
-		stream_close(sfout);
-		stream_close(sfdin);
+		close_stream(sfout);
+		close_stream(sfdin);
 		return(newErr("failed to create proxy thread"));
 	}
 
