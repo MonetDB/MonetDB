@@ -8601,7 +8601,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     }
 
                     execute (assgn (var (nodes->name),
-                             cross (var (loop->name),
+                             cross (reverse (var (loop->name)),
                                     ws_collections (var (PF_MIL_VAR_WS), 
                                                     lit_bit(safe)))));
 
