@@ -8849,8 +8849,6 @@ reduce (PFpa_op_t * p, int goalnt)
 		    pft_unpack_pfop(p,tjnres,fc_iter_a,fc_item_a,aat_pre,fc_item_a,fc_pos_a);
 
 		    unpin(tjnres,1);
-		} else if (strcmp(fcname,PFT_INFO) == 0 ) {
-		    PFoops (OOPS_FATAL,"milgen.brg: tijah:ft-index-info () temporary not supported.\n");
 		} else if ( (strcmp(fcname,PFT_TOKENIZE) == 0) ||
 			    (strcmp(fcname,PFT_RESSIZE) == 0) ) {
 		    PFpa_op_t* op1 = *(PFpa_op_t **)PFarray_at(fun_params,0);
@@ -8883,6 +8881,32 @@ reduce (PFpa_op_t * p, int goalnt)
 	            mvar_t *p_pos  = env_mvar (op1->env, att_iter, aat_nat);
 		    pin(p_pos,1);
                     env_add (p->env, fc_pos_a, aat_nat, p_pos);
+		} else if (strcmp(fcname,PFT_INFO) == 0 ) {
+		    mvar_t *pfop_names;
+
+		    int fpsz = PFarray_last (fun_params);
+
+		    if ( fpsz == 0 ) {
+		        pfop_names = pft_create_pfop(NULL,aat_str);
+		    } else {
+		        pfop_names = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,0),aat_str);
+		    }
+
+		    mvar_t *tjires = new_var(1);
+		    execute(
+		        assgn(var(tjires->name),
+			    tj_ft_index_info(
+				var (PF_MIL_VAR_WS),
+				var(fc_loop->name),
+				var(pfop_names->name)
+			    )
+			)
+		    );
+		    unpin(pfop_names,1);
+
+		    pft_unpack_pfop(p,tjires,fc_iter_a,fc_item_a,aat_pre,fc_item_a,fc_pos_a);
+
+		    unpin(tjires,1);
 		} else {
 	    	    PFoops (OOPS_FATAL,"milgen.brg: PFTIJAH fun_call() bad function[%s]!!!\n",fcname);
 		}

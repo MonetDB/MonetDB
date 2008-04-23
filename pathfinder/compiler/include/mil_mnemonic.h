@@ -444,6 +444,8 @@
 
 #define tj_tokenize(a) PFmil_tj_tokenize ((a))
 
+#define tj_ft_index_info(a,b,c) PFmil_tj_ft_index_info ((a),(b),(c))
+
 #endif
 
 /* vim:set shiftwidth=4 expandtab: */

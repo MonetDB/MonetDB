@@ -377,6 +377,7 @@ enum PFmil_kind_t {
     , m_tj_query_handler
     , m_tj_query_score
     , m_tj_query_nodes
+    , m_tj_ft_index_info
     , m_tj_add_fti_tape
     , m_tj_docmgmt_tape
 #endif
@@ -934,6 +935,9 @@ PFmil_t * PFmil_tj_docmgmt_tape (const PFmil_t *a, const PFmil_t *b, const PFmil
 PFmil_t * PFmil_tj_add_fti_tape (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f);
 
 PFmil_t * PFmil_tj_tokenize (const PFmil_t *a);
+
+PFmil_t * PFmil_tj_ft_index_info (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c);
+
 #endif
 
 

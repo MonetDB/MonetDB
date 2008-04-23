@@ -1745,6 +1745,12 @@ PFmil_tj_tokenize (const PFmil_t *a)
     return wire1 (m_tj_tokenize, a);
 }
 
+PFmil_t *
+PFmil_tj_ft_index_info (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
+{
+    return wire3 (m_tj_ft_index_info, a, b, c);
+}
+
 /** pftijah algebra argument  constructor */
 PFmil_t *
 PFmil_tj_pfop (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d)

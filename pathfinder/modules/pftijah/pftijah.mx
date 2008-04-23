@@ -1473,6 +1473,32 @@ PROC ALG_tj_pfop(
 	return res;
 }
 
+PROC ALG_tj_ft_index_info(
+	BAT[oid,bat]  par_ws,
+	BAT[void,any] par_loop,
+	BAT[oid,bat]  pfop_names
+	) : BAT[void,bat] :=
+{
+        var ret;
+
+	if ( pfop_names.count() > 0 ) {
+	    ret := ws_ft_index_info(ws, pfop_names.fetch(1@0),false);
+
+	} else {
+	    ret := reverse(par_loop).cross(ws_ft_index_info(ws,false));
+	}
+	var iter := ret.hmark(0@0);
+	var item := ret.tmark(0@0);
+	var ipik := item;
+	var frag := WS;
+	frag     := frag.materialize(ipik);
+	var pos  := tmark_grp_unique(iter,ipik);
+
+        var res := ALG_tj_pfop(iter,item,frag,pos);
+        if ( verbose ) printf("# ALG_tj_ft_index_info: FINISH.\n");
+        return res;
+}
+
 PROC ALG_tj_query_nodes(
 	BAT[void,any] par_loop,
 	BAT[oid,bat]  pfop_id,
