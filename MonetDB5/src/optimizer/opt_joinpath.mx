@@ -95,7 +95,7 @@ comment "internal routine to handle join paths.
 #include "opt_joinpath.h"
 
 static int
-OPTjoinPathImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k, actions=0;
 	int *pc, *used;
@@ -104,6 +104,7 @@ OPTjoinPathImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr *old;
 	int limit,slimit;
 
+	(void) cntxt;
 	(void) stk;
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
@@ -140,11 +141,11 @@ Try to expand its argument list
 				r= getInstrPtr(mb,pc[getArg(p,j)]);
 				assert(r);
 #ifdef DEBUG_OPT_JOINPATH 
-				stream_printf(GDKout,"expand list \n");
-				printInstruction(GDKout,mb, p, LIST_MAL_ALL);
-				printInstruction(GDKout,mb, q, LIST_MAL_ALL);
+				stream_printf(cntxt->fdout,"expand list \n");
+				printInstruction(cntxt->fdout,mb, p, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout,mb, q, LIST_MAL_ALL);
 				if(r)
-				printInstruction(GDKout,mb, r, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout,mb, r, LIST_MAL_ALL);
 #endif
 				if( r &&  getModuleId(r)== algebraRef && 
 					( getFunctionId(r)== joinRef  || getFunctionId(r)== joinPathRef) ){
@@ -154,8 +155,8 @@ Try to expand its argument list
 					q = pushArgument(mb,q,getArg(p,j));
 			}
 #ifdef DEBUG_OPT_JOINPATH 
-			stream_printf(GDKout,"new joinPath instruction\n");
-			printInstruction(GDKout,mb, q, LIST_MAL_ALL);
+			stream_printf(cntxt->fdout,"new joinPath instruction\n");
+			printInstruction(cntxt->fdout,mb, q, LIST_MAL_ALL);
 #endif
 			if(q->argc<= p->argc){
 				/* no change */
@@ -195,9 +196,9 @@ The heuristics is sufficient for the code produced by SQL frontend
 					pc[getArg(r,j)]= mb->stop-1;
 				k--;
 #ifdef DEBUG_OPT_JOINPATH 
-				stream_printf(GDKout,"heuristic joinPath rule\n");
-				printInstruction(GDKout,mb, r, LIST_MAL_ALL);
-				printInstruction(GDKout,mb, q, LIST_MAL_ALL);
+				stream_printf(cntxt->fdout,"heuristic joinPath rule\n");
+				printInstruction(cntxt->fdout,mb, r, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout,mb, q, LIST_MAL_ALL);
 #endif
 			}
 
@@ -299,13 +300,13 @@ ALGjoinPathBody(int top, BAT **joins)
 		j = 0;
 		estimate = ALGjoinCost(joins[0],joins[1]);
 #ifdef DEBUG_OPT_JOINPATH
-		printf("estimate join(%d,%d) %d\n", joins[0]->batCacheid, 
+		stream_printf(GDKout,"estimate join(%d,%d) %d\n", joins[0]->batCacheid, 
 			joins[1]->batCacheid,(int)estimate);
 #endif
 		for (i = 1; i < top - 1; i++) {
 			e = ALGjoinCost(joins[i], joins[i + 1]);
 #ifdef DEBUG_OPT_JOINPATH
-		printf("estimate join(%d,%d) %d\n", joins[i]->batCacheid, 
+		stream_printf(GDKout,"estimate join(%d,%d) %d\n", joins[i]->batCacheid, 
 			joins[i+1]->batCacheid,(int)e);
 #endif
 			if (e < estimate) {
@@ -319,7 +320,7 @@ may fire a BATproperty check in a few cases.
 @c
 		b = BATjoin(joins[j], joins[j + 1], oid_nil);
 #ifdef DEBUG_OPT_JOINPATH
-		printf("%d:= join(%d,%d)\n", 
+		stream_printf(GDKout, "%d:= join(%d,%d)\n", 
 			b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid);
 #endif
 		assert(b);
@@ -332,7 +333,7 @@ may fire a BATproperty check in a few cases.
 			joins[i] = joins[i + 1];
 	}
 #ifdef DEBUG_OPT_JOINPATH
-	printf("final join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
+	stream_printf(GDKout, "final join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
 #endif
 	b = BATjoin(joins[0], joins[1], oid_nil);
 	BBPdecref(joins[0]->batCacheid, FALSE);
@@ -349,14 +350,8 @@ ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b, **joins = (BAT**)alloca(pci->argc*sizeof(BAT*)); 
 
 	(void)mb;
-#ifdef DEBUG_OPT_JOINPATH
-		printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
-#endif
 	for (i = pci->retc; i < pci->argc; i++) {
 		bid = (int *) getArgReference(stk, pci, i);
-#ifdef DEBUG_OPT_JOINPATH
-		printf("bid %d\n", *bid);
-#endif
 		if ((b = BATdescriptor(*bid)) == NULL) {
 			for( --top; top>=0; top--)
 				BBPreleaseref(joins[top]->batCacheid);

@@ -95,9 +95,10 @@ void MRconstant(MalBlkPtr mb){
 }
 
 static int
-OPTreduceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int actions = 0;
+	(void)cntxt;
 	(void)stk;
 	(void) p;
 

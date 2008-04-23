@@ -84,7 +84,7 @@ comment "Dead code optimizer";
 #include "opt_deadcode.h"
 
 static int 
-OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k, se,limit, slimit;
 	InstrPtr p=0, *old= mb->stmt;
@@ -97,8 +97,10 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return 0;
 
 #ifdef DEBUG_OPT_DEAD
-	stream_printf(GDKout,"ENTERING DEAD CODE ELIMINATION\n");
-	printFunction(GDKout,mb,LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"ENTERING DEAD CODE ELIMINATION\n");
+	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
+#else
+	(void) cntxt;
 #endif
 
 	clrDeclarations(mb);
@@ -140,10 +142,10 @@ OPTdeadcodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	/* we may have uncovered new use-less operations */
 	if (actions) 
-		actions += OPTdeadcodeImplementation(mb, stk, pci);
+		actions += OPTdeadcodeImplementation(cntxt,mb, stk, pci);
 #ifdef DEBUG_OPT_DEAD
-	stream_printf(GDKout,"LEAVING DEAD CODE ELIMINATION\n");
-	printFunction(GDKout,mb,LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"LEAVING DEAD CODE ELIMINATION\n");
+	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
 #endif
 	for(; i<slimit; i++)
 		if( old[i])

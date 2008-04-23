@@ -75,9 +75,6 @@ QOT_create(str hnme, str tnme, int ht, int tt)
 	if (b)
 		return b;
 
-#ifdef _Q_STATISTICS_DEBUG
-	stream_printf(GDKout,"create optimizer statistics %s %s\n",hnme,tnme);
-#endif
 	b = BATnew(ht, tt, 256);
 	if (b == NULL)
 		GDKfatal("QOT_create: could not allocate.");
@@ -114,24 +111,14 @@ QOTupdateStatistics(str nme, int actions, lng val)
 	lng lval=0, *lp= &lval;
 
 	QOTstatisticsInit();
-#ifdef _Q_STATISTICS_DEBUG
-	stream_printf(GDKout,"update optimizer statistics\n");
-#endif
 	p = BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
 	if (p == BUN_NONE) {
-#ifdef _Q_STATISTICS_DEBUG
-		stream_printf(GDKout,"initialized? %d\n",qotStat[QOTnames]==0);
-		stream_printf(GDKout,"insert optimizer statistics %s\n",nme);
-#endif
 		BUNappend(qotStat[QOTnames], nme, FALSE);
 		BUNappend(qotStat[QOTcalls],  &ival, FALSE);
 		BUNappend(qotStat[QOTactions], &ival, FALSE);
 		BUNappend(qotStat[QOTtimings], &lval, FALSE);
 		p = BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
 		if (p == BUN_NONE){
-#ifdef _Q_STATISTICS_DEBUG
-			stream_printf(GDKout,"not found\n");
-#endif
 			return;
 		}
 	} 
@@ -139,22 +126,28 @@ QOTupdateStatistics(str nme, int actions, lng val)
 	idx = *(oid*) BUNhead(bi,p);
 
 	p = BUNfnd(qotStat[QOTcalls],&idx);
-	if (p == BUN_NONE)
-		stream_printf(GDKout,"#Could not access 'calls'\n");
+	if (p == BUN_NONE) {
+		GDKwarning("#Could not access 'calls'\n");
+		return;
+	}
 	bi = bat_iterator(qotStat[QOTcalls]);
 	ip = (int*) BUNtail(bi,p);
 	*ip = *ip+1;
 
 	p = BUNfnd(qotStat[QOTactions],&idx);
-	if (p == BUN_NONE)
-		stream_printf(GDKout,"#Could not access 'actions'\n");
+	if (p == BUN_NONE){
+		GDKwarning("#Could not access 'actions'\n");
+		return;
+	}
 	bi = bat_iterator(qotStat[QOTactions]);
 	ip = (int*) BUNtail(bi,p);
 	*ip = *ip+ actions;
 
 	p = BUNfnd(qotStat[QOTtimings],&idx);
-	if (p == BUN_NONE)
-		stream_printf(GDKout,"#Could not access 'timings'\n");
+	if (p == BUN_NONE){
+		GDKwarning("#Could not access 'timings'\n");
+		return ;
+	}
 	bi = bat_iterator(qotStat[QOTtimings]);
 	lp = (lng*) BUNtail(bi,p);
 	*lp = *lp+ val;

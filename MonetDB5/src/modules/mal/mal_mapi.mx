@@ -470,8 +470,8 @@ doChallenge(str cmd, stream *in, stream *out) {
 		printf("mal_mapi:Client accepted %s\n", name);
 		fflush(stdout);
 
-		THRprintf(GDKout, "#SERVERlisten:client accepted\n");
-		THRprintf(GDKout, "#SERVERlisten:client string %s\n", name);
+		stream_printf(GDKout, "#SERVERlisten:client accepted\n");
+		stream_printf(GDKout, "#SERVERlisten:client string %s\n", name);
 #endif
 		bs = bstream_create(fdin, 128 * BLOCK);
 
@@ -719,7 +719,7 @@ errno == WSAEADDRINUSE &&
 #endif
 
 #ifdef DEBUG_SERVER
-	THRprintf(GDKout, "#SERVERlisten:Network started at %d\n", port);
+	stream_printf(GDKout, "#SERVERlisten:Network started at %d\n", port);
 #endif
 	threadcommand = cmd;
 	*Sock = sock;
@@ -1239,7 +1239,7 @@ SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, s
 	}
 
 #ifdef MAPI_TEST
-	stream_printf(GDKout,"Succeeded to establish session\n");
+	stream_printf(SERVERsessions[i].c->fdout,"Succeeded to establish session\n");
 #endif
 	SERVERsessions[i].mid= mid;
 	*key = SERVERsessions[i].key;
@@ -1263,7 +1263,7 @@ SERVERdisconnectALL(int *key){
 	mal_unset_lock(mal_contextLock,"SERVERdisconnect");
 
 #ifdef MAPI_TEST
-	stream_printf(GDKout,"Succeeded to close all session\n");
+	stream_printf(SERVERsessions[i].c->fdout,"Succeeded to close all session\n");
 #endif
 	return MAL_SUCCEED;
 }
@@ -1292,7 +1292,7 @@ SERVERdisconnectWithAlias(int *key, str *dbalias){
 	mal_unset_lock(mal_contextLock,"SERVERdisconnectWithAlias");
 
 #ifdef MAPI_TEST
-	stream_printf(GDKout,"Succeeded to close all session\n");
+	stream_printf(SERVERsessions[i].c->fdout,"Succeeded to close all session\n");
 #endif
 
 	return MAL_SUCCEED;
@@ -1326,6 +1326,7 @@ SERVERreconnectAlias(int *key, str *host, int *port, str  * dbalias, str *userna
 		msg = SERVERsetAlias(&i, key, dbalias);
 	return msg;
 }
+
 str
 SERVERreconnectWithoutAlias(int *key,str *host, int *port, str *username, str *password, str *lang){
 	int i;
@@ -1362,6 +1363,7 @@ SERVERsetAlias(int *ret, int *key, str *dbalias){
 	*ret = 0;
 	return MAL_SUCCEED;
 }
+
 str
 SERVERlookup(int *ret, str *dbalias)
 {
@@ -1374,12 +1376,14 @@ SERVERlookup(int *ret, str *dbalias)
 	}
 	throw(MAL, "mapi.lookup", "Could not find database connection");
 }
+
 str
 SERVERtrace(int *ret, int *key, int *flag){
 	(void )ret;
 	mapi_trace(SERVERsessions[*key].mid,*flag);
 	return MAL_SUCCEED;
 }
+
 str
 SERVERdisconnect(int *ret, int *key){
 	int i;
@@ -1392,6 +1396,7 @@ SERVERdisconnect(int *ret, int *key){
 	*ret = 0;
 	return MAL_SUCCEED;
 }
+
 str
 SERVERdestroy(int *ret, int *key){
 	int i;
@@ -1415,6 +1420,7 @@ SERVERreconnect(int *ret, int *key){
 	*ret = 0;
 	return MAL_SUCCEED;
 }
+
 str
 SERVERping(int *ret, int *key){
 	int i;
@@ -1423,6 +1429,7 @@ SERVERping(int *ret, int *key){
 	*ret= mapi_ping(mid);
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERquery(int *ret, int *key, str *qry){
 	Mapi mid;
@@ -1436,6 +1443,7 @@ SERVERquery(int *ret, int *key, str *qry){
 	*ret = *key;
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERquery_handle(int *ret, int *key, str *qry){
 	Mapi mid;
@@ -1447,11 +1455,13 @@ SERVERquery_handle(int *ret, int *key, str *qry){
 	*ret = *key;
 	return MAL_SUCCEED;
 }
+
 str
 SERVERquery_array(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc){
 	(void) mb; (void) stk; (void) pc;
 	throw(MAL, "mapi.query_array","not yet implemented");
 }
+
 str 
 SERVERprepare(int *ret, int *key, str *qry){
 	Mapi mid;
@@ -1466,6 +1476,7 @@ SERVERprepare(int *ret, int *key, str *qry){
 	*ret = *key;
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERexecute(int *ret, int *key){
 	Mapi mid;
@@ -1478,6 +1489,7 @@ SERVERexecute(int *ret, int *key){
 	*ret = *key;
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERfinish(int *ret, int *key){
 	Mapi mid;
@@ -1490,6 +1502,7 @@ SERVERfinish(int *ret, int *key){
 	*ret = *key;
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERget_row_count(int *ret, int *key){
 	Mapi mid;
@@ -1501,6 +1514,7 @@ SERVERget_row_count(int *ret, int *key){
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERget_field_count(int *ret, int *key){
 	Mapi mid;
@@ -1512,6 +1526,7 @@ SERVERget_field_count(int *ret, int *key){
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERrows_affected(int *ret, int *key){
 	Mapi mid;
@@ -1520,6 +1535,7 @@ SERVERrows_affected(int *ret, int *key){
 	*ret= mapi_rows_affected(SERVERsessions[i].hdl);
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERfetch_row(int *ret, int *key){
 	Mapi mid;
@@ -1528,6 +1544,7 @@ SERVERfetch_row(int *ret, int *key){
 	*ret= mapi_fetch_row(SERVERsessions[i].hdl);
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERfetch_all_rows(int *ret, int *key){
 	Mapi mid;
@@ -1536,6 +1553,7 @@ SERVERfetch_all_rows(int *ret, int *key){
 	*ret= mapi_fetch_all_rows(SERVERsessions[i].hdl);
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERfetch_field_str(str *ret, int *key, int *fnr){
 	Mapi mid;
@@ -1549,6 +1567,7 @@ SERVERfetch_field_str(str *ret, int *key, int *fnr){
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERfetch_field_int(int *ret, int *key, int *fnr){
 	Mapi mid;
@@ -1562,6 +1581,7 @@ SERVERfetch_field_int(int *ret, int *key, int *fnr){
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERfetch_field_lng(lng *ret, int *key, int *fnr){
 	Mapi mid;
@@ -1575,6 +1595,7 @@ SERVERfetch_field_lng(lng *ret, int *key, int *fnr){
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERfetch_field_sht(sht *ret, int *key, int *fnr){
 	Mapi mid;
@@ -1588,6 +1609,7 @@ SERVERfetch_field_sht(sht *ret, int *key, int *fnr){
 			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERfetch_field_void(oid *ret, int *key, int *fnr){
 	Mapi mid;
@@ -1597,6 +1619,7 @@ SERVERfetch_field_void(oid *ret, int *key, int *fnr){
 	*ret = oid_nil;
 	throw(MAL, "mapi.fetch_field_void","defaults to nil");
 }
+
 str 
 SERVERfetch_field_oid(oid *ret, int *key, int *fnr){
 	Mapi mid;
@@ -1612,6 +1635,7 @@ SERVERfetch_field_oid(oid *ret, int *key, int *fnr){
 	else *(oid*) ret = (oid) atol(fld);
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERfetch_field_chr(chr *ret, int *key, int *fnr){
 	Mapi mid;
@@ -1627,6 +1651,7 @@ SERVERfetch_field_chr(chr *ret, int *key, int *fnr){
 	else *(chr*) ret = *fld;
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERfetch_line(str *ret, int *key){
 	Mapi mid;
@@ -1640,6 +1665,7 @@ SERVERfetch_line(str *ret, int *key){
 	*ret= GDKstrdup(fld? fld:str_nil);
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERnext_result(int *ret, int *key){
 	Mapi mid;
@@ -1652,6 +1678,7 @@ SERVERnext_result(int *ret, int *key){
 	*ret= *key;
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERfetch_reset(int *ret, int *key){
 	Mapi mid;
@@ -1664,6 +1691,7 @@ SERVERfetch_reset(int *ret, int *key){
 	*ret= *key;
 	return MAL_SUCCEED;
 }
+
 str
 SERVERfetch_field_bat(int *bid, int *key){
 	int i,j,cnt;
@@ -1691,6 +1719,7 @@ SERVERfetch_field_bat(int *bid, int *key){
 	BBPkeepref(*bid);
 	return MAL_SUCCEED;
 }
+
 str
 SERVERerror(int *ret, int *key){
 	Mapi mid;
@@ -1699,6 +1728,7 @@ SERVERerror(int *ret, int *key){
 	*ret= mapi_error(mid);
 	return MAL_SUCCEED;
 }
+
 str
 SERVERgetError(str *ret, int *key){
 	Mapi mid;
@@ -1797,6 +1827,7 @@ void SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 		break;
 	}
 }
+
 str
 SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1921,6 +1952,7 @@ SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	return err;
 }
+
 str
 SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *key;
@@ -1986,6 +2018,7 @@ SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 	return MAL_SUCCEED;
 }
+
 str
 SERVERputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *ret, *nme;
@@ -2012,6 +2045,7 @@ SERVERputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	*ret= GDKstrdup(buf);
 	return MAL_SUCCEED;
 }
+
 str 
 SERVERbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *key;

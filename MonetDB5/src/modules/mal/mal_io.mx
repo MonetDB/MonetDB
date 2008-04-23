@@ -240,7 +240,8 @@ IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl,
 {
 	int tpe = getArgType(mb, pci, indx);
 	ptr val = (ptr) getArgReference(stk, pci, indx);
-	stream *fp = GDKout;
+	Client cntxt= MCgetClient();
+	stream *fp = cntxt->fdout;
 
 	(void) mb;
 
@@ -276,7 +277,7 @@ IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl,
 			if (tl)
 				stream_printf(fp, "%s", tl);
 		} else
-			BATmultiprintf(GDKout, 2, &b, TRUE, 0, TRUE);
+			BATmultiprintf(cntxt->fdout, 2, &b, TRUE, 0, TRUE);
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
@@ -313,7 +314,8 @@ IOprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	IOtableAll(GDKout, mb, stk, p, 1, 0, FALSE, TRUE);
+	Client cntxt= MCgetClient();
+	IOtableAll(cntxt->fdout, mb, stk, p, 1, 0, FALSE, TRUE);
 	return MAL_SUCCEED;
 }
 
@@ -326,17 +328,18 @@ IOprompt_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 IOprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	Client cntxt= MCgetClient();
 	int tpe = getArgType(mb, pci, 1);
 	ptr val = (ptr) getArgReference(stk, pci, 1);
 
 	if (val == NULL) {
-		ATOMprint(TYPE_str, "nil", GDKout);
+		ATOMprint(TYPE_str, "nil", cntxt->fdout);
 		return MAL_SUCCEED;
 	}
 	if (tpe == TYPE_str)
-		ATOMprint(TYPE_str, *(str *) val, GDKout);
+		ATOMprint(TYPE_str, *(str *) val, cntxt->fdout);
 	else
-		ATOMprint(tpe, val, GDKout);
+		ATOMprint(tpe, val, cntxt->fdout);
 	return MAL_SUCCEED;
 }
 
@@ -376,15 +379,17 @@ str
 IOotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int order;
+	Client cntxt= MCgetClient();
 
 	order = *(int *) getArgReference(stk, pci, 1);
-	return IOtableAll(GDKout, mb, stk, pci, 2, order, TRUE, TRUE);
+	return IOtableAll(cntxt->fdout, mb, stk, pci, 2, order, TRUE, TRUE);
 }
 
 str
 IOtable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return IOtableAll(GDKout, mb, stk, pci, 1, 0, TRUE, TRUE);
+	Client cntxt= MCgetClient();
+	return IOtableAll(cntxt->fdout, mb, stk, pci, 1, 0, TRUE, TRUE);
 }
 
 str
@@ -411,17 +416,19 @@ IOftable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 IOttable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return IOtableAll(GDKout, mb, stk, pci, 1, 0, FALSE, TRUE);
+	Client cntxt= MCgetClient();
+	return IOtableAll(cntxt->fdout, mb, stk, pci, 1, 0, FALSE, TRUE);
 }
 
 str
 IOtotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int order;
+	Client cntxt= MCgetClient();
 
 	order = *(int *) getArgReference(stk, pci, 1);
 	(void) order;		/* fool compiler */
-	return IOtableAll(GDKout, mb, stk, pci, 2, order, FALSE, TRUE);
+	return IOtableAll(cntxt->fdout, mb, stk, pci, 2, order, FALSE, TRUE);
 }
 
 @- Formatter print
@@ -445,7 +452,8 @@ This avoids repeated type checking in most cases.
 str
 IOprint_str(int *ret, str *s)
 {
-	stream *fd = GDKout;
+	Client cntxt= MCgetClient();
+	stream *fd = cntxt->fdout;
 	str c;
 	(void) ret;
 

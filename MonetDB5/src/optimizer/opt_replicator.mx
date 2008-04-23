@@ -302,22 +302,23 @@ REPdump(int *ret)
 	str ps;
 	InstrPtr p;
 	int i, r;
+	Client cntxt= MCgetClient();
 
 	(void) ret;
 	if ( repl != NULL){
-		stream_printf(GDKout,"Ticks  Cnt  Reuse\tInstr\n");
+		stream_printf(cntxt->fdout,"Ticks  Cnt  Reuse\tInstr\n");
 		for (i = 0; i < repl->stop; i++){
 			p = getInstrPtr(repl, i);
 			r = getDestVar(p);
      			ps = instruction2str(repl,p, LIST_MAL_ALL);
 
 			if( isVarKept(repl,r))
-		        	stream_printf(GDKout,"%5.2f  %d  %d\t", replstat[r].ticks, replstat[r].cnt,replstat[r].reuse);
-			else stream_printf(GDKout,"Not stored   \t");
-			stream_printf(GDKout,"%s\n", ps);
+		        	stream_printf(cntxt->fdout,"%5.2f  %d  %d\t", replstat[r].ticks, replstat[r].cnt,replstat[r].reuse);
+			else stream_printf(cntxt->fdout,"Not stored   \t");
+			stream_printf(cntxt->fdout,"%s\n", ps);
 	        	GDKfree(ps);
 		}
-		stream_printf(GDKout,"Replicator entries %d\n", repl->stop);
+		stream_printf(cntxt->fdout,"Replicator entries %d\n", repl->stop);
 	}
 	return MAL_SUCCEED;
 }
@@ -351,15 +352,16 @@ REPsetCache(int *ret, sht *p)
 }
 
 static int
-OPTreplicatorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, actions=0;
 	InstrPtr *old;
 	int limit,slimit, no_pr, rprof = 0, rs =0;
 	sht *rep ;
 
+	(void) cntxt;
 	(void) stk;
-		 /* vars bound to replicator commands */
+	 /* vars bound to replicator commands */
 	rep = (sht*) alloca(sizeof(sht)* mb->vtop);
 	memset((char*) rep, 0, sizeof(sht)* mb->vtop);
 

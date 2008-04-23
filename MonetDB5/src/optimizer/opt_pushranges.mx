@@ -91,21 +91,21 @@ typedef struct RANGE{
 
 #ifdef DEBUG_OPT_RANGEPUSH
 static void 
-printRange(MalBlkPtr mb, Range rng, int idx){
+printRange(Client cntxt, MalBlkPtr mb, Range rng, int idx){
 	(void) rng;
-	stream_printf(GDKout,"[%3d] %5s used=%d\tlcst=%s\t ", 
+	stream_printf(cntxt->fdout,"[%3d] %5s used=%d\tlcst=%s\t ", 
 		idx, getVarName(mb,idx), rng[idx].used,
 		(rng[idx].lcst? getVarName(mb,rng[idx].lcst):""));
-	stream_printf(GDKout,"hcst=%s\tsource %s ", 
+	stream_printf(cntxt->fdout,"hcst=%s\tsource %s ", 
 		(rng[idx].hcst? getVarName(mb,rng[idx].hcst):""), 
 		(rng[idx].srcvar?getVarName(mb,rng[idx].srcvar):""));
-	stream_printf(GDKout,"\tlu=%d\tr=%d", rng[idx].lastupdate, rng[idx].lastrange);
-	stream_printf(GDKout,"\n");
+	stream_printf(cntxt->fdout,"\tlu=%d\tr=%d", rng[idx].lastupdate, rng[idx].lastrange);
+	stream_printf(cntxt->fdout,"\n");
 }
 #endif
 
 static int
-OPTpushrangesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j, limit,actions=0;
 	InstrPtr p, *old;
@@ -117,7 +117,9 @@ OPTpushrangesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return 0;
 
 #ifdef DEBUG_OPT_RANGEPUSH
-	printf("Range select optimizer started\n");
+	stream_printf(cntxt->fdout,"#Range select optimizer started\n");
+#else
+	(void) cntxt;
 #endif
 	(void) stk;
 	(void) pci;
@@ -137,8 +139,7 @@ In phase I we collect information about constants
 			range[getArg(p,j)].lastupdate= i;
 			if( range[getArg(p,j)].lastrange == 0)
 				range[getArg(p,j)].lastrange= i;
-		}
-		if( getModuleId(p)== algebraRef && 
+		} if( getModuleId(p)== algebraRef && 
 			( getFunctionId(p)== selectRef || getFunctionId(p)== uselectRef) ){
 @-
 The operation X:= algebra.select(Y,L,H,Li,Hi) is analysed.
@@ -232,7 +233,7 @@ It is empty if L> H or when L=H and the bounds are !(true,true).
 #ifdef DEBUG_OPT_RANGEPUSH
 		for(j=0; j< mb->vtop; j++)
 		if( range[j].used )
-			printRange(mb,range,j);
+			printRange(cntxt, mb,range,j);
 #endif
 @-
 Phase II, if we succeeded in pushing constants around and

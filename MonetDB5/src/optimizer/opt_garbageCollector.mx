@@ -164,7 +164,7 @@ OPTkeepVariable(MalBlkPtr mb, InstrPtr p, int idx)
 }
 @c
 static int
-OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k, limit,slimit, done;
 	InstrPtr p, q, *old;
@@ -172,6 +172,7 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int actions = 0;
 	Lifespan span;
 
+	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
@@ -211,9 +212,9 @@ OPTgarbageCollectorImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 #ifdef DEBUG_OPT_GARBAGE
 	{
-		stream_printf(GDKout, "Garbage collected BAT variables \n");
-		printFunction(GDKout, mb, LIST_MAL_ALL);
-		stream_printf(GDKout, "End of GCoptimizer\n");
+		stream_printf(cntxt->fdout, "Garbage collected BAT variables \n");
+		printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
+		stream_printf(cntxt->fdout, "End of GCoptimizer\n");
 	}
 #endif
 	for(; i<slimit; i++)

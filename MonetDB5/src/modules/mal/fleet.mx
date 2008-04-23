@@ -339,9 +339,6 @@ FLEETconnectAll(int *key, str *host, int *port, str *username, str *password, st
 		throw(IO, "mserver.connect", "Could not connect: %s", err);
 	}
 
-#ifdef MAPI_TEST
-	stream_printf(GDKout,"Succeeded to establish session\n");
-#endif
 	FLEETsessions[i].mid= mid;
 	*key = FLEETsessions[i].key;
 	return MAL_SUCCEED;
@@ -363,9 +360,6 @@ FLEETdisconnectALL(int *key){
 
 	mal_unset_lock(mal_contextLock,"FLEETdisconnect");
 
-#ifdef MAPI_TEST
-	stream_printf(GDKout,"Succeeded to close all session\n");
-#endif
 	return MAL_SUCCEED;
 }
 
@@ -391,10 +385,6 @@ FLEETdisconnectWithAlias(int *key, str *dbalias){
 	}
 
 	mal_unset_lock(mal_contextLock,"FLEETdisconnectWithAlias");
-
-#ifdef MAPI_TEST
-	stream_printf(GDKout,"Succeeded to close all session\n");
-#endif
 
 	return MAL_SUCCEED;
 }

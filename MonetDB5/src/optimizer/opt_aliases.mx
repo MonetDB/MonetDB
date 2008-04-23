@@ -107,13 +107,14 @@ OPTaliasRemap(InstrPtr p, int *alias){
 }
 
 static int
-OPTaliasesImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,k=1, limit, actions=0;
 	int *alias;
 	Lifespan span= newLifespan(mb);
 
 	(void) stk;
+	(void) cntxt;
 	alias= (int*) alloca(sizeof(int)* mb->vtop);
 	for(i=0; i<mb->vtop; i++) alias[i]=i;
 

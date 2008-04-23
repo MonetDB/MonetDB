@@ -1063,7 +1063,7 @@ MATcount(InstrPtr p, mat_t *mat, int mtop)
 }
 
 static int
-OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p) 
+OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) 
 {
 	InstrPtr *old=0, q, r;
 	mat_t *mat;
@@ -1071,7 +1071,9 @@ OPTmergetableImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int size, match, actions=0;
 
 #ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"Start MAT optimizer\n");
+	stream_printf(cntxt->fdout,"Start MAT optimizer\n");
+#else
+	(void) cntxt;
 #endif
 	old = mb->stmt;
 	oldtop= mb->stop;
@@ -1371,9 +1373,9 @@ For the time being, they are no-ops.
 @c
 	(void) stk; 
 #ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(GDKout,"Result of multi table optimizer\n");
+	stream_printf(cntxt->fdout,"Result of multi table optimizer\n");
 	optimizerCheck(mb,"merge test",1,0,0);
-	printFunction(GDKout, mb, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
 #endif
 
 	return actions;

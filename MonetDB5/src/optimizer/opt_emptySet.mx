@@ -115,7 +115,7 @@ Be aware to handle alias mapping.
 @c
 
 static int
-ESevaluate(MalBlkPtr mb, char *empty)
+ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 {
 	int i, j, actions = 0;
 	InstrPtr p;
@@ -134,6 +134,7 @@ ESevaluate(MalBlkPtr mb, char *empty)
 	int limit = mb->stop, slimit= mb->ssize, ctop=0;
 	InstrPtr *old = mb->stmt, *constraints;
 
+	(void) cntxt;
 	/* get query property */
 	runonce = (varGetProp(mb, getArg(old[0], 0), runonceProp) != NULL);
 	if (varGetProp(mb, getArg(old[0], 0), inlineProp) != NULL)
@@ -280,7 +281,7 @@ of removal of superflous constructions.
 	}
 #ifdef DEBUG_OPT_EMPTYSET
 	printf("FINAL STAGE errors=%d\n", mb->errors);
-	printFunction(GDKout, mb, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
 #endif
 	return actions;
 }
@@ -291,7 +292,7 @@ are not the target of an update.
 @c
 
 int
-OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	char *empty;
 	int i;
@@ -302,22 +303,22 @@ OPTemptySetImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) p;
 #ifdef DEBUG_OPT_EMPTYSET
 	printf("ESoptimizer called, collect empty sets and process them\n");
-	printFunction(GDKout, mb, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
 #endif
 	for (i = 0; i < mb->vtop; i++) {
 		VarPtr rowsp;
 		if ((rowsp = varGetProp(mb, i, rowsProp)) != NULL 
 		     && rowsp->value.val.lval == 0) {
 #ifdef DEBUG_OPT_EMPTYSET
-		stream_printf(GDKout, "START emptyset optimizer %d", i);
+		stream_printf(cntxt->fdout, "START emptyset optimizer %d", i);
 #endif
 			empty[i] = 1;
 		} 
 	}
 #ifdef DEBUG_OPT_EMPTYSET
-	stream_printf(GDKout, "\n");
+	stream_printf(cntxt->fdout, "\n");
 #endif
-	return ESevaluate(mb, empty);
+	return ESevaluate(cntxt, mb, empty);
 }
 
 @include optimizerWrapper.mx

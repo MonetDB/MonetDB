@@ -138,7 +138,7 @@ STpack(MalBlkPtr mb, int varid, STtuple * tuples)
 }
 
 static int
-STevaluate(MalBlkPtr mb, int cnt, int *vars)
+STevaluate(Client cntxt, MalBlkPtr mb, int cnt, int *vars)
 {
 	int i, j = 0, k, limit, slimit, actions = 0;
 	InstrPtr p;
@@ -146,6 +146,7 @@ STevaluate(MalBlkPtr mb, int cnt, int *vars)
 	STtuple *tuples;
 	int top = 0;
 
+	(void) cntxt;
 	if( mb->errors) 
 		return 0;
 	tuples = alloca(mb->stop * sizeof(STtuple));
@@ -160,12 +161,12 @@ variables on the stack.
 	for (i = 0; i < cnt; i++)
 		STnewTuple(mb, vars[i], &top, tuples);
 #ifdef DEBUG_OPT_SINGLETON
-	stream_printf(GDKout, "START SINGLETON OPTIMIZER %d:", cnt);
+	stream_printf(cntxt->fdout, "START SINGLETON OPTIMIZER %d:", cnt);
 	for (i = 0; i < top; i++)
-		stream_printf(GDKout, "[%d,%d,%d] ", vars[i], tuples[i].hidx, tuples[i].tidx);
-	stream_printf(GDKout, "\n");
-	printFunction(GDKout, mb, LIST_MAL_ALL);
-	stream_printf(GDKout, "START OPTIMIZER ");
+		stream_printf(cntxt->fdout, "[%d,%d,%d] ", vars[i], tuples[i].hidx, tuples[i].tidx);
+	stream_printf(cntxt->fdout, "\n");
+	printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
+	stream_printf(cntxt->fdout, "START OPTIMIZER ");
 #endif
 	newMalBlkStmt(mb, mb->ssize);
 
@@ -317,26 +318,27 @@ variables on the stack.
 #ifdef DEBUG_OPT_SINGLETON
 	if (actions) {
 		printf("FINAL STAGE actions=%d\n", actions);
-		printFunction(GDKout, mb, LIST_MAL_ALL);
+		printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
 		for (i = 0; i < top; i++)
-			stream_printf(GDKout, "[%d,%d:%s,%d:%s] ", tuples[i].vidx, tuples[i].hidx, getTypeName(tuples[i].htpe), tuples[i].tidx, getTypeName(tuples[i].ttpe));
-		stream_printf(GDKout, "\n");
+			stream_printf(cntxt->fdout, "[%d,%d:%s,%d:%s] ", tuples[i].vidx, tuples[i].hidx, getTypeName(tuples[i].htpe), tuples[i].tidx, getTypeName(tuples[i].ttpe));
+		stream_printf(cntxt->fdout, "\n");
 	}
 #endif
 
 #ifdef DEBUG_OPT_SINGLETON
 	printf("FINAL STAGE SINGLETON errors=%d\n", mb->errors);
-	printFunction(GDKout, mb, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
 #endif
 	return actions;
 }
 
 static int
-OPTsingletonImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTsingletonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int *vars;
 	int cnt = 0, i, j;
 
+	(void) cntxt;
 	(void) stk;
 	vars = (int *) alloca(mb->vtop);
 
@@ -346,7 +348,7 @@ OPTsingletonImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if (varGetProp(mb, getArg(p, j), singletonProp) != NULL)
 				vars[cnt++] = getArg(p, j);
 	}
-	return STevaluate(mb, cnt, vars);
+	return STevaluate(cntxt, mb, cnt, vars);
 }
 
 @include optimizerWrapper.mx

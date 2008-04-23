@@ -54,7 +54,7 @@ In a second pass we can then remove/keep them upon need.
 #include "mal_interpreter.h"
 
 static int
-OPTaccessmodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTaccessmodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, j, k;
 	int actions = 0;
@@ -103,8 +103,10 @@ OPTaccessmodeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		actions++;
 	} 
 #ifdef DEBUG_OPT_MODES
-	stream_printf(GDKout,"OPTIMIZE MODES\n");
-	printFunction(GDKout,mb,LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"OPTIMIZE MODES\n");
+	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
+#else
+	(void) cntxt;
 #endif
 	return actions;
 }

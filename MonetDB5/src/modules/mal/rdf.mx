@@ -490,7 +490,6 @@ RDFexport_(str url, bat M, bat S, bat P, bat O, str syntax)
 			                    	str ov = base + off[o[i]];
 		    	                    str pv = base + off[p[i]];
 		    	                    str sv = base + off[s[i]];
-		    	                    //stream_printf(GDKout, "'%s' '%s' '%s' '%s'\n", ov, pv, sv, url);
 									/* Make a triple with URI subject, URI predicate, literal object */
 									triple=GDKmalloc(sizeof(raptor_statement));
 									

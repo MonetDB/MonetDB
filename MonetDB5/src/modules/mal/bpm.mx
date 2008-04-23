@@ -1174,12 +1174,12 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 		p->tbits=  bpmcat[i]->tbits;
 
 		
-	#ifdef _DEBUG_BPM_
+#ifdef _DEBUG_BPM_
 		stream_printf(GDKout,"Broke partition '%s' at %d\n", bpmcat[i]->name,i);
 		BPMprintPartition(GDKout, bpmcat[i]);
 		BPMprintPartition(GDKout,p);
 		stream_printf(GDKout,"Finished partition\n");
-	#endif
+#endif
 
 		BATdel(b,bn,FALSE); /* assume unique heads */
 		bpmcat[i]->cnt= BATcount(b);

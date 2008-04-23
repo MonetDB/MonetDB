@@ -91,7 +91,7 @@ OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	if(strncmp(mod,"bat",3)==0)
 		return 0;
 #ifdef DEBUG_OPT_REMAP
-	stream_printf(GDKout,"found a candidate %s.%s\n",mod,fcn);
+	stream_printf(cntxt->fdout,"found a candidate %s.%s\n",mod,fcn);
 #endif
 	snprintf(buf,1024,"bat%s",mod);
 	p= newInstruction(mb,ASSIGNsymbol);
@@ -104,7 +104,7 @@ OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	for(i= pci->retc+2; i<pci->argc; i++)
 		p= pushArgument(mb,p,getArg(pci,i));
 #ifdef DEBUG_OPT_REMAP
-	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	printInstruction(cntxt->fdout,mb,p,LIST_MAL_ALL);
 #endif
 	/* now see if we can resolve the instruction */
 	typeChecker(scope,mb,p,TRUE);
@@ -114,7 +114,7 @@ OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	}
 	pushInstruction(mb,p);
 #ifdef DEBUG_OPT_REMAP
-	stream_printf(GDKout,"success\n");
+	stream_printf(cntxt->fdout,"success\n");
 #endif
 	return 1;
 }
@@ -166,9 +166,9 @@ OPTmultiplexInline( MalBlkPtr mb, InstrPtr p, int pc )
 	if( s== NULL || !isSideEffectFree(s->def)){
 #ifdef DEBUG_OPT_REMAP
 		if( s== NULL)
-			stream_printf(GDKout,"#not found \n");
+			stream_printf(cntxt->fdout,"#not found \n");
 		else
-			stream_printf(GDKout,"#side-effects\n");
+			stream_printf(cntxt->fdout,"#side-effects\n");
 #endif
 		return 0;
 	}
@@ -178,9 +178,9 @@ Determine the variables to be upgraded and adjust their type
 	mq= copyMalBlk(s->def);
 	sig= getInstrPtr(mq,0);
 #ifdef DEBUG_OPT_REMAP
-		stream_printf(GDKout,"#Modify the code\n");
-		printFunction(GDKout,mq,LIST_MAL_ALL);
-		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+		stream_printf(cntxt->fdout,"#Modify the code\n");
+		printFunction(cntxt->fdout,mq,LIST_MAL_ALL);
+		printInstruction(cntxt->fdout,mb,p,LIST_MAL_ALL);
 #endif
 	upgrade = (bit*) GDKzalloc(sizeof(bit)*mq->vtop);
 
@@ -194,12 +194,12 @@ Determine the variables to be upgraded and adjust their type
 
 			if( getTailType(getArgType(mb,p,i)) != getArgType(mq,sig,i-2)){
 #ifdef DEBUG_OPT_REMAP
-				stream_printf(GDKout,"#Type mismatch %d\n",i);
+				stream_printf(cntxt->fdout,"#Type mismatch %d\n",i);
 #endif
 				goto terminateMX;
 			}
 #ifdef DEBUG_OPT_REMAP
-			stream_printf(GDKout,"#Upgrade type %d %d\n",i, getArg(sig,i-2));
+			stream_printf(cntxt->fdout,"#Upgrade type %d %d\n",i, getArg(sig,i-2));
 #endif
 			setVarType(mq, i-2,newBatType(TYPE_oid, getArgType(mb,p,i)));
 			upgrade[getArg(sig,i-2)]= TRUE;
@@ -302,8 +302,8 @@ an upgrade and resolve it afterwards.
 	if(mq->errors){
 terminateMX:
 #ifdef DEBUG_OPT_REMAP
-		stream_printf(GDKout,"Abort remap\n");
-		printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+		stream_printf(cntxt->fdout,"Abort remap\n");
+		printInstruction(cntxt->fdout,mb,q,LIST_MAL_ALL);
 #endif
 		freeMalBlk(mq);
 		GDKfree(upgrade);
@@ -319,11 +319,11 @@ But first, shift the arguments of the multiplex.
 	delArgument(p,1);
 	inlineMALblock(mb,pc,mq);
 #ifdef DEBUG_OPT_REMAP
-	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-	stream_printf(GDKout,"New block\n");
-	printFunction(GDKout,mq,LIST_MAL_ALL);
-	stream_printf(GDKout,"Inlined result\n");
-	printFunction(GDKout,mb,LIST_MAL_ALL);
+	printInstruction(cntxt->fdout,mb,p,LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"New block\n");
+	printFunction(cntxt->fdout,mq,LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"Inlined result\n");
+	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
 #endif
 	GDKfree(upgrade);
 	return 1;
@@ -379,12 +379,11 @@ OPTremapSwitched(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	return 0;
 }
 static int
-OPTremapImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 
 	InstrPtr *old, p;
 	int i, limit, slimit, doit= 0;
-	Client cntxt = MCgetClient();
 	Module scope = cntxt->nspace;
 
 	(void) pci;
@@ -405,14 +404,14 @@ geared at handling the PSM code.
 @c
 			if ( varGetProp(mb,getArg(p,0),inlineProp)!= NULL) {
 #ifdef DEBUG_OPT_REMAP
-				stream_printf(GDKout,"Multiplex inline\n");
-				printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+				stream_printf(cntxt->fdout,"Multiplex inline\n");
+				printInstruction(cntxt->fdout,mb,p,LIST_MAL_ALL);
 #endif
 				pushInstruction(mb, p);
 				if( OPTmultiplexInline(mb,p,mb->stop-1) )
 					doit++;
 #ifdef DEBUG_OPT_REMAP
-				stream_printf(GDKout,"doit %d\n",doit);
+				stream_printf(cntxt->fdout,"doit %d\n",doit);
 #endif
 			} else 
 			if(	OPTremapDirect(mb, stk, p, scope) ||
@@ -473,11 +472,14 @@ geared at handling the PSM code.
 
 str
 OPTremapMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	Client cntxt= MCgetClient();
 	(void) mb;
 	(void)stk;
 	(void) p;
 #ifdef DEBUG_OPT_REMAP
-	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	printInstruction(cntxt->fdout,mb,p,LIST_MAL_ALL);
+#else
+	(void) cntxt;
 #endif
 	throw(MAL,"opt.remap","no implementation present");
 }

@@ -274,7 +274,7 @@ CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help){
 	c= MCgetClient();
 	msg= compileString(&sym, c,*code);
 	if( sym) {
-		stream_printf(GDKout,"REGISTER FUNCTIOn %s.%s\n",
+		stream_printf(c->fdout,"REGISTER FUNCTIOn %s.%s\n",
 			getModuleId(sym->def->stmt[0]), getFunctionId(sym->def->stmt[0]));
 		mb= sym->def;
 		if( help)

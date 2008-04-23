@@ -155,17 +155,10 @@ OPTbakeIterator(MalBlkPtr mb, InstrPtr p, int *alias, int *garbage){
 	int tpe;
 	InstrPtr q, anchor;
 
-#ifdef DEBUG_OPT_PARTITIONED
-	printf("bakeIterator for:\n");
-	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-#endif
 	anchor= q = newStmt(mb,"bpm","new");
 	tpe= getArgType(mb,p,0);
 	anchor= pushArgument(mb,anchor,newTypeVariable(mb,getHeadType(tpe)));
 	anchor= pushArgument(mb,anchor,newTypeVariable(mb,getTailType(tpe)));
-#ifdef DEBUG_OPT_PARTITIONED
-	printf("alias[%d]=%d\n",getArg(p,0),getArg(q,0));
-#endif
 	alias[getArg(p,0)]= getArg(q,0);
 	garbage[getArg(q,0)]= 1;
 
@@ -354,8 +347,9 @@ the garbage collection statements for the partitioned bats.
 }
 
 static int
-OPTpartitionsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTpartitionsImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) stk;
 	(void) pci;
 	return OPTnaiveIterations(mb);

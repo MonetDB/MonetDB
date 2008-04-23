@@ -38,17 +38,18 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol s= NULL;
 	lng t,clk= GDKusec();
 	int actions = 0;
+	Client cntxt= MCgetClient();
 
 	optimizerInit();
 	if( p )
 		removeInstruction(mb, p);
 #ifdef _DEBUG_OPTIMIZER_
-	stream_printf(GDKout,"apply @1\n");
-	printFunction(GDKout,mb,LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"apply @1\n");
+	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
 #endif
 	if( p && p->argc > 1 ){
 #ifdef _DEBUG_OPTIMIZER_
-		stream_printf(GDKout,"locate function @1\n");
+		stream_printf(cntxt->fdout,"locate function @1\n");
 #endif
 		if( getArgType(mb,p,1) != TYPE_str ||
 			getArgType(mb,p,2) != TYPE_str ||
@@ -74,17 +75,17 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			throw(MAL, "optimizer.@1",buf);
 		}
 #ifdef _DEBUG_OPTIMIZER_
-		stream_printf(GDKout,"@1 %s %d\n",modnme,fcnnme);
+		stream_printf(cntxt->fdout,"@1 %s %d\n",modnme,fcnnme);
 #endif
 		mb = s->def;
 		stk= 0;
 	} 
 	if( mb->errors )
 		return MAL_SUCCEED;
-	actions= OPT@1Implementation(mb,stk,p);
+	actions= OPT@1Implementation(cntxt, mb,stk,p);
 #ifdef _DEBUG_OPTIMIZER_
-	stream_printf(GDKout,"finished @1 %d\n",actions);
-	printFunction(GDKout,mb,LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"finished @1 %d\n",actions);
+	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
 #endif
     optimizerCheck(mb, "optimizer.@1", actions, t=(GDKusec() - clk),@2);
 	QOTupdateStatistics("@1",actions,t);

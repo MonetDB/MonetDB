@@ -107,7 +107,7 @@ OPTtraceCall(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 static int 
-OPTtraceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTtraceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k,limit,slimit;
 	InstrPtr p=0, *old= mb->stmt, q;
@@ -119,8 +119,10 @@ OPTtraceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;		/* to fool compilers */
 
 #ifdef _DEBUG_OPT_TRACE_
-	stream_printf(GDKout,"ENTERING TRACE CODE \n");
-	printFunction(GDKout,mb,LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"ENTERING TRACE CODE \n");
+	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
+#else
+	(void) cntxt;
 #endif
 
 	if( monitor[0].modptr == 0)
@@ -149,8 +151,8 @@ OPTtraceImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 #ifdef _DEBUG_OPT_TRACE_
-	stream_printf(GDKout,"LEAVING DEAD CODE ELIMINATION\n");
-	printFunction(GDKout,mb,LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"LEAVING DEAD CODE ELIMINATION\n");
+	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
 #endif
 	for( ; i<slimit; i++)
 	if(old[i])

@@ -114,7 +114,7 @@ collecting the relevant information, phase two is the actual
 code construction.
 @c
 static str
-OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i = 2, k, mloop, resB, iter = 0, cr;
 	int hvar, tvar;
@@ -123,6 +123,7 @@ OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr q;
 	int ht, tt;
 
+	(void) cntxt;
 	(void) stk;
 	alias= (int*) alloca(sizeof(int) * pci->maxarg);
 	mod = VALget(&getVar(mb, getArg(pci, 1))->value);
@@ -141,10 +142,10 @@ OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								"Iterator BAT type is missing");
 
 #ifdef DEBUG_OPT_MULTIPLEX
-	stream_printf(GDKout,"calling the optimize multiplex script routine\n");
-	printFunction(GDKout,mb,LIST_MAL_ALL);
-	stream_printf(GDKout,"multiplex against operator %d %s\n",iter, getTypeName(getVarType(mb,iter)));
-	printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"calling the optimize multiplex script routine\n");
+	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"multiplex against operator %d %s\n",iter, getTypeName(getVarType(mb,iter)));
+	printInstruction(cntxt->fdout,mb,pci,LIST_MAL_ALL);
 #endif
 @-
 Beware, the operator constant (arg=1) is passed along as well,
@@ -254,7 +255,7 @@ find the actual arguments at the proper place of the callee.
 This optimizer is directly called for the current routine.
 It is more a code generator then an optimizer per se.
 @h
-opt_export int OPTmultiplexImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export int OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str OPTmultiplexSimple(Client cntxt);
 @-
 The multiplexSimple is called by the MAL scenario. It bypasses
@@ -274,7 +275,7 @@ OPTmultiplexSimple(Client cntxt)
 			doit++;
 	}
 	if( doit) {
-		OPTmultiplexImplementation(mb, 0, 0);
+		OPTmultiplexImplementation(cntxt, mb, 0, 0);
 		chkTypes(cntxt->nspace, mb);
 		chkFlow(mb);
 		chkDeclarations(mb);
@@ -282,7 +283,7 @@ OPTmultiplexSimple(Client cntxt)
 	return 0;
 }
 int
-OPTmultiplexImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr *old, p;
 	int i, limit, slimit, doit= 0;
@@ -301,7 +302,7 @@ OPTmultiplexImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (msg == MAL_SUCCEED &&
 			getModuleId(p) == malRef && 
 			getFunctionId(p) == multiplexRef) {
-			msg= OPTexpandMultiplex(mb, stk, p);
+			msg= OPTexpandMultiplex(cntxt, mb, stk, p);
 			if( msg== MAL_SUCCEED){
 				freeInstruction(p); 
 				old[i]=0;

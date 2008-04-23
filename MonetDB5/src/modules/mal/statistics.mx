@@ -390,9 +390,6 @@ STATupdateAll(int *ret, int forced)
 		BATiter STAT_id_nmei = bat_iterator(STAT_id_nme);
 		BATloop(STAT_id_nme, p, q) {
 			name = (str) BUNtail(STAT_id_nmei, p);
-#ifdef DEBUG_STATISTICS
-			stream_printf(GDKout, "update statistics of %d\n", name);
-#endif
 			i = BBPindex(name);
 			if (i == 0)
 				continue;
@@ -501,6 +498,7 @@ STATforceUpdate(int *ret, str *nme)
 str
 STATdump(int *ret)
 {
+	Client cntxt= MCgetClient();
 	BAT *piv[MAXPARAMS];
 
 	(void) ret;
@@ -514,7 +512,7 @@ STATdump(int *ret)
 	piv[4] = STAT_id_max_lng;
 	piv[5] = STAT_id_histogram;
 
-	BATmultiprintf(GDKout, 6 + 1, piv, 0, 1, 1);
+	BATmultiprintf(cntxt->fdout, 6 + 1, piv, 0, 1, 1);
 	return MAL_SUCCEED;
 }
 

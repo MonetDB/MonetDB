@@ -112,7 +112,7 @@ OPTallowed(InstrPtr p)
 }
 
 static int
-OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k,  v, noop = 0, se;
 	InstrPtr p;
@@ -121,6 +121,7 @@ OPTfactorizeImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr *first, *second;
 	Lifespan span= newLifespan(mb);
 
+	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 

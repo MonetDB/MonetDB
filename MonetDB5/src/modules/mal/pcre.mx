@@ -406,8 +406,10 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 	for (i = 0; i < (int)strlen(flags); i++) {
 		if (flags[i] == 'e') {
 			exec_options -= PCRE_NOTEMPTY;
-			stream_printf(GDKout, "exec_options %d, PCRE_NOTEMPTY %d\n",
+/*
+			GDKwarning("exec_options %d, PCRE_NOTEMPTY %d\n",
 					exec_options, PCRE_NOTEMPTY);
+*/
 		} else if (flags[i] == 'i') {
 			compile_options |= PCRE_CASELESS;
 		} else if (flags[i] == 'm') {

@@ -229,11 +229,6 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	InstrPtr *ns, p,q;
 	int *nv;
 
-#ifdef DEBUG_OPT_MACRO
-	printf("inlineMALblock\n");
-	printFunction(GDKout,mb,LIST_MAL_ALL);
-	printFunction(GDKout,mc,LIST_MAL_ALL);
-#endif
 	p = getInstrPtr(mb, pc);
 	q = getInstrPtr(mc, 0);
 	ns = GDKzalloc((l = (mb->ssize + mc->ssize + p->retc - 3)) * sizeof(InstrPtr));
@@ -505,7 +500,7 @@ functions, regardless their
 @c
 @= implementation
 static int
-OPT@1Implementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPT@1Implementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	MalBlkPtr target= mb;
 	Module s;
@@ -513,6 +508,7 @@ OPT@1Implementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str mod,fcn;
 	int j;
 
+	(void) cntxt;
 	(void) p;
 	(void) stk;
 
@@ -567,6 +563,7 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol t;
 	str msg,mod,fcn;
 	lng clk= GDKusec();
+	Client cntxt= MCgetClient();
 	int actions = 0;
 
 	optimizerInit();
@@ -585,7 +582,7 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if( msg) 
 		return msg;
 	if( mb->errors == 0)
-		actions= OPT@1Implementation(mb,stk,p);
+		actions= OPT@1Implementation(cntxt,mb,stk,p);
 	if( p )
 		removeInstruction(mb, p);
     optimizerCheck(mb, "optimizer.@1", actions, GDKusec() - clk, OPT_CHECK_ALL);

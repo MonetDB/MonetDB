@@ -117,7 +117,7 @@ isNewSource(InstrPtr p) {
 	return 0;
 }
 static int
-OPTstrengthReductionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j = 0, k, se= FALSE;
 	InstrPtr p;
@@ -125,6 +125,7 @@ OPTstrengthReductionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr *before, *within;
 	Lifespan span= newLifespan(mb);
 
+	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
@@ -153,7 +154,7 @@ OPTstrengthReductionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					blkexit = getBlockExit(mb,i);
 				}
 #ifdef DEBUG_OPT_STRENGTHREDUCTION
-			stream_printf(GDKout, "check block %d-%d\n", blkbegin, blkexit);
+			stream_printf(cntxt->fdout, "check block %d-%d\n", blkbegin, blkexit);
 #endif
 			}
 			within[ik++] = p;
@@ -166,7 +167,7 @@ OPTstrengthReductionImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				blkexit= blkbegin = 0;
 			/* move the saved instruction into place */
 #ifdef DEBUG_OPT_STRENGTHREDUCTION
-			stream_printf(GDKout, "combine both %d %d\n", bk, ik);
+			stream_printf(cntxt->fdout, "combine both %d %d\n", bk, ik);
 #endif
 			for (k = 0; k < ik; k++)
 				before[bk++] = within[k];
@@ -206,7 +207,7 @@ none of the arguments is assigned a value.
 				if (SRoverwritten(p, getArg(q, k))) {
 					se = TRUE;
 #ifdef DEBUG_OPT_STRENGTHREDUCTION
-					stream_printf(GDKout, "variable is set in loop %d\n", 
+					stream_printf(cntxt->fdout, "variable is set in loop %d\n", 
 						getArg(p, k));
 #endif
 					goto noreduction;
@@ -221,7 +222,7 @@ after the loop, because then you may not simple move an expression.
 				 getEndLifespan(span, getArg(p, k))> blkexit) {
 				se = TRUE;
 #ifdef DEBUG_OPT_STRENGTHREDUCTION
-				stream_printf(GDKout, "variable %d may not be moved %d-%d\n",
+				stream_printf(cntxt->fdout, "variable %d may not be moved %d-%d\n",
 				getArg(p, k),getBeginLifespan(span, getArg(p, k)), getEndLifespan(span, getArg(p, k)));
 #endif
 				goto noreduction;
@@ -229,8 +230,8 @@ after the loop, because then you may not simple move an expression.
 
   noreduction:
 #ifdef DEBUG_OPT_STRENGTHREDUCTION
-		stream_printf(GDKout,"move %d to stack %s\n", i, (se ?"within":"before"));
-		printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+		stream_printf(cntxt->fdout,"move %d to stack %s\n", i, (se ?"within":"before"));
+		printInstruction(cntxt->fdout, mb, p, LIST_MAL_ALL);
 #endif
 		if (blkexit && se == FALSE && !hasSideEffects(p, TRUE) )
 			before[bk++] = p;
@@ -246,7 +247,7 @@ after the loop, because then you may not simple move an expression.
 	mb->stop = 0;
 
 #ifdef DEBUG_OPT_STRENGTHREDUCTION
-	stream_printf(GDKout,"stop= %d bk=%d\n",mb->stop,bk);
+	stream_printf(cntxt->fdout,"stop= %d bk=%d\n",mb->stop,bk);
 #endif
 	for (i = 0; i < bk; i++)
 	if( before[i])

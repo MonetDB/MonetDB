@@ -115,8 +115,8 @@ The cost formula are repetative
 		k = (@3);
 		varSetProp(mb, getArg(p,@4), rowsProp, op_eq, VALset(&v,TYPE_lng,&k));
 #ifdef DEBUG_OPT_COSTMODEL
-		stream_printf(GDKout,"COST of @1 @2 into @4: " LLFMT "\n",k);
-		printInstruction(GDKout,mb,p,0);
+		stream_printf(cntxt->fdout,"COST of @1 @2 into @4: " LLFMT "\n",k);
+		printInstruction(cntxt->fdout,mb,p,0);
 #endif
 }
 @= newRows1
@@ -156,7 +156,7 @@ Also make sure you don't re-use variables, because then the
 row count becomes non-deterministic.
 @c
 static int
-OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	lng k, c1, c2;
@@ -164,6 +164,8 @@ OPTcostModelImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sortrevRef= putName("sortReverse",11);
 	str sortrevTailRef= putName("sortReverseTail",15);
 	str projectRef= putName("project",7);
+
+	(void) cntxt;
 	(void) stk;
 	(void) pci;
 

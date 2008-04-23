@@ -65,11 +65,10 @@ comment "Replace calculations with accumulator model";
 #include "mal_builder.h"
 
 static int
-OPTaccumulatorsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j, a=0, b, valid, limit,slimit;
 	InstrPtr p,q;
-	Client cntxt = MCgetClient();
 	Module scope = cntxt->nspace;
 	int actions = 0;
 	char *available;
@@ -114,7 +113,7 @@ the replacement is aborted.
 		actions++;
 	}
 #ifdef DEBUG_OPT_OPTIMIZER
-	printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+	printInstruction(cntxt->fdout, mb, p, LIST_MAL_ALL);
 #endif
 @c
 	for (i = 0; i < limit; i++) {
@@ -157,10 +156,10 @@ the replacement is aborted.
 				continue;
 			}
 #ifdef DEBUG_OPT_OPTIMIZER
-			stream_printf(GDKout, "Found accumulation candidate ");
-			stream_printf(GDKout, "%d: %d(%d,%d) valid=%d isaBat=%d \n", 
+			stream_printf(cntxt->fdout, "Found accumulation candidate ");
+			stream_printf(cntxt->fdout, "%d: %d(%d,%d) valid=%d isaBat=%d \n", 
 				i, b,a,getArg(p,2), valid, isaBatType(v->type));
-			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+			printInstruction(cntxt->fdout, mb, p, LIST_MAL_ALL);
 #endif
 @-
 Beware, we may only use temporary BATs as accumulators, otherwise
@@ -187,8 +186,8 @@ sure it becomes one.
 			}
 			
 #ifdef DEBUG_OPT_OPTIMIZER
-			stream_printf(GDKout, "Found unary accumulation candidate\n");
-			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+			stream_printf(cntxt->fdout, "Found unary accumulation candidate\n");
+			printInstruction(cntxt->fdout, mb, p, LIST_MAL_ALL);
 #endif
 			q= copyInstruction(p);
 			p= pushArgument(mb, p, a);

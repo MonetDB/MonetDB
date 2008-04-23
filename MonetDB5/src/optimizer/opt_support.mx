@@ -627,8 +627,7 @@ optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag)
 		newComment(mb,buf);
 		if (mb->errors) {
 			showErrors();
-			stream_printf(GDKout, "Optimizer %s failed\n", name);
-			printFunction(GDKout, mb, LIST_MAL_ALL);
+			GDKwarning( "Optimizer %s failed\n", name);
 		}
 	}
 	/* code to collect all last versions to study code coverage  in SQL
@@ -898,10 +897,6 @@ safetyBarrier(InstrPtr p, InstrPtr q)
 		for (i = p->retc; i < p->argc; i++)
 			for (j = q->retc; j < q->argc; j++)
 				if (p->argv[i] == q->argv[j]) {
-#ifdef DEBUG_OPT_OPTIMIZER
-					stream_printf(GDKout, "Found overlapping assignment barrier for \n");
-					printInstruction(GDKout, mb, q, LIST_MAL_ALL);
-#endif
 					/* TODO check safety property of the argument */
 					return TRUE;
 				}

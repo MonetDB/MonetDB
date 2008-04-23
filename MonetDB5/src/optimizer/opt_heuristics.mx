@@ -108,10 +108,11 @@ SPsqueezer000(MalBlkPtr mb, int pc1, int pc2)
 }
 
 static int
-OPTheuristicsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTheuristicsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k, combis = 0, squeeze = 0;
 
+	(void) cntxt;
 	(void) stk;		/* fool compilers */
 	(void) pci;
 
@@ -120,8 +121,8 @@ OPTheuristicsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (k = i + 1; k < mb->stop; k++)
 			if (SPcombi000(mb, i, k)) {
 #ifdef DEBUG_OPT_OPTIMIZER
-				stream_printf(GDKout, "Combinator found\n");
-				printInstruction(GDKout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
+				stream_printf(cntxt->fdout, "Combinator found\n");
+				printInstructioncntxt->fdout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
 #endif
 				combis++;
 				k--;	/* an instruction has been removed */
@@ -132,8 +133,8 @@ OPTheuristicsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (k = i + 1; k < mb->stop; k++)
 			if (SPsqueezer000(mb, i, k)) {
 #ifdef DEBUG_OPT_OPTIMIZER
-				stream_printf(GDKout, "Squeezer found\n");
-				printInstruction(GDKout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
+				stream_printfcntxt->fdout, "Squeezer found\n");
+				printInstructioncntxt->fdout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
 #endif
 				squeeze++;
 				k--;	/* an instruction has been removed */

@@ -149,9 +149,6 @@ RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		recycleClaim++;
 		mal_unset_lock(recycleLock,"recycle");
 	}
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLEstart version %d\n",recycleVersion);
-#endif
 	return MAL_SUCCEED;
 }
 
@@ -176,22 +173,23 @@ str
 RECYCLEdump(int *ret)
 {
 	int i;
+	Client cntxt;
 
 	(void) ret;
-	stream_printf(GDKout,"#Recycler  catalog\n");
-	stream_printf(GDKout,"#retain= %d time =%d sze= %d alpha= %4.3f\n",
+	stream_printf(cntxt->fdout,"#Recycler  catalog\n");
+	stream_printf(cntxt->fdout,"#retain= %d time =%d sze= %d alpha= %4.3f\n",
 		retainPolicy, recycleTime, recycleVolume, recycleAlpha);
-	stream_printf(GDKout,"#reuse= %d\n", reusePolicy);
-	stream_printf(GDKout,"#rcache= %d limit= %d \n", rcachePolicy, recycleCacheLimit);
-	stream_printf(GDKout,"#hard stmt = %d hard var = %d hard mem= %d\n",
+	stream_printf(cntxt->fdout,"#reuse= %d\n", reusePolicy);
+	stream_printf(cntxt->fdout,"#rcache= %d limit= %d \n", rcachePolicy, recycleCacheLimit);
+	stream_printf(cntxt->fdout,"#hard stmt = %d hard var = %d hard mem= %d\n",
 		 HARDLIMIT_STMT, HARDLIMIT_VAR, HARDLIMIT_MEM);
-	stream_printf(GDKout,"#recycled = %d statements = %d saved time= %d memory= %d\n",
+	stream_printf(cntxt->fdout,"#recycled = %d statements = %d saved time= %d memory= %d\n",
 		 recycled, statements, savedTime,monitorRecycler);
 
 	/* and dump the statistics */
 	if (recycleBlk)
 	for(i=0; i< recycleBlk->stop; i++){
-		stream_printf(GDKout,"# %4d lru= %8d cnt= %8d ticks= %9d  rd= %9d  wr= %9d %s\n", i,
+		stream_printf(cntxt->fdout,"# %4d lru= %8d cnt= %8d ticks= %9d  rd= %9d  wr= %9d %s\n", i,
 			recycleBlk->profiler[i].clk,
 			recycleBlk->profiler[i].counter,
 			recycleBlk->profiler[i].ticks,

@@ -47,10 +47,10 @@ comment "Expand inline functions";
 #include "mal_config.h"
 #include "opt_inline.h"
 
-extern int OPTinlineMultiplex(MalBlkPtr mb, InstrPtr p);
+extern int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p);
 
 int
-OPTinlineImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
 	InstrPtr q,sig;
@@ -66,16 +66,16 @@ Time for inlining functions that are used in multiplex operations.
 They are produced by SQL compiler.
 @c
 #ifdef DEBUG_OPT_INLINE
-			stream_printf(GDKout,"check inline function\n");
-			printInstruction(GDKout,mb,q,LIST_MAL_ALL);
-			printInstruction(GDKout,q->blk,sig,LIST_MAL_ALL);
+			stream_printf(cntxt->fdout,"check inline function\n");
+			printInstruction(cntxt->fdout,mb,q,LIST_MAL_ALL);
+			printInstruction(cntxt->fdout,q->blk,sig,LIST_MAL_ALL);
 #endif
 			if( getModuleId(q) == malRef &&
 				getFunctionId(q)== multiplexRef &&
-				OPTinlineMultiplex(mb,q)){
+				OPTinlineMultiplex(cntxt,mb,q)){
 #ifdef DEBUG_OPT_INLINE
-					stream_printf(GDKout,"multiplex inline function\n");
-					printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+					stream_printf(cntxt->fdout,"multiplex inline function\n");
+					printInstruction(cntxt->fdout,mb,q,LIST_MAL_ALL);
 #endif
 			    varSetProp(mb, getArg(q,0), inlineProp, op_eq, NULL);
 			} else
@@ -88,8 +88,8 @@ Check if the function definition is tagged as being inlined.
 				i--;
 				actions++;
 #ifdef DEBUG_OPT_INLINE
-				stream_printf(GDKout,"inline function at %d\n",i);
-				printFunction(GDKout, mb, LIST_MAL_ALL);
+				stream_printf(cntxt->fdout,"inline function at %d\n",i);
+				printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
 #endif
 			} else 
 @-
@@ -100,8 +100,8 @@ Check if the local call is tagged as being inlined.
 				i--;
 				actions++;
 #ifdef DEBUG_OPT_INLINE
-				stream_printf(GDKout,"inlined called at %d\n",i);
-				printFunction(GDKout, mb, LIST_MAL_ALL);
+				stream_printf(cntxt->fdout,"inlined called at %d\n",i);
+				printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
 #endif
 			} 
 		}
@@ -111,9 +111,10 @@ Check if the local call is tagged as being inlined.
 }
 
 
-int OPTinlineMultiplex(MalBlkPtr mb, InstrPtr p){
+int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
 	Symbol s;
 	str mod,fcn;
+
 	mod = VALget(&getVar(mb, getArg(p, 1))->value);
 	fcn = VALget(&getVar(mb, getArg(p, 2))->value);
 	if( (s= findSymbol(mod,fcn)) ==0 )
@@ -126,7 +127,7 @@ to the target function as well.
 This code should be protected against overflow due to recursive calls.
 In general, this is a hard problem. For now, we just expand.
 @c
-	(void) OPTinlineImplementation(s->def, NULL, p);
+	(void) OPTinlineImplementation(cntxt, s->def, NULL, p);
 	return varGetProp(s->def , getArg(getInstrPtr(s->def,0), 0),
 				inlineProp) != NULL;
 }

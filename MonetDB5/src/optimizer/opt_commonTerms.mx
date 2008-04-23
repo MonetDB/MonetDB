@@ -91,7 +91,7 @@ The last instruction signifies the end.
 
 @c
 static int
-OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k, barrier=0, last, n=1;
 	InstrPtr p, q;
@@ -102,6 +102,7 @@ OPTcommonTermsImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int c;
 	Lifespan span= newLifespan(mb);
 
+	(void) cntxt;
 	(void) stk;
 	(void) pci;
 	mask= (int *) alloca(mb->stop * sizeof(int));
@@ -180,8 +181,8 @@ multiple occurrences of the same constant in the symbol table.
 				if (safetyBarrier(p, q = getInstrPtr(mb, j)))
 					break;
 #ifdef DEBUG_OPT_COMMONTERMS
-				printInstruction(GDKout, mb, q, LIST_MAL_ALL);
-				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout, mb, q, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout, mb, p, LIST_MAL_ALL);
 				printf("%d, %d  %d %d ", i, j, 
 					hasSameSignature(p, q), 
 					hasSameArguments(mb, p, q));
@@ -208,7 +209,7 @@ handled by the alias removal part
 					allTargetsVisible(mb,span,j,n-1) 
 					) {
 #ifdef DEBUG_OPT_COMMONTERMS
-					stream_printf(GDKout, "Found a common expression " "%d <-> %d\n", j, i);
+					stream_printf(cntxt->fdout, "Found a common expression " "%d <-> %d\n", j, i);
 #endif
 					clrFunction(p);
 					p->token = ASSIGNsymbol;
@@ -216,8 +217,8 @@ handled by the alias removal part
 					for (k = 0; k < q->retc; k++)
 						p->argv[p->retc + k] =  q->argv[k];
 #ifdef DEBUG_OPT_COMMONTERMS
-					stream_printf(GDKout, "common modified expression");
-					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+					stream_printf(cntxt->fdout, "common modified expression");
+					printInstruction(cntxt->fdout, mb, p, LIST_MAL_ALL);
 #endif
 					actions++;
 					if( p->argc== 2 &&

@@ -97,13 +97,14 @@ any cach lookup.
 #include "mal_instruction.h"
 
 static int
-OPTrecycleImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, j, cnt, actions=0, update=0;
 	Lifespan span = newLifespan(mb);
 	InstrPtr *old, q;
 	int limit;
 
+	(void) cntxt;
 	(void) stk;
 	setLifespan(mb,span);
 	limit= mb->stop;
@@ -128,8 +129,8 @@ OPTrecycleImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				isVarConstant(mb, getArg(p,j)) )
 				cnt++;
 #ifdef DEBUG_OPT_RECYCLER  
-		stream_printf(GDKout,"recyle ? %d\n",cnt);
-		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+		stream_printf(cntxt->fdout,"recyle ? %d\n",cnt);
+		printInstruction(cntxt->fdout,mb,p,LIST_MAL_ALL);
 #endif
 		if (cnt == p->argc-p->retc) {
 			actions ++;

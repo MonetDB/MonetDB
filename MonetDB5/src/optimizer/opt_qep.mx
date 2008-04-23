@@ -282,13 +282,14 @@ QEPdump(stream *f, QEP qep, int indent){
 		QEPdump(f,qep->children[i], indent+ inc);
 }
 static int
-OPTdumpQEPImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+OPTdumpQEPImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	QEP qep;
+	(void) cntxt;
 	(void) stk;
 	(void) p;
 
 	qep= QEPbuilt(mb);
-	QEPdump(GDKout,qep,0);
+	QEPdump(cntxt->fdout,qep,0);
 	return 1;
 }
 @include optimizerWrapper.mx

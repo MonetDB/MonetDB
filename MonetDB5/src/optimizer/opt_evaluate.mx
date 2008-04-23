@@ -78,7 +78,7 @@ OPTallConstant(MalBlkPtr mb, InstrPtr p){
 			 getModuleId(p) == mmathRef);
 }
 static int
-OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
 	int first=0, nxt, i, j, k, limit, done=0, again=0;
@@ -96,7 +96,9 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return 0;
 
 #ifdef DEBUG_OPT_CX
-	stream_printf(GDKout,"Constant expression optimizer started\n");
+	stream_printf(cntxt->fdout,"Constant expression optimizer started\n");
+#else
+	(void) cntxt;
 #endif
 	
 	span = newLifespan(mb);
@@ -112,17 +114,15 @@ OPTevaluateImplementation(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			j = OPTallConstant(mb,p);
 			if (j && nxt == first) nxt=i;
 #ifdef DEBUG_OPT_CX
-			stream_printf(GDKout,"Constants:%d\n",j);
-			stream_printf(GDKout,"retc %d var %s\n",p->retc,getVarName(mb,getArg(p,0)));
-			stream_printf(GDKout,"last update:%d\n", getLastUpdate(span,getArg(p,0)));
-			printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
+			stream_printf(cntxt->fdout,"Constants:%d\n",j);
+			stream_printf(cntxt->fdout,"retc %d var %s\n",p->retc,getVarName(mb,getArg(p,0)));
+			stream_printf(cntxt->fdout,"last update:%d\n", getLastUpdate(span,getArg(p,0)));
+			printInstruction(cntxt->fdout, mb, p, LIST_MAL_ALL);	
 #endif
 			if( j && p->retc== 1 && p->barrier == 0 &&
-				getLastUpdate(span,getArg(p,0)) == i  &&
-				!isUnsafeFunction(p)){
-				msg = reenterMAL(c,mb,i,i+1,env,0,0);
+				getLastUpdate(span,getArg(p,0)) == i  && !isUnsafeFunction(p)){ msg = reenterMAL(c,mb,i,i+1,env,0,0);
 #ifdef DEBUG_OPT_CX
-				stream_printf(GDKout,"result:%s\n",msg==MAL_SUCCEED?"ok":msg);
+				stream_printf(cntxt->fdout,"result:%s\n",msg==MAL_SUCCEED?"ok":msg);
 #endif
 				if (msg == MAL_SUCCEED){
 @-
@@ -136,7 +136,7 @@ a constant itself.
 					env->stk[getArg(p,0)].vtype= TYPE_int; /* no garbage */
 					freeInstruction(p);
 #ifdef DEBUG_OPT_CX
-					stream_printf(GDKout,"Evaluated new constant=%d\n",getArg(p,0));
+					stream_printf(cntxt->fdout,"Evaluated new constant=%d\n",getArg(p,0));
 #endif
 					done++;
 					again++;

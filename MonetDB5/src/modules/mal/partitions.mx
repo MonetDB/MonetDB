@@ -389,12 +389,12 @@ BPTfree()
 str
 BPTdump()
 {
-	stream *fd = GDKout;
+	Client cntxt= mCgetClient();
 	int i;
 
-	stream_printf(fd, "ptop=%d plimit=%d\n", ptop, plimit);
+	stream_printf(cntxt->fdout, "ptop=%d plimit=%d\n", ptop, plimit);
 	for (i = 0; i < ptop; i++)
-		stream_printf(fd, "[%d] bid=%d pid=%d f=%d, l=%d prv=%d nxt=%d cap=%d\n", i, partitions[i].bid, partitions[i].pid, partitions[i].first, partitions[i].last, partitions[i].prev, partitions[i].next, partitions[i].cap);
+		stream_printf(cntxt->fdout, "[%d] bid=%d pid=%d f=%d, l=%d prv=%d nxt=%d cap=%d\n", i, partitions[i].bid, partitions[i].pid, partitions[i].first, partitions[i].last, partitions[i].prev, partitions[i].next, partitions[i].cap);
 	return MAL_SUCCEED;
 }
 
