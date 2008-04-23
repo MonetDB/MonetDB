@@ -386,8 +386,11 @@ Client MCgetClient()
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
 		if( c->mythread == tid) return c;
 
+#ifdef MAL_CLIENT_DEBUG
+	/* we did not find the client record */
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
 		if( c->mythread) stream_printf(c->fdout,"client %d\n",c->mythread);
+#endif
 	return NULL;
 }
 

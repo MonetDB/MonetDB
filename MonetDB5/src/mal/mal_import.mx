@@ -88,10 +88,10 @@ Since the parser needs access to the complete block, we first have
 to find out how long the input is.
 For the time being, we assume at most 1Mb.
 @h
-mal_export str malLoadScript(str name, bstream **fdin);
+mal_export str malLoadScript(Client c, str name, bstream **fdin);
 @c
 str
-malLoadScript(str name, bstream **fdin)
+malLoadScript(Client c, str name, bstream **fdin)
 {
 	stream *fd;
 
@@ -102,7 +102,7 @@ malLoadScript(str name, bstream **fdin)
 	}
 	*fdin = bstream_create(fd, 128 * BLOCK);
 	if( bstream_next(*fdin) < 0)	
-		stream_printf(GDKout,"!WARNING: could not read %s\n",name);
+		stream_printf(c->fdout,"!WARNING: could not read %s\n",name);
 	return MAL_SUCCEED;
 }
 
@@ -170,7 +170,6 @@ It should be reset before continuing.
 @= runPhase
 	if(msg== MAL_SUCCEED && c->phase[@1] && (msg= (str) (*c->phase[@1])(c)) ){
 		/* error occurred  and ignored */
-		/* stream_printf(GDKout,"%s",msg);*/
 		GDKfree(msg); msg=MAL_SUCCEED;
 		@:@2()@
 		return;
@@ -207,7 +206,7 @@ malInclude(Client c, str name, int listing)
 
 	c->fdin = NULL;
 	c->srcFile = name;
-	if ((s = malLoadScript(name, &c->fdin)))
+	if ((s = malLoadScript(c, name, &c->fdin)))
 		stream_printf(c->fdout, "!%s\n", s);
 	else 
 		parseMAL(c,c->curprg);
@@ -308,7 +307,6 @@ compileString(Symbol *fcn, Client c, str s)
 	if(msg== MAL_SUCCEED && c->phase[MAL_SCENARIO_PARSER] && 
 		(msg= (str) (*c->phase[MAL_SCENARIO_PARSER])(c)) ){
 		/* error occurred  and ignored */
-		/* stream_printf(GDKout,"%s",msg);*/
 		@:restoreClient3()@
 		return msg;
 	}

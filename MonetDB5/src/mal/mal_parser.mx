@@ -837,7 +837,7 @@ parseAtom(Client cntxt)
 	if (currChar(cntxt) != ':')
 		tpe= TYPE_void;	/* no type qualifier */
 	else tpe = parseTypeId(cntxt, TYPE_int);
-	malAtomDefinition(modnme, tpe);
+	malAtomDefinition( modnme, tpe);
 	cntxt->nspace = fixModule(cntxt->nspace, modnme);
 	cntxt->nspace->isAtomModule = TRUE;
 	@:helpInfo(cntxt->nspace->help) @

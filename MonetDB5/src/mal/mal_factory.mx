@@ -325,7 +325,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	str msg;
 
 #ifdef DEBUG_MAL_FACTORY
-	stream_printf(GDKout, "factoryMgr called\n");
+	stream_printf(cntxt->fdout, "#factoryMgr called\n");
 #endif
 	/* the lookup can be largely avoided by handing out the index
 	   upon factory definition. todo
@@ -482,9 +482,6 @@ newPlant(MalBlkPtr mb)
 {
 	Plant p, plim;
 
-#ifdef DEBUG_MAL_FACTORY
-	stream_printf(GDKout, "newPlant called\n");
-#endif
 	plim = plants + lastPlant;
 	for (p = plants; p < plim && p->factory; p++)
 		;
@@ -566,9 +563,6 @@ shutdownFactory(MalBlkPtr mb)
 {
 	Plant pl, plim;
 
-#ifdef DEBUG_MAL_FACTORY
-	stream_printf(GDKout, "shutdownFactory called\n");
-#endif
 	plim = plants + lastPlant;
 	for (pl = plants; pl < plim; pl++)
 		if (pl->factory == mb) {
@@ -598,9 +592,6 @@ shutdownFactoryByName(Module m, str nme){
 	InstrPtr p;
 	Symbol s;
 
-#ifdef DEBUG_MAL_FACTORY
-	stream_printf(GDKout, "shutdownFactory called\n");
-#endif
 	plim = plants + lastPlant;
 	for (pl = plants; pl < plim; pl++)
 		if (pl->factory ) {

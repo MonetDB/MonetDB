@@ -116,27 +116,22 @@ getLocalObjectFile(str filename)
 
 	fullname = MSP_locate_file(filename);
 	if (fullname == NULL) {
-#ifdef DEBUG_MAL_LINKER
-		stream_printf(GDKout,"Name not resolved %s\n",filename);
-#endif
+		GDKwarning("Name not resolved %s\n",filename);
 		return 0;
 	}
-#ifdef DEBUG_MAL_LINKER
-	printf("attempt to load function %s from %s\n",filename, fullname);
-#endif
 	handle = dlopen(fullname, mode);
-#ifdef DEBUG_MAL_LINKER
-	stream_printf(GDKout, "localObjectLoaded ? %s\n",(handle!=0?"yes":"no"));
-#endif
 	if (handle){
 		fcn=(MALfcn) dlsym(handle, filename);
 		GDKfree(filename);
 		return fcn;
 	}
-	stream_printf(GDKout, "could not access library %s\n", dlerror());
+	GDKwarning("could not access library %s\n", dlerror());
 	return 0;
 }
 
+@-
+Search for occurrence of the function in the library identified by the filename.
+@c
 MALfcn
 getAddress(str filename, str modnme, str fcnname, int silent)
 {
@@ -144,16 +139,7 @@ getAddress(str filename, str modnme, str fcnname, int silent)
 	MALfcn adr;
 	int idx;
 
-#ifdef DEBUG_MAL_LINKER2
-	stream_printf(GDKout, "address of %s.%s from '%s' ?\n",
-			(modnme?modnme:"<unknown>"), fcnname, 
-			(filename?filename:"<stdin>"));
-#else
 	(void) modnme;
-#endif
-@-
-Search for occurrence of the function in the library identified by the filename.
-@c
 	if( filename)
 	for(idx =0; idx < lastfile && filesLoaded[idx].filename; idx++)
 		if( strcmp(filename, filesLoaded[idx].filename)==0) {
@@ -264,13 +250,9 @@ loadLibrary(str filename, int flag)
 
 	initM5Loader();
 	for (idx = 0; filesLoaded[idx].filename && idx < lastfile; idx++)
-		if (strcmp(filesLoaded[idx].filename, filename) == 0) {
-#ifdef DEBUG_MAL_LINKER
-				stream_printf(GDKout, "already loaded:%s:%x\n", filename, (int)filesLoaded[idx].handle);
-			return (str) throwException("loaderException", "Module loaded twice", filename);
-#endif
+		if (strcmp(filesLoaded[idx].filename, filename) == 0)
+			/* already loaded */
 			return MAL_SUCCEED;
-		}
 @-
 Use the search path provided in the configuration file
 @c
@@ -279,9 +261,6 @@ Use the search path provided in the configuration file
 	fullname = MSP_locate_file(nme);
 
 	if (fullname == NULL) {
-#ifdef DEBUG_MAL_LINKER2
-		stream_printf(GDKout, "file not found %s\n", filename);
-#endif
 		if( flag)
 			throw(LOADER, "loadLibrary", "%s: file not found", filename);
 		return MAL_SUCCEED;
@@ -297,19 +276,9 @@ Use the search path provided in the configuration file
 		errmsg = dlerror();
 		if (!errmsg) 
 			errmsg = "(no error from dlerror())";
-#ifdef DEBUG_MAL_LINKER2
-		{
-		char errbuf[1024];
-		snprintf(errbuf, 1024, "%s: loader error %s", filename, errmsg);
-		stream_printf(GDKout, "load[%d]:%s %s:%s\n", lastfile, filename, fullname, errbuf);
-		}
-#endif
 		GDKfree(fullname);
 		throw(LOADER, "loadLibrary", "%s: loader error %s", filename, errmsg);
 	}
-#ifdef DEBUG_MAL_LINKER2
-	stream_printf(GDKout, "load[%d]:%s %s:succeeded\n", lastfile, filename, fullname);
-#endif
 
 	mal_set_lock(mal_contextLock, "loadModule");
 	if (lastfile == maxfiles) {
@@ -371,9 +340,6 @@ isPreloaded(str nme)
 {
 	int i;
 
-#ifdef DEBUG_MAL_LINKER
-	stream_printf(GDKout, "load:%s:preloaded?\n", nme);
-#endif
 	for (i = 0; preloaded[i]; i++)
 		if (strcmp(preloaded[i], nme) == 0)
 			return 1;
@@ -387,9 +353,6 @@ initLibraries()
 	noDlopen = TRUE;
 	if(noDlopen == FALSE)
 	for(i=0;preloaded[i];i++) {
-#ifdef DEBUG_MAL_LINKER
-	    stream_printf(GDKout,"loading %s\n",preloaded[i]);
-#endif
 	    loadLibrary(preloaded[i],FALSE);
 	}
 }

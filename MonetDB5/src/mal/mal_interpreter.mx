@@ -54,7 +54,7 @@ mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc,
 mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, 
 	ValPtr argv[], char debug);
 mal_export void garbageElement(ValPtr v);
-mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int flag);
+mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 mal_export int getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 
@@ -329,7 +329,7 @@ we should first remove garbage.
 	/* pass the new debug mode to the caller */
 	if (stk->cmd  && env && stk->cmd!='f') env->cmd = stk->cmd; 
 	if (!stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
-		garbageCollector(mb,stk, env != stk);
+		garbageCollector(cntxt, mb,stk, env != stk);
 	@:endProfile@
 	return ret;
 }
@@ -356,7 +356,7 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	/* pass the new debug mode to the caller */
 	if (env && stk->cmd!='f') env->cmd = stk->cmd;
 	if (!stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
-		garbageCollector(mb,stk,env!=stk);
+		garbageCollector(cntxt, mb,stk,env!=stk);
 	return ret;
 }
 @-
@@ -378,8 +378,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
 	@:performanceVariables@
 
 #ifdef DEBUG_CALLMAL
-	stream_printf(GDKout,"callMAL\n");
-	printInstruction(GDKout,mb,pci,LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"callMAL\n");
+	printInstruction(cntxt->fdout,mb,pci,LIST_MAL_ALL);
 #endif
 	@:beginProfile@
 	switch( pci->token){
@@ -556,7 +556,7 @@ MALflowCost(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	return cost;
 }
 void
-addMALflowStep(FlowStep flow, int top, char *pending, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+addMALflowStep(Client cntxt, FlowStep flow, int top, char *pending, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int j;
 	flow[top].p= p;
 	flow[top].pending= 0L;
@@ -569,19 +569,21 @@ addMALflowStep(FlowStep flow, int top, char *pending, MalBlkPtr mb, MalStkPtr st
 	
 	flow[top].cost=  MALflowCost(mb, stk,p);
 #ifdef DEBUG_FLOW
-	stream_printf(GDKout,"#[%d]cost %d ",top,flow[top].cost);
-	stream_printf(GDKout,"pending %d",flow[top].pending);
-	printInstruction(GDKout,mb,p, 0);
+	stream_printf(cntxt->fdout,"#[%d]cost %d ",top,flow[top].cost);
+	stream_printf(cntxt->fdout,"pending %d",flow[top].pending);
+	printInstruction(cntxt->fdout,mb,p, 0);
+#else
+	(void) cntxt;
 #endif
 }
 
 void
-dropMALflowStep(FlowStep flow, int first, int last, char *pending, MalBlkPtr mb, MalStkPtr stk){
+dropMALflowStep(Client cntxt, FlowStep flow, int first, int last, char *pending, MalBlkPtr mb, MalStkPtr stk){
 	int i,j;
 	InstrPtr p= flow[first].p;
 #ifdef DEBUG_FLOW
-		stream_printf(GDKout,"#adjust %d ",first);
-		printInstruction(GDKout,mb,p, 0);
+		stream_printf(cntxt->fdout,"#adjust %d ",first);
+		printInstruction(cntxt->fdout,mb,p, 0);
 #endif
 	for(j=0; j<p->retc; j++)
 		pending[getArg(p,j)]= 0;
@@ -593,9 +595,11 @@ dropMALflowStep(FlowStep flow, int first, int last, char *pending, MalBlkPtr mb,
 			flow[i].pending+= pending[getArg(flow[i].p,j)];
 		}
 #ifdef DEBUG_FLOW
-		stream_printf(GDKout,"#adjust %d cost %d ",i,flow[i].cost);
-		stream_printf(GDKout,"pending %d",flow[i].pending);
-		printInstruction(GDKout,mb,flow[i].p, 0);
+		stream_printf(cntxt->fdout,"#adjust %d cost %d ",i,flow[i].cost);
+		stream_printf(cntxt->fdout,"pending %d",flow[i].pending);
+		printInstruction(cntxt->fdout,mb,flow[i].p, 0);
+#else
+	(void) cntxt;
 #endif
 	}
 }
@@ -603,7 +607,7 @@ dropMALflowStep(FlowStep flow, int first, int last, char *pending, MalBlkPtr mb,
 We simply move a cheap instruction into the front of the queue.
 @c
 void
-nxtMALflowStep(FlowStep flow, int first, int last, MalBlkPtr mb){
+nxtMALflowStep(Client cntxt, FlowStep flow, int first, int last, MalBlkPtr mb){
 	int i;
 	FlowStepRec f;
 
@@ -614,9 +618,11 @@ nxtMALflowStep(FlowStep flow, int first, int last, MalBlkPtr mb){
 			flow[i]= f;
 		}
 #ifdef DEBUG_FLOW
-	stream_printf(GDKout,"#next instruction %d: cost %d pending %d\n",
+	stream_printf(cntxt->fdout,"#next instruction %d: cost %d pending %d\n",
 		first, flow[first].cost,flow[first].pending);
-	printInstruction(GDKout,mb,flow[first].p, 0);
+	printInstruction(cntxt->fdout,mb,flow[first].p, 0);
+#else
+	(void) cntxt;
 #endif
 }
 
@@ -659,7 +665,7 @@ arguments.
 	memset((char*) pending, 0, sizeof(mb->vtop));
 
 	for (n=0, i= startpc+1; i<stoppc; i++,n++)
-		addMALflowStep(flow,n,pending, mb,stk,getInstrPtr(mb,i));
+		addMALflowStep(cntxt, flow,n,pending, mb,stk,getInstrPtr(mb,i));
 
 	if (cntxt->flags & timerFlag)
 		oldtimer= cntxt->timer= GDKusec();
@@ -672,7 +678,7 @@ the eligible instructions. [TODO]
 	stkpc = -1;
 	exceptionVar = -1;
 	while (++stkpc < n) {
-		nxtMALflowStep(flow, stkpc,n,mb);
+		nxtMALflowStep(cntxt, flow, stkpc,n,mb);
 		pci = flow[stkpc].p;
 		if (stk->cmd) {
 			lng t=0;
@@ -708,7 +714,7 @@ limited.
 		case FCNcall: @:functioncall(SLOW)@ break;
 		}
 		/* we don't allow sequential flow control here */
-		dropMALflowStep(flow,stkpc,n,pending,mb,stk);
+		dropMALflowStep(cntxt,flow,stkpc,n,pending,mb,stk);
 		@:endProfile@
 	}
 	@:MALwrapup@
@@ -788,7 +794,7 @@ elements in the value stack.
 			cntxt->timer= oldtimer;
 #endif
 		if( pcicaller && garbageControl(getInstrPtr(mb,0)) )
-			garbageCollector(mb, stk, TRUE);
+			garbageCollector(cntxt, mb, stk, TRUE);
 #if @1
 		@:endProfile@
 #endif
@@ -917,7 +923,7 @@ switch(pci->barrier){
 						BBPincref(lhs->val.bval, TRUE); 
 				}
 				if( garbageControl(getInstrPtr(mb,0)) )
-					garbageCollector(mb, stk, TRUE);
+					garbageCollector(cntxt, mb, stk, TRUE);
 				/* reset the clock */
 				if( oldtimer)
 					cntxt->timer= oldtimer;
@@ -1000,7 +1006,7 @@ the bind(namespace, batname, mode) operation. [todo]
 @= safeTarget
 #ifdef STACKTRACE
 	printf("safeTarget %d\n", needsCleanup(pci));
-	printInstruction(GDKout,mb,pci, LIST_MAL_ALL);
+	printInstruction(cntxt->fdout,mb,pci, LIST_MAL_ALL);
 #endif
 	if( needsCleanup(pci) ){ 
 		assert(pci->retc <= mb->maxarg); 
@@ -1545,14 +1551,14 @@ Beware that variables may be know polymorphic, their actual
 type should be saved for variables that recide on a global
 stack frame.
 @c
-void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int flag)
+void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 {   
 	int k;
 	ValPtr v;
 
 #ifdef STACKTRACE
-	stream_printf(GDKout,"--->stack before garbage collector\n");
-	printStack(GDKout,mb,stk,0);
+	stream_printf(cntxt->fdout,"#--->stack before garbage collector\n");
+	printStack(cntxt->fdout,mb,stk,0);
 #endif
 	for(k=0;k<mb->vtop; k++) {
 		if(isVarCleanup(mb,k) && (flag || isTmpVar(mb,k) )){
@@ -1562,8 +1568,10 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int flag)
 		}
 	}
 #ifdef STACKTRACE
-	stream_printf(GDKout,"--->stack after garbage collector\n");
-	printStack(GDKout,mb,stk,0);
+	stream_printf(cntxt->fdout,"#-->stack after garbage collector\n");
+	printStack(cntxt->fdout,mb,stk,0);
+#else
+	(void) cntxt;
 #endif
 }
 @-
@@ -1575,20 +1583,12 @@ stack frame and its parents only.
 void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 {   int k;
 
-#ifdef STACKTRACE
-	stream_printf(GDKout,"--->release BAT %d \n", bid);
-	printStack(GDKout,mb,stk,0);
-#endif
    do{
 		for(k=0;k<mb->vtop; k++) 
 		if( stk->stk[k].vtype== TYPE_bat && abs(stk->stk[k].val.bval)==bid) {
 			BBPdecref(bid,TRUE);
 			stk->stk[k].val.ival= 0;
 		}
-#ifdef STACKTRACE
-		stream_printf(GDKout,"--->stack after release BAT %d\n", bid);
-		printStack(GDKout,mb,stk,0);
-#endif
 		if(stk->up){
 			stk= stk->up;
 			mb= stk->blk;

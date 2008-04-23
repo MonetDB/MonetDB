@@ -99,10 +99,6 @@ They should be implemented with parameter-less functions.
 if( idcmp(@1,name) || pci->argc != 1)
 	return 0;
 else{
-#ifdef MAL_ATOM_DEBUG
-	stream_printf(GDKout,"set the atom property %s.%s\n",
-		getModuleId(pci),getFunctionId(pci));
-#endif
 	BATatoms[tpe].@2= (* (@4 (*)(void)) pci->fcn)();
 	setAtomName(pci);
 	return 1;
@@ -112,10 +108,6 @@ else{
 @= setItemInt
 if( idcmp(@1,name) || pci->argc != 1)
 	return 0;
-#ifdef MAL_ATOM_DEBUG
-	stream_printf(GDKout,"set the atom property %s.%s\n",
-		getModuleId(pci),getFunctionId(pci));
-#endif
 	BATatoms[tpe].@2= (*pci->fcn)();
 	setAtomName(pci);
 	return 1;
@@ -133,20 +125,12 @@ void setAtomName(InstrPtr pci){
 	char buf[MAXPATHLEN];
 	snprintf(buf,MAXPATHLEN,"#%s", getFunctionId(pci));
 	setFunctionId(pci, putName(buf,strlen(buf)));
-#ifdef MAL_ATOM_DEBUG
-	stream_printf(GDKout,"replaced the function %s.%s\n",
-		getModuleId(pci),getFunctionId(pci));
-#endif
 }
 
 int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
 	str name= getFunctionId(pci);
 	int tpe = getTypeIndex(getModuleId(pci), strlen(getModuleId(pci)), TYPE_any);
 	(void) mb; /* fool compilers */
-#ifdef MAL_ATOM_DEBUG
-	stream_printf(GDKout,"Atomproperty %s.%s\n",
-		getModuleId(pci),getFunctionId(pci));
-#endif
 	if( pci->fcn == 0)
 		GDKwarning("malAtomProperty:function not bound\n");
 	if( tpe<0 || tpe>= GDKatomcnt)
@@ -297,9 +281,6 @@ void malAtomDefinition(str name, int tpe){
 		showException(TYPE,"atomDefinition", "Undefined atom inheritance '%s'", name);
 		return;
 	}
-#ifdef MAL_ATOM_DEBUG
-	stream_printf(GDKout,"introduce a new atom type '%s'  %d\n",name,tpe);
-#endif
 	
 	ATOMproperty(name,"",  (int (*)()) 0);
 	i= ATOMindex(name);
@@ -348,7 +329,6 @@ int malAtomArray(int tpe, int size){
 	str nme;
 
 	nme = getTypeName(tpe);
-	stream_printf(GDKout,"enter a new array type definition %s %d\n", nme,size);
 	snprintf(name,IDLENGTH,"%s_", nme);
 	i= strlen(name);
 	snprintf(name+i,IDLENGTH-i,"%d", size);
@@ -357,9 +337,6 @@ int malAtomArray(int tpe, int size){
 		showException(SYNTAX,"atomArray", "Atom name '%s' too long", name);
 		return -1;  /* ERROR! */
 	}
-#ifdef MAL_ATOM_DEBUG
-	stream_printf(GDKout,"new type name %s\n",name);
-#endif
 	ATOMproperty(name,"",  (int (*)()) 0);
 	i= ATOMindex(name);
 	memcpy((char*)(BATatoms+i),
@@ -368,9 +345,6 @@ int malAtomArray(int tpe, int size){
 	BATatoms[i].storage= tpe;
 	BATatoms[i].size *= size;
 	BATatoms[i].linear = FALSE;
-#ifdef MAL_ATOM_DEBUG
-	stream_printf(GDKout,"new type %d\n",i);
-#endif
 	return i;
 }
 

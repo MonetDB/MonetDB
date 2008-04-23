@@ -230,9 +230,6 @@ void RECYCLEversion(MalBlkPtr mb)
 	int i;
 
 	if( mb->version != recycleVersion) { 
-#ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"reshuffle the version admin\n");
-#endif
 		mal_set_lock(recycleLock,"recycle");
 		/* all re-used variables are dropped */
 		for(i=0; i<mb->vtop; i++)		/* reinit recycle */

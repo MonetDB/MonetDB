@@ -119,11 +119,6 @@ getTypeName(malType tpe)
 	char buf[PATHLENGTH], *s;
 	int l = PATHLENGTH, k;
 
-#ifdef DEBUG_MAL_TYPE
-	stream_printf(GDKout, "maltype: %d %d %d", tpe, getHeadType(tpe), getTailType(tpe));
-	stream_printf(GDKout, " [%d,%d]", getHeadIndex(tpe), getTailIndex(tpe));
-	stream_printf(GDKout, "  : %s\n", (isaBatType(tpe) ? "bat" : ""));
-#endif
 	if (tpe == TYPE_any)
 		return GDKstrdup("any");
 	if (isaBatType(tpe)) {
@@ -143,9 +138,6 @@ getTypeName(malType tpe)
 			snprintf(s, l, ":any]");
 		else
 			snprintf(s, l, ":%s]", ATOMname(getTailType(tpe)));
-#ifdef DEBUG_MAL_TYPE
-		stream_printf(GDKout, "%s\n", buf);
-#endif
 		return GDKstrdup(buf);
 	}
 	if (isAnyExpression(tpe)) {
@@ -155,9 +147,6 @@ getTypeName(malType tpe)
 					TMPMARKER, getTailIndex(tpe));
 		return GDKstrdup(buf);
 	}
-#ifdef DEBUG_MAL_TYPE
-	stream_printf(GDKout, "Rely on GDK atom %s\n", ATOMname(tpe));
-#endif
 	return GDKstrdup(ATOMname(tpe));
 }
 
@@ -254,11 +243,11 @@ getTypeIndex(str nme, int len, int deftype)
 		strcmp(nme,BATatoms[i].name)==0) break;
 	if( len > 0)
 		nme[k]=old;
-	/*stream_printf(GDKout,"getTypeIndex %s %d %d\n",nme,i, GDKatomcnt); */
 	if (i == GDKatomcnt)
 		i = deftype;
 	return i;
 }
+
 INLINE int
 findGDKtype(int type)
 {

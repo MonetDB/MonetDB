@@ -526,7 +526,7 @@ str
 MALexitClient(Client c)
 {
 	if (c->glb) {
-		garbageCollector(c->curprg->def, c->glb,TRUE);
+		garbageCollector(c, c->curprg->def, c->glb,TRUE);
 		GDKfree(c->glb);
 	}
 	c->glb = 0;
