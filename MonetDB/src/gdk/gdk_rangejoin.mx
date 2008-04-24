@@ -294,6 +294,7 @@ break;
 {
 	BUN lp = 0, rp = 0, bnf = BUNfirst(bn);
 	oid *bnh = NULL, *bnt = NULL;
+	bit lo = l->htype, ro = r->ttype;
 	oid *lh = (oid*)Hloc(l, BUNfirst(l)), *rt = (oid*)Tloc(r, BUNfirst(r));
 	@1 *lt = (@1*)Tloc(l, BUNfirst(l)), *rh = (@1*)Hloc(r, BUNfirst(r)); 
 	@1 cc1 = *(@1*)c1, cc2 = *(@1*)c2;
@@ -302,11 +303,11 @@ break;
 	
 
 	/* handle oid and void inputs */
-	if (lh && rt) {
+	if (lo && ro) {
 		@:bandjoin_mj_loop(@1,@2,@3,lh[lp+i],rt[rp])
-	} else if (!lh && rt) {
+	} else if (!lo && ro) {
 		@:bandjoin_mj_loop(@1,@2,@3,lhb+lp+i,rt[rp])
-	} else if (lh && !rt) {
+	} else if (lo && !ro) {
 		@:bandjoin_mj_loop(@1,@2,@3,lh[lp+i],rtb+rp)
 	} else {
 		@:bandjoin_mj_loop(@1,@2,@3,lhb+lp+i,rtb+rp)
