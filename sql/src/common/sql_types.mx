@@ -1496,10 +1496,8 @@ sqltypeinit(void)
 		sql_create_func3("locate", "str", "locate", *t, *t, INT, INT, SCALE_NONE);
 		sql_create_func("substring", "str", "substring", *t, INT, *t, SCALE_NONE);
 		sql_create_func3("substring", "str", "substring", *t, INT, INT, *t, SCALE_NONE);
-		sql_create_func("like", "pcre", "like", *t, *t, BIT, SCALE_NONE);
-		sql_create_func3("like", "pcre", "like", *t, *t, *t, BIT, SCALE_NONE);
-		sql_create_func("not_like", "pcre", "not_like", *t, *t, BIT, SCALE_NONE);
-		sql_create_func3("not_like", "pcre", "not_like", *t, *t, *t, BIT, SCALE_NONE);
+		sql_create_func("like", "str", "like", *t, *t, BIT, SCALE_NONE);
+		sql_create_func3("like", "str", "like", *t, *t, *t, BIT, SCALE_NONE);
 		sql_create_func("patindex", "pcre", "patindex", *t, *t, INT, SCALE_NONE);
 		sql_create_func("truncate", "str", "stringleft", *t, INT, *t, SCALE_NONE);
 		sql_create_func("concat", "calc", "+", *t, *t, *t, DIGITS_ADD);
