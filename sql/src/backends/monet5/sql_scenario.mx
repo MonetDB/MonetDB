@@ -849,6 +849,8 @@ SQLsetTimer(Client c, int onoff)
 	c->itrace='c';
 	q = newStmt(c->curprg->def,"mdb","setTimer");
 	pushBit(c->curprg->def,q,onoff);
+//	q = newStmt(c->curprg->def,"mdb","setCount");
+//	pushBit(c->curprg->def,q,onoff);
 }
 
 void
@@ -1043,7 +1045,7 @@ produce code.
 			be->q->stk = 0;
 			/* register name in the namespace */
 			be->q->name = putName(be->q->name, strlen(be->q->name));
-			if( m->emode == m_normal)
+			if (m->emode == m_normal && m->emod == mod_none)
 				m->emode = m_inplace; 
 			m->sa = NULL;
 			m->sym = NULL;
