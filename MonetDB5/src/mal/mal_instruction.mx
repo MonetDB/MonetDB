@@ -1502,6 +1502,7 @@ copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v)
 	VarPtr w;
 
 	(void) src;		/* fool the compiler */
+	assert(v->propc <= v->maxprop);
 	w = (VarPtr) GDKzalloc(sizeof(VarRecord) + v->maxprop * sizeof(int));
 	w->name = v->name ? GDKstrdup(v->name) : 0;
 	w->type = v->type;
@@ -2823,18 +2824,20 @@ varSetProp(MalBlkPtr mb, int var, int prop, int op, ValPtr cst)
 	mb->prps[propid].op = op;
 
 	/* here we need to add the new property to the variable */
+	assert(v->propc <= v->maxprop);
 	if (!reset) {
-		if( v->propc == v->maxprop){
-			size= sizeof(VarRecord)+(v->maxprop-1) *sizeof(int);
-        	vnew= (VarPtr) GDKzalloc(size+MAXARG *sizeof(int));
+		if (v->propc == v->maxprop) {
+			size = sizeof(VarRecord) + v->maxprop * sizeof(int);
+        		vnew = (VarPtr) GDKzalloc(size + MAXARG * sizeof(int));
 			memcpy((char*) vnew, (char*) v, size);
-			v->maxprop+= MAXARG;
-			mb->var[var]= vnew;
+			vnew->maxprop += MAXARG;
+			mb->var[var] = vnew;
 			GDKfree(v);
-			v= getVar(mb,var);
+			v = getVar(mb, var);
 		}
 		v->prps[v->propc++] = propid;
 	}
+	assert(v->propc <= v->maxprop);
 }
 
 str
