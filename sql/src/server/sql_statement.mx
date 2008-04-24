@@ -2402,9 +2402,12 @@ stmt_has_null( stmt *s )
 		return 0;
 	case st_unop:
 	case st_reverse:
+	case st_mark:
 		return stmt_has_null(s->op1.stval);
 	case st_binop:
 		return stmt_has_null(s->op1.stval) + stmt_has_null(s->op2.stval);
+	case st_join:
+		return stmt_has_null(s->op2.stval);
 	case st_bat:
 		return s->op1.cval->null;
 
