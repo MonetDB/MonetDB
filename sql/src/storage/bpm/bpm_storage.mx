@@ -930,15 +930,13 @@ dup_part(sql_trans *tr, sql_table *t, sql_bpm *op, sql_bpm *p, int type, int oc_
 			}
 			b = temp_descriptor(p->parts[i].bid);
 			p->parts[i].ubid = 0;
-			if (p->ins == 0) {
-				if (op->parts[i].ubid) {
-					p->parts[i].ubid = temp_copy(op->parts[i].ubid, 0);
-				} else {
-					BAT *U = bat_new(TYPE_oid, b->ttype, 0);
-					p->parts[i].ubid = temp_create(U);
-					op->parts[i].ubid = temp_copy(p->parts[i].ubid, 0);
-					bat_destroy(U);
-				}
+			if (op->parts[i].ubid) {
+				p->parts[i].ubid = temp_copy(op->parts[i].ubid, 0);
+			} else {
+				BAT *U = bat_new(TYPE_oid, b->ttype, 0);
+				p->parts[i].ubid = temp_create(U);
+				op->parts[i].ubid = temp_copy(p->parts[i].ubid, 0);
+				bat_destroy(U);
 			}
 			BATseqbase(b, p->parts[i].hlow);
 			bat_destroy(b);
@@ -1299,13 +1297,17 @@ update_part( sql_trans *tr, sql_bpm *op, sql_bpm *cp, lng *cnt)
 				o = b->hseqbase + BATcount(b);
 				logger_add_bat(bpm_logger, b, p->name);
 				log_bat_persists(bpm_logger, b, p->name);
-				bat_destroy(b);
-				if (p->ubid) {
-					b = temp_descriptor(p->ubid);
-					logger_add_bat(bpm_logger, b, p->uname);
-					log_bat_persists(bpm_logger, b, p->uname);
-					bat_destroy(b);
+				if (!p->ubid) {
+					BAT *U = bat_new(TYPE_oid, b->ttype, 0);
+					p->ubid = temp_create(U);
+					bat_destroy(U);
 				}
+				bat_destroy(b);
+
+				b = temp_descriptor(p->ubid);
+				logger_add_bat(bpm_logger, b, p->uname);
+				log_bat_persists(bpm_logger, b, p->uname);
+				bat_destroy(b);
 			}
 		}
 		/* merge 2 partions  
@@ -1344,13 +1346,17 @@ update_part( sql_trans *tr, sql_bpm *op, sql_bpm *cp, lng *cnt)
 				b = temp_descriptor(p->bid);
 				logger_add_bat(bpm_logger, b, p->name);
 				log_bat_persists(bpm_logger, b, p->name);
-				bat_destroy(b);
-				if (p->ubid) {
-					b = temp_descriptor(p->ubid);
-					logger_add_bat(bpm_logger, b, p->uname);
-					log_bat_persists(bpm_logger, b, p->uname);
-					bat_destroy(b);
+				if (!p->ubid) {
+					BAT *U = bat_new(TYPE_oid, b->ttype, 0);
+					p->ubid = temp_create(U);
+					bat_destroy(U);
 				}
+				bat_destroy(b);
+
+				b = temp_descriptor(p->ubid);
+				logger_add_bat(bpm_logger, b, p->uname);
+				log_bat_persists(bpm_logger, b, p->uname);
+				bat_destroy(b);
 			}
 		}
 		/* create new insert bats */
