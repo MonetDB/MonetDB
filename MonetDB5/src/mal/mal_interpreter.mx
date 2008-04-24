@@ -183,7 +183,7 @@ updateBigFoot(Client cntxt, int bid, int add)
 		if (b == NULL) 
 			return;
 		/* count it once ! */
-		cnt = BATcount(b);
+		cntxt->cnt = cnt = BATcount(b);
 		if (add) {
 			cntxt->vmfoot += VIEWhparent(b)?0:headsize(b,cnt);
 			cntxt->vmfoot += VIEWtparent(b)?0:tailsize(b,cnt);
@@ -1688,6 +1688,8 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 		displayVolume(cntxt,cntxt->bigfoot);
 		stream_printf(cntxt->fdout," ");
 	}
+	if (cntxt->flags & cntFlag)
+		stream_printf(cntxt->fdout,":%6d ", cntxt->cnt);
 	{str line;
 	line= call2str(mb,stk,stkpc,cntxt->flags);
 	stream_printf(cntxt->fdout, " %s ]\n", line);

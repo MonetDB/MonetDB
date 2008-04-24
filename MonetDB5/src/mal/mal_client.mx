@@ -143,12 +143,14 @@ usage patterns.
 	lng     timer;   /* trace time in usec */
 	lng	bigfoot; /* maximum virtual memory use */
 	lng	vmfoot;  /* virtual memory use */
+	int	cnt;	/* bat count */
 
 #define timerFlag	1
 #define memoryFlag	2
 #define ioFlag		4
 #define flowFlag	8
 #define bigfootFlag	16
+#define cntFlag		32
 @-
 @}
 @-

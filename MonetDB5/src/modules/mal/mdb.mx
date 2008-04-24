@@ -85,7 +85,6 @@ command setBigfoot(b:bit):void
 address MDBsetBigfoot
 comment "Turn on/off memory foot print for debugger";
 
-
 command setFlow(b:bit):void
 address MDBsetFlow
 comment "Turn on/off memory flow debugger";
@@ -97,6 +96,10 @@ comment "Turn on/off memory statistics tracing.";
 command setIO(b:bit):void
 address MDBsetIO
 comment "Turn on/off io statistics tracing";
+
+command setCount(b:bit):void
+address MDBsetCount
+comment "Turn on/off bat count statistics tracing";
 
 command getDebug():int
 address MDBgetDebug
@@ -220,6 +223,7 @@ mdb_export str MDBsetBigfoot(int *ret, bit *flag);
 mdb_export str MDBsetFlow(int *ret, bit *flag);
 mdb_export str MDBsetMemory(int *ret, bit *flag);
 mdb_export str MDBsetIO(int *ret, bit *flag);
+mdb_export str MDBsetCount(int *ret, bit *flag);
 mdb_export str MDBgetExceptionVariable(str *ret, str *msg);
 mdb_export str MDBgetExceptionReason(str *ret, str *msg);
 mdb_export str MDBgetExceptionContext(str *ret, str *msg);
@@ -475,6 +479,19 @@ MDBsetIO(int *ret, bit *flag)
 		cntxt->flags |= ioFlag;
 	else
 		cntxt->flags &= ~ioFlag;
+	return MAL_SUCCEED;
+}
+
+str
+MDBsetCount(int *ret, bit *flag)
+{
+	Client cntxt = MCgetClient();
+	(void) ret;
+
+	if( *flag)
+		cntxt->flags |= cntFlag;
+	else
+		cntxt->flags &= ~cntFlag;
 	return MAL_SUCCEED;
 }
 
