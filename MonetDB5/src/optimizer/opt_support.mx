@@ -1182,12 +1182,14 @@ and should be conservative.
 @c
 int isFragmentGroup(InstrPtr p){
 	return		(getModuleId(p)== batcalcRef) ||
+			(getModuleId(p)== batstrRef) ||
 			(getModuleId(p)== constraintsRef && 
 				getFunctionId(p)== getName("emptySet",8)) ||
 			(getModuleId(p)== algebraRef && (
 				getFunctionId(p)== selectRef ||
 				getFunctionId(p)== selectNotNilRef ||
 				getFunctionId(p)== uselectRef ||
+				getFunctionId(p)== projectRef ||
 				getFunctionId(p)== antiuselectRef ||
 				getFunctionId(p)== likeselectRef ||
 				getFunctionId(p)== joinRef ||
