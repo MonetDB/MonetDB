@@ -257,6 +257,7 @@ meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name)
 	InstrPtr ql, qr;
 	int oldtop = 0, g = 0;
 	InstrPtr p;
+	Client cntxt= MCgetClient();
 
 	(void) name;
 	oldblk = (InstrPtr *) mb->stmt;
@@ -276,7 +277,7 @@ meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name)
 		}
 #ifdef MAL_MES_DEBUG
 		printf("meo_loop_optimizer attempt\n");
-		printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+		printInstruction(cntxt->fdout, mb, p, LIST_MAL_ALL);
 #endif
 
 		/* craft the new code block */

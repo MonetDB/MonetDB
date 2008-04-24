@@ -178,6 +178,7 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i,j,pc;
 	char *nme;
 	InstrPtr q;
+	Client cntxt= MCgetClient();
 
 	pc= getPC(mb,p);
 	for(i=pc+1; i<mb->stop; i++){
@@ -225,7 +226,9 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 #ifdef DEBUG_RUN_MEMORUN
-		stream_printf(GDKout,"#function target %s cost %d\n",getVarName(mb,target),mincost);
+		stream_printf(cntxt->fdout,"#function target %s cost %d\n",getVarName(mb,target),mincost);
+#else
+	(void) cntxt;
 #endif
 	/* remove non-qualifying variables */
 	for(i=2; i<p->argc; i+= 2)
@@ -235,9 +238,9 @@ RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	propagateNonTarget(mb,pc+1);
 #ifdef DEBUG_RUN_MEMORUN
-	stream_printf(GDKout,"#cost choice selected %s %d\n",
+	stream_printf(cntxt->fdout,"#cost choice selected %s %d\n",
 		getVarName(mb,target),mincost);
-	printFunction(GDKout,mb,1);
+	printFunction(cntxt->fdout,mb,1);
 #endif
 	return MAL_SUCCEED;
 }

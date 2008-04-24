@@ -211,6 +211,7 @@ schedulerMALBlock(MalBlkPtr mb)
 	int callMALinterpreter = 1, pc, cnt = 0;
 	str msg = NULL;
 	int loops = 0;
+	Client cntxt= MCgetClient();
 
 #ifdef DEBUG_MAL_SCHEDULER
 	int oldstop = mb->stop;
@@ -240,8 +241,8 @@ schedulerMALBlock(MalBlkPtr mb)
 	if (callMALinterpreter)
 		return MAL_SUCCEED;
 #ifdef DEBUG_MAL_SCHEDULER
-	if (MCgetClient()->debugScheduler && oldstop != mb->stop) {
-		stream_printf(GDKout, "Scheduler effect %d -> %d instructions\n", oldstop, mb->stop);
+	if (cntxt->debugScheduler && oldstop != mb->stop) {
+		stream_printf(cntxt->fdout, "Scheduler effect %d -> %d instructions\n", oldstop, mb->stop);
 	}
 #endif
 	if (cnt >= 64)
@@ -328,8 +329,8 @@ RUNsqlbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 #ifdef DEBUG_MAL_SCHEDULER
-	stream_printf(GDKout, "scheduler.sqlbind results\n");
-	printFunction(GDKout, mb, LIST_MAL_ALL);
+	stream_printf(cntxt->fdout, "scheduler.sqlbind results\n");
+	printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
 #endif
 	return msg;
 }
