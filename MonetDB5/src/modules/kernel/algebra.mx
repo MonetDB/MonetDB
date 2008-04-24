@@ -702,9 +702,13 @@ aggregate functions using a macro.
 @:sumprod(sum,"Gives the sum of all tail values.")@
 @:sumprod(prod,"Gives the product of all tail values.")@
 @= sumprod_definition
-command @1 (b:bat[:any_1,:@2] ) :@4 
+command @1 (b:bat[:any_1,:@2], empty_is_nil:bit ) :@4 
 address ALG@1_@2_@4
 comment @3;
+
+function @1 (b:bat[:any_1,:@2] ) :@4;
+	return @1(b, true); 
+end @1;
 @mal
 @= sumprod
 @:sumprod_definition(@1,bte,@2,bte)@
@@ -860,9 +864,9 @@ algebra_export str ALGavg_@1(dbl *res, int *bid);
 @:avg_export(dbl)@
 
 @= ALGsum_export
-algebra_export str ALGsum_@1_@2(@2* res, int *bid) ;
+algebra_export str ALGsum_@1_@2(@2* res, int *bid, bit *empty_is_nil) ;
 @= ALGprod_export
-algebra_export str ALGprod_@1_@2(@2* res, int *bid) ;
+algebra_export str ALGprod_@1_@2(@2* res, int *bid, bit *empty_is_nil) ;
 @h
 @:ALGsum_export(bte,bte,0)@
 @:ALGsum_export(bte,sht,0)@
@@ -1076,14 +1080,14 @@ is large enough to prevent overflow.
 
 @= sum_implementation
 int
-CMDsum_@1_@2(@2* res, BAT *b)
+CMDsum_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p,q;
 	@2 result=@3;
 
 	BATcheck(b,"BATsum_@1_@2");
-	if (!BATcount(b))
+	if (!BATcount(b) && *empty_is_nil)
 		result = @2_nil;
 	BATloop(b, p, q) {
 		@1 *value = (@1*) BUNtloc(bi, p);
@@ -1105,14 +1109,14 @@ is large enough to prevent overflow.
 
 @= prod_implementation
 int
-CMDprod_@1_@2(@2* res, BAT *b)
+CMDprod_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p,q;
 	@2 result=@3;
 
 	BATcheck(b,"BATprodInt");
-	if (!BATcount(b))
+	if (!BATcount(b) && *empty_is_nil)
 		result = @2_nil;
 	BATloop(b, p, q) {
 		@1 *value = (@1*) BUNtloc(bi, p);
@@ -2160,24 +2164,24 @@ The routines below assumes that the caller knows what type
 is large enough to prevent overflow.
 
 @= ALGsum_implementation
-str ALGsum_@1_@2(@2* res, int *bid) {
+str ALGsum_@1_@2(@2* res, int *bid, bit *empty_is_nil) {
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
 		 throw(MAL, "algebra.sum", "Cannot access descriptor");
 	}
 
-	CMDsum_@1_@2(res,b);
+	CMDsum_@1_@2(res, b, empty_is_nil);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 @= ALGprod_implementation
-str ALGprod_@1_@2(@2* res, int *bid) {
+str ALGprod_@1_@2(@2* res, int *bid, bit *empty_is_nil) {
 	BAT *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
 		 throw(MAL, "algebra.prod", "Cannot access descriptor");
 	}
-	CMDprod_@1_@2(res,b);
+	CMDprod_@1_@2(res, b, empty_is_nil);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -3799,9 +3803,10 @@ CMDavg_@1(dbl* res, BAT *b)
 	int cnt = BATcount(b);
 
 	if (cnt) {
+		bit t = TRUE;
 		dbl result=0;
 
-		CMDsum_@1_dbl(&result, b);
+		CMDsum_@1_dbl(&result, b, &t);
 		*res = result/cnt;
 	} else {
 		*res = dbl_nil;
