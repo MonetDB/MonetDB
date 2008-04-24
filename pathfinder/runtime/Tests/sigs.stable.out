@@ -49,6 +49,7 @@ module 'pf_support'
 [ "enumerate(BAT[void,lng], BAT[void,lng]) : BAT[oid,lng]"										  ]
 [ "fetch(BAT[any,BAT], int) : any"															  ]
 [ "fetch(BAT[any,BAT], oid) : any"																  ]
+[ "fn_deep_eq(BAT[void,BAT], BAT[void,oid], BAT[void,int], BAT[void,oid], BAT[void,int]) : BAT[void,bit]"							  ]
 [ "insert(BAT[any::1,BAT], any::1, any) : BAT[any::1,BAT]"												  ]
 [ "invalid_qname(BAT[any,str]) : str"															  ]
 [ "is_constant(any) : bit"																  ]
