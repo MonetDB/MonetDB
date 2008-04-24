@@ -173,7 +173,7 @@ str
 RECYCLEdump(int *ret)
 {
 	int i;
-	Client cntxt;
+	Client cntxt= MCgetClient();
 
 	(void) ret;
 	stream_printf(cntxt->fdout,"#Recycler  catalog\n");
