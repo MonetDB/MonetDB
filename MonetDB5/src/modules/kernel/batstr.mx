@@ -148,12 +148,12 @@ comment "Substitute first occurrence of 'src' by
 	size, repeating is only done iff src is
 	not a substring of dst.";
 
-command batstr.like(s:bat[:oid,:str],pat:str):bat[:oid,:oid]
-address STRbatlike2
+command batstr.like_uselect(s:bat[:oid,:str],pat:str):bat[:oid,:oid]
+address STRbatlike_uselect2
 comment "Perform SQL like operation against a string bat";
 
-command batstr.like(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:oid]
-address STRbatlike
+command batstr.like_uselect(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:oid]
+address STRbatlike_uselect
 comment "Perform SQL like operation against a string bat";
 
 command batstr.replace(s:bat[:oid,:str],pat:str,s2:str):bat[:oid,:str]
@@ -590,9 +590,9 @@ The pattern matching routine is optimized for SQL pattern structures.
 @c
 #define percent "\001"
 #define underscore "\002"
-batstr_export str STRbatlike(int *ret, int *bid, str *pat, str *esc);
+batstr_export str STRbatlike_uselect(int *ret, int *bid, str *pat, str *esc);
 str
-STRbatlike(int *ret, int *bid, str *pat, str *esc)
+STRbatlike_uselect(int *ret, int *bid, str *pat, str *esc)
 {
 	BATiter bi;
 	BAT *b,*bn;
@@ -622,12 +622,12 @@ bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-batstr_export str STRbatlike2(int *ret, int *bid, str *pat);
+batstr_export str STRbatlike_uselect2(int *ret, int *bid, str *pat);
 str
-STRbatlike2(int *ret, int *bid, str *pat)
+STRbatlike_uselect2(int *ret, int *bid, str *pat)
 {
 	str esc="";
-	return STRbatlike(ret,bid,pat,&esc);
+	return STRbatlike_uselect(ret,bid,pat,&esc);
 }
 @-
 The substring functions require slightly different arguments
