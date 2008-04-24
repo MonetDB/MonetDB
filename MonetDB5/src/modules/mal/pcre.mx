@@ -56,6 +56,9 @@ command uselect(pat:str, strs:bat[:any_1,:str]) :bat[:any_1,:void]
 address PCREuselect
 comment "Select tuples based on the pattern, only returning the head";
 
+command like_uselect(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void] 
+address PCRElike_uselect_pcre;
+
 command match(s:str, pat:str):bit
 address PCREmatch
 comment "POSIX pattern matching against a string";
@@ -89,20 +92,25 @@ command sql2pcre(pat:str,esc:str):str
 address PCREsql2pcre
 comment "Convert a SQL like pattern with the given escape character into a PCRE pattern.";
 
+pattern prelude() :void 
+address pcre_init
+comment "Initialize pcre";
+
+pcre.prelude();
+
+module str;
 command like(s:str, pat:str, esc:str):bit 
 address PCRElike3;
 
 command like(s:str, pat:str):bit 
 address PCRElike2;
 
-command like(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void] 
-address PCRElike_uselect_pcre;
+command batstr.like(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:bit] 
+address BATPCRElike;
 
-pattern prelude() :void 
-address pcre_init
-comment "Initialize pcre";
+command batstr.like(s:bat[:any_1,:str], pat:str):bat[:any_1,:bit] 
+address BATPCRElike2;
 
-pcre.prelude();
 @-
 @verbatim
 ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
@@ -157,6 +165,8 @@ pcre_export var_t pcre_put(Heap *h, var_t *bun, pcre * val);
 pcre_export str PCREsql2pcre(str *ret, str *pat, str *esc);
 pcre_export str PCRElike3(bit *ret, str *s, str *pat, str *esc);
 pcre_export str PCRElike2(bit *ret, str *s, str *pat);
+pcre_export str BATPCRElike(int *ret, int *b, str *pat, str *esc);
+pcre_export str BATPCRElike2(int *ret, int *b, str *pat);
 pcre_export str PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str pcre_init(void);
 
@@ -1054,6 +1064,65 @@ PCRElike2(bit *ret, str *s, str *pat)
 	char *esc = "\\";
 
 	return PCRElike3(ret, s, pat, &esc);
+}
+
+str
+BATPCRElike(bat *ret, int *bid, str *pat, str *esc)
+{
+	char *ppat = NULL;
+	str res = PCREsql2pcre(&ppat, pat, esc);
+
+	if (!res) {
+		BAT *strs = BATdescriptor(*bid);
+		BATiter strsi = bat_iterator(strs);
+		BAT *r = BATnew(TYPE_void, TYPE_bit, BATcount(strs));
+		bit *br = (bit*)Tloc(r, BUNfirst(r));
+		BUN p, q, i = 0;
+
+		if (strcmp(ppat, (char*)str_nil) == 0) {
+			BATloop(strs, p, q) {
+				str s = (str)BUNtail(strsi, p);
+
+				if (strcmp(s, *pat) == 0)
+					br[i] = TRUE;
+				else 
+					br[i] = FALSE;
+				i++;
+			}
+		} else {
+			BATloop(strs, p, q) {
+				str s = (str)BUNtail(strsi, p);
+
+				res = PCREmatch(br+i, &s, &ppat);
+				i++;
+			}
+		}
+		BATsetcount(r, i);
+		r->tsorted = 0;
+		BATkey(BATmirror(r),FALSE);
+
+		if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ); 
+
+		if (strs->htype != r->htype) {
+			BAT *v = VIEWcreate(strs, r);
+
+			BBPreleaseref(r->batCacheid);
+			r = v;
+		}
+		BBPkeepref(*ret = r->batCacheid);
+		BBPreleaseref(strs->batCacheid);
+	}
+	if (ppat)
+		GDKfree(ppat);
+	return res;
+}
+
+str
+BATPCRElike2(bat *ret, int *bid, str *pat)
+{
+	char *esc = "\\";
+
+	return BATPCRElike(ret, bid, pat, &esc);
 }
 
 str
