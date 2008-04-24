@@ -1956,15 +1956,15 @@ if test "x$enable_optim" = xyes; then
                            ;;
                       *)   CFLAGS="$CFLAGS -fomit-frame-pointer";;
                       esac
-                      CFLAGS="$CFLAGS                          -finline-functions -falign-loops=4 -falign-jumps=4 -falign-functions=4 -fexpensive-optimizations                     -funroll-loops -frerun-cse-after-loop -frerun-loop-opt"
+                      CFLAGS="$CFLAGS                          -finline-functions -falign-loops=4 -falign-jumps=4 -falign-functions=4 -fexpensive-optimizations                     -funroll-loops -frerun-cse-after-loop -frerun-loop-opt -ftree-vectorize"
                       dnl  With gcc 3.2, the combination of "-On -funroll-all-loops" (n>1)
                       dnl  does not seem to produce stable/correct? binaries
                       dnl  (Mserver produces tons of incorrect BATpropcheck warnings);
                       dnl  hence, we omit -funroll-all-loops, here.
                       ;;
       x86_64-*-*|i*86-*-*)
-                      CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt";;
-      ia64-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions                                                     -fexpensive-optimizations                                    -frerun-cse-after-loop -frerun-loop-opt"
+                      CFLAGS="$CFLAGS -O6 -fomie-frame-pointer -finline-functions -malign-loops=4 -malign-jumps=4 -malign-functions=4 -fexpensive-optimizations -funroll-all-loops  -funroll-loops -frerun-cse-after-loop -frerun-loop-opt -ftree-vectorize";;
+      ia64-*-*)       CFLAGS="$CFLAGS -O6 -fomit-frame-pointer -finline-functions                                                     -fexpensive-optimizations                                    -frerun-cse-after-loop -frerun-loop-opt -ftree-vectorize"
                       dnl  Obviously, 4-byte alignment doesn't make sense on Linux64; didn't try 8-byte alignment, yet.
                       dnl  Further, when combining either of "-funroll-all-loops" and "-funroll-loops" with "-On" (n>1),
                       dnl  gcc (3.2.1 & 2.96) does not seem to produce stable/correct? binaries under Linux64
