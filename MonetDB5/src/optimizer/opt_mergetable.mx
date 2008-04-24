@@ -165,20 +165,28 @@ int overlap( MalBlkPtr mb, int lv, int rv)
 	VarPtr lub = varGetProp(mb, lv, tubProp); 
 	VarPtr rlb = varGetProp(mb, rv, hlbProp); 
 	VarPtr rub = varGetProp(mb, rv, hubProp); 
+
 	if (!llb || !rlb) {
-		/* unknown ie overlap */
+		/* unknown lower bound ie overlap */
 		return 1;
 	}
-	if ((rub->value.val.lval != (lng)-1 && 
+	/* perfect match */
+	if (lub->value.val.lval == rub->value.val.lval &&
+	    llb->value.val.lval == rlb->value.val.lval) 
+		return 1;
+
+	if ((rub->value.val.lval != (lng)oid_nil && 
 	      rub->value.val.lval <= llb->value.val.lval) || 
- 	     (lub->value.val.lval != (lng)-1 &&
+ 	     (lub->value.val.lval != (lng)oid_nil &&
 	      lub->value.val.lval <= rlb->value.val.lval))
 		return 0;
 
-	if ((rub->value.val.lval == (lng)-1 && 
-	      rlb->value.val.lval > lub->value.val.lval) || 
- 	     (lub->value.val.lval == (lng)-1 &&
-	      llb->value.val.lval > rub->value.val.lval)) {
+	if ((rub->value.val.lval == (lng)oid_nil && 
+	     rlb->value.val.lval > lub->value.val.lval) || 
+	    (lub->value.val.lval == (lng)oid_nil &&
+	     llb->value.val.lval > rub->value.val.lval)) {
+                return 0;
+
 		return 0;
 	}
 	return 1;
@@ -194,15 +202,20 @@ int Hoverlap( MalBlkPtr mb, int lv, int rv)
 		/* unknown ie overlap */
 		return 1;
 	}
-	if ((rub->value.val.lval != (lng)-1 && 
+	/* perfect match */
+	if (lub->value.val.lval == rub->value.val.lval &&
+	    llb->value.val.lval == rlb->value.val.lval) 
+		return 1;
+
+	if ((rub->value.val.lval != (lng)oid_nil && 
 	      rub->value.val.lval <= llb->value.val.lval) || 
- 	     (lub->value.val.lval != (lng)-1 &&
+ 	     (lub->value.val.lval != (lng)oid_nil &&
 	      lub->value.val.lval <= rlb->value.val.lval))
 		return 0;
 
-	if ((rub->value.val.lval == (lng)-1 && 
+	if ((rub->value.val.lval == (lng)oid_nil && 
 	      rlb->value.val.lval > lub->value.val.lval) || 
- 	     (lub->value.val.lval == (lng)-1 &&
+ 	     (lub->value.val.lval == (lng)oid_nil &&
 	      llb->value.val.lval > rub->value.val.lval)) {
 		return 0;
 	}
@@ -402,6 +415,7 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var, int reuse)
 	}
 
 	for(k=1; k<mat[m].mi->argc; k++) {
+		int used = 0;
 		if (inout || p->argc == 2 ||
 		    /* join + overlap */
 		    /* or calc + hoverlap */
@@ -425,7 +439,12 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var, int reuse)
 			pushInstruction(mb,q);
 			if (r)
 				r = pushArgument(mb,r,getArg(q,0));
+			used = 1;
 		}
+		if (!used && 
+		   (getFunctionId(p) == kdifferenceRef ||
+		    getFunctionId(p) == kunionRef)) 
+			r = pushArgument(mb, r, getArg(mat[m].mi, k));
 	}
 	if (r)
 		assert(r->argc > 1);
@@ -469,6 +488,7 @@ mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int *mtop, int a1, int a2, int 
 	getArg(r,0) = getArg(p,0);
 
 	for(j=1; j<mat[m].mi->argc; j++) {
+		int used = 0;
 		int vm = getArg(mat[m].mi, j);
 		for(k=1; k<mat[n].mi->argc; k++) {
 			int vn = getArg(mat[n].mi, k);
@@ -486,11 +506,19 @@ mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int *mtop, int a1, int a2, int 
 
 				if (!reuse)
 					propagateProp(mb, q, vm);
+				if (!reuse && 
+				    getFunctionId(q) == kunionRef) 
+					propagateBinProp(mb, q, vm, vn);
 
 				/* add result to mat */
 				r = pushArgument(mb,r,getArg(q,0));
+				used = 1;
 			}
 		}
+		if (!used && 
+		   (getFunctionId(p) == kdifferenceRef ||
+		    getFunctionId(p) == kunionRef)) 
+			r = pushArgument(mb, r, vm);
 	}
 	if (r)
 		assert(r->argc > 1);
@@ -575,7 +603,7 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n)
 	getArg(r,0) = getArg(p,0);
 	
 	assert(m>=0 || n>=0);
-	if (mat[m].mm) {
+	if (m >= 0 && mat[m].mm) {
 		if (n<0)
 			assert(0);
 		for (j=1; j<mat[n].mi->argc; j++) {
@@ -584,6 +612,9 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n)
 			getArg(q,0) = newTmpVariable(mb, tpe);
 			getArg(q,1) = getArg(mat[m].mm,0);
 			getArg(q,2) = getArg(mat[n].mi,j);
+			assert(getArg(q,0) < mb->vtop);
+			assert(getArg(q,1) < mb->vtop);
+			assert(getArg(q,2) < mb->vtop);
 			pushInstruction(mb,q);
 			//propagateBinProp(mb, q, getArg(mat[m].mm, 0), getArg(mat[n].mi, k));
 
@@ -600,6 +631,9 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n)
 					getArg(q,0) = newTmpVariable(mb, tpe);
 					getArg(q,1) = getArg(mat[m].mi,k);
 					getArg(q,2) = getArg(mat[n].mi,j);
+					assert(getArg(q,0) < mb->vtop);
+					assert(getArg(q,1) < mb->vtop);
+					assert(getArg(q,2) < mb->vtop);
 					pushInstruction(mb,q);
 					propagateBinProp(mb, q, getArg(mat[m].mi, k), getArg(mat[n].mi, j));
 	
@@ -620,6 +654,9 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n)
 
 				getArg(q,0) = newTmpVariable(mb, tpe);
 				getArg(q,av) = getArg(mat[mv].mi, k);
+				assert(getArg(q,0) < mb->vtop);
+				assert(getArg(q,1) < mb->vtop);
+				assert(getArg(q,2) < mb->vtop);
 				pushInstruction(mb,q);
 				propagateBinProp(mb, q, getArg(mat[mv].mi, k), getArg(q, bv));
 				/* add result to mat */
@@ -633,6 +670,9 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n)
 
 				getArg(q,0) = newTmpVariable(mb, tpe);
 				getArg(q,av) = getArg(mat[mv].mi, k);
+				assert(getArg(q,0) < mb->vtop);
+				assert(getArg(q,1) < mb->vtop);
+				assert(getArg(q,2) < mb->vtop);
 				pushInstruction(mb,q);
 				propagateBinProp(mb, q, getArg(q, bv), getArg(mat[mv].mi, k));
 				/* add result to mat */
@@ -804,6 +844,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 {
 	int tp = getArgType(mb,p,0), k;
 	InstrPtr r = newInstruction(mb,ASSIGNsymbol), q;
+	int isSum = (getFunctionId(p) == sumRef); 
 
 	getArg(r,0) = getArg(p,0);
 	if (getFunctionId(p) == minRef || getFunctionId(p) == maxRef)
@@ -820,10 +861,13 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		getArg(q,0) = v;
 		q = pushArgument(mb,q,getArg(mat[m].mi,k));
 		pushInstruction(mb,q);
+		/* for now we fallback to the old sum(empty) == 0 semantics */
+		if (isSum)
+			pushBit(mb, q, FALSE);
 
 		q = newInstruction(mb,ASSIGNsymbol);
 		setModuleId(q,calcRef);
-		if (getFunctionId(p)== minRef || getFunctionId(p)==maxRef)
+		if (getFunctionId(p) == minRef || getFunctionId(p) == maxRef)
 			setFunctionId(q,getFunctionId(p));
 		else
 			setFunctionId(q, plusRef);
@@ -1142,7 +1186,6 @@ Also we should translate the mirror().join() (a groupby attribute) into
 UNION(mirror().join()).
 @c
 
-/* TODO handle value joins on multiple mats !! */
 		if (match > 0 &&
 		    getModuleId(p) == algebraRef && 
 		    getFunctionId(p) == joinRef) {
@@ -1159,9 +1202,12 @@ UNION(mirror().join()).
 		}
 		/* all batcalc and mkey operations assume aligned bats */
 		if (match >= 1 && (getModuleId(p) == batcalcRef || 
+		    getModuleId(p) == batstrRef ||
 		    getModuleId(p) == mkeyRef ||
 		    (getModuleId(p) == algebraRef && 
-		     getFunctionId(p) == semijoinRef))) { 
+		     (getFunctionId(p) == semijoinRef ||
+		      getFunctionId(p) == kdifferenceRef ||
+		      (getFunctionId(p) == kunionRef && match == 2))))) { 
 			InstrPtr bc;
 
 			m = isMATalias(getArg(p,1), mat, mtop);
@@ -1249,9 +1295,10 @@ be packed to facilitate updates. We assume the first
 partition is dominant. 
 @c
 		if (match &&
-		    ((getModuleId(p)== batRef && 
+		    (
+		   /*(getModuleId(p)== batRef && 
 		     (getFunctionId(p)== insertRef ||
-		      getFunctionId(p)== appendRef)) ||
+		      getFunctionId(p)== appendRef)) ||*/
 		     (getModuleId(p) == algebraRef &&
 		      getFunctionId(p)== kunionRef))) {
 			/* bat.insert(mat,b or val) 
