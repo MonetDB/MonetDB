@@ -339,14 +339,14 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 
 				if (active_store_type == store_bpm) {
 					bpm = i->data;
-					if (mode == RDONLY /* currently all updates are kept together || mode == RD_UPD */)
+					if (mode == RDONLY || mode == RD_UPD)
 						part = bpm->ins;
 					else if (mode == RD_INS) {
 						part = bpm->nr - bpm->ins;
 						off = bpm->ins;
 					}
 				}
-				if (i->t->cnt && mode == RDONLY)
+				if (i->t->cnt && (mode == RDONLY || mode == RD_UPD))
 					rows = i->t->cnt;
 			} else if ( f == bindRef) {
 				sql_schema *s = mvc_bind_schema(m, sname);
@@ -357,14 +357,14 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 
 				if (active_store_type == store_bpm) {
 					bpm = c->data;
-					if (mode == RDONLY /* currently all updates are kept together || mode == RD_UPD */)
+					if (mode == RDONLY || mode == RD_UPD)
 						part = bpm->ins;
 					else if (mode == RD_INS) {
 						part = bpm->nr - bpm->ins;
 						off = bpm->ins;
 					}
 				}
-				if (c->t->cnt && mode == RDONLY)
+				if (c->t->cnt && (mode == RDONLY || mode == RD_UPD))
 					rows = c->t->cnt;
 			}	
 			varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_lng, &rows));
@@ -383,12 +383,14 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 			}
 			if (part <= 1) {
 				pushInstruction(mb,p);
-				if (bpm && mode != RD_UPD) {
+				if (bpm) {
 					oid low = 0, high = 1;
 
 					low = bpm->parts[off].hlow;
+					assert(low != (oid)-1);
 					high = bpm->parts[off].hhgh;
-
+					if (high == (oid)-1)
+						high = oid_nil;
 					varSetProp(mb, getArg(p,0), hlbProp, op_gte, VALset(&vr, TYPE_oid, &low));
 					varSetProp(mb, getArg(p,0), hubProp, op_lt, VALset(&vr, TYPE_oid, &high));
 				}
@@ -403,6 +405,8 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 					low = bpm->parts[off+i].hlow;
 					assert(low != (oid)-1);
 					high = bpm->parts[off+i].hhgh;
+					if (high == (oid)-1)
+						high = oid_nil;
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, matRef);
 					setFunctionId(q, f);
