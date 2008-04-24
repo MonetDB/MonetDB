@@ -40,7 +40,6 @@ library streams;
 
 library bat5;
 library batExtensions;
-library pcre;
 library algebra;
 library algebraExtensions;
 library calc;
@@ -66,6 +65,7 @@ library batmtime;
 library batstr;
 library batcolor;
 
+library pcre;
 library clients;
 library mal_io;
 library tablet;
@@ -113,7 +113,6 @@ The kernel stuff to make it work
 @mal
 include bat5;
 include batExtensions;
-include pcre;
 include algebra;
 include algebraExtensions;
 include calc;
@@ -148,6 +147,7 @@ include batcolor;
 @-
 MAL related extensions
 @mal
+include pcre;
 include clients;
 include const;
 include bbp;
