@@ -586,6 +586,7 @@ Client MCforkClient(Client father){
 	if (father->father != NULL) father = father->father;
 	if ((son = MCinitClient(father->user, father->fdin, father->fdout))) {
 		son->fdin= NULL;
+		son->fdout= father->fdout;
 		son->bak= NULL;
 		son->yycur=0;
 		son->father = father;
