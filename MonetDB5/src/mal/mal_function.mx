@@ -566,10 +566,10 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 	            getSignature(proc)->token );
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
-/*
-printf("CLONED VERSION\n");
-printFunction(GDKout, new->def, LIST_MAL_ALL);
-*/
+#ifdef DEBUG_CLONE
+	stream_printf(GDKout,"CLONED VERSION\n");
+	printFunction(GDKout, new->def, LIST_MAL_ALL);
+#endif
 	/* check for errors after fixation , TODO*/
 	pp = getSignature(new);
 	for(i=0;i<pp->argc;i++)
@@ -600,7 +600,7 @@ printFunction(GDKout, new->def, LIST_MAL_ALL);
 		clrVarFixed(new->def,i);
 
 #ifdef DEBUG_MAL_FCN
-	printf("FUNCTION TO BE CHECKED\n");
+	stream_printf(GDKout,"FUNCTION TO BE CHECKED\n");
 	printFunction(GDKout, new->def, LIST_MAL_ALL);
 #endif
 

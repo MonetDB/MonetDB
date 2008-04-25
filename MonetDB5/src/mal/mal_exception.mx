@@ -235,28 +235,30 @@ createException(enum malexception type, str fcn, str format, ...)
 }
 
 /**
- * Internal helper function to properly emit the given string to GDKout,
- * thereby abiding to all the protocol laws.  This function will bluntly
- * crash if the given string (pointer) is NULL.
+ * Internal helper function to properly emit the given string to out,
+ * thereby abiding to all the protocol laws.  
  */
 static void
-dumpToGDKout(str whatever) {
+dumpToStream(stream *out, str whatever) {
 	size_t i;
 	size_t last = 0;
-	size_t len = strlen(whatever);	/* yes, crash if whatever is NULL */
+	size_t len ;
 
+	if( whatever == NULL)
+		return;
+	len = strlen(whatever);	
 	/* make sure each line starts with a ! */
 	for (i = 0; i < len; i++) {
 		if (whatever[i] == '\n') {
 			whatever[i] = '\0';
 			if (i - last > 0) /* skip empty lines */
-				stream_printf(GDKout, "!%s\n", whatever + last);
+				stream_printf(out, "!%s\n", whatever + last);
 			last = i + 1;
 		}
 	}
 	/* flush last part */
 	if (i - last > 0) /* skip if empty */
-		stream_printf(GDKout, "!%s\n", whatever + last);
+		stream_printf(out, "!%s\n", whatever + last);
 }
 
 /**
@@ -276,7 +278,7 @@ showException(enum malexception type, str fcn, str format, ...)
 	msg = createExceptionInternal(type, fcn, format, ap);
 	va_end(ap);
 
-	dumpToGDKout(msg);
+	dumpToStream(GDKout,msg);
 	GDKfree(msg);
 }
 
@@ -343,7 +345,7 @@ showScriptException(MalBlkPtr mb, int pc, enum malexception type, str format, ..
 	msg = createScriptExceptionInternal(mb, pc, type, NULL, format, ap);
 	va_end(ap);
 
-	dumpToGDKout(msg);
+	dumpToStream(GDKout,msg);
 	GDKfree(msg);
 }
 

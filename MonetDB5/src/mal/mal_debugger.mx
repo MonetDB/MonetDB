@@ -1730,12 +1730,12 @@ asses for memory fragmentation.
 @= heapinfo
 hp= @1;
 if(hp && hp->base){
-	stream_printf(GDKout,"\t@2=%d size=%d\n",hp->base, hp->size);}
+	stream_printf(out,"\t@2=%d size=%d\n",hp->base, hp->size);}
 @= hashinfo
 h= @1;
 if(h && h->mask){
-	    stream_printf(GDKout,"\t@2=%d size=%d\n",h, sizeof(*h));
-	    stream_printf(GDKout,"\t@2link=%d size=%d\n",h->link,
+	    stream_printf(out,"\t@2=%d size=%d\n",h, sizeof(*h));
+	    stream_printf(out,"\t@2link=%d size=%d\n",h->link,
 	            (h->mask+h->lim+1)*sizeof(int));
 }
 @-
@@ -1747,11 +1747,11 @@ More then 9 elements makes it full.
 @= setVector
 	start= (((long)@1)-min)/granule;
 	lim= (((long)@1)-min + @2)/granule;
-	stream_printf(GDKout,"start %d lim %d\n",start,lim);
+	stream_printf(out,"start %d lim %d\n",start,lim);
 
 @c
 str
-memProfileVector(int cells)
+memProfileVector(stream *out, int cells)
 {
 	str v = GDKmalloc(cells + 1);
 	int i;
@@ -1782,7 +1782,7 @@ memProfileVector(int cells)
 			long start, lim;
 #endif
 
-			stream_printf(GDKout, "\tdesc=%d size=%d\n", b, sizeof(*b));
+			stream_printf(out, "\tdesc=%d size=%d\n", b, sizeof(*b));
 			@:heapinfo(&b->H->heap,tail)@
 			@:heapinfo(&b->T->heap,head)@
 #ifdef HAVE_SBRK
@@ -1790,7 +1790,7 @@ memProfileVector(int cells)
 				min = (long) b;
 				max = min + GDKmem_heapsize();
 				granule = (max - min) / cells;
-				stream_printf(GDKout, "granule %dK\n", granule / 1024);
+				stream_printf(out, "granule %dK\n", granule / 1024);
 			}
 			@:setVector(b, sizeof(*b))@
 			@:setVector(hp->base, hp->size)@
@@ -1812,7 +1812,7 @@ printBBPinfo(stream *out)
 
 	stream_printf(out, "#BBP memory layout\n");
 	stream_printf(out, "#heap maximum =%d/M\n", GDKmem_heapsize() / (1024 * 1024));
-	v = memProfileVector(32);
+	v = memProfileVector(out,32);
 	stream_printf(out, "#%s\n", v);
 	GDKfree(v);
 #ifdef GDK_VM_KEEPHISTO
