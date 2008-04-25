@@ -107,65 +107,65 @@ function user.main():void;              #  0 main:void {G}
     bat.insert(b,10@0,"123456123456");  # 11 _31:void := BKCinsert_bun(b:bat[:oid,:str], _32:oid, _33:str) 
     bat.insert(b,11@0,"123454321");     # 12 _34:void := BKCinsert_bun(b:bat[:oid,:str], _35:oid, _36:str) 
     io.print(b);                        # 13 _37:void := IOprint_val(b:bat[:oid,:str]) 
-    i := str.like("hello","hello");     # 14 i:bit := STRlikewrap2(_39:str, _39:str) 
+    i := str.like("hello","hello");     # 14 i:bit := PCRElike2(_39:str, _39:str) 
     io.print(i);                        # 15 _40:void := IOprint_val(i:bit) 
-    i := str.like("hello","hell");      # 16 i:bit := STRlikewrap2(_39:str, _41:str) 
+    i := str.like("hello","hell");      # 16 i:bit := PCRElike2(_39:str, _41:str) 
     io.print(i);                        # 17 _42:void := IOprint_val(i:bit) 
-    i := str.like("hello","h_llo");     # 18 i:bit := STRlikewrap2(_39:str, _43:str) 
+    i := str.like("hello","h_llo");     # 18 i:bit := PCRElike2(_39:str, _43:str) 
     io.print(i);                        # 19 _44:void := IOprint_val(i:bit) 
-    i := str.like("hello","%llo");      # 20 i:bit := STRlikewrap2(_39:str, _45:str) 
+    i := str.like("hello","%llo");      # 20 i:bit := PCRElike2(_39:str, _45:str) 
     io.print(i);                        # 21 _46:void := IOprint_val(i:bit) 
-    i := str.like("hello","%___");      # 22 i:bit := STRlikewrap2(_39:str, _47:str) 
+    i := str.like("hello","%___");      # 22 i:bit := PCRElike2(_39:str, _47:str) 
     io.print(i);                        # 23 _48:void := IOprint_val(i:bit) 
-    i := str.like("hello","hxllo");     # 24 i:bit := STRlikewrap2(_39:str, _49:str) 
+    i := str.like("hello","hxllo");     # 24 i:bit := PCRElike2(_39:str, _49:str) 
     io.print(i);                        # 25 _50:void := IOprint_val(i:bit) 
-    i := str.like("tr","t_");           # 26 i:bit := STRlikewrap2(_51:str, _52:str) 
+    i := str.like("tr","t_");           # 26 i:bit := PCRElike2(_51:str, _52:str) 
     io.print(i);                        # 27 _53:void := IOprint_val(i:bit) 
-    i := str.like("trx","t_");          # 28 i:bit := STRlikewrap2(_54:str, _52:str) 
+    i := str.like("trx","t_");          # 28 i:bit := PCRElike2(_54:str, _52:str) 
     io.print(i);                        # 29 _55:void := IOprint_val(i:bit) 
-    z := batstr.like(b,"t_");           # 30 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _52:str) {G}
+    z := batstr.like_uselect(b,"t_");   # 30 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _52:str) {G}
     io.print(z);                        # 31 _57:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"%math%");       # 32 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _58:str) {G}
+    z := batstr.like_uselect(b,"%math%");# 32 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _58:str) {G}
     io.print(z);                        # 33 _59:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"%m_th_a%t");    # 34 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _60:str) {G}
+    z := batstr.like_uselect(b,"%m_th_a%t");# 34 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _60:str) {G}
     io.print(z);                        # 35 _61:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"%at%_!");       # 36 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _62:str) {G}
+    z := batstr.like_uselect(b,"%at%_!");# 36 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _62:str) {G}
     io.print(z);                        # 37 _63:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"1%");           # 38 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _64:str) {G}
+    z := batstr.like_uselect(b,"1%");   # 38 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _64:str) {G}
     io.print(z);                        # 39 _65:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"3%");           # 40 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _66:str) {G}
+    z := batstr.like_uselect(b,"3%");   # 40 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _66:str) {G}
     io.print(z);                        # 41 _67:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"%1");           # 42 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _68:str) {G}
+    z := batstr.like_uselect(b,"%1");   # 42 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _68:str) {G}
     io.print(z);                        # 43 _69:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"%3");           # 44 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _70:str) {G}
+    z := batstr.like_uselect(b,"%3");   # 44 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _70:str) {G}
     io.print(z);                        # 45 _71:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"%1%");          # 46 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _72:str) {G}
+    z := batstr.like_uselect(b,"%1%");  # 46 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _72:str) {G}
     io.print(z);                        # 47 _73:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"%12%");         # 48 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _74:str) {G}
+    z := batstr.like_uselect(b,"%12%"); # 48 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _74:str) {G}
     io.print(z);                        # 49 _75:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"%13%");         # 50 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _76:str) {G}
+    z := batstr.like_uselect(b,"%13%"); # 50 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _76:str) {G}
     io.print(z);                        # 51 _77:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"%454%");        # 52 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _78:str) {G}
+    z := batstr.like_uselect(b,"%454%");# 52 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _78:str) {G}
     io.print(z);                        # 53 _79:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"%2%2%");        # 54 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _80:str) {G}
+    z := batstr.like_uselect(b,"%2%2%");# 54 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _80:str) {G}
     io.print(z);                        # 55 _81:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"_2_3%123");     # 56 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _82:str) {G}
+    z := batstr.like_uselect(b,"_2_3%123");# 56 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _82:str) {G}
     io.print(z);                        # 57 _83:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"_123%3");       # 58 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _84:str) {G}
+    z := batstr.like_uselect(b,"_123%3");# 58 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _84:str) {G}
     io.print(z);                        # 59 _85:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"%1_3456%");     # 60 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _86:str) {G}
+    z := batstr.like_uselect(b,"%1_3456%");# 60 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _86:str) {G}
     io.print(z);                        # 61 _87:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"_3456%");       # 62 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _88:str) {G}
+    z := batstr.like_uselect(b,"_3456%");# 62 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _88:str) {G}
     io.print(z);                        # 63 _89:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"%23");          # 64 z:bat[:oid,:oid] := STRbatlike2(b:bat[:oid,:str], _90:str) {G}
+    z := batstr.like_uselect(b,"%23");  # 64 z:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _90:str) {G}
     io.print(z);                        # 65 _91:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"%","?");        # 66 z:bat[:oid,:oid] := STRbatlike(b:bat[:oid,:str], _92:str, _93:str) {G}
+    z := batstr.like_uselect(b,"%","?");# 66 z:bat[:oid,:oid] := STRbatlike_uselect(b:bat[:oid,:str], _92:str, _93:str) {G}
     io.print(z);                        # 67 _94:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"?%","?");       # 68 z:bat[:oid,:oid] := STRbatlike(b:bat[:oid,:str], _95:str, _93:str) {G}
+    z := batstr.like_uselect(b,"?%","?");# 68 z:bat[:oid,:oid] := STRbatlike_uselect(b:bat[:oid,:str], _95:str, _93:str) {G}
     io.print(z);                        # 69 _96:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,".%",".");       # 70 z:bat[:oid,:oid] := STRbatlike(b:bat[:oid,:str], _97:str, _98:str) {G}
+    z := batstr.like_uselect(b,".%",".");# 70 z:bat[:oid,:oid] := STRbatlike_uselect(b:bat[:oid,:str], _97:str, _98:str) {G}
     io.print(z);                        # 71 _99:void := IOprint_val(z:bat[:oid,:oid]) 
-    z := batstr.like(b,"tt","t");       # 72 z:bat[:oid,:oid] := STRbatlike(b:bat[:oid,:str], _100:str, _101:str) {G}
+    z := batstr.like_uselect(b,"tt","t");# 72 z:bat[:oid,:oid] := STRbatlike_uselect(b:bat[:oid,:str], _100:str, _101:str) {G}
     io.print(z);                        # 73 _102:void := IOprint_val(z:bat[:oid,:oid]) 
 end main;	# 74  
 #---------------------------------#
