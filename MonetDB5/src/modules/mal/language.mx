@@ -272,7 +272,6 @@ CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help){
 	(void) m; (void) f;
 
 	c= MCgetClient();
-	if (c == NULL) c= mal_clients; /* to handle start up effects */
 	msg= compileString(&sym, c,*code);
 	if( sym) {
 		stream_printf(c->fdout,"REGISTER FUNCTIOn %s.%s\n",
