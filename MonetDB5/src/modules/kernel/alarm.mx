@@ -120,7 +120,6 @@ CLKinitTimer(int sec, int usec)
 	int i = sec - time(0);
 
 	(void) usec;
-	TRGDEBUG THRprintf(GDKout, "#CLKinitTimer: set timer to %d secs \n", i);
 
 	alarm(i);
 }
@@ -136,7 +135,6 @@ CLKalarm(time_t t, str action)
 	int j;
 	int k;
 
-	TRGDEBUG THRprintf(GDKout, "#CLKalarm: push " LLFMT "\n", (lng) t);
 
 	if (timerTop == MAXtimer) {
 		GDKerror("CLKalarm: timer stack overflow\n");
@@ -183,7 +181,6 @@ CLKsignal(int nr)
 	if (signal(SIGALRM, CLKsignal) == SIG_ERR) {
 		GDKsyserror("CLKsignal: call failed\n");
 	}
-	TRGDEBUG THRprintf(GDKout, "#alarm signal (timeTop=%d)\n", timerTop);
 
 	if (timerTop == 0) {
 		return;
@@ -191,8 +188,6 @@ CLKsignal(int nr)
 	t = time(0);
 	while (k-- && t >= timer[k].alarm_time) {
 		if (timer[k].action) {
-			TRGDEBUG THRprintf(GDKout, "#eval(%s)\n", timer[k].action);
-
 			/* monet_eval(timer[k].action, &restype); */
 			GDKfree(timer[k].action);
 		} else {
