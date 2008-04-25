@@ -366,6 +366,7 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 					cur = n;
 			}
 			stmt_destroy(missing);
+			/* There is no merge union, so we need the expensive sort ! */
 			s = stmt_union(s, stmt_const(cur, stmt_atom(atom_general(sql_bind_localtype("oid"), NULL, 0))));
 		}
 		s = stmt_reverse(stmt_order(stmt_reverse(s), 1));
