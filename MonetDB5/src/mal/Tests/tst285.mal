@@ -2,7 +2,7 @@ b:= bat.new(:oid,:str);
 bat.append(b,"hello");
 bat.append(b,"goodbye");
 
-z1:= batstr.like(b,"%hel%");
+z1:= batstr.like_uselect(b,"%hel%");
 io.print(z1);
 
 z2:= pcre.uselect(".*[ly].*", b);

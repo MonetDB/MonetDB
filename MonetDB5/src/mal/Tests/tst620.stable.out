@@ -41,11 +41,11 @@ function user.main():void;              #  0 main:void {G}
 #check the storage size 
     user.tst();                         #  2 _2:void 
     f := inspect.getSize("algebra");    #  3 f:bat[:str,:lng] := INSPECTgetModuleSize(_4:str) {G}
-    fs:lng  := aggr.sum(f);             #  4 fs:lng := ALGsum_lng_lng(f:bat[:str,:lng]) 
+    fs:lng  := aggr.sum(f);             #  4 fs:lng := aggr.sum(f:bat[:str,:lng]) 
     fs2 := calc./(fs,2);                #  5 fs2:lng := CALCbinarycheckDIVlngint(fs:lng, _7:int) 
     io.printf("#algebra size %d\n",fs2);#  6 _8:void := IOprint_formatted_lng(_9:str, fs2:lng) 
     z := inspect.getSize("inspect");    #  7 z:bat[:str,:lng] := INSPECTgetModuleSize(_11:str) {G}
-    zs:lng  := aggr.sum(z);             #  8 zs:lng := ALGsum_lng_lng(z:bat[:str,:lng]) 
+    zs:lng  := aggr.sum(z);             #  8 zs:lng := aggr.sum(z:bat[:str,:lng]) 
     zs2 := calc./(zs,2);                #  9 zs2:lng := CALCbinarycheckDIVlngint(zs:lng, _7:int) 
     io.printf("#inspect size %d\n",zs2);# 10 _14:void := IOprint_formatted_lng(_15:str, zs2:lng) 
     l := inspect.getSize();             # 11 l:lng 

@@ -65,7 +65,7 @@ function user.main():void;              #  0 main:void {G}
     io.print(L);                        # 11 _16:void := IOprint_val(L:bat[:oid,:int]) 
     B := batcalc.==(S,"hello");         # 12 B:bat[:oid,:bit] := STRbatEqualCst(S:bat[:oid,:str], _6:str) {G}
     io.print(B);                        # 13 _18:void := IOprint_val(B:bat[:oid,:bit]) 
-    C := batstr.like(S,"hello");        # 14 C:bat[:oid,:oid] := STRbatlike2(S:bat[:oid,:str], _6:str) {G}
+    C := batstr.like_uselect(S,"hello");# 14 C:bat[:oid,:oid] := STRbatlike_uselect2(S:bat[:oid,:str], _6:str) {G}
     io.print(C);                        # 15 _20:void := IOprint_val(C:bat[:oid,:oid]) 
     U := batstr.toUpper(S);             # 16 U:bat[:oid,:str] := STRbatUpper(S:bat[:oid,:str]) {G}
     io.print(U);                        # 17 _22:void := IOprint_val(U:bat[:oid,:str]) 
