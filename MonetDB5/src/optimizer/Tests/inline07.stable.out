@@ -18,7 +18,7 @@ stdout of test 'inline07` in directory 'src/optimizer` itself:
 #	return foo:=c;
 #end foo;
 function user.foo{inline}(a:int,b:bat[:oid,:int]):dbl;#  0 foo:dbl := user.foo(a:int, b:bat[:oid,:int]) {G}
-    s := aggr.sum(b);                   #  1 s:dbl := ALGsum_int_dbl(b:bat[:oid,:int]) 
+    s := aggr.sum(b);                   #  1 s:dbl := aggr.sum(b:bat[:oid,:int]) 
     c := calc.+(a,s);                   #  2 c:dbl := CALCbinaryADDintdbl(a:int, s:dbl) 
     return foo{inline} := c;            #  3 foo:dbl := c:dbl 
 end foo;	# 4  

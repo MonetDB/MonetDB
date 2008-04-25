@@ -124,13 +124,13 @@ function user.main():void;              #  0 main:void {G}
 #	io.print("b.insert(2,15);"); 
     da_a := bat.insert(b,2,15);         # 20 da_a:void := BKCinsert_bun(b:bat[:int,:int], _25:int, _22:int) 
 #	io.print("b.sum().print();"); 
-    ea_a := aggr.sum(b);                # 22 ea_a:dbl := ALGsum_int_dbl(b:bat[:int,:int]) 
+    ea_a := aggr.sum(b);                # 22 ea_a:dbl := aggr.sum(b:bat[:int,:int]) 
     fa_a := io.print(ea_a);             # 23 fa_a:void := IOprint_val(ea_a:dbl) 
 #	io.print("b.insert(3,int(nil));"); 
     ga_a := calc.int(nil:void);         # 25 ga_a:int := CALCnil2int(_31:void) 
     ha_a := bat.insert(b,3,ga_a);       # 26 ha_a:void := BKCinsert_bun(b:bat[:int,:int], _33:int, ga_a:int) 
 #	io.print("b.sum().print();"); 
-    ia_a := aggr.sum(b);                # 28 ia_a:dbl := ALGsum_int_dbl(b:bat[:int,:int]) 
+    ia_a := aggr.sum(b);                # 28 ia_a:dbl := aggr.sum(b:bat[:int,:int]) 
     ja_a := io.print(ia_a);             # 29 ja_a:void := IOprint_val(ia_a:dbl) 
 #	io.print("b.insert(4,15);"); 
     ka_a := bat.insert(b,4,15);         # 31 ka_a:void := BKCinsert_bun(b:bat[:int,:int], _39:int, _22:int) 
