@@ -41,33 +41,18 @@ command importGraph( url:str, db:str, graph:str) : void
 address RDFimportGraph
 comment "import a graph in a named rdf db";
 
-command exportGraph( url:str, db:str, graph:str, order:str, syntax:str) : void
+command exportGraph(db:str, graph:str, order:str, syntax:str) : void
 address RDFexportGraph
 comment "export a graph in a named rdf db";
 
 
 @+ Implementation
 
-@h
-typedef enum
-{
-	BLANK,
-	URI,
-	PLAIN,
-	INTEGER,
-	DECIMAL,
-	DOUBLE,
-	BOOLEAN,
-	FLOAT,
-	STRING,
-	DATETIME,
-	UNKNOWN
-} rdf_type;
+
 @c
 #include "mal_config.h"
 #include "mal.h"
 #include "mal_exception.h"
-#include "rdf.h"
 
 #include <gdk_bbp.h>
 #include <stdio.h>
@@ -76,11 +61,47 @@ typedef enum
 #include <math.h>
 #include <time.h>
 #include <raptor.h>
+#include <stdbool.h>
 
 #define rdf_export extern
-#define RET_MAXLEN 2048
+#define RET_MAXLEN 1024
+
+typedef enum
+{
+	RDF_TYPE_BLANK,
+	RDF_TYPE_IRI,
+	RDF_TYPE_PLAIN,
+	RDF_TYPE_INTEGER,
+	RDF_TYPE_DECIMAL,
+	RDF_TYPE_DOUBLE,
+	RDF_TYPE_BOOLEAN,
+	RDF_TYPE_FLOAT,
+	RDF_TYPE_STRING,
+	RDF_TYPE_DATETIME,
+	RDF_TYPE_XML_LITERAL,
+	RDF_TYPE_OTHER
+} rdf_type;
+
+typedef enum
+{
+	RDF_SEC_BLANK,
+	RDF_SEC_IRI,
+	RDF_SEC_NEG_NUM,
+	RDF_SEC_FALSE,
+	RDF_SEC_ZERO,
+	RDF_SEC_EMPTY_STRING,
+	RDF_SEC_LANG_EMPTY_STRING,
+	RDF_SEC_STRING,
+	RDF_SEC_LANG_STRING,
+	RDF_SEC_TRUE,
+	RDF_SEC_POS_NUM,
+	RDF_SEC_DATETIME,
+	RDF_SEC_XML_LITERAL,
+	RDF_SEC_OTHER
+} rdf_section;
 
 typedef struct {
+	raptor_parser *parser;
 	lng *cur;
 	lng *lim;
 	BAT *map;
@@ -93,123 +114,396 @@ typedef struct {
 	oid *s;
 	chr *t;
 	str *ret;
+	char *ret_array;
 } triple_handler_vars;
-//TODO
-//static lng RDFestimate(str url) {
-//	url=NULL;
-//	return 8048;
-//}
 
+typedef struct {
+	raptor_parser *parser;
+	raptor_serializer *serializer;
+	str *ret;
+	char *ret_array;
+} message_handler_vars;
+/*TODO
+static lng RDFestimate(str url) {
+	url=NULL;
+	return 8048;
+}*/
 
-
-static chr RDFtypeToChar(rdf_type t)
+static chr RDFsectionToChr(rdf_section s)
 {
 	chr c;
-	switch (t)
+	switch (s)
 	{
-	case BLANK:
-		c = 'l';
+	case RDF_SEC_BLANK:
+		c = '0';
 		break;
-	case URI:
-		c = 'u';
+	case RDF_SEC_IRI:
+		c = '1';
 		break;
-	case PLAIN:
-		c = 'p';
+	case RDF_SEC_NEG_NUM:
+		c = '2';
 		break;
-	case INTEGER:
-		c = 'i';
+	case RDF_SEC_FALSE:
+		c = '3';
 		break;
-	case DECIMAL:
-		c = 'm';
+	case RDF_SEC_ZERO:
+		c = '4';
 		break;
-	case DOUBLE:
-		c = 'd';
+	case RDF_SEC_EMPTY_STRING:
+		c = '5';
 		break;
-	case BOOLEAN:
-		c = 'b';
+	case RDF_SEC_LANG_EMPTY_STRING:
+		c = '6';
 		break;
-	case FLOAT:
-		c = 'f';
+	case RDF_SEC_STRING:
+		c = '7';
 		break;
-	case STRING:
-		c = 's';
+	case RDF_SEC_LANG_STRING:
+		c = '8';
 		break;
-	case DATETIME:
-		c = 't';
+	case RDF_SEC_TRUE:
+		c = '9';
 		break;
-	case UNKNOWN:
-		c = '\0';
+	case RDF_SEC_POS_NUM:
+		c = 'A';
+		break;
+	case RDF_SEC_DATETIME:
+		c = 'B';
+		break;
+	case RDF_SEC_XML_LITERAL:
+		c = 'C';
+		break;
+	case RDF_SEC_OTHER:
+		c = 'D';
+		break;
 	}
 	return c;
 }
 
-static rdf_type RDFparseXsdDataType(char *uri)
+static rdf_section RDFchrToSection(chr c)
+{
+	rdf_section s;
+	switch (c)
+	{
+	case '0':
+		s = RDF_SEC_BLANK;
+		break;
+	case '1':
+		s = RDF_SEC_IRI;
+		break;
+	case '2':
+		s = RDF_SEC_NEG_NUM;
+		break;
+	case '3':
+		s = RDF_SEC_FALSE;
+		break;
+	case '4':
+		s = RDF_SEC_ZERO;
+		break;
+	case '5':
+		s = RDF_SEC_EMPTY_STRING;
+		break;
+	case '6':
+		s = RDF_SEC_LANG_EMPTY_STRING;
+		break;
+	case '7':
+		s = RDF_SEC_STRING;
+		break;
+	case '8':
+		s = RDF_SEC_LANG_STRING;
+		break;
+	case '9':
+		s = RDF_SEC_TRUE;
+		break;
+	case 'A':
+		s = RDF_SEC_POS_NUM;
+		break;
+	case 'B':
+		s = RDF_SEC_DATETIME;
+		break;
+	case 'C':
+		s = RDF_SEC_XML_LITERAL;
+		break;
+	case 'D':
+		s = RDF_SEC_OTHER;
+		break;
+	}
+	return s;
+}
+
+static chr RDFtypeToChr(rdf_type t)
+{
+	chr c;
+	switch (t)
+	{
+	case RDF_TYPE_BLANK:
+		c = 'l';
+		break;
+	case RDF_TYPE_IRI:
+		c = 'u';
+		break;
+	case RDF_TYPE_PLAIN:
+		c = 'p';
+		break;
+	case RDF_TYPE_INTEGER:
+		c = 'i';
+		break;
+	case RDF_TYPE_DECIMAL:
+		c = 'm';
+		break;
+	case RDF_TYPE_DOUBLE:
+		c = 'd';
+		break;
+	case RDF_TYPE_BOOLEAN:
+		c = 'b';
+		break;
+	case RDF_TYPE_FLOAT:
+		c = 'f';
+		break;
+	case RDF_TYPE_STRING:
+		c = 's';
+		break;
+	case RDF_TYPE_DATETIME:
+		c = 't';
+		break;
+	case RDF_TYPE_XML_LITERAL:
+		c = 'x';
+		break;
+	case RDF_TYPE_OTHER:
+		c = 'o';
+	}
+	return c;
+}
+
+static rdf_type RDFchrToType(chr c)
+{
+	rdf_type t;
+	switch (c)
+	{
+	case 'l':
+		t = RDF_TYPE_BLANK;
+		break;
+	case 'u':
+		t = RDF_TYPE_IRI;
+		break;
+	case 'p':
+		t = RDF_TYPE_PLAIN;
+		break;
+	case 'i':
+		t = RDF_TYPE_INTEGER;
+		break;
+	case 'm':
+		t = RDF_TYPE_DECIMAL;
+		break;
+	case 'd':
+		t = RDF_TYPE_DOUBLE;
+		break;
+	case 'b':
+		t = RDF_TYPE_BOOLEAN;
+		break;
+	case 'f':
+		t = RDF_TYPE_FLOAT;
+		break;
+	case 's':
+		t = RDF_TYPE_STRING;
+		break;
+	case 't':
+		t = RDF_TYPE_DATETIME;
+		break;
+	case 'x':
+		t = RDF_TYPE_XML_LITERAL;
+		break;
+	case 'o':
+		t = RDF_TYPE_OTHER;
+	}
+	return t;
+}
+
+static rdf_type RDFxsdToType(str uri)
 {
 	rdf_type ret;
 	if (uri == NULL)
-		ret = PLAIN;
-	else if (	strcmp(uri, "http://www.w3.org/2001/XMLSchema#int") ||
-				strcmp(uri, "http://www.w3.org/2001/XMLSchema#integer"))
-		ret = INTEGER;
-	else if (strcmp(uri, "http://www.w3.org/2001/XMLSchema#decimal"))
-		ret = DECIMAL;
-	else if (strcmp(uri, "http://www.w3.org/2001/XMLSchema#double"))
-		ret = DOUBLE;
-	else if (strcmp(uri, "http://www.w3.org/2001/XMLSchema#boolean"))
-		ret = BOOLEAN;
-	else if (strcmp(uri, "http://www.w3.org/2001/XMLSchema#float"))
-		ret = FLOAT;
-	else if (strcmp(uri, "http://www.w3.org/2001/XMLSchema#string"))
-		ret = STRING;
-	else if (strcmp(uri, "http://www.w3.org/2001/XMLSchema#dateTime"))
-		ret = DATETIME;
+		ret = RDF_TYPE_PLAIN;
+	else if (	!strcmp(uri, "http://www.w3.org/2001/XMLSchema#int") ||
+				!strcmp(uri, "http://www.w3.org/2001/XMLSchema#integer"))
+		ret = RDF_TYPE_INTEGER;
+	else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#decimal"))
+		ret = RDF_TYPE_DECIMAL;
+	else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#double"))
+		ret = RDF_TYPE_DOUBLE;
+	else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#boolean"))
+		ret = RDF_TYPE_BOOLEAN;
+	else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#float"))
+		ret = RDF_TYPE_FLOAT;
+	else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#string"))
+		ret = RDF_TYPE_STRING;
+	else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#dateTime"))
+		ret = RDF_TYPE_DATETIME;
+	else if (!strcmp(uri, "http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral"))
+		ret = RDF_TYPE_XML_LITERAL;
 	else
-		ret = UNKNOWN;
-	
-	raptor_free_memory(uri);
+		ret = RDF_TYPE_OTHER;
 	return ret;
 }
 
-static str RDFimport_fail(BAT* map, BAT* ob, BAT* pb, BAT *sb, BAT *tb) {
-    if (map) BBPunfix(map->batCacheid);
-    if (ob) BBPreclaim(ob);
-    if (pb) BBPreclaim(pb);
-    if (sb) BBPreclaim(sb);
-    if (tb) BBPreclaim(tb);
-    throw(MAL, "RDFimport", "allocation failure"); 
+static str RDFtypeToXsd(rdf_type t)
+{
+	str ret;
+	if (t == RDF_TYPE_INTEGER)
+		ret = "http://www.w3.org/2001/XMLSchema#integer";
+	else if (t == RDF_TYPE_DECIMAL)
+		ret = "http://www.w3.org/2001/XMLSchema#decimal";
+	else if (t == RDF_TYPE_DOUBLE)
+		ret = "http://www.w3.org/2001/XMLSchema#double";
+	else if (t == RDF_TYPE_BOOLEAN)
+		ret = "http://www.w3.org/2001/XMLSchema#boolean";
+	else if (t == RDF_TYPE_FLOAT)
+		ret = "http://www.w3.org/2001/XMLSchema#float";
+	else if (t == RDF_TYPE_STRING)
+		ret = "http://www.w3.org/2001/XMLSchema#string";
+	else if (t == RDF_TYPE_DATETIME)
+		ret = "http://www.w3.org/2001/XMLSchema#dateTime";
+	else if (t == RDF_TYPE_XML_LITERAL)
+		ret = "http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral";
+	else
+		ret = NULL;
+	
+	return ret;
+}
+
+typedef struct
+{
+	bool negative;
+	/*TODO*/
+} rdf_datetime;
+
+static bool RDFisDigit(chr c)
+{
+	if (c=='0' || c=='1' || c=='2' || c=='3' || c=='4' ||
+		c=='5' || c=='6' || c=='7' || c=='8' || c=='9')
+		return true;
+	else
+		return false;
+}
+
+static str RDFparseYear(str year, int year_len)
+{
+	str ret;
+	if (year_len>=4)
+	{
+		int i;
+		for (i=0; i<year_len && ret==MAL_SUCCEED; i++)
+			if (!RDFisDigit(year[i]))
+				ret = "A non-digit has been found parsing the year";
+		if (ret==MAL_SUCCEED && year_len > 4 && year[0]=='0')
+			ret = "Leading zeros are prohibited when year length is grater than 4";
+		if (ret==MAL_SUCCEED)
+		{
+			bool is0000 = true;/* is the year==0000? it is prohibited */
+			for (i=0; i<year_len; i++)
+				if (year[i]!='0')
+					is0000 = false;
+			if (is0000)
+				ret = "Year 0000 is prohibited";
+		}
+	}
+	else
+		ret = "A year must have 4 or more digits";
+	return ret;
+}
+
+static str RDFisDateTime(str data)
+{
+	str ret = MAL_SUCCEED;
+	int data_len = strlen(data);
+	/*'-'? yyyy '-' mm '-' dd 'T' hh ':' mm ':' ss ('.' s+)? (zzzzzz)?*/
+	if (data_len < 19)
+		ret = "DateTime too short";
+	else
+	{
+		rdf_datetime *dt = GDKmalloc(sizeof(rdf_datetime));
+		if (!dt)
+			ret = "failed to allocate a datetime structure";
+		else
+		{
+			int i;
+			str year;
+			if (data[0] == '-')
+			{
+				data = &data[1];
+				dt->negative = true;
+				data_len--;
+			}
+			else
+				dt->negative = true;
+			/* find next separator */
+			for (i=0; data[i] == '-' && i<data_len; i++)
+				;/* '-' is at i-1 */
+			year = GDKmalloc(sizeof(chr)*(i));
+			if (!year)
+				ret = "failed to allocate 'year' string";
+			else
+			{
+				int year_len = i-1;
+				strncpy(year, data, i-1);
+				year[year_len] = '\0';
+				ret = RDFparseYear(year, year_len);
+				GDKfree(year);
+				
+			}
+			GDKfree(dt);
+		}
+	}
+	return ret;
 }
 
 void message_handler(void *user_data, raptor_locator *locator, const char *message)
 {
 	size_t length = 0;
-	str *ret = (str *)user_data;
-	str msg = *ret;
+	message_handler_vars *info = (message_handler_vars *)user_data;
+	str *ret = info->ret;
+	char *ret_array = info->ret_array;
+	int written = 0;
+	str msg = ret_array;
+	*ret = ret_array;
 	if (locator->uri)
 	{
-		snprintf(msg, RET_MAXLEN, "In URI location \"%s\": ", raptor_uri_as_string(locator->uri));
+		written = snprintf(msg, RET_MAXLEN, "In URI location \"%s\": ", raptor_uri_as_string(locator->uri));
+		if (written >= RET_MAXLEN)
+			ret_array[RET_MAXLEN-1] = '\0';
 		length = strlen(*ret);
 		msg = *ret + length * (sizeof(char));
 	}
 	if (locator->line >=0 && length < RET_MAXLEN-1)
 	{
-		snprintf(msg, RET_MAXLEN-length, "at line %d: ", locator->line);
+		written = snprintf(msg, RET_MAXLEN-length, "at line %d: ", locator->line);
+		if (written >= RET_MAXLEN)
+			ret_array[RET_MAXLEN-1] = '\0';
 		length = strlen(*ret);
 		msg = *ret + length * (sizeof(char));
 	}
 	if (locator->column >=0 && length < RET_MAXLEN-1)
 	{
-		snprintf(msg, RET_MAXLEN-length, "at column %d: ", locator->column);
+		written = snprintf(msg, RET_MAXLEN-length, "at column %d: ", locator->column);
+		if (written >= RET_MAXLEN)
+			ret_array[RET_MAXLEN-1] = '\0';
 		length = strlen(*ret);
 		msg = *ret + length * (sizeof(char));
 	}
 	if (message && length < RET_MAXLEN-1)
 	{
-		snprintf(msg, RET_MAXLEN-length, "%s\n", message);
+		written = snprintf(msg, RET_MAXLEN-length, "%s\n", message);
+		if (written >= RET_MAXLEN)
+			ret_array[RET_MAXLEN-1] = '\0';
 	}
+	if (info->parser)
+		raptor_parse_abort(info->parser);
+	if (info->serializer)
+		raptor_serialize_end(info->serializer);
 }
 
 @= RDFins
-	HASHfnd_str(bun, mi, @1v);//bun is returned, is an index.
+	HASHfnd_str(bun, mi, @1v);/*bun is returned, is an index.*/
     if (bun == BUN_NONE)
     {
     	if (map->T->hash == NULL || BATcount(map) > 4 * map->T->hash->mask)
@@ -219,12 +513,39 @@ void message_handler(void *user_data, raptor_locator *locator, const char *messa
     	}
         bun = (BUN) map->batCount;
         if (!BUNappend(map,(ptr)@1v, TRUE)) {
-            GDKerror("RDFimport: @1[" LLFMT "] = %s, BUNappend fails\n", cur, @1v);
-            *(data->ret) = RDFimport_fail(map,ob,pb,sb,tb);
+            GDKerror("RDFimport: @1[" LLFMT "] = %s, BUNappend fails\n", cur, @1v);/*????TODO ask*/
+            *ret = ret_array;
+            snprintf(*ret, RET_MAXLEN, "BUNappend failed inserting \'%s\'", @1v);
         }
    }
    /* s,p,o[cur] are set to the virtual oid which is bun s p and o are arrays of oid */
    @1[*cur] = (oid) bun;
+
+@= RDFprefix
+	size_t len = strlen(@2) + 2; /* +1 for '\0', +1 for the prefix */
+	char prefix = RDFsectionToChr(@3);
+	@1 = GDKmalloc(len*sizeof(char));
+	if (@1)
+		snprintf(@1, len, "%c%s", prefix, @2);
+	else
+		*ret = "Failed to allocate memory for @1";
+
+@= RDFprefixLanguage
+	size_t len = strlen((char*)@2) + strlen((char *)@3) +2; /* +1 for '\0', +1 for '@' */
+	@1 = GDKmalloc(len*sizeof(char));
+	if (@1)
+		snprintf(@1, len, "%s\@%s", @3, @2);
+	else
+		*ret = "Failed to allocate memory for @1";
+
+@= RDFprefixDatatype
+	size_t len = strlen((char*)@2) + strlen((char *)@3) +2; /* +1 for '\0', +1 for '^' */
+	@1 = GDKmalloc(len*sizeof(char));
+	if (@1)
+		snprintf(@1, len, "%s^%s", @3, @2);
+	else
+		*ret = "Failed to allocate memory for @1";
+
 @c
 void
 triples_handler(void* user_data, const raptor_statement* triple) 
@@ -244,110 +565,240 @@ triples_handler(void* user_data, const raptor_statement* triple)
 	oid *s = data->s;
 	chr *t = data->t;
 	str *ret = data->ret;
+	char *ret_array = data->ret_array;
 	BATiter mi = bat_iterator(BATmirror(map));
 	BUN bun;
-	*t = 'a';
-	if (strlen(*ret)!=0)
-		return;
+	
 	/* get the subject */
 	if (triple->subject_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE)
-		sv = (str)raptor_uri_as_string((raptor_uri *)triple->subject);
+	{
+		@:RDFprefix(sv, (str)raptor_uri_as_string((raptor_uri *)triple->subject), RDF_SEC_IRI)@
+	}
 	else if (triple->subject_type == RAPTOR_IDENTIFIER_TYPE_ANONYMOUS)
-		sv = (str)triple->subject;
-	else
 	{
-		*ret="Unexpected subject type";
-		return;
+		@:RDFprefix(sv, (str)triple->subject, RDF_SEC_BLANK)@
 	}
-	
-	/* get the predicate */
-	if(triple->predicate_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE)
-	    pv = (str)raptor_uri_as_string((raptor_uri *)triple->predicate);
 	else
-	{
-		*ret="Unexpected predicate type";
-		return;
-	}
+		*ret = "Unexpected subject type";
 	
-	/* get the object */
-	
-	switch (triple->object_type)
+	if (*ret == MAL_SUCCEED)
 	{
-	unsigned char *datatype_uri;
-	rdf_type literal_type;
-	case RAPTOR_IDENTIFIER_TYPE_RESOURCE:
-		ov = (str)raptor_uri_as_string((raptor_uri*)triple->object);
-		tv = RDFtypeToChar(URI);
-		break;
-	case RAPTOR_IDENTIFIER_TYPE_ANONYMOUS:
-		ov = (str)triple->subject;//TODO correct??
-		tv = RDFtypeToChar(BLANK);
-		break;
-	case RAPTOR_IDENTIFIER_TYPE_LITERAL:
-		datatype_uri = raptor_uri_to_string(triple->object_literal_datatype);
-		literal_type = RDFparseXsdDataType((char *)datatype_uri);
-		raptor_free_memory(datatype_uri);
-		if (literal_type == UNKNOWN)
+		/* get the predicate */
+		if(triple->predicate_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE)
 		{
-			*ret = "Unexpected object literal type";
-			return;
+		    @:RDFprefix(pv, (str)raptor_uri_as_string((raptor_uri *)triple->predicate), RDF_SEC_IRI)@
 		}
-		tv = RDFtypeToChar(literal_type);
-		//TODO lang
-		ov = (str)triple->object;
-		break;
-	default:
-		*ret="Unexpected object type";
-		return;
+		else
+			*ret="Unexpected predicate type";
+		
+		if (*ret == MAL_SUCCEED)
+		{
+			/* get the object */
+			switch (triple->object_type)
+			{
+			case RAPTOR_IDENTIFIER_TYPE_RESOURCE:
+			{
+				@:RDFprefix(ov, (str)raptor_uri_as_string((raptor_uri *)triple->object), RDF_SEC_IRI)@
+				tv = RDFtypeToChr(RDF_TYPE_IRI);
+				break;
+			}
+			case RAPTOR_IDENTIFIER_TYPE_ANONYMOUS:
+			{
+				@:RDFprefix(ov, (str)triple->object, RDF_SEC_BLANK)@/*TODO correct??*/
+				tv = RDFtypeToChr(RDF_TYPE_BLANK);
+				break;
+			}
+			case RAPTOR_IDENTIFIER_TYPE_LITERAL:
+			{
+				char *obj_datatype = (char *)raptor_uri_as_string(triple->object_literal_datatype);
+				rdf_type obj_type = RDFxsdToType(obj_datatype);
+				tv = RDFtypeToChr(obj_type);
+				if (triple->object_literal_language != NULL && obj_type != RDF_TYPE_PLAIN)
+				{
+					*ret = ret_array;
+					snprintf(*ret, RET_MAXLEN,
+							"The object \'%s\' has language tag \'%s\', but has datatype \'%s\'; only plain literals may have a language tag",
+							(str)triple->object, triple->object_literal_language, obj_datatype);
+				}
+				else
+				{
+					switch (obj_type)
+					{
+					case RDF_TYPE_PLAIN:
+					case RDF_TYPE_STRING:
+					{
+						if (( obj_type == RDF_TYPE_PLAIN ) &&
+							( triple->object_literal_language != NULL ) )
+						{
+							str langPrefixedObject;
+							@:RDFprefixLanguage(langPrefixedObject, (str)triple->object, triple->object_literal_language)@
+							if (*ret == MAL_SUCCEED)
+							{
+								if (strlen((str)triple->object) == 0)
+								{
+									@:RDFprefix(ov, langPrefixedObject, RDF_SEC_LANG_EMPTY_STRING)@
+								}
+								else
+								{
+									@:RDFprefix(ov, langPrefixedObject, RDF_SEC_LANG_STRING)@
+								}
+								GDKfree(langPrefixedObject);
+							}
+						}
+						else
+						{
+							if (strlen((str)triple->object) == 0)
+							{
+								@:RDFprefix(ov, (str)triple->object, RDF_SEC_EMPTY_STRING)@
+							}
+							else
+							{
+								@:RDFprefix(ov, (str)triple->object, RDF_SEC_STRING)@
+							}
+						}
+						break;
+					}
+					case RDF_TYPE_XML_LITERAL:
+					{
+						@:RDFprefix(ov, (str)triple->object, RDF_SEC_XML_LITERAL)@
+						break;
+					}
+					case RDF_TYPE_INTEGER:
+					case RDF_TYPE_DECIMAL:
+					case RDF_TYPE_DOUBLE:
+					case RDF_TYPE_FLOAT:
+						/*double i = (double)strtod((str)triple->object, NULL);//TODO check errors
+						i++;*/
+						break;				
+					case RDF_TYPE_BOOLEAN:
+					{
+						if (!strcmp((str)triple->object, "1") || !strcmp((str)triple->object, "true"))
+						{
+							@:RDFprefix(ov, "", RDF_SEC_TRUE)@
+						}
+						else if (!strcmp((str)triple->object, "0") || !strcmp((str)triple->object, "false"))
+						{
+							@:RDFprefix(ov, "", RDF_SEC_FALSE)@
+						}
+						else
+						{
+							*ret = ret_array;
+							snprintf(*ret, RET_MAXLEN, "Invalid boolean: \'%s\'", (str)triple->object);
+						}
+						break;
+					}
+					case RDF_TYPE_DATETIME:
+					{
+						if (RDFisDateTime((str)triple->object))
+						{
+							@:RDFprefix(ov, (str)triple->object, RDF_SEC_DATETIME)@
+						}
+						else
+						{
+							*ret = ret_array;
+							snprintf(*ret, RET_MAXLEN, "Invalid datetime: \'%s\'", (str)triple->object);
+						}
+						break;
+					}
+					case RDF_TYPE_OTHER:
+					{
+						if (strchr(obj_datatype, '^')==NULL)
+						{
+							str datatypePrefixedObj;
+							@:RDFprefixDatatype(datatypePrefixedObj, (str)triple->object, obj_datatype)@
+							if (*ret == MAL_SUCCEED)
+							{
+								@:RDFprefix(ov, datatypePrefixedObj, RDF_SEC_OTHER)@
+								GDKfree(datatypePrefixedObj);
+							}
+						}
+						else
+						{
+							*ret = ret_array;
+							snprintf(*ret, RET_MAXLEN, "Invalid datatype URI: \'%s\'", obj_datatype);
+						}
+						break;
+					}
+					default:
+						*ret = "Control flow should never reach this point";
+					}/*END of switch (obj_type)*/
+					break;
+				}
+			}
+			default:
+				*ret="Unexpected object type";
+			}
+			
+			if (*ret == MAL_SUCCEED)
+			{
+				@:RDFins(o)@
+				if (*ret == MAL_SUCCEED)
+				{
+				    @:RDFins(p)@
+				    if (*ret == MAL_SUCCEED)
+				    {
+				    	@:RDFins(s)@
+				    	if (*ret == MAL_SUCCEED)
+				    	{
+				    		t[*cur] = tv;
+						    if (++(*cur) > *lim) {
+						        *lim *= 2;
+						        ob = BATextend(ob, *lim);
+						        pb = BATextend(pb, *lim);
+						        sb = BATextend(sb, *lim);
+						        tb = BATextend(tb, *lim);
+						        if (ob == NULL || pb == NULL || sb == NULL || tb == NULL)
+						            *ret = "BATextend failed";
+						        else
+						        {
+							        o = (oid *) Tloc(ob, BUNfirst(ob));
+							        p = (oid *) Tloc(pb, BUNfirst(pb));
+							        s = (oid *) Tloc(sb, BUNfirst(sb));
+							        t = (chr *) Tloc(tb, BUNfirst(tb));
+						        }
+						    }
+				    	}
+				    }
+				}
+				GDKfree(ov);
+			}
+			GDKfree(pv);
+		}
+		GDKfree(sv);
 	}
-	
-	@:RDFins(o)@
-	if (strlen(*ret)==0)
-	{
-	    @:RDFins(p)@
-	    if (strlen(*ret)==0)
-	    {
-	    	@:RDFins(s)@
-	    	if (strlen(*ret)==0)
-	    	{
-	    		t[*cur] = tv;
-	    		
-			    if (++(*cur) > *lim) {
-			        *lim *= 2;
-			        ob = BATextend(ob, *lim);
-			        pb = BATextend(pb, *lim);
-			        sb = BATextend(sb, *lim);
-			        if (ob == NULL || pb == NULL || sb == NULL)
-			            *ret = RDFimport_fail(map,ob,pb,sb,tb);
-			        o = (oid *) Tloc(ob, BUNfirst(ob));
-			        p = (oid *) Tloc(pb, BUNfirst(pb));
-			        s = (oid *) Tloc(sb, BUNfirst(sb));
-			    }
-	    	}
-	    }
-	}
+	if (*ret != MAL_SUCCEED)
+		raptor_parse_abort(data->parser);
 }
 
 static str 
-RDFimport_(BAT** S, BAT** P, BAT **O, BAT **T, str url, BAT *map) {
+RDFimport_(BAT** S, BAT** P, BAT **O, BAT **T, str url, BAT *map, char *ret_array) {
 	raptor_parser *parser;
 	raptor_uri *rdf_file;
-	str ret;
+	str ret = MAL_SUCCEED;
 	raptor_init();
 	parser = raptor_new_parser("rdfxml");
-	if (parser)
+	if (!parser)
+		ret = "Could not create a Redland parser";
+	else
 	{
 		rdf_file = raptor_new_uri((unsigned char*)url);
-		if (rdf_file)
+		if (!rdf_file)
+		{
+			ret = ret_array;
+			snprintf(ret, RET_MAXLEN, "Invalid url: \'%s\'", url);
+		}
+		else
 		{
 			BAT *ob, *pb, *sb, *tb;
 			oid *o,*p,*s;
 			chr *t;
 			triple_handler_vars *data;
-			lng *cur;
-			lng *lim;
-			*cur = 0;
-			*lim = 8192;//TODO RDFestimate(url);
+			message_handler_vars *info;
+			lng *lim, *cur, limv, curv;
+			limv = 8192;
+			curv = 0;
+			lim = &limv;/*TODO *lim = RDFestimate(url);*/
+			cur = &curv;
 			
 			ob = *O = BATnew(TYPE_void, TYPE_oid, *lim);
 		    pb = *P = BATnew(TYPE_void, TYPE_oid, *lim);
@@ -357,73 +808,81 @@ RDFimport_(BAT** S, BAT** P, BAT **O, BAT **T, str url, BAT *map) {
 		    o = (oid *) Tloc(ob, BUNfirst(ob));
 		    p = (oid *) Tloc(pb, BUNfirst(pb));
 		    s = (oid *) Tloc(sb, BUNfirst(sb));
-		    t = (chr *) Tloc(sb, BUNfirst(sb));
+		    t = (chr *) Tloc(tb, BUNfirst(tb));
 		    
 		    if (map == NULL || ob == NULL || pb == NULL || sb == NULL || tb == NULL)
-		        return RDFimport_fail(map,ob,pb,sb,tb);
-		    
-		    data = GDKmalloc(sizeof(triple_handler_vars));
-		    if (data)
+		        ret = "Creation of one of map, ob, pv or sb failed";
+		    else
 		    {
-		    	char ret_array[RET_MAXLEN];
-		    	str ret_ptr = ret_array;
-		    	ret_array[0] = '\0';
-		    	data->cur = cur;
-		    	data->lim = lim;
-		    	data->map =map;
-		    	data->sb = sb;
-		    	data->pb = pb;
-		    	data->ob = ob;
-		    	data->tb = tb;
-		    	data->s = s;
-		    	data->p = p;
-		    	data->o = o;
-		    	data->t = t;
-		    	data->ret = &ret_ptr;
-		    	raptor_set_statement_handler(parser, data, triples_handler);
-				raptor_set_fatal_error_handler(parser, &ret_ptr, message_handler);
-				raptor_set_error_handler(parser, &ret_ptr, message_handler);
-				raptor_set_warning_handler(parser, &ret_ptr, message_handler);
-				raptor_set_parser_strict(parser, TRUE);
-			    
-			    if (raptor_parse_file(parser, rdf_file, NULL) == 0)
+			    data = GDKmalloc(sizeof(triple_handler_vars));
+			    if (data)
 			    {
-			    	if(strlen(ret_ptr)==0)
-				    {
-			    		ret = MAL_SUCCEED;
-					    BATseqbase(ob, 0);
-					    BATseqbase(pb, 0);
-					    BATseqbase(sb, 0);
-					    BATsetcount(ob, *cur);
-					    BATsetcount(pb, *cur);
-					    BATsetcount(sb, *cur);
-					    ob->tsorted = 0;
-					    pb->tsorted = 0;
-					    sb->tsorted = 0;
-					    BATkey(BATmirror(ob), FALSE);
-					    BATkey(BATmirror(sb), FALSE);
-					    BATkey(BATmirror(pb), FALSE);
-				    }
+			    	info = GDKmalloc(sizeof(message_handler_vars));
+			    	if (info)
+			    	{
+				    	data->parser = parser;
+				    	data->cur = cur;
+				    	data->lim = lim;
+				    	data->map =map;
+				    	data->sb = sb;
+				    	data->pb = pb;
+				    	data->ob = ob;
+				    	data->tb = tb;
+				    	data->s = s;
+				    	data->p = p;
+				    	data->o = o;
+				    	data->t = t;
+				    	data->ret = &ret;
+				    	data->ret_array = ret_array;
+				    	
+				    	info->serializer=NULL;
+				    	info->parser = parser;
+				    	info->ret = &ret;
+				    	info->ret_array = ret_array;
+				    	
+				    	raptor_set_statement_handler(parser, data, triples_handler);
+						raptor_set_fatal_error_handler(parser, info, message_handler);
+						raptor_set_error_handler(parser, info, message_handler);
+						raptor_set_warning_handler(parser, info, message_handler);
+						raptor_set_parser_strict(parser, TRUE);
+					    
+					    if (raptor_parse_file(parser, rdf_file, NULL) == 0)
+					    {
+					    	if (ret == MAL_SUCCEED)
+						    {
+							    BATseqbase(ob, 0);
+							    BATseqbase(pb, 0);
+							    BATseqbase(sb, 0);
+							    BATseqbase(tb, 0);
+							    BATsetcount(ob, *cur);
+							    BATsetcount(pb, *cur);
+							    BATsetcount(sb, *cur);
+							    BATsetcount(tb, *cur);
+							    ob->tsorted = 0;
+							    pb->tsorted = 0;
+							    sb->tsorted = 0;
+							    tb->tsorted = 0;
+							    BATkey(BATmirror(ob), FALSE);
+							    BATkey(BATmirror(sb), FALSE);
+							    BATkey(BATmirror(pb), FALSE);
+							    BATkey(BATmirror(tb), FALSE);
+						    }
+					    }
+					    GDKfree(info);
+			    	}
+			    	else
+			    		ret = "message_handler_vars malloc failed";
+			    	GDKfree(data);
 			    }
 			    else
-			    	ret = "RDF parsing error";
-			    GDKfree(data);
+			    	ret = "triple_handler_vars malloc failed";
+			    raptor_free_uri(rdf_file);
 		    }
-		    else
-		    	ret = "triple_handler_vars malloc failed";
-		    raptor_free_uri(rdf_file);
 		}
-		else
-			ret = "Unexistent url";
 		raptor_free_parser(parser);
 	}
-	else
-		ret = "Could not create a Redland parser";
     raptor_finish();
-	if (ret != MAL_SUCCEED)
-		throw(MAL, "rdf.import", ret);
-	
-	return MAL_SUCCEED;
+	return ret;
 }
 
 rdf_export
@@ -431,10 +890,11 @@ str RDFimport(int* S, int* P, int* O, str *url, bat m)
 {
     BAT *sb = NULL, *ob=NULL, *pb = NULL, *tb = NULL, *map = BATdescriptor(m);
     str ret;
+    char ret_array[RET_MAXLEN];
     if (map) {
-        RDFimport_(&sb, &pb, &ob, &tb, *url, map);
+    	RDFimport_(&sb, &pb, &ob, &tb, *url, map, ret_array);
         if (ret == MAL_SUCCEED) {
-            BBPkeepref(*O = ob->batCacheid);//changes physical reference to logical
+            BBPkeepref(*O = ob->batCacheid);/*changes physical reference to logical*/
             BBPkeepref(*P = pb->batCacheid);
             BBPkeepref(*S = sb->batCacheid);
         }
@@ -443,12 +903,513 @@ str RDFimport(int* S, int* P, int* O, str *url, bat m)
     return ret;
 }
 
-static str 
-RDFexport_(str url, bat M, bat S, bat P, bat O, str syntax)
+int CTrefine(BAT **ret, BAT *b, BAT *a);
+BAT * BATmalleftfetchjoin(BAT *l, BAT *r);
+static str
+RDFsort(BAT *commit,
+		BAT *S, BAT *sb, BAT *pb, BAT *ob, BAT *tb,
+		BAT **Spot, BAT **sPot, BAT **spOt, BAT **spoT,
+		str Spot_nme, str sPot_nme, str spOt_nme, str spoT_nme, str db, str graph)
 {
+    BAT *SPO, *SP;
+    str ret = MAL_SUCCEED;
+    CTrefine(&SP, S, pb);
+    if (SP) {
+        CTrefine(&SPO, SP, ob);
+        BBPreclaim(SP);
+        if (SPO) {
+            BAT *piv = BATmirror(BATmark(SPO, 0));
+            BBPreclaim(SPO);
+            if (piv) {
+            	/*BATleftfetchjoin wants also a size_t estimate
+            	 * BATmalleftfetchjoin not. Which has to be used?
+            	 * TODO*/ 
+                *Spot = BATleftfetchjoin(piv, sb, oid_nil);
+                if (Spot) {
+                    *sPot = BATleftfetchjoin(piv, pb, oid_nil);
+                    if (sPot) {
+                        *spOt = BATleftfetchjoin(piv, ob, oid_nil);
+                        if (spOt) {
+                        	*spoT = BATleftfetchjoin(piv, tb, oid_nil);
+                        	if (spoT) {
+                        		char Spot_buf[1024], sPot_buf[1024], spOt_buf[1024], spoT_buf[1024];
+                        		snprintf(Spot_buf, 1024, "%s_%s_%s", db, graph, Spot_nme);
+                        		snprintf(sPot_buf, 1024, "%s_%s_%s", db, graph, sPot_nme);
+                        		snprintf(spOt_buf, 1024, "%s_%s_%s", db, graph, spOt_nme);
+                        		snprintf(spoT_buf, 1024, "%s_%s_%s", db, graph, spoT_nme);
+                        		
+                        		if (BATname(*Spot, Spot_buf) == 0 &&
+                        			BATname(*sPot, sPot_buf) == 0 &&
+                        			BATname(*spOt, spOt_buf) == 0 &&
+                        			BATname(*spoT, spoT_buf) == 0) 
+                        		{
+                        			if (BATmode(*Spot, PERSISTENT) &&
+                        				BATmode(*sPot, PERSISTENT) &&
+                        				BATmode(*spOt, PERSISTENT) &&
+                        				BATmode(*spoT, PERSISTENT))
+                        			{
+                        				BBPreclaim(piv);
+                        				BUNfastins(commit, &((*Spot)->batCacheid), Spot_buf);
+                        				BUNfastins(commit, &((*sPot)->batCacheid), sPot_buf);
+                        				BUNfastins(commit, &((*spOt)->batCacheid), spOt_buf);
+                        				BUNfastins(commit, &((*spoT)->batCacheid), spoT_buf);
+                        				/* physical reference, i.e. memory pressure */
+                        				BBPreleaseref((*Spot)->batCacheid);
+                        				BBPreleaseref((*sPot)->batCacheid);
+                        				BBPreleaseref((*spOt)->batCacheid);
+                        				BBPreleaseref((*spoT)->batCacheid);
+                        				return MAL_SUCCEED;
+                        			} else {
+                        				BATmode(*Spot, TRANSIENT);
+                        				BATmode(*sPot, TRANSIENT);
+                        				BATmode(*spOt, TRANSIENT);
+                        				BATmode(*spoT, TRANSIENT);
+                        				ret = "BATmode failed";
+                        			}
+                        		}
+                                else
+                                	ret = "BATname failed";
+                        		BBPreclaim(*spoT);
+                        	}
+                            else
+                            	ret = "BATleftfetchjoin(piv, tb, oid_nil) failed";
+                            BBPreclaim(*spOt);
+                        }
+                        else
+                        	ret = "BATleftfetchjoin(piv, ob, oid_nil) failed";
+                        BBPreclaim(*sPot);
+                    }
+                    else
+                    	ret = "BATleftfetchjoin(piv, pb, oid_nil) failed";
+                    BBPreclaim(*Spot);
+                }
+                else
+                	ret = "BATleftfetchjoin(piv, sb, oid_nil) failed";
+                BBPreclaim(piv);
+            }
+            else
+            	ret = "BATmirror(BATmark(SPO, 0)) failed";
+        }
+        else
+        	ret = "CTrefine(&SPO, SP, ob) failed";
+    }
+    else
+    	ret = "CTrefine(&SP, S, pb) failed";
+    return ret;
+}
+
+@= sort
+RDFsort(commit, sorted, @1,@2,@3,@4,&@5,&@6,&@7,&@8,"@5","@6","@7","@8",*db,*graph);
+@c
+str RDFimportGraph(int *d, str *url, str *db, str *graph)
+{
+    BAT *map = NULL, *sb = NULL, *ob=NULL,
+    	*pb = NULL, *tb = NULL, *commit = BATnew(TYPE_bat, TYPE_str, 20);
+    char map_buf[1024];
+    char ret_array[RET_MAXLEN];
+    str ret = MAL_SUCCEED;
+    (void)d;
+    ret = MAL_SUCCEED;
+    if (commit) {
+        int mapIndex;
+        snprintf(map_buf, 1024, "%s_%s_map", *db, *graph);
+        mapIndex = BBPindex(map_buf);
+        if (mapIndex)
+        {
+        	ret = ret_array;
+        	snprintf(ret, RET_MAXLEN, "There is already a graph named \'%s\' in database \'%s\'", *graph, *db);
+        }
+        else {
+            map = BATnew(TYPE_void, TYPE_str, 8192);/*TODO fix constant*/
+            if (map)
+            	BATseqbase(map, 0);
+            else
+            	ret = "Could not create the map BAT";
+        }
+        memset(map_buf, 0, 1024);
+    }
+    if (ret == MAL_SUCCEED)
+    {
+        ret = RDFimport_(&sb, &pb, &ob, &tb, *url, map, ret_array);
+        if (ret == MAL_SUCCEED) {
+            BAT *Spot = NULL, *sPot = NULL, *spOt = NULL, *spoT = NULL; 
+            BAT *Sopt = NULL, *sOpt = NULL, *soPt = NULL, *sopT = NULL; 
+            BAT *Post = NULL, *pOst = NULL, *poSt = NULL, *posT = NULL; 
+            BAT *Psot = NULL, *pSot = NULL, *psOt = NULL, *psoT = NULL; 
+            BAT *Opst = NULL, *oPst = NULL, *opSt = NULL, *opsT = NULL; 
+            BAT *Ospt = NULL, *oSpt = NULL, *osPt = NULL, *ospT = NULL; 
+            BAT *sorted;
+            BATiter ci = bat_iterator(commit);
+            BUN p, q;
+            BAT *id_translation = BATorder(BATmirror(map));
+            if (id_translation)
+            {
+	            map = BATmirror(BATmark(id_translation, 0));
+	            if (map)
+	            {
+		            id_translation = BATmark(BATmirror(id_translation), 0);
+		            if (id_translation)
+		            {/* TODO better? how? make error msgs */
+			            sb = BATjoin(sb, id_translation, 0);/*TODO number of triples*/
+			            pb = BATjoin(pb, id_translation, 0);
+			            ob = BATjoin(ob, id_translation, 0);
+			            sorted = BATmirror(BATsort(BATmirror(sb)));
+			            snprintf(map_buf, 1024, "%s_%s_map", *db, *graph);
+			            if ((BATname(map, map_buf) == 0) && BATmode(map, PERSISTENT))
+			            {
+			            	BUNfastins(commit, &(map->batCacheid), map_buf);
+				            if (sorted) {
+				            	ret = @:sort(sb,pb,ob,tb,Spot,sPot,spOt,spoT)@
+				                if (ret  == MAL_SUCCEED) {
+				                	ret = @:sort(sb,ob,pb,tb,Sopt,sOpt,soPt,sopT)@
+				                    if (ret == MAL_SUCCEED) {
+				                        BBPreclaim(sorted);
+				                        sorted = BATmirror(BATsort(BATmirror(pb)));
+				                        if (sorted) {
+				                        	ret = @:sort(pb,ob,sb,tb,Post,pOst,poSt,posT)@
+				                            if (ret == MAL_SUCCEED) {
+				                            	ret = @:sort(pb,sb,ob,tb,Psot,pSot,psOt,psoT)@
+				                                if (ret == MAL_SUCCEED) {
+				                                    BBPreclaim(sorted);
+				                                    sorted = BATmirror(BATsort(BATmirror(ob)));
+				                                    if (sorted) {
+				                                    	ret = @:sort(ob,pb,sb,tb,Opst,oPst,opSt,opsT)@
+				                                        if (ret == MAL_SUCCEED) {
+				                                        	ret = @:sort(ob,sb,pb,tb,Ospt,oSpt,osPt,ospT)@
+				                                            if (ret == MAL_SUCCEED) {
+				                                                ret = MAL_SUCCEED;
+				                                                BBPreclaim(sorted);
+				                                                goto succeed;
+				                                            }
+				                                            else
+				                                            	BBPreclaim(sorted);
+				                                            BBPreclaim(Opst);
+				                                            BBPreclaim(oPst);
+				                                            BBPreclaim(opSt);
+				                                            BBPreclaim(opsT);
+				                                        }
+				                                        else
+				                                        	BBPreclaim(sorted);
+				                                    }
+				                                    BBPreclaim(Psot);
+				                                    BBPreclaim(pSot);
+				                                    BBPreclaim(psOt);
+				                                    BBPreclaim(psoT);
+				                                }
+				                                else
+				                                	BBPreclaim(sorted);
+				                                BBPreclaim(Post);
+				                                BBPreclaim(pOst);
+				                                BBPreclaim(poSt);
+				                                BBPreclaim(posT);
+				                            }
+				                            else
+				                            	BBPreclaim(sorted);
+				                        }
+				                        BBPreclaim(Sopt);
+				                        BBPreclaim(sOpt);
+				                        BBPreclaim(soPt);
+				                        BBPreclaim(sopT);
+				                    }
+				                    else
+				                    	BBPreclaim(sorted);
+				                    BBPreclaim(Spot);
+				                    BBPreclaim(sPot);
+				                    BBPreclaim(spOt);
+				                    BBPreclaim(spoT);
+				                }
+				                else
+				                	BBPreclaim(sorted);
+				            }
+				succeed:    if (ret == MAL_SUCCEED && TMsubcommit(commit)) {
+				                ret = "commit failed";
+				            }
+							if (ret != MAL_SUCCEED) {
+				                /* we failed to create everything succesfully and commit. destroy all bats */
+				                BATloop(commit, p, q) { 
+				                    bat bid = *(bat*) BUNhead(ci,p);
+				                    BAT *b = BATdescriptor(bid);
+				                    if (b) {
+				                        BATmode(b, TRANSIENT);
+				                        BBPreleaseref(bid);
+				                    }
+				                }
+				            }
+				            BBPreleaseref(sb->batCacheid);/* release physical ref */
+				            BBPreleaseref(pb->batCacheid);
+				            BBPreleaseref(ob->batCacheid);
+				            BBPreleaseref(tb->batCacheid);
+			        	}
+			            else
+			            {
+			            	BBPreclaim(map);
+			            	map = NULL;
+			            	ret = "BATname or BATmode(map, PERSISTENT) failed";
+			            }
+		            }
+	            }
+	            BBPreclaim(id_translation);
+            }
+        }
+    }
+    BBPreclaim(commit); /* will release logical refs on all bats (if they are persistent, they will stay alive) */  
+    if (ret != MAL_SUCCEED)
+        throw(MAL, "RDFimportGraph", ret);
+    return MAL_SUCCEED;
+}
+
+static str getBatNames(str db, str graph, char *s_buf,char *p_buf,char *o_buf, char *t_buf, str order)
+{
+	str err = "order may be only one among \"spo\",\"sop\",\"pso\",\"pos\",\"osp\",\"ops\"";
+	if (strlen(order)>3)
+		return err;
+	if (strcmp(order, "spo")==0)
+	{
+		snprintf(s_buf, 1024, "%s_%s_Spot", db, graph);
+	    snprintf(p_buf, 1024, "%s_%s_sPot", db, graph);
+	    snprintf(o_buf, 1024, "%s_%s_spOt", db, graph);
+	    snprintf(t_buf, 1024, "%s_%s_spoT", db, graph);
+	}
+	else if (strcmp(order, "sop")==0)
+	{
+		snprintf(s_buf, 1024, "%s_%s_Sopt", db, graph);
+	    snprintf(o_buf, 1024, "%s_%s_sOpt", db, graph);
+	    snprintf(p_buf, 1024, "%s_%s_soPt", db, graph);
+	    snprintf(t_buf, 1024, "%s_%s_sopT", db, graph);
+	}
+	else if (strcmp(order, "pos")==0)
+	{
+	    snprintf(p_buf, 1024, "%s_%s_Post", db, graph);
+	    snprintf(o_buf, 1024, "%s_%s_pOst", db, graph);
+		snprintf(s_buf, 1024, "%s_%s_poSt", db, graph);
+		snprintf(t_buf, 1024, "%s_%s_posT", db, graph);
+	}
+	else if (strcmp(order, "pso")==0)
+	{
+	    snprintf(p_buf, 1024, "%s_%s_Psot", db, graph);
+		snprintf(s_buf, 1024, "%s_%s_pSot", db, graph);
+	    snprintf(o_buf, 1024, "%s_%s_psOt", db, graph);
+	    snprintf(t_buf, 1024, "%s_%s_psoT", db, graph);
+	}
+	else if (strcmp(order, "osp")==0)
+	{
+	    snprintf(o_buf, 1024, "%s_%s_Ospt", db, graph);
+		snprintf(s_buf, 1024, "%s_%s_oSpt", db, graph);
+	    snprintf(p_buf, 1024, "%s_%s_osPt", db, graph);
+	    snprintf(t_buf, 1024, "%s_%s_ospT", db, graph);
+	}
+	else if (strcmp(order, "ops")==0)
+	{
+	    snprintf(o_buf, 1024, "%s_%s_Opst", db, graph);
+	    snprintf(p_buf, 1024, "%s_%s_oPst", db, graph);
+		snprintf(s_buf, 1024, "%s_%s_opSt", db, graph);
+		snprintf(t_buf, 1024, "%s_%s_opsT", db, graph);
+	}
+	else
+		return err;
+	return MAL_SUCCEED;
+}
+
+static str checkSyntax(str syntax)
+{
+	if (	/*!strcmp(syntax, "atom") ||*/
+			!strcmp(syntax, "ntriples") ||
+			!strcmp(syntax, "rdfxml") ||
+			!strcmp(syntax, "rdfxml-abbrev") ||
+			!strcmp(syntax, "rdfxml-xmp") ||
+			!strcmp(syntax, "turtle") ||
+			/*!strcmp(syntax, "rdfxml-xmp") ||*/
+			!strcmp(syntax, "rss-1.0") ||
+			!strcmp(syntax, "dot"))
+	{
+		return MAL_SUCCEED;
+	}
+	else
+		return "syntax may be only one among \"atom\",\"ntriples\",\"rdfxml\",\"rdfxml-abbrev\",\"rdfxml-xmp\",\"turtle\",\"rdfxml-xmp\",\"rss-1.0\",\"dot\"";
+}
+
+static str RDFserializeTriple(raptor_statement *triple, raptor_serializer* serializer,
+							str sv, str pv, str ov, chr tv)
+{
+	str ret = MAL_SUCCEED;
+	bool 	dealloc_subj = false, dealloc_prop = false,	dealloc_obj = false,
+			dealloc_obj_datatype = false, dealloc_obj_lang = false;
+	chr ss = sv[0];
+	chr ps = pv[0];
+	chr os = ov[0];
+	rdf_section subj_sec = RDFchrToSection(ss);
+	rdf_section prop_sec = RDFchrToSection(ps);
+	rdf_section obj_sec = RDFchrToSection(os);
+	rdf_type obj_type = RDFchrToType(tv);
+	sv = sv + sizeof(chr);
+	pv = pv + sizeof(chr);
+	ov = ov + sizeof(chr);
+	
+	if (subj_sec == RDF_SEC_IRI)
+	{
+		triple->subject = raptor_new_uri((const unsigned char*)sv);
+		if (triple->subject)
+		{
+			triple->subject_type = RAPTOR_IDENTIFIER_TYPE_RESOURCE;
+			dealloc_subj = true;
+		}
+		else
+			ret = "Failed to allocate memory for the subject IRI";
+	}
+	else if (subj_sec == RDF_SEC_BLANK)
+	{
+		triple->subject = sv;
+		triple->subject_type = RAPTOR_IDENTIFIER_TYPE_ANONYMOUS;
+	}
+	else
+		ret = "Subject type unknown";
+	
+	if (ret == MAL_SUCCEED)
+	{
+		if (prop_sec == RDF_SEC_IRI)
+		{
+			triple->predicate = raptor_new_uri((const unsigned char*)pv);
+			if (triple->predicate)
+			{
+				triple->predicate_type = RAPTOR_IDENTIFIER_TYPE_RESOURCE;
+				dealloc_prop = true;
+			}
+			else
+				ret = "Failed to allocate memory for the property IRI";
+		}
+		else
+			ret = "Property type unknown";
+	}
+	
+	if (ret == MAL_SUCCEED)
+	{
+		str xsd_type = RDFtypeToXsd(obj_type);
+		
+		if (xsd_type != NULL)
+		{
+			triple->object_literal_datatype = raptor_new_uri((const unsigned char*)xsd_type);
+			if (triple->object_literal_datatype)
+				dealloc_obj_datatype = true;
+			else
+				ret = "Failed to allocate memory for the object datatype";
+		}
+		else
+			triple->object_literal_datatype = NULL;
+		
+		triple->object_literal_language = NULL;
+		
+		if (ret == MAL_SUCCEED)
+		{
+			if (obj_sec == RDF_SEC_BLANK && obj_type == RDF_TYPE_BLANK)
+			{
+				triple->object = ov;
+				triple->object_type = RAPTOR_IDENTIFIER_TYPE_ANONYMOUS;
+			}
+			else if (obj_sec == RDF_SEC_IRI && obj_type == RDF_TYPE_IRI)
+			{
+				triple->object = raptor_new_uri((const unsigned char*)ov);
+				if (triple->object)
+				{
+					triple->object_type = RAPTOR_IDENTIFIER_TYPE_RESOURCE;
+					dealloc_obj = true;
+				}
+				else
+					ret = "Failed to allocate memory for the object IRI value";
+			}
+			else
+			{
+				triple->object_type = RAPTOR_IDENTIFIER_TYPE_LITERAL;
+				
+				if ( (	obj_sec == RDF_SEC_EMPTY_STRING ||
+							obj_sec == RDF_SEC_LANG_EMPTY_STRING ||
+							obj_sec == RDF_SEC_STRING ||
+							obj_sec == RDF_SEC_LANG_STRING ) &&
+						  (	obj_type == RDF_TYPE_PLAIN ||
+							obj_type == RDF_TYPE_STRING ) )
+				{
+					if (obj_sec == RDF_SEC_LANG_EMPTY_STRING || obj_sec == RDF_SEC_LANG_STRING)
+					{
+						unsigned char *lang;
+						int i;
+						chr cur = ov[0];
+						for (i=0; cur!='\@'; i++)
+							cur = ov[i];
+						lang = GDKmalloc(sizeof(chr)*i);
+						if (lang)
+						{
+							dealloc_obj_lang = true;
+							strncpy((char *)lang, ov, i);
+							lang[i-1] = '\0';
+							triple->object_literal_language = lang;
+							ov = &(ov[i]);
+						}
+						else
+							ret = "Failed to allocate memory for the object language";
+					}
+					if (ret == MAL_SUCCEED)
+						triple->object = ov;
+				}
+				else if (obj_sec == RDF_SEC_XML_LITERAL && obj_type == RDF_TYPE_XML_LITERAL)
+					triple->object = ov;
+				else if (obj_sec == RDF_SEC_FALSE && obj_type == RDF_TYPE_BOOLEAN)
+					triple->object = "0";
+				else if (obj_sec == RDF_SEC_TRUE && obj_type == RDF_TYPE_BOOLEAN)
+					triple->object = "1";
+				else if (obj_sec == RDF_SEC_OTHER && obj_type == RDF_TYPE_OTHER)
+				{
+					unsigned char *datatype;
+					int i;
+					chr cur = ov[0];
+					for (i=0; cur!='^'; i++)
+						cur = ov[i];
+					datatype = GDKmalloc(sizeof(chr)*i);
+					if (datatype)
+					{
+						strncpy((char *)datatype, ov, i);
+						datatype[i-1] = '\0';
+						triple->object_literal_datatype = raptor_new_uri(datatype);
+						GDKfree(datatype);
+						if (triple->object_literal_datatype)
+						{
+							dealloc_obj_datatype = true;
+							ov = &(ov[i]);
+							triple->object = ov;
+						}
+						else
+							ret = "Failed to allocate memory for the object datatype URI";
+					}
+					else
+						ret = "Failed to allocate memory for the object datatype";
+				}
+			}
+		}
+	}
+	
+	if (ret == MAL_SUCCEED)
+	{
+		/* Write the triple */
+		if (raptor_serialize_statement(serializer, triple)!=0)
+			ret="failed to serialize a statement";
+	}
+	if (dealloc_subj)
+		raptor_free_uri((raptor_uri*)triple->subject);
+	if (dealloc_prop)
+		raptor_free_uri((raptor_uri*)triple->predicate);
+	if (dealloc_obj_datatype)
+		raptor_free_uri((raptor_uri*)triple->object_literal_datatype);
+	if (dealloc_obj_lang)
+		GDKfree((unsigned char *)triple->object_literal_language);
+	if (dealloc_obj)
+		raptor_free_uri((raptor_uri*)triple->object);
+	return ret;
+}
+
+static str 
+RDFexport_(bat M, bat S, bat P, bat O, bat T, str syntax)
+{
+	char ret_array[RET_MAXLEN];
     str ret = MAL_SUCCEED;
     BAT *map = BATdescriptor(M);
-    (void)url;
     if (map)
     {
         BAT *sb = BATdescriptor(S);
@@ -460,70 +1421,76 @@ RDFexport_(str url, bat M, bat S, bat P, bat O, str syntax)
                 BAT *ob = BATdescriptor(O);
                 if (ob)
                 {
-                	raptor_serializer* rdf_serializer;
-                	const char *filename="/ufs/antonell/Desktop/output.rdf";
-                	lng i, cnt = BATcount(ob);
-                    oid *o = (oid *) Tloc(ob, BUNfirst(ob));
-                    oid *p = (oid *) Tloc(pb, BUNfirst(pb));
-                    oid *s = (oid *) Tloc(sb, BUNfirst(sb));
-                    //var_t position in heap
-                    var_t *off = (var_t *) Tloc(map, BUNfirst(map));
-                    str base = (str) map->T->vheap->base;//heap first position
-                    
-                    raptor_init();
-                    rdf_serializer = raptor_new_serializer(syntax);
-                    
-                    if (rdf_serializer)
-                    {
-                    	char ret_array[RET_MAXLEN];
-    			    	str ret_ptr = ret_array;
-    			    	ret_array[0] = '\0';
-                    	raptor_serializer_set_error_handler(rdf_serializer, &ret_ptr, message_handler);
-	                    raptor_serializer_set_warning_handler(rdf_serializer, &ret_ptr, message_handler);
-	                    if (raptor_serialize_start_to_filename(rdf_serializer, filename) == 0)
+                	BAT *tb = BATdescriptor(T);
+                	if (tb)
+                	{
+				raptor_serializer* rdf_serializer;
+		        	const char *filename="/ufs/antonell/Desktop/output.rdf";
+		        	lng i, cnt = BATcount(ob);
+	                    oid *o = (oid *) Tloc(ob, BUNfirst(ob));
+	                    oid *p = (oid *) Tloc(pb, BUNfirst(pb));
+	                    oid *s = (oid *) Tloc(sb, BUNfirst(sb));
+	                    chr *t = (chr *) Tloc(tb, BUNfirst(tb));
+	                    /* var_t position in heap */
+	                    var_t *off = (var_t *) Tloc(map, BUNfirst(map));
+	                    str base = (str) map->T->vheap->base;/* heap first position */
+	                    
+	                    raptor_init();
+	                    rdf_serializer = raptor_new_serializer(syntax);
+	                    
+	                    if (rdf_serializer)
 	                    {
-		                    for(i=0; i <cnt; i++)
-		                    {
-		                    	if (strlen(ret_ptr)==0)
-		                    	{
-		                    		raptor_statement *triple;
-			                    	str ov = base + off[o[i]];
-		    	                    str pv = base + off[p[i]];
-		    	                    str sv = base + off[s[i]];
-									/* Make a triple with URI subject, URI predicate, literal object */
-									triple=GDKmalloc(sizeof(raptor_statement));
-									
-									triple->subject=(void*)raptor_new_uri((const unsigned char*)sv);
-									triple->subject_type=RAPTOR_IDENTIFIER_TYPE_RESOURCE;
-									
-									triple->predicate=(void*)raptor_new_uri((const unsigned char*)pv);
-									triple->predicate_type=RAPTOR_IDENTIFIER_TYPE_RESOURCE;
-									
-									triple->object=ov;
-									triple->object_type=RAPTOR_IDENTIFIER_TYPE_LITERAL;
-									//triple->object_literal_language=(const unsigned char*)"en";
-									triple->object_literal_language=NULL;
-									triple->object_literal_datatype = NULL;
-									/* Write the triple */
-									if (raptor_serialize_statement(rdf_serializer, triple)!=0)
-										ret="failed to serialize a statement";
-									
-									/* Delete the triple */
-									raptor_free_uri((raptor_uri*)triple->subject);
-									raptor_free_uri((raptor_uri*)triple->predicate);
-									GDKfree(triple);
-		                    	}
-		                    }
-		                    ret = MAL_SUCCEED;
-		                    raptor_serialize_end(rdf_serializer);
+	                    	message_handler_vars *info = GDKmalloc(sizeof(message_handler_vars));
+	                    	if (info)
+	                    	{
+	                    		info->parser=NULL;
+	                    		info->serializer = rdf_serializer;
+	                    		info->ret = &ret;
+	                    		info->ret_array = ret_array;
+	                    		
+		                    	raptor_serializer_set_error_handler(rdf_serializer, info, message_handler);
+			                    raptor_serializer_set_warning_handler(rdf_serializer, info, message_handler);
+			                    if (raptor_serialize_start_to_filename(rdf_serializer, filename) == 0)
+			                    {
+				                    for(i=0; i <cnt; i++)
+				                    {
+				                    	if (ret==MAL_SUCCEED)
+				                    	{
+				                    		raptor_statement *triple;
+					                    	str ov = base + off[o[i]];
+				    	                    str pv = base + off[p[i]];
+				    	                    str sv = base + off[s[i]];
+				    	                    chr tv = t[i];
+				    	                    /*stream_printf(GDKout, "'%s' '%s' '%s' '%s'\n", ov, pv, sv, url);*/
+											/* Make a triple with URI subject, URI predicate, literal object */
+											triple=GDKmalloc(sizeof(raptor_statement));
+											if (triple)
+											{
+												ret = RDFserializeTriple(triple, rdf_serializer, sv, pv, ov, tv);
+												GDKfree(triple);
+											}
+											else
+												ret = "Failed to allocate memory for raptor_statement";
+				                    	}
+				                    }
+				                    raptor_serialize_end(rdf_serializer);
+			                    }
+			                    else
+			                    	if (ret == MAL_SUCCEED)
+			                    		ret = "raptor_serialize_start_to_filename failed";
+			                    GDKfree(info);
+	                    	}
+	                    	else
+	                    		ret = "Failed to allocate memory for message_handler_vars";
+	                    	raptor_free_serializer(rdf_serializer);
 	                    }
 	                    else
-	                    	ret = "raptor_serialize_start failed";
-	                    raptor_free_serializer(rdf_serializer);
-                    }
-                    else
-                    	ret = "raptor_new_serializer failed";
-                    raptor_finish();
+	                    	ret = "raptor_new_serializer failed";
+	                    raptor_finish();
+	                    BBPreleaseref(tb->batCacheid);
+                	}
+                	else
+                		ret = "Failed to obtain T bat";
                     BBPreleaseref(ob->batCacheid);
                 }
                 else
@@ -544,265 +1511,23 @@ RDFexport_(str url, bat M, bat S, bat P, bat O, str syntax)
 }
 
 str 
-RDFexport(str *url, bat M, bat S, bat P, bat O) {
-    str ret = RDFexport_(*url, M, S, P, O, "dummy syntax");
+RDFexport(bat M, bat S, bat P, bat O, bat T) {
+    str ret = RDFexport_(M, S, P, O, T, "dummy syntax");
     if (ret != MAL_SUCCEED)
         throw(MAL, "RDFexport", ret);
     return MAL_SUCCEED;
 }
 
-int CTrefine(BAT **ret, BAT *b, BAT *a);
-BAT * BATmalleftfetchjoin(BAT *l, BAT *r);
-static str
-RDFsort(BAT *commit,
-		BAT *S, BAT *sb, BAT *pb, BAT *ob,
-		BAT **Spo, BAT **sPo, BAT **spO,
-		str Spo_nme, str sPo_nme, str spO_nme, str db, str graph)
+str RDFexportGraph(int *d, str *db, str *graph, str *order, str *syntax)
 {
-    BAT *SPO, *SP;
-    str ret = "RDFsort: allocation failure";
-    CTrefine(&SP, S, pb);
-    if (SP) {
-        CTrefine(&SPO, SP, ob);
-        BBPreclaim(SP);
-        if (SPO) {
-            BAT *piv = BATmirror(BATmark(SPO, 0));
-            BBPreclaim(SPO);
-            if (piv) {
-            	/*BATleftfetchjoin wants also a size_t estimate
-            	 * BATmalleftfetchjoin not. Which has to be used?
-            	 * TODO*/ 
-                *Spo = BATleftfetchjoin(piv, sb, oid_nil);
-                if (Spo) {
-                    *sPo = BATleftfetchjoin(piv, pb, oid_nil);
-                    if (sPo) {
-                        *spO = BATleftfetchjoin(piv, ob, oid_nil);
-                        if (spO) {
-                            char Spo_buf[1024], sPo_buf[1024], spO_buf[1024];
-                            snprintf(Spo_buf, 1024, "%s_%s_%s", db, graph, Spo_nme);
-                            snprintf(sPo_buf, 1024, "%s_%s_%s", db, graph, sPo_nme);
-                            snprintf(spO_buf, 1024, "%s_%s_%s", db, graph, spO_nme);
-    
-                            ret = "RDFsort: BATname failure";
-                            if (BATname(*Spo, Spo_buf) == 0 &&
-                                BATname(*sPo, sPo_buf) == 0 &&
-                                BATname(*spO, spO_buf) == 0) 
-                            {
-                                ret = "RDFsort: BATmode failure";
-                                if (BATmode(*Spo, PERSISTENT) &&
-                                    BATmode(*sPo, PERSISTENT) &&
-                                    BATmode(*spO, PERSISTENT))
-                                {
-                                    BBPreclaim(piv);
-                                    BUNfastins(commit, &((*Spo)->batCacheid), Spo_buf);
-                                    BUNfastins(commit, &((*sPo)->batCacheid), sPo_buf);
-                                    BUNfastins(commit, &((*spO)->batCacheid), spO_buf);
-
-                                    // physical reference, i.e. memory pressure
-                                    BBPreleaseref((*Spo)->batCacheid);
-                                    BBPreleaseref((*sPo)->batCacheid);
-                                    BBPreleaseref((*spO)->batCacheid);
-                                    return MAL_SUCCEED;
-                                } else {
-                                    BATmode(*Spo, TRANSIENT);
-                                    BATmode(*sPo, TRANSIENT);
-                                    BATmode(*spO, TRANSIENT);
-                                }
-                            }
-                            BBPreclaim(*spO);
-                        }
-                        BBPreclaim(*sPo);
-                    }
-                    BBPreclaim(*Spo);
-                }
-                BBPreclaim(piv);
-            }
-        } 
-    }	
-    return ret;
-}
-
-@= sort
-RDFsort(commit, sorted, @1,@2,@3,&@4,&@5,&@6,"@4","@5","@6",*db,*graph);
-@c
-str RDFimportGraph(int *d, str *url, str *db, str *graph)
-{
-    BAT *map = NULL, *sb = NULL, *ob=NULL,
-    	*pb = NULL, *tb = NULL, *commit = BATnew(TYPE_bat, TYPE_str, 20);
-    str ret = "RDFimportGraph failed to obtain bats";
-    (void)d;
-    if (commit) {
-        char map_buf[1024];
-        int mapIndex;
-        snprintf(map_buf, 1024, "%s_%s_map", *db, *graph);
-        mapIndex = BBPindex(map_buf);
-        if (mapIndex) {
-            map = BATdescriptor(mapIndex);
-        } else {
-            map = BATnew(TYPE_void, TYPE_str, 8192);//TODO fix constant
-            if (map && (BATname(map, map_buf) == 0) && BATmode(map, PERSISTENT)) {
-                /*
-                 * inserts in commit a pointer to map in the left column
-                 * and the map name (map_buf) in the right one
-                 */
-		BATseqbase(map, 0);
-            	BUNfastins(commit, &(map->batCacheid), map_buf);
-            } else if (map) {
-                BBPreclaim(map);
-                map = NULL;
-            }
-        }
-    }
-    if (map) {
-        ret = RDFimport_(&sb, &pb, &ob, &tb, *url, map);
-        if (ret == MAL_SUCCEED) {
-            BAT *Spo = NULL, *sPo = NULL, *spO = NULL; 
-            BAT *Sop = NULL, *sOp = NULL, *soP = NULL; 
-            BAT *Pos = NULL, *pOs = NULL, *poS = NULL; 
-            BAT *Pso = NULL, *pSo = NULL, *psO = NULL; 
-            BAT *Ops = NULL, *oPs = NULL, *opS = NULL; 
-            BAT *Osp = NULL, *oSp = NULL, *osP = NULL; 
-            
-            BATiter ci = bat_iterator(commit);
-            BUN p, q;
-            BAT *sorted = BATmirror(BATsort(BATmirror(sb)));
-
-            ret = "RDFimportGraph: sorting failed";
-            if (sorted) {
-            	ret = @:sort(sb,pb,ob,Spo,sPo,spO)@
-                if (ret  == MAL_SUCCEED) {
-                	ret = @:sort(sb,ob,pb,Sop,sOp,soP)@
-                    if (ret == MAL_SUCCEED) {
-                        BBPreclaim(sorted);
-                        sorted = BATmirror(BATsort(BATmirror(pb)));
-                        if (sorted) {
-                        	ret = @:sort(pb,ob,sb,Pos,pOs,poS)@
-                            if (ret == MAL_SUCCEED) {
-                            	ret = @:sort(pb,sb,ob,Pso,pSo,psO)@
-                                if (ret == MAL_SUCCEED) {
-                                    BBPreclaim(sorted);
-                                    sorted = BATmirror(BATsort(BATmirror(ob)));
-                                    if (sorted) {
-                                    	ret = @:sort(ob,pb,sb,Ops,oPs,opS)@
-                                        if (ret == MAL_SUCCEED) {
-                                        	ret = @:sort(ob,sb,pb,Osp,oSp,osP)@
-                                            if (ret == MAL_SUCCEED) {
-                                                ret = MAL_SUCCEED;
-                                                goto succeed;
-                                            }
-                                            BBPreclaim(Ops); BBPreclaim(oPs); BBPreclaim(opS);
-                                        }
-                                        BBPreclaim(sorted);
-                                    } 
-                                    BBPreclaim(psO); BBPreclaim(pSo); BBPreclaim(psO);
-                                } 
-                                BBPreclaim(Pos); BBPreclaim(pOs); BBPreclaim(poS);
-                            } 
-                        }
-                        BBPreclaim(Sop); BBPreclaim(sOp); BBPreclaim(soP);
-                    } 
-                    BBPreclaim(Spo); BBPreclaim(sPo); BBPreclaim(spO);
-                } 
-            }
-succeed:    if (ret == MAL_SUCCEED && TMsubcommit(commit)) {
-                ret = "RDFimportGraph: commit failed";
-            }
-	    if (ret != MAL_SUCCEED) {
-                /* we failed to create everything succesfully and commit. destroy all bats */
-                BATloop(commit, p, q) { 
-                    bat bid = *(bat*) BUNhead(ci,p);
-                    BAT *b = BATdescriptor(bid);
-                    if (b) {
-                        BATmode(b, TRANSIENT);
-                        BBPreleaseref(bid);
-                    }
-                }
-            }
-            BBPreleaseref(sb->batCacheid);// release physical ref
-            BBPreleaseref(pb->batCacheid);
-            BBPreleaseref(ob->batCacheid);
-        }
-        BBPreclaim(commit); // will release logical refs on all bats (if they are persistent, they will stay alive)  
-    }
-    if (ret != MAL_SUCCEED)
-        throw(MAL, "RDFimportGraph", ret);
-    return MAL_SUCCEED;
-}
-
-static str getBatNames(str db, str graph, char *s_buf,char *p_buf,char *o_buf, str order)
-{
-	str err = "order may be only one among \"spo\",\"sop\",\"pso\",\"pos\",\"osp\",\"ops\"";
-	if (strlen(order)>3)
-		return err;
-	if (strcmp(order, "spo")==0)
-	{
-		snprintf(s_buf, 1024, "%s_%s_Spo", db, graph);
-	    snprintf(p_buf, 1024, "%s_%s_sPo", db, graph);
-	    snprintf(o_buf, 1024, "%s_%s_spO", db, graph);
-	}
-	else if (strcmp(order, "sop")==0)
-	{
-		snprintf(s_buf, 1024, "%s_%s_Sop", db, graph);
-	    snprintf(o_buf, 1024, "%s_%s_sOp", db, graph);
-	    snprintf(p_buf, 1024, "%s_%s_soP", db, graph);
-	}
-	else if (strcmp(order, "pos")==0)
-	{
-	    snprintf(p_buf, 1024, "%s_%s_Pos", db, graph);
-	    snprintf(o_buf, 1024, "%s_%s_pOs", db, graph);
-		snprintf(s_buf, 1024, "%s_%s_poS", db, graph);
-	}
-	else if (strcmp(order, "pso")==0)
-	{
-	    snprintf(p_buf, 1024, "%s_%s_Pso", db, graph);
-		snprintf(s_buf, 1024, "%s_%s_pSo", db, graph);
-	    snprintf(o_buf, 1024, "%s_%s_psO", db, graph);
-	}
-	else if (strcmp(order, "osp")==0)
-	{
-	    snprintf(o_buf, 1024, "%s_%s_Osp", db, graph);
-		snprintf(s_buf, 1024, "%s_%s_oSp", db, graph);
-	    snprintf(p_buf, 1024, "%s_%s_osP", db, graph);
-	}
-	else if (strcmp(order, "ops")==0)
-	{
-	    snprintf(o_buf, 1024, "%s_%s_Ops", db, graph);
-	    snprintf(p_buf, 1024, "%s_%s_oPs", db, graph);
-		snprintf(s_buf, 1024, "%s_%s_opS", db, graph);
-	}
-	else
-		return err;
-	return MAL_SUCCEED;
-}
-
-static str checkSyntax(str syntax)
-{
-	if (	//!strcmp(syntax, "atom") ||
-			!strcmp(syntax, "ntriples") ||
-			!strcmp(syntax, "rdfxml") ||
-			!strcmp(syntax, "rdfxml-abbrev") ||
-			!strcmp(syntax, "rdfxml-xmp") ||
-			!strcmp(syntax, "turtle") ||
-			//!strcmp(syntax, "rdfxml-xmp") ||
-			!strcmp(syntax, "rss-1.0") ||
-			!strcmp(syntax, "dot"))
-	{
-		return MAL_SUCCEED;
-	}
-	else
-		return "syntax may be only one among \"atom\",\"ntriples\",\"rdfxml\",\"rdfxml-abbrev\",\"rdfxml-xmp\",\"turtle\",\"rdfxml-xmp\",\"rss-1.0\",\"dot\"";
-}
-
-str RDFexportGraph(int *d, str *url, str *db, str *graph, str *order, str *syntax)
-{
-    char m_buf[1024], o_buf[1024], p_buf[1024], s_buf[1024];
-    bat map, ob, pb, sb;
+    char m_buf[1024], o_buf[1024], p_buf[1024], s_buf[1024], t_buf[1024];
+    bat map, ob, pb, sb, tb;
     str ret;
     (void)d;
     ret = checkSyntax(*syntax);
     if (ret!= MAL_SUCCEED)
         throw(MAL, "RDFexportGraph", ret);
-    ret = getBatNames(*db, *graph, s_buf, p_buf, o_buf, *order);
+    ret = getBatNames(*db, *graph, s_buf, p_buf, o_buf, t_buf, *order);
     if (ret!= MAL_SUCCEED)
     	throw(MAL, "RDFexportGraph", ret);
     snprintf(m_buf, 1024, "%s_%s_map", *db, *graph);
@@ -814,7 +1539,12 @@ str RDFexportGraph(int *d, str *url, str *db, str *graph, str *order, str *synta
             if (pb) {
                 ob = BBPindex(o_buf);
                 if (ob) {
-                    ret = RDFexport_(*url, map, sb, pb, ob, *syntax);
+                	tb = BBPindex(t_buf);
+                	if (tb) {
+                		ret = RDFexport_(map, sb, pb, ob, tb, *syntax);
+                	}
+                	else
+                		ret = "Failed to obtain T bat";
                 }
                 else
                 	ret = "Failed to obtain O bat";
