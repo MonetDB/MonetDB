@@ -61,9 +61,6 @@ command project(b:bat[:oid,:any_1],i:int):bat[:oid,:int]
 address ARRAYproject
 comment "Fill an array representation with constants ";
 
-pattern print(a:bat[:any_1,:any_2],b:bat[:any_1,:int]...) :void 
-address ARRAYprint
-comment "Prints an array, using 1 value bat and N aligned index bats";
 @- Implementation
 @include ../mal/prelude.mx
 @h
@@ -114,7 +111,6 @@ comment "Prints an array, using 1 value bat and N aligned index bats";
 
 array_export str ARRAYproduct(int *ret, int *bid, int *rid);
 array_export str ARRAYproject(int *ret, int *bid, int *cst);
-array_export str ARRAYprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @= grid_impl
 array_export str ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
@@ -377,16 +373,6 @@ ARRAYproject(int *ret, int *bid, int *cst)
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
-
-str
-ARRAYprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	throw(MAL, "array.print", "not supported yet\n");
-}
-
 
 
 /*---------------------------------------------------------------------------*/
