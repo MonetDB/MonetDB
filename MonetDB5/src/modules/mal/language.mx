@@ -94,7 +94,7 @@ address MALstartDataflow
 comment "The current guarded block is executed using
 dataflow control.";
 
-command register(m:str,f:str,code:str,help:str):void
+pattern register(m:str,f:str,code:str,help:str):void
 address CMDregisterFunction
 comment"Compile the code string and register it as a MAL function.";
 
@@ -104,7 +104,7 @@ comment "Evaluate a MAL string program.";
 pattern call(s:bat[:oid,:str]):void
 address CMDcallBAT
 comment "Evaluate a program stored in a BAT.";
-command source(f:str):void
+pattern source(f:str):void
 address CMDevalFile
 comment "Merge the instructions stored in the 
 	file with the current program.";
@@ -139,9 +139,9 @@ language_export str MALassertSht(int *ret, sht *val, str *msg);
 language_export str MALassertInt(int *ret, int *val, str *msg);
 language_export str MALassertLng(int *ret, lng *val, str *msg);
 language_export str MALstartDataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help);
+language_export str CMDregisterFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDevalFile(int *ret, str *fnme);
+language_export str CMDevalFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDdebug(int *ret, int *flg);
@@ -245,10 +245,8 @@ CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 MALstartDataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret;
 	str msg= MAL_SUCCEED;
-
-	ret = (int*) getArgReference(stk,pci,0);
+	int *ret = (int*) getArgReference(stk,pci,0);
 	if (pci == NULL || stk == NULL) {
 		*ret = 1; /* ignore dataflow request */
 		return MAL_SUCCEED;
@@ -261,15 +259,17 @@ MALstartDataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str 
-CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help){
+CMDregisterFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Client c;
 	Symbol sym= NULL;
-	MalBlkPtr mb;
-/*
+	int *ret = (int *) getArgReference(stk,pci,0);
+	str *mod = (str *) getArgReference(stk,pci,1);
+	str *fcn = (str *) getArgReference(stk,pci,2);
+	str *code = (str *) getArgReference(stk,pci,3);
+	str *help = (str *) getArgReference(stk,pci,4);
 	InstrPtr sig;
-*/
 	str msg;
-	(void) m; (void) f;
 
 	c= MCgetClient();
 	msg= compileString(&sym, c,*code);
@@ -280,23 +280,21 @@ CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help){
 		if( help)
 			mb->help= GDKstrdup(*help);
 		printFunction(c->fdout, mb,0);
-/*
 		sig= getSignature(sym);
 		renameFunction( getModuleId(sig), getFunctionId(sig), 
-			putName(*m, strlen(*m)), putName(*f,strlen(*f)));
-*/
+			putName(*mod, strlen(*mod)), putName(*fcn,strlen(*fcn)));
 	}
 	*ret = 0;
 	return msg;
 }
 str
-CMDevalFile(int *ret, str *fnme)
+CMDevalFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str s = *fnme;
+	str s = *(str *) getArgReference(stk,pci,1);
 	Client c = MCgetClient();
 	char *msg = NULL;
+	(void) mb;
 
-	(void) ret;		/* fool compiler */
 	if (s == 0) 
 		throw(MAL, "mal.evalFile", "File name missing\n");
 

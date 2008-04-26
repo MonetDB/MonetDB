@@ -79,10 +79,10 @@ comment "Deactivate the counter";
 command openStream():void 
 address CMDopenProfilerStream
 comment "Sent the events to output stream";
-command openStream(fnme:str):void
+pattern openStream(fnme:str):void
 address CMDsetProfilerFile
 comment "Send the log events to a file ";
-command openStream(host:str, port:int):void
+pattern openStream(host:str, port:int):void
 address CMDsetProfilerStream
 comment "Send the log events to a stream ";
 command closeStream():void 
@@ -96,7 +96,7 @@ command setNone():void
 address CMDsetNoneProfiler
 comment "Short cut for clrFilter(*,*).";
 
-command setFilter(mod:str,fcn:str):void
+pattern setFilter(mod:str,fcn:str):void
 address CMDsetFilterProfiler
 comment "Generate an event record for all 
 	function calls that satisfy the regular 
@@ -108,7 +108,7 @@ address CMDsetFilterVariable
 comment "Generate an event record for
 	every instruction where v is used.";
 
-command clrFilter(mod:str,fcn:str):void
+pattern clrFilter(mod:str,fcn:str):void
 address CMDclrFilterProfiler
 comment "Clear the performance trace bit 
 	of the selected functions.";
@@ -117,14 +117,14 @@ pattern clrFilter(v:any):void
 address CMDsetFilterVariable
 comment "Stop tracing the variable" ;
 
-command setStartPoint(mod:str,fcn:str):void
+pattern setStartPoint(mod:str,fcn:str):void
 address CMDstartPointProfiler
 comment "Start performance tracing at mod.fcn";
-command setEndPoint(mod:str,fcn:str)
+pattern setEndPoint(mod:str,fcn:str)
 address CMDendPointProfiler
 comment "End performance tracing after mod.fcn";
 
-command start():void
+pattern start():void
 address CMDstartProfiler
 comment "Start performance tracing";
 
@@ -132,7 +132,7 @@ command noop():void
 address CMDnoopProfiler
 comment "Fetch any pending performance events";
 
-command stop():void
+pattern stop():void
 address CMDstopProfiler
 comment "Stop performance tracing";
 
@@ -191,18 +191,18 @@ Using the Monet Performance Profiler is constrained by the mal_profiler.
 
 profiler_export str CMDactivateProfiler(int *res, str *name);
 profiler_export str CMDdeactivateProfiler(int *res, str *name);
-profiler_export str CMDsetFilterProfiler(int *res, str *mod, str *fcn);
+profiler_export str CMDsetFilterProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDsetAllProfiler(int *res);
 profiler_export str CMDsetFilterVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 profiler_export str CMDclrFilterVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
-profiler_export str CMDclrFilterProfiler(int *res, str *mod, str *fcn);
+profiler_export str CMDclrFilterProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDsetNoneProfiler(int *res);
-profiler_export str CMDsetProfilerFile(int *res, str *fnme);
-profiler_export str CMDsetProfilerStream(int *res, str *host, int *port);
-profiler_export str CMDstartPointProfiler(int *res, str *mod, str *fcn);
-profiler_export str CMDendPointProfiler(int *res, str *mod, str *fcn);
-profiler_export str CMDstopProfiler(int *res);
-profiler_export str CMDstartProfiler(int *res);
+profiler_export str CMDsetProfilerFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDsetProfilerStream (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDstartPointProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDendPointProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDstopProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDstartProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDnoopProfiler(int *res);
 profiler_export str CMDclearTrace(int *res);
 profiler_export str CMDdumpTrace(int *res);
@@ -238,9 +238,11 @@ CMDdeactivateProfiler(int *res, str *name)
 }
 
 str
-CMDsetFilterProfiler(int *res, str *mod, str *fcn)
+CMDsetFilterProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;		/* fool compiler */
+	str *mod = (str*) getArgReference(stk,pci,1);
+	str *fcn = (str*) getArgReference(stk,pci,2);
+	(void) mb;		/* fool compiler */
 	checkProfiler("setFilter");
 	setFilter(MCgetClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
@@ -253,7 +255,9 @@ CMDsetAllProfiler(int *res)
 	str y = GDKstrdup("*");
 
 	(void) res;		/* fool compiler */
-	return CMDsetFilterProfiler(res, &x, &y);
+	checkProfiler("setFilter");
+	setFilter(MCgetClient()->nspace, x, y);
+	return MAL_SUCCEED;
 }
 
 str
@@ -286,9 +290,11 @@ CMDcloseProfilerStream(int *res)
 }
 
 str
-CMDclrFilterProfiler(int *res, str *mod, str *fcn)
+CMDclrFilterProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;		/* fool compiler */
+	str *mod = (str*) getArgReference(stk,pci,1);
+	str *fcn = (str*) getArgReference(stk,pci,2);
+	(void) mb;		/* fool compiler */
 	checkProfiler("clrFilter");
 	clrFilter(MCgetClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
@@ -301,51 +307,62 @@ CMDsetNoneProfiler(int *res)
 	str y = GDKstrdup("");
 
 	(void) res;		/* fool compiler */
-	return CMDclrFilterProfiler(res, &x, &y);
+	checkProfiler("clrFilter");
+	clrFilter(MCgetClient()->nspace, x, y);
+	return MAL_SUCCEED;
 }
 
 str
-CMDsetProfilerFile(int *res, str *fnme)
+CMDsetProfilerFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;		/* fool compiler */
+	str *fnme = (str*) getArgReference(stk,pci,1);
+	(void) mb;		/* fool compiler */
 	checkProfiler("setProfiler");
 	setLogFile(MCgetClient()->nspace, *fnme);
 	return MAL_SUCCEED;
 }
 
 str
-CMDsetProfilerStream(int *res, str *host, int *port)
+CMDsetProfilerStream (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;		/* fool compiler */
+	str *host = (str*) getArgReference(stk,pci,1);
+	int *port = (int*) getArgReference(stk,pci,2);
+	(void) mb;		/* fool compiler */
 	checkProfiler("setProfiler");
 	setLogStream(MCgetClient()->nspace, *host, *port);
 	return MAL_SUCCEED;
 }
 
 str
-CMDstartPointProfiler(int *res, str *mod, str *fcn)
+CMDstartPointProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;		/* fool compiler */
+	str *mod = (str*) getArgReference(stk,pci,1);
+	str *fcn = (str*) getArgReference(stk,pci,2);
+	(void) mb;		/* fool compiler */
 	checkProfiler("startPoint");
 	setStartPoint(MCgetClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
 str
-CMDendPointProfiler(int *res, str *mod, str *fcn)
+CMDendPointProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) res;		/* fool compiler */
+	str *mod = (str*) getArgReference(stk,pci,1);
+	str *fcn = (str*) getArgReference(stk,pci,2);
+	(void) mb;		/* fool compiler */
 	checkProfiler("endPoint");
 	setStartPoint(MCgetClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
 str
-CMDstopProfiler(int *res)
+CMDstopProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client c = MCgetClient();
+	(void) mb;
+	(void) stk;
+	(void) pci;
 
-	(void) res;		/* fool compiler */
 	checkProfiler("stop");
 	stream_printf(c->fdout, "# Performance profiling stopped\n");
 	stopProfiling();
@@ -353,11 +370,13 @@ CMDstopProfiler(int *res)
 }
 
 str
-CMDstartProfiler(int *res)
+CMDstartProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client c = MCgetClient();
+	(void) mb;
+	(void) stk;
+	(void) pci;
 
-	(void) res;		/* fool compiler */
 	checkProfiler("start");
 	stream_printf(c->fdout, "# Start performance profiling\n");
 	startProfiling();

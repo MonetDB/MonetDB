@@ -34,13 +34,13 @@ are efficient, but work only for binary tables.
 
 @mal
 module io;
-command stdin():bstream
+pattern stdin():bstream
 address io_stdin
 comment "return the input stream to the database client";
-command stderr():streams
+pattern stderr():streams
 address io_stderr
 comment "return the error stream for the database console";
-command stdout():streams
+pattern stdout():streams
 address io_stdout
 comment "return the output stream for the database client";
 
@@ -93,25 +93,25 @@ pattern printft(val:any_1):void
 address IOprint_ft
 comment "Select default format ";
 
-command printf(format:str,val:bit):void
+pattern printf(format:str,val:bit):void
 address IOprint_formatted_bit;
-command printf(format:str,val:chr):void
+pattern printf(format:str,val:chr):void
 address IOprint_formatted_chr;
-command printf(format:str,val:int):void
+pattern printf(format:str,val:int):void
 address IOprint_formatted_int;
-command printf(format:str,val:sht):void
+pattern printf(format:str,val:sht):void
 address IOprint_formatted_sht;
-command printf(format:str,val:oid):void
+pattern printf(format:str,val:oid):void
 address IOprint_oid;
-command printf(format:str,val:lng):void
+pattern printf(format:str,val:lng):void
 address IOprint_formatted_lng;
-command printf(format:str,val:flt):void
+pattern printf(format:str,val:flt):void
 address IOprint_formatted_flt;
-command printf(format:str,val:dbl):void
+pattern printf(format:str,val:dbl):void
 address IOprint_formatted_dbl;
-command printf(val:str):void
+pattern printf(val:str):void
 address IOprint_str;
-command printf(format:str,val:str):void
+pattern printf(format:str,val:str):void
 address IOprint_formatted_str;
 
 command data(fname:str):str
@@ -142,6 +142,7 @@ specific should be introduced last.
 #define _PRINT_H_
 
 #include <mal.h>
+#include <mal_instruction.h>
 #include <mal_interpreter.h>
 #include <blob.h>
 
@@ -184,18 +185,18 @@ io_export str IOfotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOftable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOttable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOtotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOprint_str(int *ret, str *s);
+io_export str IOprint_str(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOprint_formatted_nil(stream *fd, str format, char last);
-io_export str IOprint_formatted_lng(int *ret, str *format, lng *val);
-io_export str IOprint_formatted_str(int *ret, ptr fmt, str *s);
+io_export str IOprint_formatted_lng(MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
+io_export str IOprint_formatted_str(MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
 io_export str IOprint_oid(int *ret, ptr fmt, oid *s);
-io_export str IOprint_formatted_bit(int *ret, ptr fmt, bit *s);
+io_export str IOprint_formatted_bit(MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
 io_export str IOexport(int *ret, int *bid, str *fnme);
 io_export str IOdatafile(str *ret, str *fnme);
 io_export str IOimport(int *ret, int *bid, str *fnme);
-io_export str io_stdin(bstream **ret);
-io_export str io_stdout(stream **ret);
-io_export str io_stderr(stream **ret);
+io_export str io_stdin(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str io_stdout(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str io_stderr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _PRINT_H_ */
 
@@ -215,22 +216,28 @@ allow for any type to be assigned.
 #include "mal_io.h"
 
 str
-io_stdin(bstream **ret)
+io_stdin(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	bstream **ret= (bstream**) getArgReference(stk,pci,0);
+	(void) mb;
 	*ret = MCgetClient()->fdin;
 	return MAL_SUCCEED;
 }
 
 str
-io_stdout(stream **ret)
+io_stdout(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	stream **ret= (stream**) getArgReference(stk,pci,0);
+	(void) mb;
 	*ret = MCgetClient()->fdout;
 	return MAL_SUCCEED;
 }
 
 str
-io_stderr(stream **ret)
+io_stderr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	stream **ret= (stream**) getArgReference(stk,pci,0);
+	(void) mb;
 	*ret = GDKerr;
 	return MAL_SUCCEED;
 }
@@ -450,12 +457,13 @@ This avoids repeated type checking in most cases.
 	}
 @c
 str
-IOprint_str(int *ret, str *s)
+IOprint_str(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client cntxt= MCgetClient();
 	stream *fd = cntxt->fdout;
+	str *s= (str*) getArgReference(stk,pci,1);
 	str c;
-	(void) ret;
+	(void) mb;
 
 	if (strNil(*s))
 		stream_printf(fd, "nil");
@@ -513,12 +521,15 @@ This to simplify error handling
 @-
 
 @= printFormatted
-io_export str IOprint_formatted_@1(int *ret, ptr fmt, @1 *s);
-str IOprint_formatted_@1(int *ret, ptr fmt, @1 *s){
+io_export str IOprint_formatted_@1(MalBlkPtr mv, MalStkPtr stk, InstrPtr pci);
+str IOprint_formatted_@1(MalBlkPtr mv, MalStkPtr stk, InstrPtr pci)
+{
+	ptr fmt = (ptr) getArgReference(stk,pci,1);
+	@1 *s = (@1 *) getArgReference(stk,pci,2);
 	stream *fd = MCgetClient()->fdout;
 	char *format;
 	str c;
-	(void) ret;
+	(void) mv;
 	/* TODO: check format properly !!! including sizes */
 	format= *(str *)fmt;
 	if( format== NULL || format== str_nil) 
@@ -570,11 +581,13 @@ IOprint_formatted_nil(stream *fd, str format, char last)
 	return MAL_SUCCEED;
 }
 str
-IOprint_formatted_lng(int *ret, str *format, lng *val)
+IOprint_formatted_lng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str c;
+	str *format= (str*) getArgReference(stk,pci,1);
+	lng *val= (lng*) getArgReference(stk,pci,2);
 	stream *fd= MCgetClient()->fdout;
-	(void) ret;
+	(void) mb;
 
 	for (c = *format; *c; c++) {
 		if (*c == '\\') {
@@ -615,12 +628,14 @@ IOprint_formatted_lng(int *ret, str *format, lng *val)
 }
 
 str
-IOprint_formatted_str(int *ret, ptr fmt, str *s)
+IOprint_formatted_str(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	stream *fd = MCgetClient()->fdout;
+	ptr fmt = (ptr) getArgReference(stk,pci,1);
+	str *s = (str *) getArgReference(stk,pci,2);
 	char *format;
 	str c;
-	(void) ret;
+	(void) mb;
 
 	/* TODO: check format properly !!! including sizes */
 	format = *(str *) fmt;
@@ -664,13 +679,17 @@ IOprint_oid(int *ret, ptr fmt, oid *s)
 }
 
 str
-IOprint_formatted_bit(int *ret, ptr fmt, bit *s)
+IOprint_formatted_bit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret= (ptr) getArgReference(stk,pci,0);
+	ptr fmt= (ptr) getArgReference(stk,pci,1);
+	bit *s= (bit*) getArgReference(stk,pci,2);
 	stream *fd = MCgetClient()->fdout;
 	char *format;
 	str msg;
 	str c;
 
+	(void) mb;
 	/* TODO: check format properly !!! including sizes */
 	format = *(str *) fmt;
 	if (format == NULL)

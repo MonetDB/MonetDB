@@ -77,15 +77,15 @@ pattern setCatch(b:bit):void
 address MDBsetCatch
 comment "Turn on/off catching exceptions";
 
-command setTimer(b:bit):void
+pattern setTimer(b:bit):void
 address MDBsetTimer
 comment "Turn on/off performance timer for debugger";
 
-command setBigfoot(b:bit):void
+pattern setBigfoot(b:bit):void
 address MDBsetBigfoot
 comment "Turn on/off memory foot print for debugger";
 
-command setFlow(b:bit):void
+pattern setFlow(b:bit):void
 address MDBsetFlow
 comment "Turn on/off memory flow debugger";
 
@@ -93,11 +93,11 @@ command setMemory(b:bit):void
 address MDBsetMemory
 comment "Turn on/off memory statistics tracing.";
 
-command setIO(b:bit):void
+pattern setIO(b:bit):void
 address MDBsetIO
 comment "Turn on/off io statistics tracing";
 
-command setCount(b:bit):void
+pattern setCount(b:bit):void
 address MDBsetCount
 comment "Turn on/off bat count statistics tracing";
 
@@ -147,7 +147,7 @@ pattern var(M:str,F:str):void
 address MDBvar3
 comment "Dump the symboltable of routine M.F on standard out.";
 
-command grab(id:int):void
+pattern grab(id:int):void
 address MDBgrabClient
 comment "Stop and debug another client process.";
 
@@ -218,12 +218,12 @@ mdb_export str MDBgetDebug(int *ret);
 mdb_export str MDBsetDebug(int *ret, int *flg);
 mdb_export str MDBsetDebugStr(int *ret, str *nme);
 mdb_export str MDBsetCatch(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBsetTimer(int *ret, bit *flag);
-mdb_export str MDBsetBigfoot(int *ret, bit *flag);
-mdb_export str MDBsetFlow(int *ret, bit *flag);
-mdb_export str MDBsetMemory(int *ret, bit *flag);
-mdb_export str MDBsetIO(int *ret, bit *flag);
-mdb_export str MDBsetCount(int *ret, bit *flag);
+mdb_export str MDBsetTimer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mdb_export str MDBsetBigfoot(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mdb_export str MDBsetFlow(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mdb_export str MDBsetMemory(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mdb_export str MDBsetIO(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mdb_export str MDBsetCount(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mdb_export str MDBgetExceptionVariable(str *ret, str *msg);
 mdb_export str MDBgetExceptionReason(str *ret, str *msg);
 mdb_export str MDBgetExceptionContext(str *ret, str *msg);
@@ -240,7 +240,7 @@ mdb_export str MDBgetStackFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 mdb_export str MDBgetStackFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 mdb_export str MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 mdb_export str MDBgetDefinition(MalBlkPtr m, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBgrabClient(int *ret, int *id);
+mdb_export str MDBgrabClient(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mdb_export str MDBdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mdb_export str MDBdummy(int *ret);
 
@@ -354,6 +354,7 @@ MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	MDBtraceFlag(MCgetClient(), stk, (b? (int) 't':0));
 	return MAL_SUCCEED;
 }
+
 str
 MDBsetVarTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -417,11 +418,12 @@ MDBsetCatch(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-MDBsetTimer(int *ret, bit *flag)
+MDBsetTimer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client cntxt = MCgetClient();
+	bit *flag= (bit*) getArgReference(stk,pci,1);
 
-	(void) ret;
+	(void) mb;
 	if( *flag)
 		cntxt->flags |= timerFlag;
 	else
@@ -431,11 +433,12 @@ MDBsetTimer(int *ret, bit *flag)
 }
 
 str
-MDBsetBigfoot(int *ret, bit *flag)
+MDBsetBigfoot(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client cntxt = MCgetClient();
+	bit *flag= (bit*) getArgReference(stk,pci,1);
 
-	(void) ret;
+	(void) mb;
 	if( *flag)
 		cntxt->flags |= bigfootFlag;
 	else
@@ -444,11 +447,12 @@ MDBsetBigfoot(int *ret, bit *flag)
 }
 
 str
-MDBsetFlow(int *ret, bit *flag)
+MDBsetFlow(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client cntxt = MCgetClient();
+	bit *flag= (bit*) getArgReference(stk,pci,1);
 
-	(void) ret;
+	(void) mb;
 	if( *flag)
 		cntxt->flags |= flowFlag;
 	else
@@ -457,10 +461,12 @@ MDBsetFlow(int *ret, bit *flag)
 }
 
 str
-MDBsetMemory(int *ret, bit *flag)
+MDBsetMemory(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client cntxt = MCgetClient();
-	(void) ret;
+	bit *flag= (bit*) getArgReference(stk,pci,1);
+
+	(void) mb;
 
 	if( *flag)
 		cntxt->flags |= memoryFlag;
@@ -470,10 +476,12 @@ MDBsetMemory(int *ret, bit *flag)
 }
 
 str
-MDBsetIO(int *ret, bit *flag)
+MDBsetIO(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client cntxt = MCgetClient();
-	(void) ret;
+	bit *flag= (bit*) getArgReference(stk,pci,1);
+
+	(void) mb;
 
 	if( *flag)
 		cntxt->flags |= ioFlag;
@@ -483,11 +491,12 @@ MDBsetIO(int *ret, bit *flag)
 }
 
 str
-MDBsetCount(int *ret, bit *flag)
+MDBsetCount(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client cntxt = MCgetClient();
-	(void) ret;
+	bit *flag= (bit*) getArgReference(stk,pci,1);
 
+	(void) mb;
 	if( *flag)
 		cntxt->flags |= cntFlag;
 	else
@@ -819,9 +828,13 @@ MDBshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 Grab a client process by exchange of streams
 @c
 str
-MDBgrabClient(int *ret, int *id){
+MDBgrabClient(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Client this,c;
 	ClientRec old;
+	int *id = (int*) getArgReference(stk,pci,1);
+
+	(void) mb;
 	this= MCgetClient();
 	old= *this;
 
@@ -850,7 +863,6 @@ MDBgrabClient(int *ret, int *id){
 	c->promptlength= old.promptlength;
 	c->itrace = 0;
 	fprintf(stderr,"exchanged descriptors\n");
-	(void) ret;
 	return MAL_SUCCEED;
 }
 str MDBdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

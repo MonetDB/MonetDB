@@ -33,7 +33,7 @@ pattern stop():void
 address RECYCLEstop
 comment "Cleans recycler bookkeeping";
 
-command dump():void
+pattern dump():void
 address RECYCLEdump
 comment "Dump summary of recycle table for potential re-use benefits";
 
@@ -102,7 +102,7 @@ comment "Called at the start of a recycle controlled function";
 #define recycle_export extern
 #endif
 
-recycle_export str RECYCLEdump(int *ret);
+recycle_export str RECYCLEdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 recycle_export str RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 recycle_export str RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 recycle_export str RECYCLEsetRetain(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -170,12 +170,14 @@ RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str
-RECYCLEdump(int *ret)
+RECYCLEdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	Client cntxt= MCgetClient();
 
-	(void) ret;
+	(void) mb;
+	(void) stk;
+	(void) pci;
 	stream_printf(cntxt->fdout,"#Recycler  catalog\n");
 	stream_printf(cntxt->fdout,"#retain= %d time =%d sze= %d alpha= %4.3f\n",
 		retainPolicy, recycleTime, recycleVolume, recycleAlpha);

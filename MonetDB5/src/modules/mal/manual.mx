@@ -27,35 +27,35 @@ tools to massage it further for presentation.
 @mal
 module manual;
 
-command help(text:str)
+pattern help(text:str)
 address MANUALhelp
 comment "Produces a list of all <module>.<function> that match 
 	the text pattern. The wildcard '*' can be used for <module> 
 and <function>. Using the '(' asks for signature information and
 using ')' asks for the complete help record.";
-command search(text:str)
+pattern search(text:str)
 address MANUALsearch
 comment "Search the manual for command descriptions that match the 
 regular expression 'text'";
 
-command createXML(mod:str):void
+pattern createXML(mod:str):void
 address MANUALcreate1
 comment "Generate a synopsis of a module";
-command createXML():void
+pattern createXML():void
 address MANUALcreate0
 comment "Produces a XML-formatted manual over all modules loaded.";
 
-command section(mod:str):void
-address MANUALcreateSection1
+pattern section(mod:str):void
+address MANUALcreateSection
 comment "Generate a synopsis of a module for the reference manual";
-command index():void
+pattern index():void
 address MANUALcreateIndex
 comment "Produces an overview of all names grouped by module.";
 command summary():void
 address MANUALcreateSummary
 comment "Produces a manual with help lines grouped by module.";
 
-command completion(pat:str):bat[:int,:str]
+pattern completion(pat:str):bat[:int,:str]
 address MANUALcompletion
 comment "Produces the wordcompletion table.";
 @{
@@ -86,119 +86,94 @@ comment "Produces the wordcompletion table.";
 #define manual_export extern
 #endif
 
-manual_export str MANUALcreate(int *ret, str *fname, str *mod, int *recursive);
-manual_export str MANUALcreateSection1(int *ret, str *mod);
-manual_export str MANUALcreate2(int *ret, str *fname, str *mod, int *recursive);
-manual_export str MANUALcreate1(int *ret, str *mod);
-manual_export str MANUALcreate0(int *ret);
-manual_export str MANUALsearch(int *ret, str *mod);
-manual_export str MANUALcompletion(int *ret, str *text);
-manual_export str MANUALhelp(int *ret, str *text);
-manual_export str MANUALcreateIndex(int *ret);
-manual_export str MANUALcreateSummary(int *ret);
+manual_export str MANUALcreateSection(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALcreate1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALcreate0(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALsearch(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALhelp(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALcreateIndex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALcreateSummary(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALcompletion(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @+ Symbol table 
 Mal symbol table and environment analysis.
 @c
 
 str
-MANUALcreateSection1(int *ret, str *mod)
+MANUALcreateSection(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str *mod = (str*) getArgReference(stk,pci,1);
 	Client cntxt= MCgetClient();
-	(void) ret;		/* fool compiler */
-	dumpManualSection(cntxt->fdout, findModule(MCgetClient()->nspace, putName(*mod, strlen(*mod))));
+
+	(void) mb;
+	dumpManualSection(cntxt->fdout, findModule(cntxt->nspace, putName(*mod, strlen(*mod))));
 	return MAL_SUCCEED;
 }
 
 str
-MANUALcreate(int *ret, str *fname, str *mod, int *recursive)
-{
-	stream *fs;
-
-	(void) ret;		/* fool compiler */
-	fs = open_wastream(*fname);
-	if (fs == NULL)
-		throw(MAL, "manual.create", "Could not open file\n");
-	dumpManualHeader(fs);
-	dumpManual(fs, findModule(MCgetClient()->nspace, putName(*mod, strlen(*mod))), *recursive);
-	dumpManualFooter(fs);
-	stream_close(fs);
-	return MAL_SUCCEED;
-}
-
-str
-MANUALcreate2(int *ret, str *fname, str *mod, int *recursive)
-{
-	int r = 0;
-
-	(void) recursive;	/* fool compiler */
-	return MANUALcreate(ret, fname, mod, &r);
-}
-
-str
-MANUALcreate1(int *ret, str *mod)
+MANUALcreate1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client cntxt= MCgetClient();
-	(void) ret;		/* fool compiler */
+	str *mod = (str*) getArgReference(stk,pci,1);
+	(void) mb;		/* fool compiler */
 	dumpManualHeader(cntxt->fdout);
-	dumpManual(cntxt->fdout, findModule(MCgetClient()->nspace, putName(*mod, strlen(*mod))), 0);
+	dumpManual(cntxt->fdout, findModule(cntxt->nspace, putName(*mod, strlen(*mod))), 0);
 	dumpManualFooter(cntxt->fdout);
 	return MAL_SUCCEED;
 }
 
 str
-MANUALcreate0(int *ret)
+MANUALcreate0(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client cntxt= MCgetClient();
-	(void) ret;		/* fool compiler */
+	(void) mb;
+	(void) stk;
+	(void) pci;
 	dumpManualHeader(cntxt->fdout);
-	dumpManual(cntxt->fdout, MCgetClient()->nspace, 1);
+	dumpManual(cntxt->fdout, cntxt->nspace, 1);
 	dumpManualFooter(cntxt->fdout);
 	return MAL_SUCCEED;
 }
 str
-MANUALcreateIndex(int *ret)
+MANUALcreateIndex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client cntxt= MCgetClient();
-	(void) ret;		/* fool compiler */
+	(void) mb;
+	(void) stk;
+	(void) pci;
 	dumpManualOverview(cntxt->fdout, cntxt->nspace, 1);
 	return MAL_SUCCEED;
 }
 str
-MANUALcreateSummary(int *ret)
+MANUALcreateSummary(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client cntxt= MCgetClient();
-	(void) ret;		/* fool compiler */
+	(void) mb;
+	(void) stk;
+	(void) pci;
 	dumpManualHelp(cntxt->fdout, MCgetClient()->nspace, 1);
 	return MAL_SUCCEED;
 }
 str
-MANUALcreateTags(int *ret)
+MANUALcompletion(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client cntxt= MCgetClient();
-	(void) ret;		/* fool compiler */
-	dumpHelpTable(cntxt->fdout, MCgetClient()->nspace, 0,0);
+	str *text= (str*) getArgReference(stk,pci,1);
+	(void) mb;		/* fool compiler */
+	dumpHelpTable(cntxt->fdout, cntxt->nspace, *text,1);
 	return MAL_SUCCEED;
 }
 
 str
-MANUALcompletion(int *ret, str *text)
-{
-	Client cntxt= MCgetClient();
-	(void) ret;		/* fool compiler */
-	dumpHelpTable(cntxt->fdout, MCgetClient()->nspace, *text,1);
-	return MAL_SUCCEED;
-}
-
-str
-MANUALhelp(int *ret, str *text)
+MANUALhelp(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char **msg;
 	int i;
 	Client cntxt= MCgetClient();
+	str *text= (str*) getArgReference(stk,pci,1);
+	(void) mb;		/* fool compiler */
 
-	(void) ret;		/* fool compiler */
-	msg= getHelp(MCgetClient()->nspace,*text,1);
+	msg= getHelp(cntxt->nspace,*text,1);
 	if( msg && msg[0] ){
 		for(i=0; msg[i];i++){
 			mal_unquote(msg[i]);
@@ -212,13 +187,14 @@ MANUALhelp(int *ret, str *text)
 }
 
 str
-MANUALsearch(int *ret, str *pat)
+MANUALsearch(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char **msg;
 	int i;
 	Client cntxt= MCgetClient();
+	str *pat= (str*) getArgReference(stk,pci,1);
+	(void) mb;		/* fool compiler */
 
-	(void) ret;
 	msg= getHelpMatch(*pat);
 	if( msg && msg[0] ){
 		for(i=0; msg[i];i++){

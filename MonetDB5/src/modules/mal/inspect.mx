@@ -50,19 +50,19 @@ command getSource(mod:str,fcn:str):str
 address INSPECTgetSource
 comment "Return the original input for a function.";
 
-command getKind():bat[:oid,:str]
+pattern getKind():bat[:oid,:str]
 address INSPECTgetkind
 comment "Obtain the instruction kind.";
-command getModule():bat[:oid,:str]
+pattern getModule():bat[:oid,:str]
 address INSPECTgetAllModules
 comment "Obtain the function name.";
-command getFunction():bat[:oid,:str]
+pattern getFunction():bat[:oid,:str]
 address INSPECTgetAllFunctions
 comment "Obtain the function name.";
-command getSignatures():bat[:oid,:str]
+pattern getSignatures():bat[:oid,:str]
 address INSPECTgetAllSignatures
 comment "Obtain the function signatures.";
-command getAddresses():bat[:oid,:str]
+pattern getAddresses():bat[:oid,:str]
 address INSPECTgetAllAddresses
 comment "Obtain the function address.";
 
@@ -134,20 +134,13 @@ comment "Collect the environment variables.";
 #define inspect_export extern
 #endif
 
-inspect_export str INSPECTgetModuleIds(int *ret);
-inspect_export str INSPECTsymbolFind(int *ret, int kind);
-inspect_export str INSPECTfactoryNames(int *ret);
-inspect_export str INSPECTgetFunctionIds(int *ret);
-inspect_export str INSPECTpatternNames(int *ret);
-inspect_export str INSPECTcommandNames(int *ret);
 inspect_export str INSPECTgetFunction(int *ret);
 inspect_export str INSPECTgetModule(int *ret);
-inspect_export str INSPECTgetkind(int *ret);
-inspect_export str INSPECTgetaddress(int *ret);
-inspect_export str INSPECTgetAllSignatures(int *ret);
-inspect_export str INSPECTgetAllModules(int *ret);
-inspect_export str INSPECTgetAllFunctions(int *ret);
-inspect_export str INSPECTgetAllAddresses(int *ret);
+inspect_export str INSPECTgetkind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllSignatures(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllModules(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllFunctions(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllAddresses(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 inspect_export str INSPECTgetDefinition(int *ret, str *nme, str *fcn);
 inspect_export str INSPECTgetSignature(int *ret, str *mod, str *fcn);
 inspect_export str INSPECTgetAddress(int *ret, str *mod, str *fcn);
@@ -170,93 +163,14 @@ inspect_export str INSPECTtypeIndex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @+ Symbol table 
 Mal symbol table and environment analysis.
-@c
 
-str
-INSPECTgetModuleIds(int *ret)
-{
-	Client c;
-	Module s;
-	int i = 0;
-	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
-
-	if (b == 0)
-		throw(MAL, "inspect.getModuleIds", "failed to create BAT");
-	c = MCgetClient();
-
-	for (s = c->nspace; s; s = s->outer, i++)
-		BUNins(b, (ptr) &int_nil, s->name, FALSE);
-
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,scope,names)@
-
-	return MAL_SUCCEED;
-}
-
-str
-INSPECTsymbolFind(int *ret, int kind)
-{
-	Client c;
-	Module s;
-	Symbol t;
-	int i;
-	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
-
-	if (b == 0)
-		throw(MAL, "inspect.symbolFind", "failed to create BAT");
-	c = MCgetClient();
-	s = c->nspace;
-	while (s) {
-		for (i = 0; s && i < MAXSCOPE; i++)
-			if (s->subscope[i]) {
-				for (t = s->subscope[i]; t; t = t->peer) {
-					InstrPtr sig = getSignature(t);
-
-					if (kind && kind != sig->token)
-						continue;
-					BUNins(b, getModuleId(sig), getFunctionId(sig), FALSE);
-				}
-			}
-		s = s->outer;
-	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,symbol,name)@
-
-	return MAL_SUCCEED;
-}
-
-str
-INSPECTfactoryNames(int *ret)
-{
-	return INSPECTsymbolFind(ret, FACTORYsymbol);
-}
-
-str
-INSPECTgetFunctionIds(int *ret)
-{
-	return INSPECTsymbolFind(ret, FUNCTIONsymbol);
-}
-
-str
-INSPECTpatternNames(int *ret)
-{
-	return INSPECTsymbolFind(ret, PATTERNsymbol);
-}
-
-str
-INSPECTcommandNames(int *ret)
-{
-	return INSPECTsymbolFind(ret, COMMANDsymbol);
-}
-
-@-
 Collect symbol table information in a series of BATs for analysis
 and display. Note, the elements are aligned using a counter,
 which makes it susceptable for intermediate updates
 @c
 
 str
-INSPECTgetAllFunctions(int *ret)
+INSPECTgetAllFunctions(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client c;
 	Module s;
@@ -264,7 +178,9 @@ INSPECTgetAllFunctions(int *ret)
 	int i;
 	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
+	int *ret = (int *) getArgReference(stk,pci,0);
 
+	(void) mb;
 	if (b == 0)
 		throw(MAL, "inspect.getgetFunctionId", "failed to create BAT");
 	BATseqbase(b, k);
@@ -289,7 +205,7 @@ INSPECTgetAllFunctions(int *ret)
 }
 
 str
-INSPECTgetAllModules(int *ret)
+INSPECTgetAllModules(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client c;
 	Module s;
@@ -297,7 +213,9 @@ INSPECTgetAllModules(int *ret)
 	int i;
 	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
+	int *ret = (int *) getArgReference(stk,pci,0);
 
+	(void) mb;
 	if (b == 0)
 		throw(MAL, "inspect.getmodule", "failed to create BAT");
 	BATseqbase(b, k);
@@ -322,7 +240,7 @@ INSPECTgetAllModules(int *ret)
 }
 
 str
-INSPECTgetkind(int *ret)
+INSPECTgetkind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client c;
 	Module s;
@@ -330,7 +248,9 @@ INSPECTgetkind(int *ret)
 	int i;
 	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
+	int *ret = (int *) getArgReference(stk,pci,0);
 
+	(void)mb;
 	if (b == 0)
 		throw(MAL, "inspect.get@1", "failed to create BAT");
 	BATseqbase(b, k);
@@ -355,44 +275,9 @@ INSPECTgetkind(int *ret)
 	return MAL_SUCCEED;
 }
 
-str
-INSPECTgetaddress(int *ret)
-{
-	Client c;
-	Module s;
-	Symbol t;
-	int i;
-	oid k = 0;
-	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
-
-	if (b == 0)
-		throw(MAL, "inspect.get@1", "failed to create BAT");
-	BATseqbase(b, k);
-	c = MCgetClient();
-	s = c->nspace;
-	while (s) {
-		for (i = 0; s && i < MAXSCOPE; i++)
-			if (s->subscope[i]) {
-				for (t = s->subscope[i]; t; t = t->peer) {
-					str kind = t->def->binding;
-
-					if (kind == 0)
-						kind = "";
-					BUNins(b, &k, &kind, FALSE);
-					k++;
-				}
-			}
-		s = s->outer;
-	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,symbol, address)@
-
-	return MAL_SUCCEED;
-}
-
 
 str
-INSPECTgetAllSignatures(int *ret)
+INSPECTgetAllSignatures(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client c;
 	Module s;
@@ -401,6 +286,9 @@ INSPECTgetAllSignatures(int *ret)
 	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 	char sig[4096],*a;
+	int *ret = (int *) getArgReference(stk,pci,0);
+
+	(void)mb;
 
 	if (b == 0)
 		throw(MAL, "inspect.get@1", "failed to create BAT");
@@ -426,7 +314,7 @@ INSPECTgetAllSignatures(int *ret)
 	return MAL_SUCCEED;
 }
 str
-INSPECTgetAllAddresses(int *ret)
+INSPECTgetAllAddresses(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client c;
 	Module s;
@@ -435,6 +323,9 @@ INSPECTgetAllAddresses(int *ret)
 	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 	char sig[4096],*a;
+	int *ret = (int *) getArgReference(stk,pci,0);
+
+	(void)mb;
 
 	if (b == 0)
 		throw(MAL, "inspect.get@1", "failed to create BAT");

@@ -271,7 +271,7 @@ comment "Display all pages at once without header";
 pattern header(b:any...):int 
 address TABheader
 comment "Display the minimal header for the table";
-command setProperties(prop:str):int 
+pattern setProperties(prop:str):int 
 address TABsetProperties
 comment "Define the set of properties";
 pattern dump(s:streams,b:bat[:any,:any]...):int 
@@ -281,25 +281,25 @@ comment "Print all pages with header to a stream";
 pattern setFormat(b:any...):void 
 address TABsetFormat
 comment "Initialize a new reporting structure.";
-command finish():void 
+pattern finish():void 
 address TABfinishReport
 comment "Free the storage space of the report descriptor";
-command setStream(s:streams):void 
+pattern setStream(s:streams):void 
 address TABsetStream
 comment "Redirect the output to a stream.";
-command setPivot(b:bat[:void,:oid]) :void
+pattern setPivot(b:bat[:void,:oid]) :void
 address TABsetPivot
 comment "The pivot bat identifies the tuples of interest. The only requirement 
 	    is that all keys mentioned in the pivot tail exist in all BAT parameters 
 	    of the print comment. The pivot also provides control over the order 
 	    in which the tuples are produced.";
-command setDelimiter(sep:str):void 
+pattern setDelimiter(sep:str):void 
 address TABsetDelimiter
 comment "Set the column separator.";
-command setTableBracket(lbrk:str,rbrk:str)
+pattern setTableBracket(lbrk:str,rbrk:str)
 address TABsetTableBracket
 comment "Format the brackets around a table";
-command setRowBracket(lbrk:str,rbrk:str)
+pattern setRowBracket(lbrk:str,rbrk:str)
 address TABsetRowBracket
 comment "Format the brackets around a row";
 
@@ -307,24 +307,24 @@ comment "Format the brackets around a row";
 pattern setColumn(idx:int, v:any_1)
 address TABsetColumn
 comment "Bind i-th output column to a variable";
-command setName(idx:int, nme:str)
+pattern setName(idx:int, nme:str)
 address TABsetColumnName
 comment "Set the display name for a given column";
-command setBracket(idx:int,lbrk:str,rbrk:str)
+pattern setBracket(idx:int,lbrk:str,rbrk:str)
 address TABsetColumnBracket
 comment "Format the brackets around a field";
-command setNull(idx:int, fmt:str)
+pattern setNull(idx:int, fmt:str)
 address TABsetColumnNull
 comment "Set the display format for a null value for a given column";
-command setWidth(idx:int, maxwidth:int)
+pattern setWidth(idx:int, maxwidth:int)
 address TABsetColumnWidth
 comment "Set the maximal display witdh for a given column. All values exceeding 
 	the length are simple shortened without any notice.";
-command setPosition(idx:int,f:int,i:int)
+pattern setPosition(idx:int,f:int,i:int)
 address TABsetColumnPosition
 comment "Set the character position to use for this field when loading according to 
 	fixed (punch-card) layout.";
-command setDecimal(idx:int,s:int,p:int)
+pattern setDecimal(idx:int,s:int,p:int)
 address TABsetColumnDecimal
 comment "Set the scale and precision for numeric values";
 
@@ -471,22 +471,22 @@ tablet_export str TABheader(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABdisplayTable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABdisplayRow(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABpage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetProperties(int *ret, str *prop);
+tablet_export str TABsetProperties(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABfinishReport(int *ret);
-tablet_export str TABsetStream(int *ret, stream **s);
-tablet_export str TABsetPivot(int *ret, int *bid);
-tablet_export str TABsetDelimiter(int *ret, str *sep);
+tablet_export str TABfinishReport(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetPivot(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetDelimiter(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABsetColumn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetColumnName(int *ret, int *idx, str *s);
-tablet_export str TABsetTableBracket(int *ret, str *lbrk, str *rbrk);
-tablet_export str TABsetRowBracket(int *ret, str *lbrk, str *rbrk);
-tablet_export str TABsetColumnBracket(int *ret, int *idx, str *lbrk, str *rbrk);
-tablet_export str TABsetColumnNull(int *ret, int *idx, str *nullstr);
-tablet_export str TABsetColumnWidth(int *ret, int *idx, int *width);
-tablet_export str TABsetColumnPosition(int *ret, int *idx, int *first, int *width);
+tablet_export str TABsetColumnName(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetTableBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetRowBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnNull(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnWidth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnPosition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-tablet_export str TABsetColumnDecimal(int *ret, int *idx, int *scale, int *prec);
+tablet_export str TABsetColumnDecimal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABfirstPage(int *ret);
 tablet_export str TABlastPage(int *ret);
 tablet_export str TABnextPage(int *ret);
@@ -636,12 +636,13 @@ TABpage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetProperties(int *ret, str *prop)
+TABsetProperties(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str *prop= (str*) getArgReference(stk,pci,1);
 	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
-	(void) ret;		/* fool compiler */
+	(void) mb;		/* fool compiler */
 	if (tableReports[rnr] == 0)
 		throw(MAL, "tablet.properties", "Format definition missing");
 	CLEAR(tableReports[rnr]->properties);
@@ -659,12 +660,14 @@ TABdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABfinishReport(int *ret)
+TABfinishReport(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
-	(void) ret;		/* fool compiler */
+	(void) mb;		/* fool compiler */
+	(void) stk;
+	(void) pci;
 	if (tableReports[rnr] == 0)
 		throw(MAL, "tablet.finish", "Header information missing");
 	clearTable(tableReports[rnr]);
@@ -675,12 +678,13 @@ TABfinishReport(int *ret)
 
 
 str
-TABsetStream(int *ret, stream **s)
+TABsetStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	stream **s = (stream **) getArgReference(stk,pci,1);
 	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
-	(void) ret;		/* fool compiler */
+	(void) mb;		/* fool compiler */
 	if (tableReports[rnr] == 0)
 		throw(MAL, "tablet.setStream", "Header information missing");
 	tableReports[rnr]->fd = *s;
@@ -688,13 +692,14 @@ TABsetStream(int *ret, stream **s)
 }
 
 str
-TABsetPivot(int *ret, int *bid)
+TABsetPivot(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *bid= (int*) getArgReference(stk,pci,1);
 	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 	BAT *b;
 
-	(void) ret;		/* fool compiler */
+	(void) mb;		/* fool compiler */
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "tablet.setPivot", "Pivot BAT missing");
 	}
@@ -705,12 +710,13 @@ TABsetPivot(int *ret, int *bid)
 }
 
 str
-TABsetDelimiter(int *ret, str *sep)
+TABsetDelimiter(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str *sep= (str *) getArgReference(stk,pci,1);
 	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
-	(void) ret;		/* fool compiler */
+	(void) mb;		/* fool compiler */
 	if (tableReports[rnr] == 0)
 		throw(MAL, "tablet.setDelimiters", "Header information missing");
 	tableReports[rnr]->sep = !strNil(*sep) ? GDKstrdup(*sep) : 0;
@@ -727,24 +733,28 @@ TABsetColumn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetColumnName(int *ret, int *idx, str *s)
+TABsetColumnName(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *idx= (int *) getArgReference(stk,pci,1);
+	str *s= (str *) getArgReference(stk,pci,2);
 	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
-	(void) ret;		/* fool compiler */
+	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
 	tableReports[rnr]->columns[*idx].name = !strNil(*s) ? GDKstrdup(*s) : 0;
 	return MAL_SUCCEED;
 }
 
 str
-TABsetTableBracket(int *ret, str *lbrk, str *rbrk)
+TABsetTableBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str *lbrk= (str *) getArgReference(stk,pci,1);
+	str *rbrk= (str *) getArgReference(stk,pci,2);
 	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
-	(void) ret;		/* fool compiler */
+	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, MAXARG);
 	tableReports[rnr]->ttopbrk = !strNil(*lbrk) ? GDKstrdup(*lbrk) : 0;
 	tableReports[rnr]->tbotbrk = !strNil(*rbrk) ? GDKstrdup(*rbrk) : 0;
@@ -752,12 +762,14 @@ TABsetTableBracket(int *ret, str *lbrk, str *rbrk)
 }
 
 str
-TABsetRowBracket(int *ret, str *lbrk, str *rbrk)
+TABsetRowBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str *lbrk= (str *) getArgReference(stk,pci,1);
+	str *rbrk= (str *) getArgReference(stk,pci,2);
 	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
-	(void) ret;		/* fool compiler */
+	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, MAXARG);
 	tableReports[rnr]->rlbrk = !strNil(*lbrk) ? GDKstrdup(*lbrk) : 0;
 	tableReports[rnr]->rrbrk = !strNil(*rbrk) ? GDKstrdup(*rbrk) : 0;
@@ -765,12 +777,15 @@ TABsetRowBracket(int *ret, str *lbrk, str *rbrk)
 }
 
 str
-TABsetColumnBracket(int *ret, int *idx, str *lbrk, str *rbrk)
+TABsetColumnBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *idx= (int *) getArgReference(stk,pci,1);
+	str *lbrk= (str *) getArgReference(stk,pci,2);
+	str *rbrk= (str *) getArgReference(stk,pci,3);
 	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
-	(void) ret;		/* fool compiler */
+	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
 	tableReports[rnr]->columns[*idx].lbrk = !strNil(*lbrk) ? GDKstrdup(*lbrk) : 0;
 	tableReports[rnr]->columns[*idx].rbrk = !strNil(*rbrk) ? GDKstrdup(*rbrk) : 0;
@@ -778,36 +793,43 @@ TABsetColumnBracket(int *ret, int *idx, str *lbrk, str *rbrk)
 }
 
 str
-TABsetColumnNull(int *ret, int *idx, str *nullstr)
+TABsetColumnNull(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *idx= (int *) getArgReference(stk,pci,1);
+	str *nullstr= (str *) getArgReference(stk,pci,2);
 	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
-	(void) ret;		/* fool compiler */
+	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
 	tableReports[rnr]->columns[*idx].nullstr = !strNil(*nullstr) ? GDKstrdup(*nullstr) : 0;
 	return MAL_SUCCEED;
 }
 
 str
-TABsetColumnWidth(int *ret, int *idx, int *width)
+TABsetColumnWidth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *idx= (int *) getArgReference(stk,pci,1);
+	int *width= (int *) getArgReference(stk,pci,2);
 	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
-	(void) ret;		/* fool compiler */
+	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
 	tableReports[rnr]->columns[*idx].maxwidth = *width;
 	return MAL_SUCCEED;
 }
 
 str
-TABsetColumnPosition(int *ret, int *idx, int *first, int *width)
+TABsetColumnPosition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *idx= (int *) getArgReference(stk,pci,1);
+	int *first= (int *) getArgReference(stk,pci,2);
+	int *width= (int *) getArgReference(stk,pci,3);
 	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
-	(void) ret;
+	(void) mb;
 	(void) first;		/* fool compiler */
 	tableReports[rnr]->columns[*idx].fieldwidth = *width;
 	tableReports[rnr]->columns[*idx].fieldstart = *width;
@@ -816,12 +838,15 @@ TABsetColumnPosition(int *ret, int *idx, int *first, int *width)
 }
 
 str
-TABsetColumnDecimal(int *ret, int *idx, int *scale, int *prec)
+TABsetColumnDecimal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *idx= (int *) getArgReference(stk,pci,1);
+	int *scale= (int *) getArgReference(stk,pci,2);
+	int *prec= (int *) getArgReference(stk,pci,3);
 	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
-	(void) ret;		/* fool compiler */
+	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
 	if (*prec > *scale)
 		throw(MAL, "tablet.setColumnDecimal", "Illegal range");

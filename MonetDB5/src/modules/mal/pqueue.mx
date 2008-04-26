@@ -1,0 +1,786 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2008 CWI.
+@' All Rights Reserved.
+
+@f pqueue
+@a Nikos Mamoulis, Niels Nes
+@v 2.0
+@+ Priority queues
+
+This module includes functions for accessing and updating a pqueue.
+A pqueue is an (oid,any) bat. The tail is used as a comparison key.
+The first element of the pqueue is the smallest one in a min-pqueue
+or the largest one in a max-pqueue. 
+Each element is larger than (smaller than) or equal to 
+its parent which is defined by (position/2) if position is odd or 
+(position-1)/2 if position is even (positions are from 0 to n-1).
+The head of the bat is used to keep track of the object-ids which are
+organized in the heap with respect to their values (tail column).
+@{
+
+@+ Module Definition 
+@mal
+module pqueue;
+
+command init(a:bat[:void,:any_1],maxsize:wrd):bat[:oid,:any_1] 
+address PQinit
+comment "Creates an empty pqueue of bat a's tailtype with maximum size maxsize";
+
+@= mel_minmax
+command enqueue_@2(h:bat[:oid,:@1], id:oid, value:@1) 
+address PQenqueue_@1@2
+comment "Inserts element (oid,@1) in the @2-pqueue";
+
+command topreplace_@2(h:bat[:oid,:@1], id:oid, value:@1) 
+address PQtopreplace_@1@2
+comment "Replaces top element with input and updates @2-pqueue";
+
+command dequeue_@2(h:bat[:oid,:@1]) 
+address PQdequeue_@1@2
+comment "Removes top element of the @2-pqueue and updates it";
+
+command topn_@2(t:bat[:oid,:@1], n:int) :bat[:oid,:@1] 
+address PQtopn_@1@2
+comment "Return the topn elements of the bat t using a @2-pqueue";
+
+command topn_@2(t:bat[:void,:@1],n:int) :bat[:oid,:@1] 
+address PQtopn_void@1@2
+comment "Return the topn elements of the bat t using a @2-pqueue";
+
+@= mel_minmax_any
+pattern topreplace_@1(h:bat[:oid,:any_1], id:oid, value:any_1) 
+address PQtopreplace_any@1
+comment "Replaces top element with input and updates @1-pqueue";
+
+pattern enqueue_@1(h:bat[:oid,:any_1], id:oid, value:any_1) 
+address PQenqueue_any@1
+comment "Inserts element (oid,any) in the @1-pqueue";
+
+command dequeue_@1(h:bat[:oid,:any_1]) 
+address PQdequeue_any@1
+comment "Removes top element of the @1-pqueue and updates it";
+
+command topn_@1(t:bat[:oid,:any_1], n:int) :bat[:oid,:any_1] 
+address PQtopn_any@1
+comment "Return the topn elements of the bat t using a @1-pqueue";
+
+command topn_@1(t:bat[:void,:any_1], n:int) :bat[:oid,:any_1] 
+address PQtopn_voidany@1
+comment "Return the topn elements of the bat t using a @1-pqueue";
+
+@= mel_pqueue_any
+  @:mel_minmax_any(min)@
+  @:mel_minmax_any(max)@
+@mal
+@:mel_pqueue_any()@
+
+@= mel_pqueue
+  @:mel_minmax(@1,min)@
+  @:mel_minmax(@1,max)@
+@mal
+
+@:mel_pqueue(chr)@
+@:mel_pqueue(bte)@
+@:mel_pqueue(sht)@
+@:mel_pqueue(int)@
+@:mel_pqueue(oid)@
+@:mel_pqueue(wrd)@
+@:mel_pqueue(ptr)@
+@:mel_pqueue(lng)@
+@:mel_pqueue(flt)@
+@:mel_pqueue(dbl)@
+
+@+ Implementation
+@h
+#ifndef _PQUEUE_
+#define _PQUEUE_
+
+#include "mal.h"
+
+#ifdef WIN32
+#ifndef LIBPQUEUE
+#define pqueue_export extern __declspec(dllimport)
+#else
+#define pqueue_export extern __declspec(dllexport)
+#endif
+#else
+#define pqueue_export extern
+#endif
+
+pqueue_export str PQinit(int *ret, int *bid, wrd *maxsize);
+
+#endif /* _PQUEUE */
+@c
+#include "mal_config.h"
+#include "pqueue.h"
+#include "mal_exception.h"
+#include "mal_interpreter.h"
+
+/*returns the parent of a pqueue position*/
+static INLINE size_t parent(size_t posel)
+{
+  if (posel%2) /*odd*/
+	return posel/2;
+  else
+	return (posel-1)/2;
+}
+
+/*initialize pqueue*/
+static void
+do_pqueue_init(BAT **h, BAT *b, size_t maxsize)
+{
+	*h = BATnew(TYPE_oid, b->ttype, maxsize);
+        if (*h)
+                (*h)->batDirty |= 2;
+}
+
+int 
+pqueue_init(BAT **h, BAT *b, wrd *maxsize)
+{
+	do_pqueue_init(h, b, (size_t) *maxsize);
+  	return GDK_SUCCEED;
+}
+
+#define ht_swap(tpe,cur,ins) {					\
+	  oid htmp = *(oid*)BUNhloc(hi,cur); 			\
+	  tpe ttmp = *(tpe*)BUNtloc(hi,cur);			\
+	  *(oid*)BUNhloc(hi,cur) = *(oid*)BUNhloc(hi,ins);	\
+	  *(tpe*)BUNtloc(hi,cur) = *(tpe*)BUNtloc(hi,ins);	\
+	  *(oid*)BUNhloc(hi,ins) = htmp; 			\
+	  *(tpe*)BUNtloc(hi,ins) = ttmp;			\
+}
+
+#define any_swap(cur,ins,ts) {					\
+	  unsigned int i;					\
+	  char ch;						\
+          /* only swap the locations (ie var_t's) */		\
+	  char *c1 = BUNtloc(hi,cur), *c2 = BUNtloc(hi,ins);	\
+	  oid htmp = *(oid*)BUNhloc(hi,cur); 			\
+	  *(oid*)BUNhloc(hi,cur) = *(oid*)BUNhloc(hi,ins);	\
+	  *(oid*)BUNhloc(hi,ins) = htmp; 			\
+	  for(i=0;i<ts;i++) {					\
+		ch= c1[i]; c1[i]=c2[i]; c2[i]=ch;		\
+	  }							\
+}
+
+@= pqueueimpl_minmax
+/*enqueue an element*/
+int pqueue_enqueue_@1@2(BAT *h,
+		 oid *idx, 
+		 @3 *el)
+{
+  BATiter hi = bat_iterator(h);
+  BUN ins,cur;
+
+  BUN hbase = BUNfirst(h);
+  size_t p, posel = BATcount(h); /*last position*/
+ 
+  BUNins(h, (ptr)idx, (ptr)el, FALSE);
+  ins = hbase+posel;
+  
+  while(posel >0) {
+	p=parent(posel);
+	cur = hbase+p;
+	if (*(@3 *)BUNtloc(hi,ins) @4 *(@3 *)BUNtloc(hi,cur)) {
+	  /* swap element with its parent */
+	  ht_swap(@3,cur,ins);
+	  ins = cur;
+	  posel = parent(posel);
+	}
+	else break;
+  }
+  h->hsorted = h->tsorted = FALSE;
+  
+  return GDK_SUCCEED;
+}
+
+/* moves down the root element */
+/* used by dequeue (see below) */
+static int pqueue_movedowntop_@1@2(BAT *h)
+{
+  BATiter hi = bat_iterator(h);
+  BUN swp, cur, hbase = BUNfirst(h);
+  size_t swap, num_elems = BATcount(h);
+  size_t posel = 0;
+
+  cur = hbase;
+  
+  /*while posel is not a leaf and pqueue[posel].tail > any of childen*/
+  while (posel*2+1 < num_elems) { /*there exists a left son*/
+	if (posel*2+2< num_elems) { /*there exists a right son*/
+	  if (*(@3 *)BUNtloc(hi,hbase+(posel*2+1)) @4
+	      *(@3 *)BUNtloc(hi,hbase+(posel*2+2)))
+		swap = posel*2+1;
+	  else
+		swap = posel*2+2;
+	} else
+		swap = posel*2+1;
+
+	swp = hbase+swap;
+
+	if (*(@3 *)BUNtloc(hi,swp) @4 *(@3 *)BUNtloc(hi,cur)) {
+	  /*swap elements*/
+	  ht_swap(@3,cur,swp);
+	  cur = swp;
+	  posel = swap;
+	} else 
+		break;
+  }
+
+  return GDK_SUCCEED;
+}
+
+/* removes the root element, puts the last element as root and moves it down */
+int pqueue_dequeue_@1@2(BAT *h)
+{
+  BATiter hi = bat_iterator(h);
+  BUN hbase;
+  size_t num_elements;
+
+  if (!(num_elements = BATcount(h))) {
+    GDKerror("pqueue_dequeue: Cannot dequeue from empty queue\n");
+    return GDK_FAIL;
+  }
+
+  hbase = BUNfirst(h);
+
+  /* copy last element to the first position*/
+  ht_swap(@1,hbase, hbase+(num_elements-1));
+
+  /*delete last element*/
+  BUNdelete(h, hbase+(num_elements-1), FALSE);
+
+  pqueue_movedowntop_@1@2(h);
+  return GDK_SUCCEED;
+}
+
+/* replaces the top element with the input if it is larger (smaller) and
+ * updates the heap */
+int pqueue_topreplace_@1@2(BAT *h,
+		 oid *idx,
+		 @3 *el)
+{
+  BATiter hi = bat_iterator(h);
+  BUN hbase;
+
+  hbase = BUNfirst(h);
+
+  if (*(@3 *)BUNtloc(hi,hbase) @4 *el) {
+	*(oid*)BUNhloc(hi,hbase) = *idx;
+	*(@3*)BUNtloc(hi,hbase) = *el;
+	pqueue_movedowntop_@1@2(h);
+  }
+  
+  return GDK_SUCCEED;
+}
+
+/* TopN, based on @2-pqueue */
+
+int pqueue_topn_void@1@2(BAT **H, BAT *t, int *N)
+{
+  BATiter ti = bat_iterator(t);
+  @1 *v;
+  size_t i, n = BATcount(t);
+  oid idx = t->hseqbase;
+
+  if ((size_t) *N < n)
+	  n = (size_t) *N;
+  do_pqueue_init(H,t,n);
+  v = (@1*)BUNtail(ti,BUNfirst(t));
+
+  for(i=0; i<n; i++, idx++, v++) {
+	pqueue_enqueue_@1@2(*H, &idx, v); 
+  }
+  n = BATcount(t);
+  for(; i<n; i++, idx++, v++) {
+	pqueue_topreplace_@1@2(*H, &idx, v); 
+  }
+  return GDK_SUCCEED;
+}
+
+int pqueue_topn_@1@2(BAT **H, BAT *t, int *N)
+{
+  BATiter ti = bat_iterator(t);
+  size_t i, n = BATcount(t);
+  BUN p = BUNfirst(t);
+
+  if ((size_t) *N < n)
+	  n = (size_t) *N;
+  do_pqueue_init(H,t,n);
+
+  for(i=0; i<n; i++, p++) {
+	pqueue_enqueue_@1@2(*H, (oid*)BUNhloc(ti,p), (@1*)BUNtloc(ti,p)); 
+  }
+  n = BATcount(t);
+  for(; i<n; i++, p++) {
+	pqueue_topreplace_@1@2(*H, (oid*)BUNhloc(ti,p), (@1*)BUNtloc(ti,p)); 
+  }
+  return GDK_SUCCEED;
+}
+@c
+@= pqueueimpl
+  @:pqueueimpl_minmax(@1,min,@1,<)@
+  @:pqueueimpl_minmax(@1,max,@1,>)@
+@c
+@:pqueueimpl(chr)@
+@:pqueueimpl(bte)@
+@:pqueueimpl(sht)@
+@:pqueueimpl(int)@
+@:pqueueimpl(oid)@
+@:pqueueimpl(wrd)@
+@:pqueueimpl(ptr)@
+@:pqueueimpl(lng)@
+@:pqueueimpl(flt)@
+@:pqueueimpl(dbl)@
+
+/* The fallback case, non optimized */
+
+@= pqueueimpl_any
+/*enqueue an element*/
+int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
+{
+  BATiter hi = bat_iterator(h);
+  BUN hbase;
+  BUN ins,cur;
+  size_t p, posel, ts = Tsize(h);
+
+  hbase = BUNfirst(h);
+
+  posel = BATcount(h); /*last position*/
+  BUNins(h, (ptr)idx, (ptr)el, FALSE);
+  ins = hbase+posel;
+  
+  while(posel >0) {
+	p=parent(posel);
+	cur = hbase+p;
+	if (atom_CMP(BUNtail(hi,ins), BUNtail(hi,cur), tpe) @2 0 ) {
+	  /* swap element with its parent */
+	  any_swap(cur,ins,ts);
+	  ins = cur;
+	  posel = parent(posel);
+	}
+	else break;
+  }
+  h->hsorted = h->tsorted = FALSE;
+  
+  return GDK_SUCCEED;
+}
+
+/* moves down the root element */
+/* used by dequeue (see below) */
+static int pqueue_movedowntop_any@1(BAT *h)
+{
+  BATiter hi = bat_iterator(h);
+  BUN hbase;
+  BUN swp,cur;
+  int tpe = BATttype(h);
+  size_t swap, num_elems;
+  size_t posel, ts = Tsize(h);
+
+  hbase = BUNfirst(h);
+
+  cur = hbase;
+  num_elems = BATcount(h);
+  posel = 0;
+  
+  /*while posel is not a leaf and pqueue[posel].tail > any of childen*/
+  while (posel*2+1 < num_elems) { /*there exists a left son*/
+	if (posel*2+2< num_elems) { /*there exists a right son*/
+	  if (atom_CMP(
+		BUNtail(hi,hbase+(posel*2+1)),
+		BUNtail(hi,hbase+(posel*2+2)), tpe) @2 0 ) {
+		swap = posel*2+1;
+	  } else {
+		swap = posel*2+2;
+	  }
+	} else
+		swap = posel*2+1;
+
+	swp = hbase+swap;
+
+	if (atom_CMP( BUNtail(hi,swp), BUNtail(hi,cur), tpe) @2 0 ) {
+		/*swap elements*/
+		any_swap(cur,swp,ts);
+	  	cur = swp;
+	  	posel = swap;
+	} else 
+		break;
+  }
+  h->hsorted = h->tsorted = FALSE;
+
+  return GDK_SUCCEED;
+}
+
+/* removes the root element, puts the last element as root and moves it down */
+int pqueue_dequeue_any@1(BAT *h)
+{
+  BATiter hi = bat_iterator(h);
+  BUN hbase;
+  size_t num_elements;
+  size_t ts = Tsize(h);
+
+  if (!(num_elements = BATcount(h))) {
+	GDKerror("pqueue_dequeue: Cannot dequeue from empty queue\n");
+	return GDK_FAIL;
+  }
+
+  hbase = BUNfirst(h);
+
+  /* copy last element to the first position*/
+  any_swap(hbase, hbase+(num_elements-1), ts);
+
+  /*delete last element*/
+  BUNdelete(h, hbase+(num_elements-1), FALSE);
+
+  pqueue_movedowntop_any@1(h);
+  return GDK_SUCCEED;
+}
+
+/* replaces the top element with the input if it is larger (smaller) and
+ * updates the heap */
+int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe)
+{
+  BATiter hi = bat_iterator(h);
+  BUN hbase = BUNfirst(h);
+
+  if (atom_CMP(BUNtail(hi,hbase), el, tpe) @2 0) {
+	BUNinplace(h, hbase, idx, el, 0);
+	* (oid *) BUNhloc(hi, hbase) = *idx;
+	pqueue_movedowntop_any@1(h);
+    	h->hsorted = h->tsorted = FALSE;
+  }
+  
+  return GDK_SUCCEED;
+}
+
+int pqueue_topn_voidany@1(BAT **H, BAT *t, int *N)
+{
+  BATiter ti = bat_iterator(t);
+  size_t i, n = BATcount(t);
+  oid idx = t->hseqbase;
+  BUN p = BUNfirst(t);
+  int tpe = BATttype(t);
+
+  if ((size_t) *N < n)
+   	n = (size_t) *N;
+  do_pqueue_init(H,t,n);
+
+  for(i=0; i<n; i++, idx++, p++) {
+	pqueue_enqueue_any@1(*H, &idx, BUNtail(ti,p), tpe); 
+  }
+  n = BATcount(t);
+  for(; i<n; i++, idx++, p++) {
+	pqueue_topreplace_any@1(*H, &idx, BUNtail(ti,p), tpe); 
+  }
+  return GDK_SUCCEED;
+}
+
+int pqueue_topn_any@1(BAT **H, BAT *t, int *N)
+{
+  BATiter ti = bat_iterator(t);
+  size_t i, n = BATcount(t);
+  BUN p = BUNfirst(t);
+  int tpe = BATttype(t);
+
+  if ((size_t) *N < n)
+   	n = (size_t) *N;
+  do_pqueue_init(H,t,n);
+
+  for(i=0; i<n; i++, p++) {
+	pqueue_enqueue_any@1(*H, (oid*)BUNhloc(ti,p), BUNtail(ti,p), tpe); 
+  }
+  n = BATcount(t);
+  for(; i<n; i++, p++) {
+	pqueue_topreplace_any@1(*H, (oid*)BUNhloc(ti,p), BUNtail(ti,p), tpe); 
+  }
+  return GDK_SUCCEED;
+}
+
+@c
+@:pqueueimpl_any(min,<)@
+@:pqueueimpl_any(max,>)@
+
+@-
+old stuff
+
+proc pqueue_peek( BAT[oid,any] h ) : any {
+	return h.fetch(0);
+}
+
+proc pqueue_topn( BAT[oid,any] t, int n, int direction ) : BAT[oid,any] {
+	if (direction > 0) {
+		return pqueue_topn_max(t,n);
+	} else {
+		return pqueue_topn_min(t,n);
+	}
+}
+
+PROC test_pqueue_str() : void {
+	#
+	# Simple example of using the heap
+	# A min-heap is used to find the k-largest elements 
+	# in an (oid,str) BAT with m random values.
+	#
+
+	module("alarm");
+
+	# table t has m elements
+	var m := 100;
+	var t := new(void,str,m);
+	t.seqbase(oid(1));
+
+	# We want the k largest elements of t
+	var k := 10; 
+
+	var h := pqueue_init(t, k); 
+
+	srand(time());
+
+	var i := 1;
+	while (i<=k) {
+		var val := str(rand()%1000);
+		t.insert(oid(i), val);
+		pqueue_enqueue_min(h, oid(i), val);
+		i :+= 1;
+	}
+	while (i<=m) {
+		var val := str(rand()%1000);
+		t.insert(oid(i), val);
+		pqueue_topreplace_min(h, oid(i), val);
+		i :+= 1;
+	}
+
+	var s := sort_rev(t.reverse()).reverse().slice(0,k); # topn the old way
+	var tpn := pqueue_topn(t,k,0);
+	print([=](s,h));
+	print([=](s,tpn));
+}
+PROC test_pqueue() : void {
+	#
+	# Simple example of using the heap
+	# A min-heap is used to find the k-largest elements 
+	# in an (oid,int) BAT with m random values.
+	#
+
+	module("alarm");
+
+	# table t has m elements
+	var m := 100;
+	var t := new(void,int,m);
+	t.seqbase(oid(1));
+
+	# We want the k largest elements of t
+	var k := 10; 
+
+	var h := pqueue_init(t, k); 
+
+	srand(time());
+
+	var i := 1;
+	while (i<=k) {
+		var val := int(rand()%1000);
+		t.insert(oid(i), val);
+		pqueue_enqueue_min(h, oid(i), val);
+		i :+= 1;
+	}
+	while (i<=m) {
+		var val := int(rand()%1000);
+		t.insert(oid(i), val);
+		pqueue_topreplace_min(h, oid(i), val);
+		i :+= 1;
+	}
+
+	var s := sort_rev(t.reverse()).reverse().slice(0,k); # topn the old way
+	var tpn := pqueue_topn(t,k,0);
+	print([=](s,h));
+	print([=](s,tpn));
+}
+@-
+The M5 wrapper code
+@c
+str
+PQinit(int *ret, int *bid, wrd *maxsize){
+	BAT *b,*bn;
+	if( (b= BATdescriptor(*bid)) == NULL)
+		throw(MAL, "pqueue.init","Could not access BAT");
+	pqueue_init(&bn,b,maxsize);
+	BBPreleaseref(b->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+@-
+@= PQimpl1
+pqueue_export str PQenqueue_@1@2(int *ret, int *bid, oid *idx, @1 *el);
+str
+PQenqueue_@1@2(int *ret, int *bid, oid *idx, @1 *el){
+	BAT *b;
+	if( (b= BATdescriptor(*bid)) == NULL)
+		throw(MAL, "pqueue.enqueue","Could not access BAT");
+	pqueue_enqueue_@1@2(b,idx,el);
+	(void) ret;
+	return MAL_SUCCEED;
+}
+
+pqueue_export str PQtopreplace_@1@2(int *ret, int *bid, oid *idx, @1 *el);
+str
+PQtopreplace_@1@2(int *ret, int *bid, oid *idx, @1 *el){
+	BAT *b;
+	if( (b= BATdescriptor(*bid)) == NULL)
+		throw(MAL, "pqueue.init","Could not access BAT");
+	pqueue_topreplace_@1@2(b,idx,el);
+	(void) ret;
+	return MAL_SUCCEED;
+}
+
+@= PQimpl2
+pqueue_export str PQmovedowntop_@1@2(int *ret, int *bid);
+str
+PQmovedowntop_@1@2(int *ret, int *bid){
+	BAT *b;
+	if( (b= BATdescriptor(*bid)) == NULL)
+		throw(MAL, "pqueue.movedowntop","Could not access BAT");
+	pqueue_movedowntop_@1@2(b);
+	(void) ret;
+	return MAL_SUCCEED;
+}
+
+pqueue_export str PQdequeue_@1@2(int *ret, int *bid);
+str
+PQdequeue_@1@2(int *ret, int *bid){
+	BAT *b;
+	if( (b= BATdescriptor(*bid)) == NULL)
+		throw(MAL, "pqueue.init","Could not access BAT");
+	if( pqueue_dequeue_@1@2(b) == GDK_FAIL)
+		throw(MAL, "pqueue.dequeue","Cannot dequeue from empty queue");
+	(void) ret;
+	return MAL_SUCCEED;
+}
+
+pqueue_export str PQtopn_void@1@2(int *ret, int *bid, int *N);
+str
+PQtopn_void@1@2(int *ret, int *bid, int *N){
+	BAT *b,*bn;
+	if( (b= BATdescriptor(*bid)) == NULL)
+		throw(MAL, "pqueue.topN","Could not access BAT");
+	if (b->htype == TYPE_void)
+		pqueue_topn_void@1@2(&bn,b,N);
+	else
+		pqueue_topn_@1@2(&bn,b,N);
+	if( bn){
+		*ret= bn->batCacheid;
+		BBPkeepref(*ret);
+		BBPreleaseref(b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	BBPreleaseref(b->batCacheid);
+	throw(MAL, "pqueue.topN","Failed to create BAT");
+}
+pqueue_export str PQtopn_@1@2(int *ret, int *bid, int *N);
+str
+PQtopn_@1@2(int *ret, int *bid, int *N){
+	BAT *b,*bn;
+	if( (b= BATdescriptor(*bid)) == NULL)
+		throw(MAL, "pqueue.topN","Could not access BAT");
+	if (b->htype == TYPE_void)
+		pqueue_topn_void@1@2(&bn,b,N);
+	else
+		pqueue_topn_@1@2(&bn,b,N);
+	if( bn){
+		*ret= bn->batCacheid;
+		BBPkeepref(*ret);
+		BBPreleaseref(b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	BBPreleaseref(b->batCacheid);
+	throw(MAL, "pqueue.topN","Failed to create BAT");
+}
+@= PQminmax1
+ @:PQimpl1(@1,min)@
+ @:PQimpl1(@1,max)@
+@= PQminmax2
+ @:PQimpl2(@1,min)@
+ @:PQimpl2(@1,max)@
+@= PQminmax
+ 	@:PQminmax1(@1)@
+ 	@:PQminmax2(@1)@
+@c
+	@:PQminmax(bte)@
+	@:PQminmax(chr)@
+	@:PQminmax(sht)@
+	@:PQminmax(int)@
+	@:PQminmax(oid)@
+	@:PQminmax(ptr)@
+	@:PQminmax(wrd)@
+	@:PQminmax(lng)@
+	@:PQminmax(flt)@
+	@:PQminmax(dbl)@
+	@:PQimpl2(any,min)@
+	@:PQimpl2(any,max)@
+
+@= PQany
+/* int PQenqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)*/
+pqueue_export str PQenqueue_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str  PQenqueue_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int tpe;
+	BAT *h;
+	oid *idx;
+	ptr el;
+
+        if( p->argc != 4 || 
+	    getArgType(mb,p,1) != TYPE_bat || 
+	    getArgType(mb,p,2) != TYPE_oid) 
+		throw(MAL, "enqueue_@1", "type mismatch\n");
+	tpe = getArgType(mb,p,3);
+
+	h = BATdescriptor(*(bat*) getArgReference(stk,p,1));
+	if (!h)
+		throw(MAL, "enqueue_@1", "BAT range error\n");
+	idx = (oid*) getArgReference(stk,p,2);
+	el = (ptr) getArgReference(stk,p,3);
+		
+	pqueue_enqueue_any@1(h, idx, el, tpe);
+	return MAL_SUCCEED;
+}
+
+/* int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe) */
+pqueue_export str PQtopreplace_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str  PQtopreplace_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int tpe;
+	BAT *h;
+	oid *idx;
+	ptr el;
+
+        if( p->argc != 4 || 
+	    getArgType(mb,p,1) != TYPE_bat || 
+	    getArgType(mb,p,2) != TYPE_oid) 
+		throw(MAL, "topreplace_@1", "type mismatch\n");
+	tpe = getArgType(mb,p,3);
+
+	h = BATdescriptor(*(bat*) getArgReference(stk,p,1));
+	if (!h)
+		throw(MAL, "topreplace_@1", "BAT range error\n");
+	idx = (oid*) getArgReference(stk,p,2);
+	el = (ptr) getArgReference(stk,p,3);
+		
+	pqueue_topreplace_any@1(h, idx, el, tpe);
+	return MAL_SUCCEED;
+}
+@c
+	@:PQany(min)@
+	@:PQany(max)@
+@}

@@ -545,11 +545,11 @@ str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 }
 
 @mal
-command getnextid():void
+pattern getnextid():void
 address RMTgetnextid
 comment "Prints the next unique local identifier";
 @h
-remote_export str RMTgetnextid(int *ret);
+remote_export str RMTgetnextid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 static unsigned int _remote_object_counter = 0;
 /**
@@ -562,8 +562,11 @@ static unsigned int _remote_object_counter = 0;
  * identifier.  The current prefix is "remote_put_object_" which should
  * reduce possible conflicts to a minimum.
  */
-str RMTgetnextid(int *ret) {
+str RMTgetnextid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret= (int*) getArgReference(stk,pci,0);
 	Client c = MCgetClient();
+	(void) mb;
 
 	stream_printf(c->fdout, "[ \"remote_put_object_%d\"\t]\n",
 			_remote_object_counter++);

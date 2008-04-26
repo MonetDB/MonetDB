@@ -28,7 +28,7 @@ LIBS = {
 		calc.mx bat5.mx algebra.mx status.mx unix.mx \
 		mmath.mx lock.mx sema.mx alarm.mx  batifthen.mx \
 		batcast.mx batcalc.mx batmath.mx aggr.mx counters.mx \
-		pqueue.mx mkey.mx microbenchmark.mx 
+		mkey.mx microbenchmark.mx 
 
 	#SCRIPTS = mal mil ""
 	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
@@ -103,7 +103,7 @@ headers_h = {
 		calc.mx bat5.mx algebra.mx status.mx unix.mx \
 		mmath.mx lock.mx sema.mx alarm.mx  batifthen.mx \
 		batcast.mx batcalc.mx batmath.mx aggr.mx counters.mx \
-		pqueue.mx mkey.mx microbenchmark.mx \
+		mkey.mx microbenchmark.mx \
 		batstr.mx batmtime.mx batcolor.mx group.mx array.mx logger.mx
 	HEADERS = h 
 }
@@ -115,7 +115,7 @@ headers_mal = {
 		mmath.mx lock.mx sema.mx alarm.mx batstr.mx batmtime.mx \
 		batcolor.mx batifthen.mx batcast.mx batcalc.mx batmath.mx \
 		group.mx aggr.mx array.mx \
-		counters.mx logger.mx pqueue.mx mkey.mx microbenchmark.mx
+		counters.mx logger.mx mkey.mx microbenchmark.mx
 }
 
 EXTRA_DIST_DIR = Tests

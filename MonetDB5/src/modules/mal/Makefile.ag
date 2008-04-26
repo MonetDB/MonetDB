@@ -28,7 +28,7 @@ LIBS = {
 	SOURCES = \
 		chopper.mx constraints.mx language.mx box.mx \
 		profiler.mx const.mx algebraExtensions.mx \
-		inspect.mx manual.mx \
+		inspect.mx manual.mx pqueue.mx \
 		factory.mx mdb.mx  \
 		urlbox.mx mat.mx \
 		sabaoth.mx remote.mx batxml.mx txtsim.mx recycle.mx
@@ -146,7 +146,7 @@ headers_h = {
 		\
 		chopper.mx constraints.mx language.mx box.mx \
 		profiler.mx const.mx algebraExtensions.mx \
-		inspect.mx manual.mx \
+		inspect.mx manual.mx pqueue.mx \
 		factory.mx mdb.mx  \
 		urlbox.mx mat.mx \
 		sabaoth.mx remote.mx batxml.mx  recycle.mx
@@ -160,7 +160,7 @@ headers_mal = {
 	DIR = libdir/MonetDB5
 	SOURCES = language.mx constraints.mx mal_init.mx box.mx bbp.mx \
 		profiler.mx const.mx batExtensions.mx algebraExtensions.mx \
-		inspect.mx manual.mx mal_io.mx \
+		inspect.mx manual.mx mal_io.mx pqueue.mx \
 		chopper.mx clients.mx \
 		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
 		urlbox.mx statistics.mx transaction.mx \
