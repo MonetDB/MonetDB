@@ -28,7 +28,7 @@ stdout of test 'tst057` in directory 'src/mal` itself:
 #exit always;
 #	io.print("left always 2");
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 #leave tests 
     i := 1;                             #  2 i:int := _3:int 
 barrier always := true;                 #  3 always:bit := _5:bit {J7}

@@ -36,7 +36,7 @@ end g;	# 1
 #zrev:= bat.reverse(z);
 #h(zrev);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #function g(b:bat[:int,:any]):void; 
 #f(b); 
 #end g; 

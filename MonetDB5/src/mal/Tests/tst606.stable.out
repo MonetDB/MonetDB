@@ -29,7 +29,7 @@ stdout of test 'tst606` in directory 'src/mal` itself:
 #	const.deposit(STORE_MMAP);
 #	const.deposit(STORE_COMPR);
 #end main;
-function constants.main():void;         #  0 main:void 
+function constants.main():void;         #  0 main:void := constants.main() 
     STORE_MEM := 0;                     #  1 STORE_MEM:int := _2:int 
     STORE_MMAP := 1;                    #  2 STORE_MMAP:int := _4:int 
     STORE_COMPR := 2;                   #  3 STORE_COMPR:int := _6:int 

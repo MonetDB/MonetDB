@@ -25,17 +25,17 @@ stdout of test 'tst601` in directory 'src/mal` itself:
 #const.close();	# save the content on persistent store
 #print(p2);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # Testing the box interfaces 
 # open de const box and store a constant  
 # This operation should actually be limited to the system administrator 
 # who can open any box. 
-    const.open();                       #  5 _5:void 
+    const.open();                       #  5 _5:void := CSTopen() 
     pi := 3.14700007:flt;               #  6 pi:flt := _7:flt 
     const.deposit("pi",pi);             #  7 _8:void := CSTdeposit(_9:str, pi:flt) 
     p2:flt  := const.take("pi");        #  8 p2:flt := CSTtake(_9:str) 
     io.print(p2);                       #  9 _11:void := IOprint_val(p2:flt) 
-    const.close();                      # 10 _12:void 
+    const.close();                      # 10 _12:void := CSTclose() 
 # save the content on persistent store 
     io.print(p2);                       # 12 _14:void := IOprint_val(p2:flt) 
 end main;	# 13  

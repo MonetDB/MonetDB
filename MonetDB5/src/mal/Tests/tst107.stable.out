@@ -25,7 +25,7 @@ stdout of test 'tst107` in directory 'src/mal` itself:
 #exit	t;
 #	i:= 0;
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # analyse the basic interpreter loop 
     i := 0;                             #  2 i:int := _3:int 
 barrier v := true;                      #  3 v:bit := _5:bit {J6}

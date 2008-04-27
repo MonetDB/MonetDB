@@ -20,13 +20,13 @@ stdout of test 'tst905` in directory 'src/mal` itself:
 #	redo (v,i):= nextElement(1:lng,10:lng);
 #exit (v,i);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # the multiplex code blocks. 
     b := bat.new(:lng,:lng);            #  2 b:bat[:lng,:lng] := CMDBATnew(_3:lng, _3:lng) {G}
 barrier (v,i):= language.newRange(0:lng);#  3 (v:bit, i:lng) := RNGnewRange_lng(_6:lng) {J6}
     bat.insert(b,i,i);                  #  4 _7:void := BKCinsert_bun(b:bat[:lng,:lng], i:lng, i:lng) 
     redo (v,i):= language.nextElement(1:lng,10:lng);#  5 (v:bit, i:lng) := RNGnextElement_lng(_8:lng, _9:lng) {J4}
-exit (v,i);                             #  6 (v:bit, i:lng 
+exit (v,i);                             #  6 (v:bit, i:lng) 
     c := algebra.copy(b);               #  7 c:bat[:lng,:lng] := ALGcopy(b:bat[:lng,:lng]) {G}
     _15 := bat.new(nil:lng,nil:lng);    #  8 _15:bat[:lng,:lng] := CMDBATnew(_16:lng, _16:lng) {G}
 barrier (_18,_19,_20):= bat.newIterator(b);#  9 (_18:lng, _19:lng, _20:lng) := CHPbunIterator(b:bat[:lng,:lng]) {J17}
@@ -37,7 +37,7 @@ barrier (_18,_19,_20):= bat.newIterator(b);#  9 (_18:lng, _19:lng, _20:lng) := C
 catch MALException:str ;                # 14 MALException:str {J16}
     redo (_18,_19,_20):= bat.hasMoreElements(b);# 15 (_18:lng, _19:lng, _20:lng) := CHPbunHasMoreElements(b:bat[:lng,:lng]) {J10}
 exit MALException:str ;                 # 16 MALException:str 
-exit (_18,_19,_20);                     # 17 (_18:lng, _19:lng, _20:lng 
+exit (_18,_19,_20);                     # 17 (_18:lng, _19:lng, _20:lng) 
     x:bat[:lng,:lng]  := _15;           # 18 x:bat[:lng,:lng] := _15:bat[:lng,:lng] {G}
     io.print(x);                        # 19 _14:void := IOprint_val(x:bat[:lng,:lng]) 
 end main;	# 20  

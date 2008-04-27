@@ -34,7 +34,7 @@ function user.sample(nme:str,val:any_1):bit;#  0 sample:bit := user.sample(nme:s
     return sample := true;              #  8 sample:bit := _12:bit 
 end sample;	# 9  
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # complex analysis 
 end main;	# 2  
 

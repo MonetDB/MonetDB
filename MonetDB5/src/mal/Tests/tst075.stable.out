@@ -28,8 +28,8 @@ end swap;	# 4
 #print(x);
 #print(y);
 #
-function user.main():void;              #  0 main:void {G}
-# parsing operations with multi-assignments #  1 
+function user.main():void;              #  0 main:void := user.main() {G}
+# parsing operations with multi-assignments 
     (x,y):= user.swap("world","hello"); #  2 (x:str, y:str) := user.swap(_4:str, _5:str) {G}
     io.print(x);                        #  3 _6:void := IOprint_val(x:str) 
     io.print(y);                        #  4 _7:void := IOprint_val(y:str) 

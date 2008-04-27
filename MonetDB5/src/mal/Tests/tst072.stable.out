@@ -17,8 +17,8 @@ stdout of test 'tst072` in directory 'src/mal` itself:
 #print(c);
 #print(d);
 #
-function user.main():void;              #  0 main:void {G}
-# parsing operations with multi-assignments #  1 
+function user.main():void;              #  0 main:void := user.main() {G}
+# parsing operations with multi-assignments 
     (c,d):= ("hello","world");          #  2 (c:str, d:str) := _4:str, _5:str {G}
     io.print(c);                        #  3 _6:void := IOprint_val(c:str) 
     io.print(d);                        #  4 _7:void := IOprint_val(d:str) 

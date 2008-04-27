@@ -21,10 +21,10 @@ stdout of test 'tst235` in directory 'src/mal` itself:
 #	dn:= bbp.getNames();
 #	io.print(dn,d,dl);
 #end dir;
-function user.dir():void;               #  0 dir:void {G}
-    d := bbp.getRefCount();             #  1 d:bat[:int,:int] {G}
-    dl := bbp.getLRefCount();           #  2 dl:bat[:int,:int] {G}
-    dn := bbp.getNames();               #  3 dn:bat[:int,:str] {G}
+function user.dir():void;               #  0 dir:void := user.dir() {G}
+    d := bbp.getRefCount();             #  1 d:bat[:int,:int] := CMDbbpRefCount() {G}
+    dl := bbp.getLRefCount();           #  2 dl:bat[:int,:int] := CMDbbpLRefCount() {G}
+    dn := bbp.getNames();               #  3 dn:bat[:int,:str] := CMDbbpNames() {G}
     ds := algebra.sort(dn);             #  4 ds:bat[:int,:str] := ALGhsort(dn:bat[:int,:str]) {G}
     io.table(ds,d,dl);                  #  5 _5:void := IOttable(ds:bat[:int,:str], d:bat[:int,:int], dl:bat[:int,:int]) 
 end dir;	# 6  
@@ -53,7 +53,7 @@ end createBAT;	# 9
 #io.print(d); # bat d should have 1 lref
 #dir();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # BAT references are seens as BAT's and should be subject to the 
 # same reference scheme. 
     d := user.createBAT("one");         #  3 d:BAT := user.createBAT(_4:str) {G}

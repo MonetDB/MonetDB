@@ -17,7 +17,7 @@ stdout of test 'parseErrors` in directory 'src/mal` itself:
 #io.print(1);
 #io.print(2);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
     K;                                  #  1 K:any {U}
     io.print(1);                        #  2 _2:any := io.print(_3:int) {U}
     io.print(2);                        #  3 _4:any := io.print(_5:int) {U}

@@ -65,7 +65,7 @@ stdout of test 'tst031` in directory 'src/mal` itself:
 #io.print(f);
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # testing the void semantics, both replace and delete fail (void != oid) 
     b := bat.new(:void,:int);           #  2 b:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
     bat.append(b,0);                    #  3 _5:void := BKCappend_val_wrap(b:bat[:void,:int], _6:int) 

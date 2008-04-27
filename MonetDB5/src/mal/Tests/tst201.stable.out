@@ -174,7 +174,7 @@ stdout of test 'tst201` in directory 'src/mal` itself:
 ##b.reverse.like(" fox").print;
 ##quit;
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Mil compiler Version 1.0) 
 # Copyright (c) 1993-2001, CWI. All rights reserved. 
 # Predefined code segment 

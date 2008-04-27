@@ -25,16 +25,16 @@ stdout of test 'tst920` in directory 'src/mal` itself:
 #	redo (go,i):= mal.nextElement(1:lng,20000:lng);
 #exit (go,i);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #testing garbage collection of strings 
-    t0 := alarm.usec();                 #  2 t0:lng 
+    t0 := alarm.usec();                 #  2 t0:lng := ALARMusec() 
     base := "hello  ";                  #  3 base:str := _4:str {G}
     s := str.insert(base,6,6,"world");  #  4 s:str := STRinsert(base:str, _6:int, _6:int, _7:str) {G}
     io.print(s);                        #  5 _8:void := IOprint_val(s:str) 
 barrier (go,i):= language.newRange(0:lng);#  6 (go:bit, i:lng) := RNGnewRange_lng(_11:lng) {J9}
     s := str.insert(base,6,6,"world");  #  7 s:str := STRinsert(base:str, _6:int, _6:int, _7:str) {G}
     redo (go,i):= language.nextElement(1:lng,200:lng);#  8 (go:bit, i:lng) := RNGnextElement_lng(_12:lng, _13:lng) {J7}
-exit (go,i);                            #  9 (go:bit, i:lng 
+exit (go,i);                            #  9 (go:bit, i:lng) 
 end main;	# 10  
 [ "hello world" ]
 

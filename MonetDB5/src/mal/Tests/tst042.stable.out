@@ -36,7 +36,7 @@ stdout of test 'tst042` in directory 'src/mal` itself:
 #v:= getTypeName(bbt); printf("bat %s\n",v);
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     s := "hello";                       #  1 s:str := _2:str {G}
     i := 1;                             #  2 i:int := _4:int 
     f := 3.1400001;                     #  3 f:flt := _6:flt 

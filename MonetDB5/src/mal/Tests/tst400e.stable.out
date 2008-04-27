@@ -29,7 +29,7 @@ end simple;	# 3
 #exit	v;
 #io.print(k);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # simple test of a function call  
 # performance evaluation, how expensive are 100k calls? 
     k := 0:lng;                         #  3 k:lng := _4:lng 

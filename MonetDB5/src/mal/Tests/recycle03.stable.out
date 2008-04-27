@@ -77,7 +77,7 @@ end qry;	# 7
 #qry(1,11);
 #recycle.dump();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #test the basics of the recycler 
 # re-use joins size constrainted 
     recycle.setRetainPolicy(3,5);       #  3 _3:void := RECYCLEsetRetain(_4:int, _5:int) 
@@ -90,7 +90,7 @@ function user.main():void;              #  0 main:void {G}
     user.qry(2,3);                      # 10 _20:void := user.qry(_21:int, _4:int) 
     io.print("last");                   # 11 _22:void := IOprint_val(_23:str) 
     user.qry(1,11);                     # 12 _24:void := user.qry(_7:int, _25:int) 
-    recycle.dump();                     # 13 _26:void 
+    recycle.dump();                     # 13 _26:void := RECYCLEdump() 
 end main;	# 14  
 [ "start" ]
 #-----------------#

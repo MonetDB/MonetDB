@@ -20,10 +20,10 @@ stdout of test 'tst234` in directory 'src/mal` itself:
 #	dn:= bbp.getNames();
 #	io.print(dn,d,dl);
 #end dir;
-function user.dir():void;               #  0 dir:void {G}
-    d := bbp.getRefCount();             #  1 d:bat[:int,:int] {G}
-    dl := bbp.getLRefCount();           #  2 dl:bat[:int,:int] {G}
-    dn := bbp.getNames();               #  3 dn:bat[:int,:str] {G}
+function user.dir():void;               #  0 dir:void := user.dir() {G}
+    d := bbp.getRefCount();             #  1 d:bat[:int,:int] := CMDbbpRefCount() {G}
+    dl := bbp.getLRefCount();           #  2 dl:bat[:int,:int] := CMDbbpLRefCount() {G}
+    dn := bbp.getNames();               #  3 dn:bat[:int,:str] := CMDbbpNames() {G}
     ds := algebra.sort(dn);             #  4 ds:bat[:int,:str] := ALGhsort(dn:bat[:int,:str]) {G}
     io.table(ds,d,dl);                  #  5 _5:void := IOttable(ds:bat[:int,:str], d:bat[:int,:int], dl:bat[:int,:int]) 
 end dir;	# 6  
@@ -50,7 +50,7 @@ end tmp1;	# 6
 #d:= user.tmp1(d);
 #dir();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # dealing with BAT references in functions 
     b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     d := user.tmp1(b);                  #  3 d:bat[:int,:int] := user.tmp1(b:bat[:int,:int]) {G}

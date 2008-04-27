@@ -31,7 +31,7 @@ stdout of test 'tst1225` in directory 'src/mal` itself:
 #	bat.setColumn(tzone_bat,"timezone");
 #	jd_a := io.print(tzone_bat);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #old bug in tst1200 
     rule_apr := mtime.rule("last THU on or before aPr 1@01:15");#  2 rule_apr:zrule := MTIMErule_fromstr(_3:str) 
     rule_nov := mtime.rule(11,-10,-4,75);#  3 rule_nov:zrule := MTIMErule_create(_5:int, _6:int, _7:int, _8:int) 

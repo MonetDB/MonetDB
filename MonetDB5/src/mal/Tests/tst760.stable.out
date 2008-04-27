@@ -31,7 +31,7 @@ end test;	# 3
 !MALException:user.test[0]:Error in cloned function
 
 !TypeException:user.main[4]:'user.test' undefined in: _6:void := user.test(c:bat[:int,:str], _7:str)
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Polymorphic function tests 
 # Catching a dynamic error 
     c := bat.new(:int,:str);            #  3 c:bat[:int,:str] := CMDBATnew(_4:int, _5:str) {G}

@@ -47,41 +47,41 @@ stdout of test 'tst273` in directory 'src/mal` itself:
 #io.printf("# wrbytes %d\n",wrbytes);
 #profiler.stopMonitor();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # the multiplex code blocks. 
-    t0 := alarm.usec();                 #  2 t0:lng 
+    t0 := alarm.usec();                 #  2 t0:lng := ALARMusec() 
     b := bat.new(:oid,:lng);            #  3 b:bat[:oid,:lng] := CMDBATnew(_4:oid, _5:lng) {G}
 barrier (go,i):= language.newRange(0:lng);#  4 (go:bit, i:lng) := RNGnewRange_lng(_8:lng) {J9}
-    k := mmath.rand();                  #  5 k:int 
+    k := mmath.rand();                  #  5 k:int := MATHrandint() 
     l := calc.lng(k);                   #  6 l:lng := CALCint2lng(k:int) 
     bat.insert(b,nil:oid,l);            #  7 _11:void := BKCinsert_bun(b:bat[:oid,:lng], _12:oid, l:lng) 
     redo (go,i):= language.nextElement(1:lng,10000:lng);#  8 (go:bit, i:lng) := RNGnextElement_lng(_13:lng, _14:lng) {J5}
-exit (go,i);                            #  9 (go:bit, i:lng 
+exit (go,i);                            #  9 (go:bit, i:lng) 
     profiler.setFilter(b);              # 10 _15:void := CMDsetFilterVariable(b:bat[:oid,:lng]) 
-    profiler.start();                   # 11 _16:void 
+    profiler.start();                   # 11 _16:void := CMDstartProfiler() 
     io.printf("#monitor \n");           # 12 _17:void := IOprint_str(_18:str) 
     mx := aggr.max(b);                  # 13 mx:lng := ALGmax_lng(b:bat[:oid,:lng]) 
-    (clk,rdbytes,wrbytes):= profiler.getEvent();# 14 (clk:lng, rdbytes:int, wrbytes:int 
+    (clk,rdbytes,wrbytes):= profiler.getEvent();# 14 (clk:lng, rdbytes:int, wrbytes:int) := CMDgetEvent() 
     io.printf("# clk %d\n",clk);        # 15 _23:void := IOprint_formatted_lng(_24:str, clk:lng) 
     io.printf("# rdbytes %d\n",rdbytes);# 16 _25:void := IOprint_formatted_int(_26:str, rdbytes:int) 
     io.printf("# wrbytes %d\n",wrbytes);# 17 _27:void := IOprint_formatted_int(_28:str, wrbytes:int) 
     io.printf("#max %d\n",mx);          # 18 _29:void := IOprint_formatted_lng(_30:str, mx:lng) 
     algebra.select(b,nil:lng,mx);       # 19 _31:bat[:oid,:lng] := ALGselect(b:bat[:oid,:lng], _32:lng, mx:lng) {G}
-    (clk,rdbytes,wrbytes):= profiler.getEvent();# 20 (clk:lng, rdbytes:int, wrbytes:int 
+    (clk,rdbytes,wrbytes):= profiler.getEvent();# 20 (clk:lng, rdbytes:int, wrbytes:int) := CMDgetEvent() 
     io.printf("# clk %d\n",clk);        # 21 _33:void := IOprint_formatted_lng(_24:str, clk:lng) 
     io.printf("# rdbytes %d\n",rdbytes);# 22 _34:void := IOprint_formatted_int(_26:str, rdbytes:int) 
     io.printf("# wrbytes %d\n",wrbytes);# 23 _35:void := IOprint_formatted_int(_28:str, wrbytes:int) 
     algebra.select(b,mx,nil:lng);       # 24 _36:bat[:oid,:lng] := ALGselect(b:bat[:oid,:lng], mx:lng, _32:lng) {G}
-    (clk,rdbytes,wrbytes):= profiler.getEvent();# 25 (clk:lng, rdbytes:int, wrbytes:int 
+    (clk,rdbytes,wrbytes):= profiler.getEvent();# 25 (clk:lng, rdbytes:int, wrbytes:int) := CMDgetEvent() 
     io.printf("# clk %d\n",clk);        # 26 _37:void := IOprint_formatted_lng(_24:str, clk:lng) 
     io.printf("# rdbytes %d\n",rdbytes);# 27 _38:void := IOprint_formatted_int(_26:str, rdbytes:int) 
     io.printf("# wrbytes %d\n",wrbytes);# 28 _39:void := IOprint_formatted_int(_28:str, wrbytes:int) 
     d := mmath.sin(0.20000000298023224:dbl);# 29 d:dbl := MATHunary_SINdbl(_41:dbl) 
-    (clk,rdbytes,wrbytes):= profiler.getEvent();# 30 (clk:lng, rdbytes:int, wrbytes:int 
+    (clk,rdbytes,wrbytes):= profiler.getEvent();# 30 (clk:lng, rdbytes:int, wrbytes:int) := CMDgetEvent() 
     io.printf("# clk %d\n",clk);        # 31 _42:void := IOprint_formatted_lng(_24:str, clk:lng) 
     io.printf("# rdbytes %d\n",rdbytes);# 32 _43:void := IOprint_formatted_int(_26:str, rdbytes:int) 
     io.printf("# wrbytes %d\n",wrbytes);# 33 _44:void := IOprint_formatted_int(_28:str, wrbytes:int) 
-    profiler.stop();                    # 34 _45:void 
+    profiler.stop();                    # 34 _45:void := CMDstopProfiler() 
 end main;	# 35  
 #monitor 
 # clk 225

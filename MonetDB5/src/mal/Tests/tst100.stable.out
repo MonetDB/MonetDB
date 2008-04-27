@@ -20,7 +20,7 @@ stdout of test 'tst100` in directory 'src/mal` itself:
 #d:= +(3,1);
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # complex first test, can we gain access to the calculator function 
     a := calc.+(3,1);                   #  2 a:int := CALCbinaryADDintint(_3:int, _4:int) 
     c := calc.+(7,8);                   #  3 c:int := CALCbinaryADDintint(_6:int, _7:int) 

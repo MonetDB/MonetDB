@@ -21,7 +21,7 @@ function user.dummy{dense=true}(a:int{unsafe=true,sorted=true},b:int{sequence=tr
 end dummy;	# 2  
 #function myprint{unsafe,optimizer}():void;
 #end myprint;
-function user.myprint{unsafe,optimizer}():void;#  0 myprint:void 
+function user.myprint{unsafe,optimizer}():void;#  0 myprint:void := user.myprint() 
 end myprint;	# 1  
 #
 #a:= 0;
@@ -31,7 +31,7 @@ end myprint;	# 1
 #mdb.var("user","myprint");
 #
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 #Parsing properties and keeping them around 
     a{sorted=true} := 0;                #  2 a:int := _3:int 
     b{sequence=true} := 2;              #  3 b:int := _5:int 

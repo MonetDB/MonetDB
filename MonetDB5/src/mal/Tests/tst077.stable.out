@@ -32,7 +32,7 @@ end swap;	# 3
 #print(y);
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # parsing operations with multi-assignments 
     X := bat.new(:int,:int);            #  2 X:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     bat.insert(X,1,1);                  #  3 _4:void := BKCinsert_bun(X:bat[:int,:int], _5:int, _5:int) 

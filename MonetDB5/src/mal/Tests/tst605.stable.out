@@ -31,7 +31,7 @@ stdout of test 'tst605` in directory 'src/mal` itself:
 #	redo (b,nme):= const.hasMoreElements();
 #exit b;
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Testing global consts defined for all users 
 # It should traverse the nested spaces looking for the correct variable 
 # take a local copy 
@@ -43,11 +43,11 @@ function user.main():void;              #  0 main:void {G}
 #	bb:bat[void,str] := const.take(environment); 
 # how to obtain a copy of all objects in a space? 
     io.print("Contents of the 'const' box");# 11 _15:void := IOprint_val(_16:str) 
-barrier (b,nme):= const.newIterator();  # 12 (b:lng, nme:str {GJ17}
+barrier (b,nme):= const.newIterator();  # 12 (b:lng, nme:str) := CSTnewIterator() {GJ17}
     io.printf("# %s=",nme);             # 13 _19:void := IOprint_formatted_str(_20:str, nme:str) 
     val:str  := const.toString(nme);    # 14 val:str := CSTtoString(nme:str) {G}
     io.printf("%s\n",val);              # 15 _22:void := IOprint_formatted_str(_23:str, val:str) 
-    redo (b,nme):= const.hasMoreElements();# 16 (b:lng, nme:str {GJ13}
+    redo (b,nme):= const.hasMoreElements();# 16 (b:lng, nme:str) := CSThasMoreElements() {GJ13}
 exit b;                                 # 17 b:lng 
 end main;	# 18  
 [ "Contents of the 'const' box" ]

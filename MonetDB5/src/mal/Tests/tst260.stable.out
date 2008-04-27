@@ -32,7 +32,7 @@ stdout of test 'tst260` in directory 'src/mal` itself:
 #algebra.topN(b,9L);
 #io.print(b);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # TopN queryies 
     b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     err := bat.insert(b,1,15);          #  3 err:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) 

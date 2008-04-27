@@ -31,7 +31,7 @@ stdout of test 'tst043` in directory 'src/mal` itself:
 #l:= calc.lng(nil);	
 #io.printf("formatted lng %5d\n",d);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # this sequence tests nil type management  
     a := calc.int(nil:void);            #  2 a:int := CALCnil2int(_3:void) 
     io.printf("formatted int %-3d\n",a);#  3 _4:void := IOprint_formatted_int(_5:str, a:int) 

@@ -34,7 +34,7 @@ stdout of test 'tst050` in directory 'src/mal` itself:
 !TypeException:user.main[11]:'bat.new' undefined in: y:bat[:str,:int] := bat.new(_11:int, _11:int)
 
 !TypeException:user.main[12]:type mismatch flt := str
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Variables names may be tagged with a type upfront. 
 # They may be initialized with a lexical constant using 
 # either their stored type syntax or with a string literal 

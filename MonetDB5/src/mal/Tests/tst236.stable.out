@@ -17,10 +17,10 @@ stdout of test 'tst236` in directory 'src/mal` itself:
 #        dn:= bbp.getNames();
 #        io.print(dn,d,dl);
 #end dir;
-function user.dir():void;               #  0 dir:void {G}
-    d := bbp.getRefCount();             #  1 d:bat[:int,:int] {G}
-    dl := bbp.getLRefCount();           #  2 dl:bat[:int,:int] {G}
-    dn := bbp.getNames();               #  3 dn:bat[:int,:str] {G}
+function user.dir():void;               #  0 dir:void := user.dir() {G}
+    d := bbp.getRefCount();             #  1 d:bat[:int,:int] := CMDbbpRefCount() {G}
+    dl := bbp.getLRefCount();           #  2 dl:bat[:int,:int] := CMDbbpLRefCount() {G}
+    dn := bbp.getNames();               #  3 dn:bat[:int,:str] := CMDbbpNames() {G}
     ds := algebra.sort(dn);             #  4 ds:bat[:int,:str] := ALGhsort(dn:bat[:int,:str]) {G}
     io.table(ds,d,dl);                  #  5 _5:void := IOttable(ds:bat[:int,:str], d:bat[:int,:int], dl:bat[:int,:int]) 
 end dir;	# 6  
@@ -45,7 +45,7 @@ end createBAT;	# 5
 #dir();
 #io.print(r);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # check reference counting and multiplex 
     m := bat.new(:oid,:str);            #  2 m:bat[:oid,:str] := CMDBATnew(_3:oid, _4:str) {G}
     bat.insert(m,10@0:oid,"ten");       #  3 _5:void := BKCinsert_bun(m:bat[:oid,:str], _6:oid, _7:str) 
@@ -58,7 +58,7 @@ barrier (_19,_20,_21):= bat.newIterator(m);#  6 (_19:lng, _20:oid, _21:str) := C
 catch MALException:str ;                # 10 MALException:str {J12}
     redo (_19,_20,_21):= bat.hasMoreElements(m);# 11 (_19:lng, _20:oid, _21:str) := CHPbunHasMoreElements(m:bat[:oid,:str]) {GJ7}
 exit MALException:str ;                 # 12 MALException:str 
-exit (_19,_20,_21);                     # 13 (_19:lng, _20:oid, _21:str 
+exit (_19,_20,_21);                     # 13 (_19:lng, _20:oid, _21:str) 
     r:bat[:oid,:BAT]  := _15;           # 14 r:bat[:oid,:BAT] := _15:bat[:oid,:BAT] {G}
     io.print(r);                        # 15 _14:void := IOprint_val(r:bat[:oid,:BAT]) 
 end main;	# 16  

@@ -17,11 +17,11 @@ stdout of test 'tst400a` in directory 'src/mal` itself:
 #exit	(b,v);
 #io.print("end of loop");
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # simple iterator loop test 
 barrier (b,v):= language.newRange(0:lng);#  2 (b:bit, v:lng) := RNGnewRange_lng(_4:lng) {J4}
     redo (b,v):= language.nextElement(1:lng,1000000:lng);#  3 (b:bit, v:lng) := RNGnextElement_lng(_5:lng, _6:lng) {J3}
-exit (b,v);                             #  4 (b:bit, v:lng 
+exit (b,v);                             #  4 (b:bit, v:lng) 
     io.print("end of loop");            #  5 _7:void := IOprint_val(_8:str) 
 end main;	# 6  
 [ "end of loop" ]

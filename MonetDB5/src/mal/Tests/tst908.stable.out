@@ -36,13 +36,13 @@ end perftst;	# 5
 #        redo (v,i):= nextElement(1:lng,10:lng);
 #exit (v,i);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # the multiplex code blocks. 
     b := bat.new(:oid,:lng);            #  2 b:bat[:oid,:lng] := CMDBATnew(_3:oid, _4:lng) {G}
 barrier (v,i):= language.newRange(0:lng);#  3 (v:bit, i:lng) := RNGnewRange_lng(_7:lng) {J6}
     bat.append(b,i);                    #  4 _8:void := BKCappend_val_wrap(b:bat[:oid,:lng], i:lng) 
     redo (v,i):= language.nextElement(1:lng,10:lng);#  5 (v:bit, i:lng) := RNGnextElement_lng(_9:lng, _10:lng) {J4}
-exit (v,i);                             #  6 (v:bit, i:lng 
+exit (v,i);                             #  6 (v:bit, i:lng) 
     user.perftst(b,1:lng);              #  7 _11:void := user.perftst(b:bat[:oid,:lng], _9:lng) 
 end main;	# 8  
 [ "perftst" ]

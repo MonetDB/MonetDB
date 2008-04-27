@@ -25,7 +25,7 @@ pattern user.fs(i:int,s:str...):void address MDBdummy;#  0 fs:void := user.fs(i:
 #fs(1,"a","b");
 #fs(1,"a","b","c");
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 #Testing variable argument lists 
     user.fi(1);                         #  2 _2:void := MDBdummy(_3:int) 
     user.fi(1,2);                       #  3 _4:void := MDBdummy(_3:int, _5:int) 

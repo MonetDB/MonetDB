@@ -20,11 +20,11 @@ stdout of test 'tst610` in directory 'src/mal` itself:
 #    gl:=bbp.getLRefCount();
 #    print(g,gr,gl);
 #end refs;
-function user.refs():void;              #  0 refs:void {G}
-    g := bbp.getNames();                #  1 g:bat[:int,:str] {G}
+function user.refs():void;              #  0 refs:void := user.refs() {G}
+    g := bbp.getNames();                #  1 g:bat[:int,:str] := CMDbbpNames() {G}
     gs := algebra.sort(g);              #  2 gs:bat[:int,:str] := ALGhsort(g:bat[:int,:str]) {G}
-    gr := bbp.getRefCount();            #  3 gr:bat[:int,:int] {G}
-    gl := bbp.getLRefCount();           #  4 gl:bat[:int,:int] {G}
+    gr := bbp.getRefCount();            #  3 gr:bat[:int,:int] := CMDbbpRefCount() {G}
+    gl := bbp.getLRefCount();           #  4 gl:bat[:int,:int] := CMDbbpLRefCount() {G}
     io.table(gs,gr,gl);                 #  5 _5:void := IOttable(gs:bat[:int,:str], gr:bat[:int,:int], gl:bat[:int,:int]) 
 end refs;	# 6  
 #
@@ -68,7 +68,7 @@ end refs;	# 6
 #print("BAT was removed from the box");
 #exit MALException;
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #this test is used to monitor reference count setting 
 #create a persistent bat and destroy it in test 612 
     b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
@@ -81,7 +81,7 @@ function user.main():void;              #  0 main:void {G}
 #refs(); 
 # it is committed  
     io.print("open box");               # 12 _17:void := IOprint_val(_18:str) 
-    bbp.open();                         # 13 _19:void 
+    bbp.open();                         # 13 _19:void := CMDbbpopen() 
 #user.refs(); 
     t:bat[:int,:int]  := bbp.bind("tasks");# 15 t:bat[:int,:int] := CMDbbpbind(_11:str) {G}
     io.print(t);                        # 16 _22:void := IOprint_val(t:bat[:int,:int]) 

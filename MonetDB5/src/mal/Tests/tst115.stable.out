@@ -22,7 +22,7 @@ command user.+(L:any_1,R:any_1):any_1 address addIntInt;#  0 +:any_1 := user.+(L
 #	z:= 12;
 #	return z;
 #end doitOnce;
-function user.doitOnce():int;           #  0 doitOnce:int 
+function user.doitOnce():int;           #  0 doitOnce:int := user.doitOnce() 
     z := 12;                            #  1 z:int := _2:int 
     return doitOnce := z;               #  2 doitOnce:int := z:int 
 end doitOnce;	# 3  
@@ -49,10 +49,10 @@ end doitTwice;	# 5
 #d:= doitTwice("wrong");
 #
 !TypeException:user.main[7]:'user.doitTwice' undefined in: d:int := user.doitTwice(_9:str)
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # the next step is to trace the call of a mal function call 
     a := 1;                             #  2 a:int := _3:int 
-    b := user.doitOnce();               #  3 b:int 
+    b := user.doitOnce();               #  3 b:int := user.doitOnce() 
     c := 2;                             #  4 c:int := _6:int 
     d := user.doitTwice(3);             #  5 d:int := user.doitTwice(_8:int) 
     c := 3;                             #  6 c:int := _8:int 

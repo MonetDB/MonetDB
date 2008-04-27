@@ -15,7 +15,7 @@ stdout of test 'tst277` in directory 'src/mal` itself:
 #b:= new(:void,:int);
 #r:= reverse(b);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     r := bat.reverse(b);                #  2 r:bat[:int,:oid] := BKCreverse(b:bat[:oid,:int]) {G}
 end main;	# 3  

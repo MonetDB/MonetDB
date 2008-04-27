@@ -20,7 +20,7 @@ stdout of test 'tst014` in directory 'src/mal` itself:
 #	redo b:= <(i,3);
 #exit 	b;
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # conditionally redo a block 
     i := 1;                             #  2 i:int := _3:int 
 barrier b := calc.==(i,1);              #  3 b:bit := CALCcompEQintint(i:int, _3:int) {J7}

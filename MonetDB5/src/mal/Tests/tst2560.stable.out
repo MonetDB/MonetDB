@@ -75,7 +75,7 @@ end view1;	# 18
 #io.print(e);
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #materialized views example 
     r := bat.new(:oid,:int);            #  2 r:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
     bat.setRole(r,"emp","age");         #  3 _5:void := BKCsetRole(r:bat[:oid,:int], _6:str, _7:str) 

@@ -20,7 +20,7 @@ stdout of test 'tst002` in directory 'src/mal` itself:
 #	b:= false;
 #exit barrier;
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # reserved names may not be used as target variables 
     true := 23;                         #  2 true:int := _3:int 
     false := 24;                        #  3 false:int := _5:int 

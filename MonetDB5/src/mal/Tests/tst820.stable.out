@@ -20,7 +20,7 @@ stdout of test 'tst820` in directory 'src/mal` itself:
 #	address_str := new(:oid,:str);
 #	address_city:= new(:oid,:str);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # how does an SQL schema become accessible. 
     person_key_name := bat.new(:oid,:str);#  2 person_key_name:bat[:oid,:str] := CMDBATnew(_3:oid, _4:str) {G}
     person_key_age := bat.new(:oid,:int);#  3 person_key_age:bat[:oid,:int] := CMDBATnew(_3:oid, _6:int) {G}

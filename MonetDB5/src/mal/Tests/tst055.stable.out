@@ -22,7 +22,7 @@ stdout of test 'tst055` in directory 'src/mal` itself:
 #l:lng := nil:lng;	print(l);
 #j:int := nil:int;	print(j);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Nil values 
     s:str  := nil:str;                  #  2 s:str := _3:str {G}
     io.print(s);                        #  3 _4:void := IOprint_val(s:str) 

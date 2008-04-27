@@ -20,7 +20,7 @@ stdout of test 'tst029` in directory 'src/mal` itself:
 #s:= algebra.fetch(b,2);
 #io.printf("%s\n",s);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:int,:str);            #  1 b:bat[:int,:str] := CMDBATnew(_2:int, _3:str) {G}
     bat.insert(b,1,"io.print(1);");     #  2 _4:void := BKCinsert_bun(b:bat[:int,:str], _5:int, _6:str) 
     bat.insert(b,2,"io.print(\"hello\");");#  3 _7:void := BKCinsert_bun(b:bat[:int,:str], _8:int, _9:str) 

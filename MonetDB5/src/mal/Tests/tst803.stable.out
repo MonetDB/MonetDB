@@ -20,7 +20,7 @@ stdout of test 'tst803` in directory 'src/mal` itself:
 #io.print(b);
 #
 !TypeException:user.main[5]:'bat.insert' undefined in: _6:any := bat.insert(b:BAT, _7:int, _8:int)
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # you can not insert against an arbitrary BAT identifier 
 # because you don't know its type. 
     z := bat.new(:int,:int);            #  3 z:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}

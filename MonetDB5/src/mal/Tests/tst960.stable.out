@@ -51,7 +51,7 @@ stdout of test 'tst960` in directory 'src/mal` itself:
 #plus:= batcalc.+(S,S); 
 #io.print(plus);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # the chunk mechanism 
     S := bat.new(:oid,:str);            #  2 S:bat[:oid,:str] := CMDBATnew(_3:oid, _4:str) {G}
     bat.append(S,"hello");              #  3 _5:void := BKCappend_val_wrap(S:bat[:oid,:str], _6:str) 

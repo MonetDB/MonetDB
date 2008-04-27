@@ -21,7 +21,7 @@ stdout of test 'tst056` in directory 'src/mal` itself:
 #ox1  := 0@1;    
 #print(ox1);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
     zxx := 0@0;                         #  1 zxx:oid := _2:oid 
     io.print(zxx);                      #  2 _3:void := IOprint_val(zxx:oid) 
     o1x := 1@0;                         #  3 o1x:oid := _5:oid 

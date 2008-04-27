@@ -50,7 +50,7 @@ stdout of test 'tst130` in directory 'src/mal` itself:
 #fc:= batcalc.isnil(bc);
 #io.print(fc);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # testing batcalc isnull versions 
     bi := bat.new(:int,:int);           #  2 bi:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     bat.insert(bi,1,2);                 #  3 _4:void := BKCinsert_bun(bi:bat[:int,:int], _5:int, _6:int) 

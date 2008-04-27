@@ -35,7 +35,7 @@ exit L;                                 #  7 L:bit
     return (noes,val):= (false,seed);   #  8 (noes:bit, val:int) := _9:bit, seed:int 
 end random;	# 9  
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # Factory functions seem to provide a better control structure 
 end main;	# 2  
 

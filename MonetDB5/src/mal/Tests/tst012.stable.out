@@ -29,7 +29,7 @@ stdout of test 'tst012` in directory 'src/mal` itself:
 #exit	j;
 #	print("second loop done");
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # simple loop with controlled redo 
     i := 0;                             #  2 i:int := _3:int 
 barrier j := calc.<(i,3);               #  3 j:bit := CALCcompLTintint(i:int, _5:int) {J7}

@@ -25,7 +25,7 @@ stdout of test 'tst035` in directory 'src/mal` itself:
 #b:=b;
 #i:= getLRefCount(b); print(i);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #The MAL interpreter should initiate garbage collection correctly 
 # early version was too early 
     z := "hello world";                 #  3 z:str := _4:str {G}

@@ -29,7 +29,7 @@ stdout of test 'tst253` in directory 'src/mal` itself:
 #f:= algebra.markH(b);
 #io.print(f);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # testing void bats 
     b := bat.new(:oid,:str);            #  2 b:bat[:oid,:str] := CMDBATnew(_3:oid, _4:str) {G}
     bat.insert(b,nil:oid,"hello");      #  3 _5:void := BKCinsert_bun(b:bat[:oid,:str], _6:oid, _7:str) 

@@ -19,7 +19,7 @@ stdout of test 'tst301` in directory 'src/mal` itself:
 #	printf("catched %d\n",IllegalAccess);
 #exit IllegalAccess;
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 #propagate INT exception 
     raise IllegalAccess := 1234;        #  2 IllegalAccess:int := _3:int 
     io.print("should not come here\n"); #  3 _4:void := IOprint_val(_5:str) 

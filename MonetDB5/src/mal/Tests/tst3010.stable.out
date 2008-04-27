@@ -35,7 +35,7 @@ end add2;	# 3
 #z:= user.add(i,i); #violates properties
 #kk:= user.add2(i,i);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 #Parsing properties and keeping them around 
     i{cost=23} := 23;                   #  2 i:int := _3:int 
     z := user.add(i,i);                 #  3 z:int := user.add(i:int, i:int) 

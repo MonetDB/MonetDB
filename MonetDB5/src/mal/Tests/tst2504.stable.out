@@ -45,7 +45,7 @@ end random;	# 9
 #r2:= random(1);
 #print(r2);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # The prototypical factory construct 
 # test factory return and restart 
     r1 := user.random(1);               #  3 r1:int := user.random(_4:int) 

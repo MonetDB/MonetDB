@@ -23,7 +23,7 @@ stdout of test 'tst110` in directory 'src/mal` itself:
 #exit	v;
 #	k:= 3;
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # Simply skip the barred block 
 # analyse the basic interpreter loop 
     i := 0;                             #  3 i:int := _4:int 

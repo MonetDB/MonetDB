@@ -24,17 +24,17 @@ stdout of test 'tst400` in directory 'src/mal` itself:
 #	redo (v2,i):= nextElement(2,5);
 #exit	(v2,i);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 barrier (v1,i):= language.newRange(0);  #  1 (v1:bit, i:int) := RNGnewRange_int(_3:int) {J4}
     io.print("do something");           #  2 _4:void := IOprint_val(_5:str) 
     redo (v1,i):= language.nextElement(1,2);#  3 (v1:bit, i:int) := RNGnextElement_int(_6:int, _7:int) {J2}
-exit (v1,i);                            #  4 (v1:bit, i:int 
+exit (v1,i);                            #  4 (v1:bit, i:int) 
     io.printf("left first loop with %s\n",v1);#  5 _8:void := IOprint_formatted_bit(_9:str, v1:bit) 
     io.print("next iteration");         #  6 _10:void := IOprint_val(_11:str) 
 barrier (v2,i):= language.newRange(0);  #  7 (v2:bit, i:int) := RNGnewRange_int(_3:int) {J10}
     io.print("do something else");      #  8 _13:void := IOprint_val(_14:str) 
     redo (v2,i):= language.nextElement(2,5);#  9 (v2:bit, i:int) := RNGnextElement_int(_7:int, _15:int) {J8}
-exit (v2,i);                            # 10 (v2:bit, i:int 
+exit (v2,i);                            # 10 (v2:bit, i:int) 
 end main;	# 11  
 [ "do something" ]
 [ "do something" ]

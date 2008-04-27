@@ -22,8 +22,8 @@ command bbp.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;#  0 new:b
 #b:= bbp.new(:str,:int);
 #
 !TypeException:user.main[2]:'bbp.new' undefined in: b:bat[:str,:int] := bbp.new(_3:str, _4:int)
-function user.main():void;              #  0 main:void {G}
-# check classification of functions in the proper module #  1 
+function user.main():void;              #  0 main:void := user.main() {G}
+# check classification of functions in the proper module 
     b := bbp.new(:str,:int);            #  2 b:bat[:str,:int] := bbp.new(_3:str, _4:int) {UG}
 end main;	# 3  
 

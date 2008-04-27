@@ -25,7 +25,7 @@ end tst;	# 3
 #user.tst(1);
 #user.tst("wrong");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # The direction for future expansion of the properties 
     user.tst(1);                        #  2 _2:int := user.tst(_3:int) 
     user.tst("wrong");                  #  3 _4:str := user.tst(_5:str) {G}

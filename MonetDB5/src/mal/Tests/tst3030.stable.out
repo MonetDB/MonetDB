@@ -29,7 +29,7 @@ end newsemijoin;	# 2
 !TypeException:user.main[6]:'algebra.sort' undefined in: y:int := algebra.sort(w:bat[:int,:int])
 
 !TypeException:user.main[8]:'algebra.sort' undefined in: y:int := algebra.sort(w:bat[:int,:int])
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #Parsing properties and keeping them around 
 # note the use of the first parameter to obtain property set 
     z := bat.new(:int,:int);            #  3 z:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}

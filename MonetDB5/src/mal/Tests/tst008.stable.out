@@ -20,9 +20,9 @@ stdout of test 'tst008` in directory 'src/mal` itself:
 
 #io.print(i);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
     i := 32;                            #  1 i:any := _2:int {U}
-    io.printi();                        #  2 _3:any {U}
+    io.printi();                        #  2 _3:any := io.printi() {U}
     io.print(i);                        #  3 _4:any := io.print(i:any) {U}
 end main;                               #  4  {U}
 

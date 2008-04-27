@@ -16,20 +16,20 @@ stdout of test 'tst009` in directory 'src/mal` itself:
 #call("print(\"hello\");");
 #call("s:=\"goodbye\";print(s);");
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
     language.call("io.print(1);");      #  1 _1:void := CMDcallString(_2:str) 
     language.call("io.print(\"hello\");");#  2 _3:void := CMDcallString(_4:str) 
     language.call("s:=\"goodbye\";io.print(s);");#  3 _5:void := CMDcallString(_6:str) 
 end main;	# 4  
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
     io.print(1);                        #  1 _1:void := IOprint_val(_2:int) 
 end main;	# 2  
 [ 1 ]
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
     io.print("hello");                  #  1 _1:void := IOprint_val(_2:str) 
 end main;	# 2  
 [ "hello" ]
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     s := "goodbye";                     #  1 s:str := _2:str {G}
     io.print(s);                        #  2 _3:void := IOprint_val(s:str) 
 end main;	# 3  

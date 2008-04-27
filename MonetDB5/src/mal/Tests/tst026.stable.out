@@ -28,7 +28,7 @@ stdout of test 'tst026` in directory 'src/mal` itself:
 #io.print(f);
 #io.print(g);
 #end foo;
-function user.foo():void;               #  0 foo:void {G}
+function user.foo():void;               #  0 foo:void := user.foo() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     cnt := 0:int;                       #  2 cnt:int := _5:int 
 barrier d := true;                      #  3 d:bit := _7:bit {J11}
@@ -47,8 +47,8 @@ exit d;                                 # 11 d:bit
 end foo;	# 16  
 #foo();
 #
-function user.main():void;              #  0 main:void 
-    user.foo();                         #  1 _1:void 
+function user.main():void;              #  0 main:void := user.main() 
+    user.foo();                         #  1 _1:void := user.foo() 
 end main;	# 2  
 [ 1 ]
 [ 1 ]

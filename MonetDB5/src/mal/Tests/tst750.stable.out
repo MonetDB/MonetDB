@@ -26,7 +26,7 @@ end test;	# 3
 #b:=new(:int,:int);
 #test(b,2);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Polymorphic function tests 
 # Cloning two versions of a single function 
     b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}

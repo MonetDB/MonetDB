@@ -48,21 +48,21 @@ stdout of test 'tst901b` in directory 'src/mal` itself:
 #io.printf("compiled multiplex %d\n",d3);
 ##profiler.stop();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # what is the overhead of MAL in multiplex situations 
 # using a BATloop !! This is 40x slower as the V4.3 multiplex implementation 
 #profiler.setAll(); 
 #profiler.setLogFile("/tmp/MonetProfile.xml"); 
     b := bat.new(:oid,:lng);            #  5 b:bat[:oid,:lng] := CMDBATnew(_6:oid, _7:lng) {G}
-    t0 := alarm.usec();                 #  6 t0:lng 
+    t0 := alarm.usec();                 #  6 t0:lng := ALARMusec() 
 barrier (v,i):= language.newRange(0:lng);#  7 (v:bit, i:lng) := RNGnewRange_lng(_11:lng) {J11}
     o := calc.oid(i);                   #  8 o:oid := CALClng2oid(i:lng) 
     bat.insert(b,o,i);                  #  9 _13:void := BKCinsert_bun(b:bat[:oid,:lng], o:oid, i:lng) 
     redo (v,i):= language.nextElement(1:lng,1000000:lng);# 10 (v:bit, i:lng) := RNGnextElement_lng(_14:lng, _15:lng) {J8}
-exit (v,i);                             # 11 (v:bit, i:lng 
-    t1 := alarm.usec();                 # 12 t1:lng 
+exit (v,i);                             # 11 (v:bit, i:lng) 
+    t1 := alarm.usec();                 # 12 t1:lng := ALARMusec() 
     c := algebra.copy(b);               # 13 c:bat[:oid,:lng] := ALGcopy(b:bat[:oid,:lng]) {G}
-    t2 := alarm.usec();                 # 14 t2:lng 
+    t2 := alarm.usec();                 # 14 t2:lng := ALARMusec() 
     d := bat.new(:oid,:lng);            # 15 d:bat[:oid,:lng] := CMDBATnew(_6:oid, _7:lng) {G}
 barrier (mloop,h,t):= bat.newIterator(b);# 16 (mloop:lng, h:oid, t:lng) := CHPbunIterator(b:bat[:oid,:lng]) {J25}
     zz := algebra.find(b,h);            # 17 zz:lng := ALGfind(b:bat[:oid,:lng], h:oid) 
@@ -73,10 +73,10 @@ catch GDKerror:str ;                    # 21 GDKerror:str {J23}
     leave mloop;                        # 22 mloop:lng {J25}
 exit GDKerror:str ;                     # 23 GDKerror:str 
     redo (mloop,h,t):= bat.hasMoreElements(b);# 24 (mloop:lng, h:oid, t:lng) := CHPbunHasMoreElements(b:bat[:oid,:lng]) {J17}
-exit (mloop,h,t);                       # 25 (mloop:lng, h:oid, t:lng 
-    t3 := alarm.usec();                 # 26 t3:lng 
+exit (mloop,h,t);                       # 25 (mloop:lng, h:oid, t:lng) 
+    t3 := alarm.usec();                 # 26 t3:lng := ALARMusec() 
 #CMD000(b,b); 
-    t4 := alarm.usec();                 # 28 t4:lng 
+    t4 := alarm.usec();                 # 28 t4:lng := ALARMusec() 
     d1 := calc.-(t1,t0);                # 29 d1:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
     d2 := calc.-(t3,t2);                # 30 d2:lng := CALCbinarySUBlnglng(t3:lng, t2:lng) 
     d3 := calc.-(t4,t3);                # 31 d3:lng := CALCbinarySUBlnglng(t4:lng, t3:lng) 

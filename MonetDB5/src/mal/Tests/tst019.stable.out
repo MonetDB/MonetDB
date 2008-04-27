@@ -98,7 +98,7 @@ end welcome5;	# 3
 #(x,y):= user.welcome2(1);
 #
 !TypeException:user.main[5]:'user.welcome2' undefined in: (x:any, y:str) := user.welcome2(_2:int)
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     y := user.welcome1(1);              #  1 y:str := user.welcome1(_2:int) {G}
     io.print(y);                        #  2 _3:void := IOprint_val(y:str) 
     y := user.welcome2(1);              #  3 y:str := user.welcome2(_2:int) {G}

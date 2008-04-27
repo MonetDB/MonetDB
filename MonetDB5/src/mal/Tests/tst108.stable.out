@@ -30,7 +30,7 @@ stdout of test 'tst108` in directory 'src/mal` itself:
 !SyntaxException:user.main[9]:label 't' not in guarded block
 
 !SyntaxException:user.main[10]:exit-label 't' without begin-label
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # analyse the basic interpreter loop 
     i := 0;                             #  2 i:int := _3:int 
 barrier v := 1;                         #  3 v:int := _5:int {J7}

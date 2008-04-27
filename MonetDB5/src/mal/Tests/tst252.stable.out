@@ -26,7 +26,7 @@ stdout of test 'tst252` in directory 'src/mal` itself:
 #
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #Testing a loop over string bats 
     b := bat.new(:str,:str);            #  2 b:bat[:str,:str] := CMDBATnew(_3:str, _4:str) {G}
     bat.insert(b,"one","red");          #  3 _5:void := BKCinsert_bun(b:bat[:str,:str], _6:str, _7:str) 

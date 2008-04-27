@@ -26,7 +26,7 @@ stdout of test 'tst904` in directory 'src/mal` itself:
 #xz:= multiplex.script("+",b,c);
 #print(xz);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # the multiplex code blocks using CONSTANTS. 
     clients.setListing(15);             #  2 _2:int := CLTsetListing(_3:int) 
     b := bat.new(:lng,:lng);            #  3 b:bat[:lng,:lng] := CMDBATnew(_5:lng, _5:lng) {G}
@@ -34,7 +34,7 @@ function user.main():void;              #  0 main:void {G}
 barrier (v,i):= language.newRange(0:lng);#  5 (v:bit, i:lng) := RNGnewRange_lng(_9:lng) {J8}
     bat.insert(b,i,i);                  #  6 _10:void := BKCinsert_bun(b:bat[:lng,:lng], i:lng, i:lng) 
     redo (v,i):= language.nextElement(1:lng,10:lng);#  7 (v:bit, i:lng) := RNGnextElement_lng(_11:lng, _12:lng) {J6}
-exit (v,i);                             #  8 (v:bit, i:lng 
+exit (v,i);                             #  8 (v:bit, i:lng) 
     io.print(b);                        #  9 _13:void := IOprint_val(b:bat[:lng,:lng]) 
     c := 1;                             # 10 c:int := _15:int 
     _20 := bat.new(nil:lng,nil:lng);    # 11 _20:bat[:lng,:lng] := CMDBATnew(_21:lng, _21:lng) {G}
@@ -45,7 +45,7 @@ barrier (_23,_24,_25):= bat.newIterator(b);# 12 (_23:lng, _24:lng, _25:lng) := C
 catch MALException:str ;                # 16 MALException:str {J18}
     redo (_23,_24,_25):= bat.hasMoreElements(b);# 17 (_23:lng, _24:lng, _25:lng) := CHPbunHasMoreElements(b:bat[:lng,:lng]) {J13}
 exit MALException:str ;                 # 18 MALException:str 
-exit (_23,_24,_25);                     # 19 (_23:lng, _24:lng, _25:lng 
+exit (_23,_24,_25);                     # 19 (_23:lng, _24:lng, _25:lng) 
     xz:bat[:lng,:lng]  := _20;          # 20 xz:bat[:lng,:lng] := _20:bat[:lng,:lng] {G}
     io.print(xz);                       # 21 _19:void := IOprint_val(xz:bat[:lng,:lng]) 
 end main;	# 22  

@@ -31,7 +31,7 @@ stdout of test 'tst015` in directory 'src/mal` itself:
 #exit	c;
 #
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # Testing barriers with variables, constants and expressions 
     b := true;                          #  2 b:bit := _3:bit 
 barrier b;                              #  3 b:bit {J5}

@@ -21,7 +21,7 @@ stdout of test 'tst850` in directory 'src/mal` itself:
 #	b:= multiplex.script("startsWith",t,"");
 #	print(b);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # The likeselect operation 
     t := bat.new(:oid,:str);            #  2 t:bat[:oid,:str] := CMDBATnew(_3:oid, _4:str) {G}
     bat.append(t,"hello world");        #  3 _5:void := BKCappend_val_wrap(t:bat[:oid,:str], _6:str) 
@@ -35,7 +35,7 @@ barrier (_19,_20,_21):= bat.newIterator(t);#  7 (_19:lng, _20:oid, _21:str) := C
 catch MALException:str ;                # 11 MALException:str {J13}
     redo (_19,_20,_21):= bat.hasMoreElements(t);# 12 (_19:lng, _20:oid, _21:str) := CHPbunHasMoreElements(t:bat[:oid,:str]) {GJ8}
 exit MALException:str ;                 # 13 MALException:str 
-exit (_19,_20,_21);                     # 14 (_19:lng, _20:oid, _21:str 
+exit (_19,_20,_21);                     # 14 (_19:lng, _20:oid, _21:str) 
     b:bat[:oid,:bit]  := _15;           # 15 b:bat[:oid,:bit] := _15:bat[:oid,:bit] {G}
     io.print(b);                        # 16 _14:void := IOprint_val(b:bat[:oid,:bit]) 
 end main;	# 17  

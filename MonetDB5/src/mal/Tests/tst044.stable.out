@@ -24,7 +24,7 @@ stdout of test 'tst044` in directory 'src/mal` itself:
 #b:= 0.345e1:dbl; io.print(b);
 #b:= 3.415e-1:dbl; io.print(b);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 #testing floating point numbers; 
     a := 3.14499998:flt;                #  2 a:flt := _3:flt 
     io.print(a);                        #  3 _4:void := IOprint_val(a:flt) 

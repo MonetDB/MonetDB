@@ -20,7 +20,7 @@ stdout of test 'tst024` in directory 'src/mal` itself:
 #_5:=23;
 #io.print(_5);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 #detect illegal use of temporary variables 
     i := 12;                            #  2 i:int := _3:int 
 # internal location of i is 3 

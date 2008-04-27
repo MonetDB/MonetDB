@@ -21,13 +21,13 @@ stdout of test 'tst901` in directory 'src/mal` itself:
 #	redo (v,i):= nextElement(1:lng,10:lng);
 #exit (v,i);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # the multiplex code blocks. 
     b := bat.new(:oid,:int);            #  2 b:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
 barrier (v,i):= language.newRange(0:int);#  3 (v:bit, i:int) := RNGnewRange_int(_7:int) {J6}
     bat.append(b,i);                    #  4 _8:void := BKCappend_val_wrap(b:bat[:oid,:int], i:int) 
     redo (v,i):= language.nextElement(1:int,10:int);#  5 (v:bit, i:int) := RNGnextElement_int(_9:int, _10:int) {J4}
-exit (v,i);                             #  6 (v:bit, i:int 
+exit (v,i);                             #  6 (v:bit, i:int) 
     c := algebra.copy(b);               #  7 c:bat[:oid,:int] := ALGcopy(b:bat[:oid,:int]) {G}
     io.print(c);                        #  8 _12:void := IOprint_val(c:bat[:oid,:int]) 
     x := batcalc.+(b,c);                #  9 x:bat[:oid,:int] := CMDbatADD_int_int_int(b:bat[:oid,:int], c:bat[:oid,:int]) {G}

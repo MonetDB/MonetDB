@@ -58,7 +58,7 @@ end pow;	# 6
 #z:=multiplex.tactics("pow",b,2);
 #print(z);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     k := user.one(1);                   #  1 k:int := user.one(_2:int) 
     l := user.three(1,2,3);             #  2 l:int := user.three(_2:int, _4:int, _5:int) 
     p := user.pow(1,2);                 #  3 p:int := user.pow(_2:int, _4:int) 
@@ -73,7 +73,7 @@ barrier (_26,_27,_28):= bat.newIterator(b);#  8 (_26:lng, _27:int, _28:int) := C
 catch MALException:str ;                # 12 MALException:str {J14}
     redo (_26,_27,_28):= bat.hasMoreElements(b);# 13 (_26:lng, _27:int, _28:int) := CHPbunHasMoreElements(b:bat[:int,:int]) {J9}
 exit MALException:str ;                 # 14 MALException:str 
-exit (_26,_27,_28);                     # 15 (_26:lng, _27:int, _28:int 
+exit (_26,_27,_28);                     # 15 (_26:lng, _27:int, _28:int) 
     z:bat[:int,:int]  := _23;           # 16 z:bat[:int,:int] := _23:bat[:int,:int] {G}
     io.print("do multiplex one test");  # 17 _16:void := IOprint_val(_17:str) 
     _37 := bat.new(nil:int,nil:int);    # 18 _37:bat[:int,:int] := CMDBATnew(_24:int, _24:int) {G}
@@ -84,7 +84,7 @@ barrier (_39,_40,_41):= bat.newIterator(b);# 19 (_39:lng, _40:int, _41:int) := C
 catch MALException:str ;                # 23 MALException:str {J25}
     redo (_39,_40,_41):= bat.hasMoreElements(b);# 24 (_39:lng, _40:int, _41:int) := CHPbunHasMoreElements(b:bat[:int,:int]) {J20}
 exit MALException:str ;                 # 25 MALException:str 
-exit (_39,_40,_41);                     # 26 (_39:lng, _40:int, _41:int 
+exit (_39,_40,_41);                     # 26 (_39:lng, _40:int, _41:int) 
     z:bat[:int,:int]  := _37;           # 27 z:bat[:int,:int] := _37:bat[:int,:int] {G}
     io.print("do multiplex pow test");  # 28 _19:void := IOprint_val(_20:str) 
     _50 := bat.new(nil:int,nil:int);    # 29 _50:bat[:int,:int] := CMDBATnew(_24:int, _24:int) {G}
@@ -95,7 +95,7 @@ barrier (_52,_53,_54):= bat.newIterator(b);# 30 (_52:lng, _53:int, _54:int) := C
 catch MALException:str ;                # 34 MALException:str {J36}
     redo (_52,_53,_54):= bat.hasMoreElements(b);# 35 (_52:lng, _53:int, _54:int) := CHPbunHasMoreElements(b:bat[:int,:int]) {J31}
 exit MALException:str ;                 # 36 MALException:str 
-exit (_52,_53,_54);                     # 37 (_52:lng, _53:int, _54:int 
+exit (_52,_53,_54);                     # 37 (_52:lng, _53:int, _54:int) 
     z:bat[:int,:int]  := _50;           # 38 z:bat[:int,:int] := _50:bat[:int,:int] {G}
     io.print(z);                        # 39 _22:void := IOprint_val(z:bat[:int,:int]) 
 end main;	# 40  

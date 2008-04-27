@@ -49,23 +49,23 @@ stdout of test 'tst274` in directory 'src/mal` itself:
 #io.print(rdbytes,wrbytes,stmt);
 ##io.print(ticks,rdbytes,wrbytes,diskspace,stmt);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # the multiplex code blocks. 
 #watch out, the random generator on SUN has a limited range. 
-    t0 := alarm.usec();                 #  3 t0:lng 
+    t0 := alarm.usec();                 #  3 t0:lng := ALARMusec() 
     b := bat.new(:oid,:lng);            #  4 b:bat[:oid,:lng] := CMDBATnew(_5:oid, _6:lng) {G}
 barrier (go,i):= language.newRange(0:lng);#  5 (go:bit, i:lng) := RNGnewRange_lng(_9:lng) {J10}
-    k := mmath.rand();                  #  6 k:int 
+    k := mmath.rand();                  #  6 k:int := MATHrandint() 
     l := calc.lng(k);                   #  7 l:lng := CALCint2lng(k:int) 
     bat.insert(b,nil:oid,l);            #  8 _12:void := BKCinsert_bun(b:bat[:oid,:lng], _13:oid, l:lng) 
     redo (go,i):= language.nextElement(1:lng,10000:lng);#  9 (go:bit, i:lng) := RNGnextElement_lng(_14:lng, _15:lng) {J6}
-exit (go,i);                            # 10 (go:bit, i:lng 
+exit (go,i);                            # 10 (go:bit, i:lng) 
     profiler.activate("ticks");         # 11 _16:void := CMDactivateProfiler(_17:str) 
     profiler.activate("statement");     # 12 _18:void := CMDactivateProfiler(_19:str) 
     profiler.activate("bytes");         # 13 _20:void := CMDactivateProfiler(_21:str) 
     profiler.activate("disk");          # 14 _22:void := CMDactivateProfiler(_23:str) 
-    profiler.setAll();                  # 15 _24:void 
-    profiler.start();                   # 16 _25:void 
+    profiler.setAll();                  # 15 _24:void := CMDsetAllProfiler() 
+    profiler.start();                   # 16 _25:void := CMDstartProfiler() 
     io.printf("#monitor \n");           # 17 _26:void := IOprint_str(_27:str) 
     mx := aggr.max(b);                  # 18 mx:lng := ALGmax_lng(b:bat[:oid,:lng]) 
     mx := calc.+(mx,1);                 # 19 mx:lng := CALCbinaryADDlngint(mx:lng, _29:int) 
@@ -73,7 +73,7 @@ exit (go,i);                            # 10 (go:bit, i:lng
     k1 := algebra.select(b,nil:lng,mx); # 21 k1:bat[:oid,:lng] := ALGselect(b:bat[:oid,:lng], _32:lng, mx:lng) {G}
     k2 := algebra.select(b,mx,nil:lng); # 22 k2:bat[:oid,:lng] := ALGselect(b:bat[:oid,:lng], mx:lng, _32:lng) {G}
     d := mmath.sin(0.20000000298023224:dbl);# 23 d:dbl := MATHunary_SINdbl(_35:dbl) 
-    profiler.stop();                    # 24 _36:void 
+    profiler.stop();                    # 24 _36:void := CMDstopProfiler() 
 #stmt:= profiler.getTrace("statement"); 
 #io.print(stmt); 
     ticks := profiler.getTrace("ticks");# 27 ticks:bat[:int,:any] := CMDgetTrace(_17:str) {G}

@@ -17,7 +17,7 @@ stdout of test 'tst780` in directory 'src/mal` itself:
 #macro user.hello():void;
 #	io.print("hello world\n");
 #end hello;
-function dummy.hello():void;            #  0 hello:void 
+function dummy.hello():void;            #  0 hello:void := dummy.hello() 
     io.print("hello world\n");          #  1 _1:void := IOprint_val(_2:str) 
 end hello;	# 2  
 #
@@ -36,7 +36,7 @@ end doit;	# 4
 #z:=user.doit(1,"help");
 #
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 #some tests to illustrate function inlining for a module 
     io.print("hello world\n");          #  2 _10:void := IOprint_val(_11:str) 
     z := dummy.doit(1,"help");          #  3 z:int := dummy.doit(_4:int, _5:str) 

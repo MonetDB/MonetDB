@@ -40,7 +40,7 @@ end random;	# 9
 #r2:= random(0);
 #print(r2);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # Yield commands may only appear in factories 
     r1 := user.random(0);               #  2 r1:int := user.random(_3:int) 
     io.print(r1);                       #  3 _4:void := IOprint_val(r1:int) 

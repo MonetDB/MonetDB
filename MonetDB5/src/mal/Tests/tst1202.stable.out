@@ -173,7 +173,7 @@ stdout of test 'tst1202` in directory 'src/mal` itself:
 ##
 ##
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Mil compiler Version 1.0) 
 # Copyright (c) 1993-2001, CWI. All rights reserved. 
 # Predefined code segment 
@@ -308,7 +308,7 @@ barrier (_214,_215,_216):= bat.newIterator(tzone_bat);#128 (_214:lng, _215:oid, 
 catch MALException:str ;                #132 MALException:str {J134}
     redo (_214,_215,_216):= bat.hasMoreElements(tzone_bat);#133 (_214:lng, _215:oid, _216:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J129}
 exit MALException:str ;                 #134 MALException:str 
-exit (_214,_215,_216);                  #135 (_214:lng, _215:oid, _216:timezone 
+exit (_214,_215,_216);                  #135 (_214:lng, _215:oid, _216:timezone) 
     kd_a:bat[:oid,:int]  := _210;       #136 kd_a:bat[:oid,:int] := _210:bat[:oid,:int] {G}
     bat.setColumn(kd_a,"minutes");      #137 _197:void := BKCsetColumn(kd_a:bat[:oid,:int], _196:str) 
 #io.print([minutes](tzone_bat).bat.setColumn("minutes"), 
@@ -320,7 +320,7 @@ barrier (_228,_229,_230):= bat.newIterator(tzone_bat);#140 (_228:lng, _229:oid, 
 catch MALException:str ;                #144 MALException:str {J146}
     redo (_228,_229,_230):= bat.hasMoreElements(tzone_bat);#145 (_228:lng, _229:oid, _230:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J141}
 exit MALException:str ;                 #146 MALException:str 
-exit (_228,_229,_230);                  #147 (_228:lng, _229:oid, _230:timezone 
+exit (_228,_229,_230);                  #147 (_228:lng, _229:oid, _230:timezone) 
     md_a:bat[:oid,:zrule]  := _225;     #148 md_a:bat[:oid,:zrule] := _225:bat[:oid,:zrule] {G}
     bat.setColumn(md_a,"start_dst");    #149 _201:void := BKCsetColumn(md_a:bat[:oid,:zrule], _200:str) 
 #      [start_dst](tzone_bat).bat.setColumn("start_dst"), 
@@ -332,7 +332,7 @@ barrier (_241,_242,_243):= bat.newIterator(tzone_bat);#152 (_241:lng, _242:oid, 
 catch MALException:str ;                #156 MALException:str {J158}
     redo (_241,_242,_243):= bat.hasMoreElements(tzone_bat);#157 (_241:lng, _242:oid, _243:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J153}
 exit MALException:str ;                 #158 MALException:str 
-exit (_241,_242,_243);                  #159 (_241:lng, _242:oid, _243:timezone 
+exit (_241,_242,_243);                  #159 (_241:lng, _242:oid, _243:timezone) 
     od_a:bat[:oid,:zrule]  := _239;     #160 od_a:bat[:oid,:zrule] := _239:bat[:oid,:zrule] {G}
     bat.setColumn(od_a,"end_dst");      #161 _205:void := BKCsetColumn(od_a:bat[:oid,:zrule], _204:str) 
     io.print("print(kd_a,md_a,od_a)");  #162 _206:void := IOprint_val(_207:str) 

@@ -62,7 +62,7 @@ stdout of test 'tst041` in directory 'src/mal` itself:
 #B:= nil:bte;
 #io.print(B);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # this sequence tests nil type management  
     b := nil:void;                      #  2 b:void := _3:void {G}
     io.print(b);                        #  3 _4:void := IOprint_val(b:void) 

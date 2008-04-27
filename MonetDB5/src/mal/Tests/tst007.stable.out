@@ -76,7 +76,7 @@ stdout of test 'tst007` in directory 'src/mal` itself:
 !TypeException:user.foo[9]:'b' may not be used before being initialized
 !TypeException:user.foo[16]:'entry_or_exittest' may not be used before being initialized
 !TypeException:user.foo[29]:'booleanexpr' may not be used before being initialized
-function user.foo():void;               #  0 foo:void 
+function user.foo():void;               #  0 foo:void := user.foo() 
 barrier H := batoperatie;               #  1 H:any := batoperatie:any {J5}
     Tail := algebra.fetch(b,H);         #  2 Tail:any := algebra.fetch(b:any, H:any) {U}
 #body                                   #  3 
@@ -116,7 +116,7 @@ barrier FS := batcalc.not(FTE);         # 35 FS:any := batcalc.not(FTE:any) {UJ3
 exit FS;                                # 37 FS:any 
 end foo;	# 38  
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # A collection of forloops, which should not execute 
 end main;	# 2  
 

@@ -22,7 +22,7 @@ stdout of test 'tst255` in directory 'src/mal` itself:
 #o:= oid(z1);
 #print(o);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # testing void to oid coercion 
     z1 := bat.new(:oid,:int);           #  2 z1:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
     bat.append(z1,0);                   #  3 _5:void := BKCappend_val_wrap(z1:bat[:oid,:int], _6:int) 

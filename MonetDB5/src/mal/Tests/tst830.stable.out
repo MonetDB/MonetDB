@@ -107,7 +107,7 @@ stdout of test 'tst830` in directory 'src/mal` itself:
 #	InvalidCredentialsException:= nil:str;
 #exit InvalidCredentialsException;
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # a simple functional test for the access control table 
     scens := bat.new(:str,:oid);        #  2 scens:bat[:str,:oid] := CMDBATnew(_3:str, _4:oid) {G}
     bat.insert(scens,"sql",nil:oid);    #  3 _5:void := BKCinsert_bun(scens:bat[:str,:oid], _6:str, _7:oid) 

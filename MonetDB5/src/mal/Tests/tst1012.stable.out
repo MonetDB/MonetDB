@@ -39,9 +39,9 @@ stdout of test 'tst1012` in directory 'src/mal` itself:
 #print(v);
 #bbp.close();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # the first of a series of BBP test cases 
-    bbp.open();                         #  2 _2:void 
+    bbp.open();                         #  2 _2:void := CMDbbpopen() 
     b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
     bat.insert(b,1,2);                  #  4 _5:void := BKCinsert_bun(b:bat[:int,:int], _6:int, _7:int) 
     bbp.deposit("mysecondbat",b);       #  5 _8:void := CMDbbpdeposit(_9:str, b:bat[:int,:int]) 
@@ -59,16 +59,16 @@ function user.main():void;              #  0 main:void {G}
     io.print(x);                        # 17 _20:void := IOprint_val(x:bit) 
     io.print(z);                        # 18 _21:void := IOprint_val(z:bit) 
     io.print("");                       # 19 _22:void := IOprint_val(_18:str) 
-    bbp.close();                        # 20 _23:void 
+    bbp.close();                        # 20 _23:void := CMDbbpclose() 
 # at the end of the session, the BBP should have discarded 
 # the temporary bats of the user 
 # aug 02 this does not work, because the transaction is 
 # not properly closed. This means that a temporary bat 
 #remains in store. 
-    bbp.open();                         # 26 _29:void 
+    bbp.open();                         # 26 _29:void := CMDbbpopen() 
     v := bbp.take("mysecondbat");       # 27 v:bat[:any,:any] := CMDbbptake(_9:str) {G}
     io.print(v);                        # 28 _31:void := IOprint_val(v:bat[:any,:any]) 
-    bbp.close();                        # 29 _32:void 
+    bbp.close();                        # 29 _32:void := CMDbbpclose() 
 end main;	# 30  
 #-----------------#
 # h	tmp_4	  # name

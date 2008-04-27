@@ -21,8 +21,8 @@ command user.+(L:any_1,R:any_1):any_1 address addIntInt;#  0 +:any_1 := user.+(L
 #b:=3.5+1;
 #
 !TypeException:user.main[2]:'calc.+' undefined in: a:any := calc.+(_3:int, _4:str)
-function user.main():void;              #  0 main:void 
-# the calls are wrong, they violate the type constraint #  1 
+function user.main():void;              #  0 main:void := user.main() 
+# the calls are wrong, they violate the type constraint 
     a := calc.+(1,"hello");             #  2 a:any := calc.+(_3:int, _4:str) {U}
     b := calc.+(3.5,1);                 #  3 b:flt := CALCbinaryADDfltint(_6:flt, _3:int) 
 end main;	# 4  

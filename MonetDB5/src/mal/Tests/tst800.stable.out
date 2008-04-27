@@ -37,7 +37,7 @@ stdout of test 'tst800` in directory 'src/mal` itself:
 #io.print(aa);
 #io.print("done");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #testing simple stuff around type BAT 
     z := bat.new(:int,:int);            #  2 z:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     bat.insert(z,1,2);                  #  3 _4:void := BKCinsert_bun(z:bat[:int,:int], _5:int, _6:int) 

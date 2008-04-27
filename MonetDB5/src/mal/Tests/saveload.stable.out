@@ -33,7 +33,12 @@ stdout of test 'saveload` in directory 'src/mal` itself:
 #br:bat[:oid,:str]:= bat.load("bbb");
 #io.print(br);
 #
-function user.main():void;              #  0 main:void {G}
+#
+##and an error
+#er:bat[:int,:int]:= bbp.bind("bbb");
+#io.print(er);
+#
+function user.main():void;              #  0 main:void := user.main() {G}
 # save/load tests 
     a := bat.new(:int,:int);            #  2 a:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     bat.insert(a,0,123);                #  3 _4:void := BKCinsert_bun(a:bat[:int,:int], _5:int, _6:int) 

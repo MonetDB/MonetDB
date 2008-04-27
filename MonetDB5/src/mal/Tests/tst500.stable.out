@@ -39,7 +39,7 @@ end simple;	# 10
 #
 #r:= simple(0,2,"hello");
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # recursive MAL calls  
     r := user.simple(0,2,"hello");      #  2 r:flt := user.simple(_3:int, _4:int, _5:str) 
 end main;	# 3  

@@ -15,7 +15,7 @@ stdout of test 'tst302` in directory 'src/mal` itself:
 #raise	IllegalAccess := 1234;
 #	print("should not come here\n");
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 #propagate INT exception 
 # (you should be able to pass it upwards though) 
     raise PermissionDeniedException := 1234;#  3 PermissionDeniedException:int := _4:int 

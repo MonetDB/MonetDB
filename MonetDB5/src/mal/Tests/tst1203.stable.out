@@ -257,7 +257,7 @@ stdout of test 'tst1203` in directory 'src/mal` itself:
 #	kf_a := io.print(date_bat,date_addmonths,if_a);
 ##      [diff](date_addmonths, date_bat).bat.setColumn("diff"));
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Mil compiler Version 1.0) 
 # Copyright (c) 1993-2001, CWI. All rights reserved. 
 # Predefined code segment 
@@ -457,7 +457,7 @@ barrier (_365,_366,_367):= bat.newIterator(date_bat);#193 (_365:lng, _366:oid, _
 catch MALException:str ;                #197 MALException:str {J199}
     redo (_365,_366,_367):= bat.hasMoreElements(date_bat);#198 (_365:lng, _366:oid, _367:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J194}
 exit MALException:str ;                 #199 MALException:str 
-exit (_365,_366,_367);                  #200 (_365:lng, _366:oid, _367:date 
+exit (_365,_366,_367);                  #200 (_365:lng, _366:oid, _367:date) 
     oe_a:bat[:oid,:int]  := _361;       #201 oe_a:bat[:oid,:int] := _361:bat[:oid,:int] {G}
     pe_a := bat.setColumn(oe_a,"year"); #202 pe_a:void := BKCsetColumn(oe_a:bat[:oid,:int], _306:str) 
 #      [year](date_bat).bat.setColumn("year"), 
@@ -469,7 +469,7 @@ barrier (_378,_379,_380):= bat.newIterator(date_bat);#205 (_378:lng, _379:oid, _
 catch MALException:str ;                #209 MALException:str {J211}
     redo (_378,_379,_380):= bat.hasMoreElements(date_bat);#210 (_378:lng, _379:oid, _380:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J206}
 exit MALException:str ;                 #211 MALException:str 
-exit (_378,_379,_380);                  #212 (_378:lng, _379:oid, _380:date 
+exit (_378,_379,_380);                  #212 (_378:lng, _379:oid, _380:date) 
     qe_a:bat[:oid,:int]  := _376;       #213 qe_a:bat[:oid,:int] := _376:bat[:oid,:int] {G}
     re_a := bat.setColumn(qe_a,"day");  #214 re_a:void := BKCsetColumn(qe_a:bat[:oid,:int], _310:str) 
 #      [day](date_bat).bat.setColumn("day"), 
@@ -481,7 +481,7 @@ barrier (_391,_392,_393):= bat.newIterator(date_bat);#217 (_391:lng, _392:oid, _
 catch MALException:str ;                #221 MALException:str {J223}
     redo (_391,_392,_393):= bat.hasMoreElements(date_bat);#222 (_391:lng, _392:oid, _393:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J218}
 exit MALException:str ;                 #223 MALException:str 
-exit (_391,_392,_393);                  #224 (_391:lng, _392:oid, _393:date 
+exit (_391,_392,_393);                  #224 (_391:lng, _392:oid, _393:date) 
     se_a:bat[:oid,:int]  := _389;       #225 se_a:bat[:oid,:int] := _389:bat[:oid,:int] {G}
     _402 := bat.new(nil:oid,nil:str);   #226 _402:bat[:oid,:str] := CMDBATnew(_403:oid, _404:str) {G}
 barrier (_406,_407,_408):= bat.newIterator(se_a);#227 (_406:lng, _407:oid, _408:int) := CHPbunIterator(se_a:bat[:oid,:int]) {J234}
@@ -491,7 +491,7 @@ barrier (_406,_407,_408):= bat.newIterator(se_a);#227 (_406:lng, _407:oid, _408:
 catch MALException:str ;                #231 MALException:str {J233}
     redo (_406,_407,_408):= bat.hasMoreElements(se_a);#232 (_406:lng, _407:oid, _408:int) := CHPbunHasMoreElements(se_a:bat[:oid,:int]) {J228}
 exit MALException:str ;                 #233 MALException:str 
-exit (_406,_407,_408);                  #234 (_406:lng, _407:oid, _408:int 
+exit (_406,_407,_408);                  #234 (_406:lng, _407:oid, _408:int) 
     te_a:bat[:oid,:str]  := _402;       #235 te_a:bat[:oid,:str] := _402:bat[:oid,:str] {G}
     ue_a := bat.setColumn(te_a,"monthname");#236 ue_a:void := BKCsetColumn(te_a:bat[:oid,:str], _316:str) 
 #      [monthname]([month](date_bat)).bat.setColumn("monthname"), 
@@ -503,7 +503,7 @@ barrier (_420,_421,_422):= bat.newIterator(date_bat);#239 (_420:lng, _421:oid, _
 catch MALException:str ;                #243 MALException:str {J245}
     redo (_420,_421,_422):= bat.hasMoreElements(date_bat);#244 (_420:lng, _421:oid, _422:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J240}
 exit MALException:str ;                 #245 MALException:str 
-exit (_420,_421,_422);                  #246 (_420:lng, _421:oid, _422:date 
+exit (_420,_421,_422);                  #246 (_420:lng, _421:oid, _422:date) 
     ve_a:bat[:oid,:int]  := _417;       #247 ve_a:bat[:oid,:int] := _417:bat[:oid,:int] {G}
     _431 := bat.new(nil:oid,nil:str);   #248 _431:bat[:oid,:str] := CMDBATnew(_403:oid, _404:str) {G}
 barrier (_433,_434,_435):= bat.newIterator(ve_a);#249 (_433:lng, _434:oid, _435:int) := CHPbunIterator(ve_a:bat[:oid,:int]) {J256}
@@ -513,7 +513,7 @@ barrier (_433,_434,_435):= bat.newIterator(ve_a);#249 (_433:lng, _434:oid, _435:
 catch MALException:str ;                #253 MALException:str {J255}
     redo (_433,_434,_435):= bat.hasMoreElements(ve_a);#254 (_433:lng, _434:oid, _435:int) := CHPbunHasMoreElements(ve_a:bat[:oid,:int]) {J250}
 exit MALException:str ;                 #255 MALException:str 
-exit (_433,_434,_435);                  #256 (_433:lng, _434:oid, _435:int 
+exit (_433,_434,_435);                  #256 (_433:lng, _434:oid, _435:int) 
     we_a:bat[:oid,:str]  := _431;       #257 we_a:bat[:oid,:str] := _431:bat[:oid,:str] {G}
     _444 := bat.new(nil:oid,nil:int);   #258 _444:bat[:oid,:int] := CMDBATnew(_445:oid, _418:int) {G}
 barrier (_447,_448,_449):= bat.newIterator(we_a);#259 (_447:lng, _448:oid, _449:str) := CHPbunIterator(we_a:bat[:oid,:str]) {GJ266}
@@ -523,7 +523,7 @@ barrier (_447,_448,_449):= bat.newIterator(we_a);#259 (_447:lng, _448:oid, _449:
 catch MALException:str ;                #263 MALException:str {J265}
     redo (_447,_448,_449):= bat.hasMoreElements(we_a);#264 (_447:lng, _448:oid, _449:str) := CHPbunHasMoreElements(we_a:bat[:oid,:str]) {GJ260}
 exit MALException:str ;                 #265 MALException:str 
-exit (_447,_448,_449);                  #266 (_447:lng, _448:oid, _449:str 
+exit (_447,_448,_449);                  #266 (_447:lng, _448:oid, _449:str) 
     xe_a:bat[:oid,:int]  := _444;       #267 xe_a:bat[:oid,:int] := _444:bat[:oid,:int] {G}
     ye_a := bat.setColumn(xe_a,"monthnum");#268 ye_a:void := BKCsetColumn(xe_a:bat[:oid,:int], _322:str) 
     io.print("print(date_bat,oe_a,qe_a,te_a,xe_a)");#269 _324:void := IOprint_val(_325:str) 
@@ -537,7 +537,7 @@ barrier (_461,_462,_463):= bat.newIterator(date_bat);#273 (_461:lng, _462:oid, _
 catch MALException:str ;                #277 MALException:str {J279}
     redo (_461,_462,_463):= bat.hasMoreElements(date_bat);#278 (_461:lng, _462:oid, _463:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J274}
 exit MALException:str ;                 #279 MALException:str 
-exit (_461,_462,_463);                  #280 (_461:lng, _462:oid, _463:date 
+exit (_461,_462,_463);                  #280 (_461:lng, _462:oid, _463:date) 
     date_addyears:bat[:oid,:date]  := _458;#281 date_addyears:bat[:oid,:date] := _458:bat[:oid,:date] {G}
 #var date_addyears := [addyears](date_bat, -100); 
     _472 := bat.new(nil:oid,nil:date);  #283 _472:bat[:oid,:date] := CMDBATnew(_445:oid, _459:date) {G}
@@ -548,7 +548,7 @@ barrier (_474,_475,_476):= bat.newIterator(date_bat);#284 (_474:lng, _475:oid, _
 catch MALException:str ;                #288 MALException:str {J290}
     redo (_474,_475,_476):= bat.hasMoreElements(date_bat);#289 (_474:lng, _475:oid, _476:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J285}
 exit MALException:str ;                 #290 MALException:str 
-exit (_474,_475,_476);                  #291 (_474:lng, _475:oid, _476:date 
+exit (_474,_475,_476);                  #291 (_474:lng, _475:oid, _476:date) 
     date_addmonths:bat[:oid,:date]  := _472;#292 date_addmonths:bat[:oid,:date] := _472:bat[:oid,:date] {G}
 #var date_addmonths := [addmonths](date_bat, 1); 
     bat.setColumn(date_bat,"date");     #294 _336:void := BKCsetColumn(date_bat:bat[:oid,:date], _337:str) 
@@ -564,7 +564,7 @@ barrier (_489,_490,_491):= bat.newIterator(date_addyears);#299 (_489:lng, _490:o
 catch MALException:str ;                #304 MALException:str {J306}
     redo (_489,_490,_491):= bat.hasMoreElements(date_addyears);#305 (_489:lng, _490:oid, _491:date) := CHPbunHasMoreElements(date_addyears:bat[:oid,:date]) {J300}
 exit MALException:str ;                 #306 MALException:str 
-exit (_489,_490,_491);                  #307 (_489:lng, _490:oid, _491:date 
+exit (_489,_490,_491);                  #307 (_489:lng, _490:oid, _491:date) 
     df_a:bat[:oid,:int]  := _485;       #308 df_a:bat[:oid,:int] := _485:bat[:oid,:int] {G}
     bat.setColumn(df_a,"diff");         #309 _345:void := BKCsetColumn(df_a:bat[:oid,:int], _344:str) 
     io.print("print(date_bat,date_addyears,df_a)");#310 _346:void := IOprint_val(_347:str) 
@@ -583,7 +583,7 @@ barrier (_504,_505,_506):= bat.newIterator(date_addmonths);#318 (_504:lng, _505:
 catch MALException:str ;                #323 MALException:str {J325}
     redo (_504,_505,_506):= bat.hasMoreElements(date_addmonths);#324 (_504:lng, _505:oid, _506:date) := CHPbunHasMoreElements(date_addmonths:bat[:oid,:date]) {J319}
 exit MALException:str ;                 #325 MALException:str 
-exit (_504,_505,_506);                  #326 (_504:lng, _505:oid, _506:date 
+exit (_504,_505,_506);                  #326 (_504:lng, _505:oid, _506:date) 
     if_a:bat[:oid,:int]  := _502;       #327 if_a:bat[:oid,:int] := _502:bat[:oid,:int] {G}
     bat.setColumn(if_a,"diff");         #328 _356:void := BKCsetColumn(if_a:bat[:oid,:int], _344:str) 
     io.print(" print(date_bat,date_addmonths,if_a)");#329 _357:void := IOprint_val(_358:str) 

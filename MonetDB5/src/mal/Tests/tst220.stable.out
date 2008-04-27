@@ -36,7 +36,7 @@ end steal;	# 7
 #	b:= bbp.new(:int,:str);
 #	return b;
 #end createone;
-function user.createone():bat[:int,:str];#  0 createone:bat[:int,:str] {G}
+function user.createone():bat[:int,:str];#  0 createone:bat[:int,:str] := user.createone() {G}
     b := bat.new(:int,:str);            #  1 b:bat[:int,:str] := CMDBATnew(_2:int, _3:str) {G}
     return createone := b;              #  2 createone:bat[:int,:str] := b:bat[:int,:str] {G}
 end createone;	# 3  
@@ -78,7 +78,7 @@ end createone;	# 3
 #	i:= getLRefCount(b);
 #	printf("after 5rd assignment refcount =%d[1]\n",i);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # a test checking BAT reference counting under various situations 
     b := bat.new(:int,:str);            #  2 b:bat[:int,:str] := CMDBATnew(_3:int, _4:str) {G}
     i := bbp.getLRefCount(b);           #  3 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
@@ -98,7 +98,7 @@ function user.main():void;              #  0 main:void {G}
     i := bbp.getLRefCount(b);           # 17 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
     io.printf("after 2nd assignment refcount =%d[3]\n",i);# 18 _21:void := IOprint_formatted_int(_22:str, i:int) 
 #re-use a bat variable 
-    b3 := user.createone();             # 20 b3:bat[:int,:str] {G}
+    b3 := user.createone();             # 20 b3:bat[:int,:str] := user.createone() {G}
     i := bbp.getLRefCount(b);           # 21 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
     io.printf("after 3rd assignment refcount =%d[2]\n",i);# 22 _24:void := IOprint_formatted_int(_25:str, i:int) 
     i := bbp.getLRefCount(b3);          # 23 i:int := CMDgetBATlrefcnt(b3:bat[:int,:str]) 

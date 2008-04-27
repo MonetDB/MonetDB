@@ -61,12 +61,12 @@ barrier (mloop,m):= language.newRange(0:lng);#  6 (mloop:bit, m:lng) := RNGnewRa
     redo (mloop,m):= language.nextElement(1:lng,l);# 14 (mloop:bit, m:lng) := RNGnextElement_lng(_24:lng, l:lng) {J7}
 catch MALException:str ;                # 15 MALException:str {J16}
 exit MALException:str ;                 # 16 MALException:str 
-exit (mloop,m);                         # 17 (mloop:bit, m:lng 
+exit (mloop,m);                         # 17 (mloop:bit, m:lng) 
     return tst := resB;                 # 18 tst:bat[:oid,:int] := resB:bat[:oid,:int] {G}
 end tst;	# 19  
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.append(b,1);                    #  2 _4:void := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) 
     bat.append(b,2);                    #  3 _6:void := BKCappend_val_wrap(b:bat[:oid,:int], _7:int) 

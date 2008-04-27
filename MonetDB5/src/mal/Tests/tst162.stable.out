@@ -17,17 +17,17 @@ stdout of test 'tst162` in directory 'src/mal` itself:
 #function l():strtype;
 #    return l:= 0:strtype;
 #end l;
-function strtype.l():strtype;           #  0 l:strtype 
+function strtype.l():strtype;           #  0 l:strtype := strtype.l() 
     return l := 0:strtype;              #  1 l:strtype := _1:strtype 
 end l;	# 2  
 #
 #z:= l();
 #print(z);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # testing definition of new atom type based on ptr 
 # this definition caused an error 
-    z := strtype.l();                   #  3 z:strtype 
+    z := strtype.l();                   #  3 z:strtype := strtype.l() 
     io.print(z);                        #  4 _4:void := IOprint_val(z:strtype) 
 end main;	# 5  
 [ 0 ]

@@ -146,7 +146,7 @@ stdout of test 'tst1201` in directory 'src/mal` itself:
 ##
 ##
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Mil compiler Version 1.0) 
 # Copyright (c) 1993-2001, CWI. All rights reserved. 
 # Predefined code segment 
@@ -210,7 +210,7 @@ barrier (_196,_197,_198):= bat.newIterator(rule_bat);# 57 (_196:lng, _197:str, _
 catch MALException:str ;                # 61 MALException:str {J63}
     redo (_196,_197,_198):= bat.hasMoreElements(rule_bat);# 62 (_196:lng, _197:str, _198:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ58}
 exit MALException:str ;                 # 63 MALException:str 
-exit (_196,_197,_198);                  # 64 (_196:lng, _197:str, _198:zrule 
+exit (_196,_197,_198);                  # 64 (_196:lng, _197:str, _198:zrule) 
     na_a:bat[:str,:int]  := _192;       # 65 na_a:bat[:str,:int] := _192:bat[:str,:int] {G}
     oa_a := bat.setColumn(na_a,"month");# 66 oa_a:void := BKCsetColumn(na_a:bat[:str,:int], _95:str) 
 #      [month](rule_bat).bat.setColumn("month"), 
@@ -222,7 +222,7 @@ barrier (_209,_210,_211):= bat.newIterator(rule_bat);# 69 (_209:lng, _210:str, _
 catch MALException:str ;                # 73 MALException:str {J75}
     redo (_209,_210,_211):= bat.hasMoreElements(rule_bat);# 74 (_209:lng, _210:str, _211:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ70}
 exit MALException:str ;                 # 75 MALException:str 
-exit (_209,_210,_211);                  # 76 (_209:lng, _210:str, _211:zrule 
+exit (_209,_210,_211);                  # 76 (_209:lng, _210:str, _211:zrule) 
     pa_a:bat[:str,:int]  := _207;       # 77 pa_a:bat[:str,:int] := _207:bat[:str,:int] {G}
     qa_a := bat.setColumn(pa_a,"weekday");# 78 qa_a:void := BKCsetColumn(pa_a:bat[:str,:int], _99:str) 
 #      [weekday](rule_bat).bat.setColumn("weekday"), 
@@ -234,7 +234,7 @@ barrier (_222,_223,_224):= bat.newIterator(rule_bat);# 81 (_222:lng, _223:str, _
 catch MALException:str ;                # 85 MALException:str {J87}
     redo (_222,_223,_224):= bat.hasMoreElements(rule_bat);# 86 (_222:lng, _223:str, _224:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ82}
 exit MALException:str ;                 # 87 MALException:str 
-exit (_222,_223,_224);                  # 88 (_222:lng, _223:str, _224:zrule 
+exit (_222,_223,_224);                  # 88 (_222:lng, _223:str, _224:zrule) 
     ra_a:bat[:str,:int]  := _220;       # 89 ra_a:bat[:str,:int] := _220:bat[:str,:int] {G}
     sa_a := bat.setColumn(ra_a,"day");  # 90 sa_a:void := BKCsetColumn(ra_a:bat[:str,:int], _103:str) 
 #      [day](rule_bat).bat.setColumn("day"), 
@@ -246,7 +246,7 @@ barrier (_237,_238,_239):= bat.newIterator(rule_bat);# 93 (_237:lng, _238:str, _
 catch MALException:str ;                # 97 MALException:str {J99}
     redo (_237,_238,_239):= bat.hasMoreElements(rule_bat);# 98 (_237:lng, _238:str, _239:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ94}
 exit MALException:str ;                 # 99 MALException:str 
-exit (_237,_238,_239);                  #100 (_237:lng, _238:str, _239:zrule 
+exit (_237,_238,_239);                  #100 (_237:lng, _238:str, _239:zrule) 
     ta_a:bat[:str,:int]  := _233;       #101 ta_a:bat[:str,:int] := _233:bat[:str,:int] {G}
     ua_a := bat.setColumn(ta_a,"minutes");#102 ua_a:void := BKCsetColumn(ta_a:bat[:str,:int], _107:str) 
     io.print("rule_bat,na_a,pa_a,ra_a,ta_a");#103 _109:void := IOprint_val(_110:str) 
@@ -262,7 +262,7 @@ barrier (_251,_252,_253):= bat.newIterator(rule_bat);#109 (_251:lng, _252:str, _
 catch MALException:str ;                #113 MALException:str {J115}
     redo (_251,_252,_253):= bat.hasMoreElements(rule_bat);#114 (_251:lng, _252:str, _253:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ110}
 exit MALException:str ;                 #115 MALException:str 
-exit (_251,_252,_253);                  #116 (_251:lng, _252:str, _253:zrule 
+exit (_251,_252,_253);                  #116 (_251:lng, _252:str, _253:zrule) 
     xa_a:bat[:str,:date]  := _248;      #117 xa_a:bat[:str,:date] := _248:bat[:str,:date] {G}
     ya_a := bat.setColumn(xa_a,"2001"); #118 ya_a:void := BKCsetColumn(xa_a:bat[:str,:date], _119:str) 
 #      [compute](rule_bat, 2001).bat.setColumn("2001"), 
@@ -274,7 +274,7 @@ barrier (_264,_265,_266):= bat.newIterator(rule_bat);#121 (_264:lng, _265:str, _
 catch MALException:str ;                #125 MALException:str {J127}
     redo (_264,_265,_266):= bat.hasMoreElements(rule_bat);#126 (_264:lng, _265:str, _266:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ122}
 exit MALException:str ;                 #127 MALException:str 
-exit (_264,_265,_266);                  #128 (_264:lng, _265:str, _266:zrule 
+exit (_264,_265,_266);                  #128 (_264:lng, _265:str, _266:zrule) 
     ab_a:bat[:str,:date]  := _262;      #129 ab_a:bat[:str,:date] := _262:bat[:str,:date] {G}
     _275 := bat.new(nil:str,nil:int);   #130 _275:bat[:str,:int] := CMDBATnew(_276:str, _277:int) {G}
 barrier (_279,_280,_281):= bat.newIterator(ab_a);#131 (_279:lng, _280:str, _281:date) := CHPbunIterator(ab_a:bat[:str,:date]) {GJ138}
@@ -284,7 +284,7 @@ barrier (_279,_280,_281):= bat.newIterator(ab_a);#131 (_279:lng, _280:str, _281:
 catch MALException:str ;                #135 MALException:str {J137}
     redo (_279,_280,_281):= bat.hasMoreElements(ab_a);#136 (_279:lng, _280:str, _281:date) := CHPbunHasMoreElements(ab_a:bat[:str,:date]) {GJ132}
 exit MALException:str ;                 #137 MALException:str 
-exit (_279,_280,_281);                  #138 (_279:lng, _280:str, _281:date 
+exit (_279,_280,_281);                  #138 (_279:lng, _280:str, _281:date) 
     bb_a:bat[:str,:int]  := _275;       #139 bb_a:bat[:str,:int] := _275:bat[:str,:int] {G}
     _290 := bat.new(nil:str,nil:str);   #140 _290:bat[:str,:str] := CMDBATnew(_276:str, _276:str) {G}
 barrier (_292,_293,_294):= bat.newIterator(bb_a);#141 (_292:lng, _293:str, _294:int) := CHPbunIterator(bb_a:bat[:str,:int]) {GJ148}
@@ -294,7 +294,7 @@ barrier (_292,_293,_294):= bat.newIterator(bb_a);#141 (_292:lng, _293:str, _294:
 catch MALException:str ;                #145 MALException:str {J147}
     redo (_292,_293,_294):= bat.hasMoreElements(bb_a);#146 (_292:lng, _293:str, _294:int) := CHPbunHasMoreElements(bb_a:bat[:str,:int]) {GJ142}
 exit MALException:str ;                 #147 MALException:str 
-exit (_292,_293,_294);                  #148 (_292:lng, _293:str, _294:int 
+exit (_292,_293,_294);                  #148 (_292:lng, _293:str, _294:int) 
     cb_a:bat[:str,:str]  := _290;       #149 cb_a:bat[:str,:str] := _290:bat[:str,:str] {G}
     bat.setColumn(cb_a,"2001");         #150 _126:void := BKCsetColumn(cb_a:bat[:str,:str], _119:str) 
 #      [dayname]([dayofweek]([compute](rule_bat, 2001))).bat.setColumn("2001"), 
@@ -306,7 +306,7 @@ barrier (_306,_307,_308):= bat.newIterator(rule_bat);#153 (_306:lng, _307:str, _
 catch MALException:str ;                #157 MALException:str {J159}
     redo (_306,_307,_308):= bat.hasMoreElements(rule_bat);#158 (_306:lng, _307:str, _308:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ154}
 exit MALException:str ;                 #159 MALException:str 
-exit (_306,_307,_308);                  #160 (_306:lng, _307:str, _308:zrule 
+exit (_306,_307,_308);                  #160 (_306:lng, _307:str, _308:zrule) 
     eb_a:bat[:str,:date]  := _303;      #161 eb_a:bat[:str,:date] := _303:bat[:str,:date] {G}
     bat.setColumn(eb_a,"1999");         #162 _131:void := BKCsetColumn(eb_a:bat[:str,:date], _132:str) 
 #      [compute](rule_bat, 1999).bat.setColumn("1999"), 
@@ -318,7 +318,7 @@ barrier (_320,_321,_322):= bat.newIterator(rule_bat);#165 (_320:lng, _321:str, _
 catch MALException:str ;                #169 MALException:str {J171}
     redo (_320,_321,_322):= bat.hasMoreElements(rule_bat);#170 (_320:lng, _321:str, _322:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ166}
 exit MALException:str ;                 #171 MALException:str 
-exit (_320,_321,_322);                  #172 (_320:lng, _321:str, _322:zrule 
+exit (_320,_321,_322);                  #172 (_320:lng, _321:str, _322:zrule) 
     gb_a:bat[:str,:date]  := _317;      #173 gb_a:bat[:str,:date] := _317:bat[:str,:date] {G}
     _331 := bat.new(nil:str,nil:int);   #174 _331:bat[:str,:int] := CMDBATnew(_318:str, _332:int) {G}
 barrier (_334,_335,_336):= bat.newIterator(gb_a);#175 (_334:lng, _335:str, _336:date) := CHPbunIterator(gb_a:bat[:str,:date]) {GJ182}
@@ -328,7 +328,7 @@ barrier (_334,_335,_336):= bat.newIterator(gb_a);#175 (_334:lng, _335:str, _336:
 catch MALException:str ;                #179 MALException:str {J181}
     redo (_334,_335,_336):= bat.hasMoreElements(gb_a);#180 (_334:lng, _335:str, _336:date) := CHPbunHasMoreElements(gb_a:bat[:str,:date]) {GJ176}
 exit MALException:str ;                 #181 MALException:str 
-exit (_334,_335,_336);                  #182 (_334:lng, _335:str, _336:date 
+exit (_334,_335,_336);                  #182 (_334:lng, _335:str, _336:date) 
     hb_a:bat[:str,:int]  := _331;       #183 hb_a:bat[:str,:int] := _331:bat[:str,:int] {G}
     _345 := bat.new(nil:str,nil:str);   #184 _345:bat[:str,:str] := CMDBATnew(_318:str, _318:str) {G}
 barrier (_347,_348,_349):= bat.newIterator(hb_a);#185 (_347:lng, _348:str, _349:int) := CHPbunIterator(hb_a:bat[:str,:int]) {GJ192}
@@ -338,7 +338,7 @@ barrier (_347,_348,_349):= bat.newIterator(hb_a);#185 (_347:lng, _348:str, _349:
 catch MALException:str ;                #189 MALException:str {J191}
     redo (_347,_348,_349):= bat.hasMoreElements(hb_a);#190 (_347:lng, _348:str, _349:int) := CHPbunHasMoreElements(hb_a:bat[:str,:int]) {GJ186}
 exit MALException:str ;                 #191 MALException:str 
-exit (_347,_348,_349);                  #192 (_347:lng, _348:str, _349:int 
+exit (_347,_348,_349);                  #192 (_347:lng, _348:str, _349:int) 
     ib_a:bat[:str,:str]  := _345;       #193 ib_a:bat[:str,:str] := _345:bat[:str,:str] {G}
     bat.setColumn(ib_a,"1999");         #194 _137:void := BKCsetColumn(ib_a:bat[:str,:str], _132:str) 
 #      [dayname]([dayofweek]([compute](rule_bat, 1999))).bat.setColumn("1999"), 
@@ -350,7 +350,7 @@ barrier (_362,_363,_364):= bat.newIterator(rule_bat);#197 (_362:lng, _363:str, _
 catch MALException:str ;                #201 MALException:str {J203}
     redo (_362,_363,_364):= bat.hasMoreElements(rule_bat);#202 (_362:lng, _363:str, _364:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ198}
 exit MALException:str ;                 #203 MALException:str 
-exit (_362,_363,_364);                  #204 (_362:lng, _363:str, _364:zrule 
+exit (_362,_363,_364);                  #204 (_362:lng, _363:str, _364:zrule) 
     kb_a:bat[:str,:date]  := _358;      #205 kb_a:bat[:str,:date] := _358:bat[:str,:date] {G}
     bat.setColumn(kb_a,"1992");         #206 _141:void := BKCsetColumn(kb_a:bat[:str,:date], _142:str) 
 #      [compute](rule_bat, 1992).bat.setColumn("1992"), 
@@ -362,7 +362,7 @@ barrier (_375,_376,_377):= bat.newIterator(rule_bat);#209 (_375:lng, _376:str, _
 catch MALException:str ;                #213 MALException:str {J215}
     redo (_375,_376,_377):= bat.hasMoreElements(rule_bat);#214 (_375:lng, _376:str, _377:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ210}
 exit MALException:str ;                 #215 MALException:str 
-exit (_375,_376,_377);                  #216 (_375:lng, _376:str, _377:zrule 
+exit (_375,_376,_377);                  #216 (_375:lng, _376:str, _377:zrule) 
     mb_a:bat[:str,:date]  := _373;      #217 mb_a:bat[:str,:date] := _373:bat[:str,:date] {G}
     _386 := bat.new(nil:str,nil:int);   #218 _386:bat[:str,:int] := CMDBATnew(_359:str, _387:int) {G}
 barrier (_389,_390,_391):= bat.newIterator(mb_a);#219 (_389:lng, _390:str, _391:date) := CHPbunIterator(mb_a:bat[:str,:date]) {GJ226}
@@ -372,7 +372,7 @@ barrier (_389,_390,_391):= bat.newIterator(mb_a);#219 (_389:lng, _390:str, _391:
 catch MALException:str ;                #223 MALException:str {J225}
     redo (_389,_390,_391):= bat.hasMoreElements(mb_a);#224 (_389:lng, _390:str, _391:date) := CHPbunHasMoreElements(mb_a:bat[:str,:date]) {GJ220}
 exit MALException:str ;                 #225 MALException:str 
-exit (_389,_390,_391);                  #226 (_389:lng, _390:str, _391:date 
+exit (_389,_390,_391);                  #226 (_389:lng, _390:str, _391:date) 
     nb_a:bat[:str,:int]  := _386;       #227 nb_a:bat[:str,:int] := _386:bat[:str,:int] {G}
     _400 := bat.new(nil:str,nil:str);   #228 _400:bat[:str,:str] := CMDBATnew(_401:str, _401:str) {G}
 barrier (_403,_404,_405):= bat.newIterator(nb_a);#229 (_403:lng, _404:str, _405:int) := CHPbunIterator(nb_a:bat[:str,:int]) {GJ236}
@@ -382,7 +382,7 @@ barrier (_403,_404,_405):= bat.newIterator(nb_a);#229 (_403:lng, _404:str, _405:
 catch MALException:str ;                #233 MALException:str {J235}
     redo (_403,_404,_405):= bat.hasMoreElements(nb_a);#234 (_403:lng, _404:str, _405:int) := CHPbunHasMoreElements(nb_a:bat[:str,:int]) {GJ230}
 exit MALException:str ;                 #235 MALException:str 
-exit (_403,_404,_405);                  #236 (_403:lng, _404:str, _405:int 
+exit (_403,_404,_405);                  #236 (_403:lng, _404:str, _405:int) 
     ob_a:bat[:str,:str]  := _400;       #237 ob_a:bat[:str,:str] := _400:bat[:str,:str] {G}
     bat.setColumn(ob_a,"1992");         #238 _147:void := BKCsetColumn(ob_a:bat[:str,:str], _142:str) 
     io.print("rule_bat,xa_a,cb_a,eb_a,ib_a,kb_a,ob_a");#239 _148:void := IOprint_val(_149:str) 
@@ -398,7 +398,7 @@ barrier (_417,_418,_419):= bat.newIterator(rule_bat);#245 (_417:lng, _418:str, _
 catch MALException:str ;                #249 MALException:str {J251}
     redo (_417,_418,_419):= bat.hasMoreElements(rule_bat);#250 (_417:lng, _418:str, _419:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ246}
 exit MALException:str ;                 #251 MALException:str 
-exit (_417,_418,_419);                  #252 (_417:lng, _418:str, _419:zrule 
+exit (_417,_418,_419);                  #252 (_417:lng, _418:str, _419:zrule) 
     sb_a:bat[:str,:date]  := _414;      #253 sb_a:bat[:str,:date] := _414:bat[:str,:date] {G}
     tb_a := bat.setColumn(sb_a,"1572"); #254 tb_a:void := BKCsetColumn(sb_a:bat[:str,:date], _159:str) 
 #      [compute](rule_bat, 1572).bat.setColumn("1572"), 
@@ -410,7 +410,7 @@ barrier (_430,_431,_432):= bat.newIterator(rule_bat);#257 (_430:lng, _431:str, _
 catch MALException:str ;                #261 MALException:str {J263}
     redo (_430,_431,_432):= bat.hasMoreElements(rule_bat);#262 (_430:lng, _431:str, _432:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ258}
 exit MALException:str ;                 #263 MALException:str 
-exit (_430,_431,_432);                  #264 (_430:lng, _431:str, _432:zrule 
+exit (_430,_431,_432);                  #264 (_430:lng, _431:str, _432:zrule) 
     ub_a:bat[:str,:date]  := _428;      #265 ub_a:bat[:str,:date] := _428:bat[:str,:date] {G}
     _441 := bat.new(nil:str,nil:int);   #266 _441:bat[:str,:int] := CMDBATnew(_442:str, _443:int) {G}
 barrier (_445,_446,_447):= bat.newIterator(ub_a);#267 (_445:lng, _446:str, _447:date) := CHPbunIterator(ub_a:bat[:str,:date]) {GJ274}
@@ -420,7 +420,7 @@ barrier (_445,_446,_447):= bat.newIterator(ub_a);#267 (_445:lng, _446:str, _447:
 catch MALException:str ;                #271 MALException:str {J273}
     redo (_445,_446,_447):= bat.hasMoreElements(ub_a);#272 (_445:lng, _446:str, _447:date) := CHPbunHasMoreElements(ub_a:bat[:str,:date]) {GJ268}
 exit MALException:str ;                 #273 MALException:str 
-exit (_445,_446,_447);                  #274 (_445:lng, _446:str, _447:date 
+exit (_445,_446,_447);                  #274 (_445:lng, _446:str, _447:date) 
     vb_a:bat[:str,:int]  := _441;       #275 vb_a:bat[:str,:int] := _441:bat[:str,:int] {G}
     _456 := bat.new(nil:str,nil:str);   #276 _456:bat[:str,:str] := CMDBATnew(_442:str, _442:str) {G}
 barrier (_458,_459,_460):= bat.newIterator(vb_a);#277 (_458:lng, _459:str, _460:int) := CHPbunIterator(vb_a:bat[:str,:int]) {GJ284}
@@ -430,7 +430,7 @@ barrier (_458,_459,_460):= bat.newIterator(vb_a);#277 (_458:lng, _459:str, _460:
 catch MALException:str ;                #281 MALException:str {J283}
     redo (_458,_459,_460):= bat.hasMoreElements(vb_a);#282 (_458:lng, _459:str, _460:int) := CHPbunHasMoreElements(vb_a:bat[:str,:int]) {GJ278}
 exit MALException:str ;                 #283 MALException:str 
-exit (_458,_459,_460);                  #284 (_458:lng, _459:str, _460:int 
+exit (_458,_459,_460);                  #284 (_458:lng, _459:str, _460:int) 
     wb_a:bat[:str,:str]  := _456;       #285 wb_a:bat[:str,:str] := _456:bat[:str,:str] {G}
     xb_a := bat.setColumn(wb_a,"1572"); #286 xb_a:void := BKCsetColumn(wb_a:bat[:str,:str], _159:str) 
 #      [dayname]([dayofweek]([compute](rule_bat, 1572))).bat.setColumn("1572"), 
@@ -442,7 +442,7 @@ barrier (_472,_473,_474):= bat.newIterator(rule_bat);#289 (_472:lng, _473:str, _
 catch MALException:str ;                #293 MALException:str {J295}
     redo (_472,_473,_474):= bat.hasMoreElements(rule_bat);#294 (_472:lng, _473:str, _474:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ290}
 exit MALException:str ;                 #295 MALException:str 
-exit (_472,_473,_474);                  #296 (_472:lng, _473:str, _474:zrule 
+exit (_472,_473,_474);                  #296 (_472:lng, _473:str, _474:zrule) 
     yb_a:bat[:str,:date]  := _469;      #297 yb_a:bat[:str,:date] := _469:bat[:str,:date] {G}
     ac_a := bat.setColumn(yb_a,"1");    #298 ac_a:void := BKCsetColumn(yb_a:bat[:str,:date], _172:str) 
 #      [compute](rule_bat, 1).bat.setColumn("1"), 
@@ -454,7 +454,7 @@ barrier (_486,_487,_488):= bat.newIterator(rule_bat);#301 (_486:lng, _487:str, _
 catch MALException:str ;                #305 MALException:str {J307}
     redo (_486,_487,_488):= bat.hasMoreElements(rule_bat);#306 (_486:lng, _487:str, _488:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ302}
 exit MALException:str ;                 #307 MALException:str 
-exit (_486,_487,_488);                  #308 (_486:lng, _487:str, _488:zrule 
+exit (_486,_487,_488);                  #308 (_486:lng, _487:str, _488:zrule) 
     bc_a:bat[:str,:date]  := _483;      #309 bc_a:bat[:str,:date] := _483:bat[:str,:date] {G}
     _497 := bat.new(nil:str,nil:int);   #310 _497:bat[:str,:int] := CMDBATnew(_484:str, _498:int) {G}
 barrier (_500,_501,_502):= bat.newIterator(bc_a);#311 (_500:lng, _501:str, _502:date) := CHPbunIterator(bc_a:bat[:str,:date]) {GJ318}
@@ -464,7 +464,7 @@ barrier (_500,_501,_502):= bat.newIterator(bc_a);#311 (_500:lng, _501:str, _502:
 catch MALException:str ;                #315 MALException:str {J317}
     redo (_500,_501,_502):= bat.hasMoreElements(bc_a);#316 (_500:lng, _501:str, _502:date) := CHPbunHasMoreElements(bc_a:bat[:str,:date]) {GJ312}
 exit MALException:str ;                 #317 MALException:str 
-exit (_500,_501,_502);                  #318 (_500:lng, _501:str, _502:date 
+exit (_500,_501,_502);                  #318 (_500:lng, _501:str, _502:date) 
     cc_a:bat[:str,:int]  := _497;       #319 cc_a:bat[:str,:int] := _497:bat[:str,:int] {G}
     _511 := bat.new(nil:str,nil:str);   #320 _511:bat[:str,:str] := CMDBATnew(_484:str, _484:str) {G}
 barrier (_513,_514,_515):= bat.newIterator(cc_a);#321 (_513:lng, _514:str, _515:int) := CHPbunIterator(cc_a:bat[:str,:int]) {GJ328}
@@ -474,7 +474,7 @@ barrier (_513,_514,_515):= bat.newIterator(cc_a);#321 (_513:lng, _514:str, _515:
 catch MALException:str ;                #325 MALException:str {J327}
     redo (_513,_514,_515):= bat.hasMoreElements(cc_a);#326 (_513:lng, _514:str, _515:int) := CHPbunHasMoreElements(cc_a:bat[:str,:int]) {GJ322}
 exit MALException:str ;                 #327 MALException:str 
-exit (_513,_514,_515);                  #328 (_513:lng, _514:str, _515:int 
+exit (_513,_514,_515);                  #328 (_513:lng, _514:str, _515:int) 
     dc_a:bat[:str,:str]  := _511;       #329 dc_a:bat[:str,:str] := _511:bat[:str,:str] {G}
     ec_a := bat.setColumn(dc_a,"1");    #330 ec_a:void := BKCsetColumn(dc_a:bat[:str,:str], _172:str) 
 #      [dayname]([dayofweek]([compute](rule_bat, 1))).bat.setColumn("1"), 
@@ -486,7 +486,7 @@ barrier (_528,_529,_530):= bat.newIterator(rule_bat);#333 (_528:lng, _529:str, _
 catch MALException:str ;                #337 MALException:str {J339}
     redo (_528,_529,_530):= bat.hasMoreElements(rule_bat);#338 (_528:lng, _529:str, _530:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ334}
 exit MALException:str ;                 #339 MALException:str 
-exit (_528,_529,_530);                  #340 (_528:lng, _529:str, _530:zrule 
+exit (_528,_529,_530);                  #340 (_528:lng, _529:str, _530:zrule) 
     fc_a:bat[:str,:date]  := _524;      #341 fc_a:bat[:str,:date] := _524:bat[:str,:date] {G}
     gc_a := bat.setColumn(fc_a,"-2000");#342 gc_a:void := BKCsetColumn(fc_a:bat[:str,:date], _182:str) 
 #      [compute](rule_bat, -2000).bat.setColumn("-2000"), 
@@ -498,7 +498,7 @@ barrier (_541,_542,_543):= bat.newIterator(rule_bat);#345 (_541:lng, _542:str, _
 catch MALException:str ;                #349 MALException:str {J351}
     redo (_541,_542,_543):= bat.hasMoreElements(rule_bat);#350 (_541:lng, _542:str, _543:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ346}
 exit MALException:str ;                 #351 MALException:str 
-exit (_541,_542,_543);                  #352 (_541:lng, _542:str, _543:zrule 
+exit (_541,_542,_543);                  #352 (_541:lng, _542:str, _543:zrule) 
     hc_a:bat[:str,:date]  := _539;      #353 hc_a:bat[:str,:date] := _539:bat[:str,:date] {G}
     _552 := bat.new(nil:str,nil:int);   #354 _552:bat[:str,:int] := CMDBATnew(_525:str, _553:int) {G}
 barrier (_555,_556,_557):= bat.newIterator(hc_a);#355 (_555:lng, _556:str, _557:date) := CHPbunIterator(hc_a:bat[:str,:date]) {GJ362}
@@ -508,7 +508,7 @@ barrier (_555,_556,_557):= bat.newIterator(hc_a);#355 (_555:lng, _556:str, _557:
 catch MALException:str ;                #359 MALException:str {J361}
     redo (_555,_556,_557):= bat.hasMoreElements(hc_a);#360 (_555:lng, _556:str, _557:date) := CHPbunHasMoreElements(hc_a:bat[:str,:date]) {GJ356}
 exit MALException:str ;                 #361 MALException:str 
-exit (_555,_556,_557);                  #362 (_555:lng, _556:str, _557:date 
+exit (_555,_556,_557);                  #362 (_555:lng, _556:str, _557:date) 
     ic_a:bat[:str,:int]  := _552;       #363 ic_a:bat[:str,:int] := _552:bat[:str,:int] {G}
     _566 := bat.new(nil:str,nil:str);   #364 _566:bat[:str,:str] := CMDBATnew(_567:str, _567:str) {G}
 barrier (_569,_570,_571):= bat.newIterator(ic_a);#365 (_569:lng, _570:str, _571:int) := CHPbunIterator(ic_a:bat[:str,:int]) {GJ372}
@@ -518,7 +518,7 @@ barrier (_569,_570,_571):= bat.newIterator(ic_a);#365 (_569:lng, _570:str, _571:
 catch MALException:str ;                #369 MALException:str {J371}
     redo (_569,_570,_571):= bat.hasMoreElements(ic_a);#370 (_569:lng, _570:str, _571:int) := CHPbunHasMoreElements(ic_a:bat[:str,:int]) {GJ366}
 exit MALException:str ;                 #371 MALException:str 
-exit (_569,_570,_571);                  #372 (_569:lng, _570:str, _571:int 
+exit (_569,_570,_571);                  #372 (_569:lng, _570:str, _571:int) 
     jc_a:bat[:str,:str]  := _566;       #373 jc_a:bat[:str,:str] := _566:bat[:str,:str] {G}
     kc_a := bat.setColumn(jc_a,"-2000");#374 kc_a:void := BKCsetColumn(jc_a:bat[:str,:str], _182:str) 
     io.print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");#375 _188:void := IOprint_val(_189:str) 

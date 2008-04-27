@@ -16,9 +16,9 @@ stdout of test 'tst670` in directory 'src/mal` itself:
 #clients.quit();
 #io.print("gone");
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
     io.print("go");                     #  1 _1:void := IOprint_val(_2:str) 
-    clients.quit();                     #  2 _3:void 
+    clients.quit();                     #  2 _3:void := CLTquit() 
     io.print("gone");                   #  3 _4:void := IOprint_val(_5:str) 
 end main;	# 4  
 [ "go" ]

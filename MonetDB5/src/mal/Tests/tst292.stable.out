@@ -18,7 +18,7 @@ stdout of test 'tst292` in directory 'src/mal` itself:
 #bat.insert(b, nil, 0:bit);
 #io.print(b);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # check coercion of bit coercions on big/little endian platforms 
     b := bat.new(:oid,:bit);            #  2 b:bat[:oid,:bit] := CMDBATnew(_3:oid, _4:bit) {G}
     bat.insert(b,nil:oid,true:bit);     #  3 _5:void := BKCinsert_bun(b:bat[:oid,:bit], _6:oid, _7:bit) 

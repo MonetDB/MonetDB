@@ -35,7 +35,7 @@ stdout of test 'tst250` in directory 'src/mal` itself:
 #	redo (v,h,t):= chopper.hasMoreElements(b);
 #exit v;
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # The series tst2?? is a patched version of suite_00 
 # The first and foremost BAT operations 
     b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}

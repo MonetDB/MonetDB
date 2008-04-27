@@ -27,9 +27,9 @@ command bat2.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;#  0 new:
 !TypeException:user.main[3]:'bat2.new' undefined in: a:bat[:str,:int] := bat2.new(_4:str, _5:int)
 
 !TypeException:user.main[4]:'bat2.new' undefined in: b:bat[:str,:int] := bat2.new(_7:str, _5:int)
-function user.main():void;              #  0 main:void {G}
-# check propagation of type variables over bats #  1 
-# can be checked after bat module has been added #  2 
+function user.main():void;              #  0 main:void := user.main() {G}
+# check propagation of type variables over bats 
+# can be checked after bat module has been added 
     a := bat2.new(:str,:int);           #  3 a:bat[:str,:int] := bat2.new(_4:str, _5:int) {UG}
     b := bat2.new(:str,:int);           #  4 b:bat[:str,:int] := bat2.new(_7:str, _5:int) {UG}
     c := bat.new(:str,:int);            #  5 c:bat[:str,:int] := CMDBATnew(_9:str, _5:int) {G}

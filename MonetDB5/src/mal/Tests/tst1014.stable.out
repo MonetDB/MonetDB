@@ -30,10 +30,10 @@ stdout of test 'tst1014` in directory 'src/mal` itself:
 ## at the end of the call, the BBP should have discarded
 ## the temporary bats of the user
 #end test;
-function user.test():void;              #  0 test:void {G}
+function user.test():void;              #  0 test:void := user.test() {G}
     io.print("test");                   #  1 _1:void := IOprint_val(_2:str) 
-    bbp.open();                         #  2 _3:void 
-    x := bbp.getObjects();              #  3 x:bat[:int,:str] {G}
+    bbp.open();                         #  2 _3:void := CMDbbpopen() 
+    x := bbp.getObjects();              #  3 x:bat[:int,:str] := CMDbbpGetObjects() {G}
     io.print(x);                        #  4 _5:void := IOprint_val(x:bat[:int,:str]) 
     io.print("test");                   #  5 _6:void := IOprint_val(_2:str) 
     b := bat.new(:int,:int);            #  6 b:bat[:int,:int] := CMDBATnew(_8:int, _8:int) {G}
@@ -41,7 +41,7 @@ function user.test():void;              #  0 test:void {G}
     bbp.deposit("myfirstbat",b);        #  8 _12:void := CMDbbpdeposit(_13:str, b:bat[:int,:int]) 
     c := bbp.take("myfirstbat");        #  9 c:bat[:any,:any] := CMDbbptake(_13:str) {G}
     io.print(c);                        # 10 _15:void := IOprint_val(c:bat[:any,:any]) 
-    bbp.close();                        # 11 _16:void 
+    bbp.close();                        # 11 _16:void := CMDbbpclose() 
 # at the end of the call, the BBP should have discarded 
 # the temporary bats of the user 
 end test;	# 14  
@@ -55,19 +55,19 @@ end test;	# 14
 #print(v);
 #bbp.close();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # now within a function to assure that reference counting 
 # takes care of releasing the variables. 
-    user.test();                        #  3 _3:void 
+    user.test();                        #  3 _3:void := user.test() 
     io.print("continue");               #  4 _4:void := IOprint_val(_5:str) 
-    bbp.open();                         #  5 _6:void 
-    x := bbp.getObjects();              #  6 x:bat[:int,:str] {G}
+    bbp.open();                         #  5 _6:void := CMDbbpopen() 
+    x := bbp.getObjects();              #  6 x:bat[:int,:str] := CMDbbpGetObjects() {G}
     xr := bat.reverse(x);               #  7 xr:bat[:str,:int] := BKCreverse(x:bat[:int,:str]) {G}
     xp := algebra.project(xr);          #  8 xp:bat[:str,:oid] := ALGprojectNIL(xr:bat[:str,:int]) {G}
     io.print(xp);                       #  9 _10:void := IOprint_val(xp:bat[:str,:oid]) 
     v := bbp.take("myfirstbat");        # 10 v:bat[:any,:any] := CMDbbptake(_12:str) {G}
     io.print(v);                        # 11 _13:void := IOprint_val(v:bat[:any,:any]) 
-    bbp.close();                        # 12 _14:void 
+    bbp.close();                        # 12 _14:void := CMDbbpclose() 
 end main;	# 13  
 [ "test" ]
 #-------------------------#

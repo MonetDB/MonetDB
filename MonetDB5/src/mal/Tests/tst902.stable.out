@@ -35,14 +35,14 @@ stdout of test 'tst902` in directory 'src/mal` itself:
 #exit w;
 #print(d);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # what is the overhead of MAL in multiplex situations 
 # using a BATloop !! This is 40x slower as the V4.3 multiplex implementation 
     b := bat.new(:lng,:lng);            #  3 b:bat[:lng,:lng] := CMDBATnew(_4:lng, _4:lng) {G}
 barrier (k,v):= language.newRange(0:lng);#  4 (k:bit, v:lng) := RNGnewRange_lng(_7:lng) {J7}
     bat.insert(b,v,v);                  #  5 _8:void := BKCinsert_bun(b:bat[:lng,:lng], v:lng, v:lng) 
     redo (k,v):= language.nextElement(1:lng,10:lng);#  6 (k:bit, v:lng) := RNGnextElement_lng(_9:lng, _10:lng) {J5}
-exit (k,v);                             #  7 (k:bit, v:lng 
+exit (k,v);                             #  7 (k:bit, v:lng) 
     c := algebra.copy(b);               #  8 c:bat[:lng,:lng] := ALGcopy(b:bat[:lng,:lng]) {G}
     d := bat.new(:lng,:lng);            #  9 d:bat[:lng,:lng] := CMDBATnew(_4:lng, _4:lng) {G}
 barrier (w,h,t):= bat.newIterator(b);   # 10 (w:lng, h:lng, t:lng) := CHPbunIterator(b:bat[:lng,:lng]) {J18}

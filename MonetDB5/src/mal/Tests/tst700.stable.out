@@ -31,7 +31,7 @@ stdout of test 'tst700` in directory 'src/mal` itself:
 #	printf("%6.2f\n",pi);
 #	printf("single line %s \n","hello");
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # A few system calls 
     io.print('c');                      #  2 _2:void := IOprint_val(_3:chr) 
     io.print("hello world");            #  3 _4:void := IOprint_val(_5:str) 

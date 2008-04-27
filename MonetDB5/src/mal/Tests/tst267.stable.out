@@ -28,7 +28,7 @@ stdout of test 'tst267` in directory 'src/mal` itself:
 #g:= array.*(a,b);
 #print(g);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Grouped sums 
     a := bat.new(:oid,:int);            #  2 a:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
     b := bat.new(:oid,:int);            #  3 b:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}

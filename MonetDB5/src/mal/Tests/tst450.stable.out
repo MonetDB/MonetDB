@@ -23,11 +23,11 @@ stdout of test 'tst450` in directory 'src/mal` itself:
 #n:= manual.help("algebra","insert"); io.print(n);
 #d:= inspect.getDefinition("inspect","dir"); io.print(d);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #testing the inspect module for help information 
-    a := inspect.getAtomNames();        #  2 a:bat[:int,:str] {G}
+    a := inspect.getAtomNames();        #  2 a:bat[:int,:str] := INSPECTatom_names() {G}
     io.print(a);                        #  3 _3:void := IOprint_val(a:bat[:int,:str]) 
-    m := inspect.getModule();           #  4 m:bat[:oid,:str] {G}
+    m := inspect.getModule();           #  4 m:bat[:oid,:str] := INSPECTgetAllModules() {G}
     mr := bat.reverse(m);               #  5 mr:bat[:str,:oid] := BKCreverse(m:bat[:oid,:str]) {G}
     m1 := algebra.kunique(mr);          #  6 m1:bat[:str,:oid] := ALGkunique(mr:bat[:str,:oid]) {G}
     z := algebra.project(m1);           #  7 z:bat[:str,:oid] := ALGprojectNIL(m1:bat[:str,:oid]) {G}

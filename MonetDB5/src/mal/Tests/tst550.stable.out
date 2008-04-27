@@ -19,9 +19,9 @@ stdout of test 'tst550` in directory 'src/mal` itself:
 #lock.unset(l);
 #lock.destroy(l);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # use of the lock module 
-    l := lock.create();                 #  2 l:lock 
+    l := lock.create();                 #  2 l:lock := LCKcreate() 
     lock.set(l);                        #  3 _3:void := LCKset(l:lock) 
     i := lock.try(l);                   #  4 i:int := LCKtry(l:lock) 
     lock.unset(l);                      #  5 _5:void := LCKunset(l:lock) 

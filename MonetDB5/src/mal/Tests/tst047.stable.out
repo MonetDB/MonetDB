@@ -28,7 +28,7 @@ stdout of test 'tst047` in directory 'src/mal` itself:
 #l1:= copy(br);
 #print(l1);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #testing copying and counting reversals 
 #to test reversal handling 
     b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}

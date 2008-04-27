@@ -22,7 +22,7 @@ stdout of test 'tst240` in directory 'src/mal` itself:
 #io.print(g);
 #io.print(h);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # testing pack/unpack of bats 
     i := 1;                             #  2 i:int := _3:int 
     j := 2;                             #  3 j:int := _5:int 

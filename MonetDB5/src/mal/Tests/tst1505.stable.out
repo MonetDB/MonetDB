@@ -61,7 +61,7 @@ stdout of test 'tst1505` in directory 'src/mal` itself:
 #	x3:= and(x,A); print(x,A,x3);
 #	x4:= or(x,A); print(x,A,x4);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     y := bat.new(:oid,:dbl);            #  1 y:bat[:oid,:dbl] := CMDBATnew(_2:oid, _3:dbl) {G}
     le_a := calc.dbl(1);                #  2 le_a:dbl := CALCflt2dbl(_5:flt) 
     bat.append(y,le_a);                 #  3 _6:void := BKCappend_val_wrap(y:bat[:oid,:dbl], le_a:dbl) 

@@ -32,7 +32,7 @@ stdout of test 'tst034` in directory 'src/mal` itself:
 #z:= algebra.betweenOC(b,0,2); io.print(z);
 #z:= algebra.betweenOO(b,0,2); io.print(z);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # test the reference counting scheme 
     b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     bat.insert(b,0,0);                  #  3 _4:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _5:int) 

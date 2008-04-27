@@ -29,7 +29,7 @@ stdout of test 'tst1150` in directory 'src/mal` itself:
 #	i := stream.readInt(fp);
 #	print(i);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # simple stream test 
     fp := streams.openWrite("tst1150garbage");#  2 fp:streams := stream_open_wastreamwrap(_3:str) 
     streams.writeStr(fp,"Dit is een test\n");#  3 _4:void := stream_write_stringwrap(fp:streams, _5:str) 

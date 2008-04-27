@@ -36,7 +36,7 @@ end pl;	# 9
 #z:= pl(a);
 #print("done");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     a := "hello";                       #  1 a:str := _2:str {G}
     z := user.pl(a);                    #  2 z:void := user.pl(a:str) 
     io.print("done");                   #  3 _4:void := IOprint_val(_5:str) 

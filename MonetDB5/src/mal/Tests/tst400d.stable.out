@@ -20,13 +20,13 @@ stdout of test 'tst400d` in directory 'src/mal` itself:
 #	c:= aggr.count(b);
 #	io.print(c);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # simple iterator loop test 
     b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
 barrier (v,i):= language.newRange(0:lng);#  3 (v:bit, i:lng) := RNGnewRange_lng(_6:lng) {J6}
     z := bat.insert(b,1,1);             #  4 z:void := BKCinsert_bun(b:bat[:int,:int], _8:int, _8:int) 
     redo (v,i):= language.nextElement(1:lng,1000000:lng);#  5 (v:bit, i:lng) := RNGnextElement_lng(_9:lng, _10:lng) {J4}
-exit (v,i);                             #  6 (v:bit, i:lng 
+exit (v,i);                             #  6 (v:bit, i:lng) 
     c := aggr.count(b);                 #  7 c:int := ALGcount_bat(b:bat[:int,:int]) 
     io.print(c);                        #  8 _12:void := IOprint_val(c:int) 
 end main;	# 9  

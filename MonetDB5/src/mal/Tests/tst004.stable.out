@@ -22,7 +22,7 @@ stdout of test 'tst004` in directory 'src/mal` itself:
 #exit	m:= 4;
 #	io.print(m);
 #end foo;
-function user.foo():void;               #  0 foo:void 
+function user.foo():void;               #  0 foo:void := user.foo() 
 barrier l := 1;                         #  1 l:int := _2:int {J3}
     io.print(l);                        #  2 _3:void := IOprint_val(l:int) 
 exit l := 2;                            #  3 l:int := _4:int 
@@ -33,7 +33,7 @@ exit m := 4;                            #  7 m:int := _8:int
     io.print(m);                        #  8 _9:void := IOprint_val(m:int) 
 end foo;	# 9  
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # minimal barrier 
 end main;	# 2  
 

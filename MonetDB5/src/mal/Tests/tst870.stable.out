@@ -33,7 +33,7 @@ stdout of test 'tst870` in directory 'src/mal` itself:
 #h:= group.max(b);
 #io.print(h);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #testing the multiplex operations on simple groups 
     b := bat.new(:oid,:oid);            #  2 b:bat[:oid,:oid] := CMDBATnew(_3:oid, _3:oid) {G}
     bat.insert(b,0@0,0@0);              #  3 _4:void := BKCinsert_bun(b:bat[:oid,:oid], _5:oid, _5:oid) 

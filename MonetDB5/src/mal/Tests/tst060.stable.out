@@ -24,7 +24,7 @@ stdout of test 'tst060` in directory 'src/mal` itself:
 #exit 	b1;
 #	print(s1);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # garbage collection strins 
     s0 := "hello";                      #  2 s0:str := _3:str {G}
     s0 := "world";                      #  3 s0:str := _4:str {G}

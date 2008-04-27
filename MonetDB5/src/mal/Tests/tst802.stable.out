@@ -27,7 +27,7 @@ end tst;	# 2
 #c:= tst(b);
 #io.print(c);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #testing simple stuff around type BAT 
     z := bat.new(:int,:int);            #  2 z:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     b := nil:BAT;                       #  3 b:BAT := _5:BAT {G}

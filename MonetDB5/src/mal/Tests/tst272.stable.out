@@ -48,7 +48,7 @@ stdout of test 'tst272` in directory 'src/mal` itself:
 #print(s);
 #print(t,s);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #Same as tst270, but includes testing of the profiler trace 
     profiler.activate("ticks");         #  2 _2:void := CMDactivateProfiler(_3:str) 
 #profiler.activate("pc"); 
@@ -60,7 +60,7 @@ function user.main():void;              #  0 main:void {G}
 #test basic functionality of the BAT library. 
 #focussed on integers 
 #it includes insertions,deletions,selections, and joins. 
-    profiler.start();                   # 12 _19:void 
+    profiler.start();                   # 12 _19:void := CMDstartProfiler() 
     err := bat.insert(b,1,15);          # 13 err:void := BKCinsert_bun(b:bat[:int,:int], _21:int, _22:int) 
     err := bat.insert(b,2,4);           # 14 err:void := BKCinsert_bun(b:bat[:int,:int], _23:int, _24:int) 
     n0 := calc.int(nil:void);           # 15 n0:int := CALCnil2int(_26:void) 
@@ -75,7 +75,7 @@ function user.main():void;              #  0 main:void {G}
     err := bat.insert(b,n0,81);         # 24 err:void := BKCinsert_bun(b:bat[:int,:int], n0:int, _38:int) 
     io.print(b);                        # 25 _39:void := IOprint_val(b:bat[:int,:int]) 
     io.print(b,b,b);                    # 26 _40:void := IOtable(b:bat[:int,:int], b:bat[:int,:int], b:bat[:int,:int]) 
-    profiler.stop();                    # 27 _41:void 
+    profiler.stop();                    # 27 _41:void := CMDstopProfiler() 
     io.printf("#~BeginVariableOutput~#\n");# 28 _42:void := IOprint_str(_43:str) 
     t := profiler.getTrace("ticks");    # 29 t:bat[:int,:any] := CMDgetTrace(_45:str) {G}
 #io.print(t); 
@@ -83,7 +83,7 @@ function user.main():void;              #  0 main:void {G}
 #io.print(s); 
 #io.print(t,s); 
     io.printf("#~EndVariableOutput~#\n");# 34 _51:void := IOprint_str(_52:str) 
-    profiler.cleanup();                 # 35 _53:void 
+    profiler.cleanup();                 # 35 _53:void := CMDcleanup() 
 end main;	# 36  
 #-----------------#
 # h	tmp_13	  # name

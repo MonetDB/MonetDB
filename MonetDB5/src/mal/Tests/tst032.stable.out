@@ -25,7 +25,7 @@ stdout of test 'tst032` in directory 'src/mal` itself:
 #io.print(b);
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # testing the void semantics 
     b := bat.new(:oid,:int);            #  2 b:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
     bat.insert(b,nil:oid,0);            #  3 _5:void := BKCinsert_bun(b:bat[:oid,:int], _6:oid, _7:int) 

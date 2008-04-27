@@ -27,7 +27,7 @@ stdout of test 'tst801` in directory 'src/mal` itself:
 #x := algebra.find(b, 4);
 #io.print(x);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #testing simple stuff around type BAT 
     y := bat.new(:int,:int);            #  2 y:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     bat.insert(y,0,0);                  #  3 _4:void := BKCinsert_bun(y:bat[:int,:int], _5:int, _5:int) 

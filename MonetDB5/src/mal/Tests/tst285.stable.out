@@ -22,7 +22,7 @@ stdout of test 'tst285` in directory 'src/mal` itself:
 #z2:= match(b,".*[ly].*");
 #print(z2);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
     bat.append(b,"hello");              #  2 _4:void := BKCappend_val_wrap(b:bat[:oid,:str], _5:str) 
     bat.append(b,"goodbye");            #  3 _6:void := BKCappend_val_wrap(b:bat[:oid,:str], _7:str) 

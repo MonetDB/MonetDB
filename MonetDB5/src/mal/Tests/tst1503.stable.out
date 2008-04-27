@@ -59,7 +59,7 @@ stdout of test 'tst1503` in directory 'src/mal` itself:
 #print("b2 becomes"); print(b2);
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     x := bat.new(:oid,:chr);            #  1 x:bat[:oid,:chr] := CMDBATnew(_2:oid, _3:chr) {G}
     de_a := bat.insert(x,1@0,'a');      #  2 de_a:void := BKCinsert_bun(x:bat[:oid,:chr], _5:oid, _6:chr) 
     ee_a := bat.insert(x,2@0,'a');      #  3 ee_a:void := BKCinsert_bun(x:bat[:oid,:chr], _8:oid, _6:chr) 

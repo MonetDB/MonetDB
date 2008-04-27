@@ -31,7 +31,7 @@ stdout of test 'tst109` in directory 'src/mal` itself:
 !SyntaxException:user.main[10]:label 't' not in guarded block
 
 !SyntaxException:user.main[11]:exit-label 't' without begin-label
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # Error, illegal block weaveing  
 # analyse the basic interpreter loop 
     i := 0;                             #  3 i:int := _4:int 

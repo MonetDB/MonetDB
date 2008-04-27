@@ -27,7 +27,7 @@ end simple;	# 3
 #k:= 0;
 #r:= simple(k);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # simple test of a function call  
 # performance variation, how expensive are 10K calls? 
     k := 0;                             #  3 k:int := _4:int 

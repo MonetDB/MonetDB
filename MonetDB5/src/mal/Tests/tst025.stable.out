@@ -26,7 +26,7 @@ stdout of test 'tst025` in directory 'src/mal` itself:
 #io.print(b);
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Wrong behavior of self-deletion, it works on M4 
     b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     bat.insert(b,5140046,1804289383);   #  3 _4:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) 

@@ -30,7 +30,7 @@ stdout of test 'tst1204` in directory 'src/mal` itself:
 #exit	lf_a;
 ##}
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 ## test dayofweek and weeknumber using more than two years as consecutive days 
     date_00 := mtime.date(2000,1,1);    #  2 date_00:date := MTIMEdate_create(_3:int, _4:int, _4:int) 
     date_seq := bat.new(:int,:date);    #  3 date_seq:bat[:int,:date] := CMDBATnew(_6:int, _7:date) {G}

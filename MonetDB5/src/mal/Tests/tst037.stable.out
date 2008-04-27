@@ -23,7 +23,7 @@ stdout of test 'tst037` in directory 'src/mal` itself:
 #b:= match("Hello world","[ABHW]");
 #print(b);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # testing pattern matching against strings 
     b := pcre.match("Hello world","Hello");#  2 b:bit := PCREmatch(_3:str, _4:str) 
     io.print(b);                        #  3 _5:void := IOprint_val(b:bit) 

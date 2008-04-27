@@ -53,7 +53,7 @@ stdout of test 'tst270` in directory 'src/mal` itself:
 #profiler.stop();
 #profiler.closeStream();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #Same as tst200, but includes testing of the profiler 
 #profiler.setAll(); 
     profiler.activate("ticks");         #  3 _3:void := CMDactivateProfiler(_4:str) 
@@ -72,7 +72,7 @@ function user.main():void;              #  0 main:void {G}
     binfo := bat.info(b);               # 16 binfo:bat[:str,:str] := BKCinfo(b:bat[:int,:int]) {G}
     io.print(binfo);                    # 17 _27:void := IOprint_val(binfo:bat[:str,:str]) 
     io.printf("#~EndVariableOutput~#\n");# 18 _28:void := IOprint_str(_29:str) 
-    profiler.start();                   # 19 _30:void 
+    profiler.start();                   # 19 _30:void := CMDstartProfiler() 
     err := bat.insert(b,1,15);          # 20 err:void := BKCinsert_bun(b:bat[:int,:int], _32:int, _33:int) 
     err := bat.insert(b,2,4);           # 21 err:void := BKCinsert_bun(b:bat[:int,:int], _34:int, _35:int) 
     n0 := calc.int(nil:void);           # 22 n0:int := CALCnil2int(_37:void) 
@@ -87,9 +87,9 @@ function user.main():void;              #  0 main:void {G}
     err := bat.insert(b,n0,81);         # 31 err:void := BKCinsert_bun(b:bat[:int,:int], n0:int, _49:int) 
     io.print(b);                        # 32 _50:void := IOprint_val(b:bat[:int,:int]) 
     io.print(b,b,b);                    # 33 _51:void := IOtable(b:bat[:int,:int], b:bat[:int,:int], b:bat[:int,:int]) 
-    profiler.stop();                    # 34 _52:void 
-    profiler.closeStream();             # 35 _53:void 
-    profiler.cleanup();                 # 36 _54:void 
+    profiler.stop();                    # 34 _52:void := CMDstopProfiler() 
+    profiler.closeStream();             # 35 _53:void := CMDcloseProfilerStream() 
+    profiler.cleanup();                 # 36 _54:void := CMDcleanup() 
 end main;	# 37  
 #~BeginVariableOutput~#
 #-------------------------------------------------#

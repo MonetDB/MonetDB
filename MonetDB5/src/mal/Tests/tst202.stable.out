@@ -34,7 +34,7 @@ stdout of test 'tst202` in directory 'src/mal` itself:
 #	#destroy(b);
 #	#destroy(c);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # GDK layer should produce exceptions rather then direct warnings 
 # or ignoring. 
 # a typical case is to try to rename an existing (persistent) bat 

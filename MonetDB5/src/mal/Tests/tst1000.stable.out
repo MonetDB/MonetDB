@@ -22,7 +22,7 @@ stdout of test 'tst1000` in directory 'src/mal` itself:
 #x:= bbp.getNames();
 #print(x);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #Access BATs  
     b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     bat.insert(b,1,2);                  #  3 _4:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) 

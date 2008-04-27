@@ -18,7 +18,7 @@ stdout of test 'tst023` in directory 'src/mal` itself:
 #	b:= inspect.getDefinition("transaction","help");
 #	print(b);
 #end help
-function transaction.help():void;       #  0 help:void {G}
+function transaction.help():void;       #  0 help:void := transaction.help() {G}
     io.print("added function to specific module");#  1 _1:void := IOprint_val(_2:str) 
     b := inspect.getDefinition("transaction","help");#  2 b:bat[:str,:str] := INSPECTgetDefinition(_4:str, _5:str) {G}
     io.print(b);                        #  3 _6:void := IOprint_val(b:bat[:str,:str]) 
@@ -28,10 +28,10 @@ end help;	# 4
 !SyntaxException:parseError:       ^';' expected
 #transaction.help();
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 #test addition of a function to a known module 
     comment;                            #  2 comment:any {U}
-    transaction.help();                 #  3 _3:any {U}
+    transaction.help();                 #  3 _3:any := transaction.help() {U}
 end main;                               #  4  {U}
 
 # 07:58:39 >  

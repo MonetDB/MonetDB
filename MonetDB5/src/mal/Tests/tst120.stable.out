@@ -36,7 +36,7 @@ stdout of test 'tst120` in directory 'src/mal` itself:
 !TypeException:user.main[7]:'bottom.first' undefined in: d:any := bottom.first(_11:str)
 
 !TypeException:user.main[8]:'top.first' undefined in: e:any := top.first(_13:sht)
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 #define 2 modules and check location of routines 
 # lookup DBHOME/mal/tst120a.mal 
 # does not do anything 
