@@ -49,7 +49,7 @@ stdout of test 'reload` in directory 'tests/gdkTests` itself:
 #
 #clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     MMO_location := bat.new(:oid,:str); #  1 MMO_location:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
     bat.setName(MMO_location,"MMO_location");#  2 _4:void := BKCsetName(MMO_location:bat[:oid,:str], _5:str) 
     bat.setPersistent(MMO_location);    #  3 _6:void := BKCsetPersistent(MMO_location:bat[:oid,:str]) 
@@ -59,7 +59,7 @@ function user.main():void;              #  0 main:void {G}
     bat.insert(b0,2@0:oid,"http://www.altavista.com/");#  7 _14:void := BKCinsert_bun(b0:bat[:oid,:str], _15:oid, _16:str) 
     bat.insert(b0,3@0:oid,"http://www.searchengineshowdown.com/");#  8 _17:void := BKCinsert_bun(b0:bat[:oid,:str], _18:oid, _19:str) 
     io.print(b0);                       #  9 _20:void := IOprint_val(b0:bat[:oid,:str]) 
-    transaction.commit();               # 10 _21:bit 
+    transaction.commit();               # 10 _21:bit := TRNglobal_commit() 
     MMO_location := nil;                # 11 MMO_location:bat[:oid,:str] := _37:BAT {G}
     b0:bat[:oid,:str]  := nil;          # 12 b0:bat[:oid,:str] := _37:BAT {G}
     b1:bat[:oid,:str]  := bbp.bind("MMO_location");# 13 b1:bat[:oid,:str] := CMDbbpbind(_5:str) {G}
@@ -68,13 +68,13 @@ function user.main():void;              #  0 main:void {G}
     bat.insert(b1,0@0:oid,"http://www.metacrawler.com/");# 16 _26:void := BKCinsert_bun(b1:bat[:oid,:str], _9:oid, _10:str) 
     bat.insert(b1,2@0:oid,"http://www.altavista.com/");# 17 _27:void := BKCinsert_bun(b1:bat[:oid,:str], _15:oid, _16:str) 
     io.print(b1);                       # 18 _28:void := IOprint_val(b1:bat[:oid,:str]) 
-    transaction.commit();               # 19 _29:bit 
+    transaction.commit();               # 19 _29:bit := TRNglobal_commit() 
     b1:bat[:oid,:str]  := bbp.bind("MMO_location");# 20 b1:bat[:oid,:str] := CMDbbpbind(_5:str) {G}
     z := bat.unload("MMO_location");    # 21 z:bit := BKCunload(_5:str) 
     io.print(z);                        # 22 _31:void := IOprint_val(z:bit) 
     bat.insert(b1,4@0:oid,"http://www.ibiblio.org/javafaq/");# 23 _32:void := BKCinsert_bun(b1:bat[:oid,:str], _33:oid, _34:str) 
     io.print(b1);                       # 24 _35:void := IOprint_val(b1:bat[:oid,:str]) 
-    clients.quit();                     # 25 _36:void 
+    clients.quit();                     # 25 _36:void := CLTquit() 
 end main;	# 26  
 #-------------------------------------------------#
 # h	t					  # name

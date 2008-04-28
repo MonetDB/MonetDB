@@ -58,7 +58,7 @@ stdout of test 'test_04` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	qa_a := clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -101,7 +101,7 @@ function user.main():void;              #  0 main:void {G}
     oa_a := algebra.semijoin(b,b);      # 40 oa_a:bat[:int,:int] := ALGsemijoin(b:bat[:int,:int], b:bat[:int,:int]) {G}
     pa_a := io.print(oa_a);             # 41 pa_a:void := IOprint_val(oa_a:bat[:int,:int]) 
 #	io.print("quit();"); 
-    qa_a := clients.quit();             # 43 qa_a:void 
+    qa_a := clients.quit();             # 43 qa_a:void := CLTquit() 
 end main;	# 44  
 #-----------------#
 # h	t	  # name

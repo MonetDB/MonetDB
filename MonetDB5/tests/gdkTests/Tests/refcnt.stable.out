@@ -18,10 +18,10 @@ stdout of test 'refcnt` in directory 'tests/gdkTests` itself:
 #	dn:= bbp.getNames();
 #	io.print(dn,d,dl);
 #end tmp;
-function user.tmp():void;               #  0 tmp:void {G}
-    d := bbp.getRefCount();             #  1 d:bat[:int,:int] {G}
-    dl := bbp.getLRefCount();           #  2 dl:bat[:int,:int] {G}
-    dn := bbp.getNames();               #  3 dn:bat[:int,:str] {G}
+function user.tmp():void;               #  0 tmp:void := user.tmp() {G}
+    d := bbp.getRefCount();             #  1 d:bat[:int,:int] := CMDbbpRefCount() {G}
+    dl := bbp.getLRefCount();           #  2 dl:bat[:int,:int] := CMDbbpLRefCount() {G}
+    dn := bbp.getNames();               #  3 dn:bat[:int,:str] := CMDbbpNames() {G}
 #io.print(dn,d,dl); 
 end tmp;	# 5  
 #
@@ -135,7 +135,7 @@ end createBAT;	# 5
 ##quit();
 #clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #NOTE: the reference counter of bat(name) is during insertion 
 #      into bat(b) correctly increased 
 #PROC addBAT(bat b,str name) : void { 
@@ -158,7 +158,7 @@ function user.main():void;              #  0 main:void {G}
 # are immediately garbage collected when leaving the 
 #function. A hack would be to provide explicit incref/decref 
 #tmp(); 
-    user.tmp();                         # 23 _23:void 
+    user.tmp();                         # 23 _23:void := user.tmp() 
 #{ 
 #VAR top := new(str,bat); 
 #top.rename("top"); 
@@ -167,15 +167,15 @@ function user.main():void;              #  0 main:void {G}
 #addBAT(top,"one"); 
 #addBAT(top,"two"); 
     user.addBAT(top,"one");             # 31 _34:void := user.addBAT(top:bat[:str,:BAT], _35:str) 
-    user.tmp();                         # 32 _36:void 
+    user.tmp();                         # 32 _36:void := user.tmp() 
     user.addBAT(top,"two");             # 33 _37:void := user.addBAT(top:bat[:str,:BAT], _38:str) 
 #tmp(); 
-    user.tmp();                         # 35 _40:void 
+    user.tmp();                         # 35 _40:void := user.tmp() 
 #delBAT(top,"one"); 
     user.delBAT(top,"one");             # 37 _42:void := user.delBAT(top:bat[:str,:BAT], _35:str) 
     io.print("one droppped");           # 38 _43:void := IOprint_val(_44:str) 
 #tmp(); 
-    user.tmp();                         # 40 _46:void 
+    user.tmp();                         # 40 _46:void := user.tmp() 
 #VAR i := new(oid,str); 
     m := bat.new(:oid,:str);            # 42 m:bat[:oid,:str] := CMDBATnew(_49:oid, _50:str) {G}
 #i.insert(oid(10),"ten"); 
@@ -192,7 +192,7 @@ barrier (_88,_89,_90):= bat.newIterator(m);# 50 (_88:lng, _89:oid, _90:str) := C
 catch MALException:str ;                # 54 MALException:str {J56}
     redo (_88,_89,_90):= bat.hasMoreElements(m);# 55 (_88:lng, _89:oid, _90:str) := CHPbunHasMoreElements(m:bat[:oid,:str]) {GJ51}
 exit MALException:str ;                 # 56 MALException:str 
-exit (_88,_89,_90);                     # 57 (_88:lng, _89:oid, _90:str 
+exit (_88,_89,_90);                     # 57 (_88:lng, _89:oid, _90:str) 
     r:bat[:oid,:BAT]  := _84;           # 58 r:bat[:oid,:BAT] := _84:bat[:oid,:BAT] {G}
     io.print(r);                        # 59 _65:void := IOprint_val(r:bat[:oid,:BAT]) 
 #tmp(); 
@@ -211,7 +211,7 @@ exit (_88,_89,_90);                     # 57 (_88:lng, _89:oid, _90:str
 # instead of the initial expected 1. 
 #tmp(); 
 #quit(); 
-    clients.quit();                     # 76 _83:void 
+    clients.quit();                     # 76 _83:void := CLTquit() 
 end main;	# 77  
 [ "one droppped" ]
 [ "do multiplex" ]

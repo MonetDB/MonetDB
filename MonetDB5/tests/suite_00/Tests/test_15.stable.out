@@ -103,7 +103,7 @@ stdout of test 'test_15` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	lb_a := clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -191,7 +191,7 @@ function user.main():void;              #  0 main:void {G}
 #	io.print("marcel.print();"); 
     kb_a := io.print(marcel);           # 86 kb_a:void := IOprint_val(marcel:bat[:int,:int]) 
 #	io.print("quit();"); 
-    lb_a := clients.quit();             # 88 lb_a:void 
+    lb_a := clients.quit();             # 88 lb_a:void := CLTquit() 
 end main;	# 89  
 #-----------------#
 # h	t	  # name

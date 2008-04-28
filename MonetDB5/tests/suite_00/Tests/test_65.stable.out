@@ -69,7 +69,7 @@ stdout of test 'test_65` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	cb_a := clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -113,14 +113,14 @@ function user.main():void;              #  0 main:void {G}
     ab_a := algebra.sample(b,0);        # 41 ab_a:bat[:oid,:int] := ALGsample(b:bat[:oid,:int], _64:int) {G}
     bb_a := io.print(ab_a);             # 42 bb_a:void := IOprint_val(ab_a:bat[:oid,:int]) 
 #	io.print("quit();"); 
-    cb_a := clients.quit();             # 44 cb_a:void 
+    cb_a := clients.quit();             # 44 cb_a:void := CLTquit() 
 end main;	# 45  
 #~BeginVariableOutput~#
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 1@0,	  15	  ]
+[ 4@0,	  16	  ]
 #~EndVariableOutput~#
 #printf(\"#~BeginVariableOutput~#\\n\"); b.sample(1).print(); io.printf(\"#~EndVariableOutput~#\\n\");
 #~BeginVariableOutput~#

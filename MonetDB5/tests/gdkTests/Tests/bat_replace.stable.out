@@ -19,7 +19,7 @@ stdout of test 'bat_replace` in directory 'tests/gdkTests` itself:
 #bat.replace(a,0@0,2@0);
 #io.print(a);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     a := bat.new(:oid,:oid);            #  1 a:bat[:oid,:oid] := CMDBATnew(_2:oid, _2:oid) {G}
     bat.append(a,1@0);                  #  2 _3:void := BKCappend_val_wrap(a:bat[:oid,:oid], _4:oid) 
 # this used to give the error BATpropcheck: BAT tmp_XX is dense but not key!? 

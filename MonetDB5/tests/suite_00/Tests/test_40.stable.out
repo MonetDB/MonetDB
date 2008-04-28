@@ -88,7 +88,7 @@ stdout of test 'test_40` in directory 'tests/suite_00` itself:
 #	kb_a := clients.quit();
 ##Identifer 'rename' mapped to 'bat.setName'
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -160,7 +160,7 @@ function user.main():void;              #  0 main:void {G}
     ib_a := algebra.slice(b,8,5);       # 69 ib_a:bat[:int,:int] := ALGslice_int(b:bat[:int,:int], _84:int, _77:int) {G}
     jb_a := io.print(ib_a);             # 70 jb_a:void := IOprint_val(ib_a:bat[:int,:int]) 
 #	io.print("quit();"); 
-    kb_a := clients.quit();             # 72 kb_a:void 
+    kb_a := clients.quit();             # 72 kb_a:void := CLTquit() 
 #Identifer 'rename' mapped to 'bat.setName' 
 end main;	# 74  
 [ 3 ]

@@ -44,7 +44,7 @@ stdout of test 'append_dense_tail` in directory 'tests/gdkTests` itself:
 #j:= algebra.join(fm,i);
 #io.print(j);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # create an empty [void,oid] BAT with dense tail 
     a := bat.new(:oid,:oid);            #  2 a:bat[:oid,:oid] := CMDBATnew(_3:oid, _3:oid) {G}
     bat.append(a,1@0);                  #  3 _4:void := BKCappend_val_wrap(a:bat[:oid,:oid], _5:oid) 

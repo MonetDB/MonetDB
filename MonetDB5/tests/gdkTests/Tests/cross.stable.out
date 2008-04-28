@@ -81,7 +81,7 @@ stdout of test 'cross` in directory 'tests/gdkTests` itself:
 #ba:= algebra.crossproduct(b,ar);
 #io.print(ba);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     a := bat.new(:oid,:int);            #  1 a:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     ar := bat.reverse(a);               #  2 ar:bat[:int,:oid] := BKCreverse(a:bat[:oid,:int]) {G}
     io.print(ar);                       #  3 _5:void := IOprint_val(ar:bat[:int,:oid]) 

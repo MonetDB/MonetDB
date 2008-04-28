@@ -30,7 +30,7 @@ stdout of test 'ID.905495s` in directory 'tests/BugsViaSourgeforce` itself:
 ##print("hello");
 #	aa_a := io.print("hello");
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 # Predefined code segment 

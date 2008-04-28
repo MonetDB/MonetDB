@@ -24,7 +24,7 @@ stdout of test 'scanselect` in directory 'tests/gdkTests` itself:
 #z:=algebra.select(y,1,2);
 #io.print(z);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     x := bat.new(:void,:int);           #  1 x:bat[:void,:int] := CMDBATnew(_2:void, _3:int) {G}
     bat.append(x,1);                    #  2 _4:void := BKCappend_val_wrap(x:bat[:void,:int], _5:int) 
     bat.append(x,2);                    #  3 _6:void := BKCappend_val_wrap(x:bat[:void,:int], _7:int) 

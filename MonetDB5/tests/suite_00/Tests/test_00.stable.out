@@ -161,7 +161,7 @@ stdout of test 'test_00` in directory 'tests/suite_00` itself:
 ##	io.print("quit();");
 #	gd_a := clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -307,7 +307,7 @@ function user.main():void;              #  0 main:void {G}
     ed_a := algebra.thetajoin(b,c,LT,dd_a);#143 ed_a:bat[:int,:int] := ALGthetajoinEstimate(b:bat[:int,:int], c:bat[:int,:int], LT:int, dd_a:lng) {G}
     fd_a := io.print(ed_a);             #144 fd_a:void := IOprint_val(ed_a:bat[:int,:int]) 
 #	io.print("quit();"); 
-    gd_a := clients.quit();             #146 gd_a:void 
+    gd_a := clients.quit();             #146 gd_a:void := CLTquit() 
 end main;                               #147  
 #~BeginVariableOutput~#
 #-----------------------------------------#

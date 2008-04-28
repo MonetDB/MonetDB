@@ -75,7 +75,7 @@ stdout of test 'test_10` in directory 'tests/suite_00` itself:
 ##	mil.line("quit();");
 #	db_a := clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -135,7 +135,7 @@ function user.main():void;              #  0 main:void {G}
     bb_a := algebra.sortHT(s);          # 57 bb_a:bat[:int,:int] := ALGhtsort(s:bat[:int,:int]) {G}
     cb_a := io.print(bb_a);             # 58 cb_a:void := IOprint_val(bb_a:bat[:int,:int]) 
 #	io.print("quit();"); 
-    db_a := clients.quit();             # 60 db_a:void 
+    db_a := clients.quit();             # 60 db_a:void := CLTquit() 
 end main;	# 61  
 #~BeginVariableOutput~#
 #-----------------#

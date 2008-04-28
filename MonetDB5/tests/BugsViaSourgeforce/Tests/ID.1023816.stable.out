@@ -38,7 +38,7 @@ stdout of test 'ID.1023816` in directory 'tests/BugsViaSourgeforce` itself:
 ##	mil.line("table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);");
 #	ga_a := io.table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 

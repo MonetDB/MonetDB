@@ -74,7 +74,7 @@ stdout of test 'qsort` in directory 'tests/gdkTests` itself:
 #Zi_o2:= algebra.sortReverse(i_o); io.print(Zi_o2);
 #Zi_o3:= algebra.copy(i_o);bat.setWriteMode(Zi_o3); bat.orderReverse(Zi_o3); io.print(Zi_o3);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:int,:int,10);         #  1 b:bat[:int,:int] := CMDBATnewint(_2:int, _2:int, _3:int) {G}
     bat.insert(b,2,3);                  #  2 _4:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) 
     bat.insert(b,1,9);                  #  3 _7:void := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) 

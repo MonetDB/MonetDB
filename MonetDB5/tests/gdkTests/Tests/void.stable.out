@@ -163,7 +163,7 @@ stdout of test 'void` in directory 'tests/gdkTests` itself:
 #
 #clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     io.print("First keep void tests");  #  1 _1:void := IOprint_val(_2:str) 
     a := bat.new(:oid,:int,10);         #  2 a:bat[:oid,:int] := CMDBATnewint(_4:oid, _5:int, _6:int) {G}
     bat.setName(a,"A");                 #  3 _7:void := BKCsetName(a:bat[:oid,:int], _8:str) 
@@ -305,7 +305,7 @@ function user.main():void;              #  0 main:void {G}
     bat.setKey(zn,true);                #139 _194:bat[:oid,:int] := BKCsetkey(zn:bat[:oid,:int], _195:bit) {G}
     bat.insert(zn,y);                   #140 _196:void := BKCinsert_bat(zn:bat[:oid,:int], y:bat[:oid,:int]) 
     io.print(zn);                       #141 _197:void := IOprint_val(zn:bat[:oid,:int]) 
-    clients.quit();                     #142 _198:void 
+    clients.quit();                     #142 _198:void := CLTquit() 
 end main;                               #143  
 [ "First keep void tests" ]
 #-----------------#

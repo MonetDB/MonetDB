@@ -150,7 +150,7 @@ stdout of test 'test_05` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	xc_a := clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -285,7 +285,7 @@ function user.main():void;              #  0 main:void {G}
     vc_a := algebra.bandjoin(b,c,4.5,4.5);#132 vc_a:bat[:flt,:flt] := ALGbandjoin_default(b:bat[:flt,:flt], c:bat[:flt,:flt], _168:flt, _168:flt) {G}
     wc_a := io.print(vc_a);             #133 wc_a:void := IOprint_val(vc_a:bat[:flt,:flt]) 
 #	io.print("quit();"); 
-    xc_a := clients.quit();             #135 xc_a:void 
+    xc_a := clients.quit();             #135 xc_a:void := CLTquit() 
 end main;                               #136  
 [ 3.14700007 ]
 #var b:= bbp.new(flt,flt);

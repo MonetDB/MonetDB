@@ -82,7 +82,7 @@ end check_cap;	# 11
 #
 #clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     o := nil:oid;                       #  1 o:oid := _2:oid 
     b := bat.new(:oid,:oid);            #  2 b:bat[:oid,:oid] := CMDBATnew(_4:oid, _5:oid) {G}
     bat.setName(b,"b");                 #  3 _6:void := BKCsetName(b:bat[:oid,:oid], _7:str) 
@@ -98,7 +98,7 @@ barrier go := calc.>(i,0);              # 10 go:bit := CALCcompGTintint(i:int, _
     i := calc.-(i,1);                   # 13 i:int := CALCbinarySUBintint(i:int, _13:int) 
     redo go := calc.>(i,0);             # 14 go:bit := CALCcompGTintint(i:int, _17:int) {J11}
 exit go;                                # 15 go:bit 
-    transaction.commit();               # 16 _19:bit 
+    transaction.commit();               # 16 _19:bit := TRNglobal_commit() 
     i := calc.*(ci,2);                  # 17 i:int := CALCbinaryMULintint(ci:int, _20:int) 
 barrier go := calc.>(i,0);              # 18 go:bit := CALCcompGTintint(i:int, _17:int) {J23}
     o := calc.oid(i);                   # 19 o:oid := CALCint2oid(i:int) 
@@ -117,8 +117,8 @@ exit go;                                # 31 go:bit
     bat.insert(b,c);                    # 32 _26:void := BKCinsert_bat(b:bat[:oid,:oid], c:bat[:oid,:oid]) 
     user.check_cap(b);                  # 33 _27:void := user.check_cap(b:bat[:oid,:oid]) 
     bat.setPersistent(b,false);         # 34 _28:void := BKCpersists(b:bat[:oid,:oid], _29:bit) 
-    transaction.commit();               # 35 _30:bit 
-    clients.quit();                     # 36 _31:void 
+    transaction.commit();               # 35 _30:bit := TRNglobal_commit() 
+    clients.quit();                     # 36 _31:void := CLTquit() 
 end main;	# 37  
 
 # 20:34:11 >  

@@ -59,7 +59,7 @@ stdout of test 'binsemijoin` in directory 'tests/gdkTests` itself:
 #f:= algebra.semijoin(a,c);
 #io.print(f);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     a := bat.new(:oid,:int);            #  1 a:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.append(a,0);                    #  2 _4:void := BKCappend_val_wrap(a:bat[:oid,:int], _5:int) 
     bat.append(a,1);                    #  3 _6:void := BKCappend_val_wrap(a:bat[:oid,:int], _7:int) 

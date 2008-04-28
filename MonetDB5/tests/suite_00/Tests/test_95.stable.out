@@ -136,7 +136,7 @@ stdout of test 'test_95` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	pc_a := clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -257,7 +257,7 @@ function user.main():void;              #  0 main:void {G}
     nc_a := algebra.kunion(b,c);        #118 nc_a:bat[:int,:int] := ALGkunion(b:bat[:int,:int], c:bat[:int,:int]) {G}
     oc_a := io.print(nc_a);             #119 oc_a:void := IOprint_val(nc_a:bat[:int,:int]) 
 #	io.print("quit();"); 
-    pc_a := clients.quit();             #121 pc_a:void 
+    pc_a := clients.quit();             #121 pc_a:void := CLTquit() 
 end main;                               #122  
 #-----------------#
 # h	t	  # name

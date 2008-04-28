@@ -45,7 +45,7 @@ stdout of test 'binsemijoin2` in directory 'tests/gdkTests` itself:
 #z:= algebra.semijoin(left,right);
 #io.print(z);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Test provided as bug-report by  
 # Maurice van Keulen <keulen@fmi.uni-konstanz.de> 
 # Torsten Grust <grust@fmi.uni-konstanz.de> 

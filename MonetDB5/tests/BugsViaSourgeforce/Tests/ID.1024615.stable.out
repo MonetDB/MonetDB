@@ -90,7 +90,7 @@ stdout of test 'ID.1024615` in directory 'tests/BugsViaSourgeforce` itself:
 ##Identifer 'seqbase' mapped to 'bat.setSequenceBase'
 #
 !TypeException:user.main[18]:'mil.take' undefined in: BAT_WRITE:any := mil.take(_21:str)
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 

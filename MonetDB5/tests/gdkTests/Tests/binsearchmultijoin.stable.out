@@ -79,7 +79,7 @@ end Nseq;	# 9
 #
 #clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # The test triggers the binsearch implementation of BATmultijoin, 
 # which is chosen in two situations: 
 #   1. smallest bat is not sorted, but the larger is, and the count of the  
@@ -111,7 +111,7 @@ barrier (_51,_52,_53):= bat.newIterator(l2);# 24 (_51:lng, _52:oid, _53:int) := 
 catch MALException:str ;                # 29 MALException:str {J31}
     redo (_51,_52,_53):= bat.hasMoreElements(l2);# 30 (_51:lng, _52:oid, _53:int) := CHPbunHasMoreElements(l2:bat[:oid,:int]) {J25}
 exit MALException:str ;                 # 31 MALException:str 
-exit (_51,_52,_53);                     # 32 (_51:lng, _52:oid, _53:int 
+exit (_51,_52,_53);                     # 32 (_51:lng, _52:oid, _53:int) 
     z:bat[:oid,:int]  := _47;           # 33 z:bat[:oid,:int] := _47:bat[:oid,:int] {G}
     c := aggr.count(z);                 # 34 c:int := ALGcount_bat(z:bat[:oid,:int]) 
     io.print(c);                        # 35 _35:void := IOprint_val(c:int) 
@@ -131,12 +131,12 @@ barrier (_66,_67,_68):= bat.newIterator(nr);# 44 (_66:lng, _67:oid, _68:int) := 
 catch MALException:str ;                # 49 MALException:str {J51}
     redo (_66,_67,_68):= bat.hasMoreElements(nr);# 50 (_66:lng, _67:oid, _68:int) := CHPbunHasMoreElements(nr:bat[:oid,:int]) {J45}
 exit MALException:str ;                 # 51 MALException:str 
-exit (_66,_67,_68);                     # 52 (_66:lng, _67:oid, _68:int 
+exit (_66,_67,_68);                     # 52 (_66:lng, _67:oid, _68:int) 
     z:bat[:oid,:int]  := _64;           # 53 z:bat[:oid,:int] := _64:bat[:oid,:int] {G}
     c := aggr.count(z);                 # 54 c:int := ALGcount_bat(z:bat[:oid,:int]) 
     io.print(c);                        # 55 _44:void := IOprint_val(c:int) 
 #[+](Nseq(81).reverse().project(oid(0)).reverse(),r.sort()).count().print(); 
-    clients.quit();                     # 57 _46:void 
+    clients.quit();                     # 57 _46:void := CLTquit() 
 end main;	# 58  
 #-----------------#
 # t	h	  # name

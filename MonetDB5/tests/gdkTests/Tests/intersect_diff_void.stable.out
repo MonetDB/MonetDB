@@ -59,7 +59,7 @@ stdout of test 'intersect_diff_void` in directory 'tests/gdkTests` itself:
 #i  := bat.getSequenceBase(a1r);
 #io.print(i);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     a := bat.new(:oid,:oid);            #  1 a:bat[:oid,:oid] := CMDBATnew(_2:oid, _2:oid) {G}
     bat.insert(a,1@0,1@0);              #  2 _3:void := BKCinsert_bun(a:bat[:oid,:oid], _4:oid, _4:oid) 
     ar := bat.reverse(a);               #  3 ar:bat[:oid,:oid] := BKCreverse(a:bat[:oid,:oid]) {G}

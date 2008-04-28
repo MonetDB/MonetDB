@@ -31,7 +31,7 @@ stdout of test 'ID.914159` in directory 'tests/BugsViaSourgeforce` itself:
 #	aa_a := io.print(unknown);
 #end crash;
 !TypeException:user.crash[2]:'mil.take' undefined in: unknown:any := mil.take(_3:str)
-function user.crash():void;             #  0 crash:void 
+function user.crash():void;             #  0 crash:void := user.crash() 
 #	io.print("\tprint($t);\n"); 
     unknown := mil.take("unknown");     #  2 unknown:any := mil.take(_3:str) {U}
     aa_a := io.print(unknown);          #  3 aa_a:void := IOprint_val(unknown:any) 
@@ -39,7 +39,7 @@ end crash;	# 4
 ##	io.print("crash();");
 #	ba_a := user.crash();
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -51,7 +51,7 @@ function user.main():void;              #  0 main:void
 #use the "mil_schema" for additional support routines 
 #	io.print("PROC crash() : void"); 
 #	io.print("crash();"); 
-    ba_a := user.crash();               # 12 ba_a:void 
+    ba_a := user.crash();               # 12 ba_a:void := user.crash() 
 end main;	# 13  
 !MALException:user.crash[0]:Syntax error in script
 

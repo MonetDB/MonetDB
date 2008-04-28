@@ -33,7 +33,7 @@ stdout of test 'batcast.SF-1730987` in directory 'tests/BugTracker` itself:
 #v2 := batcalc.int(v);
 #io.print(v2);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     v := bat.new(:oid,:bit);            #  1 v:bat[:oid,:bit] := CMDBATnew(_2:oid, _3:bit) {G}
     bat.append(v,true);                 #  2 _4:void := BKCappend_val_wrap(v:bat[:oid,:bit], _5:bit) 
     bat.append(v,false);                #  3 _6:void := BKCappend_val_wrap(v:bat[:oid,:bit], _7:bit) 

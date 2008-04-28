@@ -60,7 +60,7 @@ stdout of test 'batcalc-convert_on_void_view.SF-1573060` in directory 'tests/Bug
 #is:= algebra.sortTail(i);
 #io.print(is);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # head: oid 
 # a:=microbenchmark.uniform(0:oid,9,9); platform dependent 
     a := bat.new(:oid,:int);            #  3 a:bat[:oid,:int] := CMDBATnew(_4:oid, _5:int) {G}

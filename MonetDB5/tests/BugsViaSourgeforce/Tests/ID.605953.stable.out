@@ -67,7 +67,7 @@ stdout of test 'ID.605953` in directory 'tests/BugsViaSourgeforce` itself:
 #	mb_a := io.print(lb_a);
 ##Identifer 'seqbase' mapped to 'bat.setSequenceBase'
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
