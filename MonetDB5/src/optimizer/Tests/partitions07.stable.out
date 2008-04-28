@@ -69,7 +69,7 @@ barrier (x35,x36,x37):= bat.newIterator(x14);# 11 (x35:lng, x36:oid, x37:flt) :=
 catch MALException:str ;                # 15 MALException:str {J17}
     redo (x35,x36,x37):= bat.hasMoreElements(x14);# 16 (x35:lng, x36:oid, x37:flt) := CHPbunHasMoreElements(x14:bat[:oid,:flt]) {J12}
 exit MALException:str ;                 # 17 MALException:str 
-exit (x35,x36,x37);                     # 18 (x35:lng, x36:oid, x37:flt 
+exit (x35,x36,x37);                     # 18 (x35:lng, x36:oid, x37:flt) 
     x15:bat[:oid,:flt]  := x31;         # 19 x15:bat[:oid,:flt] := x31:bat[:oid,:flt] {G}
     x18 := sql.resultSet(1,1,x15);      # 20 x18:void := MDBdummy(_13:int, _13:int, x15:bat[:oid,:flt]) 
     sql.rsColumn(x18,"sys.","sinxi","real",24,0,x15);# 21 _35:void := MDBdummy(x18:void, _36:str, _37:str, _38:str, _39:int, _9:int, x15:bat[:oid,:flt]) 
@@ -78,7 +78,7 @@ end query;	# 23
 #optimizer.partitions("sql","query");
 #mdb.list("sql","query");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #testing the BAT partition manager 
 # use a fake sql library 
 # see how you handle an aggregation 

@@ -68,7 +68,7 @@ end query;	# 18
 #optimizer.partitions("sql","query");
 #mdb.list("sql","query");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #testing the BAT partition manager 
 # use a fake sql library 
 # see how you handle an aggregation 

@@ -20,7 +20,7 @@ stdout of test 'return_types_of_head_and_tail.SF-701641` in directory 'tests/Bug
 #s:= "hello";
 #st:= inspect.getType(s); io.print(st);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     x := bat.new(:oid,:int);            #  1 x:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     (ht,tt):= inspect.getType(x);       #  2 (ht:str, tt:str) := INSPECTtypeName(x:bat[:oid,:int]) {G}
     io.print(ht);                       #  3 _6:void := IOprint_val(ht:str) 

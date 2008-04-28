@@ -42,7 +42,7 @@ end qry;	# 10
 #mdb.list("user","qry");
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # testing join path optimizations 
 # the common part should not be replicated 
     mdb.list("user","qry");             #  3 _7:void := MDBlist3(_4:str, _5:str) 

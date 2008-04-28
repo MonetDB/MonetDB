@@ -38,7 +38,7 @@ end welcome;	# 8
 #a:=user.welcome(2);
 #mdb.list();
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # the first test for macro expansions and inversions 
     io.print("test expansion");         #  2 _5:void := IOprint_val(_6:str) 
     a := nil:int;                       #  3 a:int := _19:int 
@@ -50,7 +50,7 @@ barrier _15 := calc.<(_13,2);           #  5 _15:bit := CALCcompLTintint(_13:int
 exit _15;                               #  9 _15:bit 
     a := _13;                           # 10 a:int := _13:int 
     io.print(a);                        # 11 _9:void := IOprint_val(a:int) 
-    mdb.list();                         # 12 _10:void 
+    mdb.list();                         # 12 _10:void := MDBlist() 
 end main;	# 13  
 [ "test expansion" ]
 [ "Welcome" ]

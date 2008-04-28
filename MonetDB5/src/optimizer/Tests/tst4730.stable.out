@@ -185,7 +185,7 @@ end qry1;	# 74
 #optimizer.costEstimation("user","qry1");
 #mdb.list("user","qry1");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #TPCH query 1 
 # the basis for further optimizer tests 
 #don;t depend on SQL library 

@@ -23,7 +23,7 @@ stdout of test 'PHexample` in directory 'src/optimizer` itself:
 #optimizer.peephole();
 #mdb.list();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # testing repeatative reverse optimalisation 
     r:bat[:int,:int]  := bat.new(:int,:int);#  2 r:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     o := calc.oid(0@0);                 #  3 o:oid := CALCoid2oid(_5:oid) 
@@ -31,7 +31,7 @@ function user.main():void;              #  0 main:void {G}
     rr := bat.reverse(z);               #  5 rr:bat[:oid,:int] := BKCreverse(z:bat[:int,:oid]) {G}
     t := r;                             #  6 t:bat[:int,:int] := r:bat[:int,:int] {G}
     io.print(t);                        #  7 _10:void := IOprint_val(t:bat[:int,:int]) 
-    mdb.list();                         #  8 _12:void 
+    mdb.list();                         #  8 _12:void := MDBlist() 
 end main;	# 9  
 #-----------------#
 # h	t	  # name

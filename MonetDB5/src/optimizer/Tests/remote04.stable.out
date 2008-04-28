@@ -22,9 +22,9 @@ stdout of test 'remote04` in directory 'src/optimizer` itself:
 #s:str:= mapi.rpc(mid,"io.print(123456);");
 #io.print(s);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # The easiest case, ship something and show result 
-    cat := inspect.getEnvironment();    #  2 cat:bat[:str,:str] {G}
+    cat := inspect.getEnvironment();    #  2 cat:bat[:str,:str] := INSPECTgetEnvironment() {G}
     fs := algebra.find(cat,"mapi_port");#  3 fs:str := ALGfind(cat:bat[:str,:str], _4:str) {G}
     port := calc.int(fs);               #  4 port:int := CALCstr2int(fs:str) 
 #io.printf("port %d\n",port); 

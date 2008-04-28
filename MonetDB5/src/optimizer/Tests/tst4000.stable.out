@@ -30,7 +30,7 @@ stdout of test 'tst4000` in directory 'src/optimizer` itself:
 #l3:= l2+k1;             # replace the alias
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # The 4000 series deals with strategic optimizer constructs 
 # common subexpression evaluation 
     b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_7:int, _7:int) {G}

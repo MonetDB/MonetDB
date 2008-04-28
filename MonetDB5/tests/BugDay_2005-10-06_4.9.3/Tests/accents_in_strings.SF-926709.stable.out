@@ -12,7 +12,7 @@ stdout of test 'accents_in_strings.SF-926709` in directory 'tests/BugDay_2005-10
 #	t := str.str("André");
 #	io.print(t);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     t := str.str("André");             #  1 t:str := STRtostr(_2:str) {G}
     io.print(t);                        #  2 _3:void := IOprint_val(t:str) 
 end main;	# 3  

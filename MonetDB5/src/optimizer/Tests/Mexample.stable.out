@@ -17,7 +17,7 @@ stdout of test 'Mexample` in directory 'src/optimizer` itself:
 #	c:bat[:int,:int]:=optimizer.multiplex("calc.+",b,1);
 #	mdb.list();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     bat.insert(b,1,1);                  #  2 _3:void := BKCinsert_bun(b:bat[:int,:int], _4:int, _4:int) 
     _10 := bat.new(nil:int,nil:int);    #  3 _10:bat[:int,:int] := CMDBATnew(_11:int, _11:int) {G}
@@ -28,9 +28,9 @@ barrier (_13,_14,_15):= bat.newIterator(b);#  4 (_13:lng, _14:int, _15:int) := C
 catch MALException:str ;                #  8 MALException:str {J10}
     redo (_13,_14,_15):= bat.hasMoreElements(b);#  9 (_13:lng, _14:int, _15:int) := CHPbunHasMoreElements(b:bat[:int,:int]) {J5}
 exit MALException:str ;                 # 10 MALException:str 
-exit (_13,_14,_15);                     # 11 (_13:lng, _14:int, _15:int 
+exit (_13,_14,_15);                     # 11 (_13:lng, _14:int, _15:int) 
     c:bat[:int,:int]  := _10;           # 12 c:bat[:int,:int] := _10:bat[:int,:int] {G}
-    mdb.list();                         # 13 _9:void 
+    mdb.list();                         # 13 _9:void := MDBlist() 
 end main;	# 14  
 function user.main():void;
     b := bat.new(:int,:int);

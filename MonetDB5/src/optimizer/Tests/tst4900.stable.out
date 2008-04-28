@@ -189,7 +189,7 @@ end f1;	# 84
 #	##f1();
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     mdb.list("user","f1");              #  1 _6:void := MDBlist3(_2:str, _3:str) 
 ##f1(); 
 end main;	# 3  

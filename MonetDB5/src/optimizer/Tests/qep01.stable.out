@@ -36,7 +36,7 @@ stdout of test 'qep01` in directory 'src/optimizer` itself:
                 T2 := bat.new(:int,:int);
             d := algebra.select(T4,0,5);
                 T4 := bat.new(:int,:int);
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     T1 := bat.new(:int,:int);           #  1 T1:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     T2 := bat.new(:int,:int);           #  2 T2:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     T3 := bat.new(:int,:int);           #  3 T3:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}

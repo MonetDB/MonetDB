@@ -21,13 +21,13 @@ stdout of test 'DCexample2` in directory 'src/optimizer` itself:
 #optimizer.deadcode();
 #mdb.list();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     bat.insert(b,4,2);                  #  2 _4:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) 
     bat.insert(b,9,5);                  #  3 _7:void := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) 
     bat.insert(b,6,3);                  #  4 _10:void := BKCinsert_bun(b:bat[:int,:int], _11:int, _12:int) 
     b := algebra.sort(b);               #  5 b:bat[:int,:int] := ALGhsort(b:bat[:int,:int]) {G}
-    mdb.list();                         #  6 _15:void 
+    mdb.list();                         #  6 _15:void := MDBlist() 
 end main;	# 7  
 function user.main():void;
     b := bat.new(:int,:int);

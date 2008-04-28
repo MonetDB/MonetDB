@@ -54,7 +54,7 @@ end bar;	# 7
 #	bat.insert(b,0@0,"2");
 #	z:bat[:oid,:str]:= mal.multiplex("user","bar",b,b);
 #end qry;
-function user.qry():void;               #  0 qry:void {G}
+function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
     bat.insert(b,0@0,"2");              #  2 _4:void := BKCinsert_bun(b:bat[:oid,:str], _5:oid, _6:str) 
     z:bat[:oid,:str]  := mal.multiplex("user","bar",b,b);#  3 z:bat[:oid,:str] := OPTremapMultiplex(_8:str, _9:str, b:bat[:oid,:str], b:bat[:oid,:str]) {G}
@@ -64,7 +64,7 @@ end qry;	# 4
 #	optimizer.remap("user","qry");
 #	mdb.list("user","qry");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # remapping inline functions 
     mdb.list("user","qry");             #  2 _6:void := MDBlist3(_3:str, _4:str) 
 end main;	# 3  

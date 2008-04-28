@@ -24,7 +24,7 @@ stdout of test 'JPexample` in directory 'src/optimizer` itself:
 #optimizer.joinPath();
 #mdb.list();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # test the joinpath expander 
     a := bat.new(:void,:oid);           #  2 a:bat[:void,:oid] := CMDBATnew(_3:void, _4:oid) {G}
     b := bat.new(:oid,:oid);            #  3 b:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
@@ -34,7 +34,7 @@ function user.main():void;              #  0 main:void {G}
     j3 := algebra.join(b,b);            #  7 j3:bat[:oid,:oid] := ALGjoin(b:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
     _14 := algebra.join(b,b);           #  8 _14:bat[:oid,:oid] := ALGjoin(b:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
     j4 := algebra.join(_14,b);          #  9 j4:bat[:oid,:oid] := ALGjoin(_14:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
-    mdb.list();                         # 10 _13:void 
+    mdb.list();                         # 10 _13:void := MDBlist() 
 end main;	# 11  
 function user.main():void;
 # test the joinpath expander 

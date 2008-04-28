@@ -24,7 +24,7 @@ stdout of test 'rangePush01` in directory 'src/optimizer` itself:
 #optimizer.rangePush();
 #mdb.list();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # detect empty ranges 
     b := bat.new(:void,:int);           #  2 b:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
     s1 := algebra.select(b,80,90);      #  3 s1:bat[:void,:int] := ALGselect(b:bat[:void,:int], _6:int, _7:int) {G}
@@ -34,7 +34,7 @@ function user.main():void;              #  0 main:void {G}
     s5{rows=0:lng} := bat.new(:void,:int);#  7 s5:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
     s6{rows=0:lng} := bat.new(:void,:int);#  8 s6:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
     s7{rows=0:lng} := bat.new(:void,:int);#  9 s7:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
-    mdb.list();                         # 10 _17:void 
+    mdb.list();                         # 10 _17:void := MDBlist() 
 end main;	# 11  
 function user.main():void;
 # detect empty ranges 

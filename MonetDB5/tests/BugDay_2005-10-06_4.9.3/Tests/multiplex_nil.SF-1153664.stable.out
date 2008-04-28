@@ -22,7 +22,7 @@ stdout of test 'multiplex_nil.SF-1153664` in directory 'tests/BugDay_2005-10-06_
 #bat.insert(b,2,9);
 #io.print(a,b);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     a := bat.new(:int,:int);            #  1 a:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     bat.insert(a,1,2);                  #  2 _3:void := BKCinsert_bun(a:bat[:int,:int], _4:int, _5:int) 
     bat.insert(a,2,3);                  #  3 _6:void := BKCinsert_bun(a:bat[:int,:int], _5:int, _7:int) 

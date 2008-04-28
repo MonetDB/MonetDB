@@ -26,7 +26,7 @@ stdout of test 'tst4010` in directory 'src/optimizer` itself:
 #bat.insert(d,2,2);
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # testing the library for unsafe instructions 
 # bat C can still be shared with B 
     b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_7:int, _7:int) {G}

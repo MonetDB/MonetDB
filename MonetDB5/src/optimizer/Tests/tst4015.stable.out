@@ -24,7 +24,7 @@ stdout of test 'tst4015` in directory 'src/optimizer` itself:
 #io.print(t);
 #optimizer.peephole();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # testing repeatative reverse optimalisation 
     r := bat.new(:int,:int);            #  2 r:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     bat.insert(r,5:int,1:int);          #  3 _4:void := BKCinsert_bun(r:bat[:int,:int], _5:int, _6:int) 

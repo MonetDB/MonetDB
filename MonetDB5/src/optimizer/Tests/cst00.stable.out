@@ -24,14 +24,14 @@ stdout of test 'cst00` in directory 'src/optimizer` itself:
 #optimizer.constantExpression();
 #mdb.list();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # testing simple constant expression optimizations 
     io.print(2);                        #  2 _4:void := IOprint_val(a:int) 
     io.print(2);                        #  3 _7:void := IOprint_val(_6:int) 
     io.print(6);                        #  4 _10:void := IOprint_val(c:int) 
     io.print(6);                        #  5 _12:void := IOprint_val(d:flt) 
     io.print(-0.279415488);             #  6 _14:void := IOprint_val(e:flt) 
-    mdb.list();                         #  7 _17:void 
+    mdb.list();                         #  7 _17:void := MDBlist() 
 end main;	# 8  
 [ 2 ]
 [ 2 ]

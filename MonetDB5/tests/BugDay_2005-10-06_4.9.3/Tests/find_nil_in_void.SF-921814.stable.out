@@ -41,7 +41,7 @@ stdout of test 'find_nil_in_void.SF-921814` in directory 'tests/BugDay_2005-10-0
 #exit MALException;
 #io.printf("oid(nil) -> %s\n",zs);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
     bat.append(b,"zero");               #  2 _4:void := BKCappend_val_wrap(b:bat[:oid,:str], _5:str) 
     io.print(b);                        #  3 _6:void := IOprint_val(b:bat[:oid,:str]) 

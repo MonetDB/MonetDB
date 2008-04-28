@@ -21,10 +21,10 @@ stdout of test 'cst01` in directory 'src/optimizer` itself:
 #optimizer.evaluate();
 #mdb.list();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # test constant expressions 
     io.print(57.295779513082323);       #  2 _9:void := IOprint_val(X17:dbl) 
-    mdb.list();                         #  3 _11:void 
+    mdb.list();                         #  3 _11:void := MDBlist() 
 end main;	# 4  
 [ 57.295779513082323 ]
 function user.main():void;

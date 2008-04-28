@@ -28,7 +28,7 @@ end foo;	# 3
 #	r:bat[:oid,:int]:= mal.multiplex("user","foo",b);
 #	io.print(r);
 #end qry;
-function user.qry():void;               #  0 qry:void {G}
+function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.append(b,1);                    #  2 _4:void := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) 
     bat.append(b,10);                   #  3 _6:void := BKCappend_val_wrap(b:bat[:oid,:int], _7:int) 
@@ -42,8 +42,8 @@ end qry;	# 7
 #optimizer.remap("user","qry");
 #mdb.list("user","qry");
 #
-function user.main():void;              #  0 main:void {G}
-    user.qry();                         #  1 _1:void 
+function user.main():void;              #  0 main:void := user.main() {G}
+    user.qry();                         #  1 _1:void := user.qry() 
     mdb.list("user","qry");             #  2 _6:void := MDBlist3(_3:str, _4:str) 
 end main;	# 3  
 #-----------------#

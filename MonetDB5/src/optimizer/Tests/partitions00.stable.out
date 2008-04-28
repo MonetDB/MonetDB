@@ -31,7 +31,7 @@ pattern sql.exportResult(b:any...):void address MDBdummy;#  0 exportResult:void 
 #    sql.rsColumn(t14,"sys.t","i","int",32,0,t13);
 #    sql.exportResult(t14,"");
 #end query;
-function sql.query():void;              #  0 query:void {G}
+function sql.query():void;              #  0 query:void := sql.query() {G}
     t1:bat[:oid,:int]  := sql.bind("sys","t","i",1);#  1 t1:bat[:oid,:int] := MDBdummy(_2:str, _3:str, _4:str, _5:int) {G}
     t11 := algebra.markT(t1,0@0);       #  2 t11:bat[:oid,:oid] := ALGtmark(t1:bat[:oid,:int], _7:oid) {G}
     t12 := bat.reverse(t11);            #  3 t12:bat[:oid,:oid] := BKCreverse(t11:bat[:oid,:oid]) {G}
@@ -42,7 +42,7 @@ function sql.query():void;              #  0 query:void {G}
 end query;	# 8  
 #optimizer.partitions("user","query");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #testing the BAT partition manager 
 # use a fake sql library 
     mdb.list("sql","query");            #  3 _6:void := MDBlist3(_4:str, _5:str) 

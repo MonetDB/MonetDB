@@ -30,7 +30,7 @@ end test;	# 6
 #optimizer.factorize("user","test");
 #mdb.list("user","test");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #Code factorization 
     mdb.list("user","test");            #  2 _5:void := MDBlist3(_3:str, _4:str) 
 end main;	# 3  

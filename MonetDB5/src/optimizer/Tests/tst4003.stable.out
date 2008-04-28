@@ -22,7 +22,7 @@ stdout of test 'tst4003` in directory 'src/optimizer` itself:
 #e:= algebra.select(b,"hello","world");    # mapped onto one instruction
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # The 4000 series deals with strategic optimizer constructs 
 # common subexpression evaluation 
     b := bat.new(:str,:str);            #  3 b:bat[:str,:str] := CMDBATnew(_6:str, _7:str) {G}

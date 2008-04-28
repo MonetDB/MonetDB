@@ -17,7 +17,7 @@ stdout of test 'AEexample` in directory 'src/optimizer` itself:
 #	b:= batcalc.+(a,1);
 #	c:= batcalc.*(b,4);
 #end qry;
-function user.qry():void;               #  0 qry:void {G}
+function user.qry():void;               #  0 qry:void := user.qry() {G}
     a := array.grid(1,2,4,1);           #  1 a:bat[:oid,:int] := ARRAYgrid_int(_2:int, _3:int, _4:int, _2:int) {G}
     b := batcalc.+(a,1);                #  2 b:bat[:oid,:int] := CMDbatADDcst_int_int_int(a:bat[:oid,:int], _2:int) {G}
     c := batcalc.*(b,4);                #  3 c:bat[:oid,:int] := CMDbatMULcst_int_int_int(b:bat[:oid,:int], _4:int) {G}
@@ -26,10 +26,10 @@ end qry;	# 4
 #optimizer.expressionAccumulation("user","qry");
 #mdb.List("user","qry");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     mdb.List("user","qry");             #  1 _4:void := MDBlist3Detail(_2:str, _3:str) 
 end main;	# 2  
-function user.qry():void;               #  0 qry:void {G}
+function user.qry():void;               #  0 qry:void := user.qry() {G}
     a := array.grid(1,2,4,1);           #  1 a:bat[:oid,:int] := ARRAYgrid_int(_2:int, _3:int, _4:int, _2:int) {G}
     _7 := algebra.reuse(a);             #  2 _7:bat[:oid,:int] := ALGreuse(a:bat[:oid,:int]) {G}
     b := batcalc.+(_7,a,1);             #  3 b:bat[:oid,:int] := CMDbataccumADDcst_int_int_int(_7:bat[:oid,:int], a:bat[:oid,:int], _2:int) {G}

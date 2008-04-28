@@ -38,7 +38,7 @@ end bar;	# 3
 #
 #	z:bat[:oid,:int]:= mal.multiplex("user","bar",b,b);
 #end qry;
-function user.qry():void;               #  0 qry:void {G}
+function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.insert(b,0@0,1);                #  2 _4:void := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) 
     zz := user.bar(1,2);                #  3 zz:int := user.bar(_6:int, _8:int) 
@@ -50,7 +50,7 @@ end qry;	# 6
 #	optimizer.remap("user","qry");
 #	mdb.list("user","qry");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # remapping inline functions 
 # recursive inlining 
     mdb.list("user","qry");             #  3 _7:void := MDBlist3(_4:str, _5:str) 

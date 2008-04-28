@@ -21,7 +21,7 @@ stdout of test 'inline06` in directory 'src/optimizer` itself:
 #end foo;
 function user.foo{inline}(a:int,b:int):int;#  0 foo:int := user.foo(a:int, b:int) 
     c := calc.+(a,b);                   #  1 c:int := CALCbinaryADDintint(a:int, b:int) 
-    base := mmath.rand();               #  2 base:int 
+    base := mmath.rand();               #  2 base:int := MATHrandint() 
 # this has a memory-side effect 
     c := calc.*(c,base);                #  4 c:int := CALCbinaryMULintint(c:int, base:int) 
     return foo{inline} := c;            #  5 foo:int := c:int 
@@ -33,7 +33,7 @@ end foo;	# 6
 #	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,b);
 #	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,2);
 #end qry;
-function user.qry():void;               #  0 qry:void {G}
+function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.insert(b,0@0,1);                #  2 _4:void := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) 
     z:bat[:oid,:int]  := mal.multiplex("user","foo",b,b);#  3 z:bat[:oid,:int] := OPTremapMultiplex(_8:str, _9:str, b:bat[:oid,:int], b:bat[:oid,:int]) {G}
@@ -44,7 +44,7 @@ end qry;	# 5
 #	optimizer.remap("user","qry");
 #	mdb.list("user","qry");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # remapping inline functions 
 # the crucial part is to recognize valid inlines 
     mdb.list("user","qry");             #  3 _7:void := MDBlist3(_4:str, _5:str) 

@@ -20,7 +20,7 @@ stdout of test 'operator_-_vs_sign_-.SF-1120397` in directory 'tests/BugDay_2005
 #z:=(1)+1; io.print(z);
 #z:=(1)-1; io.print(z);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
     z := calc.+(1,1);                   #  1 z:int := CALCbinaryADDintint(_2:int, _2:int) 
     io.print(z);                        #  2 _3:void := IOprint_val(z:int) 
     z := calc.-(1,1);                   #  3 z:int := CALCbinarySUBintint(_2:int, _2:int) 

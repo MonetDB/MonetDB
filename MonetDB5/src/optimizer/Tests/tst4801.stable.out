@@ -19,18 +19,18 @@ stdout of test 'tst4801` in directory 'src/optimizer` itself:
 #	redo (go,i1) := mal.nextElement(1:int,500:int);
 #exit (go,i1);
 #end f3;
-function user.f3():void;                #  0 f3:void {G}
+function user.f3():void;                #  0 f3:void := user.f3() {G}
 barrier (go,i1):= language.newRange(1:int);#  1 (go:bit, i1:int) := RNGnewRange_int(_3:int) {J5}
     t28 := array.grid(1:int,500:int,1:int,0);#  2 t28:bat[:oid,:int] := ARRAYgrid_int(_3:int, _5:int, _3:int, _6:int) {G}
     t36 := array.grid(500:int,500:int,1:int,0);#  3 t36:bat[:oid,:int] := ARRAYgrid_int(_5:int, _5:int, _3:int, _6:int) {G}
     redo (go,i1):= language.nextElement(1:int,500:int);#  4 (go:bit, i1:int) := RNGnextElement_int(_3:int, _5:int) {J2}
-exit (go,i1);                           #  5 (go:bit, i1:int 
+exit (go,i1);                           #  5 (go:bit, i1:int) 
 end f3;	# 6  
 #	#optimizer.expressionAccumulation("user","f3");
 #	optimizer.strengthReduction("user","f3");
 #	mdb.list("user","f3");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #optimizer.accumulators("user","f3"); 
     mdb.list("user","f3");              #  2 _5:void := MDBlist3(_3:str, _4:str) 
 end main;	# 3  

@@ -22,7 +22,7 @@ stdout of test 'ESexample` in directory 'src/optimizer` itself:
 #	V17 := algebra.join(V16,V7);        
 #	bat.append(V1,V17); 
 #end tst;
-function user.tst():void;               #  0 tst:void {G}
+function user.tst():void;               #  0 tst:void := user.tst() {G}
     V1 := bat.new(:oid,:int);           #  1 V1:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     V7 := bat.new(:oid,:int);           #  2 V7:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     V10{rows=0} := bat.new(:int,:oid);  #  3 V10:bat[:int,:oid] := CMDBATnew(_3:int, _2:oid) {G}
@@ -38,7 +38,7 @@ end tst;	# 9
 #    optimizer.deadcode("user","tst");
 #	mdb.list("user","tst");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     mdb.list("user","tst");             #  1 _7:void := MDBlist3(_2:str, _3:str) 
 end main;	# 2  
 function user.tst():void;

@@ -28,7 +28,7 @@ stdout of test 'qep00` in directory 'src/optimizer` itself:
         R2 := bat.reverse(E2);
             E2 := algebra.select(S,4,9);
                 S := bat.new(:void,:int);
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # demonstrate the QEP construction 
     R := bat.new(:void,:int);           #  2 R:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
     S := bat.new(:void,:int);           #  3 S:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}

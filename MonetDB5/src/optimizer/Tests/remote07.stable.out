@@ -37,10 +37,10 @@ stdout of test 'remote07` in directory 'src/optimizer` itself:
 #io.print(d);
 #optimizer.remoteQueries();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # First test of the remoteQueries optimizer 
 # we create a remote bat and fake a bind operation. 
-    cat := inspect.getEnvironment();    #  3 cat:bat[:str,:str] {G}
+    cat := inspect.getEnvironment();    #  3 cat:bat[:str,:str] := INSPECTgetEnvironment() {G}
     fs := algebra.find(cat,"mapi_port");#  4 fs:str := ALGfind(cat:bat[:str,:str], _5:str) {G}
     port := calc.int(fs);               #  5 port:int := CALCstr2int(fs:str) 
 #io.printf("port %d\n",port); 

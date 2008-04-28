@@ -25,7 +25,7 @@ stdout of test 'leftfetchjoin_void_oid.990857` in directory 'tests/BugDay_2005-1
 ##i:= bat.info(z);
 ##io.print(i);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     a := bat.new(:oid,:oid);            #  1 a:bat[:oid,:oid] := CMDBATnew(_2:oid, _2:oid) {G}
     a0 := bat.reverse(a);               #  2 a0:bat[:oid,:oid] := BKCreverse(a:bat[:oid,:oid]) {G}
     a1 := algebra.markT(a0,0@0);        #  3 a1:bat[:oid,:oid] := ALGtmark(a0:bat[:oid,:oid], _5:oid) {G}

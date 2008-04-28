@@ -36,7 +36,7 @@ end welcome;	# 7
 #user.welcome(2);
 #mdb.list();
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # the first test for macro expansions and inversions 
     io.print("test expansion");         #  2 _5:void := IOprint_val(_6:str) 
     _12 := 0;                           #  3 _12:int := _13:int 
@@ -45,7 +45,7 @@ barrier _14 := calc.<(_12,2);           #  4 _14:bit := CALCcompLTintint(_12:int
     _12 := calc.+(_12,1);               #  6 _12:int := CALCbinaryADDintint(_12:int, _17:int) 
     redo _14 := calc.<(_12,2);          #  7 _14:bit := CALCcompLTintint(_12:int, _8:int) {J5}
 exit _14;                               #  8 _14:bit 
-    mdb.list();                         #  9 _9:void 
+    mdb.list();                         #  9 _9:void := MDBlist() 
 end main;	# 10  
 [ "test expansion" ]
 [ "Welcome" ]

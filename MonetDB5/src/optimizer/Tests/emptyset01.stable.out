@@ -25,7 +25,7 @@ barrier (x,y,z):= bat.newIterator(V1);  #  1 (x:lng, y:oid, z:int) := CHPbunIter
 catch MALException:str ;                #  3 MALException:str {J5}
     io.print(MALException);             #  4 _8:void := IOprint_val(MALException:str) 
 exit MALException:str ;                 #  5 MALException:str 
-exit (x,y,z);                           #  6 (x:lng, y:oid, z:int 
+exit (x,y,z);                           #  6 (x:lng, y:oid, z:int) 
 end do;	# 7  
 #
 #function tst();
@@ -40,7 +40,7 @@ end do;	# 7
 #	do(V1);
 #	io.print("done");
 #end tst;
-function user.tst():void;               #  0 tst:void {G}
+function user.tst():void;               #  0 tst:void := user.tst() {G}
     V1 := bat.new(:oid,:int);           #  1 V1:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     V7 := bat.new(:oid,:int);           #  2 V7:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     V10{rows=0:lng} := bat.new(:int,:oid);#  3 V10:bat[:int,:oid] := CMDBATnew(_3:int, _2:oid) {G}
@@ -57,11 +57,11 @@ end tst;	# 11
 #    optimizer.emptySet("user","tst");
 #	mdb.List("user","tst");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #beware that the ESoptimizer does not remove the type of MALException 
     mdb.List("user","tst");             #  2 _7:void := MDBlist3Detail(_3:str, _4:str) 
 end main;	# 3  
-function user.tst():void;               #  0 tst:void {G}
+function user.tst():void;               #  0 tst:void := user.tst() {G}
     V1 := bat.new(:oid,:int);           #  1 V1:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     V7 := bat.new(:oid,:int);           #  2 V7:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     V10{rows=0:lng} := bat.new(:int,:oid);#  3 V10:bat[:int,:oid] := CMDBATnew(_3:int, _2:oid) {G}
@@ -75,7 +75,7 @@ barrier (_17,_18,_19):= bat.newIterator(V1);#  9 (_17:lng, _18:oid, _19:int) := 
 catch MALException:str ;                # 11 MALException:str {J13}
     io.print(MALException);             # 12 _23:void := IOprint_val(MALException:str) 
 exit MALException:str ;                 # 13 MALException:str 
-exit (_17,_18,_19);                     # 14 (_17:lng, _18:oid, _19:int 
+exit (_17,_18,_19);                     # 14 (_17:lng, _18:oid, _19:int) 
     io.print("done");                   # 15 _13:void := IOprint_val(_14:str) 
 end tst;	# 16  
 

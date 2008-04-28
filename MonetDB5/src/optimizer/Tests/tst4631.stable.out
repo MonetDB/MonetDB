@@ -130,7 +130,7 @@ end bind_dbat;	# 2
 #    V131 := optimizer.multiplex("calc.round",V130,100);
 #    V132 := aggr.count(V32,V32,V34);
 #end qry1;
-function user.qry1():void;              #  0 qry1:void {G}
+function user.qry1():void;              #  0 qry1:void := user.qry1() {G}
     V3:bat[:oid,:date]  := user.bind("sys","lineitem","l_shipdate",0);#  1 V3:bat[:oid,:date] := user.bind(_2:str, _3:str, _4:str, _5:int) {G}
     V8:bat[:oid,:oid]  := user.bind_dbat("sys","lineitem",0);#  2 V8:bat[:oid,:oid] := user.bind_dbat(_2:str, _3:str, _5:int) {G}
     V9 := bat.reverse(V8);              #  3 V9:bat[:oid,:oid] := BKCreverse(V8:bat[:oid,:oid]) {G}
@@ -238,7 +238,7 @@ end qry1;                               #101
 #optimizer.commonExpressionRemoval("user","qry1");
 #mdb.list("user","qry1");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # TPCH Q1 non-optimized 
 #don;t depend on SQL library 
     mdb.list("user","qry1");            #  3 _9:void := MDBlist3(_5:str, _6:str) 

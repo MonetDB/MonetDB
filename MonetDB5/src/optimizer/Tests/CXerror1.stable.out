@@ -36,14 +36,14 @@ stdout of test 'CXerror1` in directory 'src/optimizer` itself:
 #  bat.setPersistent(b,false);  ## but a might be not defined
 #  transaction.commit();
 #end f1;
-function user.f1():void;                #  0 f1:void {G}
+function user.f1():void;                #  0 f1:void := user.f1() {G}
 # create bat 
     xxx := bat.new(:void,:dbl);         #  2 xxx:bat[:void,:dbl] := CMDBATnew(_3:void, _4:dbl) {G}
     bat.setName(xxx,"xxx");             #  3 _5:void := BKCsetName(xxx:bat[:void,:dbl], _6:str) 
     bat.setPersistent(xxx,true);        #  4 _7:void := BKCpersists(xxx:bat[:void,:dbl], _8:bit) 
-    transaction.commit();               #  5 _9:bit 
+    transaction.commit();               #  5 _9:bit := TRNglobal_commit() 
 # check existance 
-    xxx_1 := bbp.getNames();            #  7 xxx_1:bat[:int,:str] {G}
+    xxx_1 := bbp.getNames();            #  7 xxx_1:bat[:int,:str] := CMDbbpNames() {G}
     xxx_2 := bat.reverse(xxx_1);        #  8 xxx_2:bat[:str,:int] := BKCreverse(xxx_1:bat[:int,:str]) {G}
     xxx_3 := algebra.exist(xxx_2,"xxx");#  9 xxx_3:bit := ALGexist(xxx_2:bat[:str,:int], _6:str) 
 # if it exists, print it 
@@ -56,11 +56,11 @@ exit ifb;                               # 14 ifb:bit
 ## here, it becomes b := a; 
     bat.setPersistent(b,false);         # 18 _21:void := BKCpersists(b:bat[:any,:any], _22:bit) 
 ## but a might be not defined 
-    transaction.commit();               # 20 _24:bit 
+    transaction.commit();               # 20 _24:bit := TRNglobal_commit() 
 end f1;	# 21  
 #optimizer.commonExpressionRemoval("user", "f1");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #provided by roberto 
 end main;	# 2  
 

@@ -58,7 +58,7 @@ function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
 end query;	# 15  
 #optimizer.partitions("user","query");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #testing the BAT partition manager 
 # use a fake sql library 
     mdb.list("sql","query");            #  3 _6:void := MDBlist3(_4:str, _5:str) 

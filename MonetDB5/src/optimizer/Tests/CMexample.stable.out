@@ -22,14 +22,14 @@ stdout of test 'CMexample` in directory 'src/optimizer` itself:
 #	mdb.list();
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Cost model example 
     r{rows=100} := bat.new(:oid,:int);  #  2 r:bat[:oid,:int] := CMDBATnew(_4:oid, _5:int) {G}
     s{rows=1000} := bat.new(:oid,:int); #  3 s:bat[:oid,:int] := CMDBATnew(_4:oid, _8:int) {G}
     rs{rows=501:lng} := algebra.select(s,1,1);#  4 rs:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], _10:int, _10:int) {G}
     rr{rows=100:lng} := bat.reverse(r); #  5 rr:bat[:int,:oid] := BKCreverse(r:bat[:oid,:int]) {G}
     j{rows=100:lng} := algebra.join(rs,rr);#  6 j:bat[:oid,:oid] := ALGjoin(rs:bat[:oid,:int], rr:bat[:int,:oid]) {G}
-    mdb.list();                         #  7 _14:void 
+    mdb.list();                         #  7 _14:void := MDBlist() 
 end main;	# 8  
 function user.main():void;
 # Cost model example 

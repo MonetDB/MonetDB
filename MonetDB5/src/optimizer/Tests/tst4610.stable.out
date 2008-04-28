@@ -36,14 +36,14 @@ end joinPath;	# 4
 #r:= algebra.joinPath(a,b,c);
 #mdb.list();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # the first test for macro expansions and inversions 
     a := bat.new(:int,:int);            #  2 a:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
     b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
     c := bat.new(:int,:int);            #  4 c:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
     h := user.joinPath(a,b,c);          #  5 h:bat[:int,:int] := user.joinPath(a:bat[:int,:int], b:bat[:int,:int], c:bat[:int,:int]) {PG}
     r := algebra.joinPath(a,b,c);       #  6 r:bat[:any,:any] := ALGjoinPath(a:bat[:int,:int], b:bat[:int,:int], c:bat[:int,:int]) {G}
-    mdb.list();                         #  7 _12:void 
+    mdb.list();                         #  7 _12:void := MDBlist() 
 function user.main():void;
 # the first test for macro expansions and inversions 
     a := bat.new(:int,:int);

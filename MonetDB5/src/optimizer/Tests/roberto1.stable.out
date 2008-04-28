@@ -30,19 +30,19 @@ stdout of test 'roberto1` in directory 'src/optimizer` itself:
 #    redo go := calc.<(i,2);       
 #  exit go;                        
 #end f;                            
-function user.f():void;                 #  0 f:void {G}
+function user.f():void;                 #  0 f:void := user.f() {G}
     i := 0;                             #  1 i:int := _2:int 
 barrier go := true;                     #  2 go:bit := _4:bit {J14}
 # remove from disk 
     a:bat[:oid,:dbl]  := bbp.bind("P_bat");#  4 a:bat[:oid,:dbl] := CMDbbpbind(_7:str) {G}
     bat.setPersistent(a,false);         #  5 _8:void := BKCpersists(a:bat[:oid,:dbl], _9:bit) 
-    transaction.commit();               #  6 _10:bit 
+    transaction.commit();               #  6 _10:bit := TRNglobal_commit() 
 # alter the values 
     a:bat[:oid,:dbl]  := batcalc.+(a,1);#  8 a:bat[:oid,:dbl] := CMDbatADDcst_dbl_dbl_dbl(a:bat[:oid,:dbl], _12:dbl) {G}
 # store it to disk with the same name 
     bat.setName(a,"P_bat");             # 10 _14:void := BKCsetName(a:bat[:oid,:dbl], _7:str) 
     bat.setPersistent(a,true);          # 11 _15:void := BKCpersists(a:bat[:oid,:dbl], _4:bit) 
-    transaction.commit();               # 12 _16:bit 
+    transaction.commit();               # 12 _16:bit := TRNglobal_commit() 
     redo go := calc.<(i,2);             # 13 go:bit := CALCcompLTintint(i:int, _17:int) {J3}
 exit go;                                # 14 go:bit 
 end f;	# 15  
@@ -51,7 +51,7 @@ end f;	# 15
 #optimizer.strengthReduction("user", "f");
 #mdb.list("user", "f");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     mdb.list("user","f");               #  1 _4:void := MDBlist3(_2:str, _3:str) 
 end main;	# 2  
 function user.f():void;

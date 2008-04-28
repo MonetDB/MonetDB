@@ -42,14 +42,14 @@ stdout of test 'tst4300` in directory 'src/optimizer` itself:
 ##io.print(i);
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #some join operations 
 #mdb.start(); 
     b := bat.new(:lng,:lng);            #  3 b:bat[:lng,:lng] := CMDBATnew(_4:lng, _4:lng) {G}
 barrier (k,v):= language.newRange(0:lng);#  4 (k:bit, v:lng) := RNGnewRange_lng(_7:lng) {J7}
     bat.insert(b,v,v);                  #  5 _8:void := BKCinsert_bun(b:bat[:lng,:lng], v:lng, v:lng) 
     redo (k,v):= language.nextElement(1:lng,100:lng);#  6 (k:bit, v:lng) := RNGnextElement_lng(_9:lng, _10:lng) {J5}
-exit (k,v);                             #  7 (k:bit, v:lng 
+exit (k,v);                             #  7 (k:bit, v:lng) 
     i := aggr.count(b);                 #  8 i:int := ALGcount_bat(b:bat[:lng,:lng]) 
     io.print(i);                        #  9 _12:void := IOprint_val(i:int) 
     c := algebra.select(b,0:lng,9:lng); # 10 c:bat[:lng,:lng] := ALGselect(b:bat[:lng,:lng], _7:lng, _14:lng) {G}

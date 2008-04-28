@@ -16,7 +16,7 @@ stdout of test 'print_CTgroup.SF-1315791` in directory 'tests/BugDay_2005-10-06_
 #  (histo,grp):= group.new(b);
 #  io.print(grp);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #CTgroup(new(void,int).insert(nil,0).seqbase(0@0)).print(); 
     b := bat.new(:oid,:int);            #  2 b:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
     bat.insert(b,0@0,0);                #  3 _5:void := BKCinsert_bun(b:bat[:oid,:int], _6:oid, _7:int) 

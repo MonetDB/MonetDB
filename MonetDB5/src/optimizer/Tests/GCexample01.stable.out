@@ -24,18 +24,18 @@ stdout of test 'GCexample01` in directory 'src/optimizer` itself:
 #	redo (x,y,z):= bat.hasMoreElements(c);
 #exit (x,y,z);
 #end qry;
-function user.qry():void;               #  0 qry:void {G}
+function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     c := bat.new(:int,:int);            #  2 c:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     d := bat.new(:int,:int);            #  3 d:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     bat.insert(b,1,1);                  #  4 _5:void := BKCinsert_bun(b:bat[:int,:int], _6:int, _6:int) 
 barrier (x,y,z):= bat.newIterator(b);   #  5 (x:lng, y:int, z:int) := CHPbunIterator(b:bat[:int,:int]) {J7}
     io.print(x);                        #  6 _10:void := IOprint_val(x:lng) 
-exit (x,y,z);                           #  7 (x:lng, y:int, z:int 
+exit (x,y,z);                           #  7 (x:lng, y:int, z:int) 
 barrier (x,y,z):= bat.newIterator(c);   #  8 (x:lng, y:int, z:int) := CHPbunIterator(c:bat[:int,:int]) {J11}
     io.print(x);                        #  9 _11:void := IOprint_val(x:lng) 
     redo (x,y,z):= bat.hasMoreElements(c);# 10 (x:lng, y:int, z:int) := CHPbunHasMoreElements(c:bat[:int,:int]) {J9}
-exit (x,y,z);                           # 11 (x:lng, y:int, z:int 
+exit (x,y,z);                           # 11 (x:lng, y:int, z:int) 
 # do not close d, it may be reused 
 barrier go := true;                     # 13 go:bit := _14:bit {J16}
     io.print(d);                        # 14 _15:void := IOprint_val(d:bat[:int,:int]) 
@@ -46,7 +46,7 @@ end qry;	# 17
 #optimizer.garbageCollector("user","qry");
 #mdb.list("user","qry");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #checking proper handling of scopes for the garbage collector 
     mdb.list("user","qry");             #  2 _5:void := MDBlist3(_3:str, _4:str) 
 end main;	# 3  

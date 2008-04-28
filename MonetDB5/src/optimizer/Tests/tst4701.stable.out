@@ -16,13 +16,13 @@ stdout of test 'tst4701` in directory 'src/optimizer` itself:
 #
 #command tst903()
 !MALException:MAL.getAddress:address of 'user.MCCAdmin_tst903' not found
-command user.tst903():void address MCCAdmin_tst903;#  0 tst903:void 
+command user.tst903():void address MCCAdmin_tst903;#  0 tst903:void := user.tst903() 
 #user.tst903();
 #
-!TypeException:user.main[2]:'user.tst903' undefined in: _2:void
-function user.main():void;              #  0 main:void 
+!TypeException:user.main[2]:'user.tst903' undefined in: _2:void := user.tst903()
+function user.main():void;              #  0 main:void := user.main() 
 # after the routine tst903 is it can be linked 
-    user.tst903();                      #  2 _2:void {U}
+    user.tst903();                      #  2 _2:void := user.tst903() {U}
 end main;	# 3  
 
 # 23:52:59 >  

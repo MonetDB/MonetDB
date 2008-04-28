@@ -36,7 +36,7 @@ stdout of test 'tst4004` in directory 'src/optimizer` itself:
 #optimizer.deadCodeRemoval();
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     A := 23;                            #  1 A:int := _3:int 
     D := 22;                            #  2 D:int := _5:int 
     B := true;                          #  3 B:bit := _9:bit 

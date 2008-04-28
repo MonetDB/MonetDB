@@ -11,8 +11,8 @@ stdout of test 'monettime_needs_alarm.SF-934899` in directory 'tests/BugDay_2005
 # Visit http://monetdb.cwi.nl/ for further information.
 #t:= mtime.current_timestamp();
 #
-function user.main():void;              #  0 main:void 
-    t := mtime.current_timestamp();     #  1 t:timestamp 
+function user.main():void;              #  0 main:void := user.main() 
+    t := mtime.current_timestamp();     #  1 t:timestamp := MTIMEcurrent_timestamp() 
 end main;	# 2  
 
 # 16:24:27 >  

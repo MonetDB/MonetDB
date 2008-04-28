@@ -27,7 +27,7 @@ stdout of test 'BATpropcheck_after_outerjoin.SF-936469` in directory 'tests/BugD
 #x3:= bat.reverse(x);
 #x4:= algebra.outerjoin(x3,y);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     x := bat.new(:oid,:int);            #  1 x:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.insert(x,nil:oid,1);            #  2 _4:void := BKCinsert_bun(x:bat[:oid,:int], _5:oid, _6:int) 
     bat.insert(x,nil:oid,2);            #  3 _7:void := BKCinsert_bun(x:bat[:oid,:int], _5:oid, _8:int) 

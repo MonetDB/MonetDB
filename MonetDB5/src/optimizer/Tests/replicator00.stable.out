@@ -27,7 +27,7 @@ end bind;	# 3
 #	b:bat[:int,:int]:= sql.bind("schema","r","t");
 #	t:= algebra.select(b,1,10);
 #end qry;
-function sql.qry():void;                #  0 qry:void {G}
+function sql.qry():void;                #  0 qry:void := sql.qry() {G}
     b:bat[:int,:int]  := sql.bind("schema","r","t");#  1 b:bat[:int,:int] := sql.bind(_2:str, _3:str, _4:str) {G}
     t := algebra.select(b,1,10);        #  2 t:bat[:int,:int] := ALGselect(b:bat[:int,:int], _6:int, _7:int) {G}
 end qry;	# 3  
@@ -36,7 +36,7 @@ end qry;	# 3
 #optimizer.replicator("user","qry");
 #mdb.list("user","qry");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #test the basics of the replicator 
     mdb.list("user","qry");             #  2 _5:void := MDBlist3(_3:str, _4:str) 
 end main;	# 3  

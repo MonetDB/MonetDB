@@ -21,13 +21,13 @@ stdout of test 'emptyset00` in directory 'src/optimizer` itself:
 #optimizer.emptySet();
 #mdb.list();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     s1 := algebra.select(b,80,90);      #  2 s1:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], _5:int, _6:int) {G}
     s2{rows=0:lng} := bat.new(:oid,:int);#  3 s2:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     s3{rows=0:lng} := bat.new(:oid,:int);#  4 s3:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     io.print(s3);                       #  5 _9:void := IOprint_val(s3:bat[:oid,:int]) 
-    mdb.list();                         #  6 _12:void 
+    mdb.list();                         #  6 _12:void := MDBlist() 
 end main;	# 7  
 #-----------------#
 # h	t	  # name

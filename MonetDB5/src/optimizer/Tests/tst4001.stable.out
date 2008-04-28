@@ -43,18 +43,18 @@ end qry;	# 7
 #mdb.list("user","qry");
 #mdb.list("user","main");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #tesing the optimizers 
 #setDebug(); 
-    t0 := alarm.usec();                 #  3 t0:lng 
-    t1 := alarm.usec();                 #  4 t1:lng 
+    t0 := alarm.usec();                 #  3 t0:lng := ALARMusec() 
+    t1 := alarm.usec();                 #  4 t1:lng := ALARMusec() 
     t2 := calc.-(t1,t0);                #  5 t2:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
     io.print("execute");                #  6 _11:void := IOprint_val(_12:str) 
     z := user.qry(0:dbl);               #  7 z:dbl := user.qry(_14:dbl) 
     io.print(z);                        #  8 _15:void := IOprint_val(z:dbl) 
     io.print("done");                   #  9 _16:void := IOprint_val(_17:str) 
     mdb.list("user","qry");             # 10 _18:void := MDBlist3(_5:str, _6:str) 
-    mdb.list();                         # 11 _19:void 
+    mdb.list();                         # 11 _19:void := MDBlist() 
 end main;	# 12  
 [ "execute" ]
 [ 0.8414709848078965 ]

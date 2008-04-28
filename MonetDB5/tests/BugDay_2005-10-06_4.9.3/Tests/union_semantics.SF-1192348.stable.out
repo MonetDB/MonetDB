@@ -21,7 +21,7 @@ stdout of test 'union_semantics.SF-1192348` in directory 'tests/BugDay_2005-10-0
 #u:= algebra.kunion(x,y);
 #io.print(u);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     x := bat.new(:oid,:int);            #  1 x:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     y := bat.new(:oid,:int);            #  2 y:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.insert(x,0@0,1);                #  3 _5:void := BKCinsert_bun(x:bat[:oid,:int], _6:oid, _7:int) 

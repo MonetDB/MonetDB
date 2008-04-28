@@ -16,7 +16,7 @@ stdout of test 'garbage` in directory 'src/optimizer` itself:
 #  c{keep}:= bat.new(:int,:int);
 #  io.print(b);
 #end tst;
-function user.tst():void;               #  0 tst:void {G}
+function user.tst():void;               #  0 tst:void := user.tst() {G}
     b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     c{keep} := bat.new(:int,:int);      #  2 c:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     io.print(b);                        #  3 _4:void := IOprint_val(b:bat[:int,:int]) 
@@ -24,7 +24,7 @@ end tst;	# 4
 #optimizer.garbageCollector("user","tst");
 #mdb.list("user","tst");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     mdb.list("user","tst");             #  1 _4:void := MDBlist3(_2:str, _3:str) 
 end main;	# 2  
 function user.tst():void;
