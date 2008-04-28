@@ -90,7 +90,7 @@ barrier ca_a := calc.==(ba_a,0);        #  7 ca_a:bit := CALCcompEQintint(ba_a:i
 #	io.print("        }"); 
 exit ca_a;                              # 11 ca_a:bit 
     redo (aa_a,aa_aH,aa_aT):= bat.hasMoreElements(b);# 12 (aa_a:lng, aa_aH:any, aa_aT:any) := CHPbunHasMoreElements(b:bat[:any_1,:any_2]) {PJ5}
-exit (aa_a,aa_aH,aa_aT);                # 13 (aa_a:lng, aa_aH:any, aa_aT:any 
+exit (aa_a,aa_aH,aa_aT);                # 13 (aa_a:lng, aa_aH:any, aa_aT:any) 
 #	io.print("        return a;"); 
     return ea_a := a;                   # 15 ea_a:bat[:oid,:flt] := a:bat[:oid,:flt] {G}
 end create;	# 16  
@@ -114,7 +114,7 @@ end create;	# 16
 ##	mil.line("quit();");
 #	na_a := clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -179,7 +179,7 @@ function user.main():void;              #  0 main:void {G}
     la_a := algebra.semijoin(b,c);      # 62 la_a:bat[:oid,:flt] := ALGsemijoin(b:bat[:oid,:flt], c:bat[:oid,:flt]) {G}
     ma_a := io.print(la_a);             # 63 ma_a:void := IOprint_val(la_a:bat[:oid,:flt]) 
 #	io.print("quit();"); 
-    na_a := clients.quit();             # 65 na_a:void 
+    na_a := clients.quit();             # 65 na_a:void := CLTquit() 
 end main;	# 66  
 #-----------------#
 # h	t	  # name

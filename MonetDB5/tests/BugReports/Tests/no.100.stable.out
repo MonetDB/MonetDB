@@ -94,7 +94,7 @@ stdout of test 'no.100` in directory 'tests/BugReports` itself:
 #	xa_a := clients.quit();
 ##Identifer 'seqbase' mapped to 'bat.setSequenceBase'
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -171,7 +171,7 @@ function user.main():void;              #  0 main:void {G}
     va_a := algebra.copy(ua_a);         # 74 va_a:bat[:oid,:int] := ALGcopy(ua_a:bat[:oid,:int]) {G}
     wa_a := io.print(va_a);             # 75 wa_a:void := IOprint_val(va_a:bat[:oid,:int]) 
 #	io.print("quit();"); 
-    xa_a := clients.quit();             # 77 xa_a:void 
+    xa_a := clients.quit();             # 77 xa_a:void := CLTquit() 
 end main;	# 78  
 #-------------------------#
 # h	t		  # name

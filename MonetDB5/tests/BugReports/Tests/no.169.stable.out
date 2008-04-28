@@ -59,7 +59,7 @@ stdout of test 'no.169` in directory 'tests/BugReports` itself:
 ##	mil.line("quit();");
 #	ea_a := clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -103,7 +103,7 @@ function user.main():void;              #  0 main:void {G}
     ca_a := calc.str(nil:void);         # 41 ca_a:str := CALCnil2str(_43:void) {G}
     da_a := io.print(ca_a);             # 42 da_a:void := IOprint_val(ca_a:str) 
 #	io.print("quit();"); 
-    ea_a := clients.quit();             # 44 ea_a:void 
+    ea_a := clients.quit();             # 44 ea_a:void := CLTquit() 
 end main;	# 45  
 [ nil ]
 

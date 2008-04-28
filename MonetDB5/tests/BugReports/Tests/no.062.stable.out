@@ -93,7 +93,7 @@ stdout of test 'no.062` in directory 'tests/BugReports` itself:
 #	ja_a := io.print(t);
 ##	mil.line("# alles zover is goed\n");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 

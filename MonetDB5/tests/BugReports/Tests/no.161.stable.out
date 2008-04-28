@@ -101,7 +101,7 @@ end test_outer;	# 6
 ##	mil.line("quit();");
 #	ja_a := clients.quit();
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -163,7 +163,7 @@ function user.main():void;              #  0 main:void
 #	io.print("test_outer(\"chr\");"); 
     ia_a := user.test_outer("chr");     # 60 ia_a:void := user.test_outer(_60:str) 
 #	io.print("quit();"); 
-    ja_a := clients.quit();             # 62 ja_a:void 
+    ja_a := clients.quit();             # 62 ja_a:void := CLTquit() 
 end main;	# 63  
 test_outer.in: chr
 test_inner.in: chr

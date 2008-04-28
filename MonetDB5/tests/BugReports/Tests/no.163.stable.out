@@ -175,7 +175,7 @@ end tst;	# 16
 ##	mil.line("");
 #	ia_a := clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -296,7 +296,7 @@ function user.main():void;              #  0 main:void {G}
     ga_a := bat.insert(b1,0@0,1);       #118 ga_a:void := BKCinsert_bun(b1:bat[:oid,:int], _121:oid, _124:int) 
     bn := user.tst(b1);                 #119 bn:bat[:oid,:int] := user.tst(b1:bat[:oid,:int]) {G}
     ha_a := io.print(bn);               #120 ha_a:void := IOprint_val(bn:bat[:oid,:int]) 
-    ia_a := clients.quit();             #121 ia_a:void 
+    ia_a := clients.quit();             #121 ia_a:void := CLTquit() 
 end main;                               #122  
 #-----------------#
 # h	t	  # name
