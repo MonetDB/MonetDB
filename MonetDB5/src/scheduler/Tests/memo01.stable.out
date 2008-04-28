@@ -80,7 +80,7 @@ stdout of test 'memo01` in directory 'src/scheduler` itself:
 #	answer:= scheduler.pick(T9,T10,T11,T12,T13);
 #	io.print(answer);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # The first memo driven execution 
 # use local cost functions, which leads to a hill-climber 
 # Use the backward scheduling. 
@@ -103,7 +103,7 @@ function user.main():void;              #  0 main:void {G}
     T2cost := calc.+(Bcost,Ccost);      # 20 T2cost:int := CALCbinaryADDintint(Bcost:int, Ccost:int) 
     T3cost := calc.+(Ccost,Dcost);      # 21 T3cost:int := CALCbinaryADDintint(Ccost:int, Dcost:int) 
     io.printf("choicepoint 1\n");       # 22 _26:void := IOprint_str(_27:str) 
-    scheduler.choice();                 # 23 _28:void 
+    scheduler.choice();                 # 23 _28:void := RUNchoice() 
     T1 := algebra.join(A,B);            # 24 T1:bat[:int,:int] := ALGjoin(A:bat[:int,:int], B:bat[:int,:int]) {G}
     T1cost := aggr.count(T1);           # 25 T1cost:int := ALGcount_bat(T1:bat[:int,:int]) 
     T2 := algebra.join(B,C);            # 26 T2:bat[:int,:int] := ALGjoin(B:bat[:int,:int], C:bat[:int,:int]) {G}

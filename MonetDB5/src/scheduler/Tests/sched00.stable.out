@@ -20,21 +20,21 @@ stdout of test 'sched00` in directory 'src/scheduler` itself:
 #    io.print("done\n");
 #    mdb.list();
 #end f;
-function user.f():void;                 #  0 f:void 
+function user.f():void;                 #  0 f:void := user.f() 
     i{runonce,rows>4} := 1;             #  1 i:int := _3:int 
 # just properties 
-    mdb.list();                         #  3 _5:void 
+    mdb.list();                         #  3 _5:void := MDBlist() 
     io.print("start running\n");        #  4 _6:void := IOprint_val(_7:str) 
-    scheduler.isolation();              #  5 _8:void 
+    scheduler.isolation();              #  5 _8:void := RUNisolation() 
     io.print("done\n");                 #  6 _9:void := IOprint_val(_10:str) 
-    mdb.list();                         #  7 _11:void 
+    mdb.list();                         #  7 _11:void := MDBlist() 
 end f;	# 8  
 #
 #f(); #shows self-modification in action
 #
 #
-function user.main():void;              #  0 main:void 
-    user.f();                           #  1 _1:void 
+function user.main():void;              #  0 main:void := user.main() 
+    user.f();                           #  1 _1:void := user.f() 
 #shows self-modification in action 
 end main;	# 3  
 function user.f():void;

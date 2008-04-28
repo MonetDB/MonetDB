@@ -42,7 +42,7 @@ stdout of test 'memo02` in directory 'src/scheduler` itself:
 #	answer:= scheduler.pick(T9,T10,T11,T12,T13);
 #	io.print(answer);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # The first memo driven execution 
 # use a generic cost function 
     A := bat.new(:int,:int);            #  3 A:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
@@ -56,7 +56,7 @@ function user.main():void;              #  0 main:void {G}
     D := algebra.copy(C);               # 11 D:bat[:int,:int] := ALGcopy(C:bat[:int,:int]) {G}
     bat.setWriteMode(D);                # 12 _16:bat[:int,:int] := BKCsetWriteMode(D:bat[:int,:int]) {G}
     bat.insert(D,3,3);                  # 13 _17:void := BKCinsert_bun(D:bat[:int,:int], _14:int, _14:int) 
-    scheduler.choice();                 # 14 _18:void 
+    scheduler.choice();                 # 14 _18:void := RUNchoice() 
     T1 := algebra.join(A,B);            # 15 T1:bat[:int,:int] := ALGjoin(A:bat[:int,:int], B:bat[:int,:int]) {G}
     T2 := algebra.join(B,C);            # 16 T2:bat[:int,:int] := ALGjoin(B:bat[:int,:int], C:bat[:int,:int]) {G}
     T3 := algebra.join(C,D);            # 17 T3:bat[:int,:int] := ALGjoin(C:bat[:int,:int], D:bat[:int,:int]) {G}

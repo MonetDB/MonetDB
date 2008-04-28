@@ -7,6 +7,10 @@ stdout of test 'time01` in directory 'src/modules/kernel` itself:
 
 
 
+
+
+
+
 # MonetDB server v5.5.0, based on kernel v1.23.0
 # Serving database 'mTests_src_modules_kernel'
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -34,7 +38,7 @@ stdout of test 'time01` in directory 'src/modules/kernel` itself:
 #c := batcalc.==(b2, b1);
 #io.print(c);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     x0 := mtime.daytime("10:00:00");    #  1 x0:daytime := MTIMEdaytime_fromstr(_2:str) 
     x1 := mtime.daytime("10:00:20");    #  2 x1:daytime := MTIMEdaytime_fromstr(_4:str) 
     x2 := mtime.daytime("10:00:50");    #  3 x2:daytime := MTIMEdaytime_fromstr(_6:str) 
