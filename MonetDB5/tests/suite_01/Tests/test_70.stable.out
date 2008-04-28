@@ -51,7 +51,7 @@ stdout of test 'test_70` in directory 'tests/suite_01` itself:
 #	mil.line("quit();");
 #	ha_a := clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -87,7 +87,7 @@ function user.main():void;              #  0 main:void {G}
 #	io.print("var ps:= str(1);"); 
     ps := calc.str(1);                  # 34 ps:str := CALCint2str(_26:int) {G}
 #	io.print("quit();"); 
-    ha_a := clients.quit();             # 36 ha_a:void 
+    ha_a := clients.quit();             # 36 ha_a:void := CLTquit() 
 end main;	# 37  
 [ 21 ]
 #var pf:= flt(\"23\");

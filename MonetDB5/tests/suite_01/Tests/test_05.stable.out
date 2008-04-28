@@ -80,7 +80,7 @@ stdout of test 'test_05` in directory 'tests/suite_01` itself:
 #	mil.line("quit();");
 #	va_a := clients.quit();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -143,7 +143,7 @@ function user.main():void;              #  0 main:void {G}
 #	io.print("printf(\"problem signalled before \\\"\n\");"); 
     ua_a := io.printf("problem signalled before \\\"\n");# 61 ua_a:void := IOprint_str(_82:str) 
 #	io.print("quit();"); 
-    va_a := clients.quit();             # 63 va_a:void 
+    va_a := clients.quit();             # 63 va_a:void := CLTquit() 
 end main;	# 64  
 [ "got single quote ' ." ]
 ## remove superfluous escapes
