@@ -31,7 +31,7 @@ stdout of test 'xml100` in directory 'src/modules/atoms` itself:
 #xs:= xml.str(xx);
 #io.print(xs);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     b := "Mary Ann Walker";             #  1 b:str := _2:str {G}
     c := "brown";                       #  2 c:str := _4:str {G}
     n := nil:xml;                       #  3 n:xml := _6:xml {G}

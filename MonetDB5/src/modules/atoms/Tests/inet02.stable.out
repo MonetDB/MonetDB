@@ -50,7 +50,7 @@ stdout of test 'inet02` in directory 'src/modules/atoms` itself:
 #e := inet.>>=(i3, i3);
 #io.print(e);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
 # these tests are from the PostgreSQL documentation examples 
     i1 := inet.new("192.168.1.5");      #  2 i1:inet := INETnew(_3:str) 
     io.print(i1);                       #  3 _4:void := IOprint_val(i1:inet) 

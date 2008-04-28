@@ -38,7 +38,7 @@ stdout of test 'time00` in directory 'src/modules/atoms` itself:
 #zd:= batmtime.day(b);
 #io.print(zd);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # temporal stuff. 
     date_01 := mtime.date("5000-JAN-01");#  2 date_01:date := MTIMEdate_fromstr(_3:str) 
     date_02 := mtime.date("1968-FEBR-29");#  3 date_02:date := MTIMEdate_fromstr(_5:str) 

@@ -53,7 +53,7 @@ stdout of test 'inet01` in directory 'src/modules/atoms` itself:
 #e := inet.>>=(i6, i7);
 #io.print(e);
 #
-function user.main():void;              #  0 main:void 
+function user.main():void;              #  0 main:void := user.main() 
     i1 := inet.new("127.0.0.1");        #  1 i1:inet := INETnew(_2:str) 
     io.print(i1);                       #  2 _3:void := IOprint_val(i1:inet) 
     i2 := inet.new("192.168.0.0/24");   #  3 i2:inet := INETnew(_5:str) 

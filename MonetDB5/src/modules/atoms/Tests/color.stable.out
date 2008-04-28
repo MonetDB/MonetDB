@@ -54,7 +54,7 @@ stdout of test 'color` in directory 'src/modules/atoms` itself:
 #    V94 := color.blue(c);	
 #    io.print(V94);	
 #end testcolor;	
-function user.testcolor():void;         #  0 testcolor:void {G}
+function user.testcolor():void;         #  0 testcolor:void := user.testcolor() {G}
     c := color.rgb(100,101,102);        #  1 c:color := CLRrgb(_2:int, _3:int, _4:int) 
     io.print(c);                        #  2 _5:void := IOprint_val(c:color) 
     V38 := color.red(c);                #  3 V38:int := CLRred(c:color) 
@@ -105,8 +105,8 @@ function user.testcolor():void;         #  0 testcolor:void {G}
 end testcolor;	# 48  
 #user.testcolor();
 #
-function user.main():void;              #  0 main:void 
-    user.testcolor();                   #  1 _1:void 
+function user.main():void;              #  0 main:void := user.main() 
+    user.testcolor();                   #  1 _1:void := user.testcolor() 
 end main;	# 2  
 [ 0x00646566 ]
 [ 100 ]

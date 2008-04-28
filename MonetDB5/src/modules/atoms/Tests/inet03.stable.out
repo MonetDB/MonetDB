@@ -78,7 +78,7 @@ stdout of test 'inet03` in directory 'src/modules/atoms` itself:
 #i20 := inet.abbrev(i3);
 #io.print(i20);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # these tests are from the PostgreSQL documentation examples 
 # function tests 
     i1 := inet.new("192.168.1.5/24");   #  3 i1:inet := INETnew(_4:str) 
