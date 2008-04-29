@@ -46,11 +46,6 @@ atom color:int;
 command tostr():str address color_tostr;
 command fromstr():color address color_fromstr;
 
-command print(c:color)
-address CLRprintf;
-command printf(s:str, c:color)
-address CLRprintf2;
-
 command str(s:color):str
 address CLRstr
 comment "Converts color to string ";
@@ -160,8 +155,6 @@ color_export str CLRrgb(color *rgb, int *r, int *g, int *b);
 color_export str CLRycc(color *c, int *y, int *cr, int *cb);
 color_export int color_fromstr(char *colorStr, int *len, color **c);
 color_export int color_tostr(char **colorStr, int *len, color *c);
-color_export str CLRprintf(int *ret, color *c);
-color_export str CLRprintf2(int *ret, str *form, color *c);
 
 #define color_nil ((color)int_nil)
 
@@ -273,26 +266,6 @@ color_tostr(char **colorStr, int *len, color *c)
 	printf("  = *len: %d\n", *len);
 #endif
 	return strlen(*colorStr);
-}
-
-str
-CLRprintf(int *ret, color *c)
-{
-	str s = 0;
-	int len = 0;
-
-	(void) ret;
-	color_tostr(&s, &len, c);
-	stream_printf(GDKout, "[ %s ]\n", s);
-	return MAL_SUCCEED;
-}
-
-str
-CLRprintf2(int *ret, str *form, color *c)
-{
-	(void) ret;
-	stream_printf(GDKout, *form, *c);
-	return MAL_SUCCEED;
 }
 
 str

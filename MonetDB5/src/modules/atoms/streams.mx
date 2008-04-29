@@ -122,12 +122,6 @@ typedef ptr Bstream;
 #include <stdio.h>
 #include <stream_socket.h>
 
-/*
-int io_stdin (Stream *ret) { *(stream**)ret = GDKin;  return GDK_SUCCEED; }
-int io_stdout(Stream *ret) { *(stream**)ret = GDKout; return GDK_SUCCEED; }
-int io_stderr(Stream *ret) { *(stream**)ret = GDKerr; return GDK_SUCCEED; }
-*/
-
 #ifdef WIN32
 #ifndef LIBSTREAMS
 #define streams_export extern __declspec(dllimport)

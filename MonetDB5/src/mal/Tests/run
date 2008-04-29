@@ -4,7 +4,7 @@
 DBFARM=/ufs/mk/monet5/Linux/var/MonetDB/dbfarm
 DBNAME=test
 #MSERVER="Mtimeout -timeout 123 mserver --dbfarm=$DBFARM --dbname=$DBNAME -c All.conf --set monet_prompt= --trace"
-MSERVER="valgrind mserver5 --dbfarm=$DBFARM --dbname=$DBNAME --set monet_prompt= --trace"
+MSERVER="valgrind  --leak-check=full --show-reachable=yes --num-callers=20 mserver5 --dbfarm=$DBFARM --dbname=$DBNAME --set monet_prompt= --trace"
 
 echo "Initialize database"
 rm -rf $DBFARM/$DBNAME
