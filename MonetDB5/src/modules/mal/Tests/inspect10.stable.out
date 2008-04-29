@@ -19,12 +19,12 @@ stdout of test 'inspect10` in directory 'src/modules/mal` itself:
 #	io.print(b);
 #	mdb.showFunction();
 #end dummy;
-!TypeException:user.dummy[4]:'mdb.showFunction' undefined in: _5:any
+!TypeException:user.dummy[4]:'mdb.showFunction' undefined in: _5:any := mdb.showFunction()
 function user.dummy(i:int):void;        #  0 dummy:void := user.dummy(i:int) {G}
     io.print(i);                        #  1 _2:void := IOprint_val(i:int) 
-    b := mdb.getDefinition();           #  2 b:bat[:void,:str] {G}
+    b := mdb.getDefinition();           #  2 b:bat[:void,:str] := MDBgetDefinition() {G}
     io.print(b);                        #  3 _4:void := IOprint_val(b:bat[:void,:str]) 
-    mdb.showFunction();                 #  4 _5:any {U}
+    mdb.showFunction();                 #  4 _5:any := mdb.showFunction() {U}
 end dummy;	# 5  
 #
 #user.dummy(1);
@@ -36,7 +36,7 @@ end dummy;	# 5
 #mdb.showFunction("user","dummy");
 #
 !TypeException:user.main[6]:'mdb.showFunction' undefined in: _10:any := mdb.showFunction(_7:str, _8:str)
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #self inspection of the code base 
     user.dummy(1);                      #  2 _2:void := user.dummy(_3:int) 
     io.printf("get function properties\n");#  3 _4:void := IOprint_str(_5:str) 

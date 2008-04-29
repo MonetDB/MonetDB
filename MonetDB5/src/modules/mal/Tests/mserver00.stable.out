@@ -90,9 +90,9 @@ stdout of test 'mserver00` in directory 'src/modules/mal` itself:
 #exit MapiException;
 #mapi.disconnect(mid);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Attempt to establish a client connection to yourself. 
-    z := inspect.getEnvironment();      #  2 z:bat[:str,:str] {G}
+    z := inspect.getEnvironment();      #  2 z:bat[:str,:str] := INSPECTgetEnvironment() {G}
     ps := algebra.find(z,"mapi_port");  #  3 ps:str := ALGfind(z:bat[:str,:str], _4:str) {G}
     port := calc.int(ps);               #  4 port:int := CALCstr2int(ps:str) 
     hs := algebra.find(z,"host");       #  5 hs:str := ALGfind(z:bat[:str,:str], _7:str) {G}

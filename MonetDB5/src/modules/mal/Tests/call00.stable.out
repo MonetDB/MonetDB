@@ -47,7 +47,7 @@ end tst;	# 7
 #d:= inspect.getSignature("user","tst");
 #io.print(d);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # the base experiment to execute a string 
 # if we can convert a MAL function to a string 
 # it can be shipped for remote execution. 

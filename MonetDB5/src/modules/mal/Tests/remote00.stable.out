@@ -33,7 +33,7 @@ stdout of test 'remote00` in directory 'src/modules/mal` itself:
 #g := "Hello world!";
 #remote.serveget("g");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # we need this include untill remote is added to the default modules 
 #remote.prelude(); 
 # ideally we would like to do this, however that's unfortunately 

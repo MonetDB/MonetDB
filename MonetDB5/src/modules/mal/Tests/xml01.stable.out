@@ -21,7 +21,7 @@ stdout of test 'xml01` in directory 'src/modules/mal` itself:
 #bj:= xml.str(bc);
 #io.print(bj);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
     bat.insert(b,0@0,"Mary Ann Walker");#  2 _4:void := BKCinsert_bun(b:bat[:oid,:str], _5:oid, _6:str) 
     bat.insert(b,1@0,"Annie Chapman");  #  3 _7:void := BKCinsert_bun(b:bat[:oid,:str], _8:oid, _9:str) 

@@ -48,7 +48,7 @@ stdout of test 'ascii_io2` in directory 'src/modules/mal` itself:
 #b2 := bbp.find(i2);
 #io.print(b2);
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
     namebat := bat.new(:oid,:str);      #  1 namebat:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
     bat.append(namebat,"tmpdocs");      #  2 _4:void := BKCappend_val_wrap(namebat:bat[:oid,:str], _5:str) 
     bat.append(namebat,"tmpterms");     #  3 _6:void := BKCappend_val_wrap(namebat:bat[:oid,:str], _7:str) 

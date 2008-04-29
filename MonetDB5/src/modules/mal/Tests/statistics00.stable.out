@@ -42,16 +42,16 @@ stdout of test 'statistics00` in directory 'src/modules/mal` itself:
 #
 #statistics.dump();
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 # Testing the statistics table 
     b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     bat.insert(b,1,2);                  #  3 _4:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) 
     bat.setName(b,"dummy");             #  4 _7:void := BKCsetName(b:bat[:int,:int], _8:str) 
-    statistics.open();                  #  5 _9:void 
-    statistics.dump();                  #  6 _10:void 
+    statistics.open();                  #  5 _9:void := STATopen() 
+    statistics.dump();                  #  6 _10:void := STATdump() 
 # add the bat to the statistics table 
     statistics.deposit(b);              #  8 _12:void := STATdeposit(b:bat[:int,:int]) 
-    statistics.update();                #  9 _13:void 
+    statistics.update();                #  9 _13:void := STATupdate() 
     m := statistics.getMin("dummy");    # 10 m:lng := STATgetMin(_8:str) 
     io.print(m);                        # 11 _15:void := IOprint_val(m:lng) 
 catch MALException:str ;                # 12 MALException:str {J15}
@@ -65,7 +65,7 @@ catch MALException:str ;                # 18 MALException:str {J21}
     io.print("could not get maximum from dummy");# 20 _23:void := IOprint_val(_24:str) 
 exit MALException:str ;                 # 21 MALException:str 
     statistics.discard("dummy");        # 22 _25:void := STATdiscard(_8:str) 
-    statistics.dump();                  # 23 _26:void 
+    statistics.dump();                  # 23 _26:void := STATdump() 
 end main;	# 24  
 #-------------------------------------------------#
 # t	t	t	t	t	t	  # name

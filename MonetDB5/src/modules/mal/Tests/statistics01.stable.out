@@ -49,14 +49,14 @@ stdout of test 'statistics01` in directory 'src/modules/mal` itself:
 ##io.table(dn,d,dl);
 #
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #test the statistics module 
     tz:bat[:str,:timezone]  := bbp.bind("timezones");#  2 tz:bat[:str,:timezone] := CMDbbpbind(_3:str) {G}
-    statistics.prelude();               #  3 _4:void 
+    statistics.prelude();               #  3 _4:void := STATprelude() 
 #statistics.dump();		is size dependent 
     statistics.deposit("timezones");    #  5 _6:void := STATdepositStr(_3:str) 
 #statistics.dump();		is size dependent 
-    b := statistics.getHotset();        #  7 b:bat[:int,:str] {G}
+    b := statistics.getHotset();        #  7 b:bat[:int,:str] := STATgetHotset() {G}
 #io.print(b); 
     l := statistics.getCount("timezones");#  9 l:lng := STATgetCount(_3:str) 
     io.print(l);                        # 10 _11:void := IOprint_val(l:lng) 
@@ -79,7 +79,7 @@ exit MALException:str ;                 # 24 MALException:str
     hc := aggr.count(h);                # 27 hc:int := ALGcount_bat(h:bat[:any,:any]) 
     io.print(hc);                       # 28 _29:void := IOprint_val(hc:int) 
     statistics.discard("timezones");    # 29 _30:void := STATdiscard(_3:str) 
-    statistics.epilogue();              # 30 _31:void 
+    statistics.epilogue();              # 30 _31:void := STATepilogue() 
 #d:= bbp.getRefCount();
 #dl:=bbp.getLRefCount();
 #dn:= bbp.getNames();

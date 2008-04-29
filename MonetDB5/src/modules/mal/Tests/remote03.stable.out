@@ -33,7 +33,7 @@ stdout of test 'remote03` in directory 'src/modules/mal` itself:
 ## shutdown
 #remote.destroy("test");
 #
-function user.main():void;              #  0 main:void {G}
+function user.main():void;              #  0 main:void := user.main() {G}
 #remote.prelude(); 
 # ideally we would like to do this, however that's unfortunately 
 # impossible since variadic stuff doesn't work in functions 
@@ -45,8 +45,8 @@ function user.main():void;              #  0 main:void {G}
 # for testweb, we need to ask the server itself how it is available, use 
 # sabaoth for that 
 #sabaoth.prelude(); 
-    h := sabaoth.getLocalConnectionHost();# 12 h:str {G}
-    p := sabaoth.getLocalConnectionPort();# 13 p:int 
+    h := sabaoth.getLocalConnectionHost();# 12 h:str := SABgetLocalConnectionHost() {G}
+    p := sabaoth.getLocalConnectionPort();# 13 p:int := SABgetLocalConnectionPort() 
 # create a connecton to ourself 
     remote.create("test",h,p,nil:str,"monetdb","monetdb");# 15 _15:void := RMTcreate(_16:str, h:str, p:int, _17:str, _18:str, _18:str) 
 # this is invalid, as io.print is an invalid module, and bla will be 
