@@ -910,7 +910,7 @@ stdout of test 'casts` in directory 'tests/gdkTests` itself:
 #io.print("":str);
 #io.print("random string":str);
 #
-function user.main():void;	# 0  (main:void)
+function user.main():void;	# 0 main:void := user.main() {G}
     io.printf("# casting to int\n");	# 1 IOprint_str (_1:void)<-(_2:str)
     io.print(0:int);	# 2 IOprint_val (_3:void)<-(_4:int)
     io.print(1:int);	# 3 IOprint_val (_5:void)<-(_6:int)
