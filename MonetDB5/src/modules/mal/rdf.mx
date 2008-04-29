@@ -86,6 +86,7 @@ typedef enum
 {
 	RDF_SEC_BLANK,
 	RDF_SEC_IRI,
+	RDF_SEC_NEG_INF,
 	RDF_SEC_NEG_NUM,
 	RDF_SEC_FALSE,
 	RDF_SEC_ZERO,
@@ -95,9 +96,11 @@ typedef enum
 	RDF_SEC_LANG_STRING,
 	RDF_SEC_TRUE,
 	RDF_SEC_POS_NUM,
+	RDF_SEC_POS_INF,
 	RDF_SEC_DATETIME,
 	RDF_SEC_XML_LITERAL,
-	RDF_SEC_OTHER
+	RDF_SEC_OTHER,
+	RDF_SEC_NAN
 } rdf_section;
 
 typedef struct {
@@ -140,41 +143,50 @@ static chr RDFsectionToChr(rdf_section s)
 	case RDF_SEC_IRI:
 		c = '1';
 		break;
-	case RDF_SEC_NEG_NUM:
+	case RDF_SEC_NEG_INF:
 		c = '2';
 		break;
-	case RDF_SEC_FALSE:
+	case RDF_SEC_NEG_NUM:
 		c = '3';
 		break;
-	case RDF_SEC_ZERO:
+	case RDF_SEC_FALSE:
 		c = '4';
 		break;
-	case RDF_SEC_EMPTY_STRING:
+	case RDF_SEC_ZERO:
 		c = '5';
 		break;
-	case RDF_SEC_LANG_EMPTY_STRING:
+	case RDF_SEC_EMPTY_STRING:
 		c = '6';
 		break;
-	case RDF_SEC_STRING:
+	case RDF_SEC_LANG_EMPTY_STRING:
 		c = '7';
 		break;
-	case RDF_SEC_LANG_STRING:
+	case RDF_SEC_STRING:
 		c = '8';
 		break;
-	case RDF_SEC_TRUE:
+	case RDF_SEC_LANG_STRING:
 		c = '9';
 		break;
-	case RDF_SEC_POS_NUM:
+	case RDF_SEC_TRUE:
 		c = 'A';
 		break;
-	case RDF_SEC_DATETIME:
+	case RDF_SEC_POS_NUM:
 		c = 'B';
 		break;
-	case RDF_SEC_XML_LITERAL:
+	case RDF_SEC_POS_INF:
 		c = 'C';
 		break;
-	case RDF_SEC_OTHER:
+	case RDF_SEC_DATETIME:
 		c = 'D';
+		break;
+	case RDF_SEC_XML_LITERAL:
+		c = 'E';
+		break;
+	case RDF_SEC_OTHER:
+		c = 'F';
+		break;
+	case RDF_SEC_NAN:
+		c = 'Z';
 		break;
 	}
 	return c;
@@ -192,40 +204,49 @@ static rdf_section RDFchrToSection(chr c)
 		s = RDF_SEC_IRI;
 		break;
 	case '2':
-		s = RDF_SEC_NEG_NUM;
+		s = RDF_SEC_NEG_INF;
 		break;
 	case '3':
-		s = RDF_SEC_FALSE;
+		s = RDF_SEC_NEG_NUM;
 		break;
 	case '4':
-		s = RDF_SEC_ZERO;
+		s = RDF_SEC_FALSE;
 		break;
 	case '5':
-		s = RDF_SEC_EMPTY_STRING;
+		s = RDF_SEC_ZERO;
 		break;
 	case '6':
-		s = RDF_SEC_LANG_EMPTY_STRING;
+		s = RDF_SEC_EMPTY_STRING;
 		break;
 	case '7':
-		s = RDF_SEC_STRING;
+		s = RDF_SEC_LANG_EMPTY_STRING;
 		break;
 	case '8':
-		s = RDF_SEC_LANG_STRING;
+		s = RDF_SEC_STRING;
 		break;
 	case '9':
-		s = RDF_SEC_TRUE;
+		s = RDF_SEC_LANG_STRING;
 		break;
 	case 'A':
-		s = RDF_SEC_POS_NUM;
+		s = RDF_SEC_TRUE;
 		break;
 	case 'B':
-		s = RDF_SEC_DATETIME;
+		s = RDF_SEC_POS_NUM;
 		break;
 	case 'C':
-		s = RDF_SEC_XML_LITERAL;
+		s = RDF_SEC_POS_INF;
 		break;
 	case 'D':
+		s = RDF_SEC_DATETIME;
+		break;
+	case 'E':
+		s = RDF_SEC_XML_LITERAL;
+		break;
+	case 'F':
 		s = RDF_SEC_OTHER;
+		break;
+	case 'Z':
+		s = RDF_SEC_NAN;
 		break;
 	}
 	return s;
@@ -373,8 +394,16 @@ static str RDFtypeToXsd(rdf_type t)
 
 typedef struct
 {
-	bool negative;
-	/*TODO*/
+	long year;
+	long month;
+	long day;
+	long hour;
+	long minutes;
+	long seconds;
+	long fractions;
+	bool hasTimeZone;
+	long timezone_hour;
+	long timezone_minutes;
 } rdf_datetime;
 
 static bool RDFisDigit(chr c)
@@ -386,18 +415,220 @@ static bool RDFisDigit(chr c)
 		return false;
 }
 
-static str RDFparseYear(str year, int year_len)
+static str RDFparseTimezone(rdf_datetime *dt, str timezone)
 {
-	str ret;
+	str ret = MAL_SUCCEED;
+	int timezone_len = strlen(timezone);
+	if (timezone_len == 1 && timezone[0] == 'Z')
+	{
+		dt->timezone_hour = 0;
+		dt->timezone_minutes = 0;
+	}
+	else
+	{
+		ret = "A timezone should be represented or by a \'Z\' or in form (\'+\' | \'-\') hh \':\' mm)";
+		if (timezone_len == 6)
+		{
+			if (	(timezone[0] == '+' || timezone[0] == '-') &&
+					RDFisDigit(timezone[1]) && RDFisDigit(timezone[2]) &&
+					timezone[3] == ':' &&
+					RDFisDigit(timezone[4]) && RDFisDigit(timezone[5]) )
+			{
+				char hour[4], minutes[3];
+				strncpy(hour, &timezone[0], 3);
+				hour[3] = '\0';
+				strncpy(minutes, &timezone[4], 2);
+				minutes[2] = '\0';
+				dt->timezone_hour = strtol(hour, NULL, 10);
+				if (dt->timezone_hour < -14 || dt->timezone_hour > 14)
+					ret = "Timezone hour shoud range from -14 to +14";
+				else
+				{
+					dt->timezone_minutes = strtol(minutes, NULL, 10);
+					if (dt->timezone_minutes < 0 || dt->timezone_minutes > 59)
+						ret = "Timezone minutes shoud range from 0 to 59";
+					else
+					{
+						if (dt->timezone_hour == 14 && dt->timezone_minutes != 0)
+							ret = "When timezone hour is 14, timezone minutes must be 0";
+						else
+							ret = MAL_SUCCEED;
+					}
+				}
+			}
+		}
+	}
+	return ret;
+}
+
+static str RDFparseFractions(rdf_datetime *dt, str fractions)
+{
+	str ret = MAL_SUCCEED;
+	int fractions_len = strlen(fractions);
+	int i = 0;
+	while (i<fractions_len)
+	{
+		if (!RDFisDigit(fractions[i]))
+			ret = "A non-digit has been found parsing the second fractions";
+		i++;
+	}
+	if (ret == MAL_SUCCEED)
+	{
+		dt->fractions = strtol(fractions, NULL, 10);
+		if (errno == ERANGE && (dt->fractions == LONG_MAX || dt->fractions == LONG_MIN))
+			ret = "Seconds fractions is out of long range";
+		if (ret == MAL_SUCCEED)
+			if (dt->fractions < 0)
+				ret = "Second fractions should be greater or equal to zero";
+	}
+	return ret;
+}
+
+static str RDFparseSeconds(rdf_datetime *dt, str seconds)
+{
+	str ret = MAL_SUCCEED;
+	int seconds_len = strlen(seconds);
+	if (seconds_len == 2)
+	{
+		int i = 0;
+		while (i<seconds_len && ret==MAL_SUCCEED)
+		{
+			if (!RDFisDigit(seconds[i]))
+				ret = "A non-digit has been found parsing the seconds";
+			i++;
+		}
+		if (ret == MAL_SUCCEED)
+		{
+			dt->seconds = strtol(seconds, NULL, 10);
+			if (dt->seconds < 0 || dt->seconds > 59)
+				ret = "Seconds should range between 0 and 59";
+		}
+	}
+	else
+		ret = "Seconds should be a two-digit number";
+	return ret;
+}
+
+static str RDFparseMinutes(rdf_datetime *dt, str minutes)
+{
+	str ret = MAL_SUCCEED;
+	int minutes_len = strlen(minutes);
+	if (minutes_len == 2)
+	{
+		int i = 0;
+		while (i<minutes_len && ret==MAL_SUCCEED)
+		{
+			if (!RDFisDigit(minutes[i]))
+				ret = "A non-digit has been found parsing the minutes";
+			i++;
+		}
+		if (ret == MAL_SUCCEED)
+		{
+			dt->minutes = strtol(minutes, NULL, 10);
+			if (dt->minutes < 0 || dt->minutes > 59)
+				ret = "Minutes should range between 0 and 59";
+		}
+	}
+	else
+		ret = "Minutes should be a two-digit number";
+	return ret;
+}
+
+static str RDFparseHour(rdf_datetime *dt, str hour)
+{
+	str ret = MAL_SUCCEED;
+	int hour_len = strlen(hour);
+	if (hour_len == 2)
+	{
+		int i = 0;
+		while (i<hour_len && ret==MAL_SUCCEED)
+		{
+			if (!RDFisDigit(hour[i]))
+				ret = "A non-digit has been found parsing the hour";
+			i++;
+		}
+		if (ret == MAL_SUCCEED)
+		{
+			dt->hour = strtol(hour, NULL, 10);
+			if (dt->hour < 0 || dt->hour > 24)
+				ret = "An hour should range between 0 and 24";
+		}
+	}
+	else
+		ret = "An hour should be a two-digit number";
+	return ret;
+}
+
+static str RDFparseDay(rdf_datetime *dt, str day)
+{
+	str ret = MAL_SUCCEED;
+	int day_len = strlen(day);
+	if (day_len == 2)
+	{
+		int i = 0;
+		while (i<day_len && ret==MAL_SUCCEED)
+		{
+			if (!RDFisDigit(day[i]))
+				ret = "A non-digit has been found parsing the day";
+			i++;
+		}
+		if (ret == MAL_SUCCEED)
+		{
+			dt->day = strtol(day, NULL, 10);
+			if (dt->day < 1 || dt->day > 31)
+				ret = "A day should range between 1 and 31";
+		}
+	}
+	else
+		ret = "A day should be a two-digit number";
+	return ret;
+}
+
+static str RDFparseMonth(rdf_datetime *dt, str month)
+{
+	str ret = MAL_SUCCEED;
+	int month_len = strlen(month);
+	if (month_len == 2)
+	{
+		int i = 0;
+		while (i<month_len && ret==MAL_SUCCEED)
+		{
+			if (!RDFisDigit(month[i]))
+				ret = "A non-digit has been found parsing the month";
+			i++;
+		}
+		if (ret == MAL_SUCCEED)
+		{
+			dt->month = strtol(month, NULL, 10);
+			if (dt->month < 1 || dt->month > 12)
+				ret = "A month should range between 1 and 12";
+		}
+	}
+	else
+		ret = "A month should be a two-digit number";
+	return ret;
+}
+
+static str RDFparseYear(rdf_datetime *dt, str year)
+{
+	str ret = MAL_SUCCEED;
+	int year_len = strlen(year);
 	if (year_len>=4)
 	{
-		int i;
-		for (i=0; i<year_len && ret==MAL_SUCCEED; i++)
+		int i, digitStart;
+		if (year[0]=='-')
+			digitStart = i = 1;
+		else
+			digitStart = i = 0;
+		while (i<year_len && ret==MAL_SUCCEED)
+		{
 			if (!RDFisDigit(year[i]))
 				ret = "A non-digit has been found parsing the year";
-		if (ret==MAL_SUCCEED && year_len > 4 && year[0]=='0')
+			i++;
+		}
+		if (ret==MAL_SUCCEED && year_len > 4 && year[digitStart]=='0')
 			ret = "Leading zeros are prohibited when year length is grater than 4";
-		if (ret==MAL_SUCCEED)
+		if (ret==MAL_SUCCEED && year_len == 4)
 		{
 			bool is0000 = true;/* is the year==0000? it is prohibited */
 			for (i=0; i<year_len; i++)
@@ -406,54 +637,390 @@ static str RDFparseYear(str year, int year_len)
 			if (is0000)
 				ret = "Year 0000 is prohibited";
 		}
+		if (ret == MAL_SUCCEED)
+		{
+			dt->year = strtol(year, NULL, 10);
+			if (errno==ERANGE &&  (dt->year == LONG_MAX || dt->year == LONG_MIN))
+				ret = "Year is out of long range";
+		}
 	}
 	else
 		ret = "A year must have 4 or more digits";
 	return ret;
 }
 
-static str RDFisDateTime(str data)
+static str RDFdateTimeSemanticCheck(rdf_datetime *dt)
 {
 	str ret = MAL_SUCCEED;
-	int data_len = strlen(data);
-	/*'-'? yyyy '-' mm '-' dd 'T' hh ':' mm ':' ss ('.' s+)? (zzzzzz)?*/
-	if (data_len < 19)
-		ret = "DateTime too short";
-	else
+	/* check if day is correct */
+	if (dt->day == 31)
 	{
-		rdf_datetime *dt = GDKmalloc(sizeof(rdf_datetime));
-		if (!dt)
-			ret = "failed to allocate a datetime structure";
+		if (dt->month != 1 || dt->month != 3 || dt->month != 31 ||
+			dt->month != 7 || dt->month != 8 || dt->month != 10 || dt->month != 31)
+			ret = "The month in the date has not 31 days";
+	}
+	if (dt->day == 30 && dt->month==2)
+		ret = "February has not 30 days";
+	/* check hour */
+	if (dt->hour == 24)
+	{
+		if (dt->minutes != 0)
+			ret = "If hour is 24, minutes must be 0";
 		else
+		{
+			dt->hour = 0;
+			dt->day++;/*what happens if we are in 28 february?? a mess */
+		}
+	}
+	return ret;
+}
+
+static str RDFparseDateTime(rdf_datetime *dt, str date_string)
+{
+	str ret = MAL_SUCCEED;
+	if (dt)
+	{
+		int date_len = strlen(date_string);
+		chr date_array[date_len+1];
+		str date = (str)date_array;
+		strncpy(date, date_string, date_len+1);
+		if (date_len >= 19)
 		{
 			int i;
 			str year;
-			if (data[0] == '-')
+			str month;
+			str day;
+			str hour;
+			str minutes;
+			chr seconds[3];
+			str fractions = NULL;
+			str timezone = NULL;
+			
+			year = date;
+			if (date[0] == '-')
 			{
-				data = &data[1];
-				dt->negative = true;
-				data_len--;
+				date = &date[1];
+				date_len--;
 			}
-			else
-				dt->negative = true;
-			/* find next separator */
-			for (i=0; data[i] == '-' && i<data_len; i++)
-				;/* '-' is at i-1 */
-			year = GDKmalloc(sizeof(chr)*(i));
-			if (!year)
-				ret = "failed to allocate 'year' string";
-			else
+			/*'-'? yyyy '-' mm '-' dd 'T' hh ':' mm ':' ss ('.' s+)? (zzzzzz)?*/
+			/* find year separator */
+			i = 0;
+			while (date[i] != '-' && i<date_len)
+				i++;
+			/* '-' is at i */
+			if (i <= date_len - 15)
 			{
-				int year_len = i-1;
-				strncpy(year, data, i-1);
-				year[year_len] = '\0';
-				ret = RDFparseYear(year, year_len);
-				GDKfree(year);
-				
+				date[i] = '\0';
+				month = &date[i+1];
+				/* find month separator */
+				while (date[i] != '-' && i<date_len)
+					i++;
 			}
-			GDKfree(dt);
+			if (i <= date_len - 12)
+			{
+				date[i] = '\0';
+				day = &date[i+1];
+				/* find day separator */
+				while (date[i] != 'T' && i<date_len)
+					i++;
+			}
+			if (i <= date_len - 9)
+			{
+				date[i] = '\0';
+				hour = &date[i+1];
+				/* find hour separator */
+				while (date[i] != ':' && i<date_len)
+					i++;
+			}
+			if (i <= date_len - 6)
+			{
+				date[i] = '\0';
+				minutes = &date[i+1];
+				/* find minutes separator */
+				while (date[i] != ':' && i<date_len)
+					i++;
+			}
+			if (i <= date_len - 3)
+			{
+				date[i++] = '\0';
+				seconds[0] = date[i++];
+				seconds[1] = date[i++];
+				seconds[2] = '\0';
+			}
+			if (i<date_len)
+			{
+				if (date[i] == '.' && i<date_len-1)/*fractions of second*/
+				{
+					str fractions_start; 
+					int fractions_len = 0;
+					i++;
+					fractions_start = &date[i];
+					/* find fractions separator */
+					while(date[i] != '+' && date[i] != '-' && date[i] != 'Z' && i<date_len)
+					{
+						i++;
+						fractions_len++;
+					}
+					fractions = GDKmalloc(fractions_len+1);
+					strncpy(fractions, fractions_start, fractions_len);
+					fractions[fractions_len] = '\0';
+				}
+				if (date[i] == '+' || date[i] == '-' || date[i] == 'Z') /* timezone */
+				{
+					timezone = &date[i];
+					i = date_len;
+				}
+			}
+			ret = RDFparseYear(dt, year);
+			if (ret == MAL_SUCCEED)
+			{
+				ret = RDFparseMonth(dt, month);
+				if (ret == MAL_SUCCEED)
+				{
+					ret = RDFparseDay(dt, day);
+					if (ret == MAL_SUCCEED)
+					{
+						ret = RDFparseHour(dt, hour);
+						if (ret == MAL_SUCCEED)
+						{
+							ret = RDFparseMinutes(dt, minutes);
+							if (ret == MAL_SUCCEED)
+							{
+								ret = RDFparseSeconds(dt, (str)seconds);
+								if (ret == MAL_SUCCEED)
+								{
+									if (fractions != NULL)
+										ret = RDFparseFractions(dt, fractions);
+									if (ret == MAL_SUCCEED)
+									{
+										if (timezone != NULL)
+										{
+											dt->hasTimeZone = true;
+											ret = RDFparseTimezone(dt, timezone);
+										}
+										else
+											dt->hasTimeZone = false;
+										if (ret == MAL_SUCCEED)
+											ret = RDFdateTimeSemanticCheck(dt);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			if (fractions != NULL)
+				GDKfree(fractions);
+		}
+		else
+			ret = "DateTime string too short";
+	}
+	else
+		ret = "rdf_datetime should not be NULL";
+	return ret;
+}
+
+static void RDFdoubleToString(str ret, double val)
+{
+	unsigned long long l, mask_pos = 0x8000000000000000, mask_neg = 0xffffffffffffffff;
+	bool firstCharFound = false;
+	l = *((unsigned long long*)&val);
+	if (val == 0)
+		return;/* 0 is a special case in Monet/RDF and it has not to be converted to string here */
+	if (val<0)
+		l ^= mask_neg;
+	else
+		l ^= mask_pos;
+	snprintf(ret, 17, "%16llx", l);
+	/* change leading white spaces to 0 */
+	for (int i=0; i<16 && !firstCharFound; i++)
+		if (ret[i] == ' ')
+			ret[i] = '0';
+		else
+			firstCharFound = true;
+}
+
+static double RDFstringToDouble(str string, bool positive)
+{
+	double ret;
+	unsigned long long l, mask_pos = 0x8000000000000000, mask_neg = 0xffffffffffffffff;
+	l = strtoull(string, NULL, 16);
+	if (positive)
+		l ^= mask_pos;
+	else
+		l ^= mask_neg;
+	ret = *((double*)&l);
+	return ret;
+}
+
+static bool RDFisDigitSequence(str string)
+{
+	bool ret = true;
+	int len = strlen(string);
+	if (len > 0)
+	{
+		for (int i=0; i<len && ret == true; i++)
+			if (!RDFisDigit(string[i]))
+				ret = false;
+	}
+	else
+		ret = false;
+	return ret;
+}
+
+static bool RDFisInteger(str string)
+{
+	bool ret = true;
+	int len = strlen(string);
+	if (len>0)
+		if (string[0] == '+' || string[0] == '-')
+			ret = RDFisDigitSequence(&string[1]);
+		else
+			ret = RDFisDigitSequence(string);
+	else
+		ret = false;
+	return ret;
+}
+
+static bool RDFisDecimal(str string)
+{
+	int len = strlen(string);
+	if (len>0)
+	{
+		int i;
+		for (i=0; i<len && string[i] != '.'; i++);
+		{
+			char int_part[i+1];
+			str fract_part = NULL;
+			strncpy(int_part, string, i);
+			int_part[i] = '\0';
+			if (string[i] == '.')
+			{
+				if (i<len-1)
+					fract_part=&string[i+1];
+				else
+					return false;
+			}
+			if (RDFisInteger(int_part) && (fract_part == NULL || RDFisDigitSequence(fract_part)))
+				return true;
+			else
+				return false;
 		}
 	}
+	else
+		return false;
+}
+
+static str RDFisDoubleOrFloat(str string, bool isDouble)
+{
+	str ret = MAL_SUCCEED;
+	int len = strlen(string);
+	if (len>0)
+	{
+		int i;
+		if (!strcmp(string, "INF") || !strcmp(string, "-INF") || !strcmp(string, "NaN"))
+			return MAL_SUCCEED;
+		for (i=0; i<len && string[i] != 'e' && string[i] != 'E'; i++);/*semicolon!*/
+		{
+			/*
+			 * new block to make possible to declare some stuff without CC complaing
+			 * for mixing declarations and code
+			 */
+			char mantissa[i+1];
+			str exponent = NULL;
+			double mantissa_val, exponent_val;
+			strncpy(mantissa, string, i);
+			mantissa[i] = '\0';
+			if (string[i] == 'e' || string[i] == 'E')
+			{
+				if (i<len-1)
+					exponent=&string[i+1];
+				else
+					ret = "There is no exponent after the 'E'";
+			}
+			if (ret == MAL_SUCCEED)
+			{
+				if (!RDFisDecimal(mantissa))
+					ret = "The mantissa is not a decimal";
+				else
+					if (exponent != NULL && !RDFisInteger(exponent))
+						ret = "The exponent is not an integer";
+				if (ret == MAL_SUCCEED)
+				{
+					mantissa_val = strtod(mantissa, NULL);
+					if (isDouble)
+					{
+						if (abs(mantissa_val) >= exp2(53))
+							ret = "The mantissa is out of double range, its absolute value should be less than 2^53";
+					}
+					else
+						if (abs(mantissa_val) >= exp2(24))
+							ret = "The mantissa is out of float range, its absolute value should be less than 2^24";
+					if (ret == MAL_SUCCEED && exponent != NULL)
+					{
+						exponent_val = strtod(exponent, NULL);
+						if (isDouble)
+						{
+							if (exponent_val > 970 || exponent_val < -1075)
+								ret = "The exponent is out of double range, should be LE than 970 and GE than -1075";
+						}
+						else
+							if (exponent_val > 104 || exponent_val < -149)
+								ret = "The exponent is out of float range, should be LE than 104 and GE than -149";
+					}
+				}
+			}
+		}
+	}
+	else
+		ret = "An empty string cannot be parsed to a number";
+	return ret;
+}
+
+static str RDFisFloat(str string)
+{
+	return RDFisDoubleOrFloat(string, false);
+}
+
+static str RDFisDouble(str string)
+{
+	return RDFisDoubleOrFloat(string, true);
+}
+
+static str RDFparseDoubleOrFloat(double *val, str string)
+{
+	str ret = MAL_SUCCEED;
+	if (!strcmp(string, "INF") || !strcmp(string, "-INF") || !strcmp(string, "NaN"))
+		ret = "Cannot parse +/- INF and NaN";
+	else
+	{
+		char *endptr;
+		*val = strtod(string, &endptr);
+		if (errno == ERANGE && *val == HUGE_VAL)
+			ret = "The numeric value is out of the double range";
+		else if (*endptr != '\0')
+			ret = "Could not convert numeric to double";
+	}
+	return ret;
+}
+/*
+static str RDFparseFloat(double *val, str string, bool checkLexicalForm)
+{
+	str ret = MAL_SUCCEED;
+	if (checkLexicalForm)
+		ret = RDFisFloat(string);
+	if (ret == MAL_SUCCEED)
+		ret = RDFparseDoubleOrFloat(val, string);
+	return ret;
+}
+*/
+static str RDFparseDouble(double *val, str string, bool checkLexicalForm)
+{
+	str ret = MAL_SUCCEED;
+	if (checkLexicalForm)
+		ret = RDFisDouble(string);
+	if (ret == MAL_SUCCEED)
+		ret = RDFparseDoubleOrFloat(val, string);
 	return ret;
 }
 
@@ -664,12 +1231,61 @@ triples_handler(void* user_data, const raptor_statement* triple)
 						break;
 					}
 					case RDF_TYPE_INTEGER:
+						if (!RDFisInteger((str)triple->object))
+							*ret = "The object is not a valid integer";
+						goto parse;
 					case RDF_TYPE_DECIMAL:
-					case RDF_TYPE_DOUBLE:
+						if (!RDFisDecimal((str)triple->object))
+							*ret = "The object is not a valid decimal";
+						goto parse;
 					case RDF_TYPE_FLOAT:
-						/*double i = (double)strtod((str)triple->object, NULL);//TODO check errors
-						i++;*/
-						break;				
+						*ret = RDFisFloat((str)triple->object);
+						goto parse;
+					case RDF_TYPE_DOUBLE:
+					{
+						*ret = RDFisDouble((str)triple->object);
+		parse:			if (*ret == MAL_SUCCEED)
+						{
+							double val;
+							if (!strcmp((str)triple->object, "INF"))
+							{
+								@:RDFprefix(ov, "", RDF_SEC_POS_INF)@
+							}
+							else if (!strcmp((str)triple->object, "-INF"))
+							{
+								@:RDFprefix(ov, "", RDF_SEC_NEG_INF)@
+							}
+							else if (!strcmp((str)triple->object, "NaN"))
+							{
+								@:RDFprefix(ov, "", RDF_SEC_NAN)@
+							}
+							else
+							{
+								*ret = RDFparseDouble(&val, (str)triple->object, false);
+								if (*ret == MAL_SUCCEED)
+								{
+									if (val == 0)
+									{
+										@:RDFprefix(ov, "", RDF_SEC_ZERO)@
+									}
+									else
+									{
+										char string[17];
+										RDFdoubleToString(string, val);
+										if (val > 0)
+										{
+											@:RDFprefix(ov, string, RDF_SEC_POS_NUM)@
+										}
+										else if (val < 0)
+										{
+											@:RDFprefix(ov, string, RDF_SEC_NEG_NUM)@
+										}
+									}
+								}
+							}
+						}
+						break;
+					}
 					case RDF_TYPE_BOOLEAN:
 					{
 						if (!strcmp((str)triple->object, "1") || !strcmp((str)triple->object, "true"))
@@ -689,16 +1305,26 @@ triples_handler(void* user_data, const raptor_statement* triple)
 					}
 					case RDF_TYPE_DATETIME:
 					{
-						if (RDFisDateTime((str)triple->object))
+						rdf_datetime *datetime = GDKmalloc(sizeof(rdf_datetime));
+						if (datetime)
 						{
-							@:RDFprefix(ov, (str)triple->object, RDF_SEC_DATETIME)@
+							*ret = RDFparseDateTime(datetime, (str)triple->object);
+							if (*ret == MAL_SUCCEED)
+							{
+								str datetime_string;// = RDFdateTimeToString(dt);
+								@:RDFprefix(ov, datetime_string, RDF_SEC_DATETIME)@
+								GDKfree(datetime);
+							}
+							else
+							{
+								/*TODO better error handling, print all the triple */
+								*ret = ret_array;
+								snprintf(*ret, RET_MAXLEN, "Invalid datetime: \'%s\'", (str)triple->object);
+							}
+							break;
 						}
 						else
-						{
-							*ret = ret_array;
-							snprintf(*ret, RET_MAXLEN, "Invalid datetime: \'%s\'", (str)triple->object);
-						}
-						break;
+							*ret = "Could not allocate memory for a rdf_datetime";
 					}
 					case RDF_TYPE_OTHER:
 					{
@@ -1009,7 +1635,6 @@ str RDFimportGraph(int *d, str *url, str *db, str *graph)
     char ret_array[RET_MAXLEN];
     str ret = MAL_SUCCEED;
     (void)d;
-    ret = MAL_SUCCEED;
     if (commit) {
         int mapIndex;
         snprintf(map_buf, 1024, "%s_%s_map", *db, *graph);
@@ -1234,6 +1859,7 @@ static str RDFserializeTriple(raptor_statement *triple, raptor_serializer* seria
 	str ret = MAL_SUCCEED;
 	bool 	dealloc_subj = false, dealloc_prop = false,	dealloc_obj = false,
 			dealloc_obj_datatype = false, dealloc_obj_lang = false;
+	char obj_string[512]; /* used by numeric types for conversion */
 	chr ss = sv[0];
 	chr ps = pv[0];
 	chr os = ov[0];
@@ -1352,9 +1978,27 @@ static str RDFserializeTriple(raptor_statement *triple, raptor_serializer* seria
 				else if (obj_sec == RDF_SEC_XML_LITERAL && obj_type == RDF_TYPE_XML_LITERAL)
 					triple->object = ov;
 				else if (obj_sec == RDF_SEC_FALSE && obj_type == RDF_TYPE_BOOLEAN)
-					triple->object = "0";
+					triple->object = "false";
 				else if (obj_sec == RDF_SEC_TRUE && obj_type == RDF_TYPE_BOOLEAN)
-					triple->object = "1";
+					triple->object = "true";
+				else if (obj_sec == RDF_SEC_ZERO)
+					triple->object = "0";
+				else if (obj_sec == RDF_SEC_NEG_INF && (obj_type == RDF_TYPE_FLOAT || obj_type == RDF_TYPE_DOUBLE))
+					triple->object = "-INF";
+				else if (obj_sec == RDF_SEC_POS_INF && (obj_type == RDF_TYPE_FLOAT || obj_type == RDF_TYPE_DOUBLE))
+					triple->object = "INF";
+				else if (obj_sec == RDF_SEC_NAN && (obj_type == RDF_TYPE_FLOAT || obj_type == RDF_TYPE_DOUBLE))
+					triple->object = "NaN";
+				else if (obj_sec == RDF_SEC_NEG_NUM || obj_sec == RDF_SEC_POS_NUM)
+				{
+					double val;
+					if (obj_sec == RDF_SEC_NEG_NUM)
+						val = RDFstringToDouble(ov, false);
+					else
+						val = RDFstringToDouble(ov, true);
+					snprintf(obj_string, 512, "%.10g", val);
+					triple->object = obj_string;
+				}
 				else if (obj_sec == RDF_SEC_OTHER && obj_type == RDF_TYPE_OTHER)
 				{
 					unsigned char *datatype;
