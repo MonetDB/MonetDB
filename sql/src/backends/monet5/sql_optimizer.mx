@@ -458,7 +458,7 @@ str defaultPlan=
 	"commonTerms,"
 	"accumulators,"
 	"deadcode,"
-/*	"recycle," */
+	/*"recycle,"*/
 	"reduce,"
 	"garbageCollector," 
 	"multiplex";
