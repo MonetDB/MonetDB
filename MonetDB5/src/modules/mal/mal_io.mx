@@ -44,11 +44,6 @@ pattern stdout():streams
 address io_stdout
 comment "return the output stream for the database client";
 
-pattern color.print(c:color)
-address CLRprintf;
-pattern color.printf(s:str, c:color)
-address CLRprintf2;
-
 pattern print(val:any_1,lst:any...):void 
 address IOprint_val
 comment "Print a MAL value tuple .";
@@ -201,8 +196,6 @@ io_export str IOimport(int *ret, int *bid, str *fnme);
 io_export str io_stdin(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str io_stdout(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str io_stderr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str CLRprintf(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str CLRprintf2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _PRINT_H_ */
 
 @+ Printing
@@ -219,7 +212,6 @@ allow for any type to be assigned.
 @c
 #include "mal_config.h"
 #include "mal_io.h"
-#include "../atoms/color.h"
 
 str
 io_stdin(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -899,28 +891,3 @@ Cleanup and exit. Return the filled BAT.
 }
 
 @}
-str
-CLRprintf(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	Client cntxt= MCgetClient();
-	color *c= (color*) getArgReference(stk,pci,1);
-	str s = 0;
-	int len = 0;
-
-	(void) mb;
-	color_tostr(&s, &len, c);
-	stream_printf(cntxt->fdout, "[ %s ]\n", s);
-	return MAL_SUCCEED;
-}
-
-str
-CLRprintf2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	Client cntxt= MCgetClient();
-	str *form = (str*) getArgReference(stk,pci,1);
-	color *c  = (color*) getArgReference(stk,pci,2);
-	stream_printf(cntxt->fdout, *form, *c);
-	(void) mb;
-	return MAL_SUCCEED;
-}
-
