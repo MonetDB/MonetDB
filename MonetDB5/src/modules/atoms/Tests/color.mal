@@ -1,6 +1,7 @@
 function testcolor();	
     c:= color.rgb(100,101,102);
-    io.print(c);	
+	cs:= color.str(c);
+    io.print(cs);	
     V38 := color.red(c);	
     io.print(V38);	
     V41 := color.green(c);	
@@ -9,7 +10,8 @@ function testcolor();
     io.print(V44);	
     V47 := color.hsv(90.0,0.5,1.0);	
     c := V47;	
-    color.print(c);	
+	cs:= color.str(c);
+    io.print(cs);	
 # don't print hue, saturation, and value: architectural differences can 	
 # cause differences in the output produced.  instead, use them to produce 	
 # a new color which should be the same as the original color 	
@@ -20,10 +22,12 @@ function testcolor();
     V63 := color.saturation(c);	
     V64 := color.value(c);	
     V61 := color.hsv(V62,V63,V64);	
-    color.print(V61);	
+	S61 := color.str(V61);
+    io.print(S61);	
     V66 := color.ycc(200,100,50);	
     c := V66;	
-    color.print(c);	
+	cs:= color.str(c);
+    io.print(cs);	
     V73 := color.luminance(c);	
     io.print(V73);	
     V76 := color.cr(c);	
@@ -32,7 +36,8 @@ function testcolor();
     io.print(V79);	
     V82 := color.color("0x0012ABcd");	
     c := V82;	
-    color.print(c);	
+	cs:= color.str(c);
+    io.print(cs);	
     V88 := color.red(c);	
     io.print(V88);	
     V91 := color.green(c);	

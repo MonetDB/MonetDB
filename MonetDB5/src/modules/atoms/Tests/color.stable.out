@@ -56,69 +56,74 @@ stdout of test 'color` in directory 'src/modules/atoms` itself:
 #end testcolor;	
 function user.testcolor():void;         #  0 testcolor:void := user.testcolor() {G}
     c := color.rgb(100,101,102);        #  1 c:color := CLRrgb(_2:int, _3:int, _4:int) 
-    io.print(c);                        #  2 _5:void := IOprint_val(c:color) 
-    V38 := color.red(c);                #  3 V38:int := CLRred(c:color) 
-    io.print(V38);                      #  4 _7:void := IOprint_val(V38:int) 
-    V41 := color.green(c);              #  5 V41:int := CLRgreen(c:color) 
-    io.print(V41);                      #  6 _9:void := IOprint_val(V41:int) 
-    V44 := color.blue(c);               #  7 V44:int := CLRblue(c:color) 
-    io.print(V44);                      #  8 _11:void := IOprint_val(V44:int) 
-    V47 := color.hsv(90,0.5,1);         #  9 V47:color := CLRhsv(_13:flt, _14:flt, _15:flt) 
-    c := V47;                           # 10 c:color := V47:color 
-    color.print(c);                     # 11 _16:void := CLRprintf(c:color) 
+    cs := color.str(c);                 #  2 cs:str := CLRstr(c:color) {G}
+    io.print(cs);                       #  3 _6:void := IOprint_val(cs:str) 
+    V38 := color.red(c);                #  4 V38:int := CLRred(c:color) 
+    io.print(V38);                      #  5 _8:void := IOprint_val(V38:int) 
+    V41 := color.green(c);              #  6 V41:int := CLRgreen(c:color) 
+    io.print(V41);                      #  7 _10:void := IOprint_val(V41:int) 
+    V44 := color.blue(c);               #  8 V44:int := CLRblue(c:color) 
+    io.print(V44);                      #  9 _12:void := IOprint_val(V44:int) 
+    V47 := color.hsv(90,0.5,1);         # 10 V47:color := CLRhsv(_14:flt, _15:flt, _16:flt) 
+    c := V47;                           # 11 c:color := V47:color 
+    cs := color.str(c);                 # 12 cs:str := CLRstr(c:color) {G}
+    io.print(cs);                       # 13 _17:void := IOprint_val(cs:str) 
 # don't print hue, saturation, and value: architectural differences can 	 
 # cause differences in the output produced.  instead, use them to produce 	 
 # a new color which should be the same as the original color 	 
 #    print(hue(c)); 	 
 #    print(saturation(c)); 	 
 #    print(value(c)); 	 
-    V62 := color.hue(c);                # 18 V62:flt := CLRhue(c:color) 
-    V63 := color.saturation(c);         # 19 V63:flt := CLRsaturation(c:color) 
-    V64 := color.value(c);              # 20 V64:flt := CLRvalue(c:color) 
-    V61 := color.hsv(V62,V63,V64);      # 21 V61:color := CLRhsv(V62:flt, V63:flt, V64:flt) 
-    color.print(V61);                   # 22 _27:void := CLRprintf(V61:color) 
-    V66 := color.ycc(200,100,50);       # 23 V66:color := CLRycc(_29:int, _2:int, _30:int) 
-    c := V66;                           # 24 c:color := V66:color 
-    color.print(c);                     # 25 _31:void := CLRprintf(c:color) 
-    V73 := color.luminance(c);          # 26 V73:int := CLRluminance(c:color) 
-    io.print(V73);                      # 27 _33:void := IOprint_val(V73:int) 
-    V76 := color.cr(c);                 # 28 V76:int := CLRcr(c:color) 
-    io.print(V76);                      # 29 _35:void := IOprint_val(V76:int) 
-    V79 := color.cb(c);                 # 30 V79:int := CLRcb(c:color) 
-    io.print(V79);                      # 31 _37:void := IOprint_val(V79:int) 
-    V82 := color.color("0x0012ABcd");   # 32 V82:color := CLRcolor(_39:str) 
-    c := V82;                           # 33 c:color := V82:color 
-    color.print(c);                     # 34 _40:void := CLRprintf(c:color) 
-    V88 := color.red(c);                # 35 V88:int := CLRred(c:color) 
-    io.print(V88);                      # 36 _42:void := IOprint_val(V88:int) 
-    V91 := color.green(c);              # 37 V91:int := CLRgreen(c:color) 
-    io.print(V91);                      # 38 _44:void := IOprint_val(V91:int) 
-    V94 := color.blue(c);               # 39 V94:int := CLRblue(c:color) 
-    io.print(V94);                      # 40 _46:void := IOprint_val(V94:int) 
-    bc := bat.new(:oid,:color);         # 41 bc:bat[:oid,:color] := CMDBATnew(_48:oid, _49:color) {G}
-    bat.append(bc,0x00000000:color);    # 42 _50:void := BKCappend_val_wrap(bc:bat[:oid,:color], _51:color) 
-    bat.append(bc,0x0033FF44:color);    # 43 _52:void := BKCappend_val_wrap(bc:bat[:oid,:color], _53:color) 
-    bat.append(bc,0x00003F44:color);    # 44 _54:void := BKCappend_val_wrap(bc:bat[:oid,:color], _55:color) 
-    io.print(bc);                       # 45 _56:void := IOprint_val(bc:bat[:oid,:color]) 
-    z := batcolor.red(bc);              # 46 z:bat[:oid,:int] := CLRbatRed(bc:bat[:oid,:color]) {G}
-    io.print(z);                        # 47 _58:void := IOprint_val(z:bat[:oid,:int]) 
-end testcolor;	# 48  
+    V62 := color.hue(c);                # 20 V62:flt := CLRhue(c:color) 
+    V63 := color.saturation(c);         # 21 V63:flt := CLRsaturation(c:color) 
+    V64 := color.value(c);              # 22 V64:flt := CLRvalue(c:color) 
+    V61 := color.hsv(V62,V63,V64);      # 23 V61:color := CLRhsv(V62:flt, V63:flt, V64:flt) 
+    S61 := color.str(V61);              # 24 S61:str := CLRstr(V61:color) {G}
+    io.print(S61);                      # 25 _29:void := IOprint_val(S61:str) 
+    V66 := color.ycc(200,100,50);       # 26 V66:color := CLRycc(_31:int, _2:int, _32:int) 
+    c := V66;                           # 27 c:color := V66:color 
+    cs := color.str(c);                 # 28 cs:str := CLRstr(c:color) {G}
+    io.print(cs);                       # 29 _33:void := IOprint_val(cs:str) 
+    V73 := color.luminance(c);          # 30 V73:int := CLRluminance(c:color) 
+    io.print(V73);                      # 31 _35:void := IOprint_val(V73:int) 
+    V76 := color.cr(c);                 # 32 V76:int := CLRcr(c:color) 
+    io.print(V76);                      # 33 _37:void := IOprint_val(V76:int) 
+    V79 := color.cb(c);                 # 34 V79:int := CLRcb(c:color) 
+    io.print(V79);                      # 35 _39:void := IOprint_val(V79:int) 
+    V82 := color.color("0x0012ABcd");   # 36 V82:color := CLRcolor(_41:str) 
+    c := V82;                           # 37 c:color := V82:color 
+    cs := color.str(c);                 # 38 cs:str := CLRstr(c:color) {G}
+    io.print(cs);                       # 39 _42:void := IOprint_val(cs:str) 
+    V88 := color.red(c);                # 40 V88:int := CLRred(c:color) 
+    io.print(V88);                      # 41 _44:void := IOprint_val(V88:int) 
+    V91 := color.green(c);              # 42 V91:int := CLRgreen(c:color) 
+    io.print(V91);                      # 43 _46:void := IOprint_val(V91:int) 
+    V94 := color.blue(c);               # 44 V94:int := CLRblue(c:color) 
+    io.print(V94);                      # 45 _48:void := IOprint_val(V94:int) 
+    bc := bat.new(:oid,:color);         # 46 bc:bat[:oid,:color] := CMDBATnew(_50:oid, _51:color) {G}
+    bat.append(bc,0x00000000:color);    # 47 _52:void := BKCappend_val_wrap(bc:bat[:oid,:color], _53:color) 
+    bat.append(bc,0x0033FF44:color);    # 48 _54:void := BKCappend_val_wrap(bc:bat[:oid,:color], _55:color) 
+    bat.append(bc,0x00003F44:color);    # 49 _56:void := BKCappend_val_wrap(bc:bat[:oid,:color], _57:color) 
+    io.print(bc);                       # 50 _58:void := IOprint_val(bc:bat[:oid,:color]) 
+    z := batcolor.red(bc);              # 51 z:bat[:oid,:int] := CLRbatRed(bc:bat[:oid,:color]) {G}
+    io.print(z);                        # 52 _60:void := IOprint_val(z:bat[:oid,:int]) 
+end testcolor;                          # 53  
 #user.testcolor();
 #
 function user.main():void;              #  0 main:void := user.main() 
     user.testcolor();                   #  1 _1:void := user.testcolor() 
 end main;	# 2  
-[ 0x00646566 ]
+[ "0x00646566" ]
 [ 100 ]
 [ 101 ]
 [ 102 ]
-[ 0x00BFFF80 ]
-[ 0x00BFFF80 ]
-[ 0x00A0F63D ]
+[ "0x00BFFF80" ]
+[ "0x00BFFF80" ]
+[ "0x00A0F63D" ]
 [ 199 ]
 [ 101 ]
 [ 51 ]
-[ 0x0012ABCD ]
+[ "0x0012ABCD" ]
 [ 18 ]
 [ 171 ]
 [ 205 ]
