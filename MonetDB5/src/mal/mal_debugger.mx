@@ -81,6 +81,7 @@ mdb>help
 	quit             -- turn off debugging
 	list <obj>       -- list current program block
 	List <obj>       -- list with type information
+	span             -- list the life span of variables
 	var  <obj>       -- print symbol table for module
 	optimizer <obj>  -- display program after optimizer step
 	print <var>      -- display value of a variable
@@ -944,6 +945,12 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		case 'f':	/* finish */
 		case 'n':	/* next */
 		case 's':	/* step */
+			if (strncmp("span", b, 4) == 0) {
+				Lifespan span= newLifespan(mb);
+				debugLifespan(mb,span);
+				GDKfree(span);
+				continue;
+			} else
 			if (strncmp("scenarios", b, 9) == 0) {
 				showAllScenarios(out);
 				continue;

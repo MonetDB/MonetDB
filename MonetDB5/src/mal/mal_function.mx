@@ -676,16 +676,22 @@ void
 debugLifespan(MalBlkPtr mb, Lifespan span)
 {
 	int i;
+	char name[BUFSIZ];
+	Client cntxt= MCgetClient();
 
 	for (i = 0; i < mb->vtop; i++) {
 		if (isTmpVar(mb, i))
-			printf("%c%d ", TMPMARKER, getVar(mb,i)->tmpindex); 
+			snprintf(name,BUFSIZ,"%c%d ", TMPMARKER, getVar(mb,i)->tmpindex); 
 		else
-			printf("%8s ", getVar(mb,i)->name);
-		printf("%d - %d  update %d \n", 
+			snprintf(name,BUFSIZ,"%s ", getVar(mb,i)->name);
+		stream_printf(cntxt->fdout,"#%8s range %4d - %4d  ", 
+			name,
 			getBeginLifespan(span,i),
-			getEndLifespan(span,i),
-			getLastUpdate(span,i));
+			getEndLifespan(span,i));
+		if( getLastUpdate(span,i))
+			stream_printf(cntxt->fdout,"last update %d \n", getLastUpdate(span,i));
+		else
+			stream_printf(cntxt->fdout,"constant \n"); 
 	}
 }
 
