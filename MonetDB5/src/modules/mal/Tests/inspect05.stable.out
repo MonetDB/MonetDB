@@ -3953,6 +3953,7 @@ end main;                               # 11
 [ "getException",			  "command",	  "mdb",	  "(s:str):str ",													  "MDBgetExceptionVariable;"		  ]
 [ "getDebug",				  "command",	  "mdb",	  "():int ",														  "MDBgetDebug;"			  ]
 [ "inspect",				  "pattern",	  "mdb",	  "(mod:str,fcn:str):void ",												  "MDBinspect;"				  ]
+[ "lifespan",			  "pattern",	  "mdb",	  "(M:str,F:str):void ",												  "MDBlifespan;"					  ]
 [ "list",				  "pattern",	  "mdb",	  "(M:str,F:str):void ",												  "MDBlist3;"				  ]
 [ "listMapi",				  "pattern",	  "mdb",	  "():void ",														  "MDBlistMapi;"			  ]
 [ "list",				  "pattern",	  "mdb",	  "():void ",														  "MDBlist;"				  ]
