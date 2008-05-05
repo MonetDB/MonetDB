@@ -120,7 +120,6 @@ end main;	# 14
 [ "pqueue",	  nil	  ]
 [ "profiler",	  nil	  ]
 [ "recycle",	  nil	  ]
-[ "replicator",	  nil	  ]
 [ "scheduler",	  nil	  ]
 [ "sema",	  nil	  ]
 [ "sqlblob",	  nil	  ]
