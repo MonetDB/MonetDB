@@ -4544,6 +4544,19 @@ PFbui_pf_string_value (const PFla_op_t *loop, bool ordering,
 /* ----------------------------------------------------- */
 
 /**
+ * Build in function fn:put(node, xs:string) as empty-sequence()
+ */
+struct PFla_pair_t 
+PFbui_fn_put (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+{
+    (void) ordering, (void) loop;
+
+    return (struct PFla_pair_t) {
+        .rel = NULL,
+        .frag = args[0].frag };
+}
+
+/**
  *  Build in function pf:documents() as element()*
  */
 struct PFla_pair_t 
