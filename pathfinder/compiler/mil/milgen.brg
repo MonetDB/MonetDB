@@ -2473,6 +2473,7 @@ reduce (PFpa_op_t * p, int goalnt)
         case 1: /* fold( */
         {
             PFalg_simple_type_t ty;
+            PFmil_create_ws_t create;
             mvar_t *err, *time;
             PFalg_att_t pa_item = p->sem.serialize.item;
             PFmil_t *oldmilprog, *bodymilprog;
@@ -2483,11 +2484,22 @@ reduce (PFpa_op_t * p, int goalnt)
             /* create a new empty milprog */
             milprog = nop ();
 
+            /* decide which type of new_ws should invoke */
+            if (aat_update & type_of (L(p), pa_item))
+                create = CREATE_UPDATE_WS;
+            /* FIXME: there is a second case when it is a retry of update
+             * we dont deal with this case right now because there is no loop
+             */   
+            else if (aat_docmgmt & type_of (L(p), pa_item))
+                create = CREATE_DOCMGM_WS;
+            else
+                create = CREATE_READ_ONLY_WS;
+
             execute (
                 comment ("variable controlling the output format"),
                 assgn (var (PF_MIL_VAR_GENTYPE), lit_str ("xml")),
                 comment ("volatile variable environment"),
-                assgn (var (PF_MIL_VAR_WS), new_ws ()));
+                assgn (var (PF_MIL_VAR_WS), new_ws (lit_int (create))));
             reduce (kids[0], nts[0]);
 
             /* add timing information */
@@ -3463,7 +3475,8 @@ reduce (PFpa_op_t * p, int goalnt)
             kind = new_var (1);
 
             execute (
-                assgn (var (PF_MIL_VAR_WS), new_ws ()),
+                assgn (var (PF_MIL_VAR_WS), 
+                       new_ws (lit_int(CREATE_READ_ONLY_WS))),
                 assgn (
                     var (intVAL->name),
                     seqbase (new (type (mty_void), type (mty_lng)),

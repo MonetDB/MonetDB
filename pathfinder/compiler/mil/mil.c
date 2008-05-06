@@ -1448,9 +1448,9 @@ PFmil_error (const PFmil_t *a)
  * Create a new working set
  */
 PFmil_t *
-PFmil_new_ws (void)
+PFmil_new_ws (const PFmil_t *type)
 {
-    return leaf (m_new_ws);
+    return wire1 (m_new_ws, type);
 }
 
 /**

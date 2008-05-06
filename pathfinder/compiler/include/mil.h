@@ -419,6 +419,15 @@ enum PFmil_update_t {
 };
 typedef enum PFmil_update_t PFmil_update_t;
 
+/* enum on type of ws_create */
+enum PFmil_create_ws_t {
+      CREATE_READ_ONLY_WS     = 0
+    , CREATE_DOCMGM_WS        = 1
+    , CREATE_UPDATE_WS        = 2
+    , CREATE_REP_UPDATE_WS    = 3
+};
+typedef enum PFmil_create_ws_t PFmil_create_ws_t;
+
 /** semantic content for MIL tree nodes */
 union PFmil_sem_t {
     int           i;       /**< literal integer */
@@ -812,7 +821,7 @@ PFmil_t * PFmil_mpcre_replace (const PFmil_t *, const PFmil_t *,
                                const PFmil_t *, const PFmil_t *);
 
 PFmil_t * PFmil_usec (void);
-PFmil_t * PFmil_new_ws (void);
+PFmil_t * PFmil_new_ws (const PFmil_t *);
 PFmil_t * PFmil_destroy_ws (const PFmil_t *ws);
 PFmil_t * PFmil_mposjoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_mvaljoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);

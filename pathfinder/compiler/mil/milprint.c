@@ -141,7 +141,7 @@
                  | '{sum}(' expression ')'                  <m_gsum>
                  | '{sum}(' expression ',' expression ')'   <m_egsum>
                  | 'usec ()'                                <m_usec>
-                 | 'new_ws ()'                              <m_new_ws>
+                 | 'new_ws ('exp')'                         <m_new_ws>
                  | 'mposjoin (' exp ',' exp ',' exp ')'     <m_mposjoin>
                  | 'mvaljoin (' exp ',' exp ',' exp ')'     <m_mvaljoin>
                  | 'doc_tbl (' expr ',' expr ')'            <m_doc_tbl>
@@ -946,6 +946,8 @@ print_expression (PFmil_t * n)
         case m_mtoLower:
         /* expression : '[normSpace](' expression ')' */
         case m_mnorm_space:
+        /* expression : 'new_ws ('expresion')' */
+        case m_new_ws:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (")");
@@ -953,8 +955,6 @@ print_expression (PFmil_t * n)
 
         /* expression : 'usec ()' */
         case m_usec:
-        /* expression : 'new_ws ()' */
-        case m_new_ws:
             milprintf ("%s ()", ID[n->kind]);
             break;
 

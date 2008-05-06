@@ -311,7 +311,7 @@
 #define usec() PFmil_usec ()
 
 /** create new (empty) working set */
-#define new_ws() PFmil_new_ws ()
+#define new_ws(a) PFmil_new_ws (a)
 
 /** Free an existing working set */
 #define destroy_ws(ws) PFmil_destroy_ws (ws)
