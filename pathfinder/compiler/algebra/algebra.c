@@ -935,7 +935,8 @@ PFalg_ori_name (PFalg_att_t unq, PFalg_att_t free)
     }
 
     PFoops (OOPS_FATAL,
-            "Mapping unique name to an original name failed.");
+            "Mapping unique name to an original name failed. "
+            "(unique =%s, free=%s)", PFatt_str(unq), PFatt_str(free));
 
     return 0; /* in case a compiler does not understand PFoops */
 }
