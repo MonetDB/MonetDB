@@ -1348,7 +1348,6 @@ PROC ws_new(oid id,
     return bat(void,tpe).seqbase(PRE_BASE); # a constant bat
 }
 
-PROC ws_create() : BAT[void,bat] { return ws_create(0); } # still exists for algebra
 PROC ws_create(int update) : BAT[void,bat]
 {
     # wsid = 1bit(0) | 31bits(unique-id) | 2bits(update) | 30bits(batid)
