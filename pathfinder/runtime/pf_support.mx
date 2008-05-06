@@ -3275,7 +3275,8 @@ bat[void, oid] attr_cont_ins): void
 #  print(command,pre_tgt,pre_cont_tgt,attr_tgt,attr_cont_tgt,replace_strings,rename_qn_uri,rename_qn_prefix,rename_qn_local,pre_ins,pre_cont_ins,attr_ins,attr_cont_ins);
 
   # [void,oid] list of all conts of affected documents
-  var affected_conts := kunion(pre_cont_tgt.tunique(), attr_cont_tgt.tunique()).hmark(0@0);
+  # since either the pre_cont_tgt or the attr_cont_tgt value is nil, we filter out nils
+  var affected_conts := kunion(pre_cont_tgt.tunique(), attr_cont_tgt.tunique()).reverse().select(oid_nil,oid_nil).tmark(0@0);
 
   if (affected_conts.count() = 0) {
     # nothing to do
@@ -3318,11 +3319,11 @@ bat[void, oid] attr_cont_ins): void
   {
     var inserts := command.ord_select(UPDATE_INSERT_FIRST, UPDATE_REPLACENODE); # [i,insertcommand]
     if (inserts.count() > 0) {
-      var inserts_pre_tgt := inserts.mirror().leftfetchjoin(pre_tgt); # [i,PRE]
-      var inserts_elems := inserts_pre_tgt.ord_uselect(oid_nil, oid_nil).hmark(0@0); # [j,i] inserts on elements
-      var inserts_attrs := inserts_pre_tgt.ord_uselect(oid_nil).hmark(0@0); # [k,i] inserts on attributes
+      var inserts_pre_ins := inserts.mirror().leftfetchjoin(pre_ins); # [i,PRE]
+      var inserts_elems := inserts_pre_ins.ord_uselect(oid_nil, oid_nil).hmark(0@0); # [j,i] inserts on elements
+      var inserts_attrs := inserts_pre_ins.ord_uselect(oid_nil).hmark(0@0); # [k,i] inserts on attributes
       if (inserts_attrs.count() > 0) {
-        do_update_insert_attributes(ws, inserts_attrs.leftjoin(attr_tgt), inserts_attrs.leftjoin(attr_cont_tgt), inserts_attrs.leftjoin(attr_ins), inserts_attrs.leftjoin(attr_cont_ins));
+        do_update_insert_attributes(ws, inserts_attrs.leftjoin(pre_tgt), inserts_attrs.leftjoin(pre_cont_tgt), inserts_attrs.leftjoin(attr_ins), inserts_attrs.leftjoin(attr_cont_ins));
       }
       if (inserts_elems.count() > 0) {
         do_update_insert_elements(ws, inserts_elems.leftjoin(inserts), inserts_elems.leftjoin(pre_tgt), inserts_elems.leftjoin(pre_cont_tgt), inserts_elems.leftjoin(pre_ins), inserts_elems.leftjoin(pre_cont_ins));
