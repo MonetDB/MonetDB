@@ -1300,15 +1300,17 @@ already_converted (PFfun_t *fn)
 PFcnode_t *
 PFcore_apply (PFfun_t *fn, const PFcnode_t *e)
 {
-    PFcnode_t *core;
-    PFarray_t *funs;
-    PFfun_t *fun, *fun_prev;
-    unsigned int arity, i;
+    PFcnode_t   *core;
+    PFarray_t   *funs;
+    PFfun_t     *fun;
+    unsigned int arity;
 
     assert (fn && e);
     arity = actual_args (e);
     fun = fn;
     funs = PFenv_lookup (PFfun_env, fun->qname);
+
+    assert (PFarray_last (funs));
 
     /*
      * There's exactly one function defined in XQuery that allows
@@ -1325,18 +1327,14 @@ PFcore_apply (PFfun_t *fn, const PFcnode_t *e)
     }
 
     /* get the function where the number of arguments fit */
-    for (i = 0; i < PFarray_last (funs); i++) {
-        fun_prev = fun;
-        fun = *((PFfun_t **) PFarray_at (funs, i));
-        /* be sure that the least specific one (last)
-           with the same arity is chosen */
-        if (arity < fun->arity)
-        {
-            fun = fun_prev;
+    for (unsigned int i = PFarray_last (funs); i > 0; i--) {
+        fun = *((PFfun_t **) PFarray_at (funs, i-1));
+        /* Ensure for the built-in functions that the least specific
+           one (last/highest index) with the same arity is chosen. */
+        if (arity == fun->arity)
             break;
-        }
     }
-                                                                                                                                                             
+
     /* see if number of actual argument matches function declaration */
     if (arity != fun->arity)
         PFoops (OOPS_APPLYERROR,
