@@ -309,9 +309,9 @@ InsertAVLIndex_@1(int m, oid indexPosition, @1 value,  struct Node * current, BA
         		LchildValue = Tloc(b, Lchild);
 
                     	if ( @2_LT(&value,LchildValue,@3@1) || @2_EQ(&value,LchildValue,@3@1) )
-                        	current = SingleRotateLeft(m, current);
+                        	current = SingleRotateLeft(&(CrackerIndex[m].Tree), current);
                     	else
-                        	current = DoubleRotateLeft(m, current);
+                        	current = DoubleRotateLeft(&(CrackerIndex[m].Tree), current);
 		}
         } else {
 		if ( (temp = InsertAVLIndex_@1(m, indexPosition, value, current->right, b, base)) == NULL )
@@ -327,9 +327,9 @@ InsertAVLIndex_@1(int m, oid indexPosition, @1 value,  struct Node * current, BA
                         RchildValue = Tloc(b, Rchild);
 
                         if ( @2_GT(&value,RchildValue,@3@1) )
-                        	current = SingleRotateRight(m, current);
+                        	current = SingleRotateRight(&(CrackerIndex[m].Tree), current);
                     	else
-                        	current = DoubleRotateRight(m, current);
+                        	current = DoubleRotateRight(&(CrackerIndex[m].Tree), current);
 		}
         }
 

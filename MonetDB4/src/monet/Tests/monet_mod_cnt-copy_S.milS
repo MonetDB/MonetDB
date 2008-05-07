@@ -1,9 +1,0 @@
-{
-table(monet_mod_nme.reverse().sort().reverse(), monet_mod_cnt);
-table(monet_mod_nme.reverse().sort().reverse(), monet_mod_cnt.copy());
-var x:=view_bbp_name();
-var a:=x.reverse().mirror().[bat]().[count]();
-var b:=x.reverse().mirror().[bat]().[copy]().[count]();
-var c:=a.[-](b);
-kdiff(c,c.uselect(0)).col_name("diff").print();
-}

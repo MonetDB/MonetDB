@@ -206,7 +206,8 @@ The result is a [oid,void] bat. */
 	/* For each BUN of the left bat check if the corresponding BUN in the right bat satisfies the restriction.
 	   If yes the respective oid is added to the result */
 	if (BAThdense(l)) {
-		oid lv = MAX(rmin, *(oid*)Hloc(l, BUNfirst(l)));
+		/*oid lv = MAX(rmin, *(oid*)Hloc(l, BUNfirst(l)));*/
+		oid lv = MAX(rmin, l->H->seq);
 		oid llast = MIN(rmax, lv + (BATcount(l) - 1));
 		oid l0 = lv;
 		oid *d0 = dt;
