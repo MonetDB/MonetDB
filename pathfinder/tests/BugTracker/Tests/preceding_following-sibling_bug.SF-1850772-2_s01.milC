@@ -54,7 +54,7 @@ var trace_type;
 var trace_rel;
 # Begin rule: "Query: serialize(FragList, Rel)"
 a0002 := CATCH ({
-    ws := ws_create ();
+    ws := ws_create(0);
     # Begin rule: "Rel: rec_fix(Rec, Rel)"
     # Begin rule (reduce1): "Rec: rec_param(rec_arg(Rel, Rel), Rec)"
     # Begin rule: "Rel: lit_tbl"
