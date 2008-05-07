@@ -674,7 +674,6 @@ procs();
 [ "ws_collection(BAT[void,BAT], BAT[oid,str], BAT[void,oid]) : BAT[oid,oid]"										  ]
 [ "ws_collection_root(BAT[void,BAT], BAT[void,str]) : BAT[oid,oid]"											  ]
 [ "ws_collections(BAT[void,BAT], bit) : BAT[void,oid]"																			  ]
-[ "ws_create() : BAT[void,BAT]"															  ]
 [ "ws_create(int) : BAT[void,BAT]"														  ]
 [ "ws_destroy(BAT[void,BAT]) : void"															  ]
 [ "ws_destroy(any) : void"																  ]
