@@ -65,6 +65,21 @@ struct referencesNode{
 
 typedef struct referencesNode refNode; 
 
+/* This node is used for the AVL trees built withing the core cracking algorithms 
+   It is  a more lightweight one than struct Node */
+struct NodeSimple{
+        struct NodeSimple  	*left;
+        struct NodeSimple  	*right;
+        int	      		height;
+	bit	      		deleted; 
+	struct NodeSimple  	*previous;
+	bit 	      		isPreviousSmaller;	
+	bit	      		head;
+
+        oid	      		position;		/* The position in the BAT of the current value */
+
+};
+
 struct Node{
 	/* Tree related */
         struct Node  	*left;
@@ -79,6 +94,9 @@ struct Node{
         struct Node  	*previous;
 	bit 	      	isPreviousSmaller;	
 	oid	      	hols; 		  	/* # of hols before this piece */
+        struct Node  	*nextValue;		/* the node holding the next higher value */
+
+	oid		indexPosition;		/*This is stored normally in the index bat. Due to GDK2 it might be more efficient to keep it here */
 
 	/* Joins */	
 	int 	      	slice;		  	/* A view between the position of this index entry and the next one
@@ -101,6 +119,9 @@ struct Node{
 	/* Used on the cracker BAT side in the case of incremental maps */
 	struct referencesNode *references;	/* maps that use this piece */
 	int 		tape;			/* Tape holding previous cracks, (value,inclusive) */
+
+	/* For joins */
+	BAT *partition;				/*Storing partitions we are about to join. Used when joining an intemediate result*/
 };
 
 typedef struct {
@@ -183,8 +204,8 @@ int newCrackerIndex_@1(int bid, int cbid);
 void reCreateMap_@1(int position);
 
 /* InsertIndexElements */
-void addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b);
-struct Node *  addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexLocal, oid index, BAT * b, bit localBound, bit first, int pieceBAT);
+struct Node * addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b);
+struct Node * addCrackerIndexIncrementalSideways_@1(int m, @1 value, bit inclusive, oid indexLocal, oid index, BAT * b, bit localBound, bit first, int pieceBAT);
 @
 
 
@@ -360,13 +381,14 @@ reCreateMap_@1(int position){
 
 
 /* InsertIndexElements */
-void
+struct Node *
 addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b){
 	BUN base;
 	oid *ph;
 	@1  *pt;
-	struct Node *newNode=NULL, *prev=NULL;
+	struct Node *newNode=NULL, *prev=NULL, *res=NULL, *temp=NULL;
 	oid count;
+	int viewId;
 
 	ph = (oid*)Hloc(b, BUNlast(b));
 	pt = (@1 *)Tloc(b, BUNlast(b));
@@ -386,23 +408,56 @@ addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b){
                 CrackerIndex[m].Tree->hols = (oid)0;	
                 CrackerIndex[m].Tree->slice = -1;	
 
-                return;
+                CrackerIndex[m].Tree->nextValue = NULL;	
+		CrackerIndex[m].Tree->indexPosition = index; 
+
+                return CrackerIndex[m].Tree;
         }
 
 	base = BUNfirst(b);
-	InsertTree_@1(m, count, *value, inclusive, index, CrackerIndex[m].Tree, b, base, &newNode);
-        if ( newNode != NULL ) {
+	res = InsertTree_@1(m, count, *value, inclusive, index, CrackerIndex[m].Tree, b, base, &newNode);
+	if (newNode==NULL){
+		printf("\n Inserting into the Tree failed: possibly node existed already \n");
+		return NULL;
+	}
+	prev = findPreviousPieceWalkingBack(newNode);
+	if (prev!= NULL) prev->nextValue = newNode;
+	newNode->nextValue = findNextPiece(newNode);
+	newNode->indexPosition = index;
+        if ( res != NULL ) {
 		/* use a new BUN only if we cannot reuse a previously deleted one */
 		@:insertIndexElement(@1, ph, pt, index, *value)@
 		/* remove hash table since cracking has destroyed tuple positioning */
-		prev = findPreviousPieceWalkingBack(newNode);
 		if (prev != NULL){
 			if (prev->slice != -1){
+				viewId = prev->slice;
 				BBPdecref(prev->slice,TRUE);
 				prev->slice = -1; 
+
+				/* if there are more pieces included in this hash table remove these pieces too
+				   in the future we should more clever reuse by allowing partially correct hash tables to be reused	   
+				*/
+				temp = findPreviousPieceWalkingBack(prev);	
+				while(temp!=NULL){
+					if (temp->slice == viewId)
+						temp->slice = -1;
+					else
+						break;
+					temp = findPreviousPieceWalkingBack(temp);	
+				}
+				
+				temp = newNode->nextValue;
+				while(temp!=NULL){
+					if (temp->slice == viewId)
+						temp->slice = -1;
+					else
+						break;
+					temp = temp->nextValue;				
+				}
 			}
 		}
 	}
+	return newNode;
 }
 
 struct Node *
