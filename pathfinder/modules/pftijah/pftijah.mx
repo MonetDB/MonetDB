@@ -1068,7 +1068,7 @@ PROC _tj_add2collection(str ftiName, BAT[str,bat] collBat, str uri_loc, str uri_
 	} else if ( uri_name = "" ) {
 	  uri_name := uri_loc;
 	}
-        var ws := ws_create();
+        var ws := ws_create(0);
         if (not(bat("doc_name").reverse().exist(uri_name))) {
             var s_start := usec();
 	    if ( isnil(pf_collection) ) {
