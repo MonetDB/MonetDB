@@ -3797,6 +3797,38 @@ PFbui_fn_doc (const PFla_op_t *loop, bool ordering,
         .frag = PFla_set (fragment (doc)) };
 }
 
+/*
+ *  function fn:doc-available (string?) as boolean
+ */
+struct PFla_pair_t
+PFbui_fn_doc_available (const PFla_op_t *loop, bool ordering,
+                        struct PFla_pair_t *args)
+{
+    (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       disjunion (
+                           args[0].rel,
+                           attach (
+                               attach (
+                               difference (
+                                   loop,
+                                   project (
+                                       args[0].rel,
+                                       proj (att_iter, att_iter))),
+                               att_pos, lit_nat (1)),
+                           att_item, lit_str (""))),
+                       alg_fun_fn_doc_available,
+                       att_res,
+                       attlist(att_item)),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_res)),
+        .frag = PFla_empty_set () };
+}
+
 /* --------------------- */
 /* 16. CONTEXT FUNCTIONS */
 /* --------------------- */
@@ -4512,6 +4544,19 @@ PFbui_pf_string_value (const PFla_op_t *loop, bool ordering,
 /* ----------------------------------------------------- */
 
 /**
+ * Build in function fn:put(node, xs:string) as empty-sequence()
+ */
+struct PFla_pair_t 
+PFbui_fn_put (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+{
+    (void) ordering, (void) loop;
+
+    return (struct PFla_pair_t) {
+        .rel = NULL,
+        .frag = args[0].frag };
+}
+
+/**
  *  Build in function pf:documents() as element()*
  */
 struct PFla_pair_t 
@@ -4544,39 +4589,73 @@ struct PFla_pair_t
 PFbui_pf_documents_unsafe (const PFla_op_t *loop, bool ordering,
                            struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) args;
+    (void) ordering; (void) args;
+  
+    PFla_op_t *res = fun_call (loop,
+                               nil(),
+                               ii_schema(aat_pnode),
+                               alg_fun_call_pf_documents_unsafe,
+                               PFqname (PFns_wild, NULL),
+                               NULL,
+                               att_iter,
+                               alg_occ_unknown);
 
     return (struct PFla_pair_t) {
-        .rel = NULL,
-        .frag = NULL };
+        .rel = rank (res,
+                     att_pos,
+                     sortby (att_item)),
+        /* FIXME: if uncomment the next line, a seqmentation fault appears */
+        .frag = PFla_empty_set() }; /* PFla_set (frag_extract (res, 2)) }; */
 }
 
 /**
- *  Build in function pf:documents(string*) as element()*
+ *  Build in function pf:documents(string) as element()*
  */
 struct PFla_pair_t
 PFbui_pf_documents_str (const PFla_op_t *loop, bool ordering,
                         struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) args;
+    (void) ordering;
 
     return (struct PFla_pair_t) {
-        .rel = NULL,
-        .frag = NULL };
+        .rel = rank (fun_call (loop,
+                               fun_param (args[0].rel,
+                                          nil(),
+                                          ipi_schema(aat_str)),
+                               ii_schema(aat_pnode),
+                               alg_fun_call_pf_documents_str,
+                               PFqname (PFns_wild, NULL),
+                               NULL,
+                               att_iter,
+                               alg_occ_unknown),
+                     att_pos,
+                     sortby (att_item)),
+        .frag = PFla_empty_set() };
 }
 
 /**
- *  Build in function pf:documents-unsafe(string*) as element()*
+ *  Build in function pf:documents-unsafe(string) as element()*
  */
 struct PFla_pair_t
 PFbui_pf_documents_str_unsafe (const PFla_op_t *loop, bool ordering,
                                struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) args;
+    (void) ordering;
 
     return (struct PFla_pair_t) {
-        .rel = NULL,
-        .frag = NULL };
+        .rel = rank (fun_call (loop,
+                               fun_param (args[0].rel,
+                                          nil(),
+                                          ipi_schema(aat_str)),
+                               ii_schema(aat_pnode),
+                               alg_fun_call_pf_documents_str_unsafe,
+                               PFqname (PFns_wild, NULL),
+                               NULL,
+                               att_iter,
+                               alg_occ_unknown),
+                     att_pos,
+                     sortby (att_item)),
+        .frag = PFla_empty_set() };
 }
 
 /**
@@ -4603,8 +4682,21 @@ PFbui_pf_collection (const PFla_op_t *loop, bool ordering,
     (void) loop; (void) ordering; (void) args;
 
     return (struct PFla_pair_t) {
-        .rel = NULL,
-        .frag = NULL };
+
+        .rel = rank (fun_call (loop,
+                               fun_param (args[0].rel,
+                                          nil(),
+                                          ipi_schema(aat_str)),
+                               ii_schema(aat_pnode),
+                               alg_fun_call_pf_collection,
+                               PFqname (PFns_wild, NULL),
+                               NULL,
+                               att_iter,
+                               alg_occ_unknown),
+                     att_pos,
+                     sortby (att_item)),
+
+        .frag = PFla_empty_set () };
 }
 
 /**
@@ -4614,11 +4706,23 @@ struct PFla_pair_t
 PFbui_pf_collections (const PFla_op_t *loop, bool ordering,
                       struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) args;
+    (void) ordering; (void) args;
+  
+    PFla_op_t *res = fun_call (loop,
+                               nil(),
+                               ii_schema(aat_pnode),
+                               alg_fun_call_pf_collections,
+                               PFqname (PFns_wild, NULL),
+                               NULL,
+                               att_iter,
+                               alg_occ_unknown);
 
     return (struct PFla_pair_t) {
-        .rel = NULL,
-        .frag = NULL };
+        .rel = rank (res,
+                     att_pos,
+                     sortby (att_item)),
+        .frag = PFla_empty_set() };
+
 }
 
 /**
@@ -4628,11 +4732,23 @@ struct PFla_pair_t
 PFbui_pf_collections_unsafe (const PFla_op_t *loop, bool ordering,
                              struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) args;
+    (void) ordering; (void) args;
+  
+    PFla_op_t *res = fun_call (loop,
+                               nil(),
+                               ii_schema(aat_pnode),
+                               alg_fun_call_pf_collections_unsafe,
+                               PFqname (PFns_wild, NULL),
+                               NULL,
+                               att_iter,
+                               alg_occ_unknown);
 
     return (struct PFla_pair_t) {
-        .rel = NULL,
-        .frag = NULL };
+        .rel = rank (res,
+                     att_pos,
+                     sortby (att_item)),
+        .frag = PFla_empty_set() };
+
 }
 
 /**

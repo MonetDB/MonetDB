@@ -49,6 +49,8 @@
 
 #include "pathfinder.h"
 
+#define YY_NO_INPUT
+
 /* atoi, atof, strtoul */
 #include <stdlib.h>
 #include <assert.h>

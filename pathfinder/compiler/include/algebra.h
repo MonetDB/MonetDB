@@ -309,6 +309,7 @@ enum PFalg_fun_call_t {
     , alg_fun_call_pf_docname              /**< pf:docname                 */
     , alg_fun_call_pf_collections          /**< pf:collections             */
     , alg_fun_call_pf_collections_unsafe   /**< pf:collections_unsafe      */
+    , alg_fun_call_pf_collection           /**< pf:collection */
     , alg_fun_call_xrpc                    /**< XRPC function call         */
     , alg_fun_call_xrpc_helpers            /**< func call for XRPC helpers */
     , alg_fun_call_tijah                   /**< Tijah function call        */
@@ -349,6 +350,7 @@ enum PFalg_fun_t {
     , alg_fun_fn_number           /**< fn:number */
     , alg_fun_fn_number_lax       /**< fn:number (ignoring NaN) */
     , alg_fun_fn_qname            /**< fn:QName */
+    , alg_fun_fn_doc_available    /**< fn:doc-available */
     , alg_fun_pf_fragment         /**< #pf:fragment */
     , alg_fun_pf_supernode        /**< #pf:supernode */
     , alg_fun_pf_add_doc_str      /**< pf:add-doc */

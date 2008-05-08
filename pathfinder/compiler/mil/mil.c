@@ -736,6 +736,15 @@ PFmil_leftjoin (const PFmil_t *a, const PFmil_t *b)
  * Monet join operator
  */
 PFmil_t *
+PFmil_outerjoin (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_outerjoin, a, b);
+}
+
+/**
+ * Monet join operator
+ */
+PFmil_t *
 PFmil_leftfetchjoin (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_leftfetchjoin, a, b);
@@ -1472,9 +1481,9 @@ PFmil_error (const PFmil_t *a)
  * Create a new working set
  */
 PFmil_t *
-PFmil_new_ws (void)
+PFmil_new_ws (const PFmil_t *type)
 {
-    return leaf (m_new_ws);
+    return wire1 (m_new_ws, type);
 }
 
 /**
@@ -1752,12 +1761,27 @@ PFmil_ws_collections (const PFmil_t *a, const PFmil_t *b)
     return wire2 (m_ws_collections, a, b);
 }
 
+/** 
+ * function ws_docavailable(a, b)
+ */
+PFmil_t *
+PFmil_ws_docavailable (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_ws_docavailable, a, b);
+}
+
 #ifdef HAVE_PFTIJAH
 
 PFmil_t *
 PFmil_tj_tokenize (const PFmil_t *a)
 {
     return wire1 (m_tj_tokenize, a);
+}
+
+PFmil_t *
+PFmil_tj_ft_index_info (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
+{
+    return wire3 (m_tj_ft_index_info, a, b, c);
 }
 
 /** pftijah algebra argument  constructor */

@@ -943,7 +943,7 @@ to the master bats of a collection. This is required when:
 
 - while applying the updates of a committed query to the master bat.
   Note that in a commit, first all locks of all documents must be acquired
-  (in ascending order - to prevent deadlock), then all changes commited. 
+  (in ascending order - to prevent deadlock), then all changes committed. 
 
 There are some situations where access to the master BATs is allowed
 without acquiring any of these collection locks. That for pages 
@@ -992,7 +992,7 @@ delete many documents and shred many new ones, but should commit
 atomically. If some action fails, everything is rolled back.
 The "doc_undo" meta bat is used for determining what has to be rolled back.
 
-After a succesful document management query, empty document collections 
+After a successful document management query, empty document collections 
 are pruned. That is, they are removed from the meta-tables, and 
 their data tables physically removed.  This may not be possible if there
 are concurrent users of documents in the collections (these 
@@ -1015,7 +1015,7 @@ a shred-lock. This is marked by storing the *negated* ws-id.
 
 ws-ID: a transaction (query) is characterized by its ws-id. The 
 ws-id is a unique OID, and is kept as the name of the working set 
-bat[void,bat]. ws-IDs are globally aned temporally unique, i.e. 
+bat[void,bat]. ws-IDs are globally and temporally unique, i.e. 
 we can talk about a ws-ID even after the transaction has finished.
 
 The collection pins record which transactions (wsids) are using 
@@ -1044,7 +1044,7 @@ never cause any conflicts).
  in size, caused by a transaction, rather than absolute values.)
 
 A related issue is isolation. At commit time, changes from
-the update list (that were succesfully logged in the WAL) are
+the update list (that were successfully logged in the WAL) are
 applied to the master BATs. Concurrent queries should be
 isolated from these changes in the masters. For this purpose, 
 we touch the affected pages in their copy-on-write memory maps
@@ -1091,7 +1091,7 @@ The checkpoint locking structure consists of:
 @+ Query types
 
 Besides read-only queries, there are two other types: updating
-queries (that rely on a WAL commit) and documnent management
+queries (that rely on a WAL commit) and document management
 queries that shred/delete documents (and rely on a checkpoint).
 
 Because of their reliance on different commit mechanism, updating
@@ -1101,7 +1101,7 @@ able to provide an atomic commit.
 @- Updating Queries
 
 An update query goes through the following phases:
-(0) ws_create(2), indicating an updating query. If the paraneter value 
+(0) ws_create(2), indicating an updating query. If the parameter value 
     is 3, it is a rerun of an aborted transaction (in serial mode). 
 (1) query execution. this produces an update tape.
 (2) ordering and playing the update tape for each kind of update
@@ -1113,14 +1113,14 @@ An update query goes through the following phases:
 (3) taking the long coll_lock for all affected containers (in a fixed order)
     _ws_precommit() then performs conflict detection:
     this will trigger a MIL ERROR, which will result in an abort.
-(4) All updates are logged in the WAL and a sommit record is written. 
+(4) All updates are logged in the WAL and a commit record is written. 
     This step is protected by a separate global WAL-lock.
     Reaching this point determines transaction commit/abort.
     Note that computing the deltas to the rid_size column is special,
-    because for accted ancestors, we keep not the new value, but the difference. 
+    because for affected ancestors, we keep not the new value, but the difference. 
     So, the final sizes have to be computed when logging into the WAL
     by we reading the current value in the master, and adding the difference kept 
-    in the delta-bat, and loggiong those deltas.  Thanks to this, we can keep 
+    in the delta-bat, and logging those deltas.  Thanks to this, we can keep 
     the affected ancestors out of the modified-page administration (otherwise, 
     the page containing the root node would always be modified, inhibiting any concurrency).
 (5) Upgrade the long-locks to a both lock (i.e. taking the short lock also)
@@ -1329,7 +1329,7 @@ When a working-set is destroyed, we take care to release all
 collection locks and pins. These may be open as the query may have terminated
 early with an error (these are caught and ws_destroy() is executed always).
 
-ws-IDs are persistent refererences to working sets. As a working set is
+ws-IDs are persistent references to working sets. As a working set is
 a BAT that is freed and recycled after commit, is is not persistent.
 The combination of a *unique* ID (int) with a working-set ID (bat) is
 fit into a lng and is used as the ws-ID.

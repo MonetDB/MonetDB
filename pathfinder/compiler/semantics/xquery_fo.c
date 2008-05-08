@@ -1668,6 +1668,12 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
             .ret_ty = PFty_opt (PFty_doc (PFty_xs_anyNode ())) } },
         .alg = PFbui_fn_doc }
+    , /* fn:doc-available (string?) as boolean */
+      { .ns = PFns_fn, .loc = "doc-available",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()) },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = PFbui_fn_doc_available }
     , /* fn:collection (string) as node* */
       { .ns = PFns_fn, .loc = "collection",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -1853,7 +1859,8 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "put",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_anyNode (), PFty_xs_string () },
-            .ret_ty = PFty_star( PFty_xs_anyNode ()) } } }
+            .ret_ty = PFty_none () } } ,
+        .alg = PFbui_fn_put }
     , /* pf:documents () as element()* */
       { .ns = PFns_lib, .loc = "documents",
         .arity = 0, .sig_count = 1, .sigs = { {
@@ -1864,13 +1871,13 @@ PFfun_xquery_fo (void)
         .arity = 0, .sig_count = 1, .sigs = { {
             .ret_ty = PFty_star( PFty_xs_anyElement ()) } },
         .alg = PFbui_pf_documents_unsafe }
-    , /* pf:documents (string*) as element()* */
+    , /* pf:documents (string) as element()* */
       { .ns = PFns_lib, .loc = "documents",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string () },
             .ret_ty = PFty_star( PFty_xs_anyElement ()) } },
         .alg = PFbui_pf_documents_str }
-    , /* pf:documents-unsafe (string*) as element()* */
+    , /* pf:documents-unsafe (string) as element()* */
       { .ns = PFns_lib, .loc = "documents-unsafe",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_string () },

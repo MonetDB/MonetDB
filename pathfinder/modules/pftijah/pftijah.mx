@@ -33,7 +33,7 @@
 .COMMAND tj_normalizeTerm(str, str) : str = CMDtj_normalizeTerm;
  "INCOMPLETE"
 
-.COMMAND _tj_throw2collection(BAT[str,bat],BAT[oid,bat],str,str) : void = CMDtj_throw2collection;
+.COMMAND _tj_throw2collection(BAT[str,bat],BAT[oid,bat],str) : void = CMDtj_throw2collection;
  "INCOMPLETE"
 
 .COMMAND _tj_throw2collection_index(BAT[str,bat],str) : void = CMDtj_throw2collection_index;
@@ -625,6 +625,8 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
         var stemmer        := "nostemming";
         var tokenizer      := "flex";
         var tagfilter      := "";
+	var whitelist      := "";
+	var blacklist      := "";
         var fragsize       := "0";
         var delay_finalize := "0";
   
@@ -638,8 +640,10 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
               bat("tj_" + ftiName + "_param").insert($h,$t);
 	  } else if ( $h = "fragmentSize" ) {
 	      fragsize := $t;
-	  } else if ( $h = "tagFilter" ) {
-              tagfilter := $t;
+	  } else if ( $h = "whitelist" ) {
+              whitelist := $t;
+	  } else if ( $h = "blacklist" ) {
+              blacklist := $t;
 	  } else if ( $h = "ft-index" ) {
 	      # ignore this one here
 	  } else if ( $h = "delay-finalize" ) {
@@ -654,17 +658,19 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
         #
         parambat.insert("_version","1.01");
         parambat.insert("name",ftiName);
-        parambat.insert("height","0");
         parambat.insert("tokenizer",tokenizer);
         parambat.insert("stemmer",stemmer);
         parambat.insert("fragmentSize",fragsize);
-        parambat.insert("tagFilter",tagfilter);
         parambat.insert("preExpansion","4");
         parambat.insert("lastStopWord","0");
         parambat.insert("status","building");
         parambat.insert("_last_tijahPre","1");
         parambat.insert("_last_finalizedPre","0");
         parambat.insert("delay_finalize",delay_finalize);
+	if( not(whitelist = "") )
+            parambat.insert("whitelist",whitelist);
+	if( not(blacklist = "") )
+            parambat.insert("blacklist",blacklist);
       }
       if ( rebuild  ) {
         # reconstruct the original v_pfc
@@ -1051,8 +1057,6 @@ PROC _tj_add2collection(str ftiName, BAT[str,bat] collBat, str uri_loc, str uri_
     var t_start := usec();
     if ( verbose ) printf("#TJ:_tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",ftiName,uri_loc,uri_name);
 
-    var selTagList := _tj_get_parameter(collBat, "tagFilter");
-           
     var i_start;
     if ( store ) {
 	var pf_collection := _tj_get_parameter(collBat,"pf_collection");
@@ -1082,7 +1086,7 @@ PROC _tj_add2collection(str ftiName, BAT[str,bat] collBat, str uri_loc, str uri_
         ws_opendoc(ws, bat(void,str,1).append(uri_name));
 	i_start := usec();
         if ( verbose ) printf("#TJ:_tj_throw2collection(cb(%s),ws,\"%s\") call next.\n",ftiName,uri_name);
-        _tj_throw2collection(collBat,ws,uri_name,selTagList);
+        _tj_throw2collection(collBat,ws,uri_name);
         ws_destroy(ws);
     } else {
 	i_start := usec();
@@ -1145,7 +1149,7 @@ PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat, bit fforce) : vo
     _buildIRindex(ftiName, collBat);
     #
     _tj_set_parameter(collBat, "status", "finalized");
-    var lst_fpre := parambat.find("_last_tijahPre");
+    var lst_fpre := str(lng(parambat.find("_last_tijahPre")) - 1);
     _tj_set_parameter(collBat, "_last_finalizedPre", lst_fpre);
     #
     if ( false ) {
@@ -1467,6 +1471,32 @@ PROC ALG_tj_pfop(
 	res.append(pos);
 
 	return res;
+}
+
+PROC ALG_tj_ft_index_info(
+	BAT[oid,bat]  par_ws,
+	BAT[void,any] par_loop,
+	BAT[oid,bat]  pfop_names
+	) : BAT[void,bat] :=
+{
+        var ret;
+
+	if ( pfop_names.count() > 0 ) {
+	    ret := ws_ft_index_info(ws, pfop_names.fetch(1@0),false);
+
+	} else {
+	    ret := reverse(par_loop).cross(ws_ft_index_info(ws,false));
+	}
+	var iter := ret.hmark(0@0);
+	var item := ret.tmark(0@0);
+	var ipik := item;
+	var frag := WS;
+	frag     := frag.materialize(ipik);
+	var pos  := tmark_grp_unique(iter,ipik);
+
+        var res := ALG_tj_pfop(iter,item,frag,pos);
+        if ( verbose ) printf("# ALG_tj_ft_index_info: FINISH.\n");
+        return res;
 }
 
 PROC ALG_tj_query_nodes(
@@ -1976,7 +2006,7 @@ PROC anc_desc( bat[oid,any] anc, bat[oid,any] desc, bat[oid,str] qenv ) : bat[oi
     } else {
        d_pre := bat("tj_" + cName + "_Tags").semijoin(desc).tsort();
     }
-   
+  
     var nested := false;
     if (qenv.find(QENV_RECURSIVE_TAGS) = "1") {nested := true;}
     var a_d;
@@ -3094,7 +3124,7 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void :=
 	
 	var pre_tid := bat("tj_" + ftiName + "_tid" + str(frag_offset));
 	var pre_size := bat("tj_" + ftiName + "_size" + str(frag_offset));
-	var tids := pre_tid.slice(lng(offset) - lng(pre_tid.seqbase()), lng(pre_tid.count() - 1));
+        var tids := pre_tid.slice(lng(offset) - lng(pre_tid.seqbase()), lng(pre_tid.count() - 1));
 	var sizes := pre_size.slice(lng(offset) - lng(pre_size.seqbase()), lng(pre_size.count() - 1));
 	tids.access(BAT_APPEND);
 	sizes.access(BAT_APPEND);

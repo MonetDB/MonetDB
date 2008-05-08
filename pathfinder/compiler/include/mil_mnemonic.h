@@ -149,6 +149,9 @@
 /** leftjoin() operator */
 #define leftjoin(a,b) PFmil_leftjoin((a), (b))
 
+/** outerjoin() operator */
+#define outerjoin(a,b) PFmil_outerjoin((a), (b))
+
 /** leftfetchjoin() operator */
 #define leftfetchjoin(a,b) PFmil_leftfetchjoin((a), (b))
 
@@ -312,7 +315,7 @@
 #define usec() PFmil_usec ()
 
 /** create new (empty) working set */
-#define new_ws() PFmil_new_ws ()
+#define new_ws(a) PFmil_new_ws (a)
 
 /** Free an existing working set */
 #define destroy_ws(ws) PFmil_destroy_ws (ws)
@@ -417,9 +420,10 @@
 /** mil document functions */
 #define ws_collection_root(a,b) PFmil_ws_collection_root ((a), (b))
 #define ws_documents(a,b) PFmil_ws_documents ((a), (b))
-#define ws_documents_str(a,b,c) PFmil_ws_documents ((a), (b), (c))
+#define ws_documents_str(a,b,c) PFmil_ws_documents_str ((a), (b), (c))
 #define ws_docname(a,b,c,d) PFmil_ws_docname ((a), (b), (c), (d))
 #define ws_collections(a,b) PFmil_ws_collections ((a), (b))
+#define ws_docavailable(a,b) PFmil_ws_docavailable ((a), (b))
 
 #ifdef HAVE_PFTIJAH
 
@@ -443,6 +447,8 @@
 #define tj_add_fti_tape(a,b,c,d,e,f) PFmil_tj_add_fti_tape ((a), (b), (c), (d), (e), (f))
 
 #define tj_tokenize(a) PFmil_tj_tokenize ((a))
+
+#define tj_ft_index_info(a,b,c) PFmil_tj_ft_index_info ((a),(b),(c))
 
 #endif
 

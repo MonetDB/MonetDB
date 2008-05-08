@@ -440,6 +440,14 @@ infer_ocol (PFla_op_t *n)
                     res_type = aat_qname;
                     break;
 
+                case alg_fun_fn_doc_available:
+                    assert (n->sem.fun_1to1.refs.count == 1);
+                    /* make sure attributes is of type string */
+                    assert (ocol_at (L(n), ix[0]).type == aat_str);
+
+                    res_type = aat_bln;
+                    break;
+
                 case alg_fun_pf_fragment:
                     assert (n->sem.fun_1to1.refs.count == 1);
                     /* make sure both attributes are of type string */

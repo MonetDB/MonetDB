@@ -2475,6 +2475,7 @@ reduce (PFpa_op_t * p, int goalnt)
         case 1: /* fold( */
         {
             PFalg_simple_type_t ty;
+            PFmil_create_ws_t create;
             mvar_t *err, *time;
             PFalg_att_t pa_item = p->sem.serialize.item;
             PFmil_t *oldmilprog, *bodymilprog;
@@ -2485,11 +2486,22 @@ reduce (PFpa_op_t * p, int goalnt)
             /* create a new empty milprog */
             milprog = nop ();
 
+            /* decide which type of new_ws should invoke */
+            if (aat_update & type_of (L(p), pa_item))
+                create = CREATE_UPDATE_WS;
+            /* FIXME: there is a second case when it is a retry of update
+             * we dont deal with this case right now because there is no loop
+             */   
+            else if (aat_docmgmt & type_of (L(p), pa_item))
+                create = CREATE_DOCMGM_WS;
+            else
+                create = CREATE_READ_ONLY_WS;
+
             execute (
                 comment ("variable controlling the output format"),
                 assgn (var (PF_MIL_VAR_GENTYPE), lit_str ("xml")),
                 comment ("volatile variable environment"),
-                assgn (var (PF_MIL_VAR_WS), new_ws ()));
+                assgn (var (PF_MIL_VAR_WS), new_ws (lit_int (create))));
             reduce (kids[0], nts[0]);
 
             /* add timing information */
@@ -2522,8 +2534,9 @@ reduce (PFpa_op_t * p, int goalnt)
                        *attr_tgt               = new_var (1),
                        *attr_cont_tgt          = new_var (1),
                        *replace_strings        = new_var (1),
-                       *replace_qn_uristrings  = new_var (1),
-                       *replace_qn_loc_strings = new_var (1),
+                       *replace_qn_uri         = new_var (1),
+                       *replace_qn_prefix      = new_var (1),
+                       *replace_qn_locale      = new_var (1),
                        *pre_ins                = new_var (1),
                        *pre_cont_ins           = new_var (1),
                        *attr_ins               = new_var (1),
@@ -2568,13 +2581,17 @@ reduce (PFpa_op_t * p, int goalnt)
                                                     aat_attr1))),
                                        lit_bit (true)))),
                         assgn (var (pre_tgt->name),
-                               leftjoin (
-                                   var (v->name),
-                                   VAR (L(p)->env, pa_item, aat_pre1))),
+                               outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   leftjoin (
+                                       var (v->name),
+                                       VAR (L(p)->env, pa_item, aat_pre1)))),
                         assgn (var (pre_cont_tgt->name),
-                               leftjoin (
-                                   var (v->name),
-                                   VAR (L(p)->env, pa_item, aat_frag1))));
+                                outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   leftjoin (
+                                       var (v->name),
+                                       VAR (L(p)->env, pa_item, aat_frag1)))));
                     unpin (v, 1);
                 }
                 else {
@@ -2608,11 +2625,15 @@ reduce (PFpa_op_t * p, int goalnt)
                                    cast (type (mty_oid), nil ()),
                                    cast (type (mty_oid), nil ()))),
                         assgn (var (attr_tgt->name),
-                               var (v->name)),
+                               outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   var (v->name))),
                         assgn (var (attr_cont_tgt->name),
-                               leftjoin (
-                                   mirror (var (v->name)),
-                                   VAR (L(p)->env, pa_item, aat_frag1))));
+                               outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   leftjoin (
+                                       mirror (var (v->name)),
+                                       VAR (L(p)->env, pa_item, aat_frag1)))));
                     unpin (v, 1);
                 }
                 else {
@@ -2639,24 +2660,87 @@ reduce (PFpa_op_t * p, int goalnt)
                                         cast (type (mty_str), nil()))));
 
                 /* consider qnames */ 
-                if (ty & aat_qname)
+                if (ty & aat_qname) {
+
+                    mvar_t *qn_id_no_nil   = new_var(1);
+                    mvar_t *qn_cont_no_nil = new_var(1);
+                    mvar_t *map            = new_var(1);
+
                     execute (
-                        assgn (var (replace_qn_uristrings->name),
-                            mposjoin (VAR (L(p)->env, pa_item, aat_qname_id),
-                                      VAR (L(p)->env, pa_item, aat_qname_cont),
+                        /* a range select(a,nil,nil) will return all BUNS
+                         * that dont have nil on the tail                */
+                        assgn (var (qn_id_no_nil->name),
+                               select2 (VAR (L(p)->env,
+                                             pa_item,
+                                             aat_qname_id),
+                                        cast (type (mty_oid), nil()),
+                                        cast (type (mty_oid), nil()))),
+                        assgn (var (qn_cont_no_nil->name),
+                               select2 (VAR (L(p)->env,
+                                             pa_item,
+                                             aat_qname_cont),
+                                        cast (type (mty_oid), nil()),
+                                        cast (type (mty_oid), nil()))),
+                        /* keep a map of the head oids [oid-h,void]*/
+                        assgn (var (map->name),
+                               mark (var (qn_id_no_nil->name),
+                                     lit_oid(0))),
+                        /* make the head dense for the mposjoin [void,oid-t]*/
+                        assgn (var (qn_id_no_nil->name),
+                               tmark (var (qn_id_no_nil->name),
+                                      lit_oid(0))),
+                        assgn (var (qn_cont_no_nil->name),
+                               tmark (var (qn_cont_no_nil->name),
+                                      lit_oid(0))),
+                        /* finaly is time for the mposjoin */
+                        assgn (var (replace_qn_uri->name),
+                            mposjoin (var (qn_id_no_nil->name),
+                                      var (qn_cont_no_nil->name),
                                       fetch (var (PF_MIL_VAR_WS),
                                              var (PF_MIL_VAR_QN_URI)))),
-                        assgn (var (replace_qn_loc_strings->name),
-                            mposjoin (VAR (L(p)->env, pa_item, aat_qname_id),
-                                      VAR (L(p)->env, pa_item, aat_qname_cont),
+                        assgn (var (replace_qn_prefix->name),
+                            mposjoin (var (qn_id_no_nil->name),
+                                      var (qn_cont_no_nil->name),
                                       fetch (var (PF_MIL_VAR_WS),
-                                             var (PF_MIL_VAR_QN_LOC)))));
-                else
+                                             var (PF_MIL_VAR_QN_PREFIX)))),
+                        assgn (var (replace_qn_locale->name),
+                            mposjoin (var (qn_id_no_nil->name),
+                                      var (qn_cont_no_nil->name),
+                                      fetch (var (PF_MIL_VAR_WS),
+                                             var (PF_MIL_VAR_QN_LOC)))),
+                        /* now he have to map back and restore the nil tails
+                         * producing a [oid-h,oid-t]. Then join back with the
+                         * upd_kind bat to get the nil values.*/
+                        assgn (var (replace_qn_uri->name),
+                               outerjoin (mirror (var (upd_kind->name)),
+                                          leftjoin (
+                                              var (map->name),
+                                              var (replace_qn_uri->name)))),
+                        assgn (var (replace_qn_prefix->name),
+                               outerjoin (mirror (var (upd_kind->name)),
+                                          leftjoin (
+                                              var (map->name),
+                                              var (replace_qn_prefix->name)))),
+                        assgn (var (replace_qn_locale->name),
+                               outerjoin (mirror (var (upd_kind->name)),
+                                          leftjoin (
+                                              var (map->name),
+                                              var (replace_qn_locale->name))))
+                    ); /* end of execute */
+
+                    unpin (qn_id_no_nil, 1);
+                    unpin (qn_cont_no_nil, 1);
+                    unpin (map, 1);
+
+                } else
                     execute (
-                        assgn (var (replace_qn_uristrings->name),
+                        assgn (var (replace_qn_uri->name),
                                project (var (upd_kind->name),
                                         cast (type (mty_str), nil()))),
-                        assgn (var (replace_qn_loc_strings->name),
+                        assgn (var (replace_qn_prefix->name),
+                               project (var (upd_kind->name),
+                                        cast (type (mty_str), nil()))),
+                        assgn (var (replace_qn_locale->name),
                                project (var (upd_kind->name),
                                         cast (type (mty_str), nil()))));
 
@@ -2691,13 +2775,17 @@ reduce (PFpa_op_t * p, int goalnt)
                                                     aat_attr))),
                                        lit_bit (true)))),
                         assgn (var (pre_ins->name),
-                               leftjoin (
-                                   var (v->name),
-                                   VAR (L(p)->env, pa_item, aat_pre))),
+                               outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   leftjoin (
+                                       var (v->name),
+                                       VAR (L(p)->env, pa_item, aat_pre)))),
                         assgn (var (pre_cont_ins->name),
-                               leftjoin (
-                                   var (v->name),
-                                   VAR (L(p)->env, pa_item, aat_frag))));
+                               outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   leftjoin (
+                                       var (v->name),
+                                       VAR (L(p)->env, pa_item, aat_frag)))));
                     unpin (v, 1);
                 }
                 else {
@@ -2731,11 +2819,15 @@ reduce (PFpa_op_t * p, int goalnt)
                                    cast (type (mty_oid), nil ()),
                                    cast (type (mty_oid), nil ()))),
                         assgn (var (attr_ins->name),
-                               var (v->name)),
+                               outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   var (v->name))),
                         assgn (var (attr_cont_ins->name),
-                               leftjoin (
-                                   mirror (var (v->name)),
-                                   VAR (L(p)->env, pa_item, aat_frag))));
+                               outerjoin (
+                                   mirror (var (upd_kind->name)),
+                                   leftjoin (
+                                       mirror (var (v->name)),
+                                       VAR (L(p)->env, pa_item, aat_frag)))));
                     unpin (v, 1);
                 }
                 else {
@@ -2759,13 +2851,14 @@ reduce (PFpa_op_t * p, int goalnt)
                                         arg (var (attr_tgt->name),
                                             arg (var (attr_cont_tgt->name),
                         arg (var (replace_strings->name),
-                            arg (var (replace_qn_uristrings->name),
-                                arg (var (replace_qn_loc_strings->name),
-                                    arg (var (pre_ins->name),
-                                        arg (var (pre_cont_ins->name),
-                                            arg (var (attr_ins->name),
-                                                 var (attr_cont_ins->name)
-                        ))))))))))))));  /* end of play update tape      */
+                            arg (var (replace_qn_uri->name),
+                                arg (var (replace_qn_prefix->name),
+                                    arg (var (replace_qn_locale->name),
+                                        arg (var (pre_ins->name),
+                                            arg (var (pre_cont_ins->name),
+                                                arg (var (attr_ins->name),
+                                                     var (attr_cont_ins->name)
+                        )))))))))))))));  /* end of play update tape      */
 
                 unpin (upd_kind, 1);
                 unpin (pre_tgt, 1);
@@ -2773,8 +2866,9 @@ reduce (PFpa_op_t * p, int goalnt)
                 unpin (attr_tgt, 1);
                 unpin (attr_cont_tgt, 1);
                 unpin (replace_strings, 1);
-                unpin (replace_qn_uristrings, 1);
-                unpin (replace_qn_loc_strings, 1);
+                unpin (replace_qn_uri, 1);
+                unpin (replace_qn_prefix, 1);
+                unpin (replace_qn_locale, 1);
                 unpin (pre_ins, 1);
                 unpin (pre_cont_ins, 1);
                 unpin (attr_ins, 1);
@@ -3382,7 +3476,8 @@ reduce (PFpa_op_t * p, int goalnt)
             kind = new_var (1);
 
             execute (
-                assgn (var (PF_MIL_VAR_WS), new_ws ()),
+                assgn (var (PF_MIL_VAR_WS), 
+                       new_ws (lit_int(CREATE_READ_ONLY_WS))),
                 assgn (
                     var (intVAL->name),
                     seqbase (new (type (mty_void), type (mty_lng)),
@@ -4996,6 +5091,21 @@ reduce (PFpa_op_t * p, int goalnt)
 
                     res_type = aat_qname_id;
                 }   break; /* fold) */
+                case alg_fun_fn_doc_available: /* fold( */
+                {
+                    PFalg_att_t att;
+
+                    att = p->sem.fun_1to1.refs.atts[0];
+                    res_type = aat_bln;
+
+                    execute (
+                        assgn (var (res->name),
+                               ws_docavailable ( var (PF_MIL_VAR_WS),
+                                                 VAR (L(p)->env,
+                                                      att,
+                                                      aat_str))));
+
+                } break; /* fold) */
                 case alg_fun_pf_fragment: /* fold( */
                 {
                     res_type = aat_frag;
@@ -8344,8 +8454,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                              p->sem.fun_call.iter,
                                              aat_nat);
 
-
-
+                    /* decide if it is safe or unsafe */
                     switch (p->sem.fun_call.kind) {
                         case alg_fun_call_pf_documents:
                             safe = true; break;
@@ -8356,9 +8465,9 @@ reduce (PFpa_op_t * p, int goalnt)
                     }
 
                     execute (assgn (var (nodes->name),
-                                    cross (var (loop->name),
-                                           ws_documents (var (PF_MIL_VAR_WS), 
-                                                         lit_bit(safe)))));
+                                 cross (reverse (var (loop->name)),
+                                        ws_documents (var (PF_MIL_VAR_WS), 
+                                                      lit_bit(safe)))));
 
                     execute (
                              assgn (var (res_item->name),
@@ -8380,10 +8489,146 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 case alg_fun_call_pf_documents_str:
                 case alg_fun_call_pf_documents_str_unsafe:
+                {
+                    bool safe = true;
+                    mvar_t *nodes    = new_var(1);
+                    mvar_t *res_item = new_var (p->refctr);
+                    mvar_t *res_iter = new_var (p->refctr);
+                    mvar_t *res_frag = new_var (p->refctr);
+	            PFalg_att_t iter = p->schema.items[0].name;
+	            PFalg_att_t item = p->schema.items[1].name;
+                    mvar_t *loop = env_mvar (L(p)->env,
+                                             p->sem.fun_call.iter,
+                                             aat_nat);
+                    PFpa_op_t *param_1 = *(PFpa_op_t **)
+                                         PFarray_at (fun_params, 0);
+
+                    /* decide if it is safe or unsafe */
+                    switch (p->sem.fun_call.kind) {
+                        case alg_fun_call_pf_documents_str:
+                            safe = true; break;
+                        case alg_fun_call_pf_documents_str_unsafe:
+                            safe = false; break;
+                        default:
+                            assert(!"should never reach here");
+                    }
+
+                    execute (assgn (var (nodes->name),
+                             leftjoin (reverse (var (loop->name)),
+                                    ws_documents_str (
+                                         var (PF_MIL_VAR_WS), 
+                                         VAR (param_1->env,
+                                              att_item,
+                                              aat_str),
+                                         lit_bit(safe)))));
+
+                    execute (
+                             assgn (var (res_item->name),
+                                    tmark (var(nodes->name),
+                                           lit_oid(0))),
+                             assgn (var (res_iter->name),
+                                    hmark (var(nodes->name),
+                                           lit_oid(0))),
+                             assgn (var (res_frag->name),
+                                    project (var (res_item->name),
+                                             var (PF_MIL_VAR_WS_CONT))));
+
+                    env_add (p->env, item, aat_pre, res_item);
+                    env_add (p->env, item, aat_frag, res_frag);
+                    env_add (p->env, iter, aat_nat, res_iter);
+
+                    unpin(nodes, 1);
+                }   break;
+
+                case alg_fun_call_pf_collection:
+                {
+                    mvar_t *nodes    = new_var(1);
+                    mvar_t *res_item = new_var (p->refctr);
+                    mvar_t *res_iter = new_var (p->refctr);
+                    mvar_t *res_frag = new_var (p->refctr);
+	            PFalg_att_t iter = p->schema.items[0].name;
+	            PFalg_att_t item = p->schema.items[1].name;
+                    mvar_t *loop = env_mvar (L(p)->env,
+                                             p->sem.fun_call.iter,
+                                             aat_nat);
+
+                    PFpa_op_t *param_1 = *(PFpa_op_t **)
+                                         PFarray_at (fun_params, 0);
+
+                    execute (assgn (var (nodes->name),
+                                    ws_collection_root (
+                                         var (PF_MIL_VAR_WS), 
+                                         VAR (param_1->env,
+                                              att_item,
+                                              aat_str))));
+
+                    execute (
+                             assgn (var (res_item->name),
+                                    tmark (var(nodes->name),
+                                           lit_oid(0))),
+                             assgn (var (res_frag->name),
+                                    hmark (var(nodes->name),
+                                           lit_oid(0))),
+                             assgn (var (res_iter->name),
+                                    tmark (var (loop->name),
+                                           lit_oid(0))));
+
+                    env_add (p->env, item, aat_pre, res_item);
+                    env_add (p->env, item, aat_frag, res_frag);
+                    env_add (p->env, iter, aat_nat, res_iter);
+
+                    unpin(nodes, 1); 
+                }   break;
+
                 case alg_fun_call_pf_docname:
+                {
+                }   break;
+
                 case alg_fun_call_pf_collections:
                 case alg_fun_call_pf_collections_unsafe:
                 {
+                    bool safe = true;
+                    mvar_t *nodes    = new_var(1);
+                    mvar_t *res_item = new_var (p->refctr);
+                    mvar_t *res_iter = new_var (p->refctr);
+                    mvar_t *res_frag = new_var (p->refctr);
+	            PFalg_att_t iter = p->schema.items[0].name;
+	            PFalg_att_t item = p->schema.items[1].name;
+                    mvar_t *loop = env_mvar (L(p)->env,
+                                             p->sem.fun_call.iter,
+                                             aat_nat);
+
+                    /* decide if it is safe or unsafe */
+                    switch (p->sem.fun_call.kind) {
+                        case alg_fun_call_pf_collections:
+                            safe = true; break;
+                        case alg_fun_call_pf_collections_unsafe:
+                            safe = false; break;
+                        default:
+                            assert(!"should never reach here");
+                    }
+
+                    execute (assgn (var (nodes->name),
+                             cross (reverse (var (loop->name)),
+                                    ws_collections (var (PF_MIL_VAR_WS), 
+                                                    lit_bit(safe)))));
+
+                    execute (
+                             assgn (var (res_item->name),
+                                    tmark (var(nodes->name),
+                                           lit_oid(0))),
+                             assgn (var (res_iter->name),
+                                    hmark (var(nodes->name),
+                                           lit_oid(0))),
+                             assgn (var (res_frag->name),
+                                    project (var (res_item->name),
+                                             var (PF_MIL_VAR_WS_CONT))));
+
+                    env_add (p->env, item, aat_pre, res_item);
+                    env_add (p->env, item, aat_frag, res_frag);
+                    env_add (p->env, iter, aat_nat, res_iter);
+
+                    unpin(nodes, 1);
                 }   break;
 
                 /* XRPC function */
@@ -8612,8 +8857,6 @@ reduce (PFpa_op_t * p, int goalnt)
 		    pft_unpack_pfop(p,tjnres,fc_iter_a,fc_item_a,aat_pre,fc_item_a,fc_pos_a);
 
 		    unpin(tjnres,1);
-		} else if (strcmp(fcname,PFT_INFO) == 0 ) {
-		    PFoops (OOPS_FATAL,"milgen.brg: tijah:ft-index-info () temporary not supported.\n");
 		} else if ( (strcmp(fcname,PFT_TOKENIZE) == 0) ||
 			    (strcmp(fcname,PFT_RESSIZE) == 0) ) {
 		    PFpa_op_t* op1 = *(PFpa_op_t **)PFarray_at(fun_params,0);
@@ -8646,6 +8889,32 @@ reduce (PFpa_op_t * p, int goalnt)
 	            mvar_t *p_pos  = env_mvar (op1->env, att_iter, aat_nat);
 		    pin(p_pos,1);
                     env_add (p->env, fc_pos_a, aat_nat, p_pos);
+		} else if (strcmp(fcname,PFT_INFO) == 0 ) {
+		    mvar_t *pfop_names;
+
+		    int fpsz = PFarray_last (fun_params);
+
+		    if ( fpsz == 0 ) {
+		        pfop_names = pft_create_pfop(NULL,aat_str);
+		    } else {
+		        pfop_names = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,0),aat_str);
+		    }
+
+		    mvar_t *tjires = new_var(1);
+		    execute(
+		        assgn(var(tjires->name),
+			    tj_ft_index_info(
+				var (PF_MIL_VAR_WS),
+				var(fc_loop->name),
+				var(pfop_names->name)
+			    )
+			)
+		    );
+		    unpin(pfop_names,1);
+
+		    pft_unpack_pfop(p,tjires,fc_iter_a,fc_item_a,aat_pre,fc_item_a,fc_pos_a);
+
+		    unpin(tjires,1);
 		} else {
 	    	    PFoops (OOPS_FATAL,"milgen.brg: PFTIJAH fun_call() bad function[%s]!!!\n",fcname);
 		}

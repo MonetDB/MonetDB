@@ -180,6 +180,7 @@ enum PFmil_kind_t {
     , m_cross        /**< MIL join operator */
     , m_join         /**< MIL join operator */
     , m_leftjoin     /**< MIL leftjoin operator */
+    , m_outerjoin    /**< MIL outerjoin operator */
     , m_leftfetchjoin/**< MIL leftfetchjoin operation */
     , m_thetajoin    /**< MIL thetajoin operator */
     , m_unq2_tjoin   /**< MIL htordered_unique_thetajoin PROC
@@ -370,12 +371,14 @@ enum PFmil_kind_t {
                                 for documents in a specified collection */
     , m_ws_docname         /**< mil document function for  docname      */
     , m_ws_collections     /**< mil document function for collections   */
+    , m_ws_docavailable    /**< mil document function for doc-available */
 #ifdef HAVE_PFTIJAH
     , m_tj_pfop
     , m_tj_tokenize
     , m_tj_query_handler
     , m_tj_query_score
     , m_tj_query_nodes
+    , m_tj_ft_index_info
     , m_tj_add_fti_tape
     , m_tj_docmgmt_tape
 #endif
@@ -417,6 +420,15 @@ enum PFmil_update_t {
     , UPDATE_REPLACE          = 9
 };
 typedef enum PFmil_update_t PFmil_update_t;
+
+/* enum on type of ws_create */
+enum PFmil_create_ws_t {
+      CREATE_READ_ONLY_WS     = 0
+    , CREATE_DOCMGM_WS        = 1
+    , CREATE_UPDATE_WS        = 2
+    , CREATE_REP_UPDATE_WS    = 3
+};
+typedef enum PFmil_create_ws_t PFmil_create_ws_t;
 
 /** semantic content for MIL tree nodes */
 union PFmil_sem_t {
@@ -557,6 +569,9 @@ PFmil_t * PFmil_join (const PFmil_t *, const PFmil_t *);
 
 /** MIL leftjoin() operator ensures ordering by left operand */
 PFmil_t * PFmil_leftjoin (const PFmil_t *, const PFmil_t *);
+
+/** MIL outerjoin() operator ensures ordering by left operand */
+PFmil_t * PFmil_outerjoin (const PFmil_t *, const PFmil_t *);
 
 /** MIL leftfetchjoin() operator */
 PFmil_t * PFmil_leftfetchjoin (const PFmil_t *, const PFmil_t *);
@@ -812,7 +827,7 @@ PFmil_t * PFmil_mpcre_replace (const PFmil_t *, const PFmil_t *,
                                const PFmil_t *, const PFmil_t *);
 
 PFmil_t * PFmil_usec (void);
-PFmil_t * PFmil_new_ws (void);
+PFmil_t * PFmil_new_ws (const PFmil_t *);
 PFmil_t * PFmil_destroy_ws (const PFmil_t *ws);
 PFmil_t * PFmil_mposjoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_mvaljoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);
@@ -909,6 +924,12 @@ PFmil_t * PFmil_ws_docname (const PFmil_t *, const PFmil_t *,
  */
 PFmil_t * PFmil_ws_collections (const PFmil_t *, const PFmil_t *);
 
+/** 
+ * mil document function:
+ * ws_docavailable(BAT[void,BAT], BAT[void,str]) : BAT[void,bit]
+ */
+PFmil_t * PFmil_ws_docavailable (const PFmil_t *, const PFmil_t *);
+
 #define PFmil_seq(...) \
     PFmil_seq_ (sizeof ((PFmil_t *[]) { __VA_ARGS__} ) / sizeof (PFmil_t *), \
                 (const PFmil_t *[]) { __VA_ARGS__ } )
@@ -929,6 +950,9 @@ PFmil_t * PFmil_tj_docmgmt_tape (const PFmil_t *a, const PFmil_t *b, const PFmil
 PFmil_t * PFmil_tj_add_fti_tape (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f);
 
 PFmil_t * PFmil_tj_tokenize (const PFmil_t *a);
+
+PFmil_t * PFmil_tj_ft_index_info (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c);
+
 #endif
 
 

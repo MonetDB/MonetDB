@@ -43,6 +43,7 @@
                  | expression '.cross (' expression ')'     <m_cross>
                  | expression '.join (' expression ')'      <m_join>
                  | expression '.leftjoin (' expression ')'  <m_leftjoin>
+                 | expression '.outerjoin (' expression ')' <m_outerjoin>
                  | expression '.leftfetchjoin (' expr ')'   <m_leftfetchjoin>
                  | 'thetajoin ('exp','exp','exp','exp')'    <m_thetajoin>
                  | 'htordered_unique_thetajoin ('
@@ -140,7 +141,7 @@
                  | '{sum}(' expression ')'                  <m_gsum>
                  | '{sum}(' expression ',' expression ')'   <m_egsum>
                  | 'usec ()'                                <m_usec>
-                 | 'new_ws ()'                              <m_new_ws>
+                 | 'new_ws ('exp')'                         <m_new_ws>
                  | 'mposjoin (' exp ',' exp ',' exp ')'     <m_mposjoin>
                  | 'mvaljoin (' exp ',' exp ',' exp ')'     <m_mvaljoin>
                  | 'doc_tbl (' expr ',' expr ')'            <m_doc_tbl>
@@ -168,6 +169,7 @@
                  | 'ws_documents('exp',' exp','exp')'      <m_ws_documents_str>
                  | 'ws_docname('exp','exp','exp','exp')'   <m_ws_docname>
                  | 'ws_collections('exp','exp')'           <m_ws_collections>
+                 | 'ws_docavailable('exp','exp')'          <m_ws_docavailable>
 
    args          : args ',' args                            <m_arg>
                  | expression                               <otherwise>
@@ -246,6 +248,7 @@ static char *ID[] = {
     , [m_cross]        = "cross"
     , [m_join]         = "join"
     , [m_leftjoin]     = "leftjoin"
+    , [m_outerjoin]    = "outerjoin"
     , [m_leftfetchjoin]= "leftfetchjoin"
     , [m_thetajoin]    = "thetajoin"
     , [m_unq2_tjoin]   = "htordered_unique_thetajoin"
@@ -336,6 +339,7 @@ static char *ID[] = {
     , [m_ws_documents_str]   = "ws_documents"
     , [m_ws_docname]         = "ws_docname"
     , [m_ws_collections]     = "ws_collections"
+    , [m_ws_docavailable]    = "ws_docavailable"
 
     , [m_merge_adjacent]   = "merge_adjacent_text_nodes"
     , [m_string_join]      = "string_join"
@@ -370,6 +374,7 @@ static char *ID[] = {
     , [m_tj_query_score]   = "ALG_tj_query_score"
     , [m_tj_query_nodes]   = "ALG_tj_query_nodes"
     , [m_tj_tokenize]      = "[tijah_tokenize]"
+    , [m_tj_ft_index_info] = "ALG_tj_ft_index_info"
     , [m_tj_query_handler] = "ALG_tj_query_handler"
     , [m_tj_add_fti_tape]  = "ALG_tj_add_fti_tape"
     , [m_tj_docmgmt_tape ] = "ALG_tj_docmgmt_tape"
@@ -679,6 +684,8 @@ print_expression (PFmil_t * n)
         case m_join:
         /* expression : expression '.leftjoin (' expression ')' */
         case m_leftjoin:
+        /* expression : expression '.outerjoin (' expression ')' */
+        case m_outerjoin:
         /* expression : expression '.leftfetchjoin (' expression ')' */
         case m_leftfetchjoin:
         /* expression : expression '.CTrefine (' expression ')' */
@@ -847,6 +854,8 @@ print_expression (PFmil_t * n)
         case m_ws_documents:
         /* expression : 'ws_collections(' expression ',' expression ')' */
         case m_ws_collections:
+        /* expression : 'ws_docavailable(' expression ',' expression ')' */
+        case m_ws_docavailable:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");
@@ -937,6 +946,8 @@ print_expression (PFmil_t * n)
         case m_mtoLower:
         /* expression : '[normSpace](' expression ')' */
         case m_mnorm_space:
+        /* expression : 'new_ws ('expresion')' */
+        case m_new_ws:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (")");
@@ -944,8 +955,6 @@ print_expression (PFmil_t * n)
 
         /* expression : 'usec ()' */
         case m_usec:
-        /* expression : 'new_ws ()' */
-        case m_new_ws:
             milprintf ("%s ()", ID[n->kind]);
             break;
 
@@ -1136,6 +1145,15 @@ print_expression (PFmil_t * n)
         case m_tj_tokenize:
             milprintf ("%s (", ID[n->kind]);
             print_expression (n->child[0]);
+            milprintf (")");
+	    break;
+        case m_tj_ft_index_info:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
             milprintf (")");
 	    break;
         case m_tj_query_score:

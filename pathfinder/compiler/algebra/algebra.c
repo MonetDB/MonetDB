@@ -935,7 +935,8 @@ PFalg_ori_name (PFalg_att_t unq, PFalg_att_t free)
     }
 
     PFoops (OOPS_FATAL,
-            "Mapping unique name to an original name failed.");
+            "Mapping unique name to an original name failed. "
+            "(unique =%s, free=%s)", PFatt_str(unq), PFatt_str(free));
 
     return 0; /* in case a compiler does not understand PFoops */
 }
@@ -1059,6 +1060,7 @@ PFalg_fun_call_kind_str (PFalg_fun_call_t kind)
         case alg_fun_call_pf_docname:            return "pf:docname";
         case alg_fun_call_pf_collections:        return "pf:collections";
         case alg_fun_call_pf_collections_unsafe: return "pf:collections_unsafe";
+        case alg_fun_call_pf_collection:         return "pf:collection";
         case alg_fun_call_xrpc:                  return "XRPC";
         case alg_fun_call_xrpc_helpers:          return "XRPC helper";
         case alg_fun_call_tijah:                 return "Tijah";
@@ -1105,6 +1107,7 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_number:           return "fn:number";
         case alg_fun_fn_number_lax:       return "fn:number";
         case alg_fun_fn_qname:            return "fn:QName";
+        case alg_fun_fn_doc_available:    return "fn:doc-available";
         case alg_fun_pf_fragment:         return "#pf:fragment";
         case alg_fun_pf_supernode:        return "#pf:supernode";
         case alg_fun_pf_add_doc_str:      return "pf:add-doc";

@@ -89,6 +89,9 @@ PFprop (void)
     ret->req_multi_col_cols = empty_list;
     ret->req_value_cols     = empty_list;
 
+    /* initialize required node value lists */
+    ret->req_node_vals      = NULL;
+    
     /* initialize domain information */
     ret->domains   = NULL;
     ret->subdoms   = NULL;
