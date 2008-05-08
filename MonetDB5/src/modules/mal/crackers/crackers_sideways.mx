@@ -687,7 +687,6 @@ CRKPositionProject_@1_@2(int *res, int *bid, int *pbid,int *PositionPivot, @1 *l
         @2 *pairt, *rest;
 	oid *pivott;
         oid size;
-        oid skip;
 	int m;
 	oid cl1=0,cl2=0,ch1=0,ch2=0;
 	oid j;
@@ -740,7 +739,6 @@ CRKPositionProject_@1_@2(int *res, int *bid, int *pbid,int *PositionPivot, @1 *l
         pairt  = (@2 *)Tloc(slice, BUNfirst(slice));
         pivott = (oid*)Tloc(p, BUNfirst(p));
         rest   = (@2 *)Tloc(r, BUNfirst(r));
-        skip = 0;
 
 	if (p->ttype==TYPE_void){
 		printf("\n void tail in positions \n");
