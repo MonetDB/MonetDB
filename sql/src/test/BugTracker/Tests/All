@@ -119,3 +119,4 @@ between_having_problem.SF-1959391
 between_with_column.SF-1959410
 is_not_null_syntax_error.SF-1959456
 order_by_over_table_from_another_function.SF-1959822
+sql_div.SF-1959357
