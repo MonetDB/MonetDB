@@ -916,39 +916,6 @@ reduce (PFla_op_t *p, int goalnt)
             relabel (p, kids);
             break;
 
-        /* Rel:    rank (Rel) */
-        case 50:
-            /* Replace a rank operator with a single ascending order
-               criterion by a projection that links the output column
-               to the order criterion. */
-            if (PFord_count (p->sem.sort.sortby) == 1 &&
-                PFord_order_dir_at (p->sem.sort.sortby, 0) == DIR_ASC) {
-                PFalg_proj_t *proj_list;
-                unsigned int count = 0;
-
-                /* create projection list */
-                proj_list = PFmalloc (p->schema.count *
-                                      sizeof (*(proj_list)));
-
-                /* adjust column name of the rank operator */
-                proj_list[count++] = PFalg_proj (
-                                         p->sem.sort.res,
-                                         PFord_order_col_at (
-                                             p->sem.sort.sortby,
-                                             0));
-
-                for (unsigned int i = 0; i < p->schema.count; i++)
-                    if (p->schema.items[i].name != p->sem.sort.res)
-                        proj_list[count++] = PFalg_proj (
-                                                 p->schema.items[i].name,
-                                                 p->schema.items[i].name);
-
-                *p = *PFla_project_ (L(p), count, proj_list);
-                SEEN(p) = false;
-                relabel (p, kids);
-            }
-            break;
-
         /* Rel:    rowid (rowid (Rel)) */
         case 52:
         {
