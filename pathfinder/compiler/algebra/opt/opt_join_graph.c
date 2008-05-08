@@ -72,44 +72,10 @@ opt_join_graph (PFla_op_t *p)
 
     /* action code */
     switch (p->kind) {
-        /* Remove unnecessary distinct operators and narrow the schema
-           of a distinct operator if some columns are not required
-           while the remaining columns still provide a composite key. */
+        /* Remove unnecessary distinct operators */
         case la_distinct:
             if (PFprop_ckey (L(p)->prop, p->schema))
                 *p = *PFla_dummy (L(p));
-            else {
-                PFalg_schema_t schema;
-                schema.count = 0;
-                schema.items = PFmalloc (p->schema.count *
-                                         sizeof (PFalg_schema_t));
-
-                for (unsigned int i = 0; i < p->schema.count; i++)
-                    if (PFprop_icol (p->prop, p->schema.items[i].name))
-                        schema.items[schema.count++].name
-                            = p->schema.items[i].name;
-
-                /* with compound keys we can now test whether we change
-                   the semantics if we introduce a projection that narrows
-                   the schema. */
-                if (PFprop_ckey (p->prop, schema)) {
-                    PFalg_proj_t *proj_list;
-
-                    /* create projection list */
-                    proj_list = PFmalloc (schema.count *
-                                          sizeof (*(proj_list)));
-
-                    for (unsigned int i = 0; i < schema.count; i++)
-                        proj_list[i] = PFalg_proj (schema.items[i].name,
-                                                   schema.items[i].name);
-
-                    *p = *PFla_distinct (
-                              PFla_project_ (
-                                  L(p),
-                                  schema.count,
-                                  proj_list));
-                }
-            }
             break;
 
         /* Use a rank operator with multiple sort criteria as the place
@@ -404,7 +370,7 @@ opt_set (PFla_op_t *p)
  *       while one still has to remain).
  */
 PFla_op_t *
-PFalgopt_join_graph (PFla_op_t *root, PFguide_tree_t *guide_tree)
+PFalgopt_join_graph (PFla_op_t *root, PFguide_list_t *guide_list)
 {
     /* PHASE 1: Seed a distinct operator on top of the query plan
                 if possible to remove all other distinct operators. */
@@ -471,7 +437,7 @@ PFalgopt_join_graph (PFla_op_t *root, PFguide_tree_t *guide_tree)
     PFprop_infer_composite_key (root);
     PFprop_infer_icol (root);
     PFprop_infer_set (root);
-    PFprop_infer_guide (root, guide_tree);
+    PFprop_infer_guide (root, guide_list);
     /* as a prerequisite infer the guides */
     PFprop_infer_key_with_guide (root);
     /* level is already inferred by key */

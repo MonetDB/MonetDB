@@ -1638,6 +1638,18 @@ specific (PFfun_t *fn, PFcnode_t *args)
         return *PFty_simplify ((PFty_is2ns (PFty_defn (TY(L(args))))));
     }
 
+    /* If #pf:merge-adjacent-text-nodes does not consume textnodes
+     * the output has the same type as the input.
+     */
+    if ((! PFqname_eq (fn->qname,
+                       PFqname (PFns_pf, "merge-adjacent-text-nodes"))) &&
+        !PFty_subtype (PFty_text(), PFty_prime (PFty_defn (TY(L(args)))))) {
+        /* #pf:merge-adjacent-text-nodes gets exactly one argument */
+        assert (args->kind == c_arg && R(args)->kind == c_nil);
+
+        return TY(L(args));
+    }
+
 
     if (fn->sig_count > 1) {
 	 /* special handing for functions with multiple signatures,

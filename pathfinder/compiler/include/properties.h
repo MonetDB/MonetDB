@@ -178,7 +178,7 @@ void PFprop_infer (bool card, bool const_, bool set,
                    bool key, bool ocols, bool req_node,
                    bool reqval, bool level, bool refctr,
                    bool guides, bool ori_names, bool unq_names,
-                   PFla_op_t *root, PFguide_tree_t *guide);
+                   PFla_op_t *root, PFguide_list_t *guide_list);
 
 /**
  * Reset the property of an operator.
@@ -210,7 +210,7 @@ void PFprop_infer_unq_names (PFla_op_t *root);
 void PFprop_infer_ori_names (PFla_op_t *root);
 void PFprop_infer_level (PFla_op_t *root);
 void PFprop_infer_refctr (PFla_op_t *root);
-void PFprop_infer_guide (PFla_op_t *root, PFguide_tree_t *guide);
+void PFprop_infer_guide (PFla_op_t *root, PFguide_list_t *guides);
 
 bool PFprop_check_rec_delta (PFla_op_t *root);
 
@@ -588,13 +588,16 @@ PFalg_attlist_t PFprop_trace_names (PFla_op_t *start,
 
 
 /* ---------------------- guide property accessors ------------------------- */
+
 /* Return if the property @a prop has guide nodes for @a column  */
-bool PFprop_guide(PFprop_t *prop, PFalg_att_t column);
+bool PFprop_guide (PFprop_t *prop, PFalg_att_t column);
+
 /* Return how many guide nodes are in the property @a prop for @a column */
-unsigned int PFprop_guide_count(PFprop_t *prop, PFalg_att_t column);
+unsigned int PFprop_guide_count (PFprop_t *prop, PFalg_att_t column);
+
 /* Return an array of pointers of PFguide_tree_t of  guide nodes in the 
  * property @a prop for @a column */
-PFguide_tree_t** PFprop_guide_elements(PFprop_t *prop, PFalg_att_t column);
+PFguide_tree_t** PFprop_guide_elements (PFprop_t *prop, PFalg_att_t column);
 
 #endif  /* PROPERTIES_H */
 

@@ -63,6 +63,7 @@ struct PFguide_mapping_t {
     /* NOTE: keep guide_order and guide_list aligned */
     PFarray_t    *guide_order;   /* indexes for the sorted guide nodes */
     PFarray_t    *guide_list;    /* list of guide nodes */
+    unsigned int  origin;        /* the file the guide stems from */ 
 };
 
 /* ++++++++++++++++++++++++++++++++++++ */
@@ -692,30 +693,35 @@ copy_guide_step (PFla_op_t *n)
  *        of the fn:doc() algebra equivalent.
  */
 static void
-copy_doc_tbl (PFla_op_t *n, PFguide_tree_t *guide)
+copy_doc_tbl (PFla_op_t *n, PFguide_list_t *guides)
 {
     /* Test if the document name is constant */
     if (PFprop_const_left (n->prop, n->sem.doc_tbl.att) == true) {
         /* value of the document name */
         PFalg_atom_t a = PFprop_const_val_left (PROP(n), n->sem.doc_tbl.att);
-        if (a.type == aat_str &&
+        if (a.type != aat_str) return;
+       
+        for (unsigned int i = 0; i < PFguide_list_last (guides); i++) {
+            PFguide_tree_t *guide = PFguide_at (guides, i);
             /* Is guide filename equal to query filename */
-            guide->kind == doc &&
-            strcmp (PFqname_loc (guide->name), a.val.str) == 0) {
-            PFguide_mapping_t *mapping;
-            /* create a new guide mapping */
-            mapping = new_guide_mapping (n->sem.doc_tbl.res);
-            /* add the guide to the mapping */
-            add_guide (mapping, guide);
-            /* add the mapping to the guide mapping list */
-            MAPPING_LIST(n) = add_guide_mapping (MAPPING_LIST(n), mapping);
+            if (guide->kind == doc &&
+                strcmp (PFqname_loc (guide->name), a.val.str) == 0) {
+                PFguide_mapping_t *mapping;
+                /* create a new guide mapping */
+                mapping = new_guide_mapping (n->sem.doc_tbl.res);
+                /* add the guide to the mapping */
+                add_guide (mapping, guide);
+                /* add the mapping to the guide mapping list */
+                MAPPING_LIST(n) = add_guide_mapping (MAPPING_LIST(n), mapping);
+                break;
+            }
         }
     }
 }
 
 /* Infer guide property; worker for prop_infer(). */
 static void
-infer_guide (PFla_op_t *n, PFguide_tree_t *guide)
+infer_guide (PFla_op_t *n, PFguide_list_t *guides)
 {
     assert (n);
     assert (n->prop);
@@ -863,17 +869,17 @@ infer_guide (PFla_op_t *n, PFguide_tree_t *guide)
             /* Deep copy of left children guide_mapping_list */
             MAPPING_LIST(n) = deep_copy_guide_mapping_list (MAPPING_LIST(L(n)));
 
-            copy_doc_tbl (n, guide);
+            copy_doc_tbl (n, guides);
             break;
     }
 }
 
 /* worker for PFprop_infer_guide */
 static void
-prop_infer (PFla_op_t *n, PFguide_tree_t *guide)
+prop_infer (PFla_op_t *n, PFguide_list_t *guides)
 {
-    /* no guide tree -> do nothing */
-    if (guide == NULL)
+    /* no guide list -> do nothing */
+    if (guides == NULL)
         return;
 
     assert(n);
@@ -884,7 +890,7 @@ prop_infer (PFla_op_t *n, PFguide_tree_t *guide)
 
     /* calculate guide nodes for all operators */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        prop_infer (n->child[i], guide);
+        prop_infer (n->child[i], guides);
 
     SEEN(n) = true;
 
@@ -894,7 +900,7 @@ prop_infer (PFla_op_t *n, PFguide_tree_t *guide)
     else
         MAPPING_LIST(n) = NULL;
 
-    infer_guide (n, guide);
+    infer_guide (n, guides);
 
     return;
 }
@@ -903,16 +909,16 @@ prop_infer (PFla_op_t *n, PFguide_tree_t *guide)
  * @brief Infer guide property for a DAG rooted in root.
  */
 void
-PFprop_infer_guide (PFla_op_t *root, PFguide_tree_t *guide)
+PFprop_infer_guide (PFla_op_t *root, PFguide_list_t *guides)
 {
-    if (guide == NULL)
+    if (guides == NULL)
         return;
 
     /* infer constant columns
        to lookup constant document names */
     PFprop_infer_const (root);
 
-    prop_infer (root, guide);
+    prop_infer (root, guides);
 
     PFla_dag_reset (root);
 }

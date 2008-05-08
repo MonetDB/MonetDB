@@ -88,7 +88,7 @@
  * Invoke algebra optimization.
  */
 PFla_op_t *
-PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
+PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
           char *opt_args)
 {
     bool debug_opt = getenv("PF_DEBUG_OPTIMIZATIONS") != NULL;
@@ -277,7 +277,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
 
                 tm = PFtimer_start ();
 
-                root = PFalgopt_join_graph (root, guide_tree);
+                root = PFalgopt_join_graph (root, guide_list);
 
                 tm = PFtimer_stop (tm);
                 if (timing)
@@ -315,10 +315,10 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                 break;
 
             case 'U':
-                if (!guide_tree) break;
+                if (!guide_list) break;
                 tm = PFtimer_start ();
 
-                root = PFalgopt_guide (root, guide_tree);
+                root = PFalgopt_guide (root, guide_list);
 
                 tm = PFtimer_stop (tm);
                 if (timing)
@@ -359,7 +359,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                                   true  /* guides */,
                                   true  /* original names */,
                                   false /* unique names */,
-                                  root, guide_tree);
+                                  root, guide_list);
 
                 else
                     PFprop_infer (true  /* card */,
@@ -377,7 +377,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_tree_t* guide_tree,
                                   true  /* guides */,
                                   false /* original names */,
                                   true  /* unique names */,
-                                  root, guide_tree);
+                                  root, guide_list);
 
                 tm = PFtimer_stop (tm);
                 if (timing)

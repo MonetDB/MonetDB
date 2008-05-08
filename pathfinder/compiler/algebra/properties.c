@@ -128,7 +128,7 @@ PFprop_infer (bool card, bool const_, bool set,
               bool key, bool ocols, bool req_node,
               bool reqval, bool level, bool refctr,
               bool guides, bool ori_names, bool unq_names,
-              PFla_op_t *root, PFguide_tree_t *guide)
+              PFla_op_t *root, PFguide_list_t *guide_list)
 {
     PFprop_create_prop (root);
 
@@ -145,7 +145,7 @@ PFprop_infer (bool card, bool const_, bool set,
     if (card)
         PFprop_infer_card (root);
     if (guides)
-        PFprop_infer_guide (root, guide);
+        PFprop_infer_guide (root, guide_list);
     if (const_)
         PFprop_infer_const (root);
     if (req_node)

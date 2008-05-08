@@ -66,6 +66,8 @@ static PFguide_tree_t *root_guide_node;
 
 static int level;
 
+static int origin;
+
 /* start of a XML element */
 static void
 start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
@@ -148,15 +150,16 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
     /* create all other guide nodes */
     new_guide_node = (PFguide_tree_t *) PFmalloc (sizeof (PFguide_tree_t));
     *new_guide_node = (PFguide_tree_t) {
-        .guide = guide,
-        .count = count,
-        .min   = min,
-        .max   = max,
-        .level = level,
-        .kind  = kind,
-        .name  = PFqname (PFns_wild, NULL),
-        .parent = current_guide_node,
+        .guide      = guide,
+        .count      = count,
+        .min        = min,
+        .max        = max,
+        .level      = level,
+        .kind       = kind,
+        .name       = PFqname (PFns_wild, NULL),
+        .parent     = current_guide_node,
         .child_list = NULL,
+        .origin     = origin,
     };
 
     /* copy the strings, otherwise they will be lost */
@@ -187,9 +190,9 @@ start_element (void *ctx, const xmlChar *tagname, const xmlChar **atts)
         /* insert new guide node in the child list */
         if (!current_guide_node->child_list)
             current_guide_node->child_list =
-                PFarray (sizeof (PFguide_tree_t**), 10);
+                PFarray (sizeof (PFguide_tree_t *), 10);
 
-        *(PFguide_tree_t**)
+        * (PFguide_tree_t **)
             PFarray_add (current_guide_node->child_list) =
                 new_guide_node;
     } else {
@@ -247,25 +250,24 @@ static xmlSAXHandler saxhandler = {
 };
 
 /* create the guide tree and return it */
-PFguide_tree_t*
-PFguide_tree()
+PFguide_list_t *
+PFguide_list_load (void)
 {
-
+    PFarray_t *guide_list = NULL;
+    
     /* guide filename */
-    char  *filename = NULL;
+    char      *filename = NULL;
     /* Read guide filename as option */
-    PFarray_t *options = NULL;
+    PFarray_t *options  = NULL;
 
-    /* get the filename */
-    options = PFenv_lookup (PFoptions,
-        PFqname (PFns_lib, "guide"));
-
-    if (!options) {
-        return NULL;
-    } else {
-        /* it will be used the first item only to create the guide */
-        filename = *((char **) PFarray_at (options, 0));
-    }
+    /* Context pointer */
+    xmlValidCtxtPtr         validCtxt;
+    /* DTD for evaluating a file */
+    xmlDtdPtr               dtdPtr;
+    /* to read the DTD from memory */
+    xmlParserInputBufferPtr inputBuffer;
+    /* the resulting document tree */
+    xmlDocPtr doc;
 
     /* DTD of the guide XML file */
     char *dtd = "<!ELEMENT node (EMPTY | node*)>"
@@ -277,56 +279,62 @@ PFguide_tree()
                 "<!ATTLIST node uri CDATA #IMPLIED>"
                 "<!ATTLIST node name CDATA #IMPLIED>";
 
-    /* Context pointer */
-    xmlValidCtxtPtr          validCtxt;
-    /* DTD for evaluating a file */
-    xmlDtdPtr                dtdPtr;
-    /* to read the DTD from memory */
-    xmlParserInputBufferPtr  inputBuffer;
-    /* the resulting document tree */
-    xmlDocPtr doc;
-    /* result of parsing */
-    int result = 0;
-
-    /* Allocate a validation context structure */
-    validCtxt = xmlNewValidCtxt();
-
-    /* document to be validated */
-    doc = xmlRecoverFile(filename);
-
-    /* Create a buffered parser input from memory */
-    inputBuffer = xmlParserInputBufferCreateMem(dtd, strlen(dtd),
-        XML_CHAR_ENCODING_NONE);
-
-    /* Load and parse a DTD */
-    dtdPtr = xmlIOParseDTD(NULL, inputBuffer,
-        XML_CHAR_ENCODING_NONE);
-
-    /* Try to validate the document against the dtd */
-    result = xmlValidateDtd(validCtxt, doc, dtdPtr);
-
-    if (!result)
-        PFoops (OOPS_FATAL, "Guide optimization - XML input is invalid.\n");
-
     /* start XML parsing */
     xmlParserCtxtPtr   ctx;
 
-    ctx = xmlCreateFileParserCtxt (filename);
-    ctx->sax = &saxhandler;
+    /* get the filename */
+    options = PFenv_lookup (PFoptions, PFqname (PFns_lib, "guide"));
 
-    /* initialize global variables */
-    current_guide_node = NULL;
-    root_guide_node    = NULL;
-    level              = 0;
+    if (!options) return NULL;
 
-    (void) xmlParseDocument (ctx);
+    /* Allocate a validation context structure */
+    validCtxt = xmlNewValidCtxt ();
 
-    /* Document is not well-formed */
-    if (!ctx->wellFormed)
-        PFoops (OOPS_FATAL, "Guide optimization - "
-                "XML input is not well-formed.\n");
+    /* Create a buffered parser input from memory */
+    inputBuffer = xmlParserInputBufferCreateMem (dtd,
+                                                 strlen(dtd),
+                                                 XML_CHAR_ENCODING_NONE);
 
-    return root_guide_node;
+    /* Load and parse a DTD */
+    dtdPtr = xmlIOParseDTD (NULL, inputBuffer, XML_CHAR_ENCODING_NONE);
+
+    for (unsigned int i = 0; i < PFarray_last (options); i++) {
+        /* it will be used the first item only to create the guide */
+        filename = *((char **) PFarray_at (options, i));
+
+        /* document to be validated */
+        doc = xmlRecoverFile (filename);
+
+        /* Try to validate the document against the dtd */
+        if (!xmlValidateDtd(validCtxt, doc, dtdPtr))
+            PFoops (OOPS_FATAL, "Guide optimization - XML input is invalid.\n");
+
+        ctx = xmlCreateFileParserCtxt (filename);
+        ctx->sax = &saxhandler;
+
+        /* initialize global variables */
+        current_guide_node = NULL;
+        root_guide_node    = NULL;
+        level              = 0;
+        origin             = i;
+
+        (void) xmlParseDocument (ctx);
+
+        /* Document is not well-formed */
+        if (!ctx->wellFormed)
+            PFoops (OOPS_FATAL, "Guide optimization - "
+                    "XML input is not well-formed.\n");
+        
+        if (!guide_list)
+            guide_list = PFarray (sizeof (PFguide_tree_t *),
+                                  PFarray_last (options) + 5);
+        
+        *(PFguide_tree_t **) PFarray_add (guide_list) = root_guide_node;
+    }
+
+    xmlFreeValidCtxt (validCtxt);
+
+    return guide_list;
 }
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */

@@ -36,7 +36,6 @@
 #include "array.h"
 #include "algebra.h"
 #include "ordering.h"
-#include "load_stats.h"
 
 /** Logical algebra operator node */
 typedef struct PFla_op_t PFla_op_t;
@@ -47,6 +46,7 @@ typedef PFarray_t PFplanlist_t;
 /** A SQL annotation */
 typedef struct PFsql_alg_ann_t PFsql_alg_ann_t;
 
+#include "load_stats.h"
 #include "properties.h"
 
 /* .............. algebra operators (operators on relations) .............. */
