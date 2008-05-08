@@ -2496,8 +2496,6 @@ reduce (PFpa_op_t * p, int goalnt)
                 create = CREATE_READ_ONLY_WS;
 
             execute (
-                comment ("variable controlling the output format"),
-                assgn (var (PF_MIL_VAR_GENTYPE), lit_str ("xml")),
                 comment ("volatile variable environment"),
                 assgn (var (PF_MIL_VAR_WS), new_ws (lit_int (create))));
             reduce (kids[0], nts[0]);
@@ -9080,7 +9078,7 @@ label (PFpa_op_t *p)
 
 /** @brief Compile physical algebra tree into a MIL program. */
 PFmil_t *
-PFmilgen (PFpa_op_t *n)
+PFmilgen (PFpa_op_t *n, char *genType)
 {
     PFmil_t *bodymilprog;
 
@@ -9098,7 +9096,9 @@ PFmilgen (PFpa_op_t *n)
     milprog = declare (unused ());
 
     execute (declare (var (PF_MIL_VAR_WS)),
+             comment ("variable controlling the output format"),
              declare (var (PF_MIL_VAR_GENTYPE)),
+             assgn (var (PF_MIL_VAR_GENTYPE), lit_str (genType)),
              assgn (unused (), nil ()));
 
     /* prepare the storage structure for the side

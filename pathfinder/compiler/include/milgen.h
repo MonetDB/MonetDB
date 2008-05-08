@@ -37,7 +37,7 @@
 #include "mil.h"
 
 /** Generate MIL tree from algebra expression tree */
-PFmil_t *PFmilgen (PFpa_op_t *);
+PFmil_t *PFmilgen (PFpa_op_t *, char *genType);
 
 #endif  /* MILGEN_H */
 

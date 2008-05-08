@@ -166,6 +166,7 @@ PFstate_init (PFstate_t *status)
                                       "}IQ[J]}IQ[J]IOKVCGQUCGP";
 
     status->format              = NULL;
+    status->genType             = "xml";
 
 #ifndef NDEBUG
     status->debug.subtyping     = false;
@@ -702,7 +703,7 @@ AFTER_CORE2ALG:
 
     /* Map physical algebra to MIL */
     tm = PFtimer_start ();
-    mroot = PFmilgen (paroot);
+    mroot = PFmilgen (paroot, status->genType);
     tm = PFtimer_stop (tm);
 
     if (status->timing)
@@ -859,7 +860,9 @@ AFTER_CORE2ALG:
  * Runtime environment uses a lock to stay stable under concurrent requests.
  */
 char*
-PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char** epilogue, int options)
+PFcompile_MonetDB (char *xquery, char* url,
+                   char** prologue, char** query, char** epilogue,
+                   int options, char *genType)
 {
         PFstate_t PFstate;
         PFpnode_t  *proot  = NULL;
@@ -973,7 +976,7 @@ PFcompile_MonetDB (char *xquery, char* url, char** prologue, char** query, char*
         /* compile logical into a physical plan */
         paroot = PFplan (laroot);
         /* generate internal MIL representation */
-        mroot = PFmilgen (paroot);
+        mroot = PFmilgen (paroot, genType);
         /* some dead-code elimination */
         mroot = PFmil_dce (mroot);
         /* and serialize our internal representation into actual MIL code */
