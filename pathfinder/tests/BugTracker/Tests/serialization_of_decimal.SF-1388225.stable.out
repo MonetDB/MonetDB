@@ -10,7 +10,7 @@ stdout of test 'serialization_of_decimal.SF-1388225` in directory 'tests/BugTrac
 # Compiled for i686-redhat-linux-gnu/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 module(pathfinder);
-var ws := ws_create ();
+var ws := ws_create(0);
 var a0003 := new (lng, void).key (true).reverse ().seqbase (0@0);
 var a0004 := new (dbl, void).key (true).reverse ().seqbase (0@0);
 var a0005 := new (dbl, void).key (true).reverse ().seqbase (0@0);

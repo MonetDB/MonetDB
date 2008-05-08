@@ -11,7 +11,7 @@ stdout of test 'following` in directory 'runtime` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 module(pathfinder);
 
-var ws := ws_create();
+var ws := ws_create(0);
 ws_opendoc(ws, bat(void,str,1).append("foo.xml"));
 ws_opendoc(ws, bat(void,str,1).append("http://bstore1.example.com/bib.xml"));
                                                                                                                                                              

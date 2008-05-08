@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <algebra.h>
 
 #include "lalg2sql.h"
 #include "alg_dag.h"
@@ -1956,9 +1957,23 @@ reduce (PFla_op_t * p, int goalnt)
             else if (R(p)->sem.proj.items[1].new == pos)
                 pos = R(p)->sem.proj.items[1].old;
 
+            /* modify the schema of the serialize operator according
+             * to the new values for pos and item */
+            for (unsigned int i = 0; i < p->schema.count; i++) {
+                if (p->schema.items[i].name
+                          == p->sem.ser_seq.item) {
+                    p->schema.items[i].name = item;  
+                }
+                else if (p->schema.items[i].name
+                          == p->sem.ser_seq.pos) {
+                    p->schema.items[i].name = pos;
+                }
+            }
+
             /* ignore the projection operator */
             p->sem.ser_seq.item = item;
             p->sem.ser_seq.pos  = pos;
+
         }   /* fall through */
         
         /* Query:  serialize_seq (Frag, Rel) */
@@ -1973,7 +1988,10 @@ reduce (PFla_op_t * p, int goalnt)
             PFalg_att_t         item       = p->sem.ser_seq.item;
             PFalg_att_t         pos        = p->sem.ser_seq.pos;
             PFalg_simple_type_t item_ty    = type_of (p, p->sem.ser_seq.item);
+
             PFalg_simple_type_t pos_ty     = type_of (p, p->sem.ser_seq.pos);
+
+
             PFsql_t            *sername, *colname, *colexpr,
                                *selectlist = NULL,
                                *orderby    = NULL,
@@ -2013,6 +2031,7 @@ reduce (PFla_op_t * p, int goalnt)
                 sortby = RL(p)->sem.sort.sortby;
                 for (int i = PFord_count (sortby) - 1; i >= 0; i--) {
                     ord = PFord_order_col_at (sortby, i);
+            
                     asc = PFord_order_dir_at (sortby, i) == DIR_ASC;
                     orderby = sortkey_list (
                                   sortkey_item (
@@ -2156,6 +2175,7 @@ reduce (PFla_op_t * p, int goalnt)
                             orderby = sortkey_list (sort_item, orderby);
                         }
                     }
+
                     finalquery = PFsql_select (
                                      distinct,
                                      select_list (
@@ -2355,6 +2375,7 @@ reduce (PFla_op_t * p, int goalnt)
                            ser_comment ("END SCHEMA INFORMATION **"
                                         " DO NOT EDIT THESE LINES"),
                        nil ())))))))));
+
 
             /* We only need to sort by <pos, pre> if we have a variable
                part (content operator) in the twig constructor. */
@@ -2966,19 +2987,34 @@ reduce (PFla_op_t * p, int goalnt)
         case 16:
         {
             sql_column_env_t entry;
+            unsigned int k;
+
+            /* ensure that ever column we need is in the map */
+            for (unsigned int i = 0; i < p->sem.proj.count; i++) {
+               for (k = 0; k < PFarray_last (COLMAP(L(p))); k++) {
+                   entry = col_env_at (COLMAP(L(p)), k);
+                   if (p->sem.proj.items[i].old == entry.att)
+                       break; 
+               }
+
+               if (k >= PFarray_last(COLMAP(L(p))))
+                   PFoops (OOPS_FATAL, "Attribute %s not found in project",
+                           PFatt_str (p->sem.proj.items[i].old));
+            }
 
             /* copy the column map and update the column names
                for all columns in the projection list */
             for (unsigned int i = 0; i < p->sem.proj.count; i++)
                 for (unsigned int j = 0; j < PFarray_last (COLMAP(L(p))); j++) {
                     entry = col_env_at (COLMAP(L(p)), j);
-                    if (p->sem.proj.items[i].old == entry.att)
+                    if (p->sem.proj.items[i].old == entry.att) {
                         col_env_add_full (COLMAP(p),
                                           p->sem.proj.items[i].new,
                                           entry.type,
                                           entry.expression,
                                           entry.step_alias,
                                           entry.step_leaf);
+                    }
                 }
 
             /* copy fromlist */
@@ -3002,14 +3038,16 @@ reduce (PFla_op_t * p, int goalnt)
                                       p->sem.select.att,
                                       aat_bln);
 
-            if (sqlnode->kind == sql_column_name)
+            if (sqlnode->kind == sql_column_name ||
+                sqlnode->kind == sql_lit_int) 
                 /* we introduced a case expression before that produces
                    1 for all true values ... */
                 where_list_add (WHERELIST(p), eq (sqlnode, lit_int (1)));
-            else
+            else {
                 /* otherwise we already have a comparison in our hands
                    and use it */
                 where_list_add (WHERELIST(p), sqlnode);
+            }
 
         }   break;
 
@@ -4320,11 +4358,12 @@ reduce (PFla_op_t * p, int goalnt)
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, L(p));
 
-            if (SER_REPORT(p) == ser_yes) {
+           if (SER_REPORT(p) == ser_yes) {
                 /* Ignore the result of the rank operator in the normal
                    translation process and only add it to the special
                    rank map environment. */
                 PFord_ordering_t sortby = p->sem.sort.sortby;
+                
                 unsigned int     i, j, k;
                 PFalg_att_t      ord;
                 PFarray_t       *srtbylist = PFarray (sizeof (PFsql_t *), 10);
@@ -5965,4 +6004,4 @@ PFlalg2sql (PFla_op_t * n)
     return sql_stmts;
 }
 
-/* vim:set shiftwidth=4 expandtab filetype=c: */
+

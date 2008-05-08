@@ -1,5 +1,5 @@
 module(pathfinder);
-var ws := ws_create ();
+var ws := ws_create(0);
 var a0003 := new (lng, void).key (true).reverse ().seqbase (0@0);
 var a0004 := new (dbl, void).key (true).reverse ().seqbase (0@0);
 var a0005 := new (dbl, void).key (true).reverse ().seqbase (0@0);

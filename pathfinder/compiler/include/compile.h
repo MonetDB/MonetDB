@@ -82,7 +82,7 @@ struct PFstate_t {
                                    (command line switch -o) */
     char *format;             /**< dot output format (command line switch -f) */
 
-    char* genType;     /* kind of output */
+    char* genType;            /**< kind of output */
     enum PFinvocation_t invocation;
 
 #ifndef NDEBUG

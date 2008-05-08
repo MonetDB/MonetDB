@@ -4302,7 +4302,11 @@ PROC do_update_insert(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,o
   }
 }
 
-PROC do_update_insert_attributes(bat[void, bat] ws, bat[void,oid] update_node_item, bat[void,oid] attrconts, bat[void,oid] update_insert_node_item, bat[void,oid] batcont) : void
+PROC do_update_insert_attributes(bat[void, bat] ws,
+                                 bat[void,oid] update_node_item,
+                                 bat[void,oid] attrconts,
+                                 bat[void,oid] update_insert_node_item,
+                                 bat[void,oid] batcont) : void
 {
   attrconts.tunique()@batloop() {
     var cont := $h;
@@ -4362,7 +4366,12 @@ PROC do_update_insert_attributes(bat[void, bat] ws, bat[void,oid] update_node_it
   }
 }
 
-PROC do_update_insert_elements(bat[void, bat] ws, bat[void,lng] insert_update, bat[void,oid] update_node_item, bat[void,oid] attrconts, bat[void,oid] update_insert_node_item, bat[void,oid] batcont) : void
+PROC do_update_insert_elements(bat[void, bat] ws,
+                               bat[void,lng] insert_update,
+                               bat[void,oid] update_node_item,
+                               bat[void,oid] batdoccont,
+                               bat[void,oid] update_insert_node_item,
+                               bat[void,oid] batcont) : void
 {
   var modified_nid := ws.fetch(MODIFIED_NID);
   var ancestor_nid := ws.fetch(ANCESTOR_NID);

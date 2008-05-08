@@ -446,6 +446,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
     if (R(n)) map_names (R(n), goal, np_list, att_NULL);
 }
 
+#ifndef NDEBUG
 /* check for the goal operator */
 static bool
 find_goal (PFla_op_t *n, PFla_op_t *goal)
@@ -466,6 +467,7 @@ find_goal (PFla_op_t *n, PFla_op_t *goal)
 
     return found_goal;
 }
+#endif
 
 /* reset the old property information */
 static void

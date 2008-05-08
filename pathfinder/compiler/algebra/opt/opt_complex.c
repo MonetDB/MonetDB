@@ -1045,7 +1045,9 @@ opt_complex (PFla_op_t *p)
             break;
 
         case la_rank:
-            /* match the pattern rank - (project -) rank and
+            /* first of all try to replace a rank with a single
+               ascending order criterion by a projection match 
+               match the pattern rank - (project -) rank and
                try to merge both rank operators if the nested
                one only prepares some columns for the outer rank.
                  As most operators are separated by a projection
@@ -1054,6 +1056,36 @@ opt_complex (PFla_op_t *p)
             PFla_op_t *rank;
             bool proj = false, renamed = false;
             unsigned int i;
+
+            /* Replace a rank operator with a single ascending order
+               criterion by a projection that links the output column
+               to the order criterion. */
+            if (PFord_count (p->sem.sort.sortby) == 1 &&
+                PFord_order_dir_at (p->sem.sort.sortby, 0) == DIR_ASC) {
+                PFalg_proj_t *proj_list;
+                unsigned int count = 0;
+
+                /* create projection list */
+                proj_list = PFmalloc (p->schema.count *
+                                      sizeof (*(proj_list)));
+
+                /* adjust column name of the rank operator */
+                proj_list[count++] = PFalg_proj (
+                                         p->sem.sort.res,
+                                         PFord_order_col_at (
+                                             p->sem.sort.sortby,
+                                             0));
+
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    if (p->schema.items[i].name != p->sem.sort.res)
+                        proj_list[count++] = PFalg_proj (
+                                                 p->schema.items[i].name,
+                                                 p->schema.items[i].name);
+
+                *p = *PFla_project_ (L(p), count, proj_list);
+                SEEN(p) = false;
+                break;
+            }
 
             /* check for a projection */
             if (L(p)->kind == la_project) {

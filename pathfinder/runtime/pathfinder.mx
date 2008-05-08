@@ -1348,7 +1348,6 @@ PROC ws_new(oid id,
     return bat(void,tpe).seqbase(PRE_BASE); # a constant bat
 }
 
-PROC ws_create() : BAT[void,bat] { return ws_create(0); } # still exists for algebra
 PROC ws_create(int update) : BAT[void,bat]
 {
     # wsid = 1bit(0) | 31bits(unique-id) | 2bits(update) | 30bits(batid)
@@ -4454,7 +4453,12 @@ xquery_compile_exec(xquery_client *ctx,
             PFmaxstack = ((char*) &xquery) - 2*THREAD_STACK_SIZE;
             PFerrbuf = ctx->errbuf;
             PFerrbuf[0] = 0;
-            err = PFcompile_MonetDB(xquery, url, prologue, &del, epilogue, options);
+            err = PFcompile_MonetDB(xquery, url, prologue, &del, epilogue, options,
+                                    *(ctx->genType) /* Using the content of the MIL variable genType
+                                                       defined in the prologue is yet another hack
+                                                       to make the serialization information visible
+                                                       to the algebra backend that does not use prologue
+                                                       and epilogue structures. */);
             ctx->errbuf = PFerrbuf; 
             if (err == NULL && nsurl != NULL){
                 /* get the module namespace URL Y from pattern: "module namespace X = Y" */
