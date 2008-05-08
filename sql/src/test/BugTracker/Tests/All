@@ -115,3 +115,7 @@ BETWEEN_error.SF-1911991
 count_crash.SF-1918780
 table_function_column_crash.SF-1913572
 drop_function.SF-1910396
+between_having_problem.SF-1959391
+between_with_column.SF-1959410
+is_not_null_syntax_error.SF-1959456
+order_by_over_table_from_another_function.SF-1959822
