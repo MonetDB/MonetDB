@@ -34,6 +34,15 @@
 
 #include "qname.h"
 
+typedef PFarray_t PFguide_list_t;
+#define PFguide_list_last(g) PFarray_last((g))
+#define PFguide_at(g,i) (*(PFguide_tree_t **) PFarray_at ((g),(i)))
+
+/* The guide tree */
+typedef struct PFguide_tree_t PFguide_tree_t;
+
+#include "logical.h"
+
 /* Kind of a guide node */
 enum PFguide_kind_t {
       elem  /* element node */
@@ -45,22 +54,21 @@ enum PFguide_kind_t {
 };
 typedef enum PFguide_kind_t PFguide_kind_t;
 
-/* The guide tree */
-typedef struct PFguide_tree_t PFguide_tree_t;
 struct PFguide_tree_t {
-    unsigned int    guide;      /* unique guide number */
-    unsigned int    count;      /* count of the same node */
-    unsigned int    min;        /* miniumum number of occurrences */
-    unsigned int    max;        /* maximum number of occurrences */
-    int             level;      /* level of the node */
-    PFguide_kind_t  kind;       /* kind of the node */
-    PFqname_t       name;       /* name of the node */
-    PFguide_tree_t *parent;     /* parent of the node */
-    PFarray_t      *child_list; /* all childs of the node */
+    unsigned int    guide;       /* unique guide number */
+    unsigned int    count;       /* count of the same node */
+    unsigned int    min;         /* miniumum number of occurrences */
+    unsigned int    max;         /* maximum number of occurrences */
+    int             level;       /* level of the node */
+    PFguide_kind_t  kind;        /* kind of the node */
+    PFqname_t       name;        /* name of the node */
+    PFguide_tree_t *parent;      /* parent of the node */
+    PFguide_list_t *child_list;  /* all childs of the node */
+    int             origin;      /* origin of the guide: file # */
 };
 
-/* create a guide tree from a file */
-PFguide_tree_t *PFguide_tree (void);
+/* create guide trees from files */
+PFguide_list_t *PFguide_list_load (void);
 
 #endif  /* LOAD_STATS_H */ 
 

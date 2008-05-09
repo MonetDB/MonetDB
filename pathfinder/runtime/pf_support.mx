@@ -3508,7 +3508,7 @@ bat[void, oid] attr_cont_ins): void
         do_update_insert_attributes(ws, inserts_attrs.leftjoin(pre_tgt), inserts_attrs.leftjoin(pre_cont_tgt), inserts_attrs.leftjoin(attr_ins), inserts_attrs.leftjoin(attr_cont_ins));
       }
       if (inserts_elems.count() > 0) {
-        do_update_insert_elements(ws, inserts_elems.leftjoin(inserts), inserts_elems.leftjoin(pre_tgt), inserts_elems.leftjoin(pre_cont_tgt), inserts_elems.leftjoin(pre_ins), inserts_elems.leftjoin(pre_cont_ins));
+        do_update_insert_elements(ws, inserts_elems.leftjoin(command), inserts_elems.leftjoin(pre_tgt), inserts_elems.leftjoin(pre_cont_tgt), inserts_elems.leftjoin(pre_ins), inserts_elems.leftjoin(pre_cont_ins));
       }
     }
   }
@@ -3520,10 +3520,10 @@ bat[void, oid] attr_cont_ins): void
       var deletes_elems := deletes_pre_tgt.ord_uselect(oid_nil, oid_nil).hmark(0@0); # [j,i] deletes on elements
       var deletes_attrs := deletes_pre_tgt.ord_uselect(oid_nil).hmark(0@0); # [k,i] deletes on attributes
       if (deletes_attrs.count() > 0) {
-        do_update_delete_attributes(ws, deletes_attrs.leftjoin(attr_tgt), deletes_attrs.leftjoin(attr_cont_tgt), deletes_attrs.leftjoin(delete_strings));
+        do_update_delete_attributes(ws, deletes_attrs.leftjoin(attr_tgt), deletes_attrs.leftjoin(attr_cont_tgt));
       }
       if (deletes_elems.count() > 0) {
-        do_update_delete_elements(ws, deletes_elems.leftjoin(pre_tgt), deletes_elems.leftjoin(pre_cont_tgt), deletes_elems.leftjoin(delete_strings));
+        do_update_delete_elements(ws, deletes_elems.leftjoin(pre_tgt), deletes_elems.leftjoin(pre_cont_tgt));
       }
     }
   }

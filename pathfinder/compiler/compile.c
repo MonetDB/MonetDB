@@ -85,7 +85,7 @@
 #include "lalg2sql.h"
 #include "sql_opt.h"
 #include "sqlprint.h"
-#include "load_stats.h"  /* to create the guide tree */
+#include "load_stats.h"  /* to create the guide list */
 
 #include "xml2lalg.h" /* xml importer */
 
@@ -315,7 +315,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     /* elapsed time for compiler phase */
     long tm, tm_first = 0;
 
-    PFguide_tree_t *guide_tree = NULL; /* guide tree */
+    PFguide_list_t *guide_list = NULL; /* guide list */
 
     PFquery_t PFquery = {
         .version             = "1.0",
@@ -481,8 +481,8 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
             PFlog ("path heuristics:\t\t\t %s", PFtimer_str (tm));
     }
 
-    /* create guide tree */
-    guide_tree =  PFguide_tree ();
+    /* create guide list */
+    guide_list =  PFguide_list_load ();
 
     STOP_POINT(6);
 
@@ -621,7 +621,7 @@ AFTER_CORE2ALG:
      */
     tm = PFtimer_start ();
 
-    laroot = PFalgopt (laroot, status->timing, guide_tree, status->opt_alg);
+    laroot = PFalgopt (laroot, status->timing, guide_list, status->opt_alg);
 
     tm = PFtimer_stop (tm);
     if (status->timing)
@@ -873,6 +873,7 @@ PFcompile_MonetDB (char *xquery, char* url,
         PFpa_op_t  *paroot = NULL;
         PFmil_t    *mroot  = NULL;
         PFarray_t  *serialized_mil_code = NULL;
+        PFguide_list_t *guide_list = NULL; /* guide list */
         /* for MILPRINT_SUMMER (PFoutput_format_milprint_summer) */
         char *intern_prologue = NULL,
              *intern_query = NULL,
@@ -967,7 +968,7 @@ PFcompile_MonetDB (char *xquery, char* url,
                              PFstate.output_format);
         /* optimize logical algebra */
         laroot = PFalgopt (laroot, false /* no timing output */,
-            NULL /* no guide tree */, PFstate.opt_alg);
+                           guide_list, PFstate.opt_alg);
         /* common subexpression elimination on logical algebra */
         laroot = PFla_cse (laroot);
         /* compile logical into a physical plan */

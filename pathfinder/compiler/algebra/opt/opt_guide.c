@@ -236,23 +236,34 @@ opt_guide(PFla_op_t *n)
             assert(R(n));
 
             PFla_op_t *ret = NULL;  /* new guide_step operator */
-            unsigned int count = 0; /* # of guide nodes */
+            unsigned int i,
+                         count = 0; /* # of guide nodes */
             PFguide_tree_t** guides = NULL; /* array of guide nodes */
             PFalg_att_t column = n->sem.step.item_res;
+            int origin;
 
             /* look if operator has guide nodes */
-            if(PFprop_guide(PROP(n), column) == false)
+            if (PFprop_guide (PROP(n), column) == false)
                 break;
 
             /* # of guide nodes */
-            count = PFprop_guide_count(PROP(n), column);
+            count = PFprop_guide_count (PROP(n), column);
 
             /* guide list is empty -> create empty table*/
             if (count == 0) {
                 ret = PFla_empty_tbl_ (n->schema);
             } else {
                 /* get guide nodes */
-                guides = PFprop_guide_elements(PROP(n), column);
+                guides = PFprop_guide_elements (PROP(n), column);
+                
+                /* do not rewrite in case the guides stem from
+                   different origins (different documents) */
+                origin = guides[0]->origin;
+                for (i = 1; i < count; i++)
+                    if (origin != guides[i]->origin) break;
+                if (i < count)
+                    break;
+            
                 /* create new step operator */
                 if (n->kind == la_step) {
                     ret = PFla_guide_step (
@@ -300,13 +311,13 @@ opt_guide(PFla_op_t *n)
   * Invoke algebra optimization.
  */
 PFla_op_t*
-PFalgopt_guide(PFla_op_t *root, PFguide_tree_t *guide)
+PFalgopt_guide (PFla_op_t *root, PFguide_list_t *guides)
 {
-    assert(guide);
+    assert(guides);
 
     PFprop_infer_set (root);
     PFprop_infer_icol (root);
-    PFprop_infer_guide (root, guide);
+    PFprop_infer_guide (root, guides);
 
     /* Optimize algebra tree */
     opt_guide (root);
