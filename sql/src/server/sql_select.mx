@@ -3207,6 +3207,8 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		ct = tail_type(ls);
 		rs1 = check_types(sql, ct, rs1, type_equal);
 		rs2 = check_types(sql, ct, rs2, type_equal);
+		if (!rs1 || !rs2)
+			return NULL;
 		if (symmetric) {
 			stmt *tmp = NULL;
 			sql_subfunc *min = sql_bind_func(sql->session->schema, "min", tail_type(rs1), tail_type(rs2));
@@ -3649,7 +3651,11 @@ query_groupby_outers(mvc *sql, scope *scp, stmt *subset)
 static stmt *
 find_order(stmt *s)
 {
-	assert(s->type == st_order || s->type == st_reorder);
+	if (s->type == st_limit) 
+		assert(s->op1.stval->type == st_order || s->op1.stval->type == st_reorder);
+	else
+		assert(s->type == st_order || s->type == st_reorder);
+		
 	while(s->type == st_reorder)
 		s = s->op1.stval;
 	return s;
