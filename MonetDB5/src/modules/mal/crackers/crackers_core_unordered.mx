@@ -232,6 +232,7 @@ CRKcrackUnorderedZero2_@2_@1( BAT *b, @1 mval, oid first, oid last, oid *pos, in
         rightBoundh = lh = (oid*)Hloc(b, BUNfirst(b) + last);
 
 	sample = ft + 10;
+	mid=*ft;ft++;
 	for (;ft<sample;ft++)
 		mid+=*ft;
 	mid = mid/10;
