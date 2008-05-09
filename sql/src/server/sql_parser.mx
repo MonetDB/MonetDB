@@ -3537,6 +3537,12 @@ aggr_ref:
   		  append_int(l, TRUE);
   		  append_symbol(l, _symbol_create_list(SQL_COLUMN, $4));
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
+ |  AGGR '(' DISTINCT scalar_exp ')'
+		{ dlist *l = L();
+  		  append_string(l, $1);
+  		  append_int(l, FALSE);
+  		  append_symbol(l, $4);
+		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  AGGR '(' ALL scalar_exp ')'
 		{ dlist *l = L();
   		  append_string(l, $1);
