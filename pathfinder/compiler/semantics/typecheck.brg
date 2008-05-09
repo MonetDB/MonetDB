@@ -1501,7 +1501,7 @@ specific (PFfun_t *fn, PFcnode_t *args)
         assert (args->kind == c_arg && R(args)->kind == c_nil);
         return *PFty_simplify (
                 (PFty_quantifier (TY(L(args)))
-                    (PFty_data_on (PFty_defn (TY(L(args)))))));
+                    (PFty_data_on (TY(L(args))))));
     }
 
     /* specific typing rules for fn:insert-before() */

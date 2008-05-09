@@ -1979,11 +1979,14 @@ PFty_normalize_choice (PFty_t t)
     }
 }
 
+static PFty_t data_on (PFty_t t);
+bool data_on_expand_named;
+
 /**
- * Worker for #PFty_data_on().
+ * Worker for #data_on().
  */
 static PFty_t
-data_on (PFty_t t)
+data_on_worker (PFty_t t)
 {
     switch (t.type) {
 
@@ -1997,24 +2000,28 @@ data_on (PFty_t t)
         case ty_choice:
         case ty_all:
             {
-                PFty_t c = PFty_choice (PFty_data_on (*(t.child[0])),
-                                        PFty_data_on (*(t.child[1])));
+                PFty_t c = PFty_choice (data_on (*(t.child[0])),
+                                        data_on (*(t.child[1])));
                 return *right_deep (ty_choice, &c);
             }
     
         case ty_opt:
         case ty_star:
-            return PFty_opt (PFty_data_on (*(t.child[0])));
+            return PFty_opt (data_on (*(t.child[0])));
 
         case ty_plus:
-            return PFty_data_on (*(t.child[0]));
+            return data_on (*(t.child[0]));
 
         case ty_named:
-            /* this must be the occurrence of a recursive type
-             * reference, so nothing new can be learned from
-             * looking at the referenced type
-             */
-            return PFty_none ();
+            if (data_on_expand_named) {
+                data_on_expand_named = false;
+                return data_on (PFty_defn (t));
+            } else
+                /* this must be the occurrence of a recursive type
+                 * reference, so nothing new can be learned from
+                 * looking at the referenced type
+                 */
+                return PFty_none ();
 
         case ty_stmt:
         case ty_docmgmt:
@@ -2027,7 +2034,16 @@ data_on (PFty_t t)
                                                    PFty_pi (NULL))))
                 return PFty_xs_string ();
             else if (PFty_subtype (t, PFty_xs_anyElement ())) {
-                PFty_t t1 = PFty_data_on (content (t));
+                /* make a distinction between typed elements
+                   (they have a named type content) and untyped ones */
+                PFty_t t1 = content (t);
+                if (t1.type == ty_named) {
+                    data_on_expand_named = false;
+                    t1 = data_on_worker (PFty_defn (t1));
+                }
+                else
+                    return PFty_untypedAtomic ();
+                
                 if (PFty_subtype (t1, PFty_xs_anySimpleType ()))
                     return t1;
                 else
@@ -2039,6 +2055,20 @@ data_on (PFty_t t)
             else
                 return PFty_untypedAtomic ();
     }
+}
+
+static PFty_t
+data_on (PFty_t t)
+{
+    if (t.type == ty_attr) {
+        PFty_t t1 = data_on_worker (content (t));
+        if (PFty_subtype (t1, PFty_xs_anySimpleType ()))
+            return t1;
+        else
+            return PFty_untypedAtomic ();
+    }
+    else
+        return data_on_worker (t);
 }
 
 /**
@@ -2068,15 +2098,8 @@ data_on (PFty_t t)
 PFty_t
 PFty_data_on (PFty_t t)
 {
-    if (t.type == ty_attr) {
-        PFty_t t1 = data_on (content (t));
-        if (PFty_subtype (t1, PFty_xs_anySimpleType ()))
-            return t1;
-        else
-            return PFty_untypedAtomic ();
-    }
-    else
-        return data_on (t);
+    data_on_expand_named = true;
+    return data_on (t);
 }
 
 /**
