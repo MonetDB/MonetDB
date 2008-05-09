@@ -1113,6 +1113,7 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_pf_add_doc_str:      return "pf:add-doc";
         case alg_fun_pf_add_doc_str_int:  return "pf:add-doc";
         case alg_fun_pf_del_doc:          return "pf:del-doc";
+        case alg_fun_pf_nid:              return "pf:nid";
         case alg_fun_upd_rename:          return "upd:rename";
         case alg_fun_upd_delete:          return "upd:delete";
         case alg_fun_upd_insert_into_as_first:  return "upd:insertIntoAsFirst";

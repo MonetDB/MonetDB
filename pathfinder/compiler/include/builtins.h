@@ -705,6 +705,9 @@ struct PFla_pair_t PFbui_pf_add_doc_str_int (const PFla_op_t *loop,
 struct PFla_pair_t PFbui_pf_del_doc (const PFla_op_t *loop, bool ordering,
                                      struct PFla_pair_t *args);
 
+struct PFla_pair_t PFbui_pf_nid (const PFla_op_t *loop, bool ordering,
+                                 struct PFla_pair_t *args);
+
 /* #3. UPDATE FUNCTIONS */
 struct PFla_pair_t PFbui_upd_rename (const PFla_op_t *loop, bool ordering,
                                      struct PFla_pair_t *args);
