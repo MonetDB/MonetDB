@@ -338,7 +338,7 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 "Returns the union of two BATs; looking at head-columns only.
  Results in all BUNs of 'left', plus all BUNs of 'right' that are not in 
  'left'. *no* double-elimination is done. If you want this, do:
- 'kunion(left.kunique(),right.kunique())' or: 'sunion(left,right).kunique()'."
+ 'kunion(left.kunique(),right.kunique())' or: 'kunion(left,right).kunique()'."
 @+ Joins
 The core of every relational engine.
 Signature Changed: Output tail type incorrect because of soid to coid switch.
