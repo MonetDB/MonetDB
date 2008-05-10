@@ -164,6 +164,9 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                 if (a->schema.items[i].name != b->schema.items[i].name ||
                     a->schema.items[i].type != b->schema.items[i].type)
                     return false;
+            
+            if (a->kind == la_empty_tbl)
+                return true;
 
             if (a->sem.lit_tbl.count != b->sem.lit_tbl.count)
                 return false;
