@@ -37,9 +37,6 @@ by deciding to keep a hold on them as long as deemed benificial.
 The approach taken is to mark the variables in a MAL program
 using an optimizer call, such that their result is retained 
 in a global recycle cache.
-Instructions become subject to the Recycler if
-at least one of its arguments is a BAT and all others are
-either constants or variables already known in the Recycler.
 
 Upon execution, the Recycler first checks for
 an up to date result to be picked up at no cost.
@@ -50,6 +47,8 @@ keep.
 The Recycler comes with a few policy controlling operators
 to experiment with its effect in concrete settings.
 
+Caveats:
+Updates in general should immediately invalidate the cache
 @{
 @-
 The Recycler should be a variation of the interpreter
@@ -64,7 +63,7 @@ which inspects the variable table for alternative results.
 #include "mal_instruction.h"
 
 /*#define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE*/
+#define _DEBUG_RECYCLE_REUSE */
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -72,7 +71,7 @@ spaces.
 #define RU 1024 /* recycle unit in bytes */
 #define GIGA (lng)(1024*1024*1024)
 
-#define HARDLIMIT_VAR 25000
+#define HARDLIMIT_VAR 25000		/* maximum variables to watch */
 #define HARDLIMIT_STMT 4000		/* roughly 5/line needed */
 #define HARDLIMIT_MEM 8 * (GIGA/RU)     /* avoid memory overflow */
 
@@ -109,7 +108,7 @@ mal_export MT_Lock recycleLock;
 mal_export MalBlkPtr recycleBlk;
 mal_export double recycleAlpha;
 
-mal_export int statements;	/* total number of statemetns executed */
+mal_export int statements;	/* total number of statements executed */
 mal_export int recycled;	/* total number of statements recycled */
 mal_export int retained;	/* total number of statements retained */
 mal_export int savedTime;	/* sum of all recycled clk's */
@@ -134,7 +133,8 @@ MalBlkPtr recycleBlk = NULL;
 
 @-
 The retention policies currently implemented are:
-RETAIN_ALL, where all results are in principle retained.
+RETAIN_ALL, where all results are in retained until
+the hard resource limits are reached.
 RETAIN_TIME, uses a highwater mark defined by the user.
 All results whose time to produce are lower then the
 highwater mark are dropped without further consideration.
@@ -203,7 +203,7 @@ double recycleAlpha = 0.5;
 @- Monitoring the Recycler
 @c
 lng recyclerUsedMemory = 0;
-int statements = 0;	/* total number of statemetns executed */
+int statements = 0;	/* total number of statements executed */
 int recycled = 0;	/* total number of statements recycled */
 int retained = 0;	/* total number of statements retained */
 int savedTime = 0;	/* sum of all recycled clk's */
@@ -219,9 +219,14 @@ the block is never executed.
 static void RECYCLEspace()
 {
 	if (recycleBlk == NULL) {
-		recycleBlk = newMalBlk(MAXVARS, STMT_INCREMENT);
-		recycleBlk->profiler = (ProfPtr) GDKzalloc(
-			recycleBlk->ssize*sizeof(ProfRecord));
+		/* parallel threads ? */
+		mal_set_lock(recycleLock,"recycle");
+		if (recycleBlk == NULL) {
+			recycleBlk = newMalBlk(MAXVARS, STMT_INCREMENT);
+			recycleBlk->profiler = (ProfPtr) GDKzalloc(
+				recycleBlk->ssize*sizeof(ProfRecord));
+		}
+		mal_unset_lock(recycleLock,"recycle");
 	}
 }
 
@@ -229,14 +234,14 @@ void RECYCLEversion(MalBlkPtr mb)
 {
 	int i;
 
-	if( mb->version != recycleVersion) { 
+	if ( mb->version && mb->version != recycleVersion) { 
 		mal_set_lock(recycleLock,"recycle");
 		/* all re-used variables are dropped */
 		for(i=0; i<mb->vtop; i++)		/* reinit recycle */
 			clrVarKept(mb,i);
-		mb->version = recycleVersion;
 		mal_unset_lock(recycleLock,"recycle");
 	}	
+	mb->version = recycleVersion;
 }
 @-
 The cache of recycled instructions can be kept low.
@@ -255,8 +260,18 @@ invalidated.
 Second, for each (BAT) variable removed, we
 should also remove the dependent instructions.
 @c
+static void
+RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q){
+	int j;
+	for(j=0; j< q->argc; j++)
+	if (isVarConstant(mb,getArg(q,j)) ){
+		if( isaBatType(getArgType(mb, q,j)) )
+			BBPdecref(getVarConstant(mb,getArg(q,j)).val.bval, TRUE);
+	}
+}
+
 static void RECYCLEremove(int pc){
-	int k,j,i;
+	int k,j,i,v;
 	InstrPtr p;
 	InstrPtr *old;
 	int limit;
@@ -282,6 +297,9 @@ static void RECYCLEremove(int pc){
 	stream_printf(GDKout,"RECYCLEremove %d ",i);
 	printInstruction(GDKout,recycleBlk, old[i], LIST_MAL_ALL);
 #endif
+	RECYCLEgarbagecollect(recycleBlk,old[i]);
+	for (v=0; v< old[i]->retc; v++)
+			used[getArg(p,v)] = 0; /* invalidate return variables */
 	freeInstruction(old[i]);
 	k= i;
 
@@ -290,16 +308,22 @@ static void RECYCLEremove(int pc){
 		p= old[i];
 		for( j = p->retc; j< p->argc; j++)
 		if( used[getArg(p,j)] ==0){
+			RECYCLEgarbagecollect(recycleBlk,old[i]);
+			for (v=0; v< old[i]->retc; v++)
+					used[getArg(p,v)] = 0; /* invalidate return variables */
 			freeInstruction(old[i]);
 			goto skip;
 		}
 		pushInstruction(recycleBlk,p);
 		recycleBlk->profiler[k++]= recycleBlk->profiler[i];
 		/* the instruction args are safed */
-		for( j = 0 ; j< p->argc; j++)
+		for( j = 0 ; j< p->retc; j++)
 			used[getArg(p,j)] = 1;
 	skip:;
 	}
+	GDKfree(old);
+	/* remove all un-used variables as well */
+	trimMalVariables(recycleBlk);
 }
 
 static lng lruclock=0;
@@ -307,7 +331,6 @@ static void
 RECYCLEcache(int target, int wr)
 {
 	int i, victim = 0, mem, size;
-	InstrPtr pc;
 
 	if (!recycleBlk) 
 		return;
@@ -325,10 +348,12 @@ RECYCLEcache(int target, int wr)
 	if (i != target){
 		switch(rcachePolicy){
 		case RCACHE_LRU:
+			/* find oldest instruction */
 			if( recycleBlk->profiler[victim].clk >recycleBlk->profiler[i].clk)
 				victim = i;
 			break;
 		case RCACHE_CREDIT:
+			/* find least expensive instruction to reconstruct */
 			if (recycleBlk->profiler[victim].counter * recycleCost(victim) > recycleBlk->profiler[i].counter * recycleCost(i))
 					victim = i;
 			break;
@@ -347,13 +372,8 @@ RECYCLEcache(int target, int wr)
 		stream_printf(GDKout,"RECYCLE cache, remove %d \n",victim);
 #endif
 		mal_set_lock(recycleLock,"recycle");
-		pc = getInstrPtr(recycleBlk,victim);
-		for (i=0; i< pc->argc; i++)
-			if( isaBatType(getVarType(recycleBlk, getArg(pc,i))))
-				BBPdecref(getVarConstant(recycleBlk,i).val.bval,TRUE);
 		recyclerUsedMemory -= recycleBlk->profiler[victim].obytes;
 		RECYCLEremove(victim);
-		trimMalVariables(recycleBlk);
 		if (monitorRecycler)
 			fprintf(stderr, 
 				"#memory=%lld, stop=%d, recycled=%d, retained=%d executed=%d saved=%d\n",
@@ -380,7 +400,7 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 	    recycleMemory > HARDLIMIT_MEM)
 		return -1; /* no more caching */
 
-	if( p->argc <=1 )	/* add more */
+	if ( !getFunctionId(p))
 		return -1;
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE add ");
@@ -416,6 +436,10 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 			recyclerUsedMemory, recycleBlk->stop,
 			recycled, retained, statements, savedTime);
 	retained++;
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLE kept ");
+	printTraceCall( GDKout,recycleBlk,s,getPC(recycleBlk,q),LIST_MAL_ALL);
+#endif
 	return i;
 }
 
@@ -431,6 +455,8 @@ or it can be small compared to the target.
 
 We should avoid adding the same operation twice, which
 means it should be easy to find them in the first place.
+Furthermore, we should only search for instructions if
+we are dealing with a function call.
 @c
 static int
 RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
@@ -442,10 +468,12 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	if( recycleBlk == 0)
 		return 0;
 
+	if ( getFunctionId(p))
 	for (i=0; i<recycleBlk->stop; i++) {
 		q = getInstrPtr(recycleBlk,i);
-		if ((p->argc != q->argc) ||
-		   (getFunctionId(p) != getFunctionId(q)) ||
+		if (
+			(getFunctionId(p) != getFunctionId(q)) ||
+			(p->argc != q->argc) ||
 		   (getModuleId(p) != getModuleId(q)))
 			continue;
 		for (j=p->retc; j<p->argc; j++)
@@ -456,8 +484,10 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	}
 
 #ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"RECYCLEfind ");
-	printInstruction(GDKout, mb,p, LIST_MAL_ALL);
+	if ( getFunctionId(p)){
+		stream_printf(GDKout,"RECYCLE notfound ");
+		printInstruction(GDKout, mb,p, LIST_MAL_ALL);
+	}
 #endif
 	return 0;
 }
@@ -733,8 +763,7 @@ To simplify the code, we just drop all BAT reference counts by one.
 @c
 void
 RECYCLEshutdown(void){
-	InstrPtr q;
-	int i,j;
+	int i;
 	MalBlkPtr mb;
 	
 	if( recycleBlk == NULL)
@@ -745,14 +774,8 @@ RECYCLEshutdown(void){
 	recycleBlk= NULL;
 	mal_unset_lock(recycleLock,"recycle");
 
-	for(i=0; i< mb->stop; i++){
-		q= getInstrPtr(mb,i);
-		for(j=0; j< q->argc; j++)
-		if (isVarConstant(mb,getArg(q,j)) ){
-			if( isaBatType(getArgType(mb, q,j)) )
-				BBPdecref(getVarConstant(mb,getArg(q,j)).val.bval, TRUE);
-		}
-	}
+	for(i=0; i< mb->stop; i++)
+		RECYCLEgarbagecollect(mb,getInstrPtr(mb,i));
 	freeMalBlk(mb);
 }
 @}
