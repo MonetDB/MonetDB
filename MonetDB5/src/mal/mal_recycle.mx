@@ -62,8 +62,8 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-/*#define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE */
+#define _DEBUG_RECYCLE_
+#define _DEBUG_RECYCLE_REUSE 
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -299,11 +299,12 @@ static void RECYCLEremove(int pc){
 #endif
 	RECYCLEgarbagecollect(recycleBlk,old[i]);
 	for (v=0; v< old[i]->retc; v++)
-			used[getArg(p,v)] = 0; /* invalidate return variables */
+			used[getArg(old[i],v)] = 0; /* invalidate return variables */
 	freeInstruction(old[i]);
 	k= i;
 
-	/* propagate the droppings */
+	/* propagate the droppings, in the current setup this is not needed
+	  because all instructions are independently cached */
 	for (i ++; i < limit; i++){
 		p= old[i];
 		for( j = p->retc; j< p->argc; j++)
@@ -383,6 +384,18 @@ RECYCLEcache(int target, int wr)
 		mal_unset_lock(recycleLock,"recycle");
 	}
 }
+@-
+To avoid a polution of the recycle cache, we do not store any
+intruction for which there is not function/command/pattern implementation.
+Likewise, we avoid all simple constant assigments.
+@c
+static int
+RECYCLEinterest(MalBlkPtr mb, InstrPtr p){
+	(void) mb;
+	if (p->token== ASSIGNsymbol )
+		return 0;
+	return getFunctionId(p) != NULL;
+}
 
 static int 
 RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
@@ -400,12 +413,18 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 	    recycleMemory > HARDLIMIT_MEM)
 		return -1; /* no more caching */
 
-	if ( !getFunctionId(p))
+	if ( !RECYCLEinterest(mb,p))
 		return -1;
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE add ");
-	printTraceCall( GDKout,mb,s,getPC(mb,p),LIST_MAL_ALL);
+	stream_printf(GDKout,"RECYCLE kept ");
+	printTraceCall( GDKout,mb,s, getPC(mb,p),LIST_MAL_ALL);
 #endif
+@-
+The instruction is copied and the variables are
+all assigned to the symbol table. This means the
+link with their source disappears. We can later only
+compare by value.
+@c
 	q = copyInstruction(p);
 	for (i = 0; i< p->argc; i++) {
 		j= getArg(p,i);
@@ -436,10 +455,6 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 			recyclerUsedMemory, recycleBlk->stop,
 			recycled, retained, statements, savedTime);
 	retained++;
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE kept ");
-	printTraceCall( GDKout,recycleBlk,s,getPC(recycleBlk,q),LIST_MAL_ALL);
-#endif
 	return i;
 }
 
@@ -467,8 +482,7 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	(void) mb;
 	if( recycleBlk == 0)
 		return 0;
-
-	if ( getFunctionId(p))
+	if ( RECYCLEinterest(mb,p))
 	for (i=0; i<recycleBlk->stop; i++) {
 		q = getInstrPtr(recycleBlk,i);
 		if (
@@ -483,12 +497,6 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			return i;
 	}
 
-#ifdef _DEBUG_RECYCLE_
-	if ( getFunctionId(p)){
-		stream_printf(GDKout,"RECYCLE notfound ");
-		printInstruction(GDKout, mb,p, LIST_MAL_ALL);
-	}
-#endif
 	return 0;
 }
 
@@ -657,7 +665,7 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (isVarKept(mb, getArg(p,i)) && isVarRecycled(mb, getArg(p,i)) ){
 			cnt++;
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLEentry found %d -> %d\n",getArg(p,i),
+	stream_printf(GDKout,"RECYCLEentry reuse %d -> %d\n",getArg(p,i),
 		mb->var[getArg(p,i)]->recycle);
 	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
 #endif
