@@ -1411,11 +1411,15 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	mb->var[n]->maxprop = MAXARG;
 
 	setVarType(mb, n, type);
-	clrVarConstant(mb, n);
-	clrVarCleanup(mb, n);
-	clrVarUDFtype(mb, n);
+	clrVarFixed(mb, n);
 	clrVarUsed(mb, n);
+	clrVarInit(mb, n);
+	clrVarDisabled(mb, n);
+	clrVarUDFtype(mb, n);
+	clrVarConstant(mb, n);
+	clrVarKept(mb, n);
 	clrVarRecycled(mb, n);
+	clrVarCleanup(mb, n);
 	mb->vtop++;
 	return n;
 }
