@@ -62,8 +62,8 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-/* #define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE */
+/*#define _DEBUG_RECYCLE_
+#define _DEBUG_RECYCLE_REUSE*/
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -117,6 +117,7 @@ mal_export int monitorRecycler;
 mal_export void RECYCLEversion(MalBlkPtr mb);
 mal_export int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEshutdown(void);
 #endif
 @-
@@ -771,6 +772,26 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			}
 		}
 	}
+}
+@-
+Once we encounter an update on a recycled variable, we have
+to reset all dependents as well. Since we don't have this 
+information, we simply reset all variables.
+@c
+void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i;
+
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLE reset\n");
+#endif
+	(void) stk;
+	(void) p;
+	mal_set_lock(recycleLock,"recycle");
+	for( i= 0; i< mb->vtop; i++)
+	if( isVarKept(mb,i) )
+		clrVarKept(mb,i);
+	mal_unset_lock(recycleLock,"recycle");
 }
 @-
 At the end of the session we should remove all
