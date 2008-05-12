@@ -169,11 +169,12 @@ are marked for re-use.
 			p->argc=2;
 			p->recycle = 1;
 		}
+		if (update)
+			(void) newFcnCall(mb,"recycle","reset");
 		if( p->token== ENDsymbol){
 			if (update)
-				q= newFcnCall(mb,"recycle","shutdown");
-
-			q= newFcnCall(mb,"recycle","epilogue");
+				(void) newFcnCall(mb,"recycle","shutdown");
+			(void) newFcnCall(mb,"recycle","epilogue");
 		}
 		pushInstruction(mb,p);
 	}
