@@ -394,6 +394,9 @@ PFla_empty_tbl_ (PFalg_schema_t schema)
     }
     ret->schema.count = schema.count;
 
+    ret->sem.lit_tbl.count = 0;
+    ret->sem.lit_tbl.tuples = NULL;
+
     return ret;
 }
 
@@ -424,6 +427,9 @@ PFla_empty_tbl (PFalg_attlist_t attlist)
         ret->schema.items[i].type = 0;
     }
     ret->schema.count = attlist.count;
+
+    ret->sem.lit_tbl.count = 0;
+    ret->sem.lit_tbl.tuples = NULL;
 
     return ret;
 }
