@@ -1415,6 +1415,7 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	clrVarCleanup(mb, n);
 	clrVarUDFtype(mb, n);
 	clrVarUsed(mb, n);
+	clrVarRecycled(mb, n);
 	mb->vtop++;
 	return n;
 }
