@@ -70,6 +70,10 @@ optional arguments are [ instruction-, [memory -]] limit";
 command getCachePolicy():int
 address RECYCLEgetCache;
 
+pattern reset():void
+address RECYCLEresetCMD
+comment "Reset off all recycled variables";
+
 command shutdown():void
 address RECYCLEshutdownWrap
 comment "Clear the recycle cache";
@@ -107,6 +111,7 @@ recycle_export str RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 recycle_export str RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 recycle_export str RECYCLEsetRetain(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEsetReuse(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+recycle_export str RECYCLEresetCMD(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEsetCache(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEgetRetain(int *p);
 recycle_export str RECYCLEgetReuse(int *p);
@@ -168,6 +173,13 @@ RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+
+str
+RECYCLEresetCMD(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	RECYCLEreset(mb,stk,pci);
+	return MAL_SUCCEED;
+}
 
 str
 RECYCLEdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
