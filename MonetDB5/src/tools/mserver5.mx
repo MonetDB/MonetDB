@@ -126,6 +126,8 @@ usage(char *prog)
 	fprintf(stderr, "    --dbinit=<stmt>           Server prepare statement\n");
 	fprintf(stderr, "    --config=<config_file> \n");
 	fprintf(stderr, "    --daemon=yes|no           run in background [no]\n");
+	fprintf(stderr, "    --single-user=yes|no      permit one user to access [no]\n");
+	fprintf(stderr, "    --readonly=yes|no         safeguard database [no]\n");
 	fprintf(stderr, "    --set <option>=<value>    set environment value\n");
 	fprintf(stderr, "    --help                    this list of options \n");
     fprintf(stderr, "    --version                 version and compile time info\n");
@@ -241,6 +243,8 @@ main(int argc, char **av)
 		{"debug", 2, 0, 'd'},
 		{"help", 0, 0, 'h'},
 		{"version", 0, 0, 0},
+		{"readonly", 0, 0, 'r'},
+		{"single-user", 0, 0, 0},
 		{"set", 1, 0, 's'},
 		{"trace", 0, 0, 't'},
 		{"threads",0,0,0},
@@ -339,6 +343,10 @@ faster system start.
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "monet_daemon", optarg);
 				break;
 			}
+			if (strcmp(long_options[option_index].name, "single-user") == 0) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_single_user", "yes");
+				break;
+			}
 			if (strcmp(long_options[option_index].name, "version") == 0) {
 				monet_version();
 				exit(0);
@@ -392,6 +400,9 @@ faster system start.
 				debug = 1;
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", "1");
 			}
+			break;
+		case 'r':
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_readonly", "yes");
 			break;
 		case 's':{
 			/* should add option to a list */
