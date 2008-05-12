@@ -117,8 +117,12 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)){
-			if( isUpdateInstruction(p))
+			if( isUpdateInstruction(p)){
+				/* all update instructions  modify the first argument ?*/
+				/* they may not be recycled to avoid incomplete results */
+				clrVarRecycled(mb, getArg(p,1));
 				update++;
+			}
 			pushInstruction(mb,p);
 			continue;
 		}

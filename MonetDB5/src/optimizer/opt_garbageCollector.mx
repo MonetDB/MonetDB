@@ -160,7 +160,8 @@ can be marked with the proper 'keep'.
 static int
 OPTkeepVariable(MalBlkPtr mb, InstrPtr p, int idx)
 {
-	return (varGetProp(mb, getArg(p, idx), keepProp) != NULL);
+	return isVarRecycled(mb,getArg(p,idx)) ||
+		(varGetProp(mb, getArg(p, idx), keepProp) != NULL);
 }
 @c
 static int

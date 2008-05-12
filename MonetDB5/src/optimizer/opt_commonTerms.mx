@@ -184,7 +184,7 @@ multiple occurrences of the same constant in the symbol table.
 				printInstruction(cntxt->fdout, mb, q, LIST_MAL_ALL);
 				printInstruction(cntxt->fdout, mb, p, LIST_MAL_ALL);
 				printf("%d, %d  %d %d ", i, j, 
-					hasSameSignature(p, q), 
+					hasSameSignature(mb, p, q), 
 					hasSameArguments(mb, p, q));
 				printf(" :%d %d %d %d %d\n", 
 					!hasCommonResults(p, q), 
@@ -199,7 +199,7 @@ Simple assignments are not replaced either. They should be
 handled by the alias removal part
 @c
 				if (q->token != ASSIGNsymbol && 
-					hasSameSignature(p, q) && 
+					hasSameSignature(mb, p, q) && 
 					hasSameArguments(mb, p, q) && 
 					getLastUpdate(span, getArg(p,0)) <= i &&
 					!hasCommonResults(p, q) && 
