@@ -62,7 +62,7 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-/*#define _DEBUG_RECYCLE_
+/* #define _DEBUG_RECYCLE_
 #define _DEBUG_RECYCLE_REUSE */
 @-
 We need some hard limits to not run out of datastructure
@@ -237,6 +237,9 @@ void RECYCLEversion(MalBlkPtr mb)
 	if ( mb->version && mb->version != recycleVersion) { 
 		mal_set_lock(recycleLock,"recycle");
 		/* all re-used variables are dropped */
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLE new version %d\n", recycleVersion);
+#endif
 		for(i=0; i<mb->vtop; i++)		/* reinit recycle */
 			clrVarKept(mb,i);
 		mal_unset_lock(recycleLock,"recycle");
@@ -416,8 +419,8 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 	if ( !RECYCLEinterest(mb,p))
 		return -1;
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE kept ");
-	printTraceCall( GDKout,mb,s, getPC(mb,p),LIST_MAL_ALL);
+	stream_printf(GDKout,"RECYCLE keep ");
+	printTraceCall( GDKout,mb, s, getPC(mb,p),LIST_MAL_ALL);
 #endif
 @-
 The instruction is copied and the variables are
@@ -441,6 +444,10 @@ compare by value.
 			setVarUsed(recycleBlk,c);
 		}
 	}
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLE kept ");
+	printInstruction( GDKout,recycleBlk, q,LIST_MAL_ALL);
+#endif
 	i= recycleBlk->stop;
 	pushInstruction(recycleBlk,q);
 	recycleBlk->profiler[i].clk =0;
@@ -657,7 +664,7 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i, cnt=0;
 	ValPtr lhs,rhs;
 
-	if (recycleVersion == 0 || recycleBlk == NULL)
+	if (recycleVersion == 0 || recycleBlk == NULL )
 		return 0;
 	RECYCLEversion(mb);
 
@@ -665,9 +672,12 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (isVarKept(mb, getArg(p,i)) && isVarRecycled(mb, getArg(p,i)) ){
 			cnt++;
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLEentry reuse %d -> %d\n",getArg(p,i),
-		mb->var[getArg(p,i)]->recycle);
+	stream_printf(GDKout,"RECYCLEentry reuse %d -> %d\n",
+		getArg(p,i), mb->var[getArg(p,i)]->recycle);
 	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
+	stream_printf(GDKout,"RECYCLEentry reuse %s -> %s\n",
+		getVarName(mb,getArg(p,i)),
+		getVarName(recycleBlk,mb->var[getArg(p,i)]->recycle));
 #endif
 			lhs = &stk->stk[getArg(p,i)];
 			rhs = &getVarConstant(recycleBlk, mb->var[getArg(p,i)]->recycle);
@@ -777,9 +787,13 @@ RECYCLEshutdown(void){
 	if( recycleBlk == NULL)
 		return ;
 
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLE shutdown\n");
+#endif
 	mal_set_lock(recycleLock,"recycle");
 	mb= recycleBlk;
 	recycleBlk= NULL;
+	recycleVersion++;
 	mal_unset_lock(recycleLock,"recycle");
 
 	for(i=0; i< mb->stop; i++)
