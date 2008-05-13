@@ -1,4 +1,4 @@
-pf:add-doc("/home/lsidir/develop/pathfinder/tests/BugTracker/Tests/empty_tbl_seg_fault.SF-1961027.xml","ID.1961027.xml","myCollection")
+pf:add-doc("$TSTSRCDIR/empty_tbl_seg_fault.SF-1961027.xml","ID.1961027.xml","myCollection")
 <>
 count(doc("ID.1961027.xml")/dblp/*[author="Michael Stonebraker" and author="Hector Garcia-Molina" and year > 1950]/title)
 <>
