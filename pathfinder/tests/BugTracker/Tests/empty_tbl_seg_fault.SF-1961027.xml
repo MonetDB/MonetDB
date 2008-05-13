@@ -1,0 +1,133 @@
+<dblp>
+<article key="journals/cacm/AbiteboulABCCCDFGGGHHHIKPLMNSSSSSUWWZ05" mdate="2006-02-09">
+<author>Serge Abiteboul</author>
+<author>Rakesh Agrawal</author>
+<author>Philip A. Bernstein</author>
+<author>Michael J. Carey</author>
+<author>Stefano Ceri</author>
+<author>W. Bruce Croft</author>
+<author>David J. DeWitt</author>
+<author>Michael J. Franklin</author>
+<author>Hector Garcia-Molina</author>
+<author>Dieter Gawlick</author>
+<author>Jim Gray</author>
+<author>Laura M. Haas</author>
+<author>Alon Y. Halevy</author>
+<author>Joseph M. Hellerstein</author>
+<author>Yannis E. Ioannidis</author>
+<author>Martin L. Kersten</author>
+<author>Michael J. Pazzani</author>
+<author>Michael Lesk</author>
+<author>David Maier</author>
+<author>Jeffrey F. Naughton</author>
+<author>Hans-Jörg Schek</author>
+<author>Timos K. Sellis</author>
+<author>Avi Silberschatz</author>
+<author>Michael Stonebraker</author>
+<author>Richard T. Snodgrass</author>
+<author>Jeffrey D. Ullman</author>
+<author>Gerhard Weikum</author>
+<author>Jennifer Widom</author>
+<author>Stanley B. Zdonik</author>
+<title>The Lowell database research self-assessment.</title>
+<pages>111-118</pages>
+<year>2005</year>
+<volume>48</volume>
+<journal>Commun. ACM</journal>
+<number>5</number>
+<ee>http://doi.acm.org/10.1145/1060710.1060718</ee>
+<url>db/journals/cacm/cacm48.html#AbiteboulABCCCDFGGGHHHIKPLMNSSSSSUWWZ05</url>
+</article>,
+<article key="journals/corr/cs-DB-0310006" mdate="2008-01-02">
+<author>Serge Abiteboul</author>
+<author>Rakesh Agrawal</author>
+<author>Philip A. Bernstein</author>
+<author>Michael J. Carey</author>
+<author>Stefano Ceri</author>
+<author>W. Bruce Croft</author>
+<author>David J. DeWitt</author>
+<author>Michael J. Franklin</author>
+<author>Hector Garcia-Molina</author>
+<author>Dieter Gawlick</author>
+<author>Jim Gray</author>
+<author>Laura M. Haas</author>
+<author>Alon Y. Halevy</author>
+<author>Joseph M. Hellerstein</author>
+<author>Yannis E. Ioannidis</author>
+<author>Martin L. Kersten</author>
+<author>Michael J. Pazzani</author>
+<author>Michael Lesk</author>
+<author>David Maier</author>
+<author>Jeffrey F. Naughton</author>
+<author>Hans-Jörg Schek</author>
+<author>Timos K. Sellis</author>
+<author>Avi Silberschatz</author>
+<author>Michael Stonebraker</author>
+<author>Richard T. Snodgrass</author>
+<author>Jeffrey D. Ullman</author>
+<author>Gerhard Weikum</author>
+<author>Jennifer Widom</author>
+<author>Stanley B. Zdonik</author>
+<title>The Lowell Database Research Self Assessment</title>
+<ee>http://arxiv.org/abs/cs.DB/0310006</ee>
+<year>2003</year>
+<journal>CoRR</journal>
+<volume>cs.DB/0310006</volume>
+<url>db/journals/corr/corr0310.html#cs-DB-0310006</url>
+<note>informal publication</note>
+</article>,
+<article key="journals/corr/cs-DB-9811013" mdate="2008-01-02">
+<author>Philip A. Bernstein</author>
+<author>Michael L. Brodie</author>
+<author>Stefano Ceri</author>
+<author>David J. DeWitt</author>
+<author>Michael J. Franklin</author>
+<author>Hector Garcia-Molina</author>
+<author>Jim Gray</author>
+<author>Gerald Held</author>
+<author>Joseph M. Hellerstein</author>
+<author>H. V. Jagadish</author>
+<author>Michael Lesk</author>
+<author>David Maier</author>
+<author>Jeffrey F. Naughton</author>
+<author>Hamid Pirahesh</author>
+<author>Michael Stonebraker</author>
+<author>Jeffrey D. Ullman</author>
+<title>The Asilomar Report on Database Research</title>
+<ee>http://arxiv.org/abs/cs.DB/9811013</ee>
+<year>1998</year>
+<journal>CoRR</journal>
+<volume>cs.DB/9811013</volume>
+<url>db/journals/corr/corr9811.html#cs-DB-9811013</url>
+<note>informal publication</note>
+</article>,
+<article key="journals/sigmod/BernsteinBCDFGGHHJLMNPSU98" mdate="2006-04-03">
+<ee>http://doi.acm.org/10.1145/306101.306137</ee>
+<ee>db/journals/sigmod/BernsteinBCDFGGHHJLMNPSU98.html</ee>
+<author>Philip A. Bernstein</author>
+<author>Michael L. Brodie</author>
+<author>Stefano Ceri</author>
+<author>David J. DeWitt</author>
+<author>Michael J. Franklin</author>
+<author>Hector Garcia-Molina</author>
+<author>Jim Gray</author>
+<author>Gerald Held</author>
+<author>Joseph M. Hellerstein</author>
+<author>H. V. Jagadish</author>
+<author>Michael Lesk</author>
+<author>David Maier</author>
+<author>Jeffrey F. Naughton</author>
+<author>Hamid Pirahesh</author>
+<author>Michael Stonebraker</author>
+<author>Jeffrey D. Ullman</author>
+<title>The Asilomar Report on Database Research.</title>
+<pages>74-80</pages>
+<cdrom>sigmodR/27-4/P074.pdf</cdrom>
+<year>1998</year>
+<volume>27</volume>
+<journal>SIGMOD Record</journal>
+<number>4</number>
+<ee>http://www.acm.org/sigmod/record/issues/9812/asilomar.html</ee>
+<url>db/journals/sigmod/sigmod27.html#BernsteinBCDFGGHHJLMNPSU98</url>
+</article>
+</dblp>

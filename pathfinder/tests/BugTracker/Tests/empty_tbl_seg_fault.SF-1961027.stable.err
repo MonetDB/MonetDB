@@ -1,0 +1,17 @@
+stderr of test 'empty_tbl_seg_fault.SF-1961027` in directory 'tests/BugTracker` itself:
+
+
+# 14:28:27 >  
+# 14:28:27 >   Mserver "--config=/export/scratch0/monet//prefix.current/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/export/scratch0/monet//prefix.current/lib/MonetDB4:/export/scratch0/monet//prefix.current/lib/MonetDB4/lib:/export/scratch0/monet//prefix.current/lib/MonetDB4/bin" --set "gdk_dbfarm=/export/scratch0/monet//prefix.current/var/MonetDB4/dbfarm" --set "sql_logdir=/export/scratch0/monet//prefix.current/var/MonetDB4/sql_logs" --set "xquery_logdir=/export/scratch0/monet//prefix.current/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=30641 --set xrpc_port=48434 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 14:28:27 >  
+
+
+# 14:28:28 >  
+# 14:28:28 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=darwin --port=30641 empty_tbl_seg_fault.SF-1961027.xq
+# 14:28:28 >  
+
+
+# 14:28:29 >  
+# 14:28:29 >  Done.
+# 14:28:29 >  
+
