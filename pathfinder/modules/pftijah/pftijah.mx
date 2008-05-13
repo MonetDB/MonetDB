@@ -2710,7 +2710,7 @@ PROC p_containing_q_LM(bat[oid,dbl] left, bat[void,str] Qterms, BAT[oid,str] qen
         # get element count of term
 	var e_tCnt := _getTermDocCnt($h, e_pre, e_size, qenv);
 	# score elements by this term
-        var e_tScores := _score_LMs($t, qSize, c_tCnt, cSize, e_tCnt, e_size, cLambda);
+        var e_tScores := _score_LM($t, qSize, c_tCnt, cSize, e_tCnt, e_size, cLambda);
         e_tCnt := nil;
         var base := dbl(0);
         score_base :*= base;
