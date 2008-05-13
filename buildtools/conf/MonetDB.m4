@@ -813,6 +813,13 @@ yes-*-*)
 	dnl  (see also MonetDB4/src/monet/Makefile.ag, sql/src/server/Makefile.ag,
 	dnl   pathfinder/modules/pftijah/Makefile.ag, amdb/src/lang/Makefile.ag).
 	GCC_BISON_CFLAGS="$GCC_BISON_CFLAGS -Wno-undef"
+	dnl  Likewise, at least with gcc 4.3.0 and flex 2.5.33 and bison 2.3 on Gentoo 1.12.11.1,
+	dnl  gcc complains about some bison/flex-generated code that defines an unused static function:
+	dnl  "warning: 'input' defined but not used".
+	case "$gcc_ver-$host_os" in
+	4.[[3-9]]*-*|[[5-9]].*-*)
+	    GCC_BISON_CFLAGS="$GCC_BISON_CFLAGS -Wno-unused-function";;
+	esac
 	dnl  Our code it not (yet?) up to these:
 	dnl X_CFLAGS="$X_CFLAGS -Wshadow"
 	dnl X_CFLAGS="$X_CFLAGS -Wconversion"
@@ -2012,11 +2019,25 @@ if test "x$enable_optim" = xyes; then
       x86_64-*-*-8.*)  CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
       x86_64-*-*-9.*)  CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
 #     x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1 -O1 -restrict -unroll                     -axWPT  ";;
-      x86_64-*-*-10.*) CFLAGS="$CFLAGS                                                        ";;
+#     x86_64-*-*-10.*) CFLAGS="$CFLAGS                                                        ";; # OK.
+#     x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1                                                   ";; # OK.
+#     x86_64-*-*-10.*) CFLAGS="$CFLAGS      -O1                                               ";; # K.O.!
+      x86_64-*-*-10.*) CFLAGS="$CFLAGS      -O2                                               ";; # OK.
+#     x86_64-*-*-10.*) CFLAGS="$CFLAGS      -O3                                               ";;
+#     x86_64-*-*-10.*) CFLAGS="$CFLAGS          -restrict                                     ";;
+#     x86_64-*-*-10.*) CFLAGS="$CFLAGS                    -unroll                             ";;
+#     x86_64-*-*-10.*) CFLAGS="$CFLAGS                                                -axWPT  ";;
       i*86-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       i*86-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
 #     i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O1 -restrict -unroll                     -axWPT  ";;
-      i*86-*-*-10.*)   CFLAGS="$CFLAGS                                                        ";;
+#     i*86-*-*-10.*) CFLAGS="$CFLAGS                                                        ";; # OK.
+#     i*86-*-*-10.*) CFLAGS="$CFLAGS -mp1                                                   ";; # OK.
+#     i*86-*-*-10.*) CFLAGS="$CFLAGS      -O1                                               ";; # K.O.!
+      i*86-*-*-10.*) CFLAGS="$CFLAGS      -O2                                               ";; # OK.
+#     i*86-*-*-10.*) CFLAGS="$CFLAGS      -O3                                               ";;
+#     i*86-*-*-10.*) CFLAGS="$CFLAGS          -restrict                                     ";;
+#     i*86-*-*-10.*) CFLAGS="$CFLAGS                    -unroll                             ";;
+#     i*86-*-*-10.*) CFLAGS="$CFLAGS                                                -axWPT  ";;
       ia64-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       ia64-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll                     -mcpu=itanium2";;
