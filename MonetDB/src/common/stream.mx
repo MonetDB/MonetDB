@@ -376,7 +376,7 @@ stream_init(void)
 	return 0;
 }
 
-/* #define STREAM_DEBUG 1   */
+/* #define STREAM_DEBUG 1  */
 /* #define BSTREAM_DEBUG 1 */ 
 
 #ifdef STREAM_DEBUG
@@ -498,10 +498,10 @@ stream_error(stream *s)
 int
 stream_flush(stream *s)
 {
+	if (!s) return -1;
 #ifdef STREAM_DEBUG
 	printf("flush %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	if (!s) return -1;
 	assert(s->access == ST_WRITE);
 	if (s->errnr) return s->errnr;
 	if (s->flush)
@@ -513,7 +513,7 @@ int
 stream_fsync(stream *s)
 {
 #ifdef STREAM_DEBUG
-	printf("fsync %s\n", s->name ? s->name : "<unnamed>");
+	printf("fsync %s (%d)\n", s->name ? s->name : "<unnamed>", s->errnr);
 #endif
 	if (!s) return -1;
 	assert(s->access == ST_WRITE);
