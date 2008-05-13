@@ -62,8 +62,8 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-/*#define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE*/
+#define _DEBUG_RECYCLE_
+#define _DEBUG_RECYCLE_REUSE
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -239,7 +239,7 @@ void RECYCLEversion(MalBlkPtr mb)
 		mal_set_lock(recycleLock,"recycle");
 		/* all re-used variables are dropped */
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE new version %d\n", recycleVersion);
+	stream_printf(GDKout,"RECYCLE get version %d\n", recycleVersion);
 #endif
 		for(i=0; i<mb->vtop; i++)		/* reinit recycle */
 			clrVarKept(mb,i);
@@ -384,6 +384,9 @@ RECYCLEcache(int target, int wr)
 				"#memory=%lld, stop=%d, recycled=%d, retained=%d executed=%d saved=%d\n",
 				recyclerUsedMemory, recycleBlk->stop,
 				recycled, retained, statements, savedTime);
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLE new version %d\n", recycleVersion);
+#endif
 		recycleVersion++;
 		mal_unset_lock(recycleLock,"recycle");
 	}
@@ -489,7 +492,11 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 
 	(void) mb;
 	if( recycleBlk == 0)
-		return 0;
+		return -1;
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"search\n");
+	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
+#endif
 	if ( RECYCLEinterest(mb,p))
 	for (i=0; i<recycleBlk->stop; i++) {
 		q = getInstrPtr(recycleBlk,i);
@@ -499,13 +506,16 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 		   (getModuleId(p) != getModuleId(q)))
 			continue;
 		for (j=p->retc; j<p->argc; j++)
-			if( VALcmp( &s->stk[getArg(p,j)], &getVar(recycleBlk,getArg(q,j))->value))
+			if( VALcmp( &s->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 				break;
 		if (j == q->argc)
 			return i;
 	}
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"not found\n");
+#endif
 
-	return 0;
+	return -1;
 }
 
 static int
@@ -717,24 +727,25 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	while ((recycleMemory && recyclerUsedMemory + wr > recycleMemory))
 		RECYCLEcache(-1, wr);
+	if ( RECYCLEinterest(mb,p))
 	switch(retainPolicy) {
 	case RETAIN_NONE:
 		/* RETAIN_NONE: baseline, keeps stat, no retain, no reuse */
 		break;
 	case RETAIN_ALL:
 		/* RETAIN_ALL: infinite case, retain all new instructions */
-		if (!RECYCLEfind(mb,stk,p) )
+		if (RECYCLEfind(mb,stk,p)<0 )
 			(void) RECYCLEnew(mb, stk, p, rd, wr);
 		break;
 	case RETAIN_TIME:
 		/* RETAIN_TIME: time-based semantics, retain if beneficial */
-		if (clk > ABS(recycleTime) && !RECYCLEfind(mb,stk,p))
+		if (clk > ABS(recycleTime) && RECYCLEfind(mb,stk,p)< 0)
 			(void) RECYCLEnew(mb, stk, p, rd, wr);
 		break;
 	case RETAIN_SIZE:
 	{
 		/* RETAIN_SIZE: size cost model */
-		if (recycleVolume && !RECYCLEfind(mb,stk,p)){
+		if (recycleVolume && RECYCLEfind(mb,stk,p)<0){
 			if (rd+wr > recycleVolume){
 				(void) RECYCLEnew(mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
@@ -746,7 +757,7 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	case RETAIN_VOL:
 	{
 		/* RETAIN_VOL: volumetric cost model (time x size )*/
-		if (recycleVolume && !RECYCLEfind(mb,stk,p)){
+		if (recycleVolume && RECYCLEfind(mb,stk,p)<0 ){
 			if (recycleAlpha *(rd+wr) + (1-recycleAlpha)* clk > recycleVolume * recycleTime){
 				(void) RECYCLEnew(mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
@@ -757,7 +768,7 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	}
 	case RETAIN_ADAPT:
 		/* RETAIN_ADAPT: adaptive temporal */
-		if (clk > recycleTime && !RECYCLEfind(mb,stk,p))
+		if (clk > recycleTime && RECYCLEfind(mb,stk,p)< 0)
 			(void) RECYCLEnew(mb, stk, p, rd, wr);
 		/* adapt the time watermark based on observed behavior */
 		if (recycleTime < 0 && (exitLoop++ % 99)== 0){
@@ -801,9 +812,10 @@ tables, because all others are garbage collected automatically.
 To simplify the code, we just drop all BAT reference counts by one.
 @c
 void
-RECYCLEshutdown(void){
+RECYCLEshutdown(){
+	MalBlkPtr mb= recycleBlk;
 	int i;
-	MalBlkPtr mb;
+	ValPtr v;
 	
 	if( recycleBlk == NULL)
 		return ;
@@ -812,13 +824,15 @@ RECYCLEshutdown(void){
 	stream_printf(GDKout,"RECYCLE shutdown\n");
 #endif
 	mal_set_lock(recycleLock,"recycle");
-	mb= recycleBlk;
 	recycleBlk= NULL;
 	recycleVersion++;
 	mal_unset_lock(recycleLock,"recycle");
-
-	for(i=0; i< mb->stop; i++)
-		RECYCLEgarbagecollect(mb,getInstrPtr(mb,i));
+	for (i=0; i<mb->vtop; i++)
+		if(isVarCleanup(mb,i) ){
+			garbageElement(v=  &getVarConstant(mb,i));
+			v->vtype= TYPE_int;
+			v->val.ival= int_nil;
+		}
 	freeMalBlk(mb);
 }
 @}
