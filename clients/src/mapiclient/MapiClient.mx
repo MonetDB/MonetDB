@@ -1609,11 +1609,13 @@ usage(const char *prog)
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
 	fprintf(stderr, " -G          | --algebra          use algebra frontend\n");
+	fprintf(stderr, " -g          | --no-algebra       use old frontend\n");
 
 	fprintf(stderr, "\nXQuery specific options\n");
 	fprintf(stderr, " -C colname  | --collection=colname  collection name\n");
 	fprintf(stderr, " -I docname  | --input=docname    document name, XML document on standard input\n");
 	fprintf(stderr, " -G          | --algebra          use algebra frontend\n");
+	fprintf(stderr, " -g          | --no-algebra       use old frontend\n");
 	exit(-1);
 }
 
@@ -1643,6 +1645,7 @@ main(int argc, char **argv)
 	struct stat statb;
 	static struct option long_options[] = {
 		{"algebra", 0, 0, 'G'},
+		{"no-algebra", 0, 0, 'g'},
 		{"collection", 1, 0, 'C'},
 		{"database", 1, 0, 'd'},
 		{"dump", 0, 0, 'D'},
@@ -1770,6 +1773,9 @@ main(int argc, char **argv)
 		case 'G':
 			algebra = 1;
 			break;
+		case 'g':
+			algebra = 0;
+			break;
 		case 'p':
 			port = atoi(optarg);
 			break;
@@ -1886,7 +1892,7 @@ main(int argc, char **argv)
 	if (logfile)
 		mapi_log(mid, logfile);
 
-	if (algebra && (mode == SQL || mode == XQUERY))
+	if (mode == SQL || mode == XQUERY)
 		mapi_setAlgebra(mid, algebra);
 	mapi_profile(mid, mark != NULL);
 	mapi_trace(mid, trace);
