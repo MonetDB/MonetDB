@@ -777,7 +777,7 @@ execQuery(mapi_client *mc,
           str *argval,
           BAT *shredBAT)
 {
-	char errbuf[GDKMAXERRLEN], *errbuf_bak = GDKerrbuf;
+	char errbuf[GDKMAXERRLEN], errbuf_all[GDKMAXERRLEN*2], *errbuf_bak = GDKerrbuf;
 
     /* Possible values of serializeMode:
      * 0: xml-noheader-xrpc
@@ -798,10 +798,15 @@ execQuery(mapi_client *mc,
                               method, argc, iterc, argcnt, argtpe,
                               argval, shredBAT);
     if (err) {
-        if(err == ((char*)-1)) {
-            err = errbuf;
+        if(*errbuf) {
+            snprintf(errbuf_all, GDKMAXERRLEN*2, "%s\nDue to earlier error:\n%s", err, errbuf);
+            send_err(mc->c->fdout, 0, "", "env:Sender", errbuf_all);
+        } else {
+            if(err == ((char*)-1))
+                err = "Error occurred during execution.";
+            send_err(mc->c->fdout, 0, "", "env:Sender", err);
         }
-        send_err(mc->c->fdout, ERR404, "env:Sender", err);
+        GDKsetbuf(errbuf_bak);
         return GDK_FAIL;
     } else if (updCall) { /* send empty HTTP OK header */
         stream_write(mc->c->fdout, "HTTP/1.1 200 OK\r\n"

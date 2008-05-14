@@ -1,0 +1,36 @@
+stdout of test 'order_of_declared_functions_matters.SF-1905940` in directory 'tests/BugTracker` itself:
+
+
+# 18:34:28 >  
+# 18:34:28 >   Mserver "--config=/net/andorea/export/scratch0/zhang/monet-install/stable/debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/andorea/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4:/net/andorea/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/lib:/net/andorea/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/bin" --set "gdk_dbfarm=/net/andorea/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/dbfarm" --set "sql_logdir=/net/andorea/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/andorea/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32571 --set xrpc_port=41528 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 18:34:28 >  
+
+
+
+# MonetDB Server v4.22.1
+# based on GDK   v1.22.1
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.22.1 loaded
+# XRPC administrative console at http://127.0.0.1:41528/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 18:34:28 >  
+# 18:34:28 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=andorea --port=32571 order_of_declared_functions_matters.SF-1905940.xq
+# 18:34:28 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><i><j/><k><l/><m/></k><n/></i></XQueryResult>
+
+# 18:34:28 >  
+# 18:34:28 >  Done.
+# 18:34:28 >  
+

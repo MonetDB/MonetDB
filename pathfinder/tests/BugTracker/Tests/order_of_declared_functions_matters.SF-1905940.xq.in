@@ -1,0 +1,15 @@
+import module namespace tst = "foo" at "$TSTSRCDIR/order_of_declared_functions_matters.module.SF-1905940.xq";
+
+(: import module namespace tst = "foo" at "/ufs/zhang/monet/stable/pathfinder/tests/BugTracker/Tests/order_of_declared_functions_matters.module.SF-1905940.xq"; :)
+
+
+let $d := <a><b><c><d/><e/></c><f><g/><h/></f><i><j/><k><l/><m/></k><n/></i></b><o/></a>,
+    $u := $d//i,
+    $r := $d//k,
+    $used := $u,
+    $returned := $r,
+    $referred := ($u, $r),
+    $upath := ("./title", "./year"),
+    $rpath := ("./address", "./publisher")
+return tst:comparenodes($used, $returned, $referred, $upath, $rpath, $u, $r)
+

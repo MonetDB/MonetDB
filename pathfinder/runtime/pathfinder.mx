@@ -4218,6 +4218,7 @@ typedef struct {
 #define XQ_MAPI  2 
 #define XQ_ALGEBRA 4
 #define XQ_MILPRINT_SUMMER 8
+#define XQ_XRPC 16
 
 size_t xquery_client_bytes = 64<<20; /* 64MB of procs should be enough for anyone */
 int xquery_cacheid = 0;
@@ -4453,8 +4454,10 @@ xquery_compile_exec(xquery_client *ctx,
     }
     MT_unset_lock(pf_compiler_lock, "xquery_compile_exec");
     
-    /* write errors and debug info on client stream */
-    if (err && *err) stream_write(ctx->fderr, err, len, 1);
+    /* write errors and debug info on client stream, however, in case of
+     * XRPC, we leave the error message to the XRPC receiver, so that it
+     * can create correct SOAP Fault message. */
+    if ( !(ctx->mode&XQ_XRPC) && err && *err) stream_write(ctx->fderr, err, len, 1);
 
     /* execute the three MIL sections */
     if (ret && *prologue && **prologue)
@@ -6074,7 +6077,8 @@ xquery_method(mapi_client *mc,
     char *err, *buf, *ns = "fn";
     stream *s = NULL;
 
-    ctx->mode = 0;
+    ctx->mode = XQ_XRPC;
+    ctx->errbuf = GDKerrbuf;
     buf = GDKstrdup(module);
     (*ctx->moduleNS) = buf;
     buf = GDKstrdup(method);
