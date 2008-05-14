@@ -448,7 +448,7 @@ shredBAT_extend(shredBAT *sb,
         return GDK_SUCCEED;
     }
     if (newsize+newsize > (size_t) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
-        BATmmap(sb->bat, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+        BATmmap(sb->bat, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     }
     if (!(sb->bat = BATextend(sb->bat, newsize))) {
         GDKerror("shredBAT_extend: BATextend[\"%s\"](%d to %d) fails\n", sb->def->name, sb->size, newsize);
@@ -495,7 +495,7 @@ shredBAT_append_str(shredCtxStruct *shredCtx,
     }
     newsize = sb->bat->T->heap.free & (REMAP_PAGE_MAXSIZE-1);
     if (oldsize > newsize) { /* try to use mmap() */
-        BATmmap(sb->bat, STORE_MMAP, 0, GDK_ELIMDOUBLES(sb->bat->theap)?STORE_MEM:STORE_MMAP);
+        BATmmap(sb->bat, STORE_MMAP, 0, GDK_ELIMDOUBLES(sb->bat->theap)?STORE_MEM:STORE_MMAP, STORE_MMAP);
     }
     return BATcount(sb->bat)-1;
 }
