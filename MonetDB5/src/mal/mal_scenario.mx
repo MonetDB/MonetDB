@@ -605,6 +605,8 @@ runScenarioBody(Client c)
 #endif
 
 	while (c->mode > FINISHING || msg != MAL_SUCCEED) {
+		if (msg != MAL_SUCCEED)
+			GDKfree(msg);
 		if (!c->state[0] &&
 		    (msg = runPhase(c, MAL_SCENARIO_INITCLIENT)) != MAL_SUCCEED)
 			continue;
