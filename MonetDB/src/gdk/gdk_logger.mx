@@ -1626,7 +1626,7 @@ bm_commit(logger *lg)
 
 		BATmode(lb, PERSISTENT);
 		if (BATcount(lb) > (size_t) REMAP_PAGE_MAXSIZE)
-			BATmmap(lb, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+			BATmmap(lb, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 		logbat_destroy(lb);
 
 		if (lg->debug & 1)

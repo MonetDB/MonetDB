@@ -35,33 +35,19 @@ data using the OS virtual memory management.
 
 @item STORE_PRIV: read-write mapped region
 in order to preserve ACID properties, we use a different memory mapping
-on virtual memory that is writable, This is because in case of a crash
+on virtual memory that is writable. This is because in case of a crash
 on a dirty STORE_MMAP heap, the OS may have written some of the dirty pages
 to disk and other not (but it is impossible to determine which).  The OS 
 MAP_PRIVATE mode does not modify the file on which is being mapped, rather 
 creates substitute pages dynamically taken from the swap file when modifications 
 occur. This is the only way to make writing to mmap()-ed regions safe.
-
+To save changes, we created a new file X.new; as some OS-es do not
+allow to write into a file that has a mmap open on it (e.g. Windows).
+Such X.new files take preference over X files when opening them.
 @end table
+Read also the discussion in BATsetaccess (gdk_bat.mx).
 
-On huge requests, we now open a X.priv file and memory map it (STORE_MMAP).
-This is done for heaps of new BATs: these are writable (non-readonly), but 
-are non-persistent (yet). Such BATs may be made persistent later on, of course.
-Thus, the commit protocol BBPsync/heap_move (gdk_bbp.mx) actually does
-not check anymore for hp->storage == STORE_PRIV, but rather for a .priv suffix 
-in hp->filename. Thus, persistent STORE_MMAP/.priv heaps are saved with
-by explicitly writing a separate full file X to disk (this is expensive, though!).
-
-Related to this is saving BAT descriptors. These contain hp->storage fields that 
-reflect how the heap should be loaded the *next* time the BAT is re-loaded (may differ
-from the *current* mode). In the case of persistent, writable STORE_MMAP
-bats (with a X.priv file), we set the `future-storage' to STORE_PRIV. Thus, after
-surviving their first commit, any re-load of the BAT will put it in its safe
-storage mapping (STORE_PRIV). This is in DESCsetmodes/HEAPcheckmode (gdk_storage.mx).
-
-Another hairy heap issue is changing the BAT readonly/writable state. This 
-sometimes implies flushing heaps to disk and even re-loading them with a new 
-storage mode.  This is discussed in detail in BATsetaccess (gdk_bat.mx).
+Todo: check DESCsetmodes/HEAPcheckmode (gdk_storage.mx).
 @{
 @c
 #include "monetdb_config.h"
@@ -83,14 +69,9 @@ decompose_filename(str nme)
 @- HEAPalloc
 
 Normally, we use GDKmalloc for creating a new heap.  Huge heaps, though, come 
-from X.priv files that we create with a large seek (fast, and leads to 
-files-with-holes on Unixes).  For this purpose, the filename (X) is supposed 
-to have been stored in the heap (NULL is a legal value).
-
-It would have been better to pass this name as a parameter, but this would
-also require changing the atom extension ADT interface plus modifying all
-extension modules that introduce variable-size atoms (e.g. polygon), as these
-provide overloaded versions of HEAPalloc (without heap name, currently).
+from memory mapped files that we create with a large seek. This is fast, and leads to 
+files-with-holes on Unixes (on Windows, it actually always performs I/O which is not
+nice).  
 @{
 @c
 int
@@ -126,17 +107,15 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			GDKerror("HEAPalloc: Insufficient space for HEAP.");
 	}
 	if (h->filename && h->base == NULL) {
-		char privext[PATHLENGTH], *of = h->filename;
+		char *of = h->filename;
 		FILE *fp;
 
 		h->filename = NULL;
-		sprintf(privext, "%s.priv", ext);
-		fp = GDKfilelocate(nme, "wb", privext);
+		fp = GDKfilelocate(nme, "wb", ext);
 		if (fp != NULL) {
 			fclose(fp);
-			/* a non-persistent heap: we create a .priv but *not* MMAP_PRIV !!! */
 			h->storage = STORE_MMAP;
-			HEAPload(h, nme, privext, FALSE);
+			HEAPload(h, nme, ext, FALSE);
 		}
 		GDKfree(of);
 	}
@@ -148,7 +127,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 @- HEAPextend
 
 Normally (last case in the below code), we use GDKrealloc, except for the case that the 
-heap extends to a huge size, in which case we open an X.priv file and memory map it.
+heap extends to a huge size, in which case we open memory mapped file.
 
 Observe that we may assume that the BAT is writable here (otherwise, why extend?).
 
@@ -201,25 +180,21 @@ HEAPextend(Heap *h, size_t size)
 
 		/* try GDKrealloc if the heap size stays within reasonable limits */
 		if (!must_mmap) {
-			h->storage = STORE_MEM;
+			h->newstorage = h->storage = STORE_MEM;
 			h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize, 0);
 			if (h->base)
 				return 0;
 		}
 		/* too big: convert it to a disk-based temporary heap */
 		if (can_mmap) {
-			char privext[PATHLENGTH], *of = h->filename;
-			FILE *fp;
-
+			FILE *fp = GDKfilelocate(nme, "wb", ext);
+			char *of = h->filename;
 			h->filename = NULL;
-			sprintf(privext, "%s.priv", ext);
-			fp = GDKfilelocate(nme, "wb", privext);
 			if (fp != NULL) {
 				fclose(fp);
-				/* a non-persistent heap: we create a .priv but *not* MMAP_PRIV !!! */
-				h->storage = STORE_MMAP;
+				h->newstorage = h->storage = STORE_MMAP;
 				h->base = NULL;
-				if (HEAPload(h, nme, privext, FALSE) >= 0) {
+				if (HEAPload(h, nme, ext, FALSE) >= 0) {
 					memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak);
 					return 0;
@@ -259,7 +234,7 @@ int
 HEAPfree(Heap *h)
 {
 	if (h->base) {
-		if (h->storage == STORE_MEM) {	/* plain memory */
+		if (h->newstorage == STORE_MEM) {	/* plain memory */
 			GDKfree(h->base);
 		} else {	/* mapped file, or STORE_PRIV */
 			int ret = GDKmunmap(h->base, h->maxsize);
@@ -282,12 +257,7 @@ HEAPfree(Heap *h)
 @}
 @- HEAPload
 
-If we don't find file X, we try to move X.priv to it. 
-
-If we find both an X and X.priv, the latter is killed.
-
-For STORE_PRIV, we actually then move X to X.priv and mmap on it.
-For the other modes, we access X as-is.
+If we don find file X.new, we move it over X (if present) and open it.
 
 This routine initializes the h->filename without deallocating
 its previous contents.
@@ -296,60 +266,33 @@ its previous contents.
 int
 HEAPload(Heap *h, str nme, str ext, int trunc)
 {
-	FILE *fp = (FILE *) GDKfilelocate(nme, "mrb", ext);
-	int ret = 0, desc_status = 0;
 	size_t truncsize = (1 + (((size_t) (h->free * 1.05)) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
 	size_t minsize = (1 + ((h->size - 1) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
-	int priv_storage = (h->storage == STORE_PRIV);
-	char priv[80] = { 0 };
+	FILE *fp = NULL;
+	int ret = 0, desc_status = 0;
+        long_str srcpath, dstpath;
+        struct stat st;
+	char *p;
 
+	h->storage = h->newstorage;
 	h->maxsize = h->size;
-	h->filename = NULL;
+	h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
+	if (h->filename == NULL) 
+ 	    return -1;	
+	sprintf(h->filename, "%s.%s", nme, ext);
 
 	/* round up mmap heap sizes to REMAP_PAGE_MAXSIZE (usually 512KB) segments */
 	if ((h->storage & STORE_MMAP) && (minsize != h->size)) {
 		h->size = minsize;
 		h->maxsize = MAX(minsize, h->maxsize);
 	}
-	IODEBUG {
-		THRprintf(GDKout, "#HEAPload(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, h->storage, h->free, h->size);
-	}
-	/* On some OSs (WIN32,Solaris), it is prohibited to write to a file that is open 
-	 * in MAP_PRIVATE (FILE_MAP_COPY) solution: read from a file renamed to .ext.priv 
-	 * .ex.priv files are now also used with STORE_MMAP mode on huge uncommitted BATs.
-	 */
-	strcpy(priv, ext);
-	strcat(priv, ".priv");
-	if (fp) {
-		ret = fclose(fp);
-	} else {
-		priv_storage = TRUE;	/* file may be in X.priv file iso X */
-	}
-	if (priv_storage) {
-		long_str path;
 
-		GDKfilepath(path, BATDIR, nme, priv);
-		if (fp == NULL) {
-			struct stat st;
-
-			ret = stat(path, &st);
-		} else {
-			/* silently remove any previous .ext.priv file */
-			(void) unlink(path);
-			ret = GDKmove(BATDIR, nme, ext, BATDIR, nme, priv);
-		}
-		ext = priv;
-	}
-	if (ret) {
-		return -1;	/* file could not be located */
-	}
-	/* legacy 2: some old repositories have wasted space => truncate during load */
-	if (trunc && truncsize < h->size) {
+       /* when a bat is made read-only, we can truncate any unused space at the end of the heap */
+       if (trunc && truncsize < h->size) {
 		fp = (FILE *) GDKfilelocate(nme, "mrb+", ext);
 		if (fp) {
 			ret = ftruncate(fileno(fp), (off_t) truncsize);
 			IODEBUG THRprintf(GDKout, "#ftruncate(file=%s.%s, size=" SZFMT ") = %d\n", nme, ext, truncsize, ret);
-
 			fclose(fp);
 			if (ret == 0) {
 				h->size = h->maxsize = truncsize;
@@ -357,16 +300,42 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 			}
 		}
 	}
-	h->base = (char *) GDKload(nme, ext, h->free, h->size, h->storage);
-	h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
-	if (h->base == NULL || h->filename == NULL) {
-		GDKfree(h->base);
-		GDKfree(h->filename);
-		return -1;	/* file could  not be read satisfactorily */
+
+	IODEBUG {
+		THRprintf(GDKout, "#HEAPload(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, h->storage, h->free, h->size);
 	}
-	h->newstorage = h->storage;
-	sprintf(h->filename, "%s.%s", nme, ext);
-	return desc_status;	/* ok */
+	/* On some OSs (WIN32,Solaris), it is prohibited to write to a file that is open 
+	 * in MAP_PRIVATE (FILE_MAP_COPY) solution: we write to a file named .ext.new
+         * This file, if present, takes precedence.
+	 */
+	GDKfilepath(srcpath, BATDIR, nme, ext);
+	GDKfilepath(dstpath, BATDIR, nme, ext);
+	for(p=srcpath; *p; p++);
+	strcpy(p, ".new");
+	ret = stat(dstpath, &st);
+	if (stat(srcpath, &st) == 0) {
+		if (ret) {
+			int t0 = GDKms();
+			ret = unlink(dstpath);
+        		IODEBUG THRprintf(GDKout, "#unlink %s = %d (%dms)\n", dstpath, ret, GDKms() - t0);
+		}
+		if (ret == 0) { /* move X.new to X */
+			int t0 = GDKms();
+			ret = rename(srcpath, dstpath);
+        		IODEBUG THRprintf(GDKout, "#rename %s %s = %d (%dms)\n", srcpath, dstpath, ret, GDKms() - t0);
+		}
+	} else if (ret) { /* legacy: accept .priv files as well */
+		int t0 = GDKms(); 
+		strcpy(p, ".priv");
+		ret = rename(srcpath, dstpath); /* move X.priv to X */
+        	IODEBUG THRprintf(GDKout, "#rename %s %s = %d (%dms)\n", srcpath, dstpath, ret, GDKms() - t0);
+	}
+
+	h->base = (char *) GDKload(nme, ext, h->free, h->size, h->newstorage);
+	if (h->base == NULL)
+		return -1;	/* file could  not be read satisfactorily */
+
+	return desc_status;
 }
 
 @}
@@ -374,7 +343,7 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 
 Saving STORE_MEM will do a write(fd, buf, size) in GDKsave (explicit IO).
 
-Saving a STORE_PRIV (X.priv) heap means that we must actually write to X, thus
+Saving a STORE_PRIV heap X means that we must actually write to X.new, thus
 we convert the mode passed to GDKsave to STORE_MEM.
 
 Saving STORE_MMAP will do a msync(buf, MSSYNC) in GDKsave (implicit IO).
@@ -385,26 +354,29 @@ After GDKsave returns successfully (>=0), we assume the heaps are safe on stable
 int
 HEAPsave(Heap *h, str nme, str ext)
 {
-	int store = h->storage;
-	char *p = h->filename;
+	int store = h->newstorage;
+        long_str extension;
 
 	if (h->base == NULL) {
 		return -1;
 	}
-	if (p == NULL || store == STORE_PRIV) {
+	if (store == STORE_PRIV) {
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM;
+		strcpy(extension,ext);
+		strcat(extension,".new");
+                ext = extension;
 	}
 	IODEBUG {
 		THRprintf(GDKout, "#HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n",
-			  nme, ext, h->storage, h->free, h->size);
+			  nme, ext, h->newstorage, h->free, h->size);
 	}
 	return GDKsave(nme, ext, h->base, h->free, store);
 }
 
 @}
 @- HEAPload
-Delete any saved heap file. For memory mapped files, also try to remove any remaining X.priv
+Delete any saved heap file. For memory mapped files, also try to remove any remaining X.new
 @{
 @c
 int
@@ -434,7 +406,7 @@ HEAPdelete(Heap *h, str o, str ext)
 		return 0;
 	}
 	strcpy(ext2, ext);
-	strcat(ext2, ".priv");
+	strcat(ext2, ".new");
 	return (GDKunlink(BATDIR, o, ext) == 0) | (GDKunlink(BATDIR, o, ext2) == 0) ? 0 : -1;
 }
 

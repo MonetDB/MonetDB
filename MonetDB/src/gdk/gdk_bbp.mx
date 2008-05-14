@@ -1738,10 +1738,6 @@ BBPfree(BAT *b, str calledFrom)
 				BATfree(b);	/* free memory */
 		}
 		BBPuncacheit_(bid, FALSE);
-		if (b->batMapdirty) {
-			DESCsetmodes(b, b);
-			b->batMapdirty = 0;
-		}
 	}
 	/* clearing bits can be done without the lock */
 	BBP_status_off(bid, BBPUNLOADING, calledFrom);
@@ -2584,68 +2580,24 @@ BBPrecycle_minsize(wrd val)
 
 @+ Global Commit
 
-@- Is a bat dirty at commit time?
-
-Used to be simple: look if it is loaded. If not, only its cached descriptor might still
-be dirty. Otherwise look at the union of all dirty bits.
-
-But, sometimes clean BATs must be made dirty, just because this is called from a commit!
-
-This happens in a commit where we have persistent BATs that fulfill all following conditions:
-@itemize
-item (1) 
-are updatable (non BAT_READ) 
-item (2) 
-are new in this commit
-item (3) 
-have at least one huge STORE_MMAP .priv heap
-@end itemize
-
-These BATs are a problem, as after the commit, the STORE_MMAP status should be a STORE_PRIV
-(subsequent updates followed by a crash corrupt the stable heap image).
-
-Also, if such a BAT was already clean at commit time (due to a BBPtrim or explicit save),
-its descriptor would not even be saved. Recall that HEAPcheckmodes in gdk_storage.mx would 
-at least have re-set the heap->storage modes in the desc correctly for subsequent BAT loads. 
-Not even that will happen if the BAT is clean.
-
-So, one thing we do is making the descriptor dirty always for such BATs. This solves the
-latter problem.
-
-Also, if there are no hot-locks on this BAT, we just unload the BAT inside the commit.
-In this case, we do not modify the storage modes yet. Thus, its heaps get saved with 
-an efficient msync(). After the unload, a re-load will use the correct STORE_PRIV mode. 
-
-Only if the BAT cannot be unloaded, we hack the storage state of the BAT, such that it 
-appears to be STORE_PRIV. This works, but causes a very expensive write()-based save of
-the entire bat, and duplicates disk consumption for its heap.
 @{
 @c
 static BAT *
-dirty_bat(bat i, int subcommit, int *unload)
+dirty_bat(bat *i, int subcommit)
 {
-	if (BBPvalid(i)) {
-		int unloadable = (BBP_refs(i) == 0);	/* are no other threads currently executing on this image?? */
-		int newbat = (BBP_status(i) & BBPNEW);
+	if (BBPvalid(*i)) {
 		BAT *b;
-
-		BBPspin(i, "dirty_bat", BBPSAVING);
-		b = BBP_cache(i);
+		BBPspin(*i, "dirty_bat", BBPSAVING);
+		b = BBP_cache(*i);
 		if (b != NULL) {
-			if (BBP_status(i) & BBPPERSISTENT) {
-				if (unload)
-					*unload = BATcheckmodes(b, newbat, unloadable) && unloadable;
-				if (subcommit || BATdirty(b))
-					return b;	/* the bat is loaded, persistent and dirty */
-			}
-		} else if (BBP_status(i) & BBPSWAPPED) {
-			b = (BAT *) BBPquickdesc(i, TRUE);
-			if (b) {
-				if (unload)
-					(void) BATcheckmodes(b, newbat, 0);
-				if (subcommit || b->batDirtydesc)
-					return b;	/* only the desc is loaded & dirty */
-			}
+			if ((BBP_status(*i) & BBPNEW) && BATcheckmodes(b, TRUE)) /* check mmap modes */
+				*i = 0; /* error */
+			if ((BBP_status(*i) & BBPPERSISTENT) && (subcommit || BATdirty(b)))
+				return b;	/* the bat is loaded, persistent and dirty */
+		} else if (BBP_status(*i) & BBPSWAPPED) {
+			b = (BAT *) BBPquickdesc(*i, TRUE);
+			if (b && (subcommit || b->batDirtydesc))
+				return b;	/* only the desc is loaded & dirty */
 		}
 	}
 	return NULL;
@@ -2667,9 +2619,6 @@ file_move(str srcdir, str dstdir, str name, str e)
 
 	strcpy(ext, e);
 	ret = GDKmove(srcdir, name, ext, dstdir, name, ext);
-	if (ret == 0) {
-		return 0;
-	}
 	if (ret == 0) {
 		return 0;
 	} else {
@@ -2701,18 +2650,18 @@ file_exists(str dir, str name, str ext)
 static int
 heap_move(Heap *hp, str srcdir, str dstdir, str nme, str ext)
 {
-	/* see doc at BATsetaccess()/gdk_bat.mx for an expose on .priv heap modes */
+	/* see doc at BATsetaccess()/gdk_bat.mx for an expose on mmap heap modes */
 	if (file_exists(dstdir, nme, ext)) {
 		return 0;	/* dont overwrite heap with the committed state already in dstdir */
-	} else if (hp->filename && hp->storage == STORE_PRIV) {
+	} else if (hp->filename && hp->newstorage == STORE_PRIV) {
 		long_str path;
 		struct stat st;
 
 		GDKfilepath(path, srcdir, nme, ext);
 		if (stat(path, &st)) {
-			/* in order to prevent half-saved X files surviving a recover
+			/* in order to prevent half-saved X.new files surviving a recover
 			 * we create a dummy file in the BACKUP(dstdir) whose presence
-			 * will trigger BBPrecover to remove them. Thus, X.priv will 
+			 * will trigger BBPrecover to remove them. Thus, X will 
 			 * prevail where it otherwise wouldn't have.
 			 */
 			FILE *fp;
@@ -2731,7 +2680,7 @@ heap_move(Heap *hp, str srcdir, str dstdir, str nme, str ext)
 				return 1;
 			}
 		}
-		/* if X.priv already has a saved X, that one is backed up as normal.. */
+		/* if X already has a saved X.new, that one is backed up as normal.. */
 	}
 	return file_move(srcdir, dstdir, nme, ext);
 }
@@ -2832,8 +2781,8 @@ BBPbackup(BAT *b, bit subcommit)
 	if (ret & 1)
 		return -1;
 @= backup
-	if (@2 && @2->storage != STORE_MMAP) { /* direct mmap is unprotected (readonly usage, or has WAL protection)  */
-		str ext = @2->filename && @2->storage == STORE_PRIV ? "@1.kill" : "@1";
+	if (@2 && @2->newstorage != STORE_MMAP) { /* direct mmap is unprotected (readonly usage, or has WAL protection)  */
+		str ext = @2->filename && @2->newstorage == STORE_PRIV ? "@1.kill" : "@1";
 		if ((@3) && !file_exists(BAKDIR, nme, ext)) { 
                 	/* file will be saved (is dirty), move the old image into backup */
 		        ret |= heap_move(@2, srcdir, subcommit ? SUBDIR : BAKDIR, nme, "@1");
@@ -2886,10 +2835,9 @@ BBPsync(int cnt, bat *subcommit)
 
 		while (++idx < cnt) {
 			bat i = subcommit ? subcommit[idx] : idx;
-
+			BAT *b = dirty_bat(&i, subcommit != NULL);
+			if (i <= 0) break;
 			if (BBP_status(i) & BBPEXISTING) {
-				BAT *b = dirty_bat(i, subcommit != NULL, NULL);
-
 				if (b != NULL && BBPbackup(b, subcommit != NULL))
 					break;
 			}
@@ -2906,19 +2854,10 @@ BBPsync(int cnt, bat *subcommit)
 			bat i = subcommit ? subcommit[idx] : idx;
 
 			if (BBP_status(i) & BBPPERSISTENT) {
-				int unload = FALSE;
-				BAT *b = dirty_bat(i, subcommit != NULL, &unload);
-
-				if (b != NULL) {
-					if (BATsave(b) == NULL)
-						break;	/* write error */
-					if (unload) {
-						/* BATs that became persistent and have heaps that should in the 
-						   future be STORE_PRIV (but are not yet), are unloaded */
-						BATfree(b);
-						BBPuncacheit_(i, TRUE);
-					}
-				}
+				BAT *b = dirty_bat(&i, subcommit != NULL);
+				if (i <= 0) break;
+				if (b != NULL && BATsave(b) == NULL)
+					break;	/* write error */
 			}
 		}
 		ret = (idx < cnt);
@@ -2990,9 +2929,9 @@ force_move(str srcdir, str dstdir, str name)
 
 		strncpy(srcpath, name, len);
 		srcpath[len] = '\0';
-		GDKfilepath(dstpath, dstdir, srcpath, NULL);
+		GDKfilepath(dstpath, dstdir, srcpath, ".new");
 
-		/* step 1: remove the X file that is going to be overwritten by X.priv */
+		/* step 1: remove the X.new file that is going to be overridden by X */
 		if (stat(dstpath, &st) == 0) {
 			ret = unlink(dstpath);	/* clear destination */
 			if (ret) {
@@ -3009,16 +2948,6 @@ force_move(str srcdir, str dstdir, str name)
 			GDKsyserror("force_move: unlink(%s)\n", killfile);
 			return ret;
 		}
-
-		/* step 3: move X.priv to X. Even if this fails, HEAPload will retry to do this later */
-		if (GDKcreatedir(dstdir))
-			ret = 0;
-		ret = GDKmove(dstdir, srcpath, "priv", dstdir, srcpath, NULL);
-		if (ret)
-			GDKsyserror("force_move: link(%s%c%s.priv,%s)=%d\n", srcdir, DIR_SEP, srcpath, dstpath);
-
-		IODEBUG THRprintf(GDKout, "#link %s%c%s.priv %s = %d\n", srcdir, DIR_SEP, srcpath, dstpath, ret);
-
 		return 0;
 	}
 	/* try to rename it */
@@ -3247,34 +3176,29 @@ BBPdiskscan_r(str parent)
 			filesize = st.st_size;
 		}
 
-		/* if X exists, then X.priv can always be deleted */
-		r = (int) strlen(fullname);
-		if (r > 5 && strcmp(fullname + r - 5, ".priv") == 0) {
-			chr bak = fullname[r - 5];
-
-			fullname[r - 5] = 0;	/* cut off the .priv bit */
-			delete = (stat(fullname, &st) == 0);
-			fullname[r - 5] = bak;
-		}
-		if (ok == FALSE || delete == TRUE || !persistent_bat(bid)) {
+		if (ok == FALSE || !persistent_bat(bid)) {
 			delete = TRUE;
+		} else if (strncmp(p + 1, "head", 4) == 0) {
+			BAT *b = getdesc(bid);
+			delete = (b == NULL || !b->htype || b->batCopiedtodisk == 0);
+		} else if (strncmp(p + 1, "tail", 4) == 0) {
+			BAT *b = getdesc(bid);
+			delete = (b == NULL || !b->ttype || b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "hheap", 5) == 0) {
 			BAT *b = getdesc(bid);
-
-			delete = (b == NULL || !b->hheap) || (b->batCopiedtodisk == 0);
+			delete = (b == NULL || !b->hheap || b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "theap", 5) == 0) {
 			BAT *b = getdesc(bid);
-
-			delete = (b == NULL || !b->theap) || (b->batCopiedtodisk == 0);
+			delete = (b == NULL || !b->theap || b->batCopiedtodisk == 0);
 		} else if (strncmp(p + 1, "hhash", 5) == 0) {
 			BAT *b = getdesc(bid);
-
 			delete = (b == NULL || !b->H->hash);
 		} else if (strncmp(p + 1, "thash", 5) == 0) {
 			BAT *b = getdesc(bid);
-
 			delete = (b == NULL || !b->T->hash);
 		} else if (strcmp(p + 1, "desc") && 
+			strncmp(p + 1, "priv", 4) &&
+			strncmp(p + 1, "new", 3) &&
 			strncmp(p + 1, "head", 4) &&
 			strncmp(p + 1, "tail", 4)) {
 			ok = FALSE;
@@ -3285,7 +3209,7 @@ BBPdiskscan_r(str parent)
 			break;
 		}
 		if (delete) {
-			r = unlink(fullname);
+			int r = unlink(fullname);
 			if (r) {
 				GDKsyserror("BBPdiskscan: unlink(%s)", fullname);
 			} else {

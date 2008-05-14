@@ -865,8 +865,8 @@ typedef struct {
 	chr restricted;		/* access priviliges */
 	sht persistence;	/* should the BAT persist on disk? */
 	int sharecnt;		/* incoming view count */
-	bit map_dirty;		/* new mmap mode present */
-	char map_buns;		/* mmap mode for bun heap */
+	char map_head;		/* mmap mode for head bun heap */
+	char map_tail;		/* mmap mode for tail bun heap */
 	char map_hheap;		/* mmap mode for head atom heap */
 	char map_theap;		/* mmap mode for tail atom heap */
 } BATrec;
@@ -983,8 +983,8 @@ typedef int (*GDKfcn) ();
 #define halign		H->align
 #define talign		T->align
 
-#define batMapdirty	P->map_dirty
-#define batMapbuns	P->map_buns
+#define batMaphead	P->map_head
+#define batMaptail	P->map_tail
 #define batMaphheap	P->map_hheap
 #define batMaptheap	P->map_theap
 @
@@ -1449,7 +1449,7 @@ gdk_export int BATname(BAT *b, str nme);
 gdk_export BAT *BATseqbase(BAT *b, oid o);
 gdk_export BAT *BATsetaccess(BAT *b, int mode);
 gdk_export int BATgetaccess(BAT *b);
-gdk_export int BATcheckmodes(BAT *b, int persistent, int unloadable);
+gdk_export int BATcheckmodes(BAT *b, int persistent);
 
 
 #define BATdirty(b)	((b)->batCopiedtodisk == 0 || (b)->batDirty || \
@@ -1524,9 +1524,9 @@ gdk_export BAT *BATgroup(BAT *b, int start, int incr, int grpsize);
 @item BAT *
 @tab BATsave (BAT *b)
 @item int
-@tab BATmmap (BAT *b, int bn, int hh, int th )
+@tab BATmmap (BAT *b, int hb, int tb, int hh, int th )
 @item int
-@tab BATmadvise (BAT *b, int bn, int hh, int th )
+@tab BATmadvise (BAT *b, int hb, int tb, int hh, int th )
 @item int
 @tab BATmmap_pin (BAT *b)
 @item int
@@ -1594,10 +1594,10 @@ gdk_export size_t GDK_mem_pagebits;	/* page size for non-linear mmaps */
 gdk_export BAT *BATload(str nme);
 gdk_export BAT *BATload_intern(bat bid);
 gdk_export BAT *BATsave(BAT *b);
-gdk_export int BATmmap(BAT *b, int bn, int hh, int th);
+gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th);
 gdk_export int BATmmap_pin(BAT *b);
 gdk_export int BATmmap_unpin(BAT *b);
-gdk_export int BATmadvise(BAT *b, int bn, int hh, int th);
+gdk_export int BATmadvise(BAT *b, int hb, int tb, int hh, int th);
 gdk_export int BATdelete(BAT *b);
 gdk_export size_t BATvmsize(BAT *b, int dirty);
 gdk_export size_t BATmemsize(BAT *b, int dirty);

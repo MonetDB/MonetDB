@@ -38,7 +38,7 @@ system start.
 #include "gdk.h"
 
 extern void DESCclean(BAT *);
-extern void DESCsetmodes(BAT *b, BAT *img);
+extern int DESCsetmodes(BAT *b);
 
 #endif /* _GDK_STORAGE_H_ */
 @c
@@ -439,29 +439,36 @@ DESCload(int i)
 	b->batCopiedtodisk = 1;
 	b->batSharecnt = 0;
 	DESCclean(b);
-	BATcheckmodes(b, BBP_status(i) & BBPEXISTING, FALSE);
 	return b;
 }
 
-void
-DESCsetmodes(BAT *b, BAT *img)
+#define STORE_MODE(m,r,e) (((m) == STORE_MEM)?STORE_MEM:((r)&&(e))?STORE_PRIV:STORE_MMAP)
+int
+DESCsetmodes(BAT *b)
 {
-	/* propagate the proposed modes to the separate img of the bat (so concurrent execution on this bat is not affected) */
-	if (b->batMapbuns != STORE_UNSET) {
-		img->H->heap.storage = b->batMapbuns;
-		img->T->heap.storage = b->batMapbuns;
-	}
-	if (img->hheap && b->batMaphheap != STORE_UNSET) {
-		/* elimdoubles string heaps (small, double-eliminated) cannot be memory mapped */
-		img->hheap->storage = GDK_ELIMDOUBLES(img->hheap) ? STORE_MEM : b->batMaphheap;
-	}
-	if (img->theap && b->batMaptheap != STORE_UNSET) {
-		/* elimdoubles string heaps (small, double-eliminated) cannot be memory mapped */
-		img->theap->storage = GDK_ELIMDOUBLES(img->theap) ? STORE_MEM : b->batMaptheap;
-	}
+	int existing = (BBPstatus(b->batCacheid) & BBPEXISTING);
+	int brestrict = (b->batRestricted == BAT_WRITE);
+	int ret = 0;
 
-	/* change modes in img into legal modes, and reset b's mapdirty if something had to be corrected */
-	b->batMapdirty |= BATcheckmodes(img, BBP_status(b->batCacheid) & BBPEXISTING, FALSE);
+	if (b->batMaphead != STORE_UNSET) {
+		b->H->heap.newstorage = b->H->heap.storage = STORE_MODE(b->batMaphead,brestrict,existing);
+		ret = 1;
+	}
+	if (b->batMaptail != STORE_UNSET) {
+		b->T->heap.newstorage = b->T->heap.storage = STORE_MODE(b->batMaptail,brestrict,existing);
+		ret = 1;
+	}
+	if (b->hheap && b->batMaphheap != STORE_UNSET) {
+ 		int hrestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->htype, b->H->vheap);
+		b->H->vheap->newstorage = b->H->vheap->storage = STORE_MODE(b->batMaphheap,brestrict&&hrestrict,existing);
+		ret = 1;
+	}
+	if (b->theap && b->batMaptheap != STORE_UNSET) {
+ 		int trestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->T->vheap);
+		b->T->vheap->newstorage = b->T->vheap->storage = STORE_MODE(b->batMaptheap,brestrict&&trestrict,existing);
+		ret = 1;
+	}
+	return ret;
 }
 
 void
@@ -546,9 +553,6 @@ BATsave(BAT *bd)
 			if (err == 0)
 				err = HEAPsave(b->theap, nme, "theap");
 		}
-	/* correct heap modes such that they are ACID respecting */
-	DESCsetmodes(bd, b);
-
 	if (err == 0)
 		if (b->batCopiedtodisk == 0 || b->batDirty || b->batDirtydesc) {
 			DESCclean(b);
@@ -580,12 +584,14 @@ BATload_intern(bat i)
 	bat bid = ABS(i);
 	str nme = BBP_physical(bid);
 	BAT *b = DESCload(bid);
-	int ret = 0;
+	int batmapdirty, ret = 0;
 	int vv = 1;
 
 	if (b == NULL) {
 		return NULL;
 	}
+	batmapdirty = DESCsetmodes(b);
+	
 	/* LOAD bun heap */
 	if (b->htype != TYPE_void) {
 		vv = 0;
@@ -670,7 +676,6 @@ BATload_intern(bat i)
 	}
 
 	/* initialize descriptor */
-	b->batMapdirty = ret;	/* heap mode changed during load? */
 	b->batDirtydesc = FALSE;
 	b->H->parentid = b->T->parentid = 0;
 	b->batSharecnt = 0;
@@ -681,14 +686,11 @@ BATload_intern(bat i)
 	if (!DELTAdirty(b)) {
 		ALIGNcommit(b);
 	}
-	b->batDirtydesc |= b->batMapdirty;	/* if some heap mode changed, make desc dirty */
-	b->batMapbuns = b->H->heap.storage;
-	b->batMapbuns = b->T->heap.storage;
-
-	if (b->hheap)
-		b->batMaphheap = b->hheap->storage;
-	if (b->theap)
-		b->batMaptheap = b->theap->storage;
+	b->batDirtydesc |= batmapdirty;	/* if some heap mode changed, make desc dirty */
+	b->batMaphead = STORE_UNSET;
+	b->batMaptail = STORE_UNSET;
+	b->batMaphheap = STORE_UNSET;
+	b->batMaptheap = STORE_UNSET;
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug & 2)) || (GDKdebug & 8)) {
 		++b->batSharecnt;
