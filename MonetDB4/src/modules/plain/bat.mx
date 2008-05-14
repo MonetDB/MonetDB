@@ -1643,7 +1643,7 @@ CMDmmap(BAT **r, BAT *b, int *bns, int *hhp, int *thp)
 	@:change_heap(bns,(&b->T->heap))@
 	@:change_heap(hhp,b->hheap)@
 	@:change_heap(thp,b->theap)@
-	if (BATmmap(*r = b, *bns, *hhp, *thp) == 0) {
+	if (BATmmap(*r = b, *bns, *bns, *hhp, *thp) == 0) {
 		BBPfix(b->batCacheid);
 		return GDK_SUCCEED;
 	}
@@ -1654,7 +1654,7 @@ int
 CMDmadvise(BAT **r, BAT *b, int *bns, int *hhp, int *thp)
 {
 	BBPfix(b->batCacheid);
-	return BATmadvise(*r = b, (*bns == int_nil) ? -1 : *bns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp) ? GDK_FAIL : GDK_SUCCEED;
+	return BATmadvise(*r = b, (*bns == int_nil) ? -1 : *bns, (*bns == int_nil) ? -1 : *bns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp) ? GDK_FAIL : GDK_SUCCEED;
 }
 
 @+ Accelerator Control
