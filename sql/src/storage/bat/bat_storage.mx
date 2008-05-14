@@ -481,7 +481,7 @@ new_persistent_bat(sql_trans *tr, sql_delta *bat, char *sname, char *tname, char
 		if (BATcount(b) > 1000) 
 			BATmode(b, PERSISTENT);
 		if (BATcount(b) > (size_t) REMAP_PAGE_MAXSIZE)
-        		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+        		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 		ok = log_bat_persists(bat_logger, b, bat->name);
 	}
 	*cnt = BATcount(b);
@@ -594,7 +594,7 @@ create_del(sql_trans *tr, sql_table *t)
 			if (BATcount(b) > 1000) 
 				BATmode(b, PERSISTENT);
 			if (BATcount(b) > (size_t) REMAP_PAGE_MAXSIZE)
-        			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+        			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 			ok = log_bat_persists(bat_logger, b, bat->dname);
 		}
 		t->cnt -= BATcount(b);
@@ -893,7 +893,7 @@ tr_update_bat( sql_trans *tr, sql_delta *obat, sql_delta *cbat, lng *cnt)
 				if (tr->parent == gtrans) {
 					BATmode(ins, PERSISTENT);
 					if (BATcount(ins) > (size_t) REMAP_PAGE_MAXSIZE)
-       						BATmmap(ins, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+       						BATmmap(ins, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 					logger_add_bat(bat_logger, ins, obat->name);
 					log_bat_persists(bat_logger, ins, obat->name);
 				}
@@ -903,7 +903,7 @@ tr_update_bat( sql_trans *tr, sql_delta *obat, sql_delta *cbat, lng *cnt)
 				cur = swpbat;
 			} else {
 				if (BATcount(cur)+BATcount(ins) > (size_t) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
-       					BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+       					BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     				}
 				BATappend(cur,ins,TRUE);
 				bat_clear(ins);
