@@ -380,7 +380,7 @@ sql_insert_idx(mvc *sql, stmt **inserts, sql_idx * i, list *l, int alter)
 {
 	stmt *is = NULL;
 
-	if (i->type == unique) {
+	if (i->type == hash_idx) {
 		is = hash_insert(sql, i, inserts);
 	} else if (i->type == join_idx) {
 		is = join_idx_insert(sql, i, inserts);
@@ -1030,7 +1030,7 @@ update_idxs_and_check_keys(mvc *sql, sql_schema *schema, sql_table *t, stmt **up
 		if (is_idx_updated(i, updates) == 0)
 			continue;
 
-		if (i->type == unique) {
+		if (i->type == hash_idx) {
 			is = hash_update(sql, i, updates, updcol);
 		} else if (i->type == join_idx) {
 			is = join_idx_update(i, updates, updcol);

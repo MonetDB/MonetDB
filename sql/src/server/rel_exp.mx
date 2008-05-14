@@ -72,6 +72,7 @@ extern char *exp_find_rel_name(sql_exp *e);
 
 extern sql_exp *rel_find_exp( sql_rel *rel, sql_exp *e);
 
+extern int exp_cmp( sql_exp *e1, sql_exp *e2);
 extern int exp_is_join(sql_exp *e);
 extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_correlation(sql_exp *e, sql_rel *r );
@@ -408,6 +409,12 @@ exp_find_rel_name(sql_exp *e)
 		return NULL;
 	}
 	return NULL;
+}
+
+int 
+exp_cmp( sql_exp *e1, sql_exp *e2)
+{
+	return (e1 == e2)?0:-1;
 }
 
 int

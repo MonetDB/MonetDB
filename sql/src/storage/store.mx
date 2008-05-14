@@ -365,11 +365,11 @@ load_idxcolumn(sql_trans *tr, sql_idx * i, ssize_t rid)
 	kc->trunc = *(int *)v;			_DELETE(v);
 	list_append(i->columns, kc);
 	assert(kc->c);
-	if (i->type == unique) 
+	if (i->type == hash_idx) 
 		kc->c->unique = 1;
 
 	/* create storage */
-	if (i->type == unique && list_length(i->columns) == 2 && isTable(i->t))
+	if (i->type == hash_idx && list_length(i->columns) == 2 && isTable(i->t))
 		store_funcs.create_idx(tr, i);
 }
 
@@ -3530,7 +3530,7 @@ sql_trans_create_ukey(sql_trans *tr, sql_table *t, char *name, key_type kt)
 	nk->type = kt;
 	nk->columns = list_create((fdestroy) &kc_destroy);
 	nk->t = t;
-	nk->idx = sql_trans_create_idx(tr, t, name, (nk->type == fkey) ? join_idx : unique);
+	nk->idx = sql_trans_create_idx(tr, t, name, (nk->type == fkey) ? join_idx : hash_idx);
 	nk->idx->key = nk;
 
 	uk = (sql_ukey *) nk;
@@ -3574,7 +3574,7 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, char *name, key_type kt, sql_
 	nk->type = kt;
 	nk->columns = list_create((fdestroy) &kc_destroy);
 	nk->t = t;
-	nk->idx = sql_trans_create_idx(tr, t, name, (nk->type == fkey) ? join_idx : unique);
+	nk->idx = sql_trans_create_idx(tr, t, name, (nk->type == fkey) ? join_idx : hash_idx);
 	nk->idx->key = nk;
 
 	fk = (sql_fkey *) nk;
@@ -3737,7 +3737,7 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*, extra options 
 	ic->trunc = 0;
 	list_append(i->columns, ic);
 
-	if (i->type == unique && list_length(i->columns) > 1) {
+	if (i->type == hash_idx && list_length(i->columns) > 1) {
 		/* Correct the unique flag of the keys first column */
 		c->unique = list_length(i->columns); 
 		if (c->unique == 2) {

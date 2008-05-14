@@ -548,6 +548,7 @@ order_joins(list *rels, list *exps)
 				idx = find_fk_index(r, rcols, l, lcols); 
 				swapped = 1;
 			} 
+			/* TODO then maybe 2 hash indices */
 
 #ifdef DEBUG
 			printf("%s %d %s %d (%d)\n", 
@@ -1024,6 +1025,156 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static int
+index_exp(sql_exp *e, sql_idx *i) 
+{
+	if (e->type == e_cmp) {
+		switch(i->type) {
+		case hash_idx:
+			if (e->flag == cmp_equal)
+				return 0;
+		case join_idx:
+		default:
+			return -1;
+		}
+	}
+	return -1;
+}
+
+static sql_column *
+selectexp_col(sql_exp *e, sql_rel *r) 
+{
+	sql_table *t = r->l;
+
+	if (e->type == e_cmp) {
+		sql_exp *ec = e->l;
+
+		if (ec->type == e_column) {
+			char *name = ec->name;
+			node *cn;
+
+			if (r->exps) { /* use alias */
+				for (cn = r->exps->h; cn; cn = cn->next) {
+					sql_exp *ce = cn->data;
+					if (strcmp(ce->name, name) == 0) {
+						name = ce->r;
+						break;
+					}
+				}
+			}
+			for (cn = t->columns.set->h; cn; cn = cn->next) {
+				sql_column *c = cn->data;
+				if (strcmp(c->base.name, name) == 0) 
+					return c;
+			}
+		}
+	}
+	return NULL;
+}
+
+static sql_idx *
+find_index(sql_rel *r, list **EXPS)
+{
+	sql_rel *b;
+	sql_table *t;
+
+	if ((b = find_basetable(r)) == NULL) 
+		return NULL;
+
+	/* any (partial) match of the expressions with the index columns */
+	/* Depending on the index type we may need full matches and only
+	   limited number of cmp types (hash only equality etc) */
+	/* Depending on the index type we should (in the rel_bin) generate
+	   more code, ie for spatial index add post filter etc, for hash
+	   compute hash value and use index */
+ 	t = b->l;
+	if (t->idxs.set) {
+		node *in;
+
+		/* find the columns involved in the selection over this base table*/
+	   	for(in = t->idxs.set->h; in; in = in->next) {
+			list *exps, *cols;
+	    		sql_idx *i = in->data;
+			fcmp cmp = (fcmp)&sql_column_kc_cmp;
+
+			/* join indices are only interesting for joins */
+			if (i->type == join_idx || list_length(i->columns) <= 1)
+				continue;
+			/* based on the index type, find qualifying exps */
+			exps = list_select(r->exps, i, (fcmp) &index_exp, (fdup)exp_dup);
+			/* now we obtain the columns, move into sql_column_kc_cmp! */
+			cols = list_map(exps, b, (fmap) &selectexp_col);
+
+			/* Match the index columns with the expression columns. 
+			   TODO, Allow partial matches ! */
+			if (list_match(cols, i->columns, cmp) == 0) {
+				/* re-order exps in index order */
+				node *n, *m;
+				list *es = list_create((fdestroy)&exp_destroy);
+
+				for(n = i->columns->h; n; n = n->next) {
+					int i = 0;
+					for(m = cols->h; m; m = m->next, i++) {
+						if (cmp(m->data, n->data) == 0){
+							sql_exp *e = list_fetch(exps, i);
+							list_append(es, exp_dup(e) );
+							break;
+						}
+					}
+				}
+				assert(list_length(exps) == list_length(es));
+				/* fix the destroy function */
+				cols->destroy = NULL;
+				list_destroy(cols);
+				list_destroy(exps);
+				*EXPS = es;
+				return i;
+			}
+			cols->destroy = NULL;
+			list_destroy(cols);
+			list_destroy(exps);
+		}
+	}
+	return NULL;
+}
+
+static sql_rel *
+rel_select_use_index(mvc *sql, sql_rel *rel) 
+{
+	(void)sql;
+	if (rel->op == op_select) {
+		list *exps = NULL;
+		sql_idx *i = find_index(rel, &exps);
+			
+#ifdef DEBUG
+		rel_print(sql, rel, 0);
+#endif
+		if (i) {
+			prop *p;
+			node *n;
+	
+			/* add PROP_HASHIDX to all column exps */
+			for( n = exps->h; n; n = n->next) { 
+				sql_exp *e = n->data;
+
+				e->p = p = prop_create(PROP_HASHIDX, e->p);
+				p->value = i;
+			}
+			/* add the remaining exps to the new exp list */
+			if (list_length(rel->exps) < list_length(exps)) {
+				for( n = rel->exps->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					if (!list_find(exps, e, (fcmp)&exp_cmp))
+						list_append(exps, exp_dup(e));
+				}
+			}
+			list_destroy(rel->exps);
+			rel->exps = exps;
+		}
+	}
+	return rel;
+}
+
 static sql_rel *
 rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter) 
 {
@@ -1088,6 +1239,8 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	if (gp.cnt[op_select])
 		rel = rewrite(sql, rel, &rel_push_select_down); 
 */
+	if (gp.cnt[op_select])
+		rel = rewrite(sql, rel, &rel_select_use_index); 
 
 	if (gp.cnt[op_join])
 		rel = rewrite(sql, rel, &rel_join_order); 

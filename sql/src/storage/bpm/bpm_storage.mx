@@ -820,7 +820,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 				bat_destroy(b);
 			}
 		}
-		if (ni->type == unique && 
+		if (ni->type == hash_idx && 
 		    ni->key != NULL && list_length(ni->key->columns)==1) {
 			sql_kc *c = ni->columns->h->data;
 			BAT *b = bind_col(tr->parent, c->c, RDONLY);

@@ -247,8 +247,9 @@ typedef struct sql_kc {
 } sql_kc;
 
 typedef enum idx_type {
-	unique,
+	hash_idx,
 	join_idx,
+	clustered,
 	new_idx_types
 } idx_type;
 

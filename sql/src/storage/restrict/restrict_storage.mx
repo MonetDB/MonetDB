@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2007 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2008 CWI.
 @' All Rights Reserved.
 
 @f restrict_storage
@@ -49,33 +49,35 @@ static BAT *
 bind_col(sql_trans *tr, sql_column *c, int access)
 {
 	sql_bat *bat = c->data;
-	BAT *b = temp_descriptor(bat->bid);
+	BAT *b;
 
-	assert(b);
-	bat_set_access(b, BAT_READ);
-	b->batDirty |= 2;
-	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 #ifdef NDEBUG
 	(void) access; /* satisfy compiler */
 #endif
 	assert(access != RD_UPD && access != RD_INS);
+ 	b = temp_descriptor(bat->bid);
+	assert(b);
+	bat_set_access(b, BAT_READ);
+	b->batDirty |= 2;
+	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 	return b;
 }
 
 static BAT *
 bind_idx(sql_trans *tr, sql_idx * i, int access)
 {
+	BAT *b;
 	sql_bat *bat = i->data;
-	BAT *b = temp_descriptor(bat->bid);
 
-	assert(b);
-	bat_set_access(b, BAT_READ);
-	b->batDirty |= 2;
-	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 #ifdef NDEBUG
 	(void) access; /* satisfy compiler */
 #endif
 	assert(access != RD_UPD && access != RD_INS);
+ 	b = temp_descriptor(bat->bid);
+	assert(b);
+	bat_set_access(b, BAT_READ);
+	b->batDirty |= 2;
+	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	return b;
 }
 
@@ -118,6 +120,7 @@ update_bat( sql_bat *bat, BAT *upd, int isnew)
 		bat_destroy(u);
 		bat_destroy(r);
 	}
+	b->batDirty |= 2;
 	void_replace_bat(b, upd, TRUE);
 	bat_destroy(b);
 }
@@ -362,7 +365,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 				bat_destroy(b);
 			}
 		}
-		if (ni->type == unique && 
+		if (ni->type == hash_idx && 
 		    ni->key != NULL && list_length(ni->key->columns)==1) {
 			sql_kc *c = ni->columns->h->data;
 			BAT *b = bind_col(tr->parent, c->c, RDONLY);

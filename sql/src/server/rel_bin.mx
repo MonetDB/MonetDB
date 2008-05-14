@@ -287,10 +287,6 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 
 		/* here we handle join indices */
 		if ((p=find_prop(e->p, PROP_JOINIDX)) != NULL) {
-			/* it maybe much easier to rewrite the join expression
-			   in the optimizer, to allready use the 'columns'
-			   fk_idx, pk_idx
-			 */
 			sql_idx *i = p->value, *ri;
 			sql_fkey *fk = (sql_fkey*)i->key;
 			sql_exp *el = e->l;
@@ -303,9 +299,9 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			if (!l) {
 				swapped = 1;
 				l = bin_find_column(right, el->l, i->base.name);
-				r = bin_find_column(left, er->l, ri->base.name);
+				r = bin_find_column(left, er->l, "%OID%");
 			} else {
-				r = bin_find_column(right, er->l, ri->base.name);
+				r = bin_find_column(right, er->l, "%OID%");
 			}
 			/* small performance improvement, ie use idx directly */
 			if (l->type == st_alias && 
@@ -426,18 +422,22 @@ rel2bin_basetable( mvc *sql, sql_rel *rel )
 		list_append(l, sc);
 	}
 	if (t->idxs.set) {
+		/* oid column */
+		if (t->columns.set->h) { 
+			sql_column *c = t->columns.set->h->data;
+			stmt *sc = stmt_bat(c, stmt_dup(ts), RDONLY);
+			char *rnme = (rel->name)?rel->name:t->base.name;
+	
+			rnme = (rnme)?_strdup(rnme):NULL;
+			sc = stmt_mirror(sc);
+			sc = stmt_alias(sc, rnme, _strdup("%OID%"));
+			list_append(l, sc);
+		}
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
-			stmt *sc = NULL;
+			stmt *sc = stmt_idxbat(i, RDONLY);
 			char *rnme = (rel->name)?rel->name:t->base.name;
 
-			if (i->type == join_idx) {
-				sc = stmt_idxbat(i, RDONLY);
-			} else {
-				sql_column *c = t->columns.set->h->data;
-				sc = stmt_bat(c, stmt_dup(ts), RDONLY);
-				sc = stmt_mirror(sc);
-			}
 			rnme = (rnme)?_strdup(rnme):NULL;
 			sc = stmt_alias(sc, rnme, _strdup(i->base.name));
 			list_append(l, sc);
@@ -1135,6 +1135,40 @@ rel2bin_predicate(void)
 }
 
 static stmt *
+rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en ) 
+{
+	sql_subtype *it = sql_bind_localtype("int");
+	stmt *h = NULL;
+	stmt *bits = stmt_atom_int(1 + 31/(list_length(i->columns)+2));
+	sql_exp *e = en->data;
+	sql_exp *l = e->l;
+	stmt *idx = bin_find_column(sub, l->l, i->base.name);
+
+	for( en = rel->exps->h; en; en = en->next ) {
+		sql_exp *e = en->data;
+		stmt *s;
+
+		assert(e->type == e_cmp && e->flag == cmp_equal);
+		s = exp_bin(sql, e->r, NULL, NULL, NULL, NULL);
+
+		if (h) {
+			sql_subfunc *xor = sql_bind_func_result3(sql->session->schema, "rotate_xor_hash", it, it, tail_type(s), it);
+
+			h = stmt_Nop(stmt_list( list_append( list_append(
+				list_append(create_stmt_list(), h), 
+				stmt_dup(bits)), s)), xor);
+		} else {
+			sql_subfunc *hf = sql_bind_func_result(sql->session->schema, "hash", tail_type(s), NULL, it);
+
+			h = stmt_unop(s, hf);
+		}
+	}
+	stmt_destroy(bits);
+	return stmt_uselect(idx, h, cmp_equal);
+}
+
+
+static stmt *
 rel2bin_select( mvc *sql, sql_rel *rel )
 {
 	list *l; 
@@ -1155,6 +1189,18 @@ rel2bin_select( mvc *sql, sql_rel *rel )
 		}
 	} else {
 		predicate = rel2bin_predicate();
+	}
+	/* handle possible index lookups */
+	/* expressions are in index order ! */
+	if ( (en = rel->exps->h) != NULL) { 
+		sql_exp *e = en->data;
+		prop *p;
+
+		if ((p=find_prop(e->p, PROP_HASHIDX)) != NULL) {
+			sql_idx *i = p->value;
+			
+			sel = rel2bin_hash_lookup(sql, rel, sub, i, en);
+		}
 	}
 	for( en = rel->exps->h; en; en = en->next ) {
 		stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, sel);

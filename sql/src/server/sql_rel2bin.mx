@@ -792,7 +792,7 @@ use_ukey( mvc *sql, list *l )
 		sql_idx *i;
 	   	for(in = t->idxs.set->h; in; in = in->next){
  			i = in->data;
-			if (i->type == unique && 
+			if (i->type == hash_idx && 
 			    list_length(l) == list_length(i->columns)) {
 				node *icn;
 

@@ -681,7 +681,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT
 %token RETURN 
 
-%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
+%token ALTER ADD TABLE COLUMN TO UNIQUE CLUSTERED VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET
@@ -1336,8 +1336,9 @@ index_def:
   ;
 
 opt_index_type:
-     UNIQUE		{ $$ = unique; }
- |   /* empty */	{ $$ = unique; }
+     UNIQUE		{ $$ = hash_idx; }
+ |   CLUSTERED		{ $$ = clustered; }
+ |   /* empty */	{ $$ = hash_idx; }
  ;
 
 /* sql-server def

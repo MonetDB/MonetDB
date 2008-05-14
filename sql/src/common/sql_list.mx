@@ -334,6 +334,19 @@ list_find2(list *l, void *data, void *key, fcmp2 cmp)
 	return NULL;
 }
 
+void *
+list_fetch(list *l, int pos)
+{
+	node *n = NULL;
+	int i;
+
+	for (n = l->h, i=0; n && i<pos; n = n->next, i++)
+		;
+	if (n)
+		return n->data;
+	return NULL;
+}
+
 list *
 list_distinct2(list *l, void *data, fcmp2 cmp, fdup dup)
 {
