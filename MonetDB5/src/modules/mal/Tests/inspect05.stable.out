@@ -1033,6 +1033,7 @@ end main;                               # 11
 [ "getRetainPolicy",			  "command",	  "recycle",	  "():int ",														  "RECYCLEgetRetain;"			  ]
 [ "monitor",				  "command",	  "recycle",	  "(f:int):void ",													  "RECYCLEmonitor;"			  ]
 [ "prelude",				  "pattern",	  "recycle",	  "():void ",														  "RECYCLEprelude;"			  ]
+[ "reset",			  "pattern",	  "recycle",	  "():void ",																  "RECYCLEresetCMD;"				  ]
 [ "shutdown",				  "command",	  "recycle",	  "():void ",														  "RECYCLEshutdownWrap;"		  ]
 [ "setCachePolicy",			  "pattern",	  "recycle",	  "(p:int...):void ",													  "RECYCLEsetCache;"			  ]
 [ "setReusePolicy",			  "pattern",	  "recycle",	  "(p:int...):void ",													  "RECYCLEsetReuse;"			  ]
