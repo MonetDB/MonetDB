@@ -1214,6 +1214,7 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
     env['TST_FIVE'] = ""
     env['TST_STATIC'] = ""
     env['TST_ALGEBRA'] = ""
+    env['TST_NOALGEBRA'] = ""
     if qOut:
         tbs = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs;? (.*) linked", re.MULTILINE)
         tm = re.compile("^Modules: (.*)$", re.MULTILINE)
@@ -1268,6 +1269,9 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
     if par['ALGEBRA']:
         env['TST_ALGEBRA'] = "Algebra"
         os.environ['TST_ALGEBRA'] = "Algebra"
+    if par['NOALGEBRA']:
+        env['TST_NOALGEBRA'] = "NoAlgebra"
+        os.environ['TST_NOALGEBRA'] = "NoAlgebra"
     return rtrn
 ### GetBitsAndOIDsAndModsAndStatic(env) #
 
@@ -1382,6 +1386,7 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     FIVE = env['TST_FIVE']
     STATIC = env['TST_STATIC']
     ALGEBRA = env['TST_ALGEBRA']
+    NOALGEBRA = env['TST_NOALGEBRA']
     if FIVE:
         FIVE = "(\.Five)?"
     if STATIC:
@@ -2198,6 +2203,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         Srvr = '%s%s "--dbname=%s"' % (exe['Mserver'][1], LOCAL_CONF, TSTDB)
         if par['ALGEBRA']:
             Srvr += ' --set sql_debug=16384 --set xquery_backend=algebra'
+        if par['NOALGEBRA']:
+            Srvr += '                       --set xquery_backend=milprint_summer'
 
         DBINIT=""
         if os.path.isfile(TST+".dbinit") and par['M4']:
@@ -2263,6 +2270,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             cmd = '%s%s --dbname=%s %s ' % (exe['Mserver'][1], LOCAL_CONF, TSTDB, PRELUDE)
             if par['ALGEBRA']:
                 cmd += ' --set sql_debug=16384 --set xquery_backend=algebra'
+            if par['NOALGEBRA']:
+                cmd += '                       --set xquery_backend=milprint_summer'
             if CALL in ["mal", "milS"]:
                 X=""
             else:
@@ -2548,6 +2557,7 @@ def ReadMapproveRc(f) :
     v['FIVE'] = ''
     v['STATIC'] = ''
     v['ALGEBRA'] = ''
+    v['NOALGEBRA'] = ''
     if os.path.isfile(f):
         r = re.compile('^([A-Z]+) = "(.*)".*$')
         for l in open(f):
@@ -2824,6 +2834,8 @@ def main(argv) :
          "use mserver5 of MonetDB Version 5 (default with <package> in {monetdb5, monetdb-datacell})"),
         ('algebra', 'G', 'algebra', None,
          "use the algebra version of the SQL or XQuery compiler"),
+        ('no-algebra', 'g', 'no-algebra', None,
+         "do not use the algebra version of the SQL or XQuery compiler"),
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
         ('MONETDB_SOURCE', None, 'MONETDB_SOURCE', '<path>',
@@ -2890,7 +2902,7 @@ def main(argv) :
     elif THISFILE == 'Mapprove.py':
         f = os.path.join(GetMonetConfig(par['PACKAGE'],'--prefix'),dftTSTPREF,'.Mapprove.rc')
         v = ReadMapproveRc(f)
-        for i in 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA':
+        for i in 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA', 'NOALGEBRA':
             if v[i]:
                 v[i] = '[.%s]' % v[i]
         options = cmd_options + [
@@ -2969,6 +2981,9 @@ def main(argv) :
             sys.exit(1)
 
     par['ALGEBRA'] = opts.get('algebra', 0)
+    par['NOALGEBRA'] = opts.get('no-algebra', 0)
+    if par['ALGEBRA'] and par['NOALGEBRA']:
+        ErrXit('"-G/--algebra" conflicts with "-g/--no-algebra"!')
     par['RECURSIVE'] = opts.get('recursive', 0)
     par['QUIET'] = opts.get('quiet', 0)
     if THISFILE == "Mtest.py":
@@ -3060,6 +3075,9 @@ def main(argv) :
     if par['ALGEBRA']:
         CONDITIONALS['WITH_ALGEBRA'] = '#'
         CONDITIONALS['NOT_ALGEBRA']  = ''
+    elif par['NOALGEBRA']:
+        CONDITIONALS['WITH_ALGEBRA'] = ''
+        CONDITIONALS['NOT_ALGEBRA']  = '#'
     else:
         CONDITIONALS['WITH_ALGEBRA'] = ''
         CONDITIONALS['NOT_ALGEBRA']  = '#'
@@ -3166,9 +3184,9 @@ def main(argv) :
         os.environ['DISTVER'] = DISTVER
         os.environ['VERSION'] = VERSION
         w = {}
-        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA':
+        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA', 'NOALGEBRA':
             w[i] = re.escape(v[i])
-        for i in 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA':
+        for i in 'BITS', 'OIDS', 'FIVE', 'STATIC', 'ALGEBRA', 'NOALGEBRA':
             j = 'TST_'+i
             env[j] = v[i]
             os.environ[j] = v[i]
@@ -3285,6 +3303,9 @@ def main(argv) :
         if par['ALGEBRA']:
             exe['SQL_Client']    = exe['SQL_Client'][0]   , exe['SQL_Client'][1]   +' -G'
             exe['XQuery_Client'] = exe['XQuery_Client'][0], exe['XQuery_Client'][1]+' -G'
+        if par['NOALGEBRA']:
+            exe['SQL_Client']    = exe['SQL_Client'][0]   , exe['SQL_Client'][1]   +' -g'
+            exe['XQuery_Client'] = exe['XQuery_Client'][0], exe['XQuery_Client'][1]+' -g'
         if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
@@ -3434,6 +3455,7 @@ def main(argv) :
             env['TST_FIVE'] = ""
             env['TST_STATIC'] = ""
             env['TST_ALGEBRA'] = ""
+            env['TST_NOALGEBRA'] = ""
 
         is_sql = par['PACKAGE'] == 'monetdb-sql'
         if not is_sql:
@@ -3475,18 +3497,27 @@ def main(argv) :
                 env['PF'] = 'pf -A'
                 CONDITIONALS['WITH_ALGEBRA'] = '#'
                 CONDITIONALS['NOT_ALGEBRA']  = ''
+            elif par['NOALGEBRA']:
+                env['PF'] = 'pf -M'
+                CONDITIONALS['WITH_ALGEBRA'] = ''
+                CONDITIONALS['NOT_ALGEBRA']  = '#'
             else:
                 env['PF'] = 'pf'
                 CONDITIONALS['WITH_ALGEBRA'] = ''
                 CONDITIONALS['NOT_ALGEBRA']  = '#'
-                r = re.compile('^\-A, --mil: generate MIL code \(default\)$')
+                rA = re.compile('^\-A, --mil: generate MIL code \(default\)$')
+                rM = re.compile('^\-M, --mil_2004: generate MIL code \(directly from XQuery Core\) \(default\)$')
                 proc = subprocess.Popen(['pf','-h'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
                 qOut, qErr = proc.communicate()
                 for l in qOut.split('\n'):
-                    m = r.match(l.strip())
-                    if m:
+                    mA = rA.match(l.strip())
+                    if mA:
                         CONDITIONALS['WITH_ALGEBRA'] = '#'
                         CONDITIONALS['NOT_ALGEBRA']  = ''
+                    mM = rM.match(l.strip())
+                    if mM:
+                        CONDITIONALS['WITH_ALGEBRA'] = ''
+                        CONDITIONALS['NOT_ALGEBRA']  = '#'
             os.environ['PF'] = env['PF']
             MissingMods = CheckMods(env, '', 'XQUERY', '')
             if MissingMods:
@@ -3546,7 +3577,7 @@ def main(argv) :
         env['VERSION'] = os.environ['VERSION']
         n = os.path.join(env['TSTTRGBASE'],TSTPREF,'.Mapprove.rc')
         f = open(n, 'w')
-        for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_FIVE', 'TST_STATIC', 'TST_ALGEBRA':
+        for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_OIDS', 'TST_FIVE', 'TST_STATIC', 'TST_ALGEBRA', 'TST_NOALGEBRA':
             w = v.replace('TST_','')
             f.write('%s = "%s"\n' % (w, env[v]))
         f.close()
@@ -3593,6 +3624,7 @@ def main(argv) :
         if product == 'sql':
             product += env['TST_FIVE']
             product += env['TST_ALGEBRA']
+            product += env['TST_NOALGEBRA']
         compiler = ''
         if os.name == 'nt':
             compiler = 'Mic' # Microsoft Visual Studio C
