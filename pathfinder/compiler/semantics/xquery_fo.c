@@ -1995,7 +1995,8 @@ PFfun_xquery_fo (void)
       { .ns = PFns_lib, .loc = "nid",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_anyNode () },
-            .ret_ty = PFty_xs_string () } } }
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_pf_nid }
     , /* pf:log (decimal) as decimal */
       { .ns = PFns_lib, .loc = "log",
         .arity = 1, .sig_count = 1, .sigs = { {

@@ -5451,6 +5451,27 @@ PFbui_pf_del_doc (const PFla_op_t *loop, bool ordering,
         .frag = args[0].frag };
 }
 
+/**
+ * Built-in function pf:nid(element) as string
+ */
+struct PFla_pair_t
+PFbui_pf_nid (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    return (struct PFla_pair_t) {
+        .rel = project (fun_1to1 (
+                            args[0].rel,
+                            alg_fun_pf_nid,
+                            att_res,
+                            attlist (att_item)),
+                        proj (att_iter, att_iter),
+                        proj (att_pos, att_pos),
+                        proj (att_item, att_res)),
+
+        .frag = args[0].frag };
+}
+
 /* -------------------- */
 /* #3. UPDATE FUNCTIONS */
 /* -------------------- */

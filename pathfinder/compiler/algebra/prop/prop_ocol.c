@@ -502,6 +502,15 @@ infer_ocol (PFla_op_t *n)
                     res_type = aat_docmgmt | aat_docnm;
                     break;
 
+                case alg_fun_pf_nid:
+                    assert(n->sem.fun_1to1.refs.count == 1);
+
+                    /* make sure atts are of the correct type */
+                    assert(ocol_at (L(n), ix[0]).type == aat_pnode);
+
+                    res_type = aat_str;
+                    break;
+
                 case alg_fun_upd_delete:
                     assert(n->sem.fun_1to1.refs.count == 1);
                     /* make sure that the attribute is a node */

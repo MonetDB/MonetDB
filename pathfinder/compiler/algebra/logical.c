@@ -394,6 +394,9 @@ PFla_empty_tbl_ (PFalg_schema_t schema)
     }
     ret->schema.count = schema.count;
 
+    ret->sem.lit_tbl.count = 0;
+    ret->sem.lit_tbl.tuples = NULL;
+
     return ret;
 }
 
@@ -424,6 +427,9 @@ PFla_empty_tbl (PFalg_attlist_t attlist)
         ret->schema.items[i].type = 0;
     }
     ret->schema.count = attlist.count;
+
+    ret->sem.lit_tbl.count = 0;
+    ret->sem.lit_tbl.tuples = NULL;
 
     return ret;
 }
@@ -1527,6 +1533,15 @@ printf("type = %x", n->schema.items[ix[1]].type);
             /* the returning type of doc management functions
              * is aat_docmgmt bitwise OR the attribute types */
             res_type = aat_docmgmt | aat_docnm;
+            break;
+
+        case alg_fun_pf_nid:
+            assert(refs.count == 1);
+
+            /* make sure atts are of the correct type */
+            assert(n->schema.items[ix[0]].type == aat_pnode);
+
+            res_type = aat_str;
             break;
 
         case alg_fun_upd_delete:

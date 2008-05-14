@@ -356,6 +356,7 @@ enum PFalg_fun_t {
     , alg_fun_pf_add_doc_str      /**< pf:add-doc */
     , alg_fun_pf_add_doc_str_int  /**< pf:add-doc */
     , alg_fun_pf_del_doc          /**< pf:del-doc */
+    , alg_fun_pf_nid              /**< pf:nid */
     , alg_fun_upd_rename          /**< upd:rename */
     , alg_fun_upd_delete          /**< upd:delete */
     , alg_fun_upd_insert_into_as_first    /**< upd:insertIntoAsFirst */

@@ -3458,7 +3458,9 @@ bat[void, oid] attr_cont_ins): void
 
   # [void,oid] list of all conts of affected documents
   # since either the pre_cont_tgt or the attr_cont_tgt value is nil, we filter out nils
-  var affected_conts := kunion(pre_cont_tgt.tunique(), attr_cont_tgt.tunique()).reverse().select(oid_nil,oid_nil).tmark(0@0);
+# work around a bug in MonetDB: the kunion() produces a bat with two nil values in the head but also with key property set
+#  var affected_conts := kunion(pre_cont_tgt.tunique(), attr_cont_tgt.tunique()).reverse().select(oid_nil,oid_nil).tmark(0@0);
+  var affected_conts := kunion(pre_cont_tgt.select(oid_nil,oid_nil).tunique(), attr_cont_tgt.select(oid_nil,oid_nil).tunique()).reverse().tmark(0@0);
 
   if (affected_conts.count() = 0) {
     # nothing to do
