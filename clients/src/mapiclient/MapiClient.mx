@@ -1693,7 +1693,7 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:Gh:I:iL:l:"
+				"f:Ggh:I:iL:l:"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
