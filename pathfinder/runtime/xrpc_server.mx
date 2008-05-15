@@ -800,11 +800,11 @@ execQuery(mapi_client *mc,
     if (err) {
         if(*errbuf) {
             snprintf(errbuf_all, GDKMAXERRLEN*2, "%s\nDue to earlier error:\n%s", err, errbuf);
-            send_err(mc->c->fdout, 0, "", "env:Sender", errbuf_all);
+            send_err(mc->c->fdout, ERR404, "env:Sender", errbuf_all);
         } else {
             if(err == ((char*)-1))
                 err = "Error occurred during execution.";
-            send_err(mc->c->fdout, 0, "", "env:Sender", err);
+            send_err(mc->c->fdout, ERR404, "env:Sender", err);
         }
         GDKsetbuf(errbuf_bak);
         return GDK_FAIL;
