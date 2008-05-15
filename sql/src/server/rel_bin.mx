@@ -287,12 +287,9 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 
 		/* here we handle join indices */
 		if ((p=find_prop(e->p, PROP_JOINIDX)) != NULL) {
-			sql_idx *i = p->value, *ri;
-			sql_fkey *fk = (sql_fkey*)i->key;
+			sql_idx *i = p->value;
 			sql_exp *el = e->l;
 			sql_exp *er = e->r;
-
-			ri = fk->rkey->k.idx;
 
 			/* find out left and right */
 			l = bin_find_column(left, el->l, i->base.name);
