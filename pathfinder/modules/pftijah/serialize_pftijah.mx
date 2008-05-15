@@ -135,9 +135,22 @@ int dbat_finalize(dbat* dbat, int topidx) {
 #define MINCHUNK 8192
 #define MAXCHUNK 67108864
 
-int dbat_extend(dbat* dbat, oid min_i /*raw-index*/, size_t forced_size) {
+static void
+dbat_setcount(dbat *dbat, oid n)
+{
+    BAT *b = dbat->bat;
+    BATsetcount(b, n);
+    if (b->ttype) {
+        b->tsorted = 0;
+        b->tdense = 0;
+    }
+}
+
+static int
+dbat_extend(dbat* dbat, oid min_i /*raw-index*/, size_t forced_size) {
     size_t newsize;
     
+    dbat_setcount(dbat, dbat->raw_max);
     if ( forced_size ) {
        newsize = forced_size;
     } else {
@@ -156,10 +169,19 @@ int dbat_extend(dbat* dbat, oid min_i /*raw-index*/, size_t forced_size) {
 		return -1;
 	}
     }
+#if 1
+    /* copied this form shredder.mx, keep it here ??? */
+    if (newsize+newsize > (size_t) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
+        BATmmap(dbat->bat, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+    }
+
+#endif
+
 #if 0
     stream_printf(GDKout,"dbat_extend[%s](%d -> %d)\n",dbat->name,dbat->raw_max,newsize);
 #endif
-    dbat->raw_max= newsize;
+
+    dbat->raw_max = newsize;
     dbat->seq_max = dbat->raw_max + dbat->seqbase;
     if ( !(dbat->bat = BATextend(dbat->bat,newsize)) ) {
         GDKerror("dbat_extend: BATextend[\"%s\"](to %d) fails\n","incomplete",newsize);
@@ -169,16 +191,29 @@ int dbat_extend(dbat* dbat, oid min_i /*raw-index*/, size_t forced_size) {
     return 1;
 }
 
-int dbat_sizeHint(dbat* dbat, int sizeHint_mark) {
+#if 0
+static int
+dbat_sizeHint(dbat* dbat, int sizeHint_mark) {
         int sizeHint = sizeHint_mark - dbat->seqbase;
 	int estimate = dbat->raw_max + sizeHint;
 
 	return dbat_extend(dbat, estimate, 0);
 }
+#endif
 
 #define dbat_set_oid(DBAT,I,V) (DBAT)->cast.oidCAST[I-(DBAT)->seqbase] = V
 
 #define dbat_set_int(DBAT,I,V) (DBAT)->cast.intCAST[I-(DBAT)->seqbase] = V
+
+#if 0
+static void
+dbat_int_debug(char* t, dbat* dbat) {
+	stream_printf(GDKout,"+ DEBUGGING INT DBAT[sz=%d]@=[%s]:\n",dbat->seq_max,t);
+	for(int i=0; i<10; i++) {
+	     stream_printf(GDKout,"+ dbat[%d] = %d\n",i,dbat->cast.intCAST[i]);
+	}
+}
+#endif
 
 /************************************************
  *
@@ -391,7 +426,7 @@ handleTijahTerm(struct tijahContextStruct *tjctx, char* term) {
             if ( (tjPre = tj_newPre(tjctx) ) == oid_nil )
     	        return 0;
             dbat_set_oid(&tjctx->dbat_collPre, tjPre, termOid);
-            dbat_set_int(&tjctx->dbat_collSize,(int)tjPre,0);
+            dbat_set_int(&tjctx->dbat_collSize,tjPre,0);
 #ifdef TJ_TRACE
             if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:TERM: \"%s\", termoid=%d, tjPre=%d\n",tjctx->name,term,termOid,tjPre);
 #endif
@@ -1230,7 +1265,7 @@ add2collection_handler(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName) {
 		return GDK_FAIL;
 	if ( dbat_finalize(&tjctx->dbat_collSize, tjctx->tijahPre) < 0 )
 		return GDK_FAIL;
-        
+
         tjctx->b_collPre->batDirty   = TRUE;
         tjctx->b_collSize->batDirty  = TRUE;
         tjctx->b_collPfPre->batDirty = TRUE;
