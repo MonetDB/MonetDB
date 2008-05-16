@@ -10,6 +10,8 @@ prefix = $(MAKEDIR)
 
 !INCLUDE "$(TOPDIR)\rules.msc"
 
+INSTALLER = MonetDB5-Server
+
 all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h RunMserver.bat RunMtest.bat RunMapprove.bat
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
@@ -20,6 +22,12 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 install: targetdirs mal_config.h all
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) M5server.bat "$(prefix)"
+	$(INSTALL) $(INSTALLER)\$(INSTALLER).sln "$(prefix)"
+	$(INSTALL) $(INSTALLER)\$(INSTALLER).vdproj "$(prefix)"
+	devenv "$(prefix)\$(INSTALLER).sln" /build
+	if exist "$(prefix)\$(INSTALLER).msi" del /f "$(prefix)\$(INSTALLER).msi"
+	$(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER).msi "$(prefix)"
+	@-c:\cygwin\bin\chmod a+rx "$(prefix)\$(INSTALLER).msi"
 
 $(SRCDIR)\Makefile.msc:
 	$(CD) "$(SRCDIR)" && autogen.py
