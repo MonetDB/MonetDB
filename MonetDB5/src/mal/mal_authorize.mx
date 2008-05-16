@@ -800,8 +800,7 @@ AUTHgetUsers(BAT **ret, bat *scenarios) {
 			 * selection */
 			r = BATcopy(user, user->htype, user->ttype, FALSE);
 		} else {
-			BAT *t1;
-			BAT *t2;
+			BAT *t1, *t2, *t3;
 			
 			/* we have to do some work in order to return the requested
 			 * rows; only those that have the given scenario(s) (all of
@@ -810,19 +809,24 @@ AUTHgetUsers(BAT **ret, bat *scenarios) {
 			/* all users with no scenarios are always in the return
 			 * list, we find them by "inversing" the list of users
 			 * *with* a scenario */
-			t1 = BATkdiff(user, BATkunique(scen));
+			t1 = BATkdiff(user, t2=BATkunique(scen));
+			BBPunfix(t2->batCacheid);
 			
 			/* find users with one or more scenarios in the given BAT */
-			t2 = BATjoin(
-					VIEWcombine(BATkunique(BATjoin(scen, b, BATcount(scen)))),
-					user,
-					BATcount(user)
-				);
+			t2 = BATjoin(scen, b, BATcount(scen));
+			t3 = BATkunique(t2);
+			BBPunfix(t2->batCacheid);
+			t2 = VIEWcombine(t3);
+			BBPunfix(t3->batCacheid);
+			t3 = BATjoin(t2, user, BATcount(user));
+			BBPunfix(t2->batCacheid);
 
 			/* the final result is the union of both (we can discard the
 			 * tail, as they *should* be equal when the heads are equal
 			 * too... */
-			r = BATkunion(t1, t2);
+			r = BATkunion(t1, t3);
+			BBPunfix(t1->batCacheid);
+			BBPunfix(t3->batCacheid);
 		}
 		BBPunfix(*scenarios);
 	} else {

@@ -1523,15 +1523,15 @@ All references should be logical.
 @-
 @{
 @c
-		int bid= ABS(v->val.bval);
+		int bid = ABS(v->val.bval);
 		/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
 		   bid, BBP_lrefs(bid),BBP_refs(bid));*/
-		v->val.bval =0;
-		if( bid == 0 ) return;
-		if( BBP_lrefs(bid) )
-			BBPdecref(bid,TRUE);
-		}
+		v->val.bval = 0;
+		if (bid == 0 || !BBP_lrefs(bid)) 
+			return;
+		BBPdecref(bid,TRUE);
 	}
+}
 @-
 @}
 
@@ -1583,16 +1583,17 @@ stack frame and its parents only.
 void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 {   int k;
 
-   do{
+   	do {
 		for(k=0;k<mb->vtop; k++) 
-		if( stk->stk[k].vtype== TYPE_bat && abs(stk->stk[k].val.bval)==bid) {
-			BBPdecref(bid,TRUE);
-			stk->stk[k].val.ival= 0;
-		}
+			if( stk->stk[k].vtype== TYPE_bat && abs(stk->stk[k].val.bval)==bid) {
+				BBPdecref(bid,TRUE);
+				stk->stk[k].val.ival= 0;
+			}
 		if(stk->up){
 			stk= stk->up;
 			mb= stk->blk;
-		}else break;
+		} else 
+			break;
 	} while(stk);
 }
 
