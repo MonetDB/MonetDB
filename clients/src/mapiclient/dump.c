@@ -307,10 +307,15 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe)
 		goto bailout;
 	}
 	mapi_close_handle(hdl);
+	/* presumably we don't need to order on id, since there should
+	   only be a single primary key, but it doesn't hurt, and the
+	   code is then close to the code for the uniqueness
+	   constraint */
 	snprintf(query, maxquerylen,
 		 "SELECT \"kc\".\"column\","		/* 0 */
 			"\"kc\".\"nr\", "		/* 1 */
-			"\"k\".\"name\" "		/* 2 */
+			"\"k\".\"name\", "		/* 2 */
+			"\"k\".\"id\" "			/* 3 */
 		 "FROM \"sys\".\"keycolumns\" \"kc\", "
 		      "\"sys\".\"keys\" \"k\", "
 		      "\"sys\".\"schemas\" \"s\", "
@@ -321,7 +326,7 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe)
 		       "\"t\".\"schema_id\" = \"s\".\"id\" AND "
 		       "\"s\".\"name\" = '%s' AND "
 		       "\"t\".\"name\" = '%s' "
-		 "ORDER BY \"nr\"", schema, tname);
+		 "ORDER BY \"id\", \"nr\"", schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
 			mapi_explain_query(hdl, stderr);
@@ -365,7 +370,8 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe)
 	snprintf(query, maxquerylen,
 		 "SELECT \"kc\".\"column\","		/* 0 */
 			"\"kc\".\"nr\", "		/* 1 */
-			"\"k\".\"name\" "		/* 2 */
+			"\"k\".\"name\", "		/* 2 */
+			"\"k\".\"id\" "			/* 3 */
 		 "FROM \"sys\".\"keycolumns\" \"kc\", "
 		      "\"sys\".\"keys\" \"k\", "
 		      "\"sys\".\"schemas\" \"s\", "
@@ -376,7 +382,7 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe)
 		       "\"t\".\"schema_id\" = \"s\".\"id\" AND "
 		       "\"s\".\"name\" = '%s' AND "
 		       "\"t\".\"name\" = '%s' "
-		 "ORDER BY \"nr\"", schema, tname);
+		 "ORDER BY \"id\", \"nr\"", schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		if (hdl) {
 			mapi_explain_query(hdl, stderr);
