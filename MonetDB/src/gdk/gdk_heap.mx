@@ -276,6 +276,7 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 
 	h->storage = h->newstorage;
 	h->maxsize = h->size;
+	assert(h->filename == NULL);
 	h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
 	if (h->filename == NULL) 
  	    return -1;	

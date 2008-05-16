@@ -2474,7 +2474,7 @@ backup_new(Heap *hp, int lockbat) {
             /* there is a backup already; just remove the X.new */
             ret = unlink(batpath);
 	}
-        for (xx = 0; xx <= lockbat; xx++)
+        for (xx = lockbat; xx >= 0; xx--)
             gdk_unset_lock(GDKtrimLock(xx), "TMsubcommit");
 	return ret; 
 }
@@ -2506,7 +2506,7 @@ HEAPcommitpersistence(Heap *hp, int writable, int existing)
 	if (existing) {
 		if (hp->newstorage == STORE_MMAP) { /* 6=>2 */
 			hp->dirty=1;
-			return backup_new(hp, 0)?-1:STORE_MMAP; /* only called for existing bats */
+			return backup_new(hp, -1)?-1:STORE_MMAP; /* only called for existing bats */
 		}
 		return hp->newstorage; /* 4=>0,5=>1,7=>3,c=>a no change */
 	}

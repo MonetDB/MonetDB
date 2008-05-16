@@ -548,18 +548,22 @@ VIEWreset(BAT *b)
 		memset(&tail, 0, sizeof(Heap));
 		memset(&hh, 0, sizeof(Heap));
 		memset(&th, 0, sizeof(Heap));
-		head.filename = (str) GDKmalloc(strlen(nme) + 12);
-		if (head.filename == NULL)
-			goto bailout;
-		sprintf(head.filename, "%s.head", nme);
-		if (n->htype && HEAPalloc(&head, cnt, Hsize(n)) < 0) 
-			goto bailout;
-		tail.filename = (str) GDKmalloc(strlen(nme) + 12);
-		if (tail.filename == NULL)
-			goto bailout;
-		sprintf(tail.filename, "%s.tail", nme);
-		if (n->ttype && HEAPalloc(&tail, cnt, Tsize(n)) < 0) 
-			goto bailout;
+		if (n->htype) {
+			head.filename = (str) GDKmalloc(strlen(nme) + 12);
+			if (head.filename == NULL)
+				goto bailout;
+			sprintf(head.filename, "%s.head", nme);
+			if (n->htype && HEAPalloc(&head, cnt, Hsize(n)) < 0) 
+				goto bailout;
+		}
+		if (n->ttype) {
+			tail.filename = (str) GDKmalloc(strlen(nme) + 12);
+			if (tail.filename == NULL)
+				goto bailout;
+			sprintf(tail.filename, "%s.tail", nme);
+			if (n->ttype && HEAPalloc(&tail, cnt, Tsize(n)) < 0) 
+				goto bailout;
+		}
 		if (n->H->vheap) {
 			hh.filename = (str) GDKmalloc(strlen(nme) + 12);
 			if (hh.filename == NULL)
