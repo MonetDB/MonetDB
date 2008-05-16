@@ -99,8 +99,6 @@ mal_export int rcachePolicy;
 #define RCACHE_MEMLRU 	3
 #define RCACHE_MEMCRD 	4
 
-mal_export int monitorRecycler;
-
 mal_export int recycleClaim;
 mal_export int recycleCacheLimit;
 mal_export lng recycleMemory;	/* Units of memory permitted */
@@ -332,6 +330,10 @@ static void RECYCLEremove(int pc){
 }
 
 static lng lruclock=0;
+
+/* evict entry from recycler cache to make space for wr RUnits. Target
+entry is protected from eviction */
+
 static void 
 RECYCLEcache(int target, int wr)
 {
@@ -454,7 +456,7 @@ compare by value.
 #endif
 	i= recycleBlk->stop;
 	pushInstruction(recycleBlk,q);
-	recycleBlk->profiler[i].clk =0;
+	recycleBlk->profiler[i].clk = GDKusec();
 	recycleBlk->profiler[i].counter =1;
 	recycleBlk->profiler[i].ticks = GDKusec()-s->clk;
 	recycleBlk->profiler[i].ibytes = rd;
@@ -613,6 +615,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 				getVar(mb,getArg(p,j))->recycle = getArg(q,j);
 			}
 			recycleBlk->profiler[i].counter++;
+			recycleBlk->profiler[i].clk = GDKusec();
 			savedTime += recycleBlk->profiler[i].ticks;
 			return i;
 			notfound: 
@@ -668,6 +671,12 @@ onto the stack and return success.
 Just looking at a kept result target is not good enough.
 You have to sure that the arguments are also the same.
 This outrules function arguments.
+
+If we need to check also the input args, e.g. by calling find, VarKept
+and VarRecycled seem useless. If a match is found and used, and
+..->recycled set for the result var, we should avoid calling find a
+second time in RECYCLEexit
+
 @c
 int 
 RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -702,16 +711,18 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		cnt = p->retc;
 	if ((recycleCacheLimit || recycleMemory) && i>=0)
 		RECYCLEcache(i, 0);
+/* ??? if the instruction is produced by re-use, why do we need to clean the cache, there is no result to be added */
 	stk->clk= GDKusec();
 	statements++;
-	recycled += cnt==p->retc;
+	recycled += cnt==p->retc; 
+/* ??? recycled will get increased even if no match is found */
 	return cnt == p->retc;
 }
 
 @-
 The 'exit' instruction is called after the interpreter loop
-itself and has to decide on the results obtaint.
-This is the place where we should call recycle optimization routines.
+itself and has to decide on the results obtained.
+This is the place where we should call recycle optimization routines( admission policies).
 It can use the timing information gathered from the previous call,
 which is stored in the stack frame to avoid concurrency problems.
 @c
@@ -770,7 +781,7 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		/* RETAIN_ADAPT: adaptive temporal */
 		if (clk > recycleTime && RECYCLEfind(mb,stk,p)< 0)
 			(void) RECYCLEnew(mb, stk, p, rd, wr);
-		/* adapt the time watermark based on observed behavior */
+		/* adapt the time watermark based on observed behavior ??? */
 		if (recycleTime < 0 && (exitLoop++ % 99)== 0){
 			clk= GDKusec();
 			(void) RECYCLEfind(mb,stk,p);
