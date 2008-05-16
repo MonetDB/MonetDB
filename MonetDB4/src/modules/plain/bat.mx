@@ -1883,7 +1883,6 @@ copy_segment(MT_mmap_hdl *hdl, BAT *bn, BAT *b, oid src, size_t dst, size_t cnt)
 
 	if (cnt) {
 		size_t xx = REMAP_PAGE_SIZE * Tsize(b);
-		BATiter bni = bat_iterator(bn);
 		off_t src_off = (off_t) (src * xx); /* 64bit: could overflow */
 		size_t dst_off = dst * xx;
 		size_t nbytes  = cnt * xx;
@@ -1902,7 +1901,7 @@ copy_segment(MT_mmap_hdl *hdl, BAT *bn, BAT *b, oid src, size_t dst, size_t cnt)
 			BUN end = BUNlast(bn);
 
 			for (; cur < end; cur++) {
-				ATOMreplace(bn->ttype, bn->theap, BUNtail(bni,cur), nil); 
+				ATOMreplace(bn->ttype, bn->theap, Tloc(bn,cur), nil); 
 			}
 		}
 	}
