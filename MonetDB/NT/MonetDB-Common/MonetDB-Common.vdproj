@@ -15,6 +15,12 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_1CAF2A4BDB6C4DF8B0BDE6679D00B51F"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_5460D68002064BCB839AD357B5DDF75B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -69,14 +75,14 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_D4755E0C38924F47B36981134C512664"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
+        "MsmKey" = "8:_DC4B78BE13E445B289DE0E6D4BF130B6"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_DC4B78BE13E445B289DE0E6D4BF130B6"
-        "OwnerKey" = "8:_UNDEFINED"
+        "MsmKey" = "8:_E9D89CF0BC6747B6BE939503DF239C46"
+        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -167,6 +173,26 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1CAF2A4BDB6C4DF8B0BDE6679D00B51F"
+            {
+            "SourcePath" = "8:monetdb.ico"
+            "TargetName" = "8:monetdb.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_844C5FFEA23146E49C07BE04EBEAF0B0"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5460D68002064BCB839AD357B5DDF75B"
             {
             "SourcePath" = "8:website.html"
@@ -575,7 +601,7 @@
             "Target" = "8:_5460D68002064BCB839AD357B5DDF75B"
             "Folder" = "8:_82DD9AAD477F490FB70BC1F494F632C1"
             "WorkingFolder" = "8:_844C5FFEA23146E49C07BE04EBEAF0B0"
-            "Icon" = "8:"
+            "Icon" = "8:_1CAF2A4BDB6C4DF8B0BDE6679D00B51F"
             "Feature" = "8:"
             }
         }
@@ -1080,7 +1106,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_D4755E0C38924F47B36981134C512664"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_E9D89CF0BC6747B6BE939503DF239C46"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"

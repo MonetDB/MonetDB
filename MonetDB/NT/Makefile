@@ -25,6 +25,7 @@ install: targetdirs monetdb_winconfig.h monetdb_config.h winrules.msc all
 	$(INSTALL) winrules.msc "$(pkgdatadir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) banner.bmp "$(prefix)"
+	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) monetdb.ico "$(prefix)"
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) license.rtf "$(prefix)"
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) website.html "$(prefix)"
 	$(INSTALL) $(INSTALLER)\$(INSTALLER).sln "$(prefix)"
