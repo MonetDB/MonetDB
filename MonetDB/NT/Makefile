@@ -11,6 +11,8 @@ prefix = $(MAKEDIR)
 
 UNISTD_H = unistd.h
 
+INSTALLER = MonetDB-Common
+
 all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
@@ -25,6 +27,12 @@ install: targetdirs monetdb_winconfig.h monetdb_config.h winrules.msc all
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) banner.bmp "$(prefix)"
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) license.rtf "$(prefix)"
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) website.html "$(prefix)"
+	$(INSTALL) $(INSTALLER)\$(INSTALLER).sln "$(prefix)"
+	$(INSTALL) $(INSTALLER)\$(INSTALLER).vdproj "$(prefix)"
+	devenv "$(prefix)\$(INSTALLER).sln" /build
+	if exist "$(prefix)\$(INSTALLER).msi" del /f "$(prefix)\$(INSTALLER).msi"
+	$(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER).msi "$(prefix)"
+	@-c:\cygwin\bin\chmod a+rx "$(prefix)\$(INSTALLER).msi"
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
         $(CD) "$(SRCDIR)" && autogen.py

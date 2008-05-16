@@ -11,6 +11,8 @@ prefix = $(MAKEDIR)
 
 UNISTD_H = unistd.h
 
+INSTALLER = MonetDB4-Server
+
 all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) RunMserver.bat RunMtest.bat RunMapprove.bat
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
@@ -21,6 +23,12 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 install: targetdirs monetdb4_config.h all
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) Mserver.bat "$(prefix)"
+	$(INSTALL) $(INSTALLER)\$(INSTALLER).sln "$(prefix)"
+	$(INSTALL) $(INSTALLER)\$(INSTALLER).vdproj "$(prefix)"
+	devenv "$(prefix)\$(INSTALLER).sln" /build
+	if exist "$(prefix)\$(INSTALLER).msi" del /f "$(prefix)\$(INSTALLER).msi"
+	$(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER).msi "$(prefix)"
+	@-c:\cygwin\bin\chmod a+rx "$(prefix)\$(INSTALLER).msi"
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
         $(CD) "$(SRCDIR)" && autogen.py

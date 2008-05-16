@@ -20,7 +20,7 @@ INCLUDES = $(MONETDB_INCS) $(READLINE_INCS) $(OPENSSL_INCS)
 MAPI_LIBS = $(SOCKET_LIBS) $(OPENSSL_LIBS)
 
 lib_Mapi = {
-	SOURCES = Mapi.mx
+	SOURCES = Mapi.mx Mapi.rc
 	LIBS = $(MAPI_LIBS) $(MONETDB_LIBS) -lmutils -lstream
 }
 
