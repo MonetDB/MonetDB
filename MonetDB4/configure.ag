@@ -18,7 +18,7 @@ dnl -*- mode: autoconf -*-
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
-AC_INIT([MonetDB Server], [4.23.0], [monet@cwi.nl], [MonetDB4-server])
+AC_INIT([MonetDB Server], [4.23.1], [monet@cwi.nl], [MonetDB4-server])
 #                          ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -61,7 +61,7 @@ AM_MONETDB_XQ_VARS_1()
 
 
 # Check for Monet 
-req_monetdb_ver='1.23.0'
+req_monetdb_ver='1.23.1'
 #                ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
