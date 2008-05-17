@@ -1565,13 +1565,12 @@ void
 printBATelm(stream *f, int i, size_t cnt, size_t first)
 {
 	BAT *b, *bs;
-	str tpe ,nme;
+	str tpe;
 
 	b = BATdescriptor(i);
 	if (b) {
-		nme= BATgetId(b); 
 		tpe = getTypeName(newBatType(b->htype, b->ttype));
-		stream_printf(f,tpe);
+		stream_printf(f, "%s = :%s ",BATgetId(b),tpe);
 		printBATproperties(f,b);
 		/* perform property checking */
 		if( b->H != b->T)
