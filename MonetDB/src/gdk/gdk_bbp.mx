@@ -2858,9 +2858,9 @@ BBPsync(int cnt, bat *subcommit)
 				if (i <= 0) break;
 				if (b != NULL && BATsave(b) == NULL)
 					break;	/* write error */
-				if (b && (BBP_refs(i) == 0 &&
-				   (b->map_head || b->map_hheap ||
-				    b->map_tail || b->map_theap)) {
+				if (b && (BBP_refs(i) == 0) &&
+				   (b->P->map_head || b->P->map_hheap ||
+				    b->P->map_tail || b->P->map_theap)) {
 					BATfree(b);
 					BBPuncacheit_(i, TRUE);
 				}
