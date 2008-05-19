@@ -8,3 +8,4 @@ update
 illegal-insert
 illegal-delete
 insert_test_order
+insert_test_order_seq
