@@ -465,12 +465,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_651D57486B7B44A5B70754D342D80F4C"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_6774651FC6004986888C2BA9C1247FAD"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1013,6 +1007,12 @@
         {
         "MsmKey" = "8:_F68A02B385C64980A45DD72D196AC354"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_F6A0550340554663A6B2D66ECEA1871A"
+        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -4651,11 +4651,18 @@
         }
         "LaunchCondition"
         {
+            "{836E08B8-0285-4809-BA42-01DB6754A45D}:_3BDEBA131F174543A3AA65731A49E95E"
+            {
+            "Name" = "8:libMapi exists"
+            "Condition" = "8:LIBMAPIEXISTS"
+            "Message" = "8:MonetDB Clients needs to be installed first."
+            "InstallUrl" = "8:http://monetdb.cwi.nl/"
+            }
             "{836E08B8-0285-4809-BA42-01DB6754A45D}:_51126656D4214BA5A39FB99B90F06D71"
             {
             "Name" = "8:libbat exists"
             "Condition" = "8:LIBBATEXISTS"
-            "Message" = "8:MonetDB-Common needs to be installed first"
+            "Message" = "8:MonetDB-Common needs to be installed first."
             "InstallUrl" = "8:"
             }
         }
@@ -4676,6 +4683,21 @@
             "Languages" = "8:"
             "Property" = "8:LIBBATEXISTS"
             }
+            "{39E1837C-0DB9-45A2-89C8-438377A77565}:_75FEA8B4DBF04854A8C43329F0167B1D"
+            {
+            "Name" = "8:Search for libMapi"
+            "Folder" = "8:[ProgramFilesFolder]"
+            "Depth" = "2:2"
+            "FileName" = "8:libMapi.dll"
+            "MinVesion" = "8:1.23.0"
+            "MaxVersion" = "8:"
+            "MinSize" = "8:"
+            "MaxSize" = "8:"
+            "MinDate" = "8:"
+            "MaxDate" = "8:"
+            "Languages" = "8:"
+            "Property" = "8:LIBMAPIEXISTS"
+            }
         }
         "MsiBootstrapper"
         {
@@ -4687,7 +4709,7 @@
         "ProductName" = "8:MonetDB5-Server"
         "ProductCode" = "8:{ED488527-BFB1-4AFE-AAD2-0BC3D9A68C6C}"
         "PackageCode" = "8:{482500C0-33AC-419A-97FA-99BD0568DB8E}"
-        "UpgradeCode" = "8:{E18F8010-1CA5-4812-8543-97E21775A9B6}"
+        "UpgradeCode" = "8:{143724F3-0CB2-476D-8DE3-9FFABCEA98F3}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
@@ -5321,11 +5343,11 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_651D57486B7B44A5B70754D342D80F4C"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_F68A02B385C64980A45DD72D196AC354"
             {
             "UseDynamicProperties" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86.msm"
+            "IsDependency" = "11:FALSE"
+            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86.msm"
                 "Properties"
                 {
                 }
@@ -5335,11 +5357,11 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_F68A02B385C64980A45DD72D196AC354"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_F6A0550340554663A6B2D66ECEA1871A"
             {
             "UseDynamicProperties" = "11:TRUE"
-            "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86.msm"
+            "IsDependency" = "11:TRUE"
+            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86.msm"
                 "Properties"
                 {
                 }

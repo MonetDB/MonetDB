@@ -10,6 +10,8 @@ prefix = $(MAKEDIR)
 
 !INCLUDE "$(TOPDIR)\rules.msc"
 
+INSTALLER = MonetDB5-SQL
+
 !IFDEF HAVE_MONETDB5
 RUNMSERVER5 = RunMserver5.bat
 M5INSTALLER = install-m5installer
@@ -34,6 +36,12 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 install: targetdirs all $(M4INSTALLER) $(M5INSTALLER)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MSQLserver.bat "$(prefix)"
+	$(INSTALL) $(INSTALLER)\$(INSTALLER).sln "$(prefix)"
+	$(INSTALL) $(INSTALLER)\$(INSTALLER).vdproj "$(prefix)"
+	devenv "$(prefix)\$(INSTALLER).sln" /build
+	if exist "$(prefix)\$(INSTALLER).msi" del /f "$(prefix)\$(INSTALLER).msi"
+	$(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER).msi "$(prefix)"
+	@-c:\cygwin\bin\chmod a+rx "$(prefix)\$(INSTALLER).msi"
 
 !IFDEF BITS32
 install-m4installer:

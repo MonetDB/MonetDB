@@ -69,6 +69,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_218E6491A6C44429AB602AB38B0B54B2"
+        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_21E358813A1E46708551CE2F76A4B2AB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -371,12 +377,6 @@
         {
         "MsmKey" = "8:_A99D07396E6547C381BBF17C6F064A7A"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_AEA69107E25549268FB82B139912F0B2"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -2783,7 +2783,7 @@
             {
             "Name" = "8:libbat exists"
             "Condition" = "8:LIBBATEXISTS"
-            "Message" = "8:MonetDB-Common needs to be installed first"
+            "Message" = "8:MonetDB-Common needs to be installed first."
             "InstallUrl" = "8:"
             }
         }
@@ -2813,14 +2813,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB4-Server"
-        "ProductCode" = "8:{E65FAAE1-4CD2-494F-AB38-B116FC5C93A7}"
-        "PackageCode" = "8:{73ADD0A5-A4A8-4737-8C85-1E24ABDBB8E9}"
-        "UpgradeCode" = "8:{E18F8010-1CA5-4812-8543-97E21775A9B6}"
+        "ProductCode" = "8:{BD465E6B-E457-40DD-9C32-D0424E1D91AD}"
+        "PackageCode" = "8:{1DC7BB6D-D70C-4AD9-BC2A-47323A99FC4D}"
+        "UpgradeCode" = "8:{FBA5D08C-F929-4705-8FA0-14E6AA7B5374}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:4.23.0"
+        "ProductVersion" = "8:4.23.1"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -3449,7 +3449,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_AEA69107E25549268FB82B139912F0B2"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_218E6491A6C44429AB602AB38B0B54B2"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
