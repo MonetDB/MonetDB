@@ -75,7 +75,7 @@ The number of overloaded instructions is kept to a minimum.
 @-
 The variables are all checked for being eligible as a variable
 subject to recycling control. A variable my only be assigned
-a value once. The function is an sql.bind() or all arguments
+a value once. The function is a sql.bind(-,-,-,0) or all arguments
 are already recycle enabled or constant.
 
 The arguments of the function can not be recycled.
@@ -121,6 +121,8 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				/* all update instructions  modify the first argument ?*/
 				/* they may not be recycled to avoid incomplete results */
 				clrVarRecycled(mb, getArg(p,1));
+				if (actions )
+					(void) newFcnCall(mb,"recycle","reset");
 				update++;
 			}
 			pushInstruction(mb,p);
@@ -151,7 +153,7 @@ For cheap types we preselect using select() and re-map uselect() back
 over this temporary.
 For the time being for all possible selects encountered
 are marked for re-use.
-(keeping track of the sql.bind() dependency is more work)
+
 @c
 		/* take care of semantic driven recyling */
 		if( getFunctionId(p)== selectRef )
@@ -169,10 +171,20 @@ are marked for re-use.
 			p->argc=2;
 			p->recycle = 1;
 		}
-		if (update)
-			(void) newFcnCall(mb,"recycle","reset");
+@-
+The sql.bind instructions should be handled carefully
+The delete and update BATs should not be recycled,
+because they may lead to view dependencies that later interfere
+with the transaction commits.
+@c
+		if (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef)
+			if( getVarConstant(mb, getArg(p,4)).val.ival != 0){
+				clrVarRecycled(mb, getArg(p,0));
+				p->recycle = 0; /* this instruction is not monitored */
+			}
+
 		if( p->token== ENDsymbol){
-			if (update)
+			if (actions && update)
 				(void) newFcnCall(mb,"recycle","shutdown");
 			(void) newFcnCall(mb,"recycle","epilogue");
 		}
