@@ -172,7 +172,7 @@ dbat_extend(dbat* dbat, oid min_i /*raw-index*/, size_t forced_size) {
 #if 1
     /* copied this form shredder.mx, keep it here ??? */
     if (newsize+newsize > (size_t) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
-        BATmmap(dbat->bat, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+        BATmmap(dbat->bat, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     }
 
 #endif

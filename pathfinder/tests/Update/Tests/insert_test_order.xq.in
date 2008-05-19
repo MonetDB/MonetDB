@@ -1,0 +1,15 @@
+pf:add-doc("$TSTSRCDIR/insert_test_order.xml","insert_test_order.xml",10)
+<>
+let $proj :=
+ element project {
+   attribute name {"bar"},
+   element notes {"beer"},
+   element description {"drink"}
+ }
+return (
+ do insert $proj as first into doc("insert_test_order.xml")/noot/noot1,
+ do insert $proj as last into doc("insert_test_order.xml")/noot/noot2,
+ do insert $proj before doc("insert_test_order.xml")/noot/noot3/before,
+ do insert $proj after doc("insert_test_order.xml")/noot/noot4/after )
+<>
+fn:doc("insert_test_order.xml")

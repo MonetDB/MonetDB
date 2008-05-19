@@ -1,0 +1,17 @@
+stderr of test 'insert_test_order_seq` in directory 'tests/Update` itself:
+
+
+# 15:01:02 >  
+# 15:01:02 >   Mserver "--config=/export/scratch0/monet//prefix.current/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/export/scratch0/monet//prefix.current/lib/MonetDB4:/export/scratch0/monet//prefix.current/lib/MonetDB4/lib:/export/scratch0/monet//prefix.current/lib/MonetDB4/bin" --set "gdk_dbfarm=/export/scratch0/monet//prefix.current/var/MonetDB4/dbfarm" --set "sql_logdir=/export/scratch0/monet//prefix.current/var/MonetDB4/sql_logs" --set "xquery_logdir=/export/scratch0/monet//prefix.current/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=31310 --set xrpc_port=45936 --set monet_prompt= --trace  "--dbname=mTests_tests_Update" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 15:01:02 >  
+
+
+# 15:01:04 >  
+# 15:01:04 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=darwin --port=31310 insert_test_order_seq.xq
+# 15:01:04 >  
+
+
+# 15:01:04 >  
+# 15:01:04 >  Done.
+# 15:01:04 >  
+
