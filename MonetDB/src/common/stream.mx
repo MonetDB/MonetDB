@@ -1813,7 +1813,7 @@ udp_socket(udp_stream *udp, char *hostname, int port, int write)
 
 	memset(&udp->addr, 0, sizeof(udp->addr));
 	if (write)
-		memcpy(&udp->addr.sin_addr, hp->h_addr, hp->h_length);
+		memcpy(&udp->addr.sin_addr, hp->h_addr_list[0], hp->h_length);
 	else
    		udp->addr.sin_addr.s_addr = INADDR_ANY;
 	udp->addr.sin_family = hp->h_addrtype;
