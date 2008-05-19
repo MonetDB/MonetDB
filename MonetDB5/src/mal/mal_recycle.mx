@@ -62,8 +62,8 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-/*#define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE*/
+/* #define _DEBUG_RECYCLE_
+#define _DEBUG_RECYCLE_REUSE */
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -265,11 +265,11 @@ should also remove the dependent instructions.
 static void
 RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q){
 	int j;
+
 	for(j=0; j< q->argc; j++)
-	if (isVarConstant(mb,getArg(q,j)) ){
+	if (isVarConstant(mb,getArg(q,j)) )
 		if( isaBatType(getArgType(mb, q,j)) )
 			BBPdecref(getVarConstant(mb,getArg(q,j)).val.bval, TRUE);
-	}
 }
 
 static void RECYCLEremove(int pc){
@@ -439,15 +439,20 @@ compare by value.
 		j= getArg(p,i);
 		v = &s->stk[j];
 		VALcopy(&cst,v);
-		c = defConstant(recycleBlk, v->vtype, &cst);
+		c = fndConstant(recycleBlk, &cst, recycleBlk->vtop);
+#ifdef _DEBUG_RECYCLE_
+		printf("CONSTANT %s %d\n", getVarName(mb,j), c);
+#endif
+		if (c<0)
+			c = defConstant(recycleBlk, v->vtype, &cst);
 		if (v->vtype == TYPE_bat)
 			BBPincref( *(int*)VALget(v), TRUE);
+		setVarUsed(recycleBlk,c);
 	 	setArg(q,i,c);
 		if (i < p->retc) {
 			mb->var[j]->recycle = c;
 			if (isVarRecycled(mb, j)) 
 				setVarKept(mb, j);
-			setVarUsed(recycleBlk,c);
 		}
 	}
 #ifdef _DEBUG_RECYCLE_
@@ -691,16 +696,18 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for(i=0;i< p->retc; i++) {
 		if (isVarKept(mb, getArg(p,i)) && isVarRecycled(mb, getArg(p,i)) ){
 			cnt++;
+			lhs = &stk->stk[getArg(p,i)];
+			rhs = &getVarConstant(recycleBlk, mb->var[getArg(p,i)]->recycle);
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLEentry reuse %d -> %d\n",
+	stream_printf(GDKout,"RECYCLEentry reuse %d -> %d ",
 		getArg(p,i), mb->var[getArg(p,i)]->recycle);
+	ATOMprint(rhs->vtype, VALptr(lhs),GDKout);
+	stream_printf(GDKout,"\n");
 	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
 	stream_printf(GDKout,"RECYCLEentry reuse %s -> %s\n",
 		getVarName(mb,getArg(p,i)),
 		getVarName(recycleBlk,mb->var[getArg(p,i)]->recycle));
 #endif
-			lhs = &stk->stk[getArg(p,i)];
-			rhs = &getVarConstant(recycleBlk, mb->var[getArg(p,i)]->recycle);
 			VALcopy(lhs,rhs);
 			if( lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.br.id, TRUE);
@@ -826,24 +833,25 @@ void
 RECYCLEshutdown(){
 	MalBlkPtr mb= recycleBlk;
 	int i;
-	ValPtr v;
 	
 	if( recycleBlk == NULL)
 		return ;
 
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE shutdown\n");
+	printFunction(GDKout,recycleBlk,0);
+	printStack(GDKout,mb,0);
 #endif
 	mal_set_lock(recycleLock,"recycle");
 	recycleBlk= NULL;
 	recycleVersion++;
 	mal_unset_lock(recycleLock,"recycle");
-	for (i=0; i<mb->vtop; i++)
-		if(isVarCleanup(mb,i) ){
-			garbageElement(v=  &getVarConstant(mb,i));
-			v->vtype= TYPE_int;
-			v->val.ival= int_nil;
-		}
+	for (i=0; i<mb->stop; i++)
+		RECYCLEgarbagecollect(mb, getInstrPtr(mb,i));
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLE shutdown2\n");
+	printStack(GDKout,mb,0);
+#endif
 	freeMalBlk(mb);
 }
 @}

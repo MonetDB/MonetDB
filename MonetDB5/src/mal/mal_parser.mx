@@ -1541,7 +1541,7 @@ This code is used in both positions of the expression
 	if( (i= cstToken(cntxt,&cst))){
 		int cstidx = -1,csttpe= TYPE_any;
 
-		cstidx = fndConstant(curBlk,&cst);
+		cstidx = fndConstant(curBlk,&cst,MAL_VAR_WINDOW);
 		if( cstidx >= 0){
 			int free = 1;
 			advance(cntxt,i);

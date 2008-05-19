@@ -305,6 +305,7 @@ instruction in the source.]
 /* #define DEBUG_REDUCE */
 #define MAXARG 4		/* BEWARE the code depends on this knowledge */
 #define STMT_INCREMENT 32
+#define MAL_VAR_WINDOW  32
 #define MAXVARS 32
 
 typedef struct SYMDEF {
@@ -528,7 +529,7 @@ mal_export void freeVariable(MalBlkPtr mb, int varid);
 mal_export void clearVariable(MalBlkPtr mb, int varid);
 mal_export int cpyConstant(MalBlkPtr mb, VarPtr vr);
 mal_export int defConstant(MalBlkPtr mb, int type, ValPtr cst);
-mal_export int fndConstant(MalBlkPtr mb, ValPtr cst);
+mal_export int fndConstant(MalBlkPtr mb, ValPtr cst,int depth);
 mal_export int convertConstant(malType type, ValPtr vr);
 
 #define varSetProperty(mb, var, name, opname, cst) \
@@ -1862,14 +1863,13 @@ end.
 	return vr->vtype != type;
 }
 
-#define MAL_VAR_WINDOW  32
 int
-fndConstant(MalBlkPtr mb, ValPtr cst)
+fndConstant(MalBlkPtr mb, ValPtr cst, int depth)
 {
 	int i, k;
 	ptr p = VALget(cst);
 
-	k = mb->vtop - MAL_VAR_WINDOW;
+	k = mb->vtop - depth;
 	if (k < 0)
 		k = 0;
 	for (i = mb->vtop - 1; i >= k; i--) {
@@ -1920,7 +1920,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst )
 		}
 		VALclear(&vr);
 	}
-	k= fndConstant(mb,cst);
+	k= fndConstant(mb,cst,MAL_VAR_WINDOW);
 	if( k >= 0 ) {
 		/* protect against leaks coming from constant reuse */
 		if (ATOMextern(type) && cst->val.pval)
