@@ -33,6 +33,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_21A2DD174AEE4F2394F2CFFC465BCAF0"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_262841F3C0224E07B84C4A40F15F86F7"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -63,6 +69,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_6D2469641F8846369817F1CC2A9BCF4C"
+        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_6E70A0C24C34448EBEE52691D0DC6C56"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -81,12 +93,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_9A460FAC136644518ECB0F97E6A5B41E"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_9DA561C689B04830A067A7C92CFB6A72"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -94,6 +100,12 @@
         "Entry"
         {
         "MsmKey" = "8:_A1F0F7ADF91F46198B204425337B2461"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_AD3326FC07AA462C9E1F02B1BDB0C1D9"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -118,12 +130,6 @@
         "Entry"
         {
         "MsmKey" = "8:_EDDAAB46E3DB4C4A89E3524AADE73206"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_EE80554F9A4D409AB906481B2074B398"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -267,6 +273,26 @@
             "TargetName" = "8:xrpc_server.mil"
             "Tag" = "8:"
             "Folder" = "8:_E7F9CF4E0220468FB71F65052227D019"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_21A2DD174AEE4F2394F2CFFC465BCAF0"
+            {
+            "SourcePath" = "8:C:\\Program Files\\Intel\\Compiler\\C++\\10.1.013\\IA32\\Bin\\libmmd.dll"
+            "TargetName" = "8:libmmd.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -481,6 +507,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AD3326FC07AA462C9E1F02B1BDB0C1D9"
+            {
+            "SourcePath" = "8:C:\\libxml2-2.6.30.win32\\bin\\libxml2.dll"
+            "TargetName" = "8:libxml2.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C0604829EFD549789F4EC2637D7B20DC"
             {
             "SourcePath" = "8:license.rtf"
@@ -547,26 +593,6 @@
             "TargetName" = "8:pftijah.mil"
             "Tag" = "8:"
             "Folder" = "8:_E7F9CF4E0220468FB71F65052227D019"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_EE80554F9A4D409AB906481B2074B398"
-            {
-            "SourcePath" = "8:Lib\\libmonet.dll"
-            "TargetName" = "8:libmonet.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1380,7 +1406,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_9A460FAC136644518ECB0F97E6A5B41E"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_6D2469641F8846369817F1CC2A9BCF4C"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
