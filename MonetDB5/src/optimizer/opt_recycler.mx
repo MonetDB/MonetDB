@@ -157,9 +157,9 @@ are marked for re-use.
 
 @c
 		/* take care of semantic driven recyling */
-		if( getFunctionId(p)== selectRef )
+		if( getFunctionId(p)== selectRef && recycled[getArg(p,1)] )
 			p->recycle = -1;
-		if( getFunctionId(p)== uselectRef &&
+		if( getFunctionId(p)== uselectRef && recycled[getArg(p,1)] &&
 			!ATOMvarsized( getGDKType( getArgType(mb,p,1)))
 		){
 			q= copyInstruction(p);
