@@ -93,6 +93,8 @@ typedef struct trans {
 	struct trans *tr;
 } trans;
 
+typedef int (*precommit_fptr) (char *qid,  char *cid);
+
 typedef struct logger {
 	int debug;
 	unsigned int changes;
@@ -101,6 +103,7 @@ typedef struct logger {
 	int tid;
 	char *fn;
 	char *dir;
+    precommit_fptr phandler;
 	stream *log;
 	size_t end;		/* end of pre-allocated blocks for faster f(data)sync */
 	/* Store log_bids (int) to circumvent trouble with reference counting */
@@ -132,7 +135,7 @@ etc. has a unique number.
 /* the sequence identifier for frontend objects */
 #define OBJ_SID	1
 
-gdk_export logger *logger_create(int debug, char *fn, char *logdir, char *dbname, int version);
+gdk_export logger *logger_create(int debug, char *fn, char *logdir, char *dbname, int version, precommit_fptr phandler);
 gdk_export void logger_destroy(logger *lg);
 gdk_export int logger_exit(logger *lg);
 gdk_export int logger_restart(logger *lg);
@@ -150,6 +153,7 @@ gdk_export int log_delta(logger *lg, BAT *b, char *n);
 gdk_export int log_tstart(logger *lg);	/* TODO return transaction id */
 gdk_export int log_tend(logger *lg);
 gdk_export int log_abort(logger *lg);
+gdk_export int log_precommit(logger *lg, char *qid, char *cid);
 
 gdk_export int log_sequence(logger *lg, int seq, lng id);
 
@@ -172,6 +176,7 @@ log a posteriori to check what has happened.
 @c
 #define LOG_START	1
 #define LOG_END		2
+#define LOG_PRECOMMIT 11
 #define LOG_INSERT	3
 #define LOG_DELETE	4
 #define LOG_UPDATE	5
@@ -730,6 +735,21 @@ tr_abort(logger *lg, trans *tr)
 	return tr_destroy(tr);
 }
 
+static trans *
+tr_precommit(logger *lg, trans *tr)
+{
+    char *qid = NULL, *cid = NULL;
+
+    if(!(qid = log_read_string(lg)) ||
+       !(cid = log_read_string(lg)) ||
+       !lg->phandler ||
+       !lg->phandler(cid, qid)) {
+         return tr_abort(lg, tr);
+    }
+
+    return tr_commit(lg, tr);
+}
+
 static int
 logger_open(logger *lg)
 {
@@ -800,6 +820,9 @@ logger_readlog(logger *lg, char *filename)
 			else
 				tr = tr_commit(lg, tr);
 			break;
+        case LOG_PRECOMMIT:
+            tr = tr_precommit(lg, tr);
+            break;
 		case LOG_SEQ:
 			err = (log_read_seq(lg, &l) != LOG_OK);
 			break;
@@ -943,7 +966,7 @@ bm_subcommit(BAT *list, BAT *catalog, int debug)
 }
 
 static logger *
-logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
+logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precommit_fptr phandler)
 {
 	int id = LOG_SID;
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
@@ -969,6 +992,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 	snprintf(filename, BUFSIZ, "%s%c%s%c", logdir, DIR_SEP, dbname, DIR_SEP);
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
+    lg->phandler = phandler;
 	lg->log = NULL;
 	lg->end = 0;
 	lg->catalog = NULL;
@@ -1077,9 +1101,9 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version)
 }
 
 logger *
-logger_create(int debug, char *fn, char *logdir, char *dbname, int version)
+logger_create(int debug, char *fn, char *logdir, char *dbname, int version, precommit_fptr phandler)
 {
-	logger *lg = logger_new(debug, fn, logdir, dbname, version);
+	logger *lg = logger_new(debug, fn, logdir, dbname, version, phandler);
 
 	if (!lg)
 		return NULL;
@@ -1566,6 +1590,28 @@ log_abort(logger *lg)
 	l.nr = -1;
 
 	if (log_write_format(lg, &l) == LOG_ERR)
+		return LOG_ERR;
+
+	return LOG_OK;
+}
+
+int
+log_precommit(logger *lg, char *qid, char *cid)
+{
+	logformat l;
+
+	if (lg->debug)
+		fprintf(stderr, "log_precommit %d %s %s\n", lg->tid, qid, cid);
+
+	l.flag = LOG_PRECOMMIT;
+	l.tid = lg->tid;
+	l.nr = -1;
+
+	if (log_write_format(lg, &l) == LOG_ERR ||
+        log_write_string(lg, qid) == LOG_ERR ||
+        log_write_string(lg, cid) == LOG_ERR ||
+	    stream_flush(lg->log) ||
+	    stream_fsync(lg->log))
 		return LOG_ERR;
 
 	return LOG_OK;

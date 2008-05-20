@@ -38,7 +38,7 @@ bl_create(char *logdir, char *dbname, int catalog_version)
 {
 	if (bat_logger)
 		return LOG_ERR;
-	bat_logger = logger_create(0, "sql", logdir, dbname, catalog_version);
+	bat_logger = logger_create(0, "sql", logdir, dbname, catalog_version, NULL);
 	if (bat_logger)
 		return LOG_OK;
 	return LOG_ERR;
