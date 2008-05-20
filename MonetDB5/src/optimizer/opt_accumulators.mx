@@ -197,8 +197,8 @@ sure it becomes one.
 		pushInstruction(mb,p);
 	}
 	for (i = limit; i<slimit; i++) 
-	if(old[i])
-		freeInstruction(old[i]);
+		if(old[i])
+			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(span);
 	return actions;
