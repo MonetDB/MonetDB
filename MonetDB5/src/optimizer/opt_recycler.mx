@@ -181,7 +181,6 @@ with the transaction commits.
 		if (getModuleId(p)== sqlRef && 
 			((	getFunctionId(p)==bindRef && 
 				getVarConstant(mb, getArg(p,4)).val.ival != 0) ||
-			getFunctionId(p)== bindidxRef ||
 			getFunctionId(p)== binddbatRef) ) {
 				recycled[getArg(p,0)]=0;
 				p->recycle = 0; /* this instruction is not monitored */
