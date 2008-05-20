@@ -44,6 +44,7 @@
 @m
 .MODULE pathfinder;
 
+.USE logger;
 .USE pf_support;
 
 .COMMAND xquery_frontend() : ptr = xquery_frontend;
@@ -56,6 +57,9 @@
 
 .COMMAND xquery_start_query_cache(lng maxsize) : void = CMDxquery_start_query_cache; 
  "Cached xquery clients use the query plan cache (also flushes the cache when called). if nonzero, the parameter is a per-connection size limit to the plan cache in bytes"
+
+.COMMAND xquery_logger_create( int debug, str fn, str dirname, str dbname, int version ) : logger = CMDxquery_logger_create;
+ "Create logger, check if recovery is needed.  The XRPC handler for PRE_COMMIT is passed."
 
 .PRELUDE = xquery_prelude;
 .EPILOGUE = xquery_epilogue;
@@ -3961,7 +3965,7 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 # start the query cache 
 xquery_start_query_cache(lng(monet_environment.find("xquery_procMB")) * 1024LL * 1024LL);
 
-var pf_logger := logger_create(0, "xquery", monet_environment.find("xquery_logdir"), 
+var pf_logger := xquery_logger_create(0, "xquery", monet_environment.find("xquery_logdir"), 
                                             monet_environment.find("gdk_dbname"), LOGGER_VERSION);
 
 cleantmpdir(msec() / 1000LL);              # delete tmp files in DBFARM/DBNAME/tmp
@@ -3991,6 +3995,7 @@ fork(pf_logmanager());            # start checkpointing thread
 #include <streams.h>
 #include <mapi/mapi.h>
 #include <sys.h>
+#include <gdk_logger.h>
 #ifdef LIBPF
 #define LIBPF_SUPPORT LIBPF
 #endif
@@ -6042,6 +6047,20 @@ CMDxquery(Cntxt stk,
     } 
     /* stream_printf(GDKout,"RES = %s\n",res->val.sval); */
     return GDK_SUCCEED;
+}
+
+int
+CMDxquery_logger_create( logger *L, int *debug, str fn, str dirname, str dbname, int *version) 
+{
+    /* TODO: instead of passing NULL, pass the real implementation of
+     *       the XRPC PRE_COMMIT handler */
+	logger *l = logger_create(*debug, fn, dirname, dbname, *version, NULL); 
+	
+	if (l) {
+		*(logger**)L = l;
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
 
 /* xquery_method : execute a loop-lifted xquery function
