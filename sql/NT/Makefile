@@ -11,6 +11,7 @@ prefix = $(MAKEDIR)
 !INCLUDE "$(TOPDIR)\rules.msc"
 
 INSTALLER = MonetDB5-SQL
+INSTALLER_PREREQ = "$(prefix)\banner.bmp" "$(prefix)\license.rtf" "$(prefix)\monetdb.ico"
 
 !IFDEF HAVE_MONETDB5
 RUNMSERVER5 = RunMserver5.bat
@@ -33,7 +34,7 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" check
 	call RunMtest.bat
 
-install: targetdirs all $(M4INSTALLER) $(M5INSTALLER)
+install: targetdirs all $(M4INSTALLER) $(M5INSTALLER) $(INSTALLER_PREREQ)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MSQLserver.bat "$(prefix)"
 	$(INSTALL) $(INSTALLER)\$(INSTALLER).sln "$(prefix)"
@@ -42,6 +43,13 @@ install: targetdirs all $(M4INSTALLER) $(M5INSTALLER)
 	if exist "$(prefix)\$(INSTALLER).msi" del /f "$(prefix)\$(INSTALLER).msi"
 	$(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER).msi "$(prefix)"
 	@-c:\cygwin\bin\chmod a+rx "$(prefix)\$(INSTALLER).msi"
+
+"$(prefix)\banner.bmp":
+	$(INSTALL) "$(MONETDB_PREFIX)\banner.bmp" "$(prefix)\banner.bmp"
+"$(prefix)\license.rtf":
+	$(INSTALL) "$(MONETDB_PREFIX)\license.rtf" "$(prefix)\license.rtf"
+"$(prefix)\monetdb.ico":
+	$(INSTALL) "$(MONETDB_PREFIX)\monetdb.ico" "$(prefix)\monetdb.ico"
 
 !IFDEF BITS32
 install-m4installer:
