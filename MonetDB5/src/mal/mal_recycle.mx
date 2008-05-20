@@ -64,8 +64,8 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-/* #define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE*/
+#define _DEBUG_RECYCLE_
+#define _DEBUG_RECYCLE_REUSE
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -268,11 +268,22 @@ should also remove the dependent instructions.
 static void
 RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q){
 	int j;
+	ValPtr v;
 
-	for(j=0; j< q->argc; j++)
-	if (isVarConstant(mb,getArg(q,j)) )
-		if( isaBatType(getArgType(mb, q,j)) )
-			BBPdecref(getVarConstant(mb,getArg(q,j)).val.bval, TRUE);
+	for(j=0; j< q->argc; j++){
+		v= &getVarConstant(mb,getArg(q,j));
+		if(getArgType(mb,q,j)==TYPE_bat || isaBatType(getArgType(mb, q,j)) ){
+			BBPdecref(ABS(v->val.bval), TRUE);
+			v->val.bval= 0;
+		}
+		if( v->vtype == TYPE_str) {
+			if(v->val.pval) {
+				GDKfree(v->val.pval);
+				v->val.pval = NULL;
+			}
+			v->len = 0;
+		}
+	}
 }
 
 static void RECYCLEremove(int pc){
@@ -707,7 +718,7 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			rhs = &getVarConstant(recycleBlk, getArg(q,i));
 			VALcopy(lhs,rhs);
 			if( lhs->vtype == TYPE_bat)
-				BBPincref(lhs->val.br.id, TRUE);
+				BBPincref(lhs->val.bval, TRUE);
 		}
 		return 1;
 	} 
@@ -834,10 +845,6 @@ RECYCLEshutdown(){
 	mal_unset_lock(recycleLock,"recycle");
 	for (i=0; i<mb->stop; i++)
 		RECYCLEgarbagecollect(mb, getInstrPtr(mb,i));
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE shutdown2\n");
-	printStack(GDKout,mb,0);
-#endif
 	freeMalBlk(mb);
 }
 @}
