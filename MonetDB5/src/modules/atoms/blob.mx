@@ -106,6 +106,15 @@ command blob(s:str):blob address BLOBblob_fromstr;
 command sqlblob(b:sqlblob):sqlblob address BLOBblob_blob;
 command sqlblob(s:str):sqlblob address BLOBsqlblob_fromstr;
 
+command calc.isnil(v:blob):bit 
+address BLOB_isnil
+comment "Nil test for blob value";
+
+command calc.isnil(v:sqlblob):bit 
+address BLOB_isnil
+comment "Nil test for blob value";
+
+
 @{
 @* Implementation Code
 @h
@@ -173,6 +182,7 @@ blob_export str BLOBblob_blob(blob **d, blob **s);
 blob_export str BLOBblob_fromstr(blob **b, str *d);
 
 blob_export str BLOBsqlblob_fromstr(sqlblob **b, str *d);
+blob_export str BLOB_isnil(bit *retval, blob *val);
 
 str 
 BLOBprelude(void)
@@ -934,5 +944,10 @@ BLOBsqlblob_fromstr(blob **b, str *s)
 	return MAL_SUCCEED;
 }
 
+str BLOB_isnil(bit *ret, blob *v)
+{
+	*ret = (v->nitems == ~(size_t)0);
+	return MAL_SUCCEED;
+}
 
 @}
