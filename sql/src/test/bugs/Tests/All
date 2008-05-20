@@ -86,3 +86,4 @@ case_substring
 zero_or_one_bug
 ifthenelse_bug
 copy_into_with_schema
+blob_not_null
