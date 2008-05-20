@@ -336,8 +336,6 @@ typedef struct VARRECORD {
 #define VAR_INIT	32
 #define VAR_USED	64
 #define VAR_DISABLED	128 /* used for comments and scheduler */
-#define VAR_RECYCLE	256 /* Recycle control, variable can be recycled  */
-#define VAR_KEPT	512 /* Recycle control, variable is available  */
 
 /* type check status is kept around to improve type checking efficiency */
 #define TYPE_ERROR      -1
@@ -361,7 +359,7 @@ typedef struct {
 	bit gc;			/* garbage control flags */
 	bit polymorphic;	/* complex type analysis */
 	bit varargs;		/* variable number of arguments */
-	bit recycle;	/* under the control of the recycler */
+	int recycle;	/* <0 or index into recycle cache */
 	int jump;		/* controlflow program counter */
 	MALfcn fcn;		/* resolved function address */
 	struct MALBLK *blk;	/* resolved MAL function address */
@@ -461,8 +459,6 @@ for separate name space management.
 @:varProperty(Typedef,TYPEVAR)@
 @:varProperty(UDFtype,UDFTYPE)@
 @:varProperty(Constant,CONSTANT)@
-@:varProperty(Kept,KEPT)@
-@:varProperty(Recycled,RECYCLE)@
 
 #define getVarConstant(M,I) ((M)->var[I]->value)
 #define getVarValue(M,I) 	VALget(&(M)->var[I]->value)
@@ -1418,8 +1414,6 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	clrVarDisabled(mb, n);
 	clrVarUDFtype(mb, n);
 	clrVarConstant(mb, n);
-	clrVarKept(mb, n);
-	clrVarRecycled(mb, n);
 	clrVarCleanup(mb, n);
 	mb->vtop++;
 	return n;

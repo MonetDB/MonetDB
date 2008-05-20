@@ -33,7 +33,7 @@ The Recycler optimizer and module extends this with a middle out approach.
 They exploits the materialize-all-intermediate approach of MonetDB
 by deciding to keep a hold on them as long as deemed benificial.
 
-The approach taken is to mark the variables in a MAL program
+The approach taken is to mark the instructions in a MAL program
 using the recycler optimizer call, such that their result is retained
 in a global recycle cache hardwired in the MAL interpreter.
 Instructions become subject to the Recycler if
@@ -103,9 +103,11 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	Lifespan span = newLifespan(mb);
 	InstrPtr *old, q;
 	int limit;
+	char *recycled;
 
 	(void) cntxt;
 	(void) stk;
+	recycled= GDKzalloc(sizeof(char)*mb->vtop);
 	setLifespan(mb,span);
 	limit= mb->stop;
 	old = mb->stmt;
@@ -120,7 +122,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if( isUpdateInstruction(p)){
 				/* all update instructions  modify the first argument ?*/
 				/* they may not be recycled to avoid incomplete results */
-				clrVarRecycled(mb, getArg(p,1));
+				recycled[getArg(p,1)]= 0;
 				if (actions )
 					(void) newFcnCall(mb,"recycle","reset");
 				update++;
@@ -131,8 +133,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		cnt = 0;
 		for (j=p->retc; j<p->argc; j++)
-			if(isVarRecycled(mb, getArg(p,j)) ||
-				isVarConstant(mb, getArg(p,j)) )
+			if(recycled[getArg(p,j)] || isVarConstant(mb, getArg(p,j)) )
 				cnt++;
 #ifdef DEBUG_OPT_RECYCLER  
 		stream_printf(cntxt->fdout,"recyle ? %d\n",cnt);
@@ -140,10 +141,10 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 		if (cnt == p->argc-p->retc) {
 			actions ++;
-			p->recycle = 1; /* this instruction is to be monitored */
+			p->recycle = -1; /* this instruction is to be monitored */
 			for (j= 0; j < p->retc; j++)
 				if (getLastUpdate(span, getArg(p,j)) == i)
-					setVarRecycled(mb, getArg(p,j));
+					recycled[getArg(p,j)] = 1;
 		}
 @-
 The expected gain is largest if we can re-use selections
@@ -157,19 +158,19 @@ are marked for re-use.
 @c
 		/* take care of semantic driven recyling */
 		if( getFunctionId(p)== selectRef )
-			p->recycle = 1;
+			p->recycle = -1;
 		if( getFunctionId(p)== uselectRef &&
 			!ATOMvarsized( getGDKType( getArgType(mb,p,1)))
 		){
 			q= copyInstruction(p);
 			getArg(q,0)= newTmpVariable(mb,TYPE_any);
 			setFunctionId(q, selectRef);
-			q->recycle = 1;
+			q->recycle = -1;
 			pushInstruction(mb,q);
 			getArg(p,1)= getArg(q,0);
 			setFunctionId(p,markTRef);
 			p->argc=2;
-			p->recycle = 1;
+			p->recycle = -1;
 		}
 @-
 The sql.bind instructions should be handled carefully
@@ -179,7 +180,7 @@ with the transaction commits.
 @c
 		if (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef)
 			if( getVarConstant(mb, getArg(p,4)).val.ival != 0){
-				clrVarRecycled(mb, getArg(p,0));
+				recycled[getArg(p,0)]=0;
 				p->recycle = 0; /* this instruction is not monitored */
 			}
 
@@ -194,6 +195,7 @@ with the transaction commits.
 		mb->version = -1;	/* will trigger the recycler runtime support */
 	GDKfree(span);
 	GDKfree(old);
+	GDKfree(recycled);
 	return actions;
 }
 @include optimizerWrapper.mx

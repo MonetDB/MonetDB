@@ -34,12 +34,14 @@ The Recycler module extends it with a middle out approach.
 It exploits the materialize-all-intermediate approach of MonetDB
 by deciding to keep a hold on them as long as deemed benificial.
 
-The approach taken is to mark the variables in a MAL program
+The approach taken is to mark the instructions in a MAL program
 using an optimizer call, such that their result is retained 
-in a global recycle cache.
+in a global recycle cache. A reference into the cache makes
+is used to access the latest known version quickly.
 
 Upon execution, the Recycler first checks for
-an up to date result to be picked up at no cost.
+an up to date result to be picked up at no cost,
+other then matching the arguments.
 Otherwise, it evaluates the instruction and calls upon
 policy functions to decide if it is worthwhile to
 keep.
@@ -63,7 +65,7 @@ which inspects the variable table for alternative results.
 #include "mal_instruction.h"
 
 /* #define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE */
+#define _DEBUG_RECYCLE_REUSE*/
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -239,8 +241,9 @@ void RECYCLEversion(MalBlkPtr mb)
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE get version %d\n", recycleVersion);
 #endif
-		for(i=0; i<mb->vtop; i++)		/* reinit recycle */
-			clrVarKept(mb,i);
+		for(i=1; i<mb->stop; i++)
+		if (getInstrPtr(mb,i)->recycle)
+			getInstrPtr(mb,i)->recycle = -1;
 		mal_unset_lock(recycleLock,"recycle");
 	}	
 	mb->version = recycleVersion;
@@ -401,12 +404,12 @@ Likewise, we avoid all simple constant assigments.
 static int
 RECYCLEinterest(MalBlkPtr mb, InstrPtr p){
 	(void) mb;
-	if (p->token== ASSIGNsymbol )
+	if (p->recycle == 0 || p->token== ASSIGNsymbol )
 		return 0;
 	return getFunctionId(p) != NULL;
 }
 
-static int 
+static void 
 RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 {
 	int i, j, c;
@@ -416,14 +419,14 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 	
 	RECYCLEspace();
 	if (recycleCacheLimit && recycleCacheLimit < recycleBlk->stop)
-		return -1; /* no more caching */
+		return ; /* no more caching */
 	if (recycleBlk->vtop >= HARDLIMIT_VAR ||
 	    recycleBlk->stop >= HARDLIMIT_STMT ||
 	    recycleMemory > HARDLIMIT_MEM)
-		return -1; /* no more caching */
+		return ; /* no more caching */
 
 	if ( !RECYCLEinterest(mb,p))
-		return -1;
+		return ;
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE keep ");
 	printTraceCall( GDKout,mb, s, getPC(mb,p),LIST_MAL_ALL);
@@ -449,17 +452,12 @@ compare by value.
 			BBPincref( *(int*)VALget(v), TRUE);
 		setVarUsed(recycleBlk,c);
 	 	setArg(q,i,c);
-		if (i < p->retc) {
-			mb->var[j]->recycle = c;
-			if (isVarRecycled(mb, j)) 
-				setVarKept(mb, j);
-		}
 	}
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE kept ");
 	printInstruction( GDKout,recycleBlk, q,LIST_MAL_ALL);
 #endif
-	i= recycleBlk->stop;
+	p->recycle = i= recycleBlk->stop;
 	pushInstruction(recycleBlk,q);
 	recycleBlk->profiler[i].clk = GDKusec();
 	recycleBlk->profiler[i].counter =1;
@@ -473,7 +471,6 @@ compare by value.
 			recyclerUsedMemory, recycleBlk->stop,
 			recycled, retained, statements, savedTime);
 	retained++;
-	return i;
 }
 
 @-
@@ -632,6 +629,7 @@ We have a candidate table from which we can draw a subsection.
 We execute it in place and safe the result upon need.
 @c
 	if (bid >=0) {
+		int k;
 		i= getPC(mb,p);
 #ifdef _DEBUG_RECYCLE_REUSE
 	stream_printf(GDKout,"RECYCLEreuse subselect ");
@@ -645,10 +643,11 @@ We execute it in place and safe the result upon need.
 		/* make sure the garbage collector is not called */
 		j=s->keepAlive ;
 		s->keepAlive= TRUE;
-		p->recycle= FALSE;
+		k= p->recycle;
+		p->recycle= 0;
 		(void) reenterMAL(MCgetClient(),mb,i,i+1,s,0,0);
-		p->recycle= TRUE;
-		/* RECYCLEexit(mb, s, p); */
+		p->recycle= k;
+		RECYCLEexit(mb, s, p);
 		/* restore the situation */
 		s->keepAlive= j;
 		s->stk[getArg(p,1)].val.bval = nbid;
@@ -660,70 +659,60 @@ We execute it in place and safe the result upon need.
 	return pc;
 }
 @-
-The generic wrappers for accessing the recycle variables.
+The generic wrappers for accessing the recycled instructions.
 Before the interpreter loop is allowed to execute the instruction
 we check the recycle table for available variables.
-
-TODO remove the need for VAR_RECYCLE!
-No, there is a distinction to keep a variable and actually doing it.
-A variable marked RECYCLE and not KEPT, calls for a re-evaluation.
-A few cases should be distinguished. Target variables that have not
-been marked as VAR_RECYCLE are skipped. 
-
-For those marked VAR_KEPT we are done after copying the value
-onto the stack and return success.
 
 Just looking at a kept result target is not good enough.
 You have to sure that the arguments are also the same.
 This outrules function arguments.
-
-If we need to check also the input args, e.g. by calling find, VarKept
-and VarRecycled seem useless. If a match is found and used, and
-..->recycled set for the result var, we should avoid calling find a
-second time in RECYCLEexit
-
 @c
+static int
+RECYCLEcall(MalStkPtr stk, InstrPtr p){
+	/* are the arguments the same as in the recycle cache */
+	int i;
+	InstrPtr q;
+
+	if (p->recycle <= 0 )
+			return 0;
+	q= getInstrPtr(recycleBlk,p->recycle);
+	for ( i=p->retc; i< p->argc; i++)
+		if( VALcmp( &stk->stk[getArg(p,i)], &getVarConstant(recycleBlk, getArg(q,i))))
+		return 0;
+	return 1;
+}
+
 int 
 RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, cnt=0;
+	int i=0;
 	ValPtr lhs,rhs;
+	InstrPtr q;
 
+	stk->clk= GDKusec();
 	if (recycleVersion == 0 || recycleBlk == NULL )
 		return 0;
 	RECYCLEversion(mb);
 
-	for(i=0;i< p->retc; i++) {
-		if (isVarKept(mb, getArg(p,i)) && isVarRecycled(mb, getArg(p,i)) ){
-			cnt++;
-			lhs = &stk->stk[getArg(p,i)];
-			rhs = &getVarConstant(recycleBlk, mb->var[getArg(p,i)]->recycle);
+	if (RECYCLEcall(stk,p)) {
+		recycled++;
+		q= getInstrPtr(recycleBlk, p->recycle);
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLEentry reuse %d -> %d ",
-		getArg(p,i), mb->var[getArg(p,i)]->recycle);
-	ATOMprint(rhs->vtype, VALptr(lhs),GDKout);
-	stream_printf(GDKout,"\n");
-	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
-	stream_printf(GDKout,"RECYCLEentry reuse %s -> %s\n",
-		getVarName(mb,getArg(p,i)),
-		getVarName(recycleBlk,mb->var[getArg(p,i)]->recycle));
+		stream_printf(GDKout,"RECYCLEentry reuse\n");
+		printInstruction(GDKout,mb,p, LIST_MAL_ALL);
+		printInstruction(GDKout,recycleBlk,q, LIST_MAL_ALL);
 #endif
+		for(i=0;i< p->retc; i++) {
+			lhs = &stk->stk[getArg(p,i)];
+			rhs = &getVarConstant(recycleBlk, getArg(q,i));
 			VALcopy(lhs,rhs);
 			if( lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.br.id, TRUE);
-		} 
-	}
-
-	if (cnt != p->retc && (i = RECYCLEreuse(mb,stk,p)) >= 0 )
-		cnt = p->retc;
-	if ((recycleCacheLimit || recycleMemory) && i>=0)
-		RECYCLEcache(i, 0);
-/* ??? if the instruction is produced by re-use, why do we need to clean the cache, there is no result to be added */
-	stk->clk= GDKusec();
+		}
+		return 1;
+	} 
 	statements++;
-	recycled += cnt==p->retc; 
-/* ??? recycled will get increased even if no match is found */
-	return cnt == p->retc;
+	return RECYCLEreuse(mb,stk,p) >= 0;
 }
 
 @-
@@ -787,7 +776,7 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	case RETAIN_ADAPT:
 		/* RETAIN_ADAPT: adaptive temporal */
 		if (clk > recycleTime && RECYCLEfind(mb,stk,p)< 0)
-			(void) RECYCLEnew(mb, stk, p, rd, wr);
+			RECYCLEnew(mb, stk, p, rd, wr);
 		/* adapt the time watermark based on observed behavior ??? */
 		if (recycleTime < 0 && (exitLoop++ % 99)== 0){
 			clk= GDKusec();
@@ -805,22 +794,19 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @-
 Once we encounter an update on a recycled variable, we have
 to reset all dependents as well. Since we don't have this 
-information, we simply reset all variables.
+information, we simply reset all instructions.
 @c
 void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
-
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE reset\n");
 #endif
 	(void) stk;
 	(void) p;
-	mal_set_lock(recycleLock,"recycle");
-	for( i= 0; i< mb->vtop; i++)
-	if( isVarKept(mb,i) )
-		clrVarKept(mb,i);
-	mal_unset_lock(recycleLock,"recycle");
+	for(i=1; i<mb->stop; i++)
+	if (getInstrPtr(mb,i)->recycle)
+		getInstrPtr(mb,i)->recycle = -1;
 }
 @-
 At the end of the session we should remove all
