@@ -99,6 +99,7 @@ opt_reqvals (PFla_op_t *p)
                 }
 
         if (L(p) && L(p)->kind == la_disjunion &&
+            PFprop_req_bool_val (L(p)->prop, att) &&
             PFprop_const (LL(p)->prop, att) &&
             PFprop_const (LR(p)->prop, att) &&
             (PFprop_const_val (LL(p)->prop, att)).val.bln !=
@@ -110,6 +111,7 @@ opt_reqvals (PFla_op_t *p)
         }
 
         if (R(p) && R(p)->kind == la_disjunion &&
+            PFprop_req_bool_val (R(p)->prop, att) &&
             PFprop_const (RL(p)->prop, att) &&
             PFprop_const (RR(p)->prop, att) &&
             (PFprop_const_val (RL(p)->prop, att)).val.bln !=
