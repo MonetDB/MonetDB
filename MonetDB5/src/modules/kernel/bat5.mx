@@ -501,8 +501,7 @@ For more technical information on BATs, we refer to the
 @[<a href="http://www.cwi.nl/~monet/www/scw/gdk/470_pseudo.html">GDK</a>@
 documentation.
 @mal
-command setMemoryMap(b:bat[:any_1,:any_2], buns_mode:int, hheap_mode:int, 
-		theap_mode:int) :bit 
+command setMemoryMap(b:bat[:any_1,:any_2], head_mode:int, tail_mode:int, hheap_mode:int, theap_mode:int) :bit 
 address BKCmmap
 comment "For each individual heap, you can change the allocation mode 
         to either STORE_MEM or STORE_MMAP. Passing an int(nil) means:
@@ -512,10 +511,9 @@ comment "For each individual heap, you can change the allocation mode
 
 command setMemoryMap(b:bat[:any_1,:any_2], mode:int):bit 
 address BKCmmap2
-comment "Alias for mmap(b,mode,mode,mode, mode,mode)";
+comment "Alias for mmap(b, mode, mode, mode, mode)";
 
-command setMemoryAdvise(b:bat[:any_1,:any_2], buns_mode:int, hheap_mode:int, 
-		theap_mode:int) :bit 
+command setMemoryAdvise(b:bat[:any_1,:any_2], head_mode:int, tail_mode:int, hheap_mode:int, theap_mode:int) :bit 
 address BKCmadvise
 comment "Modern Operating Systems allow users to influence the buffer 
         management policy of virtual memory. This is a crucial feature 
@@ -531,7 +529,7 @@ comment "Modern Operating Systems allow users to influence the buffer
 
 command setMemoryAdvise(b:bat[:any_1,:any_2], mode:int):bit 
 address BKCmadvise2
-comment "alias for madvise(b,mode,mode,mode, mode,mode)";
+comment "alias for madvise(b, mode, mode, mode, mode)";
 
 command setHash(b:bat[:any_1,:any_2],prop:bit):bit 
 address BKCsetHash;
@@ -677,9 +675,9 @@ bat5_export str BKCheat(int *res, str *input);
 bat5_export str BKChotBAT(int *res, int *bid);
 bat5_export str BKCsave(bit *res, str *input);
 bat5_export str BKCsave2(int *r, int *bid);
-bat5_export str BKCmmap(int *res, int *bid, int *bns, int *hhp, int *thp);
+bat5_export str BKCmmap(int *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp);
 bat5_export str BKCmmap2(int *res, int *bid, int *bns);
-bat5_export str BKCmadvise(int *res, int *bid, int *bns, int *hhp, int *thp);
+bat5_export str BKCmadvise(int *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp);
 bat5_export str BKCmadvise2(int *res, int *bid, int *mode);
 bat5_export str BKCaccbuild(int *ret, int *bid, str *acc, ptr *param);
 bat5_export str BKCaccbuild_std(int *ret, int *bid, int *acc);
@@ -1416,6 +1414,8 @@ infoHeap(BAT *bn, Heap *hp, str nme)
 	BUNins(bn, buf, local_utoa(hp->maxsize),FALSE);
 	strcpy(p, "storage");
 	BUNins(bn, buf, (hp->base == NULL || hp->base == (char*)1) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage & STORE_PRIV) ? "private map" : "malloced",FALSE);
+	strcpy(p, "newstorage");
+	BUNins(bn, buf, (hp->newstorage == STORE_MEM) ? "malloced" : (hp->newstorage & STORE_PRIV) ? "private map" : "memory mapped",FALSE);
 	strcpy(p, "filename");
 	BUNins(bn, buf, hp->filename ? hp->filename : "no file",FALSE);
 }
@@ -1727,29 +1727,19 @@ CMDsave(bit *res, str input)
 }
 
 
-@= change_heap
-{
-	if (@2) {
-		int mode = (@2)->storage;
-
-		if (mode == STORE_MMAP && (@2)->filename == NULL)
-			mode = STORE_MEM;
-		if (mode == STORE_PRIV)
-			mode = STORE_MMAP;
-		if (*@1 == int_nil || *@1 == mode) {
-			*@1 = -1;
-		}
-	}
-}
-@c
 int
-CMDmmap(BAT **r, BAT *b, int *bns, int *hhp, int *thp)
+CMDmmap(BAT **r, BAT *b, int *hbns, int *tbns, int *hhp, int *thp)
 {
-	@:change_heap(bns,(&b->H->heap))@
-	@:change_heap(bns,(&b->T->heap))@
-	@:change_heap(hhp,b->hheap)@
-	@:change_heap(thp,b->theap)@
-	if (BATmmap(*r = b, *bns, *bns, *hhp, *thp) == 0) {
+	/* == int_nil means no change */
+	if (*hbns == int_nil) 
+		*hbns = b->batMaphead;
+	if (*tbns == int_nil) 
+		*tbns = b->batMaptail;
+	if (b->hheap && *hhp == int_nil) 
+		*hhp = b->batMaphheap;
+	if (b->theap && *thp == int_nil) 
+		*thp = b->batMaptheap;
+	if (BATmmap(*r = b, *hbns, *tbns, *hhp, *thp) == 0) {
 		BBPfix(b->batCacheid);
 		return GDK_SUCCEED;
 	}
@@ -1757,10 +1747,10 @@ CMDmmap(BAT **r, BAT *b, int *bns, int *hhp, int *thp)
 }
 
 int
-CMDmadvise(BAT **r, BAT *b, int *bns, int *hhp, int *thp)
+CMDmadvise(BAT **r, BAT *b, int *hbns, int *tbns, int *hhp, int *thp)
 {
 	BBPfix(b->batCacheid);
-	return BATmadvise(*r = b, (*bns == int_nil) ? -1 : *bns, (*bns == int_nil) ? -1 : *bns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp) ? GDK_FAIL : GDK_SUCCEED;
+	return BATmadvise(*r = b, (*hbns == int_nil) ? -1 : *hbns, (*tbns == int_nil) ? -1 : *tbns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp) ? GDK_FAIL : GDK_SUCCEED;
 }
 
 @+ Accelerator Control
@@ -3777,14 +3767,14 @@ BKCsave2(int *r, int *bid)
 
 @c
 str
-BKCmmap(int *res, int *bid, int *bns, int *hhp, int *thp)
+BKCmmap(int *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
 {
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.mmap", "Cannot access descriptor");
 	}
-	if (CMDmmap(&bn, b, bns, hhp, thp) == GDK_SUCCEED) {
+	if (CMDmmap(&bn, b, hbns, tbns, hhp, thp) == GDK_SUCCEED) {
 		*res = TRUE;
 		BBPreleaseref(bn->batCacheid);
 		BBPreleaseref(b->batCacheid);
@@ -3796,20 +3786,20 @@ BKCmmap(int *res, int *bid, int *bns, int *hhp, int *thp)
 }
 
 str
-BKCmmap2(int *res, int *bid, int *bns)
+BKCmmap2(int *res, int *bid, int *mode)
 {
-	return BKCmmap(res, bid, bns, bns, bns);
+	return BKCmmap(res, bid, mode, mode, mode, mode);
 }
 
 str
-BKCmadvise(int *res, int *bid, int *bns, int *hhp, int *thp)
+BKCmadvise(int *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
 {
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.madvice", "Cannot access descriptor");
 	}
-	*res = BATmadvise(b, (*bns == int_nil) ? -1 : *bns, (*bns == int_nil) ? -1 : *bns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp);
+	*res = BATmadvise(b, (*hbns == int_nil) ? -1 : *hbns, (*tbns == int_nil) ? -1 : *tbns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp);
 	BBPreleaseref(b->batCacheid);
 	if (*res)
 		throw(MAL, "bat.madvise", " failed");
@@ -3819,7 +3809,7 @@ BKCmadvise(int *res, int *bid, int *bns, int *hhp, int *thp)
 str
 BKCmadvise2(int *res, int *bid, int *mode)
 {
-	return BKCmadvise(res, bid, mode, mode, mode);
+	return BKCmadvise(res, bid, mode, mode, mode, mode);
 }
 
 @+ Accelerator Control
