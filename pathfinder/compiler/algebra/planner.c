@@ -2700,6 +2700,26 @@ plan_subexpression (PFla_op_t *n)
 
         case la_step:           plans = plan_step (n);         break;
         case la_doc_tbl:        plans = plan_doc_tbl (n);      break;
+
+        /* case doc_index_join */
+        case la_doc_index_join:
+            /* need to first check the doc_join->kind to decide which
+             * physical operator to construct                         */
+            if (n->sem.doc_join.kind == la_dj_id ||
+                n->sem.doc_join.kind == la_dj_idref) {
+                /* fn:id or fn:idref */
+
+            } else if (n->sem.doc_join.kind == la_dj_text ||
+                n->sem.doc_join.kind == la_dj_attr) {
+                /* pf:attribute, pf:text*/
+                PFoops (OOPS_FATAL,
+                    "physical algebra equivalent for logical algebra "
+                    "node kind %u,%u not implemented, yet",
+                    n->kind, n->sem.doc_join.kind);
+            }
+
+        break;
+
         case la_doc_access:     plans = plan_doc_access (n);   break;
 
         case la_twig:           plans = plan_twig (n);         break;

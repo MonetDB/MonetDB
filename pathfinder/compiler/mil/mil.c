@@ -1737,6 +1737,15 @@ PFmil_ws_docavailable (const PFmil_t *a, const PFmil_t *b)
     return wire2 (m_ws_docavailable, a, b);
 }
 
+/** function ws_findnodes(a,b,c,d,e,f,g) */
+PFmil_t *
+PFmil_ws_findnodes (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c,
+                    const PFmil_t *d, const PFmil_t *e, const PFmil_t *f,
+                    const PFmil_t *g)
+{
+    return wire7 (m_ws_findnodes, a, b, c, d, e, f, g);
+}
+
 #ifdef HAVE_PFTIJAH
 
 PFmil_t *

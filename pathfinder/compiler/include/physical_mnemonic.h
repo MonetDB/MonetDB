@@ -162,4 +162,7 @@
 
 #define string_join(a,b,c,d) PFpa_string_join ((a),(b),(c),(d))
 
+/* id/idref operator */
+#define findnodes(a,b,c,d,e,f) PFpa_findnodes ((a),(b),(c),(d),(e),(f))
+
 /* vim:set shiftwidth=4 expandtab: */

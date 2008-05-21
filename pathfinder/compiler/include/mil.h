@@ -371,6 +371,7 @@ enum PFmil_kind_t {
     , m_ws_docname         /**< mil document function for  docname      */
     , m_ws_collections     /**< mil document function for collections   */
     , m_ws_docavailable    /**< mil document function for doc-available */
+    , m_ws_findnodes       /**< mil function for fn:id/idref            */
 #ifdef HAVE_PFTIJAH
     , m_tj_pfop
     , m_tj_tokenize
@@ -923,6 +924,16 @@ PFmil_t * PFmil_ws_collections (const PFmil_t *, const PFmil_t *);
  * ws_docavailable(BAT[void,BAT], BAT[void,str]) : BAT[void,bit]
  */
 PFmil_t * PFmil_ws_docavailable (const PFmil_t *, const PFmil_t *);
+
+/**
+ *  mil function for id/idref
+ *  ws_findnodes(BAT[void,bat] ws, BAT[void,oid] id_iter, any id_item,
+ *               any id_kind, any id_cont, any id_tokens, bit isid)
+ */
+PFmil_t * PFmil_ws_findnodes (const PFmil_t *, const PFmil_t *, 
+                              const PFmil_t *, const PFmil_t *,
+                              const PFmil_t *, const PFmil_t *,
+                              const PFmil_t *);
 
 #define PFmil_seq(...) \
     PFmil_seq_ (sizeof ((PFmil_t *[]) { __VA_ARGS__} ) / sizeof (PFmil_t *), \
