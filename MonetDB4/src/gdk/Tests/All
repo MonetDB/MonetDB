@@ -30,3 +30,4 @@ append_dense_tail
 scanselect
 directsemijoin
 bandjoin
+malloc_mmap_priv
