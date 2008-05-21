@@ -92,6 +92,8 @@ static char *a_id[]  = {
     , [pa_type]            = "TYPE"
     , [pa_type_assert]     = "type assertion"
     , [pa_cast]            = "CAST"
+    , [pa_seqty1]          = "SEQTY1"
+    , [pa_all]             = "ALL"
     , [pa_llscjoin]        = "//| "
     , [pa_doc_tbl]         = "DOC"
     , [pa_doc_access]      = "access"
@@ -234,6 +236,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         , [pa_type]            = "\"#C0C0C0\""
         , [pa_type_assert]     = "\"#C0C0C0\""
         , [pa_cast]            = "\"#C0C0C0\""
+        , [pa_seqty1]          = "\"#A0A0A0\""
+        , [pa_all]             = "\"#A0A0A0\""
         , [pa_llscjoin]        = "\"#1E90FF\""
         , [pa_doc_tbl]         = "\"#C0C0C0\""
         , [pa_doc_access]      = "\"#CCCCFF\""
@@ -452,6 +456,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         case pa_max:
         case pa_min:
         case pa_sum:
+        case pa_seqty1:
+        case pa_all:
             if (n->sem.aggr.part == att_NULL)
                 PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
                                 PFatt_str (n->sem.aggr.res),

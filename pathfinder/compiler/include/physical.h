@@ -92,6 +92,9 @@ enum PFpa_op_kind_t {
                                    certain type */
     , pa_type_assert    =  64 /**< restriction of the type of a given column */
     , pa_cast           =  65 /**< cast a table to a given type */
+    , pa_seqty1          = 66 /**< test for exactly one type occurrence in one
+                                   iteration (Pathfinder extension) */
+    , pa_all             = 67 /**< test if all items in an iteration are true */
     , pa_llscjoin       = 100 /**< Loop-Lifted StaircaseJoin */
     , pa_doc_tbl        = 120 /**< Access to persistent document relation */
     , pa_doc_access     = 121 /**< Access to string content of loaded docs */

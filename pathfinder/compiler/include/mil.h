@@ -248,6 +248,7 @@ enum PFmil_kind_t {
     , m_mnot         /**< multiplexed boolean negation `[not]' */
     , m_mneg         /**< multiplexed numeric negation `[-]' */
 
+    , m_and          /**< boolean operator `and' */
     , m_mand         /**< multiplexed boolean operator `and' */
     , m_mor          /**< multiplexed boolean operator `or' */
 
@@ -764,6 +765,9 @@ PFmil_t * PFmil_mnot (const PFmil_t *);
 
 /** MIL multiplexed numeric negation */
 PFmil_t * PFmil_mneg (const PFmil_t *);
+
+/** Boolean operator `and' */
+PFmil_t * PFmil_and (const PFmil_t *, const PFmil_t *);
 
 /** Multiplexed boolean operator `and' */
 PFmil_t * PFmil_mand (const PFmil_t *, const PFmil_t *);

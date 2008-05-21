@@ -117,6 +117,7 @@
                  | '[-](' expression ')'                    <m_mneg>
                  | 'isnil(' expression ')'                  <m_isnil>
                  | '[isnil](' expression ')'                <m_misnil>
+                 | 'and(' expression ',' expression ')'     <m_and>
                  | '[and](' expression ',' expression ')'   <m_mand>
                  | '[or](' expression ',' expression ')'    <m_mor>
                  | '[ifthenelse](' exp ',' exp ',' exp ')'  <m_ifthenelse>
@@ -302,6 +303,7 @@ static char *ID[] = {
     , [m_not]          = "not"
     , [m_mnot]         = "[not]"
     , [m_mneg]         = "[-]"
+    , [m_and]          = "and"
     , [m_mand]         = "[and]"
     , [m_mor]          = "[or]"
     , [m_mifthenelse]  = "[ifthenelse]"
@@ -844,6 +846,8 @@ print_expression (PFmil_t * n)
         case m_mle:
         /* expression : '[!=](' expression ',' expression ')' */
         case m_mne:
+        /* expression : 'and(' expression ',' expression ')' */
+        case m_and:
         /* expression : '[and](' expression ',' expression ')' */
         case m_mand:
         /* expression : '[or](' expression ',' expression ')' */

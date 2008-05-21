@@ -1286,6 +1286,15 @@ PFmil_mneg (const PFmil_t *a)
 }
 
 /**
+ * Boolean operator `and'
+ */
+PFmil_t *
+PFmil_and (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_and, a, b);
+}
+
+/**
  * Multiplexed boolean operator `and'
  */
 PFmil_t *
