@@ -43,6 +43,9 @@
 #include "alg_dag.h"
 #include "mem.h"          /* PFmalloc() */
 
+/** mnemonic algebra constructors */
+#include "logical_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -806,8 +809,40 @@ opt_const (PFla_op_t *p, bool no_attach)
             }
             break;
 
-        case la_seqty1:
         case la_all:
+            if (p->sem.aggr.part &&
+                PFprop_const_left (p->prop, p->sem.aggr.att)) {
+                PFla_op_t *op, *ret;
+                
+                if (PFprop_const_left (p->prop, p->sem.aggr.part)) {
+                    op = lit_tbl (attlist (p->sem.aggr.part),
+                                  tuple (PFprop_const_val_left (
+                                             p->prop,
+                                             p->sem.aggr.part)));
+                } else {
+                    op = distinct (
+                             project (L(p),
+                                      proj (p->sem.aggr.part,
+                                            p->sem.aggr.part)));
+                }
+
+                ret = add_attach (op, p->sem.aggr.att,
+                                  PFprop_const_val_left (
+                                      p->prop,
+                                      p->sem.aggr.att));
+                *p = *ret;
+                SEEN(p) = true;
+            }
+            else if (PFprop_const_left (p->prop, p->sem.aggr.att)) {
+                PFla_op_t *ret = lit_tbl (attlist (p->sem.aggr.att),
+                                          tuple (PFprop_const_val_left (
+                                                     p->prop,
+                                                     p->sem.aggr.att)));
+                *p = *ret;
+                SEEN(p) = true;
+            }
+            /* fall through */
+        case la_seqty1:
             /* introduce attach if necessary */
             if (PFprop_const_left (p->prop, p->sem.aggr.att)) {
                 L(p) = add_attach (L(p), p->sem.aggr.att,
