@@ -15,7 +15,7 @@
 @' All Rights Reserved.
 
 @f rdf
-@a M. Antonelli
+@a Peter Boncz, Marco Antonelli
 @+ Raptor (librdf.org) library interface
 Raptor is a free software / Open Source C library that provides a set
 of parsers and serializers that generate Resource Description Framework
@@ -2190,9 +2190,10 @@ static str RDFserializeTriple(raptor_statement *triple, raptor_serializer* seria
                                 MTIMEtzone_isnil(&isnil, utc);
                                 if (!isnil)
                                 {
-                                    str tstamp_str, format;
-                                    int len, i;
-                                    MTIMEtimestamp_tostr(&tstamp_str, val->tstamp, utc);
+                                    int len = 128, i;
+                                    char buf[len];
+                                    str tstamp_str = buf, format;
+                                    timestamp_tz_tostr(&tstamp_str, &len, val->tstamp, utc);
                                     for (i=0; tstamp_str[i]!=' '; i++);
                                     tstamp_str[i] = 'T';
                                     for (; tstamp_str[i]!='.'; i++);
@@ -2211,7 +2212,6 @@ static str RDFserializeTriple(raptor_statement *triple, raptor_serializer* seria
                                         format = "%s%s%s";
                                     snprintf(obj_string, len, format, tstamp_str, val->msecs, val->tzone);
                                     triple->object = obj_string;
-                                    GDKfree(tstamp_str);
                                 }
                                 else
                                     ret = "Could not set timezone to UTC";
