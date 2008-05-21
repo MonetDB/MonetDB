@@ -930,6 +930,7 @@ mtime_export str MTIMEcurrent_timestamp(timestamp *t);
 mtime_export str MTIMEcurrent_date(date *d);
 mtime_export str MTIMEcurrent_time(daytime *t);
 mtime_export int timestamp_tostr(str *buf, int *len, timestamp *val);
+mtime_export int timestamp_tz_tostr(str *buf, int *len, timestamp *val, tzone *timezone);
 mtime_export int timestamp_diff(lng *ret, timestamp *v1, timestamp *v2);
 mtime_export str MTIMEnil2date(date *ret, int *src);
 mtime_export str MTIMEdate2date(date *ret, date *src);
@@ -1012,6 +1013,7 @@ mtime_export str MTIMErule_fromstr(rule *ret, str *s);
 mtime_export str MTIMErule_create(rule *ret, int *month, int *day, int *weekday, int *minutes);
 mtime_export str MTIMEtzone_create_dst(tzone *ret, int *minutes, rule *start, rule *end);
 mtime_export str MTIMEtzone_create(tzone *ret, int *minutes);
+mtime_export str MTIMEtzone_isnil(bit *retval, tzone *val);
 mtime_export str MTIMErule_extract_month(int *ret, rule *r);
 mtime_export str MTIMErule_extract_day(int *ret, rule *r);
 mtime_export str MTIMErule_extract_weekday(int *ret, rule *r);
@@ -1659,45 +1661,55 @@ timestamp_fromstr(str buf, int *len, timestamp **ret)
 }
 
 int
+timestamp_tz_tostr(str *buf, int *len, timestamp *val, tzone *timezone)
+{
+    int len1, len2, big = 128;
+    char buf1[128], buf2[128], *s, *s1 = buf1, *s2 = buf2;
+    if (timezone!=NULL)
+    {
+        int off = get_offset(timezone);
+        timestamp tmp = *val;
+    
+        if (!ts_isnil(tmp) && timestamp_inside(&tmp, val, timezone, (lng) 0)) {
+            lng add = (lng) 3600000;
+    
+            timestamp_add(&tmp, &tmp, &add);
+            off += 60;
+        }
+        len1 = date_tostr(&s1, &big, &tmp.days);
+        len2 = daytime_tostr(&s2, &big, &tmp.msecs);
+    
+        if (*len < 2 + len1 + len2) {
+            if (*buf)
+                GDKfree(*buf);
+            *buf = (str) GDKzalloc(*len = len1 + len2 + 2);
+        }
+        s = *buf;
+        if (ts_isnil(tmp)) {
+            strcpy(s, "nil");
+            return 3;
+        }
+        strcpy(s, buf1);
+        s += len1;
+        *s++ = ' ';
+        strcpy(s, buf2);
+        s += len2;
+    /* omit GMT distance in order not to cinfuse the confused user
+        strcpy(s, "GMT"); s += 3;
+        if (off) {
+            *s++ = (off>=0)?'+':'-';
+            sprintf(s, "%02d%02d", ABS(off)/60, ABS(off)%60);
+            s += 4;
+        }
+     */
+    }
+    return (int) (s - *buf);
+}
+
+int
 timestamp_tostr(str *buf, int *len, timestamp *val)
 {
-	int len1, len2, big = 128, off = get_offset(&tzone_local);
-	char buf1[128], buf2[128], *s, *s1 = buf1, *s2 = buf2;
-	timestamp tmp = *val;
-
-	if (!ts_isnil(tmp) && timestamp_inside(&tmp, val, &tzone_local, (lng) 0)) {
-		lng add = (lng) 3600000;
-
-		timestamp_add(&tmp, &tmp, &add);
-		off += 60;
-	}
-	len1 = date_tostr(&s1, &big, &tmp.days);
-	len2 = daytime_tostr(&s2, &big, &tmp.msecs);
-
-	if (*len < 2 + len1 + len2) {
-		if (*buf)
-			GDKfree(*buf);
-		*buf = (str) GDKzalloc(*len = len1 + len2 + 2);
-	}
-	s = *buf;
-	if (ts_isnil(tmp)) {
-		strcpy(s, "nil");
-		return 3;
-	}
-	strcpy(s, buf1);
-	s += len1;
-	*s++ = ' ';
-	strcpy(s, buf2);
-	s += len2;
-/* omit GMT distance in order not to cinfuse the confused user
-	strcpy(s, "GMT"); s += 3;
-	if (off) {
-		*s++ = (off>=0)?'+':'-';
-		sprintf(s, "%02d%02d", ABS(off)/60, ABS(off)%60);
-		s += 4;
-	}
- */
-	return (int) (s - *buf);
+	return timestamp_tz_tostr(buf, len, val, &tzone_local);
 }
 
 str
@@ -3451,6 +3463,13 @@ MTIMEtzone_create(tzone *ret, int *minutes)
 {
 	tzone_create(ret, minutes);
 	return MAL_SUCCEED;
+}
+
+str
+MTIMEtzone_isnil(bit *retval, tzone *val)
+{
+    *retval = tz_isnil(*val);
+    return MAL_SUCCEED;
 }
 
 str
