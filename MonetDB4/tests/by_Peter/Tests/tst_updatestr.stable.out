@@ -50,7 +50,7 @@ while(true) {
  bat("ab").replace(e);
  bat("ab").count().print();
  bat("ab").slice(0,2).print();
- bat("ab").mmap(1,1,1);
+ bat("ab").mmap(1,1,1,1);
  i :+= 1;
  if (i = 4) { break; }
  unload("ab");
@@ -58,8 +58,8 @@ while(true) {
 #-------------------------------------------------#
 # t			h			  # name
 # str			str			  # type
-#-----------------------------------------#
-[ "theap.storage",	  "private map"	  ]
+#-------------------------------------------------#
+[ "theap.storage",	  "memory mapped"	  ]
 [ 1000000 ]
 [ 500000 ]
 #---------------------------------#

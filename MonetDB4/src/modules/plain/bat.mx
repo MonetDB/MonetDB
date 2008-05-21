@@ -456,14 +456,14 @@ For more technical information on BATs, we refer to the
 @[<a href="../../gdk/index.html">GDK</a>@
 documentation.
 @m
-.COMMAND mmap(BAT[any::1,any::2], int buns_mode, int hheap_mode, int theap_mode) : BAT[any::1,any::2] = CMDmmap;
+.COMMAND mmap(BAT[any::1,any::2], int head_mode, int tail_mode, int hheap_mode, int theap_mode) : BAT[any::1,any::2] = CMDmmap;
 "For each individual heap, you can change the allocation mode to
  either STORE_MEM or STORE_MMAP. Passing an int(nil) means: no change.
  Changing a dirty STORE_MEM heap into STORE_MMAP, will cause a BAT save
  (this has to happen before the heap can be mapped into virtual memory).
  These modes are persistent. "
 
-.COMMAND madvise(BAT[any::1,any::2], int buns_mode, int hheap_mode, int theap_mode) : BAT[any::1,any::2] = CMDmadvise;
+.COMMAND madvise(BAT[any::1,any::2], int head_mode, int tail_mode, int hheap_mode, int theap_mode) : BAT[any::1,any::2] = CMDmadvise;
 "Modern Operating Systems allow users to influence the buffer management
  policy of virtual memory. This is a crucial feature for database systems,
  and eliminates the need to reimplement the OS in a database buffer manager.
@@ -570,12 +570,12 @@ these 'sync' OIDs with their own propagation rules.
     }
 
     PROC mmap(bat[any::1,any::2] b, int memmode) : bat[any::1,any::2] {
-	return mmap(b, memmode, memmode, memmode );
+	return mmap(b, memmode, memmode, memmode, memmode );
     }
 
     # overload madvise to pass the same memory mode for all heaps
     PROC madvise(bat[any::1,any::2] b, int memmode) : bat[any::1,any::2] {
-	return madvise(b, memmode, memmode, memmode );
+	return madvise(b, memmode, memmode, memmode, memmode );
     }
 
 @- constants for madvise()
@@ -1310,6 +1310,8 @@ infoHeap(BAT *bn, Heap *hp, str nme)
 	BUNins(bn, buf, local_utoa(hp->maxsize),FALSE);
 	strcpy(p, "storage");
 	BUNins(bn, buf, (hp->base == NULL || hp->base == (char*)1) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage & STORE_PRIV) ? "private map" : "malloced",FALSE);
+	strcpy(p, "newstorage");
+	BUNins(bn, buf, (hp->newstorage == STORE_MEM) ? "malloced" : (hp->newstorage & STORE_PRIV) ? "private map" : "memory mapped",FALSE);
 	strcpy(p, "filename");
 	BUNins(bn, buf, hp->filename ? hp->filename : "no file",FALSE);
 }
@@ -1626,10 +1628,6 @@ CMDsave(bit *res, str input)
 	if (@2) {
 		int mode = (@2)->storage;
 
-		if (mode == STORE_MMAP && (@2)->filename == NULL)
-			mode = STORE_MEM;
-		if (mode == STORE_PRIV)
-			mode = STORE_MMAP;
 		if (*@1 == int_nil || *@1 == mode) {
 			*@1 = -1;
 		}
@@ -1637,13 +1635,18 @@ CMDsave(bit *res, str input)
 }
 @c
 int
-CMDmmap(BAT **r, BAT *b, int *bns, int *hhp, int *thp)
+CMDmmap(BAT **r, BAT *b, int *hbns, int *tbns, int *hhp, int *thp)
 {
-	@:change_heap(bns,(&b->H->heap))@
-	@:change_heap(bns,(&b->T->heap))@
-	@:change_heap(hhp,b->hheap)@
-	@:change_heap(thp,b->theap)@
-	if (BATmmap(*r = b, *bns, *bns, *hhp, *thp) == 0) {
+	/* == int_nil means no change */
+	if (*hbns == int_nil) 
+		*hbns = b->batMaphead;
+	if (*tbns == int_nil) 
+		*tbns = b->batMaptail;
+	if (b->hheap && *hhp == int_nil) 
+		*hhp = b->batMaphheap;
+	if (b->theap && *thp == int_nil) 
+		*thp = b->batMaptheap;
+	if (BATmmap(*r = b, *hbns, *tbns, *hhp, *thp) == 0) {
 		BBPfix(b->batCacheid);
 		return GDK_SUCCEED;
 	}
@@ -1651,10 +1654,10 @@ CMDmmap(BAT **r, BAT *b, int *bns, int *hhp, int *thp)
 }
 
 int
-CMDmadvise(BAT **r, BAT *b, int *bns, int *hhp, int *thp)
+CMDmadvise(BAT **r, BAT *b, int *hbns, int *tbns, int *hhp, int *thp)
 {
 	BBPfix(b->batCacheid);
-	return BATmadvise(*r = b, (*bns == int_nil) ? -1 : *bns, (*bns == int_nil) ? -1 : *bns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp) ? GDK_FAIL : GDK_SUCCEED;
+	return BATmadvise(*r = b, (*hbns == int_nil) ? -1 : *hbns, (*tbns == int_nil) ? -1 : *tbns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp) ? GDK_FAIL : GDK_SUCCEED;
 }
 
 @+ Accelerator Control

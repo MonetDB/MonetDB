@@ -12,7 +12,7 @@ while(i < 100) {
     i :+= 1;
 }
 
-bat("a").mmap(1,1,1);
+bat("a").mmap(1,1,1,1);
 unload("a");
 bat("a").info().reverse().select("theap.storage").reverse().print();
 
@@ -22,7 +22,7 @@ debugmask(49);
 bat("a").insert(e);
 debugmask(9);
 
-#bat("a").mmap(1,1,1);
+#bat("a").mmap(1,1,1,1);
 bat("a").info().reverse().select("theap.storage").reverse().print();
 e := [str]([int](bat("a").mirror()));
 debugmask(49);

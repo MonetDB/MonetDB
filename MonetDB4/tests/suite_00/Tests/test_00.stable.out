@@ -1,16 +1,16 @@
 stdout of test 'test_00` in directory 'tests/suite_00` itself:
 
 
-# 13:36:40 >  
-# 13:36:40 >  Mtimeout -timeout 60  Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=33630 --set xrpc_port=49462 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  
-# 13:36:40 >  
+# 23:14:37 >  
+# 23:14:37 >   Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32851 --set xrpc_port=41440 --set monet_prompt= --trace  --dbname=mTests_tests_suite_00  
+# 23:14:37 >  
 
-
-
-# MonetDB Server v4.21.0
-# based on GDK   v1.21.0
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
+# MonetDB Server v4.23.0
+# based on GDK   v1.23.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 setoid(oid(20000000));
 #test basic functionality of the BAT library.
@@ -25,7 +25,7 @@ printf("#~BeginVariableOutput~#\n"); b.info().print(); printf("#~EndVariableOutp
 # h			t		  # name
 # str			str		  # type
 #-----------------------------------------#
-[ "version",		  "25105"	  ]
+[ "version",		  "25106"	  ]
 [ "batId",		  "tmp_32"	  ]
 [ "batCacheid",		  "26"		  ]
 [ "hparentid",		  "0"		  ]
@@ -79,11 +79,13 @@ printf("#~BeginVariableOutput~#\n"); b.info().print(); printf("#~EndVariableOutp
 [ "head.size",		  "1024"	  ]
 [ "head.maxsize",	  "1024"	  ]
 [ "head.storage",	  "malloced"	  ]
+[ "head.newstorage",	  "malloced"	  ]
 [ "head.filename",	  "32.head"	  ]
 [ "tail.free",		  "0"		  ]
 [ "tail.size",		  "1024"	  ]
 [ "tail.maxsize",	  "1024"	  ]
 [ "tail.storage",	  "malloced"	  ]
+[ "tail.newstorage",	  "malloced"	  ]
 [ "tail.filename",	  "32.tail"	  ]
 [ "H->vheap->dirty",	  "clean"	  ]
 [ "T->vheap->dirty",	  "clean"	  ]

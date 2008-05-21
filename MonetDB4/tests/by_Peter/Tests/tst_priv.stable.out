@@ -28,14 +28,14 @@ while(i < 100) {
     i :+= 1;
 }
 
-bat("a").mmap(1,1,1);
+bat("a").mmap(1,1,1,1);
 unload("a");
 bat("a").info().reverse().select("theap.storage").reverse().print();
 #-------------------------------------------------#
 # t			tmp_31			  # name
 # str			str			  # type
-#-----------------------------------------#
-[ "theap.storage",	  "malloced"	  ]
+#-------------------------------------------------#
+[ "theap.storage",	  "memory mapped"	  ]
 
 [int](bat("a").mirror());
 var e := [str]([int](bat("a").mirror()));
@@ -55,11 +55,11 @@ debugmask(9);
 
 #bat("a").mmap(1,1,1,1,1);
 bat("a").info().reverse().select("theap.storage").reverse().print();
-#-----------------------------------------#
-# BAT:			  tmp_23	  #
-# (str)			  (str)		  #
-#-----------------------------------------#
-[ "theap.storage",	  "malloced"	  ]
+#-------------------------------------------------#
+# t			h			  # name
+# str			str			  # type
+#-------------------------------------------------#
+[ "theap.storage",	  "memory mapped"	  ]
 e := [str]([int](bat("a").mirror()));
 debugmask(49);
 bat("a").insert(e);
@@ -71,11 +71,11 @@ bat("a").insert(e);
 debugmask(9);
 
 bat("a").info().reverse().select("theap.storage").reverse().print();
-#-----------------------------------------#
-# BAT:			  tmp_30	  #
-# (str)			  (str)		  #
-#-----------------------------------------#
-[ "theap.storage",	  "malloced"	  ]
+#-------------------------------------------------#
+# t			h			  # name
+# str			str			  # type
+#-------------------------------------------------#
+[ "theap.storage",	  "memory mapped"	  ]
 bat("a").append("make dirty..");
 commit();
 #01 #BBPdir: writing BBP.dir (34 bats).

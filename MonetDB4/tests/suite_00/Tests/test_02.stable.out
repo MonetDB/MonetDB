@@ -26,7 +26,7 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 # h			t		  # name
 # str			str		  # type
 #-----------------------------------------#
-[ "version",		  "25105"	  ]
+[ "version",		  "25106"	  ]
 [ "batId",		  "tmp_32"	  ]
 [ "batCacheid",		  "26"		  ]
 [ "hparentid",		  "0"		  ]
@@ -80,17 +80,20 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 [ "head.size",		  "2048"	  ]
 [ "head.maxsize",	  "2048"	  ]
 [ "head.storage",	  "malloced"	  ]
+[ "head.newstorage",	  "malloced"	  ]
 [ "head.filename",	  "32.head"	  ]
 [ "tail.free",		  "32"		  ]
 [ "tail.size",		  "1024"	  ]
 [ "tail.maxsize",	  "1024"	  ]
 [ "tail.storage",	  "malloced"	  ]
+[ "tail.newstorage",	  "malloced"	  ]
 [ "tail.filename",	  "32.tail"	  ]
 [ "H->vheap->dirty",	  "clean"	  ]
 [ "hheap.free",		  "8304"	  ]
 [ "hheap.size",		  "11272"	  ]
 [ "hheap.maxsize",	  "11272"	  ]
 [ "hheap.storage",		  "malloced"	  ]
+[ "hheap.newstorage",	  "malloced"	  ]
 [ "hheap.filename",	  "32.hheap"	  ]
 [ "T->vheap->dirty",	  "clean"	  ]
 #~EndVariableOutput~#

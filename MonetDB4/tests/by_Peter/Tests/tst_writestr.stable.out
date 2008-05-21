@@ -39,7 +39,7 @@ while(true) {
  #e := [str]([/](d,10000));
  print(b :+= 500000); 
  bat("aa").insert(e);
- bat("aa").mmap(1,1,1);
+ bat("aa").mmap(1,1,1,1);
  i :+= 1;
  if (i = 4) { break; }
  unload("aa");
@@ -48,7 +48,7 @@ while(true) {
 # t			tmp_32			  # name
 # str			str			  # type
 #-----------------------------------------#
-[ "theap.storage",	  "private map"	  ]
+[ "theap.storage",	  "malloced"	  ]
 [ 1000000 ]
 #-----------------------------------------#
 # BAT:			  tmp_31	  #
