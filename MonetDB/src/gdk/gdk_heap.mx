@@ -162,7 +162,7 @@ HEAPextend(Heap *h, size_t size)
 	} else {
 		/* extend a malloced heap, possibly switching over to file-mapped storage */
 		Heap bak = *h;
-		int can_mmap = (h->filename && size >= GDK_mem_bigsize);
+		int can_mmap = h->filename && size >= GDK_mem_bigsize;
 		int must_mmap = can_mmap && (size >= GDK_vm_minsize || (h->newstorage != STORE_MEM));
 
 		h->size = size;
@@ -192,7 +192,8 @@ HEAPextend(Heap *h, size_t size)
 			h->filename = NULL;
 			if (fp != NULL) {
 				fclose(fp);
-				h->newstorage = h->storage = STORE_MMAP;
+				if (h->storage == STORE_MEM)
+					h->newstorage = h->storage = STORE_MMAP;
 				h->base = NULL;
 				if (HEAPload(h, nme, ext, FALSE) >= 0) {
 					memcpy(h->base, bak.base, bak.free);
@@ -234,7 +235,7 @@ int
 HEAPfree(Heap *h)
 {
 	if (h->base) {
-		if (h->newstorage == STORE_MEM) {	/* plain memory */
+		if (h->storage == STORE_MEM) {	/* plain memory */
 			GDKfree(h->base);
 		} else {	/* mapped file, or STORE_PRIV */
 			int ret = GDKmunmap(h->base, h->maxsize);
@@ -276,8 +277,8 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 
 	h->storage = h->newstorage;
 	h->maxsize = h->size;
-	assert(h->filename == NULL);
-	h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
+	if (h->filename == NULL)
+		h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
 	if (h->filename == NULL) 
  	    return -1;	
 	sprintf(h->filename, "%s.%s", nme, ext);
@@ -361,12 +362,14 @@ HEAPsave(Heap *h, str nme, str ext)
 	if (h->base == NULL) {
 		return -1;
 	}
-	if (store == STORE_PRIV) {
+	if (h->storage != STORE_MEM && store == STORE_PRIV) {
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM;
 		strcpy(extension,ext);
 		strcat(extension,".new");
                 ext = extension;
+	} else if (store != STORE_MEM) { 
+		store = h->storage;
 	}
 	IODEBUG {
 		THRprintf(GDKout, "#HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n",

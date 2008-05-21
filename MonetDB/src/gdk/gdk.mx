@@ -1574,7 +1574,6 @@ expected usage pattern of the memory in a heap.
 #define STORE_MEM	0	/* load into GDKmalloced memory */
 #define STORE_MMAP	1	/* mmap() into virtual memory */
 #define STORE_PRIV	2	/* BAT copy of copy-on-write mmap */
-#define STORE_UNSET	((char)-1)	/* no mode specified */
 
 gdk_export size_t GDK_mem_pagebits;	/* page size for non-linear mmaps */
 

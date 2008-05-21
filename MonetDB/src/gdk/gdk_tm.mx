@@ -103,7 +103,7 @@ epilogue(int cnt, bat *subcommit)
                          * due to the failure, would be a consistency risk.
                          */
 			BAT *b = BBP_cache(bid);
-			if (b) (void) BATcheckmodes(b, FALSE); /* check mmap modes */
+			if (b) (void) BATcheckmodes(b, TRUE); /* check mmap modes */
 		} 
                 if ((BBP_status(bid) & (BBPDELETED | BBPTMP)) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
 			BAT *b = BBPquickdesc(bid, TRUE);

@@ -137,8 +137,10 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 @c
 	bn->H->heap.filename = NULL;
 	bn->T->heap.filename = NULL;
-	bn->batMaphead = STORE_UNSET;
-	bn->batMaptail = STORE_UNSET;
+	bn->batMaphead = 0;
+	bn->batMaptail = 0;
+	bn->batMaphheap = 0;
+	bn->batMaptheap = 0;
 	if (heapnames) {
 		str nme = BBP_physical(bn->batCacheid);
 
@@ -160,14 +162,12 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 			if ((bn->H->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->H->vheap->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
 				goto bailout;
 			GDKfilepath(bn->H->vheap->filename, NULL, nme, "hheap");
-			bn->batMaphheap = STORE_UNSET;
 		}
 
 		if (ATOMneedheap(tt)) {
 			if ((bn->T->vheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL || (bn->T->vheap->filename = (str) GDKmalloc(strlen(nme) + 12)) == NULL)
 				goto bailout;
 			GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
-			bn->batMaptheap = STORE_UNSET;
 		}
 	}
 	bn->batDirty = TRUE;
@@ -584,7 +584,7 @@ NEW: there is now a special parameter setting (writable == 2), which does create
 an independent BAT (not a view that shares the same heaps), however tries 
 to share VM heap resources using copy-on-write maps. Note that the result of
 this is a read-only BAT (BAT_READ). The copy-on-write VM tricks can be used, 
-however, to isolate these copies from changes the in parent.
+however, to isolate these copies from changes in the parent.
 
 In these cases the copy becomes a logical view on the original, which ensures
 that the original cannot be modified or destroyed (which could affect the shared 
@@ -2255,20 +2255,39 @@ are not crucial anymore).
 @}
 @- BATmmap
 Changing the storage status of heaps in a BAT is done in @:BATmmap@. 
-The new semantics is to do nothing: the new mapping only takes effect the next time the bat is loaded. 
+The new semantics is to do nothing: the new mapping only takes effect the next time the bat is loaded or extended. The later is needed for loading large data
+sets. These transient bats should switch cheaply between malloced and memory
+mapped modes.
 
-Thus we cannot modify the hp->storage fields, but rather store the new modes in special
-batMap fields that are used when the BAT descriptor is saved.
-
-This makes the BATmmap safer & simpler as it is now
-incorporated in the normal bat loading and saving mechanism.
-
-It also makes the mmap faster as when through caching you
-are finished with the BAT before it is ever swapped to disk
-it will never have been written, whereas the old mmap obliged you to 
-save a BAT directly.
+We modify the hp->storage fields using HEAPnewstorage and store that 
+we want malloced or memory mapped heaps in special binary batMap fields 
+that are used when the BAT descriptor is saved.
 @{
 @c
+/* TODO niels: merge with BATsetmodes in gdk_storage */
+#define STORE_MODE(m,r,e) (((m) == STORE_MEM)?STORE_MEM:((r)&&(e))?STORE_PRIV:STORE_MMAP)
+void
+HEAPnewstorage(BAT *b)
+{
+	int existing = (BBPstatus(b->batCacheid) & BBPEXISTING);
+	int brestrict = (b->batRestricted == BAT_WRITE);
+
+	if (b->batMaphead) {
+		b->H->heap.newstorage = STORE_MODE(b->batMaphead,brestrict,existing);
+	}
+	if (b->batMaptail) {
+		b->T->heap.newstorage = STORE_MODE(b->batMaptail,brestrict,existing);
+	}
+	if (b->hheap && b->batMaphheap) {
+ 		int hrestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->htype, b->H->vheap);
+		b->H->vheap->newstorage = STORE_MODE(b->batMaphheap,brestrict||hrestrict,existing);
+	}
+	if (b->theap && b->batMaptheap) {
+ 		int trestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->T->vheap);
+		b->T->vheap->newstorage = STORE_MODE(b->batMaptheap,brestrict||trestrict,existing);
+	}
+}
+
 int
 BATmmap(BAT *b, int hb, int tb, int hhp, int thp)
 {
@@ -2288,6 +2307,7 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp)
 	b->batMaphheap = hhp;
 	b->batMaptheap = thp;
 	b->batDirtydesc = 1;
+	HEAPnewstorage(b);
 	return 0;
 }
 
@@ -2407,24 +2427,28 @@ c persistent BAT_READ  STORE_PRIV STORE_MMAP =>6           =>a
 (+) indicates that we must ensure that the heap gets saved in its new mode
 
 Note that we now allow a heap with save-regime STORE_PRIV that was actually
-mapped STORE_MMAP. In effect, the potential corruption of the X file is compensated
-by writing out full X.new files that take precedence. When transitioning
-out of this state towards one with both storage regime and OS as STORE_MMAP
-we need to msync the X file and (on success) remove the X.new; see HEAPremovepriv().
+mapped STORE_MMAP. In effect, the potential corruption of the X file 
+is compensated by writing out full X.new files that take precedence. 
+When transitioning out of this state towards one with both storage 
+regime and OS as STORE_MMAP we need to move the X.new files into the
+backup directory. Then msync the X file and (on success) remove the X.new; 
+see backup_new().
 
 Exception states are only reachable if the commit fails and those new
 persistent bats have already been processed (but never become part
 of a committed state). In that case a transition 2=>6 may end up 2=>b.
 Exception states a and c are reachable from b.
 
-Errors in HEAPchangeaccess() can be handled atomically inside the routine.  The work 
-on changing mmap modes HEAPcommitpersistence() is done during the BBPsync() for all 
-bats that are newly persistent (BBPNEW). After the TMcommit(), it is done for those 
-bats that are no longer persistent after the commit (BBPDELETED), only if it succeeds. 
-Such transient bats cannot be processed before the commit, because the commit may fail 
-and then the more unsafe transient mmap modes would be present on a persistent bat.
+Errors in HEAPchangeaccess() can be handled atomically inside the routine.  
+The work on changing mmap modes HEAPcommitpersistence() is done during 
+the BBPsync() for all bats that are newly persistent (BBPNEW). After the 
+TMcommit(), it is done for those bats that are no longer persistent after 
+the commit (BBPDELETED), only if it succeeds. 
+Such transient bats cannot be processed before the commit, because the 
+commit may fail and then the more unsafe transient mmap modes would be 
+present on a persistent bat.
 
-See dirt_bat() in BBPsync() -- gdk_bbp.mx and epilogue() in gdk_tm.mx
+See dirty_bat() in BBPsync() -- gdk_bbp.mx and epilogue() in gdk_tm.mx
 
 Including the exception states, we have 11 of the 16 combinations. As for the
 5 avoided states, all four (persistence,access) states with (STORE_MMAP,STORE_PRIV)
@@ -2439,14 +2463,14 @@ at the last succeeded commit).
 To avoid exception states, a TMsubcommit protocol would need to be used which 
 is too heavy for BATsetaccess(). 
 
-Note that this code is not about making heaps mmap-ed in the first place. It is just
-about determining which flavor of mmap should be used. The MIL/MAL user is oblivious
-of such details.
+Note that this code is not about making heaps mmap-ed in the first place. 
+It is just about determining which flavor of mmap should be used. The 
+MIL/MAL user is oblivious of such details.
 
 The route for making heaps mmapped in the first place (or make them no
 longer so) is to request a mode change with BATmmap. The requested modes
 are remembered in b->batMap*. At the next re-load of the BAT, they are applied
-after a sanity check (DESCstmodes() in gdk_storage.mx).
+after a sanity check (DESCsetmodes() in gdk_storage.mx).
 @end verbatim
 @{
 @c
@@ -2499,17 +2523,18 @@ HEAPchangeaccess(Heap *hp, int dstmode, int existing)
        	return hp->storage; /* 7=>5 */
 }
 
-/* heap becomes changes persistence mode (at commit point) */
+/* heap changes persistence mode (at commit point) */
 static int 
 HEAPcommitpersistence(Heap *hp, int writable, int existing)
 {
-	if (existing) {
-		if (hp->newstorage == STORE_MMAP) { /* 6=>2 */
+	if (existing) { /* existing, ie will become transient */
+		if (hp->storage == STORE_MMAP && hp->newstorage == STORE_PRIV && writable) { /* 6=>2 */
 			hp->dirty=1;
 			return backup_new(hp, -1)?-1:STORE_MMAP; /* only called for existing bats */
 		}
 		return hp->newstorage; /* 4=>0,5=>1,7=>3,c=>a no change */
 	}
+	/* !existing, ie will become persistent */
 	if (hp->newstorage == STORE_MMAP && !writable) 
  		return STORE_MMAP; /* 0=>4 STORE_MMAP */
 
@@ -2522,27 +2547,31 @@ HEAPcommitpersistence(Heap *hp, int writable, int existing)
 int
 BATcheckmodes(BAT *b, int existing)
 {
-        int wr = (b->batPersistence == BAT_WRITE);
-	int m0, m1, m2 = 0, m3 = 0;
+        int wr = (b->batRestricted == BAT_WRITE);
+	int m0 = 0, m1 = 0, m2 = 0, m3 = 0;
         int dirty = 0;
 
         BATcheck(b, "BATcheckmodes");
 
-        m0 = HEAPcommitpersistence(&b->H->heap, wr, existing);
-	dirty |= (b->H->heap.newstorage == m0);
+	if (b->htype) {
+        	m0 = HEAPcommitpersistence(&b->H->heap, wr, existing);
+		dirty |= (b->H->heap.newstorage != m0);
+	}
 
-        m1 = HEAPcommitpersistence(&b->T->heap, wr, existing);
-	dirty |= (b->T->heap.newstorage == m1);
+	if (b->ttype) {
+        	m1 = HEAPcommitpersistence(&b->T->heap, wr, existing);
+		dirty |= (b->T->heap.newstorage != m1);
+	}
 
         if (b->H->vheap) {
                 int ha = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->htype, b->H->vheap);
                 m2 = HEAPcommitpersistence(b->H->vheap, wr || ha, existing);
-		dirty |= (b->H->vheap->newstorage == m2);
+		dirty |= (b->H->vheap->newstorage != m2);
         }
         if (b->T->vheap) {
                 int ta = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->T->vheap);
                 m3 = HEAPcommitpersistence(b->T->vheap, wr || ta, existing);
-		dirty |= (b->T->vheap->newstorage == m3);
+		dirty |= (b->T->vheap->newstorage != m3);
         }
 	if (m1 < 0 || m1 < 0 || m2 < 0 || m3 < 0)
 		return -1;

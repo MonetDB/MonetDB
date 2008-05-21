@@ -2590,7 +2590,7 @@ dirty_bat(bat *i, int subcommit)
 		BBPspin(*i, "dirty_bat", BBPSAVING);
 		b = BBP_cache(*i);
 		if (b != NULL) {
-			if ((BBP_status(*i) & BBPNEW) && BATcheckmodes(b, TRUE)) /* check mmap modes */
+			if ((BBP_status(*i) & BBPNEW) && BATcheckmodes(b, FALSE)) /* check mmap modes */
 				*i = 0; /* error */
 			if ((BBP_status(*i) & BBPPERSISTENT) && (subcommit || BATdirty(b)))
 				return b;	/* the bat is loaded, persistent and dirty */
@@ -2653,34 +2653,34 @@ heap_move(Heap *hp, str srcdir, str dstdir, str nme, str ext)
 	/* see doc at BATsetaccess()/gdk_bat.mx for an expose on mmap heap modes */
 	if (file_exists(dstdir, nme, ext)) {
 		return 0;	/* dont overwrite heap with the committed state already in dstdir */
-	} else if (hp->filename && hp->newstorage == STORE_PRIV) {
+	} else if (hp->filename && 
+		   hp->newstorage == STORE_PRIV && 
+		   !file_exists(srcdir, nme, ext)) {
+
+		/* In order to prevent half-saved X.new files surviving a 
+		 * recover we create a dummy file in the BACKUP(dstdir) 
+	         * whose presence will trigger BBPrecover to remove them. 
+		 * Thus, X will prevail where it otherwise wouldn't have.
+		 * If X already has a saved X.new, that one is backed up 
+	         * as normal. 
+		 */
+
+		FILE *fp;
+		long_str kill_ext;
 		long_str path;
-		struct stat st;
 
-		GDKfilepath(path, srcdir, nme, ext);
-		if (stat(path, &st)) {
-			/* in order to prevent half-saved X.new files surviving a recover
-			 * we create a dummy file in the BACKUP(dstdir) whose presence
-			 * will trigger BBPrecover to remove them. Thus, X will 
-			 * prevail where it otherwise wouldn't have.
-			 */
-			FILE *fp;
-			long_str kill_ext;
+		strcpy(kill_ext, ext);
+		strcat(kill_ext, ".kill");
+		GDKfilepath(path, dstdir, nme, kill_ext);
+		fp = fopen(path, "w");
+		IODEBUG THRprintf(GDKout, "#open %s = %d\n", path, fp ? 0 : -1);
 
-			strcpy(kill_ext, ext);
-			strcat(kill_ext, ".kill");
-			GDKfilepath(path, dstdir, nme, kill_ext);
-			fp = fopen(path, "w");
-			IODEBUG THRprintf(GDKout, "#open %s = %d\n", path, fp ? 0 : -1);
-
-			if (fp != NULL) {
-				fclose(fp);
-				return 0;
-			} else {
-				return 1;
-			}
+		if (fp != NULL) {
+			fclose(fp);
+			return 0;
+		} else {
+			return 1;
 		}
-		/* if X already has a saved X.new, that one is backed up as normal.. */
 	}
 	return file_move(srcdir, dstdir, nme, ext);
 }
@@ -2782,10 +2782,18 @@ BBPbackup(BAT *b, bit subcommit)
 		return -1;
 @= backup
 	if (@2 && @2->newstorage != STORE_MMAP) { /* direct mmap is unprotected (readonly usage, or has WAL protection)  */
-		str ext = @2->filename && @2->newstorage == STORE_PRIV ? "@1.kill" : "@1";
+		/* STORE_PRIV saves into X.new files. Two cases could happen.
+		   The first a valid X.new exists, because of an access change
+		   or a previous commit. This X.new should be backuped as 
+		   usual. The second case is when X.new doesn't exists.
+		   In that case we could have half written X.new files 
+	           (after a crash). To protect against these we write 
+		   X.new.kill files in to the backup directory (see heap_move).
+		*/
+		str ext = (@2->filename && @2->newstorage == STORE_PRIV) ? "@1.new" : "@1";
 		if ((@3) && !file_exists(BAKDIR, nme, ext)) { 
                 	/* file will be saved (is dirty), move the old image into backup */
-		        ret |= heap_move(@2, srcdir, subcommit ? SUBDIR : BAKDIR, nme, "@1");
+		        ret |= heap_move(@2, srcdir, subcommit ? SUBDIR : BAKDIR, nme, ext);
        		} else if (subcommit && ((@3) || file_exists(BAKDIR, nme, ext))) {
                 	/* file is clean. move the backup into the subcommit dir (commit should eliminate backup) */
 			ret |= file_move(BAKDIR, SUBDIR, nme, ext);
@@ -2858,12 +2866,6 @@ BBPsync(int cnt, bat *subcommit)
 				if (i <= 0) break;
 				if (b != NULL && BATsave(b) == NULL)
 					break;	/* write error */
-				if (b && (BBP_refs(i) == 0) &&
-				   (b->P->map_head || b->P->map_hheap ||
-				    b->P->map_tail || b->P->map_theap)) {
-					BATfree(b);
-					BBPuncacheit_(i, TRUE);
-				}
 			}
 		}
 		ret = (idx < cnt);

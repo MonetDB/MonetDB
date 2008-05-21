@@ -450,22 +450,22 @@ DESCsetmodes(BAT *b)
 	int brestrict = (b->batRestricted == BAT_WRITE);
 	int ret = 0;
 
-	if (b->batMaphead != STORE_UNSET) {
+	if (b->batMaphead) {
 		b->H->heap.newstorage = b->H->heap.storage = STORE_MODE(b->batMaphead,brestrict,existing);
 		ret = 1;
 	}
-	if (b->batMaptail != STORE_UNSET) {
+	if (b->batMaptail) {
 		b->T->heap.newstorage = b->T->heap.storage = STORE_MODE(b->batMaptail,brestrict,existing);
 		ret = 1;
 	}
-	if (b->hheap && b->batMaphheap != STORE_UNSET) {
+	if (b->hheap && b->batMaphheap) {
  		int hrestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->htype, b->H->vheap);
-		b->H->vheap->newstorage = b->H->vheap->storage = STORE_MODE(b->batMaphheap,brestrict&&hrestrict,existing);
+		b->H->vheap->newstorage = b->H->vheap->storage = STORE_MODE(b->batMaphheap,brestrict||hrestrict,existing);
 		ret = 1;
 	}
-	if (b->theap && b->batMaptheap != STORE_UNSET) {
+	if (b->theap && b->batMaptheap) {
  		int trestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->T->vheap);
-		b->T->vheap->newstorage = b->T->vheap->storage = STORE_MODE(b->batMaptheap,brestrict&&trestrict,existing);
+		b->T->vheap->newstorage = b->T->vheap->storage = STORE_MODE(b->batMaptheap,brestrict||trestrict,existing);
 		ret = 1;
 	}
 	return ret;
@@ -561,9 +561,9 @@ BATsave(BAT *bd)
 			IODEBUG THRprintf(GDKout, "#BATsavedesc(%s,free=" SZFMT "," SZFMT ") = %d\n", nme, b->H->heap.free, b->T->heap.free, err);
 		}
 
-	if (b->hheap)
+	if (b->hheap) 
 		GDKfree(b->hheap);
-	if (b->theap)
+	if (b->theap) 
 		GDKfree(b->theap);
 
 	if (err == 0) {
@@ -687,10 +687,6 @@ BATload_intern(bat i)
 		ALIGNcommit(b);
 	}
 	b->batDirtydesc |= batmapdirty;	/* if some heap mode changed, make desc dirty */
-	b->batMaphead = STORE_UNSET;
-	b->batMaptail = STORE_UNSET;
-	b->batMaphheap = STORE_UNSET;
-	b->batMaptheap = STORE_UNSET;
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug & 2)) || (GDKdebug & 8)) {
 		++b->batSharecnt;
