@@ -774,7 +774,7 @@ use_ukey( mvc *sql, list *l )
 		s = n->data;
 
 		/* we can only use hash indices for lookups, not for ranges */
-		if (RSEL(s))
+		if (!PSEL(s))
 			return l;
 		/* we only want selects on base columns */
 		if (s->op1.stval->type != st_bat)

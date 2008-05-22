@@ -3511,7 +3511,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		stmt *res = sql_value_exp(sql, scp, cr, grp, subset, f, iek);
 
 		/* TODO predicate! */
-		if (res && f == sql_sel) {
+		if (res && (res->nrcols == 0 || f == sql_sel)) {
 			sql_subtype *bt = sql_bind_localtype("bit");
 			sql_subtype *tp = tail_type(res);
 			sql_subfunc *isnul = sql_bind_func_result(sql->session->schema, "isnull", tp, NULL, bt);

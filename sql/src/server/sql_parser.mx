@@ -3136,10 +3136,8 @@ like_exp:
  ;
 
 test_for_null:
-    column_ref IS NOT sqlNULL  { symbol *s =_symbol_create_list(SQL_COLUMN, $1);
-			      $$ = _symbol_create_symbol( SQL_NOT_NULL, s ); }
- |  column_ref IS sqlNULL     { symbol *s =_symbol_create_list(SQL_COLUMN, $1);
-			       $$ = _symbol_create_symbol( SQL_NULL, s ); }
+    scalar_exp IS NOT sqlNULL { $$ = _symbol_create_symbol( SQL_NOT_NULL, $1 );}
+ |  scalar_exp IS sqlNULL     { $$ = _symbol_create_symbol( SQL_NULL, $1 ); }
  ;
 
 in_predicate:
