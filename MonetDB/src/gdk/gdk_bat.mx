@@ -2535,6 +2535,8 @@ HEAPcommitpersistence(Heap *hp, int writable, int existing)
 		return hp->newstorage; /* 4=>0,5=>1,7=>3,c=>a no change */
 	}
 	/* !existing, ie will become persistent */
+	if (hp->newstorage == STORE_MEM)
+		return hp->newstorage;
 	if (hp->newstorage == STORE_MMAP && !writable) 
  		return STORE_MMAP; /* 0=>4 STORE_MMAP */
 
