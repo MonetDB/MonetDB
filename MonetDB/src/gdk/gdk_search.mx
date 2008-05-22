@@ -94,6 +94,16 @@ gdk_export hash_t HASHlist(Hash *h, size_t i);
 #define hash_int(H,V)         ((hash_t) mix_int(*((unsigned int*) (V))) & (H)->mask)
 /* XXX return size_t-sized value for 8-byte oid? */
 #define hash_lng(H,V)         ((hash_t) mix_int((unsigned int) (*(lng *)(V) ^ (*(lng *)(V) >> 32))) & (H)->mask)
+#if SIZEOF_OID == SIZEOF_INT
+#define hash_oid(H,V)         ((hash_t) mix_int((unsigned int) *((oid*) (V))) & (H)->mask)
+#else
+#define hash_oid(H,V)         ((hash_t) mix_int((unsigned int) (*(oid *)(V) ^ (*(oid *)(V) >> 32))) & (H)->mask)
+#endif
+#if SIZEOF_WRD == SIZEOF_INT
+#define hash_wrd(H,V)         ((hash_t) mix_int((unsigned int) *((wrd*) (V))) & (H)->mask)
+#else
+#define hash_wrd(H,V)         ((hash_t) mix_int((unsigned int) (*(wrd *)(V) ^ (*(wrd *)(V) >> 32))) & (H)->mask)
+#endif
 
 #define hash_flt(H,V)         hash_int(H,V)
 #define hash_dbl(H,V)         hash_lng(H,V)
@@ -133,6 +143,8 @@ gdk_export hash_t HASHlist(Hash *h, size_t i);
 @:hashfnd(sht)@
 @:hashfnd(int)@
 @:hashfnd(lng)@
+@:hashfnd(oid)@
+@:hashfnd(wrd)@
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 #define HASHfnd_ptr(x,y,z)	HASHfnd_int(x,y,z)
@@ -140,11 +152,6 @@ gdk_export hash_t HASHlist(Hash *h, size_t i);
 #define HASHfnd_ptr(x,y,z)	HASHfnd_lng(x,y,z)
 #endif
 #define HASHfnd_bit(x,y,z)	HASHfnd_chr(x,y,z)
-#if SIZEOF_OID == SIZEOF_INT	/* OIDDEPEND */
-#define HASHfnd_oid(x,y,z)	HASHfnd_int(x,y,z)
-#else
-#define HASHfnd_oid(x,y,z)	HASHfnd_lng(x,y,z)
-#endif
 #define HASHfnd_flt(x,y,z)	HASHfnd_int(x,y,z)
 #define HASHfnd_dbl(x,y,z)	HASHfnd_lng(x,y,z)
 #define HASHfnd_any(x,y,z)	HASHfnd(x,y,z)

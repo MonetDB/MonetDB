@@ -1303,21 +1303,12 @@ gdk_export BUN BUNfnd(BAT *b, ptr left);
     p = (check)?BUN_NONE:result; /* and with 0xFF...FF or 0x00..00 */   \
 }
 
-#if SIZEOF_OID == SIZEOF_INT
 #define BUNfndOID(p,bi,v)			\
 	if (BAThdense(bi.b)) {			\
 		BUNfndVOID(p,bi,v);		\
 	} else {				\
-		HASHfnd_int(p,bi,(int*)v);	\
+		HASHfnd_oid(p,bi,v);		\
 	}
-#else
-#define BUNfndOID(p,bi,v)			\
-	if (BAThdense(bi.b)) {			\
-		BUNfndVOID(p,bi,v);		\
-	} else {				\
-		HASHfnd_lng(p,bi,(lng*)v);	\
-	}
-#endif
 #define BUNfndSTD(p,bi,v) ((p) = BUNfnd(bi.b,v))
 
 #define BAThtype(b)	((b)->htype == TYPE_void && (b)->hseqbase == oid_nil ?\
@@ -2988,16 +2979,8 @@ above, to specialized versions (for speed) where the type is known
 @:hashloop(sht,sht,simple,sht,hloc)@
 @:hashloop(int,int,simple,int,hloc)@
 
-#if SIZEOF_OID == SIZEOF_INT
-@:hashloop(oid,int,simple,int,hloc)@	/* OIDDEPEND */
-#else
-@:hashloop(oid,lng,simple,lng,hloc)@	/* OIDDEPEND */
-#endif
-#if SIZEOF_WRD == SIZEOF_INT
-@:hashloop(wrd,int,simple,int,hloc)@
-#else
-@:hashloop(wrd,lng,simple,lng,hloc)@
-#endif
+@:hashloop(oid,oid,simple,oid,hloc)@
+@:hashloop(wrd,wrd,simple,wrd,hloc)@
 @:hashloop(bat,int,simple,int,hloc)@
 
 #if SIZEOF_VOID_P == SIZEOF_INT
@@ -3055,23 +3038,23 @@ The 's' finally is an integer denoting the bunsize, used for speed.
 #define SORTfnd_oid(b,v)	SORTfnd_int(b,v)
 #define SORTfndfirst_oid(b,v)	SORTfndfirst_int(b,v)
 #define SORTfndlast_oid(b,v)	SORTfndlast_int(b,v)
-#define SORTloop_oid(b,p,q,tl,th) SORTloop_int(b,p,q,tl,th)
+@:sortloop(oid,int,oid,simple,&oid_nil)@
 #else
 #define SORTfnd_oid(b,v)	SORTfnd_lng(b,v)
 #define SORTfndfirst_oid(b,v)	SORTfndfirst_lng(b,v)
 #define SORTfndlast_oid(b,v)	SORTfndlast_lng(b,v)
-#define SORTloop_oid(b,p,q,tl,th) SORTloop_lng(b,p,q,tl,th)
+@:sortloop(oid,lng,oid,simple,&oid_nil)@
 #endif
 #if SIZEOF_WRD == SIZEOF_INT
 #define SORTfnd_wrd(b,v)	SORTfnd_int(b,v)
 #define SORTfndfirst_wrd(b,v)	SORTfndfirst_int(b,v)
 #define SORTfndlast_wrd(b,v)	SORTfndlast_int(b,v)
-#define SORTloop_wrd(b,p,q,tl,th) SORTloop_int(b,p,q,tl,th)
+@:sortloop(wrd,int,wrd,simple,&wrd_nil)@
 #else
 #define SORTfnd_wrd(b,v)	SORTfnd_lng(b,v)
 #define SORTfndfirst_wrd(b,v)	SORTfndfirst_lng(b,v)
 #define SORTfndlast_wrd(b,v)	SORTfndlast_lng(b,v)
-#define SORTloop_wrd(b,p,q,tl,th) SORTloop_lng(b,p,q,tl,th)
+@:sortloop(wrd,lng,wrd,simple,&wrd_nil)@
 #endif
 #define SORTloop_bit(b,p,q,tl,th) SORTloop_chr(b,p,q,tl,th)
 @

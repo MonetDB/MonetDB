@@ -752,6 +752,8 @@ gdk_export const int int_nil;
 gdk_export const flt flt_nil;
 gdk_export const dbl dbl_nil;
 gdk_export const lng lng_nil;
+gdk_export const oid oid_nil;
+gdk_export const wrd wrd_nil;
 gdk_export const char str_nil[2];
 
 /* derived NIL values - OIDDEPEND */
@@ -763,19 +765,15 @@ gdk_export const char str_nil[2];
 #endif
 #define bat_nil	((bat) int_nil)
 #if SIZEOF_WRD == SIZEOF_INT
-#define wrd_nil	((wrd) int_nil)
 #define GDK_wrd_max ((wrd) GDK_int_max)
 #define GDK_wrd_min ((wrd) GDK_int_min)
 #else
-#define wrd_nil	((wrd) lng_nil)
 #define GDK_wrd_max ((wrd) GDK_lng_max)
 #define GDK_wrd_min ((wrd) GDK_lng_min)
 #endif
 #if SIZEOF_OID == SIZEOF_INT
-#define oid_nil ((oid) GDK_int_min)
 #define GDK_oid_max ((oid) GDK_int_max)
 #else
-#define oid_nil ((oid) GDK_lng_min)
 #define GDK_oid_max ((oid) GDK_lng_max)
 #endif
 
@@ -788,6 +786,8 @@ const int int_nil = GDK_int_min;
 const flt flt_nil = GDK_flt_min;
 const dbl dbl_nil = GDK_dbl_min;
 const lng lng_nil = GDK_lng_min;
+const oid oid_nil = GDK_oid_max;
+const wrd wrd_nil = GDK_wrd_max;
 const char str_nil[2] = { GDK_chr_min, 0 };
 
 ptr

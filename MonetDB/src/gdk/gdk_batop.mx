@@ -2236,7 +2236,7 @@ BATgroup(BAT *b, int start, int incr, int grpsize)
 @= mark_grp_init
 	BUN w;
 
-	BUNfnd@1(w, gi, (ptr) &v);
+	BUNfnd@1(w, gi, &v);
 	if (w != BUN_NONE) {
 		n = * (oid *) BUNtloc(gi, w);
 	} else {
