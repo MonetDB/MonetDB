@@ -2455,53 +2455,8 @@ PFla_op_t *
 PFla_seqty1 (const PFla_op_t *n,
              PFalg_att_t res, PFalg_att_t att, PFalg_att_t part)
 {
-    unsigned int  i;
-    bool          att_found = false;
-    bool          part_found = false;
-    PFla_op_t    *ret;
-
-    assert (n);
-    assert (res); assert (att); assert (part);
-
-    /* sanity checks: value attribute must not equal partitioning attribute */
-    if (att == part)
-        PFoops (OOPS_FATAL,
-                "seqty1 operator: value attribute equals partitioning "
-                "attribute.");
-
-    /* both attributes must exist and must have appropriate type */
-    for (i = 0; i < n->schema.count; i++) {
-        if (att == n->schema.items[i].name) {
-            att_found = true;
-            if (n->schema.items[i].type != aat_bln)
-                PFoops (OOPS_FATAL,
-                        "algebra operator `seqty1' only allowed on boolean "
-                        "attributes. (attribute `%s')", PFatt_str (att));
-        }
-        if (part == n->schema.items[i].name)
-            part_found = true;
-    }
-
-    if (!att_found || !part_found)
-        PFoops (OOPS_FATAL,
-                "seqty1: value attribute or partitioning attribute not found.");
-
-    /* Now we can actually construct the result node */
-    ret = la_op_wire1 (la_seqty1, n);
-
-    ret->sem.aggr.res  = res;
-    ret->sem.aggr.att  = att;
-    ret->sem.aggr.part = part;
-
-    ret->schema.count = 2;
-    ret->schema.items = PFmalloc (2 * sizeof (PFalg_schema_t));
-
-    ret->schema.items[0].name = part;
-    ret->schema.items[0].type = PFprop_type_of (n, part);
-    ret->schema.items[1].name = res;
-    ret->schema.items[1].type = aat_bln;
-
-    return ret;
+    assert (PFprop_type_of (n, att) == aat_bln);
+    return PFla_aggr (la_seqty1, n, res, att, part);
 }
 
 
@@ -2519,53 +2474,8 @@ PFla_op_t *
 PFla_all (const PFla_op_t *n,
           PFalg_att_t res, PFalg_att_t att, PFalg_att_t part)
 {
-    unsigned int  i;
-    bool          att_found = false;
-    bool          part_found = false;
-    PFla_op_t    *ret;
-
-    assert (n);
-    assert (res); assert (att); assert (part);
-
-    /* sanity checks: value attribute must not equal partitioning attribute */
-    if (att == part)
-        PFoops (OOPS_FATAL,
-                "all operator: value attribute equals partitioning "
-                "attribute.");
-
-    /* both attributes must exist and must have appropriate type */
-    for (i = 0; i < n->schema.count; i++) {
-        if (att == n->schema.items[i].name) {
-            att_found = true;
-            if (n->schema.items[i].type != aat_bln)
-                PFoops (OOPS_FATAL,
-                        "algebra operator `all' only allowed on boolean "
-                        "attributes. (attribute `%s')", PFatt_str (att));
-        }
-        if (part  == n->schema.items[i].name)
-            part_found = true;
-    }
-
-    if (!att_found || !part_found)
-        PFoops (OOPS_FATAL,
-                "all: value attribute or partitioning attribute not found.");
-
-    /* Now we can actually construct the result node */
-    ret = la_op_wire1 (la_all, n);
-
-    ret->sem.aggr.res  = res;
-    ret->sem.aggr.att  = att;
-    ret->sem.aggr.part = part;
-
-    ret->schema.count = 2;
-    ret->schema.items = PFmalloc (2 * sizeof (PFalg_schema_t));
-
-    ret->schema.items[0].name = part;
-    ret->schema.items[0].type = PFprop_type_of (n, part);
-    ret->schema.items[1].name = res;
-    ret->schema.items[1].type = aat_bln;
-
-    return ret;
+    assert (PFprop_type_of (n, att) == aat_bln);
+    return PFla_aggr (la_all, n, res, att, part);
 }
 
 

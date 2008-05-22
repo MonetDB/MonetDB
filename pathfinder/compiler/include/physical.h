@@ -92,6 +92,9 @@ enum PFpa_op_kind_t {
                                    certain type */
     , pa_type_assert    =  64 /**< restriction of the type of a given column */
     , pa_cast           =  65 /**< cast a table to a given type */
+    , pa_seqty1          = 66 /**< test for exactly one type occurrence in one
+                                   iteration (Pathfinder extension) */
+    , pa_all             = 67 /**< test if all items in an iteration are true */
     , pa_llscjoin       = 100 /**< Loop-Lifted StaircaseJoin */
     , pa_doc_tbl        = 120 /**< Access to persistent document relation */
     , pa_doc_access     = 121 /**< Access to string content of loaded docs */
@@ -121,6 +124,7 @@ enum PFpa_op_kind_t {
     , pa_fun_call       = 150 /**< function application */
     , pa_fun_param      = 151 /**< function application parameter */
     , pa_string_join    = 160 /**< Concatenation of multiple strings */
+    , pa_findnodes      = 170 /**< find nodes given the id/idref string */ 
 };
 /** algebra operator kinds */
 typedef enum PFpa_op_kind_t PFpa_op_kind_t;
@@ -205,7 +209,6 @@ union PFpa_op_sem_t {
                                         to compute attribute res */
     } fun_1to1;
 
-    /* semantic content for binary (arithmetic and boolean) operators */
     struct {
         PFalg_att_t     att1;     /**< first operand */
         PFalg_att_t     att2;     /**< second operand */
@@ -340,6 +343,14 @@ union PFpa_op_sem_t {
                                        iter column of the result
                                        (used for optimizations) */
     } fun_call;
+
+    /* semantic content for physical operator of function fn:id/idref */
+    struct {
+        bool            id;       /**< id or idref */
+        PFalg_att_t     item_res; /**< column to store the resulting nodes */
+        PFalg_att_t     item;     /**< column to look up the context nodes */
+        PFalg_att_t     item_doc; /**< column to store the fragment info */
+    } findnodes;
 };
 /** semantic content in physical algebra operators */
 typedef union PFpa_op_sem_t PFpa_op_sem_t;
@@ -826,6 +837,15 @@ PFpa_op_t * PFpa_string_join (const PFpa_op_t *n1,
                               PFalg_att_t,
                               PFalg_att_t);
 
+/**
+ * Constructor for finding nodes based on id/idref
+ */
+PFpa_op_t *
+PFpa_findnodes (const PFpa_op_t *doc, const PFpa_op_t *n,
+                PFalg_att_t item,
+                PFalg_att_t item_doc,
+                PFalg_att_t item_res,
+                bool id);
 
 #endif  /* PHYSICAL_H */
 

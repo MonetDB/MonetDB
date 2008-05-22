@@ -249,6 +249,7 @@ enum PFmil_kind_t {
     , m_mnot         /**< multiplexed boolean negation `[not]' */
     , m_mneg         /**< multiplexed numeric negation `[-]' */
 
+    , m_and          /**< boolean operator `and' */
     , m_mand         /**< multiplexed boolean operator `and' */
     , m_mor          /**< multiplexed boolean operator `or' */
 
@@ -372,6 +373,7 @@ enum PFmil_kind_t {
     , m_ws_docname         /**< mil document function for  docname      */
     , m_ws_collections     /**< mil document function for collections   */
     , m_ws_docavailable    /**< mil document function for doc-available */
+    , m_ws_findnodes       /**< mil function for fn:id/idref            */
 #ifdef HAVE_PFTIJAH
     , m_tj_pfop
     , m_tj_tokenize
@@ -770,6 +772,9 @@ PFmil_t * PFmil_mnot (const PFmil_t *);
 /** MIL multiplexed numeric negation */
 PFmil_t * PFmil_mneg (const PFmil_t *);
 
+/** Boolean operator `and' */
+PFmil_t * PFmil_and (const PFmil_t *, const PFmil_t *);
+
 /** Multiplexed boolean operator `and' */
 PFmil_t * PFmil_mand (const PFmil_t *, const PFmil_t *);
 
@@ -929,6 +934,16 @@ PFmil_t * PFmil_ws_collections (const PFmil_t *, const PFmil_t *);
  * ws_docavailable(BAT[void,BAT], BAT[void,str]) : BAT[void,bit]
  */
 PFmil_t * PFmil_ws_docavailable (const PFmil_t *, const PFmil_t *);
+
+/**
+ *  mil function for id/idref
+ *  ws_findnodes(BAT[void,bat] ws, BAT[void,oid] id_iter, any id_item,
+ *               any id_kind, any id_cont, any id_tokens, bit isid)
+ */
+PFmil_t * PFmil_ws_findnodes (const PFmil_t *, const PFmil_t *, 
+                              const PFmil_t *, const PFmil_t *,
+                              const PFmil_t *, const PFmil_t *,
+                              const PFmil_t *);
 
 #define PFmil_seq(...) \
     PFmil_seq_ (sizeof ((PFmil_t *[]) { __VA_ARGS__} ) / sizeof (PFmil_t *), \

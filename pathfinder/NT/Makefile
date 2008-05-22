@@ -9,6 +9,9 @@ prefix = $(MAKEDIR)
 
 !INCLUDE "$(TOPDIR)\rules.msc"
 
+INSTALLER = MonetDB4-XQuery
+INSTALLER_PREREQ = "$(prefix)\banner.bmp" "$(prefix)\license.rtf" "$(prefix)\monetdb.ico"
+
 UNISTD_H = unistd.h
 
 all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) RunMserver.bat RunMtest.bat RunMapprove.bat
@@ -29,10 +32,23 @@ install-installer:
 	$(INSTALL) MonetDB4-XQuery64\MonetDB4-XQuery-Installer.vdproj "$(prefix)"
 !ENDIF
 
-install: targetdirs pf_config.h all install-installer
+install: targetdirs pf_config.h all install-installer $(INSTALLER_PREREQ)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MXQserver.bat "$(prefix)"
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) pf.bat "$(prefix)"
+	$(INSTALL) $(INSTALLER)\$(INSTALLER).sln "$(prefix)"
+	$(INSTALL) $(INSTALLER)\$(INSTALLER).vdproj "$(prefix)"
+	devenv "$(prefix)\$(INSTALLER).sln" /build
+	if exist "$(prefix)\$(INSTALLER).msi" del /f "$(prefix)\$(INSTALLER).msi"
+	$(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER).msi "$(prefix)"
+	@-c:\cygwin\bin\chmod a+rx "$(prefix)\$(INSTALLER).msi"
+
+"$(prefix)\banner.bmp":
+	$(INSTALL) "$(MONETDB_PREFIX)\banner.bmp" "$(prefix)\banner.bmp"
+"$(prefix)\license.rtf":
+	$(INSTALL) "$(MONETDB_PREFIX)\license.rtf" "$(prefix)\license.rtf"
+"$(prefix)\monetdb.ico":
+	$(INSTALL) "$(MONETDB_PREFIX)\monetdb.ico" "$(prefix)\monetdb.ico"
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
         $(CD) "$(SRCDIR)" && autogen.py

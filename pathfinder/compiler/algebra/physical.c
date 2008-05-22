@@ -3571,4 +3571,26 @@ PFpa_string_join (const PFpa_op_t *n1, const PFpa_op_t *n2,
     return ret;
 }
 
+/**
+ * Constructor for finding nodes based on id/idref
+ */
+PFpa_op_t *
+PFpa_findnodes (const PFpa_op_t *doc, const PFpa_op_t *n,
+                PFalg_att_t item,
+                PFalg_att_t item_doc,
+                PFalg_att_t item_res,
+                bool id)
+{
+    PFpa_op_t *ret = wire2 (pa_findnodes , doc, n);
+
+    ret->sem.findnodes.id = id;
+    ret->sem.findnodes.item = item;
+    ret->sem.findnodes.item_doc = item_doc;
+    ret->sem.findnodes.item_res = item_res;
+
+    ret->cost = DEFAULT_COST + doc->cost + n->cost;
+
+    return ret;
+}
+
 /* vim:set shiftwidth=4 expandtab: */

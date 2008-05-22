@@ -556,9 +556,22 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                                 n->sem.step.guides) <= 1)
                 union_ (n->prop->keys, n->sem.step.iter);
         case la_step:
-            if (n->sem.step.spec.axis == alg_chld &&
+            /* if the input is key the output will be as well
+               (non-recursive downward step) */
+            if ((n->sem.step.spec.axis == alg_chld ||
+                 n->sem.step.spec.axis == alg_attr ||
+                 n->sem.step.spec.axis == alg_self) &&
                 PFprop_key (R(n)->prop, n->sem.step.item))
                 union_ (n->prop->keys, n->sem.step.item_res);
+
+            /* if child step is only a 'filter' (at most a single
+               node for each context node) we can copy all keys */
+            if (n->sem.step.spec.axis == alg_chld &&
+                n->sem.step.spec.kind == node_kind_elem &&
+                ! (PFQNAME_NS_WILDCARD (n->sem.step.spec.qname)
+                   || PFQNAME_LOC_WILDCARD (n->sem.step.spec.qname)) &&
+                PFprop_key (R(n)->prop, n->sem.step.iter))
+                union_ (n->prop->keys, n->sem.step.iter);
 
             /* if attribute step is only a 'filter' (at most a single
                attribute for each context node) we can copy all keys */
@@ -566,7 +579,12 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 n->sem.step.spec.kind == node_kind_attr &&
                 ! (PFQNAME_NS_WILDCARD (n->sem.step.spec.qname)
                    || PFQNAME_LOC_WILDCARD (n->sem.step.spec.qname)) &&
-                PFprop_key (R(n)->prop, n->sem.step.item))
+                PFprop_key (R(n)->prop, n->sem.step.iter))
+                union_ (n->prop->keys, n->sem.step.iter);
+
+            /* the self axis can be only a filter */
+            if (n->sem.step.spec.axis == alg_self &&
+                PFprop_key (R(n)->prop, n->sem.step.iter))
                 union_ (n->prop->keys, n->sem.step.iter);
 
             if (PFprop_const (n->prop, n->sem.step.iter))
@@ -604,6 +622,15 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 union_ (n->prop->keys, n->sem.step.item_res);
             }
 
+            /* if child step is only a 'filter' (at most a single
+               node for each context node) we can copy all keys */
+            if (n->sem.step.spec.axis == alg_chld &&
+                n->sem.step.spec.kind == node_kind_elem &&
+                ! (PFQNAME_NS_WILDCARD (n->sem.step.spec.qname)
+                   || PFQNAME_LOC_WILDCARD (n->sem.step.spec.qname)) &&
+                PFprop_key (R(n)->prop, n->sem.step.item))
+                copy (n->prop->keys, R(n)->prop->keys);
+
             /* if attribute step is only a 'filter' (at most a single
                attribute for each context node) we can copy all keys */
             if (n->sem.step.spec.axis == alg_attr &&
@@ -611,6 +638,10 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 ! (PFQNAME_NS_WILDCARD (n->sem.step.spec.qname)
                    || PFQNAME_LOC_WILDCARD (n->sem.step.spec.qname)) &&
                 PFprop_key (R(n)->prop, n->sem.step.item))
+                copy (n->prop->keys, R(n)->prop->keys);
+
+            /* the self axis can be only a filter */
+            if (n->sem.step.spec.axis == alg_self)
                 copy (n->prop->keys, R(n)->prop->keys);
 
             if (PFprop_card (R(n)->prop) == 1)

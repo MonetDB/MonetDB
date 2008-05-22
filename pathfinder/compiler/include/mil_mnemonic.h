@@ -425,6 +425,11 @@
 #define ws_collections(a,b) PFmil_ws_collections ((a), (b))
 #define ws_docavailable(a,b) PFmil_ws_docavailable ((a), (b))
 
+/** mil id/idref function */
+#define ws_findnodes(a,b,c,d,e,f,g) \
+  PFmil_ws_findnodes ((a),(b),(c),(d),(e),(f),(g))
+
+
 #ifdef HAVE_PFTIJAH
 
 /** pftijah main query handler */

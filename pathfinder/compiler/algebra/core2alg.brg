@@ -3005,13 +3005,8 @@ recursion_mil (int strategy,
                 att_pos, sortby (att_item));
 }
 
-/**
- * Construct a relational expression for a path step
- */
-static struct PFla_pair_t
-locstep (core2alg_ctx_t *ctx,
-         PFalg_axis_t axis, PFty_t ty,
-         struct PFla_pair_t p)
+static PFalg_step_spec_t
+locstep_spec (PFalg_axis_t axis, PFty_t ty)
 {
     PFalg_step_spec_t spec;
 
@@ -3058,6 +3053,17 @@ locstep (core2alg_ctx_t *ctx,
         spec.kind = node_kind_node;
     }
 
+    return spec;
+}
+
+/**
+ * Construct a relational expression for a path step
+ */
+static struct PFla_pair_t
+locstep (core2alg_ctx_t *ctx,
+         PFalg_axis_t axis, PFty_t ty,
+         struct PFla_pair_t p)
+{
     /*
      *                  env, loop: e => (q(e), delta)
      * ------------------------------------------------------------
@@ -3072,7 +3078,8 @@ locstep (core2alg_ctx_t *ctx,
                           project (p.rel,
                                    proj (att_iter, att_iter),
                                    proj (att_item, att_item)),
-                          spec, att_iter, att_item, att_item);
+                          locstep_spec (axis, ty),
+                          att_iter, att_item, att_item);
 
     if (ORDERING)
         return (struct  PFla_pair_t) {
@@ -3150,49 +3157,66 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
      *
      */
     else if (PFty_subtype (ty, PFty_star (PFty_xs_integer ())))
-        itemty = project (type (e.rel, att_itemty, att_item, aat_int),
-                          proj (att_iter, att_iter),
-                          proj (att_pos, att_pos),
-                          proj (att_itemty, att_itemty));
+        itemty = type (e.rel, att_itemty, att_item, aat_int);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_decimal ())))
         /* xs:integer is a subtype of xs:decimal.
          * Test for both types. The `type' operator merely adds a boolean
          * column. We OR them after testing for for both types.
          */
-        itemty =
-            project (
-                or (type (type (e.rel, att_isint, att_item, aat_int),
-                          att_isdec, att_item, aat_dec),
-                    att_itemty, att_isint, att_isdec),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_itemty, att_itemty));
+        itemty = or (type (type (e.rel, att_isint, att_item, aat_int),
+                           att_isdec, att_item, aat_dec),
+                     att_itemty, att_isint, att_isdec);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_double ())))
-        itemty = project (type (e.rel, att_itemty, att_item, aat_dbl),
-                          proj (att_iter, att_iter),
-                          proj (att_pos, att_pos),
-                          proj (att_itemty, att_itemty));
+        itemty = type (e.rel, att_itemty, att_item, aat_dbl);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_boolean ())))
-        itemty = project (type (e.rel, att_itemty, att_item, aat_bln),
-                          proj (att_iter, att_iter),
-                          proj (att_pos, att_pos),
-                          proj (att_itemty, att_itemty));
+        itemty = type (e.rel, att_itemty, att_item, aat_bln);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_string ())))
-        itemty = project (type (e.rel, att_itemty, att_item, aat_str),
-                          proj (att_iter, att_iter),
-                          proj (att_pos, att_pos),
-                          proj (att_itemty, att_itemty));
+        itemty = type (e.rel, att_itemty, att_item, aat_str);
     else if (PFty_subtype (ty, PFty_star (PFty_untypedAtomic ())))
-        itemty = project (type (e.rel, att_itemty, att_item, aat_uA),
-                          proj (att_iter, att_iter),
-                          proj (att_pos, att_pos),
-                          proj (att_itemty, att_itemty));
+        itemty = type (e.rel, att_itemty, att_item, aat_uA);
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_anyNode ()))) {
+        PFla_op_t *filter, *number, *in_loop;
+        
+        /* create a key for all rows */
+        number  = rowid (e.rel, att_inner);
+        /* use this key as inner loop relation */
+        in_loop = project (number, proj (att_iter1, att_inner));
+        /* evaluate for all nodes a self step that filters the correct
+           kind and name */ 
+        filter  = project (
+                      step_join (
+                          PFla_set_to_la (e.frag),
+                          type_assert_pos (
+                              select_ (
+                                  type (number, att_itemty, att_item, aat_node),
+                                  att_itemty),
+                              att_item, aat_node),
+                          locstep_spec (alg_self, PFty_prime (ty)), -1,
+                          att_item, att_item2),
+                      proj (att_iter1, att_inner));
+        
+        /* Attach the Boolean value true for all rows that matched the
+           self step filter and the value false for all other rows.
+           Map back the old iter values to the new Boolean item column */
+        itemty = eqjoin (number,
+                         disjunion (attach (filter,
+                                            att_itemty,
+                                            lit_bln (true)),
+                                    attach (difference (in_loop, filter),
+                                            att_itemty,
+                                            lit_bln (false))),
+                         att_inner,
+                         att_iter1);
+    }
     else
         PFoops (OOPS_FATAL,
                 "Sorry, I cannot translate the test for type `%s'",
                 PFty_str (ty));
 
-
+    itemty = project (itemty,
+                      proj (att_iter, att_iter),
+                      proj (att_itemty, att_itemty));
+        
     /*
      * Second part is the test for the occurence indicator.
      */
@@ -3217,10 +3241,7 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     if (PFty_subtype (ty, PFty_item ()))
         return
             disjunion (
-                seqty1 (project (itemty,
-                                 proj (att_iter, att_iter),
-                                 proj (att_item, att_itemty)),
-                        att_subty, att_item, att_iter),
+                seqty1 (itemty, att_subty, att_itemty, att_iter),
                 attach (
                     difference (
                         loop,
@@ -3241,10 +3262,7 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     if (PFty_subtype (ty, PFty_opt (PFty_item ())))
         return
             disjunion (
-                seqty1 (project (itemty,
-                                 proj (att_iter, att_iter),
-                                 proj (att_item, att_itemty)),
-                        att_subty, att_item, att_iter),
+                seqty1 (itemty, att_subty, att_itemty, att_iter),
                 attach (
                     difference (
                         loop,
@@ -3271,10 +3289,7 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     if (PFty_subtype (ty, PFty_plus (PFty_item ())))
         return
             disjunion (
-                all (project (itemty,
-                              proj (att_iter, att_iter),
-                              proj (att_item, att_itemty)),
-                     att_subty, att_item, att_iter),
+                all (itemty, att_subty, att_itemty, att_iter),
                 attach (
                     difference (
                         loop,
@@ -3295,10 +3310,7 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     if (PFty_subtype (ty, PFty_star (PFty_item ())))
         return
             disjunion (
-                all (project (itemty,
-                              proj (att_iter, att_iter),
-                              proj (att_item, att_itemty)),
-                     att_subty, att_item, att_iter),
+                all (itemty, att_subty, att_itemty, att_iter),
                 attach (
                     difference (
                         loop,
