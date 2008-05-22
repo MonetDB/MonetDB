@@ -1664,7 +1664,7 @@ int
 timestamp_tz_tostr(str *buf, int *len, timestamp *val, tzone *timezone)
 {
     int len1, len2, big = 128;
-    char buf1[128], buf2[128], *s, *s1 = buf1, *s2 = buf2;
+    char buf1[128], buf2[128], *s= *buf, *s1 = buf1, *s2 = buf2;
     if (timezone!=NULL)
     {
         int off = get_offset(timezone);
