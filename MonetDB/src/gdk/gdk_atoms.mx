@@ -786,7 +786,7 @@ const int int_nil = GDK_int_min;
 const flt flt_nil = GDK_flt_min;
 const dbl dbl_nil = GDK_dbl_min;
 const lng lng_nil = GDK_lng_min;
-const oid oid_nil = GDK_oid_min;
+const oid oid_nil = (oid) 1 << (sizeof(oid) * 8 - 1);
 const wrd wrd_nil = GDK_wrd_min;
 const char str_nil[2] = { GDK_chr_min, 0 };
 
