@@ -12,6 +12,9 @@ AC_PROG_CC
 AC_PROG_LEX
 AM_PROG_LEX()
 AC_PROG_YACC()
+AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
+AC_CHECK_PROG(RM,rm,rm -f)
+AC_CHECK_PROG(MV,mv,mv -f)
 
 dnl Pathfinder's and MEL's lexer code do not work properly with flex 2.5.31;
 dnl they work fine with both flex 2.5.4 and 2.5.33.
