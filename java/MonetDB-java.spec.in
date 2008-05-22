@@ -38,9 +38,7 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 
-This package contains the JDBC driver and mjclient, a client program
-written in Java that uses the JDBC driver to communicate with the
-database server.
+This package contains the MonetDB JDBC driver.
 
 This package also cotains the XRPC Wrapper, with which one can run
  distributed XQuery queries on different XQuery processing engine.
@@ -94,7 +92,6 @@ rm -fr $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%{_bindir}/mjclient
 %dir %{_datadir}/MonetDB/lib
 %{_datadir}/MonetDB/lib/*jar
 
