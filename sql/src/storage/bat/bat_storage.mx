@@ -332,6 +332,9 @@ append_bat( sql_delta *bat, BAT *i )
 		BATseqbase(i, bat->ibase);
 		i->batDirty |= 2;
 	} else if (!isEbat(b)){
+		if (BATcount(b)+BATcount(i) > (size_t) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
+       			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+    		}
 		BATappend(b, i, TRUE);
 	} else {
 		temp_destroy(bat->ibid);
@@ -885,11 +888,11 @@ tr_update_bat( sql_trans *tr, sql_delta *obat, sql_delta *cbat, lng *cnt)
 			BAT *pi = temp_descriptor(obat->ibid);
 			if (!BATcount(cur) && BATcount(ins) > 1000) {
 				/* swap cur and ins */
-				BAT *swpbat = ins;
+				BAT *newcur = ins;
 
 				temp_destroy(obat->bid);
 				temp_destroy(cbat->bid);
-				obat->bid = cbat->bid = temp_create(swpbat);
+				obat->bid = cbat->bid = temp_create(newcur);
 				if (tr->parent == gtrans) {
 					BATmode(ins, PERSISTENT);
 					if (BATcount(ins) > (size_t) REMAP_PAGE_MAXSIZE)
@@ -900,21 +903,22 @@ tr_update_bat( sql_trans *tr, sql_delta *obat, sql_delta *cbat, lng *cnt)
 				cbat->ibid = e_bat(cur->ttype);
 				ins = temp_descriptor(cbat->ibid);
 				bat_destroy(cur);
-				cur = swpbat;
+				cur = newcur;
 			} else {
 				if (BATcount(cur)+BATcount(ins) > (size_t) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
        					BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     				}
 				BATappend(cur,ins,TRUE);
-				bat_clear(ins);
+				temp_destroy(cbat->ibid);
+				cbat->ibid = e_bat(cur->ttype);
 			}
 			bat_clear(pi);
 			obat->ibase = cbat->ibase = BATcount(cur);
-			BATseqbase(ins, obat->ibase);
 			BATseqbase(pi, obat->ibase);
 			bat_destroy(pi);
+		} else {
+			BATcommit(ins);
 		}
-		BATcommit(ins);
 	}
 	bat_destroy(ins);
 
@@ -940,8 +944,9 @@ tr_update_bat( sql_trans *tr, sql_delta *obat, sql_delta *cbat, lng *cnt)
 				bat_destroy(cu);
 			}
 			bat_clear(ups);
+		} else {
+			BATcommit(ups);
 		}
-		BATcommit(ups);
 	}
 	*cnt = BATcount(cur);
 	bat_destroy(ups);
