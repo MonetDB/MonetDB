@@ -111,6 +111,7 @@ typedef char* err;
 
 static str _merovingian_mserver = NULL;
 static str _merovingian_conffile = NULL;
+static sabdb *_merovingian_remotedbs = NULL;
 
 typedef struct _dpair {
 	FILE* fout;       /* where to read stdout messages from */
@@ -990,7 +991,7 @@ handleClient(int sock)
 }
 
 static err
-openConnection(int *ret, unsigned short port)
+openConnectionTCP(int *ret, unsigned short port)
 {
 	struct sockaddr_in server;
 	int sock = -1;
@@ -1015,7 +1016,7 @@ openConnection(int *ret, unsigned short port)
 
 	server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
 	if (bind(sock, (SOCKPTR) &server, length) < 0) {
-		return(newErr("binding to stream socket port %d failed: %s",
+		return(newErr("binding to stream socket port %u failed: %s",
 				port, strerror(errno)));
 	}
 
@@ -1025,8 +1026,56 @@ openConnection(int *ret, unsigned short port)
 	/* keep queue of 5 */
 	listen(sock, 5);
 
-	gethostname(host, (int) 512);
-	merlog("listening for connections on %s:%d", host, port);
+	gethostname(host, 512);
+	merlog("listening for TCP connections on %s:%d", host, port);
+
+	*ret = sock;
+	return(NO_ERR);
+}
+
+static err
+openConnectionUDP(int *ret, unsigned short port)
+{
+	struct addrinfo hints;
+	struct addrinfo *result, *rp;
+	int sock = -1;
+
+	char sport[10];
+	char host[512];
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
+	hints.ai_flags = AI_PASSIVE;    /* For wildcard IP address */
+	hints.ai_protocol = 0;          /* Any protocol */
+	hints.ai_canonname = NULL;
+	hints.ai_addr = NULL;
+	hints.ai_next = NULL;
+
+	snprintf(sport, 10, "%u", port);
+	sock = getaddrinfo(NULL, sport, &hints, &result);
+	if (sock != 0)
+		return(newErr("failed getting address info: %s", gai_strerror(sock)));
+
+	for (rp = result; rp != NULL; rp = rp->ai_next) {
+		sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		if (sock == -1)
+			continue;
+
+		if (bind(sock, rp->ai_addr, rp->ai_addrlen) == 0)
+			break; /* working */
+
+		close(sock);
+	}
+
+	if (rp == NULL)
+		return(newErr("binding to datagram socket port %u failed: "
+					"no available address", port));
+
+	freeaddrinfo(result);
+
+	gethostname(host, 512);
+	merlog("listening for UDP messages on %s:%d", host, port);
 
 	*ret = sock;
 	return(NO_ERR);
@@ -1195,6 +1244,99 @@ controlRunner(void *d)
 	merlog("control channel closed");
 }
 
+static void
+discoveryRunner(void *d)
+{
+	int sock = *(int *)d;
+	int s = -1;
+	struct sockaddr_storage peer_addr;
+	socklen_t peer_addr_len;
+	ssize_t nread;
+	char buf[512]; /* our packages should be pretty small */
+	char host[128];
+	char service[8];
+
+	while (_keepListening == 1) {
+		peer_addr_len = sizeof(struct sockaddr_storage);
+		nread = recvfrom(sock, buf, 512, 0,
+				(struct sockaddr *)&peer_addr, &peer_addr_len);
+		if (nread == -1)
+			continue; /* ignore failed request */
+
+		s = getnameinfo((struct sockaddr *)&peer_addr,
+				peer_addr_len, host, 128,
+				service, 8, NI_NUMERICSERV);
+		if (s != 0) {
+			fprintf(stderr, "cannot retrieve name info: %s\n",
+					gai_strerror(s));
+			continue; /* skip this message */
+		}
+
+		if (strncmp(buf, "HELO ", 5) == 0) {
+			/* HELLO message, respond with current databases */
+		} else if (strncmp(buf, "LEAV ", 5) == 0) {
+			/* LEAVE message, unregister database */
+		} else if (strncmp(buf, "ANNC ", 5) == 0) {
+			/* ANNOUNCE message, register database */
+			sabdb *rdb;
+			sablist *l;
+			char **sp;
+			char *dbname;
+			char *conn;
+			char *scens;
+			char *scen;
+
+			strtok_r(buf, " ", sp); /* discard the msg type */
+			dbname = strtok_r(NULL, " ", sp);
+			conn = strtok_r(NULL, " ", sp);
+			scens = strtok_r(NULL, " ", sp);
+
+			if (dbname == NULL || conn == NULL || scens == NULL)
+				continue;
+
+			if (_merovingian_remotedbs == NULL) {
+				rdb = _merovingian_remotedbs = GDKmalloc(sizeof(sabdb));
+			} else {
+				rdb = _merovingian_remotedbs;
+				while (rdb->next != NULL) {
+					if (strcmp(dbname, rdb->dbname) == 0)
+						continue; /* skip duplicate entries */
+					rdb = rdb->next;
+				}
+				rdb = rdb->next = GDKmalloc(sizeof(sabdb));
+			}
+			rdb->dbname = GDKstrdup(dbname);
+			rdb->path = rdb->dbname; /* Sabaoth makes dbname a pointer to the alloced path, compatibility here */
+			rdb->locked = 0;
+			rdb->state = SABdbRunning;
+			rdb->next = NULL;
+
+			rdb->conns = GDKmalloc(sizeof(sablist));
+			rdb->conns->val = GDKstrdup(conn);
+			rdb->conns->next = NULL;
+
+			l = NULL;
+			scen = strtok_r(scens, ",", sp);
+			while (scen != NULL) {
+				if (l != NULL) {
+					l = rdb->scens = GDKmalloc(sizeof(sablist));
+				} else {
+					l = l->next = GDKmalloc(sizeof(sablist));
+				}
+				l->val = GDKstrdup(scen);
+				l->next = NULL;
+				scen = strtok_r(scens, ",", sp);
+			}
+
+			merlog("added remote database %s from at %s (%s)",
+					dbname, conn, host);
+		} else {
+			merlog("ignoring unknown message from %s:%s: '%s'",
+					host, service, buf);
+		}
+	}
+}
+
 static str
 replacePrefix(str s, str prefix)
 {
@@ -1299,7 +1441,8 @@ main(int argc, char *argv[])
 	pthread_t tid;
 	struct sigaction sa;
 	int ret;
-	int sock = 0;
+	int sock = -1;
+	int usock = -1;
 	struct stat sb;
 	FILE *oerr = NULL;
 	unsigned short port = MEROV_PORT;
@@ -1605,9 +1748,10 @@ main(int argc, char *argv[])
 	SABAOTHinit(dbfarm, NULL);
 
 	/* open up a connection */
-	e = openConnection(&sock, port);
-	if (e == NO_ERR) {
+	e = openConnectionTCP(&sock, port);
+	if (e == NO_ERR && (e = openConnectionUDP(&usock, port)) == NO_ERR) {
 		pthread_t ctid = 0;
+		pthread_t dtid = 0;
 
 		/* from this point merovingian considers itself to be in position to
 		 * start running, so flag the parent we will have fun. */
@@ -1625,11 +1769,21 @@ main(int argc, char *argv[])
 
 		/* handle control commands */
 		snprintf(buf, 1024, "%s/.merovingian_control", dbfarm);
-		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner, (void *)buf) < 0) {
+		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner,
+					(void *)buf) < 0)
+		{
 			fprintf(stderr, "unable to create control command thread\n");
 			ctid = 0;
 		}
 		GDKfree(dbfarm);
+
+		/* start neighbour discovery and notification thread */ 
+		if (pthread_create(&dtid, NULL, (void *(*)(void *))discoveryRunner,
+					(void *)&usock) < 0)
+		{
+			fprintf(stderr, "unable to start neighbour discovery thread\n");
+			dtid = 0;
+		}
 
 		/* handle external connections main loop */
 		e = acceptConnections(sock);
@@ -1639,6 +1793,10 @@ main(int argc, char *argv[])
 		fclose(fopen(buf, "a"));
 		if (ctid != 0)
 			pthread_join(ctid, NULL);
+		/* wait for the discovery thread to have finished announcing
+		 * it's going down */
+		if (dtid != 0)
+			pthread_join(dtid, NULL);
 	}
 
 	unlink(buf);
