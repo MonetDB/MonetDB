@@ -951,11 +951,9 @@ static str RDFisLexicalFloatingPoint(str string, bool isDouble)
             }
             if (ret == MAL_SUCCEED)
             {
-                if (!RDFisLexicalDecimal(mantissa))
-                    ret = "The mantissa is not a decimal";
-                else
-                    if (exponent != NULL && !RDFisLexicalInteger(exponent))
-                        ret = "The exponent is not an integer";
+            	ret = RDFisLexicalDecimal(mantissa);
+                if (ret == MAL_SUCCEED && exponent != NULL)
+                   ret = RDFisLexicalInteger(exponent);
                 if (ret == MAL_SUCCEED)
                 {
                     mantissa_val = strtod(mantissa, NULL);
@@ -1506,9 +1504,9 @@ triples_handler(void* user_data, const raptor_statement* triple)
                     snprintf(*ret, RET_MAXLEN, "In triple: %s %s %s : %s", subj, prop, obj, tmp);
                     len = 16 + slen + plen + olen + retlen;
                     if (len < RET_MAXLEN-1)
-                        *ret[len] = '\0';
+                        (*ret)[len] = '\0';
                     else
-                        *ret[RET_MAXLEN-1] = '\0';
+                        (*ret)[RET_MAXLEN-1] = '\0';
                     free(obj);
                 }
                 free(prop);
