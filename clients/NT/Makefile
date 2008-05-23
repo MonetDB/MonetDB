@@ -13,6 +13,11 @@ UNISTD_H = unistd.h
 
 INSTALLER = MonetDB-Clients
 INSTALLER_PREREQ = "$(prefix)\banner.bmp" "$(prefix)\license.rtf" "$(prefix)\monetdb.ico"
+!IF $(bits) == 32
+IBITS =
+!ELSE
+IBITS = 64
+!ENDIF
 
 all: "$(SRCDIR)\Makefile.msc" all-msc $(UNISTD_H) Runmclient.bat RunMtest.bat RunMapprove.bat
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
@@ -24,12 +29,12 @@ check: "$(SRCDIR)\Makefile.msc"
 install: targetdirs clients_config.h all $(INSTALLER_PREREQ)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) mclient.bat "$(prefix)"
-	$(INSTALL) $(INSTALLER)\$(INSTALLER).sln "$(prefix)"
-	$(INSTALL) $(INSTALLER)\$(INSTALLER).vdproj "$(prefix)"
-	devenv "$(prefix)\$(INSTALLER).sln" /build
-	if exist "$(prefix)\$(INSTALLER).msi" del /f "$(prefix)\$(INSTALLER).msi"
-	$(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER).msi "$(prefix)"
-	@-c:\cygwin\bin\chmod a+rx "$(prefix)\$(INSTALLER).msi"
+	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
+	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
+	devenv "$(prefix)\$(INSTALLER)$(IBITS).sln" /build
+	if exist "$(prefix)\$(INSTALLER)$(IBITS).msi" del /f "$(prefix)\$(INSTALLER)$(IBITS).msi"
+	$(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER)$(IBITS).msi "$(prefix)"
+	@-c:\cygwin\bin\chmod a+rx "$(prefix)\$(INSTALLER)$(IBITS).msi"
 
 "$(prefix)\banner.bmp":
 	$(INSTALL) "$(MONETDB_PREFIX)\banner.bmp" "$(prefix)\banner.bmp"
