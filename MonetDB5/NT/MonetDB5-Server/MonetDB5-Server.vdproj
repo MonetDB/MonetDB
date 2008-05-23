@@ -489,12 +489,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_6D885A723E624384A7AFFE86D51FF5B8"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_6DB4ED0C392048CCB6A0DA95349F1692"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -533,6 +527,12 @@
         {
         "MsmKey" = "8:_774F82D746A94349A0454C310504A2D6"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_77905C4275BC4174A1A89A5D2BE64480"
+        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -1938,7 +1938,7 @@
             "SourcePath" = "8:bin\\mserver5.exe"
             "TargetName" = "8:mserver5.exe"
             "Tag" = "8:"
-            "Folder" = "8:_843C7B1529C64A6485D9DA6535451465"
+            "Folder" = "8:_77288864C1244358B121C3194CCDDA16"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2038,7 +2038,7 @@
             "SourcePath" = "8:Lib\\libmonetdb5.dll"
             "TargetName" = "8:libmonetdb5.dll"
             "Tag" = "8:"
-            "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
+            "Folder" = "8:_FFEC9B8B77B14909B5F26963B0403D39"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2638,7 +2638,7 @@
             "SourcePath" = "8:M5server.bat"
             "TargetName" = "8:M5server.bat"
             "Tag" = "8:"
-            "Folder" = "8:_844C5FFEA23146E49C07BE04EBEAF0B0"
+            "Folder" = "8:_AED8F28515A44F799DFC16F560A5C94A"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3838,7 +3838,7 @@
             "SourcePath" = "8:license.rtf"
             "TargetName" = "8:license.rtf"
             "Tag" = "8:"
-            "Folder" = "8:_844C5FFEA23146E49C07BE04EBEAF0B0"
+            "Folder" = "8:_AED8F28515A44F799DFC16F560A5C94A"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4138,7 +4138,7 @@
             "SourcePath" = "8:banner.bmp"
             "TargetName" = "8:banner.bmp"
             "Tag" = "8:"
-            "Folder" = "8:_844C5FFEA23146E49C07BE04EBEAF0B0"
+            "Folder" = "8:_AED8F28515A44F799DFC16F560A5C94A"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4398,7 +4398,7 @@
             "SourcePath" = "8:etc\\monetdb5.conf"
             "TargetName" = "8:monetdb5.conf"
             "Tag" = "8:"
-            "Folder" = "8:_E17F6FE6C2BA4A08A7F4B668860BF1D1"
+            "Folder" = "8:_E2E45A3E0A1849B0B917A7EC0EF87D53"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4458,7 +4458,7 @@
             "SourcePath" = "8:monetdb.ico"
             "TargetName" = "8:monetdb.ico"
             "Tag" = "8:"
-            "Folder" = "8:_844C5FFEA23146E49C07BE04EBEAF0B0"
+            "Folder" = "8:_AED8F28515A44F799DFC16F560A5C94A"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4580,7 +4580,19 @@
             "Property" = "8:TARGETDIR"
                 "Folders"
                 {
-                    "{9EF0B969-E518-4E46-987F-47570745A589}:_843C7B1529C64A6485D9DA6535451465"
+                }
+            }
+            "{994432C3-9487-495D-8656-3E829A8DBDDE}:_AED8F28515A44F799DFC16F560A5C94A"
+            {
+            "DefaultLocation" = "8:[INSTALLPATH]"
+            "Name" = "8:Installation Folder"
+            "AlwaysCreate" = "11:FALSE"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Property" = "8:NEWPROPERTY1"
+                "Folders"
+                {
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_77288864C1244358B121C3194CCDDA16"
                     {
                     "Name" = "8:bin"
                     "AlwaysCreate" = "11:FALSE"
@@ -4591,7 +4603,18 @@
                         {
                         }
                     }
-                    "{9EF0B969-E518-4E46-987F-47570745A589}:_AC71646495814C55B03F69019B5070C2"
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_E2E45A3E0A1849B0B917A7EC0EF87D53"
+                    {
+                    "Name" = "8:etc"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_EA8425B1AC04482E8C9D743879129AB9"
+                        "Folders"
+                        {
+                        }
+                    }
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_FFEC9B8B77B14909B5F26963B0403D39"
                     {
                     "Name" = "8:lib"
                     "AlwaysCreate" = "11:FALSE"
@@ -4611,17 +4634,6 @@
                                 {
                                 }
                             }
-                        }
-                    }
-                    "{9EF0B969-E518-4E46-987F-47570745A589}:_E17F6FE6C2BA4A08A7F4B668860BF1D1"
-                    {
-                    "Name" = "8:etc"
-                    "AlwaysCreate" = "11:FALSE"
-                    "Condition" = "8:"
-                    "Transitive" = "11:FALSE"
-                    "Property" = "8:_EA8425B1AC04482E8C9D743879129AB9"
-                        "Folders"
-                        {
                         }
                     }
                 }
@@ -4665,13 +4677,20 @@
             "Message" = "8:MonetDB-Common needs to be installed first."
             "InstallUrl" = "8:"
             }
+            "{836E08B8-0285-4809-BA42-01DB6754A45D}:_AC7D06147701435B8125212AF4AF7D16"
+            {
+            "Name" = "8:Installation"
+            "Condition" = "8:INSTALLPATH"
+            "Message" = "8:MonetDB Common needs to be installed first."
+            "InstallUrl" = "8:http://monetdb.cwi.nl/"
+            }
         }
         "Locator"
         {
             "{39E1837C-0DB9-45A2-89C8-438377A77565}:_3CA0A6A4CF3647979994237E3E76052C"
             {
             "Name" = "8:Search for libbat"
-            "Folder" = "8:[ProgramFilesFolder]"
+            "Folder" = "8:[INSTALLPATH]"
             "Depth" = "2:2"
             "FileName" = "8:libbat.dll"
             "MinVesion" = "8:1.23.1.0"
@@ -4686,10 +4705,10 @@
             "{39E1837C-0DB9-45A2-89C8-438377A77565}:_75FEA8B4DBF04854A8C43329F0167B1D"
             {
             "Name" = "8:Search for libMapi"
-            "Folder" = "8:[ProgramFilesFolder]"
+            "Folder" = "8:[INSTALLPATH]"
             "Depth" = "2:2"
             "FileName" = "8:libMapi.dll"
-            "MinVesion" = "8:1.23.0"
+            "MinVesion" = "8:1.23.0.0"
             "MaxVersion" = "8:"
             "MinSize" = "8:"
             "MaxSize" = "8:"
@@ -4697,6 +4716,14 @@
             "MaxDate" = "8:"
             "Languages" = "8:"
             "Property" = "8:LIBMAPIEXISTS"
+            }
+            "{CF66B7F7-B7DA-4B08-A67A-233430638C9C}:_BED3D21450F1415798CB93584C9A00F6"
+            {
+            "Name" = "8:Search for Installation"
+            "Root" = "2:1"
+            "RegKey" = "8:Software\\[Manufacturer]\\MonetDB"
+            "Value" = "8:Path"
+            "Property" = "8:INSTALLPATH"
             }
         }
         "MsiBootstrapper"
@@ -4896,29 +4923,6 @@
             "Attributes" = "3:1"
                 "Dialogs"
                 {
-                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_3408BB797BDA4BAC896A6EAFDA8984B0"
-                    {
-                    "Sequence" = "3:200"
-                    "DisplayName" = "8:Installation Folder"
-                    "UseDynamicProperties" = "11:TRUE"
-                    "IsDependency" = "11:FALSE"
-                    "SourcePath" = "8:<VsdDialogDir>\\VsdAdminFolderDlg.wid"
-                        "Properties"
-                        {
-                            "BannerBitmap"
-                            {
-                            "Name" = "8:BannerBitmap"
-                            "DisplayName" = "8:#1001"
-                            "Description" = "8:#1101"
-                            "Type" = "3:8"
-                            "ContextData" = "8:Bitmap"
-                            "Attributes" = "3:4"
-                            "Setting" = "3:2"
-                            "Value" = "8:_DC4B78BE13E445B289DE0E6D4BF130B6"
-                            "UsePlugInResources" = "11:TRUE"
-                            }
-                        }
-                    }
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_8E1D892EAF4D4B189F1B1E13E2B0B19E"
                     {
                     "Sequence" = "3:110"
@@ -5142,42 +5146,6 @@
                             }
                         }
                     }
-                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_7FCCA8524CAD4E93B4750D228C679BE3"
-                    {
-                    "Sequence" = "3:200"
-                    "DisplayName" = "8:Installation Folder"
-                    "UseDynamicProperties" = "11:TRUE"
-                    "IsDependency" = "11:FALSE"
-                    "SourcePath" = "8:<VsdDialogDir>\\VsdFolderDlg.wid"
-                        "Properties"
-                        {
-                            "BannerBitmap"
-                            {
-                            "Name" = "8:BannerBitmap"
-                            "DisplayName" = "8:#1001"
-                            "Description" = "8:#1101"
-                            "Type" = "3:8"
-                            "ContextData" = "8:Bitmap"
-                            "Attributes" = "3:4"
-                            "Setting" = "3:2"
-                            "Value" = "8:_DC4B78BE13E445B289DE0E6D4BF130B6"
-                            "UsePlugInResources" = "11:TRUE"
-                            }
-                            "InstallAllUsersVisible"
-                            {
-                            "Name" = "8:InstallAllUsersVisible"
-                            "DisplayName" = "8:#1059"
-                            "Description" = "8:#1159"
-                            "Type" = "3:5"
-                            "ContextData" = "8:1;True=1;False=0"
-                            "Attributes" = "3:0"
-                            "Setting" = "3:0"
-                            "Value" = "3:1"
-                            "DefaultValue" = "3:1"
-                            "UsePlugInResources" = "11:TRUE"
-                            }
-                        }
-                    }
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_909D4BF40E6847838B41D03F670FB6C9"
                     {
                     "Sequence" = "3:300"
@@ -5343,7 +5311,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_6D885A723E624384A7AFFE86D51FF5B8"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_77905C4275BC4174A1A89A5D2BE64480"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
