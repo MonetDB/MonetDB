@@ -2932,12 +2932,13 @@ force_move(str srcdir, str dstdir, str name)
 	int ret = 0;
 
 	if ((p = strrchr(name, '.')) != NULL && strcmp(p, ".kill") == 0) {
+		/* Found a X.new.kill file, ie remove the X.new file */
 		struct stat st;
 		ptrdiff_t len = p - name;
 
 		strncpy(srcpath, name, len);
 		srcpath[len] = '\0';
-		GDKfilepath(dstpath, dstdir, srcpath, ".new");
+		GDKfilepath(dstpath, dstdir, srcpath, NULL);
 
 		/* step 1: remove the X.new file that is going to be overridden by X */
 		if (stat(dstpath, &st) == 0) {
