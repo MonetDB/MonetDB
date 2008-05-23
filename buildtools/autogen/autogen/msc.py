@@ -606,6 +606,8 @@ def msc_binary(fd, var, binmap, msc):
             srcs = srcs + " " + t + ".yy.obj"
         elif ext == 'def':
             srcs = srcs + ' ' + target
+        elif ext == 'res':
+            srcs = srcs + " " + t + ".res"
         elif ext in hdrs_ext:
             HDRS.append(target)
         elif ext in scripts_ext:
