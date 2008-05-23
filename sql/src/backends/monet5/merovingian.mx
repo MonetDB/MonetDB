@@ -1274,6 +1274,61 @@ discoveryRunner(void *d)
 
 		if (strncmp(buf, "HELO ", 5) == 0) {
 			/* HELLO message, respond with current databases */
+			sabdb *orig;
+			sabdb *stats;
+			int c;
+			struct sockaddr addr;
+			socklen_t adrlen;
+			char lhost[128];
+			sablist *sl;
+			err e;
+
+			/* list all known databases */
+			if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
+				fprintf(stderr, "HELO response: SABAOTHgetStatus error: %s\n", e);
+				GDKfree(e);
+				continue;
+			}
+
+			orig = stats;
+			while (stats != NULL) {
+				/* craft ANNC messages for each db */
+				gethostname(lhost, 128);
+				adrlen = sizeof(addr);
+				if (getsockname(sock, &addr, &adrlen) < 0)
+					continue;
+				c = snprintf(buf, 512, "ANNC %s mapi://%s:%u/%s ",
+						stats->dbname,
+						lhost,
+						ntohs(((struct sockaddr_in *)&addr)->sin_port),
+						stats->dbname);
+				/* build a comma separated list of scenarios */
+				c = 512 - c - 1;
+				sl = stats->scens;
+				while (sl != NULL) {
+					/* intuition says this code could be done much
+					 * better */
+					if (sl != stats->scens)
+						strncat(buf, ",", c--);
+					strncat(buf, stats->scens->val, c);
+					c -= strlen(stats->scens->val);
+					if (c < 0)
+						c = 0;
+					sl = sl->next;
+				}
+
+				c = strlen(buf);
+				if (sendto(sock, buf, c, 0,
+							(struct sockaddr *)&peer_addr,
+							peer_addr_len) != c)
+					fprintf(stderr, "HELO response: error while sending "
+							"response: %s\n", strerror(errno));
+
+				stats = stats->next;
+			}
+
+			if (orig != NULL)
+				SABAOTHfreeStatus(&orig);
 		} else if (strncmp(buf, "LEAV ", 5) == 0) {
 			/* LEAVE message, unregister database */
 			sabdb *rdb;
