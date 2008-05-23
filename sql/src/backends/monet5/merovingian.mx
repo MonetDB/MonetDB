@@ -1276,6 +1276,47 @@ discoveryRunner(void *d)
 			/* HELLO message, respond with current databases */
 		} else if (strncmp(buf, "LEAV ", 5) == 0) {
 			/* LEAVE message, unregister database */
+			sabdb *rdb;
+			sabdb *prv;
+			char **sp;
+			char *dbname;
+			char *conn;
+
+			strtok_r(buf, " ", sp); /* discard the msg type */
+			dbname = strtok_r(NULL, " ", sp);
+			conn = strtok_r(NULL, " ", sp);
+
+			if (dbname == NULL || conn == NULL)
+				continue;
+
+			/* look for the database, and verify that its "conn"
+			 * (merovingian) is the same */
+
+			/* technically, we could use Diffie-Hellman (without Debian
+			 * modifications) to negotiate a shared secret key, such
+			 * that only the original registrant can unregister a
+			 * database, however... do we really care that much? */
+
+			prv = NULL;
+			rdb = _merovingian_remotedbs;
+			while (rdb != NULL) {
+				if (strcmp(dbname, rdb->dbname) == 0 &&
+						strcmp(conn, rdb->conns->val) == 0)
+				{
+					/* found, let's remove */
+					if (prv == NULL) {
+						_merovingian_remotedbs = rdb->next;
+					} else {
+						prv->next = rdb->next;
+					}
+					SABAOTHfreeStatus(&rdb);
+					merlog("removed remote database %s at %s (%s)",
+							dbname, conn, host);
+					break;
+				}
+				prv = rdb;
+				rdb = rdb->next;
+			}
 		} else if (strncmp(buf, "ANNC ", 5) == 0) {
 			/* ANNOUNCE message, register database */
 			sabdb *rdb;
@@ -1328,7 +1369,7 @@ discoveryRunner(void *d)
 				scen = strtok_r(scens, ",", sp);
 			}
 
-			merlog("added remote database %s from at %s (%s)",
+			merlog("added remote database %s at %s (%s)",
 					dbname, conn, host);
 		} else {
 			merlog("ignoring unknown message from %s:%s: '%s'",
