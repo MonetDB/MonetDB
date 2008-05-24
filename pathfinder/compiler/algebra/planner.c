@@ -2221,6 +2221,79 @@ plan_recursion (PFla_op_t *n, PFord_ordering_t ord)
 }
 
 /**
+ * Generate plans for the findnode physical operator
+ */
+static PFplanlist_t *
+plan_id_join (PFla_op_t *n)
+{
+    /* some assertions */
+    assert (n); assert (n->kind == la_doc_index_join);
+    assert (n->sem.doc_join.kind == la_dj_id ||
+            n->sem.doc_join.kind == la_dj_idref);
+    assert (R(n)); assert (R(n)->plans);
+
+    PFalg_att_t   item_res  = n->sem.doc_join.item_res,
+                  item      = n->sem.doc_join.item,
+                  item_doc  = n->sem.doc_join.item_doc,
+                  iter,
+                  iter2;
+    PFalg_att_t   used_cols = 0;
+    unsigned int  count     = n->schema.count + 1,
+                  count_in  = 2;
+    PFalg_proj_t *proj      = PFmalloc (count * sizeof (PFalg_proj_t)),
+                 *proj_in   = PFmalloc (count_in * sizeof (PFalg_proj_t));
+    PFplanlist_t *ret       = new_planlist ();
+    PFpa_op_t    *plan,
+                 *mark;
+
+    /* create the above projection list */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        proj[i] = PFalg_proj (n->schema.items[i].name,
+                              n->schema.items[i].name);
+    /* add the result column */
+    proj[n->schema.count] = PFalg_proj (item_res, item_res);
+
+    /* get ourselves two new attribute name
+       (for creating keys using mark and joining back) */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        used_cols |= n->schema.items[i].name;
+
+    iter  = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
+    used_cols |= iter;
+    iter2 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
+
+    /* create the inner projection list */
+    proj_in[0] = PFalg_proj (iter2, iter);
+    proj_in[1] = PFalg_proj (item_res, item_res);
+
+    /* create the translation for every input plan */
+    for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++) {
+        plan = *(plan_t **) PFarray_at (R(n)->plans, i);
+        mark = mark (plan, iter);
+
+        add_plan (ret,
+                  project (
+                      leftjoin (
+                          iter,
+                          iter2,
+                          mark,
+                          project (
+                              findnodes (mark,
+                                         iter,
+                                         item,
+                                         item_doc,
+                                         item_res,
+                                         n->sem.doc_join.kind == la_dj_id),
+                               count_in,
+                               proj_in)),
+                      count,
+                      proj));
+    }
+
+    return ret;
+}
+
+/**
  * `recursion' operator(s) in the logical algebra just get a 1:1 mapping
  * into the physical recursion operator(s).
  */
@@ -2708,19 +2781,16 @@ plan_subexpression (PFla_op_t *n)
              * physical operator to construct                         */
             if (n->sem.doc_join.kind == la_dj_id ||
                 n->sem.doc_join.kind == la_dj_idref) {
-                /* fn:id or fn:idref */
-
+                plans = plan_id_join (n);                         break;
             } else if (n->sem.doc_join.kind == la_dj_text ||
-                n->sem.doc_join.kind == la_dj_attr) {
-                /* pf:attribute, pf:text*/
+                       n->sem.doc_join.kind == la_dj_attr) {
                 PFoops (OOPS_FATAL,
                     "physical algebra equivalent for logical algebra "
                     "node kind %u,%u not implemented, yet",
                     n->kind, n->sem.doc_join.kind);
+            } else {
+                 break;
             }
-
-        break;
-
         case la_doc_access:     plans = plan_doc_access (n);      break;
                                                                   
         case la_twig:           plans = plan_twig (n);            break;

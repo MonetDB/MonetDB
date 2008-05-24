@@ -347,9 +347,10 @@ union PFpa_op_sem_t {
     /* semantic content for physical operator of function fn:id/idref */
     struct {
         bool            id;       /**< id or idref */
-        PFalg_att_t     item_res; /**< column to store the resulting nodes */
+        PFalg_att_t     iter;     /**< the loop relation */
         PFalg_att_t     item;     /**< column to look up the context nodes */
         PFalg_att_t     item_doc; /**< column to store the fragment info */
+        PFalg_att_t     item_res; /**< column to store the resulting nodes */
     } findnodes;
 };
 /** semantic content in physical algebra operators */
@@ -841,10 +842,11 @@ PFpa_op_t * PFpa_string_join (const PFpa_op_t *n1,
  * Constructor for finding nodes based on id/idref
  */
 PFpa_op_t *
-PFpa_findnodes (const PFpa_op_t *doc, const PFpa_op_t *n,
+PFpa_findnodes (const PFpa_op_t *n,
+                PFalg_att_t iter,
                 PFalg_att_t item,
-                PFalg_att_t item_doc,
                 PFalg_att_t item_res,
+                PFalg_att_t item_doc,
                 bool id);
 
 #endif  /* PHYSICAL_H */

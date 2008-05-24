@@ -3,7 +3,7 @@
 "VSVersion" = "3:800"
 "ProjectType" = "8:{978C614F-708E-4E1A-B201-565925725DBA}"
 "IsWebType" = "8:FALSE"
-"ProjectName" = "8:MonetDB4-XQuery"
+"ProjectName" = "8:MonetDB4-XQuery64"
 "LanguageId" = "3:1033"
 "CodePage" = "3:1252"
 "UILanguageId" = "3:1033"
@@ -53,6 +53,12 @@
         {
         "MsmKey" = "8:_4262E797C9B946ED9141B6C92E5FBB9E"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_54AE1335F5D147E58C83DFE8B332C38E"
+        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -117,12 +123,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_C945598F178A4E9E8445C6208BAF26BF"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_DC4B78BE13E445B289DE0E6D4BF130B6"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -153,7 +153,7 @@
         "DisplayName" = "8:Debug"
         "IsDebugOnly" = "11:TRUE"
         "IsReleaseOnly" = "11:FALSE"
-        "OutputFilename" = "8:Debug\\MonetDB4-XQuery.msi"
+        "OutputFilename" = "8:Debug\\MonetDB4-XQuery64.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -185,7 +185,7 @@
         "DisplayName" = "8:Release"
         "IsDebugOnly" = "11:FALSE"
         "IsReleaseOnly" = "11:TRUE"
-        "OutputFilename" = "8:Release\\MonetDB4-XQuery.msi"
+        "OutputFilename" = "8:Release\\MonetDB4-XQuery64.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -232,7 +232,7 @@
             "SourcePath" = "8:MXQserver.bat"
             "TargetName" = "8:MXQserver.bat"
             "Tag" = "8:"
-            "Folder" = "8:_62B4F9E1E7294714A2D8C1CACF52BC43"
+            "Folder" = "8:_844C5FFEA23146E49C07BE04EBEAF0B0"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -289,10 +289,10 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_21A2DD174AEE4F2394F2CFFC465BCAF0"
             {
-            "SourcePath" = "8:C:\\Program Files\\Intel\\Compiler\\C++\\10.1.013\\IA32\\Bin\\libmmd.dll"
+            "SourcePath" = "8:C:\\Program Files (x86)\\Intel\\Compiler\\C++\\10.1.013\\EM64T\\Bin\\libmmd.dll"
             "TargetName" = "8:libmmd.dll"
             "Tag" = "8:"
-            "Folder" = "8:_D262855B92DE4EC89E4AAE66EAE05B3C"
+            "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -392,7 +392,7 @@
             "SourcePath" = "8:pf.bat"
             "TargetName" = "8:pf.bat"
             "Tag" = "8:"
-            "Folder" = "8:_62B4F9E1E7294714A2D8C1CACF52BC43"
+            "Folder" = "8:_844C5FFEA23146E49C07BE04EBEAF0B0"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -509,10 +509,10 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AD3326FC07AA462C9E1F02B1BDB0C1D9"
             {
-            "SourcePath" = "8:C:\\libxml2-2.6.30.win32\\bin\\libxml2.dll"
+            "SourcePath" = "8:C:\\libxml2-2.6.30.win64\\bin\\libxml2.dll"
             "TargetName" = "8:libxml2.dll"
             "Tag" = "8:"
-            "Folder" = "8:_D262855B92DE4EC89E4AAE66EAE05B3C"
+            "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -532,7 +532,7 @@
             "SourcePath" = "8:license.rtf"
             "TargetName" = "8:license.rtf"
             "Tag" = "8:"
-            "Folder" = "8:_62B4F9E1E7294714A2D8C1CACF52BC43"
+            "Folder" = "8:_844C5FFEA23146E49C07BE04EBEAF0B0"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -552,7 +552,7 @@
             "SourcePath" = "8:bin\\pf.exe"
             "TargetName" = "8:pf.exe"
             "Tag" = "8:"
-            "Folder" = "8:_1409D29AB00B4E23B9BF6A1BE15D4A84"
+            "Folder" = "8:_843C7B1529C64A6485D9DA6535451465"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -572,7 +572,7 @@
             "SourcePath" = "8:banner.bmp"
             "TargetName" = "8:banner.bmp"
             "Tag" = "8:"
-            "Folder" = "8:_62B4F9E1E7294714A2D8C1CACF52BC43"
+            "Folder" = "8:_844C5FFEA23146E49C07BE04EBEAF0B0"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -612,7 +612,7 @@
             "SourcePath" = "8:monetdb.ico"
             "TargetName" = "8:monetdb.ico"
             "Tag" = "8:"
-            "Folder" = "8:_62B4F9E1E7294714A2D8C1CACF52BC43"
+            "Folder" = "8:_844C5FFEA23146E49C07BE04EBEAF0B0"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -644,17 +644,17 @@
                 {
                 }
             }
-            "{994432C3-9487-495D-8656-3E829A8DBDDE}:_62B4F9E1E7294714A2D8C1CACF52BC43"
+            "{3C67513D-01DD-4637-8A68-80971EB9504F}:_844C5FFEA23146E49C07BE04EBEAF0B0"
             {
-            "DefaultLocation" = "8:[INSTALLPATH]"
-            "Name" = "8:Installation Folder"
+            "DefaultLocation" = "8:[ProgramFiles64Folder]MonetDB"
+            "Name" = "8:#1925"
             "AlwaysCreate" = "11:FALSE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
-            "Property" = "8:NEWPROPERTY1"
+            "Property" = "8:TARGETDIR"
                 "Folders"
                 {
-                    "{9EF0B969-E518-4E46-987F-47570745A589}:_1409D29AB00B4E23B9BF6A1BE15D4A84"
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_843C7B1529C64A6485D9DA6535451465"
                     {
                     "Name" = "8:bin"
                     "AlwaysCreate" = "11:FALSE"
@@ -665,7 +665,7 @@
                         {
                         }
                     }
-                    "{9EF0B969-E518-4E46-987F-47570745A589}:_D262855B92DE4EC89E4AAE66EAE05B3C"
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_AC71646495814C55B03F69019B5070C2"
                     {
                     "Name" = "8:lib"
                     "AlwaysCreate" = "11:FALSE"
@@ -687,18 +687,6 @@
                             }
                         }
                     }
-                }
-            }
-            "{3C67513D-01DD-4637-8A68-80971EB9504F}:_844C5FFEA23146E49C07BE04EBEAF0B0"
-            {
-            "DefaultLocation" = "8:[ProgramFilesFolder]MonetDB"
-            "Name" = "8:#1925"
-            "AlwaysCreate" = "11:FALSE"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Property" = "8:TARGETDIR"
-                "Folders"
-                {
                 }
             }
             "{1525181F-901A-416C-8A58-119130FE478E}:_EA92FAC0EDD34A12A0B9BA9569650928"
@@ -726,13 +714,6 @@
         }
         "LaunchCondition"
         {
-            "{836E08B8-0285-4809-BA42-01DB6754A45D}:_3FD7B7E68B104AB89073D63FB7099D14"
-            {
-            "Name" = "8:Installation"
-            "Condition" = "8:INSTALLPATH"
-            "Message" = "8:MonetDB Common needs to be installed first."
-            "InstallUrl" = "8:http://monetdb.cwi.nl/"
-            }
             "{836E08B8-0285-4809-BA42-01DB6754A45D}:_51126656D4214BA5A39FB99B90F06D71"
             {
             "Name" = "8:libbat exists"
@@ -753,7 +734,7 @@
             "{39E1837C-0DB9-45A2-89C8-438377A77565}:_3CA0A6A4CF3647979994237E3E76052C"
             {
             "Name" = "8:Search for libbat"
-            "Folder" = "8:[INSTALLPATH]"
+            "Folder" = "8:[ProgramFiles64Folder]"
             "Depth" = "2:2"
             "FileName" = "8:libbat.dll"
             "MinVesion" = "8:1.23.1.0"
@@ -768,10 +749,10 @@
             "{39E1837C-0DB9-45A2-89C8-438377A77565}:_78C7989C8AF1468E964988AC44FE7D5E"
             {
             "Name" = "8:Search for libmonet"
-            "Folder" = "8:[INSTALLPATH]"
+            "Folder" = "8:[ProgramFiles64Folder]"
             "Depth" = "2:2"
             "FileName" = "8:libmonet.dll"
-            "MinVesion" = "8:4.23.1.0"
+            "MinVesion" = "8:4.23.1"
             "MaxVersion" = "8:"
             "MinSize" = "8:"
             "MaxSize" = "8:"
@@ -779,14 +760,6 @@
             "MaxDate" = "8:"
             "Languages" = "8:"
             "Property" = "8:LIBMONETEXISTS"
-            }
-            "{CF66B7F7-B7DA-4B08-A67A-233430638C9C}:_DC9B88F9DCC9487C88BF50A4CFCC50B2"
-            {
-            "Name" = "8:Search for Installation"
-            "Root" = "2:1"
-            "RegKey" = "8:Software\\[Manufacturer]\\MonetDB"
-            "Value" = "8:Path"
-            "Property" = "8:INSTALLPATH"
             }
         }
         "MsiBootstrapper"
@@ -796,10 +769,10 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:MonetDB4-XQuery"
-        "ProductCode" = "8:{52645AD2-685C-458C-A809-F33F6AC2CBF2}"
+        "ProductName" = "8:MonetDB4-XQuery64"
+        "ProductCode" = "8:{62E9FC3F-4222-465F-8024-F57F73002964}"
         "PackageCode" = "8:{14247A71-2976-4F71-85E3-B2B63DA97023}"
-        "UpgradeCode" = "8:{FCA354F0-B2E1-4579-9146-D8185EBD0D73}"
+        "UpgradeCode" = "8:{A89989C5-2966-4CA2-A7EC-222FEF9B6F6B}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
@@ -808,7 +781,7 @@
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
-        "Title" = "8:MonetDB4-XQuery"
+        "Title" = "8:MonetDB4-XQuery64"
         "Subject" = "8:"
         "ARPCONTACT" = "8:CWI"
         "Keywords" = "8:MonetDB XML XQuery Database"
@@ -818,7 +791,7 @@
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
-        "TargetPlatform" = "3:0"
+        "TargetPlatform" = "3:1"
         "PreBuildEvent" = "8:"
         "PostBuildEvent" = "8:"
         "RunPostBuildEvent" = "3:0"
@@ -986,6 +959,29 @@
             "Attributes" = "3:1"
                 "Dialogs"
                 {
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_3408BB797BDA4BAC896A6EAFDA8984B0"
+                    {
+                    "Sequence" = "3:200"
+                    "DisplayName" = "8:Installation Folder"
+                    "UseDynamicProperties" = "11:TRUE"
+                    "IsDependency" = "11:FALSE"
+                    "SourcePath" = "8:<VsdDialogDir>\\VsdAdminFolderDlg.wid"
+                        "Properties"
+                        {
+                            "BannerBitmap"
+                            {
+                            "Name" = "8:BannerBitmap"
+                            "DisplayName" = "8:#1001"
+                            "Description" = "8:#1101"
+                            "Type" = "3:8"
+                            "ContextData" = "8:Bitmap"
+                            "Attributes" = "3:4"
+                            "Setting" = "3:2"
+                            "Value" = "8:_DC4B78BE13E445B289DE0E6D4BF130B6"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                        }
+                    }
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_8E1D892EAF4D4B189F1B1E13E2B0B19E"
                     {
                     "Sequence" = "3:110"
@@ -1209,6 +1205,42 @@
                             }
                         }
                     }
+                    "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_7FCCA8524CAD4E93B4750D228C679BE3"
+                    {
+                    "Sequence" = "3:200"
+                    "DisplayName" = "8:Installation Folder"
+                    "UseDynamicProperties" = "11:TRUE"
+                    "IsDependency" = "11:FALSE"
+                    "SourcePath" = "8:<VsdDialogDir>\\VsdFolderDlg.wid"
+                        "Properties"
+                        {
+                            "BannerBitmap"
+                            {
+                            "Name" = "8:BannerBitmap"
+                            "DisplayName" = "8:#1001"
+                            "Description" = "8:#1101"
+                            "Type" = "3:8"
+                            "ContextData" = "8:Bitmap"
+                            "Attributes" = "3:4"
+                            "Setting" = "3:2"
+                            "Value" = "8:_DC4B78BE13E445B289DE0E6D4BF130B6"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                            "InstallAllUsersVisible"
+                            {
+                            "Name" = "8:InstallAllUsersVisible"
+                            "DisplayName" = "8:#1059"
+                            "Description" = "8:#1159"
+                            "Type" = "3:5"
+                            "ContextData" = "8:1;True=1;False=0"
+                            "Attributes" = "3:0"
+                            "Setting" = "3:0"
+                            "Value" = "3:1"
+                            "DefaultValue" = "3:1"
+                            "UsePlugInResources" = "11:TRUE"
+                            }
+                        }
+                    }
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_909D4BF40E6847838B41D03F670FB6C9"
                     {
                     "Sequence" = "3:300"
@@ -1374,11 +1406,11 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_C945598F178A4E9E8445C6208BAF26BF"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_54AE1335F5D147E58C83DFE8B332C38E"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86.msm"
+            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86_x64.msm"
                 "Properties"
                 {
                 }
@@ -1392,7 +1424,7 @@
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86.msm"
+            "SourcePath" = "8:C:\\Program Files (x86)\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86_x64.msm"
                 "Properties"
                 {
                 }

@@ -8104,7 +8104,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 @= sort_only
 	BATiter bi = bat_iterator(b);
 	BUN rp, rq;
-	SORTloop_oid(b, rp, rq, (ptr)(&p), (ptr)(&p)) {
+	SORTloop_oid(b, rp, rq, &p, &p) {
 		oidoid_bunfastins(bn,&base,BUNhead(bi,rp)); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
 	}
 @= scan_only

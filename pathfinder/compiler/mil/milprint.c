@@ -1062,7 +1062,7 @@ print_expression (PFmil_t * n)
             print_expression (n->child[5]);
             milprintf (", ");
             print_expression (n->child[6]);
-            milprintf (", ");
+            milprintf (")");
             break;
 
         /* expression : 'htordered_unique_thetajoin (' exp ',' exp ','

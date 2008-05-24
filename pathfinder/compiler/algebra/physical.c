@@ -3575,22 +3575,36 @@ PFpa_string_join (const PFpa_op_t *n1, const PFpa_op_t *n2,
  * Constructor for finding nodes based on id/idref
  */
 PFpa_op_t *
-PFpa_findnodes (const PFpa_op_t *doc, const PFpa_op_t *n,
+PFpa_findnodes (const PFpa_op_t *n,
+                PFalg_att_t iter,
                 PFalg_att_t item,
                 PFalg_att_t item_doc,
                 PFalg_att_t item_res,
                 bool id)
 {
-    PFpa_op_t *ret = wire2 (pa_findnodes , doc, n);
+    PFpa_op_t *ret = wire1 (pa_findnodes, n);
 
     ret->sem.findnodes.id = id;
+    ret->sem.findnodes.iter = iter;
     ret->sem.findnodes.item = item;
     ret->sem.findnodes.item_doc = item_doc;
     ret->sem.findnodes.item_res = item_res;
 
-    ret->cost = DEFAULT_COST + doc->cost + n->cost;
+    /* allocate memory for the result schema */
+    ret->schema.count = 2;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+
+    ret->schema.items[0]
+        = (PFalg_schm_item_t) { .name = iter, .type = aat_nat };
+    ret->schema.items[1]
+        = (PFalg_schm_item_t) { .name = item_res, .type = aat_pnode };
+
+    /* the result is ordered on iter|item */
+    PFord_set_add (ret->orderings, sortby (iter, item));
+
+    ret->cost = DEFAULT_COST + n->cost;
 
     return ret;
 }
-
 /* vim:set shiftwidth=4 expandtab: */
