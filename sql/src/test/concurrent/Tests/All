@@ -1,2 +1,0 @@
-HAVE_PYTHON_SWIG?simple_select
-HAVE_PYTHON_SWIG?crash_on_concurrent_use.SF-1411926

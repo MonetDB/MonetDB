@@ -1,8 +1,0 @@
-module(url);VAR u1:=new(void,url);
-u1.insert(nil,url("http://www.cwi.nl/"));
-u1.rename("u1");
-u1.print();
-VAR u2:=new(void,url);
-u2.rename("u2");
-u2.insert(nil,url("http://www.cwi.nl/~monet/"));
-u2.print();
