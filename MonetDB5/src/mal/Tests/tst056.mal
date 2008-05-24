@@ -1,8 +1,0 @@
-zxx  := 0@0;    
-io.print(zxx);
-o1x  := 1@0;    
-io.print(o1x);
-o11  := 1@1;    
-io.print(o11);
-ox1  := 0@1;    
-io.print(ox1);

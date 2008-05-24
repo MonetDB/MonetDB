@@ -1,5 +1,0 @@
-BEGIN	{tot=0; t=0;}
-	{ if ( t==0) print $2;  t=1;  
-	  tot= tot+$3; print $3; }
-END	{ print "------------";
-	  print tot}
