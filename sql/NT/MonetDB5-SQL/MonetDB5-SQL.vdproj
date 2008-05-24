@@ -793,7 +793,7 @@
             "Folder" = "8:[INSTALLPATH]"
             "Depth" = "2:2"
             "FileName" = "8:libmonetdb5.dll"
-            "MinVesion" = "8:5.24.0.0"
+            "MinVesion" = "8:5.6.0.0"
             "MaxVersion" = "8:"
             "MinSize" = "8:"
             "MaxSize" = "8:"
