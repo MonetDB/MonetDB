@@ -8507,18 +8507,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		,ctx_counter,ctx_counter,ctx_counter,ctx_counter,ctx_counter,ctx_counter,ctx_counter,ctx_counter);
 	else
 	  milprintf(f,
-	        "    iter := iter%03u.select($t);\n"
-	        "    item := item%03u.materialize(ipik%03u).semijoin(iter);\n"
-	        "    kind := kind%03u.materialize(ipik%03u).semijoin(iter);\n"
-	        "    iter := iter.tmark(0@0);\n"
-	        "    item := item.tmark(0@0);\n"
-	        "    kind := kind.tmark(0@0);\n"
-		"    var optbat := serialize_tijah_opt(ws,1,iter,iter,item,kind,int_values,dbl_values,dec_values,str_values);\n"
-		,opt_counter,opt_counter, opt_counter,opt_counter,opt_counter);
-	else  
-          milprintf(f, 
-                "    var optbat := new(str,str,32);\n");
-
+		"var pfop_sn := new(void,bat);\n");
 	milprintf(f,
 		"# call the tijah query handler\n"
 		" var res := tj_query_handler(%s, pfop_sn, pfop_query, pfop_opt, loop%03u, ws, int_values, dbl_values, str_values, tijah_scoreDB);\n"
