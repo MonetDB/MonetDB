@@ -1257,8 +1257,10 @@ discoveryRunner(void *d)
 	char service[8];
 
 	while (_keepListening == 1) {
+		MT_sleep_ms(1000); /* don't spin */
+
 		peer_addr_len = sizeof(struct sockaddr_storage);
-		nread = recvfrom(sock, buf, 512, 0,
+		nread = recvfrom(sock, buf, 512, MSG_DONTWAIT,
 				(struct sockaddr *)&peer_addr, &peer_addr_len);
 		if (nread == -1)
 			continue; /* ignore failed request */
@@ -1267,8 +1269,8 @@ discoveryRunner(void *d)
 				peer_addr_len, host, 128,
 				service, 8, NI_NUMERICSERV);
 		if (s != 0) {
-			fprintf(stderr, "cannot retrieve name info: %s\n",
-					gai_strerror(s));
+			fprintf(stderr, "neighbour discovery: cannot retrieve "
+					"name info: %s\n", gai_strerror(s));
 			continue; /* skip this message */
 		}
 
