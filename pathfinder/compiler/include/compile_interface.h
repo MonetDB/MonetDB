@@ -55,6 +55,8 @@ const char* PFstartMIL(int);   /* MIL pattern for starting query execution */
 const char* PFstopMIL(int);    /* MIL pattern for stopping query execution (and print) */
 const char* PFdocbatMIL(void); /* MIL pattern for adding a shredded document to the ws */
 const char* PFudfMIL(void);    /* MIL pattern for calling a UDF */
+int PFstartMIL_XRPCTrans(char*, int, int, char*, long long); /* MIL pattern for starting multi-requests XRPC transaction execution */
+int PFstopMIL_XRPCTrans(char*, int, int, char*); /* MIL pattern for starting multi-requests XRPC transaction execution */
 
 #endif
 

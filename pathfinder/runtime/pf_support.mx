@@ -8111,7 +8111,7 @@ included in ws_overlaps_ws. Instead, a single variable 'pf_special' records the 
 @c
 #define PF_CONVOY 5
 BAT* ws_overlaps_ws = NULL;
-MT_Lock pf_runtime_lock[6];
+MT_Lock pf_runtime_lock[7];
 MT_Sema pf_runtime_sema[3];
 int pf_nreaders, pf_convoy, pf_ndocmgt;
 lng pf_writer, pf_special;
@@ -8122,6 +8122,7 @@ lng pf_writer, pf_special;
 #define PF_EXTEND_LOCK       pf_runtime_lock[3]
 #define PF_META_LOCK         pf_runtime_lock[4]
 #define PF_UPDATE_LOCK       pf_runtime_lock[5]
+#define PF_XRPC_LOCK         pf_runtime_lock[6]
 #define PF_META_BARRIER      pf_runtime_sema[0]
 #define PF_UPDATE_BARRIER    pf_runtime_sema[1]
 #define PF_EXTEND_BARRIER    pf_runtime_sema[2]
@@ -8133,8 +8134,8 @@ lng pf_writer, pf_special;
 
 /* get handle to the shared locks */
 int CMDpflock_get(ptr *ret, int* nr) {
-    *ret = (ptr) &pf_runtime_lock[(*nr)&3];
-    if (*nr > 3) *ret = (ptr) &PF_EXTEND_BARRIER; /* hack: do not feel like creating a CMDsema_get */
+    *ret = (ptr) &pf_runtime_lock[(*nr)&6];
+    if (*nr > 6) *ret = (ptr) &PF_EXTEND_BARRIER; /* hack: do not feel like creating a CMDsema_get */
     return GDK_SUCCEED;
 }
 
