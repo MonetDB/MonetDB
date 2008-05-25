@@ -26,14 +26,6 @@
 @a Ying Zhang
 @t Includes header files, definitions shared by the XRPC server and XRPC client
 
-@m
-.MODULE xrpc_common;
-
-.COMMAND my_hostname() : str = CMDmy_hostname;
-"Returns the hostname of the localhost."
-
-.END xrpc_common;
-
 @h
 #ifndef XRPC_COMMON_H
 #define XRPC_COMMON_H
@@ -54,19 +46,13 @@
     #include <sys/select.h>
     #include <sys/types.h>	/* used by socket */
     #include <sys/socket.h>
-    #include <unistd.h> /* gethostname() */
+    #include <unistd.h>
     #include <netinet/in.h> /* hton and ntoh */
     #include <arpa/inet.h>  /* dotted IP addr to and from 32-bits int */
-    #include <netdb.h>      /* gethostbyname(), h_errno */
+    #include <netdb.h>      /* convert domain names into IP addr */
     #include <errno.h>
     #include <ctype.h>
 #endif
-
-#define ISOLATION_NONE          1
-#define ISOLATION_REPEATABLE    2
-#define ISOLATION_2PC           3
-
-#define XRPCLOCK_IDX            6
 
 #define XRPC_REQ_CALLBACK       "/xrpc"
 
@@ -93,7 +79,6 @@
                                      " xrpc:arity=\"%lld\""         \
                                      " xrpc:iter-count=\"%lld\""    \
                                      " xrpc:updCall=\"%s\">"
-#define XRPC_QID "<xrpc:queryID xrpc:host=\"%s\" xrpc:timestamp=\"%s\" xrpc:timeout=\"%s\"/>"
 
 #define XRPC_HTTP_CALL "<xrpc:call>"                                    \
                          "<xrpc:sequence>"                              \
@@ -118,178 +103,5 @@
                       "</env:Body>"         \
                     "</env:Envelope>\n"
 
-/* exports for xrpc_server.mx and serialize_dflt.mx */
-int check_timeout_by_idx(oid qid_idx);
-int check_timeout_by_qid(char *qid, lng timestamp, lng timeout);
-
 #endif /* XRPC_COMMON_H */
 
-@c
-#include "pf_config.h"
-#include "xrpc_common.h"
-#include "pf_support.h"
-
-int CMDmy_hostname(char **res)
-{
-    int ret = 0, len = HOST_NAME_MAX > 255 ? HOST_NAME_MAX : 255;
-    char err[1024];
-
-    char *hname = GDKmalloc(len);
-    if(!hname) {
-        GDKerror("CMDmy_hostname: failed to malloc 'hname'\n");
-        return GDK_FAIL;
-    }
-    
-    errno = 0;
-    ret = gethostname(hname, len);
-    if(ret < 0) {
-        snprintf(err, 1024, "CMDmy_hostname: gethostname() failed: %s.\n", strerror(errno));
-        return GDK_FAIL;
-    }
-
-    *res = hname;
-    return GDK_SUCCEED;
-}
-
-/* return: 1: timedout; 0: not timedout; -1: not found; -2: other errors */
-int
-check_timeout_by_qid(char *qid, lng timestamp, lng timeout)
-{
-    MT_Lock *xrpclock = NULL;
-    int xrpclock_idx = XRPCLOCK_IDX;
-    BAT *xrpc_qids = NULL, *xrpc_statuss = NULL;
-    BATiter qidsi;
-    oid qid_idx = oid_nil;
-    BUN bun_qid = BUN_NONE;
-
-    if((timestamp + (timeout * 1000)) > GDKusec())
-        return 0; /* not timed out */
-
-    if(CMDpflock_get((ptr)&xrpclock, &xrpclock_idx) == GDK_FAIL) {
-        GDKerror("check_timeout_by_qid: "
-                 "failed to get the global lock 'xrpclock'!\n");
-        return -2;
-    }
-    MT_lock_set(xrpclock, "check_timeout_by_qid");
-
-    xrpc_qids = BATdescriptor(BBPindex("xrpc_qids"));
-    xrpc_statuss = BATdescriptor(BBPindex("xrpc_statuss"));
-    if(!xrpc_qids || !xrpc_statuss) {
-        if(xrpc_qids) BBPunfix(BBPcacheid(xrpc_qids));
-        if(xrpc_statuss) BBPunfix(BBPcacheid(xrpc_statuss));
-        MT_lock_unset(xrpclock, "check_timeout_by_qid");
-        GDKerror("check_timeout_by_qid: "
-                 "could not find the xrpc_* meta-BATs!\n");
-        return -2;
-    }
-
-    if((bun_qid = BUNfnd(BATmirror(xrpc_qids), qid)) ==  BUN_NONE) {
-        BBPunfix(BBPcacheid(xrpc_qids));
-        BBPunfix(BBPcacheid(xrpc_statuss));
-        MT_lock_unset(xrpclock, "check_timeout_by_qid");
-        GDKerror("check_timeout_by_qid: "
-                 "could not find QID \"%s\" in the meta-BAT "
-                 "\"xrpc_qids\"\n", qid);
-        return -1;
-    }
-
-    qidsi = bat_iterator(xrpc_qids);
-    qid_idx =  *(oid*)BUNtail(qidsi, bun_qid);
-    if(!BUNreplace(xrpc_statuss, &qid_idx, "timedout", FALSE)){
-        BBPunfix(BBPcacheid(xrpc_qids));
-        BBPunfix(BBPcacheid(xrpc_statuss));
-        MT_lock_unset(xrpclock, "check_timeout_by_qid");
-        GDKerror("check_timeout_by_qid: "
-                 "failed to change the status of query \"%s\" into "
-                 "\"timedout\"\n", qid);
-        return -2;
-    }
-
-    BBPunfix(BBPcacheid(xrpc_qids));
-    BBPunfix(BBPcacheid(xrpc_statuss));
-    MT_lock_unset(xrpclock, "check_timeout_by_qid");
-    return 1; /* timed out */
-}
-
-/* return: 1: timedout; 0: not timedout; -1: not found; -2: other errors */
-int
-check_timeout_by_idx(oid qid_idx)
-{
-    MT_Lock *xrpclock = NULL;
-    int xrpclock_idx = XRPCLOCK_IDX, ret = -2;
-    BAT *xrpc_qids = NULL, *xrpc_timeouts = NULL, *xrpc_statuss = NULL;
-    BATiter qidsi, timeoutsi;
-    BUN bun_qid = BUN_NONE, bun_to = BUN_NONE;
-    char *qid = NULL, *ts_str = NULL, *to_str = NULL;
-    lng ts = 0, to = 0;
-    char err[1024];
-
-    if(CMDpflock_get((ptr)&xrpclock, &xrpclock_idx) == GDK_FAIL) {
-        GDKerror("check_timeout_by_idx: "
-                 "failed to get the global lock 'xrpclock'!\n");
-        return ret;
-    }
-
-    MT_lock_set(xrpclock, "check_timeout_by_idx");
-
-    xrpc_qids = BATdescriptor(BBPindex("xrpc_qids"));
-    xrpc_timeouts = BATdescriptor(BBPindex("xrpc_timeouts"));
-    xrpc_statuss = BATdescriptor(BBPindex("xrpc_statuss"));
-    if(!xrpc_qids || !xrpc_timeouts || !xrpc_statuss) {
-        snprintf(err, 1024, "check_timeout_by_idx: failed to retrieve "
-                            "the xrpc_* meta-BATs!\n");
-        goto unlock_ret;
-    }
-
-    qidsi = bat_iterator(xrpc_qids);
-    timeoutsi = bat_iterator(xrpc_timeouts);
-    BUNfndVOID(bun_qid, qidsi, &qid_idx);
-    BUNfndVOID(bun_to, timeoutsi, &qid_idx);
-    if(bun_qid == BUN_NONE || bun_to == BUN_NONE) {
-        snprintf(err, 1024, "check_timeout_by_idx: "OIDFMT"-th BUN not "
-                            "found in the xrpc_* meta-BATs!\n", qid_idx);
-
-        ret = -1;
-        goto unlock_ret;
-    }
-
-    qid = (char*)BUNtail(qidsi, bun_qid);
-    to_str = (char*)BUNtail(timeoutsi, bun_to); assert(qid && to_str);
-    ts_str = strrchr(qid, '|'); assert(ts_str);
-    errno = 0; ts = strtoll(ts_str, NULL, 10);
-    if(errno) {
-        snprintf(err, 1024, "check_timeout_by_idx: invalid value of "
-                            "timestamp: \"%s\"!\n", ts_str);
-        goto unlock_ret;
-    }
-    errno = 0; to = strtoll(to_str, NULL, 10);
-    if(errno) {
-        snprintf(err, 1024, "check_timeout_by_idx: invalid value of "
-                            "timeout: \"%s\"!\n", to_str);
-        goto unlock_ret;
-    }
-
-    if((ts + (to * 1000)) > GDKusec()) {
-        ret = 0; /* not timed out */
-        goto unlock_ret;
-    }
-
-    if(!BUNreplace(xrpc_statuss, &qid_idx, "timedout", FALSE)){
-        snprintf(err, 1024, "check_timeout_by_idx: failed to change "
-                            "the status of query \"%s\" into "
-                            "\"timedout\"\n", qid);
-        goto unlock_ret;
-    }
-
-    ret = 1; /* timed out */
-    goto unlock_ret;
-
-unlock_ret:
-    if(xrpc_qids) BBPunfix(BBPcacheid(xrpc_qids));
-    if(xrpc_timeouts) BBPunfix(BBPcacheid(xrpc_timeouts));
-    if(xrpc_statuss) BBPunfix(BBPcacheid(xrpc_statuss));
-    MT_lock_unset(xrpclock, "check_timeout_by_idx");
-    if(ret < 0)
-        GDKerror(err);
-    return ret;
-}
