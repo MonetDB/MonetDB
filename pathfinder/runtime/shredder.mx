@@ -1560,7 +1560,7 @@ shredder_create(char *location,
     if (shredCtx == NULL) return NULL;
 
     /* fill it */
-    int i = 4;
+    int i = 9;
     memset(shredCtx, 0, sizeof(shredCtxStruct)); 
     shredCtx->location  = location;
     shredCtx->fileSize  = fileSize;

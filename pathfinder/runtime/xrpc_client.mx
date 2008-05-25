@@ -40,14 +40,19 @@ the "AmbientDB" project.
 
 @- HTTP client function(s)
 @m
+
+.USE lock;
+
 .COMMAND http_post(
         str options,
+        str qid,
+        lng timeout,
         str dst,
         str moduleNS,
         str location,
         str method,
-        int updCall,
-        int arity,
+        bit updCall,
+        lng arity,
         lng itercnt,
         BAT[void, bat] ws,
         BAT[void, oid] fun_vid,
@@ -66,13 +71,15 @@ the "AmbientDB" project.
 PROC rpc_client(
         str local_name,
         str options,
+        str qid,
+        lng timeout,
         str dst,
         str moduleNS,
         str location,
         str method,
-        int updCall,
-        int arity,
-        lng iterc,
+        bit updCall,
+        lng arity,
+        lng itercnt,
         BAT[void, BAT] ws,
         BAT[void, oid] fun_vid,
         BAT[void, oid] fun_iter,
@@ -83,15 +90,17 @@ PROC rpc_client(
         BAT[void, dbl] dec_values,
         BAT[void, str] str_values) : oid {
 
-    var rpcres := http_post(options, dst, moduleNS, location, method,
-                    updCall, arity, iterc, ws, fun_vid, fun_iter, fun_item,
+    var rpcres := http_post(options, qid, timeout, dst, moduleNS, location, method,
+                    updCall, arity, itercnt, ws, fun_vid, fun_iter, fun_item,
                     fun_kind, int_values, dbl_values, dec_values, str_values);
 
     var time_xrpcClntDeSeria := usec();
 
     var ret := oid_nil;
-    if (updCall != 1)
+    if(not(updCall)) {
+        # add result of read-only request to ws
         ret := ws_opencoll(ws, rpcres, local_name, TEMP_DOC);
+    }
 
     time_xrpcClntDeSeria := usec() - time_xrpcClntDeSeria;
     if (options.search("timing") >= 0) {
@@ -136,7 +145,7 @@ PROC get_rpc_res (
 
     # Get "pre_prop" value of an "sequence" node.
     var seq_prop;
-    var err := CATCH ({ seq_prop := qn_loc.ord_uselect("sequence").reverse().fetch(0); });
+    var err := CATCH (seq_prop := qn_loc.ord_uselect("sequence").reverse().fetch(0));
     if (not(isnil(err)))
         ERROR("get_rpc_res expects at least *one* \"<sequence>\" tag.\n");
 
@@ -308,13 +317,13 @@ are temporarily stored in the WS. It\n\
 
 PROC doLoopLiftedRPC(
         str options,
-        str isoLevel, # xrpc:isolation, can be 'none' or 'repeatable'
-        int timeout, # xrpc:timeout, >= 0
+        str isoLevel,
+        lng timeout,
         str moduleNS,
         str location,
         str method,
-        int updCall,
-        int arity,
+        bit updCall,
+        lng arity,
         lng niters,
         BAT[void, BAT] ws,
         BAT[oid,  str] dsts,
@@ -327,12 +336,80 @@ PROC doLoopLiftedRPC(
         BAT[void, dbl] dec_values,
         BAT[void, str] str_values) : BAT[void,bat]
 {
-    var mylock := lock_create();
-
     var unq_dsts := dsts.tunique().hmark(0@0);
+    var qid := "";
+    var idx := oid_nil;
+    if(or(isoLevel = "repeatable", isoLevel = "2PC")) {
+        # I'm the originator of this XRPC that requires isolation: initialize
+        lock_set(xrpclock); # register this query in the xrpc_* meta BATs
+        var err_qinit := CATCH({
+                var xrpc_wslock := lock_create();
+                lock_set(xrpc_wslock); # protect the ws of this query
+
+                var host := my_hostname();
+                var port := get_xrpc_port();
+                var ts := usec();
+                qid := host + ":" + str(port) + "|" + str(ts);
+                idx := count(xrpc_qids).oid(); # index of the new xrpc_* BUNs
+
+                xrpc_qids.append(qid);
+                xrpc_timeouts.append(timeout);
+                xrpc_wsids.append(ws_id(ws));
+                xrpc_locks.append(xrpc_wslock);
+                xrpc_statuss.append("exec");
+
+                var sucsBAT := ws.fetch(XRPC_SUCCESSOR);
+                # HACK: encode in the name of the XRPC_SUCCESSOR BAT where to find the query meta-information
+                sucsBAT.rename(str(int(idx)));
+                # add the dsts to the successors list
+                sucsBAT := sucsBAT.append(unq_dsts);
+        });
+        if(not(isnil(err_qinit))) {
+            # Undo above actions, ignore possible errors
+            CATCH({ ws_destroy(ws);
+                    if(lock_try(xrpc_wslock) != 0) {
+                      lock_unset(xrpc_wslock);
+                    }
+                    lock_destroy(xrpc_wslock);
+
+                    xrpc_qids.delete(idx_new);
+                    xrpc_timeouts.delete(idx_new);
+                    xrpc_wsids.delete(idx_new);
+                    xrpc_locks.delete(idx_new);
+                    xrpc_statuss.delete(idx_new);
+            });
+            lock_unset(xrpclock);
+            ERROR(err_qinit);
+        }
+        lock_unset(xrpclock);
+    } else {
+        # NOTE: if the code here is executed, the 'ws' is already locked,
+        #       by earlier printed MIL code (see milprint_summer.c:PF_STARTMIL_XRPC_GETWS)
+
+        # Get information from the workingset to see if this is part of
+        # an XRPC query that requires the "repeatable" isolation level:
+        # the name of ws[XRPC_SUCCESSOR] BAT of a none-isolated query is
+        # "tmp_*", which results in 'nil' when converted to oid.
+        idx := ws.fetch(XRPC_SUCCESSOR).bbpname().oid();
+        if(not(isnil(idx))){
+            lock_set(xrpclock);
+            var err_xrpclock := CATCH({
+                    qid := xrpc_qids.fetch(idx);
+                    timeout := xrpc_timeouts.fetch(idx); });
+            if(not(isnil(err_xrpclock))) {
+                CATCH({ xrpc_statuss.replace(idx, "abort"); });
+                lock_unset(xrpclock);
+                ERROR(err_xrpclock);
+            }
+            lock_unset(xrpclock);
+            ws.fetch(XRPC_SUCCESSOR).append(unq_dsts); # add the dsts to the successors list
+        } 
+    }
+
     var steps := unq_dsts.count();
-    # we assume each dst has the same #iterations
-    var iterc := niters / steps;
+    var rpcerr_lock := lock_create(); # guards rpc_errors
+    var rpc_errors := ""; # holds errors from each destination
+    var rpcres_lock := lock_create(); # guards rpc_results and rpc_iter
     var rpc_results := bat(str,oid);
     var rpc_iter := bat(void,bat).seqbase(0@0);
     var off := count(ws.fetch(CONT_NAME));
@@ -343,6 +420,7 @@ PROC doLoopLiftedRPC(
         # get iteration numbers for this destination
         var iter_dst := [oid](rpc_dsts.ord_uselect($t).reverse());
             iter_dst := iter_dst.reverse().mirror();
+        var itercnt := iter_dst.count().lng();
 
         # retrieve the frag of fun_vid, fun_iter, fun_item and fun_kind
         # for this iteration.
@@ -366,24 +444,20 @@ PROC doLoopLiftedRPC(
         }
 
         var local_name := "rpc_res_00" + str(int($h)+off);
-        var rpc_oid := oid(nil);
-        var rpc_err := CATCH(
-        {
-            rpc_oid := rpc_client(local_name, options, $t, moduleNS,
-                         location, method, updCall, arity, iterc, ws,
-                         fun_vid_dst, fun_iter_dst, fun_item_dst,
-                         fun_kind_dst, int_values, dbl_values,
-                         dec_values, str_values);
-        });
+        var rpc_oid := oid_nil;
+        var rpc_err := CATCH(rpc_oid := rpc_client(local_name, options, qid, timeout,
+                    $t, moduleNS, location, method, updCall, arity, itercnt, ws,
+                    fun_vid_dst, fun_iter_dst, fun_item_dst, fun_kind_dst,
+                    int_values, dbl_values, dec_values, str_values));
 
         var time_xrpcClntDeSeria := usec();
 
         if (isnil(rpc_err)) {
-            if (updCall != 1) {
-                lock_set(mylock);
+            if (not(updCall)) {
+                lock_set(rpcres_lock);
                 rpc_results.insert(local_name,rpc_oid);
                 rpc_iter.append(iter_dst.hmark(1@0));
-                lock_unset(mylock);
+                lock_unset(rpcres_lock);
             }
             time_xrpcClntDeSeria := usec() - time_xrpcClntDeSeria;
             if (options.search("timing") >= 0) {
@@ -391,14 +465,26 @@ PROC doLoopLiftedRPC(
                         time_xrpcClntDeSeria);
             }
         } else {
-            # We do not want to discard results from other destinations
-            # where executions might have succeeded, so we only print a
-            # message by error, iso. terminate the execution with 'ERROR'
-            printf("!ERROR: during RPC call to \"%s\"\n%s\n",
-                    $t, rpc_err);
+            printf("doLoopLiftedRPC: error occurred at %s:\n%s\n", $t, rpc_err);
+            if(not(isnil(qid))) {
+                # abort a 2PC-XRPC query on error
+                lock_set(xrpclock);
+                CATCH({xrpc_statuss.replace(idx, "abort");});
+                lock_unset(xrpclock);
+                # TODO: stop immediately further execution and clean up
+            } else {
+                # A none-isolation XRPC query: we do not want to discard
+                # results from other destinations where executions might
+                # have succeeded, so we only print a message by error,
+                # iso. terminate the execution with 'ERROR'
+                lock_set(rpcerr_lock);
+                CATCH({ rpc_errors := rpc_errors + $t + ": " + rpc_err + "\n"; });
+                lock_unset(rpcerr_lock);
+            }
         }
     }
-    lock_destroy(mylock);
+    lock_destroy(rpcres_lock);
+    lock_destroy(rpcerr_lock);
 
     var time_xrpcClntDeSeria := usec();
 
@@ -407,15 +493,17 @@ PROC doLoopLiftedRPC(
     var res_kind := bat(void,int).seqbase(0@0);
     var res_bats := bat(void,bat,4).seqbase(0@0);
 
-    if ( updCall = 1 ){
+    if(updCall){
         # If called function is an updating function, there is no
         # results to retrieve.  So, return empty BATs.
         res_bats.append(res_iter).append(res_item).append(res_kind);
         return res_bats.access(BAT_READ);
     }
 
-    if( count(rpc_results) = 0 ) {
-        ERROR("doLoopLiftedRPC: execution failed at all destinations");
+    if(count(rpc_results) = 0) {
+        ERROR("doLoopLiftedRPC: execution failed at all destinations:\n%s\n", rpc_errors);
+    } else if(rpc_errors != "") {
+        printf("doLoopLiftedRPC: execution failed at some destinations:\n%s\n", rpc_errors);
     }
 
     # retrieve results for this destination, and map the results back to
@@ -456,13 +544,13 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
 
 PROC doIterativeRPC(
         str options,
-        str isoLevel, # xrpc:isolation, can be 'none' or 'repeatable'
-        int timeout, # xrpc:timeout, >= 0
+        str isoLevel,
+        lng timeout,
         str moduleNS,
         str location,
         str method,
-        int updCall,
-        int arity,
+        bit updCall,
+        lng arity,
         lng niters,
         BAT[void,BAT] ws,
         BAT[oid, str] dsts,
@@ -475,6 +563,11 @@ PROC doIterativeRPC(
         BAT[void,dbl] dec_values,
         BAT[void,str] str_values) : BAT[void,bat]
 {
+    if(isoLevel != "none") {
+        ERROR("doIterativeRPC: no other isolation levels than \"none\" is supported\n");
+    }
+
+
     var time_xrpcClntSeria := 0;
     var time_xrpcClntDeSeria := 0;
 
@@ -494,15 +587,12 @@ PROC doIterativeRPC(
         time_xrpcClntSeria := time_xrpcClntSeria + (usec() - time_xrpcClntSeriaStart);
 
         var local_name := "rpc_res_00" + str(h+1);
-        var rpc_oid := oid(nil);
+        var rpc_oid := oid_nil;
 
-        var rpc_err := CATCH(
-        {
-            rpc_oid := rpc_client(local_name, options, dst, 
-                        moduleNS, location, method, updCall, arity, lng(1), ws,
-                        cur_fun_vid, cur_fun_iter, cur_fun_item, cur_fun_kind,
-                        int_values, dbl_values, dec_values, str_values);
-        });
+        var rpc_err := CATCH(rpc_oid := rpc_client(local_name, options, "", lng_nil,
+                    dst, moduleNS, location, method, updCall, arity, lng(1), ws,
+                    cur_fun_vid, cur_fun_iter, cur_fun_item, cur_fun_kind,
+                    int_values, dbl_values, dec_values, str_values));
 
         # add result of this iteration to result BATs
         var time_xrpcClntDeSeriaStart := usec();
@@ -534,7 +624,7 @@ PROC doIterativeRPC(
     }
 
     var time_xrpcClntDeSeriaStart := usec();
-    if (updCall = 1){
+    if (not(updCall)){
         # If called function is an updating function, there is no
         # results to retrieve.  So, return empty BATs.
         var res_iter := bat(void,oid).seqbase(0@0);
@@ -585,84 +675,57 @@ ADDHELP("doIterativeRPC", "zhang", "April 2006",
 #include "xrpc_common.h"
 #include "xrpc_client.h"
 
-#define errCheck(iterc, argc, ws,                                      \
-            fvid, fiter, fitem, fkind,                                 \
-            int_val, dbl_val, dec_val, str_val) {                      \
-    ERRORcheck(iterc < 0,                                              \
-               "CMDhttp_post: iterc must not be negative (<0).\n");    \
-    ERRORcheck(argc < 0,                                               \
-               "CMDhttp_post: argc must not be negative (<0).\n");     \
-    ERRORcheck(!BAThdense(ws),                                         \
-               "CMDhttp_post: head of 'ws' must be dense.\n");         \
-    ERRORcheck(!BAThdense(fun_vid),                                    \
-               "CMDhttp_post: head of 'fun_vid' must be dense.\n");    \
-    ERRORcheck(!BAThdense(fun_iter),                                   \
-               "CMDhttp_post: head of 'fun_iter' must be dense.\n");   \
-    ERRORcheck(!BAThdense(fun_item),                                   \
-               "CMDhttp_post: head of 'fun_item' must be dense.\n");   \
-    ERRORcheck(!BAThdense(fun_kind),                                   \
-               "CMDhttp_post: head of 'fun_kind' must be dense.\n");   \
-    ERRORcheck(!BAThdense(int_values),                                 \
-               "CMDhttp_post: head of 'int_values' must be dense.\n"); \
-    ERRORcheck(!BAThdense(dbl_values),                                 \
-               "CMDhttp_post: head of 'dbl_values' must be dense.\n"); \
-    ERRORcheck(!BAThdense(dec_values),                                 \
-               "CMDhttp_post: head of 'dec_values' must be dense.\n"); \
-    ERRORcheck(!BAThdense(str_values),                                 \
-               "CMDhttp_post: head of 'str_values' must be dense.\n"); \
-}
-
-#define str2buf(b, str) {                               \
-    unsigned int len = strlen(str) + 1;                 \
-    if (len > (b->len - b->pos)) {                      \
-        GDKerror("CMDhttp_post: buffer overflow\n");    \
-        return GDK_FAIL;                                \
-    }                                                   \
-    len = snprintf((b->buf + b->pos), len, str);        \
-    b->pos += len;                                      \
-}
-
-#define clean_up(sock, s1, s2, b, argcnt, iterc) {      \
-    lng i = 0;                                          \
-    if (sock > 0) close(sock);                          \
-    if(s1){                                             \
-        stream_close(s1); stream_destroy(s1);           \
-    }                                                   \
-    if(s2){                                             \
-        stream_close(s2); stream_destroy(s2);           \
-    }                                                   \
-    if (b) {                                            \
-        if (b->len > 0) buffer_destroy(b);              \
-        else            free(b);                        \
-    }                                                   \
-    if(argcnt) {                                        \
-        for(i = 0; i < iterc; i++) GDKfree(argcnt[i]);  \
-        GDKfree(argcnt);                                \
-    }                                                   \
-}
-
-/* Serialize value specified by 'offset' and 'fun_item' surrounded by
- * 'begin_tag' and 'end_tag' into buffer 'b'.
- * 
- * Returns: GDK_SUCCEED if succeeded, GDK_FAIL otherwise.
- */
-static int
-value2buf(buffer *b, BAT *fun_item, oid offset, int valueType, BAT *valueContainer, char *begin_tag, char *end_tag)
+static INLINE void
+clean_up(stream *bs, lng **argcnt, lng iterc)
 {
-    BATiter fun_itemi = bat_iterator(fun_item);
-    BATiter valueContaineri = bat_iterator(valueContainer);
-    int len;
-    char *strptr;
-    oid i;
-    
-    str2buf(b, begin_tag);
-    len = (b->len - b->pos) < GDK_int_max ? (b->len - b->pos) : GDK_int_max;
-    strptr = b->buf + b->pos;
-    i = *(oid*)BUNtail(fun_itemi, offset);
-    b->pos += BATatoms[valueType].atomToStr(&strptr, &len,
-                BUNtail(valueContaineri, i));
-    str2buf(b, end_tag);
-    return GDK_SUCCEED;
+    lng i = 0;
+    if(bs){
+        buffer_destroy(stream_get_buffer(bs));
+        stream_close(bs); stream_destroy(bs);
+    }
+    if(argcnt) {
+        for(i = 0; i < iterc; i++) GDKfree(argcnt[i]);
+        GDKfree(argcnt);
+    }
+}
+
+static void
+handle_error_msg(char *errmsg)
+{
+    char *strptr, *strptr2;
+
+    strptr = strstr(errmsg, "<env:Value");
+    if(!strptr) {
+        GDKerror(errmsg);
+        return;
+    }
+    strptr = strchr(strptr, '>'); assert(strptr);
+    strptr2 = strstr(++strptr, "</env:Value>");
+    if( (!strptr) || (!strptr2) ) {
+        GDKerror("handle_error_msg: SOAP Fault message not "
+                 "well-formed at \"<env:Value>.\n%s\n", errmsg);
+        return;
+    }
+    strptr2[0] = '\0';
+    GDKerror("SOAP Fault Code  : %s\n", strptr);
+    strptr2[0] = '<';
+
+    strptr = strstr(strptr2+12, "<env:Text");
+    if(!strptr) {
+        GDKerror("handle_error_msg: SOAP Fault message not "
+                 "well-formed: could not find \"<env:Text\".\n%s\n",
+                 errmsg);
+        return;
+    }
+    strptr = strchr(strptr, '>') + 1;
+    strptr2 = strstr(strptr, "</env:Text>");
+    if( (!strptr) || (!strptr2) ) {
+        GDKerror("handle_error_msg: SOAP Fault message not "
+                 "well-formed at \"<env:Text>\".\n%s\n", errmsg);
+        return;
+    }
+    strptr2[0] = '\0';
+    GDKerror("SOAP Fault Reason:\n%s\n", strptr);
 }
 
 /* Create a HTTP client socket.
@@ -725,7 +788,7 @@ setup_connection(str dst, int *port)
     } else {
         if (!(resolv = gethostbyname(dst))) {
             GDKerror("setup_connection: invalid IP address \"%s\": %s\n",
-                    dst, errno?strerror(errno):".");
+                    dst, h_errno?strerror(h_errno):".");
             return -1;
         }
         addr.s_addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
@@ -760,46 +823,48 @@ setup_connection(str dst, int *port)
 }
 
 /**
- * @return WS BAT, or
- *         NULL by error
+ * contID < 0 indicates ws[batID] is a simple BAT, i.e., a BAT without a
+ * BAT tail.
+ *
+ * @return ws[batID] or ws[batID][contID] or NULL on error
  */
 static BAT *
-getWsBAT(BAT *ws, int contID, int batID)
+getBatFromContainer(BAT *ws, int batID, int contID)
 {
     BAT *b = NULL, *batbat = NULL;
     BUN bun = BUN_NONE, bbun = BUN_NONE;
-    oid CONTid = (oid)contID;
-    oid BATid  = (oid)batID;
+    oid CONTid = (oid)contID, BATid  = (oid)batID;
+    BATiter wsi, batbati;
 
-    if (contID < 0){
-        GDKerror("getWsBAT: contID mush NOT be negative\n");
+    assert(ws && batID >= 0);
+
+    wsi = bat_iterator(ws);
+    BUNfndOID(bun, wsi, (ptr)&BATid);
+    if(bun == BUN_NONE) {
+        GDKerror("getBatFromContainer: BAT ws[%d] not found\n",batID);
+        return NULL;
+    }
+    if( !(batbat = BATdescriptor(*(bat*)Tloc(ws,bun))) ) {
+        GDKerror("getBatFromContainer: failed to fetch BAT ws[%d]\n", batID);
         return NULL;
     }
 
-    if ( (bun = BUNfnd(ws,&BATid)) == BUN_NONE ) {
-        GDKerror("getWsBAT: NOT FOUND BAT[%d]",batID);
+    if(contID < 0) return batbat; /* this is a simple BAT, just return it */
+
+    batbati = bat_iterator(batbat);
+    BUNfndOID(bbun, batbati, (ptr)&CONTid);
+    if(bbun == BUN_NONE) {
+        BBPunfix(BBPcacheid(batbat));
+        GDKerror("getBatFromContainer: BAT ws[%d][%d] not found\n", batID, contID);
         return NULL;
     }
-    if ( !( batbat = BATdescriptor(*(bat*)Tloc(ws,bun))) ) {
-        GDKerror("getWsBAT:FETCH BATBAT for WS[%d][%d] FAILED\n",
-                 batID, contID);
+    if( !(b = BATdescriptor(*(bat*)Tloc(batbat,bbun))) ) {
+        BBPunfix(BBPcacheid(batbat));
+        GDKerror("getBatFromContainer: failed to fetch BAT ws[%d][%d]\n", batID, contID);
         return NULL;
     }
-    bbun = BUNfnd(batbat,&CONTid);
-    if ( bbun == BUN_NONE ) {
-        BBPunfix( BBPcacheid( batbat ) );
-        GDKerror("getWsBAT:NOT FOUND BAT[%d][%d] in WS!!!!\n",
-                 batID, contID);
-        return NULL;
-    } else {
-        if ( !(b = BATdescriptor(*(bat*)Tloc(batbat,bbun))) ) {
-            BBPunfix( BBPcacheid( batbat ) );
-            GDKerror("getWsBAT:FETCH WS[%d][%d] FAILED\n",
-                     batID, contID);
-            return NULL;
-        }
-    }
-    BBPunfix( BBPcacheid( batbat ) );
+
+    BBPunfix(BBPcacheid(batbat));
     return b;
 }
 
@@ -821,7 +886,7 @@ getELEMkind(BAT *ws, int contID, oid item_index)
     BUN bun = BUN_NONE;
     chr ret;
 
-    if(!(b = getWsBAT(ws, contID, PRE_KIND)))
+    if(!(b = getBatFromContainer(ws, PRE_KIND, contID)))
         return GDK_chr_min;
 
     if (!b->batCount){
@@ -843,65 +908,28 @@ getELEMkind(BAT *ws, int contID, oid item_index)
     return ret;
 }
 
-static void
-handle_error_msg(char *errmsg)
-{
-    char *strptr, *strptr2;
-
-    strptr = strstr(errmsg, "<env:Value");
-    if(!strptr) {
-        GDKerror(errmsg);
-        return;
-    }
-    strptr = strchr(strptr, '>'); assert(strptr);
-    strptr2 = strstr(++strptr, "</env:Value>");
-    if( (!strptr) || (!strptr2) ) {
-        GDKerror("handle_error_msg: SOAP Fault message not "
-                 "well-formed at \"<env:Value>.\n%s\n", errmsg);
-        return;
-    }
-    strptr2[0] = '\0';
-    GDKerror("SOAP Fault Code  : %s\n", strptr);
-    strptr2[0] = '<';
-
-    strptr = strstr(strptr2+12, "<env:Text");
-    if(!strptr) {
-        GDKerror("handle_error_msg: SOAP Fault message not "
-                 "well-formed: could not find \"<env:Text\".\n%s\n",
-                 errmsg);
-        return;
-    }
-    strptr = strchr(strptr, '>') + 1;
-    strptr2 = strstr(strptr, "</env:Text>");
-    if( (!strptr) || (!strptr2) ) {
-        GDKerror("handle_error_msg: SOAP Fault message not "
-                 "well-formed at \"<env:Text>\".\n%s\n", errmsg);
-        return;
-    }
-    strptr2[0] = '\0';
-    GDKerror("SOAP Fault Reason:\n%s\n", strptr);
-}
-
 /**
  * try to receive the response message and shred it into shredBAT
  * Returns shredBAT, or
  *         NULL on error
  */
 static BAT *
-response2bat(int sock,
-             char *host,
-             int port,
-             buffer *b,
-             int updCall,
-             lng *time_xrpcClntDeSeria)
+response2bat(
+        bool timing,
+        stream *in,
+        char *host,
+        int port,
+        bool updCall)
 {
     char respStatus[1024];
     int ret;
-    stream *in;
+    buffer *resp;
     BAT *shredBAT;
 
-    if( !(in = socket_rastream(sock, "http_receive")) ){
-        GDKerror("response2bat: failed to create socket_rastream\n");
+    /* Create buffer for the RPC response message */
+    resp = buffer_create(MAX_BUF_SIZE);
+    if (!resp || resp->len == 0) {
+        GDKerror("response2bat: failed to create buffer for XRPC response message\n");
         return NULL;
     }
 
@@ -910,7 +938,7 @@ response2bat(int sock,
         GDKerror("response2bat: failed to receive response from %s:%d",
                 host, port);
         if(errno) GDKerror("response2bat: %s", strerror(errno));
-        stream_close(in); stream_destroy(in);
+        buffer_destroy(resp);
         return NULL;
     }
 
@@ -919,28 +947,28 @@ response2bat(int sock,
         strstr(respStatus, "HTTP/1.1 ") != respStatus ||
         respStatus[12] != ' ' ||
         respStatus[ret -1] != '\r' ) { /* the '\n' is not returned by stream_readline() */
-        GDKerror("response2bat: invalid response from %s%d\n", host, port);
+        GDKerror("response2bat: invalid response from %s:%d\n", host, port);
         do{ /* read and print everything we can receive */
             respStatus[ret -1] = '\0'; /* overwrite '\r' */
             GDKerror("%s\n", respStatus);
             ret = stream_readline(in, respStatus, 1024);
         } while (ret > 0);
-        stream_close(in); stream_destroy(in);
+        buffer_destroy(resp);
         return NULL;
     }
     respStatus[ret -1] = '\0';
 
     do{ /* read the HTTP header and throw it away */
         errno = 0;
-        ret = stream_readline(in, b->buf, 1024);
-        if(ret == 1 && b->buf[0] == '\r')
+        ret = stream_readline(in, resp->buf, 1024);
+        if(ret == 1 && resp->buf[0] == '\r')
             ret = 0; /* end-of-HTTP-header found */
     } while (ret > 0);
     if (ret < 0) {
         GDKerror("response2bat: failed to receive response from %s:%d",
                 host, port);
         if(errno) GDKerror("response2bat: %s", strerror(errno));
-        stream_close(in); stream_destroy(in);
+        buffer_destroy(resp);
         return NULL;
     }
 
@@ -948,11 +976,11 @@ response2bat(int sock,
     if(respStatus[9] != '2' || respStatus[10] != '0' || respStatus[11] != '0') {
         GDKerror("HTTP Error Code  : %s\n", respStatus+9);
 
-        b->pos = 0;
+        resp->pos = 0;
         do{ /* read the SOAP Fault message */
             errno = 0;
-            ret = stream_read(in, (b->buf + b->pos), 1, (b->len - b->pos));
-            if (ret > 0) b->pos += ret;
+            ret = stream_read(in, (resp->buf + resp->pos), 1, (resp->len - resp->pos));
+            if (ret > 0) resp->pos += ret;
         } while (ret > 0);
         if (ret < 0) {
             GDKerror("response2bat: failed to receive response from %s:%d",
@@ -960,17 +988,17 @@ response2bat(int sock,
             if(errno) GDKerror("response2bat: %s", strerror(errno));
             return NULL;
         }
-        b->buf[b->pos] = 0;
-        handle_error_msg(b->buf);
-        stream_close(in); stream_destroy(in);
+        resp->buf[resp->pos] = 0;
+        handle_error_msg(resp->buf);
+        buffer_destroy(resp);
         return NULL;
     }
 
     /* Start timing Client DeSerialisation */
-    *time_xrpcClntDeSeria = GDKusec();
+    lng time_xrpcClntDeSeria = GDKusec();
     if (!(shredBAT = BATnew(TYPE_str, TYPE_bat, 32))){
         GDKerror("response2bat: failed to malloc shredBAT\n");
-        stream_close(in); stream_destroy(in);
+        buffer_destroy(resp);
         return NULL;
     }
 
@@ -978,92 +1006,104 @@ response2bat(int sock,
         if(shred(shredBAT, NULL, NULL, in, 0, NULL, NULL, NULL) ==GDK_FAIL) {
             GDKerror("response2bat: invalid XRPC response received\n");
             BBPreclaim(shredBAT);
-            stream_close(in); stream_destroy(in);
+            buffer_destroy(resp);
             return NULL;
         }
     }
-
     /* Stop timing Client DeSerialisation */
-    *time_xrpcClntDeSeria = GDKusec() - *time_xrpcClntDeSeria;
-    stream_close(in); stream_destroy(in);
+    time_xrpcClntDeSeria = GDKusec() - time_xrpcClntDeSeria;
+    if (timing) {
+        stream_printf(GDKout,
+                "XRPC_Client_DeSerialisation (response2bat):   " LLFMT " microsec\n",
+                time_xrpcClntDeSeria);
+    }
+
     return shredBAT;
 }
 
-int
-CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
-        str rpc_uri, str rpc_method, int *updCall, int *arity,
-        lng *itercnt, BAT *ws, BAT *fun_vid, BAT *fun_iter,
-        BAT *fun_item, BAT *fun_kind, BAT *int_values, BAT *dbl_values,
-        BAT *dec_values, BAT *str_values)
+static buffer *
+byvalue_request(
+        bool timing,
+        str qid,
+        lng timeout,
+        str rpc_module,
+        str rpc_uri,
+        str rpc_method,
+        bool updCall,
+        lng arity,
+        lng iterc,
+        BAT *ws,
+        BAT *fun_vid,
+        BAT *fun_iter,
+        BAT *fun_item,
+        BAT *fun_kind,
+        BAT *int_values,
+        BAT *dbl_values,
+        BAT *dec_values,
+        BAT *str_values)
 {
-    BATiter fun_iteri, fun_vidi, fun_itemi, fun_kindi, bi;
-    int sock = -1, port = -1;
+    BATiter fun_itemi, fun_kindi;
+    int ret = -1;
     buffer *b = NULL;
-    str str_val = NULL;
-    stream *out = NULL, *bs = NULL;
+    stream *bs = NULL;
     /* Hold the temp BATs after the RPC response has been shredded: */
-    BAT *shredBAT = NULL;
+    oid *fvid_lst = NULL, *fiter_lst = NULL, *fitem_lst = NULL;
+    int *fkind_lst = NULL;
+    lng *intVals = NULL;
+    dbl *dblVals = NULL;
+    oid cnt = oid_nil;
     /* BATs hold item|kind of a node parameter */
     BAT *node_item = NULL, *node_kind = NULL;
-    /* Pointers to the current BUNs of the BATs. */
-    BUN p_vid, p_iter, p_item, p_kind;
 
-    lng i, a, nr_args = 0, arg_offset = 0;
-    lng argc = *arity, my_argc = 0;
-    lng iterc = *itercnt, my_iter = 0;
+    lng i, a, arg_offset = 0;
+    lng my_argc = 0, my_iter = 0;
     lng **argcnt = NULL; /* #items each [iter][param] contains */
 
     /* BATs needed for serializing attributes */
     BAT *attr_qn = NULL, *attr_prop = NULL;
     BAT *qn_prefix = NULL, *qn_loc = NULL, *prop_val = NULL;
+    BATiter strValsi;
 
-    lng time_xrpcClntSeria = 0, time_xrpcClntDeSeria = 0;
-    lng time_xrpcClnt2Serv = 0;
-    size_t bytes_sent = 0;
-
-    errCheck(iterc, argc, ws, fun_vid, fun_iter, fun_item, fun_kind,
-            int_values, dbl_values, dec_values, str_values);
-
-    if ((sock = setup_connection(dst, &port)) < 0) {
-        return GDK_FAIL;
-    }
-    if (!(out = socket_wastream(sock, "http_send"))) {
-        GDKerror("CMDhttp_post: failed to create socket_wastream\n");
-        close(sock);
-        return GDK_FAIL;
-    }
+    (void) dec_values;
 
     /* Start timing Client Serialisation */
-    time_xrpcClntSeria = GDKusec();
+    lng time_xrpcClntSeria = GDKusec();
 
+    fvid_lst  = (oid*) Tloc(fun_vid, BUNfirst(fun_vid));
+    fiter_lst = (oid*) Tloc(fun_iter, BUNfirst(fun_iter));
+    fitem_lst = (oid*) Tloc(fun_item, BUNfirst(fun_item));
+    fkind_lst = (int*) Tloc(fun_kind, BUNfirst(fun_kind));
+    intVals   = (lng*) Tloc(int_values, BUNfirst(int_values));
+    dblVals   = (dbl*) Tloc(dbl_values, BUNfirst(dbl_values));
+    strValsi  = bat_iterator(str_values);
+    
     /* Create buffer for the RPC request message */
-    b = buffer_create(MAX_BUF_SIZE);
-    if (!b || b->len == 0) {
-        GDKerror("CMDhttp_post: failed to create outgoing buffer\n");
-        clean_up(sock, out, bs, b, argcnt, iterc);
-        return GDK_FAIL;
+    if((b = buffer_create(MAX_BUF_SIZE)) && b->len > 0) {
+        if (!(bs = buffer_wastream(b, "xrpcrequest"))) {
+            GDKerror("byvalue_request: failed to create buffer_wastream\n");
+            buffer_destroy(b);
+            return NULL;
+        }
+    } else {
+        GDKerror("byvalue_request: failed to create outgoing buffer\n");
+        return NULL;
     }
 
-    b->pos = snprintf(b->buf, b->len, XRPC_HEADER,
-            SOAP_NS, XRPC_NS, XDT_NS, XS_NS, XSI_NS, XRPC_NS, XRPC_LOC,
-            rpc_module, rpc_uri, rpc_method, argc, iterc,
-            *updCall?"true":"false");
-
     if (!(argcnt = GDKmalloc(iterc * sizeof(lng*)))) {
-        GDKerror("CMDhttp_post: failed to malloc argcnt\n");
-        clean_up(sock, out, bs, b, argcnt, iterc);
-        return GDK_FAIL;
+        GDKerror("byvalue_request: failed to malloc argcnt\n");
+        clean_up(bs, argcnt, iterc);
+        return NULL;
     }
     for (i = 0; i < iterc; i++) {
         /* we allocate at least _one_ argcnt for each parameter, so that
          * we have a place to note that a function has zero parameter */
-        if (!(argcnt[i] = GDKmalloc((argc>0?argc:1) * sizeof(lng)))) {
-            GDKerror("CMDhttp_post: failed to malloc argcnt[" SZFMT "]\n", i);
-            clean_up(sock, out, bs, b, argcnt, iterc);
-            return GDK_FAIL;
+        if (!(argcnt[i] = GDKmalloc((arity>0?arity:1) * sizeof(lng)))) {
+            GDKerror("byvalue_request: failed to malloc argcnt[" SZFMT "]\n", i);
+            clean_up(bs, argcnt, iterc);
+            return NULL;
         }
         argcnt[i][0] = 0;
-        for (a = 1; a < argc; a++) {
+        for (a = 1; a < arity; a++) {
             argcnt[i][a] = 0;
         }
     }
@@ -1071,35 +1111,40 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
     /* Calculate the number of values contained by every parameter of
      * every iteration. */
     i = a = 0; /* i: iter counter; a: arg counter */
-    fun_itemi = bat_iterator(fun_item);
-    fun_iteri = bat_iterator(fun_iter);
-    fun_vidi = bat_iterator(fun_vid);
-    fun_kindi = bat_iterator(fun_kind);
-    for (p_vid  = BUNfirst(fun_vid),  p_iter = BUNfirst(fun_iter),
-         p_item = BUNfirst(fun_item), p_kind = BUNfirst(fun_kind);
-
-         p_vid  < BUNlast(fun_vid)  && p_iter < BUNlast(fun_iter) &&
-         p_item < BUNlast(fun_item) && p_kind < BUNlast(fun_kind);
-
-         p_vid++, p_iter++, p_item++, p_kind++) {
-
-        i = *(oid*) BUNtail(fun_iteri, p_iter);
-        a = *(oid*) BUNtail(fun_vidi,  p_vid);
+    for (cnt = 0; cnt < BATcount(fun_vid); cnt++){
+        i = fiter_lst[cnt];
+        a = fvid_lst[cnt];
         argcnt[i-1][a]++;
-        nr_args++;
     }
-    nr_args = 0;
+
+    /* soap env header and xrpc request header */
+    ret = stream_printf(bs, XRPC_HEADER, SOAP_NS, XRPC_NS, XDT_NS,
+            XS_NS, XSI_NS, XRPC_NS, XRPC_LOC, rpc_module, rpc_uri,
+            rpc_method, arity, iterc, updCall?"true":"false");
+    assert(ret > 0);
+
+    if(qid && *qid) { /* an XRPC query that requires 2PC */
+        char *ts = strrchr(qid, '|'); assert(ts);
+        /* temporarily cut-off 'timestamp' by replacing '|' with '\0' */
+        ts[0] = '\0'; ts++;
+
+        ret = stream_printf(bs,
+                "<xrpc:queryID xrpc:host=\"%s\" xrpc:timestamp=\"%s\" xrpc:timeout=\""LLFMT"\" />",
+                qid, ts, timeout);
+        assert(ret > 0);
+        --ts; ts[0] = '|'; /* undo changes in qid */
+    }
 
     for (my_iter = 0; my_iter < iterc; my_iter++) {
-        if (argc == 0) {
-            str2buf(b, "<xrpc:call/>");
+        if (arity == 0) {
+            assert(stream_write(bs, "<xrpc:call/>", 1, 12) == 12);
             continue;
         }
 
-        str2buf(b, "<xrpc:call>"); /* start an iteration */
-        for (my_argc = 0; my_argc < argc; my_argc++) {
+        assert(stream_write(bs, "<xrpc:call>", 1, 11) == 11); /* start an iteration */
+        for (my_argc = 0; my_argc < arity; my_argc++) {
             if (argcnt[my_iter][my_argc] == 0) {
-                str2buf(b, "<xrpc:sequence/>");
+                assert(stream_write(bs, "<xrpc:sequence/>", 1, 16) == 16);
                 continue;
             }
             arg_offset = 0;
@@ -1115,84 +1160,64 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
             /* now 'arg_offset' contains the start position of the
              * values of my_iter and my_argc in the fun_* BATs */
 
-            str2buf(b, "<xrpc:sequence>"); /* start a parameter */
+            assert(stream_write(bs, "<xrpc:sequence>", 1, 15) == 15); /* start a parameter */
             int k;
+            chr elem_kind = 0;
+            oid item = 0;
+            int cmbn_cont_kind = 0, cur_kind = 0, contID = 0;
             for (k= 0; k < argcnt[my_iter][my_argc]; k++) {
-                int cmbn_cont_kind = 0, cur_kind = 0, contID = 0;
-                chr elem_kind = 0;
-                oid item;
-
-                /* Enlarge the buffer if it is filled more than 80%. */
-                if (b->pos > (b->len * 0.8)) {
-                    b->len *= 2;
-                    char *bptr = realloc(b->buf, b->len);
-                    if (!bptr) {
-                        GDKerror("CMDhttp_post: failed to allocate "
-                                 "larger message buffer.\n");
-                        clean_up(sock, out, bs, b, argcnt, iterc);
-                        return GDK_FAIL;
-                    }
-                    b->buf = bptr;
-                }
 
                 a = arg_offset + k; /* index into fun_item|fun_kind */
-                item = *(oid*)BUNtail(fun_itemi, a);
-                cmbn_cont_kind = *(int*)BUNtail(fun_kindi, a);
+                item = fitem_lst[a];
+                cmbn_cont_kind = fkind_lst[a];
                 cur_kind = XTRACT_KIND(cmbn_cont_kind);
+                contID = XTRACT_CONT(cmbn_cont_kind);
 
                 switch (cur_kind) {
                     case BOOL:
-                        value2buf(b, fun_item, a, TYPE_bit, int_values,
-                                "<xrpc:atomic-value xsi:type=\"xs:boolean\">",
-                                "</xrpc:atomic-value>");
+                        ret = stream_printf(bs,
+                                "<xrpc:atomic-value xsi:type=\"xs:boolean\">%s</xrpc:atomic-value>",
+                                intVals[item] == TRUE ? "true" : "false");
+                        assert(ret > 0);
                         break;
                     case INT:
-                        value2buf(b, fun_item, a, TYPE_lng, int_values,
-                                "<xrpc:atomic-value xsi:type=\"xs:integer\">",
-                                "</xrpc:atomic-value>");
+                        ret = stream_printf(bs,
+                                "<xrpc:atomic-value xsi:type=\"xs:integer\">%lld</xrpc:atomic-value>",
+                                intVals[item]);
+                        assert(ret > 0);
                         break;
                     case DEC:
-                        value2buf(b, fun_item, a, TYPE_dbl, dbl_values,
-                                "<xrpc:atomic-value xsi:type=\"xs:decimal\">",
-                                "</xrpc:atomic-value>");
+                        ret = stream_printf(bs,
+                                "<xrpc:atomic-value xsi:type=\"xs:decimal\">%f</xrpc:atomic-value>",
+                                dblVals[item]);
+                        assert(ret > 0);
                         break;
                     case DBL:
-                        value2buf(b, fun_item, a, TYPE_dbl, dbl_values,
-                                "<xrpc:atomic-value xsi:type=\"xs:double\">",
-                                "</xrpc:atomic-value>");
+                        ret = stream_printf(bs,
+                                "<xrpc:atomic-value xsi:type=\"xs:double\">%f</xrpc:atomic-value>",
+                                dblVals[item]);
+                        assert(ret > 0);
                         break;
                     case STR:
-                        i = *(oid*)BUNtail(fun_itemi, a);
-                        bi.b = str_values;
-                        str_val = BUNtail(bi, i);
-                        b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
-                                        "<xrpc:atomic-value xsi:type=\"xs:string\">%s"
-                                        "</xrpc:atomic-value>", str_val);
-                        break;
                     case U_A:
-                        i = *(oid*)BUNtail(fun_itemi, a);
-                        bi.b = str_values;
-                        str_val = BUNtail(bi, i);
-                        b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
-                                        "<xrpc:atomic-value "
-                                        "xsi:type=\"xs:string\">"
-                                        "%s</xrpc:atomic-value>",
-                                        str_val);
+                        ret = stream_printf(bs,
+                                "<xrpc:atomic-value xsi:type=\"xs:string\">%s</xrpc:atomic-value>",
+                                (char*)BUNtail(strValsi, item));
+                        assert(ret > 0);
                         break;
                     case ATTR:
                     {
-                        str2buf(b, "<xrpc:attribute");
                         contID = XTRACT_CONT(cmbn_cont_kind);
 
-                        attr_qn   = getWsBAT(ws, contID, ATTR_QN);
-                        attr_prop = getWsBAT(ws, contID, ATTR_PROP);
-                        prop_val  = getWsBAT(ws, contID, PROP_VAL);
-                        qn_prefix = getWsBAT(ws, contID, QN_PREFIX);
-                        qn_loc    = getWsBAT(ws, contID, QN_LOC);
+                        attr_qn   = getBatFromContainer(ws, ATTR_QN, contID);
+                        attr_prop = getBatFromContainer(ws, ATTR_PROP, contID);
+                        prop_val  = getBatFromContainer(ws, PROP_VAL, contID);
+                        qn_prefix = getBatFromContainer(ws, QN_PREFIX, contID);
+                        qn_loc    = getBatFromContainer(ws, QN_LOC, contID);
                         if( (!attr_qn) || (!attr_prop) || (!prop_val) ||
                             (!qn_prefix) || (!qn_loc) ){
-                            clean_up(sock, out, bs, b, argcnt, iterc);
-                            return GDK_FAIL;
+                            clean_up(bs, argcnt, iterc);
+                            return NULL;
                         }
 
                         BATiter attr_qni = bat_iterator(attr_qn);
@@ -1208,15 +1233,13 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                         a = *(oid*)BUNtail(attr_propi, i);
                         char *attr_val = (char*)BUNtail(prop_vali, a);
 
-                        str2buf(b, " ");
+                        assert(stream_write(bs, "<xrpc:attribute ", 1, 16) == 16);
                         if (prefix && *prefix){
-                            str2buf(b, prefix);
-                            str2buf(b, ":");
+                            ret = stream_printf(bs, "%s:", prefix);
+                            assert(ret > 0);
                         }
-                        str2buf(b, loc);
-                        str2buf(b, "=\"");
-                        str2buf(b, attr_val);
-                        str2buf(b, "\"/>");
+                        ret = stream_printf(bs, "%s=\"%s\"/>", loc, attr_val);
+                        assert(ret > 0);
                         break;
                     }
                     case ELEM:
@@ -1224,21 +1247,26 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                         contID = XTRACT_CONT(cmbn_cont_kind);
                         elem_kind = getELEMkind(ws, contID, item);
                         if (elem_kind == GDK_chr_min) {
-                            clean_up(sock, out, bs, b, argcnt, iterc);
-                            return GDK_FAIL;
+                            clean_up(bs, argcnt, iterc);
+                            return NULL;
                         }
                         switch(elem_kind) {
-                            case 0: str2buf(b, "<xrpc:element>");                break;
-                            case 1: str2buf(b, "<xrpc:text>");                   break;
-                            case 2: str2buf(b, "<xrpc:comment>");                break;
-                            case 3: str2buf(b, "<xrpc:processing-instruction>"); break;
-                            case 4: str2buf(b, "<xrpc:document>");               break;
+                            case 0: assert(stream_write(bs, "<xrpc:element>", 1, 14) == 14);
+                                    break;
+                            case 1: assert(stream_write(bs, "<xrpc:text>", 1, 11) == 11);
+                                    break;
+                            case 2: assert(stream_write(bs, "<xrpc:comment>", 1, 14) == 14);
+                                    break;
+                            case 3: assert(stream_write(bs, "<xrpc:processing-instruction>", 1, 29) == 29);
+                                    break;
+                            case 4: assert(stream_write(bs, "<xrpc:document>", 1, 15) == 15);
+                                    break;
                             case 5: /* COLLECTION: nothing to be done, here */   break;
                             default:
-                                GDKerror("CMDhttp_post: call%d/sequence%d/item%d has "
+                                GDKerror("byvalue_request: call%d/sequence%d/item%d has "
                                         "invalid type %d\n", my_iter, my_argc, i);
-                                clean_up(sock, out, bs, b, argcnt, iterc);
-                                return GDK_FAIL;
+                                clean_up(bs, argcnt, iterc);
+                                return NULL;
                         }
                         /* print body of the node */
                         node_item = BUNins( BATnew(TYPE_void, TYPE_oid, 1),
@@ -1247,12 +1275,6 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                         node_kind = BUNins( BATnew(TYPE_void, TYPE_int, 1),
                                             BUNhead(fun_kindi, a),
                                             BUNtail(fun_kindi, a), FALSE );
-                        if (!(bs = buffer_wastream(b, "shred_element"))) {
-                            GDKerror("CMDhttp_post: failed to create buffer_wastream to "
-                                    "shred element parameter\n");
-                            clean_up(sock, out, bs, b, argcnt, iterc);
-                            return GDK_FAIL;
-                        }
                         xquery_print_result_driver(bs,
                                 "xml-noheader-noroot", NULL, NULL, NULL, NULL,
                                 ws, 1,
@@ -1260,54 +1282,135 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                                 int_values, dbl_values, str_values);
 
                         if(BBPreclaim(node_item) == -1){
-                            GDKerror("CMDhttp_post: failed to destroy "
-                                    "BAT \"node_item\", because it is in "
-                                    "use by other process!");
+                            GDKerror("byvalue_request: failed to destroy BAT \"node_item\", "
+                                    "because it is in use by other process!");
                             GDKerror("THIS SHOULD NEVER HAPPEN!!!");
-                            clean_up(sock, out, bs, b, argcnt, iterc);
-                            return GDK_FAIL;
+                            clean_up(bs, argcnt, iterc);
+                            return NULL;
                         }
 
                         if(BBPreclaim(node_kind) == -1){
-                            GDKerror("CMDhttp_post: failed to destroy "
-                                    "BAT \"node_item\", because it is in "
-                                    "use by other process!");
+                            GDKerror("byvalue_request: failed to destroy BAT \"node_item\", "
+                                    "because it is in use by other process!");
                             GDKerror("THIS SHOULD NEVER HAPPEN!!!");
-                            clean_up(sock, out, bs, b, argcnt, iterc);
-                            return GDK_FAIL;
+                            clean_up(bs, argcnt, iterc);
+                            return NULL;
                         }
 
                         switch(elem_kind) {
-                            case 0: str2buf(b, "</xrpc:element>");                break;
-                            case 1: str2buf(b, "</xrpc:text>");                   break;
-                            case 2: str2buf(b, "</xrpc:comment>");                break;
-                            case 3: str2buf(b, "</xrpc:processing-instruction>"); break;
-                            case 4: str2buf(b, "</xrpc:document>");               break;
+                            case 0: assert(stream_write(bs, "</xrpc:element>", 1, 15) == 15);
+                                    break;
+                            case 1: assert(stream_write(bs, "</xrpc:text>", 1, 12) == 12);
+                                    break;
+                            case 2: assert(stream_write(bs, "</xrpc:comment>", 1, 15) == 15);
+                                    break;
+                            case 3: assert(stream_write(bs, "</xrpc:processing-instruction>", 1, 30) == 30);
+                                    break;
+                            case 4: assert(stream_write(bs, "</xrpc:document>", 1, 16) == 16);
+                                    break;
                             case 5: /* COLLECTION: nothing to be done, here */    break;
                             default:
-                                GDKerror("CMDhttp_post: should have never reached here!");
-                                clean_up(sock, out, bs, b, argcnt, iterc);
-                                return GDK_FAIL;
+                                GDKerror("byvalue_request: should have never reached here!");
+                                clean_up(bs, argcnt, iterc);
+                                return NULL;
                         }
                     }   break;
                     default:
-                        GDKerror("CMDhttp_post: call%d/sequence%d/item%d has invalid type %d\n",
+                        GDKerror("byvalue_request: call%d/sequence%d/item%d has invalid type %d\n",
                                 my_iter, my_argc, i);
-                        clean_up(sock, out, bs, b, argcnt, iterc);
-                        return GDK_FAIL;
+                        clean_up(bs, argcnt, iterc);
+                        return NULL;
                 }
             }
-            str2buf(b, "</xrpc:sequence>");
+            assert(stream_write(bs, "</xrpc:sequence>", 1, 16) == 16);
         }
-        str2buf(b, "</xrpc:call>");
+        assert(stream_write(bs, "</xrpc:call>", 1, 12) == 12);
     }
-    str2buf(b, XRPC_FOOTER);
-    b->buf[b->pos] = 0;
+    assert(stream_write(bs, "</xrpc:request></env:Body></env:Envelope>\n", 1, 42) == 42);
     /* Stop timing Client Serialisation */
     time_xrpcClntSeria = GDKusec() - time_xrpcClntSeria;
+    if (timing) {
+        stream_printf(GDKout,
+                "XRPC_Client_Serialisation (create_req_msg):   " LLFMT " microsec\n",
+                time_xrpcClntSeria);
+    }
+
+    return stream_get_buffer(bs);
+}
+
+static int
+add_xrpc_hosts(
+        BAT *shredBAT,
+        BAT *ws)
+{
+    (void) shredBAT;
+    (void) ws;
+
+    return GDK_SUCCEED;
+}
+
+
+int
+CMDhttp_post(
+        BAT **res,
+        str options,
+        str qid,
+        lng *timeout,
+        str dst,
+        str rpc_module,
+        str rpc_uri,
+        str rpc_method,
+        bool *updCall,
+        lng *arity,
+        lng *itercnt,
+        BAT *ws,
+        BAT *fun_vid,
+        BAT *fun_iter,
+        BAT *fun_item,
+        BAT *fun_kind,
+        BAT *int_values,
+        BAT *dbl_values,
+        BAT *dec_values,
+        BAT *str_values)
+{
+    int sock = -1, port = -1;
+    stream *in = NULL, *out = NULL;
+    buffer *req = NULL;
+    size_t bytes_sent = 0;
+    BAT *shredBAT = NULL;
+    bool timing = (options && strstr(options, "timing")) ? TRUE : FALSE;
+
+    ERRORcheck((*itercnt) < 0, "CMDhttp_post: itercnt must not be negative (<0).\n");
+    ERRORcheck((*arity) < 0, "CMDhttp_post: arity must not be negative (<0).\n");
+    ERRORcheck(!BAThdense(ws), "CMDhttp_post: head of 'ws' must be dense.\n");
+    ERRORcheck(!BAThdense(fun_vid), "CMDhttp_post: head of 'fun_vid' must be dense.\n");
+    ERRORcheck(!BAThdense(fun_iter), "CMDhttp_post: head of 'fun_iter' must be dense.\n");
+    ERRORcheck(!BAThdense(fun_item), "CMDhttp_post: head of 'fun_item' must be dense.\n");
+    ERRORcheck(!BAThdense(fun_kind), "CMDhttp_post: head of 'fun_kind' must be dense.\n");
+    ERRORcheck(!BAThdense(int_values), "CMDhttp_post: head of 'int_values' must be dense.\n");
+    ERRORcheck(!BAThdense(dbl_values), "CMDhttp_post: head of 'dbl_values' must be dense.\n");
+    ERRORcheck(!BAThdense(dec_values), "CMDhttp_post: head of 'dec_values' must be dense.\n");
+    ERRORcheck(!BAThdense(str_values), "CMDhttp_post: head of 'str_values' must be dense.\n");
+
+    if ((sock = setup_connection(dst, &port)) < 0)
+        return GDK_FAIL;
+    if (!(out = socket_wastream(sock, "http_send"))) {
+        GDKerror("do_simple_query: failed to create socket_wastream for sending XRPC request\n");
+        close(sock);
+        return GDK_FAIL;
+    }
+
+    if(!(req = byvalue_request(timing, qid, *timeout, rpc_module, rpc_uri, rpc_method,
+                    *updCall, *arity, *itercnt, ws, fun_vid, fun_iter,
+                    fun_item, fun_kind, int_values, dbl_values,
+                    dec_values, str_values))){
+        stream_close(out); stream_destroy(out);
+        return GDK_FAIL;
+    }
+    req->buf[req->pos] = '\0';
 
     /* Start timing Network Send Client2Server */
-    time_xrpcClnt2Serv = GDKusec();
+    lng time_xrpcClnt2Serv = GDKusec();
     bytes_sent = stream_printf(out,
             "POST %s HTTP/1.1\r\n"
             "Host: %s:%d\r\n"
@@ -1316,32 +1419,42 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
             "Content-Type: text/html; charset=\"utf-8\"\r\n"
             "Content-Length: " SZFMT "\r\n\r\n"
             "%s",
-            XRPC_REQ_CALLBACK, dst, port, b->pos, b->buf);
-    if (bytes_sent < b->pos) {
-        GDKerror("CMDhttp_post: failed to send XRPC request.");
-        clean_up(sock, out, bs, b, argcnt, iterc);
+            XRPC_REQ_CALLBACK, dst, port, req->pos, req->buf);
+    if (bytes_sent < req->pos) {
+        GDKerror("do_simple_query: failed to send XRPC request.");
+        stream_close(out); stream_destroy(out);
+        buffer_destroy(req);
+        close(sock);
         return GDK_FAIL;
     }
     /* Stop timing Network Send Client2Server */
     time_xrpcClnt2Serv= GDKusec() - time_xrpcClnt2Serv;
-
-    shredBAT = response2bat(sock, dst, port, b, *updCall, &time_xrpcClntDeSeria);
-    clean_up(-1, out, bs, b, argcnt, iterc);
-
-    if (options && strstr(options, "timing")) {
+    if (timing) {
         stream_printf(GDKout,
-                "XRPC_Client_Serialisation (create_req_msg):   " LLFMT " microsec\n"
                 "XRPC_Network_Client_2_Server:  " LLFMT " microsec\n"
-                "XRPC_Data_Sent:                " SZFMT " bytes\n\n"
-                "XRPC_Client_DeSerialisation (response2bat):   " LLFMT " microsec\n",
-                time_xrpcClntSeria,
+                "XRPC_Data_Sent:                " SZFMT " bytes\n\n",
                 time_xrpcClnt2Serv,
-                bytes_sent,
-                time_xrpcClntDeSeria);
+                bytes_sent);
     }
 
-    if(!shredBAT)
+    if( !(in = socket_rastream(sock, "http_receive")) ){
+        GDKerror("do_simple_query: failed to create socket_rastream\n");
         return GDK_FAIL;
+    }
+    shredBAT = response2bat(timing, in, dst, port, *updCall);
+
+    stream_close(out); stream_destroy(out);
+    stream_close(in); stream_destroy(in);
+    buffer_destroy(req);
+
+    if(!shredBAT) return GDK_FAIL;
+
+    if(qid && *qid) {
+        if(add_xrpc_hosts(shredBAT, ws) == GDK_FAIL) {
+            BBPreclaim(shredBAT);
+            return GDK_FAIL;
+        }
+    }
 
     *res = shredBAT;
     return GDK_SUCCEED;

@@ -94,6 +94,7 @@ module(mapi);       # remote client access
 module(pf_support);
 module(logger);
 module(mkey);
+module(xrpc_common);
 module(xrpc_server);
 module(xrpc_client);
 module(pf_standoff);
@@ -340,29 +341,30 @@ concurrent updates.
 @:ws_@1(CONT_NAME,         41, void, str, void, void, oid_nil)@
 @:ws_@1(CONT_RUNTIME,      42, void, bat, void, void, oid_nil)@
 @:ws_@1(CONT_LOCKED,       43, void, lock,void, void, oid_nil)@
+@:ws_@1(XRPC_SUCCESSOR,    44, void, str, void, void, oid_nil)@
 
-@:ws_@1(_MAP_PID,          44, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_RID_SIZE,         45, void, bat, void,  int, PRE_BASE)@
-@:ws_@1(_RID_LEVEL,        46, void, bat, void,  chr, PRE_BASE)@
-@:ws_@1(_RID_PROP,         47, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_RID_KIND,         48, void, bat, void,  chr, PRE_BASE)@
-@:ws_@1(_RID_NID,          49, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_NID_RID,          50, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_FRAG_ROOT,        51, void, bat,  oid,  oid, oid_nil)@
-@:ws_@1(_QN_HISTOGRAM,     52, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_PREFIX_URI_LOC,53, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_URI_LOC,       54, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_PREFIX,        55, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_URI,           56, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_QN_LOC,           57, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_TEXT,        58, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_COM,         59, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_INS,         60, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_TGT,         61, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_PROP_VAL,         62, void, bat, void,  str, PRE_BASE)@
-@:ws_@1(_ATTR_OWN,         63, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_ATTR_QN,          64, void, bat, void,  oid, PRE_BASE)@
-@:ws_@1(_ATTR_PROP,        65, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_MAP_PID,          45, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_RID_SIZE,         46, void, bat, void,  int, PRE_BASE)@
+@:ws_@1(_RID_LEVEL,        47, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_PROP,         48, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_RID_KIND,         49, void, bat, void,  chr, PRE_BASE)@
+@:ws_@1(_RID_NID,          50, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_NID_RID,          51, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_FRAG_ROOT,        52, void, bat,  oid,  oid, oid_nil)@
+@:ws_@1(_QN_HISTOGRAM,     53, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_PREFIX_URI_LOC,54, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_URI_LOC,       55, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_PREFIX,        56, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_URI,           57, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_QN_LOC,           58, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_TEXT,        59, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_COM,         60, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_INS,         61, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_TGT,         62, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_PROP_VAL,         63, void, bat, void,  str, PRE_BASE)@
+@:ws_@1(_ATTR_OWN,         64, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_ATTR_QN,          65, void, bat, void,  oid, PRE_BASE)@
+@:ws_@1(_ATTR_PROP,        66, void, bat, void,  oid, PRE_BASE)@
 @-
 The bottom segment are the master copies of the top segment.
 The middle segment is private to the query.
@@ -372,7 +374,7 @@ BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 BEWARE: the logger version number below needs to be incremented whenever the working set schema is changed.
 
 @= ws_decl
-@:ws_@1_decl(WS_SIZE, 66)@
+@:ws_@1_decl(WS_SIZE, 67)@
 @:ws_@1_decl(QNAME,    2)@
 @:ws_@1_decl(BOOL,     3)@
 @:ws_@1_decl(INT,      4)@
@@ -394,7 +396,7 @@ const @1 := @2@8;
 @:ws_decl(mil)@
 
 # logger version number, needs to be incremented whenever the working set schema is changed
-const LOGGER_VERSION := 1;
+const LOGGER_VERSION := 2;
 
 # KIND constants, carefully chosen
 # atomic value items can be retrieved with 'kind.select(int_nil,ATOMIC)'
@@ -568,7 +570,7 @@ var pf_collbarrier_lock := lock_create(); # proptector for shortlock_barrier bat
 # there is just a global lock for this.
 var pf_extend := pflock_get(3); # protects the counter
 var pf_extend_cnt := 0; # counter is used by nonexclusive acces (first gets barrier, last releases)
-var pf_extend_barrier := sema(ptr(pflock_get(4))); # the barrier
+var pf_extend_barrier := sema(ptr(pflock_get(9))); # the barrier
 
 # master bat *UPDATES* must be protected against checkpoints (global BBP subcommits + log restart)
 # master updates take a non-exclusive pf_chkpt lock; pf_checkpoint() takes an exclusive access
@@ -633,6 +635,11 @@ PROC pf_checkpoint(BAT[void,str] commitBAT) : bit
     commitBAT.append("doc_collection");
     commitBAT.append("doc_timestamp");
     commitBAT.append("uri_lifetime");
+    commitBAT.append("xrpc_qids");
+    commitBAT.append("xrpc_wsids");
+    commitBAT.append("xrpc_timeouts");
+    commitBAT.append("xrpc_locks");
+    commitBAT.append("xrpc_statuss");
     var ok := false;
     lock_set(pf_wal);
     var err := CATCH(ok := subcommit(commitBAT));
@@ -710,6 +717,14 @@ var doc_undo := bat(oid,lng).rename("doc_undo");
 
 var uri_lifetime;     # caching rules
 
+# meta-data BATs for multi-request XRPC transactions
+var xrpc_qids;        # bat[void,str] query-id (host|timestamp)
+var xrpc_timeouts;    # bat[void,lng] query timeout in msec
+var xrpc_wsids;       # bat[void,lng] ID of the workingset associated with this query
+var xrpc_locks;       # bat[void,lock] lock for the workingset of this query 
+var xrpc_statuss;     # bat[void,str] 2PC status of this query: "exec", "prepare", "commit" or "abort"
+var xrpclock := pflock_get(6); # master XRPC lock, to protect above xrpc_* BATs
+
 # initialize persistent bats (use BBP as global mechanism to discover initialization)
 if (isnil(CATCH(bat("doc_name").count()))) {
     collection_name  := bat("collection_name");
@@ -719,6 +734,11 @@ if (isnil(CATCH(bat("doc_name").count()))) {
     doc_location     := bat("doc_location");
     doc_timestamp    := bat("doc_timestamp");
     uri_lifetime     := bat("uri_lifetime");
+    xrpc_qids        := bat("xrpc_qids");
+    xrpc_timeouts    := bat("xrpc_timeouts");
+    xrpc_wsids       := bat("xrpc_wsids");
+    xrpc_locks       := bat("xrpc_locks");
+    xrpc_statuss     := bat("xrpc_statuss");
 
     # check that this database was created with a compatible pagesize as requested now
     var pagebits := 16; 
@@ -734,6 +754,11 @@ if (isnil(CATCH(bat("doc_name").count()))) {
     doc_location    := new(oid,str).persists(true).rename("doc_location");
     doc_timestamp   := new(oid,timestamp).persists(true).rename("doc_timestamp");
     uri_lifetime    := new(str,lng).insert("tmp", 1LL).persists(true).rename("uri_lifetime");
+    xrpc_qids       := new(void,str).seqbase(0@0).persists(true).rename("xrpc_qids");
+    xrpc_timeouts   := new(void,lng).seqbase(0@0).persists(true).rename("xrpc_timeouts");
+    xrpc_wsids      := new(void,lng).seqbase(0@0).persists(true).rename("xrpc_wsids");
+    xrpc_locks      := new(void,lock).seqbase(0@0).persists(true).rename("xrpc_locks");
+    xrpc_statuss    := new(void,str).seqbase(0@0).persists(true).rename("xrpc_statuss");
     doc_collection.insert(DOCID_CURID_HACK, DOCID_MIN); # hack: store next oid as in invalid tuple
     doc_collection.insert(DOCID_PGBIT_HACK, oid(REMAP_PAGE_BITS)); # hack: store pagesize also
     pf_checkpoint(bat(void,str).append("uri_lifetime"));
@@ -4016,7 +4041,7 @@ fork(pf_logmanager());            # start checkpointing thread
 
 /* exports for XRPC */
 pathfinder_export void  xquery_client_engine(mapi_client*);
-pathfinder_export char* xquery_method(mapi_client*, int, char*, char*, char*, lng, lng, lng**, str*, str*, BAT*);
+pathfinder_export char* xquery_method(mapi_client*, int, char*, lng, char*, char*, char*, lng, lng, lng**, str*, str*, BAT*);
 pathfinder_export void  xquery_client_end(mapi_client *, char *); 
 
 #endif
@@ -4494,7 +4519,7 @@ xquery_compile_exec(xquery_client *ctx,
  * - resolve a method call in the current xquery context (return NULL if not resolved)
  *
  * char*
- * xquery_function_call(xquery_client *ctx, lng usec, char *ns, char *method, 
+ * xquery_function_call(xquery_client *ctx, lng usec, char* qid, lng timeout, char *ns, char *method, 
  *                      int argc, int itercnt, int** argcnt, char** argtpe, char** argval, BAT *shredBAT)
  * - call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).
  *   otherwise generate MIL yourself, interpret it (and cache it). Returns error string (NULL if ok).
@@ -4664,6 +4689,8 @@ static char xquery_function_error[80] = "xquery_method: error during execution.\
 static char* 
 xquery_function_call(xquery_client *ctx, 
                      lng usec, 
+                     char *qid,
+                     lng timeout,
                      char *ns, 
                      char *method, 
                      lng argc, 
@@ -4717,11 +4744,16 @@ xquery_function_call(xquery_client *ctx,
     if (fun->mil == NULL) {
         MT_set_lock(pf_cache_lock, "xquery_function_call");
         if (fun->mil == NULL) {
-            /* create working set */
             int ret;
- 
-            src = (char*) PFstartMIL(fun->sig->update);
-            while(*src && cur < end) *cur++ = *src++;
+
+            /* create working set */
+            if(qid && *qid) { /* multi-request XRPC transaction */
+                ret = PFstartMIL_XRPCTrans(cur, XQUERY_BUFSIZE-(cur-mil), fun->sig->update, qid, timeout);
+                if(ret > 0) cur += ret;
+            } else {
+                src = (char*) PFstartMIL(fun->sig->update);
+                while(*src && cur < end) *cur++ = *src++;
+            }
 
             if (shredBAT) {
                 /* add shredded RPC request message to the working set */
@@ -4737,7 +4769,11 @@ xquery_function_call(xquery_client *ctx,
             if (ret > 0) cur += ret;
 
             /* destroy working set */
-            ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil), PFstopMIL(fun->sig->update));
+            if(qid && *qid){ /* multi-request XRPC transaction */
+                ret = PFstopMIL_XRPCTrans(cur, XQUERY_BUFSIZE-(cur-mil), fun->sig->update, qid);
+            } else {
+                ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil), PFstopMIL(fun->sig->update));
+            }
             mil[XQUERY_BUFSIZE - 1] = 0;
             if (ret > 0) cur += ret;
 
@@ -4848,7 +4884,7 @@ xquery_function_call(xquery_client *ctx,
         stream_write(ctx->fderr, fun->mil, strlen(fun->mil), 1);
     }
 
-    /* set the MIL shredBAT and getType variables to the actual values */
+    /* set the MIL shredBAT and genType variables to the actual values */
     ctx->shredBAT[0] = shredBAT?shredBAT->batCacheid:0;
     *(ctx->time_compile) = GDKusec() - usec;
     
@@ -5731,7 +5767,7 @@ xquery_prepare(xquery_client *ctx,
                     lng* cnt_ptr = cnt;
                     char nsbak = *nsend, locbak = *locend;
                     *nsend = 0; *locend = 0;
-                    err = xquery_function_call(ctx, usec, ns, loc, argc, 1, &cnt_ptr, tpe, param, NULL);
+                    err = xquery_function_call(ctx, usec, NULL, 0, ns, loc, argc, 1, &cnt_ptr, tpe, param, NULL);
                     *nsend = nsbak; *locend = locbak;
                 }
             }
@@ -6065,6 +6101,7 @@ CMDxquery_logger_create( logger *L, int *debug, str fn, str dirname, str dbname,
 
 /* xquery_method : execute a loop-lifted xquery function
  *
+ * flags         = 1: timing, 2: serialization mode, 4: debug
  * argc          = #params
  * itercnt       = #iterations
  * argcnt[iter]  = #items per param
@@ -6079,6 +6116,8 @@ CMDxquery_logger_create( logger *L, int *debug, str fn, str dirname, str dbname,
 char*
 xquery_method(mapi_client *mc,
               int flags,
+              char* qid,
+              lng timeout,
               char* module,
               char* uri,
               char* method,
@@ -6106,8 +6145,7 @@ xquery_method(mapi_client *mc,
     err = xquery_change_genType(ctx, mode);
     if (err) return err;
 
-    if (argc >= 1000) {
-        /* hack: pass argc+1000 and you get debug output */
+    if (flags&4) { /* write debug output */
         s = open_wastream("/tmp/xrpc.mil");
         char *prologue = (char*) PFinitMIL();
         if (s) {
@@ -6115,14 +6153,13 @@ xquery_method(mapi_client *mc,
             ctx->mode |= XQ_DEBUG;
         }
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);
-        argc = argc % 1000;
     }
     if (err == NULL && module){
         err = xquery_module_load(ctx, ns="xrpc", module, uri); 
     }
 
     if (err == NULL) { 
-        err = xquery_function_call(ctx, usec, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
+        err = xquery_function_call(ctx, usec, qid, timeout, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
         if (err == (char*) -1) err = "xquery_method: function could not be resolved.\n";
         else if (err == xquery_function_error) err = xquery_nondescriptive_error;
     }

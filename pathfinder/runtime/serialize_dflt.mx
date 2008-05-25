@@ -40,7 +40,7 @@
 /* contains dummy callback functions */
 #include "serialize_null.h"
 #include "pathfinder.h"
-#include "xrpc_common.h"
+#include "xrpc_common.h" /* *_NS defs, check_timeout_by_idx() */
 
 /* a lot of characters, static strings, and their sizes 
    (the idea is to reuse constant character pointers during
@@ -996,23 +996,147 @@ typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
     return SUCCESS;
 }
 
+static bool
+xrpc_serializeQID(XqueryCtx *ctx, char *qid_idx)
+{
+    MT_Lock *xrpclock = NULL;
+    int xrpclock_idx = XRPCLOCK_IDX, ret = 0;
+    BAT *xrpc_qids = NULL, *xrpc_timeouts = NULL;
+    BATiter qidi, toi;
+    char *qid = NULL, *ts = NULL;
+    lng timeout = 0;
+    BUN bun_qid = BUN_NONE, bun_to = BUN_NONE;
+    oid idx = oid_nil;
+
+    if(CMDpflock_get((ptr)&xrpclock, &xrpclock_idx) == GDK_FAIL)
+        return PROBLEM;
+
+    MT_lock_set(xrpclock, "xrpc_serializeQID");
+    if((xrpc_qids = BATdescriptor(BBPindex("xrpc_qids")))) {
+        if((xrpc_timeouts = BATdescriptor(BBPindex("xrpc_timeouts")))) {
+            errno = 0;
+            ret = strtol(qid_idx, NULL, 10);
+            if(errno) {
+                GDKerror(strerror(errno));
+                goto err_ret;
+            }
+            
+            idx = (oid) ret;
+            qidi = bat_iterator(xrpc_qids);
+            toi = bat_iterator(xrpc_timeouts);
+            BUNfndVOID(bun_qid, qidi, &idx);
+            BUNfndVOID(bun_to, toi, &idx);
+            if(bun_qid == BUN_NONE || bun_to == BUN_NONE)
+                goto err_ret;
+            
+            qid = (char*)BUNtail(qidi, bun_qid);
+            timeout = *(lng*)BUNtail(toi, bun_to);
+            ts = strrchr(qid, '|');  assert(ts);
+            ts[0] = '\0'; ts++; /* separate 'timestamp' from 'host:port' */
+            
+            ret = stream_printf(ctx->out,
+                    "<xrpc:queryID host=\"%s\" timestamp=\"%s\" timeout=\""LLFMT"\"/>",
+                    qid, ts, timeout);
+            
+            ts--; ts[0] = '|';
+
+            if(ret < 0) goto err_ret;
+            BBPunfix(BBPcacheid(xrpc_qids));
+            BBPunfix(BBPcacheid(xrpc_timeouts));
+            MT_lock_unset(xrpclock, "xrpc_serializeQID");
+            return SUCCESS;
+
+        }
+        BBPunfix(BBPcacheid(xrpc_qids));
+    }
+    MT_lock_unset(xrpclock, "xrpc_serializeQID");
+    return PROBLEM;
+
+err_ret:
+    BBPunfix(BBPcacheid(xrpc_qids));
+    BBPunfix(BBPcacheid(xrpc_timeouts));
+    MT_lock_unset(xrpclock, "xrpc_serializeQID");
+    return PROBLEM;
+}
+
+static bool
+xrpc_serializeSuccessors(XqueryCtx *ctx, BAT *sucsBAT)
+{
+    oid i, cnt = BATcount(sucsBAT);
+    char *host = NULL;
+    BATiter sucsBATi = bat_iterator(sucsBAT);
+
+    if(stream_write(ctx->out, "<xrpc:participants>", 1, 19) != 19)
+        return PROBLEM;
+    for(i = 0; i < cnt; i++){
+        host = (char *) BUNtail(sucsBATi, i);
+        stream_printf(ctx->out, "<xrpc:participant>%s</xrpc:participant>", host);
+    }
+    if(stream_write(ctx->out, "</xrpc:participants>", 1, 20) != 20)
+        return PROBLEM;
+
+    return SUCCESS;
+}
+
 /**
  *  Start serialization of XRPC response message
  */
 static bool
 xrpc_startSerialize(XqueryCtx *ctx)
 {
-    stream_write(ctx->out, "HTTP/1.1 200 OK\r\n"
+    int ret = 0;
+    BUN bun = BUN_NONE;
+    BAT *sucsBAT = NULL;
+    BATiter wsi;
+    oid batID = XRPC_SUCCESSOR, idx = oid_nil;
+    char *name = NULL;
+    
+    /* Check if this XRPC query requires isolation.  If yes, we need to
+     * serialize 'queryID' and 'participants'. */
+    wsi = bat_iterator(ctx->ws);
+    BUNfndOID(bun, wsi, (ptr)&batID);
+    if(bun == BUN_NONE) return PROBLEM;
+    if(!(sucsBAT = BATdescriptor(*(bat*)Tloc(ctx->ws,bun))))
+        return PROBLEM;
+    if(!(name = BBPname(BBPcacheid(sucsBAT)))) {
+        BBPunfix(BBPcacheid(sucsBAT));
+        return PROBLEM;
+    }
+
+    /* check if the query has timed out or not, before printing results */
+    if(strncmp(name, "tmp_", 4) != 0) {
+        errno = 0;
+        idx = (oid) strtol(name, NULL, 10);
+        if(errno) {
+            GDKerror("xrpc_startSerialize: failed to convert the name "
+                    "of the BAT ws[XRPC_SUCCESS] to an oid: %s.\n",
+                    strerror(errno));
+            return PROBLEM;
+        }
+
+        ret = check_timeout_by_idx(idx);
+        if(ret < 0) {
+            return PROBLEM;
+        } else if(ret == 1) {
+            GDKerror("xrpc_startSerialize: xrpc-query timed out\n");
+            return PROBLEM;
+        }
+    }
+
+    ret = stream_write(ctx->out,
+            "HTTP/1.1 200 OK\r\n"
             "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n", 1, 60);
+    if(ret != 60) return PROBLEM;
 
     /* We need to prepend "=" to each line, so make sure
        that we print one after each newline (encoded in
        newline string 'newline')->
        In addition we print one '=' at the beginning-> */
     if (ctx->modes & MODE_MAPI)
-        stream_write (ctx->out, &e_, 1, 1);
+        if((ret = stream_write (ctx->out, &e_, 1, 1)) != 1)
+            return PROBLEM;
 
-    stream_printf(ctx->out, 
+    ret = stream_printf(ctx->out, 
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>%s"
             "<env:Envelope "
             "xmlns:env=\"%s\" "
@@ -1029,7 +1153,20 @@ xrpc_startSerialize(XqueryCtx *ctx)
             XSI_NS,
             XRPC_NS, XRPC_LOC,
             dflt_ws->module, dflt_ws->method);
+    if(ret < 0) return PROBLEM;
 
+    if(strncmp("tmp_", name, 4) != 0) {
+        /* This is a 2PC-XRPC query!  The name of the ws[XRPC_SUCCESS] BAT
+         * encodes where to find the query meta-data in the xrpc_* BATs. */
+
+        if(xrpc_serializeQID(ctx, name) == PROBLEM ||
+           xrpc_serializeSuccessors(ctx, sucsBAT) == PROBLEM) {
+            BBPunfix(BBPcacheid(sucsBAT));
+            return PROBLEM;
+        }
+    }
+    
+    BBPunfix(BBPcacheid(sucsBAT));
     return SUCCESS;
 }
 
