@@ -1016,7 +1016,7 @@ openConnectionTCP(int *ret, unsigned short port)
 
 	server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
 	if (bind(sock, (SOCKPTR) &server, length) < 0) {
-		return(newErr("binding to stream socket port %u failed: %s",
+		return(newErr("binding to stream socket port %hu failed: %s",
 				port, strerror(errno)));
 	}
 
@@ -1052,7 +1052,7 @@ openConnectionUDP(int *ret, unsigned short port)
 	hints.ai_addr = NULL;
 	hints.ai_next = NULL;
 
-	snprintf(sport, 10, "%u", port);
+	snprintf(sport, 10, "%hu", port);
 	sock = getaddrinfo(NULL, sport, &hints, &result);
 	if (sock != 0)
 		return(newErr("failed getting address info: %s", gai_strerror(sock)));
@@ -1069,13 +1069,13 @@ openConnectionUDP(int *ret, unsigned short port)
 	}
 
 	if (rp == NULL)
-		return(newErr("binding to datagram socket port %u failed: "
+		return(newErr("binding to datagram socket port %hu failed: "
 					"no available address", port));
 
 	freeaddrinfo(result);
 
 	gethostname(host, 512);
-	merlog("listening for UDP messages on %s:%d", host, port);
+	merlog("listening for UDP messages on %s:%hu", host, port);
 
 	*ret = sock;
 	return(NO_ERR);
@@ -1297,7 +1297,7 @@ discoveryRunner(void *d)
 				adrlen = sizeof(addr);
 				if (getsockname(sock, &addr, &adrlen) < 0)
 					continue;
-				c = snprintf(buf, 512, "ANNC %s mapi://%s:%u/%s ",
+				c = snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s ",
 						stats->dbname,
 						lhost,
 						ntohs(((struct sockaddr_in *)&addr)->sin_port),
@@ -1333,7 +1333,7 @@ discoveryRunner(void *d)
 			/* LEAVE message, unregister database */
 			sabdb *rdb;
 			sabdb *prv;
-			char **sp;
+			char **sp = NULL;
 			char *dbname;
 			char *conn;
 
@@ -1376,7 +1376,7 @@ discoveryRunner(void *d)
 			/* ANNOUNCE message, register database */
 			sabdb *rdb;
 			sablist *l;
-			char **sp;
+			char **sp = NULL;
 			char *dbname;
 			char *conn;
 			char *scens;
