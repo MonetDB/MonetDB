@@ -1033,7 +1033,7 @@ openConnectionUDP(int *ret, unsigned short port)
 	char host[512];
 
 	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+	hints.ai_family = AF_INET;      /* Allow IPv4 only (broadcasting) */
 	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
 	hints.ai_flags = AI_PASSIVE;    /* For wildcard IP address */
 	hints.ai_protocol = 0;          /* Any protocol */
@@ -1240,10 +1240,41 @@ discoveryRunner(void *d)
 	int s = -1;
 	struct sockaddr_storage peer_addr;
 	socklen_t peer_addr_len;
+
 	ssize_t nread;
 	char buf[512]; /* our packages should be pretty small */
 	char host[128];
 	char service[8];
+
+	/* start shouting around that we're here ;) */
+	{
+		int bcs;
+		struct sockaddr_in brdcst;
+		struct sockaddr local;
+		socklen_t addrlen;
+		size_t len;
+
+		gethostname(host, 128);
+		addrlen = sizeof(local);
+		if (getsockname(sock, &local, &addrlen) < 0) {
+			fprintf(stderr, "neighbour discovery: cannot get own hostname "
+					"discovery services disabled\n");
+			return;
+		}
+
+		bcs = socket(AF_INET, SOCK_DGRAM, 0);
+		brdcst.sin_family = AF_INET;
+		brdcst.sin_addr.s_addr = htonl(INADDR_ANY);
+		/* the target port is our configured port, not elegant, but how
+		 * else can we do it? can't broadcast to all ports or something */
+		brdcst.sin_port = ((struct sockaddr_in *)&local)->sin_port;
+
+		snprintf(buf, 512, "HELO %s", host);
+		len = strlen(buf) + 1;
+		sendto(bcs, buf, len, 0, (struct sockaddr *)&brdcst, sizeof(brdcst));
+
+		close(bcs);
+	}
 
 	while (_keepListening == 1) {
 		MT_sleep_ms(1000); /* don't spin */
