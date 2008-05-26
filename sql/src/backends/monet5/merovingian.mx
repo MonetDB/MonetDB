@@ -1258,7 +1258,6 @@ discoveryRunner(void *d)
 		int c;
 		sabdb *orig;
 		sabdb *stats;
-		sablist *sl;
 		err e;
 
 		addrlen = sizeof(local);
@@ -1278,7 +1277,7 @@ discoveryRunner(void *d)
 		}
 
 		brdcst.sin_family = AF_INET;
-		brdcst.sin_addr.s_addr = htonl(INADDR_ANY);
+		brdcst.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 		/* the target port is our configured port, not elegant, but how
 		 * else can we do it? can't broadcast to all ports or something */
 		brdcst.sin_port = ((struct sockaddr_in *)&local)->sin_port;
@@ -1297,27 +1296,13 @@ discoveryRunner(void *d)
 		orig = stats;
 		while (stats != NULL) {
 			/* craft ANNC messages for each db */
-			c = snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s ",
+			snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s",
 					stats->dbname,
 					lhost,
 					ntohs(((struct sockaddr_in *)&local)->sin_port),
 					stats->dbname);
-			/* build a comma separated list of scenarios */
-			c = 512 - c - 1;
-			sl = stats->scens;
-			while (sl != NULL) {
-				/* intuition says this code could be done much
-				 * better */
-				if (sl != stats->scens)
-					strncat(buf, ",", c--);
-				strncat(buf, stats->scens->val, c);
-				c -= strlen(stats->scens->val);
-				if (c < 0)
-					c = 0;
-				sl = sl->next;
-			}
 
-			c = strlen(buf);
+			c = strlen(buf) + 1;
 			if (sendto(bcs, buf, c, 0,
 						(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
 				fprintf(stderr, "ANNC message: error while sending "
@@ -1331,7 +1316,7 @@ discoveryRunner(void *d)
 
 		/* request others for their databases */
 		snprintf(buf, 512, "HELO %s", lhost);
-		c = strlen(buf);
+		c = strlen(buf) + 1;
 		if (sendto(bcs, buf, c, 0,
 					(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
 			fprintf(stderr, "HELO message: error while sending "
@@ -1369,8 +1354,6 @@ discoveryRunner(void *d)
 			int c;
 			struct sockaddr addr;
 			socklen_t adrlen;
-			char lhost[128];
-			sablist *sl;
 			err e;
 
 			/* list all known databases */
@@ -1380,37 +1363,22 @@ discoveryRunner(void *d)
 				continue;
 			}
 
-			gethostname(lhost, 128);
 			adrlen = sizeof(addr);
 			if (getsockname(sock, &addr, &adrlen) < 0)
 				continue;
 
-			merlog("received HELO from %s", lhost);
+			merlog("received HELO from %s", host);
 
 			orig = stats;
 			while (stats != NULL) {
 				/* craft ANNC messages for each db */
-				c = snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s ",
+				snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s",
 						stats->dbname,
 						lhost,
 						ntohs(((struct sockaddr_in *)&addr)->sin_port),
 						stats->dbname);
-				/* build a comma separated list of scenarios */
-				c = 512 - c - 1;
-				sl = stats->scens;
-				while (sl != NULL) {
-					/* intuition says this code could be done much
-					 * better */
-					if (sl != stats->scens)
-						strncat(buf, ",", c--);
-					strncat(buf, stats->scens->val, c);
-					c -= strlen(stats->scens->val);
-					if (c < 0)
-						c = 0;
-					sl = sl->next;
-				}
 
-				c = strlen(buf);
+				c = strlen(buf) + 1;
 				if (sendto(sock, buf, c, 0,
 							(struct sockaddr *)&peer_addr,
 							peer_addr_len) != c)
@@ -1457,6 +1425,7 @@ discoveryRunner(void *d)
 					} else {
 						prv->next = rdb->next;
 					}
+					rdb->next = NULL; /* avoid recursion */
 					SABAOTHfreeStatus(&rdb);
 					merlog("removed remote database %s at %s (%s)",
 							dbname, conn, host);
@@ -1468,19 +1437,15 @@ discoveryRunner(void *d)
 		} else if (strncmp(buf, "ANNC ", 5) == 0) {
 			/* ANNOUNCE message, register database */
 			sabdb *rdb;
-			sablist *l;
 			char *sp;
 			char *dbname;
 			char *conn;
-			char *scens;
-			char *scen;
 
 			strtok_r(buf, " ", &sp); /* discard the msg type */
 			dbname = strtok_r(NULL, " ", &sp);
 			conn = strtok_r(NULL, " ", &sp);
-			scens = strtok_r(NULL, " ", &sp);
 
-			if (dbname == NULL || conn == NULL || scens == NULL)
+			if (dbname == NULL || conn == NULL)
 				continue;
 
 			if (_merovingian_remotedbs == NULL) {
@@ -1488,10 +1453,14 @@ discoveryRunner(void *d)
 			} else {
 				rdb = _merovingian_remotedbs;
 				while (rdb->next != NULL) {
-					if (strcmp(dbname, rdb->dbname) == 0)
-						continue; /* skip duplicate entries */
+					if (strcmp(dbname, rdb->dbname) == 0) {
+						rdb = NULL;
+						break; /* skip duplicate entries */
+					}
 					rdb = rdb->next;
 				}
+				if (rdb == NULL)
+					continue;
 				rdb = rdb->next = GDKmalloc(sizeof(sabdb));
 			}
 			rdb->dbname = GDKstrdup(dbname);
@@ -1500,22 +1469,13 @@ discoveryRunner(void *d)
 			rdb->state = SABdbRunning;
 			rdb->next = NULL;
 
+			rdb->scens = GDKmalloc(sizeof(sablist));
+			rdb->scens->val = GDKstrdup("sql");
+			rdb->scens->next = NULL;
+
 			rdb->conns = GDKmalloc(sizeof(sablist));
 			rdb->conns->val = GDKstrdup(conn);
 			rdb->conns->next = NULL;
-
-			l = NULL;
-			scen = strtok_r(scens, ",", &sp);
-			while (scen != NULL) {
-				if (l == NULL) {
-					l = rdb->scens = GDKmalloc(sizeof(sablist));
-				} else {
-					l = l->next = GDKmalloc(sizeof(sablist));
-				}
-				l->val = GDKstrdup(scen);
-				l->next = NULL;
-				scen = strtok_r(scens, ",", &sp);
-			}
 
 			merlog("added remote database %s at %s (%s)",
 					dbname, conn, host);
@@ -1523,6 +1483,69 @@ discoveryRunner(void *d)
 			merlog("ignoring unknown message from %s:%s: '%s'",
 					host, service, buf);
 		}
+	}
+
+	/* notify of our soon to be absence ;) */
+	{
+		int bcs;
+		struct sockaddr local;
+		struct sockaddr_in brdcst;
+		socklen_t addrlen;
+		int c;
+		sabdb *orig;
+		sabdb *stats;
+		err e;
+
+		addrlen = sizeof(local);
+		if (getsockname(sock, &local, &addrlen) < 0) {
+			fprintf(stderr, "neighbour discovery: cannot get own hostname\n");
+			return;
+		}
+
+		bcs = socket(AF_INET, SOCK_DGRAM, 0);
+
+		c = 1;
+		if ((setsockopt(bcs, SOL_SOCKET, SO_BROADCAST, &c, sizeof c)) == -1) {
+			fprintf(stderr, "neighbour discovery: cannot broadcast\n");
+			return;
+		}
+
+		brdcst.sin_family = AF_INET;
+		brdcst.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+		/* the target port is our configured port, not elegant, but how
+		 * else can we do it? can't broadcast to all ports or something */
+		brdcst.sin_port = ((struct sockaddr_in *)&local)->sin_port;
+
+		/* list all known databases */
+		if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
+			fprintf(stderr, "neighbour discovery: SABAOTHgetStatus error: "
+					"%s, discovery services disabled\n", e);
+			GDKfree(e);
+			return;
+		}
+
+		orig = stats;
+		while (stats != NULL) {
+			/* craft LEAV messages for each db */
+			snprintf(buf, 512, "LEAV %s mapi://%s:%hu/%s",
+					stats->dbname,
+					lhost,
+					ntohs(((struct sockaddr_in *)&local)->sin_port),
+					stats->dbname);
+
+			c = strlen(buf) + 1;
+			if (sendto(bcs, buf, c, 0,
+						(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
+				fprintf(stderr, "LEAV message: error while sending "
+						"message: %s\n", strerror(errno));
+
+			stats = stats->next;
+		}
+
+		if (orig != NULL)
+			SABAOTHfreeStatus(&orig);
+
+		close(bcs);
 	}
 }
 
