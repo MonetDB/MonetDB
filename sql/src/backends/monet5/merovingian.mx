@@ -1238,8 +1238,16 @@ discoveryRunner(void *d)
 {
 	int sock = *(int *)d;
 	int s = -1;
+	struct sockaddr local;
+	socklen_t addrlen;
 	struct sockaddr_storage peer_addr;
 	socklen_t peer_addr_len;
+	int bcs;
+	struct sockaddr_in brdcst;
+	int c;
+	sabdb *orig;
+	sabdb *stats;
+	err e;
 
 	ssize_t nread;
 	char buf[512]; /* our packages should be pretty small */
@@ -1249,82 +1257,70 @@ discoveryRunner(void *d)
 
 	gethostname(lhost, 128);
 
-	/* start shouting around that we're here ;) */
-	{
-		int bcs;
-		struct sockaddr local;
-		struct sockaddr_in brdcst;
-		socklen_t addrlen;
-		int c;
-		sabdb *orig;
-		sabdb *stats;
-		err e;
+	addrlen = sizeof(local);
+	if (getsockname(sock, &local, &addrlen) < 0) {
+		fprintf(stderr, "neighbour discovery: cannot get own hostname, "
+				"discovery services disabled\n");
+		return;
+	}
 
-		addrlen = sizeof(local);
-		if (getsockname(sock, &local, &addrlen) < 0) {
-			fprintf(stderr, "neighbour discovery: cannot get own hostname, "
-					"discovery services disabled\n");
-			return;
-		}
+	bcs = socket(AF_INET, SOCK_DGRAM, 0);
 
-		bcs = socket(AF_INET, SOCK_DGRAM, 0);
+	s = 1;
+	if ((setsockopt(bcs, SOL_SOCKET, SO_BROADCAST, &s, sizeof(s))) == -1) {
+		fprintf(stderr, "neighbour discovery: cannot broadcast, "
+				"discovery services disabled\n");
+		return;
+	}
 
-		c = 1;
-		if ((setsockopt(bcs, SOL_SOCKET, SO_BROADCAST, &c, sizeof c)) == -1) {
-			fprintf(stderr, "neighbour discovery: cannot broadcast, "
-					"discovery services disabled\n");
-			return;
-		}
+	brdcst.sin_family = AF_INET;
+	brdcst.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+	/* the target port is our configured port, not elegant, but how
+	 * else can we do it? can't broadcast to all ports or something */
+	brdcst.sin_port = ((struct sockaddr_in *)&local)->sin_port;
 
-		brdcst.sin_family = AF_INET;
-		brdcst.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-		/* the target port is our configured port, not elegant, but how
-		 * else can we do it? can't broadcast to all ports or something */
-		brdcst.sin_port = ((struct sockaddr_in *)&local)->sin_port;
+	/* start shouting around that we're here ;)
+	 * first send the ANNCs, then the HELO, such that we do not
+	 * loose packages because we're not listening yet */
 
-		/* first send the ANNCs, then the HELO, such that we do not
-		 * loose packages because we're not listening yet */
+	/* list all known databases */
+	if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
+		fprintf(stderr, "neighbour discovery: SABAOTHgetStatus error: "
+				"%s, discovery services disabled\n", e);
+		GDKfree(e);
+		return;
+	}
 
-		/* list all known databases */
-		if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
-			fprintf(stderr, "neighbour discovery: SABAOTHgetStatus error: "
-					"%s, discovery services disabled\n", e);
-			GDKfree(e);
-			return;
-		}
+	orig = stats;
+	while (stats != NULL) {
+		/* craft ANNC messages for each db */
+		snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s",
+				stats->dbname,
+				lhost,
+				ntohs(((struct sockaddr_in *)&local)->sin_port),
+				stats->dbname);
 
-		orig = stats;
-		while (stats != NULL) {
-			/* craft ANNC messages for each db */
-			snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s",
-					stats->dbname,
-					lhost,
-					ntohs(((struct sockaddr_in *)&local)->sin_port),
-					stats->dbname);
-
-			c = strlen(buf) + 1;
-			if (sendto(bcs, buf, c, 0,
-						(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
-				fprintf(stderr, "ANNC message: error while sending "
-						"message: %s\n", strerror(errno));
-
-			stats = stats->next;
-		}
-
-		if (orig != NULL)
-			SABAOTHfreeStatus(&orig);
-
-		/* request others for their databases */
-		snprintf(buf, 512, "HELO %s", lhost);
 		c = strlen(buf) + 1;
 		if (sendto(bcs, buf, c, 0,
 					(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
-			fprintf(stderr, "HELO message: error while sending "
+			fprintf(stderr, "ANNC message: error while sending "
 					"message: %s\n", strerror(errno));
 
-		close(bcs);
+		stats = stats->next;
 	}
 
+	if (orig != NULL)
+		SABAOTHfreeStatus(&orig);
+
+	/* request others for their databases */
+	snprintf(buf, 512, "HELO %s", lhost);
+	c = strlen(buf) + 1;
+	if (sendto(bcs, buf, c, 0,
+				(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
+		fprintf(stderr, "HELO message: error while sending "
+				"message: %s\n", strerror(errno));
+
+	/* main loop */
 	while (_keepListening == 1) {
 		peer_addr_len = sizeof(struct sockaddr_storage);
 		nread = recvfrom(sock, buf, 512, MSG_DONTWAIT,
@@ -1352,9 +1348,10 @@ discoveryRunner(void *d)
 			sabdb *orig;
 			sabdb *stats;
 			int c;
-			struct sockaddr addr;
-			socklen_t adrlen;
 			err e;
+
+
+			merlog("received HELO from %s", host);
 
 			/* list all known databases */
 			if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
@@ -1363,25 +1360,23 @@ discoveryRunner(void *d)
 				continue;
 			}
 
-			adrlen = sizeof(addr);
-			if (getsockname(sock, &addr, &adrlen) < 0)
-				continue;
-
-			merlog("received HELO from %s", host);
-
 			orig = stats;
 			while (stats != NULL) {
 				/* craft ANNC messages for each db */
 				snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s",
 						stats->dbname,
 						lhost,
-						ntohs(((struct sockaddr_in *)&addr)->sin_port),
+						ntohs(((struct sockaddr_in *)&local)->sin_port),
 						stats->dbname);
 
+				/* we are connection-less, so can't reply to originating
+				 * port */
+				((struct sockaddr_in *)&peer_addr)->sin_port =
+					((struct sockaddr_in *)&local)->sin_port;
+
 				c = strlen(buf) + 1;
-				if (sendto(sock, buf, c, 0,
-							(struct sockaddr *)&peer_addr,
-							peer_addr_len) != c)
+				if (sendto(sock, buf, c, 0, (struct sockaddr *)&peer_addr,
+							sizeof(peer_addr)) != c)
 					fprintf(stderr, "HELO response: error while sending "
 							"response: %s\n", strerror(errno));
 
@@ -1485,68 +1480,38 @@ discoveryRunner(void *d)
 		}
 	}
 
-	/* notify of our soon to be absence ;) */
-	{
-		int bcs;
-		struct sockaddr local;
-		struct sockaddr_in brdcst;
-		socklen_t addrlen;
-		int c;
-		sabdb *orig;
-		sabdb *stats;
-		err e;
+	/* now notify of our soon to be absence ;) */
 
-		addrlen = sizeof(local);
-		if (getsockname(sock, &local, &addrlen) < 0) {
-			fprintf(stderr, "neighbour discovery: cannot get own hostname\n");
-			return;
-		}
-
-		bcs = socket(AF_INET, SOCK_DGRAM, 0);
-
-		c = 1;
-		if ((setsockopt(bcs, SOL_SOCKET, SO_BROADCAST, &c, sizeof c)) == -1) {
-			fprintf(stderr, "neighbour discovery: cannot broadcast\n");
-			return;
-		}
-
-		brdcst.sin_family = AF_INET;
-		brdcst.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-		/* the target port is our configured port, not elegant, but how
-		 * else can we do it? can't broadcast to all ports or something */
-		brdcst.sin_port = ((struct sockaddr_in *)&local)->sin_port;
-
-		/* list all known databases */
-		if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
-			fprintf(stderr, "neighbour discovery: SABAOTHgetStatus error: "
-					"%s, discovery services disabled\n", e);
-			GDKfree(e);
-			return;
-		}
-
-		orig = stats;
-		while (stats != NULL) {
-			/* craft LEAV messages for each db */
-			snprintf(buf, 512, "LEAV %s mapi://%s:%hu/%s",
-					stats->dbname,
-					lhost,
-					ntohs(((struct sockaddr_in *)&local)->sin_port),
-					stats->dbname);
-
-			c = strlen(buf) + 1;
-			if (sendto(bcs, buf, c, 0,
-						(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
-				fprintf(stderr, "LEAV message: error while sending "
-						"message: %s\n", strerror(errno));
-
-			stats = stats->next;
-		}
-
-		if (orig != NULL)
-			SABAOTHfreeStatus(&orig);
-
-		close(bcs);
+	/* list all known databases */
+	if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
+		fprintf(stderr, "neighbour discovery: SABAOTHgetStatus error: "
+				"%s, discovery services disabled\n", e);
+		GDKfree(e);
+		return;
 	}
+
+	orig = stats;
+	while (stats != NULL) {
+		/* craft LEAV messages for each db */
+		snprintf(buf, 512, "LEAV %s mapi://%s:%hu/%s",
+				stats->dbname,
+				lhost,
+				ntohs(((struct sockaddr_in *)&local)->sin_port),
+				stats->dbname);
+
+		c = strlen(buf) + 1;
+		if (sendto(bcs, buf, c, 0,
+					(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
+			fprintf(stderr, "LEAV message: error while sending "
+					"message: %s\n", strerror(errno));
+
+		stats = stats->next;
+	}
+
+	if (orig != NULL)
+		SABAOTHfreeStatus(&orig);
+
+	close(bcs);
 }
 
 static str
