@@ -142,7 +142,11 @@ libgeom_export int getMbrGeom( mbr *res,  wkb* geom );
 void
 libgeom_init(void) 
 {
+	str tmp;
 	initGEOS((GEOSMessageHandler)GDKwarning, (GEOSMessageHandler)GDKerror);
+	tmp = GDKgetenv("monet_welcome");
+	if (tmp != NULL && strcmp(tmp, "yes") == 0)
+		printf("# MonetDB/GIS module v" VERSION " loaded\n");
 }
 
 void

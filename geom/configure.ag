@@ -27,7 +27,7 @@ AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 
 dnl ----------------------
-AM_INIT_AUTOMAKE([no-define])
+AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/lib/libgeom.mx])
 AM_CONFIG_HEADER(geom_config.h:conf/config.h.in)
 CONFIG_H=geom_config.h
