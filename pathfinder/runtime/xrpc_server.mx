@@ -163,7 +163,6 @@ Start XPRC receiver using the default values as specified in \
 #include "xrpc_common.h"
 #include "xrpc_server.h"
 #include "shttpd.h"
-#include <signal.h>
 
 extern int xrpc_port;
 static int rpcd_running = 0;
@@ -1213,11 +1212,8 @@ xrpc_fork_mapiclient(struct shttpd_callback_arg *arg)
 }
 
 static void
-check_timeout()
+do_check(void)
 {
-    struct sigaction act;
-    sigset_t set;
-
     MT_Lock *xrpclock = NULL;
     int xrpclock_idx = XRPCLOCK_IDX;
 
@@ -1288,13 +1284,6 @@ check_timeout()
     BBPunfix(BBPcacheid(xrpc_timeouts));
     BBPunfix(BBPcacheid(xrpc_statuss));
     MT_lock_unset(xrpclock, "check_timeout");    
-
-    sigfillset(&set); /* include all signals in 'set' */
-    act.sa_handler = check_timeout;
-    act.sa_mask = set; /* block all other signals */
-    act.sa_flags = 0; 
-    sigaction(SIGALRM, &act, NULL); /* set next alarm */
-    alarm(5);
     return;
 
 err_ret:
@@ -1307,13 +1296,23 @@ err_ret:
 
 }
 
+static void
+check_timeout(void)
+{
+    for(;;) {
+        MT_sleep_ms(5000);
+        do_check();
+    }
+}
+
+/* the thread that checks every 5 seconds for expired queries */
+MT_Id checker;
+
 int
 CMDrpcd_start(int *port, bit *open, str options)
 {
     shttpd_socket ctx;
     char *s;
-    struct sigaction act;
-    sigset_t set;
     
     if (rpcd_running) {
         stream_printf(GDKout,
@@ -1360,13 +1359,8 @@ CMDrpcd_start(int *port, bit *open, str options)
     ctx = shttpd_open_port(xrpc_port, *open);
     listen_socket = ctx.sock;
 
-    /* Check for expired queries every 5 seconds */
-    sigfillset(&set); /* include all signals in 'set' */
-    act.sa_handler = check_timeout;
-    act.sa_mask = set; /* block all other signals */
-    act.sa_flags = 0; 
-    sigaction(SIGALRM, &act, NULL);
-    alarm(50000000);
+    /* Fork a thread to check for expired queries every 5 seconds */
+    MT_create_thread(&checker, (void (*)(void*))check_timeout, NULL);
 
     /* Serve connections infinitely until someone kills us */
     for ( ; rpcd_running; ) shttpd_poll(&ctx, 200);
