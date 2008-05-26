@@ -45,7 +45,7 @@ while(i < 10) {
  #e := [str]([/](d,10000));
  print(b :+= 20000); 
  bat("aa").insert(e);
- bat("aa").mmap(1,1,1);
+ bat("aa").mmap(1,1,1,1);
  unload("aa");
  i :+= 1;
 }
