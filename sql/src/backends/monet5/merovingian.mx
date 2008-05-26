@@ -344,6 +344,7 @@ newErr(str fmt, ...)
 	return(ret);
 }
 
+static int doproxy;
 /**
  * Fork an Mserver and detach.  Before forking off, Sabaoth is consulted
  * to see if forking makes sense, or whether it is necessary at all, or
@@ -482,7 +483,11 @@ forkMserver(str database, sabdb** stats, int force)
 		argv[c++] = dbname;
 		argv[c++] = "--dbinit=include sql;"; /* yep, no quotes needed! */
 		argv[c++] = "--set"; argv[c++] = "monet_daemon=yes";
-		argv[c++] = "--set"; argv[c++] = "mapi_open=true";
+		if (doproxy == 0) {
+			argv[c++] = "--set"; argv[c++] = "mapi_open=false";
+		} else {
+			argv[c++] = "--set"; argv[c++] = "mapi_open=true";
+		}
 		argv[c++] = "--set"; argv[c++] = "mapi_port=0"; /* force autosensing! */
 		argv[c++] = "--set"; argv[c++] = vaultkey;
 		argv[c++] = NULL;
@@ -958,22 +963,28 @@ handleClient(int sock)
 				host, stat->dbname, stat->conns->val);
 	}
 
-	/* need to send a redirect, we send two, first a proxy connect,
-	 * second an ordinary reconnection to the database */
-	stream_printf(fout, "^mapi:merovingian:proxy\n^%s%s\n",
-			stat->conns->val, stat->dbname);
-	/* flush redirect */
-	stream_flush(fout);
-	/* wait for input, or disconnect in a proxy runner */
-	if ((e = startProxy(fdin, fout, stat->conns->val, host)) != NO_ERR) {
-		stream_printf(fout, "!an internal error has occurred, please try again later\n");
+	/* need to send a redirect, either we are going to proxy, or we send
+	 * a redirect */
+	if (doproxy == 0) {
+		stream_printf(fout, "^%s%s\n", stat->conns->val, stat->dbname);
+		/* flush redirect */
 		stream_flush(fout);
-		close_stream(fout);
-		close_stream(fdin);
-		merlog("starting a proxy failed: %s", e);
-		SABAOTHfreeStatus(&top);
-		return(e);
-	};
+	} else {
+		stream_printf(fout, "^mapi:merovingian:proxy\n");
+		/* flush redirect */
+		stream_flush(fout);
+
+		/* wait for input, or disconnect in a proxy runner */
+		if ((e = startProxy(fdin, fout, stat->conns->val, host)) != NO_ERR) {
+			stream_printf(fout, "!an internal error has occurred, please try again later\n");
+			stream_flush(fout);
+			close_stream(fout);
+			close_stream(fdin);
+			merlog("starting a proxy failed: %s", e);
+			SABAOTHfreeStatus(&top);
+			return(e);
+		};
+	}
 
 	SABAOTHfreeStatus(&top);
 	return(NO_ERR);
@@ -1233,6 +1244,7 @@ controlRunner(void *d)
 	merlog("control channel closed");
 }
 
+static int discoveryttl;
 static void
 discoveryRunner(void *d)
 {
@@ -1677,12 +1689,14 @@ main(int argc, char *argv[])
 	/* store this conffile for later use in forkMserver */
 	_merovingian_conffile = p;
 
+	prefix = GDKstrdup(MONETDB5_PREFIX);
 	dbfarm = NULL;
 	msglog = NULL;
 	errlog = NULL;
 	timeout = 0;
 	pidfilename = NULL;
-	prefix = GDKstrdup(MONETDB5_PREFIX);
+	doproxy = 1;
+	discoveryttl = 600;
 	while (fgets(buf, 1024, cnf) != NULL) {
 		/* eliminate fgets' newline */
 		buf[strlen(buf) - 1] = '\0';
@@ -1719,6 +1733,19 @@ main(int argc, char *argv[])
 				fflush(stderr);
 			}
 			port = (unsigned short)ret;
+		} else if (*buf && strncmp(buf, "mero_doproxy=", 13) == 0) {
+			p = strchr(buf, '=') + 1;
+			if (strcmp(p, "yes") == 0 ||
+					strcmp(p, "true") == 0 ||
+					strcmp(p, "1") == 0)
+			{
+				doproxy = 1;
+			} else {
+				doproxy = 0;
+			}
+		} else if (*buf && strncmp(buf, "mero_discoveryttl=", 18) == 0) {
+			p = strchr(buf, '=');
+			discoveryttl = atoi(++p);
 		}
 	}
 
