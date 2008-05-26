@@ -84,6 +84,7 @@ FIXME: actually implement that
 #include <errno.h>
 #include <signal.h> /* handle Ctrl-C, etc. */
 #include <pthread.h>
+#include <time.h>
 
 #define SOCKPTR struct sockaddr *
 #ifdef HAVE_SOCKLEN_T
@@ -100,7 +101,6 @@ typedef char* err;
 
 static str _merovingian_mserver = NULL;
 static str _merovingian_conffile = NULL;
-static sabdb *_merovingian_remotedbs = NULL;
 
 typedef struct _dpair {
 	FILE* fout;       /* where to read stdout messages from */
@@ -112,6 +112,14 @@ typedef struct _dpair {
 	struct _dpair* next;
 }* dpair;
 static dpair topdp = NULL;
+
+typedef struct _remotedb {
+	char* dbname;
+	char* conn;
+	int ttl;
+	struct _remotedb* next;
+}* remotedb;
+static remotedb _merovingian_remotedbs = NULL;
 
 static int _keepLogging = 1;
 static int _timeInterval = 0;
@@ -1257,9 +1265,12 @@ discoveryRunner(void *d)
 	int bcs;
 	struct sockaddr_in brdcst;
 	int c;
+	time_t deadline = 0;
 	sabdb *orig;
 	sabdb *stats;
 	err e;
+	remotedb rdb;
+	remotedb prv;
 
 	ssize_t nread;
 	char buf[512]; /* our packages should be pretty small */
@@ -1291,40 +1302,8 @@ discoveryRunner(void *d)
 	 * else can we do it? can't broadcast to all ports or something */
 	brdcst.sin_port = ((struct sockaddr_in *)&local)->sin_port;
 
-	/* start shouting around that we're here ;)
-	 * first send the ANNCs, then the HELO, such that we do not
-	 * loose packages because we're not listening yet */
-
-	/* list all known databases */
-	if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
-		fprintf(stderr, "neighbour discovery: SABAOTHgetStatus error: "
-				"%s, discovery services disabled\n", e);
-		GDKfree(e);
-		return;
-	}
-
-	orig = stats;
-	while (stats != NULL) {
-		/* craft ANNC messages for each db */
-		snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s",
-				stats->dbname,
-				lhost,
-				ntohs(((struct sockaddr_in *)&local)->sin_port),
-				stats->dbname);
-
-		c = strlen(buf) + 1;
-		if (sendto(bcs, buf, c, 0,
-					(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
-			fprintf(stderr, "ANNC message: error while sending "
-					"message: %s\n", strerror(errno));
-
-		stats = stats->next;
-	}
-
-	if (orig != NULL)
-		SABAOTHfreeStatus(&orig);
-
-	/* request others for their databases */
+	/* start shouting around that we're here ;) request others to tell
+	 * what databases they have */
 	snprintf(buf, 512, "HELO %s", lhost);
 	c = strlen(buf) + 1;
 	if (sendto(bcs, buf, c, 0,
@@ -1334,6 +1313,66 @@ discoveryRunner(void *d)
 
 	/* main loop */
 	while (_keepListening == 1) {
+		/* do a round of announcements, we're ahead of the ttl because
+		 * when we announce, we add 60 seconds to avoid a "gap" */
+		if (deadline <= time(NULL)) {
+			/* set new deadline */
+			deadline = time(NULL) + discoveryttl;
+
+			/* list all known databases */
+			if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
+				fprintf(stderr, "neighbour discovery: SABAOTHgetStatus error: "
+						"%s, discovery services disabled\n", e);
+				GDKfree(e);
+				return;
+			}
+
+			orig = stats;
+			while (stats != NULL) {
+				/* craft ANNC messages for each db */
+				snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s %d",
+						stats->dbname,
+						lhost,
+						ntohs(((struct sockaddr_in *)&local)->sin_port),
+						stats->dbname,
+						discoveryttl + 60);
+
+				c = strlen(buf) + 1;
+				if (sendto(bcs, buf, c, 0,
+							(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
+					fprintf(stderr, "ANNC message: error while sending "
+							"message: %s\n", strerror(errno));
+
+				stats = stats->next;
+			}
+
+			if (orig != NULL)
+				SABAOTHfreeStatus(&orig);
+		}
+
+		/* do a round to see if we have to cleanup anything (expired
+		 * ttl) */
+		prv = NULL;
+		rdb = _merovingian_remotedbs;
+		while (rdb != NULL) {
+			if (rdb->ttl <= time(NULL)) {
+				/* expired, let's remove */
+				if (prv == NULL) {
+					_merovingian_remotedbs = rdb->next;
+				} else {
+					prv->next = rdb->next;
+				}
+				merlog("neighbour database %s at %s has expired",
+						rdb->dbname, rdb->conn);
+				free(rdb->dbname);
+				free(rdb->conn);
+				free(rdb);
+				break;
+			}
+			prv = rdb;
+			rdb = rdb->next;
+		}
+
 		peer_addr_len = sizeof(struct sockaddr_storage);
 		nread = recvfrom(sock, buf, 512, MSG_DONTWAIT,
 				(struct sockaddr *)&peer_addr, &peer_addr_len);
@@ -1357,50 +1396,12 @@ discoveryRunner(void *d)
 
 		if (strncmp(buf, "HELO ", 5) == 0) {
 			/* HELLO message, respond with current databases */
-			sabdb *orig;
-			sabdb *stats;
-			int c;
-			err e;
-
-
-			merlog("received HELO from %s", host);
-
-			/* list all known databases */
-			if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
-				fprintf(stderr, "HELO response: SABAOTHgetStatus error: %s\n", e);
-				GDKfree(e);
-				continue;
-			}
-
-			orig = stats;
-			while (stats != NULL) {
-				/* craft ANNC messages for each db */
-				snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s",
-						stats->dbname,
-						lhost,
-						ntohs(((struct sockaddr_in *)&local)->sin_port),
-						stats->dbname);
-
-				/* we are connection-less, so can't reply to originating
-				 * port */
-				((struct sockaddr_in *)&peer_addr)->sin_port =
-					((struct sockaddr_in *)&local)->sin_port;
-
-				c = strlen(buf) + 1;
-				if (sendto(sock, buf, c, 0, (struct sockaddr *)&peer_addr,
-							sizeof(peer_addr)) != c)
-					fprintf(stderr, "HELO response: error while sending "
-							"response: %s\n", strerror(errno));
-
-				stats = stats->next;
-			}
-
-			if (orig != NULL)
-				SABAOTHfreeStatus(&orig);
+			merlog("discovered neighbour %s", host);
+			/* force an announcement round by dropping the deadline */
+			deadline = 0;
+			continue;
 		} else if (strncmp(buf, "LEAV ", 5) == 0) {
 			/* LEAVE message, unregister database */
-			sabdb *rdb;
-			sabdb *prv;
 			char *sp;
 			char *dbname;
 			char *conn;
@@ -1424,7 +1425,7 @@ discoveryRunner(void *d)
 			rdb = _merovingian_remotedbs;
 			while (rdb != NULL) {
 				if (strcmp(dbname, rdb->dbname) == 0 &&
-						strcmp(conn, rdb->conns->val) == 0)
+						strcmp(conn, rdb->conn) == 0)
 				{
 					/* found, let's remove */
 					if (prv == NULL) {
@@ -1432,9 +1433,10 @@ discoveryRunner(void *d)
 					} else {
 						prv->next = rdb->next;
 					}
-					rdb->next = NULL; /* avoid recursion */
-					SABAOTHfreeStatus(&rdb);
-					merlog("removed remote database %s at %s (%s)",
+					free(rdb->dbname);
+					free(rdb->conn);
+					free(rdb);
+					merlog("removed neighbour database %s at %s (%s)",
 							dbname, conn, host);
 					break;
 				}
@@ -1443,24 +1445,29 @@ discoveryRunner(void *d)
 			}
 		} else if (strncmp(buf, "ANNC ", 5) == 0) {
 			/* ANNOUNCE message, register database */
-			sabdb *rdb;
 			char *sp;
 			char *dbname;
 			char *conn;
+			char *ttl;
 
 			strtok_r(buf, " ", &sp); /* discard the msg type */
 			dbname = strtok_r(NULL, " ", &sp);
 			conn = strtok_r(NULL, " ", &sp);
+			ttl = strtok_r(NULL, " ", &sp);
 
-			if (dbname == NULL || conn == NULL)
+			if (dbname == NULL || conn == NULL || ttl == NULL)
 				continue;
 
 			if (_merovingian_remotedbs == NULL) {
-				rdb = _merovingian_remotedbs = GDKmalloc(sizeof(sabdb));
+				rdb = _merovingian_remotedbs = malloc(sizeof(struct _remotedb));
 			} else {
 				rdb = _merovingian_remotedbs;
 				while (rdb->next != NULL) {
 					if (strcmp(dbname, rdb->dbname) == 0) {
+						if (strcmp(conn, rdb->conn) == 0) {
+							/* refresh ttl */
+							rdb->ttl = time(NULL) + atoi(ttl);
+						}
 						rdb = NULL;
 						break; /* skip duplicate entries */
 					}
@@ -1468,27 +1475,18 @@ discoveryRunner(void *d)
 				}
 				if (rdb == NULL)
 					continue;
-				rdb = rdb->next = GDKmalloc(sizeof(sabdb));
+				rdb = rdb->next = malloc(sizeof(struct _remotedb));
 			}
-			rdb->dbname = GDKstrdup(dbname);
-			rdb->path = rdb->dbname; /* Sabaoth makes dbname a pointer to the alloced path, compatibility here */
-			rdb->locked = 0;
-			rdb->state = SABdbRunning;
+			rdb->dbname = strdup(dbname);
+			rdb->conn = strdup(conn);
+			rdb->ttl = time(NULL) + atoi(ttl);
 			rdb->next = NULL;
 
-			rdb->scens = GDKmalloc(sizeof(sablist));
-			rdb->scens->val = GDKstrdup("sql");
-			rdb->scens->next = NULL;
-
-			rdb->conns = GDKmalloc(sizeof(sablist));
-			rdb->conns->val = GDKstrdup(conn);
-			rdb->conns->next = NULL;
-
-			merlog("added remote database %s at %s (%s)",
+			merlog("discovered neighbour database %s at %s (%s)",
 					dbname, conn, host);
 		} else {
-			merlog("ignoring unknown message from %s:%s: '%s'",
-					host, service, buf);
+			merlog("neighbour discovery: ignoring unknown message "
+					"from %s:%s: '%s'", host, service, buf);
 		}
 	}
 
