@@ -1016,7 +1016,7 @@ openConnectionTCP(int *ret, unsigned short port)
 	listen(sock, 5);
 
 	gethostname(host, 512);
-	merlog("listening for TCP connections on %s:%d", host, port);
+	merlog("listening for TCP connections on %s:%hu", host, port);
 
 	*ret = sock;
 	return(NO_ERR);
@@ -1252,38 +1252,100 @@ discoveryRunner(void *d)
 		struct sockaddr_in brdcst;
 		struct sockaddr local;
 		socklen_t addrlen;
-		size_t len;
+		int c;
+		sabdb *orig;
+		sabdb *stats;
+		sablist *sl;
+		err e;
 
 		gethostname(host, 128);
 		addrlen = sizeof(local);
 		if (getsockname(sock, &local, &addrlen) < 0) {
-			fprintf(stderr, "neighbour discovery: cannot get own hostname "
+			fprintf(stderr, "neighbour discovery: cannot get own hostname, "
 					"discovery services disabled\n");
 			return;
 		}
 
 		bcs = socket(AF_INET, SOCK_DGRAM, 0);
+
+		c = 1;
+		if ((setsockopt(bcs, SOL_SOCKET, SO_BROADCAST, &c, sizeof c)) == -1) {
+			fprintf(stderr, "neighbour discovery: cannot broadcast, "
+					"discovery services disabled\n");
+			return;
+		}
+
 		brdcst.sin_family = AF_INET;
 		brdcst.sin_addr.s_addr = htonl(INADDR_ANY);
 		/* the target port is our configured port, not elegant, but how
 		 * else can we do it? can't broadcast to all ports or something */
 		brdcst.sin_port = ((struct sockaddr_in *)&local)->sin_port;
 
+		/* first send the ANNCs, then the HELO, such that we do not
+		 * loose packages because we're not listening yet */
+
+		/* list all known databases */
+		if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
+			fprintf(stderr, "neighbour discovery: SABAOTHgetStatus error: "
+					"%s, discovery services disabled\n", e);
+			GDKfree(e);
+			return;
+		}
+
+		orig = stats;
+		while (stats != NULL) {
+			/* craft ANNC messages for each db */
+			c = snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s ",
+					stats->dbname,
+					host,
+					ntohs(((struct sockaddr_in *)&local)->sin_port),
+					stats->dbname);
+			/* build a comma separated list of scenarios */
+			c = 512 - c - 1;
+			sl = stats->scens;
+			while (sl != NULL) {
+				/* intuition says this code could be done much
+				 * better */
+				if (sl != stats->scens)
+					strncat(buf, ",", c--);
+				strncat(buf, stats->scens->val, c);
+				c -= strlen(stats->scens->val);
+				if (c < 0)
+					c = 0;
+				sl = sl->next;
+			}
+
+			c = strlen(buf);
+			if (sendto(bcs, buf, c, 0,
+						(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
+				fprintf(stderr, "ANNC message: error while sending "
+						"message: %s\n", strerror(errno));
+
+			stats = stats->next;
+		}
+
+		if (orig != NULL)
+			SABAOTHfreeStatus(&orig);
+
+		/* request others for their databases */
 		snprintf(buf, 512, "HELO %s", host);
-		len = strlen(buf) + 1;
-		sendto(bcs, buf, len, 0, (struct sockaddr *)&brdcst, sizeof(brdcst));
+		c = strlen(buf);
+		if (sendto(bcs, buf, c, 0,
+					(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
+			fprintf(stderr, "HELO message: error while sending "
+					"message: %s\n", strerror(errno));
 
 		close(bcs);
 	}
 
 	while (_keepListening == 1) {
-		MT_sleep_ms(1000); /* don't spin */
-
 		peer_addr_len = sizeof(struct sockaddr_storage);
 		nread = recvfrom(sock, buf, 512, MSG_DONTWAIT,
 				(struct sockaddr *)&peer_addr, &peer_addr_len);
-		if (nread == -1)
+		if (nread == -1) {
+			MT_sleep_ms(1000); /* don't spin */
 			continue; /* ignore failed request */
+		}
 
 		s = getnameinfo((struct sockaddr *)&peer_addr,
 				peer_addr_len, host, 128,
@@ -1312,13 +1374,16 @@ discoveryRunner(void *d)
 				continue;
 			}
 
+			gethostname(lhost, 128);
+			adrlen = sizeof(addr);
+			if (getsockname(sock, &addr, &adrlen) < 0)
+				continue;
+
+			merlog("received HELO from %s", lhost);
+
 			orig = stats;
 			while (stats != NULL) {
 				/* craft ANNC messages for each db */
-				gethostname(lhost, 128);
-				adrlen = sizeof(addr);
-				if (getsockname(sock, &addr, &adrlen) < 0)
-					continue;
 				c = snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s ",
 						stats->dbname,
 						lhost,
@@ -1355,13 +1420,13 @@ discoveryRunner(void *d)
 			/* LEAVE message, unregister database */
 			sabdb *rdb;
 			sabdb *prv;
-			char **sp = NULL;
+			char *sp;
 			char *dbname;
 			char *conn;
 
-			strtok_r(buf, " ", sp); /* discard the msg type */
-			dbname = strtok_r(NULL, " ", sp);
-			conn = strtok_r(NULL, " ", sp);
+			strtok_r(buf, " ", &sp); /* discard the msg type */
+			dbname = strtok_r(NULL, " ", &sp);
+			conn = strtok_r(NULL, " ", &sp);
 
 			if (dbname == NULL || conn == NULL)
 				continue;
@@ -1398,16 +1463,16 @@ discoveryRunner(void *d)
 			/* ANNOUNCE message, register database */
 			sabdb *rdb;
 			sablist *l;
-			char **sp = NULL;
+			char *sp;
 			char *dbname;
 			char *conn;
 			char *scens;
 			char *scen;
 
-			strtok_r(buf, " ", sp); /* discard the msg type */
-			dbname = strtok_r(NULL, " ", sp);
-			conn = strtok_r(NULL, " ", sp);
-			scens = strtok_r(NULL, " ", sp);
+			strtok_r(buf, " ", &sp); /* discard the msg type */
+			dbname = strtok_r(NULL, " ", &sp);
+			conn = strtok_r(NULL, " ", &sp);
+			scens = strtok_r(NULL, " ", &sp);
 
 			if (dbname == NULL || conn == NULL || scens == NULL)
 				continue;
@@ -1434,16 +1499,16 @@ discoveryRunner(void *d)
 			rdb->conns->next = NULL;
 
 			l = NULL;
-			scen = strtok_r(scens, ",", sp);
+			scen = strtok_r(scens, ",", &sp);
 			while (scen != NULL) {
-				if (l != NULL) {
+				if (l == NULL) {
 					l = rdb->scens = GDKmalloc(sizeof(sablist));
 				} else {
 					l = l->next = GDKmalloc(sizeof(sablist));
 				}
 				l->val = GDKstrdup(scen);
 				l->next = NULL;
-				scen = strtok_r(scens, ",", sp);
+				scen = strtok_r(scens, ",", &sp);
 			}
 
 			merlog("added remote database %s at %s (%s)",
@@ -1573,6 +1638,7 @@ main(int argc, char *argv[])
 				strerror(errno));
 		return(1);
 	}
+#ifndef MERO_DONTFORK
 	switch (fork()) {
 		case -1:
 			/* oops, forking went wrong! */
@@ -1597,6 +1663,7 @@ main(int argc, char *argv[])
 			close(pfd[0]);
 			return(buf[0]); /* whatever the child returned, we return */
 	}
+#endif
 
 	/* Paranoia umask, but good, because why would people have to sniff
 	 * our private parts? */
