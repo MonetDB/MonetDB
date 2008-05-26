@@ -17,7 +17,6 @@
 SUBDIRS = conf HAVE_JAVAJDBC?tests HAVE_JAVAJDBC?scripts
 
 EXTRA_DIST = configure.ag rpm.mk.in \
-		MonetDB-java.spec MonetDB-java.spec.in \
 		RunMtest.in RunMtest.bat.in \
 		RunMapprove.in \
 		build.xml build.properties release.txt

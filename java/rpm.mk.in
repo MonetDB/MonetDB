@@ -16,37 +16,6 @@
 # Portions created by CWI are Copyright (C) 1997-2008 CWI.
 # All Rights Reserved.
 
-# make rules to generate MonetDB RPMs (works on RedHat Linux, only)
+# We do not distribute/produce any MonetDB-java RPMs any more.
+# Empty "rpm.mk.in" remains as required by buildtools/autogen.
 
-rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
-
-$(top_builddir)/$(distdir).tar.gz:
-	$(MAKE) $(AM_MAKEFLAGS) dist
-
-$(rpmtopdir)/rpmmacros:
-	mkdir -p $(rpmtopdir)/RPMS
-	mkdir -p $(rpmtopdir)/SRPMS
-	mkdir -p $(rpmtopdir)/SPECS
-	mkdir -p $(rpmtopdir)/BUILD
-	mkdir -p $(rpmtopdir)/INSTALL
-
-	echo "macrofiles: /usr/lib/rpm/macros:/usr/lib/rpm/%{_target}/macros:/usr/lib/rpm/redhat/macros:/etc/rpm/macros.specspo:/etc/rpm/macros.prelink:/etc/rpm/macros.solve:/etc/rpm/macros.up2date:/etc/rpm/macros:/etc/rpm/%{_target}/macros:$(rpmtopdir)/rpmmacros" > $(rpmtopdir)/rpmrc
-
-	echo "%_tmppath          /tmp"                >  $(rpmtopdir)/rpmmacros
-	echo "%_topdir           $(rpmtopdir)"        >> $(rpmtopdir)/rpmmacros
-	echo "%tmpdir            %{_tmppath}"         >> $(rpmtopdir)/rpmmacros
-	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
-
-rpm:	MonetDB-java.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) --rcfile /usr/lib/rpm/rpmrc:/usr/lib/rpm/redhat/rpmrc:$(rpmtopdir)/rpmrc -ta  --define="buildsystem 1" $(top_builddir)/$(distdir).tar.gz
-	rm -rf $(rpmtopdir)/BUILD
-
-srpm:	MonetDB-java.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) --rcfile /usr/lib/rpm/rpmrc:/usr/lib/rpm/redhat/rpmrc:$(rpmtopdir)/rpmrc -ts --define="buildsystem 1" $(top_builddir)/$(distdir).tar.gz
-
-cleanup_distr:
-	find MonetDB-java-* -perm -0100 -type f ! -name \*.bat ! -name \*.sh ! -exec grep -q '^#!' {} \; -exec chmod a-x {} \;
-	find MonetDB-java-* -type f ! -name \*.in ! -name configure ! -name \*.spec -print | while read i; do test -f "$${i}.in" && rm -f "$${i}"; done || true
-	find MonetDB-java-* \( -name '*.[chm]' -o -name '*.cc' -o -name '*.mal' \) -exec sed -n -e "/^#line/!w $${TMPDIR:-/var/tmp}/mn-dist-$$$$" {} \; -exec chmod u+w {} \; -exec cp $${TMPDIR:-/var/tmp}/mn-dist-$$$$ {} \; && rm -f $${TMPDIR:-/var/tmp}/mn-dist-$$$$
-
-dist-hook: cleanup_distr

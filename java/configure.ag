@@ -104,7 +104,6 @@ fi
 AM_MONETDB_UTILS()	# for buildtools
 AM_MONETDB_TRANSLATEPATH()
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
-AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
 dnl provide different versions of the paths derived above
 AM_MONETDB_XQ_VARS_2()
