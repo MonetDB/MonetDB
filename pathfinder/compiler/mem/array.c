@@ -94,6 +94,9 @@ PFarray_ (size_t s, unsigned int slots, bool clear)
   PFarray_t *a;
   size_t nbytes;
 
+  if (s == 0)
+      PFoops (OOPS_FATAL, "array payload is empty");
+
   a = (PFarray_t *) PFmalloc (sizeof (PFarray_t));
 
   /* round up to nearest multiple of ACHUNK larger than s * slots */
