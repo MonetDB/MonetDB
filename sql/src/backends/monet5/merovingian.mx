@@ -1266,6 +1266,7 @@ discoveryRunner(void *d)
 	struct sockaddr_in brdcst;
 	int c;
 	time_t deadline = 0;
+	int forceannc = 0;
 	sabdb *orig;
 	sabdb *stats;
 	err e;
@@ -1315,9 +1316,10 @@ discoveryRunner(void *d)
 	while (_keepListening == 1) {
 		/* do a round of announcements, we're ahead of the ttl because
 		 * when we announce, we add 60 seconds to avoid a "gap" */
-		if (deadline <= time(NULL)) {
+		if (forceannc == 1 || deadline <= time(NULL)) {
 			/* set new deadline */
 			deadline = time(NULL) + discoveryttl;
+			forceannc = 0;
 
 			/* list all known databases */
 			if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
@@ -1398,7 +1400,7 @@ discoveryRunner(void *d)
 			/* HELLO message, respond with current databases */
 			merlog("discovered neighbour %s", host);
 			/* force an announcement round by dropping the deadline */
-			deadline = 0;
+			forceannc = 1;
 			continue;
 		} else if (strncmp(buf, "LEAV ", 5) == 0) {
 			/* LEAVE message, unregister database */
