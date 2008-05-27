@@ -1,0 +1,46 @@
+stdout of test 'step_duplicates` in directory 'tests/XQuery` itself:
+
+
+# 15:44:46 >  
+# 15:44:46 >   Mserver "--config=/local_tmp/work/MonetDB4/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/local_tmp/work/pathfinder/Linux/lib/MonetDB4:/local_tmp/work/pathfinder/Linux/lib/MonetDB4/lib:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4/lib:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4/bin" --set "gdk_dbfarm=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/dbfarm" --set "sql_logdir=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/sql_logs" --set "xquery_logdir=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32379 --set xrpc_port=46261 --set monet_prompt= --trace  "--dbname=mTests_tests_XQuery" --set sql_debug=16384 --set xquery_backend=algebra "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 15:44:46 >  
+
+# MonetDB Server v4.23.0
+# based on GDK   v1.23.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.23.0 loaded
+# XRPC administrative console at http://127.0.0.1:46261/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 15:44:46 >  
+# 15:44:46 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper08 --port=32379 -G step_duplicates.xq
+# 15:44:46 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult line="1" foo2="bar" line="2" line="3" foo2="bar" line="4" foo2="bar" line="5" foo2="bar" line="6" line="7" foo2="bar" line="8" foo2="bar" line="9" line="10" foo2="bar" line="11">
+ 1  
+ 2 textnode
+ 3  
+ 4 <a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><c foo2="bar"/>
+ 5  
+ 6 <c foo2="bar"/>
+ 7 textnode
+ 8 textnode
+ 9 <b>textnode</b><c foo2="bar"/>
+10 <a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b>textnode<c foo2="bar"/>
+11 <a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b><c foo2="bar"/>
+</XQueryResult>
+
+# 15:44:47 >  
+# 15:44:47 >  Done.
+# 15:44:47 >  
+

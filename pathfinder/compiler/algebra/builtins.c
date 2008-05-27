@@ -2664,6 +2664,52 @@ PFbui_op_node_after (const PFla_op_t *loop, bool ordering,
 /* ------------- */
 /* 14.9. fn:root */
 /* ------------- */
+struct PFla_pair_t
+PFbui_fn_root (const PFla_op_t *loop, bool ordering,
+               struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering;
+
+    PFla_op_t        *node_scj,
+                     *sel;
+    PFalg_step_spec_t anc_node_spec;
+    
+    anc_node_spec.axis = alg_anc_s;
+    anc_node_spec.kind = node_kind_node;
+    /* missing QName */
+    anc_node_spec.qname = PFqname (PFns_wild, NULL);
+    
+    /* do an ancestor-or-self::node() step
+       with exact position values */
+    node_scj = rownum (
+                   PFla_step_simple (
+                       PFla_set_to_la (args[0].frag),
+                       project (args[0].rel,
+                                proj (att_iter, att_iter),
+                                proj (att_item, att_item)),
+                       anc_node_spec,
+                       att_iter, att_item, att_item),
+                   att_pos, sortby (att_item), att_iter);
+    
+    /* select the first ancestor */
+    sel = project (
+              select_ (
+                  eq (attach (cast (node_scj, att_item1, att_pos, aat_int),
+                              att_item2,
+                              lit_int (1)),
+                      att_res,
+                      att_item1,
+                      att_item2),
+                  att_res),
+              proj (att_iter, att_iter),
+              proj (att_item, att_item));
+    
+    /* add the position values */
+    return (struct PFla_pair_t) {
+        .rel = attach (sel, att_pos, lit_nat (1)),
+        .frag = PFla_empty_set () };
+}
+
 
 /* ---------------------------------------- */
 /* 15. FUNCTIONS AND OPERATORS ON SEQUENCES */

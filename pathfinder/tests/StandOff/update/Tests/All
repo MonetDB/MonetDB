@@ -1,4 +1,4 @@
-basic_import
-basic
-basic_insert
-basic_test
+NOT_ALGEBRA?basic_import
+NOT_ALGEBRA?basic
+NOT_ALGEBRA?basic_insert
+NOT_ALGEBRA?basic_test

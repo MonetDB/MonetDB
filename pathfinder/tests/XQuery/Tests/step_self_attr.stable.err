@@ -10,6 +10,9 @@ stderr of test 'step_self_attr` in directory 'tests/XQuery` itself:
 # 11:13:15 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper08 --port=33723 -G step_self_attr.xq
 # 11:13:15 >  
 
+MAPI  = monetdb@rig:39583
+QUERY = (: check for attributes in the result :)
+ERROR = !ERROR: path steps are only supported starting from non-attribute nodes
 
 # 11:13:15 >  
 # 11:13:15 >  Done.

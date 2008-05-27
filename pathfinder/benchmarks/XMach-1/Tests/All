@@ -8,7 +8,7 @@ load_docs
 count_nodes
 q1
 q2
-q3
+NOT_ALGEBRA?q3
 q4
 q5
 q6
