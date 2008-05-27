@@ -1747,7 +1747,7 @@ END;
 CREATE FUNCTION fGetDiagChecksum()
 RETURNS BIGINT
 BEGIN
-	RETURN (select sum(count)+count(*) from "Diagnostics");
+	RETURN (select sum(count)+count(*) from Diagnostics);
 END;
 
 
@@ -2110,48 +2110,4 @@ begin
 
         return WebServerURL +'tools/explore/obj.asp?id='+ cast(objIdd as varchar(32));
 end;  
-
----- version 6 Our Doc implementation...
-
-
-/****** Object:  UserDefinedFunction [dbo].[fDocFunctionParams]    Script Date: 04/29/2008 11:48:12 ******/
-CREATE FUNCTION fDocFunctionParams(functionname varchar(400))
-RETURNS TABLE (
-	name		varchar(64),
-	type 		varchar(32),
-	type_digits	int,
-	type_scale	int,
-	number		int
-)
-BEGIN
-	DECLARE oid int;
-	SELECT id into oid
-		FROM sys.functions
-		WHERE name=functionname;
-
-
-	RETURN TABLE (SELECT name, type, type_digits, type_scale, number from sys.args where func_id = oid);
-END;
-
-CREATE FUNCTION fDocColumns(tablename varchar(400))
-RETURNS TABLE (
-	name		varchar(64),
-	type 		varchar(32),
-	type_digits	int,
-	type_scale		varchar(64)
-)
-BEGIN
-	---------------------------------
-	-- get the objectid of DBObject,
-	-- and its system type
-	---------------------------------
-	DECLARE oid bigint;
-	SELECT id into oid
-		FROM sys.tables
-		WHERE name=tablename;
-	-------------------
-	-- handle views
-	-------------------
-	RETURN TABLE (SELECT name, type, type_digits, type_scale from sys.columns where table_id = oid);
-END;
 

@@ -2175,7 +2175,7 @@ CREATE TABLE RecentQueries(
 );
 
 CREATE TABLE Region(
-	regionid int GENERATED ALWAYS AS IDENTITY NOT NULL,
+	regionid bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
 	id bigint NOT NULL,
 	"type" varchar(16)  NOT NULL,
 	comment varchar(1024)  NOT NULL,
@@ -4095,5 +4095,41 @@ CREATE TABLE Zone(
 	ra ,
 	objID 
 )
+);
+
+---- Additional one to make the functions load working ----
+CREATE TABLE sysobjects(
+	id int, 
+	uid int,
+	nme char(100)
+);
+
+CREATE TABLE sysusers(
+	id int, 
+	uid int,
+	nme char(100)
+);
+
+CREATE TABLE systypes(
+	id int, 
+	uid int,
+	nme char(100),
+	xtype char(100)
+);
+
+CREATE TABLE syscolumns(
+	id int, 
+	colid int, 
+	isoutparam int,
+	length int,
+	uid int,
+	nme char(100),
+	xtype char(100)
+);
+
+CREATE TABLE spt_datatype_info(
+	length int,
+        ss_dtype varchar(100),
+        "AUTO_INCREMENT" varchar(100)
 );
 
