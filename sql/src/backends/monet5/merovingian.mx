@@ -58,7 +58,7 @@ FIXME: actually implement that
 #include "merovingian.h"
 #include "mal_sabaoth.h"
 #include <stream_socket.h>
-#include <stdlib.h> /* exit, getenv */
+#include <stdlib.h> /* exit, getenv, rand, srand */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
 #include <sys/types.h>
@@ -1302,6 +1302,9 @@ discoveryRunner(void *d)
 	char lhost[128];
 	char service[8];
 
+	/* seed random number generation for random delay in HELO response */
+	srand(time(NULL));
+
 	gethostname(lhost, 128);
 
 	addrlen = sizeof(local);
@@ -1422,6 +1425,10 @@ discoveryRunner(void *d)
 		if (strncmp(buf, "HELO ", 5) == 0) {
 			/* HELLO message, respond with current databases */
 			merlog("discovered neighbour %s", host);
+			/* sleep a random amount of time to avoid an avalanche of
+			 * ANNC messages flooding the network */
+			c = 1 + (int)(2500.0 * (rand() / (RAND_MAX + 1.0)));
+			MT_sleep_ms(c);
 			/* force an announcement round by dropping the deadline */
 			forceannc = 1;
 			continue;
