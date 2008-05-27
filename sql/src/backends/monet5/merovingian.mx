@@ -378,8 +378,30 @@ forkMserver(str database, sabdb** stats, int force)
 		return(e);
 	}
 
-	if (*stats == NULL)
+	if (*stats == NULL) {
+		/* check the remote databases */
+		remotedb rdb = _merovingian_remotedbs;
+		while (rdb != NULL) {
+			if (strcmp(rdb->dbname, database) == 0) {
+				/* take first match, create a fake sabdb struct */
+				*stats = GDKmalloc(sizeof(sabdb));
+				(*stats)->dbname = GDKstrdup(rdb->dbname);
+				(*stats)->path = (*stats)->dbname; /* only freed by sabaoth */
+				(*stats)->locked = 0;
+				(*stats)->state = SABdbRunning;
+				(*stats)->scens = GDKmalloc(sizeof(sablist));
+				(*stats)->scens->val = GDKstrdup("sql");
+				(*stats)->scens->next = NULL;
+				(*stats)->conns = GDKmalloc(sizeof(sablist));
+				(*stats)->conns->val = GDKstrdup(rdb->conn);
+				(*stats)->conns->next = NULL;
+				(*stats)->next = NULL;
+				return(NO_ERR);
+			}
+		}
+
 		return(newErr("no such database: %s", database));
+	}
 
 	/* Since we ask for a specific database, it should be either there
 	 * or not there.  Since we checked the latter case above, it should
