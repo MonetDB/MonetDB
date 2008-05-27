@@ -975,8 +975,6 @@ handleClient(int sock)
 
 	if (getpeername(sock, (struct sockaddr *)&saddr, &saddrlen) == -1) {
 		merlog("couldn't get peername of client: %s", strerror(errno));
-		merlog("redirecting client for database '%s' to %s",
-				stat->dbname, stat->conns->val);
 		host = "(unknown)";
 	} else {
 		/* avoid doing this, it requires some includes that probably
@@ -990,17 +988,19 @@ handleClient(int sock)
 				(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 8) & 0xff),
 				(unsigned) (ntohl(saddr.sin_addr.s_addr) & 0xff),
 				(int)ntohs(saddr.sin_port));
-		merlog("redirecting client %s for database '%s' to proxy or %s",
-				host, stat->dbname, stat->conns->val);
 	}
 
 	/* need to send a redirect, either we are going to proxy, or we send
 	 * a redirect */
 	if (doproxy == 0) {
+		merlog("redirecting client %s for database '%s' to %s",
+				host, stat->dbname, stat->conns->val);
 		stream_printf(fout, "^%s%s\n", stat->conns->val, stat->dbname);
 		/* flush redirect */
 		stream_flush(fout);
 	} else {
+		merlog("proxying client %s for database '%s' to %s",
+				host, stat->dbname, stat->conns->val);
 		stream_printf(fout, "^mapi:merovingian:proxy\n");
 		/* flush redirect */
 		stream_flush(fout);
@@ -1722,7 +1722,7 @@ main(int argc, char *argv[])
 	errlog = NULL;
 	timeout = 0;
 	pidfilename = NULL;
-	doproxy = 1;
+	doproxy = 0;
 	discoveryttl = 600;
 	while (fgets(buf, 1024, cnf) != NULL) {
 		/* eliminate fgets' newline */
