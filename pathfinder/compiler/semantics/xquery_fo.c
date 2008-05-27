@@ -1297,7 +1297,8 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "root",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_node ()) },
-            .ret_ty = PFty_opt (PFty_node()) } } }
+            .ret_ty = PFty_opt (PFty_node()) } },
+        .alg = PFbui_fn_root }
 
 
 /* 15. FUNCTIONS AND OPERATORS ON SEQUENCES */
