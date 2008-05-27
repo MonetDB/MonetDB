@@ -1,6 +1,6 @@
-test1_import
-test1
-test2_import
-test2
-lltest_import
-lltest
+NOT_ALGEBRA?test1_import
+NOT_ALGEBRA?test1
+NOT_ALGEBRA?test2_import
+NOT_ALGEBRA?test2
+NOT_ALGEBRA?lltest_import
+NOT_ALGEBRA?lltest
