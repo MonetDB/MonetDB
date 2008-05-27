@@ -18,7 +18,7 @@ commit();
 #01 #write(fd 5, buf 0x70d5a0, size 0) = 8
 #01 #BATsavedesc(65,free=8) = 0
 #01 #BBPdir: writing BBP.dir (55 bats).
-01 #BBPdir start oid=1010858@0 #01 
+#01 #BBPdir start oid=1010858@0 #01 
 [  27, 32, MMO_location, 33, 3 ]
 [  52, 64, b, 64, 4672 ]
 #01 #BBPdir end
