@@ -10,9 +10,6 @@ stderr of test 'step_parent11` in directory 'tests/XQuery` itself:
 # 11:34:38 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper08 --port=32482 -G step_parent11.xq
 # 11:34:38 >  
 
-MAPI  = monetdb@rig:39583
-QUERY = (attribute foo {""}, doc("foo.xml")//(@foo2|text()))/parent::*
-ERROR = !ERROR: path steps are only supported starting from non-attribute nodes
 
 # 11:34:39 >  
 # 11:34:39 >  Done.

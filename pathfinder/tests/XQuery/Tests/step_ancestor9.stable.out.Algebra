@@ -1,4 +1,4 @@
-stdout of test 'step_parent9` in directory 'tests/XQuery` itself:
+stdout of test 'step_ancestor9` in directory 'tests/XQuery` itself:
 
 
 # 11:18:10 >  
@@ -21,12 +21,14 @@ quit();
 
 Over..
 
-# 19:18:06 >  
-# 19:18:06 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=39583 step_parent9.xq
-# 19:18:06 >  
+# 11:18:11 >  
+# 11:18:11 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper08 --port=37154 -G step_ancestor9.xq
+# 11:18:11 >  
 
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><c foo2="bar"/></XQueryResult>
 
-# 19:18:06 >  
-# 19:18:06 >  Done.
-# 19:18:06 >  
+# 11:18:11 >  
+# 11:18:11 >  Done.
+# 11:18:11 >  
 

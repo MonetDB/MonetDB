@@ -21,12 +21,14 @@ quit();
 
 Over..
 
-# 19:18:07 >  
-# 19:18:07 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=39583 step_ancestor10.xq
-# 19:18:07 >  
+# 11:18:12 >  
+# 11:18:12 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper08 --port=37154 -G step_ancestor10.xq
+# 11:18:12 >  
 
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a><b>textnode</b><c foo2="bar"/></XQueryResult>
 
-# 19:18:07 >  
-# 19:18:07 >  Done.
-# 19:18:07 >  
+# 11:18:12 >  
+# 11:18:12 >  Done.
+# 11:18:12 >  
 

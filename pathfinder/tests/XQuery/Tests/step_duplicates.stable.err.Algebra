@@ -10,9 +10,6 @@ stderr of test 'step_duplicates` in directory 'tests/XQuery` itself:
 # 15:44:46 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper08 --port=32379 -G step_duplicates.xq
 # 15:44:46 >  
 
-MAPI  = monetdb@rig:39583
-QUERY = (: Check for correct duplicate elimination :)
-ERROR = !ERROR: path steps are only supported starting from non-attribute nodes
 
 # 15:44:47 >  
 # 15:44:47 >  Done.
