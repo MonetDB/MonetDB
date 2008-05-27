@@ -9161,7 +9161,6 @@ reduce (PFpa_op_t * p, int goalnt)
             mvar_t *iter      = new_var (p->refctr);
             mvar_t *item_res  = new_var (p->refctr);
             mvar_t *frag_res  = new_var (p->refctr);
-            PFmil_type_t ty   = type_of (L(p), p->sem.findnodes.item_doc);
             PFmil_t *pre      = NULL,
                     *pre_cont = NULL;
 
