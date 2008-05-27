@@ -1402,7 +1402,7 @@ discoveryRunner(void *d)
 			continue;
 		} else if (strncmp(buf, "LEAV ", 5) == 0) {
 			/* LEAVE message, unregister database */
-			char *sp;
+			char *sp = NULL;
 			char *dbname;
 			char *conn;
 
@@ -1445,7 +1445,7 @@ discoveryRunner(void *d)
 			}
 		} else if (strncmp(buf, "ANNC ", 5) == 0) {
 			/* ANNOUNCE message, register database */
-			char *sp;
+			char *sp = NULL;
 			char *dbname;
 			char *conn;
 			char *ttl;
