@@ -1355,11 +1355,10 @@ discoveryRunner(void *d)
 			orig = stats;
 			while (stats != NULL) {
 				/* craft ANNC messages for each db */
-				snprintf(buf, 512, "ANNC %s mapi:monetdb://%s:%hu/%s %d",
+				snprintf(buf, 512, "ANNC %s mapi:monetdb://%s:%hu/ %d",
 						stats->dbname,
 						lhost,
 						ntohs(((struct sockaddr_in *)&local)->sin_port),
-						stats->dbname,
 						discoveryttl + 60);
 
 				c = strlen(buf) + 1;
@@ -1532,11 +1531,10 @@ discoveryRunner(void *d)
 	orig = stats;
 	while (stats != NULL) {
 		/* craft LEAV messages for each db */
-		snprintf(buf, 512, "LEAV %s mapi:monetdb://%s:%hu/%s",
+		snprintf(buf, 512, "LEAV %s mapi:monetdb://%s:%hu/",
 				stats->dbname,
 				lhost,
-				ntohs(((struct sockaddr_in *)&local)->sin_port),
-				stats->dbname);
+				ntohs(((struct sockaddr_in *)&local)->sin_port));
 
 		c = strlen(buf) + 1;
 		if (sendto(bcs, buf, c, 0,
