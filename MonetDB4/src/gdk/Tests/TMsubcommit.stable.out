@@ -18,9 +18,9 @@ commit();
 #01 #write(fd 5, buf 0x70d5a0, size 0) = 8
 #01 #BATsavedesc(65,free=8) = 0
 #01 #BBPdir: writing BBP.dir (55 bats).
-01 #BBPdir start oid=1010858@0 #01 
+#01 #BBPdir start oid=1010858@0 #01 
 [  27, 32, MMO_location, 33, 3 ]
-[  53, 64, b, 65, 4672 ]
+[  52, 64, b, 64, 4672 ]
 #01 #BBPdir end
 #01 #BBPsync: rename bat/BACKUP bat/DELETE_ME = 0
 #01 #GDKremovedir(bat/DELETE_ME)
@@ -43,8 +43,8 @@ subcommit(bat(int,str).insert(0,"a"));
 #01 #BBPdir: writing BBP.dir (57 bats).
 #01 #BBPdir start oid=1010864@0 #01 
 [  27, 32, MMO_location, 33, 3 ]
-[  53, 32, b, 65, 4672 ]
-[  55, 64, a, 67, 4716 ]
+[  52, 32, b, 64, 4672 ]
+[  54, 64, a, 66, 4716 ]
 #01 #BBPdir end
 #01 #BBPsync: rename bat/BACKUP/SUBCOMMIT/ bat/DELETE_ME/ = 0
 #01 #GDKremovedir(bat/DELETE_ME/)
@@ -60,7 +60,7 @@ subcommit(tmp);
 #01 #BBPdir: writing BBP.dir (57 bats).
 #01 #BBPdir start oid=1010864@0 #01 
 [  27, 32, MMO_location, 33, 3 ]
-[  53, 32, b, 65, 4672 ]
+[  52, 32, b, 64, 4672 ]
 #01 #BBPdir end
 #01 #BBPsync: rename bat/BACKUP/SUBCOMMIT bat/DELETE_ME = 0
 #01 #GDKremovedir(bat/DELETE_ME)
