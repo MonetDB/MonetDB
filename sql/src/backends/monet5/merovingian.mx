@@ -1401,6 +1401,7 @@ discoveryRunner(void *d)
 		nread = recvfrom(sock, buf, 512, MSG_DONTWAIT,
 				(struct sockaddr *)&peer_addr, &peer_addr_len);
 		if (nread == -1) {
+			buf[0] = '\0';
 			MT_sleep_ms(1000); /* don't spin */
 			continue; /* ignore failed request */
 		}
@@ -1485,29 +1486,32 @@ discoveryRunner(void *d)
 			if (_merovingian_remotedbs == NULL) {
 				rdb = _merovingian_remotedbs = malloc(sizeof(struct _remotedb));
 			} else {
+				prv = NULL;
 				rdb = _merovingian_remotedbs;
-				while (rdb->next != NULL) {
+				while (rdb != NULL) {
 					if (strcmp(dbname, rdb->dbname) == 0) {
 						if (strcmp(conn, rdb->conn) == 0) {
 							/* refresh ttl */
 							rdb->ttl = time(NULL) + atoi(ttl);
 						}
-						rdb = NULL;
+						rdb = prv;
 						break; /* skip duplicate entries */
 					}
+					prv = rdb;
 					rdb = rdb->next;
 				}
-				if (rdb == NULL)
+				if (rdb == prv)
 					continue;
-				rdb = rdb->next = malloc(sizeof(struct _remotedb));
+				rdb = prv->next = malloc(sizeof(struct _remotedb));
 			}
 			rdb->dbname = strdup(dbname);
 			rdb->conn = strdup(conn);
 			rdb->ttl = time(NULL) + atoi(ttl);
 			rdb->next = NULL;
 
-			merlog("discovered neighbour database %s at %s (%s)",
-					dbname, conn, host);
+			merlog("discovered neighbour database %s at %s "
+					"(refresh from %s in %s seconds)",
+					dbname, conn, host, ttl);
 		} else {
 			merlog("neighbour discovery: ignoring unknown message "
 					"from %s:%s: '%s'", host, service, buf);
