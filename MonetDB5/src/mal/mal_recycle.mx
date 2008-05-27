@@ -365,7 +365,7 @@ RECYCLEcache(int target, int wr)
 		return;
 	}
 
-	for(i=0; i< recycleBlk->stop; i++)
+	for(i=1; i< recycleBlk->stop; i++)
 	if (i != target){
 		switch(rcachePolicy){
 		case RCACHE_LRU:
@@ -415,7 +415,7 @@ Likewise, we avoid all simple constant assigments.
 static int
 RECYCLEinterest(MalBlkPtr mb, InstrPtr p){
 	(void) mb;
-	if (p->recycle == 0 || p->token== ASSIGNsymbol )
+	if (p->recycle == 0 || p->token== ASSIGNsymbol ) 
 		return 0;
 	return getFunctionId(p) != NULL;
 }
@@ -435,9 +435,14 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 	    recycleBlk->stop >= HARDLIMIT_STMT ||
 	    recycleMemory > HARDLIMIT_MEM)
 		return ; /* no more caching */
-
+		
+	if ( recycleBlk->stop == 0 ){ /* fake instr at pos. 0 */
+		q = copyInstruction(p);
+		pushInstruction(recycleBlk,q);
+	}
 	if ( !RECYCLEinterest(mb,p))
 		return ;
+
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE keep ");
 	printTraceCall( GDKout,mb, s, getPC(mb,p),LIST_MAL_ALL);
@@ -513,7 +518,7 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
 #endif
 	if ( RECYCLEinterest(mb,p))
-	for (i=0; i<recycleBlk->stop; i++) {
+	for (i=1; i<recycleBlk->stop; i++) {
 		q = getInstrPtr(recycleBlk,i);
 		if (
 			(getFunctionId(p) != getFunctionId(q)) ||
@@ -546,7 +551,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	if( recycleBlk == 0 || reusePolicy == 0)
 		return -1;
 
-	for (i = 0; i < recycleBlk->stop; i++){
+	for (i = 1; i < recycleBlk->stop; i++){
 		q = getInstrPtr(recycleBlk,i);
 
 		if ((p->argc > q->argc) ||
@@ -629,6 +634,8 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			}
 			recycleBlk->profiler[i].counter++;
 			recycleBlk->profiler[i].clk = GDKusec();
+			p->recycle = i;
+			recycled++;
 			savedTime += recycleBlk->profiler[i].ticks;
 			return i;
 			notfound: 
@@ -720,6 +727,9 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if( lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.bval, TRUE);
 		}
+		recycleBlk->profiler[p->recycle].counter++;
+                recycleBlk->profiler[p->recycle].clk = GDKusec();
+		savedTime += recycleBlk->profiler[p->recycle].ticks;
 		return 1;
 	} 
 	statements++;
