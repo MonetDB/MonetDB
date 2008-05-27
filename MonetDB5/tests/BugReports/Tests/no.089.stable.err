@@ -1,6 +1,0 @@
-stderr of test 'no.089` in directory 'tests/BugReports` itself:
-
-#> Mtest:	other no.089
-#> Mtest:	./no.089 no.089
-#> Mlog:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db tests_BugReports -single no.089.1.mil
-#> Mlog:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db tests_BugReports -single no.089.2.mil

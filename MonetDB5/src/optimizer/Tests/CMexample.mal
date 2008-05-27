@@ -1,9 +1,0 @@
-# Cost model example
-	r{rows=100} := bat.new(:oid,:int);
-	s{rows=1000}:= bat.new(:oid,:int);
-	rs:= algebra.select(s,1,1);
-	rr:= bat.reverse(r);
-	j:= algebra.join(rs,rr);
-	optimizer.costModel();
-	mdb.list();
-
