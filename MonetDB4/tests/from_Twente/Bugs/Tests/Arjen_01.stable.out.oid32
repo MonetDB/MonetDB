@@ -1,20 +1,16 @@
 stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 10:59:05 >  
-# 10:59:05 >  Mtimeout -timeout 60  Mserver "--config=/ufs/niels/scratch/monetdb/Linux-i686/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-i686/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-i686/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-i686/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-i686/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-i686/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-i686/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=33164 --set xrpc_port=46044 --set monet_prompt= --trace --dbname=mTests_tests_from_Twente_Bugs Arjen_01.prelude 
-# 10:59:05 >  
+# 23:14:28 >  
+# 23:14:28 >   Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32851 --set xrpc_port=41440 --set monet_prompt= --trace  --dbname=mTests_tests_from_Twente_Bugs Arjen_01.prelude 
+# 23:14:28 >  
 
 
 
-
-
-
-
-# MonetDB Server v4.21.0
-# based on GDK   v1.21.0
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit with 32bit OIDs; dynamically linked.
+# MonetDB Server v4.23.0
+# based on GDK   v1.23.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 #
 # This program should select the valuesA that are larger than 20 and smaller
@@ -171,9 +167,9 @@ print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").
 [ "hdense",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "head",		  "void",	  "void",	  "void",	  "void",	  "void",	  "oid",	  "void",	  "void",	  "void",	  "void",	  "void"	  ]
 [ "head.filename",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "41.head",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file"	  ]
-[ "head.newstorage",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced"	  ]
 [ "head.free",		  "0",		  "0",		  "0",		  "0",		  "0",		  "12",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "head.maxsize",	  "0",		  "0",		  "0",		  "0",		  "0",		  "1024",	  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "head.newstorage",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced"	  ]
 [ "head.size",		  "0",		  "0",		  "0",		  "0",		  "0",		  "1024",	  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "head.storage",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "malloced",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
 [ "hident",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "t",		  "h",		  "t",		  "t",		  "h"		  ]
@@ -190,9 +186,9 @@ print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").
 [ "hvarsized",		  "1",		  "1",		  "1",		  "1",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "tail",			  "oid",	  "int",	  "bit",	  "void",	  "bit",	  "void",	  "void",	  "void",	  "void",	  "void",	  "int"		  ]
 [ "tail.filename",	  "32.tail",	  "34.tail",	  "35.tail",	  "no file",	  "40.tail",	  "no file",	  "no file",	  "no file",	  "no file",	  "no file",	  "46.tail"	  ]
-[ "tail.newstorage",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced"	  ]
 [ "tail.free",		  "16",		  "16",		  "4",		  "0",		  "4",		  "0",		  "0",		  "0",		  "0",		  "0",		  "8"		  ]
 [ "tail.maxsize",	  "1024",	  "1024",	  "256",	  "0",		  "256",	  "0",		  "0",		  "0",		  "0",		  "0",		  "1024"	  ]
+[ "tail.newstorage",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced",	  "malloced"	  ]
 [ "tail.size",		  "1024",	  "1024",	  "256",	  "0",		  "256",	  "0",		  "0",		  "0",		  "0",		  "0",		  "1024"	  ]
 [ "tail.storage",	  "malloced",	  "malloced",	  "malloced",	  "absent",	  "malloced",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "malloced"	  ]
 [ "talign",		  "2010",	  "2018",	  "2023",	  "2029",	  "2031",	  "2034",	  "2029",	  "2039",	  "2039",	  "2028",	  "2046"	  ]
