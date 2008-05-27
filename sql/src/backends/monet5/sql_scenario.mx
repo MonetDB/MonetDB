@@ -1197,7 +1197,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 		v->val.ival= int_nil;
 	}
 	q->stk = (backend_stack)glb;
-	if (glb && SQLdebug)
+	if (glb && SQLdebug&1)
 		printStack(GDKstdout, mb, glb);
 	if( pci->argc >= MAXARG)
 		GDKfree(argv);

@@ -367,10 +367,6 @@ load_idxcolumn(sql_trans *tr, sql_idx * i, ssize_t rid)
 	assert(kc->c);
 	if (i->type == hash_idx) 
 		kc->c->unique = 1;
-
-	/* create storage */
-	if (i->type == hash_idx && list_length(i->columns) == 2 && isTable(i->t))
-		store_funcs.create_idx(tr, i);
 }
 
 static sql_idx *
@@ -1862,19 +1858,24 @@ trans_dup(backend_stack stk, sql_trans *ot, char *newname)
 	return t;
 }
 
-typedef int (*rfufunc) (sql_trans *tr, sql_base * fs, sql_base * ts);
-typedef sql_base *(*rfcfunc) (sql_trans *tr, sql_base * b);
-typedef int (*rfdfunc) (sql_trans *tr, sql_base * b);
+#define R_SNAPSHOT 	1
+#define R_LOG 		2
+#define R_APPLY 	3
+
+typedef int (*rfufunc) (sql_trans *tr, sql_base * fs, sql_base * ts, int mode);
+typedef sql_base *(*rfcfunc) (sql_trans *tr, sql_base * b, int mode);
+typedef int (*rfdfunc) (sql_trans *tr, sql_base * b, int mode);
 typedef sql_base *(*dupfunc) (sql_trans *tr, int flag, sql_base * b, sql_base * p);
 
 static int
-rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql_base * b, rfufunc rollforward_updates, rfcfunc rollforward_creates, rfdfunc rollforward_deletes, dupfunc fd)
+rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql_base * b, rfufunc rollforward_updates, rfcfunc rollforward_creates, rfdfunc rollforward_deletes, dupfunc fd, int mode)
 {
 	int ok = LOG_OK;
+	int apply = (mode == R_APPLY);
 	node *n = NULL;
 
 	/* delete removed bases */
-	if (fs->dset)
+	if (fs->dset) {
 		for (n = fs->dset->h; ok == LOG_OK && n; n = n->next) {
 			sql_base *fb = n->data;
 			node *tbn = cs_find_name(ts, fb->name);
@@ -1883,20 +1884,25 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 				sql_base *tb = tbn->data;
 
 				if (rollforward_deletes)
-					ok = rollforward_deletes(tr, tb);
-				if (ts->nelm == tbn)
-					ts->nelm = tbn->next;
-				if (tr->parent != gtrans) {
-					if (!ts->dset)
-						ts->dset = list_create(ts->destroy);
-					list_move_data(ts->set, ts->dset, tb);
-				} else {
-					list_remove_node(ts->set, tbn);
+					ok = rollforward_deletes(tr, tb, mode);
+				if (apply) {
+					if (ts->nelm == tbn)
+						ts->nelm = tbn->next;
+					if (tr->parent != gtrans) {
+						if (!ts->dset)
+							ts->dset = list_create(ts->destroy);
+						list_move_data(ts->set, ts->dset, tb);
+					} else {
+						list_remove_node(ts->set, tbn);
+					}
 				}
 			}
 		}
-		list_destroy(fs->dset);
-		fs->dset = NULL;
+		if (apply) {
+			list_destroy(fs->dset);
+			fs->dset = NULL;
+		}
+	}
 	/* changes to the existing bases */
 	if (fs->set) {
 		/* update existing */
@@ -1911,15 +1917,16 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 						sql_base *tb = tbn->data;
 
 						/* update timestamps */
-						if (fb->rtime && tr->stime > tb->rtime)
+						if (apply && fb->rtime && tr->stime > tb->rtime)
 							tb->rtime = tr->stime;
-						if (fb->wtime && tr->stime > tb->wtime)
+						if (apply && fb->wtime && tr->stime > tb->wtime)
 							tb->wtime = tr->stime;
 
-						ok = rollforward_updates(tr, fb, tb);
+						ok = rollforward_updates(tr, fb, tb, mode);
 					}
 				}
-				fb->rtime = fb->wtime = 0;
+				if (apply)
+					fb->rtime = fb->wtime = 0;
 			}
 		}
 		/* add the new bases */
@@ -1927,50 +1934,63 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 			for (n = fs->nelm; ok == LOG_OK && n; ) {
 				node *nxt = n->next;
 				sql_base *fb = n->data;
-				sql_base *tb = fd(tr, TR_NEW, fb, b);
 
-				/* conditional add the new bases */
-				if (tb) {
-					sql_base *r = rollforward_creates(tr, tb);
 
-					if (r)
-						cs_add(ts, r, TR_NEW);
-					else
-						ok = LOG_ERR;
-					fb->rtime = fb->wtime = 0;
-					fb->flag = TR_OLD;
+				if (apply) {
+					sql_base *tb = fd(tr, TR_NEW, fb, b);
+
+					/* conditional add the new bases */
+					if (tb) {
+						sql_base *r = rollforward_creates(tr, tb, mode);
+
+						if (r)
+							cs_add(ts, r, TR_NEW);
+						else
+							ok = LOG_ERR;
+						fb->rtime = fb->wtime = 0;
+						fb->flag = TR_OLD;
+					}
+				} else if (!rollforward_creates(tr, fb, mode)) {
+					ok = LOG_ERR;
 				}
 				n = nxt;
 			}
-			fs -> nelm = NULL;
+			if (apply)
+				fs -> nelm = NULL;
 		}
 	}
 	return ok;
 }
 
 static int
-rollforward_changeset_creates(sql_trans *tr, changeset * cs, rfcfunc rf)
+rollforward_changeset_creates(sql_trans *tr, changeset * cs, rfcfunc rf, int mode)
 {
+	int apply = (mode == R_APPLY);
+
 	if (cs->set) {
 		node *n;
 
 		for (n = cs->set->h; n; n = n->next) {
 			sql_base *b = n->data;
 
-			if (!rf(tr, b))
+			if (!rf(tr, b, mode))
 				return LOG_ERR;
 
-			b->rtime = b->wtime = 0;
-			b->flag = TR_OLD;
+			if (apply) {
+				b->rtime = b->wtime = 0;
+				b->flag = TR_OLD;
+			}
 		}
-		cs->nelm = NULL;
+		if (apply) 
+			cs->nelm = NULL;
 	}
 	return LOG_OK;
 }
 
 static int
-rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf)
+rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf, int mode)
 {
+	int apply = (mode == R_APPLY);
 	int ok = LOG_OK;
 
 	if (!cs)
@@ -1981,10 +2001,12 @@ rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf)
 		for (n = cs->dset->h; ok == LOG_OK && n; n = n->next) {
 			sql_base *b = n->data;
 
-			ok = rf(tr, b);
+			ok = rf(tr, b, mode);
 		}
-		list_destroy(cs->dset);
-		cs->dset = NULL;
+		if (apply) {
+			list_destroy(cs->dset);
+			cs->dset = NULL;
+		}
 	}
 	if (cs->set) {
 		node *n;
@@ -1992,70 +2014,84 @@ rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf)
 		for (n = cs->set->h; ok == LOG_OK && n; n = n->next) {
 			sql_base *b = n->data;
 
-			ok = rf(tr, b);
+			ok = rf(tr, b, mode);
 		}
 	}
 	return ok;
 }
 
 static sql_idx *
-rollforward_create_idx(sql_trans *tr, sql_idx * i)
+rollforward_create_idx(sql_trans *tr, sql_idx * i, int mode)
 {
-	if (isTable(i->t) && store_funcs.create_idx(tr, i) != LOG_OK)
+
+	if (isTable(i->t)) {
+		int p = (tr->parent == gtrans && !isTempTable(i->t));
+
+		if ((p && mode == R_SNAPSHOT && store_funcs.snapshot_create_idx(tr, i) != LOG_OK) ||
+		    (p && mode == R_LOG && store_funcs.log_create_idx(tr, i) != LOG_OK) ||
+		    (mode == R_APPLY && store_funcs.create_idx(tr, i) != LOG_OK))
 		return NULL;
+	}
 	return i;
 }
 
 static sql_key *
-rollforward_create_key(sql_trans *tr, sql_key *k)
+rollforward_create_key(sql_trans *tr, sql_key *k, int mode)
 {
 	(void) tr;
+	(void) mode;
 	return k;
 }
 
 static sql_trigger *
-rollforward_create_trigger(sql_trans *tr, sql_trigger *k)
+rollforward_create_trigger(sql_trans *tr, sql_trigger *k, int mode)
 {
 	(void) tr;
+	(void) mode;
 	return k;
 }
 
 static sql_type *
-rollforward_create_type(sql_trans *tr, sql_type *k)
+rollforward_create_type(sql_trans *tr, sql_type *k, int mode)
 {
 	(void) tr;
+	(void) mode;
 	return k;
 }
 
 static sql_func *
-rollforward_create_func(sql_trans *tr, sql_func *k)
+rollforward_create_func(sql_trans *tr, sql_func *k, int mode)
 {
 	(void) tr;
+	(void) mode;
 	return k;
 }
 
 static sql_sequence *
-rollforward_create_seq(sql_trans *tr, sql_sequence *k)
+rollforward_create_seq(sql_trans *tr, sql_sequence *k, int mode)
 {
 	(void) tr;
+	(void) mode;
 	return k;
 }
 
 
 static sql_column *
-rollforward_create_column(sql_trans *tr, sql_column *c)
+rollforward_create_column(sql_trans *tr, sql_column *c, int mode)
 {
-	if (isTable(c->t) && store_funcs.create_col(tr, c) != LOG_OK)
+	if (isTable(c->t)) {
+		int p = (tr->parent == gtrans && !isTempTable(c->t));
+
+		if ((p && mode == R_SNAPSHOT && store_funcs.snapshot_create_col(tr, c) != LOG_OK) ||
+		    (p && mode == R_LOG && store_funcs.log_create_col(tr, c) != LOG_OK) ||
+		    (mode == R_APPLY &&  store_funcs.create_col(tr, c) != LOG_OK))
 		return NULL;
-/*
-	if (tr->parent == gtrans) 
-		c->base.flag = TR_OLD;	
-*/
+	}
 	return c;
 }
 
 static sql_table *
-rollforward_create_table(sql_trans *tr, sql_table *t)
+rollforward_create_table(sql_trans *tr, sql_table *t, int mode)
 {
 	int ok = LOG_OK;
 
@@ -2063,48 +2099,67 @@ rollforward_create_table(sql_trans *tr, sql_table *t)
 		fprintf(stderr, "create table %s\n", t->base.name);
 
 	if (isTable(t) && isGlobalTable(t)) {
+		int p = (tr->parent == gtrans && !isTempTable(t));
+
 		/* only register columns without commit action tables */
-		rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_create_column);
-		store_funcs.create_del(tr, t);
-		rollforward_changeset_creates(tr, &t->keys, (rfcfunc) &rollforward_create_key);
-		rollforward_changeset_creates(tr, &t->idxs, (rfcfunc) &rollforward_create_idx);
-		rollforward_changeset_creates(tr, &t->triggers, (rfcfunc) &rollforward_create_trigger);
+		rollforward_changeset_creates(tr, &t->columns, (rfcfunc) &rollforward_create_column, mode);
+		if (p && mode == R_SNAPSHOT)
+			store_funcs.snapshot_create_del(tr, t);
+		else if (p && mode == R_LOG)
+			store_funcs.log_create_del(tr, t);
+		else if (mode == R_APPLY)
+			store_funcs.create_del(tr, t);
+		rollforward_changeset_creates(tr, &t->keys, (rfcfunc) &rollforward_create_key, mode);
+		rollforward_changeset_creates(tr, &t->idxs, (rfcfunc) &rollforward_create_idx, mode);
+		rollforward_changeset_creates(tr, &t->triggers, (rfcfunc) &rollforward_create_trigger, mode);
 	}
-/*
-	if (tr->parent == gtrans) 
-		t->base.flag = TR_OLD;	
-*/
 	if (ok != LOG_OK)
 		return NULL;
 	return t;
 }
 
 static int
-rollforward_drop_column(sql_trans *tr, sql_column *c)
+rollforward_drop_column(sql_trans *tr, sql_column *c, int mode)
 {
-	if (isTable(c->t))
-		return store_funcs.destroy_col(tr, c);
+	if (isTable(c->t)) {
+		int p = (tr->parent == gtrans);
+
+		if (p && mode == R_LOG)
+			return store_funcs.log_destroy_col(tr, c);
+		else if (mode == R_APPLY)
+			return store_funcs.destroy_col(tr, c);
+	}
 	return LOG_OK;
 }
 
 static int
-rollforward_drop_idx(sql_trans *tr, sql_idx * i)
+rollforward_drop_idx(sql_trans *tr, sql_idx * i, int mode)
 {
 	int ok = LOG_OK;
 
-	if (isTable(i->t))
-		ok = store_funcs.destroy_idx(tr, i);
+	if (isTable(i->t)) {
+		int p = (tr->parent == gtrans);
+
+		if (p && mode == R_LOG)
+			ok = store_funcs.log_destroy_idx(tr, i);
+		else if (mode == R_APPLY)
+			ok = store_funcs.destroy_idx(tr, i);
+	}
 	/* remove idx from schema */
-	list_remove_data(i->t->s->idxs, i);
+	if (mode == R_APPLY)
+		list_remove_data(i->t->s->idxs, i);
 	return ok;
 }
 
 static int
-rollforward_drop_key(sql_trans *tr, sql_key *k)
+rollforward_drop_key(sql_trans *tr, sql_key *k, int mode)
 {
 	node *n = NULL;
 	sql_fkey *fk = NULL;
+
 	(void) tr;		/* unused! */
+	if (mode != R_APPLY)
+		return LOG_OK;
 	/* remove key from schema */
 	list_remove_data(k->t->s->keys, k);
 	if (k->type == fkey) {
@@ -2130,94 +2185,112 @@ rollforward_drop_key(sql_trans *tr, sql_key *k)
 }
 
 static int
-rollforward_drop_trigger(sql_trans *tr, sql_trigger * i)
+rollforward_drop_trigger(sql_trans *tr, sql_trigger * i, int mode)
 {
 	(void)tr;
-	list_remove_data(i->t->s->triggers, i);
+	if (mode == R_APPLY)
+		list_remove_data(i->t->s->triggers, i);
 	return LOG_OK;
 }
 
 static int
-rollforward_drop_seq(sql_trans *tr, sql_sequence * seq)
+rollforward_drop_seq(sql_trans *tr, sql_sequence * seq, int mode)
 {
 	(void)tr;
 	(void)seq;
+	(void)mode;
 	/* TODO drop sequence? */
 	return LOG_OK;
 }
 
 static int
-rollforward_drop_table(sql_trans *tr, sql_table *t)
+rollforward_drop_table(sql_trans *tr, sql_table *t, int mode)
 {
 	int ok = LOG_OK;
 
-	if (isTable(t))
-		ok = store_funcs.destroy_del(tr, t);
+	if (isTable(t)) {
+		int p = (tr->parent == gtrans);
+
+		if (p && mode == R_LOG)
+			ok = store_funcs.log_destroy_del(tr, t);
+		else if (mode == R_APPLY)
+			ok = store_funcs.destroy_del(tr, t);
+	}
 	if (ok == LOG_OK)
-		ok = rollforward_changeset_deletes(tr, &t->columns, (rfdfunc) &rollforward_drop_column);
+		ok = rollforward_changeset_deletes(tr, &t->columns, (rfdfunc) &rollforward_drop_column, mode);
 	if (ok == LOG_OK)
-		ok = rollforward_changeset_deletes(tr, &t->idxs, (rfdfunc) &rollforward_drop_idx);
+		ok = rollforward_changeset_deletes(tr, &t->idxs, (rfdfunc) &rollforward_drop_idx, mode);
 	if (ok == LOG_OK)
-		ok = rollforward_changeset_deletes(tr, &t->keys, (rfdfunc) &rollforward_drop_key);
+		ok = rollforward_changeset_deletes(tr, &t->keys, (rfdfunc) &rollforward_drop_key, mode);
 	if (ok == LOG_OK)
-		ok = rollforward_changeset_deletes(tr, &t->triggers, (rfdfunc) &rollforward_drop_trigger);
+		ok = rollforward_changeset_deletes(tr, &t->triggers, (rfdfunc) &rollforward_drop_trigger, mode);
 	return ok;
 }
 
 static int
-rollforward_drop_schema(sql_trans *tr, sql_schema *s)
+rollforward_drop_schema(sql_trans *tr, sql_schema *s, int mode)
 {
 	int ok = LOG_OK;
 
-	ok = rollforward_changeset_deletes(tr, &s->seqs, (rfdfunc) &rollforward_drop_seq);
+	ok = rollforward_changeset_deletes(tr, &s->seqs, (rfdfunc) &rollforward_drop_seq, mode);
 	if (ok == LOG_OK)
-		return rollforward_changeset_deletes(tr, &s->tables, (rfdfunc) &rollforward_drop_table);
+		return rollforward_changeset_deletes(tr, &s->tables, (rfdfunc) &rollforward_drop_table, mode);
 	return ok;
 }
 
 static sql_schema *
-rollforward_create_schema(sql_trans *tr, sql_schema *s)
+rollforward_create_schema(sql_trans *tr, sql_schema *s, int mode)
 {
-	rollforward_changeset_creates(tr, &s->tables, (rfcfunc) &rollforward_create_table);
+	if (rollforward_changeset_creates(tr, &s->tables, (rfcfunc) &rollforward_create_table, mode) != LOG_OK)
+		return NULL;
 	return s;
 }
 
 static int
-rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
+rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 {
+	int p = (tr->parent == gtrans && !isTempTable(ft));
 	int ok = LOG_OK;
 
 	/* cannot update views and temporaries tables */
 	if (!isTable(ft) || isTempTable(ft))
 		return ok;
 
-	ok = rollforward_changeset_updates(tr, &ft->columns, &tt->columns, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_column, (rfdfunc) &rollforward_drop_column, (dupfunc) &column_dup);
+	ok = rollforward_changeset_updates(tr, &ft->columns, &tt->columns, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_column, (rfdfunc) &rollforward_drop_column, (dupfunc) &column_dup, mode);
 	if (ok == LOG_OK)
-		ok = rollforward_changeset_updates(tr, &ft->idxs, &tt->idxs, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_idx, (rfdfunc) &rollforward_drop_idx, (dupfunc) &idx_dup);
+		ok = rollforward_changeset_updates(tr, &ft->idxs, &tt->idxs, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_idx, (rfdfunc) &rollforward_drop_idx, (dupfunc) &idx_dup, mode);
 	if (ok == LOG_OK)
-		ok = rollforward_changeset_updates(tr, &ft->keys, &tt->keys, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_key, (rfdfunc) &rollforward_drop_key, (dupfunc) &key_dup);
+		ok = rollforward_changeset_updates(tr, &ft->keys, &tt->keys, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_key, (rfdfunc) &rollforward_drop_key, (dupfunc) &key_dup, mode);
 	if (ok == LOG_OK)
-		ok = rollforward_changeset_updates(tr, &ft->triggers, &tt->triggers, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_trigger, (rfdfunc) &rollforward_drop_trigger, (dupfunc) &trigger_dup);
+		ok = rollforward_changeset_updates(tr, &ft->triggers, &tt->triggers, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_trigger, (rfdfunc) &rollforward_drop_trigger, (dupfunc) &trigger_dup, mode);
 
-	assert(cs_size(&tt->columns) == cs_size(&ft->columns));
 	if (ok != LOG_OK) 
 		return LOG_ERR;
-	if (ft->base.rtime)
-		tt->base.rtime = tr->stime;
-	tt->base.wtime = tr->stime;
-	if (bs_debug) 
-		fprintf(stderr, "update table %s\n", tt->base.name);
-	ok = store_funcs.update_table(tr, ft, tt);
-	ft->cleared = 0;
-	ft->base.rtime = ft->base.wtime = 0;
+
+	if (p && mode == R_SNAPSHOT) {
+		ok = store_funcs.snapshot_table(tr, ft, tt);
+	} else if (p && mode == R_LOG) {
+		ok = store_funcs.log_table(tr, ft, tt);
+	} else if (mode == R_APPLY) {
+		assert(cs_size(&tt->columns) == cs_size(&ft->columns));
+		if (ft->base.rtime)
+			tt->base.rtime = tr->stime;
+		tt->base.wtime = tr->stime;
+		if (bs_debug) 
+			fprintf(stderr, "update table %s\n", tt->base.name);
+		ok = store_funcs.update_table(tr, ft, tt);
+		ft->cleared = 0;
+		ft->base.rtime = ft->base.wtime = 0;
+	}
 	return ok;
 }
 
 static int
-rollforward_update_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *tt)
+rollforward_update_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *tt, int mode)
 {
-	/* TODO what to update */
 	(void)tr;
+	if (mode != R_APPLY)
+		return LOG_OK;
 	if (ft->start != tt->start)
 		tt->start = ft->start;
 	tt->minvalue = ft->minvalue;
@@ -2231,8 +2304,10 @@ rollforward_update_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *tt)
 static sql_table *
 conditional_table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 {
+	int p = (tr->parent == gtrans);
+
 	/* persistent columns need to be dupped */
-	if ((isGlobalTable(ot) && tr->parent == gtrans) ||
+	if ((p && isGlobalTable(ot)) ||
 	    /* allways dup in recursive mode */
 	    tr->parent != gtrans)
 		return table_dup(tr, flag, ot, s);
@@ -2247,11 +2322,12 @@ conditional_table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 }
 
 static int
-rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts)
+rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mode)
 {
+	int apply = (mode == R_APPLY);
 	int ok = LOG_OK;
 
-	if (isTempSchema(fs)) {
+	if (apply && isTempSchema(fs)) {
 		if (fs->tables.set) {
 			node *n;
 			for (n = fs->tables.set->h; n; ) {
@@ -2272,39 +2348,41 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts)
 	}
 
 	if (ok == LOG_OK)
-		ok = rollforward_changeset_updates(tr, &fs->types, &ts->types, &ts->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_type, (rfdfunc) NULL, (dupfunc) &type_dup);
+		ok = rollforward_changeset_updates(tr, &fs->types, &ts->types, &ts->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_type, (rfdfunc) NULL, (dupfunc) &type_dup, mode);
 
 	if (ok == LOG_OK)
-		ok = rollforward_changeset_updates(tr, &fs->tables, &ts->tables, &ts->base, (rfufunc) &rollforward_update_table, (rfcfunc) &rollforward_create_table, (rfdfunc) &rollforward_drop_table, (dupfunc) &conditional_table_dup);
+		ok = rollforward_changeset_updates(tr, &fs->tables, &ts->tables, &ts->base, (rfufunc) &rollforward_update_table, (rfcfunc) &rollforward_create_table, (rfdfunc) &rollforward_drop_table, (dupfunc) &conditional_table_dup, mode);
 
 	if (ok == LOG_OK) /* last as it may require complex (table) types */
-		ok = rollforward_changeset_updates(tr, &fs->funcs, &ts->funcs, &ts->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_func, (rfdfunc) NULL, (dupfunc) &func_dup);
+		ok = rollforward_changeset_updates(tr, &fs->funcs, &ts->funcs, &ts->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_func, (rfdfunc) NULL, (dupfunc) &func_dup, mode);
 
 	if (ok == LOG_OK) /* last as it may require complex (table) types */
-		ok = rollforward_changeset_updates(tr, &fs->seqs, &ts->seqs, &ts->base, (rfufunc) &rollforward_update_seq, (rfcfunc) &rollforward_create_seq, (rfdfunc) &rollforward_drop_seq, (dupfunc) &seq_dup);
+		ok = rollforward_changeset_updates(tr, &fs->seqs, &ts->seqs, &ts->base, (rfufunc) &rollforward_update_seq, (rfcfunc) &rollforward_create_seq, (rfdfunc) &rollforward_drop_seq, (dupfunc) &seq_dup, mode);
 
 	return ok;
 }
 
 static int
-rollforward_trans(sql_trans *tr)
+rollforward_trans(sql_trans *tr, int mode)
 {
 	int ok = LOG_OK;
 
-	if (tr->parent && tr->wtime > tr->parent->wtime) {
+	if (mode == R_APPLY && tr->parent && tr->wtime > tr->parent->wtime) {
 		tr->parent->wtime = tr->wtime;
 		tr->parent->schema_updates = tr->schema_updates;
 	}
 
 	if (ok == LOG_OK)
-		ok = rollforward_changeset_updates(tr, &tr->schemas, &tr->parent->schemas, (sql_base *) tr->parent, (rfufunc) &rollforward_update_schema, (rfcfunc) &rollforward_create_schema, (rfdfunc) &rollforward_drop_schema, (dupfunc) &schema_dup);
-	if (tr->parent == gtrans) {
-		gtrans->stime = tr->stime;
-		
-		if (tr->schema_updates) 
-			schema_number++;
+		ok = rollforward_changeset_updates(tr, &tr->schemas, &tr->parent->schemas, (sql_base *) tr->parent, (rfufunc) &rollforward_update_schema, (rfcfunc) &rollforward_create_schema, (rfdfunc) &rollforward_drop_schema, (dupfunc) &schema_dup, mode);
+	if (mode == R_APPLY) {
+		if (tr->parent == gtrans) {
+			gtrans->stime = tr->stime;
+			
+			if (tr->schema_updates) 
+				schema_number++;
+		}
+		tr->wtime = tr->rtime = 0;
 	}
-	tr->wtime = tr->rtime = 0;
 	return ok;
 }
 
@@ -2649,23 +2727,27 @@ sql_trans_commit(sql_trans *tr)
 	/* write phase */
 	if (bs_debug)
 		fprintf(stderr, "forwarding changes %d,%d\n", gtrans->stime, tr->stime);
+	/* snap shots should be saved first */
 	if (tr->parent == gtrans) {
 		tr->stime = timestamp ();
-		ok = logger_funcs.log_tstart();
-	}
-	if (ok == LOG_OK) {
-		/*catalog_corrupt(tr); */
-		ok = rollforward_trans(tr);
-		/*catalog_corrupt(tr->parent);*/
-	}
-	if (tr->parent == gtrans) {
-		if (prev_oid != store_oid)
+		ok = rollforward_trans(tr, R_SNAPSHOT);
+
+		if (ok == LOG_OK) 
+			ok = logger_funcs.log_tstart();
+		if (ok == LOG_OK) 
+			ok = rollforward_trans(tr, R_LOG);
+		if (ok == LOG_OK && prev_oid != store_oid)
 			ok = logger_funcs.log_sequence(OBJ_SID, store_oid);
 		prev_oid = store_oid;
 		if (ok == LOG_OK)
 			ok = logger_funcs.log_tend();
 		tr->previous_schema_nr = tr->schema_number;
 		tr->schema_number = store_schema_number();
+	}
+	if (ok == LOG_OK) {
+		/* It is save to rollforward the changes now. In case 
+		   of failure, the log will be replayed. */
+		ok = rollforward_trans(tr, R_APPLY);
 	}
 	if (bs_debug)
 		fprintf(stderr, "done forwarding changes %d\n", gtrans->stime);
@@ -3744,8 +3826,6 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*, extra options 
 			sql_kc *ic1 = i->columns->h->data;
 			ic1->c->unique ++;
 		}
-		if (list_length(i->columns) == 2 && isTable(i->t))
-			store_funcs.create_idx(tr, i);
 	}
 
 	table_funcs.table_insert(tr, sysic, &i->base.id, ic->c->base.name, &ic->trunc, &nr);

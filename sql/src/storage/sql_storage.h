@@ -138,6 +138,7 @@ typedef size_t (*clear_del_fptr) (sql_trans *tr, sql_table *t);
 */
 typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt); 
 
+
 /*
 -- handle inserts and updates of columns and indices
 -- returns LOG_OK, LOG_ERR
@@ -181,6 +182,27 @@ typedef struct store_functions {
 	clear_idx_fptr clear_idx;
 	clear_del_fptr clear_del;
 
+	/* functions for logging */
+	create_col_fptr log_create_col;
+	create_idx_fptr log_create_idx;
+	create_del_fptr log_create_del;
+
+	destroy_col_fptr log_destroy_col;
+	destroy_idx_fptr log_destroy_idx;
+	destroy_del_fptr log_destroy_del;
+
+	/* functions for snapshots */
+	create_col_fptr snapshot_create_col;
+	create_idx_fptr snapshot_create_idx;
+	create_del_fptr snapshot_create_del;
+
+	destroy_col_fptr snapshot_destroy_col;
+	destroy_idx_fptr snapshot_destroy_idx;
+	destroy_del_fptr snapshot_destroy_del;
+
+	/* rollforward the changes, first snapshot, then log and finaly apply */
+	update_table_fptr snapshot_table;
+	update_table_fptr log_table;
 	update_table_fptr update_table;
 
 	col_ins_fptr col_ins;

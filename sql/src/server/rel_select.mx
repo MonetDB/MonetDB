@@ -1430,6 +1430,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_exp *param)
 sql_exp * 
 rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int tpe)
 {
+	int err = 0;
 	sql_subtype *fromtype = exp_subtype(exp);
 	
 	if ((!fromtype || !fromtype->type) && rel_set_type_param(sql, t, exp) == 0)
@@ -1439,13 +1440,12 @@ rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int tpe)
 		int c = sql_type_convert(fromtype->type->eclass, t->type->eclass);
 		if (!c || 
 		   (c == 2 && tpe == type_set) || (c == 3 && tpe != type_cast)){
-			exp_destroy(exp);
-			exp = NULL;
+			err = 1;
 		} else {
 			exp = exp_convert(exp, fromtype, t);
 		}
 	}
-	if (!exp) {
+	if (err) {
 		sql_exp *res = sql_error(
 			sql, 03,
 			"types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal",
@@ -1458,6 +1458,8 @@ rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int tpe)
 			t->scale,
 			t->type->base.name
 		);
+		if (exp)
+			exp_destroy(exp);
 		return res;
 	}
 	return exp;
@@ -2426,11 +2428,11 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		if (!le)
 			return NULL;
 		le = rel_unop_(sql, le, NULL, "isnull");
-		re = exp_atom_bool(1);
 		if (sc->token == SQL_NULL) 
-			le = exp_compare( le, re, cmp_equal);
+			re = exp_atom_bool(1);
 		else
-			le = exp_compare( le, re, cmp_notequal);
+			re = exp_atom_bool(0);
+		le = exp_compare( le, re, cmp_equal);
 		return rel_select(rel, le);
 	}
 	case SQL_NOT: { 

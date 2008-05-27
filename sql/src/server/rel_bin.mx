@@ -108,6 +108,27 @@ bin_first_column( stmt *sub )
 	return c;
 }
 
+char *compare_func( comp_type t )
+{
+	switch(t) {
+	case cmp_equal:
+		return "=";
+	case cmp_lt:
+		return "<";
+	case cmp_lte:
+		return "<=";
+	case cmp_gte:
+		return ">=";
+	case cmp_gt:
+		return ">";
+	case cmp_notequal:
+		return "<>";
+	default:
+		return NULL;
+	}
+	return NULL;
+}
+
 static stmt *
 exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel) 
 {
@@ -370,7 +391,13 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			if (r2) {
 				s = stmt_uselect2(l, r, r2, (comp_type)e->flag);
 			} else {
-				s = stmt_uselect(l, r, (comp_type)e->flag);
+				/* value compare or select */
+				if (l->nrcols == 0 && r->nrcols == 0) {
+					sql_subfunc *f = sql_bind_func(sql->session->schema, compare_func((comp_type)e->flag), tail_type(l), tail_type(r));
+					assert(f);
+					s = stmt_binop(l, r, f);
+				} else
+					s = stmt_uselect(l, r, (comp_type)e->flag);
 			}
 		}
 		if (is_anti(e))
@@ -500,27 +527,6 @@ rel2bin_table( mvc *sql, sql_rel *rel )
 		stmt_destroy(sub);
 	sub = stmt_list(l);
 	return sub;
-}
-
-char *compare_func( comp_type t )
-{
-	switch(t) {
-	case cmp_equal:
-		return "=";
-	case cmp_lt:
-		return "<";
-	case cmp_lte:
-		return "<=";
-	case cmp_gte:
-		return ">=";
-	case cmp_gt:
-		return ">";
-	case cmp_notequal:
-		return "<>";
-	default:
-		return NULL;
-	}
-	return NULL;
 }
 
 static stmt *
