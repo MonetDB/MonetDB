@@ -254,7 +254,7 @@ public final class MapiSocket {
 		do {
 			if ((tmp = reader.readLine()) == null)
 				throw new IOException("Read from " +
-						con.getInetAddress().getHostAddress() + ":" +
+						con.getInetAddress().getHostName() + ":" +
 						con.getPort() + ": End of stream reached");
 			if ((lineType = reader.getLineType()) == BufferedMCLReader.ERROR) {
 				err += "\n" + tmp.substring(1);
@@ -702,7 +702,7 @@ public final class MapiSocket {
 							logRx(new String(b, 0, off, "UTF-8"));
 						}
 						throw new IOException("Read from " +
-								con.getInetAddress().getHostAddress() + ":" +
+								con.getInetAddress().getHostName() + ":" +
 								con.getPort() + ": Incomplete block read from stream");
 					}
 					return(false);
@@ -741,7 +741,7 @@ public final class MapiSocket {
 			// read next two bytes (short)
 			if (!_read(blklen, 2)) throw
 				new IOException("Read from " +
-						con.getInetAddress().getHostAddress() + ":" +
+						con.getInetAddress().getHostName() + ":" +
 						con.getPort() + ": End of stream reached");
 
 			// Get the short-value and store its value in blockLen.
@@ -767,7 +767,7 @@ public final class MapiSocket {
 						blockLen + " > " + block.length);
 			if (!_read(block, blockLen))
 				new IOException("Read from " +
-						con.getInetAddress().getHostAddress() + ":" +
+						con.getInetAddress().getHostName() + ":" +
 						con.getPort() + ": End of stream reached");
 
 			if (debug) {
