@@ -398,6 +398,7 @@ forkMserver(str database, sabdb** stats, int force)
 				(*stats)->next = NULL;
 				return(NO_ERR);
 			}
+			rdb = rdb->next;
 		}
 
 		return(newErr("no such database: %s", database));
@@ -1354,7 +1355,7 @@ discoveryRunner(void *d)
 			orig = stats;
 			while (stats != NULL) {
 				/* craft ANNC messages for each db */
-				snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s %d",
+				snprintf(buf, 512, "ANNC %s mapi:monetdb://%s:%hu/%s %d",
 						stats->dbname,
 						lhost,
 						ntohs(((struct sockaddr_in *)&local)->sin_port),
@@ -1531,7 +1532,7 @@ discoveryRunner(void *d)
 	orig = stats;
 	while (stats != NULL) {
 		/* craft LEAV messages for each db */
-		snprintf(buf, 512, "LEAV %s mapi://%s:%hu/%s",
+		snprintf(buf, 512, "LEAV %s mapi:monetdb://%s:%hu/%s",
 				stats->dbname,
 				lhost,
 				ntohs(((struct sockaddr_in *)&local)->sin_port),
