@@ -58,7 +58,7 @@ FIXME: actually implement that
 #include "merovingian.h"
 #include "mal_sabaoth.h"
 #include <stream_socket.h>
-#include <stdlib.h> /* exit, getenv */
+#include <stdlib.h> /* exit, getenv, rand, srand */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
 #include <sys/types.h>
@@ -84,23 +84,13 @@ FIXME: actually implement that
 #include <errno.h>
 #include <signal.h> /* handle Ctrl-C, etc. */
 #include <pthread.h>
+#include <time.h>
 
 #define SOCKPTR struct sockaddr *
 #ifdef HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
 #else
 #define SOCKLEN int
-#endif
-
-/* FreeBSD 6.2 misses these definitions */
-#ifndef CLD_EXITED
-# define CLD_EXITED 1
-#endif
-#ifndef CLD_KILLED
-# define CLD_KILLED 2
-#endif
-#ifndef CLD_DUMPED
-# define CLD_DUMPED 3
 #endif
 
 typedef char* err;
@@ -111,7 +101,6 @@ typedef char* err;
 
 static str _merovingian_mserver = NULL;
 static str _merovingian_conffile = NULL;
-static sabdb *_merovingian_remotedbs = NULL;
 
 typedef struct _dpair {
 	FILE* fout;       /* where to read stdout messages from */
@@ -123,6 +112,14 @@ typedef struct _dpair {
 	struct _dpair* next;
 }* dpair;
 static dpair topdp = NULL;
+
+typedef struct _remotedb {
+	char* dbname;
+	char* conn;
+	int ttl;
+	struct _remotedb* next;
+}* remotedb;
+static remotedb _merovingian_remotedbs = NULL;
 
 static int _keepLogging = 1;
 static int _timeInterval = 0;
@@ -355,6 +352,7 @@ newErr(str fmt, ...)
 	return(ret);
 }
 
+static int doproxy;
 /**
  * Fork an Mserver and detach.  Before forking off, Sabaoth is consulted
  * to see if forking makes sense, or whether it is necessary at all, or
@@ -380,8 +378,31 @@ forkMserver(str database, sabdb** stats, int force)
 		return(e);
 	}
 
-	if (*stats == NULL)
+	if (*stats == NULL) {
+		/* check the remote databases */
+		remotedb rdb = _merovingian_remotedbs;
+		while (rdb != NULL) {
+			if (strcmp(rdb->dbname, database) == 0) {
+				/* take first match, create a fake sabdb struct */
+				*stats = GDKmalloc(sizeof(sabdb));
+				(*stats)->dbname = GDKstrdup(rdb->dbname);
+				(*stats)->path = (*stats)->dbname; /* only freed by sabaoth */
+				(*stats)->locked = 0;
+				(*stats)->state = SABdbRunning;
+				(*stats)->scens = GDKmalloc(sizeof(sablist));
+				(*stats)->scens->val = GDKstrdup("sql");
+				(*stats)->scens->next = NULL;
+				(*stats)->conns = GDKmalloc(sizeof(sablist));
+				(*stats)->conns->val = GDKstrdup(rdb->conn);
+				(*stats)->conns->next = NULL;
+				(*stats)->next = NULL;
+				return(NO_ERR);
+			}
+			rdb = rdb->next;
+		}
+
 		return(newErr("no such database: %s", database));
+	}
 
 	/* Since we ask for a specific database, it should be either there
 	 * or not there.  Since we checked the latter case above, it should
@@ -493,7 +514,11 @@ forkMserver(str database, sabdb** stats, int force)
 		argv[c++] = dbname;
 		argv[c++] = "--dbinit=include sql;"; /* yep, no quotes needed! */
 		argv[c++] = "--set"; argv[c++] = "monet_daemon=yes";
-		argv[c++] = "--set"; argv[c++] = "mapi_open=true";
+		if (doproxy == 0) {
+			argv[c++] = "--set"; argv[c++] = "mapi_open=false";
+		} else {
+			argv[c++] = "--set"; argv[c++] = "mapi_open=true";
+		}
 		argv[c++] = "--set"; argv[c++] = "mapi_port=0"; /* force autosensing! */
 		argv[c++] = "--set"; argv[c++] = vaultkey;
 		argv[c++] = NULL;
@@ -950,8 +975,6 @@ handleClient(int sock)
 
 	if (getpeername(sock, (struct sockaddr *)&saddr, &saddrlen) == -1) {
 		merlog("couldn't get peername of client: %s", strerror(errno));
-		merlog("redirecting client for database '%s' to %s",
-				stat->dbname, stat->conns->val);
 		host = "(unknown)";
 	} else {
 		/* avoid doing this, it requires some includes that probably
@@ -965,26 +988,34 @@ handleClient(int sock)
 				(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 8) & 0xff),
 				(unsigned) (ntohl(saddr.sin_addr.s_addr) & 0xff),
 				(int)ntohs(saddr.sin_port));
-		merlog("redirecting client %s for database '%s' to proxy or %s",
-				host, stat->dbname, stat->conns->val);
 	}
 
-	/* need to send a redirect, we send two, first a proxy connect,
-	 * second an ordinary reconnection to the database */
-	stream_printf(fout, "^mapi:merovingian:proxy\n^%s%s\n",
-			stat->conns->val, stat->dbname);
-	/* flush redirect */
-	stream_flush(fout);
-	/* wait for input, or disconnect in a proxy runner */
-	if ((e = startProxy(fdin, fout, stat->conns->val, host)) != NO_ERR) {
-		stream_printf(fout, "!an internal error has occurred, please try again later\n");
+	/* need to send a redirect, either we are going to proxy, or we send
+	 * a redirect */
+	if (doproxy == 0) {
+		merlog("redirecting client %s for database '%s' to %s",
+				host, stat->dbname, stat->conns->val);
+		stream_printf(fout, "^%s%s\n", stat->conns->val, stat->dbname);
+		/* flush redirect */
 		stream_flush(fout);
-		close_stream(fout);
-		close_stream(fdin);
-		merlog("starting a proxy failed: %s", e);
-		SABAOTHfreeStatus(&top);
-		return(e);
-	};
+	} else {
+		merlog("proxying client %s for database '%s' to %s",
+				host, stat->dbname, stat->conns->val);
+		stream_printf(fout, "^mapi:merovingian:proxy\n");
+		/* flush redirect */
+		stream_flush(fout);
+
+		/* wait for input, or disconnect in a proxy runner */
+		if ((e = startProxy(fdin, fout, stat->conns->val, host)) != NO_ERR) {
+			stream_printf(fout, "!an internal error has occurred, please try again later\n");
+			stream_flush(fout);
+			close_stream(fout);
+			close_stream(fdin);
+			merlog("starting a proxy failed: %s", e);
+			SABAOTHfreeStatus(&top);
+			return(e);
+		};
+	}
 
 	SABAOTHfreeStatus(&top);
 	return(NO_ERR);
@@ -1027,7 +1058,7 @@ openConnectionTCP(int *ret, unsigned short port)
 	listen(sock, 5);
 
 	gethostname(host, 512);
-	merlog("listening for TCP connections on %s:%d", host, port);
+	merlog("listening for TCP connections on %s:%hu", host, port);
 
 	*ret = sock;
 	return(NO_ERR);
@@ -1044,7 +1075,7 @@ openConnectionUDP(int *ret, unsigned short port)
 	char host[512];
 
 	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+	hints.ai_family = AF_INET;      /* Allow IPv4 only (broadcasting) */
 	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
 	hints.ai_flags = AI_PASSIVE;    /* For wildcard IP address */
 	hints.ai_protocol = 0;          /* Any protocol */
@@ -1244,26 +1275,139 @@ controlRunner(void *d)
 	merlog("control channel closed");
 }
 
+static int discoveryttl;
 static void
 discoveryRunner(void *d)
 {
 	int sock = *(int *)d;
 	int s = -1;
+	struct sockaddr local;
+	socklen_t addrlen;
 	struct sockaddr_storage peer_addr;
 	socklen_t peer_addr_len;
+	int bcs;
+	struct sockaddr_in brdcst;
+	int c;
+	time_t deadline = 0;
+	int forceannc = 0;
+	sabdb *orig;
+	sabdb *stats;
+	err e;
+	remotedb rdb;
+	remotedb prv;
+
 	ssize_t nread;
 	char buf[512]; /* our packages should be pretty small */
 	char host[128];
+	char lhost[128];
 	char service[8];
 
+	/* seed random number generation for random delay in HELO response */
+	srand(time(NULL));
+
+	gethostname(lhost, 128);
+
+	addrlen = sizeof(local);
+	if (getsockname(sock, &local, &addrlen) < 0) {
+		fprintf(stderr, "neighbour discovery: cannot get own hostname, "
+				"discovery services disabled\n");
+		return;
+	}
+
+	bcs = socket(AF_INET, SOCK_DGRAM, 0);
+
+	s = 1;
+	if ((setsockopt(bcs, SOL_SOCKET, SO_BROADCAST, &s, sizeof(s))) == -1) {
+		fprintf(stderr, "neighbour discovery: cannot broadcast, "
+				"discovery services disabled\n");
+		return;
+	}
+
+	brdcst.sin_family = AF_INET;
+	brdcst.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+	/* the target port is our configured port, not elegant, but how
+	 * else can we do it? can't broadcast to all ports or something */
+	brdcst.sin_port = ((struct sockaddr_in *)&local)->sin_port;
+
+	/* start shouting around that we're here ;) request others to tell
+	 * what databases they have */
+	snprintf(buf, 512, "HELO %s", lhost);
+	c = strlen(buf) + 1;
+	if (sendto(bcs, buf, c, 0,
+				(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
+		fprintf(stderr, "HELO message: error while sending "
+				"message: %s\n", strerror(errno));
+
+	/* main loop */
 	while (_keepListening == 1) {
-		MT_sleep_ms(1000); /* don't spin */
+		/* do a round of announcements, we're ahead of the ttl because
+		 * when we announce, we add 60 seconds to avoid a "gap" */
+		if (forceannc == 1 || deadline <= time(NULL)) {
+			/* set new deadline */
+			deadline = time(NULL) + discoveryttl;
+			forceannc = 0;
+
+			/* list all known databases */
+			if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
+				fprintf(stderr, "neighbour discovery: SABAOTHgetStatus error: "
+						"%s, discovery services disabled\n", e);
+				GDKfree(e);
+				return;
+			}
+
+			orig = stats;
+			while (stats != NULL) {
+				/* craft ANNC messages for each db */
+				snprintf(buf, 512, "ANNC %s mapi:monetdb://%s:%hu/ %d",
+						stats->dbname,
+						lhost,
+						ntohs(((struct sockaddr_in *)&local)->sin_port),
+						discoveryttl + 60);
+
+				c = strlen(buf) + 1;
+				if (sendto(bcs, buf, c, 0,
+							(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
+					fprintf(stderr, "ANNC message: error while sending "
+							"message: %s\n", strerror(errno));
+
+				stats = stats->next;
+			}
+
+			if (orig != NULL)
+				SABAOTHfreeStatus(&orig);
+		}
+
+		/* do a round to see if we have to cleanup anything (expired
+		 * ttl) */
+		prv = NULL;
+		rdb = _merovingian_remotedbs;
+		while (rdb != NULL) {
+			if (rdb->ttl <= time(NULL)) {
+				/* expired, let's remove */
+				if (prv == NULL) {
+					_merovingian_remotedbs = rdb->next;
+				} else {
+					prv->next = rdb->next;
+				}
+				merlog("neighbour database %s at %s has expired",
+						rdb->dbname, rdb->conn);
+				free(rdb->dbname);
+				free(rdb->conn);
+				free(rdb);
+				break;
+			}
+			prv = rdb;
+			rdb = rdb->next;
+		}
 
 		peer_addr_len = sizeof(struct sockaddr_storage);
 		nread = recvfrom(sock, buf, 512, MSG_DONTWAIT,
 				(struct sockaddr *)&peer_addr, &peer_addr_len);
-		if (nread == -1)
+		if (nread == -1) {
+			buf[0] = '\0';
+			MT_sleep_ms(1000); /* don't spin */
 			continue; /* ignore failed request */
+		}
 
 		s = getnameinfo((struct sockaddr *)&peer_addr,
 				peer_addr_len, host, 128,
@@ -1274,74 +1418,29 @@ discoveryRunner(void *d)
 			continue; /* skip this message */
 		}
 
+		/* ignore messages from self: FIXME make this more robust */
+		if (strcmp(host, lhost) == 0 || strcmp(host, "localhost") == 0)
+			continue;
+
 		if (strncmp(buf, "HELO ", 5) == 0) {
 			/* HELLO message, respond with current databases */
-			sabdb *orig;
-			sabdb *stats;
-			int c;
-			struct sockaddr addr;
-			socklen_t adrlen;
-			char lhost[128];
-			sablist *sl;
-			err e;
-
-			/* list all known databases */
-			if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
-				fprintf(stderr, "HELO response: SABAOTHgetStatus error: %s\n", e);
-				GDKfree(e);
-				continue;
-			}
-
-			orig = stats;
-			while (stats != NULL) {
-				/* craft ANNC messages for each db */
-				gethostname(lhost, 128);
-				adrlen = sizeof(addr);
-				if (getsockname(sock, &addr, &adrlen) < 0)
-					continue;
-				c = snprintf(buf, 512, "ANNC %s mapi://%s:%hu/%s ",
-						stats->dbname,
-						lhost,
-						ntohs(((struct sockaddr_in *)&addr)->sin_port),
-						stats->dbname);
-				/* build a comma separated list of scenarios */
-				c = 512 - c - 1;
-				sl = stats->scens;
-				while (sl != NULL) {
-					/* intuition says this code could be done much
-					 * better */
-					if (sl != stats->scens)
-						strncat(buf, ",", c--);
-					strncat(buf, stats->scens->val, c);
-					c -= strlen(stats->scens->val);
-					if (c < 0)
-						c = 0;
-					sl = sl->next;
-				}
-
-				c = strlen(buf);
-				if (sendto(sock, buf, c, 0,
-							(struct sockaddr *)&peer_addr,
-							peer_addr_len) != c)
-					fprintf(stderr, "HELO response: error while sending "
-							"response: %s\n", strerror(errno));
-
-				stats = stats->next;
-			}
-
-			if (orig != NULL)
-				SABAOTHfreeStatus(&orig);
+			merlog("discovered neighbour %s", host);
+			/* sleep a random amount of time to avoid an avalanche of
+			 * ANNC messages flooding the network */
+			c = 1 + (int)(2500.0 * (rand() / (RAND_MAX + 1.0)));
+			MT_sleep_ms(c);
+			/* force an announcement round by dropping the deadline */
+			forceannc = 1;
+			continue;
 		} else if (strncmp(buf, "LEAV ", 5) == 0) {
 			/* LEAVE message, unregister database */
-			sabdb *rdb;
-			sabdb *prv;
-			char **sp = NULL;
+			char *sp = NULL;
 			char *dbname;
 			char *conn;
 
-			strtok_r(buf, " ", sp); /* discard the msg type */
-			dbname = strtok_r(NULL, " ", sp);
-			conn = strtok_r(NULL, " ", sp);
+			strtok_r(buf, " ", &sp); /* discard the msg type */
+			dbname = strtok_r(NULL, " ", &sp);
+			conn = strtok_r(NULL, " ", &sp);
 
 			if (dbname == NULL || conn == NULL)
 				continue;
@@ -1358,7 +1457,7 @@ discoveryRunner(void *d)
 			rdb = _merovingian_remotedbs;
 			while (rdb != NULL) {
 				if (strcmp(dbname, rdb->dbname) == 0 &&
-						strcmp(conn, rdb->conns->val) == 0)
+						strcmp(conn, rdb->conn) == 0)
 				{
 					/* found, let's remove */
 					if (prv == NULL) {
@@ -1366,8 +1465,10 @@ discoveryRunner(void *d)
 					} else {
 						prv->next = rdb->next;
 					}
-					SABAOTHfreeStatus(&rdb);
-					merlog("removed remote database %s at %s (%s)",
+					free(rdb->dbname);
+					free(rdb->conn);
+					free(rdb);
+					merlog("removed neighbour database %s at %s (%s)",
 							dbname, conn, host);
 					break;
 				}
@@ -1376,63 +1477,85 @@ discoveryRunner(void *d)
 			}
 		} else if (strncmp(buf, "ANNC ", 5) == 0) {
 			/* ANNOUNCE message, register database */
-			sabdb *rdb;
-			sablist *l;
-			char **sp = NULL;
+			char *sp = NULL;
 			char *dbname;
 			char *conn;
-			char *scens;
-			char *scen;
+			char *ttl;
 
-			strtok_r(buf, " ", sp); /* discard the msg type */
-			dbname = strtok_r(NULL, " ", sp);
-			conn = strtok_r(NULL, " ", sp);
-			scens = strtok_r(NULL, " ", sp);
+			strtok_r(buf, " ", &sp); /* discard the msg type */
+			dbname = strtok_r(NULL, " ", &sp);
+			conn = strtok_r(NULL, " ", &sp);
+			ttl = strtok_r(NULL, " ", &sp);
 
-			if (dbname == NULL || conn == NULL || scens == NULL)
+			if (dbname == NULL || conn == NULL || ttl == NULL)
 				continue;
 
 			if (_merovingian_remotedbs == NULL) {
-				rdb = _merovingian_remotedbs = GDKmalloc(sizeof(sabdb));
+				rdb = _merovingian_remotedbs = malloc(sizeof(struct _remotedb));
 			} else {
+				prv = NULL;
 				rdb = _merovingian_remotedbs;
-				while (rdb->next != NULL) {
-					if (strcmp(dbname, rdb->dbname) == 0)
-						continue; /* skip duplicate entries */
+				while (rdb != NULL) {
+					if (strcmp(dbname, rdb->dbname) == 0) {
+						if (strcmp(conn, rdb->conn) == 0) {
+							/* refresh ttl */
+							rdb->ttl = time(NULL) + atoi(ttl);
+						}
+						rdb = prv;
+						break; /* skip duplicate entries */
+					}
+					prv = rdb;
 					rdb = rdb->next;
 				}
-				rdb = rdb->next = GDKmalloc(sizeof(sabdb));
+				if (rdb == prv)
+					continue;
+				rdb = prv->next = malloc(sizeof(struct _remotedb));
 			}
-			rdb->dbname = GDKstrdup(dbname);
-			rdb->path = rdb->dbname; /* Sabaoth makes dbname a pointer to the alloced path, compatibility here */
-			rdb->locked = 0;
-			rdb->state = SABdbRunning;
+			rdb->dbname = strdup(dbname);
+			rdb->conn = strdup(conn);
+			rdb->ttl = time(NULL) + atoi(ttl);
 			rdb->next = NULL;
 
-			rdb->conns = GDKmalloc(sizeof(sablist));
-			rdb->conns->val = GDKstrdup(conn);
-			rdb->conns->next = NULL;
-
-			l = NULL;
-			scen = strtok_r(scens, ",", sp);
-			while (scen != NULL) {
-				if (l != NULL) {
-					l = rdb->scens = GDKmalloc(sizeof(sablist));
-				} else {
-					l = l->next = GDKmalloc(sizeof(sablist));
-				}
-				l->val = GDKstrdup(scen);
-				l->next = NULL;
-				scen = strtok_r(scens, ",", sp);
-			}
-
-			merlog("added remote database %s at %s (%s)",
-					dbname, conn, host);
+			merlog("discovered neighbour database %s at %s "
+					"(refresh from %s in %s seconds)",
+					dbname, conn, host, ttl);
 		} else {
-			merlog("ignoring unknown message from %s:%s: '%s'",
-					host, service, buf);
+			merlog("neighbour discovery: ignoring unknown message "
+					"from %s:%s: '%s'", host, service, buf);
 		}
 	}
+
+	/* now notify of our soon to be absence ;) */
+
+	/* list all known databases */
+	if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
+		fprintf(stderr, "neighbour discovery: SABAOTHgetStatus error: "
+				"%s, discovery services disabled\n", e);
+		GDKfree(e);
+		return;
+	}
+
+	orig = stats;
+	while (stats != NULL) {
+		/* craft LEAV messages for each db */
+		snprintf(buf, 512, "LEAV %s mapi:monetdb://%s:%hu/",
+				stats->dbname,
+				lhost,
+				ntohs(((struct sockaddr_in *)&local)->sin_port));
+
+		c = strlen(buf) + 1;
+		if (sendto(bcs, buf, c, 0,
+					(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
+			fprintf(stderr, "LEAV message: error while sending "
+					"message: %s\n", strerror(errno));
+
+		stats = stats->next;
+	}
+
+	if (orig != NULL)
+		SABAOTHfreeStatus(&orig);
+
+	close(bcs);
 }
 
 static str
@@ -1553,6 +1676,7 @@ main(int argc, char *argv[])
 				strerror(errno));
 		return(1);
 	}
+#ifndef MERO_DONTFORK
 	switch (fork()) {
 		case -1:
 			/* oops, forking went wrong! */
@@ -1577,6 +1701,7 @@ main(int argc, char *argv[])
 			close(pfd[0]);
 			return(buf[0]); /* whatever the child returned, we return */
 	}
+#endif
 
 	/* Paranoia umask, but good, because why would people have to sniff
 	 * our private parts? */
@@ -1596,12 +1721,14 @@ main(int argc, char *argv[])
 	/* store this conffile for later use in forkMserver */
 	_merovingian_conffile = p;
 
+	prefix = GDKstrdup(MONETDB5_PREFIX);
 	dbfarm = NULL;
 	msglog = NULL;
 	errlog = NULL;
 	timeout = 0;
 	pidfilename = NULL;
-	prefix = GDKstrdup(MONETDB5_PREFIX);
+	doproxy = 0;
+	discoveryttl = 600;
 	while (fgets(buf, 1024, cnf) != NULL) {
 		/* eliminate fgets' newline */
 		buf[strlen(buf) - 1] = '\0';
@@ -1638,6 +1765,19 @@ main(int argc, char *argv[])
 				fflush(stderr);
 			}
 			port = (unsigned short)ret;
+		} else if (*buf && strncmp(buf, "mero_doproxy=", 13) == 0) {
+			p = strchr(buf, '=') + 1;
+			if (strcmp(p, "yes") == 0 ||
+					strcmp(p, "true") == 0 ||
+					strcmp(p, "1") == 0)
+			{
+				doproxy = 1;
+			} else {
+				doproxy = 0;
+			}
+		} else if (*buf && strncmp(buf, "mero_discoveryttl=", 18) == 0) {
+			p = strchr(buf, '=');
+			discoveryttl = atoi(++p);
 		}
 	}
 

@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDB 1 "SEPTEMBER 2007" Application "MonetDB Applications"
+.TH MONETDB 1 "MAY 2008" Application "MonetDB Applications"
 .SH NAME
 merovingian \- the MonetDB Database Server daemon
 .SH SYNOPSIS
@@ -30,12 +30,12 @@ either upon request via
 .BR monetdb (1)
 or when being shut down.  Client connections initially are made against
 .B merovingian
-which redirects the client to the appropriate database process, started
-on the fly when necessary.
+which redirects or proxies the client to the appropriate database
+process, started on the fly when necessary.
 .P
 When started,
 .B merovingian
-runs in the foreground, sending log messages to
+runs in the background, sending log messages to
 .I /var/log/merovingian.log
 , until being sent a stop, terminate or interrupt signal.  All arguments
 given when starting
@@ -45,6 +45,16 @@ are started as part of the startup of
 .B merovingian
 , which means their startup is not delayed until the first client
 requests for them.
+.P
+.B merovingian
+uses a neighbour discovery scheme to detect other
+.B merovingian
+processes running in the local network.  Databases from those remote
+instances are made available to a locally connecting client.  Remote
+databases never override local databases, and their availability is
+controlled by the remote
+.B merovingian
+process.
 .SH CONFIGURATION
 .B merovingian
 defaults to use the configuration file that was placed in the file
@@ -137,12 +147,40 @@ are strongly advised to set the
 option as to override the
 .B 0
 default.
+.IP mero_doproxy
+.B merovingian
+has two ways in which it can "attach" a connecting client to the target
+database.  The first method uses a redirect to the responsible mserver
+process, the second method proxies the client to the mserver over
+.B merovingian.
+While the first is more efficient, it requires the connecting client
+to be able to connect to the mserver.  In many settings this may be
+undesirable or even impossible, since a wide range of open ports are
+necessary for this.  In such case the proxy behaviour of
+.B merovingian
+is a good solution, which also allows a
+.B merovingian
+on the border of a network to serve requests to nodes in the local
+(unreachable) network.
+.IP mero_discoveryttl
+Neighbour discovery allows
+.B merovingian
+to discover other running
+.B merovingian
+processes in the local network.
+.B merovingian
+publishes locally available databases to others periodically.  The
+interval used here depends on the time-to-live of the databases before
+they need to get refreshed.  The default is 10 minutes, which should
+keep traffic in your network fairly low.  If you add and/or remove
+databases often, you may want to use a low ttl.  The value of this
+option is expressed in seconds.
 .SH "RETURN VALUE"
 .B merovingian
 returns exit code
 .B 0
-if it successfully stopped after a stop signal.  When an error occurs
-during startup that prevents
+if it was able to successfully launch the background process.  When an
+error occurs during startup that prevents
 .B merovingian
 from functioning properly, an exit code
 .B 1
