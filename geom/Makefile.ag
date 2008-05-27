@@ -16,7 +16,7 @@
 
 SUBDIRS = conf src
 
-EXTRA_DIST = RunMtest.in RunMapprove.in rpm.mk.in
+EXTRA_DIST = RunMtest.in RunMapprove.in rpm.mk.in MonetDB-geom.spec.in MonetDB-geom.spec
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
