@@ -152,7 +152,7 @@
 
    .PRELUDE = geom_prelude;
    .EPILOGUE = geom_epilogue;
-   
+
 .END geom;
 
 @h
@@ -590,7 +590,6 @@ ordinatesMBR(
 	res->ymax = *maxY;
 	return GDK_SUCCEED;
 }
-
 
 /* COMMAND mbr
  * Creates the mbr for the given geom_geometry.
