@@ -3706,13 +3706,10 @@ select_into( mvc *sql, SelectNode *sn, stmt *s)
 			stmt *a = NULL, *v = m->data, *var;
 			int level;
 
-			if ((var=stack_find_var(sql, nme)) == NULL || (list_length(rl) > 1 && !v->key)) {
+			if ((var=stack_find_var(sql, nme)) == NULL) {
 				list_destroy(rl);
 				list_destroy(nl);
-				if (var)
-					return sql_error(sql, 02, "SELECT INTO: needs a single row");
-				else
-					return sql_error(sql, 02, "SELECT INTO: variable '%s' unknown", nme);
+				return sql_error(sql, 02, "SELECT INTO: variable '%s' unknown", nme);
 			}
 			/* dynamic check for single values */
 			v = stmt_dup(v);
