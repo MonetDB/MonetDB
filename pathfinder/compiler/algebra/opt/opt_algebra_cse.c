@@ -1056,10 +1056,13 @@ match (PFla_op_t *a, PFla_op_t *b)
             return true;
 
         case la_step:
+	        if (!((ACTATT (R(a), a->sem.step.iter) ==
+	             ACTATT (R(b), b->sem.step.iter))))
+				return false;
+			/* falling through */
+	
         case la_step_join:
-            if ((ACTATT (R(a), a->sem.step.iter) ==
-                 ACTATT (R(b), b->sem.step.iter)) &&
-                (ACTATT (R(a), a->sem.step.item) ==
+            if ((ACTATT (R(a), a->sem.step.item) ==
                  ACTATT (R(b), b->sem.step.item))  &&
                 (a->sem.step.spec.axis == b->sem.step.spec.axis) &&
                 (a->sem.step.spec.kind == b->sem.step.spec.kind) &&
@@ -1071,10 +1074,13 @@ match (PFla_op_t *a, PFla_op_t *b)
              return false;
 
         case la_guide_step:
+	        if (!((ACTATT (R(a), a->sem.step.iter) ==
+	             ACTATT (R(b), b->sem.step.iter))))
+				return false;
+			/* falling through */
+			
         case la_guide_step_join:
-            if (!((ACTATT (R(a), a->sem.step.iter) ==
-                 ACTATT (R(b), b->sem.step.iter)) &&
-                (ACTATT (R(a), a->sem.step.item) ==
+            if (!((ACTATT (R(a), a->sem.step.item) ==
                  ACTATT (R(b), b->sem.step.item))  &&
                 (a->sem.step.spec.axis == b->sem.step.spec.axis) &&
                 (a->sem.step.spec.kind == b->sem.step.spec.kind) &&
