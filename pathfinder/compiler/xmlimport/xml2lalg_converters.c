@@ -580,21 +580,25 @@ PFxml2la_conv_2PFLA_attributeName(const char* s)
     }
     else if (strcmp(s, "item3"  ) == 0)
     {
-        return att_subty;
+        return att_item3;
     }
     else if (strcmp(s, "item4"  ) == 0)
     {
-        return att_itemty;
+        return att_subty;
     }
     else if (strcmp(s, "item5"  ) == 0)
     {
-        return att_notsub;
+        return att_itemty;
     }
     else if (strcmp(s, "item6"  ) == 0)
     {
-        return att_isint;
+        return att_notsub;
     }
     else if (strcmp(s, "item7"  ) == 0)
+    {
+        return att_isint;
+    }
+    else if (strcmp(s, "item8"  ) == 0)
     {
         return att_isdec;
     }
