@@ -20,7 +20,7 @@
     if (form.arity.value >= 3) 
       params = params + getParam(form.type3.value, form.param3.value); 
 
-    XRPC(form.postUrl.value, form.module.value, form.moduleUrl.value, 
+    XRPC(form.postUrl.value+"/xrpc", form.module.value, form.moduleUrl.value, 
          form.method.value,  form.arity.value, XRPC_CALL(params), showResponse);
   }
 
@@ -33,7 +33,7 @@
 
 <body>
  <a href="http://monetdb.cwi.nl" title="MonetDB is a high-performance open-source SQL and XQuery database system, developed by CWI" target="_blank"><img src="../admin/monetdb_med_abstract.png" border="0"/></a>
- <a href="http://www.cwi.nl" title="CWI is the national center for Computer Science and Mathematics Research" target="_blank"><img src="../admin/cwi.bmp" border="0"/></a>
+ <a href="http://www.cwi.nl" title="CWI is the Dutch national center for Computer Science and Mathematics Research" target="_blank"><img src="../admin/cwi.bmp" border="0"/></a>
  <br clear="all"/>
  The page provides a live test for XRPC SOAP remote query execution on a running Mserver. 
 
