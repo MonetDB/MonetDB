@@ -764,6 +764,7 @@ tr_log_bat( sql_trans *tr, sql_bat *cbat, sql_bat *obat, int cleared)
 	int ok = LOG_OK;
 	BAT *cur = NULL;
 
+	(void)tr;
 	assert(tr->parent == gtrans);
 	assert(store_nr_active == 1);
 
@@ -835,6 +836,7 @@ tr_snapshot_bat( sql_trans *tr, sql_bat *cbat, sql_bat *obat)
 {
 	BAT *cur;
 
+	(void)tr;
 	assert(tr->parent == gtrans);
 	assert(store_nr_active == 1);
 
