@@ -2967,6 +2967,8 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 static void
 sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 {
+	str seq_pos = NULL;
+	const char *next_value_for = "next value for \"sys\".\"seq_";
 	sql_schema *syss = find_sql_schema(tr, isGlobalTable(col->t)?"sys":"tmp"); 
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
 	ssize_t rid = table_funcs.column_find_row(tr, find_sql_column(syscolumn, "id"),
@@ -2975,6 +2977,17 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 	assert(rid != -1);
 	table_funcs.table_delete(tr, syscolumn, rid);
 	sql_trans_drop_dependencies(tr, col->base.id);
+
+	if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
+		sql_sequence * seq = NULL;
+		char *seq_name = _strdup(seq_pos + (strlen(next_value_for) - strlen("seq_")));
+		seq_name[strlen(seq_name)-1] = '\0';
+		seq = find_sql_sequence(syss, seq_name);
+		if (seq)
+			sys_drop_sequence(tr, seq, drop_action);		
+		_DELETE(seq_name);
+	}
+	
 	if (isGlobalTable(col->t)) 
 		tr->schema_updates ++;
 
