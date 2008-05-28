@@ -122,3 +122,4 @@ order_by_over_table_from_another_function.SF-1959822
 sql_div.SF-1959357
 multi-column-constraint.SF-1964587
 set_sql_debug_64__breaking_the_DB.SF-1906287
+select_multiple_not_null_constraints.SF-1926074
