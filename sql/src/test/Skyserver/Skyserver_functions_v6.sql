@@ -2098,7 +2098,7 @@ begin
         set raa = 0;
         set decc = 0;
         set WebServerURL = 'http://localhost/';
-        select cast(value as varchar(500)) into fGetUrlExpId
+        select cast(value as varchar(500)) into WebServerURL
                 from SiteConstants where name ='WebServerURL';
         select ra into raa
                 from PhotoObjAll
