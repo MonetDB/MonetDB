@@ -839,12 +839,12 @@ tr_snapshot_bat( sql_trans *tr, sql_bat *cbat, sql_bat *obat)
 	assert(store_nr_active == 1);
 
 	/* handle bat swaps */
+ 	cur = temp_descriptor(cbat->bid);
 	if (cbat->bid != obat->bid) {
 		temp_destroy(obat->bid);
 		obat->bid = cbat->bid = temp_create(cur);
 		BATmode(cur, PERSISTENT);
 	}
- 	cur = temp_descriptor(cbat->bid);
 	if (BATcount(cur) > SNAPSHOT_MINSIZE) 
 		BATmode(cur, PERSISTENT);
 	if (BATcount(cur) > (size_t) REMAP_PAGE_MAXSIZE) 
