@@ -565,7 +565,7 @@ infer_ocol (PFla_op_t *n)
                             break;
                         case alg_fun_upd_replace_element:
                             assert(ocol_at (L(n), ix[0]).type & aat_pnode);
-                            assert(ocol_at (L(n), ix[1]).type & aat_str);
+                            assert(ocol_at (L(n), ix[1]).type & aat_pnode);
                             assert((ocol_at (L(n), ix[0]).type << 4) &
                                    aat_pnode1);
                             break;

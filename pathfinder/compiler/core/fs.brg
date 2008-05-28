@@ -3409,7 +3409,7 @@ reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
                  * let $target := [[ <TargetExpr> ]] return
                  *   typeswitch ($target)
                  *     case $e as xs:anyElement return
-                 *       let $textnode := text { $step1 }
+                 *       let $textnode := text { $step1 cast as xs:string? }
                  *       return upd:replaceElementContent ($e, $textnode)
                  *     case $a as xs:anyAttribute return
                  *       upd:replaceValue ($a, $step1)
@@ -3450,7 +3450,8 @@ reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
                             let (letbind (var (string), fn_data (var (expr))),
                                 let (letbind (var (step1),
                                               APPLY (is2uA, var (string))),
-                                    let (letbind (var (target), APPLY(exactly_one, C(L(p)))),
+                                    let (letbind (var (target),
+                                                  APPLY(exactly_one, C(L(p)))),
                                          nil())))),
                         typeswitch (
                             var (target),
@@ -3464,8 +3465,11 @@ reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
                                                         PFty_xs_anyElement ()),
                                                     var (target))),
                                         let (letbind (var (textnode),
-                                                      constr (p_text,
-                                                              var (step1))),
+                                                constr (p_text,
+                                                    cast (seqtype (
+                                                        PFty_opt (
+                                                            PFty_xs_string ())),
+                                                        var (step1)))),
                                         nil ())),
                                         APPLY (replCont, var (e),
                                                var (textnode)))),

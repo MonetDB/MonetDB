@@ -1595,7 +1595,7 @@ printf("type = %x", n->schema.items[ix[1]].type);
                     break;
                 case alg_fun_upd_replace_element:
                     assert(n->schema.items[ix[0]].type & aat_pnode);
-                    assert(n->schema.items[ix[1]].type & aat_str);
+                    assert(n->schema.items[ix[1]].type & aat_pnode);
                     assert((n->schema.items[ix[0]].type << 4) & aat_pnode1);
                     break;
                 default: assert(!"should never reach here"); break;
