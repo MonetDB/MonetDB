@@ -483,6 +483,15 @@ opt_icol (PFla_op_t *p)
             }
             break;
 
+        case la_eqjoin_unq:
+            *p = *PFla_eqjoin_clone (L(p), R(p),
+                                     p->sem.eqjoin_unq.lproj,
+                                     p->sem.eqjoin_unq.rproj);
+            SEEN(p) = true;
+            /* let the constructor fix the projection
+               lists and the schema */
+            return;
+
         default:
             break;
     }

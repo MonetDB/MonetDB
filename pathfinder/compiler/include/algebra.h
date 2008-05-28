@@ -495,7 +495,12 @@ char * PFatt_str (PFalg_att_t att);
 /**
  * Checks whether a name is unique or not.
  */
-bool PFalg_is_unq_name(PFalg_att_t att);
+bool PFalg_is_unq_name (PFalg_att_t att);
+
+/**
+ * Return the id of a unique name
+ */
+unsigned int PFalg_unq_name_id (PFalg_att_t att);
 
 /**
  * Create a unique name based on an id @a id and

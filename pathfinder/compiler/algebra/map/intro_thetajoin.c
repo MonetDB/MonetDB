@@ -64,9 +64,9 @@
 
 #define SEEN(n)       (n)->bit_dag
 
-#define BOOL_COLS(n)  (n)->prop->icols
-#define LEFT_COLS(n)  (n)->prop->l_icols
-#define RIGHT_COLS(n) (n)->prop->r_icols
+#define BOOL_COLS(n)  (n)->prop->free_cols
+#define LEFT_COLS(n)  (n)->prop->left_cols
+#define RIGHT_COLS(n) (n)->prop->right_cols
 
 /**
  * Returns the intersection of an column list @a cols and a schema

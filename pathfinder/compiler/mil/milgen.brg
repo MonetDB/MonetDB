@@ -9161,12 +9161,12 @@ reduce (PFpa_op_t * p, int goalnt)
             mvar_t *iter      = new_var (p->refctr);
             mvar_t *item_res  = new_var (p->refctr);
             mvar_t *frag_res  = new_var (p->refctr);
-            PFmil_t *pre      = NULL,
-                    *pre_cont = NULL;
-
-
-            pre      = VAR (L(p)->env, p->sem.findnodes.item_doc, aat_pre);
-            pre_cont = VAR (L(p)->env, p->sem.findnodes.item_doc, aat_frag);
+            PFmil_t *pre      = VAR (L(p)->env,
+                                     p->sem.findnodes.item_doc,
+                                     aat_pre),
+                    *pre_cont = VAR (L(p)->env,
+                                     p->sem.findnodes.item_doc,
+                                     aat_frag);
 
             execute (
                 assgn (var (nodes->name),
@@ -9178,13 +9178,14 @@ reduce (PFpa_op_t * p, int goalnt)
                            pre_cont,
                            VAR (L(p)->env, p->sem.findnodes.item, aat_str),
                            p->sem.findnodes.id == la_dj_id ? lit_bit (true) :
-                                                             lit_bit (false)
-                       )));
+                                                             lit_bit (false))));
 
             execute (
                 assgn (var (iter->name),
                        leftfetchjoin (hmark (var (nodes->name), lit_oid(0)),
-                                   VAR (L(p)->env, p->sem.findnodes.iter, aat_nat))),
+                                      VAR (L(p)->env,
+                                           p->sem.findnodes.iter,
+                                           aat_nat))),
                 assgn (var (item_res->name),
                        tmark ( var (nodes->name), lit_oid(0))),
                 assgn (var (frag_res->name),

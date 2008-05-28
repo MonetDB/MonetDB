@@ -12,7 +12,7 @@ var mod     = "http://monetdb.cwi.nl/XQuery/admin/";
 var modurl  = posturl + "/admin/admin.xq";
 
 function myXRPC(method,arity,call,callback) {
-    XRPC(posturl,mod,modurl,method,arity,call,callback);
+    XRPC(posturl+"/xrpc/admin",mod,modurl,method,arity,call,callback);
 }
 
 /**********************************************************************
@@ -238,7 +238,7 @@ function doDbEnvCallback(response){
 }
 
 function doCollections()  { 
-    XRPC(posturl, mod, modurl, 'collections',  0, XRPC_CALL(), doCollectionsCallback); 
+    XRPC(posturl+"/xrpc/admin", mod, modurl, 'collections',  0, XRPC_CALL(), doCollectionsCallback); 
 }
 
 /* methods expected to take 'long' (use popup window) */
