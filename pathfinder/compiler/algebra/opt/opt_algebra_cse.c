@@ -1527,11 +1527,17 @@ new_operator (PFla_op_t *n)
              * a projection if this is the case */
             for (i = 0; i < CSE(L(n))->schema.count; i++) {
                 for (j = 0; j < CSE(R(n))->schema.count; j++) {
-                    if (REVACTATT(L(n), CSE(L(n))->schema.items[i].name) ==
-                        REVACTATT(R(n), CSE(R(n))->schema.items[j].name)) {
-                        if (ACTATT(L(n), L(n)->schema.items[i].name) !=
-                            ACTATT(R(n), R(n)->schema.items[j].name))
-                            projection = true;
+					PFalg_att_t rev_l = att_NULL,
+							  	rev_r = att_NULL;
+                    if ((rev_l = REVACTATT(
+									L(n), CSE(L(n))->schema.items[i].name)) ==
+                        (rev_r = REVACTATT(
+									R(n), CSE(R(n))->schema.items[j].name))) {
+						
+                        if (ACTATT(L(n), rev_l) !=
+                            ACTATT(R(n), rev_r))
+	                        	projection = true;
+	    
                         break;
                     }
                 }
@@ -1546,41 +1552,39 @@ new_operator (PFla_op_t *n)
             if (projection) {
                 p = (PFalg_proj_t *)
                     PFmalloc (R(n)->schema.count * sizeof (PFalg_proj_t));
-
                 for (i = 0; i < CSE(L(n))->schema.count; i++) {
                     for (j = 0; j < CSE(R(n))->schema.count; j++) {
-                        if (REVACTATT(L(n), CSE(L(n))->schema.items[i].name) ==
-                            REVACTATT(R(n), CSE(R(n))->schema.items[j].name)) {
+						PFalg_att_t rev_l = att_NULL,
+									rev_r = att_NULL;
+									
+                        if ((rev_l = REVACTATT(L(n),
+										CSE(L(n))->schema.items[i].name)) ==
+                            (rev_r = REVACTATT(R(n),
+										CSE(R(n))->schema.items[j].name))) {
                             /* the names are conflicting */
                             if (ACTATT(L(n), L(n)->schema.items[i].name) !=
                                 ACTATT(R(n), R(n)->schema.items[j].name)) {
                                 p[i] = PFalg_proj (
                                       ACTATT(L(n),
-                                             L(n)->schema.items[i].name),
+                                             rev_l),
                                       ACTATT(R(n),
-                                             R(n)->schema.items[j].name));
+                                             rev_r));
 
                                 INACTATT (actmap,
                                     actatt (ACTATT(L(n),
-                                               L(n)->schema.items[i].name),
+                                               rev_l),
                                             REVACTATT (R(n),
                                                CSE(R(n))->schema.items[j]
                                                    .name)));
                             }
                             else {
-                                p[i] = PFalg_proj (
-                                         ACTATT(R(n),
-                                            R(n)->schema.items[j].name),
-                                         ACTATT(R(n),
-                                            R(n)->schema.items[j].name));
+								PFalg_att_t t = ACTATT(R(n), rev_r);
+								
+								p[i] = PFalg_proj (t,t);
 
                                 INACTATT (
-                                   actmap,
-                                   actatt (
-                                      ACTATT(R(n),
-                                             R(n)->schema.items[j].name),
-                                      ACTATT(R(n),
-                                             R(n)->schema.items[j].name)));
+                                    actmap,
+									actatt (t,t));
                             }
                         }
                     }
