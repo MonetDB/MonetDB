@@ -1146,6 +1146,7 @@ tr_log_bat( sql_trans *tr, sql_delta *cbat, int cleared)
 	int ok = LOG_OK;
 	BAT *ups, *ins, *cur = NULL;
 
+	(void)tr;
 	assert(tr->parent == gtrans);
 	if (cbat->name && cbat->uname && cleared) 
 		if (log_bat_clear(bat_logger, cbat->name) == LOG_OK)
@@ -1225,6 +1226,7 @@ tr_snapshot_bat( sql_trans *tr, sql_delta *cbat)
 	assert(tr->parent == gtrans);
 	assert(store_nr_active>0);
 
+	(void)tr;
 	if (store_nr_active == 1) { 
 		BAT *cur = NULL, *ins = temp_descriptor(cbat->ibid);
 
