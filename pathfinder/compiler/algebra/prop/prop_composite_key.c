@@ -271,7 +271,6 @@ infer_ckey (PFla_op_t *n)
         }   break;
 
         case la_eqjoin:
-        case la_eqjoin_unq:
         {
             PFalg_att_t l_list, r_list;
             unsigned int i, j;
@@ -362,6 +361,9 @@ infer_ckey (PFla_op_t *n)
                     union_ (n->prop->ckeys, l_list | r_list);
                 }
         }   break;
+        
+        case la_eqjoin_unq:
+            break;
 
         case la_semijoin:
             copy (n->prop->ckeys, L(n)->prop->ckeys);

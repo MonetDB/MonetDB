@@ -320,9 +320,13 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
         case la_semijoin:
             bulk_add_name_pairs (np_list, L(n));
 
-            /* make sure to know the name of the right join argument */
+            n->prop->l_name_pairs = PFarray (sizeof (name_pair_t),
+                                             ARRAY_SIZE(L(n)));
             n->prop->r_name_pairs = PFarray (sizeof (name_pair_t),
                                              ARRAY_SIZE(R(n)));
+            /* make sure to know the names of the inputs */
+            bulk_add_name_pairs (n->prop->l_name_pairs, L(n));
+
             add_name_pair (n->prop->r_name_pairs,
                            n->sem.eqjoin.att2,
                            PFprop_unq_name (R(n)->prop,
