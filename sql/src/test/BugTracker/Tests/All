@@ -124,3 +124,4 @@ multi-column-constraint.SF-1964587
 set_sql_debug_64__breaking_the_DB.SF-1906287
 select_multiple_not_null_constraints.SF-1926074
 auto_increment.SF-1834820
+python_escape.SF-1916844
