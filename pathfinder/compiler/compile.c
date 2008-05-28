@@ -149,21 +149,21 @@ PFstate_init (PFstate_t *status)
 
     status->standoff_axis_steps = false;
 
-    status->opt_alg             = "OIKDCG_VGO_[J]OKVCGN"
-                                      "}IM__{_[J]OKVCG"
-                                      "}IM__{_[J]OKVCGCG"
-                                      "}IM__{_[J]OKVCG"
-                                      "}IMTS{_[J]OKVCGCG"
-                                      "}IMTS{_[J]OKVCG"
-                                      "}IMTS{_[J]OKVCGE[]CGP";
-    status->opt_sql             = "OIKDCG_VGO_[J]OKVCGN"
-                                      "}IM__{_[J]OKVCG"
-                                      "}IM__{_[J]OKVCGCG"
-                                      "}IM__{_[J]OKVCG"
-                                      "}IMTS{_[J]OKVCGUCG"
-                                      "}IMTS{_[J]OKVCGU"
-                                      "}IMTS{_[J]OKVCGUE[]CGP"
-                                      "}IQ[J]}IQ[J]IOKVCGQUCGP";
+    status->opt_alg             = "OIKDCG_VGO_[JI]OKVCGN"
+                                      "}IM__{_[JI]OKVCG"
+                                      "}IM__{_[JI]OKVCGCG"
+                                      "}IM__{_[JI]OKVCG"
+                                      "}IMTS{_[JI]OKVCGCG"
+                                      "}IMTS{_[JI]OKVCG"
+                                      "}IMTS{_[JI]OKVCGE[]CGP";
+    status->opt_sql             = "OIKDCG_VGO_[JI]OKVCGN"
+                                      "}IM__{_[JI]OKVCG"
+                                      "}IM__{_[JI]OKVCGCG"
+                                      "}IM__{_[JI]OKVCG"
+                                      "}IMTS{_[JI]OKVCGUCG"
+                                      "}IMTS{_[JI]OKVCGU"
+                                      "}IMTS{_[JI]OKVCGUE[]CGP"
+                                      "}IQ[JI]}IQ[JI]IOKVCGQUCGP";
 
     status->format              = NULL;
     status->genType             = "xml";

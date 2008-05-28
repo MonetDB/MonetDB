@@ -574,11 +574,34 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
             break;
 
         case la_eqjoin_unq:
+#define proj_at(l,i) (*(PFalg_proj_t *) PFarray_at ((l),(i)))
             PFarray_printf (dot, "%s (%s:%s = %s)",
                             a_id[n->kind],
-                            PFatt_str (n->sem.eqjoin_unq.res),
-                            PFatt_str (n->sem.eqjoin_unq.att1),
-                            PFatt_str (n->sem.eqjoin_unq.att2));
+                            PFatt_str (proj_at(n->sem.eqjoin_unq.lproj,0).new),
+                            PFatt_str (proj_at(n->sem.eqjoin_unq.lproj,0).old),
+                            PFatt_str (proj_at(n->sem.eqjoin_unq.rproj,0).old));
+            PFarray_printf (dot, "\\nleft proj: (");
+            for (unsigned int i = 1;
+                 i < PFarray_last (n->sem.eqjoin_unq.lproj);
+                 i++)
+                PFarray_printf (
+                    dot,
+                    "%s:%s%s",
+                    PFatt_str (proj_at(n->sem.eqjoin_unq.lproj,i).new),
+                    PFatt_str (proj_at(n->sem.eqjoin_unq.lproj,i).old),
+                    i+1 == PFarray_last (n->sem.eqjoin_unq.lproj) ? "" : ", ");
+            PFarray_printf (dot, ")");
+            PFarray_printf (dot, "\\nright proj: (");
+            for (unsigned int i = 1;
+                 i < PFarray_last (n->sem.eqjoin_unq.rproj);
+                 i++)
+                PFarray_printf (
+                    dot,
+                    "%s:%s%s",
+                    PFatt_str (proj_at(n->sem.eqjoin_unq.rproj,i).new),
+                    PFatt_str (proj_at(n->sem.eqjoin_unq.rproj,i).old),
+                    i+1 == PFarray_last (n->sem.eqjoin_unq.rproj) ? "" : ", ");
+            PFarray_printf (dot, ")");
             break;
 
 
@@ -1661,14 +1684,50 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
                             "      <column name=\"%s\" new=\"false\""
                                          " keep=\"%s\" position=\"1\"/>\n"
                             "      <column name=\"%s\" new=\"false\""
-                                         " keep=\"%s\" position=\"2\"/>\n"
-                            "    </content>\n",
-                            PFatt_str (n->sem.eqjoin_unq.att1),
-                            n->sem.eqjoin_unq.att1 == n->sem.eqjoin_unq.res
+                                         " keep=\"%s\" position=\"2\"/>\n",
+                            PFatt_str (proj_at(n->sem.eqjoin_unq.lproj,0).old),
+                            proj_at(n->sem.eqjoin_unq.lproj,0).new ==
+                            proj_at(n->sem.eqjoin_unq.lproj,0).old
                             ? "true" : "false",
-                            PFatt_str (n->sem.eqjoin_unq.att2),
-                            n->sem.eqjoin_unq.att2 == n->sem.eqjoin_unq.res
+                            PFatt_str (proj_at(n->sem.eqjoin_unq.rproj,0).old),
+                            proj_at(n->sem.eqjoin_unq.rproj,0).new ==
+                            proj_at(n->sem.eqjoin_unq.rproj,0).old
                             ? "true" : "false");
+            for (c = 1; c < PFarray_last (n->sem.eqjoin_unq.lproj); c++) {
+                PFalg_proj_t proj = proj_at(n->sem.eqjoin_unq.lproj,c);
+                if (proj.new != proj.old)
+                    PFarray_printf (
+                        xml,
+                        "      <column name=\"%s\" "
+                                      "old_name=\"%s\" "
+                                      "new=\"true\" function=\"left\"/>\n",
+                        PFatt_str (proj.new),
+                        PFatt_str (proj.old));
+                else
+                    PFarray_printf (
+                        xml,
+                        "      <column name=\"%s\" "
+                                       "new=\"false\" function=\"left\"/>\n",
+                        PFatt_str (proj.new));
+            }
+            for (c = 1; c < PFarray_last (n->sem.eqjoin_unq.rproj); c++) {
+                PFalg_proj_t proj = proj_at(n->sem.eqjoin_unq.rproj,c);
+                if (proj.new != proj.old)
+                    PFarray_printf (
+                        xml,
+                        "      <column name=\"%s\" "
+                                      "old_name=\"%s\" "
+                                      "new=\"true\" function=\"right\"/>\n",
+                        PFatt_str (proj.new),
+                        PFatt_str (proj.old));
+                else
+                    PFarray_printf (
+                        xml,
+                        "      <column name=\"%s\" "
+                                       "new=\"false\" function=\"right\"/>\n",
+                        PFatt_str (proj.new));
+            }
+            PFarray_printf (xml, "    </content>\n");
             break;
 
         case la_project:
@@ -2242,6 +2301,8 @@ PFla_dot (FILE *f, PFla_op_t *root, char *prop_args)
                              "edge [fontsize=9];\n"
                              "edge [dir=back];\n");
 
+        /* inside debugging we need to reset the dag bits first */
+        PFla_dag_reset (root);
         create_node_id (root);
         la_dot (dot, root, getenv("PF_DEBUG_PRINT_FRAG") != NULL, prop_args);
         PFla_dag_reset (root);

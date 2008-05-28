@@ -2131,15 +2131,99 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              <content>
                <column name="COLNAME" new="false" keep="BOOL" position="1"/>
                <column name="COLNAME" new="false" keep="BOOL" position="2"/>
+              (<column name="COLNAME" old_name="COLNAME" new="true"
+                       function="left"/>
+             | <column name="COLNAME" new="false" function"left"/>)*
+              (<column name="COLNAME" old_name="COLNAME" new="true"
+                       function="right"/>
+             | <column name="COLNAME" new="false" function"right"/>)*
              </content>
             */
 
+            PFarray_t *lproj = PFarray (sizeof (PFalg_proj_t), 10),
+                      *rproj = PFarray (sizeof (PFalg_proj_t), 10);
+            PFalg_att_t att1 = PFLA_ATT("/content/column"
+                                        "[@new='false' and @position='1']"
+                                        "/@name"),
+                        att2 = PFLA_ATT("/content/column"
+                                        "[@new='false' and @position='2']"
+                                        "/@name"),
+                        res  = PFLA_ATT("/content/column"
+                                        "[@new='false' and @kee='true']"
+                                        "/@name");
+            xmlXPathObjectPtr columnNames_xml;
+            int columnCount;
+
+            *(PFalg_proj_t *) PFarray_add (lproj) = proj (res, att1);
+            *(PFalg_proj_t *) PFarray_add (rproj) = proj (res, att2);
+            
+            /* fetch the left column elements from xml */
+            columnNames_xml =  XPATH("/content/column[@function='left']");
+
+            /* how many projection columns do we have? */
+            columnCount = PFxml2la_xpath_getNodeCount(columnNames_xml);
+
+            /* fetch and relate the projections from xml 
+            to the corresponding projection array */ 
+            for (int c = 0; c < columnCount; c++)
+            {
+                xmlNodePtr projection_xml = 
+                    PFxml2la_xpath_getNthNode(columnNames_xml, c);
+
+                char* newName = PFxml2la_xpath_getAttributeValueFromElementNode(
+                    projection_xml, "name");
+                char* oldName = PFxml2la_xpath_getAttributeValueFromElementNode(
+                    projection_xml, "old_name");
+                if (oldName == NULL)
+                {
+                    oldName = newName;
+                }
+
+                *(PFalg_proj_t *) PFarray_add (lproj)
+                    = proj (ctx->convert2PFLA_attributeName(newName),
+                            ctx->convert2PFLA_attributeName(oldName));
+            }
+
+            if(columnNames_xml)
+                xmlXPathFreeObject(columnNames_xml);
+
+            
+            /* do the same for the right side */
+
+            
+            /* fetch the right column elements from xml */
+            columnNames_xml =  XPATH("/content/column[@function='right']");
+
+            /* how many projection columns do we have? */
+            columnCount = PFxml2la_xpath_getNodeCount(columnNames_xml);
+
+            /* fetch and relate the projections from xml 
+            to the corresponding projection array */ 
+            for (int c = 0; c < columnCount; c++)
+            {
+                xmlNodePtr projection_xml = 
+                    PFxml2la_xpath_getNthNode(columnNames_xml, c);
+
+                char* newName = PFxml2la_xpath_getAttributeValueFromElementNode(
+                    projection_xml, "name");
+                char* oldName = PFxml2la_xpath_getAttributeValueFromElementNode(
+                    projection_xml, "old_name");
+                if (oldName == NULL)
+                {
+                    oldName = newName;
+                }
+
+                *(PFalg_proj_t *) PFarray_add (rproj)
+                    = proj (ctx->convert2PFLA_attributeName(newName),
+                            ctx->convert2PFLA_attributeName(oldName));
+            }
+
+            if(columnNames_xml)
+                xmlXPathFreeObject(columnNames_xml);
+
             newAlgNode = PFla_eqjoin_clone            
              (
-             CHILDNODE(0), CHILDNODE(1),
-             PFLA_ATT("/content/column[@new='false' and @position='1']/@name"),
-             PFLA_ATT("/content/column[@new='false' and @position='2']/@name"),
-             PFLA_ATT("/content/column[@new='false' and @keep='true']/@name")
+             CHILDNODE(0), CHILDNODE(1), lproj, rproj
              );
         }  
         break;

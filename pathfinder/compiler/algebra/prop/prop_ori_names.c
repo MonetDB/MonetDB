@@ -56,7 +56,7 @@
 #define ARRAY_SIZE(n) ((n)->schema.count > 10 ? (n)->schema.count : 10)
 
 /* reuse the icols field to maintain the bitlist of free variables */
-#define FREE(n) ((n)->prop->l_icols)
+#define FREE(n) ((n)->prop->free_cols)
 /* initial value for lists that encode free variables */
 #define ALL (~att_NULL)
 
@@ -268,67 +268,37 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             break;
 
         case la_eqjoin_unq:
+#define proj_at(l,i) (*(PFalg_proj_t *) PFarray_at ((l),(i)))
         {
-            PFalg_att_t att1 = n->sem.eqjoin_unq.att1;
-            PFalg_att_t att2 = n->sem.eqjoin_unq.att2;
-
-            /* only one join column is in the name pair list
-               (as only one is in the schema). Therefore we
-               add the corresponding other one (if no name
-               conflict arises). */
-            if (att1 != att2) {
-                if (att1 != n->sem.eqjoin_unq.res)
-                    unq = att1;
-                else
-                    unq = att2;
-
-                /* add the missing attribute to the name pair list */
-                ori = PFalg_ori_name (unq, FREE(n));
-                FREE(n) = diff (FREE(n), ori);
-                add_name_pair (np_list, ori, unq);
-            }
+            PFarray_t   *lproj = n->sem.eqjoin_unq.lproj,
+                        *rproj = n->sem.eqjoin_unq.rproj;
+            unsigned int i;
+            PFalg_att_t  unq_old,
+                         unq_new,
+                         ori_new,
+                         unq_att2 = proj_at (rproj, 0).old,
+                         ori_att2 = PFalg_ori_name (unq_att2, FREE(n));
+            FREE(n) = diff (FREE(n), ori_att2);
 
             /* create name pair list for the left operand */
-            for (unsigned int i = 0; i < L(n)->schema.count; i++) {
-                unq = L(n)->schema.items[i].name;
-                ori = find_ori_name (np_list, unq);
-                add_name_pair (n->prop->l_name_pairs, ori, unq);
+            for (i = 0; i < PFarray_last (lproj); i++) {
+                unq_new = proj_at (lproj, i).new;
+                unq_old = proj_at (lproj, i).old;
+                ori_new = find_ori_name (np_list, unq_new);
+                add_name_pair (n->prop->l_name_pairs, ori_new, unq_old);
             }
 
-            if (att1 == att2) {
-                /* The right join argument needs a new bit-encoded column
-                   name. As the unique names of the two join arguments
-                   conflicts we add the right join argument with a special
-                   unused unique name to the name pair list. (The name pair
-                   list for the right operand however contains the correct
-                   unique name to support the correct reference.) The
-                   matching then exploits this special column if both
-                   join arguments have the same unique name. */
-                ori = PFalg_ori_name (att2, FREE(n));
-                FREE(n) = diff (FREE(n), ori);
-                /* create special name */
-                unq = PFalg_unq_name (att_item, 0);
-                assert (!find_ori_name (np_list, unq));
-                add_name_pair (np_list, ori, unq);
-                /* make new original name available to right operand */
-                add_name_pair (n->prop->r_name_pairs, ori, att2);
-                /* copy all remaining name pairs */
-                for (unsigned int i = 0; i < R(n)->schema.count; i++) {
-                    unq = R(n)->schema.items[i].name;
-                    /* discard left join column */
-                    if (unq != att1) {
-                        ori = find_ori_name (np_list, unq);
-                        add_name_pair (n->prop->r_name_pairs, ori, unq);
-                    }
-                }
+            /* create name pair list for the right operand */
+            /* add the join column separately ... */
+            add_name_pair (n->prop->r_name_pairs, ori_att2, unq_att2);
+            /* ... and discard the join column in the iteration */
+            for (i = 1; i < PFarray_last (rproj); i++) {
+                unq_new = proj_at (rproj, i).new;
+                unq_old = proj_at (rproj, i).old;
+                ori_new = find_ori_name (np_list, unq_new);
+                add_name_pair (n->prop->r_name_pairs, ori_new, unq_old);
             }
-            else
-                /* create name pair list for the right operand */
-                for (unsigned int i = 0; i < R(n)->schema.count; i++) {
-                    unq = R(n)->schema.items[i].name;
-                    ori = find_ori_name (np_list, unq);
-                    add_name_pair (n->prop->r_name_pairs, ori, unq);
-                }
+
         }   break;
 
         case la_semijoin:

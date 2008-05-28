@@ -786,11 +786,24 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
  * Checks whether a name is unique or not.
  */
 bool
-PFalg_is_unq_name(PFalg_att_t att)
+PFalg_is_unq_name (PFalg_att_t att)
 {
     return ((1 << 3) & att) && (att & 7);
 }
 
+/**
+ * Return the id of a unique name
+ */
+unsigned int
+PFalg_unq_name_id (PFalg_att_t att)
+{
+    if (!PFalg_is_unq_name(att))
+        PFoops (OOPS_FATAL,
+                "unique column name expected");
+    
+    return att >> 4;
+}
+    
 /**
  * Create an unique name based on an id @a id and
  * an original name @a ori that retains the usage information

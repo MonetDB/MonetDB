@@ -197,8 +197,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case 'I':
-                MAP_ORI_NAMES("icol optimization")
-
                 tm = PFtimer_start ();
 
                 root = PFalgopt_icol (root);
@@ -286,10 +284,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case 'S':
-                /* we need the icols property and thus cannot
-                   apply the optimization if our names are unique */
-                MAP_ORI_NAMES("set optimization")
-
                 tm = PFtimer_start ();
 
                 root = PFalgopt_set (root);
@@ -348,7 +342,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                                   true  /* const */,
                                   true  /* set */,
                                   true  /* dom */,
-                                  false /* icol */,
+                                  true  /* icol */,
                                   false /* composite key */,
                                   true  /* key */,
                                   false /* ocols */,
