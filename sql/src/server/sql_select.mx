@@ -3690,6 +3690,55 @@ sql_reorder(stmt *order, stmt *s)
 }
 
 static stmt *
+select_into( mvc *sql, SelectNode *sn, stmt *s) 
+{
+	/* SELECT ... INTO var_list */
+	if (sn->into) {
+		list *rl = s->op1.lval;
+		node *m;
+		dnode *n;
+		list *nl = create_stmt_list();
+
+		assert(s->type == st_list);
+		for (m = rl->h, n = sn->into->h; m && n; m = m->next, n = n->next) {
+			sql_subtype *tpe = NULL;
+			char *nme = n->data.sval;
+			stmt *a = NULL, *v = m->data, *var;
+			int level;
+
+			if ((var=stack_find_var(sql, nme)) == NULL || (list_length(rl) > 1 && !v->key)) {
+				list_destroy(rl);
+				list_destroy(nl);
+				if (var)
+					return sql_error(sql, 02, "SELECT INTO: needs a single row");
+				else
+					return sql_error(sql, 02, "SELECT INTO: variable '%s' unknown", nme);
+			}
+			/* dynamic check for single values */
+			v = stmt_dup(v);
+			if (!v->key) {
+				sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", tail_type(v));
+				assert(zero_or_one);
+				v = stmt_aggr(v, NULL, zero_or_one, 1);
+			}
+			tpe = tail_type(var);
+			level = stack_find_frame(sql, nme);
+			v = check_types(sql, tpe, v, type_equal); 
+			if (!v) {
+				list_destroy(rl);
+				list_destroy(nl);
+				return NULL;
+			}
+			a = stmt_assign(nme, v, level);
+			list_append(nl, a);
+		}
+		stmt_destroy(s);
+		s = stmt_list(nl);
+	}
+	return s;
+}
+
+static stmt *
 sql_simple_select(mvc *sql, scope *scp, SelectNode *sn )
 {
 	stmt *subset = NULL;
@@ -3758,42 +3807,8 @@ sql_simple_select(mvc *sql, scope *scp, SelectNode *sn )
 	if (subset)
 		stmt_destroy(subset);
 	list_destroy(sl);
-
-	/* SELECT ... INTO var_list */
-	if (sn->into) {
-		list *nl = create_stmt_list();
-
-		for (m = rl->h, n = sn->into->h; m && n; m = m->next, n = n->next) {
-			sql_subtype *tpe = NULL;
-			char *nme = n->data.sval;
-			stmt *a = NULL, *v = m->data, *var;
-			int level;
-
-			if ((var=stack_find_var(sql, nme)) == NULL || !v->key) {
-				list_destroy(rl);
-				list_destroy(nl);
-				if (var)
-					return sql_error(sql, 02, "SELECT INTO: needs a single row");
-				else
-					return sql_error(sql, 02, "SELECT INTO: variable '%s' unknown", nme);
-			}
-			tpe = tail_type(var);
-			level = stack_find_frame(sql, nme);
-			v = check_types(sql, tpe, stmt_dup(v), type_equal); 
-			if (!v) {
-				list_destroy(rl);
-				list_destroy(nl);
-				return NULL;
-			}
-			a = stmt_assign(nme, v, level);
-			list_append(nl, a);
-		}
-		list_destroy(rl);
-		rl = nl;
-	}
-
 	s = stmt_list(rl);
-
+	s = select_into(sql, sn, s);
 	if (!s)
 		return sql_error(sql, 02, "SELECT: subquery result missing");
 	return s;
@@ -4208,6 +4223,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 	} else if (s && order && scp->p && ek.card == card_relation) {
 		s = sql_reorder(order, s);
 	}
+	s = select_into(sql, sn, s);
 	return s;
 }
 
