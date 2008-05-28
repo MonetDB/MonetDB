@@ -26,24 +26,24 @@ xrpcConvert
 xrpcConvert2
 
 # tests using the option xrpc:bulkrpc "no"
-add_int_single.xq.in
-concatStr_single.xq.in
-echoVoid_single.xq.in
-emptySeq1_single.xq.in
-emptySeq2_single.xq.in
-emptySeq3_single.xq.in
-emptySeq4_single.xq.in
-returnAncestorOrSelf_single.xq.in
-returnAncestor_single.xq.in
-returnChild_single.xq.in
-returnDescendantOrSelf_single.xq.in
-returnDescendant_single.xq.in
-returnFollowingSibling_single.xq.in
-returnFollowing_single.xq.in
-returnParent_single.xq.in
-returnPrecedingSibling_single.xq.in
-returnPreceding_single.xq.in
-returnSelf_single.xq.in
+add_int_single
+concatStr_single
+echoVoid_single
+emptySeq1_single
+emptySeq2_single
+emptySeq3_single
+emptySeq4_single
+returnAncestorOrSelf_single
+returnAncestor_single
+returnChild_single
+returnDescendantOrSelf_single
+returnDescendant_single
+returnFollowingSibling_single
+returnFollowing_single
+returnParent_single
+returnPrecedingSibling_single
+returnPreceding_single
+returnSelf_single
 
 insertNode
 
