@@ -1275,7 +1275,7 @@ reduce (PFcnode_t * p, int goalnt)
                    argument does not contain text nodes. */
                 else if (LL(p)->kind == c_seq) {
                     if (!PFty_subtype (PFty_opt (PFty_text ()),
-                                       TY(LLL(p)))) {
+                                       PFty_opt (PFty_prime (TY(LLL(p)))))) {
                         PFfun_t *pf_matn
                             = function (
                                   PFqname (
@@ -1295,7 +1295,7 @@ reduce (PFcnode_t * p, int goalnt)
                          */
                         PFcoreopt_label (p);
                     } else if (!PFty_subtype (PFty_opt (PFty_text ()),
-                                              TY(LLR(p)))) {
+                                              PFty_opt (PFty_prime (TY(LLR(p)))))) {
                         PFfun_t *pf_matn
                             = function (
                                   PFqname (
