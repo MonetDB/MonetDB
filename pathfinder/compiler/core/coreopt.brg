@@ -748,10 +748,16 @@ reduce (PFcnode_t * p, int goalnt)
             /* rewrite conjunctive selections into nested selections */
             if (L(p)->kind == c_apply &&
                 !PFqname_eq (L(p)->sem.fun->qname, PFqname (PFns_op, "and"))) {
-                PFcnode_t *sec_arg = LLRL(p);
-                assert (PFty_subtype (TY(sec_arg), PFty_xs_boolean()));
-                L(p) = LLL(p);
-                RL(p) = if_ (sec_arg, then_else (RL(p), empty ()));
+                PFcnode_t *fst_and_arg = LLL(p),
+                          *sec_and_arg = LLRL(p);
+                
+                assert (PFty_subtype (TY(fst_and_arg), PFty_xs_boolean()));
+                assert (PFty_subtype (TY(sec_and_arg), PFty_xs_boolean()));
+                
+                L(p)  = fst_and_arg;
+                /* replace then branch input by a nested if-then-else
+                   checking for the second argument of op:and */
+                RL(p) = if_ (sec_and_arg, then_else (RL(p), empty ()));
                     
                 /* type-check what we just created */
                 PFty_check (p);
