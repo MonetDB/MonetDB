@@ -7,6 +7,10 @@ stdout of test 'auto_increment.SF-1834820` in directory 'src/test/BugTracker` it
 
 
 
+
+
+
+
 # MonetDB server v5.6.0, based on kernel v1.24.0
 # Serving database 'mTests_src_test_BugTracker'
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -44,17 +48,18 @@ Over..
 % 1,	5,	15 # length
 [ 1,	"wendy",	"Wendy\nWones"	]
 [ 2,	"fred",	"Fred Flintstone"	]
-% sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
-% id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
-% int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
-% 4,	3,	8,	1,	1,	1,	1,	1,	5 # length
-[ 3857,	979,	"seq_3856",	1,	1,	0,	1,	1,	false	]
-% sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
-% id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
-% int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
-% 1,	1,	0,	1,	1,	1,	1,	1,	5 # length
+% sys.sequences # table_name
+% L1 # name
+% int # type
+% 1 # length
+[ 1	]
+% sys.sequences # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 0	]
 
-# 15:29:02 >  
-# 15:29:02 >  Done.
-# 15:29:02 >  
+# 17:39:58 >  
+# 17:39:58 >  Done.
+# 17:39:58 >  
 
