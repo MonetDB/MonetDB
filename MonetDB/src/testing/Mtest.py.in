@@ -1213,8 +1213,6 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
     env['TST_OIDS'] = ""
     env['TST_FIVE'] = ""
     env['TST_STATIC'] = ""
-    env['TST_ALGEBRA'] = ""
-    env['TST_NOALGEBRA'] = ""
     if qOut:
         tbs = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs;? (.*) linked", re.MULTILINE)
         tm = re.compile("^Modules: (.*)$", re.MULTILINE)
@@ -1266,12 +1264,6 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
     if par['M5']:
         env['TST_FIVE'] = "Five"
         os.environ['TST_FIVE'] = "Five"
-    if par['ALGEBRA']:
-        env['TST_ALGEBRA'] = "Algebra"
-        os.environ['TST_ALGEBRA'] = "Algebra"
-    if par['NOALGEBRA']:
-        env['TST_NOALGEBRA'] = "NoAlgebra"
-        os.environ['TST_NOALGEBRA'] = "NoAlgebra"
     return rtrn
 ### GetBitsAndOIDsAndModsAndStatic(env) #
 
@@ -3081,6 +3073,14 @@ def main(argv) :
     else:
         CONDITIONALS['WITH_ALGEBRA'] = ''
         CONDITIONALS['NOT_ALGEBRA']  = '#'
+    env['TST_ALGEBRA'] = ""
+    env['TST_NOALGEBRA'] = ""
+    if CONDITIONALS['WITH_ALGEBRA']:
+        env['TST_ALGEBRA'] = "Algebra"
+        os.environ['TST_ALGEBRA'] = "Algebra"
+    if CONDITIONALS['NOT_ALGEBRA']:
+        env['TST_NOALGEBRA'] = "NoAlgebra"
+        os.environ['TST_NOALGEBRA'] = "NoAlgebra"
 
     #if env.has_key('MONETDB_PREFIX'):
         #bp = os.path.join(env['MONETDB_PREFIX'],"bin")
@@ -3518,6 +3518,12 @@ def main(argv) :
                     if mM:
                         CONDITIONALS['WITH_ALGEBRA'] = ''
                         CONDITIONALS['NOT_ALGEBRA']  = '#'
+            if CONDITIONALS['WITH_ALGEBRA']:
+                env['TST_ALGEBRA'] = "Algebra"
+                os.environ['TST_ALGEBRA'] = "Algebra"
+            if CONDITIONALS['NOT_ALGEBRA']:
+                env['TST_NOALGEBRA'] = "NoAlgebra"
+                os.environ['TST_NOALGEBRA'] = "NoAlgebra"
             os.environ['PF'] = env['PF']
             MissingMods = CheckMods(env, '', 'XQUERY', '')
             if MissingMods:
