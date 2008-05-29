@@ -346,10 +346,8 @@ PROC doLoopLiftedRPC(
                 var xrpc_wslock := lock_create();
                 lock_set(xrpc_wslock); # protect the ws of this query
 
-                var host := my_hostname();
-                var port := get_xrpc_port();
                 var ts := usec();
-                qid := host + ":" + str(port) + "|" + str(ts);
+                qid := xrpc_hostport + "|" + str(ts);
                 idx := count(xrpc_qids).oid(); # index of the new xrpc_* BUNs
 
                 xrpc_qids.append(qid);
@@ -363,6 +361,7 @@ PROC doLoopLiftedRPC(
                 sucsBAT.rename(str(int(idx)));
                 # add the dsts to the successors list
                 sucsBAT := sucsBAT.append(unq_dsts);
+                isoLevel := ""; # unset isolevel so we do not initialize lock a second time in this query
         });
         if(not(isnil(err_qinit))) {
             # Undo above actions, ignore possible errors
@@ -655,6 +654,7 @@ ADDHELP("doIterativeRPC", "zhang", "April 2006",
 "DESCRIPTION: make a separate RPC call for ever iteration",
 "xrpc_client");
 
+var xrpc_hostport := my_hostname() + ":" + str(get_xrpc_port());
 
 @h
 #ifndef XRPC_CLIENT_H

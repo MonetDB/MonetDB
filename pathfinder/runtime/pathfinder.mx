@@ -635,11 +635,6 @@ PROC pf_checkpoint(BAT[void,str] commitBAT) : bit
     commitBAT.append("doc_collection");
     commitBAT.append("doc_timestamp");
     commitBAT.append("uri_lifetime");
-    commitBAT.append("xrpc_qids");
-    commitBAT.append("xrpc_wsids");
-    commitBAT.append("xrpc_timeouts");
-    commitBAT.append("xrpc_locks");
-    commitBAT.append("xrpc_statuss");
     var ok := false;
     lock_set(pf_wal);
     var err := CATCH(ok := subcommit(commitBAT));
@@ -718,11 +713,16 @@ var doc_undo := bat(oid,lng).rename("doc_undo");
 var uri_lifetime;     # caching rules
 
 # meta-data BATs for multi-request XRPC transactions
-var xrpc_qids;        # bat[void,str] query-id (host|timestamp)
-var xrpc_timeouts;    # bat[void,lng] query timeout in msec
-var xrpc_wsids;       # bat[void,lng] ID of the workingset associated with this query
-var xrpc_locks;       # bat[void,lock] lock for the workingset of this query 
-var xrpc_statuss;     # bat[void,str] 2PC status of this query: "exec", "prepare", "commit" or "abort"
+var xrpc_qids :=      # bat[void,str] query-id (host|timestamp)
+    new(void,str).seqbase(0@0).persists(true).rename("xrpc_qids");
+var xrpc_timeouts :=  # bat[void,lng] query timeout in msec
+    new(void,lng).seqbase(0@0).persists(true).rename("xrpc_timeouts");
+var xrpc_wsids :=     # bat[void,lng] ID of the workingset associated with this query
+    new(void,lng).seqbase(0@0).persists(true).rename("xrpc_wsids");
+var xrpc_locks :=     # bat[void,lock] lock for the workingset of this query 
+    new(void,lock).seqbase(0@0).persists(true).rename("xrpc_locks");
+var xrpc_statuss :=   # bat[void,str] 2PC status of this query: "exec", "prepare", "commit" or "abort"
+    new(void,str).seqbase(0@0).persists(true).rename("xrpc_statuss");
 var xrpclock := pflock_get(6); # master XRPC lock, to protect above xrpc_* BATs
 
 # initialize persistent bats (use BBP as global mechanism to discover initialization)
@@ -734,11 +734,6 @@ if (isnil(CATCH(bat("doc_name").count()))) {
     doc_location     := bat("doc_location");
     doc_timestamp    := bat("doc_timestamp");
     uri_lifetime     := bat("uri_lifetime");
-    xrpc_qids        := bat("xrpc_qids");
-    xrpc_timeouts    := bat("xrpc_timeouts");
-    xrpc_wsids       := bat("xrpc_wsids");
-    xrpc_locks       := bat("xrpc_locks");
-    xrpc_statuss     := bat("xrpc_statuss");
 
     # check that this database was created with a compatible pagesize as requested now
     var pagebits := 16; 
@@ -754,11 +749,6 @@ if (isnil(CATCH(bat("doc_name").count()))) {
     doc_location    := new(oid,str).persists(true).rename("doc_location");
     doc_timestamp   := new(oid,timestamp).persists(true).rename("doc_timestamp");
     uri_lifetime    := new(str,lng).insert("tmp", 1LL).persists(true).rename("uri_lifetime");
-    xrpc_qids       := new(void,str).seqbase(0@0).persists(true).rename("xrpc_qids");
-    xrpc_timeouts   := new(void,lng).seqbase(0@0).persists(true).rename("xrpc_timeouts");
-    xrpc_wsids      := new(void,lng).seqbase(0@0).persists(true).rename("xrpc_wsids");
-    xrpc_locks      := new(void,lock).seqbase(0@0).persists(true).rename("xrpc_locks");
-    xrpc_statuss    := new(void,str).seqbase(0@0).persists(true).rename("xrpc_statuss");
     doc_collection.insert(DOCID_CURID_HACK, DOCID_MIN); # hack: store next oid as in invalid tuple
     doc_collection.insert(DOCID_PGBIT_HACK, oid(REMAP_PAGE_BITS)); # hack: store pagesize also
     pf_checkpoint(bat(void,str).append("uri_lifetime"));
