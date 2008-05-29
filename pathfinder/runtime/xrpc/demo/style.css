@@ -1,0 +1,74 @@
+body {
+	background: orange;
+	font-family: arial, verdana;
+}
+
+#header {
+	background: white;
+	padding-left: 30px;
+	padding-right:30px;
+	border: 1px solid black;
+	border-bottom: 4px solid black;
+	border-right: 4px solid black;
+	width:100%;
+	height:100px;
+}
+
+table td h1 {
+	font-size: 20pt;
+	text-align: center;
+}
+
+#all {
+	width: 100%;
+}
+
+#all tr {
+	vertical-align: top;
+}
+
+#content {
+	background: white;
+	margin-top:20px;
+	padding: 10px;
+	border: 1px solid black;
+	border-bottom: 4px solid black;
+	border-right: 4px solid black;
+}
+
+#answers {
+	background: white;
+	margin-top:20px;
+	padding: 10px;
+	border: 1px solid black;
+	border-bottom: 4px solid black;
+	border-right: 4px solid black;
+}
+
+#messages {
+	display: none;
+}
+
+#request, #response, #graph {
+	background: white;
+	margin-top:20px;
+	padding: 10px;
+	border: 1px solid black;
+	border-bottom: 4px solid black;
+	border-right: 4px solid black;
+}
+
+#request td, #response td, #answers td, #graph td {
+	font-size: 0.7em;
+	font-weight: bold;
+	background-color: black;
+	color: white;
+}  
+
+#content tr {
+	vertical-align:top;
+}
+
+.myinput {
+	margin-bottom: 4px;
+}
