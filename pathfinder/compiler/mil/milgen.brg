@@ -426,7 +426,8 @@ static void
 unpin (mvar_t *v, unsigned int count)
 {
     if (v->pins < count) {
-        PFinfo (OOPS_WARNING, "pin count below zero");
+        PFinfo (OOPS_WARNING, "pin count for variable %s below zero",
+                PFmil_var_str (v->name));
         v->pins = 0;
     } else
         v->pins -= count;
