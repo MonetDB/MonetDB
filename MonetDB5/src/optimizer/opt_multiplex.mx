@@ -50,10 +50,6 @@ barrier (_11,_12,_13):= bat.newIterator(b);
     _15 := calc.+(_13,1);
     bat.insert(_8,_12,_15);
     redo (_11,_12,_13):= bat.hasMoreElements(b);
-catch MALException;
-	#ignore any error
-    redo (_11,_12,_13):= bat.hasMoreElements(b);
-exit MALException;
 exit (_11,_12,_13);
     c := _8;
 @end verbatim
@@ -116,7 +112,7 @@ code construction.
 static str
 OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i = 2, k, mloop, resB, iter = 0, cr;
+	int i = 2, mloop, resB, iter = 0, cr;
 	int hvar, tvar;
 	str mod, fcn;
 	int *alias;
@@ -217,27 +213,6 @@ find the actual arguments at the proper place of the callee.
 	q= pushReturn(mb, q, hvar);
 	q= pushReturn(mb, q, tvar);
 	q= pushArgument(mb, q, iter);
-
-/* catch   MALException and ignore them  and replace value with nil */
-	q = newInstruction(mb,CATCHsymbol);
-	k = newVariable(mb, GDKstrdup(exceptionToString(MAL)), TYPE_str);
-	setVarUDFtype(mb,k);
-	q= pushReturn(mb, q, k);
-	pushInstruction(mb, q);
-
-/* redo (mloop,h,r):= hasMoreElements(refBat); */
-/* ignore the error and continue */
-	q = newFcnCall(mb, batRef, "hasMoreElements");
-	q->barrier = REDOsymbol;
-	getArg(q, 0) = mloop;
-	q= pushReturn(mb, q, hvar);
-	q= pushReturn(mb, q, tvar);
-	q= pushArgument(mb, q, iter);
-
-/* finalized the catch block */
-	q= newInstruction(mb,EXITsymbol);
-	q= pushReturn(mb,q,k);
-	pushInstruction(mb,q);
 
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;
