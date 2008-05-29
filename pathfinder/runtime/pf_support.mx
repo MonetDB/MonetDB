@@ -8632,6 +8632,10 @@ PROC merge_adjacent_text_nodes (BAT[void,oid] iter,
     pcont := map.reverse()
                 .leftfetchjoin([ifthenelse](text,text_cont,pcont));
 
+    # remove deleted text nodes entries from the bat
+    pre := pre.ord_select(oid_nil,oid_nil);
+    pcont := pre.mirror().leftjoin(pcont);
+
     # return result as a BAT of BATs
     return new (void, BAT).append (ws)
                           .append (pre)
