@@ -55,7 +55,7 @@ lib__pf_support = {
                 pf_support.mx \
                 shredder.mx 
         LIBS = \
-                -l_xrpc_common libserialize libpf $(PF_LIBS) \
+                lib_xrpc_common libserialize libpf $(PF_LIBS) \
                 $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet $(PTHREAD_LIBS) \
                 $(MONETDB4_MODS) -l_lock -l_monettime -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
 }
