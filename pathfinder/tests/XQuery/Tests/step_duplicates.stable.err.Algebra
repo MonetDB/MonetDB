@@ -1,0 +1,17 @@
+stderr of test 'step_duplicates` in directory 'tests/XQuery` itself:
+
+
+# 15:44:46 >  
+# 15:44:46 >   Mserver "--config=/local_tmp/work/MonetDB4/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/local_tmp/work/pathfinder/Linux/lib/MonetDB4:/local_tmp/work/pathfinder/Linux/lib/MonetDB4/lib:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4/lib:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4/bin" --set "gdk_dbfarm=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/dbfarm" --set "sql_logdir=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/sql_logs" --set "xquery_logdir=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32379 --set xrpc_port=46261 --set monet_prompt= --trace  "--dbname=mTests_tests_XQuery" --set sql_debug=16384 --set xquery_backend=algebra "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 15:44:46 >  
+
+
+# 15:44:46 >  
+# 15:44:46 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper08 --port=32379 -G step_duplicates.xq
+# 15:44:46 >  
+
+
+# 15:44:47 >  
+# 15:44:47 >  Done.
+# 15:44:47 >  
+

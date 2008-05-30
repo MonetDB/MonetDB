@@ -427,6 +427,9 @@ struct PFla_pair_t PFbui_op_node_after (const PFla_op_t *loop,
                                         struct PFla_pair_t *args);
 
 /* 14.9. fn:root */
+struct PFla_pair_t PFbui_fn_root (const PFla_op_t *loop,
+                                  bool ordering,
+                                  struct PFla_pair_t *args);
 
 /* 15. FUNCTIONS AND OPERATORS ON SEQUENCES */
 /* 15.1. General Functions and Operators on Sequences */

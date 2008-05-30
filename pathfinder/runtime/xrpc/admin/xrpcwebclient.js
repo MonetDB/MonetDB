@@ -7,7 +7,7 @@ function XRPC(posturl,    /* Your XRPC server. Usually: "http://yourhost:yourpor
               call,       /* one or more XRPC_CALL() parameter specs (concatenated strings) */ 
               callback)   /* callback function to call with the XML response */
 {
-    clnt.sendReceive(posturl+"/xrpc/admin", method, XRPC_REQUEST(module,moduleurl,method,arity,call), callback);
+    clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,arity,call), callback);
 }
 
 /**********************************************************************

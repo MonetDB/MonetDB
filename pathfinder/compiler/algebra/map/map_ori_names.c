@@ -279,69 +279,72 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_eqjoin_unq:
+            /* We need to turn the implicit projections
+               into explicit ones to use the la_eqjoin
+               operator again. */
+#define proj_at(l,i) (*(PFalg_proj_t *) PFarray_at ((l),(i)))
         {
-            PFalg_proj_t *projlist;
-            PFalg_att_t ori;
-            unsigned int count;
+            PFarray_t    *lproj  = p->sem.eqjoin_unq.lproj,
+                         *rproj  = p->sem.eqjoin_unq.rproj;
+            PFalg_proj_t *projlist,
+                         *lprojlist,
+                         *rprojlist;
+            PFla_op_t    *left   = O(L(p)),
+                         *right  = O(R(p));
+            unsigned int  lcount = 0,
+                          rcount = 0,
+                          i;
+            PFalg_att_t   att1_new,
+                          att2_new,
+                          att2_old,
+                          att2_unq,
+                          used_cols = 0,
+                          ori,
+                          unq_new,
+                          unq_old,
+                          ori_new,
+                          ori_old;
+            
+            /* look up the join column names */
+            att1_new = ONAME(p, proj_at (lproj, 0).new);
+            att2_unq = proj_at (rproj, 0).old;
+            att2_old = PFprop_ori_name_right (p->prop, att2_unq);
 
-            /* cope with special case where unique names
-               of the join arguments conflict */
-            if (p->sem.eqjoin_unq.att1 ==
-                p->sem.eqjoin_unq.att2) {
-                /* translation is almost identical to function
-                   add_renaming_projection(). The only difference
-                   is the special unique name used for the right
-                   join argument. */
-                PFalg_att_t ori_new, ori_old, unq, ori_join = att_NULL;
-                PFla_op_t *right = O(R(p));
-                bool renamed = false;
-
-                projlist = PFmalloc (right->schema.count *
-                                     sizeof (PFalg_proj_t));
-                count = 0;
-
-                for (unsigned int i = 0; i < right->schema.count; i++) {
-                    ori_old = right->schema.items[i].name;
-
-                    /* lookup unique name for column @a ori_old */
-                    unq = C_UNAME (p, ori_old, RIGHT);
-
-                    /* column ori_old is not referenced by operator @a p
-                       and thus does not appear in the projection */
-                    if (!unq) continue;
-
-                    if (unq == p->sem.eqjoin_unq.att2) {
-                        /* use special name to lookup original
-                           attribute name proposed for the join
-                           argument */
-                        unq = PFalg_unq_name (att_item, 0);
-                        ori_join = PFprop_ori_name (p->prop, unq);
-                        ori_new = ori_join;
-                    }
-                    else
-                        /* lookup corresponding new name for column @a ori_old */
-                        ori_new = ONAME(p, unq);
-
-                    /* don't allow missing matches */
-                    assert (ori_new);
-
-                    projlist[count++] = proj (ori_new, ori_old);
-                    renamed = renamed || (ori_new != ori_old);
-                }
-                if (renamed)
-                    right = PFla_project_ (right, count, projlist);
-
-                res = eqjoin (PROJ(LEFT, p), right,
-                              ONAME(p, p->sem.eqjoin_unq.att1),
-                              ori_join);
-
+            projlist  = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
+            lprojlist = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
+            rprojlist = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
+            
+            /* create the projection list for the left operand */
+            for (i = 0; i < PFarray_last (lproj); i++) {
+                unq_new = proj_at (lproj, i).new;
+                unq_old = proj_at (lproj, i).old;
+                ori_new = ONAME (p, unq_new);
+                ori_old = ONAME (L(p), unq_old);
+                lprojlist[lcount++] = proj (ori_new, ori_old);
             }
-            else
-                res = eqjoin (PROJ(LEFT, p), PROJ(RIGHT, p),
-                              ONAME(p, p->sem.eqjoin_unq.att1),
-                              ONAME(p, p->sem.eqjoin_unq.att2));
 
-            /* As some operators may rely on the schema of its operands
+            /* Create a new unused column name for the right join argument
+               that is projected away again. This way name conflicts are
+               avoided. */
+            for (i = 0; i < p->schema.count; i++)
+                used_cols |= ONAME(p, p->schema.items[i].name);
+            att2_new = PFalg_ori_name (att2_unq, ~used_cols);
+            rprojlist[rcount++] = proj (att2_new, att2_old);
+
+            /* create the projection list for the right operand */
+            for (i = 1; i < PFarray_last (rproj); i++) {
+                unq_new = proj_at (rproj, i).new;
+                unq_old = proj_at (rproj, i).old;
+                ori_new = ONAME (p, unq_new);
+                ori_old = ONAME (R(p), unq_old);
+                rprojlist[rcount++] = proj (ori_new, ori_old);
+            }
+
+            res = eqjoin (PFla_project_ (left, lcount, lprojlist),
+                          PFla_project_ (right, rcount, rprojlist),
+                          att1_new, att2_new);
+
+            /* As some operators rely on the schema of its operands
                we introduce a projection that removes the second join
                attribute thus maintaining the schema of the duplicate
                aware eqjoin operator. */

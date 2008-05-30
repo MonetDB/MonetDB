@@ -882,44 +882,58 @@ plan_pos_select (const PFla_op_t *n)
 static PFplanlist_t *
 plan_disjunion (const PFla_op_t *n)
 {
-    PFplanlist_t  *ret       = new_planlist ();
+    unsigned int  r, s, i, j; 
+    PFplanlist_t *ret = new_planlist ();
 
     /* Consider each combination of plans in R and S */
-    for (unsigned int r = 0; r < PFarray_last (L(n)->plans); r++)
-        for (unsigned int s = 0; s < PFarray_last (R(n)->plans); s++) {
+    for (r = 0; r < PFarray_last (L(n)->plans); r++)
+        for (s = 0; s < PFarray_last (R(n)->plans); s++) {
 
             plan_t *R = *(plan_t **) PFarray_at (L(n)->plans, r);
             plan_t *S = *(plan_t **) PFarray_at (R(n)->plans, s);
 
-            /* common orderings of R and S */
-            PFord_set_t common
-                = PFord_unique (PFord_intersect (R->orderings, S->orderings));
-
             /*
              * unfortunately, we can only support MergeJoin with
-             * one-column orderings in our MIL translation (and it
-             * even has to be monomorphic).
+             * one-column ascending orderings in our MIL translation
+             * (and it even has to be monomorphic).
+             *
+             * To make use of this observation we do not collect all
+             * matching input orderings (with PFord_intersect()) but
+             * only do an intersection on the first order entry.
+             * (This makes planing unions with a large number of orders
+             *  a lot cheaper.)
              */
             PFord_set_t prefixes = PFord_set ();
 
-            for (unsigned int i = 0; i < PFord_set_count (common); i++) {
-                /* make sure that merged_union is only called for
-                   ascending orders */
-                if (PFord_order_dir_at (PFord_set_at (common, i), 0)
-                    != DIR_ASC)
-                    continue;
+            for (i = 0; i < PFord_set_count (R->orderings); i++) {
+                PFord_ordering_t ri  = PFord_set_at (R->orderings, i);
+                /* get the order prefix */
+                PFalg_att_t      att = PFord_order_col_at (ri, 0);
+                for (j = 0; j < PFord_set_count (S->orderings); j++) {
+                    PFord_ordering_t sj = PFord_set_at (S->orderings, j);
+                    
+                    if (/* look for matching prefixes */
+                        PFord_order_col_at (sj, 0) == att &&
+                        /* make sure that merged_union is only called for
+                           ascending orders */
+                        PFord_order_dir_at (ri, 0) == DIR_ASC &&
+                        PFord_order_dir_at (sj, 0) == DIR_ASC) {
 
-                PFalg_att_t att = PFord_order_col_at (
-                                      PFord_set_at (common, i),
-                                      0);
+                        PFalg_simple_type_t tyR = type_of (R->schema, att);
+                        PFalg_simple_type_t tyS = type_of (S->schema, att);
 
-                PFalg_simple_type_t tyR = type_of (R->schema, att);
-                PFalg_simple_type_t tyS = type_of (S->schema, att);
-
-                if (tyR == tyS
-                    && (tyR == aat_nat || tyR == aat_int || tyR == aat_str
-                        || tyR == aat_dec || tyR == aat_dbl || tyR == aat_uA))
-                    PFord_set_add (prefixes, sortby (att));
+                        if (tyR == tyS &&
+                            (tyR == aat_nat ||
+                             tyR == aat_int ||
+                             tyR == aat_str ||
+                             tyR == aat_dec ||
+                             tyR == aat_dbl ||
+                             tyR == aat_uA))
+                            PFord_set_add (prefixes, sortby (att));
+                        
+                        break;
+                    }
+                }
             }
 
             /* kick out the duplicates */
@@ -2979,8 +2993,9 @@ plan_subexpression (PFla_op_t *n)
             PFord_set_t orderings = PFord_set ();
             plan_t *p = (*(plan_t **) PFarray_at (plans, 0));
             unsigned int plan_count = PFarray_last (plans);
+            unsigned int i, j, plan;
 
-            for (unsigned int i = 0; i < p->schema.count; i++)
+            for (i = 0; i < p->schema.count; i++)
                 /* check for an iter-like column (to avoid generating
                    a large amount of plans) */
                 if (PFalg_unq_name (p->schema.items[i].name, 0) ==
@@ -2988,7 +3003,7 @@ plan_subexpression (PFla_op_t *n)
                     ord = PFord_refine (ord, p->schema.items[i].name, DIR_ASC);
 
             /* collect all possible orderings of length 1 and 2 */
-            for (unsigned int i = 0; i < PFord_count (ord); i++) {
+            for (i = 0; i < PFord_count (ord); i++) {
                 PFord_ordering_t  ordering = PFordering ();
 
                 ordering = PFord_refine (ordering,
@@ -2996,7 +3011,7 @@ plan_subexpression (PFla_op_t *n)
                                          DIR_ASC);
                 PFord_set_add (orderings, ordering);
 
-                for (unsigned int j = 0; j < PFord_count (ord); j++)
+                for (j = 0; j < PFord_count (ord); j++)
                     if (j != i)
                         PFord_set_add (orderings,
                                        PFord_refine (
@@ -3007,12 +3022,18 @@ plan_subexpression (PFla_op_t *n)
 
             /* add all plans satisfying the generated ordering
                to the list of plans */
-            for (unsigned int plan = 0; plan < plan_count; plan++) {
+            for (plan = 0; plan < plan_count; plan++) {
                 p = (*(plan_t **) PFarray_at (plans, plan));
-                for (unsigned int i = 0; i < PFord_set_count (orderings); i++) {
-                    ord = PFord_set_at (orderings, i);
-                    add_plans (plans, ensure_ordering (p, ord));
-                }
+                /* Make sure that we only add potentially better plans
+                   if we have only a small number of input orders.
+                   (Choose 1000 as otherwise prune_plans() will have
+                    to compare more than 1.000.000 orderings for each
+                    plan combination.) */
+                if (PFord_set_count (p->orderings) < 1000)
+                    for (i = 0; i < PFord_set_count (orderings); i++) {
+                        ord = PFord_set_at (orderings, i);
+                        add_plans (plans, ensure_ordering (p, ord));
+                    }
             }
         }
     }

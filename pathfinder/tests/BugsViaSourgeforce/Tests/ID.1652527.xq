@@ -95,7 +95,7 @@ declare function product_int($seq as xs:integer*)
    else 1
 };
 
-declare function deep-equal($node1 as node(), $node2 as node())
+declare function deep-equal-1652527($node1 as node(), $node2 as node())
    as xs:boolean
 {
    let $e1 := for $e in $node1/descendant-or-self::element()
@@ -211,7 +211,7 @@ declare function constructMustBeMatches($config as element(config)
          ,$e2 in $l2
       where ($e1/name() eq $e2/name())
       return
-         if (($e1/name() = $nonmultiple_names) or deep-equal($e1,$e2))
+         if (($e1/name() = $nonmultiple_names) or deep-equal-1652527($e1,$e2))
          then <cand a="{pf:nid($e1)}" b="{pf:nid($e2)}"/>
          else ()
 };

@@ -1,4 +1,4 @@
-declare function deep-equal($node1 as node(), $node2 as node()) as xs:boolean
+declare function deep-equal-1712595($node1 as node(), $node2 as node()) as xs:boolean
 {
   let $e1 := $node1/descendant-or-self::element()
      ,$e2 := $node2/descendant-or-self::element()
@@ -11,4 +11,4 @@ declare function deep-equal($node1 as node(), $node2 as node()) as xs:boolean
 };
 
 let $doc := doc("$TSTSRCDIR/mposjoin_missing_matches.SF-1712595.imdb2.xml")
-return deep-equal(<a>{$doc}</a>,<a>{$doc}</a>)
+return deep-equal-1712595(<a>{$doc}</a>,<a>{$doc}</a>)
