@@ -209,6 +209,7 @@ io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 	daytime_19:= mtime.daytime("nil");
 #var daytime_19 := mtime.daytime("nil");
 #
+	daytime_20:= mtime.daytime("nil");
 	daytime_bat:= bat.new(:oid,:daytime);
 #var daytime_bat := bat.new(oid,daytime);
 	bat.insert(daytime_bat,0@0,daytime_00);
