@@ -20,3 +20,4 @@ leftfetchjoin_crash.SF-1705726
 outerjoin_bug.SF-1704972
 delete_from_persistent_dense_BAT.SF-1713584
 sum_double_free
+chr_cast.SF-1530310
