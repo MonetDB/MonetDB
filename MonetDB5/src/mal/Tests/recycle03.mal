@@ -27,7 +27,7 @@ function qry(low:int, hgh:int);
 	io.print(j);
 end qry;
 
-recycle.setRetainPolicy(3,5);
+recycle.setRetainPolicy(3,1);
 recycle.setReusePolicy(1);
 optimizer.recycle("user","qry");
 io.print("start");

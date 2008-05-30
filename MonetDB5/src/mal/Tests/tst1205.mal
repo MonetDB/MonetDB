@@ -94,6 +94,7 @@ mtime.timezone_local(lzone);
 	tzone_13:= mtime.timezone(60,rule_feb,rule_dec);
 #var tzone_13 := mtime.timezone(60, rule_feb, rule_dec);
 	rc_a := calc.*(24,60);
+	tzone_14:= mtime.timezone(rc_a,rule_apr,rule_nov); # to complete it
 	tzone_15:= mtime.timezone(rc_a,rule_apr,rule_nov);
 #var tzone_15 := mtime.timezone(24*60, rule_apr, rule_nov);
 #

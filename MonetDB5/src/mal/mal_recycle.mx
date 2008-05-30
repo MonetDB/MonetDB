@@ -64,8 +64,8 @@ which inspects the variable table for alternative results.
 #include "mal_exception.h"
 #include "mal_instruction.h"
 
-/* #define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE*/
+/*#define _DEBUG_RECYCLE_
+#define _DEBUG_RECYCLE_REUSE */
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -767,22 +767,25 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			if (rd+wr > recycleVolume){
 				(void) RECYCLEnew(mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
-				stream_printf(GDKout,"RECYCLEexit size %d \n",rd+wr);
+				stream_printf(GDKout,"RECYCLEexit size %d %d\n",rd,wr);
 #endif
 			}
 		}
+		break;
 	}
 	case RETAIN_VOL:
 	{
 		/* RETAIN_VOL: volumetric cost model (time x size )*/
 		if (recycleVolume && RECYCLEfind(mb,stk,p)<0 ){
-			if (recycleAlpha *(rd+wr) + (1-recycleAlpha)* clk > recycleVolume * recycleTime){
+			if (recycleAlpha *(rd+wr) + (1-recycleAlpha)* clk > (recycleVolume+1) * (recycleTime+1)){
 				(void) RECYCLEnew(mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
-				stream_printf(GDKout,"RECYCLEexit volume %d \n",(rd+wr)*clk);
+				stream_printf(GDKout,"RECYCLEexit volume %d %d %d \n",clk,rd,wr,(rd+wr)*clk);
+				stream_printf(GDKout,"RECYCLEexit volume %d %d\n", recycleVolume, recycleTime);
 #endif
 			}
 		}
+		break;
 	}
 	case RETAIN_ADAPT:
 		/* RETAIN_ADAPT: adaptive temporal */
