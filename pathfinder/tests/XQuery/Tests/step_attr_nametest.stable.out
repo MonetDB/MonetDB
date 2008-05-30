@@ -21,35 +21,12 @@ quit();
 
 Over..
 
-# 16:12:15 >  
-# 16:12:15 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper08 --port=31189 -G step_attr_nametest.xq
-# 16:12:15 >  
+# 19:18:10 >  
+# 19:18:10 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=39583 step_attr_nametest.xq
+# 19:18:10 >  
 
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult line="1" line="2" line="3" line="4" line="5" line="6" line="7" line="8" line="9" line="10" foo2="bar" line="11" line="12" foo2="bar" line="13" line="14" foo2="bar" line="15" line="16" foo2="bar" line="17" line="18" foo2="bar" line="19" line="20" foo2="bar">
- 1  
- 2 <c foo2="bar"/>
- 3  
- 4 <b>textnode</b>
- 5 <c foo2="bar"/>
- 6 <a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a> 
- 7 <b>textnode</b> 
- 8 <c foo2="bar"/>
- 9  
-10  
-11  
-12  
-13  
-14  
-15  
-16  
-17 
-18  
-19  
-20  
-</XQueryResult>
 
-# 16:12:16 >  
-# 16:12:16 >  Done.
-# 16:12:16 >  
+# 19:18:10 >  
+# 19:18:10 >  Done.
+# 19:18:10 >  
 

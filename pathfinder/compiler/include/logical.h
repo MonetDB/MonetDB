@@ -238,8 +238,8 @@ union PFla_op_sem_t {
 
     /* semantic content for clone column aware equi-join operator */
     struct {
-        PFalg_att_t     att1;     /**< name of attribute from "left" rel */
-        PFalg_att_t     att2;     /**< name of attribute from "right" rel */
+        PFarray_t      *lproj;    /**< projection list of the "left" rel */
+        PFarray_t      *rproj;    /**< projection list of the "right" rel */
         PFalg_att_t     res;      /**< name of result attribute */
     } eqjoin_unq;
 
@@ -651,11 +651,10 @@ PFla_op_t * PFla_thetajoin_opt_internal (const PFla_op_t *n1,
 
 /**
  * Equi-join between two relations.
- * Duplicate attribute names allowed.
+ * Duplicate attribute names for join columns allowed.
  */
 PFla_op_t * PFla_eqjoin_clone (const PFla_op_t *n1, const PFla_op_t *n2,
-                               PFalg_att_t att1, PFalg_att_t att2,
-                               PFalg_att_t res);
+                               PFarray_t *lproj, PFarray_t *rproj);
 
 /**
  * Construct projection operator

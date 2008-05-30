@@ -43,8 +43,8 @@
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
-#define ITER(n) ((n)->prop->icols)
-#define POS(n) ((n)->prop->r_icols)
+#define ITER(n) ((n)->prop->left_cols)
+#define POS(n) ((n)->prop->right_cols)
 #define IN(n) ((n)->prop->set)
 
 #define REFS(n) ((n)->refctr)

@@ -64,7 +64,7 @@ struct PFprop_t {
                                   disjoint domains) */
     bool         set;        /**< boolean flag that indicates whether the
                                   cardinality of an operator is important */
-    PFalg_att_t  icols;      /**< List of attributes required by the
+    PFarray_t   *icols;      /**< List of attributes required by the
                                   parent operators. */
     PFarray_t   *keys;       /**< List of attributes that have
                                   unique values. */
@@ -84,6 +84,9 @@ struct PFprop_t {
                                        node usage information. */
     PFarray_t   *name_pairs; /**< List of attributes with their corresponding
                                   unique names. */
+    PFalg_att_t  free_cols;  /**< List of columns that are not in use. */  
+    PFalg_att_t  left_cols;  /**< List of left columns (intro_thetajoin.c) */
+    PFalg_att_t  right_cols; /**< List of right columns (intro_thetajoin.c) */
     PFarray_t   *level_mapping; /**< List of attributes annotated with
                                      level information. */
     PFarray_t   *guide_mapping_list; /**< List of guide mappings that contain
@@ -102,9 +105,9 @@ struct PFprop_t {
                                   corresponding domain identifier. */
     PFarray_t  *r_domains;   /**< List of attributes along with their
                                   corresponding domain identifier. */
-    PFalg_att_t l_icols;     /**< List of attributes required by the
+    PFarray_t  *l_icols;     /**< List of attributes required by the
                                   parent operators. */
-    PFalg_att_t r_icols;     /**< List of attributes required by the
+    PFarray_t  *r_icols;     /**< List of attributes required by the
                                   parent operators. */
     PFarray_t  *l_keys;      /**< List of attributes that have
                                   unique values. */

@@ -1,0 +1,55 @@
+stdout of test 'step_attr_nametest` in directory 'tests/XQuery` itself:
+
+
+# 16:12:14 >  
+# 16:12:14 >   Mserver "--config=/local_tmp/work/MonetDB4/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/local_tmp/work/pathfinder/Linux/lib/MonetDB4:/local_tmp/work/pathfinder/Linux/lib/MonetDB4/lib:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4/lib:/local_tmp/work/MonetDB4/Linux/lib/MonetDB4/bin" --set "gdk_dbfarm=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/dbfarm" --set "sql_logdir=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/sql_logs" --set "xquery_logdir=/local_tmp/work/MonetDB4/Linux/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=31189 --set xrpc_port=45761 --set monet_prompt= --trace  "--dbname=mTests_tests_XQuery" --set sql_debug=16384 --set xquery_backend=algebra "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 16:12:14 >  
+
+# MonetDB Server v4.23.0
+# based on GDK   v1.23.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.23.0 loaded
+# XRPC administrative console at http://127.0.0.1:45761/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 16:12:15 >  
+# 16:12:15 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper08 --port=31189 -G step_attr_nametest.xq
+# 16:12:15 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult line="1" line="2" line="3" line="4" line="5" line="6" line="7" line="8" line="9" line="10" foo2="bar" line="11" line="12" foo2="bar" line="13" line="14" foo2="bar" line="15" line="16" foo2="bar" line="17" line="18" foo2="bar" line="19" line="20" foo2="bar">
+ 1  
+ 2 <c foo2="bar"/>
+ 3  
+ 4 <b>textnode</b>
+ 5 <c foo2="bar"/>
+ 6 <a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a> 
+ 7 <b>textnode</b> 
+ 8 <c foo2="bar"/>
+ 9  
+10  
+11  
+12  
+13  
+14  
+15  
+16  
+17 
+18  
+19  
+20  
+</XQueryResult>
+
+# 16:12:16 >  
+# 16:12:16 >  Done.
+# 16:12:16 >  
+

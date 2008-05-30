@@ -687,84 +687,131 @@ PFla_eqjoin (const PFla_op_t *n1, const PFla_op_t *n2,
  *
  * Assert that @a att1 is an attribute of @a n1 and @a att2 is an attribute
  * of @a n2. The schema of the result is:
- * schema(@a n1) + schema(@a n2) - duplicate columns.
+ * schema(@a n1) + schema(@a n2) - duplicate join column.
  */
 PFla_op_t *
 PFla_eqjoin_clone (const PFla_op_t *n1, const PFla_op_t *n2,
-                   PFalg_att_t att1, PFalg_att_t att2, PFalg_att_t res)
+                   PFarray_t *lproj, PFarray_t *rproj)
 {
-    PFla_op_t    *ret;
-    unsigned int  i;
-    unsigned int  count;
+#define proj_at(l,i) (*(PFalg_proj_t *) PFarray_at ((l),(i)))
+    PFalg_simple_type_t res_ty;
+    PFla_op_t          *ret;
+    unsigned int        i,
+                        j,
+                        count;
 
     assert (n1); assert (n2);
+    assert (lproj && PFarray_last (lproj));
+    assert (rproj && PFarray_last (rproj));
+
+#ifndef NDEBUG
+    if (proj_at(lproj,0).new != proj_at(rproj,0).new)
+        PFoops (OOPS_FATAL,
+                "common result column name for join columns expected");
+#endif
 
     /* verify that att1 is attribute of n1 ... */
     for (i = 0; i < n1->schema.count; i++)
-        if (att1 == n1->schema.items[i].name)
+        if (proj_at(lproj,0).old == n1->schema.items[i].name) {
+            res_ty = n1->schema.items[i].type;
             break;
+        }
 
     /* did we find attribute att1? */
     if (i >= n1->schema.count)
         PFoops (OOPS_FATAL,
                 "attribute `%s' referenced in join not found",
-                PFatt_str(att1));
+                PFatt_str(proj_at(lproj,0).old));
 
     /* ... and att2 is attribute of n2 */
     for (i = 0; i < n2->schema.count; i++)
-        if (att2 == n2->schema.items[i].name)
+        if (proj_at(rproj,0).old == n2->schema.items[i].name) {
+            if (n2->schema.items[i].type != res_ty)
+                PFoops (OOPS_FATAL,
+                        "attribute types in join do not match");
             break;
+        }
 
     /* did we find attribute att2? */
     if (i >= n2->schema.count)
         PFoops (OOPS_FATAL,
                 "attribute `%s' referenced in join not found",
-                PFatt_str (att2));
+                PFatt_str(proj_at(rproj,0).old));
 
     /* build new equi-join node */
     ret = la_op_wire2 (la_eqjoin_unq, n1, n2);
 
-    /* insert semantic value (join attributes) into the result */
-    ret->sem.eqjoin_unq.att1 = att1;
-    ret->sem.eqjoin_unq.att2 = att2;
-    ret->sem.eqjoin_unq.res  = res;
+    /* insert a copy of the semantic value (join attributes) into the result */
+    lproj = PFarray_copy (lproj);
+    rproj = PFarray_copy (rproj);
+    ret->sem.eqjoin_unq.lproj = lproj;
+    ret->sem.eqjoin_unq.rproj = rproj;
 
     /* allocate memory for the result schema (schema(n1) + schema(n2)) */
-    ret->schema.count = n1->schema.count + n2->schema.count;
+    ret->schema.count = PFarray_last (lproj) + PFarray_last (rproj);
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    count = 0;
     /* add join attribute to the result */
-    for (i = 0; i < n1->schema.count; i++)
-        if (n1->schema.items[i].name == att1) {
-            ret->schema.items[count] = n1->schema.items[i];
-            ret->schema.items[count++].name = res;
-            break;
+    ret->schema.items[0].name = proj_at(lproj,0).new;
+    ret->schema.items[0].type = res_ty;
+    count = 1;
+
+    /* copy schema from projection list 'lproj' */
+    /* discard join columns - they are already added */
+    for (i = 1; i < PFarray_last (lproj); i++) {
+        PFalg_proj_t proj_item = proj_at(lproj, i);
+#ifndef NDEBUG
+        /* check that we do not add duplicate names */
+        for (j = 0; j < count; j++)
+            if (ret->schema.items[j].name == proj_item.new)
+                PFoops (OOPS_FATAL,
+                        "duplicate attribute `%s' in join operator",
+                        PFatt_str (proj_item.new));
+#endif
+        for (j = 0; j < n1->schema.count; j++)
+            if (proj_item.old == n1->schema.items[j].name) {
+                ret->schema.items[count].name = proj_item.new;
+                ret->schema.items[count].type = n1->schema.items[j].type;
+                count++;
+                break;
+            }
+        if (j == n1->schema.count) {
+            /* projection column is missing --
+               remove it from the projection list */
+            proj_at(lproj, i) = *(PFalg_proj_t *) PFarray_top (lproj);
+            PFarray_last (lproj)--;
+            i--;
         }
-
-    /* copy schema from argument 'n1' */
-    for (i = 0; i < n1->schema.count; i++)
-        /* discard join columns - they are already added */
-        if (n1->schema.items[i].name != att1 &&
-            n1->schema.items[i].name != att2)
-            ret->schema.items[count++] = n1->schema.items[i];
-
-    /* copy schema from argument 'n2' */
-    for (i = 0; i < n2->schema.count; i++)
-        /* discard join columns - they are already added */
-        if (n2->schema.items[i].name != att1 &&
-            n2->schema.items[i].name != att2) {
-            /* only include new columns */
-            unsigned int j;
-            for (j = 0; j < count; j++)
-                if (ret->schema.items[j].name
-                    == n2->schema.items[i].name)
-                    break;
-
-            if (j == count)
-                ret->schema.items[count++] = n2->schema.items[i];
+    }
+    
+    /* copy schema from projection list 'rproj' */
+    /* discard join columns - they are already added */
+    for (i = 1; i < PFarray_last (rproj); i++) {
+        PFalg_proj_t proj_item = proj_at(rproj, i);
+#ifndef NDEBUG
+        /* check that we do not add duplicate names */
+        for (j = 0; j < count; j++)
+            if (ret->schema.items[j].name == proj_item.new)
+                PFoops (OOPS_FATAL,
+                        "duplicate attribute `%s' in join operator",
+                        PFatt_str (proj_item.new));
+#endif
+        for (j = 0; j < n2->schema.count; j++)
+            if (proj_item.old == n2->schema.items[j].name) {
+                ret->schema.items[count].name = proj_item.new;
+                ret->schema.items[count].type = n2->schema.items[j].type;
+                count++;
+                break;
+            }
+        if (j == n2->schema.count) {
+            /* projection column is missing --
+               remove it from the projection list */
+            proj_at(rproj, i) = *(PFalg_proj_t *) PFarray_top (rproj);
+            PFarray_last (rproj)--;
+            i--;
         }
+    }
 
     /* adjust schema size */
     ret->schema.count = count;
@@ -1595,7 +1642,7 @@ printf("type = %x", n->schema.items[ix[1]].type);
                     break;
                 case alg_fun_upd_replace_element:
                     assert(n->schema.items[ix[0]].type & aat_pnode);
-                    assert(n->schema.items[ix[1]].type & aat_str);
+                    assert(n->schema.items[ix[1]].type & aat_pnode);
                     assert((n->schema.items[ix[0]].type << 4) & aat_pnode1);
                     break;
                 default: assert(!"should never reach here"); break;

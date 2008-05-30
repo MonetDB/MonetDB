@@ -362,7 +362,6 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             break;
 
         case la_eqjoin:
-        case la_eqjoin_unq:
             /* only a key-join retains all key properties */
             if (PFprop_key (L(n)->prop, n->sem.eqjoin.att1) &&
                 PFprop_key (R(n)->prop, n->sem.eqjoin.att2)) {
@@ -375,6 +374,40 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 copy (n->prop->keys, L(n)->prop->keys);
             break;
 
+        case la_eqjoin_unq:
+            /* do the same as for normal joins and
+               correctly update the columns names */
+#define proj_at(l,i) (*(PFalg_proj_t *) PFarray_at ((l),(i)))
+        {
+            PFarray_t  *lproj = n->sem.eqjoin_unq.lproj,
+                       *rproj = n->sem.eqjoin_unq.rproj;
+            PFalg_att_t att1  = proj_at(lproj, 0).old,
+                        att2  = proj_at(rproj, 0).old,
+                        res   = proj_at(lproj, 0).new;
+            
+            /* only a key-join retains all key properties */
+            if (PFprop_key (L(n)->prop, att1) &&
+                PFprop_key (R(n)->prop, att2)) {
+                union_ (n->prop->keys, res);
+                for (unsigned int i = 1; i < PFarray_last (lproj); i++)
+                    if (PFprop_key (L(n)->prop, proj_at(lproj, i).old))
+                        union_ (n->prop->keys, proj_at(lproj, i).new);
+                for (unsigned int i = 1; i < PFarray_last (rproj); i++)
+                    if (PFprop_key (R(n)->prop, proj_at(rproj, i).old))
+                        union_ (n->prop->keys, proj_at(rproj, i).new);
+            }
+            else if (PFprop_key (L(n)->prop, att1)) {
+                for (unsigned int i = 1; i < PFarray_last (rproj); i++)
+                    if (PFprop_key (R(n)->prop, proj_at(rproj, i).old))
+                        union_ (n->prop->keys, proj_at(rproj, i).new);
+            }
+            else if (PFprop_key (R(n)->prop, att2)) {
+                for (unsigned int i = 1; i < PFarray_last (lproj); i++)
+                    if (PFprop_key (L(n)->prop, proj_at(lproj, i).old))
+                        union_ (n->prop->keys, proj_at(lproj, i).new);
+            }
+        }   break;
+            
         case la_semijoin:
             copy (n->prop->keys, L(n)->prop->keys);
             break;
@@ -768,7 +801,7 @@ prop_infer (PFla_op_t *n, bool with_guide_info)
     if (n->prop->keys)
         PFarray_last (n->prop->keys) = 0;
     else
-        n->prop->keys   = PFarray (sizeof (PFalg_att_t), 10);
+        n->prop->keys = PFarray (sizeof (PFalg_att_t), 10);
 
     if (L(n)) {
         if (n->prop->l_keys)

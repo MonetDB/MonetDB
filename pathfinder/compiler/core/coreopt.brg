@@ -277,6 +277,9 @@ CoreExpr:           proof (subty (CoreExpr, SequenceType),
 CoreExpr:           if_ (CoreExpr,
                          then_else (CoreExpr, CoreExpr))        =   49(10);
                                                                      
+CoreExpr:           if_ (CoreExpr,
+                         then_else (CoreExpr, empty))           =  31 (10);
+                                                                     
 CoreExpr:           seq (seq (CoreExpr, CoreExpr), CoreExpr)    =  15 (10);
 CoreExpr:           seq (CoreExpr, CoreExpr)                    =   50(10);
 CoreExpr:           seq (empty, CoreExpr)                       =  16 (10);
@@ -737,6 +740,37 @@ reduce (PFcnode_t * p, int goalnt)
                 break;
             }
 
+            break;
+
+        /* CoreExpr:           if_ (CoreExpr,
+                                    then_else (CoreExpr, empty)) */
+        case 31:
+            /* rewrite conjunctive selections into nested selections */
+            if (L(p)->kind == c_apply &&
+                !PFqname_eq (L(p)->sem.fun->qname, PFqname (PFns_op, "and"))) {
+                PFcnode_t *fst_and_arg = LLL(p),
+                          *sec_and_arg = LLRL(p);
+                
+                assert (PFty_subtype (TY(fst_and_arg), PFty_xs_boolean()));
+                assert (PFty_subtype (TY(sec_and_arg), PFty_xs_boolean()));
+                
+                L(p)  = fst_and_arg;
+                /* replace then branch input by a nested if-then-else
+                   checking for the second argument of op:and */
+                RL(p) = if_ (sec_and_arg, then_else (RL(p), empty ()));
+                    
+                /* type-check what we just created */
+                PFty_check (p);
+
+                rewritten = true;
+
+                /*
+                 * Re-label entire subtree. Type-checking may have
+                 * modified all the state labels in the subtree, so
+                 * we have to restore them.
+                 */
+                PFcoreopt_label (p);
+            }
             break;
 
         /* CoreExpr:           seq (seq (CoreExpr, CoreExpr), CoreExpr) */
@@ -1241,7 +1275,7 @@ reduce (PFcnode_t * p, int goalnt)
                    argument does not contain text nodes. */
                 else if (LL(p)->kind == c_seq) {
                     if (!PFty_subtype (PFty_opt (PFty_text ()),
-                                       TY(LLL(p)))) {
+                                       PFty_opt (PFty_prime (TY(LLL(p)))))) {
                         PFfun_t *pf_matn
                             = function (
                                   PFqname (
@@ -1261,7 +1295,7 @@ reduce (PFcnode_t * p, int goalnt)
                          */
                         PFcoreopt_label (p);
                     } else if (!PFty_subtype (PFty_opt (PFty_text ()),
-                                              TY(LLR(p)))) {
+                                              PFty_opt (PFty_prime (TY(LLR(p)))))) {
                         PFfun_t *pf_matn
                             = function (
                                   PFqname (

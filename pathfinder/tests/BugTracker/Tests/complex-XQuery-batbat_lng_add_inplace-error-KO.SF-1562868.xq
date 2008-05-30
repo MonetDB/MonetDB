@@ -1,4 +1,4 @@
-declare function deep-equal($node1 as element(), $node2 as element())
+declare function deep-equal-1562868($node1 as element(), $node2 as element())
    as xs:boolean
 {
    let $c1 := $node1/descendant-or-self::node()
@@ -83,7 +83,7 @@ declare function theOracle_e($node1 as element(), $node2 as element())
        ,$names:=("name","persons","imdb","peggy","title","year","genres","directors")
    return
       if ($e1 eq $e2)
-      then if ($e1=$names or deep-equal($node1,$node2)) then 1.0 else 0.5
+      then if ($e1=$names or deep-equal-1562868($node1,$node2)) then 1.0 else 0.5
       else 0.0
 };
 
@@ -117,7 +117,7 @@ declare function integrate($all as element()*
       ,$ptsacode:=index-of($all,$ptsa)
       ,$ptsbcode:=index-of($all,$ptsb)
    return
-      if (deep-equal($node1,$node2))
+      if (deep-equal-1562868($node1,$node2))
       then <prob><poss prob="1.0">{$node1}</poss></prob>
       else
       if ($oracle gt 0.1 and $ea eq $eb)

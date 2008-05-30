@@ -10,6 +10,9 @@ stderr of test 'step_attr_nametest` in directory 'tests/XQuery` itself:
 # 16:12:15 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper08 --port=31189 -G step_attr_nametest.xq
 # 16:12:15 >  
 
+MAPI  = monetdb@rig:39583
+QUERY = (: Check for correct namtests :)
+ERROR = !ERROR: path steps are only supported starting from non-attribute nodes
 
 # 16:12:16 >  
 # 16:12:16 >  Done.

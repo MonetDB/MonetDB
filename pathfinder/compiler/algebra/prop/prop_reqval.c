@@ -213,7 +213,8 @@ prop_infer_reqvals (PFla_op_t *n,
             PFalg_att_t  overlap   = req_bool_vals.name;
             unsigned int bit_shift = 1;
 
-            while (bit_shift <= overlap) {
+            /* an overflow will turn bit_shift into 0 */
+            while (bit_shift) {
                 /* if the values of column that is required by both
                    parents do not match remove this column from the
                    list of required value columns */
