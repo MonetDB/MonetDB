@@ -152,7 +152,7 @@
 
    .PRELUDE = geom_prelude;
    .EPILOGUE = geom_epilogue;
-   
+
 .END geom;
 
 @h
@@ -427,11 +427,14 @@ wkbFROMSTR(
 	if (strcmp(src, str_nil) == 0) 
 		nil = 1;
 
-	if (!nil && (geosGeometry = GEOSGeomFromWKT(src)) == NULL)
+	if (!nil && (geosGeometry = GEOSGeomFromWKT(src)) == NULL) {
+		*atom = wkbNULL();
 		return 0;
+	}
 	
 	if (!nil && GEOSGeomTypeId(geosGeometry) == -1) {
 		GEOSGeom_destroy(geosGeometry);
+		*atom = wkbNULL();
 		return 0;
 	}
 
@@ -590,7 +593,6 @@ ordinatesMBR(
 	res->ymax = *maxY;
 	return GDK_SUCCEED;
 }
-
 
 /* COMMAND mbr
  * Creates the mbr for the given geom_geometry.

@@ -1,0 +1,45 @@
+stdout of test 'example` in directory 'src/sql` itself:
+
+
+# 10:10:09 >  
+# 10:10:09 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=35583 --set xrpc_port=41039 --set monet_prompt= --trace  "--dbname=mTests_src_sql" --set mal_listing=0 "--dbinit=include geom; include sql;" ; echo ; echo Over..
+# 10:10:09 >  
+
+# MonetDB server v5.6.0, based on kernel v1.24.0
+# Serving database 'mTests_src_sql'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35583/
+# MonetDB/GIS module v0.4.0 loaded
+# MonetDB/SQL module v2.24.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 10:10:09 >  
+# 10:10:09 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35583 
+# 10:10:09 >  
+
+[ 1	]
+[ 1	]
+[ 1	]
+% sys.forests,	sys.buildings # table_name
+% name,	name # name
+% clob,	clob # type
+% 0,	0 # length
+[ 1	]
+[ 2	]
+% sys.forests,	sys.buildings # table_name
+% name,	name # name
+% clob,	clob # type
+% 0,	0 # length
+
+# 10:10:09 >  
+# 10:10:09 >  Done.
+# 10:10:09 >  
+

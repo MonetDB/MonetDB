@@ -10,3 +10,4 @@ geom_mbr
 basic
 relation
 spatial
+HAVE_MONETDB5?example

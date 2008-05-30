@@ -20,18 +20,7 @@ CREATE TYPE mbr EXTERNAL NAME mbr;
 -- Envelope():Geometry
 -- as that returns Geometry objects, and we prefer the explicit mbr's
 -- minimum bounding rectangle (mbr)
-CREATE FUNCTION mbr (p Point) RETURNS mbr external name geom.mbr;
-CREATE FUNCTION mbr (c Curve) RETURNS mbr external name geom.mbr;
-CREATE FUNCTION mbr (l LineString) RETURNS mbr external name geom.mbr;
-CREATE FUNCTION mbr (s Surface) RETURNS mbr external name geom.mbr;
-CREATE FUNCTION mbr (p Polygon) RETURNS mbr external name geom.mbr;
-CREATE FUNCTION mbr (m multipoint) RETURNS mbr external name geom.mbr;
-CREATE FUNCTION mbr (m multicurve) RETURNS mbr external name geom.mbr;
-CREATE FUNCTION mbr (m multilinestring) RETURNS mbr external name geom.mbr;
-CREATE FUNCTION mbr (m multisurface) RETURNS mbr external name geom.mbr;
-CREATE FUNCTION mbr (m multipolygon) RETURNS mbr external name geom.mbr;
 CREATE FUNCTION mbr (g Geometry) RETURNS mbr external name geom.mbr;
-CREATE FUNCTION mbr (g GeomCollection) RETURNS mbr external name geom.mbr;
 
 CREATE FUNCTION mbroverlaps(a mbr, b mbr) RETURNS BOOLEAN external name geom."mbroverlaps";
 
@@ -47,16 +36,6 @@ CREATE FUNCTION GeomCollectionFromText(wkt string, srid SMALLINT) RETURNS MultiP
 -- alias
 CREATE FUNCTION PolygonFromText(wkt string, srid SMALLINT) RETURNS Polygon external name geom."PolyFromText";
 
-CREATE FUNCTION AsText(p Point) RETURNS STRING external name geom."AsText";
-CREATE FUNCTION AsText(c Curve) RETURNS STRING external name geom."AsText";
-CREATE FUNCTION AsText(l LineString) RETURNS STRING external name geom."AsText";
-CREATE FUNCTION AsText(s Surface) RETURNS STRING external name geom."AsText";
-CREATE FUNCTION AsText(p Polygon) RETURNS STRING external name geom."AsText";
-CREATE FUNCTION AsText(p MultiPoint) RETURNS STRING external name geom."AsText";
-CREATE FUNCTION AsText(c MultiCurve) RETURNS STRING external name geom."AsText";
-CREATE FUNCTION AsText(l MultiLineString) RETURNS STRING external name geom."AsText";
-CREATE FUNCTION AsText(s MultiSurface) RETURNS STRING external name geom."AsText";
-CREATE FUNCTION AsText(p MultiPolygon) RETURNS STRING external name geom."AsText";
 CREATE FUNCTION AsText(g Geometry) RETURNS STRING external name geom."AsText";
 
 CREATE FUNCTION X(g Geometry) RETURNS double external name geom."X";

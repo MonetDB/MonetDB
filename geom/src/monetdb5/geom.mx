@@ -540,11 +540,14 @@ wkbFROMSTR(
 	if (strcmp(src, str_nil) == 0) 
 		nil = 1;
 
-	if (!nil && (geosGeometry = GEOSGeomFromWKT(src)) == NULL)
+	if (!nil && (geosGeometry = GEOSGeomFromWKT(src)) == NULL) {
+		*atom = wkbNULL();
 		return 0;
+	}
 	
 	if (!nil && GEOSGeomTypeId(geosGeometry) == -1) {
 		GEOSGeom_destroy(geosGeometry);
+		*atom = wkbNULL();
 		return 0;
 	}
 
@@ -784,10 +787,14 @@ wkbgetcoord@1(double *out, wkb **geom)
 	str ret = "";
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
-	if (geosGeometry) { 
-		if (GEOSCoordSeq_get@1(GEOSGeom_getCoordSeq( geosGeometry),0,out) != 0) {
+	if (geosGeometry) {  
+		GEOSCoordSeq gcs = (GEOSCoordSeq)GEOSGeom_getCoordSeq(geosGeometry);
+
+		/* we could also check if geom is a
+			LineString, LinearRing or Point */ 
+		if (gcs && GEOSCoordSeq_get@1(gcs, 0, out) != 0) 
 			ret = MAL_SUCCEED;
-		}
+		/* gcs shouldn't be freed, its internal to the GEOSGeom */
 		GEOSGeom_destroy(geosGeometry);
 	}
 	if (ret)
@@ -806,6 +813,7 @@ wkbcreatepoint(wkb **out, double *x,double *y)
 	GEOSCoordSeq_setX(pnt,0,*x);
 	GEOSCoordSeq_setY(pnt,0,*y);
 	*out = geos2wkb(GEOSGeom_createPoint(pnt));
+	GEOSCoordSeq_destroy(pnt);
 	return MAL_SUCCEED;
 }
 
