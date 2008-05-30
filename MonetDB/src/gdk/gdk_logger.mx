@@ -176,7 +176,7 @@ log a posteriori to check what has happened.
 @c
 #define LOG_START	1
 #define LOG_END		2
-#define LOG_PRECOMMIT 11
+#define LOG_PRECOMMIT	11
 #define LOG_INSERT	3
 #define LOG_DELETE	4
 #define LOG_UPDATE	5
@@ -820,9 +820,9 @@ logger_readlog(logger *lg, char *filename)
 			else
 				tr = tr_commit(lg, tr);
 			break;
-        case LOG_PRECOMMIT:
-            tr = tr_precommit(lg, tr);
-            break;
+		case LOG_PRECOMMIT:
+			tr = tr_precommit(lg, tr);
+			break;
 		case LOG_SEQ:
 			err = (log_read_seq(lg, &l) != LOG_OK);
 			break;
@@ -1449,8 +1449,6 @@ log_bat(logger *lg, BAT *b, char *name)
 		if (lg->debug)
 			fprintf(stderr, "Logged %s %d deletes\n", name, l.nr);
 	}
-	BATcommit(b);
-
 	return (ok == GDK_SUCCEED) ? LOG_OK : LOG_ERR;
 }
 
