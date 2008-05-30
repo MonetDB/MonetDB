@@ -1307,6 +1307,52 @@ opt_complex (PFla_op_t *p)
                 p->sem.step.level - 1 == PFprop_level (R(p)->prop,
                                                        p->sem.step.item))
                 p->sem.step.spec.axis = alg_chld;
+
+            /* combine steps if they are of the form:
+               ``/descandent-or-self::node()/child::element()'' */
+            if (p->sem.step.spec.axis == alg_chld &&
+                R(p)->kind == la_project &&
+                RL(p)->kind == la_step_join &&
+                RL(p)->sem.step.spec.axis == alg_desc_s &&
+                RL(p)->sem.step.spec.kind == node_kind_node &&
+                !PFprop_icol (p->prop, p->sem.step.item) &&
+                (PFprop_set (p->prop) ||
+                 PFprop_key (p->prop, p->sem.step.item_res))) {
+
+                bool          item_link_correct = false;
+                PFalg_att_t   item_res          = p->sem.step.item_res,
+                              item_in           = p->sem.step.item,
+                              old_item_res      = RL(p)->sem.step.item_res,
+                              old_item_in       = RL(p)->sem.step.item;
+                PFalg_proj_t *proj = PFmalloc (R(p)->schema.count *
+                                               sizeof (PFalg_proj_t));
+
+                for (unsigned int i = 0; i < R(p)->sem.proj.count; i++) {
+                    PFalg_proj_t proj_item = R(p)->sem.proj.items[i];
+
+                    if (proj_item.new == item_in &&
+                        proj_item.old == old_item_res) {
+                        item_link_correct = true;
+                        proj[i] = PFalg_proj (item_in, old_item_in);
+                    }
+                    else if (proj_item.old == old_item_in)
+                        /* the old input item may not appear in the result */
+                        break;
+                    else
+                        proj[i] = proj_item;
+                }
+                if (item_link_correct) {
+                    PFalg_step_spec_t spec = p->sem.step.spec;
+                    spec.axis = alg_desc,
+                    /* rewrite child into descendant
+                       and discard descendant-or-self step */
+                    *p = *PFla_step_join_simple (
+                              L(p), 
+                              PFla_project_ (RLR(p), R(p)->schema.count, proj),
+                              spec, item_in, item_res);
+                    break;
+                }
+            }
             break;
 
         case la_fcns:
