@@ -396,14 +396,16 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                     if (PFprop_key (R(n)->prop, proj_at(rproj, i).old))
                         union_ (n->prop->keys, proj_at(rproj, i).new);
             }
-            else if (PFprop_key (L(n)->prop, att1))
+            else if (PFprop_key (L(n)->prop, att1)) {
                 for (unsigned int i = 1; i < PFarray_last (rproj); i++)
                     if (PFprop_key (R(n)->prop, proj_at(rproj, i).old))
                         union_ (n->prop->keys, proj_at(rproj, i).new);
-            else if (PFprop_key (R(n)->prop, att2))
+            }
+            else if (PFprop_key (R(n)->prop, att2)) {
                 for (unsigned int i = 1; i < PFarray_last (lproj); i++)
                     if (PFprop_key (L(n)->prop, proj_at(lproj, i).old))
                         union_ (n->prop->keys, proj_at(lproj, i).new);
+            }
         }   break;
             
         case la_semijoin:

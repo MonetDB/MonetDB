@@ -426,7 +426,8 @@ static void
 unpin (mvar_t *v, unsigned int count)
 {
     if (v->pins < count) {
-        PFinfo (OOPS_WARNING, "pin count below zero");
+        PFinfo (OOPS_WARNING, "pin count for variable %s below zero",
+                PFmil_var_str (v->name));
         v->pins = 0;
     } else
         v->pins -= count;
@@ -8177,7 +8178,7 @@ reduce (PFpa_op_t * p, int goalnt)
                    p_cont := leftfetchjoin (sel, frag); */
                 execute (
                     assgn (var (sel->name),
-                           hmark (select_ (var (attr->name), lit_bit (false)),
+                           hmark (select_ (var (attr->name), lit_bit (true)),
                                   lit_oid (0))),
                     assgn (var (p_pre->name),
                            leftfetchjoin (var (sel->name),
@@ -8198,7 +8199,7 @@ reduce (PFpa_op_t * p, int goalnt)
                    a_cont := leftfetchjoin (sel, frag); */
                 execute (
                     assgn (var (sel->name),
-                           hmark (select_ (var (attr->name), lit_bit (true)),
+                           hmark (select_ (var (attr->name), lit_bit (false)),
                                   lit_oid (0))),
                     assgn (var (a_pre->name),
                            leftfetchjoin (var (sel->name),
@@ -8253,7 +8254,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 mvar_t *mu   = new_var (1),
                        *attr = new_var (p->refctr);
 
-                env_add (p->env, item_att, aat_frag, attr);
+                env_add (p->env, item_att, aat_attr, attr);
 
                 /* Attributes have to appear before the other nodes.
                    Otherwise the node constructors may fail.
@@ -8261,15 +8262,16 @@ reduce (PFpa_op_t * p, int goalnt)
                     as we split them up anyway.) */
                 execute (
                     assgn (var (mu->name),
-                           arg (var (a_iter->name),
-                           arg (var (iter->name),
-                           arg (var (a_pre->name),
-                           arg (var (pre->name),
-                           arg (var (a_attr->name),
-                           arg (project (var (iter->name),
-                                         cast (type (mty_oid), nil ())),
-                           arg (var (a_cont->name),
-                                var (frag->name))))))))),
+                           merged_union (
+                               arg (var (a_iter->name),
+                               arg (var (iter->name),
+                               arg (var (a_pre->name),
+                               arg (var (pre->name),
+                               arg (var (a_attr->name),
+                               arg (project (var (iter->name),
+                                             cast (type (mty_oid), nil ())),
+                               arg (var (a_cont->name),
+                                    var (frag->name)))))))))),
                     assgn (var (iter->name),
                            fetch (var (mu->name), lit_int (0))),
                     assgn (var (pre->name),
