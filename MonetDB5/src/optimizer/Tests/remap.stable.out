@@ -30,18 +30,15 @@ function user.main():void;              #  0 main:void := user.main() {G}
     a:bat[:oid,:bit]  := batcalc.isnil(d);#  7 a:bat[:oid,:bit] := CMDunaryISNIL(d:bat[:oid,:str]) {G}
 # demonstrate an error 
     _22 := bat.new(nil:int,nil:int);    #  9 _22:bat[:int,:int] := CMDBATnew(_23:int, _23:int) {G}
-barrier (_25,_26,_27):= bat.newIterator(b);# 10 (_25:lng, _26:oid, _27:int) := CHPbunIterator(b:bat[:oid,:int]) {J17}
+barrier (_25,_26,_27):= bat.newIterator(b);# 10 (_25:lng, _26:oid, _27:int) := CHPbunIterator(b:bat[:oid,:int]) {J14}
     _29 := calc.+(_27,1);               # 11 _29:int := CALCbinaryADDintint(_27:int, _8:int) 
     bat.insert(_22,_26,_29);            # 12 _30:any := bat.insert(_22:bat[:int,:int], _26:oid, _29:int) {U}
     redo (_25,_26,_27):= bat.hasMoreElements(b);# 13 (_25:lng, _26:oid, _27:int) := CHPbunHasMoreElements(b:bat[:oid,:int]) {J11}
-catch MALException:str ;                # 14 MALException:str {J16}
-    redo (_25,_26,_27):= bat.hasMoreElements(b);# 15 (_25:lng, _26:oid, _27:int) := CHPbunHasMoreElements(b:bat[:oid,:int]) {J11}
-exit MALException:str ;                 # 16 MALException:str 
-exit (_25,_26,_27);                     # 17 (_25:lng, _26:oid, _27:int) 
-    y:bat[:int,:int]  := _22;           # 18 y:bat[:int,:int] := _22:bat[:int,:int] {G}
+exit (_25,_26,_27);                     # 14 (_25:lng, _26:oid, _27:int) 
+    y:bat[:int,:int]  := _22;           # 15 y:bat[:int,:int] := _22:bat[:int,:int] {G}
 # it will be ignored by the optimizer 
-    mdb.list();                         # 20 _21:void := MDBlist() 
-end main;	# 21  
+    mdb.list();                         # 17 _21:void := MDBlist() 
+end main;                               # 18  
 
 # 22:31:17 >  
 # 22:31:17 >  Done.
