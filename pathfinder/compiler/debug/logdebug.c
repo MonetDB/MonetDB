@@ -872,6 +872,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                 case doc_pi_text:
                     PFarray_printf (dot, "processing instruction");
                     break;
+				case doc_qname:
+					PFarray_printf (dot, "qname");
+					break;
                 default: PFoops (OOPS_FATAL,
                         "unknown document access in dot output");
             }

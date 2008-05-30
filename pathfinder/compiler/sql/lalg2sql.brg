@@ -3613,9 +3613,24 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_fn_substring:
                 case alg_fun_fn_substring_dbl:
                 case alg_fun_fn_normalize_space:
-
+                    assert (!"missing");
+                    break;
                 case alg_fun_fn_name:
+                /* Returns the name of a node, as an xs:string that is either the
+                 * zero length string or the lexical form of an xs:QName.
+                 * If the argument is the empty sequence, the function returns
+                 * the zero lenght-string.
+                 * If the target node has no name (that is, if it is a document node,
+                 * a comment a text node, or a namespace binding) the functions
+                 * returns the zero length string.
+                 */
+                {
+                    
+                } break;
                 case alg_fun_fn_local_name:
+                {
+                    
+                } break;
                 case alg_fun_fn_namespace_uri:
 
                 case alg_fun_fn_qname:
@@ -4573,6 +4588,7 @@ reduce (PFla_op_t * p, int goalnt)
                         item_res = p->sem.doc_access.res;
             PFalg_simple_type_t item_ty = type_of (p, item),
                                 item_res_ty = type_of (p, item_res);
+            PFalg_doc_t doc_col = p->sem.doc_access.doc_col;
             PFsql_aident_t ctxalias;
 
             /* copy all existing column, from, and where lists */
@@ -4588,8 +4604,23 @@ reduce (PFla_op_t * p, int goalnt)
                                     col_env_lookup (COLMAP(p), item, item_ty)));
             }
 
-            /* add the new column to the column map */
-            col_env_add (COLMAP(p), item_res, item_res_ty, VALUE(ctxalias));
+            switch ( doc_col ) {
+                case doc_atext:
+                case doc_text:
+                case doc_comm:
+                case doc_pi_text:
+					col_env_add (COLMAP(p), item_res, item_res_ty, VALUE(ctxalias));
+                    break;
+                case doc_qname:
+					col_env_add (COLMAP(p), item_res, aat_qname_loc, NAME(ctxalias));
+					col_env_add (COLMAP(p), item_res, aat_qname_uri, NS_URI(ctxalias));
+                    break;
+                default: PFoops (OOPS_FATAL,
+                                    "SQLgen: Unknown access identifier in "
+                                    "document access");
+            }
+            
+            
         }   break;
 
         /* Rel:    roots_ (Constr) */

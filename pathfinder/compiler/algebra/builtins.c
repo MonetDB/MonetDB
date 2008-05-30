@@ -344,6 +344,169 @@ un_op (PFalg_simple_type_t t,
 /* ------------ */
 /* 2. ACCESSORS */
 /* ------------ */
+
+/* ----------------- */
+/* 2.1. fn:node-name */
+/* ----------------- */
+
+/* The fn:node-name function returns an expanded for 
+ * node kinds that can have names.
+ * Among them obviously elements and attributes. 
+ */
+
+static struct PFla_pair_t
+fn_bui_node_name (struct PFla_pair_t
+                    (*nodes)
+                    (const PFla_op_t *, bool, PFla_pair_t *args),
+                  const PFla_op_t *loop,
+                  bool ordering,
+                  struct PFla_pair_t *args)
+{
+    PFla_op_t *qnames = project (
+                            doc_access (
+                                PFla_set_to_la (args[0].frag),
+                                nodes (loop, ordering, args).rel,
+                                att_res, att_item, doc_qname),
+                            proj (att_iter, att_iter),
+                            proj (att_pos, att_pos),
+                            proj (att_item, att_res));
+
+    return (struct PFla_pair_t) {
+                    .rel = qnames,
+                    .frag = PFla_empty_set ()
+                };
+}
+
+static struct PFla_pair_t
+fn_bui_node_name_attr_ (const PFla_op_t* loop,
+                        bool ordering,
+                        struct PFla_pair_t *args)
+{
+    (void)ordering; (void)loop;
+    return args[0];
+}
+
+static struct PFla_pair_t
+fn_bui_node_name_elem_ (const PFla_op_t *loop,
+                        bool ordering,
+                        struct PFla_pair_t *args)
+{
+    (void)ordering; (void)loop;
+    return args[0];
+}
+
+/* filter attributes only */
+static struct PFla_pair_t
+fn_bui_node_name_attr_filter (const PFla_op_t* loop,
+                              bool ordering,
+                              struct PFla_pair_t *args)
+{
+    (void)loop; (void)ordering;
+    
+    PFla_op_t *attributes = NULL;
+    PFalg_step_spec_t self_attr_spec;
+    self_attr_spec.axis = alg_self;
+    self_attr_spec.kind = node_kind_attr;
+    
+    /* just find every attribute  */
+    self_attr_spec.qname = PFqname (PFns_wild, NULL); 
+    
+    attributes = attach (
+                    PFla_step_simple (
+                        PFla_set_to_la (args[0].frag),
+                        project (args[0].rel,
+                                 proj (att_iter, att_iter),
+                                 proj (att_item, att_item)),
+                        self_attr_spec,
+                        att_iter, att_item, att_item),
+                    att_pos, lit_int(1));
+
+    return (struct PFla_pair_t) {
+                    .rel = attributes,
+                    .frag = args[0].frag
+                };
+}
+
+/* filter elements only */
+static struct PFla_pair_t
+fn_bui_node_name_element_filter (const PFla_op_t* loop,
+                                 bool ordering,
+                                 struct PFla_pair_t *args)
+{
+    (void)loop; (void)ordering;
+    
+    PFla_op_t *elements = NULL;
+    PFalg_step_spec_t self_elem_spec;
+    self_elem_spec.axis = alg_self;
+    self_elem_spec.kind = node_kind_elem; 
+    
+    /* just find every element */
+    self_elem_spec.qname = PFqname (PFns_wild, NULL);
+    
+    elements = attach (
+                    PFla_step_simple (
+                        PFla_set_to_la (args[0].frag),
+                        project (args[0].rel,
+                                 proj (att_iter, att_iter),
+                                 proj (att_item, att_item)),
+                        self_elem_spec,
+                        att_iter, att_item, att_item),
+                        att_pos, lit_int(1));
+                                
+    return (struct PFla_pair_t) {
+                    .rel = elements,
+                    .frag = args[0].frag
+                };
+}
+
+static struct PFla_pair_t
+fn_bui_node_name_node_ (const PFla_op_t *loop,
+                        bool ordering,
+                        struct PFla_pair_t *args)
+{
+    PFla_op_t *union_ = disjunion (
+                            fn_bui_node_name_attr_filter (loop,
+                                                          ordering,
+                                                          args).rel,
+                            fn_bui_node_name_element_filter (loop,
+                                                             ordering,
+                                                             args).rel);
+                                                    
+    return (struct PFla_pair_t) {
+                .rel  = union_,
+                .frag = args[0].frag
+            };
+}
+
+/* node-name for attributes */
+struct PFla_pair_t
+PFfn_bui_node_name_attr (const PFla_op_t *loop,
+                         bool ordering,
+                         struct PFla_pair_t *args)
+{
+    return fn_bui_node_name (fn_bui_node_name_attr_, loop, ordering, args);
+}
+
+/* node-name for elements */
+struct PFla_pair_t 
+PFfn_bui_node_name_elem (const PFla_op_t *loop,
+                         bool ordering,
+                         struct PFla_pair_t *args)
+{
+    return fn_bui_node_name (fn_bui_node_name_elem_, loop, ordering, args);
+}
+
+/* node-name for general nodes */
+struct PFla_pair_t
+PFfn_bui_node_name_node (const PFla_op_t *loop,
+                         bool ordering,
+                         struct PFla_pair_t *args)
+{
+    return fn_bui_node_name (fn_bui_node_name_node_, loop, ordering, args);
+}
+
+
+
 /* -------------- */
 /* 2.3. fn:string */
 /* -------------- */

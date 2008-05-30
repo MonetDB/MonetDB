@@ -3022,7 +3022,12 @@ PFla_doc_access (const PFla_op_t *doc, const PFla_op_t *n,
         ret->schema.items[i] = n->schema.items[i];
 
     ret->schema.items[i]
-        = (struct PFalg_schm_item_t) { .type = aat_str, .name = res };
+        = (struct PFalg_schm_item_t) {
+				.type = (doc_col != doc_qname)
+						? aat_str
+						: aat_qname,
+				.name = res
+			};
 
     ret->sem.doc_access.res = res;
     ret->sem.doc_access.att = col;
