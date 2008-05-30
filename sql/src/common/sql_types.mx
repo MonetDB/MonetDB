@@ -446,8 +446,17 @@ type_cmp(sql_type *t1, sql_type *t2)
 	res = (t1->localtype - t2->localtype);
 	if (res)
 		return res;
-	/* and
-	   iff they have the same sqlname */
+
+	/* iff they fall into the same equivalence class */
+	res = (t1->eclass - t2->eclass);
+	if (res)
+		return res;
+
+	/* external types with the same system type are treated equaly */
+	if (t1->eclass == EC_EXTERNAL)
+		return res;
+
+	/* sql base types need the same 'sql' name */
 	return (strcmp(t1->sqlname, t2->sqlname));
 }
 
@@ -460,6 +469,7 @@ subtype_cmp(sql_subtype *t1, sql_subtype *t2)
 	       t1->type->eclass == EC_INTERVAL) &&
 	      (t1->digits != t2->digits || t1->scale != t2->scale) )
 		return -1;
+
 	/* subtypes are only equal iff
 	   they map onto the same systemtype */
 	return (type_cmp(t1->type, t2->type));

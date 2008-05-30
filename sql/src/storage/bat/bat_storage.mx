@@ -54,6 +54,8 @@ extern BAT *eubats[MAXATOMS];
 #include "bat_utils.h"
 #include <sql_string.h>
 
+#define SNAPSHOT_MINSIZE (1024)
+
 BAT *ebats[MAXATOMS] = { NULL };
 BAT *eubats[MAXATOMS] = { NULL };
 
@@ -62,7 +64,7 @@ ebat2real(log_bid b, oid ibase)
 {
 	/* make a copy of b */
 	BAT *o = temp_descriptor(b);
-	BAT *c = BATcopy(o, TYPE_void, o->ttype, TRUE);
+	BAT *c = BATcopy(o, TYPE_void, ATOMtype(o->ttype), TRUE);
 	log_bid r;
 
 	BATseqbase(c, ibase );
@@ -326,13 +328,14 @@ append_bat( sql_delta *bat, BAT *i )
 {
 	BAT *b = temp_descriptor(bat->ibid);
 
-	if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void && bat->ibase == i->H->seq){
+	if (0 && BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void && bat->ibase == i->H->seq){
 		temp_destroy(bat->ibid);
 		bat->ibid = temp_create(i);
 		BATseqbase(i, bat->ibase);
 		i->batDirty |= 2;
 	} else if (!isEbat(b)){
-		if (BATcount(b)+BATcount(i) > (size_t) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
+		/* try to use mmap() */
+		if (BATcount(b)+BATcount(i) > (size_t) REMAP_PAGE_MAXSIZE) { 
        			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     		}
 		BATappend(b, i, TRUE);
@@ -435,21 +438,25 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 		delete_val(bat, ib);
 }
 
-static sql_delta *
-load_bat( char *sname, char *tname, char *bname, int type, int sz, lng *cnt ) 
+static int 
+load_bat(sql_delta *bat, int type, int sz, lng *cnt ) 
 {
-	BAT *b;
-	sql_delta *bat = ZNEW(sql_delta);
+	int destroy = 0;
+	BAT *b, *u;
 
 	(void)sz;
-	bat->name = sql_message("%s_%s_%s", sname, tname, bname );
 	b = quick_descriptor(logger_find_bat(bat_logger, bat->name));
 	bat->bid = temp_create(b);
 	*cnt = bat->ibase = BATcount(b);
 	
-	bat->uname = sql_message("U_%s", bat->name);
-	b = quick_descriptor(logger_find_bat(bat_logger, bat->uname));
-	bat->ubid = temp_create(b);
+	u = quick_descriptor(logger_find_bat(bat_logger, bat->uname));
+	if (!u) {
+		u = bat_new(TYPE_oid, b->ttype, 0);
+		destroy = 1;
+	}
+	bat->ubid = temp_create(u);
+	if (destroy)
+		bat_destroy(u);
 
 	bat->ibid = e_bat(type);
 	if (bat->bid && bat->ubid) {
@@ -465,44 +472,66 @@ load_bat( char *sname, char *tname, char *bname, int type, int sz, lng *cnt )
 		}
 		bat_destroy(ub);
 	}
-	return bat;
+	return LOG_OK;
 }
 
 static int
-new_persistent_bat(sql_trans *tr, sql_delta *bat, char *sname, char *tname, char *bname, int sz, lng *cnt) 
+log_new_persistent_bat(sql_trans *tr, sql_delta *bat) 
 {
 	int ok = LOG_OK;
-	BAT *u, *i, *b = temp_descriptor(bat->ibid);
+	BAT *b = temp_descriptor(bat->ibid);
+	BAT *u = temp_descriptor(bat->ubid);
 
-	bat->name = sql_message("%s_%s_%s", sname, tname, bname);
-	bat->bid = logger_add_bat(bat_logger, b, bat->name);
-	bat->ibase = BATcount(b);
-	bat->ibid = 0;
-
-	if (tr->parent == gtrans) {
-		/* snapshot large bats */
-		if (BATcount(b) > 1000) 
-			BATmode(b, PERSISTENT);
-		if (BATcount(b) > (size_t) REMAP_PAGE_MAXSIZE)
-        		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
-		ok = log_bat_persists(bat_logger, b, bat->name);
+	if (!u) {
+		u = bat_new(TYPE_oid, b->ttype, 0);
+		bat->ubid = temp_create(u);
 	}
-	*cnt = BATcount(b);
 
-	bat->uname = sql_message("U_%s", bat->name);
-	u = temp_descriptor(bat->ubid);
-	(void) logger_add_bat(bat_logger, u, bat->uname);
-
-	if (tr->parent == gtrans && ok == LOG_OK)
+	(void)tr;
+	logger_add_bat(bat_logger, u, bat->uname);
+	if (ok == LOG_OK)
 		ok = log_bat_persists(bat_logger, u, bat->uname);
 	bat_destroy(u);
 
-	i = bat_new(TYPE_void, b->ttype, sz);
+	logger_add_bat(bat_logger, b, bat->name);
+	if (ok == LOG_OK)
+		ok = log_bat_persists(bat_logger, b, bat->name);
+	bat_destroy(b);
+	return ok;
+}
+
+static int
+snapshot_new_persistent_bat(sql_trans *tr, sql_delta *bat) 
+{
+	int ok = LOG_OK;
+	BAT *b = temp_descriptor(bat->ibid);
+
+	(void)tr;
+	/* snapshot large bats */
+	if (BATcount(b) > SNAPSHOT_MINSIZE) 
+		BATmode(b, PERSISTENT);
+	if (BATcount(b) > (size_t) REMAP_PAGE_MAXSIZE)
+       		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+	bat_destroy(b);
+	return ok;
+}
+
+static int
+new_persistent_bat(sql_trans *tr, sql_delta *bat, int sz, lng *cnt) 
+{
+	BAT *i, *b = temp_descriptor(bat->ibid);
+	int ok = LOG_OK, type = b->ttype;
+
+	(void)tr;
+	assert(bat->bid == 0);
+	bat->bid = bat->ibid;
+	*cnt = bat->ibase = BATcount(b);
+	bat_destroy(b);
+
+	i = bat_new(TYPE_void, type, sz);
 	BATseqbase(i, bat->ibase);
 	bat->ibid = temp_create(i);
-	
 	bat_destroy(i);
-	bat_destroy(b);
 	return ok;
 }
 
@@ -513,11 +542,18 @@ create_col(sql_trans *tr, sql_column *c)
 	int type = c->type.type->localtype;
 	sql_delta *bat = c->data;
 
+	if (!bat)
+		c->data = bat = ZNEW(sql_delta);
+	if (!bat->uname) 
+		bat->uname = sql_message("U_%s_%s_%s", c->t->s->base.name, c->t->base.name, c->base.name);
+	if (!bat->name) 
+		bat->name = bat->uname+2;
+
 	(void)tr;
 	if (c->base.flag == TR_OLD && !isTempTable(c->t)){
-		c->data = load_bat( c->t->s->base.name, c->t->base.name, c->base.name, type, c->t->sz, &c->t->cnt);
+		return load_bat(bat, type, c->t->sz, &c->t->cnt);
 	} else if (bat && bat->ibid && !isTempTable(c->t)) {
-		return new_persistent_bat( tr, c->data, c->t->s->base.name, c->t->base.name, c->base.name, c->t->sz, &c->t->cnt);
+		return new_persistent_bat( tr, c->data, c->t->sz, &c->t->cnt);
 	} else {
 		if (!bat)
  			bat = c->data = ZNEW(sql_delta);
@@ -532,6 +568,21 @@ create_col(sql_trans *tr, sql_column *c)
 	return ok;
 }
 
+static int
+log_create_col(sql_trans *tr, sql_column *c)
+{
+	assert(tr->parent == gtrans && !isTempTable(c->t));
+	return log_new_persistent_bat( tr, c->data);
+}
+
+
+static int
+snapshot_create_col(sql_trans *tr, sql_column *c)
+{
+	assert(tr->parent == gtrans && !isTempTable(c->t));
+	return snapshot_new_persistent_bat( tr, c->data);
+}
+
 /* will be called for new idx's and when new index columns are create */
 static int
 create_idx(sql_trans *tr, sql_idx *ni)
@@ -543,35 +594,53 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	if (ni->type == join_idx)
 		type = TYPE_oid;
 
-	/* create bats for a loaded idx structure */
-	if (ni->base.flag == TR_OLD && !isTempTable(ni->t)){
-		if (ni->type == join_idx || list_length(ni->columns) > 1 ) {
-			ni->data = load_bat( ni->t->s->base.name, ni->t->base.name, ni->base.name, type, ni->t->sz, &ni->t->cnt);
-		}
-	} else if (bat && bat->ibid) { /* create bats for a new persistent idx */
-		return new_persistent_bat( tr, ni->data, ni->t->s->base.name, ni->t->base.name, ni->base.name, ni->t->sz, &ni->t->cnt);
-	} else {
-		if (ni->type == join_idx || list_length(ni->columns) > 1 ) {
-			if (!bat)
- 				bat = ni->data = ZNEW(sql_delta);
-			if (!bat->ibid) {
-				BAT *b = bat_new(TYPE_void, type, ni->t->sz);
-				if (!b) 
-					return LOG_ERR;
-				bat->ibid = temp_create(b);
-				bat_destroy(b);
-			}
-		}
-		if (ni->type == hash_idx && 
-		    ni->key != NULL && list_length(ni->key->columns)==1) {
+	/* no index bats for single column hash indices */
+/* TODO single column indices ! 
+		if (ni->key) {
 			sql_kc *c = ni->columns->h->data;
 			BAT *b = bind_col(tr->parent, c->c, RDONLY);
 
 			BATkey(BATmirror(b), BOUND2BTRUE);
 			bat_destroy(b);
 		}
+		return LOG_OK;
+	}
+*/
+
+	if (!bat)
+		ni->data = bat = ZNEW(sql_delta);
+	if (!bat->uname) 
+		bat->uname = sql_message("U_%s_%s_%s", ni->t->s->base.name, ni->t->base.name, ni->base.name);
+	if (!bat->name) 
+		bat->name = bat->uname+2;
+
+	/* create bats for a loaded idx structure */
+	if (ni->base.flag == TR_OLD && !isTempTable(ni->t)){
+		return load_bat(bat, type, ni->t->sz, &ni->t->cnt);
+	} else if (bat->ibid) { /* create bats for a new persistent idx */
+		return new_persistent_bat( tr, ni->data, ni->t->sz, &ni->t->cnt);
+	} else if (!bat->ibid) {
+		BAT *b = bat_new(TYPE_void, type, ni->t->sz);
+		if (!b) 
+			return LOG_ERR;
+		bat->ibid = temp_create(b);
+		bat_destroy(b);
 	}
 	return ok;
+}
+
+static int
+log_create_idx(sql_trans *tr, sql_idx *ni)
+{
+	assert(tr->parent == gtrans && !isTempTable(ni->t));
+	return log_new_persistent_bat( tr, ni->data);
+}
+
+static int
+snapshot_create_idx(sql_trans *tr, sql_idx *ni)
+{
+	assert(tr->parent == gtrans && !isTempTable(ni->t));
+	return snapshot_new_persistent_bat( tr, ni->data);
 }
 
 static int
@@ -581,37 +650,57 @@ create_del(sql_trans *tr, sql_table *t)
 	BAT *b;
 	sql_dbat *bat = t->data;
 
-	if (t->base.flag == TR_OLD && !isTempTable(t)) {
+	if (!bat)
 		bat = t->data = ZNEW(sql_dbat);
+	if (!bat->dname)
 		bat->dname = sql_message("D_%s_%s", t->s->base.name, t->base.name);
+	(void)tr;
+	if (t->base.flag == TR_OLD && !isTempTable(t)) {
 		b = quick_descriptor(logger_find_bat(bat_logger, bat->dname));
 		bat->dbid = temp_create(b);
-	} else if (bat && bat->dbid && !isTempTable(t)) {
+	} else if (bat->dbid && !isTempTable(t)) {
 		b = temp_descriptor(bat->dbid);
 		bat->dbid = temp_create(b);
-		bat->dname = sql_message("D_%s_%s", t->s->base.name, t->base.name);
-		(void) logger_add_bat(bat_logger, b, bat->dname);
 
-		if (tr->parent == gtrans) {
-			/* snapshot large bats */
-			if (BATcount(b) > 1000) 
-				BATmode(b, PERSISTENT);
-			if (BATcount(b) > (size_t) REMAP_PAGE_MAXSIZE)
-        			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
-			ok = log_bat_persists(bat_logger, b, bat->dname);
-		}
 		t->cnt -= BATcount(b);
 		bat_destroy(b);
-	} else {
-		if (!bat)
-			bat = t->data = ZNEW(sql_dbat);
-		if (!bat->dbid) {
-			b = bat_new(TYPE_void, TYPE_oid, t->sz);
-			bat->dbid = temp_create(b);
-			bat_destroy(b);
-		}
+	} else if (!bat->dbid) {
+		b = bat_new(TYPE_void, TYPE_oid, t->sz);
+		bat->dbid = temp_create(b);
+		bat_destroy(b);
 	}
 	return ok;
+}
+
+static int
+log_create_del(sql_trans *tr, sql_table *t)
+{
+	sql_dbat *bat = t->data;
+	BAT *b = temp_descriptor(bat->dbid);
+	int ok = LOG_OK;
+
+	(void)tr;
+	assert(!isTempTable(t));
+	(void) logger_add_bat(bat_logger, b, bat->dname);
+	ok = log_bat_persists(bat_logger, b, bat->dname);
+	bat_destroy(b);
+	return ok;
+}
+
+static int
+snapshot_create_del(sql_trans *tr, sql_table *t)
+{
+	sql_dbat *bat = t->data;
+	BAT *b = temp_descriptor(bat->dbid);
+
+	(void)tr;
+	/* snapshot large bats */
+	if (BATcount(b) > SNAPSHOT_MINSIZE) 
+		BATmode(b, PERSISTENT);
+	if (BATcount(b) > (size_t) REMAP_PAGE_MAXSIZE)
+       		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+	bat_destroy(b);
+	return LOG_OK;
 }
 
 static int 
@@ -623,6 +712,9 @@ dup_bat(sql_trans *tr, sql_table *t, sql_delta *obat, sql_delta *bat, int type, 
 	bat->bid = obat->bid;
 	bat->ubid = obat->ubid;
 	bat->ibase = obat->ibase;
+
+	bat->uname = _strdup(obat->uname);
+	bat->name = bat->uname+2;
 
 	assert(bat->ibid);
 	if (bat->ibid) {
@@ -696,6 +788,7 @@ dup_del(sql_trans *tr, sql_table *ot, sql_table *t)
 	sql_dbat *bat = t->data = ZNEW(sql_dbat), *obat = ot->data;
 
 	bat->dbid = obat->dbid;
+	bat->dname = _strdup(obat->dname);
 	if (bat->dbid) {
 		if (isNew(t)) {
 			obat->dbid = temp_copy(bat->dbid, isTempTable(t));
@@ -708,84 +801,110 @@ dup_del(sql_trans *tr, sql_table *ot, sql_table *t)
 }
 
 static int
-destroy_bat(sql_trans *tr, sql_delta *b)
+log_destroy_bat(sql_trans *tr, sql_delta *b)
 {
+	log_bid bid;
 	int ok = LOG_OK;
+
+	(void)tr;
 	if (!b)
 		return ok;
-	if (tr && tr->parent == gtrans) {
-		log_bid bid;
-		if (b->bid && b->name) {
-			ok = log_bat_transient(bat_logger, b->name);
-			bid = logger_find_bat(bat_logger, b->name);
-			if (bid) 
-				logger_del_bat(bat_logger, bid);
-		} 
-		if (b->ubid && b->uname && ok == LOG_OK) {
-			ok = log_bat_transient(bat_logger, b->uname);
-			bid = logger_find_bat(bat_logger, b->uname);
-			if (bid) 
-				logger_del_bat(bat_logger, bid);
-		}
-	} else {
-		if (b->name)
-			_DELETE(b->name);
-		if (b->uname)
-			_DELETE(b->uname);
-		if (b->ibid)
-			temp_destroy(b->ibid);
-		if (b->ubid)
-			temp_destroy(b->ubid);
-		if (b->bid) 
-			temp_destroy(b->bid);
-		b->bid = b->ibid = b->ubid = 0;
-		b->name = b->uname = NULL;
-		_DELETE(b);
+	if (b->bid && b->name) {
+		ok = log_bat_transient(bat_logger, b->name);
+		bid = logger_find_bat(bat_logger, b->name);
+		if (bid) 
+			logger_del_bat(bat_logger, bid);
+	} 
+	if (b->ubid && b->uname && ok == LOG_OK) {
+		ok = log_bat_transient(bat_logger, b->uname);
+		bid = logger_find_bat(bat_logger, b->uname);
+		if (bid) 
+			logger_del_bat(bat_logger, bid);
 	}
 	return ok;
 }
 
 static int
+destroy_bat(sql_trans *tr, sql_delta *b)
+{
+	if ((tr && tr->parent == gtrans) || !b)
+		return LOG_OK;
+	if (b->uname)
+		_DELETE(b->uname);
+	if (b->ibid)
+		temp_destroy(b->ibid);
+	if (b->ubid)
+		temp_destroy(b->ubid);
+	if (b->bid) 
+		temp_destroy(b->bid);
+	b->bid = b->ibid = b->ubid = 0;
+	b->name = b->uname = NULL;
+	_DELETE(b);
+	return LOG_OK;
+}
+
+static int
 destroy_col(sql_trans *tr, sql_column *c)
 {
-	int ok = destroy_bat(tr, c->data);;
+	int ok = destroy_bat(tr, c->data);
 	if (!tr || tr->parent != gtrans) 
 		c->data = NULL;
 	return ok;
 }
 
 static int
+log_destroy_col(sql_trans *tr, sql_column *c)
+{
+	return log_destroy_bat(tr, c->data);
+}
+
+static int
 destroy_idx(sql_trans *tr, sql_idx *i)
 {
-	int ok = destroy_bat(tr, i->data);;
+	int ok = destroy_bat(tr, i->data);
 	if (!tr || tr->parent != gtrans) 
 		i->data = NULL;
 	return ok;
 }
 
 static int
+log_destroy_idx(sql_trans *tr, sql_idx *i)
+{
+	return log_destroy_bat(tr, i->data);
+}
+
+static int
 destroy_del(sql_trans *tr, sql_table *t)
+{
+	sql_dbat *bat = t->data;
+
+	if ((tr && tr->parent == gtrans) || !bat)
+		return LOG_OK;
+	if (bat->dname)
+		_DELETE(bat->dname);
+	if (bat->dbid)
+		temp_destroy(bat->dbid);
+	bat->dbid = 0;
+	bat->dname = NULL;
+	_DELETE(bat);
+	t->data = NULL;
+	return LOG_OK;
+}
+
+static int
+log_destroy_del(sql_trans *tr, sql_table *t)
 {
 	int ok = LOG_OK;
 	sql_dbat *bat = t->data;
 
-	if (tr) {
+	(void)tr;
+	if (bat->dbid && bat->dname) {
 		log_bid bid;
-		if (bat->dbid && bat->dname) {
-			ok = log_bat_transient(bat_logger, bat->dname);
-			bid = logger_find_bat(bat_logger, bat->dname);
-			if (bid) 
-				logger_del_bat(bat_logger, bid);
-		}
-	} else {
-		if (bat->dname)
-			_DELETE(bat->dname);
-		if (bat->dbid)
-			temp_destroy(bat->dbid);
-		bat->dbid = 0;
-		bat->dname = NULL;
-		_DELETE(bat);
-		t->data = NULL;
+
+		ok = log_bat_transient(bat_logger, bat->dname);
+		bid = logger_find_bat(bat_logger, bat->dname);
+		if (bid) 
+			logger_del_bat(bat_logger, bid);
 	}
 	return ok;
 }
@@ -823,9 +942,6 @@ clear_bat(sql_trans *tr, sql_delta *bat)
 		BATcommit(b);
 		bat_destroy(b);
 	}
-	if (tr == gtrans && bat->name && bat->uname) 
-		if (log_bat_clear(bat_logger, bat->name) == LOG_OK)
-			log_bat_clear(bat_logger, bat->uname);
 	return sz;
 }
 
@@ -851,6 +967,7 @@ clear_del(sql_trans *tr, sql_table *t)
 	size_t sz = 0;
 	sql_dbat *bat = t->data;
 
+	(void)tr;
 	if (bat->dbid) {
 		BAT *b = temp_descriptor(bat->dbid);
 
@@ -859,8 +976,6 @@ clear_del(sql_trans *tr, sql_table *t)
 		BATcommit(b);
 		bat_destroy(b);
 	}
-	if (tr == gtrans && bat->dname)
-		log_bat_clear(bat_logger, bat->dname);
 	return sz;
 }
 
@@ -870,36 +985,29 @@ tr_update_bat( sql_trans *tr, sql_delta *obat, sql_delta *cbat, lng *cnt)
 	int ok = LOG_OK;
 	BAT *ups, *ins, *cur;
 
+
+	(void)tr;
+	assert(store_nr_active>0);
+
 	cur = temp_descriptor(obat->bid);
 	ins = temp_descriptor(cbat->ibid);
 	/* any inserts */
 	if (BUNlast(ins) > BUNfirst(ins)) {
-		assert(store_nr_active>0);
-		if (BUNlast(ins) > ins->batInserted) {
-			if (store_nr_active > 1) { 
-				BAT *ci = temp_descriptor(obat->ibid);
-				append_inserted(ci, ins);
-				bat_destroy(ci);
-			}
-			if (ok == LOG_OK && tr->parent == gtrans && (store_nr_active != 1 || BATcount(cur) || BATcount(ins) <= 1000))
-				ok = log_bat(bat_logger, ins, obat->name);
+		if (BUNlast(ins) > ins->batInserted && store_nr_active > 1) { 
+			BAT *ci = temp_descriptor(obat->ibid);
+			append_inserted(ci, ins);
+			bat_destroy(ci);
 		}
 		if (store_nr_active == 1) { /* flush all */
 			BAT *pi = temp_descriptor(obat->ibid);
-			if (!BATcount(cur) && BATcount(ins) > 1000) {
+			if (!BATcount(cur) && BATcount(ins) > SNAPSHOT_MINSIZE){
 				/* swap cur and ins */
 				BAT *newcur = ins;
 
 				temp_destroy(obat->bid);
 				temp_destroy(cbat->bid);
+
 				obat->bid = cbat->bid = temp_create(newcur);
-				if (tr->parent == gtrans) {
-					BATmode(ins, PERSISTENT);
-					if (BATcount(ins) > (size_t) REMAP_PAGE_MAXSIZE)
-       						BATmmap(ins, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
-					logger_add_bat(bat_logger, ins, obat->name);
-					log_bat_persists(bat_logger, ins, obat->name);
-				}
 				cbat->ibid = e_bat(cur->ttype);
 				ins = temp_descriptor(cbat->ibid);
 				bat_destroy(cur);
@@ -925,14 +1033,10 @@ tr_update_bat( sql_trans *tr, sql_delta *obat, sql_delta *cbat, lng *cnt)
 	ups = temp_descriptor(cbat->ubid);
 	/* any updates */
 	if (BUNlast(ups) > BUNfirst(ups)) {
-		if (BUNlast(ups) > ups->batInserted) {
-			if (store_nr_active > 1) { 
-				BAT *cu = temp_descriptor(obat->ubid);
-				copy_inserted(cu, ups);
-				bat_destroy(cu);
-			}
-			if (ok == LOG_OK && tr->parent == gtrans)
-				ok = log_bat(bat_logger, ups, obat->uname);
+		if (BUNlast(ups) > ups->batInserted && store_nr_active > 1) { 
+			BAT *cu = temp_descriptor(obat->ubid);
+			copy_inserted(cu, ups);
+			bat_destroy(cu);
 		}
 		if (store_nr_active == 1) { /* flush all */
 			void_replace_bat(cur, ups, TRUE);
@@ -981,8 +1085,6 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		BAT *odb = temp_descriptor(tdb->dbid);
 
 		append_inserted(odb, db);
-		if (tr->parent == gtrans)
-			ok = log_bat(bat_logger, odb, tdb->dname);
 		bat_destroy(odb);
 		BATcommit(db);
 	}
@@ -1038,6 +1140,142 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	return ok;
 }
 
+static int 
+tr_log_bat( sql_trans *tr, sql_delta *cbat, int cleared)
+{
+	int ok = LOG_OK;
+	BAT *ups, *ins, *cur = NULL;
+
+	(void)tr;
+	assert(tr->parent == gtrans);
+	if (cbat->name && cbat->uname && cleared) 
+		if (log_bat_clear(bat_logger, cbat->name) == LOG_OK)
+			log_bat_clear(bat_logger, cbat->uname);
+
+	ins = temp_descriptor(cbat->ibid);
+	/* any inserts */
+	if (BUNlast(ins) > BUNfirst(ins)) {
+		assert(store_nr_active>0);
+		if (cbat->bid)
+			cur = temp_descriptor(cbat->bid);
+		if (BUNlast(ins) > ins->batInserted && (store_nr_active != 1 || (cur && BATcount(cur)) || BATcount(ins) <= SNAPSHOT_MINSIZE))
+			ok = log_bat(bat_logger, ins, cbat->name);
+		if (store_nr_active == 1 && 
+		    ((!cur || !BATcount(cur)) && BATcount(ins) > SNAPSHOT_MINSIZE)) {
+			/* log new snapshot */
+			logger_add_bat(bat_logger, ins, cbat->name);
+			ok = log_bat_persists(bat_logger, ins, cbat->name);
+		}
+		if (cur)
+			bat_destroy(cur);
+	}
+	bat_destroy(ins);
+
+	ups = temp_descriptor(cbat->ubid);
+	/* any updates */
+	if (ok == LOG_OK && BUNlast(ups) > ups->batInserted) 
+		ok = log_bat(bat_logger, ups, cbat->uname);
+	bat_destroy(ups);
+	return ok;
+}
+
+static int
+log_table(sql_trans *tr, sql_table *ft)
+{
+	int ok = LOG_OK;
+	node *n;
+	sql_dbat *fdb = ft->data;
+	BAT *db = NULL;
+
+	assert(tr->parent == gtrans);
+	assert (fdb->dname);
+	if (ft->cleared) 
+		log_bat_clear(bat_logger, fdb->dname);
+
+	db = temp_descriptor(fdb->dbid);
+	if (BUNlast(db) > db->batInserted || ft->cleared) 
+		ok = log_bat(bat_logger, db, fdb->dname);
+	bat_destroy(db);
+
+	for (n = ft->columns.set->h; ok == LOG_OK && n; n = n->next) {
+		sql_column *cc = n->data;
+
+		if (!cc->base.wtime) 
+			continue;
+		tr_log_bat(tr, cc->data, ft->cleared);
+	}
+	if (ok == LOG_OK && ft->idxs.set) {
+		for (n = ft->idxs.set->h; ok == LOG_OK && n; n = n->next) {
+			sql_idx *ci = n->data;
+
+			/* some indices have no bats or changes */
+			if (!ci->data || !ci->base.wtime)
+				continue;
+
+			tr_log_bat(tr, ci->data, ft->cleared);
+		}
+	}
+	return ok;
+}
+
+static int 
+tr_snapshot_bat( sql_trans *tr, sql_delta *cbat)
+{
+	int ok = LOG_OK;
+
+	assert(tr->parent == gtrans);
+	assert(store_nr_active>0);
+
+	(void)tr;
+	if (store_nr_active == 1) { 
+		BAT *cur = NULL, *ins = temp_descriptor(cbat->ibid);
+
+		/* any inserts */
+		if (BUNlast(ins) > BUNfirst(ins)) {
+			if (cbat->bid)
+				cur = temp_descriptor(cbat->bid);
+		        if ((!cur || !BATcount(cur)) && BATcount(ins) > SNAPSHOT_MINSIZE) {
+				BATmode(ins, PERSISTENT);
+				if (BATcount(ins) > (size_t) REMAP_PAGE_MAXSIZE)
+       					BATmmap(ins, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+			}
+			if (cur)
+				bat_destroy(cur);
+		}
+		bat_destroy(ins);
+	}
+	return ok;
+}
+
+static int
+snapshot_table(sql_trans *tr, sql_table *ft)
+{
+	int ok = LOG_OK;
+	node *n;
+
+	assert(tr->parent == gtrans);
+
+	for (n = ft->columns.set->h; ok == LOG_OK && n; n = n->next) {
+		sql_column *cc = n->data;
+
+		if (!cc->base.wtime) 
+			continue;
+		tr_snapshot_bat(tr, cc->data);
+	}
+	if (ok == LOG_OK && ft->idxs.set) {
+		for (n = ft->idxs.set->h; ok == LOG_OK && n; n = n->next) {
+			sql_idx *ci = n->data;
+
+			/* some indices have no bats or changes */
+			if (!ci->data || !ci->base.wtime)
+				continue;
+
+			tr_snapshot_bat(tr, ci->data);
+		}
+	}
+	return ok;
+}
+
 int
 bat_storage_init( store_functions *sf)
 {
@@ -1057,6 +1295,14 @@ bat_storage_init( store_functions *sf)
 	sf->create_idx = (create_idx_fptr)&create_idx;
 	sf->create_del = (create_del_fptr)&create_del;
 
+	sf->log_create_col = (create_col_fptr)&log_create_col;
+	sf->log_create_idx = (create_idx_fptr)&log_create_idx;
+	sf->log_create_del = (create_del_fptr)&log_create_del;
+
+	sf->snapshot_create_col = (create_col_fptr)&snapshot_create_col;
+	sf->snapshot_create_idx = (create_idx_fptr)&snapshot_create_idx;
+	sf->snapshot_create_del = (create_del_fptr)&snapshot_create_del;
+
 	sf->dup_col = (dup_col_fptr)&dup_col;
 	sf->dup_idx = (dup_idx_fptr)&dup_idx;
 	sf->dup_del = (dup_del_fptr)&dup_del;
@@ -1065,11 +1311,17 @@ bat_storage_init( store_functions *sf)
 	sf->destroy_idx = (destroy_idx_fptr)&destroy_idx;
 	sf->destroy_del = (destroy_del_fptr)&destroy_del;
 
+	sf->log_destroy_col = (destroy_col_fptr)&log_destroy_col;
+	sf->log_destroy_idx = (destroy_idx_fptr)&log_destroy_idx;
+	sf->log_destroy_del = (destroy_del_fptr)&log_destroy_del;
+
 	sf->clear_col = (clear_col_fptr)&clear_col;
 	sf->clear_idx = (clear_idx_fptr)&clear_idx;
 	sf->clear_del = (clear_del_fptr)&clear_del;
 
 	sf->update_table = (update_table_fptr)&update_table;
+	sf->log_table = (update_table_fptr)&log_table;
+	sf->snapshot_table = (update_table_fptr)&snapshot_table;
 	for (t=1; t<GDKatomcnt; t++) {
 		if (BATatoms[t].name[0]) {
 			eubats[t] = BATnew(TYPE_oid, t, 0);

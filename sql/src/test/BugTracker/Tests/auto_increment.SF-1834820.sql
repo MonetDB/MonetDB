@@ -18,4 +18,8 @@ select * from testusers;
 INSERT INTO testusers (name, fullname) VALUES ('fred', 'Fred Flintstone');
 select * from testusers;
 
+select count(*) from sequences;
+
 drop table testusers;
+
+select count(*) from sequences;

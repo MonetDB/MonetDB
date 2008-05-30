@@ -1491,6 +1491,9 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	return ok;
 }
 
+
+static int bpm_none(){ return LOG_OK; }
+
 int
 bpm_storage_init( store_functions *sf)
 {
@@ -1508,6 +1511,14 @@ bpm_storage_init( store_functions *sf)
 	sf->create_idx = (create_idx_fptr)&create_idx;
 	sf->create_del = (create_del_fptr)&create_del;
 
+	sf->log_create_col = (create_col_fptr)&bpm_none;
+	sf->log_create_idx = (create_idx_fptr)&bpm_none;
+	sf->log_create_del = (create_del_fptr)&bpm_none;
+
+	sf->snapshot_create_col = (create_col_fptr)&bpm_none;
+	sf->snapshot_create_idx = (create_idx_fptr)&bpm_none;
+	sf->snapshot_create_del = (create_del_fptr)&bpm_none;
+
 	sf->dup_col = (dup_col_fptr)&dup_col;
 	sf->dup_idx = (dup_idx_fptr)&dup_idx;
 	sf->dup_del = (dup_del_fptr)&dup_del;
@@ -1516,11 +1527,18 @@ bpm_storage_init( store_functions *sf)
 	sf->destroy_idx = (destroy_idx_fptr)&destroy_idx;
 	sf->destroy_del = (destroy_del_fptr)&destroy_del;
 
+	sf->log_destroy_col = (destroy_col_fptr)&bpm_none;
+	sf->log_destroy_idx = (destroy_idx_fptr)&bpm_none;
+	sf->log_destroy_del = (destroy_del_fptr)&bpm_none;
+
 	sf->clear_col = (clear_col_fptr)&clear_col;
 	sf->clear_idx = (clear_idx_fptr)&clear_idx;
 	sf->clear_del = (clear_del_fptr)&clear_del;
 
 	sf->update_table = (update_table_fptr)&update_table;
+	sf->log_table = (update_table_fptr)&bpm_none;
+	sf->snapshot_table = (update_table_fptr)&bpm_none;
+
 	MT_lock_init(&part_lock, "SQL_part_lock");
 	return LOG_OK;
 }

@@ -23,3 +23,5 @@ select nr from timestamp1
 order by tr_time
 limit 3
 ;
+
+drop table timestamp1;
