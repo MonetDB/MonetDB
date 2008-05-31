@@ -1829,8 +1829,7 @@ plan_step_join_to_llstep (const PFla_op_t *n)
                   iter_out,
                   iter;
     PFalg_proj_t *proj_in   = PFmalloc (2 * sizeof (PFalg_proj_t));
-    PFplanlist_t *ret       = new_planlist (),
-                 *sorted    = new_planlist ();
+    PFplanlist_t *ret       = new_planlist ();
     PFpa_op_t    *plan;
     
     /* some assertions */
