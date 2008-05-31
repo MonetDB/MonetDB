@@ -2781,7 +2781,7 @@ BBPbackup(BAT *b, bit subcommit)
 	if (ret & 1)
 		return -1;
 @= backup
-	if (@2 && @2->newstorage != STORE_MMAP) { /* direct mmap is unprotected (readonly usage, or has WAL protection)  */
+	if (@2 && @2->storage != STORE_MMAP) { /* direct mmap is unprotected (readonly usage, or has WAL protection)  */
 		/* STORE_PRIV saves into X.new files. Two cases could happen.
 		   The first a valid X.new exists, because of an access change
 		   or a previous commit. This X.new should be backuped as 
