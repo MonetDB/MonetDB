@@ -504,7 +504,7 @@ returned upon success.
 
 @item MapiMsg mapi_execute_array(MapiHdl hdl, char **argv)
 
-Similar to @code{mapi_execute} but replacing the placeholders for the string
+Similar to @code{mapi\_execute} but replacing the placeholders for the string
 values provided.
 
 @item MapiMsg mapi_finish(MapiHdl hdl)
@@ -566,7 +566,7 @@ analyzed in using @code{mapi_error()}.
 @item int mapi_fetch_all_rows(MapiHdl hdl)
 
 All rows are cached at the client side first. Subsequent calls to
-@code{mapi\_fetch\_row()} will take the row from the cache. The number or
+@code{mapi_fetch_row()} will take the row from the cache. The number or
 rows cached is returned.
 
 @item int mapi_quick_response(MapiHdl hdl, FILE *fd)
@@ -577,9 +577,9 @@ stream. The result is not analyzed or cached.
 @item MapiMsg mapi_seek_row(MapiHdl hdl, int rownr, int whence)
 
 Reset the row pointer to the requested row number.  If whence is
-@code{MAPI\_SEEK\_SET} (0), rownr is the absolute row number (0 being the
-first row); if whence is @code{MAPI\_SEEK\_CUR} (1), rownr is relative to the
-current row; if whence is @code{MAPI\_SEEK\_END} (2), rownr is relative to
+@code{MAPI_SEEK\_SET} (0), rownr is the absolute row number (0 being the
+first row); if whence is @code{MAPI_SEEK_CUR} (1), rownr is relative to the
+current row; if whence is @code{MAPI_SEEK_END} (2), rownr is relative to
 the last row.
 
 @item MapiMsg mapi_fetch_reset(MapiHdl hdl)
@@ -639,7 +639,7 @@ Write the error message obtained from @code{mserver} to a file.
 @item MapiMsg mapi_bind(MapiHdl hdl, int fldnr, char **val)
 
 Bind a string variable with a field in the return table.  Upon a
-\successful subsequent @code{mapi\_fetch\_row()} the indicated field is stored
+successful subsequent @code{mapi\_fetch\_row()} the indicated field is stored
 in the space pointed to by val.  Returns an error if the field
 identified does not exist.
 
@@ -687,7 +687,7 @@ parameter.  The sizeptr parameter points to the length of the string
 pointed to by val.  If sizeptr == NULL or *sizeptr == -1, the string
 is NULL-terminated.
 
-@item MapiMsg mapi\_clear\_params(MapiHdl hdl)
+@item MapiMsg mapi_clear_params(MapiHdl hdl)
 
 Clear all parameter bindings.
 @end itemize
@@ -795,7 +795,6 @@ Return a list of accessible database tables.
 Return a list of accessible tables fields. This can also be obtained
 by inspecting the field descriptor returned by @code{mapi_fetch_field()}.
 @end itemize
-@
 @{
 @- Implementation
 @c
