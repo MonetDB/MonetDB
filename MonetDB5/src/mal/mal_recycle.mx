@@ -625,7 +625,6 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 					&getVarConstant(recycleBlk,getArg(q,j)) );
 				if (s->stk[getArg(p,j)].vtype == TYPE_bat)
 					BBPincref( s->stk[getArg(p,j)].val.bval , TRUE);
-				getVar(mb,getArg(p,j))->recycle = getArg(q,j);
 			}
 			recycleBlk->profiler[i].counter++;
 			recycleBlk->profiler[i].clk = GDKusec();

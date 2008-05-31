@@ -321,7 +321,6 @@ typedef struct VARRECORD {
 	malType type;		/* internal type signature */
 	int flags;		/* see below, reserve some space */
 	int tmpindex;		/* temporary variable */
-	int recycle;		/* variable id in the recycler catalog */
 	ValRecord value;
 	int propc, maxprop;	/* proc count and max number of properties */
 	int prps[];			/* property array */
