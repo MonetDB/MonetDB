@@ -1740,7 +1740,6 @@ plan_step_join_to_step_check (const PFla_op_t *n)
 {
     PFalg_att_t   iter_out  = n->sem.proj.items[0].new,
                   iter      = n->sem.proj.items[0].old,
-                  item_res,
                   item;
     PFalg_proj_t *proj_out  = PFmalloc (sizeof (PFalg_proj_t)),
                  *proj_in   = PFmalloc (2 * sizeof (PFalg_proj_t));
@@ -1758,7 +1757,6 @@ plan_step_join_to_step_check (const PFla_op_t *n)
     assert (PFprop_key (L(n)->prop, L(n)->sem.step.item_res) ||
             PFprop_set (L(n)->prop));
 
-    item_res = L(n)->sem.step.item_res;
     item     = L(n)->sem.step.item;
     
     proj_out[0].new = iter_out;
