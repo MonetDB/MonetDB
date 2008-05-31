@@ -415,6 +415,57 @@ plan_eqjoin (const PFla_op_t *n)
                               *(plan_t **) PFarray_at (R(n)->plans, s));
         }
 
+    /* generate a semijoin */
+    if (L(n)->schema.count == 1 &&
+        L(n)->kind == la_distinct) {
+        PFalg_proj_t *proj = PFmalloc (n->schema.count * sizeof (PFalg_proj_t));
+
+        /* create the above projection list */
+        for (unsigned int i = 0; i < n->schema.count; i++) {
+            PFalg_att_t cur = n->schema.items[i].name;
+            if (cur != n->sem.eqjoin.att1)
+                proj[i] = PFalg_proj (cur, cur);
+            else
+                proj[i] = PFalg_proj (cur, n->sem.eqjoin.att2);
+        }
+        
+        for (unsigned int l = 0; l < PFarray_last (R(n)->plans); l++)
+            for (unsigned int r = 0; r < PFarray_last (LL(n)->plans); r++)
+                add_plan (ret,
+                          project (
+                              semijoin (
+                                  n->sem.eqjoin.att2,
+                                  n->sem.eqjoin.att1,
+                                  *(plan_t **) PFarray_at (R(n)->plans, l),
+                                  *(plan_t **) PFarray_at (LL(n)->plans, r)),
+                              n->schema.count, proj));
+    }
+    
+    /* generate a semijoin */
+    if (R(n)->schema.count == 1 &&
+        R(n)->kind == la_distinct) {
+        PFalg_proj_t *proj = PFmalloc (n->schema.count * sizeof (PFalg_proj_t));
+
+        /* create the above projection list */
+        for (unsigned int i = 0; i < n->schema.count; i++) {
+            PFalg_att_t cur = n->schema.items[i].name;
+            if (cur != n->sem.eqjoin.att2)
+                proj[i] = PFalg_proj (cur, cur);
+            else
+                proj[i] = PFalg_proj (cur, n->sem.eqjoin.att1);
+        }
+        
+        for (unsigned int l = 0; l < PFarray_last (L(n)->plans); l++)
+            for (unsigned int r = 0; r < PFarray_last (RL(n)->plans); r++)
+                add_plan (ret,
+                          project (
+                              semijoin (n->sem.eqjoin.att1,
+                                  n->sem.eqjoin.att2,
+                                  *(plan_t **) PFarray_at (L(n)->plans, l),
+                                  *(plan_t **) PFarray_at (RL(n)->plans, r)),
+                              n->schema.count, proj));
+    }
+    
     return ret;
 }
 
@@ -1466,7 +1517,7 @@ plan_cast (const PFla_op_t *n)
 
 /**
  * Create physical plan for the path step operator (XPath location
- * steps). Uses helper functions plan_scj_XXX.
+ * steps).
  */
 static PFplanlist_t *
 plan_step (const PFla_op_t *n)
@@ -1517,6 +1568,343 @@ plan_step (const PFla_op_t *n)
                         out[o],
                         n->sem.step.iter,
                         n->sem.step.item));
+    }
+
+    return ret;
+}
+
+/**
+ * Create physical plan for the path step join operator.
+ *
+ * This is only a fallback solution for rewrites that return step_joins
+ * instead of path steps.
+ *
+ * step_join:   |
+ *             pi_schema(n+item_res)
+ *              |
+ *             |X|_2=1
+ *     ________/ \________
+ *    /                   \
+ *  step_2,item_res       |
+ *   |                    |
+ *  pi_2:1,item_res:item  |
+ *    \________   ________/
+ *             \ /
+ *              #_1
+ *              |
+ */
+static PFplanlist_t *
+plan_step_join (const PFla_op_t *n)
+{
+    /* some assertions */
+    assert (n); assert (n->kind == la_step_join);
+    assert (R(n)); assert (R(n)->plans);
+
+    PFalg_att_t   item_res  = n->sem.step.item_res,
+                  item      = n->sem.step.item,
+                  iter,
+                  iter2;
+    PFalg_att_t   used_cols = 0;
+    unsigned int  count     = n->schema.count,
+                  count_in  = 2;
+    PFalg_proj_t *proj      = PFmalloc (count * sizeof (PFalg_proj_t)),
+                 *proj_in   = PFmalloc (count_in * sizeof (PFalg_proj_t));
+    PFplanlist_t *ret       = new_planlist ();
+    PFpa_op_t    *plan,
+                 *mark;
+
+    /* create the above projection list */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        proj[i] = PFalg_proj (n->schema.items[i].name,
+                              n->schema.items[i].name);
+
+    /* get ourselves two new attribute name
+       (for creating keys using mark and joining back) */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        used_cols |= n->schema.items[i].name;
+
+    iter  = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
+    used_cols |= iter;
+    iter2 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
+
+    /* create the inner projection list */
+    proj_in[0] = PFalg_proj (iter2, iter);
+    proj_in[1] = PFalg_proj (item_res, item);
+
+    /* create the translation for every input plan */
+    for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++) {
+        plan = *(plan_t **) PFarray_at (R(n)->plans, i);
+        mark = mark (plan, iter);
+
+        add_plan (ret,
+                  project (
+                      leftjoin (
+                          iter,
+                          iter2,
+                          mark,
+                          llscjoin (
+                              project (
+                                  mark,
+                                  count_in,
+                                  proj_in),
+                              n->sem.step.spec,
+                              sortby (iter2, item_res),
+                              sortby (iter2, item_res),
+                              iter2,
+                              item_res)),
+                      count,
+                      proj));
+    }
+
+    return ret;
+}
+
+/**
+ * Create physical plan for the path step operator
+ * based on step join operator as input.
+ *
+ * As no iter information is available a constant iter
+ * is added.
+ */
+static PFplanlist_t *
+plan_step_join_to_step (const PFla_op_t *n)
+{
+    PFalg_att_t   item_out  = n->sem.proj.items[0].new,
+                  item_res  = n->sem.proj.items[0].old,
+                  item,
+                  iter,
+                  used_cols = 0;
+    PFalg_proj_t *proj_out  = PFmalloc (sizeof (PFalg_proj_t)),
+                 *proj_in   = PFmalloc (sizeof (PFalg_proj_t));
+    PFplanlist_t *ret       = new_planlist (),
+                 *sorted    = new_planlist ();
+    PFpa_op_t    *plan;
+    
+    /* some assertions */
+    assert (n); assert (n->kind == la_project);
+    assert (L(n)); assert (L(n)->kind == la_step_join);
+    assert (LR(n)->plans);
+
+    assert (n->schema.count == 1);
+    assert (L(n)->kind == la_step_join);
+    assert (item_res == L(n)->sem.step.item_res);
+    assert (PFprop_key (L(n)->prop, L(n)->sem.step.item_res) ||
+            PFprop_set (L(n)->prop));
+
+    /* find a free iter value */
+    item      = L(n)->sem.step.item;
+    used_cols = item_res | item;
+    iter      = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
+    
+    proj_out[0].new = item_out;
+    proj_out[0].old = item;
+    proj_in[0].new  = item;
+    proj_in[0].old  = item;
+    
+    for (unsigned int i = 0; i < PFarray_last (LR(n)->plans); i++)
+        add_plans (sorted,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (LR(n)->plans, i),
+                       sortby (item)));
+
+    /* create the translation for every input plan */
+    for (unsigned int i = 0; i < PFarray_last (sorted); i++) {
+        plan = *(plan_t **) PFarray_at (sorted, i);
+        /* add plan in item|iter output order */
+        add_plan (ret,
+                  project (
+                      llscjoin (
+                          attach (
+                              project (plan, 1, proj_in),
+                              iter,
+                              lit_nat (1)),
+                          L(n)->sem.step.spec,
+                          sortby (item, iter),
+                          sortby (item, iter),
+                          iter,
+                          item),
+                      1, proj_out));
+    }
+
+    return ret;
+}
+
+/**
+ * Create physical plan for the path step operator
+ * based on step join operator as input.
+ *
+ * only the iter column is needed as output.
+ */
+static PFplanlist_t *
+plan_step_join_to_step_check (const PFla_op_t *n)
+{
+    PFalg_att_t   iter_out  = n->sem.proj.items[0].new,
+                  iter      = n->sem.proj.items[0].old,
+                  item_res,
+                  item;
+    PFalg_proj_t *proj_out  = PFmalloc (sizeof (PFalg_proj_t)),
+                 *proj_in   = PFmalloc (2 * sizeof (PFalg_proj_t));
+    PFplanlist_t *ret       = new_planlist ();
+    PFpa_op_t    *plan;
+    
+    /* some assertions */
+    assert (n); assert (n->kind == la_project);
+    assert (L(n)); assert (L(n)->kind == la_step_join);
+    assert (LR(n)->plans);
+
+    assert (n->schema.count == 1);
+    assert (L(n)->kind == la_step_join);
+    assert (PFprop_type_of (n, n->sem.proj.items[0].new) == aat_nat);
+    assert (PFprop_key (L(n)->prop, L(n)->sem.step.item_res) ||
+            PFprop_set (L(n)->prop));
+
+    item_res = L(n)->sem.step.item_res;
+    item     = L(n)->sem.step.item;
+    
+    proj_out[0].new = iter_out;
+    proj_out[0].old = iter;
+    proj_in[0].new  = iter;
+    proj_in[0].old  = iter;
+    proj_in[1].new  = item;
+    proj_in[1].old  = item;
+    
+    /*
+     * Loop-lifted staircase join can handle two different orderings
+     * for input and output: iter|item or item|iter. In the invocation
+     * of the staircase join operators in MIL, this information is
+     * encoded in a single integer value.
+     */
+    const PFord_ordering_t in[2]
+        = { sortby (iter, item), sortby (item, iter) };
+    const PFord_ordering_t out[2]
+        = { sortby (iter, item), sortby (item, iter) };
+
+    /* consider the two possible input orderings */
+    for (unsigned short i = 0; i < 2; i++) {
+
+        PFplanlist_t *ordered = new_planlist ();
+
+        /* sort all plans according to this input ordering */
+        for (unsigned int j = 0; j < PFarray_last (LR(n)->plans); j++) {
+            add_plans (ordered,
+                       ensure_ordering (
+                           *(plan_t **) PFarray_at (LR(n)->plans, j),
+                           in[i]));
+        }
+
+        /* generate plans for each input and each output ordering */
+
+        for (unsigned int k = 0; k < PFarray_last (ordered); k++)
+            for (unsigned short o = 0; o < 2; o++) {
+                plan = *(plan_t **) PFarray_at (ordered, k);
+                add_plan (ret,
+                          project (
+                              llscjoin (
+                                  project (plan, 2, proj_in),
+                                  L(n)->sem.step.spec,
+                                  in[i],
+                                  out[o],
+                                  iter,
+                                  item),
+                              1, proj_out));
+            }
+    }
+
+    return ret;
+}
+
+/**
+ * Create physical plan for the path step operator
+ * based on step join operator as input.
+ *
+ * Two-column scenario where an iter_nat|item_node relation
+ * is fed in.
+ */
+static PFplanlist_t *
+plan_step_join_to_llstep (const PFla_op_t *n)
+{
+    PFalg_att_t   item_out,
+                  item_res,
+                  item,
+                  iter_out,
+                  iter;
+    PFalg_proj_t *proj_in   = PFmalloc (2 * sizeof (PFalg_proj_t));
+    PFplanlist_t *ret       = new_planlist ();
+    PFpa_op_t    *plan;
+    
+    /* some assertions */
+    assert (n); assert (n->kind == la_project);
+    assert (L(n)); assert (L(n)->kind == la_step_join);
+    assert (LR(n)->plans);
+
+    assert (n->schema.count == 2);
+    assert (L(n)->kind == la_step_join);
+    assert (PFprop_key (L(n)->prop, L(n)->sem.step.item_res) ||
+            PFprop_set (L(n)->prop));
+
+    item_res = L(n)->sem.step.item_res;
+    item     = L(n)->sem.step.item;
+    
+    if (n->sem.proj.items[0].old == item_res &&
+        PFprop_type_of (n, n->sem.proj.items[1].new) == aat_nat) {
+        item_out = n->sem.proj.items[0].new;
+        iter_out = n->sem.proj.items[1].new;
+        iter     = n->sem.proj.items[1].old;
+    }
+    else if (n->sem.proj.items[1].old == item_res &&
+             PFprop_type_of (n, n->sem.proj.items[0].new) == aat_nat) {
+        item_out = n->sem.proj.items[1].new;
+        iter_out = n->sem.proj.items[0].new;
+        iter     = n->sem.proj.items[0].old;
+    }
+    else
+        return ret;
+        
+    proj_in[0].new = iter_out;
+    proj_in[0].old = iter;
+    proj_in[1].new = item_out;
+    proj_in[1].old = item;
+    
+    /*
+     * Loop-lifted staircase join can handle two different orderings
+     * for input and output: iter|item or item|iter. In the invocation
+     * of the staircase join operators in MIL, this information is
+     * encoded in a single integer value.
+     */
+    const PFord_ordering_t in_in[2]
+        = { sortby (iter, item), sortby (item, iter) };
+    const PFord_ordering_t in[2]
+        = { sortby (iter_out, item_out), sortby (item_out, iter_out) };
+    const PFord_ordering_t out[2]
+        = { sortby (iter_out, item_out), sortby (item_out, iter_out) };
+
+    /* consider the two possible input orderings */
+    for (unsigned short i = 0; i < 2; i++) {
+
+        PFplanlist_t *ordered = new_planlist ();
+
+        /* sort all plans according to this input ordering */
+        for (unsigned int j = 0; j < PFarray_last (LR(n)->plans); j++) {
+            add_plans (ordered,
+                       ensure_ordering (
+                           *(plan_t **) PFarray_at (LR(n)->plans, j),
+                           in_in[i]));
+        }
+
+        /* generate plans for each input and each output ordering */
+
+        for (unsigned int k = 0; k < PFarray_last (ordered); k++)
+            for (unsigned short o = 0; o < 2; o++) {
+                plan = *(plan_t **) PFarray_at (ordered, k);
+                add_plan (ret,
+                          llscjoin (
+                              project (plan, 2, proj_in),
+                              L(n)->sem.step.spec,
+                              in[i],
+                              out[o],
+                              iter_out,
+                              item_out));
+            }
     }
 
     return ret;
@@ -2715,6 +3103,29 @@ plan_subexpression (PFla_op_t *n)
                                           PFla_distinct (n)));
                 }
             }
+            
+            if (n->schema.count == 1 &&
+                L(n)->kind == la_step_join &&
+                n->sem.proj.items[0].old == L(n)->sem.step.item_res &&
+                (PFprop_key (L(n)->prop, L(n)->sem.step.item_res) ||
+                 PFprop_set (L(n)->prop))) {
+                add_plans (plans, plan_step_join_to_step (n));
+            }
+            
+            if (n->schema.count == 1 &&
+                L(n)->kind == la_step_join &&
+                PFprop_type_of (n, n->sem.proj.items[0].new) == aat_nat &&
+                (PFprop_key (L(n)->prop, L(n)->sem.step.item_res) ||
+                 PFprop_set (L(n)->prop))) {
+                add_plans (plans, plan_step_join_to_step_check (n));
+            }
+            
+            if (n->schema.count == 2 &&
+                L(n)->kind == la_step_join &&
+                (PFprop_key (L(n)->prop, L(n)->sem.step.item_res) ||
+                 PFprop_set (L(n)->prop))) {
+                add_plans (plans, plan_step_join_to_llstep (n));
+            }
             break;
 
         case la_select:         plans = plan_select (n);       break;
@@ -2754,6 +3165,20 @@ plan_subexpression (PFla_op_t *n)
                     add_plans (plans, plan_unique_thetajoin (n));
                 }
             }
+            
+            if (n->schema.count == 2 &&
+                L(n)->kind == la_project &&
+                LL(n)->kind == la_step_join &&
+                /* check for an iter column ... */
+                (PFprop_type_of (n, n->schema.items[0].name) == aat_nat ||
+                 PFprop_type_of (n, n->schema.items[1].name) == aat_nat) &&
+                /* ... and the correct item column */
+                (L(n)->sem.proj.items[0].old == LL(n)->sem.step.item_res ||
+                 L(n)->sem.proj.items[1].old == LL(n)->sem.step.item_res)) {
+                /* tests above are sufficient as the step_join result
+                   can never be of type nat */
+                add_plans (plans, plan_step_join_to_llstep (L(n)));
+            }
             break;
 
         case la_fun_1to1:       plans = plan_fun_1to1 (n);     break;
@@ -2787,6 +3212,7 @@ plan_subexpression (PFla_op_t *n)
         case la_all:            plans = plan_aggr (pa_all, n);    break;
                                                                   
         case la_step:           plans = plan_step (n);            break;
+        case la_step_join:      plans = plan_step_join (n);       break;
         case la_doc_tbl:        plans = plan_doc_tbl (n);         break;
 
         /* case doc_index_join */
@@ -2988,6 +3414,8 @@ plan_subexpression (PFla_op_t *n)
             break;
 
         default:
+            /* add check to avoid a segfault if there is no plan */
+            if (PFarray_last (plans) > 0)
         {
             PFord_ordering_t ord = PFordering ();
             PFord_set_t orderings = PFord_set ();

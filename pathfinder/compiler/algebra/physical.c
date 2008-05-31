@@ -2604,6 +2604,10 @@ PFpa_doc_tbl (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att)
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
 
+    /* for single base tables the result is trivially sorted */
+    if (PFprop_card (n->prop) == 1)
+        PFord_set_add (ret->orderings, sortby (res));
+
     /* ---- doc_tbl: costs ---- */
     ret->cost = DEFAULT_COST + n->cost;
 
