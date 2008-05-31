@@ -19,6 +19,10 @@
 @v 2.0
 @* The MonetDB Programming Interface
 @+ The Mapi Library
+@ifclear XQRYmanual
+@section The Mapi Library
+@end ifclear
+
 The easiest way to extend the functionality of MonetDB is to construct
 an independent application, which communicates with a running server
 using a database driver with a simple API and a textual protocol.  The
@@ -26,16 +30,18 @@ effectiveness of such an approach has been demonstrated by the wide
 use of database API implementations, such as Perl DBI, PHP, ODBC,...
 
 @menu
-* An Example::
-* Command Summary::
-* Library Synopsis::
-* Mapi Function Reference::
+* An Example:: a C/C++ code example to get going.
+* Command Summary:: the list of API functions.
+* Library Synopsis:: an short explanation of how MAPI works.
+* Mapi Function Reference:: per API function its parameters and expected results.
 @end menu
 
+@ifclear XQRYmanual
 @node An Example, Command Summary, The Mapi Library, The Mapi Library
-@- Sample MAPI Application
+@subsection Sample MAPI Application
+
 The database driver implementation given in this document focuses on
-developing applications in C/C++. The command collection has been
+developing applications in C. The command collection has been
 chosen to align with common practice, i.e. queries follow a prepare,
 execute, and fetch_row paradigm. The output is considered a regular
 table. An example of a mini application below illustrates the main
@@ -100,7 +106,7 @@ int main(int argc, char **argv)
 
 The @code{mapi_connect()} operation establishes a communication channel with
 a running server.
-The query language interface is one of "sql", "xquery", "mil", or "mal".
+The query language interface is either "sql", "mil" or "xquery".
 
 Errors on the interaction can be captured using @code{mapi_error()},
 possibly followed by a request to dump a short error message
@@ -128,6 +134,80 @@ The Mapi library expects complete lines from the server as answers to
 query actions. Incomplete lines leads to Mapi waiting forever on the
 server. Thus formatted printing is discouraged in favor of tabular
 printing as offered by the @code{table.print()} commands.
+@end ifclear
+
+@ifset XQRYmanual
+@node An Example 
+@subsection An Example 
+
+C and C++ programs can use the MAPI library to execute queries on MonetDB/XQuery.
+
+We give a short example with a minimal Mapi program:
+@itemize
+@item @code{mapi_connect()} and @code{mapi_disconnect()}: make a connection to a database server (@code{Mapi mid;}).
+      @strong{note:} pass the value @code{"xquery"} in the @code{language} parameter, when connecting.
+@item @code{mapi_profile()} and @code{mapi_output()}: configure query timing and XML output format.
+@item @code{mapi_error()} and @code{mapi_error_str()}: check for and print connection errors (on @code{Mapi mid}).
+@item @code{mapi_query()} and @code{mapi_close_handle()} do a query and get a handle to it (@code{MapiHdl hdl}).
+@item @code{mapi_result_error()}: check for query evaluation errors (on @code{MapiHdl hdl}).
+@item @code{mapi_fetch_line()}: get a line of (result or error) output from the server (on @code{MapiHdl hdl}).
+      @strong{note:} output lines are prefixed with a @code{'='} character that must be escaped.
+@end itemize
+
+@example
+@verbatim
+#include <stdio.h>
+#include <Mapi.h>
+#include <stdlib.h>
+     
+int
+main(int argc, char** argv) {
+	const char *prog  = argv[0]; 
+	const char *host  = argv[1]; /* where Mserver is started, e.g. localhost */
+	const char *db    = argv[2]; /* database name e.g. demo */
+	int  port         = atoi(argv[3]); /* mapi_port e.g. 50000 */ 
+	char *mode        = argv[4]; /* output format e.g. xml  */
+	const char *query = argv[5]; /* single-line query e.g. '1+1' (use quotes) */
+	FILE *fp          = stderr; 
+	char *line;
+
+	if (argc != 6) {
+		fprintf(fp, "usage: %s <host>    <db> <port> <mode> <query>\n", prog);
+		fprintf(fp, "  e.g. %s localhost demo 50000  xml    '1+1'\n",   prog);
+	} else {
+		/* CONNECT TO SERVER, default unsecure user/password, language="xquery" */
+		Mapi    mid = mapi_connect(host, port, "monetdb", "monetdb", "xquery", db);
+		MapiHdl hdl;
+		if (mid == NULL) {
+			fprintf(fp, "%s: failed to connect.\n", prog);
+		} else {
+			mapi_profile(mid, 1);    /* SWITCH ON SERVER-SIDE QUERY TIMING */
+			mapi_output(mid, mode);  /* SET XML OUTPUT FORMAT */
+			hdl = mapi_query(mid, query); /* FIRE OFF A QUERY */
+
+			if (hdl == NULL || mapi_error(mid) != MOK) /* CHECK CONNECTION ERROR */
+				fprintf(fp, "%s: connection error: %s\n", prog, mapi_error_str(mid)); /* GET CONNECTION ERROR STRING */
+			if (hdl) {
+				if (mapi_result_error(hdl) != MOK) /* CHECK QUERY ERROR */
+					fprintf(fp, "%s: query error\n", prog);
+				else
+					fp = stdout; /* success: connection&query went ok */
+
+				/* FETCH SERVER QUERY ANSWER LINE-BY-LINE */
+				while((line = mapi_fetch_line(hdl)) != NULL) {
+					if (*line == '=') line++; // XML result lines start with '='
+					fprintf(fp, "%s\n", line);
+				} 
+			}
+			mapi_close_handle(hdl); /* CLOSE QUERY HANDLE */
+		}
+		mapi_disconnect(mid); /* CLOSE CONNECTION */
+	}
+	return (fp == stdout)? 0 : -1;
+}
+@end verbatim
+@end example
+@end ifset
 
 The following action is needed to get a working program.
 Compilation of the application relies on the @emph{monetdb-config}
@@ -138,6 +218,7 @@ follows:
 @example
 @verbatim
 cc sample.c `monetdb-clients-config --cflags --libs` -lMapi -o sample
+./sample
 @end verbatim
 @end example
 
@@ -164,8 +245,15 @@ cc sample.c `monetdb-clients-config --cflags --libs` -lMapi -o sample
 The compilation on Windows is slightly more complicated. It requires
 more attention towards the location of the include files and libraries.
 
+@ifclear XQRYmanual
 @node Command Summary, Library Synopsis, An Example, The Mapi Library
-@- Command Summary
+@subsection Command Summary
+@end ifclear 
+@ifset XQRYmanual
+@node Command Summary
+@subsection Command Summary
+@end ifset 
+
 The quick reference guide to the Mapi library is given below.  More
 details on their constraints and defaults are given in the next
 section.
@@ -239,15 +327,22 @@ section.
 @item mapi_unquote()	@tab	remove escaped characters
 @end multitable
 
+@ifclear XQRYmanual
 @node Library Synopsis, Mapi Function Reference, Command Summary, The Mapi Library
-@- Mapi Library
+@subsection Library Synopsis
+@end ifclear 
+@ifset XQRYmanual
+@node Library Synopsis
+@subsection Library Synopsis
+@end ifset 
+
 The routines to build a MonetDB application are grouped in the library
 MonetDB Programming Interface, or shorthand Mapi.
 
 The protocol information is stored in a Mapi interface descriptor
 (mid).  This descriptor can be used to ship queries, which return a
 MapiHdl to represent the query answer.  The application can set up
-several channels with the same or a different Mserver. It is the
+several channels with the same or a different @code{mserver}. It is the
 programmer's responsibility not to mix the descriptors in retrieving
 the results.
 
@@ -266,7 +361,8 @@ Upon an error, the routines @code{mapi_explain()} and @code{mapi_explain_query()
 give information about the context of the failed call, including the
 expression shipped and any response received.  The side-effect is
 clearing the error status.
-@- Error Message
+
+@subsection Error Message
 Almost every call can fail since the connection with the database
 server can fail at any time.  Functions that return a handle (either
 @code{Mapi} or @code{MapiHdl}) may return NULL on failure, or they may return the
@@ -299,9 +395,17 @@ do {
         /* use output */;
 } while (mapi_next_result(hdl) == 1);
 @end verbatim
-@node Mapi Function Reference, The Perl Library, Library Synopsis, The Mapi Library
-@- Mapi Function Reference
-@- Connecting and Disconnecting
+
+@ifclear XQRYmanual
+@node Mapi Function Reference, The Perl Library , Library Synopsis, The Mapi Library
+@subsection Mapi Function Reference
+@end ifclear 
+@ifset XQRYmanual
+@node Mapi Function Reference
+@subsection Mapi Function Reference
+@end ifset 
+
+@subsection Connecting and Disconnecting
 @itemize
 @item Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname)
 
@@ -345,7 +449,8 @@ connection. This will remove all global session variables.
 
 Test availability of the server. Returns zero upon success.
 @end itemize
-@- Sending Queries
+
+@subsection Sending Queries
 @itemize
 @item MapiHdl mapi_query(Mapi mid, const char *Command)
 
@@ -353,7 +458,7 @@ Send the Command to the database server represented by mid.  This
 function returns a query handle with which the results of the query
 can be retrieved.  The handle should be closed with
 @code{mapi_close_handle()}.  The command response is buffered for
-consumption, c.f. @code{mapi_fetch_row()}.
+consumption, c.f. mapi\_fetch\_row().
 
 @item MapiMsg mapi_query_handle(MapiHdl hdl, const char *Command)
 
@@ -426,7 +531,8 @@ tuples is a list of pointers to row values.  Each row value is a list of
 pointers to strings giving the individual results.  If one of these
 pointers is NULL it indicates a NULL/nil value.
 @end itemize
-@- Getting Results
+
+@subsection Getting Results
 @itemize
 @item int mapi_get_field_count(Mapi mid)
 
@@ -460,7 +566,7 @@ analyzed in using @code{mapi_error()}.
 @item int mapi_fetch_all_rows(MapiHdl hdl)
 
 All rows are cached at the client side first. Subsequent calls to
-@code{mapi_fetch_row()} will take the row from the cache. The number or
+@code{mapi\_fetch\_row()} will take the row from the cache. The number or
 rows cached is returned.
 
 @item int mapi_quick_response(MapiHdl hdl, FILE *fd)
@@ -471,9 +577,9 @@ stream. The result is not analyzed or cached.
 @item MapiMsg mapi_seek_row(MapiHdl hdl, int rownr, int whence)
 
 Reset the row pointer to the requested row number.  If whence is
-@code{MAPI_SEEK_SET} (0), rownr is the absolute row number (0 being the
-first row); if whence is @code{MAPI_SEEK_CUR} (1), rownr is relative to the
-current row; if whence is @code{MAPI_SEEK_END} (2), rownr is relative to
+@code{MAPI\_SEEK\_SET} (0), rownr is the absolute row number (0 being the
+first row); if whence is @code{MAPI\_SEEK\_CUR} (1), rownr is relative to the
+current row; if whence is @code{MAPI\_SEEK\_END} (2), rownr is relative to
 the last row.
 
 @item MapiMsg mapi_fetch_reset(MapiHdl hdl)
@@ -486,20 +592,21 @@ tuples at once.
 
 Return an array of string pointers to the individual fields.  A zero
 is returned upon encountering end of sequence or error. This can be
-analyzed in using @code{mapi_error()}.
+analyzed in using @code{mapi\_error()}.
 
 @item char *mapi_fetch_field(MapiHdl hdl, int fnr)
 
 Return a pointer a C-string representation of the value returned.  A
 zero is returned upon encountering an error or when the database value
-is NULL; this can be analyzed in using @code{mapi_error()}.
+is NULL; this can be analyzed in using @code{mapi\_error()}.
 
 @item MapiMsg mapi_next_result(MapiHdl hdl)
 
 Go to the next result set, discarding the rest of the output of the
 current result set.
 @end itemize
-@- Errors
+
+@subsection Errors
 @itemize
 @item MapiMsg mapi_error(Mapi mid)
 
@@ -515,32 +622,33 @@ Return a pointer to the last error message from the server.
 
 @item MapiMsg mapi_explain(Mapi mid, FILE *fd)
 
-Write the error message obtained from Mserver to a file.
+Write the error message obtained from @code{mserver} to a file.
 
 @item MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd)
 
-Write the error message obtained from Mserver to a file.
+Write the error message obtained from @code{mserver} to a file.
 
 @item MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd)
 
-Write the error message obtained from Mserver to a file.
+Write the error message obtained from @code{mserver} to a file.
 @end itemize
-@- Parameters
+
+@subsection Parameters
 
 @itemize
 @item MapiMsg mapi_bind(MapiHdl hdl, int fldnr, char **val)
 
 Bind a string variable with a field in the return table.  Upon a
-successful subsequent @code{mapi_fetch_row()} the indicated field is stored
+\successful subsequent @code{mapi\_fetch\_row()} the indicated field is stored
 in the space pointed to by val.  Returns an error if the field
 identified does not exist.
 
 @item MapiMsg mapi_bind_var(MapiHdl hdl, int fldnr, int type, void *val)
 
 Bind a variable to a field in the return table.  Upon a successful
-subsequent @code{mapi_fetch_row()}, the indicated field is converted to the
+subsequent @code{mapi\_fetch\_row()}, the indicated field is converted to the
 given type and stored in the space pointed to by val.  The types
-recognized are @verb{ { } @code{MAPI_TINY, MAPI_UTINY, MAPI_SHORT, MAPI_USHORT,
+recognized are @verb{ { } @code{MAPI\_TINY, MAPI\_UTINY, MAPI\_SHORT, MAPI\_USHORT,
 MAPI_INT, MAPI_UINT, MAPI_LONG, MAPI_ULONG, MAPI_LONGLONG,
 MAPI_ULONGLONG, MAPI_CHAR, MAPI_VARCHAR, MAPI_FLOAT, MAPI_DOUBLE,
 MAPI_DATE, MAPI_TIME, MAPI_DATETIME} @verb{ } }.  The binding operations
@@ -579,11 +687,12 @@ parameter.  The sizeptr parameter points to the length of the string
 pointed to by val.  If sizeptr == NULL or *sizeptr == -1, the string
 is NULL-terminated.
 
-@item MapiMsg mapi_clear_params(MapiHdl hdl)
+@item MapiMsg mapi\_clear\_params(MapiHdl hdl)
 
 Clear all parameter bindings.
 @end itemize
-@- Miscellaneous
+
+@subsection Miscellaneous
 @itemize
 @item MapiMsg mapi_setAutocommit(Mapi mid, int autocommit)
 
@@ -591,7 +700,7 @@ Set the autocommit flag (default is on).  This only has an effect
 when the language is SQL.  In that case, the server commits after each
 statement sent to the server.
 
-@item MapiMsg mapi_setAlgebra(Mapi mid, int algebra)
+@item MapiMsg mapi\_setAlgebra(Mapi mid, int algebra)
 
 Tell the backend to use or stop using the algebra-based compiler.
 
@@ -656,11 +765,11 @@ Mapi applications.
 
 Return the current value of the trace flag.
 
-@item MapiMsg  mapi_log(Mapi mid, const char *fname)
+@item MapiMsg  mapi\_log(Mapi mid, const char *fname)
 
 Log the interaction between the client and server for offline
 inspection. Beware that the log file overwrites any previous log.
-For detailed interaction trace with the Mapi library itself use mapi_trace().
+For detailed interaction trace with the Mapi library itself use mapi\_trace().
 @end itemize
 The remaining operations are wrappers around the data structures
 maintained. Note that column properties are derived from the table
