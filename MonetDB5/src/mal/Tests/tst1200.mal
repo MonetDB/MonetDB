@@ -171,6 +171,7 @@ io.print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");
 	tzone_13:= mtime.timezone(60,rule_feb,rule_dec);
 #var tzone_13 := mtime.timezone(60, rule_feb, rule_dec);
 	rc_a := calc.*(24,60);
+	tzone_14:= mtime.timezone(rc_a,rule_apr,rule_nov); # to complete it
 	tzone_15:= mtime.timezone(rc_a,rule_apr,rule_nov);
 #var tzone_15 := mtime.timezone(24*60, rule_apr, rule_nov);
 #
@@ -195,7 +196,13 @@ io.print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");
 #tzone_bat.bat.insert(9@0, tzone_09).insert(10@0, tzone_10).insert(11@0, tzone_11);
 	bat.insert(tzone_bat,12@0,tzone_12);
 	bat.insert(tzone_bat,13@0,tzone_13);
+	bat.insert(tzone_bat,14@0,tzone_15);
 	bat.insert(tzone_bat,15@0,tzone_15);
+	bat.insert(tzone_bat,16@0,tzone_15);
+	bat.insert(tzone_bat,17@0,tzone_15);
+	bat.insert(tzone_bat,18@0,tzone_15);
+	bat.insert(tzone_bat,19@0,tzone_15);
+	bat.insert(tzone_bat,20@0,tzone_15);
 #tzone_bat.bat.insert(12@0, tzone_12).insert(13@0, tzone_13).insert(15@0, tzone_15);
 #
 ## test the operations on tzones
@@ -430,6 +437,7 @@ io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 #var daytime_18 := mtime.daytime(23,59,60,1000);
 	daytime_19:= mtime.daytime("nil");
 #var daytime_19 := mtime.daytime("nil");
+	daytime_20:= mtime.daytime("nil");
 #
 	daytime_bat:= bat.new(:oid,:daytime);
 #var daytime_bat := bat.new(oid,daytime);
@@ -459,6 +467,7 @@ io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 #daytime_bat.bat.insert(15@0, daytime_15).insert(16@0, daytime_16).insert(17@0, daytime_17);
 	bat.insert(daytime_bat,18@0,daytime_18);
 	bat.insert(daytime_bat,19@0,daytime_19);
+	bat.insert(daytime_bat,20@0,daytime_20);
 #daytime_bat.bat.insert(18@0, daytime_18).insert(19@0, daytime_19);
 #
 	bat.setColumn(daytime_bat,"daytime");

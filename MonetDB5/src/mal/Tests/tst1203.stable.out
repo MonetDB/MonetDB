@@ -450,146 +450,113 @@ function user.main():void;              #  0 main:void := user.main() {G}
     ne_a := bat.setColumn(date_bat,"date");#190 ne_a:void := BKCsetColumn(date_bat:bat[:oid,:date], _302:str) 
 #io.print(date_bat.bat.setColumn("date"), 
     _361 := bat.new(nil:oid,nil:int);   #192 _361:bat[:oid,:int] := CMDBATnew(_362:oid, _363:int) {G}
-barrier (_365,_366,_367):= bat.newIterator(date_bat);#193 (_365:lng, _366:oid, _367:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J200}
+barrier (_365,_366,_367):= bat.newIterator(date_bat);#193 (_365:lng, _366:oid, _367:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J197}
     _369 := mtime.year(_367);           #194 _369:int := MTIMEdate_extract_year(_367:date) 
     bat.insert(_361,_366,_369);         #195 _370:void := BKCinsert_bun(_361:bat[:oid,:int], _366:oid, _369:int) 
     redo (_365,_366,_367):= bat.hasMoreElements(date_bat);#196 (_365:lng, _366:oid, _367:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J194}
-catch MALException:str ;                #197 MALException:str {J199}
-    redo (_365,_366,_367):= bat.hasMoreElements(date_bat);#198 (_365:lng, _366:oid, _367:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J194}
-exit MALException:str ;                 #199 MALException:str 
-exit (_365,_366,_367);                  #200 (_365:lng, _366:oid, _367:date) 
-    oe_a:bat[:oid,:int]  := _361;       #201 oe_a:bat[:oid,:int] := _361:bat[:oid,:int] {G}
-    pe_a := bat.setColumn(oe_a,"year"); #202 pe_a:void := BKCsetColumn(oe_a:bat[:oid,:int], _306:str) 
+exit (_365,_366,_367);                  #197 (_365:lng, _366:oid, _367:date) 
+    oe_a:bat[:oid,:int]  := _361;       #198 oe_a:bat[:oid,:int] := _361:bat[:oid,:int] {G}
+    pe_a := bat.setColumn(oe_a,"year"); #199 pe_a:void := BKCsetColumn(oe_a:bat[:oid,:int], _306:str) 
 #      [year](date_bat).bat.setColumn("year"), 
-    _376 := bat.new(nil:oid,nil:int);   #204 _376:bat[:oid,:int] := CMDBATnew(_362:oid, _363:int) {G}
-barrier (_378,_379,_380):= bat.newIterator(date_bat);#205 (_378:lng, _379:oid, _380:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J212}
-    _382 := mtime.day(_380);            #206 _382:int := MTIMEdate_extract_day(_380:date) 
-    bat.insert(_376,_379,_382);         #207 _383:void := BKCinsert_bun(_376:bat[:oid,:int], _379:oid, _382:int) 
-    redo (_378,_379,_380):= bat.hasMoreElements(date_bat);#208 (_378:lng, _379:oid, _380:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J206}
-catch MALException:str ;                #209 MALException:str {J211}
-    redo (_378,_379,_380):= bat.hasMoreElements(date_bat);#210 (_378:lng, _379:oid, _380:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J206}
-exit MALException:str ;                 #211 MALException:str 
-exit (_378,_379,_380);                  #212 (_378:lng, _379:oid, _380:date) 
-    qe_a:bat[:oid,:int]  := _376;       #213 qe_a:bat[:oid,:int] := _376:bat[:oid,:int] {G}
-    re_a := bat.setColumn(qe_a,"day");  #214 re_a:void := BKCsetColumn(qe_a:bat[:oid,:int], _310:str) 
+    _374 := bat.new(nil:oid,nil:int);   #201 _374:bat[:oid,:int] := CMDBATnew(_362:oid, _363:int) {G}
+barrier (_376,_377,_378):= bat.newIterator(date_bat);#202 (_376:lng, _377:oid, _378:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J206}
+    _380 := mtime.day(_378);            #203 _380:int := MTIMEdate_extract_day(_378:date) 
+    bat.insert(_374,_377,_380);         #204 _381:void := BKCinsert_bun(_374:bat[:oid,:int], _377:oid, _380:int) 
+    redo (_376,_377,_378):= bat.hasMoreElements(date_bat);#205 (_376:lng, _377:oid, _378:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J203}
+exit (_376,_377,_378);                  #206 (_376:lng, _377:oid, _378:date) 
+    qe_a:bat[:oid,:int]  := _374;       #207 qe_a:bat[:oid,:int] := _374:bat[:oid,:int] {G}
+    re_a := bat.setColumn(qe_a,"day");  #208 re_a:void := BKCsetColumn(qe_a:bat[:oid,:int], _310:str) 
 #      [day](date_bat).bat.setColumn("day"), 
-    _389 := bat.new(nil:oid,nil:int);   #216 _389:bat[:oid,:int] := CMDBATnew(_362:oid, _363:int) {G}
-barrier (_391,_392,_393):= bat.newIterator(date_bat);#217 (_391:lng, _392:oid, _393:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J224}
-    _395 := mtime.month(_393);          #218 _395:int := MTIMEdate_extract_month(_393:date) 
-    bat.insert(_389,_392,_395);         #219 _396:void := BKCinsert_bun(_389:bat[:oid,:int], _392:oid, _395:int) 
-    redo (_391,_392,_393):= bat.hasMoreElements(date_bat);#220 (_391:lng, _392:oid, _393:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J218}
-catch MALException:str ;                #221 MALException:str {J223}
-    redo (_391,_392,_393):= bat.hasMoreElements(date_bat);#222 (_391:lng, _392:oid, _393:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J218}
-exit MALException:str ;                 #223 MALException:str 
-exit (_391,_392,_393);                  #224 (_391:lng, _392:oid, _393:date) 
-    se_a:bat[:oid,:int]  := _389;       #225 se_a:bat[:oid,:int] := _389:bat[:oid,:int] {G}
-    _402 := bat.new(nil:oid,nil:str);   #226 _402:bat[:oid,:str] := CMDBATnew(_403:oid, _404:str) {G}
-barrier (_406,_407,_408):= bat.newIterator(se_a);#227 (_406:lng, _407:oid, _408:int) := CHPbunIterator(se_a:bat[:oid,:int]) {J234}
-    _410 := mtime.monthname(_408);      #228 _410:str := MTIMEmonth_to_str(_408:int) {G}
-    bat.insert(_402,_407,_410);         #229 _411:void := BKCinsert_bun(_402:bat[:oid,:str], _407:oid, _410:str) 
-    redo (_406,_407,_408):= bat.hasMoreElements(se_a);#230 (_406:lng, _407:oid, _408:int) := CHPbunHasMoreElements(se_a:bat[:oid,:int]) {J228}
-catch MALException:str ;                #231 MALException:str {J233}
-    redo (_406,_407,_408):= bat.hasMoreElements(se_a);#232 (_406:lng, _407:oid, _408:int) := CHPbunHasMoreElements(se_a:bat[:oid,:int]) {J228}
-exit MALException:str ;                 #233 MALException:str 
-exit (_406,_407,_408);                  #234 (_406:lng, _407:oid, _408:int) 
-    te_a:bat[:oid,:str]  := _402;       #235 te_a:bat[:oid,:str] := _402:bat[:oid,:str] {G}
-    ue_a := bat.setColumn(te_a,"monthname");#236 ue_a:void := BKCsetColumn(te_a:bat[:oid,:str], _316:str) 
+    _385 := bat.new(nil:oid,nil:int);   #210 _385:bat[:oid,:int] := CMDBATnew(_362:oid, _363:int) {G}
+barrier (_387,_388,_389):= bat.newIterator(date_bat);#211 (_387:lng, _388:oid, _389:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J215}
+    _391 := mtime.month(_389);          #212 _391:int := MTIMEdate_extract_month(_389:date) 
+    bat.insert(_385,_388,_391);         #213 _392:void := BKCinsert_bun(_385:bat[:oid,:int], _388:oid, _391:int) 
+    redo (_387,_388,_389):= bat.hasMoreElements(date_bat);#214 (_387:lng, _388:oid, _389:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J212}
+exit (_387,_388,_389);                  #215 (_387:lng, _388:oid, _389:date) 
+    se_a:bat[:oid,:int]  := _385;       #216 se_a:bat[:oid,:int] := _385:bat[:oid,:int] {G}
+    _396 := bat.new(nil:oid,nil:str);   #217 _396:bat[:oid,:str] := CMDBATnew(_397:oid, _398:str) {G}
+barrier (_400,_401,_402):= bat.newIterator(se_a);#218 (_400:lng, _401:oid, _402:int) := CHPbunIterator(se_a:bat[:oid,:int]) {J222}
+    _404 := mtime.monthname(_402);      #219 _404:str := MTIMEmonth_to_str(_402:int) {G}
+    bat.insert(_396,_401,_404);         #220 _405:void := BKCinsert_bun(_396:bat[:oid,:str], _401:oid, _404:str) 
+    redo (_400,_401,_402):= bat.hasMoreElements(se_a);#221 (_400:lng, _401:oid, _402:int) := CHPbunHasMoreElements(se_a:bat[:oid,:int]) {J219}
+exit (_400,_401,_402);                  #222 (_400:lng, _401:oid, _402:int) 
+    te_a:bat[:oid,:str]  := _396;       #223 te_a:bat[:oid,:str] := _396:bat[:oid,:str] {G}
+    ue_a := bat.setColumn(te_a,"monthname");#224 ue_a:void := BKCsetColumn(te_a:bat[:oid,:str], _316:str) 
 #      [monthname]([month](date_bat)).bat.setColumn("monthname"), 
-    _417 := bat.new(nil:oid,nil:int);   #238 _417:bat[:oid,:int] := CMDBATnew(_403:oid, _418:int) {G}
-barrier (_420,_421,_422):= bat.newIterator(date_bat);#239 (_420:lng, _421:oid, _422:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J246}
-    _424 := mtime.month(_422);          #240 _424:int := MTIMEdate_extract_month(_422:date) 
-    bat.insert(_417,_421,_424);         #241 _425:void := BKCinsert_bun(_417:bat[:oid,:int], _421:oid, _424:int) 
-    redo (_420,_421,_422):= bat.hasMoreElements(date_bat);#242 (_420:lng, _421:oid, _422:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J240}
-catch MALException:str ;                #243 MALException:str {J245}
-    redo (_420,_421,_422):= bat.hasMoreElements(date_bat);#244 (_420:lng, _421:oid, _422:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J240}
-exit MALException:str ;                 #245 MALException:str 
-exit (_420,_421,_422);                  #246 (_420:lng, _421:oid, _422:date) 
-    ve_a:bat[:oid,:int]  := _417;       #247 ve_a:bat[:oid,:int] := _417:bat[:oid,:int] {G}
-    _431 := bat.new(nil:oid,nil:str);   #248 _431:bat[:oid,:str] := CMDBATnew(_403:oid, _404:str) {G}
-barrier (_433,_434,_435):= bat.newIterator(ve_a);#249 (_433:lng, _434:oid, _435:int) := CHPbunIterator(ve_a:bat[:oid,:int]) {J256}
-    _437 := mtime.monthname(_435);      #250 _437:str := MTIMEmonth_to_str(_435:int) {G}
-    bat.insert(_431,_434,_437);         #251 _438:void := BKCinsert_bun(_431:bat[:oid,:str], _434:oid, _437:str) 
-    redo (_433,_434,_435):= bat.hasMoreElements(ve_a);#252 (_433:lng, _434:oid, _435:int) := CHPbunHasMoreElements(ve_a:bat[:oid,:int]) {J250}
-catch MALException:str ;                #253 MALException:str {J255}
-    redo (_433,_434,_435):= bat.hasMoreElements(ve_a);#254 (_433:lng, _434:oid, _435:int) := CHPbunHasMoreElements(ve_a:bat[:oid,:int]) {J250}
-exit MALException:str ;                 #255 MALException:str 
-exit (_433,_434,_435);                  #256 (_433:lng, _434:oid, _435:int) 
-    we_a:bat[:oid,:str]  := _431;       #257 we_a:bat[:oid,:str] := _431:bat[:oid,:str] {G}
-    _444 := bat.new(nil:oid,nil:int);   #258 _444:bat[:oid,:int] := CMDBATnew(_445:oid, _418:int) {G}
-barrier (_447,_448,_449):= bat.newIterator(we_a);#259 (_447:lng, _448:oid, _449:str) := CHPbunIterator(we_a:bat[:oid,:str]) {GJ266}
-    _451 := mtime.monthnum(_449);       #260 _451:int := MTIMEmonth_from_str(_449:str) 
-    bat.insert(_444,_448,_451);         #261 _452:void := BKCinsert_bun(_444:bat[:oid,:int], _448:oid, _451:int) 
-    redo (_447,_448,_449):= bat.hasMoreElements(we_a);#262 (_447:lng, _448:oid, _449:str) := CHPbunHasMoreElements(we_a:bat[:oid,:str]) {GJ260}
-catch MALException:str ;                #263 MALException:str {J265}
-    redo (_447,_448,_449):= bat.hasMoreElements(we_a);#264 (_447:lng, _448:oid, _449:str) := CHPbunHasMoreElements(we_a:bat[:oid,:str]) {GJ260}
-exit MALException:str ;                 #265 MALException:str 
-exit (_447,_448,_449);                  #266 (_447:lng, _448:oid, _449:str) 
-    xe_a:bat[:oid,:int]  := _444;       #267 xe_a:bat[:oid,:int] := _444:bat[:oid,:int] {G}
-    ye_a := bat.setColumn(xe_a,"monthnum");#268 ye_a:void := BKCsetColumn(xe_a:bat[:oid,:int], _322:str) 
-    io.print("print(date_bat,oe_a,qe_a,te_a,xe_a)");#269 _324:void := IOprint_val(_325:str) 
-    af_a := io.print(date_bat,oe_a,qe_a,te_a,xe_a);#270 af_a:void := IOtable(date_bat:bat[:oid,:date], oe_a:bat[:oid,:int], qe_a:bat[:oid,:int], te_a:bat[:oid,:str], xe_a:bat[:oid,:int]) 
+    _409 := bat.new(nil:oid,nil:int);   #226 _409:bat[:oid,:int] := CMDBATnew(_397:oid, _410:int) {G}
+barrier (_412,_413,_414):= bat.newIterator(date_bat);#227 (_412:lng, _413:oid, _414:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J231}
+    _416 := mtime.month(_414);          #228 _416:int := MTIMEdate_extract_month(_414:date) 
+    bat.insert(_409,_413,_416);         #229 _417:void := BKCinsert_bun(_409:bat[:oid,:int], _413:oid, _416:int) 
+    redo (_412,_413,_414):= bat.hasMoreElements(date_bat);#230 (_412:lng, _413:oid, _414:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J228}
+exit (_412,_413,_414);                  #231 (_412:lng, _413:oid, _414:date) 
+    ve_a:bat[:oid,:int]  := _409;       #232 ve_a:bat[:oid,:int] := _409:bat[:oid,:int] {G}
+    _421 := bat.new(nil:oid,nil:str);   #233 _421:bat[:oid,:str] := CMDBATnew(_397:oid, _398:str) {G}
+barrier (_423,_424,_425):= bat.newIterator(ve_a);#234 (_423:lng, _424:oid, _425:int) := CHPbunIterator(ve_a:bat[:oid,:int]) {J238}
+    _427 := mtime.monthname(_425);      #235 _427:str := MTIMEmonth_to_str(_425:int) {G}
+    bat.insert(_421,_424,_427);         #236 _428:void := BKCinsert_bun(_421:bat[:oid,:str], _424:oid, _427:str) 
+    redo (_423,_424,_425):= bat.hasMoreElements(ve_a);#237 (_423:lng, _424:oid, _425:int) := CHPbunHasMoreElements(ve_a:bat[:oid,:int]) {J235}
+exit (_423,_424,_425);                  #238 (_423:lng, _424:oid, _425:int) 
+    we_a:bat[:oid,:str]  := _421;       #239 we_a:bat[:oid,:str] := _421:bat[:oid,:str] {G}
+    _432 := bat.new(nil:oid,nil:int);   #240 _432:bat[:oid,:int] := CMDBATnew(_433:oid, _410:int) {G}
+barrier (_435,_436,_437):= bat.newIterator(we_a);#241 (_435:lng, _436:oid, _437:str) := CHPbunIterator(we_a:bat[:oid,:str]) {GJ245}
+    _439 := mtime.monthnum(_437);       #242 _439:int := MTIMEmonth_from_str(_437:str) 
+    bat.insert(_432,_436,_439);         #243 _440:void := BKCinsert_bun(_432:bat[:oid,:int], _436:oid, _439:int) 
+    redo (_435,_436,_437):= bat.hasMoreElements(we_a);#244 (_435:lng, _436:oid, _437:str) := CHPbunHasMoreElements(we_a:bat[:oid,:str]) {GJ242}
+exit (_435,_436,_437);                  #245 (_435:lng, _436:oid, _437:str) 
+    xe_a:bat[:oid,:int]  := _432;       #246 xe_a:bat[:oid,:int] := _432:bat[:oid,:int] {G}
+    ye_a := bat.setColumn(xe_a,"monthnum");#247 ye_a:void := BKCsetColumn(xe_a:bat[:oid,:int], _322:str) 
+    io.print("print(date_bat,oe_a,qe_a,te_a,xe_a)");#248 _324:void := IOprint_val(_325:str) 
+    af_a := io.print(date_bat,oe_a,qe_a,te_a,xe_a);#249 af_a:void := IOtable(date_bat:bat[:oid,:date], oe_a:bat[:oid,:int], qe_a:bat[:oid,:int], te_a:bat[:oid,:str], xe_a:bat[:oid,:int]) 
 #      [monthnum]([monthname]([month](date_bat))).bat.setColumn("monthnum")); 
-    _458 := bat.new(nil:oid,nil:date);  #272 _458:bat[:oid,:date] := CMDBATnew(_445:oid, _459:date) {G}
-barrier (_461,_462,_463):= bat.newIterator(date_bat);#273 (_461:lng, _462:oid, _463:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J280}
-    _465 := mtime.addyears(_463,-100);  #274 _465:date := MTIMEdate_addyears(_463:date, _330:int) 
-    bat.insert(_458,_462,_465);         #275 _466:void := BKCinsert_bun(_458:bat[:oid,:date], _462:oid, _465:date) 
-    redo (_461,_462,_463):= bat.hasMoreElements(date_bat);#276 (_461:lng, _462:oid, _463:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J274}
-catch MALException:str ;                #277 MALException:str {J279}
-    redo (_461,_462,_463):= bat.hasMoreElements(date_bat);#278 (_461:lng, _462:oid, _463:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J274}
-exit MALException:str ;                 #279 MALException:str 
-exit (_461,_462,_463);                  #280 (_461:lng, _462:oid, _463:date) 
-    date_addyears:bat[:oid,:date]  := _458;#281 date_addyears:bat[:oid,:date] := _458:bat[:oid,:date] {G}
+    _444 := bat.new(nil:oid,nil:date);  #251 _444:bat[:oid,:date] := CMDBATnew(_433:oid, _445:date) {G}
+barrier (_447,_448,_449):= bat.newIterator(date_bat);#252 (_447:lng, _448:oid, _449:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J256}
+    _451 := mtime.addyears(_449,-100);  #253 _451:date := MTIMEdate_addyears(_449:date, _330:int) 
+    bat.insert(_444,_448,_451);         #254 _452:void := BKCinsert_bun(_444:bat[:oid,:date], _448:oid, _451:date) 
+    redo (_447,_448,_449):= bat.hasMoreElements(date_bat);#255 (_447:lng, _448:oid, _449:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J253}
+exit (_447,_448,_449);                  #256 (_447:lng, _448:oid, _449:date) 
+    date_addyears:bat[:oid,:date]  := _444;#257 date_addyears:bat[:oid,:date] := _444:bat[:oid,:date] {G}
 #var date_addyears := [addyears](date_bat, -100); 
-    _472 := bat.new(nil:oid,nil:date);  #283 _472:bat[:oid,:date] := CMDBATnew(_445:oid, _459:date) {G}
-barrier (_474,_475,_476):= bat.newIterator(date_bat);#284 (_474:lng, _475:oid, _476:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J291}
-    _478 := mtime.addmonths(_476,1);    #285 _478:date := MTIMEdate_addmonths(_476:date, _334:int) 
-    bat.insert(_472,_475,_478);         #286 _479:void := BKCinsert_bun(_472:bat[:oid,:date], _475:oid, _478:date) 
-    redo (_474,_475,_476):= bat.hasMoreElements(date_bat);#287 (_474:lng, _475:oid, _476:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J285}
-catch MALException:str ;                #288 MALException:str {J290}
-    redo (_474,_475,_476):= bat.hasMoreElements(date_bat);#289 (_474:lng, _475:oid, _476:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J285}
-exit MALException:str ;                 #290 MALException:str 
-exit (_474,_475,_476);                  #291 (_474:lng, _475:oid, _476:date) 
-    date_addmonths:bat[:oid,:date]  := _472;#292 date_addmonths:bat[:oid,:date] := _472:bat[:oid,:date] {G}
+    _456 := bat.new(nil:oid,nil:date);  #259 _456:bat[:oid,:date] := CMDBATnew(_433:oid, _445:date) {G}
+barrier (_458,_459,_460):= bat.newIterator(date_bat);#260 (_458:lng, _459:oid, _460:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J264}
+    _462 := mtime.addmonths(_460,1);    #261 _462:date := MTIMEdate_addmonths(_460:date, _334:int) 
+    bat.insert(_456,_459,_462);         #262 _463:void := BKCinsert_bun(_456:bat[:oid,:date], _459:oid, _462:date) 
+    redo (_458,_459,_460):= bat.hasMoreElements(date_bat);#263 (_458:lng, _459:oid, _460:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J261}
+exit (_458,_459,_460);                  #264 (_458:lng, _459:oid, _460:date) 
+    date_addmonths:bat[:oid,:date]  := _456;#265 date_addmonths:bat[:oid,:date] := _456:bat[:oid,:date] {G}
 #var date_addmonths := [addmonths](date_bat, 1); 
-    bat.setColumn(date_bat,"date");     #294 _336:void := BKCsetColumn(date_bat:bat[:oid,:date], _337:str) 
+    bat.setColumn(date_bat,"date");     #267 _336:void := BKCsetColumn(date_bat:bat[:oid,:date], _337:str) 
 #io.print(date_bat.bat.setColumn("date"), 
-    bat.setColumn(date_addyears,"min100y");#296 _339:void := BKCsetColumn(date_addyears:bat[:oid,:date], _340:str) 
+    bat.setColumn(date_addyears,"min100y");#269 _339:void := BKCsetColumn(date_addyears:bat[:oid,:date], _340:str) 
 #      date_addyears.bat.setColumn("min100y"), 
-    _485 := bat.new(nil:oid,nil:int);   #298 _485:bat[:oid,:int] := CMDBATnew(_486:oid, _487:int) {G}
-barrier (_489,_490,_491):= bat.newIterator(date_addyears);#299 (_489:lng, _490:oid, _491:date) := CHPbunIterator(date_addyears:bat[:oid,:date]) {J307}
-    _493 := algebra.find(date_bat,_490);#300 _493:date := ALGfind(date_bat:bat[:oid,:date], _490:oid) 
-    _495 := mtime.diff(_491,_493);      #301 _495:int := MTIMEdate_diff(_491:date, _493:date) 
-    bat.insert(_485,_490,_495);         #302 _496:void := BKCinsert_bun(_485:bat[:oid,:int], _490:oid, _495:int) 
-    redo (_489,_490,_491):= bat.hasMoreElements(date_addyears);#303 (_489:lng, _490:oid, _491:date) := CHPbunHasMoreElements(date_addyears:bat[:oid,:date]) {J300}
-catch MALException:str ;                #304 MALException:str {J306}
-    redo (_489,_490,_491):= bat.hasMoreElements(date_addyears);#305 (_489:lng, _490:oid, _491:date) := CHPbunHasMoreElements(date_addyears:bat[:oid,:date]) {J300}
-exit MALException:str ;                 #306 MALException:str 
-exit (_489,_490,_491);                  #307 (_489:lng, _490:oid, _491:date) 
-    df_a:bat[:oid,:int]  := _485;       #308 df_a:bat[:oid,:int] := _485:bat[:oid,:int] {G}
-    bat.setColumn(df_a,"diff");         #309 _345:void := BKCsetColumn(df_a:bat[:oid,:int], _344:str) 
-    io.print("print(date_bat,date_addyears,df_a)");#310 _346:void := IOprint_val(_347:str) 
-    ff_a := io.print(date_bat,date_addyears,df_a);#311 ff_a:void := IOtable(date_bat:bat[:oid,:date], date_addyears:bat[:oid,:date], df_a:bat[:oid,:int]) 
+    _467 := bat.new(nil:oid,nil:int);   #271 _467:bat[:oid,:int] := CMDBATnew(_468:oid, _469:int) {G}
+barrier (_471,_472,_473):= bat.newIterator(date_addyears);#272 (_471:lng, _472:oid, _473:date) := CHPbunIterator(date_addyears:bat[:oid,:date]) {J277}
+    _475 := algebra.find(date_bat,_472);#273 _475:date := ALGfind(date_bat:bat[:oid,:date], _472:oid) 
+    _477 := mtime.diff(_473,_475);      #274 _477:int := MTIMEdate_diff(_473:date, _475:date) 
+    bat.insert(_467,_472,_477);         #275 _478:void := BKCinsert_bun(_467:bat[:oid,:int], _472:oid, _477:int) 
+    redo (_471,_472,_473):= bat.hasMoreElements(date_addyears);#276 (_471:lng, _472:oid, _473:date) := CHPbunHasMoreElements(date_addyears:bat[:oid,:date]) {J273}
+exit (_471,_472,_473);                  #277 (_471:lng, _472:oid, _473:date) 
+    df_a:bat[:oid,:int]  := _467;       #278 df_a:bat[:oid,:int] := _467:bat[:oid,:int] {G}
+    bat.setColumn(df_a,"diff");         #279 _345:void := BKCsetColumn(df_a:bat[:oid,:int], _344:str) 
+    io.print("print(date_bat,date_addyears,df_a)");#280 _346:void := IOprint_val(_347:str) 
+    ff_a := io.print(date_bat,date_addyears,df_a);#281 ff_a:void := IOtable(date_bat:bat[:oid,:date], date_addyears:bat[:oid,:date], df_a:bat[:oid,:int]) 
 #      [diff](date_addyears, date_bat).bat.setColumn("diff")); 
-    bat.setColumn(date_bat,"date");     #313 _350:void := BKCsetColumn(date_bat:bat[:oid,:date], _337:str) 
+    bat.setColumn(date_bat,"date");     #283 _350:void := BKCsetColumn(date_bat:bat[:oid,:date], _337:str) 
 #io.print(date_bat.bat.setColumn("date"), 
-    bat.setColumn(date_addmonths,"plus1m");#315 _352:void := BKCsetColumn(date_addmonths:bat[:oid,:date], _353:str) 
+    bat.setColumn(date_addmonths,"plus1m");#285 _352:void := BKCsetColumn(date_addmonths:bat[:oid,:date], _353:str) 
 #      date_addmonths.bat.setColumn("plus1m"), 
-    _502 := bat.new(nil:oid,nil:int);   #317 _502:bat[:oid,:int] := CMDBATnew(_486:oid, _487:int) {G}
-barrier (_504,_505,_506):= bat.newIterator(date_addmonths);#318 (_504:lng, _505:oid, _506:date) := CHPbunIterator(date_addmonths:bat[:oid,:date]) {J326}
-    _508 := algebra.find(date_bat,_505);#319 _508:date := ALGfind(date_bat:bat[:oid,:date], _505:oid) 
-    _510 := mtime.diff(_506,_508);      #320 _510:int := MTIMEdate_diff(_506:date, _508:date) 
-    bat.insert(_502,_505,_510);         #321 _511:void := BKCinsert_bun(_502:bat[:oid,:int], _505:oid, _510:int) 
-    redo (_504,_505,_506):= bat.hasMoreElements(date_addmonths);#322 (_504:lng, _505:oid, _506:date) := CHPbunHasMoreElements(date_addmonths:bat[:oid,:date]) {J319}
-catch MALException:str ;                #323 MALException:str {J325}
-    redo (_504,_505,_506):= bat.hasMoreElements(date_addmonths);#324 (_504:lng, _505:oid, _506:date) := CHPbunHasMoreElements(date_addmonths:bat[:oid,:date]) {J319}
-exit MALException:str ;                 #325 MALException:str 
-exit (_504,_505,_506);                  #326 (_504:lng, _505:oid, _506:date) 
-    if_a:bat[:oid,:int]  := _502;       #327 if_a:bat[:oid,:int] := _502:bat[:oid,:int] {G}
-    bat.setColumn(if_a,"diff");         #328 _356:void := BKCsetColumn(if_a:bat[:oid,:int], _344:str) 
-    io.print(" print(date_bat,date_addmonths,if_a)");#329 _357:void := IOprint_val(_358:str) 
-    kf_a := io.print(date_bat,date_addmonths,if_a);#330 kf_a:void := IOtable(date_bat:bat[:oid,:date], date_addmonths:bat[:oid,:date], if_a:bat[:oid,:int]) 
+    _482 := bat.new(nil:oid,nil:int);   #287 _482:bat[:oid,:int] := CMDBATnew(_468:oid, _469:int) {G}
+barrier (_484,_485,_486):= bat.newIterator(date_addmonths);#288 (_484:lng, _485:oid, _486:date) := CHPbunIterator(date_addmonths:bat[:oid,:date]) {J293}
+    _488 := algebra.find(date_bat,_485);#289 _488:date := ALGfind(date_bat:bat[:oid,:date], _485:oid) 
+    _490 := mtime.diff(_486,_488);      #290 _490:int := MTIMEdate_diff(_486:date, _488:date) 
+    bat.insert(_482,_485,_490);         #291 _491:void := BKCinsert_bun(_482:bat[:oid,:int], _485:oid, _490:int) 
+    redo (_484,_485,_486):= bat.hasMoreElements(date_addmonths);#292 (_484:lng, _485:oid, _486:date) := CHPbunHasMoreElements(date_addmonths:bat[:oid,:date]) {J289}
+exit (_484,_485,_486);                  #293 (_484:lng, _485:oid, _486:date) 
+    if_a:bat[:oid,:int]  := _482;       #294 if_a:bat[:oid,:int] := _482:bat[:oid,:int] {G}
+    bat.setColumn(if_a,"diff");         #295 _356:void := BKCsetColumn(if_a:bat[:oid,:int], _344:str) 
+    io.print(" print(date_bat,date_addmonths,if_a)");#296 _357:void := IOprint_val(_358:str) 
+    kf_a := io.print(date_bat,date_addmonths,if_a);#297 kf_a:void := IOtable(date_bat:bat[:oid,:date], date_addmonths:bat[:oid,:date], if_a:bat[:oid,:int]) 
 #      [diff](date_addmonths, date_bat).bat.setColumn("diff")); 
-end main;                               #332  
+end main;                               #299  
 [ "print(date_bat,oe_a,qe_a,te_a,xe_a)" ]
 #---------------------------------------------------------------------------------#
 # h	date		year		day	monthname	monthnum		  # name

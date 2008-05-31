@@ -301,44 +301,35 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.print(tzone_bat);                #125 _192:void := IOprint_val(tzone_bat:bat[:oid,:timezone]) 
 #io.print(tzone_bat.bat.setColumn("tzone")); 
     _210 := bat.new(nil:oid,nil:int);   #127 _210:bat[:oid,:int] := CMDBATnew(_211:oid, _212:int) {G}
-barrier (_214,_215,_216):= bat.newIterator(tzone_bat);#128 (_214:lng, _215:oid, _216:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J135}
+barrier (_214,_215,_216):= bat.newIterator(tzone_bat);#128 (_214:lng, _215:oid, _216:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J132}
     _218 := mtime.minutes(_216);        #129 _218:int := MTIMEtzone_extract_minutes(_216:timezone) 
     bat.insert(_210,_215,_218);         #130 _219:void := BKCinsert_bun(_210:bat[:oid,:int], _215:oid, _218:int) 
     redo (_214,_215,_216):= bat.hasMoreElements(tzone_bat);#131 (_214:lng, _215:oid, _216:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J129}
-catch MALException:str ;                #132 MALException:str {J134}
-    redo (_214,_215,_216):= bat.hasMoreElements(tzone_bat);#133 (_214:lng, _215:oid, _216:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J129}
-exit MALException:str ;                 #134 MALException:str 
-exit (_214,_215,_216);                  #135 (_214:lng, _215:oid, _216:timezone) 
-    kd_a:bat[:oid,:int]  := _210;       #136 kd_a:bat[:oid,:int] := _210:bat[:oid,:int] {G}
-    bat.setColumn(kd_a,"minutes");      #137 _197:void := BKCsetColumn(kd_a:bat[:oid,:int], _196:str) 
+exit (_214,_215,_216);                  #132 (_214:lng, _215:oid, _216:timezone) 
+    kd_a:bat[:oid,:int]  := _210;       #133 kd_a:bat[:oid,:int] := _210:bat[:oid,:int] {G}
+    bat.setColumn(kd_a,"minutes");      #134 _197:void := BKCsetColumn(kd_a:bat[:oid,:int], _196:str) 
 #io.print([minutes](tzone_bat).bat.setColumn("minutes"), 
-    _225 := bat.new(nil:oid,nil:zrule); #139 _225:bat[:oid,:zrule] := CMDBATnew(_211:oid, _226:zrule) {G}
-barrier (_228,_229,_230):= bat.newIterator(tzone_bat);#140 (_228:lng, _229:oid, _230:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J147}
-    _232 := mtime.start_dst(_230);      #141 _232:zrule := MTIMEtzone_extract_start(_230:timezone) 
-    bat.insert(_225,_229,_232);         #142 _233:void := BKCinsert_bun(_225:bat[:oid,:zrule], _229:oid, _232:zrule) 
-    redo (_228,_229,_230):= bat.hasMoreElements(tzone_bat);#143 (_228:lng, _229:oid, _230:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J141}
-catch MALException:str ;                #144 MALException:str {J146}
-    redo (_228,_229,_230):= bat.hasMoreElements(tzone_bat);#145 (_228:lng, _229:oid, _230:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J141}
-exit MALException:str ;                 #146 MALException:str 
-exit (_228,_229,_230);                  #147 (_228:lng, _229:oid, _230:timezone) 
-    md_a:bat[:oid,:zrule]  := _225;     #148 md_a:bat[:oid,:zrule] := _225:bat[:oid,:zrule] {G}
-    bat.setColumn(md_a,"start_dst");    #149 _201:void := BKCsetColumn(md_a:bat[:oid,:zrule], _200:str) 
+    _223 := bat.new(nil:oid,nil:zrule); #136 _223:bat[:oid,:zrule] := CMDBATnew(_211:oid, _224:zrule) {G}
+barrier (_226,_227,_228):= bat.newIterator(tzone_bat);#137 (_226:lng, _227:oid, _228:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J141}
+    _230 := mtime.start_dst(_228);      #138 _230:zrule := MTIMEtzone_extract_start(_228:timezone) 
+    bat.insert(_223,_227,_230);         #139 _231:void := BKCinsert_bun(_223:bat[:oid,:zrule], _227:oid, _230:zrule) 
+    redo (_226,_227,_228):= bat.hasMoreElements(tzone_bat);#140 (_226:lng, _227:oid, _228:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J138}
+exit (_226,_227,_228);                  #141 (_226:lng, _227:oid, _228:timezone) 
+    md_a:bat[:oid,:zrule]  := _223;     #142 md_a:bat[:oid,:zrule] := _223:bat[:oid,:zrule] {G}
+    bat.setColumn(md_a,"start_dst");    #143 _201:void := BKCsetColumn(md_a:bat[:oid,:zrule], _200:str) 
 #      [start_dst](tzone_bat).bat.setColumn("start_dst"), 
-    _239 := bat.new(nil:oid,nil:zrule); #151 _239:bat[:oid,:zrule] := CMDBATnew(_211:oid, _226:zrule) {G}
-barrier (_241,_242,_243):= bat.newIterator(tzone_bat);#152 (_241:lng, _242:oid, _243:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J159}
-    _245 := mtime.end_dst(_243);        #153 _245:zrule := MTIMEtzone_extract_end(_243:timezone) 
-    bat.insert(_239,_242,_245);         #154 _246:void := BKCinsert_bun(_239:bat[:oid,:zrule], _242:oid, _245:zrule) 
-    redo (_241,_242,_243):= bat.hasMoreElements(tzone_bat);#155 (_241:lng, _242:oid, _243:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J153}
-catch MALException:str ;                #156 MALException:str {J158}
-    redo (_241,_242,_243):= bat.hasMoreElements(tzone_bat);#157 (_241:lng, _242:oid, _243:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J153}
-exit MALException:str ;                 #158 MALException:str 
-exit (_241,_242,_243);                  #159 (_241:lng, _242:oid, _243:timezone) 
-    od_a:bat[:oid,:zrule]  := _239;     #160 od_a:bat[:oid,:zrule] := _239:bat[:oid,:zrule] {G}
-    bat.setColumn(od_a,"end_dst");      #161 _205:void := BKCsetColumn(od_a:bat[:oid,:zrule], _204:str) 
-    io.print("print(kd_a,md_a,od_a)");  #162 _206:void := IOprint_val(_207:str) 
-    qd_a := io.print(kd_a,md_a,od_a);   #163 qd_a:void := IOtable(kd_a:bat[:oid,:int], md_a:bat[:oid,:zrule], od_a:bat[:oid,:zrule]) 
+    _235 := bat.new(nil:oid,nil:zrule); #145 _235:bat[:oid,:zrule] := CMDBATnew(_211:oid, _224:zrule) {G}
+barrier (_237,_238,_239):= bat.newIterator(tzone_bat);#146 (_237:lng, _238:oid, _239:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J150}
+    _241 := mtime.end_dst(_239);        #147 _241:zrule := MTIMEtzone_extract_end(_239:timezone) 
+    bat.insert(_235,_238,_241);         #148 _242:void := BKCinsert_bun(_235:bat[:oid,:zrule], _238:oid, _241:zrule) 
+    redo (_237,_238,_239):= bat.hasMoreElements(tzone_bat);#149 (_237:lng, _238:oid, _239:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J147}
+exit (_237,_238,_239);                  #150 (_237:lng, _238:oid, _239:timezone) 
+    od_a:bat[:oid,:zrule]  := _235;     #151 od_a:bat[:oid,:zrule] := _235:bat[:oid,:zrule] {G}
+    bat.setColumn(od_a,"end_dst");      #152 _205:void := BKCsetColumn(od_a:bat[:oid,:zrule], _204:str) 
+    io.print("print(kd_a,md_a,od_a)");  #153 _206:void := IOprint_val(_207:str) 
+    qd_a := io.print(kd_a,md_a,od_a);   #154 qd_a:void := IOtable(kd_a:bat[:oid,:int], md_a:bat[:oid,:zrule], od_a:bat[:oid,:zrule]) 
 #      [end_dst](tzone_bat).bat.setColumn("end_dst")); 
-end main;                               #165  
+end main;                               #156  
 [ "tzone_bat" ]
 #-----------------------------------------------------------------------------------------------------------------#
 # h	t													  # name
