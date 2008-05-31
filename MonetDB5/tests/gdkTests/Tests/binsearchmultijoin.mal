@@ -34,6 +34,7 @@ l2:= algebra.union(l,bpr);
 r:= bat.new(:oid,:int);
 bat.insert(r, 1:oid,1);
 bat.insert(r, 0:oid,2);
+bat.insert(r, 2:oid,3);
 
 z:bat[:oid,:int]:= mal.multiplex("calc","+",l2,r);
 c:= aggr.count(z);
