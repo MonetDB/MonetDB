@@ -658,6 +658,45 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             fmt = prop_args;
 
         while (*fmt) {
+            if (*fmt == '+' || *fmt == 'c') {
+                PFarray_printf (dot, "\\ncost: %lu", n->cost);
+            }
+            if (*fmt == '+' || *fmt == 'o') {
+                PFarray_printf (dot, "\\norderings:");
+                for (unsigned int i = 0;
+                        i < PFarray_last (n->orderings); i++)
+                    PFarray_printf (
+                            dot, "\\n%s",
+                            PFord_str (
+                                *(PFord_ordering_t *)
+                                        PFarray_at (n->orderings,i)));
+            }
+
+            /* stop after all properties have been printed */
+            if (*fmt == '+')
+                break;
+            else
+                fmt++;
+        }
+    }
+    if (prop_args && n->prop) {
+
+        char *fmt = prop_args;
+        /* format character '+' overwrites all others */
+        bool all = false;
+        while (*fmt) {
+            if (*fmt == '+') {
+                all = true;
+                break;
+            }
+            fmt++;
+        }
+        /* iterate over all format characters
+           if we haven't found a '+' character */
+        if (!all)
+            fmt = prop_args;
+
+        while (*fmt) {
             if (*fmt == '+' || *fmt == 'A') {
                 /* if present print cardinality */
                 if (PFprop_card (n->prop))
@@ -882,19 +921,6 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                         PFarray_printf (dot, ">");
                     }
                 }
-            }
-            if (*fmt == '+' || *fmt == 'c') {
-                PFarray_printf (dot, "\\ncost: %lu", n->cost);
-            }
-            if (*fmt == '+' || *fmt == 'o') {
-                PFarray_printf (dot, "\\norderings:");
-                for (unsigned int i = 0;
-                        i < PFarray_last (n->orderings); i++)
-                    PFarray_printf (
-                            dot, "\\n%s",
-                            PFord_str (
-                                *(PFord_ordering_t *)
-                                        PFarray_at (n->orderings,i)));
             }
 
             /* stop after all properties have been printed */

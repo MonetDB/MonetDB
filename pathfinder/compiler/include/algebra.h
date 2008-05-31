@@ -377,9 +377,7 @@ enum PFalg_doc_t {
     , doc_text         /**< content of a text node > */
     , doc_comm         /**< content of a comment node > */
     , doc_pi_text      /**< content of a pi node > */
-/*    , doc_name   */      /**< name of element node > */
-/*    , doc_local  */      /**< local part of an element node name > */
-/*    , doc_uri    */      /**< uri part of an element node name > */
+	, doc_qname        /**< QName of a node > */
 };
 typedef enum PFalg_doc_t PFalg_doc_t;
 
