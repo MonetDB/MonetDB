@@ -561,6 +561,7 @@ plan_dep_unique_thetajoin (const PFla_op_t *n)
     assert (L(n)->schema.count == 1);
     assert (LL(n)->sem.thetajoin.count == 2);
     assert (LL(n)->sem.thetajoin.pred[0].comp == alg_comp_eq);
+    assert (LL(n)->sem.thetajoin.pred[1].comp != alg_comp_ne);
     assert (L(n)->sem.proj.items[0].old ==
             LL(n)->sem.thetajoin.pred[0].left ||
             L(n)->sem.proj.items[0].old ==
@@ -3146,6 +3147,7 @@ plan_subexpression (PFla_op_t *n)
                 if (n->schema.count == 1 &&
                     LL(n)->sem.thetajoin.count == 2 &&
                     LL(n)->sem.thetajoin.pred[0].comp == alg_comp_eq &&
+                    LL(n)->sem.thetajoin.pred[1].comp != alg_comp_ne &&
                     (L(n)->sem.proj.items[0].old ==
                      LL(n)->sem.thetajoin.pred[0].left ||
                      L(n)->sem.proj.items[0].old ==
