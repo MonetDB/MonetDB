@@ -54,7 +54,7 @@ or uses semantic knowledge on MAL instructions to detect
 potential reuse gain (e.g. reuse select results).
 And finally, the cache policy looks after the storage space for the 
 intermediate result pool.
-The details are described in the recycle module @ref{}.
+The details are described in the recycle module.
 @{
 @mal
 pattern optimizer.recycle():str
@@ -207,3 +207,4 @@ with the transaction commits.
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(recycle,OPT_CHECK_TYPES)@
+@}
