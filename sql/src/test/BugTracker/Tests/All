@@ -1,5 +1,6 @@
 # tests related to bug reports:
 # <descriptive-name>.SF-<bug-report-id>[.<ext>]
+multi-column-constraint.SF-1964587
 inserting_invalid_timestamp.SF-1363557
 large_prepare.SF-1363729
 HAVE_MONETDB5?large_prepare_2.SF-1363729
@@ -120,7 +121,6 @@ between_with_column.SF-1959410
 is_not_null_syntax_error.SF-1959456
 order_by_over_table_from_another_function.SF-1959822
 sql_div.SF-1959357
-multi-column-constraint.SF-1964587
 set_sql_debug_64__breaking_the_DB.SF-1906287
 select_multiple_not_null_constraints.SF-1926074
 auto_increment.SF-1834820
