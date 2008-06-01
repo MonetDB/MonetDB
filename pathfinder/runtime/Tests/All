@@ -36,6 +36,6 @@ escaped-string
 smack00
 smack01
 NOT_WIN32?pf_docname
-pf_log
-pf_sqrt
-pf_pow
+NOT_ALGEBRA?pf_log
+NOT_ALGEBRA?pf_sqrt
+NOT_ALGEBRA?pf_pow
