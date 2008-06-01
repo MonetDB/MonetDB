@@ -56,7 +56,7 @@ def main():
     server_stop(srv)
 
     srv = server_start(dbinit)
-    client('SQL' , '%s/set_a_new_user_password.SF-1844050_select.sql' % os.getenv('RELSRCDIR'), "voc", "new")
+    client('SQL' , '%s/set_a_new_user_password.SF-1844050_select.sql' % os.getenv('RELSRCDIR'), "voc2", "new")
     server_stop(srv)
 
     srv = server_start(dbinit)

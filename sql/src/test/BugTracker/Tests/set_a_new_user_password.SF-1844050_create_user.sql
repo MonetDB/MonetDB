@@ -1,9 +1,9 @@
 START TRANSACTION;
 
-CREATE USER "voc" WITH PASSWORD 'voc' NAME 'VOC_EXPLORER' SCHEMA "sys";
-CREATE SCHEMA "voc" AUTHORIZATION "voc";
-ALTER USER "voc" SET SCHEMA "voc";
+CREATE USER "voc2" WITH PASSWORD 'voc2' NAME 'VOC_EXPLORER' SCHEMA "sys";
+CREATE SCHEMA "voc2" AUTHORIZATION "voc2";
+ALTER USER "voc2" SET SCHEMA "voc2";
 
-alter user "voc" with password 'new';
+alter user "voc2" with password 'new';
 
 commit;
