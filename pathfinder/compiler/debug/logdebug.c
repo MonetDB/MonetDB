@@ -765,9 +765,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
             break;
 
         case la_type_assert:
-            PFarray_printf (dot, "%s (%s), type: %s", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s), type: %i", a_id[n->kind],
                             PFatt_str (n->sem.type.att),
-                            PFalg_simple_type_str (n->sem.type.ty));
+                            n->sem.type.ty);
             break;
 
         case la_cast:
