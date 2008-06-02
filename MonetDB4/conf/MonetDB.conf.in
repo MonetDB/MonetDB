@@ -160,15 +160,15 @@ xrpc_options=""
 
 # IP addresses or hostname separated by ';' who can execute scripts in
 # <datadir>/MonetDB/xrpc/admin/
-xrpc_admin="127.0.0.1"
+xrpc_admin="127.0.0.1;http://127.0.0.1;localhost;http://localhost"
 
 # IP addresses or hostname separated by ';' who can retrieve XML
 # documents stored in the database using a URL of the form:
 #                   http://<host>[:port]/xrpc/<name>.xml
-xrpc_user="127.0.0.1"
+xrpc_user="127.0.0.1;http://127.0.0.1;localhost;http://localhost"
 
 # url prefixes of trusted modules separated by ';'
-xrpc_trusted="http://monetdb.cwi.nl;@Xexec_prefix@@DIRSEP@share@DIRSEP@MonetDB@DIRSEP@xrpc@DIRSEP@export"
+xrpc_trusted="http://monetdb.cwi.nl;http://127.0.0.1;http://localhost;@Xexec_prefix@@DIRSEP@share@DIRSEP@MonetDB@DIRSEP@xrpc@DIRSEP@export"
 
 # standoff annotation XPath extension
 #standoff_ns=http://monetdb.cwi.nl/standoff
