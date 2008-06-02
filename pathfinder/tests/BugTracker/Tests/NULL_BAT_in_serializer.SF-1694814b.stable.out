@@ -32,6 +32,32 @@ Over..
 # 17:48:42 >  
 
 <?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><files><file xid="5" xend="81964304895" xstart="81964302336" name="$AttrDef"><container tool="general-purpose/hash-tool"><sha1 xid="255706">b49d7f48300701235231f6b6fc3d92a5630f9e70</sha1><md5 xid="255707">ad617ac3906958de35eacc3d90d31043</md5></container><container tool="general-purpose/magic-tool"><magic xid="236406">application/octet-stream</magic></container>
+<size xid="6">2560</size>
+<created xid="7"><date xid="8" unixtime="1148997594"/></created>
+<written xid="9"><date xid="10" unixtime="1148997594"/></written>
+<changed xid="11"><date xid="12" unixtime="1148997594"/></changed>
+<accessed xid="13"><date xid="14" unixtime="1148997594"/></accessed>
+</file><file xid="17" name="$BadClus">
+<created xid="18"><date xid="19" unixtime="1148997594"/></created>
+<written xid="20"><date xid="21" unixtime="1148997594"/></written>
+<changed xid="22"><date xid="23" unixtime="1148997594"/></changed>
+<accessed xid="24"><date xid="25" unixtime="1148997594"/></accessed>
+</file><file xid="26" stream="$Bad" name="$BadClus">
+<created xid="27"><date xid="28" unixtime="1148997594"/></created>
+<written xid="29"><date xid="30" unixtime="1148997594"/></written>
+<changed xid="31"><date xid="32" unixtime="1148997594"/></changed>
+<accessed xid="33"><date xid="34" unixtime="1148997594"/></accessed>
+</file></files></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><file xid="5" xend="81964304895" xstart="81964302336" name="$AttrDef"><container tool="general-purpose/hash-tool"><sha1 xid="255706">b49d7f48300701235231f6b6fc3d92a5630f9e70</sha1><md5 xid="255707">ad617ac3906958de35eacc3d90d31043</md5></container><container tool="general-purpose/magic-tool"><magic xid="236406">application/octet-stream</magic></container>
+<size xid="6">2560</size>
+<created xid="7"><date xid="8" unixtime="1148997594"/></created>
+<written xid="9"><date xid="10" unixtime="1148997594"/></written>
+<changed xid="11"><date xid="12" unixtime="1148997594"/></changed>
+<accessed xid="13"><date xid="14" unixtime="1148997594"/></accessed>
+</file></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><bug name="$AttrDef" xstart="81964302336" xend="81964304895" xid="5"/></XQueryResult>
 
 # 02:47:21 >  
