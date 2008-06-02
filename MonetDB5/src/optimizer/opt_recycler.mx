@@ -107,8 +107,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) stk;
-	/* watch out, instructions may introduce new variables */
-	recycled= GDKzalloc(sizeof(char)*mb->vtop*2);
+	recycled= GDKzalloc(sizeof(char)*mb->vtop);
 	setLifespan(mb,span);
 	limit= mb->stop;
 	old = mb->stmt;
