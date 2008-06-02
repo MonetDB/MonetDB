@@ -321,7 +321,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_5578BCAED57C4107AE240597DD6E5563"
+        "MsmKey" = "8:_55C661B093204D01B6DF7EABE1426D68"
         "OwnerKey" = "8:_F2140ED9D2C04D0AB1367617B77EAE25"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -3862,14 +3862,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB4"
-        "ProductCode" = "8:{01BBEA34-67F8-45C1-961F-036DBB0B5464}"
-        "PackageCode" = "8:{855FE29C-17CA-4035-9FA9-F6A8B0ED6198}"
-        "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
+        "ProductCode" = "8:{B2E27A5C-AFCC-4D1C-8FF5-A8A191CDBA70}"
+        "PackageCode" = "8:{9607F7BE-DAC9-47E4-B87C-B6611F5347F2}"
+        "UpgradeCode" = "8:{8A1DA6A0-71B2-4A09-8363-040233551248}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:8.2.14"
+        "ProductVersion" = "8:8.6.2"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -4526,7 +4526,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_5578BCAED57C4107AE240597DD6E5563"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_55C661B093204D01B6DF7EABE1426D68"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
