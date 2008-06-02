@@ -876,8 +876,10 @@ sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 		s = sql->session->schema;
 	/* input from different tables requires an extra cross-product! */
 	if (scp && ls->nrcols > 0 && rs->nrcols > 0 && ls->h != rs->h) {
-		ls = stmt_join(scope_find_pivot(scp, ls->h), ls, cmp_equal);
-		rs = stmt_join(scope_find_pivot(scp, rs->h), rs, cmp_equal);
+		if (ls->h && ls->h->type != st_ptable)
+			ls = stmt_join(scope_find_pivot(scp, ls->h), ls, cmp_equal);
+		if (rs->h && rs->h->type != st_ptable)
+			rs = stmt_join(scope_find_pivot(scp, rs->h), rs, cmp_equal);
 	}
 	f = sql_bind_func(s, fname, t1, t2);
 	if (!f && is_commutative(fname)) {
@@ -2853,7 +2855,7 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 			return NULL;
 		}
 		
-		if (grp && (!rs->key || !ls->key)) {
+		if ((grp || f == sql_having) && (!rs->key || !ls->key)) {
 			stmt_destroy(rs);
 			stmt_destroy(ls);
 			return sql_error(sql, 02, "SELECT: cannot compare sets with values (did you forget an aggregate function?)");
@@ -2992,7 +2994,19 @@ filter(stmt *ptable, stmt *s)
 	} else {
 		stmt *ps = ptable_statements(ptable);
 
-		list_append(ps->op1.lval, s);
+		if (ps->type == st_set) {
+			list_append(ps->op1.lval, s);
+		} else if (ps->type == st_sets) {
+			list *lists = ps->op1.lval;
+			node *n;
+
+			for(n = lists->h; n; n = n->next) {
+				list *l = n->data;
+
+				list_append(l, stmt_dup(s));
+			}
+			stmt_destroy(s);
+		}
 		if (ps->nrcols < s->nrcols)
 			ps->nrcols = s->nrcols;
 		ps->key &= s->key;
