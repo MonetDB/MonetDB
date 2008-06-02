@@ -45,6 +45,7 @@
 #include "algebra_cse.h"
 #include "la_proxy.h"
 #include "la_thetajoin.h"
+#include "mem.h" /* for PFstrdup() */
 
 #define MAP_ORI_NAMES(phase)                                                \
         if (unq_names) {                                                    \
