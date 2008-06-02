@@ -2827,7 +2827,7 @@ PROC ws_newpage(BAT[void,BAT] ws,
     # if there is a free page, then this is easy
     var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
     lock_set(coll_shortlock);
-    var page_id := 0@0; err := CATCH(page_id := __runtime_newpage(runtime));
+    var page_id := 0@0, err := CATCH(page_id := __runtime_newpage(runtime));
     lock_unset(coll_shortlock);
 
     if (isnil(err) and isnil(page_id)) {
