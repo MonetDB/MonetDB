@@ -916,13 +916,69 @@ PFxml2la_conv_2PFLA_functionType(char* s)
     {
         return alg_fun_fn_concat;
     }
+    else if (strcmp(s, "fn:substring") == 0)
+    {
+        return alg_fun_fn_substring;
+    }        
+    else if (strcmp(s, "fn:substring3") == 0)
+    {
+        return alg_fun_fn_substring_dbl;
+    }        
+    else if (strcmp(s, "fn:string-length") == 0)
+    {
+        return alg_fun_fn_string_length;
+    }
+    else if (strcmp(s, "fn:normalize-space") == 0)
+    {
+        return alg_fun_fn_normalize_space;
+    }
+    else if (strcmp(s, "fn:upper-case") == 0)
+    {
+        return alg_fun_fn_upper_case;
+    }
+    else if (strcmp(s, "fn:lower-case") == 0)
+    {
+        return alg_fun_fn_lower_case;
+    }
+    else if (strcmp(s, "fn:translate") == 0)
+    {
+        return alg_fun_fn_translate;
+    }
     else if (strcmp(s, "fn:contains") == 0)
     {
         return alg_fun_fn_contains;
     }
+    else if (strcmp(s, "fn:starts-with") == 0)
+    {
+        return alg_fun_fn_starts_with;
+    }
+    else if (strcmp(s, "fn:ends-with") == 0)
+    {
+        return alg_fun_fn_ends_with;
+    }
+    else if (strcmp(s, "fn:substring-before") == 0)
+    {
+        return alg_fun_fn_substring_before;
+    }
+    else if (strcmp(s, "fn:substring-after") == 0)
+    {
+        return alg_fun_fn_substring_after;
+    }
+    else if (strcmp(s, "fn:matches") == 0)
+    {
+        return alg_fun_fn_matches;
+    }
+    else if (strcmp(s, "fn:replace") == 0)
+    {
+        return alg_fun_fn_replace;
+    }
     else if (strcmp(s, "fn:number") == 0)
     {
         return alg_fun_fn_number;
+    }
+    else if (strcmp(s, "fn:QName") == 0)
+    {
+        return alg_fun_fn_qname;
     }
 
 

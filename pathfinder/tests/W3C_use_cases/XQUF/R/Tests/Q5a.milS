@@ -1,6 +1,21 @@
 module(unix);
 module(pathfinder);
 
+xquery("xml","count(exactly-one(doc(\"bids.xml\")/bids))").printf();
+fflush(stdout());
+fflush(stderr());
+
+xquery("xml","
+let $uid := 
+doc(\"users.xml\")/users/user_tuple[name=\"Annabel Lee\"]/userid
+let $topbid := 
+max(doc(\"bids.xml\")/bids/bid_tuple[itemno=1007]/bid)
+where $topbid*1.1 <= 200
+return ( $uid , $topbid )
+").printf();
+fflush(stdout());
+fflush(stderr());
+
 xquery("xml","
 let $uid := 
 doc(\"users.xml\")/users/user_tuple[name=\"Annabel Lee\"]/userid
@@ -17,5 +32,9 @@ return
     </bid_tuple>
   into exactly-one(doc(\"bids.xml\")/bids)
 ").printf();
+fflush(stdout());
+fflush(stderr());
 
 xquery("xml","doc(\"bids.xml\")").printf();
+fflush(stdout());
+fflush(stderr());

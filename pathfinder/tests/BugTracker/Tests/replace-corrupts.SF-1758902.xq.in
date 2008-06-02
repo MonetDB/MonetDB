@@ -6,6 +6,23 @@ let $doc := doc("notes_consumer02.xml") return $doc
 <>
 let $doc := doc("notes_consumer02.xml")
 let $orig := $doc/notes/objectnote[@xid="14"]
+return $orig
+<>
+let $doc := doc("notes_consumer02.xml")
+let $orig := $doc/notes/objectnote[@xid="14"]
+return exists($orig)
+<>
+let $doc := doc("notes_consumer02.xml")
+let $orig := $doc/notes/objectnote[@xid="14"]
+return if (exists($orig)) then ( "Yes" ) else ( "NO" )
+<>
+let $doc := doc("notes_consumer02.xml")
+let $orig := $doc/notes/objectnote[@xid="14"]
+let $on := element objectnote { attribute xid {"14"}, attribute user {"unknown"}, attribute unixtime {"1185198696"}, text {"nootje"}, element original { $orig } }
+return $on
+<>
+let $doc := doc("notes_consumer02.xml")
+let $orig := $doc/notes/objectnote[@xid="14"]
 let $on := element objectnote { attribute xid {"14"}, attribute user {"unknown"}, attribute unixtime {"1185198696"}, text {"nootje"}, element original { $orig } }
 return if (exists($orig)) then (do replace $orig with $on) else (do insert $on as last into $doc/notes)
 <>

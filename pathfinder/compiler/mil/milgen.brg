@@ -3938,7 +3938,8 @@ reduce (PFpa_op_t * p, int goalnt)
                 case alg_comp_lt: comp = var (PF_MIL_VAR_LT); break;
                 case alg_comp_le: comp = var (PF_MIL_VAR_LE); break;
                 default:
-                    PFoops (OOPS_FATAL, "incorrect comparison");
+                    PFoops (OOPS_FATAL,
+                            "cannot cope with inequality comparison");
             }
 
             if (p->kind == pa_unq2_thetajoin) {
