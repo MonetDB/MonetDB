@@ -11693,7 +11693,11 @@ PFstartMIL_XRPCTrans(
         "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"\
         "   print_result(genType,moduleNS,method,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"
 #define PF_STOPMIL_UPDATE_BODY\
-        "  play_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"
+        "  if (xrpc_qid != "") {\n"\
+        "    collect_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"\
+        "  } else {\n"\
+        "    play_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"\
+        "  }\n"
 #define PF_STOPMIL_DOCMGT_BODY\
         "  play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"
 #define PF_STOPMIL_RDONLY PF_STOPMIL_START\

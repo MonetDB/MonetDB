@@ -492,6 +492,20 @@ const ADDED_NID := DELETED_NID + 1;
 const ADDED_ATTR := ADDED_NID + 1;
 const DELETED_TEXT_NID := ADDED_ATTR + 1;
 const ADDED_TEXT_NID := DELETED_TEXT_NID + 1;
+# the following are used for XRPC updates
+const COLLECTED_COMMAND := ADDED_TEXT_NID + 1;
+const COLLECTED_PRE_TGT := COLLECTED_COMMAND + 1;
+const COLLECTED_PRE_CONT_TGT := COLLECTED_PRE_TGT + 1;
+const COLLECTED_ATTR_TGT := COLLECTED_PRE_CONT_TGT + 1;
+const COLLECTED_ATTR_CONT_TGT := COLLECTED_ATTR_TGT + 1;
+const COLLECTED_REPLACE_STRINGS := COLLECTED_ATTR_CONT_TGT + 1;
+const COLLECTED_RENAME_QN_URI := COLLECTED_REPLACE_STRINGS + 1;
+const COLLECTED_RENAME_QN_PREFIX := COLLECTED_RENAME_QN_URI + 1;
+const COLLECTED_RENAME_QN_LOCAL := COLLECTED_RENAME_QN_PREFIX + 1;
+const COLLECTED_PRE_INS := COLLECTED_RENAME_QN_LOCAL + 1;
+const COLLECTED_PRE_CONT_INS := COLLECTED_PRE_INS + 1;
+const COLLECTED_ATTR_INS := COLLECTED_PRE_CONT_INS + 1;
+const COLLECTED_ATTR_CONT_INS := COLLECTED_ATTR_INS + 1;
 
 
 # transaction debugging / performance profiling 
@@ -615,6 +629,20 @@ const ws_update := bat(int,str)
 	.insert(oid,"added_attr")
 	.insert(oid,"deleted_text_nid")
 	.insert(oid,"added_text_nid")
+	# the below are only used for XRPC updates
+	.insert(lng,"collected_command")
+	.insert(oid,"collected_pre_tgt")
+	.insert(oid,"collected_pre_cont_tgt")
+	.insert(oid,"collected_attr_tgt")
+	.insert(oid,"collected_attr_cont_tgt")
+	.insert(str,"collected_replace_strings")
+	.insert(str,"collected_rename_qn_uri")
+	.insert(str,"collected_rename_qn_prefix")
+	.insert(str,"collected_rename_qn_local")
+	.insert(oid,"collected_pre_ins")
+	.insert(oid,"collected_pre_cont_ins")
+	.insert(oid,"collected_attr_ins")
+	.insert(oid,"collected_attr_cont_ins")
 	.access(BAT_READ).rename("ws_update");
 
 # the bats that get changed using the logger in case of updates reach up until qn_histogram

@@ -3351,6 +3351,79 @@ bat[void, oid] attr_cont_ins): void
   do_update_end(ws, affected_conts);
 }
 
+PROC collect_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kind, bat[void,lng] int_values, bat[void,str] str_values) : void
+{
+  # convert MPS input to Algebra input
+  var cmd := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).mirror().leftfetchjoin(item).leftfetchjoin(int_values); # [i,CMD]
+  var node_item := [oid]([+]([lng](cmd.mirror()), 1)).leftfetchjoin(item).tmark(0@0); # [j,ITEM] target nodes
+  var node_kind := [oid]([+]([lng](cmd.mirror()), 1)).leftfetchjoin(kind).tmark(0@0); # [j,KIND] target nodes
+  var item2 := [oid]([+]([lng](cmd.mirror()), 2)).leftfetchjoin(item).tmark(0@0); # [j,ITEM] parameter
+  var kind2 := [oid]([+]([lng](cmd.mirror()), 2)).leftfetchjoin(kind).tmark(0@0); # [j,KIND] parameter
+  var command := cmd.tmark(0@0);
+  var node_types := node_kind.get_types(); # [j,ATTR/ELEM]
+  var node_conts := node_kind.get_container(); # [j,CONT]
+  var attr_tgt := node_types.ord_uselect(ATTR).mirror(); # [j,j] (attributes)
+  var attr_cont_tgt := command.mirror().outerjoin(attr_tgt.leftjoin(node_conts)); # [j,CONT/nil]
+  attr_tgt := command.mirror().outerjoin(attr_tgt.leftjoin(node_item)); # [j,ITEM/nil]
+  var pre_tgt := node_types.ord_uselect(ELEM).mirror(); # [j,j] (elements)
+  var pre_cont_tgt := command.mirror().outerjoin(pre_tgt.leftjoin(node_conts)); # [j,CONT/nil]
+  pre_tgt := command.mirror().outerjoin(pre_tgt.leftjoin(node_item)); # [j,ITEM/nil]
+
+  var renames := command.ord_uselect(UPDATE_RENAME).mirror(); # [j,j] (renames)
+  var rename_str := renames.leftjoin(item2).leftjoin(str_values); # [j,QNLOCAL/nil]
+  var rename_qn_local := command.mirror().outerjoin(rename_str); # [j,QNLOCAL/nil]
+  var rename_qn_uri := command.mirror().outerjoin(rename_str.project("")); # [j,""/nil]
+  var rename_qn_prefix := command.mirror().outerjoin(rename_str.project("")); # [j,""/nil]
+
+  var replaces := command.ord_uselect(UPDATE_REPLACE).mirror(); # [j,j] (replaces)
+  var replace_strings := command.mirror().outerjoin(replaces.leftjoin(item2).leftjoin(str_values)); # [j,REPLSTR/nil]
+
+  var inserts := command.ord_uselect(UPDATE_INSERT_FIRST, UPDATE_REPLACENODE).mirror(); # [j,j] (inserts)
+  var insert_types := inserts.leftjoin(kind2.get_types()); # [j,ATTR/ELEM]
+  var insert_conts := inserts.leftjoin(kind2.get_container()); # [j,ATTR/ELEM]
+  var insert_attrs := insert_types.ord_uselect(ATTR).mirror(); # [j,j]
+  var attr_ins := command.mirror().outerjoin(insert_attrs.leftjoin(item2));
+  var attr_cont_ins := command.mirror().outerjoin(insert_attrs.leftjoin(insert_conts));
+  var insert_elems := insert_types.ord_uselect(ELEM).mirror(); # [j,j]
+  var pre_ins := command.mirror().outerjoin(insert_elems.leftjoin(item2));
+  var pre_cont_ins := command.mirror().outerjoin(insert_elems.leftjoin(insert_conts));
+
+  ws.fetch(COLLECTED_COMMAND).append(command);
+  ws.fetch(COLLECTED_PRE_TGT).append(pre_tgt);
+  ws.fetch(COLLECTED_PRE_CONT_TGT).append(pre_cont_tgt);
+  ws.fetch(COLLECTED_ATTR_TGT).append(attr_tgt);
+  ws.fetch(COLLECTED_ATTR_CONT_TGT).append(attr_cont_tgt);
+  ws.fetch(COLLECTED_REPLACE_STRINGS).append(replace_strings);
+  ws.fetch(COLLECTED_RENAME_QN_URI).append(rename_qn_uri);
+  ws.fetch(COLLECTED_RENAME_QN_PREFIX).append(rename_qn_prefix);
+  ws.fetch(COLLECTED_RENAME_QN_LOCAL).append(rename_qn_local);
+  ws.fetch(COLLECTED_PRE_INS).append(pre_ins);
+  ws.fetch(COLLECTED_PRE_CONT_INS).append(pre_cont_ins);
+  ws.fetch(COLLECTED_ATTR_INS).append(attr_ins);
+  ws.fetch(COLLECTED_ATTR_CONT_INS).append(attr_cont_ins);
+}
+
+PROC execute_update_tape(bat[void, bat] ws) : void
+{
+  var command := ws.fetch(COLLECTED_COMMAND).append(command);
+  var pre_tgt := ws.fetch(COLLECTED_PRE_TGT).append(pre_tgt);
+  var pre_cont_tgt := ws.fetch(COLLECTED_PRE_CONT_TGT).append(pre_cont_tgt);
+  var attr_tgt := ws.fetch(COLLECTED_ATTR_TGT).append(attr_tgt);
+  var attr_cont_tgt := ws.fetch(COLLECTED_ATTR_CONT_TGT).append(attr_cont_tgt);
+  var replace_strings := ws.fetch(COLLECTED_REPLACE_STRINGS).append(replace_strings);
+  var rename_qn_uri := ws.fetch(COLLECTED_RENAME_QN_URI).append(rename_qn_uri);
+  var rename_qn_prefix := ws.fetch(COLLECTED_RENAME_QN_PREFIX).append(rename_qn_prefix);
+  var rename_qn_local := ws.fetch(COLLECTED_RENAME_QN_LOCAL).append(rename_qn_local);
+  var pre_ins := ws.fetch(COLLECTED_PRE_INS).append(pre_ins);
+  var pre_cont_ins := ws.fetch(COLLECTED_PRE_CONT_INS).append(pre_cont_ins);
+  var attr_ins := ws.fetch(COLLECTED_ATTR_INS).append(attr_ins);
+  var attr_cont_ins := ws.fetch(COLLECTED_ATTR_CONT_INS).append(attr_cont_ins);
+
+  # XXX we should do some reordering of certain insert commands here
+
+  UpdateTape(ws, command, pre_tgt, pre_cont_tgt, attr_tgt, attr_cont_tgt, replace_strings, rename_qn_uri, rename_qn_prefix, rename_qn_local, pre_ins, pre_cont_ins, attr_ins, attr_cont_ins);
+}
+
 PROC play_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kind, bat[void,lng] int_values, bat[void,str] str_values) : void
 {
   # [void,oid] list of all conts of affected documents
@@ -3782,6 +3855,19 @@ PROC mylog_delta(logger l, BAT[any,any] b, str nme) : void
 b.col_name(nme).print();
 }
 
+PROC do_2phase_commit() : void
+{
+  # write PRECOMMIT record
+  log_trans_precommit(pf_logger, xrpc_qid, ???cid);
+
+  # now wait until we get an ABORT or a COMMIT message
+  xrpc_wait_for_commit(xrpc_qid);
+
+  if (abort) {
+    ERROR("transaction aborted!");
+  }
+}
+
 PROC do_log_updates(BAT[void,bat] ws, BAT[any,any] cont_order, BAT[oid,bit] map_pid_changed_bat) : void
 {
   var ws_logtime := usec(); 
@@ -3852,7 +3938,11 @@ PROC do_log_updates(BAT[void,bat] ws, BAT[any,any] cont_order, BAT[oid,bit] map_
     if (ws_log_active)
       ws_log(ws, "commit-LOG_SIZE exec" + str(ws_logtime - (ws_logtime := usec()))); 
   }
-  log_trans_end(pf_logger); # write commit record in WAL: ==> THIS IS THE COMMIT POINT <==
+  if (xrpc_qid != "") {
+    do_2phase_commit(); # do the complete 2 phase commit stuff
+  } else {
+    log_trans_end(pf_logger); # write commit record in WAL: ==> THIS IS THE COMMIT POINT <==
+  }
 
   if (ws_log_active)
     ws_log(ws, "commit-LOG_TRANS_END exec" + str(ws_logtime - usec()));
