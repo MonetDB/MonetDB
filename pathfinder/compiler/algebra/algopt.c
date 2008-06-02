@@ -45,6 +45,7 @@
 #include "algebra_cse.h"
 #include "la_proxy.h"
 #include "la_thetajoin.h"
+#include "mem.h" /* for PFstrdup() */
 
 #define MAP_ORI_NAMES(phase)                                                \
         if (unq_names) {                                                    \
@@ -55,6 +56,19 @@
             tm = PFtimer_start ();                                          \
                                                                             \
             root = PFmap_ori_names (root);                                  \
+                                                                            \
+            /* in case we could not map back the plan                       \
+               we take the one before mapping to unique names */            \
+            if (!root) {                                                    \
+                assert (last_ori_col_plan);                                 \
+                root = last_ori_col_plan;                                   \
+                /* generate warning that some phases have been ignored */   \
+                *opt_args = '\0';                                           \
+                PFinfo (OOPS_WARNING,                                       \
+                        "could not make use of "                            \
+                        "the following optimizations: %s]",                 \
+                        first_unq_arg);                                     \
+            }                                                               \
                                                                             \
             tm = PFtimer_stop (tm);                                         \
                                                                             \
@@ -96,6 +110,17 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
     bool const_no_attach = false;
     bool unq_names = false;
     bool proxies_involved = false;
+
+    /* Here we add a fallback solution for query plans where we cannot
+       map back from unique names to bit encoded (ori) names. While
+       we still use some bit-encoded column names in the code this
+       work-around will avoid failing queries --- their performance
+       however might be 'suboptimal'. */
+    PFla_op_t *last_ori_col_plan = NULL;
+    char      *first_unq_arg     = NULL;
+    /* get a local copy of the optimization arguments to
+       safely apply side-effects (changing the string) */
+    opt_args = PFstrdup (opt_args);
 
     if (PFalg_is_unq_name(root->schema.items[0].name))
     {
@@ -389,6 +414,11 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
 
                 tm = PFtimer_start ();
 
+                /* save the original plan in case
+                   we are not able to map back */
+                last_ori_col_plan = root;
+                first_unq_arg     = opt_args;
+
                 root = PFmap_unq_names (root);
 
                 tm = PFtimer_stop (tm);
@@ -410,6 +440,19 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 tm = PFtimer_start ();
 
                 root = PFmap_ori_names (root);
+
+                /* in case we could not map back the plan
+                   we take the one before mapping to unique names */
+                if (!root) {
+                    assert (last_ori_col_plan);
+                    root = last_ori_col_plan;
+                    /* generate warning that some phases have been ignored */
+                    *opt_args = '\0';
+                    PFinfo (OOPS_WARNING,
+                            "could not make use of "
+                            "the following optimizations: %s]",
+                            first_unq_arg);
+                }
 
                 tm = PFtimer_stop (tm);
                 if (timing)
@@ -458,6 +501,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
         }
         opt_args++;
+        assert (root);
     }
     if (debug_opt)
         fputc ('\n', stderr);

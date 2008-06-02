@@ -23,7 +23,7 @@ return ($f,fn:sum($res//link[@id=$f]/@score))
 ").printf();
 fflush(stdout());
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>540874 0 191698 0 1810518 0 221824 0 1124376 0 1075178 0 2773076 0 36611 73.898743 1032697 0 16894 0 360089 8.210971</XQueryResult>
+<XQueryResult>1032697 0 1075178 0 1124376 0 16894 0 1810518 0 191698 0 221824 0 2773076 0 360089 8.210971 36611 73.898743 540874 0</XQueryResult>
 fflush(stderr());
 
 debugmask(0);
@@ -35,7 +35,7 @@ return ($f,fn:sum($res//link[@id=$f]/@score))
 ").printf();
 fflush(stdout());
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>540874 0 191698 0 1810518 0 221824 0 1124376 0 1075178 0 2773076 0 36611 73.898743 1032697 0 16894 0 360089 8.210971</XQueryResult>
+<XQueryResult>1032697 0 1075178 0 1124376 0 16894 0 1810518 0 191698 0 221824 0 2773076 0 360089 8.210971 36611 73.898743 540874 0</XQueryResult>
 fflush(stderr());
 
 quit();

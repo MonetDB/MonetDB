@@ -411,6 +411,7 @@ insert_actatts (PFarray_t *map, PFla_op_t *ori, PFarray_t *proj)
 }
 
 #if 0
+
 static void
 print_actmap (PFarray_t *actmap)
 {
@@ -1125,10 +1126,8 @@ match (PFla_op_t *a, PFla_op_t *b)
             return false;
 
         case la_doc_tbl:
-            if ((ACTATT (L(a), a->sem.doc_tbl.res) ==
-                 ACTATT (L(b), b->sem.doc_tbl.res))  &&
-                (ACTATT (L(a), a->sem.doc_tbl.att) ==
-                 ACTATT (L(b), b->sem.doc_tbl.att)))
+            if (ACTATT (L(a), a->sem.doc_tbl.att) ==
+                ACTATT (L(b), b->sem.doc_tbl.att))
                 return true;
 
             return false;

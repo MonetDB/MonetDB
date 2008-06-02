@@ -1,13 +1,16 @@
 stdout of test 'replace-corrupts.SF-1758902` in directory 'tests/BugTracker` itself:
 
 
-# 13:02:09 >  
-# 13:02:09 >  Mtimeout -timeout 180  Mserver "--config=/ufs/sjoerd/Monet-Stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/runtime/.libs:/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/runtime:/ufs/sjoerd/src/MonetDB/stable/pathfinder/runtime:/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah/.libs:/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah:/ufs/sjoerd/src/MonetDB/stable/pathfinder/modules/pftijah:/ufs/sjoerd/Monet-Stable/lib64/MonetDB4:/ufs/sjoerd/Monet-Stable/lib64/MonetDB4/lib:/ufs/sjoerd/Monet-Stable/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/xquery_logs" --set mapi_open=true --set mapi_port=36134 --set xrpc_port=41401 --set monet_prompt= --trace "--dbname=mTests_tests_BugTracker" --dbinit=" module(pathfinder);" ; echo ; echo Over..
-# 13:02:09 >  
+# 18:30:42 >  
+# 18:30:42 >   Mserver "--config=/local_tmp/work_stable/MonetDB4/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/local_tmp/work_stable/pathfinder/Linux/lib/MonetDB4:/local_tmp/work_stable/pathfinder/Linux/lib/MonetDB4/lib:/local_tmp/work_stable/MonetDB4/Linux/lib/MonetDB4:/local_tmp/work_stable/MonetDB4/Linux/lib/MonetDB4/lib:/local_tmp/work_stable/MonetDB4/Linux/lib/MonetDB4/bin" --set "gdk_dbfarm=/local_tmp/work_stable/MonetDB4/Linux/var/MonetDB4/dbfarm" --set "sql_logdir=/local_tmp/work_stable/MonetDB4/Linux/var/MonetDB4/sql_logs" --set "xquery_logdir=/local_tmp/work_stable/MonetDB4/Linux/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=35761 --set xrpc_port=41598 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" --set sql_debug=16384 --set xquery_backend=algebra "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 18:30:42 >  
 
-# Monet Database Server V4.18.1
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+
+
+# MonetDB Server v4.24.0
+# based on GDK   v1.24.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 # XRPC administrative console at http://localhost:41401/admin
 
@@ -45,7 +48,7 @@ Over..
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><notes>
 <objectnote user="hans" unixtime="1180000000" xid="4">This is my first note</objectnote>
-<objectnote xid="14" user="unknown" unixtime="1185198696">nootje, pinda<original></original></objectnote></notes></XQueryResult>
+<objectnote unixtime="1185198696" user="unknown" xid="14">nootje, pinda<original></original></objectnote></notes></XQueryResult>
 
 # 13:02:10 >  
 # 13:02:10 >  Done.

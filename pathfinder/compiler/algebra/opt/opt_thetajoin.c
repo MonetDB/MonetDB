@@ -519,10 +519,11 @@ modify_binary_op (PFla_op_t *p,
         bool switch_right = PFprop_ocol (LR(p), p->sem.binary.att1) &&
                             PFprop_ocol (LR(p), p->sem.binary.att2);
 
+        resolve_name_conflict (L(p), p->sem.binary.res);
+
         /* Pushing down the operator twice is only allowed
            if it doesn't affect the cardinality. */
         if (switch_left && switch_right) {
-            resolve_name_conflict (L(p), p->sem.binary.res);
             *p = *(thetajoin_opt (
                        op (LL(p),
                            p->sem.binary.res,
@@ -536,7 +537,6 @@ modify_binary_op (PFla_op_t *p,
             modified = true;
         }
         else if (switch_left) {
-            resolve_name_conflict (L(p), p->sem.binary.res);
             *p = *(thetajoin_opt (
                        op (LL(p),
                            p->sem.binary.res,
@@ -547,7 +547,6 @@ modify_binary_op (PFla_op_t *p,
             modified = true;
         }
         else if (switch_right) {
-            resolve_name_conflict (L(p), p->sem.binary.res);
             *p = *(thetajoin_opt (
                        LL(p),
                        op (LR(p),

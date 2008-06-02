@@ -561,6 +561,7 @@ plan_dep_unique_thetajoin (const PFla_op_t *n)
     assert (L(n)->schema.count == 1);
     assert (LL(n)->sem.thetajoin.count == 2);
     assert (LL(n)->sem.thetajoin.pred[0].comp == alg_comp_eq);
+    assert (LL(n)->sem.thetajoin.pred[1].comp != alg_comp_ne);
     assert (L(n)->sem.proj.items[0].old ==
             LL(n)->sem.thetajoin.pred[0].left ||
             L(n)->sem.proj.items[0].old ==
@@ -630,8 +631,10 @@ plan_dep_unique_thetajoin (const PFla_op_t *n)
 static PFplanlist_t *
 plan_unique_thetajoin (const PFla_op_t *n)
 {
-    PFplanlist_t  *ret = new_planlist ();
-    PFalg_att_t    ldist, rdist;
+    PFplanlist_t *ret     = new_planlist (),
+                 *lsorted = new_planlist (),
+                 *rsorted = new_planlist ();
+    PFalg_att_t   ldist, rdist;
 
     PFalg_simple_type_t cur_type;
 
@@ -668,8 +671,23 @@ plan_unique_thetajoin (const PFla_op_t *n)
         cur_type & aat_node)
         return ret;
 
-    for (unsigned int l = 0; l < PFarray_last (L(LL(n))->plans); l++)
-        for (unsigned int r = 0; r < PFarray_last (R(LL(n))->plans); r++) {
+    /* make sure the left input is sorted by the left sort criterion */
+    for (unsigned int i = 0; i < PFarray_last (L(LL(n))->plans); i++)
+        add_plans (lsorted,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (L(LL(n))->plans, i),
+                       sortby (ldist)));
+
+    /* make sure the right input is sorted by the right sort criterion */
+    for (unsigned int i = 0; i < PFarray_last (R(LL(n))->plans); i++)
+        add_plans (rsorted,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (R(LL(n))->plans, i),
+                       sortby (rdist)));
+
+    /* combine each plan in R with each plan in S */
+    for (unsigned int l = 0; l < PFarray_last (lsorted); l++)
+        for (unsigned int r = 0; r < PFarray_last (rsorted); r++) {
             add_plan (ret,
                       /* add the renaming projection afterwards */
                       project (
@@ -683,8 +701,8 @@ plan_unique_thetajoin (const PFla_op_t *n)
                               LL(n)->sem.thetajoin.pred[0].right,
                               ldist,
                               rdist,
-                              *(plan_t **) PFarray_at (L(LL(n))->plans, l),
-                              *(plan_t **) PFarray_at (R(LL(n))->plans, r)),
+                              *(plan_t **) PFarray_at (lsorted, l),
+                              *(plan_t **) PFarray_at (rsorted, r)),
                           2,
                           L(n)->sem.proj.items));
 
@@ -703,8 +721,8 @@ plan_unique_thetajoin (const PFla_op_t *n)
                                   LL(n)->sem.thetajoin.pred[0].left,
                                   rdist,
                                   ldist,
-                                  *(plan_t **) PFarray_at (R(LL(n))->plans, r),
-                                  *(plan_t **) PFarray_at (L(LL(n))->plans, l)),
+                                  *(plan_t **) PFarray_at (rsorted, r),
+                                  *(plan_t **) PFarray_at (lsorted, l)),
                               2,
                               L(n)->sem.proj.items));
         }
@@ -3146,6 +3164,7 @@ plan_subexpression (PFla_op_t *n)
                 if (n->schema.count == 1 &&
                     LL(n)->sem.thetajoin.count == 2 &&
                     LL(n)->sem.thetajoin.pred[0].comp == alg_comp_eq &&
+                    LL(n)->sem.thetajoin.pred[1].comp != alg_comp_ne &&
                     (L(n)->sem.proj.items[0].old ==
                      LL(n)->sem.thetajoin.pred[0].left ||
                      L(n)->sem.proj.items[0].old ==

@@ -3039,6 +3039,11 @@ intro_proxy_kind (PFla_op_t *root,
            by 'out'side operators. */
         find_conflicts (root, conflict_list);
 
+        /* also check for conflicting operators in the children of the exit
+           operator (in case there is no reference from the root node) */
+        if (L(proxy_exit)) find_conflicts (L(proxy_exit), conflict_list);
+        if (R(proxy_exit)) find_conflicts (R(proxy_exit), conflict_list);
+
         PFla_in_out_reset (root);
         PFla_dag_reset (root);
 

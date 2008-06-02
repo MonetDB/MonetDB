@@ -1018,10 +1018,15 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
 PFla_op_t *
 PFmap_ori_names (PFla_op_t *root)
 {
+    bool out_of_names;
+    
     PFarray_t *map = PFarray (sizeof (ori_unq_map), 300);
 
     /* infer original bit-encoded names */
-    PFprop_infer_ori_names (root);
+    out_of_names = PFprop_infer_ori_names (root);
+
+    /* do not return anything if we get into trouble with the column names */
+    if (out_of_names) return NULL;
 
     /* generate equivalent algebra DAG */
     map_ori_names (root, map);

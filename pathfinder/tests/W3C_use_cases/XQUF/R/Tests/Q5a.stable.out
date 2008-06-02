@@ -11,6 +11,28 @@ stdout of test 'Q5a` in directory 'tests/W3C_use_cases/XQUF/R` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 module(unix);
 module(pathfinder);
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.24.0 loaded
+# XRPC administrative console at http://127.0.0.1:42399/admin
+
+xquery("xml","count(exactly-one(doc(\"bids.xml\")/bids))").printf();
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>1</XQueryResult>
+fflush(stdout());
+fflush(stderr());
+
+xquery("xml","
+let $uid := 
+doc(\"users.xml\")/users/user_tuple[name=\"Annabel Lee\"]/userid
+let $topbid := 
+max(doc(\"bids.xml\")/bids/bid_tuple[itemno=1007]/bid)
+where $topbid*1.1 <= 200
+return ( $uid , $topbid )
+").printf();
+fflush(stdout());
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+fflush(stderr());
 
 xquery("xml","
 let $uid := 
@@ -28,6 +50,8 @@ return
     </bid_tuple>
   into exactly-one(doc(\"bids.xml\")/bids)
 ").printf();
+fflush(stdout());
+fflush(stderr());
 
 xquery("xml","doc(\"bids.xml\")").printf();
 <?xml version="1.0" encoding="utf-8"?>
@@ -129,6 +153,8 @@ xquery("xml","doc(\"bids.xml\")").printf();
     <bid_date>1999-02-12</bid_date> 
   </bid_tuple> 
 <bid_tuple><userid>U07</userid><itemno>1001</itemno><bid>60</bid><bid_date>1999-02-01</bid_date></bid_tuple><bid_tuple><userid>U07</userid><itemno>1002</itemno><bid>1320</bid><bid_date>1999-02-01</bid_date></bid_tuple></bids></XQueryResult>
+fflush(stdout());
+fflush(stderr());
 quit();
 
 # 21:28:35 >  

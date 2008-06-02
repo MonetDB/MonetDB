@@ -580,6 +580,11 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             }   break;
 
             case la_project:
+                /* disable rewrite in case we might get wider relations
+                   than we can map back to the bit-encoded (ori) column
+                   names */
+                if (PFarray_last (rproj) + L(lp)->schema.count < 30)
+                    
                 /* Arbitrary projections are pushed through the join operator
                    by:
                    1.) merging the projection lists of the projection

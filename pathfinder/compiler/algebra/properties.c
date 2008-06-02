@@ -161,7 +161,7 @@ PFprop_infer (bool card, bool const_, bool set,
     if (ocols)
         PFprop_infer_ocol (root);
     if (ori_names)
-        PFprop_infer_ori_names (root);
+        (void) PFprop_infer_ori_names (root);
     if (refctr)
         PFprop_infer_refctr (root);
 }
