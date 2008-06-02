@@ -31,6 +31,14 @@ Over..
 <objectnote user="hans" unixtime="1180000000" xid="4">This is my first note</objectnote>
 </notes></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>false</XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>NO</XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><objectnote unixtime="1185198696" user="unknown" xid="14">nootje<original/></objectnote></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><notes>
 <objectnote user="hans" unixtime="1180000000" xid="4">This is my first note</objectnote>
 <objectnote unixtime="1185198696" user="unknown" xid="14">nootje<original/></objectnote></notes></XQueryResult>

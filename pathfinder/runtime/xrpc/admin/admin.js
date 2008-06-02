@@ -237,10 +237,6 @@ function doDbEnvCallback(response){
         '</table>\n';
 }
 
-function doCollections()  { 
-    XRPC(posturl+"/xrpc/admin", mod, modurl, 'collections',  0, XRPC_CALL(), doCollectionsCallback); 
-}
-
 /* methods expected to take 'long' (use popup window) */
 function asyncCallback(response, method) { 
     alert(method + " DONE!\n"); 
@@ -265,6 +261,7 @@ function reportCallback(response, method) {
           Implementation of the functions defined in admin.xq
 ***********************************************************************/
 
+function doCollections()  { myXRPC('collections',0, XRPC_CALL(), doCollectionsCallback); }
 function doDocuments(colName) 
                           { myXRPC('documents',  1, XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', colName))), doDocumentsCallback); }
 function doAllDocuments() { myXRPC('documents',  0, XRPC_CALL(), doAllDocumentsCallback); }
