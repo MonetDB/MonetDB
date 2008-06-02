@@ -210,7 +210,7 @@ void PFprop_infer_ocol (PFla_op_t *root);
 void PFprop_infer_req_node (PFla_op_t *root);
 void PFprop_infer_reqval (PFla_op_t *root);
 void PFprop_infer_unq_names (PFla_op_t *root);
-void PFprop_infer_ori_names (PFla_op_t *root);
+bool PFprop_infer_ori_names (PFla_op_t *root);
 void PFprop_infer_level (PFla_op_t *root);
 void PFprop_infer_refctr (PFla_op_t *root);
 void PFprop_infer_guide (PFla_op_t *root, PFguide_list_t *guides);
