@@ -104,6 +104,7 @@ mal_export int rcachePolicy;
 mal_export int recycleClaim;
 mal_export int recycleCacheLimit;
 mal_export lng recycleMemory;	/* Units of memory permitted */
+mal_export lng recyclerUsedMemory;
 mal_export MT_Lock recycleLock;
 mal_export MalBlkPtr recycleBlk;
 mal_export double recycleAlpha;
@@ -479,6 +480,10 @@ compare by value.
 	recycleBlk->profiler[i].counter =1;
 	recycleBlk->profiler[i].ticks = GDKusec()-s->clk;
 	recycleBlk->profiler[i].ibytes = rd;
+
+	v = &s->stk[getArg(p,0)]; /* don't count memory for persistent bats */
+	if ((v->vtype == TYPE_bat) && (BBP_status( *(int*)VALget(v)) & BBPPERSISTENT))
+		wr =0;
 	recycleBlk->profiler[i].obytes = wr;
 	recyclerUsedMemory += wr;
 	if (monitorRecycler) 
