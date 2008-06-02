@@ -197,8 +197,8 @@ RECYCLEdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stream_printf(cntxt->fdout,"#rcache= %d limit= %d \n", rcachePolicy, recycleCacheLimit);
 	stream_printf(cntxt->fdout,"#hard stmt = %d hard var = %d hard mem= %d\n",
 		 HARDLIMIT_STMT, HARDLIMIT_VAR, HARDLIMIT_MEM);
-	stream_printf(cntxt->fdout,"#recycled = %d statements = %d saved time= %d memory= %d\n",
-		 recycled, statements, savedTime,monitorRecycler);
+	stream_printf(cntxt->fdout,"#recycled = %d statements = %d saved time(ms)= %8.2f memory(KB)= %d\n",
+		 recycled, statements, savedTime/1000.0,recyclerUsedMemory);
 
 	/* and dump the statistics */
 	if (recycleBlk)
