@@ -1,6 +1,6 @@
 START TRANSACTION;
 
-DROP USER "voc";
-DROP SCHEMA "voc";
+DROP USER "voc2";
+DROP SCHEMA "voc2";
 
 commit;
