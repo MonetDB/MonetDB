@@ -119,7 +119,13 @@ mtime.timezone_local(lzone);
 #tzone_bat.bat.insert(9@0, tzone_09).insert(10@0, tzone_10).insert(11@0, tzone_11);
 	bat.insert(tzone_bat,12@0,tzone_12);
 	bat.insert(tzone_bat,13@0,tzone_13);
+	bat.insert(tzone_bat,14@0,tzone_13);
 	bat.insert(tzone_bat,15@0,tzone_15);
+	bat.insert(tzone_bat,16@0,tzone_13);
+	bat.insert(tzone_bat,17@0,tzone_13);
+	bat.insert(tzone_bat,18@0,tzone_13);
+	bat.insert(tzone_bat,19@0,tzone_13);
+	bat.insert(tzone_bat,20@0,tzone_13);
 #tzone_bat.bat.insert(12@0, tzone_12).insert(13@0, tzone_13).insert(15@0, tzone_15);
 #
 ## test dayofweek and weeknumber using more than two years as consecutive days
@@ -238,6 +244,7 @@ io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 #daytime_bat.bat.insert(15@0, daytime_15).insert(16@0, daytime_16).insert(17@0, daytime_17);
 	bat.insert(daytime_bat,18@0,daytime_18);
 	bat.insert(daytime_bat,19@0,daytime_19);
+	bat.insert(daytime_bat,20@0,daytime_19);
 #daytime_bat.bat.insert(18@0, daytime_18).insert(19@0, daytime_19);
 #
 	bat.setColumn(daytime_bat,"daytime");
