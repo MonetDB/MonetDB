@@ -287,8 +287,6 @@ CoreExpr:           recursion (var, seed (CoreExpr, CoreExpr))  =  72 (10);
 /** mnemonic algebra constructors */
 #include "logical_mnemonic.h"
 
-#define RANK_DUMMY 42
-
 struct map_rel_info_t {
     PFla_op_t   *map;   /* map relation */
     unsigned int count; /* attribute counter of the map relation */
@@ -2834,12 +2832,8 @@ recursion_sql (int strategy,
 
     res_rec_param = rec_param (
                         rec_arg (
-                            attach (seed,
-                                    att_pos,
-                                    lit_int (RANK_DUMMY)),
-                            attach (res_body,
-                                    att_pos,
-                                    lit_int (RANK_DUMMY)),
+                            rowid (seed, att_pos),
+                            rowid (res_body, att_pos),
                             base
                         ),
                         nil ());
@@ -3087,7 +3081,7 @@ locstep (core2alg_ctx_t *ctx,
                    .frag = p.frag };
     else
         return (struct  PFla_pair_t) {
-                   .rel = attach (step, att_pos, lit_nat (RANK_DUMMY)),
+                   .rel = rowid (step, att_pos),
                    .frag = p.frag };
 }
 
