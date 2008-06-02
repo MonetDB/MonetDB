@@ -448,6 +448,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             /* the output cannot be of type node */
             if (!n->sem.aggr.part) {
                 prop_infer_req_node_vals (L(n), NULL);
+                return; /* only infer once */
             }
             break;
 
@@ -803,7 +804,6 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             if (map) {
                 req_node_t map_item = *map;
                 map_item.col = n->sem.merge_adjacent.item_in;
-                assert (map_item.constr == true);
                 ADD(new_map, map_item);
             }
 
