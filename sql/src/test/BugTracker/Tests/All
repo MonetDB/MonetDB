@@ -126,3 +126,4 @@ select_multiple_not_null_constraints.SF-1926074
 auto_increment.SF-1834820
 python_escape.SF-1916844
 set_a_new_user_password.SF-1844050
+select_crashes_in_the_optimization.SF-1848553
