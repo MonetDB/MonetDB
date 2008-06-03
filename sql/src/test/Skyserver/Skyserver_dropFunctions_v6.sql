@@ -1,3 +1,4 @@
+DROP FUNCTION fGetUrlFrameImg;
 DROP FUNCTION fGetNearbyObjAllEq;
 DROP FUNCTION fGetNearbyObjAllXYZ;
 DROP FUNCTION fgeturlfitsfield;
