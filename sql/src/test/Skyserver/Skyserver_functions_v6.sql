@@ -2124,3 +2124,49 @@ begin
                 + '&zoom=' + cast(zoom as varchar(6)) ;
 end;
 
+CREATE FUNCTION fGetUrlFitsField(fieldIdd bigint)
+RETURNS varchar(128)
+BEGIN
+	DECLARE link varchar(128), run varchar(8), rerun varchar(8),
+		run6 varchar(10), stripe varchar(8), camcol varchar(8), 
+		field varchar(8), startMu varchar(10), skyVersion varchar(8);
+	SET link = (select value from SiteConstants where name='DataServerURL');
+	SET link = link + 'imaging/';
+	SELECT cast(fSkyVersion(fieldIdd) as varchar(8)) into skyVersion;
+	IF (skyVersion = '0')
+		THEN SET link = link + 'inchunk_target/';
+	ELSE 	IF (skyVersion = '1')
+			THEN SET link = link + 'inchunk_best/';
+		ELSE
+			SET link = link + 'inchunk_runs/';
+		END IF;
+	END IF;
+	SELECT  cast(f.run as varchar(8)) into run
+	    FROM Field f, Segment s
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
+	SELECT  
+		cast(f.rerun as varchar(8)) into rerun 
+	    FROM Field f, Segment s
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
+	SELECT  
+		cast(s.startMu as varchar(10)) into startMu 
+	    FROM Field f, Segment s
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
+	SELECT  
+		cast(s.stripe as varchar(8)) into stripe
+	    FROM Field f, Segment s
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
+	SELECT  
+		cast(f.camcol as varchar(8)) into camcol 
+	    FROM Field f, Segment s
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
+	SELECT  
+		cast(f.field as varchar(8)) into field
+	    FROM Field f, Segment s
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
+	SET run6   = substring('000000',1,6-length(run)) + run;
+	SET field = substring('0000',1,4-length(field)) + field;
+	RETURN 	 link + 'stripe' + stripe + '_mu' + startMu + '_' 
+		+ skyVersion + '/'+camcol+'/tsField-'+run6+'-'
+		+camcol+'-'+rerun+'-'+field+'.fit';
+END;
