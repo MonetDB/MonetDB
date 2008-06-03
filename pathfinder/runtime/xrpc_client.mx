@@ -44,11 +44,12 @@ the "AmbientDB" project.
 .USE lock;
 
 .COMMAND http_post(
-        str options,
+        str genType,
         str qid,
         lng timeout,
+        lng seqnr,
         str dst,
-        str moduleNS,
+        str module,
         str location,
         str method,
         bit updCall,
@@ -68,54 +69,6 @@ the "AmbientDB" project.
 .END xrpc_client;
 
 @mil
-PROC rpc_client(
-        str local_name,
-        str options,
-        str qid,
-        lng timeout,
-        str dst,
-        str moduleNS,
-        str location,
-        str method,
-        bit updCall,
-        lng arity,
-        lng itercnt,
-        BAT[void, BAT] ws,
-        BAT[void, oid] fun_vid,
-        BAT[void, oid] fun_iter,
-        BAT[void, oid] fun_item,
-        BAT[void, int] fun_kind,
-        BAT[void, lng] int_values,
-        BAT[void, dbl] dbl_values,
-        BAT[void, dbl] dec_values,
-        BAT[void, str] str_values) : oid {
-
-    var rpcres := http_post(options, qid, timeout, dst, moduleNS, location, method,
-                    updCall, arity, itercnt, ws, fun_vid, fun_iter, fun_item,
-                    fun_kind, int_values, dbl_values, dec_values, str_values);
-
-    var time_xrpcClntDeSeria := usec();
-
-    var ret := oid_nil;
-    if(not(updCall)) {
-        # add result of read-only request to ws
-        ret := ws_opencoll(ws, rpcres, local_name, TEMP_DOC);
-    }
-
-    time_xrpcClntDeSeria := usec() - time_xrpcClntDeSeria;
-    if (options.search("timing") >= 0) {
-        printf("XRPC_Client_DeSerialisation (ws_opencoll):    %lld microsec\n",
-                time_xrpcClntDeSeria);
-    }
-
-    return ret;
-}
-ADDHELP("rpc_client", "zhang", "November 2005",
-"DESCRIPTION:\n\
-Send a RPC request to the destination \"dst\", save the results in the \
-WorkingSet and return the fragment-id of the new added document",
-"xrpc_client");
-
 PROC get_rpc_res ( 
         oid cont, 
         str local_name, 
@@ -316,10 +269,7 @@ are temporarily stored in the WS. It\n\
 "xrpc_client");
 
 PROC doLoopLiftedRPC(
-        str options,
-        str isoLevel,
-        lng timeout,
-        str moduleNS,
+        str module,
         str location,
         str method,
         bit updCall,
@@ -337,74 +287,6 @@ PROC doLoopLiftedRPC(
         BAT[void, str] str_values) : BAT[void,bat]
 {
     var unq_dsts := dsts.tunique().hmark(0@0);
-    var qid := "";
-    var idx := oid_nil;
-    if(or(isoLevel = "repeatable", isoLevel = "2PC")) {
-        # I'm the originator of this XRPC that requires isolation: initialize
-        lock_set(xrpclock); # register this query in the xrpc_* meta BATs
-        var err_qinit := CATCH({
-                var xrpc_wslock := lock_create();
-                lock_set(xrpc_wslock); # protect the ws of this query
-
-                var ts := usec();
-                qid := xrpc_hostport + "|" + str(ts);
-                idx := count(xrpc_qids).oid(); # index of the new xrpc_* BUNs
-
-                xrpc_qids.append(qid);
-                xrpc_timeouts.append(timeout);
-                xrpc_wsids.append(ws_id(ws));
-                xrpc_locks.append(xrpc_wslock);
-                xrpc_statuss.append("exec");
-
-                var sucsBAT := ws.fetch(XRPC_SUCCESSOR);
-                # HACK: encode in the name of the XRPC_SUCCESSOR BAT where to find the query meta-information
-                sucsBAT.rename(str(int(idx)));
-                # add the dsts to the successors list
-                sucsBAT := sucsBAT.append(unq_dsts);
-                isoLevel := ""; # unset isolevel so we do not initialize lock a second time in this query
-        });
-        if(not(isnil(err_qinit))) {
-            # Undo above actions, ignore possible errors
-            CATCH({ ws_destroy(ws);
-                    if(lock_try(xrpc_wslock) != 0) {
-                      lock_unset(xrpc_wslock);
-                    }
-                    lock_destroy(xrpc_wslock);
-
-                    xrpc_qids.delete(idx_new);
-                    xrpc_timeouts.delete(idx_new);
-                    xrpc_wsids.delete(idx_new);
-                    xrpc_locks.delete(idx_new);
-                    xrpc_statuss.delete(idx_new);
-            });
-            lock_unset(xrpclock);
-            ERROR(err_qinit);
-        }
-        lock_unset(xrpclock);
-    } else {
-        # NOTE: if the code here is executed, the 'ws' is already locked,
-        #       by earlier printed MIL code (see milprint_summer.c:PF_STARTMIL_XRPC_GETWS)
-
-        # Get information from the workingset to see if this is part of
-        # an XRPC query that requires the "repeatable" isolation level:
-        # the name of ws[XRPC_SUCCESSOR] BAT of a none-isolated query is
-        # "tmp_*", which results in 'nil' when converted to oid.
-        idx := ws.fetch(XRPC_SUCCESSOR).bbpname().oid();
-        if(not(isnil(idx))){
-            lock_set(xrpclock);
-            var err_xrpclock := CATCH({
-                    qid := xrpc_qids.fetch(idx);
-                    timeout := xrpc_timeouts.fetch(idx); });
-            if(not(isnil(err_xrpclock))) {
-                CATCH({ xrpc_statuss.replace(idx, "abort"); });
-                lock_unset(xrpclock);
-                ERROR(err_xrpclock);
-            }
-            lock_unset(xrpclock);
-            ws.fetch(XRPC_SUCCESSOR).append(unq_dsts); # add the dsts to the successors list
-        } 
-    }
-
     var steps := unq_dsts.count();
     var rpcerr_lock := lock_create(); # guards rpc_errors
     var rpc_errors := ""; # holds errors from each destination
@@ -413,6 +295,15 @@ PROC doLoopLiftedRPC(
     var rpc_iter := bat(void,bat).seqbase(0@0);
     var off := count(ws.fetch(CONT_NAME));
 
+    # unlock the working set while making the calls (enables circular patterns nested 2PC xrpc calls)
+    var wslock;
+    if (xrpc_qid != "") {  
+        lock_set(xrpc_lock);
+        var err := CATCH(wslock := xrpc_locks.fetch(reverse(xrpc_wsids).find(xrpc_id)));
+        lock_unset(xrpc_lock);
+        if (not(isnil(err))) ERROR(err);
+        lock_unset(wslock);
+    }
     unq_dsts @ [steps] batloop(){
         var time_xrpcClntSeria := usec();
 
@@ -437,39 +328,38 @@ PROC doLoopLiftedRPC(
         fun_iter_dst := [oid](fun_iter_dst.tmark(0@0));
 
         time_xrpcClntSeria := usec() - time_xrpcClntSeria;
-        if (options.search("timing") >= 0) {
+        if (genType.search("timing") >= 0) {
             printf("XRPC_Client_Serialisation (get_dst_params):   %lld microsec\n",
                     time_xrpcClntSeria);
         }
 
         var local_name := "rpc_res_00" + str(int($h)+off);
-        var rpc_oid := oid_nil;
-        var rpc_err := CATCH(rpc_oid := rpc_client(local_name, options, qid, timeout,
-                    $t, moduleNS, location, method, updCall, arity, itercnt, ws,
-                    fun_vid_dst, fun_iter_dst, fun_item_dst, fun_kind_dst,
-                    int_values, dbl_values, dec_values, str_values));
+        var rpc_res, timeout := max(0LL,xrpc_timeout - (usec() - timer_start));
+        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_qid, xrpc_seqnr, timeout, $t, module, location, method,
+                    updCall, arity, itercnt, ws, fun_vid, fun_iter, fun_item,
+                    fun_kind, int_values, dbl_values, dec_values, str_values));
 
         var time_xrpcClntDeSeria := usec();
 
         if (isnil(rpc_err)) {
             if (not(updCall)) {
                 lock_set(rpcres_lock);
-                rpc_results.insert(local_name,rpc_oid);
+                rpc_results.insert(local_name,rpc_res);
                 rpc_iter.append(iter_dst.hmark(1@0));
                 lock_unset(rpcres_lock);
             }
             time_xrpcClntDeSeria := usec() - time_xrpcClntDeSeria;
-            if (options.search("timing") >= 0) {
-                printf("XRPC_Client_DeSerialisation (insert_rpc_oid): %lld microsec\n",
+            if (genType.search("timing") >= 0) {
+                printf("XRPC_Client_DeSerialisation (insert_rpc_res): %lld microsec\n",
                         time_xrpcClntDeSeria);
             }
         } else {
             printf("doLoopLiftedRPC: error occurred at %s:\n%s\n", $t, rpc_err);
-            if(not(isnil(qid))) {
+            if(xrpc_qid != "") {
                 # abort a 2PC-XRPC query on error
-                lock_set(xrpclock);
-                CATCH({xrpc_statuss.replace(idx, "abort");});
-                lock_unset(xrpclock);
+                lock_set(xrpc_lock);
+                CATCH({xrpc_statuses.replace(idx, "abort");});
+                lock_unset(xrpc_lock);
                 # TODO: stop immediately further execution and clean up
             } else {
                 # A none-isolation XRPC query: we do not want to discard
@@ -482,6 +372,7 @@ PROC doLoopLiftedRPC(
             }
         }
     }
+    if (xrpc_qid != "") lock_set(wslock);
     lock_destroy(rpcres_lock);
     lock_destroy(rpcerr_lock);
 
@@ -507,7 +398,8 @@ PROC doLoopLiftedRPC(
 
     # retrieve results for this destination, and map the results back to
     # the original iteration number
-    var proc_res := [get_rpc_res](rpc_results.tmark(0@0),
+    var proc_res := [get_rpc_res](
+            [ws_opencoll](const ws, rpc_results.tmark(0@0), local_name, TEMP_DOC),
             rpc_results.hmark(0@0), const ws, const int_values,
             const dbl_values, const str_values);
 
@@ -530,7 +422,7 @@ PROC doLoopLiftedRPC(
     }
 
     time_xrpcClntDeSeria := usec() - time_xrpcClntDeSeria;
-    if (options.search("timing") >= 0) {
+    if (genType.search("timing") >= 0) {
         printf("XRPC_Client_DeSerialisation (get_rpc_res):    %lld microsec\n",
                 time_xrpcClntDeSeria);
     }
@@ -542,10 +434,7 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
 "xrpc_client");
 
 PROC doIterativeRPC(
-        str options,
-        str isoLevel,
-        lng timeout,
-        str moduleNS,
+        str module,
         str location,
         str method,
         bit updCall,
@@ -562,10 +451,14 @@ PROC doIterativeRPC(
         BAT[void,dbl] dec_values,
         BAT[void,str] str_values) : BAT[void,bat]
 {
-    if(isoLevel != "none") {
-        ERROR("doIterativeRPC: no other isolation levels than \"none\" is supported\n");
+    # unlock the working set while making the calls (enables circular patterns nested 2PC xrpc calls)
+    var wslock;
+    if (xrpc_qid != "") {  
+        lock_set(xrpc_lock);
+        var err := CATCH(wslock := xrpc_locks.fetch(reverse(xrpc_wsids).find(xrpc_id)));
+        lock_unset(xrpc_lock);
+        if (not(isnil(err))) ERROR(err);
     }
-
 
     var time_xrpcClntSeria := 0;
     var time_xrpcClntDeSeria := 0;
@@ -586,17 +479,19 @@ PROC doIterativeRPC(
         time_xrpcClntSeria := time_xrpcClntSeria + (usec() - time_xrpcClntSeriaStart);
 
         var local_name := "rpc_res_00" + str(h+1);
-        var rpc_oid := oid_nil;
+        if (xrpc_qid != "") lock_unset(wslock);
+        var rpc_res, timeout := max(0LL,xrpc_timeout - (usec() - timer_start));
+        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_qid, xrpc_seqnr, timeout, $t, module, location, method,
+                    updCall, arity, lng(1), ws, cur_fun_vid, cur_fun_iter, cur_fun_item,
+                    cur_fun_kind, int_values, dbl_values, dec_values, str_values));
+        if (xrpc_qid != "") lock_set(wslock);
 
-        var rpc_err := CATCH(rpc_oid := rpc_client(local_name, options, "", lng_nil,
-                    dst, moduleNS, location, method, updCall, arity, lng(1), ws,
-                    cur_fun_vid, cur_fun_iter, cur_fun_item, cur_fun_kind,
-                    int_values, dbl_values, dec_values, str_values));
 
         # add result of this iteration to result BATs
         var time_xrpcClntDeSeriaStart := usec();
         if (isnil(rpc_err)) {
             if (updCall != 1) {
+                var rpc_oid := ws_opencoll(ws, rpc_res, local_name, TEMP_DOC);
                 var res := get_rpc_res(rpc_oid, local_name, ws,
                                        int_values, dbl_values, str_values);
                 if (isnil(res_bats)){
@@ -637,7 +532,7 @@ PROC doIterativeRPC(
 
     time_xrpcClntDeSeria := time_xrpcClntDeSeria + (usec() - time_xrpcClntDeSeriaStart);
 
-    if (options.search("timing") >= 0) {
+    if (genType.search("timing") >= 0) {
         printf("XRPC_Client_Serialisation (get_dst_params):   %lld microsec\n",
                 time_xrpcClntSeria);
         printf("Client_DeSerialisation (get_rpc_res):        %lld msec\n",
@@ -654,7 +549,32 @@ ADDHELP("doIterativeRPC", "zhang", "April 2006",
 "DESCRIPTION: make a separate RPC call for ever iteration",
 "xrpc_client");
 
-var xrpc_hostport := my_hostname() + ":" + str(get_xrpc_port());
+PROC doRPC(
+        str module,
+        str location,
+        str method,
+        bit updCall,
+        lng arity,
+        lng niters,
+        BAT[void, BAT] ws,
+        BAT[oid,  str] dsts,
+        BAT[void, oid] fun_vid,
+        BAT[void, oid] fun_iter,
+        BAT[void, oid] fun_item,
+        BAT[void, int] fun_kind,
+        BAT[void, lng] int_values,
+        BAT[void, dbl] dbl_values,
+        BAT[void, dbl] dec_values,
+        BAT[void, str] str_values) : BAT[void,bat]
+{
+    if (search(xrpc_mode,"iterative") >= 0) 
+        doIterativeRPC(module, location, method, updCall, arity, niters,
+                        ws, dsts, fun_vid, fun_iter, fun_item, fun_kind, int_values, dbl_values, dec_values, str_values);
+    else
+        doLoopliftedRPC(module, location, method, updCall, arity, niters,
+                        ws, dsts, fun_vid, fun_iter, fun_item, fun_kind, int_values, dbl_values, dec_values, str_values);
+}
+
 
 @h
 #ifndef XRPC_CLIENT_H
@@ -675,7 +595,7 @@ var xrpc_hostport := my_hostname() + ":" + str(get_xrpc_port());
 #include "xrpc_common.h"
 #include "xrpc_client.h"
 
-static INLINE void
+static buffer *
 clean_up(stream *bs, lng **argcnt, lng iterc)
 {
     lng i = 0;
@@ -687,6 +607,7 @@ clean_up(stream *bs, lng **argcnt, lng iterc)
         for(i = 0; i < iterc; i++) GDKfree(argcnt[i]);
         GDKfree(argcnt);
     }
+    return NULL;
 }
 
 static void
@@ -757,13 +678,11 @@ setup_connection(str dst, int *port)
     else strptr = dst;
 
     /* 'dst' has the form 'URL[:port]' */
-    errno = 0;
     if ((strptr = strchr(strptr, (int)':')) != NULL) {
         strptr[0] = '\0'; strptr++;
         p = strtol(strptr, (char **)NULL, 10);
-        if (errno) {
-            GDKerror("setup_connection: invalid port number: %s\n",
-                    strerror(errno));
+        if (p <= 0) {
+            GDKerror("setup_connection: invalid port number: %s\n", strptr);
             return -1;
         }
     } else { /* find the default port number from "monet_environment" */
@@ -780,15 +699,13 @@ setup_connection(str dst, int *port)
 
     if (isdigit((int)dst[0])) {
         if ((i = inet_addr(dst)) < 0) {
-            GDKerror("setup_connection: invalid IP address \"%s\": %s\n",
-                    dst, errno?strerror(errno):".");
+            GDKerror("setup_connection: invalid IP address \"%s\"\n", dst);
             return -1;
         }
         addr.s_addr = (unsigned) i;
     } else {
         if (!(resolv = gethostbyname(dst))) {
-            GDKerror("setup_connection: invalid IP address \"%s\": %s\n",
-                    dst, h_errno?strerror(h_errno):".");
+            GDKerror("setup_connection: invalid IP address \"%s\"\n", dst);
             return -1;
         }
         addr.s_addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
@@ -811,9 +728,7 @@ setup_connection(str dst, int *port)
     }
 
     if (ret < 0) {
-        GDKerror("setup_connection: failed to setup connection with "
-                 "%s:%d\n", dst, p);
-        if(errno) GDKerror("setup_connection: %s", strerror(errno));
+        GDKerror("setup_connection: failed to setup connection with %s:%d\n", dst, p);
         close(sock);
         return -1;
     }
@@ -933,11 +848,8 @@ response2bat(
         return NULL;
     }
 
-    errno = 0;
     if( !(ret = stream_readline(in, respStatus, 1024)) ){
-        GDKerror("response2bat: failed to receive response from %s:%d",
-                host, port);
-        if(errno) GDKerror("response2bat: %s", strerror(errno));
+        GDKerror("response2bat: failed to receive response from %s:%d", host, port);
         buffer_destroy(resp);
         return NULL;
     }
@@ -959,15 +871,12 @@ response2bat(
     respStatus[ret -1] = '\0';
 
     do{ /* read the HTTP header and throw it away */
-        errno = 0;
         ret = stream_readline(in, resp->buf, 1024);
         if(ret == 1 && resp->buf[0] == '\r')
             ret = 0; /* end-of-HTTP-header found */
     } while (ret > 0);
     if (ret < 0) {
-        GDKerror("response2bat: failed to receive response from %s:%d",
-                host, port);
-        if(errno) GDKerror("response2bat: %s", strerror(errno));
+        GDKerror("response2bat: failed to receive response from %s:%d", host, port);
         buffer_destroy(resp);
         return NULL;
     }
@@ -978,14 +887,11 @@ response2bat(
 
         resp->pos = 0;
         do{ /* read the SOAP Fault message */
-            errno = 0;
             ret = stream_read(in, (resp->buf + resp->pos), 1, (resp->len - resp->pos));
             if (ret > 0) resp->pos += ret;
         } while (ret > 0);
         if (ret < 0) {
-            GDKerror("response2bat: failed to receive response from %s:%d",
-                    host, port);
-            if(errno) GDKerror("response2bat: %s", strerror(errno));
+            GDKerror("response2bat: failed to receive response from %s:%d", host, port);
             return NULL;
         }
         resp->buf[resp->pos] = 0;
@@ -1024,7 +930,9 @@ response2bat(
 static buffer *
 byvalue_request(
         bool timing,
+        str genType,
         str qid,
+        lng seqnr,
         lng timeout,
         str rpc_module,
         str rpc_uri,
@@ -1091,16 +999,14 @@ byvalue_request(
 
     if (!(argcnt = GDKmalloc(iterc * sizeof(lng*)))) {
         GDKerror("byvalue_request: failed to malloc argcnt\n");
-        clean_up(bs, argcnt, iterc);
-        return NULL;
+        return clean_up(bs, argcnt, iterc);
     }
     for (i = 0; i < iterc; i++) {
         /* we allocate at least _one_ argcnt for each parameter, so that
          * we have a place to note that a function has zero parameter */
         if (!(argcnt[i] = GDKmalloc((arity>0?arity:1) * sizeof(lng)))) {
             GDKerror("byvalue_request: failed to malloc argcnt[" SZFMT "]\n", i);
-            clean_up(bs, argcnt, iterc);
-            return NULL;
+            return clean_up(bs, argcnt, iterc);
         }
         argcnt[i][0] = 0;
         for (a = 1; a < arity; a++) {
@@ -1118,10 +1024,10 @@ byvalue_request(
     }
 
     /* soap env header and xrpc request header */
-    ret = stream_printf(bs, XRPC_HEADER, SOAP_NS, XRPC_NS, XDT_NS,
-            XS_NS, XSI_NS, XRPC_NS, XRPC_LOC, rpc_module, rpc_uri,
-            rpc_method, arity, iterc, updCall?"true":"false");
-    assert(ret > 0);
+    ret = stream_printf(bs, SOAP_ENVELOPE);
+    if (ret < 0) {
+        return clean_up(bs, argcnt, iterc);
+    }
 
     if(qid && *qid) { /* an XRPC query that requires 2PC */
         char *ts = strrchr(qid, '|'); assert(ts);
@@ -1129,7 +1035,7 @@ byvalue_request(
         ts[0] = '\0'; ts++;
 
         ret = stream_printf(bs,
-                "<xrpc:queryID xrpc:host=\"%s\" xrpc:timestamp=\"%s\" xrpc:timeout=\""LLFMT"\" />",
+                "<xrpc:queryID xrpc:host=\"%s\" xrpc:querynr=\"%s\" xrpc:timeout=\""LLFMT"\">",
                 qid, ts, timeout);
         assert(ret > 0);
         --ts; ts[0] = '|'; /* undo changes in qid */
@@ -1216,8 +1122,7 @@ byvalue_request(
                         qn_loc    = getBatFromContainer(ws, QN_LOC, contID);
                         if( (!attr_qn) || (!attr_prop) || (!prop_val) ||
                             (!qn_prefix) || (!qn_loc) ){
-                            clean_up(bs, argcnt, iterc);
-                            return NULL;
+                            return clean_up(bs, argcnt, iterc);
                         }
 
                         BATiter attr_qni = bat_iterator(attr_qn);
@@ -1247,8 +1152,7 @@ byvalue_request(
                         contID = XTRACT_CONT(cmbn_cont_kind);
                         elem_kind = getELEMkind(ws, contID, item);
                         if (elem_kind == GDK_chr_min) {
-                            clean_up(bs, argcnt, iterc);
-                            return NULL;
+                            return clean_up(bs, argcnt, iterc);
                         }
                         switch(elem_kind) {
                             case 0: assert(stream_write(bs, "<xrpc:element>", 1, 14) == 14);
@@ -1265,8 +1169,7 @@ byvalue_request(
                             default:
                                 GDKerror("byvalue_request: call%d/sequence%d/item%d has "
                                         "invalid type %d\n", my_iter, my_argc, i);
-                                clean_up(bs, argcnt, iterc);
-                                return NULL;
+                                return clean_up(bs, argcnt, iterc);
                         }
                         /* print body of the node */
                         node_item = BUNins( BATnew(TYPE_void, TYPE_oid, 1),
@@ -1285,16 +1188,14 @@ byvalue_request(
                             GDKerror("byvalue_request: failed to destroy BAT \"node_item\", "
                                     "because it is in use by other process!");
                             GDKerror("THIS SHOULD NEVER HAPPEN!!!");
-                            clean_up(bs, argcnt, iterc);
-                            return NULL;
+                            return clean_up(bs, argcnt, iterc);
                         }
 
                         if(BBPreclaim(node_kind) == -1){
                             GDKerror("byvalue_request: failed to destroy BAT \"node_item\", "
                                     "because it is in use by other process!");
                             GDKerror("THIS SHOULD NEVER HAPPEN!!!");
-                            clean_up(bs, argcnt, iterc);
-                            return NULL;
+                            return clean_up(bs, argcnt, iterc);
                         }
 
                         switch(elem_kind) {
@@ -1311,15 +1212,13 @@ byvalue_request(
                             case 5: /* COLLECTION: nothing to be done, here */    break;
                             default:
                                 GDKerror("byvalue_request: should have never reached here!");
-                                clean_up(bs, argcnt, iterc);
-                                return NULL;
+                                return clean_up(bs, argcnt, iterc);
                         }
                     }   break;
                     default:
                         GDKerror("byvalue_request: call%d/sequence%d/item%d has invalid type %d\n",
                                 my_iter, my_argc, i);
-                        clean_up(bs, argcnt, iterc);
-                        return NULL;
+                        return clean_up(bs, argcnt, iterc);
                 }
             }
             assert(stream_write(bs, "</xrpc:sequence>", 1, 16) == 16);
@@ -1338,23 +1237,12 @@ byvalue_request(
     return stream_get_buffer(bs);
 }
 
-static int
-add_xrpc_hosts(
-        BAT *shredBAT,
-        BAT *ws)
-{
-    (void) shredBAT;
-    (void) ws;
-
-    return GDK_SUCCEED;
-}
-
-
 int
 CMDhttp_post(
         BAT **res,
-        str options,
+        str genType,
         str qid,
+        lng *seqnr,
         lng *timeout,
         str dst,
         str rpc_module,
@@ -1378,7 +1266,7 @@ CMDhttp_post(
     buffer *req = NULL;
     size_t bytes_sent = 0;
     BAT *shredBAT = NULL;
-    bool timing = (options && strstr(options, "timing")) ? TRUE : FALSE;
+    bool timing = (genType && strstr(genType, "timing")) ? TRUE : FALSE;
 
     ERRORcheck((*itercnt) < 0, "CMDhttp_post: itercnt must not be negative (<0).\n");
     ERRORcheck((*arity) < 0, "CMDhttp_post: arity must not be negative (<0).\n");
@@ -1400,7 +1288,7 @@ CMDhttp_post(
         return GDK_FAIL;
     }
 
-    if(!(req = byvalue_request(timing, qid, *timeout, rpc_module, rpc_uri, rpc_method,
+    if(!(req = byvalue_request(timing, genType, qid, *seqnr, *timeout, rpc_module, rpc_uri, rpc_method,
                     *updCall, *arity, *itercnt, ws, fun_vid, fun_iter,
                     fun_item, fun_kind, int_values, dbl_values,
                     dec_values, str_values))){
@@ -1448,14 +1336,6 @@ CMDhttp_post(
     buffer_destroy(req);
 
     if(!shredBAT) return GDK_FAIL;
-
-    if(qid && *qid) {
-        if(add_xrpc_hosts(shredBAT, ws) == GDK_FAIL) {
-            BBPreclaim(shredBAT);
-            return GDK_FAIL;
-        }
-    }
-
     *res = shredBAT;
     return GDK_SUCCEED;
 }

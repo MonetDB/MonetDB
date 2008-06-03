@@ -164,22 +164,21 @@ Start XPRC receiver using the default values as specified in \
 #include "xrpc_server.h"
 #include "shttpd.h"
 
-extern int xrpc_port;
 static int rpcd_running = 0;
 static int timing = 0;
 static int debug = 0;
 static int listen_socket = -1;
 static char datadir[1024];
-static MT_Lock *xrpclock = NULL;
-static int xrpclock_idx = XRPCLOCK_IDX;
 
 static BAT* xrpc_trusted = NULL;
 static BAT* xrpc_admin = NULL;
 
 typedef struct {
     char *qid;
-    lng timestamp;
+    char *caller;
+    lng start;
     lng timeout;
+    char *mode;
     char *module;
     char *method;
     char *location;
@@ -220,8 +219,9 @@ send_err(stream *out,
 static INLINE XRPCreq_t *
 XRPCreq_new(
         char *qid,
-        lng timestamp,
+        char *caller,
         lng timeout,
+        char *mode,
         char *module,
         char *method,
         char *location,
@@ -235,8 +235,10 @@ XRPCreq_new(
     if(!req) return NULL;
 
     req->qid = qid;
+    req->caller = caller;
     req->timeout = timeout;
-    req->timestamp = timestamp;
+    req->mode = mode;
+    req->start = GDKusec();
     req->module = module;
     req->method = method;
     req->location = location;
@@ -481,32 +483,29 @@ get_val_type(oid tpe_node_pre,
     return res;
 }
 
-/* Convert string to long int.  Set 'errno' if error occurs. */
+/* Convert string to long int.  I promise never to use errno anymore!! */
 static INLINE long long int
 my_strtoll(stream *out,
            bte isSigned,
            char *val_ptr,
            char *attr_name)
 {
-    char errstr[1024];
+    char errstr[1024], *end_ptr = val_ptr;
+    long long int ret = strtoll(val_ptr, &end_ptr, 10);
 
-    errno = 0;
-    long long int ret = strtoll(val_ptr, NULL, 10);
-
-    if(errno){
+    if(end_ptr == val_ptr){
         snprintf(errstr, 1024,
-                "Invalid value (\"%s\") of numeric attribute \"%s\": %s",
-                val_ptr, attr_name, strerror(errno));
+                "Invalid value (\"%s\") of numeric attribute \"%s\"",
+                val_ptr, attr_name);
         send_err(out, ERR404, "env:Sender", errstr);
-        return 0;
+        return GDK_lng_min;
     } else if(ret < 0 && !isSigned){
-        errno = EINVAL;
         snprintf(errstr, 1024,
                 "Invalid value (\"%s\") of numeric attribute \"%s\": "
                 "should not be negative",
                 val_ptr, attr_name);
         send_err(out, ERR404, "env:Sender", errstr);
-        return 0;
+        return GDK_lng_min;
     }
     return ret;
 }
@@ -522,13 +521,12 @@ parse_request(stream *out,
 {
     XRPCreq_t *req;
     char *module = NULL, *method = NULL, *location = NULL;
-    char *qid = NULL, *host = NULL;
-    char *timestamp_str = NULL, *timeout_str = NULL;
+    char *qid = NULL, *host = NULL, *caller = "query";
+    char *querynr_str = NULL, *timeout_str = NULL, *mode_str = NULL;
     char *arity_str = NULL, *itercnt_str = NULL;
     char *pul = NULL, *val = NULL;
     bool updCall = FALSE;
-    lng argc = 0, iterc = 0, i = 0, j = 0, k = 0;
-    lng timestamp = 0, timeout = 0;
+    lng timeout = 300000, argc = 0, iterc = 0, i = 0, j = 0, k = 0;
     char errstr[1024];
 
     BATiter shredBATi, prop_vali, qn_uli;
@@ -609,6 +607,10 @@ parse_request(stream *out,
             arity_str = val;
         } else if(strcmp(pul, XRPC_NS"|iter-count") == 0) {
             itercnt_str = val;
+        } else if(strcmp(pul, XRPC_NS"|mode") == 0) {
+            mode_str = val;
+        } else if(strcmp(pul, XRPC_NS"|caller") == 0) {
+            caller = val;
         } else if(strcmp(pul,XRPC_NS"|updCall") == 0) {
             if((val[0] == 't' && val[1] == 'r' && val[2] == 'u' && val[3] == 'e') ||
                (val[0] == 'T' && val[1] == 'r' && val[2] == 'u' && val[3] == 'e') ||
@@ -626,12 +628,12 @@ parse_request(stream *out,
         return NULL;
     if(itercnt_str){
         iterc = my_strtoll(out, FALSE, itercnt_str, "iter-count");
-        if(errno) return NULL;
+        if(iterc == GDK_lng_min) return NULL;
     } else {
         iterc = BATcount(BATselect(qn_uri_loc, XRPC_NS"|call", XRPC_NS"|call"));
     }
     argc = my_strtoll(out, FALSE, arity_str, "arity");
-    if(errno) return NULL;
+    if(argc == GDK_lng_min) return NULL;
 
     /* Does this request require any isolation support? */
     if ((qid_node_pre = get_pre_by_qname(XRPC_NS"|queryID",
@@ -643,30 +645,27 @@ parse_request(stream *out,
             val = (char*) BUNtail(prop_vali, BUNfirst(prop_val) + attr_propT[ao_ptr]);
             if(strcmp(pul, XRPC_NS"|host") == 0) {
                 host = val;
-            } else if(strcmp(pul, XRPC_NS"|timestamp") == 0) {
-                timestamp_str = val;
+            } else if(strcmp(pul, XRPC_NS"|querynr") == 0) {
+                querynr_str = val;
             } else if(strcmp(pul, XRPC_NS"|timeout") == 0) {
                 timeout_str = val;
+                timeout = my_strtoll(out, FALSE, timeout_str, "timeout");
+                if(timeout == GDK_lng_min) return NULL;
             } else {
                 snprintf(errstr, 1024, 
-                        "Invalid attrbute for the \""XRPC_NS":queryID\" element: %s\n", pul);
+                        "Invalid attribute for the \""XRPC_NS":queryID\" element: %s\n", pul);
                 send_err(out, ERR404, "env:Sender", errstr);
                 return NULL;
             }
             ao_ptr++;
         }
-        if(!(host && timestamp_str && timeout_str)) {
+        if(!(host && querynr_str && timeout_str)) {
             send_err(out, ERR404, "env:Sender", "A \""XRPC_NS":queryID\" element "
-                    "must contain all three attributes: host, timestamp, timeout\n");
+                    "must contain all three attributes: host, querynr, timeout\n");
             return NULL;
         }
 
-        timestamp = my_strtoll(out, FALSE, timestamp_str, "timestamp");
-        if(errno) return NULL;
-        timeout = my_strtoll(out, FALSE, timeout_str, "timeout");
-        if(errno) return NULL;
-
-        k = strlen(host) + strlen(timestamp_str) + 2;
+        k = strlen(host) + strlen(querynr_str) + 2;
         if(!(qid = GDKmalloc(k))) {
             send_err(out, ERR500, "env:Receiver", OUT_OF_MEM);
             return NULL;
@@ -676,28 +675,10 @@ parse_request(stream *out,
         pul = qid + k;
         while(*host && val < pul) *val++ = *host++;
         *val++ = '|';
-        while(*timestamp_str && val < pul) *val++ = *timestamp_str++;
+        while(*querynr_str && val < pul) *val++ = *querynr_str++;
         *val = '\0';
-
-        /* check if the query has timedout, if yes, write "abort" in
-         * xrpc_statuss[qid] */
-        i = check_timeout_by_qid(qid, timestamp, timeout);
-        if(i == 1) {
-            send_err(out, ERR408, "env:Sender",
-                    "Query already timed out upon receiving");
-            return NULL;
-        } else if(i == -2) {
-            snprintf(errstr, 1024,
-                    "Error occurred while checking for timeout: %s",
-                    GDKerrbuf?GDKerrbuf:"no further error message.");
-            send_err(out, ERR408, "env:Receiver", errstr);
-        }
-    } else {
-        /* release lock as soon as possible */
-        MT_lock_unset(xrpclock, "xrpc_fork_mapiclient");
     }
-
-    if(!(req = XRPCreq_new(qid, timestamp, timeout, module, method,
+    if(!(req = XRPCreq_new(qid, caller, timeout, mode_str, module, method,
                            location, updCall, iterc, argc))) {
         send_err(out, ERR500, "env:Receiver", OUT_OF_MEM);
         return NULL;
@@ -899,9 +880,10 @@ execQuery(mapi_client *mc,
      */
 	*errbuf = 0;
 	GDKsetbuf(errbuf);
-    char *err = xquery_method(mc, flags, req->qid, req->timeout,
-            req->module, req->location, req->method, req->argc, req->iterc,
-            req->argcnt, req->argtpe, req->argval, req->hasNodeParam?shredBAT:NULL);
+    char *err = xquery_method(mc, flags, req->mode, req->module, 
+            req->location, req->method, req->qid, req->caller, req->timeout,
+            req->argc, req->iterc, req->argcnt, req->argtpe, req->argval, 
+            req->hasNodeParam?shredBAT:NULL);
 
     /* If no error occurred during execution, the serializer would check
      * query expiration time, before printing results */
@@ -913,7 +895,7 @@ execQuery(mapi_client *mc,
         ret = GDK_FAIL;
         /* if error was caused by other problems, we haven't checked
          * query expiration time */
-        int tdo = check_timeout_by_qid(req->qid, req->timestamp, req->timeout);
+        int tdo = check_timeout_by_qid(req->qid, req->start + req->timeout);
         snprintf(errbuf_all, GDKMAXERRLEN*2,
                 "Error occurred during execution:\n%s\n%s\n%s",
                 tdo > 0 ? "xrpc query timed out" : "",
@@ -925,7 +907,7 @@ execQuery(mapi_client *mc,
     } else if (req->updCall) {
         /* updating functions donot involve the serializer, hence,
          * time-out not checked yet */
-        ret = check_timeout_by_qid(req->qid, req->timestamp, req->timeout);
+        ret = check_timeout_by_qid(req->qid, req->start + req->timeout);
         if(ret){
             snprintf(errbuf_all, GDKMAXERRLEN*2,
                     "Error occurred when checking query expiration time:\n%s\n%s",
@@ -1102,7 +1084,7 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
             return ret;
         }
 
-        if(!(req = XRPCreq_new(NULL, 0, 0, MXQ_ADMIN, method, location, FALSE, 1, 2))) {
+        if(!(req = XRPCreq_new(NULL, NULL, 0, NULL, MXQ_ADMIN, method, location, FALSE, 1, 2))) {
             send_err(mc->c->fdout, ERR500, "env:Receiver", OUT_OF_MEM);
             BBPreclaim(shredBAT);
             return GDK_FAIL;
@@ -1119,7 +1101,7 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
         ret = execQuery(mc, flags, req, shredBAT);
         BBPreclaim(shredBAT);
     } else { /* GET/DELETE */
-        if(!(req = XRPCreq_new(NULL, 0, 0, MXQ_ADMIN, method, location, FALSE, 1, 1))) {
+        if(!(req = XRPCreq_new(NULL, NULL, 0, NULL, MXQ_ADMIN, method, location, FALSE, 1, 1))) {
             send_err(mc->c->fdout, ERR500, "env:Receiver", OUT_OF_MEM);
             return GDK_FAIL;
         }
@@ -1153,10 +1135,8 @@ xrpc_client_engine(mapi_client *mc)
     /* 'admin' and 'file' requests are one-time request, no isolation
      * needed/supported */
     if (strncmp(uri, XRPC_ADM_CALLBACK, strlen(XRPC_ADM_CALLBACK)) == 0) {
-        MT_lock_unset(xrpclock, "xrpc_fork_mapiclient");
         (void) xrpc_handle_admin_request(mc, arg);
     } else if (strncmp(uri, XRPC_DOC_CALLBACK, strlen(XRPC_DOC_CALLBACK)) == 0) {
-        MT_lock_unset(xrpclock, "xrpc_fork_mapiclient");
         (void) xrpc_handle_file_request(mc, arg); /* GET/PUT/DELETE file request */
     } else if (strncmp(uri, XRPC_REQ_CALLBACK, strlen(XRPC_REQ_CALLBACK)) == 0) {
         (void) xrpc_handle_request(mc, arg);
@@ -1178,16 +1158,6 @@ xrpc_fork_mapiclient(struct shttpd_callback_arg *arg)
 
     int sock = shttpd_get_socket(arg);
 
-    /* Protect the xrpc_* meta BATs, since the xrpc_client_engine needs
-     * to access/update those BATs for the new request.
-     * We use a "no-concurrency" model here, that is, only one thread at
-     * a time may use a 'ws'.
-     * Note: this lock MUST be unset by the xrpc_client_engine!
-     * */
-    if(CMDpflock_get((ptr)&xrpclock, &xrpclock_idx) == GDK_FAIL)
-        return -1;
-    MT_lock_set(xrpclock, "xrpc_fork_mapiclient");
-    
     /* get a MAPI thread from the xquery client pool */
     stream *fdin = socket_rastream(sock, "XRPC read");
     if (fdin && stream_errnr(fdin) == 0) {
@@ -1209,100 +1179,6 @@ xrpc_fork_mapiclient(struct shttpd_callback_arg *arg)
     }
     shttpd_finish(arg);
     return -1;
-}
-
-static void
-do_check(void)
-{
-    MT_Lock *xrpclock = NULL;
-    int xrpclock_idx = XRPCLOCK_IDX;
-
-    BAT *xrpc_qids = NULL, *xrpc_timeouts = NULL, *xrpc_statuss = NULL;
-    BATiter qidsi, timeoutsi;
-    char *qid = NULL, *ts_str = NULL, *to_str = NULL;
-    lng ts = 0, to = 0;
-    size_t idx = 0, cnt = 0;
-
-    if(CMDpflock_get((ptr)&xrpclock, &xrpclock_idx) == GDK_FAIL) {
-        GDKerror("FATAL ERROR: XRPC server failed to get the global "
-                 "lock 'xrpclock'!\nMserver is shutting down now!\n");
-        exit(10);
-    }
-
-    MT_lock_set(xrpclock, "check_timeout");    
-
-    xrpc_qids = BATdescriptor(BBPindex("xrpc_qids"));
-    xrpc_timeouts = BATdescriptor(BBPindex("xrpc_timeouts"));
-    xrpc_statuss = BATdescriptor(BBPindex("xrpc_statuss"));
-    if(!xrpc_qids || !xrpc_timeouts || !xrpc_statuss) {
-        GDKerror("FATAL ERROR: XRPC server failed to retrieve the "
-                 "xrpc_* meta-BATs!\n");
-        goto err_ret;
-    }
-    qidsi = bat_iterator(xrpc_qids);
-    timeoutsi = bat_iterator(xrpc_timeouts);
-
-    cnt = BATcount(xrpc_qids);
-    for(idx = 0; idx < cnt; idx++) {
-        qid = (char*) BUNtail(qidsi, idx);
-        to_str = (char*) BUNtail(timeoutsi, idx);
-        assert(qid && to_str);
-        ts_str = strrchr(qid, '|'); assert(ts_str);
-
-        errno = 0; ts = strtoll(ts_str, NULL, 10);
-        if(errno) {
-            GDKerror("check_timeout: query \"%s\" has an invalid value "
-                     "of timestamp: \"%s\".\n", qid, ts_str);
-           if(!BUNreplace(xrpc_statuss, &idx, "abort", FALSE)) {
-               GDKerror("check_timeout: failed to change status of the "
-                        "query \"%s\" into \"abort\"!\n", qid);
-           }
-           /* TODO: remove the ws associated with this query */
-           continue;
-        }
-        errno = 0; to = strtoll(to_str, NULL, 10);
-        if(errno) {
-            GDKerror("check_timeout: query \"%s\" has an invalid value "
-                     "of timeout: \"%s\".\n", qid, to_str);
-           if(!BUNreplace(xrpc_statuss, &idx, "abort", FALSE)) {
-               GDKerror("check_timeout: failed to change status of the "
-                        "query \"%s\" into \"abort\"!\n", qid);
-           }
-           /* TODO: remove the ws associated with this query */
-           continue;
-        }
-
-        if((ts + (to * 1000)) < GDKusec() && 
-           !BUNreplace(xrpc_statuss, &idx, "timedout", FALSE)){
-            GDKerror("FATAL ERROR: XRPC server failed to change the "
-                     "status of query \"%s\" into \"timedout\"\n", qid);
-           /* TODO: remove the ws associated with this query */
-        }
-    }
-
-    BBPunfix(BBPcacheid(xrpc_qids));
-    BBPunfix(BBPcacheid(xrpc_timeouts));
-    BBPunfix(BBPcacheid(xrpc_statuss));
-    MT_lock_unset(xrpclock, "check_timeout");    
-    return;
-
-err_ret:
-    if(xrpc_qids) BBPunfix(BBPcacheid(xrpc_qids));
-    if(xrpc_timeouts) BBPunfix(BBPcacheid(xrpc_timeouts));
-    if(xrpc_statuss) BBPunfix(BBPcacheid(xrpc_statuss));
-    MT_lock_unset(xrpclock, "check_timeout_by_idx");
-    GDKerror("Mserver is shutting down now!\n");
-    exit(10);
-
-}
-
-static void
-check_timeout(void)
-{
-    for(;;) {
-        MT_sleep_ms(5000);
-        do_check();
-    }
 }
 
 /* the thread that checks every 5 seconds for expired queries */

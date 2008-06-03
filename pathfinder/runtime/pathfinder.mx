@@ -507,6 +507,15 @@ const COLLECTED_PRE_CONT_INS := COLLECTED_PRE_INS + 1;
 const COLLECTED_ATTR_INS := COLLECTED_PRE_CONT_INS + 1;
 const COLLECTED_ATTR_CONT_INS := COLLECTED_ATTR_INS + 1;
 
+# meta-data BATs for multi-request XRPC transactions
+var xrpc_qids     := bat("xrpc_qids");      # bat[void,str] query-id (host|timestamp)
+var xrpc_timeouts := bat("xrpc_timeouts");  # bat[void,lng] query timeout in usec
+var xrpc_wsids    := bat("xrpc_wsids");     # bat[void,lng] ID of the workingset associated with this query
+var xrpc_locks    := bat("xrpc_locks");     # bat[void,lock] lock for the workingset of this query 
+var xrpc_statuses := bat("xrpc_statuses");  # bat[void,str] 2PC status of this query: "exec", "prepare", "commit" or "abort"
+var xrpc_lock     := pflock_get(6); # master XRPC lock, to protect above xrpc_* BATs
+var xrpc_hostport := my_hostname() + ":" + str(get_xrpc_port());
+var xrpc_querynr  := 9999999LL;
 
 # transaction debugging / performance profiling 
 var ws_log_lock := lock_create();
@@ -584,7 +593,7 @@ var pf_collbarrier_lock := lock_create(); # proptector for shortlock_barrier bat
 # there is just a global lock for this.
 var pf_extend := pflock_get(3); # protects the counter
 var pf_extend_cnt := 0; # counter is used by nonexclusive acces (first gets barrier, last releases)
-var pf_extend_barrier := sema(ptr(pflock_get(9))); # the barrier
+var pf_extend_barrier := sema(ptr(pflock_get(7))); # the barrier
 
 # master bat *UPDATES* must be protected against checkpoints (global BBP subcommits + log restart)
 # master updates take a non-exclusive pf_chkpt lock; pf_checkpoint() takes an exclusive access
@@ -712,15 +721,34 @@ PROC pf_logmanager() : void {
     while(true) {
         var changes := logger_changes(pf_logger);
         var delta := changes - logger_base;
-        if (((cnt :+= 1) % 10) = 0) { 
+        if (((cnt :+= 1) % 30) = 0) { 
             cleantmpdir((msec() / 1000LL) - 3600LL);
         }
-        if (((delta < 0) or (delta > 100000)) and (cnt > 10)) { 
+        if (((delta < 0) or (delta > 100000)) and (cnt > 30)) { 
             pf_logflush(0LL);
             logger_base = changes;
             cnt := 0;
         } 
-        sleep(30);  
+        sleep(10);  
+
+        # remove working sets of non-busy XRPC requests that timed out or aborted
+        lock_set(xrpc_lock);
+        var timedout := project(xrpc_timeouts.ord_uselect(0LL,GDKusec()), "timedout");
+        var aborted := xrpc_wsids.ord_uselect(lng_nil,lng_nil).mirror().leftfetchjoin(xrpc_statuses).ord_select("abort"));
+        kunion(aborted,timedout)@batloop() {
+            var wslock := xrpc_locks.find($h);
+            if (lock_try(ws_lock) = 0) {
+                # we just leave the list to grow for now :( 
+                var ws := ws_id(xrpc_wsids.find($h));
+                xrpc_statuses.inplace($h, $t);
+                xrpc_timeout.inplace($h, lng_nil);
+                xrpc_wsids.inplace($h, lng_nil);
+                xrpc_wslocks.inplace($h, lock_nil);
+                lock_destroy(wslock);
+                ws_destroy(ws);
+            }
+        }
+        lock_unset(xrpc_lock);
     }
 }
 
@@ -740,18 +768,6 @@ var doc_undo := bat(oid,lng).rename("doc_undo");
 
 var uri_lifetime;     # caching rules
 
-# meta-data BATs for multi-request XRPC transactions
-var xrpc_qids :=      # bat[void,str] query-id (host|timestamp)
-    new(void,str).seqbase(0@0).persists(true).rename("xrpc_qids");
-var xrpc_timeouts :=  # bat[void,lng] query timeout in msec
-    new(void,lng).seqbase(0@0).persists(true).rename("xrpc_timeouts");
-var xrpc_wsids :=     # bat[void,lng] ID of the workingset associated with this query
-    new(void,lng).seqbase(0@0).persists(true).rename("xrpc_wsids");
-var xrpc_locks :=     # bat[void,lock] lock for the workingset of this query 
-    new(void,lock).seqbase(0@0).persists(true).rename("xrpc_locks");
-var xrpc_statuss :=   # bat[void,str] 2PC status of this query: "exec", "prepare", "commit" or "abort"
-    new(void,str).seqbase(0@0).persists(true).rename("xrpc_statuss");
-var xrpclock := pflock_get(6); # master XRPC lock, to protect above xrpc_* BATs
 
 # initialize persistent bats (use BBP as global mechanism to discover initialization)
 if (isnil(CATCH(bat("doc_name").count()))) {
@@ -1395,13 +1411,63 @@ PROC ws_new(oid id,
     return bat(void,tpe).seqbase(PRE_BASE); # a constant bat
 }
 
+
+
+# check the working-set cache for multi-request XRPC queries (repeatable reads)
+# returns a integer "xrpc" indexing into xrpc_* bats (idx = abs(xrpc) - 1);
+#  0 = no xrpc ws caching needed, 
+# >0 = ws is already cached at idx
+# <0 = create new ws and cache it at idx
+PROC _ws_xrpcget() : int;
+{
+    var xrpc := 0;
+    xrpc_seqnr := (xrpc_querynr :+= 1LL);
+    if (xrpc_mode.search("repeatable") >= 0) {
+        xrpc := -(int(count(xrpc_qids))+1); # default: create a new ws
+        if (xrpc_qid = "") {
+            xrpc_qid := xrpc_hostport + ":" + str(xrpc_seqnr); #init
+            xpc_coord := true;
+        } else if (xrpc_qids.texist(xrpc_qid)) {
+            xrpc := int(reverse(xrpc_qids).find(qid)); # reuse an old ws
+        }
+    }
+    return xrpc;
+}
+
+# create a new ws if necessary (res <= 0), returns wsid
+PROC _ws_new(int xrpc, oid idx, int update) : lng;
+{
+    var wsid;
+    if (xrpc > 0) {
+        wsid := xrpc_wsids.find(idx);
+    } else {
+        var id := and(lng(newoid(1)), 2147483647LL);
+        var ws := [ws_new](mirror(ws_tpe), ws_tpe, ws_htp, ws_ttp, ws_seq);
+        wsid := <<(id, 32) + (lng(update) << 30) + lng(ws);
+        ws.access(BAT_READ).rename(str(wsid));
+        if (xrpc < 0) {
+            var wslock := lock_create();
+            xrpc_qids.append(xrpc_qid);
+            xrpc_timeouts.append(usec() + xrpc_timeout);
+            xrpc_wsids.append(wsid);
+            xrpc_locks.append(wslock);
+            xrpc_statuses.append("exec");
+        }
+    }
+    return wsid;
+}
+
 PROC ws_create(int update) : BAT[void,bat]
 {
-    # wsid = 1bit(0) | 31bits(unique-id) | 2bits(update) | 30bits(batid)
-    var ws := [ws_new](mirror(ws_tpe), ws_tpe, ws_htp, ws_ttp, ws_seq);
-    var id := and(lng(newoid(1)), 2147483647LL);
-    var wsid := <<(id, 32) + (lng(update) << 30) + lng(ws);
-    ws.access(BAT_READ).rename(str(wsid));
+    # NOTE: use pre-query MIL variables xrpc_qid/xrpc_timeout to possibly re-use an existing ws
+    lock_set(xrpc_lock);
+    var err := CATCH(var xrpc, wsid := _ws_new(xrpc := _ws_xrpcget(), idx := oid(abs(xrpc)), update), ws := bat(str(wsid)));
+    lock_unset(xrpc_lock);
+    if (not(isnil(err))) ERROR(err);
+
+    # each xrpc request must lock its ws
+    if (xrpc != 0) lock_set(xrpc_locks.find(idx));
+    if (xrpc > 0) return ws;
 
     # only instantiates the default views of the ws-bats (not the master bats)
     ws.fetch(PID_MAP).append(ws.fetch(MAP_PID).fetch(WS));
@@ -4059,7 +4125,7 @@ fork(pf_logmanager());            # start checkpointing thread
 
 /* exports for XRPC */
 pathfinder_export void  xquery_client_engine(mapi_client*);
-pathfinder_export char* xquery_method(mapi_client*, int, char*, lng, char*, char*, char*, lng, lng, lng**, str*, str*, BAT*);
+pathfinder_export char* xquery_method(mapi_client*, int, char*, char*, char*, char*, char*, char*, lng, lng, lng, lng**, str*, str*, BAT*);
 pathfinder_export void  xquery_client_end(mapi_client *, char *); 
 
 #endif
@@ -4188,8 +4254,8 @@ typedef struct _xquery_module {
     char* prologue;               /* MIL procs defined in this module */
     char* epilogue;               /* MIL procs undefs for this module */
     xquery_function *functions;   /* functions declared in this module */
-    char *nsurl;                  /* module namespace definition */
-    char url[1];                  /* module url */
+    char *module;                 /* module logical url */
+    char location[1];             /* module location (at-hint) */
 } xquery_module;
 
 /* global list of known modules and their function declarations */
@@ -4239,13 +4305,19 @@ typedef struct {
     BAT *fun_vid000, *fun_iter000, *fun_item000, *fun_kind000, *loop000;
 
     /* pointers into MIL variable records (to set values) */
-    int *shredBAT; 
     lng *time_compile; 
     lng *time_shred; 
     lng *time_exec; 
     lng *time_print; 
-    char **moduleNS;
-    char **method;
+
+    int   *xrpc_shredBAT; 
+    char **xrpc_module;
+    char **xrpc_method;
+    char **xrpc_mode;
+    lng   *xrpc_timeout;
+    char **xrpc_qid;
+    char **xrpc_caller;
+
     char **genType;
 
     /* counts used to remove query (non-module) procs and stacks after execution */
@@ -4294,7 +4366,7 @@ MT_Lock pf_cache_lock;
  *
  * int
  * xquery_compile_exec(xquery_client *ctx, char* xquery, int is_url, 
- *                     char** prologue, char** query, char** epilogue, char* nsurl) 
+ *                     char** prologue, char** query, char** epilogue, char* module) 
  * - translate xquery to MIL and execute
  *
  * all int-returning functions return error(0)/ok(1)
@@ -4392,15 +4464,15 @@ static char* xquery_parse_string(char* p, char *buf, int len);
 extern char* PFmaxstack;
 static int
 xquery_compile_exec(xquery_client *ctx, 
-                    char* url, 
+                    char* xquery, 
                     int is_url, 
                     char** prologue, 
                     char** query, 
                     char** epilogue,
-                    char* nsurl)
+                    char* module)
 {
     int is_mil = 0, len=0, ret = 0;
-    char *xquery = url;
+    char *url = xquery;
     char *err = NULL;
 
     int options = 0;
@@ -4441,7 +4513,7 @@ xquery_compile_exec(xquery_client *ctx,
                                                        to the algebra backend that does not use prologue
                                                        and epilogue structures. */);
             ctx->errbuf = PFerrbuf; 
-            if (err == NULL && nsurl != NULL){
+            if (err == NULL && module != NULL){
                 /* get the module namespace URL Y from pattern: "module namespace X = Y" */
                 char *p0 = xquery_parse_space(xquery); 
                 err = "xquery_compile_exec: cannot parse module namespace.\n";
@@ -4455,7 +4527,7 @@ xquery_compile_exec(xquery_client *ctx,
                                 char *p4 = xquery_parse_space(p3); 
                                 if (p4 >= p3 && *p4++ == '=') {
                                     char *p5 = xquery_parse_space(p4); 
-                                    if (p5 >= p4 && xquery_parse_string(p5, nsurl, 1024) > p5) {
+                                    if (p5 >= p4 && xquery_parse_string(p5, module, 1024) > p5) {
                                         err = NULL; /* success! */
                                     }
                                 }
@@ -4537,7 +4609,8 @@ xquery_compile_exec(xquery_client *ctx,
  * - resolve a method call in the current xquery context (return NULL if not resolved)
  *
  * char*
- * xquery_function_call(xquery_client *ctx, lng usec, char* qid, lng timeout, char *ns, char *method, 
+ * xquery_function_call(xquery_client *ctx, lng usec, char *ns, char *module, char *method, 
+ *                      char* qid, char* caller, lng timeout, char* mode, 
  *                      int argc, int itercnt, int** argcnt, char** argtpe, char** argval, BAT *shredBAT)
  * - call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).
  *   otherwise generate MIL yourself, interpret it (and cache it). Returns error string (NULL if ok).
@@ -4707,10 +4780,13 @@ static char xquery_function_error[80] = "xquery_method: error during execution.\
 static char* 
 xquery_function_call(xquery_client *ctx, 
                      lng usec, 
-                     char *qid,
-                     lng timeout,
                      char *ns, 
+                     char *module, 
                      char *method, 
+                     char *qid,
+                     char *caller,
+                     lng timeout,
+                     char* mode,
                      lng argc, 
                      lng itercnt, 
                      lng** argcnt, 
@@ -4765,17 +4841,12 @@ xquery_function_call(xquery_client *ctx,
             int ret;
 
             /* create working set */
-            if(qid && *qid) { /* multi-request XRPC transaction */
-                ret = PFstartMIL_XRPCTrans(cur, XQUERY_BUFSIZE-(cur-mil), fun->sig->update, qid, timeout);
-                if(ret > 0) cur += ret;
-            } else {
-                src = (char*) PFstartMIL(fun->sig->update);
-                while(*src && cur < end) *cur++ = *src++;
-            }
+            src = (char*) PFstartMIL(fun->sig->update);
+            while(*src && cur < end) *cur++ = *src++;
 
             if (shredBAT) {
                 /* add shredded RPC request message to the working set */
-                src = " ws_opencoll(ws, bat(shredBAT), \"\", TEMP_DOC);\n";
+                src = " ws_opencoll(ws, bat(xrpc_shredBAT), \"\", TEMP_DOC);\n";
                 while(*src && cur < end) *cur++ = *src++;
             }
 
@@ -4787,11 +4858,7 @@ xquery_function_call(xquery_client *ctx,
             if (ret > 0) cur += ret;
 
             /* destroy working set */
-            if(qid && *qid){ /* multi-request XRPC transaction */
-                ret = PFstopMIL_XRPCTrans(cur, XQUERY_BUFSIZE-(cur-mil), fun->sig->update, qid);
-            } else {
-                ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil), PFstopMIL(fun->sig->update));
-            }
+            ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil), PFstopMIL(fun->sig->update));
             mil[XQUERY_BUFSIZE - 1] = 0;
             if (ret > 0) cur += ret;
 
@@ -4902,10 +4969,16 @@ xquery_function_call(xquery_client *ctx,
         stream_write(ctx->fderr, fun->mil, strlen(fun->mil), 1);
     }
 
-    /* set the MIL shredBAT and genType variables to the actual values */
-    ctx->shredBAT[0] = shredBAT?shredBAT->batCacheid:0;
+    /* override some query-specific MIL runtime variables from here */
+    @:setvar(xrpc_module,module)@
+    @:setvar(xrpc_method,method)@
+    @:setvar(xrpc_mode,mode)@
+    @:setvar(xrpc_qid,qid)@
+    @:setvar(xrpc_caller,caller)@
+    (*ctx->xrpc_timeout) = timeout;
+    ctx->xrpc_shredBAT[0] = shredBAT?shredBAT->batCacheid:0;
     *(ctx->time_compile) = GDKusec() - usec;
-    
+
     /* Done preparing the query. Time to (re-)execute the MIL tree */
     if (xquery_tree_exec(ctx, prepfun->lt, 1)) {
         return NULL;
@@ -4926,7 +4999,7 @@ xquery_function_call(xquery_client *ctx,
  * - get an xquery module, compile it and cache it (return NULL on error)
  *
  * char*
- * xquery_module_load(xquery_client *ctx, char *ns, char *url)
+ * xquery_module_load(xquery_client *ctx, char *ns, char *module, char *location)
  * - check whether we already loaded the module, or if we already 
  *   have it cached. If not, fetch&compile. Returns error string or NULL if ok.
  */
@@ -4965,15 +5038,15 @@ xquery_module_compile(xquery_client *ctx,
     mod = GDKmalloc(sizeof(xquery_module)+url_len+1024);
     if (mod == NULL) return NULL;
     memset(mod, 0, sizeof(xquery_module)+url_len+1024);
-    strcpy(mod->url, url);
-    mod->nsurl = mod->url + url_len;
+    strcpy(mod->location, url);
+    mod->module = mod->location + url_len;
 
-    ret = xquery_compile_exec(ctx, url, 1, &mod->prologue, NULL, &mod->epilogue, mod->nsurl);
+    ret = xquery_compile_exec(ctx, url, 1, &mod->prologue, NULL, &mod->epilogue, mod->module);
     if (!ret) {
         xquery_module_free(mod);
         return NULL;
     } 
-    if (ret == 2) mod->nsurl = NULL; /* for MIL modules (ret == 2), mod->nsurl == NULL (we don't know it :-( )*/
+    if (ret == 2) mod->module = NULL; /* for MIL modules (ret == 2), mod->module == NULL (we don't know it :-( )*/
 
     BATiter bi = bat_iterator(b);
     for(p = cnt, q = BUNlast(b); p < q; p++) {
@@ -5008,20 +5081,20 @@ static char*
 xquery_module_load(xquery_client *ctx, 
                    char *ns, 
                    char *module,
-                   char *url) 
+                   char *location) 
 {
     xquery_loaded_module *mod, *prev = NULL;
     int nslen = strlen(ns);
 
     /* check whether it was already loaded in this query */
     for(mod = ctx->loaded_modules; mod; prev = mod, mod = mod->next) {
-        if (strcmp(mod->def->url, url) == 0) {
+        if (strcmp(mod->def->location, location) == 0) {
             if (mod->nslen == 0) {
                 if (prev) prev->next = mod->next;
                 else ctx->loaded_modules = NULL;
                 break; /* put module at front of list */
             }
-            if (mod->def->nsurl && module && strcmp(mod->def->nsurl, module)) 
+            if (mod->def->module && module && strcmp(mod->def->module, module)) 
                 return "xquery_module_load: import module statement does not match module namespace declaration.\n";
         }
     }
@@ -5034,10 +5107,10 @@ xquery_module_load(xquery_client *ctx,
 
         MT_set_lock(pf_module_lock, "xquery_module_load");
         for(def = xquery_compiled_modules; def; def = def->next) 
-            if (strcmp(def->url, url) == 0) break;
+            if (strcmp(def->location, location) == 0) break;
 
         if (def == NULL){
-            mod->def = xquery_module_compile(ctx, url);
+            mod->def = xquery_module_compile(ctx, location);
         }
         MT_unset_lock(pf_module_lock, "xquery_module_load");
 
@@ -5059,7 +5132,7 @@ xquery_module_load(xquery_client *ctx,
     mod->next = ctx->loaded_modules;
     ctx->loaded_modules = mod;
 
-    if (mod->def->nsurl && module && strcmp(mod->def->nsurl, module)) 
+    if (mod->def->module && module && strcmp(mod->def->module, module)) 
         return "xquery_module_load: import module statement does not match module namespace declaration.\n";
     return NULL;
 }
@@ -5172,10 +5245,14 @@ xquery_client_alloc_(xquery_client *ctx)
     if (!xquery_mil_exec(ctx, (char*) PFinitMIL()))
         return "xquery_client_alloc: failed to execute init script.\n"; 
 
-    @:find_var(shredBAT,int,ival)@
     @:find_var(genType,str,sval)@
-    @:find_var(moduleNS,str,sval)@
-    @:find_var(method,str,sval)@
+    @:find_var(xrpc_shredBAT,int,ival)@
+    @:find_var(xrpc_method,str,sval)@
+    @:find_var(xrpc_module,str,sval)@
+    @:find_var(xrpc_mode,str,sval)@
+    @:find_var(xrpc_timeout,lng,lval)@
+    @:find_var(xrpc_qid,str,sval)@
+    @:find_var(xrpc_caller,str,sval)@
     @:find_var(time_compile,lng,lval)@
     @:find_var(time_exec,lng,lval)@
     @:find_var(time_print,lng,lval)@
@@ -5258,7 +5335,7 @@ xquery_client_free_(xquery_client *ctx)
         mod = mod->next;
         /* free all modules */
         if (del->def->epilogue && !xquery_mil_exec(ctx, del->def->epilogue))
-            fprintf(stderr, "xquery_client_free: client %d error dropping %s\n", ctx->stk, del->def->url);
+            fprintf(stderr, "xquery_client_free: client %d error dropping %s\n", ctx->stk, del->def->location);
         GDKfree(mod);
     }
     ctx->loaded_modules = NULL;
@@ -5268,7 +5345,7 @@ xquery_client_free_(xquery_client *ctx)
     if (ctx->buf) GDKfree(ctx->buf);
     ctx->buf = NULL;
     ctx->buflen = 0;
-    ctx->shredBAT = NULL;
+    ctx->xrpc_shredBAT = NULL;
 
     /* free the value buffer */
     if (ctx->val) GDKfree(ctx->val);
@@ -5346,7 +5423,7 @@ xquery_client_reset(xquery_client *ctx, char *err)
     oid zero = 0, one = 1;
 
     /* cleanup all variables generated by PFvarMIL(); 
-     * these persist accross sessions as the generated PRICs refer to them.
+     * these persist accross sessions as the generated PROCs refer to them.
      * This mostly for leakage monitoring purposes, such that dir(); does
      * not show any tmp_X bats. Not doing this would not cause a leak; next 
      * session the old values are overwritten (and cleant up in MIL).
@@ -5376,7 +5453,7 @@ xquery_client_reset(xquery_client *ctx, char *err)
     BATclear(ctx->int_values);
     BATclear(ctx->str_values);
     BUNappend(ctx->str_values, "", FALSE);
-    *ctx->shredBAT = int_nil; 
+    *ctx->xrpc_shredBAT = int_nil; 
 
 
     MT_set_lock(pf_cache_lock, "xquery_client_reset");
@@ -5785,7 +5862,7 @@ xquery_prepare(xquery_client *ctx,
                     lng* cnt_ptr = cnt;
                     char nsbak = *nsend, locbak = *locend;
                     *nsend = 0; *locend = 0;
-                    err = xquery_function_call(ctx, usec, NULL, 0, ns, loc, argc, 1, &cnt_ptr, tpe, param, NULL);
+                    err = xquery_function_call(ctx, usec, ns, url1, loc, "", "", 0LL, "", argc, 1, &cnt_ptr, tpe, param, NULL);
                     *nsend = nsbak; *locend = locbak;
                 }
             }
@@ -5831,15 +5908,17 @@ xquery_prepare(xquery_client *ctx,
         return handle_paramerror(res,@1,res->vtype,@2);
     }
 }
+@= setvar
+    if (strcmp(*(ctx->@1), @2)) { 
+        char* newval = GDKstrdup(@2);
+        if (newval == NULL) return "setvar(@1): malloc failure";
+        GDKfree(*(ctx->@1));
+        (*ctx->@1) = newval;
+    }
 @c
 static char* 
-xquery_change_genType(xquery_client *ctx, char* magic_string) {
-    if (strcmp(*(ctx->genType), magic_string)) { 
-        char* newmode = GDKstrdup(magic_string);
-        if (newmode == NULL) return "xquery_change_genType: malloc failure";
-        GDKfree(*(ctx->genType));
-        (*ctx->genType) = newmode;
-    }
+xquery_change_genType(xquery_client *ctx, char* val) {
+    @:setvar(genType,val)@
     return NULL;
 }
 
@@ -6134,11 +6213,13 @@ CMDxquery_logger_create( logger *L, int *debug, str fn, str dirname, str dbname,
 char*
 xquery_method(mapi_client *mc,
               int flags,
-              char* qid,
-              lng timeout,
+              char* mode,
               char* module,
-              char* uri,
+              char* location,
               char* method,
+              char* qid,
+              char* caller,
+              lng timeout,
               lng argc,
               lng itercnt,
               lng** argcnt,
@@ -6149,18 +6230,13 @@ xquery_method(mapi_client *mc,
     lng time_xrpcServApp = GDKusec();
     lng usec = GDKusec();
     xquery_client *ctx = (xquery_client*) mc->fc;
-    char *mode = (flags&2)?"xml-noheader-noroot":"xml-noheader-xrpc";
-    char *err, *buf, *ns = "fn";
+    char *genType = (flags&2)?"xml-noheader-noroot":"xml-noheader-xrpc";
+    char *err, *ns = "fn";
     stream *s = NULL;
 
     ctx->mode = XQ_XRPC;
     ctx->errbuf = GDKerrbuf;
-    buf = GDKstrdup(module);
-    (*ctx->moduleNS) = buf;
-    buf = GDKstrdup(method);
-    (*ctx->method) = buf;
-
-    err = xquery_change_genType(ctx, mode);
+    err = xquery_change_genType(ctx, genType);
     if (err) return err;
 
     if (flags&4) { /* write debug output */
@@ -6173,11 +6249,11 @@ xquery_method(mapi_client *mc,
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);
     }
     if (err == NULL && module){
-        err = xquery_module_load(ctx, ns="xrpc", module, uri); 
+        err = xquery_module_load(ctx, ns="xrpc", module, location); 
     }
 
     if (err == NULL) { 
-        err = xquery_function_call(ctx, usec, qid, timeout, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
+        err = xquery_function_call(ctx, usec, ns, module, method, qid, caller, timeout, mode, argc, itercnt, argcnt, argtpe, argval, shredBAT);
         if (err == (char*) -1) err = "xquery_method: function could not be resolved.\n";
         else if (err == xquery_function_error) err = xquery_nondescriptive_error;
     }

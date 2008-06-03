@@ -6255,13 +6255,11 @@ static void
 translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
 {
     int i = 0, rc = NORMAL;
-    long long timeout = 0;
     bool updCall = false;
     PFcnode_t *dsts = NULL, *funApp = NULL;
     PFfun_t   *fun  = NULL;
     PFcnode_t *args = NULL;
     PFarray_t *opt = NULL;
-    char *bulkRPC = NULL, *isoLevel = NULL;
 
     assert(f && xrpc);
 
@@ -6346,51 +6344,25 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
                  counter, counter, counter, counter,
                  counter, counter, counter, counter);
 
-    /* get options declared by "declare option" */
-    opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "bulkrpc"));
-    if(!opt) {
-        bulkRPC = "yes"; /* default value of option 'xrpc:bulkrpc' */
-    } else {
-        if(PFarray_last(opt) > 1)
-            PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:bulkrpc' not allowed!");
-        bulkRPC = *((char **) PFarray_top (opt));
-        if(strcmp(bulkRPC, "yes") !=0 && strcmp(bulkRPC, "no") != 0)
-            PFoops(OOPS_FATAL, "Invalid value of option 'xrpc:bulkrpc': \"%s\".", bulkRPC);
-    }
-
     opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "isolation"));
-    if(!opt) {
-        isoLevel = "none"; /* default value of option 'xrpc:isolation' */
-    } else {
+    if (opt == NULL) 
+        opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "mode"));
+    if(opt) {
+        char* xrpc_mode = *((char **) PFarray_top (opt));
+        milprintf(f, "xrpc_mode := \"%s\";\n", xrpc_mode);
         if(PFarray_last(opt) > 1)
-            PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:isolation' not allowed!");
-        isoLevel = *((char **) PFarray_top (opt));
-        if(strcmp(isoLevel, "none") !=0 && strcmp(isoLevel, "repeatable") != 0)
-            PFoops(OOPS_FATAL, "Invalid value of option 'xrpc:isolation': \"%s\".", isoLevel);
+            PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:mode' not allowed!");
     }
 
     opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "timeout"));
-    if(strcmp(isoLevel, "none") == 0) {
-        if (opt)
-            PFoops(OOPS_WARNING, "The option 'xrpc:timeout' does not have effect "
-                    "in isolation level \"none\", discarded.");
-    } else { /* isoLevel == "repeatable" */
-        if(!opt) {
-            timeout = 30000; /* msec, default value of 'xrpc:timeout' in repeatable level */
-        } else {
-            if(PFarray_last(opt) > 1)
-                PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:timeout' not allowed!");
-            errno = 0;
-            timeout = strtoll(*((char **) PFarray_top (opt)), NULL, 10);
-            if(errno == EINVAL)
-                PFoops(OOPS_FATAL, "Invalid value of option 'xrpc:timeout': \"%s\".",
+    if (opt) {
+        long long timeout = strtoll(*((char **) PFarray_top (opt)), NULL, 10);
+        if(timeout <= 0)
+            PFoops(OOPS_FATAL, "Invalid value of option 'xrpc:timeout': \"%s\".",
                         *((char **) PFarray_top (opt)));
-            else if(errno == ERANGE)
-                PFoops(OOPS_FATAL, "Value of option 'xrpc:timeout' out-of-range (> %ld).",
-                        LONG_MAX);
-            else if(timeout <= 0)
-                PFoops(OOPS_FATAL, "Invalid value of option 'xrpc:timeout': must be positive.");
-        }
+        milprintf(f, "xrpc_timeout := \"%lld\";\n", timeout);
+        if(PFarray_last(opt) > 1)
+            PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:timeout' not allowed!");
     }
 
     /* Define a variable to hold the results of a function call.
@@ -6405,9 +6377,7 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
              * message, we need the offsets of each non-empty
              * parameters. */
             "  fun_vid%03u := ([-](fun_vid%03u.[lng](), fun_base%03u)).[oid]();\n"
-            "  var res := %s(genType,\n"
-            "                \"%s\", lng(%lld),\n" /* isoLevel, timeout */
-            "                \"%s\", \"%s\", \"%s\",\n" /* module, location, method */
+            "  var res := doRPC(\"%s\", \"%s\", \"%s\",\n" /* module, location, method */
             "                %s, lng(%d), iterc_total,\n" /* updCall, arity */
             "                ws, rpc_dsts,\n"
             "                fun_vid%03u, fun_iter%03u,\n"
@@ -6428,8 +6398,6 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
             "  }\n"
             "} # end of XRPC function call\n",
         counter, counter, counter,
-        strcmp(bulkRPC, "yes") == 0 ? "doLoopLiftedRPC" : "doIterativeRPC",
-        isoLevel, timeout,
         PFqname_uri (fun->qname), fun->atURI?fun->atURI:f->url, PFqname_loc (fun->qname),
         updCall ? "true" : "false", fun->arity,
         counter, counter, counter, counter);
@@ -11473,18 +11441,26 @@ const char* PFinitMIL(void) {
         "\n"
         "var loop000 := bat(void,oid,1).seqbase(0@0).append(1@0);\n"
         "\n"
-        "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
-        "var shredBAT := int_nil; # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
+        "# variables for performanbce monitoring\n"
         "var time_compile := 0LL;\n"
         "var time_read := 0LL;\n"
         "var time_shred := 0LL;\n"
         "var time_print := 0LL;\n"
         "var time_exec := 0LL;\n"
         "var time_start := 0LL;\n"
-        "# To print XRPC response message, we need to know the module\n"
-        "# and the method specified in the request message.\n"
-        "var moduleNS := str_nil;\n"
-        "var method := str_nil;\n"
+        "\n"
+        "# variables that determine the behavior of XRPC queries\n"
+        "var xrpc_qid := \"\";         # qid remains empty for non-2pc queries\n"
+        "var xrpc_caller := \"\";      # qid is caller-id of the root of the XRPC tree\n"
+        "var xrpc_seqnr := 0LL;        # if this query is an XRPC request, a session-unique nr\n" 
+        "var xrpc_timeout := 30000LL;  # configurable usec timeout\n"
+        "var xrpc_mode := \"none\";    # format: (none|repeatable)[-iterative][-trace]\n"
+        "var xrpc_coord := false;      # this query should act as XRPC coordinator?
+        "var xrpc_module := str_nil;   # To print XRPC response message, we need to know the module\n"
+        "var xrpc_method := str_nil;   # and the method specified in the request message.\n"
+        "var xrpc_shredBAT := int_nil; # bat-id (int) of a shredded XRPC message 2b added to the ws\n"
+        "\n"
+        "# output mode"
         "var genType := \"xml\";\n";
 }
 
@@ -11583,96 +11559,6 @@ const char* PFstartMIL(int statement_type) {
                                    (PF_STARTMIL_NORMAL("1"));
 }
 
-/* Note 1: this code will only be printed for queries requiring
- *         (repeatable|2PC) isolation, normal MIL code (see above) will
- *         be printed for one-time queries.
- * Note 2: when this code is executed, xrpclock is already set 
- *         by xrpc_fork_mapiclient().  For one-time queries, the
- *         xrpclock is already released in xrpc_client_engine(). */
-#define PF_STARTMIL_XRPC_GETWS(STMT)\
-        "  var ws := empty_bat;\n"\
-        "  var xrpc_wslock := lock_nil;\n"\
-        "  err := CATCH({\n"\
-        "    var qid_idx;\n"\
-        "    var err2 := CATCH(qid_idx := xrpc_qids.reverse().find(\"%s\"));\n"\
-        "    if(isnil(err2)) {\n"\
-        "      # we have received request for this query earlier, reuse the ws\n"\
-        "      var err3 := CATCH({ ws := bat(str(xrpc_wsids.fetch(qid_idx)));\n"\
-        "                          xrpc_wslock := xrpc_locks.fetch(qid_idx);\n"\
-        "                          lock_set(xrpc_wslock); # protect the ws of this query\n"\
-        "                  });\n"\
-        "      CATCH({ if(not(isnil(err3))) { # FIXME: is this proper handling of error?\n"\
-        "                xrpc_statuss.replace(qid_idx, \"abort\");\n"\
-        "                if(lock_try(xrpc_wslock) != 0) {\n"\
-        "                  lock_unset(xrpc_wslock); \n"\
-        "                }\n"\
-        "                ERROR(err3);\n"\
-        "              }\n"\
-        "      });\n"\
-        "      lock_unset(xrpclock);\n"\
-        "    } else {\n"\
-        "      # first request received for this 2PC-XRPC query\n"\
-        "      var err3 := CATCH({ qid_idx := count(xrpc_qids).oid(); # index of the new xrpc_* BUNs\n"\
-        "                          ws := ws_create(" STMT ");\n"\
-        "                          # HACK: use the name of ws[XRPC_SUCCESSOR] to store the QID\n"\
-        "                          ws.fetch(XRPC_SUCCESSOR).rename(str(int(qid_idx)));\n"\
-        "                          xrpc_wslock := lock_create();\n"\
-        "                          lock_set(xrpc_wslock);\n"\
-        "                          xrpc_qids.append(\"%s\");\n"\
-        "                          xrpc_timeouts.append(lng(%lld));\n"\
-        "                          xrpc_wsids.append(ws_id(ws));\n"\
-        "                          xrpc_locks.append(xrpc_wslock);\n"\
-        "                          xrpc_statuss.append(\"exec\");\n"\
-        "                  });\n"\
-        "      if(not(isnil(err3))) { # Undo above actions, ignore possible errors\n"\
-        "        CATCH({ ws_destroy(ws);\n"\
-        "                if(lock_try(xrpc_wslock) != 0) {\n"\
-        "                  lock_unset(xrpc_wslock); \n"\
-        "                }\n"\
-        "                lock_destroy(xrpc_wslock);\n"\
-        "                xrpc_qids.delete(qid_idx);\n"\
-        "                xrpc_timeouts.delete(qid_idx);\n"\
-        "                xrpc_wsids.delete(qid_idx);\n"\
-        "                xrpc_locks.delete(qid_idx);\n"\
-        "                xrpc_statuss.delete(qid_idx);\n"\
-        "        });\n"\
-        "        lock_unset(xrpclock);\n"\
-        "        ERROR(err3);\n"\
-        "      }\n"\
-        "      lock_unset(xrpclock);\n"\
-        "    }\n"
-#define PF_STARTMIL_NORMAL_XRPC_TRANS(STMT)\
-        PF_STARTMIL_START\
-        "var err;\n"\
-        "{{\n"\
-        PF_STARTMIL_XRPC_GETWS(STMT)\
-        PF_STARTMIL_END
-#define PF_STARTMIL_UPDATE_XRPC_TRANS\
-        PF_STARTMIL_START\
-        "var try := 1;\n"\
-        "var err := \"!ERROR: conflicting update\";\n"\
-        "var ws_log_wsid := 0LL;\n"\
-        "{while(((try :+= 1) <= 3) and not(isnil(err))) {\n"\
-        " if (not(err.startsWith(\"!ERROR: conflicting update\"))) break;\n"\
-        PF_STARTMIL_XRPC_GETWS("try")\
-        "  if (ws_log_active and bit(ws_log_wsid)) \n"\
-        "    ws_log(ws, \"restarted \" + str(ws_log_wsid));\n"\
-        PF_STARTMIL_END
-
-int
-PFstartMIL_XRPCTrans(
-        char *buf,
-        int buflen,
-        int statement_type,
-        char *qid,
-        long long timeout) {
-    return (statement_type == 1) ?
-        snprintf(buf, buflen, PF_STARTMIL_UPDATE_XRPC_TRANS, qid, qid, timeout) :
-        snprintf(buf, buflen, (statement_type == 0) ?
-                PF_STARTMIL_NORMAL_XRPC_TRANS("0") :
-                PF_STARTMIL_NORMAL_XRPC_TRANS("1"), qid, qid, timeout);
-}
-
 /* debug statement for PFstopMIL to print result set
 "if (genType.search(\"debug\") >= 0) print(item.slice(0,10).col_name(\"tot_items_\"+str(item.count())));\n"
 */
@@ -11691,8 +11577,12 @@ PFstartMIL_XRPCTrans(
 #define PF_STOPMIL_RDONLY_BODY\
         "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"\
         "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"\
-        "   print_result(genType,moduleNS,method,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"
+        "   print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values,\n"
+        "                xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,xrpc_seqnr,xrpc_timeout,time_start);\n"
 #define PF_STOPMIL_UPDATE_BODY\
+        "  if (xrpc_method != \"\") \n"
+        "    print_result(genType,ws,empty_bat,empty_bat,empty_bat,bat(void,int),int_values,dbl_values,str_values);\n"
+        "                  xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,xrpc_seqnr,xrpc_timeout,time_start);\n"
         "  if (xrpc_qid != "") {\n"\
         "    collect_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"\
         "  } else {\n"\
@@ -11731,44 +11621,6 @@ const char* PFstopMIL(int statement_type) {
            (statement_type==1)?
                (PF_STOPMIL_UPDATE):
                (PF_STOPMIL_DOCMGT);
-}
-
-#define PF_STOPMIL_RDONLY_XRPC_TRANS\
-        PF_STOPMIL_START\
-        PF_STOPMIL_RDONLY_BODY\
-        PF_STOPMIL_END_XRPC_TRANS("Print ")
-#define PF_STOPMIL_UPDATE_XRPC_TRANS\
-        PF_STOPMIL_START\
-        PF_STOPMIL_UPDATE_BODY\
-        PF_STOPMIL_END_XRPC_TRANS("Update")
-#define PF_STOPMIL_DOCMGT_XRPC_TRANS\
-        PF_STOPMIL_START\
-        PF_STOPMIL_DOCMGT_BODY\
-        PF_PLAY_TIJAH_TAPE\
-        PF_STOPMIL_END_XRPC_TRANS("Update")
-#define PF_STOPMIL_END_XRPC_TRANS(LASTPHASE)\
-        " }); \n"\
-        " # catch all possible errors while possibly holding lock\n"\
-        " CATCH({ ws_log_wsid := ws_id(ws);\n"\
-        "         if (not(isnil(err))) ws_log(ws, err); });\n"\
-        " if(not(isnil(xrpc_wslock)))\n"\
-        "   lock_unset(xrpc_wslock);\n"\
-        "}}\n"\
-        PF_STOP_PFTIJAH\
-        PF_STOPMIL_END_PRINT_TIMING(LASTPHASE)
-
-int
-PFstopMIL_XRPCTrans(
-        char *buf,
-        int buflen,
-        int statement_type,
-        char *qid ) {
-    (void)qid;
-    return snprintf(buf, buflen, (statement_type==0) ?
-                                    PF_STOPMIL_RDONLY_XRPC_TRANS :
-                                    (statement_type==1) ?
-                                    PF_STOPMIL_UPDATE_XRPC_TRANS:
-                                    PF_STOPMIL_DOCMGT_XRPC_TRANS);
 }
 
 const char* PFudfMIL(void) {
@@ -11858,7 +11710,7 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long t
     int stmt = PFqueryType(R(c));
 
     /* hack: milprint_summer state, not mil_opt state */
-    f->num_fun = num_fun;     /* for queries: the amount of functions in the query itself (if any); used to ignore module functions */
+    f->num_fun = num_fun; /* number of functions defined in modules (for which we should not generate code here) */
     f->module_base = module_base; /* only generate mil module; no query */
     f->url = url; /* url of this query / module definition */
 

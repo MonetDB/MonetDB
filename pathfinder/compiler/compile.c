@@ -893,6 +893,8 @@ PFcompile_MonetDB (char *xquery, char* url,
 
         PFmem_init ();
 
+        /* initialize data structures in the Parser department */
+        PFparser_init ();
         /* initialize the datastructures in the Core department */
         PFcore_init ();
         /* Initialize data structures in the functions department */

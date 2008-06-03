@@ -32,6 +32,7 @@
 .COMMAND my_hostname() : str = CMDmy_hostname;
 "Returns the hostname of the localhost."
 
+.PRELUDE = xrpc_common_prelude;
 .END xrpc_common;
 
 @h
@@ -78,22 +79,43 @@
 #define XSI_NS      "http://www.w3.org/2001/XMLSchema-instance"
 #define XRPC_NS     "http://monetdb.cwi.nl/XQuery"
 #define XRPC_LOC    "http://monetdb.cwi.nl/XQuery/XRPC.xsd"
+#define WSCOOR_NS   "http://docs.oasis-open.org/ws-tx/wscoor/2006/06"
+#define WSAT_NS     "http://docs.oasis-open.org/ws-tx/wsat/2006/06"
 
-#define XRPC_HEADER "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"  \
-                    "<env:Envelope xmlns:env=\"%s\""                \
-                                 " xmlns:xrpc=\"%s\""               \
-                                 " xmlns:xdt=\"%s\" "               \
-                                 " xmlns:xs=\"%s\""                 \
-                                 " xmlns:xsi=\"%s\""                \
-                                 " xsi:schemaLocation=\"%s %s\">"   \
-                      "<env:Body>"                                  \
-                        "<xrpc:request xrpc:module=\"%s\""          \
-                                     " xrpc:location=\"%s\""        \
-                                     " xrpc:method=\"%s\""          \
-                                     " xrpc:arity=\"%lld\""         \
-                                     " xrpc:iter-count=\"%lld\""    \
-                                     " xrpc:updCall=\"%s\">"
-#define XRPC_QID "<xrpc:queryID xrpc:host=\"%s\" xrpc:timestamp=\"%s\" xrpc:timeout=\"%s\"/>"
+#define HTTP_200_OK\
+            "HTTP/1.1 200 OK\r\n"\
+            "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n"
+
+#define SOAP_ENVELOPE\
+    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"\
+    "<env:Envelope xmlns:env=\"" SOAP_NS "\""\
+                 " xmlns:xrpc=\"" XRPC_NS "\""\
+                 " xmlns:xdt=\"" XDT_NS "\" "\
+                 " xmlns:xs=\"" XS_NS "\""\
+                 " xmlns:xsi=\"" XSI_NS "\""\
+                 " xsi:schemaLocation=\"" XRPC_NS " " XRPC_LOC "\">"
+
+#define XRPC_WS_QID\
+      "<wscoor:CoordinationContext xmlns:wscoor=\""WSCOOR_NS"\""\
+                 "env:mustUnderstand=\"true\">"\
+        "<wscoor:Identifier>%s</wscoor:Identifier>"\
+        "<wscoor:Expires>%s</wscoor:Expires>"\
+        "<wscoor:CoordinationType>" WSAT_NS "</wscoor:CoordinationType>"\
+      "</wscoor:CoordinationContext>"
+
+#define XRPC_REQ_HEADER\
+    "<env:Body>"\
+      "<xrpc:request xrpc:module=\"%s\""\
+                   " xrpc:location=\"%s\""\
+                   " xrpc:method=\"%s\""\
+                   " xrpc:arity=\"%lld\""\
+                   " xrpc:iter-count=\"%lld\""\
+                   " xrpc:updCall=\"%s\">"
+
+#define XRPC_RES_HEADER\
+    "<env:Body>"\
+      "<xrpc:response xrpc:module=\"%s\""\
+                    " xrpc:method=\"%s\">"
 
 #define XRPC_HTTP_CALL "<xrpc:call>"                                    \
                          "<xrpc:sequence>"                              \
@@ -120,7 +142,15 @@
 
 /* exports for xrpc_server.mx and serialize_dflt.mx */
 int check_timeout_by_idx(oid qid_idx);
-int check_timeout_by_qid(char *qid, lng timestamp, lng timeout);
+int check_timeout_by_qid(char *qid, lng timeout);
+
+extern int xrpc_port;
+extern char *xrpc_hostname;
+extern BAT *xrpc_qids;
+extern BAT *xrpc_timeouts;
+extern BAT *xrpc_statuses;
+extern BAT *xrpc_locks;
+extern BAT *xrpc_wsids;
 
 #endif /* XRPC_COMMON_H */
 
@@ -153,143 +183,90 @@ int CMDmy_hostname(char **res)
 
 /* return: 1: timedout; 0: not timedout; -1: not found; -2: other errors */
 int
-check_timeout_by_qid(char *qid, lng timestamp, lng timeout)
+check_timeout_by_qid(char *qid, lng timeout)
 {
-    MT_Lock *xrpclock = NULL;
-    int xrpclock_idx = XRPCLOCK_IDX;
-    BAT *xrpc_qids = NULL, *xrpc_statuss = NULL;
-    BATiter qidsi;
+    BATiter qidsi = bat_iterator(xrpc_qids);
     oid qid_idx = oid_nil;
     BUN bun_qid = BUN_NONE;
+    int ret = 1;
 
-    if((timestamp + (timeout * 1000)) > GDKusec())
+    if(timeout > GDKusec())
         return 0; /* not timed out */
 
-    if(CMDpflock_get((ptr)&xrpclock, &xrpclock_idx) == GDK_FAIL) {
-        GDKerror("check_timeout_by_qid: "
-                 "failed to get the global lock 'xrpclock'!\n");
-        return -2;
-    }
-    MT_lock_set(xrpclock, "check_timeout_by_qid");
-
-    xrpc_qids = BATdescriptor(BBPindex("xrpc_qids"));
-    xrpc_statuss = BATdescriptor(BBPindex("xrpc_statuss"));
-    if(!xrpc_qids || !xrpc_statuss) {
-        if(xrpc_qids) BBPunfix(BBPcacheid(xrpc_qids));
-        if(xrpc_statuss) BBPunfix(BBPcacheid(xrpc_statuss));
-        MT_lock_unset(xrpclock, "check_timeout_by_qid");
-        GDKerror("check_timeout_by_qid: "
-                 "could not find the xrpc_* meta-BATs!\n");
-        return -2;
-    }
-
+    MT_set_lock(PF_XRPC_LOCK, "check_timeout_by_qid");
     if((bun_qid = BUNfnd(BATmirror(xrpc_qids), qid)) ==  BUN_NONE) {
-        BBPunfix(BBPcacheid(xrpc_qids));
-        BBPunfix(BBPcacheid(xrpc_statuss));
-        MT_lock_unset(xrpclock, "check_timeout_by_qid");
         GDKerror("check_timeout_by_qid: "
                  "could not find QID \"%s\" in the meta-BAT "
                  "\"xrpc_qids\"\n", qid);
-        return -1;
+        ret = -1;
     }
-
-    qidsi = bat_iterator(xrpc_qids);
     qid_idx =  *(oid*)BUNtail(qidsi, bun_qid);
-    if(!BUNreplace(xrpc_statuss, &qid_idx, "timedout", FALSE)){
-        BBPunfix(BBPcacheid(xrpc_qids));
-        BBPunfix(BBPcacheid(xrpc_statuss));
-        MT_lock_unset(xrpclock, "check_timeout_by_qid");
+    if(!BUNreplace(xrpc_statuses, &qid_idx, "timedout", FALSE)){
+        MT_unset_lock(PF_XRPC_LOCK, "check_timeout_by_qid");
         GDKerror("check_timeout_by_qid: "
                  "failed to change the status of query \"%s\" into "
                  "\"timedout\"\n", qid);
-        return -2;
+        ret = -2;
     }
-
-    BBPunfix(BBPcacheid(xrpc_qids));
-    BBPunfix(BBPcacheid(xrpc_statuss));
-    MT_lock_unset(xrpclock, "check_timeout_by_qid");
-    return 1; /* timed out */
+    MT_unset_lock(PF_XRPC_LOCK, "check_timeout_by_qid");
+    return ret; /* timed out */
 }
 
 /* return: 1: timedout; 0: not timedout; -1: not found; -2: other errors */
 int
 check_timeout_by_idx(oid qid_idx)
 {
-    MT_Lock *xrpclock = NULL;
-    int xrpclock_idx = XRPCLOCK_IDX, ret = -2;
-    BAT *xrpc_qids = NULL, *xrpc_timeouts = NULL, *xrpc_statuss = NULL;
-    BATiter qidsi, timeoutsi;
+    BATiter qidsi = bat_iterator(xrpc_qids);
+    BATiter timeoutsi = bat_iterator(xrpc_timeouts);
     BUN bun_qid = BUN_NONE, bun_to = BUN_NONE;
-    char *qid = NULL, *ts_str = NULL, *to_str = NULL;
-    lng ts = 0, to = 0;
     char err[1024];
+    int ret = 1;
 
-    if(CMDpflock_get((ptr)&xrpclock, &xrpclock_idx) == GDK_FAIL) {
-        GDKerror("check_timeout_by_idx: "
-                 "failed to get the global lock 'xrpclock'!\n");
-        return ret;
-    }
-
-    MT_lock_set(xrpclock, "check_timeout_by_idx");
-
-    xrpc_qids = BATdescriptor(BBPindex("xrpc_qids"));
-    xrpc_timeouts = BATdescriptor(BBPindex("xrpc_timeouts"));
-    xrpc_statuss = BATdescriptor(BBPindex("xrpc_statuss"));
-    if(!xrpc_qids || !xrpc_timeouts || !xrpc_statuss) {
-        snprintf(err, 1024, "check_timeout_by_idx: failed to retrieve "
-                            "the xrpc_* meta-BATs!\n");
-        goto unlock_ret;
-    }
-
-    qidsi = bat_iterator(xrpc_qids);
-    timeoutsi = bat_iterator(xrpc_timeouts);
+    MT_set_lock(PF_XRPC_LOCK, "check_timeout_by_idx");
     BUNfndVOID(bun_qid, qidsi, &qid_idx);
     BUNfndVOID(bun_to, timeoutsi, &qid_idx);
     if(bun_qid == BUN_NONE || bun_to == BUN_NONE) {
         snprintf(err, 1024, "check_timeout_by_idx: "OIDFMT"-th BUN not "
                             "found in the xrpc_* meta-BATs!\n", qid_idx);
-
         ret = -1;
-        goto unlock_ret;
-    }
-
-    qid = (char*)BUNtail(qidsi, bun_qid);
-    to_str = (char*)BUNtail(timeoutsi, bun_to); assert(qid && to_str);
-    ts_str = strrchr(qid, '|'); assert(ts_str);
-    errno = 0; ts = strtoll(ts_str, NULL, 10);
-    if(errno) {
-        snprintf(err, 1024, "check_timeout_by_idx: invalid value of "
-                            "timestamp: \"%s\"!\n", ts_str);
-        goto unlock_ret;
-    }
-    errno = 0; to = strtoll(to_str, NULL, 10);
-    if(errno) {
-        snprintf(err, 1024, "check_timeout_by_idx: invalid value of "
-                            "timeout: \"%s\"!\n", to_str);
-        goto unlock_ret;
-    }
-
-    if((ts + (to * 1000)) > GDKusec()) {
-        ret = 0; /* not timed out */
-        goto unlock_ret;
-    }
-
-    if(!BUNreplace(xrpc_statuss, &qid_idx, "timedout", FALSE)){
-        snprintf(err, 1024, "check_timeout_by_idx: failed to change "
+    } else {
+        char *qid = (char*)BUNtail(qidsi, bun_qid);
+        char *to_str = (char*)BUNtail(timeoutsi, bun_to); 
+        assert(qid && to_str);
+        lng to = strtoll(to_str, NULL, 10);
+        if(to <= 0) {
+            snprintf(err, 1024, "check_timeout_by_idx: invalid value of "
+                                "timeout: \"%s\"!\n", to_str);
+        } else if (to > GDKusec()) {
+            ret = 0; /* not timed out */
+        } else if(!BUNreplace(xrpc_statuses, &qid_idx, "timedout", FALSE)){
+            snprintf(err, 1024, "check_timeout_by_idx: failed to change "
                             "the status of query \"%s\" into "
                             "\"timedout\"\n", qid);
-        goto unlock_ret;
+        }
     }
-
-    ret = 1; /* timed out */
-    goto unlock_ret;
-
-unlock_ret:
-    if(xrpc_qids) BBPunfix(BBPcacheid(xrpc_qids));
-    if(xrpc_timeouts) BBPunfix(BBPcacheid(xrpc_timeouts));
-    if(xrpc_statuss) BBPunfix(BBPcacheid(xrpc_statuss));
-    MT_lock_unset(xrpclock, "check_timeout_by_idx");
-    if(ret < 0)
-        GDKerror(err);
+    MT_unset_lock(PF_XRPC_LOCK, "check_timeout_by_idx");
+    if(ret < 0) GDKerror(err);
     return ret;
+}
+
+@= xrpc_bat
+    xrpc_@1 = BATnew(TYPE_void,ATOMindex("@2"),1024);
+    if (xrpc_@1 == NULL) GDKfatal("failed to create xrpc_@1");
+    BATseqbase(xrpc_@1, 1);
+    BBPrename(xrpc_@1->batCacheid, "xrpc_@1");
+@c
+BAT *xrpc_qids = NULL, *xrpc_statuses = NULL, *xrpc_timeouts = NULL, *xrpc_locks = NULL, *xrpc_wsids = NULL;
+char *xrpc_hostname = NULL;
+int xrpc_port = 0;
+
+bat*
+xrpc_common_prelude(void) {
+    @:xrpc_bat(qids,str)@
+    @:xrpc_bat(statuses,str)@
+    @:xrpc_bat(timeouts,lng)@
+    @:xrpc_bat(locks,lock)@
+    @:xrpc_bat(wsids,lng)@
+    CMDmy_hostname(&xrpc_hostname);
+    return NULL;
 }

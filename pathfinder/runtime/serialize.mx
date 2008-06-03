@@ -147,10 +147,20 @@ typedef struct XqueryCtx {
      * Next elements is a stack used during printing to store the
      * pre-value, name, namespace of the nodes currently being printed.
      */
-    int            stackPtr;
+    int         stackPtr;
     SerializeFrame tagStack[MAXTAGDEPTH];
-    /* */
-    void*	_private;   /* private application defined space */
+
+    /* xrpc response header things */
+    str         xrpc_module;
+    str         xrpc_method;  
+    str         xrpc_qid;
+    str         xrpc_caller;
+    str         xrpc_mode;
+    lng         xrpc_seqnr;
+    lng         time_exec;
+
+    /* private application defined space */
+    void*	_private;   
 } XqueryCtx;
 
 /**
@@ -164,7 +174,7 @@ typedef struct serializeFunStruct {
     const char* name;
     /* the initialization handler */
     bool (*init)(XqueryCtx* ctx, char* args, char* restag,
-                 char* resprefix, char* module, char* method);
+                 char* resprefix);
     /* the clean up handler */
     bool (*cleanup)(XqueryCtx* ctx);
 
@@ -242,8 +252,6 @@ xquery_print_doc_DRIVER (
 int
 xquery_print_result_DRIVER (
     str                 mode,
-    str                 moduleNS,
-    str                 method,
     serializeFunStruct *driverFun, /* unused */
     char               *driverArg, /* unused */
     BAT                *ws,
@@ -255,14 +263,20 @@ xquery_print_result_DRIVER (
     BAT                *intVAL,
     BAT                *dblVAL,
     BAT                *strVAL);
+    /* xrpc response header things */
+    str                xrpc_module,   
+    str                xrpc_method,   
+    str                xrpc_qid, 
+    str                xrpc_caller, 
+    str                xrpc_mode,
+    lng                *xrpc_seqnr,
+    lng                *time_start);
 
 /* hack to allow direct calls in xrpc_client.mx */
 int
 xquery_print_result_driver (
     stream             *fp,
     str                 mode,
-    str                 module,
-    str                 method,
     serializeFunStruct *driverFun, /* unused */
     char               *driverArg, /* unused */
     BAT                *ws,
@@ -273,7 +287,15 @@ xquery_print_result_driver (
     BAT                *kind,
     BAT                *intVAL,
     BAT                *dblVAL,
-    BAT                *strVAL);
+    BAT                *strVAL,
+    /* xrpc response header things */
+    str                xrpc_module,   
+    str                xrpc_method,   
+    str                xrpc_qid, 
+    str                xrpc_caller, 
+    str                xrpc_mode,
+    lng                *xrpc_seqnr,
+    lng                *time_start);
 
 #endif /* SERIALIZE_H */
 @c
@@ -1314,8 +1336,6 @@ static bool
 createWsContext (XqueryCtx*        ctx,
                  BAT*              ws,
                  str               mode,
-                 str               module,
-                 str               method,
                  serializeFunStruct*    driverFun,
                  char*             driverArg,
                  stream*           fp)
@@ -1369,18 +1389,6 @@ createWsContext (XqueryCtx*        ctx,
         /* we may wrap each item in an element
            specifying its type */
         if (match(mode, "xrpc")) {
-            if (!module) {
-                fatal_err (ctx,
-                        "the namespace of called module is "
-                        "required in \"xrpc\" mode");
-                return PROBLEM;
-            }
-            if (!method) {
-                fatal_err (ctx,
-                        "the name of called function is "
-                        "required in \"xrpc\" mode");
-                return PROBLEM;
-            }
             resprefix = "xrpc";
             ctx->modes = ctx->modes | MODE_XRPC;
             /* in "XRPC" mode, the line "<?xml ...?>" is printed by
@@ -1471,7 +1479,7 @@ createWsContext (XqueryCtx*        ctx,
     else
         return PROBLEM;
     
-    if ( !ctx->driverFun->init(ctx, driverArg, restag, resprefix, module, method) )
+    if ( !ctx->driverFun->init(ctx, driverArg, restag, resprefix) )
         return PROBLEM;
 
     return SUCCESS;
@@ -1583,7 +1591,7 @@ xquery_print_doc_DRIVER (
         GDKerror("serialize.mx: unable to find document \"%s\" in working set!\n", docName);
     } else { 
         XqueryCtx  ctx_struct, *ctx = &ctx_struct;
-        if (createWsContext(ctx,ws,mode,NULL,NULL,driverFun,driverArg,GDKout)) {
+        if (createWsContext(ctx,ws,mode,driverFun,driverArg,GDKout)) {
 	    oid start_oid = doc_startOid(ctx,docIndex);
 	    if ( start_oid == oid_nil )
 	        return GDK_FAIL;
@@ -1668,8 +1676,6 @@ int
 xquery_print_result_driver (
     stream*             fp,
     str                 mode,
-    str                 module,
-    str                 method,
     serializeFunStruct *driverFun, /* unused */
     char               *driverArg, /* unused */
     BAT                *ws,
@@ -1680,7 +1686,15 @@ xquery_print_result_driver (
     BAT                *kind,
     BAT                *intVAL,
     BAT                *dblVAL,
-    BAT                *strVAL)
+    BAT                *strVAL,
+    /* xrpc response header things */
+    str                xrpc_module,   
+    str                xrpc_method,   
+    str                xrpc_qid, 
+    str                xrpc_caller, 
+    str                xrpc_mode,
+    lng                *xrpc_seqnr,
+    lng                *time_exec);
 {
     TIMER_START();
 
@@ -1691,8 +1705,17 @@ xquery_print_result_driver (
     static BUN (*fun_k) (BAT *, oid);
 
     /* prepare serialization */ 
-    if ( !createWsContext (ctx, ws, mode, module, method, driverFun, driverArg, fp) )
+    if ( !createWsContext (ctx, ws, mode, driverFun, driverArg, fp) )
         return GDK_FAIL;
+
+    /* fill in the XRPC specific fields for the response header */
+    ctx->xrpc_module = xrpc_module;
+    ctx->xrpc_method = xrpc_method;
+    ctx->xrpc_qid = xrpc_qid;
+    ctx->xrpc_caller = xrpc_caller;
+    ctx->xrpc_mode = xrpc_mode;
+    ctx->xrpc_seqnr = *xrpc_seqnr;
+    ctx->xrpc_time_exec = *time_exec;
 
     curcnt = 0;
     maxcnt = BATcount (item);
@@ -1946,8 +1969,6 @@ xquery_print_result_driver (
 int 
 xquery_print_result_DRIVER (
     str                 mode,
-    str                 moduleNS,
-    str                 method,
     serializeFunStruct *driverFun,
     char               *driverArg,
     BAT                *ws,
@@ -1958,15 +1979,33 @@ xquery_print_result_DRIVER (
     BAT                *kind,
     BAT                *intVAL,
     BAT                *dblVAL,
-    BAT                *strVAL)
+    BAT                *strVAL,
+    /* xrpc response header things */
+    str                xrpc_module,   
+    str                xrpc_method,   
+    str                xrpc_qid, 
+    str                xrpc_caller, 
+    str                xrpc_mode,
+    lng                *xrpc_seqnr,
+    lng                *time_exec);
 {
+    stream *fp = GDKout;
     (void) driverFun;
     (void) driverArg;
+    if (xrpc_mode && strstr(xrpc_mode, "trace")) {
+        char logfile[1024], *docroot = GDKgetenv("xrpc_http_docroot");
+        snprintf(logfile, 1024, "%s" DIR_SEP "logs" DIR_SEP "res_" LLFMT ".xml", docroot, *xquery_seqnr);
+        stream *logstream = open_wstream(logfile);
+        fp = open_teestream(fp, logstream);
+        if (!logstream || !fp) {
+            GDKerror("print_result: could not open logfile %s for writing\n", logfile);
+            if (logstream) stream_destroy(logstream);
+            return GDK_FAIL;
+        }
+    }
     return xquery_print_result_driver (
-               GDKout,
+               fp,
                mode,
-               moduleNS,
-               method,
                driverFun, /* set of printing callback function */
                driverArg, /* optional arguments for the callback functions */
                ws,
@@ -1977,7 +2016,14 @@ xquery_print_result_DRIVER (
                kind, /* kind relation */
                intVAL,
                dblVAL,
-               strVAL);
+               strVAL,
+               xrpc_module,   
+               xrpc_method,   
+               xrpc_qid, 
+               xrpc_caller, 
+               xrpc_mode, 
+               xrpc_seqnr, 
+               time_exec);
 }
 
 #define FNDEEPEQTRACE 0
@@ -2372,7 +2418,7 @@ CMDfn_deep_eq(BAT** resbat, BAT* ws, BAT* litem, BAT* lkind, BAT* ritem, BAT* rk
     mySerializeFun.handle_attribute = dach_handle_attribute;
 
     XqueryCtx  ctx_struct, *ctx = &ctx_struct;
-    if (!createWsContext(ctx,ws,"xml",NULL,NULL,&mySerializeFun,"",GDKout))
+    if (!createWsContext(ctx,ws,"xml",&mySerializeFun,"",GDKout))
         return GDK_FAIL;
     struct DuplAttrChk dach; /* hander of attribute equality check */
     ctx->_private = &dach;

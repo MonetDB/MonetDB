@@ -59,23 +59,25 @@ percentage - a number [0,100] indicating the amount of free space to reserve for
 .COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
  "C interface to Workset print routine"
 
-.COMMAND print_result(str mode, str moduleNS, str method,
+.COMMAND print_result(str genType, 
                       BAT[oid,bat] ws,
                       BAT[oid,any] loop, BAT[void,oid] iter,
                       BAT[void,oid] item, BAT[void,int] kind, 
                       BAT[oid,lng] int_values, BAT[oid,dbl] dbl_values, 
                       BAT[oid,str] str_values) :
+                      str xrpc_module, str xrpc_method, str xrpc_qid, str xrpc_caller, 
+                      lng xrpc_mode, lng xrpc_seqnr, lng time_start) :
                             void = xquery_print_result_loop;
  "C interface to Workset result print routine, that can print multiple iters"
 
-.COMMAND print_result(str mode, BAT[void,bat] ws,
+.COMMAND print_result(str genType, BAT[void,bat] ws,
                       BAT[void,oid] item, BAT[void,int] kind,
                       BAT[void,lng] int_values, BAT[void,dbl] dbl_values,
                       BAT[void,dbl] dec_values, BAT[void,str] str_values) :
                             void = xquery_print_result_main;
  "C interface to Workset result print routine"
 
-.COMMAND print_result(str file, str mode, BAT[void,bat] ws,
+.COMMAND print_result(str file, str genType, BAT[void,bat] ws,
                       oid item, int kind,
                       BAT[void,lng] int_values, BAT[void,dbl] dbl_values,
                       BAT[void,dbl] dec_values, BAT[void,str] str_values) :
@@ -5806,6 +5808,23 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
 #include <monet_interpreter.h>
 #include <monettime.h>
 
+extern MT_Lock pf_runtime_lock[7];
+#define PF_SHORT_LOCK        pf_runtime_lock[0]
+#define PF_WAL_LOCK          pf_runtime_lock[1]
+#define PF_FREE_LOCK         pf_runtime_lock[2]
+#define PF_EXTEND_LOCK       pf_runtime_lock[3]
+#define PF_META_LOCK         pf_runtime_lock[4]
+#define PF_UPDATE_LOCK       pf_runtime_lock[5]
+#define PF_XRPC_LOCK         pf_runtime_lock[6]
+#define PF_META_BARRIER      pf_runtime_sema[0]
+#define PF_UPDATE_BARRIER    pf_runtime_sema[1]
+#define PF_EXTEND_BARRIER    pf_runtime_sema[2]
+
+#define PF_MODE_RDONLY 0 /* read-only query */
+#define PF_MODE_DOCMGT 1 /* document management query */ 
+#define PF_MODE_UPDATE 2 /* updating query */
+#define PF_MODE_RETRY  3 /* updating query run for the second time (exclusive mode) */
+
 #endif
 @c
 
@@ -8206,25 +8225,9 @@ MT_Sema pf_runtime_sema[3];
 int pf_nreaders, pf_convoy, pf_ndocmgt;
 lng pf_writer, pf_special;
 
-#define PF_SHORT_LOCK        pf_runtime_lock[0]
-#define PF_WAL_LOCK          pf_runtime_lock[1]
-#define PF_FREE_LOCK         pf_runtime_lock[2]
-#define PF_EXTEND_LOCK       pf_runtime_lock[3]
-#define PF_META_LOCK         pf_runtime_lock[4]
-#define PF_UPDATE_LOCK       pf_runtime_lock[5]
-#define PF_XRPC_LOCK         pf_runtime_lock[6]
-#define PF_META_BARRIER      pf_runtime_sema[0]
-#define PF_UPDATE_BARRIER    pf_runtime_sema[1]
-#define PF_EXTEND_BARRIER    pf_runtime_sema[2]
-
-#define PF_MODE_RDONLY 0 /* read-only query */
-#define PF_MODE_DOCMGT 1 /* document management query */ 
-#define PF_MODE_UPDATE 2 /* updating query */
-#define PF_MODE_RETRY  3 /* updating query run for the second time (exclusive mode) */
-
 /* get handle to the shared locks */
 int CMDpflock_get(ptr *ret, int* nr) {
-    *ret = (ptr) &pf_runtime_lock[(*nr)&6];
+    *ret = (ptr) &pf_runtime_lock[(*nr)&7];
     if (*nr > 6) *ret = (ptr) &PF_EXTEND_BARRIER; /* hack: do not feel like creating a CMDsema_get */
     return GDK_SUCCEED;
 }
@@ -8459,8 +8462,6 @@ CMDdocsused(BAT** res, BAT* input, BAT* frag_root, BAT* nid_rid, BAT* map_pid, B
 int
 xquery_print_result_loop (
     str  mode,
-    str  moduleNS,
-    str  method,
     BAT* ws,
     BAT* loop, 
     BAT* iter, 
@@ -8468,13 +8469,19 @@ xquery_print_result_loop (
     BAT* kind,
     BAT* intVAL,
     BAT* dblVAL,
-    BAT* strVAL)
+    BAT* strVAL);
+    /* xrpc response header things */
+    str  xrpc_module,   
+    str  xrpc_method,   
+    str  xrpc_qid, 
+    str  xrpc_caller, 
+    lng  *xrpc_mode,
+    lng  *xrpc_seqnr,
+    lng  *time_start);
 {
     size_t niters = BATcount (loop);
     return xquery_print_result_DRIVER (
                mode,
-               moduleNS,
-               method,
                NULL, /* set of printing callback function */
                NULL, /* optional arguments for the callback functions */
                ws,
@@ -8485,7 +8492,15 @@ xquery_print_result_loop (
                kind, /* kind relation */
                intVAL,
                dblVAL,
-               strVAL);
+               strVAL,
+               xrpc_module,   
+               xrpc_method,   
+               xrpc_qid, 
+               xrpc_caller, 
+               xrpc_mode,
+               xrpc_seqnr,
+               time_start);
+{
 }
 
 int
@@ -8503,8 +8518,6 @@ xquery_print_result_main (
     
     return xquery_print_result_DRIVER (
                mode,
-               NULL, /* module */
-               NULL, /* method */
                NULL, /* set of printing callback function */
                NULL, /* optional arguments for the callback functions */
                ws,
@@ -8515,7 +8528,14 @@ xquery_print_result_main (
                kind, /* kind relation */
                intVAL,
                dblVAL,
-               strVAL);
+               strVAL,
+               NULL, /* xrpc_module */
+               NULL, /* xrpc_method */
+               NULL, /* xrpc_qid */
+               NULL, /* xrpc_caller */
+               NULL, /* xrpc_mode */
+               NULL, /* xrpc_seqnr */
+               NULL);/* time_exexc */
 }
 
 int
@@ -8557,8 +8577,6 @@ xquery_print_result_file (
                         ret = xquery_print_result_driver (
                              s,
                              mode,
-                             NULL, /* module */
-                             NULL, /* method */
                              NULL, /* set of printing callback function */
                              NULL, /* optional arguments for the callback functions */
                              ws,
@@ -8569,7 +8587,14 @@ xquery_print_result_file (
                              k, /* kind relation */
                              intVAL,
                              dblVAL,
-                             strVAL);
+                             strVAL,
+                             NULL, /* xrpc_module */
+                             NULL, /* xrpc_method */
+                             NULL, /* xrpc_qid */
+                             NULL, /* xrpc_caller */
+                             NULL, /* xrpc_mode */
+                             NULL, /* xrpc_seqnr */
+                             NULL);/* time_exexc */
                          stream_destroy(s);
                     }
                     BBPreclaim(k);
@@ -8595,8 +8620,9 @@ bat* pf_support_prelude() {
     MT_init_lock(pf_runtime_lock[1], "PF_WAL_LOCK");
     MT_init_lock(pf_runtime_lock[2], "PF_FREE_LOCK");
     MT_init_lock(pf_runtime_lock[3], "PF_EXTEND_LOCK");
-    MT_init_lock(pf_runtime_lock[5], "PF_META_LOCK");
     MT_init_lock(pf_runtime_lock[4], "PF_UPDATE_LOCK");
+    MT_init_lock(pf_runtime_lock[5], "PF_META_LOCK");
+    MT_init_lock(pf_runtime_lock[6], "PF_XRPC_LOCK");
     MT_init_sema(pf_runtime_sema[0],1, "PF_META_BARRIER");
     MT_init_sema(pf_runtime_sema[1],1, "PF_UPDATE_BARRIER");
     MT_init_sema(pf_runtime_sema[2],1, "PF_EXTEND_BARRIER");
@@ -8617,6 +8643,7 @@ void pf_support_epilogue() {
     MT_destroy_lock(pf_runtime_lock[3]);
     MT_destroy_lock(pf_runtime_lock[4]);
     MT_destroy_lock(pf_runtime_lock[5]);
+    MT_destroy_lock(pf_runtime_lock[6]);
     MT_destroy_sema(pf_runtime_sema[0]);
     MT_destroy_sema(pf_runtime_sema[1]);
     MT_destroy_sema(pf_runtime_sema[2]);
