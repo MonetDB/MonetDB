@@ -274,9 +274,10 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q){
 	for(j=0; j< q->argc; j++){
 		v= &getVarConstant(mb,getArg(q,j));
 		if(getArgType(mb,q,j)==TYPE_bat || isaBatType(getArgType(mb, q,j)) ){
-			if( v->val.bval || !BBP_lrefs(v->val.bval))
+			if( v->val.bval )
 				BBPdecref(ABS(v->val.bval), TRUE);
-			v->val.bval= 0;
+			v->vtype= TYPE_int;
+			v->val.ival= 0;
 		}
 		if( v->vtype == TYPE_str) {
 			if(v->val.pval) {
@@ -438,8 +439,11 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 	    recycleMemory > HARDLIMIT_MEM)
 		return ; /* no more caching */
 		
-	if ( recycleBlk->stop == 0 ){ /* fake instr at pos. 0 */
-		q = copyInstruction(p);
+	if ( recycleBlk->stop == 0 ){ 
+		/* fake a proper MAL function signature. */
+		q = newInstruction(NULL,FUNCTIONsymbol);
+		setFunctionId(q, putName("recycler",8));
+		setDestVar(q, newVariable(recycleBlk,GDKstrdup("recycler"),TYPE_any));
 		pushInstruction(recycleBlk,q);
 	}
 	if ( !RECYCLEinterest(mb,p))
