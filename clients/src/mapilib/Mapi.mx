@@ -1697,8 +1697,16 @@ close_result(MapiHdl hdl)
 		for (i = 0; i < result->cache.writer; i++) {
 			if (result->cache.line[i].rows)
 				free(result->cache.line[i].rows);
-			if (result->cache.line[i].anchors)
+			if (result->cache.line[i].anchors) {
+				int j;
+
+				for (j = 0; j < result->cache.line[i].fldcnt; j++)
+					if (result->cache.line[i].anchors[j]) {
+						free(result->cache.line[i].anchors[j]);
+						result->cache.line[i].anchors[j] = NULL;
+					}
 				free(result->cache.line[i].anchors);
+			}
 		}
 		free(result->cache.line);
 		result->cache.line = NULL;
