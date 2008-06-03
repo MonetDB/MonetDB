@@ -2111,3 +2111,16 @@ begin
         return WebServerURL +'tools/explore/obj.asp?id='+ cast(objIdd as varchar(32));
 end;  
 
+CREATE FUNCTION fGetUrlFrameImg(frameId bigint, zoom int)
+returns varchar(256)
+begin   
+        declare WebServerURL varchar(500);
+        set WebServerURL = 'http://localhost/';
+        select cast(value as varchar(500)) into WebServerURL 
+                from SiteConstants
+                where name ='WebServerURL';
+        return WebServerURL + 'get/frameById.asp?id=' 
+                + cast(frameId as varchar(32))
+                + '&zoom=' + cast(zoom as varchar(6)) ;
+end;
+
