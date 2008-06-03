@@ -310,6 +310,17 @@ return
   into exactly-one($dest[@xid[. = $item/@xid]])
 <>
 
+count(doc("test10.xml")//*)
+<>
+let $todo := subsequence(doc("prepared49736.data")/XIRAF/item[*], 1281,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item at $b in $todo
+return
+  ($b, $dest[@xid[. = $item/@xid]], "
+")
+<>
 let $todo := subsequence(doc("prepared49736.data")/XIRAF/item[*], 1281,256)
 let $dest := for $i in doc("test10.xml")//*[@xid]
              where some $k in $todo/@xid satisfies $k = $i/@xid
@@ -320,6 +331,17 @@ return
   into exactly-one($dest[@xid[. = $item/@xid]])
 <>
 
+count(doc("test10.xml")//*)
+<>
+let $todo := subsequence(doc("prepared49736.data")/XIRAF/item[*], 1537,256)
+let $dest := for $i in doc("test10.xml")//*[@xid]
+             where some $k in $todo/@xid satisfies $k = $i/@xid
+             return $i
+for $item at $b in $todo
+return
+  ($b, $dest[@xid[. = $item/@xid]], "
+")
+<>
 let $todo := subsequence(doc("prepared49736.data")/XIRAF/item[*], 1537,256)
 let $dest := for $i in doc("test10.xml")//*[@xid]
              where some $k in $todo/@xid satisfies $k = $i/@xid
