@@ -1,3 +1,7 @@
+DROP FUNCTION fGetNearbyObjAllEq;
+DROP FUNCTION fGetNearbyObjAllXYZ;
+DROP FUNCTION fgeturlfitsfield;
+DROP FUNCTION fGetUrlSpecImg;
 DROP FUNCTION fHtmEq;
 DROP FUNCTION fTokenStringToTable;
 DROP FUNCTION fIAUFromEq;
@@ -113,3 +117,7 @@ DROP FUNCTION fRun;
 DROP FUNCTION fCamcol;
 DROP FUNCTION  fField;
 DROP FUNCTION fObj;
+DROP FUNCTION fGetNearbyObjAllEq;
+DROP FUNCTION fGetNearbyObjAllXYZ;
+DROP FUNCTION fgeturlfitsfield;
+DROP FUNCTION fGetUrlSpecImg;
