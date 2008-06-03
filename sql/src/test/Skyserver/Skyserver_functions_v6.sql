@@ -2251,3 +2251,15 @@ BEGIN
 	SELECT * FROM fGetNearbyObjAllXYZ(nx,ny,nz,r)); 
 END;
 
+CREATE FUNCTION fGetUrlSpecImg(specObjId bigint)
+returns varchar(256)
+begin
+	declare WebServerURL varchar(500);
+	set WebServerURL = 'http://localhost/';
+	select cast(value as varchar(500)) into WebServerURL 
+	from SiteConstants
+		where name ='WebServerURL';
+	return WebServerURL + 'get/specById.asp?id=' 
+		+ cast(coalesce(specObjId,0) as varchar(32));
+end;
+
