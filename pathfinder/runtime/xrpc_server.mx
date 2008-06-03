@@ -594,19 +594,19 @@ getCallValues(stream *out,
     /* i: index in xrpc:call; j: index of xrpc:sequence per xrpc:call */
     for(i = 0; next_call_node_pre < BATcount(pre_size); call_node_pre = next_call_node_pre, i++) {
         /* skip possible empty text node, without further checking */
-        call_node_pre += (pre_kindT[call_node_pre] == ELEMENT ? 0 : 1);
+        call_node_pre += (pre_kindT[call_node_pre] == TEXT ? 1 : 0);
         next_call_node_pre = call_node_pre + pre_sizeT[call_node_pre] + 1;
 
         for(seq_node_pre = call_node_pre + 1, j = 0; seq_node_pre < next_call_node_pre;
                 seq_node_pre = next_seq_node_pre, j++) {
             /* skip possible empty text nodes, without further checking */
-            seq_node_pre += (pre_kindT[seq_node_pre] == ELEMENT ? 0 : 1);
+            seq_node_pre += (pre_kindT[seq_node_pre] == TEXT ? 1 : 0);
             next_seq_node_pre = seq_node_pre + pre_sizeT[seq_node_pre] + 1;
        
             for(tpe_node_pre = seq_node_pre+1, k=1; tpe_node_pre < next_seq_node_pre;
                     tpe_node_pre = next_tpe_node_pre, k++) {
                 /* skip possible empty text nodes, without further checking */
-                tpe_node_pre += (pre_kindT[tpe_node_pre] == ELEMENT ? 0 : 1);
+                tpe_node_pre += (pre_kindT[tpe_node_pre] == TEXT ? 1 : 0);
                 next_tpe_node_pre = tpe_node_pre + pre_sizeT[tpe_node_pre]+1;
                 /* advance our cursor in attr_own */
                 while(ao_ptr < nattrs && attr_ownT[ao_ptr] < tpe_node_pre) ao_ptr++;
@@ -708,7 +708,8 @@ getCallValues(stream *out,
                        strcmp(argtpe[nr_args], "xs:comment") == 0 ||
                        strcmp(argtpe[nr_args], "xs:processing-instruction") == 0) {
                         val_node_pre = tpe_node_pre + 1;
-                        val_node_pre += (pre_kindT[val_node_pre] == ELEMENT ? 0 : 1);
+                        if(strcmp(argtpe[nr_args], "xs:text") != 0)
+                            val_node_pre += (pre_kindT[val_node_pre] == TEXT ? 1 : 0);
                     } else if (strcmp(argtpe[nr_args], "xs:document") == 0) {
                         val_node_pre = tpe_node_pre;
                         pre_kindT[val_node_pre] = 4;
