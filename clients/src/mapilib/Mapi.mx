@@ -577,9 +577,9 @@ stream. The result is not analyzed or cached.
 @item MapiMsg mapi_seek_row(MapiHdl hdl, int rownr, int whence)
 
 Reset the row pointer to the requested row number.  If whence is
-@code{MAPI_SEEK\_SET} (0), rownr is the absolute row number (0 being the
-first row); if whence is @code{MAPI_SEEK_CUR} (1), rownr is relative to the
-current row; if whence is @code{MAPI_SEEK_END} (2), rownr is relative to
+@code{MAPI_SEEK_SET}, rownr is the absolute row number (0 being the
+first row); if whence is @code{MAPI_SEEK_CUR}, rownr is relative to the
+current row; if whence is @code{MAPI_SEEK_END}, rownr is relative to
 the last row.
 
 @item MapiMsg mapi_fetch_reset(MapiHdl hdl)
