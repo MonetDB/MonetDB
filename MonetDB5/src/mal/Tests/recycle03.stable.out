@@ -80,16 +80,16 @@ end qry;	# 7
 function user.main():void;              #  0 main:void := user.main() {G}
 #test the basics of the recycler 
 # re-use joins size constrainted 
-    recycle.setRetainPolicy(3,5);       #  3 _3:void := RECYCLEsetRetain(_4:int, _5:int) 
-    recycle.setReusePolicy(1);          #  4 _6:void := RECYCLEsetReuse(_7:int) 
-    io.print("start");                  #  5 _11:void := IOprint_val(_12:str) 
-    user.qry(1,10);                     #  6 _13:void := user.qry(_7:int, _14:int) 
-    io.print("zoom in");                #  7 _15:void := IOprint_val(_16:str) 
-    user.qry(1,5);                      #  8 _17:void := user.qry(_7:int, _5:int) 
+    recycle.setRetainPolicy(3,1);       #  3 _3:void := RECYCLEsetRetain(_4:int, _5:int) 
+    recycle.setReusePolicy(1);          #  4 _6:void := RECYCLEsetReuse(_5:int) 
+    io.print("start");                  #  5 _10:void := IOprint_val(_11:str) 
+    user.qry(1,10);                     #  6 _12:void := user.qry(_5:int, _13:int) 
+    io.print("zoom in");                #  7 _14:void := IOprint_val(_15:str) 
+    user.qry(1,5);                      #  8 _16:void := user.qry(_5:int, _17:int) 
     io.print("next step");              #  9 _18:void := IOprint_val(_19:str) 
     user.qry(2,3);                      # 10 _20:void := user.qry(_21:int, _4:int) 
     io.print("last");                   # 11 _22:void := IOprint_val(_23:str) 
-    user.qry(1,11);                     # 12 _24:void := user.qry(_7:int, _25:int) 
+    user.qry(1,11);                     # 12 _24:void := user.qry(_5:int, _25:int) 
     recycle.dump();                     # 13 _26:void := RECYCLEdump() 
 end main;	# 14  
 [ "start" ]
@@ -112,18 +112,18 @@ end main;	# 14
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 0@0,	  1	  ]
-[ 1@0,	  2	  ]
-[ 2@0,	  3	  ]
-[ 3@0,	  4	  ]
-[ 4@0,	  5	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
 [ "next step" ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 1@0,	  2	  ]
-[ 2@0,	  3	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
 [ "last" ]
 #-----------------#
 # h	t	  # name
