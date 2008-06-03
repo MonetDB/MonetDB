@@ -2170,3 +2170,84 @@ BEGIN
 		+ skyVersion + '/'+camcol+'/tsField-'+run6+'-'
 		+camcol+'-'+rerun+'-'+field+'.fit';
 END;
+
+CREATE FUNCTION fGetNearbyObjAllXYZ (nx float, ny float, nz float, rr float)
+RETURNS TABLE (
+    objID bigint,
+    run int ,
+    camcol int ,
+    field int ,
+    rerun int ,
+    type int ,
+    mode int ,
+    cx float ,
+    cy float ,
+    cz float ,
+    htmID bigint,
+    distance float		-- distance in arc minutes
+  ) 
+BEGIN
+	RETURN TABLE (SELECT 
+	    objID, 
+	    run,
+	    camcol,
+	    field,
+	    rerun,
+	    type,
+	    mode,
+	    cx,
+	    cy,
+	    cz,
+	    htmID,
+ 	    2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60 as deg 
+	    --sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/d2r*60 
+	    FROM fHtmCoverCircleXyz(nx,ny,nz,rr) H join PhotoObjAll P
+	             ON  (P.HtmID BETWEEN H.HtmIDstart AND H.HtmIDend )
+	    AND ( (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60)< r)
+	ORDER BY deg ASC);
+ END;
+
+
+
+CREATE FUNCTION fGetNearbyObjAllEq (ra float, "dec" float, r float)
+RETURNS TABLE (
+    objID bigint,
+    run int ,
+    camcol int ,
+    field int ,
+    rerun int ,
+    type int ,
+    mode tinyint ,
+    cx float ,
+    cy float ,
+    cz float ,
+    htmID bigint,
+    distance float		-- distance in arc minutes
+  ) 
+BEGIN
+	DECLARE d2r float, nx float,ny float,nz float ;
+	DECLARE TABLE t(
+	    objID bigint,
+	    run int ,
+	    camcol int ,
+	    field int ,
+	    rerun int ,
+	    type int ,
+	    mode tinyint ,
+	    cx float ,
+	    cy float ,
+	    cz float ,
+	    htmID bigint,
+	    distance float		-- distance in arc minutes
+  	); 
+	set d2r = PI()/180.0;
+	if (r<0) 
+		THEN RETURN t;
+	END IF;
+	set nx  = COS("dec"*d2r)*COS(ra*d2r);
+	set ny  = COS("dec"*d2r)*SIN(ra*d2r);
+	set nz  = SIN("dec"*d2r);
+	RETURN TABLE (	
+	SELECT * FROM fGetNearbyObjAllXYZ(nx,ny,nz,r)); 
+END;
+
