@@ -64,6 +64,7 @@ resolve_proxies (PFla_op_t *p)
     if (p->kind == la_proxy || p->kind == la_proxy_base)
         *p = *PFla_dummy (p->child[0]);
 
+#if 0 /* disable step_join -> step rewrite */
     /* Replace the duplicate generating path step operators
        by the more explicit variant:
 
@@ -145,6 +146,7 @@ resolve_proxies (PFla_op_t *p)
                   p->schema.count,
                   top_proj);
     }
+#endif
 }
 
 /**

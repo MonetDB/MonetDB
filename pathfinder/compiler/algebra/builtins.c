@@ -4429,14 +4429,14 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop, bool ordering,
 
     /* retrieve all descendant textnodes (`/descendant-or-self::text()') */
     node_scj = rank (
-                   PFla_step_simple (
+                   PFla_step_join_simple (
                        PFla_set_to_la (args[0].frag),
                        project (args[0].rel,
                                 proj (att_iter, att_iter),
                                 proj (att_item, att_item)),
                        desc_text_spec,
-                       att_iter, att_item, att_item),
-                   att_pos, sortby (att_item));
+                       att_item, att_item1),
+                   att_pos, sortby (att_item1));
 
     /* concatenate all texts within an iteration using
        the empty string as delimiter */
@@ -4445,7 +4445,7 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop, bool ordering,
                     doc_access (
                         PFla_set_to_la (args[0].frag),
                         node_scj,
-                        att_res, att_item, doc_text),
+                        att_res, att_item1, doc_text),
                     proj (att_iter, att_iter),
                     proj (att_pos,  att_pos),
                     proj (att_item, att_res)),
@@ -4516,14 +4516,14 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop, bool ordering,
 
     /* retrieve all descendant textnodes (`/descendant-or-self::text()') */
     node_scj = rank (
-                   PFla_step_simple (
+                   PFla_step_join_simple (
                        PFla_set_to_la (args[0].frag),
                        project (sel_node,
                                 proj (att_iter, att_iter),
                                 proj (att_item, att_item)),
                        desc_text_spec,
-                       att_iter, att_item, att_item),
-                   att_pos, sortby (att_item));
+                       att_item, att_item1),
+                   att_pos, sortby (att_item1));
 
     /* concatenate all texts within an iteration using
        the empty string as delimiter */
@@ -4532,7 +4532,7 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop, bool ordering,
                     doc_access (
                         PFla_set_to_la (args[0].frag),
                         node_scj,
-                        att_res, att_item, doc_text),
+                        att_res, att_item1, doc_text),
                     proj (att_iter, att_iter),
                     proj (att_pos,  att_pos),
                     proj (att_item, att_res)),
