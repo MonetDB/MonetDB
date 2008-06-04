@@ -38,8 +38,8 @@
 #define CATALOG_VERSION 40000
 
 static MT_Lock bs_lock;
-static lng store_oid = 0;
-static lng prev_oid = 0;
+static int store_oid = 0;
+static int prev_oid = 0;
 static int nr_sessions = 0;
 static int transactions = 0;
 sql_trans *gtrans = NULL;
@@ -904,7 +904,7 @@ load_trans(sql_trans* tr, sqlid id)
 	table_funcs.rids_destroy(schemas);
 }
 
-static int
+static sqlid
 next_oid(void)
 {
 	lng id = 0;
@@ -932,6 +932,8 @@ insert_schemas(sql_trans *tr)
 	for (n = tr->schemas.set->h; n; n = n->next) {
 		sql_schema *s = n->data;
 
+		if (strcmp(s->base.name, "%dt%") == 0) 
+			continue;
 		table_funcs.table_insert(tr, sysschema, &s->base.id, s->base.name, &s->auth_id, &s->owner);
 		for (m = s->tables.set->h; m; m = m->next) {
 			sql_table *t = m->data;
@@ -976,7 +978,8 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		sql_func *f = n->data;
 		bit sql = f->sql;
 		bit se = f->side_effect;
-		int id, number = 0;
+		sqlid id;
+		int number = 0;
 		char arg_nme[] = "arg_0";
 
 		if (f->s)
@@ -1016,7 +1019,8 @@ insert_aggrs(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		char *name1 = "result";
 		char *name2 = "arg";
 		sql_func *aggr = n->data;
-		int id, number = 0;
+		sqlid id;
+		int number = 0;
 
 		if (aggr->s)
 			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &F, &T, &F, &aggr->s->base.id);
@@ -1159,6 +1163,7 @@ int
 store_init(int debug, store_type store, char *logdir, char *dbname, backend_stack stk)
 {
 	sqlid id = 0;
+	lng lng_store_oid;
 	int first = 1;
 	sql_schema *s, *p = NULL;
 	sql_table *t, *types, *funcs, *args;
@@ -1332,6 +1337,8 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 		}
 	}
 
+	s = bootstrap_create_schema(tr, "%dt%", ROLE_SYSADMIN, USER_MONETDB);
+
 	if (first) {
 		insert_types(tr, types);
 		insert_functions(tr, funcs, args);
@@ -1344,8 +1351,8 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 	}
 
 	id = store_oid; /* db objects up till id are allready created */
-	logger_funcs.get_sequence(OBJ_SID, &store_oid);
-	prev_oid = store_oid;
+	logger_funcs.get_sequence(OBJ_SID, &lng_store_oid);
+	prev_oid = store_oid = (sqlid)lng_store_oid;
 
 	/* load remaining schemas, tables, columns etc */
 	if (!first)
@@ -3216,14 +3223,14 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, t->imp, t->mod, &sql, &aggr, &se, &s->base.id);
 	if (t->res.type) {
 		char *name = "result";
-		oid id = next_oid();
+		sqlid id = next_oid();
 
 		table_funcs.table_insert(tr, sysarg, &id, &t->base.id, name, t->res.type->sqlname, &t->res.digits, &t->res.scale, &number);
 		number++;
 	}
 	if (t->ops) for (n = t->ops->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
-		oid id = next_oid();
+		sqlid id = next_oid();
 
 		table_funcs.table_insert(tr, sysarg, &id, &t->base.id, a->name, a->type.type->sqlname, &a->type.type->digits, &a->type.type->scale, &number);
 	}
@@ -3364,7 +3371,8 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int
 	sht ca;
 
 	/* temps all belong to a special tmp schema */
-	assert( !isTempTable(t) || (strcmp(s->base.name, "tmp") == 0));
+	assert( !isTempTable(t) || (strcmp(s->base.name, "tmp") == 0)
+	        || isDeclaredTable(t));
 
 	t->s = s;
 	t->sz = sz;
@@ -3375,7 +3383,8 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int
 	cs_add(&s->tables, t, TR_NEW);
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	ca = t->commit_action;
-	table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->type, &t->system, &ca);
+	if (!isDeclaredTable(t))
+		table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->type, &t->system, &ca);
 	if (isGlobalTable(t)) 
 		tr->schema_updates ++;
 	return t;
@@ -3458,7 +3467,8 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 		
-	sys_drop_table(tr, t, drop_action);
+	if (!isDeclaredTable(t))
+		sys_drop_table(tr, t, drop_action);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	if (isGlobalTable(t) || (t->commit_action != CA_DROP)) 
@@ -3469,7 +3479,6 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
-
 }
 
 size_t
@@ -3518,7 +3527,8 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tp
 
 	if (isTable(col->t))
 		store_funcs.create_col(tr, col);
-	table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr);
+	if (!isDeclaredTable(t))
+		table_funcs.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr);
 
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	if (isGlobalTable(t)) 
@@ -3553,7 +3563,6 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
-	
 }
 
 sql_column *
@@ -4105,6 +4114,7 @@ sql_session_reset(sql_session *s, int ac)
 	if (!s->tr)
 		return;
 
+	/* TODO cleanup "dt" schema */
 	tmp = find_sql_schema(s->tr, "tmp");
 		
 	if (tmp->tables.set) {

@@ -325,6 +325,7 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 			int part = 0, off = 0;
 			int k = getArg(p,0);
 			sql_bpm *bpm = NULL;
+			sql_schema *s = mvc_bind_schema(m, sname);
 
 			if (f == binddbatRef) {
 				mode = getVarConstant(mb, getArg(p,3)).val.ival;
@@ -334,7 +335,6 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 			}
 
 			if( f == bindidxRef) {
-				sql_schema *s = mvc_bind_schema(m, sname);
 				sql_idx *i = mvc_bind_idx(m, s, cname);
 
 				if (active_store_type == store_bpm) {
@@ -348,8 +348,7 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 				}
 				if (i->t->cnt && (mode == RDONLY || mode == RD_UPD))
 					rows = i->t->cnt;
-			} else if ( f == bindRef) {
-				sql_schema *s = mvc_bind_schema(m, sname);
+			} else if (s && f == bindRef) {
 				sql_table *t = mvc_bind_table(m, s, tname);
 				sql_column *c = mvc_bind_column(m, t, cname);
 

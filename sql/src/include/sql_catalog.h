@@ -429,7 +429,7 @@ typedef struct sql_trans {
 	int previous_schema_nr;	/* previous schema timestamp */
 	int schema_updates;	/* set on schema changes */
 	int status;		/* status of the last query */
-	list *dropped;  /* protection against recursive cascade action*/
+	list *dropped;  	/* protection against recursive cascade action*/
 
 	changeset schemas;
 

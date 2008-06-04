@@ -1210,11 +1210,8 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t) {
-			sql_subtype *tpe = stack_find_type(sql, tname);
-			if (tpe)
-				t = tpe->comp_type;
-		}
+		if (!t) 
+			t = mvc_bind_table(sql, NULL, tname);
 	}
 	if (!t) {
 		return sql_error(sql, 02, "INSERT INTO: no such table '%s'", tname);
