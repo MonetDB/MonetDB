@@ -3973,7 +3973,7 @@ collection_cleanup(_collection_cleanup()); # silently clean up the repository
 
 mapi_register(xquery_frontend()); # open up mapi client access
 if (monet_environment.find("monet_welcome") = "yes") 
-    printf("%c MonetDB/XQuery module v0.24.0 loaded\n", int(35));
+    printf("%c MonetDB/XQuery module v0.24.0 loaded (default back-end is '%s')\n", int(35), monet_environment.find("xquery_backend"));
     #                                 ^^^^^^
     # Maintained via vertoo. Please don't modify by hand!
     # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -4366,13 +4366,13 @@ xquery_compile_exec(xquery_client *ctx,
         options |= COMPILE_OPTION_STANDOFF;
     /* Setting the Algebra flag; server setting overules compile-time default; client choice overrules server setting */
 #if MILPRINT_SUMMER_IS_DEFAULT
-    if ((ctx->mode & XQ_ALGEBRA) || \
-        (!(ctx->mode & XQ_MILPRINT_SUMMER) && \
+    if (((ctx->mode & XQ_ALGEBRA) != 0) || \
+        (((ctx->mode & XQ_MILPRINT_SUMMER) == 0) && \
          (GDKgetenv("xquery_backend") != NULL) && (strcmp(GDKgetenv("xquery_backend"),"algebra") == 0)))
         options |= COMPILE_OPTION_ALGEBRA;
 #else /* ALGEBRA_IS_DEFAULT */
-    if (!(ctx->mode & XQ_MILPRINT_SUMMER) && \
-        ((ctx->mode & XQ_ALGEBRA) || \
+    if (((ctx->mode & XQ_MILPRINT_SUMMER) != 0) && \
+        (((ctx->mode & XQ_ALGEBRA) == 0) || \
          (GDKgetenv("xquery_backend") == NULL) || (strcmp(GDKgetenv("xquery_backend"),"milprint_summer") != 0)))
         options |= COMPILE_OPTION_ALGEBRA;
 #endif
@@ -6152,6 +6152,14 @@ extern void xmlInitParser(void);
 bat *
 xquery_prelude(void)
 {
+    if (GDKgetenv("xquery_backend") == NULL) {
+#if MILPRINT_SUMMER_IS_DEFAULT
+        GDKsetenv("xquery_backend","milprint_summer");
+#else /* ALGEBRA_IS_DEFAULT */
+        GDKsetenv("xquery_backend","algebra");
+#endif
+    }
+
     MT_init_lock(pf_compiler_lock, "pf_compiler_lock");
     MT_init_lock(pf_module_lock, "pf_module_lock");
     MT_init_lock(pf_cache_lock, "pf_cache_lock");
