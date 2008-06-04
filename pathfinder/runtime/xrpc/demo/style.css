@@ -58,6 +58,10 @@ table td h1 {
 	border-right: 4px solid black;
 }
 
+#graph {
+	margin-right: 5px;
+}
+
 #request td, #response td, #answers td, #graph td {
 	font-size: 0.7em;
 	font-weight: bold;

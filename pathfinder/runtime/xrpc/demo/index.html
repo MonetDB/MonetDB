@@ -27,68 +27,265 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
  <script type="text/javascript">
   var clnt = new XRPCWebClient(); 
 
-  function getParam(tpe, val) {
-    return XRPC_SEQ((tpe == "element")?XRPC_ELEMENT(val):XRPC_ATOM(tpe,val));
+  function funcdef(n, u, a, q, d) {
+	this.name = n;
+	this.updating = u;
+	this.arr = a;
+	this.quantarr = q;
+	this.def = d;
+
+	this.getName = function() {
+		return this.name;
+	}
+	
+	this.getUpdating = function() {
+		return this.updating;
+	}
+	
+	this.getArrSize = function() {
+		return this.arr.length;
+	}
+	
+	this.getArr = function(i) {
+		return this.arr[i];
+	}
+	
+	this.getQArr = function(i) {
+		return this.quantarr[i];
+	}
+	
+	this.getArrDisplay = function(i) {
+		if (this.arr[i] == "string") return "xs:string";
+		if (this.arr[i] == "integer") return "xs:integer";
+		return this.arr[i];
+	}
+	
+	this.getDef = function() {
+		return this.def;
+	}
+  }
+  
+  var funcdefs = new Array();
+  funcdefs[funcdefs.length]=new funcdef("add", false, new Array("integer", "integer"), new Array("", ""), "declare function f:add($v1 as xs:integer, $v2 as xs:integer) as xs:integer\n{ $v1 + $v2 };");
+  funcdefs[funcdefs.length]=new funcdef("firstPerson", false, new Array("string"), new Array(""), "declare function f:firstPerson($doc as xs:string) as node()\n{ exactly-one(doc($doc)//person[1]) };");
+  funcdefs[funcdefs.length]=new funcdef("firstPerson", false, new Array("string", "string"), new Array("+", "+"), "declare function f:firstPerson($docs as xs:string+, $dsts as xs:string+) as node()+\n{ for $d at $pos in $dsts\n  return execute at {$d} {f:firstPerson(exactly-one($docs[$pos]))}\n};");
+  funcdefs[funcdefs.length]=new funcdef("boughtItems", false, new Array("string", "string"), new Array("", ""), "declare function f:boughtItems($pid as xs:string, $doc as xs:string) as node()*\n{ doc($doc)//closed_auction[./buyer/@person=$pid] };");
+  funcdefs[funcdefs.length]=new funcdef("boughtItemsAllPersons", false, new Array("string", "string", "string"), new Array("", "", ""), "declare function f:boughtItemsAllPersons($docL as xs:string, $docR as xs:string, $dst as xs:string) as node()*\n{ for $pid in doc($docL)//person/@pid\n  return execute at {$dst} {f:boughtItems($pid, $docR)}\n};");
+  funcdefs[funcdefs.length]=new funcdef("insertPerson", true, new Array("node()", "string"), new Array("", ""), "declare updating function f:insertPerson($p as node(), $doc as xs:string)\n{ do insert $p into doc($doc)//persons };");
+  funcdefs[funcdefs.length]=new funcdef("deletePerson", true, new Array("string", "string"), new Array("", ""), "declare updating function f:deletePerson($pid as xs:string, $doc as xs:string)\n{ do delete doc($doc)//person[./@pid=$pid] };");
+  funcdefs[funcdefs.length]=new funcdef("custom...", false, new Array("integer", "integer", "integer", "integer"), new Array("", "", "", ""), "");
+  
+  var par_types = new Array("integer", "string", "node()");
+  var par_types_display = new Array("xs:integer", "xs:string", "node()");
+  var quant_types = new Array("", "?", "+", "*");
+  var example_nodes = new Array("<person>Schaap<\/person>", "John Denver", "Elvis Presley", "Shania Twain");
+  
+  function fillPostUrlBox() {
+  	var obj = document.getElementById("postUrl");
+	obj.value = "http://" + window.location.hostname + ":" + window.location.port + "/xrpc";
+  }
+  
+  function fillLocationBox() {
+  	var obj = document.getElementById("loc");
+  	obj.value = "http://" + window.location.hostname + ":" + window.location.port + "/demo/demo-mod.xq";
+  }
+
+  function fillMethodBox() {
+  	var obj = document.getElementById("method");
+	obj.options.length = 0;
+	for (var j = 0; j < funcdefs.length; j++) {
+		var temp = new Option(funcdefs[j].getName(), funcdefs[j].getName());
+		obj.options[obj.options.length] = temp;
+	}
+	obj.selectedIndex = 0;
+  }
+  
+  function getParam(tpe, quant, val) {
+  	if (quant == "")
+    	return XRPC_SEQ((tpe == "node()")?XRPC_ELEMENT(val):XRPC_ATOM(tpe,val));
+    else {
+    alert("["+quant+"]");
+    	var l = val.length;
+    	var sval = val.substring(1, l - 1);
+    	var vals = sval.split(",");
+    	var seq = "";
+    	for (var i = 0; i < vals.length; i++) {
+    		vals[i] = vals[i].split(" ").join(""); // this removes whitespace
+    		seq += (tpe == "node()")?XRPC_ELEMENT(vals[i]):XRPC_ATOM(tpe,vals[i]);
+    	}
+    	return XRPC_SEQ(seq);
+    }
   }
 
   function sendRequest(form)  {
+	var obj = document.getElementById("answer");
+    obj.value = "Waiting for server response...";
+    var obj = document.getElementById("messreq");
+    obj.value = "";
+    var obj = document.getElementById("messres");
+    obj.value = "";
+
     var params = "";
+    var xrpc_call = "";
     /* XRPCDEBUG makes you get an alert for each SOAP message sent/received */
     XRPCDEBUG = form.debug.checked;
-    if (form.arity.value >= 1) 
-      params = params + getParam(form.type1.value, form.param1.value); 
-    if (form.arity.value >= 2) 
-      params = params + getParam(form.type2.value, form.param2.value); 
-    if (form.arity.value >= 3) 
-      params = params + getParam(form.type3.value, form.param3.value); 
-
-    XRPC(form.postUrl.value+"/xrpc", form.module.value, form.moduleUrl.value, 
-         form.method.value,  form.arity.value, XRPC_CALL(params), showResponse);
+    
+    if (form.method.selectedIndex == 0) {
+	    for (var l = 0; l < form.loop.value; l++) {
+	    	params = "";
+		    for (var i = 1; i <= form.arity.value; i++) {
+		      var value = parseInt(document.getElementById("param" + i).value) + l;
+		   	  params += getParam(document.getElementById("type" + i).value, document.getElementById("quant" + i).value, value + '');
+		   	}
+		   	xrpc_call += XRPC_CALL(params);
+		}
+	} else {
+	   	for (var l = 0; l < form.loop.value; l++) {
+	    	params = "";
+		    for (var i = 1; i <= form.arity.value; i++) {
+		   	  params += getParam(document.getElementById("type" + i).value, document.getElementById("quant" + i).value, document.getElementById("param" + i).value);
+		   	}
+		   	xrpc_call += XRPC_CALL(params);
+		}
+	}
+   	  
+    XRPC(form.postUrl.value, form.ns.value, form.loc.value, 
+         form.method.value, form.arity.value, xrpc_call, showResponse, form.timeout.value);
   }
 
   function showResponse(response) {
-    /* sorry, we only show the first item of the result sequence */
-    document.form.result.value =  serializeXML(getnodesXRPC(response,"sequence")[0].firstChild.firstChild); 
+    var obj = document.getElementById("answer");
+    var obj2 = document.getElementById("updating");
+    if (!obj2.checked) { // not updating function
+    	var nodes = getnodesXRPC(response,"sequence");
+    	var text = "";
+    	for (var i = 0; i < nodes.length; i++) {
+    		if (i > 0) text += ", ";
+    		for (var c = 0; c < nodes[i].childNodes.length; c++) {
+    			text += serializeXML(nodes[i].childNodes[c].firstChild);
+    		}
+    	}
+  		obj.value = text;
+  	} else {
+  		obj.value = "Update succeeded (an updating function returns no answer).";
+  	}
   }
   
   function methodChanged(object) {
   	var val = object.value;
-  	var params = 1;
-  	var def = "";
-  	if (val == "add") { params = 2; def = "add bla bla bla.."; }
-  	if (val == "mul") { params = 2; def = "mul bla bla bla.."; }
+  	var idx = object.selectedIndex;
+  	var params = funcdefs[idx].getArrSize();
+  	var def = funcdefs[idx].getDef();
   	var defobj = document.getElementById("def");
   	defobj.value = def;
   	var obj = document.getElementById("arity");
   	obj.value = params;
   	var par = document.getElementById("params");
   	var html = "<table cellpadding=\"0\" cellspacing=\"0\">";
+  	var last = (idx == funcdefs.length - 1);
   	for (var i = 0; i < params; i++) {
   		html += "<tr><td>";
-  		html += "<input type=\"text\" name=\"partype" + i + "\" value=\"" + "integer" + "\" readonly=\"readonly\" />";
-  		html += "<\/td><td>";
-  		html += "<input type=\"text\" name=\"parval" + i + "\" value=\"" + (i+1) + "\" />";
+  		html += "<select name=\"type" + (i+1) + "\" id=\"type" + (i+1) + "\">";
+  		if (!last) {
+  			html += "<option value=\"" + funcdefs[idx].getArr(i) + "\">" + funcdefs[idx].getArrDisplay(i) + "<\/option>";
+		} else {
+			for (var j = 0; j < par_types.length; j++) {
+	  			var s = funcdefs[idx].getArr(i) == par_types[j];
+	  			var sel = s? " selected=\"selected\"": "";
+	  			html += "<option value=\"" + par_types[j] + "\""+ sel + ">" + par_types_display[j] + "<\/option>";
+	  		}
+		}
+  		html += "<\/select>";
+  		html += "<\/td><td>&nbsp;";
+  		
+  		html += "<select name=\"quant" + (i+1) + "\" id=\"quant" + (i+1) + "\">";
+  		if (!last) {
+  			html += "<option value=\"" + funcdefs[idx].getQArr(i) + "\">" + funcdefs[idx].getQArr(i) + "&nbsp;<\/option>";
+		} else {
+			for (var j = 0; j < quant_types.length; j++) {
+	  			var s = funcdefs[idx].getQArr(i) == quant_types[j];
+	  			var sel = s? " selected=\"selected\"": "";
+	  			html += "<option value=\"" + quant_types[j] + "\""+ sel + ">" + quant_types[j] + "&nbsp;<\/option>";
+	  		}
+		}
+  		html += "<\/select>";
+  		html += "<\/td><td>&nbsp;";
+  		
+  		var default_val = -1;
+  		if (funcdefs[idx].getArr(i) == "integer") {
+  			if (funcdefs[idx].getQArr(i) == "")
+  				default_val = (i + 1);
+  			else
+  				default_val = "(" + (i*3+1) + ", " + (i*3+2) + ", " + (i*3+3) + ")";
+  		}
+  		if (funcdefs[idx].getArr(i) == "string") {
+  			if (funcdefs[idx].getQArr(i) == "")
+  				default_val = "xmark.xml"; //String.fromCharCode(65 + i);
+  			else
+  				default_val = "(" + String.fromCharCode(65 + i*3) + ", " + String.fromCharCode(66 + i*3) + ", " + String.fromCharCode(67 + i*3) + ")";
+  		}
+  		if (funcdefs[idx].getArr(i) == "node()") {
+  			if (funcdefs[idx].getQArr(i) == "")
+  				default_val = default_val = example_nodes[i];
+  			else
+  				default_val = "(" + example_nodes[i] + ", " + example_nodes[i] + ", " + example_nodes[i] + ")";
+  		}
+  		html += "<input type=\"text\" name=\"param" + (i+1) + "\" id=\"param" + (i+1) + "\" value=\"" + default_val + "\" />";
   		html += "<\/td><\/tr>";
   	}
   	html += "<\/table>";
   	par.innerHTML = html;
+  	
+  	defobj.readOnly = !last;
+  	
+  	var updobj = document.getElementById("updating");
+  	updobj.checked = funcdefs[idx].getUpdating();
+  	
+  	//var loopobj = document.getElementById("loop");
+  	//loopobj.disabled = (idx != 0);
   }
   
   function debugChanged(object) {
   	var debug = object.checked;
   	var objl = document.getElementById("content");
+  	var objg = document.getElementById("graph");
   	var objr = document.getElementById("messages");
   	if (debug) {
   		objr.style.display = "block";
+  		objg.style.display = "block";
   	} else {
   		objr.style.display = "none";
+  		objg.style.display = "none";
   	}
+  }
+  
+  function isolevelChanged(object) {
+  	var lev = object.value;
+  	var obj = document.getElementById("timeout");
+  	if (lev == "none") {
+  		obj.value = "0";
+  		obj.readOnly = true;
+  	} else {
+  		obj.value = "100";
+  		obj.readOnly = false;
+  	} 
+  }
+  
+  function updatingChanged(object) { 
+  }
+  
+  function init() {
+  	fillPostUrlBox();
+ 	fillLocationBox();
+	fillMethodBox();
+ 	methodChanged(document.getElementById("method"));
+ 	debugChanged(document.getElementById("debug"));
   }
  </script>
  <link rel="stylesheet" href="style.css" type="text/css" />
 </head>
 
-<body>
+<body onload="init()">
 <table id="header">
 <tr>
 <td>
@@ -98,7 +295,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 	<h1>XRPC - Interoperable and Efficient distributed XQuery</h1>
 </td>
 <td>
-	<a href="http://monetdb.cwi.nl" title="MonetDB is a high-performance open-source SQL and XQuery database system, developed by CWI" target="_blank"><img src="monet.png" border="0" width="150" height="80"/></a>
+	<a href="http://monetdb.cwi.nl" title="MonetDB is a high-performance open-source SQL and XQuery database system, developed by CWI" target="_blank"><img src="monet.png" border="0" /></a>
 </td>
 <td>
 	<a href="http://www.cwi.nl" title="CWI is the Dutch national center for Computer Science and Mathematics Research" target="_blank"><img src="cwi.bmp" border="0" /></a>
@@ -107,26 +304,25 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 </table>
 
 <form name="form" action="actionaddress">
-<input type="hidden" name="arity" id="arity"/>
+<input type="hidden" name="arity" id="arity" />
 <table id="all" cellpadding="0" cellspacing="0">
 <tr><td>
-
 	<table id="content">
 	<tr>
-		<td><label for="dest">XRPC server URL</label></td>
-		<td><input type="text" name="dest" value="localhost" size="40" /></td>
+		<td><label for="postUrl">XRPC server URL</label></td>
+		<td><input type="text" name="postUrl" id="postUrl" value="" size="40" readonly="readonly" /></td>
 		<td></td>
 		<td></td>
 	</tr>
 	<tr>
 		<td><label for="ns">Module namespace</label></td>
-		<td><input type="text" name="ns" value="" size="40" /></td>
+		<td><input type="text" name="ns" value="xrpcdemo-functions" size="40" /></td>
 		<td></td>
 		<td></td>
 	</tr>
 	<tr>
 		<td><label for="loc">Module location</label></td>
-		<td><input type="text" name="loc" value="" size="40" /></td>
+		<td><input type="text" name="loc" id="loc" value="" size="40" /></td>
 		<td></td>
 		<td></td>
 	</tr>
@@ -134,9 +330,6 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 		<td><label for="method">Function</label></td>
 		<td>
 			<select name="method" id="method" onchange="methodChanged(this);">
-				<option value="add">Add</option>
-				<option value="mul">Multiply</option>
-				<option value="concat">Concatenate</option>
 			</select>
 		</td>
 		<td></td>
@@ -149,8 +342,38 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 		<td></td>
 	</tr>
 	<tr>
+		<td><label for="loop">Loop counter</label></td>
+		<td>
+			<select name="loop" id="loop">
+				<option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+				<option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
+			</select>
+		</td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr style="height:100px">
 		<td>Parameters</td>
 		<td id="params">
+		</td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td><label for="updating">Updating Function</label></td>
+		<td><input type="checkbox" name="updating" id="updating" onchange="updatingChanged(this)" /></td>
+		<td></td>
+		<td></td>
+	</tr>
+	<tr>
+		<td><label for="isolevel">Isolation Level</label></td>
+		<td>
+			<select name="isolevel" id="isolevel" onchange="isolevelChanged(this);">
+				<option value="none">None</option>
+				<option value="repeatable">Repeatable</option>
+			</select>
+			&nbsp;&nbsp;&nbsp;&nbsp;
+			Timeout <input type="text" value="0" name="timeout" id="timeout" readonly="readonly" size="10" />
 		</td>
 		<td></td>
 		<td></td>
@@ -168,32 +391,31 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 		<td></td>
 	</tr>
 	</table>
-
 	<table id="answers">
 	<tr>
-		<td>ANSWER<br /><textarea cols="59" rows="3" name="answer" readonly="readonly"></textarea></td>
+		<td>ANSWER<br /><textarea cols="59" rows="3" name="answer" id="answer" readonly="readonly"></textarea></td>
 	</tr>
 	</table>
 </td>
 <td>
-	<div id="graph" style="margin-right:10px;">
-		<table id="graphtable">
+	<div id="graph">
+		<!--<table id="graphtable">
 		<tr>
-			<td>GRAPH<br /><img src="img/tree.gif" /></td>
+			<td>GRAPH<br /><img src="tree.gif" /></td>
 		</tr>
 		</table>
-	</div>
+	--></div>
 </td>
 <td>
 	<div id="messages">
 		<table id="request">
 		<tr>
-			<td>REQUEST<br /><textarea cols="40" rows="8" name="messreq" readonly="readonly"></textarea></td>
+			<td>REQUEST<br /><textarea cols="40" rows="8" name="messreq" id="messreq" readonly="readonly"></textarea></td>
 		</tr>
 		</table>
 		<table id="response">
 		<tr>
-			<td>RESPONSE<br /><textarea cols="40" rows="8" name="messres" readonly="readonly"></textarea></td>
+			<td>RESPONSE<br /><textarea cols="40" rows="8" name="messres" id="messres" readonly="readonly"></textarea></td>
 		</tr>
 		</table>
 	</div>
@@ -201,9 +423,5 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 </tr>
 </table>	
 </form>
- <script type="text/javascript">
- 	methodChanged(document.getElementById("method"));
- 	debugChanged(document.getElementById("debug"));
- </script>
 </body>
 </html>

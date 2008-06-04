@@ -1,5 +1,8 @@
 module namespace f="xrpcdemo-functions";
 
+declare function f:add($v1 as xs:integer, $v2 as xs:integer) as xs:integer
+{ $v1 + $v2 };
+
 declare function f:firstPerson($doc as xs:string) as node()
 { exactly-one(doc($doc)//person[1]) };
 
@@ -19,6 +22,6 @@ declare function f:boughtItemsAllPersons($docL as xs:string, $docR as xs:string,
 declare updating function f:insertPerson($p as node(), $doc as xs:string)
 { do insert $p into doc($doc)//persons };
 
-declare updating function f:deletePerson($pid as node(), $doc as xs:string)
+declare updating function f:deletePerson($pid as xs:string, $doc as xs:string)
 { do delete doc($doc)//person[./@pid=$pid] };
 

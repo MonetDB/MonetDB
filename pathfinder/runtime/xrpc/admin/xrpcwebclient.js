@@ -5,16 +5,36 @@ function XRPC(posturl,    /* Your XRPC server. Usually: "http://yourhost:yourpor
               method,     /* method name (matches function name in module) */
               arity,      /* arity of the method */
               call,       /* one or more XRPC_CALL() parameter specs (concatenated strings) */ 
-              callback)   /* callback function to call with the XML response */
+              callback,   /* callback function to call with the XML response */
+              timeout)    /* timeout value, when > 0 repeatable isolation level is presumed */
 {
-    clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,arity,call), callback);
+    clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,arity,call,timeout), callback);
 }
 
 /**********************************************************************
           functions to construct valid XRPC soap requests
  ***********************************************************************/
 
-function XRPC_REQUEST(module, moduleurl, method, arity, body) {
+function XRPC_REQUEST(module, moduleurl, method, arity, body, timeout) {
+    
+    var h = '';
+    if (XRPCDEBUG || timeout > 0) {
+	    var hostport = window.location.hostname + ":" + window.location.port;
+	    var ms = new Date().getMilliseconds();
+	    var rnd = Math.floor(Math.random() * 1000);
+	    var qid = hostport + "|" + ms + "|" + rnd;
+	    var logging = XRPCDEBUG? '<xrpc:logging>query</xrpc:logging>': '';
+	    h = 
+	    '<env:Header>' +
+	    '  <wscoor:CoordinationContext xmlns:wscoor="http://docs.oasis-open.org/ws-tx/wscoor/2006/06" env:mustUnderstand="true">' +
+	    '    <wscoor:Identifier>' + qid + '</wscoor:Identifier>' +
+	    '    <wscoor:Expires>' + timeout + '</wscoor:Expires>' +
+	    '    <wscoor:CoordinationType>http://docs.oasis-open.org/ws-tx/wsat/2006/06</wscoor:CoordinationType>' +
+	  	'  </wscoor:CoordinationContext>' +
+	  	   logging +
+		'</env:Header>';
+	}
+
     var r = '<?xml version="1.0" encoding="utf-8"?>\n' +
            '<env:Envelope ' +
            'xmlns:env="http://www.w3.org/2003/05/soap-envelope" ' +
@@ -22,6 +42,7 @@ function XRPC_REQUEST(module, moduleurl, method, arity, body) {
            'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
            'xsi:schemaLocation="http://monetdb.cwi.nl/XQuery http://monetdb.cwi.nl/XQuery/XRPC.xsd" ' +
            'xmlns:xs="http://www.w3.org/2001/XMLSchema">' +
+		   h + 
            '<env:Body>' +
                '<xrpc:request xrpc:module="' + module + '" ' +
                 'xrpc:location="' + moduleurl + '" ' +
@@ -95,8 +116,9 @@ XRPCWebClient = function () {
 XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callback) {
     try {
         this.xmlhttp.open("POST", posturl, true);
-        if (XRPCDEBUG) alert(request); 
-        this.xmlhttp.send(request);
+        if (XRPCDEBUG) document.getElementById("messreq").value = request; 
+
+	this.xmlhttp.send(request);
 
         var app = this;
         this.xmlhttp.onreadystatechange = function() {
@@ -105,8 +127,11 @@ XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callbac
                     app.xmlhttp.responseText.indexOf("!ERROR") < 0 && 
                     app.xmlhttp.responseText.indexOf("<env:Fault>") < 0) 
                 {
-                    if (XRPCDEBUG) alert(serializeXML(app.xmlhttp.responseXML)); 
-                    callback(app.xmlhttp.responseXML);
+		    if (XRPCDEBUG) {
+		    	if (app.xmlhttp.responseText)
+		    		document.getElementById("messres").value = serializeXML(app.xmlhttp.responseXML);
+		    }
+		    callback(app.xmlhttp.responseXML);
                 } else {
                     var errmsg =
                         '!ERROR: "' + method + ' execution failed at the remote side"\n\n' +
