@@ -434,9 +434,10 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 	RECYCLEspace();
 	if (recycleCacheLimit && recycleCacheLimit < recycleBlk->stop)
 		return ; /* no more caching */
-	if (recycleBlk->vtop >= HARDLIMIT_VAR ||
-	    recycleBlk->stop >= HARDLIMIT_STMT ||
-	    recycleMemory > HARDLIMIT_MEM)
+/*	if ( recycleBlk->vtop >= HARDLIMIT_VAR ||
+	    recycleBlk->stop >= HARDLIMIT_STMT || 
+	    recycleMemory > HARDLIMIT_MEM)  drop hard limits*/
+	if ( recycleMemory > HARDLIMIT_MEM)
 		return ; /* no more caching */
 		
 	if ( recycleBlk->stop == 0 ){ 
