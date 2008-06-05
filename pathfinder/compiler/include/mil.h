@@ -502,7 +502,7 @@ PFmil_t * PFmil_if (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_while (const PFmil_t *, const PFmil_t *);
 
 /** break statement */
-PFmil_t * PFmil_break ();
+PFmil_t * PFmil_break (void);
 
 /**
  * Assignment statement including declaration:
