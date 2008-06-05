@@ -24,14 +24,12 @@
 #
 
 headers_html = {
-	HEADERS = bmp gif html js png
+	HEADERS = html js css xml
 	DIR = datadir/MonetDB/xrpc/demo
 	SOURCES = \
-		cwi.bmp \
-		MultimediaN.png \
-		monet.png \
 		style.css \
-		tree.gif \
+        res1.xml \
+        req1.xml \
 		index.html
 }
 
@@ -41,3 +39,14 @@ headers_xq = {
 	SOURCES = demo-mod.xq
 }
 
+headers_img = {
+	HEADERS = bmp gif png gif map
+	DIR = datadir/MonetDB/xrpc/demo
+	SOURCES = \
+		cwi.bmp \
+		MultimediaN.png \
+		monet.png \
+        test.gif \
+        test.map \
+		tree.gif
+}
