@@ -80,7 +80,7 @@ the "AmbientDB" project.
 @mil
 
 PROC doLoopLiftedRPC(
-        str module,
+        str modname,
         str location,
         str method,
         bit updCall,
@@ -146,7 +146,7 @@ PROC doLoopLiftedRPC(
 
         var local_name := "rpc_res_00" + str(int($h)+off);
         var rpc_res, timeout := max(0LL,xrpc_timeout - (usec() - timer_start));
-        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, xrpc_seqnr, timeout, $t, module, location, method,
+        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, xrpc_seqnr, timeout, $t, modname, location, method,
                     updCall, arity, itercnt, ws, fun_vid, fun_iter, fun_item,
                     fun_kind, int_values, dbl_values, dec_values, str_values));
 
@@ -244,7 +244,7 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
 "xrpc_client");
 
 PROC doIterativeRPC(
-        str module,
+        str modname,
         str location,
         str method,
         bit updCall,
@@ -291,7 +291,7 @@ PROC doIterativeRPC(
         var local_name := "rpc_res_00" + str(h+1);
         if (xrpc_qid != "") lock_unset(wslock);
         var rpc_res, timeout := max(0LL,xrpc_timeout - (usec() - timer_start));
-        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, xrpc_seqnr, timeout, $t, module, location, method,
+        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, xrpc_seqnr, timeout, $t, modname, location, method,
                     updCall, arity, lng(1), ws, cur_fun_vid, cur_fun_iter, cur_fun_item,
                     cur_fun_kind, int_values, dbl_values, dec_values, str_values));
         if (xrpc_qid != "") lock_set(wslock);
@@ -359,7 +359,7 @@ ADDHELP("doIterativeRPC", "zhang", "April 2006",
 "xrpc_client");
 
 PROC doRPC(
-        str module,
+        str modname,
         str location,
         str method,
         bit updCall,
@@ -377,10 +377,10 @@ PROC doRPC(
         BAT[void, str] str_values) : BAT[void,bat]
 {
     if (search(xrpc_mode,"iterative") >= 0) 
-        doIterativeRPC(module, location, method, updCall, arity, niters,
+        doIterativeRPC(modname, location, method, updCall, arity, niters,
                         ws, dsts, fun_vid, fun_iter, fun_item, fun_kind, int_values, dbl_values, dec_values, str_values);
     else
-        doLoopliftedRPC(module, location, method, updCall, arity, niters,
+        doLoopliftedRPC(modname, location, method, updCall, arity, niters,
                         ws, dsts, fun_vid, fun_iter, fun_item, fun_kind, int_values, dbl_values, dec_values, str_values);
 }
 
@@ -401,7 +401,7 @@ PROC doRPC(
 #include "pf_support.h"
 #include "shredder.h"
 #include "serialize.h"
-#include "xrpc_common.h"
+#include "xrpc_server.h"
 #include "xrpc_client.h"
 
 

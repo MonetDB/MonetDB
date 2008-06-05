@@ -94,7 +94,6 @@ module(mapi);       # remote client access
 module(pf_support);
 module(logger);
 module(mkey);
-module(xrpc_common);
 module(xrpc_server);
 module(xrpc_client);
 module(pf_standoff);
@@ -733,8 +732,8 @@ PROC pf_logmanager() : void {
 
         # remove working sets of non-busy XRPC requests that timed out or aborted
         lock_set(xrpc_lock);
-        var timedout := project(xrpc_timeouts.ord_uselect(0LL,GDKusec()), "timedout");
-        var aborted := xrpc_wsids.ord_uselect(lng_nil,lng_nil).mirror().leftfetchjoin(xrpc_statuses).ord_select("abort"));
+        var timedout := project(xrpc_timeouts.ord_uselect(0LL,usec()), "timedout");
+        var aborted := xrpc_wsids.ord_uselect(lng_nil,lng_nil).mirror().leftfetchjoin(xrpc_statuses).ord_select("abort");
         kunion(aborted,timedout)@batloop() {
             var wslock := xrpc_locks.find($h);
             if (lock_try(ws_lock) = 0) {
@@ -1418,7 +1417,7 @@ PROC ws_new(oid id,
 #  0 = no xrpc ws caching needed, 
 # >0 = ws is already cached at idx
 # <0 = create new ws and cache it at idx
-PROC _ws_xrpcget() : int;
+PROC _ws_xrpcget() : int
 {
     var xrpc := 0;
     xrpc_seqnr := (xrpc_querynr :+= 1LL);
@@ -1435,7 +1434,7 @@ PROC _ws_xrpcget() : int;
 }
 
 # create a new ws if necessary (res <= 0), returns wsid
-PROC _ws_new(int xrpc, oid idx, int update) : lng;
+PROC _ws_new(int xrpc, oid idx, int update) : lng
 {
     var wsid;
     if (xrpc > 0) {
@@ -1461,7 +1460,7 @@ PROC ws_create(int update) : BAT[void,bat]
 {
     # NOTE: use pre-query MIL variables xrpc_qid/xrpc_timeout to possibly re-use an existing ws
     lock_set(xrpc_lock);
-    var err := CATCH(var xrpc, wsid := _ws_new(xrpc := _ws_xrpcget(), idx := oid(abs(xrpc)), update), ws := bat(str(wsid)));
+    var ws, xrpc, idx, err := CATCH(wsid := _ws_new(xrpc := _ws_xrpcget(), idx := oid(abs(xrpc)), update), ws := bat(str(wsid)));
     lock_unset(xrpc_lock);
     if (not(isnil(err))) ERROR(err);
 
@@ -4167,8 +4166,8 @@ typedef struct {
 #define XQUERY_TYPES 20
 #define XQUERY_ABSTRACT 8
 
-extern xquery_type xquery_types[XQUERY_TYPES+1];
-extern int xquery_typenr(char* tpe);
+pathfinder_export xquery_type xquery_types[XQUERY_TYPES+1];
+pathfinder_export int xquery_typenr(char* tpe);
 #endif
 @c
 #include "pf_config.h"

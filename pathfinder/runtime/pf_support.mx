@@ -3860,7 +3860,7 @@ b.col_name(nme).print();
 PROC do_2phase_commit() : void
 {
   # write PRECOMMIT record
-  log_trans_precommit(pf_logger, xrpc_qid, ???cid);
+  log_trans_precommit(pf_logger, xrpc_qid);
 
   # now wait until we get an ABORT or a COMMIT message
   xrpc_wait_for_commit(xrpc_qid);
@@ -5825,6 +5825,9 @@ extern MT_Lock pf_runtime_lock[7];
 #define PF_MODE_UPDATE 2 /* updating query */
 #define PF_MODE_RETRY  3 /* updating query run for the second time (exclusive mode) */
 
+pf_support_export int xrpc_port;
+pf_support_export char *xrpc_hostname;
+
 #endif
 @c
 
@@ -5834,7 +5837,10 @@ extern MT_Lock pf_runtime_lock[7];
 #include <plain/algebra.h> /* needed for result size estimation in CMDenumerate */
 #include <math.h> /* needed for round_up */
 
-@c
+
+char *xrpc_hostname = NULL;
+int xrpc_port = 0;
+
 /* delete a file from the local tmp/ directory in the dbfarm; protect against abuse */
 int CMDcleantmpdir(lng *lim) {
         DIR *dirp = opendir("tmp");
@@ -7889,7 +7895,6 @@ CMDlastmod_time(timestamp *ret, str filename) {
         }
 	return GDK_SUCCEED;
 }
-
 
 typedef struct stack_item si;
 

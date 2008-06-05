@@ -193,8 +193,6 @@ typedef struct _urlcache_t {
 
 /* NOTE: variable is re-used in subsequent pf runs (in server-side setup) */
 urlcache_t *urlcache = NULL;
-/* NOTE: variable is re-used in subsequent pf runs (in server-side setup) */
-int xrpc_port = 80;
 
 /**
  * read input file into the url cache
@@ -210,7 +208,7 @@ char *PFurlcache (char *uri, int keep)
     if (strncmp(uri, "xrpc://", 7) == 0) {
         char *p = strchr(uri+7, '/');
         char *q = strchr(uri+7, ':');
-        int port = xrpc_port; /* if a specific port is omitted, we use the current xrpcd port number */
+        int port = 80; /* if a specific port is omitted, we use the current xrpcd port number */
         if (q) {
             if (p == NULL || p > q) port = atoi(q+1);  /* it is a port only if ':' before the first '/' */
             *q = 0;
