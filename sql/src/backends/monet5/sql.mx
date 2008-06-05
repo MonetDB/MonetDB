@@ -1689,12 +1689,11 @@ mvc_declared_table_wrap(int *res_id, str *name)
 	mvc *m = NULL;
 	str msg = getContext(&m, NULL);
 	sql_schema *s = NULL;
-	sql_table *t = NULL;
 
 	if (msg)
 		return msg;
 	s = mvc_bind_schema(m, "%dt%");
-	t = mvc_create_table(m, s, *name, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
+	(void)mvc_create_table(m, s, *name, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
 	*res_id = 0;
 	return MAL_SUCCEED;
 }

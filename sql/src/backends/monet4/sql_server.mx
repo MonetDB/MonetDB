@@ -806,10 +806,9 @@ mvc_declared_table_wrap(int *res_id, mvc *M, str name)
 {
 	mvc *m = *(mvc**)M;
 	sql_schema *s = NULL;
-	sql_table *t = NULL;
 
 	s = mvc_bind_schema(m, "%dt%");
-	t = mvc_create_table(m, s, name, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
+	(void)mvc_create_table(m, s, name, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
 	*res_id = 0;
 	return GDK_SUCCEED;
 }
