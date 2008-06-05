@@ -45,10 +45,6 @@ table td h1 {
 	border-right: 4px solid black;
 }
 
-#messages {
-	display: none;
-}
-
 #request, #response, #graph {
 	background: white;
 	margin-top:20px;
@@ -56,18 +52,44 @@ table td h1 {
 	border: 1px solid black;
 	border-bottom: 4px solid black;
 	border-right: 4px solid black;
+	width: 410px;
+	height: 312px;
 }
 
 #graph {
+	width: 400px;
+	height: 620px;
 	margin-right: 5px;
+	overflow:auto;
 }
 
-#request td, #response td, #answers td, #graph td {
+#request tr.myheader, #response tr.myheader, #answers tr.myheader, #graph tr.myheader {
 	font-size: 0.7em;
 	font-weight: bold;
 	background-color: black;
 	color: white;
+	height: 0.7em;
+}
+
+#request td.tab, #response td.tab {
+	width: 75px;
+	text-align: center;
 }  
+
+#request tr.myheader td a, #response tr.myheader td a {
+	color: orange;
+}
+
+#request td table, #response td table {
+	border: 1px solid black;
+	width: 100%;
+	font-size: 0.9em;
+}
+
+#reqvis, #reqraw, #resvis, #resraw {
+	overflow:auto;
+	height: 260px;
+}
 
 #content tr {
 	vertical-align:top;

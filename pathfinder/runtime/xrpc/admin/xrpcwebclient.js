@@ -6,16 +6,24 @@ function XRPC(posturl,    /* Your XRPC server. Usually: "http://yourhost:yourpor
               arity,      /* arity of the method */
               call,       /* one or more XRPC_CALL() parameter specs (concatenated strings) */ 
               callback,   /* callback function to call with the XML response */
-              timeout)    /* timeout value, when > 0 repeatable isolation level is presumed */
+              timeout,    /* timeout value, when > 0 repeatable isolation level is presumed */
+              mode)       /* (none | repeatable) [-iterative][-trace] */
 {
-    clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,arity,call,timeout), callback);
+    clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,arity,call,timeout,mode), callback);
+}
+
+/* the main function you want to use: */
+function XRPC_PART(geturl,    /* Your XRPC server. Usually: "http://yourhost:yourport/xrpc" */ 
+              callback)   /* callback function to call with the XML response */
+{
+    clnt.sendReceivePart(geturl, callback);
 }
 
 /**********************************************************************
           functions to construct valid XRPC soap requests
  ***********************************************************************/
 
-function XRPC_REQUEST(module, moduleurl, method, arity, body, timeout) {
+function XRPC_REQUEST(module, moduleurl, method, arity, body, timeout, mode) {
     
     var h = '';
     if (XRPCDEBUG || timeout > 0) {
@@ -23,7 +31,6 @@ function XRPC_REQUEST(module, moduleurl, method, arity, body, timeout) {
 	    var ms = new Date().getMilliseconds();
 	    var rnd = Math.floor(Math.random() * 1000);
 	    var qid = hostport + "|" + ms + "|" + rnd;
-	    var logging = XRPCDEBUG? '<xrpc:logging>query</xrpc:logging>': '';
 	    h = 
 	    '<env:Header>' +
 	    '  <wscoor:CoordinationContext xmlns:wscoor="http://docs.oasis-open.org/ws-tx/wscoor/2006/06" env:mustUnderstand="true">' +
@@ -31,7 +38,6 @@ function XRPC_REQUEST(module, moduleurl, method, arity, body, timeout) {
 	    '    <wscoor:Expires>' + timeout + '</wscoor:Expires>' +
 	    '    <wscoor:CoordinationType>http://docs.oasis-open.org/ws-tx/wsat/2006/06</wscoor:CoordinationType>' +
 	  	'  </wscoor:CoordinationContext>' +
-	  	   logging +
 		'</env:Header>';
 	}
 
@@ -47,6 +53,7 @@ function XRPC_REQUEST(module, moduleurl, method, arity, body, timeout) {
                '<xrpc:request xrpc:module="' + module + '" ' +
                 'xrpc:location="' + moduleurl + '" ' +
                 'xrpc:method="' + method + '" ' +
+                'xrpc:mode="' + mode + '" ' +
                 'xrpc:arity="' + arity + '">' + 
            body 
            + '</xrpc:request></env:Body></env:Envelope>';
@@ -93,6 +100,25 @@ function serializeXML(xml) {
     }
 }
 
+function string2XML(text) {
+	try //Internet Explorer
+	  {
+		  xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
+		  xmlDoc.async="false";
+		  xmlDoc.loadXML(text);
+	  }
+	catch(e)
+	  {
+	  try //Firefox, Mozilla, Opera, etc.
+	    {
+		    parser=new DOMParser();
+		    xmlDoc=parser.parseFromString(text,"text/xml");
+	    }
+	  catch(e) {alert(e.message)}
+	  }
+	  return xmlDoc;
+}
+
 function getnodesXRPC(node,tagname) {
     try {
         return node.getElementsByTagNameNS("http://monetdb.cwi.nl/XQuery",tagname);
@@ -116,9 +142,11 @@ XRPCWebClient = function () {
 XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callback) {
     try {
         this.xmlhttp.open("POST", posturl, true);
-        if (XRPCDEBUG) document.getElementById("messreq").value = request; 
-
-	this.xmlhttp.send(request);
+        if (XRPCDEBUG) {
+        	//document.getElementById("messreq").value = request; 
+			messreqChanged(string2XML(request));
+		}
+		this.xmlhttp.send(request);
 
         var app = this;
         this.xmlhttp.onreadystatechange = function() {
@@ -127,11 +155,44 @@ XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callbac
                     app.xmlhttp.responseText.indexOf("!ERROR") < 0 && 
                     app.xmlhttp.responseText.indexOf("<env:Fault>") < 0) 
                 {
-		    if (XRPCDEBUG) {
-		    	if (app.xmlhttp.responseText)
-		    		document.getElementById("messres").value = serializeXML(app.xmlhttp.responseXML);
-		    }
-		    callback(app.xmlhttp.responseXML);
+				    if (XRPCDEBUG) {
+				    	if (app.xmlhttp.responseText) {
+				    		//document.getElementById("messres").value = serializeXML(app.xmlhttp.responseXML);
+				    		callback(app.xmlhttp.responseXML);
+				    		messresChanged(app.xmlhttp.responseXML);
+				    	}
+				    }
+                } else {
+                    var errmsg =
+                        '!ERROR: "' + method + ' execution failed at the remote side"\n\n' +
+                        '!ERROR: HTTP/1.1 ' + app.xmlhttp.status + '\n' +
+                        '!ERROR: HTTP Response:\n\n\t' + app.xmlhttp.responseText;
+                    alert(errmsg);
+                    return null;
+                }
+            }
+        };
+    } catch (e) {
+        alert('sendRequest('+method+'): '+e);
+    }
+}
+
+XRPCWebClient.prototype.sendReceivePart = function(geturl, callback) {
+    try {
+        this.xmlhttp.open("GET", geturl, true);
+        this.xmlhttp.send("");
+        var app = this;
+        this.xmlhttp.onreadystatechange = function() {
+            if (app.xmlhttp.readyState == 4 ) {
+                if (app.xmlhttp.status == 200 &&
+                    app.xmlhttp.responseText.indexOf("!ERROR") < 0 && 
+                    app.xmlhttp.responseText.indexOf("<env:Fault>") < 0) 
+                {
+				    if (XRPCDEBUG) {
+				    	if (app.xmlhttp.responseText) {
+				    		callback(app.xmlhttp.responseXML);
+				    	}
+				    }
                 } else {
                     var errmsg =
                         '!ERROR: "' + method + ' execution failed at the remote side"\n\n' +

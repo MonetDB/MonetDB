@@ -104,7 +104,6 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   	if (quant == "")
     	return XRPC_SEQ((tpe == "node()")?XRPC_ELEMENT(val):XRPC_ATOM(tpe,val));
     else {
-    alert("["+quant+"]");
     	var l = val.length;
     	var sval = val.substring(1, l - 1);
     	var vals = sval.split(",");
@@ -118,8 +117,8 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   }
 
   function sendRequest(form)  {
-	var obj = document.getElementById("answer");
-    obj.value = "Waiting for server response...";
+	//var obj = document.getElementById("answer");
+    //obj.value = "Waiting for server response...";
     var obj = document.getElementById("messreq");
     obj.value = "";
     var obj = document.getElementById("messres");
@@ -128,7 +127,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
     var params = "";
     var xrpc_call = "";
     /* XRPCDEBUG makes you get an alert for each SOAP message sent/received */
-    XRPCDEBUG = form.debug.checked;
+    //XRPCDEBUG = form.debug.checked;
     
     if (form.method.selectedIndex == 0) {
 	    for (var l = 0; l < form.loop.value; l++) {
@@ -148,13 +147,25 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 		   	xrpc_call += XRPC_CALL(params);
 		}
 	}
+	
+	var mode = form.isolevel.value + form.mode.value + (XRPCDEBUG?"-trace":"");
    	  
     XRPC(form.postUrl.value, form.ns.value, form.loc.value, 
-         form.method.value, form.arity.value, xrpc_call, showResponse, form.timeout.value);
+         form.method.value, form.arity.value, xrpc_call, showResponse, form.timeout.value, mode);
+  }
+  
+  function sendRequestPart(obj) {
+  	var url = obj.alt;
+  	var req = true;
+  	if (url.indexOf("res") != -1) req = false;
+  	//alert(req);
+  	/* XRPCDEBUG makes you get an alert for each SOAP message sent/received */
+    //XRPCDEBUG = document.getElementById("debug").checked;
+  	XRPC_PART(obj.alt, req? messreqChanged: messresChanged);
   }
 
   function showResponse(response) {
-    var obj = document.getElementById("answer");
+    /*var obj = document.getElementById("answer");
     var obj2 = document.getElementById("updating");
     if (!obj2.checked) { // not updating function
     	var nodes = getnodesXRPC(response,"sequence");
@@ -168,7 +179,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   		obj.value = text;
   	} else {
   		obj.value = "Update succeeded (an updating function returns no answer).";
-  	}
+  	}*/
   }
   
   function methodChanged(object) {
@@ -245,7 +256,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   	//loopobj.disabled = (idx != 0);
   }
   
-  function debugChanged(object) {
+  /*function debugChanged(object) {
   	var debug = object.checked;
   	var objl = document.getElementById("content");
   	var objg = document.getElementById("graph");
@@ -257,6 +268,20 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   		objr.style.display = "none";
   		objg.style.display = "none";
   	}
+  }*/
+  
+  function clickreq(vis) {
+  	var objv = document.getElementById("reqvis");
+  	var objr = document.getElementById("reqraw");
+  	objv.style.display = vis?"block":"none";
+  	objr.style.display = vis?"none":"block";
+  }
+  
+  function clickres(vis) {
+  	var objv = document.getElementById("resvis");
+  	var objr = document.getElementById("resraw");
+  	objv.style.display = vis?"block":"none";
+  	objr.style.display = vis?"none":"block";
   }
   
   function isolevelChanged(object) {
@@ -274,12 +299,92 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   function updatingChanged(object) { 
   }
   
+  function messreqChanged(xmldoc) {
+  	document.getElementById("messreq").value = serializeXML(xmldoc);
+  
+  	var obj = document.getElementById("reqvis");
+  	obj.innerHTML = "changed";
+  	//var xpe = new XPathEvaluator();
+	//var nsResolver = xpe.createNSResolver(xmldoc.ownerDocument == null ? xmldoc.documentElement : xmldoc.ownerDocument.documentElement);
+  	//var oid = document.evaluate('/env:Envelope/env:Header/wscoor:CoordinationContext/wscoor:Identifier/text()', xmldoc, nsResolver, XPathResult.ANY_TYPE, null);
+  	var qid = xmldoc.getElementsByTagName("Identifier")[0].firstChild.nodeValue;
+  	var reqnode = xmldoc.getElementsByTagName("Body")[0].firstChild;
+  	var funcn = reqnode.getAttribute("xrpc:method");
+  	var ns = reqnode.getAttribute("xrpc:module");
+  	var loc = reqnode.getAttribute("xrpc:location");
+  	var htm =
+  		'<table>' +
+  		'<tr><td>QID<\/td><td>' + qid + '<\/td><\/tr>' +
+  		'<tr><td>Function<\/td><td>' + funcn + '<\/td><\/tr>' +
+  		'<tr><td>NS<\/td><td>' + ns + '<\/td><\/tr>' +
+  		'<tr><td>Loc<\/td><td>' + loc + '<\/td><\/tr>' +
+  		'</table><table><tr><td>iter<\/td><td>param<\/td><\/tr>';
+  	var callnodes = xmldoc.getElementsByTagName("call");
+  	for (var i = 0; i < callnodes.length; i++) {
+  		var seqnodes = callnodes[i].childNodes;
+  		var sval = '';
+  		for (var k = 0; k < seqnodes.length; k++) {
+	  		var atvals = seqnodes[k].childNodes;
+	  		sval += '( ';
+	  		for (var j = 0; j < atvals.length; j++) {
+	  		 	sval += atvals[j].firstChild.nodeValue + ' '; 
+	  		}
+	  		sval += ') ';
+	  	}
+	  	htm += '<tr><td>' + (i+1) + '<\/td><td>' + sval + '<\/td><\/tr>';
+  	}
+  	htm += '<\/table>';
+  	
+  	obj.innerHTML = htm;
+  }
+  
+  function messresChanged(xmldoc) {
+  	document.getElementById("messres").value = serializeXML(xmldoc);
+  
+  	var obj = document.getElementById("resvis");
+  	obj.innerHTML = "changed";
+  	var qid = 'UNKNOWN';
+  	try {qid = xmldoc.getElementsByTagName("Identifier")[0].firstChild.nodeValue;} catch(err) {}
+  	var reqnode = xmldoc.getElementsByTagName("Body")[0].firstChild;
+  	var funcn = reqnode.getAttribute("xrpc:method");
+  	var ns = reqnode.getAttribute("xrpc:module");
+  	var htm =
+  		'<table>' +
+  		'<tr><td>QID<\/td><td>' + qid + '<\/td><\/tr>' +
+  		'<tr><td>Function<\/td><td>' + funcn + '<\/td><\/tr>' +
+  		'<tr><td>NS<\/td><td>' + ns + '<\/td><\/tr>' +
+  		'<tr><td>&nbsp;<\/td><td><\/td><\/tr>' +
+  		'</table><table><tr><td>iter<\/td><td>param<\/td><\/tr>';
+  		var seqnodes = xmldoc.getElementsByTagName("response")[0].childNodes;
+  		
+  		for (var k = 0; k < seqnodes.length; k++) {
+	  		var atvals = seqnodes[k].childNodes;
+	  		var sval = '( ';
+	  		for (var j = 0; j < atvals.length; j++) {
+	  		 	sval += atvals[j].firstChild.nodeValue + ' '; 
+	  		}
+	  		sval += ') ';
+	  		htm += '<tr><td>' + (k+1) + '<\/td><td>' + sval + '<\/td><\/tr>';
+	  	}
+	  	
+  	htm += '<\/table>';
+  	
+  	obj.innerHTML = htm;
+  }
+  
+  function loadTreeMap(xmldoc) {
+  	var obj = document.getElementById("treemap");
+  }
+  
   function init() {
+  	XRPCDEBUG = true;
   	fillPostUrlBox();
  	fillLocationBox();
 	fillMethodBox();
+	clickreq(true);
+	clickres(true);
  	methodChanged(document.getElementById("method"));
- 	debugChanged(document.getElementById("debug"));
+ 	//debugChanged(document.getElementById("debug"));
   }
  </script>
  <link rel="stylesheet" href="style.css" type="text/css" />
@@ -311,20 +416,14 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 	<tr>
 		<td><label for="postUrl">XRPC server URL</label></td>
 		<td><input type="text" name="postUrl" id="postUrl" value="" size="40" readonly="readonly" /></td>
-		<td></td>
-		<td></td>
 	</tr>
 	<tr>
 		<td><label for="ns">Module namespace</label></td>
 		<td><input type="text" name="ns" value="xrpcdemo-functions" size="40" /></td>
-		<td></td>
-		<td></td>
 	</tr>
 	<tr>
 		<td><label for="loc">Module location</label></td>
 		<td><input type="text" name="loc" id="loc" value="" size="40" /></td>
-		<td></td>
-		<td></td>
 	</tr>
 	<tr>
 		<td><label for="method">Function</label></td>
@@ -332,38 +431,30 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 			<select name="method" id="method" onchange="methodChanged(this);">
 			</select>
 		</td>
-		<td></td>
-		<td></td>
 	</tr>
 	<tr>
 		<td></td>
-		<td><textarea cols="40" rows="3" name="def" id="def" readonly="readonly"></textarea></td>
-		<td></td>
-		<td></td>
+		<td><textarea cols="40" rows="4" name="def" id="def" readonly="readonly"></textarea></td>
 	</tr>
 	<tr>
 		<td><label for="loop">Loop counter</label></td>
 		<td>
-			<select name="loop" id="loop">
-				<option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
-				<option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
-			</select>
+			<input type="text" name="loop" id="loop" value="1" size="6" />
+			&nbsp;&nbsp;&nbsp;&nbsp;
+			Mode <select name="mode" id="mode">
+					<option value="">all-at-once</option>
+					<option value="-iterative">one-at-a-time</option>
+				</select>
 		</td>
-		<td></td>
-		<td></td>
 	</tr>
 	<tr style="height:100px">
 		<td>Parameters</td>
 		<td id="params">
 		</td>
-		<td></td>
-		<td></td>
 	</tr>
 	<tr>
 		<td><label for="updating">Updating Function</label></td>
 		<td><input type="checkbox" name="updating" id="updating" onchange="updatingChanged(this)" /></td>
-		<td></td>
-		<td></td>
 	</tr>
 	<tr>
 		<td><label for="isolevel">Isolation Level</label></td>
@@ -375,47 +466,77 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 			&nbsp;&nbsp;&nbsp;&nbsp;
 			Timeout <input type="text" value="0" name="timeout" id="timeout" readonly="readonly" size="10" />
 		</td>
-		<td></td>
-		<td></td>
 	</tr>
-	<tr>
+	<!--<tr>
 		<td><label for="debug">Show query flow</label></td>
 		<td><input type="checkbox" name="debug" id="debug" checked="checked" onchange="debugChanged(this)" /></td>
-		<td></td>
-		<td></td>
-	</tr>
+	</tr>-->
 	<tr>
 		<td></td>
 		<td><input type="button" value="Submit" onclick="sendRequest(this.form)" /></td>
-		<td></td>
-		<td></td>
 	</tr>
 	</table>
-	<table id="answers">
-	<tr>
-		<td>ANSWER<br /><textarea cols="59" rows="3" name="answer" id="answer" readonly="readonly"></textarea></td>
+	<!--<table id="answers">
+	<tr class="myheader">
+		<td>ANSWER<br /><textarea cols="65" rows="7" name="answer" id="answer" readonly="readonly"></textarea></td>
 	</tr>
-	</table>
+	</table>-->
 </td>
 <td>
 	<div id="graph">
-		<!--<table id="graphtable">
+		<map name="treemap" id="treemap">
+			<area shape="rect" onclick="sendRequestPart(this)" href="#" title="5ms" alt="http://127.0.0.1:50001/demo/res1.xml" coords="133,229,141,237"/>
+			<area shape="rect" onclick="sendRequestPart(this)" href="#" title="5ms" alt="http://127.0.0.1:50001/demo/req1.xml" coords="100,356,108,364"/>
+			<area shape="rect" onclick="sendRequestPart(this)" href="#" title="7ms" alt="http://127.0.0.1:50001/demo/res1.xml" coords="153,229,161,237"/>
+			<area shape="rect" onclick="sendRequestPart(this)" href="#" title="7ms" alt="http://127.0.0.1:50001/demo/req1.xml" coords="205,356,213,364"/>
+			<area shape="rect" onclick="sendRequestPart(this)" href="#" title="9ms" alt="http://127.0.0.1:50001/demo/res1.xml" coords="140,53,148,61"/>
+			<area shape="rect" onclick="sendRequestPart(this)" href="#" title="9ms" alt="http://127.0.0.1:50001/demo/req1.xml" coords="140,181,148,189"/>
+			<area shape="rect" onclick="sendRequestPart(this)" href="#" title="3ms" alt="http://127.0.0.1:50001/demo/res1.xml" coords="95,404,103,412"/>
+			<area shape="rect" onclick="sendRequestPart(this)" href="#" title="3ms" alt="http://127.0.0.1:50001/demo/req1.xml" coords="99,532,107,540"/>
+			<area shape="rect" onclick="sendRequestPart(this)" href="#" title="2ms" alt="http://127.0.0.1:50001/demo/res1.xml" coords="213,404,221,412"/>
+			<area shape="rect" onclick="sendRequestPart(this)" href="#" title="2ms" alt="http://127.0.0.1:50001/demo/req1.xml" coords="211,532,219,540"/>
+		</map>
+		<table id="graphtable">
 		<tr>
-			<td>GRAPH<br /><img src="tree.gif" /></td>
+			<td><img id="treeimg" src="test.gif" usemap="#treemap" border="0" alt="messageflow" /></td>
 		</tr>
 		</table>
-	--></div>
+	</div>
 </td>
 <td>
 	<div id="messages">
 		<table id="request">
+		<tr class="myheader">
+			<td>REQUEST</td>
+			<td class="tab"><a href="#" onclick="clickreq(true)">VISUAL</a></td>
+			<td class="tab"><a href="#" onclick="clickreq(false)">RAW</a></td>
+		</tr>
 		<tr>
-			<td>REQUEST<br /><textarea cols="40" rows="8" name="messreq" id="messreq" readonly="readonly"></textarea></td>
+			<td colspan="3">
+				<div id="reqraw">
+					<textarea cols="48" rows="15" name="messreq" id="messreq" readonly="readonly"></textarea>
+				</div>
+				<div id="reqvis">
+					visual display
+				</div>
+			</td>
 		</tr>
 		</table>
 		<table id="response">
+		<tr class="myheader">
+			<td>RESPONSE</td>
+			<td class="tab"><a href="#" onclick="clickres(true)">VISUAL</a></td>
+			<td class="tab"><a href="#" onclick="clickres(false)">RAW</a></td>
+		</tr>
 		<tr>
-			<td>RESPONSE<br /><textarea cols="40" rows="8" name="messres" id="messres" readonly="readonly"></textarea></td>
+			<td colspan="3">
+				<div id="resraw">
+					<textarea cols="48" rows="15" name="messres" id="messres" readonly="readonly"></textarea>
+				</div>
+				<div id="resvis">
+					visual display
+				</div>
+			</td>
 		</tr>
 		</table>
 	</div>
