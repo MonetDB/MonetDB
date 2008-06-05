@@ -873,11 +873,13 @@ At the end of the MAL block we should restore
 the recycle cache to the initial state in
 those situations where intermediate results have
 been created.
-
+For this, we take the approach to remove all instructions
+that were considered for recycling. Regardless if it was
+added in the current call or before.
 @c
 str
 RECYCLErestore(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	int i,j;
+	int i,j,k,top=0;
 	int action=0;
 	char *dropped;
 	
@@ -897,11 +899,14 @@ RECYCLErestore(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	for (i=mb->stop-1; i>=0; i--){
 		p= getInstrPtr(mb,i);
 		if (p->recycle > 0){
+			/* keep track of all BATs removed */
+			for (j=0;j<p->retc; j++)
+			if(getArgType(recycleBlk,p,j)==TYPE_bat || 
+				isaBatType(getArgType(recycleBlk, p,j)) )
+				dropped[top++]= getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
 			RECYCLEgarbagecollect(recycleBlk, getInstrPtr(recycleBlk,p->recycle));
 			removeInstruction(recycleBlk, getInstrPtr(recycleBlk,p->recycle));
 			action++;
-			for (j=0;j<p->argc; j++)
-				dropped[getArg(p,j)]= 1;
 		}
 	}
 @-
@@ -919,10 +924,17 @@ handled first.
 				isaBatType(getArgType(recycleBlk, p,j)) ){
 				int nbid = getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
 				if (nbid == -1) continue;
-				if( BBP_lrefs(nbid)==1 || dropped[getArg(p,j)] )
+				if( BBP_lrefs(nbid)==1 )
+					break;
+				for (k=0; k<top; k++)
+				if (dropped[k]== nbid)
 					break;
 			}
 			if (j<p->argc){
+				for (j=0;j<p->retc; j++)
+				if(getArgType(recycleBlk,p,j)==TYPE_bat || 
+					isaBatType(getArgType(recycleBlk, p,j)) )
+					dropped[top++]= getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
 				RECYCLEgarbagecollect(recycleBlk, p);
 				removeInstruction(recycleBlk, p);
 				action++;
