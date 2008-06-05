@@ -1165,34 +1165,10 @@ stmt_column(stmt *op1, stmt *table, sql_table *t)
 	return s;
 }
 
-static stmt *
-find_column(sql_column *c, stmt *basetable) 
-{
-	node *n;
-
-	assert(basetable->type == st_list);
-	for(n=basetable->op1.lval->h; n; n = n->next) {
-		char *cn = NULL;
-		stmt *cs = n->data;
-
-		if (strcmp(cn=column_name(cs), c->base.name) == 0) {
-			_DELETE(cn);
-			return stmt_dup(cs);
-		}
-		_DELETE(cn);
-	}
-	return NULL;
-}
-
 stmt *
 stmt_bat(sql_column *c, stmt *basetable, int access )
 {
-	stmt *s;
-
-	if (c->t->persistence == SQL_DECLARED_TABLE)
-		return find_column(c, basetable);
-
-	s = stmt_create(st_bat);
+	stmt *s = stmt_create(st_bat);
 
 	s->op1.cval = c;
 	s->nrcols = 1;

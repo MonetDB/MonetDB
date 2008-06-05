@@ -17,4 +17,11 @@ EOF
 
 Mlog -x "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -q"
 
+cat << EOF > .monetdb
+user=monetdb
+password=monetdb
+EOF
+
+Mlog -x "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -f \"$RELSRCDIR/authorization.SF-1430616-drop_user.sql\""
+
 rm -f .monetdb

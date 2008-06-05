@@ -28,11 +28,6 @@ Over..
 % int # type
 % 1 # length
 [ 2	]
-% sys.t10 # table_name
-% i # name
-% int # type
-% 1 # length
-[ 2	]
 
 # 12:38:21 >  
 # 12:38:21 >  Done.

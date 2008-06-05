@@ -173,6 +173,34 @@ dump_header(MalBlkPtr mb, stmt *s, list *l)
 	}
 }
 
+int
+dump_table(MalBlkPtr mb, sql_table *t)
+{
+	int nr;
+	node *n;
+	InstrPtr k = newStmt1(mb, sqlRef, "declaredTable");
+
+	nr = getDestVar(k);
+	k = pushStr(mb, k, t->base.name );
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		char *tname = c->t->base.name;
+		char *tn = sql_escape_ident(tname);
+		char *cn = c->base.name;
+		InstrPtr q = newStmt1(mb, sqlRef, "dtColumn");
+
+		q = pushArgument(mb, q, nr);
+		q = pushStr(mb, q, tn);
+		q = pushStr(mb, q, cn);
+		q = pushStr(mb, q, c->type.type->sqlname);
+		q = pushInt(mb, q, c->type.digits);
+		q = pushInt(mb, q, c->type.scale);
+		_DELETE(tn);
+	}
+	return nr;
+}
+
+
 @-
 The dump_cols produces a sequence of instructions for
 the front-end to prepare presentation of a result table (bat).
@@ -313,6 +341,15 @@ multiplexN(MalBlkPtr mb, char *mod, char *name)
 	return q;
 }
 
+InstrPtr
+pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
+{
+	if (t->s)
+		return pushStr(mb, q, t->s->base.name);
+	else
+		return pushNil(mb, q, TYPE_str);
+}
+
 static char*
 reconnect(MalBlkPtr mb, list *l)
 {
@@ -421,6 +458,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					int tt = tail_type(s)->type->localtype;
 					char *buf;
 
+					if (tt == TYPE_bat) {
+						/* declared table */
+						s->nr = dump_table(mb, tail_type(s)->comp_type);
+						break;
+					}
 					buf = alloca(SMALLBUFSIZ);
 					(void) snprintf(buf, SMALLBUFSIZ, "A%s", s->op1.sval);
 					q = newInstruction(mb,ASSIGNsymbol);
@@ -462,7 +504,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt2(mb, sqlRef, bindRef);
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			setVarUDFtype(mb,getArg(q,0));
-			q = pushStr(mb, q, s->op1.cval->t->s->base.name);
+			q = pushSchema(mb, q, s->op1.cval->t);
 			q = pushStr(mb, q, s->op1.cval->t->base.name);
 			q = pushStr(mb, q, s->op1.cval->base.name);
 			q = pushInt(mb, q, s->flag);
@@ -474,7 +516,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt2(mb, sqlRef, binddbatRef);
 			setVarType(mb, getArg(q,0), newBatType(ht,TYPE_oid));
 			setVarUDFtype(mb,getArg(q,0));
-			q = pushStr(mb, q, s->op1.tval->s->base.name);
+			q = pushSchema(mb, q, s->op1.tval);
 			q = pushStr(mb, q, s->op1.tval->base.name);
 			q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
@@ -488,7 +530,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			tt = tail_type(s)->type->localtype;
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			setVarUDFtype(mb,getArg(q,0));
-			q = pushStr(mb, q, s->op1.idxval->t->s->base.name);
+			q = pushSchema(mb, q, s->op1.idxval->t);
 			q = pushStr(mb, q, s->op1.idxval->t->base.name);
 			q = pushStr(mb, q, s->op1.idxval->base.name);
 			q = pushInt(mb, q, s->flag);
@@ -1384,7 +1426,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *n = (s->type==st_append_col)?appendRef:updateRef;
 
 			q = newStmt2(mb, sqlRef, n);
-			q = pushStr(mb, q, c->t->s->base.name);
+			q = pushSchema(mb, q, c->t);
 			q = pushStr(mb, q, c->t->base.name);
 			q = pushStr(mb, q, c->base.name);
 			q = pushArgument(mb, q, r);
@@ -1399,7 +1441,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *n = (s->type==st_append_idx)?appendRef:updateRef;
 
 			q = newStmt2(mb, sqlRef, n);
-			q = pushStr(mb, q, i->t->s->base.name);
+			q = pushSchema(mb, q, i->t);
 			q = pushStr(mb, q, i->t->base.name);
 			q = pushStr(mb, q, i->base.name);
 			q = pushArgument(mb, q, r);
@@ -1411,7 +1453,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			sql_table *t = s->op1.tval;
 
 			q = newStmt1(mb, sqlRef, "delete");
-			q = pushStr(mb, q, t->s->base.name);
+			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
 			q = pushArgument(mb, q, r);
 			s->nr = l;
@@ -1420,7 +1462,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			sql_table *t = s->op1.tval;
 
 			q = newStmt1(mb, sqlRef, "clear_table");
-			q = pushStr(mb, q, t->s->base.name);
+			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
 			s->nr = getDestVar(q);
 		} break;

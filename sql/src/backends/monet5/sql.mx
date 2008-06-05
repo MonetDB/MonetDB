@@ -153,10 +153,6 @@ command resultSet{unsafe}( nr_cols:int, sep:str, rsep:str, ssep:str, ns:str, ord
 address mvc_result_file_wrap
 comment "Prepare a file result set"; 
 
-command resultSet{unsafe}( nr_cols:int, qtype:int, order:bat[:oid,:any_1] ) :int 
-address mvc_result_table_wrap
-comment "Prepare a table result set"; 
-
 command resultSet{unsafe}( nr_cols:int, qtype:int, order:any_1 ) :int 
 address mvc_result_row_wrap
 comment "Prepare a row result set"; 
@@ -181,6 +177,13 @@ command rsColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, 
 address mvc_result_value_lng;
 command rsColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:int ) :void
 address mvc_result_value_int;
+
+command declaredTable{unsafe}( name:str ) :int 
+address mvc_declared_table_wrap
+comment "Prepare a declared table"; 
+
+command dtColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int) :void
+address mvc_declared_table_column_wrap;
 
 command exportResult{unsafe}(s:streams, res_id:int, w:str) :void
 address mvc_export_result_wrap
@@ -717,6 +720,9 @@ sql5_export str mvc_result_value_@1(int *ret, int *rs, str *tn, str *name, str *
 @:result_value_export(int)@
 @:result_value_export(sht)@
 @:result_value_export(bte)@
+
+sql5_export str mvc_declared_table_wrap(int *res_id, str *name);
+sql5_export str mvc_declared_table_column_wrap(int *ret, int *rs, str *tname, str *name, str *type, int *digits, int *scale);
 
 sql5_export str mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_affected_rows_wrap(int *r, lng *nr, str *w);
@@ -1674,6 +1680,43 @@ mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = *(ptr*)p;
 	if (mvc_result_value(m, *tn, *cn, *type, *digits, *scale, p, mtype))
 		throw(SQL, "sql.rsColumn", "failed");
+	return MAL_SUCCEED;
+}
+
+str
+mvc_declared_table_wrap(int *res_id, str *name)
+{
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+	sql_schema *s = NULL;
+
+	if (msg)
+		return msg;
+	s = mvc_bind_schema(m, "%dt%");
+	(void)mvc_create_table(m, s, *name, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
+	*res_id = 0;
+	return MAL_SUCCEED;
+}
+
+str 
+mvc_declared_table_column_wrap(int *ret, int *rs, str *tname, str *name, str *type, int *digits, int *scale)
+{
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_subtype tpe;
+
+	(void)ret;
+	if (msg)
+		return msg;
+	if (*rs != 0)
+                throw(SQL, "sql.dtColumn", "Cannot access declared table");
+	if (!sql_find_subtype(&tpe, *type, *digits, *scale))
+                throw(SQL, "sql.dtColumn", "Cannot find column type");
+	s = mvc_bind_schema(m, "%dt%");
+	t = mvc_bind_table(m, s, *tname);
+	(void)mvc_create_column(m, t, *name, &tpe); 
 	return MAL_SUCCEED;
 }
 

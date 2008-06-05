@@ -135,6 +135,10 @@ stream.
 	.COMMAND mvc_result_column( mvc m, str tname, str name, str typename, int digits, int scale, any val) = mvc_result_value_wrap; "Add the value to the row query result"
 	.COMMAND mvc_result_column( mvc m, str tname, str name, str typename, int digits, int scale, BAT[oid,any] col) = mvc_result_column_wrap; "Add the colunm to the table query result"
 
+	.COMMAND mvc_declared_table( mvc m, str name) : int = mvc_declared_table_wrap; "Create structure for the declared table" 
+
+	.COMMAND mvc_declared_table_column( mvc m, int rs, str tname, str name, str typename, int digits, int scale) = mvc_declared_table_column_wrap; "Add the colunm to the declared table"
+
 	.COMMAND mvc_schema_operation(mvc m, Stream s, str w) =
 		mvc_export_schema_wrap; "export a schema operation to stream s"
 
@@ -794,6 +798,36 @@ mvc_result_column_wrap(mvc *M, str tn, str name, str type, int *digits, int *sca
 {
 	if (mvc_result_column(*(mvc **) M, tn, name, type, *digits, *scale, b))
 		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+int
+mvc_declared_table_wrap(int *res_id, mvc *M, str name)
+{
+	mvc *m = *(mvc**)M;
+	sql_schema *s = NULL;
+
+	s = mvc_bind_schema(m, "%dt%");
+	(void)mvc_create_table(m, s, name, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
+	*res_id = 0;
+	return GDK_SUCCEED;
+}
+
+int 
+mvc_declared_table_column_wrap(mvc *M, int *rs, str tname, str name, str type, int *digits, int *scale)
+{
+	mvc *m = *(mvc**)M;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_subtype tpe;
+
+	if (*rs != 0)
+		return GDK_FAIL;
+	if (!sql_find_subtype(&tpe, type, *digits, *scale))
+		return GDK_FAIL;
+	s = mvc_bind_schema(m, "%dt%");
+	t = mvc_bind_table(m, s, tname);
+	(void)mvc_create_column(m, t, name, &tpe); 
 	return GDK_SUCCEED;
 }
 

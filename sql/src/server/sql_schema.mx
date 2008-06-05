@@ -1601,10 +1601,12 @@ sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table
 	if (temp != SQL_PERSIST && commit_action == CA_COMMIT)
 		commit_action = CA_DELETE;
 	
-	if (temp != SQL_PERSIST) {
-		s = mvc_bind_schema(sql, "tmp");
-	} else if (s == NULL) {
-		s = ss;
+	if (temp != SQL_DECLARED_TABLE) {
+		if (temp != SQL_PERSIST) {
+			s = mvc_bind_schema(sql, "tmp");
+		} else if (s == NULL) {
+			s = ss;
+		}
 	}
 
 	if (mvc_bind_table(sql, s, name)) {

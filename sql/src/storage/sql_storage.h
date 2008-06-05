@@ -29,6 +29,7 @@
 #define isGlobalTable(x) (x->persistence!=SQL_LOCAL_TEMP)
 #define isGlobalTemp(x) (x->persistence==SQL_GLOBAL_TEMP)
 #define isTempSchema(x)  (strcmp(x->base.name,"tmp") == 0)
+#define isDeclaredTable(x)  (x->persistence==SQL_DECLARED_TABLE)
 
 typedef enum store_type {
 	store_bat,	/* delta bats, ie multi user read/write */

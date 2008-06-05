@@ -2763,7 +2763,7 @@ sql_compare(mvc *sql, scope *scp, stmt *ls, stmt *rs, char *compare_op, int f, e
 	if (f == sql_sel || (ls->nrcols <= 0 && rs->nrcols <= 0) || !ek.reduce) {
 		return sql_binop_(sql, NULL, NULL, compare_op, ls, rs);
 	}
-	if (ls->nrcols > 0 && rs->nrcols > 0) {
+	if (ls->nrcols > 0 && rs->nrcols > 0 && f != sql_having) {
 		join = 1;
 	}
 	if (compare_op[0] == '=') {
@@ -4161,7 +4161,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 	stmt_destroy(s);
 	s = stmt_list(rl);
 
-	if (s && subset && sn->distinct) {
+	if (s && s->nrcols && subset && sn->distinct) {
 		s = distinct(s);
 	}
 

@@ -2111,3 +2111,155 @@ begin
         return WebServerURL +'tools/explore/obj.asp?id='+ cast(objIdd as varchar(32));
 end;  
 
+CREATE FUNCTION fGetUrlFrameImg(frameId bigint, zoom int)
+returns varchar(256)
+begin   
+        declare WebServerURL varchar(500);
+        set WebServerURL = 'http://localhost/';
+        select cast(value as varchar(500)) into WebServerURL 
+                from SiteConstants
+                where name ='WebServerURL';
+        return WebServerURL + 'get/frameById.asp?id=' 
+                + cast(frameId as varchar(32))
+                + '&zoom=' + cast(zoom as varchar(6)) ;
+end;
+
+CREATE FUNCTION fGetUrlFitsField(fieldIdd bigint)
+RETURNS varchar(128)
+BEGIN
+	DECLARE link varchar(128), run varchar(8), rerun varchar(8),
+		run6 varchar(10), stripe varchar(8), camcol varchar(8), 
+		field varchar(8), startMu varchar(10), skyVersion varchar(8);
+	SET link = (select value from SiteConstants where name='DataServerURL');
+	SET link = link + 'imaging/';
+	SELECT cast(fSkyVersion(fieldIdd) as varchar(8)) into skyVersion;
+	IF (skyVersion = '0')
+		THEN SET link = link + 'inchunk_target/';
+	ELSE 	IF (skyVersion = '1')
+			THEN SET link = link + 'inchunk_best/';
+		ELSE
+			SET link = link + 'inchunk_runs/';
+		END IF;
+	END IF;
+	SELECT  cast(f.run as varchar(8)) into run
+	    FROM Field f, Segment s
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
+	SELECT  
+		cast(f.rerun as varchar(8)) into rerun 
+	    FROM Field f, Segment s
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
+	SELECT  
+		cast(s.startMu as varchar(10)) into startMu 
+	    FROM Field f, Segment s
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
+	SELECT  
+		cast(s.stripe as varchar(8)) into stripe
+	    FROM Field f, Segment s
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
+	SELECT  
+		cast(f.camcol as varchar(8)) into camcol 
+	    FROM Field f, Segment s
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
+	SELECT  
+		cast(f.field as varchar(8)) into field
+	    FROM Field f, Segment s
+	    WHERE f.fieldID=fieldIdd and s.segmentID = f.segmentID; 
+	SET run6   = substring('000000',1,6-length(run)) + run;
+	SET field = substring('0000',1,4-length(field)) + field;
+	RETURN 	 link + 'stripe' + stripe + '_mu' + startMu + '_' 
+		+ skyVersion + '/'+camcol+'/tsField-'+run6+'-'
+		+camcol+'-'+rerun+'-'+field+'.fit';
+END;
+
+CREATE FUNCTION fGetNearbyObjAllXYZ (nx float, ny float, nz float, rr float)
+RETURNS TABLE (
+    objID bigint,
+    run int ,
+    camcol int ,
+    field int ,
+    rerun int ,
+    type int ,
+    mode int ,
+    cx float ,
+    cy float ,
+    cz float ,
+    htmID bigint,
+    distance float		-- distance in arc minutes
+  ) 
+BEGIN
+	RETURN TABLE (SELECT 
+	    objID, 
+	    run,
+	    camcol,
+	    field,
+	    rerun,
+	    type,
+	    mode,
+	    cx,
+	    cy,
+	    cz,
+	    htmID,
+ 	    2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60 as deg 
+	    --sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/d2r*60 
+	    FROM fHtmCoverCircleXyz(nx,ny,nz,rr) H join PhotoObjAll P
+	             ON  (P.HtmID BETWEEN H.HtmIDstart AND H.HtmIDend )
+	    AND ( (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60)< r)
+	ORDER BY deg ASC);
+ END;
+
+
+
+CREATE FUNCTION fGetNearbyObjAllEq (ra float, "dec" float, r float)
+RETURNS TABLE (
+    objID bigint,
+    run int ,
+    camcol int ,
+    field int ,
+    rerun int ,
+    type int ,
+    mode tinyint ,
+    cx float ,
+    cy float ,
+    cz float ,
+    htmID bigint,
+    distance float		-- distance in arc minutes
+  ) 
+BEGIN
+	DECLARE d2r float, nx float,ny float,nz float ;
+	DECLARE TABLE t(
+	    objID bigint,
+	    run int ,
+	    camcol int ,
+	    field int ,
+	    rerun int ,
+	    type int ,
+	    mode tinyint ,
+	    cx float ,
+	    cy float ,
+	    cz float ,
+	    htmID bigint,
+	    distance float		-- distance in arc minutes
+  	); 
+	set d2r = PI()/180.0;
+	if (r<0) 
+		THEN RETURN t;
+	END IF;
+	set nx  = COS("dec"*d2r)*COS(ra*d2r);
+	set ny  = COS("dec"*d2r)*SIN(ra*d2r);
+	set nz  = SIN("dec"*d2r);
+	RETURN TABLE (	
+	SELECT * FROM fGetNearbyObjAllXYZ(nx,ny,nz,r)); 
+END;
+
+CREATE FUNCTION fGetUrlSpecImg(specObjId bigint)
+returns varchar(256)
+begin
+	declare WebServerURL varchar(500);
+	set WebServerURL = 'http://localhost/';
+	select cast(value as varchar(500)) into WebServerURL 
+	from SiteConstants
+		where name ='WebServerURL';
+	return WebServerURL + 'get/specById.asp?id=' 
+		+ cast(coalesce(specObjId,0) as varchar(32));
+end;
+

@@ -774,11 +774,20 @@ mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 {
 	sql_table *t;
 
-	if (m->last && m->last->t->s == s &&
-		strcmp(m->last->t->base.name, tname) == 0)
+	if (!s) { /* Declared tables during query compilation have no schema */
+		sql_subtype *tpe = stack_find_type(m, tname);
+		if (tpe) { 
+			t = tpe->comp_type;
+		} else { /* during exection they are in the '%dt%' schema */
+			s = mvc_bind_schema(m, "%dt%");
+			return mvc_bind_table(m, s, tname);
+		}
+	} else if (m->last && m->last->t->s == s &&
+		strcmp(m->last->t->base.name, tname) == 0) {
 		t = m->last->t;
-	else 
+	} else {
  		t = find_sql_table(s, tname);
+	}
 	if (!t)
 		return NULL;
 	if (mvc_debug)
@@ -1107,7 +1116,7 @@ mvc_create_table(mvc *m, sql_schema *s, char *name, bit system, int persistence,
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_table %s %s %d %d %d\n", s->base.name, name, system, persistence, commit_action);
 
-	if (persistence == SQL_DECLARED_TABLE)
+	if (!s && persistence == SQL_DECLARED_TABLE)
 		/* declared tables should not end up in the catalog */
 		t = create_sql_table(name, tt_table, system, persistence, commit_action);
 	else
@@ -1178,7 +1187,7 @@ mvc_create_column(mvc *m, sql_table *t, char *name, sql_subtype *tpe)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_column %s %s %s\n", t->base.name, name, tpe->type->sqlname);
 	m->type = Q_SCHEMA;
-	if (t->persistence == SQL_DECLARED_TABLE)
+	if (!t->s && t->persistence == SQL_DECLARED_TABLE)
 		/* declared tables should not end up in the catalog */
 		return create_sql_column(t, name, tpe);
 	else
