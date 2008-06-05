@@ -140,11 +140,11 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for (j=p->retc; j<p->argc; j++)
 			if(recycled[getArg(p,j)] || isVarConstant(mb, getArg(p,j)) )
 				cnt++;
-#ifdef DEBUG_OPT_RECYCLER  
-		stream_printf(cntxt->fdout,"recyle ? %d\n",cnt);
-		printInstruction(cntxt->fdout,mb,p,LIST_MAL_ALL);
-#endif
 		if (cnt == p->argc-p->retc) {
+#ifdef DEBUG_OPT_RECYCLER  
+			stream_printf(cntxt->fdout,"recycle instruction\n");
+			printInstruction(cntxt->fdout,mb,p,LIST_MAL_ALL);
+#endif
 			actions ++;
 			p->recycle = -1; /* this instruction is to be monitored */
 			for (j= 0; j < p->retc; j++)
@@ -194,7 +194,7 @@ with the transaction commits.
 
 		if( p->token== ENDsymbol){
 			if (actions && update)
-				(void) newFcnCall(mb,"recycle","shutdown");
+				(void) newFcnCall(mb,"recycle","restore");
 			(void) newFcnCall(mb,"recycle","epilogue");
 		}
 		pushInstruction(mb,p);
