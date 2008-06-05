@@ -879,6 +879,7 @@ str
 RECYCLErestore(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int i,j;
 	int action=0;
+	char *dropped;
 	
 	if( recycleBlk == NULL)
 		return MAL_SUCCEED;
@@ -889,6 +890,8 @@ RECYCLErestore(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	printFunction(GDKout,mb,0);
 #endif
 	(void) stk;
+	dropped = alloca(recycleBlk->vtop);
+	memset(dropped, 0, recycleBlk->vtop);
 	mal_set_lock(recycleLock,"recycle");
 	recycleVersion++; /* warn other threads */
 	for (i=mb->stop-1; i>=0; i--){
@@ -897,6 +900,8 @@ RECYCLErestore(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			RECYCLEgarbagecollect(recycleBlk, getInstrPtr(recycleBlk,p->recycle));
 			removeInstruction(recycleBlk, getInstrPtr(recycleBlk,p->recycle));
 			action++;
+			for (j=0;j<p->argc; j++)
+				dropped[getArg(p,j)]= 1;
 		}
 	}
 @-
@@ -905,20 +910,23 @@ that have dependencies on variables only known to the recycler.
 Use a backward walk, to ensure that the last references are
 handled first.
 @c
-	if (action)
-	for (i=recycleBlk->stop-1; i>0; i--){
-		p= getInstrPtr(recycleBlk,i);
-		for (j=p->retc; j<p->argc; j++)
-		if(getArgType(recycleBlk,p,j)==TYPE_bat || 
-			isaBatType(getArgType(recycleBlk, p,j)) ){
-			int nbid = getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
-			if (nbid == -1) continue;
-			if( BBP_lrefs(nbid)==1 )
-				break;
-		}
-		if (j<p->argc){
-			RECYCLEgarbagecollect(recycleBlk, p);
-			removeInstruction(recycleBlk, p);
+	while (action){
+		action= 0;
+		for (i=recycleBlk->stop-1; i>0; i--){
+			p= getInstrPtr(recycleBlk,i);
+			for (j=p->retc; j<p->argc; j++)
+			if(getArgType(recycleBlk,p,j)==TYPE_bat || 
+				isaBatType(getArgType(recycleBlk, p,j)) ){
+				int nbid = getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
+				if (nbid == -1) continue;
+				if( BBP_lrefs(nbid)==1 || dropped[getArg(p,j)] )
+					break;
+			}
+			if (j<p->argc){
+				RECYCLEgarbagecollect(recycleBlk, p);
+				removeInstruction(recycleBlk, p);
+				action++;
+			}
 		}
 	}
 	mal_unset_lock(recycleLock,"recycle");
