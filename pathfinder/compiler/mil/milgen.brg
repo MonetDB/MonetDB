@@ -2481,7 +2481,7 @@ reduce (PFpa_op_t * p, int goalnt)
         {
             PFalg_simple_type_t ty;
             PFmil_create_ws_t create;
-            mvar_t *err, *time, *try;
+            mvar_t *err, *time, *try = NULL;
             PFalg_att_t pa_item = p->sem.serialize.item;
             PFmil_t *oldmilprog, *bodymilprog;
 
