@@ -3452,8 +3452,8 @@ reduce (PFpa_op_t * p, int goalnt)
                                  not (isnil (var (err->name)))),
                             seq (if_ (not (starts_with (
                                                var (err->name),
-                                               lit_str ("!ERROR: conflicting "
-                                                        "update"))),
+                                               lit_str ("!ERROR: conflicting"
+                                                        " update"))),
                                       break_(),
                                       nop()),
                                  catch_ (var (err->name), bodymilprog),
