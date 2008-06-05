@@ -6996,11 +6996,34 @@ reduce (PFpa_op_t * p, int goalnt)
             assert (type_of (LL(p), L(p)->sem.ii.iter) == aat_nat);
             assert (type_of (LL(p), L(p)->sem.ii.item) == aat_str);
         {
-            mvar_t *seqb = new_var (1);
-            mvar_t *root_pre  = new_var (p->refctr);
-            mvar_t *root_frag = new_var (p->refctr);
-            mvar_t *iter = env_mvar (LL(p)->env, L(p)->sem.ii.iter, aat_nat);
-            PFmil_t *item = VAR (LL(p)->env, L(p)->sem.ii.item, aat_str);
+            mvar_t *seqb      = new_var (1),
+                   *root_pre  = new_var (p->refctr),
+                   *root_frag = new_var (p->refctr),
+                   *iter      = new_var (p->refctr),
+                   *item      = new_var (1),
+                   *map       = new_var (1);
+
+            /* prune all empty textnodes */
+            execute (
+                assgn (var (map->name),
+                       hmark (
+                           select_ (meq (VAR (LL(p)->env,
+                                              L(p)->sem.ii.item,
+                                              aat_str),
+                                         lit_str ("")),
+                                    lit_bit (false)),
+                           lit_oid (0))),
+                assgn (var (iter->name),
+                       leftjoin (var (map->name),
+                                 VAR (LL(p)->env,
+                                      L(p)->sem.ii.iter,
+                                      aat_nat))),
+                assgn (var (item->name),
+                       leftjoin (var (map->name),
+                                 VAR (LL(p)->env,
+                                      L(p)->sem.ii.item,
+                                      aat_str))));
+            unpin (map, 1);
 
             execute (
                 /* get first free pre value */
@@ -7028,28 +7051,30 @@ reduce (PFpa_op_t * p, int goalnt)
                                  var (PF_MIL_VAR_WS),
                                  var (PF_MIL_VAR_PRE_SIZE)),
                              var (PF_MIL_VAR_WS_CONT)),
-                         project (item, lit_int (0))),
+                         project (var (item->name), lit_int (0))),
                 /* level */
                 bappend (fetch (
                              fetch (
                                  var (PF_MIL_VAR_WS),
                                  var (PF_MIL_VAR_PRE_LEVEL)),
                              var (PF_MIL_VAR_WS_CONT)),
-                         project (item, cast (type (mty_chr), lit_int (0)))),
+                         project (var (item->name),
+                                  cast (type (mty_chr), lit_int (0)))),
                 /* kind */
                 bappend (fetch (
                              fetch (
                                  var (PF_MIL_VAR_WS),
                                  var (PF_MIL_VAR_PRE_KIND)),
                              var (PF_MIL_VAR_WS_CONT)),
-                         project (item, var (PF_MIL_VAR_KIND_TEXT))),
+                         project (var (item->name),
+                                  var (PF_MIL_VAR_KIND_TEXT))),
                 /* prop */
                 bappend (fetch (
                              fetch (
                                  var (PF_MIL_VAR_WS),
                                  var (PF_MIL_VAR_PRE_PROP)),
                              var (PF_MIL_VAR_WS_CONT)),
-                         add_content (item,
+                         add_content (var (item->name),
                                       var (PF_MIL_VAR_WS),
                                       var (PF_MIL_VAR_PROP_TEXT))),
                 /* cont */
@@ -7058,28 +7083,29 @@ reduce (PFpa_op_t * p, int goalnt)
                                  var (PF_MIL_VAR_WS),
                                  var (PF_MIL_VAR_PRE_CONT)),
                              var (PF_MIL_VAR_WS_CONT)),
-                         project (item, var (PF_MIL_VAR_WS_CONT))),
+                         project (var (item->name),
+                                  var (PF_MIL_VAR_WS_CONT))),
                 /* pre_nid */
                 bappend (fetch (
                              fetch (
                                  var (PF_MIL_VAR_WS),
                                  var (PF_MIL_VAR_PRE_NID)),
                              var (PF_MIL_VAR_WS_CONT)),
-                         mark (item, var (seqb->name))),
+                         mark (var (item->name), var (seqb->name))),
                 /* nid_rid */
                 bappend (fetch (
                              fetch (
                                  var (PF_MIL_VAR_WS),
                                  var (PF_MIL_VAR_NID_RID)),
                              var (PF_MIL_VAR_WS_CONT)),
-                         mark (item, var (seqb->name))),
+                         mark (var (item->name), var (seqb->name))),
 
                 /* new root pre values */
                 assgn (var (root_pre->name),
-                       mark (item, var (seqb->name))),
+                       mark (var (item->name), var (seqb->name))),
                 /* fragment information */
                 assgn (var (root_frag->name),
-                       project (item, var (PF_MIL_VAR_WS_CONT))),
+                       project (var (item->name), var (PF_MIL_VAR_WS_CONT))),
 
                 /* make the fragment boundaries known */
                 binsert (fetch (
@@ -7093,9 +7119,9 @@ reduce (PFpa_op_t * p, int goalnt)
                                  lit_oid (0)))));
 
             unpin (seqb, 1);
-            pin (iter, p->refctr);
-            env_add (p->env, p->sem.ii.iter, aat_nat,   iter);
-            env_add (p->env, p->sem.ii.item, aat_pre,   root_pre);
+            unpin (item, 1);
+            env_add (p->env, p->sem.ii.iter, aat_nat,  iter);
+            env_add (p->env, p->sem.ii.item, aat_pre,  root_pre);
             env_add (p->env, p->sem.ii.item, aat_frag, root_frag);
         }
             break; /* fold) */
