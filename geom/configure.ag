@@ -92,7 +92,10 @@ if test "x$have_monetdb4" != xyes -a "x$have_monetdb5" != xyes; then
 fi
 
 dnl geos
+GEOS_VERSION_REQUIRED_MIN=2.0.0
+GEOS_VERSION_REQUIRED_MAX=3.0.0
 have_geos=auto
+GEOS_CONFIG=''
 GEOS_INCS=''
 GEOS_LIBS=''
 AC_ARG_WITH(geos,
@@ -102,12 +105,39 @@ AC_ARG_WITH(geos,
 if test "x$have_geos" != xno; then
 	case "$have_geos" in
 	yes|auto)
+		XPATH="$PATH"
 		;;
 	*)
-		GEOS_INCS="-I$have_geos/include"
-		GEOS_LIBS="-L$have_geos/lib"
+		XPATH="$have_geos/bin"
 		;;
 	esac
+	AC_PATH_PROG(GEOS_CONFIG,geos-config,,$XPATH)
+	if test "x$GEOS_CONFIG" = x; then
+		AC_MSG_ERROR([geos-config not found in $XPATH])
+		have_geos=no
+	fi
+fi
+if test "x$have_geos" != xno; then
+	AC_MSG_CHECKING([for Geos >= $GEOS_VERSION_REQUIRED_MIN, but < $GEOS_VERSION_REQUIRED_MAX])
+	GEOS_VERSION="`$GEOS_CONFIG --version`"
+	AC_MSG_RESULT(found $GEOS_VERSION)
+	wrong=''
+	if test MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION_REQUIRED_MIN); then
+		wrong="too old"
+	fi
+	if test MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION_REQUIRED_MAX); then
+		wrong="not yet supported"
+	fi
+	if test "x$wrong" != x; then
+		AC_MSG_ERROR([Geos version $GEOS_VERSION is $wrong])
+		have_geos=no
+	fi
+fi
+if test "x$have_geos" != xno; then
+	dnl GEOS_INCS="-I`$GEOS_CONFIG --includes`"
+	dnl GEOS_LIBS="`$GEOS_CONFIG --libs`"
+	GEOS_INCS="`$GEOS_CONFIG --cflags`"
+	GEOS_LIBS="`$GEOS_CONFIG --ldflags`"
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $GEOS_INCS"
 	AC_CHECK_HEADER(geos_c.h, AC_DEFINE(HAVE_GEOS_C_H, 1, [Define to 1 if you have the <geos_c.h> header file.]), [AC_MSG_ERROR([geos_c.h not found]); have_geos=no])
