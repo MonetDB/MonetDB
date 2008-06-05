@@ -16,6 +16,7 @@ WHERE 1 > id);
 END;
 
 select * from f1() n;
+select * from f1() n;
 
 drop function f1;
 drop table t1;
