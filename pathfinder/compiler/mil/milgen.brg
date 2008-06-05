@@ -9365,8 +9365,7 @@ PFmilgen (PFpa_op_t *n, char *genType)
 
     bodymilprog = milprog;
 
-    milprog = seq (module (lit_str ("pathfinder")),
-                   module (lit_str ("mkey")),
+    milprog = seq (
 #ifdef HAVE_PFTIJAH
 		   /* create pftijah score db */
     		   declare (var (PF_MIL_TIJAH_SCORE_DB)),

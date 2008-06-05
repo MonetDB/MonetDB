@@ -709,6 +709,10 @@ AFTER_CORE2ALG:
     if (status->timing)
         PFlog ("MIL code generation:\t\t\t %s", PFtimer_str (tm));
 
+    mroot = PFmil_seq (PFmil_module (PFmil_lit_str ("pathfinder")),
+                       PFmil_module (PFmil_lit_str ("mkey")),
+                       mroot);
+    
     /* make runtime timing available */
     if (status->timing) {
         mroot = PFmil_seq (mroot,

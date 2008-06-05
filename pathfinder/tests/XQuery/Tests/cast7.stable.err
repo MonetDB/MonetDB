@@ -6,7 +6,15 @@ stderr of test 'cast7` in directory 'tests/XQuery` itself:
 # 23:33:26 >  
 
 
-# 23:33:28 >  
-# 23:33:28 >  Done.
-# 23:33:28 >  
+# 17:31:49 >  
+# 17:31:49 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=notekemper08 --port=30620 -G cast7.xq
+# 17:31:49 >  
+
+MAPI  = monetdb@notekemper08:30620
+QUERY = for $a in (1, 2.3, "42 blub", "", 0, data(attribute foo {0})) return $a cast as xs:boolean
+ERROR = !ERROR: err:FORG0001. casting from string to boolean failed.
+
+# 17:31:50 >  
+# 17:31:50 >  Done.
+# 17:31:50 >  
 

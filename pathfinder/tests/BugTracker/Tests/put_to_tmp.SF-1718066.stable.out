@@ -18,17 +18,21 @@ quit();
 
 Over..
 
-# 18:19:55 >  
-# 18:19:55 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=31454 put_to_tmp.SF-1718066_s00.xq
-# 18:19:55 >  
+# 23:38:21 >  
+# 23:38:21 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=31547 put_to_tmp.SF-1718066_s00.xq
+# 23:38:21 >  
 
+#warning: query will always return an error
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
 
-# 18:19:55 >  
-# 18:19:55 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=31454 put_to_tmp.SF-1718066_s01.xq
-# 18:19:55 >  
+# 23:38:21 >  
+# 23:38:21 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=31547 put_to_tmp.SF-1718066_s01.xq
+# 23:38:21 >  
 
+#warning: query will always return an error
 
-# 18:19:56 >  
-# 18:19:56 >  Done.
-# 18:19:56 >  
+# 23:38:21 >  
+# 23:38:21 >  Done.
+# 23:38:21 >  
 

@@ -1,0 +1,14 @@
+stdout of test 'join-query_compilation_error.SF-1889694` in directory 'tests/BugTracker` itself:
+
+
+# 17:50:04 >  
+# 17:50:04 >  ./join-query_compilation_error.SF-1889694.sh join-query_compilation_error.SF-1889694 
+# 17:50:04 >  
+
+"pf -M join-query_compilation_error.SF-1889694.xq >/dev/null"
+"pf -A join-query_compilation_error.SF-1889694.xq >/dev/null"
+
+# 17:50:04 >  
+# 17:50:04 >  Done.
+# 17:50:04 >  
+
