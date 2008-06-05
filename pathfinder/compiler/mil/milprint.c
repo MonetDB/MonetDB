@@ -104,6 +104,7 @@
                  | '[floor](' expression ')'                <m_mfloor>
                  | '[round_up](' expression ')'             <m_mround_up>
                  | '>(' expression ',' expression ')'       <m_gt>
+                 | '<=(' expression ',' expression ')'      <m_le>
                  | '=(' expression ',' expression ')'       <m_eq>
                  | '[=](' expression ',' expression ')'     <m_meq>
                  | '[>](' expression ',' expression ')'     <m_mgt>
@@ -293,6 +294,7 @@ static char *ID[] = {
     , [m_mfloor]       = "[floor]"
     , [m_mround_up]    = "[round_up]"
     , [m_gt]           = ">"
+    , [m_le]           = "<="
     , [m_eq]           = "="
     , [m_meq]          = "[=]"
     , [m_mgt]          = "[>]"
@@ -832,6 +834,8 @@ print_expression (PFmil_t * n)
         case m_mmax:
         /* expression : '>(' expression ',' expression ')' */
         case m_gt:
+        /* expression : '<=(' expression ',' expression ')' */
+        case m_le:
         /* expression : '=(' expression ',' expression ')' */
         case m_eq:
         /* expression : '[=](' expression ',' expression ')' */

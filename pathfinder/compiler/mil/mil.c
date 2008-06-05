@@ -1196,6 +1196,15 @@ PFmil_gt (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
+ * less or equal operator
+ */
+PFmil_t *
+PFmil_le (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_le, a, b);
+}
+
+/**
  * Equal operator
  */
 PFmil_t *

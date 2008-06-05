@@ -236,6 +236,7 @@ enum PFmil_kind_t {
     , m_mround_up    /**< multiplexed operator round_up */
 
     , m_gt           /**< greater than */
+    , m_le           /**< less or equal */
     , m_eq           /**< equal */
     , m_meq          /**< multiplexed comparison (equality) */
     , m_mgt          /**< multiplexed comparison (greater than) */
@@ -735,6 +736,9 @@ PFmil_t * PFmil_mround_up (const PFmil_t *);
 
 /** greater than */
 PFmil_t * PFmil_gt (const PFmil_t *, const PFmil_t *);
+
+/** less or equal */
+PFmil_t * PFmil_le (const PFmil_t *, const PFmil_t *);
 
 /** equal */
 PFmil_t * PFmil_eq (const PFmil_t *, const PFmil_t *);

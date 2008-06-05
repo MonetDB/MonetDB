@@ -274,6 +274,9 @@
 /** greater than */
 #define gt(a,b) PFmil_gt ((a), (b))
 
+/** less or equal */
+#define le(a,b) PFmil_le ((a), (b))
+
 /** equal */
 #define eq(a,b) PFmil_eq ((a), (b))
 
