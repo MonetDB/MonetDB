@@ -78,6 +78,11 @@ command shutdown():void
 address RECYCLEshutdownWrap
 comment "Clear the recycle cache";
 
+command restore():void
+address RECYCLErestore
+comment "Restore the recycle cache to the start of the call";
+
+
 command monitor(f:int):void
 address RECYCLEmonitor
 comment "start/stop the monitoring (printing) of the recycler info (storage size used and number of statements retained)";
