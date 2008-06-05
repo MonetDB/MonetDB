@@ -77,7 +77,7 @@ bl_cleanup(void)
 static int
 bl_changes(void)
 {	
-	return logger_changes(restrict_logger);
+	return (int) MIN(logger_changes(restrict_logger), GDK_int_max);
 }
 
 static int 
@@ -97,7 +97,7 @@ ro_cleanup(void)
 static int
 ro_changes(void)
 {	
-	int c = logger_changes(restrict_logger);
+	int c = (int) MIN(logger_changes(restrict_logger), GDK_int_max);
 	assert(c==0);
 	return c;
 }

@@ -75,7 +75,7 @@ bl_cleanup(void)
 static int
 bl_changes(void)
 {	
-	return logger_changes(bat_logger);
+	return (int) MIN(logger_changes(bat_logger), GDK_int_max);
 }
 
 static int 
