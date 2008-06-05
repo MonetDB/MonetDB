@@ -839,19 +839,19 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
             PFarray_t  *lproj = n->sem.eqjoin_unq.lproj,
                        *rproj = n->sem.eqjoin_unq.rproj;
 
+            /* add both join columns to the inferred icols */
+            union_ (n->prop->l_icols, proj_at(lproj, 0).old);
+            union_ (n->prop->r_icols, proj_at(rproj, 0).old);
+
             /* rename icols columns from new to old */
-            for (unsigned int i = 0; i < PFarray_last (lproj); i++)
+            for (unsigned int i = 1; i < PFarray_last (lproj); i++)
                 if (in (n->prop->icols, proj_at(lproj, i).new))
                     union_ (n->prop->l_icols, proj_at(lproj, i).old);
 
             /* rename icols columns from new to old */
-            for (unsigned int i = 0; i < PFarray_last (rproj); i++)
+            for (unsigned int i = 1; i < PFarray_last (rproj); i++)
                 if (in (n->prop->icols, proj_at(rproj, i).new))
                     union_ (n->prop->r_icols, proj_at(rproj, i).old);
-
-            /* add both join columns to the inferred icols */
-            union_ (n->prop->l_icols, proj_at(lproj, 0).old);
-            union_ (n->prop->r_icols, proj_at(rproj, 0).old);
         }   break;
 
         case la_cross_mvd:
