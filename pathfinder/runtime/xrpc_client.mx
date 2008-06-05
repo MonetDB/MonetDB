@@ -45,6 +45,7 @@ the "AmbientDB" project.
 
 .COMMAND http_post(
         str genType,
+        str mode,
         str qid,
         lng timeout,
         lng seqnr,
@@ -66,207 +67,17 @@ the "AmbientDB" project.
         BAT[void, str] str_values) : BAT[str, bat] = CMDhttp_post;
 "Create and send a RPC request message to the specified destination"
 
-.END xrpc_client;
-
-@mil
-PROC get_rpc_res ( 
+.COMMAND get_rpc_res ( 
         oid cont, 
-        str local_name, 
         BAT[void, bat] ws, 
         BAT[void, lng] int_values,
         BAT[void, dbl] dbl_values, 
-        BAT[void, str] str_values) : BAT[void, bat]
-{
-    var res_iter := bat(void,oid).seqbase(0@0);
-    var res_item := bat(void,oid).seqbase(0@0);
-    var res_kind := bat(void,int).seqbase(0@0);
-    
-    var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
-    var pre_level := ws.fetch(PRE_LEVEL).fetch(cont).access(BAT_WRITE);
-    var pre_prop  := ws.fetch(PRE_PROP).fetch(cont).access(BAT_WRITE);
-    var pre_kind  := ws.fetch(PRE_KIND).fetch(cont).access(BAT_WRITE);
+        BAT[void, str] str_values) : BAT[void, bat] = CMDget_rpc_res;
+"Retrieve values from the response message and return as a iter|item|kind bat"
 
-    var qn_prefix := ws.fetch(QN_PREFIX).fetch(cont);
-    var qn_uri    := ws.fetch(QN_URI).fetch(cont);
-    var qn_loc    := ws.fetch(QN_LOC).fetch(cont);
-    var prop_text := ws.fetch(PROP_TEXT).fetch(cont);
+.END xrpc_client;
 
-    var attr_own  := ws.fetch(ATTR_OWN).fetch(cont);
-    var attr_qn   := ws.fetch(ATTR_QN).fetch(cont);
-    var attr_prop := ws.fetch(ATTR_PROP).fetch(cont);
-    var prop_val  := ws.fetch(PROP_VAL).fetch(cont);
-
-    # Get "pre_prop" value of an "sequence" node.
-    var seq_prop;
-    var err := CATCH (seq_prop := qn_loc.ord_uselect("sequence").reverse().fetch(0));
-    if (not(isnil(err)))
-        ERROR("get_rpc_res expects at least *one* \"<sequence>\" tag.\n");
-
-    # Fetch the position of the first "pre_prop" value of the "sequence"
-    # node.  Must use "ord_uselect" and "fetch", since the the "pre_prop"
-    # value can appear more than once in the "pre_prop" bat.
-    seq_prop := pre_prop.ord_uselect(seq_prop).reverse().fetch(0);
-
-    var seq_node_level :=  pre_level.find(seq_prop).int();
-    var tpe_node_level :=  seq_node_level + 1;
-    var val_node_level :=  tpe_node_level + 1;
-    var itercnt := 0;
-    var tpe := "";
-    var subtpe := "";
-    var xrpc_ns := "http://monetdb.cwi.nl/XQuery";
-    var xsi_ns := "http://www.w3.org/2001/XMLSchema-instance";
- 
-    # To reduce #iter: everything before the first "sequence" is
-    # not used, so do not iterate over them.
-    var i := int(seq_prop);
-    var size := pre_size.fetch(0);
-    while(i <= size){
-        var inc := 1;
-        if (not(isnil(pre_size.fetch(i)))) { # Skip holes in the BATs
-            var pre   := oid(i);
-            var level := pre_level.fetch(pre).int();
-            var kind  := pre_kind.fetch(pre);
-            var prop  := pre_prop.fetch(pre);
-
-            if ( and(level = seq_node_level, kind='\000') ){
-                var loc := qn_loc.fetch(prop);
-                var uri := qn_uri.fetch(prop);
-                if (and((loc = "sequence"), (uri = xrpc_ns))) {
-                    itercnt :+= 1; # A new iteration starts
-                }
-            } else if ( and(level = tpe_node_level, kind='\000') ){
-                var tpe_node_ns := qn_uri.fetch(prop);
-                if (tpe_node_ns != xrpc_ns) {
-                    ERROR("[get_rpc_res]: (pre=%d): " +
-                          "invalid namespace of a type node.\n" +
-                          "[get_rpc_res]: expected \"%s\", " +
-                          "got \"%s\".\n",
-                          pre, xrpc_ns, tpe_node_ns);
-                }
-                tpe := qn_loc.fetch(prop);
-                if (tpe = "atomic-value") {
-                    var tpe_qn_qn := qn_loc.ord_uselect("type").mirror();
-                    var tpe_qn_ns := qn_uri.ord_uselect(xsi_ns);
-                    tpe_qn_qn := tpe_qn_qn.join(tpe_qn_ns).mirror();
-
-                    var tpe_attr_qn := attr_qn.join(tpe_qn_qn);
-                    var tpe_attr_attr := attr_own.ord_uselect(pre).mirror();
-                    tpe_attr_attr := tpe_attr_attr.join(tpe_attr_qn).mirror();
-                    if (count(tpe_attr_attr) != 1) {
-                        ERROR("get_rpc_res (batloop %d): " +
-                              "\"atomic-value\" should only have one " +
-                              "\"xsi:type\" attributed!\n", pre);
-                    }
-                    var tpe_attr_prop := tpe_attr_attr.join(attr_prop);
-                    subtpe := tpe_attr_prop.join(prop_val).fetch(0);
-                    subtpe := subtpe.substring(subtpe.search(":") + 2); # remove the prefix
-                } else if (tpe = "document") {
-                    res_iter.append(oid(itercnt));
-                    res_item.append(pre);
-                    var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
-                    res_kind.append(k);
-                    # Replace the values of this type node with values
-                    # for a document node
-                    pre_level := replace(pre_level, pre, ('\000' - '\001'));
-                    pre_prop  := replace(pre_prop,  pre, oid_nil);
-                    pre_kind  := replace(pre_kind,  pre, '\004');
-                    inc := pre_size.fetch(i);
-                } else if (tpe = "attribute") {
-                    var attr := attr_own.select(pre);
-                    var aprop := attr.mirror().join(attr_prop);
-
-                    res_iter.append(oid(itercnt));
-                    res_item.append(aprop);
-                    var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ATTR);
-                    res_kind.append(k);
-                }
-            } else if (level = val_node_level) {
-                # 'tpe' was set during the previous iteration of 'batloop'
-                if ( and(tpe = "element", kind='\000') ){
-                    res_iter.append(oid(itercnt));
-                    res_item.append(pre);
-                    var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
-                    res_kind.append(k);
-                    inc := pre_size.fetch(i);
-                    tpe := ""; # clean up type info
-                } else if (tpe = "text") { # text value of a text node
-                    if (kind != '\001'){
-                        ERROR("get_rpc_res (batloop %d): a text node " +
-                              "should have a single text value\n", pre);
-                    }
-                    res_iter.append(oid(itercnt));
-                    res_item.append(pre);
-                    var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
-                    res_kind.append(k);
-                    tpe := ""; # clean up type info
-                } else if (tpe = "atomic-value") { # string value of an atomic-value
-                    var val := prop_text.fetch(prop); # value in str
-                    if (subtpe = "boolean"){ 
-                        var o := oid(toUpper(val) = "TRUE");
-                        res_iter.append(oid(itercnt));
-                        res_item.append(o);
-                        res_kind.append(BOOL);
-                    } else if (subtpe = "integer"){
-                        var i := lng(val);
-                        int_values.append(i);
-                        res_iter.append(oid(itercnt));
-                        res_item.append(int_values.reverse().find(i));
-                        res_kind.append(INT);
-                    } else if(subtpe = "decimal") {
-                        var d := dbl(val);
-                        dbl_values.append(d);
-                        res_iter.append(oid(itercnt));
-                        res_item.append(dbl_values.reverse().find(d));
-                        res_kind.append(DEC);
-                    } else if(or( (subtpe = "float"), (subtpe = "double") )) {
-                        var d := dbl(val);
-                        dbl_values.append(d);
-                        res_iter.append(oid(itercnt));
-                        res_item.append(dbl_values.reverse().find(d));
-                        res_kind.append(DBL);
-                    } else if(or(subtpe = "string", subtpe = "untypedAtomic")) {
-                        str_values.append(val);
-                        res_iter.append(oid(itercnt));
-                        res_item.append(str_values.reverse().find(val));
-                        res_kind.append(STR);
-                    } else {
-                        printf("get_rpc_res (batloop %d): atomic " +
-                               "value with unsupported type \"%s\" " +
-                               "ignored.\n", subtpe);
-                    }
-                    tpe := ""; # clean up type info
-                } else if (tpe = "comment") { # text value of a comment node                
-                    res_iter.append(oid(itercnt));
-                    res_item.append(pre);
-                    var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
-                    res_kind.append(k);
-                    tpe := ""; # clean up type info
-                } else if (tpe = "processing-instruction") { # text value of a PI node
-                    res_iter.append(oid(itercnt));
-                    res_item.append(pre);
-                    var k := set_kind(local_name.leftjoin(reverse(ws.fetch(CONT_NAME))).tmark(0@0), ELEM);
-                    res_kind.append(k);
-                    tpe := ""; # clean up type info
-                } 
-            } # END 'if (level = ...)'
-        } # END 'if (not(isnil(pre_size.fetch(i))))'
-        i := i + inc;
-    } # END 'while(i < size)'
-
-    pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
-    pre_prop  := ws.fetch(PRE_PROP).fetch(cont);
-    pre_kind  := ws.fetch(PRE_KIND).fetch(cont);
-
-    return bat(void,bat,4).append(res_iter).append(res_item).append(res_kind).access(BAT_READ);
-}
-ADDHELP("get_rpc_res", "zhang", "April 2006",
-"DESCRIPTION:\n\
-This proc is used to retrieve the return values of RPC call(s), which \
-are temporarily stored in the WS. It\n\
-1. retrieves the right values\n\
-2. builds temporary iter|item|kind BATs\n\
-3. fill in the value containers",
-"xrpc_client");
+@mil
 
 PROC doLoopLiftedRPC(
         str module,
@@ -335,7 +146,7 @@ PROC doLoopLiftedRPC(
 
         var local_name := "rpc_res_00" + str(int($h)+off);
         var rpc_res, timeout := max(0LL,xrpc_timeout - (usec() - timer_start));
-        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_qid, xrpc_seqnr, timeout, $t, module, location, method,
+        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, xrpc_seqnr, timeout, $t, module, location, method,
                     updCall, arity, itercnt, ws, fun_vid, fun_iter, fun_item,
                     fun_kind, int_values, dbl_values, dec_values, str_values));
 
@@ -400,8 +211,7 @@ PROC doLoopLiftedRPC(
     # the original iteration number
     var proc_res := [get_rpc_res](
             [ws_opencoll](const ws, rpc_results.tmark(0@0), local_name, TEMP_DOC),
-            rpc_results.hmark(0@0), const ws, const int_values,
-            const dbl_values, const str_values);
+            const ws, const int_values, const dbl_values, const str_values);
 
     res_iter := proc_res.[fetch](0).[leftfetchjoin](rpc_iter);
     res_item := proc_res.[fetch](1);
@@ -481,7 +291,7 @@ PROC doIterativeRPC(
         var local_name := "rpc_res_00" + str(h+1);
         if (xrpc_qid != "") lock_unset(wslock);
         var rpc_res, timeout := max(0LL,xrpc_timeout - (usec() - timer_start));
-        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_qid, xrpc_seqnr, timeout, $t, module, location, method,
+        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, xrpc_seqnr, timeout, $t, module, location, method,
                     updCall, arity, lng(1), ws, cur_fun_vid, cur_fun_iter, cur_fun_item,
                     cur_fun_kind, int_values, dbl_values, dec_values, str_values));
         if (xrpc_qid != "") lock_set(wslock);
@@ -492,8 +302,7 @@ PROC doIterativeRPC(
         if (isnil(rpc_err)) {
             if (updCall != 1) {
                 var rpc_oid := ws_opencoll(ws, rpc_res, local_name, TEMP_DOC);
-                var res := get_rpc_res(rpc_oid, local_name, ws,
-                                       int_values, dbl_values, str_values);
+                var res := get_rpc_res(rpc_oid, ws, int_values, dbl_values, str_values);
                 if (isnil(res_bats)){
                     res_bats := res;
                 } else {
@@ -594,6 +403,78 @@ PROC doRPC(
 #include "serialize.h"
 #include "xrpc_common.h"
 #include "xrpc_client.h"
+
+
+int 
+CMDget_rpc_res(BAT **res, 
+        oid *cont, 
+        BAT* ws, 
+        BAT* int_values,
+        BAT* dbl_values, 
+        BAT* str_values) 
+{
+    lng ok = GDK_FAIL;
+    oid i, j, it;
+    BATiter wi = bat_iterator(ws);
+    BAT *participants = BATdescriptor(*(bat*) BUNtail(wi, XRPC_PARTICIPANTS));
+    if (participants) {
+        BAT *shredBAT = BATnew(TYPE_void, TYPE_bat, BATTINY);
+        if (shredBAT) {
+            XRPCreq_t *req;
+            /* create a list of all main document bats (as parse_message likes it that way) */
+            for(i=0; i < ATTR_OWN; i++)
+                BUNappend(shredBAT, BUNtail(wi, *cont), FALSE);
+
+            req = xrpc_parse_message(NULL, shredBAT, participants, FALSE);
+            if (req) { 
+                BAT *res_iter = BATnew(TYPE_void, TYPE_oid, req->nr_args);
+                if (res_iter) {
+                    BAT *res_item = BATnew(TYPE_void, TYPE_oid, req->nr_args);
+                    if (res_item) {
+                        BAT *res_kind = BATnew(TYPE_void, TYPE_int, req->nr_args);
+                        if (res_kind) {
+                            *res = BATnew(TYPE_void, TYPE_bat, 3);
+                            if (*res) {
+                                lng *argcnt = req->argcnt[0];
+                                char *err = NULL;
+                                BUNappend(*res, &res_iter->batCacheid, FALSE);
+                                BUNappend(*res, &res_item->batCacheid, FALSE);
+                                BUNappend(*res, &res_kind->batCacheid, FALSE);
+                                BATseqbase(res_iter, 0);
+                                BATseqbase(res_item, 0);
+                                BATseqbase(res_kind, 0);
+                                BATseqbase(*res, 0);
+       
+                                /* get all values fro all result sequences one by one */ 
+                                for(it=i=j=0; i<req->nr_args; i++,j++) {
+                                    char* err = xquery_parse_val(req->argtpe[i], req->argval[i], res_item, res_kind,
+                                                                 int_values, dbl_values, str_values, NULL, *cont);
+                                    if (err) break;
+
+                                    /* set the correct iteration number */
+                                    while (j == argcnt[it]) { 
+                                        j=0; it++; 
+                                    }
+                                    BUNappend(res_iter, &it, FALSE);
+                                }
+                                if (err) GDKerror(err); 
+                                else ok = GDK_SUCCEED;
+                            }
+                            BBPunfix(res_kind->batCacheid);
+                        }  
+                        BBPunfix(res_item->batCacheid);
+                    }
+                    BBPunfix(res_iter->batCacheid);
+                }
+                XRPCreq_free(req);
+            }
+            BBPreclaim(shredBAT);
+        }
+        BBPunfix(participants->batCacheid);
+    }
+    return ok;
+}
+
 
 static buffer *
 clean_up(stream *bs, lng **argcnt, lng iterc)
@@ -931,8 +812,9 @@ static buffer *
 byvalue_request(
         bool timing,
         str genType,
+        str rpc_mode,
         str qid,
-        lng seqnr,
+        str seqnr,
         lng timeout,
         str rpc_module,
         str rpc_uri,
@@ -962,6 +844,8 @@ byvalue_request(
     oid cnt = oid_nil;
     /* BATs hold item|kind of a node parameter */
     BAT *node_item = NULL, *node_kind = NULL;
+
+    (void) genType;
 
     lng i, a, arg_offset = 0;
     lng my_argc = 0, my_iter = 0;
@@ -1025,21 +909,18 @@ byvalue_request(
 
     /* soap env header and xrpc request header */
     ret = stream_printf(bs, SOAP_ENVELOPE);
-    if (ret < 0) {
+    if (ret < 0) 
         return clean_up(bs, argcnt, iterc);
-    }
 
     if(qid && *qid) { /* an XRPC query that requires 2PC */
-        char *ts = strrchr(qid, '|'); assert(ts);
-        /* temporarily cut-off 'timestamp' by replacing '|' with '\0' */
-        ts[0] = '\0'; ts++;
-
-        ret = stream_printf(bs,
-                "<xrpc:queryID xrpc:host=\"%s\" xrpc:querynr=\"%s\" xrpc:timeout=\""LLFMT"\">",
-                qid, ts, timeout);
-        assert(ret > 0);
-        --ts; ts[0] = '|'; /* undo changes in qid */
+        ret = stream_printf(bs, "<env:Header" XRPC_WS_QID "</env:Header" , qid, timeout);
+        if (ret < 0) 
+            return clean_up(bs, argcnt, iterc);
     }
+    ret = stream_printf(bs, XRPC_REQ_HEADER, rpc_module, rpc_uri, rpc_method, 
+                            arity, iterc, seqnr, rpc_mode, updCall?"true":"false");
+    if (ret < 0) 
+        return clean_up(bs, argcnt, iterc);
 
     for (my_iter = 0; my_iter < iterc; my_iter++) {
         if (arity == 0) {
@@ -1178,11 +1059,11 @@ byvalue_request(
                         node_kind = BUNins( BATnew(TYPE_void, TYPE_int, 1),
                                             BUNhead(fun_kindi, a),
                                             BUNtail(fun_kindi, a), FALSE );
-                        xquery_print_result_driver(bs,
-                                "xml-noheader-noroot", NULL, NULL, NULL, NULL,
-                                ws, 1,
+                        xquery_print_result_driver( bs, "xml-noheader-noroot",
+                                NULL, NULL, ws, 1,
                                 node_item, node_item, node_item, node_kind,
-                                int_values, dbl_values, str_values);
+                                int_values, dbl_values, str_values,
+                                NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
                         if(BBPreclaim(node_item) == -1){
                             GDKerror("byvalue_request: failed to destroy BAT \"node_item\", "
@@ -1241,8 +1122,9 @@ int
 CMDhttp_post(
         BAT **res,
         str genType,
+        str rpc_mode,
         str qid,
-        lng *seqnr,
+        str seqnr,
         lng *timeout,
         str dst,
         str rpc_module,
@@ -1288,7 +1170,7 @@ CMDhttp_post(
         return GDK_FAIL;
     }
 
-    if(!(req = byvalue_request(timing, genType, qid, *seqnr, *timeout, rpc_module, rpc_uri, rpc_method,
+    if(!(req = byvalue_request(timing, genType, rpc_mode, qid, seqnr, *timeout, rpc_module, rpc_uri, rpc_method,
                     *updCall, *arity, *itercnt, ws, fun_vid, fun_iter,
                     fun_item, fun_kind, int_values, dbl_values,
                     dec_values, str_values))){

@@ -64,9 +64,9 @@ percentage - a number [0,100] indicating the amount of free space to reserve for
                       BAT[oid,any] loop, BAT[void,oid] iter,
                       BAT[void,oid] item, BAT[void,int] kind, 
                       BAT[oid,lng] int_values, BAT[oid,dbl] dbl_values, 
-                      BAT[oid,str] str_values) :
+                      BAT[oid,str] str_values,
                       str xrpc_module, str xrpc_method, str xrpc_qid, str xrpc_caller, 
-                      lng xrpc_mode, lng xrpc_seqnr, lng time_start) :
+                      str xrpc_mode, lng xrpc_seqnr, lng xrpc_timeout, lng xrpc_start) :
                             void = xquery_print_result_loop;
  "C interface to Workset result print routine, that can print multiple iters"
 
@@ -8469,15 +8469,16 @@ xquery_print_result_loop (
     BAT* kind,
     BAT* intVAL,
     BAT* dblVAL,
-    BAT* strVAL);
+    BAT* strVAL,
     /* xrpc response header things */
     str  xrpc_module,   
     str  xrpc_method,   
     str  xrpc_qid, 
     str  xrpc_caller, 
-    lng  *xrpc_mode,
+    str  xrpc_mode,
     lng  *xrpc_seqnr,
-    lng  *time_start);
+    lng  *xrpc_timeout,
+    lng  *xrpc_start)
 {
     size_t niters = BATcount (loop);
     return xquery_print_result_DRIVER (
@@ -8499,8 +8500,8 @@ xquery_print_result_loop (
                xrpc_caller, 
                xrpc_mode,
                xrpc_seqnr,
-               time_start);
-{
+               xrpc_timeout,
+               xrpc_start);
 }
 
 int
@@ -8535,7 +8536,8 @@ xquery_print_result_main (
                NULL, /* xrpc_caller */
                NULL, /* xrpc_mode */
                NULL, /* xrpc_seqnr */
-               NULL);/* time_exexc */
+               NULL, /* xrpc_timeout */
+               NULL);/* xrpc_start */
 }
 
 int
@@ -8594,7 +8596,8 @@ xquery_print_result_file (
                              NULL, /* xrpc_caller */
                              NULL, /* xrpc_mode */
                              NULL, /* xrpc_seqnr */
-                             NULL);/* time_exexc */
+                             NULL, /* xrpc_timeout */
+                             NULL);/* xrpc_start */
                          stream_destroy(s);
                     }
                     BBPreclaim(k);

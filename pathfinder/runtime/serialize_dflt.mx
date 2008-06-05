@@ -41,7 +41,7 @@
 #include "serialize_null.h"
 #include "pathfinder.h"
 #include "pf_support.h"
-#include "xrpc_common.h" /* *_NS defs, check_timeout_by_idx() */
+#include "xrpc_common.h" /* *_NS defs */
 
 /* a lot of characters, static strings, and their sizes 
    (the idea is to reuse constant character pointers during
@@ -304,8 +304,6 @@ esc_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix)
     (void) args;
     (void) restag;
     (void) resprefix;
-    (void) module;
-    (void) method;
 
     /* create workspace container */
     ctx->driverWs = (void *) new_dflt_ws ();
@@ -989,59 +987,6 @@ typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
     return SUCCESS;
 }
 
-static bool
-xrpc_serializeQID(XqueryCtx *ctx, char *qid_idx)
-{
-    int ret = PROBLEM;
-    int val = strtol(qid_idx, NULL, 10);
-    MT_set_lock(PF_XRPC_LOCK, "xrpc_serializeQID");
-    if(val < 0) {
-       GDKerror("xrpc_serializeQID: wrong qid_idx %s", qid_idx);
-    } else {
-        oid idx = (oid) val;
-        BATiter qidi = bat_iterator(xrpc_qids);
-        BATiter toi = bat_iterator(xrpc_timeouts);
-        BUN bun_qid = BUN_NONE, bun_to = BUN_NONE;
-        BUNfndVOID(bun_qid, qidi, &idx);
-        BUNfndVOID(bun_to, toi, &idx);
-        if (bun_qid != BUN_NONE && bun_to != BUN_NONE) {
-            lng timeout = *(lng*)BUNtail(toi, bun_to);
-            char* qid = (char*)BUNtail(qidi, bun_qid);
-            char* ts = strrchr(qid, '|');  assert(ts);
-            ts[0] = '\0'; ts++; /* separate 'timestamp' from 'host:port' */
-            
-            val = stream_printf(ctx->out,
-                    "<xrpc:queryID host=\"%s\" timestamp=\"%s\" timeout=\""LLFMT"\"/>",
-                    qid, ts, timeout);
-            
-            ts--; ts[0] = '|';
-
-            if(val >= 0) ret = SUCCESS;
-        }
-    }
-    MT_unset_lock(PF_XRPC_LOCK, "xrpc_serializeQID");
-    return ret;
-}
-
-static bool
-xrpc_serializeSuccessors(XqueryCtx *ctx, BAT *sucsBAT)
-{
-    oid i, cnt = BATcount(sucsBAT);
-    char *host = NULL;
-    BATiter sucsBATi = bat_iterator(sucsBAT);
-
-    if(stream_write(ctx->out, "<xrpc:participants>", 1, 19) != 19)
-        return PROBLEM;
-    for(i = 0; i < cnt; i++){
-        host = (char *) BUNtail(sucsBATi, i);
-        stream_printf(ctx->out, "<xrpc:participant>%s</xrpc:participant>", host);
-    }
-    if(stream_write(ctx->out, "</xrpc:participants>", 1, 20) != 20)
-        return PROBLEM;
-
-    return SUCCESS;
-}
-
 /**
  *  Start serialization of XRPC response message
  */
@@ -1049,60 +994,54 @@ static bool
 xrpc_startSerialize(XqueryCtx *ctx)
 {
     int len, ret = 0;
-    BUN bun = BUN_NONE;
-    oid batID = XRPC_SUCCESSOR;
+    lng time_exec = GDKusec() - ctx->xrpc_start;
    
-    if (ctx->xrpc_qid[0] && GDKusec() > ctx->time_start + ctx->xrpc_timeout) {
+    if (ctx->xrpc_qid[0] && time_exec > ctx->xrpc_timeout) {
         GDKerror("xrpc_startSerialize: xrpc-query timed out\n");
         return PROBLEM;
     }
-    len = strlen(HTTP_200_OK));
+    len = strlen(HTTP_200_OK);
     ret = stream_write(ctx->out, HTTP_200_OK, 1, len);
     if(ret != len) return PROBLEM;
 
-    len = strlen(SOAP_ENVELOPE));
+    len = strlen(SOAP_ENVELOPE);
     ret = stream_write(ctx->out, SOAP_ENVELOPE, 1, len);
     if(ret != len) return PROBLEM;
 
-    if (ctx->xrpc_qid[0] || strstr(ctx->xrpcv_mode,"trace")) {
-        BATiter bi = bat_iterator(ws);
-        bat* bid = ((bat*) BUNtail(wsi, BUNfirst(ws)))[XRPC_SUCCESSOR];
+    if (ctx->xrpc_qid[0] || strstr(ctx->xrpc_mode,"trace")) {
+        BATiter bi = bat_iterator(ctx->ws);
+        bat bid = *(bat*) BUNtail(bi, XRPC_PARTICIPANTS);
         BAT* b = BATdescriptor(bid);
         BUN p,q;
 
-        ret = stream_printf(ctx->out, "<env:Header>");
-        if(ret < 0) return PROBLEM;
-        if (ctx->xrpc_qid[0]) {
-            ret = stream_printf(ctx->out, XRPC_WS_QID, ctx->xrpc_qid, ctx->xrpc_timeout);
-            if(ret < 0) return PROBLEM;
-        }
+        if (b == NULL) return PROBLEM;
 
-        /* print the call to self */
-        ret = stream_printf(ctx->out, 
+        ret = stream_printf(ctx->out, "<env:Header>");
+        if (ret == 0 && ctx->xrpc_qid[0])
+            ret = stream_printf(ctx->out, XRPC_WS_QID, ctx->xrpc_qid, ctx->xrpc_timeout);
+
+        /* XRPC participants lists for nested transactions - append an extra item for this call */
+        if(ret == 0)
+            ret = stream_printf(ctx->out, 
                            "<xrpc:participants>\n  <xrpc:participant>%s,%s," 
                            LLFMT ",%s:%d," LLFMT "</xrpc:participant>\n",
                            ctx->xrpc_caller, xrpc_hostname, xrpc_port, ctx->xrpc_seqnr, 
-                           ctx->xrpc_method, GDKusec() - ctx->time_start);
-        if(ret < 0) return PROBLEM;
+                           ctx->xrpc_method, time_exec);
 
         /* print all nested calls (obtained from response messages)  */
         bi = bat_iterator(b);
-        BATloop(bi,p,q) {
-            ret = stream_printf(ctx->out, 
-                           "  <xrpc:participant>%s</xrpc:participant>\n",
-                           BUNtail(bi,p));
-            if(ret < 0) return PROBLEM;
+        BATloop(b,p,q) {
+            if (ret < 0) break;
+            ret = stream_printf(ctx->out, "  <xrpc:participant>%s</xrpc:participant>\n", BUNtail(bi,p));
         }
+        if(ret == 0) 
+            ret = stream_printf(ctx->out, "</xrpc:participants>\n</env:Header>\n");
+
         BBPunfix(bid);
-
-        ret = stream_printf(ctx->out, "</xrpc:participants>\n</env:Header>\n");
-        if(ret < 0) return PROBLEM;
+        if (ret < 0) return PROBLEM;
     }
-
     ret = stream_printf(ctx->out, XRPC_RES_HEADER, ctx->xrpc_module, ctx->xrpc_method);
-    if(ret < 0) return PROBLEM;
-
-    return SUCCESS;
+    return ret?PROBLEM:SUCCESS;
 }
 
 /**

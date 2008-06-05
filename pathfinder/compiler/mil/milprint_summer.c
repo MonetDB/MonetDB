@@ -11455,7 +11455,7 @@ const char* PFinitMIL(void) {
         "var xrpc_seqnr := 0LL;        # if this query is an XRPC request, a session-unique nr\n" 
         "var xrpc_timeout := 30000LL;  # configurable usec timeout\n"
         "var xrpc_mode := \"none\";    # format: (none|repeatable)[-iterative][-trace]\n"
-        "var xrpc_coord := false;      # this query should act as XRPC coordinator?
+        "var xrpc_coord := false;      # this query should act as XRPC coordinator?\n"
         "var xrpc_module := str_nil;   # To print XRPC response message, we need to know the module\n"
         "var xrpc_method := str_nil;   # and the method specified in the request message.\n"
         "var xrpc_shredBAT := int_nil; # bat-id (int) of a shredded XRPC message 2b added to the ws\n"
@@ -11577,12 +11577,12 @@ const char* PFstartMIL(int statement_type) {
 #define PF_STOPMIL_RDONLY_BODY\
         "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"\
         "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"\
-        "   print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values,\n"
+        "   print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values,\n"\
         "                xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,xrpc_seqnr,xrpc_timeout,time_start);\n"
 #define PF_STOPMIL_UPDATE_BODY\
-        "  if (xrpc_method != \"\") \n"
-        "    print_result(genType,ws,empty_bat,empty_bat,empty_bat,bat(void,int),int_values,dbl_values,str_values);\n"
-        "                  xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,xrpc_seqnr,xrpc_timeout,time_start);\n"
+        "  if (xrpc_method != \"\") \n"\
+        "    print_result(genType,ws,empty_bat,empty_bat,empty_bat,bat(void,int),int_values,dbl_values,str_values);\n"\
+        "                  xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,xrpc_seqnr,xrpc_timeout,time_start);\n"\
         "  if (xrpc_qid != "") {\n"\
         "    collect_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"\
         "  } else {\n"\

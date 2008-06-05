@@ -341,7 +341,7 @@ concurrent updates.
 @:ws_@1(CONT_NAME,         41, void, str, void, void, oid_nil)@
 @:ws_@1(CONT_RUNTIME,      42, void, bat, void, void, oid_nil)@
 @:ws_@1(CONT_LOCKED,       43, void, lock,void, void, oid_nil)@
-@:ws_@1(XRPC_SUCCESSOR,    44, void, str, void, void, oid_nil)@
+@:ws_@1(XRPC_PARTICIPANTS, 44, void, str, void, void, oid_nil)@
 
 @:ws_@1(_MAP_PID,          45, void, bat, void,  oid, PRE_BASE)@
 @:ws_@1(_RID_SIZE,         46, void, bat, void,  int, PRE_BASE)@
@@ -4125,16 +4125,9 @@ fork(pf_logmanager());            # start checkpointing thread
 
 /* exports for XRPC */
 pathfinder_export void  xquery_client_engine(mapi_client*);
-pathfinder_export char* xquery_method(mapi_client*, int, char*, char*, char*, char*, char*, char*, lng, lng, lng, lng**, str*, str*, BAT*);
+pathfinder_export char* xquery_method(mapi_client*, int, char*, char*, char*, char*, char*, char*, lng, lng, lng, lng**, int*, str*, BAT*);
 pathfinder_export void  xquery_client_end(mapi_client *, char *); 
-
-#endif
-@c
-#include "pf_config.h"
-#include "pathfinder.h"
-#include "shredder.h"
-
-#define XQUERY_BUFSIZE 16364
+pathfinder_export char* xquery_parse_val(int, char*, BAT*, BAT*, BAT* , BAT* , BAT* , char*, oid);
 
 /* the xquery builtin type hierarchy */
 typedef struct {
@@ -4145,9 +4138,44 @@ typedef struct {
     char *loc;
 } xquery_type;
 
-#define DOCBAT (ELEM | (1<<6))
+/**
+ * simple type-system for fastpath into function cache
+ * beware -- must always be kept in sync with pathfinder's type ystem
+ */
+#define XS_BOOLEAN       0
+#define XS_INTEGER       1
+#define XS_DECIMAL       2
+#define XS_FLOAT         3
+#define XS_DOUBLE        4
+#define XS_ANYURI        5
+#define XS_STRING        6
+#define XS_UNTYPEDATOMIC 7 
+#define XS_ANYATOMICTYPE 8
+#define XS_ANYSIMPLETYPE 9
+#define XS_ATTRIBUTE     10 
+#define XS_COMMENT       11
+#define XS_DOCUMENT      12
+#define XS_ELEMENT       13
+#define XS_PI            14
+#define XS_TEXT          15
+#define XS_NODE          16
+#define XS_ANYNODE       17
+#define XS_ANYTYPE       18
+#define XS_ITEM          19
+#define XS_ILLEGAL       20 
+
 #define XQUERY_TYPES 20
 #define XQUERY_ABSTRACT 8
+
+extern xquery_type xquery_types[XQUERY_TYPES+1];
+extern int xquery_typenr(char* tpe);
+#endif
+@c
+#include "pf_config.h"
+#include "pathfinder.h"
+#include "shredder.h"
+
+#define DOCBAT (ELEM | (1<<6))
 
 /**
  * We define the following hierarchy for the XQuery types
@@ -4185,8 +4213,7 @@ xquery_type xquery_types[XQUERY_TYPES+1] =
  /*  7 */ {  8, TYPE_str, STR,    "xs:untypedAtomic",  "untypedAtomic"},
  /*  8 */ {  9, TYPE_str, STR,    "xdt:anyAtomicType", "anyAtomicType"},
  /*  9 */ { 18, TYPE_str, STR,    "xs:anySimpleType",  "anySimpleType"},
-
- /* 10 */ { 16, TYPE_oid, 97, "xs:attribute",      "attribute"},
+ /* 10 */ { 16, TYPE_oid, 97,     "xs:attribute",      "attribute"},
  /* 11 */ { 16, TYPE_oid, DOCBAT, "xs:comment",        "comment"},
  /* 12 */ { 16, TYPE_oid, DOCBAT, "xs:document",       "document"},
  /* 13 */ { 16, TYPE_oid, DOCBAT, "xs:element",        "element"},
@@ -4199,10 +4226,12 @@ xquery_type xquery_types[XQUERY_TYPES+1] =
  /* 19 */ { 20, TYPE_oid, DOCBAT, "xs:item",           "item"},
  /* 20 */ {  0, TYPE_oid, DOCBAT, NULL,                "illegal type", } };
 
+#define XQUERY_BUFSIZE 16364
+
 /*
  * return xquery type number, given a type string
  */
-static int
+int
 xquery_typenr(char* tpe) 
 {
     int i;
@@ -4285,10 +4314,6 @@ typedef struct {
     /* MIL child context of ctx->stk; it is marked as a reusable stack frame so variable records are kept */
     Cntxt repeat_stk; /* stk to execute the prepared function trees in  for fast reuse */ 
     Cntxt repeat_max; /* c->maxstk for repeats */ 
-
-    /* value parsing buffer reuse */
-    int vallen;
-    ptr val;
 
     /* query buffer reuse */
     size_t buflen;
@@ -4611,7 +4636,7 @@ xquery_compile_exec(xquery_client *ctx,
  * char*
  * xquery_function_call(xquery_client *ctx, lng usec, char *ns, char *module, char *method, 
  *                      char* qid, char* caller, lng timeout, char* mode, 
- *                      int argc, int itercnt, int** argcnt, char** argtpe, char** argval, BAT *shredBAT)
+ *                      int argc, int itercnt, int** argcnt, int* argtpe, char** argval, BAT *shredBAT)
  * - call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).
  *   otherwise generate MIL yourself, interpret it (and cache it). Returns error string (NULL if ok).
  */
@@ -4758,20 +4783,59 @@ xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int *mincnt
 
 
 @= seqbase
-    BATseqbase(ctx->@1, @2);
-    if (ctx->mode&XQ_DEBUG) {
+    BATseqbase(@4@1, @2);
+    if (mil) {
         snprintf(mil+m, XQUERY_BUFSIZE-m, "@1.seqbase(" @3 ");\n");
         mil[XQUERY_BUFSIZE - 1] = 0;
         m += strlen(mil+m);
     }
 @= bunappend
-    if (BUNappend(ctx->@1, @2, FALSE) == NULL) return "xquery_method: allocation error while inserting in @1";
-    if (ctx->mode&XQ_DEBUG) {
+    if (BUNappend(@6@1, @2, FALSE) == NULL) return "xquery_method: allocation error while inserting in @1";
+    if (mil) {
         snprintf(mil+m, XQUERY_BUFSIZE-m, "@1.append(" @4 @5 ");\n", @3 @2);
         mil[XQUERY_BUFSIZE - 1] = 0;
         m += strlen(mil+m);
     }
 @c
+char*
+xquery_parse_val(int t, char* v, BAT* item, BAT* kind, BAT* int_values, BAT* dbl_values, BAT* str_values, char* mil, oid cont) {
+    int mt = xquery_types[t].monet_tpe;
+    int k = xquery_types[t].kind;
+    int vallen = sizeof(oid)+sizeof(oid);
+    size_t m = strlen(mil);
+    oid buf[2], id;
+    void *val = (void*) buf;
+
+    if (mt == TYPE_str) {
+        val = v;
+    } else if (mt == TYPE_oid) {
+        buf[0] = (oid) ((gdk_uint64) v);
+    } else if (ATOMfromstr(mt, &val, &vallen, v) <= 0) {
+       return "xquery_parse_val: illegal value.\n";
+    }
+    if (mt == TYPE_int) {
+        @:bunappend(int_values, val, *(lng*), LLFMT, "LL")@
+        BATiter ivi = bat_iterator(int_values);
+        id = *(oid*) BUNhead(ivi, BUNfnd(BATmirror(int_values), val));
+        @:bunappend(item, &id, (size_t) *(oid*), SZFMT, "@0")@
+    } else if (mt == TYPE_dbl) {
+        @:bunappend(dbl_values, val, *(dbl*), "%g")@
+        BATiter idi = bat_iterator(dbl_values);
+        id = *(oid*) BUNhead(idi, BUNfnd(BATmirror(dbl_values), val));
+        @:bunappend(item, &id , (size_t) *(oid*), SZFMT, "@0")@
+    } else if (mt == TYPE_str) {
+        @:bunappend(str_values, val, (str), "\"%s\"")@
+        BATiter isi = bat_iterator(str_values);
+        id = *(oid*) BUNhead(isi, BUNfnd(BATmirror(str_values), val));
+        @:bunappend(item, &id, (size_t) *(oid*), SZFMT, "@0")@
+    } else {
+        @:bunappend(item, val, (size_t) *(oid*), SZFMT, "@0")@
+        k = (cont << 6) | (t == XS_ATTRIBUTE)?ATTR:ELEM;
+    }
+    @:bunappend(kind, &k, *(int*), "%d")@
+    return NULL;
+}
+
 /*
  * call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).
  * otherwise generate MIL yourself, interpret it (and cache it). Returns error string (NULL if ok).
@@ -4790,14 +4854,14 @@ xquery_function_call(xquery_client *ctx,
                      lng argc, 
                      lng itercnt, 
                      lng** argcnt, 
-                     char** argtpe, 
+                     int* argtpe, 
                      char** argval, 
                      BAT *shredBAT) 
 {
     xquery_prepared_function *prepfun = ctx->prepared_functions;
     xquery_function *fun;
     int i, j, k, l, m=0, tpe[MAXPARAMS], mincnt[MAXPARAMS], maxcnt[MAXPARAMS];
-    char mil[XQUERY_BUFSIZE], *src, *cur = mil, *end = mil + XQUERY_BUFSIZE-1;
+    char debug[XQUERY_BUFSIZE], *src, *mil=debug, *cur = mil, *end = mil + XQUERY_BUFSIZE-1;
 
     /* determine minimum and maximum sequence of the parameters, and the common ancestor type of each sequence  */
     for(j=0; j<argc; j++) {
@@ -4809,10 +4873,7 @@ xquery_function_call(xquery_client *ctx,
             if (argcnt[i][j] > maxcnt[j]) maxcnt[j] = argcnt[i][j];
             if (argcnt[i][j] < mincnt[j]) mincnt[j] = argcnt[i][j];
             for(k=0; k<argcnt[i][j]; k++,l++) {
-                int t = xquery_typenr(argtpe[l]);
-                if (t >= XQUERY_TYPES) 
-                    return (char*) -1; /* can't make a quick function resolution if unknown types are involved */
-                tpe[j] = xquery_type_common_ancestor(tpe[j],t);
+                tpe[j] = xquery_type_common_ancestor(tpe[j],argtpe[l]);
             }
         }
     }
@@ -4889,80 +4950,37 @@ xquery_function_call(xquery_client *ctx,
     }
 
     /* put the actual parameters into the fun_* bats (and *_values containers) */
+    if (!(ctx->mode&XQ_DEBUG)) mil = NULL;
     for(l=j=0; j<itercnt; j++) {
         for(i=0; i<argc; i++) {
-            oid item, vid = i + fun->vid, iter = j+1;
+            oid vid = i + fun->vid, iter = j+1;
             if (i == 0 && j > 0) {
-                @:bunappend(loop000, &iter, (size_t) *(oid*), SZFMT, "@0")@
+                @:bunappend(loop000, &iter, (size_t) *(oid*), SZFMT, "@0", ctx->)@
             }
             for(k=0; k<argcnt[j][i]; k++,l++) {
-                int t = xquery_typenr(argtpe[l]);
-                char *c;
-
                 /* 'hack': perform simple atomic casts using Monet's ATOMfromstr */
+                int t = argtpe[l];
                 if (fun->sig->tpe[i] < XQUERY_ABSTRACT)
                     t = fun->sig->tpe[i]; /* just parse the value string as if it was from the desired type */ 
                 /* it is doubtful how well pathfinder supports other
                  * casts and what we should do here in those cases.
                  */
-                c = xquery_types[t].loc;
-
-		if (xquery_types[t].monet_tpe == TYPE_str) {
-            /* we no longer do fancy strTostr for strings; just copied as-is */
-		    char *t, *s = argval[l];
-		    int len = strlen(s)*2;
-		    if (len >= ctx->vallen) {
-			if (ctx->val) GDKfree(ctx->val);
-			ctx->val = GDKmalloc(ctx->vallen = len+1);
-			if (ctx->val == NULL) {
-			    ctx->vallen = 0;
-			    return "xquery_function_call: malloc failure.\n";
-			}
-		    }
-		    for(t=(char*) ctx->val; *s; s++) { *t++ = *s; }
-                    *t = 0;
-                } else if (ATOMfromstr(xquery_types[t].monet_tpe, &ctx->val, &ctx->vallen, argval[l]) <= 0)
-                    return "xquery_function_call: illegal parameter value.\n";
-
-                @:bunappend(fun_vid000, &vid, (size_t) *(oid*), SZFMT, "@0")@
-                @:bunappend(fun_iter000, &iter, (size_t) *(oid*), SZFMT, "@0")@
-                @:bunappend(fun_kind000, &xquery_types[t].kind, *(int*), "%d")@
-                if ( (strcmp(c, "boolean") == 0) ||
-                     (strcmp(c, "integer") == 0) ) {
-                    @:bunappend(int_values, ctx->val, *(lng*), LLFMT, "LL")@
-                    BATiter ivi = bat_iterator(ctx->int_values);
-                    item = *(oid*) BUNhead(ivi, BUNfnd(BATmirror(ctx->int_values), ctx->val));
-                    @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
-                } else if ( (strcmp(c, "decimal") == 0) ||
-                            (strcmp(c, "float") == 0)   ||
-                            (strcmp(c, "double") == 0) ) {
-                    @:bunappend(dbl_values, ctx->val, *(dbl*), "%g")@
-                    BATiter idi = bat_iterator(ctx->dbl_values);
-                    item = *(oid*) BUNhead(idi, BUNfnd(BATmirror(ctx->dbl_values), ctx->val));
-                    @:bunappend(fun_item000, &item , (size_t) *(oid*), SZFMT, "@0")@
-                } else if ( (strcmp(c, "string") == 0) ||
-                            (strcmp(c, "untypedAtomic") == 0)   ||
-                            (strcmp(c, "anyAtomicType") == 0) ) {
-                    @:bunappend(str_values, ctx->val, (str), "\"%s\"")@
-                    BATiter isi = bat_iterator(ctx->str_values);
-                    item = *(oid*) BUNhead(isi, BUNfnd(BATmirror(ctx->str_values), ctx->val));
-                    @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
-                } else if (shredBAT == NULL) { 
-                    return "xquery_function_call: node parameter without shredBAT.\n";
-                } else {
-                    @:bunappend(fun_item000, ctx->val, (size_t) *(oid*), SZFMT, "@0")@
-                }
+                cur = xquery_parse_val(t, argval[l], ctx->fun_item000, ctx->fun_kind000, 
+                                       ctx->int_values, ctx->dbl_values, ctx->str_values, mil, 0); 
+                if (cur) return cur;
+                @:bunappend(fun_vid000, &vid, (size_t) *(oid*), SZFMT, "@0", ctx->)@
+                @:bunappend(fun_iter000, &iter, (size_t) *(oid*), SZFMT, "@0", ctx->)@
             }
         }
     }
-    @:seqbase(loop000, 0, "0@0")@
-    @:seqbase(fun_vid000, 0, "0@0")@
-    @:seqbase(fun_iter000, 0, "0@0")@
-    @:seqbase(fun_kind000, 0, "0@0")@
-    @:seqbase(fun_item000, 0, "0@0")@
+    @:seqbase(loop000, 0, "0@0", ctx->)@
+    @:seqbase(fun_vid000, 0, "0@0", ctx->)@
+    @:seqbase(fun_iter000, 0, "0@0", ctx->)@
+    @:seqbase(fun_kind000, 0, "0@0", ctx->)@
+    @:seqbase(fun_item000, 0, "0@0", ctx->)@
 
     /* for debugging purposes, we simulate a full MIL on the log; even if parts are cached */
-    if (ctx->mode&XQ_DEBUG) { 
+    if (mil) { 
         /* MIL corresponding to BUNins calls we made from C */
         stream_write(ctx->fderr, mil, strlen(mil), 1);
         /* MIL corresponding to UDF call sequence (even if we already have it cached) */
@@ -5274,18 +5292,12 @@ xquery_client_alloc_(xquery_client *ctx)
     ctx->cachesize = 0;
     ctx->loaded_modules = NULL;
     ctx->prepared_functions = NULL;
-    ctx->buflen = XQUERY_BUFSIZE;
     ctx->cacheid = xquery_cacheid;
-    ctx->buf = GDKmalloc(ctx->buflen+1);
-    ctx->val = GDKmalloc(ctx->vallen = 128);
-    if (ctx->val == NULL || ctx->buf == NULL) {
-            if (ctx->buf) GDKfree(ctx->buf);
-            if (ctx->val) GDKfree(ctx->val);
-            ctx->buf = ctx->val = NULL;
-            ctx->buflen = 0;
-            ctx->vallen = 0;
-            return "xquery_client_alloc: failed to allocate.\n";
-    }
+    ctx->buflen = 0;
+    ctx->buf = GDKmalloc(XQUERY_BUFSIZE);
+    if (ctx->buf == NULL) 
+        return "xquery_client_alloc: failed to allocate.\n";
+    ctx->buflen = XQUERY_BUFSIZE-1;
     ctx->repeat_stk = CNTXTnew(ctx->stk);
     ctx->initialized = 0;
     CNTXTuse(ctx->repeat_stk);
@@ -5347,11 +5359,6 @@ xquery_client_free_(xquery_client *ctx)
     ctx->buflen = 0;
     ctx->xrpc_shredBAT = NULL;
 
-    /* free the value buffer */
-    if (ctx->val) GDKfree(ctx->val);
-    ctx->val = NULL;
-    ctx->vallen = 0;
-    
     /* unfix the BAT handles */
     @:unfix(int_values)@
     @:unfix(dbl_values)@
@@ -5657,15 +5664,15 @@ xquery_parse_string(char *src,
  */
 static char* 
 xquery_parse_numeric(char* p, 
-                     char **tpe) 
+                     int *tpe) 
 {
-    *tpe = "xs:integer";
+    *tpe = XS_INTEGER;
     if (p[0] == '-' || p[0] == '+') p++;
     while(p[0] >= '0' && p[0] <= '9') p++;
     if (p[0] == '.' && (p[1] >= '0' && p[1] <= '9')) {
         p++;
         while(p[0] >= '0' && p[0] <= '9') p++;
-        *tpe = "xs:decimal";
+        *tpe = XS_DECIMAL;
     }
     if (p[0] == 'e' || p[0] == 'E') {
         char *q = p+1;
@@ -5673,7 +5680,7 @@ xquery_parse_numeric(char* p,
         if (q[0] >= '0' && q[0] <= '9') {
            while(q[0] >= '0' && q[0] <= '9') q++;
            p = q;
-           *tpe = "xs:double";
+           *tpe = XS_DOUBLE;
         }
     }
     return p;
@@ -5800,7 +5807,7 @@ xquery_prepare(xquery_client *ctx,
             err = xquery_too_complex; /* this was not a function call, but an if-statement */
         } else {
             lng cnt[MAXPARAMS];
-            char* tpe[MAXPARAMS];
+            int tpe[MAXPARAMS];
             char* param[MAXPARAMS];
             lng argc = 0;
     
@@ -5811,7 +5818,7 @@ xquery_prepare(xquery_client *ctx,
             } else do {
                 int strsep = *p;
                 param[argc] = p;
-                tpe[argc] = "xs:string";
+                tpe[argc] = XS_STRING;
                 cnt[argc] = 1;
                 if (strsep == '"' || strsep == '\'') {
                     p = xquery_parse_string(param[argc], val, 1024);
@@ -6202,7 +6209,7 @@ CMDxquery_logger_create( logger *L, int *debug, str fn, str dirname, str dbname,
  * argc          = #params
  * itercnt       = #iterations
  * argcnt[iter]  = #items per param
- * argtpe[]      = xquery type of each parameter (as string, e.g. 'xs:integer')
+ * argtpe[]      = xquery type of each parameter (as a XS_* integer code)
  * argval[]      = str representation of item (e.g. '42')
  *
  * shredBAT   = optional shredded document table, that is added to working set
@@ -6223,7 +6230,7 @@ xquery_method(mapi_client *mc,
               lng argc,
               lng itercnt,
               lng** argcnt,
-              str* argtpe,
+              int* argtpe,
               str* argval,
               BAT* shredBAT)
 {

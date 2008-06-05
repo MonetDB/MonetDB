@@ -157,7 +157,8 @@ typedef struct XqueryCtx {
     str         xrpc_caller;
     str         xrpc_mode;
     lng         xrpc_seqnr;
-    lng         time_exec;
+    lng         xrpc_timeout;
+    lng         xrpc_start;
 
     /* private application defined space */
     void*	_private;   
@@ -262,7 +263,7 @@ xquery_print_result_DRIVER (
     BAT                *kind,
     BAT                *intVAL,
     BAT                *dblVAL,
-    BAT                *strVAL);
+    BAT                *strVAL,
     /* xrpc response header things */
     str                xrpc_module,   
     str                xrpc_method,   
@@ -270,7 +271,8 @@ xquery_print_result_DRIVER (
     str                xrpc_caller, 
     str                xrpc_mode,
     lng                *xrpc_seqnr,
-    lng                *time_start);
+    lng                *xrpc_timeout,
+    lng                *xrpc_start);
 
 /* hack to allow direct calls in xrpc_client.mx */
 int
@@ -295,7 +297,8 @@ xquery_print_result_driver (
     str                xrpc_caller, 
     str                xrpc_mode,
     lng                *xrpc_seqnr,
-    lng                *time_start);
+    lng                *xrpc_timeout,
+    lng                *xrpc_start);
 
 #endif /* SERIALIZE_H */
 @c
@@ -1694,7 +1697,8 @@ xquery_print_result_driver (
     str                xrpc_caller, 
     str                xrpc_mode,
     lng                *xrpc_seqnr,
-    lng                *time_exec);
+    lng                *xrpc_timeout,
+    lng                *xrpc_start)
 {
     TIMER_START();
 
@@ -1715,7 +1719,8 @@ xquery_print_result_driver (
     ctx->xrpc_caller = xrpc_caller;
     ctx->xrpc_mode = xrpc_mode;
     ctx->xrpc_seqnr = *xrpc_seqnr;
-    ctx->xrpc_time_exec = *time_exec;
+    ctx->xrpc_timeout = *xrpc_timeout;
+    ctx->xrpc_start = *xrpc_start;
 
     curcnt = 0;
     maxcnt = BATcount (item);
@@ -1987,14 +1992,15 @@ xquery_print_result_DRIVER (
     str                xrpc_caller, 
     str                xrpc_mode,
     lng                *xrpc_seqnr,
-    lng                *time_exec);
+    lng                *xrpc_timeout,
+    lng                *xrpc_start)
 {
     stream *fp = GDKout;
     (void) driverFun;
     (void) driverArg;
     if (xrpc_mode && strstr(xrpc_mode, "trace")) {
         char logfile[1024], *docroot = GDKgetenv("xrpc_http_docroot");
-        snprintf(logfile, 1024, "%s" DIR_SEP "logs" DIR_SEP "res_" LLFMT ".xml", docroot, *xquery_seqnr);
+        snprintf(logfile, 1024, "%s%clogs%cres_" LLFMT ".xml", docroot, DIR_SEP, DIR_SEP, *xrpc_seqnr);
         stream *logstream = open_wstream(logfile);
         fp = open_teestream(fp, logstream);
         if (!logstream || !fp) {
@@ -2023,7 +2029,8 @@ xquery_print_result_DRIVER (
                xrpc_caller, 
                xrpc_mode, 
                xrpc_seqnr, 
-               time_exec);
+               xrpc_timeout, 
+               xrpc_start);
 }
 
 #define FNDEEPEQTRACE 0
