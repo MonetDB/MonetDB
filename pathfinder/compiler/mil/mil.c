@@ -441,6 +441,15 @@ PFmil_while (const PFmil_t *cond, const PFmil_t *e)
 }
 
 /**
+ * MIL break statement
+ */
+PFmil_t *
+PFmil_break ()
+{
+    return leaf (m_break);
+}
+
+/**
  * Construct a combined variable declaration and its assignment.
  * (Declare variable @a v and assign result of @a e to it.)
  *
@@ -1361,6 +1370,13 @@ PFmil_t *
 PFmil_mstring2 (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
 {
     return wire3 (m_mstring2, a, b, c);
+}
+
+/** StartsWith() function `[startsWith](a,b)' */
+PFmil_t *
+PFmil_starts_with (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_starts_with, a, b);
 }
 
 /** Multiplexed startsWith() function `[startsWith](a,b)' */

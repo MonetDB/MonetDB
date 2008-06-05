@@ -148,6 +148,7 @@ enum PFmil_kind_t {
 
     , m_if           /**< if-then-else blocks */
     , m_while        /**< while statement */
+    , m_break        /**< break statement */
 
     , m_assgn        /**< assignment statement + declaration (`var ... :=') */
 #if 0
@@ -289,6 +290,7 @@ enum PFmil_kind_t {
     , m_msearch      /**< Multiplexed search() function `[search](a,b)' */
     , m_mstring      /**< Multiplexed string() function `[string](a,b)' */
     , m_mstring2     /**< Multiplexed string() function `[string](a,b,c)' */
+    , m_starts_with  /**< StartsWith() function `startsWith(a,b)' */
     , m_mstarts_with /**< Multiplexed startsWith()
                           function `[startsWith](a,b)' */
     , m_mends_with   /**< Multiplexed endsWith() function `[endsWith](a,b)' */
@@ -427,7 +429,7 @@ enum PFmil_create_ws_t {
       CREATE_READ_ONLY_WS     = 0
     , CREATE_DOCMGM_WS        = 1
     , CREATE_UPDATE_WS        = 2
-    , CREATE_REP_UPDATE_WS    = 3
+    , CREATE_RETRY_UPDATE_WS    = 3
 };
 typedef enum PFmil_create_ws_t PFmil_create_ws_t;
 
@@ -498,6 +500,10 @@ PFmil_t * PFmil_if (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 
 /** while statement */
 PFmil_t * PFmil_while (const PFmil_t *, const PFmil_t *);
+
+/** break statement */
+PFmil_t * PFmil_break ();
+
 /**
  * Assignment statement including declaration:
  * Declare variable v and assign expression e to it.
@@ -796,6 +802,9 @@ PFmil_t * PFmil_mstring (const PFmil_t *, const PFmil_t *);
 
 /** Multiplexed string() function `[string](a,b,c)' */
 PFmil_t * PFmil_mstring2 (const PFmil_t *, const PFmil_t *, const PFmil_t *);
+
+/** StartsWith() function `startsWith (a,b)' */
+PFmil_t * PFmil_starts_with (const PFmil_t *, const PFmil_t *);
 
 /** Multiplexed startsWith() function `[startsWith](a,b)' */
 PFmil_t * PFmil_mstarts_with (const PFmil_t *, const PFmil_t *);

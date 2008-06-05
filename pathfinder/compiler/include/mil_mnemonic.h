@@ -67,7 +67,10 @@
 #define unused() PFmil_unused ()
 
 #define if_(a,b,c) PFmil_if ((a), (b), (c))
+
 #define while_(a,b) PFmil_while ((a), (b))
+
+#define break_() PFmil_break ()
 
 /** assignment statement, combined with variable declaration */
 #define assgn(a,b) PFmil_assgn ((a),(b))
@@ -286,6 +289,9 @@
 /** multiplexed comparison (equality) */
 #define meq(a,b) PFmil_meq ((a), (b))
 
+/** and */
+#define and(a,b) PFmil_and ((a), (b))
+
 /** multiplexed and */
 #define mand(a,b) PFmil_mand ((a), (b))
 
@@ -353,6 +359,9 @@
 
 /** Multiplexed string() function `[string](a,b,c)' */
 #define mstring2(a,b,c) PFmil_mstring2 ((a), (b), (c))
+
+/** StartsWith() function `startsWith(a,b)' */
+#define starts_with(a,b) PFmil_starts_with ((a), (b))
 
 /** Multiplexed startsWith() function `[startsWith](a,b)' */
 #define mstarts_with(a,b) PFmil_mstarts_with ((a), (b))

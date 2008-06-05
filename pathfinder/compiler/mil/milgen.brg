@@ -2481,7 +2481,7 @@ reduce (PFpa_op_t * p, int goalnt)
         {
             PFalg_simple_type_t ty;
             PFmil_create_ws_t create;
-            mvar_t *err, *time;
+            mvar_t *err, *time, *try;
             PFalg_att_t pa_item = p->sem.serialize.item;
             PFmil_t *oldmilprog, *bodymilprog;
 
@@ -2492,19 +2492,27 @@ reduce (PFpa_op_t * p, int goalnt)
             milprog = nop ();
 
             /* decide which type of new_ws should invoke */
-            if (aat_update & type_of (L(p), pa_item))
-                create = CREATE_UPDATE_WS;
-            /* FIXME: there is a second case when it is a retry of update
-             * we dont deal with this case right now because there is no loop
-             */   
-            else if (aat_docmgmt & type_of (L(p), pa_item))
-                create = CREATE_DOCMGM_WS;
-            else
-                create = CREATE_READ_ONLY_WS;
+            if (aat_update & type_of (L(p), pa_item)) {
+                try = new_var(1);
+                execute (
+                    comment ("volatile variable environment "
+                             "for an update query"),
+                    assgn (var (PF_MIL_VAR_WS), new_ws (var (try->name))),
+                    /* re-assign var(try) to be ready in case of a retry */
+                    assgn (var (try->name),
+                           add (var (try->name),
+                                lit_int(1))));
+            } else {
+                if (aat_docmgmt & type_of (L(p), pa_item))
+                    create = CREATE_DOCMGM_WS;
+                else
+                    create = CREATE_READ_ONLY_WS;
 
-            execute (
-                comment ("volatile variable environment"),
-                assgn (var (PF_MIL_VAR_WS), new_ws (lit_int (create))));
+                execute (
+                    comment ("volatile variable environment"),
+                    assgn (var (PF_MIL_VAR_WS), new_ws (lit_int (create))));
+            }
+
             reduce (kids[0], nts[0]);
 
             /* add timing information */
@@ -2930,9 +2938,6 @@ reduce (PFpa_op_t * p, int goalnt)
                                          var (docmgmt->name)))))));
 
 #ifdef HAVE_PFTIJAH
-		/* INCOMPLETE, when the print is removed it is optimized out */
-		/* added m_tj_docmgmt_tape to the non removable expressions  */
-		/* in mil_dce() but now the system crashed with a fatal()    */
                 execute (
 		   	tj_docmgmt_tape (
 			    var(PF_MIL_TIJAH_FTI_TAPE),
@@ -3436,14 +3441,40 @@ reduce (PFpa_op_t * p, int goalnt)
 
             err = new_var (1);
 
-            execute (
-                catch_ (var (err->name), bodymilprog),
-                if_ (not (isnil (var (PF_MIL_VAR_WS))),
-                     destroy_ws (var (PF_MIL_VAR_WS)),
-                     nop ()),
-                if_ (not (isnil (var (err->name))),
-                     error (var (err->name)),
-                     nop ()));
+            /* update queries should loop around until they succeed */
+            if (aat_update & type_of (L(p), pa_item)) {
+
+                execute (
+                    assgn (var (try->name), lit_int (CREATE_UPDATE_WS)),
+                    assgn (var (err->name),
+                           lit_str ("!ERROR: conflicting update")),
+                    while_ (and (le (var (try->name), lit_int(3)),
+                                 not (isnil (var (err->name)))),
+                            seq (if_ (not (starts_with (
+                                               var (err->name),
+                                               lit_str ("!ERROR: conflicting "
+                                                        "update"))),
+                                      break_(),
+                                      nop()),
+                                 catch_ (var (err->name), bodymilprog),
+                                 if_ (not (isnil (var (PF_MIL_VAR_WS))),
+                                      destroy_ws (var (PF_MIL_VAR_WS)),
+                                      nop ()))),
+                    if_ (not (isnil (var (err->name))),
+                         error (var (err->name)),
+                         nop ()));
+                
+                unpin (try, 1);
+            } else {
+                execute (
+                    catch_ (var (err->name), bodymilprog),
+                    if_ (not (isnil (var (PF_MIL_VAR_WS))),
+                         destroy_ws (var (PF_MIL_VAR_WS)),
+                         nop ()),
+                    if_ (not (isnil (var (err->name))),
+                         error (var (err->name)),
+                         nop ()));
+            }
 
             unpin (err, 1);
         }   break; /* fold) */

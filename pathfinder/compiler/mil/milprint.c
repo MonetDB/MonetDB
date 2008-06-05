@@ -10,6 +10,7 @@
    statements    : statements statements                    <m_seq>
                  | 'if (' Expr ') {' stmts '} else {' stmts '}' <m_if>
                  | 'while (' Expr ') {' stmts '}'           <m_while>
+                 | 'break'                                  <m_break>
                  | <nothing>                                <m_nop>
                  | '#' c                                    <m_comment>
                  | statement ';'                            <otherwise>
@@ -126,6 +127,7 @@
                  | '[string](' expression ',' expression ')'<m_mstring>
                  | '[string](' exp ',' exp ',' exp ')'      <m_mstring2>
                  | '[startsWith](' exp ',' exp ')'          <m_mstarts_with>
+                 | 'startsWith(' exp ',' exp ')'            <m_starts_with>
                  | '[endsWith](' exp ',' exp ')'            <m_mends_with>
                  | '[length](' expresion ')'                <m_mlength>
                  | '[toUpper](' expresion ')'               <m_mtoUpper>
@@ -313,6 +315,7 @@ static char *ID[] = {
     , [m_mstring]      = "[string]"
     , [m_mstring2]     = "[string]"
     , [m_mstarts_with] = "[startsWith]"
+    , [m_starts_with]  = "startsWith"
     , [m_mends_with]   = "[endsWith]"
     , [m_mlength]      = "[length]"
     , [m_mtoUpper]     = "[toUpper]"
@@ -501,6 +504,10 @@ print_statement (PFmil_t * n)
             milprintf (" := CATCH ({\n");
             print_statements (n->child[1]);
             milprintf ("})");
+            break;
+
+        case m_break:
+            milprintf ("break");
             break;
 
         /* statement : 'var' Variable */
@@ -810,6 +817,8 @@ print_expression (PFmil_t * n)
         case m_mstring:
         /* expression : '[startsWith](' exp ',' exp)' */
         case m_mstarts_with:
+        /* expression : 'startsWith(' exp ',' exp)' */
+        case m_starts_with:
         /* expression : '[endsWith](' exp ',' exp)' */
         case m_mends_with:
         /* expression : '[pcre_match](' exp ',' exp)' */
