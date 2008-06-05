@@ -238,7 +238,7 @@ void RECYCLEversion(MalBlkPtr mb)
 
 	if ( mb->version && mb->version != recycleVersion) { 
 		mal_set_lock(recycleLock,"recycle");
-		/* all re-used variables are dropped */
+		/* all re-used instructions are dropped */
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE get version %d\n", recycleVersion);
 #endif
