@@ -577,9 +577,9 @@ stream. The result is not analyzed or cached.
 @item MapiMsg mapi_seek_row(MapiHdl hdl, int rownr, int whence)
 
 Reset the row pointer to the requested row number.  If whence is
-@code{MAPI_SEEK\_SET} (0), rownr is the absolute row number (0 being the
-first row); if whence is @code{MAPI_SEEK_CUR} (1), rownr is relative to the
-current row; if whence is @code{MAPI_SEEK_END} (2), rownr is relative to
+@code{MAPI_SEEK_SET}, rownr is the absolute row number (0 being the
+first row); if whence is @code{MAPI_SEEK_CUR}, rownr is relative to the
+current row; if whence is @code{MAPI_SEEK_END}, rownr is relative to
 the last row.
 
 @item MapiMsg mapi_fetch_reset(MapiHdl hdl)
@@ -1697,8 +1697,16 @@ close_result(MapiHdl hdl)
 		for (i = 0; i < result->cache.writer; i++) {
 			if (result->cache.line[i].rows)
 				free(result->cache.line[i].rows);
-			if (result->cache.line[i].anchors)
+			if (result->cache.line[i].anchors) {
+				int j;
+
+				for (j = 0; j < result->cache.line[i].fldcnt; j++)
+					if (result->cache.line[i].anchors[j]) {
+						free(result->cache.line[i].anchors[j]);
+						result->cache.line[i].anchors[j] = NULL;
+					}
 				free(result->cache.line[i].anchors);
+			}
 		}
 		free(result->cache.line);
 		result->cache.line = NULL;

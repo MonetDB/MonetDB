@@ -123,10 +123,10 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	char buf[128];
 	RECT rcDlg, rcOwner;
 
-	ODBCLOG("DialogProc 0x%x 0x%x 0x%x\n", uMsg, (int) wParam, (int) lParam);
-
 	switch (uMsg) {
 	case WM_INITDIALOG:
+		ODBCLOG("DialogProc WM_INITDIALOG 0x%x 0x%x\n", (int) wParam, (int) lParam);
+
 		datap = (struct data *) lParam;
 		/* center dialog on parent */
 		GetWindowRect(datap->parent, &rcOwner);
@@ -148,6 +148,8 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			EnableWindow(GetDlgItem(hwndDlg, IDC_EDIT_DSN), FALSE);
 		return TRUE;
 	case WM_COMMAND:
+		ODBCLOG("DialogProc WM_COMMAND 0x%x 0x%x\n", (int) wParam, (int) lParam);
+
 		switch (LOWORD(wParam)) {
 		case IDOK:
 			if (datap->request != ODBC_ADD_DSN || datap->dsn == NULL || *datap->dsn == 0) {
@@ -188,6 +190,9 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			EndDialog(hwndDlg, wParam);
 			return TRUE;
 		}
+	default:
+		ODBCLOG("DialogProc 0x%x 0x%x 0x%x\n", uMsg, (int) wParam, (int) lParam);
+		break;
 	}
 	return FALSE;
 }
@@ -264,6 +269,14 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	MergeFromProfileString(data.dsn, &data.port, "port", "50000");
 	MergeFromProfileString(data.dsn, &data.database, "database", "");
 
+	ODBCLOG("ConfigDSN values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s\n",
+		data.dsn ? data.dsn : "(null)",
+		data.uid ? data.uid : "(null)",
+		data.pwd ? data.pwd : "(null)",
+		data.host ? data.host : "(null)",
+		data.port ? data.port : "(null)",
+		data.database ? data.database : "(null)");
+
 	if (parent)
 		rc = DialogBoxParam(instance, MAKEINTRESOURCE(IDD_SETUP_DIALOG), parent, DialogProc, (LPARAM) &data) == IDOK;
 	else
@@ -295,6 +308,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 						rc = FALSE;
 						goto finish;
 					}
+					ODBCLOG("ConfigDSN removing dsn %s\n", data.dsn);
 					if (!SQLRemoveDSNFromIni(data.dsn)) {
 						rc = FALSE;
 						MessageBox(parent,
@@ -325,6 +339,14 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 				goto finish;
 			}
 		}
+		ODBCLOG("ConfigDSN writing values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s\n",
+			data.dsn ? data.dsn : "(null)",
+			data.uid ? data.uid : "(null)",
+			data.pwd ? data.pwd : "(null)",
+			data.host ? data.host : "(null)",
+			data.port ? data.port : "(null)",
+			data.database ? data.database : "(null)");
+
 		SQLWritePrivateProfileString(data.dsn, "uid", data.uid, "odbc.ini");
 		SQLWritePrivateProfileString(data.dsn, "pwd", data.pwd, "odbc.ini");
 		SQLWritePrivateProfileString(data.dsn, "host", data.host, "odbc.ini");
@@ -345,6 +367,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		free(data.port);
 	if (data.database)
 		free(data.database);
+	ODBCLOG("ConfigDSN returning %s\n", rc ? "TRUE" : "FALSE");
 	return rc;
 }
 

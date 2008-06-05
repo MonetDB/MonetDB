@@ -1636,7 +1636,7 @@ main(int argc, char **argv)
 	int trace = 0;
 	int guest = 1;
 	int dump = 0;
-	int algebra = 0;
+	int algebra = -1;
 	int c = 0;
 	Mapi mid;
 	int save_history = 0;
@@ -1892,7 +1892,7 @@ main(int argc, char **argv)
 	if (logfile)
 		mapi_log(mid, logfile);
 
-	if (mode == SQL || mode == XQUERY)
+	if (algebra != -1 && (mode == SQL || mode == XQUERY))
 		mapi_setAlgebra(mid, algebra);
 	mapi_profile(mid, mark != NULL);
 	mapi_trace(mid, trace);
