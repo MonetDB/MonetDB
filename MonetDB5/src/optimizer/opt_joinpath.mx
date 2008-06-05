@@ -244,9 +244,12 @@ Final conclusion from this exercise is:
 The difference between the join input size and the join output size is not 
 the correct (or unique) metric which should be used to decide which order 
 should be used in the joinPath. 
-
+A SMALL_OPERAND is preferrable set to those cases where the table
+fits in the cache. This depends on the cache size and operand type.
+For the time being we limit ourself to a default of 1Kelements
 @c
 /*#define SAMPLE_THRESHOLD_lOG 17*/
+#define SMALL_OPERAND	1024
 size_t
 ALGjoinCost(BAT *l, BAT *r)
 {
@@ -279,6 +282,11 @@ ALGjoinCost(BAT *l, BAT *r)
 	/* foreign key joins are common */
 	if( l->ttype== TYPE_oid || r->htype== TYPE_oid )
 		return MIN(lc,rc);
+	/* if either operand is very small, we should use that one */
+	if (rc < SMALL_OPERAND )
+		return rc;
+	if (lc < SMALL_OPERAND )
+		return lc;
 	return lc * rc;
 }
 @-
@@ -319,11 +327,12 @@ BEWARE. you may not use a size estimation, because it
 may fire a BATproperty check in a few cases.
 @c
 		b = BATjoin(joins[j], joins[j + 1], oid_nil);
+		if (b==NULL)
+			return NULL;
 #ifdef DEBUG_OPT_JOINPATH
 		stream_printf(GDKout, "%d:= join(%d,%d)\n", 
 			b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid);
 #endif
-		assert(b);
 		BBPdecref(joins[j]->batCacheid, FALSE);
 		BBPdecref(joins[j+1]->batCacheid, FALSE);
         	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -338,8 +347,7 @@ may fire a BATproperty check in a few cases.
 	b = BATjoin(joins[0], joins[1], oid_nil);
 	BBPdecref(joins[0]->batCacheid, FALSE);
 	BBPdecref(joins[1]->batCacheid, FALSE);
-        if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	assert(b);
+	if (b && !(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	return b;
 }
 
