@@ -649,6 +649,12 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
             } else if (first_twig_child) {
                 first_twig_child = false;
                 union_ (n->prop->icols, n->sem.iter_item.iter);
+
+                /* special textnode treating as we do not prune
+                   a single (stand-alone) textnode constructor */
+                if (n->kind == la_textnode)
+                    union_ (n->prop->icols, n->sem.iter_item.item);
+
                 prop_infer_icols (L(n), n->prop->icols);
             } else {
                 prop_infer_icols (L(n), NULL);
