@@ -16,7 +16,7 @@
 # All Rights Reserved.
 ?>
 
-<?
+<?php
 /**
  * database.php - an abstraction layer for a data storage engine
  * Monica Manzano Hidalgo
