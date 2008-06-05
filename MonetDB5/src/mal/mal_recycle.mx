@@ -120,6 +120,7 @@ mal_export int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEshutdown(void);
+mal_export str RECYCLErestore(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif
 @-
 @c
@@ -843,11 +844,8 @@ void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		getInstrPtr(mb,i)->recycle = -1;
 }
 @-
-At the end of the session we should remove all
-intermediate results forcefully. This only amounts
-to resetting the reference counts of the persistent
-tables, because all others are garbage collected automatically.
-To simplify the code, we just drop all BAT reference counts by one.
+At the end of session we should remove all
+knowledge from the recycle cache.
 @c
 void
 RECYCLEshutdown(){
@@ -869,5 +867,37 @@ RECYCLEshutdown(){
 	for (i=mb->stop-1; i>=0; i--)
 		RECYCLEgarbagecollect(mb, getInstrPtr(mb,i));
 	freeMalBlk(mb);
+}
+@-
+At the end of the MAL block we should restore
+the recycle cache to the initial state in
+those situations where intermediate results have
+been created.
+
+@c
+str
+RECYCLErestore(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	int i;
+	
+	if( recycleBlk == NULL)
+		return MAL_SUCCEED;
+
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLE restore\n");
+	printFunction(GDKout,recycleBlk,0);
+	printFunction(GDKout,mb,0);
+#endif
+	(void) stk;
+	mal_set_lock(recycleLock,"recycle");
+	recycleVersion++; /* warn other threads */
+	for (i=mb->stop-1; i>=0; i--){
+		p= getInstrPtr(mb,i);
+		if (p->recycle > 0){
+			RECYCLEgarbagecollect(recycleBlk, getInstrPtr(recycleBlk,p->recycle));
+			removeInstruction(recycleBlk, getInstrPtr(recycleBlk,p->recycle));
+		}
+	}
+	mal_unset_lock(recycleLock,"recycle");
+	return MAL_SUCCEED;
 }
 @}
