@@ -768,7 +768,7 @@ xrpc_parse_message(stream *out,
                     }
                     req->hasNodeParam = TRUE;
                     req->argtpe[req->nr_args] = XS_ATTRIBUTE;
-                    req->argval[req->nr_args] = (char*) (gdk_uint64) val_node_pre; 
+                    req->argval[req->nr_args] = (char*) (size_t) val_node_pre; 
                 } else {
                     req->argtpe[req->nr_args] = get_node_type(pul);
                     if (req->argtpe[req->nr_args] == XS_DOCUMENT) {
@@ -786,7 +786,7 @@ xrpc_parse_message(stream *out,
                         val_node_pre = tpe_node_pre + 1;
                         val_node_pre += (pre_kindT[val_node_pre] == ELEMENT ? 0 : 1);
                     }
-                    req->argval[req->nr_args] = (char*) (gdk_uint64) val_node_pre;
+                    req->argval[req->nr_args] = (char*) (size_t) val_node_pre;
                     frag_root = BUNappend(frag_root, (ptr)&val_node_pre, TRUE);
                     req->hasNodeParam = TRUE;
 

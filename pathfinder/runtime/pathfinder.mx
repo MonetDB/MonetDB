@@ -4809,7 +4809,7 @@ xquery_parse_val(int t, char* v, BAT* item, BAT* kind, BAT* int_values, BAT* dbl
     if (mt == TYPE_str) {
         val = v;
     } else if (mt == TYPE_oid) {
-        buf[0] = (oid) ((gdk_uint64) v);
+        buf[0] = (oid) ((size_t) v);
     } else if (ATOMfromstr(mt, &val, &vallen, v) <= 0) {
        return "xquery_parse_val: illegal value.\n";
     }
