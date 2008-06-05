@@ -877,7 +877,8 @@ been created.
 @c
 str
 RECYCLErestore(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	int i;
+	int i,j;
+	int action=0;
 	
 	if( recycleBlk == NULL)
 		return MAL_SUCCEED;
@@ -895,6 +896,29 @@ RECYCLErestore(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		if (p->recycle > 0){
 			RECYCLEgarbagecollect(recycleBlk, getInstrPtr(recycleBlk,p->recycle));
 			removeInstruction(recycleBlk, getInstrPtr(recycleBlk,p->recycle));
+			action++;
+		}
+	}
+@-
+Walk through the recycleBlk and remove all instructions 
+that have dependencies on variables only known to the recycler.
+Use a backward walk, to ensure that the last references are
+handled first.
+@c
+	if (action)
+	for (i=recycleBlk->stop-1; i>0; i--){
+		p= getInstrPtr(recycleBlk,i);
+		for (j=p->retc; j<p->argc; j++)
+		if(getArgType(recycleBlk,p,j)==TYPE_bat || 
+			isaBatType(getArgType(recycleBlk, p,j)) ){
+			int nbid = getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
+			if (nbid == -1) continue;
+			if( BBP_lrefs(nbid)==1 )
+				break;
+		}
+		if (j<p->argc){
+			RECYCLEgarbagecollect(recycleBlk, p);
+			removeInstruction(recycleBlk, p);
 		}
 	}
 	mal_unset_lock(recycleLock,"recycle");
