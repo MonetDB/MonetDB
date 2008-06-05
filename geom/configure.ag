@@ -134,10 +134,20 @@ if test "x$have_geos" != xno; then
 	fi
 fi
 if test "x$have_geos" != xno; then
-	dnl GEOS_INCS="-I`$GEOS_CONFIG --includes`"
-	dnl GEOS_LIBS="`$GEOS_CONFIG --libs`"
-	GEOS_INCS="`$GEOS_CONFIG --cflags`"
-	GEOS_LIBS="`$GEOS_CONFIG --ldflags`"
+	case "$GCC-$CC-`$GEOS_CONFIG --prefix`-`$GEOS_CONFIG --includes`" in
+	-*icc*-/usr-/usr/include)
+		dnl  icc complains about Goes' header file, at least if Geos
+		dnl  is found in the default place and we set GEOS_INCS & GEOS_LIBS.
+		dnl  Since setting GEOS_INCS & GEOS_LIBS is not strictly required
+		dnl  in this case, we omit setting them in this case.
+		;;
+	*)
+		dnl GEOS_INCS="-I`$GEOS_CONFIG --includes`"
+		dnl GEOS_LIBS="`$GEOS_CONFIG --libs`"
+		GEOS_INCS="`$GEOS_CONFIG --cflags`"
+		GEOS_LIBS="`$GEOS_CONFIG --ldflags`"
+		;;
+	esac
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $GEOS_INCS"
 	AC_CHECK_HEADER(geos_c.h, AC_DEFINE(HAVE_GEOS_C_H, 1, [Define to 1 if you have the <geos_c.h> header file.]), [AC_MSG_ERROR([geos_c.h not found]); have_geos=no])
