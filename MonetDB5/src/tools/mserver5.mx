@@ -353,39 +353,39 @@ faster system start.
 			}
 			/* debugging options */
 			if (strcmp(long_options[option_index].name, "properties") == 0) {
-				debug |=GRPproperties;
+				debug |= GRPproperties;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "algorithms") == 0) {
-				debug|= GRPalgorithms;
+				debug |= GRPalgorithms;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "xproperties") == 0) {
-				debug|= GRPxproperties;
+				debug |= GRPxproperties;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "performance") == 0) {
-				debug|= GRPperformance;
+				debug |= GRPperformance;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "io") == 0) {
-				debug|= GRPio;
+				debug |= GRPio;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "memory") == 0) {
-				debug|= GRPmemory;
+				debug |= GRPmemory;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "modules") == 0) {
-				debug|= GRPmodules;
+				debug |= GRPmodules;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "transactions") == 0) {
-				debug|= GRPtransactions;
+				debug |= GRPtransactions;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "threads") == 0) {
-				debug|= GRPthreads;
+				debug |= GRPthreads;
 				break;
 			}
 			usage(prog);
@@ -395,10 +395,9 @@ faster system start.
 			break;
 		case 'd':
 			if (optarg) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", optarg);
+				debug |= strtol(optarg, NULL, 10);
 			} else {
-				debug = 1;
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", "1");
+				debug |= 1;
 			}
 			break;
 		case 'r':
@@ -432,6 +431,13 @@ faster system start.
 
 	if (!(setlen = mo_system_config(&set, setlen)))
 		usage(prog);
+
+	if (debug) {
+		long_str buf;
+
+		snprintf(buf, sizeof(long_str)-1, "%d", debug);
+		setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", buf);
+	}
 
 	monet_script = (str *) GDKmalloc(sizeof(str) * (argc + 1));
 	monet_script[idx] = NULL;
