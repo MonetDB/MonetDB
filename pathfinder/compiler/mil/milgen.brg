@@ -2502,7 +2502,8 @@ reduce (PFpa_op_t * p, int goalnt)
                     assgn (var (try->name),
                            add (var (try->name),
                                 lit_int(1))));
-            } else {
+            }
+            else {
                 if (aat_docmgmt & type_of (L(p), pa_item))
                     create = CREATE_DOCMGM_WS;
                 else
@@ -4826,13 +4827,42 @@ reduce (PFpa_op_t * p, int goalnt)
                                    VAR (L(p)->env, att3, aat_str))));
                 }   break; /* fold) */
                 case alg_fun_fn_replace: /* fold( */
+                case alg_fun_fn_replace_flag:
                 {
-                    PFalg_att_t att1, att2, att3;
+                    PFalg_att_t  att1, att2, att3;
+                    PFmil_t     *flags = NULL;
+                    mvar_t      *chk   = new_var (1);
 
                     att1 = p->sem.fun_1to1.refs.atts[0];
                     att2 = p->sem.fun_1to1.refs.atts[1];
                     att3 = p->sem.fun_1to1.refs.atts[2];
                     res_type = aat_str;
+
+                    switch (p->sem.fun_1to1.kind) {
+                        case alg_fun_fn_replace:
+                            flags = lit_str("");
+                            break;
+                        case alg_fun_fn_replace_flag:
+                            flags = VAR (L(p)->env,
+                                         p->sem.fun_1to1.refs.atts[3],
+                                         aat_str);
+                            break;
+                        default:
+                            assert(!"should never reach here"); break;
+                    }
+
+                    /* check whether the replacement
+                     * string contains variables */
+                    execute (
+                        assgn (var (chk->name),
+                               mpcre_match (VAR (L(p)->env, att3, aat_str),
+                                            lit_str("[$][0-9]"))),
+                        if_ (texist (var (chk->name), lit_bit(true)),
+                             error (lit_str ("Variables in replacements are "
+                                             "not supported yet")),
+                             nop ()));
+
+                    unpin (chk, 1);
 
                     execute (
                         assgn (var (res->name),
@@ -4840,25 +4870,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                    VAR (L(p)->env, att1, aat_str),
                                    VAR (L(p)->env, att2, aat_str),
                                    VAR (L(p)->env, att3, aat_str),
-                                   lit_str(""))));
-                }   break; /* fold) */
-                case alg_fun_fn_replace_flag: /* fold( */
-                {
-                    PFalg_att_t att1, att2, att3, att4;
-
-                    att1 = p->sem.fun_1to1.refs.atts[0];
-                    att2 = p->sem.fun_1to1.refs.atts[1];
-                    att3 = p->sem.fun_1to1.refs.atts[2];
-                    att4 = p->sem.fun_1to1.refs.atts[3];
-                    res_type = aat_str;
-
-                    execute (
-                        assgn (var (res->name),
-                               mpcre_replace (
-                                   VAR (L(p)->env, att1, aat_str),
-                                   VAR (L(p)->env, att2, aat_str),
-                                   VAR (L(p)->env, att3, aat_str),
-                                   VAR (L(p)->env, att4, aat_str))));
+                                   flags)));
                 }   break; /* fold) */
                 case alg_fun_fn_name: /* fold( */
                 {
