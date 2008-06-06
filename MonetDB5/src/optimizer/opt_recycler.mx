@@ -120,19 +120,21 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)){
-			if( isUpdateInstruction(p)){
-				/* all update instructions  modify the first argument ?*/
-				/* they may not be recycled to avoid incomplete results */
-				recycled[getArg(p,1)]= 0;
-				if (actions )
-					(void) newFcnCall(mb,"recycle","reset");
-				update++;
-			}
 			if( getModuleId(p)== recycleRef ){ /*don't inline recycle instr. */
 				freeInstruction(p);
 				continue;
 			}
 			pushInstruction(mb,p);
+			if( isUpdateInstruction(p) &&
+				(getArgType(mb,p,1)==TYPE_bat || isaBatType(getArgType(mb, p,1))
+				)){
+				/* all update instructions  modify the first argument ?*/
+				/* they may not be recycled to avoid incomplete results */
+				recycled[getArg(p,1)]= 0;
+				q= newFcnCall(mb,"recycle","reset");
+				pushArgument(mb,q, getArg(p,1));
+				update++;
+			}
 			continue;
 		}
 
@@ -193,8 +195,6 @@ with the transaction commits.
 			}
 
 		if( p->token== ENDsymbol){
-			if (actions && update)
-				(void) newFcnCall(mb,"recycle","restore");
 			(void) newFcnCall(mb,"recycle","epilogue");
 		}
 		pushInstruction(mb,p);
