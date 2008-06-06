@@ -17,7 +17,15 @@ dnl All Rights Reserved.
 dnl Defaults that differ between development trunk and release branch:
 AC_DEFUN([AM_MONETDB_DEFAULTS],
 [
-dft_strict=no
+if test -f "$srcdir"/vertoo.data; then
+	dnl  Developers compiling from CVS:
+	dnl  default is --enable-strict
+	dft_strict=yes
+else
+	dnl  Users compiling from source tarball(s):
+	dnl  default is --disable-strict
+	dft_strict=no
+fi
 dft_assert=no
 dft_optimi=yes
 dft_warning=no
