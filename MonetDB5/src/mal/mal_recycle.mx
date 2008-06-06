@@ -120,7 +120,6 @@ mal_export int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEshutdown(void);
-mal_export str RECYCLErestore(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif
 @-
 @c
@@ -826,23 +825,7 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		}
 	}
 }
-@-
-Once we encounter an update on a recycled variable, we have
-to reset all dependents as well. Since we don't have this 
-information, we simply reset all instructions.
-@c
-void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	int i;
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE reset\n");
-#endif
-	(void) stk;
-	(void) p;
-	for(i=1; i<mb->stop; i++)
-	if (getInstrPtr(mb,i)->recycle)
-		getInstrPtr(mb,i)->recycle = -1;
-}
+
 @-
 At the end of session we should remove all
 knowledge from the recycle cache.
@@ -868,70 +851,46 @@ RECYCLEshutdown(){
 		RECYCLEgarbagecollect(mb, getInstrPtr(mb,i));
 	freeMalBlk(mb);
 }
+
 @-
-At the end of the MAL block we should restore
-the recycle cache to the initial state in
-those situations where intermediate results have
-been created.
-For this, we take the approach to remove all instructions
-that were considered for recycling. Regardless if it was
-added in the current call or before.
+Evict a bat from recycle cache, for instance if an update on it has been detected. 
 @c
-str
-RECYCLErestore(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	int i,j,k,top=0;
-	int action=0;
-	char *dropped;
+static void 
+RECYCLEevict(bat bid){
+	int i,j,k,top = 0;
+	int action = 1, upd = 0;
+	int *dropped;
+	InstrPtr p;
 	
 	if( recycleBlk == NULL)
-		return MAL_SUCCEED;
+		return;
 
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE restore\n");
+#ifdef _DEBUG_RECYCLE_ 
+	stream_printf(GDKout,"RECYCLE evict\n");
 	printFunction(GDKout,recycleBlk,0);
-	printFunction(GDKout,mb,0);
 #endif
-	(void) stk;
-	dropped = alloca(recycleBlk->vtop);
-	memset(dropped, 0, recycleBlk->vtop);
+
+	dropped = (int *) alloca(sizeof(int)*recycleBlk->vtop);
+	memset(dropped, 0, sizeof(int)*recycleBlk->vtop);
 	mal_set_lock(recycleLock,"recycle");
-	recycleVersion++; /* warn other threads */
-	for (i=mb->stop-1; i>=0; i--){
-		p= getInstrPtr(mb,i);
-		if (p->recycle > 0){
-			/* keep track of all BATs removed */
-			for (j=0;j<p->retc; j++)
-			if(getArgType(recycleBlk,p,j)==TYPE_bat || 
-				isaBatType(getArgType(recycleBlk, p,j)) )
-				dropped[top++]= getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
-			RECYCLEgarbagecollect(recycleBlk, getInstrPtr(recycleBlk,p->recycle));
-			removeInstruction(recycleBlk, getInstrPtr(recycleBlk,p->recycle));
-			action++;
-		}
-	}
-@-
-Walk through the recycleBlk and remove all instructions 
-that have dependencies on variables only known to the recycler.
-Use a backward walk, to ensure that the last references are
-handled first.
-@c
+
+	dropped[top++] = bid;
 	while (action){
 		action= 0;
-		for (i=recycleBlk->stop-1; i>0; i--){
-			p= getInstrPtr(recycleBlk,i);
+		for (i=1; i<recycleBlk->stop; i++){
+			p = getInstrPtr(recycleBlk,i);
 			for (j=p->retc; j<p->argc; j++)
-			if(getArgType(recycleBlk,p,j)==TYPE_bat || 
-				isaBatType(getArgType(recycleBlk, p,j)) ){
-				int nbid = getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
-				if (nbid == -1) continue;
-				if( BBP_lrefs(nbid)==1 )
-					break;
-				for (k=0; k<top; k++)
-				if (dropped[k]== nbid)
-					break;
+				if(getArgType(recycleBlk,p,j)==TYPE_bat || 
+					isaBatType(getArgType(recycleBlk, p,j)) ){
+					int nbid = getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
+					if (nbid == -1) continue;
+					for (k=0; k<top; k++)
+						if (dropped[k]== nbid)
+						break;
+					if (k < top) break;
 			}
-			if (j<p->argc){
-				for (j=0;j<p->retc; j++)
+			if (j<p->argc){  /* delete instruction dependent on updated bat */
+				for (j=0;j<p->retc; j++)  /* mark result bats as dropped */
 				if(getArgType(recycleBlk,p,j)==TYPE_bat || 
 					isaBatType(getArgType(recycleBlk, p,j)) )
 					dropped[top++]= getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
@@ -940,8 +899,33 @@ handled first.
 				action++;
 			}
 		}
+		if (action) upd++;
+	}
+	if (upd){
+		recycleVersion++; /* warn other threads */
+		trimMalVariables(recycleBlk);
 	}
 	mal_unset_lock(recycleLock,"recycle");
-	return MAL_SUCCEED;
 }
+
+@-
+Once we encounter an update we check and clean the recycle cache from instructions
+dependent on the updated bat.
+@c
+void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int j;
+	ValRecord *v;
+
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLE reset\n");
+#endif
+	(void) mb;
+	for (j=p->retc; j<p->argc; j++){
+ 		v = &stk->stk[getArg(p,j)];
+		if(v->vtype == TYPE_bat )
+			RECYCLEevict(v->val.bval);
+	}
+}
+
 @}
