@@ -184,7 +184,7 @@ logger_changes_wrap(int *r, logger *L )
 {
 	logger *l = *(logger**)L;
 	if (l) {
-		*r = logger_changes(l);
+		*r = (int) MIN(logger_changes(l), GDK_int_max);
 		return GDK_SUCCEED;
 	}
 	*r = 0;
