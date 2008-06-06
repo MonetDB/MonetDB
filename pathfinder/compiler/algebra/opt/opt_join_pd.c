@@ -1384,91 +1384,6 @@ map_name (PFla_op_t *p, PFalg_att_t att)
 }
 
 /**
- * mark_left_path follows a path based on an initial
- * column name and marks all operators on the path as
- * being LEFT children of the join.
- */
-static void
-mark_left_path (PFla_op_t *p, PFalg_att_t att)
-{
-    assert (p);
-
-    if (LEFT(p))
-       return;
-
-    if (p->kind == la_frag_union ||
-        p->kind == la_empty_frag)
-        return;
-    else if (p->kind == la_eqjoin_unq &&
-             att == res(p)) {
-        mark_left_path (L(p), latt(p));
-        mark_left_path (R(p), ratt(p));
-        LEFT(p) = true;
-        return;
-    }
-    else if (p->kind == la_cond_err) {
-        mark_left_path (L(p), att);
-        LEFT(p) = true;
-        return;
-    }
-
-    att = map_name (p, att);
-    if (!att) return;
-
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
-        for (unsigned int j = 0; j < p->child[i]->schema.count; j++)
-            if (att == p->child[i]->schema.items[j].name) {
-                mark_left_path (p->child[i], att);
-                break;
-            }
-
-    LEFT(p) = true;
-}
-
-/**
- * mark_right_path follows a path based on an initial
- * column name and marks all operators on the path as
- * being RIGHT children of the join.
- */
-static void
-mark_right_path (PFla_op_t *p, PFalg_att_t att)
-{
-    assert (p);
-
-    if (RIGHT(p))
-       return;
-
-    if (p->kind == la_frag_union ||
-        p->kind == la_empty_frag)
-        return;
-    else if (p->kind == la_eqjoin_unq &&
-             att == res(p)) {
-        mark_right_path (L(p), latt(p));
-        mark_right_path (R(p), ratt(p));
-        LEFT(p) = true;
-        return;
-    }
-    else if (p->kind == la_cond_err) {
-        mark_right_path (L(p), att);
-        LEFT(p) = true;
-        return;
-    }
-
-    att = map_name (p, att);
-
-    if (!att) return;
-
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
-        for (unsigned int j = 0; j < p->child[i]->schema.count; j++)
-            if (att == p->child[i]->schema.items[j].name) {
-                mark_right_path (p->child[i], att);
-                break;
-            }
-
-    RIGHT(p) = true;
-}
-
-/**
  * mark_left_subdag marks all operators in the DAG
  * underneath p as being LEFT children of the join.
  */
@@ -1508,6 +1423,117 @@ mark_right_subdag (PFla_op_t *p)
 
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         mark_right_subdag (p->child[i]);
+
+    RIGHT(p) = true;
+}
+
+/**
+ * mark_left_path follows a path based on an initial
+ * column name and marks all operators on the path as
+ * being LEFT children of the join.
+ */
+static void
+mark_left_path (PFla_op_t *p, PFalg_att_t att)
+{
+    assert (p);
+
+    if (LEFT(p))
+       return;
+
+    if (p->kind == la_frag_union ||
+        p->kind == la_empty_frag)
+        return;
+    else if (p->kind == la_eqjoin_unq &&
+             att == res(p)) {
+        mark_left_path (L(p), latt(p));
+        mark_left_path (R(p), ratt(p));
+        LEFT(p) = true;
+        return;
+    }
+    else if (p->kind == la_cond_err) {
+        mark_left_path (L(p), att);
+        LEFT(p) = true;
+        return;
+    }
+    else if (p->kind == la_disjunion ||
+             p->kind == la_intersect ||
+             p->kind == la_difference) {
+        /* the name column is split into multiple columns
+           so we fall back to the primitive variant */
+        mark_left_subdag (p);
+        return;
+    }
+
+    att = map_name (p, att);
+    if (!att) {
+        /* we could not follow the names and
+           have to fall back to the primitive variant */
+        mark_left_subdag (p);
+        return;
+    }
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+        for (unsigned int j = 0; j < p->child[i]->schema.count; j++)
+            if (att == p->child[i]->schema.items[j].name) {
+                mark_left_path (p->child[i], att);
+                break;
+            }
+
+    LEFT(p) = true;
+}
+
+/**
+ * mark_right_path follows a path based on an initial
+ * column name and marks all operators on the path as
+ * being RIGHT children of the join.
+ */
+static void
+mark_right_path (PFla_op_t *p, PFalg_att_t att)
+{
+    assert (p);
+
+    if (RIGHT(p))
+       return;
+
+    if (p->kind == la_frag_union ||
+        p->kind == la_empty_frag)
+        return;
+    else if (p->kind == la_eqjoin_unq &&
+             att == res(p)) {
+        mark_right_path (L(p), latt(p));
+        mark_right_path (R(p), ratt(p));
+        LEFT(p) = true;
+        return;
+    }
+    else if (p->kind == la_cond_err) {
+        mark_right_path (L(p), att);
+        LEFT(p) = true;
+        return;
+    }
+    else if (p->kind == la_disjunion ||
+             p->kind == la_intersect ||
+             p->kind == la_difference) {
+        /* the name column is split into multiple columns
+           so we fall back to the primitive variant */
+        mark_right_subdag (p);
+        return;
+    }
+
+    att = map_name (p, att);
+
+    if (!att) {
+        /* we could not follow the names and
+           have to fall back to the primitive variant */
+        mark_right_subdag (p);
+        return;
+    }
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+        for (unsigned int j = 0; j < p->child[i]->schema.count; j++)
+            if (att == p->child[i]->schema.items[j].name) {
+                mark_right_path (p->child[i], att);
+                break;
+            }
 
     RIGHT(p) = true;
 }

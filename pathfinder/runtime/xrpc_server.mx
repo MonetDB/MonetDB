@@ -322,28 +322,27 @@ isTrusted(stream *out, char *location)
  * @return PRE, or 0 if not found.
  */
 static INLINE oid
-get_req_node_pre(
-        stream *out,
-        oid   start_pre,
-        oid   end_pre,
-        oid  *pre_propT,
-        char *pre_kindT,
-        BAT  *qn_prefix_uri_loc)
+get_pre_by_qname(str qname,
+                 oid start_pre,
+                 oid end_pre,
+                 oid *pre_propT,
+                 char *pre_kindT,
+                 BAT *qn_uri_loc)
 {
     oid i;
-    char *qname = NULL;
-    BATiter qn_puli;
-    
-    qn_puli = bat_iterator(qn_prefix_uri_loc);
+    BUN bun = BUN_NONE;
+    BATiter qn_uli = bat_iterator(qn_uri_loc);
+
     for (i = start_pre; i <= end_pre; i++) {
         if (pre_kindT[i] == ELEMENT) {
-            qname = BUNtail(qn_puli, BUNfnd(qn_prefix_uri_loc, &(pre_propT[i])));
-            if(strcmp(qname, "xrpc|"XRPC_NS"|request") == 0)
+            BUNfndVOID(bun, qn_uli, &(pre_propT[i]));
+            if(bun == BUN_NONE)
+                return 0;
+            if(strcmp(BUNtail(qn_uli, bun), qname) == 0)
                 return i;
         }
     }
 
-    send_err(out, ERR404, "env:Sender", "The required \""XRPC_NS":request\" element not found");
     return 0;
 }
 
@@ -510,12 +509,12 @@ getCallValues(stream *out,
     frag_root  = BATsetaccess(frag_root, BAT_APPEND);
     nattrs     = BATcount(attr_prop);
 
-    /* There are at least two nodes before "request", namely "Envelope"
-     * and "Body" (a "Header" node is optional). There are at least one
-     * node after "request", namely "sequence". */
-    if (!(req_node_pre = get_req_node_pre(out, 2, BATcount(pre_size),
-                    pre_propT, pre_kindT, qn_prefix_uri_loc)))
+    if (!(req_node_pre = get_pre_by_qname(XRPC_NS"|request",
+                    2, /* There are at least two nodes before "request" */
+                    BATcount(pre_size), pre_propT, pre_kindT, qn_uri_loc))) {
+        send_err(out, ERR404, "env:Sender", "The required \""XRPC_NS":request\" element not found");
         return GDK_FAIL;
+    }
     while(ao_ptr < nattrs && attr_ownT[ao_ptr] < req_node_pre) ao_ptr++;
     while(ao_ptr < nattrs && attr_ownT[ao_ptr] == req_node_pre) {
         char *pul = (char*) BUNtail(qn_puli, BUNfirst(qn_prefix_uri_loc) + attr_qnT[ao_ptr]);
@@ -553,7 +552,17 @@ getCallValues(stream *out,
             return GDK_FAIL;
         }
     } else {
-        iterc = BATcount(BATselect(qn_uri_loc, XRPC_NS"|call", XRPC_NS"|call"));
+        /* calculate iterc by counting the "xrpc:call" nodes */
+        call_node_pre = get_pre_by_qname(XRPC_NS"|call", req_node_pre + 1,
+                    req_node_pre + pre_sizeT[req_node_pre], pre_propT,
+                    pre_kindT, qn_uri_loc); /* remember first "xrpc:call" */
+        next_call_node_pre = call_node_pre;
+        do {
+            iterc++; /* found an "xrpc:call", try next */
+            next_call_node_pre = next_call_node_pre + pre_sizeT[next_call_node_pre] + 1;
+        } while ((next_call_node_pre = get_pre_by_qname(XRPC_NS"|call",
+                        next_call_node_pre, req_node_pre + pre_sizeT[req_node_pre],
+                        pre_propT, pre_kindT, qn_uri_loc)));
     }
     argc = my_strtol(out, FALSE, arity_str, "arity");
     if(errno) {
@@ -589,24 +598,27 @@ getCallValues(stream *out,
         return GDK_FAIL;
     }
    
-    call_node_pre = req_node_pre + 1;
+    call_node_pre = call_node_pre > 0 ? call_node_pre :
+        get_pre_by_qname(XRPC_NS"|call", (req_node_pre + 1),
+                req_node_pre + pre_sizeT[req_node_pre] + 1, pre_propT,
+                pre_kindT, qn_uri_loc);
     /* Fill the arrays 'argcnt', 'argval', 'argtpe' */
     /* i: index in xrpc:call; j: index of xrpc:sequence per xrpc:call */
     for(i = 0; next_call_node_pre < BATcount(pre_size); call_node_pre = next_call_node_pre, i++) {
         /* skip possible empty text node, without further checking */
-        call_node_pre += (pre_kindT[call_node_pre] == ELEMENT ? 0 : 1);
+        call_node_pre += (pre_kindT[call_node_pre] == TEXT ? 1 : 0);
         next_call_node_pre = call_node_pre + pre_sizeT[call_node_pre] + 1;
 
         for(seq_node_pre = call_node_pre + 1, j = 0; seq_node_pre < next_call_node_pre;
                 seq_node_pre = next_seq_node_pre, j++) {
             /* skip possible empty text nodes, without further checking */
-            seq_node_pre += (pre_kindT[seq_node_pre] == ELEMENT ? 0 : 1);
+            seq_node_pre += (pre_kindT[seq_node_pre] == TEXT ? 1 : 0);
             next_seq_node_pre = seq_node_pre + pre_sizeT[seq_node_pre] + 1;
        
             for(tpe_node_pre = seq_node_pre+1, k=1; tpe_node_pre < next_seq_node_pre;
                     tpe_node_pre = next_tpe_node_pre, k++) {
                 /* skip possible empty text nodes, without further checking */
-                tpe_node_pre += (pre_kindT[tpe_node_pre] == ELEMENT ? 0 : 1);
+                tpe_node_pre += (pre_kindT[tpe_node_pre] == TEXT ? 1 : 0);
                 next_tpe_node_pre = tpe_node_pre + pre_sizeT[tpe_node_pre]+1;
                 /* advance our cursor in attr_own */
                 while(ao_ptr < nattrs && attr_ownT[ao_ptr] < tpe_node_pre) ao_ptr++;
@@ -708,7 +720,8 @@ getCallValues(stream *out,
                        strcmp(argtpe[nr_args], "xs:comment") == 0 ||
                        strcmp(argtpe[nr_args], "xs:processing-instruction") == 0) {
                         val_node_pre = tpe_node_pre + 1;
-                        val_node_pre += (pre_kindT[val_node_pre] == ELEMENT ? 0 : 1);
+                        if(strcmp(argtpe[nr_args], "xs:text") != 0)
+                            val_node_pre += (pre_kindT[val_node_pre] == TEXT ? 1 : 0);
                     } else if (strcmp(argtpe[nr_args], "xs:document") == 0) {
                         val_node_pre = tpe_node_pre;
                         pre_kindT[val_node_pre] = 4;

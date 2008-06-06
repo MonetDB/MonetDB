@@ -675,19 +675,15 @@ PROC exit() : void { # redefine exit to do a checkpoint first
 
 
 # the logger background thread
-var logger_base := 0;
 PROC pf_logmanager() : void {
-    logger_base := logger_changes(pf_logger);
     var cnt := 0;
     while(true) {
         var changes := logger_changes(pf_logger);
-        var delta := changes - logger_base;
         if (((cnt :+= 1) % 10) = 0) { 
             cleantmpdir((msec() / 1000LL) - 3600LL);
         }
-        if (((delta < 0) or (delta > 100000)) and (cnt > 10)) { 
+        if ((changes > 100000) and (cnt > 10)) { 
             pf_logflush(0LL);
-            logger_base = changes;
             cnt := 0;
         } 
         sleep(30);  
@@ -2880,7 +2876,7 @@ PROC ws_newpage(BAT[void,BAT] ws,
     # if there is a free page, then this is easy
     var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
     lock_set(coll_shortlock);
-    var page_id := 0@0; err := CATCH(page_id := __runtime_newpage(runtime));
+    var page_id := 0@0, err := CATCH(page_id := __runtime_newpage(runtime));
     lock_unset(coll_shortlock);
 
     if (isnil(err) and isnil(page_id)) {
@@ -4026,7 +4022,7 @@ collection_cleanup(_collection_cleanup()); # silently clean up the repository
 
 mapi_register(xquery_frontend()); # open up mapi client access
 if (monet_environment.find("monet_welcome") = "yes") 
-    printf("%c MonetDB/XQuery module v0.25.0 loaded\n", int(35));
+    printf("%c MonetDB/XQuery module v0.25.0 loaded (default back-end is '%s')\n", int(35), monet_environment.find("xquery_backend"));
     #                                 ^^^^^^
     # Maintained via vertoo. Please don't modify by hand!
     # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -4434,13 +4430,13 @@ xquery_compile_exec(xquery_client *ctx,
         options |= COMPILE_OPTION_STANDOFF;
     /* Setting the Algebra flag; server setting overules compile-time default; client choice overrules server setting */
 #if MILPRINT_SUMMER_IS_DEFAULT
-    if ((ctx->mode & XQ_ALGEBRA) || \
-        (!(ctx->mode & XQ_MILPRINT_SUMMER) && \
+    if (((ctx->mode & XQ_ALGEBRA) != 0) || \
+        (((ctx->mode & XQ_MILPRINT_SUMMER) == 0) && \
          (GDKgetenv("xquery_backend") != NULL) && (strcmp(GDKgetenv("xquery_backend"),"algebra") == 0)))
         options |= COMPILE_OPTION_ALGEBRA;
 #else /* ALGEBRA_IS_DEFAULT */
-    if (!(ctx->mode & XQ_MILPRINT_SUMMER) && \
-        ((ctx->mode & XQ_ALGEBRA) || \
+    if (((ctx->mode & XQ_MILPRINT_SUMMER) != 0) && \
+        (((ctx->mode & XQ_ALGEBRA) == 0) || \
          (GDKgetenv("xquery_backend") == NULL) || (strcmp(GDKgetenv("xquery_backend"),"milprint_summer") != 0)))
         options |= COMPILE_OPTION_ALGEBRA;
 #endif
@@ -6232,6 +6228,14 @@ extern void xmlInitParser(void);
 bat *
 xquery_prelude(void)
 {
+    if (GDKgetenv("xquery_backend") == NULL) {
+#if MILPRINT_SUMMER_IS_DEFAULT
+        GDKsetenv("xquery_backend","milprint_summer");
+#else /* ALGEBRA_IS_DEFAULT */
+        GDKsetenv("xquery_backend","algebra");
+#endif
+    }
+
     MT_init_lock(pf_compiler_lock, "pf_compiler_lock");
     MT_init_lock(pf_module_lock, "pf_module_lock");
     MT_init_lock(pf_cache_lock, "pf_cache_lock");

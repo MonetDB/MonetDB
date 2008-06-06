@@ -455,37 +455,45 @@ opt_const (PFla_op_t *p, bool no_attach)
                and replace it by an unpartitioned count */
             if (p->schema.count == 1 &&
                 L(p)->kind == la_project &&
-                L(L(p))->kind == la_count &&
-                PFprop_const (L(L(p))->prop, L(L(p))->sem.aggr.part) &&
+                LL(p)->kind == la_count &&
+                PFprop_const (LL(p)->prop, LL(p)->sem.aggr.part) &&
+                L(p)->sem.proj.items[0].old == LL(p)->sem.aggr.res &&
                 R(p)->kind == la_project &&
-                L(R(p))->kind == la_attach &&
-                L(R(p))->sem.attach.value.type == aat_int &&
-                L(R(p))->sem.attach.value.val.int_ == 0 &&
-                L(L(R(p)))->kind == la_difference &&
-                R(L(L(R(p))))->kind == la_project &&
-                R(L(L(R(p))))->sem.proj.items[0].new ==
-                L(L(p))->sem.aggr.part &&
-                L(R(L(L(R(p))))) == L(L(p))) {
+                RL(p)->kind == la_attach &&
+                R(p)->sem.proj.items[0].old == RL(p)->sem.attach.res &&
+                RL(p)->sem.attach.value.type == aat_int &&
+                RL(p)->sem.attach.value.val.int_ == 0 &&
+                RLL(p)->kind == la_difference &&
+                RLLR(p)->kind == la_project &&
+                RLLR(p)->sem.proj.items[0].old ==
+                LL(p)->sem.aggr.part &&
+                L(RLLR(p)) == LL(p)) {
 
                 /* check that the values in the loop are constant
                    and provide the same value */
-                assert (PFprop_const (L(L(L(R(p))))->prop,
-                                      L(L(p))->sem.aggr.part));
+                assert (PFprop_const (RLLL(p)->prop,
+                                      LL(p)->sem.aggr.part));
                 assert (
                     PFalg_atom_comparable (
-                        PFprop_const_val (L(L(L(R(p))))->prop,
-                                          L(L(p))->sem.aggr.part),
-                        PFprop_const_val (L(L(p))->prop,
-                                          L(L(p))->sem.aggr.part)) &&
+                        PFprop_const_val (RLLL(p)->prop,
+                                          RLLR(p)->sem.proj.items[0].new),
+                        PFprop_const_val (LL(p)->prop,
+                                          LL(p)->sem.aggr.part)) &&
                     !PFalg_atom_cmp (
-                        PFprop_const_val (L(L(L(R(p))))->prop,
-                                          L(L(p))->sem.aggr.part),
-                        PFprop_const_val (L(L(p))->prop,
-                                          L(L(p))->sem.aggr.part)));
+                        PFprop_const_val (RLLL(p)->prop,
+                                          RLLR(p)->sem.proj.items[0].new),
+                        PFprop_const_val (LL(p)->prop,
+                                          LL(p)->sem.aggr.part)));
 
-                *p = *PFla_count (L(L(L(p))),
-                                  p->schema.items[0].name,
-                                  att_NULL);
+                /* To avoid creating more results than allowed (1 instead
+                   of 0) we have to make sure that we take the cardinality
+                   of the loop relation into account. */
+                *p = *project (cross (RLLL(p), /* loop */
+                                      PFla_count (LLL(p),
+                                                  R(p)->sem.proj.items[0].old,
+                                                  att_NULL)),
+                               proj (R(p)->sem.proj.items[0].new,
+                                     R(p)->sem.proj.items[0].old));
                 break;
             }
             break;
@@ -659,6 +667,11 @@ opt_const (PFla_op_t *p, bool no_attach)
             /* some optimization opportunities for
                aggregate operators arise if 'att' is constant */
             if (PFprop_const_left (p->prop, p->sem.aggr.att)) {
+
+#if 0 /* We are not allowed to create an unpartitioned aggregate
+         as an empty loop relation might result in a single line
+         result otherwise. */
+         
                 /* if partitioning column is constant as well
                    replace aggregate by a new literal table
                    with one row containing 'att' and 'part' */
@@ -677,6 +690,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                    constant we can replace the aggregate by a
                    distinct operator (value in 'att' stays the same). */
                 else if (p->sem.aggr.part)
+#endif
                     *p = *PFla_distinct (
                               PFla_project (
                                   L(p),
@@ -684,6 +698,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                                               p->sem.aggr.att),
                                   PFalg_proj (p->sem.aggr.part,
                                               p->sem.aggr.part)));
+#if 0
                 /* replace aggregate by a new literal table
                    containining a single record with the result of
                    aggregate operator. */
@@ -693,6 +708,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                                             PFprop_const_val_left (
                                                 p->prop,
                                                 p->sem.aggr.att)));
+#endif
             }
             break;
 
@@ -704,6 +720,10 @@ opt_const (PFla_op_t *p, bool no_attach)
                                                           p->sem.aggr.att));
             }
 
+#if 0 /* We are not allowed to create an unpartitioned aggregate
+         as an empty loop relation might result in a single line
+         result otherwise. */
+         
             /* if partitiong attribute is constant remove it
                and attach it after the operator */
             if (p->sem.aggr.part &&
@@ -739,6 +759,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                 *p = *ret;
                 SEEN(p) = true;
             }
+#endif
             break;
 
         case la_rownum:
@@ -814,17 +835,24 @@ opt_const (PFla_op_t *p, bool no_attach)
                 PFprop_const_left (p->prop, p->sem.aggr.att)) {
                 PFla_op_t *op, *ret;
                 
+#if 0 /* We are not allowed to create an unpartitioned aggregate
+         as an empty loop relation might result in a single line
+         result otherwise. */
+
                 if (PFprop_const_left (p->prop, p->sem.aggr.part)) {
                     op = lit_tbl (attlist (p->sem.aggr.part),
                                   tuple (PFprop_const_val_left (
                                              p->prop,
                                              p->sem.aggr.part)));
                 } else {
+#endif
                     op = distinct (
                              project (L(p),
                                       proj (p->sem.aggr.part,
                                             p->sem.aggr.part)));
+#if 0
                 }
+#endif
 
                 ret = add_attach (op, p->sem.aggr.att,
                                   PFprop_const_val_left (
@@ -833,6 +861,10 @@ opt_const (PFla_op_t *p, bool no_attach)
                 *p = *ret;
                 SEEN(p) = true;
             }
+#if 0 /* We are not allowed to create an unpartitioned aggregate
+         as an empty loop relation might result in a single line
+         result otherwise. */
+
             else if (PFprop_const_left (p->prop, p->sem.aggr.att)) {
                 PFla_op_t *ret = lit_tbl (attlist (p->sem.aggr.att),
                                           tuple (PFprop_const_val_left (
@@ -842,6 +874,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                 SEEN(p) = true;
             }
             /* fall through */
+#endif
         case la_seqty1:
             /* introduce attach if necessary */
             if (PFprop_const_left (p->prop, p->sem.aggr.att)) {
@@ -849,6 +882,10 @@ opt_const (PFla_op_t *p, bool no_attach)
                                    PFprop_const_val_left (p->prop,
                                                           p->sem.aggr.att));
             }
+
+#if 0 /* We are not allowed to create an unpartitioned aggregate
+         as an empty loop relation might result in a single line
+         result otherwise. */
 
             /* if partitiong attribute is constant remove it
                and attach it after the operator */
@@ -872,6 +909,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                 *p = *ret;
                 SEEN(p) = true;
             }
+#endif
             break;
 
         case la_cond_err:

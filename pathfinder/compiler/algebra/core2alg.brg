@@ -3067,13 +3067,17 @@ locstep (core2alg_ctx_t *ctx,
      * A(L(p)).rel contains a axis node with information on the
      * location step. Will be read out in PFla_step().
      */
-    PFla_op_t *step = PFla_step_simple (
-                          PFla_set_to_la (p.frag),
-                          project (p.rel,
-                                   proj (att_iter, att_iter),
-                                   proj (att_item, att_item)),
-                          locstep_spec (axis, ty),
-                          att_iter, att_item, att_item);
+    PFla_op_t *step = PFla_project (
+                          PFla_step_join_simple (
+                              PFla_set_to_la (p.frag),
+                              project (p.rel,
+                                       proj (att_iter, att_iter),
+                                       proj (att_item, att_item)),
+                              locstep_spec (axis, ty),
+                              att_item,
+                              att_item1),
+                          PFalg_proj (att_iter, att_iter),
+                          PFalg_proj (att_item, att_item1));
 
     if (ORDERING)
         return (struct  PFla_pair_t) {

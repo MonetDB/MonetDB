@@ -2368,11 +2368,18 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_att_t att,
         {
             if (pos)
                 assert_ty = n->schema.items[i].type & ty;
-            else
+            else {
                 /* the restricted type assert_ty is the original
                    type without type ty */
                 assert_ty = n->schema.items[i].type -
                             (n->schema.items[i].type & ty);
+                /* make sure that all node type bits are retained */
+                if (assert_ty & aat_nkind)
+                    assert_ty = assert_ty | aat_pre | aat_frag;
+                /* make sure that all attr type bits are retained */
+                if (assert_ty & aat_attr)
+                    assert_ty = assert_ty | aat_pre | aat_frag;
+            }
             break;
         }
 

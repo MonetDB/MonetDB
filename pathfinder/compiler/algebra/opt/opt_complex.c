@@ -635,6 +635,7 @@ opt_complex (PFla_op_t *p)
                 break;
             }
 
+#if 0 /* disable join -> semijoin rewrites */
             /* introduce semi-join operator if possible */
             if (!left_arg_req &&
                 (PFprop_key_left (p->prop, p->sem.eqjoin.att1) ||
@@ -750,6 +751,7 @@ opt_complex (PFla_op_t *p)
                 *p = *PFla_project_ (semijoin, count, proj);
                 break;
             }
+#endif
         }   break;
 
         case la_semijoin:
