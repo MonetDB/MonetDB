@@ -345,7 +345,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	}
 	if (pl == 0) {
 		/* compress the plant table*/
-		for(k=i=0;i<lastPlant; i++)
+		for(k=i=0;i<=lastPlant; i++)
 		if( plants[i].inuse)
 			plants[k++]= plants[i];
 		lastPlant = k;
@@ -540,7 +540,6 @@ yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 	
 	if (i>=0) {
 		pl = plants+i;
-		pl->inuse = 0;
 		pl->pc = pc + 1;
 		pl->client = NULL;
 		pl->caller = NULL;
