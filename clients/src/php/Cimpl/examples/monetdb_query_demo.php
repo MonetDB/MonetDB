@@ -7,7 +7,7 @@
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
 # License for the specific language governing rights and limitations
-# under the License.
+# under the License.?
 #
 # The Original Code is the MonetDB Database System.
 #
@@ -27,7 +27,13 @@
 
   <body>
 <?php
-dl("monetdb.so");
+if (!extension_loaded('monetdb')) {
+	$prefix = (PHP_SHLIB_SUFFIX == 'dll') ? 'php_' : '';
+	// note: PHP5 says it deprecates this, but I can't find
+	//       how to make PHP5 happy...
+	dl($prefix.'monetdb.'.PHP_SHLIB_SUFFIX) or
+		die("Unable to load monetdb module!");
+}
 
 $db = monetdb_connect("sql", "localhost", 50000, "monetdb", "monetdb");
 
@@ -38,20 +44,20 @@ $tables = monetdb_query('SELECT name FROM tables');
   <input type="hidden" name="postback" value="query" />
   <select name="table" onchange="document.theform.query.value='SELECT * FROM ' + document.theform.table.value;">
     <option value=""></option>
-<?
+<?php
 	for ($i = 0; $line = @monetdb_fetch_assoc($tables); $i++) {
 ?>
 	<option value="<?=htmlspecialchars($line['name'])?>">
 	  <?=htmlspecialchars($line['name'])?>
 	</option>
-<?
+<?php
 	}
 ?>
   </select>
   <input type="text" name="query" value="<?=htmlspecialchars($_REQUEST['query'])?>" />
   <input type="submit" value="Query!" />
 </form>
-<?
+<?php
 
 	if ($_REQUEST['postback'] == "query") {
 		print "<table>";
@@ -78,6 +84,6 @@ $tables = monetdb_query('SELECT name FROM tables');
 
   </body>
 </html>
-<?
+<?php
 // vim:ts=4:sw=4:tw=0:noexpandtab
 ?>

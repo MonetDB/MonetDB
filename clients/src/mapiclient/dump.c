@@ -97,8 +97,11 @@ get_schema(Mapi mid)
 		mapi_close_handle(hdl);
 		return NULL;
 	}
+	/* copy before closing the handle */
+	if (sname)
+		sname = strdup(sname);
 	mapi_close_handle(hdl);
-	return sname ? strdup(sname) : NULL;
+	return sname;
 }
 
 int

@@ -1,5 +1,5 @@
 #!/usr/bin/php 
-<?
+<?php
 if (!extension_loaded('monetdb')) {
 	$prefix = (PHP_SHLIB_SUFFIX == 'dll') ? 'php_' : '';
 	// note: PHP5 says it deprecates this, but I can't find
