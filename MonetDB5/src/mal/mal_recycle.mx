@@ -853,7 +853,8 @@ RECYCLEshutdown(){
 }
 
 @-
-Evict a bat from recycle cache, for instance if an update on it has been detected. 
+Evict a bat from recycle cache, for instance if an update on it 
+has been detected. 
 @c
 static void 
 RECYCLEevict(bat bid){
@@ -883,10 +884,10 @@ RECYCLEevict(bat bid){
 				if(getArgType(recycleBlk,p,j)==TYPE_bat || 
 					isaBatType(getArgType(recycleBlk, p,j)) ){
 					int nbid = getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
-					if (nbid == -1) continue;
+					if (nbid == 0) continue;
 					for (k=0; k<top; k++)
 						if (dropped[k]== nbid)
-						break;
+							break;
 					if (k < top) break;
 			}
 			if (j<p->argc){  /* delete instruction dependent on updated bat */
@@ -896,7 +897,9 @@ RECYCLEevict(bat bid){
 					dropped[top++]= getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
 				RECYCLEgarbagecollect(recycleBlk, p);
 				removeInstruction(recycleBlk, p);
+				i=0;	/* restart check */
 				action++;
+				continue;
 			}
 		}
 		if (action) upd++;
@@ -909,8 +912,8 @@ RECYCLEevict(bat bid){
 }
 
 @-
-Once we encounter an update we check and clean the recycle cache from instructions
-dependent on the updated bat.
+Once we encounter an update we check and clean the recycle cache from 
+instructions dependent on the updated bat.
 @c
 void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -920,10 +923,11 @@ void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE reset\n");
 #endif
-	(void) mb;
-	for (j=p->retc; j<p->argc; j++){
+	for (j=p->retc; j<p->argc; j++)
+	if(getArgType(mb,p,j)==TYPE_bat || 
+		isaBatType(getArgType(mb, p,j)) ){
  		v = &stk->stk[getArg(p,j)];
-		if(v->vtype == TYPE_bat )
+		if(v->vtype == TYPE_bat && v->val.bval )
 			RECYCLEevict(v->val.bval);
 	}
 }
