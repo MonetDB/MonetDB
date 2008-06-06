@@ -61,6 +61,7 @@
                  | expression '.CTrefine (' expression ')'  <m_ctrefine>
                  | expression '.CTrefine_rev (' exp ')'     <m_ctrefine_rev>
                  | expression '.CTderive (' expression ')'  <m_ctderive>
+                 | expression '.texist (' expression ')'    <m_texist>
                  | expression '.insert (' expression ')'    <m_binsert>
                  | expression '.append (' expression ')'    <m_bappend>
                  | expression '.fetch (' expression ')'     <m_fetch>
@@ -281,6 +282,7 @@ static char *ID[] = {
     , [m_ctrefine]     = "CTrefine"
     , [m_ctrefine_rev] = "CTrefine_rev"
     , [m_ctderive]     = "CTderive"
+    , [m_texist]       = "texist"
 
     , [m_add]          = "+"
     , [m_madd]         = "[+]"
@@ -707,6 +709,8 @@ print_expression (PFmil_t * n)
         case m_ctrefine_rev:
         /* expression : expression '.CTderive (' expression ')' */
         case m_ctderive:
+        /* expression : expression '.texist (' expression ')' */
+        case m_texist:
         /* expression : expression '.insert (' expression ')' */
         case m_binsert:
         /* expression : expression '.append (' expression ')' */

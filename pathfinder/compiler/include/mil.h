@@ -217,6 +217,7 @@ enum PFmil_kind_t {
     , m_ctrefine     /**< MIL CTrefine function */
     , m_ctrefine_rev /**< MIL CTrefine_rev function */
     , m_ctderive     /**< MIL CTderive function */
+    , m_texist       /**< MIL texist function */
 
     , m_cast         /**< typecast */
     , m_mcast        /**< multiplexed typecast */
@@ -653,6 +654,9 @@ PFmil_t * PFmil_ctrefine (const PFmil_t *, const PFmil_t *, bool dir_desc);
 
 /** MIL CTderive function */
 PFmil_t * PFmil_ctderive (const PFmil_t *, const PFmil_t *);
+
+/** MIL texist function */
+PFmil_t * PFmil_texist (const PFmil_t *, const PFmil_t *);
 
 /** enumerate operator, return sequence of integers */
 PFmil_t * PFmil_enumerate (const PFmil_t *, const PFmil_t *);

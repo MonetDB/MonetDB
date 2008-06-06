@@ -945,6 +945,15 @@ PFmil_ctderive (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
+ * Monet texist function.
+ */
+PFmil_t *
+PFmil_texist (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_texist, a, b);
+}
+
+/**
  * enumerate operator, return sequence of integers
  * starting from @a a with the length @a l.
  */

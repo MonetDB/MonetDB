@@ -221,7 +221,10 @@
 #define ctrefine(a,b,c) PFmil_ctrefine((a),(b),(c))
 
 /** CTderive() function */
-#define ctderive(a,b) PFmil_ctderive(a,b)
+#define ctderive(a,b) PFmil_ctderive((a),(b))
+
+/** texist() function */
+#define texist(a,b) PFmil_texist((a),(b))
 
 /** max() operator */
 #ifdef max
