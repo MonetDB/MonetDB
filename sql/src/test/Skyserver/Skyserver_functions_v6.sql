@@ -2283,3 +2283,29 @@ BEGIN
         RETURN   link + plate + '/1d/spSpec-'+mjd+'-'+plate+'-'+fiber+'.fit';
 END;
 
+CREATE FUNCTION fGetNearestObjAllEq (ra float, "dec" float, r float)
+RETURNS TABLE (
+    objID bigint,
+    run int ,
+    camcol int ,
+    field int ,
+    rerun int ,
+    type int ,
+    mode int ,
+    cx float ,
+    cy float ,
+    cz float ,
+    htmID bigint,
+    distance float		-- distance in arc minutes
+  ) 
+BEGIN
+	DECLARE d2r float,nx float,ny float,nz float ;
+	set d2r = PI()/180.0;
+	set nx  = COS("dec"*d2r)*COS(ra*d2r);
+	set ny  = COS("dec"*d2r)*SIN(ra*d2r);
+	set nz  = SIN("dec"*d2r);
+	RETURN TABLE (SELECT * 
+	FROM fGetNearbyObjAllXYZ(nx,ny,nz,r)
+	ORDER BY distance ASC LIMIT 1);   -- order by needed to get the closest one.
+END;
+
