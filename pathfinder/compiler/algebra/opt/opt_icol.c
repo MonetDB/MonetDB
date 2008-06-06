@@ -415,6 +415,8 @@ opt_icol (PFla_op_t *p)
                            are not allowed to throw away the textnode
                            constructor. */
                         break;
+                    default:
+                        assert(0);
                 }
             else if (L(p)->kind == la_doc_tbl &&
                      !PFprop_icol (L(p)->prop, L(p)->sem.doc_tbl.res)) {
