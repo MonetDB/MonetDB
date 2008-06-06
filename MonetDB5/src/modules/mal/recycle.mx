@@ -70,18 +70,13 @@ optional arguments are [ instruction-, [memory -]] limit";
 command getCachePolicy():int
 address RECYCLEgetCache;
 
-pattern reset():void
+pattern reset(bid:bat):void
 address RECYCLEresetCMD
 comment "Reset off all recycled variables";
 
 command shutdown():void
 address RECYCLEshutdownWrap
 comment "Clear the recycle cache";
-
-command restore():void
-address RECYCLErestore
-comment "Restore the recycle cache to the start of the call";
-
 
 command monitor(f:int):void
 address RECYCLEmonitor
@@ -207,7 +202,7 @@ RECYCLEdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* and dump the statistics */
 	if (recycleBlk)
-	for(i=0; i< recycleBlk->stop; i++){
+	for(i=1; i< recycleBlk->stop; i++){
 		stream_printf(cntxt->fdout,"# %4d lru= %8d cnt= %8d ticks= %9d  rd= %9d  wr= %9d %s\n", i,
 			recycleBlk->profiler[i].clk,
 			recycleBlk->profiler[i].counter,
