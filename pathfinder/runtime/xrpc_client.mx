@@ -47,8 +47,8 @@ the "AmbientDB" project.
         str genType,
         str mode,
         str qid,
-        lng timeout,
         lng seqnr,
+        lng timeout,
         str dst,
         str module,
         str location,
@@ -145,7 +145,7 @@ PROC doLoopLiftedRPC(
         }
 
         var local_name := "rpc_res_00" + str(int($h)+off);
-        var rpc_res, timeout := max(0LL,xrpc_timeout - (usec() - timer_start));
+        var rpc_res, timeout := max(0LL,xrpc_timeout - ((usec() - time_start) / 1000));
         var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, xrpc_seqnr, timeout, $t, modname, location, method,
                     updCall, arity, itercnt, ws, fun_vid, fun_iter, fun_item,
                     fun_kind, int_values, dbl_values, dec_values, str_values));
@@ -166,21 +166,13 @@ PROC doLoopLiftedRPC(
             }
         } else {
             printf("doLoopLiftedRPC: error occurred at %s:\n%s\n", $t, rpc_err);
-            if(xrpc_qid != "") {
-                # abort a 2PC-XRPC query on error
-                lock_set(xrpc_lock);
-                CATCH({xrpc_statuses.replace(idx, "abort");});
-                lock_unset(xrpc_lock);
-                # TODO: stop immediately further execution and clean up
-            } else {
-                # A none-isolation XRPC query: we do not want to discard
-                # results from other destinations where executions might
-                # have succeeded, so we only print a message by error,
-                # iso. terminate the execution with 'ERROR'
-                lock_set(rpcerr_lock);
-                CATCH({ rpc_errors := rpc_errors + $t + ": " + rpc_err + "\n"; });
-                lock_unset(rpcerr_lock);
-            }
+            # A none-isolation XRPC query: we do not want to discard
+            # results from other destinations where executions might
+            # have succeeded, so we only print a message by error,
+            # iso. terminate the execution with 'ERROR'
+            lock_set(rpcerr_lock);
+            CATCH({ rpc_errors := rpc_errors + $t + ": " + rpc_err + "\n"; });
+            lock_unset(rpcerr_lock);
         }
     }
     if (xrpc_qid != "") lock_set(wslock);
@@ -204,7 +196,7 @@ PROC doLoopLiftedRPC(
     if(count(rpc_results) = 0) {
         ERROR("doLoopLiftedRPC: execution failed at all destinations:\n%s\n", rpc_errors);
     } else if(rpc_errors != "") {
-        printf("doLoopLiftedRPC: execution failed at some destinations:\n%s\n", rpc_errors);
+        ERROR("doLoopLiftedRPC: execution failed at some destinations:\n%s\n", rpc_errors);
     }
 
     # retrieve results for this destination, and map the results back to
@@ -290,7 +282,7 @@ PROC doIterativeRPC(
 
         var local_name := "rpc_res_00" + str(h+1);
         if (xrpc_qid != "") lock_unset(wslock);
-        var rpc_res, timeout := max(0LL,xrpc_timeout - (usec() - timer_start));
+        var rpc_res, timeout := max(0LL,xrpc_timeout - ((usec() - time_start)/1000));
         var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, xrpc_seqnr, timeout, $t, modname, location, method,
                     updCall, arity, lng(1), ws, cur_fun_vid, cur_fun_iter, cur_fun_item,
                     cur_fun_kind, int_values, dbl_values, dec_values, str_values));
@@ -380,7 +372,7 @@ PROC doRPC(
         doIterativeRPC(modname, location, method, updCall, arity, niters,
                         ws, dsts, fun_vid, fun_iter, fun_item, fun_kind, int_values, dbl_values, dec_values, str_values);
     else
-        doLoopliftedRPC(modname, location, method, updCall, arity, niters,
+        doLoopLiftedRPC(modname, location, method, updCall, arity, niters,
                         ws, dsts, fun_vid, fun_iter, fun_item, fun_kind, int_values, dbl_values, dec_values, str_values);
 }
 
@@ -814,7 +806,7 @@ byvalue_request(
         str genType,
         str rpc_mode,
         str qid,
-        str seqnr,
+        lng seqnr,
         lng timeout,
         str rpc_module,
         str rpc_uri,
@@ -918,7 +910,7 @@ byvalue_request(
             return clean_up(bs, argcnt, iterc);
     }
     ret = stream_printf(bs, XRPC_REQ_HEADER, rpc_module, rpc_uri, rpc_method, 
-                            arity, iterc, seqnr, rpc_mode, updCall?"true":"false");
+                            arity, iterc, xrpc_hostname, xrpc_port, seqnr, rpc_mode, updCall?"true":"false");
     if (ret < 0) 
         return clean_up(bs, argcnt, iterc);
 
@@ -1124,7 +1116,7 @@ CMDhttp_post(
         str genType,
         str rpc_mode,
         str qid,
-        str seqnr,
+        lng *seqnr,
         lng *timeout,
         str dst,
         str rpc_module,
@@ -1170,7 +1162,7 @@ CMDhttp_post(
         return GDK_FAIL;
     }
 
-    if(!(req = byvalue_request(timing, genType, rpc_mode, qid, seqnr, *timeout, rpc_module, rpc_uri, rpc_method,
+    if(!(req = byvalue_request(timing, genType, rpc_mode, qid, *seqnr, *timeout, rpc_module, rpc_uri, rpc_method,
                     *updCall, *arity, *itercnt, ws, fun_vid, fun_iter,
                     fun_item, fun_kind, int_values, dbl_values,
                     dec_values, str_values))){

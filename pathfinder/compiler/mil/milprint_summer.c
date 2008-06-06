@@ -11460,7 +11460,7 @@ const char* PFinitMIL(void) {
         "var xrpc_method := str_nil;   # and the method specified in the request message.\n"
         "var xrpc_shredBAT := int_nil; # bat-id (int) of a shredded XRPC message 2b added to the ws\n"
         "\n"
-        "# output mode"
+        "# output mode\n"
         "var genType := \"xml\";\n";
 }
 
@@ -11522,17 +11522,17 @@ const char* PFvarMIL(void) {
         "time_shred := 0LL;\n"\
         "time_print := 0LL;\n"\
         "time_exec := 0LL;\n"\
-        "time_start := usec();\n"
+        "time_start := usec();\n"\
+        "var try := 1;\n"
 #define PF_STARTMIL_NORMAL(STMT) PF_STARTMIL_START\
-        "var err;\n"\
+        "var err := str_nil;\n"\
         "{{var ws := empty_bat;\n"\
         "  err := CATCH({\n"\
         "  ws := ws_create(" STMT ");\n" PF_STARTMIL_END
 #define PF_STARTMIL_UPDATE PF_STARTMIL_START\
-        "var try := 1;\n"\
         "var err := \"!ERROR: conflicting update\";\n"\
         "var ws_log_wsid := 0LL;\n"\
-        "{while(((try :+= 1) <= 3) and not(isnil(err))) {\n"\
+        "{while(try <= 2) and not(isnil(err))) {\n"\
         " if (not(err.startsWith(\"!ERROR: conflicting update\"))) break;\n"\
         " var ws := empty_bat;\n"\
         " err := CATCH({\n"\
@@ -11601,9 +11601,7 @@ const char* PFstartMIL(int statement_type) {
         PF_PLAY_TIJAH_TAPE PF_STOPMIL_END("Update")
 #define PF_STOPMIL_END(LASTPHASE)\
         " });\n"\
-        " ws_log_wsid := ws_id(ws);\n"\
-        " if (not(isnil(err))) ws_log(ws, err);\n"\
-        " ws_destroy(ws);\n"\
+        " try := try + ws_end(ws, err);\n"\
         "}}\n"\
         PF_STOP_PFTIJAH\
         PF_STOPMIL_END_PRINT_TIMING(LASTPHASE)

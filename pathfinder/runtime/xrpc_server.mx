@@ -134,9 +134,6 @@ Start XPRC receiver using the default values as specified in \
 \"monet_environment\"",
 "xrpc_server");
 
-PROC print_xrpc() : void {
-    print(xrpc_qids,xrpc_statuses,xrpc_timeouts,xrpc_locks,xrpc_wsids);
-}
 @h
 #ifndef XRPC_SERVER_H
 #define XRPC_SERVER_H
@@ -225,7 +222,7 @@ PROC print_xrpc() : void {
                    " xrpc:method=\"%s\""\
                    " xrpc:arity=\"%lld\""\
                    " xrpc:iter-count=\"%lld\""\
-                   " xrpc:caller=\"%s\""\
+                   " xrpc:caller=\"%s:%d:"LLFMT"\""\
                    " xrpc:mode=\"%s\""\
                    " xrpc:updCall=\"%s\">"
 
@@ -593,7 +590,7 @@ xrpc_parse_message(stream *out,
                    bit isAdmin)
 {
     XRPCreq_t *req = NULL, *res = NULL;
-    char* msg = participants?XRPC_REQUEST:XRPC_RESPONSE;
+    char* msg = participants?XRPC_RESPONSE:XRPC_REQUEST;
     char *module = NULL, *method = NULL, *location = NULL;
     char *qid = NULL, *host = NULL, *caller = "query,0";
     char *querynr_str = NULL, *timeout_str = NULL, *mode_str = NULL;
@@ -997,38 +994,6 @@ parse_request(stream *out,
     return xrpc_parse_message(out, shredBAT, NULL, isAdmin);
 }
 
-/* return: 1: timedout; 0: not timedout; -1: not found; -2: other errors */
-int
-check_timeout_by_qid(char *qid, lng timeout)
-{
-    BATiter qidsi = bat_iterator(xrpc_qids);
-    oid qid_idx = oid_nil;
-    BUN bun_qid = BUN_NONE;
-    int ret = 1;
-
-    if(timeout > GDKusec())
-        return 0; /* not timed out */
-
-    MT_set_lock(PF_XRPC_LOCK, "check_timeout_by_qid");
-    if((bun_qid = BUNfnd(BATmirror(xrpc_qids), qid)) ==  BUN_NONE) {
-        GDKerror("check_timeout_by_qid: "
-                 "could not find QID \"%s\" in the meta-BAT "
-                 "\"xrpc_qids\"\n", qid);
-        ret = -1;
-    }
-    qid_idx =  *(oid*)BUNtail(qidsi, bun_qid);
-    if(!BUNreplace(xrpc_statuses, &qid_idx, "timedout", FALSE)){
-        MT_unset_lock(PF_XRPC_LOCK, "check_timeout_by_qid");
-        GDKerror("check_timeout_by_qid: "
-                 "failed to change the status of query \"%s\" into "
-                 "\"timedout\"\n", qid);
-        ret = -2;
-    }
-    MT_unset_lock(PF_XRPC_LOCK, "check_timeout_by_qid");
-    return ret; /* timed out */
-}
-
-
 /**
  * @return GDK_SUCCEED, or
  *         GDK_FAIL if an error has occurred.
@@ -1075,32 +1040,15 @@ execQuery(mapi_client *mc,
         ret = GDK_FAIL;
         /* if error was caused by other problems, we haven't checked
          * query expiration time */
-        int tdo = check_timeout_by_qid(req->qid, req->start + req->timeout);
         snprintf(errbuf_all, GDKMAXERRLEN*2,
-                "Error occurred during execution:\n%s\n%s\n%s",
-                tdo > 0 ? "xrpc query timed out" : "",
+                "Error occurred during execution:s\n%s\n%s",
                 *errbuf ? errbuf : "",
                 err == ((char*)-1) ? "no further error message" : err);
-        send_err(mc->c->fdout, tdo > 0 ? ERR504 : ERR404,
-                               tdo > 0 ? "env:Receiver" : "env:Sender",
-                               errbuf_all);
+        send_err(mc->c->fdout, ERR404, "env:Sender", errbuf_all);
     } else if (req->updCall) {
-        /* updating functions donot involve the serializer, hence,
-         * time-out not checked yet */
-        ret = check_timeout_by_qid(req->qid, req->start + req->timeout);
-        if(ret){
-            snprintf(errbuf_all, GDKMAXERRLEN*2,
-                    "Error occurred when checking query expiration time:\n%s\n%s",
-                    ret > 0 ? "xrpc query timed out" : "",
-                    *errbuf ? errbuf : "no further error message.");
-            send_err(mc->c->fdout, ret > 0 ? ERR504 : ERR404,
-                                   ret > 0 ? "env:Receiver" : "env:Sender",
-                                   errbuf_all);
-            ret = GDK_FAIL;
-        } else { /* send empty HTTP OK header for updating request */
-            stream_write(mc->c->fdout, "HTTP/1.1 200 OK\r\n"
+        /* send empty HTTP OK header for updating request */
+        stream_write(mc->c->fdout, "HTTP/1.1 200 OK\r\n"
                     "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n", 1, 60);
-        }
     }
 
     stream_flush(mc->c->fdout);

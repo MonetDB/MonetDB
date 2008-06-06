@@ -511,10 +511,63 @@ var xrpc_qids     := bat("xrpc_qids");      # bat[void,str] query-id (host|times
 var xrpc_timeouts := bat("xrpc_timeouts");  # bat[void,lng] query timeout in usec
 var xrpc_wsids    := bat("xrpc_wsids");     # bat[void,lng] ID of the workingset associated with this query
 var xrpc_locks    := bat("xrpc_locks");     # bat[void,lock] lock for the workingset of this query 
-var xrpc_statuses := bat("xrpc_statuses");  # bat[void,str] 2PC status of this query: "exec", "prepare", "commit" or "abort"
+var xrpc_statuses := bat("xrpc_statuses");  # bat[void,str] 2PC status of this query: "exec", "wait", "prepare", "commit", "abort" or "timeout"
 var xrpc_lock     := pflock_get(6); # master XRPC lock, to protect above xrpc_* BATs
 var xrpc_hostport := my_hostname() + ":" + str(get_xrpc_port());
 var xrpc_querynr  := 9999999LL;
+
+# abort a 2PC transaction, keeping the record (note ws should have been destroyed already)
+PROC _ws_xrpc_abort(oid idx, str status) : void
+{
+    var wslock := xrpc_locks.find(idx);
+    xrpc_statuses.inplace(idx, status);
+    xrpc_wsids.inplace(idx, lng_nil);
+    xrpc_wslocks.inplace(idx, lock_nil);
+    lock_destroy(wslock);
+}
+
+# end a 2PC request. On success, unlock ws and keep waiting for more. On failure, abort it.
+PROC _ws_xrpc_end(lng wsid, str errmsg) : void
+{
+    var idx := xrpc_qids.find(xrpc_qid);
+    if (isnil(errmsg)) { 
+        xrpc_statuses.inplace(idx, "wait");
+        lock_unset(xrpc_wslocks.find(idx));
+    } else {
+        _ws_xrpc_abort(idx, "abort");
+    }
+}
+
+# background check to time-out waiting 2PC transactions, and prune them fully after an hour
+PROC _ws_xrpc_prune() : void
+{
+    var lim      := usec();
+    var timeout  := mirror(xrpc_statuses.ord_select("wait")).leftfetchjoin(xrpc_timeouts).ord_uselect(0LL,lim).project("timeout");
+    var aborted  := mirror(xrpc_wsids.ord_uselect(lng_nil,lng_nil)).leftfetchjoin(xrpc_statuses).ord_select("abort");
+
+    kunion(aborted,timeout)@batloop() {
+       var ws := bat(str(xrpc_wsids.find($h)));
+       ws_destroy(ws);
+       _ws_xrpc_abort($h,$t);
+    }
+    var relevant := xrpc_timeout.ord_uselect(lim - 3600000000LL,lng_nil).hmark(0@0);
+    if (count(relevant) < count(xrpc_timeout)) {
+        # pruned xrpc requests should all have destroyed wslock and ws (we let them leak here)
+        var relevant_qids     := relevant.leftfetchjoin(xrpc_qids);      xrpc_qids.delete().append(relevant_qids);
+        var relevant_timeouts := relevant.leftfetchjoin(xrpc_qtimeouts); xrpc_timeouts.delete().append(relevant_timeouts);
+        var relevant_wsids    := relevant.leftfetchjoin(xrpc_wsids);     xrpc_wsids.delete().append(relevant_wsids);
+        var relevant_locks    := relevant.leftfetchjoin(xrpc_locks);     xrpc_locks.delete().append(relevant_locks);
+        var relevant_statuses := relevant.leftfetchjoin(xrpc_statuses);  xrpc_statuses.delete().append(relevant_statuses);
+    }
+}
+
+PROC xrpc_status() : void {
+    lock_set(xrpc_lock);
+    var err := CATCH(print(xrpc_qids,xrpc_statuses,xrpc_timeouts,xrpc_locks,xrpc_wsids));
+    lock_unset(xrpc_lock);
+    if (not(isnil(err))) GDKerror(err);
+}
+
 
 # transaction debugging / performance profiling 
 var ws_log_lock := lock_create();
@@ -732,21 +785,7 @@ PROC pf_logmanager() : void {
 
         # remove working sets of non-busy XRPC requests that timed out or aborted
         lock_set(xrpc_lock);
-        var timedout := project(xrpc_timeouts.ord_uselect(0LL,usec()), "timedout");
-        var aborted := xrpc_wsids.ord_uselect(lng_nil,lng_nil).mirror().leftfetchjoin(xrpc_statuses).ord_select("abort");
-        kunion(aborted,timedout)@batloop() {
-            var wslock := xrpc_locks.find($h);
-            if (lock_try(ws_lock) = 0) {
-                # we just leave the list to grow for now :( 
-                var ws := ws_id(xrpc_wsids.find($h));
-                xrpc_statuses.inplace($h, $t);
-                xrpc_timeout.inplace($h, lng_nil);
-                xrpc_wsids.inplace($h, lng_nil);
-                xrpc_wslocks.inplace($h, lock_nil);
-                lock_destroy(wslock);
-                ws_destroy(ws);
-            }
-        }
+        CATCH(_ws_xrpc_prune());
         lock_unset(xrpc_lock);
     }
 }
@@ -847,6 +886,7 @@ var ws_mem := [oid]([int](mirror(ws_dsk)).[-](_RID_SIZE - PRE_SIZE)).access(BAT_
 var ws_rid := ws_mem.slice(PRE_SIZE, PRE_NID).rename("ws_rid");
               # of those, all master rid_* bats, and their (remapped) pre_* views
     ws_mem := ws_mem.slice(NID_RID, INT_MAX).rename("ws_mem");
+
 
 # scans for empty collections, and produces a list of kill-bats (fast - done inside the short lock)
 PROC _collection_cleanup() : BAT[str,str]
@@ -1433,34 +1473,54 @@ PROC _ws_xrpcget() : int
     return xrpc;
 }
 
-# create a new ws if necessary (res <= 0), returns wsid
-PROC _ws_new(int xrpc, oid idx, int update) : lng
+# create a new ws if necessary (res <= 0)
+PROC _ws_new(int xrpc, oid idx, int update) : BAT[void,bat]
 {
-    var wsid;
+    var ws;
     if (xrpc > 0) {
-        wsid := xrpc_wsids.find(idx);
+        ws := bat(xrpc_wsids.find(idx));
+        xrpc_statuses.inplace(idx,"exec");
     } else {
         var id := and(lng(newoid(1)), 2147483647LL);
-        var ws := [ws_new](mirror(ws_tpe), ws_tpe, ws_htp, ws_ttp, ws_seq);
+        ws := [ws_new](mirror(ws_tpe), ws_tpe, ws_htp, ws_ttp, ws_seq);
         wsid := <<(id, 32) + (lng(update) << 30) + lng(ws);
         ws.access(BAT_READ).rename(str(wsid));
         if (xrpc < 0) {
             var wslock := lock_create();
             xrpc_qids.append(xrpc_qid);
-            xrpc_timeouts.append(usec() + xrpc_timeout);
+            xrpc_timeouts.append(usec() + *(1000LL * xrpc_timeout));
             xrpc_wsids.append(wsid);
             xrpc_locks.append(wslock);
             xrpc_statuses.append("exec");
         }
     }
-    return wsid;
+    return ws;
+}
+
+   
+var update := 0;
+var xrpc_qid := "";
+var xrpc_seqnr := "";
+var xrpc_mode := "";
+var ws, wsid, xrpc, idx; ws := _ws_new(xrpc := _ws_xrpcget(), idx := oid(abs(xrpc)), update); wsid := ws_id(ws);
+
+PROC ws_end(BAT[void,bat] ws, str err) : int 
+{
+    ws_log_wsid := ws_id(ws);
+    if (not(isnil(err))) ws_log(ws, err);
+    ws_destroy(ws);
+    if (xrpc_qid = "") return 1;
+    lock_set(xrpc_lock);
+    CATCH(_ws_xrpc_end(wsid, err));
+    lock_unset(xrpc_lock);
+    return 2; # do not auto-restart 2PC transactions ever
 }
 
 PROC ws_create(int update) : BAT[void,bat]
 {
     # NOTE: use pre-query MIL variables xrpc_qid/xrpc_timeout to possibly re-use an existing ws
     lock_set(xrpc_lock);
-    var ws, xrpc, idx, err := CATCH(wsid := _ws_new(xrpc := _ws_xrpcget(), idx := oid(abs(xrpc)), update), ws := bat(str(wsid)));
+    var ws, wsid, xrpc, idx, err := CATCH(ws := _ws_new(xrpc := _ws_xrpcget(), idx := oid(abs(xrpc)), update), wsid := ws_id(ws));
     lock_unset(xrpc_lock);
     if (not(isnil(err))) ERROR(err);
 
@@ -4801,7 +4861,7 @@ xquery_parse_val(int t, char* v, BAT* item, BAT* kind, BAT* int_values, BAT* dbl
     int mt = xquery_types[t].monet_tpe;
     int k = xquery_types[t].kind;
     int vallen = sizeof(oid)+sizeof(oid);
-    size_t m = strlen(mil);
+    size_t m = mil?strlen(mil):0;
     oid buf[2], id;
     void *val = (void*) buf;
 
@@ -4812,7 +4872,10 @@ xquery_parse_val(int t, char* v, BAT* item, BAT* kind, BAT* int_values, BAT* dbl
     } else if (ATOMfromstr(mt, &val, &vallen, v) <= 0) {
        return "xquery_parse_val: illegal value.\n";
     }
-    if (mt == TYPE_int) {
+    if (mt == TYPE_bit) {
+        id = (*(bit*) val == TRUE);
+        @:bunappend(item, &id, (size_t) *(oid*), SZFMT, "@0")@
+    } else if (mt == TYPE_lng) {
         @:bunappend(int_values, val, *(lng*), LLFMT, "LL")@
         BATiter ivi = bat_iterator(int_values);
         id = *(oid*) BUNhead(ivi, BUNfnd(BATmirror(int_values), val));
@@ -5915,7 +5978,7 @@ xquery_prepare(xquery_client *ctx,
     }
 }
 @= setvar
-    if (strcmp(*(ctx->@1), @2)) { 
+    if (@2 && strcmp(*(ctx->@1), @2)) { 
         char* newval = GDKstrdup(@2);
         if (newval == NULL) return "setvar(@1): malloc failure";
         GDKfree(*(ctx->@1));

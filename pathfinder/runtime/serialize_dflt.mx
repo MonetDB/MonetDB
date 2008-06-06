@@ -994,7 +994,7 @@ static bool
 xrpc_startSerialize(XqueryCtx *ctx)
 {
     int len, ret = 0;
-    lng time_exec = GDKusec() - ctx->xrpc_start;
+    lng time_exec = (GDKusec() - ctx->xrpc_start) / 1000;
    
     if (ctx->xrpc_qid[0] && time_exec > ctx->xrpc_timeout) {
         GDKerror("xrpc_startSerialize: xrpc-query timed out\n");
@@ -1041,7 +1041,7 @@ xrpc_startSerialize(XqueryCtx *ctx)
         if (ret < 0) return PROBLEM;
     }
     ret = stream_printf(ctx->out, XRPC_RES_HEADER, ctx->xrpc_module, ctx->xrpc_method);
-    return ret?PROBLEM:SUCCESS;
+    return (ret < 0)?PROBLEM:SUCCESS;
 }
 
 /**
