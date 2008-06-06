@@ -1,0 +1,82 @@
+stdout of test 'tst2570` in directory 'src/mal` itself:
+
+
+# 02:38:10 >  
+# 02:38:10 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36766 --set xrpc_port=46537 --set monet_prompt= --trace  --dbname=mTests_src_mal  tst2570.mal
+# 02:38:10 >  
+
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_mal'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:36766/
+##basic interaction of factories and restart
+#
+#factory step1():int;
+#	io.printf("start step 1\n");
+#	cnt := 0;
+#
+#barrier go:= true;
+#	cnt:= cnt+1;
+#	io.printf("step1 %d\n",cnt);
+#	yield step1:= cnt;
+#	redo go:= true;
+#exit go;
+#end step1;
+factory user.step1():int;               #  0 step1:int := user.step1() 
+    io.printf("start step 1\n");        #  1 _1:void := IOprint_str(_2:str) 
+    cnt := 0;                           #  2 cnt:int := _4:int 
+barrier go := true;                     #  3 go:bit := _6:bit {J8}
+    cnt := calc.+(cnt,1);               #  4 cnt:int := CALCbinaryADDintint(cnt:int, _7:int) 
+    io.printf("step1 %d\n",cnt);        #  5 _8:void := IOprint_formatted_int(_9:str, cnt:int) 
+    yield step1 := cnt;                 #  6 step1:int := cnt:int 
+    redo go := true;                    #  7 go:bit := _6:bit {J4}
+exit go;                                #  8 go:bit 
+end step1;                              #  9  
+#
+#factory step2():int;
+#	io.printf("start step 2\n");
+#	cnt := 0;
+#
+#barrier go:= true;
+#	cnt:= cnt+1;
+#	io.printf("step2 %d\n",cnt);
+#	yield step2:= cnt;
+#	redo go:= true;
+#exit go;
+#end step2;
+factory user.step2():int;               #  0 step2:int := user.step2() 
+    io.printf("start step 2\n");        #  1 _1:void := IOprint_str(_2:str) 
+    cnt := 0;                           #  2 cnt:int := _4:int 
+barrier go := true;                     #  3 go:bit := _6:bit {J8}
+    cnt := calc.+(cnt,1);               #  4 cnt:int := CALCbinaryADDintint(cnt:int, _7:int) 
+    io.printf("step2 %d\n",cnt);        #  5 _8:void := IOprint_formatted_int(_9:str, cnt:int) 
+    yield step2 := cnt;                 #  6 step2:int := cnt:int 
+    redo go := true;                    #  7 go:bit := _6:bit {J4}
+exit go;                                #  8 go:bit 
+end step2;                              #  9  
+#
+#i:= user.step1();
+#j:= user.step2();
+#k:= user.step1();
+#m:= user.step2();
+#
+function user.main():void;              #  0 main:void := user.main() 
+#basic interaction of factories and restart 
+    i := user.step1();                  #  2 i:int := user.step1() 
+    j := user.step2();                  #  3 j:int := user.step2() 
+    k := user.step1();                  #  4 k:int := user.step1() 
+    m := user.step2();                  #  5 m:int := user.step2() 
+end main;                               #  6  
+start step 1
+step1 1
+start step 2
+step2 1
+step1 2
+step2 2
+
+# 02:38:10 >  
+# 02:38:10 >  Done.
+# 02:38:10 >  
+
