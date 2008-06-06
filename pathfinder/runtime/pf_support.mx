@@ -3321,9 +3321,27 @@ bat[void, oid] attr_cont_ins): void
   {
     var inserts := command.ord_select(UPDATE_INSERT_FIRST, UPDATE_REPLACENODE); # [i,insertcommand]
     if (inserts.count() > 0) {
+
+      # UPDATE_INSERT_LAST and UPDATE_INSERT_BEFORE commands must be executed in reverse order
+      var order := inserts.ord_uselect(UPDATE_INSERT_LAST, UPDATE_INSERT_BEFORE).copy().mark(0@0);
+      if (order.count() > 1) {
+        pre_tgt.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(pre_tgt).access(BAT_WRITE).revert().tmark(0@0)));
+        pre_cont_tgt.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(pre_cont_tgt).access(BAT_WRITE).revert().tmark(0@0)));
+        attr_tgt.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(attr_tgt).access(BAT_WRITE).revert().tmark(0@0)));
+        attr_cont_tgt.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(attr_cont_tgt).access(BAT_WRITE).revert().tmark(0@0)));
+        pre_ins.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(pre_ins).access(BAT_WRITE).revert().tmark(0@0)));
+        pre_cont_ins.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(pre_cont_ins).access(BAT_WRITE).revert().tmark(0@0)));
+        attr_ins.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(attr_ins).access(BAT_WRITE).revert().tmark(0@0)));
+        attr_cont_ins.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(attr_cont_ins).access(BAT_WRITE).revert().tmark(0@0)));
+        inserts.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(inserts).access(BAT_WRITE).revert().tmark(0@0)));
+        command.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(command).access(BAT_WRITE).revert().tmark(0@0)));
+      }
+
       var inserts_pre_ins := inserts.mirror().leftfetchjoin(pre_ins); # [i,PRE]
       var inserts_elems := inserts_pre_ins.ord_uselect(oid_nil, oid_nil).hmark(0@0); # [j,i] inserts on elements
       var inserts_attrs := inserts_pre_ins.ord_uselect(oid_nil).hmark(0@0); # [k,i] inserts on attributes
+
+
       if (inserts_attrs.count() > 0) {
         do_update_insert_attributes(ws, inserts_attrs.leftjoin(pre_tgt), inserts_attrs.leftjoin(pre_cont_tgt), inserts_attrs.leftjoin(attr_ins), inserts_attrs.leftjoin(attr_cont_ins));
       }
