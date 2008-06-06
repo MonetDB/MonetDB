@@ -2263,3 +2263,23 @@ begin
 		+ cast(coalesce(specObjId,0) as varchar(32));
 end;
 
+CREATE FUNCTION fGetUrlFitsSpectrum(specObjIdd bigint)
+RETURNS varchar(128) 
+BEGIN
+        DECLARE link varchar(128), plate varchar(8), mjd varchar(8), fiber varchar(8), rerun int;
+        SET link = (select value from SiteConstants where name='DataServerURL');        SET rerun=(select p.spRerun from specobjall s, platex p where s.plateid=p.plateid and s.specobjid=specObjIdd);
+        SET link = link + 'spectro/1d_' + cast(rerun as varchar(4)) + '/';
+        SELECT cast(p.mjd as varchar(8)) into mjd
+            FROM PlateX p, specObjAll s 
+            WHERE p.plateId=s.plateId AND s.specObjID=specObjIdd;
+	SELECT cast(p.plate as varchar(8)) into plate
+            FROM PlateX p, specObjAll s 
+            WHERE p.plateId=s.plateId AND s.specObjID=specObjIdd;
+	SELECT cast(s.fiberID as varchar(8)) into fiber  
+            FROM PlateX p, specObjAll s 
+            WHERE p.plateId=s.plateId AND s.specObjID=specObjIdd;
+        SET plate = substring('0000',1,4-length(plate)) + plate;
+        SET fiber = substring( '000',1,3-length(fiber)) + fiber;
+        RETURN   link + plate + '/1d/spSpec-'+mjd+'-'+plate+'-'+fiber+'.fit';
+END;
+
