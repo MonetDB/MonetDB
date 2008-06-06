@@ -206,6 +206,11 @@ str
 SQLinit(Client c)
 {
 	char *debug_str = GDKgetenv("sql_debug");
+/*
+	char *readonly_str = GDKgetenv("gdk_read_only");
+	char *single_str = GDKgetenv("gdk_single_user");
+	int readonly= 0, single=0;
+*/
 	char *gmt = "GMT";
 	tzone tz;
 
@@ -215,6 +220,10 @@ SQLinit(Client c)
 #endif
 	if (SQLinitialized)
 		return MAL_SUCCEED;
+/*
+	readonly= readonly_str && strcmp(readonly_str,"yes")==0;
+	single= single_str && strcmp(single_str,"yes")==0;
+*/
 
 	memset((char*)&be_funcs, 0, sizeof(backend_functions));
 	be_funcs.fstack		= &monet5_freestack;
