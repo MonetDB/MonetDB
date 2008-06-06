@@ -29,6 +29,11 @@ Over..
 % idd,	aage # name
 % int,	int # type
 % 1,	1 # length
+[ 0	]
+% .n,	.n # table_name
+% idd,	aage # name
+% int,	int # type
+% 1,	1 # length
 
 # 20:40:19 >  
 # 20:40:19 >  Done.

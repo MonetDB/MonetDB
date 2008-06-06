@@ -18,11 +18,12 @@ def server_start(dbinit):
     sys.stderr.write('#mserver: "%s"\n' % (srvcmd))
     sys.stderr.flush()
     srv = os.popen(srvcmd, 'w')
-    time.sleep(5)                      # give server time to start
+    time.sleep(2)                      # give server time to start
     return srv
 
 def server_stop(srv):
     srv.close()
+    time.sleep(2)                      # give server time to stop
 
 def client_load_file(clt, port, file):
     f = open(file, 'r')

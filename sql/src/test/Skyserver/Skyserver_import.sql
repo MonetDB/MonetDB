@@ -131,7 +131,6 @@ COPY 1000 RECORDS INTO Field FROM 'DATA/Field.dat.bz2' USING DELIMITERS '\t', '\
 
 COPY 200300 RECORDS INTO PhotoObjAll FROM 'DATA/PhotoObjAll.dat.bz2' USING DELIMITERS '\t', '\015\n';
 select count(*) from PhotoObjAll;
-select * from PhotoObjAll limit 1;
 
 COPY 200300 RECORDS INTO PhotoTag FROM 'DATA/PhotoTag.dat.bz2' USING DELIMITERS '\t', '\015\n';
 

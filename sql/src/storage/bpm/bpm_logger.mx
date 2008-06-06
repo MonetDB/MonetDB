@@ -73,7 +73,7 @@ bl_cleanup(void)
 static int
 bl_changes(void)
 {	
-	return logger_changes(bpm_logger);
+	return (int) MIN(logger_changes(bpm_logger), GDK_int_max);
 }
 
 static int 
