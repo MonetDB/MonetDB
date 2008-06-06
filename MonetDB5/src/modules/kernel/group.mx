@@ -1352,7 +1352,7 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	if (BATcount(b) > 1024*1024 &&
+	if (BATcount(b) > 32*1024 &&
 	    (ATOMstorage(b->ttype) == TYPE_int || 
 	     ATOMstorage(b->ttype) == TYPE_lng)) { 
 		int N = BATcount(b), one = 1;
