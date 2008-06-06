@@ -384,7 +384,6 @@ opt_icol (PFla_op_t *p)
                         break;
 
                     case la_element:
-                    case la_textnode:
                     case la_comment:
                         *p = *PFla_project (
                                   LLL(p),
@@ -410,9 +409,14 @@ opt_icol (PFla_op_t *p)
                                       LL(p)->sem.iter_pos_item.iter));
                         break;
 
-                    default:
-                        assert (0);
+                    case la_textnode:
+                        /* As a textnode based on an empty string
+                           has to result in an empty sequence we
+                           are not allowed to throw away the textnode
+                           constructor. */
                         break;
+                    default:
+                        assert(0);
                 }
             else if (L(p)->kind == la_doc_tbl &&
                      !PFprop_icol (L(p)->prop, L(p)->sem.doc_tbl.res)) {
@@ -424,10 +428,12 @@ opt_icol (PFla_op_t *p)
         case la_frag_union:
             if (L(p)->kind == la_fragment &&
                 LL(p)->kind == la_twig &&
+                LLL(p)->kind != la_textnode && /* retain textnodes */
                 !PFprop_icol (LL(p)->prop, LL(p)->sem.iter_item.item))
                 *p = *PFla_dummy (R(p));
             else if (R(p)->kind == la_fragment &&
                 RL(p)->kind == la_twig &&
+                RLL(p)->kind != la_textnode && /* retain textnodes */
                 !PFprop_icol (RL(p)->prop, RL(p)->sem.iter_item.item))
                 *p = *PFla_dummy (L(p));
             else if (L(p)->kind == la_fragment &&

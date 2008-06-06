@@ -441,6 +441,15 @@ PFmil_while (const PFmil_t *cond, const PFmil_t *e)
 }
 
 /**
+ * MIL break statement
+ */
+PFmil_t *
+PFmil_break ()
+{
+    return leaf (m_break);
+}
+
+/**
  * Construct a combined variable declaration and its assignment.
  * (Declare variable @a v and assign result of @a e to it.)
  *
@@ -936,6 +945,15 @@ PFmil_ctderive (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
+ * Monet texist function.
+ */
+PFmil_t *
+PFmil_texist (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_texist, a, b);
+}
+
+/**
  * enumerate operator, return sequence of integers
  * starting from @a a with the length @a l.
  */
@@ -1196,6 +1214,15 @@ PFmil_gt (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
+ * less or equal operator
+ */
+PFmil_t *
+PFmil_le (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_le, a, b);
+}
+
+/**
  * Equal operator
  */
 PFmil_t *
@@ -1352,6 +1379,13 @@ PFmil_t *
 PFmil_mstring2 (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
 {
     return wire3 (m_mstring2, a, b, c);
+}
+
+/** StartsWith() function `[startsWith](a,b)' */
+PFmil_t *
+PFmil_starts_with (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_starts_with, a, b);
 }
 
 /** Multiplexed startsWith() function `[startsWith](a,b)' */

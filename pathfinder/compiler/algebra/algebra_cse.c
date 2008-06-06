@@ -224,10 +224,17 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                 rcount != PFarray_last (b->sem.eqjoin_unq.rproj))
                 return false;
             
-            for (i = 0; i < lcount; i++) {
 #define proj_at(l,i) (*(PFalg_proj_t *) PFarray_at ((l),(i)))
+            for (i = 0; i < lcount; i++) {
                 aproj = proj_at(a->sem.eqjoin_unq.lproj, i),
                 bproj = proj_at(b->sem.eqjoin_unq.lproj, i);
+                if (aproj.old != bproj.old || aproj.new != bproj.new)
+                    return false;
+            }
+
+            for (i = 0; i < rcount; i++) {
+                aproj = proj_at(a->sem.eqjoin_unq.rproj, i),
+                bproj = proj_at(b->sem.eqjoin_unq.rproj, i);
                 if (aproj.old != bproj.old || aproj.new != bproj.new)
                     return false;
             }

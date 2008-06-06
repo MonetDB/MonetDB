@@ -2840,7 +2840,7 @@ setdefmimetypes(void)
 		{"css",		"text/css"			},
 		{"htm",		"text/html"			},
 		{"html",	"text/html"			},
-        {"xml",     "text/xml"          },
+		{"xml",     "text/xml"          },
 		{NULL,		NULL				}
 	};
 

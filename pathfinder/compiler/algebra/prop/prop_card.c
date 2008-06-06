@@ -90,7 +90,6 @@ infer_card (PFla_op_t *n)
         case la_docnode:
         case la_element:
         case la_attribute:
-        case la_textnode:
         case la_comment:
         case la_processi:
         case la_roots:
@@ -132,6 +131,7 @@ infer_card (PFla_op_t *n)
         case la_step_join:
         case la_doc_index_join:
         case la_fcns:
+        case la_textnode:
         case la_merge_adjacent:
         case la_fragment:
         case la_frag_extract:
