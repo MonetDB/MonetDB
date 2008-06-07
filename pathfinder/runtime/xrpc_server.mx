@@ -211,7 +211,7 @@ Start XPRC receiver using the default values as specified in \
       "<wscoor:CoordinationContext xmlns:wscoor=\""WSCOOR_NS"\""\
                  "env:mustUnderstand=\"true\">"\
         "<wscoor:Identifier>%s</wscoor:Identifier>"\
-        "<wscoor:Expires>%s</wscoor:Expires>"\
+        "<wscoor:Expires>"LLFMT"</wscoor:Expires>"\
         "<wscoor:CoordinationType>" WSAT_NS "</wscoor:CoordinationType>"\
       "</wscoor:CoordinationContext>"
 
@@ -764,9 +764,9 @@ xrpc_parse_message(stream *out,
     if (iterc == -1) {
         /* if no iterc was found in the request (and always for XRPC responses), just count sequence elements */
         BAT *qn_seq = BATselect(qn_uri_loc, XRPC_NS"|sequence", XRPC_NS"|sequence");
-        elt_qn = get_elt_qn(pre_prop, qn_seq);
+        elt_qn = get_elt_qn(pre_kind, pre_prop);
         if (elt_qn && qn_seq) {
-            BAT* elt_seq = BATmirror(BATsemijoin(BATmirror(elt_qn),  elt_seq));
+            BAT* elt_seq = BATmirror(BATsemijoin(BATmirror(elt_qn), qn_seq));
             if (elt_seq) {
                 iterc = BATcount(elt_seq);
                 BBPreclaim(elt_seq);
@@ -778,7 +778,7 @@ xrpc_parse_message(stream *out,
         /* for XRPC response messages we add all participants to the participant bat */
         BAT *qn_part = BATselect(qn_uri_loc, XRPC_NS"|participant", XRPC_NS"|participant");
         if (qn_part) {
-            BAT *elt_part = BATmirror(BATsemijoin(BATmirror(elt_qn),  qn_part));
+            BAT *elt_part = BATmirror(BATsemijoin(BATmirror(elt_qn),qn_part));
             if (elt_part) {
                 BATiter pi = bat_iterator(elt_part);
                 BUN p,q;
@@ -1005,7 +1005,7 @@ execQuery(mapi_client *mc,
           BAT *shredBAT)
 {
     int ret = GDK_SUCCEED;
-	char errbuf[GDKMAXERRLEN], errbuf_all[GDKMAXERRLEN*2], *errbuf_bak = GDKerrbuf;
+    char errbuf[GDKMAXERRLEN], errbuf_all[GDKMAXERRLEN*2], *errbuf_bak = GDKerrbuf;
 
     /* Possible values of flags:
      * 0: xml-noheader-xrpc
@@ -1023,8 +1023,8 @@ execQuery(mapi_client *mc,
      *    Get generated MIL code in "/tmp/xrpc.mil", hence, this option
      *    is not portable.
      */
-	*errbuf = 0;
-	GDKsetbuf(errbuf);
+    *errbuf = 0;
+    GDKsetbuf(errbuf);
     char *err = xquery_method(mc, flags, req->mode, req->module, 
             req->location, req->method, req->qid, req->caller, req->timeout,
             req->argc, req->iterc, req->argcnt, req->argtpe, req->argval, 

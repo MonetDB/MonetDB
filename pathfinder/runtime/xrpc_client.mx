@@ -102,7 +102,7 @@ PROC doLoopLiftedRPC(
     var rpcerr_lock := lock_create(); # guards rpc_errors
     var rpc_errors := ""; # holds errors from each destination
     var rpcres_lock := lock_create(); # guards rpc_results and rpc_iter
-    var rpc_results := bat(str,oid);
+    var rpc_results := bat(str,bat);
     var rpc_iter := bat(void,bat).seqbase(0@0);
     var off := count(ws.fetch(CONT_NAME));
 
@@ -110,7 +110,7 @@ PROC doLoopLiftedRPC(
     var wslock;
     if (xrpc_qid != "") {  
         lock_set(xrpc_lock);
-        var err := CATCH(wslock := xrpc_locks.fetch(reverse(xrpc_wsids).find(xrpc_id)));
+        var err := CATCH(wslock := xrpc_locks.fetch(reverse(xrpc_qids).find(xrpc_qid)));
         lock_unset(xrpc_lock);
         if (not(isnil(err))) ERROR(err);
         lock_unset(wslock);
@@ -145,7 +145,7 @@ PROC doLoopLiftedRPC(
         }
 
         var local_name := "rpc_res_00" + str(int($h)+off);
-        var rpc_res, timeout := max(0LL,xrpc_timeout - ((usec() - time_start) / 1000));
+        var rpc_res, timeout := max(0LL,xrpc_timeout - ((usec() - time_start)/1000));
         var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, xrpc_seqnr, timeout, $t, modname, location, method,
                     updCall, arity, itercnt, ws, fun_vid, fun_iter, fun_item,
                     fun_kind, int_values, dbl_values, dec_values, str_values));
@@ -202,7 +202,7 @@ PROC doLoopLiftedRPC(
     # retrieve results for this destination, and map the results back to
     # the original iteration number
     var proc_res := [get_rpc_res](
-            [ws_opencoll](const ws, rpc_results.tmark(0@0), local_name, TEMP_DOC),
+            [ws_opencoll](const ws, rpc_results.tmark(0@0), rpc_results.hmark(0@0), TEMP_DOC),
             const ws, const int_values, const dbl_values, const str_values);
 
     res_iter := proc_res.[fetch](0).[leftfetchjoin](rpc_iter);
@@ -228,7 +228,6 @@ PROC doLoopLiftedRPC(
         printf("XRPC_Client_DeSerialisation (get_rpc_res):    %lld microsec\n",
                 time_xrpcClntDeSeria);
     }
-
     return res_bats;
 }
 ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
@@ -257,7 +256,7 @@ PROC doIterativeRPC(
     var wslock;
     if (xrpc_qid != "") {  
         lock_set(xrpc_lock);
-        var err := CATCH(wslock := xrpc_locks.fetch(reverse(xrpc_wsids).find(xrpc_id)));
+        var err := CATCH(wslock := xrpc_locks.fetch(reverse(xrpc_qids).find(xrpc_qid)));
         lock_unset(xrpc_lock);
         if (not(isnil(err))) ERROR(err);
     }
@@ -369,11 +368,11 @@ PROC doRPC(
         BAT[void, str] str_values) : BAT[void,bat]
 {
     if (search(xrpc_mode,"iterative") >= 0) 
-        doIterativeRPC(modname, location, method, updCall, arity, niters,
-                        ws, dsts, fun_vid, fun_iter, fun_item, fun_kind, int_values, dbl_values, dec_values, str_values);
+        return doIterativeRPC(modname, location, method, updCall, arity, niters,
+                              ws, dsts, fun_vid, fun_iter, fun_item, fun_kind, int_values, dbl_values, dec_values, str_values);
     else
-        doLoopLiftedRPC(modname, location, method, updCall, arity, niters,
-                        ws, dsts, fun_vid, fun_iter, fun_item, fun_kind, int_values, dbl_values, dec_values, str_values);
+        return doLoopLiftedRPC(modname, location, method, updCall, arity, niters,
+                               ws, dsts, fun_vid, fun_iter, fun_item, fun_kind, int_values, dbl_values, dec_values, str_values);
 }
 
 
@@ -414,9 +413,14 @@ CMDget_rpc_res(BAT **res,
         if (shredBAT) {
             XRPCreq_t *req;
             /* create a list of all main document bats (as parse_message likes it that way) */
-            for(i=0; i < ATTR_OWN; i++)
-                BUNappend(shredBAT, BUNtail(wi, *cont), FALSE);
-
+            for(i=0; i <= ATTR_PROP; i++) {
+                BAT *b = BATdescriptor(*(bat*) BUNtail(wi, i));
+                if (b) {
+                    BATiter bi = bat_iterator(b);
+                    BUNappend(shredBAT, BUNtail(bi, *cont), FALSE);
+                    BBPunfix(b->batCacheid);
+                }
+            }
             req = xrpc_parse_message(NULL, shredBAT, participants, FALSE);
             if (req) { 
                 BAT *res_iter = BATnew(TYPE_void, TYPE_oid, req->nr_args);
@@ -905,7 +909,7 @@ byvalue_request(
         return clean_up(bs, argcnt, iterc);
 
     if(qid && *qid) { /* an XRPC query that requires 2PC */
-        ret = stream_printf(bs, "<env:Header" XRPC_WS_QID "</env:Header" , qid, timeout);
+        ret = stream_printf(bs, "<env:Header>" XRPC_WS_QID "</env:Header>" , qid, timeout);
         if (ret < 0) 
             return clean_up(bs, argcnt, iterc);
     }

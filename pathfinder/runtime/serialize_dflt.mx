@@ -1017,11 +1017,11 @@ xrpc_startSerialize(XqueryCtx *ctx)
         if (b == NULL) return PROBLEM;
 
         ret = stream_printf(ctx->out, "<env:Header>");
-        if (ret == 0 && ctx->xrpc_qid[0])
+        if (ret >= 0 && ctx->xrpc_qid[0])
             ret = stream_printf(ctx->out, XRPC_WS_QID, ctx->xrpc_qid, ctx->xrpc_timeout);
 
         /* XRPC participants lists for nested transactions - append an extra item for this call */
-        if(ret == 0)
+        if(ret >= 0)
             ret = stream_printf(ctx->out, 
                            "<xrpc:participants>\n  <xrpc:participant>%s,%s," 
                            LLFMT ",%s:%d," LLFMT "</xrpc:participant>\n",
@@ -1034,7 +1034,7 @@ xrpc_startSerialize(XqueryCtx *ctx)
             if (ret < 0) break;
             ret = stream_printf(ctx->out, "  <xrpc:participant>%s</xrpc:participant>\n", BUNtail(bi,p));
         }
-        if(ret == 0) 
+        if (ret >= 0) 
             ret = stream_printf(ctx->out, "</xrpc:participants>\n</env:Header>\n");
 
         BBPunfix(bid);

@@ -520,19 +520,21 @@ var xrpc_querynr  := 9999999LL;
 PROC _ws_xrpc_abort(oid idx, str status) : void
 {
     var wslock := xrpc_locks.find(idx);
+    var ws := bat(str(xrpc_wsids.find(idx)));
+    ws_destroy(ws);
     xrpc_statuses.inplace(idx, status);
     xrpc_wsids.inplace(idx, lng_nil);
-    xrpc_wslocks.inplace(idx, lock_nil);
+    xrpc_locks.inplace(idx, lock_nil);
     lock_destroy(wslock);
 }
 
 # end a 2PC request. On success, unlock ws and keep waiting for more. On failure, abort it.
 PROC _ws_xrpc_end(lng wsid, str errmsg) : void
 {
-    var idx := xrpc_qids.find(xrpc_qid);
+    var idx := reverse(xrpc_qids).find(xrpc_qid);
     if (isnil(errmsg)) { 
         xrpc_statuses.inplace(idx, "wait");
-        lock_unset(xrpc_wslocks.find(idx));
+        lock_unset(xrpc_locks.find(idx));
     } else {
         _ws_xrpc_abort(idx, "abort");
     }
@@ -546,12 +548,10 @@ PROC _ws_xrpc_prune() : void
     var aborted  := mirror(xrpc_wsids.ord_uselect(lng_nil,lng_nil)).leftfetchjoin(xrpc_statuses).ord_select("abort");
 
     kunion(aborted,timeout)@batloop() {
-       var ws := bat(str(xrpc_wsids.find($h)));
-       ws_destroy(ws);
        _ws_xrpc_abort($h,$t);
     }
-    var relevant := xrpc_timeout.ord_uselect(lim - 3600000000LL,lng_nil).hmark(0@0);
-    if (count(relevant) < count(xrpc_timeout)) {
+    var relevant := xrpc_timeouts.ord_uselect(lim - 3600000000LL,lng_nil).hmark(0@0);
+    if (count(relevant) < count(xrpc_timeouts)) {
         # pruned xrpc requests should all have destroyed wslock and ws (we let them leak here)
         var relevant_qids     := relevant.leftfetchjoin(xrpc_qids);      xrpc_qids.delete().append(relevant_qids);
         var relevant_timeouts := relevant.leftfetchjoin(xrpc_qtimeouts); xrpc_timeouts.delete().append(relevant_timeouts);
@@ -1465,9 +1465,9 @@ PROC _ws_xrpcget() : int
         xrpc := -(int(count(xrpc_qids))+1); # default: create a new ws
         if (xrpc_qid = "") {
             xrpc_qid := xrpc_hostport + ":" + str(xrpc_seqnr); #init
-            xpc_coord := true;
+            xrpc_coord := true;
         } else if (xrpc_qids.texist(xrpc_qid)) {
-            xrpc := int(reverse(xrpc_qids).find(qid)); # reuse an old ws
+            xrpc := int(reverse(xrpc_qids).find(xrpc_qid)); # reuse an old ws
         }
     }
     return xrpc;
@@ -1478,7 +1478,7 @@ PROC _ws_new(int xrpc, oid idx, int update) : BAT[void,bat]
 {
     var ws;
     if (xrpc > 0) {
-        ws := bat(xrpc_wsids.find(idx));
+        ws := bat(str(xrpc_wsids.find(idx)));
         xrpc_statuses.inplace(idx,"exec");
     } else {
         var id := and(lng(newoid(1)), 2147483647LL);
@@ -1488,7 +1488,7 @@ PROC _ws_new(int xrpc, oid idx, int update) : BAT[void,bat]
         if (xrpc < 0) {
             var wslock := lock_create();
             xrpc_qids.append(xrpc_qid);
-            xrpc_timeouts.append(usec() + *(1000LL * xrpc_timeout));
+            xrpc_timeouts.append(usec() + *(1000LL, xrpc_timeout));
             xrpc_wsids.append(wsid);
             xrpc_locks.append(wslock);
             xrpc_statuses.append("exec");
@@ -1499,19 +1499,22 @@ PROC _ws_new(int xrpc, oid idx, int update) : BAT[void,bat]
 
    
 var update := 0;
-var xrpc_qid := "";
-var xrpc_seqnr := "";
-var xrpc_mode := "";
+var xrpc_qid := "1";
+var xrpc_seqnr := 1LL;
+var xrpc_timeout := 30000LL;
+var xrpc_mode := "repeatable";
 var ws, wsid, xrpc, idx; ws := _ws_new(xrpc := _ws_xrpcget(), idx := oid(abs(xrpc)), update); wsid := ws_id(ws);
 
 PROC ws_end(BAT[void,bat] ws, str err) : int 
 {
     ws_log_wsid := ws_id(ws);
     if (not(isnil(err))) ws_log(ws, err);
-    ws_destroy(ws);
-    if (xrpc_qid = "") return 1;
+    if (xrpc_qid = "") {
+        ws_destroy(ws);
+        return 1;
+    }
     lock_set(xrpc_lock);
-    CATCH(_ws_xrpc_end(wsid, err));
+    CATCH(_ws_xrpc_end(ws_log_wsid, err));
     lock_unset(xrpc_lock);
     return 2; # do not auto-restart 2PC transactions ever
 }
