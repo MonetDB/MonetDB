@@ -56,10 +56,8 @@ import nl.cwi.monetdb.xquery.xrpc.api.*;
  */
 
 public class XRPCTestClient {
-	private static final String FILE_SEPARATOR =
-		System.getProperty("file.separator");
 	private static final String DEFAULT_ROOTDIR =
-		System.getProperty("java.io.tmpdir") + FILE_SEPARATOR;
+		System.getProperty("java.io.tmpdir") + XRPCMessage.DIR_SEP;
 	private static final String XRPCD_CALLBACK = "/xrpc";
 	private static final String DEFAULT_SERVER = "http://localhost:50002";
     private static final String PACKAGE_PATH = "/nl/cwi/monetdb/xquery/xrpc/client/";
@@ -146,8 +144,8 @@ public class XRPCTestClient {
             CmdLineOpts.OptionContainer rootdirOpt =
                 opts.getOption("rootdir");
             String rootdir = rootdirOpt.getArgument();
-            if(!rootdir.endsWith(FILE_SEPARATOR)) {
-                rootdir += FILE_SEPARATOR;
+            if(!rootdir.endsWith(XRPCMessage.DIR_SEP)) {
+                rootdir += XRPCMessage.DIR_SEP;
             }
             rootdirOpt.resetArguments();
             rootdirOpt.addArgument(rootdir);
@@ -221,40 +219,39 @@ public class XRPCTestClient {
         }
     
         StringBuffer callBody = new StringBuffer(8192);
-        for(int i = 0; i < iterc; i++){
-            if(method.equals("echoVoid")) {
-
-                /* echoVoid() */
+		/* echoVoid() */
+		if(method.equals("echoVoid")) {
+			for(int i = 0; i < iterc; i++){
                 arity = 0;
                 callBody.append(XRPCMessage.XRPC_CALL(null));
-
-            } else if (method.equals("echoInteger")) {
-
-                /* echoInteger($v as xs:integer*) as xs:integer */
+			}
+		/* echoInteger($v as xs:integer*) as xs:integer */
+		} else if (method.equals("echoInteger")) {
+			for(int i = 0; i < iterc; i++){
                 arity = 1;
                 callBody.append(XRPCMessage.XRPC_CALL(
                         XRPCMessage.XRPC_SEQ(
                             XRPCMessage.XRPC_ATOM("integer", "234") )));
-
-            } else if (method.equals("echoDouble")) {
-
-                /* echoDouble($v as xs:double*) as xs:double */
+			}
+        /* echoDouble($v as xs:double*) as xs:double */
+		} else if (method.equals("echoDouble")) {
+			for(int i = 0; i < iterc; i++){
                 arity = 1;
                 callBody.append(XRPCMessage.XRPC_CALL(
                         XRPCMessage.XRPC_SEQ(
                             XRPCMessage.XRPC_ATOM("double", "234.43") )));
-
-            } else if (method.equals("echoString")) {
-
-                /* echoString($v as xs:string*) as xs:string */
+			}
+        /* echoString($v as xs:string*) as xs:string */
+		} else if (method.equals("echoString")) {
+			for(int i = 0; i < iterc; i++){
                 arity = 1;
                 callBody.append(XRPCMessage.XRPC_CALL(
                         XRPCMessage.XRPC_SEQ(
                             XRPCMessage.XRPC_ATOM("string", "Hello") )));
-
-            } else if (method.equals("echoParam")) {
-
-                /* echoParam($v1 as xs:double*, $v2 as item()*) as node() */
+			}
+        /* echoParam($v1 as xs:double*, $v2 as item()*) as node() */
+		} else if (method.equals("echoParam")) {
+			for(int i = 0; i < iterc; i++){
                 arity = 2;
                 callBody.append(XRPCMessage.XRPC_CALL(
                         XRPCMessage.XRPC_SEQ(
@@ -262,75 +259,87 @@ public class XRPCTestClient {
                             XRPCMessage.XRPC_ATOM("double", "45.1")
                         ) +
                         XRPCMessage.XRPC_SEQ(
-                            XRPCMessage.XRPC_ELEMENT("<hello><world/></hello>") +
+                            XRPCMessage.XRPC_ELEMENT(
+								"<hello><world/></hello>") +
                             XRPCMessage.XRPC_ATOM("string", "hello") +
-                            XRPCMessage.XRPC_ELEMENT("<foo><bar/></foo>")
-                        ) ));
-
-            } else if (method.equals("getPerson")) {
-
-                /* getPerson($personDoc as xs:string, $pid as xs:string) */
+                            XRPCMessage.XRPC_ELEMENT(
+								"<foo><bar/></foo>") ) ));
+			}
+		/* getPerson($personDoc as xs:string, $pid as xs:string) */
+		} else if (method.equals("getPerson")) {
+			for(int i = 0; i < iterc; i++){
                 arity = 2;
                 callBody.append(XRPCMessage.XRPC_CALL(
                         XRPCMessage.XRPC_SEQ(
-                            XRPCMessage.XRPC_ATOM("string", rootdir+FILES[PERS]) ) +
+							XRPCMessage.XRPC_ATOM("string",
+								rootdir+FILES[PERS]) ) +
                         XRPCMessage.XRPC_SEQ(
-                            XRPCMessage.XRPC_ATOM("string", "person66")
+							XRPCMessage.XRPC_ATOM("string", "person66")
                         ) ));
-
-            } else if (method.equals("getDoc")) {
-
-                /* getDoc($doc as xs:string) as document-node()*/
+			}
+        /* getDoc($doc as xs:string) as document-node()*/
+		} else if (method.equals("getDoc")) {
+			for(int i = 0; i < iterc; i++){
                 arity = 1;
                 callBody.append(XRPCMessage.XRPC_CALL(
                         XRPCMessage.XRPC_SEQ(
-                            XRPCMessage.XRPC_ATOM("string", rootdir+FILES[BIB]) )));
-
-            } else if (method.equals("firstClosedAuction")) {
-
-                /* firstClosedAuction($auctionDoc as xs:string) as node()*/
+							XRPCMessage.XRPC_ATOM("string",
+								rootdir+FILES[BIB]) )));
+			}
+		/* firstClosedAuction($auctionDoc as xs:string) as node()*/
+		} else if (method.equals("firstClosedAuction")) {
+			for(int i = 0; i < iterc; i++){
                 arity = 1;
                 callBody.append(XRPCMessage.XRPC_CALL(
-                        XRPCMessage.XRPC_SEQ(
-                            XRPCMessage.XRPC_ATOM("string", rootdir+FILES[AUCT]) )));
-
-            } else if (method.equals("buyerAndAuction")) {
-
-                /* buyerAndAuction($personDoc as xs:string,
-                 *                    $auctionDoc as xs:string) as node()*/
+						XRPCMessage.XRPC_SEQ(
+							XRPCMessage.XRPC_ATOM("string",
+								rootdir+FILES[AUCT]) )));
+			}
+        /* buyerAndAuction($personDoc as xs:string,
+		 *                 $auctionDoc as xs:string) as node()*/
+		} else if (method.equals("buyerAndAuction")) {
+			for(int i = 0; i < iterc; i++){
                 arity = 2;
                 callBody.append(XRPCMessage.XRPC_CALL(
                         XRPCMessage.XRPC_SEQ(
-                            XRPCMessage.XRPC_ATOM("string", rootdir+FILES[PERS]) ) +
+							XRPCMessage.XRPC_ATOM("string",
+								rootdir+FILES[PERS]) ) +
                         XRPCMessage.XRPC_SEQ(
-                            XRPCMessage.XRPC_ATOM("string", rootdir+FILES[AUCT]) ) ));
-
-            } else if (method.equals("auctionsOfBuyer")) {
-
-                /* auctionsOfBuyer($auctionDoc as xs:string,
-                 *                 $pid as xs:string) as node() */
+							XRPCMessage.XRPC_ATOM("string",
+								rootdir+FILES[AUCT]) ) ));
+			}
+        /* auctionsOfBuyer($auctionDoc as xs:string,
+         *                 $pid as xs:string) as node() */
+		} else if (method.equals("auctionsOfBuyer")) {
+			for(int i = 0; i < iterc; i++){
                 arity = 2;
                 callBody.append(XRPCMessage.XRPC_CALL(
                         XRPCMessage.XRPC_SEQ(
-                            XRPCMessage.XRPC_ATOM("string", rootdir+FILES[AUCT]) ) +
+							XRPCMessage.XRPC_ATOM("string",
+								rootdir+FILES[AUCT]) ) +
                         XRPCMessage.XRPC_SEQ(
                             XRPCMessage.XRPC_ATOM("string", "person66")
                         ) ));
+			}
+		} else {
+			throw new XRPCException("generateRequestMessage(): " +
+					"unknow function " + method);
+		}
 
-            } else {
-                throw new XRPCException("generateRequestMessage(): " +
-                        "unknow function " + method);
-            }
-        }
-
-        return XRPCMessage.XRPC_REQUEST(
+		String reqHeader = XRPCMessage.XRPC_REQ_HEADER(
                 "xrpcwrapper-testfunctions",
                 opts.getOption("location").getArgument(),
                 method,
                 arity,
                 iterc,
-                false,
-                callBody.toString());
+                "false",
+				"none-trace",
+				"query");
+
+        return XRPCMessage.SOAP_REQUEST(
+				"", /* soapHeader */
+				reqHeader,
+				callBody.toString());
     }
 
     private void extractResults(StringBuffer response)

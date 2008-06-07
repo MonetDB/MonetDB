@@ -41,34 +41,36 @@ import nl.cwi.monetdb.xquery.xrpc.api.*;
 
 public class XRPCWrapper {
 	public static final int MIN_BUFSIZE = 128;
-	public static final String FILE_SEPARATOR =
-		System.getProperty("file.separator");
 	public static final String DEFAULT_ROOTDIR =
-		System.getProperty("java.io.tmpdir") + FILE_SEPARATOR;
+		System.getProperty("java.io.tmpdir") + XRPCMessage.DIR_SEP;
 
 	public static final String XRPC_WRAPPER_VERSION = "0.1";
 	public static final String XRPCD_CALLBACK = "/xrpc";
 	public static final String DEFAULT_PORT = "50002";
 	public static final String PACKAGE_PATH = "/nl/cwi/monetdb/xquery/xrpc/wrapper";
 	public static final String WF_FILE = "wrapper_functions.xq";
-    public static final String WELCOME_MSG =
-            "# XRPC Wrapper v" + XRPC_WRAPPER_VERSION + "\n" +
-            "# Copyright (c) 1993-2007, CWI. All rights reserved.\n\n";
+	public static final String WELCOME_MSG =
+		"# XRPC Wrapper v" + XRPC_WRAPPER_VERSION + "\n" +
+		"# Copyright (c) 1993-2007, CWI. All rights reserved.\n\n";
 
-    CmdLineOpts opts;
+	CmdLineOpts opts;
 
 	XRPCWrapper(CmdLineOpts o)
-    {
-        opts = o;
-    }
+	{
+		opts = o;
+	}
 
 	private void run()
 	{
 		ServerSocket server = null;
+		String hostport = null;
 
+		int port;
+		String rootdir = DEFAULT_ROOTDIR;
+		boolean debug = false;
 		try {
-            int port = Integer.parseInt(
-                    opts.getOption("port").getArgument());
+			port = Integer.parseInt(
+					opts.getOption("port").getArgument());
 			server = new ServerSocket(port);
 			if(!opts.getOption("quiet").isPresent()){
 				System.out.println(
@@ -78,124 +80,136 @@ public class XRPCWrapper {
 						"# Type Ctrl-C to stop\n");
 			}
 
-			String toFile = opts.getOption("rootdir").getArgument()+WF_FILE;
+			debug = opts.getOption("debug").isPresent();
 
-            /* Extract the XQuery module file to a temporary directory. */
+			rootdir = opts.getOption("rootdir").getArgument();
+			File rootdirF = new File(rootdir);
+			if(!rootdirF.exists()){
+				rootdirF.mkdirs();
+				if(debug)
+					System.out.println("Non-existing rootdir \"" +
+							rootdir + "\" created");
+			}
+
+			/* Extract the XQuery module file to a temporary directory. */
+			String toFile = rootdir + WF_FILE;
 			Extract.extractFile(PACKAGE_PATH + "/" + WF_FILE, toFile);
-            if(opts.getOption("debug").isPresent()) {
-                System.out.println("# XQuery module file \"" + WF_FILE +
-                        "\" extracted to \"" + toFile + "\"");
-            }
-		} catch (OptionsException oe) {
-			oe.printStackTrace();
-			System.exit(1);
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			if(debug) {
+				System.out.println("# XQuery module file \"" + WF_FILE +
+						"\" extracted to \"" + toFile + "\"");
+			}
+
+			hostport = InetAddress.getLocalHost().getHostAddress() + ":" + port;
+		} catch (Exception e) {
+			e.printStackTrace();
 			System.exit(1);
 		}
 
+		long seqnr = 0;
 		for(;;){ /* Run server for ever, until someone kills it */
 			try{
 				Socket clntsock = server.accept();
 				XRPCWrapperWorker worker =
-					new XRPCWrapperWorker(clntsock, opts);
+					new XRPCWrapperWorker(clntsock, opts, hostport,
+							seqnr, rootdir, debug);
 				worker.start();
+				seqnr++;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
 	}
 
-    private static CmdLineOpts initCmdLineOpts()
-    {
+	private static CmdLineOpts initCmdLineOpts()
+	{
 		CmdLineOpts copts = new CmdLineOpts();
 
-        try{
-            /* arguments which take exactly one argument */
-            copts.addOption("c", "command", CmdLineOpts.CAR_ONE, null,
-                    "This option is MANDATORY!  This option specifies " +
-                    "the command for executing the XQuery engine and all " +
-                    "options that should be passed to the XQuery engine. " +
-                    "The command and all options MUST be specified in " +
-                    "ONE string.");
-            /* For example:
-             *      --command "galax-run -serialize wf"
-             *      --command "java -cp <pathto>/saxon8.jar net.sf.saxon.Query"
-             */
-            copts.addOption("p", "port", CmdLineOpts.CAR_ONE, DEFAULT_PORT,
-                    "The port number to listen to\n" +
-                    "(dflt: " + DEFAULT_PORT + ")");
-            copts.addOption("r", "rootdir", CmdLineOpts.CAR_ONE, DEFAULT_ROOTDIR,
-                    "The root directory to store temporary files\n" +
-                    "(dflt: " + DEFAULT_ROOTDIR + ").");
-            copts.addOption("R", "remove", CmdLineOpts.CAR_ONE, null,
-                    "Remove the temporary files (<request|query|all>) " +
-                    "that contain the XRPC request message " +
-                    "(--remove request) and/or the generated XQuery " +
-                    "query (--remove query) after a request has been " +
-                    "handled.");
+		try{
+			/* arguments which take exactly one argument */
+			copts.addOption("c", "command", CmdLineOpts.CAR_ONE, null,
+					"This option is MANDATORY!  This option specifies " +
+					"the command for executing the XQuery engine and all " +
+					"options that should be passed to the XQuery engine. " +
+					"The command and all options MUST be specified in " +
+					"ONE string.");
+			/* For example:
+			 *      --command "galax-run -serialize wf"
+			 *      --command "java -cp <pathto>/saxon8.jar net.sf.saxon.Query"
+			 */
+			copts.addOption("p", "port", CmdLineOpts.CAR_ONE, DEFAULT_PORT,
+					"The port number to listen to\n" +
+					"(dflt: " + DEFAULT_PORT + ")");
+			copts.addOption("r", "rootdir", CmdLineOpts.CAR_ONE, DEFAULT_ROOTDIR,
+					"The root directory to store temporary files\n" +
+					"(dflt: " + DEFAULT_ROOTDIR + ").");
+			copts.addOption("R", "remove", CmdLineOpts.CAR_ONE, null,
+					"Remove the temporary files (<request|query|all>) " +
+					"that contain the XRPC request message " +
+					"(--remove request) and/or the generated XQuery " +
+					"query (--remove query) after a request has been " +
+					"handled.");
 
-            /* arguments which have no argument(s) */
-            copts.addOption("d", "debug", CmdLineOpts.CAR_ZERO, null,
-                    "Turn on DEBUG mode to get more information printed.");
-            copts.addOption("h", "help", CmdLineOpts.CAR_ZERO, null,
-                    "Print this help message.");
-            copts.addOption("q", "quiet", CmdLineOpts.CAR_ZERO, null,
-                    "Suppress printing the welcome header.");
-            copts.addOption("v", "version", CmdLineOpts.CAR_ZERO, null,
-                    "Print version number and exit.");
-        } catch (OptionsException oe) {
-            System.err.println(WELCOME_MSG);
-            System.err.println("Internal error: " + oe.getMessage());
-            System.exit(1);
-        }
-        return copts;
-    }
+			/* arguments which have no argument(s) */
+			copts.addOption("d", "debug", CmdLineOpts.CAR_ZERO, null,
+					"Turn on DEBUG mode to get more information printed.");
+			copts.addOption("h", "help", CmdLineOpts.CAR_ZERO, null,
+					"Print this help message.");
+			copts.addOption("q", "quiet", CmdLineOpts.CAR_ZERO, null,
+					"Suppress printing the welcome header.");
+			copts.addOption("v", "version", CmdLineOpts.CAR_ZERO, null,
+					"Print version number and exit.");
+		} catch (OptionsException oe) {
+			System.err.println(WELCOME_MSG);
+			System.err.println("Internal error: " + oe.getMessage());
+			System.exit(1);
+		}
+		return copts;
+	}
 
-    private static void parseOptions(String[] args, CmdLineOpts copts)
-    {
-        String usage = WELCOME_MSG +
-            "Usage: java -jar xrpcwrapper.jar [options]\n" +
-            "OPTIONS:\n" + copts.produceHelpMessage();
-        try{
-            copts.processArgs(args);
-            if (copts.getOption("help").isPresent() ||
-                    copts.getOption("version").isPresent()) {
-                System.out.print(usage);
-                System.exit(0);
-            } else if (!copts.getOption("command").isPresent()) {
-                System.err.println(
-                        "ERROR: missing mandatory option: --command\n" +
-                        "Don't know how to execute the XQuery " +
-                        "engine.\n\n" + usage);
-                System.exit(-1);
-            } else if (copts.getOption("port").isPresent()){
-                CmdLineOpts.OptionContainer portOpt =
-                    copts.getOption("port");
-                String port = portOpt.getArgument();
-                portOpt.resetArguments();
-                portOpt.addArgument(port);
-            } else if (copts.getOption("rootdir").isPresent()){
-                CmdLineOpts.OptionContainer rootdirOpt =
-                    copts.getOption("rootdir");
-                String rootdir = rootdirOpt.getArgument();
-                if(!rootdir.endsWith(FILE_SEPARATOR)) {
-                    rootdir += FILE_SEPARATOR;
-                }
-                rootdirOpt.resetArguments();
-                rootdirOpt.addArgument(rootdir);
-            }
-        } catch (OptionsException oe){
-            System.out.println("Invalide option: " + oe.getMessage());
-            System.out.println("\n" + usage);
-            System.exit(1);
-        }
-    }
+	private static void parseOptions(String[] args, CmdLineOpts copts)
+	{
+		String usage = WELCOME_MSG +
+			"Usage: java -jar xrpcwrapper.jar [options]\n" +
+			"OPTIONS:\n" + copts.produceHelpMessage();
+		try{
+			copts.processArgs(args);
+			if (copts.getOption("help").isPresent() ||
+					copts.getOption("version").isPresent()) {
+				System.out.print(usage);
+				System.exit(0);
+			} else if (!copts.getOption("command").isPresent()) {
+				System.err.println(
+						"ERROR: missing mandatory option: --command\n" +
+						"Don't know how to execute the XQuery " +
+						"engine.\n\n" + usage);
+				System.exit(-1);
+			} else if (copts.getOption("port").isPresent()){
+				CmdLineOpts.OptionContainer portOpt =
+					copts.getOption("port");
+				String port = portOpt.getArgument();
+				portOpt.resetArguments();
+				portOpt.addArgument(port);
+			} else if (copts.getOption("rootdir").isPresent()){
+				CmdLineOpts.OptionContainer rootdirOpt =
+					copts.getOption("rootdir");
+				String rootdir = rootdirOpt.getArgument();
+				if(!rootdir.endsWith(XRPCMessage.DIR_SEP)) {
+					rootdir += XRPCMessage.DIR_SEP;
+				}
+				rootdirOpt.resetArguments();
+				rootdirOpt.addArgument(rootdir);
+			}
+		} catch (OptionsException oe){
+			System.out.println("Invalide option: " + oe.getMessage());
+			System.out.println("\n" + usage);
+			System.exit(1);
+		}
+	}
 
 	public static void main (String[] args)
 	{
-        CmdLineOpts opts = initCmdLineOpts();
-        parseOptions(args, opts);
+		CmdLineOpts opts = initCmdLineOpts();
+		parseOptions(args, opts);
 
 		XRPCWrapper wrapper = new XRPCWrapper(opts);
 		wrapper.run();
