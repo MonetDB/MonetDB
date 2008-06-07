@@ -67,10 +67,12 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   
   var funcdefs = new Array();
   funcdefs[funcdefs.length]=new funcdef("add", false, new Array("integer", "integer"), new Array("", ""), "declare function f:add($v1 as xs:integer, $v2 as xs:integer) as xs:integer\n{ $v1 + $v2 };");
+  funcdefs[funcdefs.length]=new funcdef("addSeq", false, new Array("integer", "integer"), new Array("+", "+"), "declare function f:addSeq($v1 as xs:integer+, $v2 as xs:integer+) as xs:integer\n{ for $vi in $v1, $vj in $v2 return $vi + $vj };");
   funcdefs[funcdefs.length]=new funcdef("firstPerson", false, new Array("string"), new Array(""), "declare function f:firstPerson($doc as xs:string) as node()\n{ exactly-one(doc($doc)//person[1]) };");
   funcdefs[funcdefs.length]=new funcdef("firstPerson", false, new Array("string", "string"), new Array("+", "+"), "declare function f:firstPerson($docs as xs:string+, $dsts as xs:string+) as node()+\n{ for $d at $pos in $dsts\n  return execute at {$d} {f:firstPerson(exactly-one($docs[$pos]))}\n};");
   funcdefs[funcdefs.length]=new funcdef("boughtItems", false, new Array("string", "string"), new Array("", ""), "declare function f:boughtItems($pid as xs:string, $doc as xs:string) as node()*\n{ doc($doc)//closed_auction[./buyer/@person=$pid] };");
-  funcdefs[funcdefs.length]=new funcdef("boughtItemsAllPersons", false, new Array("string", "string", "string"), new Array("", "", ""), "declare function f:boughtItemsAllPersons($docL as xs:string, $docR as xs:string, $dst as xs:string) as node()*\n{ for $pid in doc($docL)//person/@pid\n  return execute at {$dst} {f:boughtItems($pid, $docR)}\n};");
+  funcdefs[funcdefs.length]=new funcdef("boughtItemsSeq", false, new Array("string", "string"), new Array("+", ""), "declare function f:boughtItemsSeq($pid as xs:string+, $doc as xs:string) as node()*\n{ for $p in $pid\n  return\n    doc($doc)//closed_auction[./buyer/@person=$p]\n};");
+  funcdefs[funcdefs.length]=new funcdef("boughtItemsAllPersons", false, new Array("string", "string", "string"), new Array("", "", ""), "declare function f:boughtItemsAllPersons($docL as xs:string, $docR as xs:string, $dst as xs:string) as node()*\n{ for $p in $pid\n  return\n  	for $ca in doc($doc)//closed_auction[./buyer/@person=$p]\n  	return\nelement closed_auction {attribute buyer {$ca/buyer/@person}, $ca/price, $ca/date}\n};");
   funcdefs[funcdefs.length]=new funcdef("insertPerson", true, new Array("node()", "string"), new Array("", ""), "declare updating function f:insertPerson($p as node(), $doc as xs:string)\n{ do insert $p into doc($doc)//persons };");
   funcdefs[funcdefs.length]=new funcdef("deletePerson", true, new Array("string", "string"), new Array("", ""), "declare updating function f:deletePerson($pid as xs:string, $doc as xs:string)\n{ do delete doc($doc)//person[./@pid=$pid] };");
   funcdefs[funcdefs.length]=new funcdef("custom...", false, new Array("integer", "integer", "integer", "integer"), new Array("", "", "", ""), "");
@@ -299,6 +301,10 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   function updatingChanged(object) { 
   }
   
+  function escapeForHTML(s) {
+  	return s.split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;")
+  }
+  
   function messreqChanged(xmldoc) {
   	document.getElementById("messreq").value = serializeXML(xmldoc);
   
@@ -325,9 +331,13 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   		var sval = '';
   		for (var k = 0; k < seqnodes.length; k++) {
 	  		var atvals = seqnodes[k].childNodes;
+	  		if (k > 0) sval += ', ';
 	  		sval += '( ';
 	  		for (var j = 0; j < atvals.length; j++) {
-	  		 	sval += atvals[j].firstChild.nodeValue + ' '; 
+	  		 	if (j > 0) sval += ', ';
+	  		 	var tval = atvals[j].firstChild.nodeValue;
+	  			if (tval == null) tval = escapeForHTML(serializeXML(atvals[j].firstChild));
+	  		 	sval += tval + ' ';
 	  		}
 	  		sval += ') ';
 	  	}
@@ -354,14 +364,17 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   		'<tr><td>Function<\/td><td>' + funcn + '<\/td><\/tr>' +
   		'<tr><td>NS<\/td><td>' + ns + '<\/td><\/tr>' +
   		'<tr><td>&nbsp;<\/td><td><\/td><\/tr>' +
-  		'</table><table><tr><td>iter<\/td><td>param<\/td><\/tr>';
+  		'</table><table><tr><td>iter<\/td><td>result<\/td><\/tr>';
   		var seqnodes = xmldoc.getElementsByTagName("response")[0].childNodes;
   		
   		for (var k = 0; k < seqnodes.length; k++) {
 	  		var atvals = seqnodes[k].childNodes;
 	  		var sval = '( ';
 	  		for (var j = 0; j < atvals.length; j++) {
-	  		 	sval += atvals[j].firstChild.nodeValue + ' '; 
+	  		 	if (j > 0) sval += ', ';
+	  			var tval = atvals[j].firstChild.nodeValue;
+	  			if (tval == null) tval = escapeForHTML(serializeXML(atvals[j].firstChild));
+	  		 	sval += tval + ' ';
 	  		}
 	  		sval += ') ';
 	  		htm += '<tr><td>' + (k+1) + '<\/td><td>' + sval + '<\/td><\/tr>';
@@ -434,7 +447,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 	</tr>
 	<tr>
 		<td></td>
-		<td><textarea cols="40" rows="4" name="def" id="def" readonly="readonly"></textarea></td>
+		<td><textarea cols="40" rows="14" name="def" id="def" readonly="readonly"></textarea></td>
 	</tr>
 	<tr>
 		<td><label for="loop">Loop counter</label></td>

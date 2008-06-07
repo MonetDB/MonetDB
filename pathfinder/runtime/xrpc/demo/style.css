@@ -34,6 +34,7 @@ table td h1 {
 	border: 1px solid black;
 	border-bottom: 4px solid black;
 	border-right: 4px solid black;
+	height: 646px;
 }
 
 #answers {
@@ -58,9 +59,10 @@ table td h1 {
 
 #graph {
 	width: 400px;
-	height: 620px;
+	height: 640px;
 	margin-right: 5px;
 	overflow:auto;
+	padding: 0px;
 }
 
 #request tr.myheader, #response tr.myheader, #answers tr.myheader, #graph tr.myheader {

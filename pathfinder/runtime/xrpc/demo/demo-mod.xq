@@ -3,6 +3,9 @@ module namespace f="xrpcdemo-functions";
 declare function f:add($v1 as xs:integer, $v2 as xs:integer) as xs:integer
 { $v1 + $v2 };
 
+declare function f:addSeq($v1 as xs:integer+, $v2 as xs:integer+) as xs:integer+
+{ for $vi in $v1, $vj in $v2 return $vi + $vj };
+
 declare function f:firstPerson($doc as xs:string) as node()
 { exactly-one(doc($doc)//person[1]) };
 
@@ -13,6 +16,15 @@ declare function f:firstPerson($docs as xs:string+, $dsts as xs:string+) as node
 
 declare function f:boughtItems($pid as xs:string, $doc as xs:string) as node()*
 { doc($doc)//closed_auction[./buyer/@person=$pid] };
+
+declare function f:boughtItemsSeq($pid as xs:string+, $doc as xs:string) as node()*
+{ for $p in $pid
+  return
+  	for $ca in doc($doc)//closed_auction[./buyer/@person=$p]
+  	return
+    	element closed_auction {attribute buyer {$ca/buyer/@person}, $ca/price, $ca/date}
+    	
+};
 
 declare function f:boughtItemsAllPersons($docL as xs:string, $docR as xs:string, $dst as xs:string) as node()*
 { for $pid in doc($docL)//person/@pid
