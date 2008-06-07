@@ -49,64 +49,42 @@ function user.main():void;              #  0 main:void := user.main() {G}
     p := sabaoth.getLocalConnectionPort();# 13 p:int := SABgetLocalConnectionPort() 
 # create a connecton to ourself 
     remote.create("test",h,p,nil:str,"monetdb","monetdb");# 15 _15:void := RMTcreate(_16:str, h:str, p:int, _17:str, _18:str, _18:str) 
+# now do it with a function that returns something (a BAT in this case) 
+    b := remote.exec("test","inspect","getAtomNames");# 17 b:any := RMTexec(_16:str, _21:str, _22:str) 
+    io.print(b);                        # 18 _23:void := IOprint_val(b:any) 
+catch MALException:str ;                # 19 MALException:str {J21}
+    io.printf("!%s\n",MALException);    # 20 _25:void := IOprint_formatted_str(_26:str, MALException:str) 
+exit MALException:str ;                 # 21 MALException:str 
 # this is invalid, as io.print is an invalid module, and bla will be 
 # taken as function 
-    f := remote.exec("test","io.print","bla");# 18 f:any := RMTexec(_16:str, _22:str, _23:str) 
-    io.print(f);                        # 19 _24:void := IOprint_val(f:any) 
-catch MALException:str ;                # 20 MALException:str {J22}
-    io.printf("!%s\n",MALException);    # 21 _26:void := IOprint_formatted_str(_27:str, MALException:str) 
-exit MALException:str ;                 # 22 MALException:str 
+    io.printf("sent invalid request\n");# 24 _29:void := IOprint_str(_30:str) 
+    f := remote.exec("test","io.print","bla");# 25 f:any := RMTexec(_16:str, _32:str, _33:str) 
+    io.print(f);                        # 26 _34:void := IOprint_val(f:any) 
+catch MALException:str ;                # 27 MALException:str {J29}
+    io.printf("!first:%s\n",MALException);# 28 _35:void := IOprint_formatted_str(_36:str, MALException:str) 
+exit MALException:str ;                 # 29 MALException:str 
+    io.printf("sent request\n");        # 30 _37:void := IOprint_str(_38:str) 
 # io.print only outputs things, but returns nothing 
-    a := remote.exec("test","io","print","bla");# 24 a:any := RMTexec(_16:str, _30:str, _31:str, _23:str) 
-    io.print(a);                        # 25 _32:void := IOprint_val(a:any) 
-# now do it with a function that returns something (a BAT in this case) 
-    b := remote.exec("test","inspect","getAtomNames");# 27 b:any := RMTexec(_16:str, _35:str, _36:str) 
-    io.print(b);                        # 28 _37:void := IOprint_val(b:any) 
+    a := remote.exec("test","io","print","bla");# 32 a:any := RMTexec(_16:str, _41:str, _42:str, _33:str) 
+catch MALException:str ;                # 33 MALException:str {J35}
+    io.printf("!second:\n");            # 34 _43:void := IOprint_str(_44:str) 
+exit MALException:str ;                 # 35 MALException:str 
+    io.print(a);                        # 36 _45:void := IOprint_val(a:any) 
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
-    remote.destroy("test");             # 31 _40:void := RMTdestroy(_16:str) 
-end main;	# 32  
-!MALException:remote.exec:remote_put_object_0 := io.print.bla();
+    remote.destroy("test");             # 39 _48:void := RMTdestroy(_49:str) 
+end main;                               # 40  
+!MALException:remote.get:no such object ''
+
+sent invalid request
+!first:MALException:remote.exec:remote_put_object_1 := io.print.bla();
 !SyntaxException:parseError:                              ^'(' expected
 
+sent request
+!second:
 [ nil ]
-#-------------------------#
-# h	t		  # name
-# int	str		  # type
-#-------------------------#
-[ 0,	  "void"	  ]
-[ 1,	  "bit"		  ]
-[ 2,	  "chr"		  ]
-[ 3,	  "bte"		  ]
-[ 4,	  "sht"		  ]
-[ 5,	  "BAT"		  ]
-[ 6,	  "int"		  ]
-[ 7,	  "oid"		  ]
-[ 8,	  "wrd"		  ]
-[ 9,	  "ptr"		  ]
-[ 10,	  "flt"		  ]
-[ 11,	  "dbl"		  ]
-[ 12,	  "lng"		  ]
-[ 13,	  "str"		  ]
-[ 14,	  "lock"	  ]
-[ 15,	  "sema"	  ]
-[ 16,	  "streams"	  ]
-[ 17,	  "bstream"	  ]
-[ 18,	  "blob"	  ]
-[ 19,	  "sqlblob"	  ]
-[ 20,	  "color"	  ]
-[ 21,	  "url"		  ]
-[ 22,	  "date"	  ]
-[ 23,	  "daytime"	  ]
-[ 24,	  "timestamp"	  ]
-[ 25,	  "timezone"	  ]
-[ 26,	  "zrule"	  ]
-[ 27,	  "inet"	  ]
-[ 28,	  "pcre"	  ]
-[ 29,	  "xml"		  ]
-[ 30,	  "mapentry"	  ]
 
-# 15:28:56 >  
-# 15:28:56 >  Done.
-# 15:28:56 >  
+# 19:22:53 >  
+# 19:22:53 >  Done.
+# 19:22:53 >  
 
