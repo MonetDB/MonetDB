@@ -897,7 +897,12 @@ RECYCLEevict(bat bid){
 					dropped[top++]= getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
 				RECYCLEgarbagecollect(recycleBlk, p);
 				removeInstruction(recycleBlk, p);
-				i=0;	/* restart check */
+@-
+we assume that the variables defined are only used later on in the recycle
+cache. This can be enforced by never re-sorting it. Under this condition
+we only have to make one step back in the look.
+@c
+				i--;
 				action++;
 				continue;
 			}
