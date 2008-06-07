@@ -399,6 +399,9 @@ public class XRPCWrapperWorker extends Thread {
 	 *	 query to a file
 	 *  3. Call the XQuery engine to execute the query and send the
 	 *	 results back
+	 *
+	 * @param request the XRPC request message
+	 * @param sockOut the response writer
 	 */
 	private void handleXRPCReq(String request, BufferedWriter sockOut)
 		throws XRPCException
@@ -461,6 +464,86 @@ public class XRPCWrapperWorker extends Thread {
 		}
 	}
 
+	/**
+	 * A simple HTTPD server, which only handles HTTP GET requests to
+	 * files in the log directory.
+	 *
+	 * @param request the HTTP GET URI
+	 * @param sockOut the response writer
+	 */
+	private void handleHttpGetReq(
+			String request,
+			BufferedWriter sockOut)
+	{
+		String infoHeader = "INFO: ("+getName()+") handleHttpGetReq(): ";
+		String warnHeader = "WARNING: ("+getName()+") handleHttpGetReq(): ";
+
+		if(debug)
+			System.out.println(infoHeader + "GET URI: " + request);
+
+		try{
+			if(request.length() == 0) {
+				sockOut.write(
+						"HTTP/1.1 400 Bad Request\r\n" +
+						"Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n");
+				sockOut.write("The HTTP GET request did not contain a " +
+						"URI.\n");
+				sockOut.flush();
+				return;
+			}
+
+			if(!request.startsWith("/logs")) {
+				sockOut.write(
+						"HTTP/1.1 403 Forbidden\r\n" +
+						"Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n");
+				sockOut.write("Access to file \"" + request +
+						"\" denied.\n");
+				sockOut.flush();
+				return;
+			}
+
+			String filename = logdir + request.substring(6);
+			String ctntType = "";
+			if(request.endsWith(".xml"))
+				ctntType = "Context-Type: text/xml; charset=\"utf-8\"\r\n";
+			else if (request.endsWith(".gif"))
+				ctntType = "Context-Type: image/gif\r\n";
+			else {
+				sockOut.write(
+						"HTTP/1.1 403 Forbidden\r\n" +
+						"Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n");
+				sockOut.write("Access to file \"" + request +
+						"\" denied.\nOnly access to XML and GIF files " +
+						"are allowed.\n");
+				sockOut.flush();
+				return;
+			}
+
+			File f = new File(filename);
+			if(!f.exists()) {
+				sockOut.write(
+						"HTTP/1.1 404 Not Found\r\n" +
+						"Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n");
+				sockOut.write("File \"" + request +
+						"\" not found on this server.\n");
+				sockOut.flush();
+				return;
+			}
+
+			/* Finally, we can send the file */
+			FileReader fr = new FileReader(f);
+			sockOut.write("HTTP/1.1 200 OK\r\n" + ctntType + "\r\n");
+			int c = -1;
+			while((c = fr.read()) > 0)
+				sockOut.write(c);
+			sockOut.flush();
+			fr.close();
+		} catch (Exception e) {
+			System.out.println(warnHeader);
+			e.printStackTrace();
+		}
+	}
+
 	public void run()
 	{
 		String warnHeader = "WARNING: ("+getName()+") run(): ";
@@ -476,14 +559,17 @@ public class XRPCWrapperWorker extends Thread {
 					OutputStreamWriter(sock.getOutputStream()));
 
 			String reqMsg = XRPCHTTPConnection.receive(sockIn, XRPCWrapper.XRPCD_CALLBACK);
-			handleXRPCReq(reqMsg, sockOut);
+			if(reqMsg.startsWith("<"))
+				handleXRPCReq(reqMsg, sockOut);
+			else
+				handleHttpGetReq(reqMsg, sockOut);
 		} catch (XRPCException xe){
 			String faultMsg = "", httpHeader = "";
 
 			try{
 				if (xe instanceof XRPCSenderException) {
 					faultMsg = XRPCMessage.SOAP_FAULT(soapPrefix+":Sender", xe.getMessage());
-					httpHeader = XRPCHTTPConnection.HTTP_ERR_404_HEADER;
+					httpHeader = XRPCHTTPConnection.HTTP_ERR_400_HEADER;
 				} else if (xe instanceof XRPCReceiverException) {
 					faultMsg = XRPCMessage.SOAP_FAULT(soapPrefix+":Receiver", xe.getMessage());
 					httpHeader = XRPCHTTPConnection.HTTP_ERR_500_HEADER;

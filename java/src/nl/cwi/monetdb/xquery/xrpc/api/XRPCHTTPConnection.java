@@ -35,19 +35,29 @@ public class XRPCHTTPConnection {
      */
     public static final String HTTP_OK_HEADER =
         "HTTP/1.1 200 OK\r\n" +
-        "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n";
+        "Content-Type: text/xml; charset=\"utf-8\"\r\n\r\n";
     /**
-     * HTTP response header: 404 Bad Request
+     * HTTP response header: 400 Bad Request
      */
-    public static final String HTTP_ERR_404_HEADER =
-        "HTTP/1.1 404 Bad Request\r\n" +
-        "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n";
+    public static final String HTTP_ERR_400_HEADER =
+        "HTTP/1.1 400 Bad Request\r\n" +
+        "Content-Type: text/xml; charset=\"utf-8\"\r\n\r\n";
     /**
      * HTTP response header: 500 Internal Server Error
      */
     public static final String HTTP_ERR_500_HEADER =
         "HTTP/1.1 500 Internal Server Error\r\n" +
-        "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n";
+        "Content-Type: text/xml; charset=\"utf-8\"\r\n\r\n";
+
+    /**
+     * HTTP request type GET
+     */
+	public static final int HTTP_METHOD_GET = 0;
+
+    /**
+     * HTTP request type POST
+     */
+	public static final int HTTP_METHOD_POST = 1;
 
     /**
      * Sends the given (XRPC) message <code>msg</code> in the pay load
@@ -76,10 +86,18 @@ public class XRPCHTTPConnection {
      * checks the HTTP header for mandatory fields, the validity of the
      * values of the mandatory fields.
      * The header is then discarded.
-     * Receives XRPC request message included in the pay load as a
-     * <code>String</code>.
+	 * If the request is an HTTP POST request, returns the XRPC request
+	 * message included in the pay load as a <code>String</code>.
+	 * If the request if an HTTP GET request, returns the GET URL
+	 * <code>String</code>.
+	 *
      * It is up to the caller to close the socket and the associated
      * streams.
+	 *
+	 * FIXME: since we now expect two kinds of request, nl. XRPC request
+	 * and HTTP GET requst, the return type of this function should be
+	 * changed to return both message type (XRPC_REQ, HTTP_GET, or
+	 * error) and the message.
      *
      * @param socketReader A reader based on socket
      * @param reqURI Accepted URI in the HTTP request header
@@ -93,21 +111,28 @@ public class XRPCHTTPConnection {
         throws XRPCSenderException, XRPCReceiverException
     {
         int contentLength = 0;
-        String ln = null;
-        boolean foundPostHeader = false;
+        String ln = null, getURI = null;
+        boolean foundReqHeader = false;
         boolean foundClHeader = false;
         boolean foundHostHeader = false;
+		int reqType = HTTP_METHOD_POST;
         
         /* read the HTTP header */
         try{
             while( ((ln = socketReader.readLine()) != null) &&
                    (ln.length() > 0) ){
-                if(ln.startsWith("POST")){
+				if(ln.startsWith("GET")) {
+					reqType = HTTP_METHOD_GET;
+                    foundReqHeader = true;
+					int urlEnd = ln.indexOf(" ", 4);
+					getURI = urlEnd > 4 ? ln.substring(4, urlEnd) : "";
+					foundClHeader = true;
+				} else if(ln.startsWith("POST")){
                     if( !ln.startsWith(reqURI, 5) ){
                         throw new XRPCSenderException(
                                 "Unsupported Request: \"" + ln + "\"");
                     }
-                    foundPostHeader = true;
+                    foundReqHeader = true;
                 } else if(ln.startsWith("Content-Length:")) {
                     contentLength = Integer.parseInt(ln.substring(16));
                     foundClHeader = true;
@@ -125,7 +150,7 @@ public class XRPCHTTPConnection {
                     "Could not read HTTP request header.");
         }
 
-        if(!foundPostHeader){
+        if(!foundReqHeader){
             throw new XRPCSenderException("HTTP header does not contain " +
                     "a \"POST\" method definition.");
         } else if (!foundClHeader){
@@ -135,6 +160,9 @@ public class XRPCHTTPConnection {
             throw new XRPCSenderException("HTTP header does not contain " +
                     "the mandatory \"Host\" field.");
         }
+
+		if(reqType == HTTP_METHOD_GET)
+			return getURI;
 
         /* read the XRPC request message */
         StringBuffer reqMsg = new StringBuffer(contentLength + 10);
