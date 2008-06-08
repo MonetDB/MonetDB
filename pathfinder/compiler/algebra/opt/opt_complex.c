@@ -1357,42 +1357,58 @@ opt_complex (PFla_op_t *p)
             }
             break;
 
-        case la_fcns:
-            /**
-             * match the following pattern
-             *              _ _ _ _ _
-             *            |          \
-             *         content        |
-             *         /     \
-             *     frag_U    attach   |
-             *     /   \       |
-             *  empty  frag  roots    |
-             *  frag      \   /
-             *            twig        |
-             *              | _ _ _ _/
-             *
-             * and throw it away ( - - - )
-             */
-            if (L(p)->kind == la_content &&
-                LR(p)->kind == la_attach &&
-                LRL(p)->kind == la_roots &&
-                LRLL(p)->kind == la_twig &&
-                LL(p)->kind == la_frag_union &&
-                LLL(p)->kind == la_empty_frag &&
-                LLR(p)->kind == la_fragment &&
-                LLRL(p) == LRLL(p) &&
-                /* input columns match the output
-                   columns of the underlying twig */
-                L(p)->sem.iter_pos_item.iter ==
-                LRLL(p)->sem.iter_item.iter &&
-                L(p)->sem.iter_pos_item.item ==
-                LRLL(p)->sem.iter_item.item &&
-                /* input twig is referenced only once */
-                PFprop_refctr (LR(p)) == 1 &&
-                PFprop_refctr (LRL(p)) == 1) {
-                L(p) = L(LRLL(p));
+        case la_element:
+        {
+            PFla_op_t *fcns = R(p);
+
+            /* Traverse all children and try to merge more nodes into the twig
+               (as long as the input provides for every iteration a node). */
+            while (fcns->kind == la_fcns) {
+                /**
+                 * match the following pattern
+                 *              _ _ _ _ _
+                 *            |          \
+                 *         content        |
+                 *         /     \
+                 *     frag_U    attach   |
+                 *     /   \       |
+                 *  empty  frag  roots    |
+                 *  frag      \   /
+                 *            twig        |
+                 *              | _ _ _ _/
+                 *
+                 * and throw it away ( - - - )
+                 */
+                if (L(fcns)->kind == la_content &&
+                    /* Make sure that all iterations of the parent
+                       are present (no subdomain relationship). */
+                    PFprop_subdom (
+                        p->prop,
+                        PFprop_dom (p->prop,
+                                    p->sem.iter_item.iter),
+                        PFprop_dom (L(fcns)->prop,
+                                    L(fcns)->sem.iter_pos_item.iter)) &&
+                    LR(fcns)->kind == la_attach &&
+                    LRL(fcns)->kind == la_roots &&
+                    LRLL(fcns)->kind == la_twig &&
+                    LL(fcns)->kind == la_frag_union &&
+                    LLL(fcns)->kind == la_empty_frag &&
+                    LLR(fcns)->kind == la_fragment &&
+                    LLRL(fcns) == LRLL(fcns) &&
+                    /* input columns match the output
+                       columns of the underlying twig */
+                    L(fcns)->sem.iter_pos_item.iter ==
+                    LRLL(fcns)->sem.iter_item.iter &&
+                    L(fcns)->sem.iter_pos_item.item ==
+                    LRLL(fcns)->sem.iter_item.item &&
+                    /* input twig is referenced only once */
+                    PFprop_refctr (LR(fcns)) == 1 &&
+                    PFprop_refctr (LRL(fcns)) == 1) {
+                    L(fcns) = L(LRLL(fcns));
+                }
+                fcns = R(fcns);
             }
-            break;
+        }   break;
 
         case la_string_join:
             if (PFprop_key_left (p->prop, p->sem.string_join.iter) &&
