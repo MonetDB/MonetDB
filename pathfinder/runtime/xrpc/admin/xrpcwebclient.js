@@ -16,7 +16,7 @@ function XRPC(posturl,    /* Your XRPC server. Usually: "http://yourhost:yourpor
 function XRPC_PART(geturl,    /* Your XRPC server. Usually: "http://yourhost:yourport/xrpc" */ 
               callback)   /* callback function to call with the XML response */
 {
-    clnt.sendReceivePart(geturl, callback);
+    clntPart.sendReceivePart(geturl, callback);
 }
 
 /**********************************************************************
@@ -139,17 +139,29 @@ XRPCWebClient = function () {
     }
 }
 
+XRPCWebClientPart = function () {
+    if (window.XMLHttpRequest) {
+        this.xmlhttp = new XMLHttpRequest();
+    } else if (window.ActiveXObject) {
+        try {
+            this.xmlhttp = new ActiveXObject("Msxml2.XMLHTTP");
+        } catch(e) {
+            this.xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+    }
+}
+
 XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callback) {
     try {
-        this.xmlhttp.open("POST", posturl, true);
+    	this.xmlhttp.open("POST", posturl, true);
         if (XRPCDEBUG) {
         	//document.getElementById("messreq").value = request; 
 			messreqChanged(string2XML(request));
 		}
 		this.xmlhttp.send(request);
-
-        var app = this;
-        this.xmlhttp.onreadystatechange = function() {
+		var app = this;
+    
+    	this.xmlhttp.onreadystatechange = function() {
             if (app.xmlhttp.readyState == 4 ) {
                 if (app.xmlhttp.status == 200 &&
                     app.xmlhttp.responseText.indexOf("!ERROR") < 0 && 
@@ -157,9 +169,8 @@ XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callbac
                 {
 				    if (XRPCDEBUG) {
 				    	if (app.xmlhttp.responseText) {
-				    		//document.getElementById("messres").value = serializeXML(app.xmlhttp.responseXML);
-				    		callback(app.xmlhttp.responseXML);
-				    		messresChanged(app.xmlhttp.responseXML);
+				    		messresChanged(app.xmlhttp.responseXML? app.xmlhttp.responseXML: string2XML(app.xmlhttp.responseText));
+				    		callback(app.xmlhttp.responseXML? app.xmlhttp.responseXML: string2XML(app.xmlhttp.responseText));
 				    	}
 				    }
                 } else {
@@ -177,21 +188,23 @@ XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callbac
     }
 }
 
-XRPCWebClient.prototype.sendReceivePart = function(geturl, callback) {
+XRPCWebClientPart.prototype.sendReceivePart = function(geturl, callback) {
     try {
+    	//alert("get " + geturl);
         this.xmlhttp.open("GET", geturl, true);
         this.xmlhttp.send("");
         var app = this;
-        this.xmlhttp.onreadystatechange = function() {
+    
+    	this.xmlhttp.onreadystatechange = function() {
+        	//alert("back");
             if (app.xmlhttp.readyState == 4 ) {
                 if (app.xmlhttp.status == 200 &&
                     app.xmlhttp.responseText.indexOf("!ERROR") < 0 && 
                     app.xmlhttp.responseText.indexOf("<env:Fault>") < 0) 
                 {
 				    if (XRPCDEBUG) {
-				    	if (app.xmlhttp.responseText) {
-				    		callback(app.xmlhttp.responseXML);
-				    	}
+				    	if (app.xmlhttp.responseText)
+				    		callback(app.xmlhttp.responseXML? app.xmlhttp.responseXML: string2XML(app.xmlhttp.responseText));
 				    }
                 } else {
                     var errmsg =

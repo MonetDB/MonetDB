@@ -25,7 +25,8 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
  <title>SIGMOD 2008 - XRPC Demo</title>
  <script type="text/javascript" src="../admin/xrpcwebclient.js"></script>
  <script type="text/javascript">
-  var clnt = new XRPCWebClient(); 
+  var clnt = new XRPCWebClient();
+  var clntPart = new XRPCWebClientPart(); 
 
   function funcdef(n, u, a, q, d) {
 	this.name = n;
@@ -160,13 +161,34 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   	var url = obj.alt;
   	var req = true;
   	if (url.indexOf("res") != -1) req = false;
-  	//alert(req);
   	/* XRPCDEBUG makes you get an alert for each SOAP message sent/received */
     //XRPCDEBUG = document.getElementById("debug").checked;
-  	XRPC_PART(obj.alt, req? messreqChanged: messresChanged);
+  	XRPC_PART(url, req? messreqChanged: messresChanged);
   }
 
-  function showResponse(response) {
+  function sendRequestMap(url) {
+  	XRPC_PART(url, mapChanged);
+  }
+  
+  function mapChanged(xmldoc) {
+  	//alert(serializeXML(xmldoc));
+  	var mapobj = document.getElementById("treemap");
+  	mapobj.innerHTML = "";
+  	var areas = xmldoc.getElementsByTagName('area');
+	for (var i = 0; i < areas.length; i++) {
+		var thisnode = areas[i];
+		var newnode = document.createElement("area");
+		newnode.setAttribute("shape", areas[i].getAttribute("shape"));
+		newnode.setAttribute("coords", areas[i].getAttribute("coords"));
+		newnode.setAttribute("href", "#");
+		newnode.setAttribute("title", areas[i].getAttribute("title"));
+		newnode.setAttribute("alt", areas[i].getAttribute("href"));
+		newnode.setAttribute("onclick", "sendRequestPart(this)");
+		mapobj.appendChild(newnode);
+	}
+  }
+
+  function showResponse(xmldoc) {
     /*var obj = document.getElementById("answer");
     var obj2 = document.getElementById("updating");
     if (!obj2.checked) { // not updating function
@@ -182,6 +204,23 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   	} else {
   		obj.value = "Update succeeded (an updating function returns no answer).";
   	}*/
+  	
+  	var participantNodes = xmldoc.getElementsByTagName("participants");
+  	var participantNode = null; 
+  	if (participantNodes.length > 0)
+  		participantNode = xmldoc.getElementsByTagName("participants")[0].firstChild;
+  	if (participantNode == null) {
+  		participantNode = document.createElement("participant");
+  		var tnode = document.createTextNode("query,127.0.0.1:50001,1,fcn,time");
+  		participantNode.appendChild( tnode );
+  	}
+  	var value = participantNode.firstChild.nodeValue;
+  	var sepValues = value.split(",");
+  	var newSrcLocation = "http://" + sepValues[1] + "/logs/qflow_" +sepValues[2];
+  	
+  	var imgobj = document.getElementById("treeimg");
+  	imgobj.src = newSrcLocation + ".gif";
+  	sendRequestMap(newSrcLocation + ".xml")
   }
   
   function methodChanged(object) {
@@ -324,7 +363,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   		'<tr><td>Function<\/td><td>' + funcn + '<\/td><\/tr>' +
   		'<tr><td>NS<\/td><td>' + ns + '<\/td><\/tr>' +
   		'<tr><td>Loc<\/td><td>' + loc + '<\/td><\/tr>' +
-  		'</table><table><tr><td>iter<\/td><td>param<\/td><\/tr>';
+  		'<\/table><table><tr><td>iter<\/td><td>param<\/td><\/tr>';
   	var callnodes = xmldoc.getElementsByTagName("call");
   	for (var i = 0; i < callnodes.length; i++) {
   		var seqnodes = callnodes[i].childNodes;
@@ -364,7 +403,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   		'<tr><td>Function<\/td><td>' + funcn + '<\/td><\/tr>' +
   		'<tr><td>NS<\/td><td>' + ns + '<\/td><\/tr>' +
   		'<tr><td>&nbsp;<\/td><td><\/td><\/tr>' +
-  		'</table><table><tr><td>iter<\/td><td>result<\/td><\/tr>';
+  		'<\/table><table><tr><td>iter<\/td><td>result<\/td><\/tr>';
   		var seqnodes = xmldoc.getElementsByTagName("response")[0].childNodes;
   		
   		for (var k = 0; k < seqnodes.length; k++) {
@@ -385,10 +424,6 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   	obj.innerHTML = htm;
   }
   
-  function loadTreeMap(xmldoc) {
-  	var obj = document.getElementById("treemap");
-  }
-  
   function init() {
   	XRPCDEBUG = true;
   	fillPostUrlBox();
@@ -403,7 +438,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
  <link rel="stylesheet" href="style.css" type="text/css" />
 </head>
 
-<body onload="init()">
+<body onload="init()" id="thebody">
 <table id="header">
 <tr>
 <td>
