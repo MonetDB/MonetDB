@@ -1,3 +1,8 @@
 module(pathfinder);
 
 xquery("dm","<a>{text {()}}</a>/text()").printf();
+xquery("dm","text{\"42\"}/<a/>").printf();
+xquery("dm","text{\"\"}/<a/>").printf();
+xquery("dm","<a>{text{\"foo\"}}</a>").printf();
+xquery("dm","<a>{text{\"\"}}</a>").printf();
+xquery("dm","for $a in (\"foo\",\"\",\"bar\") return <a>{text{$a}}</a>").printf();
