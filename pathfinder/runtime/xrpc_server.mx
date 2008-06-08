@@ -670,7 +670,7 @@ xrpc_parse_message(stream *out,
     }
     call_node_pre = msg_node_pre;
 
-    if (msg == XRPC_REQUEST) {
+    if (participants == NULL) {
         /* XRPC request message parsing */
         while(ao_ptr < nattrs && attr_ownT[ao_ptr] < msg_node_pre) ao_ptr++;
         while(ao_ptr < nattrs && attr_ownT[ao_ptr] == msg_node_pre) {
@@ -772,7 +772,7 @@ xrpc_parse_message(stream *out,
         }
         if (iterc == -1) goto cleanup;
     }
-    if (msg == XRPC_RESPONSE) {
+    if (participants) {
         /* for XRPC response messages we add all participants to the participant bat */
         BAT *qn_part = BATselect(qn_uri_loc, XRPC_NS"|participant", XRPC_NS"|participant");
         if (qn_part) {
