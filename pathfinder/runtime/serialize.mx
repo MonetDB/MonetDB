@@ -300,6 +300,8 @@ xquery_print_result_driver (
     lng                *xrpc_timeout,
     lng                *xrpc_start);
 
+stream* xquery_print_trace(str msg, lng seqnr);
+
 #endif /* SERIALIZE_H */
 @c
 
@@ -1971,6 +1973,25 @@ xquery_print_result_driver (
     return GDK_SUCCEED;
 }
 
+stream*
+xquery_print_trace(str msg, lng xrpc_seqnr) {
+    char logdir[1024], logfile[1024], *docroot = GDKgetenv("datadir");
+    stream* fp;
+    if (docroot) {
+        snprintf(logdir, 1024, "%s%cMonetDB%cxrpc%clogs%c", docroot, DIR_SEP, DIR_SEP, DIR_SEP, DIR_SEP);
+        snprintf(logfile, 1024, "%s%s_" LLFMT ".xml", logdir, msg, xrpc_seqnr);
+        GDKcreatedir(logdir);
+        fp = open_wastream(logfile);
+    }
+    if (!fp || stream_errnr(fp)) {
+        GDKerror("print_result: could not open logfile %s for writing\n", logfile);
+        if (fp) stream_destroy(fp);
+        return NULL;
+    }
+    return fp;
+}
+
+
 int 
 xquery_print_result_DRIVER (
     str                 mode,
@@ -1996,20 +2017,15 @@ xquery_print_result_DRIVER (
     lng                *xrpc_start)
 {
     stream *fp = GDKout;
+    int ret, trace = xrpc_method && *xrpc_method && xrpc_mode && strstr(xrpc_mode, "trace");
     (void) driverFun;
     (void) driverArg;
-    if (xrpc_mode && strstr(xrpc_mode, "trace")) {
-        char logfile[1024], *docroot = GDKgetenv("xrpc_http_docroot");
-        snprintf(logfile, 1024, "%s%clogs%cres_" LLFMT ".xml", docroot, DIR_SEP, DIR_SEP, *xrpc_seqnr);
-        stream *logstream = open_wstream(logfile);
-        fp = open_teestream(fp, logstream);
-        if (!logstream || !fp) {
-            GDKerror("print_result: could not open logfile %s for writing\n", logfile);
-            if (logstream) stream_destroy(logstream);
-            return GDK_FAIL;
-        }
+    if (trace) {
+        stream* logstream = xquery_print_trace("res",*xrpc_seqnr);
+        fp = logstream?open_teestream(fp, logstream):NULL;
+        if (fp == NULL) return GDK_FAIL;
     }
-    return xquery_print_result_driver (
+    ret = xquery_print_result_driver (
                fp,
                mode,
                driverFun, /* set of printing callback function */
@@ -2031,6 +2047,12 @@ xquery_print_result_DRIVER (
                xrpc_seqnr, 
                xrpc_timeout, 
                xrpc_start);
+  
+     if (trace) {
+         stream_close(fp);
+         stream_destroy(fp);
+     }
+     return ret; 
 }
 
 #define FNDEEPEQTRACE 0

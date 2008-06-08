@@ -920,14 +920,17 @@ byvalue_request(
 
     for (my_iter = 0; my_iter < iterc; my_iter++) {
         if (arity == 0) {
-            assert(stream_write(bs, "<xrpc:call/>", 1, 12) == 12);
+            ret = stream_write(bs, "<xrpc:call/>", 1, 12);
+            if (ret != 12) return clean_up(bs, argcnt, iterc);
             continue;
         }
 
-        assert(stream_write(bs, "<xrpc:call>", 1, 11) == 11); /* start an iteration */
+        ret = stream_write(bs, "<xrpc:call>", 1, 11); /* start an iteration */
+        if (ret != 11) return clean_up(bs, argcnt, iterc);
         for (my_argc = 0; my_argc < arity; my_argc++) {
             if (argcnt[my_iter][my_argc] == 0) {
-                assert(stream_write(bs, "<xrpc:sequence/>", 1, 16) == 16);
+                ret = stream_write(bs, "<xrpc:sequence/>", 1, 16);
+                if (ret != 16) return clean_up(bs, argcnt, iterc);
                 continue;
             }
             arg_offset = 0;
@@ -943,7 +946,8 @@ byvalue_request(
             /* now 'arg_offset' contains the start position of the
              * values of my_iter and my_argc in the fun_* BATs */
 
-            assert(stream_write(bs, "<xrpc:sequence>", 1, 15) == 15); /* start a parameter */
+            ret = stream_write(bs, "<xrpc:sequence>", 1, 15); /* start a parameter */
+            if (ret != 15) return clean_up(bs, argcnt, iterc);
             int k;
             chr elem_kind = 0;
             oid item = 0;
@@ -961,32 +965,32 @@ byvalue_request(
                         ret = stream_printf(bs,
                                 "<xrpc:atomic-value xsi:type=\"xs:boolean\">%s</xrpc:atomic-value>",
                                 intVals[item] == TRUE ? "true" : "false");
-                        assert(ret > 0);
+                        if (ret <= 0) return clean_up(bs, argcnt, iterc);
                         break;
                     case INT:
                         ret = stream_printf(bs,
                                 "<xrpc:atomic-value xsi:type=\"xs:integer\">%lld</xrpc:atomic-value>",
                                 intVals[item]);
-                        assert(ret > 0);
+                        if (ret <= 0) return clean_up(bs, argcnt, iterc);
                         break;
                     case DEC:
                         ret = stream_printf(bs,
                                 "<xrpc:atomic-value xsi:type=\"xs:decimal\">%f</xrpc:atomic-value>",
                                 dblVals[item]);
-                        assert(ret > 0);
+                        if (ret <= 0) return clean_up(bs, argcnt, iterc);
                         break;
                     case DBL:
                         ret = stream_printf(bs,
                                 "<xrpc:atomic-value xsi:type=\"xs:double\">%f</xrpc:atomic-value>",
                                 dblVals[item]);
-                        assert(ret > 0);
+                        if (ret <= 0) return clean_up(bs, argcnt, iterc);
                         break;
                     case STR:
                     case U_A:
                         ret = stream_printf(bs,
                                 "<xrpc:atomic-value xsi:type=\"xs:string\">%s</xrpc:atomic-value>",
                                 (char*)BUNtail(strValsi, item));
-                        assert(ret > 0);
+                        if (ret <= 0) return clean_up(bs, argcnt, iterc);
                         break;
                     case ATTR:
                     {
@@ -1015,13 +1019,14 @@ byvalue_request(
                         a = *(oid*)BUNtail(attr_propi, i);
                         char *attr_val = (char*)BUNtail(prop_vali, a);
 
-                        assert(stream_write(bs, "<xrpc:attribute ", 1, 16) == 16);
+                        ret = stream_write(bs, "<xrpc:attribute ", 1, 16);
+                        if (ret != 16) return clean_up(bs, argcnt, iterc);
                         if (prefix && *prefix){
                             ret = stream_printf(bs, "%s:", prefix);
-                            assert(ret > 0);
+                            if (ret <= 0) return clean_up(bs, argcnt, iterc);
                         }
                         ret = stream_printf(bs, "%s=\"%s\"/>", loc, attr_val);
-                        assert(ret > 0);
+                        if (ret <= 0) return clean_up(bs, argcnt, iterc);
                         break;
                     }
                     case ELEM:
@@ -1032,15 +1037,20 @@ byvalue_request(
                             return clean_up(bs, argcnt, iterc);
                         }
                         switch(elem_kind) {
-                            case 0: assert(stream_write(bs, "<xrpc:element>", 1, 14) == 14);
+                            case 0: ret = stream_write(bs, "<xrpc:element>", 1, 14);
+                                    if (ret != 14) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 1: assert(stream_write(bs, "<xrpc:text>", 1, 11) == 11);
+                            case 1: ret = stream_write(bs, "<xrpc:text>", 1, 11);
+                                    if (ret != 11) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 2: assert(stream_write(bs, "<xrpc:comment>", 1, 14) == 14);
+                            case 2: ret = stream_write(bs, "<xrpc:comment>", 1, 14);
+                                    if (ret != 14) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 3: assert(stream_write(bs, "<xrpc:processing-instruction>", 1, 29) == 29);
+                            case 3: ret = stream_write(bs, "<xrpc:processing-instruction>", 1, 29);
+                                    if (ret != 29) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 4: assert(stream_write(bs, "<xrpc:document>", 1, 15) == 15);
+                            case 4: ret = stream_write(bs, "<xrpc:document>", 1, 15);
+                                    if (ret != 15) return clean_up(bs, argcnt, iterc);
                                     break;
                             case 5: /* COLLECTION: nothing to be done, here */   break;
                             default:
@@ -1076,15 +1086,20 @@ byvalue_request(
                         }
 
                         switch(elem_kind) {
-                            case 0: assert(stream_write(bs, "</xrpc:element>", 1, 15) == 15);
+                            case 0: ret = stream_write(bs, "</xrpc:element>", 1, 15);
+                                    if (ret != 15) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 1: assert(stream_write(bs, "</xrpc:text>", 1, 12) == 12);
+                            case 1: ret = stream_write(bs, "</xrpc:text>", 1, 12);
+                                    if (ret != 12) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 2: assert(stream_write(bs, "</xrpc:comment>", 1, 15) == 15);
+                            case 2: ret = stream_write(bs, "</xrpc:comment>", 1, 15);
+                                    if (ret != 15) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 3: assert(stream_write(bs, "</xrpc:processing-instruction>", 1, 30) == 30);
+                            case 3: ret = stream_write(bs, "</xrpc:processing-instruction>", 1, 30);
+                                    if (ret != 30) return clean_up(bs, argcnt, iterc);
                                     break;
-                            case 4: assert(stream_write(bs, "</xrpc:document>", 1, 16) == 16);
+                            case 4: ret = stream_write(bs, "</xrpc:document>", 1, 16);
+                                    if (ret != 16) return clean_up(bs, argcnt, iterc);
                                     break;
                             case 5: /* COLLECTION: nothing to be done, here */    break;
                             default:
@@ -1098,11 +1113,14 @@ byvalue_request(
                         return clean_up(bs, argcnt, iterc);
                 }
             }
-            assert(stream_write(bs, "</xrpc:sequence>", 1, 16) == 16);
+            ret = stream_write(bs, "</xrpc:sequence>", 1, 16);
+            if (ret != 16) return clean_up(bs, argcnt, iterc);
         }
-        assert(stream_write(bs, "</xrpc:call>", 1, 12) == 12);
+        ret = stream_write(bs, "</xrpc:call>", 1, 12);
+        if (ret != 12) return clean_up(bs, argcnt, iterc);
     }
-    assert(stream_write(bs, "</xrpc:request></env:Body></env:Envelope>\n", 1, 42) == 42);
+    ret = stream_write(bs, "</xrpc:request></env:Body></env:Envelope>\n", 1, 42);
+    if (ret != 42) return clean_up(bs, argcnt, iterc);
     /* Stop timing Client Serialisation */
     time_xrpcClntSeria = GDKusec() - time_xrpcClntSeria;
     if (timing) {

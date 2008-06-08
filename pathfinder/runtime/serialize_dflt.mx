@@ -1001,7 +1001,7 @@ xrpc_startSerialize(XqueryCtx *ctx)
         return PROBLEM;
     }
     len = strlen(HTTP_200_OK);
-    ret = stream_write(ctx->out, HTTP_200_OK, 1, len);
+    ret = stream_write(GDKout, HTTP_200_OK, 1, len);
     if(ret != len) return PROBLEM;
 
     len = strlen(SOAP_ENVELOPE);
@@ -1023,10 +1023,8 @@ xrpc_startSerialize(XqueryCtx *ctx)
         /* XRPC participants lists for nested transactions - append an extra item for this call */
         if(ret >= 0)
             ret = stream_printf(ctx->out, 
-                           "<xrpc:participants>\n  <xrpc:participant>%s,%s," 
-                           LLFMT ",%s:%d," LLFMT "</xrpc:participant>\n",
-                           ctx->xrpc_caller, xrpc_hostname, xrpc_port, ctx->xrpc_seqnr, 
-                           ctx->xrpc_method, time_exec);
+                "<xrpc:participants>\n  <xrpc:participant>%s,%s:%d:"LLFMT",%s,"LLFMT"</xrpc:participant>\n",
+                ctx->xrpc_caller, xrpc_hostname, xrpc_port, ctx->xrpc_seqnr, ctx->xrpc_method, time_exec);
 
         /* print all nested calls (obtained from response messages)  */
         bi = bat_iterator(b);
