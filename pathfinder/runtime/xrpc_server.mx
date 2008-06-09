@@ -226,6 +226,17 @@ Start XPRC receiver using the default values as specified in \
                    " xrpc:mode=\"%s\""\
                    " xrpc:updCall=\"%s\">"
 
+#define XRPC_REQ_HEADER_FIRST_CALLER\
+    "<env:Body>"\
+      "<xrpc:request xrpc:module=\"%s\""\
+                   " xrpc:location=\"%s\""\
+                   " xrpc:method=\"%s\""\
+                   " xrpc:arity=\"%lld\""\
+                   " xrpc:iter-count=\"%lld\""\
+                   " xrpc:caller=\"query.0\""\
+                   " xrpc:mode=\"%s\""\
+                   " xrpc:updCall=\"%s\">"
+
 #define XRPC_RES_HEADER\
     "<env:Body>"\
       "<xrpc:response xrpc:module=\"%s\""\
@@ -253,6 +264,14 @@ Start XPRC receiver using the default values as specified in \
 #define XRPC_FOOTER     "</xrpc:request>"   \
                       "</env:Body>"         \
                     "</env:Envelope>\n"
+
+#ifndef HOST_NAME_MAX
+#ifdef _POSIX_HOST_NAME_MAX
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#else 
+#define HOST_NAME_MAX 255
+#endif
+#endif
 
 typedef struct {
     char *qid;
@@ -1069,6 +1088,7 @@ xrpc_handle_request(mapi_client *mc, struct shttpd_callback_arg *arg)
         }
         stream_close(logstream);
         stream_destroy(logstream);
+
     }
 
     if (timing) {

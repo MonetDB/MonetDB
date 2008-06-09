@@ -158,7 +158,7 @@ typedef struct XqueryCtx {
     str         xrpc_mode;
     lng         xrpc_seqnr;
     lng         xrpc_timeout;
-    lng         xrpc_start;
+    lng         time_exec;
 
     /* private application defined space */
     void*	_private;   
@@ -298,7 +298,7 @@ xquery_print_result_driver (
     str                xrpc_mode,
     lng                *xrpc_seqnr,
     lng                *xrpc_timeout,
-    lng                *xrpc_start);
+    lng                *time_exec);
 
 stream* xquery_print_trace(str msg, lng seqnr);
 
@@ -1700,7 +1700,7 @@ xquery_print_result_driver (
     str                xrpc_mode,
     lng                *xrpc_seqnr,
     lng                *xrpc_timeout,
-    lng                *xrpc_start)
+    lng                *time_exec)
 {
     TIMER_START();
 
@@ -1722,7 +1722,7 @@ xquery_print_result_driver (
     ctx->xrpc_mode = xrpc_mode;
     ctx->xrpc_seqnr = *xrpc_seqnr;
     ctx->xrpc_timeout = *xrpc_timeout;
-    ctx->xrpc_start = *xrpc_start;
+    ctx->time_exec = *time_exec;
 
     curcnt = 0;
     maxcnt = BATcount (item);
@@ -1991,6 +1991,123 @@ xquery_print_trace(str msg, lng xrpc_seqnr) {
     return fp;
 }
 
+int
+draw_queryflow(
+        lng xrpc_seqnr,
+        str xrpc_method,
+        lng time_exec,
+        BAT *participants)
+{
+    int ret = 0;
+    stream *s = NULL;
+    char *docroot = NULL, *ptr = NULL;
+    char base_name[2048], dotFile[2052], caller[1024], dst[1024];
+    char dstNID[1024], fcn[1024], time[64], *seqnr = NULL;
+    BUN p, q;
+    BATiter bi;
+
+    if(!(docroot = GDKgetenv("xrpc_http_docroot"))) {
+        GDKerror("draw_queryflow: xrpc_http_docroot not found");
+        return GDK_FAIL;
+    }
+    snprintf(base_name, 2048, "%s%clogs%cqflow_"LLFMT, docroot, DIR_SEP, DIR_SEP, xrpc_seqnr);
+    snprintf(dotFile, 2048, "%s.dot", base_name);
+    if(!(s = open_wstream(dotFile))) return GDK_FAIL;
+
+    /* replace all non-alpha-numeric chars in the string with '_', so
+     * that it can be used as the ID of nodes in dot file */
+    strcpy(dstNID, xrpc_hostname);
+    ptr = dstNID;
+    do { if(!isalnum(ptr[0])) ptr[0] = '_'; ptr++; } while (ptr[0]);
+    ret = strlen(xrpc_hostname);
+    snprintf(dstNID + ret, 1024-ret, "_%d", xrpc_port);
+
+    stream_printf(s,
+            "digraph G {\n"
+            " ratio=2\n"
+            " node [style=filled, color=\".7 .3 1.0\"];\n"
+            " subgraph cluster_%s {\n"
+            "  node [style=filled,color=\".7 .3 1.0\"];\n"   
+            "  style=filled;\n"
+            "  color=yellow;\n"
+            "  label=\"%s:%d\";\n"
+            "  %s_"LLFMT"[label=\"%s\"];\n"
+            " }\n"
+            " query->%s_"LLFMT"[headURL=\"http://%s:%d/logs/req_"LLFMT".xml\"]\n"
+            " %s_"LLFMT"->query[label=\""LLFMT"ms\",headURL=\"http://%s:%d/logs/res_"LLFMT".xml\"]\n\n",
+            dstNID,
+            xrpc_hostname, xrpc_port,
+            dstNID, xrpc_seqnr, xrpc_method,
+            dstNID, xrpc_seqnr, xrpc_hostname, xrpc_port, xrpc_seqnr,
+            dstNID, xrpc_seqnr, time_exec, xrpc_hostname, xrpc_port, xrpc_seqnr);
+
+    bi = bat_iterator(participants);
+    BATloop(participants, p, q) {
+        ret = sscanf(BUNtail(bi,p), "%[^','],%[^','],%[^','],%s", caller, dst, fcn, time);
+        if(ret != 4) {
+            GDKerror("draw_queryflow: sscanf failed");
+            return GDK_FAIL;
+        }
+        seqnr = strrchr(dst, ':');
+        if(!seqnr) {
+            GDKerror("draw_queryflow: invalid value of participant: %s.", dst);
+            return GDK_FAIL;
+        }
+        seqnr[0] = '\0'; /* cut off the seqnr from the dst string */
+        seqnr++;
+
+        ptr = caller;
+        do { if(!isalnum(ptr[0])) ptr[0] = '_'; ptr++; } while (ptr[0]);
+
+        strcpy(dstNID, dst);
+        ptr = dstNID;
+        do { if(!isalnum(ptr[0])) ptr[0] = '_'; ptr++; } while (ptr[0]);
+
+        stream_printf(s,
+                " subgraph cluster_%s {\n"
+                "   node [style=filled,color=\".7 .3 1.0\"];\n"   
+                "   style=filled;\n"
+                "   color=yellow;\n"
+                "   label=\"%s\";\n"
+                "   %s_%s[label=\"%s\"];\n"
+                " }\n"
+                " %s->%s_%s[headURL=\"http://%s/logs/req_%s.xml\"]\n"
+                " %s_%s->%s[label=\"%sms\",headURL=\"http://%s/logs/res_%s.xml\"]\n\n",
+                dstNID,
+                dst,
+                dstNID, seqnr, fcn,
+
+                caller, dstNID, seqnr, dst, seqnr,
+                dstNID, seqnr, caller, time, dst, seqnr);
+    }
+    stream_write(s, "}", 1, 1);
+    stream_flush(s);
+    stream_close(s);
+    stream_destroy(s);
+    
+    char mapArg[2055], gifArg[2055]; 
+    snprintf(mapArg, 2055, "-o%s.xml", base_name);
+    snprintf(gifArg, 2055, "-o%s.gif", base_name);
+    /*
+    char *argv[7];
+    argv[0] = "dot";
+    argv[1] = "-Tcmapx";
+    argv[2] = mapArg;
+    argv[3] = "-Tgif";
+    argv[4] = gifArg;
+    argv[5] = dotFile;
+    argv[6] = (char*)NULL;
+    */
+
+    if(execlp("dot", "dot", "-Tcmapx", mapArg, "-Tgif", gifArg, dotFile, (char*)NULL) < 0) {
+    //if(execvp("dot", argv) < 0) {
+        GDKerror("draw_queryflow: failed to generate query flow "
+                "graph using \"dot\": %s", strerror(errno));
+        return GDK_FAIL;
+    }
+
+    return GDK_SUCCEED;
+}
 
 int 
 xquery_print_result_DRIVER (
@@ -2020,10 +2137,20 @@ xquery_print_result_DRIVER (
     int ret, trace = xrpc_method && *xrpc_method && xrpc_mode && strstr(xrpc_mode, "trace");
     (void) driverFun;
     (void) driverArg;
+
+    lng time_exec = (GDKusec() - *xrpc_start) / 1000;
+
     if (trace) {
         stream* logstream = xquery_print_trace("res",*xrpc_seqnr);
         fp = logstream?attach_teestream(fp, logstream):NULL;
         if (fp == NULL) return GDK_FAIL;
+        if (strcmp(xrpc_caller, "query.0") == 0) {
+            BATiter wsi = bat_iterator(ws);
+            BAT *participants = BATdescriptor(*(bat*) BUNtail(wsi, XRPC_PARTICIPANTS));
+            if(draw_queryflow(*xrpc_seqnr, xrpc_method, time_exec,
+                        participants) == GDK_FAIL)
+                return GDK_FAIL;
+        }
     }
     ret = xquery_print_result_driver (
                fp,
@@ -2046,7 +2173,7 @@ xquery_print_result_DRIVER (
                xrpc_mode, 
                xrpc_seqnr, 
                xrpc_timeout, 
-               xrpc_start);
+               &time_exec);
   
      if (trace) detach_teestream(fp);
      return ret; 

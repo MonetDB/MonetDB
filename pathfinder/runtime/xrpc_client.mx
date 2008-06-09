@@ -47,6 +47,7 @@ the "AmbientDB" project.
         str genType,
         str mode,
         str qid,
+        bit firstCaller,
         lng seqnr,
         lng timeout,
         str dst,
@@ -146,7 +147,9 @@ PROC doLoopLiftedRPC(
 
         var local_name := "rpc_res_00" + str(int($h)+off);
         var rpc_res, timeout := max(0LL,xrpc_timeout - ((usec() - time_start)/1000));
-        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, xrpc_seqnr, timeout, $t, modname, location, method,
+        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid,
+                    (xrpc_caller = ""),
+                    xrpc_seqnr, timeout, $t, modname, location, method,
                     updCall, arity, itercnt, ws, fun_vid, fun_iter, fun_item,
                     fun_kind, int_values, dbl_values, dec_values, str_values));
 
@@ -282,7 +285,7 @@ PROC doIterativeRPC(
         var local_name := "rpc_res_00" + str(h+1);
         if (xrpc_qid != "") lock_unset(wslock);
         var rpc_res, timeout := max(0LL,xrpc_timeout - ((usec() - time_start)/1000));
-        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, xrpc_seqnr, timeout, $t, modname, location, method,
+        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, (xrpc_caller = ""), xrpc_seqnr, timeout, $t, modname, location, method,
                     updCall, arity, lng(1), ws, cur_fun_vid, cur_fun_iter, cur_fun_item,
                     cur_fun_kind, int_values, dbl_values, dec_values, str_values));
         if (xrpc_qid != "") lock_set(wslock);
@@ -810,6 +813,7 @@ byvalue_request(
         str genType,
         str rpc_mode,
         str qid,
+        bool firstCaller,
         lng seqnr,
         lng timeout,
         str rpc_module,
@@ -913,8 +917,16 @@ byvalue_request(
         if (ret < 0) 
             return clean_up(bs, argcnt, iterc);
     }
-    ret = stream_printf(bs, XRPC_REQ_HEADER, rpc_module, rpc_uri, rpc_method, 
-                            arity, iterc, xrpc_hostname, xrpc_port, seqnr, rpc_mode, updCall?"true":"false");
+
+    if(firstCaller) {
+        ret = stream_printf(bs, XRPC_REQ_HEADER_FIRST_CALLER,
+                rpc_module, rpc_uri, rpc_method, arity, iterc,
+                rpc_mode, updCall?"true":"false");
+    } else {
+        ret = stream_printf(bs, XRPC_REQ_HEADER, rpc_module, rpc_uri,
+                rpc_method, arity, iterc, xrpc_hostname, xrpc_port,
+                seqnr, rpc_mode, updCall?"true":"false");
+    }
     if (ret < 0) 
         return clean_up(bs, argcnt, iterc);
 
@@ -1138,6 +1150,7 @@ CMDhttp_post(
         str genType,
         str rpc_mode,
         str qid,
+        bool *firstCaller,
         lng *seqnr,
         lng *timeout,
         str dst,
@@ -1184,7 +1197,7 @@ CMDhttp_post(
         return GDK_FAIL;
     }
 
-    if(!(req = byvalue_request(timing, genType, rpc_mode, qid, *seqnr, *timeout, rpc_module, rpc_uri, rpc_method,
+    if(!(req = byvalue_request(timing, genType, rpc_mode, qid, *firstCaller, *seqnr, *timeout, rpc_module, rpc_uri, rpc_method,
                     *updCall, *arity, *itercnt, ws, fun_vid, fun_iter,
                     fun_item, fun_kind, int_values, dbl_values,
                     dec_values, str_values))){
