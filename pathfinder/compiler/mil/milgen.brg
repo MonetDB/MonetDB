@@ -4813,11 +4813,34 @@ reduce (PFpa_op_t * p, int goalnt)
                 case alg_fun_fn_matches_flag: /* fold( */
                 {
                     PFalg_att_t att1, att2, att3;
+                    mvar_t *chk = new_var(1),
+                           *err = new_var(1);
 
                     att1 = p->sem.fun_1to1.refs.atts[0];
                     att2 = p->sem.fun_1to1.refs.atts[1];
                     att3 = p->sem.fun_1to1.refs.atts[2];
                     res_type = aat_bln;
+
+                    /* check flags for validity */
+                    execute (
+                        catch_ (var (err->name),
+                                seq ( assgn (var (chk->name),
+                                             mpcre_match (
+                                                 VAR (L(p)->env,
+                                                      att3,
+                                                      aat_str),
+                                                 lit_str("[^imsx]"))))),
+                        if_ (not (isnil (var (err->name))),
+                             error (
+                                 arg (lit_str ("Should not happen: "
+                                      "error occurred while checking flags: "),
+                                      var (err->name))),
+                             nop ()),
+                        if_ (texist (var (chk->name), lit_bit(true)),
+                             error (lit_str ("err:FORX0001: flags of "
+                                             "fn:matches containing "
+                                             "undefined character(s)")),
+                             nop ()));
 
                     execute (
                         assgn (var (res->name),
@@ -4825,6 +4848,9 @@ reduce (PFpa_op_t * p, int goalnt)
                                    VAR (L(p)->env, att1, aat_str),
                                    VAR (L(p)->env, att2, aat_str),
                                    VAR (L(p)->env, att3, aat_str))));
+
+                    unpin (chk, 1);
+                    unpin (err, 1);
                 }   break; /* fold) */
                 case alg_fun_fn_replace: /* fold( */
                 case alg_fun_fn_replace_flag:
