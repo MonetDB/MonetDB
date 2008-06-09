@@ -379,15 +379,15 @@ fixed-sized types.
 	@4 *q = (@4*)Tloc(b, BUNlast(b));
 
 	for (; p<q; o++, p++) {
-		if (c == 0) { 
-			res = createException(ARITH, "batcalc.@1", "Division by zero");
-			break;
-		} else 
 #ifdef NULLTST
 		if (c == @3_nil || *p == @4_nil)
 			*o = @1_nil;
 		else 
 #endif
+		if (c == 0) { 
+			res = createException(ARITH, "batcalc.@1", "Division by zero");
+			break;
+		} else 
 			*o = c @2 *p;
 	}
 }
@@ -418,16 +418,16 @@ The similar code base is produced for dealing with a constant argument.
 	if( '@1' == '/'){ 
 		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
-			if (*r == 0) {
-				res = createException(ARITH, "batcalc.@1", "Division by zero");
-				break;
-				
-			} else 
 #ifdef NULLTST
 			if (*p == @4_nil || *r == @5_nil)
 				*o = @3_nil;
 			else 
 #endif
+			if (*r == 0) {
+				res = createException(ARITH, "batcalc.@1", "Division by zero");
+				break;
+				
+			} else 
 				*o = (@3)(*p / *r);
 		}
 	} else {

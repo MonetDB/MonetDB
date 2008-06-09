@@ -425,7 +425,7 @@ geared at handling the PSM code.
 			getModuleId(p) == aggrRef && 
 			getFunctionId(p) == avgRef) {
 			/* group aggr.avg -> aggr.sum/aggr.count */	
-			InstrPtr sum = copyInstruction(p), avg, t;
+			InstrPtr sum = copyInstruction(p), avg, t, iszero;
 			InstrPtr cnt = copyInstruction(p);
 			setFunctionId(sum, sumRef);
 			setFunctionId(cnt, countRef);
@@ -436,8 +436,27 @@ geared at handling the PSM code.
 
 			t = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(t, batcalcRef);
+			setFunctionId(t, putName("==", strlen("==")));
+			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_bit));
+			t = pushArgument(mb, t, getDestVar(cnt));
+			t = pushInt(mb, t, 0);
+			pushInstruction(mb, t);
+			iszero = t;
+
+			t = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(t, batcalcRef);
 			setFunctionId(t, dblRef);
 			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
+			t = pushArgument(mb, t, getDestVar(sum));
+			pushInstruction(mb, t);
+			sum = t;
+
+			t = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(t, batcalcRef);
+			setFunctionId(t, putName("ifthenelse", strlen("ifthenelse")));
+			getArg(t,0) = newTmpVariable(mb, getArgType(mb, p, 0));
+			t = pushArgument(mb, t, getDestVar(iszero));
+			t = pushNil(mb, t, TYPE_dbl);
 			t = pushArgument(mb, t, getDestVar(sum));
 			pushInstruction(mb, t);
 			sum = t;

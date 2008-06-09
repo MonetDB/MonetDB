@@ -1106,10 +1106,10 @@ str CALCbinarycheck@1@3@4(@5 *res, @3 *a, @4 *b ) {
 #ifdef DEBUG
 	printf( "CALCbinarycheck@1@3@4\n");
 #endif
-   if (*b == 0) {
-	throw(MAL, "calc.@2", @7);
-   } else if (*a == @3_nil || *b == @4_nil) {
+   if (*a == @3_nil || *b == @4_nil) {
 	*res = @5_nil;
+   } else if (*b == 0) {
+	throw(MAL, "calc.@2", @7);
    } else {
 #if TYPE_@3 == TYPE_flt || TYPE_@3 == TYPE_dbl || TYPE_@4 == TYPE_flt || TYPE_@4 == TYPE_dbl
 		/* at least one of the operands is a floating point
