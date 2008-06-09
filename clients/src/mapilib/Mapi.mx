@@ -3447,7 +3447,7 @@ mapi_cache_freeup_internal(struct MapiResultSet *result, int k)
 }
 
 static void
-mapi_extend_cache(struct MapiResultSet *result)
+mapi_extend_cache(struct MapiResultSet *result, int cacheall)
 {
 	int incr, newsize, oldsize = result->cache.limit, i;
 
@@ -3459,7 +3459,7 @@ mapi_extend_cache(struct MapiResultSet *result)
 	if (incr > 200000)
 		incr = 20000;
 	newsize = oldsize + incr;
-	if (result->cache.rowlimit > 0 && newsize > result->cache.rowlimit) {
+	if (result->cache.rowlimit > 0 && newsize > result->cache.rowlimit && !cacheall) {
 		newsize = result->cache.rowlimit;
 		incr = newsize - oldsize;
 		if (incr <= 0) {
@@ -3471,7 +3471,7 @@ mapi_extend_cache(struct MapiResultSet *result)
 			}
 			/* not enough space, so increase limit */
 			result->cache.rowlimit += 100;
-			mapi_extend_cache(result);	/* try again */
+			mapi_extend_cache(result, cacheall); /* try again */
 			return;
 		}
 	}
@@ -3490,11 +3490,11 @@ mapi_extend_cache(struct MapiResultSet *result)
 
 /* store a line in the cache */
 static void
-add_cache(struct MapiResultSet *result, char *line)
+add_cache(struct MapiResultSet *result, char *line, int cacheall)
 {
 	/* manage the row cache space first */
 	if (result->cache.writer >= result->cache.limit)
-		mapi_extend_cache(result);
+		mapi_extend_cache(result, cacheall);
 
 	result->cache.line[result->cache.writer].rows = line;
 	result->cache.line[result->cache.writer].tuplerev = result->cache.tuplecount;
@@ -3712,14 +3712,14 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			result = parse_header_line(hdl, line, result);
 			hdl->active = result;
 			if (result && *line != '&')
-				add_cache(result, strdup(line));
+				add_cache(result, strdup(line), !lookahead);
 			break;
 		default:
 			if (result == NULL) {
 				result = new_result(hdl);
 				hdl->active = result;
 			}
-			add_cache(result, strdup(line));
+			add_cache(result, strdup(line), !lookahead);
 			if (lookahead > 0 && (result->querytype == -1 /* unknown (not SQL) */  ||
 					      result->querytype == Q_TABLE ||
 					      result->querytype == Q_UPDATE))
@@ -3766,7 +3766,7 @@ mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const ch
 	}
 
 	for (tuple = *tuples++, n = 0; tuplecount < 0 ? tuple !=NULL : n < tuplecount; tuple = *tuples++, n++) {
-		add_cache(result, strdup("[ ]"));
+		add_cache(result, strdup("[ ]"), 1);
 		result->cache.line[n].fldcnt = columns;
 		anchors = malloc(columns * sizeof(*anchors));
 		result->cache.line[n].anchors = anchors;
