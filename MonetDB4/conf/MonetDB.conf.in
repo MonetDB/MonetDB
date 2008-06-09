@@ -160,12 +160,16 @@ xrpc_options=""
 
 # IP addresses or hostname separated by ';' who can execute scripts in
 # <datadir>/MonetDB/xrpc/admin/
-xrpc_admin="127.0.0.1;http://127.0.0.1;localhost;http://localhost"
+xrpc_admin="http://127.0.0.1;127.0.0.1;http://localhost;localhost"
 
 # IP addresses or hostname separated by ';' who can retrieve XML
 # documents stored in the database using a URL of the form:
 #                   http://<host>[:port]/xrpc/<name>.xml
-xrpc_user="127.0.0.1;http://127.0.0.1;localhost;http://localhost"
+xrpc_user="http://127.0.0.1;127.0.0.1;http://localhost;localhost"
+
+# document_root of the XQuery HTTP server.
+# Note: this path should be in xrpc_trusted
+xrpc_http_docroot="@Xexec_prefix@@DIRSEP@share@DIRSEP@MonetDB@DIRSEP@xrpc"
 
 # url prefixes of trusted modules separated by ';'
 xrpc_trusted="http://monetdb.cwi.nl;http://127.0.0.1;http://localhost;@Xexec_prefix@@DIRSEP@share@DIRSEP@MonetDB@DIRSEP@xrpc@DIRSEP@export"
