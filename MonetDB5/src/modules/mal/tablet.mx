@@ -287,7 +287,7 @@ comment "Free the storage space of the report descriptor";
 pattern setStream(s:streams):void 
 address TABsetStream
 comment "Redirect the output to a stream.";
-pattern setPivot(b:bat[:void,:oid]) :void
+pattern setPivot(:bat[:void,:oid]) :void
 address TABsetPivot
 comment "The pivot bat identifies the tuples of interest. The only requirement 
 	    is that all keys mentioned in the pivot tail exist in all BAT parameters 
@@ -327,6 +327,13 @@ comment "Set the character position to use for this field when loading according
 pattern setDecimal(idx:int,s:int,p:int)
 address TABsetColumnDecimal
 comment "Set the scale and precision for numeric values";
+
+command setTryAll()
+address TABsetTryAll
+comment "Skip error lines and assemble an error report";
+pattern setComplaints(b:bat[:oid,:str]) :void
+address TABsetComplaints
+comment "The comlaints bat identifies all erroneous lines encountered ";
 
 command firstPage():void 
 address TABfirstPage
@@ -430,6 +437,8 @@ typedef struct Table_t {
 	stream *fd;
 	BAT *pivot;
 	str error;	/* last error */
+	int tryall;		/* skip erroneous lines */
+	BAT *complaints;	/* lines that did not match the required input */
 	unsigned int rowwidth;		/* sum of columns used for mallocs */
 	Column columns[1];			/* at least one column, enlarged upon need */
 } Tablet;
@@ -476,6 +485,7 @@ tablet_export str TABdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABfinishReport(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABsetStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABsetPivot(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetComplaints(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABsetDelimiter(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABsetColumn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABsetColumnName(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -487,6 +497,7 @@ tablet_export str TABsetColumnWidth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABsetColumnPosition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 tablet_export str TABsetColumnDecimal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetTryAll(int *ret, int *flg);
 tablet_export str TABfirstPage(int *ret);
 tablet_export str TABlastPage(int *ret);
 tablet_export str TABnextPage(int *ret);
@@ -708,6 +719,23 @@ TABsetPivot(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+str
+TABsetComplaints(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *bid= (int*) getArgReference(stk,pci,1);
+	Client c = MCgetClient();
+	int rnr = c - mal_clients;
+	BAT *b;
+
+	(void) mb;		/* fool compiler */
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "tablet.setComplaints", "Complaints BAT missing");
+	}
+
+	tableReports[rnr]->complaints = b;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
 
 str
 TABsetDelimiter(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -722,7 +750,6 @@ TABsetDelimiter(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tableReports[rnr]->sep = !strNil(*sep) ? GDKstrdup(*sep) : 0;
 	return MAL_SUCCEED;
 }
-
 str
 TABsetColumn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -852,6 +879,18 @@ TABsetColumnDecimal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "tablet.setColumnDecimal", "Illegal range");
 	tableReports[rnr]->columns[*idx].precision = *prec;
 	tableReports[rnr]->columns[*idx].scale = *scale;
+	return MAL_SUCCEED;
+}
+
+str
+TABsetTryAll(int *ret, int *flg)
+{
+	Client c = MCgetClient();
+	int rnr = c - mal_clients;
+	(void) ret;
+	if (tableReports[rnr] == 0)
+		throw(MAL, "tablet.setTryAll", "Header information missing");
+	tableReports[rnr]->tryall = *flg;
 	return MAL_SUCCEED;
 }
 
@@ -1322,8 +1361,11 @@ skip_string(char *s, char quote)
 			esc = 1;
 		else if (*s == quote && !esc)
 			break;
-		else
+		else {
+			if (!isascii((int)*s) || iscntrl((int)*s))
+				return 0;
 			esc = 0;
+		}
 		s++;
 	}
 	if (*s)
@@ -1360,12 +1402,24 @@ insert_line(Tablet * as, char *line, ptr key)
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
 					"in %s at line %d\n", quote, s, (int) BATcount(fmt->c));
 				as->error= GDKstrdup(errmsg);
-				return -1;
+				if (as->complaints)
+					BUNins(as->complaints,NULL, as->error, TRUE);
+				if (!as->tryall)
+					return -1;
 			}
 		}
 
 		/* skip until separator */
 		while (*line) {
+			if (!isascii((int)*line) || iscntrl((int)*line)){
+				snprintf(errmsg,BUFSIZ, "non-ascii/cntrl in line %d field %d\n", 
+					(int)BATcount(fmt->c), (int)i);
+				as->error= GDKstrdup(errmsg);
+				if (as->complaints)
+					BUNins(as->complaints,NULL, as->error, TRUE);
+				if (!as->tryall)
+					return -1;
+			}
 			if (*line == *(fmt[i].sep) &&
 			    (fmt[i].sep[1] == 0 || 
 			     strncmp(fmt[i].sep, line, fmt[i].seplen) == 0)) {
@@ -1380,11 +1434,16 @@ insert_line(Tablet * as, char *line, ptr key)
 			res |= insert_val(&fmt[i], s, e, quote, key, &as->error);
 			quote = 0;
 			line = e + fmt[i].seplen;
+			if (as->error && as->complaints)
+				BUNins(as->complaints,NULL, as->error, TRUE);
 		} else {
 			snprintf(errmsg,BUFSIZ, "missing sep %s line %d field %d\n", 
 				fmt->sep, (int)BATcount(fmt->c), (int)i);
 			as->error= GDKstrdup(errmsg);
-			return -1;
+			if (as->complaints)
+				BUNins(as->complaints,NULL, as->error, TRUE);
+			if (!as->tryall)
+				return -1;
 		}
 	}
 	return res;
@@ -1611,7 +1670,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 						res = 1; 
 						if (b->len > b->pos &&
 						    i>=offset &&
-						    insert_line(as, s, NULL) < 0) {
+						    insert_line(as, s, NULL) < 0 && !as->tryall) {
 								GDKerror(as->error);
 								as->error=0;
 								GDKerror("TABLETload_file: read error "
