@@ -1,3 +1,5 @@
+<example> { <doc>Hello World</doc>/doc/text() } </example>
+<>
 <example> { 
-  fn:concat("Hello ","World") 
+  <doc>Hello World</doc>/text() 
 } </example>
