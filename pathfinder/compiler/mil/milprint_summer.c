@@ -6343,7 +6343,6 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
                  counter, counter, counter, counter,
                  counter, counter, counter, counter);
 
-
     /* Define a variable to hold the results of a function call.
      * call rpc_sender => cont~=kind
      * extract return value (s) from the message node
@@ -11729,15 +11728,23 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long t
     opt_output(f, OPT_SEC_QUERY);
 
     /* get options */
+    char *xrpc_iso = NULL, *xrpc_mode = NULL;
     opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "isolation"));
-    if (opt == NULL) 
-        opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "mode"));
     if(opt) {
-        char* xrpc_mode = *((char **) PFarray_top (opt));
-        milprintf(f, "xrpc_mode := \"%s\";\n", xrpc_mode);
+        xrpc_iso =  *((char **) PFarray_top (opt));
+        if(PFarray_last(opt) > 1)
+            PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:isolation' not allowed!");
+    }
+    opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "mode"));
+    if(opt) {
+        xrpc_mode = *((char **) PFarray_top (opt));
         if(PFarray_last(opt) > 1)
             PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:mode' not allowed!");
     }
+    if(xrpc_iso && xrpc_mode)
+        milprintf(f, "xrpc_mode := \"%s-%s\";\n", xrpc_iso, xrpc_mode);
+    else if(xrpc_iso || xrpc_mode)
+        milprintf(f, "xrpc_mode := \"%s\";\n", xrpc_iso ? xrpc_iso : xrpc_mode);
     opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "timeout"));
     if (opt) {
         long long timeout = strtoll(*((char **) PFarray_top (opt)), NULL, 10);
