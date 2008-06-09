@@ -560,12 +560,12 @@ Internal Variables
 - ``SQL_SOURCE`` - source folder of the sql package
 - ``PATHFINDER_SOURCE`` - source folder of the pathfinder package
 
-- ``MONETDB_BUILD`` - build folder of the MonetDB package (i.e. ``%MONETDB_SOURCE%\NT%``)
-- ``CLIENTS_BUILD`` - build folder of the clients package (i.e. ``%CLIENTS_SOURCE%\NT%``)
-- ``MONETDB4_BUILD`` - build folder of the MonetDB4 package (i.e. ``%MONETDB4_SOURCE%\NT%``)
-- ``MONETDB5_BUILD`` - build folder of the MonetDB5 package (i.e. ``%MONETDB5_SOURCE%\NT%``)
-- ``SQL_BUILD`` - build folder of the sql package (i.e. ``%SQL_SOURCE%\NT%``)
-- ``PATHFINDER_BUILD`` - build folder of the pathfinder package (i.e. ``%PATHFINDER_SOURCE%\NT%``)
+- ``MONETDB_BUILD`` - build folder of the MonetDB package (i.e. ``%MONETDB_SOURCE%\NT``)
+- ``CLIENTS_BUILD`` - build folder of the clients package (i.e. ``%CLIENTS_SOURCE%\NT``)
+- ``MONETDB4_BUILD`` - build folder of the MonetDB4 package (i.e. ``%MONETDB4_SOURCE%\NT``)
+- ``MONETDB5_BUILD`` - build folder of the MonetDB5 package (i.e. ``%MONETDB5_SOURCE%\NT``)
+- ``SQL_BUILD`` - build folder of the sql package (i.e. ``%SQL_SOURCE%\NT``)
+- ``PATHFINDER_BUILD`` - build folder of the pathfinder package (i.e. ``%PATHFINDER_SOURCE%\NT``)
 
 - ``MONETDB_PREFIX`` - installation folder of the MonetDB package
 - ``CLIENTS_PREFIX`` - installation folder of the clients package
