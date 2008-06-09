@@ -880,18 +880,18 @@ CMDdelete_bat_head(BAT **r, BAT *b, BAT *s)
 
 
 int
-bun_inplace(BAT **res, BAT *b, oid *id, ptr val )
+bun_inplace(BAT **res, BAT *b, oid *id, ptr t )
 {
-	int ret = void_inplace(b,*id,val,FALSE);
+	int ret = void_inplace(b,*id,@:batconvert(b,t)@,FALSE);
 	*res = b;
 	BBPfix(b->batCacheid);
 	return ret;
 }
 
 int
-bun_inplace_force(BAT **res, BAT *b, oid *id, ptr val, bit *force )
+bun_inplace_force(BAT **res, BAT *b, oid *id, ptr t, bit *force )
 {
-	int ret = void_inplace(b,*id,val,*force);
+	int ret = void_inplace(b,*id,@:batconvert(b,t)@,*force);
 	*res = b;
 	BBPfix(b->batCacheid);
 	return ret;
