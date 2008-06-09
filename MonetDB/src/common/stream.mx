@@ -257,7 +257,8 @@ it is resized. The spare byte is kept.
 A tee stream is a write stream that duplicates all output to two write
 streams of the same type (asc/bin).
 @h
-stream_export stream *open_teestream(stream *s1, stream* s2);
+stream_export stream *attach_teestream(stream *orig, stream* log);
+stream_export void  detach_teestream(stream *ts);
 
 
 typedef enum stream_errors {
@@ -2988,67 +2989,78 @@ isa_block_stream(stream *s)
 /* A tee stream just duplicates the output of a stream to to streams */
 
 typedef struct {
-  stream *s1, *s2;
+  stream *orig, *log;
 } tee_stream;
 
 static ssize_t 
-ts_write(stream *ss, const void *buf, size_t elmsize, size_t cnt){
-  tee_stream *ts = (tee_stream*) ss->stream_data.p;
-  ssize_t res1 = ts->s1->write(ts->s1, buf, elmsize, cnt); 
-  ssize_t res2 = ts->s2->write(ts->s2, buf, elmsize, cnt); 
-  return (res1 < res2)? res1 : res2;
+ts_write(stream *s, const void *buf, size_t elmsize, size_t cnt){
+  tee_stream *ts = (tee_stream*) s->stream_data.p;
+  ssize_t reorig = ts->orig->write(ts->orig, buf, elmsize, cnt); 
+  ssize_t relog = ts->log->write(ts->log, buf, elmsize, cnt); 
+  return (reorig < relog)? reorig : relog;
 }
 
 static int 
-ts_flush(stream *ss) {
-  tee_stream *ts = (tee_stream*) ss->stream_data.p;
-  int res1 = ts->s1->flush(ts->s1);
-  int res2 = ts->s2->flush(ts->s2);
-  return (res1 < res2)? res1 : res2;
+ts_flush(stream *s) {
+  tee_stream *ts = (tee_stream*) s->stream_data.p;
+  int reorig = ts->orig->flush(ts->orig);
+  int relog = ts->log->flush(ts->log);
+  return (reorig < relog)? reorig : relog;
 }
 
 static void 
-ts_close(stream *ss){
-  tee_stream *ts = (tee_stream*) ss->stream_data.p;
-  ts->s1->close(ts->s1);
-  ts->s2->close(ts->s2);
+ts_close(stream *s){
+  tee_stream *ts = (tee_stream*) s->stream_data.p;
+  ts->orig->close(ts->orig);
+  ts->log->close(ts->log);
 }
 
 static void 
-ts_destroy(stream *ss) {
-  tee_stream *ts = (tee_stream*) ss->stream_data.p;
-  ts->s1->destroy(ts->s1);
-  ts->s2->destroy(ts->s2);
+ts_destroy(stream *s) {
+  tee_stream *ts = (tee_stream*) s->stream_data.p;
+  ts->orig->destroy(ts->orig);
+  ts->log->destroy(ts->log);
+  free(ts);
+  destroy(s);
+}
+
+void 
+detach_teestream(stream *s) {
+  tee_stream *ts = (tee_stream*) s->stream_data.p;
+  ts->log->close(ts->log);
+  ts->log->destroy(ts->log);
+  free(ts);
+  destroy(s);
 }
 
 stream *
-open_teestream(stream *s1, stream *s2)
+attach_teestream(stream *orig, stream *log)
 {
         tee_stream *ts;
 	stream *ns;
 
         /* we require two write streams of the same type */
-        if (s1 == NULL || s2 == NULL || s1->type != s2->type || s1->access != ST_WRITE || s2->access != ST_WRITE)
+        if (orig == NULL || log == NULL || orig->access != ST_WRITE || log->access != ST_WRITE)
              return NULL;
         ts = (tee_stream*) malloc(sizeof(tee_stream));
 
         if (ts == NULL)
              return NULL;
-        ts->s1 = s1;
-        ts->s2 = s2;
+        ts->orig = orig;
+        ts->log = log;
 
 #ifdef STREAM_DEBUG
-	printf("tee_stream %s %s\n", s1->name ? s1->name : "<unnamed>", 
-                                     s2->name ? s2->name : "<unnamed>");
+	printf("tee_stream %s %s\n", orig->name ? orig->name : "<unnamed>", 
+                                     log->name ? log->name : "<unnamed>");
 #endif
-	if ((ns = create_stream(s1->name)) == NULL)
+	if ((ns = create_stream(orig->name)) == NULL)
 		return NULL;
 	/* blocksizes have a fixed little endian byteorder */ 
 #ifdef WORDS_BIGENDIAN
 	s->byteorder = 3412; /* simply != 1234 */
 #endif
-	ns->type = s1->type;
-	ns->access = s1->access;
+	ns->type = orig->type;
+	ns->access = orig->access;
 	ns->write = ts_write;
 	ns->close = ts_close;
 	ns->flush = ts_flush;
