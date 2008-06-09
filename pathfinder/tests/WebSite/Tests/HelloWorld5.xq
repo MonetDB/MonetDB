@@ -1,8 +1,7 @@
 <example> { <doc>Hello World</doc>//text() } </example>
 <>
-<example> { 
+<example> {
   <doc>
-   <test>Hello World</test>
-  </doc>/test/text() 
+    <msg>Hello World</msg>
+  </doc>//text()
 } </example>
-  
