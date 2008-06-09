@@ -89,3 +89,4 @@ copy_into_with_schema
 blob_not_null
 select_into
 distinct_count
+div_zero_bug
