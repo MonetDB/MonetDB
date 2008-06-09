@@ -6259,7 +6259,6 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
     PFcnode_t *dsts = NULL, *funApp = NULL;
     PFfun_t   *fun  = NULL;
     PFcnode_t *args = NULL;
-    PFarray_t *opt = NULL;
 
     assert(f && xrpc);
 
@@ -6344,26 +6343,6 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
                  counter, counter, counter, counter,
                  counter, counter, counter, counter);
 
-    opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "isolation"));
-    if (opt == NULL) 
-        opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "mode"));
-    if(opt) {
-        char* xrpc_mode = *((char **) PFarray_top (opt));
-        milprintf(f, "xrpc_mode := \"%s\";\n", xrpc_mode);
-        if(PFarray_last(opt) > 1)
-            PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:mode' not allowed!");
-    }
-
-    opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "timeout"));
-    if (opt) {
-        long long timeout = strtoll(*((char **) PFarray_top (opt)), NULL, 10);
-        if(timeout <= 0)
-            PFoops(OOPS_FATAL, "Invalid value of option 'xrpc:timeout': \"%s\".",
-                        *((char **) PFarray_top (opt)));
-        milprintf(f, "xrpc_timeout := \"%lld\";\n", timeout);
-        if(PFarray_last(opt) > 1)
-            PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:timeout' not allowed!");
-    }
 
     /* Define a variable to hold the results of a function call.
      * call rpc_sender => cont~=kind
@@ -11581,9 +11560,9 @@ const char* PFstartMIL(int statement_type) {
         "                xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,xrpc_seqnr,xrpc_timeout,time_start);\n"
 #define PF_STOPMIL_UPDATE_BODY\
         "  if (xrpc_method != \"\") \n"\
-        "    print_result(genType,ws,empty_bat,empty_bat,empty_bat,bat(void,int),int_values,dbl_values,str_values);\n"\
+        "    print_result(genType,ws,empty_bat,empty_bat,empty_bat,bat(void,int),int_values,dbl_values,str_values,\n"\
         "                  xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,xrpc_seqnr,xrpc_timeout,time_start);\n"\
-        "  if (xrpc_qid != "") {\n"\
+        "  if (xrpc_qid != \"\") {\n"\
         "    collect_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"\
         "  } else {\n"\
         "    play_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"\
@@ -11703,7 +11682,7 @@ int
 PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long timing,
                 char** prologue, char** query, char** epilogue, char* url, bool standoff)
 {
-    PFarray_t *way, *counter;
+    PFarray_t *way, *counter, *opt;
     opt_t *f = opt_open(optimize);
     int stmt = PFqueryType(R(c));
 
@@ -11748,6 +11727,28 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, long t
     f->num_fun = num_fun;     /* reassign */
 
     opt_output(f, OPT_SEC_QUERY);
+
+    /* get options */
+    opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "isolation"));
+    if (opt == NULL) 
+        opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "mode"));
+    if(opt) {
+        char* xrpc_mode = *((char **) PFarray_top (opt));
+        milprintf(f, "xrpc_mode := \"%s\";\n", xrpc_mode);
+        if(PFarray_last(opt) > 1)
+            PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:mode' not allowed!");
+    }
+    opt = PFenv_lookup(PFoptions, PFqname(PFns_xrpc, "timeout"));
+    if (opt) {
+        long long timeout = strtoll(*((char **) PFarray_top (opt)), NULL, 10);
+        if(timeout <= 0)
+            PFoops(OOPS_FATAL, "Invalid value of option 'xrpc:timeout': \"%s\".",
+                        *((char **) PFarray_top (opt)));
+        milprintf(f, "xrpc_timeout := \"%lld\";\n", timeout);
+        if(PFarray_last(opt) > 1)
+            PFoops(OOPS_FATAL, "Multiple declarations of option 'xrpc:timeout' not allowed!");
+    }
+
 
     /* define working set and all other MIL context (global vars for the query) */
     if (module_base == 0) {

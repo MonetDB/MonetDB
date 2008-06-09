@@ -2022,7 +2022,7 @@ xquery_print_result_DRIVER (
     (void) driverArg;
     if (trace) {
         stream* logstream = xquery_print_trace("res",*xrpc_seqnr);
-        fp = logstream?open_teestream(fp, logstream):NULL;
+        fp = logstream?attach_teestream(fp, logstream):NULL;
         if (fp == NULL) return GDK_FAIL;
     }
     ret = xquery_print_result_driver (
@@ -2048,10 +2048,7 @@ xquery_print_result_DRIVER (
                xrpc_timeout, 
                xrpc_start);
   
-     if (trace) {
-         stream_close(fp);
-         stream_destroy(fp);
-     }
+     if (trace) detach_teestream(fp);
      return ret; 
 }
 
