@@ -287,7 +287,7 @@ comment "Free the storage space of the report descriptor";
 pattern setStream(s:streams):void 
 address TABsetStream
 comment "Redirect the output to a stream.";
-pattern setPivot(:bat[:void,:oid]) :void
+pattern setPivot(b:bat[:void,:oid]) :void
 address TABsetPivot
 comment "The pivot bat identifies the tuples of interest. The only requirement 
 	    is that all keys mentioned in the pivot tail exist in all BAT parameters 
