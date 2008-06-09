@@ -19,15 +19,19 @@ AC_DEFUN([AM_MONETDB_DEFAULTS],
 [
 if test -f "$srcdir"/vertoo.data; then
 	dnl  Developers compiling from CVS:
-	dnl  default is --enable-strict
+	dnl  default is --enable-strict --enable-assert --enable-debug --disable-optimize
 	dft_strict=yes
+	dft_assert=yes
+	dft_debug=yes
+	dft_optimi=no
 else
 	dnl  Users compiling from source tarball(s):
-	dnl  default is --disable-strict
+	dnl  default is --disable-strict --disable-assert --disable-debug --disable-optimize
 	dft_strict=no
+	dft_assert=no
+	dft_debug=no
+	dft_optimi=no
 fi
-dft_assert=no
-dft_optimi=yes
 dft_warning=no
 dft_netcdf=no
 
@@ -1904,9 +1908,9 @@ esac
 dnl --enable-debug
 AC_ARG_ENABLE(debug,
 	AC_HELP_STRING([--enable-debug],
-		[enable full debugging [default=no]]),
+		[enable full debugging [default=$dft_debug]]),
 	enable_debug=$enableval,
-	enable_debug=no)
+	enable_debug=$dft_debug)
 if test "x$enable_debug" = xyes; then
   if test "x$enable_optim" = xyes; then
     AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible.])

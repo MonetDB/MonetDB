@@ -129,14 +129,16 @@ rm -rf $RPM_BUILD_ROOT
 %build
 
 %configure \
-        --enable-assert=no \
-        --enable-optimize \
-        --enable-bits=%{bits} \
-        %{?oid32:--enable-oid32} \
-        %{?comp_cc:CC="%{comp_cc}"} \
-        --with-monetdb=%{_prefix} \
-        %{?_with_monetdb4} %{?_without_monetdb4} \
-        %{?_with_monetdb5} %{?_without_monetdb5}
+	--enable-strict=no \
+	--enable-assert=no \
+	--enable-debug=no \
+	--enable-optimize=yes \
+	--enable-bits=%{bits} \
+	%{?oid32:--enable-oid32} \
+	%{?comp_cc:CC="%{comp_cc}"} \
+	--with-monetdb=%{_prefix} \
+	%{?_with_monetdb4} %{?_without_monetdb4} \
+	%{?_with_monetdb5} %{?_without_monetdb5}
 
 make
 

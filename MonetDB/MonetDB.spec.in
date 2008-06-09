@@ -94,8 +94,10 @@ rm -rf $RPM_BUILD_ROOT
 %build
 
 %{configure} \
+	--enable-strict=no \
 	--enable-assert=no \
-	--enable-optimize \
+	--enable-debug=no \
+	--enable-optimize=yes \
 	--enable-bits=%{bits} \
 	%{?oid32:--enable-oid32} \
 	%{?comp_cc:CC="%{comp_cc}"} \
