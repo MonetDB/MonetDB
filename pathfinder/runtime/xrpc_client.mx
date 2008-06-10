@@ -839,7 +839,9 @@ byvalue_request(
     buffer *b = NULL;
     stream *bs = NULL;
     /* Hold the temp BATs after the RPC response has been shredded: */
+	/* Might be NULL if the oid tail of a fun_* BAT is dense */
     oid *fvid_lst = NULL, *fiter_lst = NULL, *fitem_lst = NULL;
+	oid fvid_seqbase = 0, fiter_seqbase = 0, fitem_seqbase = 0;
     int *fkind_lst = NULL;
     lng *intVals = NULL;
     dbl *dblVals = NULL;
@@ -870,6 +872,9 @@ byvalue_request(
     intVals   = (lng*) Tloc(int_values, BUNfirst(int_values));
     dblVals   = (dbl*) Tloc(dbl_values, BUNfirst(dbl_values));
     strValsi  = bat_iterator(str_values);
+	fvid_seqbase = fun_vid->hseqbase;
+	fiter_seqbase = fun_iter->hseqbase;
+	fitem_seqbase = fun_item->hseqbase;
     
     /* Create buffer for the RPC request message */
     if((b = buffer_create(MAX_BUF_SIZE)) && b->len > 0) {
@@ -904,8 +909,8 @@ byvalue_request(
      * every iteration. */
     i = a = 0; /* i: iter counter; a: arg counter */
     for (cnt = 0; cnt < BATcount(fun_vid); cnt++){
-        i = fiter_lst[cnt];
-        a = fvid_lst[cnt];
+        i = fiter_lst ? fiter_lst[cnt] : cnt + fiter_seqbase;
+        a = fvid_lst ? fvid_lst[cnt] : cnt + fvid_seqbase;
         argcnt[i-1][a]++;
     }
 
@@ -969,7 +974,7 @@ byvalue_request(
             for (k= 0; k < argcnt[my_iter][my_argc]; k++) {
 
                 a = arg_offset + k; /* index into fun_item|fun_kind */
-                item = fitem_lst[a];
+                item = fitem_lst ? fitem_lst[a] : a + fitem_seqbase;
                 cmbn_cont_kind = fkind_lst[a];
                 cur_kind = XTRACT_KIND(cmbn_cont_kind);
                 contID = XTRACT_CONT(cmbn_cont_kind);
