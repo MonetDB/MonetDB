@@ -2310,3 +2310,15 @@ BEGIN
 	ORDER BY distance ASC LIMIT 1);   -- order by needed to get the closest one.
 END;
 
+CREATE FUNCTION fGetUrlExpEq(ra float, "dec" float)
+returns varchar(256)
+begin
+        declare WebServerURL varchar(500);
+        set WebServerURL = 'http://localhost/';
+        select cast(value as varchar(500)) into WebServerURL 
+                from SiteConstants
+                where name ='WebServerURL';
+        return WebServerURL + 'tools/explore/obj.asp?ra='
+                + ltrim(cast (round(ra,6) as varchar(10))) + '&"dec"=' + ltrim(cast(round("dec",6)  as varchar(10)));
+end;
+
