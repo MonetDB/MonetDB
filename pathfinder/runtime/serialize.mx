@@ -2094,7 +2094,7 @@ draw_queryflow(
     stream_close(s);
     stream_destroy(s);
     
-    snprintf(dotcmd, 1024, "dot -Tcmapx -o%s.xml -Tgif -o%s.gif %s", base_name, base_name, dotFile);
+    snprintf(dotcmd, 1024, "dot -Tcmapx -o%s.xml -Tgif -o%s.gif %s 2> %s.err", base_name, base_name, dotFile, dotFile);
     if (ret || system(dotcmd) < 0) {
         GDKerror("draw_queryflow: failed to generate query flow graph using \"dot\"");
         return GDK_FAIL;
@@ -2141,8 +2141,12 @@ xquery_print_result_DRIVER (
         if (strcmp(xrpc_caller, "query") == 0) {
             BATiter wsi = bat_iterator(ws);
             BAT *participants = BATdescriptor(*(bat*) BUNtail(wsi, XRPC_PARTICIPANTS));
-            if(draw_queryflow(*xrpc_seqnr, xrpc_method, time_exec, participants) == GDK_FAIL)
-                return GDK_FAIL;
+            int ret = GDK_FAIL;
+            if (participants) {
+                ret = draw_queryflow(*xrpc_seqnr, xrpc_method, time_exec, participants);
+                BBPunfix(participants->batCacheid);
+            }
+            if (ret == GDK_FAIL) return ret;
         }
     }
     ret = xquery_print_result_driver (

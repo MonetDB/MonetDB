@@ -4967,7 +4967,12 @@ xquery_function_call(xquery_client *ctx,
 
             if (shredBAT) {
                 /* add shredded RPC request message to the working set */
-                src = " ws_opencoll(ws, bat(xrpc_shredBAT), \"\", TEMP_DOC);\n";
+                src = " var cont := ws_opencoll(ws, bat(xrpc_shredBAT), \"\", TEMP_DOC);\n"
+                      " fun_kind000.inplace([+](fun_kind000.ord_select(64,int_nil),<<(int(cont),6) - 64));\n";
+                /* the above weirdness is to handle nested requests made from a cached ws in 2PC.
+                 * in that case, the XRC message is *not* cont=1, but something else, therefore
+                 * we have to adjust the kind numbers of all node values.
+                 */
                 while(*src && cur < end) *cur++ = *src++;
             }
 
@@ -5019,14 +5024,16 @@ xquery_function_call(xquery_client *ctx,
             }
             for(k=0; k<argcnt[j][i]; k++,l++) {
                 /* 'hack': perform simple atomic casts using Monet's ATOMfromstr */
-                int t = argtpe[l];
-                if (fun->sig->tpe[i] < XQUERY_ABSTRACT)
-                    t = fun->sig->tpe[i]; /* just parse the value string as if it was from the desired type */ 
                 /* it is doubtful how well pathfinder supports other
                  * casts and what we should do here in those cases.
                  */
+                int t = argtpe[l];
+                if (fun->sig->tpe[i] < XQUERY_ABSTRACT)
+                    t = fun->sig->tpe[i]; /* just parse the value string as if it was from the desired type */ 
+
+                /* parse value from tpe/str into a MonetDB BAT representation. */ 
                 cur = xquery_parse_val(t, argval[l], ctx->fun_item000, ctx->fun_kind000, 
-                                       ctx->int_values, ctx->dbl_values, ctx->str_values, mil, 0); 
+                                       ctx->int_values, ctx->dbl_values, ctx->str_values, mil, 1); 
                 if (cur) return cur;
                 @:bunappend(fun_vid000, &vid, (size_t) *(oid*), SZFMT, "@0", ctx->)@
                 @:bunappend(fun_iter000, &iter, (size_t) *(oid*), SZFMT, "@0", ctx->)@

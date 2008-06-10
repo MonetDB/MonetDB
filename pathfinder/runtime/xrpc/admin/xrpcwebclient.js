@@ -167,7 +167,7 @@ XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callbac
             }
         };
     } catch (e) {
-        alert('sendRequest('+method+'): '+e);
+        alert('sendRequest('+posturl,','+method+'): '+e);
     }
 }
 
@@ -200,7 +200,7 @@ XRPCWebClientPart.prototype.sendReceivePart = function(geturl, callback) {
             }
         };
     } catch (e) {
-        alert('sendRequest('+method+'): '+e);
+        alert('sendRequest('+geturl+'): '+e);
     }
 }
 

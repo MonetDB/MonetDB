@@ -646,7 +646,7 @@ xrpc_parse_message(stream *out,
     /* FIXME: should used BATdescriptor */
 @= getbat
     @1 = BATdescriptor(*(bat*)BUNtail(shredBATi,i+@2));
-    if (pre_size == NULL) {
+    if (@1 == NULL) {
         send_err(out, ERR404, "env:Sender", "Shredded BAT @1 unavailable");
         goto cleanup;
     }
@@ -928,6 +928,7 @@ xrpc_parse_message(stream *out,
 @c
 cleanup:
     if (req) XRPCreq_free(req);
+    @:delbat(pre_size)@
     @:delbat(pre_level)@
     @:delbat(pre_prop)@
     @:delbat(pre_kind)@
