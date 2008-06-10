@@ -1057,6 +1057,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 		lg->snapshots = BATdescriptor(snapshots);
 	}
 	lg->freed = BATnew(TYPE_int, TYPE_void, 1);
+	snprintf(bak, BUFSIZ, "%s_freed", fn);
+	BBPrename(lg->freed->batCacheid, bak);
 
 	snprintf(filename, BUFSIZ, "%s%s", lg->dir, LOGFILE);
 
