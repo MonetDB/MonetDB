@@ -11387,12 +11387,6 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 const char* PFinitMIL(void) {
     return
 #ifdef HAVE_PFTIJAH
-	"var tijah_scoreDB  := new(void,bat).seqbase(0@0);\n"
-	"tijah_scoreDB.append(new(void,oid).seqbase(0@0));\n" // 0@0 tijah_tID
-	"tijah_scoreDB.append(new(void,oid).seqbase(0@0));\n" // 1@0 tijah_frag
-	"tijah_scoreDB.append(new(void,oid).seqbase(0@0));\n" // 2@0 tijah_pre
-	"tijah_scoreDB.append(new(void,dbl).seqbase(0@0));\n" // 3@0 tijah_score
-	"tijah_scoreDB.append(new(lng,lng));\n"               // 4@0 tijah_resultsz
 	"var tijah_lock  := lock_nil; # pftijah collection lock\n"
 #endif
 #ifdef HAVE_PROBXML
@@ -11492,7 +11486,16 @@ const char* PFvarMIL(void) {
         "var v_kind000;\n"
         "var outer000;\n"
         "var inner000;\n"
-        "var order_000;\n";
+        "var order_000;\n"
+#ifdef HAVE_PFTIJAH
+	"var tijah_scoreDB  := new(void,bat).seqbase(0@0);\n"
+	"tijah_scoreDB.append(new(void,oid).seqbase(0@0));\n" // 0@0 tijah_tID
+	"tijah_scoreDB.append(new(void,oid).seqbase(0@0));\n" // 1@0 tijah_frag
+	"tijah_scoreDB.append(new(void,oid).seqbase(0@0));\n" // 2@0 tijah_pre
+	"tijah_scoreDB.append(new(void,dbl).seqbase(0@0));\n" // 3@0 tijah_score
+	"tijah_scoreDB.append(new(lng,lng));\n"               // 4@0 tijah_resultsz
+#endif
+	;
 }
 
 #define PF_STARTMIL_START \
