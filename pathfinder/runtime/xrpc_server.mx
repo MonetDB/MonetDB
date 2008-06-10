@@ -237,7 +237,7 @@ Start XPRC receiver using the default values as specified in \
     "   xrpc:method=\"%s\"\n"\
     "   xrpc:arity=\"%lld\"\n"\
     "   xrpc:iter-count=\"%lld\"\n"\
-    "   xrpc:caller=\"query.0\"\n"\
+    "   xrpc:caller=\"query\"\n"\
     "   xrpc:mode=\"%s\"\n"\
     "   xrpc:updCall=\"%s\">\n"
 
