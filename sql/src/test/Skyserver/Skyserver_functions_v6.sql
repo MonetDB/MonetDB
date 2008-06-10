@@ -2263,3 +2263,50 @@ begin
 		+ cast(coalesce(specObjId,0) as varchar(32));
 end;
 
+CREATE FUNCTION fGetUrlFitsSpectrum(specObjIdd bigint)
+RETURNS varchar(128) 
+BEGIN
+        DECLARE link varchar(128), plate varchar(16), mjd varchar(16), fiber varchar(16), rerun int;
+        SET link = (select value from SiteConstants where name='DataServerURL');        
+	SET rerun=(select p.spRerun from specobjall s, platex p where s.plateid=p.plateid and s.specobjid=specObjIdd);
+        SET link = link + 'spectro/1d_' + cast(rerun as varchar(4)) + '/';
+        SELECT cast(p.mjd as varchar(8)) into mjd
+            FROM PlateX p, specObjAll s 
+            WHERE p.plateId=s.plateId AND s.specObjID=specObjIdd;
+	SELECT cast(p.plate as varchar(8)) into plate
+            FROM PlateX p, specObjAll s 
+            WHERE p.plateId=s.plateId AND s.specObjID=specObjIdd;
+	SELECT cast(s.fiberID as varchar(8)) into fiber  
+            FROM PlateX p, specObjAll s 
+            WHERE p.plateId=s.plateId AND s.specObjID=specObjIdd;
+        SET plate = substring('0000',1,4-length(plate)) + plate;
+        SET fiber = substring( '000',1,3-length(fiber)) + fiber;
+        RETURN   link + plate + '/1d/spSpec-'+mjd+'-'+plate+'-'+fiber+'.fit';
+END;
+
+CREATE FUNCTION fGetNearestObjAllEq (ra float, "dec" float, r float)
+RETURNS TABLE (
+    objID bigint,
+    run int ,
+    camcol int ,
+    field int ,
+    rerun int ,
+    type int ,
+    mode int ,
+    cx float ,
+    cy float ,
+    cz float ,
+    htmID bigint,
+    distance float		-- distance in arc minutes
+  ) 
+BEGIN
+	DECLARE d2r float,nx float,ny float,nz float ;
+	set d2r = PI()/180.0;
+	set nx  = COS("dec"*d2r)*COS(ra*d2r);
+	set ny  = COS("dec"*d2r)*SIN(ra*d2r);
+	set nz  = SIN("dec"*d2r);
+	RETURN TABLE (SELECT * 
+	FROM fGetNearbyObjAllXYZ(nx,ny,nz,r)
+	ORDER BY distance ASC LIMIT 1);   -- order by needed to get the closest one.
+END;
+

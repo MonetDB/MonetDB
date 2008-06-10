@@ -13,10 +13,10 @@ stdout of test 'subselect_ambigious_columns-bug-sf-949071` in directory 'src/tes
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:35075/
 # MonetDB/SQL module v2.24.0 loaded
 
+printf("\nReady.\n");
+
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
+quit();
 
 Over..
 
@@ -41,15 +41,15 @@ Over..
 % name # name
 % varchar # type
 % 10 # length
-[ "functions"	]
 [ "args"	]
+[ "functions"	]
+[ "idxs"	]
+[ "idxs"	]
+[ "keycolumns"	]
+[ "keycolumns"	]
+[ "keys"	]
+[ "keys"	]
 [ "sequences"	]
-[ "keys"	]
-[ "idxs"	]
-[ "keycolumns"	]
-[ "keys"	]
-[ "idxs"	]
-[ "keycolumns"	]
 
 # 21:42:22 >  
 # 21:42:22 >  Done.
