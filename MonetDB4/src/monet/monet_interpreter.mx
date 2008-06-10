@@ -2214,8 +2214,11 @@ interpret_iterator(Cntxt stk, YYSTREE lt, int parallel)
 	 */
 
 	if (parallel > handle->parcap) {
-		/* Create more trees
+		/* Create more trees, fore recreation of all
 		 */
+                Myyfree(handle->tree);
+                handle->tree = NULL;
+                handle->parmax = 0;
 		iterator_maketrees(handle, body, parallel, ht, tt);
 
 		/* Rearrange the tree: we make one structure of everything,
