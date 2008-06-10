@@ -200,47 +200,52 @@ Start XPRC receiver using the default values as specified in \
 /* XRPC SOAP snippets */
 #define SOAP_ENVELOPE\
     "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"\
-    "<env:Envelope xmlns:env=\"" SOAP_NS "\""\
-                 " xmlns:xrpc=\"" XRPC_NS "\""\
-                 " xmlns:xdt=\"" XDT_NS "\" "\
-                 " xmlns:xs=\"" XS_NS "\""\
-                 " xmlns:xsi=\"" XSI_NS "\""\
-                 " xsi:schemaLocation=\"" XRPC_NS " " XRPC_LOC "\">"
+    "<env:Envelope\n"\
+    "  xmlns:env=\"" SOAP_NS "\"\n"\
+    "  xmlns:xrpc=\"" XRPC_NS "\"\n"\
+    "  xmlns:xdt=\"" XDT_NS "\" \n"\
+    "  xmlns:xs=\"" XS_NS "\"\n"\
+    "  xmlns:xsi=\"" XSI_NS "\"\n"\
+    "  xsi:schemaLocation=\"" XRPC_NS " " XRPC_LOC "\">\n"
 
 #define XRPC_WS_QID\
-      "<wscoor:CoordinationContext xmlns:wscoor=\""WSCOOR_NS"\" "\
-                 "env:mustUnderstand=\"true\">"\
-        "<wscoor:Identifier>%s</wscoor:Identifier>"\
-        "<wscoor:Expires>"LLFMT"</wscoor:Expires>"\
-        "<wscoor:CoordinationType>" WSAT_NS "</wscoor:CoordinationType>"\
-      "</wscoor:CoordinationContext>"
+      " <wscoor:CoordinationContext\n"\
+      "  xmlns:wscoor=\""WSCOOR_NS"\"\n"\
+      "  env:mustUnderstand=\"true\">\n"\
+      "   <wscoor:Identifier>%s</wscoor:Identifier>\n"\
+      "   <wscoor:Expires>"LLFMT"</wscoor:Expires>\n"\
+      "   <wscoor:CoordinationType>" WSAT_NS "</wscoor:CoordinationType>\n"\
+      " </wscoor:CoordinationContext>\n"
 
 #define XRPC_REQ_HEADER\
-    "<env:Body>"\
-      "<xrpc:request xrpc:module=\"%s\""\
-                   " xrpc:location=\"%s\""\
-                   " xrpc:method=\"%s\""\
-                   " xrpc:arity=\"%lld\""\
-                   " xrpc:iter-count=\"%lld\""\
-                   " xrpc:caller=\"%s:%d:"LLFMT"\""\
-                   " xrpc:mode=\"%s\""\
-                   " xrpc:updCall=\"%s\">"
+    "<env:Body>\n"\
+      "<xrpc:request\n"\
+      "  xrpc:module=\"%s\"\n"\
+      "  xrpc:location=\"%s\"\n"\
+      "  xrpc:method=\"%s\"\n"\
+      "  xrpc:arity=\"%lld\"\n"\
+      "  xrpc:iter-count=\"%lld\"\n"\
+      "  xrpc:caller=\"%s:%d:"LLFMT"\"\n"\
+      "  xrpc:mode=\"%s\"\n"\
+      "  xrpc:updCall=\"%s\">\n"
 
 #define XRPC_REQ_HEADER_FIRST_CALLER\
-    "<env:Body>"\
-      "<xrpc:request xrpc:module=\"%s\""\
-                   " xrpc:location=\"%s\""\
-                   " xrpc:method=\"%s\""\
-                   " xrpc:arity=\"%lld\""\
-                   " xrpc:iter-count=\"%lld\""\
-                   " xrpc:caller=\"query.0\""\
-                   " xrpc:mode=\"%s\""\
-                   " xrpc:updCall=\"%s\">"
+    "<env:Body>\n"\
+    " <xrpc:request\n"\
+    "   xrpc:module=\"%s\"\n"\
+    "   xrpc:location=\"%s\"\n"\
+    "   xrpc:method=\"%s\"\n"\
+    "   xrpc:arity=\"%lld\"\n"\
+    "   xrpc:iter-count=\"%lld\"\n"\
+    "   xrpc:caller=\"query.0\"\n"\
+    "   xrpc:mode=\"%s\"\n"\
+    "   xrpc:updCall=\"%s\">\n"
 
 #define XRPC_RES_HEADER\
-    "<env:Body>"\
-      "<xrpc:response xrpc:module=\"%s\""\
-                    " xrpc:method=\"%s\">"
+    "<env:Body>\n"\
+    " <xrpc:response\n"\
+    "   xrpc:module=\"%s\"\n"\
+    "   xrpc:method=\"%s\">\n"
 
 #define XRPC_HTTP_CALL "<xrpc:call>"                                    \
                          "<xrpc:sequence>"                              \
@@ -261,8 +266,8 @@ Start XPRC receiver using the default values as specified in \
                          "</xrpc:sequence>"                             \
                        "</xrpc:call>"
 
-#define XRPC_FOOTER     "</xrpc:request>"   \
-                      "</env:Body>"         \
+#define XRPC_FOOTER " </xrpc:request>\n"   \
+                    "</env:Body>\n"         \
                     "</env:Envelope>\n"
 
 #ifndef HOST_NAME_MAX
@@ -368,14 +373,18 @@ send_err(stream *out,
         stream_printf(out, "HTTP/1.1 %s\r\n"
             "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n"
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-            "<env:Envelope xmlns:env=\"%s\">"
-            "<env:Body>"
-            "<env:Fault>"
-            "<env:Code><env:Value>%s</env:Value></env:Code>"
-            "<env:Reason>"
-            "<env:Text xml:lang=\"en\">%s</env:Text>"
-            "</env:Reason>"
-            "</env:Fault></env:Body></env:Envelope>\n",
+            "<env:Envelope xmlns:env=\"%s\">\n"
+            " <env:Body>\n"
+            "  <env:Fault>\n"
+            "   <env:Code>\n"
+            "    <env:Value>%s</env:Value>\n"
+            "   </env:Code>\n"
+            "   <env:Reason>\n"
+            "    <env:Text xml:lang=\"en\">%s</env:Text>\n"
+            "   </env:Reason>\n"
+            "  </env:Fault>\n"
+            " </env:Body>\n"
+            "</env:Envelope>\n",
             http_err, SOAP_NS, soap_err, err_reason);
         stream_flush(out);
     }
@@ -600,7 +609,7 @@ xrpc_parse_message(stream *out,
     XRPCreq_t *req = NULL, *res = NULL;
     char* msg = participants?XRPC_RESPONSE:XRPC_REQUEST;
     char *module = NULL, *method = NULL, *location = NULL;
-    char *mode = NULL, *qid = NULL, *caller = "query,0";
+    char *mode = NULL, *qid = NULL, *caller = "query";
     char *arity_str = NULL, *itercnt_str = NULL;
     char *pul = NULL, *val = NULL;
     int updCall = FALSE;
@@ -1033,7 +1042,7 @@ execQuery(mapi_client *mc,
         /* if error was caused by other problems, we haven't checked
          * query expiration time */
         snprintf(errbuf_all, GDKMAXERRLEN*2,
-                "Error occurred during execution:s\n%s\n%s",
+                "Error occurred during execution:\n%s\n%s",
                 *errbuf ? errbuf : "",
                 err == ((char*)-1) ? "no further error message" : err);
         send_err(mc->c->fdout, ERR404, "env:Sender", errbuf_all);

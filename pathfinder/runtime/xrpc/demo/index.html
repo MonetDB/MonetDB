@@ -189,26 +189,9 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   }
 
   function showResponse(xmldoc) {
-    /*var obj = document.getElementById("answer");
-    var obj2 = document.getElementById("updating");
-    if (!obj2.checked) { // not updating function
-    	var nodes = getnodesXRPC(response,"sequence");
-    	var text = "";
-    	for (var i = 0; i < nodes.length; i++) {
-    		if (i > 0) text += ", ";
-    		for (var c = 0; c < nodes[i].childNodes.length; c++) {
-    			text += serializeXML(nodes[i].childNodes[c].firstChild);
-    		}
-    	}
-  		obj.value = text;
-  	} else {
-  		obj.value = "Update succeeded (an updating function returns no answer).";
-  	}*/
-  	
-  	var participantNodes = xmldoc.getElementsByTagName("participants");
+  	var participantNodes = xmldoc.getElementsByTagName("participant");
   	var participantNode = null; 
-  	if (participantNodes.length > 0)
-  		participantNode = xmldoc.getElementsByTagName("participants")[0].firstChild;
+  	if (participantNodes.length > 0) participantNode = participantNodes[0];
   	if (participantNode == null) {
   		participantNode = document.createElement("participant");
   		var tnode = document.createTextNode("query,127.0.0.1:50001,1,fcn,time");
@@ -216,7 +199,8 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   	}
   	var value = participantNode.firstChild.nodeValue;
   	var sepValues = value.split(",");
-  	var newSrcLocation = "http://" + sepValues[1] + "/logs/qflow_" +sepValues[2];
+  	    sepValues = sepValues[1].split(":");
+  	var newSrcLocation = "http://" + sepValues[0] + ":" + sepValues[1] + "/logs/qflow_" + sepValues[2];
   	
   	var imgobj = document.getElementById("treeimg");
   	imgobj.src = newSrcLocation + ".gif";
@@ -352,14 +336,14 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   	//var xpe = new XPathEvaluator();
 	//var nsResolver = xpe.createNSResolver(xmldoc.ownerDocument == null ? xmldoc.documentElement : xmldoc.ownerDocument.documentElement);
   	//var oid = document.evaluate('/env:Envelope/env:Header/wscoor:CoordinationContext/wscoor:Identifier/text()', xmldoc, nsResolver, XPathResult.ANY_TYPE, null);
-  	var qid = xmldoc.getElementsByTagName("Identifier")[0].firstChild.nodeValue;
-  	var reqnode = xmldoc.getElementsByTagName("Body")[0].firstChild;
+  	// var qid = xmldoc.getElementsByTagName("Identifier")[0].firstChild.nodeValue;
+  	var reqnode = xmldoc.getElementsByTagName("request")[0];
   	var funcn = reqnode.getAttribute("xrpc:method");
   	var ns = reqnode.getAttribute("xrpc:module");
   	var loc = reqnode.getAttribute("xrpc:location");
   	var htm =
   		'<table>' +
-  		'<tr><td>QID<\/td><td>' + qid + '<\/td><\/tr>' +
+  		// '<tr><td>QID<\/td><td>' + qid + '<\/td><\/tr>' +
   		'<tr><td>Function<\/td><td>' + funcn + '<\/td><\/tr>' +
   		'<tr><td>NS<\/td><td>' + ns + '<\/td><\/tr>' +
   		'<tr><td>Loc<\/td><td>' + loc + '<\/td><\/tr>' +
@@ -394,9 +378,9 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   	obj.innerHTML = "changed";
   	var qid = 'UNKNOWN';
   	try {qid = xmldoc.getElementsByTagName("Identifier")[0].firstChild.nodeValue;} catch(err) {}
-  	var reqnode = xmldoc.getElementsByTagName("Body")[0].firstChild;
-  	var funcn = reqnode.getAttribute("xrpc:method");
-  	var ns = reqnode.getAttribute("xrpc:module");
+  	var resnode = xmldoc.getElementsByTagName("response")[0];
+  	var funcn = resnode.getAttribute("xrpc:method");
+  	var ns = resnode.getAttribute("xrpc:module");
   	var htm =
   		'<table>' +
   		'<tr><td>QID<\/td><td>' + qid + '<\/td><\/tr>' +
@@ -404,8 +388,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   		'<tr><td>NS<\/td><td>' + ns + '<\/td><\/tr>' +
   		'<tr><td>&nbsp;<\/td><td><\/td><\/tr>' +
   		'<\/table><table><tr><td>iter<\/td><td>result<\/td><\/tr>';
-  		var seqnodes = xmldoc.getElementsByTagName("response")[0].childNodes;
-  		
+  	        var seqnodes = resnode.getElementsByTagName("sequence");
   		for (var k = 0; k < seqnodes.length; k++) {
 	  		var atvals = seqnodes[k].childNodes;
 	  		var sval = '( ';

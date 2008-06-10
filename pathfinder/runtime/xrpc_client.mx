@@ -130,10 +130,10 @@ PROC doLoopLiftedRPC(
         # order of 'fun_iter' needs to be preserved, so use 'leftjoin',
         # iso. 'join'.
         var fun_iter_dst := fun_iter.leftjoin(iter_dst);
-        var indices      := fun_iter_dst.mirror().hmark(0@0);
-        var fun_vid_dst  := indices.fetchjoin(fun_vid).tmark(0@0);
-        var fun_item_dst := indices.fetchjoin(fun_item).tmark(0@0);
-        var fun_kind_dst := indices.fetchjoin(fun_kind).tmark(0@0);
+        var indices      := fun_iter_dst.hmark(0@0);
+        var fun_vid_dst  := indices.leftfetchjoin(fun_vid);
+        var fun_item_dst := indices.leftfetchjoin(fun_item);
+        var fun_kind_dst := indices.leftfetchjoin(fun_kind);
 
         # renumber the iters, starting from 1
         fun_iter_dst := fun_iter_dst.leftjoin(iter_dst.mark(1@0));
@@ -150,8 +150,8 @@ PROC doLoopLiftedRPC(
         var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid,
                     (xrpc_caller = ""),
                     xrpc_seqnr, timeout, $t, modname, location, method,
-                    updCall, arity, itercnt, ws, fun_vid, fun_iter, fun_item,
-                    fun_kind, int_values, dbl_values, dec_values, str_values));
+                    updCall, arity, itercnt, ws, fun_vid_dst, fun_iter_dst, fun_item_dst,
+                    fun_kind_dst, int_values, dbl_values, dec_values, str_values));
 
         var time_xrpcClntDeSeria := usec();
 
@@ -159,7 +159,7 @@ PROC doLoopLiftedRPC(
             if (not(updCall)) {
                 lock_set(rpcres_lock);
                 rpc_results.insert(local_name,rpc_res);
-                rpc_iter.append(iter_dst.hmark(1@0));
+                rpc_iter.append(iter_dst.hmark(0@0));
                 lock_unset(rpcres_lock);
             }
             time_xrpcClntDeSeria := usec() - time_xrpcClntDeSeria;
@@ -208,7 +208,8 @@ PROC doLoopLiftedRPC(
             [ws_opencoll](const ws, rpc_results.tmark(0@0), rpc_results.hmark(0@0), TEMP_DOC),
             const ws, const int_values, const dbl_values, const str_values);
 
-    res_iter := proc_res.[fetch](0).[leftfetchjoin](rpc_iter);
+    res_iter := bat(void,bat).seqbase(0@0); 
+                proc_res.[fetch](0)@batloop() res_iter.append($t.leftfetchjoin(rpc_iter.find($h)));
     res_item := proc_res.[fetch](1);
     res_kind := proc_res.[fetch](2);
 
@@ -285,7 +286,8 @@ PROC doIterativeRPC(
         var local_name := "rpc_res_00" + str(h+1);
         if (xrpc_qid != "") lock_unset(wslock);
         var rpc_res, timeout := max(0LL,xrpc_timeout - ((usec() - time_start)/1000));
-        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, (xrpc_caller = ""), xrpc_seqnr, timeout, $t, modname, location, method,
+        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, (xrpc_caller = ""), 
+                    xrpc_seqnr, timeout, $t, modname, location, method,
                     updCall, arity, lng(1), ws, cur_fun_vid, cur_fun_iter, cur_fun_item,
                     cur_fun_kind, int_values, dbl_values, dec_values, str_values));
         if (xrpc_qid != "") lock_set(wslock);

@@ -4889,7 +4889,7 @@ xquery_parse_val(int t, char* v, BAT* item, BAT* kind, BAT* int_values, BAT* dbl
         @:bunappend(item, &id, (size_t) *(oid*), SZFMT, "@0")@
     } else {
         @:bunappend(item, val, (size_t) *(oid*), SZFMT, "@0")@
-        k = (cont << 6) | (t == XS_ATTRIBUTE)?ATTR:ELEM;
+        k = (cont << 6) | ((t == XS_ATTRIBUTE)?ATTR:ELEM);
     }
     @:bunappend(kind, &k, *(int*), "%d")@
     return NULL;
@@ -5500,7 +5500,7 @@ xquery_client_reset(xquery_client *ctx, char *err)
      * session the old values are overwritten (and cleant up in MIL).
      */
     Variable v = monet_cntxt[ctx->stk].var;
-    while(v && strcmp(v->name, "vu_vid")) {
+    while(v && strcmp(v->name, "v_vid000")) {
         if (v->binding.vtype == TYPE_bat) {
           BBPdecref(v->binding.val.bval, TRUE);
           v->binding.vtype = TYPE_int;

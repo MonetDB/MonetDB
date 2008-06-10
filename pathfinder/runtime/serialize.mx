@@ -1973,18 +1973,30 @@ xquery_print_result_driver (
     return GDK_SUCCEED;
 }
 
+char xrpc_logdir_buf[1024], *xrpc_logdir = NULL;
+static char* get_xrpc_logdir() {
+    char *logdir;
+    if (xrpc_logdir == NULL && (logdir = GDKgetenv("datadir")) != NULL) {
+        snprintf(xrpc_logdir_buf, 1024, "%s%cMonetDB%cxrpc%clogs%c", logdir, DIR_SEP, DIR_SEP, DIR_SEP, DIR_SEP);
+        if (GDKcreatedir(xrpc_logdir_buf)) {
+            xrpc_logdir = xrpc_logdir_buf;
+        } else {
+            GDKerror("get_xrpc_logdir: directory %s not writable.", xrpc_logdir_buf);
+        }
+    }
+    return xrpc_logdir;
+}
+
 stream*
 xquery_print_trace(str msg, lng xrpc_seqnr) {
-    char logdir[1024], logfile[1024], *docroot = GDKgetenv("datadir");
-    stream* fp;
-    if (docroot) {
-        snprintf(logdir, 1024, "%s%cMonetDB%cxrpc%clogs%c", docroot, DIR_SEP, DIR_SEP, DIR_SEP, DIR_SEP);
+    char logfile[1024], *logdir = get_xrpc_logdir();
+    stream* fp = NULL;
+    if (logdir) {
         snprintf(logfile, 1024, "%s%s_" LLFMT ".xml", logdir, msg, xrpc_seqnr);
-        GDKcreatedir(logdir);
         fp = open_wastream(logfile);
     }
     if (!fp || stream_errnr(fp)) {
-        GDKerror("print_result: could not open logfile %s for writing\n", logfile);
+        GDKerror("print_result: could not open logfile for writing\n");
         if (fp) stream_destroy(fp);
         return NULL;
     }
@@ -2000,29 +2012,27 @@ draw_queryflow(
 {
     int ret = 0;
     stream *s = NULL;
-    char *docroot = NULL, *ptr = NULL;
+    char *ptr = NULL, *logdir = get_xrpc_logdir();
     char base_name[2048], dotFile[2052], caller[1024], dst[1024];
     char dstNID[1024], fcn[1024], time[64], *seqnr = NULL;
+    char dotcmd[1024];
     BUN p, q;
     BATiter bi;
 
-    if(!(docroot = GDKgetenv("xrpc_http_docroot"))) {
-        GDKerror("draw_queryflow: xrpc_http_docroot not found");
-        return GDK_FAIL;
-    }
-    snprintf(base_name, 2048, "%s%clogs%cqflow_"LLFMT, docroot, DIR_SEP, DIR_SEP, xrpc_seqnr);
+    if (logdir == NULL) return GDK_FAIL;
+    snprintf(base_name, 2048, "%s%cqflow_"LLFMT, logdir, DIR_SEP, xrpc_seqnr);
     snprintf(dotFile, 2048, "%s.dot", base_name);
-    if(!(s = open_wstream(dotFile))) return GDK_FAIL;
 
     /* replace all non-alpha-numeric chars in the string with '_', so
      * that it can be used as the ID of nodes in dot file */
     strcpy(dstNID, xrpc_hostname);
-    ptr = dstNID;
-    do { if(!isalnum(ptr[0])) ptr[0] = '_'; ptr++; } while (ptr[0]);
-    ret = strlen(xrpc_hostname);
-    snprintf(dstNID + ret, 1024-ret, "_%d", xrpc_port);
+    for(ptr=dstNID; *ptr; ptr++) { 
+        if(!isalnum(*ptr)) *ptr = '_'; 
+    }
+    snprintf(ptr, 1024-(ptr-dstNID), "_%d", xrpc_port);
 
-    stream_printf(s,
+    if(!(s = open_wastream(dotFile))) return GDK_FAIL;
+    ret = stream_printf(s,
             "digraph G {\n"
             " ratio=2\n"
             " node [style=filled, color=\".7 .3 1.0\"];\n"
@@ -2039,18 +2049,19 @@ draw_queryflow(
             xrpc_hostname, xrpc_port,
             dstNID, xrpc_seqnr, xrpc_method,
             dstNID, xrpc_seqnr, xrpc_hostname, xrpc_port, xrpc_seqnr,
-            dstNID, xrpc_seqnr, time_exec, xrpc_hostname, xrpc_port, xrpc_seqnr);
+            dstNID, xrpc_seqnr, time_exec, xrpc_hostname, xrpc_port, xrpc_seqnr) < 0;
 
     bi = bat_iterator(participants);
     BATloop(participants, p, q) {
-        ret = sscanf(BUNtail(bi,p), "%[^','],%[^','],%[^','],%s", caller, dst, fcn, time);
-        if(ret != 4) {
+        if (sscanf(BUNtail(bi,p), "%[^','],%[^','],%[^','],%s", caller, dst, fcn, time) != 4) {
             GDKerror("draw_queryflow: sscanf failed");
+            stream_destroy(s);
             return GDK_FAIL;
         }
         seqnr = strrchr(dst, ':');
         if(!seqnr) {
             GDKerror("draw_queryflow: invalid value of participant: %s.", dst);
+            stream_destroy(s);
             return GDK_FAIL;
         }
         seqnr[0] = '\0'; /* cut off the seqnr from the dst string */
@@ -2063,7 +2074,7 @@ draw_queryflow(
         ptr = dstNID;
         do { if(!isalnum(ptr[0])) ptr[0] = '_'; ptr++; } while (ptr[0]);
 
-        stream_printf(s,
+        ret = ret || (stream_printf(s,
                 " subgraph cluster_%s {\n"
                 "   node [style=filled,color=\".7 .3 1.0\"];\n"   
                 "   style=filled;\n"
@@ -2076,33 +2087,16 @@ draw_queryflow(
                 dstNID,
                 dst,
                 dstNID, seqnr, fcn,
-
                 caller, dstNID, seqnr, dst, seqnr,
-                dstNID, seqnr, caller, time, dst, seqnr);
+                dstNID, seqnr, caller, time, dst, seqnr) < 0);
     }
-    stream_write(s, "}", 1, 1);
-    stream_flush(s);
+    ret = ret || (stream_write(s, "}", 1, 1) < 0);
     stream_close(s);
     stream_destroy(s);
     
-    char mapArg[2055], gifArg[2055]; 
-    snprintf(mapArg, 2055, "-o%s.xml", base_name);
-    snprintf(gifArg, 2055, "-o%s.gif", base_name);
-    /*
-    char *argv[7];
-    argv[0] = "dot";
-    argv[1] = "-Tcmapx";
-    argv[2] = mapArg;
-    argv[3] = "-Tgif";
-    argv[4] = gifArg;
-    argv[5] = dotFile;
-    argv[6] = (char*)NULL;
-    */
-
-    if(execlp("dot", "dot", "-Tcmapx", mapArg, "-Tgif", gifArg, dotFile, (char*)NULL) < 0) {
-    //if(execvp("dot", argv) < 0) {
-        GDKerror("draw_queryflow: failed to generate query flow "
-                "graph using \"dot\": %s", strerror(errno));
+    snprintf(dotcmd, 1024, "dot -Tcmapx -o%s.xml -Tgif -o%s.gif %s", base_name, base_name, dotFile);
+    if (ret || system(dotcmd) < 0) {
+        GDKerror("draw_queryflow: failed to generate query flow graph using \"dot\"");
         return GDK_FAIL;
     }
 
@@ -2144,11 +2138,10 @@ xquery_print_result_DRIVER (
         stream* logstream = xquery_print_trace("res",*xrpc_seqnr);
         fp = logstream?attach_teestream(fp, logstream):NULL;
         if (fp == NULL) return GDK_FAIL;
-        if (strcmp(xrpc_caller, "query.0") == 0) {
+        if (strcmp(xrpc_caller, "query") == 0) {
             BATiter wsi = bat_iterator(ws);
             BAT *participants = BATdescriptor(*(bat*) BUNtail(wsi, XRPC_PARTICIPANTS));
-            if(draw_queryflow(*xrpc_seqnr, xrpc_method, time_exec,
-                        participants) == GDK_FAIL)
+            if(draw_queryflow(*xrpc_seqnr, xrpc_method, time_exec, participants) == GDK_FAIL)
                 return GDK_FAIL;
         }
     }

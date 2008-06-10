@@ -716,7 +716,7 @@ handle_pfx_uri_loc(shredCtxStruct *shredCtx,
     {
         return BUNappend(histo, &cnt, TRUE)?res:oid_nil;
     } else if (res != oid_nil) {
-        BUN p = BUNlast(histo) - 1;
+        BUN p = (BUN) res;
         cnt = 1 + *(lng*) Tloc(histo,p);
         return BUNinplace(histo, p, NULL, &cnt, TRUE)?res:oid_nil;
     }

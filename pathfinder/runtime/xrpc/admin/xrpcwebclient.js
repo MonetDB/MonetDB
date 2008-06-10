@@ -23,32 +23,15 @@ function XRPC_PART(geturl,    /* Your XRPC server. Usually: "http://yourhost:you
           functions to construct valid XRPC soap requests
  ***********************************************************************/
 
-function XRPC_REQUEST(module, moduleurl, method, arity, body, timeout, mode) {
-    
-    var h = '';
-    if (XRPCDEBUG || timeout > 0) {
-	    var hostport = window.location.hostname + ":" + window.location.port;
-	    var ms = new Date().getMilliseconds();
-	    var rnd = Math.floor(Math.random() * 1000);
-	    var qid = hostport + "|" + ms + "|" + rnd;
-	    h = 
-	    '<env:Header>' +
-	    '  <wscoor:CoordinationContext xmlns:wscoor="http://docs.oasis-open.org/ws-tx/wscoor/2006/06" env:mustUnderstand="true">' +
-	    '    <wscoor:Identifier>' + qid + '</wscoor:Identifier>' +
-	    '    <wscoor:Expires>' + timeout + '</wscoor:Expires>' +
-	    '    <wscoor:CoordinationType>http://docs.oasis-open.org/ws-tx/wsat/2006/06</wscoor:CoordinationType>' +
-	  	'  </wscoor:CoordinationContext>' +
-		'</env:Header>';
-	}
-
-    var r = '<?xml version="1.0" encoding="utf-8"?>\n' +
+function XRPC_REQUEST(module, moduleurl, method, arity, body, timeout, mode) 
+{
+    return '<?xml version="1.0" encoding="utf-8"?>\n' +
            '<env:Envelope ' +
            'xmlns:env="http://www.w3.org/2003/05/soap-envelope" ' +
            'xmlns:xrpc="http://monetdb.cwi.nl/XQuery" ' +
            'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
            'xsi:schemaLocation="http://monetdb.cwi.nl/XQuery http://monetdb.cwi.nl/XQuery/XRPC.xsd" ' +
            'xmlns:xs="http://www.w3.org/2001/XMLSchema">' +
-		   h + 
            '<env:Body>' +
                '<xrpc:request xrpc:module="' + module + '" ' +
                 'xrpc:location="' + moduleurl + '" ' +
@@ -57,7 +40,6 @@ function XRPC_REQUEST(module, moduleurl, method, arity, body, timeout, mode) {
                 'xrpc:arity="' + arity + '">' + 
            body 
            + '</xrpc:request></env:Body></env:Envelope>';
-    return r;
 }
 
 /* a body consists of one or more calls */
@@ -155,6 +137,7 @@ XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callbac
     try {
     	this.xmlhttp.open("POST", posturl, true);
         if (XRPCDEBUG) {
+            //alert(request);
         	//document.getElementById("messreq").value = request; 
 			messreqChanged(string2XML(request));
 		}
