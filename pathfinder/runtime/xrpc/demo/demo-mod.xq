@@ -31,6 +31,9 @@ declare function f:boughtItemsAllPersons($docL as xs:string, $docR as xs:string,
   return execute at {$dst} {f:boughtItems($pid, $docR)}
 };
 
+declare function f:getdoc($url as xs:string) as document-node()?
+{ doc($url) };
+
 declare updating function f:insertPerson($p as node(), $doc as xs:string)
 { do insert $p into doc($doc)//persons };
 

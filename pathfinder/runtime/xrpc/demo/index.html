@@ -67,25 +67,37 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   }
   
   var funcdefs = new Array();
-  funcdefs[funcdefs.length]=new funcdef("add", false, new Array("integer", "integer"), new Array("", ""), "declare function f:add($v1 as xs:integer, $v2 as xs:integer) as xs:integer\n{ $v1 + $v2 };");
-  funcdefs[funcdefs.length]=new funcdef("addSeq", false, new Array("integer", "integer"), new Array("+", "+"), "declare function f:addSeq($v1 as xs:integer+, $v2 as xs:integer+) as xs:integer\n{ for $vi in $v1, $vj in $v2 return $vi + $vj };");
-  funcdefs[funcdefs.length]=new funcdef("firstPerson", false, new Array("string"), new Array(""), "declare function f:firstPerson($doc as xs:string) as node()\n{ exactly-one(doc($doc)//person[1]) };");
-  funcdefs[funcdefs.length]=new funcdef("firstPerson", false, new Array("string", "string"), new Array("+", "+"), "declare function f:firstPerson($docs as xs:string+, $dsts as xs:string+) as node()+\n{ for $d at $pos in $dsts\n  return execute at {$d} {f:firstPerson(exactly-one($docs[$pos]))}\n};");
-  funcdefs[funcdefs.length]=new funcdef("boughtItems", false, new Array("string", "string"), new Array("", ""), "declare function f:boughtItems($pid as xs:string, $doc as xs:string) as node()*\n{ doc($doc)//closed_auction[./buyer/@person=$pid] };");
-  funcdefs[funcdefs.length]=new funcdef("boughtItemsSeq", false, new Array("string", "string"), new Array("+", ""), "declare function f:boughtItemsSeq($pid as xs:string+, $doc as xs:string) as node()*\n{ for $p in $pid\n  return\n    doc($doc)//closed_auction[./buyer/@person=$p]\n};");
-  funcdefs[funcdefs.length]=new funcdef("boughtItemsAllPersons", false, new Array("string", "string", "string"), new Array("", "", ""), "declare function f:boughtItemsAllPersons($docL as xs:string, $docR as xs:string, $dst as xs:string) as node()*\n{ for $p in $pid\n  return\n  	for $ca in doc($doc)//closed_auction[./buyer/@person=$p]\n  	return\nelement closed_auction {attribute buyer {$ca/buyer/@person}, $ca/price, $ca/date}\n};");
-  funcdefs[funcdefs.length]=new funcdef("insertPerson", true, new Array("node()", "string"), new Array("", ""), "declare updating function f:insertPerson($p as node(), $doc as xs:string)\n{ do insert $p into doc($doc)//persons };");
-  funcdefs[funcdefs.length]=new funcdef("deletePerson", true, new Array("string", "string"), new Array("", ""), "declare updating function f:deletePerson($pid as xs:string, $doc as xs:string)\n{ do delete doc($doc)//person[./@pid=$pid] };");
+  funcdefs[funcdefs.length]=new funcdef("add", false, new Array("integer", "integer"), new Array("", ""),
+      "declare function f:add($v1 as xs:integer, $v2 as xs:integer) as xs:integer\n{ $v1 + $v2 };");
+  funcdefs[funcdefs.length]=new funcdef("addSeq", false, new Array("integer", "integer"), new Array("+", "+"),
+    "declare function f:addSeq($v1 as xs:integer+, $v2 as xs:integer+) as xs:integer\n{ for $vi in $v1, $vj in $v2 return $vi + $vj };");
+  funcdefs[funcdefs.length]=new funcdef("firstPerson", false, new Array("string"), new Array(""),
+    "declare function f:firstPerson($doc as xs:string) as node()\n{ exactly-one(doc($doc)//person[1]) };");
+  funcdefs[funcdefs.length]=new funcdef("firstPerson", false, new Array("string", "string"), new Array("+", "+"),
+      "declare function f:firstPerson($docs as xs:string+, $dsts as xs:string+) as node()+\n{ for $d at $pos in $dsts\n  return execute at {$d} {f:firstPerson(exactly-one($docs[$pos]))}\n};");
+  funcdefs[funcdefs.length]=new funcdef("boughtItems", false, new Array("string", "string"), new Array("", ""),
+    "declare function f:boughtItems($pid as xs:string, $doc as xs:string) as node()*\n{ doc($doc)//closed_auction[./buyer/@person=$pid] };");
+  funcdefs[funcdefs.length]=new funcdef("boughtItemsSeq", false, new Array("string", "string"), new Array("+", ""),
+      "declare function f:boughtItemsSeq($pid as xs:string+, $doc as xs:string) as node()*\n{ for $p in $pid\n  return\n    doc($doc)//closed_auction[./buyer/@person=$p]\n};");
+  funcdefs[funcdefs.length]=new funcdef("boughtItemsAllPersons", false, new Array("string", "string", "string"), new Array("", "", ""),
+      "declare function f:boughtItemsAllPersons($docL as xs:string, $docR as xs:string, $dst as xs:string) as node()*\n{ for $p in $pid\n  return\n  	for $ca in doc($doc)//closed_auction[./buyer/@person=$p]\n  	return\nelement closed_auction {attribute buyer {$ca/buyer/@person}, $ca/price, $ca/date}\n};");
+  funcdefs[funcdefs.length]=new funcdef("insertPerson", true, new Array("node()", "string"), new Array("", ""),
+      "declare updating function f:insertPerson($p as node(), $doc as xs:string)\n{ do insert $p into doc($doc)//persons };");
+  funcdefs[funcdefs.length]=new funcdef("deletePerson", true, new Array("string", "string"), new Array("", ""),
+      "declare updating function f:deletePerson($pid as xs:string, $doc as xs:string)\n{ do delete doc($doc)//person[./@pid=$pid] };");
   funcdefs[funcdefs.length]=new funcdef("custom...", false, new Array("integer", "integer", "integer", "integer"), new Array("", "", "", ""), "");
   
   var par_types = new Array("integer", "string", "node()");
   var par_types_display = new Array("xs:integer", "xs:string", "node()");
   var quant_types = new Array("", "?", "+", "*");
-  var example_nodes = new Array("<person>Schaap<\/person>", "John Denver", "Elvis Presley", "Shania Twain");
+  var example_nodes = new Array("<person id=\"newperson1\">Schaap<\/person>",
+      "<person id=\"newperson2\">John Denver</person>",
+      "<person id=\"newperson3\">Elvis Presley</person>",
+      "<person id=\"newperson4\">Shania Twain</person>");
   
   function fillPostUrlBox() {
   	var obj = document.getElementById("postUrl");
-	obj.value = "http://" + window.location.hostname + ":" + window.location.port + "/xrpc";
+    obj.value = "http://" + window.location.hostname + ":" + window.location.port + "/xrpc";
   }
   
   function fillLocationBox() {
@@ -256,9 +268,9 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   		}
   		if (funcdefs[idx].getArr(i) == "string") {
   			if (funcdefs[idx].getQArr(i) == "")
-  				default_val = "xmark.xml"; //String.fromCharCode(65 + i);
+  				default_val = "xmark.xml";
   			else
-  				default_val = "(" + String.fromCharCode(65 + i*3) + ", " + String.fromCharCode(66 + i*3) + ", " + String.fromCharCode(67 + i*3) + ")";
+  				default_val = "(xmark.xml, xmark.xml, xmark,xml)";
   		}
   		if (funcdefs[idx].getArr(i) == "node()") {
   			if (funcdefs[idx].getQArr(i) == "")
@@ -376,7 +388,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   
   	var obj = document.getElementById("resvis");
   	obj.innerHTML = "changed";
-  	var qid = 'UNKNOWN';
+  	var qid = 'None';
   	try {qid = xmldoc.getElementsByTagName("Identifier")[0].firstChild.nodeValue;} catch(err) {}
   	var resnode = xmldoc.getElementsByTagName("response")[0];
   	var funcn = resnode.getAttribute("xrpc:method");
@@ -507,11 +519,6 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 		<td><input type="button" value="Submit" onclick="sendRequest(this.form)" /></td>
 	</tr>
 	</table>
-	<!--<table id="answers">
-	<tr class="myheader">
-		<td>ANSWER<br /><textarea cols="65" rows="7" name="answer" id="answer" readonly="readonly"></textarea></td>
-	</tr>
-	</table>-->
 </td>
 <td>
 	<div id="graph">
@@ -529,7 +536,8 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 		</map>
 		<table id="graphtable">
 		<tr>
-			<td><img id="treeimg" src="test.gif" usemap="#treemap" border="0" alt="messageflow" /></td>
+      <td>Query Flow:<br/><br/>
+        <img id="treeimg" src="noquery.gif" usemap="#treemap" border="0" alt="messageflow"/></td>
 		</tr>
 		</table>
 	</div>
@@ -548,7 +556,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 					<textarea cols="48" rows="15" name="messreq" id="messreq" readonly="readonly"></textarea>
 				</div>
 				<div id="reqvis">
-					visual display
+					No message
 				</div>
 			</td>
 		</tr>
@@ -565,7 +573,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 					<textarea cols="48" rows="15" name="messres" id="messres" readonly="readonly"></textarea>
 				</div>
 				<div id="resvis">
-					visual display
+					No message
 				</div>
 			</td>
 		</tr>
