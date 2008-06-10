@@ -145,3 +145,4 @@ empty_tbl_seg_fault.SF-1961027
 NOT_WIN32?update-stress.SF-1896755
 order_of_declared_functions_matters.SF-1905940
 multi-join_query_compile_error.SF-1908822
+immune_for_updates.SF-1981852

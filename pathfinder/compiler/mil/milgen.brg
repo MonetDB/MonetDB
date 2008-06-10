@@ -4813,11 +4813,34 @@ reduce (PFpa_op_t * p, int goalnt)
                 case alg_fun_fn_matches_flag: /* fold( */
                 {
                     PFalg_att_t att1, att2, att3;
+                    mvar_t *chk = new_var(1),
+                           *err = new_var(1);
 
                     att1 = p->sem.fun_1to1.refs.atts[0];
                     att2 = p->sem.fun_1to1.refs.atts[1];
                     att3 = p->sem.fun_1to1.refs.atts[2];
                     res_type = aat_bln;
+
+                    /* check flags for validity */
+                    execute (
+                        catch_ (var (err->name),
+                                seq ( assgn (var (chk->name),
+                                             mpcre_match (
+                                                 VAR (L(p)->env,
+                                                      att3,
+                                                      aat_str),
+                                                 lit_str("[^imsx]"))))),
+                        if_ (not (isnil (var (err->name))),
+                             error (
+                                 arg (lit_str ("Should not happen: "
+                                      "error occurred while checking flags: "),
+                                      var (err->name))),
+                             nop ()),
+                        if_ (texist (var (chk->name), lit_bit(true)),
+                             error (lit_str ("err:FORX0001: flags of "
+                                             "fn:matches containing "
+                                             "undefined character(s)")),
+                             nop ()));
 
                     execute (
                         assgn (var (res->name),
@@ -4825,6 +4848,9 @@ reduce (PFpa_op_t * p, int goalnt)
                                    VAR (L(p)->env, att1, aat_str),
                                    VAR (L(p)->env, att2, aat_str),
                                    VAR (L(p)->env, att3, aat_str))));
+
+                    unpin (chk, 1);
+                    unpin (err, 1);
                 }   break; /* fold) */
                 case alg_fun_fn_replace: /* fold( */
                 case alg_fun_fn_replace_flag:
@@ -7019,11 +7045,12 @@ reduce (PFpa_op_t * p, int goalnt)
             execute (
                 assgn (var (map->name),
                        hmark (
-                           select_ (meq (VAR (LL(p)->env,
-                                              L(p)->sem.ii.item,
-                                              aat_str),
-                                         lit_str ("")),
-                                    lit_bit (false)),
+                           select_ (
+                               PFmil_mne (VAR (LL(p)->env,
+                                               L(p)->sem.ii.item,
+                                               aat_str),
+                                          lit_str ("")),
+                               lit_bit (true)),
                            lit_oid (0))),
                 assgn (var (iter->name),
                        leftjoin (var (map->name),
@@ -7619,52 +7646,121 @@ reduce (PFpa_op_t * p, int goalnt)
             assert (type_of (L(p), p->sem.ii.iter) == aat_nat);
             assert (type_of (L(p), p->sem.ii.item) == aat_str);
         {
-            mvar_t  *v = new_var (1);
-            mvar_t  *prop = new_var (1);
-            PFmil_t *iter = VAR (L(p)->env, p->sem.ii.iter, aat_nat);
-            PFmil_t *item = VAR (L(p)->env, p->sem.ii.item, aat_str);
+            mvar_t  *v    = new_var (1),
+                    *prop = new_var (1),
+                    *iter = new_var (1),
+                    *item = new_var (1);
 
+            /* check for constant non-empty string */
+            if (PFprop_const (p->prop, p->sem.ii.item) &&
+                strcmp (PFprop_const_val (p->prop, p->sem.ii.item).val.str, "")) {
+                execute (
+                    assgn (var (iter->name),
+                           VAR (L(p)->env, p->sem.ii.iter, aat_nat)),
+                    assgn (var (item->name),
+                           VAR (L(p)->env, p->sem.ii.item, aat_str)));
+
+                /* stable size + 1 */
+                twig_state->size++;
+            }
+            /* we need to prune empty textnodes and calculate the
+               resulting sizes for the consuming parents */
+            else {
+                mvar_t *bool_list = new_var (1),
+                       *map       = new_var (1),
+                       *size      = new_var (1);
+                
+                /* prune all empty textnodes */
+                execute (
+                    assgn (var (bool_list->name),
+                           PFmil_mne (VAR (L(p)->env,
+                                           p->sem.ii.item,
+                                           aat_str),
+                                      lit_str (""))),
+                    assgn (var (map->name),
+                           hmark (
+                               select_ (var (bool_list->name),
+                                        lit_bit (true)),
+                               lit_oid (0))),
+                    assgn (var (iter->name),
+                           leftjoin (var (map->name),
+                                     VAR (L(p)->env,
+                                          p->sem.ii.iter,
+                                          aat_nat))),
+                    assgn (var (item->name),
+                           leftjoin (var (map->name),
+                                     VAR (L(p)->env,
+                                          p->sem.ii.item,
+                                          aat_str))));
+                unpin (map, 1);
+
+                assert (twig_state->loop);
+
+                /* calculate the sizes and map them to the head
+                   of the loop relation */
+                execute (
+                    assgn (var (size->name),
+                           leftjoin (
+                               twig_state->loop,
+                               leftjoin (
+                                   reverse (VAR (L(p)->env,
+                                                 p->sem.ii.iter,
+                                                 aat_nat)),
+                                   mcast (type (mty_int),
+                                          var (bool_list->name))))));
+                unpin (bool_list, 1);
+                
+                /* add the correct sizes to the variable environment */
+                env_add (p->env, att_NULL, aat_int, size);
+            }
+            
             execute (
                 assgn (var (prop->name),
-                       add_content (item,
+                       add_content (var (item->name),
                                     var (PF_MIL_VAR_WS),
                                     var (PF_MIL_VAR_PROP_TEXT))),
                 assgn (var (v->name),
                        seqbase (new (type (mty_void), type (mty_bat)),
                                 lit_oid (0))),
                 /* iter */
-                bappend (var (v->name), iter),
+                bappend (var (v->name), var (iter->name)),
                 /* pre */
                 bappend (var (v->name),
-                         project (iter, lit_oid (twig_state->pre))),
+                         project (var (iter->name),
+                                  lit_oid (twig_state->pre))),
                 /* size */
                 bappend (var (v->name),
-                         project (iter, lit_int (0))),
+                         project (var (iter->name), lit_int (0))),
                 /* level */
                 bappend (var (v->name),
-                         project (iter,
+                         project (var (iter->name),
                                   cast (type (mty_chr),
                                         lit_int (twig_state->level)))),
                 /* kind */
                 bappend (var (v->name),
-                         project (iter, var (PF_MIL_VAR_KIND_TEXT))),
+                         project (var (iter->name),
+                                  var (PF_MIL_VAR_KIND_TEXT))),
                 /* prop */
                 bappend (var (v->name), var (prop->name)),
                 /* cont */
                 bappend (var (v->name),
-                         project (iter, var (PF_MIL_VAR_WS_CONT))),
+                         project (var (iter->name),
+                                  var (PF_MIL_VAR_WS_CONT))),
                 /* old_pre */
                 bappend (var (v->name),
-                         project (iter, cast (type (mty_oid), nil ()))),
+                         project (var (iter->name),
+                                  cast (type (mty_oid), nil ()))),
                 /* old_cont */
                 bappend (var (v->name),
-                         project (iter, cast (type (mty_oid), nil ()))));
+                         project (var (iter->name),
+                                  cast (type (mty_oid), nil ()))));
 
+            unpin (iter, 1);
+            unpin (item, 1);
             unpin (prop, 1);
 
             *(mvar_t **) PFarray_add (twig_state->elem_vars) = v;
             twig_state->pre++;
-            twig_state->size++;
         }
             break; /* fold) */
 

@@ -21,7 +21,14 @@ Over..
 # 23:20:35 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/etc/MonetDB.conf" --host=localhost --port=36404 < text_nodes_with_empty_content_seq.SF-1350418.milC
 # 23:20:35 >  
 
-()
+
+<a/>
+
+<a>foo</a>
+<a/>
+<a>foo</a>,
+<a/>,
+<a>bar</a>
 
 # 23:20:35 >  
 # 23:20:35 >  Done.

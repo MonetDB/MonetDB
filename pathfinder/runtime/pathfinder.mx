@@ -159,7 +159,7 @@ if (monet_environment.exist("standoff"))
 #       For them RID=PRE=NID in all cases, the RID-PRE-NID transformations (leftfetchjoin/ 
 #       siwzzle) are zero-cost. This is also true for the transient document container. 
 #
-# NOTE: MAP_PID page indices start at oid(0). by putting the rid_* phyisical pages 
+# NOTE: MAP_PID page indices start at oid(0). by putting the rid_* physical pages 
 #       in the order specified by MAP_PID we get the original pre_* tables back.
 #
 # qn_* tables contain qualified names (elements, attributes). 
