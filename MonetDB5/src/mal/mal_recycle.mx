@@ -289,6 +289,7 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q){
 	}
 }
 
+@-
 static void RECYCLEremove(int pc){
 	int k,j,i,v;
 	InstrPtr p;
@@ -410,6 +411,136 @@ RECYCLEcache(int target, int wr)
 		mal_unset_lock(recycleLock,"recycle");
 	}
 }
+
+@c
+static void RECYCLEcleanCache(){
+	int k,j,i,l,ltop,w,wtop;
+	InstrPtr p;
+	InstrPtr *old;
+	char *used;
+	int *lvs, *wm;
+	int limit;
+	lng oldclk, newclk;
+	dbl mincrd, maxcrd, crd;
+
+	if (!recycleBlk) 
+		return;
+
+	used= alloca(recycleBlk->vtop);
+	memset(used,0, recycleBlk->vtop);
+
+	lvs = (int *)alloca(sizeof(int)*recycleBlk->stop);
+	memset(lvs,0, sizeof(int)*recycleBlk->stop);
+
+	/* set all used variables */
+	for (i = 0; i < recycleBlk->stop; i++){
+		p = recycleBlk->stmt[i];
+		for( j = p->retc ; j< p->argc; j++)
+			used[getArg(p,j)]++;
+	}
+
+	/* find the leaves */
+	ltop = 0;
+	for (i = 0; i < recycleBlk->stop; i++){
+		p = recycleBlk->stmt[i];
+		for( j = 0; j < p->retc ; j++)
+			if (used[getArg(p,j)]) goto skip;
+		lvs[ltop++] = i;
+		skip:;
+	}
+
+	/* find the wictims */
+	if (ltop == 0 )
+		return;
+	wm = (int *)alloca(sizeof(int)*ltop);
+	memset(wm,0, sizeof(int)*ltop);
+	wtop = 0;
+	newclk = oldclk = recycleBlk->profiler[lvs[0]].clk;
+	for (l = 0; l < ltop; l++){
+		k = lvs[l];
+		if( recycleBlk->profiler[k].clk > newclk) 
+			newclk = recycleBlk->profiler[k].clk;
+		if( recycleBlk->profiler[k].clk < oldclk) 
+			oldclk = recycleBlk->profiler[k].clk;
+	}
+	switch(rcachePolicy){
+		case RCACHE_LRU:
+			oldclk = (lng)(oldclk + newclk)/2;
+			for (l = 0; l < ltop; l++)
+				if( recycleBlk->profiler[lvs[l]].clk < oldclk) 
+					wm[wtop++] = lvs[l];
+			break;
+
+		case RCACHE_CREDIT:
+			maxcrd = mincrd = recycleBlk->profiler[lvs[0]].counter *
+					  recycleCost(lvs[0]);
+			newclk = (lng)(0.1*oldclk + 0.9*newclk);
+			for (l = 0; l < ltop; l++){
+				k = lvs[l];
+				if ( recycleBlk->profiler[k].clk > newclk) 
+					continue; /* protect newest from deletion */
+				crd = recycleBlk->profiler[k].counter * recycleCost(k);
+				if( crd > maxcrd) 
+					maxcrd = crd;
+				if( crd < mincrd) 
+					mincrd = crd;
+			}
+			mincrd = (mincrd + maxcrd)/2;
+			for (l = 0; l < ltop; l++){
+				if ( recycleBlk->profiler[k].clk > newclk) 
+					continue;
+				if( recycleBlk->profiler[lvs[l]].counter *
+					  recycleCost(lvs[l]) < mincrd) 
+					wm[wtop++] = lvs[l];
+			}
+			break;
+	}
+
+
+
+#ifdef _DEBUG_RECYCLE_
+	stream_printf(GDKout,"RECYCLEremove %d ",i);
+	printInstruction(GDKout,recycleBlk, old[i], LIST_MAL_ALL);
+#endif
+
+	if (wtop == 0 )
+		return;
+
+	/* drop wictims in one pass */
+	mal_set_lock(recycleLock,"recycle");
+	old = recycleBlk->stmt;
+	limit = recycleBlk->stop;
+	newMalBlkStmt(recycleBlk,recycleBlk->ssize);
+
+	w = 0; k = 0;
+	for (i = 0; i < limit && w < wtop; i++){
+		p = old[i];
+		if( i == wm[w] ) {
+			RECYCLEgarbagecollect(recycleBlk,p);
+			/* reduce counter of input variables */
+			for (j=p->retc; j< p->argc; j++)
+				used[getArg(p,j)]--;
+			recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
+			freeInstruction(old[i]);
+			w++;
+		}
+		else {
+			pushInstruction(recycleBlk,p);
+			recycleBlk->profiler[k++]= recycleBlk->profiler[i];
+		}
+	}
+			/* copy the remainder */
+	for (; i < limit; i++){
+		pushInstruction(recycleBlk,old[i]);
+		recycleBlk->profiler[k++]= recycleBlk->profiler[i];
+	}
+	GDKfree(old);
+	/* remove all un-used variables as well */
+	trimMalVariables(recycleBlk);
+	recycleVersion++;
+	mal_unset_lock(recycleLock,"recycle");
+}
+
 @-
 To avoid a polution of the recycle cache, we do not store any
 intruction for which there is not function/command/pattern implementation.
@@ -763,8 +894,11 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	RECYCLEversion(mb);
 	clk= GDKusec()-stk->clk;
 
+/*	while ((recycleMemory && recyclerUsedMemory + wr > recycleMemory))
+		RECYCLEcache(-1, wr); */
 	while ((recycleMemory && recyclerUsedMemory + wr > recycleMemory))
-		RECYCLEcache(-1, wr);
+		RECYCLEcleanCache();
+
 	if ( RECYCLEinterest(mb,p))
 	switch(retainPolicy) {
 	case RETAIN_NONE:
