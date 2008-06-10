@@ -415,6 +415,7 @@ opt_icol (PFla_op_t *p)
                            are not allowed to throw away the textnode
                            constructor. */
                         break;
+
                     default:
                         assert(0);
                 }

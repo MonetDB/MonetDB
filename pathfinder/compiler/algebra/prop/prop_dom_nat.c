@@ -722,7 +722,6 @@ infer_dom (PFla_op_t *n, unsigned int id)
                     break;
 
                 case la_element:
-                case la_textnode:
                 case la_comment:
                     add_dom (n->prop,
                              n->sem.iter_item.iter,
@@ -730,6 +729,16 @@ infer_dom (PFla_op_t *n, unsigned int id)
                                          L(n)->sem.iter_item.iter));
                     break;
 
+                case la_textnode:
+                    /* because of empty textnode constructors
+                       create new subdomain for attribute iter */
+                    add_subdom (n->prop,
+                                PFprop_dom (L(n)->prop,
+                                            L(n)->sem.iter_item.iter),
+                                id);
+                    add_dom (n->prop, n->sem.iter_item.iter, id++);
+                    break;
+                    
                 case la_attribute:
                 case la_processi:
                     add_dom (n->prop,

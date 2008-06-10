@@ -412,10 +412,22 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             break;
 
         case la_fun_1to1:
-            /* mark the input columns as access columns */
-            for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
-                if (type_of (n, n->sem.fun_1to1.refs.atts[i]) & aat_node)
-                    add_access_map (n, n->sem.fun_1to1.refs.atts[i]);
+            if (type_of (n, n->sem.fun_1to1.res) & (aat_update|aat_docmgmt)) {
+                /* mark that we are not allowed to assume anything about
+                   the input columns */
+                for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
+                    if (type_of (n, n->sem.fun_1to1.refs.atts[i]) & aat_node)
+                        add_map_ (n, n->sem.fun_1to1.refs.atts[i],
+                                  true, true, true,
+                                  true, true, true,
+                                  true, true, true);
+            }
+            else {
+                /* mark the input columns as access columns */
+                for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
+                    if (type_of (n, n->sem.fun_1to1.refs.atts[i]) & aat_node)
+                        add_access_map (n, n->sem.fun_1to1.refs.atts[i]);
+            }
             break;
 
         case la_num_eq:
