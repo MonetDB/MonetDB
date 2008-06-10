@@ -11390,11 +11390,11 @@ const char* PFinitMIL(void) {
 	"var tijah_lock  := lock_nil; # pftijah collection lock\n"
 #endif
 #ifdef HAVE_PROBXML
-   "module(\"probxml\");\n"
-   "var newid_counter := 1LL;\n"
+        "module(\"probxml\");\n"
+        "var newid_counter := 1LL;\n"
 #endif
 #ifdef DO_PROFILE
-   "var prof_fun_time := new(str,lng);\n"
+        "var prof_fun_time := new(str,lng);\n"
 #endif
         "\n"
         "# value containers for literal values\n"
@@ -11504,7 +11504,7 @@ const char* PFvarMIL(void) {
         "time_print := 0LL;\n"\
         "time_exec := 0LL;\n"\
         "time_start := usec();\n"\
-        "var try := 1;\n"
+        "var try := 2;\n"
 #define PF_STARTMIL_NORMAL(STMT) PF_STARTMIL_START\
         "var err := str_nil;\n"\
         "{{var ws := empty_bat;\n"\
@@ -11513,7 +11513,7 @@ const char* PFvarMIL(void) {
 #define PF_STARTMIL_UPDATE PF_STARTMIL_START\
         "var err := \"!ERROR: conflicting update\";\n"\
         "var ws_log_wsid := 0LL;\n"\
-        "{while(try <= 2) and not(isnil(err))) {\n"\
+        "{while((try <= 3) and not(isnil(err))) {\n"\
         " if (not(err.startsWith(\"!ERROR: conflicting update\"))) break;\n"\
         " var ws := empty_bat;\n"\
         " err := CATCH({\n"\
