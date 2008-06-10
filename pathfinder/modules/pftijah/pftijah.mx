@@ -176,7 +176,7 @@ const DEBUG := false;
 # locks
 var tj_adm_lock     := lock_create(); # tijah top administration lock
 var tj_dep_lock     := lock_create(); # tijah top dependency adm lock
-var tj_coll_lockbat := new(str,lock); # locks for all active collections
+var tj_coll_lockbat := new(str,lock).rename("tj_coll_lockbat"); # locks for all active collections
 
 # Comparisons
 # const GREATER := 10;
@@ -1881,7 +1881,7 @@ PROC tj_setBackgroundCollName(str name, BAT[oid,str] qenv) : BAT[void,str] :=
 var equivalences := new(str,str);
 PROC tj_initEquivalences() : void := 
 {
-    equivalences := new(str,str);
+    equivalences := new(str,str).rename("tj_equivalences");
 }
 
 # INCOMPLETE: henning, what should I do about this.
