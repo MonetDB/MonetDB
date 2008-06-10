@@ -46,7 +46,5 @@ headers_img = {
 		cwi.bmp \
 		MultimediaN.png \
 		monet.png \
-        test.gif \
-        test.map \
-		tree.gif
+        noquery.gif
 }
