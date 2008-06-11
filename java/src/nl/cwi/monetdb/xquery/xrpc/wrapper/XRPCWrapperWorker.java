@@ -78,11 +78,6 @@ public class XRPCWrapperWorker extends Thread {
 		if(!logdirF.exists()) logdirF.mkdirs();
 	}
 
-	private void DEBUG(String msg)
-	{
-		if(debug) System.out.print(msg);
-	}
-
 	/**
 	 * Generate an XQuery query for the request and write the query
 	 * to a file.
@@ -209,9 +204,11 @@ public class XRPCWrapperWorker extends Thread {
 					"declare namespace xs=\"" +
 							XRPCMessage.XS_NS + "\";\n" +
 					
-					"<env:Envelope" + " xsi:schemaLocation=\"" +
-										XRPCMessage.XRPC_NS + " " +
-										XRPCMessage.XRPC_LOC + "\">" +
+					"<env:Envelope" +
+						" xmlns:xrpc=\"" + XRPCMessage.XRPC_NS + "\" " +
+						" xsi:schemaLocation=\"" +
+								XRPCMessage.XRPC_NS + " " +
+								XRPCMessage.XRPC_LOC + "\">" +
 					"<env:Header>" +
 						XRPCMessage.XRPC_PART(caller, hostport,
 							xrpc_seqnr, xqMethod) +
@@ -248,7 +245,9 @@ public class XRPCWrapperWorker extends Thread {
 					e.getMessage());
 		}
 
-		DEBUG(infoHeader + "query generated in "+queryFilename+"\n");
+		if(debug)
+			System.out.println(infoHeader + "query generated in " +
+					queryFilename);
 	}
 
 	/**
@@ -278,7 +277,7 @@ public class XRPCWrapperWorker extends Thread {
 
 			String command = opts.getOption("command").getArgument() +
 				" " + queryFilename;
-			DEBUG(infoHeader + "executing: " + command + "\n");
+			if(debug) System.out.println(infoHeader + "executing: " + command);
 			proc = Runtime.getRuntime().exec(command);
 			procIn = new BufferedReader(new
 					InputStreamReader(proc.getInputStream()));
@@ -296,9 +295,10 @@ public class XRPCWrapperWorker extends Thread {
 
 		if (cbuf[0] != (char)-1){
 			try{
-				DEBUG(infoHeader + "query execution seems succeeded: " +
-						"got output from the process' InputStream.\n");
-				DEBUG(infoHeader + "sending XRPC response message:\n");
+				if(debug) System.out.println(infoHeader +
+						"query execution seems succeeded: " +
+						"got output from the process' InputStream.\n" +
+						infoHeader + "send XRPC response message:\n");
 
 				sockOut.write(XRPCHTTPConnection.HTTP_OK_HEADER);
 
@@ -351,8 +351,8 @@ public class XRPCWrapperWorker extends Thread {
 				}
 				resFile.close();
 
-				DEBUG(infoHeader + "response message saved in " +
-						resFilename +"\n");
+				if(debug) System.out.println(infoHeader +
+						"response message saved in " + resFilename);
 			} catch (IOException ioe){
 				throw new XRPCReceiverException(
 						"Error occurred while reading query results: " +
@@ -372,9 +372,15 @@ public class XRPCWrapperWorker extends Thread {
 				String faultMsg =
 					XRPCMessage.SOAP_FAULT(soapPrefix+":Receiver",
 							faultReason.toString());
-				DEBUG(XRPCHTTPConnection.HTTP_ERR_500_HEADER + faultMsg);
 				XRPCHTTPConnection.send(sockOut,
 						XRPCHTTPConnection.HTTP_ERR_500_HEADER, faultMsg);
+				if(resFile != null) {
+					resFile.write(faultMsg);
+					resFile.close();
+					if(debug) System.out.println(infoHeader +
+							"HTTP ERR 500 sent, SOAP Fault message saved in " +
+							resFilename);
+				}
 			} catch (IOException ioe){
 				System.err.println(errHeader + "caught exception:");
 				ioe.printStackTrace();
@@ -384,7 +390,8 @@ public class XRPCWrapperWorker extends Thread {
 
 		try{
 			int ret = proc.waitFor();
-			DEBUG(infoHeader + "query execution exits with: " + ret + "\n");
+			if(debug) System.out.println(infoHeader +
+					"query execution exits with: " + ret);
 		} catch (InterruptedException ie){
 			System.err.println(errHeader + "caught exception:");
 			ie.printStackTrace();
@@ -417,8 +424,9 @@ public class XRPCWrapperWorker extends Thread {
 					FileWriter(requestFilename, false));
 			fileOut.write(request.toString());
 			fileOut.close();
-			DEBUG(infoHeader + "request (" + request.length() +
-					" bytes) stored in: " + requestFilename + "\n");
+			if(debug) System.out.println(infoHeader + "request (" +
+					request.length() + " bytes) stored in: " +
+					requestFilename);
 		} catch (IOException ioe){
 			throw new XRPCReceiverException(
 					"Failed to store request message: " +
@@ -427,7 +435,7 @@ public class XRPCWrapperWorker extends Thread {
 
 		generateQuery(requestFilename, queryFilename, request);
 		execAndSend(queryFilename, sockOut);
-		DEBUG(infoHeader + "DONE: " + sock + "\n\n");
+		if(debug) System.out.println(infoHeader + "DONE: " + sock + "\n");
 
 		try{
 			if(opts.getOption("remove").isPresent()){
@@ -438,19 +446,22 @@ public class XRPCWrapperWorker extends Thread {
 					String arg = opts.getOption("remove").getArgument();
 					if(arg.equals("request")) {
 						fQ.delete();
-						DEBUG(infoHeader + "request file \"" +
-								requestFilename + "\" deleted\n");
+						if(debug) System.out.println(infoHeader +
+								"request file \"" + requestFilename +
+								"\" deleted");
 					} else if(arg.equals("query")) {
 						fR.delete();
-						DEBUG(infoHeader + "query file \"" +
-								queryFilename + "\" deleted\n");
+						if(debug) System.out.println(infoHeader +
+								"query file \"" + queryFilename +
+								"\" deleted");
 					} else if(arg.equals("all")) {
 						fQ.delete();
 						fR.delete();
-						DEBUG(infoHeader + "query file \"" +
-								queryFilename + "\" deleted\n");
-						DEBUG(infoHeader + "request file \"" +
-								requestFilename + "\" deleted\n");
+						if(debug) System.out.println(infoHeader +
+								"query file \"" + queryFilename +
+								"\" deleted\n" +
+								infoHeader + "request file \"" +
+								requestFilename + "\" deleted");
 					}
 				} catch (Exception e) {
 					System.out.println(warnHeader +
@@ -586,7 +597,7 @@ public class XRPCWrapperWorker extends Thread {
 				System.err.println(errHeader + "caught exception:");
 				xe.printStackTrace();
 				System.err.println(errHeader + "sent SOAP Fault message:");
-				DEBUG(httpHeader + faultMsg);
+				if(debug) System.out.println(httpHeader + faultMsg);
 			} catch (IOException ioe){
 				System.err.println(errHeader + "caught exception:");
 				ioe.printStackTrace();
