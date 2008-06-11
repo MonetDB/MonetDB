@@ -103,11 +103,11 @@ extensions for MonetDB-SQL-server5.
 Summary: MonetDB SQL GIS development package
 Group: Applications/Databases
 %if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
-Requires: %{name}-server4
+Requires: %{name}-MonetDB4
 Requires: MonetDB4-server-devel
 %endif
 %if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
-Requires: %{name}-server5
+Requires: %{name}-MonetDB5
 Requires: MonetDB5-server-devel
 %endif
 Requires: MonetDB-devel
