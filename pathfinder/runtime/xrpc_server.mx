@@ -599,6 +599,12 @@ get_node_type(str typename) {
     return -1;
 } 
 
+static INLINE oid
+skip_text_nodes(char *pre_kindT, oid pre, oid max)
+{
+	while(pre_kindT[pre] == TEXT && pre < max) pre++;
+	return pre;
+}
 
 XRPCreq_t *
 xrpc_parse_message(stream *out,
@@ -633,7 +639,7 @@ xrpc_parse_message(stream *out,
     oid call_node_pre = 0,  seq_node_pre = 0,  tpe_node_pre = 0;
     oid next_call_node_pre = 0, next_seq_node_pre = 0, next_tpe_node_pre = 0;
     oid ao_ptr = 0; /* cursor in the attr_own bat */
-    size_t nattrs = 0;
+    size_t nattrs = 0, nnodes = 0;
     
     /* We need to clean up the pre_size, pre_level, pre_prop and
      * pre_kind values between two node values, to prevent that
@@ -682,6 +688,7 @@ xrpc_parse_message(stream *out,
     pre_level  = BATsetaccess(pre_level, BAT_WRITE);
     frag_root  = BATsetaccess(frag_root, BAT_APPEND);
     nattrs     = BATcount(attr_prop);
+    nnodes     = BATcount(pre_size);
 
     if (participants) {
         /* parse a SOAP header for participants (XRPC response case) */
@@ -736,7 +743,7 @@ xrpc_parse_message(stream *out,
         }
     }
 
-    if (!(msg_node_pre = get_pre_by_qname(msg, 2, BATcount(pre_size), pre_propT, pre_kindT, qn_uri_loc))) {
+    if (!(msg_node_pre = get_pre_by_qname(msg, 2, nnodes, pre_propT, pre_kindT, qn_uri_loc))) {
         send_err(out, ERR404, "env:Sender", msg);
         goto cleanup;
     }
@@ -806,22 +813,28 @@ xrpc_parse_message(stream *out,
 
     /* Fill the arrays 'req->argcnt', 'req->argval', 'req->argtpe' */
     /* i: index in xrpc:call; j: index of xrpc:sequence per xrpc:call */
-    for(i = 0; next_call_node_pre < BATcount(pre_size); call_node_pre = next_call_node_pre, i++) {
-        /* skip possible empty text node, without further checking */
-        call_node_pre += (pre_kindT[call_node_pre] == ELEMENT ? 0 : 1);
+	next_call_node_pre = call_node_pre;
+	for(i = 0; next_call_node_pre > 0 && next_call_node_pre < nnodes;
+			call_node_pre = next_call_node_pre, i++) {
+		/* end of current call node */
         next_call_node_pre = call_node_pre + pre_sizeT[call_node_pre] + 1;
 
-        for(seq_node_pre = call_node_pre + 1, j = 0; seq_node_pre < next_call_node_pre;
+		for(seq_node_pre = skip_text_nodes(pre_kindT,
+					call_node_pre + 1, next_call_node_pre),
+				next_seq_node_pre = seq_node_pre, j = 0;
+				next_seq_node_pre > 0 && next_seq_node_pre < next_call_node_pre;
                 seq_node_pre = next_seq_node_pre, j++) {
-            /* skip possible empty text nodes, without further checking */
-            seq_node_pre += (pre_kindT[seq_node_pre] == ELEMENT ? 0 : 1);
+			/* end of current sequence node */
             next_seq_node_pre = seq_node_pre + pre_sizeT[seq_node_pre] + 1;
        
-            for(tpe_node_pre = seq_node_pre+1, k=1; tpe_node_pre < next_seq_node_pre;
+            for(tpe_node_pre = skip_text_nodes(pre_kindT,
+						seq_node_pre+1, next_seq_node_pre),
+					next_tpe_node_pre = tpe_node_pre, k=1;
+					next_tpe_node_pre > 0 && next_tpe_node_pre < next_seq_node_pre;
                     tpe_node_pre = next_tpe_node_pre, k++) {
-                /* skip possible empty text nodes, without further checking */
-                tpe_node_pre += (pre_kindT[tpe_node_pre] == ELEMENT ? 0 : 1);
+				/* end of current xrpc:<type> node */
                 next_tpe_node_pre = tpe_node_pre + pre_sizeT[tpe_node_pre]+1;
+
                 /* advance our cursor in attr_own */
                 while(ao_ptr < nattrs && attr_ownT[ao_ptr] < tpe_node_pre) ao_ptr++;
 
@@ -918,8 +931,11 @@ xrpc_parse_message(stream *out,
                 }
                 req->argcnt[i][j]++;
                 req->nr_args++;
+				next_tpe_node_pre = skip_text_nodes(pre_kindT, next_tpe_node_pre, next_seq_node_pre);
             } /* end loop 'xrpc:<type>' */
+			next_seq_node_pre = skip_text_nodes(pre_kindT, next_seq_node_pre, next_call_node_pre);
         } /* end loop 'xrpc:sequence' */
+		next_call_node_pre = skip_text_nodes(pre_kindT, next_call_node_pre, nnodes);
     } /* end loop 'xrpc:call' */
     frag_root = BATsetaccess(frag_root, BAT_READ);
     res = req; req = NULL;
