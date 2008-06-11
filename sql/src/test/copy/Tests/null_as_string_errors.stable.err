@@ -10,36 +10,36 @@ stderr of test 'null_as_string_errors` in directory 'src/test/copy` itself:
 # 18:52:45 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=33682 
 # 18:52:45 >  
 
-MAPI  = monetdb@koala:33682
+MAPI  = monetdb@alf:34972
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
-ERROR = !ERROR: value NULL,NULL,NULL from line 0 not inserted
+ERROR = !ERROR: value 'NULL' while parsing 'NULL,NULL,NULL' from line 0 field 0 not inserted, expecting type int
         !ERROR: importTable: failed to import table
         !ERROR: mvc_import_table_wrap: operation failed.
-MAPI  = monetdb@koala:33682
+MAPI  = monetdb@alf:34972
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
-ERROR = !ERROR: value NULL,zero,0 from line 0 not inserted
+ERROR = !ERROR: value 'NULL' while parsing 'NULL,zero,0' from line 0 field 0 not inserted, expecting type int
         !ERROR: importTable: failed to import table
         !ERROR: mvc_import_table_wrap: operation failed.
-MAPI  = monetdb@koala:33682
+MAPI  = monetdb@alf:34972
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
 ERROR = !ERROR: decimal wrong format (NULL)
-        !ERROR: value NULL from line 0 not inserted
+        !ERROR: value 'NULL' while parsing 'NULL' from line 0 field 2 not inserted, expecting type int
         !ERROR: importTable: failed to import table
         !ERROR: mvc_import_table_wrap: operation failed.
-MAPI  = monetdb@koala:33682
+MAPI  = monetdb@alf:34972
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
-ERROR = !ERROR: value ,, from line 0 not inserted
+ERROR = !ERROR: value '' while parsing ',,' from line 0 field 0 not inserted, expecting type int
         !ERROR: importTable: failed to import table
         !ERROR: mvc_import_table_wrap: operation failed.
-MAPI  = monetdb@koala:33682
+MAPI  = monetdb@alf:34972
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
-ERROR = !ERROR: value ,zero,0 from line 0 not inserted
+ERROR = !ERROR: value '' while parsing ',zero,0' from line 0 field 0 not inserted, expecting type int
         !ERROR: importTable: failed to import table
         !ERROR: mvc_import_table_wrap: operation failed.
-MAPI  = monetdb@koala:33682
+MAPI  = monetdb@alf:34972
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
 ERROR = !WARNING: Decimal cannot be parsed from int
-        !ERROR: value  from line 0 not inserted
+        !ERROR: value '' while parsing '' from line 0 field 2 not inserted, expecting type int
         !ERROR: importTable: failed to import table
         !ERROR: mvc_import_table_wrap: operation failed.
 

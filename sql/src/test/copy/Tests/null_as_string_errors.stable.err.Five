@@ -10,30 +10,30 @@ stderr of test 'null_as_string_errors` in directory 'src/test/copy` itself:
 # 18:52:45 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=33682 
 # 18:52:45 >  
 
-MAPI  = monetdb@koala:32121
+MAPI  = monetdb@alf:32002
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
-ERROR = !SQLException:sql:value NULL,NULL,NULL from line 0 not inserted
+ERROR = !SQLException:sql:value 'NULL' while parsing 'NULL,NULL,NULL' from line 0 field 0 not inserted, expecting type int
         !SQLException:importTable:failed to import table
-MAPI  = monetdb@koala:32121
+MAPI  = monetdb@alf:32002
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
-ERROR = !SQLException:sql:value NULL,zero,0 from line 0 not inserted
+ERROR = !SQLException:sql:value 'NULL' while parsing 'NULL,zero,0' from line 0 field 0 not inserted, expecting type int
         !SQLException:importTable:failed to import table
-MAPI  = monetdb@koala:32121
+MAPI  = monetdb@alf:32002
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
 ERROR = !SQLException:sql:decimal wrong format (NULL)
-        !SQLException:sql:value NULL from line 0 not inserted
+        !SQLException:sql:value 'NULL' while parsing 'NULL' from line 0 field 2 not inserted, expecting type int
         !SQLException:importTable:failed to import table
-MAPI  = monetdb@koala:32121
+MAPI  = monetdb@alf:32002
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
-ERROR = !SQLException:sql:value ,, from line 0 not inserted
+ERROR = !SQLException:sql:value ',,' while parsing ',,' from line 0 field 0 not inserted, expecting type int
         !SQLException:importTable:failed to import table
-MAPI  = monetdb@koala:32121
+MAPI  = monetdb@alf:32002
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
-ERROR = !SQLException:sql:value ,zero,0 from line 0 not inserted
+ERROR = !SQLException:sql:value ',zero,0' while parsing ',zero,0' from line 0 field 0 not inserted, expecting type int
         !SQLException:importTable:failed to import table
-MAPI  = monetdb@koala:32121
+MAPI  = monetdb@alf:32002
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
-ERROR = !SQLException:sql:value  from line 0 not inserted
+ERROR = !SQLException:sql:value '' while parsing '' from line 0 field 2 not inserted, expecting type int
         !SQLException:importTable:failed to import table
         !WARNING: Decimal cannot be parsed from int
 
