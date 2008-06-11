@@ -99,7 +99,7 @@ public class XRPCWrapper {
 						"\" extracted to \"" + toFile + "\"");
 			}
 
-			hostport = InetAddress.getLocalHost().getHostAddress() + ":" + port;
+			hostport = InetAddress.getLocalHost().getHostName() + ":" + port;
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(1);
