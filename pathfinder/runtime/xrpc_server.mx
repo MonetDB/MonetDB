@@ -223,8 +223,8 @@ Start XPRC receiver using the default values as specified in \
       "  xrpc:module=\"%s\"\n"\
       "  xrpc:location=\"%s\"\n"\
       "  xrpc:method=\"%s\"\n"\
-      "  xrpc:arity=\"%lld\"\n"\
-      "  xrpc:iter-count=\"%lld\"\n"\
+      "  xrpc:arity=\""LLFMT"\"\n"\
+      "  xrpc:iter-count=\""LLFMT"\"\n"\
       "  xrpc:caller=\"%s:%d:"LLFMT"\"\n"\
       "  xrpc:mode=\"%s\"\n"\
       "  xrpc:updCall=\"%s\">\n"
@@ -235,8 +235,8 @@ Start XPRC receiver using the default values as specified in \
     "   xrpc:module=\"%s\"\n"\
     "   xrpc:location=\"%s\"\n"\
     "   xrpc:method=\"%s\"\n"\
-    "   xrpc:arity=\"%lld\"\n"\
-    "   xrpc:iter-count=\"%lld\"\n"\
+    "   xrpc:arity=\""LLFMT"\"\n"\
+    "   xrpc:iter-count=\""LLFMT"\"\n"\
     "   xrpc:caller=\"query\"\n"\
     "   xrpc:mode=\"%s\"\n"\
     "   xrpc:updCall=\"%s\">\n"
@@ -1047,11 +1047,6 @@ execQuery(mapi_client *mc,
                 *errbuf ? errbuf : "",
                 err == ((char*)-1) ? "no further error message" : err);
         send_err(mc->c->fdout, ERR404, "env:Sender", errbuf_all);
-    } else if (req->updCall) {
-        /* send empty HTTP OK header for updating request */
-        stream_write(mc->c->fdout, "HTTP/1.1 200 OK\r\n"
-                    "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n", 1, 60);
-        stream_flush(mc->c->fdout);
     }
     GDKsetbuf(errbuf_bak);
     return ret;

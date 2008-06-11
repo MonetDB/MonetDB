@@ -30,17 +30,12 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 
   function funcdef(n, u, a, q, d) {
 	this.name = n;
-	this.updating = u;
 	this.arr = a;
 	this.quantarr = q;
 	this.def = d;
 
 	this.getName = function() {
 		return this.name;
-	}
-	
-	this.getUpdating = function() {
-		return this.updating;
 	}
 	
 	this.getArrSize = function() {
@@ -164,9 +159,9 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 	}
 	
 	var mode = form.isolevel.value + form.mode.value + (XRPCDEBUG?"-trace":"");
-   	  
+   	 
     XRPC(form.postUrl.value, form.ns.value, form.loc.value, 
-         form.method.value, form.arity.value, xrpc_call, showResponse, form.timeout.value, mode);
+         form.method.value, form.arity.value, form.updating.checked, xrpc_call, showResponse, form.timeout.value, mode);
   }
   
   function sendRequestPart(obj) {
@@ -285,9 +280,6 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   	par.innerHTML = html;
   	
   	defobj.readOnly = !last;
-  	
-  	var updobj = document.getElementById("updating");
-  	updobj.checked = funcdefs[idx].getUpdating();
   	
   	//var loopobj = document.getElementById("loop");
   	//loopobj.disabled = (idx != 0);

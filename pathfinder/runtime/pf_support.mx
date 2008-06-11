@@ -64,9 +64,18 @@ percentage - a number [0,100] indicating the amount of free space to reserve for
                       BAT[oid,any] loop, BAT[void,oid] iter,
                       BAT[void,oid] item, BAT[void,int] kind, 
                       BAT[oid,lng] int_values, BAT[oid,dbl] dbl_values, 
+                      BAT[oid,str] str_values) :
+                            void = xquery_print_result_basic;
+
+ "C interface to Workset result print routine, that can print multiple iters"
+.COMMAND print_result(str genType, 
+                      BAT[oid,bat] ws,
+                      BAT[oid,any] loop, BAT[void,oid] iter,
+                      BAT[void,oid] item, BAT[void,int] kind, 
+                      BAT[oid,lng] int_values, BAT[oid,dbl] dbl_values, 
                       BAT[oid,str] str_values,
                       str xrpc_module, str xrpc_method, str xrpc_qid, str xrpc_caller, 
-                      str xrpc_mode, lng xrpc_seqnr, lng xrpc_timeout, lng xrpc_start) :
+                      str xrpc_mode, bit xrpc_updating, lng xrpc_seqnr, lng xrpc_timeout, lng xrpc_start) :
                             void = xquery_print_result_loop;
  "C interface to Workset result print routine, that can print multiple iters"
 
@@ -8481,6 +8490,7 @@ xquery_print_result_loop (
     str  xrpc_qid, 
     str  xrpc_caller, 
     str  xrpc_mode,
+    bit  *xrpc_updating,
     lng  *xrpc_seqnr,
     lng  *xrpc_timeout,
     lng  *xrpc_start)
@@ -8504,9 +8514,43 @@ xquery_print_result_loop (
                xrpc_qid, 
                xrpc_caller, 
                xrpc_mode,
+               xrpc_updating,
                xrpc_seqnr,
                xrpc_timeout,
                xrpc_start);
+}
+
+int
+xquery_print_result_basic (
+    str  mode,
+    BAT* ws,
+    BAT* loop, 
+    BAT* iter, 
+    BAT* item, 
+    BAT* kind,
+    BAT* intVAL,
+    BAT* dblVAL,
+    BAT* strVAL)
+{
+    return xquery_print_result_loop (
+               mode,
+               ws,
+               loop, /* loop relation */
+               iter, /* iter relation */
+               item, /* item relation */
+               kind, /* kind relation */
+               intVAL,
+               dblVAL,
+               strVAL,
+               NULL, /* xrpc_module   */  
+               NULL, /* xrpc_method   */  
+               NULL, /* xrpc_qid      */
+               NULL, /* xrpc_caller   */
+               NULL, /* xrpc_mode     */
+               NULL, /* xrpc_updating */
+               NULL, /* xrpc_seqnr    */
+               NULL, /* xrpc_timeout  */
+               NULL);/* xrpc_start    */
 }
 
 int
@@ -8522,27 +8566,16 @@ xquery_print_result_main (
 {
     (void) decVAL;
     
-    return xquery_print_result_DRIVER (
+    return xquery_print_result_basic (
                mode,
-               NULL, /* set of printing callback function */
-               NULL, /* optional arguments for the callback functions */
                ws,
-               1, /* number of iterations */
                item, /* loop relation */
                item, /* iter relation */
                item, /* item relation */
                kind, /* kind relation */
                intVAL,
                dblVAL,
-               strVAL,
-               NULL, /* xrpc_module */
-               NULL, /* xrpc_method */
-               NULL, /* xrpc_qid */
-               NULL, /* xrpc_caller */
-               NULL, /* xrpc_mode */
-               NULL, /* xrpc_seqnr */
-               NULL, /* xrpc_timeout */
-               NULL);/* xrpc_start */
+               strVAL);
 }
 
 int
@@ -8600,6 +8633,7 @@ xquery_print_result_file (
                              NULL, /* xrpc_qid */
                              NULL, /* xrpc_caller */
                              NULL, /* xrpc_mode */
+                             NULL, /* xrpc_updating */
                              NULL, /* xrpc_seqnr */
                              NULL, /* xrpc_timeout */
                              NULL);/* xrpc_start */

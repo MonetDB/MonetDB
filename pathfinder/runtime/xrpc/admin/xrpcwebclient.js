@@ -4,12 +4,13 @@ function XRPC(posturl,    /* Your XRPC server. Usually: "http://yourhost:yourpor
               moduleurl,  /* module (physical) at-hint URL. Module file must be here! */
               method,     /* method name (matches function name in module) */
               arity,      /* arity of the method */
+              updating,   /* whether the function is an updating function */
               call,       /* one or more XRPC_CALL() parameter specs (concatenated strings) */ 
               callback,   /* callback function to call with the XML response */
               timeout,    /* timeout value, when > 0 repeatable isolation level is presumed */
               mode)       /* (none | repeatable) [-iterative][-trace] */
 {
-    clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,arity,call,timeout,mode), callback);
+    clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,arity,updating,call,timeout,mode), callback);
 }
 
 /* the main function you want to use: */
@@ -23,7 +24,7 @@ function XRPC_PART(geturl,    /* Your XRPC server. Usually: "http://yourhost:you
           functions to construct valid XRPC soap requests
  ***********************************************************************/
 
-function XRPC_REQUEST(module, moduleurl, method, arity, body, timeout, mode) 
+function XRPC_REQUEST(module, moduleurl, method, arity, updating, body, timeout, mode) 
 {
     return '<?xml version="1.0" encoding="utf-8"?>\n' +
            '<env:Envelope ' +
@@ -37,6 +38,7 @@ function XRPC_REQUEST(module, moduleurl, method, arity, body, timeout, mode)
                 'xrpc:location="' + moduleurl + '" ' +
                 'xrpc:method="' + method + '" ' +
                 'xrpc:mode="' + mode + '" ' +
+                'xrpc:updCall="' + (updating?"true":"false") + '" ' +
                 'xrpc:arity="' + arity + '">' + 
            body 
            + '</xrpc:request></env:Body></env:Envelope>';

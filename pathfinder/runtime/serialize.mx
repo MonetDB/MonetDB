@@ -156,6 +156,7 @@ typedef struct XqueryCtx {
     str         xrpc_qid;
     str         xrpc_caller;
     str         xrpc_mode;
+    bit         xrpc_updating;
     lng         xrpc_seqnr;
     lng         xrpc_timeout;
     lng         time_exec;
@@ -270,6 +271,7 @@ xquery_print_result_DRIVER (
     str                xrpc_qid, 
     str                xrpc_caller, 
     str                xrpc_mode,
+    bit                *xrpc_updating,
     lng                *xrpc_seqnr,
     lng                *xrpc_timeout,
     lng                *xrpc_start);
@@ -296,6 +298,7 @@ xquery_print_result_driver (
     str                xrpc_qid, 
     str                xrpc_caller, 
     str                xrpc_mode,
+    bit                *xrpc_updating,
     lng                *xrpc_seqnr,
     lng                *xrpc_timeout,
     lng                *time_exec);
@@ -1698,6 +1701,7 @@ xquery_print_result_driver (
     str                xrpc_qid, 
     str                xrpc_caller, 
     str                xrpc_mode,
+    bit                *xrpc_updating,
     lng                *xrpc_seqnr,
     lng                *xrpc_timeout,
     lng                *time_exec)
@@ -1721,6 +1725,7 @@ xquery_print_result_driver (
     ctx->xrpc_caller = xrpc_caller;
     ctx->xrpc_mode = xrpc_mode;
     ctx->xrpc_seqnr = *xrpc_seqnr;
+    ctx->xrpc_updating = *xrpc_updating;
     ctx->xrpc_timeout = *xrpc_timeout;
     ctx->time_exec = *time_exec;
 
@@ -2123,6 +2128,7 @@ xquery_print_result_DRIVER (
     str                xrpc_qid, 
     str                xrpc_caller, 
     str                xrpc_mode,
+    bit                *xrpc_updating,
     lng                *xrpc_seqnr,
     lng                *xrpc_timeout,
     lng                *xrpc_start)
@@ -2168,6 +2174,7 @@ xquery_print_result_DRIVER (
                xrpc_qid, 
                xrpc_caller, 
                xrpc_mode, 
+               xrpc_updating, 
                xrpc_seqnr, 
                xrpc_timeout, 
                &time_exec);

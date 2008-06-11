@@ -1088,7 +1088,7 @@ byvalue_request(
                                 NULL, NULL, ws, 1,
                                 node_item, node_item, node_item, node_kind,
                                 int_values, dbl_values, str_values,
-                                NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+                                NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
                         if(BBPreclaim(node_item) == -1){
                             GDKerror("byvalue_request: failed to destroy BAT \"node_item\", "
