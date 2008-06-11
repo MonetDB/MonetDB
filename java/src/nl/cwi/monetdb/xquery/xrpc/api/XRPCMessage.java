@@ -257,12 +257,6 @@ public class XRPCMessage {
 			long seqnr,
 			String fcn)
 	{
-System.out.println("XRPC_PART: caller: " + caller);
-System.out.println("XRPC_PART: hostport: " + hostport);
-System.out.println("XRPC_PART: fcn: " + fcn);
-
-
-
 		if(caller == null || caller.length() == 0 ||
 			hostport == null || hostport.length() == 0 ||
 			fcn == null || fcn.length() == 0 || seqnr < 0)
