@@ -2010,6 +2010,7 @@ xquery_print_trace(str msg, lng xrpc_seqnr) {
 
 int
 draw_queryflow(
+        int xrpc_updating,
         lng xrpc_seqnr,
         str xrpc_method,
         lng time_exec,
@@ -2042,7 +2043,7 @@ draw_queryflow(
             " ratio=2\n"
             " node [style=filled, color=\".7 .3 1.0\"];\n"
             " subgraph cluster_%s {\n"
-            "  node [style=filled,color=\".7 .3 1.0\"];\n"   
+            "  node [style=filled,color=\"%s\"];\n"   
             "  style=filled;\n"
             "  color=yellow;\n"
             "  label=\"%s:%d\";\n"
@@ -2051,6 +2052,7 @@ draw_queryflow(
             " query->%s_"LLFMT"[headURL=\"http://%s:%d/logs/req_"LLFMT".xml\"]\n"
             " %s_"LLFMT"->query[label=\""LLFMT"ms\",headURL=\"http://%s:%d/logs/res_"LLFMT".xml\"]\n\n",
             dstNID,
+            xrpc_updating?"orange":".7 .3 1.0",
             xrpc_hostname, xrpc_port,
             dstNID, xrpc_seqnr, xrpc_method,
             dstNID, xrpc_seqnr, xrpc_hostname, xrpc_port, xrpc_seqnr,
@@ -2058,7 +2060,7 @@ draw_queryflow(
 
     bi = bat_iterator(participants);
     BATloop(participants, p, q) {
-        if (sscanf(BUNtail(bi,p), "%[^','],%[^','],%[^','],%s", caller, dst, fcn, time) != 4) {
+        if (sscanf(BUNtail(bi,p), "%[^','],%[^','],%[^','],%s,%d", caller, dst, fcn, time, &xrpc_updating) != 5) {
             GDKerror("draw_queryflow: sscanf failed");
             stream_destroy(s);
             return GDK_FAIL;
@@ -2081,7 +2083,7 @@ draw_queryflow(
 
         ret = ret || (stream_printf(s,
                 " subgraph cluster_%s {\n"
-                "   node [style=filled,color=\".7 .3 1.0\"];\n"   
+                "   node [style=filled,color=\"%s\"];\n"
                 "   style=filled;\n"
                 "   color=yellow;\n"
                 "   label=\"%s\";\n"
@@ -2090,6 +2092,7 @@ draw_queryflow(
                 " %s->%s_%s[headURL=\"http://%s/logs/req_%s.xml\"]\n"
                 " %s_%s->%s[label=\"%sms\",headURL=\"http://%s/logs/res_%s.xml\"]\n\n",
                 dstNID,
+                xrpc_updating?"orange":".7 .3 1.0",
                 dst,
                 dstNID, seqnr, fcn,
                 caller, dstNID, seqnr, dst, seqnr,
@@ -2149,7 +2152,7 @@ xquery_print_result_DRIVER (
             BAT *participants = BATdescriptor(*(bat*) BUNtail(wsi, XRPC_PARTICIPANTS));
             int ret = GDK_FAIL;
             if (participants) {
-                ret = draw_queryflow(*xrpc_seqnr, xrpc_method, time_exec, participants);
+                ret = draw_queryflow(*xrpc_updating, *xrpc_seqnr, xrpc_method, time_exec, participants);
                 BBPunfix(participants->batCacheid);
             }
             if (ret == GDK_FAIL) return ret;
