@@ -67,34 +67,83 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   }
   
   var funcdefs = new Array();
-  funcdefs[funcdefs.length]=new funcdef("add", false, new Array("integer", "integer"), new Array("", ""),
-      "declare function f:add($v1 as xs:integer, $v2 as xs:integer) as xs:integer\n{ $v1 + $v2 };");
-  funcdefs[funcdefs.length]=new funcdef("addSeq", false, new Array("integer", "integer"), new Array("+", "+"),
-    "declare function f:addSeq($v1 as xs:integer+, $v2 as xs:integer+) as xs:integer\n{ for $vi in $v1, $vj in $v2 return $vi + $vj };");
-  funcdefs[funcdefs.length]=new funcdef("firstPerson", false, new Array("string"), new Array(""),
-    "declare function f:firstPerson($doc as xs:string) as node()\n{ exactly-one(doc($doc)//person[1]) };");
-  funcdefs[funcdefs.length]=new funcdef("firstPerson", false, new Array("string", "string"), new Array("+", "+"),
-      "declare function f:firstPerson($docs as xs:string+, $dsts as xs:string+) as node()+\n{ for $d at $pos in $dsts\n  return execute at {$d} {f:firstPerson(exactly-one($docs[$pos]))}\n};");
-  funcdefs[funcdefs.length]=new funcdef("boughtItems", false, new Array("string", "string"), new Array("", ""),
-    "declare function f:boughtItems($pid as xs:string, $doc as xs:string) as node()*\n{ doc($doc)//closed_auction[./buyer/@person=$pid] };");
-  funcdefs[funcdefs.length]=new funcdef("boughtItemsSeq", false, new Array("string", "string"), new Array("+", ""),
-      "declare function f:boughtItemsSeq($pid as xs:string+, $doc as xs:string) as node()*\n{ for $p in $pid\n  return\n    doc($doc)//closed_auction[./buyer/@person=$p]\n};");
-  funcdefs[funcdefs.length]=new funcdef("boughtItemsAllPersons", false, new Array("string", "string", "string"), new Array("", "", ""),
-      "declare function f:boughtItemsAllPersons($docL as xs:string, $docR as xs:string, $dst as xs:string) as node()*\n{ for $p in $pid\n  return\n  	for $ca in doc($doc)//closed_auction[./buyer/@person=$p]\n  	return\nelement closed_auction {attribute buyer {$ca/buyer/@person}, $ca/price, $ca/date}\n};");
-  funcdefs[funcdefs.length]=new funcdef("insertPerson", true, new Array("node()", "string"), new Array("", ""),
-      "declare updating function f:insertPerson($p as node(), $doc as xs:string)\n{ do insert $p into doc($doc)//persons };");
-  funcdefs[funcdefs.length]=new funcdef("deletePerson", true, new Array("string", "string"), new Array("", ""),
-      "declare updating function f:deletePerson($pid as xs:string, $doc as xs:string)\n{ do delete doc($doc)//person[./@pid=$pid] };");
-  funcdefs[funcdefs.length]=new funcdef("custom...", false, new Array("integer", "integer", "integer", "integer"), new Array("", "", "", ""), "");
+  funcdefs[funcdefs.length]=new funcdef("getPerson", false,
+      new Array("string", "string"), new Array("", ""),
+      "declare function dfx:getPerson( \n" +
+      "          $doc as xs:string, \n" +
+      "          $pid as xs:string) as node() \n" +
+      "{ doc($doc)//person[./@id = $pid]; };");
+
+  funcdefs[funcdefs.length]=new funcdef("auctionsAllPerson", false,
+      new Array("string", "string"), new Array("", ""),
+      "declare function dfx:auctionsAllPerson( \n" +
+			"           $dst as xs:string, \n" +
+			"           $doc as xs:string) as node()* \n" +
+      "{ \n" +
+	    " for $pid in doc($doc)//person/@id \n"+
+  	  " return \n" +
+		  "   execute at {$dst} {f2:auctionsByPerson($doc, $pid)} \n"+
+      "};");
+
+  funcdefs[funcdefs.length]=new funcdef("nestedRPC", false,
+      new Array("string", "string", "string", "string"),
+      new Array("", "", "", ""),
+      "declare function dfx:nestedRPC( \n" +
+      "          $dst1 as xs:string, \n" +
+      "          $dst2 as xs:string, \n" +
+      "          $dst3 as xs:string, \n" +
+      "          $doc as xs:string) as node()* \n" +
+      "{ \n" +
+      "  (execute at {$dst1} {dfx:auctionsAllPerson($dst3, $doc)}, \n" +
+      "   execute at {$dst2} {dfx:auctionsAllPerson($dst3, $doc)}) \n" +
+      "}; ");
+
+  funcdefs[funcdefs.length]=new funcdef("insertPerson", true,
+      new Array("string", "node()"), new Array("", ""),
+      "declare updating function dfx:insertPerson( \n" +
+      "            $doc as xs:string, $p as node())\n" +
+      "{ do insert $p into doc($doc)//persons };");
+
+  funcdefs[funcdefs.length]=new funcdef("insertPersonNested", true,
+      new Array("string", "string", "node()"), new Array("+", "", ""),
+      "declare updating function dfx:insertPersonNested( \n" +
+      "			$dsts as xs:string+, \n" +
+      "			$doc as xs:string, \n" +
+      "			$p as node()) \n" +
+      "{ \n" +
+      "  (do insert $p into doc($doc)//persons, \n" +
+      "   for $dst in $dsts return \n" +
+      "	  execute at {$dst} {dfx:insertPerson($doc, $p)}) \n" +
+      "};");
+
+  funcdefs[funcdefs.length]=new funcdef("deletePerson", true,
+      new Array("string", "string"), new Array("", ""),
+      "declare updating function f:deletePerson( \n" +
+      "            $pid as xs:string, $doc as xs:string) \n" +
+      "{ do delete doc($doc)//person[./@pid=$pid] };");
+
+  funcdefs[funcdefs.length]=new funcdef("deletePersonNested", true,
+      new Array("string", "string", "string"), new Array("+", "", ""),
+      "declare updating function dfx:deletePersonNested( \n" +
+      "			$dsts as xs:string+, \n" +
+      "			$doc as xs:string, \n" +
+      "			$pid as xs:string) \n" +
+      "{ \n" +
+      "  (do delete doc($doc)//person[./@pid=$pid], \n" +
+      "   for $dst in $dsts return \n" +
+      "	  execute at {$dst} {dfx:deletePerson($doc, $pid)}) \n" +
+      "};");
+
+  funcdefs[funcdefs.length]=new funcdef("custom...", false,
+      new Array("integer", "integer", "integer", "integer"),
+      new Array("", "", "", ""), "");
   
   var par_types = new Array("integer", "string", "node()");
   var par_types_display = new Array("xs:integer", "xs:string", "node()");
   var quant_types = new Array("", "?", "+", "*");
-  var example_nodes = new Array("<person id=\"newperson1\">Schaap<\/person>",
-      "<person id=\"newperson2\">John Denver</person>",
-      "<person id=\"newperson3\">Elvis Presley</person>",
-      "<person id=\"newperson4\">Shania Twain</person>");
-  
+  var example_nodes = new Array(
+      "<person id=\"new1\"><name>X</name><\/person>");
+
   function fillPostUrlBox() {
   	var obj = document.getElementById("postUrl");
   obj.value = "http://" + window.location.hostname + ":" + window.location.port + "/xrpc";
@@ -102,7 +151,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   
   function fillLocationBox() {
   	var obj = document.getElementById("loc");
-  	obj.value = "http://" + window.location.hostname + ":" + window.location.port + "/demo/demo-mod.xq";
+  	obj.value = "http://" + window.location.hostname + ":" + window.location.port + "/demo/demo-xrpcmod.xq";
   }
 
   function fillMethodBox() {
@@ -140,7 +189,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
     var params = "";
     var xrpc_call = "";
     
-    if (form.method.selectedIndex == 0) {
+    if (form.method.selectedIndex < 0) {
 	    for (var l = 0; l < form.loop.value; l++) {
 	    	params = "";
 		    for (var i = 1; i <= form.arity.value; i++) {
@@ -280,26 +329,41 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   		html += "<\/select>";
   		html += "<\/td><td>&nbsp;";
   		
-  		var default_val = -1;
-  		if (funcdefs[idx].getArr(i) == "integer") {
-  			if (funcdefs[idx].getQArr(i) == "")
-  				default_val = (i + 1);
-  			else
-  				default_val = "(" + (i*3+1) + ", " + (i*3+2) + ", " + (i*3+3) + ")";
-  		}
-  		if (funcdefs[idx].getArr(i) == "string") {
-  			if (funcdefs[idx].getQArr(i) == "")
-  				default_val = "xmark.xml";
-  			else
-  				default_val = "(xmark.xml, xmark.xml, xmark,xml)";
-  		}
-  		if (funcdefs[idx].getArr(i) == "node()") {
-  			if (funcdefs[idx].getQArr(i) == "")
-  				default_val = default_val = example_nodes[i];
-  			else
-  				default_val = "(" + example_nodes[i] + ", " + example_nodes[i] + ", " + example_nodes[i] + ")";
-  		}
-  		html += "<input type=\"text\" name=\"param" + (i+1) + "\" id=\"param" + (i+1) + "\" value=\"" + default_val + "\" />";
+  		var default_val = "";
+      if(val == "getPerson") {
+        default_val = (i==0) ? "xmark1.xml" : "person10";
+      } else if(val == "auctionsAllPerson") {
+        default_val = (i==0) ? "localhost:60001" : "xmark1.xml";
+      } else if (val == "nestedRPC") {
+        if(i == 0)
+          default_val = "localhost:60001";
+        else if(i == 1)
+          default_val = "localhost:70001";
+        else if(i == 2)
+          default_val = "localhost:80001";
+        else
+          default_val = "xmark1.xml";
+      } else if (val == "insertPerson") {
+        default_val = (i==0) ? "xmark1.xml" : '<person id=\"new1\"><name>Ronald</name></person>';
+      } else if (val == "insertPersonNested") {
+        if(i == 0)
+          default_val = "(localhost:60001, localhost:70001)";
+        else if (i== 1)
+          default_val = "xmark1.xml";
+        else 
+          default_val = '<person id=\"new1\"><name>Ronald</name></person>';
+      } else if (val == "deletePerson") {
+        default_val = (i==0) ? "xmark1.xml" : "new1";
+      } else if (val == "deletePersonNested") {
+        if(i == 0)
+          default_val = "(localhost:60001, localhost:70001)";
+        else if (i== 1)
+          default_val = "xmark1.xml";
+        else 
+          default_val = "new1";
+      }
+
+  		html += "<input type=\"text\" name=\"param" + (i+1) + "\" id=\"param" + (i+1) + '\" value=\'' + default_val + '\' />';
   		html += "<\/td><\/tr>";
   	}
   	html += "<\/table>";
@@ -463,7 +527,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 	</tr>
 	<tr>
 		<td><label for="ns">Module namespace</label></td>
-		<td><input type="text" name="ns" value="xrpcdemo-functions" size="40" /></td>
+		<td><input type="text" name="ns" value="demo-functions-xrpc" size="40" /></td>
 	</tr>
 	<tr>
 		<td><label for="loc">Module location</label></td>
@@ -477,8 +541,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 		</td>
 	</tr>
 	<tr>
-		<td></td>
-		<td><textarea cols="40" rows="14" name="def" id="def" readonly="readonly"></textarea></td>
+		<td colspan="2"><textarea cols="65" rows="20" name="def" id="def" readonly="readonly"></textarea></td>
 	</tr>
 	<tr>
 		<td><label for="loop">Loop counter</label></td>

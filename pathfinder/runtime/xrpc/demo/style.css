@@ -54,12 +54,12 @@ table td h1 {
 	border-bottom: 4px solid black;
 	border-right: 4px solid black;
 	width: 410px;
-	height: 312px;
+	height: 326px;
 }
 
 #graph {
-	width: 400px;
-	height: 640px;
+	width: 430px;
+	height: 670px;
 	margin-right: 5px;
 	overflow:auto;
 	padding: 0px;
