@@ -596,17 +596,26 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, topn);
 				l = getDestVar(q);
 
-				/* As the result of the topn isn't sorted
-				   we take the lower (according to the order
-				   direction (size-offset)) to
-				   get the correct output. */ 
+				/* since both arguments of algebra.slice are 
+				   inclusive correct the LIMIT value by 
+				   substracting 1 */
 				if (s->op2.stval->op1.aval->data.val.ival) {
-					name = "topn_max";
-					if ((s->flag-1) > 0)
-						name = "topn_min"; 
+					q = newStmt1(mb, calcRef, "-");
+					q = pushArgument(mb, q, topn);
+					q = pushInt(mb, q, 1);
+					len = getDestVar(q);
 
-					q = newStmt(mb, "pqueue", name);
-					q = pushArgument(mb,q, l);
+					if ((s->flag-1) > 0) {
+						q = newStmt1(mb, algebraRef, "sortTail");
+					} else {
+						q = newStmt1(mb, algebraRef, "sortReverseTail");
+					}
+					q = pushArgument(mb, q, l);
+					l = getDestVar(q);
+
+					q = newStmt1(mb, algebraRef, "slice");
+					q = pushArgument(mb, q, l);
+					q = pushArgument(mb, q, offset);
 					q = pushArgument(mb, q, len);
 					l = getDestVar(q);
 				}
@@ -642,14 +651,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_order:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 
-			q = newStmt1(mb, algebraRef, "sortTail" );
+			if( s->flag > 0){
+				q = newStmt1(mb, algebraRef, "sortTail");
+			} else {
+				q = newStmt1(mb, algebraRef, "sortReverseTail");
+			}
 			q = pushArgument(mb, q, l);
 			s->nr = getDestVar(q);
-			if( s->flag == 0){
-				q = newStmt1(mb, algebraRef,"sortReverseTail");
-				q= pushArgument(mb,q,s->nr);
-				s->nr = getDestVar(q);
-			}
 		} break;
 		case st_reorder:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);

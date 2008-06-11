@@ -1,3 +1,4 @@
+DROP FUNCTION fGetUrlExpEq;
 DROP FUNCTION fGetNearestObjAllEq;
 DROP FUNCTION fGetUrlFitsSpectrum;
 DROP FUNCTION fGetUrlFrameImg;

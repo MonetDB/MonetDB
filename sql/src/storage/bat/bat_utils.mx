@@ -144,6 +144,7 @@ temp_copy(log_bid b, int temp)
 
 	if (!temp) {
 		c = BATcopy(o, o->htype, o->ttype, TRUE);
+		bat_set_access(c, BAT_READ);
 		BATcommit(c);
 	} else {
 		c = bat_new(o->htype, o->ttype, COLSIZE);
