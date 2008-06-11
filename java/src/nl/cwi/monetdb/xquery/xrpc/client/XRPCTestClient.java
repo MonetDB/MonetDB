@@ -349,11 +349,11 @@ public class XRPCTestClient {
     {
         String msg = response.toString();
         
+        String soapPrefix = XRPCMessage.getNamespacePrefix(
+				"Body", msg,
+				XRPCMessage.SOAP_NS);
         /* A simple check to see if the response is a SOAP Fault message
          * or not */
-        String soapPrefix = XRPCMessage.getNamespacePrefix(
-                XRPCMessage.XRPC_MSG_TYPE_RESP, msg,
-                XRPCMessage.SOAP_NS);
         if(response.indexOf(soapPrefix+":Fault") > 0) {
             System.out.println(response);
             return;
@@ -431,7 +431,6 @@ public class XRPCTestClient {
             extractResults(respMsg);
         } catch (Exception e){
             e.printStackTrace();
-            System.exit(1);
         }
     }
 
@@ -460,7 +459,6 @@ public class XRPCTestClient {
             }
         } catch (OptionsException oe){
             oe.printStackTrace();
-            System.exit(1);
         }
     }
 
