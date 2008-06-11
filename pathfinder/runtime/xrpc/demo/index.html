@@ -31,6 +31,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   function funcdef(n, u, a, q, d) {
 	this.name = n;
 	this.arr = a;
+  this.upd = u;
 	this.quantarr = q;
 	this.def = d;
 
@@ -59,6 +60,10 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 	this.getDef = function() {
 		return this.def;
 	}
+
+  this.getUpdating = function() {
+		return this.upd;
+  }
   }
   
   var funcdefs = new Array();
@@ -92,7 +97,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   
   function fillPostUrlBox() {
   	var obj = document.getElementById("postUrl");
-    obj.value = "http://" + window.location.hostname + ":" + window.location.port + "/xrpc";
+  obj.value = "http://" + window.location.hostname + ":" + window.location.port + "/xrpc";
   }
   
   function fillLocationBox() {
@@ -127,8 +132,6 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   }
 
   function sendRequest(form)  {
-	//var obj = document.getElementById("answer");
-    //obj.value = "Waiting for server response...";
     var obj = document.getElementById("messreq");
     obj.value = "";
     var obj = document.getElementById("messres");
@@ -136,8 +139,6 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 
     var params = "";
     var xrpc_call = "";
-    /* XRPCDEBUG makes you get an alert for each SOAP message sent/received */
-    //XRPCDEBUG = form.debug.checked;
     
     if (form.method.selectedIndex == 0) {
 	    for (var l = 0; l < form.loop.value; l++) {
@@ -168,17 +169,34 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   	var url = obj.alt;
   	var req = true;
   	if (url.indexOf("res") != -1) req = false;
-  	/* XRPCDEBUG makes you get an alert for each SOAP message sent/received */
-    //XRPCDEBUG = document.getElementById("debug").checked;
-  	XRPC_PART(url, req? messreqChanged: messresChanged);
+  	var params = getParam('string', '', url);
+  	var xrpc_call = XRPC_CALL(params);
+
+  	XRPC(form.postUrl.value, form.ns.value, form.loc.value, 
+         'getdoc', '1', false, xrpc_call, req? messreqChangedWrapper: messresChangedWrapper, 0, 'none');
   }
 
+  function messreqChangedWrapper(xmldoc) {
+    /* we now have two env:Envelope in the response message of 'getdoc' */
+  	var reqnode = xmldoc.getElementsByTagName("Envelope")[1];
+  	messreqChanged(reqnode);
+  }
+  
+  function messresChangedWrapper(xmldoc) {
+  	var resnode = xmldoc.getElementsByTagName("Envelope")[1];
+  	messresChanged(resnode);
+  }
+  
   function sendRequestMap(url) {
   	XRPC_PART(url, mapChanged);
+    /*
+  	var xrpc_call = XRPC_CALL(getParam('string', '', url));
+  	XRPC(form.postUrl.value, form.ns.value, form.loc.value, 
+         'getdoc', '1', false, xrpc_call, mapChanged, 0, 'none');
+    */
   }
   
   function mapChanged(xmldoc) {
-  	//alert(serializeXML(xmldoc));
   	var mapobj = document.getElementById("treemap");
   	mapobj.innerHTML = "";
   	var areas = xmldoc.getElementsByTagName('area');
@@ -187,10 +205,12 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 		var newnode = document.createElement("area");
 		newnode.setAttribute("shape", areas[i].getAttribute("shape"));
 		newnode.setAttribute("coords", areas[i].getAttribute("coords"));
-		newnode.setAttribute("href", "#");
 		newnode.setAttribute("title", areas[i].getAttribute("title"));
-		newnode.setAttribute("alt", areas[i].getAttribute("href"));
-		newnode.setAttribute("onclick", "sendRequestPart(this)");
+    if(areas[i].getAttribute("href") != null) {
+      newnode.setAttribute("alt", areas[i].getAttribute("href"));
+      newnode.setAttribute("onclick", "sendRequestPart(this)");
+      newnode.setAttribute("href", "#");
+    }
 		mapobj.appendChild(newnode);
 	}
   }
@@ -198,7 +218,8 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   function showResponse(xmldoc) {
   	var participantNodes = xmldoc.getElementsByTagName("participant");
   	var participantNode = null; 
-  	if (participantNodes.length > 0) participantNode = participantNodes[0];
+    if (participantNodes.length > 0)
+      participantNode = participantNodes[0];
   	if (participantNode == null) {
   		participantNode = document.createElement("participant");
   		var tnode = document.createTextNode("query,127.0.0.1:50001,1,fcn,time");
@@ -211,7 +232,12 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   	
   	var imgobj = document.getElementById("treeimg");
   	imgobj.src = newSrcLocation + ".gif";
-  	sendRequestMap(newSrcLocation + ".xml")
+  	//sendRequestMap(newSrcLocation + ".xml")
+
+  	var newMapLocation = "http://" + window.location.hostname + ":"
+      + window.location.port + "/logs/qflow_" + sepValues[2];
+
+  	sendRequestMap(newMapLocation + ".xml")
   }
   
   function methodChanged(object) {
@@ -281,23 +307,9 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   	
   	defobj.readOnly = !last;
   	
-  	//var loopobj = document.getElementById("loop");
-  	//loopobj.disabled = (idx != 0);
+  	var updobj = document.getElementById("updating");
+  	updobj.checked = funcdefs[idx].getUpdating();
   }
-  
-  /*function debugChanged(object) {
-  	var debug = object.checked;
-  	var objl = document.getElementById("content");
-  	var objg = document.getElementById("graph");
-  	var objr = document.getElementById("messages");
-  	if (debug) {
-  		objr.style.display = "block";
-  		objg.style.display = "block";
-  	} else {
-  		objr.style.display = "none";
-  		objg.style.display = "none";
-  	}
-  }*/
   
   function clickreq(vis) {
   	var objv = document.getElementById("reqvis");
@@ -325,9 +337,6 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   	} 
   }
   
-  function updatingChanged(object) { 
-  }
-  
   function escapeForHTML(s) {
   	return s.split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;")
   }
@@ -337,17 +346,18 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
   
   	var obj = document.getElementById("reqvis");
   	obj.innerHTML = "changed";
-  	//var xpe = new XPathEvaluator();
-	//var nsResolver = xpe.createNSResolver(xmldoc.ownerDocument == null ? xmldoc.documentElement : xmldoc.ownerDocument.documentElement);
-  	//var oid = document.evaluate('/env:Envelope/env:Header/wscoor:CoordinationContext/wscoor:Identifier/text()', xmldoc, nsResolver, XPathResult.ANY_TYPE, null);
-  	// var qid = xmldoc.getElementsByTagName("Identifier")[0].firstChild.nodeValue;
+    var qidN = xmldoc.getElementsByTagName("Identifier");
+    var qid = "None";
+    if(qidN.length == 1) {
+      qid = qidN[0].firstChild.nodeValue;
+    }
   	var reqnode = xmldoc.getElementsByTagName("request")[0];
   	var funcn = reqnode.getAttribute("xrpc:method");
   	var ns = reqnode.getAttribute("xrpc:module");
   	var loc = reqnode.getAttribute("xrpc:location");
   	var htm =
   		'<table>' +
-  		// '<tr><td>QID<\/td><td>' + qid + '<\/td><\/tr>' +
+  		'<tr><td>QID<\/td><td>' + qid + '<\/td><\/tr>' +
   		'<tr><td>Function<\/td><td>' + funcn + '<\/td><\/tr>' +
   		'<tr><td>NS<\/td><td>' + ns + '<\/td><\/tr>' +
   		'<tr><td>Loc<\/td><td>' + loc + '<\/td><\/tr>' +
@@ -419,7 +429,6 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 	clickreq(true);
 	clickres(true);
  	methodChanged(document.getElementById("method"));
- 	//debugChanged(document.getElementById("debug"));
   }
  </script>
  <link rel="stylesheet" href="style.css" type="text/css" />
@@ -489,7 +498,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 	</tr>
 	<tr>
 		<td><label for="updating">Updating Function</label></td>
-		<td><input type="checkbox" name="updating" id="updating" onchange="updatingChanged(this)" /></td>
+		<td><input type="checkbox" name="updating" id="updating" /></td>
 	</tr>
 	<tr>
 		<td><label for="isolevel">Isolation Level</label></td>
@@ -502,10 +511,6 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
 			Timeout <input type="text" value="0" name="timeout" id="timeout" readonly="readonly" size="10" />
 		</td>
 	</tr>
-	<!--<tr>
-		<td><label for="debug">Show query flow</label></td>
-		<td><input type="checkbox" name="debug" id="debug" checked="checked" onchange="debugChanged(this)" /></td>
-	</tr>-->
 	<tr>
 		<td></td>
 		<td><input type="button" value="Submit" onclick="sendRequest(this.form)" /></td>

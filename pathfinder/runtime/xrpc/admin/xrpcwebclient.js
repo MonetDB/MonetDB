@@ -12,8 +12,7 @@ function XRPC(posturl,    /* Your XRPC server. Usually: "http://yourhost:yourpor
 {
     clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,arity,updating,call,timeout,mode), callback);
 }
-
-/* the main function you want to use: */
+     
 function XRPC_PART(geturl,    /* Your XRPC server. Usually: "http://yourhost:yourport/xrpc" */ 
               callback)   /* callback function to call with the XML response */
 {
@@ -138,11 +137,11 @@ XRPCWebClientPart = function () {
 XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callback) {
     try {
     	this.xmlhttp.open("POST", posturl, true);
-        if (XRPCDEBUG) {
-            //alert(request);
-        	//document.getElementById("messreq").value = request; 
-			messreqChanged(string2XML(request));
-		}
+      //alert(request);
+      if (XRPCDEBUG && method != 'getdoc') {
+        //document.getElementById("messreq").value = request; 
+        messreqChanged(string2XML(request));
+      }
 		this.xmlhttp.send(request);
 		var app = this;
     
@@ -154,7 +153,9 @@ XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callbac
                 {
 				    if (XRPCDEBUG) {
 				    	if (app.xmlhttp.responseText) {
-				    		messresChanged(app.xmlhttp.responseXML? app.xmlhttp.responseXML: string2XML(app.xmlhttp.responseText));
+
+
+				    		if(method != 'getdoc') messresChanged(app.xmlhttp.responseXML? app.xmlhttp.responseXML: string2XML(app.xmlhttp.responseText));
 				    		callback(app.xmlhttp.responseXML? app.xmlhttp.responseXML: string2XML(app.xmlhttp.responseText));
 				    	}
 				    }
@@ -181,7 +182,6 @@ XRPCWebClientPart.prototype.sendReceivePart = function(geturl, callback) {
         var app = this;
     
     	this.xmlhttp.onreadystatechange = function() {
-        	//alert("back");
             if (app.xmlhttp.readyState == 4 ) {
                 if (app.xmlhttp.status == 200 &&
                     app.xmlhttp.responseText.indexOf("!ERROR") < 0 && 
