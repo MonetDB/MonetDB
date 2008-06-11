@@ -11559,11 +11559,11 @@ const char* PFstartMIL(int statement_type) {
         "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"\
         "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"\
         "   print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values,\n"\
-        "                xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,xrpc_seqnr,xrpc_timeout,time_start);\n"
+        "                xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,false,xrpc_seqnr,xrpc_timeout,time_start);\n"
 #define PF_STOPMIL_UPDATE_BODY\
         "  if (xrpc_method != \"\") \n"\
         "    print_result(genType,ws,empty_bat,empty_bat,empty_bat,bat(void,int),int_values,dbl_values,str_values,\n"\
-        "                  xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,xrpc_seqnr,xrpc_timeout,time_start);\n"\
+        "                  xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,true,xrpc_seqnr,xrpc_timeout,time_start);\n"\
         "  if (xrpc_qid != \"\") {\n"\
         "    collect_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"\
         "  } else {\n"\
