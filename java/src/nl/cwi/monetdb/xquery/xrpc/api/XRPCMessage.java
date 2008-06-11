@@ -263,7 +263,7 @@ public class XRPCMessage {
 			return null;
 
 		return  "<xrpc:participants><xrpc:participant>" +
-					caller + "," + hostport + "," + seqnr + "," + fcn +
+					caller + "," + hostport + ":" + seqnr + "," + fcn +
 				"</xrpc:participant></xrpc:participants>";
 	}
 
