@@ -331,7 +331,7 @@ public class XRPCWrapperWorker extends Thread {
 								cbuf[15] == 'a' && cbuf[16] == 'n' &&
 								cbuf[17] == 't' && cbuf[18] == '>') {
 								String time_exec = "," +
-									(new Date().getTime() - xrpc_start);
+									(new Date().getTime() - xrpc_start) + ",0";
 								sockOut.write(time_exec,
 										0, time_exec.length());
 								if(resFile != null)
