@@ -2026,7 +2026,7 @@ draw_queryflow(
     BATiter bi;
 
     if (logdir == NULL) return GDK_FAIL;
-    snprintf(base_name, 2048, "%s%cqflow_"LLFMT, logdir, DIR_SEP, xrpc_seqnr);
+    snprintf(base_name, 2048, "%sqflow_"LLFMT, logdir, xrpc_seqnr);
     snprintf(dotFile, 2048, "%s.dot", base_name);
 
     /* replace all non-alpha-numeric chars in the string with '_', so
@@ -2060,7 +2060,7 @@ draw_queryflow(
 
     bi = bat_iterator(participants);
     BATloop(participants, p, q) {
-        if (sscanf(BUNtail(bi,p), "%[^','],%[^','],%[^','],%s,%d", caller, dst, fcn, time, &xrpc_updating) != 5) {
+        if (sscanf(BUNtail(bi,p), "%[^','],%[^','],%[^','],%[^','],%d", caller, dst, fcn, time, &xrpc_updating) != 5) {
             GDKerror("draw_queryflow: sscanf failed");
             stream_destroy(s);
             return GDK_FAIL;
