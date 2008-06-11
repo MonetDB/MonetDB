@@ -1302,7 +1302,7 @@ rfind_quote(char *s, char quote)
 }
 
 static INLINE int
-insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err)
+insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 {
 	char *end = e;
 	char bak = *e;
@@ -1335,14 +1335,17 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err)
 	} else {
 		adt = fmt->frstr(fmt->extra, fmt->adt, s, e, quote);
 	}
-	*end = bak;
 
 	if (!adt) {
-		snprintf(buf,BUFSIZ, "value %s from line %d not inserted\n", 
-				s, (int) BATcount(fmt->c));
+		char *val = (s!=e)?GDKstrdup(s):GDKstrdup("");
+
+		*end = bak;
+		snprintf(buf,BUFSIZ, "value '%s' while parsing '%s' from line %d field %d not inserted, expecting type %s\n", val, s, (int) BATcount(fmt->c), c, fmt->type);
 		*err= GDKstrdup(buf);
+		GDKfree(val);
 		return -1;
 	}
+	*end = bak;
 
 	/* key maybe NULL but thats not a problem, as long as we have void */
 	bunfastins(fmt->c, key, adt);
@@ -1431,7 +1434,7 @@ insert_line(Tablet * as, char *line, ptr key)
 		if (!e && i == (as->nr_attrs-1))
 			e = line;
 		if (e) {
-			res |= insert_val(&fmt[i], s, e, quote, key, &as->error);
+			res |= insert_val(&fmt[i], s, e, quote, key, &as->error, i);
 			quote = 0;
 			line = e + fmt[i].seplen;
 			if (as->error && as->complaints)
