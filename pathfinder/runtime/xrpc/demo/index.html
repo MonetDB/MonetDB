@@ -108,7 +108,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
       new Array("string", "node()"), new Array("", ""),
       "declare updating function dfx:insertPerson( \n" +
       "            $doc as xs:string, $p as node())\n" +
-      "{ do insert $p into doc($doc)//persons };");
+      "{ do insert $p into doc($doc)//people };");
 
   funcdefs[funcdefs.length]=new funcdef("insertPersonNested", true,
       new Array("string", "string", "node()"), new Array("+", "", ""),
@@ -117,7 +117,7 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
       "			$doc as xs:string, \n" +
       "			$p as node()) \n" +
       "{ \n" +
-      "  (do insert $p into doc($doc)//persons, \n" +
+      "  (do insert $p into doc($doc)//people, \n" +
       "   for $dst in $dsts return \n" +
       "	  execute at {$dst} {dfx:insertPerson($doc, $p)}) \n" +
       "};");
@@ -135,9 +135,20 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
       "			$doc as xs:string, \n" +
       "			$pid as xs:string) \n" +
       "{ \n" +
-      "  (do delete doc($doc)//person[./@pid=$pid], \n" +
+      "  (do delete doc($doc)//person[./@id=$pid], \n" +
       "   for $dst in $dsts return \n" +
       "	  execute at {$dst} {dfx:deletePerson($doc, $pid)}) \n" +
+      "};");
+
+  funcdefs[funcdefs.length]=new funcdef("repeatable", false,
+      new Array("string"), new Array(""),
+      "declare function dfx:repeatable($dst as xs:string) as node()* \n" +
+      "{ \n" +
+      "	let $d1 := execute at {$dst} {dfx:getdoc('hello.xml')}, \n" +
+      "	    $slow := (for $i in 1 to 1000 \n" +
+      "					return count(doc('xmark1.xml')//*)), \n" +
+      "	    $d2 := execute at {$dst} {dfx:getdoc('hello.xml')} \n" +
+      "	return ($d1/hello, $d2/hello) \n" +
       "};");
 
   funcdefs[funcdefs.length]=new funcdef("custom...", false,
@@ -339,21 +350,21 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
       if(val == "getPerson") {
         default_val = (i==0) ? "xmark1.xml" : "person10";
       } else if(val == "auctionsAllPerson") {
-        default_val = (i==0) ? "localhost:60001" : "xmark1.xml";
+        default_val = (i==0) ? "192.168.0.1:50001" : "xmark1.xml";
       } else if (val == "nestedRPC") {
         if(i == 0)
-          default_val = "localhost:60001";
+          default_val = "192.168.0.1:50001";
         else if(i == 1)
-          default_val = "localhost:70001";
+          default_val = "jarl.ins.cwi.nl:8080";
         else if(i == 2)
-          default_val = "localhost:80001";
+          default_val = "localhost:60001";
         else
           default_val = "xmark1.xml";
       } else if (val == "insertPerson") {
         default_val = (i==0) ? "xmark1.xml" : '<person id=\"new1\"><name>Ronald</name></person>';
       } else if (val == "insertPersonNested") {
         if(i == 0)
-          default_val = "(localhost:60001, localhost:70001)";
+          default_val = "(jarl.ins.cwi.nl:50001, 192.168.0.1:50001)";
         else if (i== 1)
           default_val = "xmark1.xml";
         else 
@@ -362,11 +373,13 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
         default_val = (i==0) ? "xmark1.xml" : "new1";
       } else if (val == "deletePersonNested") {
         if(i == 0)
-          default_val = "(localhost:60001, localhost:70001)";
+          default_val = "(jarl.ins.cwi.nl:50001, 192.168.0.1:50001)";
         else if (i== 1)
           default_val = "xmark1.xml";
         else 
           default_val = "new1";
+      } else if(val == "repeatable") {
+          default_val = "192.168.0.1:50001";
       }
 
   		html += "<input type=\"text\" name=\"param" + (i+1) + "\" id=\"param" + (i+1) + '\" value=\'' + default_val + '\' />';

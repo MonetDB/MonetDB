@@ -14,20 +14,6 @@ declare function dfx:getPerson(
   			$p/name }
 };
 
-(:
-declare function dfx:auctionsByPerson(
-          $doc as xs:string,
-          $pid as xs:string) as node()*
-{
-  for $ca in doc($doc)//closed_auction[./buyer/@person=$pid]
-  return
-    element closed_auction {
-      attribute buyer {$ca/buyer/@person},
-      $ca/price
-    }
-};
-:)
-
 declare function dfx:auctionsAllPerson(
 			$dst as xs:string,
 			$doc as xs:string) as node()*
@@ -79,6 +65,15 @@ declare updating function dfx:deletePersonNested(
   (do delete doc($doc)//person[./@id=$pid],
    for $dst in $dsts return
 	  execute at {$dst} {dfx:deletePerson($doc, $pid)})
+};
+
+declare function dfx:repeatable($dst as xs:string) as node()*
+{
+	let $d1 := execute at {$dst} {dfx:getdoc("hello.xml")},
+	    $slow := (for $i in 1 to 1000
+					return count(doc("xmark1.xml")//*)),
+	    $d2 := execute at {$dst} {dfx:getdoc("hello.xml")}
+	return ($d1/hello, $d2/hello)
 };
 
 declare function dfx:getdoc($url as xs:string) as document-node()?
