@@ -517,7 +517,7 @@ get_pre_by_qname(str qname,
     BUN bun = BUN_NONE;
     BATiter qn_uli = bat_iterator(qn_uri_loc);
 
-    for (i = start_pre; i <= end_pre; i++) {
+    for (i = start_pre; i < end_pre; i++) {
         if (pre_kindT[i] == ELEMENT) {
             BUNfndVOID(bun, qn_uli, &(pre_propT[i]));
             if(bun != BUN_NONE && strcmp(BUNtail(qn_uli, bun), qname) == 0)
@@ -602,7 +602,7 @@ get_node_type(str typename) {
 static INLINE oid
 skip_text_nodes(char *pre_kindT, oid pre, oid max)
 {
-	while(pre_kindT[pre] == TEXT && pre < max) pre++;
+	while(pre < max && pre_kindT[pre] == TEXT) pre++;
 	return pre;
 }
 
