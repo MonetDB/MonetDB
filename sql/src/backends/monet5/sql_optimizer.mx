@@ -455,9 +455,10 @@ str defaultPlan=
 	"joinPath," 
 	"mergetable," 
 	"commonTerms,"
+/*	"replicator," */
 	"accumulators,"
 	"deadcode,"
-	"recycle,"
+/*	"recycle,"  */
 	"reduce,"
 	"garbageCollector," 
 	"multiplex";
