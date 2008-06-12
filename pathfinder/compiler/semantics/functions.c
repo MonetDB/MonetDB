@@ -243,6 +243,7 @@ add_ufun (PFpnode_t *n)
 static void
 add_ufuns (PFpnode_t *n)
 {
+    char *bak = current_atURI;
     if (n->kind == p_lib_mod)
         current_atURI = n->sem.str;
 
@@ -258,6 +259,7 @@ add_ufuns (PFpnode_t *n)
                     (i < PFPNODE_MAXCHILD) && (n->child[i]); i++)
                 add_ufuns (n->child[i]);
     }
+    current_atURI = bak;
 }
 
 

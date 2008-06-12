@@ -8461,7 +8461,7 @@ CMDdocsused(BAT** res, BAT* input, BAT* frag_root, BAT* nid_rid, BAT* map_pid, B
         BUNins(*res, &docpre, &docid[j], FALSE);
 
         /* skip all nodes of this document */
-        docpre = docpre + size[docpre];
+        docpre = docpre + size[docpre] + 1;
         for (delta = (n-i) >> 4; delta > 40; delta >>= 4)
             while (i+delta < n && * (oid *) BUNtail(inputi, i+delta) <= docpre)
                 i += delta;

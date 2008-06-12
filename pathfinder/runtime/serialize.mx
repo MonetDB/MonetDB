@@ -1724,10 +1724,10 @@ xquery_print_result_driver (
     ctx->xrpc_qid = xrpc_qid;
     ctx->xrpc_caller = xrpc_caller;
     ctx->xrpc_mode = xrpc_mode;
-    ctx->xrpc_seqnr = *xrpc_seqnr;
-    ctx->xrpc_updating = *xrpc_updating;
-    ctx->xrpc_timeout = *xrpc_timeout;
-    ctx->time_exec = *time_exec;
+    ctx->xrpc_seqnr = xrpc_seqnr?*xrpc_seqnr:0;
+    ctx->xrpc_updating = xrpc_updating?*xrpc_updating:0;
+    ctx->xrpc_timeout = xrpc_timeout?*xrpc_timeout:0;
+    ctx->time_exec = time_exec?*time_exec:0;
 
     curcnt = 0;
     maxcnt = BATcount (item);

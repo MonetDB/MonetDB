@@ -11557,10 +11557,12 @@ const char* PFstartMIL(int statement_type) {
         "  time_exec := time_print - time_start;\n"
 #define PF_STOPMIL_RDONLY_BODY\
         "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"\
+        "  if (xrpc_coord) xrpc_shredBAT;\n"\
         "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"\
         "   print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values,\n"\
         "                xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,false,xrpc_seqnr,xrpc_timeout,time_start);\n"
 #define PF_STOPMIL_UPDATE_BODY\
+        "  if (xrpc_coord) xrpc_shredBAT;\n"\
         "  if (xrpc_method != \"\") \n"\
         "    print_result(genType,ws,empty_bat,empty_bat,empty_bat,bat(void,int),int_values,dbl_values,str_values,\n"\
         "                  xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,true,xrpc_seqnr,xrpc_timeout,time_start);\n"\
@@ -11588,7 +11590,7 @@ const char* PFstartMIL(int statement_type) {
         PF_STOPMIL_END_PRINT_TIMING(LASTPHASE)
 #define PF_STOPMIL_END_PRINT_TIMING(LASTPHASE)\
         "if (not(isnil(err))) {\n"\
-        "  ERROR(err);\n"\
+        "  ERROR(err); -(try);\n"\
         "} else if (genType.startsWith(\"timing\")) {\n"\
         "  time_print := usec() - time_print;\n"\
         "  printf(\"\\nTrans  %% 10.3f msec\\nShred  %% 10.3f msec\\nQuery  %% 10.3f msec\\n" LASTPHASE " %% 10.3f msec\\n\","\

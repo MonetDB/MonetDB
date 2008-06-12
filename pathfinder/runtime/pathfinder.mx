@@ -1504,12 +1504,14 @@ PROC ws_end(BAT[void,bat] ws, str err) : int
     if (not(isnil(err))) ws_log(ws, err);
     if (xrpc_qid = "") {
         ws_destroy(ws);
-        return 1;
+    } else {
+        lock_set(xrpc_lock);
+        CATCH(_ws_xrpc_end(xrpc_qid, err));
+        lock_unset(xrpc_lock);
     }
-    lock_set(xrpc_lock);
-    CATCH(_ws_xrpc_end(xrpc_qid, err));
-    lock_unset(xrpc_lock);
-    return 2; # do not auto-restart 2PC transactions ever
+    # do not auto-restart XRPC updates (deadlock danger) 
+    if (xrpc_method != "") return 2;
+    return 1; 
 }
 
 PROC ws_create(int update) : BAT[void,bat]

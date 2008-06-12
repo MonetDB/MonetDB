@@ -68,7 +68,7 @@ declare updating function dfx:deletePerson(
           $doc as xs:string,
           $pid as xs:string)
 {
-  do delete doc($doc)//person[./@pid=$pid]
+  do delete doc($doc)//person[./@id=$pid]
 };
 
 declare updating function dfx:deletePersonNested(
@@ -76,7 +76,7 @@ declare updating function dfx:deletePersonNested(
 			$doc as xs:string,
 			$pid as xs:string)
 {
-  (do delete doc($doc)//person[./@pid=$pid],
+  (do delete doc($doc)//person[./@id=$pid],
    for $dst in $dsts return
 	  execute at {$dst} {dfx:deletePerson($doc, $pid)})
 };
