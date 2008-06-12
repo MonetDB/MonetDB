@@ -72,7 +72,13 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
       "declare function dfx:getPerson( \n" +
       "          $doc as xs:string, \n" +
       "          $pid as xs:string) as node() \n" +
-      "{ doc($doc)//person[./@id = $pid]; };");
+      "{ \n" +
+      "	for $p in doc($doc)//person[./@id = $pid] \n" +
+      "	return \n" +
+      "		element person { \n" +
+      "			attribute id {$p/@id}, \n" +
+      "  			$p/name } \n" +
+      "}; \n");
 
   funcdefs[funcdefs.length]=new funcdef("auctionsAllPerson", false,
       new Array("string", "string"), new Array("", ""),
