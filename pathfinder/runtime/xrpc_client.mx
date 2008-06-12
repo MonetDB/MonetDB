@@ -453,7 +453,7 @@ CMDget_rpc_res(BAT **res,
                                     if (err) break;
 
                                     /* set the correct iteration number */
-                                    while (j == argcnt[it]) { 
+                                    while (j == (unsigned)argcnt[it]) { 
                                         j=0; it++; 
                                     }
                                     BUNappend(res_iter, &it, FALSE);
