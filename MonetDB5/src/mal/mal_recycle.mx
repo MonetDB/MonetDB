@@ -65,7 +65,8 @@ which inspects the variable table for alternative results.
 #include "mal_instruction.h"
 
 /*#define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE */
+#define _DEBUG_RECYCLE_REUSE 
+#define _DEBUG_CACHE_ */
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -188,7 +189,7 @@ int rcachePolicy = RCACHE_LRU;  /* recycle cache management policy
 			RCACHE_MEMCRD: reduce the storage overhead */
 int recycleCacheLimit= 1000;
 int recycleClaim=0;	/* avoid stale tables by letting users mark it */
-lng recycleMemory=0;	/* Units of memory permitted */
+lng recycleMemory=100;	/* Units of memory permitted */
 @-
 The profiler record is re-used to store recycler information.
 The clk is used by the LRU scheme, counter is the number of
@@ -490,9 +491,11 @@ static void RECYCLEcleanCache(){
 	}
 
 
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLEcleancache %d ",i);
-	printInstruction(GDKout,recycleBlk, old[i], LIST_MAL_ALL);
+#ifdef _DEBUG_CACHE_
+	stream_printf(GDKout,"RECYCLEcleanCache: #instr=%d vm=%d ",recycleBlk->stop,wm);
+	printInstruction(GDKout,recycleBlk, recycleBlk->stmt[wm], LIST_MAL_ALL);
+	stream_printf(GDKout,"policy=%d mem=%ld usedmem=%ld\n",
+		rcachePolicy,recycleMemory,recyclerUsedMemory);
 #endif
 
 	/* drop wictims in one pass */
@@ -545,14 +548,13 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 	ValRecord *v;
 	ValRecord cst;
 	InstrPtr q;
+	lng memLimit;
 	
 	RECYCLEspace();
-	if (recycleCacheLimit && recycleCacheLimit < recycleBlk->stop)
+	if (recycleCacheLimit && recycleCacheLimit <= recycleBlk->stop)
 		return ; /* no more caching */
-/*	if ( recycleBlk->vtop >= HARDLIMIT_VAR ||
-	    recycleBlk->stop >= HARDLIMIT_STMT || 
-	    recycleMemory > HARDLIMIT_MEM)  drop hard limits*/
-	if ( recycleMemory > HARDLIMIT_MEM)
+	memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
+	if ( recyclerUsedMemory + wr > memLimit)
 		return ; /* no more caching */
 		
 	if ( recycleBlk->stop == 0 ){ 
@@ -881,7 +883,7 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
 	if (recycleBlk)
-		while ( recyclerUsedMemory + wr > memLimit ||
+		while ( (wr < memLimit && recyclerUsedMemory + wr > memLimit) ||
 			recycleBlk->vtop >= HARDLIMIT_VAR ||
 	    		recycleBlk->stop >= HARDLIMIT_STMT )
 			RECYCLEcleanCache();
