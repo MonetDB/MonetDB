@@ -986,19 +986,63 @@ static str RDFisLexicalFloatingPoint(str string, bool isDouble)
     return ret;
 }
 
-static str RDFstringToDouble(double *val, str string)
+static str RDFdecimalStringToDouble(double *val, str string)
+{
+    str ret = MAL_SUCCEED;
+    char *endptr;
+    *val = strtod(string, &endptr);
+    if (errno == ERANGE && *val == HUGE_VAL)
+        ret = "The numeric value is out of the double range";
+    else if (*endptr != '\0')
+        ret = "Could not convert numeric to double";
+    return ret;
+}
+
+static str RDFdoubleStringToDouble(double *val, str string)
 {
     str ret = MAL_SUCCEED;
     if (!strcmp(string, "INF") || !strcmp(string, "-INF") || !strcmp(string, "NaN"))
         ret = "Cannot parse +/- INF and NaN";
     else
     {
-        char *endptr;
-        *val = strtod(string, &endptr);
-        if (errno == ERANGE && *val == HUGE_VAL)
-            ret = "The numeric value is out of the double range";
-        else if (*endptr != '\0')
-            ret = "Could not convert numeric to double";
+    	/*
+    	 * in xml the double lexical form mEn (m decimal, e integer),
+    	 * is mapped to the value space by calculating m * 2^n.
+    	 * The strtod function parses the same lexical forms by assigning
+    	 * a value of m * 10^n.
+    	 */
+    	char *exp_ptr = strchr(string, 'e');
+    	if (exp_ptr==NULL)
+    		exp_ptr = strchr(string, 'E');
+    	if (exp_ptr == NULL)
+        	return RDFdecimalStringToDouble(val, string);
+        else
+        {
+        	int mantissa_len = exp_ptr - string;
+	    	int exp_len = strlen(string) - mantissa_len - 1;
+        	double mant_val;
+        	double exp_val;
+        	char mantissa[mantissa_len+1];
+        	char exp[exp_len+1];
+	    	char *endptr;
+        	snprintf(mantissa, mantissa_len+1, string);
+        	snprintf(exp, exp_len+1, &exp_ptr[1]);
+	        mant_val = strtod(mantissa, &endptr);
+	        if (errno == ERANGE && mant_val == HUGE_VAL)
+	            ret = "The mantissa value is out of the double range";
+	        else if (*endptr != '\0')
+	        	ret = "Could not convert numeric to double";
+	        if (ret==MAL_SUCCEED)
+	        {
+				exp_val = strtod(exp, &endptr);
+		        if (errno == ERANGE && exp_val == HUGE_VAL)
+		            ret = "The exponent value is out of the double range";
+		        else if (*endptr != '\0')
+		        	ret = "Could not convert numeric to double";
+				if (ret == MAL_SUCCEED)
+					*val = mant_val * exp2(exp_val);
+	        }
+        }
     }
     return ret;
 }
@@ -1106,7 +1150,7 @@ static str RDFparseDecimal(double *val, str string, rdf_type type)
     str ret = RDFcheckNumericLexicalSpace(string, type);
     if (ret == MAL_SUCCEED)
     {
-        ret = RDFstringToDouble(val, string);
+        ret = RDFdecimalStringToDouble(val, string);
         if (ret == MAL_SUCCEED)
             ret = RDFcheckNumericValueSpace(*val, type);
     }
@@ -1361,7 +1405,7 @@ triples_handler(void* user_data, const raptor_statement* triple)
                             }
                             else
                             {
-                                *ret = RDFstringToDouble(&val, (str)triple->object);
+                                *ret = RDFdoubleStringToDouble(&val, (str)triple->object);
         save:                   if (*ret == MAL_SUCCEED)
                                 {
                                     if (val == 0)
@@ -2025,6 +2069,29 @@ static str getBatNames(str db, str graph, char *s_buf,char *p_buf,char *o_buf, c
     return MAL_SUCCEED;
 }
 
+static void mantissaToCanonicalLexicalForm(double mant_val, str *mantissa_lexical)
+{
+	int mantissa_len;
+	str dot_ptr;
+	snprintf(*mantissa_lexical, 512, "%.10f", mant_val);
+	/* XML wants no leading plus, at least one decimal digit,
+	 * that maybe just a zero, and no trailing zeros */
+	mantissa_len = strlen(*mantissa_lexical);
+	dot_ptr = strchr(*mantissa_lexical, '.');
+	if (dot_ptr==NULL)
+	{
+		(*mantissa_lexical)[mantissa_len] = '.';
+		(*mantissa_lexical)[mantissa_len+1] = '0';
+		(*mantissa_lexical)[mantissa_len+2] = '\0';
+	}
+	else
+	{
+		/* remove trailing zeros after the decimal dot */
+		for (int i=mantissa_len-1; *mantissa_lexical[i]!='0'; i--)
+			mantissa_lexical[i]='\0';
+	}
+}
+
 static str RDFserializeTriple(raptor_statement *triple, raptor_serializer* serializer,
                             str sv, str pv, str ov, bte tv)
 {
@@ -2036,6 +2103,7 @@ static str RDFserializeTriple(raptor_statement *triple, raptor_serializer* seria
     rdf_section prop_sec = pv[0];
     rdf_section obj_sec = ov[0];
     rdf_type obj_type = tv;
+    memset(obj_string, 0, 512);
     sv = sv + sizeof(chr);
     pv = pv + sizeof(chr);
     ov = ov + sizeof(chr);
@@ -2152,7 +2220,19 @@ static str RDFserializeTriple(raptor_statement *triple, raptor_serializer* seria
                         triple->object = "true";
                         break;
                     case RDF_SEC_ZERO:
-                        triple->object = "0";
+                    	switch (obj_type)
+                    	{
+							case RDF_TYPE_FLOAT:
+							case RDF_TYPE_DOUBLE:
+								triple->object = "0.0E0";
+								break;
+							case RDF_TYPE_DECIMAL:
+								triple->object = "0.0";
+								break;
+							default:
+								triple->object = "0";
+								break;
+						}
                         break;
                     case RDF_SEC_NEG_INF:
                         triple->object = "-INF";
@@ -2167,7 +2247,69 @@ static str RDFserializeTriple(raptor_statement *triple, raptor_serializer* seria
                     case RDF_SEC_POS_NUM:
                     {
                         double val = RDFhexStringToDouble(ov);
-                        snprintf(obj_string, 512, "%.10g", val);
+                        snprintf(obj_string, 512, "%.10G", val);
+                        /* if there an exponent is printed, this means a power of ten, 
+                         * while XML wants a power of two for lexical forms.
+                         * To have a power of two exponent, the double will be printed
+                         * with the 'a' switch, that prints the value as hexadecimal
+                         * string with power of two exponent. Mantissa is then
+                         * converted to decimal, while exponent is already printed as decimal
+                         */
+                        if (strchr(obj_string, 'E')!=NULL)
+                        {
+                        	char *exp_ptr;
+                        	snprintf(obj_string, 512, "%A", val);
+                        	exp_ptr = strchr(obj_string, 'P');
+                        	if (exp_ptr!=NULL)
+                        	{
+	                        	int mantissa_hex_len = exp_ptr - obj_string;
+	                	    	int exp_len = strlen(obj_string) - mantissa_hex_len - 1;
+	                        	double mant_val;
+	                        	char mantissa_hex[mantissa_hex_len+1];
+	                        	char exp[exp_len+1];
+	                	    	char *endptr;
+	                        	snprintf(mantissa_hex, mantissa_hex_len+1, obj_string);
+	                        	snprintf(exp, exp_len+1, &exp_ptr[1]);
+	                	        mant_val = strtod(mantissa_hex, &endptr);
+	                	        if (errno == ERANGE && mant_val == HUGE_VAL)
+	                	            ret = "The mantissa value is out of the double range";
+	                	        else if (*endptr != '\0')
+	                	        	ret = "Could not convert numeric to double";
+	                	        if (ret==MAL_SUCCEED)
+	                	        {
+	                	        	char mantissa_dec[512];
+	                	        	str exp_str;
+	                	        	mantissaToCanonicalLexicalForm(mant_val, (str*)&mantissa_dec);
+	                	        	/* exponent has not to have leading + */
+	                	        	if (exp[0]=='+')
+	                	        		exp_str = &exp[1];
+	                	        	else
+	                	        		exp_str = exp;
+	                	        	/* now print as decimal */
+	                	        	snprintf(obj_string, 512, "%sE%s", mantissa_dec, exp_str);
+	                	        }                        	
+                        	}
+                        }
+                        /* float and double always have a trailing 'E0'*/
+                        else if (obj_type == RDF_TYPE_FLOAT || obj_type == RDF_TYPE_DOUBLE)
+                        {
+                        	int len = strlen(obj_string);
+							obj_string[len] = 'E';
+							obj_string[len+1] = '0';
+							obj_string[len+2] = '\0';
+                        }
+                        /* a decimal should always have a decimal digit in its canonical representation */
+                        else if (obj_type == RDF_TYPE_DECIMAL)
+                        {
+                        	str dot_ptr = strchr(obj_string, '.');
+							if (dot_ptr==NULL)
+							{
+								int dec_len = strlen(obj_string);
+								obj_string[dec_len] = '.';
+								obj_string[dec_len+1] = '0';
+								obj_string[dec_len+2] = '\0';
+							}
+                        }
                         triple->object = obj_string;
                         break;
                     }
