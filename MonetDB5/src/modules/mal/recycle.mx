@@ -34,8 +34,12 @@ address RECYCLEstop
 comment "Cleans recycler bookkeeping";
 
 pattern dump():void
-address RECYCLEdump
+address RECYCLEdumpWrap
 comment "Dump summary of recycle table for potential re-use benefits";
+
+pattern dump(n:str):void
+address RECYCLEdumpWrap
+comment "Dump summary of recycle table into a file";
 
 pattern setRetainPolicy(p:int...):void
 address RECYCLEsetRetain
@@ -106,7 +110,7 @@ comment "Called at the start of a recycle controlled function";
 #define recycle_export extern
 #endif
 
-recycle_export str RECYCLEdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+recycle_export str RECYCLEdumpWrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 recycle_export str RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 recycle_export str RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 recycle_export str RECYCLEsetRetain(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -181,29 +185,25 @@ RECYCLEresetCMD(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
-RECYCLEdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+void
+RECYCLEdump(stream *s)
 {
 	int i;
-	Client cntxt= MCgetClient();
 
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	stream_printf(cntxt->fdout,"#Recycler  catalog\n");
-	stream_printf(cntxt->fdout,"#retain= %d time =%d sze= %d alpha= %4.3f\n",
+	stream_printf(s,"#Recycler  catalog\n");
+	stream_printf(s,"#retain= %d time =%d sze= %d alpha= %4.3f\n",
 		retainPolicy, recycleTime, recycleVolume, recycleAlpha);
-	stream_printf(cntxt->fdout,"#reuse= %d\n", reusePolicy);
-	stream_printf(cntxt->fdout,"#rcache= %d limit= %d \n", rcachePolicy, recycleCacheLimit);
-	stream_printf(cntxt->fdout,"#hard stmt = %d hard var = %d hard mem= %d\n",
+	stream_printf(s,"#reuse= %d\n", reusePolicy);
+	stream_printf(s,"#rcache= %d limit= %d \n", rcachePolicy, recycleCacheLimit);
+	stream_printf(s,"#hard stmt = %d hard var = %d hard mem= %d\n",
 		 HARDLIMIT_STMT, HARDLIMIT_VAR, HARDLIMIT_MEM);
-	stream_printf(cntxt->fdout,"#recycled = %d statements = %d saved time(ms)= %8.2f memory(KB)= %d\n",
+	stream_printf(s,"#recycled = %d statements = %d saved time(ms)= %8.2f memory(KB)= %d\n",
 		 recycled, statements, savedTime/1000.0,recyclerUsedMemory);
 
 	/* and dump the statistics */
 	if (recycleBlk)
 	for(i=1; i< recycleBlk->stop; i++){
-		stream_printf(cntxt->fdout,"# %4d lru= %8d cnt= %8d ticks= %9d  rd= %9d  wr= %9d %s\n", i,
+		stream_printf(s,"# %4d lru= %8d cnt= %8d ticks= %9d  rd= %9d  wr= %9d %s\n", i,
 			recycleBlk->profiler[i].clk,
 			recycleBlk->profiler[i].counter,
 			recycleBlk->profiler[i].ticks,
@@ -211,6 +211,28 @@ RECYCLEdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			recycleBlk->profiler[i].obytes,
 			instruction2str(recycleBlk,getInstrPtr(recycleBlk,i),TRUE));
 	}
+}
+
+
+str
+RECYCLEdumpWrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	Client cntxt= MCgetClient();
+	stream *s = cntxt->fdout;
+	str fname;
+
+	(void) mb;
+	if (pci->argc >1){
+		fname = * (str*) getArgReference(stk, pci,1);
+		s = open_wastream(fname);
+		if (s == NULL || stream_errnr(s)) {
+        	        GDKerror("could not open file %s.\n", fname);
+			s = cntxt->fdout;
+		}
+	}
+	RECYCLEdump(s);
+	if( s != cntxt->fdout)
+		close_stream(s);
 	return MAL_SUCCEED;
 }
 
