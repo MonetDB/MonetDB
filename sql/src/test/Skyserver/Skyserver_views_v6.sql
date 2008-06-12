@@ -372,3 +372,88 @@ SELECT *
     FROM PhotoPrimary
     WHERE type not in (3,6,8)
 ;
+
+CREATE VIEW PhotoTag
+AS
+SELECT 	objID,
+	skyVersion,
+	run,
+	rerun,
+	camcol,
+	field,
+	obj,
+	"mode",
+	nChild,
+	"type",
+	probPSF,
+	insideMask,
+	flags,
+	psfMag_u,
+	psfMag_g,
+	psfMag_r,
+	psfMag_i,
+	psfMag_z,
+	psfMagErr_u,
+	psfMagErr_g,
+	psfMagErr_r,
+	psfMagErr_i,
+	psfMagErr_z,
+	petroMag_u,
+	petroMag_g,
+	petroMag_r,
+	petroMag_i,
+	petroMag_z,
+	petroMagErr_u,
+	petroMagErr_g,
+	petroMagErr_r,
+	petroMagErr_i,
+	petroMagErr_z,
+	petroR50_r,
+	petroR90_r,
+	modelMag_u,
+	modelMag_g,
+	modelMag_r,
+	modelMag_i,
+	modelMag_z,
+	modelMagErr_u,
+	modelMagErr_g,
+	modelMagErr_r,
+	modelMagErr_i,
+	modelMagErr_z,
+	mRrCc_r,
+	mRrCcErr_r,
+	lnLStar_r,
+	lnLExp_r,
+	lnLDeV_r,
+	status,
+	ra,
+	"dec",
+	cx,
+	cy,
+	cz,
+	primTarget,
+	secTarget,
+	extinction_u,
+	extinction_g,
+	extinction_r,
+	extinction_i,
+	extinction_z,
+	htmID,
+	fieldID,
+	specObjID,
+	sqrt(mRrCc_r/2.0) as size
+    FROM PhotoObjAll;
+
+CREATE VIEW StarTag
+AS
+SELECT * 
+    FROM PhotoTag g
+    WHERE type = 6 and mode=1
+;
+
+CREATE VIEW GalaxyTag
+AS
+SELECT * 
+    FROM PhotoTag g
+    WHERE type = 3 and mode=1
+;
