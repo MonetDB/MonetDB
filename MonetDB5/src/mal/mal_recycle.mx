@@ -73,8 +73,8 @@ spaces.
 #define RU 1024 /* recycle unit in bytes */
 #define GIGA (lng)(1024*1024*1024)
 
-#define HARDLIMIT_VAR 25000		/* maximum variables to watch */
-#define HARDLIMIT_STMT 4000		/* roughly 5/line needed */
+#define HARDLIMIT_VAR 100000		/* maximum variables to watch */
+#define HARDLIMIT_STMT 20000		/* roughly 5/line needed */
 #define HARDLIMIT_MEM 8 * (GIGA/RU)     /* avoid memory overflow */
 
 mal_export int recycleVersion;  /* version of recycle table */
@@ -108,6 +108,7 @@ mal_export lng recyclerUsedMemory;
 mal_export MT_Lock recycleLock;
 mal_export MalBlkPtr recycleBlk;
 mal_export double recycleAlpha;
+mal_export double recycleFresh;
 
 mal_export int statements;	/* total number of statements executed */
 mal_export int recycled;	/* total number of statements recycled */
@@ -199,6 +200,7 @@ The cost function is a weighted balance between cpu and
 storage cost. Often there is a direct relationship,
 @c
 double recycleAlpha = 0.5;
+double recycleFresh = 0.8; /* fresh instructions are protected from deletion */
 
 #define recycleCost(X) recycleAlpha * recycleBlk->profiler[X].ticks + (1-recycleAlpha)* (recycleBlk->profiler[X].ibytes+recycleBlk->profiler[X].obytes)
 
@@ -414,14 +416,14 @@ RECYCLEcache(int target, int wr)
 
 @c
 static void RECYCLEcleanCache(){
-	int k,j,i,l,ltop,w,wtop;
+	int k,j,i,l,ltop;
 	InstrPtr p;
 	InstrPtr *old;
 	char *used;
-	int *lvs, *wm;
+	int *lvs, wm, oldest;
 	int limit;
 	lng oldclk, newclk;
-	dbl mincrd, maxcrd, crd;
+	dbl mincrd, crd;
 
 	if (!recycleBlk) 
 		return;
@@ -449,62 +451,49 @@ static void RECYCLEcleanCache(){
 		skip:;
 	}
 
-	/* find the wictims */
+	/* find the wictim */
 	if (ltop == 0 )
 		return;
-	wm = (int *)alloca(sizeof(int)*ltop);
-	memset(wm,0, sizeof(int)*ltop);
-	wtop = 0;
 	newclk = oldclk = recycleBlk->profiler[lvs[0]].clk;
+	oldest = lvs[0];
 	for (l = 0; l < ltop; l++){
 		k = lvs[l];
 		if( recycleBlk->profiler[k].clk > newclk) 
 			newclk = recycleBlk->profiler[k].clk;
-		if( recycleBlk->profiler[k].clk < oldclk) 
+		if( recycleBlk->profiler[k].clk < oldclk){ 
 			oldclk = recycleBlk->profiler[k].clk;
+			oldest = k;
+		}
 	}
 	switch(rcachePolicy){
 		case RCACHE_LRU:
-			oldclk = (lng)(oldclk + newclk)/2;
-			for (l = 0; l < ltop; l++)
-				if( recycleBlk->profiler[lvs[l]].clk < oldclk) 
-					wm[wtop++] = lvs[l];
+			wm = oldest;
 			break;
 
 		case RCACHE_CREDIT:
-			maxcrd = mincrd = recycleBlk->profiler[lvs[0]].counter *
+			mincrd = recycleBlk->profiler[lvs[0]].counter *
 					  recycleCost(lvs[0]);
-			newclk = (lng)(0.1*oldclk + 0.9*newclk);
+			wm = 0;
+			newclk = (lng)((1-recycleFresh)*oldclk + recycleFresh*newclk);
 			for (l = 0; l < ltop; l++){
 				k = lvs[l];
-				if ( recycleBlk->profiler[k].clk > newclk) 
+				if (( recycleBlk->profiler[k].counter == 1) &&
+					recycleBlk->profiler[k].clk > newclk) 
 					continue; /* protect newest from deletion */
 				crd = recycleBlk->profiler[k].counter * recycleCost(k);
-				if( crd > maxcrd) 
-					maxcrd = crd;
-				if( crd < mincrd) 
+				if( crd < mincrd) {
 					mincrd = crd;
-			}
-			mincrd = (mincrd + maxcrd)/2;
-			for (l = 0; l < ltop; l++){
-				if ( recycleBlk->profiler[k].clk > newclk) 
-					continue;
-				if( recycleBlk->profiler[lvs[l]].counter *
-					  recycleCost(lvs[l]) < mincrd) 
-					wm[wtop++] = lvs[l];
+					wm = k;
+				}
 			}
 			break;
 	}
 
 
-
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLEremove %d ",i);
+	stream_printf(GDKout,"RECYCLEcleancache %d ",i);
 	printInstruction(GDKout,recycleBlk, old[i], LIST_MAL_ALL);
 #endif
-
-	if (wtop == 0 )
-		return;
 
 	/* drop wictims in one pass */
 	mal_set_lock(recycleLock,"recycle");
@@ -512,28 +501,23 @@ static void RECYCLEcleanCache(){
 	limit = recycleBlk->stop;
 	newMalBlkStmt(recycleBlk,recycleBlk->ssize);
 
-	w = 0; k = 0;
-	for (i = 0; i < limit && w < wtop; i++){
+	k = 0;
+	for (i = 0; i < limit; i++){
 		p = old[i];
-		if( i == wm[w] ) {
+		if( i == wm ) {
 			RECYCLEgarbagecollect(recycleBlk,p);
 			/* reduce counter of input variables */
 			for (j=p->retc; j< p->argc; j++)
 				used[getArg(p,j)]--;
 			recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
-			freeInstruction(old[i]);
-			w++;
+			freeInstruction(p);
 		}
 		else {
 			pushInstruction(recycleBlk,p);
 			recycleBlk->profiler[k++]= recycleBlk->profiler[i];
 		}
 	}
-			/* copy the remainder */
-	for (; i < limit; i++){
-		pushInstruction(recycleBlk,old[i]);
-		recycleBlk->profiler[k++]= recycleBlk->profiler[i];
-	}
+
 	GDKfree(old);
 	/* remove all un-used variables as well */
 	trimMalVariables(recycleBlk);
@@ -888,16 +872,19 @@ void
 RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	static int exitLoop=0;
 	lng clk = 0;
+	lng memLimit;
 	int rd = getVolume(stk,p, 1)/ RU;
 	int wr = getVolume(stk,p, 0)/ RU;
 
 	RECYCLEversion(mb);
 	clk= GDKusec()-stk->clk;
 
-/*	while ((recycleMemory && recyclerUsedMemory + wr > recycleMemory))
-		RECYCLEcache(-1, wr); */
-	while ((recycleMemory && recyclerUsedMemory + wr > recycleMemory))
-		RECYCLEcleanCache();
+	memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
+	if (recycleBlk)
+		while ( recyclerUsedMemory + wr > memLimit ||
+			recycleBlk->vtop >= HARDLIMIT_VAR ||
+	    		recycleBlk->stop >= HARDLIMIT_STMT )
+			RECYCLEcleanCache();
 
 	if ( RECYCLEinterest(mb,p))
 	switch(retainPolicy) {
