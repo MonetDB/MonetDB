@@ -189,7 +189,7 @@ int rcachePolicy = RCACHE_LRU;  /* recycle cache management policy
 			RCACHE_MEMCRD: reduce the storage overhead */
 int recycleCacheLimit= 1000;
 int recycleClaim=0;	/* avoid stale tables by letting users mark it */
-lng recycleMemory=100;	/* Units of memory permitted */
+lng recycleMemory=10;	/* Units of memory permitted */
 @-
 The profiler record is re-used to store recycler information.
 The clk is used by the LRU scheme, counter is the number of
@@ -416,15 +416,19 @@ RECYCLEcache(int target, int wr)
 }
 
 @c
-static void RECYCLEcleanCache(){
-	int k,j,i,l,ltop;
+static void RECYCLEcleanCache(int wr){
+	int k,j,i,l,ltop,v,vtop;
 	InstrPtr p;
 	InstrPtr *old;
 	char *used;
-	int *lvs, wm, oldest;
-	int limit;
+	int *lvs, *vm, *lvs1;
+	int limit, mem, oldest, cheap;
 	lng oldclk, newclk;
 	dbl mincrd, crd;
+	lng memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
+	Client cntxt= MCgetClient();
+
+	(void) cntxt;
 
 	if (!recycleBlk) 
 		return;
@@ -444,7 +448,7 @@ static void RECYCLEcleanCache(){
 
 	/* find the leaves */
 	ltop = 0;
-	for (i = 0; i < recycleBlk->stop; i++){
+	for (i = 1; i < recycleBlk->stop; i++){
 		p = recycleBlk->stmt[i];
 		for( j = 0; j < p->retc ; j++)
 			if (used[getArg(p,j)]) goto skip;
@@ -452,51 +456,112 @@ static void RECYCLEcleanCache(){
 		skip:;
 	}
 
-	/* find the wictim */
+	/* find the victims */
 	if (ltop == 0 )
 		return;
+	mem = recyclerUsedMemory + wr > memLimit;
+	vm = (int *)alloca(sizeof(int)*ltop);
+	memset(vm,0, sizeof(int)*ltop);
+	vtop = 0;
 	newclk = oldclk = recycleBlk->profiler[lvs[0]].clk;
-	oldest = lvs[0];
+	oldest = 0;
 	for (l = 0; l < ltop; l++){
 		k = lvs[l];
 		if( recycleBlk->profiler[k].clk > newclk) 
 			newclk = recycleBlk->profiler[k].clk;
 		if( recycleBlk->profiler[k].clk < oldclk){ 
 			oldclk = recycleBlk->profiler[k].clk;
-			oldest = k;
+			oldest = l;
 		}
 	}
 	switch(rcachePolicy){
 		case RCACHE_LRU:
-			wm = oldest;
+			if (!mem) /* evict 1 entry */
+				vm[vtop++] = lvs[oldest];
+			else{	  /* evict several to get enough mem */
+				vm[vtop++] = lvs[oldest];
+				wr -= recycleBlk->profiler[lvs[oldest]].obytes;
+				lvs[oldest] = lvs[--ltop];
+				while( ltop>0 && recyclerUsedMemory + wr > memLimit){
+					oldest = 0;
+					oldclk = recycleBlk->profiler[lvs[0]].clk;
+					for (l = 0; l < ltop; l++){
+						k = lvs[l];
+						if( recycleBlk->profiler[k].clk < oldclk){ 
+							oldclk = recycleBlk->profiler[k].clk;
+							oldest = l;
+						}
+					}
+					vm[vtop++] = lvs[oldest];
+					wr -= recycleBlk->profiler[lvs[oldest]].obytes;
+					lvs[oldest] = lvs[--ltop];
+				}
+			}
 			break;
 
 		case RCACHE_CREDIT:
-			mincrd = recycleBlk->profiler[lvs[0]].counter *
-					  recycleCost(lvs[0]);
-			wm = 0;
 			newclk = (lng)((1-recycleFresh)*oldclk + recycleFresh*newclk);
-			for (l = 0; l < ltop; l++){
-				k = lvs[l];
+			lvs1 = lvs;  	/* drop newest to avoid deletion */
+			lvs = (int *)alloca(sizeof(int)*ltop);
+			memset(lvs,0, sizeof(int)*ltop);
+			l = 0;
+			for (j = 0; j < ltop; j++){
+				k = lvs1[j];
 				if (( recycleBlk->profiler[k].counter == 1) &&
 					recycleBlk->profiler[k].clk > newclk) 
-					continue; /* protect newest from deletion */
+					continue; 
+				lvs[l++] = lvs1[j];
+			}
+			if (l) ltop = l;
+			else lvs = lvs1; 
+
+			mincrd = recycleBlk->profiler[lvs[0]].counter *
+					  recycleCost(lvs[0]);
+			cheap = 0;
+			for (l = 0; l < ltop; l++){
+				k = lvs[l];
 				crd = recycleBlk->profiler[k].counter * recycleCost(k);
 				if( crd < mincrd) {
 					mincrd = crd;
-					wm = k;
+					cheap = l;
+				}
+			}
+			if (!mem) /* evict 1 entry */
+				vm[vtop++] = lvs[cheap];
+			else{	  /* evict several to get enough mem */
+				vm[vtop++] = lvs[cheap];
+				wr -= recycleBlk->profiler[lvs[cheap]].obytes;
+				lvs[cheap] = lvs[--ltop];
+				while( ltop>0 && recyclerUsedMemory + wr > memLimit){
+					cheap = 0;
+					mincrd = recycleBlk->profiler[lvs[0]].counter *
+						recycleCost(lvs[0]);
+					for (l = 0; l < ltop; l++){
+						k = lvs[l];
+						crd = recycleBlk->profiler[k].counter *
+							 recycleCost(k);
+						if( crd < mincrd) {
+							mincrd = crd;
+							cheap = l;
+						}
+					}
+					vm[vtop++] = lvs[cheap];
+					wr -= recycleBlk->profiler[lvs[cheap]].obytes;
+					lvs[cheap] = lvs[--ltop];
 				}
 			}
 			break;
 	}
 
 
+
 #ifdef _DEBUG_CACHE_
-	stream_printf(GDKout,"RECYCLEcleanCache: #instr=%d vm=%d ",recycleBlk->stop,wm);
-	printInstruction(GDKout,recycleBlk, recycleBlk->stmt[wm], LIST_MAL_ALL);
-	stream_printf(GDKout,"policy=%d mem=%ld usedmem=%ld\n",
+	stream_printf(cntxt->fdout,"RECYCLEcleanCache: #instr=%d vm=%d ",recycleBlk->stop,wm);
+	printInstruction(cntxt->fdout,recycleBlk, recycleBlk->stmt[wm], LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"policy=%d mem=%ld usedmem=%ld\n",
 		rcachePolicy,recycleMemory,recyclerUsedMemory);
 #endif
+
 
 	/* drop wictims in one pass */
 	mal_set_lock(recycleLock,"recycle");
@@ -504,23 +569,28 @@ static void RECYCLEcleanCache(){
 	limit = recycleBlk->stop;
 	newMalBlkStmt(recycleBlk,recycleBlk->ssize);
 
-	k = 0;
-	for (i = 0; i < limit; i++){
+	v = 0; k = 0;
+	for (i = 0; i < limit && v < vtop; i++){
 		p = old[i];
-		if( i == wm ) {
+		if( i == vm[v] ) {
 			RECYCLEgarbagecollect(recycleBlk,p);
 			/* reduce counter of input variables */
 			for (j=p->retc; j< p->argc; j++)
 				used[getArg(p,j)]--;
 			recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
 			freeInstruction(p);
+			v++;
 		}
 		else {
 			pushInstruction(recycleBlk,p);
 			recycleBlk->profiler[k++]= recycleBlk->profiler[i];
 		}
 	}
-
+			/* copy the remainder */
+	for (; i < limit; i++){
+		pushInstruction(recycleBlk,old[i]);
+		recycleBlk->profiler[k++]= recycleBlk->profiler[i];
+	}
 	GDKfree(old);
 	/* remove all un-used variables as well */
 	trimMalVariables(recycleBlk);
@@ -874,19 +944,20 @@ void
 RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	static int exitLoop=0;
 	lng clk = 0;
-	lng memLimit;
-	int rd = getVolume(stk,p, 1)/ RU;
-	int wr = getVolume(stk,p, 0)/ RU;
+	lng memLimit, cacheLimit;
+	int rd = getVolume(stk,p, 1)/ RU +1;
+	int wr = getVolume(stk,p, 0)/ RU +1;
 
 	RECYCLEversion(mb);
 	clk= GDKusec()-stk->clk;
 
 	memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
+	cacheLimit = recycleCacheLimit?recycleCacheLimit:HARDLIMIT_STMT;
+
 	if (recycleBlk)
 		while ( (wr < memLimit && recyclerUsedMemory + wr > memLimit) ||
-			recycleBlk->vtop >= HARDLIMIT_VAR ||
-	    		recycleBlk->stop >= HARDLIMIT_STMT )
-			RECYCLEcleanCache();
+	    		recycleBlk->stop >= cacheLimit )
+			RECYCLEcleanCache(wr);
 
 	if ( RECYCLEinterest(mb,p))
 	switch(retainPolicy) {
