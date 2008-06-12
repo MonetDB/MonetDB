@@ -1,0 +1,33 @@
+# Test of LRU cache policy in limited memory (8 RU)
+
+function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
+b:= bat.new(:oid,:int);
+barrier (go,i):= language.newRange(0:int);
+	bat.append(b,i);
+	redo (go,i):= language.nextElement(1:int,1000:int);
+exit (go,i);
+return bind:=b;
+end bind;
+
+function qry(low:int, hgh:int);
+	b:= user.bind("schema","table","column",0);
+	s1:= algebra.select(b,low,hgh);
+	m0:= algebra.markT(s1, 0@0);
+	mr:= bat.reverse(m0);
+end qry;
+
+recycle.setRetainPolicy(1);
+recycle.setReusePolicy(1);
+recycle.setCachePolicy(1,10,8);
+optimizer.recycle("user","qry");
+
+io.print("start");
+qry(100,120);
+qry(700,710);
+qry(400,600);
+recycle.dump();
+
+# The next query should evict the oldest select (#2)
+qry(200,500);
+recycle.dump();
+
