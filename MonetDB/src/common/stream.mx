@@ -2964,7 +2964,7 @@ block_stream(stream *s)
 		ns->errnr = OPEN_ERROR;
 	/* blocksizes have a fixed little endian byteorder */ 
 #ifdef WORDS_BIGENDIAN
-	s->byteorder = 3412; /* simply != 1234 */
+	ns->byteorder = 3412; /* simply != 1234 */
 #endif
 	ns->type = s->type;
 	ns->access = s->access;
@@ -3057,7 +3057,7 @@ attach_teestream(stream *orig, stream *log)
 		return NULL;
 	/* blocksizes have a fixed little endian byteorder */ 
 #ifdef WORDS_BIGENDIAN
-	s->byteorder = 3412; /* simply != 1234 */
+	ns->byteorder = 3412; /* simply != 1234 */
 #endif
 	ns->type = orig->type;
 	ns->access = orig->access;
