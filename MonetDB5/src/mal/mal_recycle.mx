@@ -189,7 +189,7 @@ int rcachePolicy = RCACHE_LRU;  /* recycle cache management policy
 			RCACHE_MEMCRD: reduce the storage overhead */
 int recycleCacheLimit= 1000;
 int recycleClaim=0;	/* avoid stale tables by letting users mark it */
-lng recycleMemory=10;	/* Units of memory permitted */
+lng recycleMemory=0;	/* Units of memory permitted */
 @-
 The profiler record is re-used to store recycler information.
 The clk is used by the LRU scheme, counter is the number of
