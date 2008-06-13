@@ -1864,24 +1864,24 @@ llscj (const PFpa_op_t *p)
 
 /* PFTIJAH helper functions */
 
-static mvar_t
-*pft_create_pfop(PFpa_op_t *p, PFalg_simple_type_t t)
+static mvar_t *
+pft_create_pfop (PFpa_op_t *p, PFalg_simple_type_t t)
 {
 	mvar_t *res;
 	if ( p ) {
 	    res  = new_var (1);
-	    mvar_t *p_iter = env_mvar (p->env, att_iter, aat_nat);
-	    mvar_t *p_item = env_mvar (p->env, att_item, t);
+	    mvar_t *p_iter = env_mvar (p->env, p->schema.items[0].name /* iter */, aat_nat);
+	    mvar_t *p_item = env_mvar (p->env, p->schema.items[2].name /* item */, t);
 	    mvar_t *p_frag;
 	    if ( t == aat_pre ) {
-	        p_frag = env_mvar (p->env, att_item, aat_frag);
+	        p_frag = env_mvar (p->env, p->schema.items[2].name /* item */, aat_frag);
 	    } else {
 	        p_frag = new_var (1);
 		execute(
                     assgn (var (p_frag->name), lit_int(0))
 		);
 	    }
-	    mvar_t *p_pos  = env_mvar (p->env, att_pos , aat_nat);
+	    mvar_t *p_pos  = env_mvar (p->env, p->schema.items[1].name /* item */, aat_nat);
 
 	    if ( !(p_iter && p_item && p_frag && p_pos) )
 		PFoops(OOPS_FATAL,"pft_create_pfop: missing [iter|item|frag|pos] child");
@@ -8865,7 +8865,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                     ws_documents_str (
                                          var (PF_MIL_VAR_WS), 
                                          VAR (param_1->env,
-                                              att_item,
+                                   /* item */ param_1->schema.items[2].name,
                                               aat_str),
                                          lit_bit(safe)))));
 
@@ -8906,7 +8906,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                     ws_collection_root (
                                          var (PF_MIL_VAR_WS), 
                                          VAR (param_1->env,
-                                              att_item,
+                                   /* item */ param_1->schema.items[2].name,
                                               aat_str))));
 
                     execute (
@@ -9205,20 +9205,29 @@ reduce (PFpa_op_t * p, int goalnt)
 		    PFpa_op_t* op1 = *(PFpa_op_t **)PFarray_at(fun_params,0);
 
 		    /* copy the iter bat */
-	            mvar_t *p_iter = env_mvar (op1->env, att_iter, aat_nat);
+	            mvar_t *p_iter = env_mvar (
+                                         op1->env,
+                                         op1->schema.items[0].name /* iter */,
+                                         aat_nat);
 		    pin(p_iter,1);
                     env_add (p->env, fc_iter_a, aat_nat, p_iter);
 
                     mvar_t *new_item  = new_var (p->refctr);
 		    if ( strcmp(fcname,PFT_TOKENIZE) == 0 ) {
-	                mvar_t *p_item = env_mvar (op1->env, att_item, aat_str);
+	                mvar_t *p_item = env_mvar (
+                                             op1->env,
+                                             op1->schema.items[2].name /* item */,
+                                             aat_str);
                         execute (
                            assgn (var (new_item->name),
 		               tj_tokenize( var(p_item->name) ) ) );
                         env_add (p->env, fc_item_a, aat_str, new_item);
 		    } else {
 		        /* must be RESSIZE */
-	                mvar_t *p_item = env_mvar (op1->env, att_item, aat_int);
+	                mvar_t *p_item = env_mvar (
+                                             op1->env,
+                                             op1->schema.items[2].name /* item */,
+                                             aat_int);
 			/* "var res := item%s.join(tijah_scoreDB.fetch(4@0));\n" */
                         execute (
                            assgn (var (new_item->name),
@@ -9229,7 +9238,10 @@ reduce (PFpa_op_t * p, int goalnt)
 		    }
 
 		    /* copy the pos bat */
-	            mvar_t *p_pos  = env_mvar (op1->env, att_iter, aat_nat);
+	            mvar_t *p_pos  = env_mvar (
+                                         op1->env,
+                                         op1->schema.items[1].name /* pos */,
+                                         aat_nat);
 		    pin(p_pos,1);
                     env_add (p->env, fc_pos_a, aat_nat, p_pos);
 		} else if (strcmp(fcname,PFT_INFO) == 0 ) {
