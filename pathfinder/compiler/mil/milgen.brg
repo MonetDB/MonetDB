@@ -5338,6 +5338,26 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 }   break; /* fold) */
  
+                case alg_fun_pf_docname: /* fold( */
+                {
+                    PFalg_att_t element   = p->sem.fun_1to1.refs.atts[0];
+                    PFmil_t *pre          = VAR (p->env, element, aat_pre),
+                            *pre_cont     = VAR (p->env, element, aat_frag);
+
+                    assert (env_count (L(p)->env));
+
+                    res_type = aat_str;
+
+                    execute (
+                        assgn ( var (res->name),
+                                ws_docname (var (PF_MIL_VAR_WS),
+                                            hmark (pre, lit_oid(0)),
+                                            pre,
+                                            set_kind (pre_cont,
+                                                      var (PF_MIL_VAR_ELEM)))));
+
+                }   break; /* fold) */
+
                 case alg_fun_upd_delete: /* fold( */
                 {
                     PFalg_att_t tgt = p->sem.fun_1to1.refs.atts[0];
@@ -8905,10 +8925,6 @@ reduce (PFpa_op_t * p, int goalnt)
                     env_add (p->env, iter, aat_nat, res_iter);
 
                     unpin(nodes, 1); 
-                }   break;
-
-                case alg_fun_call_pf_docname:
-                {
                 }   break;
 
                 case alg_fun_call_pf_collections:
