@@ -241,10 +241,10 @@ RECYCLEsetRetain(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) mb;
 	retainPolicy = * (int*) getArgReference(stk, p,1);
-	if( p->argc >= 2)
+	if( p->argc > 2)
 	switch(retainPolicy){
 	case RETAIN_VOL:
-		if( p->argc >= 3)
+		if( p->argc > 3)
 			recycleVolume = * (int*) getArgReference(stk, p,3);
 	case RETAIN_TIME:
 	case RETAIN_ADAPT:
@@ -253,7 +253,7 @@ RECYCLEsetRetain(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	case RETAIN_SIZE:
 		recycleVolume = * (int*) getArgReference(stk, p,2);
 	}
-	if(p->argc >3)
+	if(p->argc >4)
 		recycleAlpha = 1.0/  *(int*) getArgReference(stk, p,4);
 	return MAL_SUCCEED;
 }
@@ -271,9 +271,9 @@ RECYCLEsetCache(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) mb;
 	rcachePolicy = * (int*) getArgReference(stk, p, 1);
-	if( rcachePolicy && p->argc >= 2)
+	if( rcachePolicy && p->argc > 2)
 		recycleCacheLimit = * (int*) getArgReference(stk, p, 2);
-	if( rcachePolicy && p->argc >= 3)
+	if( rcachePolicy && p->argc > 3)
 		recycleMemory= * (int*) getArgReference(stk, p, 3);
 	return MAL_SUCCEED;
 }
