@@ -1,0 +1,40 @@
+# Test of Retain_ADAPT policy 5, 10usec time limit
+
+function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
+b:= bat.new(:oid,:int);
+barrier (go,i):= language.newRange(0:int);
+	bat.append(b,i);
+	redo (go,i):= language.nextElement(1:int,1000:int);
+exit (go,i);
+return bind:=b;
+end bind;
+
+function qry(low:int, hgh:int);
+	b:= user.bind("schema","table","column",0);
+	s1:= algebra.select(b,low,hgh);
+	m0:= algebra.markT(s1, 0@0);
+	mr:= bat.reverse(m0);
+end qry;
+
+function user.batch(n:int);
+barrier (go,i):= language.newRange(0:int);
+	k:= mmath.rand();
+	k1:= calc.dbl(k);
+	k2:= mmath.fmod(k1,1000.0:dbl);
+	l:= calc.int(k2);
+	h:= calc.+(l,10);
+	qry(l,h);
+	redo (go,i):= language.nextElement(1:int,n:int);
+exit (go,i);
+end batch;
+
+recycle.setRetainPolicy(5, 2);
+recycle.setReusePolicy(1);
+recycle.setCachePolicy(1);
+optimizer.recycle("user","qry");
+
+io.print("start");
+user.batch(30);
+recycle.dump();
+ser.qry(1,10);
+recycle.dump();
