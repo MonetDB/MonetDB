@@ -1,4 +1,4 @@
-# Test of LRU cache policy in limited memory (8 RU)
+# Test of LRU cache policy in limited memory (12 RU)
 
 function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
 b:= bat.new(:oid,:int);

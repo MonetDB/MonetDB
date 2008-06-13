@@ -65,8 +65,8 @@ which inspects the variable table for alternative results.
 #include "mal_instruction.h"
 
 /*#define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE 
-#define _DEBUG_CACHE_ */
+#define _DEBUG_RECYCLE_REUSE */
+#define _DEBUG_CACHE_ 
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -88,6 +88,7 @@ mal_export int retainPolicy;
 #define RETAIN_ADAPT	5
 
 mal_export int recycleTime;		
+mal_export int recycleSearchTime;
 mal_export int recycleVolume;
 
 mal_export int reusePolicy;
@@ -156,7 +157,8 @@ int retainPolicy = RETAIN_ALL;  /* recycle retainment policy
 			RETAIN_SIZE: size cost model 
 			RETAIN_VOL: volumetric cost model (time x size )
 			RETAIN_ADAP: adaptive temporal */
-int recycleTime = 0;	
+int recycleTime = 0;
+int recycleSearchTime = 0;	/* cache search time in ms*/
 int recycleVolume = 0;
 
 @-
@@ -458,7 +460,10 @@ static void RECYCLEcleanCache(int wr){
 		lvs[ltop++] = i;
 		skip:;
 	}
-
+	/* the last leaf might be the predecessor of the current instr., 
+	shouldn't be evicted - to be refined*/
+	if (ltop>1 && lvs[ltop-1] == recycleBlk->stop-1)
+		ltop--;
 	/* find the victims */
 	if (ltop == 0 )
 		return;
@@ -559,8 +564,9 @@ static void RECYCLEcleanCache(int wr){
 
 
 #ifdef _DEBUG_CACHE_
-	stream_printf(cntxt->fdout,"RECYCLEcleanCache: #instr=%d vm=%d ",recycleBlk->stop,wm);
-	printInstruction(cntxt->fdout,recycleBlk, recycleBlk->stmt[wm], LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"RECYCLEcleanCache: clean %d instruction(s) ",vtop);
+	for(v=0; v<vtop;v++)
+	printInstruction(cntxt->fdout,recycleBlk, recycleBlk->stmt[vm[v]], LIST_MAL_ALL);
 	stream_printf(cntxt->fdout,"policy=%d mem=%ld usedmem=%ld\n",
 		rcachePolicy,recycleMemory,recyclerUsedMemory);
 #endif
@@ -710,6 +716,7 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
 	int i, j;
 	InstrPtr q;
+	lng clk = GDKusec();
 
 	(void) mb;
 	if( recycleBlk == 0)
@@ -735,7 +742,7 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"not found\n");
 #endif
-
+	recycleSearchTime = GDKusec()-clk;
 	return -1;
 }
 
@@ -945,7 +952,6 @@ which is stored in the stack frame to avoid concurrency problems.
 @c
 void
 RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	static int exitLoop=0;
 	lng clk = 0;
 	lng memLimit, cacheLimit;
 	int rd = getVolume(stk,p, 1)/ RU +1;
@@ -1005,20 +1011,11 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		break;
 	}
 	case RETAIN_ADAPT:
-		/* RETAIN_ADAPT: adaptive temporal */
-		if (clk > recycleTime && RECYCLEfind(mb,stk,p)< 0)
+		/* RETAIN_ADAPT: searching the cache may take too long? */
+		if ( RECYCLEfind(mb,stk,p)< 0){
+			if (recycleSearchTime > recycleTime)
+				RECYCLEcleanCache(wr);
 			RECYCLEnew(mb, stk, p, rd, wr);
-		/* adapt the time watermark based on observed behavior ??? */
-		if (recycleTime < 0 && (exitLoop++ % 99)== 0){
-			clk= GDKusec();
-			(void) RECYCLEfind(mb,stk,p);
-			clk= GDKusec()-clk;
-			if( clk > recycleTime){
-#ifdef _DEBUG_RECYCLE_
-				stream_printf(GDKout,"RECYCLEretain time %d adjusted\n", recycleTime);
-#endif
-				recycleTime = clk;
-			}
 		}
 	}
 }
