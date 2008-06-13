@@ -48,3 +48,4 @@ DROP VIEW TiMask;
 DROP VIEW UberCalibStatus;
 DROP VIEW Unknown;
 DROP VIEW PhotoPrimary ;
+DROP VIEW PhotoTag;

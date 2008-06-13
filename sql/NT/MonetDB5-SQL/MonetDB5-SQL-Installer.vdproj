@@ -165,6 +165,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_1F0920257AB04C12B530CA5213439411"
+        "OwnerKey" = "8:_819BD8650A494CC68BD064E23EF621BB"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_1F21FF9B05884483AE223BD0B7C9B5ED"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -641,12 +647,6 @@
         {
         "MsmKey" = "8:_78DBE91E7B194412A267B54D939765B0"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7A089F59EFEF401BA02ABB80C50C7F71"
-        "OwnerKey" = "8:_819BD8650A494CC68BD064E23EF621BB"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -5917,14 +5917,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5"
-        "ProductCode" = "8:{B1968DE3-70F5-44B5-9A27-E27F66059ACC}"
-        "PackageCode" = "8:{1907BA61-8AB6-425C-B0BA-FAEB8086B564}"
+        "ProductCode" = "8:{0CAFA263-F91D-4B5A-9FA1-25887DE8BF1D}"
+        "PackageCode" = "8:{C3826C21-1B18-4EE4-836C-44E177B9C1C5}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:8.2.19"
+        "ProductVersion" = "8:8.6.13"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -6581,7 +6581,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_7A089F59EFEF401BA02ABB80C50C7F71"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_1F0920257AB04C12B530CA5213439411"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
@@ -6599,7 +6599,7 @@
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files (x86)\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86.msm"
+            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86.msm"
                 "Properties"
                 {
                 }

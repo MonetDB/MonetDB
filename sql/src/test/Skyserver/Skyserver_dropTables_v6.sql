@@ -32,7 +32,6 @@ DROP TABLE ObjMask;
 DROP TABLE PartitionMap;
 DROP TABLE PhotoObjAll;
 DROP TABLE PhotoProfile;
-DROP TABLE PhotoTag;
 DROP TABLE Photoz;
 DROP TABLE Photoz2;
 DROP TABLE PlateX;

@@ -52,10 +52,6 @@ ALTER TABLE PhotoObjAll  DROP  CONSTRAINT fk_PhotoObjAll_fieldID_Field_fie
 ;
 ALTER TABLE PhotoProfile  DROP  CONSTRAINT fk_PhotoProfile_objID_PhotoObjAl 
 ;
-ALTER TABLE PhotoTag  DROP  CONSTRAINT fk_PhotoTag_fieldID_Field_fieldI 
-;
-ALTER TABLE PhotoTag  DROP  CONSTRAINT fk_PhotoTag_objID_PhotoObjAll_ob 
-;
 ALTER TABLE Photoz  DROP  CONSTRAINT fk_Photoz_objID_PhotoObjAll_objI 
 ;
 ALTER TABLE Photoz2  DROP  CONSTRAINT fk_Photoz2_objID_PhotoObjAll_obj 

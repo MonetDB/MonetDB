@@ -79,12 +79,6 @@ REFERENCES Field (fieldID)
 ALTER TABLE PhotoProfile  ADD  CONSTRAINT fk_PhotoProfile_objID_PhotoObjAl FOREIGN KEY(objID)
 REFERENCES PhotoObjAll (objID)
 ;
-ALTER TABLE PhotoTag  ADD  CONSTRAINT fk_PhotoTag_fieldID_Field_fieldI FOREIGN KEY(fieldID)
-REFERENCES Field (fieldID)
-;
-ALTER TABLE PhotoTag  ADD  CONSTRAINT fk_PhotoTag_objID_PhotoObjAll_ob FOREIGN KEY(objID)
-REFERENCES PhotoObjAll (objID)
-;
 ALTER TABLE Photoz  ADD  CONSTRAINT fk_Photoz_objID_PhotoObjAll_objI FOREIGN KEY(objID)
 REFERENCES PhotoObjAll (objID)
 ;
