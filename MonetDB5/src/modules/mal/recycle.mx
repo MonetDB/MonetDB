@@ -194,11 +194,11 @@ RECYCLEdump(stream *s)
 	stream_printf(s,"#retain= %d time =%d sze= %d alpha= %4.3f\n",
 		retainPolicy, recycleTime, recycleVolume, recycleAlpha);
 	stream_printf(s,"#reuse= %d\n", reusePolicy);
-	stream_printf(s,"#rcache= %d limit= %d \n", rcachePolicy, recycleCacheLimit);
+	stream_printf(s,"#rcache= %d limit= %d memlimit=%d\n", rcachePolicy, recycleCacheLimit, recycleMemory);
 	stream_printf(s,"#hard stmt = %d hard var = %d hard mem= %d\n",
 		 HARDLIMIT_STMT, HARDLIMIT_VAR, HARDLIMIT_MEM);
-	stream_printf(s,"#recycled = %d statements = %d saved time(ms)= %8.2f memory(KB)= %d\n",
-		 recycled, statements, savedTime/1000.0,recyclerUsedMemory);
+	stream_printf(s,"#recycled = %d incache= %d executed = %d saved time(ms)= %8.2f memory(KB)= %d\n",
+		 recycled, recycleBlk->stop-1,statements, savedTime/1000.0,recyclerUsedMemory);
 
 	/* and dump the statistics */
 	if (recycleBlk)
