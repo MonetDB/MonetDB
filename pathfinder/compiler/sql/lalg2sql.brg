@@ -3643,6 +3643,7 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_pf_add_doc_str_int:
                 case alg_fun_pf_del_doc:
                 case alg_fun_pf_nid:
+                case alg_fun_pf_docname:
 
                 case alg_fun_upd_delete:
                 case alg_fun_upd_rename:

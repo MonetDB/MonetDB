@@ -306,7 +306,6 @@ enum PFalg_fun_call_t {
     , alg_fun_call_pf_documents_unsafe     /**< pf:documents_unsafe        */
     , alg_fun_call_pf_documents_str        /**< pf:documents_str           */
     , alg_fun_call_pf_documents_str_unsafe /**< pf:documents_str_unsafe    */
-    , alg_fun_call_pf_docname              /**< pf:docname                 */
     , alg_fun_call_pf_collections          /**< pf:collections             */
     , alg_fun_call_pf_collections_unsafe   /**< pf:collections_unsafe      */
     , alg_fun_call_pf_collection           /**< pf:collection */
@@ -357,6 +356,7 @@ enum PFalg_fun_t {
     , alg_fun_pf_add_doc_str_int  /**< pf:add-doc */
     , alg_fun_pf_del_doc          /**< pf:del-doc */
     , alg_fun_pf_nid              /**< pf:nid */
+    , alg_fun_pf_docname          /**< pf:docname */
     , alg_fun_upd_rename          /**< upd:rename */
     , alg_fun_upd_delete          /**< upd:delete */
     , alg_fun_upd_insert_into_as_first    /**< upd:insertIntoAsFirst */

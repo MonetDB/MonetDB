@@ -1070,7 +1070,6 @@ PFalg_fun_call_kind_str (PFalg_fun_call_t kind)
         case alg_fun_call_pf_documents_str:      return "pf:documents_str";
         case alg_fun_call_pf_documents_str_unsafe: 
                                                return "pf:documents_str_unsafe";
-        case alg_fun_call_pf_docname:            return "pf:docname";
         case alg_fun_call_pf_collections:        return "pf:collections";
         case alg_fun_call_pf_collections_unsafe: return "pf:collections_unsafe";
         case alg_fun_call_pf_collection:         return "pf:collection";
@@ -1127,6 +1126,7 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_pf_add_doc_str_int:  return "pf:add-doc";
         case alg_fun_pf_del_doc:          return "pf:del-doc";
         case alg_fun_pf_nid:              return "pf:nid";
+        case alg_fun_pf_docname:          return "pf:docname";
         case alg_fun_upd_rename:          return "upd:rename";
         case alg_fun_upd_delete:          return "upd:delete";
         case alg_fun_upd_insert_into_as_first:  return "upd:insertIntoAsFirst";

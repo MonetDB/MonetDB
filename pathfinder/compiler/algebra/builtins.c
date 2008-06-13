@@ -4872,11 +4872,17 @@ struct PFla_pair_t
 PFbui_pf_docname (const PFla_op_t *loop, bool ordering,
                   struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) args;
+    (void) loop; (void) ordering;
 
     return (struct PFla_pair_t) {
-        .rel = NULL,
-        .frag = NULL };
+        .rel = project (fun_1to1 (args[0].rel,
+                                  alg_fun_pf_docname,
+                                  att_res,
+                                  attlist (att_item)),
+                        proj (att_iter, att_iter),
+                        proj (att_pos, att_pos),
+                        proj (att_item, att_res)),
+        .frag = args[0].frag };
 }
 
 /**
