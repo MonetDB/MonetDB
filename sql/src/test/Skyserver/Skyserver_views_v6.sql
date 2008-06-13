@@ -36,12 +36,6 @@ SELECT name,
     FROM DataConstants
     WHERE field='FramesStatus'
 ;
-CREATE VIEW GalaxyTag
-AS
-SELECT * 
-    FROM PhotoTag g
-    WHERE type = 3 and mode=1
-;
 CREATE VIEW HoleType
 AS
 SELECT name,
@@ -304,12 +298,6 @@ AS
 SELECT * 
     FROM PhotoPrimary
     WHERE type = 6
-;
-CREATE VIEW StarTag
-AS
-SELECT * 
-    FROM PhotoTag g
-    WHERE type = 6 and mode=1
 ;
 CREATE VIEW TargPhotoObj
 AS

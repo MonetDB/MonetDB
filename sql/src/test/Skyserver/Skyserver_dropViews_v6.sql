@@ -1,4 +1,3 @@
-DROP VIEW PhotoTag;
 DROP VIEW CoordType;
 DROP VIEW FieldMask;
 DROP VIEW FieldQuality;
@@ -49,3 +48,4 @@ DROP VIEW TiMask;
 DROP VIEW UberCalibStatus;
 DROP VIEW Unknown;
 DROP VIEW PhotoPrimary ;
+DROP VIEW PhotoTag;
