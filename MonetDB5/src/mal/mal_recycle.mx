@@ -277,10 +277,13 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q){
 	for(j=0; j< q->argc; j++){
 		v= &getVarConstant(mb,getArg(q,j));
 		if(getArgType(mb,q,j)==TYPE_bat || isaBatType(getArgType(mb, q,j)) ){
-			if( v->val.bval )
+			if( v->val.bval ){
 				BBPdecref(ABS(v->val.bval), TRUE);
-			v->vtype= TYPE_int;
-			v->val.ival= 0;
+				if (!BBP_lrefs(v->val.bval)){ 
+					v->vtype= TYPE_int;
+					v->val.ival= 0; 
+				}
+			}
 		}
 		if( v->vtype == TYPE_str) {
 			if(v->val.pval) {
