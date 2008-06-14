@@ -43,7 +43,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     user.qry();                         #  6 _12:void := user.qry() 
     io.print("last");                   #  7 _13:void := IOprint_val(_14:str) 
     user.qry();                         #  8 _15:void := user.qry() 
-    recycle.dump();                     #  9 _16:void := RECYCLEdump() 
+    recycle.dump();                     #  9 _16:void := RECYCLEdumpWrap() 
 end main;	# 10  
 [ "start" ]
 [ 529 ]

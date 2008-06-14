@@ -82,7 +82,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     user.qry(2,3);                      # 10 _19:void := user.qry(_20:int, _21:int) 
     io.print("last");                   # 11 _22:void := IOprint_val(_23:str) 
     user.qry(1,11);                     # 12 _24:void := user.qry(_4:int, _25:int) 
-    recycle.dump();                     # 13 _26:void := RECYCLEdump() 
+    recycle.dump();                     # 13 _26:void := RECYCLEdumpWrap() 
 end main;	# 14  
 [ "start" ]
 [ "zoom in" ]
