@@ -505,6 +505,7 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 	size_t nbytes;
 	blob *result;
 	char *s = instr;
+	int nil = 0;
 
 	/* since the string is built of (only) hexits the number of bytes
 	 * required for it is the length of the string divided by two
@@ -512,9 +513,10 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 	i = strlen(instr);
 	if (i % 2 == 1) {
 		GDKerror("sqlblob_fromstr: Illegal blob length '%d' (should be even)\n", i);
-		return -1;
+		instr = 0;
+		nil = 1;
 	}
-	nitems = strlen(instr) / 2;
+	nitems = i / 2;
 	nbytes = blobsize(nitems);
 
 	if (*val == (blob *) NULL) {
@@ -524,6 +526,10 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 		GDKfree(*val);
 		*val = (blob *) GDKmalloc(nbytes);
 		*l = (int) nbytes;
+	}
+	if (nil) {
+		**val = *blob_null();
+		return 0;
 	}
 	result = *val;
 	result->nitems = nitems;
