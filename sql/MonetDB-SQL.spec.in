@@ -110,10 +110,6 @@ This package contains the SQL frontend for MonetDB5.
 %package devel
 Summary: MonetDB SQL development package
 Group: Applications/Databases
-%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
-Requires: %{name}-server4
-Requires: MonetDB4-server-devel
-%endif
 %if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
 Requires: %{name}-server5
 Requires: MonetDB5-server-devel
@@ -128,6 +124,27 @@ automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 
 This package contains the files needed to develop with %{name}.
+
+%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
+%package devel4
+Summary: MonetDB SQL development package
+Group: Applications/Databases
+%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
+Requires: %{name}-server4
+Requires: MonetDB4-server-devel
+Requires: %{name}-devel
+%endif
+Requires: MonetDB-devel
+Requires: MonetDB-client-devel
+
+%description devel4
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators, SQL- and XML- frontends.
+
+This package contains the files needed to develop with %{name}.
+%endif
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -206,8 +223,15 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_libdir}/pkgconfig/MonetDB-SQL.pc
 %{_bindir}/monetdb-sql-config
-%{_libdir}/libembeddedsql.so
+%if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
 %{_libdir}/libembeddedsql5.so
+%endif
+
+%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
+%files devel4
+%defattr(-,root,root)
+%{_libdir}/libembeddedsql.so
+%endif
 
 %changelog
 * Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1
