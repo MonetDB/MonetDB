@@ -81,7 +81,6 @@ static void
 map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
            PFalg_att_t twig_iter)
 {
-    PFalg_att_t cur, ori;
     PFarray_t  *np_list = n->prop->name_pairs;
 
     assert (n);
@@ -94,36 +93,12 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
         n->kind == la_fragment)
         ;
     else
-    /* collect all name pair lists of the parent operators and
-       include (possibly) new matching columns in the name pairs list */
-    if (!PFarray_last (np_list))
-        /* Copy the complete name pair list of the parent
-           if we have no name pair list so far. */
+        /* collect all name pair lists of the parent operators and
+           include (possibly) new matching columns in the name pairs list */
         for (unsigned int i = 0; i < PFarray_last (par_np_list); i++)
             add_name_pair (np_list,
                            ORI_AT(par_np_list, i),
                            CUR_AT(par_np_list, i));
-    else
-        /* Otherwise adjust the name pair list. */
-        for (unsigned int i = 0; i < PFarray_last (par_np_list); i++) {
-            ori = ORI_AT(par_np_list, i);
-            cur = CUR_AT(par_np_list, i);
-
-            /* Use the name pair entry of the parent if the name pair
-               is unknown (original name is 0). Name pairs marked
-               as unknown are introduced by a projection that prunes
-               the column. */
-            if (!ORI_AT(np_list,i)) {
-                ORI_AT(np_list, i) = ori;
-                CUR_AT(np_list, i) = cur;
-            }
-            /* Mark the name pair as invalid if the name pair of the
-               parent is known (original name is not 0) and we have
-               conflicting current names. */
-            else if (ori && cur != CUR_AT(np_list, i)) {
-                CUR_AT(np_list, i) = att_NULL;
-            }
-        }
 
     /* nothing to do if we haven't collected
        all incoming name pair lists of that node */
@@ -152,7 +127,6 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
         case la_disjunion:
         case la_intersect:
         case la_difference:
-        case la_count:
         case la_type_assert:
         case la_roots:
         case la_error:
@@ -168,26 +142,24 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
         case la_project:
         {
             unsigned int j;
+            /* if we have no additional name pair list then create one */
+            if (!n->prop->l_name_pairs)
+               n->prop->l_name_pairs = PFarray (sizeof (name_pair_t), 10);
+
             for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
                 /* Adjust all current column names for the columns
-                   in the projection list. */
+                   in the projection list and prune the out of scope
+                   names. */
                 for (j = 0; j < n->sem.proj.count; j++)
                     if (n->sem.proj.items[j].new == CUR_AT(np_list, i)) {
-                        CUR_AT(np_list, i) = n->sem.proj.items[j].old;
+                        add_name_pair (n->prop->l_name_pairs,
+                                       ORI_AT(np_list, i),
+                                       n->sem.proj.items[j].old);
                         break;
                     }
-                /* If the name pair is not referenced in the projection
-                   list and it is not marked as invalid we mark the
-                   name pair as unknown. (Throwing away both column
-                   names does not cause trouble as all name pair lists
-                   are aligned.) */
-                if (j == n->sem.proj.count &&
-                    CUR_AT(np_list, i) != att_NULL) {
-                    CUR_AT(np_list, i) = att_NULL;
-                    ORI_AT(np_list, i) = att_NULL;
-                }
             }
-        }   break;
+            map_names (L(n), goal, n->prop->l_name_pairs, att_NULL);
+        }   return;
 
         case la_cross:
         case la_eqjoin:
@@ -199,8 +171,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             if (!n->prop->l_name_pairs)
                n->prop->l_name_pairs = PFarray (sizeof (name_pair_t), 10);
 
-            /* mark all columns that we do not see in the left child
-               as unknown */
+            /* split up the name mappings */
             for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
                 for (j = 0; j < L(n)->schema.count; j++)
                     if (L(n)->schema.items[j].name == CUR_AT(np_list, i)) {
@@ -209,19 +180,21 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
                                        CUR_AT(np_list, i));
                         break;
                     }
-                if (j == L(n)->schema.count)
-                    add_name_pair (n->prop->l_name_pairs, att_NULL, att_NULL);
             }
             map_names (L(n), goal, n->prop->l_name_pairs, att_NULL);
             PFarray_last (n->prop->l_name_pairs) = 0;
 
-            if (n->kind == la_semijoin)
-                /* mark all columns in the right child as unknown */
+            if (n->kind == la_semijoin) {
+                /* only propagate the name of the join column */
                 for (unsigned int i = 0; i < PFarray_last (np_list); i++)
-                    add_name_pair (n->prop->l_name_pairs, att_NULL, att_NULL);
+                    if (n->sem.eqjoin.att2 == CUR_AT(np_list, i)) {
+                        add_name_pair (n->prop->l_name_pairs,
+                                       ORI_AT(np_list, i),
+                                       CUR_AT(np_list, i));
+                        break;
+                    }
+            }
             else
-                /* mark all columns that we do not see in the right child
-                   as unknown */
                 for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
                     for (j = 0; j < R(n)->schema.count; j++)
                         if (R(n)->schema.items[j].name == CUR_AT(np_list, i)) {
@@ -230,10 +203,6 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
                                            CUR_AT(np_list, i));
                             break;
                         }
-                    if (j == R(n)->schema.count)
-                        add_name_pair (n->prop->l_name_pairs,
-                                       att_NULL,
-                                       att_NULL);
                 }
             map_names (R(n), goal, n->prop->l_name_pairs, att_NULL);
             PFarray_last (n->prop->l_name_pairs) = 0;
@@ -255,13 +224,14 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             diff_np (np_list, n->sem.unary.res);
             break;
 
+        case la_count:
         case la_avg:
         case la_max:
         case la_min:
         case la_sum:
         case la_seqty1:
         case la_all:
-            diff_np (np_list, n->sem.aggr.att);
+            diff_np (np_list, n->sem.aggr.res);
             break;
 
         case la_rownum:
@@ -492,7 +462,8 @@ PFprop_trace_names (PFla_op_t *start,
                     PFalg_attlist_t list)
 {
     PFalg_attlist_t new_list;
-    unsigned int    j;
+    unsigned int    i,
+                    j;
     PFarray_t      *map_list = PFarray (sizeof (name_pair_t), list.count),
                    *new_map_list;
 
@@ -507,21 +478,39 @@ PFprop_trace_names (PFla_op_t *start,
     PFla_dag_reset (start);
 
     /* intialize the projection list */
-    for (unsigned int i = 0; i < list.count; i++)
+    for (i = 0; i < list.count; i++)
         add_name_pair (map_list, list.atts[i], list.atts[i]);
 
     /* collect the mapped names */
     map_names (start, goal, map_list, att_NULL);
     new_map_list = goal->prop->name_pairs;
     assert (new_map_list);
-    assert (PFarray_last (new_map_list) == list.count);
+    
+    /* prune duplicate column name mappings and mark
+       the name mappings that stem from multiple columns
+       as invalid */
+    for (i = 0; i < PFarray_last (new_map_list); i++) {
+        for (j = i+1; j < PFarray_last (new_map_list); j++)
+            if (ORI_AT(new_map_list, i) == ORI_AT(new_map_list, j)) {
+                /* Mark the name pair as invalid if we have conflicting
+                   current names. */
+                if (CUR_AT(new_map_list, i) != CUR_AT(new_map_list, j))
+                    CUR_AT(new_map_list, i) = att_NULL;
+
+                /* remove the entry at index j */
+                *(name_pair_t *) PFarray_at (new_map_list, j)
+                    = *(name_pair_t *) PFarray_top (new_map_list);
+                PFarray_del (new_map_list);
+                j--;
+            }
+    }
 
     /* create new list */
     new_list.count = list.count;
     new_list.atts  = PFmalloc (list.count * sizeof (PFalg_att_t));
 
     /* fill the list of mapped variable names */
-    for (unsigned int i = 0; i < list.count; i++) {
+    for (i = 0; i < list.count; i++) {
         for (j = 0; j < PFarray_last (new_map_list); j++)
             if (list.atts[i] == ORI_AT(new_map_list, j)) {
                 new_list.atts[i] = CUR_AT(new_map_list, j);
