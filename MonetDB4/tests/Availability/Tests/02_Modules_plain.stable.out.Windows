@@ -737,14 +737,14 @@ Module: "logger"
 # str			str		str								str													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "log_abort",		  "COMMAND:   ",  "log_abort(logger) : void",					  "write transaction aborted in the WAL"												  ]
-[ "log_bat",		  "COMMAND:   ",  "log_bat(logger, BAT[void,any::1], str) : void",		  "log the inserts in the WAL"														  ]
+[ "log_bat",		  "COMMAND:   ",  "log_bat(logger, BAT[oid,any::1], str) : void",		  "log the inserts in the WAL"														  ]
 [ "log_bat_clear",	  "COMMAND:   ",  "log_bat_clear(logger, str) : void",				  "log the inserts in the WAL"														  ]
-[ "log_bat_persists",	  "COMMAND:   ",  "log_bat_persists(logger, BAT[void,any::1], str) : void",	  "log the created bat in the WAL (return success)"											  ]
+[ "log_bat_persists",	  "COMMAND:   ",  "log_bat_persists(logger, BAT[oid,any::1], str) : void",	  "log the created bat in the WAL (return success)"											  ]
 [ "log_bat_transient",	  "COMMAND:   ",  "log_bat_transient(logger, str) : void",			  "log the bat destruction in the WAL (return success)"											  ]
 [ "log_delta",		  "COMMAND:   ",  "log_delta(logger, BAT[oid,any::1], str) : void",		  "log the updates in the WAL"														  ]
 [ "log_trans_end",	  "COMMAND:   ",  "log_trans_end(logger) : void",				  "write transaction end in the WAL"													  ]
 [ "log_trans_start",	  "COMMAND:   ",  "log_trans_start(logger) : void",				  "Log a start of a transaction"													  ]
-[ "logger_add_bat",	  "COMMAND:   ",  "logger_add_bat(logger, BAT[void,any::1], str) : int",	  "Register a bat name, return the bid"													  ]
+[ "logger_add_bat",	  "COMMAND:   ",  "logger_add_bat(logger, BAT[oid,any::1], str) : int",		  "Register a bat name, return the bid"													  ]
 [ "logger_changes",	  "COMMAND:   ",  "logger_changes(logger) : int",				  "Return the number of logged changes."												  ]
 [ "logger_cleanup",	  "COMMAND:   ",  "logger_cleanup(logger) : void",				  "Cleanup the old no longer needed logfiles. Should be called after logger_restart but can be called without any locks."		  ]
 [ "logger_create",	  "COMMAND:   ",  "logger_create(int, str, str, str, int) : logger",		  "Create logger, check if recovery is needed. The fn variable names the frontend,this is needed to keep the catalog bat seperate"	  ]
