@@ -4196,8 +4196,8 @@ reduce (PFpa_op_t * p, int goalnt)
                         " in the merge-union translation for MIL");
 
             /* first two arguments of merged_union() are the grouping atts */
-            args = arg (VAR (L(p)->env, grp_att, grp_ty),
-                        VAR (R(p)->env, grp_att, grp_ty));
+            args = arg (assert_order (VAR (L(p)->env, grp_att, grp_ty)),
+                        assert_order (VAR (R(p)->env, grp_att, grp_ty)));
 
             for (unsigned int i = 0; i < p->schema.count; i++)
                 if (p->schema.items[i].name != grp_att)
