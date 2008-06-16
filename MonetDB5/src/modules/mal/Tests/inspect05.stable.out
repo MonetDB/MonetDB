@@ -1032,6 +1032,7 @@ end main;                               # 11
 [ "getCachePolicy",			  "command",	  "recycle",	  "():int ",														  "RECYCLEgetCache;"			  ]
 [ "getReusePolicy",			  "command",	  "recycle",	  "():int ",														  "RECYCLEgetReuse;"			  ]
 [ "getRetainPolicy",			  "command",	  "recycle",	  "():int ",														  "RECYCLEgetRetain;"			  ]
+[ "log",			  "command",	  "recycle",	  "(nm:str):void ",															  "RECYCLElog;"						  ]
 [ "monitor",				  "command",	  "recycle",	  "(f:int):void ",													  "RECYCLEmonitor;"			  ]
 [ "prelude",				  "pattern",	  "recycle",	  "():void ",														  "RECYCLEprelude;"			  ]
 [ "reset",				  "pattern",	  "recycle",	  "(bid:BAT):void ",															  "RECYCLEresetCMD;"					  ]
