@@ -153,20 +153,8 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_1CF3981625D7433488FABAA49C317E0F"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_1D05A54B97984B81904B627C89271790"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_1F0920257AB04C12B530CA5213439411"
-        "OwnerKey" = "8:_819BD8650A494CC68BD064E23EF621BB"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -393,12 +381,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_3BB3996E3E4D4A64B574C39D8398AB69"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_3FC10DE2DE6D408BAAA63EFDCDE65A4D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -503,6 +485,12 @@
         {
         "MsmKey" = "8:_5A3E7A66C70A4CDC8C2594C3E4554DE3"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_5AA8A277842046E9ADFF9740FF46103C"
+        "OwnerKey" = "8:_819BD8650A494CC68BD064E23EF621BB"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -898,12 +886,6 @@
         "Entry"
         {
         "MsmKey" = "8:_AF7BA2C6BED8425CBE8CCFF2ADA83A29"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_B066267D25F24C60971F33490167D53A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1857,26 +1839,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1CF3981625D7433488FABAA49C317E0F"
-            {
-            "SourcePath" = "8:share\\MonetDB\\lib\\monetdb-1.7-jdbc.jar"
-            "TargetName" = "8:monetdb-1.7-jdbc.jar"
-            "Tag" = "8:"
-            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1D05A54B97984B81904B627C89271790"
             {
             "SourcePath" = "8:Lib\\MonetDB5\\sql.mal"
@@ -2623,26 +2585,6 @@
             "TargetName" = "8:lib_optimizer.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3BB3996E3E4D4A64B574C39D8398AB69"
-            {
-            "SourcePath" = "8:share\\MonetDB\\lib\\jdbcclient.jar"
-            "TargetName" = "8:jdbcclient.jar"
-            "Tag" = "8:"
-            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4317,26 +4259,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B066267D25F24C60971F33490167D53A"
-            {
-            "SourcePath" = "8:share\\MonetDB\\lib\\monetdb-1.3-mcl.jar"
-            "TargetName" = "8:monetdb-1.3-mcl.jar"
-            "Tag" = "8:"
-            "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B089F212173D4BADABD72CD0B3724468"
             {
             "SourcePath" = "8:Lib\\MonetDB5\\opt_garbageCollector.mal"
@@ -5841,17 +5763,6 @@
                                         {
                                         }
                                     }
-                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_2E7A7A2A3AA7443EB1803999F76D6C26"
-                                    {
-                                    "Name" = "8:lib"
-                                    "AlwaysCreate" = "11:FALSE"
-                                    "Condition" = "8:"
-                                    "Transitive" = "11:FALSE"
-                                    "Property" = "8:_71648C6794BF493D92B9E2F353CCED56"
-                                        "Folders"
-                                        {
-                                        }
-                                    }
                                     "{9EF0B969-E518-4E46-987F-47570745A589}:_69999C4142A6488CB44E3C22BC2E4BFA"
                                     {
                                     "Name" = "8:php"
@@ -6581,7 +6492,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_1F0920257AB04C12B530CA5213439411"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_5AA8A277842046E9ADFF9740FF46103C"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
