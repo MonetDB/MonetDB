@@ -66,7 +66,7 @@ which inspects the variable table for alternative results.
 
 /*#define _DEBUG_RECYCLE_
 #define _DEBUG_RECYCLE_REUSE 
-#define _DEBUG_CACHE_ */ 
+#define _DEBUG_CACHE_ */
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -117,6 +117,7 @@ mal_export int recycled;	/* total number of statements recycled */
 mal_export int retained;	/* total number of statements retained */
 mal_export int savedTime;	/* sum of all recycled clk's */
 mal_export int monitorRecycler;
+mal_export int recycleRecent;
 
 mal_export void RECYCLEversion(MalBlkPtr mb);
 mal_export int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -214,7 +215,9 @@ int statements = 0;	/* total number of statements executed */
 int recycled = 0;	/* total number of statements recycled */
 int retained = 0;	/* total number of statements retained */
 int savedTime = 0;	/* sum of all recycled clk's */
-int monitorRecycler = 0;
+int monitorRecycler = 0; /* 1: print cache stat after each RECYCLEnew call */
+			 /* 2: print cache stat at the end of query */
+int recycleRecent;     /* the most recent entry in cache touched by current query execution */
 
 @-
 The Recycle catalog is a global structure, which should be
@@ -407,7 +410,7 @@ RECYCLEcache(int target, int wr)
 		mal_set_lock(recycleLock,"recycle");
 		recyclerUsedMemory -= recycleBlk->profiler[victim].obytes;
 		RECYCLEremove(victim);
-		if (monitorRecycler)
+		if (monitorRecycler == 1)
 			fprintf(stderr, 
 				"#memory=%lld, stop=%d, recycled=%d, retained=%d executed=%d saved=%d\n",
 				recyclerUsedMemory, recycleBlk->stop,
@@ -451,19 +454,18 @@ static void RECYCLEcleanCache(int wr){
 			used[getArg(p,j)]++;
 	}
 
-	/* find the leaves */
+	/* find the leaves, ignore the most recent instruction */
+
 	ltop = 0;
 	for (i = 1; i < recycleBlk->stop; i++){
+		if (i == recycleRecent) continue;
 		p = recycleBlk->stmt[i];
 		for( j = 0; j < p->retc ; j++)
 			if (used[getArg(p,j)]) goto skip;
 		lvs[ltop++] = i;
 		skip:;
 	}
-	/* the last leaf might be the predecessor of the current instr., 
-	shouldn't be evicted - to be refined*/
-	if (ltop>1 && lvs[ltop-1] == recycleBlk->stop-1)
-		ltop--;
+
 	/* find the victims */
 	if (ltop == 0 )
 		return;
@@ -688,12 +690,13 @@ compare by value.
 		wr =0;
 	recycleBlk->profiler[i].obytes = wr;
 	recyclerUsedMemory += wr;
-	if (monitorRecycler) 
+	if (monitorRecycler == 1 ) 
 		fprintf(stderr, 
 			"#memory=%lld, stop=%d, recycled=%d, retained=%d executed=%d saved=%d\n",
 			recyclerUsedMemory, recycleBlk->stop,
 			recycled, retained, statements, savedTime);
 	retained++;
+	recycleRecent = i;
 }
 
 @-
@@ -843,6 +846,7 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			recycleBlk->profiler[i].clk = GDKusec();
 			p->recycle = i;
 			recycled++;
+			recycleRecent = i;
 			savedTime += recycleBlk->profiler[i].ticks;
 			return i;
 			notfound: 
@@ -937,6 +941,7 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		recycleBlk->profiler[p->recycle].counter++;
                 recycleBlk->profiler[p->recycle].clk = GDKusec();
 		savedTime += recycleBlk->profiler[p->recycle].ticks;
+		recycleRecent = p->recycle;
 		return 1;
 	} 
 	statements++;
