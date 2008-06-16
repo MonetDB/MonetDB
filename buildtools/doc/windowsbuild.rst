@@ -122,10 +122,10 @@ any of the Microsoft compilers.  It can be compiled with the Intel
 compiler.
 
 Not supported anymore (but probably still possible) are the GNU C
-Compiler gcc under Cygwin__.  Using that it (probably still) is possible
-to build a version that runs using the Cygwin DLLs, but also a version
-that uses the MinGW__ (Minimalist GNU for Windows) package.  This is
-not supported and not further described here.
+Compiler gcc under Cygwin__.  Using that, it (probably still) is
+possible to build a version that runs using the Cygwin DLLs, but also
+a version that uses the MinGW__ (Minimalist GNU for Windows) package.
+This is not supported and not further described here.
 
 __ http://www.cygwin.com/
 __ http://www.mingw.org/
