@@ -98,19 +98,19 @@ the bats are made persistent, i.e. a bbp sub-commit is done.
 .COMMAND log_delta(logger l, bat[oid,any::1] b, str nme ) : void = log_delta_wrap;
 "log the updates in the WAL"
 
-.COMMAND log_bat(logger l, bat[void,any::1] b, str name ) : void = log_bat_wrap;
+.COMMAND log_bat(logger l, bat[oid,any::1] b, str name ) : void = log_bat_wrap;
 "log the inserts in the WAL"
 
 .COMMAND log_bat_clear(logger l, str name ) : void = log_bat_clear_wrap;
 "log the inserts in the WAL"
 
-.COMMAND log_bat_persists(logger l, bat[void,any::1] b, str name ) : void = log_bat_persists_wrap;
+.COMMAND log_bat_persists(logger l, bat[oid,any::1] b, str name ) : void = log_bat_persists_wrap;
 "log the created bat in the WAL (return success)"
  
 .COMMAND log_bat_transient(logger l, str name ) : void = log_bat_transient_wrap;
 "log the bat destruction in the WAL (return success)"
  
-.COMMAND logger_add_bat(logger l, bat[void,any::1] b, str name) : int = logger_add_bat_wrap;
+.COMMAND logger_add_bat(logger l, bat[oid,any::1] b, str name) : int = logger_add_bat_wrap;
 "Register a bat name, return the bid"
 
 .COMMAND logger_del_bat(logger l, int bid) : void = logger_del_bat_wrap;
