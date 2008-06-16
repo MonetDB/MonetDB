@@ -241,13 +241,21 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			as = exp_bin(sql, attr->h->data, left, right, NULL, sel);
 			if (list_length(attr) == 2)
 				as2 = exp_bin(sql, attr->h->next->data, left, right, NULL, sel);
+			/* insert single value into a column */
+			if (as && as->nrcols <= 0 && !left)
+				as = stmt_append(stmt_temp(tail_type(as)), as);
 		} else {
 			/* count(*) may need the default group (relation) and
 			   and/or an attribute to count */
-			if (g)
+			if (g) {
 				as = stmt_dup(grp->grp);
-			else
+			} else if (left) {
 				as = bin_first_column(left);
+			} else {
+				/* create dummy single value in a column */
+				as = stmt_atom_int(0);
+				as = stmt_append(stmt_temp(tail_type(as)), as);
+			}
 		}
 		if (!as) 
 			return NULL;	
@@ -1262,11 +1270,12 @@ rel2bin_groupby( mvc *sql, sql_rel *rel )
 	group *groupby = NULL;
 
 
-	if (rel->l) /* first construct the sub relation */
+	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(sql, rel->l);
-	if (!sub) { 
-		assert(0);
-		return NULL;	
+		if (!sub) { 
+			assert(0);
+			return NULL;	
+		}
 	}
 
 	/* groupby columns */
@@ -1312,7 +1321,7 @@ rel2bin_groupby( mvc *sql, sql_rel *rel )
 		aggrstmt = stmt_rename(rel, aggrexp, aggrstmt);
 		list_append(l, aggrstmt);
 	}
-	stmt_destroy(sub);
+	if (sub) stmt_destroy(sub);
 	if (groupby) grp_destroy(groupby);
 	return cursub;
 }

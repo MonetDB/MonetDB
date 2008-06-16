@@ -1204,8 +1204,11 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		/* the values which are aggregated together, no grp should
 		 * be given there to optain the values */
 		s = sql_value_exp(sql, scp, l->h->next->next->data.sym, /*grp */ NULL, subset, f, ek);
-		if (s && s->nrcols <= 0 && subset) /* single value */
+		if (s && s->nrcols <= 0 && subset) { /* single value */
 			s = stmt_const(first_subset(subset), s);
+		} else if (s && s->nrcols <=0) { /* single value */
+			s = stmt_append(stmt_temp(tail_type(s)), s);
+		}
 	}
 
 	if (s && distinct) {
