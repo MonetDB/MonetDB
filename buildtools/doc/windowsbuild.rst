@@ -366,7 +366,7 @@ Perl program to communicate with a MonetDB server.
 
 We have used ActiveState__'s ActivePerl__ distribution (release
 5.10.0.1001).  Just install the 32 or 64 bit version and compile the
-clients component with the additional ``nmake`` flags ``HAVE_PER=1
+clients component with the additional ``nmake`` flags ``HAVE_PERL=1
 HAVE_PERL_DEVEL=1 HAVE_PERL_SWIG=1`` (the latter flag only if SWIG_
 is also installed).
 
