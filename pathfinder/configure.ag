@@ -553,9 +553,9 @@ AC_ARG_WITH(default-backend,
             AC_HELP_STRING(
                [--with-default-backend=BACKEND],
                [select a default back-end (milprint_summer/algebra/sql)
-                for Pathfinder (default=milprint_summer)]),
+                for Pathfinder (default=algebra)]),
             default_backend="$withval",
-            default_backend='milprint_summer')
+            default_backend='algebra')
 if test "x$default_backend" = xmilprint_summer
 then
         AC_DEFINE(ALGEBRA_IS_DEFAULT, 0,
