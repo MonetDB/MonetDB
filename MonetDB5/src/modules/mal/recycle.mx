@@ -86,6 +86,10 @@ command monitor(f:int):void
 address RECYCLEmonitor
 comment "start/stop the monitoring (printing) of the recycler info (storage size used and number of statements retained)";
 
+command log(nm:str):void
+address RECYCLElog
+comment "Set the name of recycle log file";
+
 pattern prelude():void
 address RECYCLEprelude
 comment "Called at the start of a recycle controlled function";
@@ -122,6 +126,7 @@ recycle_export str RECYCLEgetReuse(int *p);
 recycle_export str RECYCLEgetCache(int *p);
 recycle_export str RECYCLEshutdownWrap(int *ret);
 recycle_export str RECYCLEmonitor(int *d, int *p);
+recycle_export str RECYCLElog(int *d, str *nm);
 recycle_export str RECYCLEprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEepilogue(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
@@ -134,6 +139,7 @@ recycle_export str RECYCLEepilogue(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #include "mal_recycle.h"
 #include "recycle.h"
 
+str recycleLog = NULL; 
 @-
 The recycler is started when the first function is called for its support.
 Upon exit of the last function, the content of the recycle cache is destroyed.
@@ -237,6 +243,29 @@ RECYCLEdumpWrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+void
+RECYCLErunningStat()
+{	
+	stream *s;
+	if (recycleLog == NULL) 
+		s = MCgetClient()->fdout;
+	else {
+		s = append_wastream(recycleLog);
+		if (s == NULL || stream_errnr(s)) {
+        	        GDKerror("could not open file %s.\n", recycleLog);
+			s = MCgetClient()->fdout;
+		}
+	}
+
+	stream_printf(s,"#recycled = %d incache= %d executed = %d ",
+		recycled, recycleBlk->stop-1,statements);
+	stream_printf(s,"saved time(ms)= %8.2f memory(KB)= %d\n",
+		savedTime/1000.0,recyclerUsedMemory);
+	if( s != MCgetClient()->fdout)
+		close_stream(s);
+}
+
+
 str
 RECYCLEsetRetain(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -318,10 +347,19 @@ RECYCLEmonitor(int *ret, int *p)
 }
 
 str 
+RECYCLElog(int *ret, str *nm)
+{
+	(void) ret;
+	recycleLog = GDKstrdup(*nm);
+	return MAL_SUCCEED;
+}
+
+str 
 RECYCLEprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) stk;
 	(void) p;
 	RECYCLEversion(mb);
+	recycleRecent = -1;
 	return MAL_SUCCEED;
 }
 str 
@@ -329,6 +367,7 @@ RECYCLEepilogue(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) mb;
 	(void) stk;
 	(void) p;
+	if (monitorRecycler == 2 ) RECYCLErunningStat();
 	return MAL_SUCCEED;
 }
 @}
