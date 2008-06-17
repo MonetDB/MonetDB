@@ -190,7 +190,7 @@ int rcachePolicy = RCACHE_LRU;  /* recycle cache management policy
 			RCACHE_CREDIT: credit-based LRU scheme
 			RCACHE_MEMLRU: reduce the storage overhead 
 			RCACHE_MEMCRD: reduce the storage overhead */
-int recycleCacheLimit= 1000;
+int recycleCacheLimit=0; /* No limit by default */
 int recycleClaim=0;	/* avoid stale tables by letting users mark it */
 lng recycleMemory=0;	/* Units of memory permitted */
 @-
@@ -629,10 +629,11 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 	ValRecord *v;
 	ValRecord cst;
 	InstrPtr q;
-	lng memLimit;
+	lng memLimit,cacheLimit;
 	
 	RECYCLEspace();
-	if (recycleCacheLimit && recycleCacheLimit <= recycleBlk->stop)
+	cacheLimit = recycleCacheLimit?recycleCacheLimit:HARDLIMIT_STMT;
+	if ( recycleBlk->stop >= cacheLimit)
 		return ; /* no more caching */
 	memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
 	if ( recyclerUsedMemory + wr > memLimit)
@@ -938,6 +939,8 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if( lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.bval, TRUE);
 		}
+		/* don't count times saved from cached bats  -to do*/
+	
 		recycleBlk->profiler[p->recycle].counter++;
                 recycleBlk->profiler[p->recycle].clk = GDKusec();
 		savedTime += recycleBlk->profiler[p->recycle].ticks;
