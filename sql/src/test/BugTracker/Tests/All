@@ -130,3 +130,4 @@ select_crashes_in_the_optimization.SF-1848553
 schema_from_declared_table.SF-1983341
 proc_insert_into.SF-1958572
 nested_views_algebra_version.SF-1993765
+copy_into_crash.SF-1993999
