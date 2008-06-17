@@ -257,9 +257,9 @@ RECYCLErunningStat()
 		}
 	}
 
-	stream_printf(s,"#recycled = %d incache= %d executed = %d ",
+	stream_printf(s,"#recycled = %d\t incache= %d\t executed = %d\t ",
 		recycled, recycleBlk->stop-1,statements);
-	stream_printf(s,"saved time(ms)= %8.2f memory(KB)= %d\n",
+	stream_printf(s,"saved time(ms)= %8.2f\t memory(KB)= %d\n",
 		savedTime/1000.0,recyclerUsedMemory);
 	if( s != MCgetClient()->fdout)
 		close_stream(s);

@@ -918,6 +918,7 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i=0;
 	ValPtr lhs,rhs;
 	InstrPtr q;
+	ProfPtr prof;
 
 	stk->clk= GDKusec();
 	if (recycleVersion == 0 || recycleBlk == NULL )
@@ -939,11 +940,14 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if( lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.bval, TRUE);
 		}
-		/* don't count times saved from cached bats  -to do*/
-	
-		recycleBlk->profiler[p->recycle].counter++;
-                recycleBlk->profiler[p->recycle].clk = GDKusec();
-		savedTime += recycleBlk->profiler[p->recycle].ticks;
+		/* don't count times saved from cached bats*/
+		prof = &recycleBlk->profiler[p->recycle];
+		if (prof->counter==1 && getName("bind",4)== getFunctionId(p) && 
+				getModuleId(p)==getName("sql",3))
+			prof->ticks =  GDKusec()- stk->clk;
+		prof->counter++;
+                prof->clk = GDKusec();
+		savedTime += prof->ticks;
 		recycleRecent = p->recycle;
 		return 1;
 	} 
