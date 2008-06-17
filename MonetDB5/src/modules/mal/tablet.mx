@@ -1364,11 +1364,8 @@ skip_string(char *s, char quote)
 			esc = 1;
 		else if (*s == quote && !esc)
 			break;
-		else {
-			if (!isascii((int)*s) || iscntrl((int)*s))
-				return 0;
+		else
 			esc = 0;
-		}
 		s++;
 	}
 	if (*s)
@@ -1414,15 +1411,6 @@ insert_line(Tablet * as, char *line, ptr key)
 
 		/* skip until separator */
 		while (*line) {
-			if (!isascii((int)*line) || iscntrl((int)*line)){
-				snprintf(errmsg,BUFSIZ, "non-ascii/cntrl in line %d field %d\n", 
-					(int)BATcount(fmt->c), (int)i);
-				as->error= GDKstrdup(errmsg);
-				if (as->complaints)
-					BUNins(as->complaints,NULL, as->error, TRUE);
-				if (!as->tryall)
-					return -1;
-			}
 			if (*line == *(fmt[i].sep) &&
 			    (fmt[i].sep[1] == 0 || 
 			     strncmp(fmt[i].sep, line, fmt[i].seplen) == 0)) {
