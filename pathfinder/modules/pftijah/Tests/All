@@ -4,7 +4,7 @@ procs
 loadthesis
 colltest0
 colltest1
-colltest2
+NOT_ALGEBRA?colltest2
 createcoll0
 createcoll1
 createcoll1_frag
