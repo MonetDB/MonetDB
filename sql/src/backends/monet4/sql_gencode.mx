@@ -1629,8 +1629,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 			/* should not appear here */
 		case st_reljoin:
+		case st_releqjoin:
 		case st_relselect:
-		case st_intersect:
 			/* todo */
 
 		case st_basetable:	/* relation(table) */

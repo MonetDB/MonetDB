@@ -1487,15 +1487,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 			break;
 		}
-		case st_intersect:{
-			int l = _dumpstmt(sql, mb, s->op1.stval);
-			int r = _dumpstmt(sql, mb, s->op2.stval);
-
-			q = newStmt1(mb, algebraRef, "sintersect");
-			q = pushArgument(mb, q, l);
-			q = pushArgument(mb, q, r);
-			s->nr = getDestVar(q);
-		} break;
 		case st_alias:
 			s->nr = _dumpstmt(sql, mb, s->op1.stval);
 			break;
@@ -1860,6 +1851,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_ptable:
 		case st_pivot:
 		case st_relselect:
+		case st_releqjoin:
 		case st_reljoin:
 			stream_printf(GDKout, "not implemented stmt\n");
 			assert(0);

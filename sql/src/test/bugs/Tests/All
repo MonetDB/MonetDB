@@ -92,3 +92,4 @@ distinct_count
 div_zero_bug
 order_limit_offset_bug
 aggr_single_value
+reljoin_join2_bug

@@ -116,12 +116,12 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int a
 				stmt_relselect_fill(s, stmt_uselect( stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(inserts[c->c->colnr]->op2.stval), cmp_equal));
 			}
 		} else {
-			s = stmt_reljoin_init();
-			stmt_reljoin_fill(s, stmt_idxbat(k->idx, RDONLY), stmt_dup(idx_inserts));
+			s = stmt_releqjoin_init();
+			stmt_releqjoin_fill(s, stmt_idxbat(k->idx, RDONLY), stmt_dup(idx_inserts));
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 
-				stmt_reljoin_fill(s, stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(inserts[c->c->colnr]->op2.stval));
+				stmt_releqjoin_fill(s, stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(inserts[c->c->colnr]->op2.stval));
 			}
 		}
 		s = stmt_binop(stmt_aggr(s, NULL, cnt, 1), stmt_atom_int(0), ne);
@@ -220,7 +220,7 @@ insert_check_fkey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 	if (s->key && s->nrcols == 0) {
 		s = stmt_binop(stmt_aggr(stmt_dup(idx_inserts), NULL, cnt, 1), stmt_atom_int(1), ne);
 	} else {
-		/* reljoin.count <> inserts[col1].count */
+		/* releqjoin.count <> inserts[col1].count */
 		stmt *ins = stmt_dup(inserts[0]->op2.stval);
 
 		s = stmt_binop(stmt_aggr(stmt_dup(idx_inserts), NULL, cnt, 1), stmt_aggr(ins, NULL, sql_dup_aggr(cnt), 1), ne);
@@ -334,12 +334,12 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 	} else {
 		int nulls = 0;
 
-		s = stmt_reljoin_init();
+		s = stmt_releqjoin_init();
 		for (m = i->columns->h, o = ri->columns->h; m && o; m = m->next, o = o->next) {
 			sql_kc *c = m->data;
 			sql_kc *rc = o->data;
 
-			stmt_reljoin_fill(s, stmt_dup(inserts[c->c->colnr]->op2.stval), stmt_bat(rc->c, stmt_dup(rts), RDONLY));
+			stmt_releqjoin_fill(s, stmt_dup(inserts[c->c->colnr]->op2.stval), stmt_bat(rc->c, stmt_dup(rts), RDONLY));
 			if (c->c->null)
 				nulls = 1;
 		}
@@ -564,8 +564,8 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 			This is done using a relation join and a count (which 
 			should be zero)
 	 	*/
-		s = stmt_reljoin_init();
-		stmt_reljoin_fill(s, stmt_diff(stmt_idxbat(k->idx, RDONLY), stmt_dup(idx_updates)), stmt_dup(idx_updates));
+		s = stmt_releqjoin_init();
+		stmt_releqjoin_fill(s, stmt_diff(stmt_idxbat(k->idx, RDONLY), stmt_dup(idx_updates)), stmt_dup(idx_updates));
 		for (m = k->columns->h; m; m = m->next) {
 			sql_kc *c = m->data;
 			stmt *upd, *l;
@@ -576,7 +576,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 				upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(updates[updcol]->op2.stval));
 			}
 			l = stmt_diff(stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(upd));
-			stmt_reljoin_fill(s, l, upd);
+			stmt_releqjoin_fill(s, l, upd);
 
 		}
 		s = stmt_binop(stmt_aggr(s, NULL, cnt, 1), stmt_atom_int(0), ne);
@@ -676,7 +676,7 @@ update_check_fkey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 
 	if (!idx_updates)
 		return NULL;
-	/* reljoin.count <> updates[updcol].count */
+	/* releqjoin.count <> updates[updcol].count */
 	cur = stmt_dup(updates[updcol]->op2.stval);
 	s = stmt_binop(stmt_aggr(stmt_dup(idx_updates), NULL, cnt, 1), stmt_aggr(cur, NULL, sql_dup_aggr(cnt), 1), ne);
 
@@ -700,7 +700,7 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt **updates, int updcol)
 	sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
 
 	fts = stmt_basetable(k->idx->t, k->idx->t->base.name);
-	s = stmt_reljoin_init();
+	s = stmt_releqjoin_init();
 
 	rows = stmt_idxbat(k->idx, RDONLY);
 	rows = stmt_semijoin(stmt_reverse(rows), stmt_dup(updates[updcol]->op2.stval));
@@ -727,7 +727,7 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt **updates, int updcol)
 				null = nn;
 			nulls = 1;
 		}
-		stmt_reljoin_fill(s, upd, stmt_semijoin(stmt_dup(
+		stmt_releqjoin_fill(s, upd, stmt_semijoin(stmt_dup(
 		  stmt_bat(fc->c, stmt_dup(fts), RDONLY)), stmt_dup(rows) ));
 	}
 	/* add missing nulls */
@@ -737,7 +737,7 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt **updates, int updcol)
 	stmt_destroy(ts);
 	stmt_destroy(fts);
 
-	/* reljoin.count <> updates[updcol].count */
+	/* releqjoin.count <> updates[updcol].count */
 	s = stmt_binop(stmt_aggr(stmt_dup(s), NULL, cnt, 1), stmt_aggr(rows, NULL, sql_dup_aggr(cnt), 1), ne);
 
 	/* s should be empty */
@@ -974,7 +974,7 @@ join_idx_update(sql_idx * i, stmt **updates, int updcol)
 	stmt *null = NULL;
 
 	ts = stmt_basetable(i->t, i->t->base.name);
-	s = stmt_reljoin_init();
+	s = stmt_releqjoin_init();
 	for (m = i->columns->h, o = ri->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
@@ -996,7 +996,7 @@ join_idx_update(sql_idx * i, stmt **updates, int updcol)
 				null = nn;
 			nulls = 1;
 		}
-		stmt_reljoin_fill(s, upd, stmt_dup(stmt_bat(rc->c, stmt_dup(rts), RDONLY)));
+		stmt_releqjoin_fill(s, upd, stmt_dup(stmt_bat(rc->c, stmt_dup(rts), RDONLY)));
 
 	}
 	/* add missing nulls */

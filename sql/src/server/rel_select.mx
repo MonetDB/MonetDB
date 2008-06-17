@@ -4283,6 +4283,8 @@ rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, i
 
 		if (!instantiate)
 			sql->emode = m_instantiate;
+		if (instantiate) /* we also need the other views instantiated */
+			sql->emode = 0;
 		sq = rel_subquery(sql, NULL, query, ek);
 		sql->emode = emode;
 		if (!sq)
