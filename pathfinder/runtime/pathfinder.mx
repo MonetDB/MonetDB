@@ -1509,9 +1509,9 @@ PROC ws_end(BAT[void,bat] ws, str err) : int
         CATCH(_ws_xrpc_end(xrpc_qid, err));
         lock_unset(xrpc_lock);
     }
-    # do not auto-restart XRPC updates (deadlock danger) 
+    # do not auto-restart XRPC updates (deadlock danger)
     if (xrpc_method != "") return 2;
-    return 1; 
+    return 1;
 }
 
 PROC ws_create(int update) : BAT[void,bat]
@@ -4185,6 +4185,7 @@ pathfinder_export void  xquery_client_engine(mapi_client*);
 pathfinder_export char* xquery_method(mapi_client*, int, lng*, char*, char*, char*, char*, char*, char*, lng, lng, lng, lng**, int*, str*, BAT*);
 pathfinder_export void  xquery_client_end(mapi_client *, char *); 
 pathfinder_export char* xquery_parse_val(int, char*, BAT*, BAT*, BAT* , BAT* , BAT* , char*, oid);
+pathfinder_export lng   xquery_2pc_exec(mapi_client *mc, str qid, ptr hdl);
 
 /* the xquery builtin type hierarchy */
 typedef struct {
@@ -4400,6 +4401,7 @@ typedef struct {
     lng   *xrpc_seqnr;
     char **xrpc_qid;
     char **xrpc_caller;
+    ptr   *xrpc_hdl;
 
     char **genType;
 
@@ -4526,6 +4528,20 @@ xquery_mil_exec(xquery_client *ctx,
         Myyfree(t);
     }
     return ret;
+}
+
+/*
+ * fire off a MIL runtime proc that executes transaction commit (2pc, the perpare request) 
+ */
+lng
+xquery_2pc_exec(mapi_client *mc, str qid, ptr hdl)
+{
+    xquery_client *ctx = (xquery_client*) mc->fc;
+    *(ctx->xrpc_hdl) = hdl;
+    *(ctx->xrpc_qid) = GDKstrdup(qid);
+    if (!xquery_mil_exec(ctx, "{ var ws; CATCH(execute_update_tape(ws := ws_create(0)); })"))
+        return 0;
+    return *ctx->xrpc_seqnr; /* return the seqnr we got assigned in MIL (used for message logging) */
 }
 
 static char* xquery_parse_ident(char* p); 
@@ -5339,6 +5355,7 @@ xquery_client_alloc_(xquery_client *ctx)
     @:find_var(xrpc_module,str,sval)@
     @:find_var(xrpc_method,str,sval)@
     @:find_var(xrpc_caller,str,sval)@
+    @:find_var(xrpc_hdl,ptr,pval)@
     @:find_var(xrpc_qid,str,sval)@
     @:find_var(xrpc_mode,str,sval)@
     @:find_var(xrpc_seqnr,lng,lval)@

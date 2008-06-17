@@ -46,6 +46,17 @@ remote XQuery execution using HTTP connection on top of MonetDB for the
 .COMMAND my_hostname() : str = CMDmy_hostname;
 "Returns the hostname of the localhost."
 
+@- 2pc
+very basic 2pc implementation. we do not do aborts yet (failures just lead to
+timeout). Also, recovery is not yet implemented (ie finding out after a precommit
+record without commit whether the transaction succeeded or not).
+@m
+.COMMAND xrpc_wait_for_commit(str qid, str caller, lng seqnr, ptr handle) : void = CMDxrpc_2pc_wait_for_commit;
+"report prepared, wait for commit"
+
+.COMMAND xrpc_confirm_commit(str qid, str caller, lng seqnr, ptr handle) : void = CMDxrpc_2pc_confirm_commit;
+"report commit"
+
 .PRELUDE = xrpc_prelude;
 .EPILOGUE = xrpc_epilogue;
 .END xrpc_server;
@@ -167,6 +178,7 @@ Start XPRC receiver using the default values as specified in \
 /* HTTP defines */
 #define XRPC_DOC_CALLBACK       "/xrpc/doc"
 #define XRPC_ADM_CALLBACK       "/xrpc/admin"
+#define XRPC_WSAT_CALLBACK      "/xrpc/wsat"
 #define XRPC_REQ_CALLBACK       "/xrpc"
 
 #define ERR403                  "403 Forbidden"
@@ -209,15 +221,17 @@ Start XPRC receiver using the default values as specified in \
     "  xsi:schemaLocation=\"" XRPC_NS " " XRPC_LOC "\">\n"
 
 #define XRPC_WS_QID\
-      " <wscoor:CoordinationContext\n"\
-      "  xmlns:wscoor=\""WSCOOR_NS"\"\n"\
-      "  env:mustUnderstand=\"true\">\n"\
-      "   <wscoor:Identifier>%s</wscoor:Identifier>\n"\
-      "   <wscoor:Expires>"LLFMT"</wscoor:Expires>\n"\
-      "   <wscoor:CoordinationType>" WSAT_NS "</wscoor:CoordinationType>\n"\
-      " </wscoor:CoordinationContext>\n"
+      " <xrpc:header xrpc:mode=\"%s\">\n"\
+      "  <wscoor:CoordinationContext\n"\
+      "   xmlns:wscoor=\""WSCOOR_NS"\"\n"\
+      "   env:mustUnderstand=\"true\">\n"\
+      "    <wscoor:Identifier>%s</wscoor:Identifier>\n"\
+      "    <wscoor:Expires>"LLFMT"</wscoor:Expires>\n"\
+      "    <wscoor:CoordinationType>" WSAT_NS "</wscoor:CoordinationType>\n"\
+      "  </wscoor:CoordinationContext>\n"\
+      " </xrpc:header>\n"
 
-#define XRPC_REQ_HEADER\
+#define XRPC_REQ\
     "<env:Body>\n"\
       "<xrpc:request\n"\
       "  xrpc:module=\"%s\"\n"\
@@ -225,23 +239,24 @@ Start XPRC receiver using the default values as specified in \
       "  xrpc:method=\"%s\"\n"\
       "  xrpc:arity=\""LLFMT"\"\n"\
       "  xrpc:iter-count=\""LLFMT"\"\n"\
-      "  xrpc:caller=\"%s:%d:"LLFMT"\"\n"\
-      "  xrpc:mode=\"%s\"\n"\
-      "  xrpc:updCall=\"%s\">\n"
+      "  xrpc:updCall=\"%s\"\n"\
+      "  xrpc:caller=\""
+#define XRPC_REQ_BODY\
+      XRPC_REQ "%s:%d:"LLFMT"\">\n"
+#define XRPC_REQ_BODY_FIRST_CALLER\
+      XRPC_REQ "query\">\n"
 
-#define XRPC_REQ_HEADER_FIRST_CALLER\
-    "<env:Body>\n"\
-    " <xrpc:request\n"\
-    "   xrpc:module=\"%s\"\n"\
-    "   xrpc:location=\"%s\"\n"\
-    "   xrpc:method=\"%s\"\n"\
-    "   xrpc:arity=\""LLFMT"\"\n"\
-    "   xrpc:iter-count=\""LLFMT"\"\n"\
-    "   xrpc:caller=\"query\"\n"\
-    "   xrpc:mode=\"%s\"\n"\
-    "   xrpc:updCall=\"%s\">\n"
+#define XRPC_WSAT_REQ SOAP_ENVELOPE\
+    "<env:Header>" XRPC_WS_QID "</env:Header>\n"\
+    "<env:Body><wsat:%s/></env:Body>\n"\
+    "</env:Envelope>"
 
-#define XRPC_RES_HEADER\
+#define XRPC_WSAT_RES SOAP_ENVELOPE\
+    "<env:Header>\n" XRPC_WS_QID "<xrpc:partipant>%s,%s:%s:%s,"LLFMT",%d</xrpc:participant>\n</env:Header>\n"\
+    "<env:Body><wsat:%s/></env:Body>\n"\
+    "</env:Envelope>"
+
+#define XRPC_RES_BODY\
     "<env:Body>\n"\
     " <xrpc:response\n"\
     "   xrpc:module=\"%s\"\n"\
@@ -337,6 +352,16 @@ static int timing = 0;
 static int debug = 0;
 static int listen_socket = -1;
 static char datadir[1024];
+
+typedef struct {
+    lng start;
+    stream *s;
+    char* qid;
+    char* mode;
+} xrpc_commit_t;
+
+static MT_Sema xrpc_commit_sema;
+static xrpc_commit_t *xrpc_commit_active = NULL;
 
 
 int CMDmy_hostname(char **res)
@@ -599,11 +624,12 @@ get_node_type(str typename) {
     return -1;
 } 
 
+
 static INLINE oid
-skip_text_nodes(char *pre_kindT, oid pre, oid max)
+skip_text_nodes(char *pre_kindT, oid pre, oid max) 
 {
-	while(pre < max && pre_kindT[pre] == TEXT) pre++;
-	return pre;
+    while(pre < max && pre_kindT[pre] != ELEM) pre++;
+    return pre; 
 }
 
 XRPCreq_t *
@@ -647,7 +673,6 @@ xrpc_parse_message(stream *out,
     oid start_invalidate = 0; /* indicates from which node we should start with invalidation */
     char level_diff = 0; /* indicates how many levels each pre_level value of a node should be reduced. */
 
-    i = BUNfirst(shredBAT);
     shredBATi = bat_iterator(shredBAT);
     /* FIXME: should used BATdescriptor */
 @= getbat
@@ -690,6 +715,16 @@ xrpc_parse_message(stream *out,
     nattrs     = BATcount(attr_prop);
     nnodes     = BATcount(pre_size);
 
+    /* get mode from the header (a bit hacked) */
+    for(i=0; i<nattrs; i++) {
+        str s = (str) BUNtail(qn_uli, attr_qnT[i]);
+        if (strcmp(s, XRPC_NS"|mode") == 0) {
+            mode = (str) BUNtail(prop_vali, attr_propT[i]);
+            break;
+        }
+    }
+
+    i = BUNfirst(shredBAT);
     if (participants) {
         /* parse a SOAP header for participants (XRPC response case) */
         if ((hdr_node_pre = get_pre_by_qname(XRPC_NS"|participants",
@@ -768,8 +803,6 @@ xrpc_parse_message(stream *out,
                 arity_str = val;
             } else if(strcmp(pul, XRPC_NS"|iter-count") == 0) {
                 itercnt_str = val;
-            } else if(strcmp(pul, XRPC_NS"|mode") == 0) {
-                mode = val;
             } else if(strcmp(pul, XRPC_NS"|caller") == 0) {
                 caller = val;
             } else if(strcmp(pul,XRPC_NS"|updCall") == 0) {
@@ -814,27 +847,30 @@ xrpc_parse_message(stream *out,
     /* Fill the arrays 'req->argcnt', 'req->argval', 'req->argtpe' */
     /* i: index in xrpc:call; j: index of xrpc:sequence per xrpc:call */
 	next_call_node_pre = call_node_pre;
-	for(i = 0; next_call_node_pre > 0 && next_call_node_pre < nnodes;
-			call_node_pre = next_call_node_pre, i++) {
-		/* end of current call node */
+    for(i = 0; 
+            next_call_node_pre > 0 && next_call_node_pre < nnodes; 
+                call_node_pre = next_call_node_pre, i++) 
+    {
+        /* end of current call node */
         next_call_node_pre = call_node_pre + pre_sizeT[call_node_pre] + 1;
 
-		for(seq_node_pre = skip_text_nodes(pre_kindT,
-					call_node_pre + 1, next_call_node_pre),
-				next_seq_node_pre = seq_node_pre, j = 0;
-				next_seq_node_pre > 0 && next_seq_node_pre < next_call_node_pre;
-                seq_node_pre = next_seq_node_pre, j++) {
-			/* end of current sequence node */
+        for(seq_node_pre = skip_text_nodes(pre_kindT, call_node_pre + 1, next_call_node_pre), 
+            next_seq_node_pre = seq_node_pre, j = 0;
+                next_seq_node_pre > 0 && next_seq_node_pre < next_call_node_pre;
+                    seq_node_pre = next_seq_node_pre, j++) 
+        {
+            /* end of current sequence node */
             next_seq_node_pre = seq_node_pre + pre_sizeT[seq_node_pre] + 1;
        
-            for(tpe_node_pre = skip_text_nodes(pre_kindT,
-						seq_node_pre+1, next_seq_node_pre),
-					next_tpe_node_pre = tpe_node_pre, k=1;
-					next_tpe_node_pre > 0 && next_tpe_node_pre < next_seq_node_pre;
-                    tpe_node_pre = next_tpe_node_pre, k++) {
-				/* end of current xrpc:<type> node */
+            for(tpe_node_pre = skip_text_nodes(pre_kindT, seq_node_pre+1, next_seq_node_pre),
+		next_tpe_node_pre = tpe_node_pre, k=1;
+                    next_tpe_node_pre > 0 && next_tpe_node_pre < next_seq_node_pre;
+                        tpe_node_pre = next_tpe_node_pre, k++) 
+            {
+                /* end of current xrpc:<type> node */
                 next_tpe_node_pre = tpe_node_pre + pre_sizeT[tpe_node_pre]+1;
 
+                
                 /* advance our cursor in attr_own */
                 while(ao_ptr < nattrs && attr_ownT[ao_ptr] < tpe_node_pre) ao_ptr++;
 
@@ -931,11 +967,11 @@ xrpc_parse_message(stream *out,
                 }
                 req->argcnt[i][j]++;
                 req->nr_args++;
-				next_tpe_node_pre = skip_text_nodes(pre_kindT, next_tpe_node_pre, next_seq_node_pre);
+                next_tpe_node_pre = skip_text_nodes(pre_kindT, next_tpe_node_pre, next_seq_node_pre);
             } /* end loop 'xrpc:<type>' */
-			next_seq_node_pre = skip_text_nodes(pre_kindT, next_seq_node_pre, next_call_node_pre);
+            next_seq_node_pre = skip_text_nodes(pre_kindT, next_seq_node_pre, next_call_node_pre);
         } /* end loop 'xrpc:sequence' */
-		next_call_node_pre = skip_text_nodes(pre_kindT, next_call_node_pre, nnodes);
+        next_call_node_pre = skip_text_nodes(pre_kindT, next_call_node_pre, nnodes);
     } /* end loop 'xrpc:call' */
     frag_root = BATsetaccess(frag_root, BAT_READ);
     res = req; req = NULL;
@@ -1081,16 +1117,16 @@ xrpc_handle_request(mapi_client *mc, struct shttpd_callback_arg *arg)
     BAT *shredBAT;
     lng time_xrpcServDeSeria;
     int flags = timing|debug; 
-    char *msg;
+    char *msg = shttpd_get_msg(arg);
 
     time_xrpcServDeSeria = GDKusec();
     if(!(shredBAT = request2bat(mc->c->fdout, msg=shttpd_get_msg(arg))))
         return GDK_FAIL;
 
     if(!(req = parse_request(mc->c->fdout, shredBAT, 0))) {
-        BBPreclaim(shredBAT);
         return GDK_FAIL;
     }
+    BBPreclaim(shredBAT);
 
     time_xrpcServDeSeria = GDKusec() - time_xrpcServDeSeria;
 
@@ -1101,7 +1137,7 @@ xrpc_handle_request(mapi_client *mc, struct shttpd_callback_arg *arg)
         return GDK_FAIL;
     }
     if (req->mode && strstr(req->mode,"trace")) {
-        stream *logstream = xquery_print_trace("req", req->seqnr);
+        stream *logstream = xrpc_log_message("req", req->seqnr);
         if (logstream == NULL) return GDK_FAIL;
         if (stream_errnr(logstream) || stream_write(logstream, msg, 1, strlen(msg)) <= 0) {
             stream_destroy(logstream);
@@ -1276,6 +1312,71 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
     return ret;
 }
 
+
+/**
+ * Handle 2PC Web Services Atomic Transactions (WSAT) requests
+ *
+ * @return GDK_SUCCEED, or
+ *         GDK_FAIL if an error has occurred.
+ */
+static int 
+xrpc_handle_wsat_request(mapi_client *mc, struct shttpd_callback_arg *arg)
+{
+    char *msg = shttpd_get_msg(arg);
+    char *qid = strstr(msg, ":Identifier>");
+    char *mode = NULL, *p = strstr(msg, ":header mode=");
+    if (p) {
+        /* we do some very hacky unsafe XML parsing here (get mode) */
+        for(p+=18; *p; p++) 
+            if (*p != ' ' && *p != '\t' && *p != '\n') break; 
+        if (*p == '\'' || *p == '\"') {
+            char *q = strchr(p+1, *p);
+            if (*q) { *q = 0; mode = p+1; }
+        }
+    } 
+    msg = strchr(msg, '<');
+
+    if (msg && qid) { 
+        /* we do some very hacky unsafe XML parsing here (get qid) */
+        str q = (qid+=12);
+        while(*q && *q != '<') q++;
+        *q = 0;
+
+        if (strstr(msg, ":Prepare")) {
+            lng seqnr;
+ 
+            /* initialize a commit record; the MIL code will come back with its pointer to send the response */
+            xrpc_commit_t c;
+            c.s = mc->c->fdout;
+            c.mode = mode;
+            c.qid = qid;
+            c.start = GDKusec();
+            seqnr = xquery_2pc_exec(mc, qid, (ptr) &c);
+            if (seqnr == 0) send_err(c.s, ERR404, "env:Sender", "prepare failed");
+
+            /* log the request */ 
+            if (mode && strstr(mode, "trace")) {
+                stream *logstream = xrpc_log_message("prepare", seqnr);
+                if (logstream) {
+                    stream_write(logstream, q, 1, strlen(q));
+                    stream_close(logstream);
+                    stream_destroy(logstream);
+                }
+            }
+        } else if (strcmp(xrpc_commit_active->qid,qid) == 0) {
+            if (strstr(msg, ":Commit")) {
+                xrpc_commit_active->mode = mode;
+                xrpc_commit_active->s = mc->c->fdout;
+            } /* else: abort */
+            xrpc_commit_active->qid = msg; /* hack: put message in qid for logging */
+            xrpc_commit_active = NULL;
+            MT_up_sema(xrpc_commit_sema, "xrpc_handle_wsat_request");
+        } 
+    }
+    return GDK_SUCCEED;
+}
+
+
 /*
  * XRPC MAPI client handler (overrides the xquery_client_engine)
  */
@@ -1293,6 +1394,8 @@ xrpc_client_engine(mapi_client *mc)
         (void) xrpc_handle_file_request(mc, arg); /* GET/PUT/DELETE file request */
     } else if (strncmp(uri, XRPC_REQ_CALLBACK, strlen(XRPC_REQ_CALLBACK)) == 0) {
         (void) xrpc_handle_request(mc, arg);
+    } else if (strncmp(uri, XRPC_WSAT_CALLBACK, strlen(XRPC_WSAT_CALLBACK)) == 0) {
+        (void) xrpc_handle_wsat_request(mc, arg);
     }
 
     /* clean up */
@@ -1373,6 +1476,7 @@ CMDrpcd_start(int *port, bit *open, str options)
     shttpd_register_url(XRPC_REQ_CALLBACK, xrpc_fork_mapiclient, NULL);
     shttpd_register_url(XRPC_DOC_CALLBACK, xrpc_fork_mapiclient, NULL);
     shttpd_register_url(XRPC_ADM_CALLBACK, xrpc_fork_mapiclient, NULL);
+    shttpd_register_url(XRPC_WSAT_CALLBACK, xrpc_fork_mapiclient, NULL);
 
     /* Open listening socket */
     ctx = shttpd_open_port(xrpc_port, *open);
@@ -1384,6 +1488,67 @@ CMDrpcd_start(int *port, bit *open, str options)
     return GDK_SUCCEED;
 }
 
+
+int
+CMDxrpc_2pc_wait_for_commit(str qid, str caller, lng* seqnr, ptr* handle) {
+    xrpc_commit_t *c = (xrpc_commit_t*) handle;
+    long now = GDKusec();
+
+    stream_printf(c->s, HTTP_200_OK);
+
+    if (c->mode && strstr(c->mode,"trace")) {
+        stream *logstream = xrpc_log_message("res", *seqnr);
+        if (logstream) c->s = attach_teestream(c->s, logstream);   
+    }
+    stream_printf(c->s, XRPC_WSAT_RES, c->mode?c->mode:"repeatable",
+                  qid, 0LL, caller, xrpc_hostname, xrpc_port, "Prepare", now - c->start, 2, "Prepared");
+    stream_printf(c->s, HTTP_200_OK);
+    stream_close(c->s);
+    stream_destroy(c->s); 
+
+    /* now start waiting for the commit request (handle_wsat_request deblocks us) */
+    c->start = now;
+    c->s = 0;
+    assert(xrpc_commit_active == NULL);
+    assert(strcmp(c->qid,qid) == 0);
+    xrpc_commit_active = c;
+    MT_down_sema(xrpc_commit_sema, "xrpc_2pc_wait_for_commit");
+    if (c->s == NULL) {
+        GDKerror("XRPC transaction %s aborted!", qid);
+        return GDK_FAIL;
+    }
+    return GDK_SUCCEED;
+}
+
+int
+CMDxrpc_2pc_confirm_commit(str qid, str caller, lng* seqnr, ptr* handle) {
+    xrpc_commit_t *c = (xrpc_commit_t*) handle;
+    long now = GDKusec();
+
+    stream_printf(c->s, HTTP_200_OK);
+
+    if (c->mode && strstr(c->mode,"trace")) {
+        stream* logstream = xrpc_log_message("res", *seqnr);
+        if (logstream) c->s = attach_teestream(c->s, logstream);   
+    }
+    stream_printf(c->s, XRPC_WSAT_RES, c->mode?c->mode:"repeatable",
+                  qid, 0LL, caller, xrpc_hostname, xrpc_port, "Commit", now - c->start, 3, "Committed");
+    stream_close(c->s);
+    stream_destroy(c->s); 
+
+    if (c->mode && strstr(c->mode,"trace")) {
+        /* hack: we had put Commit msg in qid so we can log it now with the right seqnr */
+        stream* logstream = xrpc_log_message("req", *seqnr);
+        if (logstream) {
+            stream_write(logstream, c->qid, 1, strlen(c->qid));
+            stream_close(logstream);
+            stream_destroy(logstream);
+        }
+    }
+    return GDK_SUCCEED;
+}
+
+
 @= xrpc_bat
     xrpc_@1 = BATnew(TYPE_void,ATOMindex("@2"),1024);
     assert(xrpc_@1);
@@ -1392,6 +1557,7 @@ CMDrpcd_start(int *port, bit *open, str options)
 @c
 BAT *xrpc_qids = NULL, *xrpc_statuses = NULL, *xrpc_timeouts = NULL, *xrpc_locks = NULL, *xrpc_wsbats = NULL;
 BAT *xrpc_trusted = NULL, *xrpc_admin = NULL, *xrpc_user = NULL;
+
 
 bat* xrpc_prelude(void) {
     @:xrpc_bat(qids,str)@
@@ -1403,6 +1569,7 @@ bat* xrpc_prelude(void) {
     @:xrpc_bat(admin,str)@
     @:xrpc_bat(user,str)@
     CMDmy_hostname(&xrpc_hostname);
+    MT_init_sema(xrpc_commit_sema,0, "XRPC_COMMIT_SEMA");
     assert(xrpc_hostname);
     return NULL;
 }

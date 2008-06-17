@@ -1038,7 +1038,7 @@ xrpc_startSerialize(XqueryCtx *ctx)
         BBPunfix(bid);
         if (ret < 0) return PROBLEM;
     }
-    ret = stream_printf(ctx->out, XRPC_RES_HEADER, ctx->xrpc_module, ctx->xrpc_method);
+    ret = stream_printf(ctx->out, XRPC_RES_BODY, ctx->xrpc_module, ctx->xrpc_method);
     return (ret < 0)?PROBLEM:SUCCESS;
 }
 

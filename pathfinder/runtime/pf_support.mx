@@ -3362,7 +3362,7 @@ bat[void, oid] attr_cont_ins): void
   do_update_end(ws, affected_conts);
 }
 
-PROC collect_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kind, bat[void,lng] int_values, bat[void,str] str_values) : void
+PROC collect_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] kind, bat[void,lng] int_values, bat[void,str] str_values) : bit
 {
   # convert MPS input to Algebra input
   var cmd := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).mirror().leftfetchjoin(item).leftfetchjoin(int_values); # [i,CMD]
@@ -3412,6 +3412,8 @@ PROC collect_update_tape(bat[void, bat] ws, bat[void, oid] item, bat[void, int] 
   ws.fetch(COLLECTED_PRE_CONT_INS).append(pre_cont_ins);
   ws.fetch(COLLECTED_ATTR_INS).append(attr_ins);
   ws.fetch(COLLECTED_ATTR_CONT_INS).append(attr_cont_ins);
+ 
+  return (count(cmd) > 0);
 }
 
 PROC execute_update_tape(bat[void, bat] ws) : void
@@ -3817,6 +3819,9 @@ PROC do_update_end(bat[void,bat] ws, bat[void,oid] affected_conts) : void
       newattr := vx_maintain(elemnids, elemqns, attrqns, attrvals);
     }
 
+    if (xrpc_qid != "") 
+      xrpc_confirm_commit(xrpc_qid, xrpc_caller, xrpc_seqnr, xrpc_hdl);
+
     var newtext;
     {
       var prop_text := ws.fetch(_PROP_TEXT).find(cont);
@@ -3866,18 +3871,6 @@ PROC mylog_delta(logger l, BAT[any,any] b, str nme) : void
 b.col_name(nme).print();
 }
 
-PROC do_2phase_commit() : void
-{
-  # write PRECOMMIT record
-  log_trans_precommit(pf_logger, xrpc_qid);
-
-  # now wait until we get an ABORT or a COMMIT message
-  xrpc_wait_for_commit(xrpc_qid);
-
-  if (abort) {
-    ERROR("transaction aborted!");
-  }
-}
 
 PROC do_log_updates(BAT[void,bat] ws, BAT[any,any] cont_order, BAT[oid,bit] map_pid_changed_bat) : void
 {
@@ -3949,11 +3942,15 @@ PROC do_log_updates(BAT[void,bat] ws, BAT[any,any] cont_order, BAT[oid,bit] map_
     if (ws_log_active)
       ws_log(ws, "commit-LOG_SIZE exec" + str(ws_logtime - (ws_logtime := usec()))); 
   }
+
+  # 2PC transactions report back here ("Prepared") and must wait for the final Commit
   if (xrpc_qid != "") {
-    do_2phase_commit(); # do the complete 2 phase commit stuff
-  } else {
-    log_trans_end(pf_logger); # write commit record in WAL: ==> THIS IS THE COMMIT POINT <==
-  }
+    log_trans_precommit(pf_logger); # write PRECOMMIT record
+    xrpc_wait_for_commit(xrpc_qid, xrpc_caller, xrpc_seqnr, xrpc_hdl);
+  } 
+
+  # write commit record in WAL: ==> THIS IS THE COMMIT POINT <==
+  log_trans_end(pf_logger); 
 
   if (ws_log_active)
     ws_log(ws, "commit-LOG_TRANS_END exec" + str(ws_logtime - usec()));
@@ -5834,8 +5831,10 @@ extern MT_Lock pf_runtime_lock[7];
 #define PF_MODE_UPDATE 2 /* updating query */
 #define PF_MODE_RETRY  3 /* updating query run for the second time (exclusive mode) */
 
-pf_support_export int xrpc_port;
-pf_support_export char *xrpc_hostname;
+pf_support_export int     xrpc_port;
+pf_support_export char*   xrpc_hostname;
+pf_support_export stream* xrpc_log_message(str msg, lng xrpc_seqnr);
+pf_support_export char*   xrpc_log_dir();
 
 #endif
 @c

@@ -11424,6 +11424,7 @@ const char* PFinitMIL(void) {
         "# variables that determine the behavior of XRPC queries\n"
         "var xrpc_qid := \"\";         # qid remains empty for non-2pc queries\n"
         "var xrpc_caller := \"\";      # qid is caller-id of the root of the XRPC tree\n"
+        "var xrpc_hdl := ptr(0);       # handle to link Prepare messages with Commit messages.\n"
         "var xrpc_seqnr := 0LL;        # if this query is an XRPC request, a session-unique nr\n" 
         "var xrpc_timeout := 30000LL;  # configurable usec timeout\n"
         "var xrpc_mode := \"none\";    # format: (none|repeatable)[-iterative][-trace]\n"
@@ -11557,20 +11558,20 @@ const char* PFstartMIL(int statement_type) {
         "  time_exec := time_print - time_start;\n"
 #define PF_STOPMIL_RDONLY_BODY\
         "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"\
-        "  if (xrpc_coord) xrpc_shredBAT;\n"\
         "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"\
         "   print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values,\n"\
-        "                xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,false,xrpc_seqnr,xrpc_timeout,time_start);\n"
+        "                xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,bit_nil,xrpc_seqnr,xrpc_timeout,time_start);\n"
 #define PF_STOPMIL_UPDATE_BODY\
-        "  if (xrpc_coord) xrpc_shredBAT;\n"\
-        "  if (xrpc_method != \"\") \n"\
-        "    print_result(genType,ws,empty_bat,empty_bat,empty_bat,bat(void,int),int_values,dbl_values,str_values,\n"\
-        "                  xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,true,xrpc_seqnr,xrpc_timeout,time_start);\n"\
+        "  var dirty := bit_nil;\n"\
         "  if (xrpc_qid != \"\") {\n"\
-        "    collect_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"\
+        "    dirty := collect_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"\
         "  } else {\n"\
         "    play_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"\
-        "  }\n"
+        "  }\n"\
+        "  if (xrpc_coord) xrpc_commit(xrpc_qid, xrpc_mode, xrpc_timeout, time_start, ws.find(XRPC_PARTICIPANTS));"\
+        "  if (xrpc_method != \"\") \n"\
+        "    print_result(genType,ws,empty_bat,empty_bat,empty_bat,bat(void,int),int_values,dbl_values,str_values,\n"\
+        "                  xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,dirty,xrpc_seqnr,xrpc_timeout,time_start);\n"
 #define PF_STOPMIL_DOCMGT_BODY\
         "  play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"
 #define PF_STOPMIL_RDONLY PF_STOPMIL_START\

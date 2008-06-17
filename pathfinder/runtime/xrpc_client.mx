@@ -76,6 +76,9 @@ the "AmbientDB" project.
         BAT[void, str] str_values) : BAT[void, bat] = CMDget_rpc_res;
 "Retrieve values from the response message and return as a iter|item|kind bat"
 
+.COMMAND xrpc_commit(str qid, str mode, BAT[void,str] participants) : void = CMDxrpc_2pc_commit;
+"coordinate a 2pc commit"
+
 .END xrpc_client;
 
 @mil
@@ -313,14 +316,6 @@ PROC doIterativeRPC(
     }
 
     var time_xrpcClntDeSeriaStart := usec();
-    var res_iter := bat(void,oid).seqbase(0@0);
-    var res_item := bat(void,oid).seqbase(0@0);
-    var res_kind := bat(void,int).seqbase(0@0);
-
-    res_bats := bat(void,bat,4).seqbase(0@0);
-    res_bats.append(res_iter).append(res_item).append(res_kind);
-    res_bats.access(BAT_READ);
-
     time_xrpcClntDeSeria := time_xrpcClntDeSeria + (usec() - time_xrpcClntDeSeriaStart);
 
     if (genType.search("timing") >= 0) {
@@ -439,7 +434,7 @@ CMDget_rpc_res(BAT **res,
                                     if (err) break;
 
                                     /* set the correct iteration number */
-                                    while (j == (unsigned)argcnt[it]) { 
+                                    while (j == (unsigned) argcnt[it]) { 
                                         j=0; it++; 
                                     }
                                     BUNappend(res_iter, &it, FALSE);
@@ -905,19 +900,19 @@ byvalue_request(
         return clean_up(bs, argcnt, iterc);
 
     if(qid && *qid) { /* an XRPC query that requires 2PC */
-        ret = stream_printf(bs, "<env:Header>" XRPC_WS_QID "</env:Header>" , qid, timeout);
+        ret = stream_printf(bs, "<env:Header>" XRPC_WS_QID "</env:Header>" , qid, timeout, rpc_mode);
         if (ret < 0) 
             return clean_up(bs, argcnt, iterc);
     }
 
     if(firstCaller) {
-        ret = stream_printf(bs, XRPC_REQ_HEADER_FIRST_CALLER,
+        ret = stream_printf(bs, XRPC_REQ_BODY_FIRST_CALLER,
                 rpc_module, rpc_uri, rpc_method, arity, iterc,
-                rpc_mode, updCall?"true":"false");
+                updCall?"true":"false");
     } else {
-        ret = stream_printf(bs, XRPC_REQ_HEADER, rpc_module, rpc_uri,
+        ret = stream_printf(bs, XRPC_REQ_BODY, rpc_module, rpc_uri,
                 rpc_method, arity, iterc, xrpc_hostname, xrpc_port,
-                seqnr, rpc_mode, updCall?"true":"false");
+                seqnr, updCall?"true":"false");
     }
     if (ret < 0) 
         return clean_up(bs, argcnt, iterc);
@@ -1239,5 +1234,119 @@ CMDhttp_post(
     if(!shredBAT) return GDK_FAIL;
     *res = shredBAT;
     return GDK_SUCCEED;
+}
+
+
+
+/* send a WSAT request */
+static int
+xrpc_2pc_send(int sock, char* dst, int port, str msg) { 
+    stream *out = NULL;
+    
+    if (!(out = socket_wastream(sock, "http_send"))) {
+        GDKerror("xrpc_2pc_commit: failed to create socket_wastream for sending XRPC request\n");
+        return GDK_FAIL;
+    }
+    if (stream_printf(out,
+            "POST %s HTTP/1.1\r\n"
+            "Host: %s:%d\r\n"
+            "Accept: text/html, text/xml, application/soap+xml\r\n"
+            "Accept-Language: en-uk en-us\r\n"
+            "Content-Type: text/html; charset=\"utf-8\"\r\n"
+            "Content-Length: " SZFMT "\r\n\r\n"
+            XRPC_WSAT_CALLBACK, dst, port, strlen(msg), msg) < 0) 
+    {
+        GDKerror("xrpc_2pc_commit: failed to send XRPC request header.");
+        return GDK_FAIL;
+    }
+    if (stream_write(out, msg, 1, strlen(msg)) < 0) {
+        GDKerror("xrpc_2pc_commit: failed to send XRPC request.");
+        return GDK_FAIL;
+    }
+    stream_close(out);
+    stream_destroy(out);
+    return GDK_SUCCEED;
+}
+
+/* get a WSAT response */
+static int
+xrpc_2pc_recv(int sock, char* dst, int port, str msg) { 
+    stream *in = NULL;
+    BAT* shredBAT;
+    int ret = GDK_FAIL;
+
+    if( !(in = socket_rastream(sock, "http_receive")) ){
+        GDKerror("do_simple_query: failed to create socket_rastream\n");
+        return GDK_FAIL;
+    }
+    shredBAT = response2bat(0, in, dst, port, 0);
+    if (shredBAT) {
+        BATiter si = bat_iterator(shredBAT);
+        BAT *qn_uri_loc = BATdescriptor(*(bat*) BUNtail(si, QN_URI_LOC));
+        if (qn_uri_loc) {
+            if (BUNfnd(qn_uri_loc, msg)) ret = GDK_SUCCEED;
+            BBPunfix(qn_uri_loc->batCacheid);
+        }
+    }
+    BBPreclaim(shredBAT);
+    stream_close(in);
+    stream_destroy(in);
+    return ret;
+}
+    
+int
+CMDxrpc_2pc_commit(str qid, str mode, lng* xrpc_timeout, lng* time_start, BAT* participants) {
+    int i, j, ret=GDK_FAIL, cnt=0, npart = BATcount(participants);
+    str *part = (str*) alloca(npart*sizeof(npart));
+    int *port = (int*) alloca(npart*sizeof(int));
+    int *sock = (int*) alloca(npart*sizeof(int)), xrpc_updating;
+    char dst[1024], msg[1024], *r; 
+    BATiter pi = bat_iterator(participants);
+    BUN p,q;
+  
+    /* get all URIs of peers that performed updates */ 
+    BATloop(participants, p, q) {
+        str s = (str) BUNtail(pi, p); 
+        if (sscanf(s, "%[^','],%[^','],%[^','],%s,%d", 
+                   msg, dst, msg, msg, &xrpc_updating) != 5 
+            || (r=strrchr(dst,':')) == NULL) 
+        {
+            GDKerror("draw_queryflow: sscanf failed");
+            goto cleanup;
+        }
+        if (xrpc_updating == 1) { /* a request that did updates */
+            *r = 0;
+            for(i=0; i<cnt; i++) 
+                if (strcmp(part[i],dst) == 0) break;
+
+            if (i == cnt) { /* not already in the list? */
+                char* p = strchr(part[i] = GDKstrdup(dst), ':');
+                port[i] = 80;
+                if (p) { *p = 0; port[i] = atoi(p+1); }
+                if ((sock[i] = setup_connection(part[i], port+i)) < 0) goto cleanup;
+                cnt++;
+            }
+        }
+    }
+
+    /* create Prepare and Commit SOAP messages */
+    snprintf(msg, 1024, XRPC_WSAT_REQ, mode, qid, *xrpc_timeout - (GDKusec() - *time_start), "Prepare");
+    for(i=0; i<cnt; i++) 
+       if (xrpc_2pc_send(sock[i], part[i], port[i], msg) == GDK_FAIL) break;
+    for(j=0; j<i; j++) 
+       if (xrpc_2pc_recv(sock[j], part[j], port[j], WSAT_NS"|Prepared") == GDK_FAIL) break;
+
+    if (j == cnt) ret = GDK_SUCCEED;
+    snprintf(msg, 1024, XRPC_WSAT_REQ, mode, qid, *xrpc_timeout - (GDKusec() - *time_start), (ret == GDK_SUCCEED) ? "Commit" : "Abort");
+    for(j=0; j<cnt; j++) 
+       if (xrpc_2pc_send(sock[j], part[j], port[j], msg) == GDK_FAIL) ret = GDK_FAIL;
+    for(i=0; i<j; i++) 
+       if (xrpc_2pc_recv(sock[i], part[i], port[i], WSAT_NS"|Committed") == GDK_FAIL) ret = GDK_FAIL;
+cleanup:
+    for(i=0; i<cnt; i++) {
+        if (part[i]) GDKfree(part[i]);
+        if (sock[i] >= 0) close(sock[i]);
+    }
+    return ret;
 }
 /* vim:set shiftwidth=4 expandtab: */

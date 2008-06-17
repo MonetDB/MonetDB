@@ -303,8 +303,6 @@ xquery_print_result_driver (
     lng                *xrpc_timeout,
     lng                *time_exec);
 
-stream* xquery_print_trace(str msg, lng seqnr);
-
 #endif /* SERIALIZE_H */
 @c
 
@@ -316,6 +314,7 @@ stream* xquery_print_trace(str msg, lng seqnr);
 #include <pf_config.h>
 #include "serialize.h"
 #include "pf_support.h"
+#include "xrpc_server.h"
 
 /**
  *
@@ -1978,36 +1977,6 @@ xquery_print_result_driver (
     return GDK_SUCCEED;
 }
 
-char xrpc_logdir_buf[1024], *xrpc_logdir = NULL;
-static char* get_xrpc_logdir() {
-    char *logdir;
-    if (xrpc_logdir == NULL && (logdir = GDKgetenv("datadir")) != NULL) {
-        snprintf(xrpc_logdir_buf, 1024, "%s%cMonetDB%cxrpc%clogs%c", logdir, DIR_SEP, DIR_SEP, DIR_SEP, DIR_SEP);
-        if (GDKcreatedir(xrpc_logdir_buf)) {
-            xrpc_logdir = xrpc_logdir_buf;
-        } else {
-            GDKerror("get_xrpc_logdir: directory %s not writable.", xrpc_logdir_buf);
-        }
-    }
-    return xrpc_logdir;
-}
-
-stream*
-xquery_print_trace(str msg, lng xrpc_seqnr) {
-    char logfile[1024], *logdir = get_xrpc_logdir();
-    stream* fp = NULL;
-    if (logdir) {
-        snprintf(logfile, 1024, "%s%s_" LLFMT ".xml", logdir, msg, xrpc_seqnr);
-        fp = open_wastream(logfile);
-    }
-    if (!fp || stream_errnr(fp)) {
-        GDKerror("print_result: could not open logfile for writing\n");
-        if (fp) stream_destroy(fp);
-        return NULL;
-    }
-    return fp;
-}
-
 int
 draw_queryflow(
         int xrpc_updating,
@@ -2018,7 +1987,7 @@ draw_queryflow(
 {
     int ret = 0;
     stream *s = NULL;
-    char *ptr = NULL, *logdir = get_xrpc_logdir();
+    char *ptr = NULL, *logdir = xrpc_log_dir();
     char base_name[2048], dotFile[2052], caller[1024], dst[1024];
     char dstNID[1024], fcn[1024], time[64], *seqnr = NULL;
     char dotcmd[1024];
@@ -2026,7 +1995,7 @@ draw_queryflow(
     BATiter bi;
 
     if (logdir == NULL) return GDK_FAIL;
-    snprintf(base_name, 2048, "%sqflow_"LLFMT, logdir, xrpc_seqnr);
+    snprintf(base_name, 2048, "%s%cqflow_"LLFMT, logdir, DIR_SEP, xrpc_seqnr);
     snprintf(dotFile, 2048, "%s.dot", base_name);
 
     /* replace all non-alpha-numeric chars in the string with '_', so
@@ -2052,7 +2021,7 @@ draw_queryflow(
             " query->%s_"LLFMT"[headURL=\"http://%s:%d/logs/req_"LLFMT".xml\"]\n"
             " %s_"LLFMT"->query[label=\""LLFMT"ms\",headURL=\"http://%s:%d/logs/res_"LLFMT".xml\"]\n\n",
             dstNID,
-            xrpc_updating?"orange":".7 .3 1.0",
+            (xrpc_updating==1)?"orange":(xrpc_updating==2)?"red":(xrpc_updating==3)?"green":".7 .3 1.0",
             xrpc_hostname, xrpc_port,
             dstNID, xrpc_seqnr, xrpc_method,
             dstNID, xrpc_seqnr, xrpc_hostname, xrpc_port, xrpc_seqnr,
@@ -2060,7 +2029,7 @@ draw_queryflow(
 
     bi = bat_iterator(participants);
     BATloop(participants, p, q) {
-        if (sscanf(BUNtail(bi,p), "%[^','],%[^','],%[^','],%[^','],%d", caller, dst, fcn, time, &xrpc_updating) != 5) {
+        if (sscanf(BUNtail(bi,p), "%[^','],%[^','],%[^','],%s,%d", caller, dst, fcn, time, &xrpc_updating) != 5) {
             GDKerror("draw_queryflow: sscanf failed");
             stream_destroy(s);
             return GDK_FAIL;
@@ -2092,7 +2061,7 @@ draw_queryflow(
                 " %s->%s_%s[headURL=\"http://%s/logs/req_%s.xml\"]\n"
                 " %s_%s->%s[label=\"%sms\",headURL=\"http://%s/logs/res_%s.xml\"]\n\n",
                 dstNID,
-                xrpc_updating?"orange":".7 .3 1.0",
+                (xrpc_updating==1)?"orange":(xrpc_updating==2)?"red":(xrpc_updating==3)?"green":".7 .3 1.0",
                 dst,
                 dstNID, seqnr, fcn,
                 caller, dstNID, seqnr, dst, seqnr,
@@ -2109,6 +2078,39 @@ draw_queryflow(
     }
 
     return GDK_SUCCEED;
+}
+
+
+char xrpc_logdir_buf[1024], *xrpc_logdir = NULL;
+char*
+xrpc_log_dir() {
+    char *logdir;
+    if (xrpc_logdir == NULL && (logdir = GDKgetenv("datadir")) != NULL) {
+        snprintf(xrpc_logdir_buf, 1024, "%s%cMonetDB%cxrpc%clogs%c", logdir, DIR_SEP, DIR_SEP, DIR_SEP, DIR_SEP);
+        if (GDKcreatedir(xrpc_logdir_buf)) {
+            xrpc_logdir = xrpc_logdir_buf;
+        } else {
+            GDKerror("get_xrpc_logdir: directory %s not writable.", xrpc_logdir_buf);
+        }
+    }
+    return xrpc_logdir;
+}
+
+
+stream*
+xrpc_log_message(str msg, lng xrpc_seqnr) {
+    char logfile[1024], *logdir = xrpc_log_dir();
+    stream* fp = NULL;
+    if (logdir) {
+        snprintf(logfile, 1024, "%s%s_" LLFMT ".xml", logdir, msg, xrpc_seqnr);
+        fp = open_wastream(logfile);
+    }
+    if (!fp || stream_errnr(fp)) {
+        GDKerror("print_result: could not open logfile for writing\n");
+        if (fp) stream_destroy(fp);
+        return NULL;
+    }
+    return fp;
 }
 
 int 
@@ -2144,7 +2146,7 @@ xquery_print_result_DRIVER (
     lng time_exec = (GDKusec() - *xrpc_start) / 1000;
 
     if (trace) {
-        stream* logstream = xquery_print_trace("res",*xrpc_seqnr);
+        stream* logstream = xrpc_log_message("res",*xrpc_seqnr);
         fp = logstream?attach_teestream(fp, logstream):NULL;
         if (fp == NULL) return GDK_FAIL;
         if (strcmp(xrpc_caller, "query") == 0) {
