@@ -15,6 +15,12 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_296522C11FB24C8BA89B33E429045489"
+        "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_2FB9A57E3DD7443F97A7C8B0DBF82DB5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -41,12 +47,6 @@
         {
         "MsmKey" = "8:_5CCCB992693C48C0BFEF4B0EFBBD884A"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_69AD457DA62B4E09B507155023809C3D"
-        "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -493,14 +493,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB ODBC Driver"
-        "ProductCode" = "8:{BE5FBDDC-D09B-4771-941D-234073CC8AE9}"
-        "PackageCode" = "8:{4F9763E6-805F-4475-9F5C-22C185D9E417}"
+        "ProductCode" = "8:{2E961C0B-64C3-4FB9-8EA9-B6699FB7912C}"
+        "PackageCode" = "8:{C303949A-A505-4338-8F37-304ED164357E}"
         "UpgradeCode" = "8:{95ACBC8C-BC4B-4901-AF70-48B54A5C20F7}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:8.6.13"
+        "ProductVersion" = "8:8.6.17"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -1129,11 +1129,11 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_3517E482BC7F4EFC88537C979178E768"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_296522C11FB24C8BA89B33E429045489"
             {
             "UseDynamicProperties" = "11:TRUE"
-            "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files (x86)\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86_x64.msm"
+            "IsDependency" = "11:TRUE"
+            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86_x64.msm"
                 "Properties"
                 {
                 }
@@ -1143,11 +1143,11 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_69AD457DA62B4E09B507155023809C3D"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_3517E482BC7F4EFC88537C979178E768"
             {
             "UseDynamicProperties" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86_x64.msm"
+            "IsDependency" = "11:FALSE"
+            "SourcePath" = "8:C:\\Program Files (x86)\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86_x64.msm"
                 "Properties"
                 {
                 }
