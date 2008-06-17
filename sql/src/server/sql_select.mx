@@ -1927,7 +1927,7 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 		dnode *n = js->data.lval->h;
 
 		matching_columns = list_create(NULL);
-		s = stmt_reljoin_init();
+		s = stmt_releqjoin_init();
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
 
@@ -1954,7 +1954,7 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 			}
 			list_append(matching_columns, lc);
 			list_append(matching_columns, rc);
-			stmt_reljoin_fill(s, ls, rs);
+			stmt_releqjoin_fill(s, ls, rs);
 		}
 	} else {		/* ! js -> natural join */
 		node *m;
@@ -1967,7 +1967,7 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 			return sql_error(sql, 02, "JOIN: no columns of tables '%s' and '%s' match", tv1->tname, tv2->tname);
 		}
 
-		s = stmt_reljoin_init();
+		s = stmt_releqjoin_init();
 		for (m = matching_columns->h; m; m = m->next->next) {
 			cvar *lc = m->data;
 			cvar *rc = m->next->data;
@@ -1987,7 +1987,7 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 				list_destroy(matching_columns);
 				return NULL;
 			}
-			stmt_reljoin_fill(s, ls, rs);
+			stmt_releqjoin_fill(s, ls, rs);
 		}
 	}
 
@@ -2269,7 +2269,7 @@ sql_except(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 		rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a, 1); 
 
 		/* now find the matching groups */
-		s = stmt_reljoin_init();
+		s = stmt_releqjoin_init();
 		for (n = tv1->columns->h, m = tv2->columns->h; n && m; n = n->next, m = m->next) {
 			cvar *lc = n->data;
 			cvar *rc = m->data;
@@ -2290,7 +2290,7 @@ sql_except(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 			}
 			l = stmt_join(stmt_dup(lgrp->ext), l, cmp_equal);
 			r = stmt_join(stmt_dup(rgrp->ext), r, cmp_equal);
-			stmt_reljoin_fill(s, l, r);
+			stmt_releqjoin_fill(s, l, r);
 		}
 		
 		/* the join of the groups removed those in A but not in B,
@@ -2379,7 +2379,7 @@ sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 		rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a, 1); 
 
 		/* now find the matching groups */
-		s = stmt_reljoin_init();
+		s = stmt_releqjoin_init();
 		for (n = tv1->columns->h, m = tv2->columns->h; n && m; n = n->next, m = m->next) {
 			cvar *lc = n->data;
 			cvar *rc = m->data;
@@ -2400,7 +2400,7 @@ sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 			}
 			l = stmt_join(stmt_dup(lgrp->ext), l, cmp_equal);
 			r = stmt_join(stmt_dup(rgrp->ext), r, cmp_equal);
-			stmt_reljoin_fill(s, l, r);
+			stmt_releqjoin_fill(s, l, r);
 		}
 		
 		if (!distinct) {

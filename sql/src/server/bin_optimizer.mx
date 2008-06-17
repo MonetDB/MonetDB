@@ -205,7 +205,7 @@ is_reduced( stmt *s )
 	case st_uselect2:
 	case st_semijoin:
 	case st_limit:
-	case st_reljoin:
+	case st_releqjoin:
 	case st_join2:
 		return 1;
 
@@ -513,7 +513,6 @@ bin_optimizer(mvc *c, stmt *s)
 	case st_temp:
 	case st_filter:
 	case st_diff:
-	case st_intersect:
 	case st_union:
 	case st_outerjoin:
 	case st_mirror:
@@ -607,7 +606,7 @@ bin_optimizer(mvc *c, stmt *s)
 		return res;
 	}
 
-	case st_reljoin:
+	case st_releqjoin:
 	case st_relselect:
 
 	case st_pivot:

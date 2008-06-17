@@ -124,13 +124,12 @@ tailcolumn(stmt *st)
 	switch (st->type) {
 	case st_join:
 	case st_outerjoin:
-	case st_intersect:
 	case st_reorder:
 		return tailcolumn(st->op2.stval);
 
 	case st_join2:
 		return tailcolumn(st->op2.stval);
-	case st_reljoin:
+	case st_releqjoin:
 		return tailcolumn(st->op2.lval->h->data);
 
 	case st_semijoin:
@@ -204,12 +203,7 @@ select_count(stmt *s)
 	case st_column:
 	case st_alias:
 		return 0;
-/*
-		return select_count(s->op1.stval);
-*/
-	case st_intersect:
-		return select_count(s->op1.stval ) + select_count(s->op2.stval);
-	case st_reljoin:{
+	case st_releqjoin:{
 		int sc = 0;
 		node *n = NULL;
 
@@ -219,6 +213,17 @@ select_count(stmt *s)
 		for (n = s->op2.lval->h; n; n = n->next) {
 			sc += select_count(n->data);
 		}
+		return sc;
+	}
+	case st_reljoin:{
+		int sc = 0;
+		node *n = NULL;
+
+		if (s->op1.stval)
+			sc += select_count(s->op1.stval);
+		if (s->op2.lval)
+			for (n = s->op2.lval->h; n; n = n->next) 
+				sc += select_count(n->data);
 		return sc;
 	}
 	case st_join:
@@ -332,111 +337,54 @@ data_cmp(void *d, void *k)
 	return -1;
 }
 
-#define TYPE_JOIN(type)  (type == st_join || type == st_join2 || type == st_reljoin)
-
 static stmt *
-stmt_intersect(stmt *op1, stmt *op2)
+releqjoin2select( stmt *rj )
 {
-	stmt *res = NULL;
-	int reverse = 0;
+	node *n1 = rj->op1.lval->h;
+	node *n2 = rj->op2.lval->h;
 
-	while (op1->type == st_reverse) {
-		stmt *r = op1;
+	stmt *cmp, *le, *re;
 
-		op1 = stmt_dup(op1->op1.stval);
-		stmt_destroy(r);
+	le = stmt_dup(n1->data);
+	re = stmt_dup(n2->data);
+	cmp = stmt_uselect(le, re, cmp_equal);
+	for(n1 = n1->next, n2 = n2->next; 
+	    n1 && n2; n1 = n1->next, n2 = n2->next) {
+		le = stmt_semijoin(stmt_dup(n1->data), stmt_dup(cmp));
+		re = stmt_semijoin(stmt_dup(n2->data), cmp);
+		cmp = stmt_uselect(le, re, cmp_equal);
 	}
-	while (op2->type == st_reverse) {
-		stmt *r = op2;
-
-		op2 = stmt_dup(op2->op1.stval);
-		stmt_destroy(r);
-	}
-	if (op1->h != op2->h) {
-		reverse = 1;
-	}
-	assert((TYPE_JOIN(op1->type)) && (TYPE_JOIN(op2->type)));
-
-	/* only keep the join, ie forget about the cross product */
-	if (TYPE_JOIN(op1->type) && op1->flag == cmp_all) {
-		stmt_destroy(op1);
-		return op2;
-	} else if (TYPE_JOIN(op2->type) && op2->flag == cmp_all) {
-		stmt_destroy(op2);
-		return op1;
-	}
-
-	/* this case should have been transformed into a proper
-	   multi-att join ("st_reljoin") by push_selects_down()
-	 */
-	assert(!(op1->type == st_reljoin && op2->type == st_reljoin));
-	assert(op1->type != st_idxbat && op2->type != st_idxbat);
-
-	/*
-	 * need to add the mark trick as [].select(true) on tables
-	 * without unique head identifiers + semijoin is wrong
-	 */
-	if (!reverse) {
-		stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
-		stmt *mr = stmt_mark(stmt_dup(op1), 50);
-		stmt *l = stmt_join(stmt_dup(ml),
-			    	stmt_dup(op2->op1.stval), cmp_equal);
-		if (op2->type == st_join2) {
-			stmt *r1 = stmt_join(stmt_dup(mr),
-				    	stmt_dup(op2->op2.stval), cmp_equal);
-			stmt *r2 = stmt_join(stmt_dup(mr),
-				    	stmt_dup(op2->op3.stval), cmp_equal);
-			comp_type c1 = op2->flag&2 ? cmp_gte : cmp_gt;
-			comp_type c2 = op2->flag&1 ? cmp_lte : cmp_lt;
-			stmt *v1 = stmt_uselect(l, r1, c1);
-			stmt *v2 = stmt_uselect(stmt_dup(l), r2, c2);
-			
-			ml = stmt_semijoin(ml, v1);
-			ml = stmt_semijoin(ml, v2);
-			res = stmt_join(stmt_reverse(ml), mr, cmp_equal);
-		} else {
-			stmt *r = stmt_join(stmt_dup(mr),
-				    	stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
-			stmt *v = stmt_uselect(l, r, (comp_type) op2->flag);
-	
-			res = stmt_join(stmt_reverse(stmt_semijoin(ml, v)), mr, cmp_equal);
-		}
-	} else {		/* reverse */
-		if (op2->type == st_join2) {
-			stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
-			stmt *mr = stmt_mark(stmt_dup(op1), 50);
-			stmt *l = stmt_join(stmt_dup(mr),
-				    	stmt_dup(op2->op1.stval), cmp_equal);
-			stmt *r1 = stmt_join(stmt_dup(ml),
-				    	stmt_dup(op2->op2.stval), cmp_equal);
-			stmt *r2 = stmt_join(stmt_dup(ml),
-				    	stmt_dup(op2->op3.stval), cmp_equal);
-			comp_type c1 = op2->flag&2 ? cmp_gte : cmp_gt;
-			comp_type c2 = op2->flag&1 ? cmp_lte : cmp_lt;
-			stmt *v1 = stmt_uselect(l, r1, c1);
-			stmt *v2 = stmt_uselect(stmt_dup(l), r2, c2);
-	
-			ml = stmt_semijoin(ml, v1);
-			ml = stmt_semijoin(ml, v2);
-			res = stmt_join(stmt_reverse(ml), mr, cmp_equal);
-		} else {
-			stmt *ml = stmt_mark(stmt_reverse(stmt_dup(op1)), 50);
-			stmt *mr = stmt_mark(stmt_dup(op1), 50);
-			stmt *l = stmt_join(stmt_dup(mr),
-				    	stmt_dup(op2->op1.stval), cmp_equal);
-			stmt *r = stmt_join(stmt_dup(ml),
-				    	stmt_reverse(stmt_dup(op2->op2.stval)), cmp_equal);
-			stmt *v = stmt_uselect(l, r, (comp_type) op2->flag);
-	
-			res = stmt_join(stmt_reverse(stmt_semijoin(ml, v)), mr, cmp_equal);
-		}
-	}
-
-	stmt_destroy(op1);
-	stmt_destroy(op2);
-	return res;
+	return cmp;
 }
 
+static stmt * stmt_join2select(stmt *j);
+static stmt *
+stmt_join2select_(stmt *j)
+{
+	return stmt_join2select(stmt_dup(j));
+}
+
+static stmt *
+reljoin2select( stmt *joins )
+{
+	stmt *join = NULL;
+	stmt *releqjoin = joins->op1.stval;
+	list *nqjoins = joins->op2.lval;
+
+	if (releqjoin) 
+		join = stmt_join2select(stmt_dup(releqjoin));
+
+	if (list_length(nqjoins)) {
+		list *sels = list_map(nqjoins, NULL, (fmap) &stmt_join2select_);
+		stmt *nj = (stmt *) list_reduce(sels, (freduce) &stmt_semijoin, (fdup) &stmt_dup);
+		if (join)
+			join = stmt_semijoin(join, nj);
+		else
+			join = nj;
+		list_destroy(sels);
+	}
+	return join;
+}
 
 static stmt *stmt_push_down_tail(stmt *join, stmt *select);
 static stmt *
@@ -444,7 +392,7 @@ stmt_push_down_head(stmt *join, stmt *select)
 {
 	stmt *res = NULL;
 
-	if (join->type == st_reljoin) {
+	if (join->type == st_releqjoin) {
 		list *l1 = create_stmt_list();
 		list *l2 = list_dup(join->op2.lval, (fdup) &stmt_dup);
 		node *n;
@@ -454,18 +402,30 @@ stmt_push_down_head(stmt *join, stmt *select)
 		}
 		stmt_destroy(select);
 		stmt_destroy(join);
-		return stmt_reljoin2(l1, l2);
+		return stmt_releqjoin2(l1, l2);
+	} else if (join->type == st_reljoin) {
+		stmt *reljoin = NULL;
+		list *l2 = NULL;
+		node *n;
+
+		if (join->op1.stval)
+			reljoin = stmt_push_down_head(stmt_dup(join->op1.stval), stmt_dup(select));
+
+		if (join->op2.lval) {
+			l2 = create_stmt_list();
+			for (n = join->op2.lval->h; n; n = n->next) {
+				l2 = list_append(l2, stmt_push_down_head(stmt_dup(n->data), stmt_dup(select)));
+			}
+		}
+		stmt_destroy(select);
+		stmt_destroy(join);
+		return stmt_reljoin(reljoin, l2);
 	} else if (join->type == st_join) {
 		res = stmt_join(stmt_push_down_head(stmt_dup(join->op1.stval), select), stmt_dup(join->op2.stval), (comp_type) join->flag);
 		stmt_destroy(join);
 		return res;
 	} else if (join->type == st_join2) {
 		res = stmt_join2(stmt_push_down_head(stmt_dup(join->op1.stval), select), stmt_dup(join->op2.stval), stmt_dup(join->op3.stval), join->flag);
-		stmt_destroy(join);
-		return res;
-	} else if (join->type == st_intersect) {
-		res = stmt_intersect(stmt_push_down_head(stmt_dup(join->op1.stval), select), stmt_push_down_head(stmt_dup(join->op2.stval), stmt_dup(select))
-		    );
 		stmt_destroy(join);
 		return res;
 	} else if (join->type == st_reverse) {
@@ -531,7 +491,7 @@ stmt_push_down_tail(stmt *join, stmt *select)
 {
 	stmt *res;
 
-	if (join->type == st_reljoin) {
+	if (join->type == st_releqjoin) {
 		list *l1 = list_dup(join->op2.lval, (fdup) &stmt_dup);
 		list *l2 = create_stmt_list();
 		node *n;
@@ -541,19 +501,30 @@ stmt_push_down_tail(stmt *join, stmt *select)
 		}
 		stmt_destroy(select);
 		stmt_destroy(join);
-		return stmt_reljoin2(l1, l2);
+		return stmt_releqjoin2(l1, l2);
+	} else if (join->type == st_reljoin) {
+		stmt *reljoin = NULL;
+		list *l2 = NULL;
+		node *n;
+
+		if (join->op1.stval)
+			reljoin = stmt_push_down_tail(stmt_dup(join->op1.stval), stmt_dup(select));
+
+		if (join->op2.lval) {
+			l2 = create_stmt_list();
+			for (n = join->op2.lval->h; n; n = n->next) {
+				l2 = list_append(l2, stmt_push_down_tail(stmt_dup(n->data), stmt_dup(select)));
+			}
+		}
+		stmt_destroy(select);
+		stmt_destroy(join);
+		return stmt_reljoin(reljoin, l2);
 	} else if (join->type == st_join) {
 		res = stmt_join(stmt_dup(join->op1.stval), stmt_push_down_tail(stmt_dup(join->op2.stval), select), (comp_type) join->flag);
 		stmt_destroy(join);
 		return res;
 	} else if (join->type == st_join2) {
 		res = stmt_join2(stmt_dup(join->op1.stval), stmt_reverse(stmt_push_down_tail(stmt_reverse(stmt_dup(join->op2.stval)), select)), stmt_reverse(stmt_push_down_tail(stmt_reverse(stmt_dup(join->op3.stval)), select)), join->flag);
-		stmt_destroy(join);
-		return res;
-	} else if (join->type == st_intersect) {
-		select = stmt_dup(select);
-		res = stmt_intersect(stmt_push_down_tail(stmt_dup(join->op1.stval), select), stmt_push_down_tail(stmt_dup(join->op2.stval), select)
-		    );
 		stmt_destroy(join);
 		return res;
 	} else if (join->type == st_reverse) {
@@ -604,7 +575,7 @@ static stmt *
 stmt_push_join_head(stmt *s, stmt *join)
 {
 	/* found target of push-down: a [rel]join */
-	if (s->type == st_reljoin) {
+	if (s->type == st_releqjoin) {
 		list *l1 = create_stmt_list();
 		list *l2 = list_dup(s->op2.lval, (fdup) &stmt_dup);
 		node *n;
@@ -614,7 +585,27 @@ stmt_push_join_head(stmt *s, stmt *join)
 		}
 		stmt_destroy(join);
 		stmt_destroy(s);
-		return stmt_reljoin2(l1, l2);
+		return stmt_releqjoin2(l1, l2);
+	} else if (s->type == st_reljoin) {
+		stmt *reljoin = NULL;
+		list *l2 = NULL;
+		node *n;
+
+		if (s->op1.stval)
+			reljoin = stmt_push_join_head(stmt_dup(s->op1.stval), stmt_dup(join));
+
+		if (s->op2.lval) {
+			l2 = create_stmt_list();
+			for (n = s->op2.lval->h; n; n = n->next) {
+				stmt *j = stmt_dup(n->data);
+				stmt *nj = stmt_push_join_head(j, stmt_dup(join));
+
+				l2 = list_append(l2, nj);
+			}
+		}
+		stmt_destroy(join);
+		stmt_destroy(s);
+		return stmt_reljoin(reljoin, l2);
 	} else if (s->type == st_join) {
 		stmt *op1 = stmt_join(join, stmt_dup(s->op1.stval), cmp_equal);
 		stmt *res = stmt_join(op1, stmt_dup(s->op2.stval), (comp_type) s->flag);
@@ -633,12 +624,6 @@ stmt_push_join_head(stmt *s, stmt *join)
 	/* recursively proceed push-down/search for join through some operations */
 	} else if (s->type == st_reverse) {
 		stmt *res = stmt_reverse(stmt_push_join_tail(stmt_dup(s->op1.stval), stmt_reverse(join)));
-
-		stmt_destroy(s);
-		return res;
-	} else if (s->type == st_intersect) {
-		stmt *res = stmt_intersect(stmt_push_join_head(stmt_dup(s->op1.stval), join),
-					   stmt_push_join_head(stmt_dup(s->op2.stval), stmt_dup(join)));
 
 		stmt_destroy(s);
 		return res;
@@ -707,7 +692,7 @@ static stmt *
 stmt_push_join_tail(stmt *s, stmt *join)
 {
 	/* found target of push-down: a [rel]join */
-	if (s->type == st_reljoin) {
+	if (s->type == st_releqjoin) {
 		list *l1 = list_dup(s->op1.lval, (fdup) &stmt_dup);
 		list *l2 = create_stmt_list();
 		node *n;
@@ -717,7 +702,27 @@ stmt_push_join_tail(stmt *s, stmt *join)
 		}
 		stmt_destroy(s);
 		stmt_destroy(join);
-		return stmt_reljoin2(l1, l2);
+		return stmt_releqjoin2(l1, l2);
+	} else if (s->type == st_reljoin) {
+		stmt *reljoin = NULL;
+		list *l2 = NULL;
+		node *n;
+
+		if (s->op1.stval)
+			reljoin = stmt_push_join_tail(stmt_dup(s->op1.stval), stmt_dup(join));
+
+		if (s->op2.lval) {
+			l2 = create_stmt_list();
+			for (n = s->op2.lval->h; n; n = n->next) {
+				stmt *j = stmt_dup(n->data);
+				stmt *nj = stmt_push_join_tail(j, stmt_dup(join));
+
+				l2 = list_append(l2, nj);
+			}
+		}
+		stmt_destroy(join);
+		stmt_destroy(s);
+		return stmt_reljoin(reljoin, l2);
 	} else if (s->type == st_join) {
 		stmt *op2 = stmt_join(stmt_dup(s->op2.stval), join, cmp_equal);
 		stmt *res = stmt_join(stmt_dup(s->op1.stval), op2,
@@ -742,13 +747,6 @@ stmt_push_join_tail(stmt *s, stmt *join)
 		return res;
 	} else if (s->type == st_reverse) {
 		stmt *res = stmt_reverse(stmt_push_join_head(stmt_dup(s->op1.stval), stmt_reverse(join)));
-
-		stmt_destroy(s);
-		return res;
-	} else if (s->type == st_intersect) {
-		stmt *res = stmt_intersect(stmt_push_join_tail(stmt_dup(s->op1.stval), join),
-					   stmt_push_join_tail(stmt_dup(s->op2.stval), stmt_dup(join))
-		    );
 
 		stmt_destroy(s);
 		return res;
@@ -804,10 +802,13 @@ stmt_join2select(stmt *j)
 	} else if (j->type == st_idxbat) {
 		assert(0); /* handled earlier */
 	} else if (j->type == st_join2) {
-		stmt *res = stmt_select2(stmt_dup(j->op1.stval),
-					 stmt_dup(j->op2.stval),
-					 stmt_dup(j->op3.stval),
-					 j->flag);
+		comp_type c1 = j->flag&2 ? cmp_gte : cmp_gt;
+		comp_type c2 = j->flag&1 ? cmp_lte : cmp_lt;
+		stmt *le = stmt_dup(stmt_dup(j->op1.stval));
+		stmt *cmp1 = stmt_uselect(le, stmt_dup(j->op2.stval), c1);
+		stmt *cmp2 = stmt_uselect(le, stmt_dup(j->op3.stval), c2);
+		stmt *res = stmt_semijoin(cmp1, cmp2);
+
 		stmt_destroy(j);
 		return res;
 	} else if (j->type == st_reverse) {
@@ -815,21 +816,25 @@ stmt_join2select(stmt *j)
 
 		stmt_destroy(j);
 		return res;
-	} else if (j->type == st_intersect) {
-		stmt *res = stmt_semijoin(stmt_join2select(stmt_dup(j->op1.stval)),
-					  stmt_join2select(stmt_dup(j->op2.stval)));
+	} else if (j->type == st_semijoin) {
+		stmt *res = stmt_semijoin(stmt_join2select(
+					  stmt_dup(j->op1.stval)),
+					  stmt_dup(j->op2.stval));
 
 		stmt_destroy(j);
 		return res;
-	} else if (j->type == st_semijoin) {
-		stmt *res = stmt_semijoin(stmt_join2select(stmt_dup(j->op1.stval)),
-					  stmt_dup(j->op2.stval));
-
+	} else if (j->type == st_releqjoin) {
+		stmt *res = releqjoin2select(j);
+		stmt_destroy(j);
+		return res;
+	} else if (j->type == st_reljoin) {
+		stmt *res = reljoin2select(j);
 		stmt_destroy(j);
 		return res;
 #ifndef NDEBUG
 	} else {
 		printf("= TODO: common/optimize.c: join2select %s\n", st_type2string(j->type));
+		assert(0);
 #endif
 	}
 	return j;
@@ -1064,12 +1069,11 @@ push_selects_down(mvc *c, list *con)
 	}
 	list_destroy(sels);
 
-	/* TODO join order rewrites */
 	for (n = djoins->h; n; n = n->next) {
 		list *ejoins = list_select(joins, n->data, (fcmp) &stmt_cmp_head_tail, (fdup) &stmt_dup);
 		stmt *join = ejoins->h->data;
 		list *eqjoins = NULL, *nqjoins = NULL, *rjoins = NULL;
-		stmt *reljoin = NULL, *jdx = NULL;
+		stmt *releqjoin = NULL, *jdx = NULL;
 		node *hsel = NULL, *tsel = NULL;
 		node * jn;
 
@@ -1082,15 +1086,15 @@ push_selects_down(mvc *c, list *con)
 				stmt *jt = stmt_reverse(stmt_dup(j->op1.stval));
 				jn->data = stmt_join(jh, jt, swap_compare((comp_type)j->flag));
 				stmt_destroy(j);
-			} else if (j->type == st_reljoin &&
+			} else if (j->type == st_releqjoin &&
 				   STMT_BAT(j->op1.stval->type) && 
 				   STMT_BAT(j->op2.stval->op1.stval->type) &&
 				   j->t == join->h) {
 				list *l1 = list_dup(j->op1.lval, (fdup)&stmt_dup);
 				list *l2 = list_dup(j->op2.lval, (fdup)&stmt_dup);
-				/* change order reljoin ? */
+				/* change order releqjoin ? */
 				assert(0);
-				jn->data = stmt_reljoin2(l2,l1);
+				jn->data = stmt_releqjoin2(l2,l1);
 				stmt_destroy(j);
 			}
 		}
@@ -1191,13 +1195,13 @@ push_selects_down(mvc *c, list *con)
 		eqjoins = list_select(ejoins, (void *) 1L, (fcmp) &join_cmp_eq, (fdup) &stmt_dup);
 		if (list_length(eqjoins) > 1) {
 			/* rewrite conjuction of equi-join into multi-att equi-join */
-			reljoin = stmt_reljoin1(eqjoins);
+			releqjoin = stmt_releqjoin1(eqjoins);
 			/* collect the remaining non-equi joins */
 			nqjoins = list_select(ejoins, (void *) 1L, (fcmp) &join_cmp_neq, (fdup) &stmt_dup);
 			list_destroy(ejoins);
 		} else {
 			/* no multi-att equi-join found; treat all joins equally */
-			reljoin = NULL;
+			releqjoin = NULL;
 			nqjoins = ejoins;
 		}
 		list_destroy(eqjoins);
@@ -1270,14 +1274,14 @@ push_selects_down(mvc *c, list *con)
 		if (jdx) 
 			list_append(nqjoins, jdx);
 
-		/* changes to [].().select(TRUE) */
-		join = (stmt *) list_reduce(nqjoins, (freduce) &stmt_intersect, (fdup) &stmt_dup);
-		list_destroy(nqjoins);
-
-		if (reljoin && join) {
-			join = stmt_intersect(reljoin, join);
-		} else if (reljoin) {
-			join = reljoin;
+		if (list_length(nqjoins) > 0){
+			if (releqjoin || list_length(nqjoins) > 1)
+				join = stmt_reljoin(releqjoin, nqjoins);
+			else
+				join = stmt_dup(nqjoins->h->data);
+		} else {
+			list_destroy(nqjoins);
+			join = releqjoin;
 		}
 
 		if (!join)
@@ -1688,7 +1692,7 @@ optimize(mvc *c, stmt *s)
 		s->optimized = 1;
 		return stmt_dup(s);
 
-	case st_reljoin:{
+	case st_releqjoin:{
 
 		list *l1 = create_stmt_list();
 		list *l2 = create_stmt_list();
@@ -1699,7 +1703,7 @@ optimize(mvc *c, stmt *s)
 			list_append(l1, optimize(c, n1->data));
 			list_append(l2, optimize(c, n2->data));
 		}
-		res = stmt_reljoin2(l1, l2);
+		res = stmt_releqjoin2(l1, l2);
 		s->optimized = res->optimized = 1;
 		if (res != s) {
 			assert(s->rewritten==NULL);
@@ -1708,6 +1712,29 @@ optimize(mvc *c, stmt *s)
 		return res;
 	}
 
+	case st_reljoin:{
+
+		stmt *reljoin = NULL;
+		list *l2 = NULL;
+		node *n;
+		stmt *res;
+
+		if (s->op1.stval)
+			reljoin = optimize(c, s->op1.stval);
+		if (s->op2.lval) {
+			l2 = create_stmt_list();
+			for (n = s->op2.lval->h; n; n = n->next) {
+				list_append(l2, optimize(c, n->data));
+			}
+		}
+		res = stmt_reljoin(reljoin, l2);
+		s->optimized = res->optimized = 1;
+		if (res != s) {
+			assert(s->rewritten==NULL);
+			s->rewritten = stmt_dup(res);
+		}
+		return res;
+	}
 	case st_relselect:{
 
 		list *l = create_stmt_list();
@@ -1734,7 +1761,6 @@ optimize(mvc *c, stmt *s)
 	case st_uselect2:
 	case st_semijoin:
 	case st_diff:
-	case st_intersect:
 	case st_union:
 	case st_outerjoin:
 	case st_join:
