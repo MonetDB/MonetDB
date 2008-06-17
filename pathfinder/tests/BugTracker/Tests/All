@@ -36,9 +36,9 @@ modules_diamond_prepare
 modules_diamond.SF-1510975a
 modules_diamond.SF-1510975b
 wrong_result_duplication.SF-1549292
-type_error_with_typeswitch.SF-1559355
+WITH_ALGEBRA?type_error_with_typeswitch.SF-1559355
 type_errors_with_fn-name.SF-1563354
-fn-name_on_text_nodes.SF-1564964
+WITH_ALGEBRA?fn-name_on_text_nodes.SF-1564964
 NOT_ALGEBRA?complex-XQuery-batbat_lng_add_inplace-error-OK.SF-1562868
 NOT_ALGEBRA?complex-XQuery-batbat_lng_add_inplace-error-KO.SF-1562868
 NOT_ALGEBRA?complex-XQuery-batbat_lng_add_inplace-error-KO2.SF-1562868
@@ -115,7 +115,7 @@ crash_on_concatenated_query.SF-1730547
 error_in_preceeding_axis.SF-1731850
 attribute_serialization.SF-1743442
 attr-entity-bug.SF-1743433
-merged-union_error_with_fn-sum.SF-1751684
+WITH_ALGEBRA?merged-union_error_with_fn-sum.SF-1751684
 comment-print-bug.SF-1755466
 replace-corrupts.SF-1758902
 swizzle-bug.SF-1760811
@@ -129,7 +129,7 @@ immune_for_updates.SF-1766259
 repeated-insert.SF-1814911
 fn_normalize-space.SF-1828362
 NOT_ALGEBRA?recursive_function.SF-1835745
-variable_in_module.SF-1836980
+WITH_ALGEBRA?variable_in_module.SF-1836980
 preceding-sibling_failure.SF-1841747-d10
 preceding-sibling_failure.SF-1841747-d0
 preceding_following-sibling_bug.SF-1850772
