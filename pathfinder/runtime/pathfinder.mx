@@ -2592,7 +2592,7 @@ PROC ws_docfilter(bat[void,bat] ws,
     var isolate := (ttype(map_pid) = oid);
     if (not(isolate)) {
         any_pre := any_pre.tsort(); # no-op for read-only nsloc element index
-        if (isnil(min(reverse(frag_root)))) return any_pre;
+        if (frag_root.exist(TEMP_DOC)) return any_pre; # temporary document (collections) can never have been deleted
     } else if (any_pre.htype() = void) {
         any_pre := any_pre.leftfetchjoin(nid_rid).[swizzle](map_pid).tsort();
     } else {
