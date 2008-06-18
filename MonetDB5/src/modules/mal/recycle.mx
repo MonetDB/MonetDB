@@ -194,7 +194,7 @@ RECYCLEresetCMD(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 void
 RECYCLEdump(stream *s)
 {
-	int i;
+	int i, incache;
 
 	stream_printf(s,"#Recycler  catalog\n");
 	stream_printf(s,"#retain= %d time =%d sze= %d alpha= %4.3f\n",
@@ -203,8 +203,9 @@ RECYCLEdump(stream *s)
 	stream_printf(s,"#rcache= %d limit= %d memlimit=%d\n", rcachePolicy, recycleCacheLimit, recycleMemory);
 	stream_printf(s,"#hard stmt = %d hard var = %d hard mem= %d\n",
 		 HARDLIMIT_STMT, HARDLIMIT_VAR, HARDLIMIT_MEM);
+	incache = recycleBlk? recycleBlk->stop-1:0;
 	stream_printf(s,"#recycled = %d incache= %d executed = %d saved time(ms)= %8.2f memory(KB)= %d\n",
-		 recycled, recycleBlk->stop-1,statements, savedTime/1000.0,recyclerUsedMemory);
+		 recycled, incache,statements, savedTime/1000.0,recyclerUsedMemory);
 	stream_printf(s,"#Cache search time= %d(usec)\n",recycleSearchTime);
 
 	/* and dump the statistics */
