@@ -128,7 +128,7 @@ insert_attribute_gives_ERROR_in_merged_union.SF-1763575
 immune_for_updates.SF-1766259
 repeated-insert.SF-1814911
 fn_normalize-space.SF-1828362
-NOT_ALGEBRA?recursive_function.SF-1835745
+# recursive_function.SF-1835745 # won't fix with MPS, not supported with ALG
 WITH_ALGEBRA?variable_in_module.SF-1836980
 preceding-sibling_failure.SF-1841747-d10
 preceding-sibling_failure.SF-1841747-d0
