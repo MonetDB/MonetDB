@@ -17,8 +17,8 @@ Usage: pf [OPTION] [FILE]
 
   Reads from standard input if FILE is omitted.
 
-= -A, --mil: generate MIL code
-= -M, --mil_2004: generate MIL code (directly from XQuery Core) (default)
+= -A, --mil: generate MIL code (default)
+= -M, --mil_2004: generate MIL code (directly from XQuery Core)
 = -S, --sql: generate SQL code
 = -X, --xml: generate XML representation of algebraic plan
 
