@@ -352,3 +352,12 @@ return
   into exactly-one($dest[@xid[. = $item/@xid]])
 <>
 count(doc("test10.xml")//*)
+
+<>
+pf:del-doc("test10.xml")
+<>
+pf:del-doc("projinit49725.xml")
+<>
+pf:del-doc("prepared49734.data")
+<>
+pf:del-doc("prepared49736.data")
