@@ -1929,6 +1929,12 @@ if test "x$enable_debug" = xyes; then
         ;;
     esac
   fi
+elif test "x$enable_debug" = xno; then
+    dnl  remove "-g"; keep al other defaults (e.g., -O2 for gcc)
+    CFLAGS=" $CFLAGS "
+    CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's| -gxcoff | |g' -e 's|^ ||' -e 's| $||'`"
+    JAVACFLAGS=" $JAVACFLAGS "
+    JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
 fi
 
 dnl --enable-assert
