@@ -1002,11 +1002,9 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 	throw(MAL, "txtsim.qgramselfjoin", "could not realloc\n");
 }
 
-@mal
-
+@-
 #mil implementation
 
-#mil implementation
 #proc str2qgrams(str s) : bat[oid,str]
 #{
 #    s := qgramnormalize(s);
@@ -1015,7 +1013,25 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 #    var b := bat(str,void,len+4);
 #    var i := 0;
 #    var last := " ";
+#
+#    b.insert("#",nil);
+#    b.insert("#",nil);
+#    while(i < len) {
+#        b.insert(s.string(i,1), nil);
+#        if (b.count() > 32764) break; # ignore suffix of >32KB strings
+#        i :+= 1;
+#    }
+#    b.insert("$",nil);
+#    b.insert("$",nil);
+#    b.reverse().seqbase(0@0);
+#
+#    var c0 := b.select(0@0, oid(b.count() - 3)).mark(0@0).reverse();
+#    var c1 := b.select(1@0, oid(b.count() - 2)).mark(0@0).reverse();
+#    var c2 := b.select(2@0, oid(b.count() - 1)).mark(0@0).reverse();
+#    return [+](c0, [+](c1, c2));
+#}
 #mal implementation
+@mal
 function str2qgrams(s:str):bat[:oid,:str];
     s := qgramnormalize(s);
 
@@ -1024,16 +1040,8 @@ function str2qgrams(s:str):bat[:oid,:str];
     b := bat.new(:str,:oid,len);
     i := 0;
     last := " ";
-#
-#    b.insert("#",nil);
-#    b.insert("#",nil);
     bat.insert(b,"#",nil:oid);
     bat.insert(b,"#",nil:oid);
-#    while(i < len) {
-#        b.insert(s.string(i,1), nil);
-#        if (b.count() > 32764) break; # ignore suffix of >32KB strings
-#        i :+= 1;
-#    }
 	cnt:= 0:int;
     id := calc.oid(cnt);
     barrier B:= i < len;
@@ -1044,29 +1052,22 @@ function str2qgrams(s:str):bat[:oid,:str];
         i := calc.+(i,1);
     redo B:= i < len;
     exit B;
-#    b.insert("$",nil);
-#    b.insert("$",nil);
-#    b.reverse().seqbase(0@0);
     bat.insert(b,"$",nil:oid);
     bat.insert(b,"$",nil:oid);
     rev := bat.reverse (b);
     alg := algebra.markH(rev, 0@0);
-#
-#    var c0 := b.select(0@0, oid(b.count() - 3)).mark(0@0).reverse();
     cnt := aggr.count(alg);
     cnt := calc.-(cnt,3);
     sel := algebra.select(b, 0@0, id);
     mrk := algebra.markT(sel, 0@0); 
     c0  := bat.reverse(mrk);
 
-#    var c1 := b.select(1@0, oid(b.count() - 2)).mark(0@0).reverse();
     cnt := aggr.count(alg);
     cnt := calc.-(cnt,2);
     id := calc.oid(cnt);
     sel := algebra.select(b, 1@0, id);
     mrk := algebra.markT(sel, 0@0); 
     c1  := bat.reverse(mrk);
-#    var c2 := b.select(2@0, oid(b.count() - 1)).mark(0@0).reverse();
     cnt := aggr.count(alg);
     cnt := calc.-(cnt,1);
     id := calc.oid(cnt);
@@ -1074,8 +1075,6 @@ function str2qgrams(s:str):bat[:oid,:str];
     mrk := algebra.markT(sel, 0@0); 
     c2  := bat.reverse(mrk);
 
-#    return [+](c0, [+](c1, c2));
-#}
     res := batcalc.+(c1, c2);
     res := batcalc.+(c0, res);
 

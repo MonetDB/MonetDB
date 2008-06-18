@@ -465,10 +465,12 @@ address CALCbat2str;
 command bat(v:void) :bat[:any_1,:any_2] 
 address CALCnil2bat;
 
-#command bat(b:bat):bat[:any_1,:any_2]
-#address CALCBAT2bat;
-#command bat(b:bat[:any_1,:any_2]):bat
-#address CALCbat2BAT;
+@-
+command bat(b:bat):bat[:any_1,:any_2]
+address CALCBAT2bat;
+command bat(b:bat[:any_1,:any_2]):bat
+address CALCbat2BAT;
+@mal
 
 command str(v:void) :str 
 address CALCnil2str;

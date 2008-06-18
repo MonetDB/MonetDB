@@ -89,7 +89,9 @@ library optimizer;
 library chopper;
 library txtsim;
 
-#library logger;
+@-
+library logger;
+@mal
 library transaction;
 
 library mal_isolation;
@@ -157,9 +159,13 @@ include tablet;
 include factory;
 include recycle;
 
-# experimental
+@-
+experimental
+@mal
 include mat;
-# the real partition handler
+@-
+the real partition handler
+@mal
 include bpm;
 include inspect;
 include manual;
@@ -203,14 +209,20 @@ include opt_trace;
 include chopper;
 include txtsim;
 
-#include logger;
+@-
+include logger;
+@mal
 include transaction;
 
-#scheduler components
+@-
+scheduler components
+@mal
 include mal_isolation;
 include mal_memorun;
 
-# Cracker schemes
+@-
+ Cracker schemes
+@mal
 include opt_crack;
 include opt_joinselect;
 include opt_remoteQueries;

@@ -71,10 +71,12 @@ command xml.xquery(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
 address BATXMLxquery
 comment "Execute the XQuery against the elements.";
 
-#todo
-#command xml.table(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
-#address BATXMLquery
-#comment "Execute the XQuery against the elements";
+@-
+todo
+command xml.table(val:bat[:oid,:str],expr:str):bat[:oid,:xml]
+address BATXMLquery
+comment "Execute the XQuery against the elements";
+@mal
 
 command xml.pi(operator:str, ret:bat[:oid,:xml]):bat[:oid,:xml]
 address XMLpi

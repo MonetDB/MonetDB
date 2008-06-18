@@ -44,8 +44,6 @@ This calls for knowledge on the underlying BAT types`s
 }}
 @-
 The code speaks for itself
-@mal
-
 
 #command bat(ht:int, tt:int) :bat[:any_1,:any_2] 
 #address BKCnewBat_default
@@ -64,6 +62,19 @@ The code speaks for itself
 #address BKCnewBATlng
 #comment "Creates a new empty BAT, allocating 'size' elements.";
 
+#command convert(b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
+#address BKCconvert
+#comment "Convert the contents of a BAT from little-endian to big-endian 
+#        and vice versa. THIS command SHOULD NOT BE USED FROM MAL!
+#	DANGEROUS! DEBUGGING PURPOSES ONLY!";
+
+#command access( b:bat[:any_1,:any_2], mode:int) :bat[:any_1,:any_2]
+#address BKCaccess;
+
+#command setSequenceBase( b:bat[:oid,:any_1], base:oid):void
+#address BKCsetSequenceBase
+#comment "Set the sequence base for the void column of a BAT.";
+@mal
 module bat;
 command reverse(b:bat[:any_1,:any_2]) :bat[:any_2,:any_1] 
 address BKCreverse
@@ -74,12 +85,6 @@ comment "Returns the reverse view of a BAT (head is tail and tail is head).
 command mirror(b:bat[:any_1,:any_2]) :bat[:any_1,:any_1] 
 address BKCmirror
 comment "Returns the head-mirror image of a BAT (two head columns).";
-
-#command convert(b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
-#address BKCconvert
-#comment "Convert the contents of a BAT from little-endian to big-endian 
-#        and vice versa. THIS command SHOULD NOT BE USED FROM MAL!
-#	DANGEROUS! DEBUGGING PURPOSES ONLY!";
 
 command order(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address BKCorder
@@ -215,8 +220,6 @@ comment "Try to change the update access priviliges
 	BATs are updatable by default. On making a BAT read-only, 
         all subsequent updates fail with an error message.Returns 
         the BAT itself.";
-#command access( b:bat[:any_1,:any_2], mode:int) :bat[:any_1,:any_2]
-#address BKCaccess;
 
 command setAppendMode( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BKCsetAppendMode
@@ -250,10 +253,6 @@ comment "return true if to this BAT is read only.";
 command getSequenceBase( b:bat[:oid,:any_1]):oid 
 address BKCgetSequenceBase
 comment "Get the sequence base for the void column of a BAT.";
-
-#command setSequenceBase( b:bat[:oid,:any_1], base:oid):void
-#address BKCsetSequenceBase
-#comment "Set the sequence base for the void column of a BAT.";
 
 command setSorted(b:bat[:any_1,:any_2]) :bit 
 address BKCsetSorted

@@ -235,7 +235,6 @@ merge with existing bats with the merge_data script.
 The dump_format scripts dump a format file for a given set of
 to be dumped bats. These bats can be dumped with dump_data.
 @mal
-# the major tablet shuffling routines
 module tablet;
 
 command load( names:bat[:oid,:str], seps:bat[:oid,:str], 
@@ -303,7 +302,9 @@ pattern setRowBracket(lbrk:str,rbrk:str)
 address TABsetRowBracket
 comment "Format the brackets around a row";
 
-# Set the column properties 
+@-
+Set the column properties 
+@mal
 pattern setColumn(idx:int, v:any_1)
 address TABsetColumn
 comment "Bind i-th output column to a variable";
@@ -443,7 +444,7 @@ typedef struct Table_t {
 	Column columns[1];			/* at least one column, enlarged upon need */
 } Tablet;
 
-tablet_export BAT *TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr);
+tablet_export BAT *TABLETload(Tablet *as, char *datafile);
 tablet_export BAT *TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, stream *out, size_t nr, size_t est);
 tablet_export size_t TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
 tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr);
@@ -451,7 +452,7 @@ tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, 
 /* The low level routines are primarilly used by the SQL front-end.*/
 tablet_export int TABLETcreate_bats(Tablet * as, size_t est);
 tablet_export size_t TABLETassign_BATs(Tablet * as, BAT *bats);
-tablet_export ssize_t TABLETload_file(Tablet * as, bstream *b, stream *out);
+tablet_export ssize_t TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2);
 tablet_export BAT *TABLETcollect_bats(Tablet * as);
 tablet_export void TABLETdestroy_format(Tablet * as);
 tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
@@ -459,7 +460,7 @@ tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
 tablet_export ptr *TABLETstrFrStr(Column *c, char *s, char *e);
 tablet_export ptr *TABLETadt_frStr(void *extra, int type, char *s, char *e, char quote);
 tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
-tablet_export int insert_line(Tablet * as, char *line, ptr key);
+tablet_export int insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 );
 tablet_export int output_file_dense(Tablet * as, stream *fd);
 tablet_export int has_whitespace(char *sep);
 
@@ -1376,7 +1377,7 @@ skip_string(char *s, char quote)
 }
 
 INLINE int
-insert_line(Tablet * as, char *line, ptr key)
+insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 {
 	int res = 0;
 	Column *fmt = as->format;
@@ -1422,7 +1423,8 @@ insert_line(Tablet * as, char *line, ptr key)
 		if (!e && i == (as->nr_attrs-1))
 			e = line;
 		if (e) {
-			res |= insert_val(&fmt[i], s, e, quote, key, &as->error, i);
+			if (i>= col1 && i< col2)
+				res |= insert_val(&fmt[i], s, e, quote, key, &as->error, i);
 			quote = 0;
 			line = e + fmt[i].seplen;
 			if (as->error && as->complaints)
@@ -1606,7 +1608,7 @@ read_more(bstream *in, stream *out, size_t n)
 
 
 ssize_t
-TABLETload_file(Tablet * as, bstream *b, stream *out)
+TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2)
 {
 	int res = 0, done = 0;
 	size_t i = 0;
@@ -1640,7 +1642,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 
 			if (e) {
 				*e = '\0';
-				if (i>=offset && insert_line(as, s, NULL) < 0) {
+				if (i>=offset && insert_line(as, s, NULL, col1,col2) < 0) {
 					s = e + seplen;
 					b->pos = (s - b->buf);
 					res = -1;
@@ -1661,7 +1663,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 						res = 1; 
 						if (b->len > b->pos &&
 						    i>=offset &&
-						    insert_line(as, s, NULL) < 0 && !as->tryall) {
+						    insert_line(as, s, NULL, col1,col2) < 0 && !as->tryall) {
 								GDKerror(as->error);
 								as->error=0;
 								GDKerror("TABLETload_file: read error "
@@ -1810,26 +1812,45 @@ estimator(char *datafile){
 }
 
 BAT *
-TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr)
+TABLETload(Tablet *as,char *datafile)
 {
-	BAT *res;
-	stream *s = open_rastream(datafile);
+	BAT *res= NULL;
+	stream *s = NULL;
 	bstream *b = NULL;
-	size_t est = nr;
+	size_t est = as->nr;
+	size_t col,stride=1;
+	int error= FALSE;
 
-	if (s == NULL || stream_errnr(s)) {
-		GDKerror("could not open file %s\n", datafile);
-		if (s) {
-			stream_destroy(s);
-		}
-		return NULL;
-	}
-	if (nr == ~(size_t) 0)
+	if ( TABLETcreate_bats(as, est) < 0) 
+			return NULL;
+
+	if (as->nr == ~(size_t) 0)
 		est = estimator(datafile);
-	res = TABLETinput(names, seps, types, b = bstream_create(s, SIZE), NULL, nr, est);
-	bstream_destroy(b);
-	stream_close(s);
-	stream_destroy(s);
+@-
+Determine a good Stride for the table at hand. It should be based
+on the number of records to be expected and the general system resources.
+@c
+	for (col=0; col <as->nr_attrs; col += stride){
+		s = open_rastream(datafile);
+		if (s == NULL || stream_errnr(s)) {
+			GDKerror("could not open file %s\n", datafile);
+			if (s) {
+				stream_destroy(s);
+			}
+			return NULL;
+		}
+		if (TABLETload_file(as, b = bstream_create(s, SIZE), NULL ,col,col+stride) < 0){
+				error= TRUE;
+				break;
+		}
+
+		bstream_destroy(b);
+		stream_close(s);
+		stream_destroy(s);
+	}
+	if( error == FALSE)
+		res = TABLETcollect_bats(as);
+	TABLETdestroy_format(as);
 	return res;
 }
 
@@ -1841,8 +1862,9 @@ TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, stream *out, size_t n
 
 	as.nr_attrs = 0;
 	as.nr = nr;
-	if (create_loadformat(&as, names, seps, types) != ~(size_t) 0 && TABLETcreate_bats(&as, est) >= 0) {
-		if (TABLETload_file(&as, s, out) >= 0)
+	if (create_loadformat(&as, names, seps, types) != ~(size_t) 0 && 
+		TABLETcreate_bats(&as, est) >= 0) {
+		if (TABLETload_file(&as, s, out, 0, as.nr_attrs) >= 0)
 			bats = TABLETcollect_bats(&as);
 	}
 	TABLETdestroy_format(&as);
@@ -1917,10 +1939,15 @@ static void
 tablet_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *N)
 {
 	size_t nr = ~(size_t)0;
+	Tablet as;
 
 	if (*N >= 0)
 		nr = *N;
-	*bats = TABLETload(names, seps, types, datafile, nr);
+	as.nr_attrs = 0;
+	as.nr = nr;
+
+	if (create_loadformat(&as, names, seps, types) != ~(size_t) 0 )
+		*bats = TABLETload(&as, datafile);
 }
 static void
 tablet_input(BAT **bats, BAT *names, BAT *seps, BAT *types, void **s, int *N)

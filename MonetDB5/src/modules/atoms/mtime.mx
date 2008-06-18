@@ -409,7 +409,7 @@ address MTIMEruleDef2
 comment "Introduce a synomym timezone rule.";
 
 
-module batmtime; # for the multiplexes
+module batmtime;
 module mtime;
 command date_sub_sec_interval(t:date,s:int):date 
 address MTIMEdate_sub_sec_interval_wrap
@@ -613,7 +613,6 @@ address MTIMEtzone_extract_minutes
 comment "extract number of minutes that 
 	time zone is offset wrt GMT.";
 
-# rule
 command month(t:zrule) :int 
 address MTIMErule_extract_month 
 comment "extract month from rule.";

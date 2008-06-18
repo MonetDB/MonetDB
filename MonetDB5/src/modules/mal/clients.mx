@@ -26,7 +26,6 @@ adjust global properties.
 @mal
 module clients;
 
-#Operations for all clients
 pattern setListing(flag:int):int
 address CLTsetListing
 comment "Turn on/off echo of MAL instructions:
@@ -62,7 +61,9 @@ pattern exit():void
 address CLTexit
 comment "Terminate the session for a single client using a soft error.";
 
-#Administrator operations
+@-
+Administrator operations
+@mal
 command getLogins( ):bat[:int,:str] 
 address CLTLogin
 comment "Pseudo bat of client login time.";

@@ -39,6 +39,7 @@ comment "Global memory usage information";
 command ioStatistics():bat[:str,:int] 
 address SYSioStatistics
 comment "Global IO activity information";
+@-
 #command memMap() :void 
 #address SYSmemMap
 #comment "Print a map of all memory that is in use";
