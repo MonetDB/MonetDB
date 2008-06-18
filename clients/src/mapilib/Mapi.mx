@@ -19,9 +19,6 @@
 @v 2.0
 @* The MonetDB Programming Interface
 @+ The Mapi Library
-@ifclear XQRYmanual
-@section The Mapi Library
-@end ifclear
 
 The easiest way to extend the functionality of MonetDB is to construct
 an independent application, which communicates with a running server
