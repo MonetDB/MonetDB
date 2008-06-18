@@ -88,8 +88,8 @@ seqcast_opt_int_to_numeric.SF-1637867
 entities_dtd.SF-1642663
 entities_dtd.SF-1642665
 NOT_ALGEBRA?call2builtin_function_crashes_XRPC_client.SF-1655857
-NOT_ALGEBRA?conflict_normal_xrpc_queries_nx.SF-1644610
-NOT_ALGEBRA?conflict_normal_xrpc_queries_xn.SF-1644610
+conflict_normal_xrpc_queries_nx.SF-1644610
+conflict_normal_xrpc_queries_xn.SF-1644610
 NOT_ALGEBRA?interleave_PUT_GET_crashes_Mserver.SF-1676443
 id-function_fails_to_locate_some_kinds_of_nodes.SF-1698498
 char_escape_SF-1681921
