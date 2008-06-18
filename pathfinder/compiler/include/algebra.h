@@ -491,21 +491,33 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b);
 char * PFatt_str (PFalg_att_t att);
 
 /**
+ * Initialize the column name counter.
+ */
+void PFalg_init (void);
+
+/**
  * Checks whether a name is unique or not.
  */
 bool PFalg_is_unq_name (PFalg_att_t att);
 
 /**
- * Return the id of a unique name
+ * Return a new unique column name
  */
-unsigned int PFalg_unq_name_id (PFalg_att_t att);
+PFalg_att_t PFalg_new_name (PFalg_att_t att);
 
 /**
- * Create a unique name based on an id @a id and
+ * Create a unique name based on an original bit-encoded name @a ori
+ * that retains the usage information of the new variable (iter, pos
+ * or item).
+ */
+PFalg_att_t PFalg_unq_name (PFalg_att_t ori);
+
+/**
+ * Create an unique name based on an id @a id and
  * an original name @a ori that retains the usage information
  * of the new variable (iter, pos or item).
  */
-PFalg_att_t PFalg_unq_name (PFalg_att_t ori, unsigned int id);
+PFalg_att_t PFalg_unq_fixed_name (PFalg_att_t ori, unsigned int id);
 
 /**
  * Create an original column name based on an unique name @a unq

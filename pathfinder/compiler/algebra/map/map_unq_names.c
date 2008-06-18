@@ -270,54 +270,60 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         {
             /* Prepare a projection list for both operands
                to ensure the correct names of all columns. */
-            PFla_op_t  *left,
-                       *right;
-            PFarray_t  *lproj,
-                       *rproj;
-            PFalg_att_t ori,
-                        unq,
-                        l_unq,
-                        r_unq,
-                        att1_unq,
-                        att2_unq;
+            PFla_op_t    *left  = U(L(p)),
+                         *right = U(R(p));
+            PFalg_proj_t *projlist,
+                         *projlist1,
+                         *projlist2;
+            PFalg_att_t   ori,
+                          unq,
+                          att1  = UNAME (p, p->sem.eqjoin.att1),
+                          att2  = UNAME (p, p->sem.eqjoin.att2),
+                          new_unq;
+            unsigned int  count;
 
-            left     = U(L(p));
-            right    = U(R(p));
-            
-            att1_unq = PFprop_unq_name_left (p->prop, p->sem.eqjoin.att1);
-            att2_unq = PFprop_unq_name_right (p->prop, p->sem.eqjoin.att2);
-            
-            lproj    = PFarray (sizeof (PFalg_proj_t), left->schema.count);
-            rproj    = PFarray (sizeof (PFalg_proj_t), right->schema.count);
-            
-            *(PFalg_proj_t *) PFarray_add (lproj)
-                = proj (UNAME(p, p->sem.eqjoin.att1), att1_unq);
-            *(PFalg_proj_t *) PFarray_add (rproj)
-                = proj (UNAME(p, p->sem.eqjoin.att2), att2_unq);
+            projlist  = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
+            projlist1 = PFmalloc (left->schema.count * sizeof (PFalg_proj_t));
+            projlist2 = PFmalloc (right->schema.count * sizeof (PFalg_proj_t));
 
+            assert (att1 == att2);
+            /* Replace att2 by a new column name to ensure that
+               the join columns use a different column name. */
+            att2 = PFalg_new_name (att2);
+            
             for (unsigned int i = 0; i < left->schema.count; i++) {
-                l_unq = left->schema.items[i].name;
-                ori = PFprop_ori_name_left (p->prop, l_unq);
+                unq = left->schema.items[i].name;
+                ori = PFprop_ori_name_left (p->prop, unq);
                 assert (ori);
-
-                unq = UNAME(p, ori);
-                if (l_unq != att1_unq)
-                    *(PFalg_proj_t *) PFarray_add (lproj) = proj (unq, l_unq);
+                projlist1[i] = proj (UNAME(p, ori), unq);
             }
 
             for (unsigned int i = 0; i < right->schema.count; i++) {
-                r_unq = right->schema.items[i].name;
-                ori = PFprop_ori_name_right (p->prop, r_unq);
+                unq     = right->schema.items[i].name;
+                ori     = PFprop_ori_name_right (p->prop, unq);
                 assert (ori);
-
-                unq = UNAME(p, ori);
-                if (r_unq != att2_unq)
-                    *(PFalg_proj_t *) PFarray_add (rproj) = proj (unq, r_unq);
+                new_unq = UNAME(p, ori);
+                if (new_unq == att1)
+                    projlist2[i] = proj (att2, unq);
+                else
+                    projlist2[i] = proj (new_unq, unq);
             }
 
-            /* create a join operator that comes with two internal
-               projection lists */
-            res = PFla_eqjoin_clone (left, right, lproj, rproj);
+            res = eqjoin (PFla_project_ (left, left->schema.count, projlist1),
+                          PFla_project_ (right, right->schema.count, projlist2),
+                          att1,
+                          att2);
+
+            /* Make sure that the new column name att2 is not visible.
+               (Otherwise some mapping might fail due to the missing
+                properties collected for that column.) */
+            count = 0;
+            for (unsigned int i = 0; i < res->schema.count; i++) {
+                unq = res->schema.items[i].name;
+                if (unq != att2)
+                    projlist[count++] = proj (unq, unq);
+            }
+            res = PFla_project_ (res, count, projlist);
         }   break;
 
         case la_eqjoin_unq:
