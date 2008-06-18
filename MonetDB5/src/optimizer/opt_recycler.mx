@@ -166,7 +166,8 @@ are marked for re-use.
 		/* take care of semantic driven recyling */
 		if( getFunctionId(p)== selectRef && recycled[getArg(p,1)] ){
 			p->recycle = -1;
-			recycled[getArg(p,0)] = 1;
+			if (getLastUpdate(span, getArg(p,0)) == i)
+				recycled[getArg(p,0)] = 1;
 		}
 		if( getFunctionId(p)== uselectRef && recycled[getArg(p,1)] &&
 			!ATOMvarsized( getGDKType( getArgType(mb,p,1)))){
@@ -180,7 +181,8 @@ are marked for re-use.
 			setFunctionId(p,markTRef);
 			p->argc = 2;
 			p->recycle = -1; 
-			recycled[getArg(p,0)] = 1;
+			if (getLastUpdate(span, getArg(p,0)) == i)
+				recycled[getArg(p,0)] = 1;
 		}
 @-
 The sql.bind instructions should be handled carefully
