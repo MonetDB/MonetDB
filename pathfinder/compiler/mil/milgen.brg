@@ -3362,22 +3362,22 @@ reduce (PFpa_op_t * p, int goalnt)
                         sorted = true;
                     }
                     else {
+                        mvar_t *v = new_var (1);
                         execute (
+                            assgn (
+                                var (v->name),
+                                select2 (VAR (L(p)->env, pa_item, aat_bln),
+                                         cast (type (mty_bit), nil ()),
+                                         cast (type (mty_bit), nil ()))),
                             binsert (
                                 var (item->name),
-                                mcast (type (mty_oid),
-                                       VAR (L(p)->env, pa_item, aat_bln))),
+                                mcast (type (mty_oid), var (v->name))),
                             binsert (
                                 var (kind->name),
-                                project (select2 (VAR (L(p)->env,
-                                                       pa_item,
-                                                       aat_bln),
-                                                  cast (type (mty_bit),
-                                                        nil ()),
-                                                  cast (type (mty_bit),
-                                                        nil ())),
+                                project (var (v->name),
                                          var (PF_MIL_VAR_BOOL)))
                         );
+                        unpin (v, 1);
                     }
                 }
 
