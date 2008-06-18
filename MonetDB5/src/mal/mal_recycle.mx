@@ -1067,6 +1067,9 @@ RECYCLEshutdown(){
 	mal_set_lock(recycleLock,"recycle");
 	recycleBlk= NULL;
 	recycleVersion++;
+	recycled = statements = 0;
+	savedTime = recycleSearchTime = 0;
+	recyclerUsedMemory = 0;
 	mal_unset_lock(recycleLock,"recycle");
 	for (i=mb->stop-1; i>=0; i--)
 		RECYCLEgarbagecollect(mb, getInstrPtr(mb,i));
