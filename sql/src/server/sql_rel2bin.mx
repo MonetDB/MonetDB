@@ -782,7 +782,7 @@ reljoin( mvc *sql, stmt *rj, list *l2 )
 			l = stmt_semijoin(stmt_dup(l), stmt_dup(cmp));
 			r = stmt_semijoin(stmt_dup(r), cmp);
 		} else {
-			stmt *cmp = stmt_uselect(le, re, j->flag);
+			stmt *cmp = stmt_uselect(le, re, (comp_type)j->flag);
 
 			l = stmt_semijoin(stmt_dup(l), stmt_dup(cmp));
 			r = stmt_semijoin(stmt_dup(r), cmp);
