@@ -1,1 +1,1 @@
-internal
+# internal # testing pf's -d option is useless in case assertions are disabled
