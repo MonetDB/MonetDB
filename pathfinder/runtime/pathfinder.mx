@@ -2506,7 +2506,7 @@ PROC ws_docfilter(bat[void,bat] ws,
         # register the newly opened documents
         open_name.append(docpre_nme.tmark(0@0));
         open_cont.append(docpre_nme.tmark(0@0).project(cont));
-        open_docid.append(docpre_nme.hmark(0@0));
+        open_docid.append(docpre_nme.hmark(0@0).leftjoin(reverse(frag_root)));
     }
     return assert_order(any_pre);
 }
@@ -4314,7 +4314,7 @@ MT_Lock pf_cache_lock;
  * - execute MIL buffer (parse & execute)
  *
  * int
- * xquery_compile_exec(xquery_client *ctx, char* xquery, int is_url, 
+ * xquery_compile_exec(xquery_client *ctx, int options, char* xquery, int is_url, 
  *                     char** prologue, char** query, char** epilogue, char* nsurl) 
  * - translate xquery to MIL and execute
  *
@@ -4413,6 +4413,7 @@ static char* xquery_parse_string(char* p, char *buf, int len);
 extern char* PFmaxstack;
 static int
 xquery_compile_exec(xquery_client *ctx, 
+                    int options,
                     char* url, 
                     int is_url, 
                     char** prologue, 
@@ -4424,22 +4425,9 @@ xquery_compile_exec(xquery_client *ctx,
     char *xquery = url;
     char *err = NULL;
 
-    int options = 0;
     /* Setting the StandOff flag based on runtime settings */
     if ((GDKgetenv("standoff") != NULL) && (strcmp(GDKgetenv("standoff"),"enabled") == 0))
         options |= COMPILE_OPTION_STANDOFF;
-    /* Setting the Algebra flag; server setting overules compile-time default; client choice overrules server setting */
-#if MILPRINT_SUMMER_IS_DEFAULT
-    if (((ctx->mode & XQ_ALGEBRA) != 0) || \
-        (((ctx->mode & XQ_MILPRINT_SUMMER) == 0) && \
-         (GDKgetenv("xquery_backend") != NULL) && (strcmp(GDKgetenv("xquery_backend"),"algebra") == 0)))
-        options |= COMPILE_OPTION_ALGEBRA;
-#else /* ALGEBRA_IS_DEFAULT */
-    if (((ctx->mode & XQ_MILPRINT_SUMMER) == 0) && \
-        (((ctx->mode & XQ_ALGEBRA) != 0) || \
-         (GDKgetenv("xquery_backend") == NULL) || (strcmp(GDKgetenv("xquery_backend"),"milprint_summer") != 0)))
-        options |= COMPILE_OPTION_ALGEBRA;
-#endif
 
     MT_set_lock(pf_compiler_lock, "xquery_compile_exec");
     if (is_url) {
@@ -4987,7 +4975,7 @@ xquery_module_compile(xquery_client *ctx,
     strcpy(mod->url, url);
     mod->nsurl = mod->url + url_len;
 
-    ret = xquery_compile_exec(ctx, url, 1, &mod->prologue, NULL, &mod->epilogue, mod->nsurl);
+    ret = xquery_compile_exec(ctx, 0, url, 1, &mod->prologue, NULL, &mod->epilogue, mod->nsurl);
     if (!ret) {
         xquery_module_free(mod);
         return NULL;
@@ -5825,9 +5813,22 @@ xquery_prepare(xquery_client *ctx,
         char *sec1 = NULL;
         char *sec2 = NULL;
         char *sec3 = NULL;
+        int options = 0;
         /* compile and execute the query (minus module imports) */
         err = xquery_nondescriptive_error;
-        if (xquery_compile_exec(ctx, query, 0, &sec1, &sec2, &sec3, NULL)) 
+    /* Setting the Algebra flag; server setting overules compile-time default; client choice overrules server setting */
+#if MILPRINT_SUMMER_IS_DEFAULT
+         if (((ctx->mode & XQ_ALGEBRA) != 0) || \
+            (((ctx->mode & XQ_MILPRINT_SUMMER) == 0) && \
+              (GDKgetenv("xquery_backend") != NULL) && (strcmp(GDKgetenv("xquery_backend"),"algebra") == 0)))
+            options = COMPILE_OPTION_ALGEBRA;
+#else /* ALGEBRA_IS_DEFAULT */
+        if (((ctx->mode & XQ_MILPRINT_SUMMER) == 0) && \
+            (((ctx->mode & XQ_ALGEBRA) != 0) || \
+             (GDKgetenv("xquery_backend") == NULL) || (strcmp(GDKgetenv("xquery_backend"),"milprint_summer") != 0)))
+            options = COMPILE_OPTION_ALGEBRA;
+#endif
+        if (xquery_compile_exec(ctx, options, query, 0, &sec1, &sec2, &sec3, NULL)) 
                 err = NULL;
         if (sec1) free(sec1);
         if (sec2) free(sec2);
@@ -6232,7 +6233,12 @@ xquery_prelude(void)
 #if MILPRINT_SUMMER_IS_DEFAULT
         GDKsetenv("xquery_backend","milprint_summer");
 #else /* ALGEBRA_IS_DEFAULT */
-        GDKsetenv("xquery_backend","algebra");
+        if ((GDKgetenv("standoff") != NULL) && (strcmp(GDKgetenv("standoff"),"enabled") == 0)) {
+            /* Algebra back-end does not support StandOff extensions, yet */
+            GDKsetenv("xquery_backend","milprint_summer");
+        } else {
+            GDKsetenv("xquery_backend","algebra");
+        }
 #endif
     }
 

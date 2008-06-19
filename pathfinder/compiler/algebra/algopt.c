@@ -228,7 +228,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case 'K':
-                MAP_ORI_NAMES("key optimization")
                 REMOVE_PROXIES("key optimization")
 
                 tm = PFtimer_start ();
@@ -257,8 +256,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case 'N':
-                MAP_ORI_NAMES("required nodes optimization")
-
                 tm = PFtimer_start ();
 
                 root = PFalgopt_req_node (root);
@@ -345,8 +342,8 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                                   true  /* icol */,
                                   false /* composite key */,
                                   true  /* key */,
-                                  false /* ocols */,
-                                  false /* req_node */,
+                                  true  /* ocols */,
+                                  true  /* req_node */,
                                   false /* reqval */,
                                   true  /* level */,
                                   true  /* refctr */,
@@ -461,12 +458,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
     }
     if (debug_opt)
         fputc ('\n', stderr);
-
-    if (unq_names)
-        PFinfo (OOPS_WARNING,
-                "Physical algebra requires original names. "
-                "Add ']' optimization option (at the end) to "
-                "ensure correct attribute name usage.");
 
     if (proxies_involved)
         PFinfo (OOPS_WARNING,

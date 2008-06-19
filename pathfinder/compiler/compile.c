@@ -365,6 +365,9 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         /* Initialize data structures in the QName department */
         PFqname_init ();
 
+        /* Initialize the column name counter */
+        PFalg_init ();
+
         if (status->import_xml_filename) {
             /**
              * If the input is explicitely specified with an filename,
@@ -595,7 +598,8 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         goto bailout;
     }
 
-
+    /* Initialize the column name counter */
+    PFalg_init ();
 
     /*
      * map core to algebra tree

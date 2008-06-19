@@ -766,7 +766,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
 
             map = find_map (MAP_LIST(n), att_item);
 
-            /* inherit the properties of the iter column */
+            /* inherit the properties of the item column */
             if (map) {
                 req_node_t map_item = *map;
                 map_item.col = n->sem.iter_pos_item.item;

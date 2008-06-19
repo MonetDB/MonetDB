@@ -782,6 +782,17 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
     return NULL;
 }
 
+static unsigned int highest_col_name_id;
+
+/**
+ * Initialize the column name counter.
+ */
+void
+PFalg_init (void)
+{
+    highest_col_name_id = 1;
+}
+
 /**
  * Checks whether a name is unique or not.
  */
@@ -792,16 +803,16 @@ PFalg_is_unq_name (PFalg_att_t att)
 }
 
 /**
- * Return the id of a unique name
+ * Return a new unique column name
  */
-unsigned int
-PFalg_unq_name_id (PFalg_att_t att)
+PFalg_att_t
+PFalg_new_name (PFalg_att_t att)
 {
     if (!PFalg_is_unq_name(att))
         PFoops (OOPS_FATAL,
                 "unique column name expected");
     
-    return att >> 4;
+    return (highest_col_name_id++ << 4) | (1 << 3) | (att & 7);
 }
     
 /**
@@ -809,14 +820,14 @@ PFalg_unq_name_id (PFalg_att_t att)
  * an original name @a ori that retains the usage information
  * of the new variable (iter, pos or item).
  */
-PFalg_att_t
-PFalg_unq_name (PFalg_att_t ori, unsigned int id)
+static PFalg_att_t
+unq_name (PFalg_att_t ori, unsigned int id)
 {
+    PFalg_att_t unq = att_NULL;
 
-//     printf("id:%i\n", id);
-//     printf("name:%s\n", PFatt_str(ori));
-
-    PFalg_att_t unq;
+    if (PFalg_is_unq_name(ori))
+        PFoops (OOPS_FATAL,
+                "bit-encoded column name expected");
 
     switch (ori) {
         case att_iter:
@@ -863,11 +874,36 @@ PFalg_unq_name (PFalg_att_t ori, unsigned int id)
         default:
             PFoops (OOPS_FATAL,
                     "Mapping variable to an unique name failed. "
-                    "(original name: %s, id: %u)",
+                    "(bit-encoded name: %s, id: %u)",
                     PFatt_str (ori), id);
     }
 
-    return unq | 1 << 3 | id << 4;
+    return (id << 4) | (1 << 3) | unq;
+}
+
+/**
+ * Create a unique name based on an original bit-encoded name @a ori
+ * that retains the usage information of the new variable (iter, pos
+ * or item).
+ */
+PFalg_att_t
+PFalg_unq_name (PFalg_att_t ori)
+{
+    return unq_name (ori, highest_col_name_id++);
+}
+
+/**
+ * Create an unique name based on an id @a id and
+ * an original name @a ori that retains the usage information
+ * of the new variable (iter, pos or item).
+ */
+PFalg_att_t
+PFalg_unq_fixed_name (PFalg_att_t ori, unsigned int id)
+{
+    if (id > highest_col_name_id)
+        highest_col_name_id = id;
+
+    return unq_name (ori, id);
 }
 
 /**
@@ -995,11 +1031,16 @@ PFatt_str (PFalg_att_t att) {
         case att_isdec:   return "item8";
         default:
             if (att & (1 << 3)) {
-                unsigned int id = att >> 4;
-                size_t len = sizeof ("iter0000");
-                char *res = PFmalloc (len+1);
+                unsigned int id     = att >> 4,
+                             tmp_id = id;
+                size_t       len = sizeof ("iter");
+                char        *res;
 
-                assert (id < 10000);
+                while (tmp_id > 0) {
+                    tmp_id /= 10;
+                    len++;
+                }
+                res = PFmalloc (len+1);
 
                 if (att & att_iter)
                     snprintf (res, len, "%s%u", "iter", id);

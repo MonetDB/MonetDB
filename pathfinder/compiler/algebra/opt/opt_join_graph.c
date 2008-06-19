@@ -154,7 +154,7 @@ opt_join_graph (PFla_op_t *p)
 
                 PFalg_att_t item_res;
                 item_res = PFalg_ori_name (
-                               PFalg_unq_name (att_item, 0),
+                               PFalg_unq_name (att_item),
                                ~(p->sem.step.item |
                                  p->sem.step.iter));
 
@@ -191,7 +191,7 @@ opt_join_graph (PFla_op_t *p)
 
                 PFalg_att_t item_res;
                 item_res = PFalg_ori_name (
-                               PFalg_unq_name (att_item, 0),
+                               PFalg_unq_name (att_item),
                                ~(p->sem.step.item |
                                  p->sem.step.iter));
 
@@ -270,7 +270,7 @@ opt_set (PFla_op_t *p)
                 /* rename the join argument in case a name conflict occurs */
                 if (used_cols & new_col)
                     new_col = PFalg_ori_name (
-                                  PFalg_unq_name (new_col, 0),
+                                  PFalg_unq_name (new_col),
                                   ~used_cols);
 
                 /* replace the semijoin */
@@ -306,7 +306,7 @@ opt_set (PFla_op_t *p)
 
                 PFalg_att_t item_res;
                 item_res = PFalg_ori_name (
-                               PFalg_unq_name (att_item, 0),
+                               PFalg_unq_name (att_item),
                                ~(p->sem.step.item |
                                  p->sem.step.iter));
 
@@ -334,7 +334,7 @@ opt_set (PFla_op_t *p)
 
                 PFalg_att_t item_res;
                 item_res = PFalg_ori_name (
-                               PFalg_unq_name (att_item, 0),
+                               PFalg_unq_name (att_item),
                                ~(p->sem.step.item |
                                  p->sem.step.iter));
 

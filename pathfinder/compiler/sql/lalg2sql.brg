@@ -3173,7 +3173,7 @@ reduce (PFla_op_t * p, int goalnt)
                 for (unsigned int i = 0; i < p->schema.count; i++)
                     used_cols |= p->schema.items[i].name;
 
-                num = PFalg_ori_name (PFalg_unq_name (att_pos, 0), ~used_cols);
+                num = PFalg_ori_name (PFalg_unq_name (att_pos), ~used_cols);
 
                 /* copy all existing column, from, and where lists */
                 copy_cols_from_where (p, L(p));

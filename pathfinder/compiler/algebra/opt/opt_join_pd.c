@@ -88,19 +88,6 @@
 #define ratt(p)  (proj_at(rproj(p),0).old)
 #define res(p)   (proj_at(lproj(p),0).new)
 
-/* highest free id value */
-static unsigned int highest_id;
-
-/* increase the id of the input column name */
-static PFalg_att_t
-free_col (PFalg_att_t att)
-{
-    assert (PFalg_is_unq_name (att));
-
-    return PFalg_unq_name (PFalg_ori_name (att, ~att_NULL),
-                           highest_id++);
-}
-        
 /* abbreviation for attribute dependency test */
 static bool
 is_join_att (PFla_op_t *p, PFalg_att_t att)
@@ -664,7 +651,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     /* any new column will be added
                        with an unused column name */
                     if (j == lproj_old_size)
-                        proj_add (lproj) = proj (free_col (cur), cur);
+                        proj_add (lproj) = proj (PFalg_new_name (cur), cur);
                 }
 
                 *p = *(PFla_project_ (eqjoin_unq (L(lp), rp, lproj, rproj),
@@ -1685,26 +1672,133 @@ join_pushdown (PFla_op_t *p, PFarray_t *clean_up_list)
 }
 
 /**
- * find the highest column name id
+ * Introduce the special eqjoin operator with implicit
+ * projection list that is pushed down in the optimization
+ * phase.
  */
-static unsigned int
-get_highest_id (PFla_op_t *p, unsigned int id)
+static void
+introduce_eqjoin_unq (PFla_op_t *p)
 {
-    unsigned int col_id;
-
     if (SEEN(p))
-        return id;
+        return;
     else
         SEEN(p) = true;
     
-    for (unsigned int i = 0; i < p->schema.count; i++) {
-        col_id = PFalg_unq_name_id (p->schema.items[i].name);
-        if (id <= col_id)
-            id = col_id;
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+        introduce_eqjoin_unq (p->child[i]);
+
+    /* introduce the special eqjoin operator */
+    if (p->kind == la_eqjoin) {
+        unsigned int  lcount = L(p)->schema.count,
+                      rcount = R(p)->schema.count,
+                      i;
+        PFarray_t    *lproj  = PFarray (sizeof (PFalg_proj_t), lcount),
+                     *rproj  = PFarray (sizeof (PFalg_proj_t), rcount);
+        PFalg_proj_t *projlist;
+        PFalg_att_t   att1   = p->sem.eqjoin.att1,
+                      att2   = p->sem.eqjoin.att2,
+                      res    = att1 < att2 ? att1 : att2,
+                      att;
+        
+        projlist  = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
+        
+        /* add the join columns as first arguments
+           to the projection lists */
+        proj_add (lproj) = proj (res, att1);
+        proj_add (rproj) = proj (res, att2);
+        
+        /* fill the projection lists */
+        for (i = 0; i < lcount; i++) {
+            att = L(p)->schema.items[i].name;
+            if (att == att1) {
+                projlist[i] = proj (att1, res);
+            }
+            else {
+                projlist[i] = proj (att, att);
+                proj_add (lproj) = proj (att, att);
+            }
+        }
+        for (i = 0; i < rcount; i++) {
+            att = R(p)->schema.items[i].name;
+            if (att == att2) {
+                projlist[i+lcount] = proj (att2, res);
+            }
+            else {
+                projlist[i+lcount] = proj (att, att);
+                proj_add (rproj) = proj (att, att);
+            }
+        }
+            
+        *p = *PFla_project_ (
+                  eqjoin_unq (L(p), R(p), lproj, rproj),
+                  p->schema.count, projlist);
     }
-    if (L(p)) id = get_highest_id (L(p), id);
-    if (R(p)) id = get_highest_id (R(p), id);
-    return id;
+}
+
+/**
+ * Replace the special eqjoin operator with implicit
+ * projection list with the normal eqjoin operator.
+ */
+static void
+remove_eqjoin_unq (PFla_op_t *p)
+{
+    if (SEEN(p))
+        return;
+    else
+        SEEN(p) = true;
+    
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+        remove_eqjoin_unq (p->child[i]);
+
+    /* remove the special eqjoin operator */
+    if (p->kind == la_eqjoin_unq) {
+        PFarray_t    *lproj  = p->sem.eqjoin_unq.lproj,
+                     *rproj  = p->sem.eqjoin_unq.rproj;
+        PFalg_proj_t *projlist,
+                     *lprojlist,
+                     *rprojlist;
+        unsigned int  lcount = PFarray_last (lproj),
+                      rcount = PFarray_last (rproj),
+                      i;
+        PFalg_att_t   att1_new,
+                      att2_old,
+                      att2_new,
+                      att;
+        
+        /* look up the join column names */
+        att1_new = proj_at (lproj, 0).new;
+        att2_old = proj_at (rproj, 0).old;
+        /* get a new column name */
+        att2_new = PFalg_new_name (att2_old);
+
+        projlist  = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
+        lprojlist = PFmalloc (lcount * sizeof (PFalg_proj_t));
+        rprojlist = PFmalloc (rcount * sizeof (PFalg_proj_t));
+        
+        /* create the projection list for the left operand */
+        for (i = 0; i < PFarray_last (lproj); i++)
+            lprojlist[i] = proj_at (lproj, i);
+
+        /* create the projection list for the right operand */
+        rprojlist[0] = proj (att2_new, att2_old);
+        for (i = 1; i < PFarray_last (rproj); i++)
+            rprojlist[i] = proj_at (rproj, i);
+
+        /* As some operators rely on the schema of its operands
+           we introduce a projection that removes the second join
+           attribute thus maintaining the schema of the duplicate
+           aware eqjoin operator. */
+        for (unsigned int i = 0; i < p->schema.count; i++) {
+            att = p->schema.items[i].name;
+            projlist[i] = proj (att, att);
+        }
+        
+        *p = *PFla_project_ (
+                  eqjoin (PFla_project_ (L(p), lcount, lprojlist),
+                          PFla_project_ (R(p), rcount, rprojlist),
+                          att1_new, att2_new),
+                  p->schema.count, projlist);
+    }
 }
 
 /**
@@ -1717,7 +1811,9 @@ PFalgopt_join_pd (PFla_op_t *root)
     unsigned int tries = 0, max_tries = 1;
     bool modified = true;
 
-    highest_id = get_highest_id (root, 0) + 1;
+    /* replace la_eqjoin by la_eqjoin_unq operators */
+    introduce_eqjoin_unq (root);
+    PFla_dag_reset (root);
 
     /* Optimize algebra tree */
     while (modified || tries <= max_tries) {
@@ -1733,6 +1829,11 @@ PFalgopt_join_pd (PFla_op_t *root)
         PFla_dag_reset (root);
         if (!modified) tries++;
     }
+
+    /* replace la_eqjoin_unq by la_eqjoin operators */
+    remove_eqjoin_unq (root);
+    PFla_dag_reset (root);
+
     return root;
 }
 

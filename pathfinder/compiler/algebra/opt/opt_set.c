@@ -75,7 +75,7 @@ opt_set (PFla_op_t *p)
                 PFprop_set (L(p)->prop)) {
                 PFalg_att_t item_res;
                 item_res = PFalg_ori_name (
-                               PFalg_unq_name (att_item, 0),
+                               PFalg_unq_name (att_item),
                                ~(L(p)->sem.step.item |
                                  L(p)->sem.step.iter));
                 *L(p) = *PFla_project (
@@ -97,7 +97,7 @@ opt_set (PFla_op_t *p)
                 PFprop_set (R(p)->prop)) {
                 PFalg_att_t item_res;
                 item_res = PFalg_ori_name (
-                               PFalg_unq_name (att_item, 0),
+                               PFalg_unq_name (att_item),
                                ~(R(p)->sem.step.item |
                                  R(p)->sem.step.iter));
                 *R(p) = *PFla_project (
