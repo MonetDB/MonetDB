@@ -12,7 +12,7 @@
 	io.print(c);
 	#setPersistent(c);
 	io.print(c);
-	io.printf("catched anything?\n");
+	io.printf("caught anything?\n");
 catch GDKerror:str;
 	io.printf("Catched the renaming exception\n");
 exit  GDKerror;

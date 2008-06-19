@@ -22,7 +22,7 @@ function user.main():void;              #  0 main:void := user.main()
     io.print("should not come here\n"); #  4 _5:void := IOprint_val(_6:str) 
 end main;	# 5  
 !MALException:user.main[3]:Exception raised
-!PermissionDeniedException:user.main[5]:Exception not catched
+!PermissionDeniedException:user.main[5]:Exception not caught
 
 # 17:45:29 >  
 # 17:45:29 >  Done.

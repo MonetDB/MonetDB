@@ -726,15 +726,15 @@ limited.
 		if (ret) {
 			ret = createScriptException(mb, mb->stop-1,
 					getExceptionType(getVarName(mb,exceptionVar)),
-					ret, "Exception not catched");
+					ret, "Exception not caught");
 		} else {
 			if (stk->stk[exceptionVar].vtype == TYPE_str) {
 				ret = createScriptException(mb, mb->stop-1, MAL,
 						stk->stk[exceptionVar].val.sval,
-						"Exception not catched");
+						"Exception not caught");
 			} else {
 				ret = createScriptException(mb, mb->stop-1, MAL,
-						NULL, "Exception not catched");
+						NULL, "Exception not caught");
 			}
 		}
 	}
