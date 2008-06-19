@@ -297,6 +297,13 @@ union PFpa_op_sem_t {
         PFalg_att_t     item;     /**< item column */
     } ii;
 
+    /* store the column names necessary for a merge_adjacent operator */
+    struct {
+        PFalg_att_t     iter;     /**< name of the iter column */
+        PFalg_att_t     pos;      /**< name of the pos column */
+        PFalg_att_t     item;     /**< name of the item column */
+    } iter_pos_item;
+
     /* store the column names necessary for document access */
     struct {
         PFalg_att_t     res;      /**< attribute to hold the result */
