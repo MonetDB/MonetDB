@@ -475,7 +475,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			}
 		}
 		if (TABLETcreate_bats(&as, (sz<0)?1000:sz) >= 0) {
-			if (TABLETload_file(&as, bs, out) >= 0)
+			if (TABLETload_file(&as, bs, out,0, i) >= 0)
 				bats = TABLETcollect_bats(&as);
 		}
 		if (as.error)
