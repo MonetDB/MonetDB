@@ -898,8 +898,11 @@ open_gzrstream(const char *filename)
 	if ((s = open_gzstream(filename, "rb")) == NULL)
 		return NULL;
 	s->type = ST_BIN;
-	if (s->errnr == NO__ERROR)
-		gzread((gzFile *) s->stream_data.p, (void *) &s->byteorder, sizeof(s->byteorder));
+	if (s->errnr == NO__ERROR &&
+	    gzread((gzFile *) s->stream_data.p, (void *) &s->byteorder, sizeof(s->byteorder)) < (int) sizeof(s->byteorder)) {
+		stream_gzclose(s);
+		s->errnr = OPEN_ERROR;
+	}
 	return s;
 }
 
@@ -1022,8 +1025,11 @@ open_bzrstream(const char *filename)
 	if ((s = open_bzstream(filename, "rb")) == NULL)
 		return NULL;
 	s->type = ST_BIN;
-	if (s->errnr == NO__ERROR)
-		BZ2_bzread((BZFILE *) s->stream_data.p, (void *) &s->byteorder, sizeof(s->byteorder));
+	if (s->errnr == NO__ERROR &&
+	    BZ2_bzread((BZFILE *) s->stream_data.p, (void *) &s->byteorder, sizeof(s->byteorder)) < (int) sizeof(s->byteorder)) {
+		stream_bzclose(s);
+		s->errnr = OPEN_ERROR;
+	}
 	return s;
 }
 
@@ -1114,8 +1120,11 @@ open_rstream(const char *filename)
 	s->type = ST_BIN;
 	if (s->errnr == NO__ERROR) {
 		if (fread((void *) &s->byteorder, sizeof(s->byteorder), 1, (FILE *) s->stream_data.p) < 1 ||
-		    ferror((FILE *) s->stream_data.p))
+		    ferror((FILE *) s->stream_data.p)) {
+			fclose((FILE *) s->stream_data.p);
+			s->stream_data.p = NULL;
 			s->errnr = OPEN_ERROR;
+		}
 	}
 	return s;
 }
@@ -1646,8 +1655,11 @@ socket_rstream(SOCKET sock, const char *name)
 	if ((s = socket_open(sock, name)) == NULL)
 		return NULL;
 	s->type = ST_BIN;
-	if (s->errnr == NO__ERROR)
-		socket_read(s, (void *) &s->byteorder, sizeof(s->byteorder), 1);
+	if (s->errnr == NO__ERROR &&
+	    socket_read(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) < 1) {
+		socket_close(s);
+		s->errnr = OPEN_ERROR;
+	}
 	return s;
 }
 
@@ -2091,8 +2103,11 @@ ssl_rstream(SSL * ssl, const char *name)
 		return NULL;
 	s->access = ST_READ;
 	s->type = ST_BIN;
-	if (s->errnr == NO__ERROR)
-		ssl_read(s, (void *) &s->byteorder, sizeof(s->byteorder), 1);
+	if (s->errnr == NO__ERROR &&
+	    ssl_read(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) < 1) {
+		ssl_close(s);
+		s->errnr = READ_ERROR;
+	}
 	return s;
 }
 
@@ -2181,8 +2196,11 @@ file_rstream(FILE *fp, const char *name)
 
 	if (s->errnr == NO__ERROR) {
 		if (fread((void *) &s->byteorder, sizeof(s->byteorder), 1, fp) < 1 ||
-		    ferror(fp))
+		    ferror(fp)) {
+			fclose(fp);
+			s->stream_data.p = NULL;
 			s->errnr = OPEN_ERROR;
+		}
 	}
 	return s;
 }
