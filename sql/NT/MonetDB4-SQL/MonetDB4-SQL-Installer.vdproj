@@ -441,12 +441,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_8EC55414FBC142BB920FB7EFBC8BA206"
-        "OwnerKey" = "8:_F2140ED9D2C04D0AB1367617B77EAE25"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_8FF45856AE4640D195C01D0100C480FC"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -461,6 +455,12 @@
         {
         "MsmKey" = "8:_92DE8D997EA84EF49237343E180078ED"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_93F03AF29E894642865C94C9CFBB6D2C"
+        "OwnerKey" = "8:_F2140ED9D2C04D0AB1367617B77EAE25"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -3873,14 +3873,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB4"
-        "ProductCode" = "8:{76991721-CCDE-4281-826A-2EFF44441B36}"
-        "PackageCode" = "8:{D7120A91-A066-418E-860A-D521D0D3DAFC}"
+        "ProductCode" = "8:{3DB06D7E-EC88-4DB6-A1FA-B00CD87CF1EE}"
+        "PackageCode" = "8:{C07A8443-7D55-4C59-80CC-7F4DB6FFDF64}"
         "UpgradeCode" = "8:{9BECFB49-E47B-443F-9404-ADFBD243AB5D}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:8.6.17"
+        "ProductVersion" = "8:8.6.19"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -4537,7 +4537,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_8EC55414FBC142BB920FB7EFBC8BA206"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_93F03AF29E894642865C94C9CFBB6D2C"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
