@@ -146,3 +146,5 @@ NOT_WIN32?update-stress.SF-1896755
 order_of_declared_functions_matters.SF-1905940
 multi-join_query_compile_error.SF-1908822
 immune_for_updates.SF-1981852
+join-query_compilation_error.SF-1889694
+iter_in_join.SF-1991938
