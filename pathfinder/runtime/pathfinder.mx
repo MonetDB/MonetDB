@@ -2454,7 +2454,7 @@ PROC ws_docfilter(bat[void,bat] ws,
         # register the newly opened documents
         open_name.append(docpre_nme.tmark(0@0));
         open_cont.append(docpre_nme.tmark(0@0).project(cont));
-        open_docid.append(docpre_nme.hmark(0@0));
+        open_docid.append(docpre_nme.hmark(0@0).leftjoin(reverse(frag_root)));
     }
     return assert_order(any_pre);
 }
