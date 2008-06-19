@@ -54,7 +54,7 @@ initialized C variable. Thereafter, we simple produce
 function calls for each MAL instruction and plug in
 the required flow of control statements.
 Notice that each instruction may produce an exception,
-which should be catched. 
+which should be caught. 
 
 Of course the resulting code is not optimal, e.g.
 the following portion for the example is produced:

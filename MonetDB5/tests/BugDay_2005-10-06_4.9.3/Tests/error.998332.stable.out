@@ -15,7 +15,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     raise SQLerror := "this is an error ";#  1 SQLerror:str := _2:str {G}
 end main;	# 2  
 !MALException:user.main[1]:this is an error 
-!MALException:user.main[2]:Exception not catched
+!MALException:user.main[2]:Exception not caught
 
 
 

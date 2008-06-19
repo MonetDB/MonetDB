@@ -18,7 +18,7 @@ stdout of test 'tst307` in directory 'src/mal` itself:
 #z:= find(b,0);
 #print("should not come here anymore");
 #catch MALException;
-#	print("catched the exception");
+#	print("caught the exception");
 #exit MALException;
 #
 function user.main():void;              #  0 main:void := user.main() {G}
@@ -27,10 +27,10 @@ function user.main():void;              #  0 main:void := user.main() {G}
     z := algebra.find(b,0);             #  3 z:int := ALGfind(b:bat[:int,:int], _5:int) 
     io.print("should not come here anymore");#  4 _6:void := IOprint_val(_7:str) 
 catch MALException:str ;                #  5 MALException:str {J7}
-    io.print("catched the exception");  #  6 _9:void := IOprint_val(_10:str) 
+    io.print("caught the exception");  #  6 _9:void := IOprint_val(_10:str) 
 exit MALException:str ;                 #  7 MALException:str 
 end main;	# 8  
-[ "catched the exception" ]
+[ "caught the exception" ]
 
 # 08:01:18 >  
 # 08:01:18 >  Done.

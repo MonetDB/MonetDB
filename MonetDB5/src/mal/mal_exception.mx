@@ -47,7 +47,7 @@ implicitly raises the exception in the surrounding scope.
 After an exception has been dealt with the catch block can be left
 at the normal @sc{exit} with the option @sc{leave} or
 continue after the failed instruction using a @sc{redo}.
-The latter case assumes the catched code block has been able to provide
+The latter case assumes the caught code block has been able to provide
 an alternative for the failed instruction.
 
 Both @sc{leave} and @sc{redo} are conditional flow of control modifiers,
@@ -59,7 +59,7 @@ The argument to the catch statement is a target list,
 which holds the exception variables you are interested in.
 
 The snippet below illustrates how an exception raised
-in the function @sc{io.read} is catched using the exception variable IOerror.
+in the function @sc{io.read} is caught using the exception variable IOerror.
 After dealing with it locally, it raises a new exception @sc{ FATALerror}
 for the enclosing call.
 

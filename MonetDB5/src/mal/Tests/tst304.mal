@@ -10,6 +10,6 @@ end myException;
 	io.print("should not come here");
 #exception block;
 catch	MALException:str;
-	io.printf("catched IllegalAccess\n");
+	io.printf("caught IllegalAccess\n");
 exit	MALException;
 	io.print("done");

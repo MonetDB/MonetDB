@@ -664,11 +664,14 @@ str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	mhdl = NULL;
 	rethrow("remote.exec", tmp, RMTquery(&mhdl, "remote.exec", c->mconn, "remote.getnextid();"));
 	mapi_fetch_row(mhdl); /* should succeed */
-	ident = mapi_fetch_field(mhdl, 0); /* should be there */
-	if (ident == NULL) {
+	tmp = mapi_fetch_field(mhdl, 0); /* should be there */
+	if (tmp == NULL) {
 		mapi_close_handle(mhdl);
 		throw(MAL, "remote.exec", "missing first column in tuple");
 	}
+	i = strlen(tmp) + 1;
+	ident = alloca(sizeof(char) * i);
+	memcpy(ident, tmp, i);
 
 	/* build the function invocation string in qbuf */
 	len = 0;

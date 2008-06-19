@@ -5,7 +5,7 @@ function tst();
 	io.printf("should not come here\n");
 #exception block;
 catch	myNewException:str;
-	io.printf("catched exception\n");
+	io.printf("caught exception\n");
 exit	myNewException;
 end tst;
 

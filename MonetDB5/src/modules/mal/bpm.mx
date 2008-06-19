@@ -629,7 +629,7 @@ A ring may be empty.
 
 CAVEAT 1. Operations like revert do not return a new bat descriptor,
 which may lead to a situation that BATs may end up to be shared
-in two rings. This is currently catched in addPartition, which takes
+in two rings. This is currently caught in addPartition, which takes
 a copy of the BAT instead. Further optimization is needed here.
 
 CAVEAT 2. Grouping and aggregations are handled using reconstruction

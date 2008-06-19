@@ -3,7 +3,7 @@ echo "patch test_00"
 echo "lines changed:"
 grep "fb_a :=" test_00.mal
 grep "gb_a :=" test_00.mal
-echo "reason: find produces an exception, which is not catched"
+echo "reason: find produces an exception, which is not caught"
 ex - test_00.mal <<!EOF
 /fb_a :=/s/^/#ignore/p
 /gb_a :=/s/^/#ignore/p

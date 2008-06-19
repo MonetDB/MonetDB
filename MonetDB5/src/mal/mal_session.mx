@@ -567,7 +567,7 @@ MALparser(Client c)
 	if (parseMAL(c, c->curprg) || c->curprg->def->errors) {
 		/* just complete it for visibility */
 		pushEndInstruction(c->curprg->def);
-		/* catched errors */
+		/* caught errors */
 		showErrors();
 		@:restoreState@
 		/* now the parsing is done we should advance the stream */

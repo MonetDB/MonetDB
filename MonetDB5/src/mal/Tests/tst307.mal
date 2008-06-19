@@ -4,5 +4,5 @@ b:= bat.new(:int,:int);
 z:= algebra.find(b,0);
 io.print("should not come here anymore");
 catch MALException:str;
-	io.print("catched the exception");
+	io.print("caught the exception");
 exit MALException;
