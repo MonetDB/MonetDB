@@ -1,6 +1,6 @@
 %define name MonetDB-geom
 %define version @VERSION@
-%define release 2%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
+%define release 3%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
 # groups of related archs
 %define all_x86 i386 i586 i686
