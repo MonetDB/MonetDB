@@ -1036,7 +1036,7 @@ function str2qgrams(s:str):bat[:oid,:str];
     s := qgramnormalize(s);
 
     len := calc.length(s);
-    len := len + 4;
+    len := calc.+(len,4);
     b := bat.new(:str,:oid,len);
     i := 0;
     last := " ";
@@ -1044,13 +1044,13 @@ function str2qgrams(s:str):bat[:oid,:str];
     bat.insert(b,"#",nil:oid);
 	cnt:= 0:int;
     id := calc.oid(cnt);
-    barrier B:= i < len;
+    barrier B:= calc.<(i,len);
   	sstr := str.string(s,i,1);
         bat.insert(b,sstr, nil:oid);
 	cnt := aggr.count(b);
-        leave B:= cnt > 32764; # ignore suffix of >32KB strings
+        leave B:= calc.>(cnt,32764); # ignore suffix of >32KB strings
         i := calc.+(i,1);
-    redo B:= i < len;
+    redo B:= calc.<(i,len);
     exit B;
     bat.insert(b,"$",nil:oid);
     bat.insert(b,"$",nil:oid);

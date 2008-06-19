@@ -751,6 +751,7 @@ TABsetDelimiter(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tableReports[rnr]->sep = !strNil(*sep) ? GDKstrdup(*sep) : 0;
 	return MAL_SUCCEED;
 }
+
 str
 TABsetColumn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1427,8 +1428,11 @@ insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 				res |= insert_val(&fmt[i], s, e, quote, key, &as->error, i);
 			quote = 0;
 			line = e + fmt[i].seplen;
-			if (as->error && as->complaints)
+			if (as->error && as->complaints){
 				BUNins(as->complaints,NULL, as->error, TRUE);
+				if (!as->tryall)
+					return -1;
+			}
 		} else {
 			snprintf(errmsg,BUFSIZ, "missing sep %s line %d field %d\n", 
 				fmt->sep, (int)BATcount(fmt->c), (int)i);
@@ -1663,7 +1667,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2)
 						res = 1; 
 						if (b->len > b->pos &&
 						    i>=offset &&
-						    insert_line(as, s, NULL, col1,col2) < 0 && !as->tryall) {
+						    insert_line(as, s, NULL, col1,col2) < 0 ) {
 								GDKerror(as->error);
 								as->error=0;
 								GDKerror("TABLETload_file: read error "
