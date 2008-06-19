@@ -442,6 +442,8 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 		as.nr = sz;
 		as.offset = offset;
 		as.error = NULL;
+		as.tryall = 0;
+		as.complaints= NULL;
 		fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (as.nr_attrs + 1));
 		dec = (dec_format*) GDKmalloc(sizeof(dec_format) * (as.nr_attrs + 1));
 
@@ -475,7 +477,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			}
 		}
 		if (TABLETcreate_bats(&as, (sz<0)?1000:sz) >= 0) {
-			if (TABLETload_file(&as, bs, out,0, i) >= 0)
+			if (TABLETload_file(&as, bs, out, (size_t) 0,  (size_t) i) >= 0)
 				bats = TABLETcollect_bats(&as);
 		}
 		if (as.error)
