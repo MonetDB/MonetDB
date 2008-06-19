@@ -272,8 +272,10 @@ target directory, you need to call
 
 Some other useful ``configure`` options are:
 
---enable-debug          enable full debugging default=off
---enable-optimize       enable extra optimization default=off
+--enable-debug          enable full debugging default=[see `Configure defaults and recommendations`_ below]
+--enable-optimize       enable extra optimization default=[see `Configure defaults and recommendations`_ below]
+--enable-assert         enable assertions in the code default=[see `Configure defaults and recommendations`_ below]
+--enable-strict         enable strict compiler flags default=[see `Configure defaults and recommendations`_ below]
 --enable-warning        enable extended compiler warnings default=off
 --enable-profile        enable profiling default=off
 --enable-instrument     enable instrument default=off
@@ -292,6 +294,54 @@ Use ``configure --help`` to find out more about ``configure`` options.
 
 The ``--with-mx`` and ``--with-mel`` options are only used when
 configuring the sources as retrieved through CVS.
+
+Configure defaults and recommendations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For convenience of both developers and users as well as to comply even more
+with open source standards, we now set/use the following defaults for the
+configure options
+
+::
+
+ --enable-strict, --enable-assert, --enable-debug, --enable-optimize
+
+When compiling from CVS sources
+(as mainly done by developers):
+
+::
+
+ strict=yes  assert=yes  debug=yes  optimize=no (*)
+
+When compiling from packaged/distributed sources (i.e., tarballs)
+(as mainly done by users):
+
+::
+
+ strict=no   assert=no   debug=no   optimize=no (*)
+
+For building binary distributions (RPMs):
+
+::
+
+ strict=no   assert=no   debug=no   optimize=yes
+
+``(*)``
+IMPORTANT NOTE:
+
+Since ``--enable-optimize=yes`` is no longer the default for any case except
+binary packages, it is *strongly recommended* to (re)compile everything from
+scratch, *explicitly configured* with
+
+::
+
+ --enable-debug=no --enable-assert=no --enable-optimize=yes
+
+in case you want/need to run any performance experiments with MonetDB!
+
+Please note:
+``--enable-X=yes`` is equivalent to ``--enable-X``, and
+``--enable-X=no``  is equivalent to ``--disable-X``.
 
 Make
 ~~~~
