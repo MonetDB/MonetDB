@@ -1981,7 +1981,7 @@ tablet_output(BAT *order, BAT *seps, BAT *bats, void **s)
 str
 CMDtablet_load(int *ret, int *nameid, int *sepid, int *typeid, str *filename, int *nr)
 {
-	BAT *names, *seps, *types, *bn;
+	BAT *names, *seps, *types, *bn = NULL;
 
 	if ((names = BATdescriptor(*nameid)) == NULL) {
 		throw(MAL, "tablet.load", "BAT missing");
