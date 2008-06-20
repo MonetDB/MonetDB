@@ -93,7 +93,7 @@ fi
 
 dnl geos
 GEOS_VERSION_REQUIRED_MIN=2.0.0
-GEOS_VERSION_REQUIRED_MAX=3.0.0
+dnl GEOS_VERSION_REQUIRED_MAX=3.0.0
 have_geos=auto
 GEOS_CONFIG=''
 GEOS_INCS=''
@@ -118,20 +118,21 @@ if test "x$have_geos" != xno; then
 	fi
 fi
 if test "x$have_geos" != xno; then
-	AC_MSG_CHECKING([for Geos >= $GEOS_VERSION_REQUIRED_MIN, but < $GEOS_VERSION_REQUIRED_MAX])
+dnl	AC_MSG_CHECKING([for Geos >= $GEOS_VERSION_REQUIRED_MIN, but < $GEOS_VERSION_REQUIRED_MAX])
+	AC_MSG_CHECKING([for Geos >= $GEOS_VERSION_REQUIRED_MIN])
 	GEOS_VERSION="`$GEOS_CONFIG --version`"
 	AC_MSG_RESULT(found $GEOS_VERSION)
 	wrong=''
 	if test MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION_REQUIRED_MIN); then
 		wrong="too old"
 	fi
-	if test MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION_REQUIRED_MAX); then
-		wrong="not yet supported"
-	fi
-	if test "x$wrong" != x; then
-		AC_MSG_ERROR([Geos version $GEOS_VERSION is $wrong])
-		have_geos=no
-	fi
+dnl	if test MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION_REQUIRED_MAX); then
+dnl		wrong="not yet supported"
+dnl	fi
+dnl	if test "x$wrong" != x; then
+dnl		AC_MSG_ERROR([Geos version $GEOS_VERSION is $wrong])
+dnl		have_geos=no
+dnl	fi
 fi
 if test "x$have_geos" != xno; then
 	case "$GCC-$CC-`$GEOS_CONFIG --prefix`-`$GEOS_CONFIG --includes`" in
