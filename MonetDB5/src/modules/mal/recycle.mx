@@ -71,6 +71,10 @@ comment "Set recycler cache policy:
 4- RCACHE_MEMCRD: reduce the storage overhead 
 optional arguments are [ instruction-, [memory -]] limit";
 
+pattern setCachePolicy(p:int,cl:int,mem:int,alpha:flt):void
+address RECYCLEsetCache
+comment "Set recycler cache policy with alpha parameter"
+
 command getCachePolicy():int
 address RECYCLEgetCache;
 
@@ -322,6 +326,8 @@ RECYCLEsetCache(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		recycleCacheLimit = * (int*) getArgReference(stk, p, 2);
 	if( rcachePolicy && p->argc > 3)
 		recycleMemory= * (int*) getArgReference(stk, p, 3);
+	if( rcachePolicy && p->argc > 4)
+		recycleAlpha = * (flt*) getArgReference(stk, p, 4);
 	return MAL_SUCCEED;
 }
 
