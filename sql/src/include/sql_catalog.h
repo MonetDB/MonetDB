@@ -197,27 +197,28 @@ typedef struct sql_func {
 
 	char *imp;
 	char *mod;
-	list *ops;		/* param list */
+	list *ops;	/* param list */
 	sql_subtype res;
-	/* res.scale
-	   SCALE_NOFIX/SCALE_NONE => nothing
-	   SCALE_FIX => input scale fixing,
-	   SCALE_ADD => leave inputs as is and do add scales
-	   example numerical multiplication
-	   SCALE_SUB => first input scale, fix with second scale
-	   result scale is equal to first input
-	   example numerical division
-	   DIGITS_ADD => result digits, sum of args
-	   example string concat
-	 */
 	int nr;
 	int is_func;
-	int sql;		/* 0 native implementation
-				   1 sql 
-				   2 sql instantiated proc 
-				*/
+	int sql;	/* 0 native implementation
+			   1 sql 
+			   2 sql instantiated proc 
+			*/
 	int aggr;
 	int side_effect;
+	int fix_scale;		
+			/*
+	   		   SCALE_NOFIX/SCALE_NONE => nothing
+	   		   SCALE_FIX => input scale fixing,
+	   		   SCALE_ADD => leave inputs as is and do add scales
+	   		   example numerical multiplication
+	   		   SCALE_SUB => first input scale, fix with second scale
+	   		   result scale is equal to first input
+	   		   example numerical division
+	   		   DIGITS_ADD => result digits, sum of args
+	   		   example string concat
+	 		*/
 	sql_schema *s;
 } sql_func;
 
