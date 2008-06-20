@@ -27,7 +27,7 @@ URL: http://monetdb.cwi.nl/
 Source: http://downloads.sourceforge.net/monetdb/MonetDB-geom-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
-%{!?_with_monetdb4: %{!?_without_monetdb4: %define _with_monetdb4 --with-monetdb4}}
+%{!?_with_monetdb4: %{!?_without_monetdb4: %define _without_monetdb4 --without-monetdb4}}
 %{!?_with_monetdb5: %{!?_without_monetdb5: %define _with_monetdb5 --with-monetdb5}}
 
 %if !%{?buildsystem}
