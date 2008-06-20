@@ -537,6 +537,22 @@ rel2bin_table( mvc *sql, sql_rel *rel )
 	return sub;
 }
 
+static int
+equi_join(stmt *j)
+{
+	if (j->flag == cmp_equal)
+		return 0;
+	return -1;
+}
+
+static int
+not_equi_join(stmt *j)
+{
+	if (j->flag != cmp_equal)
+		return 0;
+	return -1;
+}
+
 static stmt *
 rel2bin_join( mvc *sql, sql_rel *rel )
 {
@@ -556,29 +572,28 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 		return NULL;	
 	}
 	if (rel->exps) {
-		/* TODO introduce hash optimized reljoin (see rel2bin.mx) */
-		/* probably better to simply generate stmt_reljoin here */
+		int idx = 0;
+		list *jns = create_stmt_list();
 
-		/* simply keep a list of joins */
-		/* at end split the lists in 2, ie those with equi joins and
-		   those not. With those results create releqjoin and reljoin	
-		   statements.
-		 */
+		/* generate a stmt_reljoin */
 		for( en = rel->exps->h; en; en = en->next ) {
+			int join_idx = sql->opt_stats[0];
 			stmt *s = exp_bin(sql, en->data, left, right, NULL, NULL);
 
 			if (!s) {
 				assert(0);
 				stmt_destroy(left);
 				stmt_destroy(right);
-				if (join)
-					stmt_destroy(join);
+				list_destroy(jns);
 				return NULL;
 			}
+			if (join_idx != sql->opt_stats[0])
+				idx = 1;
 			if (!join) {
 				join = s;
 			} else if (s->type != st_join && s->type != st_join2) {
 				/* handle select expressions */
+				assert(0);
 				if (s->h == join->h) {
 					join = stmt_semijoin(join,s);
 				} else {
@@ -586,44 +601,25 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 					join = stmt_semijoin(join,s);
 					join = stmt_reverse(join);
 				}
-			} else {
-				/* break column join */
-				stmt *l = stmt_mark(stmt_reverse(join), 100);
-				stmt *r = stmt_mark(stmt_dup(join), 100);
-				stmt *ld = stmt_dup(s->op1.stval);
-				stmt *le = stmt_join(l, ld, cmp_equal);
-				if (s->type == st_join2) {
-					stmt *rd = stmt_dup(s->op2.stval);
-					stmt *re = stmt_join(r, rd, cmp_equal);
-					stmt *r2 = stmt_dup(s->op3.stval);
-					stmt *re2 = stmt_join(stmt_dup(r), r2, cmp_equal);
-					comp_type c1 = s->flag&2?cmp_gte:cmp_gt;
-					comp_type c2 = s->flag&1?cmp_lte:cmp_lt;
-					stmt *v1 = stmt_uselect(le, re, c1);
-					stmt *v2 = stmt_uselect(stmt_dup(le), re2, c2);
-					l = stmt_semijoin(stmt_dup(l), stmt_dup(v1));
-					l = stmt_semijoin(l, stmt_dup(v2));
-					r = stmt_semijoin(stmt_dup(r), v1);
-					r = stmt_semijoin(r, v2);
-					join = stmt_join(stmt_reverse(l), r, cmp_equal);
-					stmt_destroy(s);
-				} else {
-					stmt *rd = stmt_reverse(stmt_dup(s->op2.stval));
-					stmt *re = stmt_join(r, rd, cmp_equal);
-					sql_subfunc *f = sql_bind_func(sql->session->schema, compare_func((comp_type)s->flag), tail_type(le), tail_type(le));
-					stmt * cmp;
-	
-					assert(f);
-
-					cmp = stmt_binop(le, re, f);
-					cmp = stmt_uselect(cmp, stmt_bool(1), cmp_equal);
-
-					l = stmt_semijoin(stmt_dup(l), stmt_dup(cmp));
-					r = stmt_semijoin(stmt_dup(r), cmp);
-					join = stmt_join(stmt_reverse(l), r, cmp_equal);
-					stmt_destroy(s);
-				}
+				continue;
 			}
+			list_append(jns, s);
+		}
+		if (list_length(jns) > 1) {
+			int o = 1, *O = &o;
+			/* move all equi joins into a releqjoin */
+			list *eqjns = list_select(jns, O, (fcmp)&equi_join, (fdup)stmt_dup);
+			if (!idx && list_length(eqjns) > 1) {
+				list *neqjns = list_select(jns, O, (fcmp)&not_equi_join, (fdup)stmt_dup);
+				list_destroy(jns);
+				join = stmt_reljoin(stmt_releqjoin1(eqjns), neqjns);
+			} else {
+				join = stmt_reljoin(NULL, jns);
+				list_destroy(eqjns);
+			}
+		} else {
+			join = stmt_dup(jns->h->data); 
+			list_destroy(jns);
 		}
 	} else {
 		stmt *l = bin_first_column(left);

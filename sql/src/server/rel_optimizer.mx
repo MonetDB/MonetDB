@@ -762,70 +762,11 @@ printf("AFTER\n");
 	return rel;
 }
 
-#if 0
-static sql_exp *
-exp_remove_alias(sql_exp *e, list *exps) 
-{
-	sql_exp *r = NULL;
-
-	switch(e->type) {
-	case e_column:
-		if (e->l) 
-			r = exps_bind_column2(exps, e->l, e->r);
-		else
-			r = exps_bind_column(exps, e->r);
-		if (r) {
-			r = exp_dup(r);
-			exp_destroy(e);
-			return r;
-		}
-		break;
-	case e_cmp: 
-		e->l = exp_remove_alias(e->l, exps);
-		e->r = exp_remove_alias(e->r, exps);
-		if (e->f)
-			e->f = exp_remove_alias(e->f, exps);
-		return e;
-	case e_convert:
-		e->l = exp_remove_alias(e->l, exps);
-		return e;
-	case e_aggr:
-	case e_func: {
-		list *l = e->l;
-		if (l) {
-			node *n;
-			list *nl = new_exp_list();
-			for(n=l->h; n; n=n->next) {
-				sql_exp *arg = n->data;
-
-				arg = exp_dup(exp_remove_alias(arg, exps));
-				append(nl, arg);
-			}
-			list_destroy(l);
-			e->l = nl;
-		}
-	}	return e;
-	case e_atom:
-		return e;
-	}
-	return NULL;
-}
-#endif
-
-/*
-static sql_exp *
-exps_remove_alias(sql_exp *e, list *exps) 
-{
-	return exp_dup(exp_remove_alias(e, exps));
-}
-*/
-
-#if 0
 /* push the expression down, ie translate colum references from relation f into expression of relation t */ 
 static sql_exp *
 exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) 
 {
-	sql_exp *ne = NULL;
+	sql_exp *ne = NULL, *l, *r, *r2;
 
 	switch(e->type) {
 	case e_column:
@@ -839,25 +780,35 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column(f->exps, e->r);
 		assert(ne);
 		e = NULL;
-		if (ne->name && strcmp(ne->r, ne->name) == 0){ /* no alias */ 
+		if (ne->name && ne->r && strcmp(ne->r, ne->name) == 0){ 
 			if (ne->l) {
 				e = rel_bind_column2(sql, t, ne->l, ne->r);
 				if (!e && t->name && strcmp(ne->l, t->name) == 0) 
 					e = rel_bind_column(sql, t, ne->r);
 			}
 		}
-		if (!e)
+		if (!e && ne->r)
 			e = rel_bind_column(sql, t, ne->r);
-		assert(e);
-		//return exp_dup(e);
 		return e;
 	case e_cmp: 
-		if (e->f) 
-			return exp_compare2( exp_push_down(sql, e->l, f, t), exp_push_down(sql, e->r, f, t), exp_push_down(sql, e->f, f, t), e->flag);
-		else
-			return exp_compare( exp_push_down(sql, e->l, f, t), exp_push_down(sql, e->r, f, t), e->flag);
+		l = exp_push_down(sql, e->l, f, t);
+		r = exp_push_down(sql, e->r, f, t);
+		if (e->f) {
+			r2 = exp_push_down(sql, e->f, f, t);
+			if (l && r && r2)
+				return exp_compare2( l, r, r2, e->flag);
+		} else if (l && r) {
+			return exp_compare( l, r, e->flag);
+		}
+		exp_destroy(l);
+		exp_destroy(r);
+		return NULL;
 	case e_convert:
-		return exp_convert( exp_push_down(sql, e->l, f, t), exp_fromtype(e), exp_totype(e));
+		l = exp_push_down(sql, e->l, f, t);
+		if (l)
+			return exp_convert( l, exp_fromtype(e), exp_totype(e));
+		exp_destroy(l);
+		return NULL;
 	case e_aggr:
 	case e_func: {
 		list *l = e->l, *nl = NULL;
@@ -872,31 +823,52 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				sql_exp *arg = n->data;
 
 				arg = exp_push_down(sql, arg, f, t);
+				if (!arg) {
+					list_destroy(nl);
+					return NULL;
+				}
 				append(nl, arg);
 			}
 		}
 		if (e->type == e_func)
 			return exp_op(nl, sql_dup_func(e->f));
-		return exp_aggr(nl, sql_dup_aggr(e->f), e->flag&1, (e->flag>>1), e->card);
+		else 
+			return exp_aggr(nl, sql_dup_aggr(e->f), e->flag&1, (e->flag>>1), e->card);
 	}	
 	case e_atom:
 		return exp_dup(e);
 	}
 	return NULL;
 }
-#endif
 
 sql_rel *
 rel_push_select_down(mvc *sql, sql_rel *rel) 
 {
-	//sql_rel *rr, *rl;
-
-(void)sql;
+	(void)sql;
+	if ((is_join(rel->op) || is_project(rel->op) || rel->op == op_topn) && rel->l) {
+		sql_rel *l = rel->l;
+		if (l->op == op_select && 
+		   (!l->exps || list_length(l->exps) == 0)) {
+			rel->l = l->l;
+			l->l = NULL;
+			rel_destroy(l);
+		} 
+	}
+	if ((is_join(rel->op) || is_set(rel->op)) && rel->r) {
+		sql_rel *r = rel->r;
+		if (r->op == op_select && 
+	   	   (!r->exps || list_length(r->exps) == 0)) {
+			rel->r = r->l;
+			r->l = NULL;
+			rel_destroy(r);
+		}
+	} 
 	if (rel->op == op_select && rel->l) {
+		list *exps = rel->exps;
 		sql_rel *r = rel->l; 
-	//	node *n;
+		node *n;
 
-		assert(rel->exps);
+		assert(exps);
 
 		switch(r->op) {
 		case op_basetable:
@@ -917,7 +889,7 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 
 			/* for each exp check if we can push it left or right */
 /*
-			for (n=rel->exps->h; n; n = n->next) { 
+			for (n=exps->h; n; n = n->next) { 
 				sql_exp *e = n->data;
 			
 				if (e->type == e_cmp) {
@@ -931,7 +903,7 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 					} else {
 						nr =rel_push_select(r, le, re);
 					}
-					assert(nr==r);
+					//assert(nr==r);
 					(void)nr;
 				}
 			}
@@ -951,7 +923,7 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 			r = rel_dup(rel->l); 
 			rl = rel_select(rel_dup(r->l), NULL);
 			rr = rel_select(rel_dup(r->r), NULL);
-			for (n=rel->exps->h; n; n = n->next) { 
+			for (n=exps->h; n; n = n->next) { 
 				sql_exp *le, *re, *e = n->data;
 */
 
@@ -959,6 +931,7 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 /*
 				le = exp_push_down(sql, e, r, r->l);
 				re = exp_push_down(sql, e, r, r->r);
+				
 				rel_select_add_exp(rl, exp_dup(le));
 				rel_select_add_exp(rr, exp_dup(re));
 			}
@@ -987,34 +960,37 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 
 			/* here we need to fix aliases */
 
-//			r = r->l;
+			rel->exps = new_exp_list(); 
 			/* for each exp check if we can rename it */
-/*
-			for (n=rel->exps->h; n; n = n->next) { 
-				sql_exp *e = n->data;
-			
+			for (n = exps->h; n; n = n->next) { 
+				sql_exp *e = n->data, *ne = NULL, *le, *re;
+				sql_rel *prj = r, *nr, *nl;
+
+				/* sometimes we also have functions in the expression list (TODO change them to e_cmp (predicates like (1=0))) */
 				if (e->type == e_cmp) {
-					sql_exp *le, *re;
-					sql_rel *nr, *p = rel->l;
-		
-					e = exps_remove_alias(e, p->exps);
- 					le = e->l;
-					re = e->r;
-					if (re->card >= CARD_AGGR) {
-						nr = rel_push_join(r, le, re, e);
+					ne = exp_push_down(sql, e, prj, prj->l);
+					/* can we move it down */
+					if (ne && ne != e) {
+						nr = prj->l;
 					} else {
-						nr = rel_push_select(r, le, re);
+						nr = rel;
+						exp_destroy(ne);
+						ne = exp_dup(e);
 					}
-					assert(nr==r);
-					(void)nr;
+ 					le = ne->l;
+					re = ne->r;
+					if (re->card >= CARD_AGGR) {
+						nl = rel_push_join(nr, le, re, ne);
+					} else {
+						nl = rel_push_select(nr, le, ne);
+					}
+					if (nl != nr)
+						prj->l = nl;
+				} else {
+					list_append(rel->exps, exp_dup(e));
 				}
 			}
-			r = rel->l;
-			rel->l = NULL;
-			rel_destroy( rel );
-			rel = r;
-			rel_print(sql, rel, 0);
-*/
+			list_destroy(exps);
 			return rel;
 
 		case op_groupby: 
@@ -1175,6 +1151,51 @@ rel_select_use_index(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+/* TODO CSE */
+static list *
+exp_merge(list *exps)
+{
+	node *n, *m;
+	for (n=exps->h; n && n->next; n = n->next) {
+		sql_exp *e = n->data;
+		//sql_exp *le = e->l;
+		sql_exp *re = e->r;
+
+		assert(e->type == e_cmp);
+		/* only look for gt, gte, lte, lt */
+		if (re->card == CARD_ATOM && e->flag < cmp_equal) {
+			for (m=n->next; m; m = m->next) {
+				sql_exp *f = m->data;
+				//sql_exp *lf = f->l;
+				sql_exp *rf = f->r;
+
+				assert(f->type == e_cmp);
+				if (rf->card == CARD_ATOM && e->flag < cmp_equal) {
+					//printf("possible candidate\n");
+				}
+			}
+		}
+	}
+	return exps;
+}
+
+static sql_rel *
+rel_select_order(mvc *sql, sql_rel *rel) 
+{
+	(void)sql;
+	if (rel->op == op_select && rel->exps && list_length(rel->exps)>1) {
+		list *exps = NULL;
+			
+#ifdef DEBUG
+		rel_print(sql, rel, 0);
+#endif
+		exps = list_sort(rel->exps, (fkeyvalue)&exp_keyvalue, (fdup)&exp_dup);
+		list_destroy(rel->exps);
+		rel->exps = exp_merge(exps);
+	}
+	return rel;
+}
+
 static sql_rel *
 rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter) 
 {
@@ -1235,15 +1256,17 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 		(for example common rels, with only one different expression) */
 	/* TODO common sub relation/expression optimizer */
 
-/*
 	if (gp.cnt[op_select])
 		rel = rewrite(sql, rel, &rel_push_select_down); 
-*/
+
 	if (gp.cnt[op_select])
 		rel = rewrite(sql, rel, &rel_select_use_index); 
 
 	if (gp.cnt[op_join])
 		rel = rewrite(sql, rel, &rel_join_order); 
+
+	if (gp.cnt[op_select])
+		rel = rewrite(sql, rel, &rel_select_order); 
 
 #ifdef DEBUG
 	rel_print(sql, rel, 0);

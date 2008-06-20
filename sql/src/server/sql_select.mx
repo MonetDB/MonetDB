@@ -894,14 +894,14 @@ sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 		}
 	}
 	if (f) {
-		if (f->func->res.scale == SCALE_FIX) {
+		if (f->func->fix_scale == SCALE_FIX) {
 			ls = fix_scale(sql, t2, ls, 0, 0);
 			rs = fix_scale(sql, t1, rs, 0, 0);
-		} else if (f->func->res.scale == SCALE_SUB) {
+		} else if (f->func->fix_scale == SCALE_SUB) {
 			ls = scale_algebra(sql, f, ls, rs);
-		} else if (f->func->res.scale == SCALE_ADD) {
+		} else if (f->func->fix_scale == SCALE_ADD) {
 			ls = sum_scales(sql, f, ls, rs);
-		} else if (f->func->res.scale == DIGITS_ADD) {
+		} else if (f->func->fix_scale == DIGITS_ADD) {
 			f->res.digits = t1->digits + t2->digits;
 		}
 		return stmt_binop(ls, rs, f);
@@ -943,14 +943,14 @@ sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 			t2 = tail_type(rs);
 			f = sql_bind_func(s, fname, t1, t2);
 			if (f) {
-				if (f->func->res.scale == SCALE_FIX) {
+				if (f->func->fix_scale == SCALE_FIX) {
 					ls = fix_scale(sql, t2, ls, 0, 0);
 					rs = fix_scale(sql, t1, rs, 0, 0);
-				} else if (f->func->res.scale == SCALE_SUB) {
+				} else if (f->func->fix_scale == SCALE_SUB) {
 					ls = scale_algebra(sql, f, ls, rs);
-				} else if (f->func->res.scale == SCALE_ADD) {
+				} else if (f->func->fix_scale == SCALE_ADD) {
 					ls = sum_scales(sql, f, ls, rs);
-				} else if (f->func->res.scale == DIGITS_ADD) {
+				} else if (f->func->fix_scale == DIGITS_ADD) {
 					f->res.digits = digits;
 				}
 				stmt_destroy(ols);

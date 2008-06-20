@@ -772,7 +772,7 @@ mvc_bind_schema(mvc *m, char *sname)
 sql_table *
 mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 {
-	sql_table *t;
+	sql_table *t = NULL;
 
 	if (!s) { /* Declared tables during query compilation have no schema */
 		sql_subtype *tpe = stack_find_type(m, tname);
