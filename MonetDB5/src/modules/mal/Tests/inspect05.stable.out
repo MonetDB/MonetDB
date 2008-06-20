@@ -1037,6 +1037,7 @@ end main;                               # 11
 [ "prelude",				  "pattern",	  "recycle",	  "():void ",														  "RECYCLEprelude;"			  ]
 [ "reset",				  "pattern",	  "recycle",	  "(bid:BAT):void ",															  "RECYCLEresetCMD;"					  ]
 [ "shutdown",				  "command",	  "recycle",	  "():void ",														  "RECYCLEshutdownWrap;"		  ]
+[ "setCachePolicy",		  "pattern",	  "recycle",	  "(p:int,cl:int,mem:int,alpha:flt):void ",												  "RECYCLEsetCache;"					  ]
 [ "setCachePolicy",			  "pattern",	  "recycle",	  "(p:int...):void ",													  "RECYCLEsetCache;"			  ]
 [ "setReusePolicy",			  "pattern",	  "recycle",	  "(p:int...):void ",													  "RECYCLEsetReuse;"			  ]
 [ "setRetainPolicy",			  "pattern",	  "recycle",	  "(p:int...):void ",													  "RECYCLEsetRetain;"			  ]
