@@ -141,6 +141,7 @@ recycle_export str RECYCLEepilogue(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 str recycleLog = NULL; 
 int recycled0 = 0;
+lng time0 = 0; /*start time of query */
 @-
 The recycler is started when the first function is called for its support.
 Upon exit of the last function, the content of the recycle cache is destroyed.
@@ -210,15 +211,17 @@ RECYCLEdump(stream *s)
 	stream_printf(s,"#Cache search time= %d(usec)\n",recycleSearchTime);
 
 	/* and dump the statistics */
-	if (recycleBlk)
+	if (recycleBlk){
+        stream_printf(s,"# CL\t   lru\t\tcnt\t ticks\t rd\t wr\t Instr\n");
 	for(i=1; i< recycleBlk->stop; i++){
-		stream_printf(s,"# %4d lru= %8d cnt= %8d ticks= %9d  rd= %9d  wr= %9d %s\n", i,
+		stream_printf(s,"%4d\t%d\t%d\t%d\t%d\t%d\t%s\n", i,
 			recycleBlk->profiler[i].clk,
 			recycleBlk->profiler[i].counter,
 			recycleBlk->profiler[i].ticks,
 			recycleBlk->profiler[i].ibytes,
 			recycleBlk->profiler[i].obytes,
 			instruction2str(recycleBlk,getInstrPtr(recycleBlk,i),TRUE));
+	}
 	}
 }
 
@@ -245,11 +248,17 @@ RECYCLEdumpWrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+@-
+Called to collect statistics at the end of each query.
+@c
 void
 RECYCLErunningStat(MalBlkPtr mb)
 {	
 	static int q=0;
 	stream *s;
+	InstrPtr p;
+	int potrec=0, i;
+
 	if (recycleLog == NULL) 
 		s = MCgetClient()->fdout;
 	else {
@@ -260,10 +269,15 @@ RECYCLErunningStat(MalBlkPtr mb)
 		}
 	}
 
-	stream_printf(s,"%d\t %d\t %d\t %d\t %d\t %d\t ",++q, mb->stop,
-		recycled-recycled0,recycled,recycleBlk?recycleBlk->stop-1:0,statements);
-	stream_printf(s,"%8.2f\t %d\n",
-		savedTime/1000.0,recyclerUsedMemory);
+	for(i=0; i< mb->stop; i++){
+		p = mb->stmt[i];
+		if ( RECYCLEinterest(mb,p) ) potrec++;
+	}
+
+	stream_printf(s,"%d\t %d\t %d\t %d\t %8.2f\t",++q, mb->stop, potrec,
+		recycled-recycled0,(GDKusec()-time0)/1000.0);
+	stream_printf(s,"%d\t %d\t %d\t %d\n",
+		recycled,recycleBlk?recycleBlk->stop-1:0,statements,recyclerUsedMemory);
 	if( s != MCgetClient()->fdout)
 		close_stream(s);
 }
@@ -357,7 +371,7 @@ RECYCLElog(int *ret, str *nm)
 	recycleLog = GDKstrdup(*nm);
 	s = open_wastream(recycleLog);
         if (s){
-        	stream_printf(s,"# Q\t InstrQ\t RecQ\t RecTot\tincache\t ITot\tsaved time(ms)\tmemory(KB)\n");
+        	stream_printf(s,"# Q\t InstrQ\t PotRecQ RecQ\t TimeQ(ms)\tRecTot\tincache\tInstrTot\tmemory(KB)\n");
                 close_stream(s);
 	}
 
@@ -371,6 +385,7 @@ RECYCLEprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	RECYCLEversion(mb);
 	recycleRecent = -1;
 	recycled0 = recycled; 
+	time0 = GDKusec();
 	return MAL_SUCCEED;
 }
 str 
