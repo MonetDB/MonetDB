@@ -20,9 +20,12 @@
 
 /* Manual config.h. needed for win32 .  */
 
-/* We use #if _MSC_VER >= 1300 to identify Visual Studio .NET 2003 in
- * which the value is actually 0x1310 (in Visual Studio 6 the value is
- * 1200; in Visual Studio 8 the value is 1400).
+/* We use the value of _MSC_VER to distinguish the various versions of
+ * Microsoft Visual Studio:
+ * _MSC_VER = 1200: Visual Studio 6
+ * _MSC_VER = 1310: Visual Studio .NET 2003 (a.k.a. Visual Studio 7)
+ * _MSC_VER = 1400: Visual Studio 8
+ * _MSC_VER = 1500: Visual Studio 9.0
  */
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -509,8 +512,10 @@ typedef int socklen_t;
 
 /* Define to 1 if you have the `vsnprintf' function. */
 #define HAVE_VSNPRINTF 1
+#if _MSC_VER < 1500
 #ifndef vsnprintf
 #define vsnprintf _vsnprintf
+#endif
 #endif
 
 /* Define to 1 if you have the <winsock.h> header file. */

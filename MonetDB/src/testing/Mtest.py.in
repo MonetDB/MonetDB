@@ -3505,19 +3505,16 @@ def main(argv) :
                 env['PF'] = 'pf'
                 CONDITIONALS['WITH_ALGEBRA'] = ''
                 CONDITIONALS['NOT_ALGEBRA']  = '#'
-                rA = re.compile('^\-A, --mil: generate MIL code \(default\)$')
-                rM = re.compile('^\-M, --mil_2004: generate MIL code \(directly from XQuery Core\) \(default\)$')
+                rA = re.compile('-A.* \(default\)')
+                rM = re.compile('-M.* \(default\)')
                 proc = subprocess.Popen(['pf','-h'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
                 qOut, qErr = proc.communicate()
-                for l in qOut.split('\n'):
-                    mA = rA.match(l.strip())
-                    if mA:
-                        CONDITIONALS['WITH_ALGEBRA'] = '#'
-                        CONDITIONALS['NOT_ALGEBRA']  = ''
-                    mM = rM.match(l.strip())
-                    if mM:
-                        CONDITIONALS['WITH_ALGEBRA'] = ''
-                        CONDITIONALS['NOT_ALGEBRA']  = '#'
+                if rA.search(qOut) is not None:
+                    CONDITIONALS['WITH_ALGEBRA'] = '#'
+                    CONDITIONALS['NOT_ALGEBRA']  = ''
+                if rM.search(qOut) is not None:
+                    CONDITIONALS['WITH_ALGEBRA'] = ''
+                    CONDITIONALS['NOT_ALGEBRA']  = '#'
             if CONDITIONALS['WITH_ALGEBRA']:
                 env['TST_ALGEBRA'] = "Algebra"
                 os.environ['TST_ALGEBRA'] = "Algebra"
