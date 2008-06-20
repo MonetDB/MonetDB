@@ -140,6 +140,7 @@ recycle_export str RECYCLEepilogue(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #include "recycle.h"
 
 str recycleLog = NULL; 
+int recycled0 = 0;
 @-
 The recycler is started when the first function is called for its support.
 Upon exit of the last function, the content of the recycle cache is destroyed.
@@ -245,8 +246,9 @@ RECYCLEdumpWrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 void
-RECYCLErunningStat()
+RECYCLErunningStat(MalBlkPtr mb)
 {	
+	static int q=0;
 	stream *s;
 	if (recycleLog == NULL) 
 		s = MCgetClient()->fdout;
@@ -258,8 +260,8 @@ RECYCLErunningStat()
 		}
 	}
 
-	stream_printf(s,"%d\t %d\t %d\t ",
-		recycled, recycleBlk->stop-1,statements);
+	stream_printf(s,"%d\t %d\t %d\t %d\t %d\t %d\t ",++q, mb->stop,
+		recycled-recycled0,recycled,recycleBlk?recycleBlk->stop-1:0,statements);
 	stream_printf(s,"%8.2f\t %d\n",
 		savedTime/1000.0,recyclerUsedMemory);
 	if( s != MCgetClient()->fdout)
@@ -355,7 +357,7 @@ RECYCLElog(int *ret, str *nm)
 	recycleLog = GDKstrdup(*nm);
 	s = open_wastream(recycleLog);
         if (s){
-        	stream_printf(s,"#recycled\t incache\t executed\t saved time(ms)\t memory(KB)\n");
+        	stream_printf(s,"# Q\t InstrQ\t RecQ\t RecTot\tincache\t ITot\tsaved time(ms)\tmemory(KB)\n");
                 close_stream(s);
 	}
 
@@ -368,6 +370,7 @@ RECYCLEprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) p;
 	RECYCLEversion(mb);
 	recycleRecent = -1;
+	recycled0 = recycled; 
 	return MAL_SUCCEED;
 }
 str 
@@ -375,7 +378,7 @@ RECYCLEepilogue(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) mb;
 	(void) stk;
 	(void) p;
-	if (monitorRecycler == 2 ) RECYCLErunningStat();
+	if (monitorRecycler == 2 ) RECYCLErunningStat(mb);
 	return MAL_SUCCEED;
 }
 @}
