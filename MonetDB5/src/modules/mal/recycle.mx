@@ -258,9 +258,9 @@ RECYCLErunningStat()
 		}
 	}
 
-	stream_printf(s,"#recycled = %d\t incache= %d\t executed = %d\t ",
+	stream_printf(s,"%d\t %d\t %d\t ",
 		recycled, recycleBlk->stop-1,statements);
-	stream_printf(s,"saved time(ms)= %8.2f\t memory(KB)= %d\n",
+	stream_printf(s,"%8.2f\t %d\n",
 		savedTime/1000.0,recyclerUsedMemory);
 	if( s != MCgetClient()->fdout)
 		close_stream(s);
@@ -350,8 +350,15 @@ RECYCLEmonitor(int *ret, int *p)
 str 
 RECYCLElog(int *ret, str *nm)
 {
+	stream *s;
 	(void) ret;
 	recycleLog = GDKstrdup(*nm);
+	s = open_wastream(recycleLog);
+        if (s){
+        	stream_printf(s,"#recycled\t incache\t executed\t saved time(ms)\t memory(KB)\n");
+                close_stream(s);
+	}
+
 	return MAL_SUCCEED;
 }
 
