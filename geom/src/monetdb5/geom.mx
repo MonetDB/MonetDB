@@ -911,7 +911,11 @@ wkbgetcoord@1(double *out, wkb **geom)
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (geosGeometry) {  
+#if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
+		const GEOSCoordSequence *gcs = GEOSGeom_getCoordSeq(geosGeometry);
+#else
 		const GEOSCoordSeq gcs = GEOSGeom_getCoordSeq(geosGeometry);
+#endif
 
 		/* we could also check if geom is a
 			LineString, LinearRing or Point */ 
