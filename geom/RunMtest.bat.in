@@ -22,7 +22,7 @@ set sql_prefix=@XSQL_PREFIX@
 
 if %V% == 4 call "%monetdb4_prefix%\bin\monetdb4-config.bat" --internal
 if %V% == 5 call "%monetdb5_prefix%\bin\monetdb5-config.bat" --internal
-call "%sql_prefix%" --internal
+call "%sql_prefix%\bin\monetdb-sql-config.bat" --internal
 
 set pkg=monetdb-geom
 set builddir=@XGEOM_BUILD@
