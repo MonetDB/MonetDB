@@ -218,7 +218,7 @@ RECYCLEdump(stream *s)
 	if (recycleBlk){
         stream_printf(s,"# CL\t   lru\t\tcnt\t ticks\t rd\t wr\t Instr\n");
 	for(i=1; i< recycleBlk->stop; i++){
-		stream_printf(s,"%4d\t%d\t%d\t%d\t%d\t%d\t%s\n", i,
+		stream_printf(s,"# %4d\t%d\t%d\t%d\t%d\t%d\t%s\n", i,
 			recycleBlk->profiler[i].clk,
 			recycleBlk->profiler[i].counter,
 			recycleBlk->profiler[i].ticks,
