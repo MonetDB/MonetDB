@@ -74,11 +74,44 @@ exit MALException:str ;                 # 35 MALException:str
 # shutdown 
     remote.destroy("test");             # 39 _48:void := RMTdestroy(_49:str) 
 end main;                               # 40  
-!first
+#-------------------------#
+# h	t		  # name
+# int	str		  # type
+#-------------------------#
+[ 0,	  "void"	  ]
+[ 1,	  "bit"		  ]
+[ 2,	  "chr"		  ]
+[ 3,	  "bte"		  ]
+[ 4,	  "sht"		  ]
+[ 5,	  "BAT"		  ]
+[ 6,	  "int"		  ]
+[ 7,	  "oid"		  ]
+[ 8,	  "wrd"		  ]
+[ 9,	  "ptr"		  ]
+[ 10,	  "flt"		  ]
+[ 11,	  "dbl"		  ]
+[ 12,	  "lng"		  ]
+[ 13,	  "str"		  ]
+[ 14,	  "lock"	  ]
+[ 15,	  "sema"	  ]
+[ 16,	  "streams"	  ]
+[ 17,	  "bstream"	  ]
+[ 18,	  "blob"	  ]
+[ 19,	  "sqlblob"	  ]
+[ 20,	  "color"	  ]
+[ 21,	  "url"		  ]
+[ 22,	  "date"	  ]
+[ 23,	  "daytime"	  ]
+[ 24,	  "timestamp"	  ]
+[ 25,	  "timezone"	  ]
+[ 26,	  "zrule"	  ]
+[ 27,	  "inet"	  ]
+[ 28,	  "pcre"	  ]
+[ 29,	  "xml"		  ]
+[ 30,	  "mapentry"	  ]
 sent invalid request
 !second
 sent request
-!third:
 [ nil ]
 
 # 19:22:53 >  
