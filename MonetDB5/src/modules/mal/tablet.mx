@@ -413,6 +413,7 @@ typedef struct Column_t {
 	int nillen;
 	bit ws; 	/* if set we need to skip white space */
 	bit quote; 	/* if set use this character for string quotes */
+	void *nildata;
 } Column;
 
 @-
@@ -1069,7 +1070,7 @@ TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 	}
 }
 
-#define myisspace(s)  (s == ' ' || s == '\t')
+#define myisspace(s)  (s<=' ' &&(s == ' ' || s == '\t'))
 
 int
 has_whitespace(char *sep)
@@ -1095,6 +1096,8 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 
 	as->offset = 0;
 	as->nr_attrs = nr_attrs;
+	as->tryall= 0;
+	as->complaints = 0;
 	/* assert(as->nr_attrs == nr_attrs); *//* i.e. it fits */
 	for (p = 0; p < nr_attrs; p++) {
 		fmt[p].name = (char *) bun_tail(names, p);
@@ -1114,6 +1117,8 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 		fmt[p].ws = !(has_whitespace(fmt[p].sep));
 		fmt[p].quote = '"';
 		fmt[p].data = GDKmalloc(fmt[p].len);
+		fmt[p].nildata = GDKmalloc(fmt[p].nillen);
+		memcpy(fmt[p].nildata, ATOMnilptr(fmt[p].adt), fmt[p].nillen);
 		fmt[p].nullstr = GDKstrdup("nil");
 		if (tablet_debug)
 			stream_printf(GDKerr, "%s\n", fmt[p].name);
@@ -1268,18 +1273,10 @@ TABLETcollect_bats(Tablet * as)
 }
 
 static INLINE char *
-lstrip(char *s)
-{
-	while (myisspace((int) *s)) 
-		s++;
-	return s;
-}
-
-static INLINE char *
-rstrip(char *e)
+rstrip(char *s, char *e)
 {
 	e--;
-	while (myisspace((int) *e)) 
+	while (myisspace((int) *e) && e>s) 
 		e--;
 	e++;
 	if (e && *e) 
@@ -1296,11 +1293,11 @@ find_quote(char *s, char quote)
 }
 
 static INLINE char *
-rfind_quote(char *s, char quote)
+rfind_quote(char *s, char *e, char quote)
 {
-	while (*s != quote)
-		s--;
-	return s;
+	while (*e != quote && e>s)
+		e--;
+	return e;
 }
 
 static INLINE int
@@ -1320,20 +1317,16 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 			return -1;
 		}
 		s++;
-		e = rfind_quote(e, quote);
+		e = rfind_quote(s, e, quote);
 		*e = 0;
-	} else if (e > s) {
-		s = lstrip(s);
-		e = rstrip(e);
-	}
-	if (e < s)
-		e = s;
+	} else 
+		e = rstrip(s,e);
+	
 	if ( s == NULL ||
 	     (s == e && fmt->nullstr[0] == 0) ||
 	     (s != e && !quote && strcasecmp(s,fmt->nullstr) == 0) ||
 	     (s != e && quote && strncasecmp(s+1, fmt->nullstr, e-s) == 0)) {
-		adt = fmt->data;
-		memcpy(adt, ATOMnilptr(fmt->adt), fmt->nillen);
+		adt = fmt->nildata;
 	} else {
 		adt = fmt->frstr(fmt->extra, fmt->adt, s, e, quote);
 	}
@@ -1353,6 +1346,8 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 	bunfastins(fmt->c, key, adt);
 	return 0;
 bunins_failed:
+	snprintf(buf,BUFSIZ, "while parsing '%s' from line %d field %d not inserted\n", s, (int) BATcount(fmt->c), c);
+	*err= GDKstrdup(buf);
 	return -1;
 }
 
@@ -1391,8 +1386,9 @@ insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 		s = line;
 
 		/* skip leading spaces */
-		while (fmt[i].ws && myisspace((int) (*line)))
-			line++;
+		if (fmt[i].ws)
+			while (myisspace((int) (*line)))
+				line++;
 
 		/* recognize fields starting with a quote */
 		if ( *line && *line == fmt[i].quote && 
@@ -1667,7 +1663,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2)
 						res = 1; 
 						if (b->len > b->pos &&
 						    i>=offset &&
-						    insert_line(as, s, NULL, col1,col2) < 0 ) {
+						    insert_line(as, s, NULL, col1,col2) < 0 && !as->tryall ) {
 								GDKerror(as->error);
 								as->error=0;
 								GDKerror("TABLETload_file: read error "
@@ -1949,6 +1945,8 @@ tablet_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *N)
 		nr = *N;
 	as.nr_attrs = 0;
 	as.nr = nr;
+	as.tryall= 0;
+	as.complaints = NULL;
 
 	if (create_loadformat(&as, names, seps, types) != ~(size_t) 0 )
 		*bats = TABLETload(&as, datafile);
