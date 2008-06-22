@@ -1279,8 +1279,7 @@ rstrip(char *s, char *e)
 	while (myisspace((int) *e) && e>s) 
 		e--;
 	e++;
-	if (e && *e) 
-		*e = 0;
+	*e = 0;
 	return e;
 }
 
@@ -1322,10 +1321,10 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 	} else 
 		e = rstrip(s,e);
 	
-	if ( s == NULL ||
+	if ( 
 	     (s == e && fmt->nullstr[0] == 0) ||
-	     (s != e && !quote && strcasecmp(s,fmt->nullstr) == 0) ||
-	     (s != e && quote && strncasecmp(s+1, fmt->nullstr, e-s) == 0)) {
+	     (s != e && ( (!quote && strcasecmp(s,fmt->nullstr) == 0) ||
+					  (quote && strncasecmp(s+1, fmt->nullstr, e-s) == 0)) ) ) {
 		adt = fmt->nildata;
 	} else {
 		adt = fmt->frstr(fmt->extra, fmt->adt, s, e, quote);
@@ -1375,13 +1374,12 @@ skip_string(char *s, char quote)
 INLINE int
 insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 {
-	int res = 0;
 	Column *fmt = as->format;
-	char *s, *e = 0, quote = 0;
+	char *s, *e = 0, quote=0, seperator;
 	size_t i;
 	char errmsg[BUFSIZ];
 
-	for (i = 0; i < as->nr_attrs && res == 0; i++) {
+	for (i = 0; i < as->nr_attrs ; i++) {
 		e = 0;
 		s = line;
 
@@ -1405,23 +1403,32 @@ insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 				if (!as->tryall)
 					return -1;
 			}
-		}
+		} 
 
 		/* skip until separator */
-		while (*line) {
-			if (*line == *(fmt[i].sep) &&
-			    (fmt[i].sep[1] == 0 || 
-			     strncmp(fmt[i].sep, line, fmt[i].seplen) == 0)) {
-				e = line;
-				break;
+		if ( fmt[i].sep[1] ==0 ){
+			seperator=fmt[i].sep[0];
+			while (*line) {
+				if (*line == seperator){
+					e = line;
+					break;
+				}
+				line++;
 			}
-			line++;
-		}
+		} else
+			while (*line) {
+				if (*line == seperator &&
+					 strncmp(fmt[i].sep, line, fmt[i].seplen) == 0) {
+					e = line;
+					break;
+				}
+				line++;
+			}
 		if (!e && i == (as->nr_attrs-1))
 			e = line;
 		if (e) {
 			if (i>= col1 && i< col2)
-				res |= insert_val(&fmt[i], s, e, quote, key, &as->error, i);
+				(void) insert_val(&fmt[i], s, e, quote, key, &as->error, i);
 			quote = 0;
 			line = e + fmt[i].seplen;
 			if (as->error && as->complaints){
@@ -1439,7 +1446,7 @@ insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 				return -1;
 		}
 	}
-	return res;
+	return 0;
 }
 
 static int
