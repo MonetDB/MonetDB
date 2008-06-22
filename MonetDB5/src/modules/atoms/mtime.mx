@@ -1094,7 +1094,8 @@ str DAYS[8] = { NULL, "sunday", "monday", "tuesday", "wednesday", "thursday",
 };
 str COUNT1[7] = { NULL, "first", "second", "third", "fourth", "fifth", "last" };
 str COUNT2[7] = { NULL, "1st", "2nd", "3rd", "4th", "5th", "last" };
-int NODAYS[13] = { 0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+int NODAYS[13] =  { 0, 31, 29, 31,  30,  31,  30,  31,  31,  30,  31,  30,  31 };
+int CUMDAYS[13] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
 
 date DATE_MAX, DATE_MIN;	/* often used dates; computed once */
 
@@ -1206,7 +1207,9 @@ todate(int day, int month, int year)
 	if (DATE(day, month, year)) {
 		if (year < 0)
 			year++;	/* HACK: hide year 0 */
-		for (n = (date) (day - 1); --month > 0; n += MONTHDAYS(month, year))
+		n = (date) (day-1 );
+		if ( month > 2 && leapyear(year)) n++;
+		n+= CUMDAYS[month-1];
 			;
 		/* current year does not count as leapyear */
 		n += 365 * year + LEAPYEARS(year >= 0 ? year - 1 : year);
