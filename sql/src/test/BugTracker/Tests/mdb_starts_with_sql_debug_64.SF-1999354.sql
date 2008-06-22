@@ -41,7 +41,7 @@ SET t = MS_STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
 RETURN(t);
 END;
 
-SELECT f2(1,2,3);
+explain SELECT f2(1,2,3);
 --SELECT fIAUFromEq(p.ra,p."dec") FROM PhotoPrimary as p;
 
 drop function f2;
