@@ -963,10 +963,7 @@ stmt_push_down_tail_wrap(stmt *j, stmt *sel)
 	return stmt_push_down_tail(stmt_dup(j), stmt_dup(sel));
 }
 
-#define sSTMT_BAT(type) (type == st_bat || type == st_idxbat)
-int STMT_BAT(int type ) {
-	return sSTMT_BAT(type);
-}
+#define STMT_BAT(type) (type == st_bat)
 
 static sql_idx *
 find_fk_index(list * eqjoins, int tail, list **fkjoins)

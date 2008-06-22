@@ -316,15 +316,7 @@ ease code generation.
 pattern calc.rotate_xor_hash(h:int, nbits:int, v:any_1) :int address MKEYrotate_xor_hash;
 command batcalc.rotate_xor_hash(h:bat[:oid,:int], nbits:int, b:bat[:oid,:any_1]) :bat[:oid,:int] address MKEYbulk_rotate_xor_hash;
 
-pattern calc.hash( v:any ) :int address MKEYhash; 
-command calc.hash( v:chr ) :int address MKEYhash_chr; 
-command calc.hash( v:bte ) :int address MKEYhash_bte; 
-command calc.hash( v:sht ) :int address MKEYhash_sht; 
-command calc.hash( v:int ) :int address MKEYhash_int; 
-command calc.hash( v:flt ) :int address MKEYhash_flt; 
-command calc.hash( v:dbl ) :int address MKEYhash_dbl; 
-command calc.hash( v:lng ) :int address MKEYhash_lng; 
-command calc.hash( v:str ) :int address MKEYhash_str; 
+pattern calc.hash( v:any ) :int address hash_wrap; 
 
 command batcalc.hash( b:bat[:oid,:any_1] ) :bat[:oid,:int]
 address bathash_wrap 
@@ -1937,7 +1929,7 @@ voidbathash(int *res, BAT *b )
 	if (ATOMvarsized(b->ttype)) { /* ugh */
 		BUN p,q;
 
-		BATloop(b,p,q){
+		BATloop(b,p,q) {
 			ptr v = BUNtail(bi,p);
 			*r++ = (hash(v)) & 0xEFFFFFFF;
 		}
