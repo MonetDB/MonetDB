@@ -711,7 +711,12 @@ BEGIN
 	-- seconds
 	SET d  = MS_ROUND( 60.0 * (d-nd),precision,truncat );
 --	SET d  = 60.0 * (d-nd);
-	SET q  = LTRIM(STR(d,precision));
+	IF (precision < 1) 
+		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(7)));
+	END IF;
+	IF (precision > 10) 
+		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(16)));
+	END IF;
 	SET t = MS_STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
 	--
 	RETURN(s||t);
@@ -1993,7 +1998,7 @@ RETURNS TABLE (
 	f 		    float  ,
 	node 		float  ,
 	incl 		float  ,
-    distance    float 		-- distance in arc minutes 
+	distance    float 		-- distance in arc minutes 
   ) 
 BEGIN
 	--
@@ -2010,11 +2015,9 @@ BEGIN
 	INSERT into cover
 		SELECT htmidStart, htmidEnd
 		FROM fHtmCoverCircleXyz(nx,ny,nz,radius);
-	RETURN TABLE (
-	SELECT  fieldID,a,b,c,d,e,f,node,incl,
-            (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) as val
-	    FROM cover H inner join Frame F
-	             ON  (F.HtmID BETWEEN H.htmidStart AND H.htmidEnd )
+	RETURN TABLE(SELECT  fieldID,a,b,c,d,e,f,node,incl, 
+           (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) as val
+	    FROM cover H inner join Frame F ON  (F.HtmID BETWEEN H.htmidStart AND H.htmidEnd )
 	    WHERE zoom = zoo
 	    AND (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) < radius ORDER BY val ASC);
 END;
