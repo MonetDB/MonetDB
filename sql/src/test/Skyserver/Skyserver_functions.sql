@@ -711,7 +711,12 @@ BEGIN
 	-- seconds
 	SET d  = MS_ROUND( 60.0 * (d-nd),precision,truncat );
 --	SET d  = 60.0 * (d-nd);
-	SET q  = LTRIM(STR(d,precision));
+	IF (precision < 1) 
+		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(7)));
+	END IF;
+	IF (precision > 10) 
+		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(16)));
+	END IF;
 	SET t = MS_STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
 	--
 	RETURN(s||t);
