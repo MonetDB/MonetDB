@@ -1176,6 +1176,8 @@ TABLETdestroy_format(Tablet * as)
 			GDKfree(fmt[p].nullstr);
 		if (fmt[p].data)
 			GDKfree(fmt[p].data);
+		if (fmt[p].nildata)
+			GDKfree(fmt[p].nildata);
 	}
 	GDKfree(fmt);
 }
@@ -1276,7 +1278,7 @@ static INLINE char *
 rstrip(char *s, char *e)
 {
 	e--;
-	while (myisspace((int) *e) && e>s) 
+	while (myisspace((int) *e) && e>=s) 
 		e--;
 	e++;
 	*e = 0;
@@ -1397,17 +1399,16 @@ insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 			if (!line) {
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
 					"in %s at line %d\n", quote, s, (int) BATcount(fmt->c));
-				as->error= GDKstrdup(errmsg);
-				if (as->complaints)
-					BUNins(as->complaints,NULL, as->error, TRUE);
+				as->error = GDKstrdup(errmsg);
 				if (!as->tryall)
 					return -1;
+				BUNins(as->complaints, NULL, as->error, TRUE);
 			}
 		} 
 
 		/* skip until separator */
+		seperator=fmt[i].sep[0];
 		if ( fmt[i].sep[1] ==0 ){
-			seperator=fmt[i].sep[0];
 			while (*line) {
 				if (*line == seperator){
 					e = line;
@@ -1415,7 +1416,7 @@ insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 				}
 				line++;
 			}
-		} else
+		} else {
 			while (*line) {
 				if (*line == seperator &&
 					 strncmp(fmt[i].sep, line, fmt[i].seplen) == 0) {
@@ -1424,6 +1425,7 @@ insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 				}
 				line++;
 			}
+		}
 		if (!e && i == (as->nr_attrs-1))
 			e = line;
 		if (e) {
@@ -1431,19 +1433,18 @@ insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 				(void) insert_val(&fmt[i], s, e, quote, key, &as->error, i);
 			quote = 0;
 			line = e + fmt[i].seplen;
-			if (as->error && as->complaints){
-				BUNins(as->complaints,NULL, as->error, TRUE);
+			if (as->error) {
 				if (!as->tryall)
 					return -1;
+				BUNins(as->complaints, NULL, as->error, TRUE);
 			}
 		} else {
 			snprintf(errmsg,BUFSIZ, "missing sep %s line %d field %d\n", 
 				fmt->sep, (int)BATcount(fmt->c), (int)i);
-			as->error= GDKstrdup(errmsg);
-			if (as->complaints)
-				BUNins(as->complaints,NULL, as->error, TRUE);
+			as->error = GDKstrdup(errmsg);
 			if (!as->tryall)
 				return -1;
+			BUNins(as->complaints, NULL, as->error, TRUE);
 		}
 	}
 	return 0;
@@ -1952,7 +1953,7 @@ tablet_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *N)
 		nr = *N;
 	as.nr_attrs = 0;
 	as.nr = nr;
-	as.tryall= 0;
+	as.tryall = 0;
 	as.complaints = NULL;
 
 	if (create_loadformat(&as, names, seps, types) != ~(size_t) 0 )
