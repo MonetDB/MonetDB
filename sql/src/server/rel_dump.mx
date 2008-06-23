@@ -116,9 +116,9 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 	case e_aggr: {
 		sql_subaggr *a = e->f;
 		printf("%s", a->aggr->base.name );
-		if (is_distinct(e))
+		if (need_distinct(e))
 			printf(" unique ");
-		if (is_no_nil(e))
+		if (has_no_nil(e))
 			printf(" no nil ");
 		exps_print( sql, e->l, depth, alias, 1);
 	} 	break;
@@ -145,6 +145,8 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 	}
 	if (e->type != e_atom && is_ascending(e))
 		printf(" ASC");
+	if (e->type != e_atom && e->type != e_cmp && !has_nil(e))
+		printf(" NOT NULL");
 	if (e->name && alias) {
 		printf(" as ");
 		if (e->rname)
@@ -268,7 +270,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 		else if (!rel->exps && rel->op == op_join)
 			r = "crossproduct";
 		print_indent(sql, depth);
-		if (is_distinct(rel))
+		if (need_distinct(rel))
 			printf("distinct ");
 		printf("%s (", r);
 		rel_print(sql, rel->l, depth+1);
@@ -293,7 +295,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 			r = "top N";
 		if (rel->l) {
 			print_indent(sql, depth);
-			if (is_distinct(rel))
+			if (need_distinct(rel))
 				printf("distinct ");
 			printf("%s (", r);
 			rel_print(sql, rel->l, depth+1);

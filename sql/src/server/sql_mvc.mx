@@ -31,6 +31,7 @@
 #include <sql_types.h>
 #include <sql_backend.h>
 #include <sql_catalog.h>
+#include <sql_relation.h>
 #include <sql_storage.h>
 #include <sql_keyword.h>
 #include <sql_atom.h>
@@ -57,8 +58,9 @@
 #define mod_trace 4
 #define mod_record 8
 
+struct stmt;
 typedef struct sql_var {
-	struct stmt *s;
+	void *s;	/* stmt or sql_rel */
 	char *name;
 	ValRecord value;
 	sql_subtype type;
@@ -206,11 +208,13 @@ extern list *mvc_get_connection(mvc *m, int id, char *server, char *db, char *db
 /* variable management */
 extern void stack_push_var(mvc *sql, char *name, struct stmt *var, sql_subtype *type);
 extern void stack_push_view(mvc *sql, char *name, struct stmt *var);
+extern void stack_push_rel_view(mvc *sql, char *name, sql_rel *view);
 extern void stack_push_frame(mvc *sql, char *name);
 extern void stack_pop_frame(mvc *sql);
 extern void stack_pop_until(mvc *sql, int top);
 extern sql_subtype *stack_find_type(mvc *sql, char *name);
 extern struct stmt *stack_find_view(mvc *sql, char *name);
+extern sql_rel *stack_find_rel_view(mvc *sql, char *name);
 extern struct stmt *stack_find_var(mvc *sql, char *name);
 /* find var in current frame */
 extern int frame_find_var(mvc *sql, char *name);
@@ -239,6 +243,7 @@ extern void stack_set_number(mvc *sql, char *name, lng v);
 #include "sql_env.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
+#include "rel_select.h"
 
 static int mvc_debug = 0;
 
@@ -1377,6 +1382,21 @@ stack_push_view(mvc *sql, char *name, stmt *var)
 	sql->topvars++;
 }
 
+void 
+stack_push_rel_view(mvc *sql, char *name, sql_rel *var)
+{
+	if (sql->topvars == sql->sizevars) {
+		sql->sizevars <<= 1;
+		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
+	}
+	sql->vars[sql->topvars].s = rel_dup(var);
+	sql->vars[sql->topvars].name = _strdup(name);
+	sql->vars[sql->topvars].value.vtype = 0;
+	sql->vars[sql->topvars].view = 1;
+	sql->vars[sql->topvars].type.comp_type = NULL;
+	sql->topvars++;
+}
+
 
 void
 stack_set_var(mvc *sql, char *name, ValRecord *v)
@@ -1477,6 +1497,19 @@ stack_find_view(mvc *sql, char *name)
 		if (sql->vars[i].s && sql->vars[i].view &&
 			strcmp(sql->vars[i].name, name)==0)
 			return stmt_dup(sql->vars[i].s);
+	}
+	return NULL;
+}
+
+sql_rel *
+stack_find_rel_view(mvc *sql, char *name)
+{
+	int i;
+
+	for (i = sql->topvars-1; i >= 0; i--) {
+		if (sql->vars[i].s && sql->vars[i].view &&
+			strcmp(sql->vars[i].name, name)==0)
+			return rel_copy(sql->vars[i].s);
 	}
 	return NULL;
 }

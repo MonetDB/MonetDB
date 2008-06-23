@@ -184,8 +184,36 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DECLARE:
 	case SQL_CALL:
 	case SQL_SET:
+		return NULL;
 
 	case SQL_WITH:
+	{
+		dnode *d = s->data.lval->h;
+		symbol *select = d->next->data.sym;
+		sql_rel *rel = NULL;
+
+		stack_push_frame(sql, "WITH");
+		/* first handle all with's (ie inlined views) */
+		for (d = d->data.lval->h; d; d = d->next) {
+			symbol *sym = d->data.sym;
+			dnode *dn = sym->data.lval->h;
+			char *name = qname_table(dn->data.lval);
+
+			if (frame_find_var(sql, name)) {
+				return sql_error(sql, 01, "Variable '%s' allready declared", name);
+			}
+			rel = rel_semantic(sql, sym);
+			if (!rel) {  
+				stack_pop_frame(sql);
+				return NULL;
+			}
+			stack_push_rel_view(sql, name, rel);
+		}
+		rel = rel_semantic(sql, select);
+		stack_pop_frame(sql);
+		return rel;
+	}
+
 	case SQL_MULSTMT:
 		/*return sql_error(sql, 02, "Not implemented");*/
 		return NULL;

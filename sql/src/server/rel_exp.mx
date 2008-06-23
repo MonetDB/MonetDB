@@ -48,9 +48,9 @@ extern sql_exp *exp_op( list *l, sql_subfunc *f );
 	exp_op(append(append(append(new_exp_list(),l),r),r2), f)
 #define exp_op4(l,r,r2,r3,f) \
 	exp_op(append(append(append(append(new_exp_list(),l),r),r2),r3), f)
-extern sql_exp *exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, int card );
-#define exp_aggr1(e, a, d, n, c) \
-	exp_aggr(append(new_exp_list(), e), a, d, n, c)
+extern sql_exp *exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, int card, int has_nil );
+#define exp_aggr1(e, a, d, n, c, hn) \
+	exp_aggr(append(new_exp_list(), e), a, d, n, c, hn)
 extern sql_exp * exp_atom( atom *a);
 extern sql_exp * exp_atom_bool(int b); 
 extern sql_exp * exp_atom_int(int i);
@@ -58,7 +58,7 @@ extern sql_exp * exp_atom_str(str s, sql_subtype *st);
 extern sql_exp * exp_atom_clob(str s);
 extern sql_exp * exp_atom_ref(int i, sql_subtype *tpe);
 extern sql_exp * exp_param(char *name, sql_subtype *tpe, int frame);
-extern sql_exp * exp_column( char *rname, char *name, sql_subtype *t, int card);
+extern sql_exp * exp_column( char *rname, char *name, sql_subtype *t, int card, int has_nils);
 extern void exp_setname( sql_exp *e, char *rname, char *name );
 
 extern void exp_swap( sql_exp *e );
@@ -217,7 +217,7 @@ exp_op( list *l, sql_subfunc *f )
 }
 
 sql_exp * 
-exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, int card )
+exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, int card, int has_nils )
 {
 	sql_exp *e = exp_create(e_aggr);
 	e->card = card;
@@ -227,6 +227,8 @@ exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, int card )
 		set_distinct(e);
 	if (no_nils)
 		set_no_nil(e);
+	if (!has_nils)
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -296,7 +298,7 @@ exp_param(char *name, sql_subtype *tpe, int frame)
 }
 
 sql_exp * 
-exp_column( char *rname, char *cname, sql_subtype *t, int card) 
+exp_column( char *rname, char *cname, sql_subtype *t, int card, int has_nils) 
 {
 	sql_exp *e = exp_create(e_column);
 
@@ -306,6 +308,8 @@ exp_column( char *rname, char *cname, sql_subtype *t, int card)
 	e->l = (rname)?_strdup(rname):NULL;
 	e->r = _strdup(cname);
 	e->f = t;
+	if (!has_nils)
+		set_has_no_nil(e);
 	return e;
 }
 

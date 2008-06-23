@@ -47,7 +47,7 @@ typedef struct expression {
 	void *r;
 	void *f; 	/* func's and aggr's and column type */
 			/* e_cmp may have have 2 arguments */
-	int  flag;	/* DISTINCT, NO_NIL, ASCENDING, cmp types */
+	int  flag;	/* EXP_DISTINCT, NO_NIL, ASCENDING, cmp types */
 	char card;	/* card 
 				(0 truth value!)
 				(1 atoms) 
@@ -57,11 +57,12 @@ typedef struct expression {
 	void *p;	/* properties for the optimizer */
 } sql_exp;
 
-#define DISTINCT	1
+#define EXP_DISTINCT	1
 #define NO_NIL		2
 /* ASCENDING > 8 else we have problems with cmp types */
 #define ASCENDING	16
 #define ANTISEL	32
+#define HAS_NO_NIL	64
  
 #define MAXOPS 16
 
@@ -87,8 +88,10 @@ typedef enum operator_type {
 	(et != e_cmp)
 #define is_base(op) \
 	(op == op_basetable || op == op_table)
+#define is_outerjoin(op) \
+	(op == op_left || op == op_right || op == op_full)
 #define is_join(op) \
-	(op == op_join || op == op_left || op == op_right || op == op_full)
+	(op == op_join || is_outerjoin(op))
 #define is_select(op) \
 	(op == op_select || op == op_semi || op == op_anti)
 #define is_set(op) \
@@ -100,10 +103,17 @@ typedef enum operator_type {
 #define is_sort(rel) \
 	((rel->op == op_project && rel->r) || rel->op == op_topn)
 
-#define is_no_nil(e) \
+/* NO NIL semantics of aggr operations */
+#define has_no_nil(e) \
 	((e->flag&NO_NIL))
 #define set_no_nil(e) \
 	e->flag |= NO_NIL
+
+/* does the expression (possibly) have nils */
+#define has_nil(e) \
+	((e->flag&HAS_NO_NIL) == 0)
+#define set_has_no_nil(e) \
+	e->flag |= HAS_NO_NIL
 
 #define is_ascending(e) \
 	((e->flag&ASCENDING))
@@ -116,10 +126,10 @@ typedef enum operator_type {
 	e->flag |= ANTISEL
 
 /* used for expressions and relations */
-#define is_distinct(e) \
-	((e->flag&DISTINCT))
+#define need_distinct(e) \
+	((e->flag&EXP_DISTINCT))
 #define set_distinct(e) \
-	e->flag |= DISTINCT
+	e->flag |= EXP_DISTINCT
 
 #define is_processed(rel) \
 	(rel->processed)
@@ -139,7 +149,7 @@ typedef struct relation {
 	void *r;
 	list *exps; 
 	int nrcols;	/* nr of cols */	
-	char flag;	/* DISTINCT */ 
+	char flag;	/* EXP_DISTINCT */ 
 	char card;	/* 0, 1 (row), 2 aggr, 3 */
 	char processed; /* fully processed or still in the process of building */
 	char subquery;	/* is this part a subquery, this is needed for proper name binding */

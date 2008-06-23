@@ -267,12 +267,12 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 		 *
 		 * so here we need to ignore NULLs
 		 */
-		if (is_no_nil(e) && attr) {
+		if (has_no_nil(e) && attr) {
 			sql_subtype *t = exp_subtype(attr->h->data);
 			stmt *n = stmt_atom(atom_general(t, NULL, 0));
 			as = stmt_select2(as, n, stmt_dup(n), 0);
 		}
-		if (is_distinct(e)){ 
+		if (need_distinct(e)){ 
 			if (g)
 				as = stmt_unique(as, grp_dup(grp));
 			else
@@ -848,7 +848,7 @@ rel2bin_union( mvc *sql, sql_rel *rel )
 	stmt_destroy(left);
 	stmt_destroy(right);
 	sub = stmt_list(l);
-	if (is_distinct(rel)) 
+	if (need_distinct(rel)) 
 		sub = rel2bin_distinct(sub);
 	return sub;
 }
@@ -900,8 +900,8 @@ rel2bin_except( mvc *sql, sql_rel *rel )
 	/* now find the matching groups */
 	s = stmt_releqjoin_init();
 	for (n = left->op1.lval->h, m = right->op1.lval->h; n && m; n = n->next, m = m->next) {
-		stmt *l = stmt_dup(n->data);
-		stmt *r = stmt_dup(m->data);
+		stmt *l = column(n->data);
+		stmt *r = column(m->data);
 
 		l = stmt_join(stmt_dup(lgrp->ext), l, cmp_equal);
 		r = stmt_join(stmt_dup(rgrp->ext), r, cmp_equal);
@@ -946,7 +946,7 @@ rel2bin_except( mvc *sql, sql_rel *rel )
 
 	/* project columns of left hand expression */
 	for (n = left->op1.lval->h; n; n = n->next) {
-		stmt *c1 = stmt_dup(n->data);
+		stmt *c1 = column(n->data);
 		char *rnme = rel->name;
 		char *nme = column_name(c1);
 
@@ -966,7 +966,7 @@ rel2bin_except( mvc *sql, sql_rel *rel )
 	stmt_destroy(left);
 	stmt_destroy(right);
 	sub = stmt_list(stmts);
-	if (is_distinct(rel))
+	if (need_distinct(rel))
 		sub = rel2bin_distinct(sub);
 	return sub;
 }
@@ -1018,8 +1018,8 @@ rel2bin_inter( mvc *sql, sql_rel *rel )
 	/* now find the matching groups */
 	s = stmt_releqjoin_init();
 	for (n = left->op1.lval->h, m = right->op1.lval->h; n && m; n = n->next, m = m->next) {
-		stmt *l = stmt_dup(n->data);
-		stmt *r = stmt_dup(m->data);
+		stmt *l = column(n->data);
+		stmt *r = column(m->data);
 
 		l = stmt_join(stmt_dup(lgrp->ext), l, cmp_equal);
 		r = stmt_join(stmt_dup(rgrp->ext), r, cmp_equal);
@@ -1051,7 +1051,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel )
 
 	/* project columns of left hand expression */
 	for (n = left->op1.lval->h; n; n = n->next) {
-		stmt *c1 = stmt_dup(n->data);
+		stmt *c1 = column(n->data);
 		char *rnme = rel->name;
 		char *nme = column_name(c1);
 
@@ -1071,7 +1071,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel )
 	stmt_destroy(left);
 	stmt_destroy(right);
 	sub = stmt_list(stmts);
-	if (is_distinct(rel))
+	if (need_distinct(rel))
 		sub = rel2bin_distinct(sub);
 	return sub;
 }
@@ -1113,7 +1113,7 @@ rel2bin_project( mvc *sql, sql_rel *rel )
 		list_append(l, s);
 	}
 	psub = stmt_list(l);
-	if (is_distinct(rel))
+	if (need_distinct(rel))
 		psub = rel2bin_distinct(psub);
 	if (rel->r) {
 		list *oexps = rel->r;
@@ -1159,6 +1159,7 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en )
 	sql_exp *l = e->l;
 	stmt *idx = bin_find_column(sub, l->l, i->base.name);
 
+	/* TODO should be in key order! */
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *e = en->data;
 		stmt *s;
@@ -1217,8 +1218,10 @@ rel2bin_select( mvc *sql, sql_rel *rel )
 			sel = rel2bin_hash_lookup(sql, rel, sub, i, en);
 		}
 	}
+	sel = stmt_relselect_init();
 	for( en = rel->exps->h; en; en = en->next ) {
-		stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, sel);
+		//stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, sel);
+		stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, NULL);
 
 		if (!s) {
 			assert(0);
@@ -1232,14 +1235,23 @@ rel2bin_select( mvc *sql, sql_rel *rel )
 				predicate = rel2bin_predicate();
 			predicate = stmt_uselect(predicate, s, cmp_equal);
 		} else {
+			/*
 			if (sel) 
 				stmt_destroy(sel);
 			sel = s;
+			*/
+			stmt_relselect_fill(sel, s);
 		}
 	}
 
-	if (predicate && sel) 
-		sel = stmt_join(sel, stmt_dup(predicate), cmp_all);
+	if (predicate && sel) {
+		if (list_length(sel->op1.lval) == 0) {
+			stmt_destroy(sel);
+			sel = NULL;
+		} else {
+			sel = stmt_join(sel, stmt_dup(predicate), cmp_all);
+		}
+	}
 	/* construct relation */
 	l = create_stmt_list();
 	if (sub && sel) {
