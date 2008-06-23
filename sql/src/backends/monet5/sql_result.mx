@@ -468,6 +468,8 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			fmt[i].ws = !(has_whitespace(fmt[i].sep));
 			fmt[i].quote = ssep?ssep[0]:0;
 			fmt[i].nullstr = _strdup(ns);
+	                fmt[i].nildata = GDKmalloc(fmt[i].nillen);
+       		        memcpy(fmt[i].nildata, ATOMnilptr(fmt[i].adt), fmt[i].nillen);
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
