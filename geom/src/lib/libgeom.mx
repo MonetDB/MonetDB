@@ -178,7 +178,11 @@ getMbrGeos( mbr *res, const GEOSGeom geosGeometry )
 		return 0;
 
 	if (GEOSGeomTypeId(envelope) == GEOS_POINT) {
+#if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
+		const GEOSCoordSequence *coords = GEOSGeom_getCoordSeq(envelope);
+#else
 		const GEOSCoordSeq coords = GEOSGeom_getCoordSeq(envelope);
+#endif
 		GEOSCoordSeq_getX(coords, 0, &xmin);
 		GEOSCoordSeq_getY(coords, 0, &ymin);
 		res->xmin = xmin;
@@ -186,9 +190,17 @@ getMbrGeos( mbr *res, const GEOSGeom geosGeometry )
 		res->xmax = xmin;
 		res->ymax = ymin;
 	} else { /* GEOSGeomTypeId(envelope) == GEOS_POLYGON */
+#if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
+		const GEOSGeometry *ring = GEOSGetExteriorRing(envelope);
+#else
 		const GEOSGeom ring = GEOSGetExteriorRing(envelope);
+#endif
 		if (ring) {
+#if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
+			const GEOSCoordSequence *coords = GEOSGeom_getCoordSeq(ring);
+#else
 			const GEOSCoordSeq coords = GEOSGeom_getCoordSeq(ring); 
+#endif
 			GEOSCoordSeq_getX(coords, 0, &xmin);
 			GEOSCoordSeq_getY(coords, 0, &ymin);
 			GEOSCoordSeq_getX(coords, 2, &xmax);

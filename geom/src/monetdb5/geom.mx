@@ -284,6 +284,9 @@ geom_export wkb * wkbNULL(void);
 
 int TYPE_mbr;
 
+geom_export bat*
+geom_prelude(void);
+
 bat*
 geom_prelude(void)
 {
@@ -291,6 +294,9 @@ geom_prelude(void)
 	TYPE_mbr = malAtomSize(sizeof(mbr), sizeof(oid), "mbr");
 	return NULL;	
 }
+
+geom_export void
+geom_epilogue(void);
 
 void
 geom_epilogue(void)
@@ -312,6 +318,9 @@ mbr_isnil(mbr *mbr)
 
 /* NULL: generic nil mbr. */
 /* returns a pointer to a nil-mbr. */
+geom_export mbr*
+mbrNULL(void);
+
 mbr*
 mbrNULL(void)
 {
@@ -325,6 +334,13 @@ mbrNULL(void)
 
 /* FROMSTR: parse string to mbr. */
 /* return number of parsed characters. */
+geom_export int
+mbrFROMSTR(
+   char*	src,	/* IN: to-be-parsed string. */
+   int*		len,	/* INOUT: length of area pointed to by atom [may need enlarging!] */
+   mbr**	atom	/* INOUT: ptr to atom-ptr [may need (re-)alloc!] */
+);
+
 int
 mbrFROMSTR(
    char*	src,	/* IN: to-be-parsed string. */
@@ -360,6 +376,13 @@ mbrFROMSTR(
 
 /* TOSTR: print atom in a string. */
 /* return length of resulting string. */
+geom_export int
+mbrTOSTR(
+   char**	dst,	/* INOUT: dst charbuffer [maybe 0, may need realloc]*/
+   int*		len,	/* INOUT: length of buffer */
+   mbr*	atom	/* IN: to-be-printed mbr. */
+);
+
 int
 mbrTOSTR(
    char**	dst,	/* INOUT: dst charbuffer [maybe 0, may need realloc]*/
@@ -392,6 +415,11 @@ mbrTOSTR(
 
 /* HASH: compute a hash value. */
 /* returns a positive integer hash value */
+geom_export hash_t
+mbrHASH(
+   mbr*	atom	/* IN: to-be-hashed mbr. */
+);
+
 hash_t
 mbrHASH(
    mbr*	atom	/* IN: to-be-hashed mbr. */
@@ -402,6 +430,12 @@ mbrHASH(
 
 /* COMP: compare two mbrs. */
 /* returns int <0 if l<r, 0 if l==r, >0 else */
+geom_export int
+mbrCOMP(
+   mbr*	l,	/* IN: first geom_point. */
+   mbr*	r	/* IN: second geom_point. */
+);
+
 int
 mbrCOMP(
    mbr*	l,	/* IN: first geom_point. */
@@ -422,6 +456,9 @@ mbrCOMP(
 	}
 	return res;
 }
+
+geom_export mbr *
+mbrREAD(mbr *a, stream *s, size_t cnt);
 
 mbr *
 mbrREAD(mbr *a, stream *s, size_t cnt)
@@ -444,6 +481,9 @@ mbrREAD(mbr *a, stream *s, size_t cnt)
 	return a;
 }
 
+geom_export void
+mbrWRITE(mbr *c, stream *s, size_t cnt);
+
 void
 mbrWRITE(mbr *c, stream *s, size_t cnt)
 {
@@ -458,6 +498,9 @@ mbrWRITE(mbr *c, stream *s, size_t cnt)
 	}
 }
 
+geom_export str
+mbrFromString(mbr **w, str *src);
+
 str
 mbrFromString(mbr **w, str *src)
 {
@@ -467,6 +510,9 @@ mbrFromString(mbr **w, str *src)
 		return MAL_SUCCEED;
 	throw(MAL, "mbr.FromString", GDKerrbuf);
 }
+
+geom_export str
+mbrFromMBR(mbr **w, mbr **src);
 
 str
 mbrFromMBR(mbr **w, mbr **src)
@@ -491,6 +537,13 @@ wkb_size(size_t len)
 
 /* TOSTR: print atom in a string. */
 /* return length of resulting string. */
+geom_export int
+wkbTOSTR(
+   char**	dst,	/* INOUT: dst charbuffer [maybe 0, may need realloc]*/
+   int*		len,	/* INOUT: length of buffer */
+   wkb*	atom	/* IN: to-be-printed geom_geometry. */
+);
+
 int
 wkbTOSTR(
    char**	dst,	/* INOUT: dst charbuffer [maybe 0, may need realloc]*/
@@ -525,6 +578,13 @@ wkbTOSTR(
 
 /* FROMSTR: parse string to @1. */
 /* return number of parsed characters. */
+geom_export int
+wkbFROMSTR(
+   char*	src,	/* IN: to-be-parsed string. */
+   int*		len,	/* INOUT: length of area pointed to by atom [may need enlarging!] */
+   wkb**	atom	/* INOUT: ptr to atom-ptr [may need (re-)alloc!] */
+);
+
 int
 wkbFROMSTR(
    char*	src,	/* IN: to-be-parsed string. */
@@ -569,6 +629,9 @@ wkbFROMSTR(
 	return strlen(src);
 }
 
+geom_export str
+wkbFromString(wkb **w, str *wkt);
+
 str
 wkbFromString(wkb **w, str *wkt)
 {
@@ -578,6 +641,9 @@ wkbFromString(wkb **w, str *wkt)
 		return MAL_SUCCEED;
 	throw(MAL, "wkb.FromString", GDKerrbuf);
 }
+
+geom_export str
+wkbFromWKB(wkb **w, wkb **src);
 
 str
 wkbFromWKB(wkb **w, wkb **src)
@@ -592,6 +658,9 @@ wkbFromWKB(wkb **w, wkb **src)
 	}
 	return MAL_SUCCEED;
 }
+
+geom_export str
+wkbFromText(wkb **w, str *wkt, int *tpe);
 
 str
 wkbFromText(wkb **w, str *wkt, int *tpe)
@@ -611,6 +680,9 @@ wkbFromText(wkb **w, str *wkt, int *tpe)
 	throw(MAL, "wkb.FromText", GDKerrbuf);
 }
 
+geom_export hash_t
+wkbHASH(wkb *w);
+
 hash_t
 wkbHASH(wkb *w)
 {
@@ -623,6 +695,9 @@ wkbHASH(wkb *w)
 	}
 	return h;
 }
+
+geom_export int
+wkbCOMP(wkb *l, wkb *r);
 
 int
 wkbCOMP(wkb *l, wkb *r)
@@ -638,6 +713,9 @@ wkbCOMP(wkb *l, wkb *r)
 	return memcmp(l->data, r->data, len);
 }
 
+geom_export wkb *
+wkbNULL(void);
+
 wkb *
 wkbNULL(void)
 {
@@ -646,6 +724,9 @@ wkbNULL(void)
 	nullval.len = ~(int) 0;
 	return (&nullval);
 }
+
+geom_export str
+wkbAsText(str *r, wkb** w);
 
 str
 wkbAsText(str *r, wkb** w) 
@@ -658,11 +739,17 @@ wkbAsText(str *r, wkb** w)
 	throw(MAL, "geom.AsText", "Failed to create Text from Well Known Format");
 }
 
+geom_export void
+wkbDEL(Heap *h, var_t *index);
+
 void
 wkbDEL(Heap *h, var_t *index)
 {
 	HEAP_free(h, *index);
 }
+
+geom_export wkb *
+wkbREAD(wkb *a, stream *s, size_t cnt);
 
 wkb *
 wkbREAD(wkb *a, stream *s, size_t cnt)
@@ -683,6 +770,9 @@ wkbREAD(wkb *a, stream *s, size_t cnt)
 	return a;
 }
 
+geom_export void
+wkbWRITE(wkb *a, stream *s, size_t cnt);
+
 void
 wkbWRITE(wkb *a, stream *s, size_t cnt)
 {
@@ -694,6 +784,9 @@ wkbWRITE(wkb *a, stream *s, size_t cnt)
 		stream_write(s, (char *) a->data, len, 1);
 }
 
+geom_export void
+wkbCONVERT(wkb *b, int direction);
+
 void
 wkbCONVERT(wkb *b, int direction)
 {
@@ -701,17 +794,26 @@ wkbCONVERT(wkb *b, int direction)
 	b->len = normal_int_SWAP(b->len);
 }
 
+geom_export int
+wkbLENGTH(wkb *p);
+
 int
 wkbLENGTH(wkb *p)
 {
 	return wkb_size(p->len);
 }
 
+geom_export void
+wkbHEAP(Heap *heap, size_t capacity);
+
 void
 wkbHEAP(Heap *heap, size_t capacity)
 {
 	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
+
+geom_export var_t
+wkbPUT(Heap *h, var_t *bun, wkb *val);
 
 var_t
 wkbPUT(Heap *h, var_t *bun, wkb *val)
@@ -728,6 +830,15 @@ wkbPUT(Heap *h, var_t *bun, wkb *val)
 /* COMMAND mbr
  * Creates the mbr for the given geom_geometry.
  */
+geom_export str
+ordinatesMBR(
+	mbr** res, /* INOUT. */
+	flt* minX, /* IN. */
+	flt* minY, /* IN. */
+	flt* maxX, /* IN. */
+	flt* maxY /* IN. */
+);
+
 str
 ordinatesMBR(
 	mbr** res, /* INOUT. */
@@ -749,6 +860,12 @@ ordinatesMBR(
 /* COMMAND mbr
  * Creates the mbr for the given geom_geometry.
  */
+geom_export str
+wkbMBR(
+	mbr** res, /* INOUT. */
+	wkb** geom /* IN. */
+);
+
 str
 wkbMBR(
 	mbr** res, /* INOUT. */
@@ -762,6 +879,9 @@ wkbMBR(
 	}
 	throw(MAL, "geom.mbr", "Failed to create mbr");
 }
+
+geom_export wkb *
+geos2wkb( GEOSGeom geosGeometry );
 
 wkb *
 geos2wkb( GEOSGeom geosGeometry )
@@ -781,6 +901,9 @@ geos2wkb( GEOSGeom geosGeometry )
 }
 
 @= getcoord
+geom_export str
+wkbgetcoord@1(double *out, wkb **geom);
+
 str
 wkbgetcoord@1(double *out, wkb **geom)
 {
@@ -788,7 +911,11 @@ wkbgetcoord@1(double *out, wkb **geom)
 	GEOSGeom geosGeometry = wkb2geos(*geom);
 
 	if (geosGeometry) {  
+#if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
+		const GEOSCoordSequence *gcs = GEOSGeom_getCoordSeq(geosGeometry);
+#else
 		const GEOSCoordSeq gcs = GEOSGeom_getCoordSeq(geosGeometry);
+#endif
 
 		/* we could also check if geom is a
 			LineString, LinearRing or Point */ 
@@ -806,6 +933,9 @@ wkbgetcoord@1(double *out, wkb **geom)
 @:getcoord(Y)@
 
 @c
+geom_export str
+wkbcreatepoint(wkb **out, double *x,double *y);
+
 str
 wkbcreatepoint(wkb **out, double *x,double *y)
 {
@@ -816,6 +946,9 @@ wkbcreatepoint(wkb **out, double *x,double *y)
 	GEOSCoordSeq_destroy(pnt);
 	return MAL_SUCCEED;
 }
+
+geom_export str
+mbroverlaps( bit *out, mbr *b1, mbr *b2);
 
 str
 mbroverlaps( bit *out, mbr *b1, mbr *b2)
@@ -828,6 +961,9 @@ mbroverlaps( bit *out, mbr *b1, mbr *b2)
 }
 
 @= basic
+geom_export str
+wkb@1( @2 *out, wkb **geom);
+
 str
 wkb@1( @2 *out, wkb **geom)
 {
@@ -854,6 +990,9 @@ wkb@1( @2 *out, wkb **geom)
 @:basic(Boundary,wkb*,GEOSBoundary,geos2wkb,NULL)@
 
 @= spatial
+geom_export str
+wkb@1( bit *out, wkb **a, wkb **b);
+
 str
 wkb@1( bit *out, wkb **a, wkb **b)
 {
@@ -874,6 +1013,9 @@ wkb@1( bit *out, wkb **a, wkb **b)
 	return ret;
 }
 @= spatial2
+geom_export str
+wkb@1( bit *out, wkb **a, wkb **b, @3 @4);
+
 str
 wkb@1( bit *out, wkb **a, wkb **b, @3 @4)
 {
@@ -905,6 +1047,9 @@ wkb@1( bit *out, wkb **a, wkb **b, @3 @4)
 @:spatial2(Relate,GEOSRelatePattern,char*,pattern)@
 
 @= analysis
+geom_export str
+wkb@1( dbl *out, wkb **a);
+
 str
 wkb@1( dbl *out, wkb **a)
 {
@@ -921,6 +1066,9 @@ wkb@1( dbl *out, wkb **a)
 	return ret;
 }
 @= analysis2
+geom_export str
+wkb@1( dbl *out, wkb **a, wkb **b);
+
 str
 wkb@1( dbl *out, wkb **a, wkb **b)
 {
@@ -941,6 +1089,9 @@ wkb@1( dbl *out, wkb **a, wkb **b)
 	return ret;
 }
 @= analysis3
+geom_export str
+wkb@1( @2 *out, wkb **a, wkb **b);
+
 str
 wkb@1( @2 *out, wkb **a, wkb **b)
 {
@@ -971,6 +1122,9 @@ wkb@1( @2 *out, wkb **a, wkb **b)
 @:analysis3(SymDifference,wkb*,GEOSSymDifference,geos2wkb)@
 
 @c
+geom_export str
+wkbBuffer( wkb **out, wkb **geom, dbl *distance);
+
 str
 wkbBuffer( wkb **out, wkb **geom, dbl *distance)
 {
@@ -1007,6 +1161,10 @@ wkbBuffer( wkb **out, wkb **geom, dbl *distance)
 	*X = (Y)->batCacheid; \
 	BBPkeepref(*(X));\
 	BBPreleaseref(Z->batCacheid);
+
+geom_export str 
+bat_wkbMBR(int *ret, int *l);
+
 str 
 bat_wkbMBR(int *ret, int *l)
 {   

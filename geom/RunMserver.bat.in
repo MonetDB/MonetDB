@@ -2,20 +2,33 @@
 
 setlocal
 
-set builddir=@XMONETDB_BUILD@
-set prefix=@MONETDB_PREFIX@
+rem default back end is MonetDB4
+set V=4
+if "%1" == "-4" set V=4& shift
+if "%1" == "-5" set V=5& shift
 
-set MOD_PATH=%prefix%\src\modules\plain\.libs;%prefix%\src\modules\plain;%prefix%\src\modules\contrib\.libs;%prefix%\src\modules\contrib;%prefix%\src\modules\calibrator\.libs;%prefix%\src\modules\calibrator;%prefix%\src\modules\mnetcdf\.libs;%prefix%\src\modules\mnetcdf;%prefix%\src\mapi\.libs;%prefix%\src\mapi
+set monetdb4_prefix=@XMONETDB4_PREFIX@
+set monetdb5_prefix=@XMONETDB5_PREFIX@
 
-rem to find the geom module
-set MOD_PATH=%builddir%\src\.libs;%MOD_PATH%
+if %V% == 4 call "%monetdb4_prefix%\bin\monetdb4-config.bat" --internal
+if %V% == 5 call "%monetdb5_prefix%\bin\monetdb5-config.bat" --internal
 
-set PATH=%prefix%\src\testing;%prefix%\src\tools;%prefix%\src\mapi\clients\C;%prefix%\src\mapi\clients\python;%PATH%
-set PATH=%MOD_PATH%;%prefix%\src\common;%prefix%\src\gdk;%prefix%\src\mapi\clients\C;%prefix%\src\modules\plain\stream;%prefix%\src\monet;%PATH%
+set builddir=@GEOM_BUILD@
+
+set MOD_PATH=%modpath%
+set MOD_PATH=%builddir%\src\sql;%MOD_PATH%
+set MOD_PATH=%builddir%\src\monetdb%V%;%MOD_PATH%
+set MOD_PATH=%builddir%\src\monetdb%V%\.libs;%MOD_PATH%
+
+set PATH=%MOD_PATH%;%PATH%
+set PATH=%builddir%\conf;%PATH%
 
 rem to find geos_c.dll
-set PATH=%builddir%;%PATH%
+set PATH=%GEOS%\bin;%PATH%
 
-"%prefix%\src\tools\Mserver.exe" --dbinit="module(geom);" "--config=%prefix%\conf\MonetDB.conf" --set "monet_mod_path=%MOD_PATH%" --dbname=geom %*
+if %V% == 4 set mserver=Mserver.exe
+if %V% == 5 set mserver=mserver5.exe
+
+%mserver% --set "monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 endlocal
