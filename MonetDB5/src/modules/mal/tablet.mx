@@ -1375,7 +1375,7 @@ INLINE int
 insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 {
 	Column *fmt = as->format;
-	char *s, *e = 0, quote=0, seperator;
+	char *s, *e = 0, quote=0, seperator = 0;
 	size_t i;
 	char errmsg[BUFSIZ];
 
