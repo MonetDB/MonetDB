@@ -1491,7 +1491,7 @@ RETURNS bigint
 BEGIN 
 	DECLARE cmd varchar(100); 
         SET cmd = 'CARTESIAN 20 ' 
-             ||str(x,15)||' '||str(y,15)||' '||str(z,15);
+             ||cast(round(x,7) as varchar(15))||' '||cast(round(y,7) as varchar(15))||' '||cast(round(z,7) as varchar(15));
 	RETURN fHtmLookup(cmd);
 END; 
 
