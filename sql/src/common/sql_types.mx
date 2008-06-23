@@ -1438,8 +1438,6 @@ sqltypeinit(void)
 		sql_create_func("exp", "mmath", "exp", *t, NULL, *t, SCALE_FIX);
 		sql_create_func("log", "mmath", "log", *t, NULL, *t, SCALE_FIX);
 		sql_create_func("log10", "mmath", "log10", *t, NULL, *t, SCALE_FIX);
-		sql_create_func("str", "calc", "str", *t, INT, *strings, SCALE_NONE);
-
 	}
 	sql_create_func("pi", "mmath", "pi", NULL, NULL, DBL, SCALE_NONE);
 

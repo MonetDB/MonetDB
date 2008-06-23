@@ -711,7 +711,12 @@ BEGIN
 	-- seconds
 	SET d  = MS_ROUND( 60.0 * (d-nd),precision,truncat );
 --	SET d  = 60.0 * (d-nd);
-	SET q  = LTRIM(STR(d,precision));
+	IF (precision < 1) 
+		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(7)));
+	END IF;
+	IF (precision > 10) 
+		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(16)));
+	END IF;
 	SET t = MS_STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
 	--
 	RETURN(s||t);
@@ -769,10 +774,14 @@ BEGIN
 	SET t  = MS_STUFF(t,6-LENGTH(q),LENGTH(q), q);
 	-- seconds
 	SET d  = MS_ROUND( 60.0 * (d-nd),precision,truncat );
-	SET q  = LTRIM(STR(d,precision));
+	IF (precision < 1) 
+		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(7)));
+	END IF;
+	IF (precision > 10) 
+		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(16)));
+	END IF;
 	SET t = MS_STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
 --	SET d  = 60.0 * (d-nd);
---	SET q = LTRIM(STR(d,3));
 --	SET t = MS_STUFF(t,13-LENGTH(q),LENGTH(q), q);
 	--
 	RETURN(t);
@@ -1482,7 +1491,7 @@ RETURNS bigint
 BEGIN 
 	DECLARE cmd varchar(100); 
         SET cmd = 'CARTESIAN 20 ' 
-             ||str(x,15)||' '||str(y,15)||' '||str(z,15);
+             ||cast(round(x,7) as varchar(15))||' '||cast(round(y,7) as varchar(15))||' '||cast(round(z,7) as varchar(15));
 	RETURN fHtmLookup(cmd);
 END; 
 
@@ -1993,7 +2002,7 @@ RETURNS TABLE (
 	f 		    float  ,
 	node 		float  ,
 	incl 		float  ,
-    distance    float 		-- distance in arc minutes 
+	distance    float 		-- distance in arc minutes 
   ) 
 BEGIN
 	--
@@ -2010,11 +2019,9 @@ BEGIN
 	INSERT into cover
 		SELECT htmidStart, htmidEnd
 		FROM fHtmCoverCircleXyz(nx,ny,nz,radius);
-	RETURN TABLE (
-	SELECT  fieldID,a,b,c,d,e,f,node,incl,
-            (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) as val
-	    FROM cover H inner join Frame F
-	             ON  (F.HtmID BETWEEN H.htmidStart AND H.htmidEnd )
+	RETURN TABLE(SELECT  fieldID,a,b,c,d,e,f,node,incl, 
+           (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) as val
+	    FROM cover H inner join Frame F ON  (F.HtmID BETWEEN H.htmidStart AND H.htmidEnd )
 	    WHERE zoom = zoo
 	    AND (2*DEGREES(ASIN(sqrt(power(nx-cx,2)+power(ny-cy,2)+power(nz-cz,2))/2))*60) < radius ORDER BY val ASC);
 END;

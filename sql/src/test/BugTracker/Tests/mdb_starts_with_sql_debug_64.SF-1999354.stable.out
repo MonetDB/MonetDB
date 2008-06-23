@@ -1,0 +1,23 @@
+stdout of test 'mdb_starts_with_sql_debug_64.SF-1999354` in directory 'src/test/BugTracker` itself:
+
+
+# 22:28:20 >  
+# 22:28:20 >  /usr/bin/python mdb_starts_with_sql_debug_64.SF-1999354.py mdb_starts_with_sql_debug_64.SF-1999354 
+# 22:28:20 >  
+
+# MonetDB server v5.6.0, based on kernel v1.24.0
+# Serving database 'mTests_src_test_BugTracker'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34243/
+# MonetDB/SQL module v2.24.0 loaded
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+
+# 22:28:24 >  
+# 22:28:24 >  Done.
+# 22:28:24 >  
+
