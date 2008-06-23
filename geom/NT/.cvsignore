@@ -1,6 +1,7 @@
 src
 conf
 RunMserver.bat
+RunMserver5.bat
 geom_config.h
 unistd.h
 RunMapprove.bat
