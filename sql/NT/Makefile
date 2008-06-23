@@ -18,6 +18,12 @@ IBITS =
 IBITS = 64
 !ENDIF
 
+!IFDEF HAVE_MONETDB4
+M4INSTALLER = install-m4installer
+!ELSE
+M4INSTALLER =
+!ENDIF
+
 !IFDEF HAVE_MONETDB5
 RUNMSERVER5 = RunMserver5.bat
 M5INSTALLER = install-m5installer
@@ -26,13 +32,7 @@ RUNMSERVER5 =
 M5INSTALLER =
 !ENDIF
 
-!IFDEF HAVE_MONETDB5
-M4INSTALLER = install-m4installer
-!ELSE
-M4INSTALLER =
-!ENDIF
-
-all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h RunMserver.bat RunMtest.bat RunMapprove.bat $(RUNMSERVER5)
+all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h RunMserver.bat $(RUNMSERVER5) RunMtest.bat RunMapprove.bat
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
