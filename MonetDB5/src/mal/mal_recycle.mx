@@ -710,6 +710,30 @@ compare by value.
 }
 
 @-
+The generic wrappers for accessing the recycled instructions.
+Before the interpreter loop is allowed to execute the instruction
+we check the recycle table for available variables.
+
+Just looking at a kept result target is not good enough.
+You have to sure that the arguments are also the same.
+This outrules function arguments.
+@c
+static int
+RECYCLEcall(MalStkPtr stk, InstrPtr p){
+        /* are the arguments the same as in the recycle cache */
+        int i;
+        InstrPtr q;
+
+        if (p->recycle <= 0 )
+                        return 0;
+        q= getInstrPtr(recycleBlk,p->recycle);
+        for ( i=p->retc; i< p->argc; i++)
+                if( VALcmp( &stk->stk[getArg(p,i)], &getVarConstant(recycleBlk, getArg(q,i))))
+                return 0;
+        return 1;
+}
+
+@-
 Searching for useful recycle instructions is the real challenge.
 There are two major approaches. The first approach is to search
 for an identical operation as the target under investigation and
@@ -734,6 +758,9 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	(void) mb;
 	if( recycleBlk == 0)
 		return -1;
+	if (RECYCLEcall(s,p)) 
+		return p->recycle;
+
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"search\n");
 	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
@@ -896,29 +923,6 @@ We execute it in place and safe the result upon need.
 		return i;
 	}
 	return pc;
-}
-@-
-The generic wrappers for accessing the recycled instructions.
-Before the interpreter loop is allowed to execute the instruction
-we check the recycle table for available variables.
-
-Just looking at a kept result target is not good enough.
-You have to sure that the arguments are also the same.
-This outrules function arguments.
-@c
-static int
-RECYCLEcall(MalStkPtr stk, InstrPtr p){
-	/* are the arguments the same as in the recycle cache */
-	int i;
-	InstrPtr q;
-
-	if (p->recycle <= 0 )
-			return 0;
-	q= getInstrPtr(recycleBlk,p->recycle);
-	for ( i=p->retc; i< p->argc; i++)
-		if( VALcmp( &stk->stk[getArg(p,i)], &getVarConstant(recycleBlk, getArg(q,i))))
-		return 0;
-	return 1;
 }
 
 int 
