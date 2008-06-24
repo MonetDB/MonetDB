@@ -1098,6 +1098,7 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 	as->nr_attrs = nr_attrs;
 	as->tryall= 0;
 	as->complaints = 0;
+	as->error = NULL;
 	/* assert(as->nr_attrs == nr_attrs); *//* i.e. it fits */
 	for (p = 0; p < nr_attrs; p++) {
 		fmt[p].name = (char *) bun_tail(names, p);
@@ -1136,6 +1137,9 @@ create_dumpformat(Tablet * as, BAT *names, BAT *seps, BAT *bats)
 
 	as->offset = 0;
 	as->nr_attrs = nr_attrs;
+	as->tryall= 0;
+	as->complaints = 0;
+	as->error = NULL;
 	/* assert(as->nr_attrs == nr_attrs); *//* i.e. it fits */
 	for (p = 0; p < nr_attrs; p++) {
 		BAT *b = (BAT *) BATdescriptor(*(bat *) bun_tail(bats, p));
@@ -1383,12 +1387,12 @@ insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 
 	for (i = 0; i < as->nr_attrs ; i++) {
 		e = 0;
-		s = line;
 
 		/* skip leading spaces */
-		if (fmt[i].ws)
+		if (fmt[i].ws) 
 			while (myisspace((int) (*line)))
 				line++;
+		s = line;
 
 		/* recognize fields starting with a quote */
 		if ( *line && *line == fmt[i].quote && 
