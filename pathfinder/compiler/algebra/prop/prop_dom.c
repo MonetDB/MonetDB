@@ -546,8 +546,37 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_cross:
-            /* we have to make sure to assign subdomains as otherwise
-               dynamic empty relations might be ignored */
+            if (PFprop_card (R(n)->prop) > 0)
+                bulk_add_dom (n->prop, L(n));
+            else
+                /* we have to make sure to assign subdomains as otherwise
+                   dynamic empty relations might be ignored */
+                /* create new subdomains for all attributes */
+                for (unsigned int i = 0; i < L(n)->schema.count; i++) {
+                    add_subdom (n->prop,
+                                PFprop_dom (L(n)->prop,
+                                            L(n)->schema.items[i].name),
+                                id);
+                    add_dom (n->prop, L(n)->schema.items[i].name, id);
+                    id++;
+                }
+            
+            if (PFprop_card (L(n)->prop) > 0)
+                bulk_add_dom (n->prop, R(n));
+            else
+                /* we have to make sure to assign subdomains as otherwise
+                   dynamic empty relations might be ignored */
+                /* create new subdomains for all attributes */
+                for (unsigned int i = 0; i < R(n)->schema.count; i++) {
+                    add_subdom (n->prop,
+                                PFprop_dom (R(n)->prop,
+                                            R(n)->schema.items[i].name),
+                                id);
+                    add_dom (n->prop, R(n)->schema.items[i].name, id);
+                    id++;
+                }
+            break;
+
         case la_thetajoin:
             /* As we do not know how multiple predicates interact
                we assign subdomains for all attributes. */
@@ -1264,6 +1293,7 @@ prop_infer (PFla_op_t *n, PFarray_t *subdoms, PFarray_t *disjdoms,
 void
 PFprop_infer_dom (PFla_op_t *root)
 {
+    PFprop_infer_card (root);
     /*
      * Initialize domain property inference with an empty domain
      * relation list,
