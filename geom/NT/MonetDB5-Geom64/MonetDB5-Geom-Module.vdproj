@@ -15,20 +15,26 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_0729672A47604EE69F8B5461528D646F"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_1FE7B02CBBA5493DA5E90CC441A198FC"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_558F3D55055F49D3B2E63E9CAFF2ECF6"
-        "OwnerKey" = "8:_C5249117205D42C183A8CFBF50D2C692"
+        "MsmKey" = "8:_5BE7FE00E4D843E8BC2DBCFC75D469B4"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_5BE7FE00E4D843E8BC2DBCFC75D469B4"
-        "OwnerKey" = "8:_UNDEFINED"
+        "MsmKey" = "8:_AC2C6EB8513A4109846751AE33350A78"
+        "OwnerKey" = "8:_C5249117205D42C183A8CFBF50D2C692"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -137,6 +143,26 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0729672A47604EE69F8B5461528D646F"
+            {
+            "SourcePath" = "8:C:\\geos-3.0.win64\\bin\\geos_c.dll"
+            "TargetName" = "8:geos_c.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_4D9CE65EDD774551869CFD46B59B4F9E"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1FE7B02CBBA5493DA5E90CC441A198FC"
             {
             "SourcePath" = "8:banner.bmp"
@@ -362,7 +388,7 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:MonetDB5"
+        "ProductName" = "8:MonetDB5 SQL GIS Module"
         "ProductCode" = "8:{97791FD1-3A6B-4F07-A88F-C9069051E65D}"
         "PackageCode" = "8:{0207C460-AE7A-4F68-89CF-4ACC74A45BD2}"
         "UpgradeCode" = "8:{8E6CDFDE-39B9-43D9-97B3-2440C012845C}"
@@ -378,7 +404,7 @@
         "Subject" = "8:"
         "ARPCONTACT" = "8:CWI"
         "Keywords" = "8:MonetDB5 MonetDB SQL GIS Database"
-        "ARPCOMMENTS" = "8:MonetDB5/SQ/GIS Module"
+        "ARPCOMMENTS" = "8:MonetDB5/SQL/GIS Module"
         "ARPURLINFOABOUT" = "8:http://monetdb.cwi.nl"
         "ARPPRODUCTICON" = "8:"
         "ARPIconIndex" = "3:0"
@@ -926,7 +952,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_558F3D55055F49D3B2E63E9CAFF2ECF6"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_AC2C6EB8513A4109846751AE33350A78"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
