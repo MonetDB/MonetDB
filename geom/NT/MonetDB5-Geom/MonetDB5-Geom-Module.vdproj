@@ -39,6 +39,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_934B6D306BC8482388408CCD3E3707C0"
+        "OwnerKey" = "8:_819BD8650A494CC68BD064E23EF621BB"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_B44E4DBF28214C5F8E146367ED28914D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -47,12 +53,6 @@
         {
         "MsmKey" = "8:_D147424A3FAE4B65A5E6354CD1874429"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D2F245208EF1402F9A3AEE5E32103316"
-        "OwnerKey" = "8:_819BD8650A494CC68BD064E23EF621BB"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -388,7 +388,7 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:MonetDB5"
+        "ProductName" = "8:MonetDB5 SQL GIS Module"
         "ProductCode" = "8:{2B42AD3B-C1B5-4D7C-ADD2-F1FE2C99E5E0}"
         "PackageCode" = "8:{3279496A-BB4F-4417-8B96-F985F39EDFFB}"
         "UpgradeCode" = "8:{92C89C36-0E86-45E1-B3D8-0D6C91108F30}"
@@ -966,7 +966,7 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_D2F245208EF1402F9A3AEE5E32103316"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_934B6D306BC8482388408CCD3E3707C0"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
