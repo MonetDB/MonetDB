@@ -378,7 +378,7 @@
         "Subject" = "8:"
         "ARPCONTACT" = "8:CWI"
         "Keywords" = "8:MonetDB5 MonetDB SQL GIS Database"
-        "ARPCOMMENTS" = "8:MonetDB5/SQ/GIS Module"
+        "ARPCOMMENTS" = "8:MonetDB5/SQL/GIS Module"
         "ARPURLINFOABOUT" = "8:http://monetdb.cwi.nl"
         "ARPPRODUCTICON" = "8:"
         "ARPIconIndex" = "3:0"
