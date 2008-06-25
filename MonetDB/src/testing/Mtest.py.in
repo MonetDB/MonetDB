@@ -408,9 +408,9 @@ def Warn(TEXT) :
         pass
 ### Warn(TEXT) #
 
-def startswith(str,pre) :
-    return str[:len(pre)] == pre
-### startswith(str,pre) #
+def startswithpath(str,pre) :
+    return os.path.normcase(str[:len(pre)]) == os.path.normcase(pre)
+### startswithpath(str,pre) #
 
 import urllib
 ##def path(str) :
@@ -3145,18 +3145,15 @@ def main(argv) :
         ErrXit('TSTSRCBASE itself must not be a test-directory, i.e., called "%s" and contain an "All" file!' % TSTSUFF)
 
     # make TSTxxxBASE absolute physical paths
-    BACK = os.getcwd()
     for p in 'TSTSRCBASE', 'TSTBLDBASE', 'TSTTRGBASE':
         if os.path.isdir(env[p]):
-            os.chdir(env[p])
-            if os.getcwd() != env[p]:
-                if not quiet:
-                    Warn(p+": Replacing logical path  "+env[p]+
-                         "  by absolute physical path  "+os.getcwd())
-                env[p] = os.getcwd()
+            rp = os.path.abspath(env[p])
+            if not quiet and os.path.normcase(rp) != os.path.normcase(env[p]):
+                Warn(p+": Replacing logical path  "+env[p]+
+                     "  by absolute physical path  "+rp)
+            env[p] = rp
         else:
             ErrXit("Illegal "+p+": directory '"+env[p]+"' does not exist!")
-    os.chdir(BACK)
 
     if THISFILE == "Mapprove.py" \
        and not os.path.exists(os.path.join(env['TSTTRGBASE'],dftTSTPREF )) \
@@ -3200,11 +3197,11 @@ def main(argv) :
             ErrXit("System (-S) must match '"+sv+"' !")
 
     # some relative path's for relocatable HTML output
-    if env['TSTSRCBASE'] == env['TSTBLDBASE']  and  env['TSTBLDBASE'] == env['TSTTRGBASE']:
+    if os.path.normcase(env['TSTSRCBASE']) == os.path.normcase(env['TSTBLDBASE'])  and  os.path.normcase(env['TSTBLDBASE']) == os.path.normcase(env['TSTTRGBASE']):
         RELSRCBASE = os.curdir
         RELBLDBASE = os.curdir
     else:
-        TSTBASE = os.path.dirname(os.path.commonprefix([env['TSTSRCBASE'],env['TSTBLDBASE'],env['TSTTRGBASE']]))
+        TSTBASE = os.path.dirname(os.path.commonprefix([os.path.normcase(env['TSTSRCBASE']),os.path.normcase(env['TSTBLDBASE']),os.path.normcase(env['TSTTRGBASE'])]))
         RELBASE = ((os.pardir+os.sep)*len(env['TSTTRGBASE'][len(TSTBASE+os.sep):].split(os.sep)))
         RELSRCBASE = RELBASE+env['TSTSRCBASE'][len(TSTBASE):]
         RELBLDBASE = RELBASE+env['TSTBLDBASE'][len(TSTBASE):]
@@ -3277,7 +3274,7 @@ def main(argv) :
     #       os.environ['LD_LIBRARY_PATH'] = lp
     #       print "LD_LIBRARY_PATH = "+lp
 
-    if not startswith(os.getcwd()+os.sep, env['TSTSRCBASE']+os.sep):
+    if not startswithpath(os.getcwd()+os.sep, env['TSTSRCBASE']+os.sep):
         Warn("Current directory "+os.getcwd()+" is no descendant of TSTSRCBASE="+env['TSTSRCBASE']+";")
         Warn("changing to TSTSRCBASE="+env['TSTSRCBASE']+", now.")
         os.chdir(env['TSTSRCBASE'])
@@ -3325,7 +3322,7 @@ def main(argv) :
     if   len(args) == 1:
         if   os.path.isdir(args[0]):
             d = os.path.abspath(args[0])
-            if startswith(d+os.sep, env['TSTSRCBASE']+os.sep):
+            if startswithpath(d+os.sep, env['TSTSRCBASE']+os.sep):
                 dirlist.append(d)
             #TODO:
             #else:
@@ -3340,7 +3337,7 @@ def main(argv) :
         i = 0
         while i < len(args)  and  os.path.isdir(args[i]):
             d = os.path.abspath(args[i])
-            if startswith(d+os.sep, env['TSTSRCBASE']+os.sep):
+            if startswithpath(d+os.sep, env['TSTSRCBASE']+os.sep):
                 dirlist.append(os.path.abspath(args[i]))
             #TODO:
             #else:
