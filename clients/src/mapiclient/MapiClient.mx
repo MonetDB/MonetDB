@@ -185,7 +185,18 @@ char *output = NULL;		/* output format as string */
 
 #define DEFWIDTH 80
 
-static long t0, t1;		/* used for timing */
+/* try to use a 64 bit integer for the timer, but fall back to plain long */
+#ifdef HAVE_LONG_LONG
+typedef long long timertype;
+#else
+#ifdef HAVE___INT64
+typedef __int64 timertype;
+#else
+typedef long timertype;
+#endif
+#endif
+
+static timertype t0, t1;	/* used for timing */
 static char *mark, *mark2;
 
 @-
@@ -243,20 +254,30 @@ static enum modifiers specials = NOmodifier; /* set when we see EXPLAIN,DEBUG, o
 #define fileno _fileno
 #endif
 
-static long
+static timertype
 gettime(void)
 {
+	/* Return the time in milliseconds since an epoch.  The epoch
+	  is roughly the time this program started. */
 #ifdef HAVE_GETTIMEOFDAY
+	static struct timeval tpbase;  /* automatically initialized to 0 */
 	struct timeval tp;
 
+	if (tpbase.tv_sec == 0)
+		gettimeofday(&tpbase, NULL);
 	gettimeofday(&tp, NULL);
-	return (long) tp.tv_sec * 1000000 + (long) tp.tv_usec;
+	tp.tv_sec -= tpbase.tv_sec;
+	return (timertype) tp.tv_sec * 1000000 + (timertype) tp.tv_usec;
 #else
 #ifdef HAVE_FTIME
+	static struct timeb tbbase;  /* automatically initialized to 0 */
 	struct timeb tb;
 
+	if (tbbase.time == 0)
+		ftime(&tbbase);
 	ftime(&tb);
-	return (long) tb.time * 1000000 + (long) tb.millitm * 1000;
+	tb.time -= tbbase.time;
+	return (timertype) tb.time * 1000000 + (timertype) tb.millitm * 1000;
 #endif
 #endif
 }
@@ -284,7 +305,7 @@ timerEnd(void)
 {
 	t1 = gettime();
 	if (mark && specials == NOmodifier) {
-		stream_printf(toConsole, "%s % 7ld.%03ld msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
+		stream_printf(toConsole, "%s % 7ld.%03ld msec %s\n", mark, (long) ((t1 - t0) / 1000), (long) ((t1 - t0) % 1000), mark2 ? mark2 : "");
 		stream_flush(toConsole);
 	}
 }
