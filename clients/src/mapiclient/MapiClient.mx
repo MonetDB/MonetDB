@@ -264,7 +264,7 @@ gettime(void)
 	struct timeval tp;
 
 	if (tpbase.tv_sec == 0)
-		gettimeofday(&tpbase);
+		gettimeofday(&tpbase, NULL);
 	gettimeofday(&tp, NULL);
 	tp.tv_sec -= tpbase.tv_sec;
 	return (timertype) tp.tv_sec * 1000000 + (timertype) tp.tv_usec;
