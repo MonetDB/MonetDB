@@ -1,3 +1,6 @@
+create table t1(ra float, "dec" int);
+
+
 CREATE FUNCTION f2(deg float, truncat int , precision int)
 RETURNS varchar(32)
 BEGIN
@@ -32,7 +35,7 @@ SET q = LTRIM(CAST(nd as varchar(4)));
 SET t = MS_STUFF(t,6-LENGTH(q),LENGTH(q), q);
 -- seconds
 SET d = MS_ROUND( 60.0 * (d-nd),precision,truncat );
-SET q = LTRIM(STR(d,precision));
+--SET q = LTRIM(STR(d,precision));
 SET t = MS_STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
 -- SET d = 60.0 * (d-nd);
 -- SET q = LTRIM(STR(d,3));
@@ -44,4 +47,7 @@ END;
 explain SELECT f2(1,2,3);
 --SELECT fIAUFromEq(p.ra,p."dec") FROM PhotoPrimary as p;
 
+TRACE SELECT f2(p.ra,8,p."dec") FROM t1 as p;
+
 drop function f2;
+drop table t1;

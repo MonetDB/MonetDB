@@ -711,10 +711,10 @@ BEGIN
 	-- seconds
 	SET d  = MS_ROUND( 60.0 * (d-nd),precision,truncat );
 --	SET d  = 60.0 * (d-nd);
-	IF (precision < 1) 
+	IF (precision = 1) 
 		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(7)));
 	END IF;
-	IF (precision > 10) 
+	IF (precision = 10) 
 		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(16)));
 	END IF;
 	SET t = MS_STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
@@ -774,10 +774,10 @@ BEGIN
 	SET t  = MS_STUFF(t,6-LENGTH(q),LENGTH(q), q);
 	-- seconds
 	SET d  = MS_ROUND( 60.0 * (d-nd),precision,truncat );
-	IF (precision < 1) 
+	IF (precision = 1) 
 		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(7)));
 	END IF;
-	IF (precision > 10) 
+	IF (precision = 10) 
 		THEN SET q  = LTRIM(cast( round(d, precision) as varchar(16)));
 	END IF;
 	SET t = MS_STUFF(t,10+precision-LENGTH(q),LENGTH(q), q);
