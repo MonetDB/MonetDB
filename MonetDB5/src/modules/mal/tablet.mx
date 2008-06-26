@@ -453,7 +453,7 @@ tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, 
 /* The low level routines are primarilly used by the SQL front-end.*/
 tablet_export int TABLETcreate_bats(Tablet * as, size_t est);
 tablet_export size_t TABLETassign_BATs(Tablet * as, BAT *bats);
-tablet_export ssize_t TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2);
+tablet_export ssize_t TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, int start, int limit);
 tablet_export BAT *TABLETcollect_bats(Tablet * as);
 tablet_export void TABLETdestroy_format(Tablet * as);
 tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
@@ -1618,9 +1618,21 @@ read_more(bstream *in, stream *out, size_t n)
 	return 1;
 }
 
+@-
+We should extend the TABLETload_file with optional arguments to read
+a portion of a file. We assume that the blocked stream is already
+positioned correctly at the reading position. The start and limit
+indicates the byte range to search for tuples.
+If start> 0 then we first skip to the next record separator.
+If necessary we read more then 'limit' bytes to ensure parsing a complete
+record and stop at the record boundary.
+Beware, we should allocate Tablet descriptors for each file segment,
+otherwise we end up with a gross concurrency control problem.
+The resulting BATs should be glued at the final phase.
+@c
 
 ssize_t
-TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2)
+TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, int start, int limit)
 {
 	int res = 0, done = 0;
 	size_t i = 0;
@@ -1629,6 +1641,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2)
 	size_t offset = as->offset;
 	size_t nr = offset + as->nr;
 
+	(void) limit;
 	if (tablet_debug)
 		stream_printf(GDKerr, "TABLETload_file\n");
 
@@ -1652,7 +1665,18 @@ TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2)
 		while (s < end) {
 			char *e = strstr(s, sep);
 
+			if (start){
+				/*ignore partial record from previous block */
+				start = 0;
+				s= e+ strlen(sep);
+				continue;
+			}
+			if (limit < 0){
+				/* we have read enough */
+				break;
+			}
 			if (e) {
+				limit -= (e-s)+strlen(sep);
 				*e = '\0';
 				if (i>=offset && insert_line(as, s, NULL, col1,col2) < 0) {
 					s = e + seplen;
@@ -1851,7 +1875,7 @@ on the number of records to be expected and the general system resources.
 			}
 			return NULL;
 		}
-		if (TABLETload_file(as, b = bstream_create(s, SIZE), NULL ,col,col+stride) < 0){
+		if (TABLETload_file(as, b = bstream_create(s, SIZE), NULL ,col,col+stride,0,INT_MAX) < 0){
 				error= TRUE;
 				break;
 		}
@@ -1876,7 +1900,7 @@ TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, stream *out, size_t n
 	as.nr = nr;
 	if (create_loadformat(&as, names, seps, types) != ~(size_t) 0 && 
 		TABLETcreate_bats(&as, est) >= 0) {
-		if (TABLETload_file(&as, s, out, 0, as.nr_attrs) >= 0)
+		if (TABLETload_file(&as, s, out, 0, as.nr_attrs,0, INT_MAX) >= 0)
 			bats = TABLETcollect_bats(&as);
 	}
 	TABLETdestroy_format(&as);
