@@ -1048,19 +1048,23 @@ tr_update_bat( sql_trans *tr, sql_delta *obat, sql_delta *cbat, lng *cnt)
 	if (BUNlast(ups) > BUNfirst(ups)) {
 		if (BUNlast(ups) > ups->batInserted && store_nr_active > 1) { 
 			BAT *cu = temp_descriptor(obat->ubid);
+
+			if (isEUbat(cu)) {
+				temp_destroy(obat->ubid);
+				obat->ubid = temp_copy(cu->batCacheid, FALSE);
+				bat_destroy(cu);
+				cu = temp_descriptor(obat->ubid);
+			}
 			copy_inserted(cu, ups);
 			bat_destroy(cu);
 		}
 		if (store_nr_active == 1) { /* flush all */
 			void_replace_bat(cur, ups, TRUE);
 			/* cleanup the old deltas */
-			if (BUNfirst(ups) != ups->batInserted) { 
-				BAT *cu = temp_descriptor(obat->ubid);
-				bat_clear(cu);
-				BATcommit(cu);
-				bat_destroy(cu);
-			}
-			bat_clear(ups);
+			temp_destroy(obat->ubid);
+			obat->ubid = e_ubat(cur->ttype);
+			temp_destroy(cbat->ubid);
+			cbat->ubid = e_ubat(cur->ttype);
 		} else {
 			BATcommit(ups);
 		}
