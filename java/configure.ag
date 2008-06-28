@@ -19,7 +19,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([MonetDB Java], [20080617], [monet@cwi.nl], [MonetDB-java])
+AC_INIT([MonetDB Java], [20080625], [monet@cwi.nl], [MonetDB-java])
 AC_CONFIG_AUX_DIR(conf)
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER([monetdb_java_config.h])
@@ -104,6 +104,7 @@ fi
 AM_MONETDB_UTILS()	# for buildtools
 AM_MONETDB_TRANSLATEPATH()
 AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
+AC_CHECK_PROG(RM,rm,rm -f)
 
 dnl provide different versions of the paths derived above
 AM_MONETDB_XQ_VARS_2()
