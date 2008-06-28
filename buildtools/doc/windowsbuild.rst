@@ -693,3 +693,32 @@ available.  The following parameters are possible:
 - ``HAVE_PYTHON=1`` - Python is available;
 - ``HAVE_PYTHON_SWIG=1`` - Python and SWIG are both available (also
   need ``HAVE_PYTHON=1``).
+
+Building Installers
+~~~~~~~~~~~~~~~~~~~
+
+Installers can be built either using the full-blown Visual Studio user
+interface or on the command line.  To use the user interface, open one
+or more of the files ``MonetDB4-XQuery-Installer.sln``,
+``MonetDB5-SQL-Installer.sln``, ``MonetDB-ODBC-Driver.sln``, and
+``MonetDB5-Geom-Module.sln`` in the
+installation folder and select ``Build`` -> ``Build Solution``.  To
+use the command line, execute one or more of the commands in the
+installation folder::
+
+ devenv MonetDB4-XQuery-Installer.sln /build
+ devenv MonetDB5-SQL-Installer.sln /build
+ devenv MonetDB-ODBC-Driver.sln /build
+ devenv MonetDB5-Geom-Module.sln /build
+
+In both cases, use the solutions (``.sln`` files) that are
+appropriate.
+
+There is annoying bug in Visual Studio on Windows64 that affects the
+MonetDB5-Geom-Module installer.  The installer contains code to check
+the registry to find out where MonetDB5/SQL is installed.  The bug is
+that the 64 bit installer will check the 32-bit section of the
+registry.  The code can be fixed by editing the generated installer
+(``.msi`` file) using e.g. the program ``orca`` from Microsoft.  Open
+the installer in ``orca`` and locate the table ``RegLocator``.  In the
+Type column, change the value from ``2`` to ``18`` and save the file.
