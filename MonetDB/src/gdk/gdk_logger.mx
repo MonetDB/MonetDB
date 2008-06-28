@@ -992,7 +992,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 	snprintf(filename, BUFSIZ, "%s%c%s%c", logdir, DIR_SEP, dbname, DIR_SEP);
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
-    lg->phandler = phandler;
+	lg->phandler = phandler;
 	lg->log = NULL;
 	lg->end = 0;
 	lg->catalog = NULL;
