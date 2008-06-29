@@ -170,6 +170,7 @@ stream_export stream *file_rastream(FILE *fp, const char *name);
 stream_export stream *file_wastream(FILE *fp, const char *name);
 
 stream_export FILE* getFile(stream *s);
+stream_export stream *dupFileStream(stream *s);
 
 #ifdef HAVE_ICONV
 stream_export stream *iconv_rstream(stream *ss, const char *charset, const char *name);
@@ -553,7 +554,6 @@ stream_fsetpos(stream *s, size_t p)
 	printf("fsetpos %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	if (!s) return -1;
-	assert(s->access == ST_WRITE);
 	if (s->errnr) return s->errnr;
 	if (s->fsetpos)
 		return (*s->fsetpos) (s, p);
@@ -803,21 +803,47 @@ file_fgetpos(stream *s, size_t *p)
 static int
 file_fsetpos(stream *s, size_t p)
 {
+	int res = 0;
 	FILE *fp = (FILE*)s->stream_data.p;
 
 #if defined(NATIVE_WIN32) && _MSC_VER >= 1400 /* Visual Studio 2005 */
-	return _fseeki64(fp, (__int64) p, SEEK_SET);
+	res = _fseeki64(fp, (__int64) p, SEEK_SET);
 #else
-	return fseek(fp, (long) p, SEEK_SET);
+	res = fseek(fp, (long) p, SEEK_SET);
 #endif
+	return res;
 }
 
-
+@-
+Front-ends may wish to have more control
+over the designated file activity. For this
+they need access to the file descriptor
+or even duplicate it. (e.g. tablet loader)
+@c
 FILE *getFile(stream *s){
 	if (s->read != file_read)
 		return NULL;
 	return (FILE*) s->stream_data.p;
 }
+
+stream *dupFileStream(stream *s){
+	stream *ns;
+	if (s->read != file_read)
+		return NULL;
+	if ((ns = create_stream(s->name)) == NULL)
+		return NULL;
+	ns->read = file_read;
+	ns->readline = NULL;
+	ns->write = file_write;
+	ns->close = file_close;
+	ns->flush = file_flush;
+	ns->fsync = file_fsync;
+	ns->fgetpos = file_fgetpos;
+	ns->fsetpos = file_fsetpos;
+	ns->stream_data.p= (void*) fdopen(dup(fileno((FILE*)s->stream_data.p)), "r");
+	return ns;
+}
+
 static stream *
 open_stream(const char *filename, const char *flags)
 {
