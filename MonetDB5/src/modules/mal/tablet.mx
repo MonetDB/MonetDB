@@ -388,7 +388,9 @@ pre presented on the screen directly.
 
 #define SIZE 1*1024*1024
 
-typedef ptr *(*frStr) (void *extra, int type, char *s, char *e, char quote);
+struct Column_t;
+typedef ptr *(*frStr) (struct Column_t *fmt, int type, char *s, char *e, char quote);
+/* as toString functions are also used outside tablet we don't pas the column here */
 typedef int (*toStr) (void *extra, char **buf, int *len, int type, ptr a);
 
 typedef struct Column_t {
@@ -418,7 +420,7 @@ typedef struct Column_t {
 	bit ws; 	/* if set we need to skip white space */
 	bit quote; 	/* if set use this character for string quotes */
 	void *nildata;
-} Column;
+} Column; 
 
 @-
 All table printing is based on building a report structure first.
@@ -466,7 +468,7 @@ tablet_export void TABLETdestroy_format(Tablet * as);
 tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
 
 tablet_export ptr *TABLETstrFrStr(Column *c, char *s, char *e);
-tablet_export ptr *TABLETadt_frStr(void *extra, int type, char *s, char *e, char quote);
+tablet_export ptr *TABLETadt_frStr(Column *c, int type, char *s, char *e, char quote);
 tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
 tablet_export int insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 );
 tablet_export int output_file_dense(Tablet * as, stream *fd);
@@ -1034,10 +1036,8 @@ TABLETstrFrStr(Column *c, char *s, char *e)
 }
 
 ptr *
-TABLETadt_frStr(void *extra, int type, char *s, char *e, char quote)
+TABLETadt_frStr(Column *c, int type, char *s, char *e, char quote)
 {
-	Column *c = extra;
-
 	if (s == NULL || (!quote && strcmp(s, "nil") == 0)) {
         	memcpy(c->data, ATOMnilptr(type), c->nillen);
 	} else if (type == TYPE_str) {
@@ -1126,7 +1126,7 @@ copy_loadformat(Tablet *as){
 		fmt[p].adt =  as->format[p].adt;
 		fmt[p].tostr = as->format[p].tostr;
 		fmt[p].frstr = as->format[p].frstr;
-		fmt[p].extra = fmt+p;
+		fmt[p].extra = as->format[p].extra;
 		fmt[p].len = as->format[p].len;
 		fmt[p].nillen = as->format[p].nillen;
 		fmt[p].ws = as->format[p].ws;
@@ -1167,7 +1167,7 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 		}
 		fmt[p].tostr = &TABLETadt_toStr;
 		fmt[p].frstr = &TABLETadt_frStr;
-		fmt[p].extra = fmt+p;
+		fmt[p].extra = NULL;
 		fmt[p].len = fmt[p].nillen = 
 			ATOMlen(fmt[p].adt, ATOMnilptr(fmt[p].adt));
 		fmt[p].ws = !(has_whitespace(fmt[p].sep));
@@ -1212,7 +1212,7 @@ create_dumpformat(Tablet * as, BAT *names, BAT *seps, BAT *bats)
 		fmt[p].adt = (b)->ttype;
 		fmt[p].tostr = &TABLETadt_toStr;
 		fmt[p].frstr = &TABLETadt_frStr;
-		fmt[p].extra = fmt+p;
+		fmt[p].extra = NULL;
 		fmt[p].data = NULL;
 		fmt[p].len = 0;
 		fmt[p].nillen = 0;
@@ -1389,7 +1389,7 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 	    (quote && strncasecmp(s+1, fmt->nullstr, e-s) == 0)) ) ) {
 		adt = fmt->nildata;
 	} else {
-		adt = fmt->frstr(fmt->extra, fmt->adt, s, e, quote);
+		adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
 	}
 
 	if (!adt) {
@@ -1735,7 +1735,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 			if (start) {
 				/*ignore partial record from previous block */
 				start = 0;
-				limit -= (e-s)+strlen(sep) - 1;
+				limit -= (e-s)+strlen(sep);
 				s = e + strlen(sep);
 				continue;
 			}
@@ -1771,6 +1771,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 										BATcount(as->format[0].c));
 							res = -1;
 						}
+						limit = -1;
 						break;
 					}
 					end = b->buf + b->len;
@@ -1874,7 +1875,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 #endif
 			(void)res;
 			/* execute a thread over a range of the file */
-			partition[i]->bytes = piece; 
+			partition[i]->bytes = (i==NWAY-1)?size-i*piece:piece; 
 			MT_create_thread(&partition[i]->tid, TABLETload_chunk, partition[i]);
 		}
 		
