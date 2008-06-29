@@ -1714,6 +1714,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 	while ((b->pos < b->len || !b->eof) && res == 0 && limit > 0 && (nr == ~(size_t) 0 || i < nr)) {
 		char *s, *end;
 
+
 		if (b->pos >= b->len && read_more(b, out, b->size - (b->len - b->pos)) == EOF) {
 			if (nr != ~(size_t)0 && i < nr) {
 				res = 1; 
@@ -1787,6 +1788,10 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 				break;
 		}
 	}
+#ifdef _DEBUG_TABLET_
+	stream_printf(GDKstdout,"limit %d, nr %d res %d offset %d\n",limit,i-offset,res,offset);
+	stream_printf(GDKstdout,"stream eof %d len %d pos %d\n", b->eof, b->len, b->pos);
+#endif
 	as->nr = i-offset;
 	if (res < 0)
 		return res;
@@ -1811,6 +1816,10 @@ static void TABLETload_chunk(void *data){
 	TABLETload_bulk(p, p->input, p->output, 0, p->nr_attrs, 1, p->bytes);
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKstdout,"exit of loader child (bytes) %d %d\n", p->bytes, p->tid);
+	{ int i;
+	for(i=0; i< (int) p->nr_attrs; i++)
+	stream_printf(GDKstdout,"field %d tuples %d\n",i, BATcount(p->format[i].c));
+	}
 #endif
 	p->tid = 0; 	/* we are done loading this chunk */
 }
@@ -1834,8 +1843,6 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKstdout,"starting parallel file based load\n");
 #endif
-	as->input = b;	/* prepare for passing it to the threads */
-	as->output = out;
 
 	/* get size of file */
 	fseek(f,0L,SEEK_END);
@@ -1850,6 +1857,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 		partition[i] = copy_loadformat(as);
 		/* private copy of stream is needed */
 		partition[i]->input = bstream_create(dupFileStream(b->s),SIZE);
+		partition[i]->output = out;
 		if (TABLETcreate_bats(partition[i], (size_t) 0) < 0){
 			for (i--; i>= 0; i--)
 				TABLETdestroy_format(partition[i]);
