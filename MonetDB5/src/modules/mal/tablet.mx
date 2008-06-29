@@ -368,6 +368,8 @@ pre presented on the screen directly.
 #ifndef _TABLET_IO2_H_
 #define _TABLET_IO2_H_
 
+#define _DEBUG_TABLET_
+
 #include <gdk.h>
 #include "streams.h"
 #include <mal_exception.h>
@@ -383,6 +385,8 @@ pre presented on the screen directly.
 #else
 #define tablet_export extern
 #endif
+
+#define SIZE 1*1024*1024
 
 typedef ptr *(*frStr) (void *extra, int type, char *s, char *e, char quote);
 typedef int (*toStr) (void *extra, char **buf, int *len, int type, ptr a);
@@ -442,18 +446,19 @@ typedef struct Table_t {
 	int tryall;		/* skip erroneous lines */
 	BAT *complaints;	/* lines that did not match the required input */
 	unsigned int rowwidth;		/* sum of columns used for mallocs */
+	bstream *input;			/* where to get the data from */
+	stream *output;			/* where to leave immediate output */
 	Column columns[1];			/* at least one column, enlarged upon need */
 } Tablet;
 
 tablet_export BAT *TABLETload(Tablet *as, char *datafile);
-tablet_export BAT *TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, stream *out, size_t nr, size_t est);
 tablet_export size_t TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
 tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr);
 
 /* The low level routines are primarilly used by the SQL front-end.*/
 tablet_export int TABLETcreate_bats(Tablet * as, size_t est);
 tablet_export size_t TABLETassign_BATs(Tablet * as, BAT *bats);
-tablet_export ssize_t TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, int start, int limit);
+tablet_export ssize_t TABLETload_file(Tablet * as, bstream *b, stream *out);
 tablet_export BAT *TABLETcollect_bats(Tablet * as);
 tablet_export void TABLETdestroy_format(Tablet * as);
 tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
@@ -1087,6 +1092,51 @@ has_whitespace(char *sep)
 	return 0;
 }
 
+static Tablet *
+copy_loadformat(Tablet *as){
+	Tablet *ns= (Tablet *) GDKzalloc(sizeof(Tablet));
+	Column *fmt = ns->format = (Column *) GDKzalloc(sizeof(Column) * (as->nr_attrs + 1));
+	size_t p;
+
+	*ns= *as;
+	if (as->sep)
+		ns->sep = strdup(as->sep);		/* default separator */
+	if( as->ttopbrk)
+		ns->ttopbrk = strdup(as->ttopbrk);
+	if (as->tbotbrk)
+		ns->tbotbrk= strdup(as->tbotbrk);	/* table brackets */
+	if (as->rlbrk)
+		ns->rlbrk = strdup(as->rlbrk);
+	if (as->rrbrk)
+		ns->rrbrk = strdup(as->rrbrk);	/* row brackets */
+	if (as->properties)
+		ns->properties= strdup(as->properties);		/* of header to display */
+	if (as->title)
+		ns->title = strdup(as->title);
+	if (as->footer)
+		ns->footer = strdup(as->footer);
+	for (p = 0; p < as->nr_attrs; p++) {
+		fmt[p].name = as->format[p].name;
+		fmt[p].sep = sep_dup(as->format[p].sep);
+		fmt[p].seplen = as->format[p].seplen;
+		fmt[p].type = as->format[p].type;
+		fmt[p].adt =  as->format[p].adt;
+		fmt[p].tostr = as->format[p].tostr;
+		fmt[p].frstr = as->format[p].frstr;
+		fmt[p].extra = as->format[p].extra;
+		fmt[p].len = as ->format[p].len;
+		fmt[p].nillen = as ->format[p].nillen;
+		fmt[p].ws = as->format[p].ws;
+		fmt[p].quote = as->format[p].quote;
+		fmt[p].data = GDKmalloc(fmt[p].len);
+		fmt[p].nildata = GDKmalloc(fmt[p].nillen);
+		memcpy(fmt[p].nildata, ATOMnilptr(fmt[p].adt), fmt[p].nillen);
+		fmt[p].nullstr = GDKstrdup("nil");
+		if (tablet_debug)
+			stream_printf(GDKerr, "%s\n", fmt[p].name);
+	}
+	return ns;
+}
 static size_t
 create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 {
@@ -1099,6 +1149,8 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 	as->tryall= 0;
 	as->complaints = 0;
 	as->error = NULL;
+	as->input= NULL;
+	as->output= NULL;
 	/* assert(as->nr_attrs == nr_attrs); *//* i.e. it fits */
 	for (p = 0; p < nr_attrs; p++) {
 		fmt[p].name = (char *) bun_tail(names, p);
@@ -1140,6 +1192,8 @@ create_dumpformat(Tablet * as, BAT *names, BAT *seps, BAT *bats)
 	as->tryall= 0;
 	as->complaints = 0;
 	as->error = NULL;
+	as->input = NULL;
+	as->output = NULL;
 	/* assert(as->nr_attrs == nr_attrs); *//* i.e. it fits */
 	for (p = 0; p < nr_attrs; p++) {
 		BAT *b = (BAT *) BATdescriptor(*(bat *) bun_tail(bats, p));
@@ -1182,6 +1236,8 @@ TABLETdestroy_format(Tablet * as)
 			GDKfree(fmt[p].data);
 		if (fmt[p].nildata)
 			GDKfree(fmt[p].nildata);
+		if (as->input)
+			stream_close(as->input->s);
 	}
 	GDKfree(fmt);
 }
@@ -1619,8 +1675,16 @@ read_more(bstream *in, stream *out, size_t n)
 }
 
 @-
-We should extend the TABLETload_file with optional arguments to read
-a portion of a file. We assume that the blocked stream is already
+To speedup the CPU intensive loading of files we have to break
+the file into pieces and perform parallel analysis. Experimentation
+against lineitem SF1 showed that half of the time goes into very
+basis atom analysis (41 out of 102 B instructions).
+Furthermore, the actual insertion into the BATs takes only
+about 10% of the total. With multi-core processors around
+it seems we can gain here significantly.
+
+The approach taken is to fork a parallel scan over the text file.
+We assume that the blocked stream is already
 positioned correctly at the reading position. The start and limit
 indicates the byte range to search for tuples.
 If start> 0 then we first skip to the next record separator.
@@ -1631,8 +1695,8 @@ otherwise we end up with a gross concurrency control problem.
 The resulting BATs should be glued at the final phase.
 @c
 
-ssize_t
-TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, int start, int limit)
+static ssize_t
+TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, int start, int limit)
 {
 	int res = 0, done = 0;
 	size_t i = 0;
@@ -1643,8 +1707,11 @@ TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 
 	(void) limit;
 	if (tablet_debug)
-		stream_printf(GDKerr, "TABLETload_file\n");
+		stream_printf(GDKerr, "TABLETload_bulk\n");
 
+#ifdef _DEBUG_TABLET_
+	stream_printf(GDKout,"load_bulk %d %d\n",start,limit);
+#endif
 	while ((b->pos < b->len || !b->eof) && res == 0 && (nr == ~(size_t) 0 || i < nr)) {
 		char *s, *end;
 
@@ -1652,7 +1719,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 			if (nr != ~(size_t)0 && i < nr) {
 				res = 1; 
 				if (b->len > b->pos) {
-					GDKerror("TABLETload_file: read error (after loading %d records)\n", BATcount(as->format[0].c));
+					GDKerror("TABLETload_bulk: read error (after loading %d records)\n", BATcount(as->format[0].c));
 					res = -1;
 				}
 			}
@@ -1702,7 +1769,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 						    insert_line(as, s, NULL, col1,col2) < 0 && !as->tryall ) {
 								GDKerror(as->error);
 								as->error=0;
-								GDKerror("TABLETload_file: read error "
+								GDKerror("TABLETload_bulk: read error "
 										"(after loading %d records)\n",
 										BATcount(as->format[0].c));
 							res = -1;
@@ -1727,6 +1794,126 @@ TABLETload_file(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 	as->nr = i-offset;
 	if (res < 0)
 		return res;
+	return (ssize_t) as->nr;
+}
+@-
+To speed up loading ascii files we have to determine the number of blocks.
+This depends on the number of cores available. 
+For the time being we hardwire this decision based on our own
+platforms.
+Furthermore, we only consider parallel load for file-based requests.
+
+To simplify our world, we assume a single loader process.
+@c
+static Tablet *partition[8];	/* based on max parallel threads to consider */
+static int piece,nway;
+static MT_Lock loader;
+static MT_Id pids[4];
+
+static void TABLETload_chunk(void *data){
+	int i = (size_t) data;
+#ifdef _DEBUG_TABLET_
+	stream_printf(GDKout,"starting loader child %d %d-%d\n",
+		i, i*piece, (i<nway-1? (i+1)*piece:INT_MAX));
+#endif
+	TABLETload_bulk(partition[i], partition[i]->input, partition[i]->output, 
+		0, partition[i]->nr_attrs, i*piece, (i<nway-1? (i+1)*piece:INT_MAX));
+	pids[i] = 0;
+#ifdef _DEBUG_TABLET_
+	stream_printf(GDKout,"exit of loader child %d\n",i);
+#endif
+}
+
+ssize_t
+TABLETload_file(Tablet * as, bstream *b, stream *out)
+{
+	int i,j, size, active=0;
+	size_t cnt=0;
+	FILE *f= getFile(b->s);
+
+	/*Detect the block streams over files */
+/* TURN ON FOR PARALLEL LOAD
+	if (f==NULL)
+*/
+		return TABLETload_bulk(as, b, out, 0, as->nr_attrs, 0, INT_MAX);
+
+#ifdef _DEBUG_TABLET_
+	stream_printf(GDKout,"starting parallel file based load\n");
+#endif
+	MT_init_lock(loader,"loaderLock");
+	MT_set_lock(loader,"loaderLock");
+	nway = 4;	/* depends on cores */
+	as->input= b;	/* prepare for passing it to the threads */
+	as->output = out;
+
+	/* prepare the tablet descriptors */
+	/* watchout for START and LIMIT requests  !!!!*/
+	/* perhaps we should not let them be handled in parallel */
+	for( i=0; i<nway; i++) {
+		partition[i]= copy_loadformat(as);
+		/* private copy of stream is needed */
+		partition[i]->input = bstream_create(dupFileStream(b->s),SIZE);
+		if (TABLETcreate_bats(partition[i], (size_t) 0) < 0){
+			for (i--; i>= 0; i--)
+				TABLETdestroy_format(partition[i]);
+			GDKerror("TABLETload_file:could not allocate bats \n");
+			MT_unset_lock(loader,"loaderLock");
+			return -1;
+		}
+	}
+
+	/* get size of file */
+	fseek(f,0L,SEEK_END);
+	size= ftell(f);
+	/* determine block size */
+	piece = size/nway;
+
+	for( i=0; i<nway; i++)
+	if (partition[i]->input){
+		f= getFile(partition[i]->input->s);
+		fseek(f,i*piece,SEEK_SET);
+		/* execute a thread over a range of the file */
+		MT_create_thread(&pids[i],  TABLETload_chunk, (void *) (size_t)i);
+	}
+		
+	/* wait for all threads to finish */
+	do{
+		MT_sleep_ms(20);
+		for(active=0, i=0; i<nway; i++)
+		if (pids[i]) active++;
+	}while ( active );
+#ifdef _DEBUG_TABLET_
+	stream_printf(GDKout,"all finished\n");
+#endif
+	
+	/* combine the pieces */
+	/* determine the required size first */
+	cnt =0;
+	for (i=0; i<nway; i++)
+	if ( partition[i]->format[0].c)
+		cnt+= BATcount(partition[i]->format[0].c);
+#ifdef _DEBUG_TABLET_
+	stream_printf(GDKout,"total records found %d\n",cnt);
+#endif
+
+	for( i=0; i< (int)as->nr_attrs; i++)
+	if (as->format[i].c){
+		/* prepare enough space */
+		BATextend( as->format[i].c, cnt );
+		for (j=0; j<nway; j++)
+		if (partition[j]->format[i].c){
+			BATins(as->format[i].c, partition[j]->format[i].c,TRUE);
+			/* Throw away the temporary bats a.s.a.p. without saveing */
+			BBPunfix(partition[j]->format[j].c->batCacheid);
+			partition[j]->format[j].c= NULL;
+		}
+		/* perhaps explicitly save them one by one */
+		BATsave(as->format[i].c);
+	}
+	
+	for (i=0; i<nway; i++)
+		TABLETdestroy_format(partition[i]);
+	MT_unset_lock(loader,"loaderLock");
 	return (ssize_t) as->nr;
 }
 
@@ -1817,7 +2004,6 @@ output_file_ordered(Tablet * as, BAT *order, stream *fd, oid base)
 	return res;
 }
 
-#define SIZE 1*1024*1024
 @-
 Estimate the size of a BAT to avoid multiple extends.
 @c
@@ -1848,63 +2034,30 @@ estimator(char *datafile){
 }
 
 BAT *
-TABLETload(Tablet *as,char *datafile)
+TABLETload(Tablet *as, char *datafile)
 {
 	BAT *res= NULL;
-	stream *s = NULL;
+	stream *s = open_rastream(datafile);
 	bstream *b = NULL;
 	size_t est = as->nr;
-	size_t col,stride=1;
-	int error= FALSE;
 
-	if ( TABLETcreate_bats(as, est) < 0) 
-			return NULL;
-
+	if (s == NULL || stream_errnr(s)) {
+		GDKerror("could not open file %s\n", datafile);
+		if (s) 
+			stream_destroy(s);
+		return NULL;
+	}
 	if (as->nr == ~(size_t) 0)
 		est = estimator(datafile);
-@-
-Determine a good Stride for the table at hand. It should be based
-on the number of records to be expected and the general system resources.
-@c
-	for (col=0; col <as->nr_attrs; col += stride){
-		s = open_rastream(datafile);
-		if (s == NULL || stream_errnr(s)) {
-			GDKerror("could not open file %s\n", datafile);
-			if (s) {
-				stream_destroy(s);
-			}
-			return NULL;
-		}
-		if (TABLETload_file(as, b = bstream_create(s, SIZE), NULL ,col,col+stride,0,INT_MAX) < 0){
-				error= TRUE;
-				break;
-		}
 
-		bstream_destroy(b);
-		stream_close(s);
-		stream_destroy(s);
-	}
-	if( error == FALSE)
+	if ( TABLETcreate_bats(as, est) >= 0 &&
+		 TABLETload_file(as, b = bstream_create(s, SIZE), NULL) >= 0)
 		res = TABLETcollect_bats(as);
+	bstream_destroy(b);
+	stream_close(s);
+	stream_destroy(s);
 	TABLETdestroy_format(as);
 	return res;
-}
-
-BAT *
-TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, stream *out, size_t nr, size_t est)
-{
-	BAT *bats = NULL;
-	Tablet as;
-
-	as.nr_attrs = 0;
-	as.nr = nr;
-	if (create_loadformat(&as, names, seps, types) != ~(size_t) 0 && 
-		TABLETcreate_bats(&as, est) >= 0) {
-		if (TABLETload_file(&as, s, out, 0, as.nr_attrs,0, INT_MAX) >= 0)
-			bats = TABLETcollect_bats(&as);
-	}
-	TABLETdestroy_format(&as);
-	return bats;
 }
 
 void
@@ -1983,23 +2136,11 @@ tablet_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *N)
 	as.nr = nr;
 	as.tryall = 0;
 	as.complaints = NULL;
+	as.input = NULL;
+	as.output = NULL;
 
 	if (create_loadformat(&as, names, seps, types) != ~(size_t) 0 )
 		*bats = TABLETload(&as, datafile);
-}
-static void
-tablet_input(BAT **bats, BAT *names, BAT *seps, BAT *types, void **s, int *N)
-{
-	bstream *b = NULL;
-	size_t nr = ~(size_t)0;
-	size_t est = 0;
-
-	if (*N >= 0) {
-		nr = *N;
-		est = nr;
-	}
-	*bats = TABLETinput(names, seps, types, b = bstream_create(*(stream **) s, SIZE), NULL, nr, est);
-	bstream_destroy(b);
 }
 
 void
@@ -2075,7 +2216,9 @@ CMDtablet_dump(int *ret, int *nameid, int *sepid, int *bids, str *filename, int 
 str
 CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *nr)
 {
-	BAT *names, *seps, *types, *bn;
+	BAT *names, *seps, *types, *bn=NULL;
+	bstream *bs = NULL;
+	Tablet as;
 
 	if ((names = BATdescriptor(*nameid)) == NULL) {
 		throw(MAL, "tablet.load", "BAT missing");
@@ -2090,13 +2233,26 @@ CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *
 		throw(MAL, "tablet.load", "BAT missing");
 	}
 
-	tablet_input(&bn, names, seps, types, (void **) s, nr);
+	as.nr_attrs = 0;
+	as.nr = *nr;
+	as.tryall = 0;
+	as.complaints = NULL;
+	as.input = NULL;
+	as.output = NULL;
+
+	if (create_loadformat(&as, names, seps, types) != ~(size_t) 0 && 
+		TABLETcreate_bats(&as, (size_t) 0) >= 0  &&
+		TABLETload_file(&as, bs = bstream_create(*(stream **) s,SIZE), NULL) >= 0)
+			bn = TABLETcollect_bats(&as);
+	TABLETdestroy_format(&as);
+
 	if (bn == NULL) {
 		BBPunfix(names->batCacheid);
 		BBPunfix(seps->batCacheid);
 		BBPunfix(types->batCacheid);
 		throw(MAL, "tablet.load", "Failed to load");
 	}
+	bstream_destroy(bs);
 	BBPincref(*ret, TRUE);
 	*ret = bn->batCacheid;
 	BBPunfix(names->batCacheid);
