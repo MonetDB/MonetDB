@@ -1236,8 +1236,6 @@ TABLETdestroy_format(Tablet * as)
 			GDKfree(fmt[p].data);
 		if (fmt[p].nildata)
 			GDKfree(fmt[p].nildata);
-		if (as->input)
-			stream_close(as->input->s);
 	}
 	GDKfree(fmt);
 }
