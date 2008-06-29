@@ -269,7 +269,8 @@ bat_max_@1length(BAT *b)
 @:bat_max_xlength(lng)@
 
 @= dec_frstr
-	sql_subtype *t = &df->col->type;
+	sql_column *col = c->extra;
+	sql_subtype *t = &col->type;
 
 	unsigned int i, neg = 0;
 	char *p = s;
@@ -317,10 +318,10 @@ bat_max_@1length(BAT *b)
 		showException(SQL,"sql", "decimal wrong format (%s)", p);
 		return NULL;
 	}
-	r = df->ai->data;
+	r = c->data;
 	if (!r)
 		r = (@1*)GDKmalloc(sizeof(@1));
-	df->ai->data = r;
+	c->data = r;
 	if (neg)
 		*r = -res;
 	else
@@ -328,17 +329,10 @@ bat_max_@1length(BAT *b)
 	return (ptr*)r;
 @c
 
-typedef struct dec_format {
-	sql_column *col;
-	Column *ai;
-} dec_format;
-
 ptr *
-dec_frstr(void *extra, int type, char *s, char *e, char quote)
+dec_frstr(Column *c, int type, char *s, char *e, char quote)
 {
 	/* support dec map to bte, sht, int and lng */
-	dec_format *df = extra;
-
 	(void)e;
 	(void)quote;
 	if (s == e) {
@@ -359,10 +353,8 @@ dec_frstr(void *extra, int type, char *s, char *e, char quote)
 }
 
 ptr *
-_ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
+_ASCIIadt_frStr(Column *c, int type, char *s, char *e, char quote)
 {
-	Column *c = extra;
-
 	(void)quote;
 	if (type == TYPE_str) {
 		return TABLETstrFrStr(c, s, e);
@@ -380,9 +372,9 @@ static int
 _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 {
 	if (type == TYPE_str) {
-		Column *fmt = (Column*)extra;
+		Column *c = extra;
 		char *dst, *src = a;
-		int l = (fmt->quote)?escapedStrlen(src):(int)strlen(src), l2 = 0;
+		int l = (c->quote)?escapedStrlen(src):(int)strlen(src), l2 = 0;
 
 		if (l + 3 > *len) {
 			GDKfree(*buf);
@@ -390,15 +382,15 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 			*buf = GDKmalloc(*len);
 		}
 		dst = *buf;
-		if (fmt->quote) {
-			dst[0] = fmt->quote;
+		if (c->quote) {
+			dst[0] = c->quote;
 			l2 = 1;
 			l = escapedStr(dst+l2, src);
 		} else {
 			strncpy(dst + l2, src, l);
 		}
 		if (l2) {
-			dst[l + l2] = fmt->quote;
+			dst[l + l2] = c->quote;
 			l2++;
 		}
 		dst[l + l2] = 0;
@@ -436,7 +428,6 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 		offset--;
 	if (t->columns.set) {
 		stream *out = m->scanner.ws;
-		dec_format *dec;
 
 		memset((char*) &as, 0, sizeof(as));
 		as.nr_attrs = list_length(t->columns.set);
@@ -446,8 +437,6 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 		as.tryall = 0;
 		as.complaints= NULL;
 		fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (as.nr_attrs + 1));
-		dec = (dec_format*) GDKmalloc(sizeof(dec_format) * (as.nr_attrs + 1));
-
 		if (!isa_block_stream(bs->s))
 			 out = NULL;
 
@@ -461,7 +450,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			fmt[i].adt = ATOMindex(fmt[i].type);
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
-			fmt[i].extra = fmt+i;
+			fmt[i].extra = NULL;
 			fmt[i].len = fmt[i].nillen = 
 				ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 			fmt[i].data = GDKmalloc(fmt[i].len);
@@ -474,9 +463,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
-				fmt[i].extra = dec+i;
-				dec[i].col = col;
-				dec[i].ai = fmt+i;
+				fmt[i].extra = col;
 			}
 		}
 		if (TABLETcreate_bats(&as, (sz<0)?1000:sz) >= 0) {
@@ -485,7 +472,6 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 		}
 		if (as.error)
 			showException(SQL, "sql", as.error);
-		GDKfree(dec);
 		TABLETdestroy_format(&as);
 	}
 
