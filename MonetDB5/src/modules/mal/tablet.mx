@@ -1126,7 +1126,7 @@ copy_loadformat(Tablet *as){
 		fmt[p].adt =  as->format[p].adt;
 		fmt[p].tostr = as->format[p].tostr;
 		fmt[p].frstr = as->format[p].frstr;
-		fmt[p].extra = as->format[p].extra;
+		fmt[p].extra = fmt+p;
 		fmt[p].len = as->format[p].len;
 		fmt[p].nillen = as->format[p].nillen;
 		fmt[p].ws = as->format[p].ws;
