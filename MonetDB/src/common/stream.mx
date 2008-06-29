@@ -826,24 +826,6 @@ FILE *getFile(stream *s){
 	return (FILE*) s->stream_data.p;
 }
 
-stream *dupFileStream(stream *s){
-	stream *ns;
-	if (s->read != file_read)
-		return NULL;
-	if ((ns = create_stream(s->name)) == NULL)
-		return NULL;
-	ns->read = file_read;
-	ns->readline = NULL;
-	ns->write = file_write;
-	ns->close = file_close;
-	ns->flush = file_flush;
-	ns->fsync = file_fsync;
-	ns->fgetpos = file_fgetpos;
-	ns->fsetpos = file_fsetpos;
-	ns->stream_data.p= (void*) fdopen(dup(fileno((FILE*)s->stream_data.p)), "r");
-	return ns;
-}
-
 static stream *
 open_stream(const char *filename, const char *flags)
 {
@@ -864,6 +846,17 @@ open_stream(const char *filename, const char *flags)
 	s->fsetpos = file_fsetpos;
 	s->stream_data.p = (void *) fp;
 	return s;
+}
+
+stream *dupFileStream(stream *s){
+	stream *ns;
+	if (s->read != file_read)
+		return NULL;
+	if (s->access == ST_WRITE)
+		ns = open_stream(s->name, "w");
+	else
+		ns = open_stream(s->name, "r");
+	return ns;
 }
 
 /* ------------------------------------------------------------------ */
