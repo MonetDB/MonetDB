@@ -169,6 +169,8 @@ stream_export stream *file_wstream(FILE *fp, const char *name);
 stream_export stream *file_rastream(FILE *fp, const char *name);
 stream_export stream *file_wastream(FILE *fp, const char *name);
 
+stream_export FILE* getFile(stream *s);
+
 #ifdef HAVE_ICONV
 stream_export stream *iconv_rstream(stream *ss, const char *charset, const char *name);
 stream_export stream *iconv_wstream(stream *ss, const char *charset, const char *name);
@@ -811,6 +813,11 @@ file_fsetpos(stream *s, size_t p)
 }
 
 
+FILE *getFile(stream *s){
+	if (s->read != file_read)
+		return NULL;
+	return (FILE*) s->stream_data.p;
+}
 static stream *
 open_stream(const char *filename, const char *flags)
 {
