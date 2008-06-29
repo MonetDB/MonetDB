@@ -245,6 +245,8 @@ void RECYCLEversion(MalBlkPtr mb)
 {
 	int i;
 
+	if (mb->version == 0)
+		MT_init_lock(recycleLock,"recycleLock");
 	if ( mb->version && mb->version != recycleVersion) { 
 		mal_set_lock(recycleLock,"recycle");
 		/* all re-used instructions are dropped */
@@ -904,6 +906,7 @@ We execute it in place and safe the result upon need.
 	stream_printf(GDKout,">>>");
 	printTraceCall(GDKout, mb, s,i, LIST_MAL_ALL);
 #endif
+		s->clk= GDKusec();
 		s->stk[getArg(p,1)].val.bval = bid;
 		BBPincref(bid, TRUE);
 		/* make sure the garbage collector is not called */
@@ -933,7 +936,6 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr q;
 	ProfPtr prof;
 
-	stk->clk= GDKusec();
 	if (recycleVersion == 0 || recycleBlk == NULL )
 		return 0;
 	RECYCLEversion(mb);
