@@ -438,6 +438,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 		stream *out = m->scanner.ws;
 		dec_format *dec;
 
+		memset((char*) &as, 0, sizeof(as));
 		as.nr_attrs = list_length(t->columns.set);
 		as.nr = sz;
 		as.offset = offset;
@@ -479,7 +480,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			}
 		}
 		if (TABLETcreate_bats(&as, (sz<0)?1000:sz) >= 0) {
-			if (TABLETload_file(&as, bs, out, (size_t) 0,  (size_t) i, 0, INT_MAX) >= 0)
+			if (TABLETload_file(&as, bs, out) >= 0)
 				bats = TABLETcollect_bats(&as);
 		}
 		if (as.error)
