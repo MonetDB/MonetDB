@@ -368,7 +368,7 @@ pre presented on the screen directly.
 #ifndef _TABLET_IO2_H_
 #define _TABLET_IO2_H_
 
-#define _DEBUG_TABLET_
+/* #define _DEBUG_TABLET_ */
 
 #include <gdk.h>
 #include "streams.h"
