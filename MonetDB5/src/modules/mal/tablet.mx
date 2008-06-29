@@ -452,6 +452,7 @@ typedef struct Table_t {
 	stream *output;			/* where to leave immediate output */
 	unsigned int bytes;		/* required bytes to load (round up to end of record) */
 	MT_Id tid;			/* Thread id for parallel loads only */
+	int partid;			/* partition number */
 	Column columns[1];			/* at least one column, enlarged upon need */
 } Tablet;
 
@@ -1814,7 +1815,7 @@ static void TABLETload_chunk(void *data){
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKstdout,"starting loader child (bytes) %d %d\n", p->bytes, p->tid);
 #endif
-	TABLETload_bulk(p, p->input, p->output, 0, p->nr_attrs, 1, p->bytes);
+	TABLETload_bulk(p, p->input, p->output, 0, p->nr_attrs, p->partid, p->bytes);
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKstdout,"exit of loader child (bytes) %d %d\n", p->bytes, p->tid);
 	{ int i;
@@ -1876,6 +1877,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 			(void)res;
 			/* execute a thread over a range of the file */
 			partition[i]->bytes = (i==NWAY-1)?size-i*piece:piece; 
+			partition[i]->partid = i;
 			MT_create_thread(&partition[i]->tid, TABLETload_chunk, partition[i]);
 		}
 		
