@@ -1913,8 +1913,6 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 				BBPunfix(partition[j]->format[i].c->batCacheid);
 				partition[j]->format[i].c= NULL;
 			}
-			/* perhaps explicitly save them one by one */
-			BATsave(as->format[i].c);
 		}
 	}
 	for (i=0; i<NWAY; i++)
