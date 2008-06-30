@@ -1,6 +1,6 @@
 %define name MonetDB5-server
 %define version @VERSION@
-%define release 4%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
+%define release 1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
 # groups of related archs
 %define all_x86 i386 i586 i686
