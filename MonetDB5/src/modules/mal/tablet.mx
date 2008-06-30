@@ -1078,7 +1078,7 @@ TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 	}
 }
 
-#define myisspace(s)  (s<=' ' &&(s == ' ' || s == '\t'))
+#define myisspace(s)  (s == ' ' || s == '\t')
 
 int
 has_whitespace(char *sep)
@@ -1334,6 +1334,16 @@ TABLETcollect_bats(Tablet * as)
 		}
 	}
 	return bats;
+}
+
+void
+sync_bats(Tablet * as)
+{
+	unsigned int i;
+	Column *fmt = as->format;
+
+	for (i = 0; i < as->nr_attrs; i++) 
+		BATsave(fmt[i].c);
 }
 
 static INLINE char *
@@ -1697,7 +1707,7 @@ The resulting BATs should be glued at the final phase.
 @c
 
 static ssize_t
-TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, int start, int limit)
+TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, int start, size_t limit)
 {
 	int res = 0, done = 0;
 	size_t i = 0;
@@ -1710,7 +1720,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 		stream_printf(GDKerr, "TABLETload_bulk\n");
 
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKstdout,"load_bulk %d %d\n",start,limit);
+	stream_printf(GDKstdout,"load_bulk %d\n",start);
 #endif
 	while ((b->pos < b->len || !b->eof) && res == 0 && limit > 0 && (nr == ~(size_t) 0 || i < nr)) {
 		char *s, *end;
@@ -1786,6 +1796,8 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 			i++;
 			if (tablet_debug && (i % 100000) == 0)
 				stream_printf(GDKerr, "inserted " SZFMT "\n", i);
+			if ((i % 100000) == 0)
+				sync_bats(as);
 			if (nr != ~(size_t) 0 && i >= nr)
 				break;
 		}
