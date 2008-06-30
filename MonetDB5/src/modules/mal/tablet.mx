@@ -1707,7 +1707,7 @@ The resulting BATs should be glued at the final phase.
 @c
 
 static ssize_t
-TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, int start, size_t limit)
+TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, int start, ssize_t limit)
 {
 	int res = 0, done = 0;
 	size_t i = 0;
