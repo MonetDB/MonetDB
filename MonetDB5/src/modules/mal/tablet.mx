@@ -1830,6 +1830,7 @@ static void TABLETload_chunk(void *data){
 ssize_t
 TABLETload_file(Tablet * as, bstream *b, stream *out)
 {
+	char *error = NULL;
 	Tablet *partition[NWAY];	/* based on max parallel threads to consider */
 	size_t piece, cnt=0, size;
 	int i,j;
@@ -1886,40 +1887,48 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 		}
 		
 	/* wait for all threads to finish */
-	for(i=0; i<NWAY; i++) {
-		int res = MT_join_thread(partition[i]->tid);
-		if (res)
-			printf("failed to join thread %d %d\n", i, res);
-	}
+	for(i=0; i<NWAY; i++) 
+		MT_join_thread(partition[i]->tid);
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKstdout,"all finished\n");
 #endif
-	
-	/* combine the pieces */
-	/* determine the required size first */
-	cnt = 0;
+
+	/* check for errors */
 	for (i=0; i<NWAY; i++)
-		if (partition[i]->format[0].c)
-			cnt+= BATcount(partition[i]->format[0].c);
+		if (partition[i]->error)
+			error = partition[i]->error;
+	
+	if (!error) {
+		/* combine the pieces */
+		/* determine the required size first */
+		cnt = 0;
+		for (i=0; i<NWAY; i++)
+			if (partition[i]->format[0].c)
+				cnt+= BATcount(partition[i]->format[0].c);
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKstdout,"total records found %d\n",cnt);
+		stream_printf(GDKstdout,"total records found %d\n",cnt);
 #endif
 
-	for( i=0; i< (int)as->nr_attrs; i++) {
-		if (as->format[i].c) {
-			/* prepare enough space */
-			BATextend( as->format[i].c, cnt );
-			for (j=0; j<NWAY; j++) {
-				assert (partition[j]->format[i].c);
-				BATappend(as->format[i].c, partition[j]->format[i].c,TRUE);
-				/* Throw away the temporary bats a.s.a.p. without saveing */
-				BBPunfix(partition[j]->format[i].c->batCacheid);
-				partition[j]->format[i].c= NULL;
+		for( i=0; i< (int)as->nr_attrs; i++) {
+			if (as->format[i].c) {
+				/* prepare enough space */
+				BATextend( as->format[i].c, cnt );
+				for (j=0; j<NWAY; j++) {
+					assert (partition[j]->format[i].c);
+					BATappend(as->format[i].c, partition[j]->format[i].c,TRUE);
+					/* Throw away the temporary bats a.s.a.p. without saveing */
+					BBPunfix(partition[j]->format[i].c->batCacheid);
+					partition[j]->format[i].c= NULL;
+				}
 			}
 		}
 	}
 	for (i=0; i<NWAY; i++)
 		TABLETdestroy_format(partition[i]);
+	if (error) {
+		as->error = GDKstrdup(error);
+		return -1;
+	}
 	return (ssize_t) as->nr;
 }
 
