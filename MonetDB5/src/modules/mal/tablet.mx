@@ -1849,6 +1849,10 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 	size = ftell(f);
 	/* determine block size */
 	piece = (size+NWAY-1)/NWAY;
+	if (size < 100000){ /* to small use non threaded version */
+		fseek(f,0L,SEEK_SET);
+		return TABLETload_bulk(as, b, out, 0, as->nr_attrs, 0, INT_MAX);
+	}
 
 	/* prepare the tablet descriptors */
 	/* watchout for START and LIMIT requests  !!!!*/
