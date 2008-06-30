@@ -1907,7 +1907,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 			BATextend( as->format[i].c, cnt );
 			for (j=0; j<NWAY; j++) {
 				assert (partition[j]->format[i].c);
-				BATins(as->format[i].c, partition[j]->format[i].c,TRUE);
+				BATappend(as->format[i].c, partition[j]->format[i].c,TRUE);
 				/* Throw away the temporary bats a.s.a.p. without saveing */
 				BBPunfix(partition[j]->format[i].c->batCacheid);
 				partition[j]->format[i].c= NULL;
