@@ -368,7 +368,7 @@ pre presented on the screen directly.
 #ifndef _TABLET_IO2_H_
 #define _TABLET_IO2_H_
 
-#define _DEBUG_TABLET_ 
+/* #define _DEBUG_TABLET_ */
 
 #include <gdk.h>
 #include "streams.h"
@@ -1823,7 +1823,6 @@ static void TABLETload_chunk(void *data){
 	stream_printf(GDKstdout,"field %d tuples %d\n",i, BATcount(p->format[i].c));
 	}
 #endif
-	p->tid = 0; 	/* we are done loading this chunk */
 }
 
 #define NWAY 4
@@ -1833,7 +1832,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 {
 	Tablet *partition[NWAY];	/* based on max parallel threads to consider */
 	int piece;
-	int i,j, size, active=0;
+	int i,j, size;
 	size_t cnt=0;
 	FILE *f;
 
@@ -1856,11 +1855,12 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 	/* watchout for START and LIMIT requests  !!!!*/
 	/* perhaps we should not let them be handled in parallel */
 	for( i=0; i<NWAY; i++) {
+		size_t sz = (as->nr != ~(size_t)0)?as->nr/NWAY:0;
 		partition[i] = copy_loadformat(as);
 		/* private copy of stream is needed */
 		partition[i]->input = bstream_create(dupFileStream(b->s),SIZE);
 		partition[i]->output = out;
-		if (TABLETcreate_bats(partition[i], (size_t) 0) < 0){
+		if (TABLETcreate_bats(partition[i], sz) < 0){
 			for (i--; i>= 0; i--)
 				TABLETdestroy_format(partition[i]);
 			GDKerror("TABLETload_file:could not allocate bats \n");
@@ -1878,16 +1878,16 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 			/* execute a thread over a range of the file */
 			partition[i]->bytes = (i==NWAY-1)?size-i*piece:piece; 
 			partition[i]->partid = i;
+			partition[i]->tid = 0;
 			MT_create_thread(&partition[i]->tid, TABLETload_chunk, partition[i]);
 		}
 		
 	/* wait for all threads to finish */
-	do {	/* TODO use pthread_join ! */
-		MT_sleep_ms(20);
-		for(active=0, i=0; i<NWAY; i++)
-			if (partition[i]->tid) 
-				active++;
-	} while(active);
+	for(i=0; i<NWAY; i++) {
+		int res = MT_join_thread(partition[i]->tid);
+		if (res)
+			printf("failed to join thread %d %d\n", i, res);
+	}
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKstdout,"all finished\n");
 #endif
