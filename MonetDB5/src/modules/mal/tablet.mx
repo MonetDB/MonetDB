@@ -444,16 +444,16 @@ typedef struct Table_t {
 	Column *format;		/* remove later */
 	stream *fd;
 	BAT *pivot;
-	str error;	/* last error */
+	str error;		/* last error */
 	int tryall;		/* skip erroneous lines */
 	BAT *complaints;	/* lines that did not match the required input */
-	unsigned int rowwidth;		/* sum of columns used for mallocs */
-	bstream *input;			/* where to get the data from */
-	stream *output;			/* where to leave immediate output */
-	unsigned int bytes;		/* required bytes to load (round up to end of record) */
-	MT_Id tid;			/* Thread id for parallel loads only */
-	int partid;			/* partition number */
-	Column columns[1];			/* at least one column, enlarged upon need */
+	unsigned int rowwidth;	/* sum of columns used for mallocs */
+	bstream *input;		/* where to get the data from */
+	stream *output;		/* where to leave immediate output */
+	size_t bytes;		/* required bytes to load (round up to end of record) */
+	MT_Id tid;		/* Thread id for parallel loads only */
+	int partid;		/* partition number */
+	Column columns[1];	/* at least one column, enlarged upon need */
 } Tablet;
 
 tablet_export BAT *TABLETload(Tablet *as, char *datafile);
@@ -1831,9 +1831,8 @@ ssize_t
 TABLETload_file(Tablet * as, bstream *b, stream *out)
 {
 	Tablet *partition[NWAY];	/* based on max parallel threads to consider */
-	int piece;
-	int i,j, size;
-	size_t cnt=0;
+	size_t piece, cnt=0, size;
+	int i,j;
 	FILE *f;
 
 	/* Detect the block streams over files */
