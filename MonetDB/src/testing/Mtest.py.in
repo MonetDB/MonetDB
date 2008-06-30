@@ -888,7 +888,7 @@ def SkipTest(env, TST, EXT, REASON) :
 
 def find_test_dirs(thisdir) :
     testdirs = []
-    thisdir = os.path.abspath(thisdir)
+    thisdir = os.path.realpath(thisdir)
     dirnme = os.path.basename(thisdir)
     dirlst = os.listdir(thisdir)
     if dirnme == TSTSUFF  and  "All" in dirlst  and  os.path.isfile(os.path.join(thisdir,"All")):
@@ -2563,7 +2563,7 @@ def ReadMapproveRc(f) :
 #       MAIN
 
 THISFILE = os.path.basename(sys.argv[0])
-THISPATH = os.path.abspath(os.path.dirname(sys.argv[0]))
+THISPATH = os.path.realpath(os.path.dirname(sys.argv[0]))
 dftIGNORE = '^#'
 TSTDBG = str(2+8)
 dftTSTPREF = "mTests"
@@ -3147,7 +3147,7 @@ def main(argv) :
     # make TSTxxxBASE absolute physical paths
     for p in 'TSTSRCBASE', 'TSTBLDBASE', 'TSTTRGBASE':
         if os.path.isdir(env[p]):
-            rp = os.path.abspath(env[p])
+            rp = os.path.realpath(env[p])
             if not quiet and os.path.normcase(rp) != os.path.normcase(env[p]):
                 Warn(p+": Replacing logical path  "+env[p]+
                      "  by absolute physical path  "+rp)
@@ -3321,7 +3321,7 @@ def main(argv) :
     dirlist = []
     if   len(args) == 1:
         if   os.path.isdir(args[0]):
-            d = os.path.abspath(args[0])
+            d = os.path.realpath(args[0])
             if startswithpath(d+os.sep, env['TSTSRCBASE']+os.sep):
                 dirlist.append(d)
             #TODO:
@@ -3336,9 +3336,9 @@ def main(argv) :
     elif len(args) > 1:
         i = 0
         while i < len(args)  and  os.path.isdir(args[i]):
-            d = os.path.abspath(args[i])
+            d = os.path.realpath(args[i])
             if startswithpath(d+os.sep, env['TSTSRCBASE']+os.sep):
-                dirlist.append(os.path.abspath(args[i]))
+                dirlist.append(os.path.realpath(args[i]))
             #TODO:
             #else:
                 # WARNING/ERROR
@@ -3376,9 +3376,9 @@ def main(argv) :
     else:
         for d in dirlist:
             if   os.path.basename(d) == TSTSUFF  and  os.path.isfile(os.path.join(d,"All")):
-                testdirs.append(os.path.dirname(os.path.abspath(d)))
+                testdirs.append(os.path.dirname(os.path.realpath(d)))
             elif os.path.isdir(os.path.join(d,TSTSUFF))  and  os.path.isfile(os.path.join(d,TSTSUFF,"All")):
-                testdirs.append(os.path.abspath(d))
+                testdirs.append(os.path.realpath(d))
             else:
                 Warn("No tests found in '"+d+"`; skipping directory!")
 
