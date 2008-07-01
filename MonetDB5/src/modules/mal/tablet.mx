@@ -1399,6 +1399,7 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 	    (s != e && ( (!quote && strcasecmp(s, fmt->nullstr) == 0) ||
 	    (quote && strncasecmp(s+1, fmt->nullstr, e-s) == 0)) ) ) {
 		adt = fmt->nildata;
+		fmt->c->T->nonil = 0;
 	} else {
 		adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
 	}
