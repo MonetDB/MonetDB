@@ -539,11 +539,15 @@ typedef struct{
 @-
 The cost of a flow step depends on availability of its
 arguments and the total size of the BATs being accessed.
+There are several options to calculate the cost.
+The optimizer already turns on profiling, which means
+we can use the aggregated use as an indication of the
+expected cost. This works optimal for similar queries.
 @c
 lng
 MALflowCost(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int i,bid;
-	lng cost=0;
+	lng cost= p->argc;
 	BAT *b;
 	for(i= p->retc; i<p->argc; i++)
 	if( isaBatType(getArgType(mb,p,i)) &&
@@ -555,6 +559,7 @@ MALflowCost(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	}
 	return cost;
 }
+
 void
 addMALflowStep(Client cntxt, FlowStep flow, int top, char *pending, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int j;
@@ -581,6 +586,7 @@ void
 dropMALflowStep(Client cntxt, FlowStep flow, int first, int last, char *pending, MalBlkPtr mb, MalStkPtr stk){
 	int i,j;
 	InstrPtr p= flow[first].p;
+	(void) cntxt;
 #ifdef DEBUG_FLOW
 		stream_printf(cntxt->fdout,"#adjust %d ",first);
 		printInstruction(cntxt->fdout,mb,p, 0);
@@ -594,13 +600,6 @@ dropMALflowStep(Client cntxt, FlowStep flow, int first, int last, char *pending,
 		for(j=flow[i].p->retc; j< flow[i].p->argc; j++){
 			flow[i].pending+= pending[getArg(flow[i].p,j)];
 		}
-#ifdef DEBUG_FLOW
-		stream_printf(cntxt->fdout,"#adjust %d cost %d ",i,flow[i].cost);
-		stream_printf(cntxt->fdout,"pending %d",flow[i].pending);
-		printInstruction(cntxt->fdout,mb,flow[i].p, 0);
-#else
-	(void) cntxt;
-#endif
 	}
 }
 @-
@@ -611,22 +610,41 @@ nxtMALflowStep(Client cntxt, FlowStep flow, int first, int last, MalBlkPtr mb){
 	int i;
 	FlowStepRec f;
 
-	for (i = first; i<last; i++)
-		if (flow[i].pending == 0 && flow[first].cost > flow[i].cost){
-			f = flow[first];
-			flow[first]= flow[i];
-			flow[i]= f;
+	for (i = first+1; i<last; i++)
+		if (flow[i].pending == 0 ){
+ 			if( flow[first].cost > flow[i].cost){
+				f = flow[first];
+				flow[first]= flow[i];
+				flow[i]= f;
+			} else 
+			if( flow[first].pending){
+				f = flow[first];
+				flow[first]= flow[i];
+				flow[i]= f;
+			}
 		}
+#ifdef DEBUG_FLOW1
+	for(i=first; i<last; i++){
+		stream_printf(cntxt->fdout,"#adjust %d cost %d ",i,flow[i].cost);
+		stream_printf(cntxt->fdout,"pending %d",flow[i].pending);
+		printInstruction(cntxt->fdout,mb,flow[i].p, 0);
+	}
+#endif
 #ifdef DEBUG_FLOW
-	stream_printf(cntxt->fdout,"#next instruction %d: cost %d pending %d\n",
-		first, flow[first].cost,flow[first].pending);
+	stream_printf(cntxt->fdout,"#next instruction %d out of %d\n", first,last);
+	stream_printf(cntxt->fdout,"#cost %d pending %d\n",
+		flow[first].cost,flow[first].pending);
 	printInstruction(cntxt->fdout,mb,flow[first].p, 0);
 #else
 	(void) cntxt;
 #endif
 }
 
-
+@-
+The dataflow execution is confined to a barrier block. 
+Within the block there are multiple flows, which, in principle,
+can be executed in parallel.
+@c
 str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {   
@@ -634,7 +652,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	int i,k,n; 
 	InstrPtr pci=0; 
 	int exceptionVar;
-	str ret=0;
+	str ret= MAL_SUCCEED;
 	int stamp= -1;
 	bat *backup= (bat*) alloca(mb->maxarg * sizeof(bat));
 	str *sbackup= (str*) alloca(mb->maxarg * sizeof(str));
@@ -650,10 +668,15 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	struct rusage oldResource;
 #endif
 	@:performanceVariables@
+#ifdef DEBUG_FLOW
+	stream_printf(GDKout,"runMALdataflow for block %d - %d\n", startpc,stoppc);
+#endif
 @-
 First step is to collect all instructions into a multistack.
 The instructions are sorted by dependency on enabled input
 arguments.
+The instructions under control of the dataflow interpreter
+are encapsulated by a barrier block.
 @c
 
 	(void)env;
@@ -661,8 +684,9 @@ arguments.
 
 	assert(stoppc > startpc);
 	flow = (FlowStep) alloca(sizeof(FlowStepRec) * (stoppc-startpc+1));
-	pending = (char*) alloca(sizeof(mb->vtop));
-	memset((char*) pending, 0, sizeof(mb->vtop));
+	memset((char*) flow, 0, sizeof(FlowStepRec) * (stoppc-startpc+1));
+	pending = (char*) GDKzalloc(sizeof(mb->vtop));
+	memset((char*) pending, 0,sizeof(mb->vtop));
 
 	for (n=0, i= startpc+1; i<stoppc; i++,n++)
 		addMALflowStep(cntxt, flow,n,pending, mb,stk,getInstrPtr(mb,i));
@@ -701,7 +725,7 @@ the eligible instructions. [TODO]
 		}
 
 		@:beginProfile@
-		ret = 0;
+		ret = MAL_SUCCEED;
 @-
 The number of instructions allowed is severely
 limited.
@@ -712,13 +736,26 @@ limited.
 		case CMDcall: @:commandcall(SLOW)@ break;
 		case FACcall: @:factorycall(SLOW)@ break;
 		case FCNcall: @:functioncall(SLOW)@ break;
+		case NOOPsymbol:
+		case REMsymbol:
+			break;
+		default:
+			if( pci->token < 0 ){
+				/* temporary NOOP instruction */
+				break;
+			}
+			ret = createScriptException(mb, stkpc,MAL,
+					NULL, "unkown operation");
 		}
 		/* we don't allow sequential flow control here */
 		dropMALflowStep(cntxt,flow,stkpc,n,pending,mb,stk);
 		@:endProfile@
 	}
 	@:MALwrapup@
-	return ret;
+#ifdef DEBUG_FLOW
+	stream_printf(GDKout,"runMALdataflow exit %s\n", ret?ret:"");
+#endif
+	return ret; /* skip the dataflow block, it has been handled */
 }
 @-
 @= MALwrapup
@@ -1614,22 +1651,18 @@ See @ref{The MAL Profiler} for more details.
 #endif
 @= beginProfile
 #ifdef MALprofiler
-	if (malProfileMode == 0)
-		/* mostly true */;
-	else {
-		if( mb->profiler != NULL && stk ){
-			stk->clk= GDKusec();
-			if( mb->profiler[stkpc].trace)
-			{
-				ppc= stkpc;
-				mb->profiler[ppc].clk= stk->clk;
-				time(&stk->clock);
-				mb->profiler[ppc].clock= stk->clock;
+	if( mb->profiler != NULL && stk ){
+		stk->clk= GDKusec();
+		if( mb->profiler[stkpc].trace)
+		{
+			ppc= stkpc;
+			mb->profiler[ppc].clk= stk->clk;
+			time(&stk->clock);
+			mb->profiler[ppc].clock= stk->clock;
 #ifdef HAVE_TIMES
-				times(&stk->timer);
-				mb->profiler[ppc].timer= stk->timer;
+			times(&stk->timer);
+			mb->profiler[ppc].timer= stk->timer;
 #endif
-			}
 		}
 	}
 #endif
