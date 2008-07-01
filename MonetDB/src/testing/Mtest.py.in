@@ -158,6 +158,7 @@ CONDITIONALS = {
     'HAVE_JDBCCLIENT_JAR' : "",
     'HAVE_JDBCTESTS_JAR'  : "",
     'HAVE_JDBCTESTS_DIR'  : "",
+    'HAVE_JDBCTESTS'      : "",
     'HAVE_XRPCAPI_JAR'    : "",
     'HAVE_XRPCCLIENT_JAR' : "",
     'HAVE_XRPCWRAPPER_JAR': "",
@@ -2577,10 +2578,8 @@ def CheckClassPath(quiet) :
             miss += ' "%s"' % j
     if miss and not quiet:
         Warn('Could not find%s in\nCLASSPATH="%s"' % (miss,cpx))
-    if CONDITIONALS['HAVE_JDBCTESTS_JAR'] and not CONDITIONALS['HAVE_MONETDBJDBC_JAR']:
-        CONDITIONALS['HAVE_JDBCTESTS_JAR'] = ''
-    if CONDITIONALS['HAVE_JDBCTESTS_DIR'] and not CONDITIONALS['HAVE_MONETDBJDBC_JAR']:
-        CONDITIONALS['HAVE_JDBCTESTS_DIR'] = ''
+    if CONDITIONALS['HAVE_MONETDBJDBC_JAR'] and ( CONDITIONALS['HAVE_JDBCTESTS_JAR'] or CONDITIONALS['HAVE_JDBCTESTS_DIR']):
+        CONDITIONALS['HAVE_JDBCTESTS'] = '#'
 ### CheckClassPath(quiet) #
 
 def SetExecEnv(exe,verbose) :
