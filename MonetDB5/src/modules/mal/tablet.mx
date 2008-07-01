@@ -1746,12 +1746,12 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 			if (start) {
 				/*ignore partial record from previous block */
 				start = 0;
-				limit -= (e-s)+strlen(sep);
-				s = e + strlen(sep);
+				limit -= (e-s) + seplen;
+				s = e + seplen;
 				continue;
 			}
 			if (e) {
-				limit -= (e-s)+strlen(sep);
+				limit -= (e-s) + seplen;
 				*e = '\0';
 				if (i>=offset && insert_line(as, s, NULL, col1,col2) < 0) {
 					s = e + seplen;
@@ -1868,8 +1868,6 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 	}
 
 	/* prepare the tablet descriptors */
-	/* watchout for START and LIMIT requests  !!!!*/
-	/* perhaps we should not let them be handled in parallel */
 	for( i=0; i<NWAY; i++) {
 		size_t sz = (as->nr != ~(size_t)0)?as->nr/NWAY:0;
 		partition[i] = copy_loadformat(as);
