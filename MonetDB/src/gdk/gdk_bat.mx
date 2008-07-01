@@ -116,6 +116,8 @@ Fill in basic column info
 	bn->ttype = tt;
 	bn->hkey = FALSE;
 	bn->tkey = FALSE;
+	bn->H->nonil = TRUE;
+	bn->T->nonil = TRUE;
 	bn->hsorted = ((bit) ATOMlinear(ht) ? GDK_SORTED : FALSE);
 	bn->tsorted = ((bit) ATOMlinear(tt) ? GDK_SORTED : FALSE);
 	bn->GDKversion = GDKLIBRARY;
@@ -864,8 +866,9 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 		bn->hdense = b->hdense;
 		if (b->hkey)
 			BATkey(bn, TRUE);
+		bn->H->nonil = b->H->nonil;
 	} else {
-		bn->hsorted = bn->hdense = 0;
+		bn->hsorted = bn->hdense = bn->T->nonil = 0;
 	}
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
 		ALIGNsetT(bn, b);
@@ -874,8 +877,9 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 		bn->tdense = b->tdense;
 		if (b->tkey)
 			BATkey(BATmirror(bn), TRUE);
+		bn->T->nonil = b->T->nonil;
 	} else {
-		bn->tsorted = bn->tdense = 0;
+		bn->tsorted = bn->tdense = bn->T->nonil = 0;
 	}
 	if (writable != TRUE)
 		bn->batRestricted = BAT_READ;
@@ -1074,6 +1078,8 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 					b->H->nokey[1] = i;
 					b->hkey = bm->tkey = b->hdense = FALSE;
 				}
+				if (b->H->nonil) 
+					b->H->nonil = atom_CMP(h, ATOMnilptr(b->htype), b->htype) != 0;
 			}
 			if (b->ttype != TYPE_void) {
 				int cmp = 0;
@@ -1123,6 +1129,8 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 					b->T->nokey[1] = i;
 					b->tkey = bm->hkey = b->tdense = FALSE;
 				}
+				if (b->T->nonil) 
+					b->T->nonil = atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
 			}
 		} else {
 			if (b->htype == TYPE_oid) {
@@ -1334,6 +1342,8 @@ BUNappend(BAT *b, ptr t, bit force)
 			b->tkey = bm->hkey |= TRUE;
 		}
 	}
+	if (b->T->nonil) 
+		b->T->nonil = atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
 	if (!countonly) {
 		bunfastins(b, h, t);
 	} else {
@@ -1626,6 +1636,8 @@ BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
 		if (((b->ttype != TYPE_void) & b->tkey & !(b->tkey & BOUND2BTRUE)) && BATcount(b) > 1) {
 			BATkey(bm, FALSE);
 		}
+		if (b->T->nonil) 
+			b->T->nonil = atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
 		b->T->heap.dirty = TRUE;
 		if (b->T->vheap)
 			b->T->vheap->dirty = TRUE;

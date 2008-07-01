@@ -103,7 +103,7 @@ typedef struct logger {
 	int tid;
 	char *fn;
 	char *dir;
-    precommit_fptr phandler;
+	precommit_fptr phandler;
 	stream *log;
 	size_t end;		/* end of pre-allocated blocks for faster f(data)sync */
 	/* Store log_bids (int) to circumvent trouble with reference counting */

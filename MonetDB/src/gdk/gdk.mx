@@ -811,6 +811,7 @@ typedef struct {
           bit    hkey;             /* head values should be unique? */
           bit    hsorted;          /* are head values currently ordered? */
           bit    hvarsized;        /* for speed: head type is varsized? */
+	  bit	 hnonil;		   /* head has no nils */
 	  oid	 halign;	   /* alignment OID for head. */
           /* Head storage */
           int    hloc;             /* byte-offset in BUN for head elements */
@@ -820,6 +821,7 @@ typedef struct {
           int    ttype;            /* Tail type number */
           str    tident;           /* name for tail column */
           bit    tkey;             /* tail values should be unique? */
+	  bit	 tnonil;	   /* tail has no nils */
           bit    tsorted;          /* are tail values currently ordered? */
           bit    tvarsized;        /* for speed: tail type is varsized? */
 	  oid	 talign;	   /* alignment OID for head. */
@@ -895,7 +897,10 @@ typedef struct {
 	chr shift;		/* log2 of bunwidth */
 	bit key;		/* duplicates allowed? */
 	bit sorted;		/* 0=false, 1=true; */
-	bit dense;		/* 0=false, 1=true; */
+	unsigned char 
+	dense:1,		
+	nonil:1, 		/* nonil isn't propchecked jet */
+	unused:6; 
 	oid align;		/* OID for sync alignment */
 	size_t nosorted_rev;	/* position that proves sorted_rev==FALSE */
 	size_t nokey[2];	/* positions that prove key ==FALSE */

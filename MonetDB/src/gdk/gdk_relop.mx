@@ -334,6 +334,7 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 			BATkey(bn, TRUE);
 		}
 	}
+	bn->H->nonil = r->H->nonil;
 	if (l->tkey) {
 		bn->tsorted = BATtordered(r) & BATtordered(l) & 1;
 		if (!nil_on_miss) {
@@ -346,6 +347,7 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 			bn->tsorted = 0;	/* nils destroy the ordering */
 		}
 	}
+	bn->T->nonil = l->T->nonil & !(nil_on_miss);
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -461,6 +463,8 @@ BAThashjoin(BAT *l, BAT *r, size_t estimate)
 		if (BAThkey(l))
 			BATkey(bn, TRUE);
 	}
+	bn->H->nonil = r->H->nonil;
+	bn->T->nonil = l->T->nonil;
 	ESTIDEBUG THRprintf(GDKout, "#BAThashjoin: actual resultsize: " SZFMT "\n", BATcount(bn));
 
 	return bn;
@@ -1063,6 +1067,8 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 			BATkey(BATmirror(bn), BATtkey(r));
 		}
 	}
+	bn->H->nonil = r->H->nonil;
+	bn->T->nonil = l->T->nonil;
 	ret = bn;
       ready:
 	if (l != l_orig) {
@@ -1369,6 +1375,8 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 	} else {
 		bn->hsorted = BAThordered(l);
 	}
+	bn->H->nonil = r->H->nonil;
+	bn->T->nonil = l->T->nonil;
 	ESTIDEBUG THRprintf(GDKout, "#BATouterjoin: actual resultsize: " SZFMT "\n", BATcount(bn));
 
 	/* Just to silence compilers (Intel's icc) that otherwise might
@@ -1661,6 +1669,8 @@ BATnlthetajoin(BAT *l, BAT *r, int op, size_t estimate)
 	}
 	bn->hsorted = l->hsorted;
 	bn->tsorted = 0;
+	bn->H->nonil = r->H->nonil;
+	bn->T->nonil = l->T->nonil;
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -1800,6 +1810,8 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 			ALIGNsetH(bn, l);
 		}
 	}
+	bn->H->nonil = l->H->nonil;
+	bn->T->nonil = l->T->nonil;
 	if (del)
 		BBPreclaim(del);
 	ESTIDEBUG THRprintf(GDKout, "#BATbinsemijoin: actual resultsize: " SZFMT "\n", BATcount(bn));
@@ -1910,6 +1922,8 @@ BATrevsemijoin(BAT *l, BAT *r)
 	if (BAThkey(r) && BATtkey(l) && BATcount(bn) == BATcount(r)) {
 		ALIGNsetH(bn, r);
 	}
+	bn->H->nonil = r->H->nonil;
+	bn->T->nonil = r->T->nonil;
 	ESTIDEBUG THRprintf(GDKout, "#BATrevsemijoin: actual resultsize: " SZFMT "\n", BATcount(bn));
 
 	return bn;
@@ -1997,7 +2011,8 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 	/* property propagation */
 	bn->hsorted = (BAThordered(l) & BAThordered(r) & 1 ? GDK_SORTED : FALSE);
 	bn->tsorted = (bn->hsorted & BATtordered(cpy) & 1 ? GDK_SORTED : FALSE);
-
+	bn->H->nonil = l->H->nonil;
+	bn->T->nonil = l->T->nonil;
 
 	if (denselookup && BATcount(bn) == BATcount(l)) {
 		ALIGNsetH(bn, l);
@@ -2288,6 +2303,8 @@ BATantijoin(BAT *l, BAT *r)
 		bn->tdense = (lc == 1 ? r->tdense : FALSE);
 		BATkey(bn, (rc == 1 ? BAThkey(l) : FALSE));
 		BATkey(BATmirror(bn), (lc == 1 ? BATtkey(r) : FALSE));
+		bn->H->nonil = l->H->nonil;
+		bn->T->nonil = r->T->nonil;
 		if (!bn->batDirty)
 			bn->batDirty = TRUE;
 	}
@@ -2458,6 +2475,8 @@ BATcross(BAT *l, BAT *r)
 		BATkey(BATmirror(bn), (lc == 1 ? BATtkey(r) : FALSE));
 		if (!bn->batDirty)
 			bn->batDirty = TRUE;
+		bn->H->nonil = l->H->nonil;
+		bn->T->nonil = r->T->nonil;
 	}
 
 	return bn;

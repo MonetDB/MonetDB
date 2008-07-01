@@ -220,6 +220,8 @@ BATins(BAT *b, BAT *n, bit force)
 				r++;
 			}
 		}
+		b->H->nonil &= n->H->nonil; 
+		b->T->nonil &= n->T->nonil; 
 	} else {
 		@:updateloop(b,n,bunins)@
 	}
@@ -318,6 +320,8 @@ BATappend(BAT *b, BAT *n, bit force)
 			b->tkey |= (n->tkey & TRUE);
 			b->T->nokey[0] = n->T->nokey[0];
 			b->T->nokey[1] = n->T->nokey[1];
+			b->H->nonil = n->H->nonil; 
+			b->T->nonil = n->T->nonil; 
 		} else {
 			BUN last = BUNlast(b) - 1;
 			BATiter ni = bat_iterator(n);
@@ -436,6 +440,8 @@ BATappend(BAT *b, BAT *n, bit force)
 			b->tdense = b->tsorted = 0;
 		}
 	}
+	b->H->nonil &= n->H->nonil; 
+	b->T->nonil &= n->T->nonil; 
 	return b;
       bunins_failed:
 	return NULL;
@@ -569,6 +575,8 @@ We have to do it: create a new BAT and put everything into it.
 	bn->tsorted = BATtordered(b);
 	BATkey(bn, BAThkey(b));
 	BATkey(BATmirror(bn), BATtkey(b));
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = b->T->nonil;
 	if (BAThdense(b)) {
 		bn->hdense = TRUE;
 		BATseqbase(bn, b->hseqbase + low);
@@ -634,6 +642,8 @@ BATslice2(BAT *b, size_t l1, size_t h1, size_t l2, size_t h2)
 	bn->tsorted = BATtordered(b);
 	BATkey(bn, BAThkey(b));
 	BATkey(BATmirror(bn), BATtkey(b));
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = b->T->nonil;
 	if (bn->hkey && bn->htype == TYPE_oid) {
 		if (BATcount(bn) == 0) {
 			bn->hdense = TRUE;
@@ -791,7 +801,7 @@ the result (as (nil @{<,=,>@} ANY) = bit(nil) != true).
 BAT *
 BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit anti, bit preserve_order)
 {
-	int hval, lval, equi, nequi=anti, t, ht, tt;
+	int hval, lval, equi, nequi=anti, t, ht, tt, lnil = 0;
 	size_t offset, batcnt, estimate = 0;
 	ptr nil;
 	BAT *bn;
@@ -805,7 +815,8 @@ Examine type, and values for lower- and higher-bound.
 	batcnt = BATcount(b);
 	t = b->ttype;
 	nil = ATOMnilptr(t);
-	lval = ATOMcmp(t, tl, nil) || (th == NULL);
+	lnil = ATOMcmp(t, tl, nil) == 0;
+	lval = !lnil || (th == NULL);
 	equi = ((th == NULL) || (lval && !ATOMcmp(t, tl, th)));
 	if (equi) {
 		if (th == NULL)
@@ -843,6 +854,10 @@ Examine type, and values for lower- and higher-bound.
 
 		return BATnew(ht, tt, 10);
 	}
+	if (!equi && !lval && !hval && b->T->nonil && lnil)
+		return BATcopy(b, b->htype, b->ttype, FALSE); 
+	if (equi && lval && hval && b->T->nonil && lnil)
+		return BATnew(ht, tt, 10);
 
 @}
 @- Slice Implementations
@@ -928,6 +943,11 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 		if (!tail) {
 			BBPreclaim(v);
 		}
+		/* selected no nils */
+		if (!equi && !lval && !hval && lnil)
+			bn->T->nonil = 1;
+		else if (equi && !lnil)
+			bn->T->nonil = 1;
 		return bn;
 	}
 @-
@@ -1010,6 +1030,11 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 		bn->hsorted = BAThordered(b);
 		bn->tsorted = BATtordered(b);
 	}
+	/* selected no nils */
+	if (!equi && !lval && !hval && lnil)
+		bn->T->nonil = 1;
+	else if (equi && !lnil)
+		bn->T->nonil = 1;
 	ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): %s: hkey=%d, tkey=%d, hsorted=%d, tsorted=%d.\n", BATgetId(b), BATgetId(bn), bn->hkey, bn->tkey, bn->hsorted, bn->tsorted);
 	ESTIDEBUG THRprintf(GDKout, "#BAT_select_(b=%s): resultsize: estimated " SZFMT ", got " SZFMT ".\n", BATgetId(b), estimate, BATcount(bn));
 
@@ -1178,6 +1203,8 @@ BATsample(BAT *b, size_t size)
 	bn->tsorted = BATtordered(b);
 	BATkey(bn, BAThkey(b));
 	BATkey(BATmirror(bn), BATtkey(b));
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = b->T->nonil;
 	return bn;
       bunins_failed:
 	if (choice)
@@ -1284,6 +1311,8 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 	BATkey(BATmirror(bn), BATtkey(b));
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = BATtordered(b);
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = b->T->nonil;
 
 	s = BATcount(b);
 	if (s == 0) {
@@ -1831,6 +1860,8 @@ part_bat(BAT *b, int ht, int tt, size_t expected_size, int respect_order)
 		BATkey(BATmirror(bn), BATtkey(b));
 		bn->hsorted = (respect_order && (BAThordered(b) & 1)) ? GDK_SORTED : 0;
 		bn->tsorted = (respect_order && (BATtordered(b) & 1)) ? GDK_SORTED : 0;
+		bn->H->nonil = b->H->nonil;
+		bn->T->nonil = b->T->nonil;
 	}
 	return bn;
 }
@@ -2185,6 +2216,8 @@ BATnumber(BAT *b)
 	BATsetprop_wrd(bn, GDK_AGGR_CARD, i);	/* 64bit: no (wrd) cast to remind us */
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = GDK_SORTED;
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = 1;
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -2227,6 +2260,8 @@ BATgroup(BAT *b, int start, int incr, int grpsize)
 	BATsetprop_wrd(bn, GDK_AGGR_CARD, ngroups);
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = GDK_SORTED;
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = 1;
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -2383,6 +2418,8 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 				gc->hsorted = BAThordered(g);
 			}
 			BATkey(gc, TRUE);
+			gc->H->nonil = gc->H->nonil;
+			gc->T->nonil = 1;
 		} else {
 			gc = BATcopy(g, g->htype, g->ttype, TRUE);
 			if (gc == NULL)
@@ -2413,6 +2450,8 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 		BATseqbase(BATmirror(bn), *(oid *) BUNtloc(bni, BUNfirst(bn)));
 	}
 	BATkey(BATmirror(bn), trivprop);
+	bn->H->nonil = bn->H->nonil;
+	bn->T->nonil = 1;
 
 	if (gc)
 		BBPreclaim(gc);
@@ -2449,6 +2488,7 @@ BATconst(BAT *b, int tailtype, ptr v)
 			
 			if (!bt)
 				return NULL;
+			bt->T->nonil = (ATOMcmp(b->ttype, v, ATOMnilptr(b->ttype)) != 0);
 			ts = Tsize(bt);
 			switch(ATOMsize(ATOMstorage(tailtype))) {
 			case 1: {
@@ -2500,6 +2540,8 @@ BATconst(BAT *b, int tailtype, ptr v)
 	}
 	ALIGNsetH(bn, b);
 	bn->tsorted = GDK_SORTED;
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = (ATOMcmp(b->ttype, v, ATOMnilptr(b->ttype)) != 0);
 	BATsetprop_wrd(bn, GDK_AGGR_CARD, (wrd) (BATcount(b) > 0));
 	if (tailtype == TYPE_bit) {
 		BATsetprop_wrd(bn, GDK_AGGR_SIZE, (*(bit *) v == TRUE) ? BATcount(b) : 0);
@@ -2785,6 +2827,7 @@ by bulk copying the heap as well
 		ALIGNsetH(bn, BATmirror(b));
 	BATkey(bn, TRUE);
 	BATkey(BATmirror(bn), BATcount(bn) < 2);
+	bn->H->nonil = b->T->nonil;
 	if (b->ttype == TYPE_bit) {
 		BATiter bni = bat_iterator(bn);
 		bit trueval = TRUE;

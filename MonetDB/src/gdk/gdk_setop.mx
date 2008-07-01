@@ -221,6 +221,8 @@ BATins_kunique(BAT *bn, BAT *b)
 		   hence, the resulting BAT's head is (now) unique/key ... */
 		BATkey(bn, TRUE);
 	}
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = b->T->nonil;
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -268,6 +270,8 @@ BATins_sunique(BAT *bn, BAT *b)
 		   hence, the resulting BAT is (now) unique/set ... */
 		BATset(bn, TRUE);
 	}
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = b->T->nonil;
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -324,6 +328,8 @@ BATkunique(BAT *b)
 	BATkey(BATmirror(bn), BATtkey(b));
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = BATtordered(b);
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = b->T->nonil;
 	if (BATcount(bn) == BATcount(b)) {
 		ALIGNset(bn, b);
 	}
@@ -378,6 +384,8 @@ BATsunique(BAT *b)
 	BATkey(BATmirror(bn), BATtkey(b));
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = BATtordered(b);
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = b->T->nonil;
 	if (BATcount(bn) == BATcount(b)) {
 		ALIGNset(bn, b);
 	}
@@ -802,6 +810,8 @@ BAT@1@2(BAT *l, BAT *r)
 		BATkey(bn, TRUE);
 		BATkey(BATmirror(bn), TRUE);
 	}
+	bn->H->nonil = l->H->nonil;
+	bn->T->nonil = l->T->nonil;
 	return bn;
 }
 @c
@@ -955,6 +965,8 @@ BAT@1union(BAT *l, BAT *r)
 		BATkey(bn, FALSE);
 #endif
 	BATkey(BATmirror(bn), tdisjunct ? BATtkey(l) && BATtkey(r) : 0);
+	bn->H->nonil = l->H->nonil & r->H->nonil;
+	bn->T->nonil = l->T->nonil & r->T->nonil;
 
 	return bn;
   bunins_failed:

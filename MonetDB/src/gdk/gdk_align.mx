@@ -130,6 +130,7 @@ ALIGNsetH(BAT *b1, BAT *b2)
 	BATkey(b1, BAThkey(b2));
 	b1->hsorted = BAThordered(b2);
 	b1->halign = b2->halign;
+	b1->H->nonil = b2->H->nonil;
 	b1->batDirtydesc = TRUE;
 	b1->H->nosorted_rev = b2->H->nosorted_rev + diff;
 	b1->H->nokey[0] = b2->H->nokey[0] + diff;

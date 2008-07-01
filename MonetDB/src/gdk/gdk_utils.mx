@@ -748,9 +748,11 @@ GDKmtrace(bit *enable)
 			BBPrename(memBat->batCacheid, "mem_trace");
 			BBPrename(stackBat->batCacheid, "mem_stack");
 			memBat->hsorted = memBat->tsorted = 0;
+			memBat->H->nonil = 0;
 			BATkey(memBat, TRUE);
 			stackBat->hsorted = stackBat->tsorted = 0;
 			BATset(stackBat, TRUE);
+			memBat->T->nonil = 0;
 		}
 		mtrace++;
 	} else if (mtrace > 0)
