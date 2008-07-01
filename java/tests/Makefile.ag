@@ -32,22 +32,7 @@ EXTRA_DIST = \
 		BugConcurrent_clients_SF_1504657.java \
 		build.xml build.properties
 
-ant_compile = {
-	DIR = datadir/MonetDB/Tests
-	FILES = \
-		Test_Cautocommit.class \
-		Test_Clargequery.class \
-		Test_Cmanycon.class \
-		Test_Creplysize.class \
-		Test_Csavepoints.class \
-		Test_Ctransaction.class \
-		Test_PStimedate.class \
-		Test_PStimezone.class \
-		Test_PStypes.class \
-		Test_Rbooleans.class \
-		Test_Rmetadata.class \
-		Test_Rpositioning.class \
-		Test_Rtimedate.class \
-		Test_Sbatching.class \
-		BugConcurrent_clients_SF_1504657.class
+ant_jar_jdbctests = {
+	DIR = datadir/MonetDB/lib
+	FILES = jdbctests.jar
 }

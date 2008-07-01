@@ -39,6 +39,8 @@ All Rights Reserved.
     value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
   <property name="jdbc_url"
     value="jdbc:monetdb://localhost/?user=monetdb&amp;password=monetdb${debug}" />
+  <property name="jdbctests-jar"
+    value="${jardir}/jdbctests.jar" />
 
   <!-- Prepares the build directory -->
   <target name="prepare">
@@ -59,6 +61,18 @@ All Rights Reserved.
         <pathelement path="${srcdir}" />
       </classpath>
     </javac>
+  </target>
+
+  <!-- a convenience jar collectin all JDBC tests -->
+  <target name="jar_jdbctests"
+    depends="compile"
+    unless="uptodate.jdbctests-jar">
+    <echo message="Building JDBC tests convenience jar" />
+    <jar jarfile="${jdbctests-jar}">
+      <fileset dir="${builddir}">
+        <include name="**/*.class" />
+      </fileset>
+    </jar>
   </target>
 
   <!-- makes sure the jdbc driver is compiled -->
