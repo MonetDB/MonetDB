@@ -76,7 +76,7 @@ Over..
 % double # type
 % 22 # length
 [ 2.3760683760683761	]
-% sys.,	sys.aircraft,	sys.aircraft # table_name
+% sys.aircraft,	sys.aircraft,	sys.aircraft # table_name
 % count_,	min_pay_load,	max_pay_load # name
 % int,	int,	int # type
 % 2,	3,	6 # length
@@ -101,7 +101,7 @@ Over..
 % int # type
 % 2 # length
 [ 94	]
-% sys.aircraft # table_name
+% sys.flight # table_name
 % count_ # name
 % int # type
 % 3 # length
