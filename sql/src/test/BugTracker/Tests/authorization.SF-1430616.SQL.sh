@@ -8,20 +8,20 @@ EOF
 LANG="en_US.UTF-8"
 export LANG
 
-Mlog -x "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -f \"$RELSRCDIR/authorization.SF-1430616-data.sql\""
+Mlog -x "$MTIMEOUT java nl.cwi.monetdb.client.JdbcClient -h $HOST -p $MAPIPORT -d ${TSTDB} -f \"$RELSRCDIR/authorization.SF-1430616-data.sql\""
 
 cat << EOF > .monetdb
 user=voc
 password=voc
 EOF
 
-Mlog -x "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -q"
+Mlog -x "$MTIMEOUT java nl.cwi.monetdb.client.JdbcClient -h $HOST -p $MAPIPORT -d ${TSTDB} -q"
 
 cat << EOF > .monetdb
 user=monetdb
 password=monetdb
 EOF
 
-Mlog -x "$MTIMEOUT mjclient -h $HOST -p $MAPIPORT -d ${TSTDB} -f \"$RELSRCDIR/authorization.SF-1430616-drop_user.sql\""
+Mlog -x "$MTIMEOUT java nl.cwi.monetdb.client.JdbcClient -h $HOST -p $MAPIPORT -d ${TSTDB} -f \"$RELSRCDIR/authorization.SF-1430616-drop_user.sql\""
 
 rm -f .monetdb

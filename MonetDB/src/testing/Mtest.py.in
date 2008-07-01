@@ -154,9 +154,13 @@ CONDITIONALS = {
     # hence, we set them at runtime in main() below
     'HAVE_MONETDB5'    : "@HAVE_MONETDB5_FALSE@",
     'HAVE_MONETDB4'    : "@HAVE_MONETDB4_FALSE@",
-    'HAVE_MONETDB_JAVA': "@HAVE_MONETDB_JAVA_FALSE@",
-    'HAVE_MONETDB_JAVAJDBC': "@HAVE_MONETDB_JAVAJDBC_FALSE@",
-    'HAVE_MONETDB_JAVAXRPC': "@HAVE_MONETDB_JAVAXRPC_FALSE@",
+    'HAVE_MONETDBJDBC_JAR': "",
+    'HAVE_JDBCCLIENT_JAR' : "",
+    'HAVE_JDBCTESTS_JAR'  : "",
+    'HAVE_JDBCTESTS_DIR'  : "",
+    'HAVE_XRPCAPI_JAR'    : "",
+    'HAVE_XRPCCLIENT_JAR' : "",
+    'HAVE_XRPCWRAPPER_JAR': "",
     'WITH_ALGEBRA'     : "",
     'NOT_ALGEBRA'      : "",
 }
@@ -2517,6 +2521,68 @@ def CheckExec(cmd) :
     return ""
 ### CheckExec(cmd) #
 
+def CheckClassPath(quiet) :
+    if os.environ.has_key('CLASSPATH'):
+        cp = os.environ['CLASSPATH']
+        cpx = cp + os.pathsep
+    else:
+        cp = ''
+        cpx = ''
+    JARS = {
+        'HAVE_MONETDBJDBC_JAR' : re.compile('^monetdb-[0-9]\.[0-9]-jdbc\.jar$'),
+        'HAVE_JDBCCLIENT_JAR'  : re.compile('^jdbcclient\.jar$'),
+        'HAVE_JDBCTESTS_JAR'   : re.compile('^jdbctests\.jar$'),
+        'HAVE_XRPCAPI_JAR'     : re.compile('^xrpcapi\.jar$'),
+        'HAVE_XRPCCLIENT_JAR'  : re.compile('^xrpcclient\.jar$'),
+        'HAVE_XRPCWRAPPER_JAR' : re.compile('^xrpcwrapper\.jar$'),
+    }
+    # check for known JARs in CLASSPATH files
+    for p in cp.split(os.pathsep):
+        if os.path.isfile(p):
+            f = os.path.basename(p)
+            C = 'HAVE_%s' % f.upper().replace('.','_')
+            if not JARS.has_key(C):
+                C = 'HAVE_MONETDBJDBC_JAR'
+            if JARS[C].match(f):
+                CONDITIONALS[C] = '#'
+    # check for known JARs in CLASSPATH directories
+    # + fall-back using `monetdb-config --pkgdatadir`/lib
+    #               and `monetdb-config --pkgdatadir`/Tests
+    cpx += os.path.join(GetMonetConfig('monetdb','--pkgdatadir'),'lib')
+    cpx += os.pathsep
+    cpx += os.path.join(GetMonetConfig('monetdb','--pkgdatadir'),'Tests')
+    for d in cpx.split(os.pathsep):
+        if os.path.isdir(d):
+            for f in os.listdir(d):
+                p = os.path.join(d,f)
+                if os.path.isfile(p):
+                    if f == 'BugConcurrent_clients_SF_1504657.class':
+                        C = 'HAVE_JDBCTESTS_DIR'
+                        if not CONDITIONALS[C]:
+                            cp = cp + os.pathsep + d
+                            CONDITIONALS[C] = '#'
+                    else:
+                        C = 'HAVE_%s' % f.upper().replace('.','_')
+                        if not JARS.has_key(C):
+                            C = 'HAVE_MONETDBJDBC_JAR'
+                        if not CONDITIONALS[C] and JARS[C].match(f):
+                            cp = cp + os.pathsep + p
+                            CONDITIONALS[C] = '#'
+    if cp:
+        os.environ['CLASSPATH'] = cp
+    miss = ''
+    for j in ['monetdbjdbc.jar', 'jdbcclient.jar', 'jdbctests.jar', 'xrpcapi.jar', 'xrpcclient.jar', 'xrpcwrapper.jar']:
+        C = 'HAVE_%s' % j.upper().replace('.','_')
+        if not CONDITIONALS[C]:
+            miss += ' "%s"' % j
+    if miss and not quiet:
+        Warn('Could not find%s in\nCLASSPATH="%s"' % (miss,cpx))
+    if CONDITIONALS['HAVE_JDBCTESTS_JAR'] and not CONDITIONALS['HAVE_MONETDBJDBC_JAR']:
+        CONDITIONALS['HAVE_JDBCTESTS_JAR'] = ''
+    if CONDITIONALS['HAVE_JDBCTESTS_DIR'] and not CONDITIONALS['HAVE_MONETDBJDBC_JAR']:
+        CONDITIONALS['HAVE_JDBCTESTS_DIR'] = ''
+### CheckClassPath(quiet) #
+
 def SetExecEnv(exe,verbose) :
     if os.name == "nt":
         CALL = "call "
@@ -2738,9 +2804,9 @@ if os.path.exists(os.path.join('CVS', 'Repository')):
             repo = _PackageDict[repo]
     par['PACKAGE'] = repo
     if not CheckExec(par['PACKAGE']+'-config'):
-        if par['PACKAGE'] in ('monetdb', 'monetdb-java', 'monetdb-clients', 'monetdb4', 'monetdb5'):
+        if par['PACKAGE'] in ('monetdb', 'monetdb-clients', 'monetdb4', 'monetdb5'):
             ErrXit('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
-        else:
+        elif par['PACKAGE'] != 'monetdb-java':
             Warn('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
             par['PACKAGE'] = 'monetdb'
             Warn('Using default package="%s".' % par['PACKAGE'])
@@ -2939,9 +3005,9 @@ def main(argv) :
                 pkg = _PackageDict[pkg]
         par['PACKAGE'] = pkg
     if not CheckExec(par['PACKAGE']+'-config'):
-        if par['PACKAGE'] in ('monetdb', 'monetdb-java', 'monetdb-clients', 'monetdb4', 'monetdb5'):
+        if par['PACKAGE'] in ('monetdb', 'monetdb-clients', 'monetdb4', 'monetdb5'):
             ErrXit('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
-        else:
+        elif par['PACKAGE'] != 'monetdb-java':
             Warn('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
             if par['M4']:
                 par['PACKAGE'] = 'monetdb4'
@@ -3056,14 +3122,7 @@ def main(argv) :
     else:
         CONDITIONALS['HAVE_MONETDB5'] = ''
         CONDITIONALS['HAVE_MONETDB4'] = '#'
-    if CheckExec('monetdb-java-config'):
-        CONDITIONALS['HAVE_MONETDB_JAVA'] = '#'
-        CONDITIONALS['HAVE_MONETDB_JAVAJDBC'] = GetConfig('monetdb-java-config', '--HAVE_MONETDB_JAVAJDBC')
-        CONDITIONALS['HAVE_MONETDB_JAVAXRPC'] = GetConfig('monetdb-java-config', '--HAVE_MONETDB_JAVAXRPC')
-    else:
-        CONDITIONALS['HAVE_MONETDB_JAVA'] = ''
-        CONDITIONALS['HAVE_MONETDB_JAVAJDBC'] = ''
-        CONDITIONALS['HAVE_MONETDB_JAVAXRPC'] = ''
+    CheckClassPath(quiet)
     if par['ALGEBRA']:
         CONDITIONALS['WITH_ALGEBRA'] = '#'
         CONDITIONALS['NOT_ALGEBRA']  = ''
@@ -3242,6 +3301,8 @@ def main(argv) :
         print "%s = %s" % ('PATH', os.environ['PATH'])
         if os.environ.has_key('PYTHONPATH'):
             print "%s = %s" % ('PYTHONPATH', os.environ['PYTHONPATH'])
+        if os.environ.has_key('CLASSPATH'):
+            print "%s = %s" % ('CLASSPATH', os.environ['CLASSPATH'])
     STDOUT.flush()
 
     # add QUIET par to env
