@@ -23,7 +23,7 @@ srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
 # make sure scripts are executable
-for x in "${builddir}/conf/${pkg}-config" "${builddir}/scripts/mjclient"
+for x in "${builddir}/conf/${pkg}-config"
 do
 	if [ -s $x ] ; then
 		chmod +x $x
@@ -31,7 +31,7 @@ do
 done
 
 # enhance various paths to find our stuff
-PATH="${builddir}/conf:${builddir}/scripts:$PATH"
+PATH="${builddir}/conf:$PATH"
 export PATH
 
 # execute Mtest.py in the source directory

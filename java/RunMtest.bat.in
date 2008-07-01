@@ -13,7 +13,6 @@ set builddir=@XMONETDB_JAVA_BUILD@
 set srcdir=@XMONETDB_JAVA_SOURCE@
 
 set PATH=%builddir%\conf;%PATH%
-set PATH=%builddir%\scripts;%PATH%
 
 REM execute Mtest.py in the source directory
 pushd %srcdir%

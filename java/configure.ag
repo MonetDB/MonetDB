@@ -24,7 +24,7 @@ AC_CONFIG_AUX_DIR(conf)
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER([monetdb_java_config.h])
 
-# MONETDB_JAVA_BUILD and MONETDB_JAVA_SOURCE are *only* used for monetdb-java-config
+# MONETDB_JAVA_BUILD and MONETDB_JAVA_SOURCE are *only* used for RunMtest & RunMapprove
 # MONETDB_JAVA_SOURCE is the absolute path name of the source directory
 # (srcdir can be relative)
 

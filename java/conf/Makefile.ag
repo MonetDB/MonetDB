@@ -18,16 +18,3 @@ EXTRA_DIST = \
 	config.guess config.sub \
 	install-sh missing \
 	ltmain.sh
-
-scripts_sh = {
-	COND = NOT_WIN32
-	EXT = ""
-	DIR = bindir
-	SOURCES = monetdb-java-config.in
-}
-
-scripts_bat = {
-	COND = NATIVE_WIN32
-	DIR = bindir
-	SOURCES = monetdb-java-config.bat.in 
-}
