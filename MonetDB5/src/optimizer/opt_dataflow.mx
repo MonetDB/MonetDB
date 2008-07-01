@@ -113,11 +113,13 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			start = i;
 		}
 		/* check if the instruction can start a flow */
+		/* this should be a function call with multiple arguments */
 		cnt =0;
+		if (getFunctionId(p))
 		for(j=p->retc; j<p->argc; j++)
 		if( getLastUpdate(span, getArg(p,j)) <= start)
 			cnt++;
-		if (cnt== p->argc-p->retc)
+		if (cnt && cnt== p->argc-p->retc )
 			entries++;
 	}
 	GDKfree(old);
