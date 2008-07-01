@@ -28,7 +28,7 @@ Over..
 % tinyint # type
 % 1 # length
 [ 1	]
-% . # table_name
+% .bbp # table_name
 % count_ # name
 % int # type
 % 2 # length
@@ -38,7 +38,7 @@ Over..
 % tinyint # type
 % 1 # length
 [ 1	]
-% . # table_name
+% .bbp # table_name
 % count_ # name
 % int # type
 % 2 # length
