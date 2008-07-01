@@ -42,7 +42,7 @@ Over..
 % int # type
 % 1 # length
 [ 0	]
-% sys. # table_name
+% sys.slow_count # table_name
 % count_ # name
 % int # type
 % 6 # length

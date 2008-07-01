@@ -19,7 +19,7 @@ Over..
 # 19:06:11 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=37689  < slow_counting_2.SF-923709.sql
 # 19:06:11 >  
 
-% sys. # table_name
+% sys.slow_count # table_name
 % count_ # name
 % int # type
 % 6 # length

@@ -24,7 +24,7 @@ Over..
 # 10:37:19 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=30726 
 # 10:37:19 >  
 
-% sys. # table_name
+% sys.dependencies # table_name
 % count_ # name
 % int # type
 % 2 # length

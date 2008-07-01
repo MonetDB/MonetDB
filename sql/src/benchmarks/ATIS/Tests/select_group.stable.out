@@ -91,17 +91,17 @@ Over..
 % char,	char # type
 % 3,	3 # length
 [ "ATL",	"ATL"	]
-% sys. # table_name
+% sys.aircraft # table_name
 % count_ # name
 % int # type
 % 2 # length
 [ 50	]
-% sys. # table_name
+% sys.aircraft # table_name
 % count_ # name
 % int # type
 % 2 # length
 [ 94	]
-% sys. # table_name
+% sys.aircraft # table_name
 % count_ # name
 % int # type
 % 3 # length

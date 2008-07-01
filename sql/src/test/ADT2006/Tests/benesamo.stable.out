@@ -7,12 +7,10 @@ stdout of test 'benesamo` in directory 'src/test/ADT2006` itself:
 
 
 
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# config:/ufs/goncalve/scratch/MonetDB/monetdb5/etc/MonetDB5.conf
-# dbfarm:/ufs/goncalve/scratch/MonetDB/monetdb5/var/MonetDB5/dbfarm
-# dbname:mTests_src_test_ADT2006
+# MonetDB server v5.6.1, based on kernel v1.24.1
+# Serving database 'mTests_src_test_ADT2006'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 
 Ready.
@@ -192,7 +190,7 @@ Over..
 % 5,	6,	35 # length
 [ "Ada",	"Wilson",	"(survived the attack on 1888-28-03)"	]
 [ "Annie",	"Farmer",	"(survived the attack on 1888-11-20)"	]
-% sys. # table_name
+% sys.scene_witness # table_name
 % count_ # name
 % int # type
 % 1 # length
@@ -202,7 +200,7 @@ Over..
 % int # type
 % 1 # length
 [ 2	]
-% sys. # table_name
+% sys.victim # table_name
 % count_ # name
 % int # type
 % 1 # length
@@ -256,7 +254,7 @@ Over..
 % varchar,	varchar,	varchar,	varchar # type
 % 3,	6,	6,	8 # length
 [ "Dr.",	"George",	"Baxter",	"Phillips"	]
-% sys. # table_name
+% sys.victim # table_name
 % count_ # name
 % int # type
 % 2 # length

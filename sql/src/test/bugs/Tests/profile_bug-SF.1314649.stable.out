@@ -35,7 +35,7 @@ Over..
 % varchar,	varchar # type
 % 9,	7 # length
 [ "select 1;",	"monetdb"	]
-% sys. # table_name
+% sys.t1314649 # table_name
 % count_ # name
 % int # type
 % 1 # length

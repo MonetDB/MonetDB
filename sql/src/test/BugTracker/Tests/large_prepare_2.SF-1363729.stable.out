@@ -62,7 +62,7 @@ Over..
 [ "int",	32,	0	]
 [ "int",	32,	0	]
 [ 1	]
-% sys. # table_name
+% sys.mytable # table_name
 % count_ # name
 % int # type
 % 1 # length

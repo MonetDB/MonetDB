@@ -29,7 +29,7 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% . # table_name
+% .b # table_name
 % count_ # name
 % int # type
 % 1 # length
