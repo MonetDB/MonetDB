@@ -1,0 +1,109 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2008 CWI.
+@' All Rights Reserved.
+
+@f opt_dataflow
+@- The dataflow optimizer
+The MAL programs are largely a logical description of an execution plan.
+At least as it concerns side-effect free operations.
+For these sub-plans the order of execution is not a priori fixed and
+a dataflow driven evaluation is possible. Even using multiple cores to
+work their way through the dataflow graph.
+
+The dataflow optimize analysis the code base and wraps all instructions
+eligible for dataflow driven execution with a guarded block.
+
+The runtime system is free to assign as many processors as it deems
+possible and optimial.
+@{
+@mal
+pattern optimizer.dataflow():str
+address OPTdataflow;
+pattern optimizer.dataflow(mod:str, fcn:str):str
+address OPTdataflow
+comment "Dataflow bracket code injection";
+
+@h
+#ifndef _OPT_DATAFLOW_
+#define _OPT_DATAFLOW_
+#include "opt_prelude.h"
+#include "opt_support.h"
+
+/* #define DEBUG_OPT_DATAFLOW */
+@-
+The statemens are all checked for being eligible for dataflow.
+@c
+#include "mal_config.h"
+#include "opt_dataflow.h"
+#include "mal_instruction.h"
+#include "mal_interpreter.h"
+
+static int
+OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i, actions=0;
+	int flowblock= 0, dumbcopy=0;
+	InstrPtr *old, q;
+	int limit;
+
+	(void) cntxt;
+	(void) stk;
+	limit= mb->stop;
+	old = mb->stmt;
+	newMalBlkStmt(mb, mb->ssize+20); /* some marge */
+	pushInstruction(mb,old[0]);
+
+	initProfiler(mb);
+	for (i = 1; i<limit; i++) {
+		p = old[i];
+		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)){
+			if (flowblock){
+				/* close old block */
+				q= newAssignment(mb);
+				q->barrier= EXITsymbol;
+				getArg(q,0) = flowblock;
+				flowblock = 0;
+			}
+			pushInstruction(mb,p);
+			continue;
+		}
+		if (dumbcopy || blockStart(p)){
+			dumbcopy++;
+			pushInstruction(mb,p);
+			continue;
+		}
+		if (blockExit(p))
+			dumbcopy= 0;
+
+		if (flowblock == 0){
+			q= newFcnCall(mb,languageRef,dataflowRef);
+			getArg(q,0)= flowblock = newTmpVariable(mb, TYPE_int);
+			pushInstruction(mb,q);
+			actions++;
+		}
+		pushInstruction(mb,p);
+		mb->profiler[i].trace = TRUE;
+	}
+	GDKfree(old);
+	return actions;
+}
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(dataflow)@
+#endif
+@c
+#include "opt_statistics.h"
+@:wrapOptimizer(dataflow,OPT_CHECK_TYPES)@
+@}
