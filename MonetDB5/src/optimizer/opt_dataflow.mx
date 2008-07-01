@@ -24,6 +24,8 @@ work their way through the dataflow graph.
 
 The dataflow optimize analysis the code base and wraps all instructions
 eligible for dataflow driven execution with a guarded block.
+This is only necessary if you can upfront determine there are possibilities
+for multiple starting points.
 
 The runtime system is free to assign as many processors as it deems
 possible and optimial.
@@ -53,13 +55,15 @@ The statemens are all checked for being eligible for dataflow.
 static int
 OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, actions=0;
+	int i,j, cnt, start=1,entries=0, actions=0;
 	int flowblock= 0, dumbcopy=0;
 	InstrPtr *old, q;
 	int limit;
+	Lifespan span = newLifespan(mb);
 
 	(void) cntxt;
 	(void) stk;
+	setLifespan(mb,span);
 	limit= mb->stop;
 	old = mb->stmt;
 	newMalBlkStmt(mb, mb->ssize+20); /* some marge */
@@ -70,11 +74,24 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		p = old[i];
 		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)){
 			if (flowblock){
-				/* close old block */
-				q= newAssignment(mb);
-				q->barrier= EXITsymbol;
-				getArg(q,0) = flowblock;
+				/* close old flow block */
+				if (entries > 1){
+					q= newFcnCall(mb,languageRef,dataflowRef);
+					q->barrier= BARRIERsymbol;
+					getArg(q,0)= flowblock;
+					setVarUsed(mb,flowblock);
+				}
+				for( j=start ; j<i; j++){
+					pushInstruction(mb,old[j]);
+					mb->profiler[j].trace = TRUE;
+				}
+				if (entries>1){
+					q= newAssignment(mb);
+					q->barrier= EXITsymbol;
+					getArg(q,0) = flowblock;
+				}
 				flowblock = 0;
+				actions++;
 			}
 			pushInstruction(mb,p);
 			continue;
@@ -84,19 +101,27 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			pushInstruction(mb,p);
 			continue;
 		}
-		if (blockExit(p))
+		if (blockExit(p)){
 			dumbcopy= 0;
+			pushInstruction(mb,p);
+			continue;
+		}
 
 		if (flowblock == 0){
-			q= newFcnCall(mb,languageRef,dataflowRef);
-			getArg(q,0)= flowblock = newTmpVariable(mb, TYPE_int);
-			pushInstruction(mb,q);
-			actions++;
+			flowblock = newTmpVariable(mb,TYPE_int);
+			entries= 0;
+			start = i;
 		}
-		pushInstruction(mb,p);
-		mb->profiler[i].trace = TRUE;
+		/* check if the instruction can start a flow */
+		cnt =0;
+		for(j=p->retc; j<p->argc; j++)
+		if( getLastUpdate(span, getArg(p,j)) <= start)
+			cnt++;
+		if (cnt== p->argc-p->retc)
+			entries++;
 	}
 	GDKfree(old);
+	GDKfree(span);
 	return actions;
 }
 @include optimizerWrapper.mx
