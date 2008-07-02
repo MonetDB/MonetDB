@@ -58,8 +58,9 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i,j, cnt, start=1,entries=0, actions=0;
 	int flowblock= 0, dumbcopy=0;
 	InstrPtr *old, q;
-	int limit;
+	int limit,block;
 	Lifespan span = newLifespan(mb);
+	char *assigned= (char*) alloca(mb->vtop);
 
 	(void) cntxt;
 	(void) stk;
@@ -72,7 +73,16 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	initProfiler(mb);
 	for (i = 1; i<limit; i++) {
 		p = old[i];
-		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)){
+
+		/* make sure each variable is assigned only once */
+		block =0;
+		for(j=0;j<p->retc;j++)
+		if(assigned[getArg(p,j)]){
+			block++;
+			break;
+		}
+
+		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p) || block){
 			if (flowblock){
 				/* close old flow block */
 				if (entries > 1){
@@ -98,20 +108,27 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		if (dumbcopy || blockStart(p)){
 			dumbcopy++;
+			for(j=0;j<p->retc;j++)
+				assigned[getArg(p,j)]=1;
 			pushInstruction(mb,p);
 			continue;
 		}
 		if (blockExit(p)){
 			dumbcopy= 0;
+			for(j=0;j<p->retc;j++)
+				assigned[getArg(p,j)]=1;
 			pushInstruction(mb,p);
 			continue;
 		}
 
 		if (flowblock == 0){
 			flowblock = newTmpVariable(mb,TYPE_int);
+			memset(assigned, 0, mb->vtop);
 			entries= 0;
 			start = i;
 		}
+		for(j=0;j<p->retc;j++)
+			assigned[getArg(p,j)]=1;
 		/* check if the instruction can start a flow */
 		/* this should be a function call with multiple arguments */
 		cnt =0;

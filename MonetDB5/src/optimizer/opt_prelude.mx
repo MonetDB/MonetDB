@@ -22,6 +22,7 @@ These definitions are handy to have around in the optimizer
 #define MAL_PRELUDE
 #include "opt_support.h"
 
+opt_export  str affectedRowsRef;
 opt_export  str aggrRef;
 opt_export  str alarmRef;
 opt_export  str algebraRef;
@@ -160,6 +161,7 @@ opt_export void optimizerInit(void);
 #include "mal_config.h"
 #include "opt_prelude.h"
 
+str affectedRowsRef;
 str aggrRef;
 str alarmRef;
 str algebraRef;
@@ -294,6 +296,7 @@ int tubProp;
 
 void optimizerInit(){
 	if(batRef == NULL){
+		affectedRowsRef = putName("affectedRows",12);
 		aggrRef = putName("aggr",4);
 		alarmRef = putName("alarm",5);
 		algebraRef = putName("algebra",7);

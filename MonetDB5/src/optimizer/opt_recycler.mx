@@ -100,7 +100,7 @@ static int
 OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, j, cnt, actions=0, update=0;
-	Lifespan span = newLifespan(mb);
+	Lifespan span;
 	InstrPtr *old, q;
 	int limit;
 	char *recycled;
@@ -108,10 +108,18 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	(void) stk;
 	/* watch out, instructions may introduce new variables */
-	recycled= GDKzalloc(sizeof(char)*mb->vtop*2);
-	setLifespan(mb,span);
 	limit= mb->stop;
 	old = mb->stmt;
+
+	for (i = 1; i<limit; i++) {
+		p = old[i];
+		if( getFunctionId(p) == affectedRowsRef && getModuleId(p)==sqlRef)
+			return 0;
+	}
+
+	recycled= GDKzalloc(sizeof(char)*mb->vtop*2);
+	span= newLifespan(mb);
+	setLifespan(mb,span);
 	newMalBlkStmt(mb, mb->ssize);
 	pushInstruction(mb,old[0]);
 
