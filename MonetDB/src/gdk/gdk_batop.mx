@@ -2488,7 +2488,7 @@ BATconst(BAT *b, int tailtype, ptr v)
 			
 			if (!bt)
 				return NULL;
-			bt->T->nonil = (ATOMcmp(b->ttype, v, ATOMnilptr(b->ttype)) != 0);
+			bt->T->nonil = (ATOMcmp(tailtype, v, ATOMnilptr(tailtype)) != 0);
 			ts = Tsize(bt);
 			switch(ATOMsize(ATOMstorage(tailtype))) {
 			case 1: {
