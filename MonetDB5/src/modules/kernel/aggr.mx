@@ -204,6 +204,7 @@ as the latter turned out to be rather expensive ...
 	BATiter ei = bat_iterator(e);
 
 	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 0;
 	min = max = (oid) 0;
 	ALIGNsetH(bn, e);
 	/* set all sums/avgs/counts to zero; for prod, zero is 1 */
@@ -2175,6 +2176,7 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 
 	/* init: set all counts to zero and calculate min/max oid */
 	@:init_result(int)@
+	bn->T->nonil = 1;
 	range = max - min + 1;
 
 	/* scan b & g, and calculate counts */

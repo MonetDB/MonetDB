@@ -481,8 +481,9 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 	}
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	bn->T->nonil = 0;
 	ALIGNsetH(bn,b);
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	if (hash && !m)
 		GDKfree(hash);
 	return m ? NULL : map2histo(map);
@@ -1726,6 +1727,7 @@ str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 	@:chkHeader(e,GRPsum_@1_@3)@
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	ei = bat_iterator(e);
 	bi = bat_iterator(b);
@@ -1796,6 +1798,7 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 	@:chkHeader(e,GRPprod_@1_@3)@
 	/* init: set all prods to one */
 	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	ei = bat_iterator(e);
 	bi = bat_iterator(b);
@@ -1888,6 +1891,7 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 	off = BUNfirst(bn);
 	/* init sums and counts to zero */
 	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	ei = bat_iterator(e);
 	bi = bat_iterator(b);
@@ -2047,6 +2051,7 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 		return GDK_FAIL;
 	}
 	bn->hsorted = bn->tsorted = 0;
+	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	return GDK_SUCCEED;
 }
@@ -2059,8 +2064,9 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 @:arithvar(flt)@
 @:arithvar(dbl)@
 
+
 @= extreme
-static int 
+static int
 CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 {
 	BAT *bn = *ret = BATnew(e->htype, BATttype(b), BATcount(e));
@@ -2115,6 +2121,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 		return GDK_FAIL;
 	}
 	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	return GDK_SUCCEED;
 }
@@ -2322,6 +2329,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 1;
 	ALIGNsetH(bn, e);
 	ei = bat_iterator(e);
 	bi = bat_iterator(b);
@@ -2404,6 +2412,7 @@ GRPsize(int *retval, int *bid, int *eid)
 		throw(MAL, "group.size", "Cannot create descriptor");
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 1;
 	ALIGNsetH(bn, e);
 	ei = bat_iterator(e);
 	bi = bat_iterator(b);

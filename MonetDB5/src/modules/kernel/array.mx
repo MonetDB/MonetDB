@@ -295,6 +295,7 @@ ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 			BUNfastins(bn,&o,&val);
 		}
 	}
+	bn->T->nonil = b->T->nonil & r->T->nonil;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
@@ -342,6 +343,7 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 	/* not sorted at best we have some fixed offset partial sorting */
 	bn->hsorted = 0;
 	bn->tsorted = 0;
+	bn->T->nonil = b->T->nonil & r->T->nonil;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);

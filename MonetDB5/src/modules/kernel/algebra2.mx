@@ -109,9 +109,10 @@ old stuff
 command {_csum}(BAT[oid,@1] b) : BAT[oid,@1] 
 address CMDclustered_sum_@1
 comment "grouped tail sum";
-
+@:sum(bte)@
 @:sum(sht)@
 @:sum(int)@
+@:sum(wrd)@
 @:sum(lng)@
 @:sum(flt)@
 @:sum(dbl)@
@@ -131,13 +132,13 @@ comment "grouped tail sum";
 #include "algebra2.h"
 
 /* don't reorder! */
-BAT *
+static BAT *
 BATmalleftjoin(BAT *l, BAT *r)
 {
 	return BATleftjoin(l, r, oid_nil);
 }
 
-BAT *
+static BAT *
 BATmalfetchjoin(BAT *l, BAT *r)
 {
 	int rfetch = (BAThdense(r) && ATOMstorage(l->ttype) <= ATOMstorage(TYPE_oid));
@@ -153,7 +154,7 @@ BATmalfetchjoin(BAT *l, BAT *r)
 }
 
 /* don't reorder! */
-BAT *
+static BAT *
 BATmalleftfetchjoin(BAT *l, BAT *r)
 {
 	int rfetch = (BAThdense(r) && ATOMstorage(l->ttype) <= ATOMstorage(TYPE_oid));
@@ -165,11 +166,11 @@ BATmalleftfetchjoin(BAT *l, BAT *r)
 	return NULL;
 }
 
-BAT *
+static BAT *
 BATmalhashjoin(BAT *l, BAT *r)
 {
-	size_t lsize = l->batBuns->size + (l->hheap ? l->hheap->size : 0) + (l->theap ? l->theap->size : 0);
-	size_t rsize = r->batBuns->size + (r->hheap ? r->hheap->size : 0) + (r->theap ? r->theap->size : 0);
+	size_t lsize = l->H->heap.size + l->T->heap.size + (l->hheap ? l->hheap->size : 0) + (l->theap ? l->theap->size : 0);
+	size_t rsize = r->H->heap.size + r->T->heap.size + (r->hheap ? r->hheap->size : 0) + (r->theap ? r->theap->size : 0);
 
 	if (rsize < lsize) {
 		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), oid_nil));
@@ -178,13 +179,13 @@ BATmalhashjoin(BAT *l, BAT *r)
 }
 
 /* don't reorder! */
-BAT *
+static BAT *
 BATmallefthashjoin(BAT *l, BAT *r)
 {
 	return BAThashjoin(l, r, oid_nil);
 }
 
-BAT *
+static BAT *
 BATmalmergejoin(BAT *l, BAT *r)
 {
 	if (!((BATtordered(l) & 1) || (BAThordered(r) & 1))) {
@@ -203,7 +204,7 @@ BATmalmergejoin(BAT *l, BAT *r)
 }
 
 /* don't reorder! */
-BAT *
+static BAT *
 BATmalleftmergejoin(BAT *l, BAT *r)
 {
 	if (!(BAThordered(r) & 1)) {
@@ -264,10 +265,10 @@ CMDnlthetajoin(BAT **result, BAT *l, BAT *r, int *mode, lng *estimate)
 
 @= selectcmd
 int CMDord_@1select1(BAT **result, BAT* b, ptr value) {
-	return (*result = BAT_select_(b, value, 0, TRUE, TRUE, @2, TRUE))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = BAT_select_(b, value, 0, TRUE, TRUE, @2, FALSE, TRUE))?GDK_SUCCEED:GDK_FAIL;
 }
 int CMDord_@1select(BAT **result, BAT *b, ptr low, ptr high) {
-	return (*result = BAT_select_(b, low, high, TRUE, TRUE, @2, TRUE))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = BAT_select_(b, low, high, TRUE, TRUE, @2, FALSE, TRUE))?GDK_SUCCEED:GDK_FAIL;
 }
 int CMDord_@1select_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_in) {
 	int tt = b->ttype;
@@ -280,7 +281,7 @@ int CMDord_@1select_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_
 		GDKerror("CMDord_@1select: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
 		return GDK_FAIL;
 	}
-	return (*result = BAT_select_(b, low, high, *l_in, *h_in, @2, TRUE))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = BAT_select_(b, low, high, *l_in, *h_in, @2, FALSE, TRUE))?GDK_SUCCEED:GDK_FAIL;
 }
 @c
 @:selectcmd(,TRUE)@
@@ -289,19 +290,21 @@ int CMDord_@1select_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_
 
 @= sumcmd
 int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
+	BATiter bi = bat_iterator(b);
 	BAT *bn = BATnew(b->htype, BATttype(b), BATcount(b));	
 	BUN p, q;
-	int xx;
 	oid cur;
 	@1 sum = 0;
 
 	bn->hsorted = b->hsorted;
 	bn->tsorted = 0;
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = 0;
 	if (BATcount(b))
- 		cur = *(oid*)BUNhead(b,BUNfirst(b));
-	BATloopFast(b, p, q, xx) {
-		oid *h = (oid*) BUNhead(b,p);
-		@1 *t = (@1*) BUNtail(b,p);
+ 		cur = *(oid*)BUNhead(bi,BUNfirst(b));
+	BATloop(b, p, q) {
+		oid *h = (oid*) BUNhead(bi,p);
+		@1 *t = (@1*) BUNtail(bi,p);
 
 		if (cur != *h){
 			BUNfastins(bn, &cur, &sum );
@@ -317,8 +320,10 @@ int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
 	return GDK_SUCCEED;
 }
 @c
+@:sumcmd(bte)@
 @:sumcmd(sht)@
 @:sumcmd(int)@
+@:sumcmd(wrd)@
 @:sumcmd(lng)@
 @:sumcmd(flt)@
 @:sumcmd(dbl)@

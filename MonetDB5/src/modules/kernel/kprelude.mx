@@ -33,6 +33,8 @@ if( bn== NULL) {*ret= 0;
     }
     bn->hsorted = b->hsorted;
     bn->tsorted = b->tsorted;
+    bn->H->nonil = b->H->nonil;
+    bn->T->nonil = b->T->nonil;
     BATkey(bn, BAThkey(b));
 
 @= resultBAT
@@ -48,6 +50,9 @@ if( bn== NULL) {*ret= 0;
     }
     bn->hsorted = b->hsorted;
     bn->tsorted = b->tsorted;
+    if (!BAThvoid(b))
+    	bn->H->nonil = b->H->nonil;
+    bn->T->nonil = b->T->nonil;
     BATkey(bn, BAThkey(b));
 
 @= voidresultBAT
@@ -59,6 +64,8 @@ if( bn== NULL) {*ret= 0;
 	}
 	bn->hsorted = b->hsorted;
 	bn->tsorted = b->tsorted;
+    	bn->H->nonil = 1;
+    	bn->T->nonil = b->T->nonil;
 
 @= Pseudo
 	if (BBPindex("view_@1_@2") <= 0)

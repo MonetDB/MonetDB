@@ -167,12 +167,14 @@ str CLRbat@1(int *ret, int *l)
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi,p);
 		x= (@3 *) BUNtail(bi,p);
-		if (x== 0 || *x == @3_nil)
+		if (x== 0 || *x == @3_nil) {
 			y = (@4)@4_nil;
-		else 
+			bn->T->nonil = 0;
+		} else 
 			@2(yp,x);
 		bunfastins(bn, h, yp);
 	}
+	bn->H->nonil = b->H->nonil;
 	finalizeResult(ret,bn,b);
 	return MAL_SUCCEED;
 bunins_failed:
@@ -236,14 +238,16 @@ str CLRbat@1(int *ret, int *l, int *bid2, int *bid3)
 		x3= (@3 *) BUNtail(b3i,p);
 		if (x== 0 || *x == @3_nil ||
 		   x2== 0 || *x2 == @3_nil ||
-		   x3== 0 || *x3 == @3_nil)
+		   x3== 0 || *x3 == @3_nil) {
 			y = @4_nil;
-		else 
+			bn->T->nonil = 0;
+		} else 
 			@2(yp,x,x2,x3);
 		bunfastins(bn, h, yp);
 		p2++;
 		p3++;
 	}
+	bn->H->nonil = b->H->nonil;
 	finalizeResult(ret,bn,b);
 	return MAL_SUCCEED;
 bunins_failed:
