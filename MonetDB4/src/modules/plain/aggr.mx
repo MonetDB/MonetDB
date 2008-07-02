@@ -741,7 +741,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 
 	if (bn == NULL)
 		return GDK_FAIL;
-	cmp= BATatoms[bn->ttype].atomCmp;
+	cmp = BATatoms[bn->ttype].atomCmp;
 	nil = ATOMnilptr(bn->ttype);
 	off = BUNfirst(e);
 	extremes = (@3*) GDKmalloc(BATcount(e)*sizeof(@3));

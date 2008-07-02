@@ -193,8 +193,8 @@ BATmalmergejoin(BAT *l, BAT *r)
  * Stefan: There is no reason not to perform a mergejoin on voids, is there?
  *
   if ( (l->ttype==TYPE_void) || (r->htype==TYPE_void) ) {
-    GDKerror( "BATmalmergejoin: Cannot perform mergejoin on void fields.\n" );
-    return NULL;    
+	GDKerror( "BATmalmergejoin: Cannot perform mergejoin on void fields.\n" );
+	return NULL;
   }
 */
 	return BATmergejoin(l, r, oid_nil);
