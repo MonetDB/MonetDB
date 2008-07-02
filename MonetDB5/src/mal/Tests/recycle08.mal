@@ -17,7 +17,7 @@ end qry;
 
 recycle.setRetainPolicy(1);
 recycle.setReusePolicy(1);
-recycle.setCachePolicy(2,20,8);
+recycle.setCachePolicy(2,0,8);
 optimizer.recycle("user","qry");
 
 io.print("start");

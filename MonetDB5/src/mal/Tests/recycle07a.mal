@@ -1,4 +1,4 @@
-# Test of CREDIT cache policy in limited cache (10 lines, 1 is always taken by fake 0)
+# Test of CREDIT cache policy in limited cache (7 lines, 1 is always taken by fake 0)
 # Evicts the leaf instruction with smallest credit= cnt * cost
 # The recent, non reused instructions are protected from eviction
 

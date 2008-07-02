@@ -427,11 +427,60 @@ RECYCLEcache(int target, int wr)
 }
 
 @c
+
+int chooseVictims(int *lvs, int ltop, int wr)
+{
+	dbl *wcrd, tmp;
+	int l, w, newtop, maxwc, mpos, tmpl;
+	int totmem = 0, targmem, smem;
+
+	wcrd = (dbl *)alloca(sizeof(dbl)*ltop);
+	memset(wcrd,0, sizeof(dbl)*ltop);
+	for (l = 0; l < ltop; l++){
+		w = recycleBlk->profiler[lvs[l]].obytes;
+		wcrd[l] = w? recycleCost(lvs[l])* recycleBlk->profiler[lvs[l]].counter/ w :0;
+		totmem +=w;
+	} 
+	if (totmem <= wr) /* all leaves need to be dropped */
+		return ltop;
+
+	/* reorder instructions on increasing weighted credit */
+	/* knapsack: find a set with biggest wcrd fitting in totmem-wr.
+	 They are most benefitial and can be saved from dropping */ 
+
+	targmem = totmem - wr; /*sack volume */
+	smem = 0;
+	for(newtop =ltop; newtop>0; newtop--){
+		maxwc = 0;
+		for(l = 0; l<newtop; l++){
+			if ( recycleBlk->profiler[lvs[l]].obytes > targmem - smem  )
+				wcrd[l] = -1;
+			if (maxwc <= wcrd[l]){
+				maxwc = wcrd[l];
+				mpos = l;
+			}
+		}
+		if ( maxwc ){
+			smem += recycleBlk->profiler[lvs[mpos]].obytes;
+			tmpl = lvs[mpos];
+			lvs[mpos] = lvs[newtop-1];
+			lvs[newtop-1] = tmpl;
+			tmp = wcrd[mpos];
+			wcrd[mpos] = wcrd[newtop-1];
+			wcrd[newtop-1] = tmp;
+		}
+		else break;
+	}
+	return newtop;
+
+}
+
+
 static void RECYCLEcleanCache(int wr){
 	int k,j,i,l,ltop,v,vtop;
 	InstrPtr p;
 	InstrPtr *old;
-	char *used;
+	char *used, *dmask;
 	int *lvs, *vm, *lvs1;
 	int limit, mem, oldest, cheap;
 	int cont, reserve;
@@ -537,39 +586,25 @@ newpass:
 			if (l) ltop = l;
 			else lvs = lvs1; 
 
-			mincrd = recycleBlk->profiler[lvs[0]].counter *
+			if (!mem) { /* evict the cheapest entry */
+				mincrd = recycleBlk->profiler[lvs[0]].counter *
 					  recycleCost(lvs[0]);
-			cheap = 0;
-			for (l = 0; l < ltop; l++){
-				k = lvs[l];
-				crd = recycleBlk->profiler[k].counter * recycleCost(k);
-				if( crd < mincrd) {
-					mincrd = crd;
-					cheap = l;
-				}
-			}
-			if (!mem) /* evict 1 entry */
-				vm[vtop++] = lvs[cheap];
-			else{	  /* evict several to get enough mem */
-				vm[vtop++] = lvs[cheap];
-				wr -= recycleBlk->profiler[lvs[cheap]].obytes;
-				lvs[cheap] = lvs[--ltop];
-				while( ltop>0 && recyclerUsedMemory + wr > memLimit){
-					cheap = 0;
-					mincrd = recycleBlk->profiler[lvs[0]].counter *
-						recycleCost(lvs[0]);
-					for (l = 0; l < ltop; l++){
-						k = lvs[l];
-						crd = recycleBlk->profiler[k].counter *
-							 recycleCost(k);
-						if( crd < mincrd) {
-							mincrd = crd;
-							cheap = l;
-						}
+				cheap = 0;
+				for (l = 0; l < ltop; l++){
+					k = lvs[l];
+					crd = recycleBlk->profiler[k].counter * recycleCost(k);
+					if( crd < mincrd) {
+						mincrd = crd;
+						cheap = l;
 					}
-					vm[vtop++] = lvs[cheap];
-					wr -= recycleBlk->profiler[lvs[cheap]].obytes;
-					lvs[cheap] = lvs[--ltop];
+				}
+				vm[vtop++] = lvs[cheap];
+			}
+			else {	  /* evict several to get enough mem */
+				vtop = chooseVictims(lvs, ltop, wr);
+				for (v = 0; v < vtop; v++){
+					vm[v] = lvs[v];
+					wr -= recycleBlk->profiler[lvs[v]].obytes;
 				}
 			}
 			break;
@@ -580,42 +615,44 @@ newpass:
 		cont = 1;
 
 #ifdef _DEBUG_CACHE_
-	stream_printf(cntxt->fdout,"RECYCLEcleanCache: clean %d instruction(s) ",vtop);
-	for(v=0; v<vtop;v++)
-	printInstruction(cntxt->fdout,recycleBlk, recycleBlk->stmt[vm[v]], LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"RECYCLEcleanCache: candidates for eviction \n ");
+	for (l = 0; l < ltop; l++)
+		stream_printf(cntxt->fdout,"%3d ",lvs[l]);
+	stream_printf(cntxt->fdout,"\nEvicted %d instruction(s) \n ",vtop);
+	for(v=0; v<vtop;v++){
+		printInstruction(cntxt->fdout,recycleBlk, recycleBlk->stmt[vm[v]], LIST_MAL_ALL);
+		stream_printf(cntxt->fdout," Cost %f \n", recycleCost(vm[v]));}
 	stream_printf(cntxt->fdout,"policy=%d mem=%ld usedmem=%ld\n",
 		rcachePolicy,recycleMemory,recyclerUsedMemory);
 #endif
 
 
 	/* drop wictims in one pass */
+
+	dmask = alloca(recycleBlk->stop);
+	memset(dmask,0,recycleBlk->stop);
+	for (v = 0; v < vtop; v++)
+		dmask[vm[v]] = 1;
+
 	mal_set_lock(recycleLock,"recycle");
 	old = recycleBlk->stmt;
 	limit = recycleBlk->stop;
 	newMalBlkStmt(recycleBlk,recycleBlk->ssize);
 
-	v = 0; k = 0;
-	for (i = 0; i < limit && v < vtop; i++){
+	k = 0;
+	for (i = 0; i < limit ; i++){
 		p = old[i];
-		if( i == vm[v] ) {
+		if( dmask[i] ) {
 			RECYCLEgarbagecollect(recycleBlk,p);
-			/* reduce counter of input variables */
-			for (j=p->retc; j< p->argc; j++)
-				used[getArg(p,j)]--;
 			recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
 			freeInstruction(p);
-			v++;
 		}
 		else {
 			pushInstruction(recycleBlk,p);
 			recycleBlk->profiler[k++]= recycleBlk->profiler[i];
 		}
 	}
-			/* copy the remainder */
-	for (; i < limit; i++){
-		pushInstruction(recycleBlk,old[i]);
-		recycleBlk->profiler[k++]= recycleBlk->profiler[i];
-	}
+
 	GDKfree(old);
 	/* remove all un-used variables as well */
 	trimMalVariables(recycleBlk);
@@ -906,7 +943,6 @@ We execute it in place and safe the result upon need.
 	stream_printf(GDKout,">>>");
 	printTraceCall(GDKout, mb, s,i, LIST_MAL_ALL);
 #endif
-		s->clk= GDKusec();
 		s->stk[getArg(p,1)].val.bval = bid;
 		BBPincref(bid, TRUE);
 		/* make sure the garbage collector is not called */
@@ -936,6 +972,7 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr q;
 	ProfPtr prof;
 
+	stk->clk= GDKusec();
 	if (recycleVersion == 0 || recycleBlk == NULL )
 		return 0;
 	RECYCLEversion(mb);
@@ -999,8 +1036,10 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		return;
 	if (recycleBlk)
 		if ( recyclerUsedMemory + wr > memLimit ||
-	    		recycleBlk->stop >= cacheLimit )
+	    		recycleBlk->stop >= cacheLimit ){
 			RECYCLEcleanCache(wr);
+			RECYCLEversion(mb);
+		}
 
 	if ( RECYCLEinterest(mb,p))
 	switch(retainPolicy) {
