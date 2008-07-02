@@ -1988,7 +1988,9 @@ if test "x$enable_optim" = xyes; then
 #     i*86-*-*-10.*) CFLAGS="$CFLAGS                                                -axWPT  ";;
       ia64-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       ia64-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
-      ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll                     -mcpu=itanium2";;
+      ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll                     -mcpu=itanium2"
+                       NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -O0"
+                       ;;
       i*86-*-*)        CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
       ia64-*-*)        CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo -ipo_obj -tpp2 -mcpu=itanium2"
                        dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
