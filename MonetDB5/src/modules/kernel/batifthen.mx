@@ -131,10 +131,10 @@ CMDifThen_@1(int *ret, int *bid, int *tid)
 	t = (bit*)Tloc(b,BUNfirst(b));
 
 	BATloop(b, p, q) {
-		if (*t == bit_nil) 
+		if (*t == bit_nil) {
 			BUNfastins(bn, BUNhead(bi,p), (ptr) & nilval);
 			bn->T->nonil = 0;
-		else if (*t) {
+		} else if (*t) {
 			val = (@1*) BUNtail(tbi,p);
 			BUNfastins(bn, BUNhead(bi,p), val);
 		}
