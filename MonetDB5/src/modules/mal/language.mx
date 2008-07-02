@@ -92,7 +92,7 @@ more then depth*vtop elements on the stack.";
 pattern dataflow():int
 address MALstartDataflow
 comment "The current guarded block is executed using
-dataflow control.";
+dataflow control. It returns the number of threads assigned for the job, which can be used testing.";
 
 pattern register(m:str,f:str,code:str,help:str):void
 address CMDregisterFunction
