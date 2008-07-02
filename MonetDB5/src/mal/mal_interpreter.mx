@@ -42,6 +42,7 @@ to be passed by a handle.
 
 /*#define DEBUG_MAL_INTERPRETER */
 /*#define DEBUG_MAL_PARALLEL */
+/*#define DEBUG_FLOW*/
 /*#define STACKTRACE*/
 mal_export void showErrors(void);
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb);
@@ -515,7 +516,7 @@ workslow:
 }
 @- Out of order execution
 The alternative is to execute the instructions out of order
-using a dataflow dependencies. It only works on a code
+using dataflow dependencies. It only works on a code
 sequence that does not include additional (implicit) flow of control
 statements and, ideally, consist of expensive BAT operations.
 The dataflow interpreter selects cheap instructions
@@ -531,7 +532,7 @@ mal_export str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 @-
 The flow graphs should be organized such that parallel threads can
 access it mostly without expensive locking.
-Furthermore, per flow block we keen an administration when
+Furthermore, per flow block we keep an administration when
 variables are blocked or not. An instruction can fire if all
 its input variables are not blocked.
 @c
@@ -542,7 +543,7 @@ its input variables are not blocked.
 #define DFLOWfree	 8
 
 typedef struct{
-	int pc;
+	int pc;	/* pc in underlying malblock */
 	lng cost;
 	int status;
 } *FlowStep, FlowStepRec;
@@ -550,20 +551,26 @@ typedef struct{
 typedef struct{
 	MT_Lock	lock;
 	Client cntxt;		/* for debugging */
-	int start, stop;	/* boundary space */
+	int start, stop;	/* guarded block under consideration*/
 	MalBlkPtr mb;
 	MalStkPtr stk;
 	FlowStep queue;	/* of eligible instructions to fire organized by thread*/
 	char *blocked;		/* marking of all variables */
 } *DataFlow, DataFlowRec;
-#define DEBUG_FLOW
 @-
 The cost of a flow step depends on availability of its
 arguments and the total size of the BATs being accessed.
+All references to variables outside the block are considered
+initialized. All within the block or not, until an instruction
+delivers it as a target.
+
 There are several options to calculate the cost.
-The optimizer already turns on profiling, which means
+The dataflow optimizer turns on profiling, which means
 we can use the aggregated timing as an indication of the
 expected cost. This works optimal for similar queries.
+
+The base line is to use the BAT counts, because these
+are the more interesting instructions to consider.
 @c
 lng
 MALflowCost(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
@@ -611,23 +618,22 @@ DFLOWinit(DataFlow flow){
 #ifdef DEBUG_FLOW
 	stream_printf(flow->cntxt->fdout,"DFLOWinit\n");
 	for(i=0;i<n; i++){
-		stream_printf(flow->cntxt->fdout,"#[%3d]cost %2d  state %2d pc %d",
-				i, flow->queue[i],flow->queue[i].cost,flow->queue[i].status,
-				flow->queue[i].pc);
+		stream_printf(flow->cntxt->fdout,"#[%2d,%3d]cost %2d  state %2d ",
+				i,flow->queue[i].pc,
+				flow->queue[i],flow->queue[i].cost,flow->queue[i].status);
 		printInstruction(flow->cntxt->fdout,flow->mb,getInstrPtr(flow->mb,flow->queue[i].pc), 0);
 	}
 #endif
 }
-
+@-
+After an instruction is executed, the target variables should be freed
+and any related instruction can be set to pending. The argument pc
+indicates the first instruction to consider. All before are executed already.
+@c
 static void
-DFLOWdrop(DataFlow flow, int first){
+DFLOWdrop(DataFlow flow, int pc){
 	int i,j,blocked,limit;
-	InstrPtr p= getInstrPtr(flow->mb,flow->queue[first].pc);
-
-#ifdef DEBUG_FLOW
-	stream_printf(flow->cntxt->fdout,"#adjust %d ",first);
-	printInstruction(flow->cntxt->fdout,flow->mb,p, 0);
-#endif
+	InstrPtr p= getInstrPtr(flow->mb,flow->queue[pc].pc);
 
 	/* unblock the variables */
 	for(j=0; j<p->retc; j++)
@@ -635,7 +641,7 @@ DFLOWdrop(DataFlow flow, int first){
 
 	/* unblock any blocked instruction */
 	limit= flow->stop- flow->start;
-	for(i=0; i<limit; i++)
+	for(i=pc+1; i<limit; i++)
 	if (flow->queue[i].status==DFLOWblocked){
 		blocked = 0;
 		p= getInstrPtr(flow->mb,flow->queue[i].pc);
@@ -647,48 +653,46 @@ DFLOWdrop(DataFlow flow, int first){
 		if( blocked == 0){
 			flow->queue[i].status= DFLOWpending;
 			flow->queue[i].cost= MALflowCost(flow->mb, flow->stk,p);
+#ifdef DEBUG_FLOW
+			stream_printf(flow->cntxt->fdout,"#upd[%2d,%3d]cost %2d  state %2d ",
+				i,flow->queue[i].pc,
+				flow->queue[i],flow->queue[i].cost,flow->queue[i].status);
+			printInstruction(flow->cntxt->fdout,flow->mb,p,0);
+#endif
 		}
 		for(j=0; j<p->retc; j++)
 			flow->blocked[getArg(p,j)]= 1;
 	}
-#ifdef DEBUG_FLOW
-	stream_printf(flow->cntxt->fdout,"DFLOWdrop\n");
-	for(i=flow->start;i<limit; i++){
-		stream_printf(flow->cntxt->fdout,"#[%3d]cost %2d  state %2d  pc  %d",
-				i, flow->queue[i],flow->queue[i].cost,flow->queue[i].status,
-				flow->queue[i].pc);
-		printInstruction(flow->cntxt->fdout,flow->mb,getInstrPtr(flow->mb,flow->queue[i].pc), 0);
-	}
-#endif
 }
 @-
 We simply move a cheap instruction into the front of the queue.
+Beware, we assume that variables are assigned a value once, otherwise
+the order may really create errors.
 @c
 static void
-DFLOWstep(DataFlow flow,int first){
+DFLOWstep(DataFlow flow,int pc){
 	int i,limit;
 	FlowStepRec f;
 
 	limit= flow->stop-flow->start;
 	MT_set_lock(flow->lock,"dataflow step");
-	for (i = first; i<limit; i++)
+	for (i = pc; i<limit; i++)
 		if (flow->queue[i].status == DFLOWpending ){
- 			if( flow->queue[first].cost > flow->queue[i].cost){
-				f = flow->queue[first];
-				flow->queue[first]= flow->queue[i];
+ 			if( flow->queue[pc].cost > flow->queue[i].cost){
+				f = flow->queue[pc];
+				flow->queue[pc]= flow->queue[i];
 				flow->queue[i]= f;
 			} else 
-			if (flow->queue[first].status == DFLOWblocked ){
-				f = flow->queue[first];
-				flow->queue[first]= flow->queue[i];
+			if (flow->queue[pc].status == DFLOWblocked ){
+				f = flow->queue[pc];
+				flow->queue[pc]= flow->queue[i];
 				flow->queue[i]= f;
 			}
 		}
 #ifdef DEBUG_FLOW
-	stream_printf(flow->cntxt->fdout,"#next instruction %d out of %d\n", flow->start,flow->stop);
-	stream_printf(flow->cntxt->fdout,"#pc %d cost %d status %d\n",
-		flow->queue[first].pc, flow->queue[first].cost,flow->queue[first].status);
-	printInstruction(flow->cntxt->fdout,flow->mb,getInstrPtr(flow->mb,flow->queue[first].pc), 0);
+	stream_printf(flow->cntxt->fdout,"#exec[%2d,%3d] cost %d status %d\n",
+		pc,flow->queue[pc].pc, flow->queue[pc].cost,flow->queue[pc].status);
+	printInstruction(flow->cntxt->fdout,flow->mb,getInstrPtr(flow->mb,flow->queue[pc].pc), 0);
 #endif
 	MT_unset_lock(flow->lock,"dataflow step");
 }
@@ -722,15 +726,8 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	@:performanceVariables@
 #ifdef DEBUG_FLOW
 	stream_printf(GDKout,"runMALdataflow for block %d - %d\n", startpc,stoppc);
-	printFunction(GDKout,mb,LIST_MAL_ALL);
+	printFunction(GDKout,mb,0);
 #endif
-@-
-First step is to collect all instructions into a multistack.
-The instructions are sorted by dependency on enabled input
-arguments.
-The instructions under control of the dataflow interpreter
-are encapsulated by a barrier block.
-@c
 
 	(void)env;
 	(void)pcicaller;
@@ -756,10 +753,10 @@ Construct the flow relation ship and collect
 the eligible instructions. [TODO]
 @c
 	/* select the first eligible instruction */
-	stkpc = -1;
 	exceptionVar = -1;
-	while (++stkpc < n) {
+	for(stkpc=0; stkpc<n;stkpc++){
 		DFLOWstep(&flow,stkpc);
+		assert(flow.queue[stkpc].status== DFLOWpending);
 		flow.queue[stkpc].status= DFLOWrunning;
 		pci = getInstrPtr(flow.mb,flow.queue[stkpc].pc);
 		if (stk->cmd) {
@@ -814,6 +811,12 @@ We don't allow sequential flow control here.
 	@:MALwrapup@
 #ifdef DEBUG_FLOW
 	stream_printf(GDKout,"runMALdataflow exit %s\n", ret?ret:"");
+	for(i=0;i<n; i++){
+		stream_printf(flow.cntxt->fdout,"#[%2d,%3d]cost %2d  state %2d ",
+				i,flow.queue[i].pc,
+				flow.queue[i],flow.queue[i].cost,flow.queue[i].status);
+		printInstruction(flow.cntxt->fdout,flow.mb,getInstrPtr(flow.mb,flow.queue[i].pc), 0);
+	}
 #endif
 	GDKfree(flow.queue);
 	GDKfree(flow.blocked);
