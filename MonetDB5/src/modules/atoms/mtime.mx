@@ -3936,6 +3936,7 @@ str MTIME@1_extract_@2_bulk(int *ret, int *bid)
 	}
 	BBPkeepref(*ret = bn->batCacheid);
 	bn->tsorted = FALSE;
+	bn->T->nonil = FALSE;
 
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

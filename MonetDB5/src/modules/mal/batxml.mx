@@ -185,8 +185,8 @@ batxml_export str BATXMLgroup(int *ret, int *bid);
     if( (X= BATdescriptor(*Y)) == NULL ) \
         throw(MAL, "xml." Z, "Cannot access descriptor");
 
-#define prepareResult(X,Y,T,Z) \
-    X= BATnew(Y->htype,T,BATcount(Y)); \
+#define prepareResult(X,Y,tpe,Z) \
+    X= BATnew(Y->htype,tpe,BATcount(Y)); \
     if( Y->htype== TYPE_void) \
         BATseqbase(X, Y->hseqbase); \
     if( X == NULL){ \
@@ -194,7 +194,9 @@ batxml_export str BATXMLgroup(int *ret, int *bid);
         throw(MAL, "xml." Z, "no space available "); \
     } \
     X->hsorted=Y->hsorted; \
-    X->tsorted=0;
+    X->tsorted=0; \
+    X->H->nonil=Y->H->nonil; \
+    X->T->nonil=0;
 
 #define finalizeResult(X,Y,Z) \
     if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ); \
@@ -800,6 +802,7 @@ BATXMLagg3(int *ret, int *bid,int *grp, int *ext)
 	BBPunfix(g->batCacheid);
 	BBPunfix(b->batCacheid);
 	bn->tsorted = 0;
+	bn->T->nonil = 0;
 	BBPkeepref(*ret=bn->batCacheid);
 	return MAL_SUCCEED;
 bunins_failed:
@@ -871,6 +874,7 @@ BATXMLagg(int *ret, int *bid,int *grp)
 	BBPunfix(j->batCacheid);
 	GDKfree(buf);
 	bn->tsorted = 0;
+	bn->T->nonil = 0;
 	BBPkeepref(*ret=bn->batCacheid);
 	return MAL_SUCCEED;
 bunins_failed:
@@ -899,6 +903,7 @@ BATXMLgroup(int *ret, int *bid)
 		bunfastins(g,v, &o);
 	}
 	msg= BATXMLagg(ret,bid,&g->batCacheid);
+	g->H->nonil = b->H->nonil;
 	bunins_failed:
 	BBPunfix(g->batCacheid);
 	BBPunfix(b->batCacheid);

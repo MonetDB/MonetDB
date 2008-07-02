@@ -1324,6 +1324,7 @@ M4_RDX_BATuniform(BAT **bn, oid *base, int *size, int *domain)
 		*(int *) BUNtloc(b, q) = val;
 	}
 	b->tsorted = FALSE;
+	b->T->nonil = FALSE;
 	b->hdense = TRUE;
 	BATseqbase(b, *base);
 	BATkey(b, TRUE);
@@ -1425,6 +1426,7 @@ M4_RDX_BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *
 		*(int *) BUNtloc(b, q) = val;
 	}
 	b->tsorted = FALSE;
+	b->T->nonil = FALSE;
 	b->hdense = TRUE;
 	BATseqbase(b, *base);
 	BATkey(b, TRUE);
@@ -1649,6 +1651,7 @@ M4_RDX_BATinteger(BAT **ret, BAT *b, int *width)
 		}
 		ALIGNsetH(bn, b);
 		bn->tsorted = b->tsorted;
+		bn->T->nonil = b->T->nonil;
 		BATkey(BATmirror(bn), BATtkey(b));
 		bn->T->nosorted = b->T->nosorted;
 		bn->T->nosorted_rev = b->T->nosorted_rev;

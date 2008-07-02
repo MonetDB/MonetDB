@@ -995,6 +995,7 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 	}
 
 	bn->hsorted = bn->tsorted = 0;
+	bn->H->nonil = bn->T->nonil = 0;
 
 	return MAL_SUCCEED;
       bunins_failed:
