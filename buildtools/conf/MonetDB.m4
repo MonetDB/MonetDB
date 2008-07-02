@@ -2036,7 +2036,8 @@ if test "x$enable_optim" = xyes; then
       dnl  Hence, we skip Interprocedural (IP) Optimization with icc-8.*.
       x86_64-*-*-8.*)  CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
       x86_64-*-*-9.*)  CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp7 -axWP   ";;
-#     x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1 -O1 -restrict -unroll                     -axWPT  ";;
+
+#     x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1 -O1 -restrict -unroll                     -axWPT  ";; # K.O.!
 #     x86_64-*-*-10.*) CFLAGS="$CFLAGS                                                        ";; # OK.
 #     x86_64-*-*-10.*) CFLAGS="$CFLAGS -mp1                                                   ";; # OK.
 #     x86_64-*-*-10.*) CFLAGS="$CFLAGS      -O1                                               ";; # K.O.!
@@ -2045,20 +2046,35 @@ if test "x$enable_optim" = xyes; then
 #     x86_64-*-*-10.*) CFLAGS="$CFLAGS          -restrict                                     ";;
 #     x86_64-*-*-10.*) CFLAGS="$CFLAGS                    -unroll                             ";;
 #     x86_64-*-*-10.*) CFLAGS="$CFLAGS                                                -axWPT  ";;
+
       i*86-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       i*86-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
-#     i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O1 -restrict -unroll                     -axWPT  ";;
-#     i*86-*-*-10.*) CFLAGS="$CFLAGS                                                        ";; # OK.
-#     i*86-*-*-10.*) CFLAGS="$CFLAGS -mp1                                                   ";; # OK.
-#     i*86-*-*-10.*) CFLAGS="$CFLAGS      -O1                                               ";; # K.O.!
-#     i*86-*-*-10.*) CFLAGS="$CFLAGS      -O2                                               ";; # OK.
-      i*86-*-*-10.*) CFLAGS="$CFLAGS      -O3                                               ";; # OK.
-#     i*86-*-*-10.*) CFLAGS="$CFLAGS          -restrict                                     ";;
-#     i*86-*-*-10.*) CFLAGS="$CFLAGS                    -unroll                             ";;
-#     i*86-*-*-10.*) CFLAGS="$CFLAGS                                                -axWPT  ";;
+
+#     i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O1 -restrict -unroll                     -axWPT  ";; # K.O.!
+#     i*86-*-*-10.*)   CFLAGS="$CFLAGS                                                        ";; # OK.
+#     i*86-*-*-10.*)   CFLAGS="$CFLAGS -mp1                                                   ";; # OK.
+#     i*86-*-*-10.*)   CFLAGS="$CFLAGS      -O1                                               ";; # K.O.!
+#     i*86-*-*-10.*)   CFLAGS="$CFLAGS      -O2                                               ";; # OK.
+      i*86-*-*-10.*)   CFLAGS="$CFLAGS      -O3                                               ";; # OK.
+#     i*86-*-*-10.*)   CFLAGS="$CFLAGS          -restrict                                     ";;
+#     i*86-*-*-10.*)   CFLAGS="$CFLAGS                    -unroll                             ";;
+#     i*86-*-*-10.*)   CFLAGS="$CFLAGS                                                -axWPT  ";;
+
       ia64-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       ia64-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
-      ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll                     -mcpu=itanium2";;
+
+      ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll                     -mcpu=itanium2"
+#     ia64-*-*-10.*)   CFLAGS="$CFLAGS                                                              "
+#     ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1                                                         "
+#     ia64-*-*-10.*)   CFLAGS="$CFLAGS      -O1                                                     "
+#     ia64-*-*-10.*)   CFLAGS="$CFLAGS      -O2                                                     "
+#     ia64-*-*-10.*)   CFLAGS="$CFLAGS      -O3                                                     "
+#     ia64-*-*-10.*)   CFLAGS="$CFLAGS          -restrict                                           "
+#     ia64-*-*-10.*)   CFLAGS="$CFLAGS                    -unroll                                   "
+#     ia64-*-*-10.*)   CFLAGS="$CFLAGS                                                -mcpu=itanium2"
+                       NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -O0"
+                       ;;
+
       i*86-*-*)        CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -ipo -ipo_obj -tpp6 -axiMKW";;
       ia64-*-*)        CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll -ipo -ipo_obj -tpp2 -mcpu=itanium2"
                        dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
