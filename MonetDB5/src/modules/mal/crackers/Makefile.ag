@@ -20,6 +20,8 @@ INCLUDES = -I../../atoms -I../../kernel \
 
 MTSAFE
 
+crackers_sideways_CFLAGS = $(NO_INLINE_CFLAGS)
+
 lib_crackers = {
 	DIR = libdir/MonetDB5
 	SEP = _
