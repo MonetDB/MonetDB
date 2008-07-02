@@ -134,6 +134,7 @@ str MTIME@1bat_@3(int *ret, int *l, int *r)
 		MTIME@1_@3(&y, (@1*)tl, (@1*)tr);
 		bunfastins(bn, h, &y);
 	}
+	bn->T->nonil = 0;
 	BBPreleaseref(right->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
@@ -166,6 +167,7 @@ str MTIME@1bat_@3cst(int *ret, int *l, @1 *cst)
 		MTIME@1_@3(&y, (@1*)tl, cst);
 		bunfastins(bn, h, &y);
 	}
+    	bn->H->nonil = left->H->nonil;
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 

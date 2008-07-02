@@ -241,9 +241,10 @@ str STRbat@1(int *ret, int *l)
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi,p);
 		x = (@3) BUNtail(bi,p);
-		if (x== 0 || strcmp(x,@3_nil)== 0)
+		if (x== 0 || strcmp(x,@3_nil)== 0) {
 			y= int_nil;
-		else 
+			bn->T->nonil = 0;
+		} else 
 			@2(yp,x);
 		bunfastins(bn, h, yp);
 	}
@@ -284,6 +285,7 @@ str STRbat@1(int *ret, int *l)
 		if (y != str_nil)
 			GDKfree(y);
 	}
+	bn->T->nonil = 0;
 	finalizeResult(ret,bn,b);
 	return MAL_SUCCEED;
 bunins_failed:
@@ -320,9 +322,10 @@ STRbat@2Cst(int *ret, int *l, str *cst)
 		ptr h = BUNhead(bi, p);
 
 		x = (str) BUNtail(bi, p);
-		if (x == 0 || strcmp(x, str_nil) == 0)
+		if (x == 0 || strcmp(x, str_nil) == 0) {
 			y = bit_nil;
-		else
+			bn->T->nonil = 0;
+		} else
 			y = strcmp(x, *cst) @1 0;
 		bunfastins(bn, h, &y);
 	}
@@ -372,6 +375,7 @@ STRbat@2(int *ret, int *l, int *r)
 			y = FALSE;
 		bunfastins(bn, h, &y);
 	}
+	bn->T->nonil = 0;
 	BBPreleaseref(right->batCacheid);
 	bn->tsorted = (BATtordered(left)&BATtordered(right)&1)?@3:0;
 	finalizeResult(ret, bn, left);
@@ -411,6 +415,7 @@ str STRbat@1(int *ret, int *l, int *r)
 		bunfastins(bn, h, vp);
 		@7;
 	}
+	bn->T->nonil = 0;
 	BBPreleaseref(right->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
@@ -442,6 +447,7 @@ str STRbat@1cst(int *ret, int *l, @3 *cst)
 		bunfastins(bn, h, vp);
 		@7;
 	}
+	bn->T->nonil = 0;
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
@@ -474,6 +480,7 @@ str STRbat@1(int *ret, int *l, int *r)
 		bunfastins(bn, h, @6);
 		@7;
 	}
+	bn->T->nonil = 0;
 	BBPreleaseref(right->batCacheid);
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
@@ -505,6 +512,7 @@ str STRbat@1cst(int *ret, int *l, @3 *cst)
 		bunfastins(bn, h, @6);
 		@7;
 	}
+	bn->T->nonil = 0;
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
@@ -534,6 +542,7 @@ str STRcst@1bat(int *ret, @3 *cst, int *r)
 		bunfastins(bn, h, @6);
 		@7;
 	}
+	bn->T->nonil = 0;
 	finalizeResult(ret,bn,right);
 	return MAL_SUCCEED;
 
@@ -577,6 +586,7 @@ STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 		if (y != str_nil)
 			GDKfree(yp);
 	}
+	bn->T->nonil = 0;
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
 bunins_failed:
@@ -615,6 +625,7 @@ STRbatlike_uselect(int *ret, int *bid, str *pat, str *esc)
 		if (STRlike((str) t, *pat, *esc)) 
 			bunfastins(bn, h, &o);
 	}
+	bn->T->nonil = 0;
 bunins_failed:
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 	*ret = bn->batCacheid;
@@ -660,6 +671,7 @@ STRbatsubstringcst(int *ret, int *bid, int *start, int *length)
 		bunfastins(bn, h, (ptr)res);
 		GDKfree(res);
 	}
+	bn->T->nonil = 0;
 bunins_failed:
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 	*ret = bn->batCacheid;
@@ -713,6 +725,7 @@ str STRbatsubstring(int *ret, int *l, int *r, int *t)
 		bunfastins(bn, h, *vp);
 		GDKfree(*vp);
 	}
+	bn->T->nonil = 0;
 	BBPreleaseref(start->batCacheid);
 	BBPreleaseref(length->batCacheid);
 	finalizeResult(ret,bn,left);
@@ -754,6 +767,7 @@ str STRbatreplace(int *ret, int *l, str *pat, str *s2)
 		bunfastins(bn, h, *vp);
 		GDKfree(*vp);
 	}
+	bn->T->nonil = 0;
 	finalizeResult(ret,bn,left);
 	return MAL_SUCCEED;
 
