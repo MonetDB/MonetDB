@@ -3090,7 +3090,6 @@ properties. They can be used to improve query processing at higher levels.
 
 #define GDK_AGGR_SIZE 1
 #define GDK_AGGR_CARD 2
-#define GDK_AGGR_HASNIL 3
 
 gdk_export void PROPdestroy(PROPrec *p);
 gdk_export bit BATgetprop_bit(BAT *b, int idx);

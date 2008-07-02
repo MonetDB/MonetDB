@@ -334,7 +334,7 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 			BATkey(bn, TRUE);
 		}
 	}
-	bn->H->nonil = r->H->nonil;
+	bn->H->nonil = l->H->nonil;
 	if (l->tkey) {
 		bn->tsorted = BATtordered(r) & BATtordered(l) & 1;
 		if (!nil_on_miss) {
@@ -347,7 +347,7 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 			bn->tsorted = 0;	/* nils destroy the ordering */
 		}
 	}
-	bn->T->nonil = l->T->nonil & !(nil_on_miss);
+	bn->T->nonil = r->T->nonil & !(nil_on_miss);
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -463,8 +463,8 @@ BAThashjoin(BAT *l, BAT *r, size_t estimate)
 		if (BAThkey(l))
 			BATkey(bn, TRUE);
 	}
-	bn->H->nonil = r->H->nonil;
-	bn->T->nonil = l->T->nonil;
+	bn->H->nonil = l->H->nonil;
+	bn->T->nonil = r->T->nonil;
 	ESTIDEBUG THRprintf(GDKout, "#BAThashjoin: actual resultsize: " SZFMT "\n", BATcount(bn));
 
 	return bn;
@@ -1067,8 +1067,8 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 			BATkey(BATmirror(bn), BATtkey(r));
 		}
 	}
-	bn->H->nonil = r->H->nonil;
-	bn->T->nonil = l->T->nonil;
+	bn->H->nonil = l->H->nonil;
+	bn->T->nonil = r->T->nonil;
 	ret = bn;
       ready:
 	if (l != l_orig) {
@@ -1375,8 +1375,8 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 	} else {
 		bn->hsorted = BAThordered(l);
 	}
-	bn->H->nonil = r->H->nonil;
-	bn->T->nonil = l->T->nonil;
+	bn->H->nonil = l->H->nonil;
+	bn->T->nonil = r->T->nonil;
 	ESTIDEBUG THRprintf(GDKout, "#BATouterjoin: actual resultsize: " SZFMT "\n", BATcount(bn));
 
 	/* Just to silence compilers (Intel's icc) that otherwise might
@@ -1669,8 +1669,8 @@ BATnlthetajoin(BAT *l, BAT *r, int op, size_t estimate)
 	}
 	bn->hsorted = l->hsorted;
 	bn->tsorted = 0;
-	bn->H->nonil = r->H->nonil;
-	bn->T->nonil = l->T->nonil;
+	bn->H->nonil = l->H->nonil;
+	bn->T->nonil = r->T->nonil;
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
