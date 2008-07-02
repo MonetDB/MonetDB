@@ -274,6 +274,8 @@ int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
 
 	bn->hsorted = b->hsorted;
 	bn->tsorted = 0;
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = 0;
 	if (BATcount(b))
  		cur = *(oid*)BUNhead(bi,BUNfirst(b));
 	BATloop(b, p, q) {

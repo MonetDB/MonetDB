@@ -134,6 +134,7 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 		return GDK_FAIL;
 	BATseqbase(bn,l->hseqbase);
 	bn->tsorted = 0;
+	bn->T->nonil = 0;
 
 	lq = (@1*)Tloc(l,BUNlast(l));
 	lp = (@1*)Tloc(l,BUNfirst(l));
@@ -169,6 +170,7 @@ batbat_@1_@3_inplace(BAT **ret, BAT *l, BAT *r)
 		   "batbat_@1_@3_inplace: BATs l & r must be void-headed and head-aligned.\n");
 
 	l->tsorted = 0;
+	l->T->nonil = 0;
 	lq = (@1*)Tloc(l,BUNlast(l));
 	lp = (@1*)Tloc(l,BUNfirst(l));
 	rp = (@1*)Tloc(r,BUNfirst(r));
@@ -242,6 +244,7 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 	} else {
 		bn->tsorted = 0;
 	}
+	bn->T->nonil = 0;
 
 	*ret = bn;
 	return GDK_SUCCEED;
@@ -287,6 +290,7 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 	} else {
 		b->tsorted = 0;
 	}
+	b->T->nonil = 0;
 
 	BBPfix(b->batCacheid);
 	*ret = b;
@@ -345,6 +349,7 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 	} else {
 		bn->tsorted = 0;
 	}
+	bn->T->nonil = 0;
 
 	*ret = bn;
 	return GDK_SUCCEED;
@@ -391,6 +396,7 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 	} else {
 		b->tsorted = 0;
 	}
+	b->T->nonil = 0;
 
 	BBPfix(b->batCacheid);
 	*ret = b;

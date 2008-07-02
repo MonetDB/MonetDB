@@ -524,6 +524,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 	}
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
+	bn->T->nonil = 0;
 	ALIGNsetH(bn,b);
 	if (hash && !m)
 		GDKfree(hash);

@@ -416,6 +416,8 @@ CMDconstDiff(BAT **res, BAT *l, ptr val)
 		}
 		bn->hsorted = l->hsorted;
 		bn->tsorted = l->tsorted;
+		bn->H->nonil = l->H->nonil;
+		bn->T->nonil = l->T->nonil;
 		if (l->hkey) BATkey(bn,1);
 		if (l->tkey) BATkey(BATmirror(bn),1);
 		*res = bn;

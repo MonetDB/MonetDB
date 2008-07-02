@@ -1072,6 +1072,8 @@ int @1( BAT** res, BAT* b1, BAT* b2){
 	} else if (ATOMsize(b2->htype) == 2) {
 		@:@1(short)@
 	}
+	bn->H->nonil = b1->H->nonil;
+	bn->T->nonil = b2->T->nonil;
 	*res = bn;
 	return GDK_SUCCEED;
 }

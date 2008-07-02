@@ -1903,6 +1903,7 @@ decimal_bulkdivide(BAT **ret, BAT *b, decimal *dv, int *prec)
 	decimal_mult_table(dv, mult);
 
 	bn->tsorted = 0;
+	bn->T->nonil = 0;
 	BATloop(b, p, q) {
 		decimal *src = (decimal *) BUNtvar(bi, p);
 		int divprc = prec ? yy : PREC(src);

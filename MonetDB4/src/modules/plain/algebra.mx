@@ -1895,6 +1895,8 @@ CMDgen_group(BAT **result, BAT *b )
 	}
 	r -> hsorted = BAThordered(b);
 	r -> tsorted = BATtordered(b);
+	r -> H ->nonil = b->H->nonil;
+	r -> T ->nonil = 0;
 	*result = r;
 	return GDK_SUCCEED;
 }
@@ -2019,6 +2021,8 @@ CMDlike(BAT **ret, BAT *b, str s)
 	}
 	c->hsorted = BAThordered(b);
 	c->tsorted = BATtordered(b);
+	c->H->nonil = b->H->nonil;
+	c->T->nonil = b->T->nonil;
 	*ret = c;
 	return GDK_SUCCEED;
 }
@@ -2222,6 +2226,8 @@ CMDr@1_summary(BAT **ret, BAT* b, int *quantiles)
 		return GDK_FAIL;
 	bn->hsorted = (1 @3 0 ? GDK_SORTED : FALSE);
 	bn->tsorted = GDK_SORTED;
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = b->T->nonil;
 
 	if (cnt > 0) {
 		BATiter bi = bat_iterator(b);
@@ -2415,6 +2421,8 @@ CMDsplit(BAT **ret, BAT *b)
 	bn->tsorted = FALSE ;
 	bn->hdense = FALSE ;
 	bn->tdense = FALSE ;
+	bn->H->nonil = FALSE ;
+	bn->T->nonil = FALSE ;
 	BATkey(bn, FALSE) ;
 	BATkey(BATmirror(bn), FALSE) ;
 

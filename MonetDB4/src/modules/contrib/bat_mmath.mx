@@ -96,10 +96,12 @@ bat_@1_@2(BAT **ret, BAT *b)
 	bp = (@1*)Tloc(b,BUNfirst(b));
 	bnp = (@1*)Tloc(bn,BUNlast(bn));
 	for (; bp < bq; bp++) {
-		REGISTER @1 bv = *(@1*)bp;
-		if (bv != @1_nil) {
+		@1 bv = *(@1*)bp;
+		int nonil = (bv != @1_nil); 
+
+		bn->T->nonil &= nonil;
+		if (nonil) 
 			bv = @2(bv);
-		}
 		*bnp++ = bv;
 	}
         BATsetcount(bn, ((char*)bnp - bn->T->heap.base)/Tsize(bn));
@@ -133,6 +135,7 @@ batbat_@1_@2(BAT **ret, BAT *l, BAT *r)
 			*bnp = @2(*lp, *rp);
 		} else {
 			*bnp = @1_nil;
+			bn->T->nonil = 0;
 		}
 		bnp++;
 	}

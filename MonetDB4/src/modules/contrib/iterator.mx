@@ -306,8 +306,10 @@ ITERcollect(ITER *it)
 		BATkey(bn, TRUE);
 	if (it->result->tkey)
 		BATkey(BATmirror(bn), TRUE);
+	bn->hsorted = it->result->hsorted;
 	bn->tsorted = it->result->tsorted;
-	bn->hsorted = it->result->tsorted;
+	bn->H->nonil = it->result->H->nonil;
+	bn->T->nonil = it->result->T->nonil;
 	if (BAThdense(it->result))
 		BATseqbase(bn, it->result->hseqbase);
 	if (BATtdense(it->result))

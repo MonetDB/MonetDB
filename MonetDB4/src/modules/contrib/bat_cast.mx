@@ -66,6 +66,7 @@ int batcast_@1_@2(BAT **ret, BAT *b) {
 	bn = BATnew(TYPE_void, TYPE_@2, BATcount(b));
 	BATseqbase(bn,b->hseqbase);
 	bn->tsorted = 0;
+	bn->T->nonil = 0;
 	bq = (@1*)Tloc(b,BUNlast(b));
 	bp = (@1*)Tloc(b,BUNfirst(b));
 	bnp = (@2*)Tloc(bn,BUNlast(bn));

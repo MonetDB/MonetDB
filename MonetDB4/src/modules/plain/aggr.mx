@@ -429,6 +429,7 @@ CMDaggr_sum_@1_@3(BAT **ret, BAT *b, BAT *e)
 		return GDK_FAIL;
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	if (BAThordered(e)&1) {
 		min = *(oid*)BUNhead(ei, BUNfirst(e));
@@ -480,6 +481,7 @@ CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 		return GDK_FAIL;
 	/* init: set all prods to one */
 	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	if (BAThordered(e)&1) {
 		min = *(oid*)BUNhead(ei, BUNfirst(e));
@@ -554,6 +556,7 @@ CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e)
 	off = BUNfirst(bn);
 	/* init sums and counts to zero */
 	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	if (BAThordered(e)&1) {
 		min = *(oid*)BUNhead(ei, BUNfirst(e));
@@ -710,6 +713,7 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 		return GDK_FAIL;
 	}
 	bn->hsorted = bn->tsorted = 0;
+	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	return GDK_SUCCEED;
 }
@@ -779,6 +783,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 		return GDK_FAIL;
 	}
 	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	return GDK_SUCCEED;
 }
@@ -886,6 +891,7 @@ CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 1;
 	ALIGNsetH(bn, e);
 	if (BAThordered(e) & 1) {
 		min = *(oid *) BUNhead(ei, BUNfirst(e));
@@ -950,6 +956,7 @@ CMDaggr_size(BAT **ret, BAT *b, BAT *e)
 		return GDK_FAIL;
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 1;
 	ALIGNsetH(bn, e);
 	BATloop(e, p, q) {
 		if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
@@ -1129,10 +1136,10 @@ CMDcard_unlimited(wrd *result, BAT *b)
 int
 CMDhasNil(bit *ret, BAT *b)
 {
-	*ret = (BATcount(b) == 0) ? FALSE : BATtdense(b) ? (b->tseqbase == oid_nil) : BATgetprop_bit(BATmirror(b), GDK_AGGR_HASNIL);
+	*ret = (BATcount(b) == 0) ? FALSE : BATtdense(b) ? (b->tseqbase == oid_nil): !b->T->nonil?bit_nil : FALSE;
 	if (*ret == bit_nil) {
 		*ret = BUNfnd(BATmirror(b), ATOMnilptr(b->ttype)) ? TRUE : FALSE;
-		BATsetprop_bit(BATmirror(b), GDK_AGGR_HASNIL, *ret);
+		b->T->nonil = *ret;
 	}
 	return GDK_SUCCEED;
 }
