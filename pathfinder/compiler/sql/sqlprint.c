@@ -283,6 +283,7 @@ print_column_name_list (PFsql_t *n)
             }
             break;
             
+        case sql_ref_column_name:
         case sql_column_name:
             print_column_name (n);
             break;
