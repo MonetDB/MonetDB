@@ -51,6 +51,7 @@
 #include "variable.h"
 
 #include "algebra.h"
+#include "builtins.h"
 
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
@@ -1752,6 +1753,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         /* CoreExpr:           cast (seqtype, CoreExpr) */
         case 21:
         {
+            struct  PFla_pair_t pair = A(R(p));
             PFty_t              t;
             PFalg_simple_type_t algty;
 
@@ -1779,12 +1781,23 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                         "don't know the algebra equivalent of type %s",
                         PFty_str (L(p)->sem.type));
 
+            /* in case we require a single item and the input
+               may be less or more than a single item add a runtime check */
+            if (PFty_subtype (L(p)->sem.type, PFty_item ()) &&
+                !PFty_subtype (R(p)->type, PFty_item ()))
+                pair = PFbui_fn_exactly_one (LOOP, ORDERING, &pair);
+            /* in case we require zero or one items and the input
+               may be more than a single item add a runtime check */
+            else if (PFty_subtype (L(p)->sem.type, PFty_opt (PFty_item ())) &&
+                     !PFty_subtype (R(p)->type, PFty_opt (PFty_item ())))
+                pair = PFbui_fn_zero_or_one (LOOP, ORDERING, &pair);
+                    
             A(p) = (struct PFla_pair_t) {
-                .rel  = project (cast (A(R(p)).rel, att_cast, att_item, algty),
+                .rel  = project (cast (pair.rel, att_cast, att_item, algty),
                                  proj (att_iter, att_iter),
                                  proj (att_pos, att_pos),
                                  proj (att_item, att_cast)),
-                .frag = A(R(p)).frag };
+                .frag = pair.frag };
 
         } break;
 
@@ -3067,13 +3080,17 @@ locstep (core2alg_ctx_t *ctx,
      * A(L(p)).rel contains a axis node with information on the
      * location step. Will be read out in PFla_step().
      */
-    PFla_op_t *step = PFla_step_simple (
-                          PFla_set_to_la (p.frag),
-                          project (p.rel,
-                                   proj (att_iter, att_iter),
-                                   proj (att_item, att_item)),
-                          locstep_spec (axis, ty),
-                          att_iter, att_item, att_item);
+    PFla_op_t *step = PFla_project (
+                          PFla_step_join_simple (
+                              PFla_set_to_la (p.frag),
+                              project (p.rel,
+                                       proj (att_iter, att_iter),
+                                       proj (att_item, att_item)),
+                              locstep_spec (axis, ty),
+                              att_item,
+                              att_item1),
+                          PFalg_proj (att_iter, att_iter),
+                          PFalg_proj (att_item, att_item1));
 
     if (ORDERING)
         return (struct  PFla_pair_t) {

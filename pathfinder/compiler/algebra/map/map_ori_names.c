@@ -348,8 +348,6 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
                we introduce a projection that removes the second join
                attribute thus maintaining the schema of the duplicate
                aware eqjoin operator. */
-            projlist = PFmalloc (p->schema.count *
-                                 sizeof (PFalg_proj_t));
             for (unsigned int i = 0; i < p->schema.count; i++) {
                 ori = ONAME(p, p->schema.items[i].name);
                 projlist[i] = proj (ori, ori);

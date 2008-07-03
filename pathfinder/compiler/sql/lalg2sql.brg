@@ -3627,6 +3627,7 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_pf_add_doc_str_int:
                 case alg_fun_pf_del_doc:
                 case alg_fun_pf_nid:
+                case alg_fun_pf_docname:
 
                 case alg_fun_upd_delete:
                 case alg_fun_upd_rename:
@@ -4370,9 +4371,20 @@ reduce (PFla_op_t * p, int goalnt)
                 bool             asc, cols_added;
                 rank_map_t      *rank_map;
 
+                
+                
+                PFsql_t *expr;
+                PFalg_simple_type_t expr_ty;
+                
+
                 for (i = 0; i < PFord_count (sortby); i++) {
-                    ord = PFord_order_col_at (sortby, i);
+                    ord = PFord_order_col_at (sortby, i);                   
                     asc = PFord_order_dir_at (sortby, i) == DIR_ASC;
+
+                    expr_ty = type_of (L(p), ord);
+                    expr = col_env_lookup (COLMAP(L(p)),
+                                           ord,
+                                           expr_ty);
 
                     cols_added = false;
                     if (RANK_MAP(L(p)))
@@ -4395,10 +4407,14 @@ reduce (PFla_op_t * p, int goalnt)
                     if (!cols_added)
                         *(PFsql_t **) PFarray_add (srtbylist)
                             = sortkey_item (
-                                  col_env_lookup (
-                                      COLMAP(L(p)),
-                                      ord,
-                                      type_of (L(p), ord)),
+                                    /* different handling of boolean
+                                       types as search criterion */
+                                    (expr->kind == sql_column_name ||
+                                     expr->kind == sql_lit_int     ||
+                                     expr_ty    != aat_bln)
+                                         ? expr
+                                         : case_ (when (expr, TRUE_INT),
+                                                        else_ (FALSE_INT)),
                                   asc);
                 }
 
@@ -4424,20 +4440,31 @@ reduce (PFla_op_t * p, int goalnt)
                 PFsql_t *srtbylist = NULL;
                 PFalg_att_t ord;
                 bool asc;
+                PFsql_t* expr = NULL;
+                PFalg_simple_type_t expr_ty;
 
                 /* collect all sorting criteria */
                 for (int i = PFord_count (sortby) - 1; i >= 0; i--) {
                     ord = PFord_order_col_at (sortby, i);
                     asc = PFord_order_dir_at (sortby, i) == DIR_ASC;
+
+                    expr_ty = type_of (L(p), ord);
+                    expr = col_env_lookup (COLMAP(L(p)),
+                                           ord,
+                                           expr_ty);
+
                     srtbylist = sortkey_list (
                                     sortkey_item (
-                                        col_env_lookup (
-                                            COLMAP(L(p)),
-                                            ord,
-                                            type_of (L(p), ord)),
+                                        /* different handling of boolean
+                                           types as search criterion */
+                                        (expr->kind == sql_column_name ||
+                                         expr->kind == sql_lit_int     ||
+                                         expr_ty    != aat_bln)
+                                             ? expr
+                                             : case_ (when (expr, TRUE_INT),
+                                                      else_ (FALSE_INT)),
                                         asc),
                                     srtbylist);
-
                 }
                 col_env_add (COLMAP(p),
                              p->sem.sort.res,

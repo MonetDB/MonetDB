@@ -1,3 +1,1 @@
-<example> { 
-  <doc>Hello World</doc>/text() 
-} </example>
+<example>Hello World</example>

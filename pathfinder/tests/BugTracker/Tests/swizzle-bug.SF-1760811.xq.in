@@ -1,35 +1,63 @@
+0
+<>
 pf:add-doc("$TSTSRCDIR/swizzle-bug-xiraf48457.SF-1760811.xml","wrappers.xml","wrappers.xml",10)
 <>
+count(doc("wrappers.xml")//*)
+<>
 
+1
+<>
 do insert ("
 ", <device name="pc01" type="unknown"/>, "
 ") into doc("wrappers.xml")/XIRAF
 <>
+count(doc("wrappers.xml")//*)
+<>
 
+2
+<>
 pf:add-doc("$TSTSRCDIR/swizzle-bug-xiraf48466.SF-1760811.xml","prepared48465.data","prepared48465.data")
+<>
+count(doc("prepared48465.data")/XIRAF/item//*)
 <>
 
 let $source := doc("prepared48465.data")
 let $destination := doc("wrappers.xml")
 for $item in $source/XIRAF/item return   do insert $item/*  into $destination/id(exactly-one($item/@nid) cast as xs:string)
 <>
+count(doc("wrappers.xml")//*)
+<>
 
+3
+<>
 pf:add-doc("$TSTSRCDIR/swizzle-bug-xiraf48478.SF-1760811.xml","prepared48477.data","prepared48477.data")
+<>
+count(doc("prepared48477.data")/XIRAF/item//*)
 <>
 
 let $source := doc("prepared48477.data")
 let $destination := doc("wrappers.xml")
 for $item in $source/XIRAF/item return   do insert $item/*  into $destination/id(exactly-one($item/@nid) cast as xs:string)
 <>
+count(doc("wrappers.xml")//*)
+<>
 
+4
+<>
 pf:add-doc("$TSTSRCDIR/swizzle-bug-xiraf48484.SF-1760811.xml","prepared48483.data","prepared48483.data")
+<>
+count(doc("prepared48483.data")/XIRAF/item//*)
 <>
 
 let $source := doc("prepared48483.data")
 let $destination := doc("wrappers.xml")
 for $item in $source/XIRAF/item return   do insert $item/*  into $destination/id(exactly-one($item/@nid) cast as xs:string)
 <>
+count(doc("wrappers.xml")//*)
+<>
 
+5
+<>
 element { "job" } {
 	  attribute { "tool" } { "general-purpose/hash-tool" },
 	  attribute { "project" } { "wrappers" },

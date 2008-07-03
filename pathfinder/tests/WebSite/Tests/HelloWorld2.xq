@@ -1,6 +1,5 @@
+<example> { fn:concat("Hello"," ","World") } </example>
+<>
 <example> { 
-  <doc>
-   <test>Hello World</test>
-  </doc>/test/text() 
+  fn:concat("Hello ","World") 
 } </example>
-  

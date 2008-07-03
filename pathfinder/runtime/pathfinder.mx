@@ -159,7 +159,7 @@ if (monet_environment.exist("standoff"))
 #       For them RID=PRE=NID in all cases, the RID-PRE-NID transformations (leftfetchjoin/ 
 #       siwzzle) are zero-cost. This is also true for the transient document container. 
 #
-# NOTE: MAP_PID page indices start at oid(0). by putting the rid_* phyisical pages 
+# NOTE: MAP_PID page indices start at oid(0). by putting the rid_* physical pages 
 #       in the order specified by MAP_PID we get the original pre_* tables back.
 #
 # qn_* tables contain qualified names (elements, attributes). 
@@ -766,19 +766,15 @@ PROC exit() : void { # redefine exit to do a checkpoint first
 
 
 # the logger background thread
-var logger_base := 0;
 PROC pf_logmanager() : void {
-    logger_base := logger_changes(pf_logger);
     var cnt := 0;
     while(true) {
         var changes := logger_changes(pf_logger);
-        var delta := changes - logger_base;
         if (((cnt :+= 1) % 30) = 0) { 
             cleantmpdir((msec() / 1000LL) - 3600LL);
         }
-        if (((delta < 0) or (delta > 100000)) and (cnt > 30)) { 
+        if ((changes > 100000) and (cnt > 30)) { 
             pf_logflush(0LL);
-            logger_base = changes;
             cnt := 0;
         } 
         sleep(10);  
@@ -2625,7 +2621,7 @@ PROC ws_docfilter(bat[void,bat] ws,
         # register the newly opened documents
         open_name.append(docpre_nme.tmark(0@0));
         open_cont.append(docpre_nme.tmark(0@0).project(cont));
-        open_docid.append(docpre_nme.hmark(0@0));
+        open_docid.append(docpre_nme.hmark(0@0).leftjoin(reverse(frag_root)));
     }
     return assert_order(any_pre);
 }
@@ -2994,7 +2990,7 @@ PROC ws_newpage(BAT[void,BAT] ws,
     # if there is a free page, then this is easy
     var coll_shortlock := reverse(runtime).fetch(RT_LOCK_FREELIST);
     lock_set(coll_shortlock);
-    var page_id := 0@0; err := CATCH(page_id := __runtime_newpage(runtime));
+    var page_id := 0@0, err := CATCH(page_id := __runtime_newpage(runtime));
     lock_unset(coll_shortlock);
 
     if (isnil(err) and isnil(page_id)) {
@@ -4140,7 +4136,7 @@ collection_cleanup(_collection_cleanup()); # silently clean up the repository
 
 mapi_register(xquery_frontend()); # open up mapi client access
 if (monet_environment.find("monet_welcome") = "yes") 
-    printf("%c MonetDB/XQuery module v0.24.0 loaded\n", int(35));
+    printf("%c MonetDB/XQuery module v0.24.1 loaded (default back-end is '%s')\n", int(35), monet_environment.find("xquery_backend"));
     #                                 ^^^^^^
     # Maintained via vertoo. Please don't modify by hand!
     # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -4451,7 +4447,7 @@ MT_Lock pf_cache_lock;
  * - execute MIL buffer (parse & execute)
  *
  * int
- * xquery_compile_exec(xquery_client *ctx, char* xquery, int is_url, 
+ * xquery_compile_exec(xquery_client *ctx, int options, char* xquery, int is_url, 
  *                     char** prologue, char** query, char** epilogue, char* module) 
  * - translate xquery to MIL and execute
  *
@@ -4564,6 +4560,7 @@ static char* xquery_parse_string(char* p, char *buf, int len);
 extern char* PFmaxstack;
 static int
 xquery_compile_exec(xquery_client *ctx, 
+                    int options,
                     char* xquery, 
                     int is_url, 
                     char** prologue, 
@@ -4575,22 +4572,9 @@ xquery_compile_exec(xquery_client *ctx,
     char *url = xquery;
     char *err = NULL;
 
-    int options = 0;
     /* Setting the StandOff flag based on runtime settings */
     if ((GDKgetenv("standoff") != NULL) && (strcmp(GDKgetenv("standoff"),"enabled") == 0))
         options |= COMPILE_OPTION_STANDOFF;
-    /* Setting the Algebra flag; server setting overules compile-time default; client choice overrules server setting */
-#if MILPRINT_SUMMER_IS_DEFAULT
-    if ((ctx->mode & XQ_ALGEBRA) || \
-        (!(ctx->mode & XQ_MILPRINT_SUMMER) && \
-         (GDKgetenv("xquery_backend") != NULL) && (strcmp(GDKgetenv("xquery_backend"),"algebra") == 0)))
-        options |= COMPILE_OPTION_ALGEBRA;
-#else /* ALGEBRA_IS_DEFAULT */
-    if (!(ctx->mode & XQ_MILPRINT_SUMMER) && \
-        ((ctx->mode & XQ_ALGEBRA) || \
-         (GDKgetenv("xquery_backend") == NULL) || (strcmp(GDKgetenv("xquery_backend"),"milprint_summer") != 0)))
-        options |= COMPILE_OPTION_ALGEBRA;
-#endif
 
     MT_set_lock(pf_compiler_lock, "xquery_compile_exec");
     if (is_url) {
@@ -5146,7 +5130,7 @@ xquery_module_compile(xquery_client *ctx,
     strcpy(mod->location, url);
     mod->module = mod->location + url_len;
 
-    ret = xquery_compile_exec(ctx, url, 1, &mod->prologue, NULL, &mod->epilogue, mod->module);
+    ret = xquery_compile_exec(ctx, 0, url, 1, &mod->prologue, NULL, &mod->epilogue, mod->module);
     if (!ret) {
         xquery_module_free(mod);
         return NULL;
@@ -5983,9 +5967,22 @@ xquery_prepare(xquery_client *ctx,
         char *sec1 = NULL;
         char *sec2 = NULL;
         char *sec3 = NULL;
+        int options = 0;
         /* compile and execute the query (minus module imports) */
         err = xquery_nondescriptive_error;
-        if (xquery_compile_exec(ctx, query, 0, &sec1, &sec2, &sec3, NULL)) 
+    /* Setting the Algebra flag; server setting overules compile-time default; client choice overrules server setting */
+#if MILPRINT_SUMMER_IS_DEFAULT
+         if (((ctx->mode & XQ_ALGEBRA) != 0) || \
+            (((ctx->mode & XQ_MILPRINT_SUMMER) == 0) && \
+              (GDKgetenv("xquery_backend") != NULL) && (strcmp(GDKgetenv("xquery_backend"),"algebra") == 0)))
+            options = COMPILE_OPTION_ALGEBRA;
+#else /* ALGEBRA_IS_DEFAULT */
+        if (((ctx->mode & XQ_MILPRINT_SUMMER) == 0) && \
+            (((ctx->mode & XQ_ALGEBRA) != 0) || \
+             (GDKgetenv("xquery_backend") == NULL) || (strcmp(GDKgetenv("xquery_backend"),"milprint_summer") != 0)))
+            options = COMPILE_OPTION_ALGEBRA;
+#endif
+        if (xquery_compile_exec(ctx, options, query, 0, &sec1, &sec2, &sec3, NULL)) 
                 err = NULL;
         if (sec1) free(sec1);
         if (sec2) free(sec2);
@@ -6387,6 +6384,19 @@ extern void xmlInitParser(void);
 bat *
 xquery_prelude(void)
 {
+    if (GDKgetenv("xquery_backend") == NULL) {
+#if MILPRINT_SUMMER_IS_DEFAULT
+        GDKsetenv("xquery_backend","milprint_summer");
+#else /* ALGEBRA_IS_DEFAULT */
+        if ((GDKgetenv("standoff") != NULL) && (strcmp(GDKgetenv("standoff"),"enabled") == 0)) {
+            /* Algebra back-end does not support StandOff extensions, yet */
+            GDKsetenv("xquery_backend","milprint_summer");
+        } else {
+            GDKsetenv("xquery_backend","algebra");
+        }
+#endif
+    }
+
     MT_init_lock(pf_compiler_lock, "pf_compiler_lock");
     MT_init_lock(pf_module_lock, "pf_module_lock");
     MT_init_lock(pf_cache_lock, "pf_cache_lock");

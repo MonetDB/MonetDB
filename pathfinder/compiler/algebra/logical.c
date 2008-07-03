@@ -1591,6 +1591,15 @@ printf("type = %x", n->schema.items[ix[1]].type);
             res_type = aat_str;
             break;
 
+        case alg_fun_pf_docname:
+            assert(refs.count == 1);
+
+            /* make sure atts are of the correct type */
+            assert(n->schema.items[ix[0]].type & aat_node);
+
+            res_type = aat_str;
+            break;
+
         case alg_fun_upd_delete:
             assert(refs.count == 1);
 

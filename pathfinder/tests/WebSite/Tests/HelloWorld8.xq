@@ -1,7 +1,9 @@
-let $f := doc("http://monetdb.cwi.nl/XQuery/files/HelloWorld.xml")/doc
-for $g in $f/greet
-for $l in $f/location
-return 
-  <sentence> { 
-    $g/text(),$l/text()
-  } </sentence>
+for $t in ( <doc>
+              <greet kind="informal">Hi </greet>
+              <greet kind="casual">Hello </greet>
+              <location kind="global">World</location>
+              <location kind="local">Amsterdam</location>
+            </doc> )
+let $x := $t/greet[@kind="casual"]/text()
+let $y := $t/location[@kind="global"]/text()
+return <example> { $x, $y } </example>

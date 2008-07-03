@@ -36,9 +36,9 @@ modules_diamond_prepare
 modules_diamond.SF-1510975a
 modules_diamond.SF-1510975b
 wrong_result_duplication.SF-1549292
-type_error_with_typeswitch.SF-1559355
+WITH_ALGEBRA?type_error_with_typeswitch.SF-1559355
 type_errors_with_fn-name.SF-1563354
-fn-name_on_text_nodes.SF-1564964
+WITH_ALGEBRA?fn-name_on_text_nodes.SF-1564964
 NOT_ALGEBRA?complex-XQuery-batbat_lng_add_inplace-error-OK.SF-1562868
 NOT_ALGEBRA?complex-XQuery-batbat_lng_add_inplace-error-KO.SF-1562868
 NOT_ALGEBRA?complex-XQuery-batbat_lng_add_inplace-error-KO2.SF-1562868
@@ -88,8 +88,8 @@ seqcast_opt_int_to_numeric.SF-1637867
 entities_dtd.SF-1642663
 entities_dtd.SF-1642665
 NOT_ALGEBRA?call2builtin_function_crashes_XRPC_client.SF-1655857
-NOT_ALGEBRA?conflict_normal_xrpc_queries_nx.SF-1644610
-NOT_ALGEBRA?conflict_normal_xrpc_queries_xn.SF-1644610
+conflict_normal_xrpc_queries_nx.SF-1644610
+conflict_normal_xrpc_queries_xn.SF-1644610
 NOT_ALGEBRA?interleave_PUT_GET_crashes_Mserver.SF-1676443
 id-function_fails_to_locate_some_kinds_of_nodes.SF-1698498
 char_escape_SF-1681921
@@ -109,13 +109,13 @@ collection_management.SF-1726599
 attribute_access_mposjoin_error.SF-1726928
 insert_large_doc.SF-1726954
 32_docs.SF-1730617
-HAVE_MONETDB_JAVAJDBC?JDBC_250_results.SF-1730556
-HAVE_MONETDB_JAVAJDBC?JDBC_0_results.SF-1886326
+HAVE_JDBCCLIENT_JAR?JDBC_250_results.SF-1730556
+HAVE_JDBCCLIENT_JAR?JDBC_0_results.SF-1886326
 crash_on_concatenated_query.SF-1730547
 error_in_preceeding_axis.SF-1731850
 attribute_serialization.SF-1743442
 attr-entity-bug.SF-1743433
-merged-union_error_with_fn-sum.SF-1751684
+WITH_ALGEBRA?merged-union_error_with_fn-sum.SF-1751684
 comment-print-bug.SF-1755466
 replace-corrupts.SF-1758902
 swizzle-bug.SF-1760811
@@ -128,8 +128,8 @@ insert_attribute_gives_ERROR_in_merged_union.SF-1763575
 immune_for_updates.SF-1766259
 repeated-insert.SF-1814911
 fn_normalize-space.SF-1828362
-NOT_ALGEBRA?recursive_function.SF-1835745
-variable_in_module.SF-1836980
+# recursive_function.SF-1835745 # won't fix with MPS, not supported with ALG
+WITH_ALGEBRA?variable_in_module.SF-1836980
 preceding-sibling_failure.SF-1841747-d10
 preceding-sibling_failure.SF-1841747-d0
 preceding_following-sibling_bug.SF-1850772
@@ -145,3 +145,12 @@ empty_tbl_seg_fault.SF-1961027
 NOT_WIN32?update-stress.SF-1896755
 order_of_declared_functions_matters.SF-1905940
 multi-join_query_compile_error.SF-1908822
+immune_for_updates.SF-1981852
+join-query_compilation_error.SF-1889694
+iter_in_join.SF-1991938
+compilation_or_runtime_choice.SF-1991738_0_MPS
+#takes >30 minutes & >6 GB to run (compile)
+>30min_>6GB?compilation_or_runtime_choice.SF-1991738_0_ALG
+#type error: can't cast type 'untypedAtomic*' to type 'integer?'
+untypedAtomic?compilation_or_runtime_choice.SF-1991738_1_MPS
+compilation_or_runtime_choice.SF-1991738_1_ALG

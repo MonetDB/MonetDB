@@ -931,10 +931,15 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
             break;
 
         case la_fun_call:
-            PFarray_printf (dot,
-                            "%s function \\\"%s\\\" (",
-                            PFalg_fun_call_kind_str (n->sem.fun_call.kind),
-                            PFqname_uri_str (n->sem.fun_call.qname));
+            if (PFqname_loc (n->sem.fun_call.qname))
+                PFarray_printf (dot,
+                                "%s function \\\"%s\\\" (",
+                                PFalg_fun_call_kind_str (n->sem.fun_call.kind),
+                                PFqname_uri_str (n->sem.fun_call.qname));
+            else
+                PFarray_printf (dot,
+                                "%s function (",
+                                PFalg_fun_call_kind_str (n->sem.fun_call.kind));
             for (unsigned int i = 0; i < n->schema.count; i++)
                 PFarray_printf (dot, "%s%s",
                                 i?", ":"",

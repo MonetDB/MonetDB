@@ -142,6 +142,7 @@ opt_set (PFla_op_t *p)
                           p->sem.step.item);
             break;
 
+#if 0 /* disable step_join -> step rewrite */
         case la_step_join:
             if (PFprop_set (p->prop) &&
                 PFprop_icols_count (p->prop) == 2 &&
@@ -174,6 +175,7 @@ opt_set (PFla_op_t *p)
                           p->sem.step.item_res);
             }
             break;
+#endif
 
         case la_guide_step:
             if (PFprop_set (p->prop) &&

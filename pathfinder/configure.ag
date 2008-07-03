@@ -22,7 +22,7 @@
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.53)
-AC_INIT([MonetDB XQuery], [0.24.0], [monet@cwi.nl], [MonetDB-XQuery])
+AC_INIT([MonetDB XQuery], [0.24.1], [monet@cwi.nl], [MonetDB-XQuery])
 #                          ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -78,11 +78,6 @@ if test "x$have_c99" != xyes; then
 	AC_MSG_ERROR([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])
 fi
 
-req_monetdb_java_ver='1.7.0'
-#                     ^^^^^^
-# Maintained via vertoo. Please don't modify by hand!
-# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-AM_MONETDB_JAVA($req_monetdb_java_ver)
 req_clients_ver='1.24.0'
 #                ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
@@ -553,9 +548,9 @@ AC_ARG_WITH(default-backend,
             AC_HELP_STRING(
                [--with-default-backend=BACKEND],
                [select a default back-end (milprint_summer/algebra/sql)
-                for Pathfinder (default=milprint_summer)]),
+                for Pathfinder (default=algebra)]),
             default_backend="$withval",
-            default_backend='milprint_summer')
+            default_backend='algebra')
 if test "x$default_backend" = xmilprint_summer
 then
         AC_DEFINE(ALGEBRA_IS_DEFAULT, 0,
