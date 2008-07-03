@@ -344,8 +344,8 @@ xrpc_server_export BAT *xrpc_admin;
 #include "pf_support.h"
 #include "shredder.h"
 #include "serialize.h"
-#include "shttpd.h"
 #include "xrpc_server.h"
+#include "shttpd.h"
 
 static int rpcd_running = 0;
 static int timing = 0;
@@ -500,56 +500,68 @@ XRPCreq_free(XRPCreq_t *req)
     GDKfree(req);
 }
 
-/* Convert string to long int.  I promise never to use errno anymore!! */
-lng
-my_strtoll(stream *out,
-           bte isSigned,
-           char *val_ptr,
-           char *attr_name)
-{
-    char errstr[1024], *end_ptr = val_ptr;
-    long long int ret = strtoll(val_ptr, &end_ptr, 10);
+static int 
+get_node_type(str typename) {
+    if (strcmp(typename, XRPC_NS"|element") == 0)
+        return XS_ELEMENT;
+    if (strcmp(typename, XRPC_NS"|text") == 0)
+        return XS_TEXT;
+    if (strcmp(typename, XRPC_NS"|comment") == 0)
+        return XS_COMMENT;
+    if (strcmp(typename, XRPC_NS"|processing-instruction") == 0) 
+        return XS_PI;
+    if (strcmp(typename, XRPC_NS"|document") == 0)
+        return XS_DOCUMENT;
+    return -1;
+} 
 
-    if(end_ptr == val_ptr){
-        snprintf(errstr, 1024,
-                "Invalid value (\"%s\") of numeric attribute \"%s\"",
-                val_ptr, attr_name);
-        send_err(out, ERR404, "env:Sender", errstr);
-        return GDK_lng_min;
-    } else if(ret < 0 && !isSigned){
-        snprintf(errstr, 1024,
-                "Invalid value (\"%s\") of numeric attribute \"%s\": "
-                "should not be negative",
-                val_ptr, attr_name);
-        send_err(out, ERR404, "env:Sender", errstr);
-        return GDK_lng_min;
-    }
-    return ret;
+static INLINE oid
+skip_text_nodes(char *pre_kindT, oid pre, oid max) 
+{
+    while(pre < max && pre_kindT[pre] != ELEM) pre++;
+    return pre; 
 }
 
 /**
- * @return PRE, or 0 if not found.
+ * Retrieves the request message from the connection and shred it to
+ * BATs.
+ *
+ * @return BATs containing the shredded request message, or
+ *         NULL if an error has occurred.
  */
-static INLINE oid
-get_pre_by_qname(str qname,
-                 oid start_pre,
-                 oid end_pre,
-                 oid *pre_propT,
-                 char *pre_kindT,
-                 BAT *qn_uri_loc)
+static BAT *
+request2bat(stream *out, char *reqmsg)
 {
-    oid i;
-    BUN bun = BUN_NONE;
-    BATiter qn_uli = bat_iterator(qn_uri_loc);
+    char *strptr = NULL;
+    lng percentage = 0;
+    BAT *shredBAT = NULL;
+    bit verbose = FALSE;
 
-    for (i = start_pre; i < end_pre; i++) {
-        if (pre_kindT[i] == ELEMENT) {
-            BUNfndVOID(bun, qn_uli, &(pre_propT[i]));
-            if(bun != BUN_NONE && strcmp(BUNtail(qn_uli, bun), qname) == 0)
-                return i;
-        }
+    if(!reqmsg){
+        send_err(out, ERR404, "env:Sender", "No request message!");
+        return NULL;
     }
-    return 0;
+
+    /* Remove the first line of the message, which containing
+     * "<?xml...?>", so that the message we pass to CMDshred2bats starts
+     * directly with <env:Envelope ...> */
+    strptr = reqmsg + 7; /* strlen("<?xml...?>") >= 7 */
+    if( (strstr(reqmsg, "<?xml") != reqmsg) ||
+        (strptr = strchr(strptr, (int)'<')) == NULL ) {
+        send_err(out, ERR404, "env:Sender", NOT_WELL_FORMED);
+        return NULL;
+    }
+    if (!(shredBAT = BATnew(TYPE_str, TYPE_bat, 32))) {
+        send_err(out, ERR500, "env:Receiver", OUT_OF_MEM);
+        return NULL;
+    }
+    
+    if( CMDshred_str(shredBAT, strptr, &percentage, NULL, &verbose) == GDK_FAIL ) {
+        send_err(out, ERR404, "env:Sender", NOT_WELL_FORMED);
+        BBPreclaim(shredBAT);
+        shredBAT = NULL;
+    }
+    return shredBAT;
 }
 
 /**
@@ -609,27 +621,56 @@ isTrusted(stream *out, char *location)
     return 1;
 }
 
-static int 
-get_node_type(str typename) {
-    if (strcmp(typename, XRPC_NS"|element") == 0)
-        return XS_ELEMENT;
-    if (strcmp(typename, XRPC_NS"|text") == 0)
-        return XS_TEXT;
-    if (strcmp(typename, XRPC_NS"|comment") == 0)
-        return XS_COMMENT;
-    if (strcmp(typename, XRPC_NS"|processing-instruction") == 0) 
-        return XS_PI;
-    if (strcmp(typename, XRPC_NS"|document") == 0)
-        return XS_DOCUMENT;
-    return -1;
-} 
-
-
+/**
+ * @return PRE, or 0 if not found.
+ */
 static INLINE oid
-skip_text_nodes(char *pre_kindT, oid pre, oid max) 
+get_pre_by_qname(str qname,
+                 oid start_pre,
+                 oid end_pre,
+                 oid *pre_propT,
+                 char *pre_kindT,
+                 BAT *qn_uri_loc)
 {
-    while(pre < max && pre_kindT[pre] != ELEM) pre++;
-    return pre; 
+    oid i;
+    BUN bun = BUN_NONE;
+    BATiter qn_uli = bat_iterator(qn_uri_loc);
+
+    for (i = start_pre; i < end_pre; i++) {
+        if (pre_kindT[i] == ELEMENT) {
+            BUNfndVOID(bun, qn_uli, &(pre_propT[i]));
+            if(bun != BUN_NONE && strcmp(BUNtail(qn_uli, bun), qname) == 0)
+                return i;
+        }
+    }
+    return 0;
+}
+
+/* Convert string to long int.  I promise never to use errno anymore!! */
+lng
+my_strtoll(stream *out,
+           bte isSigned,
+           char *val_ptr,
+           char *attr_name)
+{
+    char errstr[1024], *end_ptr = val_ptr;
+    long long int ret = strtoll(val_ptr, &end_ptr, 10);
+
+    if(end_ptr == val_ptr){
+        snprintf(errstr, 1024,
+                "Invalid value (\"%s\") of numeric attribute \"%s\"",
+                val_ptr, attr_name);
+        send_err(out, ERR404, "env:Sender", errstr);
+        return GDK_lng_min;
+    } else if(ret < 0 && !isSigned){
+        snprintf(errstr, 1024,
+                "Invalid value (\"%s\") of numeric attribute \"%s\": "
+                "should not be negative",
+                val_ptr, attr_name);
+        send_err(out, ERR404, "env:Sender", errstr);
+        return GDK_lng_min;
+    }
+    return ret;
 }
 
 XRPCreq_t *
@@ -995,50 +1036,6 @@ cleanup:
     @:delbat(attr_prop)@
     return res;
 }
-
-
-/**
- * Retrieves the request message from the connection and shred it to
- * BATs.
- *
- * @return BATs containing the shredded request message, or
- *         NULL if an error has occurred.
- */
-static BAT *
-request2bat(stream *out, char *reqmsg)
-{
-    char *strptr = NULL;
-    lng percentage = 0;
-    BAT *shredBAT = NULL;
-    bit verbose = FALSE;
-
-    if(!reqmsg){
-        send_err(out, ERR404, "env:Sender", "No request message!");
-        return NULL;
-    }
-
-    /* Remove the first line of the message, which containing
-     * "<?xml...?>", so that the message we pass to CMDshred2bats starts
-     * directly with <env:Envelope ...> */
-    strptr = reqmsg + 7; /* strlen("<?xml...?>") >= 7 */
-    if( (strstr(reqmsg, "<?xml") != reqmsg) ||
-        (strptr = strchr(strptr, (int)'<')) == NULL ) {
-        send_err(out, ERR404, "env:Sender", NOT_WELL_FORMED);
-        return NULL;
-    }
-    if (!(shredBAT = BATnew(TYPE_str, TYPE_bat, 32))) {
-        send_err(out, ERR500, "env:Receiver", OUT_OF_MEM);
-        return NULL;
-    }
-    
-    if( CMDshred_str(shredBAT, strptr, &percentage, NULL, &verbose) == GDK_FAIL ) {
-        send_err(out, ERR404, "env:Sender", NOT_WELL_FORMED);
-        BBPreclaim(shredBAT);
-        shredBAT = NULL;
-    }
-    return shredBAT;
-}
-
 
 XRPCreq_t *
 parse_request(stream *out,
