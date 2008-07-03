@@ -55,7 +55,7 @@ The statemens are all checked for being eligible for dataflow.
 static int
 OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,j, cnt, start=1,entries=0, actions=0;
+	int i,j, cnt, start=1,entries=0, actions=0,oldvtop;
 	int flowblock= 0, dumbcopy=0;
 	InstrPtr *old, q;
 	int limit,block;
@@ -69,6 +69,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	old = mb->stmt;
 	newMalBlkStmt(mb, mb->ssize+20); /* some marge */
 	pushInstruction(mb,old[0]);
+	memset(assigned,0, (oldvtop= mb->vtop));
 
 	initProfiler(mb);
 	for (i = 1; i<limit; i++) {
@@ -123,7 +124,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		if (flowblock == 0){
 			flowblock = newTmpVariable(mb,TYPE_int);
-			memset(assigned, 0, mb->vtop);
+			memset(assigned, 0, oldvtop);
 			entries= 0;
 			start = i;
 		}
@@ -149,5 +150,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 @c
 #include "opt_statistics.h"
-@:wrapOptimizer(dataflow,OPT_CHECK_TYPES)@
+
+@:wrapOptimizer(dataflow,OPT_CHECK_ALL)@
 @}
