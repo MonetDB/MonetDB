@@ -1,0 +1,12 @@
+<map id="G" name="G">
+<area shape="rect" href="http://host2:60001/logs/res_1.xml" title="5ms" alt="" coords="133,229,141,237"/>
+<area shape="rect" href="http://host2:60001/logs/req_1.xml" title="5ms" alt="" coords="100,356,108,364"/>
+<area shape="rect" href="http://host3:60001/logs/res_1.xml" title="7ms" alt="" coords="153,229,161,237"/>
+<area shape="rect" href="http://host3:60001/logs/req_1.xml" title="7ms" alt="" coords="205,356,213,364"/>
+<area shape="rect" href="http://host1:60001/logs/res_1.xml" title="9ms" alt="" coords="140,53,148,61"/>
+<area shape="rect" href="http://host1:60001/logs/req_1.xml" title="9ms" alt="" coords="140,181,148,189"/>
+<area shape="rect" href="http://host4:60001/logs/res_1.xml" title="3ms" alt="" coords="95,404,103,412"/>
+<area shape="rect" href="http://host4:60001/logs/req_1.xml" title="3ms" alt="" coords="99,532,107,540"/>
+<area shape="rect" href="http://host4:60001/logs/res_2.xml" title="2ms" alt="" coords="213,404,221,412"/>
+<area shape="rect" href="http://host4:60001/logs/req_2.xml" title="2ms" alt="" coords="211,532,219,540"/>
+</map>

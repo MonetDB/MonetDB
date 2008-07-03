@@ -23,5 +23,28 @@
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 #
 
-SUBDIRS = admin export demo
+headers_html = {
+	HEADERS = html js css xml
+	DIR = datadir/MonetDB/xrpc/demo
+	SOURCES = \
+		style.css \
+        res1.xml \
+        req1.xml \
+		index.html
+}
 
+headers_xq = {
+	HEADERS = xq
+	DIR = datadir/MonetDB/xrpc/demo
+	SOURCES = demo-mod.xq demo-xrpcmod.xq
+}
+
+headers_img = {
+	HEADERS = bmp gif png gif map
+	DIR = datadir/MonetDB/xrpc/demo
+	SOURCES = \
+		cwi.bmp \
+		MultimediaN.png \
+		monet.png \
+        noquery.gif
+}

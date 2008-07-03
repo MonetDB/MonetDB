@@ -40,7 +40,8 @@
 /* contains dummy callback functions */
 #include "serialize_null.h"
 #include "pathfinder.h"
-#include "xrpc_common.h"
+#include "pf_support.h"
+#include "xrpc_server.h" /* *_NS defs */
 
 /* a lot of characters, static strings, and their sizes 
    (the idea is to reuse constant character pointers during
@@ -78,10 +79,7 @@ static size_t tnE_sz = 1; /* strlen (textnodeEnd); */
 struct dflt_ws_t {
     char  *restag; /* result tag name */
     char  *resprefix; /* used in 'typed' and 'xrpc' modes to set the prefix */
-    /* Need these two variables to store the values of the attributes
-     * 'module' and 'method' for the 'xrpc' mode. */
-    char  *module;
-    char  *method;
+
     char  *newline, *esc_quote; /* newline and escaped quote string */
     size_t nl_sz, esq_sz; /* length of newline and escaped quote string */
     
@@ -244,7 +242,7 @@ emit_escaped_comment (XqueryCtx* ctx, char* src) {
  * dflt driver initialization function
  */
 static bool
-dflt_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix, char *module, char *method)
+dflt_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix)
 {
     (void) args;
 
@@ -263,10 +261,6 @@ dflt_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix, char *modu
     /* store result prefix and tag */
     dflt_ws->resprefix = resprefix;
     dflt_ws->restag    = restag;
-
-    dflt_ws->module = module;
-    dflt_ws->method = method;
-
     return SUCCESS;
 }
 
@@ -276,7 +270,7 @@ dflt_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix, char *modu
  *  is the '=' character that is printed after each newline.)
  */
 static bool
-mapi_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix, char *module, char *method)
+mapi_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix)
 {
     (void) args;
 
@@ -295,10 +289,6 @@ mapi_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix, char *modu
     /* store result prefix and tag */
     dflt_ws->resprefix = resprefix;
     dflt_ws->restag    = restag;
-
-    dflt_ws->module = module;
-    dflt_ws->method = method;
-
     return SUCCESS;
 }
 
@@ -306,13 +296,11 @@ mapi_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix, char *modu
  * seq driver initialization function
  */
 static bool
-esc_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix, char *module, char *method)
+esc_init (XqueryCtx* ctx, char* args, char *restag, char *resprefix)
 {
     (void) args;
     (void) restag;
     (void) resprefix;
-    (void) module;
-    (void) method;
 
     /* create workspace container */
     ctx->driverWs = (void *) new_dflt_ws ();
@@ -1002,35 +990,56 @@ typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
 static bool
 xrpc_startSerialize(XqueryCtx *ctx)
 {
-    stream_write(ctx->out, "HTTP/1.1 200 OK\r\n"
-            "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n", 1, 60);
+    int len, ret = 0;
+   
 
-    /* We need to prepend "=" to each line, so make sure
-       that we print one after each newline (encoded in
-       newline string 'newline')->
-       In addition we print one '=' at the beginning-> */
-    if (ctx->modes & MODE_MAPI)
-        stream_write (ctx->out, &e_, 1, 1);
+    if (ctx->xrpc_qid[0] && ctx->time_exec > ctx->xrpc_timeout) {
+        GDKerror("xrpc_startSerialize: xrpc-query timed out\n");
+        return PROBLEM;
+    }
 
-    stream_printf(ctx->out, 
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>%s"
-            "<env:Envelope "
-            "xmlns:env=\"%s\" "
-            "xmlns:xrpc=\"%s\" "
-            "xmlns:xs=\"%s\" "
-            "xmlns:xsi=\"%s\" "
-            "xsi:schemaLocation=\"%s %s\">"
-            "<env:Body>"
-            "<xrpc:response xrpc:module=\"%s\" xrpc:method=\"%s\">",
-            dflt_ws->newline,
-            SOAP_NS,
-            XRPC_NS,
-            XS_NS,
-            XSI_NS,
-            XRPC_NS, XRPC_LOC,
-            dflt_ws->module, dflt_ws->method);
+    /* HACK: we use GDKout and not ctx->stdout because the logger stream should see only the XML content */
+    len = strlen(HTTP_200_OK);
+    ret = stream_write(GDKout, HTTP_200_OK, 1, len);
+    if(ret != len) return PROBLEM;
 
-    return SUCCESS;
+    len = strlen(SOAP_ENVELOPE);
+    ret = stream_write(ctx->out, SOAP_ENVELOPE, 1, len);
+    if(ret != len) return PROBLEM;
+
+    if (ctx->xrpc_qid[0] || strstr(ctx->xrpc_mode,"trace")) {
+        BATiter bi = bat_iterator(ctx->ws);
+        bat bid = *(bat*) BUNtail(bi, XRPC_PARTICIPANTS);
+        BAT* b = BATdescriptor(bid);
+        BUN p,q;
+
+        if (b == NULL) return PROBLEM;
+
+        ret = stream_printf(ctx->out, "<env:Header>\n");
+        if (ret >= 0 && ctx->xrpc_qid[0])
+            ret = stream_printf(ctx->out, XRPC_WS_QID, ctx->xrpc_qid, ctx->xrpc_timeout);
+
+        /* XRPC participants lists for nested transactions - append an extra item for this call */
+        if(ret >= 0)
+            ret = stream_printf(ctx->out, 
+                " <xrpc:participants>\n  <xrpc:participant>%s,%s:%d:"LLFMT",%s,"LLFMT",%d</xrpc:participant>\n",
+                ctx->xrpc_caller, xrpc_hostname, xrpc_port, ctx->xrpc_seqnr, ctx->xrpc_method, ctx->time_exec,
+                (int) ctx->xrpc_updating);
+
+        /* print all nested calls (obtained from response messages)  */
+        bi = bat_iterator(b);
+        BATloop(b,p,q) {
+            if (ret < 0) break;
+            ret = stream_printf(ctx->out, "  <xrpc:participant>%s</xrpc:participant>\n", BUNtail(bi,p));
+        }
+        if (ret >= 0) 
+            ret = stream_printf(ctx->out, " </xrpc:participants>\n</env:Header>\n");
+
+        BBPunfix(bid);
+        if (ret < 0) return PROBLEM;
+    }
+    ret = stream_printf(ctx->out, XRPC_RES_BODY, ctx->xrpc_module, ctx->xrpc_method);
+    return (ret < 0)?PROBLEM:SUCCESS;
 }
 
 /**

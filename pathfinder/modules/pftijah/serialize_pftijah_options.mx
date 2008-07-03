@@ -64,12 +64,10 @@ static struct PTOS* GLOBAL_PTOS = NULL;
  * Definition of the structure containing the functions
  */
 static bool
-pftijah_options_init(XqueryCtx* ctx, char* args, char *restag, char *resprefix, char* module, char* method) {
+pftijah_options_init(XqueryCtx* ctx, char* args, char *restag, char *resprefix) {
     (void) args;
     (void) restag;
     (void) resprefix;
-    (void) module;
-    (void) method;
 
     ctx->driverWs		= GLOBAL_PTOS;
     GLOBAL_PTOS->errorMessage	= NULL;
@@ -209,8 +207,6 @@ int serialize_pftijah_options_DRIVER(
 #endif
 	int returnVal = xquery_print_result_DRIVER(
             "",
-            NULL, /* module */
-            NULL, /* method */
             &pftijah_optionsSerializeFun,
             "",
         	ws,
@@ -221,7 +217,7 @@ int serialize_pftijah_options_DRIVER(
         	kind,
         	intVAL,
         	dblVAL,
-        	strVAL);
+        	strVAL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 #ifdef DEBUG
 	stream_printf(GDKout,"CALLED xquery_print_result_DRIVER: res=%d\n",returnVal);
 	BATprintf(GDKout,ptos.bat);

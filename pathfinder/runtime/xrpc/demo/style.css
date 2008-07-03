@@ -1,0 +1,102 @@
+body {
+	background: orange;
+	font-family: arial, verdana;
+}
+
+#header {
+	background: white;
+	padding-left: 30px;
+	padding-right:30px;
+	border: 1px solid black;
+	border-bottom: 4px solid black;
+	border-right: 4px solid black;
+	width:100%;
+	height:100px;
+}
+
+table td h1 {
+	font-size: 20pt;
+	text-align: center;
+}
+
+#all {
+	width: 100%;
+}
+
+#all tr {
+	vertical-align: top;
+}
+
+#content {
+	background: white;
+	margin-top:20px;
+	padding: 10px;
+	border: 1px solid black;
+	border-bottom: 4px solid black;
+	border-right: 4px solid black;
+	height: 646px;
+}
+
+#answers {
+	background: white;
+	margin-top:20px;
+	padding: 10px;
+	border: 1px solid black;
+	border-bottom: 4px solid black;
+	border-right: 4px solid black;
+}
+
+#request, #response, #graph {
+	background: white;
+	margin-top:20px;
+	padding: 10px;
+	border: 1px solid black;
+	border-bottom: 4px solid black;
+	border-right: 4px solid black;
+	width: 410px;
+	height: 326px;
+}
+
+#graph {
+	width: 430px;
+	height: 670px;
+	margin-right: 5px;
+	overflow:auto;
+	padding: 0px;
+}
+
+#request tr.myheader, #response tr.myheader, #answers tr.myheader, #graph tr.myheader {
+	font-size: 0.7em;
+	font-weight: bold;
+	background-color: black;
+	color: white;
+	height: 0.7em;
+}
+
+#request td.tab, #response td.tab {
+	width: 75px;
+	text-align: center;
+}  
+
+#request tr.myheader td a, #response tr.myheader td a {
+	color: orange;
+}
+
+#request td table, #response td table {
+	border: 1px solid black;
+	width: 100%;
+	font-size: 0.9em;
+}
+
+#reqvis, #reqraw, #resvis, #resraw {
+	overflow:auto;
+	height: 260px;
+}
+
+#content tr {
+	vertical-align:top;
+}
+
+.myinput {
+	margin-bottom: 4px;
+}

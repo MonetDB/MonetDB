@@ -4,18 +4,28 @@ function XRPC(posturl,    /* Your XRPC server. Usually: "http://yourhost:yourpor
               moduleurl,  /* module (physical) at-hint URL. Module file must be here! */
               method,     /* method name (matches function name in module) */
               arity,      /* arity of the method */
+              updating,   /* whether the function is an updating function */
               call,       /* one or more XRPC_CALL() parameter specs (concatenated strings) */ 
+              callback,   /* callback function to call with the XML response */
+              timeout,    /* timeout value, when > 0 repeatable isolation level is presumed */
+              mode)       /* (none | repeatable) [-iterative][-trace] */
+{
+    clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,arity,updating,call,timeout,mode), callback);
+}
+     
+function XRPC_PART(geturl,    /* Your XRPC server. Usually: "http://yourhost:yourport/xrpc" */ 
               callback)   /* callback function to call with the XML response */
 {
-    clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,arity,call), callback);
+    clntPart.sendReceivePart(geturl, callback);
 }
 
 /**********************************************************************
           functions to construct valid XRPC soap requests
  ***********************************************************************/
 
-function XRPC_REQUEST(module, moduleurl, method, arity, body) {
-    var r = '<?xml version="1.0" encoding="utf-8"?>\n' +
+function XRPC_REQUEST(module, moduleurl, method, arity, updating, body, timeout, mode) 
+{
+    return '<?xml version="1.0" encoding="utf-8"?>\n' +
            '<env:Envelope ' +
            'xmlns:env="http://www.w3.org/2003/05/soap-envelope" ' +
            'xmlns:xrpc="http://monetdb.cwi.nl/XQuery" ' +
@@ -26,10 +36,11 @@ function XRPC_REQUEST(module, moduleurl, method, arity, body) {
                '<xrpc:request xrpc:module="' + module + '" ' +
                 'xrpc:location="' + moduleurl + '" ' +
                 'xrpc:method="' + method + '" ' +
+                'xrpc:mode="' + mode + '" ' +
+                'xrpc:updCall="' + (updating?"true":"false") + '" ' +
                 'xrpc:arity="' + arity + '">' + 
            body 
            + '</xrpc:request></env:Body></env:Envelope>';
-    return r;
 }
 
 /* a body consists of one or more calls */
@@ -72,6 +83,25 @@ function serializeXML(xml) {
     }
 }
 
+function string2XML(text) {
+	try //Internet Explorer
+	  {
+		  xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
+		  xmlDoc.async="false";
+		  xmlDoc.loadXML(text);
+	  }
+	catch(e)
+	  {
+	  try //Firefox, Mozilla, Opera, etc.
+	    {
+		    parser=new DOMParser();
+		    xmlDoc=parser.parseFromString(text,"text/xml");
+	    }
+	  catch(e) {alert(e.message)}
+	  }
+	  return xmlDoc;
+}
+
 function getnodesXRPC(node,tagname) {
     try {
         return node.getElementsByTagNameNS("http://monetdb.cwi.nl/XQuery",tagname);
@@ -92,21 +122,43 @@ XRPCWebClient = function () {
     }
 }
 
+XRPCWebClientPart = function () {
+    if (window.XMLHttpRequest) {
+        this.xmlhttp = new XMLHttpRequest();
+    } else if (window.ActiveXObject) {
+        try {
+            this.xmlhttp = new ActiveXObject("Msxml2.XMLHTTP");
+        } catch(e) {
+            this.xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+    }
+}
+
 XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callback) {
     try {
-        this.xmlhttp.open("POST", posturl, true);
-        if (XRPCDEBUG) alert(request); 
-        this.xmlhttp.send(request);
-
-        var app = this;
-        this.xmlhttp.onreadystatechange = function() {
+    	this.xmlhttp.open("POST", posturl, true);
+      //alert(request);
+      if (XRPCDEBUG && method != 'getdoc') {
+        //document.getElementById("messreq").value = request; 
+        messreqChanged(string2XML(request));
+      }
+		this.xmlhttp.send(request);
+		var app = this;
+    
+    	this.xmlhttp.onreadystatechange = function() {
             if (app.xmlhttp.readyState == 4 ) {
                 if (app.xmlhttp.status == 200 &&
                     app.xmlhttp.responseText.indexOf("!ERROR") < 0 && 
                     app.xmlhttp.responseText.indexOf("<env:Fault>") < 0) 
                 {
-                    if (XRPCDEBUG) alert(serializeXML(app.xmlhttp.responseXML)); 
-                    callback(app.xmlhttp.responseXML);
+				    if (XRPCDEBUG) {
+				    	if (app.xmlhttp.responseText) {
+
+
+				    		if(method != 'getdoc') messresChanged(app.xmlhttp.responseXML? app.xmlhttp.responseXML: string2XML(app.xmlhttp.responseText));
+				    		callback(app.xmlhttp.responseXML? app.xmlhttp.responseXML: string2XML(app.xmlhttp.responseText));
+				    	}
+				    }
                 } else {
                     var errmsg =
                         '!ERROR: "' + method + ' execution failed at the remote side"\n\n' +
@@ -118,7 +170,39 @@ XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callbac
             }
         };
     } catch (e) {
-        alert('sendRequest('+method+'): '+e);
+        alert('sendRequest('+posturl,','+method+'): '+e);
+    }
+}
+
+XRPCWebClientPart.prototype.sendReceivePart = function(geturl, callback) {
+    try {
+    	//alert("get " + geturl);
+        this.xmlhttp.open("GET", geturl, true);
+        this.xmlhttp.send("");
+        var app = this;
+    
+    	this.xmlhttp.onreadystatechange = function() {
+            if (app.xmlhttp.readyState == 4 ) {
+                if (app.xmlhttp.status == 200 &&
+                    app.xmlhttp.responseText.indexOf("!ERROR") < 0 && 
+                    app.xmlhttp.responseText.indexOf("<env:Fault>") < 0) 
+                {
+				    if (XRPCDEBUG) {
+				    	if (app.xmlhttp.responseText)
+				    		callback(app.xmlhttp.responseXML? app.xmlhttp.responseXML: string2XML(app.xmlhttp.responseText));
+				    }
+                } else {
+                    var errmsg =
+                        '!ERROR: "' + method + ' execution failed at the remote side"\n\n' +
+                        '!ERROR: HTTP/1.1 ' + app.xmlhttp.status + '\n' +
+                        '!ERROR: HTTP Response:\n\n\t' + app.xmlhttp.responseText;
+                    alert(errmsg);
+                    return null;
+                }
+            }
+        };
+    } catch (e) {
+        alert('sendRequest('+geturl+'): '+e);
     }
 }
 

@@ -716,7 +716,7 @@ handle_pfx_uri_loc(shredCtxStruct *shredCtx,
     {
         return BUNappend(histo, &cnt, TRUE)?res:oid_nil;
     } else if (res != oid_nil) {
-        BUN p = BUNlast(histo) - 1;
+        BUN p = (BUN) res;
         cnt = 1 + *(lng*) Tloc(histo,p);
         return BUNinplace(histo, p, NULL, &cnt, TRUE)?res:oid_nil;
     }
@@ -807,7 +807,7 @@ shred_start_document(void *xmlCtx)
 #ifdef DEBUG
         stream_printf(GDKout, "CALL %s:start_document()\n", shredCtx->serFun->name);
 #endif
-            shredCtx->serFun->init(shredCtx->serCtx, "", NULL, NULL, NULL, NULL);
+            shredCtx->serFun->init(shredCtx->serCtx, "", NULL, NULL);
             shredCtx->serFun->handle_startDocument(shredCtx->serCtx,shredCtx->nnode_pre);
     }
 }
@@ -1560,7 +1560,7 @@ shredder_create(char *location,
     if (shredCtx == NULL) return NULL;
 
     /* fill it */
-    int i = 4;
+    int i = 9;
     memset(shredCtx, 0, sizeof(shredCtxStruct)); 
     shredCtx->location  = location;
     shredCtx->fileSize  = fileSize;

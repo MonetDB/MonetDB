@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope" xmlns:xrpc="http://monetdb.cwi.nl/XQuery" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://monetdb.cwi.nl/XQuery http://monetdb.cwi.nl/XQuery/XRPC.xsd"><env:Body><xrpc:response xrpc:module="xrpcdemo-functions" xrpc:method="add"><xrpc:sequence><xrpc:atomic-value xsi:type="xs:integer">3</xrpc:atomic-value></xrpc:sequence></xrpc:response></env:Body></env:Envelope>
