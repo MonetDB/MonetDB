@@ -757,7 +757,7 @@ xrpc_parse_message(stream *out,
     nnodes     = BATcount(pre_size);
 
     /* get mode from the header (a bit hacked) */
-    for(i=0; i<nattrs; i++) {
+    for(i=0; (size_t)i<nattrs; i++) {
         str s = (str) BUNtail(qn_uli, attr_qnT[i]);
         if (strcmp(s, XRPC_NS"|mode") == 0) {
             mode = (str) BUNtail(prop_vali, attr_propT[i]);
