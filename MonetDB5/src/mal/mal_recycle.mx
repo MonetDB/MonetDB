@@ -451,7 +451,7 @@ int chooseVictims(int *lvs, int ltop, int wr)
 	targmem = totmem - wr; /*sack volume */
 	smem = 0;
 	for(newtop =ltop; newtop>0; newtop--){
-		maxwc = 0;
+		maxwc = 0; mpos = newtop-1;
 		for(l = 0; l<newtop; l++){
 			if ( recycleBlk->profiler[lvs[l]].obytes > targmem - smem  )
 				wcrd[l] = -1;
