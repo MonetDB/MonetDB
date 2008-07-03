@@ -161,6 +161,8 @@ typedef struct {
 	int 		chid;
 	int 		hiid;
 
+	lng 		pieces; 	/* number of physical pieces in the column. For now maintained only for sideways cracking  */
+
 	struct referencesNode *references;
 	lng 		creationTimestamp;
 	lng 		accesses;
@@ -410,16 +412,18 @@ addCrackerIndex_@1(int m, @1 *value, bit inclusive, oid index, BAT * b){
 
                 CrackerIndex[m].Tree->nextValue = NULL;	
 		CrackerIndex[m].Tree->indexPosition = index; 
-
+			
+		CrackerIndex[m].pieces++;
                 return CrackerIndex[m].Tree;
         }
 
 	base = BUNfirst(b);
 	res = InsertTree_@1(m, count, *value, inclusive, index, CrackerIndex[m].Tree, b, base, &newNode);
 	if (newNode==NULL){
-		printf("\n Inserting into the Tree failed: possibly node existed already \n");
+		/*printf("\n Inserting into the Tree failed: possibly node existed already \n");*/
 		return NULL;
 	}
+	CrackerIndex[m].pieces++;
 	prev = findPreviousPieceWalkingBack(newNode);
 	if (prev!= NULL) prev->nextValue = newNode;
 	newNode->nextValue = findNextPiece(newNode);

@@ -1216,6 +1216,7 @@ CRKcrackUnorderedThreeSideways_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, oid first, o
 	if (vl == vm){ /* Left piece is empty */
 		if (@9_@8(vl, &hgh,@[10]@1)){
 			@:shuffleSideways(@1,@2,vl,hmax,vlt,hmaxt)@
+                        hmax--;hmaxt--;
 			*posl = vl - h0;
 		}
 		else if (@9_@6(vl, &low,@[10]@1))
@@ -1243,8 +1244,8 @@ CRKcrackUnorderedThreeSideways_@3_@4_@1_@2( BAT *b, @1 low, @1 hgh, oid first, o
                 }
         }
 	if (vm == (@1*)Hloc(b,firstBUN+last+1)){ /* Right and middle are empty */
-		*posl = 0;/*-1;*/
-		*posh = 0;/*-1;*/
+		*posl = (oid)-1;
+		*posh = (oid)-1;
 		return MAL_SUCCEED;
 	}	
 	if (hmax == vl){ /* Middle piece is empty */
@@ -2374,7 +2375,7 @@ dropPiece_@1(int batId, int tailBatId, struct Node *localFirst){
         if (vh < cl2)
                 /*then the left piece is empty*/
                 gapH = -1;
-        if (vh > ch2){
+        if (vh >= ch2){
                 /*then the right piece is empty*/
                 gapH = -1;
                 vh--;
@@ -2410,11 +2411,13 @@ dropPiece_@1(int batId, int tailBatId, struct Node *localFirst){
         if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE)
                 CRKcrackUnorderedThreeSideways_LO_RO_@1_@2(b,*low,*hgh, @3, @4, &vl, &vh);
 
-        /*if (vl != -1 && vh != -1){*/
+        if (vl != (oid)-1 && vh != (oid)-1 && vl < vh){
+		CrackerIndex[m].pieces++; /* add one more piece since we are making 
+						at least 2 new pieces */
                 if (vl>0) _vl=vl-1; else _vl=vl;
                 addCrackerIndex_@1(m,low,*inclusiveLow,_vl,c);
-                addCrackerIndex_@1(m,hgh,HBound,vh,c);
-        
+                if (vh<@4) addCrackerIndex_@1(m,hgh,HBound,vh,c);
+        }
 @
 
 @= crkThreeTreeIncrementalSideways
@@ -3495,9 +3498,23 @@ createView:
 
         /* create the map if it does not exist and perform the fist crack 
 	   without searching the index (it is empty at this point) */
-        if (m == -1 && newTape == TRUE){
-		@:CreateCrackerMap(@1,@2)@		
-		newCrackerMAP = TRUE;
+	/* Also take this branch if there is an index but is empty, i.e., there were gaps in the previous selections */
+        if ((m == -1 && newTape == TRUE) || (m!=-1 && CrackerIndex[m].Tree == NULL)){
+
+		if (m==-1){
+			@:CreateCrackerMap(@1,@2)@		
+			newCrackerMAP = TRUE;
+		}else{
+			CrackerIndex[m].accesses += 1;
+	 
+			/* Take the index of the bat */
+			if ((c = BATdescriptor(CrackerIndex[m].cid)) == NULL)                        
+				throw(MAL, "crackers.crackRange", "Cannot access cracker index");
+			
+			/* Take the copy of the bat for which we maintain the index */
+			if ((b = BATdescriptor(CrackerIndex[m].cbid)) == NULL)
+				throw(MAL, "crackers.crackRange", "Cannot access cracker BAT");
+		}
 
 		/* crack the whole map based on the current restriction */
                 posl = BUNfirst(b);

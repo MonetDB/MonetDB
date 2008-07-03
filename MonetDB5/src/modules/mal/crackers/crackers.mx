@@ -172,6 +172,7 @@ comment "clear all references ";
 command fmremoveMap():void
 address CRKremoveFullMap
 comment "clear all debugging map ";
+
 @
 
 @= Select
@@ -533,8 +534,12 @@ command crackJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2],b4:bat[:oid
 address CRKcrackJoin_@2
 comment "Join two maps based on head values. Align the maps to avoid overlapping pieces";
 
-command cacheConsciousCrackHashJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2],b4:bat[:oid,:@2]):bat[:oid,:oid]
+command cacheConsciousCrackHashJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2],b4:bat[:oid,:@2],pieceSize:lng,joinThreshold:lng):bat[:oid,:oid]
 address CRKcacheConsciousCrackHashJoin_@2
+comment "Join two maps based on head values. Align the maps to avoid overlapping pieces. Reuse hash tables";
+
+command cacheConsciousCrackHashJoinAlignOnly(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2],b4:bat[:oid,:@2],pieceSize:lng,joinThreshold:lng):bat[:oid,:oid]
+address CRKcacheConsciousCrackHashJoinAlignOnly_@2
 comment "Join two maps based on head values. Align the maps to avoid overlapping pieces. Reuse hash tables";
 
 command crackHashJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2],b4:bat[:oid,:@2]):bat[:oid,:oid]
@@ -632,11 +637,11 @@ CrackerIndexNode *CrackerIndex;
 
 struct storageManagement *StorageInfo = NULL;
 
-int IndexEntries = 220000; /* Initial size used for the bat that stores index values */
+int IndexEntries = 4000000; /* Initial size used for the bat that stores index values */
 
 /* Temp variables used to test the effect of stop updating the index, they operate only on one cracker bat */
 int IndexSize = 0;
-int IndexStop = 250000;
+int IndexStop = 10000000;
 @
 
 @}

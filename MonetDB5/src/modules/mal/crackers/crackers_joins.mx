@@ -40,7 +40,7 @@ crackers_export str CRKbatCount(lng *count, int *bid);
 crackers_export str CRKmaterializeH(int *res, int *bid);
 
 /* #define DEBUG_CRACKERS_JOIN 		to enable debug trace */
-/* #define TIMER_CRACKERS_JOIN 		to enable timing pieces */
+ #define TIMER_CRACKERS_JOIN 		to enable timing pieces 
 #endif /* _CRACKERS_JOINS_H */
 @
 
@@ -50,7 +50,8 @@ crackers_export str CRKmaterializeH(int *res, int *bid);
 crackers_export str CRKsimpleJoin_@1(int *res, int *bidL1, int *bidL2, int *bidR1, int *bidR2);
 crackers_export str CRKcrackJoin_@1(int *res, int *bidL1, int *bidL2, int *bidR1, int *bidR2);
 crackers_export str CRKcrackHashJoin_@1(int *res, int *bidL1, int *bidL2, int *bidR1, int *bidR2);
-crackers_export str CRKcacheConsciousCrackHashJoin_@1(int *res, int *bidL1, int *bidL2, int *bidR1, int *bidR2);
+crackers_export str CRKcacheConsciousCrackHashJoin_@1(int *res, int *bidL1, int *bidL2, int *bidR1, int *bidR2, lng *pieceSize, lng *joinThreshold);
+crackers_export str CRKcacheConsciousCrackHashJoinAlignOnly_@1(int *res, int *bidL1, int *bidL2, int *bidR1, int *bidR2, lng *pieceSize, lng *joinThreshold);
 crackers_export str CRKFullAlignment_@1(int *res, int *bidL, int *bidR1, int *bidR2);
 crackers_export str CRKAlreadyAlignedJoin_@1(int *res, int *bidL, int *bidR1, int *bidR2);
 crackers_export str CRKAlignJoin_@1(int *res, int *bidL, int *bidR1, int *bidR2);
@@ -69,6 +70,7 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 @c
 #include "mal_config.h"
 #include "crackers.h"
+#include "bat5.h"
 
 /* Local support functions and macros */
 
@@ -93,17 +95,20 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 
 @c
 
-void
+lng
 CRKjoin(BAT *bn, BAT *l, BAT *r) {
 	ptr v, nil = ATOMnilptr(r->htype);
 	BUN p, q;
 	int any;
+	lng T1=GDKusec(), T2;
 	BATiter li = bat_iterator(l);
         BATiter ri = bat_iterator(r);
 
 	BATmmap_pin(r);
-	if (BATprepareHash(r))
-		return;
+	if (BATprepareHash(r)){
+		T2=GDKusec();
+		return T2-T1;
+	}
 	switch (any = ATOMstorage(l->ttype)) {
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
@@ -133,11 +138,12 @@ CRKjoin(BAT *bn, BAT *l, BAT *r) {
 
       bunins_failed: /* blindly assume bunins does NOT fail*/
 	BATmmap_unpin(r);
-	return;
+	T2=GDKusec();
+	return T2-T1;
 }
 
 /* Exported functions */
-@:TypeSwitch_1(JoinFunctionns_impl_1)@
+@:TypeSwitch_1(JoinFunctions_impl_1)@
 
 str CRKbatCount(lng *count, int *bid){
 	BAT *b=BATdescriptor(*bid);
@@ -159,33 +165,33 @@ str CRKmaterializeH(int *res, int *bid){
 @- Exported functions
 
 @= JoinTwoPieces
+	joinsDone++;
 	viewHeadLeft = VIEWhead_(mapLeft,  BAT_READ);
 	viewHeadRight = VIEWhead_(mapRight,  BAT_READ);
 
-	viewLeft  = BATslice(viewHeadLeft, prevPosLeft+1,  curPosLeft +1);
+	viewLeft  = BATslice(viewHeadLeft, prevPosLeft,  curPosLeft +1);
         BBPunfix(viewHeadLeft->batCacheid);
 
-        viewRight = BATslice(viewHeadRight, prevPosRight+1, curPosRight+1);
+        viewRight = BATslice(viewHeadRight, prevPosRight, curPosRight+1);
         BBPunfix(viewHeadRight->batCacheid);
 
-	markedViewLeft  = (BAT*)BATmark(viewLeft,prevPosLeft+1);
+	markedViewLeft  = (BAT*)BATmark(viewLeft,prevPosLeft);
         BBPunfix(viewLeft->batCacheid);
 
-        markedViewRight = (BAT*)BATmark(viewRight,prevPosRight+1);
+        markedViewRight = (BAT*)BATmark(viewRight,prevPosRight);
         BBPunfix(viewRight->batCacheid);
 
-	TJ1=GDKusec();
-	if (curPosLeft - prevPosLeft > 0 && curPosRight - prevPosRight > 0) {
-		if ( curPosLeft - prevPosLeft < curPosRight - prevPosRight ){ 
-			CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
+	if (curPosLeft - prevPosLeft +1> 0 && curPosRight - prevPosRight+1 > 0) {
+		if ( curPosLeft - prevPosLeft+1 < curPosRight - prevPosRight+1 ){ 
+			TJtotal+=CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
 		}
 		else{ 
-			CRKjoin(res, BATmirror(markedViewLeft), markedViewRight);
+			TJtotal+=CRKjoin(res, BATmirror(markedViewLeft), markedViewRight);
 		}
 	}
-	TJ2=GDKusec();
-	TJtotal += TJ2 - TJ1;
-
+/*
+printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal-temp, curPosLeft - prevPosLeft +1, curPosRight - prevPosRight +1);
+*/
 	BBPunfix(markedViewRight->batCacheid);
 	BBPunfix(markedViewLeft->batCacheid);
 @
@@ -193,32 +199,60 @@ str CRKmaterializeH(int *res, int *bid){
 @= dumpIndex
 #ifdef DEBUG_CRACKERS_JOIN
 	printf("\n @1 \n");
-	printAVLTree(CrackerIndex[mapLpos].Tree, indexLeft, baseLeft, bunSizeLeft);
+	printAVLTree(CrackerIndex[mapLpos].Tree, indexLeft, baseLeft);
 	printf("\n Index Right \n");
-	printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight, bunSizeRight);
+	printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight);
 #endif
 
 @= JoinTwoSuperPiecesReuseHashTables
+#ifdef TIMER_CRACKERS_JOIN
+		joinsDone++;
+#endif
 	@:dumpIndex(Index Left)@
 	/* Exploit existing views if possible */
+	invalidateHash=FALSE;
 	if (prevNodeLeft != NULL){
 		if (prevNodeLeft->slice != -1){
 			temp = prevNodeLeft;
 			existsHashTableLeft = TRUE;
 			while (temp->indexPosition != curPosLeft){
-				if (temp->slice != prevNodeLeft->slice)
-					existsHashTableLeft = FALSE;
+				if (temp->slice != prevNodeLeft->slice){
+					invalidateHash=TRUE;
+					break;
+				}
 				if (temp->nextValue==NULL)
 					break;
 				temp=temp->nextValue;
 			}
+		}else
+			invalidateHash=TRUE;
+	}
+	if (invalidateHash == TRUE){
+		int lastHash=-1;
+		existsHashTableLeft = FALSE;
+		temp = prevNodeLeft;
+		while (temp->indexPosition != curPosLeft){
+			if (temp->slice!=-1){
+				lastHash=temp->slice;
+				BBPdecref(temp->slice,TRUE);
+				while (temp->slice==lastHash){
+					temp->slice=-1;
+					if (temp->nextValue==NULL)
+						break;
+					temp=temp->nextValue;
+				}
+				continue;
+			}
+			if (temp->nextValue==NULL)
+				break;
+			temp=temp->nextValue;
 		}
 	}
 	if (existsHashTableLeft == FALSE){
 		viewHeadLeft = VIEWhead_(mapLeft,  BAT_READ);
-		viewLeft  = BATslice(viewHeadLeft, prevPosLeft+1,  curPosLeft +1);
+		viewLeft  = BATslice(viewHeadLeft, prevPosLeft,  curPosLeft +1);
 	        BBPunfix(viewHeadLeft->batCacheid);
-		markedViewLeft  = (BAT*)BATmark(viewLeft,prevPosLeft+1);
+		markedViewLeft  = (BAT*)BATmark(viewLeft,prevPosLeft);
 	        BBPunfix(viewLeft->batCacheid);
 	}
 	else {
@@ -226,48 +260,96 @@ str CRKmaterializeH(int *res, int *bid){
 		        	throw(MAL, "crackers.crackHashJoin", "Cannot access slice");
 	}
 
+	invalidateHash=FALSE;
 	if (prevNodeRight != NULL){
                 if (prevNodeRight->slice != -1){
 			temp = prevNodeRight;
 			existsHashTableRight = TRUE;
 			while (temp->indexPosition != curPosRight){
-				if (temp->slice != prevNodeRight->slice)
-					existsHashTableRight = FALSE;
+				if (temp->slice != prevNodeRight->slice){
+					invalidateHash=TRUE;
+					break;
+				}
 				if (temp->nextValue==NULL)
 					break;
 				temp=temp->nextValue;
 			}
+		}else
+			invalidateHash=TRUE;
+	}
+	if (invalidateHash == TRUE){
+		int lastHash=-1;
+		existsHashTableRight = FALSE;
+		temp = prevNodeRight;
+		while (temp->indexPosition != curPosRight){
+			if (temp->slice!=-1){
+				lastHash=temp->slice;
+				BBPdecref(temp->slice,TRUE);
+				while (temp->slice==lastHash){
+					temp->slice=-1;
+					if (temp->nextValue==NULL)
+						break;
+					temp=temp->nextValue;
+				}
+				continue;
+			}
+			if (temp->nextValue==NULL)
+				break;
+			temp=temp->nextValue;
 		}
 	}
 	if (existsHashTableRight == FALSE){
 		viewHeadRight = VIEWhead_(mapRight,  BAT_READ);
-	        viewRight = BATslice(viewHeadRight, prevPosRight+1, curPosRight+1);
+	        viewRight = BATslice(viewHeadRight, prevPosRight, curPosRight+1);
 	        BBPunfix(viewHeadRight->batCacheid);
-        	markedViewRight = (BAT*)BATmark(viewRight,prevPosRight+1);
+        	markedViewRight = (BAT*)BATmark(viewRight,prevPosRight);
 	        BBPunfix(viewRight->batCacheid);
 	}else{
 		if ((markedViewRight = BATdescriptor(prevNodeRight->slice)) == NULL)
 			throw(MAL, "crackers.crackHashJoin", "Cannot access slice");
 	}
+
 #ifdef DEBUG_CRACKERS_JOIN
 	printf("\n Left \n");
 	BATprint(markedViewLeft);
 	printf("\n Right \n");
 	BATprint(markedViewRight);
 #endif
-	TJ1=GDKusec();
-	if (curPosLeft - prevPosLeft > 0 && curPosRight - prevPosRight > 0) {
+	sizeLeft = curPosLeft - prevPosLeft + 1;
+	sizeRight = curPosRight - prevPosRight + 1;
+	if (sizeLeft > 0 && sizeRight > 0) {
+	(void) joinThreshold;
 		if (existsHashTableLeft == FALSE && existsHashTableRight == TRUE){
-			CRKjoin(res, BATmirror(markedViewLeft), markedViewRight);
+			/* If the size with the hash table does not fit in cache while the other does, then build new hash table on the smaller size */
+			if (sizeLeft < sizeRight){
+				if (sizeLeft <  (oid)*joinThreshold){
+					if  (sizeRight >  (oid)*joinThreshold){
+						reversingJoinOrder++;
+						TJtotal+=CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
+					}
+				}
+			}else{	
+				TJtotal+=CRKjoin(res, BATmirror(markedViewLeft), markedViewRight);
+			}
 		}else 
 		if (existsHashTableLeft == TRUE && existsHashTableRight == FALSE){
-			CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
+			if (sizeRight < sizeLeft){
+				if (sizeRight < (oid)*joinThreshold){
+					if  (sizeLeft >  (oid)*joinThreshold){
+						reversingJoinOrder++;
+						TJtotal+=CRKjoin(res, BATmirror(markedViewLeft), markedViewRight);
+					}
+				}
+			}else{	
+				TJtotal+=CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
+			}
 		}else{
-			if  (curPosLeft - prevPosLeft > curPosRight - prevPosRight){ 
-				CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
+			if  (sizeLeft < sizeRight){ 
+				TJtotal+=CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
 				if (prevNodeLeft != NULL && existsHashTableLeft == FALSE){
 					temp = prevNodeLeft;
 					while (temp->indexPosition != curPosLeft){
+
 						temp->slice = markedViewLeft->batCacheid;
 						if (temp->nextValue==NULL)
 							break;
@@ -276,7 +358,7 @@ str CRKmaterializeH(int *res, int *bid){
 					BBPincref(markedViewLeft->batCacheid,TRUE);
 				}				
 			}else{ 
-				CRKjoin(res, BATmirror(markedViewLeft), markedViewRight);
+				TJtotal+=CRKjoin(res, BATmirror(markedViewLeft), markedViewRight);
 				if (prevNodeRight != NULL && existsHashTableRight == FALSE){
 					temp = prevNodeRight;
 					while (temp->indexPosition != curPosRight){
@@ -289,12 +371,11 @@ str CRKmaterializeH(int *res, int *bid){
 				}
 				
 			}
+
 		}
 		BBPunfix(markedViewRight->batCacheid);
 		BBPunfix(markedViewLeft->batCacheid);
 	}
-	TJ2=GDKusec();
-	TJtotal += TJ2 - TJ1;
 
 #ifdef DEBUG_CRACKERS_JOIN
 	printf("\n Res \n");
@@ -305,6 +386,7 @@ str CRKmaterializeH(int *res, int *bid){
 @= JoinTwoPiecesReuseHashTables
 	@:dumpIndex(Index Left)@
 	/* Exploit existing views if possible */
+	joinsDone++;
 	if (prevNodeLeft != NULL){
 		if (prevNodeLeft->slice != -1){
 			if ((markedViewLeft = BATdescriptor(prevNodeLeft->slice)) == NULL)
@@ -315,15 +397,11 @@ str CRKmaterializeH(int *res, int *bid){
 	}
 	if (existsHashTableLeft == FALSE){
 		viewHeadLeft = VIEWhead_(mapLeft,  BAT_READ);
-		viewLeft  = BATslice(viewHeadLeft, prevPosLeft+1,  curPosLeft +1);
+		viewLeft  = BATslice(viewHeadLeft, prevPosLeft,  curPosLeft +1);
 	        BBPunfix(viewHeadLeft->batCacheid);
-		markedViewLeft  = (BAT*)BATmark(viewLeft,prevPosLeft+1);
+		markedViewLeft  = (BAT*)BATmark(viewLeft,prevPosLeft);
 	        BBPunfix(viewLeft->batCacheid);
 	}
-#ifdef TIMER_CRACKERS_JOIN
-	 else
-		printf("\n found hash table left \n"); */
-#endif
 
 	if (prevNodeRight != NULL){
                 if (prevNodeRight->slice != -1){
@@ -335,15 +413,11 @@ str CRKmaterializeH(int *res, int *bid){
 	}
 	if (existsHashTableRight == FALSE){
 		viewHeadRight = VIEWhead_(mapRight,  BAT_READ);
-	        viewRight = BATslice(viewHeadRight, prevPosRight+1, curPosRight+1);
+	        viewRight = BATslice(viewHeadRight, prevPosRight, curPosRight+1);
 	        BBPunfix(viewHeadRight->batCacheid);
-        	markedViewRight = (BAT*)BATmark(viewRight,prevPosRight+1);
+        	markedViewRight = (BAT*)BATmark(viewRight,prevPosRight);
 	        BBPunfix(viewRight->batCacheid);
 	}
-#ifdef TIMER_CRACKERS_JOIN
-	else
-		printf("\n found hash table right \n");
-#endif
 
 #ifdef DEBUG_CRACKERS_JOIN
 	printf("\n Left \n");
@@ -352,24 +426,21 @@ str CRKmaterializeH(int *res, int *bid){
 	BATprint(markedViewRight);
 #endif
 
-#ifdef DEBUG_CRACKERS_JOIN
-	TJ1=GDKusec();
-#endif
-	if (curPosLeft - prevPosLeft > 0 && curPosRight - prevPosRight > 0) {
+	if (curPosLeft - prevPosLeft +1> 0 && curPosRight - prevPosRight +1> 0) {
 		if (existsHashTableLeft == FALSE && existsHashTableRight == TRUE){
-			CRKjoin(res, BATmirror(markedViewLeft), markedViewRight);
+			TJtotal+=CRKjoin(res, BATmirror(markedViewLeft), markedViewRight);
 		}else 
 		if (existsHashTableLeft == TRUE && existsHashTableRight == FALSE){
-			CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
+			TJtotal+=CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
 		}else{
-			if  (curPosLeft - prevPosLeft > curPosRight - prevPosRight){ 
-				CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
+			if  (curPosLeft - prevPosLeft+1 < curPosRight - prevPosRight+1){ 
+				TJtotal+=CRKjoin(BATmirror(res), BATmirror(markedViewRight), markedViewLeft);
 				if (prevNodeLeft != NULL && existsHashTableLeft == FALSE){
 					prevNodeLeft->slice = markedViewLeft->batCacheid;
 					BBPincref(markedViewLeft->batCacheid,TRUE);
 				}				
 			}else{ 
-				CRKjoin(res, BATmirror(markedViewLeft), markedViewRight);
+				TJtotal+=CRKjoin(res, BATmirror(markedViewLeft), markedViewRight);
 				if (prevNodeRight != NULL && existsHashTableRight == FALSE){
 					prevNodeRight->slice = markedViewRight->batCacheid;
 					BBPincref(markedViewRight->batCacheid,TRUE);
@@ -381,10 +452,7 @@ str CRKmaterializeH(int *res, int *bid){
 		BBPunfix(markedViewLeft->batCacheid);
 	}
 #ifdef DEBUG_CRACKERS_JOIN
-	TJ2=GDKusec();
-	TJtotal += TJ2 - TJ1;
-#endif
-#ifdef DEBUG_CRACKERS_JOIN
+	printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT" ReuseHash: %d \n",joinsDone, TJtotal-temp, curPosLeft - prevPosLeft +1, curPosRight - prevPosRight +1, (existsHashTableLeft == FALSE && existsHashTableRight == TRUE)?1:0);
 	printf("\n Res \n");
 	BATprint(res);
 	@:dumpIndex(Index Left)@
@@ -456,6 +524,7 @@ str CRKmaterializeH(int *res, int *bid){
 	@:dumpIndex(Index Left)@
 #endif
 @
+
 @= AlignJoin
 	existsHashTableRight = FALSE;
 	viewLeft  = BATslice(mapLeft, prevPosLeft,  curPosLeft +1);
@@ -523,6 +592,7 @@ str CRKmaterializeH(int *res, int *bid){
 	@:dumpIndex(Index Left)@
 #endif
 @
+
 @= JoinTwoPiecesReuseHashTablesRight
 	@:dumpIndex(Index Left)@
 	/* Exploit existing views if possible */
@@ -599,15 +669,11 @@ str CRKmaterializeH(int *res, int *bid){
 #endif
 	prevPos@2 = curPos@2;
 	curNode@2 = findNextPiece(curNode@2);
-	if (curNode@2 == NULL){
-#ifdef DEBUG_CRACKERS_JOIN
-		printf(" Skip the rest of the opposite(@2) pieces because @2 pieces are done \n"); 
-#endif
-		break;
-	}				
-	curTuple@2 = base@2 + curNode@2->position;
-        curValue@2 =  *(@1 *)Tloc(index@2, curTuple@2);
-        curPos@2   =  *(oid*)Hloc(index@2, curTuple@2);
+	if (curNode@2 != NULL){
+		curTuple@2 = base@2 + curNode@2->position;
+		curValue@2 =  *(@1 *)Tloc(index@2, curTuple@2);
+		curPos@2   =  *(oid*)Hloc(index@2, curTuple@2);
+	}
 @
 
 
@@ -692,9 +758,9 @@ str CRKmaterializeH(int *res, int *bid){
 @
 
 
-@= JoinFunctionns_impl_1
+@= JoinFunctions_impl_1
 str CRKsimpleJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
-	lng TJtotal = 0, TJ1, TJ2;
+	lng TJtotal = 0, T1=GDKusec(), T2, TCtotal=0;
 	int tapeLpos, mapLpos;
 	struct Node *curNodeLeft; 
 	BAT *indexLeft, *mapLeft, *viewLeft, *markedViewLeft, *viewHeadLeft;
@@ -708,6 +774,8 @@ str CRKsimpleJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2)
 	BUN curTupleRight, baseRight;
 	oid curPosRight, prevPosRight;
         @1  curValueRight;
+
+	lng joinsDone=0;
 
 	BAT *res;
 
@@ -761,9 +829,15 @@ str CRKsimpleJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2)
 
         baseRight      = BUNfirst(indexRight);
 
-	res = BATnew(TYPE_oid,TYPE_oid,5*BATcount(mapRight));
+	res = BATnew(TYPE_oid,TYPE_oid,5*BATcount(mapLeft));
 
-	prevPosLeft = prevPosRight = -1;
+	prevPosLeft = prevPosRight = 0;
+	if (curNodeLeft == NULL || curNodeRight == NULL){
+		curPosLeft  = BATcount(mapLeft ) -1;
+		curPosRight = BATcount(mapRight) -1;
+		@:JoinTwoPieces()@
+		goto done;
+	}
 
 	curTupleLeft = baseLeft + curNodeLeft->position;
         curValueLeft =  *(@1*)Tloc(indexLeft, curTupleLeft);
@@ -790,10 +864,20 @@ str CRKsimpleJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2)
 			@:MoveToNextPiece(@1,Right)@
 		}
 
+		if (curNodeLeft == NULL || curNodeRight == NULL){
+			curPosLeft  = BATcount(mapLeft ) -1;
+			curPosRight = BATcount(mapRight) -1;
+			@:JoinTwoPieces()@
+			break;
+		}
+
 		@:JoinTwoPieces()@
 
 	}
 	
+
+	done:;
+
         *resid = res->batCacheid;
         BBPkeepref(*resid);
 
@@ -801,11 +885,17 @@ str CRKsimpleJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2)
         BBPunfix(indexRight->batCacheid);
         BBPunfix(mapLeft->batCacheid);
         BBPunfix(mapRight->batCacheid);
+
+	T2=GDKusec();
+
+	printf("Total  %lld Join %lld Rest  %lld Joins %lld Crack %lld Pieces %lld \n", 
+			T2-T1, TJtotal, ((T2-T1)-TJtotal)-TCtotal, joinsDone, TCtotal, CrackerIndex[mapLpos].pieces + CrackerIndex[mapRpos].pieces );
+
 	return MAL_SUCCEED;
 }	
 
 str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
-	lng T1=GDKusec(), TJtotal = 0, TJ1, TJ2, T2, TCtotal = 0, TC1, TC2;
+	lng T1=GDKusec(), TJtotal = 0, T2, TCtotal = 0, TC1, TC2;
 	int tapeLpos, mapLpos;
 	struct Node *curNodeLeft; 
 	BAT *indexLeft, *mapLeft, *viewLeft, *markedViewLeft, *viewHeadLeft;
@@ -869,6 +959,7 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
         /* Take the map */
         if ((mapRight = BATdescriptor(CrackerIndex[mapRpos].cbid)) == NULL)
                 throw(MAL, "crackers.simpleJoin", "Cannot access crack index");
+
 #ifdef DEBUG_CRACKERS_JOIN
 	printf("maps\n");
 	BATprint(mapLeft);
@@ -880,11 +971,11 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
 
         baseRight      = BUNfirst(indexRight);
 
-	res = BATnew(TYPE_oid,TYPE_oid,5*BATcount(mapRight));
+	res = BATnew(TYPE_oid,TYPE_oid,5*BATcount(mapLeft));
 	
-	prevPosLeft = prevPosRight = -1;
+	prevPosLeft = prevPosRight = 0;
 
-	while (1){
+	while (curNodeLeft != NULL && curNodeRight != NULL){
 
 #ifdef DEBUG_CRACKERS_JOIN
 	printf(" new loop maps\n");
@@ -902,6 +993,17 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
         	curValueRight = *(@1 *)Tloc(indexRight, curTupleRight);
         	curPosRight   = *(oid*)Hloc(indexRight, curTupleRight);
 
+		if (curPosLeft ==0 &&  prevPosLeft==0)
+			if ( *(@1 *)Tloc(mapLeft,0)>curValueLeft){
+				curNodeLeft = curNodeLeft->nextValue;/*findNextPiece(curNodeLeft);*/
+				continue;
+			}	 
+		if (curPosRight ==0 &&  prevPosRight==0)
+			if ( *(@1 *)Tloc(mapRight,0)>curValueRight){
+				curNodeRight = curNodeRight->nextValue;/*findNextPiece(curNodeRight);*/
+				continue;
+			}	 
+
 #ifdef DEBUG_CRACKERS_JOIN
 		printf(" leftVal %d rightVal %d \n", curValueLeft, curValueRight);
 		printf(" prevPosLeft %lld curPosLeft %lld \n", prevPosLeft,curPosLeft);
@@ -911,25 +1013,23 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
 		if (curValueLeft < curValueRight || 
 		((curValueLeft == curValueRight) && (curNodeLeft->inclusive == FALSE) && (curNodeRight->inclusive == TRUE))){
 
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("crack Right \n");
-#endif
-
 			crackedOperationsRight++;
 
 			TC1=GDKusec();	
 			if (curNodeLeft->inclusive == TRUE)
-		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapRight, curValueLeft, prevPosRight+1, curPosRight, &newPosition);
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapRight, curValueLeft, prevPosRight, curPosRight, &newPosition);
         		else 
-                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, prevPosRight+1, curPosRight, &newPosition);
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("newPos %lld \n",newPosition);
-#endif
-
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, prevPosRight, curPosRight, &newPosition);
 			TC2=GDKusec();	
 			TCtotal+=TC2-TC1;
 
-			if (newPosition != curPosRight){
+			if (newPosition < prevPosRight || newPosition ==(oid)-1){
+				/*Empty piece*/
+				prevPosLeft   = curPosLeft+1;
+				curNodeLeft = curNodeLeft->nextValue;/*findNextPiece(curNodeLeft);*/
+				continue;
+			}
+			if (newPosition < curPosRight){
 				addCrackerIndex_@1(mapRpos, &curValueLeft, curNodeLeft->inclusive, newPosition, indexRight);
 				AddToTape_@1(mapRpos, @1_nil, curValueLeft, curNodeLeft->inclusive, curNodeLeft->inclusive);
 				curPosRight = newPosition;
@@ -939,25 +1039,23 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
 		else if (curValueRight < curValueLeft ||
                 ((curValueLeft == curValueRight) && (curNodeRight->inclusive == FALSE) && (curNodeLeft->inclusive == TRUE))){
 
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("crack Left \n");
-#endif
-
 			crackedOperationsLeft++;
 
 			TC1=GDKusec();	
 			if (curNodeRight->inclusive == TRUE)
-		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapLeft, curValueRight, prevPosLeft+1, curPosLeft, &newPosition);
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapLeft, curValueRight, prevPosLeft, curPosLeft, &newPosition);
         		else 
-                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapLeft, curValueRight, prevPosLeft+1, curPosLeft, &newPosition);
-
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("newPos %lld \n",newPosition);
-#endif
-
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapLeft, curValueRight, prevPosLeft, curPosLeft, &newPosition);
 			TC2=GDKusec();	
 			TCtotal+=TC2-TC1;
-			if (newPosition != curPosLeft){
+
+			if (newPosition < prevPosLeft || newPosition ==(oid)-1){
+				/*Empty piece*/
+				prevPosRight   = curPosRight+1;
+				curNodeRight = curNodeRight->nextValue;/*findNextPiece(curNodeRight);*/
+				continue;
+			}
+			if (newPosition < curPosLeft){
 				addCrackerIndex_@1(mapLpos, &curValueRight, curNodeRight->inclusive, newPosition, indexLeft);
 				AddToTape_@1(mapLpos, @1_nil, curValueRight, curNodeRight->inclusive, curNodeRight->inclusive);
 				curPosLeft = newPosition;
@@ -966,18 +1064,14 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
 		}
 
 		@:JoinTwoPieces()@
-		joinsDone++;
 
-		prevPosLeft = curPosLeft;
+		prevPosLeft = curPosLeft+1;
 		if (crackedLeft == FALSE)
-			curNodeLeft = findNextPiece(curNodeLeft);
+			curNodeLeft = curNodeLeft->nextValue;
 				
-		prevPosRight = curPosRight;
+		prevPosRight = curPosRight+1;
 		if (crackedRight == FALSE)
-        		curNodeRight = findNextPiece(curNodeRight);
-		
-		if (curNodeLeft == NULL || curNodeRight == NULL)
-			break;
+        		curNodeRight = curNodeRight->nextValue;
 	}
 
 	while(1){
@@ -1009,16 +1103,18 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
 
 			TC1=GDKusec();	
 			if (curNodeLeft->inclusive == TRUE)
-		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapRight, curValueLeft, prevPosRight+1, curPosRight, &newPosition);
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapRight, curValueLeft, prevPosRight, curPosRight, &newPosition);
         		else 
-                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, prevPosRight+1, curPosRight, &newPosition);
-
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("newPos %lld \n",newPosition);
-#endif
-
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, prevPosRight, curPosRight, &newPosition);
 			TC2=GDKusec();	
 			TCtotal+=TC2-TC1;
+
+			if (newPosition < prevPosRight || newPosition ==(oid)-1){
+				/*Empty piece*/
+				prevPosLeft   = curPosLeft+1;
+				curNodeLeft = curNodeLeft->nextValue;/*findNextPiece(curNodeLeft);*/
+				continue;
+			}
 			if (newPosition < curPosRight){
 				addCrackerIndex_@1(mapRpos, &curValueLeft, curNodeLeft->inclusive, newPosition, indexRight);
 				AddToTape_@1(mapRpos, @1_nil, curValueLeft, curNodeLeft->inclusive, curNodeLeft->inclusive);
@@ -1026,13 +1122,7 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
 				crackedRight = TRUE;
 			}
 			else {  /* this means that there is no chance to join with the future pieces of the other side */
-
-#ifdef DEBUG_CRACKERS_JOIN
-				printf("skippiing the rest of the pieces left");
-#endif
-
 				@:JoinTwoPieces()@
-				joinsDone++;
 				break;
 			}
 		}
@@ -1042,16 +1132,18 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
 
 			TC1=GDKusec();	
 			if (curNodeRight->inclusive == TRUE)
-		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapLeft, curValueRight, prevPosLeft+1, curPosLeft, &newPosition);
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapLeft, curValueRight, prevPosLeft, curPosLeft, &newPosition);
         		else 
-                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapLeft, curValueRight, prevPosLeft+1, curPosLeft, &newPosition);
-
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("newPos %lld \n",newPosition);
-#endif
-
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapLeft, curValueRight, prevPosLeft, curPosLeft, &newPosition);
 			TC2=GDKusec();	
 			TCtotal+=TC2-TC1;
+
+			if (newPosition < prevPosLeft || newPosition ==(oid)-1){
+				/*Empty piece*/
+				prevPosRight   = curPosRight+1;
+				curNodeRight = curNodeRight->nextValue;/*findNextPiece(curNodeRight);*/
+				continue;
+			}
 			if (newPosition < curPosLeft){
 				addCrackerIndex_@1(mapLpos, &curValueRight, curNodeRight->inclusive, newPosition, indexLeft);
 				AddToTape_@1(mapLpos, @1_nil, curValueRight, curNodeRight->inclusive, curNodeRight->inclusive);
@@ -1059,37 +1151,24 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
 				crackedLeft = TRUE;
 			}
 			else {
-
-#ifdef DEBUG_CRACKERS_JOIN
-				printf("skipping the rest of the pieces right");
-#endif
-
 				@:JoinTwoPieces()@
-				joinsDone++;
 				break;
 			}
 		}
 		else if (curNodeLeft == NULL && curNodeRight == NULL){
-
-#ifdef DEBUG_CRACKERS_JOIN
-			printf(" into the last piece for both maps \n");
-#endif
-
 			@:JoinTwoPieces()@
-			joinsDone++;
 			break;
 		}			
 
 		@:JoinTwoPieces()@
-		joinsDone++;
 
-		prevPosLeft = curPosLeft;
+		prevPosLeft = curPosLeft+1;
 		if (crackedLeft == FALSE && curNodeLeft != NULL)
-			curNodeLeft = findNextPiece(curNodeLeft);
+			curNodeLeft = curNodeLeft->nextValue;
 				
-		prevPosRight = curPosRight;
+		prevPosRight = curPosRight+1;
 		if (crackedRight == FALSE && curNodeRight != NULL)
-        		curNodeRight = findNextPiece(curNodeRight);
+        		curNodeRight = curNodeRight->nextValue;
 	}
 	
         *resid = res->batCacheid;
@@ -1102,22 +1181,18 @@ str CRKcrackJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
 
 	T2=GDKusec();
 
-	printf(" Total  %lld Join %lld Crack %lld Rest  %lld Cracks %lld Left %lld Right %lld Joins %lld \n", 
-			T2-T1, TJtotal, TCtotal, ((T2-T1)-TJtotal)-TCtotal, crackedOperationsLeft + crackedOperationsRight, 
-			crackedOperationsLeft, crackedOperationsRight, joinsDone);
+	printf("Total  %lld Join %lld Rest  %lld Joins %lld Crack %lld Pieces %lld \n", 
+			T2-T1, TJtotal, ((T2-T1)-TJtotal)-TCtotal, joinsDone, TCtotal, CrackerIndex[mapLpos].pieces + CrackerIndex[mapRpos].pieces );
 
 	return MAL_SUCCEED;
 }	
 
-str CRKcacheConsciousCrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
-
-	lng T1=GDKusec(), TJtotal = 0, TJ1, TJ2, T2, TCtotal = 0, TC1, TC2;
+str CRKcacheConsciousCrackHashJoinAlignOnly_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2, lng *pieceSize, lng *joinThreshold){
+	lng T1=GDKusec(), TJtotal = 0, T2, TCtotal = 0, TC1, TC2;
 	
-	oid cacheSize, cacheThreshold;
-
 	int tapeLpos, mapLpos;
 	struct Node *curNodeLeft, *prevNodeLeft; 
-	BAT *indexLeft, *mapLeft, *viewLeft, *markedViewLeft, *viewHeadLeft;
+	BAT *indexLeft, *mapLeft;
 	BUN baseLeft;
 	oid curPosLeft, prevPosLeft, cprevPosLeft;
 	@1  curValueLeft;
@@ -1125,7 +1200,7 @@ str CRKcacheConsciousCrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *b
 
 	int tapeRpos, mapRpos;
 	struct Node *curNodeRight, *prevNodeRight; 
-	BAT *indexRight, *mapRight, *viewRight, *markedViewRight, *viewHeadRight;
+	BAT *indexRight, *mapRight;
 	BUN baseRight;
 	oid curPosRight, prevPosRight, cprevPosRight;
         @1  curValueRight;
@@ -1137,10 +1212,9 @@ str CRKcacheConsciousCrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *b
 	oid sizeLeft, sizeRight;
 	oid iterations = 0;
 
-	struct Node *temp;
-	
-	cacheSize 	  = 524288;
-	cacheThreshold    = (cacheSize / 2) / (16+sizeof(@1));
+	lng joinsDone = 0;
+
+	(void)joinThreshold;
 
 	/* Get the cracker tape for the set of the left map or create one if it does not exist */
         tapeLpos = existsCrackerIndexSideways(*bidL1, -1);
@@ -1190,15 +1264,13 @@ str CRKcacheConsciousCrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *b
 
         baseRight      = BUNfirst(indexRight);
 
-	res = BATnew(TYPE_oid,TYPE_oid,5*BATcount(mapRight));
+	res = BATnew(TYPE_oid,TYPE_oid,5*BATcount(mapLeft));
 	
-	prevPosLeft   = prevPosRight   = -1;
+	prevPosLeft   = prevPosRight   = 0;
 	prevNodeLeft  = prevNodeRight  = NULL;
-
 	while (curNodeLeft != NULL && curNodeRight != NULL){
 	
 		iterations++;
-
 		cprevPosRight = prevPosRight;
 		cprevPosLeft  = prevPosLeft;
 
@@ -1211,60 +1283,84 @@ str CRKcacheConsciousCrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *b
         	curValueRight = *(@1 *)Tloc(indexRight, baseRight + curNodeRight->position);
         	curPosRight   = curNodeRight->indexPosition;
 		
-		sizeLeft  = curPosLeft  - prevPosLeft;
-		sizeRight = curPosRight - prevPosRight;
+		if (curPosLeft ==0 &&  prevPosLeft==0)
+			if ( *(@1 *)Tloc(mapLeft,0)>curValueLeft){
+				prevNodeLeft  = curNodeLeft;
+				curNodeLeft = curNodeLeft->nextValue;/*findNextPiece(curNodeLeft);*/
+				continue;
+			}	 
+		if (curPosRight ==0 &&  prevPosRight==0)
+			if ( *(@1 *)Tloc(mapRight,0)>curValueRight){
+				prevNodeRight  = curNodeRight;
+				curNodeRight = curNodeRight->nextValue;/*findNextPiece(curNodeRight);*/
+				continue;
+			}	 
+
+
+		sizeLeft  = curPosLeft  - prevPosLeft  + 1;
+		sizeRight = curPosRight - prevPosRight + 1;
 		
-		if (sizeLeft < cacheThreshold && sizeRight > cacheThreshold) {
+		if (sizeLeft < (oid)*pieceSize) {
 				while (curValueLeft > curValueRight ||
                 			((curValueLeft == curValueRight) && 
 						(curNodeRight->inclusive == FALSE) && (curNodeLeft->inclusive == TRUE))){ 
 					if (curNodeRight->nextValue == NULL) goto cont;
-					cprevPosRight = curPosRight;
+					cprevPosRight = curPosRight+1;
 					curNodeRight = curNodeRight->nextValue;
 					curValueRight = *(@1 *)Tloc(indexRight, baseRight + curNodeRight->position);
 					curPosRight   = curNodeRight->indexPosition;
 				}
-			while (sizeLeft < cacheThreshold){
+			while (sizeLeft < (oid)*pieceSize){
 
 				if (curNodeLeft->nextValue == NULL) goto cont;
- 				cprevPosLeft = curPosLeft;
+				if (curNodeLeft->nextValue->indexPosition - prevPosLeft+1 > (oid)*pieceSize){
+					if (curNodeLeft->nextValue->indexPosition - prevPosLeft+1 - (oid)*pieceSize > (oid)*pieceSize - sizeLeft)
+						goto checkRight;
+				}
+ 				cprevPosLeft = curPosLeft+1;
 				curNodeLeft = curNodeLeft->nextValue;
 				curValueLeft = *(@1 *)Tloc(indexLeft, baseLeft + curNodeLeft->position);
 				curPosLeft   = curNodeLeft->indexPosition; 
-				sizeLeft  = curPosLeft - prevPosLeft;
+				sizeLeft  = curPosLeft - prevPosLeft+1;
 				while (curValueLeft > curValueRight ||
                 			((curValueLeft == curValueRight) && 
 						(curNodeRight->inclusive == FALSE) && (curNodeLeft->inclusive == TRUE))){ 
 					if (curNodeRight->nextValue == NULL) goto cont;
-					cprevPosRight = curPosRight;
+					cprevPosRight = curPosRight+1;
 					curNodeRight = curNodeRight->nextValue;
 					curValueRight = *(@1 *)Tloc(indexRight, baseRight + curNodeRight->position);
 					curPosRight   = curNodeRight->indexPosition;
 				}
 				
 			}
-		}else if (sizeRight < cacheThreshold){
+		}
+		checkRight:;
+		if (sizeRight < (oid)*pieceSize){
 			while (curValueRight > curValueLeft ||
 				((curValueLeft == curValueRight) && 
 					(curNodeLeft->inclusive == FALSE) && (curNodeRight->inclusive == TRUE))){ 
 				if (curNodeLeft->nextValue == NULL) goto cont;
-				cprevPosLeft = curPosLeft;
+				cprevPosLeft = curPosLeft+1;
 				curNodeLeft = curNodeLeft->nextValue;
 				curValueLeft = *(@1 *)Tloc(indexLeft, baseLeft + curNodeLeft->position);
 				curPosLeft   = curNodeLeft->indexPosition; 
 			}
-			while (sizeRight < cacheThreshold){
+			while (sizeRight < (oid)*pieceSize){
 				if (curNodeRight->nextValue == NULL) goto cont;
-				cprevPosRight = curPosRight;
+				if (curNodeRight->nextValue->indexPosition - prevPosRight+1 > (oid)*pieceSize){
+					if (curNodeRight->nextValue->indexPosition - prevPosRight+1 - (oid)*pieceSize > (oid)*pieceSize - sizeRight)
+						goto cont;
+				}
+				cprevPosRight = curPosRight+1;
 				curNodeRight = curNodeRight->nextValue;
 				curValueRight = *(@1 *)Tloc(indexRight, baseRight + curNodeRight->position);
 				curPosRight   = curNodeRight->indexPosition;
-				sizeRight  = curPosRight - prevPosRight;
+				sizeRight  = curPosRight - prevPosRight+1;
 				while (curValueRight > curValueLeft ||
                 			((curValueLeft == curValueRight) && 
 						(curNodeLeft->inclusive == FALSE) && (curNodeRight->inclusive == TRUE))) { 
 					if (curNodeLeft->nextValue == NULL) goto cont;
-					cprevPosLeft = curPosLeft;
+					cprevPosLeft = curPosLeft+1;
 					curNodeLeft = curNodeLeft->nextValue;
 					curValueLeft = *(@1 *)Tloc(indexLeft, baseLeft + curNodeLeft->position);
 					curPosLeft   = curNodeLeft->indexPosition; 
@@ -1273,19 +1369,26 @@ str CRKcacheConsciousCrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *b
 		}
 		
 		cont:;
-			TC1=GDKusec();	
 		if (curValueLeft < curValueRight || 
 		((curValueLeft == curValueRight) && (curNodeLeft->inclusive == FALSE) && (curNodeRight->inclusive == TRUE))){
 
+			TC1=GDKusec();	
 			if (curNodeLeft->inclusive == TRUE)
-		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapRight, curValueLeft, cprevPosRight+1, curPosRight, &newPosition);
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapRight, curValueLeft, cprevPosRight, curPosRight, &newPosition);
         		else 
-                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, cprevPosRight+1, curPosRight, &newPosition);
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, cprevPosRight, curPosRight, &newPosition);
+					TC2=GDKusec();	
+					TCtotal+=TC2-TC1;
 
-			if (newPosition == cprevPosRight){
-				curPosRight = cprevPosRight;
+			if (newPosition < cprevPosRight){
+				if (cprevPosRight == prevPosRight){
+					prevNodeLeft = curNodeLeft;
+					curNodeLeft  = curNodeLeft->nextValue;
+					continue;
+				}
+				curPosRight = cprevPosRight - 1;
 				curNodeRight = findPreviousPieceWalkingBack(curNodeRight);
-			}else if (newPosition != curPosRight){
+			}else if (newPosition < curPosRight){
 				curNodeRight = addCrackerIndex_@1(mapRpos, &curValueLeft, curNodeLeft->inclusive, newPosition, indexRight);
 				AddToTape_@1(mapRpos, @1_nil, curValueLeft, curNodeLeft->inclusive, curNodeLeft->inclusive);
 				curPosRight = newPosition;
@@ -1293,25 +1396,29 @@ str CRKcacheConsciousCrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *b
 		}
 		else if (curValueRight < curValueLeft ||
                 ((curValueLeft == curValueRight) && (curNodeRight->inclusive == FALSE) && (curNodeLeft->inclusive == TRUE))){
+			TC1=GDKusec();	
 			if (curNodeRight->inclusive == TRUE)
-		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapLeft, curValueRight, cprevPosLeft+1, curPosLeft, &newPosition);
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapLeft, curValueRight, cprevPosLeft, curPosLeft, &newPosition);
         		else 
-                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapLeft, curValueRight, cprevPosLeft+1, curPosLeft, &newPosition);
-
-			if (newPosition == cprevPosLeft){
-				curPosLeft = cprevPosLeft;
-				curNodeLeft = findPreviousPieceWalkingBack(curNodeLeft);
-			}else if (newPosition != curPosLeft){
-				curNodeLeft = addCrackerIndex_@1(mapLpos, &curValueRight, curNodeRight->inclusive, newPosition, indexLeft);
-				AddToTape_@1(mapLpos, @1_nil, curValueRight, curNodeRight->inclusive, curNodeRight->inclusive);
-				curPosLeft = newPosition;
-				
-			}
-		}
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapLeft, curValueRight, cprevPosLeft, curPosLeft, &newPosition);
 			TC2=GDKusec();	
 			TCtotal+=TC2-TC1;
 
-		@:JoinTwoSuperPiecesReuseHashTables()@
+			if (newPosition < cprevPosLeft){
+				if (cprevPosLeft == prevPosLeft){
+					prevNodeRight = curNodeRight;
+					curNodeRight  = curNodeRight->nextValue;
+					continue;
+				}
+				curPosLeft = cprevPosLeft - 1;
+				curNodeLeft = findPreviousPieceWalkingBack(curNodeLeft);
+			}else if (newPosition < curPosLeft){
+				curNodeLeft = addCrackerIndex_@1(mapLpos, &curValueRight, curNodeRight->inclusive, newPosition, indexLeft);
+				AddToTape_@1(mapLpos, @1_nil, curValueRight, curNodeRight->inclusive, curNodeRight->inclusive);
+				curPosLeft = newPosition;
+			}
+		}
+
 
 		prevNodeLeft  = curNodeLeft;
 		curNodeLeft = curNodeLeft->nextValue;
@@ -1319,16 +1426,16 @@ str CRKcacheConsciousCrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *b
 		prevNodeRight  = curNodeRight;
 		curNodeRight = curNodeRight->nextValue;
 
-		prevPosLeft  = prevNodeLeft->indexPosition;
-		prevPosRight = prevNodeRight->indexPosition;
+		prevPosLeft  = prevNodeLeft->indexPosition  + 1;
+		prevPosRight = prevNodeRight->indexPosition + 1;
 	}
 
 	while(1){
 		iterations++;
 		existsHashTableLeft = existsHashTableRight = FALSE;
 		
-		prevPosLeft   = prevNodeLeft->indexPosition;
-		prevPosRight  = prevNodeRight->indexPosition;
+		prevPosLeft   = prevNodeLeft ==NULL?0:(prevNodeLeft->indexPosition==0?0:prevNodeLeft->indexPosition + 1);
+		prevPosRight  = prevNodeRight==NULL?0:(prevNodeRight->indexPosition==0?0:prevNodeRight->indexPosition + 1);
 
 		if (curNodeLeft == NULL)
 			curPosLeft  = BATcount(mapLeft)-1;
@@ -1342,57 +1449,463 @@ str CRKcacheConsciousCrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *b
    	             	curValueRight = *(@1 *)Tloc(indexRight, baseRight + curNodeRight->position);
         	        curPosRight   = curNodeRight->indexPosition;
 		}
-		
-		sizeLeft  = curPosLeft  - prevPosLeft;
-		sizeRight = curPosRight - prevPosRight;
 
-		if (sizeLeft < cacheThreshold && curNodeLeft != NULL) {
-			while (sizeLeft < cacheThreshold){
+		
+		sizeLeft  = curPosLeft  - prevPosLeft  + 1;
+		sizeRight = curPosRight - prevPosRight + 1;
+
+		if (sizeLeft < (oid)*pieceSize && curNodeLeft != NULL) {
+			while (sizeLeft < (oid)*pieceSize){
 				if (curNodeLeft->nextValue == NULL)  {
-					if ( (BATcount(mapLeft)-1)- prevPosLeft <cacheThreshold){
+					if ( (BATcount(mapLeft)-1)- prevPosLeft <(oid)*pieceSize){
 						curPosLeft  = BATcount(mapLeft)-1;
 						curNodeLeft = NULL;
 					}
 					break;
 				}
+				if (curNodeLeft->nextValue->indexPosition - prevPosLeft+1 > (oid)*pieceSize){
+					if (curNodeLeft->nextValue->indexPosition - prevPosLeft+1 - (oid)*pieceSize > (oid)*pieceSize - sizeLeft)
+						goto checkRight2;
+				}
 				curNodeLeft = curNodeLeft->nextValue;
 				curPosLeft   = curNodeLeft->indexPosition; 
         	        	curValueLeft = *(@1 *)Tloc(indexLeft, baseLeft + curNodeLeft->position);
-				sizeLeft  = curPosLeft - prevPosLeft;
+				sizeLeft  = curPosLeft - prevPosLeft + 1;
 			}
-		}else if (sizeRight < cacheThreshold && curNodeRight != NULL){
-			while (sizeRight < cacheThreshold){
+		}
+		checkRight2:;
+		if (sizeRight < (oid)*pieceSize && curNodeRight != NULL){
+			while (sizeRight < (oid)*pieceSize){
 				if (curNodeRight->nextValue == NULL) {
-					if ( (BATcount(mapRight)-1)- prevPosRight <cacheThreshold){
+					if ( (BATcount(mapRight)-1)- prevPosRight <(oid)*pieceSize){
 						curPosRight  = BATcount(mapRight)-1;
 						curNodeRight = NULL;
 					}
 					break;
 				}
+				if (curNodeRight->nextValue->indexPosition - prevPosRight+1 > (oid)*pieceSize){
+					if (curNodeRight->nextValue->indexPosition - prevPosRight+1 - (oid)*pieceSize > (oid)*pieceSize - sizeRight)
+						goto cont2;
+				}
 				curNodeRight = curNodeRight->nextValue;
 				curPosRight   = curNodeRight->indexPosition;
    	             		curValueRight = *(@1 *)Tloc(indexRight, baseRight + curNodeRight->position);
-				sizeRight  = curPosRight - prevPosRight;
+				sizeRight  = curPosRight - prevPosRight + 1;
 			}
 		}
-		
+		cont2:;	
 		if (curNodeLeft != NULL && curNodeRight == NULL){	
+			
 			TC1=GDKusec();	
 			if (curNodeLeft->inclusive == TRUE)
 
-		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapRight, curValueLeft, prevPosRight+1, curPosRight, &newPosition);
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapRight, curValueLeft, prevPosRight, curPosRight, &newPosition);
         		else 
-                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, prevPosRight+1, curPosRight, &newPosition);
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, prevPosRight, curPosRight, &newPosition);
 
 			TC2=GDKusec();	
 			TCtotal+=TC2-TC1;
-			if (newPosition < curPosRight && newPosition != prevPosRight){
-			TC1=GDKusec();	
+			if (newPosition < prevPosRight){
+				prevNodeLeft = curNodeLeft;
+				curNodeLeft  = curNodeLeft->nextValue;	
+				continue;
+			}
+			else if (newPosition < curPosRight){
 				curNodeRight = addCrackerIndex_@1(mapRpos, &curValueLeft, curNodeLeft->inclusive, newPosition, indexRight);
 				AddToTape_@1(mapRpos, @1_nil, curValueLeft, curNodeLeft->inclusive, curNodeLeft->inclusive);
 				curPosRight = newPosition;
+			}
+			else {  /* this means that there is no chance to join with the future pieces of the other side */
+
+
+				break;
+			}
+		}
+		else if (curNodeLeft == NULL && curNodeRight != NULL){
+
+			TC1=GDKusec();	
+			if (curNodeRight->inclusive == TRUE)
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapLeft, curValueRight, prevPosLeft+1, curPosLeft, &newPosition);
+        		else 
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapLeft, curValueRight, prevPosLeft+1, curPosLeft, &newPosition);
+
 			TC2=GDKusec();	
 			TCtotal+=TC2-TC1;
+			if (newPosition < prevPosLeft){
+				prevNodeRight = curNodeRight;
+				curNodeRight  = curNodeRight->nextValue;	
+				continue;
+			}else
+			if (newPosition < curPosLeft){
+				curNodeLeft = addCrackerIndex_@1(mapLpos, &curValueRight, curNodeRight->inclusive, newPosition, indexLeft);
+				AddToTape_@1(mapLpos, @1_nil, curValueRight, curNodeRight->inclusive, curNodeRight->inclusive);
+				curPosLeft = newPosition;
+			}
+			else {
+				break;
+			}
+		}
+
+		if (curNodeLeft == NULL && curNodeRight == NULL)
+			break;
+
+		prevNodeLeft  = curNodeLeft;
+		curNodeLeft = curNodeLeft->nextValue;
+	
+		prevNodeRight  = curNodeRight;
+		curNodeRight = curNodeRight->nextValue;
+	}
+	
+        *resid = res->batCacheid;
+        BBPkeepref(*resid);
+
+        BBPunfix(indexLeft->batCacheid);
+        BBPunfix(indexRight->batCacheid);
+        BBPunfix(mapLeft->batCacheid);
+        BBPunfix(mapRight->batCacheid);
+
+	T2=GDKusec();
+
+	printf("Total  %lld Join %lld Rest  %lld Joins %lld Crack %lld Pieces %lld \n", 
+			T2-T1, TJtotal, ((T2-T1)-TJtotal)-TCtotal, joinsDone, TCtotal, CrackerIndex[mapLpos].pieces + CrackerIndex[mapRpos].pieces );
+	return MAL_SUCCEED;
+
+}	
+
+str CRKcacheConsciousCrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2, lng *pieceSize, lng *joinThreshold){
+
+	lng T1=GDKusec(), TJtotal = 0, T2, TCtotal = 0, TC1, TC2;
+	
+	int tapeLpos, mapLpos;
+	struct Node *curNodeLeft, *prevNodeLeft; 
+	BAT *indexLeft, *mapLeft, *viewLeft, *markedViewLeft, *viewHeadLeft;
+	BUN baseLeft;
+	oid curPosLeft, prevPosLeft, cprevPosLeft;
+	@1  curValueLeft;
+	bit existsHashTableLeft;
+
+	int tapeRpos, mapRpos;
+	struct Node *curNodeRight, *prevNodeRight; 
+	BAT *indexRight, *mapRight, *viewRight, *markedViewRight, *viewHeadRight;
+	BUN baseRight;
+	oid curPosRight, prevPosRight, cprevPosRight;
+        @1  curValueRight;
+	bit existsHashTableRight;
+
+	bit invalidateHash;
+	
+	BAT *res;
+	oid newPosition=0;
+
+	oid sizeLeft, sizeRight;
+	oid iterations = 0;
+
+	lng joinsDone = 0;
+	lng reversingJoinOrder = 0;
+
+	struct Node *temp;
+	
+
+	/* Get the cracker tape for the set of the left map or create one if it does not exist */
+        tapeLpos = existsCrackerIndexSideways(*bidL1, -1);
+        if (tapeLpos == -1)
+                tapeLpos = CreateTape_@1(*bidL1);
+
+        /* Get the left map */
+        mapLpos = existsCrackerIndexSideways(*bidL1, *bidL2);
+
+	/* Align the map based on the position of its cursor in the cracker tape */
+        Sync_@1_@1(tapeLpos, mapLpos);
+
+        /* Take the index of the map */
+        if ((indexLeft = BATdescriptor(CrackerIndex[mapLpos].cid)) == NULL)
+                throw(MAL, "crackers.simpleJoin", "Cannot access crack index");
+
+        /* Take the map */
+        if ((mapLeft = BATdescriptor(CrackerIndex[mapLpos].cbid)) == NULL)
+                throw(MAL, "crackers.simpleJoin", "Cannot access crack index");
+
+	/* Get the piece that holds the lowest values */
+	curNodeLeft = getFirstNode(CrackerIndex[mapLpos].Tree);
+
+	baseLeft      = BUNfirst(indexLeft);
+
+	/* Get the cracker tape for the set of the right map or create one if it does not exist */
+        tapeRpos = existsCrackerIndexSideways(*bidR1, -1);
+        if (tapeRpos == -1)
+                tapeRpos = CreateTape_@1(*bidR1);
+
+        /* Get the right map */
+        mapRpos = existsCrackerIndexSideways(*bidR1, *bidR2);
+
+        /* Align the map based on the position of its cursor in the cracker tape */
+        Sync_@1_@1(tapeRpos, mapRpos);
+
+        /* Take the index of the map */
+        if ((indexRight = BATdescriptor(CrackerIndex[mapRpos].cid)) == NULL)
+                throw(MAL, "crackers.simpleJoin", "Cannot access crack index");
+
+        /* Take the map */
+        if ((mapRight = BATdescriptor(CrackerIndex[mapRpos].cbid)) == NULL)
+                throw(MAL, "crackers.simpleJoin", "Cannot access crack index");
+	
+        /* Get the piece that holds the lowest values */
+        curNodeRight = getFirstNode(CrackerIndex[mapRpos].Tree);
+
+        baseRight      = BUNfirst(indexRight);
+
+	res = BATnew(TYPE_oid,TYPE_oid,BATcount(mapLeft));
+	
+	prevPosLeft   = prevPosRight   = 0;
+	prevNodeLeft  = prevNodeRight  = NULL;
+	while (curNodeLeft != NULL && curNodeRight != NULL){
+	
+		iterations++;
+		cprevPosRight = prevPosRight;
+		cprevPosLeft  = prevPosLeft;
+
+
+		existsHashTableLeft = existsHashTableRight = FALSE;
+
+       		curValueLeft = *(@1 *)Tloc(indexLeft, baseLeft + curNodeLeft->position);
+        	curPosLeft   = curNodeLeft->indexPosition; 
+
+        	curValueRight = *(@1 *)Tloc(indexRight, baseRight + curNodeRight->position);
+        	curPosRight   = curNodeRight->indexPosition;
+		
+		if (curPosLeft ==0 &&  prevPosLeft==0)
+			if ( *(@1 *)Tloc(mapLeft,0)>curValueLeft){
+				prevNodeLeft  = curNodeLeft;
+				curNodeLeft = curNodeLeft->nextValue;/*findNextPiece(curNodeLeft);*/
+				continue;
+			}	 
+		if (curPosRight ==0 &&  prevPosRight==0)
+			if ( *(@1 *)Tloc(mapRight,0)>curValueRight){
+				prevNodeRight  = curNodeRight;
+				curNodeRight = curNodeRight->nextValue;/*findNextPiece(curNodeRight);*/
+				continue;
+			}	 
+
+
+		sizeLeft  = curPosLeft  - prevPosLeft  + 1;
+		sizeRight = curPosRight - prevPosRight + 1;
+		
+		if (sizeLeft < (oid)*pieceSize) {
+				while (curValueLeft > curValueRight ||
+                			((curValueLeft == curValueRight) && 
+						(curNodeRight->inclusive == FALSE) && (curNodeLeft->inclusive == TRUE))){ 
+					if (curNodeRight->nextValue == NULL) goto cont;
+					cprevPosRight = curPosRight+1;
+					curNodeRight = curNodeRight->nextValue;
+					curValueRight = *(@1 *)Tloc(indexRight, baseRight + curNodeRight->position);
+					curPosRight   = curNodeRight->indexPosition;
+				}
+			while (sizeLeft < (oid)*pieceSize){
+
+				if (curNodeLeft->nextValue == NULL) goto cont;
+				if (curNodeLeft->nextValue->indexPosition - prevPosLeft+1 > (oid)*pieceSize){
+				/*	if (curNodeLeft->nextValue->indexPosition - prevPosLeft+1 - (oid)*pieceSize > (oid)*pieceSize - sizeLeft)  */
+						goto checkRight;
+				}
+ 				cprevPosLeft = curPosLeft+1;
+				curNodeLeft = curNodeLeft->nextValue;
+				curValueLeft = *(@1 *)Tloc(indexLeft, baseLeft + curNodeLeft->position);
+				curPosLeft   = curNodeLeft->indexPosition; 
+				sizeLeft  = curPosLeft - prevPosLeft+1;
+				while (curValueLeft > curValueRight ||
+                			((curValueLeft == curValueRight) && 
+						(curNodeRight->inclusive == FALSE) && (curNodeLeft->inclusive == TRUE))){ 
+					if (curNodeRight->nextValue == NULL) goto cont;
+					cprevPosRight = curPosRight+1;
+					curNodeRight = curNodeRight->nextValue;
+					curValueRight = *(@1 *)Tloc(indexRight, baseRight + curNodeRight->position);
+					curPosRight   = curNodeRight->indexPosition;
+				}
+				
+			}
+		}
+		checkRight:;
+		if (sizeRight < (oid)*pieceSize){
+			while (curValueRight > curValueLeft ||
+				((curValueLeft == curValueRight) && 
+					(curNodeLeft->inclusive == FALSE) && (curNodeRight->inclusive == TRUE))){ 
+				if (curNodeLeft->nextValue == NULL) goto cont;
+				cprevPosLeft = curPosLeft+1;
+				curNodeLeft = curNodeLeft->nextValue;
+				curValueLeft = *(@1 *)Tloc(indexLeft, baseLeft + curNodeLeft->position);
+				curPosLeft   = curNodeLeft->indexPosition; 
+			}
+			while (sizeRight < (oid)*pieceSize){
+				if (curNodeRight->nextValue == NULL) goto cont;
+				if (curNodeRight->nextValue->indexPosition - prevPosRight+1 > (oid)*pieceSize){
+				/*	if (curNodeRight->nextValue->indexPosition - prevPosRight+1 - (oid)*pieceSize > (oid)*pieceSize - sizeRight) */
+						goto cont;
+				}
+				cprevPosRight = curPosRight+1;
+				curNodeRight = curNodeRight->nextValue;
+				curValueRight = *(@1 *)Tloc(indexRight, baseRight + curNodeRight->position);
+				curPosRight   = curNodeRight->indexPosition;
+				sizeRight  = curPosRight - prevPosRight+1;
+				while (curValueRight > curValueLeft ||
+                			((curValueLeft == curValueRight) && 
+						(curNodeLeft->inclusive == FALSE) && (curNodeRight->inclusive == TRUE))) { 
+					if (curNodeLeft->nextValue == NULL) goto cont;
+					cprevPosLeft = curPosLeft+1;
+					curNodeLeft = curNodeLeft->nextValue;
+					curValueLeft = *(@1 *)Tloc(indexLeft, baseLeft + curNodeLeft->position);
+					curPosLeft   = curNodeLeft->indexPosition; 
+				}
+			}
+		}
+		
+		cont:;
+		if (curValueLeft < curValueRight || 
+		((curValueLeft == curValueRight) && (curNodeLeft->inclusive == FALSE) && (curNodeRight->inclusive == TRUE))){
+
+			TC1=GDKusec();	
+			if (curNodeLeft->inclusive == TRUE)
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapRight, curValueLeft, cprevPosRight, curPosRight, &newPosition);
+        		else 
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, cprevPosRight, curPosRight, &newPosition);
+			TC2=GDKusec();	
+			TCtotal+=TC2-TC1;
+
+			if (newPosition < cprevPosRight){
+				if (cprevPosRight == prevPosRight){
+					prevNodeLeft = curNodeLeft;
+					curNodeLeft  = curNodeLeft->nextValue;
+					continue;
+				}
+				curPosRight = cprevPosRight - 1;
+				curNodeRight = findPreviousPieceWalkingBack(curNodeRight);
+			}else if (newPosition < curPosRight){
+				curNodeRight = addCrackerIndex_@1(mapRpos, &curValueLeft, curNodeLeft->inclusive, newPosition, indexRight);
+				AddToTape_@1(mapRpos, @1_nil, curValueLeft, curNodeLeft->inclusive, curNodeLeft->inclusive);
+				curPosRight = newPosition;
+			}
+		}
+		else if (curValueRight < curValueLeft ||
+                ((curValueLeft == curValueRight) && (curNodeRight->inclusive == FALSE) && (curNodeLeft->inclusive == TRUE))){
+			TC1=GDKusec();	
+			if (curNodeRight->inclusive == TRUE)
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapLeft, curValueRight, cprevPosLeft, curPosLeft, &newPosition);
+        		else 
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapLeft, curValueRight, cprevPosLeft, curPosLeft, &newPosition);
+			TC2=GDKusec();	
+			TCtotal+=TC2-TC1;
+
+			if (newPosition < cprevPosLeft){
+				if (cprevPosLeft == prevPosLeft){
+					prevNodeRight = curNodeRight;
+					curNodeRight  = curNodeRight->nextValue;
+					continue;
+				}
+				curPosLeft = cprevPosLeft - 1;
+				curNodeLeft = findPreviousPieceWalkingBack(curNodeLeft);
+			}else if (newPosition < curPosLeft){
+				curNodeLeft = addCrackerIndex_@1(mapLpos, &curValueRight, curNodeRight->inclusive, newPosition, indexLeft);
+				AddToTape_@1(mapLpos, @1_nil, curValueRight, curNodeRight->inclusive, curNodeRight->inclusive);
+				curPosLeft = newPosition;
+			}
+		}
+
+		@:JoinTwoSuperPiecesReuseHashTables()@
+
+		prevNodeLeft  = curNodeLeft;
+		curNodeLeft = curNodeLeft->nextValue;
+
+		prevNodeRight  = curNodeRight;
+		curNodeRight = curNodeRight->nextValue;
+
+		prevPosLeft  = prevNodeLeft->indexPosition  + 1;
+		prevPosRight = prevNodeRight->indexPosition + 1;
+	}
+
+	while(1){
+		iterations++;
+		existsHashTableLeft = existsHashTableRight = FALSE;
+		
+		prevPosLeft   = prevNodeLeft ==NULL?0:(prevNodeLeft->indexPosition==0?0:prevNodeLeft->indexPosition + 1);
+		prevPosRight  = prevNodeRight==NULL?0:(prevNodeRight->indexPosition==0?0:prevNodeRight->indexPosition + 1);
+
+		if (curNodeLeft == NULL)
+			curPosLeft  = BATcount(mapLeft)-1;
+		else {
+        	        curValueLeft = *(@1 *)Tloc(indexLeft, baseLeft + curNodeLeft->position);
+	                curPosLeft   = curNodeLeft->indexPosition;
+		}
+		if (curNodeRight == NULL)
+			curPosRight  = BATcount(mapRight)-1;
+		else {
+   	             	curValueRight = *(@1 *)Tloc(indexRight, baseRight + curNodeRight->position);
+        	        curPosRight   = curNodeRight->indexPosition;
+		}
+
+		
+		sizeLeft  = curPosLeft  - prevPosLeft  + 1;
+		sizeRight = curPosRight - prevPosRight + 1;
+
+		if (sizeLeft < (oid)*pieceSize && curNodeLeft != NULL) {
+			while (sizeLeft < (oid)*pieceSize){
+				if (curNodeLeft->nextValue == NULL)  {
+					if ( (BATcount(mapLeft)-1)- prevPosLeft <(oid)*pieceSize){
+						curPosLeft  = BATcount(mapLeft)-1;
+						curNodeLeft = NULL;
+					}
+					break;
+				}
+				if (curNodeLeft->nextValue->indexPosition - prevPosLeft+1 > (oid)*pieceSize){
+				/*	if (curNodeLeft->nextValue->indexPosition - prevPosLeft+1 - (oid)*pieceSize > (oid)*pieceSize - sizeLeft) */
+						goto checkRight2;
+				}
+				curNodeLeft = curNodeLeft->nextValue;
+				curPosLeft   = curNodeLeft->indexPosition; 
+        	        	curValueLeft = *(@1 *)Tloc(indexLeft, baseLeft + curNodeLeft->position);
+				sizeLeft  = curPosLeft - prevPosLeft + 1;
+			}
+		}
+		checkRight2:;
+		if (sizeRight < (oid)*pieceSize && curNodeRight != NULL){
+			while (sizeRight < (oid)*pieceSize){
+				if (curNodeRight->nextValue == NULL) {
+					if ( (BATcount(mapRight)-1)- prevPosRight <(oid)*pieceSize){
+						curPosRight  = BATcount(mapRight)-1;
+						curNodeRight = NULL;
+					}
+					break;
+				}
+				if (curNodeRight->nextValue->indexPosition - prevPosRight+1 > (oid)*pieceSize){
+				/*	if (curNodeRight->nextValue->indexPosition - prevPosRight+1 - (oid)*pieceSize > (oid)*pieceSize - sizeRight) */
+						goto cont2;
+				}
+				curNodeRight = curNodeRight->nextValue;
+				curPosRight   = curNodeRight->indexPosition;
+   	             		curValueRight = *(@1 *)Tloc(indexRight, baseRight + curNodeRight->position);
+				sizeRight  = curPosRight - prevPosRight + 1;
+			}
+		}
+
+		cont2:;	
+		if (curNodeLeft != NULL && curNodeRight == NULL){	
+			
+			TC1=GDKusec();	
+			if (curNodeLeft->inclusive == TRUE)
+
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapRight, curValueLeft, prevPosRight, curPosRight, &newPosition);
+        		else 
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, prevPosRight, curPosRight, &newPosition);
+
+			TC2=GDKusec();	
+			TCtotal+=TC2-TC1;
+			if (newPosition < prevPosRight){
+				prevNodeLeft = curNodeLeft;
+				curNodeLeft  = curNodeLeft->nextValue;	
+				continue;
+			}
+			else if (newPosition < curPosRight){
+				curNodeRight = addCrackerIndex_@1(mapRpos, &curValueLeft, curNodeLeft->inclusive, newPosition, indexRight);
+				AddToTape_@1(mapRpos, @1_nil, curValueLeft, curNodeLeft->inclusive, curNodeLeft->inclusive);
+				curPosRight = newPosition;
 			}
 			else {  /* this means that there is no chance to join with the future pieces of the other side */
 
@@ -1411,14 +1924,15 @@ str CRKcacheConsciousCrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *b
 
 			TC2=GDKusec();	
 			TCtotal+=TC2-TC1;
-			if (newPosition < curPosLeft && newPosition != prevPosLeft){
-			TC1=GDKusec();	
+			if (newPosition < prevPosLeft){
+				prevNodeRight = curNodeRight;
+				curNodeRight  = curNodeRight->nextValue;	
+				continue;
+			}else
+			if (newPosition < curPosLeft){
 				curNodeLeft = addCrackerIndex_@1(mapLpos, &curValueRight, curNodeRight->inclusive, newPosition, indexLeft);
 				AddToTape_@1(mapLpos, @1_nil, curValueRight, curNodeRight->inclusive, curNodeRight->inclusive);
 				curPosLeft = newPosition;
-				
-			TC2=GDKusec();	
-			TCtotal+=TC2-TC1;
 			}
 			else {
 				@:JoinTwoSuperPiecesReuseHashTables()@
@@ -1447,15 +1961,16 @@ str CRKcacheConsciousCrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *b
 
 	T2=GDKusec();
 
-	printf(" Total  %lld Join %lld Crack %lld Rest  %lld  iterations "OIDFMT" \n", 
-			T2-T1, TJtotal, TCtotal, ((T2-T1)-TJtotal)-TCtotal, iterations);
+	printf("Total  %lld Join %lld Rest  %lld Joins %lld Crack %lld Pieces %lld \n", 
+			T2-T1, TJtotal, ((T2-T1)-TJtotal)-TCtotal, joinsDone, TCtotal, CrackerIndex[mapLpos].pieces + CrackerIndex[mapRpos].pieces );
 	return MAL_SUCCEED;
 
 }	
 
+
 str CRKcrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
 #ifdef TIMER_CRACKERS_JOIN
-	lng T1=GDKusec(), TJtotal = 0, TJ1, TJ2, T2, TCtotal = 0, TC1, TC2;
+	lng T1=GDKusec(), TJtotal = 0, T2, TCtotal = 0, TC1, TC2;
 	lng crackedOperationsLeft = 0 , crackedOperationsRight = 0, joinsDone = 0;
 #endif
 	int tapeLpos, mapLpos;
@@ -1474,9 +1989,9 @@ str CRKcrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bid
         @1  curValueRight;
 	bit crackedRight, existsHashTableRight;
 
+
 	BAT *res;
 	oid newPosition=0;
-
 
 	/* Get the cracker tape for the set of the left map or create one if it does not exist */
         tapeLpos = existsCrackerIndexSideways(*bidL1, -1);
@@ -1533,9 +2048,9 @@ str CRKcrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bid
 
         baseRight      = BUNfirst(indexRight);
 
-	res = BATnew(TYPE_oid,TYPE_oid,5*BATcount(mapRight));
+	res = BATnew(TYPE_oid,TYPE_oid,5*BATcount(mapLeft));
 	
-	prevPosLeft   = prevPosRight   = -1;
+	prevPosLeft   = prevPosRight   = 0;
 	prevNodeLeft  = prevNodeRight  = NULL;
 
 #ifdef DEBUG_CRACKERS_JOIN
@@ -1549,6 +2064,7 @@ str CRKcrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bid
 	BATprint(mapLeft);
 	BATprint(mapRight);
 #endif
+
 		crackedLeft = crackedRight = FALSE;
 		existsHashTableLeft = existsHashTableRight = FALSE;
 
@@ -1557,92 +2073,104 @@ str CRKcrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bid
        		curValueLeft = *(@1 *)Tloc(indexLeft, curTupleLeft);
         	curPosLeft   = *(oid*)Hloc(indexLeft, curTupleLeft);
 
+
         	curTupleRight = baseRight + curNodeRight->position;
         	curValueRight = *(@1 *)Tloc(indexRight, curTupleRight);
         	curPosRight   = *(oid*)Hloc(indexRight, curTupleRight);
 
 #ifdef DEBUG_CRACKERS_JOIN
-		printf(" leftVal %d rightVal %d \n", curValueLeft, curValueRight);
-		printf(" prevPosLeft %lld curPosLeft %lld \n", prevPosLeft,curPosLeft);
-		printf(" prevPosRight %lld curPosRight %lld \n", prevPosRight,curPosRight);
+	printf("\n New Join Index Left \n");
+	@:dumpIndex(Index Left)@
 #endif
+#ifdef DEBUG_CRACKERS_JOIN
+		printf(" leftVal %d rightVal %d \n", curValueLeft, curValueRight);
+		printf(" prevPosLeft "OIDFMT" curPosLeft "OIDFMT" \n", prevPosLeft,curPosLeft);
+		printf(" prevPosRight "OIDFMT" curPosRight "OIDFMT" \n", prevPosRight,curPosRight);
+#endif
+		if (curPosLeft ==0 &&  prevPosLeft==0)
+			if ( *(@1 *)Tloc(mapLeft,0)>curValueLeft){
+				prevNodeLeft  = curNodeLeft;
+				curNodeLeft = curNodeLeft->nextValue;/*findNextPiece(curNodeLeft);*/
+				continue;
+			}	 
+		if (curPosRight ==0 &&  prevPosRight==0)
+			if ( *(@1 *)Tloc(mapRight,0)>curValueRight){
+				prevNodeRight  = curNodeRight;
+				curNodeRight = curNodeRight->nextValue;/*findNextPiece(curNodeRight);*/
+				continue;
+			}	 
 
 		if (curValueLeft < curValueRight || 
 		((curValueLeft == curValueRight) && (curNodeLeft->inclusive == FALSE) && (curNodeRight->inclusive == TRUE))){
-
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("crack Right \n");
-#endif
 
 #ifdef TIMER_CRACKERS_JOIN
 			crackedOperationsRight++;
 			TC1=GDKusec();	
 #endif
 			if (curNodeLeft->inclusive == TRUE)
-		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapRight, curValueLeft, prevPosRight+1, curPosRight, &newPosition);
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapRight, curValueLeft, prevPosRight, curPosRight, &newPosition);
         		else 
-                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, prevPosRight+1, curPosRight, &newPosition);
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("newPos %lld \n",newPosition);
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, prevPosRight, curPosRight, &newPosition);
+
+#ifdef TIMER_CRACKERS_JOIN
+			TC2=GDKusec();	
+			TCtotal+=TC2-TC1;
 #endif
-
-
-			if (newPosition != curPosRight){
+			if (newPosition < prevPosRight || newPosition ==(oid)-1){
+				/*Empty piece*/
+				prevPosLeft   = curPosLeft+1;
+				prevNodeLeft  = curNodeLeft;
+				curNodeLeft = curNodeLeft->nextValue;/*findNextPiece(curNodeLeft);*/
+				continue;
+			}
+			if (newPosition < curPosRight){
 				newprevNodeRight = addCrackerIndex_@1(mapRpos, &curValueLeft, curNodeLeft->inclusive, newPosition, indexRight);
 				AddToTape_@1(mapRpos, @1_nil, curValueLeft, curNodeLeft->inclusive, curNodeLeft->inclusive);
 				curPosRight = newPosition;
 				crackedRight = TRUE;
 			}
+		}
+		else if (curValueRight < curValueLeft ||
+                ((curValueLeft == curValueRight) && (curNodeRight->inclusive == FALSE) && (curNodeLeft->inclusive == TRUE))){
+
+
+#ifdef TIMER_CRACKERS_JOIN
+			crackedOperationsLeft++;
+			TC1=GDKusec();	
+#endif
+			if (curNodeRight->inclusive == TRUE)
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapLeft, curValueRight, prevPosLeft, curPosLeft, &newPosition);
+        		else 
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapLeft, curValueRight, prevPosLeft, curPosLeft, &newPosition);
 
 #ifdef TIMER_CRACKERS_JOIN
 			TC2=GDKusec();	
 			TCtotal+=TC2-TC1;
 #endif
-		}
-		else if (curValueRight < curValueLeft ||
-                ((curValueLeft == curValueRight) && (curNodeRight->inclusive == FALSE) && (curNodeLeft->inclusive == TRUE))){
-
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("crack Left \n");
-#endif
-
-#ifdef TIMER_CRACKERS_JOIN
-			crackedOperationsLeft++;
-
-			TC1=GDKusec();	
-#endif
-			if (curNodeRight->inclusive == TRUE)
-		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapLeft, curValueRight, prevPosLeft+1, curPosLeft, &newPosition);
-        		else 
-                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapLeft, curValueRight, prevPosLeft+1, curPosLeft, &newPosition);
-
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("newPos %lld \n",newPosition);
-#endif
-
-			if (newPosition != curPosLeft){
+			if (newPosition < prevPosLeft || newPosition ==(oid)-1){
+				/*Empty piece*/
+				prevPosRight   = curPosRight+1;
+				prevNodeRight  = curNodeRight;
+				curNodeRight = curNodeRight->nextValue;/*findNextPiece(curNodeRight);*/
+				continue;
+			}
+			if (newPosition < curPosLeft){
 				newprevNodeLeft = addCrackerIndex_@1(mapLpos, &curValueRight, curNodeRight->inclusive, newPosition, indexLeft);
 				AddToTape_@1(mapLpos, @1_nil, curValueRight, curNodeRight->inclusive, curNodeRight->inclusive);
 				curPosLeft = newPosition;
 				crackedLeft = TRUE;
 			}
-#ifdef TIMER_CRACKERS_JOIN
-			TC2=GDKusec();	
-			TCtotal+=TC2-TC1;
-#endif
 		}
 
 		@:JoinTwoPiecesReuseHashTables()@
-#ifdef TIMER_CRACKERS_JOIN
-		joinsDone++;
-#endif
-		prevPosLeft   = curPosLeft;
+
+		prevPosLeft   = curPosLeft+1;
 		if (crackedLeft == FALSE){
 			prevNodeLeft  = curNodeLeft;
 			curNodeLeft = curNodeLeft->nextValue;/*findNextPiece(curNodeLeft);*/
 		} else prevNodeLeft = newprevNodeLeft;
 
-		prevPosRight   = curPosRight;
+		prevPosRight   = curPosRight+1;
 		if (crackedRight == FALSE){
 			prevNodeRight  = curNodeRight;
         		curNodeRight = curNodeRight->nextValue;/*findNextPiece(curNodeRight);*/
@@ -1650,6 +2178,7 @@ str CRKcrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bid
 	}
 
 	while(1){
+
 		crackedLeft = crackedRight = FALSE;
 		existsHashTableLeft = existsHashTableRight = FALSE;
 
@@ -1669,33 +2198,37 @@ str CRKcrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bid
 		}
 		
 #ifdef DEBUG_CRACKERS_JOIN
+		printf("\n Index Left \n");
+		printAVLTree(CrackerIndex[mapLpos].Tree, indexLeft, baseLeft);
+		printf("\n Index Right \n");
+		printAVLTree(CrackerIndex[mapRpos].Tree, indexRight, baseRight);
 		printf(" leftVal %d rightVal %d \n", curValueLeft, curValueRight);
-		printf(" prevPosLeft %lld curPosLeft %lld \n", prevPosLeft,curPosLeft);
-		printf(" prevPosRight %lld curPosRight %lld \n", prevPosRight,curPosRight);
+		printf(" prevPosLeft "OIDFMT" curPosLeft "OIDFMT" \n", prevPosLeft,curPosLeft);
+		printf(" prevPosRight "OIDFMT" curPosRight "OIDFMT" \n", prevPosRight,curPosRight);
 #endif
 
 		if (curNodeLeft != NULL && curNodeRight == NULL){	
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("crack Right \n");
-#endif
 #ifdef TIMER_CRACKERS_JOIN
 			crackedOperationsRight++;
-
 			TC1=GDKusec();	
 #endif
 			if (curNodeLeft->inclusive == TRUE)
-		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapRight, curValueLeft, prevPosRight+1, curPosRight, &newPosition);
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapRight, curValueLeft, prevPosRight, curPosRight, &newPosition);
         		else 
-                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, prevPosRight+1, curPosRight, &newPosition);
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapRight, curValueLeft, prevPosRight, curPosRight, &newPosition);
 
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("newPos %lld \n",newPosition);
-#endif
 #ifdef TIMER_CRACKERS_JOIN
 
 			TC2=GDKusec();	
 			TCtotal+=TC2-TC1;
 #endif
+			if (newPosition < prevPosRight || newPosition ==(oid)-1){
+				/*Empty piece*/
+				prevPosLeft   = curPosLeft+1;
+				prevNodeLeft  = curNodeLeft;
+				curNodeLeft = curNodeLeft->nextValue;/*findNextPiece(curNodeLeft);*/
+				continue;
+			}
 			if (newPosition < curPosRight){
 				newprevNodeRight = addCrackerIndex_@1(mapRpos, &curValueLeft, curNodeLeft->inclusive, newPosition, indexRight);
 				AddToTape_@1(mapRpos, @1_nil, curValueLeft, curNodeLeft->inclusive, curNodeLeft->inclusive);
@@ -1703,42 +2236,30 @@ str CRKcrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bid
 				crackedRight = TRUE;
 			}
 			else {  /* this means that there is no chance to join with the future pieces of the other side */
-
-#ifdef DEBUG_CRACKERS_JOIN
-				printf("skippiing the rest of the pieces left");
-#endif
-
 				@:JoinTwoPiecesReuseHashTables()@
-
-#ifdef TIMER_CRACKERS_JOIN
-				joinsDone++;
-#endif
 				break;
 			}
 		}
 		else if (curNodeLeft == NULL && curNodeRight != NULL){
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("crack Left \n");
-#endif
-
 #ifdef TIMER_CRACKERS_JOIN
 			crackedOperationsLeft++;
-
 			TC1=GDKusec();	
 #endif
 			if (curNodeRight->inclusive == TRUE)
-		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapLeft, curValueRight, prevPosLeft+1, curPosLeft, &newPosition);
+		                CRKcrackUnorderedZeroSideways_RE_@1_@1(mapLeft, curValueRight, prevPosLeft, curPosLeft, &newPosition);
         		else 
-                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapLeft, curValueRight, prevPosLeft+1, curPosLeft, &newPosition);
-
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("newPos %lld \n",newPosition);
-#endif
-
+                		CRKcrackUnorderedZeroSideways_LE_@1_@1(mapLeft, curValueRight, prevPosLeft, curPosLeft, &newPosition);
 #ifdef TIMER_CRACKERS_JOIN
 			TC2=GDKusec();	
 			TCtotal+=TC2-TC1;
 #endif
+			if (newPosition < prevPosLeft || newPosition ==(oid)-1){
+				/*Empty piece*/
+				prevPosRight   = curPosRight+1;
+				prevNodeRight  = curNodeRight;
+				curNodeRight = curNodeRight->nextValue;/*findNextPiece(curNodeRight);*/
+				continue;
+			}
 			if (newPosition < curPosLeft){
 				newprevNodeLeft = addCrackerIndex_@1(mapLpos, &curValueRight, curNodeRight->inclusive, newPosition, indexLeft);
 				AddToTape_@1(mapLpos, @1_nil, curValueRight, curNodeRight->inclusive, curNodeRight->inclusive);
@@ -1746,47 +2267,27 @@ str CRKcrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bid
 				crackedLeft = TRUE;
 			}
 			else {
-
-#ifdef DEBUG_CRACKERS_JOIN
-				printf("skipping the rest of the pieces right");
-#endif
-
 				@:JoinTwoPiecesReuseHashTables()@
-#ifdef TIMER_CRACKERS_JOIN
-				joinsDone++;
-#endif
 				break;
 			}
 		}
 		else if (curNodeLeft == NULL && curNodeRight == NULL){
-
-#ifdef DEBUG_CRACKERS_JOIN
-			printf(" into the last piece for both maps \n");
-#endif
-
 			@:JoinTwoPiecesReuseHashTables()@
-
-#ifdef TIMER_CRACKERS_JOIN
-			joinsDone++;
-#endif
 			break;
 		}			
 
 		@:JoinTwoPiecesReuseHashTables()@
-#ifdef TIMER_CRACKERS_JOIN
-		joinsDone++;
-#endif
 
-		prevPosLeft   = curPosLeft;
+		prevPosLeft   = curPosLeft+1;
 		if (crackedLeft == FALSE){
 			prevNodeLeft  = curNodeLeft;
-			curNodeLeft = findNextPiece(curNodeLeft);
+			curNodeLeft = curNodeLeft->nextValue;
 		}else prevNodeLeft = newprevNodeLeft; 
 
-		prevPosRight   = curPosRight;
+		prevPosRight   = curPosRight+1;
 		if (crackedRight == FALSE){
 			prevNodeRight  = curNodeRight;
-        		curNodeRight = findNextPiece(curNodeRight);
+        		curNodeRight = curNodeRight->nextValue;
 		} else prevNodeRight = newprevNodeRight;
 	}
 	
@@ -1800,10 +2301,8 @@ str CRKcrackHashJoin_@1(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bid
 
 #ifdef TIMER_CRACKERS_JOIN
 	T2=GDKusec();
-
-	printf(" Total  %lld Join %lld Crack %lld Rest  %lld Cracks %lld Left %lld Right %lld Joins %lld \n", 
-			T2-T1, TJtotal, TCtotal, ((T2-T1)-TJtotal)-TCtotal, crackedOperationsLeft + crackedOperationsRight, 
-			crackedOperationsLeft, crackedOperationsRight, joinsDone);
+	printf("Total  %lld Join %lld Rest  %lld Joins %lld Crack %lld Pieces %lld \n", 
+			T2-T1, TJtotal, ((T2-T1)-TJtotal)-TCtotal, joinsDone, TCtotal, CrackerIndex[mapLpos].pieces + CrackerIndex[mapRpos].pieces );
 #endif
 
 	return MAL_SUCCEED;
@@ -1829,6 +2328,7 @@ if (lastNodeRight==NULL) printf(" lR  End ");
 else printf(" lR  "OIDFMT" ", lastNodeRight->indexPosition);
 printf(" cur  "OIDFMT"  \n", curNodeRight->indexPosition);
 */
+
 	if (curNodeRight->inclusive == TRUE)
 	
 		CRKcrackUnorderedZero_RE_@1(mapLeft, bound, startPos, endPos, &newPosition);
@@ -1883,12 +2383,10 @@ str CRKAlignJoin_@1(int *resid, int *bidL,  int *bidR1, int *bidR2){
 	int tapeRpos, mapRpos;
 	BAT *indexRight, *mapRight;
 	BUN baseRight;
-	oid cacheSize, cacheThreshold;
+
+	oid cacheThreshold = 65536;
 
 	BAT *res;
-
-	cacheSize 	  = 524288;
-	cacheThreshold    = (cacheSize / 2) / (16+sizeof(@1));
 
 	/*TODO if left is an intermediate result, use this as a map and create an index */
 	/* Get the cracker tape for the set of the left map or create one if it does not exist */
@@ -1931,8 +2429,6 @@ str CRKAlignJoin_@1(int *resid, int *bidL,  int *bidR1, int *bidR2){
 	res = BATnew(TYPE_oid,TYPE_oid,5*BATcount(mapRight));
 
 	cacheConsciousAlignJoinStep(mapLeft, mapRight, CrackerIndex[mapRpos].Tree, 0, BATcount(mapLeft)-1, indexRight, baseRight, indexLeft, mapLpos, cacheThreshold, NULL,NULL,res);
-
-
 
         *resid = res->batCacheid;
         BBPkeepref(*resid);
@@ -1982,7 +2478,6 @@ str CRKOnePassJoin_@1(int *resid, int *bidL,  int *bidR1, int *bidR2){
 	int tapeRpos, mapRpos;
 	BAT *indexRight, *mapRight;
 	BUN baseRight, baseLeft;
-	oid cacheSize, cacheThreshold;
 
 	BAT *res, *newBAT, *firstPieceBAT=NULL, *partitionLeft, *viewRight, *markedViewRight, *viewHeadRight;
 
@@ -1991,14 +2486,13 @@ str CRKOnePassJoin_@1(int *resid, int *bidL,  int *bidR1, int *bidR2){
 	struct Node *temp, *prevNodeRight, *newEntry, *curNodeRight, *prevNodeLeft;
 	oid prevPosRight, nextPosRight, curPosRight;
 
+	oid cacheThreshold = 65536;
+
 	@1  *curLeftValue;
 	oid *curLeftId;
 	oid i;
 
 	lng t1,t2;
-	
-	cacheSize 	  = 524288;
-	cacheThreshold    = (cacheSize / 2) / (16+sizeof(@1));
 
 	/*TODO if left is an intermediate result, use this as a map and create an index */
 	/* Get the cracker tape for the set of the left map or create one if it does not exist */
@@ -2103,10 +2597,6 @@ str CRKOnePassJoin_@1(int *resid, int *bidL,  int *bidR1, int *bidR2){
 
 */
 
-
-
-
-
 	t1=GDKusec();
 	/* The final step is to go through all pieces and perform the joins */
 	prevNodeRight 	= NULL;
@@ -2162,6 +2652,7 @@ str CRKOnePassJoin_@1(int *resid, int *bidL,  int *bidR1, int *bidR2){
 
 	return MAL_SUCCEED;
 }	
+
 str CRKAlreadyAlignedJoin_@1(int *resid, int *bidL1,  int *bidR1, int *bidR2){
 	lng T1=GDKusec(), TJtotal = 0, TJ1, TJ2, T2;
 	int  mapLpos;
@@ -2268,10 +2759,6 @@ str CRKAlreadyAlignedJoin_@1(int *resid, int *bidL1,  int *bidR1, int *bidR2){
 #endif
 
 		while (curValueRight < curValueLeft){
-
-#ifdef DEBUG_CRACKERS_JOIN
-			printf("\n skiping right \n");
-#endif
 			if (curNodeRight->nextValue == NULL){
 				curPosRight  = BATcount(mapRight)-1;
 				goto last;
@@ -2296,6 +2783,7 @@ str CRKAlreadyAlignedJoin_@1(int *resid, int *bidL1,  int *bidR1, int *bidR2){
 	/* handle last pieces or the case where the left has no index and it all falls to the last piece of the right */
 	curPosLeft   = BATcount(mapLeft)-1;
 	curPosRight  = BATcount(mapRight)-1;
+
 	last:;
 	@:JoinTwoPiecesReuseHashTablesRight()@
 	joinsDone++;
@@ -2317,8 +2805,7 @@ str CRKAlreadyAlignedJoin_@1(int *resid, int *bidL1,  int *bidR1, int *bidR2){
 	CrackerIndex[mapLpos].bid=-1;
 
 	T2=GDKusec();
-
-	printf(" Total  %lld Join %lld Rest  %lld Joins %lld \n", 
+	printf("Total  %lld Join %lld Rest  %lld Joins %lld \n", 
 			T2-T1, TJtotal, (T2-T1)-TJtotal,joinsDone);
 
 	return MAL_SUCCEED;
@@ -2544,13 +3031,10 @@ str CRKFullAlignment_@1(int *res, int *bidL, int *bidR1, int *bidR2){
 	int tapeRpos, mapRpos;
 	BAT *indexRight, *mapRight;
 	BUN baseRight;
-	oid cacheSize, cacheThreshold;
+
+	oid cacheThreshold = 65536;
 	
 	(void)res;
-
-
-	cacheSize 	  = 524288;
-	cacheThreshold    = (cacheSize / 2) / (16+sizeof(@1));
 
 	/*TODO if left is an intermediate result, use this as a map and create an index */
 	/* Get the cracker tape for the set of the left map or create one if it does not exist */

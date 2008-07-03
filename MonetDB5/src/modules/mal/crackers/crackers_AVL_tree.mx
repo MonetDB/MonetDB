@@ -360,6 +360,9 @@ void
 printAVLTree(struct Node * current, BAT *b, BUN base){
 	BUN cur;
 
+	if (current == NULL)
+		return;
+
 	cur = base + current->position;
 	if (current->deleted == FALSE) {
 		printf("\n Pos: "OIDFMT", PosBat: "OIDFMT", Val: %d,  Hols: "OIDFMT", Slice: %d ", current->position, *(oid*)Hloc(b, cur), *(int*)Tloc(b, cur), current->hols, current->slice );
@@ -381,6 +384,14 @@ bit
 GetLow_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, oid *p1, oid *p2, oid previous, oid next){
 	BUN cur;
 	@1 *curValue;
+
+	if (current == NULL){
+		/* This means that we are trying to search for bounds in an empty tree 
+		   The full bat is return as the bounds for the next crack operation */ 	
+        	*p1 = previous;
+        	*p2 = next;
+		return 0;		
+	}
 
 	cur = base + current->position;
 	curValue = (@1*)Tloc(b, cur);
@@ -435,6 +446,14 @@ bit
 GetHgh_@1(@1  x, bit inclusive, struct Node * current, BAT *b, BUN base, oid *p1, oid *p2, oid previous, oid next){
         BUN cur;
 	@1 *curValue;	
+
+	if (current == NULL){
+		/* This means that we are trying to search for bounds in an empty tree 
+		   The full bat is return as the bounds for the next crack operation */ 	
+        	*p1 = previous;
+        	*p2 = next;
+		return 0;		
+	}
 
 	cur = base + current->position;
 	curValue = (@1*)Tloc(b, cur);
@@ -798,9 +817,6 @@ InsertTree_@1(int m, oid indexPosition, @1 value, bit inclusive, oid crackPositi
 		*newNode = current;
 		goto end;
         }
-
-	if (current==NULL)
-		printf("\n current is NULL\n");
 
 	cur = base + current->position;
         curValue = (@1*)Tloc(b, cur);
