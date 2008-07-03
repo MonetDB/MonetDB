@@ -46,6 +46,28 @@ comment "Dataflow bracket code injection";
 /* #define DEBUG_OPT_DATAFLOW */
 @-
 The statemens are all checked for being eligible for dataflow.
+@= flowblock
+	/* close old flow block */
+	if (flowblock){
+		if (entries > 1){
+			q= newFcnCall(mb,languageRef,dataflowRef);
+			q->barrier= BARRIERsymbol;
+			getArg(q,0)= flowblock;
+			setVarUsed(mb,flowblock);
+		}
+		for( j=start ; j<i; j++){
+			pushInstruction(mb,old[j]);
+			mb->profiler[j].trace = TRUE;
+		}
+		if (entries>1){
+			q= newAssignment(mb);
+			q->barrier= EXITsymbol;
+			getArg(q,0) = flowblock;
+		}
+		flowblock = 0;
+		actions++;
+	}
+@c
 @c
 #include "mal_config.h"
 #include "opt_dataflow.h"
@@ -76,7 +98,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		p = old[i];
 
 		/* make sure each variable is assigned only once */
-		block =0;
+		block = p->token== ENDsymbol;
 		for(j=0;j<p->retc;j++)
 		if(assigned[getArg(p,j)]){
 			block++;
@@ -84,43 +106,24 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 
 		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p) || block){
-			if (flowblock){
-				/* close old flow block */
-				if (entries > 1){
-					q= newFcnCall(mb,languageRef,dataflowRef);
-					q->barrier= BARRIERsymbol;
-					getArg(q,0)= flowblock;
-					setVarUsed(mb,flowblock);
-				}
-				for( j=start ; j<i; j++){
-					pushInstruction(mb,old[j]);
-					mb->profiler[j].trace = TRUE;
-				}
-				if (entries>1){
-					q= newAssignment(mb);
-					q->barrier= EXITsymbol;
-					getArg(q,0) = flowblock;
-				}
-				flowblock = 0;
-				actions++;
-			}
+			@:flowblock@
 			pushInstruction(mb,p);
 			continue;
 		}
-		if (dumbcopy || blockStart(p)){
+
+		if (blockStart(p)){
 			dumbcopy++;
+			if (dumbcopy == 1)
+				@:flowblock@
+		}
+		if (dumbcopy){
 			for(j=0;j<p->retc;j++)
 				assigned[getArg(p,j)]=1;
 			pushInstruction(mb,p);
 			continue;
 		}
-		if (blockExit(p)){
-			dumbcopy= 0;
-			for(j=0;j<p->retc;j++)
-				assigned[getArg(p,j)]=1;
-			pushInstruction(mb,p);
-			continue;
-		}
+		if (blockExit(p))
+			dumbcopy--;
 
 		if (flowblock == 0){
 			flowblock = newTmpVariable(mb,TYPE_int);

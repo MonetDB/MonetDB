@@ -160,6 +160,11 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			continue;
 		}
+		if (p->barrier ){
+			/* never save a barrier*/
+			pushInstruction(mb,p);
+			continue;
+		}
 
 		if (updstmt){
 			if( p->token== ENDsymbol){
