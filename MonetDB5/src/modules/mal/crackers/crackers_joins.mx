@@ -1196,7 +1196,6 @@ str CRKcacheConsciousCrackHashJoinAlignOnly_@1(int *resid, int *bidL1, int *bidL
 	BUN baseLeft;
 	oid curPosLeft, prevPosLeft, cprevPosLeft;
 	@1  curValueLeft;
-	bit existsHashTableLeft;
 
 	int tapeRpos, mapRpos;
 	struct Node *curNodeRight, *prevNodeRight; 
@@ -1204,7 +1203,6 @@ str CRKcacheConsciousCrackHashJoinAlignOnly_@1(int *resid, int *bidL1, int *bidL
 	BUN baseRight;
 	oid curPosRight, prevPosRight, cprevPosRight;
         @1  curValueRight;
-	bit existsHashTableRight;
 
 	BAT *res;
 	oid newPosition=0;
@@ -1273,9 +1271,6 @@ str CRKcacheConsciousCrackHashJoinAlignOnly_@1(int *resid, int *bidL1, int *bidL
 		iterations++;
 		cprevPosRight = prevPosRight;
 		cprevPosLeft  = prevPosLeft;
-
-
-		existsHashTableLeft = existsHashTableRight = FALSE;
 
        		curValueLeft = *(@1 *)Tloc(indexLeft, baseLeft + curNodeLeft->position);
         	curPosLeft   = curNodeLeft->indexPosition; 
@@ -1432,7 +1427,6 @@ str CRKcacheConsciousCrackHashJoinAlignOnly_@1(int *resid, int *bidL1, int *bidL
 
 	while(1){
 		iterations++;
-		existsHashTableLeft = existsHashTableRight = FALSE;
 		
 		prevPosLeft   = prevNodeLeft ==NULL?0:(prevNodeLeft->indexPosition==0?0:prevNodeLeft->indexPosition + 1);
 		prevPosRight  = prevNodeRight==NULL?0:(prevNodeRight->indexPosition==0?0:prevNodeRight->indexPosition + 1);
