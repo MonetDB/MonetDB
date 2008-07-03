@@ -136,6 +136,12 @@ BuildRequires: ruby-devel
 %endif
 %endif
 
+%package tests
+Summary: MonetDB Client tests package
+Group: Applications/Databases
+Requires: %{name} = %{version}-%{release}
+Requires: %{name}-odbc = %{version}-%{release}
+
 %description
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
@@ -207,6 +213,16 @@ This package contains the files needed to use MonetDB from a Ruby
 program.
 %endif
 
+%description tests
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators, SQL- and XML- frontends.
+
+This package contains the sample MAPI programs used for testing other
+MonetDB packages.  You probably don't need this, unless you are a
+developer.
+
 
 %prep
 rm -rf $RPM_BUILD_ROOT
@@ -236,8 +252,6 @@ rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 
 # cleanup stuff we don't want to install
-rm -rf $RPM_BUILD_ROOT%{_datadir}/MonetDB/Tests
-rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB/Tests
 find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
 
 %post -p /sbin/ldconfig
@@ -305,6 +319,9 @@ rm -fr $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_prefix}/%{ruby_libdir}/*
 %endif
+
+%files tests
+%{_libdir}/MonetDB/Tests/*
 
 %changelog
 * Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
