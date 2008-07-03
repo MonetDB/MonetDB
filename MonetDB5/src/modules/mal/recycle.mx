@@ -82,6 +82,10 @@ pattern reset(bid:bat):void
 address RECYCLEresetCMD
 comment "Reset off all recycled variables";
 
+pattern reset(sname:str...):void
+address RECYCLEresetCMD
+comment "Reset off all recycled variables";
+
 command shutdown():void
 address RECYCLEshutdownWrap
 comment "Clear the recycle cache";

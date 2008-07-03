@@ -102,8 +102,9 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i, j, cnt, actions=0, update=0;
 	Lifespan span;
 	InstrPtr *old, q;
-	int limit;
+	int limit, updstmt = 0;
 	char *recycled;
+	short app_sc=-1,app_tbl =-1;
 
 	(void) cntxt;
 	(void) stk;
@@ -114,7 +115,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 		if( getFunctionId(p) == affectedRowsRef && getModuleId(p)==sqlRef)
-			return 0;
+			updstmt = 1;
 	}
 
 	recycled= GDKzalloc(sizeof(char)*mb->vtop*2);
@@ -133,18 +134,46 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				continue;
 			}
 			pushInstruction(mb,p);
-			if( isUpdateInstruction(p) &&
-				(getArgType(mb,p,1)==TYPE_bat || isaBatType(getArgType(mb, p,1))
-				)){
-				/* all update instructions  modify the first argument ?*/
-				/* they may not be recycled to avoid incomplete results */
-				recycled[getArg(p,1)]= 0;
-				q= newFcnCall(mb,"recycle","reset");
-				pushArgument(mb,q, getArg(p,1));
-				update++;
+				/*  update instructions are not recycled but monitored*/
+			if( isUpdateInstruction(p)){
+				if (getModuleId(p) == batRef &&
+					(getArgType(mb,p,1)==TYPE_bat
+					|| isaBatType(getArgType(mb, p,1)))){
+					recycled[getArg(p,1)]= 0;
+					q= newFcnCall(mb,"recycle","reset");
+					pushArgument(mb,q, getArg(p,1));
+					update++;
+				}
+				if (getModuleId(p) == sqlRef){
+					if (getFunctionId(p) == appendRef){
+						app_sc = getArg(p,1);
+						app_tbl = getArg(p,2);
+					} else {
+						q= newFcnCall(mb,"recycle","reset");
+						pushArgument(mb,q, getArg(p,1));
+						pushArgument(mb,q, getArg(p,2));
+						if (getFunctionId(p) == updateRef)
+							pushArgument(mb,q, getArg(p,3));
+					}
+					update++;
+				}
 			}
 			continue;
 		}
+
+		if (updstmt){
+			if( p->token== ENDsymbol){
+				if ( app_sc >= 0 ){
+					q= newFcnCall(mb,"recycle","reset");
+					pushArgument(mb,q, app_sc);
+					pushArgument(mb,q, app_tbl);
+				}
+				(void) newFcnCall(mb,"recycle","epilogue");
+			}
+			pushInstruction(mb,p);
+			continue;
+		} 
+
 
 		cnt = 0;
 		for (j=p->retc; j<p->argc; j++)

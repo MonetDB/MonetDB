@@ -1038,6 +1038,7 @@ end main;                               # 11
 [ "log",			  "command",	  "recycle",	  "(nm:str):void ",															  "RECYCLElog;"						  ]
 [ "monitor",				  "command",	  "recycle",	  "(f:int):void ",													  "RECYCLEmonitor;"			  ]
 [ "prelude",				  "pattern",	  "recycle",	  "():void ",														  "RECYCLEprelude;"			  ]
+[ "reset",			  "pattern",	  "recycle",	  "(sname:str...):void ",														  "RECYCLEresetCMD;"					  ]
 [ "reset",				  "pattern",	  "recycle",	  "(bid:BAT):void ",															  "RECYCLEresetCMD;"					  ]
 [ "shutdown",				  "command",	  "recycle",	  "():void ",														  "RECYCLEshutdownWrap;"		  ]
 [ "setCachePolicy",		  "pattern",	  "recycle",	  "(p:int,cl:int,mem:int,alpha:flt):void ",												  "RECYCLEsetCache;"					  ]

@@ -1089,7 +1089,8 @@ isUpdateInstruction(InstrPtr p){
 		getFunctionId(p) == setAccessRef ||
 		getFunctionId(p) == setWriteModeRef ||
 		getFunctionId(p) == replaceRef ||
-		getFunctionId(p) == deleteRef))
+		getFunctionId(p) == deleteRef ||
+		getFunctionId(p) == clear_tableRef))
 		return TRUE;
 	return FALSE;
 }

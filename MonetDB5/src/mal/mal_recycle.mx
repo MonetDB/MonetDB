@@ -1127,7 +1127,7 @@ Evict a bat from recycle cache, for instance if an update on it
 has been detected. 
 @c
 static void 
-RECYCLEevict(bat bid){
+RECYCLEevict(bat *bats, int btop){
 	int i,j,k,top = 0;
 	int action = 1, upd = 0;
 	int *dropped;
@@ -1145,7 +1145,8 @@ RECYCLEevict(bat bid){
 	memset(dropped, 0, sizeof(int)*recycleBlk->vtop);
 	mal_set_lock(recycleLock,"recycle");
 
-	dropped[top++] = bid;
+	for( i=0; i<btop; i++)
+		dropped[top++] = bats[i];
 	while (action){
 		action= 0;
 		for (i=1; i<recycleBlk->stop; i++){
@@ -1192,19 +1193,46 @@ instructions dependent on the updated bat.
 @c
 void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int j;
+	int i,j, btop=0;
+	int *b;
 	ValRecord *v;
+	InstrPtr q;
+
 
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(GDKout,"RECYCLE reset\n");
 #endif
-	for (j=p->retc; j<p->argc; j++)
-	if(getArgType(mb,p,j)==TYPE_bat || 
-		isaBatType(getArgType(mb, p,j)) ){
- 		v = &stk->stk[getArg(p,j)];
-		if(v->vtype == TYPE_bat && v->val.bval )
-			RECYCLEevict(v->val.bval);
+	if( recycleBlk == NULL)
+		return;
+	b = (int *)alloca(sizeof(int)*recycleBlk->stop);
+	memset(b,0, sizeof(int)*recycleBlk->stop);
+
+	if (p->argc == 2){
+		if(getArgType(mb,p,1)==TYPE_bat || 
+			isaBatType(getArgType(mb, p,1)) ){
+ 			v = &stk->stk[getArg(p,1)];
+			if(v->vtype == TYPE_bat && v->val.bval )
+				b[btop++] = v->val.bval;
+		}
+
+	} else if (p->argc > 2) {
+		for (i=1; i<recycleBlk->stop; i++) {
+			q = getInstrPtr(recycleBlk,i);
+			if (getName("bind",4)== getFunctionId(q) && getModuleId(q)==getName("sql",3)){
+				for (j=p->retc; j<p->argc; j++)
+					if( VALcmp( &stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
+					break;
+				if (j == p->argc){
+					v = &getVarConstant(recycleBlk,getArg(q,0));
+					if( v->val.bval )
+						b[btop++] = v->val.bval;
+				}
+			}
+		}
 	}
+	if (btop)
+		RECYCLEevict(b,btop);
+
 }
 
 @}
