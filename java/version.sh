@@ -119,10 +119,6 @@ sed \
 
 for file in \
 	Makefile.ag \
-	../sql/src/jdbc/tests/Tests/Test.SQL.bat \
-	../sql/NT/MonetDB4-SQL{,64}/MonetDB4-SQL-Installer.vdproj \
-	../sql/NT/MonetDB5-SQL{,64}/MonetDB5-SQL-Installer.vdproj \
-	../"*"/NT/MonetDB4-XQuery{,64}/MonetDB4-XQuery-Installer.vdproj \
 	; do
 	[[ ${file} == *"*"* ]] \
 		&& file=$(eval echo "${file%/\*/*}"/*/"${file#*/\*/}")
