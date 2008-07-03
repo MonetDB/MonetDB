@@ -593,37 +593,53 @@ Collect all eligable instructions. They are recognized as those where
 the arguments have all been set before the block started.
 @c
 static void
-DFLOWinit(DataFlow flow){
-	int i,n,j, blocked;
+DFLOWupdate(DataFlow flow){
+	int i,j, blocked,limit;
 	InstrPtr p;
 
-	for (n=0, i= flow->start; i<flow->stop; i++,n++){
+	memset((char*) flow->blocked,0, flow->mb->vtop);
+	
+	limit= flow->stop-flow->start;
+	for (i= 0; i<limit; i++)
+	if (flow->queue[i].status != DFLOWwrapup) {
 		/* is the current instruction free? */
-		p= getInstrPtr(flow->mb,i);
+		p= getInstrPtr(flow->mb,flow->queue[i].pc);
 		blocked = 0;
-		for(j=p->retc; j< p->argc; j++){
-			if( flow->blocked[getArg(p,j)]){
+		for(j=0; j< p->argc; j++)
+			if( flow->blocked[getArg(p,j)] ){
 				blocked++;
 				break;
 			}
-		}
-		flow->queue[n].pc= i;
-		flow->queue[n].status= blocked?DFLOWblocked:DFLOWpending;
-		flow->queue[n].cost= blocked? -1:  MALflowCost(flow->mb, flow->stk,p);
+		flow->queue[i].status= blocked?DFLOWblocked:DFLOWpending;
+		flow->queue[i].cost= blocked? -1:  MALflowCost(flow->mb, flow->stk,p);
 		
-		/* mark all variables assigned a new value as blocked */
-		for(j=0; j<p->retc; j++)
+		/* mark all variables as blocked */
+		for(j=0; j<p->argc; j++)
+		if (!isVarConstant(flow->mb,getArg(p,j)))
 			flow->blocked[getArg(p,j)]= 1;
 	}
 #ifdef DEBUG_FLOW
 	stream_printf(flow->cntxt->fdout,"DFLOWinit\n");
-	for(i=0;i<n; i++){
+	for(i=0;i<limit; i++){
 		stream_printf(flow->cntxt->fdout,"#[%2d,%3d]cost %2d  state %2d ",
 				i,flow->queue[i].pc,
 				flow->queue[i],flow->queue[i].cost,flow->queue[i].status);
 		printInstruction(flow->cntxt->fdout,flow->mb,getInstrPtr(flow->mb,flow->queue[i].pc), 0);
 	}
 #endif
+}
+
+static void
+DFLOWinit(DataFlow flow){
+	int i,n;
+
+	for (n=0, i= flow->start; i<flow->stop; i++,n++)
+	if (flow->queue[n].status != DFLOWwrapup) {
+		/* is the current instruction free? */
+		flow->queue[n].pc= i;
+		flow->queue[n].status= DFLOWblocked;
+	}
+	DFLOWupdate(flow);
 }
 @-
 After an instruction is executed, the target variables should be freed
@@ -632,46 +648,35 @@ indicates the first instruction to consider. All before are executed already.
 @c
 static void
 DFLOWdrop(DataFlow flow, int pc){
-	int i,j,blocked,limit;
-	InstrPtr p= getInstrPtr(flow->mb,flow->queue[pc].pc);
-
-	/* unblock the variables */
-	for(j=0; j<p->retc; j++)
-		flow->blocked[getArg(p,j)]= 0;
-
-	/* unblock any blocked instruction */
-	limit= flow->stop- flow->start;
-	for(i=pc+1; i<limit; i++)
-	if (flow->queue[i].status==DFLOWblocked){
-		blocked = 0;
-		p= getInstrPtr(flow->mb,flow->queue[i].pc);
-		for(j=p->retc;j<p->argc; j++)
-		if (flow->blocked[getArg(p,j)]){
-			blocked++;
-			break;
-		}
-		if( blocked == 0){
-			flow->queue[i].status= DFLOWpending;
-			flow->queue[i].cost= MALflowCost(flow->mb, flow->stk,p);
 #ifdef DEBUG_FLOW
-			stream_printf(flow->cntxt->fdout,"#upd[%2d,%3d]cost %2d  state %2d ",
-				i,flow->queue[i].pc,
-				flow->queue[i],flow->queue[i].cost,flow->queue[i].status);
-			printInstruction(flow->cntxt->fdout,flow->mb,p,0);
-#endif
-		}
-		for(j=0; j<p->retc; j++)
-			flow->blocked[getArg(p,j)]= 1;
+	int i,j,limit;
+
+	InstrPtr p= getInstrPtr(flow->mb,flow->queue[pc].pc);
+	stream_printf(flow->cntxt->fdout,"#drop");
+	printInstruction(flow->cntxt->fdout,flow->mb,p,0);
+
+
+	limit= flow->stop-flow->start;
+	for(i=pc+1; i<limit; i++){
+		p= getInstrPtr(flow->mb,flow->queue[i].pc);
+		for(j=0; j<p->argc; j++)
+		stream_printf(flow->cntxt->fdout," %d%s ", getArg(p,j),
+		(flow->blocked[getArg(p,j)]?"b":""));
 	}
+	stream_printf(flow->cntxt->fdout,"\n");
+#endif
+	flow->queue[pc].status= DFLOWwrapup;
+	DFLOWupdate(flow);
 }
 @-
 We simply move a cheap instruction into the front of the queue.
 Beware, we assume that variables are assigned a value once, otherwise
 the order may really create errors.
+The order of the instructions should be retained as long as possible.
 @c
 static void
 DFLOWstep(DataFlow flow,int pc){
-	int i,limit;
+	int i,j,limit;
 	FlowStepRec f;
 
 	limit= flow->stop-flow->start;
@@ -679,20 +684,22 @@ DFLOWstep(DataFlow flow,int pc){
 	for (i = pc; i<limit; i++)
 		if (flow->queue[i].status == DFLOWpending ){
  			if( flow->queue[pc].cost > flow->queue[i].cost){
-				f = flow->queue[pc];
-				flow->queue[pc]= flow->queue[i];
-				flow->queue[i]= f;
-			} else 
-			if (flow->queue[pc].status == DFLOWblocked ){
-				f = flow->queue[pc];
-				flow->queue[pc]= flow->queue[i];
-				flow->queue[i]= f;
-			}
+				f = flow->queue[i];
+				for(j=i; j>pc; j--)
+					flow->queue[j]= flow->queue[j-1];
+				flow->queue[pc]=f;
+			} 
 		}
 #ifdef DEBUG_FLOW
 	stream_printf(flow->cntxt->fdout,"#exec[%2d,%3d] cost %d status %d\n",
 		pc,flow->queue[pc].pc, flow->queue[pc].cost,flow->queue[pc].status);
 	printInstruction(flow->cntxt->fdout,flow->mb,getInstrPtr(flow->mb,flow->queue[pc].pc), 0);
+	for(i=0;i<limit; i++){
+		stream_printf(flow->cntxt->fdout,"#[%2d,%3d]cost %2d  state %2d ",
+				i,flow->queue[i].pc,
+				flow->queue[i],flow->queue[i].cost,flow->queue[i].status);
+		printInstruction(flow->cntxt->fdout,flow->mb,getInstrPtr(flow->mb,flow->queue[i].pc), 0);
+	}
 #endif
 	MT_unset_lock(flow->lock,"dataflow step");
 }
@@ -706,7 +713,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {   
 	ValPtr lhs,rhs,v;
-	int i,k,n=stoppc-startpc-1; 
+	int i,k,n;
 	InstrPtr pci=0; 
 	int exceptionVar;
 	str ret= MAL_SUCCEED;
@@ -730,7 +737,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 #endif
 
 	(void)env;
-	(void)pcicaller;
+	(void) pcicaller;
 
 	assert(stoppc > startpc);
 	MT_init_lock(flow.lock,"dataflow lock");
@@ -739,7 +746,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	flow.stop= stoppc;
 	flow.mb = mb;
 	flow.stk= stk;
-	flow.queue = (FlowStep) GDKzalloc(sizeof(FlowStepRec) * (n+1));
+	flow.queue = (FlowStep) GDKzalloc(sizeof(FlowStepRec) * (stoppc-startpc+1));
 	flow.blocked = (char*) GDKzalloc(mb->vtop);
 
 	/* initialize the eligible statements */
@@ -754,6 +761,7 @@ the eligible instructions. [TODO]
 @c
 	/* select the first eligible instruction */
 	exceptionVar = -1;
+	n= flow.stop-flow.start;
 	for(stkpc=0; stkpc<n;stkpc++){
 		DFLOWstep(&flow,stkpc);
 		assert(flow.queue[stkpc].status== DFLOWpending);
