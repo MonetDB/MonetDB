@@ -2596,8 +2596,9 @@ table_name(stmt *st)
 	case st_alias:
 		if (st->op2.stval)
 			return table_name(st->op2.stval);
-		return NULL;
-
+		else
+			/* there are no table aliases, ie look into the base column */
+			return table_name(st->op1.stval);
 	case st_atom:
 		if (st->op1.aval->data.vtype == TYPE_str && st->op1.aval->data.val.sval && _strlen(st->op1.aval->data.val.sval))
 			return atom2string(st->op1.aval);

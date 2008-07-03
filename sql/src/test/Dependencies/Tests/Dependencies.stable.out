@@ -53,7 +53,7 @@ Dependencies between database objects
 % varchar,	varchar,	char # type
 % 2,	8,	9 # length
 [ "t1",	"id_index",	"DEP_INDEX"	]
-% sys.,	sys.,	. # table_name
+% sys.t,	sys.tri,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 2,	14,	11 # length
@@ -173,7 +173,7 @@ Cleanup
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
-% sys.,	sys.,	. # table_name
+% sys.t,	sys.tri,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length

@@ -25,7 +25,7 @@ Over..
 # 20:57:23 >  
 
 [ 32605	]
-% sys. # table_name
+% sys.tradedate # table_name
 % cnt # name
 % int # type
 % 5 # length

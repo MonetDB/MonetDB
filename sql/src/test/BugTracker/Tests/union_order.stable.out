@@ -1,19 +1,22 @@
 stdout of test 'union_order` in directory 'src/test/BugTracker` itself:
 
 
-# 15:51:29 >  
-# 15:51:29 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_port=36178 --set xrpc_port=46380 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit=" module(sql_server);" ; echo ; echo Over..
-# 15:51:29 >  
+# 11:56:46 >  
+# 11:56:46 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5//lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5//lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5//lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5//var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5//var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30364 --set xrpc_port=49769 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 11:56:46 >  
 
-# Monet Database Server V4.16.3
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.6.1, based on kernel v1.24.1
+# Serving database 'mTests_src_test_BugTracker'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:30364/
+# MonetDB/SQL module v2.24.1 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -21,11 +24,11 @@ Over..
 # 15:51:29 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36178 
 # 15:51:29 >  
 
-% sys. # table_name
+% sys.tmp_one # table_name
 % data # name
 % decimal # type
 % 6 # length
-% sys. # table_name
+% sys.tmp_one # table_name
 % data # name
 % decimal # type
 % 6 # length
