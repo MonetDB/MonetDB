@@ -282,7 +282,7 @@ PROC doIterativeRPC(
         if (xrpc_qid != "") lock_unset(wslock);
         var rpc_res, timeout := max(0LL,xrpc_timeout - ((usec() - time_start)/1000));
         var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, (xrpc_caller = ""), 
-                    xrpc_seqnr, timeout, $t, modname, location, method,
+                    xrpc_seqnr, timeout, dst, modname, location, method,
                     updCall, arity, lng(1), ws, cur_fun_vid, cur_fun_iter, cur_fun_item,
                     cur_fun_kind, int_values, dbl_values, dec_values, str_values));
         if (xrpc_qid != "") lock_set(wslock);

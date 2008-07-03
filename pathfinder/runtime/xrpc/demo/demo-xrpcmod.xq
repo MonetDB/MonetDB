@@ -18,9 +18,9 @@ declare function dfx:auctionsAllPerson(
 			$dst as xs:string,
 			$doc as xs:string) as node()*
 { 
-	for $pid in doc($doc)//person/@id
+	for $pid in subsequence(doc($doc)//person/@id,0,5)
 	return 	
-		execute at {$dst} {f2:auctionsByPerson($doc, $pid)}
+		execute at {$dst} {f2:auctionsByPerson($doc, 'person10')}
 };
 
 declare function dfx:nestedRPC(
@@ -70,10 +70,9 @@ declare updating function dfx:deletePersonNested(
 declare function dfx:repeatable($dst as xs:string) as node()*
 {
 	let $d1 := execute at {$dst} {dfx:getdoc("hello.xml")},
-	    $slow := (for $i in 1 to 1000
-					return count(doc("xmark1.xml")//*)),
+	    $slow := count(for $i in 1 to 10 return element bla {doc("xmark2.xml")}),
 	    $d2 := execute at {$dst} {dfx:getdoc("hello.xml")}
-	return ($d1/hello, $d2/hello)
+	return ($d1//hello, $d2//hello, <slow>{$slow}</slow>)
 };
 
 declare function dfx:getdoc($url as xs:string) as document-node()?

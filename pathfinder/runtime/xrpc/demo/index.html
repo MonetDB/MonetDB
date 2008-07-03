@@ -353,13 +353,13 @@ Universitaet Muenchen, respectively.  All Rights Reserved.
         default_val = (i==0) ? "192.168.0.1:50001" : "xmark1.xml";
       } else if (val == "nestedRPC") {
         if(i == 0)
-          default_val = "192.168.0.1:50001";
+          default_val = "localhost:50001";
         else if(i == 1)
-          default_val = "jarl.ins.cwi.nl:8080";
-        else if(i == 2)
           default_val = "localhost:60001";
+        else if(i == 2)
+          default_val = "localhost:60005";
         else
-          default_val = "xmark1.xml";
+          default_val = "file:///home/jennie/xmark1.xml";
       } else if (val == "insertPerson") {
         default_val = (i==0) ? "xmark1.xml" : '<person id=\"new1\"><name>Ronald</name></person>';
       } else if (val == "insertPersonNested") {
