@@ -32,6 +32,11 @@ comment "Create a BAT with uniform integer distribution";
 command normal(base:oid, size:int, domain:int, stddev:int, mean:int):bat[:oid,:int]
 address MBMnormal
 comment "Create a BAT with a normal integer distribution";
+
+command mix(b1:bat[:oid,:int]):bat[:oid,:int]
+address MBMmix
+comment "Mix the BUNs of this BAT";
+
 @+ Experimentation Gimmicks
 @- Data Generation
 @h
@@ -51,6 +56,7 @@ comment "Create a BAT with a normal integer distribution";
 
 mb_export str MBMuniform(int *ret, oid *base, int *size, int *domain);
 mb_export str MBMnormal(int *ret, oid *base, int *size, int *domain, int *stddev, int *mean);
+mb_export str MBMmix(int *ret, int *batid);
 
 #endif /* _MBM_H_ */
 @c
@@ -235,6 +241,37 @@ MBMnormal(int *ret, oid *base, int *size, int *domain, int *stddev, int *mean){
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		BBPkeepref(*ret= bn->batCacheid);
 	} else throw(MAL, "microbenchmark","uniform");
+	return MAL_SUCCEED;
+}
+
+
+str
+MBMmix(int *bn, int *batid)
+{
+	size_t n, r, i;
+	BUN firstbun, p, q;
+	BAT *b;
+
+	if ((b = BATdescriptor(*batid)) == NULL)
+                throw(MAL, "microbenchmark.mix", "Cannot access BAT");
+
+	n = BATcount(b);
+	firstbun = BUNfirst(b);
+	/* mix BUNs randomly */
+	for (r = i = 0; i < n; i++) {
+		size_t idx = i + ((r += rand()) % (n - i));
+		int val;
+
+		p = (BUN) (firstbun + i);
+		q = (BUN) (firstbun + idx);
+		val = *(int *) Tloc(b, p);
+		*(int *) Tloc(b, p) = *(int *) Tloc(b, q);
+		*(int *) Tloc(b, q) = val;
+	}
+
+	BBPunfix(b->batCacheid);
+	*bn = b->batCacheid;
+
 	return MAL_SUCCEED;
 }
 @}
