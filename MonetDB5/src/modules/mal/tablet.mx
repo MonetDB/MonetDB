@@ -1101,7 +1101,7 @@ copy_loadformat(Tablet *as){
 	Column *fmt = (Column *) GDKzalloc(sizeof(Column) * (as->nr_attrs + 1));
 	size_t p;
 
-	*ns= *as;
+	*ns = *as;
 	ns->format = fmt;
 	if (as->sep)
 		ns->sep = strdup(as->sep);		/* default separator */
@@ -1940,7 +1940,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 		as->error = GDKstrdup(error);
 		return -1;
 	}
-	return (ssize_t) as->nr;
+	return (ssize_t) cnt;
 }
 
 static int
