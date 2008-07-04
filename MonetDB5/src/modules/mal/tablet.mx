@@ -1716,6 +1716,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 	int seplen = as->format[as->nr_attrs - 1].seplen;
 	size_t offset = as->offset;
 	size_t nr = offset + as->nr;
+	int started = !start;
 
 	if (tablet_debug)
 		stream_printf(GDKerr, "TABLETload_bulk\n");
@@ -1723,7 +1724,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKstdout,"load_bulk %d\n",start);
 #endif
-	while ((b->pos < b->len || !b->eof) && res == 0 && limit > 0 && (nr == ~(size_t) 0 || i < nr)) {
+	while ((b->pos < b->len || !b->eof) && res == 0 && limit >= 0 && (nr == ~(size_t) 0 || i < nr)) {
 		char *s, *end;
 
 
@@ -1741,20 +1742,13 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 		s = b->buf + b->pos;
 		*end = '\0';
 		done = 0;
-		while (s < end && limit > 0) {
+		while (s < end && limit >= 0) {
 			char *e = strstr(s, sep);
 
-			if (start) {
-				/*ignore partial record from previous block */
-				start = 0;
-				limit -= (e-s) + seplen;
-				s = e + seplen;
-				continue;
-			}
 			if (e) {
 				limit -= (e-s) + seplen;
 				*e = '\0';
-				if (i>=offset && insert_line(as, s, NULL, col1,col2) < 0) {
+				if (started && i>=offset && insert_line(as, s, NULL, col1,col2) < 0) {
 					s = e + seplen;
 					b->pos = (s - b->buf);
 					res = -1;
@@ -1794,7 +1788,9 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 				break;
 			}
 			b->pos = (s - b->buf);
-			i++;
+			i += started;
+			/* ignored partial record from previous block */
+			started = 1;
 			if (tablet_debug && (i % 100000) == 0)
 				stream_printf(GDKerr, "inserted " SZFMT "\n", i);
 			if ((i % 100000) == 0)
@@ -1876,14 +1872,17 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 		partition[i]->input = bstream_create(dupFileStream(b->s),SIZE);
 		partition[i]->output = out;
 		if (TABLETcreate_bats(partition[i], sz) < 0){
-			for (i--; i>= 0; i--)
+			for (i--; i>= 0; i--) {
+				bstream_destroy(partition[i]->input);
 				TABLETdestroy_format(partition[i]);
+			}
 			GDKerror("TABLETload_file:could not allocate bats \n");
 			return -1;
 		}
 	}
 
-	for( i=0; i<NWAY; i++)
+	for( i=0; i<NWAY; i++) {
+		int seplen = as->format[as->nr_attrs - 1].seplen;
 		if (partition[i]->input) {
 			int res = stream_fsetpos(partition[i]->input->s, i*piece);
 #ifdef _DEBUG_TABLET_
@@ -1891,11 +1890,11 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 #endif
 			(void)res;
 			/* execute a thread over a range of the file */
-			partition[i]->bytes = (i==NWAY-1)?size-i*piece:piece; 
+			partition[i]->bytes = (i==NWAY-1)?size-(i*piece):piece+seplen-1; 
 			partition[i]->partid = i;
-			partition[i]->tid = 0;
 			MT_create_thread(&partition[i]->tid, TABLETload_chunk, partition[i]);
 		}
+	}
 		
 	/* wait for all threads to finish */
 	for(i=0; i<NWAY; i++) 
@@ -1934,8 +1933,10 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 			}
 		}
 	}
-	for (i=0; i<NWAY; i++)
+	for (i=0; i<NWAY; i++) {
+		bstream_destroy(partition[i]->input);
 		TABLETdestroy_format(partition[i]);
+	}
 	if (error) {
 		as->error = GDKstrdup(error);
 		return -1;
