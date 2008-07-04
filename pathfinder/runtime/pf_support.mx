@@ -5854,7 +5854,7 @@ extern MT_Lock pf_runtime_lock[7];
 pf_support_export int     xrpc_port;
 pf_support_export char*   xrpc_hostname;
 pf_support_export stream* xrpc_log_message(str msg, lng xrpc_seqnr);
-pf_support_export char*   xrpc_log_dir();
+pf_support_export char*   xrpc_log_dir(void);
 
 #endif
 @c
