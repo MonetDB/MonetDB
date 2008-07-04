@@ -1993,7 +1993,8 @@ if test "x$enable_optim" = xyes; then
       ia64-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
       ia64-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll               -tpp2 -mcpu=itanium2";;
 
-      ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll                     -mcpu=itanium2"
+#     ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O2 -restrict -unroll                     -mcpu=itanium2" # OK.
+      ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll                     -mcpu=itanium2"
 #     ia64-*-*-10.*)   CFLAGS="$CFLAGS                                                              "
 #     ia64-*-*-10.*)   CFLAGS="$CFLAGS -mp1                                                         "
 #     ia64-*-*-10.*)   CFLAGS="$CFLAGS      -O1                                                     "
