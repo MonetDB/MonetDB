@@ -727,7 +727,8 @@ can be executed in parallel.
 
 typedef struct {
 	MT_Id tid;
-	int id;
+	MT_Sema sema;
+	int id,status;
 	DataFlow flow;
 	str error;
 } FlowTask;
@@ -830,6 +831,10 @@ startFlowTask(void *t){
 			task->flow->error= msg;
 		MT_unset_lock(task->flow->lock,"dataflow lock");
 	}
+/*
+	task->status= 0;
+	MT_down_sema(task->sema,"Interpreter thread");
+*/
 }
 
 str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
@@ -838,7 +843,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	lng oldtimer;
 	DataFlowRec flow;
 	int i;
-	FlowTask task[NWAY]; 
+	static FlowTask *task; 
 
 #ifdef DEBUG_FLOW
 	stream_printf(GDKout,"runMALdataflow for block %d - %d\n", startpc,stoppc);
@@ -867,21 +872,30 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	if (cntxt->flags & timerFlag)
 		oldtimer= cntxt->timer= GDKusec();
 
+	if (task == NULL){
+		task = (FlowTask *) GDKzalloc(sizeof(FlowTask)*NWAY);
+		for(i=0; i<NWAY; i++){
+			task[i].id = i;
+			MT_init_sema(task[i].sema,0,"Interpreter thread");
+			/* create the threads and let them wait */
+		}
+	}
 	for(i=0; i<NWAY; i++){
-		task[i].id = i;
+		task[i].status = 1;	/* it is active */
 		task[i].error = MAL_SUCCEED;
 		task[i].flow = &flow;
 		MT_create_thread(&task[i].tid, startFlowTask, &task[i]);
 	}
 
 	/* wait for the threads to finish */
+	/* should be converted to a loop over the task status */
 	for(i=0;i<NWAY;i++)
 		MT_join_thread(task[i].tid);
 
 #ifdef DEBUG_FLOW
 	for(i=0;i<NWAY;i++){
 		stream_printf(GDKout,"finished %d result %s\n", 
-			task[i].id, task[i].error?task[i].error:"");
+			task[i]->id, task[i]->error?task[i]->error:"");
 	}
 #endif
 	GDKfree(flow.queue);
