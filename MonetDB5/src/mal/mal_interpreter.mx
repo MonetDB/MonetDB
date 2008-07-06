@@ -840,7 +840,6 @@ startFlowTask(void *t){
 str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {   
-	lng oldtimer;
 	DataFlowRec flow;
 	int i;
 	static FlowTask *task; 
@@ -870,7 +869,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	DFLOWinit( &flow);
 
 	if (cntxt->flags & timerFlag)
-		oldtimer= cntxt->timer= GDKusec();
+		cntxt->timer= GDKusec();
 
 	if (task == NULL){
 		task = (FlowTask *) GDKzalloc(sizeof(FlowTask)*NWAY);
