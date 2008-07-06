@@ -250,15 +250,14 @@ pcre_exit(void)
 {
 }
 
-int
+str
 pcre_match_with_flags(bit *ret, str val, str pat, str flags)
 {
 	(void) ret;
 	(void) val;
 	(void) pat;
     (void)flags;
-	GDKerror("pcre_match_with_flags() not available as required version of libpcre was not found by configure.\n");
-	return GDK_FAIL;
+	return "pcre_match_with_flags() not available as required version of libpcre was not found by configure.\n";
 }
 
 str
