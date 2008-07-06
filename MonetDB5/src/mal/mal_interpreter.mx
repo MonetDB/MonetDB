@@ -827,7 +827,7 @@ startFlowTask(void *t){
 	msg= runFlow(task->flow);
 	if(msg != MAL_SUCCEED){
 		MT_set_lock(task->flow->lock,"dataflow lock");
-		if(msg != MAL_SUCCEED)
+		if(msg != MAL_SUCCEED && task->flow->error== MAL_SUCCEED)
 			task->flow->error= msg;
 		MT_unset_lock(task->flow->lock,"dataflow lock");
 	}
@@ -1585,7 +1585,6 @@ if( ret != MAL_SUCCEED ) {
 	str msg = 0, nxt;
 	if( stk->cmd  ) {
 		stream_printf(cntxt->fdout,"!ERROR: %s\n",ret);
-		stk->cmd='n';
 		mdbStep(cntxt,mb,stk,stkpc);
 		if( stk->cmd == 'x' || stk->cmd == 'q' ) {
 			stkpc= mb->stop;
