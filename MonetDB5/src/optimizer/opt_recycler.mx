@@ -160,8 +160,8 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			continue;
 		}
-		if (p->barrier ){
-			/* never save a barrier*/
+		if (p->barrier  && p->token != CMDcall){
+			/* never save a barrier unless it is a command and side-effect free */
 			pushInstruction(mb,p);
 			continue;
 		}
