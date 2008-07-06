@@ -294,10 +294,10 @@ The join path type analysis should also be done at run time,
 because the expressive power of MAL is insufficient to
 enforce a proper join type list.
 @h
-opt_export BAT * ALGjoinPathBody(int top, BAT **joins);
+opt_export BAT * ALGjoinPathBody(Client cntxt, int top, BAT **joins);
 @c
 BAT *
-ALGjoinPathBody(int top, BAT **joins)
+ALGjoinPathBody(Client cntxt, int top, BAT **joins)
 {
 	BAT *b;
 	size_t estimate, e;
@@ -308,13 +308,15 @@ ALGjoinPathBody(int top, BAT **joins)
 		j = 0;
 		estimate = ALGjoinCost(joins[0],joins[1]);
 #ifdef DEBUG_OPT_JOINPATH
-		stream_printf(GDKout,"estimate join(%d,%d) %d\n", joins[0]->batCacheid, 
+		stream_printf(cntxt->fdout,"estimate join(%d,%d) %d\n", joins[0]->batCacheid, 
 			joins[1]->batCacheid,(int)estimate);
+#else
+	(void) cntxt;
 #endif
 		for (i = 1; i < top - 1; i++) {
 			e = ALGjoinCost(joins[i], joins[i + 1]);
 #ifdef DEBUG_OPT_JOINPATH
-		stream_printf(GDKout,"estimate join(%d,%d) %d\n", joins[i]->batCacheid, 
+		stream_printf(cntxt->fdout,"estimate join(%d,%d) %d\n", joins[i]->batCacheid, 
 			joins[i+1]->batCacheid,(int)e);
 #endif
 			if (e < estimate) {
@@ -330,7 +332,7 @@ may fire a BATproperty check in a few cases.
 		if (b==NULL)
 			return NULL;
 #ifdef DEBUG_OPT_JOINPATH
-		stream_printf(GDKout, "%d:= join(%d,%d)\n", 
+		stream_printf(cntxt->fdout, "%d:= join(%d,%d)\n", 
 			b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid);
 #endif
 		BBPdecref(joins[j]->batCacheid, FALSE);
@@ -342,7 +344,7 @@ may fire a BATproperty check in a few cases.
 			joins[i] = joins[i + 1];
 	}
 #ifdef DEBUG_OPT_JOINPATH
-	stream_printf(GDKout, "final join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
+	stream_printf(cntxt->fdout, "final join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
 #endif
 	b = BATjoin(joins[0], joins[1], oid_nil);
 	BBPdecref(joins[0]->batCacheid, FALSE);
@@ -356,6 +358,7 @@ ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,*bid,top=0;
 	BAT *b, **joins = (BAT**)alloca(pci->argc*sizeof(BAT*)); 
+	Client cntxt= MCgetClient();
 
 	(void)mb;
 	for (i = pci->retc; i < pci->argc; i++) {
@@ -368,7 +371,7 @@ ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		joins[top++] = b;
 	}
-	b= ALGjoinPathBody(top,joins);
+	b= ALGjoinPathBody(cntxt,top,joins);
 	BBPkeepref(b->batCacheid);
 	*(int *) getArgReference(stk, pci, 0) = b->batCacheid;
 	return MAL_SUCCEED;
