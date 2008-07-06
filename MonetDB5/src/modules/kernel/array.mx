@@ -377,13 +377,17 @@ ARRAYproject(int *ret, int *bid, int *cst)
 }
 
 
+@-
+The printing stuff is postponed to the future. Then it also needs
+a solution to the GDKout issues.
 /*---------------------------------------------------------------------------*/
 /*
    memory-hungry function;
    it internally builds the index to be able to print the array in-order.
+	This is postpone to the future of arrays.
 */
 
-int
+static int
 print_array(BAT *val, ...)
 {
 	BATiter vali = bat_iterator(val);
@@ -559,6 +563,4 @@ exit_err_part:
 exit_err_none:
 	return GDK_FAIL;
 }
-
-
-/*============================================================================*/
+@}
