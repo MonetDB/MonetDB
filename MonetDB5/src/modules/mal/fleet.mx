@@ -895,11 +895,12 @@ FLEETmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Mapi mid;
 	MapiHdl hdl;
 	char *s,*fld, *qry=0;
+	Client cntxt= mcGetClient();
 
 	key= * (int*) getArgReference(stk,pci,pci->retc);
 	@:accessTest(key,rpc)@
 #ifdef MAPI_TEST
-	stream_printf(GDKout,"about to sent: %s\n",qry);
+	stream_printf(cntxt->fdout,"about to sent: %s\n",qry);
 #endif
 	/* glue all strings together */
 	for(i= pci->retc+1; i<pci->argc; i++){
@@ -923,7 +924,7 @@ FLEETmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for(j=0; j<pci->retc; j++){
 			fld= mapi_fetch_field(hdl,j);
 #ifdef MAPI_TEST
-			stream_printf(GDKout,"Got: %s\n",fld);
+			stream_printf(cntxt->fdout,"Got: %s\n",fld);
 #endif
 			switch(getVarType(mb,getArg(pci,j)) ){
 			case TYPE_void:

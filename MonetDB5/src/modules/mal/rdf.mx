@@ -2474,7 +2474,6 @@ RDFexport_(bat M, bat S, bat P, bat O, bat T, str fileurl, str syntax)
                                             str pv = base + off[p[i]];
                                             str sv = base + off[s[i]];
                                             bte tv = t[i];
-                                            /*stream_printf(GDKout, "'%s' '%s' '%s' '%s'\n", ov, pv, sv, fileurl);*/
                                             /* Make a triple with URI subject, URI predicate, literal object */
                                             triple=GDKmalloc(sizeof(raptor_statement));
                                             if (triple)

@@ -422,6 +422,9 @@ static void generateChallenge(str buf, int min, int max) {
 
 static void 
 doChallenge(str cmd, stream *in, stream *out) {
+#ifdef DEBUG_SERVER
+	Client = MCgetClient();
+#endif
 	if (cmd == NULL) {
 		char *buf = (char *) GDKmalloc(BLOCK + 1);
 		char *challenge;
@@ -470,8 +473,8 @@ doChallenge(str cmd, stream *in, stream *out) {
 		printf("mal_mapi:Client accepted %s\n", name);
 		fflush(stdout);
 
-		stream_printf(GDKout, "#SERVERlisten:client accepted\n");
-		stream_printf(GDKout, "#SERVERlisten:client string %s\n", name);
+		stream_printf(cntxt->fdout, "#SERVERlisten:client accepted\n");
+		stream_printf(cntxt->fdout, "#SERVERlisten:client string %s\n", name);
 #endif
 		bs = bstream_create(fdin, 128 * BLOCK);
 
@@ -604,7 +607,6 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	int sock = -1;
 	int *Sock = GDKmalloc(sizeof(int));
 	int accept_any=0;
-
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
 #endif
@@ -615,6 +617,10 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	int port;
 	int maxusers;
 	char msg[512], *cmd, *usockfile, host[512];
+#ifdef DEBUG_SERVER
+	Client cntxt= MCgetClient();
+#endif
+
 
 	accept_any = GDKgetenv_istrue("mapi_open");
 
@@ -719,7 +725,7 @@ errno == WSAEADDRINUSE &&
 #endif
 
 #ifdef DEBUG_SERVER
-	stream_printf(GDKout, "#SERVERlisten:Network started at %d\n", port);
+	stream_printf(cntxt->fdout, "#SERVERlisten:Network started at %d\n", port);
 #endif
 	threadcommand = cmd;
 	*Sock = sock;
@@ -735,7 +741,7 @@ errno == WSAEADDRINUSE &&
 	(void) msg;
 #ifdef DEBUG_SERVER
 	snprintf(msg, (int) 512, "#Ready to accept connections on %s:%d\n", host, port);
-	stream_printf(GDKout, "%s", msg);
+	stream_printf(cntxt->fdout, "%s", msg);
 #endif
 
 	/* seed the randomiser such that our challenges aren't
@@ -878,6 +884,9 @@ SERVERlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd)
 	SSL_CTX *ctx = NULL;
 	SSL *ssl = NULL;
 	char *msg = NULL;
+#ifdef DEBUG_SERVER
+	Client cntxt= MCgetClient();
+#endif
 
 	if (!port)
 		port = SERVERSSLPORT;
@@ -943,7 +952,7 @@ Get the new information for the server socket and start listening.
 	listen(sock, maxusers);
 
 #ifdef DEBUG_SERVER
-	THRprintf(GDKout, "#SERVERlistenSSL:Network started at %d\n", port);
+	THRprintf(cntxt->fdout, "#SERVERlistenSSL:Network started at %d\n", port);
 #endif
 	do {
 		int retval;
@@ -1835,11 +1844,14 @@ SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Mapi mid;
 	MapiHdl hdl;
 	char *s,*fld, *qry=0;
+#ifdef DEBUG_SERVER
+	Client cntxt= MCgetClient();
+#endif
 
 	key= * (int*) getArgReference(stk,pci,pci->retc);
 	@:accessTest(key,rpc)@
 #ifdef MAPI_TEST
-	stream_printf(GDKout,"about to sent: %s\n",qry);
+	stream_printf(cntxt->fdout,"about to sent: %s\n",qry);
 #endif
 	/* glue all strings together */
 	for(i= pci->retc+1; i<pci->argc; i++){
@@ -1863,7 +1875,7 @@ SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for(j=0; j<pci->retc; j++){
 			fld= mapi_fetch_field(hdl,j);
 #ifdef MAPI_TEST
-			stream_printf(GDKout,"Got: %s\n",fld);
+			stream_printf(cntxt->fdout,"Got: %s\n",fld);
 #endif
 			switch(getVarType(mb,getArg(pci,j)) ){
 			case TYPE_void:
