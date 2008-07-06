@@ -63,6 +63,7 @@ which inspects the variable table for alternative results.
 #include "mal.h"
 #include "mal_exception.h"
 #include "mal_instruction.h"
+#include "mal_client.h"
 
 /*#define _DEBUG_RECYCLE_
 #define _DEBUG_RECYCLE_REUSE 
@@ -119,10 +120,10 @@ mal_export int savedTime;	/* sum of all recycled clk's */
 mal_export int monitorRecycler;
 mal_export int recycleRecent;
 
-mal_export void RECYCLEversion(MalBlkPtr mb);
-mal_export int RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export void RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export void RECYCLEversion(Client cntxt, MalBlkPtr mb);
+mal_export int RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export void RECYCLEexit(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export void RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEshutdown(void);
 mal_export int RECYCLEinterest(MalBlkPtr mb,InstrPtr p);
 #endif
@@ -241,7 +242,7 @@ static void RECYCLEspace()
 	}
 }
 
-void RECYCLEversion(MalBlkPtr mb)
+void RECYCLEversion(Client cntxt, MalBlkPtr mb)
 {
 	int i;
 
@@ -251,7 +252,9 @@ void RECYCLEversion(MalBlkPtr mb)
 		mal_set_lock(recycleLock,"recycle");
 		/* all re-used instructions are dropped */
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE get version %d\n", recycleVersion);
+	stream_printf(cntxt->fdout,"RECYCLE get version %d\n", recycleVersion);
+#else
+	(void) cntxt;
 #endif
 		for(i=1; i<mb->stop; i++)
 		if (getInstrPtr(mb,i)->recycle)
@@ -328,8 +331,8 @@ static void RECYCLEremove(int pc){
 
 	/* ditch the selected one */
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLEremove %d ",i);
-	printInstruction(GDKout,recycleBlk, old[i], LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"RECYCLEremove %d ",i);
+	printInstruction(cntxt->fdout,recycleBlk, old[i], LIST_MAL_ALL);
 #endif
 	RECYCLEgarbagecollect(recycleBlk,old[i]);
 	for (v=0; v< old[i]->retc; v++)
@@ -408,7 +411,7 @@ RECYCLEcache(int target, int wr)
 
 	if (victim!= target && (mem || (size && recycleClaim <= 1)) ){
 #ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"RECYCLE cache, remove %d \n",victim);
+		stream_printf(cntxt->fdout,"RECYCLE cache, remove %d \n",victim);
 #endif
 		mal_set_lock(recycleLock,"recycle");
 		recyclerUsedMemory -= recycleBlk->profiler[victim].obytes;
@@ -419,7 +422,7 @@ RECYCLEcache(int target, int wr)
 				recyclerUsedMemory, recycleBlk->stop,
 				recycled, retained, statements, savedTime);
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE new version %d\n", recycleVersion);
+	stream_printf(cntxt->fdout,"RECYCLE new version %d\n", recycleVersion);
 #endif
 		recycleVersion++;
 		mal_unset_lock(recycleLock,"recycle");
@@ -702,8 +705,8 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
 		return ;
 
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE keep ");
-	printTraceCall( GDKout,mb, s, getPC(mb,p),LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"RECYCLE keep ");
+	printTraceCall( cntxt->fdout,mb, s, getPC(mb,p),LIST_MAL_ALL);
 #endif
 @-
 The instruction is copied and the variables are
@@ -728,8 +731,8 @@ compare by value.
 	 	setArg(q,i,c);
 	}
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE kept ");
-	printInstruction( GDKout,recycleBlk, q,LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"RECYCLE kept ");
+	printInstruction( cntxt->fdout,recycleBlk, q,LIST_MAL_ALL);
 #endif
 	p->recycle = i= recycleBlk->stop;
 	pushInstruction(recycleBlk,q);
@@ -801,8 +804,8 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 		return p->recycle;
 
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"search\n");
-	printInstruction(GDKout,mb,p, LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"search\n");
+	printInstruction(cntxt->fdout,mb,p, LIST_MAL_ALL);
 #endif
 	if ( RECYCLEinterest(mb,p))
 	for (i=1; i<recycleBlk->stop; i++) {
@@ -819,14 +822,14 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			return i;
 	}
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"not found\n");
+	stream_printf(cntxt->fdout,"not found\n");
 #endif
 	recycleSearchTime = GDKusec()-clk;
 	return -1;
 }
 
 static int
-RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
+RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
 	int i, j, nbid= -1, bid = -1, ridx, idx, pc = -1;
 	InstrPtr q;
@@ -883,14 +886,14 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 						pc = i;
 #ifdef _DEBUG_RECYCLE_
 	b1 = BBPquickdesc(bid, FALSE);
-	stream_printf(GDKout,"counts A %d -> %d \n", bid, (int)BATcount(b1));
+	stream_printf(cntxt->fdout,"counts A %d -> %d \n", bid, (int)BATcount(b1));
 #endif
 					} else {
 						b1 = BBPquickdesc(bid, FALSE);
 						b2 = BBPquickdesc(nbid, FALSE);
 
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"counts B %d -> %d %d -> %d\n", 
+	stream_printf(cntxt->fdout,"counts B %d -> %d %d -> %d\n", 
 		bid, (int)BATcount(b1), nbid, (int)BATcount(b2));
 #endif
 						if (BATcount(b1) > BATcount(b2)){
@@ -899,8 +902,8 @@ RECYCLEreuse(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 						}
 					}
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"Inclusive range bid=%d ", bid);
-	printInstruction(GDKout,recycleBlk,q, LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"Inclusive range bid=%d ", bid);
+	printInstruction(cntxt->fdout,recycleBlk,q, LIST_MAL_ALL);
 #endif
 				}
 			}
@@ -937,11 +940,11 @@ We execute it in place and safe the result upon need.
 		int k;
 		i= getPC(mb,p);
 #ifdef _DEBUG_RECYCLE_REUSE
-	stream_printf(GDKout,"RECYCLEreuse subselect ");
-	printInstruction(GDKout, recycleBlk, getInstrPtr(recycleBlk,pc), LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"RECYCLEreuse subselect ");
+	printInstruction(cntxt->fdout, recycleBlk, getInstrPtr(recycleBlk,pc), LIST_MAL_ALL);
 
-	stream_printf(GDKout,">>>");
-	printTraceCall(GDKout, mb, s,i, LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,">>>");
+	printTraceCall(cntxt->fdout, mb, s,i, LIST_MAL_ALL);
 #endif
 		s->stk[getArg(p,1)].val.bval = bid;
 		BBPincref(bid, TRUE);
@@ -952,7 +955,7 @@ We execute it in place and safe the result upon need.
 		p->recycle= 0;
 		(void) reenterMAL(MCgetClient(),mb,i,i+1,s,0,0);
 		p->recycle= k;
-		RECYCLEexit(mb, s, p);
+		RECYCLEexit(cntxt, mb, s, p);
 		/* restore the situation */
 		s->keepAlive= j;
 		s->stk[getArg(p,1)].val.bval = nbid;
@@ -965,7 +968,7 @@ We execute it in place and safe the result upon need.
 }
 
 int 
-RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i=0;
 	ValPtr lhs,rhs;
@@ -975,15 +978,15 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	stk->clk= GDKusec();
 	if (recycleVersion == 0 || recycleBlk == NULL )
 		return 0;
-	RECYCLEversion(mb);
+	RECYCLEversion(cntxt,mb);
 
 	if (RECYCLEcall(stk,p)) {
 		recycled++;
 		q= getInstrPtr(recycleBlk, p->recycle);
 #ifdef _DEBUG_RECYCLE_
-		stream_printf(GDKout,"RECYCLEentry reuse\n");
-		printInstruction(GDKout,mb,p, LIST_MAL_ALL);
-		printInstruction(GDKout,recycleBlk,q, LIST_MAL_ALL);
+		stream_printf(cntxt->fdout,"RECYCLEentry reuse\n");
+		printInstruction(cntxt->fdout,mb,p, LIST_MAL_ALL);
+		printInstruction(cntxt->fdout,recycleBlk,q, LIST_MAL_ALL);
 #endif
 		for(i=0;i< p->retc; i++) {
 			lhs = &stk->stk[getArg(p,i)];
@@ -1004,7 +1007,7 @@ RECYCLEentry(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		return 1;
 	} 
 	statements++;
-	return RECYCLEreuse(mb,stk,p) >= 0;
+	return RECYCLEreuse(cntxt,mb,stk,p) >= 0;
 }
 
 @-
@@ -1015,14 +1018,14 @@ It can use the timing information gathered from the previous call,
 which is stored in the stack frame to avoid concurrency problems.
 @c
 void
-RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng clk = 0;
 	lng memLimit, cacheLimit;
 	int rd = getVolume(stk,p, 1)/ RU +1;
 	int wr = getVolume(stk,p, 0)/ RU +1;
 	ValRecord *v;
 
-	RECYCLEversion(mb);
+	RECYCLEversion(cntxt,mb);
 	clk= GDKusec()-stk->clk;
 
 	memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
@@ -1038,7 +1041,7 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		if ( recyclerUsedMemory + wr > memLimit ||
 	    		recycleBlk->stop >= cacheLimit ){
 			RECYCLEcleanCache(wr);
-			RECYCLEversion(mb);
+			RECYCLEversion(cntxt,mb);
 		}
 
 	if ( RECYCLEinterest(mb,p))
@@ -1063,7 +1066,7 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			if (rd+wr > recycleVolume){
 				(void) RECYCLEnew(mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
-				stream_printf(GDKout,"RECYCLEexit size %d %d\n",rd,wr);
+				stream_printf(cntxt->fdout,"RECYCLEexit size %d %d\n",rd,wr);
 #endif
 			}
 		}
@@ -1076,8 +1079,8 @@ RECYCLEexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			if (recycleAlpha *(rd+wr) + (1-recycleAlpha)* clk > (recycleVolume+1) * (recycleTime+1)){
 				(void) RECYCLEnew(mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
-				stream_printf(GDKout,"RECYCLEexit volume %d %d %d \n",clk,rd,wr,(rd+wr)*clk);
-				stream_printf(GDKout,"RECYCLEexit volume %d %d\n", recycleVolume, recycleTime);
+				stream_printf(cntxt->fdout,"RECYCLEexit volume %d %d %d \n",clk,rd,wr,(rd+wr)*clk);
+				stream_printf(cntxt->fdout,"RECYCLEexit volume %d %d\n", recycleVolume, recycleTime);
 #endif
 			}
 		}
@@ -1106,9 +1109,9 @@ RECYCLEshutdown(){
 		return ;
 
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE shutdown\n");
-	printFunction(GDKout,recycleBlk,0);
-	printStack(GDKout,mb,0);
+	stream_printf(cntxt->fdout,"RECYCLE shutdown\n");
+	printFunction(cntxt->fdout,recycleBlk,0);
+	printStack(cntxt->fdout,mb,0);
 #endif
 	mal_set_lock(recycleLock,"recycle");
 	recycleBlk= NULL;
@@ -1127,7 +1130,7 @@ Evict a bat from recycle cache, for instance if an update on it
 has been detected. 
 @c
 static void 
-RECYCLEevict(bat *bats, int btop){
+RECYCLEevict(Client cntxt, bat *bats, int btop){
 	int i,j,k,top = 0;
 	int action = 1, upd = 0;
 	int *dropped;
@@ -1137,8 +1140,10 @@ RECYCLEevict(bat *bats, int btop){
 		return;
 
 #ifdef _DEBUG_RECYCLE_ 
-	stream_printf(GDKout,"RECYCLE evict\n");
-	printFunction(GDKout,recycleBlk,0);
+	stream_printf(cntxt->fdout,"RECYCLE evict\n");
+	printFunction(cntxt->fdout,recycleBlk,0);
+#else
+	(void) cntxt;
 #endif
 
 	dropped = (int *) alloca(sizeof(int)*recycleBlk->vtop);
@@ -1191,7 +1196,7 @@ we only have to make one step back in the look.
 Once we encounter an update we check and clean the recycle cache from 
 instructions dependent on the updated bat.
 @c
-void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+void RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j, btop=0;
 	int *b;
@@ -1200,7 +1205,9 @@ void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(GDKout,"RECYCLE reset\n");
+	stream_printf(cntxt->fdout,"RECYCLE reset\n");
+#else
+	(void) cntxt;
 #endif
 	if( recycleBlk == NULL)
 		return;
@@ -1231,8 +1238,7 @@ void RECYCLEreset(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 	if (btop)
-		RECYCLEevict(b,btop);
+		RECYCLEevict(cntxt,b,btop);
 
 }
-
 @}

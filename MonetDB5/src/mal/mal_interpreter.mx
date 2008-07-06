@@ -1657,10 +1657,10 @@ as much as possible.
 The recycler works for any variable and relies on policy functions
 registered.
 @= MALrecycleStart
-	if( !RECYCLEentry(mb,stk,pci) || mb->version== 0 )
+	if( !RECYCLEentry(cntxt, mb,stk,pci) || mb->version== 0 )
 @= MALrecycleExit
 	if( pci->recycle )
-		RECYCLEexit(mb,stk,pci);
+		RECYCLEexit(cntxt, mb,stk,pci);
 @}
 @-
 @node Garbage Collection, Stack Management, Exception Handling, The MAL Interpreter
