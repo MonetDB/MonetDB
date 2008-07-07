@@ -900,7 +900,8 @@ typedef struct {
 	unsigned char 
 	dense:1,		
 	nonil:1, 		/* nonil isn't propchecked jet */
-	unused:6; 
+	nil:1,			/* nil is set when we found one nil (propcheck) */
+	unused:5; 
 	oid align;		/* OID for sync alignment */
 	size_t nosorted_rev;	/* position that proves sorted_rev==FALSE */
 	size_t nokey[2];	/* positions that prove key ==FALSE */

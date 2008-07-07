@@ -1139,12 +1139,16 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 			} else if (b->htype) {
 				b->hkey = bm->tkey |= TRUE;
 			}
+			if (b->H->nonil) 
+				b->H->nonil = atom_CMP(h, ATOMnilptr(b->htype), b->htype) != 0;
 			if (b->ttype == TYPE_oid) {
 				b->tkey = bm->hkey |= b->tdense = TRUE;
 				b->tseqbase = bm->hseqbase = *(oid *) t;
 			} else if (b->ttype) {
 				b->tkey = bm->hkey |= TRUE;
 			}
+			if (b->T->nonil) 
+				b->T->nonil = atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
 		}
 		if (!countonly) {
 			bunfastins(b, h, t);
@@ -2826,8 +2830,8 @@ BAT *
 BATpropcheck(BAT *b, int mode)
 {
 	BATiter bvi, bi = bat_iterator(b);
-	int disprove_dense, disprove_sorted, disprove_key = TRUE;
-	int dense_bak = 0, key_bak = 0, sorted_bak = 0;
+	int disprove_dense, disprove_sorted, disprove_key = TRUE, disprove_nonil = b->H->nonil;
+	int dense_bak = 0, key_bak = 0, sorted_bak = 0, nonil_bak = 0;
 	oid seq_bak = 0;
 	size_t xx, yy;
 	int zz, tpe;
@@ -2968,9 +2972,11 @@ first propagate already known properties. that will save some effort.
 		seq_bak = b->hseqbase;
 		sorted_bak = BAThordered(b) & 1;	/* StM: GDK_SORTED_REV ? */
 		key_bak = b->hkey;
+		nonil_bak = b->H->nonil;
 		BATkey(b, FALSE);
 		b->hsorted &= (bit) ~1;	/* FALSE */	/* StM: GDK_SORTED_REV ? */
 		b->hdense = FALSE;
+		b->H->nonil = FALSE;
 	} else if (b->hdense) {
 		disprove_dense = FALSE;
 	}
@@ -2984,6 +2990,13 @@ check whether whatever we want need to prove was already disproven
 			disprove_key = FALSE;
 		} else {
 			b->H->nokey[0] = b->H->nokey[1] = 0;
+		}
+	}
+	if (disprove_nonil) {
+		if (b->H->nonil || b->H->nil) {
+			disprove_nonil = FALSE;
+		} else {
+			b->H->nil = 0;
 		}
 	}
 	if (disprove_sorted) {	/* StM: GDK_SORTED_REV ? */
@@ -3010,7 +3023,7 @@ check whether whatever we want need to prove was already disproven
 @-
 still got something to prove? If not, we're done.
 @c
-	if (!(disprove_sorted || disprove_key || disprove_dense)) {
+	if (!(disprove_sorted || disprove_key || disprove_dense || disprove_nonil)) {
 		goto exit;
 	}
 @-
@@ -3077,6 +3090,15 @@ Merge scan check to see if head values are sorted (&key)
 
 @= merge_disprove
 	if (disprove_sorted) {	/* StM: GDK_SORTED_REV ? */
+		if (disprove_nonil && p < q) {
+			ptr v = BUNh@3(bi, p);
+			int ret = @1_CMP(v, ATOMnilptr(b->htype), @2);
+			if (ret == 0) {
+				b->H->nil = 1;
+				disprove_nonil = FALSE;
+				b->batDirtydesc = 1; 
+			}
+		}
 		while (p < q) {
 			ptr v = BUNh@3(bi, p);
 			int ret = @1_CMP(v, last, @2);
@@ -3116,7 +3138,7 @@ that also gives the best overview of MIL execution - necessary
 for determining which algebra commands set properties sub-optimally.
 @{
 @c
-	if (disprove_key) {
+	if (disprove_key || disprove_nonil) {
 		if (p < q) {
 			size_t cnt = BATcount(b);
 			size_t lim = (size_t) ((mode & BATPROPS_ALL) ? GDK_int_max : 16000);
@@ -3175,9 +3197,17 @@ for determining which algebra commands set properties sub-optimally.
 @= hash_disprove
 	bvi = bat_iterator(bv);
 	for (r = BUNfirst(b); r < p; r++, yy++) {
-		HASHins@1(bv->H->hash, yy, BUNh@2(bvi, r));
+		ptr v;
+		HASHins@1(bv->H->hash, yy, v=BUNh@2(bvi, r));
+		if (disprove_nonil && ATOMcmp(b->htype, v, ATOMnilptr(b->htype)) == 0) {
+			disprove_nonil = FALSE;
+			b->H->nil = 1;
+			b->batDirtydesc = 1;
+			if (!disprove_key)
+				break;
+		}
 	}
-	while (p < q) {
+	while (disprove_key && p < q) {
 		ptr v = BUNh@2(bvi, p);
 
 		HASHfnd@1(r,bvi,v); /* purify: UMR */
@@ -3198,6 +3228,8 @@ for determining which algebra commands set properties sub-optimally.
 @-
 failed to disprove on exhaustive check => succeeded to prove
 @c
+	if (disprove_nonil) 
+		b->H->nonil = nonil_bak;
 	if (disprove_key || disprove_dense) {
 		BATkey(b, key_bak | isKey);	/* respect BOUND2BTRUE */
 	}
@@ -3218,6 +3250,8 @@ failed to disprove on exhaustive check => succeeded to prove
 		}
 		if (key_bak && !b->hkey)
 			GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was incorrectly marked keyed!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+		if (nonil_bak && !b->H->nonil)
+			GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was incorrectly marked nonil!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 		if (dense_bak && disprove_dense) {
 			if (!BAThdense(b))
 				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was incorrectly marked dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));

@@ -944,6 +944,8 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 			BBPreclaim(v);
 		}
 		/* selected no nils */
+		bn->H->nonil = b->H->nonil;
+		bn->T->nonil = b->T->nonil;
 		if (!equi && !lval && !hval && lnil)
 			bn->T->nonil = 1;
 		else if (equi && !lnil)
@@ -983,6 +985,8 @@ Create the result BAT and execute the select algorithm.
 		ht = TYPE_oid;
 	}
 	bn = BATnew(ht, tt, estimate);
+assert((bn->H->nonil == 1 && bn->H->nil == 0) && 
+       (bn->T->nonil == 1 && bn->T->nil == 0) );
 	if (bn) {
 		int nocheck = (estimate >= batcnt);
 
@@ -1031,6 +1035,8 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 		bn->tsorted = BATtordered(b);
 	}
 	/* selected no nils */
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = b->T->nonil;
 	if (!equi && !lval && !hval && lnil)
 		bn->T->nonil = 1;
 	else if (equi && !lnil)

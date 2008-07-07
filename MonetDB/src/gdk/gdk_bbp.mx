@@ -2533,6 +2533,8 @@ BBPrecycle(int ht, int tt, size_t cap)
 		b->halign = 0;
 		b->hkey = FALSE;
 		b->hdense = 0;
+		b->H->nonil = 1;
+		b->H->nil = 0;
 		b->hseqbase = (ht == TYPE_void) ? oid_nil : 0;
 
 		b->ttype = tt;
@@ -2541,6 +2543,8 @@ BBPrecycle(int ht, int tt, size_t cap)
 		b->talign = 0;
 		b->tkey = FALSE;
 		b->tdense = 0;
+		b->T->nonil = 1;
+		b->T->nil = 0;
 		b->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
 
 		b->batSet = FALSE;

@@ -221,6 +221,8 @@ BATbandjoin_nl(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	/* set sorted flags by hand, because we used BUNfastins() */
 	bn->hsorted = BAThordered(l);
 	bn->tsorted = FALSE;
+	bn->H->nonil = l->H->nonil;
+	bn->T->nonil = r->T->nonil;
 
 	ESTIDEBUG THRprintf(GDKout, "#BATbandjoin: actual resultsize: " SZFMT "\n", BATcount(bn));
 
@@ -388,6 +390,8 @@ BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	BATkey(BATmirror(bn), FALSE);
 	bn->hsorted = FALSE;
 	bn->tsorted = BATtordered(r);
+	bn->H->nonil = l->H->nonil;
+	bn->T->nonil = r->T->nonil;
 	return bn;
 failed:
 	BBPreclaim(bn);
