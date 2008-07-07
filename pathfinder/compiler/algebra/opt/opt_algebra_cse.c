@@ -1330,21 +1330,23 @@ new_operator (PFla_op_t *n)
                                 ACTATT(R(n), n->sem.ser_seq.item));
 
         case la_serialize_rel:
-		{
-			PFalg_attlist_t items = (PFalg_attlist_t) {
-									.count = n->sem.ser_rel.items.count,
-									.atts = PFmalloc (sizeof(PFalg_att_t))
-								};
-							
-			for (unsigned int i = 0; i < items.count; i++) {
-				items.atts[i] = ACTATT (L(n), n->sem.ser_rel.items.atts[i]);
-			}
-			
+        {
+            PFalg_attlist_t items = 
+                (PFalg_attlist_t) {
+                    .count = n->sem.ser_rel.items.count,
+                    .atts = PFmalloc (n->sem.ser_rel.items.count * 
+                                      sizeof(PFalg_att_t))
+            };
+                            
+            for (unsigned int i = 0; i < items.count; i++) {
+                items.atts[i] = ACTATT (L(n), n->sem.ser_rel.items.atts[i]);
+            }
+            
             return PFla_serialize_rel (CSE(L(n)),
                                 ACTATT (L(n), n->sem.ser_rel.iter),
                                 ACTATT (L(n), n->sem.ser_rel.pos),
                                 items);
-		}
+        }
         case la_lit_tbl:
             return PFla_lit_tbl_ (create_attlist (n->schema),
                                   n->sem.lit_tbl.count,
