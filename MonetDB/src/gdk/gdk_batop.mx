@@ -2487,6 +2487,7 @@ BATconst(BAT *b, int tailtype, ptr v)
 			if (b != o)
 				BBPunfix(b->batCacheid);
 			BATseqbase(BATmirror(bn), seqbase);
+			bn->T->nonil = 0;
 			return bn;
 		} else {
 			BAT *bt = BATnew(TYPE_void, tailtype, cnt);
@@ -2548,7 +2549,7 @@ BATconst(BAT *b, int tailtype, ptr v)
 	ALIGNsetH(bn, b);
 	bn->tsorted = GDK_SORTED;
 	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = (ATOMcmp(b->ttype, v, ATOMnilptr(b->ttype)) != 0);
+	bn->T->nonil = (ATOMcmp(tailtype, v, ATOMnilptr(tailtype)) != 0);
 	BATsetprop_wrd(bn, GDK_AGGR_CARD, (wrd) (BATcount(b) > 0));
 	if (tailtype == TYPE_bit) {
 		BATsetprop_wrd(bn, GDK_AGGR_SIZE, (*(bit *) v == TRUE) ? BATcount(b) : 0);
