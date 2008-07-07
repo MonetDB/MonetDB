@@ -66,34 +66,38 @@ BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi)
 	if (bn == NULL) 
 		return bn;
 	switch (ATOMstorage(rl->ttype)) {
-#ifndef NOEXPAND_CHR
+/* #ifndef NOEXPAND_CHR */
 	case TYPE_chr:
 		@:rangejoin(chr)@
-#endif
-#ifndef NOEXPAND_BTE
+/* #endif */
+/* #ifndef NOEXPAND_BTE */
 	case TYPE_bte:
 		@:rangejoin(bte)@
-#endif
-#ifndef NOEXPAND_SHT
+/* #endif */
+/* #ifndef NOEXPAND_SHT */
 	case TYPE_sht:
 		@:rangejoin(sht)@
-#endif
-#ifndef NOEXPAND_INT
+/* #endif */
+/* #ifndef NOEXPAND_INT */
 	case TYPE_int:
 		@:rangejoin(int)@
-#endif
-#ifndef NOEXPAND_FLT
+/* #endif */
+/* #ifndef NOEXPAND_WRD */
+	case TYPE_wrd:
+		@:rangejoin(wrd)@
+/* #endif */
+/* #ifndef NOEXPAND_FLT */
 	case TYPE_flt:
 		@:rangejoin(flt)@
-#endif
-#ifndef NOEXPAND_DBL
+/* #endif */
+/* #ifndef NOEXPAND_DBL */
 	case TYPE_dbl:
 		@:rangejoin(dbl)@
-#endif
-#ifndef NOEXPAND_LNG
+/* #endif */
+/* #ifndef NOEXPAND_LNG */
 	case TYPE_lng:
 		@:rangejoin(lng)@
-#endif
+/* #endif */
 	default:
 		(void) li;
 		(void) hi;
@@ -174,34 +178,38 @@ BATbandjoin_nl(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	if (bn == NULL) 
 		return bn;
 	switch (ATOMstorage(r->htype)) {
-#ifndef NOEXPAND_CHR
+/* #ifndef NOEXPAND_CHR */
 	case TYPE_chr:
 		@:bandjoin_nl(chr)@
-#endif
-#ifndef NOEXPAND_BTE
+/* #endif */
+/* #ifndef NOEXPAND_BTE */
 	case TYPE_bte:
 		@:bandjoin_nl(bte)@
-#endif
-#ifndef NOEXPAND_SHT
+/* #endif */
+/* #ifndef NOEXPAND_SHT */
 	case TYPE_sht:
 		@:bandjoin_nl(sht)@
-#endif
-#ifndef NOEXPAND_INT
+/* #endif */
+/* #ifndef NOEXPAND_INT */
 	case TYPE_int:
 		@:bandjoin_nl(int)@
-#endif
-#ifndef NOEXPAND_FLT
+/* #endif */
+/* #ifndef NOEXPAND_WRD */
+	case TYPE_wrd:
+		@:bandjoin_nl(wrd)@
+/* #endif */
+/* #ifndef NOEXPAND_FLT */
 	case TYPE_flt:
 		@:bandjoin_nl(flt)@
-#endif
-#ifndef NOEXPAND_DBL
+/* #endif */
+/* #ifndef NOEXPAND_DBL */
 	case TYPE_dbl:
 		@:bandjoin_nl(dbl)@
-#endif
-#ifndef NOEXPAND_LNG
+/* #endif */
+/* #ifndef NOEXPAND_LNG */
 	case TYPE_lng:
 		@:bandjoin_nl(lng)@
-#endif
+/* #endif */
 	default:
 		(void) c1;
 		(void) c2;
@@ -336,34 +344,38 @@ BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	ALGODEBUG THRprintf(GDKout, "#BATbandjoin: mergejoin;\n");
 	bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), MIN(lc,rc));
 	switch (l->ttype) {
-#ifndef NOEXPAND_CHR
+/* #ifndef NOEXPAND_CHR */
 	case TYPE_chr:
 		@:bandjoin_mj_(chr)@
-#endif
-#ifndef NOEXPAND_BTE
+/* #endif */
+/* #ifndef NOEXPAND_BTE */
 	case TYPE_bte:
 		@:bandjoin_mj_(bte)@
-#endif
-#ifndef NOEXPAND_SHT
+/* #endif */
+/* #ifndef NOEXPAND_SHT */
 	case TYPE_sht:
 		@:bandjoin_mj_(sht)@
-#endif
-#ifndef NOEXPAND_INT
+/* #endif */
+/* #ifndef NOEXPAND_INT */
 	case TYPE_int:
 		@:bandjoin_mj_(int)@
-#endif
-#ifndef NOEXPAND_FLT
+/* #endif */
+/* #ifndef NOEXPAND_WRD */
+	case TYPE_wrd:
+		@:bandjoin_mj_(wrd)@
+/* #endif */
+/* #ifndef NOEXPAND_FLT */
 	case TYPE_flt:
 		@:bandjoin_mj_(flt)@
-#endif
-#ifndef NOEXPAND_DBL
+/* #endif */
+/* #ifndef NOEXPAND_DBL */
 	case TYPE_dbl:
 		@:bandjoin_mj_(dbl)@
-#endif
-#ifndef NOEXPAND_LNG
+/* #endif */
+/* #ifndef NOEXPAND_LNG */
 	case TYPE_lng:
 		@:bandjoin_mj_(lng)@
-#endif
+/* #endif */
 	default:
 		(void) c1;
 		(void) c2;
