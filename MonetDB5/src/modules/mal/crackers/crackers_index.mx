@@ -171,6 +171,33 @@ typedef struct {
 
 } CrackerIndexNode;
 
+/* for storage management */
+struct mapNode{
+        int             tailBatId;	  
+        struct mapNode  *nextMap;
+        struct Node     *nextPiece;
+};
+
+struct mapSetNode{
+        int             batId;
+        struct mapNode  *nextMap;
+        struct mapSetNode *nextMapSet;
+};
+
+struct storageManagement{
+	oid totalTuples;	
+	oid threshold;
+	bit setThreshold;
+	struct mapSetNode *nextMapSet;	/* the list of map set nodes are holding info on map sets based on mapSetNode->batId
+					   Each map set node has a list of mapNodes for each map that exists in this map set
+					   Each mapNode has a list of Nodes linking directly to the cracker indices of the respective maps
+					   Each Node is the FIRST node of a piece in a map*/
+
+	struct referencesNodeFM *references; /* used in the case of full maps to hold the maps used in the current query */
+	int temp;
+};
+/*-------------------------------------------------------*/
+
 /* Signatures shared within the crackers module/library */
 @:IndexSharedFunctions_decl_0@
 @:TypeSwitch(IndexSharedFunctions_decl_1)@
