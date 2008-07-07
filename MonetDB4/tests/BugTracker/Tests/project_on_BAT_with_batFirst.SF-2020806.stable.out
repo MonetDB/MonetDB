@@ -1,0 +1,76 @@
+stdout of test 'project_on_BAT_with_batFirst.SF-2020806` in directory 'tests/BugTracker` itself:
+
+
+# 17:20:54 >  
+# 17:20:54 >   Mserver "--config=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/lib:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/bin" --set "gdk_dbfarm=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/dbfarm" --set "sql_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=37454 --set xrpc_port=46260 --set monet_prompt= --trace  --dbname=mTests_tests_BugTracker  
+# 17:20:54 >  
+
+
+
+# MonetDB Server v4.24.0
+# based on GDK   v1.24.1
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+var a := monet_environment.copy().access(BAT_WRITE);
+a.delete("exec_prefix");
+a.delete("prefix");
+a.delete("gdk_debug");
+a.delete("gdk_embedded");
+a.delete("gdk_vm_minsize");
+a.delete("mapi_debug");
+a.delete("mapi_noheaders");
+a.delete("monet_daemon");
+a.delete("monet_mod_path");
+a.delete("monet_pid");
+a.delete("monet_prompt");
+a.delete("monet_welcome");
+a.delete("sql_debug");
+a.delete("sql_logdir");
+a.insert("gdk_mem_maxsize ", str(mem_maxsize()));
+a.sort().project(1).print();
+
+
+#-----------------------------------------#
+# h			t		  # name
+# str			int		  # type
+#-----------------------------------------#
+[ "config",		  1		  ]
+[ "datadir",		  1		  ]
+[ "gdk_alloc_map",	  1		  ]
+[ "gdk_arch",		  1		  ]
+[ "gdk_dbfarm",		  1		  ]
+[ "gdk_dbname",		  1		  ]
+[ "gdk_mem_bigsize",	  1		  ]
+[ "gdk_mem_maxsize ",	  1		  ]
+[ "gdk_mem_pagebits",	  1		  ]
+[ "gdk_version",	  1		  ]
+[ "gdk_vmtrim",		  1		  ]
+[ "host",		  1		  ]
+[ "mapi_clients",	  1		  ]
+[ "mapi_open",		  1		  ]
+[ "mapi_port",		  1		  ]
+[ "monet_admin",	  1		  ]
+[ "monet_cwd",		  1		  ]
+[ "monet_version",	  1		  ]
+[ "standoff_end",	  1		  ]
+[ "standoff_ns",	  1		  ]
+[ "standoff_start",	  1		  ]
+[ "xquery_cacheMB",	  1	  ]
+[ "xquery_cacherules",	  1		  ]
+[ "xquery_logdir",	  1	  ]
+[ "xquery_output",	  1	  ]
+[ "xquery_procMB",	  1	  ]
+[ "xrpc_admin",		  1	  ]
+[ "xrpc_open",		  1	  ]
+[ "xrpc_options",	  1	  ]
+[ "xrpc_port",		  1	  ]
+[ "xrpc_trusted",	  1	  ]
+[ "xrpc_user",		  1	  ]
+
+quit();
+
+# 17:20:54 >  
+# 17:20:54 >  Done.
+# 17:20:54 >  
+
