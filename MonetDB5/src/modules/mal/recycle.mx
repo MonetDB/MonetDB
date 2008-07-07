@@ -165,10 +165,11 @@ RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MT_lock_init(&recycleLock,"recycle");
 		recycleVersion =1 ;
 	}
-	if( mb->version )
+	if( mb->version ) {
+		Client c = MCgetClient();
 		/* upgrade to a new version by dropping old info */
-		RECYCLEversion(mb);
-	else{
+		RECYCLEversion(c, mb);
+	} else {
 		mal_set_lock(recycleLock,"recycle");
 		mb->version= recycleVersion;
 		recycleClaim++;
@@ -197,7 +198,8 @@ RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 RECYCLEresetCMD(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	RECYCLEreset(mb,stk,pci);
+	Client c = MCgetClient();
+	RECYCLEreset(c, mb,stk,pci);
 	return MAL_SUCCEED;
 }
 
@@ -389,10 +391,13 @@ RECYCLElog(int *ret, str *nm)
 }
 
 str 
-RECYCLEprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+RECYCLEprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	Client c = MCgetClient();
+
 	(void) stk;
 	(void) p;
-	RECYCLEversion(mb);
+	RECYCLEversion(c, mb);
 	recycleRecent = -1;
 	recycled0 = recycled; 
 	time0 = GDKusec();
