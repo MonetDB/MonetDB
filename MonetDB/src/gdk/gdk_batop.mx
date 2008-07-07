@@ -855,7 +855,7 @@ Examine type, and values for lower- and higher-bound.
 		return BATnew(ht, tt, 10);
 	}
 	if (!equi && !lval && !hval && b->T->nonil && lnil)
-		return BATcopy(b, b->htype, b->ttype, FALSE); 
+		return BATcopy(b, ht, tt, FALSE); 
 	if (equi && lval && hval && b->T->nonil && lnil)
 		return BATnew(ht, tt, 10);
 
