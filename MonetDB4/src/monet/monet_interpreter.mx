@@ -1443,6 +1443,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 
 		/* propagate properties */
 		ALIGNsetH(bn, b);
+		bn->T->nonil = b->T->nonil;
                 if (tpe == TYPE_oid && b->htype == TYPE_void && BATtdense(b)) {
                         /* fast special case: materialize and oid column */
                         oid *dst = (oid*) bn->T->heap.base;
@@ -1459,6 +1460,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		} else if (BATcount(b) < 2) {
 			/* trivial case */
 			bn->tsorted = GDK_SORTED;
+			bn->T->nonil = 0;
 		} else if (!(BATtordered(b) & 1) ||
 			   b->ttype > TYPE_lng || tpe > TYPE_lng ||
 			   b->ttype == TYPE_bit || tpe == TYPE_bit ||
@@ -1470,6 +1472,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			 * (3) do not care, whether the result will not be sorted
 			 */
 			bn->tsorted = 0;
+			bn->T->nonil = 0;
 		} else if ((b->ttype != TYPE_void && b->ttype < tpe && (b->ttype < TYPE_flt || tpe >= TYPE_flt))
 			   || (b->ttype == TYPE_lng && tpe >= TYPE_flt && tpe <= TYPE_dbl)
 #if SIZEOF_OID == SIZEOF_INT
@@ -1513,6 +1516,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 				assert(0);
 			}
 			bn->tsorted = (overflow ? 0 : GDK_SORTED);
+			bn->T->nonil = (overflow ? 0 : b->T->nonil);
 		} else {
 			/* all remaining cases require checking for both underflows & overflows */
 			/* (source domain is always larger than target domain) */
@@ -1595,6 +1599,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 @c
 		@:interpret_batcast_source_switch@
 			bn->tsorted = (overflow ? 0 : GDK_SORTED);
+			bn->T->nonil = (overflow ? 0 : b->T->nonil);
 		}
 
 
@@ -1754,6 +1759,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		} else if ((!bn->tkey) && (!reduce)) {
 			BATkey(BATmirror(bn), b->tkey);
 		}
+		b->T->nonil &= reduce;
 		BATsetaccess(bn, BAT_READ);
 	}
 	ok = 1;
