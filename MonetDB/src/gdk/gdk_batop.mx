@@ -2438,10 +2438,15 @@ BATconst(BAT *b, int tailtype, ptr v)
 		return NULL;
 	if (BAThrestricted(b) == BAT_READ && 
 	    !ATOMvarsized(tailtype) && tailtype != TYPE_bat) {
+		BAT *o = b;
+		if (BUNfirst(b))
+			b = BATslice(b, 0, BATcount(b));
  		if (tailtype == TYPE_void) {
 			oid seqbase = oid_nil;
 
 			bn = VIEWhead(b);
+			if (b != o)
+				BBPunfix(b->batCacheid);
 			BATseqbase(BATmirror(bn), seqbase);
 			return bn;
 		} else {
@@ -2481,6 +2486,8 @@ BATconst(BAT *b, int tailtype, ptr v)
 			}
 			bt->tsorted = GDK_SORTED;
 			bn = VIEWcreate(b, bt);
+			if (b != o)
+				BBPunfix(b->batCacheid);
 			BBPunfix(bt->batCacheid);
 			return bn;
 		}
