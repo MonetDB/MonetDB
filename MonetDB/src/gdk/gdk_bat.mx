@@ -1079,7 +1079,7 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 					b->hkey = bm->tkey = b->hdense = FALSE;
 				}
 				if (b->H->nonil) 
-					b->H->nonil = atom_CMP(h, ATOMnilptr(b->htype), b->htype) != 0;
+					b->H->nonil = h && atom_CMP(h, ATOMnilptr(b->htype), b->htype) != 0;
 			}
 			if (b->ttype != TYPE_void) {
 				int cmp = 0;
@@ -1130,7 +1130,7 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 					b->tkey = bm->hkey = b->tdense = FALSE;
 				}
 				if (b->T->nonil) 
-					b->T->nonil = atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
+					b->T->nonil = t && atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
 			}
 		} else {
 			if (b->htype == TYPE_oid) {
@@ -1140,7 +1140,7 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 				b->hkey = bm->tkey |= TRUE;
 			}
 			if (b->H->nonil) 
-				b->H->nonil = atom_CMP(h, ATOMnilptr(b->htype), b->htype) != 0;
+				b->H->nonil = h && atom_CMP(h, ATOMnilptr(b->htype), b->htype) != 0;
 			if (b->ttype == TYPE_oid) {
 				b->tkey = bm->hkey |= b->tdense = TRUE;
 				b->tseqbase = bm->hseqbase = *(oid *) t;
@@ -1148,7 +1148,7 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 				b->tkey = bm->hkey |= TRUE;
 			}
 			if (b->T->nonil) 
-				b->T->nonil = atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
+				b->T->nonil = t && atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
 		}
 		if (!countonly) {
 			bunfastins(b, h, t);
@@ -1347,7 +1347,7 @@ BUNappend(BAT *b, ptr t, bit force)
 		}
 	}
 	if (b->T->nonil) 
-		b->T->nonil = atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
+		b->T->nonil = t && atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
 	if (!countonly) {
 		bunfastins(b, h, t);
 	} else {
@@ -1641,7 +1641,7 @@ BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
 			BATkey(bm, FALSE);
 		}
 		if (b->T->nonil) 
-			b->T->nonil = atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
+			b->T->nonil = t && atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
 		b->T->heap.dirty = TRUE;
 		if (b->T->vheap)
 			b->T->vheap->dirty = TRUE;
