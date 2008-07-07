@@ -954,23 +954,33 @@ BBPinsert(BAT *b)
 
 	/* find an empty slot */
 	if (BBP_free(idx) <= 0) {
-		for (i = 0; i <= BBP_THREADMASK; i++)
-			if (lock == 0 || i != idx)
+		/* we need to extend the BBP */
+		if (lock) {
+			/* we must take all locks in a consistent order
+			   so first unset the one we've already got */
+			gdk_unset_lock(GDKcacheLock(idx), "BBPinsert");
+			for (i = 0; i <= BBP_THREADMASK; i++)
 				gdk_set_lock(GDKcacheLock(i), "BBPinsert");
+		}
 		gdk_set_lock(GDKnameLock, "BBPinsert");
-		if (BBPsize++ >= BBPlimit) {
-			BBPextend(BATMARGIN, TRUE);
-			/* it seems BBPextend could return and still leaving
-			   BBP_free(idx) == 0 */
-			if (BBP_free(idx) == 0)
+		/* check again in case some other thread extended
+		   while we were waiting */
+		if (BBP_free(idx) <= 0) {
+			if (BBPsize++ >= BBPlimit) {
+				BBPextend(BATMARGIN, TRUE);
+				/* it seems BBPextend could return and
+				   still leaving BBP_free(idx) == 0 */
+				if (BBP_free(idx) == 0)
+					BBP_free(idx) = BBPsize - 1;
+			} else {
 				BBP_free(idx) = BBPsize - 1;
-		} else {
-			BBP_free(idx) = BBPsize - 1;
+			}
 		}
 		gdk_unset_lock(GDKnameLock, "BBPinsert");
-		for (i = BBP_THREADMASK; i >= 0; i--)
-			if (lock == 0 || i != idx)
-				gdk_unset_lock(GDKcacheLock(i), "BBPinsert");
+		if (lock)
+			for (i = BBP_THREADMASK; i >= 0; i--)
+				if (i != idx)
+					gdk_unset_lock(GDKcacheLock(i), "BBPinsert");
 	}
 	i = BBP_free(idx);
 	BBP_free(idx) = BBP_next(BBP_free(idx));
