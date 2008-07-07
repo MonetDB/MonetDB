@@ -1123,7 +1123,6 @@ xrpc_handle_request(mapi_client *mc, struct shttpd_callback_arg *arg)
     if(!(req = parse_request(mc->c->fdout, shredBAT, 0))) {
         return GDK_FAIL;
     }
-    BBPreclaim(shredBAT);
 
     time_xrpcServDeSeria = GDKusec() - time_xrpcServDeSeria;
 
