@@ -347,7 +347,7 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 			bn->tsorted = 0;	/* nils destroy the ordering */
 		}
 	}
-	bn->T->nonil = r->T->nonil & !(nil_on_miss);
+	bn->T->nonil = r->T->nonil & !nil_on_miss;
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -1376,7 +1376,7 @@ BATouterjoin(BAT *l, BAT *r, size_t estimate)
 		bn->hsorted = BAThordered(l);
 	}
 	bn->H->nonil = l->H->nonil;
-	bn->T->nonil = r->T->nonil;
+	bn->T->nonil = FALSE;
 	ESTIDEBUG THRprintf(GDKout, "#BATouterjoin: actual resultsize: " SZFMT "\n", BATcount(bn));
 
 	/* Just to silence compilers (Intel's icc) that otherwise might
