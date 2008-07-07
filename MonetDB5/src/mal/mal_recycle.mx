@@ -1214,6 +1214,7 @@ void RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	b = (int *)alloca(sizeof(int)*recycleBlk->stop);
 	memset(b,0, sizeof(int)*recycleBlk->stop);
 
+	mal_set_lock(recycleLock,"recycle");
 	if (p->argc == 2){
 		if(getArgType(mb,p,1)==TYPE_bat || 
 			isaBatType(getArgType(mb, p,1)) ){
@@ -1237,6 +1238,7 @@ void RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 		}
 	}
+	mal_unset_lock(recycleLock,"recycle");
 	if (btop)
 		RECYCLEevict(cntxt,b,btop);
 
