@@ -1585,6 +1585,7 @@ if( ret != MAL_SUCCEED ) {
 	str msg = 0, nxt;
 	if( stk->cmd  ) {
 		stream_printf(cntxt->fdout,"!ERROR: %s\n",ret);
+		stk->cmd= '\n';	/* in debugging go to step mode */
 		mdbStep(cntxt,mb,stk,stkpc);
 		if( stk->cmd == 'x' || stk->cmd == 'q' ) {
 			stkpc= mb->stop;
