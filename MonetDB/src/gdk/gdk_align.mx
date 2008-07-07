@@ -273,6 +273,8 @@ a void. Take care to zero the accelerator data, though.
 @c
 	*bn->U = *h->U;
 	*bn->H = *h->H;
+	/* we need aligned bats */
+	assert(h->U->first == t->U->first);
 	if (h->H == t->T) {
 		vc = 1;
 		tp = hp;
