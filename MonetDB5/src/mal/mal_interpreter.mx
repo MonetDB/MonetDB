@@ -737,7 +737,7 @@ static str
 runFlow(DataFlow flow){
 	ValPtr lhs,rhs,v;
 	int i,k,limit;
-	int exceptionVar;
+	int exceptionVar= -1;
 	str ret= MAL_SUCCEED;
 	int stamp= -1;
 	int startpc= flow->start;
@@ -748,7 +748,7 @@ runFlow(DataFlow flow){
 	MalStkPtr stk= flow->stk;
 	InstrPtr pci = flow->pci;
 	lng oldtimer=0;
-	struct Mallinfo oldMemory;
+	struct Mallinfo oldMemory = MT_mallinfo();
 	int stkpc=0;
 
 #ifdef HAVE_SYS_RESOURCE_H

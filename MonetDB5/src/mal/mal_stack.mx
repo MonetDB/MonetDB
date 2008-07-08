@@ -63,7 +63,7 @@ ensure we are still within safe bounds.
 
 #define STACKINCR   128
 #define MAXGLOBALS  4 * STACKINCR
-#define MAXSHARES   2
+#define MAXSHARES   8
 
 typedef struct MALSTK {
 	int stksize;
