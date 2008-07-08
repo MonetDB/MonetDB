@@ -151,8 +151,10 @@ BATloaddesc(str nme)
 	}
 
 	dst = (BATstore *) GDKzalloc(sizeof(BATstore));
-	if (!dst)
+	if (!dst) {
+		close(fd);
 		return NULL;
+	}
 
 	if ((n = read(fd, dst, sizeof(BATstore)) != sizeof(BATstore))) {
 		GDKerror("BATloaddesc: read error: name=%s, n=%d\n", nme, n);
@@ -216,7 +218,7 @@ BATloaddesc(str nme)
 	}
 	close(fd);
 
-	/* mark atom as unknown if its not loaded jet */
+	/* mark atom as unknown if its not loaded yet */
 	if (!ATOMname(b->htype) || strcmp(ATOMname(b->htype), hatm) != 0) {
 		int ht = ATOMindex(hatm);
 
