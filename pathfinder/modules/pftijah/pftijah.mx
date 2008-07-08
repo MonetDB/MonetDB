@@ -3938,6 +3938,8 @@ int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, int* 
 	BATkey(BATmirror(res), TRUE);
         res->hsorted = GDK_SORTED;
         res->tsorted = FALSE;
+        res->H->nonil = 1;
+        res->T->nonil = 0;
 	
 	*result = res;
 	return GDK_SUCCEED;
@@ -4101,6 +4103,8 @@ int CMDmergeindex2 ( BAT** result, BAT* tidpre, BAT* tidsize, BAT* oldindex, BAT
 	BATkey(BATmirror(res), TRUE);
         res->hsorted = GDK_SORTED;
         res->tsorted = FALSE;
+        res->H->nonil = 1;
+        res->T->nonil = 0;
 	
 	*result = res;
 	return GDK_SUCCEED;
