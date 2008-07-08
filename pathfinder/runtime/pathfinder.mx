@@ -1455,6 +1455,7 @@ PROC ws_new(oid id,
 # <0 = create new ws and cache it at idx
 PROC _ws_xrpcget() : int
 {
+return 0;
     var xrpc := 0;
     xrpc_seqnr := (xrpc_querynr :+= 1LL);
     xrpc_coord := false;
