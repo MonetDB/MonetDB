@@ -128,7 +128,16 @@ typedef unsigned int PFmil_ident_t;
 #define PF_MIL_VAR_TIME_QUERY  81
 #define PF_MIL_VAR_TIME_PRINT  82
 
-#define PF_MIL_RES_VAR_COUNT (PF_MIL_VAR_TIME_PRINT + 1)
+#define PF_MIL_VAR_XRPC_QID     85
+#define PF_MIL_VAR_XRPC_CALLER  86
+#define PF_MIL_VAR_XRPC_HDL     87
+#define PF_MIL_VAR_XRPC_SEQNR   88
+#define PF_MIL_VAR_XRPC_TIMEOUT 89
+#define PF_MIL_VAR_XRPC_MODE    90
+#define PF_MIL_VAR_XRPC_MODULE  91
+#define PF_MIL_VAR_XRPC_METHOD  92
+
+#define PF_MIL_RES_VAR_COUNT (PF_MIL_VAR_XRPC_METHOD + 1)
 
 /** Node kinds for MIL tree representation */
 enum PFmil_kind_t {

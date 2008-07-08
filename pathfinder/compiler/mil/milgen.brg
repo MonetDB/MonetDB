@@ -9611,6 +9611,26 @@ PFmilgen (PFpa_op_t *n, char *genType)
                    assgn (var (PF_MIL_TIJAH_FTI_TAPE), 
                           (new (type (mty_str), type(mty_bat) ))),
 #endif
+
+                   /* add xrpc_* vars */
+                   declare (var (PF_MIL_VAR_XRPC_QID)),
+                   declare (var (PF_MIL_VAR_XRPC_CALLER)),
+                   declare (var (PF_MIL_VAR_XRPC_HDL)),
+                   declare (var (PF_MIL_VAR_XRPC_SEQNR)),
+                   declare (var (PF_MIL_VAR_XRPC_TIMEOUT)),
+                   declare (var (PF_MIL_VAR_XRPC_MODE)),
+                   declare (var (PF_MIL_VAR_XRPC_MODULE)),
+                   declare (var (PF_MIL_VAR_XRPC_METHOD)),
+
+                   assgn (var (PF_MIL_VAR_XRPC_QID), lit_str("")),
+                   assgn (var (PF_MIL_VAR_XRPC_CALLER), lit_str("")),
+                   assgn (var (PF_MIL_VAR_XRPC_HDL), lit_int(0)),
+                   assgn (var (PF_MIL_VAR_XRPC_SEQNR), lit_lng(0)),
+                   assgn (var (PF_MIL_VAR_XRPC_TIMEOUT), lit_lng(30000)),
+                   assgn (var (PF_MIL_VAR_XRPC_MODE), lit_str("none")),
+                   assgn (var (PF_MIL_VAR_XRPC_MODULE), lit_str("")),
+                   assgn (var (PF_MIL_VAR_XRPC_METHOD), lit_str("")),
+
                    /* add timing information */
                    declare (var (PF_MIL_VAR_TIME_LOAD)),
                    declare (var (PF_MIL_VAR_TIME_QUERY)),

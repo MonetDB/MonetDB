@@ -372,6 +372,15 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_CODE_NSLOC:  return "TEST_nsloc";
         case PF_MIL_VAR_CODE_TARGET: return "TEST_target";
 
+        case PF_MIL_VAR_XRPC_QID:    return "xrpc_qid";
+        case PF_MIL_VAR_XRPC_CALLER: return "xrpc_caller";
+        case PF_MIL_VAR_XRPC_HDL:    return "xrpc_hdl";
+        case PF_MIL_VAR_XRPC_SEQNR:  return "xrpc_seqnr";
+        case PF_MIL_VAR_XRPC_TIMEOUT:return "xrpc_timeout";
+        case PF_MIL_VAR_XRPC_MODE:   return "xrpc_mode";
+        case PF_MIL_VAR_XRPC_MODULE: return "xrpc_module";
+        case PF_MIL_VAR_XRPC_METHOD: return "xrpc_method";
+
         case PF_MIL_VAR_TIME_LOAD:   return "time_load";
         case PF_MIL_VAR_TIME_QUERY:  return "time_query";
         case PF_MIL_VAR_TIME_PRINT:  return "time_print";
