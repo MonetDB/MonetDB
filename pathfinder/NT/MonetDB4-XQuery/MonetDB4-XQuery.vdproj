@@ -771,7 +771,7 @@
             "Folder" = "8:[INSTALLPATH]"
             "Depth" = "2:2"
             "FileName" = "8:libmonet.dll"
-            "MinVesion" = "8:4.24.0.0"
+            "MinVesion" = "8:4.25.0.0"
             "MaxVersion" = "8:"
             "MinSize" = "8:"
             "MaxSize" = "8:"
