@@ -360,6 +360,8 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
     BATkey(BATmirror(res),(res->tdense||one_iter)); /* might be TRUE in some more cases... */
     BATset(res, TRUE);
 }
+    res->H->nonil = 0;
+    res->T->nonil = 0;
     *result = res;
 
     @:ll_return(GDK_SUCCEED)@

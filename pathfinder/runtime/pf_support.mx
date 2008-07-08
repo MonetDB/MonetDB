@@ -6493,6 +6493,8 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 		}
 		bn[c]->hdense = TRUE;
 		bn[c]->tdense = FALSE;
+		bn[c]->H->nonil = 1;
+		bn[c]->T->nonil = 0;
 	}
 
 	/* insert bn[] BATs in BN BAT */
@@ -6764,6 +6766,8 @@ CMDll_strSplit(BAT **res, BAT *strs, BAT *seps)
         bn->tsorted = triv_prop;
         bn->hdense = triv_prop;
         bn->tdense = FALSE;
+	bn->H->nonil = 1;
+	bn->T->nonil = 0;
         if (BATcount(bn) == 0) {
                 BATseqbase(bn, (oid)0);
         } else if (BATcount(bn) == 1) {
@@ -6957,6 +6961,8 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 	bn->tsorted = triv_prop;
 	bn->hdense = triv_prop;
 	bn->tdense = FALSE;
+	bn->H->nonil = 1;
+	bn->T->nonil = 0;
 	if (BATcount(bn) == 0) {
 		BATseqbase(bn, (oid)0);
 	} else if (BATcount(bn) == 1) {
@@ -7158,6 +7164,8 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 	bn->tsorted = triv_prop;
 	bn->hdense = triv_prop;
 	bn->tdense = FALSE;
+	bn->H->nonil = 1;
+	bn->T->nonil = 0;
 	if (BATcount(bn) == 0) {
 		BATseqbase(bn, (oid)0);
 	} else if (BATcount(bn) == 1) {
@@ -7236,6 +7244,8 @@ int CMDenumerate ( BAT** res, BAT *startval, BAT *length )
 	bn->tsorted = triv_prop;
 	bn->hdense = triv_prop;
 	bn->tdense = FALSE;
+	bn->H->nonil = 1;
+	bn->T->nonil = 0;
 	if (BATcount(bn) == 0) {
 		BATseqbase(bn, (oid)0);
 	} else if (BATcount(bn) == 1) {
@@ -7497,6 +7507,8 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	bn->tsorted = triv_prop;
 	bn->hdense = TRUE;
 	bn->tdense = FALSE;
+	bn->H->nonil = 1;
+	bn->T->nonil = 0;
 
 	*res = bn;
 @c
@@ -7724,6 +7736,8 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	bn->tsorted = triv_prop;
 	bn->hdense = triv_prop;
 	bn->tdense = triv_prop;
+	bn->H->nonil = 1;
+	bn->T->nonil = 0;
 	if (BATcount(bn) == 0) {
 		BATseqbase(bn, (oid)0);
 		BATseqbase(BATmirror(bn), (oid)0);
@@ -8278,7 +8292,7 @@ int CMDpflock_begin(lng *wsid)
         MT_set_lock(PF_META_LOCK, "pflock_begin: metaLock for mgmt");
         MT_set_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for mgmt");
         take_barrier = (pf_ndocmgt++ == 0);
-        MT_unset_lock(PF_SHORT_LOCK, "pflock_begin: shirtLock for mgmt");
+        MT_unset_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for mgmt");
         if (take_barrier) {
             MT_down_sema(PF_META_BARRIER, "pflock_begin: metaBarrier");
         }

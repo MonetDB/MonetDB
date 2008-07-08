@@ -411,6 +411,7 @@ shredBAT_setcount(shredBAT *sb,
     if (b->ttype) {
         b->tsorted = 0;
         b->tdense = 0;
+        b->T->nonil = 0;
     }
 }
 
@@ -495,7 +496,7 @@ shredBAT_append_str(shredCtxStruct *shredCtx,
     }
     newsize = sb->bat->T->heap.free & (REMAP_PAGE_MAXSIZE-1);
     if (oldsize > newsize) { /* try to use mmap() */
-        BATmmap(sb->bat, STORE_MMAP, 0, GDK_ELIMDOUBLES(sb->bat->theap)?STORE_MEM:STORE_MMAP, STORE_MMAP);
+        BATmmap(sb->bat, STORE_MMAP, STORE_MMAP, STORE_MMAP, GDK_ELIMDOUBLES(sb->bat->theap)?STORE_MEM:STORE_MMAP);
     }
     return BATcount(sb->bat)-1;
 }
@@ -1864,11 +1865,13 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
         if (shredCtx->dstBAT[PRE_SIZE].bat->tkey == TRUE) {
         	shredCtx->dstBAT[PRE_SIZE].bat->tsorted = 0;
         	shredCtx->dstBAT[PRE_SIZE].bat->tdense = 0;
+        	shredCtx->dstBAT[PRE_SIZE].bat->T->nonil = 0;
         	BATkey(BATmirror(shredCtx->dstBAT[PRE_SIZE].bat), FALSE);
         }
         if (shredCtx->dstBAT[PRE_KIND].bat->tkey == TRUE) {
         	shredCtx->dstBAT[PRE_KIND].bat->tsorted = 0;
         	shredCtx->dstBAT[PRE_KIND].bat->tdense = 0;
+        	shredCtx->dstBAT[PRE_KIND].bat->T->nonil = 0;
         	BATkey(BATmirror(shredCtx->dstBAT[PRE_KIND].bat), FALSE);
         }
         if (shredCtx->dstBAT[ATTR_PROP].bat->tkey == TRUE) {
