@@ -1519,7 +1519,7 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
 @= IncrementalCrackingBasicBodyA
         BAT *b=NULL, *c=NULL, *cm=NULL, *tailBAT=NULL, *piece=NULL;
         int  m, h;
-        oid vl=0, vh=0, posl, posh;
+        oid vl=0, vh=0, posl=0, posh=0;
 	struct Node *localNodeLow1=NULL,*localNodeLow2=NULL,*localNodeHgh1=NULL,*localNodeHgh2=NULL, 
 			*nodeLow1=NULL,*nodeHgh1=NULL, *nodeLow2=NULL,*nodeHgh2=NULL, *localFirst=NULL; 
 	struct Node *curCBatNodeLast=NULL, *curPieceNodeLast=NULL;
@@ -1530,8 +1530,8 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
         BAT *p;     
         bit *pivott;        
 	oid size=0;
-	@2 *pairt;
-	oid j, tuplesToAnalyze, base;
+	@2 *pairt=NULL;
+	oid j=0, tuplesToAnalyze=0, base=0;
 	bit newMapSet = FALSE;
 	bit newMap = FALSE;
 	bit newPiece = FALSE;
