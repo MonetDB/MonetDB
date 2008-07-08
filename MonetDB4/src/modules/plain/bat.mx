@@ -1990,6 +1990,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 	bn->H->shift = 0;
 	bn->H->width = 0;
 	bn->H->seq = 0;
+	bn->H->nonil = 0;
 
 	bn->T->type = b->T->type;
 	bn->T->varsized = b->T->varsized;
@@ -1999,6 +2000,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 
 	bn->tsorted = 0;
 	bn->tkey = 0;
+	bn->T->nonil = 0;
 	bn->batRestricted = BAT_READ;
 	n = cnt << REMAP_PAGE_BITS;
 
