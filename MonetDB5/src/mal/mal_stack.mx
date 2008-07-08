@@ -81,8 +81,6 @@ for use in profiling and recylcing instructions.
 #endif
 	time_t clock;		/* seconds since epoch */
 	lng clk;			/* micro seconds */
-	int shares;			/* number of processes locked onto this stack */
-	int childs[MAXSHARES]; /* not used */
 	char cmd;		/* debugger communication */
 	int pcup;		/* saved pc upon a recursive all */
 	struct MALSTK *up;	/* stack trace list */

@@ -894,7 +894,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 #ifdef DEBUG_FLOW
 	for(i=0;i<NWAY;i++){
 		stream_printf(GDKout,"finished %d result %s\n", 
-			task[i]->id, task[i]->error?task[i]->error:"");
+			task[i].id, task[i].error?task[i].error:"");
 	}
 #endif
 	GDKfree(flow.queue);
