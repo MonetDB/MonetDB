@@ -48,7 +48,7 @@ Requires: MonetDB-client >= 1.24
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.24
+BuildRequires: MonetDB-devel >= 1.25
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.

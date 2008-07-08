@@ -4693,7 +4693,7 @@
             "Folder" = "8:[INSTALLPATH]"
             "Depth" = "2:2"
             "FileName" = "8:libbat.dll"
-            "MinVesion" = "8:1.24.0.0"
+            "MinVesion" = "8:1.25.0.0"
             "MaxVersion" = "8:"
             "MinSize" = "8:"
             "MaxSize" = "8:"
