@@ -1854,7 +1854,7 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "put",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_anyNode (), PFty_xs_string () },
-            .ret_ty = PFty_none () } } ,
+            .ret_ty = PFty_empty() } } ,
         .alg = PFbui_fn_put }
     , /* pf:documents () as element()* */
       { .ns = PFns_lib, .loc = "documents",
