@@ -2143,7 +2143,12 @@ xquery_print_result_DRIVER (
     (void) driverFun;
     (void) driverArg;
 
-    lng time_exec = (GDKusec() - *xrpc_start) / 1000;
+    lng time_exec;
+
+    if (xrpc_start)
+	 time_exec = (GDKusec() - *xrpc_start) / 1000;
+    else
+	 time_exec = 0;
 
     if (trace) {
         stream* logstream = xrpc_log_message("res",*xrpc_seqnr);
