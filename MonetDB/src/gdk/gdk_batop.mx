@@ -945,11 +945,11 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 		}
 		/* selected no nils */
 		bn->H->nonil = b->H->nonil;
-		bn->T->nonil = b->T->nonil;
+		bn->T->nonil = b->T->nonil & tail;
 		if (!equi && !lval && !hval && lnil)
-			bn->T->nonil = 1;
+			bn->T->nonil = tail;
 		else if (equi && !lnil)
-			bn->T->nonil = 1;
+			bn->T->nonil = tail;
 		return bn;
 	}
 @-
@@ -985,8 +985,6 @@ Create the result BAT and execute the select algorithm.
 		ht = TYPE_oid;
 	}
 	bn = BATnew(ht, tt, estimate);
-assert((bn->H->nonil == 1 && bn->H->nil == 0) && 
-       (bn->T->nonil == 1 && bn->T->nil == 0) );
 	if (bn) {
 		int nocheck = (estimate >= batcnt);
 
@@ -1036,11 +1034,11 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 	}
 	/* selected no nils */
 	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = b->T->nonil;
+	bn->T->nonil = b->T->nonil & tail;
 	if (!equi && !lval && !hval && lnil)
-		bn->T->nonil = 1;
+		bn->T->nonil = tail;
 	else if (equi && !lnil)
-		bn->T->nonil = 1;
+		bn->T->nonil = tail;
 	ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): %s: hkey=%d, tkey=%d, hsorted=%d, tsorted=%d.\n", BATgetId(b), BATgetId(bn), bn->hkey, bn->tkey, bn->hsorted, bn->tsorted);
 	ESTIDEBUG THRprintf(GDKout, "#BAT_select_(b=%s): resultsize: estimated " SZFMT ", got " SZFMT ".\n", BATgetId(b), estimate, BATcount(bn));
 
@@ -2189,6 +2187,8 @@ BATmark(BAT *b, oid oid_base)
 	bn = VIEWhead(b);
 	if (bn) {
 		BATseqbase(BATmirror(bn), oid_base);
+		if (oid_base == oid_nil)
+			bn->T->nonil = 0;
 		if (BAThrestricted(b) != BAT_READ) {
 			BAT *v = bn;
 
