@@ -8585,16 +8585,28 @@ xquery_print_result_main (
 {
     (void) decVAL;
     
-    return xquery_print_result_basic (
+    return xquery_print_result_DRIVER (
                mode,
+               NULL, /* set of printing callback function */
+               NULL, /* optional arguments for the callback functions */
                ws,
+               1, /* number of iterations */
                item, /* loop relation */
                item, /* iter relation */
                item, /* item relation */
                kind, /* kind relation */
                intVAL,
                dblVAL,
-               strVAL);
+               strVAL,
+               NULL,   
+               NULL,   
+               NULL, 
+               NULL, 
+               NULL,
+               NULL,
+               NULL,
+               NULL,
+               NULL);
 }
 
 int
