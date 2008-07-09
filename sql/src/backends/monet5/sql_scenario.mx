@@ -1154,18 +1154,20 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 	printFunction(GDKout, ((Symbol)q->code)->def, LIST_MAL_ALL);
 #endif
 	mb = ((Symbol)q->code)->def;
-	pci= getInstrPtr(mb,0);
+	pci = getInstrPtr(mb,0);
 	if( pci->argc >= MAXARG)
-		argv= (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
-	else argv= argvbuffer;
+		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
+	else 
+		argv = argvbuffer;
 
 	if( pci->retc >= MAXARG)
-		argrec= (ValRecord *)GDKmalloc(sizeof(ValRecord) * pci->retc);
-	else argrec= argrecbuffer;
+		argrec = (ValRecord *)GDKmalloc(sizeof(ValRecord) * pci->retc);
+	else 
+		argrec = argrecbuffer;
 
 	/* prepare the target variables */
-	for(i=0;i<pci->retc; i++){
-		argv[i]= argrec+i;
+	for(i=0; i<pci->retc; i++){
+		argv[i] = argrec+i;
 		argv[i]->vtype= getVarGDKType(mb,i);
 	}
 

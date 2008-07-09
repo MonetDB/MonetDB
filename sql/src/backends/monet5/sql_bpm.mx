@@ -19,32 +19,32 @@
 
 module mat;
 
-command bind(sname:str, tname:str, cname:str, access:int, part:int) :bat[:oid,:any_1]
+pattern bind(sname:str, tname:str, cname:str, access:int, part:int) :bat[:oid,:any_1]
 address mat_bind_wrap
 comment "Bind the bat tname.cname into the focus with specific access mode";
 
-command bind_idxbat(sname:str, tname:str, iname:str, access:int, part:int):bat[:oid,:any_1]
+pattern bind_idxbat(sname:str, tname:str, iname:str, access:int, part:int):bat[:oid,:any_1]
 address mat_bind_idxbat_wrap
 comment "Bind the idx bat, tname.idx
 	with specific accsess modes";
 
-command inc_parts(sname:str, tname:str):void
+pattern inc_parts(sname:str, tname:str):void
 address inc_parts_wrap
 comment "Increment the number of partions";
 
 module constraints;
 
-command parts(sname:str, tname:str, cname:str, access:int, nrparts:int):void
+pattern parts(sname:str, tname:str, cname:str, access:int, nrparts:int):void
 address Cparts
 comment "Check if the number of partions is still valid";
 
 module distribution;
 
-command bindHost(sname:str, tname:str, cname:str, part:int):int
+pattern bindHost(sname:str, tname:str, cname:str, part:int):int
 address dist_bindHost_wrap
 comment "Bind location id for a partition fragment";
 
-command setHost(sname:str, tname:str, cname:str, part:int, host:int):int
+pattern setHost(sname:str, tname:str, cname:str, part:int, host:int):int
 address dist_setHost_wrap
 comment "Set location id for a partition fragment";
 
@@ -56,7 +56,7 @@ command reconnect(id:int):int
 address dist_reconnect_wrap
 comment "Reconnect to a remote host using the location information associated to id";
 
-command send(mid:int, sname:str, tname:str, cname:str, part:int):int
+pattern send(mid:int, sname:str, tname:str, cname:str, part:int):int
 address dist_send_wrap
 comment "Send a fragment to a remote location";
 
@@ -65,17 +65,15 @@ comment "Send a fragment to a remote location";
 #define _SQL_BPM_H_
 #include "sql.h"
 
-sql5_export str mat_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *part);
-sql5_export str mat_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *part);
-sql5_export str inc_parts_wrap(int *d, str *sname, str *tname);
-sql5_export str Cparts(int *d, str *sname, str *tname, str *cname, int *access, int *parts);
-sql5_export str dist_bindHost_wrap(int *host, str *sname, str *tname, str *cname, int *part);
-sql5_export str dist_setHost_wrap(int *bid, str *sname, str *tname, str *cname, int *part, int *host);
+sql5_export str mat_bind_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mat_bind_idxbat_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str inc_parts_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str Cparts(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str dist_bindHost_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str dist_setHost_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dist_addHost_wrap(int *id, str *host, int *port, str *dbname, str *user, str *passwd);
 sql5_export str dist_reconnect_wrap(int *mid, int *id);
-sql5_export str dist_send_wrap(int *mid, str *sname, str *tname, str *cname, int *part);
-
-
+sql5_export str dist_send_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_BPM_H_ */
 
@@ -112,12 +110,19 @@ mat_bind(mvc *m, char *sname, char *tname, char *cname, int access, int part)
 	}
 }
 
+/* str mat_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *part); */
 str
-mat_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *part)
+mat_bind_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b = NULL;
 	mvc *m = NULL;
-	str msg = getContext(&m, NULL);
+	str msg = getContext(mb, &m, NULL);
+	int *bid = (int *)getArgReference(stk, pci, 0);
+	str *sname = (str *)getArgReference(stk, pci, 1);
+	str *tname = (str *)getArgReference(stk, pci, 2);
+	str *cname = (str *)getArgReference(stk, pci, 3);
+	int *access = (int *)getArgReference(stk, pci, 4);
+	int *part = (int *)getArgReference(stk, pci, 5);
 
 	if (msg)
 		return msg;
@@ -147,12 +152,19 @@ mat_bind_idxbat(mvc *m, char *sname, char *cname, int access, int part)
 	}
 }
 
+/* str mat_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *part); */
 str
-mat_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *part)
+mat_bind_idxbat_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b = NULL;
 	mvc *m = NULL;
-	str msg = getContext(&m, NULL);
+	str msg = getContext(mb, &m, NULL);
+	int *bid = (int *)getArgReference(stk, pci, 0);
+	str *sname = (str *)getArgReference(stk, pci, 1);
+	str *tname = (str *)getArgReference(stk, pci, 2);
+	str *cname = (str *)getArgReference(stk, pci, 3);
+	int *access = (int *)getArgReference(stk, pci, 4);
+	int *part = (int *)getArgReference(stk, pci, 5);
 
 	if (msg)
 		return msg;
@@ -165,16 +177,23 @@ mat_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *cname, int *access, 
 	throw(SQL, "mat.bind", "limitation in transaction scope");
 }
 
+/* str Cparts(int *d, str *sname, str *tname, str *cname, int *access, int *parts); */
 str
-Cparts(int *d, str *sname, str *tname, str *cname, int *access, int *parts)
+Cparts(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(&m, NULL);
+	str msg = getContext(mb, &m, NULL);
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
 	sql_bpm *p;
 	int err = 0;
+	int *d = (int *)getArgReference(stk, pci, 0);
+	str *sname = (str *)getArgReference(stk, pci, 1);
+	str *tname = (str *)getArgReference(stk, pci, 2);
+	str *cname = (str *)getArgReference(stk, pci, 3);
+	int *access = (int *)getArgReference(stk, pci, 4);
+	int *parts = (int *)getArgReference(stk, pci, 5);
 
 	(void)d;
 	if (msg)
@@ -224,15 +243,17 @@ inc_parts(sql_table *t)
 	}
 }
 
+/* str inc_parts_wrap(int *d, str *sname, str *tname); */
 str
-inc_parts_wrap(int *d, str *sname, str *tname)
+inc_parts_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(&m, NULL);
+	str msg = getContext(mb, &m, NULL);
 	sql_schema *s;
 	sql_table *t;
+	str *sname = (str *)getArgReference(stk, pci, 1);
+	str *tname = (str *)getArgReference(stk, pci, 2);
 
-	(void)d;
 	if (msg)
 		return msg;
 
@@ -266,12 +287,17 @@ dist_bind(mvc *m, char *sname, char *tname, char *cname, int part)
 	}
 }
 
-
+/* str dist_bindHost_wrap(int *host, str *sname, str *tname, str *cname, int *part); */
 str
-dist_bindHost_wrap(int *host, str *sname, str *tname, str *cname, int *part)
+dist_bindHost_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(&m, NULL);
+	str msg = getContext(mb, &m, NULL);
+	int *host = (int *)getArgReference(stk, pci, 0);
+	str *sname = (str *)getArgReference(stk, pci, 1);
+	str *tname = (str *)getArgReference(stk, pci, 2);
+	str *cname = (str *)getArgReference(stk, pci, 3);
+	int *part = (int *)getArgReference(stk, pci, 4);
 
 	if (msg)
 		return msg;
@@ -296,11 +322,18 @@ dist_set(mvc *m, char *sname, char *tname, char *cname, int part, int host)
 	}
 }
 
+/* str dist_setHost_wrap(int *bid, str *sname, str *tname, str *cname, int *part, int *host); */
 str 
-dist_setHost_wrap(int *bid, str *sname, str *tname, str *cname, int *part, int *host)
+dist_setHost_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(&m, NULL);
+	str msg = getContext(mb, &m, NULL);
+	int *bid = (int *)getArgReference(stk, pci, 0);
+	str *sname = (str *)getArgReference(stk, pci, 1);
+	str *tname = (str *)getArgReference(stk, pci, 2);
+	str *cname = (str *)getArgReference(stk, pci, 3);
+	int *part = (int *)getArgReference(stk, pci, 4);
+	int *host = (int *)getArgReference(stk, pci, 5);
 	
 	if (msg)
 		return msg;
@@ -352,11 +385,17 @@ dist_send(mvc *m, int *mid, str sname, str tname, str cname, int part)
 	return NULL;	
 }
 
+/* str dist_send_wrap(int *mid, str *sname, str *tname, str *cname, int *part); */
 str 
-dist_send_wrap(int *mid, str *sname, str *tname, str *cname, int *part)
+dist_send_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(&m, NULL);
+	str msg = getContext(mb, &m, NULL);
+	int *mid = (int *)getArgReference(stk, pci, 0);
+	str *sname = (str *)getArgReference(stk, pci, 1);
+	str *tname = (str *)getArgReference(stk, pci, 2);
+	str *cname = (str *)getArgReference(stk, pci, 3);
+	int *part = (int *)getArgReference(stk, pci, 4);
 	
 	if (msg)
 		return msg;
