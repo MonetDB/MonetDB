@@ -1730,6 +1730,8 @@ parseTuple(Client cntxt) {
 		showException(SYNTAX, "no temp file", "");
 	else 
 		f= fdopen(fd,"w");
+	if (f==NULL)
+		showException(SYNTAX, "temp file not writeable", "");
 	while( (c=currChar(cntxt)) == '[' && c){
 		do {
 			if (f && c) fputc(c, f);
