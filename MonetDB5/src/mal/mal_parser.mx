@@ -1720,15 +1720,16 @@ parseTuple(Client cntxt) {
 	InstrPtr curInstr;
 	MalBlkPtr curBlk;
 	Symbol curPrg;
+	int fd;
 	FILE *f= 0;
-	char  buf[MAXPATHLEN]="monetXXXXX",*fname= buf;
+	char  buf[MAXPATHLEN]="monetXXXXXX",*fname= buf;
 	int c;
 
-	fname= tmpnam(fname);
-	if(fname == 0)
+	fd= mkstemp(fname);
+	if (fd < 0)
 		showException(SYNTAX, "no temp file", "");
 	else 
-		f= fopen(fname,"w");
+		f= fdopen(fd,"w");
 	while( (c=currChar(cntxt)) == '[' && c){
 		do {
 			if (f && c) fputc(c, f);
