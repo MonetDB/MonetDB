@@ -9502,6 +9502,12 @@ simplifyCoreTree (PFcnode_t *c)
             simplifyCoreTree (L(c));
             simplifyCoreTree (R(c));
 
+            /* FIXME: disable the following rewrite as this incorrectly
+             * removes fn:put(), which has a return type
+             * empty-sequence(),  in sequences.  A more advanced check
+             * is needed if avoiding this rewrite decreases the
+             * performance of some queries. */
+            /*
             if (TY_EQ(TY(L(c)), PFty_empty ()) &&
                 TY_EQ(TY(R(c)), PFty_empty ()))
             {
@@ -9513,6 +9519,7 @@ simplifyCoreTree (PFcnode_t *c)
                 *c = *(R(c));
             else if (TY_EQ(TY(R(c)), PFty_empty ()))
                 *c = *(L(c));
+            */
             break;
         case c_let:
             /* don't do anything with global variables */
