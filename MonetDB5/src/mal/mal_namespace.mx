@@ -40,9 +40,9 @@ the name space by deletion of non-used names once in a while.
 
 mal_export void initNamespace(void);
 mal_export void finishNamespace(void);
-mal_export str putName(str nme,int len);
-mal_export str getName(str nme,int len);
-mal_export void delName(str nme,int len);
+mal_export str putName(str nme, size_t len);
+mal_export str getName(str nme, size_t len);
+mal_export void delName(str nme, size_t len);
 mal_export void dumpNamespaceStatistics(stream *f, int details);
 
 #endif /* _MAL_NAMESPACE_H */
@@ -170,16 +170,16 @@ void chkName(int l){
 Before a name is being stored we should check for its occurrence first.
 The administration is initialized incrementally.
 @c
-str getName(str nme, int len)
+str getName(str nme, size_t len)
 {
-	int l;
+	size_t l;
 	if(len == 0 || nme== NULL || *nme==0) return 0;
 	
 	for(l= nme[0]; l && namespace.nme[l]; l= namespace.link[l]){
 #ifdef _BACKUP_
 		chkName(l);
 #endif
-	    if( namespace.length[l] == len  &&
+	    if (namespace.length[l] == (int)len  &&
 			strncmp(nme,namespace.nme[l],len)==0) {
 	        namespace.hit[l]++;
 			namespace.totalhit++;
@@ -197,7 +197,7 @@ To avoid all these problems, the namespace should become
 private to each Client, but this would mean expensive look ups
 deep into the kernel to access the context.
 @c
-void delName(str nme, int len){
+void delName(str nme, size_t len){
 	str n;
 	n= getName(nme,len);
 	if( nme[0]==0 || n == 0) return ;
@@ -206,9 +206,9 @@ void delName(str nme, int len){
 	GDKwarning("Namespace garbage collection not available");
 	mal_unset_lock(mal_contextLock,"putName");
 }
-str putName(str nme, int len)
+str putName(str nme, size_t len)
 {
-	int i,k=0,l,top;
+	size_t i,k=0,l,top;
 	char buf[1024];
 	str s;
 
@@ -218,7 +218,7 @@ str putName(str nme, int len)
 #ifdef _BACKUP_
 		chkName(l);
 #endif
-	    if( namespace.length[l] == len  &&
+	    if( namespace.length[l] == (int)len  &&
 			strncmp(nme,namespace.nme[l],len) == 0 ) {
 	        namespace.hit[l]++;
 			namespace.totalhit++;
@@ -230,7 +230,7 @@ str putName(str nme, int len)
 				i= namespace.hit[l]; namespace.hit[l]=namespace.hit[k];
 				namespace.hit[k]= i;
 				i= namespace.length[l]; namespace.length[l]=namespace.length[k];
-				namespace.length[k]= i;
+				namespace.length[k]= (int)i;
 
 #ifdef _BACKUP_
 				s= backup.nme[l]; backup.nme[l]= backup.nme[k];
@@ -238,7 +238,7 @@ str putName(str nme, int len)
 				i= backup.hit[l]; backup.hit[l]=backup.hit[k];
 				backup.hit[k]= i;
 				i= backup.length[l]; backup.length[l]=backup.length[k];
-				backup.length[k]= i;
+				backup.length[k]= (int)i;
 #endif
 				mal_unset_lock(mal_contextLock,"putName");
 				l=k;
@@ -256,13 +256,13 @@ str putName(str nme, int len)
 	if( namespace.nmetop+1== namespace.size)
 	    expandNamespace(MAXIDENTIFIERS);
 	l= nme[0];
-	top= namespace.nme[l]== 0? l: namespace.nmetop;
+	top= namespace.nme[l]== 0? (int)l: namespace.nmetop;
 	namespace.nme[top]= GDKstrdup(buf);
 	namespace.link[top]= namespace.link[l];
-	if( top == namespace.nmetop)
-		namespace.link[l]= top;
+	if ((int)top == namespace.nmetop)
+		namespace.link[l] = (int)top;
 	namespace.hit[top]= 0;
-	namespace.length[top]= len;
+	namespace.length[top]= (int)len;
 	namespace.nmetop++;
 
 #ifdef _BACKUP_

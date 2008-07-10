@@ -1744,7 +1744,7 @@ convertConstant(malType type, ValPtr vr)
 			ATOMformat(vr->vtype, VALptr(vr), &w);
 			assert(w != NULL);
 			vr->vtype= TYPE_str;
-			vr->len = strlen(w);
+			vr->len = (int)strlen(w);
 			vr->val.sval= w;
 		  /* VALset(vr, type, w); does not use TYPE-str */
 		}
@@ -2709,7 +2709,7 @@ function2str(MalBlkPtr mb, int flg)
 	len = GDKmalloc(sizeof(int) * mb->stop);
 	for (i = 0; i < mb->stop; i++) {
 		txt[i] = instruction2str(mb, getInstrPtr(mb, i), flg);
-		totlen += len[i] = strlen(txt[i]);
+		totlen += len[i] = (int)strlen(txt[i]);
 	}
 	ps = GDKmalloc(totlen + mb->stop + 1);
 	totlen = 0;

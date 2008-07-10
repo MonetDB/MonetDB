@@ -117,7 +117,8 @@ str
 getTypeName(malType tpe)
 {
 	char buf[PATHLENGTH], *s;
-	int l = PATHLENGTH, k;
+	size_t l = PATHLENGTH;
+	int k;
 
 	if (tpe == TYPE_any)
 		return GDKstrdup("any");

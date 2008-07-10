@@ -159,6 +159,10 @@ command avg(b:bat[:any_2,:@1], e:bat[:any_2,:any_1]) :bat[:any_2,:@1]
 address GRPavg_@1
 comment "grouped tail average";
 
+command variance(b:bat[:any_2,:@1], e:bat[:any_2,:any_1]) :bat[:any_2,:@1] 
+address GRPvar_@1
+comment "grouped tail variance";
+
 @-
 Not used yet
 #command min(b:bat[:any_2,:@1], size:int) :bat[:any_2,:@1] 
@@ -1868,16 +1872,13 @@ group_export str GRPavg_@1(int *ret, int *bid, int *eid);
 str GRPavg_@1(int *ret, int *bid, int *eid)
 {
 	BAT *b = NULL, *e = NULL;
-	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));
+	BAT *bn = NULL;
 	BATiter ei, bi, bni;
 	size_t yy = 0, off;
 	size_t *cnt;
 	oid i, range, min, max;
 	dbl zero = (dbl) 0, *sums;
 	BUN p, q, r;
-
-	if (bn == NULL)
-		throw(MAL, "group.@1", "Cannot create descriptor");
 
 	if ((b = BATdescriptor(*bid)) == NULL ){
 		throw(MAL, "group.@1", "Cannot access descriptor");
@@ -1888,7 +1889,10 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 		throw(MAL, "group.@1", "Cannot access descriptor");
 	}
 	@:chkHeader(e,GRPavg_@1)@
-	off = BUNfirst(bn);
+	bn = BATnew(e->htype, BATttype(b), BATcount(e));
+	if (bn == NULL)
+		throw(MAL, "group.@1", "Cannot create descriptor");
+
 	/* init sums and counts to zero */
 	bn->tsorted = bn->hsorted = 0;
 	bn->T->nonil = 0;
@@ -1896,6 +1900,7 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 	ei = bat_iterator(e);
 	bi = bat_iterator(b);
 	bni = bat_iterator(bn);
+	off = BUNfirst(bn);
 
 	if (BAThordered(e)&1) {
 		min = *(oid*)BUNhead(ei, BUNfirst(e));
@@ -1946,23 +1951,44 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 @:arithavg(dbl,tloc)@
 
 @= arithvar
-int
-CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
+group_export str GRPvar_@1(int *ret, int *bid, int *eid);
+str GRPvar_@1(int *ret, int *bid, int *eid)
 {
-	size_t nElements = BATcount(e);
-	BAT *bn = *ret = BATnew(e->htype, BATttype(b), nElements);
-	BATiter ei = bat_iterator(e), bi = bat_iterator(b);
+	int err = 0;
+	size_t nElements;
+	BAT *b = NULL, *e = NULL;
+	BAT *bn = NULL;
+	BATiter ei, bi, bni;
 	size_t off, idx = 0;
-	int *cnt ;
+	int *cnt;
+	@1 zero = (@1) 0;
 	dbl *sum ;
 	dbl *sumsquares ;
-	@1 zero = (@1) 0;
 	BUN p, q, r;
 	oid previousOid = oid_nil;
 
+	if ((b = BATdescriptor(*bid)) == NULL ){
+		throw(MAL, "group.@1", "Cannot access descriptor");
+	}
+	@:chkHeader(b,GRPavg_@1)@
+	if( (e= BATdescriptor(*eid)) == NULL ){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "group.@1", "Cannot access descriptor");
+	}
+	@:chkHeader(e,GRPavg_@1)@
+	bn = BATnew(e->htype, BATttype(b), BATcount(e));
 	if (bn == NULL)
-		return GDK_FAIL;
+		throw(MAL, "group.@1", "Cannot create descriptor");
+	nElements = BATcount(e);
+
 	off = BUNfirst(e);
+	/* init sums and counts to zero */
+	bn->tsorted = bn->hsorted = 0;
+	bn->T->nonil = 0;
+	ALIGNsetH(bn, e);
+	ei = bat_iterator(e);
+	bi = bat_iterator(b);
+	bni = bat_iterator(bn);
 	cnt = (int*) GDKmalloc(nElements*sizeof(int));
 	if (cnt == NULL) {
 		BBPreclaim(bn);
@@ -2026,19 +2052,19 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 		if (cnt[idx] == int_nil) {
 			@1 _nil = @1_nil;
 			if (BUNfastins(bn, BUNhead(ei,p), (ptr)&_nil) == NULL) {
-				*ret = NULL;
+				err = 1;
 				break;
 			}
 		} else if (cnt[idx] <= 1) {
 			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
-				*ret = NULL;
+				err = 1;
 				break;
 			}
 		} else {
 			dbl avg = (sum[idx] / cnt[idx]);
 			@1 variance = (@1) (sumsquares[idx] / cnt[idx] - (avg * avg));
 			if (BUNfastins(bn, BUNhead(ei,p), &variance) == NULL) {
-				*ret = NULL;
+				err = 1;
 				break;
 			}
 		}
@@ -2046,14 +2072,17 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 	}
 	GDKfree(cnt);
 	GDKfree(sum);
-	if (!*ret) {
+	if (err) {
 		BBPreclaim(bn);
-		return GDK_FAIL;
+		throw(MAL, "group.@1", "failed");
 	}
 	bn->hsorted = bn->tsorted = 0;
 	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
-	return GDK_SUCCEED;
+	BBPkeepref(*ret= bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(e->batCacheid);
+	return MAL_SUCCEED;
 }
 @c
 @:arithvar(bte)@
@@ -2061,6 +2090,7 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 @:arithvar(int)@
 @:arithvar(wrd)@
 @:arithvar(lng)@
+@:arithvar(oid)@
 @:arithvar(flt)@
 @:arithvar(dbl)@
 

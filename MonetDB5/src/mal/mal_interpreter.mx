@@ -162,7 +162,7 @@ void showErrors() {
 		return;
 
 	if (*cntxt->errbuf) {
-		i = strlen(cntxt->errbuf);
+		i = (int)strlen(cntxt->errbuf);
 		stream_printf(cntxt->fdout, "%s", cntxt->errbuf);
 		if (cntxt->errbuf[i - 1] != '\n')
 			stream_printf(cntxt->fdout, "\n");
@@ -1603,7 +1603,7 @@ if( ret != MAL_SUCCEED ) {
 	msg = strchr(ret,':');
 	if(msg) {
 		*msg= 0;
-		exceptionVar = findVariableLength(mb,ret,msg-ret);
+		exceptionVar = findVariableLength(mb,ret,(int)(msg-ret));
 		*msg=':';
 	} else {
 		if( ret == MAL_SUCCEED && cntxt->errbuf){
@@ -1629,7 +1629,7 @@ if( ret != MAL_SUCCEED ) {
 			setVarType(mb, exceptionVar, TYPE_str);
 		v->vtype = TYPE_str;
 		v->val.pval= ret;
-		v->len= strlen(v->val.pval);
+		v->len= (int)strlen(v->val.pval);
 		ret = 0;
 	} else GDKfree(nxt);
 	/* position yourself at the catch instruction for further decisions */
@@ -1901,7 +1901,7 @@ int getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	}
 	for(; i<limit; i++) {
 		if (stk->stk[getArg(pci,i)].vtype == TYPE_bat){
-			int cnt = 0;
+			size_t cnt = 0;
 			b = BATdescriptor(stk->stk[getArg(pci,i)].val.bval);
 			if (b==NULL) 
 				continue;

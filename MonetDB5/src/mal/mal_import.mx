@@ -152,7 +152,7 @@ It should be reset before continuing.
 	c->srcFile = oldsrcFile;
 	if(c->prompt) GDKfree(c->prompt);
 	c->prompt = oldprompt;
-	c->promptlength= strlen(c->prompt);
+	c->promptlength= (int)strlen(c->prompt);
 @= restoreClient2
 	c->glb = oldglb;
 	c->nspace = oldnspace;
@@ -200,7 +200,7 @@ malInclude(Client c, str name, int listing)
 
 	c->yycur = 0;
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
-	c->promptlength = strlen(c->prompt);
+	c->promptlength = (int)strlen(c->prompt);
 	c->listing = listing;
 	c->bak = NULL;
 
@@ -242,7 +242,7 @@ evalFile(Client c, str fname, int listing){
 
 	c->yycur = 0;
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
-	c->promptlength = strlen(c->prompt);
+	c->promptlength = (int)strlen(c->prompt);
 	c->listing = listing;
 	c->bak = NULL;
 
@@ -283,7 +283,7 @@ str
 compileString(Symbol *fcn, Client c, str s)
 {
 	@:restoreState3@
-	int len = strlen(s);
+	int len = (int)strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED;
 	str qry;
@@ -326,7 +326,7 @@ void
 callString(Client c, str s, int listing)
 {
 	@:restoreState3@
-	int len = strlen(s);
+	int len = (int)strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED,qry;
 	str old = s;
