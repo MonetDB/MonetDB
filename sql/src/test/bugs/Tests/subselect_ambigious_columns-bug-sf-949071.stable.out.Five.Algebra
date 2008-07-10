@@ -28,15 +28,15 @@ Over..
 % name # name
 % varchar # type
 % 10 # length
-[ "args"	]
 [ "functions"	]
-[ "idxs"	]
-[ "idxs"	]
-[ "keycolumns"	]
-[ "keycolumns"	]
-[ "keys"	]
-[ "keys"	]
+[ "args"	]
 [ "sequences"	]
+[ "keys"	]
+[ "idxs"	]
+[ "keycolumns"	]
+[ "keys"	]
+[ "idxs"	]
+[ "keycolumns"	]
 % sys.tables # table_name
 % name # name
 % varchar # type
