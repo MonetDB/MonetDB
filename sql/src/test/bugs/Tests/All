@@ -93,3 +93,4 @@ div_zero_bug
 order_limit_offset_bug
 aggr_single_value
 reljoin_join2_bug
+rangejoin_optimize_bug
