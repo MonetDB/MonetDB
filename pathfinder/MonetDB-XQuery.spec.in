@@ -124,8 +124,10 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_datadir}/MonetDB/xrpc
 %dir %{_datadir}/MonetDB/xrpc/admin
 %dir %{_datadir}/MonetDB/xrpc/export
+%dir %{_datadir}/MonetDB/xrpc/demo
 %{_datadir}/MonetDB/xrpc/admin/*
 %{_datadir}/MonetDB/xrpc/export/*
+%{_datadir}/MonetDB/xrpc/demo/*
 
 
 %files devel
