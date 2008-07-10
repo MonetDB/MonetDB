@@ -29,10 +29,10 @@ new(void,str).append("hseqbase").append("hdense").append("tseqbase").append("tde
 # h		t	  # name
 # str		str	  # type
 #-------------------------#
-[ "hseqbase",	  "0@0"	  ]
 [ "hdense",	  "1"	  ]
-[ "tseqbase",	  "0@0"	  ]
+[ "hseqbase",	  "0@0"	  ]
 [ "tdense",	  "0"	  ]
+[ "tseqbase",	  "0@0"	  ]
 quit();
 
 # 15:58:38 >  
