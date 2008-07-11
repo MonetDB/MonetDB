@@ -163,9 +163,9 @@ Start XPRC receiver using the default values as specified in \
     #endif
 #else           /* UNIX specific */
     #include <sys/select.h>
-    #include <sys/types.h>	/* used by socket */
+    #include <sys/types.h>  /* used by socket */
     #include <sys/socket.h>
-    #include <unistd.h> /* gethostname() */
+    #include <unistd.h>     /* gethostname() */
     #include <netinet/in.h> /* hton and ntoh */
     #include <arpa/inet.h>  /* dotted IP addr to and from 32-bits int */
     #include <netdb.h>      /* gethostbyname(), h_errno */
@@ -888,7 +888,7 @@ xrpc_parse_message(stream *out,
 
     /* Fill the arrays 'req->argcnt', 'req->argval', 'req->argtpe' */
     /* i: index in xrpc:call; j: index of xrpc:sequence per xrpc:call */
-	next_call_node_pre = call_node_pre;
+    next_call_node_pre = call_node_pre;
     for(i = 0; 
             next_call_node_pre > 0 && next_call_node_pre < nnodes; 
                 call_node_pre = next_call_node_pre, i++) 
@@ -905,9 +905,9 @@ xrpc_parse_message(stream *out,
             next_seq_node_pre = seq_node_pre + pre_sizeT[seq_node_pre] + 1;
        
             for(tpe_node_pre = skip_text_nodes(pre_kindT, seq_node_pre+1, next_seq_node_pre),
-		next_tpe_node_pre = tpe_node_pre, k=1;
-                    next_tpe_node_pre > 0 && next_tpe_node_pre < next_seq_node_pre;
-                        tpe_node_pre = next_tpe_node_pre, k++) 
+                    next_tpe_node_pre = tpe_node_pre, k=1;
+                next_tpe_node_pre > 0 && next_tpe_node_pre < next_seq_node_pre;
+                tpe_node_pre = next_tpe_node_pre, k++) 
             {
                 /* end of current xrpc:<type> node */
                 next_tpe_node_pre = tpe_node_pre + pre_sizeT[tpe_node_pre]+1;
