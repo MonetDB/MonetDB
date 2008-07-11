@@ -518,7 +518,7 @@ get_node_type(str typename) {
 static INLINE oid
 skip_text_nodes(char *pre_kindT, oid pre, oid max) 
 {
-    while(pre < max && pre_kindT[pre] != ELEM) pre++;
+    while(pre < max && pre_kindT[pre] != ELEMENT) pre++;
     return pre; 
 }
 
@@ -715,7 +715,6 @@ xrpc_parse_message(stream *out,
     char level_diff = 0; /* indicates how many levels each pre_level value of a node should be reduced. */
 
     shredBATi = bat_iterator(shredBAT);
-    /* FIXME: should used BATdescriptor */
 @= getbat
     @1 = BATdescriptor(*(bat*)BUNtail(shredBATi,i+@2));
     if (@1 == NULL) {
@@ -874,12 +873,14 @@ xrpc_parse_message(stream *out,
         if (argc == GDK_lng_min) goto cleanup;
     }
     if (iterc == -1) {
-        /* if no iterc was found in the request (and always for XRPC responses), just count sequence elements */
+        /* if no iterc was found in the request (and always for XRPC
+         * responses), just count sequence elements */
         BUN p = BUNfnd(BATmirror(qn_uri_loc), XRPC_NS"|sequence");
         iterc = (p == BUN_NONE)?1:(*(lng*) BUNtail(qn_histi, p) / argc);
     }
 
-    /* the req struct contains all parsed data (we use it also for response messages) */ 
+    /* the req struct contains all parsed data (we use it also for
+     * response messages) */ 
     if(!(req = XRPCreq_new(qid, caller, timeout, mode, module, method, location, updCall, iterc, argc))) {
         send_err(out, ERR500, "env:Receiver", OUT_OF_MEM);
         goto cleanup;
