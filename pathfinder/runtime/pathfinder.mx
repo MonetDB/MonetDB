@@ -5070,7 +5070,7 @@ xquery_function_call(xquery_client *ctx,
     *(ctx->time_compile) = GDKusec() - usec;
 
     /* Done preparing the query. Time to (re-)execute the MIL tree */
-    if (xquery_tree_exec(ctx, prepfun->lt, 1)) {
+    if (xquery_tree_exec(ctx, prepfun->lt, 1) && seqnr) {
         *seqnr = (*ctx->xrpc_seqnr);
         return NULL;
     }
