@@ -905,7 +905,7 @@ xrpc_parse_message(stream *out,
             next_seq_node_pre = seq_node_pre + pre_sizeT[seq_node_pre] + 1;
        
             for(tpe_node_pre = skip_text_nodes(pre_kindT, seq_node_pre+1, next_seq_node_pre),
-                    next_tpe_node_pre = tpe_node_pre, k=1;
+                    next_tpe_node_pre = tpe_node_pre, k=0;
                 next_tpe_node_pre > 0 && next_tpe_node_pre < next_seq_node_pre;
                 tpe_node_pre = next_tpe_node_pre, k++) 
             {
@@ -944,7 +944,7 @@ xrpc_parse_message(stream *out,
                     }
                     if(tpe < 0){
                         snprintf(errstr, 1024, "XRPC request: iter["LLFMT"]/param["LLFMT"]/value["LLFMT"]"
-                                " does not have an \""XSI_NS":type\"", i+1, j+1, k);
+                                " does not have an \""XSI_NS":type\"", i, j, k);
                         send_err(out, ERR404, "env:Sender", errstr);
                         goto cleanup;
                     }
@@ -952,7 +952,7 @@ xrpc_parse_message(stream *out,
                     val_node_pre = tpe_node_pre + 1;
                     if(pre_sizeT[tpe_node_pre] != 1 || pre_kindT[val_node_pre] != TEXT) {
                         snprintf(errstr, 1024, "XRPC message: iter["LLFMT"]/param["LLFMT"]/value["LLFMT"]"
-                                "is expected to have a simple value", i+1, j+1, k);
+                                "is expected to have a simple value", i, j, k);
                         send_err(out, ERR404, "env:Sender", errstr);
                         goto cleanup;
                     }
@@ -965,7 +965,7 @@ xrpc_parse_message(stream *out,
                         snprintf(errstr, 1024, "XRPC request: "
                                 "iter["LLFMT"]/param["LLFMT"]/value["LLFMT"] "
                                 "of type "XRPC_NS":attribute is expected to have a single attribute",
-                                i+1, j+1, k);
+                                i, j, k);
                         send_err(out, ERR404, "env:Sender", errstr);
                         goto cleanup;
                     }
@@ -982,7 +982,7 @@ xrpc_parse_message(stream *out,
                         snprintf(errstr, 1024, "XRPC request: "
                                 "iter["LLFMT"]/param["LLFMT"]/value["LLFMT"] "
                                 "contains unsupported type: %s\n",
-                                i+1, j+1, k, pul);
+                                i, j, k, pul);
                         send_err(out, ERR404, "env:Sender", errstr);
                         goto cleanup;
                     } else {
