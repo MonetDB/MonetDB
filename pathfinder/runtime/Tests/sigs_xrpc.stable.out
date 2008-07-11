@@ -14,6 +14,7 @@ stdout of test 'sigs_xrpc` in directory 'runtime` itself:
 # Copyright (c) 1993-2008, CWI. All rights reserved.
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+module(lock);
 printf("module '%s'\n","xrpc_server");
 module 'xrpc_server'
 module(xrpc_server);
@@ -25,22 +26,26 @@ sigs("xrpc_server");
 [ "get_xrpc_open() : bit"		  ]
 [ "get_xrpc_options() : str"		  ]
 [ "get_xrpc_port() : int"		  ]
+[ "my_hostname() : str"					  ]
 [ "rpcd_start() : void"																									  ]
 [ "rpcd_start(int, bit, str) : void"	  ]
+[ "xrpc_confirm_commit(str, str, lng, ptr) : void"	  ]
+[ "xrpc_wait_for_commit(str, str, lng, ptr) : void"	  ]
 drop("xrpc_server");
 printf("module '%s'\n","xrpc_client");
 module 'xrpc_client'
 module(xrpc_client);
+
+
+
+
 sigs("xrpc_client");
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # signature																											  # name
 # str																												  # type
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "doIterativeRPC(str, str, int, str, str, str, int, int, lng, BAT[void,BAT], BAT[oid,str], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"	  ]
-[ "doLoopLiftedRPC(str, str, int, str, str, str, int, int, lng, BAT[void,BAT], BAT[oid,str], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"	  ]
-[ "get_rpc_res(oid, str, BAT[void,BAT], BAT[void,lng], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"																  ]
-[ "http_post(str, str, str, str, str, int, int, lng, BAT[void,BAT], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[str,BAT]"			  ]
-[ "rpc_client(str, str, str, str, str, str, int, int, lng, BAT[void,BAT], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : oid"			  ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "doIterativeRPC(str, str, str, bit, lng, lng, BAT[void,BAT], BAT[oid,str], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"	  ]
+[ "doLoopLiftedRPC(str, str, str, bit, lng, lng, BAT[void,BAT], BAT[oid,str], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"	  ]
 drop("xrpc_client");
 quit();
 

@@ -1,14 +1,14 @@
 stdout of test 'load` in directory 'runtime` itself:
 
 
-# 20:09:24 >  
-# 20:09:24 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB:/var/tmp/_PREFIX_TEMPLATE_GNU_32_d__/lib/MonetDB" --dbfarm "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_runtime  < load.milS
-# 20:09:24 >  
+# 18:44:57 >  
+# 18:44:57 >   Mserver "--config=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/lib/MonetDB4:/net/jarl/export/scratch0/zhang/monet-install/dev/debug/lib/MonetDB4/lib:/net/jarl/export/scratch0/zhang/monet-install/dev/debug/lib/MonetDB4/bin" --set "gdk_dbfarm=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/var/MonetDB4/dbfarm" --set "sql_logdir=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=34458 --set xrpc_port=42468 --set monet_prompt= --trace  --dbname=mTests_runtime  
+# 18:44:57 >  
 
 
 
-# MonetDB Server v4.23.0
-# based on GDK   v1.23.1
+# MonetDB Server v4.25.0
+# based on GDK   v1.25.0
 # Copyright (c) 1993-2008, CWI. All rights reserved.
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
@@ -94,7 +94,7 @@ loading module 'pathfinder'
 [ "bat_arith",	  2		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
-[ "lock",	  4		  ]
+[ "lock",	  5		  ]
 [ "logger",	  4		  ]
 [ "main",	  1		  ]
 [ "malalgebra",	  5		  ]

@@ -5,9 +5,12 @@ stdout of test 'load_xrpc` in directory 'runtime` itself:
 # 20:09:24 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB:/var/tmp/_PREFIX_TEMPLATE_GNU_32_d__/lib/MonetDB" --dbfarm "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_runtime  < load_xrpc.milS
 # 20:09:24 >  
 
-# Monet Database Server V4.3.9
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# MonetDB Server v4.25.0
+# based on GDK   v1.25.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+module(lock);
 loaded();
 #---------------------------------#
 # module		usage_count	  # name
@@ -18,6 +21,7 @@ loaded();
 [ "bat",	  1		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
+[ "lock",	  1		  ]
 [ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -35,6 +39,7 @@ loaded();
 [ "bat",	  1		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
+[ "lock",	  1		  ]
 [ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -53,6 +58,7 @@ loaded();
 [ "bat",	  1		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
+[ "lock",	  1		  ]
 [ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -60,6 +66,10 @@ loaded();
 printf("loading module '%s'\n","xrpc_client");
 loading module 'xrpc_client'
 module(xrpc_client);
+
+
+
+
 loaded();
 #---------------------------------#
 # module		usage_count	  # name
@@ -70,6 +80,7 @@ loaded();
 [ "bat",	  1		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
+[ "lock",	  2		  ]
 [ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
@@ -88,6 +99,7 @@ loaded();
 [ "bat",	  1		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
+[ "lock",	  1		  ]
 [ "main",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]

@@ -1,3 +1,4 @@
+module(lock);
 printf("module '%s'\n","xrpc_server");
 module(xrpc_server);
 sigs("xrpc_server");
