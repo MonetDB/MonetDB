@@ -577,7 +577,8 @@ newpass:
 			newclk = (lng)((1-recycleFresh)*oldclk + recycleFresh*newclk);
 			lvs1 = lvs;  	/* drop newest to avoid deletion */
 			lvs = (int *)alloca(sizeof(int)*ltop);
-			memset(lvs,0, sizeof(int)*ltop);
+			assert(ltop > 0);
+			memset(lvs, 0, sizeof(int)*ltop);
 			l = 0;
 			for (j = 0; j < ltop; j++){
 				k = lvs1[j];
