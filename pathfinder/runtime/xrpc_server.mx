@@ -518,7 +518,7 @@ get_node_type(str typename) {
 static INLINE oid
 skip_text_nodes(char *pre_kindT, oid pre, oid max) 
 {
-    while(pre < max && pre_kindT[pre] != ELEMENT) pre++;
+    while(pre < max && pre_kindT[pre] == TEXT) pre++;
     return pre; 
 }
 
@@ -975,7 +975,13 @@ xrpc_parse_message(stream *out,
                 } else {
                     req->argtpe[req->nr_args] = get_node_type(pul);
                     if (req->argtpe[req->nr_args] == XS_DOCUMENT) {
-                        val_node_pre = tpe_node_pre;
+                        /* Find the first next ELEMENT, which should be
+                         * the root node of the document, and then
+                         * (mis)use its previous PRE als DOC_ROOT */
+                        val_node_pre = pre_sizeT[tpe_node_pre] == 0 ?
+                            tpe_node_pre :
+                            skip_text_nodes(pre_kindT, tpe_node_pre + 1,
+                                    next_tpe_node_pre) - 1;
                         pre_kindT[val_node_pre] = 4;
                         pre_propT[val_node_pre] = oid_nil;
                     } else if (req->argtpe[req->nr_args] < 0) {
@@ -987,7 +993,9 @@ xrpc_parse_message(stream *out,
                         goto cleanup;
                     } else {
                         val_node_pre = tpe_node_pre + 1;
-                        val_node_pre += (pre_kindT[val_node_pre] == ELEMENT ? 0 : 1);
+                        if (req->argtpe[req->nr_args] != XS_TEXT)
+                            val_node_pre = skip_text_nodes(pre_kindT,
+                                    val_node_pre, next_tpe_node_pre);
                     }
                     req->argval[req->nr_args] = (char*) (size_t) val_node_pre;
                     frag_root = BUNappend(frag_root, (ptr)&val_node_pre, TRUE);
