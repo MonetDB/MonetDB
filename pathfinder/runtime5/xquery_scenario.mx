@@ -247,7 +247,7 @@ XQUERYparser(Client c)
 		chkProgram(c->nspace, c->curprg->def);
 	}
 	if( c->curprg->def->errors || err){
-		showErrors();
+		showErrors(c);
 		if( xb->mode == xquery_explain)
 			printFunction(c->fdout, c->curprg->def,LIST_MAL_ALL);
 		/* restore the state */
