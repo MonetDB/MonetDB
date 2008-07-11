@@ -108,7 +108,7 @@ epilogue(int cnt, bat *subcommit)
                 if ((BBP_status(bid) & (BBPDELETED | BBPTMP)) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
 			BAT *b = BBPquickdesc(bid, TRUE);
 
-			/* the unloaded ones are deleted without loading delete disk images */
+			/* the unloaded ones are deleted without loading deleted disk images */
 			BATdelete(b);
 			if (BBP_cache(bid)) {
 				/* those that quickdesc decides to load => free memory */

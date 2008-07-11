@@ -312,7 +312,8 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 	 */
 	GDKfilepath(srcpath, BATDIR, nme, ext);
 	GDKfilepath(dstpath, BATDIR, nme, ext);
-	for(p=srcpath; *p; p++);
+	for (p = srcpath; *p; p++)
+		;
 	strcpy(p, ".new");
 	ret = stat(dstpath, &st);
 	if (stat(srcpath, &st) == 0) {

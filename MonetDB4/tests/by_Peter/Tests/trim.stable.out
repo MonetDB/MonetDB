@@ -57,7 +57,7 @@ while(i < 10) {
 #---------------------------------------------------------------------------------------------------------#
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_1",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "b_2",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
@@ -65,7 +65,7 @@ while(i < 10) {
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
 [ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_2",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "b_3",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
@@ -74,7 +74,7 @@ while(i < 10) {
 #---------------------------------------------------------------------------------------------------------#
 [ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_3",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "b_4",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
@@ -84,7 +84,7 @@ while(i < 10) {
 [ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_4",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_4",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "b_5",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
@@ -95,7 +95,7 @@ while(i < 10) {
 [ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_4",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_5",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_5",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "b_6",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
@@ -107,7 +107,7 @@ while(i < 10) {
 [ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_4",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_5",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_6",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_6",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "b_7",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
@@ -120,7 +120,7 @@ while(i < 10) {
 [ "b_4",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_5",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_6",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_7",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_7",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "b_8",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 [ "DIR" ]
@@ -134,7 +134,7 @@ while(i < 10) {
 [ "b_5",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_6",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_7",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_8",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_8",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "b_9",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "COPY" ]
 
@@ -159,7 +159,7 @@ dir("b_");
 [ "b_6",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_7",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_8",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_9",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_9",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 
 countall(bat("b_1"),bat("b_2"),bat("b_3"),bat("b_4"));
 [ 1000000 ]
@@ -172,7 +172,7 @@ dir("b_");
 # name	| htype	| ttype	| count		| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
 [ "b_1",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_10", "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_10", "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "b_2",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_3",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_4",  "void", "int",  1000000,	  0,	  "clean",	  "load", "pers", 0,	  1		  ]
@@ -180,7 +180,7 @@ dir("b_");
 [ "b_6",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_7",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 [ "b_8",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
-[ "b_9",  "void", "int",  1000000,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
+[ "b_9",  "void", "int",  1000000,	  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 
 quit();
 

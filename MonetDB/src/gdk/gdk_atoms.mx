@@ -1981,6 +1981,12 @@ strLocate(Heap *h, str v)
 	return 0;
 }
 
+#if SIZEOF_SIZE_T == SIZEOF_INT
+#define normal_vart_SWAP(x)	((var_t) normal_int_SWAP((int)x))
+#else
+#define normal_vart_SWAP(x)	((var_t) long_long_SWAP((lng)x))
+#endif
+
 /* convert the integers in the implicit hash table structure */
 void
 strHeapConvert(Heap *h, int dir)

@@ -88,7 +88,7 @@ BATinit_idents(BAT *bn)
 	bn->tident = (char *) BATstring_t;
 }
 
-BAT *
+BATstore *
 BATcreatedesc(int ht, int tt, int heapnames)
 {
 	BAT *bn;
@@ -103,11 +103,16 @@ assert needed in the kernel to get symbol eprintf resolved.
 Else modules using assert fail to load.
 @c
 	assert(ht >= 0 && tt >= 0);
+	bs->BM.H = &bs->T;
+	bs->BM.T = &bs->H;
+	bs->BM.P = &bs->P;
+	bs->BM.U = &bs->U;
+	bs->B.H = &bs->H;
+	bs->B.T = &bs->T;
+	bs->B.P = &bs->P;
+	bs->B.U = &bs->U;
+
 	bn = &bs->B;
-	bn->H = &bs->H;
-	bn->T = &bs->T;
-	bn->P = &bs->P;
-	bn->U = &bs->U;
 
 @-
 Fill in basic column info
@@ -120,7 +125,6 @@ Fill in basic column info
 	bn->T->nonil = TRUE;
 	bn->hsorted = ((bit) ATOMlinear(ht) ? GDK_SORTED : FALSE);
 	bn->tsorted = ((bit) ATOMlinear(tt) ? GDK_SORTED : FALSE);
-	bn->GDKversion = GDKLIBRARY;
 
 	bn->hident = (char *) BATstring_h;
 	bn->tident = (char *) BATstring_t;
@@ -133,7 +137,7 @@ Fill in basic column info
 @-
 add to BBP
 @c
-	BBPinsert(bn);
+	BBPinsert(bs);
 @-
 fill in heap names, so HEAPallocs can resort to disk for very large writes.
 @c
@@ -173,7 +177,7 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 		}
 	}
 	bn->batDirty = TRUE;
-	return bn;
+	return bs;
 bailout:
 	if (ht)
 		HEAPfree(&bn->H->heap);
@@ -187,7 +191,7 @@ bailout:
 		HEAPfree(bn->T->vheap);
 		GDKfree(bn->T->vheap);
 	}
-	GDKfree(bn);
+	GDKfree(bs);
 	return NULL;
 }
 
@@ -224,16 +228,18 @@ as temporary heap storage.
 In case of huge bats, we want HEAPalloc to write a file to disk, and memory map
 it. To make this possible, we must provide it with filenames.
 @c
-BAT *
+BATstore *
 BATnewstorage(int ht, int tt, size_t cap)
 {
-	BAT *bn, *recycled;
+	BATstore *bs, *recycled;
+	BAT *bn;
 
-	bn = recycled = BBPrecycle(ht, tt, cap);
-	if (!bn)
-		bn = BATcreatedesc(ht, tt, (ht || tt));
-	if (bn == NULL)
+	bs = recycled = BBPrecycle(ht, tt, cap);
+	if (!bs)
+		bs = BATcreatedesc(ht, tt, (ht || tt));
+	if (bs == NULL)
 		return NULL;
+	bn = &bs->B;
 
 	if (!recycled) {
 		BATsetdims(bn);
@@ -267,20 +273,23 @@ BATnewstorage(int ht, int tt, size_t cap)
 			return NULL;
 		}
 		DELTAinit(bn);
-		BBPcacheit(bn);
+		BBPcacheit(bs);
 	}
-	return bn;
+	return bs;
 }
 
 BAT *
 BATnew(int ht, int tt, size_t cap)
 {
+	BATstore *bs;
+
 	ERRORcheck((ht < 0) || (ht > GDKatomcnt), "BATnew:ht error\n");
 	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "BATnew:tt error\n");
 
 	/* determine the minimum size. BATTINY bats will be cached */
 	cap = MAX(BATTINY, cap);
-	return BATnewstorage(ht, tt, cap);
+	bs = BATnewstorage(ht, tt, cap);
+	return bs == NULL ? NULL : &bs->B;
 }
 
 @-
@@ -530,30 +539,29 @@ BATfree(BAT *b)
 	b = BBP_cache(-b->batCacheid);
 	if (b) {
 		BBP_cache(b->batCacheid) = NULL;
-		GDKfree(b);
 	}
 	return 0;
 }
 
 /* free a cached BAT descriptor */
 void
-BATdestroy( BAT *b )
+BATdestroy( BATstore *bs )
 {
-	if (b->hident && !default_ident(b->hident)) 
-		GDKfree(b->hident);
-	b->hident = BATstring_h;
-	if (b->tident && !default_ident(b->tident)) 
-		GDKfree(b->tident);
-	b->tident = BATstring_t;
-	if (b->H->vheap)
-		GDKfree(b->H->vheap);
-	if (b->T->vheap)
-		GDKfree(b->T->vheap);
-	if (b->H->props)
-		PROPdestroy(b->H->props);
-	if (b->T->props)
-		PROPdestroy(b->T->props);
-	GDKfree(b);
+	if (bs->H.id && !default_ident(bs->H.id)) 
+		GDKfree(bs->H.id);
+	bs->H.id = BATstring_h;
+	if (bs->T.id && !default_ident(bs->T.id)) 
+		GDKfree(bs->T.id);
+	bs->T.id = BATstring_t;
+	if (bs->H.vheap)
+		GDKfree(bs->H.vheap);
+	if (bs->T.vheap)
+		GDKfree(bs->T.vheap);
+	if (bs->H.props)
+		PROPdestroy(bs->H.props);
+	if (bs->T.props)
+		PROPdestroy(bs->T.props);
+	GDKfree(bs);
 }
 
 @}
@@ -1076,7 +1084,7 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 				if (b->hkey == TRUE && cmp <= 0) {
 					b->H->nokey[0] = i - 1;
 					b->H->nokey[1] = i;
-					b->hkey = bm->tkey = b->hdense = FALSE;
+					b->hkey = b->hdense = FALSE;
 				}
 				if (b->H->nonil) 
 					b->H->nonil = h && atom_CMP(h, ATOMnilptr(b->htype), b->htype) != 0;
@@ -1127,25 +1135,25 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 				if (b->tkey == TRUE && cmp <= 0) {
 					b->T->nokey[0] = i - 1;
 					b->T->nokey[1] = i;
-					b->tkey = bm->hkey = b->tdense = FALSE;
+					b->tkey = b->tdense = FALSE;
 				}
 				if (b->T->nonil) 
 					b->T->nonil = t && atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
 			}
 		} else {
 			if (b->htype == TYPE_oid) {
-				b->hkey = bm->tkey |= b->hdense = TRUE;
-				b->hseqbase = bm->tseqbase = *(oid *) h;
+				b->hkey |= b->hdense = TRUE;
+				b->hseqbase = *(oid *) h;
 			} else if (b->htype) {
-				b->hkey = bm->tkey |= TRUE;
+				b->hkey |= TRUE;
 			}
 			if (b->H->nonil) 
 				b->H->nonil = h && atom_CMP(h, ATOMnilptr(b->htype), b->htype) != 0;
 			if (b->ttype == TYPE_oid) {
-				b->tkey = bm->hkey |= b->tdense = TRUE;
-				b->tseqbase = bm->hseqbase = *(oid *) t;
+				b->tkey |= b->tdense = TRUE;
+				b->tseqbase = *(oid *) t;
 			} else if (b->ttype) {
-				b->tkey = bm->hkey |= TRUE;
+				b->tkey |= TRUE;
 			}
 			if (b->T->nonil) 
 				b->T->nonil = t && atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
@@ -2868,8 +2876,7 @@ check if duplicated properties are equal
 
 			b->batDirty = TRUE;
 		}
-		zz = (b->GDKversion != bm->GDKversion) |
-		     ((b->U != bm->U) << 1) |
+		zz = ((b->U != bm->U) << 1) |
 		     ((b->P != bm->P) << 2) |
 		     ((b->H != bm->T) << 3) |
 		     ((b->htype != bm->ttype) << 4) |

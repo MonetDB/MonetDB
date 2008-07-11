@@ -26,7 +26,6 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 # h			t		  # name
 # str			str		  # type
 #-----------------------------------------#
-[ "version",		  "25106"	  ]
 [ "batId",		  "tmp_32"	  ]
 [ "batCacheid",		  "26"		  ]
 [ "hparentid",		  "0"		  ]

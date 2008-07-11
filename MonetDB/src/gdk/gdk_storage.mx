@@ -403,7 +403,7 @@ Failure to read or write the BAT results in a NULL, otherwise
 it returns the BAT pointer.
 @{
 @c
-static BAT *
+static BATstore *
 DESCload(int i)
 {
 	str s, nme = BBP_physical(i);
@@ -414,7 +414,7 @@ DESCload(int i)
 	IODEBUG {
 		THRprintf(GDKout, "#DESCload %s\n", nme);
 	}
-	bs = BBPgetdesc(i);
+	bs = BBP_desc(i);
 
 	if (bs == NULL)
 		return 0;
@@ -439,7 +439,7 @@ DESCload(int i)
 	b->batCopiedtodisk = 1;
 	b->batSharecnt = 0;
 	DESCclean(b);
-	return b;
+	return bs;
 }
 
 #define STORE_MODE(m,r,e) (((m) == STORE_MEM)?STORE_MEM:((r)&&(e))?STORE_PRIV:STORE_MMAP)
@@ -517,9 +517,13 @@ BATsave(BAT *bd)
 
 	/* copy the descriptor to a local variable in order to let our messing in
 	 * the BAT descriptor not affect other threads that only read it. */
-	bs = *(BATstore *) b;
-	b = &bs.B;
-	b->U = &bs.U;
+	bs = *BBP_desc(b->batCacheid);
+	/* fix up internal pointers */
+	b = &bs.BM;		/* first the mirror */
+	b->P = &bs.P;
+	b->H = &bs.T;
+	b->T = &bs.H;
+	b = &bs.B;		/* then the unmirrored version */
 	b->P = &bs.P;
 	b->H = &bs.H;
 	b->T = &bs.T;
@@ -553,13 +557,6 @@ BATsave(BAT *bd)
 			if (err == 0)
 				err = HEAPsave(b->theap, nme, "theap");
 		}
-	if (err == 0)
-		if (b->batCopiedtodisk == 0 || b->batDirty || b->batDirtydesc) {
-			DESCclean(b);
-			b->batCopiedtodisk = 1;
-			err = BATsavedesc(b, nme);
-			IODEBUG THRprintf(GDKout, "#BATsavedesc(%s,free=" SZFMT "," SZFMT ") = %d\n", nme, b->H->heap.free, b->T->heap.free, err);
-		}
 
 	if (b->hheap) 
 		GDKfree(b->hheap);
@@ -583,20 +580,19 @@ BATload_intern(bat i)
 {
 	bat bid = ABS(i);
 	str nme = BBP_physical(bid);
-	BAT *b = DESCload(bid);
-	int batmapdirty, ret = 0;
-	int vv = 1;
+	BATstore *bs = DESCload(bid);
+	BAT *b;
+	int batmapdirty;
 
-	if (b == NULL) {
+	if (bs == NULL) {
 		return NULL;
 	}
+	b = &bs->B;
 	batmapdirty = DESCsetmodes(b);
 	
 	/* LOAD bun heap */
 	if (b->htype != TYPE_void) {
-		vv = 0;
-		ret = HEAPload(&b->H->heap, nme, "head", b->batRestricted == BAT_READ);
-		if (ret < 0) {
+		if (HEAPload(&b->H->heap, nme, "head", b->batRestricted == BAT_READ) < 0) {
 			return NULL;
 		}
 		b->batCapacity = b->H->heap.size >> b->H->shift;
@@ -604,9 +600,7 @@ BATload_intern(bat i)
 		b->H->heap.base = NULL;
 	}
 	if (b->ttype != TYPE_void) {
-		vv = 0;
-		ret = HEAPload(&b->T->heap, nme, "tail", b->batRestricted == BAT_READ);
-		if (ret < 0) {
+		if (HEAPload(&b->T->heap, nme, "tail", b->batRestricted == BAT_READ) < 0) {
 			HEAPfree(&b->H->heap);
 			return NULL;
 		}
@@ -627,9 +621,8 @@ BATload_intern(bat i)
 	}
 
 	/* LOAD head heap */
-	if (ATOMvarsized(b->htype) && ret >= 0) {
-		ret |= HEAPload(b->hheap, nme, "hheap", b->batRestricted == BAT_READ);
-		if (ret < 0) {
+	if (ATOMvarsized(b->htype)) {
+		if (HEAPload(b->hheap, nme, "hheap", b->batRestricted == BAT_READ) < 0) {
 			HEAPfree(&b->H->heap);
 			HEAPfree(&b->T->heap);
 			return NULL;
@@ -637,14 +630,13 @@ BATload_intern(bat i)
 		if (BATatoms[b->htype].atomHeapCheck == HEAP_check) {
 			HEAP_init(b->hheap, b->htype);
 		} else if (ATOMstorage(b->htype) == TYPE_str) {
-			strCleanHash(b->hheap, (b->GDKversion != GDKLIBRARY));	/* ensure consistency */
+			strCleanHash(b->hheap, FALSE);	/* ensure consistency */
 		}
 	}
 
 	/* LOAD tail heap */
-	if (ATOMvarsized(b->ttype) && ret >= 0) {
-		ret |= HEAPload(b->theap, nme, "theap", b->batRestricted == BAT_READ);
-		if (ret < 0) {
+	if (ATOMvarsized(b->ttype)) {
+		if (HEAPload(b->theap, nme, "theap", b->batRestricted == BAT_READ) < 0) {
 			if (b->hheap)
 				HEAPfree(b->hheap);
 			HEAPfree(&b->H->heap);
@@ -654,25 +646,8 @@ BATload_intern(bat i)
 		if (BATatoms[b->ttype].atomHeapCheck == HEAP_check) {
 			HEAP_init(b->theap, b->ttype);
 		} else if (ATOMstorage(b->ttype) == TYPE_str) {
-			strCleanHash(b->theap, (b->GDKversion != GDKLIBRARY));	/* ensure consistency */
+			strCleanHash(b->theap, FALSE);	/* ensure consistency */
 		}
-	}
-
-	/* handle fatal errors */
-	if (ret < 0) {
-		if (!vv) {
-			HEAPfree(&b->H->heap);
-			HEAPfree(&b->T->heap);
-		}
-		if (b->hheap)
-			HEAPfree(b->hheap);
-		if (b->theap)
-			HEAPfree(b->theap);
-		return NULL;
-	}
-	if (b->GDKversion != GDKLIBRARY) {
-		b->GDKversion = GDKLIBRARY;
-		b->batDirtydesc = 1;
 	}
 
 	/* initialize descriptor */
@@ -681,7 +656,7 @@ BATload_intern(bat i)
 	b->batSharecnt = 0;
 
 	/* load succeeded; register it in BBP */
-	BBPcacheit(b);
+	BBPcacheit(bs);
 
 	if (!DELTAdirty(b)) {
 		ALIGNcommit(b);
@@ -704,7 +679,7 @@ BATload(str nme)
 	BAT *b = BBP_cache(i);
 
 	if (i == 0 || b != NULL) {
-		return b;	/* inexistent bat or already loaded */
+		return b;	/* nonexistent bat or already loaded */
 	}
 	return BATload_intern(i);
 }
@@ -734,15 +709,6 @@ BATdelete(BAT *b)
 	if (loaded) {
 		b = loaded;
 		HASHdestroy(b);
-		GDKfree(BATmirror(b));
-		BBP_cache(-b->batCacheid) = NULL;
-	}
-	if (b->batCopiedtodisk) {
-		IODEBUG THRprintf(GDKout, "#BATdelete %s\n", o);
-
-		if (GDKunlink(BATDIR, o, "desc")) {
-			GDKwarning("BATdelete(%s): descriptor\n", BATgetId(b));
-		}
 	}
 	assert(!b->H->heap.base || !b->T->heap.base || b->H->heap.base != b->T->heap.base);
 	if (b->batCopiedtodisk || (b->H->heap.storage & STORE_MMAP)) {

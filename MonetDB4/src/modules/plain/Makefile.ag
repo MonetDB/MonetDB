@@ -71,7 +71,7 @@ LIBS = {
 		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
 		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
 		stats.mx unix.mx url.mx pqueue.mx 
-		#radix.mx tcpip.mx upgrade.mx
+		#radix.mx tcpip.mx
 	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
 		../../monet/libmonet \
@@ -120,7 +120,7 @@ headers_mil = {
 		monettime.mx stats.mx \
 		unix.mx url.mx counters.mx pcl.mx pcre.mx pqueue.mx \
 		logger.mx
-		# radix.mx tcpip.mx upgrade.mx
+		# radix.mx tcpip.mx
 }
 
 headers_plain = {

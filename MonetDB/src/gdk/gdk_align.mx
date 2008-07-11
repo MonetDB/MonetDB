@@ -205,13 +205,15 @@ with the parent, as they need a modified version.
 static BAT *
 VIEWhcreate(BAT *h)
 {
-	BAT *bn, *recycled = NULL;
+	BATstore *bs, *recycled = NULL;
+	BAT *bn;
 	bat hp;
 
 	BATcheck(h, "VIEWhcreate: bat required");
-	recycled = bn = BBPrecycle(TYPE_void, TYPE_void, 1);
-	if (!bn) 
-		bn = BATcreatedesc(h->htype, TYPE_void, FALSE);
+	recycled = bs = BBPrecycle(TYPE_void, TYPE_void, 1);
+	if (bs == NULL) 
+		bs = BATcreatedesc(h->htype, TYPE_void, FALSE);
+	bn = &bs->B;
 
 	BATsetdims(bn);
 	hp = VIEWhparent(h);
@@ -241,7 +243,7 @@ The b->P structure cannot be shared and must be copied individually.
 	bn->batRestricted = BAT_READ;
 
 	if (recycled == NULL) 
-		BBPcacheit(bn);	/* enter in BBP and create mirror */
+		BBPcacheit(bs);	/* enter in BBP */
 	return bn;
 }
 
@@ -249,14 +251,16 @@ The b->P structure cannot be shared and must be copied individually.
 BAT *
 VIEWcreate_(BAT *h, BAT *t, int slice_view)
 {
-	BAT *bn, *recycled = NULL;
+	BATstore *bs, *recycled = NULL;
+	BAT *bn;
 	bat hp = 0, tp = 0, vc = 0;
 
 	BATcheck(h, "VIEWcreate_: bat required");
 	BATcheck(t, "VIEWcreate_: bat required");
-	recycled = bn = BBPrecycle(TYPE_void, TYPE_void, 1);
-	if (!bn) 
-		bn = BATcreatedesc(h->htype, t->ttype, FALSE);
+	recycled = bs = BBPrecycle(TYPE_void, TYPE_void, 1);
+	if (!bs) 
+		bs = BATcreatedesc(h->htype, t->ttype, FALSE);
+	bn = &bs->B;
 
 	hp = VIEWhparent(h);
 	tp = VIEWtparent(t);
@@ -326,7 +330,7 @@ use a copy.
 	else 
 		bn->T->hash = t->T->hash;
 	if (recycled == NULL) 
-		BBPcacheit(bn);	/* enter in BBP and create mirror */
+		BBPcacheit(bs);	/* enter in BBP */
 	/* View of VIEW combine, ie we need to fix the head of the mirror */ 
 	if (vc) {
  		BAT *bm = BATmirror(bn);
@@ -348,10 +352,11 @@ BAT *
 VIEWhead(BAT *b)
 {
 	BAT *bn = VIEWhcreate(b), *bm;
-	BATstore *bs = (BATstore *) bn;
+	BATstore *bs;
 
 	if (bn == NULL)
 		return NULL;
+	bs = BBP_desc(bn->batCacheid);
  	bm = BATmirror(bn);
  	if (bm == NULL)
 		return NULL;
@@ -406,7 +411,7 @@ VIEWcombine(BAT *b)
 
 @-
 The @#BATmaterialize@ routine produces in-place materialized version of
-a void bat (which should have been a VIEW) (later we should add the code 
+a void bat (which should not be a VIEW) (later we should add the code 
 for VIEWs).
 @c
 
@@ -535,13 +540,15 @@ VIEWreset(BAT *b)
 	hp = VIEWhparent(b);
 	tp = VIEWtparent(b);
 	if (hp || tp) {
-		BAT *r = b, *n = ((b) = BBP_cache(ABS((b)->batCacheid)));
+		BAT *r = b;
+		BAT *n = b = BBP_cache(ABS(b->batCacheid));
 		BAT *m = BATmirror(n);
 		BAT *v;
-		BATstore *bs = (BATstore *) n;
+		BATstore *bs = BBP_desc(b->batCacheid);
 		size_t cnt = BATcount(b) + 1;
 		str nme = BBP_physical(n->batCacheid);
 
+		assert(b->batCacheid > 0);
 		assert(hp || !r->htype);
 		assert(tp || !r->ttype);
 
@@ -595,10 +602,10 @@ VIEWreset(BAT *b)
 			BBPunshare(tp);
 
 		/* make sure everything points there */
-		m->U = n->U = &(bs->U);
-		m->P = n->P = &(bs->P);
-		m->T = n->H = &(bs->H);
-		m->H = n->T = &(bs->T);
+		m->U = n->U = &bs->U;
+		m->P = n->P = &bs->P;
+		m->T = n->H = &bs->H;
+		m->H = n->T = &bs->T;
 
 		n->H->type = v->H->type;
 		n->H->varsized = v->H->varsized;
@@ -614,7 +621,6 @@ VIEWreset(BAT *b)
 
 		n->H->parentid = n->T->parentid = 0;
 		n->batRestricted = BAT_WRITE;
-		n->GDKversion = GDKLIBRARY;
 
 		/* reset BOUND2KEY */
 		n->H->key = BAThkey(v);
@@ -643,8 +649,8 @@ VIEWreset(BAT *b)
 		n->batDirty = 1;
 
 		/* reset BOUND2KEY */
-		n->hkey = m->tkey = BAThkey(v);
-		n->tkey = m->hkey = BATtkey(v);
+		n->hkey = BAThkey(v);
+		n->tkey = BATtkey(v);
 
 		/* make the BAT empty and insert all again */
 		DELTAinit(n);

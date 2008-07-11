@@ -70,6 +70,10 @@ bat("MMO_location").print();
 [ 2@0,	  "http://www.altavista.com/"		  ]
 [ 4@0,	  "http://www.ibiblio.org/javafaq/"	  ]
 
+# clean up
+bat("MMO_location").persists(false);
+commit();
+
 quit();
 
 # 17:04:45 >  

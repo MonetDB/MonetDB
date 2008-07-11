@@ -862,10 +862,10 @@ typedef struct {
 	 dirtyflushed:1,	/* was dirty before commit started? */
 	 descdirty:1,		/* bat descriptor dirty marker */
 	 lview:1,		/* bat is a *logical* view on parentid */
-	 unused:26;		/* value=0 for now */
-	chr set;		/* real set semantics */
-	chr restricted;		/* access priviliges */
-	sht persistence;	/* should the BAT persist on disk? */
+	 set:1,			/* real set semantics */
+	 restricted:2,		/* access priviliges */
+	 persistence:2,		/* should the BAT persist on disk? */
+	 unused:21;		/* value=0 for now */
 	int sharecnt;		/* incoming view count */
 	char map_head;		/* mmap mode for head bun heap */
 	char map_tail;		/* mmap mode for tail bun heap */
@@ -895,13 +895,13 @@ typedef struct {
 	bit varsized;		/* varsized(>0) or fixedsized(0). */
 	chr type;		/* type id. */
 	chr shift;		/* log2 of bunwidth */
-	bit key;		/* duplicates allowed? */
 	bit sorted;		/* 0=false, 1=true; */
 	unsigned char 
-	dense:1,		
-	nonil:1, 		/* nonil isn't propchecked jet */
-	nil:1,			/* nil is set when we found one nil (propcheck) */
-	unused:5; 
+	 key:2,			/* duplicates allowed? */
+	 dense:1,		
+	 nonil:1, 		/* nonil isn't propchecked yet */
+	 nil:1,			/* nil is set when we found one nil (propcheck) */
+	 unused:3; 
 	oid align;		/* OID for sync alignment */
 	size_t nosorted_rev;	/* position that proves sorted_rev==FALSE */
 	size_t nokey[2];	/* positions that prove key ==FALSE */
@@ -921,7 +921,6 @@ typedef struct {
 
 typedef struct BAT {
 	/* static bat properties */
-	sht GDKversion;		/* FIRST! */
 	bat batCacheid;		/* index into BBP */
 
 	/* dynamic column properties */
@@ -944,6 +943,7 @@ next to each other in the @%BATstore@ type.
 @h
 typedef struct {
 	BAT B;			/* storage for BAT descriptor */
+	BAT BM;			/* mirror (reverse) BAT */
 	COLrec H;		/* storage for head column */
 	COLrec T;		/* storage for tail column */
 	BATrec P;		/* storage for BATrec */
@@ -1138,10 +1138,10 @@ gdk_export BAT *BATclone(BAT *b, size_t capacity);
 gdk_export BAT *BATextend(BAT *b, size_t newcap);
 
 /* internal */
-gdk_export BAT *BATnewstorage(int ht, int tt, size_t cap);
-gdk_export BAT *BATcreatedesc(int ht, int tt, int heapnames);
+gdk_export BATstore *BATnewstorage(int ht, int tt, size_t cap);
+gdk_export BATstore *BATcreatedesc(int ht, int tt, int heapnames);
 gdk_export int BATfree(BAT *b);
-gdk_export void BATdestroy(BAT *b);
+gdk_export void BATdestroy(BATstore *bs);
 gdk_export chr 	ATOMelmshift(int sz);
 gdk_export void BATsetdims(BAT *b);
 
@@ -1384,8 +1384,6 @@ static INLINE BATiter bat_iterator(BAT *b)
 @tab BATdirty (BAT *b)
 @item int
 @tab BATgetaccess (BAT *b)
-@item int
-@tab BATversion (BAT *b)
 @end multitable
 @
 The function @%BATcount@ returns the number of associations
@@ -1455,15 +1453,14 @@ gdk_export int BATcheckmodes(BAT *b, int persistent);
 			((b)->H->vheap?(b)->H->vheap->dirty:0) || \
 			((b)->T->vheap?(b)->T->vheap->dirty:0))
 
-#define PERSISTENT	4096
-#define SESSION		2048
-#define TRANSIENT	1024
+#define PERSISTENT	3
+#define SESSION		2
+#define TRANSIENT	1
 
 #define BAT_WRITE		0	/* all kinds of access allowed */
 #define BAT_READ		1	/* only read-access allowed */
 #define BAT_APPEND		2	/* only reads and appends allowed */
 
-#define BATversion(b)	(b)->GDKversion
 #define BATcapacity(b)	(b)->batCapacity
 @
 @}
@@ -1530,8 +1527,6 @@ gdk_export BAT *BATgroup(BAT *b, int start, int incr, int grpsize);
 @tab BATmmap_unpin (BAT *b)
 @item int
 @tab BATdelete (BAT *b)
-@item BAT *
-@tab BATconvert (str name, int direction)
 @end multitable
 @-
 A BAT created by @%BATnew@ is considered temporary until one calls the
@@ -1542,11 +1537,6 @@ columns.
 @
 Failure to read or write the BAT results in a NULL, otherwise it
 returns the BAT pointer.
-@
-The @%BATconvert@ converts a BAT that contains data saved on
-hardware with a different byte order (little endian vs big endian),
-into the correct format. Direction is either CONV_NTOH or CONV_HTON,
-indication conversion from network to host or host to network format.
 @
 MonetDB now has a mmap trim thread that takes care of flushing the
 memory mapped regions when MonetDB starts to consume too much
@@ -2303,7 +2293,6 @@ gdk_export int GDKerrorCount(void);
 #include "gdk_search.h"
 #include "gdk_atoms.h"
 #include "gdk_bbp.h"
-#include "gdk_desc.h"
 #include "gdk_utils.h"
 #include "gdk_bat.h"
 

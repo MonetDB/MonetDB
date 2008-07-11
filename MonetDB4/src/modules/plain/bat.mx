@@ -69,10 +69,6 @@ can be found in this module.
 .COMMAND mirror(BAT[any::1,any]) : BAT[any::1,any::1] = CMDmirror;
 "Returns the head-mirror image of a BAT (two head columns)."
 
-.COMMAND convert(BAT[any::1,any::2] ) : BAT[any::1,any::2] = CMDconvert;
-"Convert the contents of a BAT from little-endian to big-endian and vice versa.
- THIS COMMAND SHOULD NOT BE USED FROM MIL! DANGEROUS! DEBUGGING PURPOSES ONLY!"
-
 .COMMAND order(BAT[any::1,any::2] b) : BAT[any::1,any::2] = CMDorder;
 "Sorts the BAT itself, in place, on ascending head values. Returns b."
 
@@ -727,14 +723,6 @@ CMDmirror(BAT **ret, BAT *b)
 }
 
 int
-CMDconvert(BAT **ret, BAT *b)
-{
-	if (BATconvert(*ret = b, CONV_HTON) == NULL)
-		BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
 CMDrevert(BAT **ret, BAT *b)
 {
 	if (BATrevert(*ret = b) == NULL)
@@ -1361,7 +1349,6 @@ CMDinfo(BAT **retval, BAT *b)
 		accessmode = "unknown";
 	}
 
-	BUNins(bn, "version", local_itoa((ssize_t)(b->GDKversion)),FALSE);
 	BUNins(bn, "batId", BATgetId(b),FALSE);
 	BUNins(bn, "batCacheid", local_itoa((ssize_t)(b->batCacheid)),FALSE);
 	BUNins(bn, "hparentid", local_itoa((ssize_t)(b->H->parentid)),FALSE);
@@ -1926,6 +1913,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
         char *chk;
 	BUN p, q;
 	BAT *bn;
+	BATstore *bs;
 	MT_mmap_hdl hdl;
 
    	/* try to use fast page-wise memory mapping technique on read-only mmapped [void,X] bats */ 
@@ -1980,7 +1968,9 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 	GDKfree(chk);
 
 	/* create result bat descriptor */
-	*res = bn = BATcreatedesc(TYPE_void, b->ttype, TRUE); 
+	bs = BATcreatedesc(TYPE_void, b->ttype, TRUE);
+	bn = bs ? &bs->B : NULL;
+	*res = bn; 
 	bni = bat_iterator(bn);
 	if (bn == NULL) return GDK_FAIL;
         BATinit_idents(bn);
@@ -2064,7 +2054,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 			fix(BUNtail(bni, p));
 		}
 	}
-	BBPcacheit(bn);
+	BBPcacheit(bs);
 	if (mmappath) {
 		/* if copy-on-write was used, make bn a logical view on b */
 		bn->P->lview = TRUE;

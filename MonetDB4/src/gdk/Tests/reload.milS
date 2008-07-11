@@ -31,4 +31,8 @@ bat("MMO_location").insert(oid(4),"http://www.ibiblio.org/javafaq/");
 bat("MMO_location").print();
 }
 
+# clean up
+bat("MMO_location").persists(false);
+commit();
+
 quit();
