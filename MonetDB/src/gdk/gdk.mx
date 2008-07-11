@@ -892,16 +892,16 @@ typedef struct {
 	str id;			/* label for head/tail column */
 
 	unsigned short width;	/* byte-width of the atom array */
-	bit varsized;		/* varsized(>0) or fixedsized(0). */
 	chr type;		/* type id. */
 	chr shift;		/* log2 of bunwidth */
 	bit sorted;		/* 0=false, 1=true; */
 	unsigned char 
+	 varsized:1,		/* varsized(>0) or fixedsized(0). */
 	 key:2,			/* duplicates allowed? */
 	 dense:1,		
 	 nonil:1, 		/* nonil isn't propchecked yet */
 	 nil:1,			/* nil is set when we found one nil (propcheck) */
-	 unused:3; 
+	 unused:2; 
 	oid align;		/* OID for sync alignment */
 	size_t nosorted_rev;	/* position that proves sorted_rev==FALSE */
 	size_t nokey[2];	/* positions that prove key ==FALSE */
