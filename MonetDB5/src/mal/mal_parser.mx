@@ -1723,9 +1723,10 @@ parseTuple(Client cntxt) {
 	int fd;
 	FILE *f= 0;
 	char  buf[MAXPATHLEN]="monetXXXXXX",*fname= buf;
+	char *tmp = mktemp(fname);
 	int c;
 
-	fd= mkstemp(fname);
+	fd = open(tmp, O_RDWR|O_CREAT|O_EXCL, 0600);
 	if (fd < 0)
 		showException(SYNTAX, "no temp file", "");
 	else 

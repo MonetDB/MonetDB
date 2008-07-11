@@ -1958,7 +1958,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	size_t nElements;
 	BAT *b = NULL, *e = NULL;
 	BAT *bn = NULL;
-	BATiter ei, bi, bni;
+	BATiter ei, bi;
 	size_t off, idx = 0;
 	int *cnt;
 	@1 zero = (@1) 0;
@@ -1988,7 +1988,6 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	ALIGNsetH(bn, e);
 	ei = bat_iterator(e);
 	bi = bat_iterator(b);
-	bni = bat_iterator(bn);
 	cnt = (int*) GDKmalloc(nElements*sizeof(int));
 	if (cnt == NULL) {
 		BBPreclaim(bn);
