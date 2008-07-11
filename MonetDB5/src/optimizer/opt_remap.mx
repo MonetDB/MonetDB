@@ -65,7 +65,7 @@ address OPTremapMultiplex;
 
 /* #define DEBUG_OPT_REMAP       trace its behavior */
 
-opt_export str OPTremapMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str OPTremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @-
 The first attempt of the multiple optimizer is to locate
@@ -151,7 +151,7 @@ find an instruction that does not have a multiplex
 counterpart.
 @c
 static int 
-OPTmultiplexInline( MalBlkPtr mb, InstrPtr p, int pc )
+OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 {
 	MalBlkPtr mq;
 	InstrPtr q,sig;
@@ -276,7 +276,7 @@ an upgrade and resolve it afterwards.
 					setModuleId(q,putName(buf,strlen(buf)));
 
 					/* now see if we can resolve the instruction */
-					typeChecker(MCgetClient()->nspace,mq,q,TRUE);
+					typeChecker(cntxt->nspace,mq,q,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
 					break;
@@ -290,7 +290,7 @@ an upgrade and resolve it afterwards.
 					q= pushArgument(mq,q, getArg(q,1));
 					getArg(q,1)= refbat;
 				
-					typeChecker(MCgetClient()->nspace,mq,q,TRUE);
+					typeChecker(cntxt->nspace,mq,q,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
 					break;
@@ -408,7 +408,7 @@ geared at handling the PSM code.
 				printInstruction(cntxt->fdout,mb,p,LIST_MAL_ALL);
 #endif
 				pushInstruction(mb, p);
-				if( OPTmultiplexInline(mb,p,mb->stop-1) )
+				if( OPTmultiplexInline(cntxt,mb,p,mb->stop-1) )
 					doit++;
 #ifdef DEBUG_OPT_REMAP
 				stream_printf(cntxt->fdout,"doit %d\n",doit);
@@ -490,8 +490,7 @@ geared at handling the PSM code.
 }
 
 str
-OPTremapMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	Client cntxt= MCgetClient();
+OPTremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) mb;
 	(void)stk;
 	(void) p;

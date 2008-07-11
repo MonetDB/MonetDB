@@ -138,15 +138,15 @@ language_export str MALassertOid(int *ret, oid *val, str *msg);
 language_export str MALassertSht(int *ret, sht *val, str *msg);
 language_export str MALassertInt(int *ret, int *val, str *msg);
 language_export str MALassertLng(int *ret, lng *val, str *msg);
-language_export str MALstartDataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDregisterFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDevalFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str CMDincludeFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDdebug(int *ret, int *flg);
-language_export str MALassertTriple(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-language_export str MALsafeguardStack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+language_export str MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+language_export str MALsafeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* _LANGUAGE_H */
 @c
 
@@ -204,7 +204,8 @@ MALassertStr(int *ret, str *val, str *msg){
 }
 
 str
-MALassertTriple(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) p;
@@ -212,8 +213,9 @@ MALassertTriple(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 }
 
 str 
-MALsafeguardStack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+MALsafeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	(void) cntxt;
 	return safeguardStack(mb, stk, p);
 }
 
@@ -230,7 +232,7 @@ identifier and argument value)
 @- Input redirectionrs
 @c
 str
-CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *s;
 
@@ -238,20 +240,22 @@ CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = (str *) getArgReference(stk, pci, 1);
 	if (strlen(*s) == 0)
 		return MAL_SUCCEED;
-	callString(MCgetClient(), *s, FALSE);
+	callString(cntxt, *s, FALSE);
 	return MAL_SUCCEED;
 }
 
 str
-MALstartDataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg= MAL_SUCCEED;
 	int *ret = (int*) getArgReference(stk,pci,0);
+
+	(void) cntxt;
 	if (pci == NULL || stk == NULL) {
 		*ret = 1; /* ignore dataflow request */
 		return MAL_SUCCEED;
 	}
-	msg = runMALdataflow(MCgetClient(), mb, getPC(mb,pci), pci->jump, stk, 0, pci);
+	msg = runMALdataflow(cntxt, mb, getPC(mb,pci), pci->jump, stk, 0, pci);
 	if (msg == MAL_SUCCEED)
 		*ret = -1;
 	return msg;
@@ -259,9 +263,8 @@ MALstartDataflow( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str 
-CMDregisterFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c;
 	Symbol sym= NULL;
 	int *ret = (int *) getArgReference(stk,pci,0);
 	str *mod = (str *) getArgReference(stk,pci,1);
@@ -271,15 +274,14 @@ CMDregisterFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr sig;
 	str msg;
 
-	c= MCgetClient();
-	msg= compileString(&sym, c,*code);
+	msg= compileString(&sym, cntxt,*code);
 	if( sym) {
-		stream_printf(c->fdout,"REGISTER FUNCTIOn %s.%s\n",
+		stream_printf(cntxt->fdout,"REGISTER FUNCTIOn %s.%s\n",
 			getModuleId(sym->def->stmt[0]), getFunctionId(sym->def->stmt[0]));
 		mb= sym->def;
 		if( help)
 			mb->help= GDKstrdup(*help);
-		printFunction(c->fdout, mb,0);
+		printFunction(cntxt->fdout, mb,0);
 		sig= getSignature(sym);
 		renameFunction( getModuleId(sig), getFunctionId(sig), 
 			putName(*mod, strlen(*mod)), putName(*fcn,strlen(*fcn)));
@@ -288,10 +290,9 @@ CMDregisterFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 str
-CMDevalFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str s = *(str *) getArgReference(stk,pci,1);
-	Client c = MCgetClient();
 	char *msg = NULL;
 	(void) mb;
 
@@ -304,11 +305,10 @@ CMDevalFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		strcpy(buf, monet_cwd);
 		strcat(buf, "/");
 		strcat(buf, s);
-		msg = evalFile(c, buf, 0);
+		msg = evalFile(cntxt, buf, 0);
 		GDKfree(buf);
-	} else {
-		msg = evalFile(c, s, 0);
-	}
+	} else 
+		msg = evalFile(cntxt, s, 0);
 	return msg;
 }
 @-
@@ -316,8 +316,9 @@ Calling a BAT is simply translated into a concatenation of
 all the unquoted strings and then passing it to the callEval.
 @c
 str
-CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -325,8 +326,9 @@ CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDincludeFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */

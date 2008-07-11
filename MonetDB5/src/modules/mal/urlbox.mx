@@ -111,21 +111,21 @@ urlbox.prelude();
 #define urlbox_export extern
 #endif
 
-urlbox_export str URLBOXprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXreleaseOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXdiscardOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXdiscardAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXreleaseOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXdiscardOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXdiscardAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+urlbox_export str URLBOXhasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _URL_BOX_H */
 
 @- Module initializaton
@@ -146,11 +146,12 @@ static int urlDepth = 0;
 static BAT *urlBAT[MAXURLDEPTH];
 
 str
-URLBOXprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 	int depth;
 
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -169,8 +170,9 @@ URLBOXprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @- Operator implementation
 @c
 str
-URLBOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -181,8 +183,9 @@ URLBOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-URLBOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -193,10 +196,11 @@ URLBOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-URLBOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -343,12 +347,13 @@ URLBOXdepositFile(int *r, str *fnme){
 	return MAL_SUCCEED;
 }
 str
-URLBOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str url;
 	Box box;
 	char tuple[2048];
 
+	(void) cntxt;
 	(void) mb;
 	@:OpenBox(deposit)@
 	url = (str) getArgValue(stk, pci, 1);
@@ -359,11 +364,12 @@ URLBOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-URLBOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str url, parts[MAXURLDEPTH];
 	Box box;
 
+	(void) cntxt;
 	@:OpenBox(take)@
 	url = (str) getArgValue(stk, pci, 1);
 	url = GDKstrdup(url);
@@ -374,11 +380,12 @@ URLBOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-URLBOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 
 	@:OpenBox(release)@
@@ -388,11 +395,12 @@ URLBOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 str
-URLBOXreleaseOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXreleaseOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 
 	@:OpenBox(release)@
@@ -403,10 +411,11 @@ URLBOXreleaseOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-URLBOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -416,11 +425,12 @@ URLBOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-URLBOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(discard)@
 	name = (str) getArgValue(stk, pci, 1);
@@ -429,11 +439,12 @@ URLBOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 str
-URLBOXdiscardOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXdiscardOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(discard)@
 	name = (str) getArgValue(stk, pci, 1);
@@ -442,11 +453,12 @@ URLBOXdiscardOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 str
-URLBOXdiscardAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXdiscardAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(discard)@
 	name = (str) getArgValue(stk, pci, 1);
@@ -456,13 +468,14 @@ URLBOXdiscardAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-URLBOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 	int i, len = 0;
 	ValPtr v;
 	str nme, s = 0;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(toString)@
 	nme = (str) getArgValue(stk, pci, 1);
@@ -482,12 +495,13 @@ URLBOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-URLBOXnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 	lng *cursor;
 	ValPtr v;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(iterator)@
 	cursor = (lng *) getArgValue(stk, pci, 0);
@@ -497,12 +511,13 @@ URLBOXnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-URLBOXhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+URLBOXhasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 	lng *cursor;
 	ValPtr v;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(iterator)@
 	cursor = (lng *) getArgValue(stk, pci, 0);

@@ -239,7 +239,6 @@ mal_export int nextBoxElement(Box box, lng *cursor, ValPtr v);
 mal_export stream *prepareSaveBox(Box box, str *boxfile, str *boxfilebak);
 mal_export void printSomeBox(stream *fd, int k);
 mal_export void printBox(stream *fd, Box obj);
-mal_export void freeBoxes(void);
 #endif /* _MAL_BOX_H */
 @-
 The hierarchy of object spaces ends at the root of the tree.
@@ -300,10 +299,10 @@ newBox(str name)
 
 }
 
-void
-freeBox(int i){
+static void
+freeBox(Client cntxt, int i){
 		if (box[i]) {
-			garbageCollector(MCgetClient(), box[i]->sym, box[i]->val,TRUE);
+			garbageCollector(cntxt, box[i]->sym, box[i]->val,TRUE);
 			GDKfree(box[i]->name);
 			freeMalBlk(box[i]->sym);
 			GDKfree(box[i]->val);
@@ -312,12 +311,12 @@ freeBox(int i){
 		}
 }
 void
-freeBoxes()
+freeBoxes(Client cntxt)
 {
 	int i;
 
 	for (i = 0; i < MAXSPACES; i++)
-		freeBox(i);
+		freeBox(cntxt, i);
 }
 
 Box
@@ -721,8 +720,9 @@ loadBox(str name)
 	stream_printf(GDKout, "loadBox:start loading the file %s\n", boxfile);
 #endif
 	if (access(boxfile, R_OK) == 0) {
-		Client child= MCforkClient(MCgetClient());
-		if( child != MCgetClient()){
+		Client cntxt= MCgetClient();
+		Client child= MCforkClient(cntxt);
+		if( child != cntxt){
 			defaultScenario(child);
 			evalFile(child, boxfile, 0);
 			MCcloseClient(child);

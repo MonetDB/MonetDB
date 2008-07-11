@@ -732,17 +732,18 @@ PQtopn_@1@2(int *ret, int *bid, int *N){
 
 @= PQany
 /* int PQenqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)*/
-pqueue_export str PQenqueue_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str  PQenqueue_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+pqueue_export str PQenqueue_any@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str  PQenqueue_any@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int tpe;
 	BAT *h;
 	oid *idx;
 	ptr el;
+	(void) cntxt;
 
-        if( p->argc != 4 || 
-	    getArgType(mb,p,1) != TYPE_bat || 
-	    getArgType(mb,p,2) != TYPE_oid) 
+	if( p->argc != 4 || 
+		getArgType(mb,p,1) != TYPE_bat || 
+		getArgType(mb,p,2) != TYPE_oid) 
 		throw(MAL, "enqueue_@1", "type mismatch\n");
 	tpe = getArgType(mb,p,3);
 
@@ -757,15 +758,17 @@ str  PQenqueue_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 /* int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe) */
-pqueue_export str PQtopreplace_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str  PQtopreplace_any@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+pqueue_export str PQtopreplace_any@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str  PQtopreplace_any@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int tpe;
 	BAT *h;
 	oid *idx;
 	ptr el;
 
-        if( p->argc != 4 || 
+	(void) cntxt;
+
+	if( p->argc != 4 || 
 	    getArgType(mb,p,1) != TYPE_bat || 
 	    getArgType(mb,p,2) != TYPE_oid) 
 		throw(MAL, "topreplace_@1", "type mismatch\n");

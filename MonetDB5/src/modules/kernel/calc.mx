@@ -752,9 +752,9 @@ CALCunarybitNOT(bit *retval, bit *value)
 calc_export str CALCswitchbit(ptr retval, bit *b, ptr v1, ptr v2);
 str
 */
-calc_export str CALCswitchbit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+calc_export str CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str 
-CALCswitchbit(MalBlkPtr mb, MalStkPtr stk, InstrPtr P)
+CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr P)
 {
 	ptr p;
 	ptr retval = getArgReference(stk,P,0);
@@ -762,6 +762,7 @@ CALCswitchbit(MalBlkPtr mb, MalStkPtr stk, InstrPtr P)
 	int t1 = getArgType(mb, P, 2);
 	int t2 = getArgType(mb, P, 3);
 
+	(void) cntxt;
 	if (t1 != t2)
 		throw(MAL, "ifthenelse", "types should match\n");
 

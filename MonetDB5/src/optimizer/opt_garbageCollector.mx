@@ -168,7 +168,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 {
 	int i, j, k, limit,slimit, done;
 	InstrPtr p, q, *old;
-	Module s = MCgetClient()->nspace;
+	Module s = cntxt->nspace;
 	int actions = 0;
 	Lifespan span;
 

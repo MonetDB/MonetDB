@@ -82,13 +82,12 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 {
 	InstrPtr p;
 	int first=0, nxt, i, j, k, limit, done=0, again=0;
-	Client c= MCgetClient();
 	MalStkPtr env = NULL;
 	str msg;
-	int debugstate= c->itrace;
+	int debugstate= cntxt->itrace;
 	Lifespan span;
 
-	c->itrace= 0;
+	cntxt->itrace= 0;
 	(void) stk;
 	(void) pci;
 
@@ -120,7 +119,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			printInstruction(cntxt->fdout, mb, p, LIST_MAL_ALL);	
 #endif
 			if( j && p->retc== 1 && p->barrier == 0 &&
-				getLastUpdate(span,getArg(p,0)) == i  && !isUnsafeFunction(p)){ msg = reenterMAL(c,mb,i,i+1,env,0,0);
+				getLastUpdate(span,getArg(p,0)) == i  && !isUnsafeFunction(p)){ msg = reenterMAL(cntxt,mb,i,i+1,env,0,0);
 #ifdef DEBUG_OPT_CX
 				stream_printf(cntxt->fdout,"result:%s\n",msg==MAL_SUCCEED?"ok":msg);
 #endif
@@ -156,7 +155,7 @@ a constant itself.
 	} while( again );
 	GDKfree(span);
 	freeStack(env);
-	c->itrace= debugstate;
+	cntxt->itrace= debugstate;
 	return 1;
 }
 @include optimizerWrapper.mx

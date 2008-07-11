@@ -105,10 +105,10 @@ comment "return the BUN tail value using the cursor.";
 
 chopper_export str CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule);
 chopper_export str CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule);
-chopper_export str CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-chopper_export str CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-chopper_export str CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-chopper_export str CHPgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+chopper_export str CHPbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+chopper_export str CHPbunHasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+chopper_export str CHPgetHead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+chopper_export str CHPgetTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @-
 We start with the large chunk iterator.
@@ -186,7 +186,7 @@ variable. If it returns zero the control variable has been reset
 to zero and end of stream has been reached.
 @c
 str
-CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CHPbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *b;
@@ -196,6 +196,7 @@ CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ValPtr head, tail;
 	oid o;
 
+	(void) cntxt;
 	cursor = (lng *) getArgReference(stk, pci, 0);
 	head = &stk->stk[pci->argv[1]];
 	tail = &stk->stk[pci->argv[2]];
@@ -228,7 +229,7 @@ CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CHPbunHasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BATiter bi;
 	BAT *b;
@@ -238,6 +239,7 @@ CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ValPtr head, tail;
 	oid o;
 
+	(void) cntxt;
 	cursor = (lng *) getArgReference(stk, pci, 0);
 	head = &stk->stk[pci->argv[1]];
 	tail = &stk->stk[pci->argv[2]];
@@ -279,7 +281,7 @@ the extended BAT iterator, because then it can re-use the
 BAT descriptor.
 @c
 str
-CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CHPgetHead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
 	lng *cursor;
@@ -288,6 +290,7 @@ CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ValPtr head;
 	oid o;
 
+	(void) cntxt;
 	cursor = (lng *) getArgReference(stk, pci, 2);
 	bid = (int *) getArgReference(stk, pci, 1);
 	head = &stk->stk[pci->argv[0]];
@@ -314,7 +317,7 @@ CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CHPgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CHPgetTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
  	BATiter bi; 
 	BAT *b;
@@ -323,6 +326,7 @@ CHPgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int limit;
 	ValPtr tail;
 
+	(void) cntxt;
 	cursor = (lng *) getArgReference(stk, pci, 2);
 	bid = (int *) getArgReference(stk, pci, 1);
 	tail = &stk->stk[pci->argv[0]];

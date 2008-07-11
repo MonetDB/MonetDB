@@ -511,8 +511,8 @@ comment "Handle simple replacements";
 #endif
 
 opt_export str MALoptimizer(Client c);
-opt_export int optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag);
-opt_export str optimizeMALBlock(MalBlkPtr mb);
+opt_export int optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int flag);
+opt_export str optimizeMALBlock(Client cntxt, MalBlkPtr mb);
 opt_export void showOptimizerStep(str fnme,int i, int flg);
 opt_export void showOptimizerHistory(void);
 
@@ -609,9 +609,8 @@ for the future using an additional flag.
 #define OPT_CHECK_ALL (OPT_CHECK_FLOW | OPT_CHECK_TYPES | OPT_CHECK_DECL )
 @c
 int
-optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag)
+optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int flag)
 {
-	Client cntxt = MCgetClient();
 	if( actions > 0){
 		if( flag & OPT_CHECK_TYPES) chkTypes(cntxt->nspace, mb);
 		if( flag & OPT_CHECK_FLOW) chkFlow(mb);
@@ -626,7 +625,7 @@ optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec, int flag)
 			removeInstruction(mb,p);
 		newComment(mb,buf);
 		if (mb->errors) {
-			showErrors();
+			showErrors(cntxt);
 			GDKwarning( "Optimizer %s failed\n", name);
 		}
 	}
@@ -649,7 +648,7 @@ recursion, provided the optimizer does not itself generate
 a growing list.
 @c
 str
-optimizeMALBlock(MalBlkPtr mb)
+optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 {
 	InstrPtr p;
 	int pc, qot = 0;
@@ -665,12 +664,12 @@ optimizeMALBlock(MalBlkPtr mb)
 			if (getModuleId(p) == optimizerRef && p->fcn) {
 				/* all optimizers should behave like patterns */
 				/* However, we don;t have a stack now */
-				msg = (str) (*p->fcn) (mb, 0, p);
+				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
 					str place = getExceptionPlace(msg);
 					showException(getExceptionType(msg), place, getExceptionMessage(msg));
 					GDKfree(place);
-					showErrors();
+					showErrors(cntxt);
 					return msg;
 				}
 				pc= -1;
@@ -691,7 +690,7 @@ MALoptimizer(Client c)
 {
 	str msg;
 
-	msg= optimizeMALBlock(c->curprg->def);
+	msg= optimizeMALBlock(c, c->curprg->def);
 	if( msg == MAL_SUCCEED)
 		OPTmultiplexSimple(c);
 	return msg;

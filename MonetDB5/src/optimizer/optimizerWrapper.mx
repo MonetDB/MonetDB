@@ -27,18 +27,17 @@ The wrapper expects the optimizers to return the number of
 actions taken, i.e. number of succesful changes to the code.
 @{
 @= exportOptimizer
-opt_export str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @= wrapOptimizer
 /* #define _DEBUG_OPTIMIZER_*/
 
-str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme;
 	str fcnnme;
 	Symbol s= NULL;
 	lng t,clk= GDKusec();
 	int actions = 0;
-	Client cntxt= MCgetClient();
 
 	optimizerInit();
 	if( p )
@@ -87,7 +86,7 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	stream_printf(cntxt->fdout,"finished @1 %d\n",actions);
 	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
 #endif
-    optimizerCheck(mb, "optimizer.@1", actions, t=(GDKusec() - clk),@2);
+    optimizerCheck(cntxt, mb, "optimizer.@1", actions, t=(GDKusec() - clk),@2);
 	QOTupdateStatistics("@1",actions,t);
 	addtoMalBlkHistory(mb,"@1");
 	return MAL_SUCCEED;

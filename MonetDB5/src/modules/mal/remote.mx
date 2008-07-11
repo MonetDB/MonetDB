@@ -89,6 +89,7 @@ comment "Release the resources held by the remote module";
 
 
 #remote.prelude();
+@{
 @-
 
 @- Implementation
@@ -436,7 +437,7 @@ pattern serveget(ident:str):void
 address RMTserveget
 comment "Prints a description of the given identifier";
 @h
-remote_export str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+remote_export str RMTserveget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 /**
  * serveget prints a descriptive string for the given identifier ident.
@@ -451,14 +452,14 @@ remote_export str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
  * str tail and one BUN:
  * [ "bat", "oid", "str", 1 ]
  */
-str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+str RMTserveget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int i;
 	str name;
 	VarPtr n;
 	ValPtr v;
 	char ret[256];
-	Client c = MCgetClient();
 
+	(void) cntxt;
 	name = (str)getArgValue(stk, pci, 1);
 	i = findVariable(mb, name);
 	if (i < 0)
@@ -506,26 +507,28 @@ str RMTserveget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	}
 	ret[255] = '\0';
 
-	stream_printf(c->fdout, "%s\n", ret);
+	stream_printf(cntxt->fdout, "%s\n", ret);
 
 	return(MAL_SUCCEED);
 }
+@}
 
 @mal
 pattern get(conn:str, ident:str):any
 address RMTget
 comment "Retrieves and returns the object referenced by ident from conn";
 @h
-remote_export str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+remote_export str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 /**
  * get fetches the object referenced by ident over connection conn.
  */
-str RMTget(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, ident, tmp;
 	connection c;
 
-	(void)mb;
+	(void) cntxt;
+	(void) mb;
 
 	conn = (str)getArgValue(stk, pci, 1);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
@@ -549,7 +552,7 @@ pattern getnextid():void
 address RMTgetnextid
 comment "Prints the next unique local identifier";
 @h
-remote_export str RMTgetnextid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+remote_export str RMTgetnextid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 static unsigned int _remote_object_counter = 0;
 /**
@@ -562,13 +565,12 @@ static unsigned int _remote_object_counter = 0;
  * identifier.  The current prefix is "remote_put_object_" which should
  * reduce possible conflicts to a minimum.
  */
-str RMTgetnextid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str RMTgetnextid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret= (int*) getArgReference(stk,pci,0);
-	Client c = MCgetClient();
 	(void) mb;
 
-	stream_printf(c->fdout, "[ \"remote_put_object_%d\"\t]\n",
+	stream_printf(cntxt->fdout, "[ \"remote_put_object_%d\"\t]\n",
 			_remote_object_counter++);
 
 	*ret = 0;
@@ -580,17 +582,18 @@ pattern put(conn:str, object:any):str
 address RMTput
 comment "Stores object on host and returns its identifier on host";
 @h
-remote_export str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+remote_export str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 /**
  * stores the given object on the remote host.  The identifier of the
  * object on the remote host is returned for later use.
  */
-str RMTput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, tmp, ident;
 	connection c;
 	ValPtr v;
 
+	(void) cntxt;
 	conn = (str)getArgValue(stk, pci, 1);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.put", "connection name is NULL or nil");
@@ -625,7 +628,7 @@ pattern exec(conn:str, mod:str, func:str...):any
 address RMTexec
 comment "Executes function mod.func over conn using the given arguments and returns its result";
 @h
-remote_export str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+remote_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 /**
  * exec executes the function with its given arguments on the remote
@@ -638,13 +641,14 @@ remote_export str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
  * calling of the function on the remote site) is not possible using get
  * or put calls.
  */
-str RMTexec(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, mod, func, ident, arg, tmp;
 	int i, len;
 	connection c;
 	char qbuf[512];	/* FIXME: make this dynamic */
 	MapiHdl mhdl;
 
+	(void) cntxt;
 	(void)mb;
 
 	conn = (str)getArgValue(stk, pci, 1);

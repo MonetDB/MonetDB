@@ -123,7 +123,7 @@ comment "Inverse macro, find pattern and replace with a function call.";
 
 /* #define DEBUG_OPT_MACRO*/
 
-opt_export str MACROprocessor(MalBlkPtr mb, Symbol t);
+opt_export str MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t);
 opt_export int inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc);
 @-
 @c
@@ -353,14 +353,16 @@ MACROvalidate(MalBlkPtr mb)
 }
 
 str
-MACROprocessor(MalBlkPtr mb, Symbol t)
+MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 {
 	InstrPtr q;
 	int i, cnt = 0, last = -1;
 	str msg = MAL_SUCCEED;
 
 #ifdef DEBUG_OPT_MACRO
-	printf("calling the MACRO processor\n");
+	stream_printf(cntxt->fdout,"calling the MACRO processor\n");
+#else
+	(void) cntxt;
 #endif
 	if (t == NULL)
 		return msg;
@@ -372,7 +374,7 @@ MACROprocessor(MalBlkPtr mb, Symbol t)
 		if (getFunctionId(q) && idcmp(getFunctionId(q), t->name) == 0 && 
 			getSignature(t)->token == FUNCTIONsymbol) {
 #ifdef DEBUG_OPT_MACRO
-			printf("Hit, replace macro call %s\n", t->name);
+			stream_printf(cntxt->fdout,"Hit, replace macro call %s\n", t->name);
 #endif
 			if (i == last)
 				throw(MAL, "optimizer.MACROoptimizer", "duplicate macro expansion");
@@ -466,7 +468,7 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 }
 
 static str
-ORCAMprocessor(MalBlkPtr mb, Symbol t)
+ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 {
 	MalBlkPtr mc = t->def;
 	int i;
@@ -489,7 +491,7 @@ ORCAMprocessor(MalBlkPtr mb, Symbol t)
 			else
 				break;
 		}
-	chkProgram(MCgetClient()->nspace, mb);
+	chkProgram(cntxt->nspace, mb);
 	return msg;
 }
 
@@ -500,7 +502,7 @@ functions, regardless their
 @c
 @= implementation
 static int
-OPT@1Implementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPT@1Implementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	MalBlkPtr target= mb;
 	Module s;
@@ -525,7 +527,7 @@ OPT@1Implementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		mod= getArgDefault(mb,p,3);
 		fcn= getArgDefault(mb,p,4);
 	}
-	s = findModule(MCgetClient()->nspace, putName(mod, strlen(mod)));
+	s = findModule(cntxt->nspace, putName(mod, strlen(mod)));
 	if (s == 0)
 		return 0;
 	if (s->subscope) {
@@ -533,7 +535,7 @@ OPT@1Implementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for (t = s->subscope[j]; t != NULL; t = t->peer)
 			if (t->def->errors == 0) {
 				if (getSignature(t)->token == FUNCTIONsymbol)
-					@2processor(target, t);
+					@2processor(cntxt, target, t);
 			}
 	}
 	return 1;
@@ -556,14 +558,13 @@ actions taken, i.e. number of succesful changes to the code.
 This code is slightly different from other optimizer
 wrappers, because the mod.fcn argument is optional.
 @= exportOptimizer
-opt_export str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @= wrapOptimizer
-str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol t;
 	str msg,mod,fcn;
 	lng clk= GDKusec();
-	Client cntxt= MCgetClient();
 	int actions = 0;
 
 	optimizerInit();
@@ -585,7 +586,7 @@ str OPT@1(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		actions= OPT@1Implementation(cntxt,mb,stk,p);
 	if( p )
 		removeInstruction(mb, p);
-    optimizerCheck(mb, "optimizer.@1", actions, GDKusec() - clk, OPT_CHECK_ALL);
+    optimizerCheck(cntxt,mb, "optimizer.@1", actions, GDKusec() - clk, OPT_CHECK_ALL);
 	return MAL_SUCCEED;
 }
 @h

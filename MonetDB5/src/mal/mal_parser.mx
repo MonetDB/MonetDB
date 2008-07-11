@@ -1287,7 +1287,7 @@ This scheme is intended for just-in-time compilation.
 		return (MalBlkPtr) parseError(cntxt,"'address' expected\n");
 	}
 	@:helpInfo(curBlk->help)@
-	showErrors();
+	showErrors(cntxt);
 	if(curBlk && cntxt->listing) 
 		printFunction(cntxt->fdout, curBlk, cntxt->listing);
 	return curBlk;
@@ -1369,7 +1369,7 @@ int parseEnd(Client cntxt)
 		skipToEnd(cntxt);
 		if(showit && cntxt->listing) 
 			printFunction(cntxt->fdout, curBlk, cntxt->listing);
-		showErrors();
+		showErrors(cntxt);
 		return 1;
 	}
 	return 0;

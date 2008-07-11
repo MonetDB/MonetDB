@@ -102,19 +102,19 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #define be_export extern
 #endif
 
-be_export str CMDBATsetGarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+be_export str CMDBATsetGarbage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDBATflush(int *res, int *bid);
 be_export str CMDBATreduce(int *ret, int *bid);
-be_export str CMDBATclone(MalBlkPtr m, MalStkPtr s, InstrPtr p);
-be_export str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p);
-be_export str CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p);
+be_export str CMDBATclone(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
+be_export str CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
+be_export str CMDBATnewDerived(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 be_export str CMDBATderivedByName(int *ret, str *nme);
-be_export str CMDBATnewint(MalBlkPtr m, MalStkPtr s, InstrPtr p);
-be_export str CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+be_export str CMDBATnewint(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
+be_export str CMDBBPproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDBBPprojectNil(int *ret, int *bid);
-be_export str CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDsetBase(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+be_export str CMDbatunpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+be_export str CMDbatpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+be_export str CMDsetBase(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @-
 Access to a box calls for resolving the first parameter
@@ -136,12 +136,13 @@ Note that we clear the dirty bit to ensure that
 the BAT is not written back to store before being freed.
 @c
 str
-CMDBATsetGarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDBATsetGarbage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *bid;
 	BAT *b;
 
 	(void) mb;
+	(void) cntxt;
 	bid = (int *) getArgValue(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		throw(MAL, "bbp.setGarbage", "Cannot access descriptor");
@@ -202,13 +203,14 @@ CMDBATreduce(int *ret, int *bid)
 The code to enhance the kernel.
 @c
 str
-CMDBATclone(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+CMDBATclone(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	BAT *b, *bn;
 	int bid = 0, cap, ht, tt;
 	int *res;
 
 	(void) m;
+	(void) cntxt;
 
 	bid = *(int *) getArgReference(s, p, 3);
 	if ((b = BATdescriptor(bid)) == NULL) {
@@ -238,12 +240,13 @@ Cloning should include copying of the properties.
 }
 
 str
-CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	int ht, tt;
 	lng cap = 0;
 	int *res;
 
+	(void) cntxt;
 	res = (int *) getArgReference(s, p, 0);
 	ht = getArgType(m, p, 1);
 	tt = getArgType(m, p, 2);
@@ -260,7 +263,7 @@ CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 }
 
 str
-CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
 	int bid, ht, tt;
 	int cap = 0;
@@ -269,7 +272,8 @@ CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	str msg;
 	oid o;
 
-	(void) m;
+	(void) mb;
+	(void) cntxt;
 	res = (int *) getArgReference(s, p, 0);
 	bid = *(int *) getArgReference(s, p, 1);
 	if ((b = BATdescriptor(bid)) == NULL) {
@@ -317,12 +321,13 @@ CMDBATderivedByName(int *ret, str *nme)
 }
 
 str
-CMDBATnewint(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+CMDBATnewint(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	int ht, tt;
 	int cap = 0;
 	int *res;
 
+	(void) cntxt;
 	res = (int *) getArgReference(s, p, 0);
 	ht = getArgType(m, p, 1);
 	tt = getArgType(m, p, 2);
@@ -333,12 +338,13 @@ CMDBATnewint(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 }
 
 str
-CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDBBPproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *result, *bid, tt;
 	ptr *p;
 	BAT *b, *bn;
 
+	(void) cntxt;
 	result = (int *) getArgReference(stk, pci, 0);
 	bid = (int *) getArgReference(stk, pci, 1);
 	p = (ptr *) getArgReference(stk, pci, 2);
@@ -383,13 +389,14 @@ CMDBBPprojectNil(int *ret, int *bid)
 }
 
 str
-CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbatunpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
 	int bid;
 	BUN p;
 	ValPtr head, tail;
 
+	(void) cntxt;
 	bid = *(int *) getArgValue(stk, pci, 2);
 
 	if ((b = BATdescriptor(bid)) == NULL) {
@@ -410,13 +417,14 @@ CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbatpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
 	int *ret;
 	int ht, tt;
 	size_t cap = 0;
 
+	(void) cntxt;
 	ht = getArgType(mb, pci, 1);
 	tt = getArgType(mb, pci, 2);
 	ret = (int *) getArgReference(stk, pci, 0);
@@ -436,12 +444,14 @@ CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDsetBase(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDsetBase(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	oid o= 0;
 	BAT *b;
 	(void) mb;
+	(void) cntxt;
+
 	for( i= pci->retc; i < pci->argc; i++){
 		b= BATdescriptor(*(int*) getArgReference(stk,pci,i));
 		if( b == NULL)

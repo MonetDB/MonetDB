@@ -329,7 +329,7 @@ pattern setDecimal(idx:int,s:int,p:int)
 address TABsetColumnDecimal
 comment "Set the scale and precision for numeric values";
 
-command setTryAll()
+pattern setTryAll()
 address TABsetTryAll
 comment "Skip error lines and assemble an error report";
 pattern setComplaints(b:bat[:oid,:str]) :void
@@ -487,29 +487,29 @@ tablet_export int has_whitespace(char *sep);
 #define CLEAR(X) if(X) {GDKfree(X);X = NULL;}
 #define isScalar(C)  C->adt != TYPE_bat
 
-tablet_export str TABsetFormat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABheader(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABdisplayTable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABdisplayRow(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABpage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetProperties(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABfinishReport(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetPivot(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetComplaints(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetDelimiter(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetColumn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetColumnName(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetTableBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetRowBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetColumnBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetColumnNull(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetColumnWidth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetColumnPosition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetFormat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABheader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABdisplayTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABdisplayRow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABpage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetProperties(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABfinishReport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetPivot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetComplaints(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetDelimiter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetTableBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetRowBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnNull(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnWidth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnPosition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-tablet_export str TABsetColumnDecimal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-tablet_export str TABsetTryAll(int *ret, int *flg);
+tablet_export str TABsetColumnDecimal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnDecimal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABfirstPage(int *ret);
 tablet_export str TABlastPage(int *ret);
 tablet_export str TABnextPage(int *ret);
@@ -549,10 +549,9 @@ static Tablet *tableReports[MAL_MAXCLIENTS];
 
 
 static void
-TABformatPrepare(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABformatPrepare(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 	Tablet *t;
 	int anr = 0, i, tpe, k=0;
 	ptr val;
@@ -574,36 +573,35 @@ TABformatPrepare(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bindVariable(t, anr, getArgName(mb, pci, i), tpe, val, &k);
 	}
 	t->nr_attrs = anr;
-	t->fd = c->fdout;
+	t->fd = cntxt->fdout;
 	t->pivot = 0;
 }
 
 str
-TABsetFormat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetFormat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	TABformatPrepare(mb, stk, pci);
+	(void) cntxt;
+	TABformatPrepare(cntxt, mb, stk, pci);
 	return MAL_SUCCEED;
 }
 
 str
-TABheader(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABheader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 
-	TABformatPrepare(mb, stk, pci);
+	TABformatPrepare(cntxt, mb, stk, pci);
 	TABshowHeader(tableReports[rnr]);
 	return MAL_SUCCEED;
 }
 
 str
-TABdisplayTable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABdisplayTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 	Tablet *t;
 
-	TABheader(mb, stk, pci);
+	TABheader(cntxt, mb, stk, pci);
 	t = tableReports[rnr];
 	if (!isBATVector(t))
 		throw(MAL, "tablet.print", "Only aligned BATs expected");
@@ -616,13 +614,12 @@ TABdisplayTable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABdisplayRow(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABdisplayRow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 	Tablet *t;
 
-	TABheader(mb, stk, pci);
+	TABheader(cntxt, mb, stk, pci);
 	t = tableReports[rnr];
 	if (!isScalarVector(t))
 		throw(MAL, "tablet.print", "Only scalars expected");
@@ -636,13 +633,12 @@ TABdisplayRow(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABpage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABpage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 	Tablet *t;
 
-	TABformatPrepare(mb, stk, pci);
+	TABformatPrepare(cntxt, mb, stk, pci);
 	t = tableReports[rnr];
 	if (t->ttopbrk == 0) {
 		LINE(t->fd, t->rowwidth);
@@ -659,11 +655,10 @@ TABpage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetProperties(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetProperties(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *prop= (str*) getArgReference(stk,pci,1);
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 
 	(void) mb;		/* fool compiler */
 	if (tableReports[rnr] == 0)
@@ -674,8 +669,9 @@ TABsetProperties(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -683,10 +679,9 @@ TABdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABfinishReport(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABfinishReport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 
 	(void) mb;		/* fool compiler */
 	(void) stk;
@@ -701,11 +696,10 @@ TABfinishReport(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str
-TABsetStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	stream **s = (stream **) getArgReference(stk,pci,1);
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 
 	(void) mb;		/* fool compiler */
 	if (tableReports[rnr] == 0)
@@ -715,11 +709,10 @@ TABsetStream(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetPivot(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetPivot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *bid= (int*) getArgReference(stk,pci,1);
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 	BAT *b;
 
 	(void) mb;		/* fool compiler */
@@ -732,11 +725,10 @@ TABsetPivot(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 str
-TABsetComplaints(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetComplaints(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *bid= (int*) getArgReference(stk,pci,1);
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 	BAT *b;
 
 	(void) mb;		/* fool compiler */
@@ -750,11 +742,10 @@ TABsetComplaints(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetDelimiter(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetDelimiter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *sep= (str *) getArgReference(stk,pci,1);
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 
 	(void) mb;		/* fool compiler */
 	if (tableReports[rnr] == 0)
@@ -764,8 +755,9 @@ TABsetDelimiter(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetColumn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetColumn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -773,12 +765,11 @@ TABsetColumn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetColumnName(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetColumnName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *idx= (int *) getArgReference(stk,pci,1);
 	str *s= (str *) getArgReference(stk,pci,2);
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
@@ -787,12 +778,11 @@ TABsetColumnName(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetTableBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetTableBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *lbrk= (str *) getArgReference(stk,pci,1);
 	str *rbrk= (str *) getArgReference(stk,pci,2);
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, MAXARG);
@@ -802,12 +792,11 @@ TABsetTableBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetRowBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetRowBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *lbrk= (str *) getArgReference(stk,pci,1);
 	str *rbrk= (str *) getArgReference(stk,pci,2);
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, MAXARG);
@@ -817,13 +806,12 @@ TABsetRowBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetColumnBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetColumnBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *idx= (int *) getArgReference(stk,pci,1);
 	str *lbrk= (str *) getArgReference(stk,pci,2);
 	str *rbrk= (str *) getArgReference(stk,pci,3);
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
@@ -833,12 +821,11 @@ TABsetColumnBracket(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetColumnNull(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetColumnNull(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *idx= (int *) getArgReference(stk,pci,1);
 	str *nullstr= (str *) getArgReference(stk,pci,2);
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
@@ -847,12 +834,11 @@ TABsetColumnNull(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetColumnWidth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetColumnWidth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *idx= (int *) getArgReference(stk,pci,1);
 	int *width= (int *) getArgReference(stk,pci,2);
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
@@ -861,13 +847,12 @@ TABsetColumnWidth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetColumnPosition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetColumnPosition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *idx= (int *) getArgReference(stk,pci,1);
 	int *first= (int *) getArgReference(stk,pci,2);
 	int *width= (int *) getArgReference(stk,pci,3);
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 
 	(void) mb;
 	(void) first;		/* fool compiler */
@@ -878,13 +863,12 @@ TABsetColumnPosition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetColumnDecimal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TABsetColumnDecimal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *idx= (int *) getArgReference(stk,pci,1);
 	int *scale= (int *) getArgReference(stk,pci,2);
 	int *prec= (int *) getArgReference(stk,pci,3);
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
+	int rnr = cntxt - mal_clients;
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
@@ -896,14 +880,15 @@ TABsetColumnDecimal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-TABsetTryAll(int *ret, int *flg)
+TABsetTryAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
-	int rnr = c - mal_clients;
-	(void) ret;
+	int rnr = cntxt - mal_clients;
+	int flg = *(int*) getArgReference(stk,pci,1);
+
+	(void) mb;
 	if (tableReports[rnr] == 0)
 		throw(MAL, "tablet.setTryAll", "Header information missing");
-	tableReports[rnr]->tryall = *flg;
+	tableReports[rnr]->tryall = flg;
 	return MAL_SUCCEED;
 }
 

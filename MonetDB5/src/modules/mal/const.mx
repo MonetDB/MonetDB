@@ -106,18 +106,18 @@ const.prelude();
 #define const_export extern
 #endif
 
-const_export str CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSTnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+const_export str CSThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 const_export  str CSTepilogue(int *ret);
 #endif /* _CONST_H */
 @- Module initializaton
@@ -138,10 +138,11 @@ The content of this box my only be changed by the Administrator.
 
 
 str
-CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CSTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -152,7 +153,7 @@ CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* if the box was already filled we can skip initialization */
 	if (box->sym->vtop == 0) {
 		char u[24 + 1];
-		snprintf(u, 24, OIDFMT, MCgetClient()->user);
+		snprintf(u, 24, OIDFMT, cntxt->user);
 		u[24] = '\0';
 		insertToBox(box, "user", u);
 		insertToBox(box, "dbname", GDKgetenv("gdk_dbname"));
@@ -177,8 +178,9 @@ CSTepilogue(int *ret)
 @- Operator implementation
 @c
 str
-CSTopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CSTopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -189,8 +191,9 @@ CSTopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CSTclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CSTclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -201,10 +204,11 @@ CSTclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CSTdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CSTdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -224,12 +228,13 @@ to a named box.
 @-
 @c
 str
-CSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CSTdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	ValPtr v;
 	Box box;
 
+	(void) cntxt;
 	@:OpenBox(deposit)@
 	name = (str) getArgValue(stk, pci, 1);
 	v = &stk->stk[getArg(pci, 2)];
@@ -240,12 +245,13 @@ CSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CSTtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 	ValPtr v;
 
+	(void) cntxt;
 	@:OpenBox(take)@
 	name = (str) getArgValue(stk, pci, 1);
 	v = &stk->stk[getArg(pci, 0)];
@@ -256,11 +262,12 @@ CSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CSTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 
 	@:OpenBox(release)@
@@ -271,10 +278,11 @@ CSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CSTreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CSTreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -284,11 +292,12 @@ CSTreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CSTdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(discard)@
 	name = (str) getArgValue(stk, pci, 1);
@@ -298,13 +307,14 @@ CSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CSTtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 	int i, len = 0;
 	ValPtr v;
 	str nme, s = 0;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(toString)@
 	nme = (str) getArgValue(stk, pci, 1);
@@ -324,12 +334,13 @@ CSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CSTnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CSTnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 	lng *cursor;
 	ValPtr v;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(iterator)@
 	cursor = (lng *) getArgValue(stk, pci, 0);
@@ -339,12 +350,13 @@ CSTnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CSThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CSThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 	lng *cursor;
 	ValPtr v;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(iterator)@
 	cursor = (lng *) getArgValue(stk, pci, 0);

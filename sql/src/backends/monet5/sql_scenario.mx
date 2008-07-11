@@ -47,9 +47,9 @@ sql5_export str SQLinitClient(Client c);
 sql5_export str SQLreader(Client c);
 sql5_export str SQLparser(Client c);
 sql5_export str SQLengine(Client c);
-sql5_export str SQLassert(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLassertInt(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLassertLng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str SQLinitEnvironment(int *ret);
 sql5_export str SQLstatement(int *ret, str *expr);
@@ -976,7 +976,7 @@ SQLparser(Client c)
 		/* switch to different language mode */
 		char oldlang= be->language;
 		be->language= 'D';
-		runMALDebugger(c->curprg);
+		runMALDebugger(c,c->curprg);
 		be->language= oldlang;
 	}
 	if( err ||
@@ -1103,10 +1103,10 @@ query block.
 				/* switch to differnt language mode */
 				char oldlang= be->language;
 				be->language= 'D';
-				runMALDebugger(c->curprg);
+				runMALDebugger(c,c->curprg);
 				be->language= oldlang;
 			}
-			showErrors();
+			showErrors(c);
 			/* restore the state */
 			resetMalBlk(c->curprg->def, oldstop);
 			freeVariables(c->curprg->def, c->glb, oldvtop);
@@ -1354,7 +1354,7 @@ cleanup_engine:
 			showException(getExceptionType(msg), p, getExceptionMessage(msg));
 			GDKfree(p);
 		}
-		showErrors();
+		showErrors(c);
 		m->session->status = -10;
 	}
 @-
@@ -1412,7 +1412,7 @@ SQLrecompile(Client c, backend *be)
 
 	chkTypes(c->nspace, c->curprg->def); /* resolve types */
 	if (c->curprg->def->errors) {
-		showErrors();
+		showErrors(c);
 		/* restore the state */
 		resetMalBlk(c->curprg->def, oldstop);
 		freeVariables(c->curprg->def, c->glb, oldvtop);
@@ -1435,9 +1435,10 @@ raises an exception. An debugger dump is generated upon request
 to ease debugging.
 @c
 str
-SQLassert(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bit *flg = (bit*) getArgReference(stk,pci, 1);
 	str *msg = (str*) getArgReference(stk,pci, 2);
+	(void) cntxt;
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/
@@ -1447,9 +1448,10 @@ SQLassert(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 str
-SQLassertInt(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *flg = (int*) getArgReference(stk,pci, 1);
 	str *msg = (str*) getArgReference(stk,pci, 2);
+	(void) cntxt;
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/
@@ -1459,9 +1461,10 @@ SQLassertInt(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 str
-SQLassertLng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	lng *flg = (lng*) getArgReference(stk,pci, 1);
 	str *msg = (str*) getArgReference(stk,pci, 2);
+	(void) cntxt;
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/

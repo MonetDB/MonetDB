@@ -490,9 +490,9 @@ static void RECYCLEcleanCache(int wr){
 	lng oldclk, newclk;
 	dbl mincrd, crd;
 	lng memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
+#ifdef _DEBUG_CACHE_
 	Client cntxt= MCgetClient();
-
-	(void) cntxt;
+#endif
 
 	if (!recycleBlk) 
 		return;
@@ -954,7 +954,7 @@ We execute it in place and safe the result upon need.
 		s->keepAlive= TRUE;
 		k= p->recycle;
 		p->recycle= 0;
-		(void) reenterMAL(MCgetClient(),mb,i,i+1,s,0,0);
+		(void) reenterMAL(cntxt,mb,i,i+1,s,0,0);
 		p->recycle= k;
 		RECYCLEexit(cntxt, mb, s, p);
 		/* restore the situation */

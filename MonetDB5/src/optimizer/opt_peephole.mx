@@ -138,7 +138,7 @@ OPTpeepholeImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		freeInstruction(old[i]);
 	GDKfree(old);
 	if (doit) {
-		chkProgram(MCgetClient()->nspace, mb);
+		chkProgram(cntxt->nspace, mb);
 #ifdef DEBUG_OPT_PEEPHOLE
 		stream_printf(cntxt->fdout, "PEEPHOLE %d\n", doit);
 		printFunction(cntxt->fdout, mb, LIST_MAL_ALL);

@@ -574,9 +574,9 @@ The events may be sent for offline processing through a
 stream, including "stdout".
 @c
 str
-setLogFile(Module cntxt, str fname)
+setLogFile(Module mod, str fname)
 {
-	(void) cntxt;		/* still unused */
+	(void) mod;		/* still unused */
 #ifdef MALprofiler
 	if( ! profileLockInitialized) {
 		MT_lock_init(&profileLock,"M5_profileLock");
@@ -622,12 +622,10 @@ setLogStream(Module cntxt, str host, int port)
 }
 
 str
-openProfilerStream(void)
+openProfilerStream()
 {
-	Client c = MCgetClient();
-
 	malProfileMode = TRUE;
-	eventstream = c->fdout;
+	eventstream = MCgetClient()->fdout;
 	delayswitch = 1;	/* avoid an incomplete initial profile event */
 	return MAL_SUCCEED;
 }

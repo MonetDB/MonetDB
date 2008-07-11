@@ -173,7 +173,7 @@ batxml_export str BATXMLroot(int *ret, int *bid, str *version, str *standalone);
 batxml_export str BATXMLattribute(int *ret, str *name, int *bid);
 batxml_export str BATXMLelement(int *ret, str *name, str *ns, str *attr, int *bid);
 batxml_export str BATXMLconcat(int *ret, int *bid, int *rid);
-batxml_export str BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+batxml_export str BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 batxml_export str BATXMLagg(int *ret, int *bid, int *grp);
 batxml_export str BATXMLagg3(int *ret, int *bid, int *grp, int *e);
 batxml_export str BATXMLgroup(int *ret, int *bid);
@@ -612,7 +612,7 @@ bunins_failed:
 }
 
 str
-BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret= (int*) getArgReference(stk,pci,0);
 	BAT *bn;
@@ -622,6 +622,7 @@ BATXMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i,offset,len,size= BUFSIZ;
 
 	(void)mb;
+	(void) cntxt;
 	bi= alloca(sizeof(BATiter) * pci->argc);
 	p= alloca(sizeof(BUN) * pci->argc);
 	q= alloca(sizeof(BUN) * pci->argc);

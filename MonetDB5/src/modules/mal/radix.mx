@@ -4653,10 +4653,10 @@ M5_RDX_BATnormal_bdvm(int *M5res, int *size)
 }
 @h
 radix_export str 
-M5_RDX_radix_cluster(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+M5_RDX_radix_cluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str
-M5_RDX_radix_cluster(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+M5_RDX_radix_cluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* (int *M5res, int *M5b, str nme, flt *perc, int *nbits, ... ) */
 {
 #define M5_RDX_radix_cluster_MAX_PASSES 9
@@ -4670,6 +4670,7 @@ M5_RDX_radix_cluster(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	@:M5_RDX_init(BAT*)@
 	@:M5_RDX_get_BATdesc_1(radix_cluster,b)@
+	(void) cntxt;
 	assert(passes > 0);
 	assert(passes <= M5_RDX_radix_cluster_MAX_PASSES);
 	(void) mb;
@@ -4691,10 +4692,10 @@ M5_RDX_radix_cluster(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 @h
 radix_export str 
-M5_RDX_radix_cluster_l(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+M5_RDX_radix_cluster_l(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str
-M5_RDX_radix_cluster_l(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+M5_RDX_radix_cluster_l(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* (int *M5res, int *M5b, flt *perc, int *nbits, ... ) */
 {
 	int j = 0;
@@ -4706,6 +4707,7 @@ M5_RDX_radix_cluster_l(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	@:M5_RDX_init(BAT*)@
 	@:M5_RDX_get_BATdesc_1(radix_cluster_l,b)@
+	(void) cntxt;
 	assert(passes > 0);
 	assert(passes <= M5_RDX_radix_cluster_MAX_PASSES);
 	(void) mb;
@@ -4727,10 +4729,10 @@ M5_RDX_radix_cluster_l(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 @h
 radix_export str 
-M5_RDX_radix_cluster_p(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+M5_RDX_radix_cluster_p(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str
-M5_RDX_radix_cluster_p(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+M5_RDX_radix_cluster_p(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* (int *M5res, int *M5b, str nme, int *nbits, ... ) */
 {
 	int j = 0;
@@ -4742,6 +4744,7 @@ M5_RDX_radix_cluster_p(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	@:M5_RDX_init(BAT*)@
 	@:M5_RDX_get_BATdesc_1(radix_cluster_p,b)@
+	(void) cntxt;
 	assert(passes > 0);
 	assert(passes <= M5_RDX_radix_cluster_MAX_PASSES);
 	(void) mb;
@@ -4763,10 +4766,10 @@ M5_RDX_radix_cluster_p(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 @h
 radix_export str 
-M5_RDX_radix_cluster_lp(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+M5_RDX_radix_cluster_lp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str
-M5_RDX_radix_cluster_lp(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+M5_RDX_radix_cluster_lp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* (int *M5res, int *M5b, int *nbits, ... ) */
 {
 	int j = 0;
@@ -4775,8 +4778,11 @@ M5_RDX_radix_cluster_lp(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int nbits[M5_RDX_radix_cluster_MAX_PASSES];
 	int passes = pci->argc - j;
 	int i;
+
 	@:M5_RDX_init(BAT*)@
 	@:M5_RDX_get_BATdesc_1(radix_cluster_lp,b)@
+
+	(void) cntxt;
 	assert(passes > 0);
 	assert(passes <= M5_RDX_radix_cluster_MAX_PASSES);
 	(void) mb;

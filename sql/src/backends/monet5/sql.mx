@@ -685,47 +685,47 @@ extern BAT *mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access);
 extern BAT *mvc_bind_dbat(mvc *m, char *sname, char *tname, int access);
 extern BAT *mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access);
 
-sql5_export str SQLcommit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLrollback(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export str mvc_append_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_update_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_bind_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bind_single_wrap(int *ret, int *bid, str *name);
-sql5_export str mvc_bind_dbat_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_bind_idxbat_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_clear_table_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_delete_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_result_row_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_result_file_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_result_table_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_result_column_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_bind_dbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_result_row_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_result_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_result_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_result_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export str mvc_declared_table_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_declared_table_column_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export str mvc_affected_rows_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_export_result_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_export_operation_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_import_table_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str bathash_wrap(int *res, int *bid );
-sql5_export str hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p);
-sql5_export str setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str getVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str sql_variables(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_logfile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_next_value(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_bat_next_value(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_get_value(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_restart_seq(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str hash_wrap(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
+sql5_export str setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str zero_or_one(ptr ret, int *bid);
 sql5_export str not_unique(bit *ret, int *bid);
 sql5_export str month_interval_str( int *ret, str *s, int *ek, int *sk );
 sql5_export str second_interval_str( lng *res, str *s, int *ek, int *sk );
-sql5_export str dump_cache(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str dump_opt_stats(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str sql_rowid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe);
 sql5_export str sql_rank(bat *rid, bat *bid);
 sql5_export str sql_dense_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe);
@@ -759,8 +759,8 @@ sql5_export str SQL@1_2_str( str *res, @1 *val );
 @:cast_export(daytime,daytime_tostr)@
 @:cast_export(date,date_tostr)@
 @:cast_export(sqlblob,sqlblob_tostr)@
-sql5_export str SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLbatstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @= fround_export
 sql5_export str @1_dec_round_wrap( @1 *res, @1 *v, @1 *r );
 sql5_export str @1_round_wrap( @1 *res, @1 *v, bte *r );
@@ -846,7 +846,7 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @:numcastdown_export(sht,lng)@
 @:numcastdown_export(int,lng)@
 
-sql5_export str getContext(MalBlkPtr mb, mvc **c, backend **b );
+sql5_export str getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b );
 
 #endif /* _SQL_H */
 
@@ -990,28 +990,27 @@ Failure to find the state descriptor aborts the session.
 
 @c
 str 
-getContext(MalBlkPtr mb, mvc **c, backend **b )
+getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b )
 {
-	Client _client = MCgetClient();
-
 	(void)mb;
-	if (_client == NULL ) 
+	if (cntxt == NULL ) 
 		throw(SQL, "mvc","Can not access client record");
-	if (_client->state[MAL_SCENARIO_PARSER] == NULL || _client->state[MAL_SCENARIO_OPTIMIZE] == NULL)
+	if (cntxt->state[MAL_SCENARIO_PARSER] == NULL || cntxt->state[MAL_SCENARIO_OPTIMIZE] == NULL)
 		throw(SQL, "mvc","MAL_SCENARIO_PARSER not initialized");
-	*c = ((mvc *) _client ->state[MAL_SCENARIO_OPTIMIZE]); 
+	*c = ((mvc *) cntxt ->state[MAL_SCENARIO_OPTIMIZE]); 
 	if (b)
-		*b = ((backend*) _client->state[MAL_SCENARIO_PARSER]);
+		*b = ((backend*) cntxt->state[MAL_SCENARIO_PARSER]);
 	return MAL_SUCCEED;
 }
 
 str
-SQLcommit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	int *ret  = (int *) getArgReference(stk, pci, 0);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	*ret = 0;
@@ -1019,12 +1018,13 @@ SQLcommit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 str
-SQLrollback(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m=NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	int *ret  = (int *) getArgReference(stk, pci, 0);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	*ret = 0;
@@ -1034,15 +1034,16 @@ SQLrollback(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* setVariable(int *ret, str *name, any value) */
 str
-setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char buf[BUFSIZ];
 	mvc *m = NULL;
 	int mtype = getArgType(mb, pci, 2);
 	str varname   = *(str *) getArgReference(stk, pci, 1);
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	ValRecord *src;
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 
@@ -1065,14 +1066,15 @@ setVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* getVariable(int *ret, str *name) */
 str
-getVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	int mtype = getArgType(mb, pci, 0);
 	str varname   = *(str *) getArgReference(stk, pci, 1);
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	ValRecord *dst, *src;
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 
@@ -1090,14 +1092,15 @@ getVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-sql_variables(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	mvc *m = NULL;
 	BAT *vars, *r; 
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	int *res = (int *) getArgReference(stk, pci, 0);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 
@@ -1115,13 +1118,14 @@ sql_variables(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_logfile(int *d, str *filename); */
 str
-mvc_logfile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	int *res = (int *) getArgReference(stk, pci, 0);
 	str filename = *(str *)getArgReference(stk, pci, 1);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	if (m->scanner.log) {
@@ -1137,15 +1141,16 @@ mvc_logfile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_next_value(lng *res, str *sname, str *seqname); */
 str
-mvc_next_value(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	sql_schema *s;
 	lng *res  = (lng *) getArgReference(stk, pci, 0);
 	str *sname  = (str *) getArgReference(stk, pci, 1);
 	str *seqname  = (str *) getArgReference(stk, pci, 2);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
  	s = mvc_bind_schema(m, *sname);
@@ -1162,10 +1167,10 @@ mvc_next_value(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_bat_next_value(int *res, int *sid, str *seqname); */
 str
-mvc_bat_next_value(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	BAT *b, *r;
 	BUN p,q;
 	sql_schema *s = NULL;
@@ -1176,6 +1181,7 @@ mvc_bat_next_value(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *sid  = (int *) getArgReference(stk, pci, 1);
 	str *seqname  = (str *) getArgReference(stk, pci, 2);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 
@@ -1230,15 +1236,16 @@ mvc_bat_next_value(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_get_value(lng *res, str *sname, str *seqname); */
 str
-mvc_get_value(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	sql_schema *s;
 	lng *res  = (lng *) getArgReference(stk, pci, 0);
 	str *sname  = (str *) getArgReference(stk, pci, 1);
 	str *seqname  = (str *) getArgReference(stk, pci, 2);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
  	s = mvc_bind_schema(m, *sname);
@@ -1253,16 +1260,17 @@ mvc_get_value(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_restart_seq(lng *res, str *sname, str *seqname, lng *start); */
 str
-mvc_restart_seq(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	sql_schema *s;
 	lng *res  = (lng *) getArgReference(stk, pci, 0);
 	str *sname  = (str *) getArgReference(stk, pci, 1);
 	str *seqname  = (str *) getArgReference(stk, pci, 2);
 	lng *start  = (lng *) getArgReference(stk, pci, 3);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
  	s = mvc_bind_schema(m, *sname);
@@ -1319,17 +1327,18 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 
 /* str mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access); */
 str
-mvc_bind_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b = NULL;
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	int *bid = (int *)getArgReference(stk, pci, 0);
 	str *sname = (str *)getArgReference(stk, pci, 1);
 	str *tname = (str *)getArgReference(stk, pci, 2);
 	str *cname = (str *)getArgReference(stk, pci, 3);
 	int *access = (int *)getArgReference(stk, pci, 4);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	b = mvc_bind(m, *sname, *tname, *cname, *access);
@@ -1342,17 +1351,18 @@ mvc_bind_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access); */
 str
-mvc_bind_idxbat_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b = NULL;
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	int *bid = (int *)getArgReference(stk, pci, 0);
 	str *sname = (str *)getArgReference(stk, pci, 1);
 	str *tname = (str *)getArgReference(stk, pci, 2);
 	str *iname = (str *)getArgReference(stk, pci, 3);
 	int *access = (int *)getArgReference(stk, pci, 4);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	b = mvc_bind_idxbat(m, *sname, *tname, *iname, *access);
@@ -1366,10 +1376,10 @@ mvc_bind_idxbat_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /*mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
 str
-mvc_append_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	str sname = *(str *)getArgReference(stk, pci, 1);
 	str tname = *(str *)getArgReference(stk, pci, 2);
 	str cname = *(str *)getArgReference(stk, pci, 3);
@@ -1380,6 +1390,7 @@ mvc_append_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	sql_column *c;
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 
@@ -1406,10 +1417,10 @@ mvc_append_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /*mvc_update_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
 str
-mvc_update_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	str sname = *(str *)getArgReference(stk, pci, 1);
 	str tname = *(str *)getArgReference(stk, pci, 2);
 	str cname = *(str *)getArgReference(stk, pci, 3);
@@ -1420,6 +1431,7 @@ mvc_update_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	sql_column *c;
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 
@@ -1487,16 +1499,17 @@ mvc_bind_single_wrap(int *ret, int *bid, str *name)
 
 /* str mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access); */
 str
-mvc_bind_dbat_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_bind_dbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	int *ret = (int *)getArgReference(stk, pci, 0);
 	str *sname = (str *)getArgReference(stk, pci, 1);
 	str *tname = (str *)getArgReference(stk, pci, 2);
 	int *access = (int*)getArgReference(stk, pci, 3);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	b = mvc_bind_dbat(m, *sname, *tname, *access);
@@ -1509,16 +1522,17 @@ mvc_bind_dbat_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_clear_table_wrap(lng *res, str *sname, str *tname); */
 str
-mvc_clear_table_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	sql_schema *s;
 	sql_table *t;
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	lng *res = (lng *)getArgReference(stk, pci, 0);
 	str *sname = (str *)getArgReference(stk, pci, 1);
 	str *tname = (str *)getArgReference(stk, pci, 2);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	s = mvc_bind_schema(m, *sname);
@@ -1529,10 +1543,10 @@ mvc_clear_table_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /*mvc_delete_wrap(int *d, str *sname, str *tname, ptr d) */
 str
-mvc_delete_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	str sname = *(str *)getArgReference(stk, pci, 1);
 	str tname = *(str *)getArgReference(stk, pci, 2);
 	ptr ins = (ptr)getArgReference(stk, pci, 3);
@@ -1542,6 +1556,7 @@ mvc_delete_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_table *t;
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 
@@ -1568,15 +1583,16 @@ mvc_result_row(mvc *m, int nr_cols, int qtype)
 
 /* str mvc_result_row_wrap(int *res_id, int *nr_cols, int *qtype, int *o); */
 str
-mvc_result_row_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_result_row_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	int *res_id = (int *)getArgReference(stk, pci, 0);
 	int *nr_cols = (int *)getArgReference(stk, pci, 1);
 	int *qtype = (int *)getArgReference(stk, pci, 2);
 	int *o = (int *)getArgReference(stk, pci, 3);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	(void)o; /* dummy order */
@@ -1588,12 +1604,12 @@ mvc_result_row_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_result_file_wrap(int *res_id, int *nr_cols, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, bat *order_bid); */
 str 
-mvc_result_file_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str res = MAL_SUCCEED;
 	BAT *order;
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	res_table *t = NULL;
 	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len;
@@ -1605,6 +1621,7 @@ mvc_result_file_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	unsigned char **N = (unsigned char **)getArgReference(stk, pci, 5);
 	bat *order_bid = (bat *)getArgReference(stk, pci, 6);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
         if ((order = BATdescriptor(*order_bid)) == NULL ) {
@@ -1633,17 +1650,18 @@ mvc_result_file_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_result_table_wrap(int *res_id, int *nr_cols, int *qtype, bat *order_bid); */
 str
-mvc_result_table_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_result_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str res = MAL_SUCCEED;
 	BAT *order;
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	int *res_id = (int *)getArgReference(stk, pci, 0);
 	int *nr_cols = (int *)getArgReference(stk, pci, 1);
 	int *qtype = (int *)getArgReference(stk, pci, 2);
 	bat *order_bid = (bat *)getArgReference(stk, pci, 3);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
         if ((order = BATdescriptor(*order_bid)) == NULL ) {
@@ -1658,12 +1676,12 @@ mvc_result_table_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_result_column_wrap(int *ret, int *rs, str *tn, str *name, str *type, int *digits, int *scale, bat *bid); */
 str
-mvc_result_column_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_result_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str res = MAL_SUCCEED;
 	BAT *b;
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	int *ret = (int *)getArgReference(stk, pci, 0);
 	str *tn = (str *)getArgReference(stk, pci, 2);
 	str *name = (str *)getArgReference(stk, pci, 3);
@@ -1672,6 +1690,7 @@ mvc_result_column_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *scale = (int *)getArgReference(stk, pci, 6);
 	bat *bid = (bat *)getArgReference(stk, pci, 7);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
         if( (b = BATdescriptor(*bid)) == NULL ){
@@ -1686,7 +1705,7 @@ mvc_result_column_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 /*mvc_result_value_wrap(int *ret, int *rs, str *tn, str *name, str *type, int *digits, int *scale, ptr p, int mtype)*/
-mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_result_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret  = (int *) getArgReference(stk, pci, 0);
 	str *tn   = (str *) getArgReference(stk, pci, 2);
@@ -1697,8 +1716,9 @@ mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ptr p =  (ptr) getArgReference(stk, pci, 7);
 	int mtype = getArgType(mb, pci, 7);
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	if (ATOMextern(mtype)) 
@@ -1711,14 +1731,15 @@ mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_declared_table_wrap(int *res_id, str *name); */
 str
-mvc_declared_table_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	sql_schema *s = NULL;
 	int *res_id = (int *) getArgReference(stk, pci, 0);
 	str *name = (str *) getArgReference(stk, pci, 1);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	s = mvc_bind_schema(m, "%dt%");
@@ -1729,10 +1750,10 @@ mvc_declared_table_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_declared_table_column_wrap(int *ret, int *rs, str *tname, str *name, str *type, int *digits, int *scale); */
 str 
-mvc_declared_table_column_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_subtype tpe;
@@ -1744,6 +1765,7 @@ mvc_declared_table_column_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *digits = (int *) getArgReference(stk, pci, 5);
 	int *scale = (int *) getArgReference(stk, pci, 6);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	if (*rs != 0)
@@ -1759,16 +1781,17 @@ mvc_declared_table_column_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_affected_rows_wrap(int *r, lng *nr, str *w); */
 str
-mvc_affected_rows_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
 	mvc *c = NULL;
-	str msg = getContext(mb, &c, &b);
+	str msg = getContext(cntxt,mb, &c, &b);
 	int *r  = (int *) getArgReference(stk, pci, 0);
 	int mtype = getArgType(mb, pci, 1);
 	lng nr;
 	str *w = (str *) getArgReference(stk, pci, 2);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	c->type = Q_UPDATE;
@@ -1785,16 +1808,17 @@ mvc_affected_rows_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_export_result_wrap(int *ret, stream **s, int *res_id, str *w); */
 str
-mvc_export_result_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
 	mvc *c = NULL;
-	str msg = getContext(mb, &c, &b);
+	str msg = getContext(cntxt,mb, &c, &b);
 	int *ret  = (int *) getArgReference(stk, pci, 0);
 	stream **s  = (stream **) getArgReference(stk, pci, 1);
 	int *res_id = (int *) getArgReference(stk, pci, 2);
 	str *w = (str *) getArgReference(stk, pci, 3);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	if (mvc_export_result(c, *s, *res_id, *w)) {
@@ -1806,14 +1830,15 @@ mvc_export_result_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_export_operation_wrap(int *ret, str *w); */
 str
-mvc_export_operation_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *b = NULL;
 	mvc *c = NULL;
-	str msg = getContext(mb, &c, &b);
+	str msg = getContext(cntxt,mb, &c, &b);
 	int *ret  = (int *) getArgReference(stk, pci, 0);
 	str *w = (str *) getArgReference(stk, pci, 1);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	if (mvc_export_operation(c, b->out, *w)) {
@@ -1826,7 +1851,7 @@ mvc_export_operation_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 /*mvc_export_value_wrap(int *ret, int *qtype, str tn, str name, str type, int *digits, int *scale, int *eclass, ptr p, int mtype)*/
-mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_export_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *qtype= (int *) getArgReference(stk, pci, 1);
 	str *tn   = (str *) getArgReference(stk, pci, 2);
@@ -1840,8 +1865,9 @@ mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *w = (str *) getArgReference(stk, pci, 9);
 	backend *b = NULL;
 	mvc *c = NULL;
-	str msg = getContext(mb, &c, &b);
+	str msg = getContext(cntxt,mb, &c, &b);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	if (ATOMextern(mtype)) 
@@ -1853,11 +1879,11 @@ mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str mvc_import_table_wrap(int *res, bstream **s, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, int *sz, int *offset); */
 str
-mvc_import_table_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
 	ssize_t len = 0;
 	int *res = (int *) getArgReference(stk, pci, 0);
@@ -1871,6 +1897,7 @@ mvc_import_table_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *sz = (int *) getArgReference(stk, pci, 8);
 	int *offset = (int *) getArgReference(stk, pci, 9);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	len = strlen((char*)(*T));
@@ -2063,11 +2090,12 @@ bathash_wrap(int *res, int *bid )
 
 
 str
-hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+hash_wrap(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	ptr v;
 	int *res, tpe = getArgType(m,p,1);
 
+	(void) cntxt;
 	res= (int *) getArgReference(s,p,0);
 	v = getArgReference(s,p,1);
 
@@ -2431,7 +2459,7 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 }
 
 str
-SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *res  = (str *) getArgReference(stk, pci, 0);
 	int eclass = *(int*) getArgReference(stk, pci, 1);
@@ -2442,8 +2470,9 @@ SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tpe = getArgType(mb, pci, 5);
 	int len   = *(int *) getArgReference(stk, pci, 6);
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	if (ATOMextern(tpe)) 
@@ -2453,13 +2482,13 @@ SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str SQLbatstr_cast(int *res, int *eclass, int *d1, int *s1, int *has_tz, int *bid, int *digits ); */
 str 
-SQLbatstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b, *dst;
 	BATiter bi;
 	BUN p,q;
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	char *r = NULL;
 	int *res  = (int *) getArgReference(stk, pci, 0);
 	int *eclass = (int*) getArgReference(stk, pci, 1);
@@ -2469,6 +2498,7 @@ SQLbatstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *bid   = (int*) getArgReference(stk, pci, 5);
 	int *digits   = (int *) getArgReference(stk, pci, 6);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	if( (b = BATdescriptor(*bid)) == NULL ){
@@ -3192,15 +3222,16 @@ second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
 
 /* str dump_cache(int *r); */
 str
-dump_cache(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	int cnt; 
 	BAT *t, *query, *count;
 	cq *q = NULL;
 	int *r = (int *) getArgReference(stk, pci, 0);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	cnt = m->qc->id; 
@@ -3226,14 +3257,15 @@ dump_cache(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str dump_opt_stats(int *r); */
 str
-dump_opt_stats(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	int cnt; 
 	BAT *t, *rewrite, *count;
 	int *r = (int *) getArgReference(stk, pci, 0);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	cnt = m->qc->id; 
@@ -3258,11 +3290,11 @@ dump_opt_stats(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* str sql_rowid(oid *rid, ptr v, str *sname, str *tname); */
 str 
-sql_rowid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
 	mvc *m = NULL;
-	str msg = getContext(mb, &m, NULL);
+	str msg = getContext(cntxt,mb, &m, NULL);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_column *c = NULL;
@@ -3271,6 +3303,7 @@ sql_rowid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *sname = (str *) getArgReference(stk, pci, 2);
 	str *tname = (str *) getArgReference(stk, pci, 3);
 
+	(void) cntxt;
 	if (msg)
 		return msg;
 	s = mvc_bind_schema(m, *sname);

@@ -245,11 +245,11 @@ and is available as global information.
 #define mal_mes_export extern
 #endif
 
-mal_mes_export str meo_loop_optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_mes_export str meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name);
+mal_mes_export str meo_loop_optimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_mes_export str meo_loop_optimizerImpl(Client cntxt, MalBlkPtr mb, MALfcn f, str name);
 
 str
-meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name)
+meo_loop_optimizerImpl(Client cntxt, MalBlkPtr mb, MALfcn f, str name)
 {
 	int i, l, lb, r, rb;
 	InstrPtr *oldblk;
@@ -257,7 +257,6 @@ meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name)
 	InstrPtr ql, qr;
 	int oldtop = 0, g = 0;
 	InstrPtr p;
-	Client cntxt= MCgetClient();
 
 	(void) name;
 	oldblk = (InstrPtr *) mb->stmt;
@@ -335,7 +334,7 @@ meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name)
 }
 
 str
-meo_loop_optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+meo_loop_optimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	MALfcn f;
 
@@ -344,11 +343,11 @@ meo_loop_optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	f = findSymbol( putName("algebra",7),
 			putName("cross",5))->def->stmt[0]->fcn;
 
-	meo_loop_optimizerImpl(mb, f, "cross");
+	meo_loop_optimizerImpl(cntxt, mb, f, "cross");
 	f = findSymbol( getName("algebra",7),
 			putName("join",4))->def->stmt[0]->fcn;
 
-	meo_loop_optimizerImpl(mb, f, "join");
+	meo_loop_optimizerImpl(cntxt, mb, f, "join");
 	return MAL_SUCCEED;
 }
 

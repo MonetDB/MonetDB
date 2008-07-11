@@ -481,7 +481,7 @@ mal_export void mdbShowBreakpoints(Client cntxt);
 mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
 mal_export int mdbSession(void);
 mal_export void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
-mal_export void mdbDump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export void mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export void mdbHelp(stream *f);
 mal_export void printBATelm(stream *f, int i, size_t cnt, size_t first);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
@@ -490,11 +490,11 @@ mal_export void printBatProperties(stream *f, VarPtr n, ValPtr v, str props);
 mal_export void printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags);
 mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int flags);
 
-mal_export str runMALDebugger(Symbol s);
+mal_export str runMALDebugger(Client cntxt, Symbol s);
 mal_export void printBBPinfo(stream *out);
 
-mal_export void optimizerDebug(MalBlkPtr mb, str name, int actions, lng usec);
-mal_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export void optimizerDebug(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec);
+mal_export str debugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _MAL_DEBUGGER_h */
 @+ Debugger framework
 Before the interpreter is allowed to proceed we give control
@@ -1406,8 +1406,7 @@ signatures satisfying the pattern.
 }
 
 void 
-mdbDump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	Client cntxt= MCgetClient();
+mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int i= getPC(mb,pci);
 	stream_printf(cntxt->fdout,"!MDB dump of instruction %d\n",i);
 	printFunction(cntxt->fdout, mb, LIST_MAL_ALL | LIST_MAL_PROPS);
@@ -1515,7 +1514,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		stk->cmd = 'x';	/* will force a graceful termination */
 	}
 	if( mdbSessionActive== 0) return;
-	showErrors();
+	showErrors(cntxt);
 	if (cntxt->flags & timerFlag)
 		cntxt->timer = GDKusec();
 	mdbSessionActive= 0; /* for name completion */
@@ -1527,12 +1526,10 @@ the debugger on a specific function. This calls for the
 creation of a minimal execution environment first.
 @c
 str
-runMALDebugger(Symbol s)
+runMALDebugger(Client cntxt, Symbol s)
 {
-	Client c = MCgetClient();
-
-	c->itrace = 'n';
-	runMAL(c, s->def, 1, 0, 0, 0);
+	cntxt->itrace = 'n';
+	runMAL(cntxt, s->def, 1, 0, 0, 0);
 	return MAL_SUCCEED;
 }
 
@@ -1885,10 +1882,8 @@ make it thread safe by assigning it to a client record.
 int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
 
 str
-debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+debugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt = MCgetClient();
-
 	(void) stk;
 
 	cntxt->debugOptimizer = cntxt->debugOptimizer ? FALSE : TRUE;

@@ -44,7 +44,7 @@ to be passed by a handle.
 /*#define DEBUG_MAL_PARALLEL */
 /*#define DEBUG_FLOW*/
 /*#define STACKTRACE*/
-mal_export void showErrors(void);
+mal_export void showErrors(Client cntxt);
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb);
 mal_export str runMAL(Client c, MalBlkPtr mb, int startpc,
 			MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller);
@@ -155,8 +155,7 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 #endif
 } 
 
-void showErrors() {
-	Client cntxt = MCgetClient();
+void showErrors(Client cntxt) {
 	int i;
 	if (cntxt->errbuf == '\0')
 		return;
@@ -242,7 +241,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 	@:performanceVariables@
 
 	if (mb->errors) {
-		showErrors();
+		showErrors(cntxt);
 		if (cntxt->itrace == 0) /* permit debugger analysis */
 			return createScriptException(mb, 0, MAL, NULL, "Syntax error in script");
 	}
@@ -1411,7 +1410,7 @@ to the operators.
 				"address of pattern missing");
 	else {
 		@:safeTarget@
-		ret = (str) (*pci->fcn)(mb,stk,pci);
+		ret = (str) (*pci->fcn)(cntxt,mb,stk,pci);
 		@:restoreTarget(@1)@
 		@:exceptionHndlr(@1)@
 		@:timingHndlr(@1)@

@@ -706,7 +706,7 @@ functions.
 		errors += mccInstruction(f, mb, p, i, catch, &ctop);
 	}
 	if (errors)
-		showErrors();
+		showErrors(MCgetClient());
 }
 
 void

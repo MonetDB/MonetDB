@@ -86,24 +86,23 @@ comment "Produces the wordcompletion table.";
 #define manual_export extern
 #endif
 
-manual_export str MANUALcreateSection(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALcreate1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALcreate0(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALsearch(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALhelp(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALcreateIndex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALcreateSummary(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALcompletion(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALcreateSection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALcreate1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALcreate0(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALsearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALhelp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALcreateIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALcreateSummary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+manual_export str MANUALcompletion(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @+ Symbol table 
 Mal symbol table and environment analysis.
 @c
 
 str
-MANUALcreateSection(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MANUALcreateSection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *mod = (str*) getArgReference(stk,pci,1);
-	Client cntxt= MCgetClient();
 
 	(void) mb;
 	dumpManualSection(cntxt->fdout, findModule(cntxt->nspace, putName(*mod, strlen(*mod))));
@@ -111,9 +110,8 @@ MANUALcreateSection(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-MANUALcreate1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MANUALcreate1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt= MCgetClient();
 	str *mod = (str*) getArgReference(stk,pci,1);
 	(void) mb;		/* fool compiler */
 	dumpManualHeader(cntxt->fdout);
@@ -123,9 +121,9 @@ MANUALcreate1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-MANUALcreate0(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MANUALcreate0(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt= MCgetClient();
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
@@ -135,9 +133,8 @@ MANUALcreate0(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 str
-MANUALcreateIndex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MANUALcreateIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt= MCgetClient();
 	(void) mb;
 	(void) stk;
 	(void) pci;
@@ -145,19 +142,17 @@ MANUALcreateIndex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 str
-MANUALcreateSummary(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MANUALcreateSummary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt= MCgetClient();
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	dumpManualHelp(cntxt->fdout, MCgetClient()->nspace, 1);
+	dumpManualHelp(cntxt->fdout, cntxt->nspace, 1);
 	return MAL_SUCCEED;
 }
 str
-MANUALcompletion(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MANUALcompletion(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt= MCgetClient();
 	str *text= (str*) getArgReference(stk,pci,1);
 	(void) mb;		/* fool compiler */
 	dumpHelpTable(cntxt->fdout, cntxt->nspace, *text,1);
@@ -165,11 +160,10 @@ MANUALcompletion(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-MANUALhelp(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MANUALhelp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char **msg;
 	int i;
-	Client cntxt= MCgetClient();
 	str *text= (str*) getArgReference(stk,pci,1);
 	(void) mb;		/* fool compiler */
 
@@ -187,11 +181,10 @@ MANUALhelp(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-MANUALsearch(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MANUALsearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char **msg;
 	int i;
-	Client cntxt= MCgetClient();
 	str *pat= (str*) getArgReference(stk,pci,1);
 	(void) mb;		/* fool compiler */
 

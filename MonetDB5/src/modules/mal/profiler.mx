@@ -76,7 +76,7 @@ command deactivate(name:str):void
 address CMDdeactivateProfiler
 comment "Deactivate the counter";
 
-command openStream():void 
+pattern openStream():void 
 address CMDopenProfilerStream
 comment "Sent the events to output stream";
 pattern openStream(fnme:str):void
@@ -89,7 +89,7 @@ command closeStream():void
 address CMDcloseProfilerStream
 comment "Stop sending the event records";
 
-command setAll():void
+pattern setAll():void
 address CMDsetAllProfiler
 comment "Short cut for setFilter(*,*).";
 command setNone():void
@@ -178,6 +178,7 @@ Using the Monet Performance Profiler is constrained by the mal_profiler.
 @c
 #include "mal_config.h"
 #include "profiler.h"
+#include "mal_client.h"
 
 #ifdef WIN32
 #ifndef LIBPROFILER
@@ -191,27 +192,27 @@ Using the Monet Performance Profiler is constrained by the mal_profiler.
 
 profiler_export str CMDactivateProfiler(int *res, str *name);
 profiler_export str CMDdeactivateProfiler(int *res, str *name);
-profiler_export str CMDsetFilterProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDsetAllProfiler(int *res);
-profiler_export str CMDsetFilterVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
-profiler_export str CMDclrFilterVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
-profiler_export str CMDclrFilterProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDsetNoneProfiler(int *res);
-profiler_export str CMDsetProfilerFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDsetProfilerStream (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDstartPointProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDendPointProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDstopProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDstartProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDsetFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDsetAllProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
+profiler_export str CMDsetFilterVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
+profiler_export str CMDclrFilterVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
+profiler_export str CMDclrFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDsetNoneProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDsetProfilerFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDsetProfilerStream (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDstartPointProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDendPointProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDnoopProfiler(int *res);
 profiler_export str CMDclearTrace(int *res);
 profiler_export str CMDdumpTrace(int *res);
 profiler_export str CMDgetTrace(int *res, str *ev);
-profiler_export str CMDopenProfilerStream(int *res);
+profiler_export str CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDcloseProfilerStream(int *res);
 profiler_export str CMDcleanup(int *ret);
-profiler_export str CMDgetEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-profiler_export str CMDclearEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDgetEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDclearEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define checkProfiler(X) \
 	if( ! profilerAvailable()) \
@@ -238,48 +239,55 @@ CMDdeactivateProfiler(int *res, str *name)
 }
 
 str
-CMDsetFilterProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDsetFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *mod = (str*) getArgReference(stk,pci,1);
 	str *fcn = (str*) getArgReference(stk,pci,2);
 	(void) mb;		/* fool compiler */
 	checkProfiler("setFilter");
-	setFilter(MCgetClient()->nspace, *mod, *fcn);
+	setFilter(cntxt->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
 str
-CMDsetAllProfiler(int *res)
+CMDsetAllProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
 	str x = GDKstrdup("*");
 	str y = GDKstrdup("*");
 
-	(void) res;		/* fool compiler */
+	(void) mb;		/* fool compiler */
+	(void) stk;
+	(void) pc;
 	checkProfiler("setFilter");
-	setFilter(MCgetClient()->nspace, x, y);
+	setFilter(cntxt->nspace, x, y);
 	return MAL_SUCCEED;
 }
 
 str
-CMDsetFilterVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
+CMDsetFilterVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
+	(void) cntxt;
 	(void) stk;
 	setFilterVariable(mb,getArg(pc,1));
 	return MAL_SUCCEED;
 }
 
 str
-CMDclrFilterVariable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
+CMDclrFilterVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
+	(void) cntxt;
 	(void) stk;
 	clrFilterVariable(mb,getArg(pc,1));
 	return MAL_SUCCEED;
 }
 
 str
-CMDopenProfilerStream(int *res)
+CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
-	(void) res;
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pc;
 	return openProfilerStream();
 }
 str
@@ -290,95 +298,95 @@ CMDcloseProfilerStream(int *res)
 }
 
 str
-CMDclrFilterProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDclrFilterProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *mod = (str*) getArgReference(stk,pci,1);
 	str *fcn = (str*) getArgReference(stk,pci,2);
 	(void) mb;		/* fool compiler */
 	checkProfiler("clrFilter");
-	clrFilter(MCgetClient()->nspace, *mod, *fcn);
+	clrFilter(cntxt->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
 str
-CMDsetNoneProfiler(int *res)
+CMDsetNoneProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str x = GDKstrdup("");
 	str y = GDKstrdup("");
 
-	(void) res;		/* fool compiler */
+	(void) mb;		/* fool compiler */
+	(void) stk;
+	(void) pci;
 	checkProfiler("clrFilter");
-	clrFilter(MCgetClient()->nspace, x, y);
+	clrFilter(cntxt->nspace, x, y);
 	return MAL_SUCCEED;
 }
 
 str
-CMDsetProfilerFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDsetProfilerFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *fnme = (str*) getArgReference(stk,pci,1);
 	(void) mb;		/* fool compiler */
 	checkProfiler("setProfiler");
-	setLogFile(MCgetClient()->nspace, *fnme);
+	setLogFile(cntxt->nspace, *fnme);
 	return MAL_SUCCEED;
 }
 
 str
-CMDsetProfilerStream (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDsetProfilerStream (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *host = (str*) getArgReference(stk,pci,1);
 	int *port = (int*) getArgReference(stk,pci,2);
 	(void) mb;		/* fool compiler */
 	checkProfiler("setProfiler");
-	setLogStream(MCgetClient()->nspace, *host, *port);
+	setLogStream(cntxt->nspace, *host, *port);
 	return MAL_SUCCEED;
 }
 
 str
-CMDstartPointProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDstartPointProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *mod = (str*) getArgReference(stk,pci,1);
 	str *fcn = (str*) getArgReference(stk,pci,2);
 	(void) mb;		/* fool compiler */
 	checkProfiler("startPoint");
-	setStartPoint(MCgetClient()->nspace, *mod, *fcn);
+	setStartPoint(cntxt->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
 str
-CMDendPointProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDendPointProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *mod = (str*) getArgReference(stk,pci,1);
 	str *fcn = (str*) getArgReference(stk,pci,2);
 	(void) mb;		/* fool compiler */
 	checkProfiler("endPoint");
-	setStartPoint(MCgetClient()->nspace, *mod, *fcn);
+	setStartPoint(cntxt->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
 str
-CMDstopProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
 	(void) mb;
 	(void) stk;
 	(void) pci;
 
 	checkProfiler("stop");
-	stream_printf(c->fdout, "# Performance profiling stopped\n");
+	stream_printf(cntxt->fdout, "# Performance profiling stopped\n");
 	stopProfiling();
 	return MAL_SUCCEED;
 }
 
 str
-CMDstartProfiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
 	(void) mb;
 	(void) stk;
 	(void) pci;
 
 	checkProfiler("start");
-	stream_printf(c->fdout, "# Start performance profiling\n");
+	stream_printf(cntxt->fdout, "# Start performance profiling\n");
 	startProfiling();
 	return MAL_SUCCEED;
 }
@@ -433,12 +441,13 @@ CMDcleanup(int *ret){
 }
 
 str
-CMDgetEvent( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+CMDgetEvent( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *clk, *reads, *writes, pc;
 	clk = (int *) getArgReference(stk,pci,0);
 	reads = (int *) getArgReference(stk,pci,1);
 	writes = (int *) getArgReference(stk,pci,2);
 
+	(void) cntxt;
 	if( mb->profiler == 0)
 		throw(MAL,"profiler.getEvent","Monitor not active");
 

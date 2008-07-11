@@ -122,23 +122,23 @@ detailed information.
 #define clients_export extern
 #endif
 
-clients_export str CLTsetListing(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTgetClientId(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTgetScenario(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTsetScenario(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+clients_export str CLTsetListing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+clients_export str CLTgetClientId(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+clients_export str CLTgetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+clients_export str CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTchangeUsername(int *ret, str *old, str *new) ;
 clients_export str CLTusers(int *ret);
-clients_export str CLTsetHistory(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTquit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+clients_export str CLTsetHistory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+clients_export str CLTexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+clients_export str CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTLogin(int *ret);
 clients_export str CLTLastCommand(int *ret);
 clients_export str CLTActions(int *ret);
 clients_export str CLTTime(int *ret);
-clients_export str CLTInfo(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+clients_export str CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTgetUsername(str *ret);
 
-clients_export str CLTsuspend(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+clients_export str CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTwakeup(int *ret, int *id);
 
 clients_export str CLTaddUser(oid *ret, str *usr, str *pw, bat *sc);
@@ -166,51 +166,43 @@ clients_export str CLTshutdown(int *ret, bit *forced);
 #endif
 
 str
-CLTsetListing(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTsetListing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c;
-
-	c = MCgetClient();
 	(void) mb;
-	*(int*) getArgReference(stk,pci,0) = c->listing;
-	c->listing = *(int*) getArgReference(stk,pci,1);
+	*(int*) getArgReference(stk,pci,0) = cntxt->listing;
+	cntxt->listing = *(int*) getArgReference(stk,pci,1);
 	return MAL_SUCCEED;
 }
 
 str
-CLTgetClientId(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTgetClientId(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
-
 	(void) mb;
-	*(int*) getArgReference(stk,pci,0) = c - mal_clients;
+	*(int*) getArgReference(stk,pci,0) = cntxt - mal_clients;
 	return MAL_SUCCEED;
 }
 
 str
-CLTgetScenario(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTgetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
-
 	(void) mb;
-	if (c->scenario)
-		*(str *) getArgReference(stk,pci,0) = GDKstrdup(c->scenario);
+	if (cntxt->scenario)
+		*(str *) getArgReference(stk,pci,0) = GDKstrdup(cntxt->scenario);
 	else
 		*(str *) getArgReference(stk,pci,0) = GDKstrdup("nil");
 	return MAL_SUCCEED;
 }
 
 str
-CLTsetScenario(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
 	str msg = MAL_SUCCEED;
 
 	(void) mb;
-	msg = setScenario(c, *(str *) getArgReference(stk,pci,1));
+	msg = setScenario(cntxt, *(str *) getArgReference(stk,pci,1));
 	*(str *) getArgReference(stk,pci,0) = 0;
 	if (msg == NULL)
-		*(str *) getArgReference(stk,pci,0) = GDKstrdup(c->scenario);
+		*(str *) getArgReference(stk,pci,0) = GDKstrdup(cntxt->scenario);
 	return msg;
 }
 
@@ -253,9 +245,8 @@ CLTtimeConvert(time_t l, char *s){
 }
 
 str
-CLTInfo(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
 	int *ret=  (int *) getArgReference(stk,pci,0);
 	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
 	char s[26];
@@ -264,16 +255,16 @@ CLTInfo(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL, "clients.info", "failed to create BAT");
 
-	BUNins(b, "user", local_itoa((int)c->user), FALSE);
+	BUNins(b, "user", local_itoa((int)cntxt->user), FALSE);
 	BUNins(b, "password", "", FALSE); /* FIXME: get rid of this */
-	BUNins(b, "scenario", c->scenario, FALSE);
-	BUNins(b, "timer", local_itoa((int) c->timer), FALSE);
-	BUNins(b, "trace", local_itoa(c->itrace), FALSE);
-	BUNins(b, "listing", local_itoa(c->listing), FALSE);
-	BUNins(b, "debug", local_itoa(c->debug), FALSE);
-	CLTtimeConvert((time_t) c->login,s);
+	BUNins(b, "scenario", cntxt->scenario, FALSE);
+	BUNins(b, "timer", local_itoa((int) cntxt->timer), FALSE);
+	BUNins(b, "trace", local_itoa(cntxt->itrace), FALSE);
+	BUNins(b, "listing", local_itoa(cntxt->listing), FALSE);
+	BUNins(b, "debug", local_itoa(cntxt->debug), FALSE);
+	CLTtimeConvert((time_t) cntxt->login,s);
 	BUNins(b, "login", s, FALSE);
-	CLTtimeConvert((time_t) c->delay,s);
+	CLTtimeConvert((time_t) cntxt->delay,s);
 	BUNins(b, "delay", s, FALSE);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(client,info,)@
@@ -381,57 +372,53 @@ CLTusers(int *ret)
 }
 
 str
-CLTsetHistory(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTsetHistory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c= MCgetClient();
 	str* fname = (str *) getArgReference(stk,pci,1);
 	(void) mb;
 
-	if( c->history){
+	if( cntxt->history){
 #ifdef HAVE_LIBREADLINE
-		write_history(c->history);
+		write_history(cntxt->history);
 #endif
-		GDKfree(c->history);
+		GDKfree(cntxt->history);
 	}
 	if( *fname == str_nil)
-		c->history = NULL;
+		cntxt->history = NULL;
 	else {
-		c->history = GDKstrdup(*fname);
+		cntxt->history = GDKstrdup(*fname);
 #ifdef HAVE_LIBREADLINE
-		read_history(c->history);
+		read_history(cntxt->history);
 #endif
 	}
 	return MAL_SUCCEED;
 }
 
 str
-CLTexit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
-
 	(void) mb;		/* fool compiler */
 	(void) stk;
 	(void) pci;
-	c->mode = FINISHING;
+	cntxt->mode = FINISHING;
 	throw(MAL, "client.exit", "Exit session with soft error");
 }
 str
-CLTquit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
-
 	(void) mb;		/* fool compiler */
 	(void) stk;
 	(void) pci;
-	if( c != mal_clients )
+	if( cntxt != mal_clients )
 		throw(MAL, "client.quit", "Server not stopped from console.");
 	throw(MAL, "client.quit", "Server stopped.");
 }
 
 str
-CLTsuspend(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *id=  (int *) getArgReference(stk,pci,1);
+	(void) cntxt;
 	(void) mb;
     return MCsuspendClient(*id,-1);
 }

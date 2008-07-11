@@ -164,38 +164,38 @@ typedef FILE *fstream;
 #define io_export extern
 #endif
 
-io_export str IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-io_export str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+io_export str IOprint_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+io_export str IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 int i, int order, int printhead, int printorderby);
-io_export str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
+io_export str IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
 str hd, str tl, int nobat);
 io_export str IOprint_formatted_nil(stream *fd, str format, char last);
-io_export str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
+io_export str IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
 str hd, str tl, int nobat);
-io_export str IOprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-io_export str IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-io_export str IOprompt_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+io_export str IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+io_export str IOprint_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+io_export str IOprompt_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str IOprint_ft(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 int i, int order, int printhead, int printorder);
-io_export str IOotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOtable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOfotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOftable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOttable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOtotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOprint_str(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str IOotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str IOfotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str IOftable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str IOttable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str IOprint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOprint_formatted_nil(stream *fd, str format, char last);
-io_export str IOprint_formatted_lng(MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
-io_export str IOprint_formatted_str(MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
-io_export str IOprint_oid(int *ret, ptr fmt, oid *s);
-io_export str IOprint_formatted_bit(MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
+io_export str IOprint_formatted_lng(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
+io_export str IOprint_formatted_str(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
+io_export str IOprint_oid(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
+io_export str IOprint_formatted_bit(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
 io_export str IOexport(int *ret, int *bid, str *fnme);
 io_export str IOdatafile(str *ret, str *fnme);
 io_export str IOimport(int *ret, int *bid, str *fnme);
-io_export str io_stdin(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str io_stdout(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str io_stderr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str io_stderr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _PRINT_H_ */
 
 @+ Printing
@@ -214,38 +214,38 @@ allow for any type to be assigned.
 #include "mal_io.h"
 
 str
-io_stdin(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bstream **ret= (bstream**) getArgReference(stk,pci,0);
 	(void) mb;
-	*ret = MCgetClient()->fdin;
+	*ret = cntxt->fdin;
 	return MAL_SUCCEED;
 }
 
 str
-io_stdout(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	stream **ret= (stream**) getArgReference(stk,pci,0);
 	(void) mb;
-	*ret = MCgetClient()->fdout;
+	*ret = cntxt->fdout;
 	return MAL_SUCCEED;
 }
 
 str
-io_stderr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+io_stderr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	stream **ret= (stream**) getArgReference(stk,pci,0);
+	(void) cntxt;
 	(void) mb;
 	*ret = GDKerr;
 	return MAL_SUCCEED;
 }
 
 str
-IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl, int nobat)
+IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl, int nobat)
 {
 	int tpe = getArgType(mb, pci, indx);
 	ptr val = (ptr) getArgReference(stk, pci, indx);
-	Client cntxt= MCgetClient();
 	stream *fp = cntxt->fdout;
 
 	(void) mb;
@@ -300,40 +300,39 @@ IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl,
 }
 
 str
-IOprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
 
+	(void) cntxt;
 	if (p->argc == 2)
-		IOprintBoth(mb, stk, p, 1, "[ ", " ]\n", 0);
+		IOprintBoth(cntxt, mb, stk, p, 1, "[ ", " ]\n", 0);
 	else {
-		IOprintBoth(mb, stk, p, 1, "[ ", 0, 1);
+		IOprintBoth(cntxt, mb, stk, p, 1, "[ ", 0, 1);
 		for (i = 2; i < p->argc - 1; i++)
-			IOprintBoth(mb, stk, p, i, ", ", 0, 1);
-		IOprintBoth(mb, stk, p, i, ", ", "]\n", 1);
+			IOprintBoth(cntxt,mb, stk, p, i, ", ", 0, 1);
+		IOprintBoth(cntxt,mb, stk, p, i, ", ", "]\n", 1);
 	}
 	return MAL_SUCCEED;
 
 }
 
 str
-IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+IOprint_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	Client cntxt= MCgetClient();
-	IOtableAll(cntxt->fdout, mb, stk, p, 1, 0, FALSE, TRUE);
+	IOtableAll(cntxt->fdout, cntxt, mb, stk, p, 1, 0, FALSE, TRUE);
 	return MAL_SUCCEED;
 }
 
 str
-IOprompt_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+IOprompt_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return IOprintBoth(mb, stk, pci, 1, 0, 0, 1);
+	return IOprintBoth(cntxt, mb, stk, pci, 1, 0, 0, 1);
 }
 
 str
-IOprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+IOprint_ft(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt= MCgetClient();
 	int tpe = getArgType(mb, pci, 1);
 	ptr val = (ptr) getArgReference(stk, pci, 1);
 
@@ -353,13 +352,14 @@ The table printing routine implementations rely on the multiprintf.
 They merely differ in destination and order prerequisite
 @c
 str
-IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int order, int printhead, int printorder)
+IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int order, int printhead, int printorder)
 {
 	BAT *piv[MAXPARAMS], *b;
 	int nbats = 0;
 	int tpe, k = i;
 	ptr val;
 
+	(void) cntxt;
 	for (; i < pci->argc; i++) {
 		tpe = getArgType(mb, pci, i);
 		val = (ptr) getArgReference(stk, pci, i);
@@ -381,24 +381,21 @@ IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int orde
 }
 
 str
-IOotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+IOotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int order;
-	Client cntxt= MCgetClient();
-
 	order = *(int *) getArgReference(stk, pci, 1);
-	return IOtableAll(cntxt->fdout, mb, stk, pci, 2, order, TRUE, TRUE);
+	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 2, order, TRUE, TRUE);
 }
 
 str
-IOtable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt= MCgetClient();
-	return IOtableAll(cntxt->fdout, mb, stk, pci, 1, 0, TRUE, TRUE);
+	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 1, 0, TRUE, TRUE);
 }
 
 str
-IOfotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+IOfotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	stream *fp;
 	int order;
@@ -406,34 +403,31 @@ IOfotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fp = *(stream **) getArgReference(stk, pci, 1);
 	order = *(int *) getArgReference(stk, pci, 2);
 	(void) order;		/* fool compiler */
-	return IOtableAll(fp, mb, stk, pci, 3, 1, TRUE, TRUE);
+	return IOtableAll(fp, cntxt, mb, stk, pci, 3, 1, TRUE, TRUE);
 }
 
 str
-IOftable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+IOftable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	stream *fp;
 
 	fp = *(stream **) getArgReference(stk, pci, 1);
-	return IOtableAll(fp, mb, stk, pci, 2, 0, TRUE, TRUE);
+	return IOtableAll(fp, cntxt, mb, stk, pci, 2, 0, TRUE, TRUE);
 }
 
 str
-IOttable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+IOttable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt= MCgetClient();
-	return IOtableAll(cntxt->fdout, mb, stk, pci, 1, 0, FALSE, TRUE);
+	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 1, 0, FALSE, TRUE);
 }
 
 str
-IOtotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int order;
-	Client cntxt= MCgetClient();
-
 	order = *(int *) getArgReference(stk, pci, 1);
 	(void) order;		/* fool compiler */
-	return IOtableAll(cntxt->fdout, mb, stk, pci, 2, order, FALSE, TRUE);
+	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 2, order, FALSE, TRUE);
 }
 
 @- Formatter print
@@ -455,9 +449,8 @@ This avoids repeated type checking in most cases.
 	}
 @c
 str
-IOprint_str(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+IOprint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt= MCgetClient();
 	stream *fd = cntxt->fdout;
 	str *s= (str*) getArgReference(stk,pci,1);
 	str c;
@@ -519,14 +512,15 @@ This to simplify error handling
 @-
 
 @= printFormatted
-io_export str IOprint_formatted_@1(MalBlkPtr mv, MalStkPtr stk, InstrPtr pci);
-str IOprint_formatted_@1(MalBlkPtr mv, MalStkPtr stk, InstrPtr pci)
+io_export str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci);
+str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci)
 {
 	ptr fmt = (ptr) getArgReference(stk,pci,1);
 	@1 *s = (@1 *) getArgReference(stk,pci,2);
-	stream *fd = MCgetClient()->fdout;
+	stream *fd = cntxt->fdout;
 	char *format;
 	str c;
+	(void) cntxt;
 	(void) mv;
 	/* TODO: check format properly !!! including sizes */
 	format= *(str *)fmt;
@@ -579,12 +573,13 @@ IOprint_formatted_nil(stream *fd, str format, char last)
 	return MAL_SUCCEED;
 }
 str
-IOprint_formatted_lng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+IOprint_formatted_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str c;
 	str *format= (str*) getArgReference(stk,pci,1);
 	lng *val= (lng*) getArgReference(stk,pci,2);
-	stream *fd= MCgetClient()->fdout;
+	stream *fd= cntxt->fdout;
+	(void) cntxt;
 	(void) mb;
 
 	for (c = *format; *c; c++) {
@@ -626,13 +621,14 @@ IOprint_formatted_lng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-IOprint_formatted_str(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+IOprint_formatted_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	stream *fd = MCgetClient()->fdout;
+	stream *fd = cntxt->fdout;
 	ptr fmt = (ptr) getArgReference(stk,pci,1);
 	str *s = (str *) getArgReference(stk,pci,2);
 	char *format;
 	str c;
+	(void) cntxt;
 	(void) mb;
 
 	/* TODO: check format properly !!! including sizes */
@@ -649,13 +645,17 @@ IOprint_formatted_str(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-IOprint_oid(int *ret, ptr fmt, oid *s)
+IOprint_oid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	stream *fd = MCgetClient()->fdout;
+	stream *fd = cntxt->fdout;
+	int *ret= (int*) getArgReference(stk,pci,0);
+	ptr fmt = (ptr) getArgReference(stk,pci,1);
+	oid *s = (oid*) getArgReference(stk,pci,2);
 	char *format;
 	str msg, c;
 	int len = 50;
 
+	(void) mb;
 	format = *(str *) fmt;
 
 	if (format == NULL)
@@ -677,16 +677,17 @@ IOprint_oid(int *ret, ptr fmt, oid *s)
 }
 
 str
-IOprint_formatted_bit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+IOprint_formatted_bit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret= (ptr) getArgReference(stk,pci,0);
 	ptr fmt= (ptr) getArgReference(stk,pci,1);
 	bit *s= (bit*) getArgReference(stk,pci,2);
-	stream *fd = MCgetClient()->fdout;
+	stream *fd = cntxt->fdout;
 	char *format;
 	str msg;
 	str c;
 
+	(void) cntxt;
 	(void) mb;
 	/* TODO: check format properly !!! including sizes */
 	format = *(str *) fmt;

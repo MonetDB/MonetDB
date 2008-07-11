@@ -169,7 +169,7 @@ struct {
 #endif
 
 sched_export str MALscheduler(Client c);
-sched_export str debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sched_export str debugScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* MAL_SCEDULER */
 
@@ -187,10 +187,8 @@ sched_export str debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "opt_macro.h"
 
 str
-debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+debugScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt = MCgetClient();
-
 	(void) stk;
 
 	cntxt->debugScheduler = cntxt->debugScheduler ? FALSE : TRUE;
@@ -205,13 +203,12 @@ The result should be a MAL block that can be executed by the corresponding
 engine. 
 @c
 str
-schedulerMALBlock(MalBlkPtr mb)
+schedulerMALBlock(Client cntxt, MalBlkPtr mb)
 {
 	InstrPtr p;
 	int callMALinterpreter = 1, pc, cnt = 0;
 	str msg = NULL;
 	int loops = 0;
-	Client cntxt= MCgetClient();
 
 #ifdef DEBUG_MAL_SCHEDULER
 	int oldstop = mb->stop;
@@ -231,7 +228,7 @@ schedulerMALBlock(MalBlkPtr mb)
 					msg = (str) (*p->fcn) (mb, 0, p);
 				if (msg) {
 					GDKerror(msg);
-					showErrors();
+					showErrors(cntxt);
 					return msg;
 				}
 				pc--;	/*scheduler statement has been removed */
@@ -253,7 +250,7 @@ schedulerMALBlock(MalBlkPtr mb)
 str
 MALscheduler(Client c)
 {
-	return schedulerMALBlock(c->curprg->def);
+	return schedulerMALBlock(c, c->curprg->def);
 }
 
 @}
@@ -289,7 +286,7 @@ done here and upon explicit request]
 @c
 @{
 str
-RUNinline(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+RUNinline(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	Symbol qc;
 	str modnme = getVarConstant(mb, getArg(p, 1)).val.sval;
@@ -301,7 +298,7 @@ RUNinline(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			putName(fcnnme,strlen(fcnnme)));
 
 	if (qc)
-		MACROprocessor(mb, qc);
+		MACROprocessor(cntxt, mb, qc);
 
 	return MAL_SUCCEED;
 }
@@ -311,11 +308,10 @@ The SQL scheduler is presented merely as an example. The real one
 is located in  the SQL libraries for it needs specific information.
 @c
 str
-RUNsqlbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+RUNsqlbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
 	str msg = MAL_SUCCEED;
-	Client cntxt = MCgetClient();
 	Symbol sqlbind = findSymbol( getName("sql",3), getName("bind",4));
 	MALfcn f = getSignature(sqlbind)->fcn;
 

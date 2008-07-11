@@ -122,21 +122,21 @@ comment "Called at the start of a recycle controlled function";
 #define recycle_export extern
 #endif
 
-recycle_export str RECYCLEdumpWrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-recycle_export str RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-recycle_export str RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-recycle_export str RECYCLEsetRetain(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-recycle_export str RECYCLEsetReuse(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-recycle_export str RECYCLEresetCMD(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-recycle_export str RECYCLEsetCache(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+recycle_export str RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+recycle_export str RECYCLEstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+recycle_export str RECYCLEstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+recycle_export str RECYCLEsetRetain(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+recycle_export str RECYCLEsetReuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+recycle_export str RECYCLEresetCMD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+recycle_export str RECYCLEsetCache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEgetRetain(int *p);
 recycle_export str RECYCLEgetReuse(int *p);
 recycle_export str RECYCLEgetCache(int *p);
 recycle_export str RECYCLEshutdownWrap(int *ret);
 recycle_export str RECYCLEmonitor(int *d, int *p);
 recycle_export str RECYCLElog(int *d, str *nm);
-recycle_export str RECYCLEprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-recycle_export str RECYCLEepilogue(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+recycle_export str RECYCLEprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+recycle_export str RECYCLEepilogue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif
 @-
@@ -155,9 +155,8 @@ The recycler is started when the first function is called for its support.
 Upon exit of the last function, the content of the recycle cache is destroyed.
 @c
 str
-RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+RECYCLEstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-
 	(void) pci;
 	(void) stk;
 
@@ -166,9 +165,8 @@ RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		recycleVersion =1 ;
 	}
 	if( mb->version ) {
-		Client c = MCgetClient();
 		/* upgrade to a new version by dropping old info */
-		RECYCLEversion(c, mb);
+		RECYCLEversion(cntxt, mb);
 	} else {
 		mal_set_lock(recycleLock,"recycle");
 		mb->version= recycleVersion;
@@ -180,8 +178,9 @@ RECYCLEstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str
-RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+RECYCLEstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
@@ -196,10 +195,9 @@ RECYCLEstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str
-RECYCLEresetCMD(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+RECYCLEresetCMD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = MCgetClient();
-	RECYCLEreset(c, mb,stk,pci);
+	RECYCLEreset(cntxt, mb,stk,pci);
 	return MAL_SUCCEED;
 }
 
@@ -237,9 +235,8 @@ RECYCLEdump(stream *s)
 
 
 str
-RECYCLEdumpWrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt= MCgetClient();
 	stream *s = cntxt->fdout;
 	str fname;
 
@@ -261,8 +258,8 @@ RECYCLEdumpWrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @-
 Called to collect statistics at the end of each query.
 @c
-void
-RECYCLErunningStat(MalBlkPtr mb)
+static void
+RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 {	
 	static int q=0;
 	stream *s;
@@ -270,12 +267,12 @@ RECYCLErunningStat(MalBlkPtr mb)
 	int potrec=0, i;
 
 	if (recycleLog == NULL) 
-		s = MCgetClient()->fdout;
+		s = cntxt->fdout;
 	else {
 		s = append_wastream(recycleLog);
 		if (s == NULL || stream_errnr(s)) {
         	        GDKerror("could not open file %s.\n", recycleLog);
-			s = MCgetClient()->fdout;
+			s = cntxt->fdout;
 		}
 	}
 
@@ -288,14 +285,15 @@ RECYCLErunningStat(MalBlkPtr mb)
 		recycled-recycled0,(GDKusec()-time0)/1000.0);
 	stream_printf(s,"%d\t %d\t %d\t %d\n",
 		recycled,recycleBlk?recycleBlk->stop-1:0,statements,recyclerUsedMemory);
-	if( s != MCgetClient()->fdout)
+	if( s !=cntxt->fdout)
 		close_stream(s);
 }
 
 
 str
-RECYCLEsetRetain(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+RECYCLEsetRetain(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	(void) cntxt;
 	(void) mb;
 	retainPolicy = * (int*) getArgReference(stk, p,1);
 	if( p->argc > 2)
@@ -316,16 +314,18 @@ RECYCLEsetRetain(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-RECYCLEsetReuse(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+RECYCLEsetReuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	(void) cntxt;
 	(void) mb;
 	reusePolicy = * (int*) getArgReference(stk, p,1);
 	return MAL_SUCCEED;
 }
 
 str
-RECYCLEsetCache(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+RECYCLEsetCache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	(void) cntxt;
 	(void) mb;
 	rcachePolicy = * (int*) getArgReference(stk, p, 1);
 	if( rcachePolicy && p->argc > 2)
@@ -391,24 +391,23 @@ RECYCLElog(int *ret, str *nm)
 }
 
 str 
-RECYCLEprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+RECYCLEprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	Client c = MCgetClient();
-
 	(void) stk;
 	(void) p;
-	RECYCLEversion(c, mb);
+	RECYCLEversion(cntxt, mb);
 	recycleRecent = -1;
 	recycled0 = recycled; 
 	time0 = GDKusec();
 	return MAL_SUCCEED;
 }
 str 
-RECYCLEepilogue(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+RECYCLEepilogue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) p;
-	if (monitorRecycler == 2 ) RECYCLErunningStat(mb);
+	if (monitorRecycler == 2 ) RECYCLErunningStat(cntxt,mb);
 	return MAL_SUCCEED;
 }
 @}

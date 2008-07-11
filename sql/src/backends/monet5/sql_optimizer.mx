@@ -162,7 +162,7 @@ factory structures.
 #define TOSMALL 10
 
 str 
-FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+FXoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr *ns, p;
 	int v;
@@ -173,6 +173,7 @@ FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stream_printf(GDKout, "First call to FXoptimizer\n");
 	printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
+	(void) cntxt;
 	(void)stk;
 	if( mb->errors) {
 		/* remove the FXoptimizer request */
@@ -259,7 +260,7 @@ Finalize the factory loop
 	GDKfree(mb->stmt);
 	mb->stmt = ns;
 
-	optimizerCheck(mb,"sql.factorize",1,GDKusec()-clk, OPT_CHECK_ALL);
+	optimizerCheck(cntxt,mb,"sql.factorize",1,GDKusec()-clk, OPT_CHECK_ALL);
 @-
 At this stage we can once call upon the optimizers to do their work.
 Static known information is known and stored in constant variables,
@@ -295,7 +296,7 @@ common term optimizer, because the first bind has a side-effect.
 @c
 
 static void
-SQLgetStatistics(mvc *m, MalBlkPtr mb)
+SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 {
 	InstrPtr *old = NULL;
 	int oldtop, i, actions = 0, size = 0, j = 0;
@@ -434,7 +435,7 @@ SQLgetStatistics(mvc *m, MalBlkPtr mb)
 		}
 	}
 	GDKfree(old);
-	optimizerCheck(mb,"optimizer.SQLgetstatistics",actions,GDKusec()-clk,0);
+	optimizerCheck(cntxt,mb,"optimizer.SQLgetstatistics",actions,GDKusec()-clk,0);
 }
 @-
 The optimizers applied are taken from a list managed with
@@ -458,9 +459,10 @@ str defaultPlan=
 /*	"replicator," */
 	"accumulators,"
 	"deadcode,"
-	"recycle,"  
+	"recycle," 
 	"reduce,"
 	"garbageCollector," 
+	/* "dataflow,"*/
 	"multiplex";
 static str minimalPlan=
 	"multiplex";
@@ -513,7 +515,7 @@ addQueryToCache(Client c)
 	backend *be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	str optimizer;
 	MalBlkPtr mb;
-    	ValRecord src;
+	ValRecord src;
 
 	insertSymbol(c->nspace, c->curprg);
 	trimMalBlk(c->curprg->def);
@@ -532,12 +534,12 @@ to allow inspection.
 	if (mb->errors) {
 		mvc *m;
 		m = ((mvc *) c->state[MAL_SCENARIO_OPTIMIZE]);
-		showErrors();
+		showErrors(c);
 
 		if (c->listing)
 			printFunction(c->fdout, mb, c->listing);
 		if ( m->debug )
-			runMALDebugger(c->curprg);
+			runMALDebugger(c,c->curprg);
 		return;
 	}
 	optimizer = stack_get_string(be->mvc, "optimizer");
@@ -561,7 +563,7 @@ care of.
 		stack_set_var(be->mvc, "optimizer", 
 			VALset(&src, TYPE_str, defaultPlan? defaultPlan:minimalPlan));
 		addOptimizers(c,mb, base);
-		optimizeMALBlock(mb);
+		optimizeMALBlock(c,mb);
 	} else
 	if( strcmp(optimizer,"off")==0 ){ 
 		str base = GDKstrdup(minimalPlan);
@@ -570,7 +572,7 @@ care of.
 			VALset(&src, TYPE_str, minimalPlan));
 		/* no real optimization needed */
 		addOptimizers(c,mb, base);
-		optimizeMALBlock(mb);
+		optimizeMALBlock(c,mb);
 	} else {
 		str base = GDKstrdup(optimizer);
 
@@ -578,9 +580,9 @@ care of.
 
 		/* time to execute the optimizers */
 		if( c->debug)
-			optimizerCheck(mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
-		SQLgetStatistics((mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
-		optimizeMALBlock(mb);
+			optimizerCheck(c,mb,"sql.baseline",-1,0, OPT_CHECK_ALL);
+		SQLgetStatistics(c,(mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
+		optimizeMALBlock(c,mb);
 	}
 }
 

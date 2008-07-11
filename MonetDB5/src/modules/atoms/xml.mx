@@ -107,6 +107,7 @@ on linking in a portable library, e.g. libxml2 ?
 #include "mal_config.h"
 #include <gdk.h>
 #include "mal.h"
+#include "mal_client.h"
 #include "mal_instruction.h"
 #include "mal_exception.h"
 
@@ -141,7 +142,7 @@ xml_export str XMLattribute(xml *ret, str *name, str *val);
 xml_export str XMLelement(xml *ret, str *name, str *nspace, xml *attr, xml *val);
 xml_export str XMLelementSmall(xml *ret, str *name, xml *val);
 xml_export str XMLconcat(xml *ret, xml *left, xml *right);
-xml_export str XMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+xml_export str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 xml_export str XMLprelude(void);
 
@@ -308,12 +309,13 @@ XMLconcat(xml *ret, xml *left, xml *right)
 }
 
 str
-XMLforest(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str *ret= (str*) getArgReference(stk,p,0);
 	int i, len=0;
 	str buf;
 
+	(void) cntxt;
 	for( i=p->retc; i<p->argc; i++)
 		len += strlen(*(str*)getArgReference(stk,p,i));
 	buf= (str) GDKmalloc(len+1);

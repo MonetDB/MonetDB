@@ -80,17 +80,17 @@ comment "Retrieve the names of all boxes.";
 #define box_export extern
 #endif
 
-box_export str BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-box_export str BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-box_export str BOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-box_export str BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-box_export str BOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-box_export str BOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-box_export str BOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-box_export str BOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-box_export str BOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 box_export str BOXgetBoxNames(int *bid);
-box_export str BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+box_export str BOXiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* __BOX_H */
 @c
 #include "mal_config.h"
@@ -101,10 +101,11 @@ box_export str BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 
 str
-BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BOXopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 
+	(void) cntxt;
 	(void) mb;		/*fool compiler */
 	name = (str) getArgValue(stk, pci, 1);
 	if (openBox(name) != 0)
@@ -113,10 +114,11 @@ BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BOXclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 
+	(void) cntxt;
 	(void) mb;		/*fool compiler */
 	name = (str) getArgValue(stk, pci, 1);
 	if (closeBox(name, FALSE) == 0)
@@ -125,11 +127,12 @@ BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-BOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BOXdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 	str name;
 
+	(void) cntxt;
 	(void) mb;
 	(void) stk;		/*fool compiler */
 	@:OpenBox(destroy)@
@@ -148,12 +151,13 @@ to a named box.
 @-
 @c
 str
-BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	ValPtr v;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;
 	@:OpenBox(deposit)@
 	name = (str) getArgValue(stk, pci, 2);
@@ -164,12 +168,13 @@ BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-BOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BOXtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 	ValPtr v;
 
+	(void) cntxt;
 	@:OpenBox(take)@
 	name = (str) getArgValue(stk, pci, 2);
 	v = &stk->stk[getArg(pci, 0)];
@@ -180,11 +185,12 @@ BOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-BOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BOXrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;		/*fool compiler */
 	@:OpenBox(release)@
 	name = (str) getArgValue(stk, pci, 2);
@@ -193,11 +199,12 @@ BOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-BOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BOXreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;		/*fool compiler */
 	@:OpenBox(releaseAll)@
 	releaseAllBox(box);
@@ -205,11 +212,12 @@ BOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-BOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BOXdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;		/*fool compiler */
 	@:OpenBox(discard)@
 	name = (str) getArgValue(stk, pci, 2);
@@ -219,11 +227,12 @@ BOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-BOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BOXtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;
 	(void) stk;		/*fool compiler */
 	@:OpenBox(toString)@
@@ -237,13 +246,14 @@ BOXgetBoxNames(int *bid)
 }
 
 str
-BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BOXiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 	lng *cursor;
 	ValPtr v;
 
+	(void) cntxt;
 	(void) mb;		/*fool compiler */
 	@:OpenBox(iterator)@
 	cursor = (lng *) getArgValue(stk, pci, 0);

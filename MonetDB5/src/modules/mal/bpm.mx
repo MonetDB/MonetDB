@@ -543,7 +543,7 @@ bpm_export str BPMtake(bat *ret, str *nme);
 bpm_export str BPMtakePartition(bat *ret, str *nme, ptr *hl, ptr *hh, ptr *tl, ptr *th);
 bpm_export str BPMtakePartitionIndexed(bat *ret, int *bid, int *idx, ptr *hl, ptr *hh, ptr *tl, ptr *th);
 
-bpm_export str BPMexpand(MalBlkPtr mb, int varid, int bid);
+bpm_export str BPMexpand(Client cntxt, MalBlkPtr mb, int varid, int bid);
 
 bpm_export str BPMunfold(bat *ret, bat *bid);
 bpm_export str BPMfold(int *ret, bat *src);
@@ -557,18 +557,18 @@ bpm_export str BPMgetNames(bat *bid);
 bpm_export str BPMdiscard(int *ret, bat *bid);
 bpm_export str BPMdiscardAll(int *ret);
 
-bpm_export str BPMnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bpm_export str BPMnewIterator2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bpm_export str BPMnewIterator3(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bpm_export str BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bpm_export str BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bpm_export str BPMnewIteratorRng4(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMnewIterator2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMnewIterator3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMnewIteratorRng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMnewIteratorRng4(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-bpm_export str BPMhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bpm_export str BPMhasMoreElements2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bpm_export str BPMhasMoreElements3(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bpm_export str BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bpm_export str BPMhasMoreElementsRng4(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMhasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMhasMoreElements2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMhasMoreElements3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMhasMoreElementsRng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bpm_export str BPMhasMoreElementsRng4(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 bpm_export str BPMgetNumberOfPartitions(int *ret, int *bid);
 bpm_export str BPMselect(int *ret, int *bid, ptr low, ptr hgh);
@@ -2146,11 +2146,12 @@ The Mergetable optimizer may request a list of fragments
 to be included.
 @c
 str
-BPMexpand(MalBlkPtr mb, int varid, int bid){
+BPMexpand(Client cntxt, MalBlkPtr mb, int varid, int bid){
 	Partition p;
 	InstrPtr q;
 	int i,fragment=0;
 
+	(void) cntxt;
 	/* fake the partitioned version */
 	BPMunfold( &i, &bid);
 	p= getByNumber(bid);
@@ -2456,12 +2457,14 @@ size.
 Iterations over partitioned BATs can be valued constrainted.
 @c
 str
-BPMnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BPMnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bn;
 	bat *ret;
 	int ht, tt;
 	Partition pa;
+
+	(void) cntxt;
 	(void) mb;
 
 	ret= (bat *)getArgReference(stk, pci, 0);
@@ -2490,11 +2493,13 @@ BPMnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BPMnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret, *bid;
 	Partition p;
 	str msg= MAL_SUCCEED;
+
+	(void) cntxt;
 	(void) mb;
 
 	ret= (bat *)getArgReference(stk, pci, 0);
@@ -2503,7 +2508,7 @@ BPMnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BPMopen();
 	
 	if( (p= getAlias(*bid)) == 0){
-		mdbDump(mb,stk,pci);
+		mdbDump(cntxt,mb,stk,pci);
 		throw(MAL,"bpm.newIterator","Can not access alias BAT");
 	}
 
@@ -2530,28 +2535,32 @@ a minimal move to ensure alignment of the iterator
 values.
 @c
 str
-BPMnewIterator2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+BPMnewIterator2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
 	return MAL_SUCCEED;
 }
 str
-BPMnewIterator3(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+BPMnewIterator3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
 	return MAL_SUCCEED;
 }
 str
-BPMhasMoreElements2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+BPMhasMoreElements2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
 	return MAL_SUCCEED;
 }
 str
-BPMhasMoreElements3(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+BPMhasMoreElements3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
@@ -2559,7 +2568,7 @@ BPMhasMoreElements3(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 str
-BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BPMnewIteratorRng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret, *bid;
 	Partition p;
@@ -2568,6 +2577,8 @@ BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int (*cmp) (ptr, ptr);
 	ptr nilptr, low, hgh;
 	str msg= MAL_SUCCEED;
+
+	(void) cntxt;
 	(void) mb;
 
 	ret= (bat *)getArgReference(stk, pci, 0);
@@ -2578,7 +2589,7 @@ BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BPMopen();
 	
 	if( (p= getAlias(*bid)) == 0){
-		mdbDump(mb,stk,pci);
+		mdbDump(cntxt,mb,stk,pci);
 		throw(MAL,"bpm.newIterator","Can not access alias BAT");
 	}
 	@:getBATdescriptor(&p->bid,b,"bpm.newIterator")@
@@ -2615,8 +2626,9 @@ BPMnewIteratorRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str
-BPMnewIteratorRng4(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BPMnewIteratorRng4(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
@@ -2629,10 +2641,11 @@ a correct element in the paritition list.
 
 @c
 str
-BPMhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BPMhasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat idx, *ret, bid;
 	Partition p;
+	(void) cntxt;
 	(void) mb;
 
 	ret= (bat *)getArgReference(stk, pci, 0);
@@ -2641,7 +2654,7 @@ BPMhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BPMopen();
 	if( (p= getAlias(bid)) == 0){
-		mdbDump(mb,stk,pci);
+		mdbDump(cntxt,mb,stk,pci);
 		throw(MAL,"bpm.hasMoreElements","Can not access alias BAT");
 	}
 	if( bpmcat[idx] == 0)
@@ -2660,7 +2673,7 @@ BPMhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BPMhasMoreElementsRng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret, *bid;
 	BAT *b;
@@ -2669,6 +2682,8 @@ BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ptr nilptr, low, hgh;
 	Partition p;
 	str msg= MAL_SUCCEED;
+
+	(void) cntxt;
 	(void) mb;
 
 	ret= (bat *)getArgReference(stk, pci, 0);
@@ -2718,8 +2733,9 @@ BPMhasMoreElementsRng(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str
-BPMhasMoreElementsRng4(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BPMhasMoreElementsRng4(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;

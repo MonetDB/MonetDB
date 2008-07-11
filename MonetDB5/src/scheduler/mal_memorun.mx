@@ -134,10 +134,10 @@ comment "A sample cost prediction function";
 #define memorun_export extern
 #endif
 
-memorun_export str RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-memorun_export str RUNvolumeCost(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-memorun_export str RUNcostPrediction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-memorun_export str RUNpickResult(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+memorun_export str RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+memorun_export str RUNvolumeCost(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+memorun_export str RUNcostPrediction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+memorun_export str RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* MAL_RUN_MEMORUN */
 
 @+ Memorun implementation
@@ -171,14 +171,13 @@ the fragment to be optimized and to gain access to the variables
 without the need to declare them upfront.
 @c
 str
-RUNchoice(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int target;
 	int cost, mincost;
 	int i,j,pc;
 	char *nme;
 	InstrPtr q;
-	Client cntxt= MCgetClient();
 
 	pc= getPC(mb,p);
 	for(i=pc+1; i<mb->stop; i++){
@@ -249,11 +248,12 @@ At the end of the query plan we save the result in
 a separate variable.
 @c
 str
-RUNpickResult(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	ValPtr lhs,rhs;
 	int i;
 
+	(void) cntxt;
 	lhs= &stk->stk[getArg(p,0)];
 	for(i=p->retc; i<p->argc; i++)
 		if( !isVarDisabled(mb,getArg(p,i))){
@@ -273,10 +273,11 @@ The MAL compiler ensures that all arguments have been
 assigned a value.
 @c
 str
-RUNvolumeCost(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+RUNvolumeCost(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng *cost= (lng*) getArgReference(stk,p,0);
 	(void) mb;
 
+	(void) cntxt;
 	*cost = getVolume(stk,p,0); /* calculate total input size */
 	return MAL_SUCCEED;
 }
@@ -286,10 +287,11 @@ instructions to assess the total cost if you follow the path
 starting at the argument given.
 @c
 str
-RUNcostPrediction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+RUNcostPrediction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     lng *cost= (lng*) getArgReference(stk,p,0);
     (void) mb;
 
+	(void) cntxt;
     *cost = 0;
     return MAL_SUCCEED;
 }

@@ -83,9 +83,9 @@ transaction_export str TRNglobal_sync(int *ret);
 transaction_export str TRNglobal_abort(int *ret);
 transaction_export str TRNglobal_commit(int *ret);
 transaction_export str TRNsub_commit(int *ret, int *bid);
-transaction_export str TRNtrans_clean(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-transaction_export str TRNtrans_abort(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-transaction_export str TRNtrans_commit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+transaction_export str TRNtrans_clean(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+transaction_export str TRNtrans_abort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+transaction_export str TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNsubcommit(int *ret, int *bid);
 transaction_export str TRNtrans_prev(int *ret, int *bid);
 transaction_export str TRNtrans_alpha(int *ret, int *bid);
@@ -130,11 +130,12 @@ TRNsubcommit(int *ret, int *bid)
 }
 
 str
-TRNtrans_clean(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+TRNtrans_clean(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, *bid;
 	BAT *b;
 
+	(void) cntxt;
 	(void) mb;
 	for (i = p->retc; i < p->argc; i++) {
 		bid = (int *) getArgReference(stk, p, i);
@@ -152,11 +153,12 @@ TRNtrans_clean(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-TRNtrans_abort(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+TRNtrans_abort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, *bid;
 	BAT *b;
 
+	(void) cntxt;
 	(void) mb;
 	for (i = p->retc; i < p->argc; i++) {
 		bid = (int *) getArgReference(stk, p, i);
@@ -173,11 +175,12 @@ TRNtrans_abort(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-TRNtrans_commit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, *bid;
 	BAT *b;
 
+	(void) cntxt;
 	(void) mb;
 	for (i = p->retc; i < p->argc; i++) {
 		bid = (int *) getArgReference(stk, p, i);

@@ -78,28 +78,29 @@ comment "retrieve the definition from the partition catalogue";
 #define mat_export extern
 #endif
 
-mat_export str MATnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mat_export str MATpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mat_export str MATnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mat_export str MAThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATdummy(int *ret, str *grp);
 mat_export str MATinfo(int *ret, str *grp, str *elm);
-mat_export str MATprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATprint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @- 
 Mal symbol table and environment analysis.
 @c
 
 str
-MATnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	(void) mb; (void) stk; (void) p;
+	(void) cntxt; (void) mb; (void) stk; (void) p;
 	return MAL_SUCCEED;
 }
 str
-MATnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+MATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int *ret = (int*) getArgReference(stk,p,0);
+	(void) cntxt;
 	(void) mb; 
 	if( p->argc == 1){
 		*ret = 0;
@@ -108,11 +109,12 @@ MATnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 str
-MAThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int *ret = (int*) getArgReference(stk,p,0);
 	int i, idx = *ret;
 
+	(void) cntxt;
 	(void) mb; 
 	for(i=1; i< p->argc; i++)
 	if( *(int*) getArgReference(stk,p,i) == idx){
@@ -133,11 +135,12 @@ For the experiments we materialize the BAT in the first
 component. 
 @c
 str
-MATpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,*ret;
 	BAT *b, *bn;
 
+	(void) cntxt;
 	bn= BATdescriptor(stk->stk[getArg(p,1)].val.ival);
 	if( bn == NULL)
 		throw(MAL, "mat.pack","Could access BAT");
@@ -162,9 +165,9 @@ MATpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-MATprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+MATprint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	(void) mb; (void) stk; (void) p;
+	(void) cntxt; (void) mb; (void) stk; (void) p;
 	return MAL_SUCCEED;
 }
 

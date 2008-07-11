@@ -262,14 +262,14 @@ comment "Bind a remote variable to a local one.";
 #define FLEETSSLPORT		40000
 #define FLEETMAXUSERS 		5
 
-m_export str FLEETmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-m_export str FLEETmapi_rpc_single_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-m_export str FLEETput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-m_export str FLEETputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-m_export str FLEETbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+m_export str FLEETmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+m_export str FLEETmapi_rpc_single_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+m_export str FLEETput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+m_export str FLEETputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+m_export str FLEETbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 m_export str FLEETclient(int *res, stream **In, stream **Out);
-m_export str FLEETmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-m_export str FLEETmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+m_export str FLEETmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+m_export str FLEETmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* FLEET_H */
 @c
@@ -539,8 +539,8 @@ FLEETquery_handle(int *ret, int *key, str *qry){
 	return MAL_SUCCEED;
 }
 str
-FLEETquery_array(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc){
-	(void) mb; (void) stk; (void) pc;
+FLEETquery_array(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc){
+	(void) cntxt;(void) mb; (void) stk; (void) pc;
 	throw(MAL, "mserver.query_array","not yet implemented");
 }
 str 
@@ -889,13 +889,12 @@ void FLEETfieldAnalysis(str fld, int tpe, ValPtr v){
 	}
 }
 str
-FLEETmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+FLEETmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int key,i,j;
 	Mapi mid;
 	MapiHdl hdl;
 	char *s,*fld, *qry=0;
-	Client cntxt= mcGetClient();
 
 	key= * (int*) getArgReference(stk,pci,pci->retc);
 	@:accessTest(key,rpc)@
@@ -959,7 +958,7 @@ The generic implementation based on a pattern is the next
 step. 
 @c
 str
-FLEETmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+FLEETmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *ret;
 	int *key;
 	str *qry,err= MAL_SUCCEED;
@@ -971,6 +970,7 @@ FLEETmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ValRecord hval,tval;
 	int ht,tt;
 
+	(void) cntxt;
 	ret= (int*) getArgReference(stk,pci,0);
 	key= (int*) getArgReference(stk,pci,pci->retc);
 	qry= (str*) getArgReference(stk,pci,pci->retc+1);
@@ -1014,7 +1014,7 @@ FLEETmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return err;
 }
 str
-FLEETput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+FLEETput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *key;
 	str *nme;
 	ptr val;
@@ -1023,6 +1023,7 @@ FLEETput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	MapiHdl hdl=0;
 	char *w=0, buf[BUFSIZ];
 
+	(void) cntxt;
 	key= (int*) getArgReference(stk,pci,pci->retc);
 	nme= (str*) getArgReference(stk,pci,pci->retc+1);
 	val= (ptr) getArgReference(stk,pci,pci->retc+2);
@@ -1047,12 +1048,13 @@ FLEETput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 str
-FLEETputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+FLEETputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *ret, *nme;
 	ptr val;
 	int tpe;
 	char *w=0, buf[BUFSIZ];
 
+	(void) cntxt;
 	ret= (str*) getArgReference(stk,pci,0);
 	nme= (str*) getArgReference(stk,pci,pci->retc);
 	val= (ptr) getArgReference(stk,pci,pci->retc+1);
@@ -1073,13 +1075,15 @@ FLEETputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 str 
-FLEETbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+FLEETbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *key;
 	str *nme,*tab,*col;
 	int i;
 	Mapi mid;
 	MapiHdl hdl=0;
 	char buf[BUFSIZ];
+
+	(void) cntxt;
 	key= (int*) getArgReference(stk,pci,pci->retc);
 	nme= (str*) getArgReference(stk,pci,pci->retc+1);
 	@:accessTest(*key,bind)@

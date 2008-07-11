@@ -70,7 +70,6 @@ They are marked as unsafe.
 
 /* #define DEBUG_OPT_ALIASES      show partial result */
 
-opt_export int OPTaliasStep(MalBlkPtr mb, int pc);
 opt_export int OPTisAlias(InstrPtr p);
 opt_export void OPTaliasRemap(InstrPtr p, int *alias);
 @-

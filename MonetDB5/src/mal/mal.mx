@@ -350,7 +350,7 @@ int mal_init(){
 	initNamespace();
 	initParser();
 	if( malBootstrap() == 0) {
-		showErrors();
+		showErrors(MCgetClient());
 		return -1;
 	}
 	return 0;

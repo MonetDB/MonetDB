@@ -86,7 +86,7 @@ malBootstrap()
 	trimMalBlk(c->curprg->def);
 	chkProgram(c->nspace, c->curprg->def);
 	if (c->curprg->def->errors) {
-		showErrors();
+		showErrors(c);
 		GDKfatal("Failed to initialise system");
 		return 0;
 	}
@@ -568,7 +568,7 @@ MALparser(Client c)
 		/* just complete it for visibility */
 		pushEndInstruction(c->curprg->def);
 		/* caught errors */
-		showErrors();
+		showErrors(c);
 		@:restoreState@
 		/* now the parsing is done we should advance the stream */
 		c->fdin->pos += c->yycur;
@@ -597,7 +597,7 @@ MALparser(Client c)
 	trimMalBlk(c->curprg->def);
 	chkProgram(c->nspace, c->curprg->def);
 	if (c->curprg->def->errors) {
-		showErrors();
+		showErrors(c);
 		@:restoreState@
 		throw(MAL, "MAL.parser", "Semantic errors detected");
 	}
@@ -632,7 +632,7 @@ MALengine(Client c)
 		throw(MAL, "MAL.engine", "Main MAL function missing");
 
 	if (prg->def->errors > 0) {
-		showErrors();
+		showErrors(c);
 		@:restoreState@
 		throw(MAL, "MAL.engine", "Program contains errors");
 	}
@@ -667,7 +667,7 @@ and marking all non-temporary variables as being (potentially) used.
 		GDKfree(place);
 		if (!c->listing)
 			printFunction(c->fdout, c->curprg->def, c->listing);
-		showErrors();
+		showErrors(c);
 	}
 	resetMalBlk(prg->def,1);
 	MSresetVariables(prg->def, c->glb, 0);

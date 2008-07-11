@@ -202,25 +202,25 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #define bbp_export extern
 #endif
 
-bbp_export str CMDbbpprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpbind2(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-bbp_export str CMDbbpbindindex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpdestroyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpdestroyBAT1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpReleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpbindDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpbind2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+bbp_export str CMDbbpbindindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbptake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbprelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpreleaseBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpdestroyBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpdestroyBAT1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpReleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbptoStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+bbp_export str CMDbbpGetObjects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpDiskSpace(int *ret);
 bbp_export str CMDbbpNames(int *ret);
 bbp_export str CMDbbpName(str *ret, int *bid);
@@ -249,11 +249,12 @@ to a named box. The bbp box is automatically opened.
 
 
 str
-CMDbbpprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
+	(void) cntxt;
 	if (openBox("bbp"))
 		return MAL_SUCCEED;
 	throw(MAL, "bbp.prelude", "failed to open box");
@@ -262,8 +263,9 @@ CMDbbpprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @- Operator implementation
 @c
 str
-CMDbbpopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -273,29 +275,29 @@ CMDbbpopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbbpclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	Box box;
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	if (MCgetClient() != mal_clients)
-		throw(MAL, "bbp.close", "not allowed to close 'bbp' box");
+	OpenBox("close");
 	if (closeBox("bbp", TRUE) == 0)
 		return MAL_SUCCEED;
 	throw(MAL, "bbp.close", "failed to close 'bbp' box");
 }
 
 str
-CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
 	OpenBox("destroy");
-	if (MCgetClient() != mal_clients)
-		throw(MAL, "bbp.destroy", "not allowed to destroy 'bbp' box");
 	destroyBox("bbp");
 	return MAL_SUCCEED;
 }
@@ -306,13 +308,14 @@ increment the reference count to assure it is not
 garbage collected. Moreover, it should be done so only once.
 @c
 str
-CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	ValPtr v;
 	Box box;
 	int flg;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 
 	OpenBox("deposit");
@@ -329,11 +332,12 @@ CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpbindDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name, loc;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("bind");
 	name = (str) getArgValue(stk, pci, 1);
@@ -346,7 +350,7 @@ CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
@@ -355,6 +359,7 @@ CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int ht,tt;
 	BAT *b;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	lhs = &stk->stk[getArg(pci, 0)];
 	name = (str) getArgValue(stk, pci, 1);
@@ -407,12 +412,13 @@ CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbbpbind2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+CMDbbpbind2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *ret= (int*) getArgReference(stk,pci,0);
 	str hnme = (str) getArgValue(stk, pci, 1);
 	str tnme = (str) getArgValue(stk, pci, 2);
 	int i,ht,tt;
 
+	(void) cntxt;
 	/* check conformity of the actual type and the one requested */
 	ht= getHeadType(getArgType(mb,pci,0));
 	tt= getTailType(getArgType(mb,pci,0));
@@ -445,12 +451,13 @@ CMDbbpbind2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	throw(MAL, "bbp.find","BAT not found");
 }
 str
-CMDbbpbindindex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+CMDbbpbindindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	int ht,tt;
 	int *ret= (int*) getArgReference(stk,pci,0);
 	int *bid= (int*) getArgReference(stk,pci,1);
 
+	(void) cntxt;
 	/* check conformity of the actual type and the one requested */
 	ht= getHeadType(getArgType(mb,pci,0));
 	tt= getTailType(getArgType(mb,pci,0));
@@ -481,12 +488,13 @@ If the bat is not known in the box, we go to the bbp pool
 and make an attempt to load it directly.
 @c
 str
-CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbptake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 	ValPtr v;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("take");
 	name = (str) getArgValue(stk, pci, 1);
@@ -513,11 +521,12 @@ CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbprelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;		/* fool compiler */
 	(void) mb;		/* fool compiler */
 	OpenBox("release");
 	name = (str) getArgValue(stk, pci, 1);
@@ -533,11 +542,12 @@ We decrease the reference count with one, but should not
 immediately release it, because there may be aliases.
 @c
 str
-CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpreleaseBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *bid;
 	Box box;
 
+	(void) cntxt;
 	OpenBox("release");
 	bid = (int *) getArgValue(stk, pci, 1);
 	BBPdecref(*bid, TRUE);
@@ -554,12 +564,13 @@ Note that we clear the dirty bit to ensure that
 the BAT is not written back to store before being freed.
 @c
 str
-CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpgarbage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *bid;
 	Box box;
 	BAT *b;
 
+	(void) cntxt;
 	(void) mb;
 	OpenBox("release");
 	bid = (int *) getArgValue(stk, pci, 1);
@@ -593,16 +604,17 @@ a session. The references within the current frame
 should also be zapped.
 @c
 str
-CMDbbpdestroyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpdestroyBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit ret = 0;
 	int *bid;
 	bit *immediate;
 	str msg;
 
+	(void) cntxt;
 	bid = (int *) getArgValue(stk, pci, 1);
 	immediate = (bit *) getArgValue(stk, pci, 2);
-	msg = CMDbbpreleaseBAT(mb, stk, pci);
+	msg = CMDbbpreleaseBAT(cntxt,mb, stk, pci);
 	if( *immediate) 
 		msg = BKCdestroyImmediate(&ret, bid);
 	else 
@@ -612,10 +624,11 @@ CMDbbpdestroyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbbpdestroyBAT1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpdestroyBAT1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit ret = 0;
 	int *bid;
+	(void) cntxt;
 	(void) mb;
 
 	bid = (int *) getArgValue(stk, pci, 1);
@@ -624,10 +637,11 @@ CMDbbpdestroyBAT1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbbpReleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpReleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -639,11 +653,12 @@ CMDbbpReleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("discard");
 	name = (str) getArgValue(stk, pci, 1);
@@ -654,13 +669,14 @@ CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbptoStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 	int i;
 	ValPtr v;
 	str nme;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("toString");
 	nme = (str) getArgValue(stk, pci, 1);
@@ -676,12 +692,13 @@ CMDbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 	lng *cursor;
 	ValPtr v;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("iterator");
 	cursor = (lng *) getArgValue(stk, pci, 0);
@@ -712,7 +729,7 @@ it is simply removed first
 	BBPkeepref(*ret);
 @c
 str
-CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpGetObjects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
 	int i;
@@ -720,6 +737,7 @@ CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Box box;
 	int *ret;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("getObjects");
 	b = BATnew(TYPE_int, TYPE_str, BBPsize);

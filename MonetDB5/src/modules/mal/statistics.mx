@@ -204,23 +204,23 @@ s_export str STATenrollHistogram(int *ret, str *nme);
 s_export str STATupdateAll(int *ret, int forced);
 s_export str STATupdate(int *ret);
 s_export str STATforceUpdate(int *ret, str *nme);
-s_export str STATdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+s_export str STATdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATprelude(int *ret);
 s_export str STATepilogue(int *ret);
-s_export str STATopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+s_export str STATopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+s_export str STATclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+s_export str STATdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATdepositStr(int *ret, str *nme);
 s_export str STATdeposit(int *ret, int *bid);
-s_export str STATtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+s_export str STATtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATrelease(int *ret, int *bid);
-s_export str STATreleaseStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+s_export str STATreleaseStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+s_export str STATreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+s_export str STATdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATdiscard2(int *ret, int *bid);
-s_export str STATtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STAThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+s_export str STATtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+s_export str STATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+s_export str STAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATgetHotset(int *bid);
 s_export str STATgetObjects(int *bid);
 s_export str STATgetHistogram(int *ret, str *nme);
@@ -496,9 +496,8 @@ STATforceUpdate(int *ret, str *nme)
 }
 
 str
-STATdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STATdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt= MCgetClient();
 	BAT *piv[MAXPARAMS];
 
 	(void) mb;
@@ -559,11 +558,12 @@ STATepilogue(int *ret)
 }
 
 str
-STATopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STATopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret;
 	str msg=MAL_SUCCEED;
 
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -576,9 +576,10 @@ STATopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-STATclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STATclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
+	(void) cntxt;
 	(void) stk;
 	(void) pci;		/* fool compiler */
 	authorize("close");
@@ -588,10 +589,11 @@ STATclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-STATdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STATdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -647,12 +649,13 @@ STATdeposit(int *ret, int *bid)
 }
 
 str
-STATtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STATtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 	ValPtr v;
 
+	(void) cntxt;
 	OpenBox("take");
 	name = (str) getArgName(mb, pci, 1);
 	v = &stk->stk[getArg(pci, 0)];
@@ -677,11 +680,12 @@ STATrelease(int *ret, int *bid)
 }
 
 str
-STATreleaseStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STATreleaseStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;
 	(void) stk;		/* fool compiler */
 
 	OpenBox("release");
@@ -699,10 +703,11 @@ stale information. All others are only updated with a forceful update.
 The release policy is not yet implemented.
 @c
 str
-STATreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STATreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 
+	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
@@ -712,11 +717,12 @@ STATreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-STATdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STATdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("discard");
 	name = (str) getArgValue(stk, pci, 1);
@@ -742,13 +748,14 @@ STATdiscard2(int *ret, int *bid)
 }
 
 str
-STATtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STATtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 	int i, len = 0;
 	ValPtr v;
 	str nme, s = 0;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("toString");
 	nme = (str) getArgValue(stk, pci, 1);
@@ -768,12 +775,13 @@ STATtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-STATnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 	lng *cursor;
 	ValPtr v;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("iterator");
 	cursor = (lng *) getArgValue(stk, pci, 0);
@@ -783,12 +791,13 @@ STATnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-STAThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 	lng *cursor;
 	ValPtr v;
 
+	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("iterator");
 	cursor = (lng *) getArgValue(stk, pci, 0);

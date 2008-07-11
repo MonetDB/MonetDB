@@ -71,7 +71,7 @@ comment "Run a private copy of the MAL program";
 #define isolation_export extern
 #endif
 
-isolation_export str RUNisolation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+isolation_export str RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* MAL_RUN_ISOLATION */
 
 @+ Isolation implementation
@@ -80,8 +80,9 @@ isolation_export str RUNisolation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #include "mal_isolation.h"
 
 str
-RUNisolation(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	(void) cntxt;
 	(void) stk;
 	addtoMalBlkHistory(mb,"isolation");
 	removeInstruction(mb, p);

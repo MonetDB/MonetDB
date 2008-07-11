@@ -224,7 +224,7 @@ The heuristics is sufficient for the code produced by SQL frontend
 @h
 @:exportOptimizer(joinPath)@
 #endif
-opt_export str ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(joinPath,OPT_CHECK_ALL)@
@@ -354,11 +354,10 @@ may fire a BATproperty check in a few cases.
 }
 
 str
-ALGjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,*bid,top=0;
 	BAT *b, **joins = (BAT**)alloca(pci->argc*sizeof(BAT*)); 
-	Client cntxt= MCgetClient();
 
 	(void)mb;
 	for (i = pci->retc; i < pci->argc; i++) {
