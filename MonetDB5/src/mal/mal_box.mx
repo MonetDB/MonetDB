@@ -682,7 +682,7 @@ saveBox(Box box, int flag)
 		if (v->vtype == TYPE_bat) {
 			BAT *b = (BAT *) BBPgetdesc(v->val.bval);
 
-			if (b && b->batPersistence & PERSISTENT){
+			if (b && b->batPersistence == PERSISTENT){
 				stream_printf(f, "%s.bind(\"%s\",\"%s\");\n", 
 					box->name, getVarName(box->sym, i), 
 					BBPname(v->val.bval));

@@ -1657,7 +1657,7 @@ createView:
 
 				/* make sure we use the correct capacity */
 				tcap = (b->ttype)?b->T->heap.size>>b->T->shift:0;
-				b->U->capacity = tcap;
+				b->batCapacity = tcap;
 
 
 				/* first/inserted must point equally far into the heap as in the source */

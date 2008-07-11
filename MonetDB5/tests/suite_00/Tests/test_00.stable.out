@@ -314,7 +314,6 @@ end main;                               #147
 # h			t		  # name
 # str			str		  # type
 #-----------------------------------------#
-[ "version",		  "25106"	  ]
 [ "batId",		  "tmp_10"	  ]
 [ "batCacheid",		  "8"		  ]
 [ "hparentid",		  "0"		  ]

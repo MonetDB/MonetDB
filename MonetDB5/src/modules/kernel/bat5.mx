@@ -62,12 +62,6 @@ The code speaks for itself
 #address BKCnewBATlng
 #comment "Creates a new empty BAT, allocating 'size' elements.";
 
-#command convert(b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
-#address BKCconvert
-#comment "Convert the contents of a BAT from little-endian to big-endian 
-#        and vice versa. THIS command SHOULD NOT BE USED FROM MAL!
-#	DANGEROUS! DEBUGGING PURPOSES ONLY!";
-
 #command access( b:bat[:any_1,:any_2], mode:int) :bat[:any_1,:any_2]
 #address BKCaccess;
 
@@ -611,7 +605,6 @@ bat5_export str BKCnewBat(int *res, int *ht, int *tt, wrd *cap);
 bat5_export str BKCnewBat_default(int *res, int *ht, int *tt);
 bat5_export str BKCreverse(int *ret, int *bid);
 bat5_export str BKCmirror(int *ret, int *bid);
-bat5_export str BKCconvert(int *ret, int *bid);
 bat5_export str BKCrevert(int *ret, int *bid);
 bat5_export str BKCorder(int *ret, int *bid);
 bat5_export str BKCorder_rev(int *ret, int *bid);
@@ -781,14 +774,6 @@ CMDmirror(BAT **ret, BAT *b)
 		BBPreclaim(v);
 	}
 	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-int
-CMDconvert(BAT **ret, BAT *b)
-{
-	if (BATconvert(*ret = b, CONV_HTON) == NULL)
-		BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
 }
 
 int
@@ -1464,7 +1449,6 @@ CMDinfo(BAT **retval, BAT *b)
 		accessmode = "unknown";
 	}
 
-	BUNins(bn, "version", local_itoa((ssize_t)(b->GDKversion)),FALSE);
 	BUNins(bn, "batId", BATgetId(b),FALSE);
 	BUNins(bn, "batCacheid", local_itoa((ssize_t)(b->batCacheid)),FALSE);
 	BUNins(bn, "hparentid", local_itoa((ssize_t)(b->H->parentid)),FALSE);
@@ -1918,6 +1902,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
         char *chk;
 	BUN p, q;
 	BAT *bn;
+	BATstore *bs;
 	MT_mmap_hdl hdl;
 
    	/* try to use fast page-wise memory mapping technique on read-only mmapped [void,X] bats */ 
@@ -1972,7 +1957,9 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 	GDKfree(chk);
 
 	/* create result bat descriptor */
-	*res = bn = BATcreatedesc(TYPE_void, b->ttype, TRUE); 
+	bs = BATcreatedesc(TYPE_void, b->ttype, TRUE);
+	bn = bs ? &bs->B : NULL;
+	*res = bn; 
 	bni = bat_iterator(bn);
 	if (bn == NULL) return GDK_FAIL;
         BATinit_idents(bn);
@@ -2054,7 +2041,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 			fix(BUNtail(bni, p));
 		}
 	}
-	BBPcacheit(bn);
+	BBPcacheit(bs);
 	if (mmappath) {
 		/* if copy-on-write was used, make bn a logical view on b */
 		bn->P->lview = TRUE;
@@ -2434,23 +2421,6 @@ BKCmirror(int *ret, int *bid)
 	*ret = 0;
 	BBPreleaseref(b->batCacheid);
 	throw(MAL, "bat.mirror", "GDKerror");
-}
-
-str
-BKCconvert(int *ret, int *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.convert", "Cannot access descriptor");
-	}
-	if (BATconvert(b, CONV_HTON) == NULL) {
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.convert", "Failed");
-	}
-	*ret = b->batCacheid;
-	BBPkeepref(*ret);
-	return MAL_SUCCEED;
 }
 
 str
