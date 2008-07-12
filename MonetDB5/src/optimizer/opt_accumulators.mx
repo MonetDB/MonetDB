@@ -174,6 +174,7 @@ sure it becomes one.
 			p= pushArgument(mb, p, getArg(p,2));
 			setArg(p,2,getArg(p,1));
 			setArg(p,1,getArg(p,0));
+			setArg(p,0,getArg(p,0));
 			@:patchInstruction@
 	} else if (p->retc==1 && p->argc == 2) {
 			/* unary operation, check first argument  and return type */
@@ -192,6 +193,7 @@ sure it becomes one.
 			q= copyInstruction(p);
 			p= pushArgument(mb, p, a);
 			setArg(p,1,getArg(p,0));
+			setArg(p,0,getArg(p,0));
 			@:patchInstruction@
 		} 
 		pushInstruction(mb,p);
