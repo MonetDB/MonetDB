@@ -38,8 +38,7 @@ strongly typed the hard way.
 Moreover, they have a counterpart representation in the 
 MVC structure to ease inspection during query processing.
 
-The variables and their type definition are assembled in a system table
-called 'sessions'.
+The variables can be retrieved using the table producing function var();
 @{
 @h
 #ifndef _SQL_ENV_H_
