@@ -151,7 +151,7 @@ void setModuleJump(str nme, Module cur){
 }
 Module newModule(Module scope, str nme){
 	Module cur;
-	nme= getName(nme,strlen(nme));
+	nme = getName(nme,strlen(nme));
 	@:newscope(newModule)@
 	newSubScope(cur);
 	if( scope != NULL){
@@ -865,7 +865,8 @@ char **getHelp(Module m, str inputpat, int completion)
 	str pat, modnme, fcnnme = 0;
 	Module m1;
 	Symbol s;
-	int len1 = 0,len2 = 0,fnd=0;
+	size_t len1 = 0,len2 = 0;
+	int fnd=0;
 	char *t, **msg, buf[BUFSIZ];
 	int top=0, i,j,k, sig = 0, doc = 0;
 	int maxhelp= MAXHELP;
@@ -913,7 +914,7 @@ char **getHelp(Module m, str inputpat, int completion)
 		return msg;
 	}
 
-	len1 = strlen(modnme);
+	len1 = (int)strlen(modnme);
 
 	/* display module information if there is no function */
 	if( fcnnme == NULL){
@@ -945,7 +946,7 @@ char **getHelp(Module m, str inputpat, int completion)
 	if( m1 ) m = m1;
 	
 #ifdef MAL_SCOPE_DEBUG 
-	printf("showHelp: %s %s [%d] %s %s\n",
+	printf("showHelp: %s %s [" SZFMT "] %s %s\n",
 			modnme,fcnnme,len2, (doc?"doc":""), (sig?"sig":""));
 #endif
 	for(i=0; i< MAXSCOPE; i++)
@@ -971,7 +972,7 @@ char **getHelp(Module m, str inputpat, int completion)
 				if( doc) {
 					char *v;
 
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
 					buf[0]=' ';
 
 					v= strstr(buf,"address");
@@ -1000,7 +1001,7 @@ char **getHelp(Module m, str inputpat, int completion)
 					*v=0;
 				} else if( strncmp(fcnnme,s->name,strlen(fcnnme))==0 ||
 							*fcnnme=='*' ) {
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
 					buf[0]=' ';
 					t= strstr(buf,"address");
 					if( t) *t= 0;
@@ -1047,7 +1048,7 @@ char **getHelpMatch(char *pat){
 				for(s= m->subscope[j]; s; s= s->peer)
 				if( strstr(m->name,pat) || strstr(s->name,pat) ||
 					(s->def->help && strstr(s->def->help,pat))) {
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
 					buf[0]=' ';
 					if( s->def->help) {
 						char *v,*w;

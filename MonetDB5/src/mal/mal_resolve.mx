@@ -636,7 +636,7 @@ In those cases, the detailed analysis is performed upon an actual call.
 			if( !silent) {
 				char errsig[BUFSIZ];
 
-				instructionCall(mb,p,errsig);
+				instructionCall(mb,p,errsig,errsig,BUFSIZ);
 				showScriptException(mb,getPC(mb,p),TYPE,
 						"'%s%s%s' undefined in: %s", 
 						(getModuleId(p)?getModuleId(p):""),
