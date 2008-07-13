@@ -590,7 +590,7 @@ BBPinit(void)
 		unsigned short map_head, map_tail, map_hheap, map_theap;
 
 		if (sscanf(buf,
-			   "%llu %hu %128s %128s %128s %d %u %llu %llu %llu %llu %llu %hu %hu %hu %hu"
+			   "%lld %hu %128s %128s %128s %d %u %lld %lld %lld %lld %lld %hu %hu %hu %hu"
 			   "%n",
 			   &batid, &status, headname, tailname, filename, &lastused, &properties, &inserted, &deleted, &first, &count, &capacity, &map_head, &map_tail, &map_hheap, &map_theap,
 			   &nread) < 16)
