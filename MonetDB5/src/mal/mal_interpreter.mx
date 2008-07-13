@@ -41,9 +41,9 @@ to be passed by a handle.
 @h
 
 /*#define DEBUG_MAL_INTERPRETER */
-/*#define DEBUG_MAL_PARALLEL */
-/*#define DEBUG_FLOW*/
+/*#define DEBUG_FLOW */
 /*#define STACKTRACE*/
+
 mal_export void showErrors(Client cntxt);
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb);
 mal_export str runMAL(Client c, MalBlkPtr mb, int startpc,
@@ -475,7 +475,7 @@ We rely on optimizing compilers to remove the redundant code.
 				@:MALinterpret(FAST)@
 				@:MALrecycleExit@
 			}
-			@:MALflowofcontrol(FAST)@
+			@:MALflowofcontrol(FAST,continue)@
 		}
 	} else
 	while(stkpc < mb->stop && stkpc != stoppc ){
@@ -507,7 +507,7 @@ workslow:
 			@:MALinterpret(SLOW)@
 			@:MALrecycleExit@
 		}
-		@:MALflowofcontrol(SLOW)@
+		@:MALflowofcontrol(SLOW,continue)@
 		@:endProfile@
 	}
 	@:MALwrapup@
@@ -535,29 +535,27 @@ Furthermore, per flow block we keep an administration when
 variables are blocked or not. An instruction can fire if all
 its input variables are not blocked.
 @c
-#define DFLOWpending 0
-#define DFLOWblocked 1
-#define DFLOWrunning 2
-#define DFLOWwrapup  4
-#define DFLOWfree	 8
+#define DFLOWpending -1		/* runnable */
+#define DFLOWrunning -2		/* currently in progress */
+#define DFLOWwrapup  -4		/* done! */
 
-typedef struct{
-	int pc;	/* pc in underlying malblock */
-	lng cost;
-	int status;
-} *FlowStep, FlowStepRec;
-
-typedef struct{
-	MT_Lock	lock;
+typedef struct {
 	Client cntxt;		/* for debugging */
 	MalBlkPtr mb;		/* carry the context */
 	MalStkPtr stk;
-	InstrPtr pci;
-	str error;
 	int start, stop;	/* guarded block under consideration*/
-	FlowStep queue;	/* of eligible instructions to fire organized by thread*/
+	int *status;	/* statements can be blocked on other statements */
 	char *blocked;		/* marking of all variables */
 } *DataFlow, DataFlowRec;
+
+typedef struct {
+	int pc;	/* pc in underlying malblock */
+	sht status;
+	sht cost;
+	str error;
+	DataFlow flow;
+} *FlowStep, FlowStepRec;
+
 @-
 The cost of a flow step depends on availability of its
 arguments and the total size of the BATs being accessed.
@@ -602,122 +600,6 @@ MALflowCost(MalBlkPtr mb, MalStkPtr stk, int pc){
 }
 
 @-
-Collect all eligable instructions. They are recognized as those where
-the arguments have all been set before the block started.
-@c
-static void
-DFLOWupdate(DataFlow flow){
-	int i,j, blocked,limit;
-	InstrPtr p;
-
-	memset((char*) flow->blocked,0, flow->mb->vtop);
-	
-	limit= flow->stop-flow->start;
-	for (i= 0; i<limit; i++)
-	if (flow->queue[i].status != DFLOWwrapup) {
-		/* is the current instruction free? */
-		p= getInstrPtr(flow->mb,flow->queue[i].pc);
-		blocked = 0;
-		for(j=0; j< p->argc; j++)
-			if( flow->blocked[getArg(p,j)] ){
-				blocked++;
-				break;
-			}
-		flow->queue[i].status= blocked?DFLOWblocked:DFLOWpending;
-		flow->queue[i].cost= blocked? -1:  MALflowCost(flow->mb, flow->stk, flow->queue[i].pc);
-		
-		/* mark all variables as blocked */
-		for(j=0; j<p->argc; j++)
-		if (!isVarConstant(flow->mb,getArg(p,j)))
-			flow->blocked[getArg(p,j)]= 1;
-	}
-#ifdef DEBUG_FLOW
-	stream_printf(flow->cntxt->fdout,"DFLOWinit\n");
-	for(i=0;i<limit; i++){
-		stream_printf(flow->cntxt->fdout,"#[%2d,%3d]cost %2d  state %2d ",
-				i,flow->queue[i].pc,
-				flow->queue[i],flow->queue[i].cost,flow->queue[i].status);
-		printInstruction(flow->cntxt->fdout,flow->mb,getInstrPtr(flow->mb,flow->queue[i].pc), 0);
-	}
-#endif
-}
-
-static void
-DFLOWinit(DataFlow flow){
-	int i,n;
-
-	for (n=0, i= flow->start; i<flow->stop; i++,n++)
-	if (flow->queue[n].status != DFLOWwrapup) {
-		/* is the current instruction free? */
-		flow->queue[n].pc= i;
-		flow->queue[n].status= DFLOWblocked;
-	}
-	DFLOWupdate(flow);
-}
-@-
-After an instruction is executed, the target variables should be freed
-and any related instruction can be set to pending. The argument pc
-indicates the first instruction to consider. All before are executed already.
-@c
-static void
-DFLOWdrop(DataFlow flow, int pc){
-#ifdef DEBUG_FLOW
-	int i,j,limit;
-
-	InstrPtr p= getInstrPtr(flow->mb,flow->queue[pc].pc);
-	stream_printf(flow->cntxt->fdout,"#drop");
-	printInstruction(flow->cntxt->fdout,flow->mb,p,0);
-
-
-	limit= flow->stop-flow->start;
-	for(i=pc+1; i<limit; i++){
-		p= getInstrPtr(flow->mb,flow->queue[i].pc);
-		for(j=0; j<p->argc; j++)
-		stream_printf(flow->cntxt->fdout," %d%s ", getArg(p,j),
-		(flow->blocked[getArg(p,j)]?"b":""));
-	}
-	stream_printf(flow->cntxt->fdout,"\n");
-#endif
-	flow->queue[pc].status= DFLOWwrapup;
-	DFLOWupdate(flow);
-}
-@-
-We simply move a cheap instruction into the front of the queue.
-Beware, we assume that variables are assigned a value once, otherwise
-the order may really create errors.
-The order of the instructions should be retained as long as possible.
-@c
-static void
-DFLOWstep(DataFlow flow,int pc){
-	int i,j,limit;
-	FlowStepRec f;
-
-	limit= flow->stop-flow->start;
-	MT_set_lock(flow->lock,"dataflow step");
-	for (i = pc; i<limit; i++)
-		if (flow->queue[i].status == DFLOWpending ){
- 			if( flow->queue[pc].cost > flow->queue[i].cost){
-				f = flow->queue[i];
-				for(j=i; j>pc; j--)
-					flow->queue[j]= flow->queue[j-1];
-				flow->queue[pc]=f;
-			} 
-		}
-#ifdef DEBUG_FLOW
-	stream_printf(flow->cntxt->fdout,"#exec[%2d,%3d] cost %d status %d\n",
-		pc,flow->queue[pc].pc, flow->queue[pc].cost,flow->queue[pc].status);
-	printInstruction(flow->cntxt->fdout,flow->mb,getInstrPtr(flow->mb,flow->queue[pc].pc), 0);
-	for(i=0;i<limit; i++){
-		stream_printf(flow->cntxt->fdout,"#[%2d,%3d]cost %2d  state %2d ",
-				i,flow->queue[i].pc,
-				flow->queue[i],flow->queue[i].cost,flow->queue[i].status);
-		printInstruction(flow->cntxt->fdout,flow->mb,getInstrPtr(flow->mb,flow->queue[i].pc), 0);
-	}
-#endif
-	MT_unset_lock(flow->lock,"dataflow step");
-}
-
-@-
 The dataflow execution is confined to a barrier block. 
 Within the block there are multiple flows, which, in principle,
 can be executed in parallel.
@@ -726,29 +608,110 @@ can be executed in parallel.
 
 typedef struct {
 	MT_Id tid;
-	MT_Sema sema;
-	int id,status;
-	DataFlow flow;
-	str error;
+	int id;
 } FlowTask;
 
-static str 
-runFlow(DataFlow flow){
+typedef struct queue {
+	int size;	/* size of queue */
+	int first;	/* first in the queue */
+	int last;	/* last element in the queue */
+	void **data;	
+	MT_Lock l;	/* its a shared resource, ie we need locks */
+	MT_Sema s;	/* threads wait on empty queues */
+} queue;
+
+static queue*
+q_create( int sz )
+{
+	queue *q = (queue*)GDKmalloc(sizeof(queue));
+
+	q->size = ((sz<<1)>>1); /* we want a multiple of 2 */
+	q->first = -1;
+	q->last = 0;
+	q->data = (void*)GDKmalloc(sizeof(void*)*sz);
+	
+	MT_init_lock(q->l, "q_create");
+	MT_init_sema(q->s, 0, "q_create");
+	return q;
+}
+
+#if 0
+static void
+q_destroy( queue *q )
+{
+	GDKfree(q->data);
+	GDKfree(q);
+}
+#endif
+
+static void
+q_enqueue(queue *q, void *d)
+{
+	MT_set_lock(q->l, "q_enqueue");
+	if (q->last == q->first) {
+		/* enlarge buffer */
+		q->size <<= 1;
+		q->data = GDKrealloc(q->data, q->size);
+	}
+	q->data[q->last] = d;
+	if (q->first < 0)
+		q->first = q->last;
+	q->last = (q->last+1)&(q->size-1);
+	MT_unset_lock(q->l, "q_enqueue");
+	MT_up_sema(q->s, "q_enqueue");
+}
+
+static void *
+q_dequeue(queue *q) 
+{
+	void *r = NULL;
+
+	MT_down_sema(q->s, "q_dequeue");
+	MT_set_lock(q->l, "q_dequeue");
+	if (q->first < 0) 
+		assert(0); 	/* nothing to dequeue */
+	r = q->data[q->first];
+	q->first = (q->first+1)&(q->size-1);
+	if (q->first == q->last) /* empty */
+		q->first = -1;
+	MT_unset_lock(q->l, "q_dequeue");
+	return r;
+}
+
+static int
+q_empty(queue *q)
+{
+	/* not thread save ! */
+	if (q->first < 0)
+		return 1;
+	return 0;
+}
+@-
+We simply move a cheap instruction into the front of the queue.
+Beware, we assume that variables are assigned a value once, otherwise
+the order may really create errors.
+The order of the instructions should be retained as long as possible.
+@c
+static str
+DFLOWstep(FlowStep fs) 
+{
+	DataFlow flow = fs->flow;
+	int stkpc = fs->pc;
+
 	ValPtr lhs,rhs,v;
-	int i,k,limit;
+	int i,k;
 	int exceptionVar= -1;
-	str ret= MAL_SUCCEED;
-	int stamp= -1;
-	int startpc= flow->start;
+	str ret = MAL_SUCCEED;
+	int stamp = -1;
 	bat *backup= (bat*) alloca(flow->mb->maxarg * sizeof(bat));
 	str *sbackup= (str*) alloca(flow->mb->maxarg * sizeof(str));
-	Client cntxt=flow->cntxt;
-	MalBlkPtr mb= flow->mb;
-	MalStkPtr stk= flow->stk;
-	InstrPtr pci = flow->pci;
+	Client cntxt = flow->cntxt;
+	MalBlkPtr mb = flow->mb;
+	MalStkPtr stk = flow->stk;
+	int startpc = flow->start;
+	InstrPtr pci;
 	lng oldtimer=0;
 	struct Mallinfo oldMemory = MT_mallinfo();
-	int stkpc=0;
 
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
@@ -757,148 +720,270 @@ runFlow(DataFlow flow){
 #endif
 	@:performanceVariables@
 
-	limit= flow->stop- flow->start;
-	for(stkpc=0; stkpc<limit && ret== MAL_SUCCEED;stkpc++){
-		DFLOWstep(flow,stkpc);
-		if (flow->queue[stkpc].status!= DFLOWpending)
-			continue;
-		flow->queue[stkpc].status= DFLOWrunning;
-		pci = getInstrPtr(flow->mb,flow->queue[stkpc].pc);
-		if (stk->cmd) {
-			lng t=0;
-			if( oldtimer)
-				t= GDKusec();
-			mdbStep(cntxt,mb,stk,getPC(mb,pci));
-			if (stk->cmd == 'x') {
-				stkpc= mb->stop;
-				continue;
-			}
-			if (oldtimer ) {
-				/* ignore debugger waiting time*/
-				t= GDKusec()-t;
-				oldtimer += t;
-#ifdef HAVE_SYS_RESOURCE_H
-				getrusage(RUSAGE_SELF, &oldResource);
-#endif
-				oldMemory= MT_mallinfo();
-			}
+	pci = getInstrPtr(flow->mb, stkpc);
+	if (stk->cmd) {
+		lng t=0;
+		if( oldtimer)
+			t= GDKusec();
+		mdbStep(cntxt,mb,stk,getPC(mb,pci));
+		if (stk->cmd == 'x') {
+			/* need a way to skip */
+			stkpc = mb->stop;
+			fs->pc = -1;
+			return ret;
 		}
+		if (oldtimer ) {
+			/* ignore debugger waiting time*/
+			t= GDKusec()-t;
+			oldtimer += t;
+#ifdef HAVE_SYS_RESOURCE_H
+			getrusage(RUSAGE_SELF, &oldResource);
+#endif
+			oldMemory = MT_mallinfo();
+		}
+	}
 
-		@:beginProfile@
-		ret = MAL_SUCCEED;
+	@:beginProfile@
+	ret = MAL_SUCCEED;
 @-
 The number of instructions allowed is severely
 limited.
 We don't allow sequential flow control here.
 @c
-		switch (pci->token){
-		case ASSIGNsymbol: @:assignStmt(SLOW)@ break;
-		case PATcall: @:patterncall(SLOW)@ break;
-		case CMDcall: @:commandcall(SLOW)@ break;
-		case FACcall: @:factorycall(SLOW)@ break;
-		case FCNcall: @:functioncall(SLOW)@ break;
-		case NOOPsymbol:
-		case REMsymbol:
+	switch (pci->token){
+	case ASSIGNsymbol: @:assignStmt(SLOW,fs->pc = -1; return ret)@ break;
+	case PATcall: @:patterncall(SLOW,fs->pc = -1; return ret)@ break;
+	case CMDcall: @:commandcall(SLOW,fs->pc = -1; return ret)@ break;
+	case FACcall: @:factorycall(SLOW,fs->pc = -1; return ret)@ break;
+	case FCNcall: @:functioncall(SLOW,fs->pc = -1; return ret)@ break;
+	case NOOPsymbol:
+	case REMsymbol:
+		break;
+	default:
+		if( pci->token < 0 ){
+			/* temporary NOOP instruction */
 			break;
-		default:
-			if( pci->token < 0 ){
-				/* temporary NOOP instruction */
-				break;
-			}
-			ret = createScriptException(mb, stkpc,MAL,
-					NULL, "unkown operation");
 		}
-		/* update the list of eligable instructions */
-		flow->queue[stkpc].status= DFLOWwrapup;
-		DFLOWdrop(flow,stkpc);
-		@:endProfile@
+		ret = createScriptException(mb, stkpc, MAL,
+				NULL, "unkown operation");
+	}
+	/* update the list of eligable instructions */
+	@:endProfile@
+	if (ret)
+		fs->pc = -1;
+	return ret;
+}
+
+static FlowTask *worker = NULL;
+static queue *work = NULL;
+static queue *done = NULL;
+
+static void
+runDFLOWworker(void *t)
+{
+	FlowStep fs;
+	FlowTask *task = (FlowTask*) t;
+
+#ifdef DEBUG_FLOW
+	stream_printf(GDKstdout, "start parallel interpreter thread\n");
+#endif
+	while(task) {
+		fs = (FlowStep)q_dequeue(work);
+		fs->error = DFLOWstep(fs);
+		q_enqueue(done, fs);
+	}
+}
+
+static void 
+DFLOWcreate(void)
+{
+	int i;
+
+	assert(worker == NULL);
+
+	work = q_create(256);
+	done = q_create(256);
+
+	worker = (FlowTask *) GDKzalloc(sizeof(FlowTask)*NWAY);
+	for(i=0; i<NWAY; i++) {
+		worker[i].id = i;
+		/* create the thread and let it wait */
+		MT_create_thread(&worker[i].tid, runDFLOWworker, worker+i);
+	}
+}
+
+static int
+argumentProducedBy(DataFlow flow, int pc, int a)
+{
+	int i, o;
+
+	for(i = pc-1; i >= flow->start; i--) {
+		InstrPtr p = getInstrPtr(flow->mb, i);
+
+		for(o=0; o<p->retc; o++) {
+			if (getArg(p, o) == a)
+				return i;
+		}
+	}
+	return i;
+}
+
+static int
+argumentUsedBy(DataFlow flow, int pc, int a)
+{
+	int i, ia;
+
+	for(i = pc-1; i >= flow->start; i--) {
+		InstrPtr p = getInstrPtr(flow->mb, i);
+
+		for(ia=p->retc; ia<p->argc; ia++) {
+			if (getArg(p, ia) == a)
+				return i;
+		}
+	}
+	return i;
+}
+
+
+static void
+DFLOWinit(DataFlow flow, FlowStep fs)
+{
+	int i, n;
+
+	for (n=0, i = flow->start; i<flow->stop; i++, n++) {
+		InstrPtr p;
+
+		/* initial state, ie everything can run */
+		fs[n].pc = i;
+		fs[n].status = DFLOWpending; 
+		fs[n].flow = flow; 
+		fs[n].cost = -1; 
+		fs[n].error = NULL; 
+
+		p = getInstrPtr(flow->mb, i);
+		if (p->retc) {
+			int ia, oa = getArg(p, 0);
+			for(ia=p->retc; ia<p->argc; ia++) {
+				if (oa == getArg(p, ia)) {
+					int q = argumentProducedBy(flow, i, oa); 
+					if (q > fs[n].status)
+						fs[n].status = q;
+					flow->blocked[oa] = 1;
+					break;
+				}
+			}
+			if (garbageControl(p)) {
+				int q = argumentUsedBy(flow, i, oa); 
+				if (q > fs[n].status)
+					fs[n].status = q;
+			}
+		}
+	}
+}
+
+static str
+DFLOWexecute( DataFlow flow )
+{
+	int queued = 0;
+	int pc = 0, i, j;
+	int limit = flow->stop - flow->start;
+	str ret = MAL_SUCCEED;
+	FlowStep fs = (FlowStep)alloca(sizeof(FlowStepRec) * limit);
+
+	/* initialize the eligible statements */
+	DFLOWinit(flow, fs);
+
+	if (flow->cntxt->flags & timerFlag)
+		flow->cntxt->timer = GDKusec();
+	
+	while(pc < limit) {
+		for(i = pc; i < limit; i++) {
+			if (fs[i].status == DFLOWwrapup) 
+				if (pc == i)
+					pc++;
+			if (fs[i].status == DFLOWpending || 
+			   (fs[i].status > 0 && fs[i].status < pc+flow->start)){
+				int blocked = 0;
+				InstrPtr p = getInstrPtr(flow->mb, fs[i].pc);
+				int oa = (p->retc)?getArg(p,0):0;
+				for(j=p->retc; j<p->argc && !blocked; j++) {
+					int ia = getArg(p,j);
+					if (oa != ia && flow->blocked[ia]) 
+						blocked++;
+				}
+				
+				if (!blocked) {
+					queued++;
+					fs[i].status = DFLOWrunning;
+					q_enqueue(work, fs+i);
+				}
+
+				/* mark all return variables as blocked */
+				for(j=0; j<p->retc; j++)
+					if (!isVarConstant(flow->mb,getArg(p,j)))
+						flow->blocked[getArg(p,j)] = 1;
+
+			}
+		}
+		/* we cannot enqueue, lets wait for the results */ 
+		while(queued) {
+			FlowStep f = q_dequeue(done);
+
+
+			f->status = DFLOWwrapup;
+			if (f->pc < 0) {
+				/* dequeue the remainders */
+				while(--queued) 
+					(void)q_dequeue(done);
+				pc = limit + 1;
+				return f->error;
+			} else {
+				InstrPtr p = getInstrPtr(flow->mb, f->pc);
+
+				for(j=0; j<p->retc; j++)
+					flow->blocked[getArg(p,j)] = 0;
+				if (pc == f->pc-flow->start)
+					pc++;
+			}
+			queued--;
+			if (pc < limit && q_empty(done)) /* only fetch next if possible */
+				break;
+		}
 	}
 	return ret;
 }
 
-static void
-startFlowTask(void *t){
-	FlowTask *task= (FlowTask*) t;
-	str msg;
-#ifdef DEBUG_FLOW
-	stream_printf(GDKout,"start parallel interpreter thread\n");
-#endif
-	msg= runFlow(task->flow);
-	if(msg != MAL_SUCCEED){
-		MT_set_lock(task->flow->lock,"dataflow lock");
-		if(msg != MAL_SUCCEED && task->flow->error== MAL_SUCCEED)
-			task->flow->error= msg;
-		MT_unset_lock(task->flow->lock,"dataflow lock");
-	}
-/*
-	task->status= 0;
-	MT_down_sema(task->sema,"Interpreter thread");
-*/
-}
 
 str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {   
 	DataFlowRec flow;
-	int i;
-	static FlowTask *task; 
+	str ret = MAL_SUCCEED;
 
 #ifdef DEBUG_FLOW
-	stream_printf(GDKout,"runMALdataflow for block %d - %d\n", startpc,stoppc);
-	printFunction(GDKout,mb,0);
+	stream_printf(GDKstdout, "runMALdataflow for block %d - %d\n", startpc,stoppc);
+	printFunction(GDKstdout, mb, 0);
 #endif
 
 	(void)env;
-	(void) pcicaller;
+	(void)pcicaller;
 
 	assert(stoppc > startpc);
-	MT_init_lock(flow.lock,"dataflow lock");
-	flow.cntxt= cntxt;
-	flow.start= startpc+1;
-	flow.stop= stoppc;
-	flow.cntxt= cntxt;
+	flow.cntxt = cntxt;
+	flow.start = startpc+1;
+	flow.stop = stoppc;
 	flow.mb = mb;
-	flow.stk= stk;
-	flow.pci= pcicaller;
-	flow.queue = (FlowStep) GDKzalloc(sizeof(FlowStepRec) * (stoppc-startpc+1));
+	flow.stk = stk;
+	flow.status = (int*) GDKzalloc(sizeof(int) * (stoppc-startpc+1));
 	flow.blocked = (char*) GDKzalloc(mb->vtop);
-	flow.error= MAL_SUCCEED;
 
-	/* initialize the eligible statements */
-	DFLOWinit( &flow);
+	if (!worker) 
+		DFLOWcreate();
 
-	if (cntxt->flags & timerFlag)
-		cntxt->timer= GDKusec();
-
-	if (task == NULL){
-		task = (FlowTask *) GDKzalloc(sizeof(FlowTask)*NWAY);
-		for(i=0; i<NWAY; i++){
-			task[i].id = i;
-			MT_init_sema(task[i].sema,0,"Interpreter thread");
-			/* create the threads and let them wait */
-		}
-	}
-	for(i=0; i<NWAY; i++){
-		task[i].status = 1;	/* it is active */
-		task[i].error = MAL_SUCCEED;
-		task[i].flow = &flow;
-		MT_create_thread(&task[i].tid, startFlowTask, &task[i]);
-	}
-
-	/* wait for the threads to finish */
-	/* should be converted to a loop over the task status */
-	for(i=0;i<NWAY;i++)
-		MT_join_thread(task[i].tid);
-
-#ifdef DEBUG_FLOW
-	for(i=0;i<NWAY;i++){
-		stream_printf(GDKout,"finished %d result %s\n", 
-			task[i].id, task[i].error?task[i].error:"");
-	}
-#endif
-	GDKfree(flow.queue);
+	ret = DFLOWexecute(&flow);
+	GDKfree(flow.status);
 	GDKfree(flow.blocked);
-	return flow.error; 
+	return ret; 
 }
 @-
 @= MALwrapup
@@ -958,11 +1043,11 @@ elements in the value stack.
 @= MALinterpret
 	ret = 0;
 	switch( pci->token){
-	case ASSIGNsymbol: @:assignStmt(@1)@ break;
-	case PATcall: @:patterncall(@1)@ break;
-	case CMDcall: @:commandcall(@1)@ break;
-	case FACcall: @:factorycall(@1)@ break;
-	case FCNcall: @:functioncall(@1)@ break;
+	case ASSIGNsymbol: @:assignStmt(@1,continue)@ break;
+	case PATcall: @:patterncall(@1,continue)@ break;
+	case CMDcall: @:commandcall(@1,continue)@ break;
+	case FACcall: @:factorycall(@1,continue)@ break;
+	case FCNcall: @:functioncall(@1,continue)@ break;
 	case NOOPsymbol:
 	case REMsymbol:
 		break;
@@ -1077,7 +1162,7 @@ switch(pci->barrier){
 		} else
 			ret = createScriptException(mb, stkpc, MAL, NULL,
 					"Exception raised");
-		@:skipToCatch(exceptionVar)@
+		@:skipToCatch(exceptionVar,@2)@
 		break;
 	case YIELDsymbol: /* to be defined */
 		if( oldtimer)
@@ -1141,7 +1226,7 @@ cause errors in multi-assignment statements.
 	}
 	@:restoreTarget(@1)@
 	ret = 0;
-	@:exceptionHndlr(@1)@
+	@:exceptionHndlr(@1,@2)@
 	@:timingHndlr(@1)@
 }
 @}
@@ -1400,8 +1485,8 @@ to the operators.
 				"too many arguments for command call");
 	}
 	@:restoreTarget(@1)@
-	@:exceptionHndlr(@1)@
-	@:timingHndlr(@1)@
+	@:exceptionHndlr(@1,@2)@
+	@:timingHndlr(@1,@2)@
 }
 @-
 @= patterncall
@@ -1411,9 +1496,9 @@ to the operators.
 	else {
 		@:safeTarget@
 		ret = (str) (*pci->fcn)(cntxt,mb,stk,pci);
-		@:restoreTarget(@1)@
-		@:exceptionHndlr(@1)@
-		@:timingHndlr(@1)@
+		@:restoreTarget(@1,@2)@
+		@:exceptionHndlr(@1,@2)@
+		@:timingHndlr(@1,@2)@
 	}
 @-
 MAL function calls are relatively expensive, because they have to assemble
@@ -1427,7 +1512,7 @@ non-returned values.
 	@:safeTarget@
 	ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
 	@:restoreTarget(@1)@
-	@:exceptionHndlr(@1)@
+	@:exceptionHndlr(@1,@2)@
 	@:timingHndlr(@1)@
 }
 @-
@@ -1440,7 +1525,7 @@ Factory calls should deal with the reference counting.
 				"reference to MAL function missing");
 	else
 		ret= runFactory(cntxt,pci->blk,mb,stk,pci);
-	@:exceptionHndlr(@1)@
+	@:exceptionHndlr(@1,@2)@
 	@:timingHndlr(SLOW)@
 @-
 The type dispatching table in getArgValue can be removed if we 
@@ -1510,7 +1595,7 @@ reaching end of function block.
 		mdbStep(cntxt,mb,stk,stkpc);
 		if( stk->cmd == 'x') {
 			stkpc = mb->stop;
-			continue;
+			@2;
 		}
 	}
 	/* skip to catch block or end */
@@ -1525,7 +1610,7 @@ reaching end of function block.
 	}
 	if( stkpc== mb->stop) {
 		@:endProfile@ 
-			continue;
+			@2;
 	}
 @-
 Each time we enter a barrier block, we could keep its position in the
@@ -1588,13 +1673,13 @@ if( ret != MAL_SUCCEED ) {
 		mdbStep(cntxt,mb,stk,stkpc);
 		if( stk->cmd == 'x' || stk->cmd == 'q' ) {
 			stkpc= mb->stop;
-			continue;
+			@2;
 		}
 		if( stk->cmd == 'r') {
 			stk->cmd = 'n';
 			stkpc = startpc;
 			exceptionVar = -1;
-			continue;
+			@2;
 		}
 	}
 	/* Detect any exception received from the implementation. */
@@ -1617,7 +1702,7 @@ if( ret != MAL_SUCCEED ) {
 	if( exceptionVar == -1){
 		@:endProfile@
 		stkpc= mb->stop;
-		continue;
+		@2;
 	}
 	msg++;
 	/* assure correct variable type */
@@ -1632,7 +1717,7 @@ if( ret != MAL_SUCCEED ) {
 		ret = 0;
 	} else GDKfree(nxt);
 	/* position yourself at the catch instruction for further decisions */
-	@:skipToCatch(exceptionVar)@
+	@:skipToCatch(exceptionVar,@2)@
 	pci= getInstrPtr(mb,stkpc);
 }
 @-
