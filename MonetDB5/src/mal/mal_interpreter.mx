@@ -443,6 +443,8 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	lng oldtimer=0;
 	struct Mallinfo oldMemory;
 	int stkpc=0;
+	MT_Lock *lock = NULL;
+	int tid = 0;
 
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
@@ -546,6 +548,7 @@ typedef struct {
 	int start, stop;	/* guarded block under consideration*/
 	int *status;	/* statements can be blocked on other statements */
 	char *blocked;		/* marking of all variables */
+	MT_Lock lock;
 } *DataFlow, DataFlowRec;
 
 typedef struct {
@@ -693,7 +696,7 @@ the order may really create errors.
 The order of the instructions should be retained as long as possible.
 @c
 static str
-DFLOWstep(FlowStep fs) 
+DFLOWstep(FlowTask *t, FlowStep fs) 
 {
 	DataFlow flow = fs->flow;
 	int stkpc = fs->pc;
@@ -712,6 +715,8 @@ DFLOWstep(FlowStep fs)
 	InstrPtr pci;
 	lng oldtimer=0;
 	struct Mallinfo oldMemory = MT_mallinfo();
+	MT_Lock *lock = &flow->lock;
+	int tid = t->id;
 
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
@@ -789,7 +794,7 @@ runDFLOWworker(void *t)
 #endif
 	while(task) {
 		fs = (FlowStep)q_dequeue(work);
-		fs->error = DFLOWstep(fs);
+		fs->error = DFLOWstep(task, fs);
 		q_enqueue(done, fs);
 	}
 }
@@ -976,6 +981,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	flow.stk = stk;
 	flow.status = (int*) GDKzalloc(sizeof(int) * (stoppc-startpc+1));
 	flow.blocked = (char*) GDKzalloc(mb->vtop);
+	MT_init_lock(flow.lock, "runMALdataflow");
 
 	if (!worker) 
 		DFLOWcreate();
@@ -1917,8 +1923,10 @@ See @ref{The MAL Profiler} for more details.
 @= timingHndlr
 #if @1
 if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
+	if (lock)
+		MT_set_lock(*lock, "timing");
 	if( cntxt->flags & timerFlag)
-		stream_printf(cntxt->fdout,"[%6d usec ",GDKusec()-cntxt->timer);
+		stream_printf(cntxt->fdout,"[%2d %6d usec ",tid, GDKusec()-cntxt->timer);
 #ifdef HAVE_SYS_RESOURCE_H
 	if( cntxt-> flags & ioFlag){
 		struct  rusage resource;
@@ -1959,6 +1967,8 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	}
 	if( cntxt->flags & timerFlag)
 		cntxt->timer = GDKusec();
+	if (lock)
+		MT_unset_lock(*lock, "timing");
 }
 #endif
 @-
