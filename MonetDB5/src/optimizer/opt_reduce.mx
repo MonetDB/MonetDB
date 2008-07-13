@@ -59,7 +59,7 @@ comment "Reduce the stack space claims";
 
 static 
 void MRconstant(MalBlkPtr mb){
-	int i,j;
+	int i,j, equals=0;
 	int *cst,*alias,top=0;
 
 	cst= (int*) alloca(mb->vtop *sizeof(int));
@@ -74,11 +74,15 @@ void MRconstant(MalBlkPtr mb){
 			     VALget(&getVar(mb,i)->value),
 			     VALget(&getVar(mb,cst[j])->value)) == 0) {
 				alias[i] = cst[j];
+				equals++;
 				break;
 			}
 		}
 		cst[top++] = i;
 	}
+
+	if (equals==0)
+		return;
 	for( i=0; i< mb->stop; i++){
 		InstrPtr p = getInstrPtr(mb,i);
 

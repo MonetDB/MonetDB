@@ -78,7 +78,7 @@ into the iterator code generation.
 #include "opt_macro.h"
 
 static int
-OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
+OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	str mod,fcn;
 	char buf[1024];
 	int i;
@@ -92,6 +92,8 @@ OPTremapDirect(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 		return 0;
 #ifdef DEBUG_OPT_REMAP
 	stream_printf(cntxt->fdout,"found a candidate %s.%s\n",mod,fcn);
+#else
+	(void) cntxt;
 #endif
 	snprintf(buf,1024,"bat%s",mod);
 	p= newInstruction(mb,ASSIGNsymbol);
@@ -345,7 +347,7 @@ static struct{
 {0,0,0}};
 
 static int
-OPTremapSwitched(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
+OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 	char *fcn;
 	int r,i;
 	(void) stk;
@@ -365,7 +367,7 @@ OPTremapSwitched(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){
 		getVarConstant(mb, getArg(pci, 2)).val.sval = putName(OperatorMap[i].dst,OperatorMap[i].len);
 		getVarConstant(mb, getArg(pci, 2)).len = OperatorMap[i].len;
 		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
-		r= OPTremapDirect(mb, stk, pci, scope);
+		r= OPTremapDirect(cntxt,mb, stk, pci, scope);
 
 		/* always restore the allocated function name */
 		getVarConstant(mb, getArg(pci, 2)).val.sval= fcn;
@@ -414,8 +416,8 @@ geared at handling the PSM code.
 				stream_printf(cntxt->fdout,"doit %d\n",doit);
 #endif
 			} else 
-			if(	OPTremapDirect(mb, stk, p, scope) ||
-				OPTremapSwitched(mb, stk, p, scope)){
+			if(	OPTremapDirect(cntxt, mb, stk, p, scope) ||
+				OPTremapSwitched(cntxt, mb, stk, p, scope)){
 				freeInstruction(p); 
 				doit++;
 			} else {
@@ -486,6 +488,12 @@ geared at handling the PSM code.
 	if( old[i])
 		freeInstruction(old[i]);
 	GDKfree(old);
+#ifdef DEBUG_OPT_REMAP
+	if (doit){
+		stream_printf(cntxt->fdout,"After remap, before type check\n");
+		printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
+	}
+#endif
 	return doit;
 }
 

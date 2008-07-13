@@ -41,7 +41,7 @@ comment "Expand inline functions";
 #include "mal_interpreter.h"
 #include "opt_macro.h"
 
-/* #define DEBUG_OPT_INLINE     show partial result */
+/*#define DEBUG_OPT_INLINE      show partial result */
 
 @c
 #include "mal_config.h"
@@ -66,7 +66,7 @@ Time for inlining functions that are used in multiplex operations.
 They are produced by SQL compiler.
 @c
 #ifdef DEBUG_OPT_INLINE
-			stream_printf(cntxt->fdout,"check inline function\n");
+			stream_printf(cntxt->fdout,"check inline statement\n");
 			printInstruction(cntxt->fdout,mb,q,LIST_MAL_ALL);
 			printInstruction(cntxt->fdout,q->blk,sig,LIST_MAL_ALL);
 #endif
@@ -114,6 +114,7 @@ Check if the local call is tagged as being inlined.
 int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
 	Symbol s;
 	str mod,fcn;
+	int res;
 
 	mod = VALget(&getVar(mb, getArg(p, 1))->value);
 	fcn = VALget(&getVar(mb, getArg(p, 2))->value);
@@ -128,8 +129,13 @@ This code should be protected against overflow due to recursive calls.
 In general, this is a hard problem. For now, we just expand.
 @c
 	(void) OPTinlineImplementation(cntxt, s->def, NULL, p);
-	return varGetProp(s->def , getArg(getInstrPtr(s->def,0), 0),
+	res= varGetProp(s->def , getArg(getInstrPtr(s->def,0), 0),
 				inlineProp) != NULL;
+#ifdef DEBUG_OPT_INLINE
+	stream_printf(cntxt->fdout,"result of inline operation\n");
+	printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
+#endif
+	return res;
 }
 @include optimizerWrapper.mx
 @h
