@@ -648,7 +648,7 @@ BBPinit(void)
 			int n;
 
 			if (sscanf(buf + nread,
-				   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %llu %llu %hu"
+				   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %hu"
 				   "%n",
 				   type, &width, &var, &properties, &nokey0, &nokey1, &nosorted, &base, &align, &free, &size, &storage,
 				    &n) < 12)
@@ -697,7 +697,7 @@ BBPinit(void)
 			if (bs->@1.vheap == NULL)
 				GDKfatal("BBPinit: cannot allocate memory for heap.");
 			if (sscanf(buf + nread,
-				   " %llu %llu %hu"
+				   " %lld %lld %hu"
 				   "%n",
 				   &free, &size, &storage, &n) < 3)
 				GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
