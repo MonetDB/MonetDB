@@ -105,9 +105,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			break;
 		}
 
-		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p) || block ||
-			/* SQL is not thread safe yet */
-			getModuleId(p)== sqlRef){
+		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p) || block){
 			@:flowblock@
 			pushInstruction(mb,p);
 			continue;
