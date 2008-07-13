@@ -26,9 +26,10 @@
 #include <stdarg.h>
 #include <sql_list.h>
 #include "sql_symbol.h"
+#include "sql_scope.h"
 #include "sql_statement.h"
 
-extern stmt *schemas(mvc *sql, symbol *sym);
+extern stmt *schemas(mvc *sql, scope *scp, symbol *sym);
 extern stmt *sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_elements_or_subquery, int commit_action);
 
 #endif /*_SQL_SCHEMA_H_*/
@@ -38,7 +39,6 @@ extern stmt *sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, 
 #include "sql_config.h"
 #include "sql_schema.h"
 #include "sql_parser.h"
-#include "sql_scope.h"
 #include "sql_updates.h"
 #include "sql_select.h"
 #include "sql_semantic.h"
@@ -519,11 +519,10 @@ create_type(mvc *sql, dlist *qname, char *impl)
 }
 
 static stmt *
-create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, 
+create_trigger(mvc *sql, scope *scp, dlist *qname, int time, symbol *trigger_event, 
 	char *table_name, dlist *opt_ref, dlist *triggered_action)
 {
 	stmt *sq = NULL;
-	scope *scp;
 	sql_trigger *trigger;
 	char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
@@ -567,8 +566,17 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 		trigger = mvc_create_trigger(sql, t, tname, time, orientation, 
 			event, old_name, new_name, condition, q);
 	}
- 	scp = scope_open(NULL);
+	if (!instantiate) {
+ 		scp = scope_open(NULL);
+		/* we need to add the old and new tables */
+		if (new_name)
+			scope_add_table_columns(sql, scp, t, new_name, 0);
+		if (old_name)
+			scope_add_table_columns(sql, scp, t, old_name, 0);
+	}
 	sq = sequential_block(sql, scp, NULL, stmts, NULL, 1);
+	if (!instantiate)
+		scope_close(scp);
 	
 	if (sq && !instantiate) {
 		list *col_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
@@ -585,7 +593,6 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 		stmt_destroy(sq);
 		sq = stmt_none();
 	}
-	scope_close(scp);
 	
 	/* todo trigger_columns */
 	(void)columns;
@@ -1841,7 +1848,7 @@ drop_schema(mvc *sql, dlist *qname, int dropaction)
 }
 
 stmt *
-schemas(mvc *sql, symbol *s)
+schemas(mvc *sql, scope *scp, symbol *s)
 {
 	stmt *ret = NULL;
 
@@ -2029,7 +2036,7 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_trigger(sql, l->h->data.lval, l->h->next->data.ival, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval);
+		ret = create_trigger(sql, scp, l->h->data.lval, l->h->next->data.ival, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;
 	}
 		break;

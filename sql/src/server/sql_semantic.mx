@@ -1130,7 +1130,7 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	case SQL_CONNECT:
 	case SQL_DISCONNECT:
 	{
-		res = schemas(sql, s);
+		res = schemas(sql, scp, s);
 		break;
 	}
 	case SQL_CREATE_SEQ:

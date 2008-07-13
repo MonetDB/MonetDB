@@ -1188,7 +1188,7 @@ sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output)
 }
 
 static stmt *
-insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
+insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q)
 {
 	int inscol = 0;
 
@@ -1257,7 +1257,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 
 				for (n = values->h, m = collist->h; n && m; n = n->next, m = m->next) {
 					sql_column *c = m->data;
-					stmt *ins = insert_value(sql, NULL, c, n->data.sym);
+					stmt *ins = insert_value(sql, scp, c, n->data.sym);
 
 					if (!ins) {
 						cleanup_stmts(inserts, len);
@@ -1986,7 +1986,7 @@ updates(mvc *sql, scope *scp, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = insert_into(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym);
+		ret = insert_into(sql, scp, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;
