@@ -1197,7 +1197,7 @@ we only have to make one step back in the look.
 Once we encounter an update we check and clean the recycle cache from 
 instructions dependent on the updated bat.
 @c
-void RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j, btop=0;
 	int *b;
@@ -1213,7 +1213,6 @@ void RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( recycleBlk == NULL)
 		return;
 	b = (int *)alloca(sizeof(int)*recycleBlk->stop);
-	memset(b,0, sizeof(int)*recycleBlk->stop);
 
 	mal_set_lock(recycleLock,"recycle");
 	if (p->argc == 2){
