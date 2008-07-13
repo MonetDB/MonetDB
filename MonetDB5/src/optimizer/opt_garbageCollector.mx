@@ -110,6 +110,7 @@ tables out of memory.
 	getArg(q,0) = getArg(p,j);
 	q= pushNil(mb,q, TYPE_bat);
 	pushInstruction(mb,q);
+	q->gc = GARBAGECONTROL;
 	typeChecker(s,mb,q,TRUE);
 }
 @= releaseBATbyFunction
