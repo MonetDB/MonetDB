@@ -2060,6 +2060,7 @@ backend_create_func(backend *be, sql_func *f)
 		return;
 	f->sql++;
 	s = scope_sqlparse(m, NULL, f->imp, m_instantiate);
+	assert(s);
 	if (s) {
 		stmt *opt;
 		opt = optimize(m, s);
@@ -2078,7 +2079,10 @@ backend_create_func(backend *be, sql_func *f)
 	varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
 
 	if (f->res.type) { 
-		setVarType(curBlk, 0, f->res.type->localtype);
+		if (f->res.type->localtype == TYPE_bat)
+			setVarType(curBlk, 0, newBatType(TYPE_str, TYPE_bat));
+		else
+			setVarType(curBlk, 0, f->res.type->localtype);
 		setVarUDFtype(curBlk,0);
 	} else {
 		setVarType(curBlk, 0, TYPE_void);
