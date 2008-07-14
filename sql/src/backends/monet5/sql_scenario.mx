@@ -437,14 +437,8 @@ SQLexitClient(Client c)
 		res_tables_destroy(m->results);
 		m->results= NULL;
 
-		/* files are already closed 
 		if (m->session && m->session->tr)
 			reset_functions(m->session->tr);
-		mvc_destroy(m);
-		backend_destroy((backend *) c->state[MAL_SCENARIO_PARSER]);
-		c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
-		c->state[MAL_SCENARIO_PARSER] = NULL;
-		*/
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
 	return MAL_SUCCEED;
