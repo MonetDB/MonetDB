@@ -80,7 +80,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i,j, cnt, start=1,entries=0, actions=0,oldvtop;
 	int flowblock= 0, dumbcopy=0;
 	InstrPtr *old, q;
-	int limit,block;
+	int limit;
 	Lifespan span = newLifespan(mb);
 	char *assigned= (char*) alloca(mb->vtop);
 
@@ -97,15 +97,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 
-		/* make sure each variable is assigned only once */
-		block = p->token== ENDsymbol;
-		for(j=0;j<p->retc;j++)
-		if(assigned[getArg(p,j)]){
-			block++;
-			break;
-		}
-
-		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p) || block){
+		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)){
 			@:flowblock@
 			pushInstruction(mb,p);
 			continue;
