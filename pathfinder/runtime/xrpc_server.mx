@@ -756,8 +756,11 @@ getCallValues(stream *out,
                 }
                 argcnt[i][j]++;
                 nr_args++;
+                next_tpe_node_pre += (pre_kindT[next_tpe_node_pre] == TEXT ? 1 : 0);
             } /* end loop 'xrpc:<type>' */
+            next_seq_node_pre += (pre_kindT[next_seq_node_pre] == TEXT ? 1 : 0);
         } /* end loop 'xrpc:sequence' */
+        next_call_node_pre += (pre_kindT[next_call_node_pre] == TEXT ? 1 : 0);
     } /* end loop 'xrpc:call' */
     frag_root = BATsetaccess(frag_root, BAT_READ);
 
