@@ -607,7 +607,7 @@ The dataflow execution is confined to a barrier block.
 Within the block there are multiple flows, which, in principle,
 can be executed in parallel.
 @c
-#define NWAY 4	/* number of cores to consider */
+int nway = 2;
 
 typedef struct {
 	MT_Id tid;
@@ -809,8 +809,9 @@ DFLOWcreate(void)
 	work = q_create(256);
 	done = q_create(256);
 
-	worker = (FlowTask *) GDKzalloc(sizeof(FlowTask)*NWAY);
-	for(i=0; i<NWAY; i++) {
+	nway = MT_check_nr_cores();
+	worker = (FlowTask *) GDKzalloc(sizeof(FlowTask)*nway);
+	for(i=0; i<nway; i++) {
 		worker[i].id = i;
 		/* create the thread and let it wait */
 		MT_create_thread(&worker[i].tid, runDFLOWworker, worker+i);
