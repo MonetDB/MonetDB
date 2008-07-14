@@ -5060,13 +5060,15 @@ xquery_function_call(xquery_client *ctx,
     }
 
     /* override some query-specific MIL runtime variables from here */
-    @:setvar(xrpc_module,module)@
-    @:setvar(xrpc_method,method)@
-    @:setvar(xrpc_mode,mode)@
-    @:setvar(xrpc_qid,qid)@
-    @:setvar(xrpc_caller,caller)@
-    (*ctx->xrpc_timeout) = timeout;
-    ctx->xrpc_shredBAT[0] = shredBAT?shredBAT->batCacheid:0;
+    if(ctx->mode & XQ_MILPRINT_SUMMER) {
+        @:setvar(xrpc_module,module)@
+        @:setvar(xrpc_method,method)@
+        @:setvar(xrpc_mode,mode)@
+        @:setvar(xrpc_qid,qid)@
+        @:setvar(xrpc_caller,caller)@
+        (*ctx->xrpc_timeout) = timeout;
+        ctx->xrpc_shredBAT[0] = shredBAT?shredBAT->batCacheid:0;
+    }
     *(ctx->time_compile) = GDKusec() - usec;
 
     /* Done preparing the query. Time to (re-)execute the MIL tree */
@@ -5538,13 +5540,16 @@ xquery_client_reset(xquery_client *ctx, char *err)
     BATclear(ctx->int_values);
     BATclear(ctx->str_values);
     BUNappend(ctx->str_values, "", FALSE);
-    *ctx->xrpc_shredBAT = int_nil; 
-    (*ctx->xrpc_qid)[0] = 0;
-    (*ctx->xrpc_caller)[0] = 0;
-    (*ctx->xrpc_module)[0] = 0;
-    (*ctx->xrpc_method)[0] = 0;
-    (*ctx->xrpc_mode)[0] = 0;
-    *ctx->xrpc_timeout = 30000LL;
+
+    if(ctx->mode & XQ_MILPRINT_SUMMER) {
+        *ctx->xrpc_shredBAT = int_nil; 
+        (*ctx->xrpc_qid)[0] = 0;
+        (*ctx->xrpc_caller)[0] = 0;
+        (*ctx->xrpc_module)[0] = 0;
+        (*ctx->xrpc_method)[0] = 0;
+        (*ctx->xrpc_mode)[0] = 0;
+        *ctx->xrpc_timeout = 30000LL;
+    }
 
     MT_set_lock(pf_cache_lock, "xquery_client_reset");
     /* only deactivate the loaded modules */
