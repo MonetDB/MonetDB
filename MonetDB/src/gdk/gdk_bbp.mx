@@ -915,10 +915,8 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 
 	if ((fp = GDKfilelocate("BBP", "w", "dir")) == NULL)
 		goto bailout;
-	if ((s = file_wastream(fp, "BBP.dir")) == NULL) {
-		fclose(fp);
+	if ((s = file_wastream(fp, "BBP.dir")) == NULL)
 		goto bailout;
-	}
 	fp = NULL;
 
 	n = BBPsize;
@@ -993,8 +991,10 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	return 0;
 
   bailout:
-	stream_close(s);
-	stream_destroy(s);
+	if (s != NULL) {
+		stream_close(s);
+		stream_destroy(s);
+	}
 	if (fp != NULL)
 		fclose(fp);
 	GDKsyserror("BBPdir failed:\n");
