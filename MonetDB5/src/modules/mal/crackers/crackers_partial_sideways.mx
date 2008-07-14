@@ -99,6 +99,7 @@ crackers_export str CRKMaxTailIncrementalSideways_@1_@2(int *res, int *bid, int 
 @c
 #include "mal_config.h"
 #include "crackers.h"
+#include "crackers_partial_sideways.h"
 
 /* Local support functions and macros */
 @:pieceReferencesManagement@
