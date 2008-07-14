@@ -708,6 +708,7 @@ sql5_export str mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalSt
 sql5_export str mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_export_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str bathash_wrap(int *res, int *bid );
 sql5_export str hash_wrap(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
