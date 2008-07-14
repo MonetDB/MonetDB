@@ -1839,7 +1839,7 @@ def RunTest(env, TST, BusyPorts, COND) :
             #       timedout = 0
             #       signal.alarm(par['TIMEOUT'])
             #       try:
-            #               os.system(MDIFF+' -I"'+par['IGNORE']+'" '+par['CONTEXT']+' -A'+str(ACCURACY)+' -r"'+REVo+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
+            #               os.system(MDIFF+' -I"'+par['IGNORE']+'" -C'+par['CONTEXT']+' -A'+str(ACCURACY)+' -r"'+REVo+'" '+TST+STABLEout+'.FILTERED '+TST+'.test.out.FILTERED '+TST+'.out.diff.html')
             #       except TimeoutError, t:
             #               timedout = 1
             #       signal.alarm(0)
@@ -1871,7 +1871,7 @@ def RunTest(env, TST, BusyPorts, COND) :
                     cmd.append('-d')
                 if quiet:
                     cmd.append('-q')
-                proc = subprocess.Popen(cmd + ['-I%s' % par['IGNORE'], par['CONTEXT'], '-A%d' % ACCURACYout, '-r%s' % REVe, '%s%s.FILTERED' % (TST, STABLEout), '%s.test.out.FILTERED' % TST, '%s.out.diff.html' % TST])
+                proc = subprocess.Popen(cmd + ['-I%s' % par['IGNORE'], '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout, '-r%s' % REVe, '%s%s.FILTERED' % (TST, STABLEout), '%s.test.out.FILTERED' % TST, '%s.out.diff.html' % TST])
                 proc.killed = False
                 t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
                 try:
@@ -1884,6 +1884,11 @@ def RunTest(env, TST, BusyPorts, COND) :
                     raise
                 timedout = proc.killed
                 ACCURACYout = ACCURACYout - 1
+            if env.get('ECHO_DIFF'):
+                cmd = 'diff'
+                if ACCURACYout >= 0:
+                    cmd += ' -d'
+                os.system('%s -Bb -I"%s" -U%s "%s%s.FILTERED" "%s.test.out.FILTERED"' % (cmd, par['IGNORE'], par['CONTEXT'], TST, STABLEout, TST))
 
             #TODO:
             #timedout = 1
@@ -1891,7 +1896,7 @@ def RunTest(env, TST, BusyPorts, COND) :
             #       timedout = 0
             #       signal.alarm(par['TIMEOUT'])
             #       try:
-            #               os.system(MDIFF+' -I"'+par['IGNORE']+'" '+par['CONTEXT']+' -A'+str(ACCURACY)+' -r"'+REVe+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
+            #               os.system(MDIFF+' -I"'+par['IGNORE']+'" -C'+par['CONTEXT']+' -A'+str(ACCURACY)+' -r"'+REVe+'" '+TST+STABLEerr+'.FILTERED '+TST+'.test.err.FILTERED '+TST+'.err.diff.html')
             #       except TimeoutError, t:
             #               timedout = 1
             #       signal.alarm(0)
@@ -1919,10 +1924,15 @@ def RunTest(env, TST, BusyPorts, COND) :
                     MDIFF = MDIFF0
                     ACCURACYerr = 0
                 if not quiet:
-                    timedout = os.system('%s -I"%s" "%s" -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
+                    timedout = os.system('%s -I"%s" -C%s -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 else:
-                    timedout = os.system('%s -q -I"%s" "%s" -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
+                    timedout = os.system('%s -q -I"%s" -C%s -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 ACCURACYerr = ACCURACYerr - 1
+            if env.get('ECHO_DIFF'):
+                cmd = 'diff'
+                if ACCURACYerr >= 0:
+                    cmd += ' -d'
+                os.system('%s -Bb -I"%s" -U%s "%s%s.FILTERED" "%s.test.err.FILTERED"' % (cmd, par['IGNORE'], par['CONTEXT'], TST, STABLEerr, TST))
 
             FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, killed))
 
@@ -2950,6 +2960,8 @@ def main(argv) :
             ('at', None, 'use_at', None, 'Use at command as watchdog'),
             ('dbg', None, 'dbg', '<debugger/valgrind>',
              "debugger to start before each server"),
+            ('echo-diff', None, 'echo-diff', None,
+             "echo differences between stable and current test output to console (stdout)"),
             ('mserver_set', None, 'mserver_set', '<Mserver_option>',
              "This passes a single set to the server"),
             ]
@@ -3049,7 +3061,7 @@ def main(argv) :
         else:
             _IGNORE = dftIGNORE
         par['IGNORE'] = opts.get('ignore', _IGNORE)
-        par['CONTEXT'] = '-C%d' % int(opts.get('context', 1))
+        par['CONTEXT'] = opts.get('context', '1')
         a = int(opts.get('accuracy', 1))
         if a not in (-1,0,1,2):
             ErrExit('Accuracy for diff (-A) must be one of: 0=lines, 1=words, 2=chars !')
@@ -3076,6 +3088,9 @@ def main(argv) :
         a = opts.get('dbg')
         if a is not None:
             env['DBG'] = a
+        a = opts.get('echo-diff')
+        if a is not None:
+            env['ECHO_DIFF'] = a
         a = opts.get('mserver_set')
         if a is not None:
             env['MSERVER_SET'] = "--set " + a
