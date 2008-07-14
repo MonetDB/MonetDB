@@ -1820,16 +1820,20 @@ static void TABLETload_chunk(void *data){
 #endif
 }
 
-#define NWAY 4
+static int nway = 0;
 
 ssize_t
 TABLETload_file(Tablet * as, bstream *b, stream *out)
 {
 	char *error = NULL;
-	Tablet *partition[NWAY];	/* based on max parallel threads to consider */
 	size_t piece, cnt=0, size;
 	int i,j;
 	FILE *f;
+	Tablet **partition = NULL;
+
+	if (!nway) /* based on max parallel threads to consider */
+		nway = MT_check_nr_cores();
+	partition = (Tablet**)alloca(sizeof(Tablet*)*nway);	
 
 	/* Detect the block streams over files */
 	if (as->offset || (as->nr != ~(size_t)0 && as->nr < 10000) || 
@@ -1844,15 +1848,15 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 	fseek(f,0L,SEEK_END);
 	size = ftell(f);
 	/* determine block size */
-	piece = (size+NWAY-1)/NWAY;
+	piece = (size+nway-1)/nway;
 	if (size < 100000){ /* to small use non threaded version */
 		fseek(f,0L,SEEK_SET);
 		return TABLETload_bulk(as, b, out, 0, as->nr_attrs, 0, INT_MAX);
 	}
 
 	/* prepare the tablet descriptors */
-	for( i=0; i<NWAY; i++) {
-		size_t sz = (as->nr != ~(size_t)0)?as->nr/NWAY:0;
+	for( i=0; i<nway; i++) {
+		size_t sz = (as->nr != ~(size_t)0)?as->nr/nway:0;
 		partition[i] = copy_loadformat(as);
 		/* private copy of stream is needed */
 		partition[i]->input = bstream_create(dupFileStream(b->s),SIZE);
@@ -1867,7 +1871,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 		}
 	}
 
-	for( i=0; i<NWAY; i++) {
+	for( i=0; i<nway; i++) {
 		int seplen = as->format[as->nr_attrs - 1].seplen;
 		if (partition[i]->input) {
 			int res = stream_fsetpos(partition[i]->input->s, i*piece);
@@ -1876,21 +1880,21 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 #endif
 			(void)res;
 			/* execute a thread over a range of the file */
-			partition[i]->bytes = (i==NWAY-1)?size-(i*piece):piece+seplen-1; 
+			partition[i]->bytes = (i==nway-1)?size-(i*piece):piece+seplen-1; 
 			partition[i]->partid = i;
 			MT_create_thread(&partition[i]->tid, TABLETload_chunk, partition[i]);
 		}
 	}
 		
 	/* wait for all threads to finish */
-	for(i=0; i<NWAY; i++) 
+	for(i=0; i<nway; i++) 
 		MT_join_thread(partition[i]->tid);
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKstdout,"all finished\n");
 #endif
 
 	/* check for errors */
-	for (i=0; i<NWAY; i++)
+	for (i=0; i<nway; i++)
 		if (partition[i]->error)
 			error = partition[i]->error;
 	
@@ -1898,7 +1902,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 		/* combine the pieces */
 		/* determine the required size first */
 		cnt = 0;
-		for (i=0; i<NWAY; i++)
+		for (i=0; i<nway; i++)
 			if (partition[i]->format[0].c)
 				cnt+= BATcount(partition[i]->format[0].c);
 #ifdef _DEBUG_TABLET_
@@ -1909,7 +1913,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 			if (as->format[i].c) {
 				/* prepare enough space */
 				BATextend( as->format[i].c, cnt );
-				for (j=0; j<NWAY; j++) {
+				for (j=0; j<nway; j++) {
 					assert (partition[j]->format[i].c);
 					BATappend(as->format[i].c, partition[j]->format[i].c,TRUE);
 					/* Throw away the temporary bats a.s.a.p. without saveing */
@@ -1919,7 +1923,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 			}
 		}
 	}
-	for (i=0; i<NWAY; i++) {
+	for (i=0; i<nway; i++) {
 		bstream_destroy(partition[i]->input);
 		TABLETdestroy_format(partition[i]);
 	}
