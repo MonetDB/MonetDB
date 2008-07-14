@@ -576,9 +576,10 @@ newpass:
 		case RCACHE_CREDIT:
 			newclk = (lng)((1-recycleFresh)*oldclk + recycleFresh*newclk);
 			lvs1 = lvs;  	/* drop newest to avoid deletion */
-			lvs = (int *)alloca(sizeof(int)*ltop);
 			assert(ltop > 0);
-			memset(lvs, 0, sizeof(int)*ltop);
+			lvs = (int *)alloca(sizeof(int)*ltop);
+			for(j = 0; j < ltop; j++)
+				lvs[j] = 0;
 			l = 0;
 			for (j = 0; j < ltop; j++){
 				k = lvs1[j];
