@@ -237,6 +237,8 @@ typedef pthread_cond_t MT_Cond;
 #define MT_signal_cond(c,n)  MT_cond_signal(&c,n)
 #define MT_wait_cond(c,l,n)  MT_cond_wait(&c,&l,n)
 
+gdk_export int MT_check_nr_cores(void);
+
 #endif /*_GDK_SYSTEM_H_*/
 
 
@@ -516,6 +518,45 @@ MT_alive(int pid)
 	(void) pid;
 	return 0;
 #endif
+}
+
+#define SMP_TOLERANCE 0.40
+#define SMP_ROUNDS 1024*1024*128
+
+static void 
+smp_thread(void *data)
+{
+	unsigned int s=1,r;
+
+	(void)data;
+	for(r=0;r<SMP_ROUNDS;r++)
+		s = s*r+r;
+	(void)s;
+}
+
+int MT_check_nr_cores(void)
+{
+	int i,curr=1,cores;
+	double lasttime=0,thistime;
+	while(1) {	
+		lng t0, t1;
+		MT_Id *threads = GDKmalloc(sizeof(MT_Id) * curr);
+
+		t0=GDKusec();
+		for(i=0; i<curr; i++) 
+			MT_create_thread(threads+i, smp_thread, NULL);
+		for(i=0; i<curr; i++) 
+			MT_join_thread(threads[i]);
+		t1=GDKusec();				
+		GDKfree(threads);
+		thistime = (double)(t1-t0)/1000000;
+		if (lasttime>0 && thistime/lasttime>1+SMP_TOLERANCE)
+			break;
+		lasttime = thistime;
+		cores = curr;
+		curr *= 2; /* only check for powers of 2 */
+	}
+	return cores;
 }
 
 @}
