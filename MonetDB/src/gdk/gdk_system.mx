@@ -536,7 +536,7 @@ smp_thread(void *data)
 
 int MT_check_nr_cores(void)
 {
-	int i,curr=1,cores;
+	int i,curr=1,cores = 1;
 	double lasttime=0,thistime;
 	while(1) {	
 		lng t0, t1;
