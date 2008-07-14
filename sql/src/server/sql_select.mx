@@ -3520,14 +3520,13 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		}
 	}
 		break;
-	case SQL_NULL:
-	case SQL_NOT_NULL:
+	case SQL_IS_NULL:
+	case SQL_IS_NOT_NULL:
 	/* is (NOT) NULL */
 	{
 		symbol *cr = sc->data.sym;
 		stmt *res = sql_value_exp(sql, scp, cr, grp, subset, f, iek);
 
-		/* TODO predicate! */
 		if (res && (res->nrcols == 0 || f == sql_sel)) {
 			sql_subtype *bt = sql_bind_localtype("bit");
 			sql_subtype *tp = tail_type(res);
@@ -3538,7 +3537,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 				return NULL;
 			}
 			res = stmt_unop(res, isnul);
-			if (sc->token != SQL_NULL) {
+			if (sc->token != SQL_IS_NULL) {
 				sql_subfunc *not = sql_bind_func_result(sql->session->schema, "not", bt, NULL, bt);
 				res = stmt_unop(res, not);
 			} 
@@ -3546,7 +3545,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			sql_subtype *tpe = tail_type(res);
 			stmt *a = stmt_atom(atom_general(tpe, NULL, 0));
 
-			if (sc->token == SQL_NULL) {
+			if (sc->token == SQL_IS_NULL) {
 				res = stmt_uselect(res, a, cmp_equal);
 			} else {
 				res = stmt_uselect(res, a, cmp_notequal);
@@ -4050,7 +4049,9 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 					return sql_error(sql, 02, "SELECT: single value in column expression");
 					/* properly handle select '' from x */
 				} else if (!cs->aggr && !aggr) {
-					stmt *ss = first_subset(subset);
+					stmt *ss = (grp)?
+						stmt_dup(grp->ext):
+						first_subset(subset);
 
 					cs = stmt_const(ss, stmt_dup(cs));
 					list_append(rl, cs);

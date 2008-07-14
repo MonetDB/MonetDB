@@ -2146,8 +2146,8 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			return rel_binop_(sql, e1, e2, NULL, "and");
 		}
 	}
-	case SQL_NULL:
-	case SQL_NOT_NULL:
+	case SQL_IS_NULL:
+	case SQL_IS_NOT_NULL:
 	/* is (NOT) NULL */
 	{
 		sql_exp *le = rel_value_exp(sql, rel, sc->data.sym, f, ek);
@@ -2155,7 +2155,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		if (!le)
 			return NULL;
 		le = rel_unop_(sql, le, NULL, "isnull");
-		if (sc->token != SQL_NULL) 
+		if (sc->token != SQL_IS_NULL) 
 			le = rel_unop_(sql, le, NULL, "not");
 		return le;
 	}
@@ -2446,8 +2446,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		}
 		return rel;
 	}
-	case SQL_NULL:
-	case SQL_NOT_NULL:
+	case SQL_IS_NULL:
+	case SQL_IS_NOT_NULL:
 	/* is (NOT) NULL */
 	{
 		sql_exp *re, *le = rel_value_exp(sql, &rel, sc->data.sym, f, ek);
@@ -2455,7 +2455,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		if (!le)
 			return NULL;
 		le = rel_unop_(sql, le, NULL, "isnull");
-		if (sc->token == SQL_NULL) 
+		if (sc->token == SQL_IS_NULL) 
 			re = exp_atom_bool(1);
 		else
 			re = exp_atom_bool(0);

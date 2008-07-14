@@ -87,6 +87,8 @@ typedef enum tokens {
 	SQL_DEFAULT,
 	SQL_NOT_NULL,
 	SQL_NULL,
+	SQL_IS_NULL,
+	SQL_IS_NOT_NULL,
 	SQL_NULLIF,
 	SQL_UNIQUE,
 	SQL_PRIMARY_KEY,
@@ -3136,8 +3138,8 @@ like_exp:
  ;
 
 test_for_null:
-    scalar_exp IS NOT sqlNULL { $$ = _symbol_create_symbol( SQL_NOT_NULL, $1 );}
- |  scalar_exp IS sqlNULL     { $$ = _symbol_create_symbol( SQL_NULL, $1 ); }
+    scalar_exp IS NOT sqlNULL { $$ = _symbol_create_symbol( SQL_IS_NOT_NULL, $1 );}
+ |  scalar_exp IS sqlNULL     { $$ = _symbol_create_symbol( SQL_IS_NULL, $1 ); }
  ;
 
 in_predicate:

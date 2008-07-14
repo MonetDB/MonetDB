@@ -1241,12 +1241,14 @@ push_selects_down(mvc *c, list *con)
 						stmt_reverse(stmt_dup(o2->op2.stval)),
 						cmp);
 				} else {
+					/* we need to swap compare */
+					if (cmp == 1 || cmp == 2)
+						cmp = 3-cmp;
 					s = stmt_join2(
 						stmt_reverse(stmt_dup(o1->op2.stval)),
-						/* we need to swap order too */
 						stmt_dup(o2->op1.stval),
 						stmt_dup(o1->op1.stval),
-						3-cmp);
+						cmp);
 				}
 				stmt_destroy(o1);
 				stmt_destroy(o2);
