@@ -307,6 +307,7 @@ instruction in the source.]
 #define STMT_INCREMENT 32
 #define MAL_VAR_WINDOW  32
 #define MAXVARS 32
+#define MAXLISTING 64*1024
 
 typedef struct SYMDEF {
 	struct SYMDEF *peer;	/* where to look next */
@@ -546,9 +547,9 @@ mal_export void setReturnArgument(InstrPtr p, int varid);
 mal_export malType destinationType(MalBlkPtr mb, InstrPtr p);
 mal_export void setPolymorphic(InstrPtr p, int tpe, int force);
 mal_export str fcnClass(InstrPtr p);
-mal_export str fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg);
+mal_export str fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len);
 mal_export void printInstruction(stream *fd, MalBlkPtr mb, InstrPtr p, int flg);
-mal_export str instructionCall(MalBlkPtr mb, InstrPtr p, str s);
+mal_export str instructionCall(MalBlkPtr mb, InstrPtr p, str s, str base, size_t len);
 mal_export void promptInstruction(stream *fd, MalBlkPtr mb, InstrPtr p, int flg);
 mal_export str instruction2str(MalBlkPtr mb, InstrPtr p, int hidden);
 mal_export str function2str(MalBlkPtr mb, int flg);
@@ -2233,11 +2234,13 @@ interpretation. Provided, the code did not produce an error.
 
 The hiddenInstruction operator assumes a sufficiently large block
 to leave information on the signature behind.
+
+The protection against overflow is not tight.
 @c
-#define advance(X)  while(*(X))(X)++;
+#define advance(X,B,L)  assert(X< B+L); while(*(X) && B+L>X)(X)++;
 
 str
-instructionCall(MalBlkPtr mb, InstrPtr p, str s)
+instructionCall(MalBlkPtr mb, InstrPtr p, str s, str base, size_t len)
 {
 	int i, closing=0;
 	str tpe;
@@ -2252,16 +2255,16 @@ instructionCall(MalBlkPtr mb, InstrPtr p, str s)
 				*s= 0;
 			}
 			if( p->blk && p->blk->binding){
-				sprintf(s, " := %s(", p->blk->binding );
+				snprintf(s,(len-(s-base)), " := %s(", p->blk->binding );
 				closing= 1;
 			} else
 			if( getFunctionId(p)) {
-				sprintf(s, " := %s.%s(", getModuleId(p),getFunctionId(p) );
+				snprintf(s,(len-(s-base)), " := %s.%s(", getModuleId(p),getFunctionId(p) );
 				closing= 1;
 			} else
 			if (p->argc > p->retc)
 				sprintf(s, " := ");
-			advance(s);
+			advance(s,base,len);
 		}
 		if (i<p->argc && p->argv[i] >= 0) {
 			str nme;
@@ -2273,13 +2276,13 @@ instructionCall(MalBlkPtr mb, InstrPtr p, str s)
 				nme = nmebuf;
 			} else
 				nme = getArgName(mb, p, i);
-			sprintf(s, "%s:%s", (nme ? nme : "nil"), tpe);
-			advance(s);
+			snprintf(s, (len-(s-base)), "%s:%s", (nme ? nme : "nil"), tpe);
+			advance(s,base,len);
 			if (i != p->retc-1 && i< p->argc-1)
 				sprintf(s, ", ");
 
 			GDKfree(tpe);
-			advance(s);
+			advance(s,base,len);
 		}
 	}
 	if( closing)
@@ -2288,8 +2291,8 @@ instructionCall(MalBlkPtr mb, InstrPtr p, str s)
 	return s;
 }
 
-str
-hiddenInstructionArgs(MalBlkPtr mb, InstrPtr p, str s, str start, int flg)
+static str
+hiddenInstructionArgs(MalBlkPtr mb, InstrPtr p, str s, str start, int flg, str base, size_t len)
 {
 	int i;
 
@@ -2298,9 +2301,9 @@ hiddenInstructionArgs(MalBlkPtr mb, InstrPtr p, str s, str start, int flg)
 	i= (int)(s-start);
 	while (i++< 40) *s++= ' ';	/* to give a better look to most programs */
 	*s = 0;
-	sprintf(s, "#%3d ", getPC(mb, p));
-	advance(s);
-	s = instructionCall(mb,p,s);
+	snprintf(s, (len-(s-base)), "#%3d ", getPC(mb, p));
+	advance(s,base,len);
+	s = instructionCall(mb,p,s, base, len);
 @-
 The instruction is complemented with simple flags to ease debugging.
 To limit the impact on test output, we only display them when they
@@ -2329,13 +2332,14 @@ J = jump towards other statement
 			*s++ ='R';
 		if (p->jump){
 			sprintf(s, "J%d", p->jump);
-			advance(s);
+			advance(s,base,len);
 		}
 		if( *(s-1) != '{')
 			*s++ ='}';
 		else s--;
 		*s=0;
 	}
+	advance(s,base,len);
 	return s;
 }
 
@@ -2349,9 +2353,9 @@ beginning of each line.
     if( mb->profiler ){
 		int pc= getPC(mb,p);
         double avg= (mb->profiler[pc].ticks+0.0)/mb->profiler[pc].counter;
-        sprintf(t,"[%7ld, %5.2f] ",mb->profiler[pc].counter,avg);
+        snprintf(t,(len-(t-base)),"[%7ld, %5.2f] ",mb->profiler[pc].counter,avg);
     }
-    advance(t);
+    advance(t,base,len);
 #endif
 @-
 
@@ -2361,9 +2365,9 @@ beginning of each line.
 		pstring = varGetPropStr(mb, getArg(p,i));
 	else
 		pstring = GDKstrdup("");
-        advance(t);
-        sprintf(t,"%s:%s%s",getArgName(mb,p,i),tpe,pstring);
-        advance(t);
+        advance(t,base,len);
+        snprintf(t,(len-(t-base)),"%s:%s%s",getArgName(mb,p,i),tpe,pstring);
+        advance(t,base,len);
         if( i<p->@1-1) sprintf(t,",");
         if(pstring) { GDKfree(pstring); pstring=0;}
         GDKfree(tpe);
@@ -2375,37 +2379,37 @@ fcnClass(InstrPtr p)
 }
 
 str
-fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
+fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 {
 	int i;
 	str t, tpe, pstring;
 
 	pstring = varGetPropStr(mb, getArg(p,0));
 	t = s;
-	sprintf(t, "%s%s ", (flg ? "" : "#"), fcnClass(p));
+	snprintf(t,(len-(t-base)), "%s%s ", (flg ? "" : "#"), fcnClass(p));
 
-	advance(t);
+	advance(t,base,len);
 	if (getModuleId(p))
-		sprintf(t, "%s.", getModuleId(p));
+		snprintf(t,(len-(t-base)), "%s.", getModuleId(p));
 	else
-		sprintf(t, "user.");
-	advance(t);
+		snprintf(t,(len-(t-base)),"user.");
+	advance(t,base,len);
 	if( pstring )
-		sprintf(t, "%s%s(", getFunctionId(p),pstring);
+		snprintf(t,(len-(t-base)),"%s%s(", getFunctionId(p),pstring);
 	else 
-		sprintf(t, "%s(", getFunctionId(p));
+		snprintf(t,(len-(t-base)),"%s(", getFunctionId(p));
 	for (i = p->retc; i < p->argc; i++) {
 		@:showParam(argc)@
 	}
-	advance(t);
+	advance(t,base,len);
 	if (p->varargs & VARARGS)
 		sprintf(t, "...");
-	advance(t);
+	advance(t,base,len);
 	if (p->retc == 1) {
 		tpe = getTypeName(getArgType(mb, p, 0));
-		sprintf(t, "):%s", tpe);
+		snprintf(t,(len-(t-base)),"):%s", tpe);
 		GDKfree(tpe);
-		advance(t);
+		advance(t,base,len);
 	} else {
 		sprintf(t, ") (");
 		t += 3;
@@ -2413,17 +2417,17 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
 		@:showParam(retc)@}
 		if (p->varargs & VARRETS)
 			sprintf(t, "...");
-		advance(t);
+		advance(t,base,len);
 		*t++ = ')';
 	}
 	if (mb->binding)
-		sprintf(t, " address %s;", mb->binding);
+		snprintf(t,(len-(t-base))," address %s;", mb->binding);
 	else
 		sprintf(t, ";");
 #ifdef DEBUG_MAL_INSTR
 	if (flg & LIST_MAL_TYPE) {
-		advance(t);
-		hiddenInstructionArgs(mb, p, t,s, flg);
+		advance(t,base,len);
+		hiddenInstructionArgs(mb, p, t,s, flg,base,len);
 	}
 #endif
 	return s;
@@ -2470,15 +2474,14 @@ str
 instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 {
 	int i, tab = 4;
-	size_t len = 0;
-	str s, t, nme;
+	str base, s, t, nme;
+	size_t len= MAXLISTING;
 	int low, high;
 	char nmebuf[PATHLENGTH];
 	str pstring = 0;
 	char *tnme;
 
-	len = 64*1024;
-	s = GDKmalloc(len);
+	base = s = GDKmalloc(len);
 	if (flg) {
 		if( p->token<0){
 			s[0] = '#';
@@ -2508,7 +2511,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 		nme = nmebuf;
 	} else
 		nme = getArgName(mb, p, 0);
-	advance(t);
+	advance(t,base,len);
 	if (p->token == REMsymbol) {
 		/* do nothing */
 	} else if (p->barrier) {
@@ -2520,15 +2523,15 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
     			for(;tab>0;tab--) 
 				*t++= ' ';
     			*t= 0;
-    			advance(t);
+    			advance(t,base,len);
 		}
-		sprintf(t, "%s ", operatorName(p->barrier));
-		advance(t);
+		snprintf(t,(len-(t-base)), "%s ", operatorName(p->barrier));
+		advance(t,base,len);
 	} else if (!functionStart(p) && !functionExit(p)) {
     		for(;tab>0;tab--) 
 			*t++= ' ';
     		*t= 0;
-    		advance(t);
+    		advance(t,base,len);
 	}
 	switch (p->token<0?-p->token:p->token) {
 	case NOOPsymbol:
@@ -2545,11 +2548,11 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 			if ( isVarUDFtype(mb,getArg(p, 0))) {
 				str tpe = getTypeName(getVarType(mb, getArg(p, 0)));
 
-				sprintf(t, "%s:%s%s ", nme, tpe, pstring);
+				snprintf(t,(len-(t-base)), "%s:%s%s ", nme, tpe, pstring);
 				GDKfree(tpe);
 			} else
-				sprintf(t, "%s%s", nme, pstring);
-			advance(t);
+				snprintf(t,(len-(t-base)), "%s%s", nme, pstring);
+			advance(t,base,len);
 			if (pstring)
 				GDKfree(pstring);
 		} else {
@@ -2571,13 +2574,13 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 				if ( isVarUDFtype(mb, getArg(p, i))) {
 					str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 
-					sprintf(t, "%s:%s%s ", getArgName(mb, p, i), tpe, pstring);
+					snprintf(t,(len-(t-base)), "%s:%s%s ", getArgName(mb, p, i), tpe, pstring);
 					GDKfree(tpe);
 				} else
-					sprintf(t, "%s%s", getArgName(mb, p, i), pstring);
+					snprintf(t,(len-(t-base)),"%s%s", getArgName(mb, p, i), pstring);
 				if (pstring)
 					GDKfree(pstring);
-				advance(t);
+				advance(t,base,len);
 				if (i < p->retc - 1)
 					*t++ = ',';
 			}
@@ -2595,39 +2598,39 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 		}
 		break;
 	case ENDsymbol:
-		sprintf(t, "end %s", getFunctionId(getInstrPtr(mb, 0)));
-		advance(t);
+		snprintf(t,(len-(t-base)), "end %s", getFunctionId(getInstrPtr(mb, 0)));
+		advance(t,base,len);
 		break;
 	case COMMANDsymbol:
 	case FUNCTIONsymbol:
 	case FACTORYsymbol:
 	case PATTERNsymbol:
-		return fcnDefinition(mb, p, s, flg);
+		return fcnDefinition(mb, p, s, flg, base, len);
 	case REMsymbol:
 		if(getVar(mb, getArg(p, 0))->value.val.sval) 
-			sprintf(t, "#%s ", getVar(mb, getArg(p, 0))->value.val.sval);
+			snprintf(t,(len-(t-base)), "#%s ", getVar(mb, getArg(p, 0))->value.val.sval);
 		else
-			sprintf(t, "# ");
+			snprintf(t, (len-(t-base)), "# ");
 		break;
 	default:
-		sprintf(t, " ?%d? ", p->token);
+		snprintf(t,  (len-(t-base))," ?%d? ", p->token);
 	}
-	advance(t);
+	advance(t,base,len);
 	low = p->retc;
 	high = p->argc;
 	if (getModuleId(p))
-		sprintf(t, "%s.", getModuleId(p));
-	advance(t);
+		snprintf(t,  (len-(t-base)),"%s.", getModuleId(p));
+	advance(t,base,len);
 	if (getFunctionId(p)) {
-		sprintf(t, "%s(", getFunctionId(p));
+		snprintf(t, (len-(t-base)), "%s(", getFunctionId(p));
 	} else if (p->argc > p->retc + 1)
-		sprintf(t, "(");
-	advance(t);
+		snprintf(t, (len-(t-base)), "(");
+	advance(t,base,len);
 
 	for (i = low; i < high; i++) {
-		advance(t);
+		advance(t,base,len);
 		if (i + 1 == high && p->varargs & VARARGS) {
-			sprintf(t, "...");
+			snprintf(t, (len-(t-base)), "...");
 			break;
 		}
 		if (isVarConstant(mb, getArg(p, i))) {
@@ -2645,29 +2648,29 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 			}
 			strcat(t, cv);
 			GDKfree(cv);
-			advance(t);
+			advance(t,base,len);
 			if( isaBatType(getVarType(mb,getArg(p,i)) ) ){
 				BAT *d= BATdescriptor(getVarConstant(mb,getArg(p,i)).val.bval);
 				if( d){
-					sprintf(t,"[" SZFMT "]", BATcount(d));
+					snprintf(t,(len-(t-base)),"[" SZFMT "]", BATcount(d));
 					BBPdecref(d->batCacheid,TRUE);
-					advance(t);
+					advance(t,base,len);
 				}
 			}
 		} else {
 			if( ! isVarTypedef(mb,getArg(p,i)) ){
 				if (isTmpVar(mb, getArg(p, i))) {
 					if( ! isVarTypedef(mb,getArg(p,i)) )
-						sprintf(t, "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, i)));
-					advance(t);
+						snprintf(t,(len-(t-base)), "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, i)));
+					advance(t,base,len);
 				} else
-				sprintf(t, "%s", mb->var[getArg(p, i)]->name);
+				snprintf(t,(len-(t-base)), "%s", mb->var[getArg(p, i)]->name);
 			} 
 		}
 @-
 Dump the type and value information.
 @c
-		advance(t);
+		advance(t,base,len);
 		if (isVarTypedef(mb, getArg(p, i)) || 
 			  (isVarConstant(mb, getArg(p, i)) &&
 			   !isaBatType(getArgType(mb, p, i)) &&
@@ -2675,25 +2678,24 @@ Dump the type and value information.
 			   ATOMcmp(getArgGDKType(mb,p,i), ATOMnilptr(getArgType(mb,p,i)), VALptr(&getVar(mb, getArg(p, i))->value) ) == 0))) {
 			tnme = getTypeName(getArgType(mb, p, i));
 
-			sprintf(t, ":%s", tnme);
+			snprintf(t,(len-(t-base)), ":%s", tnme);
 			GDKfree(tnme);
-			advance(t);
+			advance(t,base,len);
 		} 
 		if (i + 1 < high)
-			sprintf(t, ",");
+			snprintf(t,(len-(t-base)), ",");
 	}
-	advance(t);
+	advance(t,base,len);
 	if (getFunctionId(p) || p->argc > p->retc + 1)
-		sprintf(t, ")");
-	advance(t);
+		snprintf(t,(len-(t-base)), ")");
+	advance(t,base,len);
 	if (p->token != REMsymbol)
-		sprintf(t, ";");
+		snprintf(t,(len-(t-base)), ";");
 	if (flg & LIST_MAL_TYPE) {
-		advance(t);
-		t = hiddenInstructionArgs(mb, p, t,s, flg);
+		advance(t,base,len);
+		t = hiddenInstructionArgs(mb, p, t,s, flg,base,len);
 	}
-	advance(t);
-	/* sprintf(t,"\n"); */
+	advance(t,base,len);
 	if (t > s + len)
 		GDKfatal("instruction2str:");
 	return s;
@@ -2752,7 +2754,7 @@ printSignature(stream *fd, Symbol s, int flg)
 	str txt = GDKzalloc(BLOCK);
 
 	p = getSignature(s);
-	(void) fcnDefinition(s->def, p, txt, flg);
+	(void) fcnDefinition(s->def, p, txt, flg, txt, BLOCK);
 	stream_printf(fd, "%s\n", txt);
 	GDKfree(txt);
 }

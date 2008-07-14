@@ -972,7 +972,7 @@ char **getHelp(Module m, str inputpat, int completion)
 				if( doc) {
 					char *v;
 
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
 					buf[0]=' ';
 
 					v= strstr(buf,"address");
@@ -1001,7 +1001,7 @@ char **getHelp(Module m, str inputpat, int completion)
 					*v=0;
 				} else if( strncmp(fcnnme,s->name,strlen(fcnnme))==0 ||
 							*fcnnme=='*' ) {
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
 					buf[0]=' ';
 					t= strstr(buf,"address");
 					if( t) *t= 0;
@@ -1048,7 +1048,7 @@ char **getHelpMatch(char *pat){
 				for(s= m->subscope[j]; s; s= s->peer)
 				if( strstr(m->name,pat) || strstr(s->name,pat) ||
 					(s->def->help && strstr(s->def->help,pat))) {
-					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE,buf,BUFSIZ);
 					buf[0]=' ';
 					if( s->def->help) {
 						char *v,*w;

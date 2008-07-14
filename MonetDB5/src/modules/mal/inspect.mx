@@ -278,7 +278,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
-	char sig[4096],*a;
+	char sig[BLOCK],*a;
 	int *ret = (int *) getArgReference(stk,pci,0);
 
 	(void)mb;
@@ -291,7 +291,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (i = 0; s && i < MAXSCOPE; i++)
 			if (s->subscope[i]) {
 				for (t = s->subscope[i]; t; t = t->peer) {
-					fcnDefinition(t->def, getSignature(t), sig, 0);
+					fcnDefinition(t->def, getSignature(t), sig, 0,sig,BLOCK);
 					a= strstr(sig,"address");
 					if(a) *a = 0;
 					BUNins(b, &k, strchr(sig, '('), FALSE);
@@ -313,7 +313,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
-	char sig[4096],*a;
+	char sig[BLOCK],*a;
 	int *ret = (int *) getArgReference(stk,pci,0);
 
 	(void)mb;
@@ -326,7 +326,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (i = 0; s && i < MAXSCOPE; i++)
 			if (s->subscope[i]) {
 				for (t = s->subscope[i]; t; t = t->peer) {
-					fcnDefinition(t->def, getSignature(t), sig, 0);
+					fcnDefinition(t->def, getSignature(t), sig, 0,sig,BLOCK);
 					a= strstr(sig,"address");
 					if( a)
 						for( a=a+7; isspace((int) *a); a++)
