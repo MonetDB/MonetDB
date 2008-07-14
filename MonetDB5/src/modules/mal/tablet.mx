@@ -510,6 +510,7 @@ tablet_export str TABsetColumnPosition(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 
 tablet_export str TABsetColumnDecimal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABsetColumnDecimal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetTryAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABfirstPage(int *ret);
 tablet_export str TABlastPage(int *ret);
 tablet_export str TABnextPage(int *ret);
