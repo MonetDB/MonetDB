@@ -215,6 +215,7 @@ extern struct stmt *stack_find_var(mvc *sql, char *name);
 /* find var in current frame */
 extern int frame_find_var(mvc *sql, char *name);
 extern int stack_find_frame(mvc *sql, char *name);
+extern int stack_nr_of_declared_tables(mvc *sql);
 
 extern ValRecord * stack_get_var(mvc *sql, char *name);
 extern void stack_set_var(mvc *sql, char *name, ValRecord *v);
@@ -756,6 +757,9 @@ mvc_bind_schema(mvc *m, char *sname)
 	if (!tr)
 		return NULL;
 
+	/* declared tables */
+	if (strcmp(sname, str_nil) == 0)
+		sname = dt_schema;
 	if (m->last && m->last->t->s &&
 		strcmp(m->last->t->s->base.name, sname) == 0)
 		s = m->last->t->s;
@@ -778,8 +782,8 @@ mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 		sql_subtype *tpe = stack_find_type(m, tname);
 		if (tpe) { 
 			t = tpe->comp_type;
-		} else { /* during exection they are in the '%dt%' schema */
-			s = mvc_bind_schema(m, "%dt%");
+		} else { /* during exection they are in the declared table schema */
+			s = mvc_bind_schema(m, dt_schema);
 			return mvc_bind_table(m, s, tname);
 		}
 	} else if (m->last && m->last->t->s == s &&
@@ -1520,6 +1524,22 @@ stack_find_frame(mvc *sql, char *name)
 			return frame;
 	}
 	return 0;
+}
+
+int
+stack_nr_of_declared_tables(mvc *sql)
+{
+	int i, dt = 0;
+
+	for (i = sql->topvars-1; i >= 0; i--) {
+		/* frame has no statement and only sometimes a name */
+		if (sql->vars[i].s && !sql->vars[i].view) {
+			sql_var *v = &sql->vars[i];
+			if (v->type.comp_type) 
+				dt++;
+		}
+	}
+	return dt;
 }
 
 void

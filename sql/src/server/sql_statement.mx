@@ -302,7 +302,7 @@ extern stmt *stmt_affected_rows(stmt *l);
 /* flow control statements */
 extern stmt *stmt_while(stmt *cond, stmt *whilestmts );
 extern stmt *stmt_if(stmt *cond, stmt *ifstmts, stmt *elsestmts);
-extern stmt *stmt_return(stmt *val);
+extern stmt *stmt_return(stmt *val, int nr_of_declared_tables);
 extern stmt *stmt_assign(char *varname, stmt *val, int level);
 
 extern sql_subtype *head_type(stmt *st);
@@ -2714,11 +2714,12 @@ stmt *stmt_if(stmt *cond, stmt *ifstmts, stmt *elsestmts)
 	return s;
 }
 
-stmt *stmt_return(stmt *val)
+stmt *stmt_return(stmt *val, int nr_declared_tables)
 {
 	stmt *s = stmt_create(st_return);
 
 	s->op1.stval = val;
+	s->flag = nr_declared_tables;
 	return s;
 }
 

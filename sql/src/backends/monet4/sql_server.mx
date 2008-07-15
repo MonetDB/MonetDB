@@ -139,6 +139,8 @@ stream.
 
 	.COMMAND mvc_declared_table_column( mvc m, int rs, str tname, str name, str typename, int digits, int scale) = mvc_declared_table_column_wrap; "Add the colunm to the declared table"
 
+	.COMMAND mvc_drop_declared_table( mvc m, str name) :void = mvc_drop_declared_table_wrap; "Drop a declared table" 
+
 	.COMMAND mvc_schema_operation(mvc m, Stream s, str w) =
 		mvc_export_schema_wrap; "export a schema operation to stream s"
 
@@ -828,6 +830,19 @@ mvc_declared_table_column_wrap(mvc *M, int *rs, str tname, str name, str type, i
 	s = mvc_bind_schema(m, "%dt%");
 	t = mvc_bind_table(m, s, tname);
 	(void)mvc_create_column(m, t, name, &tpe); 
+	return GDK_SUCCEED;
+}
+
+int
+mvc_drop_declared_table_wrap(mvc *M, str name)
+{
+	mvc *m = *(mvc**)M;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+
+	s = mvc_bind_schema(m, "%dt%");
+	t = mvc_bind_table(m, s, name);
+	(void)mvc_drop_table(m, s, t, 0);
 	return GDK_SUCCEED;
 }
 

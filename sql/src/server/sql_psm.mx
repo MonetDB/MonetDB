@@ -358,7 +358,23 @@ psm_return( mvc *sql, scope *scp, sql_subtype *restype, symbol *return_sym )
 	res = sql_value_exp(sql, scp, return_sym, NULL, NULL, sql_sel, ek);
 	if (!res || (res = check_types(sql, restype, res, type_equal)) == NULL)
 		return NULL;
-	return stmt_return(res);
+	return stmt_return(res, stack_nr_of_declared_tables(sql));
+}
+
+static int
+has_return(stmt *s )
+{
+	if (s->type == st_return) {
+		return 1;
+	} else if (s->type == st_if) {
+		int res = has_return(s->op2.stval); /* ifstmts */
+		if (res && s->op3.stval)
+			res = has_return(s->op3.stval); /* elsestmts */
+		return res;
+	} else if (s->type == st_list) { /* sequential block */
+		return has_return(s->op1.lval->t->data);
+	}
+	return 0;
 }
 
 stmt *
@@ -366,6 +382,7 @@ sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *
 {
 	list *l=0;
 	dnode *n;
+	int i;
 
  	if (THRhighwater())
 		return sql_error(sql, 10, "SELECT: too many nested operators");
@@ -376,6 +393,7 @@ sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *
 	for (n = blk->h; n; n = n->next ) {
 		stmt *res = NULL;
 		symbol *s = n->data.sym;
+
 		switch (s->token) {
 		case SQL_SET:
 			res = psm_set(sql, scp, s->data.lval->h);
@@ -435,6 +453,16 @@ sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *
 		}
 		list_append(l, res);
 	}
+	/* drop the declared tables of this frame */
+	if (l && l->t && !has_return(l->t->data)) {
+		i = sql->topvars;
+		while(sql->vars[--i].s) {
+			sql_var *v = &sql->vars[i];
+
+			if (v->type.comp_type && !v->view) 
+				list_append(l, stmt_assign(v->name, NULL, sql->frame));
+		}
+	}
 	stack_pop_frame(sql);
 	if (l)
 		return stmt_list(l);
@@ -475,22 +503,6 @@ result_type(mvc *sql, char *fname, symbol *res, int instantiate )
 		return t;
 	}
 	return NULL;
-}
-
-static int
-has_return(stmt *s )
-{
-	if (s->type == st_return) {
-		return 1;
-	} else if (s->type == st_if) {
-		int res = has_return(s->op2.stval); /* ifstmts */
-		if (res && s->op3.stval)
-			res = has_return(s->op3.stval); /* elsestmts */
-		return res;
-	} else if (s->type == st_list) { /* sequential block */
-		return has_return(s->op1.lval->t->data);
-	}
-	return 0;
 }
 
 list *

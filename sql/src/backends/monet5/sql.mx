@@ -185,6 +185,14 @@ comment "Prepare a declared table";
 command dtColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int) :void
 address mvc_declared_table_column_wrap;
 
+command dropDeclaredTable{unsafe}( name:str ) :void 
+address mvc_drop_declared_table_wrap
+comment "drop a declared table"; 
+
+command dropDeclaredTables{unsafe}( nr:int ) :void 
+address mvc_drop_declared_tables_wrap
+comment "drop top n declared tables"; 
+
 command exportResult{unsafe}(s:streams, res_id:int, w:str) :void
 address mvc_export_result_wrap
 comment "Export a result (in order) to stream s"; 
@@ -715,6 +723,8 @@ sql5_export str mvc_result_value_@1(int *ret, int *rs, str *tn, str *name, str *
 
 sql5_export str mvc_declared_table_wrap(int *res_id, str *name);
 sql5_export str mvc_declared_table_column_wrap(int *ret, int *rs, str *tname, str *name, str *type, int *digits, int *scale);
+sql5_export str mvc_drop_declared_table_wrap(int *d, str *name);
+sql5_export str mvc_drop_declared_tables_wrap(int *d, int *nr);
 
 sql5_export str mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_affected_rows_wrap(int *r, lng *nr, str *w);
@@ -1684,7 +1694,7 @@ mvc_declared_table_wrap(int *res_id, str *name)
 
 	if (msg)
 		return msg;
-	s = mvc_bind_schema(m, "%dt%");
+	s = mvc_bind_schema(m, dt_schema);
 	(void)mvc_create_table(m, s, *name, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
 	*res_id = 0;
 	return MAL_SUCCEED;
@@ -1706,9 +1716,47 @@ mvc_declared_table_column_wrap(int *ret, int *rs, str *tname, str *name, str *ty
                 throw(SQL, "sql.dtColumn", "Cannot access declared table");
 	if (!sql_find_subtype(&tpe, *type, *digits, *scale))
                 throw(SQL, "sql.dtColumn", "Cannot find column type");
-	s = mvc_bind_schema(m, "%dt%");
+	s = mvc_bind_schema(m, dt_schema);
 	t = mvc_bind_table(m, s, *tname);
 	(void)mvc_create_column(m, t, *name, &tpe); 
+	return MAL_SUCCEED;
+}
+
+str
+mvc_drop_declared_table_wrap(int *d, str *name)
+{
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+
+	if (msg)
+		return msg;
+	s = mvc_bind_schema(m, dt_schema);
+	t = mvc_bind_table(m, s, *name);
+	(void)mvc_drop_table(m, s, t, 0);
+	(void)d;
+	return MAL_SUCCEED;
+}
+
+str
+mvc_drop_declared_tables_wrap(int *d, int *nr)
+{
+	int i = *nr;
+	mvc *m = NULL;
+	str msg = getContext(&m, NULL);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+
+	if (msg)
+		return msg;
+	s = mvc_bind_schema(m, dt_schema);
+	while(i && s->tables.set->t) {
+		t = s->tables.set->t->data;
+		(void)mvc_drop_table(m, s, t, 0);
+		i--;
+	}
+	(void)d;
 	return MAL_SUCCEED;
 }
 

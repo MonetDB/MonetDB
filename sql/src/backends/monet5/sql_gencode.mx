@@ -200,6 +200,16 @@ dump_table(MalBlkPtr mb, sql_table *t)
 	return nr;
 }
 
+static int
+drop_table(MalBlkPtr mb, str n)
+{
+	InstrPtr k = newStmt1(mb, sqlRef, "dropDeclaredTable");
+	int nr = getDestVar(k);
+
+	k = pushStr(mb, k, n);
+	return nr;
+}
+
 
 @-
 The dump_cols produces a sequence of instructions for
@@ -1814,6 +1824,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_return: {
 			int c = _dumpstmt(sql,mb, s->op1.stval);
 			int tt = tail_type(s->op1.stval)->type->localtype;
+
+			if (s->flag) { /* drop declared tables */
+				InstrPtr k = newStmt1(mb, sqlRef, "dropDeclaredTables");
+				k = pushInt(mb, k, s->flag);
+			} 
 			q = newInstruction(mb,RETURNsymbol);
 			if (tt == TYPE_bat) {
 				tt = newBatType(TYPE_str,TYPE_bat);
@@ -1825,11 +1840,19 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			pushInstruction(mb, q);
 		}	break;
 		case st_assign: {
-			int r = _dumpstmt(sql,mb, s->op2.stval);
-			if (!VAR_GLOBAL(s->flag)) { /* globals */
-				char *vn = atom2string(s->op1.stval->op1.aval);
-				char *buf;
+			int r = -1;
 
+			if (s->op2.stval)
+				r = _dumpstmt(sql,mb, s->op2.stval);
+			if (!VAR_GLOBAL(s->flag)) { /* globals */
+				char *buf, *vn = atom2string(s->op1.stval->op1.aval);
+
+				if (!s->op2.stval) {
+					/* drop declared table */
+					s->nr = drop_table(mb, vn);
+					_DELETE(vn);
+					break;
+				}
 				buf = alloca(SMALLBUFSIZ);
 				(void) snprintf(buf, SMALLBUFSIZ, "A%s", vn);
 				q = newInstruction(mb,ASSIGNsymbol);

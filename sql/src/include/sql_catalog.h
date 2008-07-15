@@ -92,6 +92,7 @@
 
 #define sql_max(i1,i2) ((i1)<(i2))?(i2):(i1)
 
+#define dt_schema 	"%dt%"
 
 typedef enum temp_t { 
 	SQL_PERSIST,
