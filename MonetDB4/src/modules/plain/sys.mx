@@ -165,9 +165,6 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 .COMMAND view_bbp_kind(): BAT[int,str] = view_bbp_kind;
 	"Pseudo bat to map a BAT id into its type"
 
-.COMMAND check_bbp_size() : lng = check_bbp_size;
-	"Walk the BBP directories, delete leftovers and return total size"
-
 .COMMAND bbp_batcache_minsize(wrd minsize) : wrd = bbp_batcache_minsize;
 	"set the minimum size (BUN count) for bats to be cached"
 
@@ -888,13 +885,6 @@ view_gdk_env(BAT **retval)
 	if (b == 0)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-check_bbp_size(lng *ret)
-{
-	*ret = BBPdiskscan();
 	return GDK_SUCCEED;
 }
 

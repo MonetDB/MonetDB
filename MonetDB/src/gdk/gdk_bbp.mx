@@ -126,7 +126,6 @@ gdk_export BAT *BBPdescriptor(bat b);
 
 /* swapping interface */
 gdk_export int BBPrecover(void);
-gdk_export lng BBPdiskscan(void);
 gdk_export int BBPsync(int cnt, bat *subcommit);
 gdk_export int BBPincref(bat b, int logical);
 gdk_export void BBPkeepref(bat i);
@@ -473,6 +472,7 @@ recover_dir(int direxists)
 }
 
 static int BBPrecover_subdir(void);
+static int BBPdiskscan(const char *);
 
 void
 BBPinit(void)
@@ -762,7 +762,7 @@ BBPinit(void)
 		GDKfatal("BBPinit: cannot properly process %s.", BAKDIR);
 
 	/* cleanup any leftovers (must be done after BBPrecover) */
-	BBPdiskscan(/*BATDIR*/);
+	BBPdiskscan(BATDIR);
 
 	return;
 
@@ -3385,19 +3385,18 @@ getdesc(int bid)
 	return &bs->B;
 }
 
-static lng
-BBPdiskscan_r(str parent)
+static int
+BBPdiskscan(const char *parent)
 {
-	str dir = parent ? parent : BATDIR;
-	DIR *dirp = opendir(dir);
+	DIR *dirp = opendir(parent);
 	struct dirent *dent;
 	long_str fullname;
-	str dst = fullname, src = dir;
-	lng ret, tot = LL_CONSTANT(0);
+	str dst = fullname;
+	const char *src = parent;
 
-	if (dirp == NULL) {
-		return LL_CONSTANT(-1);	/* nothing to do */
-	}
+	if (dirp == NULL)
+		return -1;	/* nothing to do */
+
 	while (*src)
 		*dst++ = *src++;
 	if (dst[-1] != DIR_SEP)
@@ -3406,17 +3405,17 @@ BBPdiskscan_r(str parent)
 	while ((dent = readdir(dirp)) != NULL) {
 		str p;
 		bat bid;
-		int r, ok, delete;
-		off_t filesize;
+		int ok, delete;
 		struct stat st;
 
 		if (dent->d_name[0] == '.')
 			continue;	/* ignore .dot files and directories (. ..) */
 
-		if (strncmp(dent->d_name, "BBP.", 4) == 0) {
-			if (parent == NULL || strncmp(parent, BAKDIR, strlen(BAKDIR)) == 0 || strncmp(parent, SUBDIR, strlen(SUBDIR)) == 0)
-				continue;
-		}
+		if (strncmp(dent->d_name, "BBP.", 4) == 0 &&
+		    (strcmp(parent, BATDIR) == 0 ||
+		     strncmp(parent, BAKDIR, strlen(BAKDIR)) == 0 ||
+		     strncmp(parent, SUBDIR, strlen(SUBDIR)) == 0))
+			continue;
 
 		p = strchr(dent->d_name, '.');
 		bid = strtol(dent->d_name, NULL, 8);
@@ -3424,21 +3423,15 @@ BBPdiskscan_r(str parent)
 		delete = FALSE;
 
 		strcpy(dst, dent->d_name);
-		if (p == NULL) {
-			ret = BBPdiskscan_r(fullname);
-			if (ret >= 0) {
-				tot += ret;	/* it was a directory; add subtotal */
-				continue;
-			}
+		if (p == NULL && BBPdiskscan(fullname) == 0) {
+			/* it was a directory */
+			continue;
 		}
-		r = stat(fullname, &st);
-		if (r) {
+		if (stat(fullname, &st)) {
 			GDKsyserror("BBPdiskscan: stat(%s)", fullname);
 			continue;
-		} else {
-			/* record the real disk occupancy; not just the bytesize */
-			filesize = st.st_size;
 		}
+		IODEBUG THRprintf(GDKout, "#BBPdiskscan: stat(%s) = 0\n", fullname);
 
 		if (ok == FALSE || !persistent_bat(bid)) {
 			delete = TRUE;
@@ -3468,28 +3461,19 @@ BBPdiskscan_r(str parent)
 		}
 		if (!ok) {
 			/* found an unknown file; stop pruning in this subdir */
-			GDKwarning("BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, dir);
+			GDKwarning("BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, parent);
 			break;
 		}
 		if (delete) {
-			int r = unlink(fullname);
-			if (r) {
+			if (unlink(fullname) < 0) {
 				GDKsyserror("BBPdiskscan: unlink(%s)", fullname);
-			} else {
-				tot += filesize;
+				continue;
 			}
-			IODEBUG THRprintf(GDKout, "#BBPcleanup: unlink(%s) = %d\n", fullname, r);
+			IODEBUG THRprintf(GDKout, "#BBPcleanup: unlink(%s) = 0\n", fullname);
 		}
-		IODEBUG THRprintf(GDKout, "#BBPdiskscan: stat(%s) = %d\n", fullname, r);
 	}
 	closedir(dirp);
-	return tot;
-}
-
-lng
-BBPdiskscan(void)
-{
-	return BBPdiskscan_r(NULL);
+	return 0;
 }
 
 void 
