@@ -12,10 +12,15 @@ stdout of test 'mdb_starts_with_sql_debug_64.SF-1999354` in directory 'src/test/
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34243/
 # MonetDB/SQL module v2.24.0 loaded
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
+% . # table_name
+% f2_single_value # name
+% varchar # type
+% 7 # length
+[ "0004044"	]
+% sys. # table_name
+% f2_ra # name
+% varchar # type
+% 0 # length
 
 # 22:28:24 >  
 # 22:28:24 >  Done.
