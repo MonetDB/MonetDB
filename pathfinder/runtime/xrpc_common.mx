@@ -1,0 +1,107 @@
+@' Copyright Notice:
+@' -----------------
+@'
+@' The contents of this file are subject to the Pathfinder Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License.  You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/PathfinderLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.  See
+@' the License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the Pathfinder system.
+@'
+@' The Original Code has initially been developed by the Database &
+@' Information Systems Group at the University of Konstanz, Germany and
+@' is now maintained by the Database Systems Group at the Technische
+@' Universitaet Muenchen, Germany.  Portions created by the University of
+@' Konstanz and the Technische Universitaet Muenchen are Copyright (C)
+@' 2000-2005 University of Konstanz and (C) 2005-2008 Technische
+@' Universitaet Muenchen, respectively.  All Rights Reserved.
+@'
+@' $Id$
+@f xrpc_common
+@a Ying Zhang
+@t Includes header files, definitions shared by the XRPC server and XRPC client
+
+@h
+#ifndef XRPC_COMMON_H
+#define XRPC_COMMON_H
+
+#include <mapi/mapi.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stream_socket.h>
+
+#ifdef _WIN32   /* Windows specific */
+    #include <winsock.h>
+    #define snprintf _snprintf
+    #ifndef __MINGW32__
+        #pragma comment(lib, "ws2_32")
+    #endif
+#else           /* UNIX specific */
+    #include <sys/select.h>
+    #include <sys/types.h>	/* used by socket */
+    #include <sys/socket.h>
+    #include <unistd.h>
+    #include <netinet/in.h> /* hton and ntoh */
+    #include <arpa/inet.h>  /* dotted IP addr to and from 32-bits int */
+    #include <netdb.h>      /* convert domain names into IP addr */
+    #include <errno.h>
+    #include <ctype.h>
+#endif
+
+#define XRPC_REQ_CALLBACK       "/xrpc"
+
+#define MXQ_ADMIN   "http://monetdb.cwi.nl/XQuery/admin/"
+
+#define SOAP_NS     "http://www.w3.org/2003/05/soap-envelope"
+#define XDT_NS      "http://www.w3.org/2005/xpath-datatypes"
+#define XS_NS       "http://www.w3.org/2001/XMLSchema"
+#define XSI_NS      "http://www.w3.org/2001/XMLSchema-instance"
+#define XRPC_NS     "http://monetdb.cwi.nl/XQuery"
+#define XRPC_LOC    "http://monetdb.cwi.nl/XQuery/XRPC.xsd"
+
+#define XRPC_HEADER "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"  \
+                    "<env:Envelope xmlns:env=\"%s\""                \
+                                 " xmlns:xrpc=\"%s\""               \
+                                 " xmlns:xdt=\"%s\" "               \
+                                 " xmlns:xs=\"%s\""                 \
+                                 " xmlns:xsi=\"%s\""                \
+                                 " xsi:schemaLocation=\"%s %s\">"   \
+                      "<env:Body>"                                  \
+                        "<xrpc:request xrpc:module=\"%s\""          \
+                                     " xrpc:location=\"%s\""        \
+                                     " xrpc:method=\"%s\""          \
+                                     " xrpc:arity=\"%lld\""         \
+                                     " xrpc:iter-count=\"%lld\""    \
+                                     " xrpc:updCall=\"%s\">"
+
+#define XRPC_HTTP_CALL "<xrpc:call>"                                    \
+                         "<xrpc:sequence>"                              \
+                           "<xrpc:atomic-value xsi:type=\"xs:string\">" \
+                             "%s"                                       \
+                           "</xrpc:atomic-value>"                       \
+                         "</xrpc:sequence>"                             \
+                       "</xrpc:call>"
+
+#define XRPC_PUT_CALL  "<xrpc:call>"                                    \
+                         "<xrpc:sequence>"                              \
+                           "<xrpc:atomic-value xsi:type=\"xs:string\">" \
+                             "%s"                                       \
+                           "</xrpc:atomic-value>"                       \
+                         "</xrpc:sequence>"                             \
+                         "<xrpc:sequence>"                              \
+                           "<xrpc:element>%s</xrpc:element>"            \
+                         "</xrpc:sequence>"                             \
+                       "</xrpc:call>"
+
+#define XRPC_FOOTER     "</xrpc:request>"   \
+                      "</env:Body>"         \
+                    "</env:Envelope>\n"
+
+#endif /* XRPC_COMMON_H */
+
