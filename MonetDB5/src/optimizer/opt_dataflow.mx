@@ -56,14 +56,17 @@ The statemens are all checked for being eligible for dataflow.
 			setVarUsed(mb,flowblock);
 		}
 		for( j=start ; j<i; j++){
+			if (old[j] == NULL)
+				continue;
 			pushInstruction(mb,old[j]);
-			mb->profiler[j].trace = TRUE;
+			//mb->profiler[j].trace = TRUE;
 		}
 		if (entries>1){
 			q= newAssignment(mb);
 			q->barrier= EXITsymbol;
 			getArg(q,0) = flowblock;
 		}
+		entries = 0;
 		flowblock = 0;
 		actions++;
 	}
@@ -77,27 +80,48 @@ The statemens are all checked for being eligible for dataflow.
 static int
 OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,j, cnt, start=1,entries=0, actions=0,oldvtop;
+	int i,j, cnt, start=1,entries=0, actions=0;
 	int flowblock= 0, dumbcopy=0;
 	InstrPtr *old, q;
 	int limit;
 	Lifespan span = newLifespan(mb);
-	char *assigned= (char*) alloca(mb->vtop);
 
 	(void) cntxt;
 	(void) stk;
 	setLifespan(mb,span);
+#ifdef DEBUG_DATAFLOW_OPT
+	printFunction(GDKstdout, mb, LIST_MAL_ALL);
+#endif
 	limit= mb->stop;
 	old = mb->stmt;
 	newMalBlkStmt(mb, mb->ssize+20); /* some marge */
 	pushInstruction(mb,old[0]);
-	memset(assigned,0, (oldvtop= mb->vtop));
 
 	initProfiler(mb);
+	/* remove the inlined dataflow barriers */
 	for (i = 1; i<limit; i++) {
 		p = old[i];
 
-		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)){
+		if (!flowblock && blockStart(p) && 
+		    getFunctionId(p) == dataflowRef){
+			flowblock = getArg(p,0);
+			freeInstruction(p);
+			old[i] = NULL;
+		}
+
+		if (flowblock && blockExit(p) && getArg(p,0) == flowblock) {
+			flowblock = 0;
+			freeInstruction(p);
+			old[i] = NULL;
+		}
+	}
+	for (i = 1; i<limit; i++) {
+		p = old[i];
+
+		if (p == NULL)
+			continue;
+		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)
+		   || blockCntrl(p) || (!dumbcopy && blockExit(p))){
 			@:flowblock@
 			pushInstruction(mb,p);
 			continue;
@@ -108,35 +132,38 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if (dumbcopy == 1)
 				@:flowblock@
 		}
-		if (dumbcopy){
-			for(j=0;j<p->retc;j++)
-				assigned[getArg(p,j)]=1;
+		if (blockExit(p)) {
+			assert(flowblock == 0);
+			dumbcopy--;
 			pushInstruction(mb,p);
 			continue;
 		}
-		if (blockExit(p))
-			dumbcopy--;
+		if (dumbcopy) {
+			assert(flowblock == 0);
+			pushInstruction(mb,p);
+			continue;
+		}
 
 		if (flowblock == 0){
 			flowblock = newTmpVariable(mb,TYPE_int);
-			memset(assigned, 0, oldvtop);
-			entries= 0;
+			entries = 0;
 			start = i;
 		}
-		for(j=0;j<p->retc;j++)
-			assigned[getArg(p,j)]=1;
 		/* check if the instruction can start a flow */
 		/* this should be a function call with multiple arguments */
-		cnt =0;
+		cnt = 0;
 		if (getFunctionId(p))
-		for(j=p->retc; j<p->argc; j++)
-		if( getLastUpdate(span, getArg(p,j)) <= start)
-			cnt++;
-		if (cnt && cnt== p->argc-p->retc )
+			for(j=p->retc; j<p->argc; j++)
+				if (getLastUpdate(span, getArg(p,j)) <= start)
+					cnt++;
+		if (cnt && cnt == p->argc-p->retc)
 			entries++;
 	}
 	GDKfree(old);
 	GDKfree(span);
+#ifdef DEBUG_DATAFLOW_OPT
+	printFunction(GDKstdout, mb, LIST_MAL_ALL);
+#endif
 	return actions;
 }
 @include optimizerWrapper.mx
