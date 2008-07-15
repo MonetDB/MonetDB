@@ -228,7 +228,7 @@ as temporary heap storage.
 In case of huge bats, we want HEAPalloc to write a file to disk, and memory map
 it. To make this possible, we must provide it with filenames.
 @c
-BATstore *
+static BATstore *
 BATnewstorage(int ht, int tt, size_t cap)
 {
 	BATstore *bs, *recycled;

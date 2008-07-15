@@ -1138,7 +1138,6 @@ gdk_export BAT *BATclone(BAT *b, size_t capacity);
 gdk_export BAT *BATextend(BAT *b, size_t newcap);
 
 /* internal */
-gdk_export BATstore *BATnewstorage(int ht, int tt, size_t cap);
 gdk_export BATstore *BATcreatedesc(int ht, int tt, int heapnames);
 gdk_export int BATfree(BAT *b);
 gdk_export void BATdestroy(BATstore *bs);
