@@ -176,7 +176,7 @@ socket_open(str host, int port, str fcn)
 		GDKsyserror("s(%s:d): lookup error.\n", fcn, host, port);
 		return GDK_FAIL;
 	}
-	memcpy(&a.sin_addr, hp->h_addr, hp->h_length);
+	memcpy(&a.sin_addr, hp->h_addr_list[0], hp->h_length);
 	if ((fd = socket(PF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
 		GDKsyserror("%s(%s:%d): could not create socket.\n", fcn, host, port);
 	} else if (connect(fd, addr, len)) {
