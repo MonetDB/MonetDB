@@ -3008,7 +3008,7 @@ block_stream(stream *s)
 		ns->errnr = OPEN_ERROR;
 	/* blocksizes have a fixed little endian byteorder */ 
 #ifdef WORDS_BIGENDIAN
-	ns->byteorder = 3412; /* simply != 1234 */
+	s->byteorder = 3412; /* simply != 1234 */
 #endif
 	ns->type = s->type;
 	ns->access = s->access;
