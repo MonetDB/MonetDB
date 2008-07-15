@@ -314,7 +314,6 @@ xquery_print_result_driver (
 #include <pf_config.h>
 #include "serialize.h"
 #include "pf_support.h"
-#include "xrpc_server.h"
 
 /**
  *

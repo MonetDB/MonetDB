@@ -145,16 +145,15 @@ Start XPRC receiver using the default values as specified in \
 \"monet_environment\"",
 "xrpc_server");
 
-@h
-#ifndef XRPC_SERVER_H
-#define XRPC_SERVER_H
+@c
+#include "pf_config.h"
 
+#include <gdk.h>
 #include <mapi/mapi.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stream_socket.h>
-
 #ifdef _WIN32   /* Windows specific */
     #include <winsock.h>
     #define snprintf _snprintf
@@ -168,184 +167,16 @@ Start XPRC receiver using the default values as specified in \
     #include <unistd.h>     /* gethostname() */
     #include <netinet/in.h> /* hton and ntoh */
     #include <arpa/inet.h>  /* dotted IP addr to and from 32-bits int */
-    #include <netdb.h>      /* gethostbyname(), h_errno */
+    #include <netdb.h>      /* gethostbyname() */
     #include <errno.h>
     #include <ctype.h>
 #endif
-#include "pf_support.h"
-#include "xrpc_server.proto.h"
-
-/* HTTP defines */
-#define XRPC_DOC_CALLBACK       "/xrpc/doc"
-#define XRPC_ADM_CALLBACK       "/xrpc/admin"
-#define XRPC_WSAT_CALLBACK      "/xrpc/wsat"
-#define XRPC_REQ_CALLBACK       "/xrpc"
-
-#define ERR403                  "403 Forbidden"
-#define ERR404                  "404 Bad Request"
-#define ERR408                  "408 Request Timeout"
-#define ERR500                  "500 Internal Server Error"
-#define ERR504                  "504 Gateway Timeout"
-
-#define OUT_OF_MEM              "Internal Receiver Error: out-of memory"
-#define NOT_WELL_FORMED         "Request XML message not well-formed"
-#define MAX_NR_PARAMS           1024
-
-#define HTTP_200_OK\
-            "HTTP/1.1 200 OK\r\n"\
-            "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n"
-
-/* our namespaces */
-#define MXQ_ADMIN     "http://monetdb.cwi.nl/XQuery/admin/"
-#define SOAP_NS       "http://www.w3.org/2003/05/soap-envelope"
-#define XDT_NS        "http://www.w3.org/2005/xpath-datatypes"
-#define XS_NS         "http://www.w3.org/2001/XMLSchema"
-#define XSI_NS        "http://www.w3.org/2001/XMLSchema-instance"
-#define XRPC_NS       "http://monetdb.cwi.nl/XQuery"
-#define XRPC_LOC      "http://monetdb.cwi.nl/XQuery/XRPC.xsd"
-#define WSCOOR_NS     "http://docs.oasis-open.org/ws-tx/wscoor/2006/06"
-#define WSAT_NS       "http://docs.oasis-open.org/ws-tx/wsat/2006/06"
-
-#define XRPC_REQUEST  XRPC_NS"|request"
-#define XRPC_RESPONSE XRPC_NS"|response"
-
-/* XRPC SOAP snippets */
-#define SOAP_ENVELOPE\
-    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"\
-    "<env:Envelope\n"\
-    "  xmlns:env=\"" SOAP_NS "\"\n"\
-    "  xmlns:xrpc=\"" XRPC_NS "\"\n"\
-    "  xmlns:xdt=\"" XDT_NS "\" \n"\
-    "  xmlns:xs=\"" XS_NS "\"\n"\
-    "  xmlns:xsi=\"" XSI_NS "\"\n"\
-    "  xsi:schemaLocation=\"" XRPC_NS " " XRPC_LOC "\">\n"
-
-#define XRPC_WS_QID\
-      " <xrpc:header xrpc:mode=\"%s\">\n"\
-      "  <wscoor:CoordinationContext\n"\
-      "   xmlns:wscoor=\""WSCOOR_NS"\"\n"\
-      "   env:mustUnderstand=\"true\">\n"\
-      "    <wscoor:Identifier>%s</wscoor:Identifier>\n"\
-      "    <wscoor:Expires>"LLFMT"</wscoor:Expires>\n"\
-      "    <wscoor:CoordinationType>" WSAT_NS "</wscoor:CoordinationType>\n"\
-      "  </wscoor:CoordinationContext>\n"\
-      " </xrpc:header>\n"
-
-#define XRPC_REQ\
-    "<env:Body>\n"\
-      "<xrpc:request\n"\
-      "  xrpc:module=\"%s\"\n"\
-      "  xrpc:location=\"%s\"\n"\
-      "  xrpc:method=\"%s\"\n"\
-      "  xrpc:arity=\""LLFMT"\"\n"\
-      "  xrpc:iter-count=\""LLFMT"\"\n"\
-      "  xrpc:updCall=\"%s\"\n"\
-      "  xrpc:caller=\""
-#define XRPC_REQ_BODY\
-      XRPC_REQ "%s:%d:"LLFMT"\">\n"
-#define XRPC_REQ_BODY_FIRST_CALLER\
-      XRPC_REQ "query\">\n"
-
-#define XRPC_WSAT_REQ SOAP_ENVELOPE\
-    "<env:Header>" XRPC_WS_QID "</env:Header>\n"\
-    "<env:Body><wsat:%s/></env:Body>\n"\
-    "</env:Envelope>"
-
-#define XRPC_WSAT_RES SOAP_ENVELOPE\
-    "<env:Header>\n" XRPC_WS_QID "<xrpc:partipant>%s,%s:%s:%s,"LLFMT",%d</xrpc:participant>\n</env:Header>\n"\
-    "<env:Body><wsat:%s/></env:Body>\n"\
-    "</env:Envelope>"
-
-#define XRPC_RES_BODY\
-    "<env:Body>\n"\
-    " <xrpc:response\n"\
-    "   xrpc:module=\"%s\"\n"\
-    "   xrpc:method=\"%s\">\n"
-
-#define XRPC_HTTP_CALL "<xrpc:call>"                                    \
-                         "<xrpc:sequence>"                              \
-                           "<xrpc:atomic-value xsi:type=\"xs:string\">" \
-                             "%s"                                       \
-                           "</xrpc:atomic-value>"                       \
-                         "</xrpc:sequence>"                             \
-                       "</xrpc:call>"
-
-#define XRPC_PUT_CALL  "<xrpc:call>"                                    \
-                         "<xrpc:sequence>"                              \
-                           "<xrpc:atomic-value xsi:type=\"xs:string\">" \
-                             "%s"                                       \
-                           "</xrpc:atomic-value>"                       \
-                         "</xrpc:sequence>"                             \
-                         "<xrpc:sequence>"                              \
-                           "<xrpc:element>%s</xrpc:element>"            \
-                         "</xrpc:sequence>"                             \
-                       "</xrpc:call>"
-
-#define XRPC_FOOTER " </xrpc:request>\n"   \
-                    "</env:Body>\n"         \
-                    "</env:Envelope>\n"
-
-#ifndef HOST_NAME_MAX
-#ifdef _POSIX_HOST_NAME_MAX
-#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
-#else 
-#define HOST_NAME_MAX 255
-#endif
-#endif
-
-typedef struct {
-    char *qid;
-    char *caller;
-    lng seqnr;
-    lng start;
-    lng timeout;
-    char *mode;
-    char *module;
-    char *method;
-    char *location;
-    int updCall;
-    int hasNodeParam;
-    size_t argc;
-    size_t iterc;
-    size_t nr_args;
-    size_t max_args;
-    lng **argcnt;
-    int *argtpe;
-    char **argval;
-    lng partcnt;
-    BAT *shredBAT;
-} XRPCreq_t;
-
-/* exports for xrpc_server.mx and serialize_dflt.mx */
-xrpc_server_export int        isAllowed(BAT *allowed, char* key);
-xrpc_server_export int        isTrusted(stream *out, char *location);
-
-xrpc_server_export XRPCreq_t *xrpc_parse_message(stream *out, BAT *shredBAT, BAT *participants, bit isAdmin);
-xrpc_server_export XRPCreq_t *XRPCreq_new(char *qid, char *caller, lng timeout, char *mode, char *module,
-                                         char *method, char *location, int updCall, size_t iterc, size_t argc);
-xrpc_server_export void       XRPCreq_free(XRPCreq_t *req);
-xrpc_server_export void       send_err(stream *out, char *http_err, char *soap_err, char *err_reason);
-xrpc_server_export lng        my_strtoll(stream *out, bte isSigned, char *val_ptr, char *attr_name);
-
-xrpc_server_export BAT *xrpc_qids;
-xrpc_server_export BAT *xrpc_timeouts;
-xrpc_server_export BAT *xrpc_statuses;
-xrpc_server_export BAT *xrpc_locks;
-xrpc_server_export BAT *xrpc_wsbats;
-xrpc_server_export BAT *xrpc_trusted;
-xrpc_server_export BAT *xrpc_admin;
-
-#endif /* XRPC_SERVER */
-
-@c
-#include "pf_config.h"
-#include <gdk.h>
 #include "pathfinder.h"
 #include "pf_support.h"
 #include "shredder.h"
 #include "serialize.h"
-#include "xrpc_server.h"
 #include "shttpd.h"
+#include "xrpc_common.h"
 
 static int rpcd_running = 0;
 static int timing = 0;
@@ -363,11 +194,9 @@ typedef struct {
 static MT_Sema xrpc_commit_sema;
 static xrpc_commit_t *xrpc_commit_active = NULL;
 
-
 int CMDmy_hostname(char **res)
 {
     int ret = 0, len = HOST_NAME_MAX > 255 ? HOST_NAME_MAX : 255;
-    char err[1024];
 
     char *hname = GDKmalloc(len);
     if(!hname) {
@@ -378,7 +207,8 @@ int CMDmy_hostname(char **res)
     errno = 0;
     ret = gethostname(hname, len);
     if(ret < 0) {
-        snprintf(err, 1024, "CMDmy_hostname: gethostname() failed: %s.\n", strerror(errno));
+        GDKerror("CMDmy_hostname: gethostname() failed: %s.\n",
+                strerror(errno));
         return GDK_FAIL;
     }
 
@@ -386,141 +216,36 @@ int CMDmy_hostname(char **res)
     return GDK_SUCCEED;
 }
 
-void
+static void
 send_err(stream *out,
          char *http_err,
          char *soap_err,
          char *err_reason)
 {
-    if (out == NULL) {
-        GDKerror(err_reason);
-    } else {
+    if(out) {
         stream_printf(out, "HTTP/1.1 %s\r\n"
-            "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n"
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-            "<env:Envelope xmlns:env=\"%s\">\n"
-            " <env:Body>\n"
-            "  <env:Fault>\n"
-            "   <env:Code>\n"
-            "    <env:Value>%s</env:Value>\n"
-            "   </env:Code>\n"
-            "   <env:Reason>\n"
-            "    <env:Text xml:lang=\"en\">%s</env:Text>\n"
-            "   </env:Reason>\n"
-            "  </env:Fault>\n"
-            " </env:Body>\n"
-            "</env:Envelope>\n",
-            http_err, SOAP_NS, soap_err, err_reason);
+                "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n"
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                "<env:Envelope xmlns:env=\"%s\">\n"
+                " <env:Body>\n"
+                "  <env:Fault>\n"
+                "   <env:Code>\n"
+                "    <env:Value>%s</env:Value>\n"
+                "   </env:Code>\n"
+                "   <env:Reason>\n"
+                "    <env:Text xml:lang=\"en\">%s</env:Text>\n"
+                "   </env:Reason>\n"
+                "  </env:Fault>\n"
+                " </env:Body>\n"
+                "</env:Envelope>\n",
+                http_err, SOAP_NS, soap_err, err_reason);
         stream_flush(out);
+    } else {
+        GDKerror("send_err: stream 'out' is null");
     }
 }
 
 lng xrpc_reqnr = 1000000;
-
-XRPCreq_t *
-XRPCreq_new(
-        char *qid,
-        char *caller,
-        lng timeout,
-        char *mode,
-        char *module,
-        char *method,
-        char *location,
-        int updCall,
-        size_t iterc,
-        size_t argc)
-{
-    size_t i = 0, j = 0;
-
-    XRPCreq_t *req = (XRPCreq_t*) GDKmalloc(sizeof(XRPCreq_t));
-    if(!req) return NULL;
-
-    req->seqnr = 0;
-    req->qid = qid;
-    req->caller = caller;
-    req->timeout = timeout;
-    req->mode = mode;
-    req->start = GDKusec();
-    req->module = module;
-    req->method = method;
-    req->location = location;
-    req->updCall = updCall;
-    req->hasNodeParam = FALSE;
-    req->argc = argc;
-    req->iterc = iterc;
-    req->nr_args = 0;
-    req->max_args = iterc * (argc>0?argc:1) * MAX_NR_PARAMS;
-
-    if (!(req->argcnt = (lng**) GDKmalloc(iterc * sizeof(lng*)))) {
-        GDKfree(req);
-        return NULL;
-    }
-    for (i = 0; i < iterc; i++) {
-        /* we allocate _at least one_ argcnt for each parameter, so that
-         * we have a place to note that a function has zero parameter */
-        if(!(req->argcnt[i] = GDKmalloc((argc>0?argc:1) * sizeof(lng)))){
-            for (j = 0; j < i; j++)
-                GDKfree(req->argcnt[j]);
-            GDKfree(req);
-            return NULL;
-        }
-        req->argcnt[i][0] = 0;
-        for (j = 1; j < argc; j++)
-            req->argcnt[i][j] = 0;
-    }
-
-    if(!(req->argtpe = (int*) GDKmalloc(req->max_args * sizeof(int)))){
-        for(i = 0; i < iterc; i++) GDKfree(req->argcnt[i]);
-        GDKfree(req->argcnt);
-        GDKfree(req);
-        return NULL;
-    }
-   
-    if(!(req->argval = (char**) GDKmalloc(req->max_args * sizeof(char *)))){
-        for(i = 0; i < iterc; i++) GDKfree(req->argcnt[i]);
-        GDKfree(req->argcnt);
-        GDKfree(req->argtpe);
-        GDKfree(req);
-        return NULL;
-    }
-
-    return req;
-}
-
-void
-XRPCreq_free(XRPCreq_t *req)
-{
-    size_t i = 0;
-
-    if(req->qid) GDKfree(req->qid);
-    for(i = 0; i < req->iterc; i++) GDKfree(req->argcnt[i]);
-    GDKfree(req->argcnt);
-    GDKfree(req->argtpe);
-    GDKfree(req->argval);
-    GDKfree(req);
-}
-
-static int 
-get_node_type(str typename) {
-    if (strcmp(typename, XRPC_NS"|element") == 0)
-        return XS_ELEMENT;
-    if (strcmp(typename, XRPC_NS"|text") == 0)
-        return XS_TEXT;
-    if (strcmp(typename, XRPC_NS"|comment") == 0)
-        return XS_COMMENT;
-    if (strcmp(typename, XRPC_NS"|processing-instruction") == 0) 
-        return XS_PI;
-    if (strcmp(typename, XRPC_NS"|document") == 0)
-        return XS_DOCUMENT;
-    return -1;
-} 
-
-static INLINE oid
-skip_text_nodes(char *pre_kindT, oid pre, oid max) 
-{
-    while(pre < max && pre_kindT[pre] == TEXT) pre++;
-    return pre; 
-}
 
 /**
  * Retrieves the request message from the connection and shred it to
@@ -565,11 +290,12 @@ request2bat(stream *out, char *reqmsg)
 }
 
 /**
- * Checks if a prefix of 'key' is present in a bat with a list of allowed prefixes
+ * Checks if a prefix of 'key' is present in a bat with a list of
+ * allowed prefixes.
  *
  * Return 1 if yes, 0 otherwise.
  */
-int 
+static int 
 isAllowed(BAT *allowed, char* key)
 {
     BATiter allowedi = bat_iterator(allowed);
@@ -587,7 +313,7 @@ isAllowed(BAT *allowed, char* key)
  *
  * Return 1 if yes, 0 otherwise.
  */
-int
+static int
 isTrusted(stream *out, char *location)
 {
     if (!isAllowed(xrpc_trusted, location)) {
@@ -606,12 +332,12 @@ isTrusted(stream *out, char *location)
         len += len_x;
         pos += snprintf(err+pos, len-pos, "%s", msg);
         if (!len_x) {
-            pos += snprintf(err+pos, len-pos, " '%s'.", location);
+            pos += snprintf(err+pos, len-pos, " \"%s\".", location);
         } else {
-            pos += snprintf(err+pos, len-pos, "\n'%s' not in", location);
+            pos += snprintf(err+pos, len-pos, "\n\"%s\" not in", location);
             BATloop(xrpc_trusted, p, q) {
                 char* prefix = BUNtail(xrpc_trustedi, p);
-                pos += snprintf(err+pos, len-pos, "\n'%s',", prefix);
+                pos += snprintf(err+pos, len-pos, "\n\"%s\",", prefix);
             }
             err[pos-1] = '.';
         }
@@ -621,437 +347,25 @@ isTrusted(stream *out, char *location)
     return 1;
 }
 
-/**
- * @return PRE, or 0 if not found.
- */
-static INLINE oid
-get_pre_by_qname(str qname,
-                 oid start_pre,
-                 oid end_pre,
-                 oid *pre_propT,
-                 char *pre_kindT,
-                 BAT *qn_uri_loc)
-{
-    oid i;
-    BUN bun = BUN_NONE;
-    BATiter qn_uli = bat_iterator(qn_uri_loc);
-
-    for (i = start_pre; i < end_pre; i++) {
-        if (pre_kindT[i] == ELEMENT) {
-            BUNfndVOID(bun, qn_uli, &(pre_propT[i]));
-            if(bun != BUN_NONE && strcmp(BUNtail(qn_uli, bun), qname) == 0)
-                return i;
-        }
-    }
-    return 0;
-}
-
-/* Convert string to long int.  I promise never to use errno anymore!! */
-lng
-my_strtoll(stream *out,
-           bte isSigned,
-           char *val_ptr,
-           char *attr_name)
-{
-    char errstr[1024], *end_ptr = val_ptr;
-    long long int ret = strtoll(val_ptr, &end_ptr, 10);
-
-    if(end_ptr == val_ptr){
-        snprintf(errstr, 1024,
-                "Invalid value (\"%s\") of numeric attribute \"%s\"",
-                val_ptr, attr_name);
-        send_err(out, ERR404, "env:Sender", errstr);
-        return GDK_lng_min;
-    } else if(ret < 0 && !isSigned){
-        snprintf(errstr, 1024,
-                "Invalid value (\"%s\") of numeric attribute \"%s\": "
-                "should not be negative",
-                val_ptr, attr_name);
-        send_err(out, ERR404, "env:Sender", errstr);
-        return GDK_lng_min;
-    }
-    return ret;
-}
-
-XRPCreq_t *
-xrpc_parse_message(stream *out,
-                   BAT *shredBAT,
-                   BAT *participants,
-                   bit isAdmin)
-{
-    XRPCreq_t *req = NULL, *res = NULL;
-    char* msg = participants?XRPC_RESPONSE:XRPC_REQUEST;
-    char *module = NULL, *method = NULL, *location = NULL;
-    char *mode = NULL, *qid = NULL, *caller = "query";
-    char *arity_str = NULL, *itercnt_str = NULL;
-    char *pul = NULL, *val = NULL;
-    int updCall = FALSE;
-    lng timeout = 30000, argc = GDK_lng_min, iterc = -1, i = 0, j = 0, k = 0;
-    char errstr[1024];
-
-    BATiter shredBATi, prop_vali, qn_uli, qn_histi;
-    BAT *pre_size = NULL, *pre_level = NULL, *pre_kind = NULL,  *pre_prop = NULL;
-    BAT *qn_loc   = NULL, *qn_uri_loc = NULL, *qn_histo = NULL;
-    BAT *prop_val = NULL,  *prop_text = NULL;
-    BAT *attr_own = NULL,  *attr_qn = NULL, *attr_prop = NULL;
-    BAT *frag_root = NULL;
-    int   *pre_sizeT = NULL; /* Arrays holding the Tail values of some of the BATs above. */
-    char  *pre_levelT = NULL, *pre_kindT = NULL;
-    char  *text_base = NULL; /* text base of prop_text tail values */
-    oid   *attr_ownT = NULL, *attr_qnT = NULL, *attr_propT = NULL;
-    oid   *pre_propT = NULL;
-    var_t *prop_textT = NULL;
-
-    oid msg_node_pre = 0, hdr_node_pre = 0, val_node_pre = 0;
-    oid call_node_pre = 0,  seq_node_pre = 0,  tpe_node_pre = 0;
-    oid next_call_node_pre = 0, next_seq_node_pre = 0, next_tpe_node_pre = 0;
-    oid ao_ptr = 0; /* cursor in the attr_own bat */
-    size_t nattrs = 0, nnodes = 0;
-    
-    /* We need to clean up the pre_size, pre_level, pre_prop and
-     * pre_kind values between two node values, to prevent that
-     * a node value is treated as part of the message */
-    oid start_invalidate = 0; /* indicates from which node we should start with invalidation */
-    char level_diff = 0; /* indicates how many levels each pre_level value of a node should be reduced. */
-
-    shredBATi = bat_iterator(shredBAT);
-@= getbat
-    @1 = BATdescriptor(*(bat*)BUNtail(shredBATi,i+@2));
-    if (@1 == NULL) {
-        send_err(out, ERR404, "env:Sender", "Shredded BAT @1 unavailable");
-        goto cleanup;
-    }
-@c
-    @:getbat(pre_size,PRE_SIZE)@
-    @:getbat(pre_level,PRE_LEVEL)@
-    @:getbat(pre_prop,PRE_PROP)@
-    @:getbat(pre_kind,PRE_KIND)@
-    @:getbat(prop_text,PROP_TEXT)@
-    @:getbat(prop_val,PROP_VAL)@
-    @:getbat(qn_uri_loc,QN_URI_LOC)@
-    @:getbat(qn_histo,QN_HISTOGRAM)@
-    @:getbat(qn_loc,QN_LOC)@
-    @:getbat(frag_root,FRAG_ROOT)@
-    @:getbat(attr_own,ATTR_OWN)@
-    @:getbat(attr_qn,ATTR_QN)@
-    @:getbat(attr_prop,ATTR_PROP)@
-
-    prop_vali = bat_iterator(prop_val);
-    qn_uli = bat_iterator(qn_uri_loc);
-    qn_histi = bat_iterator(qn_histo);
-
-    pre_sizeT  = (int*)  Tloc(pre_size, BUNfirst(pre_size));
-    pre_levelT = (char*) Tloc(pre_level, BUNfirst(pre_level));
-    pre_propT  = (oid*)  Tloc(pre_prop, BUNfirst(pre_prop));
-    pre_kindT  = (char*) Tloc(pre_kind, BUNfirst(pre_kind));
-    prop_textT = (var_t*)Tloc(prop_text, BUNfirst(prop_text));
-    attr_ownT  = (oid*)  Tloc(attr_own, BUNfirst(attr_own));
-    attr_qnT   = (oid*)  Tloc(attr_qn, BUNfirst(attr_qn));
-    attr_propT = (oid*)  Tloc(attr_prop, BUNfirst(attr_prop));
-    text_base  = prop_text->theap->base;
-
-    pre_level  = BATsetaccess(pre_level, BAT_WRITE);
-    frag_root  = BATsetaccess(frag_root, BAT_APPEND);
-    nattrs     = BATcount(attr_prop);
-    nnodes     = BATcount(pre_size);
-
-    /* get mode from the header (a bit hacked) */
-    for(i=0; (size_t)i<nattrs; i++) {
-        str s = (str) BUNtail(qn_uli, attr_qnT[i]);
-        if (strcmp(s, XRPC_NS"|mode") == 0) {
-            mode = (str) BUNtail(prop_vali, attr_propT[i]);
-            break;
-        }
-    }
-
-    i = BUNfirst(shredBAT);
-    if (participants) {
-        /* parse a SOAP header for participants (XRPC response case) */
-        if ((hdr_node_pre = get_pre_by_qname(XRPC_NS"|participants",
-                        msg_node_pre, msg_node_pre + pre_sizeT[msg_node_pre] + 1,
-                        pre_propT, pre_kindT, qn_uri_loc)))
-        {
-            oid hdr_node_end = hdr_node_pre + pre_sizeT[hdr_node_pre];
-            while(++hdr_node_pre <= hdr_node_end) {
-                if (pre_kindT[hdr_node_pre] == ELEMENT) {
-                    char *s = (char*) BUNtail(qn_uli, pre_propT[hdr_node_pre]);
-                    if (strcmp(s, XRPC_NS"|participant") == 0) {
-                        oid end_pre = hdr_node_pre + pre_sizeT[hdr_node_pre];
-                        while(++hdr_node_pre <= end_pre) {
-                            if (pre_kindT[hdr_node_pre] == TEXT) {
-                                s = text_base + prop_textT[pre_propT[hdr_node_pre]];
-                                BUNappend(participants, s, FALSE);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        /* parse a SOAP header for qid and timeout  (XRPC request case)*/
-        if ((hdr_node_pre = get_pre_by_qname(WSCOOR_NS"|CoordinationContext",
-                        msg_node_pre, msg_node_pre + pre_sizeT[msg_node_pre] + 1,
-                        pre_propT, pre_kindT, qn_uri_loc)))
-        {
-            oid hdr_node_end = hdr_node_pre + pre_sizeT[hdr_node_pre];
-            while(++hdr_node_pre <= hdr_node_end) {
-                if (pre_kindT[hdr_node_pre] == ELEMENT) {
-                    char *s = (char*) BUNtail(qn_uli, pre_propT[hdr_node_pre]);
-                    int isqid = (strcmp(s, WSCOOR_NS"|Identifier") == 0);
-                    if (isqid || strcmp(s, WSCOOR_NS"|Expires") == 0) {
-                        oid end_pre = hdr_node_pre + pre_sizeT[hdr_node_pre];
-                        while(++hdr_node_pre <= end_pre) {
-                            if (pre_kindT[hdr_node_pre] == TEXT) {
-                                s = text_base + prop_textT[pre_propT[hdr_node_pre]];
-                                if (isqid) {
-                                    qid = GDKstrdup(s);
-                                } else {
-                                    timeout = my_strtoll(out, FALSE, s, "timeout");
-                                    if (timeout == GDK_lng_min) goto cleanup;
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if (!(msg_node_pre = get_pre_by_qname(msg, 2, nnodes, pre_propT, pre_kindT, qn_uri_loc))) {
-        send_err(out, ERR404, "env:Sender", msg);
-        goto cleanup;
-    }
-    call_node_pre = msg_node_pre;
-
-    /* analyze the XRPC request information */
-    if (participants) {
-        argc = 1; /* responses have only a out param (argc=1) ie a result */
-    } else {
-        /* more XRPC request message parsing: the XRPC Request in the body contains module/method etc info */
-        while(ao_ptr < nattrs && attr_ownT[ao_ptr] < msg_node_pre) ao_ptr++;
-        while(ao_ptr < nattrs && attr_ownT[ao_ptr] == msg_node_pre) {
-            pul = (char*) BUNtail(qn_uli, BUNfirst(qn_uri_loc) + attr_qnT[ao_ptr]);
-            val = (char*) BUNtail(prop_vali, BUNfirst(prop_val) + attr_propT[ao_ptr]);
-            if(strcmp(pul, XRPC_NS"|module") == 0) {
-                module = val;
-            } else if(strcmp(pul, XRPC_NS"|location") == 0) {
-                location = val;
-            } else if(strcmp(pul, XRPC_NS"|method") == 0) {
-                method = val;
-            } else if(strcmp(pul, XRPC_NS"|arity") == 0) {
-                arity_str = val;
-            } else if(strcmp(pul, XRPC_NS"|iter-count") == 0) {
-                itercnt_str = val;
-            } else if(strcmp(pul, XRPC_NS"|caller") == 0) {
-                caller = val;
-            } else if(strcmp(pul,XRPC_NS"|updCall") == 0) {
-                if((val[0] == 't' && val[1] == 'r' && val[2] == 'u' && val[3] == 'e') ||
-                   (val[0] == 'T' && val[1] == 'r' && val[2] == 'u' && val[3] == 'e') ||
-                   (val[0] == 'T' && val[1] == 'R' && val[2] == 'U' && val[3] == 'E'))
-                updCall = TRUE;
-            }
-            ao_ptr++;
-        }
-        if(!(module && location && method && arity_str)) {
-            send_err(out, ERR404, "env:Sender", 
-                "The \""XRPC_NS":request\" node didn't contain the required attributes\n");
-            goto cleanup;
-        }
-        if(!isAdmin && !isTrusted(out, location))
-            goto cleanup;
-        if(itercnt_str){
-            iterc = my_strtoll(out, FALSE, itercnt_str, "iter-count");
-            if(iterc == GDK_lng_min) goto cleanup;
-        }
-
-        call_node_pre = get_pre_by_qname(XRPC_NS"|call", MAX(call_node_pre,msg_node_pre),
-            msg_node_pre + pre_sizeT[msg_node_pre] + 1,
-            pre_propT, pre_kindT, qn_uri_loc);
-
-        argc = my_strtoll(out, FALSE, arity_str, "arity");
-        if (argc == GDK_lng_min) goto cleanup;
-    }
-    if (iterc == -1) {
-        /* if no iterc was found in the request (and always for XRPC
-         * responses), just count sequence elements */
-        BUN p = BUNfnd(BATmirror(qn_uri_loc), XRPC_NS"|sequence");
-        iterc = (p == BUN_NONE)?1:(*(lng*) BUNtail(qn_histi, p) / argc);
-    }
-
-    /* the req struct contains all parsed data (we use it also for
-     * response messages) */ 
-    if(!(req = XRPCreq_new(qid, caller, timeout, mode, module, method, location, updCall, iterc, argc))) {
-        send_err(out, ERR500, "env:Receiver", OUT_OF_MEM);
-        goto cleanup;
-    }
-
-    /* Fill the arrays 'req->argcnt', 'req->argval', 'req->argtpe' */
-    /* i: index in xrpc:call; j: index of xrpc:sequence per xrpc:call */
-    next_call_node_pre = call_node_pre;
-    for(i = 0; 
-            next_call_node_pre > 0 && next_call_node_pre < nnodes; 
-                call_node_pre = next_call_node_pre, i++) 
-    {
-        /* end of current call node */
-        next_call_node_pre = call_node_pre + pre_sizeT[call_node_pre] + 1;
-
-        for(seq_node_pre = skip_text_nodes(pre_kindT, call_node_pre + 1, next_call_node_pre), 
-            next_seq_node_pre = seq_node_pre, j = 0;
-                next_seq_node_pre > 0 && next_seq_node_pre < next_call_node_pre;
-                    seq_node_pre = next_seq_node_pre, j++) 
-        {
-            /* end of current sequence node */
-            next_seq_node_pre = seq_node_pre + pre_sizeT[seq_node_pre] + 1;
-       
-            for(tpe_node_pre = skip_text_nodes(pre_kindT, seq_node_pre+1, next_seq_node_pre),
-                    next_tpe_node_pre = tpe_node_pre, k=0;
-                next_tpe_node_pre > 0 && next_tpe_node_pre < next_seq_node_pre;
-                tpe_node_pre = next_tpe_node_pre, k++) 
-            {
-                /* end of current xrpc:<type> node */
-                next_tpe_node_pre = tpe_node_pre + pre_sizeT[tpe_node_pre]+1;
-
-                
-                /* advance our cursor in attr_own */
-                while(ao_ptr < nattrs && attr_ownT[ao_ptr] < tpe_node_pre) ao_ptr++;
-
-                if (req->nr_args == req->max_args) {
-                    req->max_args *= 2;
-                    char **bptr = GDKrealloc(req->argval, req->max_args * sizeof(char*));
-                    if (!bptr) {
-                        send_err(out, ERR500, "env:Receiver",OUT_OF_MEM);
-                        goto cleanup;
-                    }
-                    req->argval = bptr;
-
-                    if(!(bptr = GDKrealloc(req->argtpe, req->max_args * sizeof(int*)))) {
-                        send_err(out, ERR500, "env:Receiver",OUT_OF_MEM);
-                        goto cleanup;
-                    }
-                    req->argtpe = (int*) bptr;
-                }
-
-                pul = (char*) BUNtail(qn_uli, pre_propT[tpe_node_pre]);
-                if (strcmp(pul, XRPC_NS"|atomic-value") == 0) {
-                    int tpe = -1;
-                    while(ao_ptr < nattrs && attr_ownT[ao_ptr] == tpe_node_pre) {
-                        if(strcmp((char*)BUNtail(qn_uli, BUNfirst(qn_uri_loc)+attr_qnT[ao_ptr]),
-                                    XSI_NS"|type") == 0) {
-                            tpe = xquery_typenr((char*)BUNtail(prop_vali, BUNfirst(prop_val)+attr_propT[ao_ptr]));
-                        }
-                        ao_ptr++;
-                    }
-                    if(tpe < 0){
-                        snprintf(errstr, 1024, "XRPC request: iter["LLFMT"]/param["LLFMT"]/value["LLFMT"]"
-                                " does not have an \""XSI_NS":type\"", i, j, k);
-                        send_err(out, ERR404, "env:Sender", errstr);
-                        goto cleanup;
-                    }
-                    req->argtpe[req->nr_args] = tpe;
-                    val_node_pre = tpe_node_pre + 1;
-                    if(pre_sizeT[tpe_node_pre] != 1 || pre_kindT[val_node_pre] != TEXT) {
-                        snprintf(errstr, 1024, "XRPC message: iter["LLFMT"]/param["LLFMT"]/value["LLFMT"]"
-                                "is expected to have a simple value", i, j, k);
-                        send_err(out, ERR404, "env:Sender", errstr);
-                        goto cleanup;
-                    }
-                    req->argval[req->nr_args] = text_base + prop_textT[pre_propT[val_node_pre]];
-                } else if (strcmp(pul, XRPC_NS"|attribute") == 0) {
-                    while(ao_ptr < nattrs && attr_ownT[ao_ptr] < tpe_node_pre) ao_ptr++;
-                    if (attr_ownT[ao_ptr] == tpe_node_pre) {
-                        val_node_pre = ao_ptr;
-                    } else {
-                        snprintf(errstr, 1024, "XRPC request: "
-                                "iter["LLFMT"]/param["LLFMT"]/value["LLFMT"] "
-                                "of type "XRPC_NS":attribute is expected to have a single attribute",
-                                i, j, k);
-                        send_err(out, ERR404, "env:Sender", errstr);
-                        goto cleanup;
-                    }
-                    req->hasNodeParam = TRUE;
-                    req->argtpe[req->nr_args] = XS_ATTRIBUTE;
-                    req->argval[req->nr_args] = (char*) (size_t) val_node_pre; 
-                } else {
-                    req->argtpe[req->nr_args] = get_node_type(pul);
-                    if (req->argtpe[req->nr_args] == XS_DOCUMENT) {
-                        /* Find the first next ELEMENT, which should be
-                         * the root node of the document, and then
-                         * (mis)use its previous PRE als DOC_ROOT */
-                        val_node_pre = pre_sizeT[tpe_node_pre] == 0 ?
-                            tpe_node_pre :
-                            skip_text_nodes(pre_kindT, tpe_node_pre + 1,
-                                    next_tpe_node_pre) - 1;
-                        pre_kindT[val_node_pre] = 4;
-                        pre_propT[val_node_pre] = oid_nil;
-                    } else if (req->argtpe[req->nr_args] < 0) {
-                        snprintf(errstr, 1024, "XRPC request: "
-                                "iter["LLFMT"]/param["LLFMT"]/value["LLFMT"] "
-                                "contains unsupported type: %s\n",
-                                i, j, k, pul);
-                        send_err(out, ERR404, "env:Sender", errstr);
-                        goto cleanup;
-                    } else {
-                        val_node_pre = tpe_node_pre + 1;
-                        if (req->argtpe[req->nr_args] != XS_TEXT)
-                            val_node_pre = skip_text_nodes(pre_kindT,
-                                    val_node_pre, next_tpe_node_pre);
-                    }
-                    req->argval[req->nr_args] = (char*) (size_t) val_node_pre;
-                    frag_root = BUNappend(frag_root, (ptr)&val_node_pre, TRUE);
-                    req->hasNodeParam = TRUE;
-
-                    /* reassign level values for the ELEM nodes */
-                    level_diff = pre_levelT[val_node_pre];
-                    if(req->argtpe[req->nr_args] == XS_DOCUMENT)
-                        level_diff++;
-                    unsigned long long l = val_node_pre;
-                    for( ; l <= (val_node_pre + pre_sizeT[val_node_pre]); l++){
-                        pre_levelT[l] -= level_diff;
-                    }
-                    for (l = start_invalidate; l < val_node_pre; l++) {
-                        pre_levelT[l] = -3;
-                        pre_sizeT[l] = 0;
-                    }
-                    start_invalidate = val_node_pre + pre_sizeT[val_node_pre] + 1;
-                }
-                req->argcnt[i][j]++;
-                req->nr_args++;
-                next_tpe_node_pre = skip_text_nodes(pre_kindT, next_tpe_node_pre, next_seq_node_pre);
-            } /* end loop 'xrpc:<type>' */
-            next_seq_node_pre = skip_text_nodes(pre_kindT, next_seq_node_pre, next_call_node_pre);
-        } /* end loop 'xrpc:sequence' */
-        next_call_node_pre = skip_text_nodes(pre_kindT, next_call_node_pre, nnodes);
-    } /* end loop 'xrpc:call' */
-    frag_root = BATsetaccess(frag_root, BAT_READ);
-    res = req; req = NULL;
-@= delbat
-    if (@1) BBPunfix(@1->batCacheid);
-@c
-cleanup:
-    if (req) XRPCreq_free(req);
-    @:delbat(pre_size)@
-    @:delbat(pre_level)@
-    @:delbat(pre_prop)@
-    @:delbat(pre_kind)@
-    @:delbat(prop_text)@
-    @:delbat(prop_val)@
-    @:delbat(qn_uri_loc)@
-    @:delbat(qn_loc)@
-    @:delbat(qn_histo)@
-    @:delbat(frag_root)@
-    @:delbat(attr_own)@
-    @:delbat(attr_qn)@
-    @:delbat(attr_prop)@
-    return res;
-}
-
-XRPCreq_t *
+static XRPCreq_t *
 parse_request(stream *out,
               BAT *shredBAT,
               bit isAdmin)
 {
-    return xrpc_parse_message(out, shredBAT, NULL, isAdmin);
+    char err[4098];
+
+    XRPCreq_t *req = xrpc_parse_message(err, 4098, shredBAT, NULL);
+    if(!req) {
+        if(strcmp(err, OUT_OF_MEM) == 0)
+            send_err(out, ERR500, "env:Receiver", err);
+        else
+            send_err(out, ERR404, "env:Sender", err);
+    }
+    if(!isAdmin && !isTrusted(out, req->location)) {
+        XRPCreq_free(req);
+        return NULL;
+    }
+    return req;
 }
 
 /**
@@ -1101,9 +415,9 @@ execQuery(mapi_client *mc,
         /* if error was caused by other problems, we haven't checked
          * query expiration time */
         snprintf(errbuf_all, GDKMAXERRLEN*2,
-                "Error occurred during execution:\n%s\n%s",
+                "Error occurred during execution.\n%s\n%s",
                 *errbuf ? errbuf : "",
-                err == ((char*)-1) ? "no further error message" : err);
+                err == ((char*)-1) ? "" : err);
         send_err(mc->c->fdout, ERR404, "env:Sender", errbuf_all);
     }
     GDKsetbuf(errbuf_bak);
@@ -1263,8 +577,6 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
     method = shttpd_get_method(arg);
 
     if (strcmp(method, "PUT") == 0) {
-        lng percentage = 1;
-        bit verbose = FALSE;
         BAT *shredBAT = NULL;
         
         if(!(shredBAT = BATnew(TYPE_str, TYPE_bat, 32))) {
@@ -1272,13 +584,11 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
             return GDK_FAIL;
         }
 
-        if((ret = CMDshred_str(shredBAT, shttpd_get_msg(arg), &percentage, NULL, &verbose)) == GDK_FAIL) {
-            BBPreclaim(shredBAT);
-            send_err(mc->c->fdout, ERR404, "env:Sender", NOT_WELL_FORMED);
-            return ret;
-        }
+        shredBAT = request2bat(mc->c->fdout, shttpd_get_msg(arg));
+        if(!shredBAT) return GDK_FAIL;
 
-        if(!(req = XRPCreq_new(NULL, NULL, 0, NULL, MXQ_ADMIN, method, location, FALSE, 1, 2))) {
+        if(!(req = XRPCreq_new(NULL, NULL, 0, NULL, MXQ_ADMIN, method,
+                        location, FALSE, 1, 2))) {
             send_err(mc->c->fdout, ERR500, "env:Receiver", OUT_OF_MEM);
             BBPreclaim(shredBAT);
             return GDK_FAIL;
@@ -1295,7 +605,8 @@ xrpc_handle_file_request(mapi_client *mc, struct shttpd_callback_arg *arg)
         ret = execQuery(mc, flags, req, shredBAT);
         BBPreclaim(shredBAT);
     } else { /* GET/DELETE */
-        if(!(req = XRPCreq_new(NULL, NULL, 0, NULL, MXQ_ADMIN, method, location, FALSE, 1, 1))) {
+        if(!(req = XRPCreq_new(NULL, NULL, 0, NULL, MXQ_ADMIN, method,
+                        location, FALSE, 1, 1))) {
             send_err(mc->c->fdout, ERR500, "env:Receiver", OUT_OF_MEM);
             return GDK_FAIL;
         }

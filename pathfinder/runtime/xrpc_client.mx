@@ -374,26 +374,45 @@ PROC doRPC(
 @c
 #include "pf_config.h"
 #include <gdk.h>
+#include <stream_socket.h>
+#ifdef _WIN32   /* Windows specific */
+    #include <winsock.h>
+    #define snprintf _snprintf
+    #ifndef __MINGW32__
+        #pragma comment(lib, "ws2_32")
+    #endif
+#else           /* UNIX specific */
+    #include <sys/select.h>
+    #include <sys/types.h>  /* used by socket */
+    #include <sys/socket.h>
+    #include <unistd.h>     /* gethostname() */
+    #include <netinet/in.h> /* hton and ntoh */
+    #include <arpa/inet.h>  /* dotted IP addr to and from 32-bits int */
+    #include <netdb.h>      /* gethostbyname() */
+    #include <errno.h>
+    #include <ctype.h>
+#endif
 #include "pathfinder.h"
 #include "pf_support.h"
 #include "shredder.h"
 #include "serialize.h"
-#include "xrpc_server.h"
+#include "xrpc_common.h"
 #include "xrpc_client.h"
-
 
 int 
 CMDget_rpc_res(BAT **res, 
         oid *cont, 
-        BAT* ws, 
-        BAT* int_values,
-        BAT* dbl_values, 
-        BAT* str_values) 
+        BAT *ws, 
+        BAT *int_values,
+        BAT *dbl_values, 
+        BAT *str_values) 
 {
     lng ok = GDK_FAIL;
     oid i, j, it;
+    char err[4098];
     BATiter wi = bat_iterator(ws);
     BAT *participants = BATdescriptor(*(bat*) BUNtail(wi, XRPC_PARTICIPANTS));
+
     if (participants) {
         BAT *shredBAT = BATnew(TYPE_void, TYPE_bat, BATTINY);
         if (shredBAT) {
@@ -407,7 +426,8 @@ CMDget_rpc_res(BAT **res,
                     BBPunfix(b->batCacheid);
                 }
             }
-            req = xrpc_parse_message(NULL, shredBAT, participants, FALSE);
+            err[0] = '\0';
+            req = xrpc_parse_message(err, 4098, shredBAT, participants);
             if (req) { 
                 BAT *res_iter = BATnew(TYPE_void, TYPE_oid, req->nr_args);
                 if (res_iter) {
@@ -449,6 +469,8 @@ CMDget_rpc_res(BAT **res,
                     BBPunfix(res_iter->batCacheid);
                 }
                 XRPCreq_free(req);
+            } else {
+                GDKerror(err);
             }
             BBPreclaim(shredBAT);
         }

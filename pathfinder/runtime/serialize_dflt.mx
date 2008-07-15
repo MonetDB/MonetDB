@@ -41,7 +41,7 @@
 #include "serialize_null.h"
 #include "pathfinder.h"
 #include "pf_support.h"
-#include "xrpc_server.h" /* *_NS defs */
+#include "xrpc_common.h" /* *_NS defs */
 
 /* a lot of characters, static strings, and their sizes 
    (the idea is to reuse constant character pointers during
