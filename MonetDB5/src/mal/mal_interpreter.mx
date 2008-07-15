@@ -959,7 +959,6 @@ DFLOWexecute( DataFlow flow )
 	return ret;
 }
 
-
 str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {   
@@ -1876,6 +1875,12 @@ activated using the compile option MALprofiler. Activation can lead to
 a significant performance degradation, because for all traced functions
 we have to keep track of essential system counter information.
 See @ref{The MAL Profiler} for more details.
+
+Running the program under dataflow control will screw up the
+order in which performance trace data is displayed. Moreover,
+we do not clearly see the start and end of the dataflow execution,
+because the performance data is the result of the 'failed' runMALdataflow().
+It simply skips the barrier block upon return.
 
 @= performanceVariables
 #ifdef MALprofiler

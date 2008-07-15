@@ -2751,10 +2751,10 @@ void
 printSignature(stream *fd, Symbol s, int flg)
 {
 	InstrPtr p;
-	str txt = GDKzalloc(BLOCK);
+	str txt = GDKzalloc(MAXLISTING); /* some slack for large blocks */
 
 	p = getSignature(s);
-	(void) fcnDefinition(s->def, p, txt, flg, txt, BLOCK);
+	(void) fcnDefinition(s->def, p, txt, flg, txt, MAXLISTING);
 	stream_printf(fd, "%s\n", txt);
 	GDKfree(txt);
 }
