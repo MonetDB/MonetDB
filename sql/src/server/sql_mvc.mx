@@ -755,15 +755,16 @@ schema_bind_func(mvc *sql, sql_schema * s, char *name, int is_func)
 sql_schema *
 mvc_bind_schema(mvc *m, char *sname)
 {
+	sql_column *l = m->last;
 	sql_trans *tr = m->session->tr;
 	sql_schema *s;
 
 	if (!tr)
 		return NULL;
 
-	if (m->last && m->last->t->s &&
-		strcmp(m->last->t->s->base.name, sname) == 0)
-		s = m->last->t->s;
+	if (l && l->t->s &&
+		strcmp(l->t->s->base.name, sname) == 0)
+		s = l->t->s;
 	else 
  		s = find_sql_schema(tr, sname);
 	if (!s)
@@ -777,6 +778,7 @@ mvc_bind_schema(mvc *m, char *sname)
 sql_table *
 mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 {
+	sql_column *l = m->last;
 	sql_table *t = NULL;
 
 	if (!s) { /* Declared tables during query compilation have no schema */
@@ -787,9 +789,9 @@ mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 			s = mvc_bind_schema(m, "%dt%");
 			return mvc_bind_table(m, s, tname);
 		}
-	} else if (m->last && m->last->t->s == s &&
-		strcmp(m->last->t->base.name, tname) == 0) {
-		t = m->last->t;
+	} else if (l && l->t->s == s &&
+		strcmp(l->t->base.name, tname) == 0) {
+		t = l->t;
 	} else {
  		t = find_sql_table(s, tname);
 	}
@@ -804,11 +806,11 @@ mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 sql_column *
 mvc_bind_column(mvc *m, sql_table *t, char *cname)
 {
+	sql_column *l = m->last;
 	sql_column *c;
 
-	if (m->last && m->last->t == t &&
-		strcmp(m->last->base.name, cname) == 0)
-		c = m->last;
+	if (l && l->t == t && strcmp(l->base.name, cname) == 0)
+		c = l;
 	else 
 		c = find_sql_column(t, cname);
 	if (!c)
