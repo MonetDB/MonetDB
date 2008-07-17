@@ -195,6 +195,8 @@ static MT_Sema xrpc_commit_sema;
 static xrpc_commit_t *xrpc_commit_active = NULL;
 
 BAT *xrpc_trusted = NULL, *xrpc_admin = NULL, *xrpc_user = NULL;
+char *xrpc_hostname = NULL;
+int xrpc_port = 0;
 
 int CMDmy_hostname(char **res)
 {
