@@ -206,25 +206,39 @@ are marked for re-use.
 
 @c
 		/* take care of semantic driven recyling */
-		if( getFunctionId(p)== selectRef && recycled[getArg(p,1)] ){
+		if(( getFunctionId(p)== selectRef || 
+		     getFunctionId(p)== antiuselectRef ||
+		     getFunctionId(p)== putName("like",4) || 
+		     getFunctionId(p)== putName("like_uselect",12)) &&
+	      	    recycled[getArg(p,1)] ){
 			p->recycle = -1;
 			if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
 		}
-		if( getFunctionId(p)== uselectRef && recycled[getArg(p,1)] &&
-			!ATOMvarsized( getGDKType( getArgType(mb,p,1)))){
-			q = copyInstruction(p);
-			getArg(q,0)= newTmpVariable(mb,TYPE_any); 
-			setFunctionId(q, selectRef); 
-			q->recycle = -1;
-			recycled[getArg(q,0)] = 1;
-			pushInstruction(mb,q);
-			getArg(p,1) = getArg(q,0);
-			setFunctionId(p,markTRef);
-			p->argc = 2;
+		if( getFunctionId(p)== uselectRef && recycled[getArg(p,1)]) {
+			if (!ATOMvarsized( getGDKType( getArgType(mb,p,2)))) { 
+				q = copyInstruction(p);
+				getArg(q,0)= newTmpVariable(mb,TYPE_any); 
+				setFunctionId(q, selectRef); 
+				q->recycle = -1;
+				recycled[getArg(q,0)] = 1;
+				pushInstruction(mb,q);
+				getArg(p,1) = getArg(q,0);
+				setFunctionId(p,markTRef);
+				p->argc = 2;
+			}
 			p->recycle = -1; 
 			if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
+		}
+
+		if(getModuleId(p) == pcreRef) {
+			if (( getFunctionId(p)== selectRef && recycled[getArg(p,2)]) ||  
+			    ( getFunctionId(p)== uselectRef && recycled[getArg(p,2)])){
+				p->recycle = -1;
+				if (getLastUpdate(span, getArg(p,0)) == i)
+				recycled[getArg(p,0)] = 1;
+			}
 		}
 @-
 The sql.bind instructions should be handled carefully

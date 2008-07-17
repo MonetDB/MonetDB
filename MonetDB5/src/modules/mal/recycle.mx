@@ -264,7 +264,7 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 	static int q=0;
 	stream *s;
 	InstrPtr p;
-	int potrec=0, i;
+	int potrec=0, instr=0, i;
 
 	if (recycleLog == NULL) 
 		s = cntxt->fdout;
@@ -279,12 +279,13 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 	for(i=0; i< mb->stop; i++){
 		p = mb->stmt[i];
 		if ( RECYCLEinterest(mb,p) ) potrec++;
+		if ( p->token!= ASSIGNsymbol) instr++;
 	}
 
 	stream_printf(s,"%d\t %d\t %d\t %d\t %8.2f\t",++q, mb->stop, potrec,
 		recycled-recycled0,(GDKusec()-time0)/1000.0);
-	stream_printf(s,"%d\t %d\t %d\t %d\n",
-		recycled,recycleBlk?recycleBlk->stop-1:0,statements,recyclerUsedMemory);
+	stream_printf(s,"%d\t %d\t %d\t %d\t %d\n",
+		recycled,recycleBlk?recycleBlk->stop-1:0,statements,recyclerUsedMemory, instr);
 	if( s !=cntxt->fdout)
 		close_stream(s);
 }
@@ -383,7 +384,7 @@ RECYCLElog(int *ret, str *nm)
 	recycleLog = GDKstrdup(*nm);
 	s = open_wastream(recycleLog);
         if (s){
-        	stream_printf(s,"# Q\t InstrQ\t PotRecQ RecQ\t TimeQ(ms)\tRecTot\tincache\tInstrTot\tmemory(KB)\n");
+        	stream_printf(s,"# Q\t InstrQ\t PotRecQ RecQ\t TimeQ(ms)\tRecTot\tincache\tInstrTot\tmemory(KB)\tInstrNoGBC\n");
                 close_stream(s);
 	}
 
