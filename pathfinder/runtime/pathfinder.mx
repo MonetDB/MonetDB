@@ -6345,6 +6345,8 @@ xquery_method(mapi_client *mc,
 
     ctx->mode = XQ_XRPC;
     ctx->errbuf = GDKerrbuf;
+    if(shredBAT)
+        *ctx->xrpc_shredBAT = BBPcacheid(shredBAT);
     err = xquery_change_genType(ctx, genType);
     if (err) return err;
 
