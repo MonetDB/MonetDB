@@ -1,14 +1,14 @@
 stdout of test 'load` in directory 'modules/pftijah` itself:
 
 
-# 14:49:41 >  
-# 14:49:41 >  Mtimeout -timeout 60 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./PATHFINDER/lib64/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/lib64/MonetDB" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/log" --set mapi_port=30721 --set monet_prompt= --trace --dbname=mTests_modules_pftijah  < load.milS
-# 14:49:41 >  
+# 11:35:30 >  
+# 11:35:30 >   Mserver "--config=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/lib/MonetDB4:/net/jarl/export/scratch0/zhang/monet-install/dev/debug/lib/MonetDB4/lib:/net/jarl/export/scratch0/zhang/monet-install/dev/debug/lib/MonetDB4/bin" --set "gdk_dbfarm=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/var/MonetDB4/dbfarm" --set "sql_logdir=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32698 --set xrpc_port=40168 --set monet_prompt= --trace  --dbname=mTests_modules_pftijah  
+# 11:35:30 >  
 
 
 
-# MonetDB Server v4.23.0
-# based on GDK   v1.23.0
+# MonetDB Server v4.25.0
+# based on GDK   v1.25.0
 # Copyright (c) 1993-2008, CWI. All rights reserved.
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
@@ -50,7 +50,7 @@ loading module 'pathfinder'
 [ "bat_arith",	  2		  ]
 [ "builtin",	  1		  ]
 [ "constant",	  1		  ]
-[ "lock",	  3		  ]
+[ "lock",	  4		  ]
 [ "logger",	  4		  ]
 [ "main",	  1		  ]
 [ "malalgebra",	  4		  ]
