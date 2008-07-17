@@ -1750,8 +1750,6 @@ parseTuple(Client cntxt) {
 	getArg(curInstr,0)= c;
 	pushStr(curBlk,curInstr,buf);
 	(void) fclose(f);
-	if (unlink(buf) < 0)
-		showException(SYNTAX, "temp file not destroyed", "");
 }
 
 #define BRKONERR if( curPrg->def->errors>=MAXERRORS) return curPrg->def->errors;
