@@ -217,7 +217,7 @@ int serialize_pftijah_options_DRIVER(
         	kind,
         	intVAL,
         	dblVAL,
-        	strVAL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+        	strVAL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 #ifdef DEBUG
 	stream_printf(GDKout,"CALLED xquery_print_result_DRIVER: res=%d\n",returnVal);
 	BATprintf(GDKout,ptos.bat);

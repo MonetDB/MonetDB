@@ -97,7 +97,7 @@
     "   xrpc:updCall=\"%s\"\n"\
     "   xrpc:caller=\""
 #define XRPC_REQ_BODY\
-      XRPC_REQ_BODY_OPEN "%s:%d:"LLFMT"\">\n"
+      XRPC_REQ_BODY_OPEN "%s:"LLFMT"\">\n"
 #define XRPC_REQ_BODY_FIRST_CALLER\
       XRPC_REQ_BODY_OPEN "query\">\n"
 

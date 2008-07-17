@@ -75,7 +75,7 @@ percentage - a number [0,100] indicating the amount of free space to reserve for
                       BAT[oid,lng] int_values, BAT[oid,dbl] dbl_values, 
                       BAT[oid,str] str_values,
                       str xrpc_module, str xrpc_method, str xrpc_qid, str xrpc_caller, 
-                      str xrpc_mode, bit xrpc_updating, lng xrpc_seqnr, lng xrpc_timeout, lng xrpc_start) :
+                      str xrpc_mode, str xrpc_hostport, bit xrpc_updating, lng xrpc_seqnr, lng xrpc_timeout, lng xrpc_start) :
                             void = xquery_print_result_loop;
  "C interface to Workset result print routine, that can print multiple iters"
 
@@ -5851,8 +5851,6 @@ extern MT_Lock pf_runtime_lock[7];
 #define PF_MODE_UPDATE 2 /* updating query */
 #define PF_MODE_RETRY  3 /* updating query run for the second time (exclusive mode) */
 
-pf_support_export int     xrpc_port;
-pf_support_export char*   xrpc_hostname;
 pf_support_export stream* xrpc_log_message(str msg, lng xrpc_seqnr);
 pf_support_export char*   xrpc_log_dir(void);
 
@@ -5864,10 +5862,6 @@ pf_support_export char*   xrpc_log_dir(void);
 #include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 #include <plain/algebra.h> /* needed for result size estimation in CMDenumerate */
 #include <math.h> /* needed for round_up */
-
-
-char *xrpc_hostname = NULL;
-int xrpc_port = 0;
 
 /* delete a file from the local tmp/ directory in the dbfarm; protect against abuse */
 int CMDcleantmpdir(lng *lim) {
@@ -8523,6 +8517,7 @@ xquery_print_result_loop (
     str  xrpc_qid, 
     str  xrpc_caller, 
     str  xrpc_mode,
+    str  xrpc_hostport,
     bit  *xrpc_updating,
     lng  *xrpc_seqnr,
     lng  *xrpc_timeout,
@@ -8547,6 +8542,7 @@ xquery_print_result_loop (
                xrpc_qid, 
                xrpc_caller, 
                xrpc_mode,
+               xrpc_hostport,
                xrpc_updating,
                xrpc_seqnr,
                xrpc_timeout,
@@ -8580,6 +8576,7 @@ xquery_print_result_basic (
                NULL, /* xrpc_qid      */
                NULL, /* xrpc_caller   */
                NULL, /* xrpc_mode     */
+               NULL, /* xrpc_hostport */
                NULL, /* xrpc_updating */
                NULL, /* xrpc_seqnr    */
                NULL, /* xrpc_timeout  */
@@ -8612,15 +8609,16 @@ xquery_print_result_main (
                intVAL,
                dblVAL,
                strVAL,
-               NULL,   
-               NULL,   
-               NULL, 
-               NULL, 
-               NULL,
-               NULL,
-               NULL,
-               NULL,
-               NULL);
+               NULL, /* xrpc_module */
+               NULL, /* xrpc_method */
+               NULL, /* xrpc_qid */
+               NULL, /* xrpc_caller */
+               NULL, /* xrpc_mode */
+               NULL, /* xrpc_hostport */
+               NULL, /* xrpc_updating */
+               NULL, /* xrpc_seqnr */
+               NULL, /* xrpc_timeout */
+               NULL);/* xrpc_start */
 }
 
 int
@@ -8678,6 +8676,7 @@ xquery_print_result_file (
                              NULL, /* xrpc_qid */
                              NULL, /* xrpc_caller */
                              NULL, /* xrpc_mode */
+                             NULL, /* xrpc_hostport */
                              NULL, /* xrpc_updating */
                              NULL, /* xrpc_seqnr */
                              NULL, /* xrpc_timeout */

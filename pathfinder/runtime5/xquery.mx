@@ -211,7 +211,7 @@ xquery_print_result_main_wrap(int *res /*dummy*/, str *mode, bat *ws, bat *item,
 		throw(MAL, "xquery.print", "Cannot access (str_values) descriptor");
 	
 	(void) decb; /* pacify compilers */
-	if (xquery_print_result_DRIVER(*mode, NULL, NULL, wsb, 1, itemb, itemb, itemb, kindb, intb, dblb, strb, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL) == GDK_FAIL) {
+	if (xquery_print_result_DRIVER(*mode, NULL, NULL, wsb, 1, itemb, itemb, itemb, kindb, intb, dblb, strb, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL) == GDK_FAIL) {
 		throw(MAL, "xquery.print", "print failed");
 	}
 	BBPunfix(*ws);

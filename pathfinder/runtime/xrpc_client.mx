@@ -47,6 +47,7 @@ the "AmbientDB" project.
         str genType,
         str mode,
         str qid,
+        str xrpc_hostport,
         bit firstCaller,
         lng seqnr,
         lng timeout,
@@ -151,7 +152,7 @@ PROC doLoopLiftedRPC(
         var local_name := "rpc_res_00" + str(int($h)+off);
         var rpc_res, timeout := max(0LL,xrpc_timeout - ((usec() - time_start)/1000));
         var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid,
-                    (xrpc_caller = ""),
+                    xrpc_hostport, (xrpc_caller = ""),
                     xrpc_seqnr, timeout, $t, modname, location, method,
                     updCall, arity, itercnt, ws, fun_vid_dst, fun_iter_dst, fun_item_dst,
                     fun_kind_dst, int_values, dbl_values, dec_values, str_values));
@@ -281,7 +282,7 @@ PROC doIterativeRPC(
         var local_name := "rpc_res_00" + str(h+1);
         if (xrpc_qid != "") lock_unset(wslock);
         var rpc_res, timeout := max(0LL,xrpc_timeout - ((usec() - time_start)/1000));
-        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, (xrpc_caller = ""), 
+        var rpc_err := CATCH(rpc_res := http_post(genType, xrpc_mode, xrpc_qid, xrpc_hostport, (xrpc_caller = ""), 
                     xrpc_seqnr, timeout, dst, modname, location, method,
                     updCall, arity, lng(1), ws, cur_fun_vid, cur_fun_iter, cur_fun_item,
                     cur_fun_kind, int_values, dbl_values, dec_values, str_values));
@@ -817,6 +818,7 @@ byvalue_request(
         str genType,
         str rpc_mode,
         str qid,
+        str xrpc_hostport,
         bool firstCaller,
         lng seqnr,
         lng timeout,
@@ -933,7 +935,7 @@ byvalue_request(
                 updCall?"true":"false");
     } else {
         ret = stream_printf(bs, XRPC_REQ_BODY, rpc_module, rpc_uri,
-                rpc_method, arity, iterc, xrpc_hostname, xrpc_port,
+                rpc_method, arity, iterc, xrpc_hostport,
                 seqnr, updCall?"true":"false");
     }
     if (ret < 0) 
@@ -1090,7 +1092,7 @@ byvalue_request(
                                 NULL, NULL, ws, 1,
                                 node_item, node_item, node_item, node_kind,
                                 int_values, dbl_values, str_values,
-                                NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+                                NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
                         if(BBPreclaim(node_item) == -1){
                             GDKerror("byvalue_request: failed to destroy BAT \"node_item\", "
@@ -1159,6 +1161,7 @@ CMDhttp_post(
         str genType,
         str rpc_mode,
         str qid,
+        str xrpc_hostport,
         bool *firstCaller,
         lng *seqnr,
         lng *timeout,
@@ -1206,7 +1209,7 @@ CMDhttp_post(
         return GDK_FAIL;
     }
 
-    if(!(req = byvalue_request(timing, genType, rpc_mode, qid, *firstCaller, *seqnr, *timeout, rpc_module, rpc_uri, rpc_method,
+    if(!(req = byvalue_request(timing, genType, rpc_mode, qid, xrpc_hostport, *firstCaller, *seqnr, *timeout, rpc_module, rpc_uri, rpc_method,
                     *updCall, *arity, *itercnt, ws, fun_vid, fun_iter,
                     fun_item, fun_kind, int_values, dbl_values,
                     dec_values, str_values))){

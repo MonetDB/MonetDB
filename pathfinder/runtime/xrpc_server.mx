@@ -62,7 +62,7 @@ record without commit whether the transaction succeeded or not).
 .END xrpc_server;
 
 @mil
-# initialize xrpcd_admin: IPs that can execute modules from the special
+# initialize xrpc_admin: IPs that can execute modules from the special
 # xrpc/admin directory
 var xrpc_admin := bat("xrpc_admin").append(split(monet_environment.find("xrpc_admin"),";"));
 
@@ -194,10 +194,6 @@ typedef struct {
 static MT_Sema xrpc_commit_sema;
 static xrpc_commit_t *xrpc_commit_active = NULL;
 
-/* shared BATs */
-BAT *xrpc_qids = NULL, *xrpc_statuses = NULL, *xrpc_timeouts = NULL;
-BAT *xrpc_locks = NULL, *xrpc_wsbats = NULL;
-/* only used by xrpc_server */
 BAT *xrpc_trusted = NULL, *xrpc_admin = NULL, *xrpc_user = NULL;
 
 int CMDmy_hostname(char **res)
@@ -872,13 +868,14 @@ CMDxrpc_2pc_confirm_commit(str qid, str caller, lng* seqnr, ptr* handle) {
 
 
 @= xrpc_bat
-    xrpc_@1 = BATnew(TYPE_void,ATOMindex("@2"),1024);
-    assert(xrpc_@1);
-    BATseqbase(xrpc_@1, 1);
-    BBPrename(xrpc_@1->batCacheid, "xrpc_@1");
+    xrpc_bat = BATnew(TYPE_void,ATOMindex("@2"),1024);
+    assert(xrpc_bat);
+    BATseqbase(xrpc_bat, 1);
+    BBPrename(xrpc_bat->batCacheid, "xrpc_@1");
 @c
 
 bat* xrpc_prelude(void) {
+    BAT *xrpc_bat = NULL; 
     @:xrpc_bat(qids,str)@
     @:xrpc_bat(statuses,str)@
     @:xrpc_bat(timeouts,lng)@
@@ -886,8 +883,12 @@ bat* xrpc_prelude(void) {
     @:xrpc_bat(wsbats,bat)@
 
     @:xrpc_bat(trusted,str)@
+    xrpc_trusted = xrpc_bat;
     @:xrpc_bat(admin,str)@
+    xrpc_admin = xrpc_bat;
     @:xrpc_bat(user,str)@
+    xrpc_user = xrpc_bat;
+
     CMDmy_hostname(&xrpc_hostname);
     MT_init_sema(xrpc_commit_sema,0, "XRPC_COMMIT_SEMA");
     assert(xrpc_hostname);

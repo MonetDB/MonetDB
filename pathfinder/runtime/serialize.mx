@@ -156,6 +156,7 @@ typedef struct XqueryCtx {
     str         xrpc_qid;
     str         xrpc_caller;
     str         xrpc_mode;
+    str         xrpc_hostport;
     bit         xrpc_updating;
     lng         xrpc_seqnr;
     lng         xrpc_timeout;
@@ -271,6 +272,7 @@ xquery_print_result_DRIVER (
     str                xrpc_qid, 
     str                xrpc_caller, 
     str                xrpc_mode,
+    str                xrpc_hostport,
     bit                *xrpc_updating,
     lng                *xrpc_seqnr,
     lng                *xrpc_timeout,
@@ -298,6 +300,7 @@ xquery_print_result_driver (
     str                xrpc_qid, 
     str                xrpc_caller, 
     str                xrpc_mode,
+    str                xrpc_hostport,
     bit                *xrpc_updating,
     lng                *xrpc_seqnr,
     lng                *xrpc_timeout,
@@ -1699,6 +1702,7 @@ xquery_print_result_driver (
     str                xrpc_qid, 
     str                xrpc_caller, 
     str                xrpc_mode,
+    str                xrpc_hostport,
     bit                *xrpc_updating,
     lng                *xrpc_seqnr,
     lng                *xrpc_timeout,
@@ -1726,6 +1730,7 @@ xquery_print_result_driver (
     ctx->xrpc_updating = xrpc_updating?*xrpc_updating:0;
     ctx->xrpc_timeout = xrpc_timeout?*xrpc_timeout:0;
     ctx->time_exec = time_exec?*time_exec:0;
+    ctx->xrpc_hostport = xrpc_hostport;
 
     curcnt = 0;
     maxcnt = BATcount (item);
@@ -1982,6 +1987,7 @@ draw_queryflow(
         lng xrpc_seqnr,
         str xrpc_method,
         lng time_exec,
+        str xrpc_hostport,
         BAT *participants)
 {
     int ret = 0;
@@ -1999,11 +2005,10 @@ draw_queryflow(
 
     /* replace all non-alpha-numeric chars in the string with '_', so
      * that it can be used as the ID of nodes in dot file */
-    strcpy(dstNID, xrpc_hostname);
+    strcpy(dstNID, xrpc_hostport);
     for(ptr=dstNID; *ptr; ptr++) { 
         if(!isalnum(*ptr)) *ptr = '_'; 
     }
-    snprintf(ptr, 1024-(ptr-dstNID), "_%d", xrpc_port);
 
     if(!(s = open_wastream(dotFile))) return GDK_FAIL;
     ret = stream_printf(s,
@@ -2014,17 +2019,17 @@ draw_queryflow(
             "  node [style=filled,color=\"%s\"];\n"   
             "  style=filled;\n"
             "  color=yellow;\n"
-            "  label=\"%s:%d\";\n"
+            "  label=\"%s\";\n"
             "  %s_"LLFMT"[label=\"%s\"];\n"
             " }\n"
-            " query->%s_"LLFMT"[headURL=\"http://%s:%d/logs/req_"LLFMT".xml\"]\n"
-            " %s_"LLFMT"->query[label=\""LLFMT"ms\",headURL=\"http://%s:%d/logs/res_"LLFMT".xml\"]\n\n",
+            " query->%s_"LLFMT"[headURL=\"http://%s/logs/req_"LLFMT".xml\"]\n"
+            " %s_"LLFMT"->query[label=\""LLFMT"ms\",headURL=\"http://%/logs/res_"LLFMT".xml\"]\n\n",
             dstNID,
             (xrpc_updating==1)?"orange":(xrpc_updating==2)?"red":(xrpc_updating==3)?"green":".7 .3 1.0",
-            xrpc_hostname, xrpc_port,
+            xrpc_hostport,
             dstNID, xrpc_seqnr, xrpc_method,
-            dstNID, xrpc_seqnr, xrpc_hostname, xrpc_port, xrpc_seqnr,
-            dstNID, xrpc_seqnr, time_exec, xrpc_hostname, xrpc_port, xrpc_seqnr) < 0;
+            dstNID, xrpc_seqnr, xrpc_hostport, xrpc_seqnr,
+            dstNID, xrpc_seqnr, time_exec, xrpc_hostport, xrpc_seqnr) < 0;
 
     bi = bat_iterator(participants);
     BATloop(participants, p, q) {
@@ -2132,6 +2137,7 @@ xquery_print_result_DRIVER (
     str                xrpc_qid, 
     str                xrpc_caller, 
     str                xrpc_mode,
+    str                xrpc_hostport,
     bit                *xrpc_updating,
     lng                *xrpc_seqnr,
     lng                *xrpc_timeout,
@@ -2158,7 +2164,7 @@ xquery_print_result_DRIVER (
             BAT *participants = BATdescriptor(*(bat*) BUNtail(wsi, XRPC_PARTICIPANTS));
             int ret = GDK_FAIL;
             if (participants) {
-                ret = draw_queryflow(*xrpc_updating, *xrpc_seqnr, xrpc_method, time_exec, participants);
+                ret = draw_queryflow(*xrpc_updating, *xrpc_seqnr, xrpc_method, time_exec, xrpc_hostport, participants);
                 BBPunfix(participants->batCacheid);
             }
             if (ret == GDK_FAIL) return ret;
@@ -2183,6 +2189,7 @@ xquery_print_result_DRIVER (
                xrpc_qid, 
                xrpc_caller, 
                xrpc_mode, 
+               xrpc_hostport,
                xrpc_updating, 
                xrpc_seqnr, 
                xrpc_timeout, 
