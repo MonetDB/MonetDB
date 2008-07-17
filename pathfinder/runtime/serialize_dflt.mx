@@ -40,7 +40,7 @@
 /* contains dummy callback functions */
 #include "serialize_null.h"
 #include "pathfinder.h"
-#include "xrpc_const.h"
+#include "xrpc_common.h" /* *_NS defs */
 
 /* a lot of characters, static strings, and their sizes 
    (the idea is to reuse constant character pointers during

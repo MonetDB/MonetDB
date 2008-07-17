@@ -177,7 +177,6 @@ Start XPRC receiver using the default values as specified in \
 #include "serialize.h"
 #include "shttpd.h"
 #include "xrpc_common.h"
-#include "xrpc_const.h"
 
 static int rpcd_running = 0;
 static int timing = 0;
