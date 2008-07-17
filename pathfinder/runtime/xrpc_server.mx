@@ -194,6 +194,12 @@ typedef struct {
 static MT_Sema xrpc_commit_sema;
 static xrpc_commit_t *xrpc_commit_active = NULL;
 
+/* shared BATs */
+BAT *xrpc_qids = NULL, *xrpc_statuses = NULL, *xrpc_timeouts = NULL;
+BAT *xrpc_locks = NULL, *xrpc_wsbats = NULL;
+/* only used by xrpc_server */
+BAT *xrpc_trusted = NULL, *xrpc_admin = NULL, *xrpc_user = NULL;
+
 int CMDmy_hostname(char **res)
 {
     int ret = 0, len = HOST_NAME_MAX > 255 ? HOST_NAME_MAX : 255;
@@ -871,9 +877,6 @@ CMDxrpc_2pc_confirm_commit(str qid, str caller, lng* seqnr, ptr* handle) {
     BATseqbase(xrpc_@1, 1);
     BBPrename(xrpc_@1->batCacheid, "xrpc_@1");
 @c
-BAT *xrpc_qids = NULL, *xrpc_statuses = NULL, *xrpc_timeouts = NULL, *xrpc_locks = NULL, *xrpc_wsbats = NULL;
-BAT *xrpc_trusted = NULL, *xrpc_admin = NULL, *xrpc_user = NULL;
-
 
 bat* xrpc_prelude(void) {
     @:xrpc_bat(qids,str)@
@@ -881,6 +884,7 @@ bat* xrpc_prelude(void) {
     @:xrpc_bat(timeouts,lng)@
     @:xrpc_bat(locks,lock)@
     @:xrpc_bat(wsbats,bat)@
+
     @:xrpc_bat(trusted,str)@
     @:xrpc_bat(admin,str)@
     @:xrpc_bat(user,str)@

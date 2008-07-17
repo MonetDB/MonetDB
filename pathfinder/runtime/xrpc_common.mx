@@ -182,14 +182,6 @@ void XRPCreq_free(XRPCreq_t *req);
 XRPCreq_t *xrpc_parse_message(char *err, int errlen, BAT *shredBAT,
         BAT *participants);
 
-BAT *xrpc_qids;
-BAT *xrpc_timeouts;
-BAT *xrpc_statuses;
-BAT *xrpc_locks;
-BAT *xrpc_wsbats;
-BAT *xrpc_trusted;
-BAT *xrpc_admin;
-
 #endif /* XRPC_COMMON_H */
 
 @c
