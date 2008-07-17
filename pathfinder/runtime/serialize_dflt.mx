@@ -40,7 +40,6 @@
 /* contains dummy callback functions */
 #include "serialize_null.h"
 #include "pathfinder.h"
-#include "pf_support.h"
 #include "xrpc_const.h"
 
 /* a lot of characters, static strings, and their sizes 
