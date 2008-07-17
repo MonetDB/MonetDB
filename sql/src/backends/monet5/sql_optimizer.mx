@@ -328,6 +328,10 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			sql_bpm *bpm = NULL;
 			sql_schema *s = mvc_bind_schema(m, sname);
 
+			if (!s || strcmp(s->base.name, dt_schema) == 0) {
+				pushInstruction(mb,p);
+				continue;
+			}
 			if (f == binddbatRef) {
 				mode = getVarConstant(mb, getArg(p,3)).val.ival;
 			} else {

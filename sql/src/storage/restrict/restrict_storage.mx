@@ -563,7 +563,8 @@ destroy_bat(sql_trans *tr, sql_bat *b, int rollback)
 {
 	int ok = LOG_OK;
 
-	(void)tr;
+	if ((tr && tr->parent == gtrans) || !b)
+		return LOG_OK;
 	/* also rollback non committed changes */
 	if (rollback) {
 		BAT *bd = temp_descriptor(b->bid);
@@ -592,8 +593,7 @@ static int
 destroy_col(sql_trans *tr, sql_column *c)
 {
 	int ok = destroy_bat(tr, c->data, (tr && tr->stime == c->base.wtime));
-	if (!tr || tr->parent != gtrans) 
-		c->data = NULL;
+	c->data = NULL;
 	return ok;
 }
 
@@ -607,8 +607,7 @@ static int
 destroy_idx(sql_trans *tr, sql_idx *i)
 {
 	int ok = destroy_bat(tr, i->data, (tr && tr->stime == i->base.wtime));
-	if (!tr || tr->parent != gtrans) 
-		i->data = NULL;
+	i->data = NULL;
 	return ok;
 }
 
@@ -623,8 +622,7 @@ static int
 destroy_del(sql_trans *tr, sql_table *t)
 {
 	int ok = destroy_bat(tr, t->data, (tr && tr->stime == t->base.wtime));
-	if (!tr || tr->parent != gtrans) 
-		t->data = NULL;
+	t->data = NULL;
 	return ok;
 }
 

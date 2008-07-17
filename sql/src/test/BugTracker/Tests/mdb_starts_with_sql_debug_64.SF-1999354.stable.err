@@ -76,17 +76,8 @@ stderr of test 'mdb_starts_with_sql_debug_64.SF-1999354` in directory 'src/test/
 # cmdline opt 	gdk_debug = 10
 #warning: please don't forget to set your vault key!
 #(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
-#client: "Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=alf --port=34243  -G"
-#client: "Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=alf --port=34243  -G"
-MAPI  = monetdb@alf:34243
-QUERY = CREATE FUNCTION f2(deg float, truncat int , precision int)
-ERROR = !SELECT: no such binary operator 'str(double,int)'
-MAPI  = monetdb@alf:34243
-QUERY = explain SELECT f2(1,2,3);
-ERROR = !SELECT: no such operator 'f2'
-MAPI  = monetdb@alf:34243
-QUERY = drop function f2;
-ERROR = !DROP FUNCTION: no such function 'f2'
+#client: "Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33476 "
+#client: "Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33476 "
 
 # 22:28:24 >  
 # 22:28:24 >  Done.

@@ -29,8 +29,8 @@
 #define isGlobalTable(x) (x->persistence!=SQL_LOCAL_TEMP && \
 			  x->persistence!=SQL_DECLARED_TABLE)
 #define isGlobalTemp(x)  (x->persistence==SQL_GLOBAL_TEMP)
-#define isTempSchema(x)  (strcmp(x->base.name,"tmp") == 0 || \
-			  strcmp(x->base.name,"%dt%") == 0)
+#define isTempSchema(x)  (strcmp(x->base.name, "tmp") == 0 || \
+			  strcmp(x->base.name, dt_schema) == 0)
 #define isDeclaredTable(x)  (x->persistence==SQL_DECLARED_TABLE)
 
 typedef enum store_type {
