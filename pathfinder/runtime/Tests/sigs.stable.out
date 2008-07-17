@@ -1,14 +1,14 @@
 stdout of test 'sigs` in directory 'runtime` itself:
 
 
-# 20:09:25 >  
-# 20:09:25 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_PREFIX_MONET_GNU_32_d__/lib/MonetDB:/var/tmp/_PREFIX_TEMPLATE_GNU_32_d__/lib/MonetDB" --dbfarm "/var/tmp/_PREFIX_MONET_GNU_32_d__/var/dbfarm" --set monet_prompt= --trace --dbname=mTests_runtime  < sigs.milS
-# 20:09:25 >  
+# 11:31:00 >  
+# 11:31:00 >   Mserver "--config=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/lib/MonetDB4:/net/jarl/export/scratch0/zhang/monet-install/dev/debug/lib/MonetDB4/lib:/net/jarl/export/scratch0/zhang/monet-install/dev/debug/lib/MonetDB4/bin" --set "gdk_dbfarm=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/var/MonetDB4/dbfarm" --set "sql_logdir=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/jarl/export/scratch0/zhang/monet-install/dev/debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=30121 --set xrpc_port=45698 --set monet_prompt= --trace  --dbname=mTests_runtime  
+# 11:31:00 >  
 
 
 
-# MonetDB Server v4.23.0
-# based on GDK   v1.23.1
+# MonetDB Server v4.25.0
+# based on GDK   v1.25.0
 # Copyright (c) 1993-2008, CWI. All rights reserved.
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
@@ -89,9 +89,10 @@ module 'pf_support'
 [ "pflock_get(int) : lock"																  ]
 [ "pflock_meta(lng) : void"																  ]
 [ "print_doc(str, BAT[void,BAT], str) : void"												  ]
+[ "print_result(str, BAT[oid,BAT], BAT[oid,any], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[oid,lng], BAT[oid,dbl], BAT[oid,str]) : void"							  ]
+[ "print_result(str, BAT[oid,BAT], BAT[oid,any], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[oid,lng], BAT[oid,dbl], BAT[oid,str], str, str, str, str, str, bit, lng, lng, lng) : void"	  ]
 [ "print_result(str, BAT[void,BAT], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : void"	  ]
 [ "print_result(str, str, BAT[void,BAT], oid, int, BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : void"					  ]
-[ "print_result(str, str, str, BAT[oid,BAT], BAT[oid,any], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[oid,lng], BAT[oid,dbl], BAT[oid,str]) : void"	  ]
 [ "round_up(dbl) : dbl"															  ]
 [ "shred_str(BAT[str,BAT], str, lng, lock, bit) : void"													  ]
 [ "shred_stream(BAT[str,BAT], Stream, lng, lock, bit) : void"												  ]
