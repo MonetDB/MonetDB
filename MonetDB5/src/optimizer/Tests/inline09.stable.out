@@ -71,8 +71,6 @@ end main;	# 3
 function user.qry():void;
     b := bat.new(:oid,:str);
     bat.insert(b,0@0,"2");
-    z:bat[:oid,:str]{inline}  := nil;
-    _13 := nil;
     b := batstr.replace(b,"A","");
     b := batstr.replace(b,"E","");
     b := batstr.replace(b,"I","");
@@ -81,7 +79,6 @@ function user.qry():void;
     b := batstr.replace(b," ","");
     _13 := b;
     _13 := batstr.substring(_13,1,5);
-    _16 := nil;
     b := batstr.replace(b,"A","");
     b := batstr.replace(b,"E","");
     b := batstr.replace(b,"I","");

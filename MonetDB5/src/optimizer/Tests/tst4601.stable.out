@@ -41,17 +41,16 @@ end welcome;	# 8
 function user.main():void;              #  0 main:void := user.main() 
 # the first test for macro expansions and inversions 
     io.print("test expansion");         #  2 _5:void := IOprint_val(_6:str) 
-    a := nil:int;                       #  3 a:int := _19:int 
-    _13 := 0;                           #  4 _13:int := _14:int 
-barrier _15 := calc.<(_13,2);           #  5 _15:bit := CALCcompLTintint(_13:int, _8:int) {J9}
-    io.print("Welcome");                #  6 _16:void := IOprint_val(_17:str) 
-    _13 := calc.+(_13,1);               #  7 _13:int := CALCbinaryADDintint(_13:int, _18:int) 
-    redo _15 := calc.<(_13,2);          #  8 _15:bit := CALCcompLTintint(_13:int, _8:int) {J6}
-exit _15;                               #  9 _15:bit 
-    a := _13;                           # 10 a:int := _13:int 
-    io.print(a);                        # 11 _9:void := IOprint_val(a:int) 
-    mdb.list();                         # 12 _10:void := MDBlist() 
-end main;	# 13  
+    _13 := 0;                           #  3 _13:int := _14:int 
+barrier _15 := calc.<(_13,2);           #  4 _15:bit := CALCcompLTintint(_13:int, _8:int) {J8}
+    io.print("Welcome");                #  5 _16:void := IOprint_val(_17:str) 
+    _13 := calc.+(_13,1);               #  6 _13:int := CALCbinaryADDintint(_13:int, _18:int) 
+    redo _15 := calc.<(_13,2);          #  7 _15:bit := CALCcompLTintint(_13:int, _8:int) {J5}
+exit _15;                               #  8 _15:bit 
+    a := _13;                           #  9 a:int := _13:int 
+    io.print(a);                        # 10 _9:void := IOprint_val(a:int) 
+    mdb.list();                         # 11 _10:void := MDBlist() 
+end main;                               # 12  
 [ "test expansion" ]
 [ "Welcome" ]
 [ "Welcome" ]
@@ -59,7 +58,6 @@ end main;	# 13
 function user.main():void;
 # the first test for macro expansions and inversions 
     io.print("test expansion");
-    a := nil:int;
     _13 := 0;
 barrier _15 := calc.<(_13,2);
     io.print("Welcome");

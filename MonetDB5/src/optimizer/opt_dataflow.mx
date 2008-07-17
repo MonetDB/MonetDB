@@ -29,6 +29,9 @@ for multiple starting points.
 
 The runtime system is free to assign as many processors as it deems
 possible and optimial.
+
+Dataflow blocks may not be nested. They can appear as a result of
+inlining and are removed.
 @{
 @mal
 pattern optimizer.dataflow():str
@@ -63,6 +66,7 @@ The statemens are all checked for being eligible for dataflow.
 		}
 		if (entries>1){
 			q= newAssignment(mb);
+			q->token= EXITsymbol;
 			q->barrier= EXITsymbol;
 			getArg(q,0) = flowblock;
 		}
