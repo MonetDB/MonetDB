@@ -1720,17 +1720,12 @@ parseTuple(Client cntxt) {
 	InstrPtr curInstr;
 	MalBlkPtr curBlk;
 	Symbol curPrg;
-	int fd;
 	FILE *f= 0;
-	char  buf[MAXPATHLEN]="monetXXXXXX",*fname= buf;
-	char *tmp = mktemp(fname);
+	char  buf[MAXPATHLEN];
 	int c;
 
-	fd = open(tmp, O_RDWR|O_CREAT|O_EXCL, 0600);
-	if (fd < 0)
-		showException(SYNTAX, "no temp file", "");
-	else 
-		f= fdopen(fd,"w");
+	sprintf(buf,"input%d",(int)(cntxt-mal_clients));
+	f = fopen(buf,"w");
 	if (f==NULL)
 		showException(SYNTAX, "temp file not writeable", "");
 	while( (c=currChar(cntxt)) == '[' && c){
@@ -1738,7 +1733,12 @@ parseTuple(Client cntxt) {
 			if (f && c) fputc(c, f);
 			nextChar(cntxt);
 		} while( (c=currChar(cntxt)) != '\n' && c);
-		if (f && c) fputc(c, f);
+		if (f && c && fputc(c, f)  == EOF){
+			if (unlink(buf) < 0)
+				showException(SYNTAX, "out of temp file space and unable to unlink", "");
+			showException(SYNTAX, "out of temp file space", "");
+			return;
+		}
 		nextChar(cntxt);
 	}
 	curPrg = cntxt->curprg;
@@ -1748,9 +1748,10 @@ parseTuple(Client cntxt) {
 	setFunctionId(curInstr,putName("data",4));
 	c = newVariable(curBlk,GDKstrdup("tuples"),TYPE_any);
 	getArg(curInstr,0)= c;
-	pushStr(curBlk,curInstr,fname);
-	if( f)
-		(void) fclose(f);
+	pushStr(curBlk,curInstr,buf);
+	(void) fclose(f);
+	if (unlink(buf) < 0)
+		showException(SYNTAX, "temp file not destroyed", "");
 }
 
 #define BRKONERR if( curPrg->def->errors>=MAXERRORS) return curPrg->def->errors;
