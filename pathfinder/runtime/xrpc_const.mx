@@ -1,0 +1,156 @@
+@' Copyright Notice:
+@' -----------------
+@'
+@' The contents of this file are subject to the Pathfinder Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License.  You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/PathfinderLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.  See
+@' the License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the Pathfinder system.
+@'
+@' The Original Code has initially been developed by the Database &
+@' Information Systems Group at the University of Konstanz, Germany and
+@' is now maintained by the Database Systems Group at the Technische
+@' Universitaet Muenchen, Germany.  Portions created by the University of
+@' Konstanz and the Technische Universitaet Muenchen are Copyright (C)
+@' 2000-2005 University of Konstanz and (C) 2005-2008 Technische
+@' Universitaet Muenchen, respectively.  All Rights Reserved.
+@'
+@' $Id$
+@f xrpc_const
+@a Ying Zhang
+@t Defines XRPC string constants
+
+@h
+#ifndef XRPC_CONST_H
+#define XRPC_CONST_H
+
+/* HTTP defines */
+#define XRPC_DOC_CALLBACK  "/xrpc/doc"
+#define XRPC_ADM_CALLBACK  "/xrpc/admin"
+#define XRPC_WSAT_CALLBACK "/xrpc/wsat"
+#define XRPC_REQ_CALLBACK  "/xrpc"
+
+#define ERR403 "403 Forbidden"
+#define ERR404 "404 Bad Request"
+#define ERR408 "408 Request Timeout"
+#define ERR500 "500 Internal Server Error"
+#define ERR504 "504 Gateway Timeout"
+
+#define OUT_OF_MEM      "Internal Receiver Error: out-of memory"
+#define NOT_WELL_FORMED "Request XML message not well-formed"
+#define MAX_NR_PARAMS   1024
+
+#define HTTP_200_OK\
+    "HTTP/1.1 200 OK\r\n"\
+    "Content-type: text/xml; charset=\"utf-8\"\r\n\r\n"
+
+/* Namespaces */
+#define MXQ_ADMIN   "http://monetdb.cwi.nl/XQuery/admin/"
+#define SOAP_NS     "http://www.w3.org/2003/05/soap-envelope"
+#define XDT_NS      "http://www.w3.org/2005/xpath-datatypes"
+#define XS_NS       "http://www.w3.org/2001/XMLSchema"
+#define XSI_NS      "http://www.w3.org/2001/XMLSchema-instance"
+#define XRPC_NS     "http://monetdb.cwi.nl/XQuery"
+#define XRPC_LOC    "http://monetdb.cwi.nl/XQuery/XRPC.xsd"
+#define WSCOOR_NS   "http://docs.oasis-open.org/ws-tx/wscoor/2006/06"
+#define WSAT_NS     "http://docs.oasis-open.org/ws-tx/wsat/2006/06"
+
+#define XRPC_REQ_QN XRPC_NS"|request"
+#define XRPC_RES_QN XRPC_NS"|response"
+
+/* XRPC SOAP snippets */
+#define SOAP_ENVELOPE\
+    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"\
+    "<env:Envelope\n"\
+    "  xmlns:env=\"" SOAP_NS "\"\n"\
+    "  xmlns:xrpc=\"" XRPC_NS "\"\n"\
+    "  xmlns:xdt=\"" XDT_NS "\" \n"\
+    "  xmlns:xs=\"" XS_NS "\"\n"\
+    "  xmlns:xsi=\"" XSI_NS "\"\n"\
+    "  xsi:schemaLocation=\"" XRPC_NS " " XRPC_LOC "\">\n"
+
+#define XRPC_WS_QID\
+    " <xrpc:header xrpc:mode=\"%s\">\n"\
+    "  <wscoor:CoordinationContext\n"\
+    "   xmlns:wscoor=\""WSCOOR_NS"\"\n"\
+    "   env:mustUnderstand=\"true\">\n"\
+    "    <wscoor:Identifier>%s</wscoor:Identifier>\n"\
+    "    <wscoor:Expires>"LLFMT"</wscoor:Expires>\n"\
+    "    <wscoor:CoordinationType>" WSAT_NS "</wscoor:CoordinationType>\n"\
+    "  </wscoor:CoordinationContext>\n"\
+    " </xrpc:header>\n"
+
+#define XRPC_REQ_BODY_OPEN\
+    "<env:Body>\n"\
+    " <xrpc:request\n"\
+    "   xrpc:module=\"%s\"\n"\
+    "   xrpc:location=\"%s\"\n"\
+    "   xrpc:method=\"%s\"\n"\
+    "   xrpc:arity=\""LLFMT"\"\n"\
+    "   xrpc:iter-count=\""LLFMT"\"\n"\
+    "   xrpc:updCall=\"%s\"\n"\
+    "   xrpc:caller=\""
+#define XRPC_REQ_BODY\
+      XRPC_REQ_BODY_OPEN "%s:"LLFMT"\">\n"
+#define XRPC_REQ_BODY_FIRST_CALLER\
+      XRPC_REQ_BODY_OPEN "query\">\n"
+
+#define XRPC_WSAT_REQ SOAP_ENVELOPE\
+    "<env:Header>"\
+      XRPC_WS_QID \
+    "</env:Header>\n"\
+    "<env:Body><wsat:%s/></env:Body>\n"\
+    "</env:Envelope>"
+
+#define XRPC_WSAT_RES SOAP_ENVELOPE\
+    "<env:Header>\n"\
+      XRPC_WS_QID \
+    " <xrpc:partipant>%s,%s:%s:%s,"LLFMT",%d</xrpc:participant>\n"\
+    "</env:Header>\n"\
+    "<env:Body><wsat:%s/></env:Body>\n"\
+    "</env:Envelope>"
+
+#define XRPC_RES_BODY\
+    "<env:Body>\n"\
+    " <xrpc:response\n"\
+    "   xrpc:module=\"%s\"\n"\
+    "   xrpc:method=\"%s\">\n"
+
+#define XRPC_HTTP_CALL\
+    "  <xrpc:call>"\
+    "   <xrpc:sequence>"\
+    "    <xrpc:atomic-value xsi:type=\"xs:string\">%s</xrpc:atomic-value>"\
+    "   </xrpc:sequence>"\
+    "  </xrpc:call>"
+
+#define XRPC_PUT_CALL\
+    "  <xrpc:call>"\
+    "   <xrpc:sequence>"\
+    "    <xrpc:atomic-value xsi:type=\"xs:string\">%s</xrpc:atomic-value>"\
+    "   </xrpc:sequence>"\
+    "   <xrpc:sequence>"\
+    "    <xrpc:element>%s</xrpc:element>"\
+    "   </xrpc:sequence>"\
+    "  </xrpc:call>"
+
+#define XRPC_REQ_FOOTER\
+    " </xrpc:request>\n"\
+    "</env:Body>\n"\
+    "</env:Envelope>"
+
+#ifndef HOST_NAME_MAX
+#ifdef _POSIX_HOST_NAME_MAX
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#else 
+#define HOST_NAME_MAX 255
+#endif
+#endif
+
+#endif /* XRPC_CONST_H */
+

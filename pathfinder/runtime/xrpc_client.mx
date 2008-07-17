@@ -398,6 +398,7 @@ PROC doRPC(
 #include "shredder.h"
 #include "serialize.h"
 #include "xrpc_common.h"
+#include "xrpc_const.h"
 #include "xrpc_client.h"
 
 int 

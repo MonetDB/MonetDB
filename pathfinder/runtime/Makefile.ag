@@ -49,11 +49,6 @@ lib_pf = {
                 ll_sibling.mx
 }
 
-lib_xrpc_common = {
-	NOINST
-	SOURCES = xrpc_common.mx
-}
-
 lib__pf_support = {
         DIR = libdir/MonetDB4
         SOURCES = \
@@ -103,25 +98,16 @@ lib__pathfinder = {
                 $(MONETDB4_MODS) -l_logger -l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant -l_mapi 
 }
 
-lib__xrpc_client = {
-        DIR = libdir/MonetDB4
-        SOURCES = xrpc_client.mx
-        LIBS = \
-			   libserialize libxrpc_common \
-			   ./lib_pf_support ./lib_pathfinder \
-			   $(PF_LIBS) $(SOCKET_LIBS) \
-			   $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet \
-			   $(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io
-}
-
-lib__xrpc_server = {
+lib__xrpc = {
         DIR = libdir/MonetDB4
         SOURCES = \
+				  xrpc_const.mx \
+				  xrpc_common.mx \
 				  shttpd.c shttpd.h \
-				  xrpc_server.mx
+				  xrpc_server.mx \
+				  xrpc_client.mx
         LIBS = \
-			   libxrpc_common \
-			   ./lib_pf_support ./lib_pathfinder \
+			   libserialize ./lib_pf_support ./lib_pathfinder \
 			   $(PF_LIBS) $(SOCKET_LIBS) \
 			   $(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet $(PTHREAD_LIBS) \
 			   $(MONETDB4_MODS) -l_mapi -l_streams -l_builtin -l_ascii_io
