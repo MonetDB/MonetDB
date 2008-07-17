@@ -712,8 +712,8 @@ sql5_export str mvc_result_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 sql5_export str mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_drop_declared_table_wrap(Client cntxt, int *d, str *name);
-sql5_export str mvc_drop_declared_tables_wrap(Client cntxt, int *d, int *nr);
+sql5_export str mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, int *d, str *name);
+sql5_export str mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, int *d, int *nr);
 
 sql5_export str mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1792,10 +1792,10 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 /* str mvc_affected_rows_wrap(int *r, lng *nr, str *w); */
 str
-mvc_drop_declared_table_wrap(Client cntxt, int *d, str *name)
+mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, int *d, str *name)
 {
 	mvc *m = NULL;
-	str msg = getContext(cntxt, &m, NULL);
+	str msg = getContext(cntxt, mb, &m, NULL);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
@@ -1809,11 +1809,11 @@ mvc_drop_declared_table_wrap(Client cntxt, int *d, str *name)
 }
 
 str
-mvc_drop_declared_tables_wrap(Client cntxt, int *d, int *nr)
+mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, int *d, int *nr)
 {
 	int i = *nr;
 	mvc *m = NULL;
-	str msg = getContext(cntxt, &m, NULL);
+	str msg = getContext(cntxt, mb, &m, NULL);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
