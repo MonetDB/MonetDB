@@ -1794,7 +1794,7 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 			ALIGNsetH(bn, l);
 		}
 	}
-	bn->H->nonil = l->H->nonil;
+	bn->H->nonil = l->H->nonil & r->H->nonil;
 	bn->T->nonil = l->T->nonil;
 	if (del)
 		BBPreclaim(del);
@@ -1906,8 +1906,8 @@ BATrevsemijoin(BAT *l, BAT *r)
 	if (BAThkey(r) && BATtkey(l) && BATcount(bn) == BATcount(r)) {
 		ALIGNsetH(bn, r);
 	}
-	bn->H->nonil = r->H->nonil;
-	bn->T->nonil = r->T->nonil;
+	bn->H->nonil = l->H->nonil & r->H->nonil;
+	bn->T->nonil = l->T->nonil;
 	ESTIDEBUG THRprintf(GDKout, "#BATrevsemijoin: actual resultsize: " SZFMT "\n", BATcount(bn));
 
 	return bn;
@@ -1995,8 +1995,8 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 	/* property propagation */
 	bn->hsorted = (BAThordered(l) & BAThordered(r) & 1 ? GDK_SORTED : FALSE);
 	bn->tsorted = (bn->hsorted & BATtordered(cpy) & 1 ? GDK_SORTED : FALSE);
-	bn->H->nonil = l->H->nonil;
-	bn->T->nonil = l->T->nonil;
+	bn->H->nonil = l->H->nonil & r->H->nonil;
+	bn->T->nonil = cpy->T->nonil;
 
 	if (denselookup && BATcount(bn) == BATcount(l)) {
 		ALIGNsetH(bn, l);
