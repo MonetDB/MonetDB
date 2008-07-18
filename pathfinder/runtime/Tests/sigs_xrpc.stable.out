@@ -47,7 +47,7 @@ sigs("xrpc_client");
 [ "doIterativeRPC(str, str, str, bit, lng, lng, BAT[void,BAT], BAT[oid,str], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"	  ]
 [ "doLoopLiftedRPC(str, str, str, bit, lng, lng, BAT[void,BAT], BAT[oid,str], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"	  ]
 [ "get_rpc_res(oid, BAT[void,BAT], BAT[void,lng], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"																	  ]
-[ "http_post(str, str, str, bit, lng, lng, str, str, str, str, bit, lng, lng, BAT[void,BAT], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[str,BAT]"	  ]
+[ "http_post(str, str, str, str, bit, lng, lng, str, str, str, str, bit, lng, lng, BAT[void,BAT], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[str,BAT]"	  ]
 [ "xrpc_commit(str, str, BAT[void,str]) : void"																								  ]
 drop("xrpc_client");
 quit();
