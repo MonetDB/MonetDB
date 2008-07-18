@@ -2613,7 +2613,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 			snprintf(t, (len-(t-base)), "# ");
 		break;
 	default:
-		snprintf(t,  (len-(t-base))," ?%d? ", p->token);
+		snprintf(t,  (len-(t-base))," unknown symbol ?%d? ", p->token);
 	}
 	advance(t,base,len);
 	low = p->retc;
