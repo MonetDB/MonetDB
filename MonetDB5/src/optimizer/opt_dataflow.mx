@@ -16,22 +16,29 @@
 
 @f opt_dataflow
 @- The dataflow optimizer
-The MAL programs are largely a logical description of an execution plan.
+The MAL programs are largely logical descriptions of an execution plan.
 At least as it concerns side-effect free operations.
-For these sub-plans the order of execution is not a priori fixed and
+For these sub-plans the order of execution need not a priori fixed and
 a dataflow driven evaluation is possible. Even using multiple cores to
 work their way through the dataflow graph.
 
-The dataflow optimize analysis the code base and wraps all instructions
+The dataflow optimizer analysis the code and wraps all instructions
 eligible for dataflow driven execution with a guarded block.
-This is only necessary if you can upfront determine there are possibilities
-for multiple starting points.
+Ofcourse, this is only necessary if you can upfront determine there are 
+multiple threads of execution possible.
 
-The runtime system is free to assign as many processors as it deems
-possible and optimial.
+Upon execution, the interpreter instantiates multiple threads based on
+an estimate of the number of processor cores available. Subsequently,
+the eligible instructions are queued and consumed by the interpreter
+threads.
 
-Dataflow blocks may not be nested. They can appear as a result of
-inlining and are removed.
+Dataflow blocks may not be nested. Therefore, any dataflow block produced for
+inlined code is removed first.
+
+Initial experiments on e.g. the RDF benchmark showed a speed up of
+20\% on average, with a peak of a factor 2 for individual queries.
+The main reason for this limited gain stems from the little 
+opportunities for parallel execution in the SQL code plans
 @{
 @mal
 pattern optimizer.dataflow():str
