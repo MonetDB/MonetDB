@@ -70,7 +70,7 @@ comment "Obtain the function address.";
 pattern getSize():lng
 address INSPECTgetSize
 comment "Return the storage size for the current function (in bytes).";
-pattern getSize(mod:str):bat[:str,:lng]
+command getSize(mod:str):bat[:str,:lng]
 address INSPECTgetModuleSize
 comment "Return the storage size for a module (in bytes).";
 command getSize(mod:str,fcn:str):lng
@@ -136,30 +136,30 @@ comment "Collect the environment variables.";
 
 inspect_export str INSPECTgetFunction(int *ret);
 inspect_export str INSPECTgetModule(int *ret);
-inspect_export str INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetkind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllSignatures(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllModules(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllFunctions(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllAddresses(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 inspect_export str INSPECTgetDefinition(int *ret, str *nme, str *fcn);
 inspect_export str INSPECTgetSignature(int *ret, str *mod, str *fcn);
 inspect_export str INSPECTgetAddress(int *ret, str *mod, str *fcn);
 inspect_export str INSPECTgetComment(int *ret, str *mod, str *fcn);
 inspect_export str INSPECTgetSource(str *ret, str *mod, str *fcn);
-inspect_export str INSPECTgetModuleSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+inspect_export str INSPECTgetModuleSize(int *ret, str *mod);
 inspect_export str INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn);
-inspect_export str INSPECTgetSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+inspect_export str INSPECTgetSize(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTgetEnvironment(int *ret);
 inspect_export str INSPECTsymbolType(int *ret, str *mod, str *fcn);
 inspect_export str INSPECTatom_names(int *ret);
 inspect_export str INSPECTatom_sup_names(int *ret);
 inspect_export str INSPECTatom_sizes(int *ret);
-inspect_export str INSPECTshowFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-inspect_export str INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+inspect_export str INSPECTshowFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+inspect_export str INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTtypename(str *ret, int *tpe);
-inspect_export str INSPECTtype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTtypeIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTtypeName(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTtypeIndex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @+ Symbol table 
 Mal symbol table and environment analysis.
@@ -170,8 +170,9 @@ which makes it susceptable for intermediate updates
 @c
 
 str
-INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTgetAllFunctions(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	Client c;
 	Module s;
 	Symbol t;
 	int i;
@@ -183,7 +184,8 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL, "inspect.getgetFunctionId", "failed to create BAT");
 	BATseqbase(b, k);
-	s = cntxt->nspace;
+	c = MCgetClient();
+	s = c->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
 			if (s->subscope[i]) {
@@ -203,8 +205,9 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTgetAllModules(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	Client c;
 	Module s;
 	Symbol t;
 	int i;
@@ -216,7 +219,8 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL, "inspect.getmodule", "failed to create BAT");
 	BATseqbase(b, k);
-	s = cntxt->nspace;
+	c = MCgetClient();
+	s = c->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
 			if (s->subscope[i]) {
@@ -236,8 +240,9 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTgetkind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	Client c;
 	Module s;
 	Symbol t;
 	int i;
@@ -249,7 +254,8 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL, "inspect.get@1", "failed to create BAT");
 	BATseqbase(b, k);
-	s = cntxt->nspace;
+	c = MCgetClient();
+	s = c->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
 			if (s->subscope[i]) {
@@ -271,8 +277,9 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str
-INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTgetAllSignatures(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	Client c;
 	Module s;
 	Symbol t;
 	int i;
@@ -286,7 +293,8 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL, "inspect.get@1", "failed to create BAT");
 	BATseqbase(b, k);
-	s = cntxt->nspace;
+	c = MCgetClient();
+	s = c->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
 			if (s->subscope[i]) {
@@ -306,8 +314,9 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 str
-INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTgetAllAddresses(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	Client c;
 	Module s;
 	Symbol t;
 	int i;
@@ -321,7 +330,8 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL, "inspect.get@1", "failed to create BAT");
 	BATseqbase(b, k);
-	s = cntxt->nspace;
+	c = MCgetClient();
+	s = c->nspace;
 	while (s) {
 		for (i = 0; s && i < MAXSCOPE; i++)
 			if (s->subscope[i]) {
@@ -629,7 +639,7 @@ INSPECTatom_sizes(int *ret)
 }
 
 /* calculate to trimmed storage space */
-static lng
+lng
 INSPECTcalcSize(MalBlkPtr mb){
 	lng size,args=0,i;
 	InstrPtr p;
@@ -645,31 +655,24 @@ INSPECTcalcSize(MalBlkPtr mb){
 }
 
 str
-INSPECTgetSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+INSPECTgetSize(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng *ret = (lng*) getArgReference(stk,p,0);
-
-
 	*ret= INSPECTcalcSize(mb);
-	(void) cntxt;
-	(void) mb;
 	return MAL_SUCCEED;
 }
 str
-INSPECTgetModuleSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTgetModuleSize(int *ret, str *mod)
 {
 	Symbol s;
 	Module m;
 	int i;
 	lng total=0;
 	BAT *b = BATnew(TYPE_str, TYPE_lng, 256);
-	int *ret= (int*) getArgReference(stk,pci,0);
-	str *mod= (str*) getArgReference(stk,pci,1);
 
-	(void) mb;
 	if (b == 0)
 		throw(MAL, "inspect.getSize", "failed to create BAT");
 
-	m = findModule(cntxt->nspace, putName(*mod, strlen(*mod)));
+	m = findModule(MCgetClient()->nspace, putName(*mod, strlen(*mod)));
 	if (m == 0)
 		throw(MAL, "inspect.getSize", 
 				"failed to find <module>.<function>");
@@ -689,7 +692,6 @@ INSPECTgetModuleSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:Pseudo(view,input,result)@
 	return MAL_SUCCEED;
 }
-
 str
 INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn)
 {
@@ -705,20 +707,24 @@ INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn)
 @+ Display routines
 @c
 str
-INSPECTshowFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+INSPECTshowFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	Client c = MCgetClient();
+
 	(void) p;
 	(void) stk;
-	printFunction(cntxt->fdout, mb, LIST_INPUT);
+	printFunction(c->fdout, mb, LIST_INPUT);
 	return MAL_SUCCEED;
 }
 
 str
-INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str modnme = getArgName(mb, p, 1);
 	str fcnnme = getArgName(mb, p, 2);
 	Symbol s = NULL;
+	Client c = MCgetClient();
+
 
 	s = findSymbol(getName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
@@ -727,7 +733,7 @@ INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		snprintf(buf,BUFSIZ,"Could not find %s.%s\n", modnme, fcnnme);
 		throw(MAL, "inspect.showSource",buf);
 	} else
-		printFunction(cntxt->fdout, s->def, LIST_INPUT);
+		printFunction(c->fdout, s->def, LIST_INPUT);
 	(void) stk;		/* fool compiler */
 	return MAL_SUCCEED;
 }
@@ -739,24 +745,20 @@ INSPECTtypename(str *ret, int *tpe)
 	return MAL_SUCCEED;
 }
 str
-INSPECTtypeIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTtypeIndex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret;
-
-	(void) cntxt;
 	ret = (int *) getArgReference(stk, pci, 0);
 	*ret = getTailType(getArgType(mb, pci, 1));
 	return MAL_SUCCEED;
 }
 
 str
-INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTtypeName(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *hn, *tn =0;
 
 	hn = (str *) getArgReference(stk, pci, 0);
-
-	(void) cntxt;
 	if( pci->retc== 2){
 		tn = (str *) getArgReference(stk, pci, 1);
 		*hn = getTypeName(getHeadType(getArgType(mb, pci, 2)));
