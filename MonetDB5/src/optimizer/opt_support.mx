@@ -620,7 +620,7 @@ optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int 
 		/* keep the actions take as post block comments */
 		char buf[BUFSIZ];
 		InstrPtr p= getInstrPtr(mb,mb->stop-1);
-		sprintf(buf,"actions=%d time=" LLFMT " usec %s",actions,usec,name);
+		sprintf(buf,"%-20s actions=%2d time=" LLFMT " usec",name,actions,usec);
 		if( p->token == REMsymbol)
 			removeInstruction(mb,p);
 		newComment(mb,buf);
@@ -1036,6 +1036,7 @@ of simple SQL rewrites using the module name as the discriminator.
 * Common Terms::
 * Constant Expressions::
 * Cost Models::
+* Data Flow::
 * Dead Code Removal::
 * Empty Set Removal::
 * Garbage Collector::
