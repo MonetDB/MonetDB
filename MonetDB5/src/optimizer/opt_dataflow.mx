@@ -73,7 +73,6 @@ The statemens are all checked for being eligible for dataflow.
 		}
 		if (entries>1){
 			q= newAssignment(mb);
-			q->token= EXITsymbol;
 			q->barrier= EXITsymbol;
 			getArg(q,0) = flowblock;
 		}

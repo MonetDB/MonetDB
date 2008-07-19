@@ -40,7 +40,7 @@ Activation of a thread requires construction of the argument list
 to be passed by a handle.
 @h
 
-/*#define DEBUG_MAL_INTERPRETER */
+/*#define DEBUG_MAL_INTERPRETER*/
 /*#define DEBUG_FLOW */
 /*#define STACKTRACE*/
 
@@ -537,18 +537,29 @@ Furthermore, per flow block we keep an administration when
 variables are blocked or not. An instruction can fire if all
 its input variables are not blocked.
 @c
-#define DFLOWpending -1		/* runnable */
-#define DFLOWrunning -2		/* currently in progress */
-#define DFLOWwrapup  -4		/* done! */
+#define DFLOWpending 0		/* runnable */
+#define DFLOWrunning 1		/* currently in progress */
+#define DFLOWwrapup  2		/* done! */
+
+typedef struct queue {
+	int size;	/* size of queue */
+	int first;	/* first in the queue */
+	int last;	/* last element in the queue */
+	void **data;	
+	MT_Lock l;	/* its a shared resource, ie we need locks */
+	MT_Sema s;	/* threads wait on empty queues */
+} queue;
 
 typedef struct {
 	Client cntxt;		/* for debugging */
 	MalBlkPtr mb;		/* carry the context */
 	MalStkPtr stk;
 	int start, stop;	/* guarded block under consideration*/
-	int *status;	/* statements can be blocked on other statements */
-	char *blocked;		/* marking of all variables */
-	MT_Lock lock;
+	char *status;	/* statements can be blocked on other statements */
+	char *blocked;		/* blocked, should be created first */
+	char *inuse;		/* inuse reference count */
+	int *reassign;
+	queue *done;
 } *DataFlow, DataFlowRec;
 
 typedef struct {
@@ -614,15 +625,6 @@ typedef struct {
 	int id;
 } FlowTask;
 
-typedef struct queue {
-	int size;	/* size of queue */
-	int first;	/* first in the queue */
-	int last;	/* last element in the queue */
-	void **data;	
-	MT_Lock l;	/* its a shared resource, ie we need locks */
-	MT_Sema s;	/* threads wait on empty queues */
-} queue;
-
 static queue*
 q_create( int sz )
 {
@@ -638,14 +640,12 @@ q_create( int sz )
 	return q;
 }
 
-#if 0
 static void
 q_destroy( queue *q )
 {
 	GDKfree(q->data);
 	GDKfree(q);
 }
-#endif
 
 static void
 q_enqueue(queue *q, void *d)
@@ -715,7 +715,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	InstrPtr pci;
 	lng oldtimer=0;
 	struct Mallinfo oldMemory = MT_mallinfo();
-	MT_Lock *lock = &flow->lock;
+	MT_Lock *lock = &flow->done->l;
 	int tid = t->id;
 
 #ifdef HAVE_SYS_RESOURCE_H
@@ -781,7 +781,6 @@ We don't allow sequential flow control here.
 
 static FlowTask *worker = NULL;
 static queue *work = NULL;
-static queue *done = NULL;
 
 static void
 runDFLOWworker(void *t)
@@ -795,7 +794,7 @@ runDFLOWworker(void *t)
 	while(task) {
 		fs = (FlowStep)q_dequeue(work);
 		fs->error = DFLOWstep(task, fs);
-		q_enqueue(done, fs);
+		q_enqueue(fs->flow->done, fs);
 	}
 }
 
@@ -807,9 +806,8 @@ DFLOWcreate(void)
 	assert(worker == NULL);
 
 	work = q_create(256);
-	done = q_create(256);
 
-	nway = MT_check_nr_cores();
+	nway = GDKcores;
 	worker = (FlowTask *) GDKzalloc(sizeof(FlowTask)*nway);
 	for(i=0; i<nway; i++) {
 		worker[i].id = i;
@@ -818,38 +816,46 @@ DFLOWcreate(void)
 	}
 }
 
-static int
-argumentProducedBy(DataFlow flow, int pc, int a)
+static void
+DFLOWreassign(DataFlow flow, FlowStep fs, int oa)
 {
-	int i, o;
+	int i, use = 0, limit = flow->stop - flow->start;
+	
+	for (i = flow->reassign[oa] - flow->start; i<limit; i++) {
+		int j, a;
+		InstrPtr p = getInstrPtr(flow->mb, fs[i].pc);
 
-	for(i = pc-1; i >= flow->start; i--) {
-		InstrPtr p = getInstrPtr(flow->mb, i);
+		for (j=0; j<p->retc; j++){
+			a = getArg(p, j);
 
-		for(o=0; o<p->retc; o++) {
-			if (getArg(p, o) == a)
-				return i;
+			if (a == oa) {
+				flow->reassign[a] = fs[i].pc;
+				/* the variable isn't used inbetween we should
+				   set the reassign one down */
+				if (!use) {
+					flow->reassign[a]++;
+					flow->blocked[a] = 1;
+				}
+				flow->inuse[a] = use;
+#ifdef DEBUG_FLOW
+	printf("%d [ %1d %2d %3d ]\n", a, 
+		flow->blocked[a],
+		flow->inuse[a],
+		flow->reassign[a]);
+#endif
+				return;
+			}
+		}
+		for (j=p->retc; j<p->argc; j++){
+			a = getArg(p, j);
+			if (a == oa)
+				use++;
 		}
 	}
-	return i;
+	/* no reassign found */
+	flow->reassign[oa] = 0;
+	flow->inuse[oa] = use;
 }
-
-static int
-argumentUsedBy(DataFlow flow, int pc, int a)
-{
-	int i, ia;
-
-	for(i = pc-1; i >= flow->start; i--) {
-		InstrPtr p = getInstrPtr(flow->mb, i);
-
-		for(ia=p->retc; ia<p->argc; ia++) {
-			if (getArg(p, ia) == a)
-				return i;
-		}
-	}
-	return i;
-}
-
 
 static void
 DFLOWinit(DataFlow flow, FlowStep fs)
@@ -857,7 +863,8 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 	int i, n;
 
 	for (n=0, i = flow->start; i<flow->stop; i++, n++) {
-		InstrPtr p;
+		InstrPtr p = getInstrPtr(flow->mb, i);
+		int j, a, oa = -1;
 
 		/* initial state, ie everything can run */
 		fs[n].pc = i;
@@ -866,25 +873,49 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 		fs[n].cost = -1; 
 		fs[n].error = NULL; 
 
-		p = getInstrPtr(flow->mb, i);
-		if (p->retc) {
-			int ia, oa = getArg(p, 0);
-			for(ia=p->retc; ia<p->argc; ia++) {
-				if (oa == getArg(p, ia)) {
-					int q = argumentProducedBy(flow, i, oa); 
-					if (q > fs[n].status)
-						fs[n].status = q;
-					flow->blocked[oa] = 1;
-					break;
-				}
-			}
-			if (garbageControl(p)) {
-				int q = argumentUsedBy(flow, i, oa); 
-				if (q > fs[n].status)
-					fs[n].status = q;
-			}
+		for (j=0; j<p->retc; j++){
+			a = getArg(p, j);
+
+			if (!flow->reassign[a] && (flow->blocked[a] ||
+			    (flow->inuse[a] && !flow->blocked[a])))
+				flow->reassign[a] = i;
+			if (!flow->reassign[a] && !flow->blocked[a] && !flow->inuse[a])
+				flow->blocked[a] = 1;
+		}
+		if (p->retc)
+			oa = getArg(p, 0);
+		for (j=p->retc; j<p->argc; j++){
+			a = getArg(p, j);
+			if (!isVarConstant(flow->mb, a) && oa != a && !flow->reassign[a])
+				flow->inuse[a]++;
 		}
 	}
+#ifdef DEBUG_FLOW
+for (i=0; i < flow->mb->vtop; i++) {
+	printf("%d [ %1d %2d %3d ]\n", i, 
+		flow->blocked[i],
+		flow->inuse[i],
+		flow->reassign[i]);
+}
+#endif
+}
+
+static int
+garbage( MalBlkPtr mb, InstrPtr p) 
+{
+	int ia;
+	ValPtr s;
+
+	if (p->retc != 1 || p->argc != 2)  
+		return 0;
+	if (!isVarConstant(mb, ia = getArg(p, 1))) 
+		return 0;
+	if (getVarGDKType(mb, ia) != TYPE_bat)  
+		return 0;
+	s = &getVarConstant(mb, ia);
+	if (s->val.bval && s->val.bval != bat_nil) 
+		return 0;
+	return 1;
 }
 
 static str
@@ -903,56 +934,127 @@ DFLOWexecute( DataFlow flow )
 		flow->cntxt->timer = GDKusec();
 	
 	while(pc < limit) {
-		for(i = pc; i < limit; i++) {
+		for(i = pc; i < limit && queued < (nway<<1); i++) {
 			if (fs[i].status == DFLOWwrapup) 
 				if (pc == i)
 					pc++;
-			if (fs[i].status == DFLOWpending || 
-			   (fs[i].status > 0 && fs[i].status < pc+flow->start)){
-				int blocked = 0;
+			if (fs[i].status == DFLOWpending) { 
 				InstrPtr p = getInstrPtr(flow->mb, fs[i].pc);
-				int oa = (p->retc)?getArg(p,0):0;
-				for(j=p->retc; j<p->argc && !blocked; j++) {
-					int ia = getArg(p,j);
-					if (oa != ia && flow->blocked[ia]) 
+				int blocked = 0, oa = getArg(p,0);
+
+				/* check if output args are blocked */
+				for(j=0; j<p->retc && !blocked; j++) {
+					int oa = getArg(p,j);
+
+					/* inuse or 
+					   this is a reassign statement*/
+					if (!flow->blocked[oa] ||
+					   (flow->reassign[oa] &&
+					    flow->reassign[oa] <= fs[i].pc)) 
 						blocked++;
 				}
 				
-				if (!blocked) {
-					queued++;
-					fs[i].status = DFLOWrunning;
-					q_enqueue(work, fs+i);
+				/* check if input args aren't blocked */
+				for(j=p->retc; j<p->argc && !blocked; j++) {
+					int ia = getArg(p,j);
+
+					if ((!isVarConstant(flow->mb, ia) &&
+					    ia != oa &&
+					    flow->blocked[ia]) || 
+					   (ia != oa &&
+					    flow->reassign[ia] &&
+					    flow->reassign[ia] <= fs[i].pc)) 
+						blocked++;
 				}
 
-				/* mark all return variables as blocked */
-				for(j=0; j<p->retc; j++)
-					if (!isVarConstant(flow->mb,getArg(p,j)))
-						flow->blocked[getArg(p,j)] = 1;
+#ifdef DEBUG_FLOW
+if (blocked) {
+	int oa = getArg(p,0);
+	printf("cannot enqueue %d [ %1d %2d %3d ]\n", fs[i].pc, flow->blocked[getArg(p,0)], flow->inuse[oa], flow->reassign[oa]);
+	if (oa != getArg(p,1)) {
+		oa = getArg(p,1);
+		printf("cannot enqueue in [ %1d %2d %3d ]\n", flow->blocked[getArg(p,0)], flow->inuse[oa], flow->reassign[oa]);
+	}
+	printInstruction(GDKstdout, flow->mb, p, LIST_MAL_ALL);
+}
+#endif
+				if (!blocked) { 
+					queued++;
+					fs[i].status = DFLOWrunning;
 
+#ifdef DEBUG_FLOW
+	printf("enqueue %d\n", fs[i].pc);
+	printInstruction(GDKstdout, flow->mb, p, LIST_MAL_ALL);
+#endif
+					q_enqueue(work, fs+i);
+				}
 			}
 		}
+		assert(queued || pc == limit); 
 		/* we cannot enqueue, lets wait for the results */ 
 		while(queued) {
-			FlowStep f = q_dequeue(done);
-
+			FlowStep f = q_dequeue(flow->done);
 
 			f->status = DFLOWwrapup;
 			if (f->pc < 0) {
 				/* dequeue the remainders */
 				while(--queued) 
-					(void)q_dequeue(done);
+					(void)q_dequeue(flow->done);
 				pc = limit + 1;
 				return f->error;
 			} else {
 				InstrPtr p = getInstrPtr(flow->mb, f->pc);
+				int oa = getArg(p,0);
 
-				for(j=0; j<p->retc; j++)
-					flow->blocked[getArg(p,j)] = 0;
+#ifdef DEBUG_FLOW
+	printf("done %d\n", f->pc);
+	printInstruction(GDKstdout, flow->mb, p, LIST_MAL_ALL);
+#endif
+				/* deblock the output args */
+				for(j=0; j<p->retc; j++) {
+					int oa = getArg(p,j);
+
+					/* use can now start */
+					flow->blocked[oa] = 0;
+
+					/* second statement, ie
+					   garbage collect or accum 
+					 */
+					/* based on type check for reassign */
+					if (flow->inuse[oa] == 0 && 
+					    flow->reassign[oa] == f->pc+1 &&
+					    !garbage(flow->mb, p)) {
+						DFLOWreassign(flow, fs, oa);
+					} else if (flow->inuse[oa] == 0 &&
+					    !garbage(flow->mb, p)) {
+						/* enable reassign */
+						flow->blocked[oa] = 1;
+						if (flow->reassign[oa])
+							flow->reassign[oa]++;
+					}
+				}
+
+				/* free the input args */
+				for(j=p->retc; j<p->argc; j++) {
+					int ia = getArg(p,j);
+
+					if (ia != oa && !isVarConstant(flow->mb, ia))
+						flow->inuse[ia]--;
+					assert(flow->inuse[ia] >= 0);
+					
+					if (ia != oa && flow->inuse[ia] == 0 && flow->reassign[ia]) {
+						/* enable reassign */
+						flow->blocked[ia] = 1;
+						if (flow->reassign[ia])
+							flow->reassign[ia]++;
+					}
+				}
 				if (pc == f->pc-flow->start)
 					pc++;
+
 			}
 			queued--;
-			if (pc < limit && q_empty(done)) /* only fetch next if possible */
+			if (pc < limit && q_empty(flow->done)) /* only fetch next if possible */
 				break;
 		}
 	}
@@ -979,16 +1081,21 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	flow.stop = stoppc;
 	flow.mb = mb;
 	flow.stk = stk;
-	flow.status = (int*) GDKzalloc(sizeof(int) * (stoppc-startpc+1));
-	flow.blocked = (char*) GDKzalloc(mb->vtop);
-	MT_init_lock(flow.lock, "runMALdataflow");
+	flow.status = (char*) GDKzalloc((stoppc-startpc+1));
+	flow.blocked = (char*) GDKzalloc(sizeof(char)*mb->vtop);
+	flow.inuse = (char*) GDKzalloc(sizeof(char)*mb->vtop);
+	flow.reassign = (int*) GDKzalloc(sizeof(int)*mb->vtop);
+	flow.done = q_create(256);
 
 	if (!worker) 
 		DFLOWcreate();
 
 	ret = DFLOWexecute(&flow);
+	q_destroy(flow.done);
 	GDKfree(flow.status);
 	GDKfree(flow.blocked);
+	GDKfree(flow.inuse);
+	GDKfree(flow.reassign);
 	return ret; 
 }
 @-

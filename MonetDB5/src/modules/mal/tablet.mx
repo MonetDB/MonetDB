@@ -1832,7 +1832,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 	Tablet **partition = NULL;
 
 	if (!nway) /* based on max parallel threads to consider */
-		nway = MT_check_nr_cores();
+		nway = GDKcores;
 	partition = (Tablet**)alloca(sizeof(Tablet*)*nway);	
 
 	/* Detect the block streams over files */
