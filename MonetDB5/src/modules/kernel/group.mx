@@ -1991,20 +1991,20 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	cnt = (int*) GDKmalloc(nElements*sizeof(int));
 	if (cnt == NULL) {
 		BBPreclaim(bn);
-		return GDK_FAIL;
+		throw(MAL, "group.@1", "Cannot alloc space ");
 	}
 	sum = (dbl*) GDKmalloc(nElements*sizeof(dbl));
 	if (sum == NULL) {
 		BBPreclaim(bn);
 		GDKfree(cnt);
-		return GDK_FAIL;
+		throw(MAL, "group.@1", "Cannot alloc space ");
 	}
 	sumsquares = (dbl*) GDKmalloc(nElements*sizeof(dbl));
 	if (sumsquares == NULL) {
 		BBPreclaim(bn);
 		GDKfree(cnt);
 		GDKfree(sum);
-		return GDK_FAIL;
+		throw(MAL, "group.@1", "Cannot alloc space ");
 	}
 
 	/* scan b, adding sums, and incrementing counts */
@@ -2013,7 +2013,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 		GDKfree(cnt);
 		GDKfree(sum);
 		GDKfree(sumsquares);
-		return GDK_FAIL;
+		throw(MAL, "group.@1", "Cannot alloc space ");
 	}
 
 	/* init sums and counts to zero */
