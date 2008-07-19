@@ -182,7 +182,7 @@ type information
 @h
 	bitset  listing;        
 	str prompt;         /* acknowledge prompt */
-	int promptlength;
+	size_t promptlength;
 	ClientInput *bak;   /* used for recursive script and string execution */
 
 	stream   *fdout;    /* streams from and to user. */

@@ -516,7 +516,8 @@ yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
 	(void) pc;
 	for (pl = plants; pl < plim; pl++)
 		if (pl->factory == mb ) {
-			if( pl->env == NULL) return pl-plants;
+			if( pl->env == NULL) 
+				return(int) (pl-plants);
 			for (i = 0; i < p->retc; i++) {
 #ifdef DEBUG_MAL_FACTORY
 				printf("lhs %d rhs %d\n", getArg(pl->pci, i), getArg(p, i));
@@ -525,7 +526,7 @@ yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
 				lhs = &pl->env->stk[getArg(pl->pci, i)];
 				VALcopy(lhs, rhs);
 			}
-			return pl-plants;
+			return (int) (pl-plants);
 		}
 	return -1;
 }
