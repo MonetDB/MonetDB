@@ -1553,6 +1553,7 @@ GDKinit(opt *set, int setlen)
 		MT_create_thread(&t, GDKvmtrim, &GDK_mem_maxsize);
 	}
 #endif
+	GDKcores = MT_check_nr_cores();
 	return 1;
 }
 
@@ -1562,9 +1563,11 @@ the transient BATs should be removed.
 The buffer pool manager takes care of this.
 @h
 gdk_export int GDKstopped;
+gdk_export int GDKcores;
 
 @c
 int GDKstopped = 1;
+int GDKcores = 1;
 
 @h
 gdk_export void GDKexit(int status);
