@@ -88,9 +88,9 @@ mal_export int retainPolicy;
 #define RETAIN_VOL	4
 #define RETAIN_ADAPT	5
 
-mal_export int recycleTime;		
-mal_export int recycleSearchTime;
-mal_export int recycleVolume;
+mal_export lng recycleTime;		
+mal_export lng recycleSearchTime;
+mal_export lng recycleVolume;
 
 mal_export int reusePolicy;
 #define REUSE_NONE	0
@@ -160,9 +160,9 @@ int retainPolicy = RETAIN_ALL;  /* recycle retainment policy
 			RETAIN_SIZE: size cost model 
 			RETAIN_VOL: volumetric cost model (time x size )
 			RETAIN_ADAP: adaptive temporal */
-int recycleTime = 0;
-int recycleSearchTime = 0;	/* cache search time in ms*/
-int recycleVolume = 0;
+lng recycleTime = 0;
+lng recycleSearchTime = 0;	/* cache search time in ms*/
+lng recycleVolume = 0;
 
 @-
 REUSE_EXACT only looks at precisely matching instructions.
@@ -433,8 +433,8 @@ RECYCLEcache(int target, int wr)
 
 int chooseVictims(int *lvs, int ltop, int wr)
 {
-	dbl *wcrd, tmp;
-	int l, w, newtop, maxwc, mpos, tmpl;
+	dbl *wcrd, maxwc, tmp;
+	int l, w, newtop, mpos, tmpl;
 	int totmem = 0, targmem, smem;
 
 	wcrd = (dbl *)alloca(sizeof(dbl)*ltop);

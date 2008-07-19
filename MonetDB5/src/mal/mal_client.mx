@@ -160,7 +160,7 @@ Future releases may support a re-connect facility.  [TODO]
 @h
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */
-	time_t      delay;	/* not yet used */
+	lng         delay;	/* not yet used */
 @-
 Communication channels for the interconnect are stored here.
 It is perfectly legal to have a client without input stream.

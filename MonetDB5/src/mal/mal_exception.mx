@@ -49,6 +49,7 @@ at the normal @sc{exit} with the option @sc{leave} or
 continue after the failed instruction using a @sc{redo}.
 The latter case assumes the caught code block has been able to provide
 an alternative for the failed instruction.
+[todo, the redo from failed instruction is not implemented yet]
 
 Both @sc{leave} and @sc{redo} are conditional flow of control modifiers,
 which trigger on a non-empty string variable.

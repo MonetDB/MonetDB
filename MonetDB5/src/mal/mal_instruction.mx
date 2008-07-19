@@ -387,10 +387,10 @@ typedef struct PERF {
 	time_t clock;		/* clock */
 	lng clk;		/* microseconds clock */
 	long counter;
-	long ticks;		/* micro seconds spent */
+	lng ticks;		/* micro seconds spent */
 	bit trace;		/* facilitate filter-based profiling */
-	int ibytes;		/* bytes read by an instruction */
-	int obytes;		/* bytes written by an instruction */
+	lng ibytes;		/* bytes read by an instruction */
+	lng obytes;		/* bytes written by an instruction */
 } *ProfPtr, ProfRecord;
 
 typedef struct MALBLK {
