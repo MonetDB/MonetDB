@@ -116,7 +116,7 @@ mal_export double recycleFresh;
 mal_export int statements;	/* total number of statements executed */
 mal_export int recycled;	/* total number of statements recycled */
 mal_export int retained;	/* total number of statements retained */
-mal_export int savedTime;	/* sum of all recycled clk's */
+mal_export lng savedTime;	/* sum of all recycled clk's */
 mal_export int monitorRecycler;
 mal_export int recycleRecent;
 
@@ -216,7 +216,7 @@ lng recyclerUsedMemory = 0;
 int statements = 0;	/* total number of statements executed */
 int recycled = 0;	/* total number of statements recycled */
 int retained = 0;	/* total number of statements retained */
-int savedTime = 0;	/* sum of all recycled clk's */
+lng savedTime = 0;	/* sum of all recycled clk's */
 int monitorRecycler = 0; /* 1: print cache stat after each RECYCLEnew call */
 			 /* 2: print cache stat at the end of query */
 int recycleRecent;     /* the most recent entry in cache touched by current query execution */
@@ -431,11 +431,11 @@ RECYCLEcache(int target, int wr)
 
 @c
 
-int chooseVictims(int *lvs, int ltop, int wr)
+int chooseVictims(lng *lvs, int ltop, int wr)
 {
 	dbl *wcrd, maxwc, tmp;
 	int l, w, newtop, mpos, tmpl;
-	int totmem = 0, targmem, smem;
+	lng totmem = 0, targmem, smem;
 
 	wcrd = (dbl *)alloca(sizeof(dbl)*ltop);
 	memset(wcrd,0, sizeof(dbl)*ltop);
@@ -484,7 +484,7 @@ static void RECYCLEcleanCache(int wr){
 	InstrPtr p;
 	InstrPtr *old;
 	char *used, *dmask;
-	int *lvs, *vm, *lvs1;
+	lng *lvs, *vm, *lvs1;
 	int limit, mem, oldest, cheap;
 	int cont, reserve;
 	lng oldclk, newclk;
@@ -502,8 +502,8 @@ newpass:
 	used = alloca(recycleBlk->vtop);
 	memset(used,0, recycleBlk->vtop);
 
-	lvs = (int *)alloca(sizeof(int)*recycleBlk->stop);
-	memset(lvs,0, sizeof(int)*recycleBlk->stop);
+	lvs = (lng *)alloca(sizeof(lng)*recycleBlk->stop);
+	memset(lvs,0, sizeof(lng)*recycleBlk->stop);
 
 	/* set all used variables */
 	for (i = 0; i < recycleBlk->stop; i++){
@@ -534,8 +534,8 @@ newpass:
 		else return;
 	}
 	mem = recyclerUsedMemory + wr > memLimit;
-	vm = (int *)alloca(sizeof(int)*ltop);
-	memset(vm,0, sizeof(int)*ltop);
+	vm = (lng *)alloca(sizeof(lng)*ltop);
+	memset(vm,0, sizeof(lng)*ltop);
 	vtop = 0;
 	newclk = oldclk = recycleBlk->profiler[lvs[0]].clk;
 	oldest = 0;
@@ -577,7 +577,7 @@ newpass:
 			newclk = (lng)((1-recycleFresh)*oldclk + recycleFresh*newclk);
 			lvs1 = lvs;  	/* drop newest to avoid deletion */
 			assert(ltop > 0);
-			lvs = (int *)alloca(sizeof(int)*ltop);
+			lvs = (lng *)alloca(sizeof(lng)*ltop);
 			for(j = 0; j < ltop; j++)
 				lvs[j] = 0;
 			l = 0;
@@ -746,7 +746,7 @@ compare by value.
 	recyclerUsedMemory += wr;
 	if (monitorRecycler == 1 ) 
 		fprintf(stderr, 
-			"#memory=%lld, stop=%d, recycled=%d, retained=%d executed=%d saved=%d\n",
+			"#memory=%lld, stop=%d, recycled=%d, retained=%d executed=%d saved=" LLFMT "\n",
 			recyclerUsedMemory, recycleBlk->stop,
 			recycled, retained, statements, savedTime);
 	retained++;
