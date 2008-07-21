@@ -346,7 +346,7 @@ str
 dist_addHost_wrap(int *id, str *host, int *port, str *dbname, str *user, str *passwd)
 {
 	bpmHost bpmH = bpm_host_create(*host, *port, *dbname, *user, *passwd);
-	if (bpmH && (*id = *(int *) bpmH->host))
+	if (bpmH && (*id = bpmH->id))
 		return MAL_SUCCEED;
 	throw(SQL, "dist.addHost", "limitation in transaction scope");
 
