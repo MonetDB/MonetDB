@@ -316,7 +316,7 @@ faster system start.
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::t:r:h?s:m:i:a:e:x",
+		int c = getopt_long(argc, av, "c:d::t:rh?s:m:i:a:e:x",
 				    long_options, &option_index);
 
 		if (c == -1)
@@ -401,7 +401,7 @@ faster system start.
 			}
 			break;
 		case 'r':
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_readonly", "yes");
+			setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_readonly", "yes");
 			break;
 		case 's':{
 			/* should add option to a list */
