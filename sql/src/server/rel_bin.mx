@@ -1242,14 +1242,8 @@ rel2bin_select( mvc *sql, sql_rel *rel )
 		}
 	}
 
-	if (predicate && sel) {
-		if (list_length(sel->op1.lval) == 0) {
-			stmt_destroy(sel);
-			sel = NULL;
-		} else {
-			sel = stmt_join(sel, stmt_dup(predicate), cmp_all);
-		}
-	}
+	if (predicate && sel)
+		sel = stmt_join(sel, stmt_dup(predicate), cmp_all);
 	/* construct relation */
 	l = create_stmt_list();
 	if (sub && sel) {
