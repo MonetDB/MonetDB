@@ -1242,14 +1242,27 @@ rel2bin_select( mvc *sql, sql_rel *rel )
 		}
 	}
 
-	if (predicate && sel) 
-		sel = stmt_join(sel, stmt_dup(predicate), cmp_all);
+	if (predicate && sel) {
+		if (list_length(sel->op1.lval) == 0) {
+			stmt_destroy(sel);
+			sel = NULL;
+		} else {
+			sel = stmt_join(sel, stmt_dup(predicate), cmp_all);
+		}
+	}
 	/* construct relation */
 	l = create_stmt_list();
 	if (sub && sel) {
 		sel = stmt_mark(stmt_reverse(sel),0);
 		for( n = sub->op1.lval->h; n; n = n->next ) {
-			list_append(l, stmt_join(stmt_dup(sel), stmt_dup(n->data), cmp_equal));
+			stmt *col = stmt_dup(n->data);
+	
+			sel = stmt_dup(sel);
+			if (col->nrcols == 0) /* constant */
+				col = stmt_const(sel, col);
+			else
+				col = stmt_join(sel, col, cmp_equal);
+			list_append(l, col);
 		}
 	} else if (sub && predicate) {
 		stmt *h = NULL;
@@ -1257,7 +1270,14 @@ rel2bin_select( mvc *sql, sql_rel *rel )
 		h = stmt_join( stmt_dup(n->data), stmt_dup(predicate), cmp_all);
 		h = stmt_reverse(stmt_mark_tail(h, 0)); 
 		for( n = sub->op1.lval->h; n; n = n->next ) {
-			list_append(l, stmt_join(stmt_dup(h), stmt_dup(n->data), cmp_equal));
+			stmt *col = stmt_dup(n->data);
+	
+			h = stmt_dup(h);
+			if (col->nrcols == 0) /* constant */
+				col = stmt_const(h, col);
+			else
+				col = stmt_join(h, col, cmp_equal);
+			list_append(l, col);
 		}
 		stmt_destroy(h);
 	} else if (predicate) {
