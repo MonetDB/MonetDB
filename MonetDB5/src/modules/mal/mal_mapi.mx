@@ -2079,7 +2079,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		tab= (str*) getArgReference(stk,pci,pci->retc+2);
 		col= (str*) getArgReference(stk,pci,pci->retc+3);
 		i= *(int*) getArgReference(stk,pci,pci->retc+4);
-		snprintf(buf,BUFSIZ,"%s:bat[:void,:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",0,%d);",
+		snprintf(buf,BUFSIZ,"%s:bat[:oid,:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
 			getVarName(mb,getDestVar(pci)),
 			getTypeName(getTailType(getVarType(mb,getDestVar(pci)))),
 			*nme, *tab,*col,i);
