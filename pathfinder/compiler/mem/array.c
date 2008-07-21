@@ -69,12 +69,6 @@
 #include "mem.h"
 #include "oops.h"
 
-/**
- * size (in bytes) rounded up to whenever a fresh array is allocated or
- * an out-of-bounds index has been accessed
- */
-#define ACHUNK 8U
-
 #ifndef NDEBUG
 /* switch to turn debug printing
    of memory reallocations on/off */
@@ -99,17 +93,15 @@ PFarray_ (size_t s, unsigned int slots, bool clear)
 
   a = (PFarray_t *) PFmalloc (sizeof (PFarray_t));
 
-  /* round up to nearest multiple of ACHUNK larger than s * slots */
-  nbytes = (s * slots + ACHUNK) & (~ACHUNK + 1);
+  a->bound = slots + 1; /* allocate one more slot */
+  a->esize = s;
+  a->clear = clear;
 
+  nbytes  = a->bound*a->esize;
   a->base = PFmalloc (nbytes);
 
   if (clear)
       memset (a->base, 0, nbytes);
-
-  a->bound = nbytes / s;
-  a->esize = s;
-  a->clear = clear;
 
   /* 0 indicates emptiness (see macro PFarray_empty ()) */
   a->appi  = 0;
@@ -151,14 +143,14 @@ PFarray_at (PFarray_t *a, unsigned int i)
                  file, func, line, i+1, a->bound);
 #endif
 
-      if (i > 2 * a->bound)
+      if (i >= 2 * a->bound)
           /* out-of-bounds index access,
            * grow array such that index position i becomes valid
            */
-          nbytes = ((i + 1) * a->esize + ACHUNK) & (~ACHUNK + 1);
+          nbytes = (i + 1) * a->esize;
       else
           /* amortize reallocation costs for small chunks */
-          nbytes = 2 * a->bound * a->esize;
+          nbytes = 2 * a->bound*a->esize;
 
       assert(a->base);
       a->base = PFrealloc (a->base, a->bound*a->esize, nbytes);
