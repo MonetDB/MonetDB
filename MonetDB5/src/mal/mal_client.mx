@@ -160,7 +160,7 @@ Future releases may support a re-connect facility.  [TODO]
 @h
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */
-	lng         delay;	/* not yet used */
+	unsigned int  delay;	/* not yet used */
 @-
 Communication channels for the interconnect are stored here.
 It is perfectly legal to have a client without input stream.
@@ -251,7 +251,7 @@ mal_export void    MCcloseClient    (Client c);
 mal_export Client  MCforkClient     (Client c);
 mal_export int	   MCcountClients(void);
 mal_export int     MCreadClient  (Client c);
-mal_export str	   MCsuspendClient(int id, int timeout);
+mal_export str	   MCsuspendClient(int id, unsigned int timeout);
 mal_export str	   MCawakeClient(int id);
 mal_export int     MCwait(Client c);
 mal_export void    MCcleanupClients(void);
@@ -719,11 +719,9 @@ MCexitPending()
 }
 
 str
-MCsuspendClient(int id, int timeout){
+MCsuspendClient(int id, unsigned int timeout){
 	if( id<0 || id>MAL_MAXCLIENTS)
 		throw(MAL,"mal.clients","illegal client id");
-	if( timeout <-1 )
-		throw(MAL,"mal.clients","illegal timeout");
 	mal_clients[id].itrace='S';
 	mal_clients[id].delay=timeout;
 	return MAL_SUCCEED;

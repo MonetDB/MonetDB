@@ -434,8 +434,8 @@ RECYCLEcache(int target, int wr)
 int chooseVictims(lng *lvs, int ltop, int wr)
 {
 	dbl *wcrd, maxwc, tmp;
-	int l, w, newtop, mpos, tmpl;
-	lng totmem = 0, targmem, smem;
+	int l, newtop, mpos;
+	lng w, tmpl, totmem = 0, targmem, smem;
 
 	wcrd = (dbl *)alloca(sizeof(dbl)*ltop);
 	memset(wcrd,0, sizeof(dbl)*ltop);
@@ -479,12 +479,12 @@ int chooseVictims(lng *lvs, int ltop, int wr)
 }
 
 
-static void RECYCLEcleanCache(int wr){
-	int k,j,i,l,ltop,v,vtop;
+static void RECYCLEcleanCache(lng wr){
+	int j,i,l,ltop,v,vtop;
 	InstrPtr p;
 	InstrPtr *old;
 	char *used, *dmask;
-	lng *lvs, *vm, *lvs1;
+	lng k, *lvs, *vm, *lvs1;
 	int limit, mem, oldest, cheap;
 	int cont, reserve;
 	lng oldclk, newclk;
@@ -1023,8 +1023,8 @@ void
 RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng clk = 0;
 	lng memLimit, cacheLimit;
-	int rd = getVolume(stk,p, 1)/ RU +1;
-	int wr = getVolume(stk,p, 0)/ RU +1;
+	lng rd = getVolume(stk,p, 1)/ RU +1;
+	lng wr = getVolume(stk,p, 0)/ RU +1;
 	ValRecord *v;
 
 	RECYCLEversion(cntxt,mb);
