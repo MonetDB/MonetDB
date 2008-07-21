@@ -53,6 +53,7 @@ sql5_export str SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 sql5_export str SQLinitEnvironment(int *ret);
 sql5_export str SQLstatement(int *ret, str *expr);
+sql5_export str SQLstatementOut(int *ret, str *expr, bit *output);
 sql5_export str SQLcompile(str *ret, str *expr);
 sql5_export str SQLtrace(int *ret);
 sql5_export str SQLCacheRemove(Client c, str nme);
@@ -503,7 +504,7 @@ freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 
 /* #define _SQL_COMPILE */
 static str
-SQLstatementIntern(str *expr, str nme, int execute)
+SQLstatementIntern(str *expr, str nme, int execute, bit output)
 {
 	int err = 0;
 	mvc *o, *m;
@@ -621,7 +622,8 @@ We don;t search the cache for a previous incarnation yet.
 
 		if ( execute) {
 			backend *be = c->state[MAL_SCENARIO_PARSER];
-			sql->out = NULL; /* no output */
+			if (!output)
+				sql->out = NULL; /* no output */
 			c->state[MAL_SCENARIO_PARSER] = sql;
 			msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
 			c->state[MAL_SCENARIO_PARSER] = be;
@@ -658,7 +660,14 @@ str
 SQLstatement(int *ret, str *expr)
 {
 	(void)ret;
-	return SQLstatementIntern(expr, "SQLstatement", TRUE);
+	return SQLstatementIntern(expr, "SQLstatement", TRUE, TRUE);
+}
+
+str
+SQLstatementOut(int *ret, str *expr, bit *output)
+{
+	(void)ret;
+	return SQLstatementIntern(expr, "SQLstatement", TRUE, *output);
 }
 
 str
@@ -666,7 +675,7 @@ SQLcompile(str *ret, str *expr){
 	str msg;
 
 	*ret = NULL;
-	msg= SQLstatementIntern(expr, "SQLcompile", FALSE);
+	msg= SQLstatementIntern(expr, "SQLcompile", FALSE, FALSE);
 	if( msg == MAL_SUCCEED)
 		*ret= _strdup("SQLcompile");
 	return msg;
@@ -1214,6 +1223,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 str 
 backend_record( backend *be, char *query, lng parse, lng optimize, lng exec, lng total)
 {
+	bit fls = FALSE;
 	int ret;
 	str msg = NULL;
 	mvc *c = be->mvc;
@@ -1257,7 +1267,7 @@ backend_record( backend *be, char *query, lng parse, lng optimize, lng exec, lng
 
 	c->emode = m_normal;
 	c->emode = mod_none;
-	msg = SQLstatement(&ret, &stmt);
+	msg = SQLstatementOut(&ret, &stmt, &fls);
 	(void)ret;
 	c->emode = emode;
 	c->emod = emod;

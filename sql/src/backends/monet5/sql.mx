@@ -48,6 +48,10 @@ command eval(cmd:str):void
 address SQLstatement
 comment "Compile and execute a single sql statement";
 
+command eval(cmd:str, output:bit):void 
+address SQLstatementOut
+comment "Compile and execute a single sql statement (and optionaly send output on the output stream)";
+
 pattern assert{unsafe}(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";
@@ -176,11 +180,11 @@ comment "Prepare a declared table";
 pattern dtColumn{unsafe}(rs:int, tname:str, name:str, typename:str, digits:int, scale:int) :void
 address mvc_declared_table_column_wrap;
 
-command dropDeclaredTable{unsafe}( name:str ) :void 
+pattern dropDeclaredTable{unsafe}( name:str ) :void 
 address mvc_drop_declared_table_wrap
 comment "drop a declared table"; 
 
-command dropDeclaredTables{unsafe}( nr:int ) :void 
+pattern dropDeclaredTables{unsafe}( nr:int ) :void 
 address mvc_drop_declared_tables_wrap
 comment "drop top n declared tables"; 
 
@@ -553,37 +557,37 @@ comment "return the densely ranked bat";
 command aggr.exist(b:bat[:any_1,:any_2], h:any_1):bit 
 address ALGexist;
 
-function batcalc.mark_grp( b:bat[:oid,:any_1], a:bat[:any_2,:any_3], g:bat[:oid,:oid]) :bat[:oid,:int]; 
+function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], a:bat[:any_2,:any_3], g:bat[:oid,:oid]) :bat[:oid,:int]; 
 	x := algebra.mark_grp(a,g,1:oid);
 	return batcalc.int(x);
 end batcalc.mark_grp;
 
-function batcalc.mark_grp( b:bat[:oid,:any_1] ) :bat[:oid,:int]; 
+function batcalc.mark_grp{inline}( b:bat[:oid,:any_1] ) :bat[:oid,:int]; 
 	x := algebra.markT(b,1:oid);
 	return batcalc.int(x);
 end batcalc.mark_grp;
 
-function batcalc.rank_grp( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int]; 
+function batcalc.rank_grp{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int]; 
 	o := bat.mirror(b);
 	g := algebra.join(o, gp);
 	return sql.rank_grp(b, g, gpe);
 end batcalc.rank_grp;
 
-function batcalc.rank_grp( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
+function batcalc.rank_grp{inline}( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
 	return sql.rank(b);
 end batcalc.rank_grp;
 
-function batcalc.dense_rank_grp( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int]; 
+function batcalc.dense_rank_grp{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int]; 
 	o := bat.mirror(b);
 	g := algebra.join(o, gp);
 	return sql.dense_rank_grp(b, g, gpe);
 end batcalc.dense_rank_grp;
 
-function batcalc.dense_rank_grp( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
+function batcalc.dense_rank_grp{inline}( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
 	return sql.dense_rank(b);
 end batcalc.dense_rank_grp;
 
-function sql.zero_or_one( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:any_1];
+function sql.zero_or_one{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:any_1];
 	(e,g) := group.new(gp);
 	m := aggr.max(e);
 	c0 := calc.isnil(m);
@@ -593,12 +597,12 @@ function sql.zero_or_one( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:o
 	ms := calc.str(m); 
 	msg := str.+("zero_or_one: cardinality violation (", ms);
 	msg := str.+(msg, ">1)");
-	assert(c1, msg);
+	sql.assert(c1, msg);
 	return b;
 end sql.zero_or_one;
 
 
-function mmath.rand( v:int ) :int;
+function mmath.rand{inline}( v:int ) :int;
 	x := mmath.rand();
 	return x;
 end mmath.rand;
@@ -712,8 +716,8 @@ sql5_export str mvc_result_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 sql5_export str mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, int *d, str *name);
-sql5_export str mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, int *d, int *nr);
+sql5_export str mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci );
+sql5_export str mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci );
 
 sql5_export str mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1792,9 +1796,10 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 /* str mvc_affected_rows_wrap(int *r, lng *nr, str *w); */
 str
-mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, int *d, str *name)
+mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 {
 	mvc *m = NULL;
+	str *name = (str *) getArgReference(stk, pci, 1);
 	str msg = getContext(cntxt, mb, &m, NULL);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
@@ -1804,15 +1809,14 @@ mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, int *d, str *name)
 	s = mvc_bind_schema(m, dt_schema);
 	t = mvc_bind_table(m, s, *name);
 	(void)mvc_drop_table(m, s, t, 0);
-	(void)d;
 	return MAL_SUCCEED;
 }
 
 str
-mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, int *d, int *nr)
+mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 {
-	int i = *nr;
 	mvc *m = NULL;
+	int i = *(int *) getArgReference(stk, pci, 1);
 	str msg = getContext(cntxt, mb, &m, NULL);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
@@ -1825,7 +1829,6 @@ mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, int *d, int *nr)
 		(void)mvc_drop_table(m, s, t, 0);
 		i--;
 	}
-	(void)d;
 	return MAL_SUCCEED;
 }
 

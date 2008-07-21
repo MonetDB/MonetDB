@@ -173,7 +173,7 @@ dump_header(MalBlkPtr mb, stmt *s, list *l)
 	}
 }
 
-int
+static int
 dump_table(MalBlkPtr mb, sql_table *t)
 {
 	int nr;
@@ -209,7 +209,6 @@ drop_table(MalBlkPtr mb, str n)
 	k = pushStr(mb, k, n);
 	return nr;
 }
-
 
 @-
 The dump_cols produces a sequence of instructions for
@@ -448,6 +447,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt1(mb, sqlRef, "eval");
 			s->nr = getDestVar(q);
 			q = pushArgument(mb, q, o1);
+			q = pushBit(mb, q, FALSE);
 		} break;
 		case st_var:{
 			if (s->op1.sval) {
