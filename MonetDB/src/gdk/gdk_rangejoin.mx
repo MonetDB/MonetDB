@@ -66,43 +66,40 @@ BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi)
 	if (bn == NULL) 
 		return bn;
 	switch (ATOMstorage(rl->ttype)) {
-/* #ifndef NOEXPAND_CHR */
+#ifndef NOEXPAND_CHR
 	case TYPE_chr:
-		@:rangejoin(chr)@
-/* #endif */
-/* #ifndef NOEXPAND_BTE */
+		@:rangejoin(chr,)@
+#endif
+#ifndef NOEXPAND_BTE
 	case TYPE_bte:
-		@:rangejoin(bte)@
-/* #endif */
-/* #ifndef NOEXPAND_SHT */
+		@:rangejoin(bte,)@
+#endif
+#ifndef NOEXPAND_SHT
 	case TYPE_sht:
-		@:rangejoin(sht)@
-/* #endif */
-/* #ifndef NOEXPAND_INT */
+		@:rangejoin(sht,)@
+#endif
+#ifndef NOEXPAND_INT
 	case TYPE_int:
-		@:rangejoin(int)@
-/* #endif */
-/* #ifndef NOEXPAND_WRD */
+		@:rangejoin(int,)@
+#endif
+#ifndef NOEXPAND_WRD
 	case TYPE_wrd:
-		@:rangejoin(wrd)@
-/* #endif */
-/* #ifndef NOEXPAND_FLT */
+		@:rangejoin(wrd,)@
+#endif
+#ifndef NOEXPAND_FLT
 	case TYPE_flt:
-		@:rangejoin(flt)@
-/* #endif */
-/* #ifndef NOEXPAND_DBL */
+		@:rangejoin(flt,)@
+#endif
+#ifndef NOEXPAND_DBL
 	case TYPE_dbl:
-		@:rangejoin(dbl)@
-/* #endif */
-/* #ifndef NOEXPAND_LNG */
+		@:rangejoin(dbl,)@
+#endif
+#ifndef NOEXPAND_LNG
 	case TYPE_lng:
-		@:rangejoin(lng)@
-/* #endif */
+		@:rangejoin(lng,)@
+#endif
 	default:
-		(void) li;
-		(void) hi;
-		GDKerror("BATrangejoin: type not implemented\n");
-		return NULL;
+		@:rangejoin(any,any)@
 	}
 	/* set sorted flags by hand, because we used BUNfastins() */
 	bn->hsorted = BAThordered(l);
@@ -115,13 +112,13 @@ BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi)
 
 @= rangejoin
 if (li && hi)
-	@:rangejoin_(@1,>=,<=)
+	@:rangejoin_@2(@1,>=,<=)
 else if (li && !hi)
-	@:rangejoin_(@1,>=,<)
+	@:rangejoin_@2(@1,>=,<)
 else if (!li && hi)
-	@:rangejoin_(@1,>,<=)
+	@:rangejoin_@2(@1,>,<=)
 else
-	@:rangejoin_(@1,>,<)
+	@:rangejoin_@2(@1,>,<)
 break;
 @
 @= rangejoin_
@@ -137,6 +134,32 @@ break;
 		BATloop(rl, v, w) {
 			if ((x1 @2 *(@1 *) BUNtloc(rli, v))  &&
 			    (x1 @3 *(@1 *) BUNtloc(rhi, v))) { 
+				if (BUNfastins(bn, BUNhead(li, p), BUNhead(rli, v)) == NULL) {
+					BBPreclaim(bn);
+					return NULL;
+				}
+			}
+		}
+	}
+}
+@= rangejoin_any
+{
+	BATiter li = bat_iterator(l);
+	BATiter rli = bat_iterator(rl);
+	BATiter rhi = bat_iterator(rh);
+	BUN p, q;
+	BUN v, w;
+	int (*cmp)(void*,void*) = BATatoms[l->ttype].atomCmp;
+
+	if (!ATOMlinear(l->ttype)) {
+		GDKerror("range join not possible on non-linear types\n");
+		return NULL;
+	}
+	BATloop(l, p, q) {
+		ptr x1 = (ptr)BUNtail(li, p);
+		BATloop(rl, v, w) {
+			if (cmp(x1, (ptr)BUNtail(rli, v)) @2 0  &&
+			    cmp(x1, (ptr)BUNtail(rhi, v)) @3 0) { 
 				if (BUNfastins(bn, BUNhead(li, p), BUNhead(rli, v)) == NULL) {
 					BBPreclaim(bn);
 					return NULL;
