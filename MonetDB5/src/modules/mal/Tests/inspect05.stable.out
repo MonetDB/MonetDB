@@ -946,7 +946,7 @@ end main;                               # 11
 [ "getType",				  "pattern",	  "inspect",	  "(v:any_1):str ",													  "INSPECTtypeName;"			  ]
 [ "getType",				  "pattern",	  "inspect",	  "(v:bat[:any_1,:any_2]) (ht:str,tt:str) ",										  "INSPECTtypeName;"			  ]
 [ "getSize",				  "command",	  "inspect",	  "(mod:str,fcn:str):lng ",												  "INSPECTgetFunctionSize;"		  ]
-[ "getSize",				  "command",	  "inspect",	  "(mod:str):bat[:str,:lng] ",												  "INSPECTgetModuleSize;"		  ]
+[ "getSize",				  "pattern",	  "inspect",	  "(mod:str):bat[:str,:lng] ",															  "INSPECTgetModuleSize;"				  ]
 [ "getSize",				  "pattern",	  "inspect",	  "():lng ",														  "INSPECTgetSize;"			  ]
 [ "getAddresses",			  "pattern",	  "inspect",	  "():bat[:oid,:str] ",													  "INSPECTgetAllAddresses;"		  ]
 [ "getSignatures",			  "pattern",	  "inspect",	  "():bat[:oid,:str] ",													  "INSPECTgetAllSignatures;"		  ]

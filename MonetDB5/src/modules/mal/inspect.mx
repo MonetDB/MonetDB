@@ -136,30 +136,30 @@ comment "Collect the environment variables.";
 
 inspect_export str INSPECTgetFunction(int *ret);
 inspect_export str INSPECTgetModule(int *ret);
-inspect_export str INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetkind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllSignatures(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllModules(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllFunctions(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllAddresses(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 inspect_export str INSPECTgetDefinition(int *ret, str *nme, str *fcn);
 inspect_export str INSPECTgetSignature(int *ret, str *mod, str *fcn);
 inspect_export str INSPECTgetAddress(int *ret, str *mod, str *fcn);
 inspect_export str INSPECTgetComment(int *ret, str *mod, str *fcn);
 inspect_export str INSPECTgetSource(str *ret, str *mod, str *fcn);
-inspect_export str INSPECTgetModuleSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+inspect_export str INSPECTgetModuleSize(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn);
-inspect_export str INSPECTgetSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+inspect_export str INSPECTgetSize(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTgetEnvironment(int *ret);
 inspect_export str INSPECTsymbolType(int *ret, str *mod, str *fcn);
 inspect_export str INSPECTatom_names(int *ret);
 inspect_export str INSPECTatom_sup_names(int *ret);
 inspect_export str INSPECTatom_sizes(int *ret);
-inspect_export str INSPECTshowFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-inspect_export str INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+inspect_export str INSPECTshowFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+inspect_export str INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTtypename(str *ret, int *tpe);
-inspect_export str INSPECTtype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTtypeIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTtypeName(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTtypeIndex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @+ Symbol table 
 Mal symbol table and environment analysis.
@@ -170,7 +170,7 @@ which makes it susceptable for intermediate updates
 @c
 
 str
-INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTgetAllFunctions(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
 	Symbol t;
@@ -178,6 +178,7 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 	int *ret = (int *) getArgReference(stk,pci,0);
+	Client cntxt = MCgetClient();
 
 	(void) mb;
 	if (b == 0)
@@ -203,7 +204,7 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTgetAllModules(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
 	Symbol t;
@@ -211,6 +212,7 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 	int *ret = (int *) getArgReference(stk,pci,0);
+	Client cntxt= MCgetClient();
 
 	(void) mb;
 	if (b == 0)
@@ -236,7 +238,7 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTgetkind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
 	Symbol t;
@@ -244,6 +246,7 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 	int *ret = (int *) getArgReference(stk,pci,0);
+	Client cntxt= MCgetClient();
 
 	(void)mb;
 	if (b == 0)
@@ -271,7 +274,7 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str
-INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTgetAllSignatures(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
 	Symbol t;
@@ -280,6 +283,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 	char sig[BLOCK],*a;
 	int *ret = (int *) getArgReference(stk,pci,0);
+	Client cntxt= MCgetClient();
 
 	(void)mb;
 
@@ -306,7 +310,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 str
-INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTgetAllAddresses(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Module s;
 	Symbol t;
@@ -315,6 +319,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 	char sig[BLOCK],*a;
 	int *ret = (int *) getArgReference(stk,pci,0);
+	Client cntxt= MCgetClient();
 
 	(void)mb;
 
@@ -645,17 +650,16 @@ INSPECTcalcSize(MalBlkPtr mb){
 }
 
 str
-INSPECTgetSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+INSPECTgetSize(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng *ret = (lng*) getArgReference(stk,p,0);
 
 
 	*ret= INSPECTcalcSize(mb);
-	(void) cntxt;
 	(void) mb;
 	return MAL_SUCCEED;
 }
 str
-INSPECTgetModuleSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTgetModuleSize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Symbol s;
 	Module m;
@@ -664,6 +668,7 @@ INSPECTgetModuleSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = BATnew(TYPE_str, TYPE_lng, 256);
 	int *ret= (int*) getArgReference(stk,pci,0);
 	str *mod= (str*) getArgReference(stk,pci,1);
+	Client cntxt= MCgetClient();
 
 	(void) mb;
 	if (b == 0)
@@ -705,8 +710,9 @@ INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn)
 @+ Display routines
 @c
 str
-INSPECTshowFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+INSPECTshowFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	Client cntxt= MCgetClient();
 	(void) p;
 	(void) stk;
 	printFunction(cntxt->fdout, mb, LIST_INPUT);
@@ -714,8 +720,9 @@ INSPECTshowFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	Client cntxt = MCgetClient();
 	str modnme = getArgName(mb, p, 1);
 	str fcnnme = getArgName(mb, p, 2);
 	Symbol s = NULL;
@@ -739,24 +746,22 @@ INSPECTtypename(str *ret, int *tpe)
 	return MAL_SUCCEED;
 }
 str
-INSPECTtypeIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTtypeIndex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret;
 
-	(void) cntxt;
 	ret = (int *) getArgReference(stk, pci, 0);
 	*ret = getTailType(getArgType(mb, pci, 1));
 	return MAL_SUCCEED;
 }
 
 str
-INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTtypeName(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *hn, *tn =0;
 
 	hn = (str *) getArgReference(stk, pci, 0);
 
-	(void) cntxt;
 	if( pci->retc== 2){
 		tn = (str *) getArgReference(stk, pci, 1);
 		*hn = getTypeName(getHeadType(getArgType(mb, pci, 2)));
