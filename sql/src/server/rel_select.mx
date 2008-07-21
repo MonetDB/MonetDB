@@ -4273,11 +4273,11 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 }
 
 static sql_rel *
-view_rename_columns( char *name, sql_rel *sq, dlist *column_spec)
+view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 {
 	dnode *n = column_spec->h;
 	node *m = sq->exps->h;
-	list *l = create_stmt_list();
+	list *l = new_exp_list();
 
 	for (; n && m; n = n->next, m = m->next) {
 		char *cname = n->data.sval;
@@ -4289,7 +4289,7 @@ view_rename_columns( char *name, sql_rel *sq, dlist *column_spec)
 	}
 	if (n || m) {
 		list_destroy(l);
-		return NULL;
+		return sql_error(sql, 02, "Column lists do not match");
 	}
 	(void)name;
 	return rel_project(sq, l);
@@ -4347,7 +4347,7 @@ rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, i
 		}
 
 		if (!persistent && column_spec) 
-			sq = view_rename_columns( name, sq, column_spec);
+			sq = view_rename_columns( sql, name, sq, column_spec);
 
 		if (!instantiate && sq && persistent) {
 			stmt *sqs = rel_bin(sql, sq);

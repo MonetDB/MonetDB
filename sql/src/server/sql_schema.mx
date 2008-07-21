@@ -702,7 +702,7 @@ as_subquery( mvc *sql, sql_table *t, stmt *sq, dlist *column_spec )
 }
 
 static stmt *
-view_rename_columns( char *name, stmt *sq, dlist *column_spec)
+view_rename_columns( mvc *sql, char *name, stmt *sq, dlist *column_spec)
 {
 	dnode *n = column_spec->h;
 	node *m = sq->op1.lval->h;
@@ -718,7 +718,7 @@ view_rename_columns( char *name, stmt *sq, dlist *column_spec)
 	stmt_destroy(sq);
 	if (n || m) {
 		list_destroy(l);
-		return NULL;
+		return sql_error(sql, 02, "Column lists do not match");
 	}
 	return stmt_list(l);
 }
@@ -767,7 +767,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 			as_subquery( sql, t, sq, column_spec );
 		}
 		if (!persistent && column_spec) 
-			sq = view_rename_columns( name, sq, column_spec);
+			sq = view_rename_columns( sql, name, sq, column_spec);
 		if (!instantiate && sq) {
 			list *view_id_l = stmt_list_dependencies(sq, VIEW_DEPENDENCY);
 			list *id_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
