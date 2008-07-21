@@ -755,22 +755,25 @@ The number of instructions allowed is severely
 limited.
 We don't allow sequential flow control here.
 @c
-	switch (pci->token){
-	case ASSIGNsymbol: @:assignStmt(SLOW,fs->pc = -1; return ret)@ break;
-	case PATcall: @:patterncall(SLOW,fs->pc = -1; return ret)@ break;
-	case CMDcall: @:commandcall(SLOW,fs->pc = -1; return ret)@ break;
-	case FACcall: @:factorycall(SLOW,fs->pc = -1; return ret)@ break;
-	case FCNcall: @:functioncall(SLOW,fs->pc = -1; return ret)@ break;
-	case NOOPsymbol:
-	case REMsymbol:
-		break;
-	default:
-		if( pci->token < 0 ){
-			/* temporary NOOP instruction */
+	@:MALrecycleStart@ {
+		switch (pci->token){
+		case ASSIGNsymbol: @:assignStmt(SLOW,fs->pc = -1; return ret)@ break;
+		case PATcall: @:patterncall(SLOW,fs->pc = -1; return ret)@ break;
+		case CMDcall: @:commandcall(SLOW,fs->pc = -1; return ret)@ break;
+		case FACcall: @:factorycall(SLOW,fs->pc = -1; return ret)@ break;
+		case FCNcall: @:functioncall(SLOW,fs->pc = -1; return ret)@ break;
+		case NOOPsymbol:
+		case REMsymbol:
 			break;
+		default:
+			if( pci->token < 0 ){
+				/* temporary NOOP instruction */
+				break;
+			}
+			ret = createScriptException(mb, stkpc, MAL,
+					NULL, "unkown operation");
 		}
-		ret = createScriptException(mb, stkpc, MAL,
-				NULL, "unkown operation");
+		@:MALrecycleExit@
 	}
 	/* update the list of eligable instructions */
 	@:endProfile@
