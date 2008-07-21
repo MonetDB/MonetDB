@@ -191,7 +191,7 @@ monet_sig_pack(monet_sig_t *s, int argc, ValPtr argv)
 		}
 	}
 	/* setting up monetsig_nbits(s) */
-	s->words[0] = (s->words[0] & 0xFFFF) | (bitoffset + ((wordptr - (s->words + 1)) << 5)) << 16;
+	s->words[0] = (s->words[0] & 0xFFFF) | (int) (bitoffset + ((wordptr - (s->words + 1)) << 5)) << 16;
 	return 0;
 }
 
