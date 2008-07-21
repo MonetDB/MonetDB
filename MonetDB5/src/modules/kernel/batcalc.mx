@@ -936,7 +936,11 @@ str CMDunaryAccum@1(int *ret,int *did, int *bid)
 	@:getBATdescriptor(bid,b,"batcalc.@1")@
 
 	switch(BATttype(bn)){
-	case TYPE_oid: @:accumUnary(oid,@2)@ break;
+	case TYPE_oid: if (  strcmp("@2","+")== 0){
+				@:accumUnary(oid,@2)@ 
+			} else
+				throw(MAL, "batcalc.@1", "unexpected operator");
+			break;
 	case TYPE_bte: @:accumUnary(bte,@2)@ break;
 	case TYPE_sht: @:accumUnary(sht,@2)@ break;
 	case TYPE_int: @:accumUnary(int,@2)@ break;
