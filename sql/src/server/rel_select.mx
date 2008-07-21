@@ -4245,6 +4245,30 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 	}
 }
 
+static sql_rel *
+view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
+{
+	dnode *n = column_spec->h;
+	node *m = sq->exps->h;
+	list *l = new_exp_list();
+
+	for (; n && m; n = n->next, m = m->next) {
+		char *cname = n->data.sval;
+		sql_exp *e = m->data;
+
+		sql_exp *n = exp_column(e->rname, e->name, exp_subtype(e), sq->card);
+		exp_setname(n, NULL, cname);
+		list_append(l, n);
+	}
+	if (n || m) {
+		list_destroy(l);
+		return sql_error(sql, 02, "Column lists do not match");
+	}
+	(void)name;
+	return rel_project(sq, l);
+}
+
+
 sql_rel *
 rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, int persistent)
 {
@@ -4294,10 +4318,10 @@ rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, i
 			t = mvc_create_view(sql, s, name, q, 0);
 			as_subquery( sql, t, sq, column_spec );
 		}
-/* todo 
+
 		if (!persistent && column_spec) 
-			sq = view_rename_columns( name, sq, column_spec);
-*/
+			sq = view_rename_columns( sql, name, sq, column_spec);
+
 		if (!instantiate && sq && persistent) {
 			stmt *sqs = rel_bin(sql, sq);
 			list *view_id_l = stmt_list_dependencies(sqs, VIEW_DEPENDENCY);
