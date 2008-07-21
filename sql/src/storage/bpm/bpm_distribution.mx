@@ -90,11 +90,11 @@ bpm_host_add(int id, char *host, int port, char *dbname, char *user, char *passw
 	bpmHost bpmH = NULL;
 	bpmH = ZNEW(bpmHostRec);
 	bpmH->id = id;
-	bpmH->host = host;
+	bpmH->host = strdup(host);
 	bpmH->port = port;
-	bpmH->dbname = dbname;
-	bpmH->user = user;
-	bpmH->passwd = password;
+	bpmH->dbname = strdup(dbname);
+	bpmH->user = strdup(user);
+	bpmH->passwd = strdup(password);
 	bpmH->next = hostAnchor;
 	hostAnchor = bpmH;
 
