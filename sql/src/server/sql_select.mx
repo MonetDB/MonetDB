@@ -3864,6 +3864,19 @@ sets2table( mvc *sql, scope *scp , stmt *s )
 	return stmt_sets(nl);
 }
 
+static stmt *
+find_aggr( list *l)
+{
+	node *n;
+
+	for(n=l->h; n; n = n->next) {
+		stmt *s = n->data;
+		
+		if (s->aggr)
+			return stmt_dup(s);
+	} 
+	return NULL;
+}
 
 static stmt *
 sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
@@ -4054,6 +4067,16 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 						first_subset(subset);
 
 					cs = stmt_const(ss, stmt_dup(cs));
+					list_append(rl, cs);
+
+					/* and select '', count(*) from x */
+				} else if (!cs->aggr && aggr) {
+					stmt *ss = find_aggr(sl);
+
+					if (ss && ss->nrcols)
+						cs = stmt_const(ss, stmt_dup(cs));
+					else
+						cs = stmt_dup(cs);
 					list_append(rl, cs);
 				} else {
 					cs = stmt_dup(cs);
