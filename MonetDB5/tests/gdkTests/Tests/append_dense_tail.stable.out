@@ -80,10 +80,10 @@ end main;	# 24
 # h		t	  # name
 # str		str	  # type
 #-------------------------#
-[ "hdense",	  "1"	  ]
 [ "hseqbase",	  "0@0"	  ]
-[ "tdense",	  "0"	  ]
+[ "hdense",	  "1"	  ]
 [ "tseqbase",	  "0@0"	  ]
+[ "tdense",	  "0"	  ]
 
 # 09:01:01 >  
 # 09:01:01 >  Done.
