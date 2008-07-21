@@ -207,11 +207,8 @@ str
 SQLinit(Client c)
 {
 	char *debug_str = GDKgetenv("sql_debug");
-/*
-	char *readonly_str = GDKgetenv("gdk_read_only");
-	char *single_str = GDKgetenv("gdk_single_user");
-	int readonly= 0, single=0;
-*/
+	int readonly  = GDKgetenv_isyes("gdk_readonly");
+	int single_user = GDKgetenv_isyes("gdk_single_user");
 	char *gmt = "GMT";
 	tzone tz;
 
@@ -221,10 +218,6 @@ SQLinit(Client c)
 #endif
 	if (SQLinitialized)
 		return MAL_SUCCEED;
-/*
-	readonly= readonly_str && strcmp(readonly_str,"yes")==0;
-	single= single_str && strcmp(single_str,"yes")==0;
-*/
 
 	memset((char*)&be_funcs, 0, sizeof(backend_functions));
 	be_funcs.fstack		= &monet5_freestack;
@@ -235,6 +228,10 @@ SQLinit(Client c)
 	(void) tz;
 	if (debug_str) 
 		SQLdebug = strtol(debug_str,NULL,10);
+	if (single_user)
+		SQLdebug |= 64;
+	if (readonly)
+		SQLdebug |= 32;
 	if (((SQLdebug&16)==16 && mvc_init(FALSE, store_bpm, 0) < 0) ||
 	    ((SQLdebug&96)==96 && mvc_init(FALSE, store_suro, 0) < 0) ||
 	    ((SQLdebug&96)==64 && mvc_init(FALSE, store_su, 0) < 0) ||
