@@ -1503,7 +1503,11 @@ def RunTest(env, TST, BusyPorts, COND) :
         if i > 0:
             return RunTest(env, TST[:i], BusyPorts, COND)
         EXT = CALL = SERVER = ""
-        if os.name == "nt":
+        if   COND and not CONDITIONALS.has_key(COND):
+            elem = SkipTest(env, TST, EXT, "as conditional '%s' is unknown." % COND)
+        elif COND and not CONDITIONALS[COND]:
+            elem = SkipTest(env, TST, EXT, "as conditional '%s' does not hold." % COND)
+        elif os.name == "nt":
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|milS|milC|sql|xq|x100)`")
             #TODO:
             #elif os.name == "posix":
