@@ -163,7 +163,7 @@ static INLINE str RMTfindconn(connection *ret, str conn) {
 		}
 	}
 
-	throw(MAL, "remote.<findconn>", "no such connection with name '%s'", *conn);
+	throw(MAL, "remote.<findconn>", "no such connection with name '%s'", conn);
 }
 
 /**
