@@ -796,7 +796,7 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column(f->exps, e->r);
 		assert(ne);
 		e = NULL;
-		if (ne->name && ne->r && strcmp(ne->r, ne->name) == 0){ 
+		if (ne->name && ne->r){ 
 			if (ne->l) {
 				e = rel_bind_column2(sql, t, ne->l, ne->r);
 				if (!e && t->name && strcmp(ne->l, t->name) == 0) 
