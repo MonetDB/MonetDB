@@ -90,11 +90,11 @@ bpm_host_add(int id, char *host, int port, char *dbname, char *user, char *passw
 	bpmHost bpmH = NULL;
 	bpmH = ZNEW(bpmHostRec);
 	bpmH->id = id;
-	bpmH->host = strdup(host);
+	bpmH->host = _strdup(host);
 	bpmH->port = port;
-	bpmH->dbname = strdup(dbname);
-	bpmH->user = strdup(user);
-	bpmH->passwd = strdup(password);
+	bpmH->dbname = _strdup(dbname);
+	bpmH->user = _strdup(user);
+	bpmH->passwd = _strdup(password);
 	bpmH->next = hostAnchor;
 	hostAnchor = bpmH;
 
@@ -126,7 +126,11 @@ bpm_host_destroy(bpmHost bpmH)
 		}
 		previous = n;
 	}
-			
+
+	_DELETE(n->host);
+	_DELETE(n->dbname);
+	_DELETE(n->user);
+	_DELETE(n->passwd);
 	_DELETE(n);
 }
 
