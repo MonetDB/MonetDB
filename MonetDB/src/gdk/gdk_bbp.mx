@@ -672,14 +672,14 @@ BBPinit(void)
 			bs->@1.nosorted = (size_t) nosorted;
 			bs->@1.seq = base < 0 ? oid_nil : (oid) base;
 			bs->@1.align = (oid) align;
-			bs->@1.heap.maxsize = size;
-			bs->@1.heap.free = free;
-			bs->@1.heap.size = size;
+			bs->@1.heap.maxsize = (size_t) size;
+			bs->@1.heap.free = (size_t) free;
+			bs->@1.heap.size = (size_t) size;
 			bs->@1.heap.base = NULL;
 			bs->@1.heap.filename = NULL;
-			bs->@1.heap.storage = storage;
+			bs->@1.heap.storage = (char) storage;
 			bs->@1.heap.copied = 0;
-			bs->@1.heap.newstorage = storage;
+			bs->@1.heap.newstorage = (chr) storage;
 			bs->@1.heap.dirty = 0;
 			nread += n;
 		}
@@ -701,14 +701,14 @@ BBPinit(void)
 				   "%n",
 				   &free, &size, &storage, &n) < 3)
 				GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
-			bs->@1.vheap->maxsize = size;
-			bs->@1.vheap->free = free;
-			bs->@1.vheap->size = size;
+			bs->@1.vheap->maxsize = (size_t) size;
+			bs->@1.vheap->free = (size_t) free;
+			bs->@1.vheap->size = (size_t) size;
 			bs->@1.vheap->base = NULL;
 			bs->@1.vheap->filename = NULL;
-			bs->@1.vheap->storage = storage;
+			bs->@1.vheap->storage = (char) storage;
 			bs->@1.vheap->copied = 0;
-			bs->@1.vheap->newstorage = storage;
+			bs->@1.vheap->newstorage = (chr) storage;
 			bs->@1.vheap->dirty = 0;
 			nread += n;
 		}
