@@ -625,10 +625,10 @@ BBPinit(void)
 		bs->U.first = (BUN) first;
 		bs->U.count = (size_t) count;
 		bs->U.capacity = (size_t) capacity;
-		bs->P.map_head = map_head;
-		bs->P.map_tail = map_tail;
-		bs->P.map_hheap = map_hheap;
-		bs->P.map_theap = map_theap;
+		bs->P.map_head = (char) map_head;
+		bs->P.map_tail = (char) map_tail;
+		bs->P.map_hheap = (char) map_hheap;
+		bs->P.map_theap = (char) map_theap;
 
 @= heapinit
 		{
@@ -660,18 +660,18 @@ BBPinit(void)
 				GDKfatal("BBPinit: inconsistent entry in BBP.dir");
 			bs->@1.type = t;
 			bs->@1.width = width;
-			bs->@1.varsized = var;
+			bs->@1.varsized = var != 0;
 			bs->@1.shift = ATOMelmshift(width);
-			bs->@1.nokey[0] = nokey0;
-			bs->@1.nokey[1] = nokey1;
+			bs->@1.nokey[0] = (size_t) nokey0;
+			bs->@1.nokey[1] = (size_t) nokey1;
 			bs->@1.sorted = (bit) (properties & 0x00FF);
 			bs->@1.key = (properties & 0x0100) != 0;
 			bs->@1.dense = (properties & 0x0200) != 0;
 			bs->@1.nonil = (properties & 0x0400) != 0;
 			bs->@1.nil = (properties & 0x0800) != 0;
-			bs->@1.nosorted = nosorted;
+			bs->@1.nosorted = (size_t) nosorted;
 			bs->@1.seq = base < 0 ? oid_nil : (oid) base;
-			bs->@1.align = align;
+			bs->@1.align = (oid) align;
 			bs->@1.heap.maxsize = size;
 			bs->@1.heap.free = free;
 			bs->@1.heap.size = size;
