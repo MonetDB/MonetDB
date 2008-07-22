@@ -12,7 +12,7 @@ stderr of test 'cardinality_violation.SF-1240701` in directory 'src/test/BugTrac
 
 MAPI  = monetdb@rig:31006
 QUERY = select * from env() as env where name = ( select 'prefix' from env() as env );
-ERROR = !SQLException:zero_or_one:cardinality violation (46>1)
+ERROR = !SQLException:zero_or_one:cardinality violation (47>1)
 MAPI  = monetdb@rig:31006
 QUERY = select * from columns where name = (select columns.name from _tables, columns where _tables.id = columns.table_id);
 ERROR = !SQLException:zero_or_one:cardinality violation (171>1)

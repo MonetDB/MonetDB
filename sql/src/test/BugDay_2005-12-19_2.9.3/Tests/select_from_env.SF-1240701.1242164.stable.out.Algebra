@@ -54,6 +54,7 @@ Over..
 [ "standoff_start"	]
 [ "standoff_end"	]
 [ "config"	]
+[ "gdk_nr_threads"	]
 [ "mapi_open"	]
 [ "xrpc_open"	]
 [ "xrpc_port"	]
