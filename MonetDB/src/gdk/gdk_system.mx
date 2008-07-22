@@ -521,7 +521,7 @@ MT_alive(int pid)
 }
 
 #define SMP_TOLERANCE 0.40
-#define SMP_ROUNDS 1024*1024*16
+#define SMP_ROUNDS 1024*1024*128
 
 static void 
 smp_thread(void *data)
