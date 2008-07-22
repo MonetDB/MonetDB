@@ -420,7 +420,7 @@ CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *id=  (int *) getArgReference(stk,pci,1);
 	(void) cntxt;
 	(void) mb;
-    return MCsuspendClient(*id,-1);
+    return MCsuspendClient(*id,0);
 }
 str
 CLTwakeup(int *ret, int *id)
