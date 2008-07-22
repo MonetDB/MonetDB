@@ -810,7 +810,7 @@ DFLOWcreate(void)
 
 	work = q_create(256);
 
-	nway = GDKcores;
+	nway = GDKnr_threads;
 	worker = (FlowTask *) GDKzalloc(sizeof(FlowTask)*nway);
 	for(i=0; i<nway; i++) {
 		worker[i].id = i;

@@ -165,7 +165,7 @@ monet_hello(opt *set, int setlen)
 		printf("# MonetDB server v" VERSION ", based on kernel v%s\n",
 				GDKversion());
 		printf("# Serving database '%s'\n", GDKgetenv("gdk_dbname"));
-		printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked running on %d core%c\n", HOST, (size_t) (sizeof(ptr) * 8), (size_t) (sizeof(oid) * 8), linkinfo, GDKcores, (GDKcores>1)?'s':' ');
+		printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked using %d thread%c\n", HOST, (size_t) (sizeof(ptr) * 8), (size_t) (sizeof(oid) * 8), linkinfo, GDKnr_threads, (GDKnr_threads>1)?'s':' ');
 #ifdef MONET_GLOBAL_DEBUG
 		printf("# Configuration:%s\n", GDKgetenv("config"));
 		printf("# Database farm:%s\n", GDKgetenv("gdk_dbfarm"));
