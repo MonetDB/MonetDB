@@ -44,6 +44,7 @@ a.sort().project(1).print();
 [ "gdk_mem_bigsize",	  1		  ]
 [ "gdk_mem_maxsize ",	  1		  ]
 [ "gdk_mem_pagebits",	  1		  ]
+[ "gdk_nr_threads",	  1		  ]
 [ "gdk_version",	  1		  ]
 [ "gdk_vmtrim",		  1		  ]
 [ "host",		  1		  ]
