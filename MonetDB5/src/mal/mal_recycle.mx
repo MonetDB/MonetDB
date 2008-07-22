@@ -244,10 +244,13 @@ static void RECYCLEspace()
 
 void RECYCLEversion(Client cntxt, MalBlkPtr mb)
 {
+	static int recycleLockInitialized = 0;
 	int i;
 
-	if (mb->version == 0)
+	if (!recycleLockInitialized) {
 		MT_init_lock(recycleLock,"recycleLock");
+		recycleLockInitialized = 1;
+	}
 	if ( mb->version && mb->version != recycleVersion) { 
 		mal_set_lock(recycleLock,"recycle");
 		/* all re-used instructions are dropped */
@@ -257,8 +260,8 @@ void RECYCLEversion(Client cntxt, MalBlkPtr mb)
 	(void) cntxt;
 #endif
 		for(i=1; i<mb->stop; i++)
-		if (getInstrPtr(mb,i)->recycle)
-			getInstrPtr(mb,i)->recycle = -1;
+			if (getInstrPtr(mb,i)->recycle)
+				getInstrPtr(mb,i)->recycle = -1;
 		mal_unset_lock(recycleLock,"recycle");
 	}	
 	mb->version = recycleVersion;
