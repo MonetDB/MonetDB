@@ -1874,18 +1874,6 @@ fetch(ptr ret, BAT *b, lng i)
 }
 
 int
-CMDfetch(ptr ret, BAT *b, lng *pos)
-{
-	return fetch(ret, b, (size_t) *pos);
-}
-
-int
-CMDfetch_wrd(ptr ret, BAT *b, wrd *pos)
-{
-	return fetch(ret, b, (size_t) *pos);
-}
-
-int
 CMDfetch_int(ptr ret, BAT *b, int *pos)
 {
 	return fetch(ret, b, (size_t) *pos);
