@@ -431,7 +431,7 @@ RECYCLEcache(int target, int wr)
 
 @c
 
-int chooseVictims(lng *lvs, int ltop, int wr)
+int chooseVictims(lng *lvs, int ltop, lng wr)
 {
 	dbl *wcrd, maxwc, tmp;
 	int l, newtop, mpos;
@@ -680,7 +680,7 @@ RECYCLEinterest(MalBlkPtr mb, InstrPtr p){
 }
 
 static void 
-RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, int rd, int wr)
+RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr)
 {
 	int i, j, c;
 	ValRecord *v;

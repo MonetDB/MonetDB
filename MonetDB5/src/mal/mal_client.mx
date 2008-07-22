@@ -645,7 +645,8 @@ void freeClient(Client c)
 		c->errbuf=0;
 	}
 	c->father = 0;
-	c->login = c->delay = c->lastcmd = 0;
+	c->login = c->lastcmd = 0;
+	c->delay =  0;
 @-
 The threads may not be removed, but should become dormant
 @c
