@@ -2630,6 +2630,7 @@ THISFILE = os.path.basename(sys.argv[0])
 THISPATH = os.path.realpath(os.path.dirname(sys.argv[0]))
 dftIGNORE = '^#'
 TSTDBG = str(2+8)
+TSTTHREADS = "0"
 dftTSTPREF = "mTests"
 TSTSUFF = "Tests"
 
@@ -2857,6 +2858,7 @@ def main(argv) :
     dft['TSTTRGBASE']     = "GetMonetConfig(par['PACKAGE'],'--prefix')"   # or os.getcwd() ?
     if THISFILE == "Mtest.py":
         dft['GDK_DEBUG']      = "TSTDBG"
+        dft['GDK_NR_THREADS'] = "TSTTHREADS"
         dft['MONETDB_MOD_PATH'] = "''"   #"os.path.join(env['MONETDB_PREFIX'],'lib')+os.pathsep+os.path.join(env['MONETDB_PREFIX'],'lib','MonetDB')"
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
@@ -2924,10 +2926,13 @@ def main(argv) :
              "timeout: kill (hanging) tests after <sec> seconds;\n"
              "-t0 means no timeout (default: -t60)"),
             ('debug', 'd', 'debug', '<num>',
-             ("debug value to be used by Mserver (default: -d%s)\n"
-              "(see `Mserver --help' for details)") % TSTDBG),
+             ("debug value to be used by Mserver/mserver5 (default: -d%s)\n"
+              "(see `Mserver --help' / `mserver5 --help' for details)") % TSTDBG),
+            ('nr_threads', 'n', 'nr_threads', '<num>',
+             ("number of threads for mserver5 (default: -n%s)\n"
+              "-n0 => mserver5 automatically determines the number of CPU cores") % TSTTHREADS),
             ('monet_mod_path', None, 'monet_mod_path', '<pathlist>',
-             "override Mserver's default module search path"),
+             "override Mserver's/mserver5's default module search path"),
             ('dbfarm', None, 'gdk_dbfarm', '<directory>',
              "override default location of database directory"),
             ('sql_logdir', None, 'sql_logdir', '<directory>',
@@ -3059,6 +3064,9 @@ def main(argv) :
         a = opts.get('debug')
         if a is not None:
             env['GDK_DEBUG'] = str(int(a))
+        a = opts.get('nr_threads')
+        if a is not None:
+            env['GDK_NR_THREADS'] = str(int(a))
         a = opts.get('monet_mod_path')
         if a is not None:
             env['MONETDB_MOD_PATH'] = a
@@ -3143,6 +3151,8 @@ def main(argv) :
     if CONDITIONALS['NOT_ALGEBRA']:
         env['TST_NOALGEBRA'] = "NoAlgebra"
         os.environ['TST_NOALGEBRA'] = "NoAlgebra"
+    if par['M4']:
+        env['GDK_NR_THREADS'] = "1"
 
     #if env.has_key('MONETDB_PREFIX'):
         #bp = os.path.join(env['MONETDB_PREFIX'],"bin")
@@ -3160,7 +3170,7 @@ def main(argv) :
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE == "Mtest.py":
-        vars_ = vars + ['MAPIPORT', 'XRPCPORT', 'GDK_DEBUG', 'MONETDB_MOD_PATH']
+        vars_ = vars + ['MAPIPORT', 'XRPCPORT', 'GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars
     for v in vars_:
@@ -3348,11 +3358,11 @@ def main(argv) :
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
         if par['M5']:
-            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 "--config=%s" --debug=%s %s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
-                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
+            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
+                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
         else:
-            exe['Mserver']       = CheckExec('Mserver')      , '%s Mserver "--config=%s" --debug=%s %s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
-                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
+            exe['Mserver']       = CheckExec('Mserver')      , '%s Mserver "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
+                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
         exe['MIL_Client']    = CheckExec(env['MILCLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb --host=%s --port=%s' % (env['MILCLIENT'], HOST, env['MAPIPORT'])
