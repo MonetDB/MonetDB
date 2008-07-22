@@ -1245,7 +1245,7 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
             ErrMsg("Checking for OIDs failed!")
         if not env['TST_MODS']:
             if par['M5']:
-                Warn("Monet5: Check, whether required modules do exist, is not possible, yet!")
+                Warn("MonetDB/5: Check, whether required modules do exist, is not possible, yet!")
                 env['TST_MODS'].append("")
             else:
                 ErrMsg("Checking for Modules failed!")
@@ -1259,7 +1259,7 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
             rtrn = 1
     else:
         rtrn = 1
-        ErrMsg("No output from Mserver when checking for Bits, OIDs & Modules!?")
+        ErrMsg("No output from Mserver/mserver5 when checking for Bits, OIDs & Modules!?")
         if qErr:
             STDERR.write(cmd + "\n\n")
             STDERR.write(qErr)
@@ -1308,7 +1308,7 @@ def CheckBATs(env, TST, TSTDB) :
         return missing
 
     if par['M5']:
-        # Warn("Monet5: Check, whether required BATs do exist, is not possible, yet!")
+        # Warn("MonetDB/5: Check, whether required BATs do exist, is not possible, yet!")
         return missing
 
     cmd = '%s --dbname=%s' % (env['exe']['Mserver'][1], TSTDB)
@@ -2033,7 +2033,7 @@ def CheckSocket3(env,SERVER,ErrFileName) :
         res = F_SOCK
         Smsg = """
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
-! %sPORT was not properly released by Mserver !
+! %sPORT was not properly released by Mserver/mserver5 !
 """ % (SERVER, host, port, Serrno, Serrstr, SERVER)
         STDERR.write(Smsg)
         STDERR.flush()
@@ -2386,7 +2386,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 pSrvr.stdin.flush()
             except IOError, (IOerrNo, IOerrStr):
                 EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
-                EpiFailed = EpiFailed+"\n! Probably, Mserver has died before or during. !\n"
+                EpiFailed = EpiFailed+"\n! Probably, Mserver/mserver5 has died before or during. !\n"
             ln="dummy"
             while 0 < len(ln) and ln[:6] not in ['Done..','Over..']:
                 ln=pSrvr.stdout.readline()
