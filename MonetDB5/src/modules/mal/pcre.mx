@@ -315,7 +315,7 @@ pcre_compile_wrap(pcre ** res, str pattern)
 str
 pcre_exec_wrap(bit *res, pcre * pattern, str s)
 {
-	if (pcre_exec(m2p(pattern), NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
+	if (pcre_exec(m2p(pattern), NULL, s, (int) strlen(s), 0, 0, NULL, 0) >= 0) {
 		*res = TRUE;
 		return MAL_SUCCEED;
 	} 
@@ -329,7 +329,7 @@ pcre_index(int *res, pcre * pattern, str s)
 	int v[2];
 
 	v[0] = v[1] = *res = 0;
-	if (pcre_exec(m2p(pattern), NULL, s, strlen(s), 0, 0, v, 2) >= 0) {
+	if (pcre_exec(m2p(pattern), NULL, s, (int) strlen(s), 0, 0, v, 2) >= 0) {
 		*res = v[1];
 	}
 	return MAL_SUCCEED;
@@ -356,7 +356,7 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 	BATloop(strs, p, q) {
 		str s = BUNtail(strsi, p);
 
-		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
+		if (pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0) >= 0) {
 			BUNins(r, BUNhead(strsi, p), s, FALSE);
 		}
 	}
@@ -387,7 +387,7 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 	BATloop(strs, p, q) {
 		str s = BUNtail(strsi, p);
 
-		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
+		if (pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0) >= 0) {
 			BUNins(r, BUNhead(strsi, p), NULL, FALSE);
 		}
 	}
@@ -409,8 +409,8 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 	int i, j, k, len, errpos = 0, offset = 0;
 	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
 	int *ovector, ovecsize;
-	int len_origin_str = strlen(origin_str);
-	int len_replacement = strlen(replacement);
+	int len_origin_str = (int) strlen(origin_str);
+	int len_replacement = (int) strlen(replacement);
 	int capture_offsets[MAX_NR_CAPTURES * 2], ncaptures = 0, len_del = 0;
 	
 	for (i = 0; i < (int)strlen(flags); i++) {
@@ -518,7 +518,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 	BAT *tmpbat;
 	BUN p, q;
 	int *ovector, ovecsize;
-	int len_origin_str, len_replacement = strlen(replacement);
+	int len_origin_str, len_replacement = (int) strlen(replacement);
 	int capture_offsets[MAX_NR_CAPTURES * 2], ncaptures = 0, len_del = 0;
 	str origin_str, replaced_str;
 
@@ -558,7 +558,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 	tmpbat = BATnew(origin_strs->htype, TYPE_str, BATcount(origin_strs));
 	BATloop(origin_strs, p, q) {
 		origin_str = BUNtail(origin_strsi, p);
-		len_origin_str = strlen(origin_str);
+		len_origin_str = (int) strlen(origin_str);
 		i = ncaptures = len_del = offset = 0;
 		do {
 			j = pcre_exec(pcre_code, extra, origin_str, len_origin_str, offset,
@@ -662,7 +662,7 @@ pcre_match_with_flags(int *ret, str val, str pat, str flags)
 	if ((re = pcre_compile(pat, options, &err_p, &errpos, NULL)) == NULL) {
 		throw(MAL, "pcre_match", "Compilation of regular expression (%s) failed at %d with '%s'", pat, errpos, err_p);
 	}
-	*ret = pcre_exec(re, NULL, val, strlen(val), 0, 0, NULL, 0);
+	*ret = pcre_exec(re, NULL, val, (int) strlen(val), 0, 0, NULL, 0);
 	return MAL_SUCCEED;
 }
 
