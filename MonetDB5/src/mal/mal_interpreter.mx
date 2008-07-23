@@ -557,7 +557,7 @@ typedef struct {
 	int start, stop;	/* guarded block under consideration*/
 	char *status;	/* statements can be blocked on other statements */
 	char *blocked;		/* blocked, should be created first */
-	char *inuse;		/* inuse reference count */
+	int *inuse;		/* inuse reference count */
 	int *reassign;
 	queue *done;
 } *DataFlow, DataFlowRec;
@@ -1086,7 +1086,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	flow.stk = stk;
 	flow.status = (char*) GDKzalloc((stoppc-startpc+1));
 	flow.blocked = (char*) GDKzalloc(sizeof(char)*mb->vtop);
-	flow.inuse = (char*) GDKzalloc(sizeof(char)*mb->vtop);
+	flow.inuse = (int*) GDKzalloc(sizeof(int)*mb->vtop);
 	flow.reassign = (int*) GDKzalloc(sizeof(int)*mb->vtop);
 	flow.done = q_create(256);
 
