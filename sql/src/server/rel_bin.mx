@@ -35,7 +35,7 @@ extern stmt * rel_bin(mvc *sql, sql_rel *rel);
 #include "rel_exp.h"
 #include "rel_prop.h"
 
-static stmt * subrel_bin(mvc *sql, sql_rel *rel);
+static stmt * subrel_bin(mvc *sql, sql_rel *rel, list *refs);
 
 static void 
 print_stmtlist( stmt *l )
@@ -437,7 +437,7 @@ stmt_rename( sql_rel *rel, sql_exp *exp, stmt *s )
 }
 
 static stmt *
-rel2bin_basetable( mvc *sql, sql_rel *rel )
+rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs )
 {
 	list *l; 
 	stmt *ts, *sub = NULL;
@@ -445,6 +445,7 @@ rel2bin_basetable( mvc *sql, sql_rel *rel )
 	node *n;
 			
 	(void)sql;
+	(void)refs;
 	l = create_stmt_list();
 	ts = stmt_basetable(t, (rel->name)?rel->name:t->base.name);
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -499,12 +500,13 @@ rel2bin_basetable( mvc *sql, sql_rel *rel )
 }
 
 static stmt *
-rel2bin_table( mvc *sql, sql_rel *rel )
+rel2bin_table( mvc *sql, sql_rel *rel, list *refs )
 {
 	list *l; 
 	stmt *sub = NULL;
 	node *en;
 			
+	(void)refs;
 	sub = exp_bin(sql, rel->l, NULL, NULL, NULL, NULL); /* table function */
 	if (!sub) { 
 		assert(0);
@@ -554,7 +556,7 @@ not_equi_join(stmt *j)
 }
 
 static stmt *
-rel2bin_join( mvc *sql, sql_rel *rel )
+rel2bin_join( mvc *sql, sql_rel *rel, list *refs )
 {
 	list *l; 
 	node *en, *n;
@@ -562,9 +564,9 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 	stmt *ld = NULL, *rd = NULL;
 
 	if (rel->l) /* first construct the left sub relation */
-		left = subrel_bin(sql, rel->l);
+		left = subrel_bin(sql, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
-		right = subrel_bin(sql, rel->r);
+		right = subrel_bin(sql, rel->r, refs);
 	if (!left || !right) { 
 		assert(0);
 		if (left) stmt_destroy(left);
@@ -685,16 +687,16 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 }
 
 static stmt *
-rel2bin_semijoin( mvc *sql, sql_rel *rel )
+rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs )
 {
 	list *l; 
 	node *en, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL;
 
 	if (rel->l) /* first construct the left sub relation */
-		left = subrel_bin(sql, rel->l);
+		left = subrel_bin(sql, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
-		right = subrel_bin(sql, rel->r);
+		right = subrel_bin(sql, rel->r, refs);
 	if (!left || !right) { 
 		assert(0);
 		if (left) stmt_destroy(left);
@@ -805,16 +807,16 @@ rel2bin_distinct(stmt *s)
 }
 
 static stmt *
-rel2bin_union( mvc *sql, sql_rel *rel )
+rel2bin_union( mvc *sql, sql_rel *rel, list *refs )
 {
 	list *l; 
 	node *n, *m;
 	stmt *left = NULL, *right = NULL, *sub;
 
 	if (rel->l) /* first construct the left sub relation */
-		left = subrel_bin(sql, rel->l);
+		left = subrel_bin(sql, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
-		right = subrel_bin(sql, rel->r);
+		right = subrel_bin(sql, rel->r, refs);
 	if (!left || !right) { 
 		assert(0);
 		if (left) stmt_destroy(left);
@@ -854,7 +856,7 @@ rel2bin_union( mvc *sql, sql_rel *rel )
 }
 
 static stmt *
-rel2bin_except( mvc *sql, sql_rel *rel )
+rel2bin_except( mvc *sql, sql_rel *rel, list *refs )
 {
 	list *stmts; 
 	node *n, *m;
@@ -865,9 +867,9 @@ rel2bin_except( mvc *sql, sql_rel *rel )
 	sql_subaggr *a;
 
 	if (rel->l) /* first construct the left sub relation */
-		left = subrel_bin(sql, rel->l);
+		left = subrel_bin(sql, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
-		right = subrel_bin(sql, rel->r);
+		right = subrel_bin(sql, rel->r, refs);
 	if (!left || !right) { 
 		assert(0);
 		if (left) stmt_destroy(left);
@@ -972,7 +974,7 @@ rel2bin_except( mvc *sql, sql_rel *rel )
 }
 
 static stmt *
-rel2bin_inter( mvc *sql, sql_rel *rel )
+rel2bin_inter( mvc *sql, sql_rel *rel, list *refs )
 {
 	list *stmts; 
 	node *n, *m;
@@ -983,9 +985,9 @@ rel2bin_inter( mvc *sql, sql_rel *rel )
 	sql_subaggr *a;
 
 	if (rel->l) /* first construct the left sub relation */
-		left = subrel_bin(sql, rel->l);
+		left = subrel_bin(sql, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
-		right = subrel_bin(sql, rel->r);
+		right = subrel_bin(sql, rel->r, refs);
 	if (!left || !right) { 
 		assert(0);
 		if (left) stmt_destroy(left);
@@ -1077,7 +1079,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel )
 }
 
 static stmt *
-rel2bin_project( mvc *sql, sql_rel *rel )
+rel2bin_project( mvc *sql, sql_rel *rel, list *refs )
 {
 	list *l; 
 	node *en;
@@ -1087,7 +1089,7 @@ rel2bin_project( mvc *sql, sql_rel *rel )
 		return stmt_none();
 
 	if (rel->l) { /* first construct the sub relation */
-		sub = subrel_bin(sql, rel->l);
+		sub = subrel_bin(sql, rel->l, refs);
 		if (!sub) { 
 			assert(0);
 			return NULL;	
@@ -1185,7 +1187,7 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en )
 
 
 static stmt *
-rel2bin_select( mvc *sql, sql_rel *rel )
+rel2bin_select( mvc *sql, sql_rel *rel, list *refs )
 {
 	list *l; 
 	node *en, *n;
@@ -1198,7 +1200,7 @@ rel2bin_select( mvc *sql, sql_rel *rel )
 	}
 
 	if (rel->l) { /* first construct the sub relation */
-		sub = subrel_bin(sql, rel->l);
+		sub = subrel_bin(sql, rel->l, refs);
 		if (!sub) { 
 			assert(0);
 			return NULL;	
@@ -1292,16 +1294,15 @@ rel2bin_select( mvc *sql, sql_rel *rel )
 }
 
 static stmt *
-rel2bin_groupby( mvc *sql, sql_rel *rel )
+rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs )
 {
 	list *l, *aggrs;
 	node *n, *en;
 	stmt *sub = NULL, *cursub;
 	group *groupby = NULL;
 
-
 	if (rel->l) { /* first construct the sub relation */
-		sub = subrel_bin(sql, rel->l);
+		sub = subrel_bin(sql, rel->l, refs);
 		if (!sub) { 
 			assert(0);
 			return NULL;	
@@ -1357,7 +1358,7 @@ rel2bin_groupby( mvc *sql, sql_rel *rel )
 }
 
 static stmt *
-rel2bin_topn( mvc *sql, sql_rel *rel )
+rel2bin_topn( mvc *sql, sql_rel *rel, list *refs )
 {
 	list *newl;
 	int l = -1, o = 0;
@@ -1365,7 +1366,7 @@ rel2bin_topn( mvc *sql, sql_rel *rel )
 	node *n;
 
 	if (rel->l) /* first construct the sub relation */
-		sub = subrel_bin(sql, rel->l);
+		sub = subrel_bin(sql, rel->l, refs);
 	if (!sub) { 
 		assert(0);
 		return NULL;	
@@ -1439,65 +1440,91 @@ rel2bin_topn( mvc *sql, sql_rel *rel )
 	return sub;
 }
 
+static stmt *
+refs_find_rel(list *refs, sql_rel *rel)
+{
+	node *n;
+
+	for(n=refs->h; n; n = n->next) {
+		stmt *s = n->data;
+		char *name = table_name(s->op1.lval->h->data);
+		
+		if (strcmp(name, rel->name) == 0) {
+			_DELETE(name);
+			return stmt_dup(s);
+		}
+		_DELETE(name);
+	}
+	return NULL;
+}
 
 static stmt *
-subrel_bin(mvc *sql, sql_rel *rel ) 
+subrel_bin(mvc *sql, sql_rel *rel, list *refs ) 
 {
 	stmt *s = NULL;
 
 	if (!rel)
 		return s;
+	if (rel_is_ref(rel)) {
+		s = refs_find_rel(refs, rel);
+		if (s)
+			return s;
+	}
 	switch (rel->op) {
 	case op_basetable:
-		s = rel2bin_basetable(sql, rel);
+		s = rel2bin_basetable(sql, rel, refs);
 		break;
 	case op_table:
-		s = rel2bin_table(sql, rel);
+		s = rel2bin_table(sql, rel, refs);
 		break;
 	case op_join: 
 	case op_left: 
 	case op_right: 
 	case op_full: 
-		s = rel2bin_join(sql, rel);
+		s = rel2bin_join(sql, rel, refs);
 		break;
 	case op_semi:
 	case op_anti:
-		s = rel2bin_semijoin(sql, rel);
+		s = rel2bin_semijoin(sql, rel, refs);
 		break;
 	case op_union: 
-		s = rel2bin_union(sql, rel);
+		s = rel2bin_union(sql, rel, refs);
 		break;
 	case op_except: 
-		s = rel2bin_except(sql, rel);
+		s = rel2bin_except(sql, rel, refs);
 		break;
 	case op_inter: 
-		s = rel2bin_inter(sql, rel);
+		s = rel2bin_inter(sql, rel, refs);
 		break;
 	case op_project:
-		s = rel2bin_project(sql, rel);
+		s = rel2bin_project(sql, rel, refs);
 		break;
 	case op_select: 
-		s = rel2bin_select(sql, rel);
+		s = rel2bin_select(sql, rel, refs);
 		break;
 	case op_groupby: 
-		s = rel2bin_groupby(sql, rel);
+		s = rel2bin_groupby(sql, rel, refs);
 		break;
 	case op_topn: 
-		s = rel2bin_topn(sql, rel);
+		s = rel2bin_topn(sql, rel, refs);
 		break;
 	default:
 		printf("todo: print %u\n", rel->op);
 	}
+	if (s && rel_is_ref(rel)) 
+		list_append(refs, stmt_dup(s));
 	return s;
 }
 
 stmt *
 rel_bin(mvc *sql, sql_rel *rel ) 
 {
-	stmt *s = subrel_bin( sql, rel);
+	list *refs = create_stmt_list();
+	stmt *s = subrel_bin( sql, rel, refs);
 	if (s && s->type != st_none) {
 		s = stmt_output(s);
 		sql->type = Q_TABLE;
 	}
+	list_destroy(refs);
 	return s;
 }

@@ -211,7 +211,7 @@ op2string(operator_type op)
 }
 
 void
-rel_print(mvc *sql, sql_rel *rel, int depth) 
+rel_print_(mvc *sql, sql_rel *rel, int depth) 
 {
 	char *r = NULL;
 
@@ -273,9 +273,15 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 		if (need_distinct(rel))
 			printf("distinct ");
 		printf("%s (", r);
-		rel_print(sql, rel->l, depth+1);
+		if (rel_is_ref(rel->l))
+			printf(" & %s ", ((sql_rel*)rel->l)->name);
+		else
+			rel_print_(sql, rel->l, depth+1);
 		printf(",");
-		rel_print(sql, rel->r, depth+1);
+		if (rel_is_ref(rel->r))
+			printf(" & %s ", ((sql_rel*)rel->r)->name);
+		else
+			rel_print_(sql, rel->r, depth+1);
 		print_indent(sql, depth);
 		printf(")");
 		exps_print(sql, rel->exps, depth, 0, 0);
@@ -298,7 +304,10 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 			if (need_distinct(rel))
 				printf("distinct ");
 			printf("%s (", r);
-			rel_print(sql, rel->l, depth+1);
+			if (rel_is_ref(rel->l))
+				printf(" & %s ", ((sql_rel*)rel->l)->name);
+			else
+				rel_print_(sql, rel->l, depth+1);
 			print_indent(sql, depth);
 			printf(")");
 		}
@@ -316,6 +325,53 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	default:
 		assert(0);
 	}
+	if (rel_is_ref(rel))
+		printf(" (%d) ", rel->ref.refcnt-1);
 	if (!depth)
 		printf("\n");
+}
+
+void
+rel_print_refs(mvc *sql, sql_rel *rel, int depth) 
+{
+	if (!rel)
+		return;
+	switch (rel->op) {
+	case op_basetable:
+	case op_table:
+		break;
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+	case op_semi: 
+	case op_anti: 
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+		rel_print_refs(sql, rel->l, depth);
+		rel_print_refs(sql, rel->r, depth);
+		if (rel_is_ref(rel->l))
+			rel_print_(sql, rel->l, depth);
+		if (rel_is_ref(rel->r))
+			rel_print_(sql, rel->r, depth);
+		break;
+	case op_project:
+	case op_select: 
+	case op_groupby: 
+	case op_topn: 
+		rel_print_refs(sql, rel->l, depth);
+		if (rel->l && rel_is_ref(rel->l))
+			rel_print_(sql, rel->l, depth);
+		break;
+	default:
+		assert(0);
+	}
+}
+
+void
+rel_print(mvc *sql, sql_rel *rel, int depth) 
+{
+	rel_print_refs(sql, rel, depth);
+	rel_print_(sql, rel, depth);
 }

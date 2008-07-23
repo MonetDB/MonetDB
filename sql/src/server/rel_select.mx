@@ -54,7 +54,7 @@ extern void rel_destroy(sql_rel *rel);
 
 #define new_rel_list() list_create((fdestroy)NULL)
 
-extern void rel_set_name( sql_rel *rel, char *name );
+extern void rel_setname( sql_rel *rel, char *name );
 
 #endif /*_REL_SELECT_H_*/
 @c
@@ -848,7 +848,7 @@ rel_topn(sql_rel *l, list *exps )
 	return rel;
 }
 
-void rel_set_name( sql_rel *rel, char *name )
+void rel_setname( sql_rel *rel, char *name )
 {
 	if (rel->name)
 		_DELETE(rel->name);
@@ -1008,7 +1008,7 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 		char *tname = optname->data.lval->h->data.sval;
 
 		if (tname)
-			rel_set_name( sq, tname );
+			rel_setname( sq, tname );
 		columnrefs = optname->data.lval->h->next->data.lval;
 		if (columnrefs && sq->exps) {
 			dnode *d = columnrefs->h;
@@ -1290,7 +1290,10 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
 		}
 		if (temp_table && !t) {
-			rel_set_name(temp_table, tname);
+			list *exps = rel_projections(sql, temp_table, NULL, 0);
+
+			temp_table = rel_project(temp_table, exps);
+			rel_setname(temp_table, tname);
 			return temp_table;
 		} else if (isView(t) && sql->emode != m_instantiate) { 
 		   	/* instantiate base view */
@@ -1310,7 +1313,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 				if (e->card == CARD_AGGR)
 					e->card = CARD_MULTI;
 			}
-			rel_set_name(rel, tname);
+			rel_setname(rel, tname);
 			return rel;
 		}
 		return rel_basetable(t, tname);

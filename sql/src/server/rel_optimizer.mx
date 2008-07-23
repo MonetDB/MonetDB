@@ -739,8 +739,10 @@ push_up_join_exps( sql_rel *rel)
 {
 	switch(rel->op) {
 	case op_join: {
-		list *l = push_up_join_exps(rel->l);
-		list *r = push_up_join_exps(rel->r);
+		sql_rel *rl = rel->l;
+		sql_rel *rr = rel->r;
+		list *l = !rel_is_ref(rl) ? push_up_join_exps(rl): NULL;
+		list *r = !rel_is_ref(rr) ? push_up_join_exps(rr): NULL;
 		if (l && r) {
 			l = list_merge(l, r, (fdup)&exp_dup);
 			list_destroy(r);
@@ -871,7 +873,7 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 	(void)sql;
 	if ((is_join(rel->op) || is_project(rel->op) || rel->op == op_topn) && rel->l) {
 		sql_rel *l = rel->l;
-		if (l->op == op_select && 
+		if (l->op == op_select && !(rel_is_ref(l)) &&
 		   (!l->exps || list_length(l->exps) == 0)) {
 			rel->l = l->l;
 			l->l = NULL;
@@ -881,7 +883,7 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 	}
 	if ((is_join(rel->op) || is_set(rel->op)) && rel->r) {
 		sql_rel *r = rel->r;
-		if (r->op == op_select && 
+		if (r->op == op_select && !(rel_is_ref(r)) &&
 	   	   (!r->exps || list_length(r->exps) == 0)) {
 			rel->r = r->l;
 			r->l = NULL;
@@ -889,7 +891,7 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 			return rel_push_select_down(sql, rel);
 		}
 	} 
-	if (rel->op == op_select && r && (r->op == op_select || r->op == op_except)) {
+	if (rel->op == op_select && r && !(rel_is_ref(r)) && (r->op == op_select || r->op == op_except)) {
 		(void)list_merge(r->exps, rel->exps, (fdup)&exp_dup);
 		rel->l = NULL;
 		rel_destroy(rel);
@@ -897,7 +899,7 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 	}
 	exps = rel->exps;
 	r = rel->l;
-	if (rel->op == op_select && r && is_set(r->op)) {
+	if (rel->op == op_select && r && is_set(r->op) && !(rel_is_ref(r))) {
 		rel->exps = new_exp_list(); 
 		for (n = exps->h; n; n = n->next) { 
 			sql_exp *e = n->data, *ne = NULL;
@@ -933,7 +935,7 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 		list_destroy(exps);
 		return rel_push_select_down(sql, r);
 	}
-	if (rel->op == op_project && r && r->op == op_project) {
+	if (rel->op == op_project && r && r->op == op_project && !(rel_is_ref(r))) {
 		int all = 1;
 
 		/* here we need to fix aliases */
@@ -971,7 +973,7 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 			rel->exps = exps;
 		}
 		return rel;
-	} else if (rel->op == op_select && r && r->op == op_project) {
+	} else if (rel->op == op_select && r && r->op == op_project && !(rel_is_ref(r))) {
 		/* here we need to fix aliases */
 		rel->exps = new_exp_list(); 
 		/* for each exp check if we can rename it */
@@ -1297,6 +1299,8 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter)
 			rel->l = rewrite(sql, rel->l, rewriter);
 		break;
 	}
+	if (rel_is_ref(rel))
+		return rel;
 	return rewriter(sql, rel);
 }
 

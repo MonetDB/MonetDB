@@ -207,6 +207,7 @@ rel_semantic(mvc *sql, symbol *s)
 				stack_pop_frame(sql);
 				return NULL;
 			}
+			rel_setname(rel, name);
 			stack_push_rel_view(sql, name, rel);
 		}
 		rel = rel_semantic(sql, select);
