@@ -512,7 +512,7 @@ TODO synced/key case..
 	memset(d, 0, sizeof(d));
 	BATloop(r, p1, q1) {
 		h = BUNh@2(ri,p1);
-		i = hash_@4(H, h);
+		i = (int) hash_@4(H, h);
 		/* collision or check for not-nil (nils don't match anyway) */
 		if (d[i] != 0 || !(@6)) {
 			collision = 1;
@@ -546,7 +546,7 @@ TODO synced/key case..
 				bnh = (@4*)Hloc(bn,0);
 				bnt = (oid*)Tloc(bn,0);
 				for (; p1<r1; p1++, b++){ 
-					i = hash_@4(H, h+p1);
+					i = (int) hash_@4(H, h+p1);
 					if (d[i] != 0 && @7(h+p1, rh+d[i]-1) &&
 					    EQUAL@5(t, BUNtail(ri, d[i]-1))) {
 						DHIT@1(h+p1, b);
@@ -573,7 +573,7 @@ TODO synced/key case..
 				r1 = p1 + BATcapacity(bn) - BUNlast(bn);
 				if (r1 > q1) r1 = q1;
 				for (; p1<r1; p1++) { 
-					i = hash_@4(H, h+p1);
+					i = (int) hash_@4(H, h+p1);
 					if (d[i] != 0 && @7(h+p1, rh+d[i]-1) &&
 				    	    EQUAL@5(BUNtail(li,p1), BUNtail(ri, d[i]-1))) {
 						HIT@1_nocheck(h+p1, BUNtail(li, p1));

@@ -723,7 +723,8 @@ pcre_put(Heap *h, var_t *bun, pcre * val)
 int
 pcre_length(pcre * p)
 {
-	return (pcresize(p));
+	assert(pcresize(p) <= GDK_int_max);
+	return (int) (pcresize(p));
 }
 
 void

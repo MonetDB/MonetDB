@@ -1843,7 +1843,8 @@ int
 CMDcount(int *result, BAT *b)
 {
 /* 64bit: should return wrd */
-	*result = BATcount(b);
+	assert(BATcount(b) <= GDK_int_max);
+	*result = (int) BATcount(b);
 	return GDK_SUCCEED;
 }
 
@@ -1851,10 +1852,11 @@ int
 CMDcount_nil(int *result, BAT *b, bit *ignore_nils)
 {
 /* 64bit: should return wrd */
+	assert(BATcount(b) <= GDK_int_max);
 	if (*ignore_nils)
-		*result = BATcount_no_nil(b);
+		*result = (int) BATcount_no_nil(b);
 	else
-		*result = BATcount(b);
+		*result = (int) BATcount(b);
 	return GDK_SUCCEED;
 }
 

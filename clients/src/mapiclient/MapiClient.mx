@@ -704,8 +704,10 @@ SQLtraceRenderer(MapiHdl hdl)
 			*s = 0;
 			fields[1] = s + 1;
 			if (cols == 1) {
-				len[1] = len[0] - strlen(fields[0]);
-				len[0] = strlen(fields[0]) - 2;	/* border */
+				size_t l = strlen(fields[0]);
+				assert(l <= INT_MAX);
+				len[1] = len[0] - (int) l;
+				len[0] = (int) l - 2;	/* border */
 				SQLseparator(len, 2, '-');
 				cols = 2;
 			}
@@ -779,8 +781,12 @@ SQLrenderer(MapiHdl hdl)
 						len[i] = MINCOLSIZE;
 				}
 				s = mapi_get_name(hdl, i);
-				if (s != NULL && (max = strlen(s)) > len[i])
-					len[i] = max;
+				if (s != NULL) {
+					size_t l = strlen(s);
+					assert(l <= INT_MAX);
+					if ((max = l) > len[i])
+						len[i] = max;
+				}
 				total += len[i];
 				s = mapi_get_type(hdl, i);
 				numeric[i] = s != NULL && (strcmp(s, "int") == 0 ||

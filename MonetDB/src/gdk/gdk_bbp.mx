@@ -1177,7 +1177,7 @@ BBPinsert(BATstore *bs)
 	str s;
 	long_str dirname;
 	bat i;
-	int idx = pid & BBP_THREADMASK;
+	int idx = (int)(pid & BBP_THREADMASK);
 
 	assert(bs->B.H != NULL);
 	assert(bs->B.T != NULL);
@@ -1381,7 +1381,7 @@ BBPclear(bat i)
 	int lock = locked_by ? pid != locked_by : 1;
 
 	if (BBPcheck(i, "BBPclear")) {
-		bbpclear(ABS(i), pid & BBP_THREADMASK, lock ? "BBPclear" : NULL);
+		bbpclear(ABS(i), (int)(pid & BBP_THREADMASK), lock ? "BBPclear" : NULL);
 	}
 }
 
@@ -1429,7 +1429,7 @@ BBPrename(bat bid, str nme)
 	if (strlen(dirname) + strLen(nme) + 1 >= IDLENGTH) {
 		return BBPRENAME_LONG;
 	}
-	idx = BBP_getpid() & BBP_THREADMASK;
+	idx = (int)(BBP_getpid() & BBP_THREADMASK);
 	gdk_set_lock(GDKtrimLock(idx), "BBPrename");
 	gdk_set_lock(GDKnameLock, "BBPrename");
 	i = BBP_find(nme, FALSE);
@@ -2554,7 +2554,8 @@ batcache_del(batcache_t * bc)
 	assert(b->H->parentid == 0 && b->T->parentid == 0);
 	BATfree(b);		/* maybe unsafe without lock ? */
 	*BBP_logical(bid) = 't';
-	bbpclear(bid, bc - batcache, "batcache_del");
+	assert(bc - batcache <= BBP_THREADMASK);
+	bbpclear(bid, (int)(bc - batcache), "batcache_del");
 	return i;
 }
 

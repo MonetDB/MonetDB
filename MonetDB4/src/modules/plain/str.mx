@@ -1549,8 +1549,11 @@ int
 strLength(int *res, str s)
 {
 /* 64bit: should return wrd */
+	wrd len;
 	RETURN_NIL_IF(strNil(s), TYPE_int);
-	*res = UTF8_strlen(s);
+	len = UTF8_strlen(s);
+	assert(len <= GDK_int_max);
+	*res = (int) len;
 	return GDK_SUCCEED;
 }
 
@@ -1558,7 +1561,9 @@ int
 strBytes(int *res, str s)
 {
 /* 64bit: should return wrd */
-	*res = strlen(s);
+	size_t len = strlen(s);
+	assert(len <= GDK_int_max);
+	*res = (int) len;
 	return GDK_SUCCEED;
 }
 
@@ -1807,8 +1812,11 @@ strStrSearch(int *res, str s, str s2)
 	char *p;
 
 	RETURN_NIL_IF(strNil(s) || strNil(s2), TYPE_int);
-	if ((p = strstr(s, s2)) != 0)
-		*res = UTF8_strpos(s, p);
+	if ((p = strstr(s, s2)) != 0) {
+		wrd pos = UTF8_strpos(s, p);
+		assert(pos <= GDK_int_max);
+		*res = (int) pos;
+	}
 	else
 		*res = -1;
 	return GDK_SUCCEED;
@@ -1830,7 +1838,9 @@ strReverseStrSearch(int *res, str s, str s2)
 		for (i = 0, q = p; i < slen && *q == s2[i]; i++, q++)
 			;
 		if (i == slen) {
-			*res = UTF8_strpos(s, p);
+			wrd pos = UTF8_strpos(s, p);
+			assert(pos <= GDK_int_max);
+			*res = (int) pos;
 			break;
 		}
 	}
