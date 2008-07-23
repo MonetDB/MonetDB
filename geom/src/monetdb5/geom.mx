@@ -490,10 +490,14 @@ mbrWRITE(mbr *c, stream *s, size_t cnt)
 	size_t i;
 
 	for(i=0;i<cnt;i++, c++) {
-		if (!stream_writeInt(s, c->xmin) ||
-		    !stream_writeInt(s, c->ymin) ||
-		    !stream_writeInt(s, c->xmax) ||
-		    !stream_writeInt(s, c->ymax))
+		assert(GDK_int_min <= c->xmin && c->xmin <= GDK_int_max);
+		assert(GDK_int_min <= c->ymin && c->ymin <= GDK_int_max);
+		assert(GDK_int_min <= c->xmax && c->xmax <= GDK_int_max);
+		assert(GDK_int_min <= c->ymax && c->ymax <= GDK_int_max);
+		if (!stream_writeInt(s, (int) c->xmin) ||
+		    !stream_writeInt(s, (int) c->ymin) ||
+		    !stream_writeInt(s, (int) c->xmax) ||
+		    !stream_writeInt(s, (int) c->ymax))
 			break;
 	}
 }

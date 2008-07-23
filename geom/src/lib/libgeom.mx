@@ -185,10 +185,12 @@ getMbrGeos( mbr *res, const GEOSGeom geosGeometry )
 #endif
 		GEOSCoordSeq_getX(coords, 0, &xmin);
 		GEOSCoordSeq_getY(coords, 0, &ymin);
-		res->xmin = xmin;
-		res->ymin = ymin;
-		res->xmax = xmin;
-		res->ymax = ymin;
+		assert(GDK_flt_min <= xmin && xmin <= GDK_flt_max);
+		assert(GDK_flt_min <= ymin && ymin <= GDK_flt_max);
+		res->xmin = (float) xmin;
+		res->ymin = (float) ymin;
+		res->xmax = (float) xmin;
+		res->ymax = (float) ymin;
 	} else { /* GEOSGeomTypeId(envelope) == GEOS_POLYGON */
 #if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
 		const GEOSGeometry *ring = GEOSGetExteriorRing(envelope);
@@ -205,10 +207,14 @@ getMbrGeos( mbr *res, const GEOSGeom geosGeometry )
 			GEOSCoordSeq_getY(coords, 0, &ymin);
 			GEOSCoordSeq_getX(coords, 2, &xmax);
 			GEOSCoordSeq_getY(coords, 2, &ymax);
-			res->xmin = xmin;
-			res->ymin = ymin;
-			res->xmax = xmax;
-			res->ymax = ymax;
+			assert(GDK_flt_min <= xmin && xmin <= GDK_flt_max);
+			assert(GDK_flt_min <= ymin && ymin <= GDK_flt_max);
+			assert(GDK_flt_min <= xmax && xmax <= GDK_flt_max);
+			assert(GDK_flt_min <= ymax && ymax <= GDK_flt_max);
+			res->xmin = (float) xmin;
+			res->ymin = (float) ymin;
+			res->xmax = (float) xmax;
+			res->ymax = (float) ymax;
 		}
 	}
 	GEOSGeom_destroy(envelope);
