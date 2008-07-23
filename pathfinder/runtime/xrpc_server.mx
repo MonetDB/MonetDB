@@ -194,7 +194,7 @@ typedef struct {
 static MT_Sema xrpc_commit_sema;
 static xrpc_commit_t *xrpc_commit_active = NULL;
 
-BAT *xrpc_trusted = NULL, *xrpc_admin = NULL, *xrpc_user = NULL;
+BAT *xrpc_trusted = NULL, *xrpc_admin = NULL;
 char *xrpc_hostname = NULL;
 int xrpc_port = 0;
 
@@ -889,7 +889,6 @@ bat* xrpc_prelude(void) {
     @:xrpc_bat(admin,str)@
     xrpc_admin = xrpc_bat;
     @:xrpc_bat(user,str)@
-    xrpc_user = xrpc_bat;
 
     CMDmy_hostname(&xrpc_hostname);
     MT_init_sema(xrpc_commit_sema,0, "XRPC_COMMIT_SEMA");
