@@ -185,10 +185,8 @@ GDKgetenv_int(const char *name, int def)
 {
 	char *val = GDKgetenv(name);
 
-	if (val) {
-		int d = strtod(val, NULL);
-		return d;
-	}
+	if (val) 
+		return atoi(val);
 	return def;
 }
 @h
