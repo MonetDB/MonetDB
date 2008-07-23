@@ -1891,7 +1891,7 @@ at a time (adding 16-bits to the hash value each iteration).
 @h
 #define GDK_STRHASH(x,y) {\
      str _key = (str) (x);\
-     int _i;\
+     hash_t _i;\
      for (_i = y = 0; _key[_i]; _i++) {\
          y += _key[_i];\
          y += (y << 10);\
@@ -2037,7 +2037,7 @@ strPut(Heap *h, var_t *dst, str v)
 	/* flush the hash table if it becomes too big (implies !GDK_ELIMDOUBLES) */
 	if (h->free + len >= elimlimit) {
 		/* if we are not hash-inserting anymore, h->free may no longer be var_t aligned */
-		int mask = h->free & (sizeof(var_t) - 1);
+		size_t mask = h->free & (sizeof(var_t) - 1);
 
 		if (mask)
 			h->free += sizeof(var_t) - mask;	/* realign */
