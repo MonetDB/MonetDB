@@ -255,8 +255,11 @@ mbrFROMSTR(
 	if (nil) {
 		nchars = 3;
 		**atom = *mbrNULL();
-	} else if (getMbrGeos(*atom, geosMbr))
-		nchars = strlen(src);
+	} else if (getMbrGeos(*atom, geosMbr)) {
+		size_t l = strlen(src);
+		assert(l <= GDK_int_max);
+		nchars = (int) l;
+	}
 	if (geosMbr)
 		GEOSGeom_destroy(geosMbr);
 	return nchars;
@@ -286,14 +289,16 @@ mbrTOSTR(
 	
 	if (*len < (int) dstStrLen + 1) { 
 		if (*dst) GDKfree(*dst);
-		*dst = GDKmalloc(*len = dstStrLen + 1);
+		assert(dstStrLen < GDK_int_max);
+		*dst = GDKmalloc(*len = (int) dstStrLen + 1);
 	}
 	
 	if (dstStrLen > 3)
 		strcpy(*dst, tempWkt);
 	else
 		strcpy(*dst, "nil");
-	return dstStrLen;
+	assert(dstStrLen < GDK_int_max);
+	return (int) dstStrLen;
 }
 
 /* HASH: compute a hash value. */
@@ -394,8 +399,11 @@ wkbTOSTR(
 	GEOSGeom geosGeometry = wkb2geos(atom);
 	
 	if (geosGeometry) {
+		size_t l;
 		wkt = GEOSGeomToWKT(geosGeometry);
-		dstStrLen = strlen(wkt);
+		l = strlen(wkt);
+		assert(l < GDK_int_max);
+		dstStrLen = (int) l;
 		GEOSGeom_destroy(geosGeometry);
 	}
 	
@@ -453,11 +461,14 @@ wkbFROMSTR(
 	if (!wkb) {
 		**atom = *wkbNULL();
 	} else {
-		(*atom)->len = wkbLen;
+		assert(wkbLen < GDK_int_max);
+		(*atom)->len = (int) wkbLen;
 		memcpy(&(*atom)->data, wkb, wkbLen);
 		free(wkb);
 	}
-	return strlen(src);
+	wkbLen = strlen(src);
+	assert(wkbLen < GDK_int_max);
+	return (int) wkbLen;
 }
 
 int
@@ -558,7 +569,9 @@ wkbCONVERT(wkb *b, int direction)
 int
 wkbLENGTH(wkb *p)
 {
-	return wkb_size(p->len);
+	size_t len = wkb_size(p->len);
+	assert(len < GDK_int_max);
+	return (int) len;
 }
 
 void
@@ -622,7 +635,8 @@ geos2wkb( GEOSGeom geosGeometry )
 	if (!w) {
 		*atom = *wkbNULL();
 	} else {
-		atom->len = wkbLen;
+		assert(wkbLen < GDK_int_max);
+		atom->len = (int) wkbLen;
 		memcpy(&atom->data, w, wkbLen);
 		free(w);
 	}
