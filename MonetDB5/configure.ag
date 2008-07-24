@@ -138,6 +138,63 @@ AC_TRY_LINK([$ac_includes_default
 AC_MSG_RESULT($ctime_r3)
 
 
+dnl raptor
+RAPTOR_VERSION_REQUIRED_MIN=1.4.16
+have_raptor=auto
+RAPTOR_CONFIG=''
+RAPTOR_INCS=''
+RAPTOR_LIBS=''
+wrong=''
+AC_ARG_WITH(raptor,
+	AC_HELP_STRING([--with-raptor=DIR],
+		[raptor library is installed in DIR]),
+	have_raptor="$withval")
+if test "x$have_raptor" != xno; then
+	case "$have_raptor" in
+	yes|auto)
+		XPATH="$PATH"
+		;;
+	*)
+		XPATH="$have_raptor/bin"
+		;;
+	esac
+	AC_PATH_PROG(RAPTOR_CONFIG,raptor-config,,$XPATH)
+	if test "x$RAPTOR_CONFIG" = x; then
+		wrong="raptor-config not found in $XPATH"
+		have_raptor=no
+	fi
+fi
+if test "x$have_raptor" != xno; then
+	AC_MSG_CHECKING([for raptor >= $RAPTOR_VERSION_REQUIRED_MIN])
+	RAPTOR_VERSION="`$RAPTOR_CONFIG --version`"
+	AC_MSG_RESULT(found $RAPTOR_VERSION)
+	if test MONETDB_VERSION_TO_NUMBER(echo $RAPTOR_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo $RAPTOR_VERSION_REQUIRED_MIN); then
+		wrong="raptor version $RAPTOR_VERSION is older than $RAPTOR_VERSION_REQUIRED_MIN"
+		have_raptor=no
+	fi
+fi
+if test "x$have_raptor" != xno; then
+	RAPTOR_LIBS="`$RAPTOR_CONFIG --libs`"
+	RAPTOR_INCS="`$RAPTOR_CONFIG --cflags`"
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $RAPTOR_INCS"
+	AC_CHECK_HEADER(raptor.h, AC_DEFINE(HAVE_RAPTOR_H, 1, [Define to 1 if you have the <raptor.h> header file.]), [wrong="raptor.h not found"; have_raptor=no])
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+if test "x$have_raptor" != xno; then
+	save_LIBS="$LIBS"
+    	LIBS="$LIBS $RAPTOR_LIBS"
+    	AC_CHECK_LIB(raptor, raptor_uri_as_string, :, [wrong="-lraptor not found"; have_raptor=no])
+    	LIBS="$save_LIBS"
+fi
+if test "x$have_raptor" = xno; then
+	AC_MSG_WARN([module rdf will be compiled as $wrong.])
+fi
+AC_SUBST(RAPTOR_INCS)
+AC_SUBST(RAPTOR_LIBS)
+AM_CONDITIONAL(HAVE_RAPTOR, test x"$have_raptor" != xno)
+
+
 dnl provide different versions of the paths derived above
 AM_MONETDB_XQ_VARS_2()
 AC_DEFINE_UNQUOTED(MONETDB5_PREFIX,"$QXprefix",[architecture-independent files])

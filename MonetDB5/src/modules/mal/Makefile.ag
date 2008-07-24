@@ -18,6 +18,7 @@ SUBDIRS = crackers
 
 INCLUDES = -I../atoms -I../kernel \
         -I../../mal $(CLIENTS_INCS) $(MONETDB_INCS) \
+        $(RAPTOR_INCS) \
         $(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS) $(READLINE_INCS)
 
 MTSAFE
@@ -137,6 +138,26 @@ lib__statistics = {
 		$(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
+lib__rdf = {
+	COND = HAVE_RAPTOR
+	DIR = libdir/MonetDB5
+	SOURCES = rdf.mx
+
+	#SCRIPTS = mal mil ""
+	LIBS = ../../mal/libmonetdb5 \
+		$(MONETDB_LIBS) -lbat -lstream \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
+                $(RAPTOR_LIBS)
+}
+
+headers_rdf = {
+	COND = HAVE_RAPTOR
+	DIR = libdir/MonetDB5
+	SOURCES = rdf.mx
+	HEADERS = mal
 }
 
 headers_h = {
