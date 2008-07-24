@@ -40,6 +40,7 @@ Known values for OPTION are:
   --source		print ${pkg} source directory
   --modpath4		print default ${pkg} module path (for M4)
   --modpath5		print default ${pkg} module path (for M5)
+  --conds		conditionals as set by configure
   --help		display this help and exit
 
 Install directories ${pkg} was configured to
@@ -92,6 +93,35 @@ while test $# -gt 0; do
 
     --help)
 	usage 0
+	;;
+
+    --conds)
+	echo BITS32=@BITS32_FALSE@
+	echo BITS64=@BITS64_FALSE@
+	echo DOCTOOLS=@DOCTOOLS_FALSE@
+	echo HAVE_BUILDTOOLS=@HAVE_BUILDTOOLS_FALSE@
+	echo HAVE_CLIENTS=@HAVE_CLIENTS_FALSE@
+	echo HAVE_EXTRA_MK=@HAVE_EXTRA_MK_FALSE@
+	echo HAVE_MONETDB4=@HAVE_MONETDB4_FALSE@
+	echo HAVE_MONETDB5=@HAVE_MONETDB5_FALSE@
+	echo HAVE_MONETDB=@HAVE_MONETDB_FALSE@
+	echo HAVE_PCRE=@HAVE_PCRE_FALSE@
+	echo HAVE_PERL_DEVEL=@HAVE_PERL_DEVEL_FALSE@
+	echo HAVE_PERL=@HAVE_PERL_FALSE@
+	echo HAVE_PERL_SWIG=@HAVE_PERL_SWIG_FALSE@
+	echo HAVE_PHP=@HAVE_PHP_FALSE@
+	echo HAVE_PYTHON_DEVEL=@HAVE_PYTHON_DEVEL_FALSE@
+	echo HAVE_PYTHON=@HAVE_PYTHON_FALSE@
+	echo HAVE_PYTHON_SWIG=@HAVE_PYTHON_SWIG_FALSE@
+	echo HAVE_RUBY_DEVEL=@HAVE_RUBY_DEVEL_FALSE@
+	echo HAVE_RUBY=@HAVE_RUBY_FALSE@
+	echo HAVE_RUBY_SWIG=@HAVE_RUBY_SWIG_FALSE@
+	echo HAVE_SWIG=@HAVE_SWIG_FALSE@
+	echo LINK_STATIC=@LINK_STATIC_FALSE@
+	echo NATIVE_WIN32=@NATIVE_WIN32_FALSE@
+	echo NEED_MX=@NEED_MX_FALSE@
+	echo NOT_WIN32=@NOT_WIN32_FALSE@
+	echo PROFILING=@PROFILING_FALSE@
 	;;
 
     *)
