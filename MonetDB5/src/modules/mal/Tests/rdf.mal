@@ -13,7 +13,12 @@ io.printf("#source:%s\n",datafile);
 
 rdf.importGraph(datafile, "turtle", "db", "g", 1024:lng);
 
+xsdtypes:bat[:oid,:str] := bbp.bind("RDFtype2xsd");
+io.print("Datatypes");
+io.print(xsdtypes);
+
 map:bat[:oid,:str] := bbp.bind("db_g_map");
+io.print("Dictionary");
 io.print(map);
 
 Spot:bat[:oid,:oid] := bbp.bind("db_g_Spot");
