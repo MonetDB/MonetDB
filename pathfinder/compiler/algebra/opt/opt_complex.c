@@ -550,14 +550,12 @@ opt_complex (PFla_op_t *p)
             /* discard join attributes as one of them always remains */
             for (unsigned int i = 0; i < L(p)->schema.count; i++) {
                 left_arg_req = left_arg_req ||
-                               (!PFprop_subdom (
-                                     p->prop,
-                                     PFprop_dom_left (
-                                         p->prop,
-                                         p->sem.eqjoin.att1),
-                                     PFprop_dom_left (
-                                         p->prop,
-                                         L(p)->schema.items[i].name)) &&
+                               (PFprop_unq_name (
+                                    L(p)->prop,
+                                    L(p)->schema.items[i].name) !=
+                                PFprop_unq_name (
+                                    p->prop,
+                                    p->sem.eqjoin.att1) &&
                                 PFprop_icol (
                                    p->prop,
                                    L(p)->schema.items[i].name));
@@ -596,14 +594,12 @@ opt_complex (PFla_op_t *p)
             /* discard join attributes as one of them always remains */
             for (unsigned int i = 0; i < R(p)->schema.count; i++) {
                 right_arg_req = right_arg_req ||
-                                (!PFprop_subdom (
-                                      p->prop,
-                                      PFprop_dom_right (
-                                          p->prop,
-                                          p->sem.eqjoin.att2),
-                                      PFprop_dom_right (
-                                          p->prop,
-                                          R(p)->schema.items[i].name)) &&
+                                (PFprop_unq_name (
+                                     R(p)->prop,
+                                     R(p)->schema.items[i].name) !=
+                                 PFprop_unq_name (
+                                     p->prop,
+                                     p->sem.eqjoin.att2) &&
                                  PFprop_icol (
                                      p->prop,
                                      R(p)->schema.items[i].name));
@@ -1470,9 +1466,12 @@ opt_complex (PFla_op_t *p)
 PFla_op_t *
 PFalgopt_complex (PFla_op_t *root)
 {
-    /* Infer key, icols, domain, reqval,
-       and refctr properties first */
+    /* Infer key, icols, domain, and unique names
+       properties first */
+    PFprop_infer_unq_names (root);
+    /* already inferred by PFprop_infer_unq_names
     PFprop_infer_key (root);
+    */
     PFprop_infer_level (root);
     PFprop_infer_icol (root);
     PFprop_infer_set (root);

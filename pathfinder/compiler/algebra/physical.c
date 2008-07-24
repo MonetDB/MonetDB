@@ -2959,9 +2959,8 @@ PFpa_merge_adjacent (const PFpa_op_t *n,
 {
     PFpa_op_t *ret = wire1 (pa_merge_adjacent, n);
 
-    ret->sem.iter_pos_item.iter = iter;
-    ret->sem.iter_pos_item.pos  = pos;
-    ret->sem.iter_pos_item.item = item;
+    ret->sem.ii.iter = iter;
+    ret->sem.ii.item = item;
 
     /* allocate memory for the result schema */
     ret->schema.count = n->schema.count;

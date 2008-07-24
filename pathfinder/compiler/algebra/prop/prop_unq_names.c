@@ -108,9 +108,9 @@ add_name_pair (PFarray_t *np_list, PFalg_att_t ori, PFalg_att_t unq)
  * to the name pair list (@a np_list).
  */
 static void
-new_name_pair (PFarray_t *np_list, PFalg_att_t ori)
+new_name_pair (PFarray_t *np_list, PFalg_att_t ori, unsigned int id)
 {
-    add_name_pair (np_list, ori, PFalg_unq_name (ori));
+    add_name_pair (np_list, ori, PFalg_unq_name (ori, id));
 }
 
 /**
@@ -135,8 +135,8 @@ bulk_add_name_pairs (PFarray_t *np_list, PFla_op_t *child)
 /**
  * Infer unique name properties; worker for prop_infer().
  */
-static void
-infer_unq_names (PFla_op_t *n)
+static unsigned int
+infer_unq_names (PFla_op_t *n, unsigned int id)
 {
     PFarray_t *np_list = n->prop->name_pairs;
 
@@ -154,12 +154,12 @@ infer_unq_names (PFla_op_t *n)
         case la_ref_tbl:
             /* create new unique names for all attributes */
             for (unsigned int i = 0; i < n->schema.count; i++)
-                new_name_pair (np_list, n->schema.items[i].name);
+                new_name_pair (np_list, n->schema.items[i].name, id++);
             break;
 
         case la_attach:
             bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.attach.res);
+            new_name_pair (np_list, n->sem.attach.res, id++);
             break;
 
         case la_cross:
@@ -198,7 +198,7 @@ infer_unq_names (PFla_op_t *n)
                     unq = find_unq_name (np_list, ori_prev);
                 else
                     /* no match */
-                    unq = PFalg_unq_name (ori);
+                    unq = PFalg_unq_name (ori, id++);
 
                 add_name_pair (np_list, ori, unq);
                 add_name_pair (left_np_list, ori, child_unq);
@@ -216,7 +216,7 @@ infer_unq_names (PFla_op_t *n)
                     unq = find_unq_name (np_list, ori_prev);
                 else
                     /* no match */
-                    unq = PFalg_unq_name (ori);
+                    unq = PFalg_unq_name (ori, id++);
 
                 add_name_pair (np_list, ori, unq);
                 add_name_pair (right_np_list, ori, child_unq);
@@ -273,12 +273,12 @@ infer_unq_names (PFla_op_t *n)
                         unq = find_unq_name (np_list, ori_prev);
                     else
                         /* no match */
-                        unq = PFalg_unq_name (ori);
+                        unq = PFalg_unq_name (ori, id++);
 
                     add_name_pair (np_list, ori, unq);
                 }
                 else if (child_unq == att2_unq)
-                    add_name_pair (np_list, ori, PFalg_unq_name (ori));
+                    add_name_pair (np_list, ori, PFalg_unq_name (ori, id++));
                 else
                     add_name_pair (np_list, ori, child_unq);
 
@@ -304,12 +304,12 @@ infer_unq_names (PFla_op_t *n)
                         unq = find_unq_name (np_list, ori_prev);
                     else
                         /* no match */
-                        unq = PFalg_unq_name (ori);
+                        unq = PFalg_unq_name (ori, id++);
 
                     add_name_pair (np_list, ori, unq);
                 }
                 else if (child_unq == att1_unq)
-                    add_name_pair (np_list, ori, PFalg_unq_name (ori));
+                    add_name_pair (np_list, ori, PFalg_unq_name (ori, id++));
                 else
                     add_name_pair (np_list, ori, child_unq);
 
@@ -376,7 +376,7 @@ infer_unq_names (PFla_op_t *n)
                     unq = l_unq;
                 else
                 */
-                    unq = PFalg_unq_name (ori);
+                    unq = PFalg_unq_name (ori, id++);
 
                 add_name_pair (np_list, ori, unq);
                 add_name_pair (n->prop->l_name_pairs, ori, l_unq);
@@ -386,7 +386,7 @@ infer_unq_names (PFla_op_t *n)
 
         case la_fun_1to1:
             bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.fun_1to1.res);
+            new_name_pair (np_list, n->sem.fun_1to1.res, id++);
             break;
 
         case la_num_eq:
@@ -395,12 +395,12 @@ infer_unq_names (PFla_op_t *n)
         case la_bool_or:
         case la_to:
             bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.binary.res);
+            new_name_pair (np_list, n->sem.binary.res, id++);
             break;
 
         case la_bool_not:
             bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.unary.res);
+            new_name_pair (np_list, n->sem.unary.res, id++);
             break;
 
         case la_avg:
@@ -410,7 +410,7 @@ infer_unq_names (PFla_op_t *n)
         case la_count:
         case la_seqty1:
         case la_all:
-            new_name_pair (np_list, n->sem.aggr.res);
+            new_name_pair (np_list, n->sem.aggr.res, id++);
             if (n->sem.aggr.part)
                 add_name_pair (np_list,
                                n->sem.aggr.part,
@@ -422,18 +422,18 @@ infer_unq_names (PFla_op_t *n)
         case la_rowrank:
         case la_rank:
             bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.sort.res);
+            new_name_pair (np_list, n->sem.sort.res, id++);
             break;
 
         case la_rowid:
             bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.rowid.res);
+            new_name_pair (np_list, n->sem.rowid.res, id++);
             break;
 
         case la_type:
         case la_cast:
             bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.type.res);
+            new_name_pair (np_list, n->sem.type.res, id++);
             break;
 
         case la_type_assert:
@@ -446,28 +446,28 @@ infer_unq_names (PFla_op_t *n)
                            n->sem.step.iter,
                            PFprop_unq_name (R(n)->prop,
                                             n->sem.step.iter));
-            new_name_pair (np_list, n->sem.step.item_res);
+            new_name_pair (np_list, n->sem.step.item_res, id++);
             break;
 
         case la_step_join:
         case la_guide_step_join:
             bulk_add_name_pairs (np_list, R(n));
-            new_name_pair (np_list, n->sem.step.item_res);
+            new_name_pair (np_list, n->sem.step.item_res, id++);
             break;
 
         case la_doc_index_join:
             bulk_add_name_pairs (np_list, R(n));
-            new_name_pair (np_list, n->sem.doc_join.item_res);
+            new_name_pair (np_list, n->sem.doc_join.item_res, id++);
             break;
 
         case la_doc_tbl:
             bulk_add_name_pairs (np_list, L(n));
-            new_name_pair (np_list, n->sem.doc_tbl.res);
+            new_name_pair (np_list, n->sem.doc_tbl.res, id++);
             break;
 
         case la_doc_access:
             bulk_add_name_pairs (np_list, R(n));
-            new_name_pair (np_list, n->sem.doc_access.res);
+            new_name_pair (np_list, n->sem.doc_access.res, id++);
             break;
 
         case la_twig:
@@ -508,7 +508,7 @@ infer_unq_names (PFla_op_t *n)
                 default:
                     break;
             }
-            new_name_pair (np_list, n->sem.iter_item.item);
+            new_name_pair (np_list, n->sem.iter_item.item, id++);
             break;
 
         case la_fcns:
@@ -530,7 +530,7 @@ infer_unq_names (PFla_op_t *n)
                            n->sem.merge_adjacent.pos_res,
                            PFprop_unq_name (R(n)->prop,
                                             n->sem.merge_adjacent.pos_in));
-            new_name_pair (np_list, n->sem.merge_adjacent.item_res);
+            new_name_pair (np_list, n->sem.merge_adjacent.item_res, id++);
             break;
 
         case la_roots:
@@ -573,7 +573,7 @@ infer_unq_names (PFla_op_t *n)
 
             /* create new unique names for all attributes */
             for (unsigned int i = 0; i < n->schema.count; i++)
-                new_name_pair (np_list, n->schema.items[i].name);
+                new_name_pair (np_list, n->schema.items[i].name, id++);
             break;
 
         case la_rec_base:
@@ -583,7 +583,7 @@ infer_unq_names (PFla_op_t *n)
         case la_fun_call:
             /* create new unique names for all attributes */
             for (unsigned int i = 0; i < n->schema.count; i++)
-                new_name_pair (np_list, n->schema.items[i].name);
+                new_name_pair (np_list, n->schema.items[i].name, id++);
             break;
 
         case la_fun_param:
@@ -600,7 +600,7 @@ infer_unq_names (PFla_op_t *n)
                            n->sem.string_join.iter_res,
                            PFprop_unq_name (R(n)->prop,
                                             n->sem.string_join.iter_sep));
-            new_name_pair (np_list, n->sem.string_join.item_res);
+            new_name_pair (np_list, n->sem.string_join.item_res, id++);
             break;
 
         case la_cross_mvd:
@@ -617,6 +617,7 @@ infer_unq_names (PFla_op_t *n)
             bulk_add_name_pairs (np_list, L(n));
             break;
     }
+    return id;
 }
 
 static void
@@ -634,20 +635,20 @@ reset_property (PFla_op_t *n)
 }
 
 /* forward declaration */
-static void
-prop_infer (PFla_op_t *n);
+static unsigned int
+prop_infer (PFla_op_t *n, unsigned int cur_col_id);
 
 /* Helper function that walks through a recursion paramter list
    and only calls the property inference for the seed expressions. */
-static void 
-prop_infer_rec_seed (PFla_op_t *n)
+static unsigned int
+prop_infer_rec_seed (PFla_op_t *n, unsigned int cur_col_id)
 {
     switch (n->kind)
     {
         case la_rec_param:
             /* infer the unique names of the arguments */
-            prop_infer_rec_seed (L(n));
-            prop_infer_rec_seed (R(n));
+            cur_col_id = prop_infer_rec_seed (L(n), cur_col_id);
+            cur_col_id = prop_infer_rec_seed (R(n), cur_col_id);
 
             /* recursion parameters do not have properties */
             reset_property (n);
@@ -655,12 +656,12 @@ prop_infer_rec_seed (PFla_op_t *n)
 
         case la_rec_arg:
             /* infer the unique names of the seed */
-            prop_infer (L(n));
+            cur_col_id = prop_infer (L(n), cur_col_id);
 
             reset_property (n);
 
             /* infer unique name columns */
-            infer_unq_names (n);
+            cur_col_id = infer_unq_names (n, cur_col_id);
 
             n->sem.rec_arg.base->bit_dag = true;
             reset_property (n->sem.rec_arg.base);
@@ -685,24 +686,26 @@ prop_infer_rec_seed (PFla_op_t *n)
                     n->kind);
             break;
     }
+
+    return cur_col_id;
 }
 
 /* Helper function that walks through a recursion paramter list
    and only calls the property inference for the recursion body. */
-static void
-prop_infer_rec_body (PFla_op_t *n)
+static unsigned int
+prop_infer_rec_body (PFla_op_t *n, unsigned int cur_col_id)
 {
     switch (n->kind)
     {
         case la_rec_param:
             /* infer the unique names of the arguments */
-            prop_infer_rec_body (L(n));
-            prop_infer_rec_body (R(n));
+            cur_col_id = prop_infer_rec_body (L(n), cur_col_id);
+            cur_col_id = prop_infer_rec_body (R(n), cur_col_id);
             break;
 
         case la_rec_arg:
             /* infer the unique names of the recursion body */
-            prop_infer (R(n));
+            cur_col_id = prop_infer (R(n), cur_col_id);
 
             /* The both inputs (seed and recursion) do not use
                the same column names. Thus we live with inconsistent
@@ -722,11 +725,12 @@ prop_infer_rec_body (PFla_op_t *n)
     }
 
     n->bit_dag = true;
+    return cur_col_id;
 }
 
 /* worker for PFprop_infer_unq_names */
-static void
-prop_infer (PFla_op_t *n)
+static unsigned int
+prop_infer (PFla_op_t *n, unsigned int cur_col_id)
 {
     bool bottom_up = true;
 
@@ -734,7 +738,7 @@ prop_infer (PFla_op_t *n)
 
     /* nothing to do if we already visited that node */
     if (n->bit_dag)
-        return;
+        return cur_col_id;
 
     /* Make sure to first collect all seeds and adjust
        the rec_base properties before inferring the properties
@@ -743,9 +747,9 @@ prop_infer (PFla_op_t *n)
     {
         case la_rec_fix:
             /* infer the unique names of the arguments */
-            prop_infer_rec_seed (L(n));
-            prop_infer_rec_body (L(n));
-            prop_infer (R(n));
+            cur_col_id = prop_infer_rec_seed (L(n), cur_col_id);
+            cur_col_id = prop_infer_rec_body (L(n), cur_col_id);
+            cur_col_id = prop_infer (R(n), cur_col_id);
             bottom_up = false;
             break;
 
@@ -758,13 +762,15 @@ prop_infer (PFla_op_t *n)
            the fragment information is translated after the value part) */
         for (unsigned int i = PFLA_OP_MAXCHILD; i > 0; i--)
             if (n->child[i - 1])
-                prop_infer (n->child[i - 1]);
+                cur_col_id = prop_infer (n->child[i - 1], cur_col_id);
 
     n->bit_dag = true;
     reset_property (n);
 
     /* infer unique name columns */
-    infer_unq_names (n);
+    cur_col_id = infer_unq_names (n, cur_col_id);
+
+    return cur_col_id;
 }
 
 /**
@@ -777,7 +783,7 @@ PFprop_infer_unq_names (PFla_op_t *root)
        a more useful eqjoin inference */
     PFprop_infer_key (root);
 
-    prop_infer (root);
+    prop_infer (root, 1);
     PFla_dag_reset (root);
 }
 

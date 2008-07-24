@@ -488,7 +488,7 @@ create_unq_name (PFalg_schema_t schema, PFalg_att_t att)
     }
 
     if (name_conflict) {
-        new_col = PFalg_ori_name (PFalg_unq_name (att),
+        new_col = PFalg_ori_name (PFalg_unq_name (att, 0),
                             ~used_cols);
     }
 
@@ -1402,7 +1402,7 @@ new_operator (PFla_op_t *n)
                        PFalg_att_t t =
                               PFalg_ori_name (
                                   PFalg_unq_name (
-                                      CSE(R(n))->schema.items[i].name),
+                                      CSE(R(n))->schema.items[i].name, 0),
                                       ~used_cols);
 
                        /* create new entry for projection */

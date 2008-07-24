@@ -60,6 +60,8 @@
 /* initial value for lists that encode free variables */
 #define ALL (~att_NULL)
 
+static bool out_of_names;
+
 /* worker for PFprop_ori_name* */
 static PFalg_att_t
 find_ori_name (PFarray_t *np_list, PFalg_att_t attr)
@@ -227,7 +229,17 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             PFalg_att_t ori = PFalg_ori_name (unq, FREE(n));
             add_name_pair (np_list, ori, unq);
             FREE(n) = diff (FREE(n), ori);
+            /* check if we run out of names */
+            if (!FREE(n)) {
+                out_of_names = true;
+                return np_list;
+            }
         }
+    }
+    /* check if we run out of names */
+    if (!FREE(n)) {
+        out_of_names = true;
+        return np_list;
     }
 
     /* create name pair lists for the child operators */
@@ -710,9 +722,12 @@ reset_fun (PFla_op_t *n)
 /**
  * Infer original names for a DAG rooted in root
  */
-void
+bool
 PFprop_infer_ori_names (PFla_op_t *root)
 {
+    /* reset out_of_names flag */
+    out_of_names = false;
+    
     /* collect number of incoming edges (parents) */
     PFprop_infer_refctr (root);
 
@@ -722,6 +737,8 @@ PFprop_infer_ori_names (PFla_op_t *root)
     /* infer new original names property */
     infer_ori_names (root,
                      PFarray (sizeof (name_pair_t), 0));
+
+    return out_of_names;
 }
 
 /* vim:set shiftwidth=4 expandtab: */

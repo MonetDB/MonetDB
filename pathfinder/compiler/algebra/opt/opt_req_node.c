@@ -135,63 +135,61 @@ get_loop_relation (PFla_op_t *p, PFalg_att_t iter)
  * @brief Copy a constant fragment using a different loop relation (@a loop).
  */
 static PFla_op_t *
-build_constant_frag (PFla_op_t *p, PFla_op_t *loop, PFalg_att_t iter, bool unq)
+build_constant_frag (PFla_op_t *p, PFla_op_t *loop)
 {
-#define name_item  (unq ? PFalg_unq_fixed_name (att_item, 1) : att_item)
-#define name_item1 (unq ? PFalg_unq_fixed_name (att_item, 2) : att_item1)
     switch (p->kind) {
         case la_fcns:
-            return fcns (build_constant_frag (L(p), loop, iter, unq),
-                         build_constant_frag (R(p), loop, iter, unq));
+            return fcns (build_constant_frag (L(p), loop),
+                         build_constant_frag (R(p), loop));
         case la_docnode:
             return docnode (loop,
-                            build_constant_frag (R(p), loop, iter, unq), iter);
+                            build_constant_frag (R(p), loop), att_iter);
         case la_element:
             return element (attach (loop,
-                                    name_item,
+                                    att_item,
                                     PFprop_const_val_left (
                                         p->prop,
                                         p->sem.iter_item.item)),
-                            build_constant_frag (R(p), loop, iter, unq),
-                            iter, name_item);
+                            build_constant_frag (R(p), loop),
+                            att_iter, att_item);
         case la_textnode:
             return textnode (attach (loop,
-                                     name_item,
+                                     att_item,
                                      PFprop_const_val_left (
                                          p->prop,
                                          p->sem.iter_item.item)),
-                             iter, name_item);
+                             att_iter, att_item);
         case la_comment:
             return comment (attach (loop,
-                                    name_item,
+                                    att_item,
                                     PFprop_const_val_left (
                                         p->prop,
                                         p->sem.iter_item.item)),
-                            iter, name_item);
+                            att_iter, att_item);
         case la_attribute:
             return attribute (attach (
                                   attach (loop,
-                                          name_item,
+                                          att_item,
                                           PFprop_const_val_left (
                                               p->prop,
                                               p->sem.iter_item1_item2.item1)),
-                                  name_item1,
+                                  att_item1,
                                   PFprop_const_val_left (
                                       p->prop,
                                       p->sem.iter_item1_item2.item2)),
-                              iter, name_item, name_item1);
+                              att_iter, att_item, att_item1);
         case la_processi:
             return processi (attach (
                                  attach (loop,
-                                         name_item,
+                                         att_item,
                                          PFprop_const_val_left (
                                              p->prop,
                                              p->sem.iter_item1_item2.item1)),
-                                 name_item1,
+                                 att_item1,
                                  PFprop_const_val_left (
                                      p->prop,
                                      p->sem.iter_item1_item2.item2)),
-                             iter, name_item, name_item1);
+                             att_iter, att_item, att_item1);
         case la_content:
             PFoops (OOPS_FATAL, "constructor not constant");
         case la_nil:
@@ -268,19 +266,16 @@ opt_req_node (PFla_op_t *p)
              twig_constant (LL(p))) {
         /* Save the old item column name as well as the old loop relation
            before overwriting the references. */
-        PFalg_att_t iter = L(p)->sem.iter_item.iter,
-                    item = L(p)->sem.iter_item.item;
+        PFalg_att_t item = L(p)->sem.iter_item.item;
         PFla_op_t  *loop = get_loop_relation (LL(p), L(p)->sem.iter_item.iter);
 
         /* relink the fragment operator */
         *L(p) = *twig (build_constant_frag (
                            LL(p),
-                           lit_tbl (attlist (iter), tuple (lit_nat (1))),
-                           iter,
-                           PFalg_is_unq_name (item)),
-                       iter, item);
+                           lit_tbl (attlist (att_iter), tuple (lit_nat (1)))),
+                       att_iter, att_item);
 
-        *p    = *cross (project (roots (L(p)), proj (item, item)),
+        *p    = *cross (project (roots (L(p)), proj (item, att_item)),
                         loop);
     }
 

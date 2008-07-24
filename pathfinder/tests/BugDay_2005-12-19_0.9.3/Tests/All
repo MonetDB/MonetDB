@@ -18,7 +18,7 @@ doc-order_in_attributes.SF-1328671
 empty.SF-1331808
 merged_union_and_join.SF-1337630
 parent_step_bug.SF-1339844
-text_nodes_with_empty_content_seq.SF-1350418
+WITH_ALGEBRA?text_nodes_with_empty_content_seq.SF-1350418
 attribute_after_non-attribute_content.SF-1351516
 shredding_one_attribute.SF-1376942
 shredding_on_the_fly.SF-1377006

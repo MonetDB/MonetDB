@@ -5,18 +5,10 @@ stderr of test 'internal` in directory 'compiler/semantics/tests/typechecking` i
 # 11:48:33 >  Mtimeout -timeout 60 ./internal internal 
 # 11:48:33 >  
 
-Testing the subtyping algorithm:
---------------------------------
+pf: invalid option -- d
+unknown or incomplete command line argument: try `pf -h'
 
-integer <: decimal : true
-element #pf:foo { integer } | element { double } <: element #pf:foo { integer } : false
-element #pf:foo { integer } | element { double } <: element { double } : false
-element { double } | element #pf:foo { integer } <: element #pf:foo { integer } : false
-element { double } | element #pf:foo { integer } <: element { double } : false
-
-Subtype debugging completed.
-
-# 11:48:33 >  
-# 11:48:33 >  Done.
-# 11:48:33 >  
+# 10:18:08 >  
+# 10:18:08 >  Done.
+# 10:18:08 >  
 

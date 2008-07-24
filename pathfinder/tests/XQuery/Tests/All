@@ -135,7 +135,7 @@ cast3
 cast4
 cast5
 cast6
-cast7
+WITH_ALGEBRA?cast7
 instance1
 instance2
 sum1
@@ -224,10 +224,10 @@ fn_round
 fn_sum
 fn_number
 fn_true_false
-fun1
+NOT_ALGEBRA?fun1
 fun2
 fun3
-fun4
+NOT_ALGEBRA?fun4
 fun5
 fun6
 fun7
@@ -255,8 +255,8 @@ HAVE_PCRE?replace15
 HAVE_PCRE?replace16
 HAVE_PCRE?replace17
 HAVE_PCRE?replace18
-typing1
-typing2
+WITH_ALGEBRA?typing1
+WITH_ALGEBRA?typing2
 typing3
 type_integer
 fn_not

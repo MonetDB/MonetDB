@@ -97,34 +97,9 @@ PFfun_xquery_fo (void)
     {
 
 /* 2. ACCESSORS */
-/* 2.1. fn:node-name */
-	  /* fn:node-name ((attribute)?) as xs:QName? */
-	    { .ns = PFns_fn, .loc = "node-name",
-	      .arity = 1,
-	      .sig_count = 1, .sigs = { {
-	          .par_ty = (PFty_t[]) { PFty_opt (
-								PFty_xs_anyAttribute ()) },
-	          .ret_ty = PFty_xs_QName() } },
-	      .alg = PFfn_bui_node_name_attr }
-	 /* fn:node-name ((element)?) as xs:QName? */
-	 , { .ns = PFns_fn, .loc = "node-name",
-	     .arity = 1,
-	     .sig_count = 1, .sigs = { {
-	         .par_ty = (PFty_t[]) { PFty_opt (
-	   						PFty_xs_anyElement ()) },
-	         .ret_ty = PFty_xs_QName() } },
-	     .alg = PFfn_bui_node_name_elem }
-	  /* fn:node-name ((node)?)*/
-	  , { .ns = PFns_fn, .loc = "node-name",
-	      .arity = 1,
-	      .sig_count = 1, .sigs = { {
-	          .par_ty = (PFty_t[]) { PFty_opt (
-								PFty_xs_anyNode ()) },
-	          .ret_ty = PFty_xs_QName() } },
-	      .alg = PFfn_bui_node_name_node }
 /* 2.3. fn:string */
       /* fn:string () as string */
-     , { .ns = PFns_fn, .loc = "string",
+      { .ns = PFns_fn, .loc = "string",
         .arity = 0, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_none () },
             .ret_ty = PFty_xs_string () } },
@@ -1885,7 +1860,7 @@ PFfun_xquery_fo (void)
       { .ns = PFns_fn, .loc = "put",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_anyNode (), PFty_xs_string () },
-            .ret_ty = PFty_none () } } ,
+            .ret_ty = PFty_empty() } } ,
         .alg = PFbui_fn_put }
     , /* pf:documents () as element()* */
       { .ns = PFns_lib, .loc = "documents",

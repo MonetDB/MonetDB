@@ -48,19 +48,6 @@
 #include "core2alg.h"
 
 /* 2. ACCESSORS */
-/* 2.1. fn:node_name */
-struct PFla_pair_t PFfn_bui_node_name_attr (const PFla_op_t *loop,
-					     					bool ordering,
-    				     					struct PFla_pair_t *args);
-
-struct PFla_pair_t PFfn_bui_node_name_elem (const PFla_op_t *loop,
-						 					bool ordering,
-						 					struct PFla_pair_t *args);
-
-struct PFla_pair_t PFfn_bui_node_name_node (const PFla_op_t *loop,
-						 					bool ordering,
-    					 					struct PFla_pair_t *args);
-
 /* 2.3. fn:string */
 struct PFla_pair_t PFbui_fn_string_attr (const PFla_op_t *loop,
                                          bool ordering,

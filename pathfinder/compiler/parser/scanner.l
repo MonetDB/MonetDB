@@ -571,7 +571,10 @@ _                                {S}
                                                                    yyleng));
                                      gotoState (OPERATOR); 
                                      pf_yield (Star_Colon_NCName); }
-"document-node"{_}?"("/[^:]        { pushState (OCCURRENCEINDICATOR);
+"document-node"{_}?"("/[^:]        { /* fake KINDTESTFORDOC that needs to allow
+                                        schema (, schema-element (, and needs to
+                                        end up in an OCCURRENCEINDICATOR state */ 
+                                     gotoState (ITEMTYPE);
                                      pf_yield (document_node_lparen); }
 "text"{_}?"("/[^:]                 { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
@@ -845,8 +848,7 @@ _                                {S}
                                      gotoState (OCCURRENCEINDICATOR);
                                      pf_yield (QName);
                                    }
-"document-node"{_}?"("/[^:]        { pushState (OCCURRENCEINDICATOR);
-                                     pf_yield (document_node_lparen); }
+"document-node"{_}?"("/[^:]        { pf_yield (document_node_lparen); }
 "text"{_}?"("/[^:]                 { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
                                      pf_yield (text_lparen); }

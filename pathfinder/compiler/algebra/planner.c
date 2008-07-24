@@ -124,12 +124,6 @@ typedef PFpa_op_t plan_t;
 /* Function call kind indicator */
 static PFalg_fun_call_t fun_call_kind;
 
-/* Information if we have unique or bit-encoded column names */
-static unsigned int unq_column_names;
-#define new_name(p,l) (unq_column_names                          \
-                       ? PFalg_unq_name (p)                      \
-                       : PFalg_ori_name (PFalg_unq_name (p), ~l))
-
 /* ensure some ordering on a given plan */
 static PFplanlist_t *ensure_ordering (const plan_t *unordered,
                                       PFord_ordering_t required);
@@ -902,8 +896,9 @@ plan_pos_select (const PFla_op_t *n)
     for (unsigned int i = 0; i < n->schema.count; i++)
         used_cols |= n->schema.items[i].name;
 
-    num  = new_name (att_pos, used_cols);
-    cast = new_name (att_pos, (used_cols|num));
+    num = PFalg_ori_name (PFalg_unq_name (att_pos, 0), ~used_cols);
+    used_cols |= num;
+    cast = PFalg_ori_name (PFalg_unq_name (att_pos, 0), ~used_cols);
 
     for (unsigned int i = 0; i < count; i++)
         proj[i] = PFalg_proj (n->schema.items[i].name,
@@ -1545,11 +1540,12 @@ plan_cast (const PFla_op_t *n)
 static PFplanlist_t *
 plan_step (const PFla_op_t *n)
 {
-    PFplanlist_t *ret  = new_planlist ();
-    PFalg_proj_t *proj = PFmalloc (2 * sizeof (PFalg_proj_t));
+    PFplanlist_t *ret     = new_planlist ();
 
-    proj[0] = PFalg_proj (n->sem.step.iter, n->sem.step.iter);
-    proj[1] = PFalg_proj (n->sem.step.item_res, n->sem.step.item);
+#ifndef NDEBUG
+    /* ensure that input and output columns have the same name */
+    assert (n->sem.step.item == n->sem.step.item_res);
+#endif
 
     /*
      * Loop-lifted staircase join can handle two different orderings
@@ -1583,15 +1579,13 @@ plan_step (const PFla_op_t *n)
             for (unsigned short o = 0; o < 2; o++)
                 add_plan (
                     ret,
-                    project (
-                        llscjoin (
-                            *(plan_t **) PFarray_at (ordered, k),
-                            n->sem.step.spec,
-                            in[i],
-                            out[o],
-                            n->sem.step.iter,
-                            n->sem.step.item),
-                        2, proj));
+                    llscjoin (
+                        *(plan_t **) PFarray_at (ordered, k),
+                        n->sem.step.spec,
+                        in[i],
+                        out[o],
+                        n->sem.step.iter,
+                        n->sem.step.item));
     }
 
     return ret;
@@ -1647,8 +1641,9 @@ plan_step_join (const PFla_op_t *n)
     for (unsigned int i = 0; i < n->schema.count; i++)
         used_cols |= n->schema.items[i].name;
 
-    iter  = new_name (att_iter, used_cols);
-    iter2 = new_name (att_iter, (used_cols|iter));
+    iter  = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
+    used_cols |= iter;
+    iter2 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
 
     /* create the inner projection list */
     proj_in[0] = PFalg_proj (iter2, iter);
@@ -1717,7 +1712,7 @@ plan_step_join_to_step (const PFla_op_t *n)
     /* find a free iter value */
     item      = L(n)->sem.step.item;
     used_cols = item_res | item;
-    iter      = new_name (att_iter, used_cols);
+    iter      = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
     
     proj_out[0].new = item_out;
     proj_out[0].old = item;
@@ -2197,11 +2192,10 @@ plan_processi (const PFla_op_t *n)
 static PFplanlist_t *
 plan_content (const PFla_op_t *n)
 {
-    PFplanlist_t *ret        = new_planlist (),
-                 *ordered_in = new_planlist ();
-    PFalg_att_t   iter       = n->sem.iter_pos_item.iter,
-                  pos        = n->sem.iter_pos_item.pos,
-                  item       = n->sem.iter_pos_item.item;
+    PFplanlist_t  *ret        = new_planlist ();
+    PFplanlist_t  *ordered_in = new_planlist ();
+    PFalg_att_t    iter       = n->sem.iter_pos_item.iter;
+    PFalg_att_t    pos        = n->sem.iter_pos_item.pos;
 
     for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++)
         add_plans (ordered_in,
@@ -2209,19 +2203,21 @@ plan_content (const PFla_op_t *n)
                        *(plan_t **) PFarray_at (R(n)->plans, i),
                        sortby (iter, pos)));
 
-    if (PFprop_node_property (R(n)->prop, item) &&
-        !PFprop_node_content_queried (R(n)->prop, item))
+    if (PFprop_node_property (n->prop, att_item) &&
+        !PFprop_node_content_queried (n->prop, att_item))
         /* for each plan, generate a constructor */
         for (unsigned int i = 0; i < PFarray_last (ordered_in); i++)
             add_plan (ret,
                       slim_content (*(plan_t **) PFarray_at (ordered_in, i),
-                                    iter, item));
+                                    iter,
+                                    n->sem.iter_pos_item.item));
     else
         /* for each plan, generate a constructor */
         for (unsigned int i = 0; i < PFarray_last (ordered_in); i++)
             add_plan (ret,
                       content (*(plan_t **) PFarray_at (ordered_in, i),
-                               iter, item));
+                               iter,
+                               n->sem.iter_pos_item.item));
 
     return ret;
 }
@@ -2233,24 +2229,23 @@ plan_content (const PFla_op_t *n)
 static PFplanlist_t *
 plan_merge_texts (const PFla_op_t *n)
 {
+    PFplanlist_t *ret    = new_planlist ();
+    PFplanlist_t *sorted = new_planlist ();
+    plan_t       *cheapest_sorted    = NULL;
+    PFalg_att_t   iter = n->sem.merge_adjacent.iter_in;
+    PFalg_att_t   pos  = n->sem.merge_adjacent.pos_in;
+    PFalg_att_t   item = n->sem.merge_adjacent.item_in;
+
+#ifndef NDEBUG
+    /* ensure that matching columns (iter, pos, item) have the same name */
+    assert (iter == n->sem.merge_adjacent.iter_res);
+    assert (pos  == n->sem.merge_adjacent.pos_res);
+    assert (item == n->sem.merge_adjacent.item_res);
+#endif
+
     assert (n); assert (n->kind == la_merge_adjacent);
     assert (R(n)); assert (R(n)->plans);
 
-    PFplanlist_t *ret      = new_planlist ();
-    PFplanlist_t *sorted   = new_planlist ();
-    plan_t       *cheapest_sorted    = NULL;
-    PFalg_att_t   iter     = n->sem.merge_adjacent.iter_in,
-                  pos      = n->sem.merge_adjacent.pos_in,
-                  item     = n->sem.merge_adjacent.item_in,
-                  iter_res = n->sem.merge_adjacent.iter_res,
-                  pos_res  = n->sem.merge_adjacent.pos_res,
-                  item_res = n->sem.merge_adjacent.item_res;
-    PFalg_proj_t *proj     = PFmalloc (3 * sizeof (PFalg_proj_t));
-
-    proj[0] = PFalg_proj (iter_res, iter);
-    proj[1] = PFalg_proj (pos_res, pos);
-    proj[2] = PFalg_proj (item_res, item);
-                         
     /* The merge_adjacent_text_node operator requires
        its inputs to be properly sorted. */
     for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++)
@@ -2268,11 +2263,9 @@ plan_merge_texts (const PFla_op_t *n)
     /* generate a merge_adjacent_text_node operator for
        the single remaining plan */
     add_plan (ret,
-              project (
-                  merge_adjacent (
-                      cheapest_sorted,
-                      iter, pos, item),
-                  3, proj));
+              merge_adjacent (
+                  cheapest_sorted,
+                  iter, pos, item));
     return ret;
 }
 
@@ -2478,29 +2471,25 @@ plan_fun_param (const PFla_op_t *n)
 static PFplanlist_t *
 plan_string_join (const PFla_op_t *n)
 {
+    PFplanlist_t *ret       = new_planlist ();
+    PFplanlist_t *sorted_n1 = new_planlist ();
+    PFplanlist_t *sorted_n2 = new_planlist ();
+    PFalg_att_t   iter = n->sem.string_join.iter;
+    PFalg_att_t   pos  = n->sem.string_join.pos;
+    PFalg_att_t   item = n->sem.string_join.item;
+
+#ifndef NDEBUG
+    /* ensure that matching columns (iter, pos, item) have the same name */
+    assert (iter == n->sem.string_join.iter_sep &&
+            iter == n->sem.string_join.iter_res);
+    assert (item == n->sem.string_join.item_sep &&
+            item == n->sem.string_join.item_res);
+#endif
+
     assert (n); assert (n->kind == la_string_join);
     assert (L(n)); assert (L(n)->plans);
     assert (R(n)); assert (R(n)->plans);
 
-    PFplanlist_t *ret       = new_planlist ();
-    PFplanlist_t *sorted_n1 = new_planlist ();
-    PFplanlist_t *sorted_n2 = new_planlist ();
-    PFalg_att_t   iter      = n->sem.string_join.iter,
-                  pos       = n->sem.string_join.pos,
-                  item      = n->sem.string_join.item,
-                  iter_res  = n->sem.string_join.iter_res,
-                  item_res  = n->sem.string_join.item_res,
-                  iter_sep  = n->sem.string_join.iter_sep,
-                  item_sep  = n->sem.string_join.item_sep;
-
-    PFalg_proj_t *lproj     = PFmalloc (2 * sizeof (PFalg_proj_t)),
-                 *rproj     = PFmalloc (1 * sizeof (PFalg_proj_t));
-
-    lproj[0] = PFalg_proj (iter_res, iter);
-    lproj[1] = PFalg_proj (item_res, item);
-    rproj[0] = PFalg_proj (iter_res, iter_sep);
-    rproj[1] = PFalg_proj (item_res, item_sep);
-    
     /* The string_join operator requires its inputs to be properly sorted. */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plans (sorted_n1,
@@ -2512,22 +2501,16 @@ plan_string_join (const PFla_op_t *n)
         add_plans (sorted_n2,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (R(n)->plans, i),
-                       sortby (iter_sep)));
+                       sortby (iter)));
 
     /* for each remaining plan, generate a string_join operator */
     for (unsigned int i = 0; i < PFarray_last (sorted_n1); i++)
         for (unsigned int j = 0; j < PFarray_last (sorted_n2); j++)
             add_plan (ret,
                       string_join (
-                          project (
-                              *(plan_t **) PFarray_at (sorted_n1, i),
-                              2,
-                              lproj),
-                          project (
-                              *(plan_t **) PFarray_at (sorted_n2, j),
-                              2,
-                              rproj),
-                          iter_res, item_res));
+                          *(plan_t **) PFarray_at (sorted_n1, i),
+                          *(plan_t **) PFarray_at (sorted_n2, j),
+                          iter, item));
     return ret;
 }
 
@@ -2693,8 +2676,9 @@ plan_id_join (PFla_op_t *n)
     for (unsigned int i = 0; i < n->schema.count; i++)
         used_cols |= n->schema.items[i].name;
 
-    iter  = new_name (att_iter, used_cols);
-    iter2 = new_name (att_iter, (used_cols|iter));
+    iter  = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
+    used_cols |= iter;
+    iter2 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
 
     /* create the inner projection list */
     proj_in[0] = PFalg_proj (iter2, iter);
@@ -3455,19 +3439,13 @@ plan_subexpression (PFla_op_t *n)
             plan_t *p = (*(plan_t **) PFarray_at (plans, 0));
             unsigned int plan_count = PFarray_last (plans);
             unsigned int i, j, plan;
-            PFalg_att_t att;
 
-            for (i = 0; i < p->schema.count; i++) {
-                att = p->schema.items[i].name;
+            for (i = 0; i < p->schema.count; i++)
                 /* check for an iter-like column (to avoid generating
                    a large amount of plans) */
-                if ((unq_column_names &&
-                     PFalg_ori_name (att, ~att_NULL) == att_iter) ||
-                    (!unq_column_names &&
-                     PFalg_unq_fixed_name (p->schema.items[i].name, 1) ==
-                     PFalg_unq_fixed_name (att_iter, 1)))
+                if (PFalg_unq_name (p->schema.items[i].name, 0) ==
+                    PFalg_unq_name (att_iter, 0))
                     ord = PFord_refine (ord, p->schema.items[i].name, DIR_ASC);
-            }
 
             /* collect all possible orderings of length 1 and 2 */
             for (i = 0; i < PFord_count (ord); i++) {
@@ -3539,10 +3517,6 @@ PFplan (PFla_op_t *root)
 {
     PFpa_op_t *ret = NULL;
 
-    assert (root->kind == la_serialize_seq);
-
-    unq_column_names = PFalg_is_unq_name (root->sem.ser_seq.item);
-        
     /* compute all interesting plans for root */
     plan_subexpression (root);
 

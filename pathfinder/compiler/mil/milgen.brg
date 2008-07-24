@@ -8302,28 +8302,23 @@ reduce (PFpa_op_t * p, int goalnt)
         /* Rel:      merge_adjacent (Rel) */
         case 117: /* fold( */
         {
-            PFalg_att_t         iter_att   = p->sem.iter_pos_item.iter,
-                                pos_att    = p->sem.iter_pos_item.pos,
-                                item_att   = p->sem.iter_pos_item.item;
+            PFalg_att_t         iter_att   = p->sem.ii.iter,
+                                item_att   = p->sem.ii.item;
             PFalg_simple_type_t item_ty    = type_of (L(p), item_att);
             mvar_t             *iter       = new_var (p->refctr),
-                               *pos        = new_var (p->refctr),
                                *pre        = new_var (p->refctr),
                                *frag       = new_var (p->refctr),
                                *a_iter     = NULL,
-                               *a_pos      = NULL,
                                *a_pre      = NULL,
                                *a_attr     = NULL,
                                *a_cont     = NULL,
                                *p_iter     = NULL,
-                               *p_pos      = NULL,
                                *p_pre      = NULL,
                                *p_cont     = NULL,
                                *ma;
             bool                treat_attr = false;
 
             env_add (p->env, iter_att, aat_nat, iter);
-            env_add (p->env, pos_att,  aat_nat, pos);
             env_add (p->env, item_att, aat_pre, pre);
             env_add (p->env, item_att, aat_frag, frag);
 
@@ -8333,7 +8328,6 @@ reduce (PFpa_op_t * p, int goalnt)
                 mvar_t *attr    = new_var (1),
                        *sel     = new_var (1),
                        *in_iter = env_mvar (L(p)->env, iter_att, aat_nat),
-                       *in_pos  = env_mvar (L(p)->env, pos_att,  aat_nat),
                        *in_frag = env_mvar (L(p)->env, item_att, aat_frag),
                        *in_pre  = env_mvar (L(p)->env, item_att, aat_pre),
                        *in_attr = env_mvar (L(p)->env, item_att, aat_attr);
@@ -8341,11 +8335,9 @@ reduce (PFpa_op_t * p, int goalnt)
                 treat_attr = true;
 
                 p_iter = new_var (1);
-                p_pos  = new_var (1);
                 p_pre  = new_var (1);
                 p_cont = new_var (1);
                 a_iter = new_var (1);
-                a_pos  = new_var (1);
                 a_pre  = new_var (1);
                 a_attr = new_var (1);
                 a_cont = new_var (1);
@@ -8364,7 +8356,6 @@ reduce (PFpa_op_t * p, int goalnt)
                 /* sel    := attr.uselect(true).hmark(0@0);
                    p_pre  := leftfetchjoin (sel, pre);
                    p_iter := leftfetchjoin (sel, iter);
-                   p_pos  := leftfetchjoin (sel, pos);
                    p_cont := leftfetchjoin (sel, frag); */
                 execute (
                     assgn (var (sel->name),
@@ -8376,9 +8367,6 @@ reduce (PFpa_op_t * p, int goalnt)
                     assgn (var (p_iter->name),
                            leftfetchjoin (var (sel->name),
                                           var (in_iter->name))),
-                    assgn (var (p_pos->name),
-                           leftfetchjoin (var (sel->name),
-                                          var (in_pos->name))),
                     assgn (var (p_cont->name),
                            leftfetchjoin (var (sel->name),
                                           var (in_frag->name))));
@@ -8389,7 +8377,6 @@ reduce (PFpa_op_t * p, int goalnt)
                    a_pre  := leftfetchjoin (sel, pre);
                    a_attr := leftfetchjoin (sel, attr);
                    a_iter := leftfetchjoin (sel, iter);
-                   a_pos  := leftfetchjoin (sel, pos);
                    a_cont := leftfetchjoin (sel, frag); */
                 execute (
                     assgn (var (sel->name),
@@ -8404,9 +8391,6 @@ reduce (PFpa_op_t * p, int goalnt)
                     assgn (var (a_iter->name),
                            leftfetchjoin (var (sel->name),
                                           var (in_iter->name))),
-                    assgn (var (a_pos->name),
-                           leftfetchjoin (var (sel->name),
-                                          var (in_pos->name))),
                     assgn (var (a_cont->name),
                            leftfetchjoin (var (sel->name),
                                           var (in_frag->name))));
@@ -8416,7 +8400,6 @@ reduce (PFpa_op_t * p, int goalnt)
             }
             else {
                 p_iter = env_mvar (L(p)->env, iter_att, aat_nat);
-                p_pos  = env_mvar (L(p)->env, pos_att, aat_nat);
                 p_pre  = env_mvar (L(p)->env, item_att, aat_pre);
                 p_cont = env_mvar (L(p)->env, item_att, aat_frag);
             }
@@ -8435,11 +8418,6 @@ reduce (PFpa_op_t * p, int goalnt)
                            hmark (fetch (var (ma->name), lit_int (1)),
                                   lit_oid (0)),
                            VAR (L(p)->env, iter_att, aat_nat))),
-                assgn (var (pos->name),
-                       leftfetchjoin (
-                           hmark (fetch (var (ma->name), lit_int (1)),
-                                  lit_oid (0)),
-                           VAR (L(p)->env, pos_att, aat_nat))),
                 assgn (var (pre->name),
                        tmark (fetch (var (ma->name), lit_int (1)),
                               lit_oid (0))),
@@ -8468,34 +8446,28 @@ reduce (PFpa_op_t * p, int goalnt)
                            merged_union (
                                arg (var (a_iter->name),
                                arg (var (iter->name),
-                               arg (var (a_pos->name),
-                               arg (var (pos->name),
                                arg (var (a_pre->name),
                                arg (var (pre->name),
                                arg (var (a_attr->name),
                                arg (project (var (iter->name),
                                              cast (type (mty_oid), nil ())),
                                arg (var (a_cont->name),
-                                    var (frag->name)))))))))))),
+                                    var (frag->name)))))))))),
                     assgn (var (iter->name),
                            fetch (var (mu->name), lit_int (0))),
-                    assgn (var (pos->name),
-                           fetch (var (mu->name), lit_int (1))),
                     assgn (var (pre->name),
-                           fetch (var (mu->name), lit_int (2))),
+                           fetch (var (mu->name), lit_int (1))),
                     assgn (var (attr->name),
-                           fetch (var (mu->name), lit_int (3))),
+                           fetch (var (mu->name), lit_int (2))),
                     assgn (var (frag->name),
-                           fetch (var (mu->name), lit_int (4))));
+                           fetch (var (mu->name), lit_int (3))));
 
                 unpin (mu, 1);
 
                 unpin (p_iter, 1);
-                unpin (p_pos, 1);
                 unpin (p_pre, 1);
                 unpin (p_cont, 1);
                 unpin (a_iter, 1);
-                unpin (a_pos, 1);
                 unpin (a_pre, 1);
                 unpin (a_attr, 1);
                 unpin (a_cont, 1);

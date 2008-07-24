@@ -134,7 +134,8 @@ opt_icol (PFla_op_t *p)
                     tuples[j].count = 1;
                 }
 
-                *p = *PFla_lit_tbl_ (PFalg_attlist_ (1, atts), 1, tuples);
+                *p = *PFla_lit_tbl_ (PFalg_attlist_ (1, atts),
+                                     p->sem.lit_tbl.count, tuples);
                 SEEN(p) = true;
             }
         } break;

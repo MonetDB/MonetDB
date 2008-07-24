@@ -1681,12 +1681,12 @@ opt_mvd (PFla_op_t *p)
                    to ensure that at least one column remains as input
                    for the cross product. */
                 if (!lcount) {
-                    cur = PFalg_ori_name (PFalg_unq_name (att_iter),
+                    cur = PFalg_ori_name (PFalg_unq_name (att_iter, 0),
                                           ~used_cols);
                     proj_lcross[0] = proj (cur, p->schema.items[0].name);
                     lcount++;
                 } else if (!rcount) {
-                    cur = PFalg_ori_name (PFalg_unq_name (att_iter),
+                    cur = PFalg_ori_name (PFalg_unq_name (att_iter, 0),
                                           ~used_cols);
                     proj_rcross[0] = proj (cur, rcross->schema.items[0].name);
                     rcount++;

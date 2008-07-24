@@ -98,7 +98,7 @@ remove_semijoin_worker (PFla_op_t *p)
         /* rename the join argument in case a name conflict occurs */
         if (used_cols & new_col)
             new_col = PFalg_ori_name (
-                          PFalg_unq_name (new_col),
+                          PFalg_unq_name (new_col, 0),
                           ~used_cols);
 
         /* project away all columns except for the join column */
@@ -811,20 +811,20 @@ modify_semijoin_proxy (PFla_op_t *root,
 
     /* Create 4 new column names for the two additional rowid operators
        and their backmapping equi-joins */
-    num_col1 = PFalg_ori_name (PFalg_unq_name (num_col), ~used_cols);
+    num_col1 = PFalg_ori_name (PFalg_unq_name (num_col, 0), ~used_cols);
     used_cols = used_cols | num_col1;
-    num_col2 = PFalg_ori_name (PFalg_unq_name (num_col), ~used_cols);
+    num_col2 = PFalg_ori_name (PFalg_unq_name (num_col, 0), ~used_cols);
     used_cols = used_cols | num_col2;
-    num_col_alias1 = PFalg_ori_name (PFalg_unq_name (num_col), ~used_cols);
+    num_col_alias1 = PFalg_ori_name (PFalg_unq_name (num_col, 0), ~used_cols);
     used_cols = used_cols | num_col_alias1;
-    num_col_alias2 = PFalg_ori_name (PFalg_unq_name (num_col), ~used_cols);
+    num_col_alias2 = PFalg_ori_name (PFalg_unq_name (num_col, 0), ~used_cols);
     used_cols = used_cols | num_col_alias2;
 
     /* Create a new alias for the mapping rowid operator if its
        name conflicts with the column name of the sub-DAG */
     if (join_att2 == num_col) {
         num_col_alias = PFalg_ori_name (
-                            PFalg_unq_name (num_col),
+                            PFalg_unq_name (num_col, 0),
                             ~used_cols);
         used_cols = used_cols | num_col_alias;
     } else
@@ -1235,7 +1235,7 @@ nest_proxy (PFla_op_t *root,
     /* Generate a new column name that will hold the values of the
        new upper rowid operator... */
     new_num_col = PFalg_ori_name (
-                      PFalg_unq_name (proxy_exit->sem.rowid.res),
+                      PFalg_unq_name (proxy_exit->sem.rowid.res, 0),
                       ~used_cols);
     used_cols = used_cols | new_num_col;
 
@@ -1266,7 +1266,7 @@ nest_proxy (PFla_op_t *root,
         cur_col = proxy_exit->schema.items[i].name;
 
         if (cur_col != proxy_exit->sem.rowid.res) {
-            new_col = PFalg_ori_name (PFalg_unq_name (cur_col), ~used_cols);
+            new_col = PFalg_ori_name (PFalg_unq_name (cur_col, 0), ~used_cols);
             used_cols = used_cols | new_col;
 
             lower_left_proj[i] = PFalg_proj (new_col, cur_col);
@@ -1627,7 +1627,7 @@ intro_step_join (PFla_op_t *root,
     used_cols = used_cols | item;
 
     /* Create a new column name for the result of the new path step. */
-    item_res = PFalg_ori_name (PFalg_unq_name (att_item), ~used_cols);
+    item_res = PFalg_ori_name (PFalg_unq_name (att_item, 0), ~used_cols);
 
     /* Get the column of the resulting item column of the step */
     if (proj) {
@@ -1928,7 +1928,7 @@ generate_join_proxy (PFla_op_t *root,
     /* Generate a new column name that will hold the values of the
        new nested rowid operator... */
     new_num_col = PFalg_ori_name (
-                      PFalg_unq_name (num_col),
+                      PFalg_unq_name (num_col, 0),
                       ~used_cols);
     used_cols = used_cols | new_num_col;
 
@@ -1939,11 +1939,11 @@ generate_join_proxy (PFla_op_t *root,
     /* In addition create two names for mapping the old as well
        as the new rowid operators... */
     new_num_col_alias = PFalg_ori_name (
-                            PFalg_unq_name (num_col),
+                            PFalg_unq_name (num_col, 0),
                             ~used_cols);
     used_cols = used_cols | new_num_col_alias;
     num_col_alias = PFalg_ori_name (
-                        PFalg_unq_name (num_col),
+                        PFalg_unq_name (num_col, 0),
                         ~used_cols);
     used_cols = used_cols | num_col_alias;
 
@@ -2026,7 +2026,7 @@ generate_join_proxy (PFla_op_t *root,
             if (j == base_count) {
                 /* create new column name */
                 PFalg_att_t new_exit_col = PFalg_ori_name (
-                                               PFalg_unq_name (entry_col),
+                                               PFalg_unq_name (entry_col, 0),
                                                ~used_cols);
                 used_cols = used_cols | new_exit_col;
                 /* add column to the list of new columns */
@@ -2702,9 +2702,9 @@ unnest_proxy (PFla_op_t *root,
 
     /* Generate two new column names from the list
        of 'remaining' column names. */
-    num_col1 = PFalg_ori_name (PFalg_unq_name (att_iter), ~used_cols);
+    num_col1 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
     used_cols = used_cols | num_col1;
-    num_col2 = PFalg_ori_name (PFalg_unq_name (att_iter), ~used_cols);
+    num_col2 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
     /* used_cols = used_cols | num_col2; */
 
     /* create overall rowid operator */

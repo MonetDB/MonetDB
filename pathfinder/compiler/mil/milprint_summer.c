@@ -6817,8 +6817,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  kind := ELEM;\n"
                 "  item := ws_mil(ws, item%s.fetch(0));\n"
                 "  if (type(item) = str) {\n"
-                "     item := addValues(str_values,item);\n"
-                "     kind := STR;\n"
+                "     if(isnil(item)) {\n"
+                "       item := empty_bat;\n"
+                "     } else {\n"
+                "       item := addValues(str_values,item);\n"
+                "       kind := STR;\n"
+                "     }\n"
                 "  }\n"
                 "  kind := set_kind(WS,kind);\n"
                 "  iter := item.materialize(ipik).project(1@0);\n"
@@ -9614,6 +9618,12 @@ simplifyCoreTree (PFcnode_t *c)
             simplifyCoreTree (L(c));
             simplifyCoreTree (R(c));
 
+            /* FIXME: disable the following rewrite as this incorrectly
+             * removes fn:put(), which has a return type
+             * empty-sequence(),  in sequences.  A more advanced check
+             * is needed if avoiding this rewrite decreases the
+             * performance of some queries. */
+            /*
             if (TY_EQ(TY(L(c)), PFty_empty ()) &&
                 TY_EQ(TY(R(c)), PFty_empty ()))
             {
@@ -9625,6 +9635,7 @@ simplifyCoreTree (PFcnode_t *c)
                 *c = *(R(c));
             else if (TY_EQ(TY(R(c)), PFty_empty ()))
                 *c = *(L(c));
+            */
             break;
         case c_let:
             /* don't do anything with global variables */

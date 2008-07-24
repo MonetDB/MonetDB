@@ -239,7 +239,7 @@ resolve_name_conflict (PFla_op_t *n, PFalg_att_t att)
         PFalg_att_t new_col, cur_col;
 
         /* generate new column name */
-        new_col = PFalg_ori_name (PFalg_unq_name (att),
+        new_col = PFalg_ori_name (PFalg_unq_name (att, 0),
                                   ~used_cols);
         used_cols = used_cols | new_col;
 
@@ -270,7 +270,7 @@ resolve_name_conflict (PFla_op_t *n, PFalg_att_t att)
         PFalg_att_t new_col, cur_col;
 
         /* generate new column name */
-        new_col = PFalg_ori_name (PFalg_unq_name (att),
+        new_col = PFalg_ori_name (PFalg_unq_name (att, 0),
                                   ~used_cols);
         used_cols = used_cols | new_col;
 
@@ -356,7 +356,7 @@ resolve_name_conflicts (PFla_op_t *n, PFalg_schema_t schema)
 
             if (cur_col & conf_cols) {
                 /* generate new column name */
-                new_col = PFalg_ori_name (PFalg_unq_name (cur_col),
+                new_col = PFalg_ori_name (PFalg_unq_name (cur_col, 0),
                                           ~used_cols);
                 used_cols = used_cols | new_col;
 
@@ -388,7 +388,7 @@ resolve_name_conflicts (PFla_op_t *n, PFalg_schema_t schema)
 
             if (cur_col & conf_cols) {
                 /* generate new column name */
-                new_col = PFalg_ori_name (PFalg_unq_name (cur_col),
+                new_col = PFalg_ori_name (PFalg_unq_name (cur_col, 0),
                                           ~used_cols);
                 used_cols = used_cols | new_col;
 
@@ -899,7 +899,7 @@ opt_mvd (PFla_op_t *p)
                             /* introduce a new column name ... */
                             PFalg_att_t new_col;
                             new_col = PFalg_ori_name (
-                                          PFalg_unq_name (LEFT_AT(pred, i)),
+                                          PFalg_unq_name (LEFT_AT(pred, i), 0),
                                           ~used_cols);
                             used_cols = used_cols | new_col;
 
@@ -923,7 +923,7 @@ opt_mvd (PFla_op_t *p)
                             /* introduce a new column name ... */
                             PFalg_att_t new_col;
                             new_col = PFalg_ori_name (
-                                          PFalg_unq_name (RIGHT_AT(pred, i)),
+                                          PFalg_unq_name (RIGHT_AT(pred, i), 0),
                                           ~used_cols);
                             used_cols = used_cols | new_col;
 
@@ -2129,7 +2129,7 @@ opt_mvd (PFla_op_t *p)
                                 PFalg_att_t new_col;
                                 /* get a new column name */
                                 new_col = PFalg_ori_name (
-                                              PFalg_unq_name (cur_col),
+                                              PFalg_unq_name (cur_col, 0),
                                               ~used_cols);
                                 used_cols = used_cols | new_col;
                                 /* introduce a renaming */
@@ -2155,7 +2155,7 @@ opt_mvd (PFla_op_t *p)
                                 PFalg_att_t new_col;
                                 /* get a new column name */
                                 new_col = PFalg_ori_name (
-                                              PFalg_unq_name (cur_col),
+                                              PFalg_unq_name (cur_col, 0),
                                               ~used_cols);
                                 used_cols = used_cols | new_col;
                                 /* introduce a renaming */
@@ -2198,7 +2198,7 @@ opt_mvd (PFla_op_t *p)
                                 if (cur_col & used_cols) {
                                     /* get a new column name */
                                     new_col = PFalg_ori_name (
-                                                  PFalg_unq_name (cur_col),
+                                                  PFalg_unq_name (cur_col, 0),
                                                   ~(used_cols |
                                                     used_invisible_cols));
                                     used_cols = used_cols | new_col;
@@ -2224,7 +2224,7 @@ opt_mvd (PFla_op_t *p)
                                 if (cur_col & used_cols) {
                                     /* get a new column name */
                                     new_col = PFalg_ori_name (
-                                                  PFalg_unq_name (cur_col),
+                                                  PFalg_unq_name (cur_col, 0),
                                                   ~(used_cols |
                                                     used_invisible_cols));
                                     used_cols = used_cols | new_col;
@@ -2489,7 +2489,7 @@ remove_thetajoin_opt (PFla_op_t *p)
                         PFalg_att_t new_col;
                         /* get a new column name */
                         new_col = PFalg_ori_name (
-                                      PFalg_unq_name (RES_AT(pred, i)),
+                                      PFalg_unq_name (RES_AT(pred, i), 0),
                                       ~used_cols);
                         used_cols = used_cols | new_col;
 
@@ -2516,7 +2516,7 @@ remove_thetajoin_opt (PFla_op_t *p)
                         PFalg_att_t new_col;
                         /* get a new column name */
                         new_col = PFalg_ori_name (
-                                      PFalg_unq_name (RES_AT(pred, i)),
+                                      PFalg_unq_name (RES_AT(pred, i), 0),
                                       ~used_cols);
                         used_cols = used_cols | new_col;
 
@@ -2536,7 +2536,7 @@ remove_thetajoin_opt (PFla_op_t *p)
                         PFalg_att_t new_col;
                         /* get a new column name */
                         new_col = PFalg_ori_name (
-                                      PFalg_unq_name (RES_AT(pred, i)),
+                                      PFalg_unq_name (RES_AT(pred, i), 0),
                                       ~used_cols);
                         used_cols = used_cols | new_col;
 
