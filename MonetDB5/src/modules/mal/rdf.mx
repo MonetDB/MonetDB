@@ -28,15 +28,6 @@ microformats for HTML, XHTML and XML. The serializing syntaxes are RDF/XML
 @mal
 module rdf;
 
-command import(url:str, map:bat[:str,:oid])(:bat[:oid,:oid],:bat[:oid,:oid],:bat[:oid,:oid])
-address RDFimport 
-comment "import a url with RDF, put the triples in the three new returned bats. 
-         The map is used and extended to map URI/literals to oids";
-
-command export( url:str, map:bat[:str,:oid], o:bat[:oid,:oid], p:bat[:oid,:oid], s:bat[:oid,:oid]) : void
-address RDFexport
-comment "export a triple table to some file url";
-
 command importGraph(fileurl:str, syntax:str, db:str, graph:str, lim:lng) : void
 address RDFimportGraph
 comment "import a graph in a named rdf db";
@@ -63,37 +54,38 @@ comment "export a graph in a named rdf db";
 #include <time.h>
 #include <raptor.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 #define rdf_export extern
 #define RET_MAXLEN 1024
-
+#define NUMBER_OF_TYPES 20
+#define TYPE2XSD "RDFtype2xsd"
 
 typedef enum
 {
-    RDF_TYPE_BLANK = '0',
-    RDF_TYPE_IRI = '1',
-    RDF_TYPE_PLAIN = '2',
-    RDF_TYPE_DECIMAL = '3',
-    RDF_TYPE_INTEGER = '4',
-    RDF_TYPE_NPOS_INT = '5',
-    RDF_TYPE_NEG_INT = '6',
-    RDF_TYPE_NNEG_INT = '7',
-    RDF_TYPE_POS_INT = '8',
-    RDF_TYPE_LONG = '9',
-    RDF_TYPE_ULONG = 'A',
-    RDF_TYPE_INT = 'B',
-    RDF_TYPE_UINT = 'C',
-    RDF_TYPE_SHORT = 'D',
-    RDF_TYPE_USHORT = 'E',
-    RDF_TYPE_BYTE = 'F',
-    RDF_TYPE_UBYTE = 'G',
-    RDF_TYPE_FLOAT = 'H',
-    RDF_TYPE_DOUBLE = 'I',
-    RDF_TYPE_BOOLEAN = 'J',
-    RDF_TYPE_STRING = 'K',
-    RDF_TYPE_DATETIME = 'L',
-    RDF_TYPE_XML_LITERAL = 'M',
-    RDF_TYPE_OTHER = 'N'
+	RDF_TYPE_DECIMAL = 0,
+	RDF_TYPE_INTEGER = 1,
+	RDF_TYPE_NPOS_INT = 2,
+	RDF_TYPE_NEG_INT = 3,
+	RDF_TYPE_NNEG_INT = 4,
+	RDF_TYPE_POS_INT = 5,
+	RDF_TYPE_LONG = 6,
+	RDF_TYPE_ULONG = 7,
+	RDF_TYPE_INT = 8,
+	RDF_TYPE_UINT = 9,
+	RDF_TYPE_SHORT = 10,
+	RDF_TYPE_USHORT = 11,
+	RDF_TYPE_BYTE = 12,
+	RDF_TYPE_UBYTE = 13,
+	RDF_TYPE_FLOAT = 14,
+	RDF_TYPE_DOUBLE = 15,
+	RDF_TYPE_BOOLEAN = 16,
+	RDF_TYPE_STRING = 17,
+	RDF_TYPE_DATETIME = 18,
+	RDF_TYPE_XML_LITERAL = 19,
+	RDF_TYPE_PLAIN = 20,
+	RDF_TYPE_OTHER = 21,
+	RDF_TYPE_NULL = 22
 } rdf_type;
 
 typedef enum
@@ -122,6 +114,7 @@ typedef struct {
     lng *cur;
     lng *lim;
     BAT *map;
+    BAT *type2xsd;
     BAT *ob;
     BAT *pb;
     BAT *sb;
@@ -225,135 +218,33 @@ static lng RDFestimate(str url) {
     return 8048;
 }*/
 
-static rdf_type RDFxsdToType(str uri)
+static rdf_type RDFxsdToType(str uri, BAT *m)
 {
     rdf_type ret;
     if (uri == NULL)
         ret = RDF_TYPE_PLAIN;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#decimal"))
-        ret = RDF_TYPE_DECIMAL;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#integer"))
-        ret = RDF_TYPE_INTEGER;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#nonPositiveInteger"))
-        ret = RDF_TYPE_NPOS_INT;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#negativeInteger"))
-        ret = RDF_TYPE_NEG_INT;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#nonNegativeInteger"))
-        ret = RDF_TYPE_NNEG_INT;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#positiveInteger"))
-        ret = RDF_TYPE_POS_INT;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#long"))
-        ret = RDF_TYPE_LONG;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#unsignedLong"))
-        ret = RDF_TYPE_ULONG;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#int"))
-        ret = RDF_TYPE_INT;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#unsignedInt"))
-        ret = RDF_TYPE_UINT;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#short"))
-        ret = RDF_TYPE_SHORT;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#unsignedShort"))
-        ret = RDF_TYPE_USHORT;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#byte"))
-        ret = RDF_TYPE_BYTE;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#unsignedByte"))
-        ret = RDF_TYPE_UBYTE;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#float"))
-        ret = RDF_TYPE_FLOAT;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#double"))
-        ret = RDF_TYPE_DOUBLE;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#boolean"))
-        ret = RDF_TYPE_BOOLEAN;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#string"))
-        ret = RDF_TYPE_STRING;
-    else if (!strcmp(uri, "http://www.w3.org/2001/XMLSchema#dateTime"))
-        ret = RDF_TYPE_DATETIME;
-    else if (!strcmp(uri, "http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral"))
-        ret = RDF_TYPE_XML_LITERAL;
     else
-        ret = RDF_TYPE_OTHER;
-    return ret;
-}
-
-static str RDFtypeToXsd(rdf_type t)
-{
-    str ret;
-    switch(t)
     {
-        case RDF_TYPE_DECIMAL:
-            ret = "http://www.w3.org/2001/XMLSchema#decimal";
-            break;
-        case RDF_TYPE_INTEGER:
-            ret = "http://www.w3.org/2001/XMLSchema#integer";
-            break;
-        case RDF_TYPE_NPOS_INT:
-            ret = "http://www.w3.org/2001/XMLSchema#nonPositiveInteger";
-            break;
-        case RDF_TYPE_NEG_INT:
-            ret = "http://www.w3.org/2001/XMLSchema#negativeInteger";
-            break;
-        case RDF_TYPE_NNEG_INT:
-            ret = "http://www.w3.org/2001/XMLSchema#nonNegativeInteger";
-            break;
-        case RDF_TYPE_POS_INT:
-            ret = "http://www.w3.org/2001/XMLSchema#positiveInteger";
-            break;
-        case RDF_TYPE_LONG:
-            ret = "http://www.w3.org/2001/XMLSchema#long";
-            break;
-        case RDF_TYPE_ULONG:
-            ret = "http://www.w3.org/2001/XMLSchema#unsignedLong";
-            break;
-        case RDF_TYPE_INT:
-            ret = "http://www.w3.org/2001/XMLSchema#int";
-            break;
-        case RDF_TYPE_UINT:
-            ret = "http://www.w3.org/2001/XMLSchema#unsignedInt";
-            break;
-        case RDF_TYPE_SHORT:
-            ret = "http://www.w3.org/2001/XMLSchema#short";
-            break;
-        case RDF_TYPE_USHORT:
-            ret = "http://www.w3.org/2001/XMLSchema#unsignedShort";
-            break;
-        case RDF_TYPE_BYTE:
-            ret = "http://www.w3.org/2001/XMLSchema#byte";
-            break;
-        case RDF_TYPE_UBYTE:
-            ret = "http://www.w3.org/2001/XMLSchema#unsignedByte";
-            break;
-        case RDF_TYPE_FLOAT:
-            ret = "http://www.w3.org/2001/XMLSchema#float";
-            break;
-        case RDF_TYPE_DOUBLE:
-            ret = "http://www.w3.org/2001/XMLSchema#double";
-            break;
-        case RDF_TYPE_BOOLEAN:
-            ret = "http://www.w3.org/2001/XMLSchema#boolean";
-            break;
-        case RDF_TYPE_STRING:
-            ret = "http://www.w3.org/2001/XMLSchema#string";
-            break;
-        case RDF_TYPE_DATETIME:
-            ret = "http://www.w3.org/2001/XMLSchema#dateTime";
-            break;
-        case RDF_TYPE_XML_LITERAL:
-            ret = "http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral";
-            break;
-        default:
-            ret = NULL;
-            break;
+    	BUN bun;
+    	BATiter mi = bat_iterator(BATmirror(m));
+    	HASHfnd_str(bun, mi, uri);
+    	if (bun == BUN_NONE)
+    		ret = RDF_TYPE_OTHER;
+    	else
+    		ret = (oid) bun;
     }
     return ret;
 }
 
-static bool RDFisDigit(chr c)
+static str RDFtypeToXsd(rdf_type t, BAT *m)
 {
-    if (c=='0' || c=='1' || c=='2' || c=='3' || c=='4' ||
-        c=='5' || c=='6' || c=='7' || c=='8' || c=='9')
-        return true;
-    else
-        return false;
+    str ret = NULL;
+    if (t<NUMBER_OF_TYPES)
+    {
+    	BATiter it = bat_iterator(m);
+    	ret = BUNtail(it, t);
+    }
+    return ret;
 }
 
 static str RDFparseTimezone(str timezone)
@@ -367,9 +258,9 @@ static str RDFparseTimezone(str timezone)
         if (timezone_len == 6)
         {
             if (    (timezone[0] == '+' || timezone[0] == '-') &&
-                    RDFisDigit(timezone[1]) && RDFisDigit(timezone[2]) &&
+                    isdigit(timezone[1]) && isdigit(timezone[2]) &&
                     timezone[3] == ':' &&
-                    RDFisDigit(timezone[4]) && RDFisDigit(timezone[5]) )
+                    isdigit(timezone[4]) && isdigit(timezone[5]) )
             {
                 char hour_str[4], min_str[3];
                 int hour, min;
@@ -410,7 +301,7 @@ static str RDFparseFractions(str fractions)
     int i = 0;
     while (i<fractions_len)
     {
-        if (!RDFisDigit(fractions[i]))
+        if (!isdigit(fractions[i]))
             ret = "A non-digit has been found parsing the second fractions";
         i++;
     }
@@ -426,7 +317,7 @@ static str RDFparseSeconds(str seconds)
         int i = 0;
         while (i<seconds_len && ret==MAL_SUCCEED)
         {
-            if (!RDFisDigit(seconds[i]))
+            if (!isdigit(seconds[i]))
                 ret = "A non-digit has been found parsing the seconds";
             i++;
         }
@@ -445,7 +336,7 @@ static str RDFparseMinutes(str minutes)
         int i = 0;
         while (i<minutes_len && ret==MAL_SUCCEED)
         {
-            if (!RDFisDigit(minutes[i]))
+            if (!isdigit(minutes[i]))
                 ret = "A non-digit has been found parsing the minutes";
             i++;
         }
@@ -464,7 +355,7 @@ static str RDFparseHour(str hour)
         int i = 0;
         while (i<hour_len && ret==MAL_SUCCEED)
         {
-            if (!RDFisDigit(hour[i]))
+            if (!isdigit(hour[i]))
                 ret = "A non-digit has been found parsing the hour";
             i++;
         }
@@ -483,7 +374,7 @@ static str RDFparseDay(str day)
         int i = 0;
         while (i<day_len && ret==MAL_SUCCEED)
         {
-            if (!RDFisDigit(day[i]))
+            if (!isdigit(day[i]))
                 ret = "A non-digit has been found parsing the day";
             i++;
         }
@@ -502,7 +393,7 @@ static str RDFparseMonth(str month)
         int i = 0;
         while (i<month_len && ret==MAL_SUCCEED)
         {
-            if (!RDFisDigit(month[i]))
+            if (!isdigit(month[i]))
                 ret = "A non-digit has been found parsing the month";
             i++;
         }
@@ -526,7 +417,7 @@ static str RDFparseYear(str year)
     {
         while (i<year_len && ret==MAL_SUCCEED)
         {
-            if (!RDFisDigit(year[i]))
+            if (!isdigit(year[i]))
                 ret = "A non-digit has been found parsing the year";
             i++;
         }
@@ -588,7 +479,32 @@ static str rdf_datetime_set_MTIMEtimestamp(rdf_datetime *dt, str year, str month
         ret = "mtime.mx could not parse the timestamp";
     return ret;
 }
-
+/* 
+ * This function parses xml dateTimes, full documentation can
+ * be found at http://www.w3.org/TR/xmlschema-2/#dateTime.
+ * The lexical form is '-'? yyyy '-' mm '-' dd 'T' hh ':' mm ':' ss ('.' s+)? (zzzzzz)?
+ * mtime.mx does not handle fractions of second with more than three digits,
+ * here they can be arbitrarly long => see ('.' s+)? in lexical form
+ * Datetimes with timezone are normalized to UTC, but the original timezone
+ * is stored as well, so this permits:
+ * - to obtain the original timezone (if ever needed)
+ * - to distinguish between d.t. that originally had a timezone and
+ *       those who didn't had it.
+ * 
+ * The final string, as will be found in the map bat, is:
+ * 
+ * (1 hex char Prefix) (16 hex chars representing mtime.mx timestamp) (second fractions)
+ * (+ or -)(absolute timezone)
+ * 
+ * For example, datetime 1236-12-15T05:00:00.123+05:00 becomes (D is the prefix)
+ * D8006e4cd00000000123+05:00
+ * TODO Some bits of mtime.mx timestamps are wasted:
+ * timestamp saves the hour of a day in milliseconds, here
+ * timestamp are used only with second resolution, since
+ * milliseconds are saved as strings. Saving millisecons in
+ * hex chars instead of decimal chars, and timezones in
+ * some kind of binary format may be worth.
+ */
 static str RDFparseDateTime(rdf_datetime *dt, str date_string)
 {
     str ret = MAL_SUCCEED;
@@ -837,7 +753,7 @@ static str RDFisDigitSequence(str string)
     if (len > 0)
     {
         for (int i=0; i<len && ret == MAL_SUCCEED; i++)
-            if (!RDFisDigit(string[i]))
+            if (!isdigit(string[i]))
                 ret = "Found a non-digit character";
     }
     else
@@ -1047,71 +963,14 @@ static str RDFdoubleStringToDouble(double *val, str string)
     return ret;
 }
 
-static str RDFcheckNumericValueSpace(double val, rdf_type t)
-{
-    str ret = MAL_SUCCEED;
-    switch (t)
-    {
-        case RDF_TYPE_DECIMAL:
-        case RDF_TYPE_INTEGER:
-            break;
-        case RDF_TYPE_NPOS_INT:
-            if (val>0)
-                ret = "The value is out of the \'nonPositiveInteger\' value space";
-            break;
-        case RDF_TYPE_NNEG_INT:
-            if (val<0)
-                ret = "The value is out of the \'nonNegativeInteger\' value space";
-            break;
-        case RDF_TYPE_LONG:
-            if (val > 9223372036854775807.0 || val < -9223372036854775808.0)
-                ret = "The value is out of the \'long\' value space";
-            break;
-        case RDF_TYPE_INT:
-            if (val > 2147483647 || val < -2147483648)
-                ret = "The value is out of the \'int\' value space";
-            break;
-        case RDF_TYPE_SHORT:
-            if (val > 32767 || val < -32768)
-                ret = "The value is out of the \'short\' value space";
-            break;
-        case RDF_TYPE_BYTE:
-            if (val > 127 || val < -128)
-                ret = "The value is out of the \'byte\' value space";
-            break;
-        case RDF_TYPE_ULONG:
-            if (val > 18446744073709551615.0)
-                ret = "The value is out of the \'unsignedLong\' value space";
-            break;
-        case RDF_TYPE_UINT:
-            if (val > 4294967295)
-                ret = "The value is out of the \'unsignedInt\' value space";
-            break;
-        case RDF_TYPE_USHORT:
-            if (val > 65535)
-                ret = "The value is out of the \'unsignedShort\' value space";
-            break;
-        case RDF_TYPE_UBYTE:
-            if (val > 65535)
-                ret = "The value is out of the \'unsignedByte\' value space";
-            break;
-        case RDF_TYPE_NEG_INT:
-            if (val > -1)
-                ret = "The value is out of the \'negativeInteger\' value space";
-            break;
-        case RDF_TYPE_POS_INT:
-            if (val < 1)
-                ret = "The value is out of the \'positiveInteger\' value space";
-            break;
-        case RDF_TYPE_FLOAT:
-        case RDF_TYPE_DOUBLE:
-            break;
-        default:
-            ret = "RDFcheckNumericValueSpace: type error, default case";
-            break;
-    }
-    return ret;
-}
+/* TODO
+ * this function was supposed to check value boundaries of xml numeric
+ * types as described in http://www.w3.org/TR/xmlschema-2/#built-in-datatypes,
+ * but it's really ugly and would probably not compile on 32-bits platform
+ * This checks are not performed any more
+
+static str RDFcheckNumericValueSpace(double val, rdf_type t);
+*/
 
 static str RDFcheckNumericLexicalSpace(str string, rdf_type t)
 {
@@ -1149,11 +1008,7 @@ static str RDFparseDecimal(double *val, str string, rdf_type type)
 {
     str ret = RDFcheckNumericLexicalSpace(string, type);
     if (ret == MAL_SUCCEED)
-    {
         ret = RDFdecimalStringToDouble(val, string);
-        if (ret == MAL_SUCCEED)
-            ret = RDFcheckNumericValueSpace(*val, type);
-    }
     return ret;
 }
 
@@ -1208,12 +1063,12 @@ void message_handler(void *user_data, raptor_locator *locator, const char *messa
     {
         if (map->T->hash == NULL || BATcount(map) > 4 * map->T->hash->mask)
         {
-        HASHdestroy(map); /* keeps hash performance in check */
+            HASHdestroy(map); /* keeps hash performance in check */
             BAThash(BATmirror(map), 2*BATcount(map));
         }
         bun = (BUN) map->batCount;
         if (!BUNappend(map,(ptr)@1v, TRUE)) {
-            GDKerror("RDFimport: @1[" LLFMT "] = %s, BUNappend fails\n", cur, @1v);/*????TODO ask*/
+            GDKerror("RDFimport: @1[" LLFMT "] = %s, BUNappend fails\n", cur, @1v);
             *ret = ret_array;
             snprintf(*ret, RET_MAXLEN, "BUNappend failed inserting \'%s\'", @1v);
         }
@@ -1256,6 +1111,7 @@ triples_handler(void* user_data, const raptor_statement* triple)
     str ov, pv, sv;
     bte tv;
     BAT *map = data->map;
+    BAT *type2xsd = data->type2xsd;
     BAT *sb = data->sb;
     BAT *pb = data->pb;
     BAT *ob = data->ob;
@@ -1301,19 +1157,19 @@ triples_handler(void* user_data, const raptor_statement* triple)
             case RAPTOR_IDENTIFIER_TYPE_RESOURCE:
             {
                 @:RDFprefix(ov, (str)raptor_uri_as_string((raptor_uri *)triple->object), RDF_SEC_IRI)@
-                tv = RDF_TYPE_IRI;
+                tv = RDF_TYPE_NULL;
                 break;
             }
             case RAPTOR_IDENTIFIER_TYPE_ANONYMOUS:
             {
                 @:RDFprefix(ov, (str)triple->object, RDF_SEC_BLANK)@
-                tv = RDF_TYPE_BLANK;
+                tv = RDF_TYPE_NULL;
                 break;
             }
             case RAPTOR_IDENTIFIER_TYPE_LITERAL:
             {
                 char *obj_datatype = (char *)raptor_uri_as_string(triple->object_literal_datatype);
-                rdf_type obj_type = RDFxsdToType(obj_datatype);
+                rdf_type obj_type = RDFxsdToType(obj_datatype, type2xsd);
                 tv = obj_type;
                 if (triple->object_literal_language != NULL && obj_type != RDF_TYPE_PLAIN)
                 {
@@ -1326,6 +1182,8 @@ triples_handler(void* user_data, const raptor_statement* triple)
                 {
                     switch (obj_type)
                     {
+                    /* for numerics */
+                    double val;
                     case RDF_TYPE_PLAIN:
                     case RDF_TYPE_STRING:
                     {
@@ -1380,7 +1238,6 @@ triples_handler(void* user_data, const raptor_statement* triple)
                     case RDF_TYPE_BYTE:
                     case RDF_TYPE_UBYTE:
                     {
-                        double val;
                         *ret = RDFparseDecimal(&val, (str)triple->object, obj_type);
                         goto save;
                     }
@@ -1390,7 +1247,6 @@ triples_handler(void* user_data, const raptor_statement* triple)
                         *ret = RDFcheckNumericLexicalSpace((str)triple->object, obj_type);
                         if (*ret == MAL_SUCCEED)
                         {
-                            double val;
                             if (!strcmp((str)triple->object, "INF"))
                             {
                                 @:RDFprefix(ov, "", RDF_SEC_POS_INF)@
@@ -1562,9 +1418,10 @@ triples_handler(void* user_data, const raptor_statement* triple)
 }
 
 static str 
-RDFimport_(BAT** S, BAT** P, BAT **O, BAT **T, str url, BAT *map, char *ret_array, str syntax, lng *lim) {
+RDFimport_(BAT** S, BAT** P, BAT **O, BAT **T, str filename,
+			BAT *map, BAT *type2xsd, char *ret_array, str syntax, lng *lim) {
     raptor_parser *parser;
-    raptor_uri *rdf_file;
+    FILE *rdf_file;
     str ret = MAL_SUCCEED;
     raptor_init();
     parser = raptor_new_parser(syntax);
@@ -1572,11 +1429,14 @@ RDFimport_(BAT** S, BAT** P, BAT **O, BAT **T, str url, BAT *map, char *ret_arra
         ret = "Could not create a Redland parser";
     else
     {
-        rdf_file = raptor_new_uri((unsigned char*)url);
+    	/* if filename is an uri, remove the leading "file://" */
+    	if (strncmp("file://", filename, 7)==0)
+    		filename = &filename[7];
+        rdf_file = fopen(filename, "r");
         if (!rdf_file)
         {
             ret = ret_array;
-            snprintf(ret, RET_MAXLEN, "Invalid url: \'%s\'", url);
+            snprintf(ret, RET_MAXLEN, "Invalid filename: \'%s\'", filename);
         }
         else
         {
@@ -1606,10 +1466,12 @@ RDFimport_(BAT** S, BAT** P, BAT **O, BAT **T, str url, BAT *map, char *ret_arra
                                 data->tb = BATnew(TYPE_void, TYPE_bte, *lim);
                                 if (data->tb)
                                 {
+                                	raptor_uri *base;
                                     data->parser = parser;
                                     data->cur = cur;
                                     data->lim = lim;
                                     data->map = map;
+                                    data->type2xsd = type2xsd;
                                     data->ret = &ret;
                                     data->ret_array = ret_array;
                                     
@@ -1623,34 +1485,44 @@ RDFimport_(BAT** S, BAT** P, BAT **O, BAT **T, str url, BAT *map, char *ret_arra
                                     raptor_set_error_handler(parser, info, message_handler);
                                     raptor_set_warning_handler(parser, info, message_handler);
                                     raptor_set_parser_strict(parser, TRUE);
-                                    
-                                    if (raptor_parse_file(parser, rdf_file, NULL) == 0)
+                                    base = raptor_new_uri((unsigned char*)"http://dummyrequireduri.com/");
+                                    if (base)
                                     {
-                                        /* data->sb,pb,ob may be changed now */
-                                        if (ret == MAL_SUCCEED)
-                                        {
-                                            BATseqbase(data->ob, 0);
-                                            BATseqbase(data->pb, 0);
-                                            BATseqbase(data->sb, 0);
-                                            BATseqbase(data->tb, 0);
-                                            BATsetcount(data->ob, *cur);
-                                            BATsetcount(data->pb, *cur);
-                                            BATsetcount(data->sb, *cur);
-                                            BATsetcount(data->tb, *cur);
-                                            data->ob->tsorted = 0;
-                                            data->pb->tsorted = 0;
-                                            data->sb->tsorted = 0;
-                                            data->tb->tsorted = 0;
-                                            BATkey(BATmirror(data->ob), FALSE);
-                                            BATkey(BATmirror(data->sb), FALSE);
-                                            BATkey(BATmirror(data->pb), FALSE);
-                                            BATkey(BATmirror(data->tb), FALSE);
-                                            *S = data->sb;
-                                            *P = data->pb;
-                                            *O = data->ob;
-                                            *T = data->tb;
-                                        }
+	                                    /*if (raptor_parse_file(parser, rdf_file, NULL) == 0)*/
+	                                    if (raptor_parse_file_stream(parser, rdf_file, NULL, base) == 0)
+	                                    {
+	                                        /* data->sb,pb,ob may be changed now */
+	                                        if (ret == MAL_SUCCEED)
+	                                        {
+	                                            BATseqbase(data->ob, 0);
+	                                            BATseqbase(data->pb, 0);
+	                                            BATseqbase(data->sb, 0);
+	                                            BATseqbase(data->tb, 0);
+	                                            BATsetcount(data->ob, *cur);
+	                                            BATsetcount(data->pb, *cur);
+	                                            BATsetcount(data->sb, *cur);
+	                                            BATsetcount(data->tb, *cur);
+	                                            
+	                                            data->ob->tsorted = 0;
+	                                            data->pb->tsorted = 0;
+	                                            data->sb->tsorted = 0;
+	                                            data->tb->tsorted = 0;
+	                                            BATkey(BATmirror(data->ob), FALSE);
+	                                            BATkey(BATmirror(data->sb), FALSE);
+	                                            BATkey(BATmirror(data->pb), FALSE);
+	                                            BATkey(BATmirror(data->tb), FALSE);
+	                                            *S = data->sb;
+	                                            *P = data->pb;
+	                                            *O = data->ob;
+	                                            *T = data->tb;
+	                                        }
+	                                    }
+	                                    else
+	                                    	ret = "raptor_parse could not parse file";
+	                                    raptor_free_uri(base);
                                     }
+                                    else
+                                    	ret = "RDFimport_: memory allocation failure";
                                     if (ret!=MAL_SUCCEED)
                                         BBPreclaim(data->tb);
                                 }
@@ -1679,14 +1551,14 @@ RDFimport_(BAT** S, BAT** P, BAT **O, BAT **T, str url, BAT *map, char *ret_arra
             }
             else
                 ret = "triple_handler_vars malloc failed";
-            raptor_free_uri(rdf_file);
+            fclose(rdf_file);
         }
         raptor_free_parser(parser);
     }
     raptor_finish();
     return ret;
 }
-
+/*
 rdf_export
 str RDFimport(int* S, int* P, int* O, str *url, bat m)
 {
@@ -1697,7 +1569,7 @@ str RDFimport(int* S, int* P, int* O, str *url, bat m)
         lng lim = 8192;
         RDFimport_(&sb, &pb, &ob, &tb, *url, map, ret_array, "rdfxml", &lim);
         if (ret == MAL_SUCCEED) {
-            BBPkeepref(*O = ob->batCacheid);/*changes physical reference to logical*/
+            BBPkeepref(*O = ob->batCacheid);*changes physical reference to logical*
             BBPkeepref(*P = pb->batCacheid);
             BBPkeepref(*S = sb->batCacheid);
         }
@@ -1705,6 +1577,7 @@ str RDFimport(int* S, int* P, int* O, str *url, bat m)
     }
     return ret;
 }
+*/
 
 int CTrefine(BAT **ret, BAT *b, BAT *a);
 BAT * BATmalleftfetchjoin(BAT *l, BAT *r);
@@ -1819,13 +1692,45 @@ static str checkSyntax(str syntax)
         return "syntax may be only one among \"atom\",\"ntriples\",\"rdfxml\",\"rdfxml-abbrev\",\"rdfxml-xmp\",\"turtle\",\"rdfxml-xmp\",\"rss-1.0\",\"dot\"";
 }
 
+static str RDFfillType2xsd(BAT *m)
+{
+	str ret = MAL_SUCCEED;
+	BATseqbase(m, 0);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#decimal", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#integer", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#nonPositiveInteger", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#negativeInteger", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#nonNegativeInteger", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#positiveInteger", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#long", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#unsignedLong", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#int", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#unsignedInt", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#short", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#unsignedShort", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#byte", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#unsignedByte", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#float", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#double", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#boolean", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#string", TRUE);
+	BUNappend(m, "http://www.w3.org/2001/XMLSchema#dateTime", TRUE);
+	BUNappend(m, "http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral", TRUE);
+	if (BATname(m, TYPE2XSD) != 0)
+		ret ="BATname error";
+	if (!BATmode(m, PERSISTENT))
+		ret = "BATmode error";
+	return ret;
+}
+
 @= sort
 RDFsort(commit, sorted, @1,@2,@3,@4,&@5,&@6,&@7,&@8,"@5","@6","@7","@8",*db,*graph);
 @c
 str RDFimportGraph(int *d, str *fileurl, str *syntax, str *db, str *graph, lng *lim)
 {
     BAT *map = NULL, *sb = NULL, *ob=NULL,
-        *pb = NULL, *tb = NULL, *commit;
+        *pb = NULL, *tb = NULL, *commit,
+    	*type2xsd;
     char map_buf[1024];
     char ret_array[RET_MAXLEN];
     str ret = MAL_SUCCEED;
@@ -1845,158 +1750,174 @@ str RDFimportGraph(int *d, str *fileurl, str *syntax, str *db, str *graph, lng *
                 map = BATnew(TYPE_void, TYPE_str, *lim);/* TODO estimate */
                 if (map)
                 {
+                	int type2xsdIndex = BBPindex(TYPE2XSD);
                     BATseqbase(map, 0);
-                    ret = RDFimport_(&sb, &pb, &ob, &tb, *fileurl, map, ret_array, *syntax, lim);
-                    if (ret == MAL_SUCCEED)
+                    
+                    if (!type2xsdIndex)
                     {
-                        BAT *Spot = NULL, *sPot = NULL, *spOt = NULL, *spoT = NULL; 
-                        BAT *Sopt = NULL, *sOpt = NULL, *soPt = NULL, *sopT = NULL; 
-                        BAT *Post = NULL, *pOst = NULL, *poSt = NULL, *posT = NULL; 
-                        BAT *Psot = NULL, *pSot = NULL, *psOt = NULL, *psoT = NULL; 
-                        BAT *Opst = NULL, *oPst = NULL, *opSt = NULL, *opsT = NULL; 
-                        BAT *Ospt = NULL, *oSpt = NULL, *osPt = NULL, *ospT = NULL;
-                        BAT *new_map, *oid_translation, *new_sb, *new_pb, *new_ob, *sorted;
-                        BATiter ci = bat_iterator(commit);
-                        BUN p, q;
-                        BATorder(BATmirror(map));
-                        /* now map is a bat of type [:oid, :str], ordered on tail */
-                        /* create the new map and the oid_translation bat */
-                        new_map = BATmirror(BATmark(BATmirror(map), 0));
-                        oid_translation = BATmark(map, 0);
-                        /* destroy the old map, use the new */
-                        BBPreclaim(map);
-                        map = new_map;
-                        /* Translate the oids of sb, pb and ob */
-                        new_sb = BATleftjoin(sb, oid_translation, 0);/*TODO number of triples*/
-                        if (new_sb)
-                        {
-                            BBPreclaim(sb);
-                            sb = new_sb;
-                            
-                            new_pb = BATleftjoin(pb, oid_translation, 0);
-                            if (new_pb)
-                            {
-                                BBPreclaim(pb);
-                                pb = new_pb;
-                                
-                                new_ob = BATleftjoin(ob, oid_translation, 0);
-                                if (new_ob)
-                                {
-                                    BBPreclaim(ob);
-                                    ob = new_ob;
-                                    
-                                    snprintf(map_buf, 1024, "%s_%s_map", *db, *graph);
-                                    if ((BATname(map, map_buf) == 0) && BATmode(map, PERSISTENT))
-                                    {/* TODO should not be persistent if S,P,O aren't */
-                                        BUNfastins(commit, &(map->batCacheid), map_buf);
-                                        sorted = BATmirror(BATsort(BATmirror(sb)));
-                                        if (sorted)
-                                        {
-                                            ret = @:sort(sb,pb,ob,tb,Spot,sPot,spOt,spoT)@
-                                            if (ret  == MAL_SUCCEED)
-                                            {
-                                                ret = @:sort(sb,ob,pb,tb,Sopt,sOpt,soPt,sopT)@
-                                                if (ret == MAL_SUCCEED)
-                                                {
-                                                    BBPreclaim(sorted);
-                                                    sorted = BATmirror(BATsort(BATmirror(pb)));
-                                                    if (sorted)
-                                                    {
-                                                        ret = @:sort(pb,ob,sb,tb,Post,pOst,poSt,posT)@
-                                                        if (ret == MAL_SUCCEED)
-                                                        {
-                                                            ret = @:sort(pb,sb,ob,tb,Psot,pSot,psOt,psoT)@
-                                                            if (ret == MAL_SUCCEED)
-                                                            {
-                                                                BBPreclaim(sorted);
-                                                                sorted = BATmirror(BATsort(BATmirror(ob)));
-                                                                if (sorted)
-                                                                {
-                                                                    ret = @:sort(ob,pb,sb,tb,Opst,oPst,opSt,opsT)@
-                                                                    if (ret == MAL_SUCCEED)
-                                                                    {
-                                                                        ret = @:sort(ob,sb,pb,tb,Ospt,oSpt,osPt,ospT)@
-                                                                    	BBPreclaim(sorted);
-                                                                        if (ret == MAL_SUCCEED)
-                                                                            goto succeed;
-                                                                        BBPreclaim(Opst);
-                                                                        BBPreclaim(oPst);
-                                                                        BBPreclaim(opSt);
-                                                                        BBPreclaim(opsT);
-                                                                    }
-                                                                    else
-                                                                        BBPreclaim(sorted);
-                                                                }
-                                                                else
-                                                                    ret = "Could not create a sorted copy of ob";
-                                                                BBPreclaim(Psot);
-                                                                BBPreclaim(pSot);
-                                                                BBPreclaim(psOt);
-                                                                BBPreclaim(psoT);
-                                                            }
-                                                            else
-                                                                BBPreclaim(sorted);
-                                                            BBPreclaim(Post);
-                                                            BBPreclaim(pOst);
-                                                            BBPreclaim(poSt);
-                                                            BBPreclaim(posT);
-                                                        }
-                                                        else
-                                                            BBPreclaim(sorted);
-                                                    }
-                                                    else
-                                                        ret = "Could not create a sorted copy of pb";
-                                                    BBPreclaim(Sopt);
-                                                    BBPreclaim(sOpt);
-                                                    BBPreclaim(soPt);
-                                                    BBPreclaim(sopT);
-                                                }
-                                                else
-                                                    BBPreclaim(sorted);
-                                                BBPreclaim(Spot);
-                                                BBPreclaim(sPot);
-                                                BBPreclaim(spOt);
-                                                BBPreclaim(spoT);
-                                            }
-                                            else
-                                                BBPreclaim(sorted);
-                                succeed:    if (ret == MAL_SUCCEED && TMsubcommit(commit))
-                                            {
-                                                ret = "commit failed";
-                                            }
-                                        }
-                                        else
-                                            ret = "Could not create a sorted copy of sb";
-                                        if (ret != MAL_SUCCEED)
-                                        {
-                                            /* we failed to create everything succesfully and commit. destroy all bats */
-                                            BATloop(commit, p, q) { 
-                                                bat bid = *(bat*) BUNhead(ci,p);
-                                                BAT *b = BATdescriptor(bid);
-                                                if (b) {
-                                                    BATmode(b, TRANSIENT);
-                                                    BBPreleaseref(bid);
-                                                }
-                                            }
-                                        }
-                                    }
-                                    else
-                                        ret = "BATname or BATmode(map, PERSISTENT) failed";
-                                }
-                                else
-                                    ret = "Could not translate the ob oids";
-                            }
-                            else
-                                ret = "Could not translate the pb oids";
-                        }
-                        else
-                            ret = "Could not translate the sb oids";
-                        BBPreclaim(oid_translation);
-                        BBPreleaseref(sb->batCacheid);/* release physical ref */
-                        BBPreleaseref(pb->batCacheid);/* TODO why not BBPreclaim ?? */
-                        BBPreleaseref(ob->batCacheid);
-                        BBPreleaseref(tb->batCacheid);
+                    	type2xsd = BATnew(TYPE_void, TYPE_str, NUMBER_OF_TYPES);
+                    	if (type2xsd)
+                    		ret = RDFfillType2xsd(type2xsd);
                     }
+                    else
+                    	type2xsd = BATdescriptor(type2xsdIndex);
+                    if (type2xsd)
+                    {
+                    	ret = RDFimport_(&sb, &pb, &ob, &tb, *fileurl, map, type2xsd, ret_array, *syntax, lim);
+	                    if (ret == MAL_SUCCEED)
+	                    {
+	                        BAT *Spot = NULL, *sPot = NULL, *spOt = NULL, *spoT = NULL; 
+	                        BAT *Sopt = NULL, *sOpt = NULL, *soPt = NULL, *sopT = NULL; 
+	                        BAT *Post = NULL, *pOst = NULL, *poSt = NULL, *posT = NULL; 
+	                        BAT *Psot = NULL, *pSot = NULL, *psOt = NULL, *psoT = NULL; 
+	                        BAT *Opst = NULL, *oPst = NULL, *opSt = NULL, *opsT = NULL; 
+	                        BAT *Ospt = NULL, *oSpt = NULL, *osPt = NULL, *ospT = NULL;
+	                        BAT *new_map, *oid_translation, *new_sb, *new_pb, *new_ob, *sorted;
+	                        BATiter ci = bat_iterator(commit);
+	                        BUN p, q;
+	                        BATorder(BATmirror(map));
+	                        /* now map is a bat of type [:oid, :str], ordered on tail */
+	                        /* create the new map and the oid_translation bat */
+	                        new_map = BATmirror(BATmark(BATmirror(map), 0));
+	                        oid_translation = BATmark(map, 0);
+	                        /* destroy the old map, use the new */
+	                        BBPreclaim(map);
+	                        map = new_map;
+	                        /* Translate the oids of sb, pb and ob */
+	                        new_sb = BATleftjoin(sb, oid_translation, 0);/*TODO number of triples*/
+	                        if (new_sb)
+	                        {
+	                            BBPreclaim(sb);
+	                            sb = new_sb;
+	                            
+	                            new_pb = BATleftjoin(pb, oid_translation, 0);
+	                            if (new_pb)
+	                            {
+	                                BBPreclaim(pb);
+	                                pb = new_pb;
+	                                
+	                                new_ob = BATleftjoin(ob, oid_translation, 0);
+	                                if (new_ob)
+	                                {
+	                                    BBPreclaim(ob);
+	                                    ob = new_ob;
+	                                    
+	                                    snprintf(map_buf, 1024, "%s_%s_map", *db, *graph);
+	                                    if ((BATname(map, map_buf) == 0) && BATmode(map, PERSISTENT))
+	                                    {/* TODO should not be persistent if S,P,O aren't */
+	                                        BUNfastins(commit, &(map->batCacheid), map_buf);
+	                                        sorted = BATmirror(BATsort(BATmirror(sb)));
+	                                        if (sorted)
+	                                        {
+	                                            ret = @:sort(sb,pb,ob,tb,Spot,sPot,spOt,spoT)@
+	                                            if (ret  == MAL_SUCCEED)
+	                                            {
+	                                                ret = @:sort(sb,ob,pb,tb,Sopt,sOpt,soPt,sopT)@
+	                                                if (ret == MAL_SUCCEED)
+	                                                {
+	                                                    BBPreclaim(sorted);
+	                                                    sorted = BATmirror(BATsort(BATmirror(pb)));
+	                                                    if (sorted)
+	                                                    {
+	                                                        ret = @:sort(pb,ob,sb,tb,Post,pOst,poSt,posT)@
+	                                                        if (ret == MAL_SUCCEED)
+	                                                        {
+	                                                            ret = @:sort(pb,sb,ob,tb,Psot,pSot,psOt,psoT)@
+	                                                            if (ret == MAL_SUCCEED)
+	                                                            {
+	                                                                BBPreclaim(sorted);
+	                                                                sorted = BATmirror(BATsort(BATmirror(ob)));
+	                                                                if (sorted)
+	                                                                {
+	                                                                    ret = @:sort(ob,pb,sb,tb,Opst,oPst,opSt,opsT)@
+	                                                                    if (ret == MAL_SUCCEED)
+	                                                                    {
+	                                                                        ret = @:sort(ob,sb,pb,tb,Ospt,oSpt,osPt,ospT)@
+	                                                                    	BBPreclaim(sorted);
+	                                                                        if (ret == MAL_SUCCEED)
+	                                                                            goto succeed;
+	                                                                        BBPreclaim(Opst);
+	                                                                        BBPreclaim(oPst);
+	                                                                        BBPreclaim(opSt);
+	                                                                        BBPreclaim(opsT);
+	                                                                    }
+	                                                                    else
+	                                                                        BBPreclaim(sorted);
+	                                                                }
+	                                                                else
+	                                                                    ret = "Could not create a sorted copy of ob";
+	                                                                BBPreclaim(Psot);
+	                                                                BBPreclaim(pSot);
+	                                                                BBPreclaim(psOt);
+	                                                                BBPreclaim(psoT);
+	                                                            }
+	                                                            else
+	                                                                BBPreclaim(sorted);
+	                                                            BBPreclaim(Post);
+	                                                            BBPreclaim(pOst);
+	                                                            BBPreclaim(poSt);
+	                                                            BBPreclaim(posT);
+	                                                        }
+	                                                        else
+	                                                            BBPreclaim(sorted);
+	                                                    }
+	                                                    else
+	                                                        ret = "Could not create a sorted copy of pb";
+	                                                    BBPreclaim(Sopt);
+	                                                    BBPreclaim(sOpt);
+	                                                    BBPreclaim(soPt);
+	                                                    BBPreclaim(sopT);
+	                                                }
+	                                                else
+	                                                    BBPreclaim(sorted);
+	                                                BBPreclaim(Spot);
+	                                                BBPreclaim(sPot);
+	                                                BBPreclaim(spOt);
+	                                                BBPreclaim(spoT);
+	                                            }
+	                                            else
+	                                                BBPreclaim(sorted);
+	                                succeed:    if (ret == MAL_SUCCEED && TMsubcommit(commit))
+	                                            {
+	                                                ret = "commit failed";
+	                                            }
+	                                        }
+	                                        else
+	                                            ret = "Could not create a sorted copy of sb";
+	                                        if (ret != MAL_SUCCEED)
+	                                        {
+	                                            /* we failed to create everything succesfully and commit. destroy all bats */
+	                                            BATloop(commit, p, q) { 
+	                                                bat bid = *(bat*) BUNhead(ci,p);
+	                                                BAT *b = BATdescriptor(bid);
+	                                                if (b) {
+	                                                    BATmode(b, TRANSIENT);
+	                                                    BBPreleaseref(bid);
+	                                                }
+	                                            }
+	                                        }
+	                                    }
+	                                    else
+	                                        ret = "BATname or BATmode(map, PERSISTENT) failed";
+	                                }
+	                                else
+	                                    ret = "Could not translate the ob oids";
+	                            }
+	                            else
+	                                ret = "Could not translate the pb oids";
+	                        }
+	                        else
+	                            ret = "Could not translate the sb oids";
+	                        BBPreclaim(oid_translation);
+	                        BBPreleaseref(sb->batCacheid);/* release physical ref */
+	                        BBPreleaseref(pb->batCacheid);/* TODO why not BBPreclaim ?? */
+	                        BBPreleaseref(ob->batCacheid);
+	                        BBPreleaseref(tb->batCacheid);
+	                    }
+	                    BBPreleaseref(type2xsd->batCacheid);
+                    }
+                    else
+                    	ret = "Could not create the type2xsd BAT";
                     BBPreleaseref(map->batCacheid);
                 }
                 else
@@ -2093,7 +2014,7 @@ static void mantissaToCanonicalLexicalForm(double mant_val, str *mantissa_lexica
 }
 
 static str RDFserializeTriple(raptor_statement *triple, raptor_serializer* serializer,
-                            str sv, str pv, str ov, bte tv)
+                            str sv, str pv, str ov, bte tv, BAT *type2xsd)
 {
     str ret = MAL_SUCCEED;
     bool     dealloc_subj = false, dealloc_prop = false,    dealloc_obj = false,
@@ -2146,7 +2067,7 @@ static str RDFserializeTriple(raptor_statement *triple, raptor_serializer* seria
     
     if (ret == MAL_SUCCEED)
     {
-        str xsd_type = RDFtypeToXsd(obj_type);
+        str xsd_type = RDFtypeToXsd(obj_type, type2xsd);
         
         if (xsd_type != NULL)
         {
@@ -2163,12 +2084,12 @@ static str RDFserializeTriple(raptor_statement *triple, raptor_serializer* seria
         
         if (ret == MAL_SUCCEED)
         {
-            if (obj_sec == RDF_SEC_BLANK && obj_type == RDF_TYPE_BLANK)
+            if (obj_sec == RDF_SEC_BLANK)
             {
                 triple->object = ov;
                 triple->object_type = RAPTOR_IDENTIFIER_TYPE_ANONYMOUS;
             }
-            else if (obj_sec == RDF_SEC_IRI && obj_type == RDF_TYPE_IRI)
+            else if (obj_sec == RDF_SEC_IRI)
             {
                 triple->object = raptor_new_uri((const unsigned char*)ov);
                 if (triple->object)
@@ -2419,7 +2340,7 @@ static str RDFserializeTriple(raptor_statement *triple, raptor_serializer* seria
 }
 
 static str 
-RDFexport_(bat M, bat S, bat P, bat O, bat T, str fileurl, str syntax)
+RDFexport_(bat M, bat S, bat P, bat O, bat T, bat type2xsdIndex, str fileurl, str syntax)
 {
     char ret_array[RET_MAXLEN];
     str ret = MAL_SUCCEED;
@@ -2438,68 +2359,75 @@ RDFexport_(bat M, bat S, bat P, bat O, bat T, str fileurl, str syntax)
                     BAT *tb = BATdescriptor(T);
                     if (tb)
                     {
-                        raptor_serializer* rdf_serializer;
-                        lng i, cnt = BATcount(ob);
-                        oid *o = (oid *) Tloc(ob, BUNfirst(ob));
-                        oid *p = (oid *) Tloc(pb, BUNfirst(pb));
-                        oid *s = (oid *) Tloc(sb, BUNfirst(sb));
-                        bte *t = (bte *) Tloc(tb, BUNfirst(tb));
-                        /* var_t position in heap */
-                        var_t *off = (var_t *) Tloc(map, BUNfirst(map));
-                        str base = (str) map->T->vheap->base;/* heap first position */
-                        
-                        raptor_init();
-                        rdf_serializer = raptor_new_serializer(syntax);
-                        
-                        if (rdf_serializer)
-                        {
-                            message_handler_vars *info = GDKmalloc(sizeof(message_handler_vars));
-                            if (info)
-                            {
-                                info->parser=NULL;
-                                info->serializer = rdf_serializer;
-                                info->ret = &ret;
-                                info->ret_array = ret_array;
-                                
-                                raptor_serializer_set_error_handler(rdf_serializer, info, message_handler);
-                                raptor_serializer_set_warning_handler(rdf_serializer, info, message_handler);
-                                if (raptor_serialize_start_to_filename(rdf_serializer, fileurl) == 0)
-                                {
-                                    for(i=0; i <cnt; i++)
-                                    {
-                                        if (ret==MAL_SUCCEED)
-                                        {
-                                            raptor_statement *triple;
-                                            str ov = base + off[o[i]];
-                                            str pv = base + off[p[i]];
-                                            str sv = base + off[s[i]];
-                                            bte tv = t[i];
-                                            /* Make a triple with URI subject, URI predicate, literal object */
-                                            triple=GDKmalloc(sizeof(raptor_statement));
-                                            if (triple)
-                                            {
-                                                ret = RDFserializeTriple(triple, rdf_serializer, sv, pv, ov, tv);
-                                                GDKfree(triple);
-                                            }
-                                            else
-                                                ret = "Failed to allocate memory for raptor_statement";
-                                        }
-                                    }
-                                    raptor_serialize_end(rdf_serializer);
-                                }
-                                else
-                                    if (ret == MAL_SUCCEED)
-                                        ret = "raptor_serialize_start_to_filename failed";
-                                GDKfree(info);
-                            }
-                            else
-                                ret = "Failed to allocate memory for message_handler_vars";
-                            raptor_free_serializer(rdf_serializer);
-                        }
-                        else
-                            ret = "raptor_new_serializer failed";
-                        raptor_finish();
-                        BBPreleaseref(tb->batCacheid);
+                    	BAT *type2xsd = BATdescriptor(type2xsdIndex);
+                    	if (type2xsd)
+                    	{
+	                        raptor_serializer* rdf_serializer;
+	                        lng i, cnt = BATcount(ob);
+	                        oid *o = (oid *) Tloc(ob, BUNfirst(ob));
+	                        oid *p = (oid *) Tloc(pb, BUNfirst(pb));
+	                        oid *s = (oid *) Tloc(sb, BUNfirst(sb));
+	                        bte *t = (bte *) Tloc(tb, BUNfirst(tb));
+	                        /* var_t position in heap */
+	                        var_t *off = (var_t *) Tloc(map, BUNfirst(map));
+	                        str base = (str) map->T->vheap->base;/* heap first position */
+	                        
+	                        raptor_init();
+	                        rdf_serializer = raptor_new_serializer(syntax);
+	                        
+	                        if (rdf_serializer)
+	                        {
+	                            message_handler_vars *info = GDKmalloc(sizeof(message_handler_vars));
+	                            if (info)
+	                            {
+	                                info->parser=NULL;
+	                                info->serializer = rdf_serializer;
+	                                info->ret = &ret;
+	                                info->ret_array = ret_array;
+	                                
+	                                raptor_serializer_set_error_handler(rdf_serializer, info, message_handler);
+	                                raptor_serializer_set_warning_handler(rdf_serializer, info, message_handler);
+	                                if (raptor_serialize_start_to_filename(rdf_serializer, fileurl) == 0)
+	                                {
+	                                    for(i=0; i <cnt; i++)
+	                                    {
+	                                        if (ret==MAL_SUCCEED)
+	                                        {
+	                                            raptor_statement *triple;
+	                                            str ov = base + off[o[i]];
+	                                            str pv = base + off[p[i]];
+	                                            str sv = base + off[s[i]];
+	                                            bte tv = t[i];
+	                                            /* Make a triple with URI subject, URI predicate, literal object */
+	                                            triple=GDKmalloc(sizeof(raptor_statement));
+	                                            if (triple)
+	                                            {
+	                                                ret = RDFserializeTriple(triple, rdf_serializer, sv, pv, ov, tv, type2xsd);
+	                                                GDKfree(triple);
+	                                            }
+	                                            else
+	                                                ret = "Failed to allocate memory for raptor_statement";
+	                                        }
+	                                    }
+	                                    raptor_serialize_end(rdf_serializer);
+	                                }
+	                                else
+	                                    if (ret == MAL_SUCCEED)
+	                                        ret = "raptor_serialize_start_to_filename failed";
+	                                GDKfree(info);
+	                            }
+	                            else
+	                                ret = "Failed to allocate memory for message_handler_vars";
+	                            raptor_free_serializer(rdf_serializer);
+	                        }
+	                        else
+	                            ret = "raptor_new_serializer failed";
+	                        raptor_finish();
+	                        BBPreleaseref(type2xsd->batCacheid);
+                    	}
+                    	else
+                    		ret = "Failed to obtain type2xsd bat";
+                    	BBPreleaseref(tb->batCacheid);
                     }
                     else
                         ret = "Failed to obtain T bat";
@@ -2521,19 +2449,11 @@ RDFexport_(bat M, bat S, bat P, bat O, bat T, str fileurl, str syntax)
         ret = "Failed to obtain MAP bat";
     return ret;
 }
-/* TODO what should this function do? */
-str 
-RDFexport(bat M, bat S, bat P, bat O, bat T) {
-    str ret = RDFexport_(M, S, P, O, T, "fileurl", "dummy syntax");
-    if (ret != MAL_SUCCEED)
-        throw(MAL, "RDFexport", ret);
-    return MAL_SUCCEED;
-}
 
 str RDFexportGraph(int *d, str *db, str *graph, str *fileurl, str *order, str *syntax)
 {
     char m_buf[1024], o_buf[1024], p_buf[1024], s_buf[1024], t_buf[1024];
-    bat map, ob, pb, sb, tb;
+    bat map, ob, pb, sb, tb, type2xsd;
     str ret;
     (void)d;
     ret = checkSyntax(*syntax);
@@ -2553,7 +2473,11 @@ str RDFexportGraph(int *d, str *db, str *graph, str *fileurl, str *order, str *s
                 if (ob) {
                     tb = BBPindex(t_buf);
                     if (tb) {
-                        ret = RDFexport_(map, sb, pb, ob, tb, *fileurl, *syntax);
+                    	type2xsd = BBPindex(TYPE2XSD);
+                    	if (type2xsd)
+                    		ret = RDFexport_(map, sb, pb, ob, tb, type2xsd, *fileurl, *syntax);
+                    	else
+                    		ret = "Failed to obtain type2xsd bat";
                     }
                     else
                         ret = "Failed to obtain T bat";
