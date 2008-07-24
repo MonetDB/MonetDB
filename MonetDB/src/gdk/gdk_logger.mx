@@ -1350,6 +1350,7 @@ log_delta(logger *lg, BAT *b, char *name)
 	int ok = GDK_SUCCEED;
 	logformat l;
 	BUN p;
+	size_t nr;
 
 	if (lg->debug & 128) {
 		/* logging is switched off */
@@ -1357,7 +1358,9 @@ log_delta(logger *lg, BAT *b, char *name)
 	}
 
 	l.tid = lg->tid;
-	l.nr = (BUNlast(b) - BUNfirst(b));
+	nr = (BUNlast(b) - BUNfirst(b));
+	assert(nr <= GDK_int_max);
+	l.nr = (int) nr;
 	lg->changes += l.nr;
 
 	if (l.nr) {
