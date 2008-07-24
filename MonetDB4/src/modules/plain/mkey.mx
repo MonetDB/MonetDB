@@ -461,7 +461,8 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
                         str src = base + *cur;
 			hash_t val;
 			GDK_STRHASH(src, val);
-			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
+			assert(val <= GDK_int_max);
+			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ (int) val;
 			cur++;
 			dst++;
 		}

@@ -774,7 +774,8 @@ CMDrunon(Cntxt stk, YYSTREE lt, ValPtr res)
 		return -1;
 	} else {
 		q = newRequest(stk, arg(lt, 0), 0);
-		q->ev_process = GDKthreads[i].pid;
+		assert(GDKthreads[i].pid <= GDK_int_max);
+		q->ev_process = (int) GDKthreads[i].pid;
 		putRequest(q);
 		lt->yysons[0] = 0;
 	}

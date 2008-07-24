@@ -219,7 +219,9 @@ blob_convert(blob *b, int direction)
 int
 blob_length(blob *p)
 {
-	return blobsize(p->nitems); /* 64bit: check for overflow */
+	size_t l = blobsize(p->nitems); /* 64bit: check for overflow */
+	assert(l <= GDK_int_max);
+	return (int) l; /* 64bit: check for overflow */
 }
 
 
