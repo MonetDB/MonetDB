@@ -1561,7 +1561,7 @@ expected usage pattern of the memory in a heap.
 #define STORE_MMAP	1	/* mmap() into virtual memory */
 #define STORE_PRIV	2	/* BAT copy of copy-on-write mmap */
 
-gdk_export size_t GDK_mem_pagebits;	/* page size for non-linear mmaps */
+gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 
 #define REMAP_PAGE_BITS    GDK_mem_pagebits
 #define REMAP_PAGE_SIZE    (1 << REMAP_PAGE_BITS)
