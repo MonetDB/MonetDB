@@ -129,10 +129,10 @@ dnl	AC_MSG_CHECKING([for Geos >= $GEOS_VERSION_REQUIRED_MIN, but < $GEOS_VERSION
 dnl	if test MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo $GEOS_VERSION_REQUIRED_MAX); then
 dnl		wrong="not yet supported"
 dnl	fi
-dnl	if test "x$wrong" != x; then
-dnl		AC_MSG_ERROR([Geos version $GEOS_VERSION is $wrong])
-dnl		have_geos=no
-dnl	fi
+	if test "x$wrong" != x; then
+		AC_MSG_ERROR([Geos version $GEOS_VERSION is $wrong])
+		have_geos=no
+	fi
 fi
 if test "x$have_geos" != xno; then
 	case "$GCC-$CC-`$GEOS_CONFIG --prefix`-`$GEOS_CONFIG --includes`" in
