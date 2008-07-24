@@ -784,7 +784,7 @@ SQLrenderer(MapiHdl hdl)
 				if (s != NULL) {
 					size_t l = strlen(s);
 					assert(l <= INT_MAX);
-					if ((max = l) > len[i])
+					if ((max = (int) l) > len[i])
 						len[i] = max;
 				}
 				total += len[i];
