@@ -583,7 +583,7 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	mapi_client *fc = NULL;
 	mapi_frontend *f = NULL;
 	Client c;
-	int len = 0;
+	ssize_t len = 0;
 
 	/* create blockstreams */
 	fdin = block_stream(fdin);

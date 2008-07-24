@@ -656,7 +656,7 @@ rfind_quote(char *s, char quote)
 }
 
 static INLINE int
-insert_val(ascii_io *fmt, char *s, char *e, char quote, int c)
+insert_val(ascii_io *fmt, char *s, char *e, char quote, size_t c)
 {
 	char *end = e;
 	char bak = *e;
@@ -693,7 +693,7 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote, int c)
 		char *val = (s!=e)?GDKstrdup(s):GDKstrdup("");
 
 		*end = bak;
-		GDKerror("value '%s' while parsing '%s' from line %d field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c), c, fmt->type);
+		GDKerror("value '%s' while parsing '%s' from line " SZFMT " field " SZFMT " not inserted, expecting type %s\n", val, s, BATcount(fmt->c), c, fmt->type);
 		GDKfree(val);
 		return -1;
 	}
@@ -903,7 +903,7 @@ output_line_lookup(char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_at
 			char *p = BUNtail(f->ci, id + BUNfirst(f->c));
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
-				int l = strlen(f->nullstr);
+				ssize_t l = (ssize_t) strlen(f->nullstr);
 				if (stream_write(fd, f->nullstr, 1, l) != l)
 					return ascii_io_error(fd);
 			} else {
