@@ -231,7 +231,7 @@ static rdf_type RDFxsdToType(str uri, BAT *m)
     	if (bun == BUN_NONE)
     		ret = RDF_TYPE_OTHER;
     	else
-    		ret = (oid) bun;
+    		ret = (rdf_type) bun;
     }
     return ret;
 }
@@ -517,11 +517,11 @@ static str RDFparseDateTime(rdf_datetime *dt, str date_string)
         if (date_len >= 19)
         {
             int i;
-            str year;
-            str month;
-            str day;
-            str hour;
-            str minutes;
+            str year = NULL;
+            str month = NULL;
+            str day = NULL;
+            str hour = NULL;
+            str minutes = NULL;
             chr seconds[3];
             str fractions = NULL;
             str timezone = NULL;
@@ -666,9 +666,9 @@ static str RDFparseDateTime(rdf_datetime *dt, str date_string)
 static INLINE void rdf_datetime_toString(str ret, size_t len, rdf_datetime *datetime)
 {
     bool firstCharFound = false;
-    unsigned long mask = 0x8000000000000000;
-    unsigned long l = *(unsigned long*)datetime->tstamp ^ mask;
-    snprintf(ret, len, "%16lx%s%s", l, datetime->msecs, datetime->tzone);
+    unsigned long long mask = 0x8000000000000000;
+    unsigned long long l = *(unsigned long long*)datetime->tstamp ^ mask;
+    snprintf(ret, len, "%16llx%s%s", l, datetime->msecs, datetime->tzone);
     /* change leading white spaces to 0 */
     for (int i=0; i<16 && !firstCharFound; i++)
         if (ret[i] == ' ')
@@ -680,7 +680,7 @@ static INLINE void rdf_datetime_toString(str ret, size_t len, rdf_datetime *date
 static void rdf_datetime_fromString(rdf_datetime *dt, str string)
 {
     char tstamp_str[17];
-    unsigned long l, mask = 0x8000000000000000;
+    unsigned long long l, mask = 0x8000000000000000;
     timestamp *tmp;
     snprintf(tstamp_str, 17, string);
     tstamp_str[16] = '\0';
@@ -704,9 +704,9 @@ static void rdf_datetime_fromString(rdf_datetime *dt, str string)
                 rdf_datetime_set_tzone(dt, timezone);
         }
     }
-    l = strtoul(tstamp_str, NULL, 16);
+    l = strtoull(tstamp_str, NULL, 16);
     l ^= mask;
-    tmp = (timestamp *)&l;
+    tmp = (timestamp *)(lng*)&l;
     dt->tstamp->msecs = tmp->msecs;
     dt->tstamp->days = tmp->days;
 }
@@ -716,7 +716,7 @@ static void RDFdoubleToHexString(str ret, double val)
 {
     unsigned long long l;
     bool firstCharFound = false;
-    l = *((unsigned long long*)&val);
+    l = *((unsigned long long*)(dbl*)&val);
     if (val == 0)
         return;/* 0 is a special case in Monet/RDF and it has not to be converted to string here */
     if (val<0)
@@ -742,7 +742,7 @@ static double RDFhexStringToDouble(str string)
         l ^= RDF_POSITIVE_MASK;
     else
         l ^= RDF_NEGATIVE_MASK;
-    ret = *((double*)&l);
+    ret = *((double*)(lng*)&l);
     return ret;
 }
 
@@ -1023,7 +1023,7 @@ void message_handler(void *user_data, raptor_locator *locator, const char *messa
     *ret = ret_array;
     if (locator->uri)
     {
-        written = snprintf(msg, RET_MAXLEN, "In URI location \"%s\": ", raptor_uri_as_string(locator->uri));
+        written = snprintf(msg, RET_MAXLEN, "In URI location \"%s\": ", (str)raptor_uri_as_string(locator->uri));
         if (written >= RET_MAXLEN)
             ret_array[RET_MAXLEN-1] = '\0';
         length = strlen(*ret);
@@ -1108,7 +1108,7 @@ triples_handler(void* user_data, const raptor_statement* triple)
     triple_handler_vars *data = (triple_handler_vars *)user_data;
     lng *cur = data->cur;
     lng *lim = data->lim;
-    str ov, pv, sv;
+    str ov = NULL, pv = NULL, sv = NULL;
     bte tv;
     BAT *map = data->map;
     BAT *type2xsd = data->type2xsd;
@@ -1176,7 +1176,7 @@ triples_handler(void* user_data, const raptor_statement* triple)
                     *ret = ret_array;
                     snprintf(*ret, RET_MAXLEN,
                             "The object \'%s\' has language tag \'%s\', but has datatype \'%s\'; only plain literals may have a language tag",
-                            (str)triple->object, triple->object_literal_language, obj_datatype);
+                            (str)triple->object, (str)triple->object_literal_language, obj_datatype);
                 }
                 else
                 {
@@ -1191,7 +1191,7 @@ triples_handler(void* user_data, const raptor_statement* triple)
                             ( triple->object_literal_language != NULL ) )
                         {
                             str langPrefixedObject;
-                            @:RDFprefixLanguage(langPrefixedObject, (str)triple->object, triple->object_literal_language)@
+                            @:RDFprefixLanguage(langPrefixedObject, (str)triple->object, (str)triple->object_literal_language)@
                             if (*ret == MAL_SUCCEED)
                             {
                                 if (strlen((str)triple->object) == 0)
@@ -2020,10 +2020,10 @@ static str RDFserializeTriple(raptor_statement *triple, raptor_serializer* seria
     bool     dealloc_subj = false, dealloc_prop = false,    dealloc_obj = false,
             dealloc_obj_datatype = false, dealloc_obj_lang = false;
     char obj_string[512]; /* used by numeric types and datetimes for conversion */
-    rdf_section subj_sec = sv[0];
-    rdf_section prop_sec = pv[0];
-    rdf_section obj_sec = ov[0];
-    rdf_type obj_type = tv;
+    rdf_section subj_sec = (rdf_section) sv[0];
+    rdf_section prop_sec = (rdf_section) pv[0];
+    rdf_section obj_sec = (rdf_section) ov[0];
+    rdf_type obj_type = (rdf_type) tv;
     memset(obj_string, 0, 512);
     sv = sv + sizeof(chr);
     pv = pv + sizeof(chr);
