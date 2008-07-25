@@ -45,6 +45,7 @@ lib_opt = {
                 opt_mvd.c \
                 opt_req_node.c \
                 opt_reqval.c \
+                opt_rank.c \
                 opt_set.c \
                 opt_thetajoin.c \
 				opt_algebra_cse.c

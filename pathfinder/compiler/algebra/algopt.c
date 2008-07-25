@@ -280,6 +280,19 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                            PFtimer_str (tm));
                 break;
 
+            case 'R':
+                MAP_ORI_NAMES("rank optimization")
+
+                tm = PFtimer_start ();
+
+                root = PFalgopt_rank (root);
+
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("   rank optimization:\t\t    %s",
+                           PFtimer_str (tm));
+                break;
+
             case 'S':
                 tm = PFtimer_start ();
 
@@ -328,6 +341,19 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   required value optimization:\t    %s",
+                           PFtimer_str (tm));
+                break;
+
+            case 'Y':
+                MAP_ORI_NAMES("rowid split optimization")
+
+                tm = PFtimer_start ();
+
+                root = PFalgopt_rowid_split (root);
+
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("   rowid split optimization:\t    %s",
                            PFtimer_str (tm));
                 break;
 
