@@ -133,38 +133,21 @@ CONDITIONALS = {
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
     # MonetDB:
-    'CROSS_COMPILING'  : "@CROSS_COMPILING_FALSE@",
-    'DOCTOOLS'         : "@DOCTOOLS_FALSE@",
-    'HAVE_JAVA'        : "@HAVE_JAVA_FALSE@",
-    'HAVE_PCRE'        : "@HAVE_PCRE_FALSE@",
-    'HAVE_PERL'        : "@HAVE_PERL_FALSE@",
-    'HAVE_PERL_DEVEL'  : "@HAVE_PERL_DEVEL_FALSE@",
-    'HAVE_PERL_SWIG'   : "@HAVE_PERL_SWIG_FALSE@",
-    'HAVE_PHP'         : "@HAVE_PHP_FALSE@",
-    'HAVE_PYTHON'      : "@HAVE_PYTHON_FALSE@",
-    'HAVE_PYTHON_DEVEL': "@HAVE_PYTHON_DEVEL_FALSE@",
-    'HAVE_PYTHON_SWIG' : "@HAVE_PYTHON_SWIG_FALSE@",
-    'HAVE_SWIG'        : "@HAVE_SWIG_FALSE@",
-    'LINK_STATIC'      : "@LINK_STATIC_FALSE@",
-    'NOT_WIN32'        : "@NOT_WIN32_FALSE@",
-    'PROFILING'        : "@PROFILING_FALSE@",
-    # SQL:
-    'NATIVE_WIN32'     : "@NATIVE_WIN32_FALSE@",
-    # unknown at compile time, as Mtest.py is compiled with MonetDB;
-    # hence, we set them at runtime in main() below
-    'HAVE_MONETDB5'    : "@HAVE_MONETDB5_FALSE@",
-    'HAVE_MONETDB4'    : "@HAVE_MONETDB4_FALSE@",
-    'HAVE_MONETDBJDBC_JAR': "",
-    'HAVE_JDBCCLIENT_JAR' : "",
-    'HAVE_JDBCTESTS_JAR'  : "",
-    'HAVE_JDBCTESTS_DIR'  : "",
-    'HAVE_JDBCTESTS'      : "",
-    'HAVE_XRPCAPI_JAR'    : "",
-    'HAVE_XRPCCLIENT_JAR' : "",
-    'HAVE_XRPCWRAPPER_JAR': "",
-    'WITH_ALGEBRA'     : "",
-    'NOT_ALGEBRA'      : "",
+    'CROSS_COMPILING'  : "@CROSS_COMPILING_FALSE@"
+    # remaining conditionals are set dynamically at runtime
 }
+
+def GetCONDITIONALS(pkg) :
+    cfg = pkg+'-config'
+    cmd = CheckExec(cfg)
+    proc = subprocess.Popen([cmd,'--conds'], stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
+    qOut, qErr = proc.communicate()
+    r = re.compile('^(.*)=(.*)$')
+    for l in qOut.split('\n'):
+        m = r.match(l.strip())
+        if m:
+            CONDITIONALS[m.group(1)] = m.group(2)
+### GetCONDITIONALS(pkg) #
 
 # a bunch of classes to help with generating (X)HTML files
 class _Encode:
@@ -2558,14 +2541,14 @@ def CheckClassPath(quiet) :
                 if os.path.isfile(p):
                     if f == 'BugConcurrent_clients_SF_1504657.class':
                         C = 'HAVE_JDBCTESTS_DIR'
-                        if not CONDITIONALS[C]:
+                        if not CONDITIONALS.has_key(C):
                             cp = cp + os.pathsep + d
                             CONDITIONALS[C] = '#'
                     else:
                         C = 'HAVE_%s' % f.upper().replace('.','_')
                         if not JARS.has_key(C):
                             C = 'HAVE_MONETDBJDBC_JAR'
-                        if not CONDITIONALS[C] and JARS[C].match(f):
+                        if not CONDITIONALS.has_key(C) and JARS[C].match(f):
                             cp = cp + os.pathsep + p
                             CONDITIONALS[C] = '#'
     if cp:
@@ -2573,11 +2556,11 @@ def CheckClassPath(quiet) :
     miss = ''
     for j in ['monetdbjdbc.jar', 'jdbcclient.jar', 'jdbctests.jar', 'xrpcapi.jar', 'xrpcclient.jar', 'xrpcwrapper.jar']:
         C = 'HAVE_%s' % j.upper().replace('.','_')
-        if not CONDITIONALS[C]:
+        if not CONDITIONALS.has_key(C):
             miss += ' "%s"' % j
     if miss and not quiet:
         Warn('Could not find%s in\nCLASSPATH="%s"' % (miss,cpx))
-    if CONDITIONALS['HAVE_MONETDBJDBC_JAR'] and ( CONDITIONALS['HAVE_JDBCTESTS_JAR'] or CONDITIONALS['HAVE_JDBCTESTS_DIR']):
+    if CONDITIONALS.has_key('HAVE_MONETDBJDBC_JAR') and ( CONDITIONALS.has_key('HAVE_JDBCTESTS_JAR') or CONDITIONALS.has_key('HAVE_JDBCTESTS_DIR')):
         CONDITIONALS['HAVE_JDBCTESTS'] = '#'
 ### CheckClassPath(quiet) #
 
@@ -3127,6 +3110,7 @@ def main(argv) :
     # hence, we set then at runtime.
     # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
     # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
+    GetCONDITIONALS(par['PACKAGE'])
     if par['M5']:
         CONDITIONALS['HAVE_MONETDB5'] = '#'
         CONDITIONALS['HAVE_MONETDB4'] = ''
