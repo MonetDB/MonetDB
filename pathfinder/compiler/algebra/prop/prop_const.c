@@ -561,6 +561,18 @@ infer_const (PFla_op_t *n)
                         PFalg_lit_dbl ((PFprop_const_val (
                                             L(n)->prop,
                                             n->sem.type.att)).val.int_));
+            /* In special cases a stable cast (in respect to different
+               implementations) is possible (see e.g. from nat to int). */
+            else if (PFprop_const (L(n)->prop, n->sem.type.att) &&
+                     (PFprop_const_val (L(n)->prop,
+                                        n->sem.type.att)).type == aat_nat &&
+                     n->sem.type.ty == aat_int)
+                PFprop_mark_const (
+                        n->prop,
+                        n->sem.type.res,
+                        PFalg_lit_int ((PFprop_const_val (
+                                            L(n)->prop,
+                                            n->sem.type.att)).val.nat_));
             break;
 
         case la_type:
