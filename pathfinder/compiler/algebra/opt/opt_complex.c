@@ -1215,8 +1215,7 @@ opt_complex (PFla_op_t *p)
             break;
 
         case la_cast:
-            if (!PFprop_req_value_col (p->prop, p->sem.type.res) &&
-                !PFprop_req_bijective_col (p->prop, p->sem.type.res) &&
+            if (PFprop_req_order_col (p->prop, p->sem.type.res) &&
                 p->sem.type.ty == aat_int &&
                 PFprop_type_of (p, p->sem.type.att) == aat_nat) {
                 PFalg_proj_t *proj = PFmalloc (p->schema.count *
