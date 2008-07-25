@@ -50,4 +50,4 @@ xml04
 xml05
 xml10
 
-rdf
+HAVE_RAPTOR?rdf
