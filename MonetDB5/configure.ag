@@ -160,7 +160,7 @@ if test "x$have_raptor" != xno; then
 	esac
 	AC_PATH_PROG(RAPTOR_CONFIG,raptor-config,,$XPATH)
 	if test "x$RAPTOR_CONFIG" = x; then
-		wrong="raptor-config not found in $XPATH"
+		wrong="raptor-config could not be found in $XPATH"
 		have_raptor=no
 	fi
 fi
@@ -178,13 +178,13 @@ if test "x$have_raptor" != xno; then
 	RAPTOR_INCS="`$RAPTOR_CONFIG --cflags`"
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $RAPTOR_INCS"
-	AC_CHECK_HEADER(raptor.h, AC_DEFINE(HAVE_RAPTOR_H, 1, [Define to 1 if you have the <raptor.h> header file.]), [wrong="raptor.h not found"; have_raptor=no])
+	AC_CHECK_HEADER(raptor.h, AC_DEFINE(HAVE_RAPTOR_H, 1, [Define to 1 if you have the <raptor.h> header file.]), [wrong="raptor.h could not be found/used"; have_raptor=no])
 	CPPFLAGS="$save_CPPFLAGS"
 fi
 if test "x$have_raptor" != xno; then
 	save_LIBS="$LIBS"
     	LIBS="$LIBS $RAPTOR_LIBS"
-    	AC_CHECK_LIB(raptor, raptor_uri_as_string, :, [wrong="-lraptor not found"; have_raptor=no])
+    	AC_CHECK_LIB(raptor, raptor_uri_as_string, :, [wrong="-lraptor could not be found/used"; have_raptor=no])
     	LIBS="$save_LIBS"
 fi
 if test "x$have_raptor" = xno; then
