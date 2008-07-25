@@ -188,7 +188,7 @@ if test "x$have_raptor" != xno; then
     	LIBS="$save_LIBS"
 fi
 if test "x$have_raptor" = xno; then
-	AC_MSG_WARN([module rdf will be compiled as $wrong.])
+	AC_MSG_WARN([module rdf will NOT be compiled as $wrong.])
 fi
 AC_SUBST(RAPTOR_INCS)
 AC_SUBST(RAPTOR_LIBS)
