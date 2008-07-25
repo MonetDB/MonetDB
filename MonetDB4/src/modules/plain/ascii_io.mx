@@ -801,18 +801,18 @@ dump_line(char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs, size
 	for (i = 0; i < nr_attrs; i++) {
 		ascii_io *f;
 		char *p;
-		int l;
 
 		f = fmt + i;
 		if (f->c) {
 			p = (char *) bun_tail(f->c, id);
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
-				l = strlen(f->nullstr);
-				if (stream_write(fd, f->nullstr, 1, l) != l)
+				size_t l = strlen(f->nullstr);
+				assert(l <= GDK_int_max);
+				if (stream_write(fd, f->nullstr, 1, (int) l) != (int) l)
 					return ascii_io_error(fd);
 			} else {
-				l = f->tostr(f->extra, buf, len, f->adt, p);
+				int l = f->tostr(f->extra, buf, len, f->adt, p);
 				if (stream_write(fd, *buf, 1, l) != l)
 					return ascii_io_error(fd);
 			}
@@ -840,18 +840,18 @@ output_line(char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_attrs, pt
 		for (i = 0; i < nr_attrs; i++) {
 			ascii_io *f;
 			char *p;
-			int l;
 
 			f = fmt + i;
 			if (f->c) {
 				p = BUNtail(f->ci, f->p);
 
 				if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
-					l = strlen(f->nullstr);
-					if (stream_write(fd, f->nullstr, 1, l) != l)
+					size_t l = strlen(f->nullstr);
+					assert(l <= GDK_int_max);
+					if (stream_write(fd, f->nullstr, 1, (int) l) != (int) l)
 						return ascii_io_error(fd);
 				} else {
-					l = f->tostr(f->extra, buf, len, f->adt, p);
+					int l = f->tostr(f->extra, buf, len, f->adt, p);
 					if (stream_write(fd, *buf, 1, l) != l)
 						return ascii_io_error(fd);
 				}
@@ -875,8 +875,9 @@ output_line_dense(char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_att
 			char *p = BUNtail(f->ci, f->p);
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
-				int l = strlen(f->nullstr);
-				if (stream_write(fd, f->nullstr, 1, l) != l)
+				size_t l = strlen(f->nullstr);
+				assert(l <= GDK_int_max);
+				if (stream_write(fd, f->nullstr, 1, (int) l) != (int) l)
 					return ascii_io_error(fd);
 			} else {
 				int l = f->tostr(f->extra, buf, len, f->adt, p);
