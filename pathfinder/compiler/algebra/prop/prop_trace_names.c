@@ -396,18 +396,9 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             diff_np (np_list, n->sem.string_join.item_res);
             break;
 
-        case la_cross_mvd:
+        case la_internal_op:
             PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
-            break;
-
-        case la_eqjoin_unq:
-            PFoops (OOPS_FATAL,
-                    "clone column aware equi-join operator is "
-                    "only allowed with unique attribute names!");
-            break;
-
+                    "internal optimization operator is not allowed here");
     }
 
     /* infer properties for children and

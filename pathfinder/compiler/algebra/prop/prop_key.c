@@ -374,39 +374,44 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 copy (n->prop->keys, L(n)->prop->keys);
             break;
 
-        case la_eqjoin_unq:
-            /* do the same as for normal joins and
-               correctly update the columns names */
+        case la_internal_op:
+            /* interpret this operator as internal join */
+            if (n->sem.eqjoin_opt.kind == la_eqjoin) {
+                /* do the same as for normal joins and
+                   correctly update the columns names */
 #define proj_at(l,i) (*(PFalg_proj_t *) PFarray_at ((l),(i)))
-        {
-            PFarray_t  *lproj = n->sem.eqjoin_unq.lproj,
-                       *rproj = n->sem.eqjoin_unq.rproj;
-            PFalg_att_t att1  = proj_at(lproj, 0).old,
-                        att2  = proj_at(rproj, 0).old,
-                        res   = proj_at(lproj, 0).new;
-            
-            /* only a key-join retains all key properties */
-            if (PFprop_key (L(n)->prop, att1) &&
-                PFprop_key (R(n)->prop, att2)) {
-                union_ (n->prop->keys, res);
-                for (unsigned int i = 1; i < PFarray_last (lproj); i++)
-                    if (PFprop_key (L(n)->prop, proj_at(lproj, i).old))
-                        union_ (n->prop->keys, proj_at(lproj, i).new);
-                for (unsigned int i = 1; i < PFarray_last (rproj); i++)
-                    if (PFprop_key (R(n)->prop, proj_at(rproj, i).old))
-                        union_ (n->prop->keys, proj_at(rproj, i).new);
+                PFarray_t  *lproj = n->sem.eqjoin_opt.lproj,
+                           *rproj = n->sem.eqjoin_opt.rproj;
+                PFalg_att_t att1  = proj_at(lproj, 0).old,
+                            att2  = proj_at(rproj, 0).old,
+                            res   = proj_at(lproj, 0).new;
+                
+                /* only a key-join retains all key properties */
+                if (PFprop_key (L(n)->prop, att1) &&
+                    PFprop_key (R(n)->prop, att2)) {
+                    union_ (n->prop->keys, res);
+                    for (unsigned int i = 1; i < PFarray_last (lproj); i++)
+                        if (PFprop_key (L(n)->prop, proj_at(lproj, i).old))
+                            union_ (n->prop->keys, proj_at(lproj, i).new);
+                    for (unsigned int i = 1; i < PFarray_last (rproj); i++)
+                        if (PFprop_key (R(n)->prop, proj_at(rproj, i).old))
+                            union_ (n->prop->keys, proj_at(rproj, i).new);
+                }
+                else if (PFprop_key (L(n)->prop, att1)) {
+                    for (unsigned int i = 1; i < PFarray_last (rproj); i++)
+                        if (PFprop_key (R(n)->prop, proj_at(rproj, i).old))
+                            union_ (n->prop->keys, proj_at(rproj, i).new);
+                }
+                else if (PFprop_key (R(n)->prop, att2)) {
+                    for (unsigned int i = 1; i < PFarray_last (lproj); i++)
+                        if (PFprop_key (L(n)->prop, proj_at(lproj, i).old))
+                            union_ (n->prop->keys, proj_at(lproj, i).new);
+                }
             }
-            else if (PFprop_key (L(n)->prop, att1)) {
-                for (unsigned int i = 1; i < PFarray_last (rproj); i++)
-                    if (PFprop_key (R(n)->prop, proj_at(rproj, i).old))
-                        union_ (n->prop->keys, proj_at(rproj, i).new);
-            }
-            else if (PFprop_key (R(n)->prop, att2)) {
-                for (unsigned int i = 1; i < PFarray_last (lproj); i++)
-                    if (PFprop_key (L(n)->prop, proj_at(lproj, i).old))
-                        union_ (n->prop->keys, proj_at(lproj, i).new);
-            }
-        }   break;
+            else
+                PFoops (OOPS_FATAL,
+                        "internal optimization operator is not allowed here");
+            break;
             
         case la_semijoin:
             copy (n->prop->keys, L(n)->prop->keys);
@@ -423,7 +428,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                                PFprop_key (L(n)->prop,
                                            n->sem.thetajoin.pred[i].left);
                     key_right = key_right ||
-                                PFprop_key (L(n)->prop,
+                                PFprop_key (R(n)->prop,
                                             n->sem.thetajoin.pred[i].right);
                 }
 
@@ -610,9 +615,6 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             if (n->sem.step.spec.axis == alg_self &&
                 PFprop_key (R(n)->prop, n->sem.step.iter))
                 union_ (n->prop->keys, n->sem.step.iter);
-
-            if (PFprop_const (n->prop, n->sem.step.iter))
-                union_ (n->prop->keys, n->sem.step.item_res);
             break;
 
         case la_guide_step_join:
@@ -768,11 +770,6 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             union_ (n->prop->keys, n->sem.string_join.iter_res);
             break;
 
-        case la_cross_mvd:
-            PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
-
         case la_dummy:
             copy (n->prop->keys, L(n)->prop->keys);
             break;
@@ -827,10 +824,8 @@ prop_infer (PFla_op_t *n, bool with_guide_info)
 void
 PFprop_infer_key (PFla_op_t *root)
 {
-    /* infer cardinalities and constant column to
-       discover more key columns */
+    /* infer cardinalities to discover more key columns */
     PFprop_infer_card (root);
-    PFprop_infer_const (root);
     /* use the cheaper domain inference that only infers
        domains for columns of the native type */
     PFprop_infer_nat_dom (root);
@@ -846,10 +841,8 @@ PFprop_infer_key (PFla_op_t *root)
 void
 PFprop_infer_key_with_guide (PFla_op_t *root)
 {
-    /* infer cardinalities and constant column to
-       discover more key columns */
+    /* infer cardinalities to discover more key columns */
     PFprop_infer_card (root);
-    PFprop_infer_const (root);
     /* use the cheaper domain inference that only infers
        domains for columns of the native type */
     PFprop_infer_nat_dom (root);

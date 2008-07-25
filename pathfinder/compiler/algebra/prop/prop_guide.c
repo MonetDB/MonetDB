@@ -801,8 +801,7 @@ infer_guide (PFla_op_t *n, PFguide_list_t *guides)
         case la_fun_call:
         case la_fun_param:
         case la_fun_frag_param:
-        case la_cross_mvd:
-        case la_eqjoin_unq:
+        case la_internal_op:
         case la_string_join:
         case la_nil:
             break;

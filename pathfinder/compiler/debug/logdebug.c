@@ -56,7 +56,6 @@ static char *a_id[]  = {
     , [la_attach]           = "Attach"
     , [la_cross]            = "Cross"
     , [la_eqjoin]           = "Join"
-    , [la_eqjoin_unq]       = "Join"
     , [la_semijoin]         = "SemiJoin"
     , [la_thetajoin]        = "ThetaJoin"
     , [la_project]          = "Project"
@@ -124,6 +123,7 @@ static char *a_id[]  = {
     , [la_fun_frag_param]   = "fun frag param"
     , [la_proxy]            = "PROXY"
     , [la_proxy_base]       = "PROXY_BASE"
+    , [la_internal_op]      = "!!!INTERNAL OP!!!"
     , [la_string_join]      = "fn:string_join"
     , [la_dummy]            = "DUMMY"
 };
@@ -138,7 +138,6 @@ static char *xml_id[]  = {
     , [la_attach]           = "attach"
     , [la_cross]            = "cross"
     , [la_eqjoin]           = "eqjoin"
-    , [la_eqjoin_unq]       = "eqjoin_unq"
     , [la_semijoin]         = "semijoin"
     , [la_thetajoin]        = "thetajoin"
     , [la_project]          = "project"
@@ -388,7 +387,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
         , [la_attach]          = "#EEEEEE"
         , [la_cross]           = "#990000"
         , [la_eqjoin]          = "#00FF00"
-        , [la_eqjoin_unq]      = "#00CC00"
         , [la_semijoin]        = "#009900"
         , [la_thetajoin]       = "#00AA00"
         , [la_project]         = "#EEEEEE"
@@ -465,7 +463,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
 
     /* the following line enables id printing to simplify comparison with
        generated XML plans */
-    /* PFarray_printf (dot, "id: %i\\n", n->node_id); */
+    PFarray_printf (dot, "id: %i\\n", n->node_id);
 
     /* create label */
     switch (n->kind)
@@ -573,37 +571,43 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                                 PFatt_str (n->sem.thetajoin.pred[c].right));
             break;
 
-        case la_eqjoin_unq:
+        case la_internal_op:
+            /* interpret this operator as internal join */
+            if (n->sem.eqjoin_opt.kind == la_eqjoin) {
 #define proj_at(l,i) (*(PFalg_proj_t *) PFarray_at ((l),(i)))
-            PFarray_printf (dot, "%s (%s:%s = %s)",
-                            a_id[n->kind],
-                            PFatt_str (proj_at(n->sem.eqjoin_unq.lproj,0).new),
-                            PFatt_str (proj_at(n->sem.eqjoin_unq.lproj,0).old),
-                            PFatt_str (proj_at(n->sem.eqjoin_unq.rproj,0).old));
-            PFarray_printf (dot, "\\nleft proj: (");
-            for (unsigned int i = 1;
-                 i < PFarray_last (n->sem.eqjoin_unq.lproj);
-                 i++)
                 PFarray_printf (
                     dot,
-                    "%s:%s%s",
-                    PFatt_str (proj_at(n->sem.eqjoin_unq.lproj,i).new),
-                    PFatt_str (proj_at(n->sem.eqjoin_unq.lproj,i).old),
-                    i+1 == PFarray_last (n->sem.eqjoin_unq.lproj) ? "" : ", ");
-            PFarray_printf (dot, ")");
-            PFarray_printf (dot, "\\nright proj: (");
-            for (unsigned int i = 1;
-                 i < PFarray_last (n->sem.eqjoin_unq.rproj);
-                 i++)
-                PFarray_printf (
-                    dot,
-                    "%s:%s%s",
-                    PFatt_str (proj_at(n->sem.eqjoin_unq.rproj,i).new),
-                    PFatt_str (proj_at(n->sem.eqjoin_unq.rproj,i).old),
-                    i+1 == PFarray_last (n->sem.eqjoin_unq.rproj) ? "" : ", ");
-            PFarray_printf (dot, ")");
+                    "%s (%s:%s = %s)",
+                    a_id[n->kind],
+                    PFatt_str (proj_at(n->sem.eqjoin_opt.lproj,0).new),
+                    PFatt_str (proj_at(n->sem.eqjoin_opt.lproj,0).old),
+                    PFatt_str (proj_at(n->sem.eqjoin_opt.rproj,0).old));
+                PFarray_printf (dot, "\\nleft proj: (");
+                for (unsigned int i = 1;
+                     i < PFarray_last (n->sem.eqjoin_opt.lproj);
+                     i++)
+                    PFarray_printf (
+                        dot,
+                        "%s:%s%s",
+                        PFatt_str (proj_at(n->sem.eqjoin_opt.lproj,i).new),
+                        PFatt_str (proj_at(n->sem.eqjoin_opt.lproj,i).old),
+                        i+1 == PFarray_last (n->sem.eqjoin_opt.lproj)
+                        ? "" : ", ");
+                PFarray_printf (dot, ")");
+                PFarray_printf (dot, "\\nright proj: (");
+                for (unsigned int i = 1;
+                     i < PFarray_last (n->sem.eqjoin_opt.rproj);
+                     i++)
+                    PFarray_printf (
+                        dot,
+                        "%s:%s%s",
+                        PFatt_str (proj_at(n->sem.eqjoin_opt.rproj,i).new),
+                        PFatt_str (proj_at(n->sem.eqjoin_opt.rproj,i).old),
+                        i+1 == PFarray_last (n->sem.eqjoin_opt.rproj)
+                        ? "" : ", ");
+                PFarray_printf (dot, ")");
+            }
             break;
-
 
         case la_project:
             if (n->sem.proj.items[0].new != n->sem.proj.items[0].old)
@@ -1011,11 +1015,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
         case la_error:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
-
-        case la_cross_mvd:
-            PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
     }
 
     if (prop_args) {
@@ -1686,23 +1685,25 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
             PFarray_printf (xml, "    </content>\n");
             break;
 
-        case la_eqjoin_unq:
+        case la_internal_op:
+#if 0
+        /* this code only works for printing an internal eqjoin */
             PFarray_printf (xml,
                             "    <content>\n"
                             "      <column name=\"%s\" new=\"false\""
                                          " keep=\"%s\" position=\"1\"/>\n"
                             "      <column name=\"%s\" new=\"false\""
                                          " keep=\"%s\" position=\"2\"/>\n",
-                            PFatt_str (proj_at(n->sem.eqjoin_unq.lproj,0).old),
-                            proj_at(n->sem.eqjoin_unq.lproj,0).new ==
-                            proj_at(n->sem.eqjoin_unq.lproj,0).old
+                            PFatt_str (proj_at(n->sem.eqjoin_opt.lproj,0).old),
+                            proj_at(n->sem.eqjoin_opt.lproj,0).new ==
+                            proj_at(n->sem.eqjoin_opt.lproj,0).old
                             ? "true" : "false",
-                            PFatt_str (proj_at(n->sem.eqjoin_unq.rproj,0).old),
-                            proj_at(n->sem.eqjoin_unq.rproj,0).new ==
-                            proj_at(n->sem.eqjoin_unq.rproj,0).old
+                            PFatt_str (proj_at(n->sem.eqjoin_opt.rproj,0).old),
+                            proj_at(n->sem.eqjoin_opt.rproj,0).new ==
+                            proj_at(n->sem.eqjoin_opt.rproj,0).old
                             ? "true" : "false");
-            for (c = 1; c < PFarray_last (n->sem.eqjoin_unq.lproj); c++) {
-                PFalg_proj_t proj = proj_at(n->sem.eqjoin_unq.lproj,c);
+            for (c = 1; c < PFarray_last (n->sem.eqjoin_opt.lproj); c++) {
+                PFalg_proj_t proj = proj_at(n->sem.eqjoin_opt.lproj,c);
                 if (proj.new != proj.old)
                     PFarray_printf (
                         xml,
@@ -1718,8 +1719,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
                                        "new=\"false\" function=\"left\"/>\n",
                         PFatt_str (proj.new));
             }
-            for (c = 1; c < PFarray_last (n->sem.eqjoin_unq.rproj); c++) {
-                PFalg_proj_t proj = proj_at(n->sem.eqjoin_unq.rproj,c);
+            for (c = 1; c < PFarray_last (n->sem.eqjoin_opt.rproj); c++) {
+                PFalg_proj_t proj = proj_at(n->sem.eqjoin_opt.rproj,c);
                 if (proj.new != proj.old)
                     PFarray_printf (
                         xml,
@@ -1736,6 +1737,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
                         PFatt_str (proj.new));
             }
             PFarray_printf (xml, "    </content>\n");
+#endif
             break;
 
         case la_project:

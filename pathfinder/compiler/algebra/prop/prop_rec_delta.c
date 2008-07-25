@@ -70,8 +70,7 @@ check_op (PFla_op_t *n, bool op_used)
         case la_guide_step_join:
         case la_proxy:
         case la_proxy_base:
-        case la_cross_mvd:
-        case la_eqjoin_unq:
+        case la_internal_op:
         case la_dummy:
             PFoops (OOPS_FATAL,
                     "This property checking phase should be run "

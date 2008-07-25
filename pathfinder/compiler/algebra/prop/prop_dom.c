@@ -657,69 +657,75 @@ infer_dom (PFla_op_t *n, unsigned int id)
                 }
         }   break;
 
-        case la_eqjoin_unq:
-            /* do the same as for normal joins and
-               correctly update the columns names */
+        case la_internal_op:
+            /* interpret this operator as internal join */
+            if (n->sem.eqjoin_opt.kind == la_eqjoin) {
+                /* do the same as for normal joins and
+                   correctly update the columns names */
 #define proj_at(l,i) (*(PFalg_proj_t *) PFarray_at ((l),(i)))
-        {   /**
-             * Infering the domains of the join attributes results
-             * in a common domain, that is either the more general
-             * domain if the are in a subdomain relationship or a
-             * new subdomain. The domains of all other columns
-             * (whose domain is different from the domains of the
-             * join arguments) remain unchanged.
-             */
-            PFarray_t  *lproj = n->sem.eqjoin_unq.lproj,
-                       *rproj = n->sem.eqjoin_unq.rproj;
-            PFalg_att_t att1  = proj_at(lproj, 0).old,
-                        att2  = proj_at(rproj, 0).old,
-                        res   = proj_at(lproj, 0).new;
-            
-            dom_t att1_dom = PFprop_dom (L(n)->prop, att1),
-                  att2_dom = PFprop_dom (R(n)->prop, att2),
-                  join_dom,
-                  cur_dom;
+                /**
+                 * Infering the domains of the join attributes results
+                 * in a common domain, that is either the more general
+                 * domain if the are in a subdomain relationship or a
+                 * new subdomain. The domains of all other columns
+                 * (whose domain is different from the domains of the
+                 * join arguments) remain unchanged.
+                 */
+                PFarray_t  *lproj = n->sem.eqjoin_opt.lproj,
+                           *rproj = n->sem.eqjoin_opt.rproj;
+                PFalg_att_t att1  = proj_at(lproj, 0).old,
+                            att2  = proj_at(rproj, 0).old,
+                            res   = proj_at(lproj, 0).new;
+                
+                dom_t att1_dom = PFprop_dom (L(n)->prop, att1),
+                      att2_dom = PFprop_dom (R(n)->prop, att2),
+                      join_dom,
+                      cur_dom;
 
-            if (att1_dom == att2_dom)
-                join_dom = att1_dom;
-            else if (PFprop_subdom (n->prop, att1_dom, att2_dom))
-                join_dom = att1_dom;
-            else if (PFprop_subdom (n->prop, att2_dom, att1_dom))
-                join_dom = att2_dom;
-            else {
-                join_dom = id++;
-                add_subdom (n->prop, att1_dom, join_dom);
-                add_subdom (n->prop, att2_dom, join_dom);
+                if (att1_dom == att2_dom)
+                    join_dom = att1_dom;
+                else if (PFprop_subdom (n->prop, att1_dom, att2_dom))
+                    join_dom = att1_dom;
+                else if (PFprop_subdom (n->prop, att2_dom, att1_dom))
+                    join_dom = att2_dom;
+                else {
+                    join_dom = id++;
+                    add_subdom (n->prop, att1_dom, join_dom);
+                    add_subdom (n->prop, att2_dom, join_dom);
+                }
+                add_dom (n->prop, res, join_dom);
+
+                /* copy domains and update domains of join arguments */
+                for (unsigned int i = 1; i < PFarray_last (lproj); i++)
+                    if ((cur_dom = PFprop_dom (
+                                       L(n)->prop,
+                                       proj_at (lproj, i).old))
+                        == att1_dom)
+                        add_dom (n->prop, proj_at (lproj, i).new, join_dom);
+                    else if (join_dom == att1_dom)
+                        add_dom (n->prop, proj_at (lproj, i).new, cur_dom);
+                    else {
+                        add_subdom (n->prop, cur_dom, id);
+                        add_dom (n->prop, proj_at (lproj, i).new, id++);
+                    }
+
+                for (unsigned int i = 1; i < PFarray_last (rproj); i++)
+                    if ((cur_dom = PFprop_dom (
+                                       R(n)->prop,
+                                       proj_at (rproj, i).old))
+                        == att2_dom)
+                        add_dom (n->prop, proj_at (rproj, i).new, join_dom);
+                    else if (join_dom == att2_dom)
+                        add_dom (n->prop, proj_at (rproj, i).new, cur_dom);
+                    else {
+                        add_subdom (n->prop, cur_dom, id);
+                        add_dom (n->prop, proj_at (rproj, i).new, id++);
+                    }
             }
-            add_dom (n->prop, res, join_dom);
-
-            /* copy domains and update domains of join arguments */
-            for (unsigned int i = 1; i < PFarray_last (lproj); i++)
-                if ((cur_dom = PFprop_dom (
-                                   L(n)->prop,
-                                   proj_at (lproj, i).old))
-                    == att1_dom)
-                    add_dom (n->prop, proj_at (lproj, i).new, join_dom);
-                else if (join_dom == att1_dom)
-                    add_dom (n->prop, proj_at (lproj, i).new, cur_dom);
-                else {
-                    add_subdom (n->prop, cur_dom, id);
-                    add_dom (n->prop, proj_at (lproj, i).new, id++);
-                }
-
-            for (unsigned int i = 1; i < PFarray_last (rproj); i++)
-                if ((cur_dom = PFprop_dom (
-                                   R(n)->prop,
-                                   proj_at (rproj, i).old))
-                    == att2_dom)
-                    add_dom (n->prop, proj_at (rproj, i).new, join_dom);
-                else if (join_dom == att2_dom)
-                    add_dom (n->prop, proj_at (rproj, i).new, cur_dom);
-                else {
-                    add_subdom (n->prop, cur_dom, id);
-                    add_dom (n->prop, proj_at (rproj, i).new, id++);
-                }
-        }   break;
+            else
+                PFoops (OOPS_FATAL,
+                        "internal optimization operator is not allowed here");
+            break;
 
         case la_semijoin:
         {   /**
@@ -1219,11 +1225,6 @@ infer_dom (PFla_op_t *n, unsigned int id)
             /* create new domain for attribute item */
             add_dom (n->prop, n->sem.string_join.item_res, id++);
             break;
-
-        case la_cross_mvd:
-            PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
 
         case la_dummy:
             bulk_add_dom (n->prop, L(n));

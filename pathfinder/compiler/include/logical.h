@@ -171,8 +171,7 @@ enum PFla_op_kind_t {
                                    of operators */
     , la_proxy_base      = 97 /**< completes the content of the proxy
                                    (a virtual base table) */
-    , la_cross_mvd       = 98 /**< clone column aware cross product */
-    , la_eqjoin_unq      = 99 /**< clone column aware equi-join */
+    , la_internal_op     = 99 /**< operator used inside optimizations */
     /* builtin support for XQuery functions */
     , la_string_join     =102 /**< fn:string-join */
 
@@ -238,10 +237,13 @@ union PFla_op_sem_t {
 
     /* semantic content for clone column aware equi-join operator */
     struct {
+        /* kind has to be the first entry to correctly access the semantical
+           information for different internal operators */
+        PFla_op_kind_t  kind;     /**< original operator kind */
         PFarray_t      *lproj;    /**< projection list of the "left" rel */
         PFarray_t      *rproj;    /**< projection list of the "right" rel */
         PFalg_att_t     res;      /**< name of result attribute */
-    } eqjoin_unq;
+    } eqjoin_opt;
 
     /* semantic content for theta-join operator */
     struct {
@@ -252,6 +254,9 @@ union PFla_op_sem_t {
     /* semantic content for theta-join operator
        (used during thetajoin optimization) */
     struct {
+        /* kind has to be the first entry to correctly access the semantical
+           information for different internal operators */
+        PFla_op_kind_t  kind;     /**< original operator kind */
         PFarray_t      *pred;     /**< internal list of predicates
                                        (an extended variant of the
                                         normal semantic content) */
@@ -319,6 +324,18 @@ union PFla_op_sem_t {
         PFalg_att_t     part;     /**< optional partitioning attribute,
                                        otherwise NULL */
     } sort;
+
+    /* semantic content for rank operator
+       (used during rank optimization) */
+    struct {
+        /* kind has to be the first entry to correctly access the semantical
+           information for different internal operators */
+        PFla_op_kind_t  kind;     /**< original operator kind */
+        PFalg_att_t     res;      /**< name of generated (integer) attribute */
+        PFarray_t      *sortby;   /**< internal list of sort criteria
+                                       (an extended variant of the
+                                        normal semantic content) */
+    } rank_opt;
 
     /* semantic content for rowid operator */
     struct {
@@ -616,7 +633,7 @@ PFla_op_t * PFla_cross (const PFla_op_t *n1, const PFla_op_t *n2);
  * Cross product (Cartesian product) of two relations.
  * Duplicate attribute names allowed.
  */
-PFla_op_t * PFla_cross_clone (const PFla_op_t *n1, const PFla_op_t *n2);
+PFla_op_t * PFla_cross_opt_internal (const PFla_op_t *n1, const PFla_op_t *n2);
 
 
 /**
@@ -653,8 +670,8 @@ PFla_op_t * PFla_thetajoin_opt_internal (const PFla_op_t *n1,
  * Equi-join between two relations.
  * Duplicate attribute names for join columns allowed.
  */
-PFla_op_t * PFla_eqjoin_clone (const PFla_op_t *n1, const PFla_op_t *n2,
-                               PFarray_t *lproj, PFarray_t *rproj);
+PFla_op_t * PFla_eqjoin_opt_internal (const PFla_op_t *n1, const PFla_op_t *n2,
+                                      PFarray_t *lproj, PFarray_t *rproj);
 
 /**
  * Construct projection operator
@@ -802,6 +819,13 @@ PFla_op_t * PFla_rowrank (const PFla_op_t *n, PFalg_att_t a,
 /** Constructor for the ranking operator. */
 PFla_op_t * PFla_rank (const PFla_op_t *n, PFalg_att_t a,
                        PFord_ordering_t s);
+
+/**
+ * Constructor for the row ranking operator.
+ * Special internal variant used during rowrank optimization.
+ */
+PFla_op_t * PFla_rank_opt_internal (const PFla_op_t *n, PFalg_att_t a,
+                                    PFarray_t *s);
 
 /** Constructor for the numbering operator. */
 PFla_op_t * PFla_rowid (const PFla_op_t *n, PFalg_att_t a);

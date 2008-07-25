@@ -1008,8 +1008,7 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
             prop_infer_reqvals_empty (R(n)); /* function param */
             return; /* only infer once */
 
-        case la_cross_mvd:
-        case la_eqjoin_unq:
+        case la_internal_op:
             PFoops (OOPS_FATAL,
                     "internal optimization operator is not allowed here");
 

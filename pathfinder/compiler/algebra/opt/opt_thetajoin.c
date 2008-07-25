@@ -200,7 +200,7 @@ resolve_name_conflict (PFla_op_t *n, PFalg_att_t att)
     PFarray_t *pred;
     unsigned int i;
 
-    assert (n->kind == la_thetajoin);
+    assert (n->kind == la_internal_op);
 
     pred = n->sem.thetajoin_opt.pred;
 
@@ -310,7 +310,7 @@ resolve_name_conflicts (PFla_op_t *n, PFalg_schema_t schema)
     PFarray_t *pred;
     unsigned int i, j;
 
-    assert (n->kind == la_thetajoin);
+    assert (n->kind == la_internal_op);
 
     pred = n->sem.thetajoin_opt.pred;
 
@@ -414,7 +414,7 @@ resolve_name_conflicts (PFla_op_t *n, PFalg_schema_t schema)
 static bool
 is_tj (PFla_op_t *p)
 {
-    return (p->kind == la_thetajoin);
+    return (p->kind == la_internal_op);
 }
 
 /**
@@ -426,8 +426,8 @@ thetajoin_identical (PFla_op_t *a, PFla_op_t *b)
 {
     PFarray_t *pred1, *pred2;
 
-    assert (a->kind == la_thetajoin &&
-            b->kind == la_thetajoin);
+    assert (a->kind == la_internal_op &&
+            b->kind == la_internal_op);
 
     pred1 = a->sem.thetajoin_opt.pred;
     pred2 = b->sem.thetajoin_opt.pred;
@@ -459,7 +459,7 @@ thetajoin_stable_col_count (PFla_op_t *p)
 {
     PFarray_t *pred;
 
-    assert (p->kind == la_thetajoin);
+    assert (p->kind == la_internal_op);
 
     pred = p->sem.thetajoin_opt.pred;
     assert (pred);
@@ -665,7 +665,6 @@ opt_mvd (PFla_op_t *p)
             break;
 
         case la_cross:
-        case la_cross_mvd:
             if (is_tj (L(p))) {
                 resolve_name_conflicts (L(p), R(p)->schema);
                 *p = *(thetajoin_opt (LL(p),
@@ -680,9 +679,6 @@ opt_mvd (PFla_op_t *p)
                                   R(p)->sem.thetajoin_opt.pred));
                 modified = true;
             }
-            break;
-
-        case la_eqjoin_unq:
             break;
 
         case la_eqjoin:
@@ -757,6 +753,7 @@ opt_mvd (PFla_op_t *p)
             break;
 
         case la_thetajoin:
+        case la_internal_op:
             /* ignore adjacent thetajoins for now */
             break;
 
@@ -2409,7 +2406,7 @@ remove_thetajoin_opt (PFla_op_t *p)
         remove_thetajoin_opt (p->child[i]);
 
     /* replace the intermediate representation of the thetajoin */
-    if (p->kind == la_thetajoin) {
+    if (p->kind == la_internal_op) {
         unsigned int  count = 0;
         PFalg_sel_t  *pred_new;
         PFarray_t    *pred = p->sem.thetajoin_opt.pred;

@@ -267,39 +267,45 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             }
             break;
 
-        case la_eqjoin_unq:
+        case la_internal_op:
+            /* interpret this operator as internal join */
+            if (n->sem.eqjoin_opt.kind == la_eqjoin) {
+                /* do the same as for normal joins and
+                   correctly update the columns names */
 #define proj_at(l,i) (*(PFalg_proj_t *) PFarray_at ((l),(i)))
-        {
-            PFarray_t   *lproj = n->sem.eqjoin_unq.lproj,
-                        *rproj = n->sem.eqjoin_unq.rproj;
-            unsigned int i;
-            PFalg_att_t  unq_old,
-                         unq_new,
-                         ori_new,
-                         unq_att2 = proj_at (rproj, 0).old,
-                         ori_att2 = PFalg_ori_name (unq_att2, FREE(n));
-            FREE(n) = diff (FREE(n), ori_att2);
+                PFarray_t   *lproj = n->sem.eqjoin_opt.lproj,
+                            *rproj = n->sem.eqjoin_opt.rproj;
+                unsigned int i;
+                PFalg_att_t  unq_old,
+                             unq_new,
+                             ori_new,
+                             unq_att2 = proj_at (rproj, 0).old,
+                             ori_att2 = PFalg_ori_name (unq_att2, FREE(n));
+                FREE(n) = diff (FREE(n), ori_att2);
 
-            /* create name pair list for the left operand */
-            for (i = 0; i < PFarray_last (lproj); i++) {
-                unq_new = proj_at (lproj, i).new;
-                unq_old = proj_at (lproj, i).old;
-                ori_new = find_ori_name (np_list, unq_new);
-                add_name_pair (n->prop->l_name_pairs, ori_new, unq_old);
+                /* create name pair list for the left operand */
+                for (i = 0; i < PFarray_last (lproj); i++) {
+                    unq_new = proj_at (lproj, i).new;
+                    unq_old = proj_at (lproj, i).old;
+                    ori_new = find_ori_name (np_list, unq_new);
+                    add_name_pair (n->prop->l_name_pairs, ori_new, unq_old);
+                }
+
+                /* create name pair list for the right operand */
+                /* add the join column separately ... */
+                add_name_pair (n->prop->r_name_pairs, ori_att2, unq_att2);
+                /* ... and discard the join column in the iteration */
+                for (i = 1; i < PFarray_last (rproj); i++) {
+                    unq_new = proj_at (rproj, i).new;
+                    unq_old = proj_at (rproj, i).old;
+                    ori_new = find_ori_name (np_list, unq_new);
+                    add_name_pair (n->prop->r_name_pairs, ori_new, unq_old);
+                }
             }
-
-            /* create name pair list for the right operand */
-            /* add the join column separately ... */
-            add_name_pair (n->prop->r_name_pairs, ori_att2, unq_att2);
-            /* ... and discard the join column in the iteration */
-            for (i = 1; i < PFarray_last (rproj); i++) {
-                unq_new = proj_at (rproj, i).new;
-                unq_old = proj_at (rproj, i).old;
-                ori_new = find_ori_name (np_list, unq_new);
-                add_name_pair (n->prop->r_name_pairs, ori_new, unq_old);
-            }
-
-        }   break;
+            else
+                PFoops (OOPS_FATAL,
+                        "internal optimization operator is not allowed here");
+            break;
 
         case la_semijoin:
             n->prop->l_name_pairs = PFarray_copy (np_list);
@@ -651,11 +657,6 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             add_name_pair (n->prop->l_name_pairs, ori, unq);
             FREE(n) = diff (FREE(n), ori);
             break;
-
-        case la_cross_mvd:
-            PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
 
         case la_dummy:
             n->prop->l_name_pairs = PFarray_copy (np_list);

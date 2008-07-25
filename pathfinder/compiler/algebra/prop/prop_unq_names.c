@@ -603,15 +603,9 @@ infer_unq_names (PFla_op_t *n)
             new_name_pair (np_list, n->sem.string_join.item_res);
             break;
 
-        case la_cross_mvd:
+        case la_internal_op:
             PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
-
-        case la_eqjoin_unq:
-            PFoops (OOPS_FATAL,
-                    "clone column aware equi-join operator is "
-                    "only allowed with unique attribute names!");
+                    "internal optimization operator is not allowed here");
 
         case la_dummy:
             bulk_add_name_pairs (np_list, L(n));

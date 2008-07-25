@@ -7,7 +7,7 @@
  * along the DAG structure.)
  *
  * We add a new cross operator that can cope with identical
- * columns (la_cross_mvd). This allows us to push down operators
+ * columns (la_internal_op). This allows us to push down operators
  * into both operands of the cross product whenever we do not
  * know which operand really requires the operators.
  * A cleaning phase then replaces the clone column aware cross products
@@ -65,7 +65,7 @@
  * Use cross product implementation that copes
  * with 'c'loned 'a'ttribute 'n'ames.
  */
-#define cross_can(a,b) PFla_cross_clone ((a),(b))
+#define cross_can(a,b) PFla_cross_opt_internal ((a),(b))
 
 /* Keep track of the ineffective cross product - cross product
    rewrites (cross_changes) and stop if max_cross_changes is reached. */
@@ -75,7 +75,7 @@ static unsigned int max_cross_changes;
 static bool
 is_cross (PFla_op_t *p)
 {
-    return (p->kind == la_cross || p->kind == la_cross_mvd);
+    return (p->kind == la_cross || p->kind == la_internal_op);
 }
 
 /* check if @a att appears in the schema of operator @a p */
@@ -326,7 +326,7 @@ opt_mvd (PFla_op_t *p)
         break;
 
     case la_cross:
-    case la_cross_mvd:
+    case la_internal_op:
         /* If there are two nested cross products make sure that
            each operand has the chance to be propagated up the DAG:
 
@@ -355,9 +355,6 @@ opt_mvd (PFla_op_t *p)
                                          L(p))));
             modified = true;
         }
-        break;
-
-    case la_eqjoin_unq:
         break;
 
     case la_eqjoin:
@@ -1757,7 +1754,7 @@ clean_up_cross (PFla_op_t *p)
     for (i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         clean_up_cross (p->child[i]);
 
-    if (p->kind == la_cross_mvd) {
+    if (p->kind == la_internal_op) {
         PFalg_proj_t *proj_list;
         unsigned int j;
         unsigned int count = 0;

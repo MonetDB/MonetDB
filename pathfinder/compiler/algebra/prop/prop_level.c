@@ -215,10 +215,10 @@ infer_level (PFla_op_t *n)
         case la_cross:
         case la_eqjoin:
         case la_thetajoin:
-        case la_cross_mvd:
-        case la_eqjoin_unq:
+        case la_internal_op: /* interpret this operator as internal join */
             copy_level_info (n, L(n));
-            insert_level_info (n->prop->level_mapping, R(n));
+            if (R(n)) /* avoid the segfault for la_internal_op != eqjoin */
+                insert_level_info (n->prop->level_mapping, R(n));
             break;
 
         case la_project:

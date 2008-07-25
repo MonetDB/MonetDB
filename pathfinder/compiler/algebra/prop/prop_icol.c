@@ -839,31 +839,31 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
             union_ (n->prop->r_icols, n->sem.string_join.item_sep);
             break;
 
-        case la_eqjoin_unq:
-        {
+        case la_internal_op:
+            /* interpret this operator as internal join */
+            if (n->sem.eqjoin_opt.kind == la_eqjoin) {
 #define proj_at(l,i) (*(PFalg_proj_t *) PFarray_at ((l),(i)))
-            PFarray_t  *lproj = n->sem.eqjoin_unq.lproj,
-                       *rproj = n->sem.eqjoin_unq.rproj;
+                PFarray_t  *lproj = n->sem.eqjoin_opt.lproj,
+                           *rproj = n->sem.eqjoin_opt.rproj;
 
-            /* add both join columns to the inferred icols */
-            union_ (n->prop->l_icols, proj_at(lproj, 0).old);
-            union_ (n->prop->r_icols, proj_at(rproj, 0).old);
+                /* add both join columns to the inferred icols */
+                union_ (n->prop->l_icols, proj_at(lproj, 0).old);
+                union_ (n->prop->r_icols, proj_at(rproj, 0).old);
 
-            /* rename icols columns from new to old */
-            for (unsigned int i = 1; i < PFarray_last (lproj); i++)
-                if (in (n->prop->icols, proj_at(lproj, i).new))
-                    union_ (n->prop->l_icols, proj_at(lproj, i).old);
+                /* rename icols columns from new to old */
+                for (unsigned int i = 1; i < PFarray_last (lproj); i++)
+                    if (in (n->prop->icols, proj_at(lproj, i).new))
+                        union_ (n->prop->l_icols, proj_at(lproj, i).old);
 
-            /* rename icols columns from new to old */
-            for (unsigned int i = 1; i < PFarray_last (rproj); i++)
-                if (in (n->prop->icols, proj_at(rproj, i).new))
-                    union_ (n->prop->r_icols, proj_at(rproj, i).old);
-        }   break;
-
-        case la_cross_mvd:
-            PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
+                /* rename icols columns from new to old */
+                for (unsigned int i = 1; i < PFarray_last (rproj); i++)
+                    if (in (n->prop->icols, proj_at(rproj, i).new))
+                        union_ (n->prop->r_icols, proj_at(rproj, i).old);
+            }
+            else
+                PFoops (OOPS_FATAL,
+                        "internal optimization operator is not allowed here");
+            break;
 
         case la_dummy:
             /* infer incoming icols for input relation */

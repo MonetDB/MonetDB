@@ -177,8 +177,6 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
                                 of operators */
 %term proxy_base      = 97 /**< completes the content of the proxy
                                 (a virtual base table) */
-%term cross_mvd       = 98 /**< clone column aware cross product */
-%term eqjoin_unq      = 99 /**< clone column aware equi-join */
 /* builtin support for XQuery functions */
 %term string_join     =102 /**< fn:string-join */
 
@@ -310,8 +308,6 @@ Rel:    rec_fix (
 Rel:    dummy (Rel)                                  = 115 (10);
 Rel:    proxy (Rel)                                  = 116 (10);
 Rel:    proxy_base (Rel)                             = 117 (10);
-Rel:    eqjoin_unq (Rel, Rel)                        = 118 (10);
-Rel:    cross_mvd (Rel, Rel)                         = 119 (10);
 
 %%
 
@@ -1774,8 +1770,6 @@ rec_allowed (PFla_op_t *p)
             return true;
         case la_proxy:
         case la_proxy_base:
-        case la_cross_mvd:
-        case la_eqjoin_unq:
             return false;
         default:
             PFoops (OOPS_FATAL, "This operation is unknown");
@@ -5491,10 +5485,6 @@ reduce (PFla_op_t * p, int goalnt)
         case 116:
         /* Rel:    proxy_base (Rel) */
         case 117:
-        /* Rel:    eqjoin_unq (Rel, Rel) */
-        case 118:
-        /* Rel:    cross_mvd (Rel, Rel) */
-        case 119:
 
         default:
             PFoops (OOPS_FATAL,

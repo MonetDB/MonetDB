@@ -135,8 +135,6 @@ prop_infer_set (PFla_op_t *n, bool set)
         case la_cross:
         case la_eqjoin:
         case la_thetajoin:
-        case la_cross_mvd:
-        case la_eqjoin_unq:
         case la_disjunion:
             l_set = n->prop->set;
             r_set = n->prop->set;
@@ -238,6 +236,10 @@ prop_infer_set (PFla_op_t *n, bool set)
             l_set = false;
             r_set = false;
             break;
+
+        case la_internal_op:
+            PFoops (OOPS_FATAL,
+                    "internal optimization operator is not allowed here");
 
         case la_dummy:
             l_set = n->prop->set;

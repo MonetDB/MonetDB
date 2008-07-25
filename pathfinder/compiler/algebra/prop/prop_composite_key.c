@@ -362,9 +362,6 @@ infer_ckey (PFla_op_t *n)
                 }
         }   break;
         
-        case la_eqjoin_unq:
-            break;
-
         case la_semijoin:
             copy (n->prop->ckeys, L(n)->prop->ckeys);
             break;
@@ -751,10 +748,9 @@ infer_ckey (PFla_op_t *n)
             union_ (n->prop->ckeys, n->sem.string_join.iter_res);
             break;
 
-        case la_cross_mvd:
+        case la_internal_op:
             PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
+                    "internal optimization operator is not allowed here");
 
         case la_dummy:
             copy (n->prop->ckeys, L(n)->prop->ckeys);

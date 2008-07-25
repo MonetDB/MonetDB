@@ -571,9 +571,9 @@ PFla_cross (const PFla_op_t *n1, const PFla_op_t *n2)
  * Arguments @a n1 and @a n2 may have equally named attributes.
  */
 PFla_op_t *
-PFla_cross_clone (const PFla_op_t *n1, const PFla_op_t *n2)
+PFla_cross_opt_internal (const PFla_op_t *n1, const PFla_op_t *n2)
 {
-    PFla_op_t   *ret = la_op_wire2 (la_cross_mvd, n1, n2);
+    PFla_op_t   *ret = la_op_wire2 (la_internal_op, n1, n2);
     unsigned int i;
     unsigned int j;
     unsigned int count;
@@ -591,6 +591,9 @@ PFla_cross_clone (const PFla_op_t *n1, const PFla_op_t *n2)
 
     count = n1->schema.count;
 
+    /* indicate what kind of internal operator we are working on */
+    ret->sem.eqjoin_opt.kind   = la_cross;
+    
     /* copy schema from argument 2, check for duplicate attribute names
        and discard if present */
     for (j = 0; j < n2->schema.count; j++) {
@@ -690,8 +693,8 @@ PFla_eqjoin (const PFla_op_t *n1, const PFla_op_t *n2,
  * schema(@a n1) + schema(@a n2) - duplicate join column.
  */
 PFla_op_t *
-PFla_eqjoin_clone (const PFla_op_t *n1, const PFla_op_t *n2,
-                   PFarray_t *lproj, PFarray_t *rproj)
+PFla_eqjoin_opt_internal (const PFla_op_t *n1, const PFla_op_t *n2,
+                          PFarray_t *lproj, PFarray_t *rproj)
 {
 #define proj_at(l,i) (*(PFalg_proj_t *) PFarray_at ((l),(i)))
     PFalg_simple_type_t res_ty;
@@ -739,13 +742,14 @@ PFla_eqjoin_clone (const PFla_op_t *n1, const PFla_op_t *n2,
                 PFatt_str(proj_at(rproj,0).old));
 
     /* build new equi-join node */
-    ret = la_op_wire2 (la_eqjoin_unq, n1, n2);
+    ret = la_op_wire2 (la_internal_op, n1, n2);
 
     /* insert a copy of the semantic value (join attributes) into the result */
     lproj = PFarray_copy (lproj);
     rproj = PFarray_copy (rproj);
-    ret->sem.eqjoin_unq.lproj = lproj;
-    ret->sem.eqjoin_unq.rproj = rproj;
+    ret->sem.eqjoin_opt.kind  = la_eqjoin;
+    ret->sem.eqjoin_opt.lproj = lproj;
+    ret->sem.eqjoin_opt.rproj = rproj;
 
     /* allocate memory for the result schema (schema(n1) + schema(n2)) */
     ret->schema.count = PFarray_last (lproj) + PFarray_last (rproj);
@@ -960,9 +964,10 @@ PFla_thetajoin_opt_internal (const PFla_op_t *n1, const PFla_op_t *n2,
     assert (n1); assert (n2);
 
     /* build new theta-join node */
-    ret = la_op_wire2 (la_thetajoin, n1, n2);
+    ret = la_op_wire2 (la_internal_op, n1, n2);
 
     /* insert semantic value (predicates) into the result */
+    ret->sem.thetajoin_opt.kind = la_thetajoin;
     ret->sem.thetajoin_opt.pred = PFarray_copy (data);
 
     /* allocate no schema -- this will be done by the optimization */
@@ -2245,6 +2250,36 @@ PFla_rowrank (const PFla_op_t *n, PFalg_att_t a, PFord_ordering_t s)
                 "applying rank operator without sort specifier");
 
     return sort_col (n, la_rowrank, "rowrank", a, s, att_NULL);
+}
+
+
+/**
+ * Constructor for the row ranking operator.
+ * Special internal variant used during thetajoin optimization.
+ *
+ * The optimizer will fill check for consistency and
+ * fill in the correct schema (which requires internal knowledge
+ * of @a data).
+ */
+PFla_op_t *
+PFla_rank_opt_internal (const PFla_op_t *n, PFalg_att_t res,
+                        PFarray_t *data)
+{
+    PFla_op_t     *ret;
+
+    assert (n);
+
+    /* build new rowrank node */
+    ret = la_op_wire1 (la_internal_op, n);
+
+    /* insert semantic values into the result */
+    ret->sem.rank_opt.kind   = la_rank;
+    ret->sem.rank_opt.res    = res;
+    ret->sem.rank_opt.sortby = PFarray_copy (data);
+
+    /* allocate no schema -- this will be done by the optimization */
+
+    return ret;
 }
 
 
@@ -4540,8 +4575,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
         case la_rec_base:
         case la_proxy:
         case la_proxy_base:
-        case la_cross_mvd:
-        case la_eqjoin_unq:
+        case la_internal_op:
             PFoops (OOPS_FATAL,
                     "Logical operator cloning does not"
                     "support node kind (%i).",

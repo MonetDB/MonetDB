@@ -965,15 +965,9 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             prop_infer_req_node_vals (R(n), NULL); /* function param */
             return; /* only infer once */
 
-        case la_cross_mvd:
+        case la_internal_op:
             PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
-
-        case la_eqjoin_unq:
-            PFoops (OOPS_FATAL,
-                    "clone column aware equi-join operator is "
-                    "only allowed with unique attribute names!");
+                    "internal optimization operator is not allowed here");
 
         case la_string_join:
             if (MAP_LIST(n) != NULL && PFarray_last (MAP_LIST(n)) > 0) {

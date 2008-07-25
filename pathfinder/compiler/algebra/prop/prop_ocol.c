@@ -1067,15 +1067,9 @@ infer_ocol (PFla_op_t *n)
                                         .type = aat_str };
             break;
 
-        case la_eqjoin_unq:
+        case la_internal_op:
             PFoops (OOPS_FATAL,
-                    "clone column aware equi-join operator is "
-                    "only allowed with unique names!");
-
-        case la_cross_mvd:
-            PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
+                    "internal optimization operator is not allowed here");
 
         case la_dummy:
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));

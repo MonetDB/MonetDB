@@ -260,12 +260,6 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         }   break;
 
 
-        case la_cross_mvd:
-            PFoops (OOPS_FATAL,
-                    "clone column unaware cross product operator is "
-                    "only allowed inside mvd optimization!");
-            break;
-
         case la_eqjoin:
         {
             /* Prepare a projection list for both operands
@@ -326,21 +320,11 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             res = PFla_project_ (res, count, projlist);
         }   break;
 
-        case la_eqjoin_unq:
-            PFoops (OOPS_FATAL,
-                    "clone column aware eqjoin operator is "
-                    "only allowed with unique attribute names!");
-
         case la_semijoin:
             /* Transform semi-join operations into equi-joins
                as these semi-joins might be superfluous as well. */
             if (PFprop_set (p->prop)) {
-                PFarray_t  *lproj,
-                           *rproj;
-                PFalg_att_t ori,
-                            unq,
-                            l_unq,
-                            att1_unq,
+                PFalg_att_t att1_unq,
                             att2_unq;
 
                 /* we have to make sure that only the columns from
@@ -357,26 +341,8 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                 att1_unq = PFprop_unq_name_left (p->prop, p->sem.eqjoin.att1);
                 att2_unq = PFprop_unq_name_right (p->prop, p->sem.eqjoin.att2);
                 
-                lproj    = PFarray (sizeof (PFalg_proj_t), left->schema.count);
-                rproj    = PFarray (sizeof (PFalg_proj_t), 1);
-                
-                *(PFalg_proj_t *) PFarray_add (lproj)
-                    = proj (att1_unq, att1_unq);
-                *(PFalg_proj_t *) PFarray_add (rproj)
-                    = proj (att1_unq, att2_unq);
-
-                for (unsigned int i = 0; i < left->schema.count; i++) {
-                    l_unq = left->schema.items[i].name;
-                    ori = PFprop_ori_name_left (p->prop, l_unq);
-                    assert (ori);
-
-                    unq = UNAME(p, ori);
-                    if (l_unq != att1_unq)
-                        *(PFalg_proj_t *) PFarray_add (lproj) = proj (unq, l_unq);
-                }
-
                 res = PFla_project_ (
-                          PFla_eqjoin_clone (left, U(R(p)), lproj, rproj),
+                          PFla_eqjoin (left, U(R(p)), att1_unq, att2_unq),
                           left->schema.count,
                           projlist);
             } else {
@@ -927,6 +893,10 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             PFoops (OOPS_FATAL,
                     "PROXY EXPANSION MISSING");
             break;
+
+        case la_internal_op:
+            PFoops (OOPS_FATAL,
+                    "internal optimization operator is not allowed here");
 
         case la_string_join:
             res = fn_string_join (

@@ -212,35 +212,42 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return true;
             break;
 
-        case la_eqjoin_unq:
+        case la_internal_op:
+            PFoops (OOPS_FATAL,
+                    "internal optimization operator is not allowed outside"
+                    " the optimization phase");
+#if 0
+        /* this code only works for an internal eqjoin operator */
         {
             PFalg_proj_t aproj,
                          bproj;
             unsigned int i      = 0,
-                         lcount = PFarray_last (a->sem.eqjoin_unq.lproj),
-                         rcount = PFarray_last (a->sem.eqjoin_unq.rproj);
+                         lcount = PFarray_last (a->sem.eqjoin_opt.lproj),
+                         rcount = PFarray_last (a->sem.eqjoin_opt.rproj);
 
-            if (lcount != PFarray_last (b->sem.eqjoin_unq.lproj) ||
-                rcount != PFarray_last (b->sem.eqjoin_unq.rproj))
+            if (lcount != PFarray_last (b->sem.eqjoin_opt.lproj) ||
+                rcount != PFarray_last (b->sem.eqjoin_opt.rproj))
                 return false;
             
 #define proj_at(l,i) (*(PFalg_proj_t *) PFarray_at ((l),(i)))
             for (i = 0; i < lcount; i++) {
-                aproj = proj_at(a->sem.eqjoin_unq.lproj, i),
-                bproj = proj_at(b->sem.eqjoin_unq.lproj, i);
+                aproj = proj_at(a->sem.eqjoin_opt.lproj, i),
+                bproj = proj_at(b->sem.eqjoin_opt.lproj, i);
                 if (aproj.old != bproj.old || aproj.new != bproj.new)
                     return false;
             }
 
             for (i = 0; i < rcount; i++) {
-                aproj = proj_at(a->sem.eqjoin_unq.rproj, i),
-                bproj = proj_at(b->sem.eqjoin_unq.rproj, i);
+                aproj = proj_at(a->sem.eqjoin_opt.rproj, i),
+                bproj = proj_at(b->sem.eqjoin_opt.rproj, i);
                 if (aproj.old != bproj.old || aproj.new != bproj.new)
                     return false;
             }
 
             return true;
-        }   break;
+        }   
+#endif
+            break;
 
         case la_project:
             if (a->sem.proj.count != b->sem.proj.count)
@@ -523,11 +530,6 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             /* references would be screwed up by the rewriting */
             return false;
             break;
-
-        case la_cross_mvd:
-            PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
 
         case la_dummy:
             PFoops (OOPS_FATAL,

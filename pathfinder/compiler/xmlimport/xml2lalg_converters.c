@@ -433,13 +433,6 @@ PFxml2la_conv_2PFLA_OpKind(const char* s)
     {
         return la_proxy_base;
     }
-    //  else if (strcmp(s, "???") == 0) {
-    //      return la_cross_mvd 
-    // }
-    else if (strcmp(s, "eqjoin_unq") == 0)
-    {
-        return la_eqjoin_unq;
-    }
     else if (strcmp(s, "fn:string-join") == 0)
     {
         return la_string_join;

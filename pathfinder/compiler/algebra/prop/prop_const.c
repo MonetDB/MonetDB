@@ -241,7 +241,6 @@ infer_const (PFla_op_t *n)
         case la_cross:
         case la_eqjoin:
         case la_thetajoin:
-        case la_eqjoin_unq:
         case la_select:
         case la_pos_select:
         case la_distinct:
@@ -705,7 +704,6 @@ infer_const (PFla_op_t *n)
         case la_cross:
         case la_eqjoin:
         case la_thetajoin:
-        case la_eqjoin_unq:
         case la_pos_select:
         case la_distinct:
         /* we also might calculate some result constants.
@@ -740,10 +738,9 @@ infer_const (PFla_op_t *n)
         case la_dummy:
             break;
 
-        case la_cross_mvd:
+        case la_internal_op:
             PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
+                    "internal optimization operator is not allowed here");
     }
 }
 

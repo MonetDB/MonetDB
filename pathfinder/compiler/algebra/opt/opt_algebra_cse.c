@@ -130,8 +130,7 @@ static char *ID[] = {
     , [la_fun_frag_param]  = "la_fun_frag_param"
     , [la_proxy]           = "la_proxy"
     , [la_proxy_base]      = "la_proxy_base"
-    , [la_cross_mvd]       = "la_cross_mvd"
-    , [la_eqjoin_unq]      = "la_eqjoin_unq"
+    , [la_internal_op]     = "!!!INTERNAL OP!!!"
     , [la_string_join]     = "la_string_join"
     , [la_dummy]           = "la_dummy"
 };
@@ -1204,8 +1203,6 @@ match (PFla_op_t *a, PFla_op_t *b)
 
         case la_proxy:
         case la_proxy_base:
-        case la_cross_mvd:
-        case la_eqjoin_unq:
             return false;
 
         case la_string_join:
@@ -2142,8 +2139,6 @@ new_operator (PFla_op_t *n)
                         n->sem.col_ref.pos);
         case la_proxy:
         case la_proxy_base:
-        case la_cross_mvd:
-        case la_eqjoin_unq:
             PFoops (OOPS_FATAL,
                     "Logical operator cloning does not"
                     "support node kind (%s).",
@@ -2568,8 +2563,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             break;
         case la_proxy:
         case la_proxy_base:
-        case la_cross_mvd:
-        case la_eqjoin_unq:
+        case la_internal_op:
             PFoops (OOPS_FATAL,
                     "This operator (%s) shouldn't appear in the plan",
                     ID[ori->kind]);

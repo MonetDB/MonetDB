@@ -113,13 +113,11 @@ infer_card (PFla_op_t *n)
             break;
 
         case la_cross:
-        case la_cross_mvd:
             /* multiply both children cardinalities */
             n->prop->card = L(n)->prop->card * R(n)->prop->card;
             break;
 
         case la_eqjoin:
-        case la_eqjoin_unq:
         case la_semijoin:
         case la_thetajoin:
         case la_select:
@@ -138,6 +136,7 @@ infer_card (PFla_op_t *n)
         case la_frag_union:
         case la_empty_frag:
         case la_fun_frag_param:
+        case la_internal_op:
         case la_string_join:
             /* can't say something specific about cardinality */
             n->prop->card = 0;
