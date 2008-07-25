@@ -44,13 +44,6 @@ typedef struct PFprop_t PFprop_t;
 #include "algebra.h"
 #include "logical.h"
 
-/* required values list */
-struct req_bool_val_t {
-    PFalg_att_t  name;
-    PFalg_att_t  val;
-};
-typedef struct req_bool_val_t req_bool_val_t;
-
 struct PFprop_t {
     unsigned int card;       /**< Exact number of tuples in intermediate
                                   result. (0 means we don't know) */
@@ -68,18 +61,8 @@ struct PFprop_t {
                                   parent operators. */
     PFarray_t   *keys;       /**< List of attributes that have
                                   unique values. */
-    req_bool_val_t req_bool_vals; /**< List of attributes with their
-                                       corresponding required values. */
-    PFalg_att_t  req_order_cols;  /**< List of columns whose values need
-                                       to maintain the order. */
-    PFalg_att_t  req_bijective_cols;  /**< List of columns whose values have
-                                       to fulfill any bijective function. */
-    PFalg_att_t  req_multi_col_cols; /**< List of columns that can be
-                                       split up into multiple columns. */
-    PFalg_att_t  req_filter_cols; /**< List of columns whose values are
-                                       used for filtering only. */
-    PFalg_att_t  req_value_cols;  /**< List of columns whose values are
-                                       important for the query evaluation. */
+    PFarray_t   *reqvals;    /**< List of columns their associated
+                                  usage information. */
     PFarray_t   *req_node_vals;   /**< List of columns and their associated
                                        node usage information. */
     PFarray_t   *name_pairs; /**< List of attributes with their corresponding
@@ -444,46 +427,52 @@ void PFprop_update_ocol (PFla_op_t *n);
 /* -------------------- required value property accessors ------------------ */
 
 /**
- * Test if @a attr is in the list of required value columns
+ * Test if @a col is in the list of required value columns
  * in container @a prop
  */
-bool PFprop_req_bool_val (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_req_bool_val (const PFprop_t *prop, PFalg_att_t col);
 
 /**
- * Looking up required value of column @a attr
+ * Looking up required value of column @a col
  * in container @a prop
  */
-bool PFprop_req_bool_val_val (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_req_bool_val_val (const PFprop_t *prop, PFalg_att_t col);
 
 /**
- * Test if @a attr is in the list of order columns
+ * Test if @a col is in the list of order columns
  * in container @a prop
  */
-bool PFprop_req_order_col (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_req_order_col (const PFprop_t *prop, PFalg_att_t col);
 
 /**
- * Test if @a attr is in the list of bijective columns
+ * Test if @a col is in the list of bijective columns
  * in container @a prop
  */
-bool PFprop_req_bijective_col (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_req_bijective_col (const PFprop_t *prop, PFalg_att_t col);
 
 /**
- * Test if @a attr is in the list of multi-col columns
+ * Test if @a col is in the list of multi-col columns
  * in container @a prop
  */
-bool PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_att_t col);
 
 /**
- * Test if @a attr is in the list of filter columns
+ * Test if @a col is in the list of filter columns
  * in container @a prop
  */
-bool PFprop_req_filter_col (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_req_filter_col (const PFprop_t *prop, PFalg_att_t col);
 
 /**
- * Test if @a attr is in the list of value columns
+ * Test if @a col is in the list of value columns
  * in container @a prop
  */
-bool PFprop_req_value_col (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_req_value_col (const PFprop_t *prop, PFalg_att_t col);
+
+/**
+ * Test if @a col may be represented by something that maintains
+ * the same duplicates.
+ */
+bool PFprop_req_unique_col (const PFprop_t *prop, PFalg_att_t col);
 
 /* -------------------- required node property accessors ------------------- */
 

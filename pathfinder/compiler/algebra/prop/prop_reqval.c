@@ -3,6 +3,31 @@
  *
  * Inference of required value property of logical algebra expressions.
  *
+ * For each used column we record in which setting it is used. The most
+ * general information is that the column is used as ``value'' column.
+ *
+ * More specific usage information is:
+ *
+ * - unique:    The column is only consumed as an uniqueness criterion
+ *              during duplicate elimination.
+ *
+ * - order:     The column is only consumed as an order criterion.
+ *
+ * - multi-col: The column can be split into two columns as it is used
+ *              only inside mapping joins or as order criterion.
+ *
+ * - bijective: The column can be replaced by any column that provides
+ *              a bijection (columns stem either from partition or join
+ *              columns.
+ *
+ * - filter:    The column is a value column where we know that it is
+ *              only used inside an equality predicate.
+ *
+ * - selection: The column is a value column where we inferred that it
+ *              is a Boolean column where we are interested in the rows
+ *              with either true or false values.
+ *
+ *
  * Copyright Notice:
  * -----------------
  *
@@ -50,232 +75,363 @@
    in the refctr field */
 #define EDGE(n) ((n)->refctr)
 
-#define empty_list 0
-#define in(a,b) ((a) & (b) ? true : false)
+/* required value property list */
+struct req_val_t {
+    PFalg_att_t col;       /* column name ... */
+
+    /* ... and the corresponding property that tests if ... */
+
+    bool        value;     /* ... its value is required */
+    bool        join;      /* ... the column is used in equi-joins */
+    bool        part;      /* ... the column is used as partition column */
+    bool        order;     /* ... the column is used for ordering */
+    bool        distinct;  /* ... the column is used for duplicate
+                                  elimination */
+    bool        filter;    /* ... its value is used as filter only */
+    bool        sel_name;  /* ... only one boolean value is required */
+    bool        sel_val;   /* ... together with the value of the boolean */
+};
+typedef struct req_val_t req_val_t;
+
+#define MAP_LIST(n)       ((n)->prop->reqvals)
+#define ADD(l,p)          (*((req_val_t *) PFarray_add ((l))) = (p))
+#define MAP_AT(n,i)       (*((req_val_t *) PFarray_at ((n), (i))))
+
+#define COL_AT(n,i)       (((req_val_t *) PFarray_at ((n), (i)))->col)
+#define VAL_AT(n,i)       (((req_val_t *) PFarray_at ((n), (i)))->value)
+#define JOIN_AT(n,i)      (((req_val_t *) PFarray_at ((n), (i)))->join)
+#define PART_AT(n,i)      (((req_val_t *) PFarray_at ((n), (i)))->part)
+#define ORD_AT(n,i)       (((req_val_t *) PFarray_at ((n), (i)))->order)
+#define DIST_AT(n,i)      (((req_val_t *) PFarray_at ((n), (i)))->distinct)
+#define FILTER_AT(n,i)    (((req_val_t *) PFarray_at ((n), (i)))->filter)
+#define SNAME_AT(n,i)     (((req_val_t *) PFarray_at ((n), (i)))->sel_name)
+#define SVAL_AT(n,i)      (((req_val_t *) PFarray_at ((n), (i)))->sel_val)
 
 /**
- * Test if @a attr is in the list of required value columns
- * in container @a prop
+ * @brief look up the property mapping (in @a l) for a given column @a col.
  */
-bool
-PFprop_req_bool_val (const PFprop_t *prop, PFalg_att_t attr)
+static req_val_t *
+find_map (PFarray_t *l, PFalg_att_t col)
 {
-    return in (prop->req_bool_vals.name, attr);
-}
+    if (!l)
+        return NULL;
 
-/**
- * Looking up required value of column @a attr
- * in container @a prop
- */
-bool
-PFprop_req_bool_val_val (const PFprop_t *prop, PFalg_att_t attr)
-{
-    return in (prop->req_bool_vals.val, attr);
-}
-
-/**
- * Test if @a attr is in the list of order columns
- * in container @a prop
- */
-bool
-PFprop_req_order_col (const PFprop_t *prop, PFalg_att_t attr)
-{
-    return in (prop->req_order_cols, attr) &&
-          !in (prop->req_value_cols, attr);
-}
-
-/**
- * Test if @a attr is in the list of bijective columns
- * in container @a prop
- */
-bool
-PFprop_req_bijective_col (const PFprop_t *prop, PFalg_att_t attr)
-{
-    return in (prop->req_bijective_cols, attr) &&
-          !in (prop->req_value_cols, attr);
-}
-
-/**
- * Test if @a attr may be represented by multiple columns
- */
-bool
-PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_att_t attr)
-{
-    return in (prop->req_multi_col_cols, attr) &&
-          !in (prop->req_value_cols, attr);
-}
-
-/**
- * Test if @a attr is in the list of filter columns
- * in container @a prop
- */
-bool
-PFprop_req_filter_col (const PFprop_t *prop, PFalg_att_t attr)
-{
-    return in (prop->req_filter_cols, attr);
-}
-
-/**
- * Test if @a attr is in the list of value columns
- * in container @a prop
- */
-bool
-PFprop_req_value_col (const PFprop_t *prop, PFalg_att_t attr)
-{
-    return in (prop->req_value_cols, attr);
-}
-
-/**
- * Transform a schema into a bit-encoded column list.
- */
-static PFalg_att_t
-schema2collist (PFla_op_t *n)
-{
-    PFalg_att_t res = empty_list;
-
-    for (unsigned int i = 0; i < n->schema.count; i++) {
-        res |= n->schema.items[i].name;
+    for (unsigned int i = 0; i < PFarray_last (l); i++) {
+        if (col == COL_AT(l, i))
+            return (req_val_t *) PFarray_at (l, i);
     }
-    return res;
+    return NULL;
 }
 
 /**
- * Returns union of two lists
+ * Test if @a col is in the list of required value columns
+ * in container @a prop
  */
-static PFalg_att_t
-intersect (PFalg_att_t a, PFalg_att_t b)
+bool
+PFprop_req_bool_val (const PFprop_t *prop, PFalg_att_t col)
 {
-    return a & b;
+    req_val_t *reqval = find_map (prop->reqvals, col);
+
+    if (!reqval)
+        return false;
+    else
+        return reqval->sel_name;
 }
 
 /**
- * Returns union of two lists
+ * Looking up required value of column @a col
+ * in container @a prop
  */
-static PFalg_att_t
-union_ (PFalg_att_t a, PFalg_att_t b)
+bool
+PFprop_req_bool_val_val (const PFprop_t *prop, PFalg_att_t col)
 {
-    return a | b;
+    req_val_t *reqval = find_map (prop->reqvals, col);
+
+    if (!reqval)
+        return false;
+    else if (reqval->sel_name == false)
+        PFoops (OOPS_FATAL,
+                "cannot look up required value property");
+    else
+        return reqval->sel_val;
 }
 
 /**
- * Returns difference of two lists
+ * Test if @a col is in the list of filter columns
+ * in container @a prop
  */
-static PFalg_att_t
-diff (PFalg_att_t a, PFalg_att_t b)
+bool
+PFprop_req_filter_col (const PFprop_t *prop, PFalg_att_t col)
 {
-    return a & (~b);
+    req_val_t *reqval = find_map (prop->reqvals, col);
+
+    if (!reqval)
+        return false;
+    else
+        /* only value columns can be filter columns */
+        return reqval->value && reqval->filter;
 }
+
+/**
+ * Test if @a col is in the list of value columns
+ * in container @a prop
+ */
+bool
+PFprop_req_value_col (const PFprop_t *prop, PFalg_att_t col)
+{
+    req_val_t *reqval = find_map (prop->reqvals, col);
+
+    if (!reqval)
+        /* in case we have no information
+           we assume its a value column */
+        return true;
+    else
+        return reqval->value;
+}
+
+/**
+ * Test if @a col is in the list of order columns
+ * in container @a prop
+ */
+bool
+PFprop_req_order_col (const PFprop_t *prop, PFalg_att_t col)
+{
+    req_val_t *reqval = find_map (prop->reqvals, col);
+
+    if (!reqval)
+        return false;
+    else
+        /* column col is only used inside ordering operators */
+        return reqval->order &&
+               !reqval->part && !reqval->join && !reqval->value;
+}
+
+/**
+ * Test if @a col is in the list of bijective columns
+ * in container @a prop
+ */
+bool
+PFprop_req_bijective_col (const PFprop_t *prop, PFalg_att_t col)
+{
+    req_val_t *reqval = find_map (prop->reqvals, col);
+
+    if (!reqval)
+        return false;
+    else
+        /* column col is only used inside equi-joins or as
+           partition column */
+        return (reqval->part || reqval->join) &&
+               !reqval->order && !reqval->value;
+}
+
+/**
+ * Test if @a col may be represented by multiple columns
+ */
+bool
+PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_att_t col)
+{
+    req_val_t *reqval = find_map (prop->reqvals, col);
+
+    if (!reqval)
+        return false;
+    else
+        /* column col is only used inside equi-joins or
+           ordering operators */
+        return (reqval->join || reqval->order) &&
+               !reqval->part && !reqval->value;
+}
+
+/**
+ * Test if @a col may be represented by something that maintains
+ * the same duplicates.
+ */
+bool
+PFprop_req_unique_col (const PFprop_t *prop, PFalg_att_t col)
+{
+    req_val_t *reqval = find_map (prop->reqvals, col);
+
+    if (!reqval)
+        return false;
+    else
+        /* column col is only used inside equi-joins or
+           ordering operators */
+        return (reqval->distinct) &&
+               !reqval->join && !reqval->order &&
+               !reqval->part && !reqval->value;
+}
+
+/* define possible inputs for adjust_map and adjust_map_ */
+#define NO  0
+#define YES 1
+#define KEEP 2 /* keep-old-result-value flag */
+/**
+ * @brief look up the property mapping (in @a l) for a given column @a col.
+ */
+static void
+adjust_map_ (PFarray_t *map_list, PFalg_att_t col,
+             char value, char join, char part, char order, char distinct,
+             char filter, char sel_name, char sel_val)
+{
+    req_val_t *map;
+
+    /* lookup the mapping (if present) */
+    map = find_map (map_list, col);
+
+    /* add a new mapping */
+    if (!map) {
+        *((req_val_t *) PFarray_add (map_list))
+            = (req_val_t) { .col      = col,
+                            .value    = (value    == YES),
+                            .join     = (join     == YES),
+                            .part     = (part     == YES),
+                            .order    = (order    == YES),
+                            .distinct = (distinct == YES),
+                            .filter   = (filter   != NO),
+                            /* we mark the selection mapping
+                               with (name=false, val=true) in
+                               case we don't know anything about it */
+                            .sel_name = (sel_name == YES),
+                            .sel_val  = (sel_val  != NO) };
+    }
+    /* modify already existing mapping */
+    else {
+        if (value    != KEEP) map->value    |= (value    == YES);
+        if (join     != KEEP) map->join     |= (join     == YES);
+        if (part     != KEEP) map->part     |= (part     == YES);
+        if (order    != KEEP) map->order    |= (order    == YES);
+        if (distinct != KEEP) map->distinct |= (distinct == YES);
+        if (filter   != KEEP) map->filter   &= (filter   == YES);
+        if (sel_name != KEEP) {
+            assert (sel_val != KEEP);
+            /* if we don't know anything about the selection
+               mapping yet we replace it */
+            if (!map->sel_name && map->sel_val) {
+                map->sel_name = (sel_name == YES);
+                map->sel_val  = (sel_val  == YES);
+            }
+            /* the selection mapping conflicts -- we should not keep one */
+            else if ((map->sel_name && sel_name == NO) ||
+                     (!map->sel_name && sel_name == YES)) {
+                map->sel_name = false;
+                map->sel_val  = false;
+            }
+            else /* map->sel_name == (sel_name == YES) */ {
+                map->sel_val &= (sel_val == YES);
+            }
+        }
+    }
+}
+#define adjust_value_(list,col)   \
+        adjust_map_ ((list), (col), YES,  NO,   NO,   NO,   NO,   NO,   NO,   NO)
+#define adjust_join_(list,col)    \
+        adjust_map_ ((list), (col), KEEP, YES,  KEEP, KEEP, NO,   KEEP, KEEP, KEEP)
+#define adjust_part_(list,col)    \
+        adjust_map_ ((list), (col), KEEP, KEEP, YES,  KEEP, NO,   KEEP, KEEP, KEEP)
+#define adjust_order_(list,col)   \
+        adjust_map_ ((list), (col), KEEP, KEEP, KEEP, YES,  NO,   KEEP, KEEP, KEEP)
+#define adjust_distinct_(list,col)\
+        adjust_map_ ((list), (col), KEEP, KEEP, KEEP, KEEP, YES,  KEEP, KEEP, KEEP)
+#define adjust_filter_(list,col)  \
+        adjust_map_ ((list), (col), YES,  NO,   NO,   NO,   NO,   YES,  KEEP, KEEP)
+#define adjust_sel_(list,col)     \
+        adjust_map_ ((list), (col), YES,  NO,   NO,   NO,   NO,   KEEP, YES,  YES)
+#define adjust_nosel_(list,col)   \
+        adjust_map_ ((list), (col), YES,  NO,   NO,   NO,   NO,   KEEP, YES,  NO)
+
+static void
+adjust_map (PFla_op_t *n, PFalg_att_t col,
+            char value, char join, char part, char order, char distinct,
+            char filter, char sel_name, char sel_val)
+{
+    assert (n);
+
+    /* create a new mapping list if not already available */
+    if (!MAP_LIST(n))
+        MAP_LIST(n) = PFarray (sizeof (req_val_t),
+                               n->schema.count);
+
+    adjust_map_ (MAP_LIST(n), col,
+                 value, join, part, order, distinct, filter, sel_name, sel_val);
+}
+#define adjust_value(col)   \
+        adjust_map (n, (col), YES,  NO,   NO,   NO,   NO,   NO,   NO,   NO)
+#define adjust_join(col)    \
+        adjust_map (n, (col), KEEP, YES,  KEEP, KEEP, NO,   KEEP, KEEP, KEEP)
+#define adjust_part(col)    \
+        adjust_map (n, (col), KEEP, KEEP, YES,  KEEP, NO,   KEEP, KEEP, KEEP)
+#define adjust_order(col)   \
+        adjust_map (n, (col), KEEP, KEEP, KEEP, YES,  NO,   KEEP, KEEP, KEEP)
+#define adjust_distinct(col)\
+        adjust_map (n, (col), KEEP, KEEP, KEEP, KEEP, YES,  KEEP, KEEP, KEEP)
+#define adjust_filter(col)  \
+        adjust_map (n, (col), YES,  NO,   NO,   NO,   NO,   YES,  KEEP, KEEP)
+#define adjust_sel(col)     \
+        adjust_map (n, (col), YES,  NO,   NO,   NO,   NO,   KEEP, YES,  YES)
+#define adjust_nosel(col)   \
+        adjust_map (n, (col), YES,  NO,   NO,   NO,   NO,   KEEP, YES,  NO)
+
 
 /* short version to descend to fragment information */
-#define prop_infer_reqvals_empty(n)                                \
-        prop_infer_reqvals((n),                                    \
-                           (req_bool_val_t) { .name = empty_list,  \
-                                              .val = empty_list }, \
-                           empty_list, empty_list, empty_list,     \
-                           empty_list, empty_list, empty_list)
+#define prop_infer_reqvals_empty(n) prop_infer_reqvals((n), NULL)
 
 /**
- * worker for PFprop_infer_req_bool_val
+ * worker for PFprop_infer_reqval
  * infers the required values property during the second run
  * (uses edge counter from the first run)
  */
 static void
-prop_infer_reqvals (PFla_op_t *n,
-                    req_bool_val_t req_bool_vals,
-                    PFalg_att_t    cols,
-                    PFalg_att_t    order_cols,
-                    PFalg_att_t    bijective_cols,
-                    PFalg_att_t    multi_col_cols,
-                    PFalg_att_t    filter_cols,
-                    PFalg_att_t    value_cols)
+prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
 {
-    req_bool_val_t rv; /* list of required boolean values */
-    PFalg_att_t    oc, /* list of order columns */
-                   bc, /* list of bijective columns */
-                   mc, /* list of multi column columns */
-                   fc, /* list of filter columns */
-                   vc; /* list of value columns */
+    req_val_t *map;
+    
     assert (n);
 
-    /* make sure that relations that require all boolean
-       values overrule any decision */
-    if (SEEN(n) && !req_bool_vals.name)
-        n->prop->req_bool_vals = (req_bool_val_t) { .name = empty_list,
-                                                    .val = empty_list };
+    /* initialize the mapping list if we need it
+       and haven't got one already */
+    if (!MAP_LIST(n) && reqvals && PFarray_last (reqvals) > 0)
+        MAP_LIST(n) = PFarray (sizeof (req_val_t), n->schema.count);
 
-    /* in all calls (except the first) we ensure that
-       we already have required boolean value columns */
-    if (SEEN(n) && n->prop->req_bool_vals.name) {
-        /* Check if both parents look for required values
-           in the same columns and then resolve the possible
-           conflicts */
-        if (n->prop->req_bool_vals.name == req_bool_vals.name) {
-            PFalg_att_t  overlap   = req_bool_vals.name;
-            unsigned int bit_shift = 1;
+    if (reqvals) {
+        for (unsigned int i = 0; i < PFarray_last (reqvals); i++) {
+            /* Only try to merge nodes visible at that node.
+               (Non-matching columns may result from binary
+                operators as e.g., the cross product.) */
+            if (!PFprop_ocol (n, COL_AT(reqvals, i)))
+                continue;
 
-            /* an overflow will turn bit_shift into 0 */
-            while (bit_shift) {
-                /* if the values of column that is required by both
-                   parents do not match remove this column from the
-                   list of required value columns */
-                if (bit_shift & overlap &&
-                    ((bit_shift & req_bool_vals.val) !=
-                     (bit_shift & n->prop->req_bool_vals.val))) {
-                    /* remove entry from the list */
-                    n->prop->req_bool_vals.name
-                        = diff (n->prop->req_bool_vals.name, bit_shift);
-                    n->prop->req_bool_vals.val
-                        = diff (n->prop->req_bool_vals.val, bit_shift);
+            /* lookup the mapping in the already existing mapping list */
+            map = find_map (MAP_LIST(n), COL_AT(reqvals, i));
+
+            /* modify the mapping */
+            if (map) {
+                map->value    |= VAL_AT(reqvals, i);
+                map->join     |= JOIN_AT(reqvals, i);
+                map->part     |= PART_AT(reqvals, i);
+                map->order    |= ORD_AT(reqvals, i);
+                map->distinct |= DIST_AT(reqvals, i);
+                map->filter   &= FILTER_AT(reqvals, i);
+                /* if we don't know anything about the selection
+                   mapping yet we replace it */
+                if (!map->sel_name && map->sel_val) {
+                    map->sel_name = SNAME_AT(reqvals, i);
+                    map->sel_val  = SVAL_AT(reqvals, i);
                 }
-                bit_shift <<= 1;
+                else if (map->sel_name && SNAME_AT(reqvals, i)) {
+                    if (map->sel_val != SVAL_AT(reqvals, i)) {
+                        map->sel_name = false;
+                        map->sel_val  = false;
+                    }
+                    /* else we look for the column in both parents
+                       and the value is the same */
+                } else {
+                    map->sel_name = false;
+                    map->sel_val  = false;
+                }
             }
-        } else
-            n->prop->req_bool_vals = (req_bool_val_t) { .name = empty_list,
-                                                        .val = empty_list };
+            else
+                ADD(MAP_LIST(n), MAP_AT(reqvals, i));
+        }
     }
-
-    /* in the first call we use the required values of the caller */
-    if (!SEEN(n)) {
-        n->prop->req_bool_vals = req_bool_vals;
-
-        oc = intersect (cols, order_cols);
-        bc = intersect (cols, bijective_cols);
-        mc = intersect (cols, multi_col_cols);
-        fc = intersect (cols, filter_cols);
-        vc = intersect (cols, value_cols);
-        SEEN(n) = true;
-    } else {
-        oc = n->prop->req_order_cols;
-        bc = n->prop->req_bijective_cols;
-        mc = n->prop->req_multi_col_cols;
-        fc = n->prop->req_filter_cols;
-        vc = n->prop->req_value_cols;
-
-        /* collect all columns whose order is necessary */
-        oc = union_ (oc, intersect (cols, order_cols));
-        /* collect all columns whose bijective value mapping is necessary */
-        bc = union_ (bc, intersect (cols, bijective_cols));
-        /* Keep only non-conflicting columns by matching the columns
-           from the new input and the exisiting ones thus keeping the
-           columns that are not referenced (not in cols).
-           (comparison is done on common columns only) */
-        mc = union_ (intersect (intersect (mc, cols), multi_col_cols),
-                     diff (mc, cols));
-        /* Keep only non-conflicting columns by matching the columns
-           from the new input and the exisiting ones thus keeping the
-           columns that are not referenced (not in cols).
-           (comparison is done on common columns only) */
-        fc = union_ (intersect (intersect (fc, cols), filter_cols),
-                     diff (fc, cols));
-        /* collect all columns whose real value is necessary */
-        vc = union_ (vc, intersect (cols, value_cols));
-    }
-    /* store the combined lists */
-    n->prop->req_order_cols     = oc;
-    n->prop->req_bijective_cols = bc;
-    n->prop->req_multi_col_cols = mc;
-    n->prop->req_filter_cols    = fc;
-    n->prop->req_value_cols     = vc;
 
     /* nothing to do if we haven't collected
        all incoming required values lists of that node */
@@ -284,65 +440,25 @@ prop_infer_reqvals (PFla_op_t *n,
         return;
     }
 
-    /* copy current required value list */
-    rv  = n->prop->req_bool_vals;
-
-    /* get the current schema */
-    cols = schema2collist (n);
-
-    /**
-     * Infer REQUIRED boolean values property for n's children:
-     *
-     * - 'select' introduces new required boolean value columns.
-     * - 'not' extends required boolean values list with a new column
-     *   if the result also is one.
-     * - All other operators either ignore the required value columns
-     *   or infer them (partially) to their children.
-     *
-     * Infer REQUIRED order value columns for n's children:
-     *
-     * - Marks a column if it is used only in orderings.
-     *
-     * Infer REQUIRED bijective value columns for n's children:
-     *
-     * - Marks a column if it is used only in joins, orderings, and
-     *   partitionings (where only the values need to fullfil a
-     *   bijective mapping).
-     *
-     * Infer POSSIBLE multi column columns for n's children:
-     *
-     * - Marks a column if it is used only in joins and orderings
-     *   where a column can be splitted into two.
-     *
-     * Infer REQUIRED real value columns for n's children:
-     *
-     * - Marks all columns that are input to operators (except for
-     *   the operators that infer order, bijective and/or multi column
-     *   columns).
-     */
+    /* Adjust the properties of the algebra operators based
+       on the current mapping list (MAP_LIST(n)). The adjust_*()
+       macros add the respective usage information to the
+       mapping list. */
     switch (n->kind) {
         case la_serialize_seq:
-            oc = union_ (empty_list, n->sem.ser_seq.pos);
-            bc = empty_list;
-            mc = diff (diff (cols, n->sem.ser_seq.pos), n->sem.ser_seq.item);
-            fc = empty_list;
-            vc = union_ (vc, n->sem.ser_seq.item);
+            adjust_order (n->sem.ser_seq.pos);
+            adjust_value (n->sem.ser_seq.item);
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (R(n), MAP_LIST(n));
             return; /* only infer once */
 
         case la_serialize_rel:
-            oc = union_ (empty_list, n->sem.ser_rel.pos);
-            bc = empty_list;
-            mc = diff (diff (cols, n->sem.ser_rel.iter), n->sem.ser_rel.pos);
-            fc = empty_list;
-            vc = union_ (vc, n->sem.ser_rel.iter);
+            adjust_order (n->sem.ser_rel.pos);
+            adjust_value (n->sem.ser_rel.iter);
 
-            for (unsigned int i = 0; i < n->sem.ser_rel.items.count; i++) {
-                mc = diff (mc, n->sem.ser_rel.items.atts[i]);
-                vc = union_ (vc, n->sem.ser_rel.items.atts[i]);
-            }
+            for (unsigned int i = 0; i < n->sem.ser_rel.items.count; i++)
+                adjust_value (n->sem.ser_rel.items.atts[i]);
             break;
 
         case la_lit_tbl:
@@ -354,24 +470,16 @@ prop_infer_reqvals (PFla_op_t *n,
             break;
 
         case la_attach:
-            rv.name = diff (rv.name, n->sem.attach.res);
-            rv.val = diff (rv.val, n->sem.attach.res);
-
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.attach.res);
+            /* no additional usage information */
             break;
 
         case la_cross:
-            prop_infer_reqvals (L(n), rv, schema2collist(L(n)),
-                                oc, bc, mc, fc, vc);
-            prop_infer_reqvals (R(n), rv, schema2collist(R(n)),
-                                oc, bc, mc, fc, vc);
-            return; /* only infer once */
+            /* no additional usage information */
+            break;
 
         case la_eqjoin:
-            /* Check whether the join columns can be marked as bijective value
-               columns and multi column columns or if they have to produce
-               the exact values. */
+            /* Check whether the join columns can be marked as mapping join
+               columns or if they have to produce the exact values. */
             if ((PFprop_subdom (n->prop,
                                 PFprop_dom_right (n->prop,
                                                   n->sem.eqjoin.att2),
@@ -381,40 +489,18 @@ prop_infer_reqvals (PFla_op_t *n,
                                 PFprop_dom_left (n->prop,
                                                  n->sem.eqjoin.att1),
                                 PFprop_dom_right (n->prop,
-                                                  n->sem.eqjoin.att2))) &&
-                !in (vc, n->sem.eqjoin.att1) &&
-                !in (vc, n->sem.eqjoin.att2)) {
-                /* We know that the columns are from the same origin (subdomain
-                   relationship) and there values are not needed.
-                   We thus mark that we only need the bijectivity of the values
-                   to correctly implement the operator. */
-                bc = union_ (union_ (bc, n->sem.eqjoin.att1),
-                             n->sem.eqjoin.att2);
-                /* We know that the columns are from the same origin (subdomain
-                   relationship) and there values are not needed.
-                   We thus mark that we could replace the comparison
-                   by a one with two condititions (using a theta-join). */
-                mc = union_ (union_ (mc, n->sem.eqjoin.att1),
-                              n->sem.eqjoin.att2);
+                                                  n->sem.eqjoin.att2)))) {
+                adjust_join (n->sem.eqjoin.att1);
+                adjust_join (n->sem.eqjoin.att2);
             } else {
-                vc = union_ (union_ (vc, n->sem.eqjoin.att1),
-                             n->sem.eqjoin.att2);
+                adjust_value (n->sem.eqjoin.att1);
+                adjust_value (n->sem.eqjoin.att2);
             }
-
-            prop_infer_reqvals (L(n), rv, schema2collist(L(n)),
-                                oc, bc, mc, fc, vc);
-            prop_infer_reqvals (R(n), rv, schema2collist(R(n)),
-                                oc, bc, mc, fc, vc);
-            return; /* only infer once */
+            break;
 
         case la_semijoin:
         {
-            PFalg_att_t oc_right = empty_list,
-                        bc_right = empty_list,
-                        mc_right = empty_list,
-                        fc_right = empty_list,
-                        vc_right = empty_list;
-
+            PFarray_t *rmap = PFarray (sizeof (req_val_t), 1);
             /* Check whether the join columns can be marked as bijective value
                columns or if they have to produce the exact values. */
             if ((PFprop_subdom (n->prop,
@@ -426,30 +512,16 @@ prop_infer_reqvals (PFla_op_t *n,
                                 PFprop_dom_left (n->prop,
                                                  n->sem.eqjoin.att1),
                                 PFprop_dom_right (n->prop,
-                                                  n->sem.eqjoin.att2))) &&
-                !in (vc, n->sem.eqjoin.att1)) {
-                /* We know that the columns are from the same origin (subdomain
-                   relationship) and there values are not needed.
-                   We thus mark that we only need the bijectivity of the values
-                   to correctly implement the operator. */
-                bc = union_ (bc, n->sem.eqjoin.att1);
-                bc_right = union_ (empty_list, n->sem.eqjoin.att2);
+                                                  n->sem.eqjoin.att2)))) {
+                adjust_join (n->sem.eqjoin.att1);
+                adjust_join_ (rmap, n->sem.eqjoin.att2);
             } else {
-                vc = union_ (vc, n->sem.eqjoin.att1);
-                vc_right = union_ (empty_list, n->sem.eqjoin.att2);
+                adjust_value (n->sem.eqjoin.att1);
+                adjust_value_ (rmap, n->sem.eqjoin.att2);
             }
 
-            /* remove columns as we cannot split up the join column */
-            mc = diff (mc, n->sem.eqjoin.att1);
-
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
-
-            cols = union_ (empty_list, n->sem.eqjoin.att2);
-            rv.name = empty_list;
-            rv.val = empty_list;
-
-            prop_infer_reqvals (R(n), rv, cols, oc_right,
-                                bc_right, mc_right, fc_right, vc_right);
+            prop_infer_reqvals (L(n), MAP_LIST(n));
+            prop_infer_reqvals (R(n), rmap);
         }   return; /* only infer once */
 
         case la_thetajoin:
@@ -468,100 +540,51 @@ prop_infer_reqvals (PFla_op_t *n,
                                     PFprop_dom_left (n->prop,
                                                      left),
                                     PFprop_dom_right (n->prop,
-                                                      right))) &&
-                    !in (vc, left) &&
-                    !in (vc, right)) {
-                    /* We know that the columns are from the same origin
-                       (subdomain relationship) and there values are not needed.
-                       We thus mark that we only need the bijectivity
-                       of the values to correctly implement the operator. */
-                    bc = union_ (union_ (bc, left), right);
-                    /* We know that the columns are from the same origin
-                       (subdomain relationship) and there values are not needed.
-                       We thus mark that we could replace the comparison
-                       by a one with two condititions (using a theta-join). */
-                    mc = union_ (union_ (mc, left), right);
+                                                      right)))) {
+                    adjust_join (left);
+                    adjust_join (right);
+                } else if (n->sem.thetajoin.pred[i].comp == alg_comp_eq) {
+                    adjust_filter (left);  /* also sets value flag */
+                    adjust_filter (right); /* also sets value flag */
                 } else {
-                    if (n->sem.thetajoin.pred[i].comp == alg_comp_eq)
-                        fc = union_ (union_ (fc, left), right);
-                    vc  = union_ (union_ (vc, left), right);
+                    adjust_value (left);
+                    adjust_value (right);
                 }
-            }
-
-            prop_infer_reqvals (L(n), rv, schema2collist(L(n)),
-                                oc, bc, mc, fc, vc);
-            prop_infer_reqvals (R(n), rv, schema2collist(R(n)),
-                                oc, bc, mc, fc, vc);
-            return; /* only infer once */
-
-        case la_project:
-            /* discard the copies */
-            rv.name = empty_list;
-            rv.val = empty_list;
-            oc = empty_list;
-            bc = empty_list;
-            mc = empty_list;
-            fc = empty_list;
-            vc = empty_list;
-            cols = empty_list;
-            /* and fill them again based on the original stored values */
-
-            /* rename reqvals columns from new to old */
-            for (unsigned int i = 0; i < n->sem.proj.count; i++) {
-                if (in (n->prop->req_bool_vals.name,
-                        n->sem.proj.items[i].new)) {
-                    rv.name = union_ (rv.name, n->sem.proj.items[i].old);
-                    /* keep values but map them to the old column name */
-                    if (in (n->prop->req_bool_vals.val,
-                            n->sem.proj.items[i].new))
-                        rv.val = union_ (rv.val, n->sem.proj.items[i].old);
-                }
-                if (in (n->prop->req_order_cols, n->sem.proj.items[i].new))
-                    oc = union_ (oc, n->sem.proj.items[i].old);
-                if (in (n->prop->req_bijective_cols, n->sem.proj.items[i].new))
-                    bc = union_ (bc, n->sem.proj.items[i].old);
-                if (in (n->prop->req_multi_col_cols, n->sem.proj.items[i].new))
-                    mc = union_ (mc, n->sem.proj.items[i].old);
-                if (in (n->prop->req_filter_cols, n->sem.proj.items[i].new))
-                    fc = union_ (fc, n->sem.proj.items[i].old);
-                if (in (n->prop->req_value_cols, n->sem.proj.items[i].new))
-                    vc = union_ (vc, n->sem.proj.items[i].old);
-                cols = union_ (cols, n->sem.proj.items[i].old);
             }
             break;
 
+        case la_project:
+        {
+            PFarray_t *new_map = PFarray (sizeof (req_val_t),
+                                          n->sem.proj.count);
+
+            for (unsigned int i = 0; i < n->sem.proj.count; i++) {
+                map = find_map (MAP_LIST(n), n->sem.proj.items[i].new);
+                if (map) {
+                    req_val_t map_item = *map;
+                    map_item.col = n->sem.proj.items[i].old;
+                    ADD(new_map, map_item);
+                }
+            }
+            prop_infer_reqvals (L(n), new_map);
+        }   return; /* only infer once */
+
         case la_select:
             /* introduce new required value column */
-            n->prop->req_bool_vals.name = union_ (n->prop->req_bool_vals.name,
-                                                  n->sem.select.att);
-            n->prop->req_bool_vals.val = union_ (n->prop->req_bool_vals.val,
-                                                 n->sem.select.att);
-            rv.name = union_ (rv.name, n->sem.select.att);
-            rv.val = union_ (rv.val, n->sem.select.att);
-
-            /* we have a real value column here */
-            oc = diff (oc, n->sem.select.att);
-            bc = diff (bc, n->sem.select.att);
-            mc = diff (mc, n->sem.select.att);
-            vc = union_ (vc, n->sem.select.att);
+            adjust_sel (n->sem.select.att);
             break;
 
         case la_pos_select:
         {
             PFord_ordering_t sortby = n->sem.pos_sel.sortby;
-            for (unsigned int i = 0; i < PFord_count (sortby); i++) {
+            for (unsigned int i = 0; i < PFord_count (sortby); i++)                
                  /* for the order criteria we only have to ensure
                     the correct order */
-                 oc = union_ (oc, PFord_order_col_at (sortby, i));
-                 mc = union_ (mc, PFord_order_col_at (sortby, i));
-            }
+                adjust_order (PFord_order_col_at (sortby, i));
 
-            if (n->sem.pos_sel.part) {
+            if (n->sem.pos_sel.part)
                 /* we only have to provide the same groups */
-                bc = union_ (bc, n->sem.pos_sel.part);
-                /* we cannot split up a partition column */
-                mc = diff (mc, n->sem.pos_sel.part);
-            }
+                adjust_part (n->sem.pos_sel.part);
         }   break;
 
         case la_disjunion:
@@ -569,158 +592,139 @@ prop_infer_reqvals (PFla_op_t *n,
             /* We have to apply a natural join here which means
                the values should be comparable. (Including domain
                information might improve this inference.) */
-            oc = empty_list;
-            bc = empty_list;
-            mc = empty_list;
-
-            /* Keep order columns, bijective value columns and multi
-               column columns if they stem from the same operator.
-               For all other columns we require the real values. */
             for (unsigned int i = 0; i < n->schema.count; i++) {
                 PFalg_att_t cur = n->schema.items[i].name;
-                if ((PFprop_subdom (n->prop,
-                                    PFprop_dom_right (n->prop, cur),
-                                    PFprop_dom_left (n->prop, cur)) ||
-                     PFprop_subdom (n->prop,
-                                    PFprop_dom_left (n->prop, cur),
-                                    PFprop_dom_right (n->prop, cur))) &&
-                    !in (vc, cur)) {
-                    if (in (n->prop->req_order_cols, cur))
-                        oc = union_ (oc, cur);
-                    if (in (n->prop->req_bijective_cols, cur))
-                        bc = union_ (bc, cur);
-                    if (in (n->prop->req_multi_col_cols, cur))
-                        mc = union_ (mc, cur);
-
-                    if (!in (oc, cur) && !in (bc, cur) && !in (mc, cur))
-                        vc  = union_ (vc,  cur);
-                } else
-                    vc  = union_ (vc,  cur);
+                req_val_t  *map = find_map (MAP_LIST(n), cur);
+                
+                if (map && map->value)
+                    continue;
+                
+                /* Keep order, join, and part columns if they stem from
+                   the same operator.  For all other columns we require
+                   the real values. */
+                if (!map ||
+                    !((PFprop_subdom (n->prop,
+                                      PFprop_dom_right (n->prop, cur),
+                                      PFprop_dom_left (n->prop, cur)) ||
+                       PFprop_subdom (n->prop,
+                                      PFprop_dom_left (n->prop, cur),
+                                      PFprop_dom_right (n->prop, cur))) &&
+                      (map->order || map->join || map->part)))
+                    adjust_value (cur);
             }
             break;
 
         case la_difference:
+        {
+            PFarray_t *rmap;
+            
             /* We have to apply a natural join here which means
                the values should be comparable. (Including domain
                information might improve this inference.) */
-            oc = empty_list;
-            bc = empty_list;
-            mc = empty_list;
-
             for (unsigned int i = 0; i < n->schema.count; i++) {
                 PFalg_att_t cur = n->schema.items[i].name;
-                if ((PFprop_subdom (n->prop,
-                                    PFprop_dom_right (n->prop, cur),
-                                    PFprop_dom_left (n->prop, cur)) ||
-                     PFprop_subdom (n->prop,
-                                    PFprop_dom_left (n->prop, cur),
-                                    PFprop_dom_right (n->prop, cur))) &&
-                    !in (vc, cur)) {
-                    if (in (n->prop->req_order_cols, cur))
-                        oc = union_ (oc, cur);
-                    if (in (n->prop->req_bijective_cols, cur))
-                        bc = union_ (bc, cur);
-                    if (in (n->prop->req_multi_col_cols, cur))
-                        mc = union_ (mc, cur);
-
-                    if (!in (oc, cur) && !in (bc, cur) && !in (mc, cur))
-                        vc  = union_ (vc,  cur);
-                } else
-                    vc  = union_ (vc,  cur);
+                req_val_t  *map = find_map (MAP_LIST(n), cur);
+                
+                if (map && map->value)
+                    continue;
+                
+                /* Keep order, join, and part columns if they stem from
+                   the same operator.  For all other columns we require
+                   the real values. */
+                if (!map ||
+                    !((PFprop_subdom (n->prop,
+                                      PFprop_dom_right (n->prop, cur),
+                                      PFprop_dom_left (n->prop, cur)) ||
+                       PFprop_subdom (n->prop,
+                                      PFprop_dom_left (n->prop, cur),
+                                      PFprop_dom_right (n->prop, cur))) &&
+                      (map->order || map->join || map->part)))
+                    adjust_value (cur);
             }
+            prop_infer_reqvals (L(n), MAP_LIST(n));
 
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
-
-            rv.name = empty_list;
-            rv.val = empty_list;
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
-            return; /* only infer once */
+            rmap = PFarray_copy (MAP_LIST(n));
+            for (unsigned int i = 0; i < PFarray_last (rmap); i++) {
+                req_val_t *map = (req_val_t *) PFarray_at (rmap, i);
+                /* we don't know anything about the selection
+                   mapping so we replace it */
+                if (map && map->value) {
+                    map->sel_name = false;
+                    map->sel_val  = true;
+                }
+            }
+            prop_infer_reqvals (R(n), rmap);
+        }   return; /* only infer once */
 
         case la_distinct:
-            /* for all columns where we do not need the real values
-               we need at least the bijectivity of the values */
-            bc = diff (cols, vc);
-            mc = diff (cols, vc);
+            /* for all columns where we have no usage information
+               we need to ensure at least the bijectivity */
+            for (unsigned int i = 0; i < n->schema.count; i++) {
+                PFalg_att_t cur = n->schema.items[i].name;
+                req_val_t  *map = find_map (MAP_LIST(n), cur);
+                if (!map)
+                    adjust_distinct (cur);
+            }
             break;
 
         case la_fun_1to1:
-            rv.name = diff (rv.name, n->sem.fun_1to1.res);
-            rv.val = diff (rv.val, n->sem.fun_1to1.res);
-
             /* mark the input columns as value columns */
             for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
-                vc = union_ (vc, n->sem.fun_1to1.refs.atts[i]);
-
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.fun_1to1.res);
+                adjust_value (n->sem.fun_1to1.refs.atts[i]);
             break;
 
         case la_num_eq:
-            if (in (rv.name, n->sem.binary.res))
-                fc = union_ (union_ (fc, n->sem.binary.att1),
-                             n->sem.binary.att2);
+            if (PFprop_req_bool_val (n->prop, n->sem.binary.res)) {
+                adjust_filter (n->sem.binary.att1);
+                adjust_filter (n->sem.binary.att2);
+            }
+            else {
+                adjust_value (n->sem.binary.att1);
+                adjust_value (n->sem.binary.att2);
+            }
+            break;
+            
         case la_num_gt:
         case la_to:
-            rv.name = diff (rv.name, n->sem.binary.res);
-            rv.val = diff (rv.val, n->sem.binary.res);
-
-            /* mark the input columns as value columns */
-            vc = union_ (union_ (vc, n->sem.binary.att1), n->sem.binary.att2);
-
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.binary.res);
+            adjust_value (n->sem.binary.att1);
+            adjust_value (n->sem.binary.att2);
             break;
 
         case la_bool_and:
             if (PFprop_req_bool_val (n->prop, n->sem.binary.res) &&
                 PFprop_req_bool_val_val (n->prop, n->sem.binary.res)) {
-                rv.name = union_ (rv.name, n->sem.binary.att1);
-                rv.val = union_ (rv.val, n->sem.binary.att1);
-                rv.name = union_ (rv.name, n->sem.binary.att2);
-                rv.val = union_ (rv.val, n->sem.binary.att2);
+                adjust_sel (n->sem.binary.att1);
+                adjust_sel (n->sem.binary.att2);
             }
-
-            /* mark the input columns as value columns */
-            vc = union_ (union_ (vc, n->sem.binary.att1), n->sem.binary.att2);
-
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.binary.res);
+            else {
+                adjust_value (n->sem.binary.att1);
+                adjust_value (n->sem.binary.att2);
+            }
             break;
 
         case la_bool_or:
             if (PFprop_req_bool_val (n->prop, n->sem.binary.res) &&
                 !PFprop_req_bool_val_val (n->prop, n->sem.binary.res)) {
-                rv.name = union_ (rv.name, n->sem.binary.att1);
-                rv.val = diff (rv.val, n->sem.binary.att1);
-                rv.name = union_ (rv.name, n->sem.binary.att2);
-                rv.val = diff (rv.val, n->sem.binary.att2);
+                adjust_nosel (n->sem.binary.att1);
+                adjust_nosel (n->sem.binary.att2);
             }
-
-            /* mark the input columns as value columns */
-            vc = union_ (union_ (vc, n->sem.binary.att1), n->sem.binary.att2);
-
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.binary.res);
+            else {
+                adjust_value (n->sem.binary.att1);
+                adjust_value (n->sem.binary.att2);
+            }
             break;
 
         case la_bool_not:
             /* if res is a required value column also add att
                with the switched boolean value */
             if (PFprop_req_bool_val (n->prop, n->sem.unary.res)) {
-                rv.name = union_ (rv.name, n->sem.unary.att);
-                /* add positive value if res is wrong otherwise
-                   value stays false (default) */
-                if (!PFprop_req_bool_val_val (n->prop, n->sem.unary.res))
-                    rv.val = union_ (rv.val, n->sem.unary.att);
+                if (PFprop_req_bool_val_val (n->prop, n->sem.unary.res))
+                    adjust_nosel (n->sem.unary.att);
+                else
+                    adjust_sel (n->sem.unary.att);
             }
-            rv.name = diff (rv.name, n->sem.unary.res);
-            rv.val = diff (rv.val, n->sem.unary.res);
-
-            /* mark the input columns as value columns */
-            vc = union_ (vc, n->sem.unary.att);
-
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.unary.res);
+            else
+                adjust_value (n->sem.unary.att);
             break;
 
         case la_avg:
@@ -730,56 +734,43 @@ prop_infer_reqvals (PFla_op_t *n,
         case la_count:
         case la_seqty1:
         case la_all:
-            rv.name = empty_list;
-            rv.val = empty_list;
-
-            /* mark the input columns as value columns */
-            vc = union_ (diff (vc, n->sem.aggr.res), n->sem.aggr.att);
-
-            if (n->sem.aggr.part) {
+        {
+            PFarray_t *lmap = PFarray (sizeof (req_val_t), 2);
+            if (n->sem.aggr.part)
                 /* we only have to provide the same groups */
-                bc = union_ (bc, n->sem.aggr.part);
-                /* we cannot split up a partition column */
-                mc = diff (mc, n->sem.aggr.part);
-            }
-
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.aggr.res);
+                adjust_part_ (lmap, n->sem.aggr.part);
 
             if (n->sem.aggr.att)
                 /* to make up for the schema change
                    we add the input columns by hand */
-                cols = union_ (cols, n->sem.aggr.att);
-            break;
+                adjust_value_ (lmap, n->sem.aggr.att);
+
+            prop_infer_reqvals (L(n), lmap);
+        }   return; /* only infer once */
 
         case la_rownum:  /* for rownum, rowrank, rank, and rowid */
         case la_rowrank: /* type of res is != boolean and */
         case la_rank:    /* therefore never needs to be removed */
         {
             PFord_ordering_t sortby = n->sem.sort.sortby;
-            for (unsigned int i = 0; i < PFord_count (sortby); i++) {
+            for (unsigned int i = 0; i < PFord_count (sortby); i++)                
                  /* for the order criteria we only have to ensure
                     the correct order */
-                 oc = union_ (oc , PFord_order_col_at (sortby, i));
-                 mc = union_ (mc, PFord_order_col_at (sortby, i));
-            }
+                adjust_order (PFord_order_col_at (sortby, i));
 
-            if (n->sem.sort.part) {
+            if (n->sem.sort.part)
                 /* we only have to provide the same groups */
-                bc = union_ (bc, n->sem.sort.part);
-                /* we cannot split up a partition column */
-                mc = diff (mc, n->sem.sort.part);
-            }
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.sort.res);
+                adjust_part (n->sem.sort.part);
         }   break;
 
         case la_rowid:
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.rowid.res);
+            /* no additional usage information */
             break;
 
         case la_cast:
+        {
+            bool att_adjusted = false;
+
             if (n->sem.type.ty == aat_bln) {
                 bool att_bln = false;
                 for (unsigned int i = 0; i < n->schema.count; i++)
@@ -789,235 +780,131 @@ prop_infer_reqvals (PFla_op_t *n,
                     }
 
                 if (att_bln && PFprop_req_bool_val (n->prop, n->sem.type.res)) {
-                    rv.name = union_ (rv.name, n->sem.type.att);
                     if (PFprop_req_bool_val_val (n->prop, n->sem.type.res))
-                        rv.val = union_ (rv.val, n->sem.type.att);
+                        adjust_sel (n->sem.type.att);
+                    else
+                        adjust_nosel (n->sem.type.att);
+                    att_adjusted = true;
                 }
             }
-            rv.name = diff (rv.name, n->sem.type.res);
-            rv.val = diff (rv.val, n->sem.type.res);
-
-            if (!in (vc, n->sem.type.res) &&
-                !in (bc, n->sem.type.res) &&
-                in (oc, n->sem.type.res))
-                /* mark the input column as order column if
-                   not used differently */
-                oc = union_ (oc, n->sem.type.att);
-            else
-                /* mark the input column as value columns */
-                vc = union_ (vc, n->sem.type.att);
-
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.type.res);
-            break;
+            if (!att_adjusted) {
+                req_val_t *map = find_map (MAP_LIST(n), n->sem.type.res);
+                if (!map || !map->order)
+                    /* mark the input column as value columns */
+                    adjust_value (n->sem.type.att);
+                else
+                    /* mark the input column as order column if
+                       not used differently */
+                    adjust_order (n->sem.type.att);
+            }
+        }   break;
 
         case la_type:
-            rv.name = diff (rv.name, n->sem.type.res);
-            rv.val = diff (rv.val, n->sem.type.res);
-
-            /* mark the input columns as value columns */
-            vc = union_ (vc, n->sem.type.att);
-
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.type.res);
-            break;
-
         case la_type_assert:
-            /* propagate required values list to left subtree */
-
             /* mark the input columns as value columns */
-            vc = union_ (vc, n->sem.type.att);
+            adjust_value (n->sem.type.att);
             break;
 
         case la_step:
         case la_guide_step:
-            rv.name = empty_list;
-            rv.val = empty_list;
-
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (union_ (empty_list, n->sem.step.iter),
-                           n->sem.step.item);
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc   = cols;
+            /* mark the input columns as value columns */
+            adjust_value (n->sem.step.iter);
+            adjust_value (n->sem.step.item);
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (R(n), MAP_LIST(n));
             return; /* only infer once */
 
         case la_step_join:
         case la_guide_step_join:
-            rv.name = diff (rv.name, n->sem.step.item_res);
-            rv.val = diff (rv.val, n->sem.step.item_res);
-
-            /* mark the input columns as value columns */
-            vc = union_ (vc, n->sem.step.item);
-
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.step.item_res);
+            /* mark the input column as value column */
+            adjust_value (n->sem.step.item);
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (R(n), MAP_LIST(n));
             return; /* only infer once */
 
         case la_doc_index_join:
-            rv.name = diff (rv.name, n->sem.doc_join.item_res);
-            rv.val = diff (rv.val, n->sem.doc_join.item_res);
-
             /* mark the input columns as value columns */
-            vc = union_ (union_ (vc, n->sem.doc_join.item),
-                         n->sem.doc_join.item_doc);
-
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.doc_join.item_res);
+            adjust_value (n->sem.doc_join.item);
+            adjust_value (n->sem.doc_join.item_doc);
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (R(n), MAP_LIST(n));
             return; /* only infer once */
 
         case la_doc_tbl:
-            rv.name = diff (rv.name, n->sem.doc_tbl.res);
-            rv.val = diff (rv.val, n->sem.doc_tbl.res);
-
-            /* mark the input columns as value columns */
-            vc = union_ (vc, n->sem.doc_tbl.att);
-
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.doc_tbl.res);
+            /* mark the input column as value column */
+            adjust_value (n->sem.doc_tbl.att);
             break;
 
         case la_doc_access:
-            rv.name = diff (rv.name, n->sem.doc_access.res);
-            rv.val = diff (rv.val, n->sem.doc_access.res);
-
-            /* mark the input columns as value columns */
-            vc = union_ (vc, n->sem.doc_access.att);
-
-            /* make the new column invisible for the children */
-            cols = diff (cols, n->sem.doc_access.res);
+            /* mark the input column as value column */
+            adjust_value (n->sem.doc_access.att);
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (R(n), MAP_LIST(n));
             return; /* only infer once */
 
         case la_twig:
+            prop_infer_reqvals_empty (L(n)); /* constructor */
+            return; /* only infer once */
+            
         case la_fcns:
-            rv.name = empty_list;
-            rv.val = empty_list;
-
-            cols = empty_list;
-            break;
+            prop_infer_reqvals_empty (L(n)); /* constructor */
+            prop_infer_reqvals_empty (R(n)); /* constructor */
+            return; /* only infer once */
 
         case la_docnode:
-            rv.name = empty_list;
-            rv.val = empty_list;
+            /* mark the input column as value column */
+            adjust_value (n->sem.docnode.iter);
 
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (empty_list, n->sem.docnode.iter);
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc   = cols;
-
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (L(n), MAP_LIST(n));
             prop_infer_reqvals_empty (R(n)); /* constructor */
             return; /* only infer once */
 
         case la_element:
-            rv.name = empty_list;
-            rv.val = empty_list;
+            /* mark the input columns as value columns */
+            adjust_value (n->sem.iter_item.iter);
+            adjust_value (n->sem.iter_item.item);
 
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (union_ (empty_list, n->sem.iter_item.iter),
-                           n->sem.iter_item.item);
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc   = cols;
-
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (L(n), MAP_LIST(n));
             prop_infer_reqvals_empty (R(n)); /* constructor */
             return; /* only infer once */
 
         case la_textnode:
         case la_comment:
-            rv.name = empty_list;
-            rv.val = empty_list;
-
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (union_ (empty_list, n->sem.iter_item.iter),
-                           n->sem.iter_item.item);
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc   = cols;
+            /* mark the input columns as value columns */
+            adjust_value (n->sem.iter_item.iter);
+            adjust_value (n->sem.iter_item.item);
             break;
 
         case la_attribute:
         case la_processi:
-            rv.name = empty_list;
-            rv.val = empty_list;
-
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (union_ (union_ (empty_list,
-                                           n->sem.iter_item1_item2.iter),
-                                   n->sem.iter_item1_item2.item1),
-                           n->sem.iter_item1_item2.item2);
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc   = cols;
+            /* mark the input columns as value columns */
+            adjust_value (n->sem.iter_item1_item2.iter);
+            adjust_value (n->sem.iter_item1_item2.item1);
+            adjust_value (n->sem.iter_item1_item2.item2);
             break;
 
         case la_content:
-            rv.name = empty_list;
-            rv.val = empty_list;
-
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (union_ (union_ (empty_list,
-                                           n->sem.iter_pos_item.iter),
-                                   n->sem.iter_pos_item.pos),
-                           n->sem.iter_pos_item.item);
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc   = cols;
+            /* mark the input columns as value columns */
+            adjust_value (n->sem.iter_pos_item.iter);
+            adjust_order (n->sem.iter_pos_item.pos);
+            adjust_value (n->sem.iter_pos_item.item);
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (R(n), MAP_LIST(n));
             return; /* only infer once */
 
         case la_merge_adjacent:
-            rv.name = empty_list;
-            rv.val = empty_list;
-
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (union_ (union_ (empty_list,
-                                           n->sem.merge_adjacent.iter_in),
-                                   n->sem.merge_adjacent.pos_in),
-                           n->sem.merge_adjacent.item_in);
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc   = cols;
+            /* mark the input columns as value columns */
+            adjust_value (n->sem.merge_adjacent.iter_in);
+            adjust_value (n->sem.merge_adjacent.pos_in);
+            adjust_value (n->sem.merge_adjacent.item_in);
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (R(n), MAP_LIST(n));
             return; /* only infer once */
 
         case la_roots:
@@ -1039,92 +926,48 @@ prop_infer_reqvals (PFla_op_t *n,
             return; /* only infer once */
 
         case la_cond_err:
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
+        {
+            PFarray_t *rmap = PFarray (sizeof (req_val_t), 1);
+            adjust_value_ (rmap, n->sem.err.att);
 
-            rv.name = empty_list;
-            rv.val = empty_list;
-
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (empty_list, n->sem.err.att);
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc   = cols;
-
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
-            return; /* only infer once */
+            prop_infer_reqvals (L(n), MAP_LIST(n));
+            prop_infer_reqvals (R(n), rmap);
+        }   return; /* only infer once */
 
         case la_trace:
-            rv.name = empty_list;
-            rv.val = empty_list;
+            /* mark the input columns as value columns */
+            adjust_value (n->sem.iter_pos_item.iter);
+            adjust_value (n->sem.iter_pos_item.pos);
+            adjust_value (n->sem.iter_pos_item.item);
 
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (union_ (union_ (empty_list,
-                                           n->sem.iter_pos_item.iter),
-                                   n->sem.iter_pos_item.pos),
-                           n->sem.iter_pos_item.item);
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc   = cols;
-
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
-            prop_infer_reqvals_empty (R(n)); /* trace */
+            prop_infer_reqvals_empty (L(n)); /* trace */
+            prop_infer_reqvals (R(n), MAP_LIST(n));
             return; /* only infer once */
 
         case la_trace_msg:
-            rv.name = empty_list;
-            rv.val = empty_list;
+            /* mark the input columns as value columns */
+            adjust_value (n->sem.iter_item.iter);
+            adjust_value (n->sem.iter_item.item);
 
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (union_ (empty_list, n->sem.iter_item.iter),
-                           n->sem.iter_item.item);
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc   = cols;
-
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (L(n), MAP_LIST(n));
             prop_infer_reqvals_empty (R(n)); /* trace */
             return; /* only infer once */
 
         case la_trace_map:
-            rv.name = empty_list;
-            rv.val = empty_list;
+            /* mark the input columns as value columns */
+            adjust_value (n->sem.trace_map.inner);
+            adjust_value (n->sem.trace_map.outer);
 
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (union_ (empty_list, n->sem.trace_map.inner),
-                           n->sem.trace_map.outer);
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc   = cols;
-
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (L(n), MAP_LIST(n));
             prop_infer_reqvals_empty (R(n)); /* trace */
             return; /* only infer once */
 
         case la_rec_fix:
-            /* infer no required values */
-            rv.name = empty_list;
-            rv.val = empty_list;
-
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc  = cols;
+            for (unsigned int i = 0; i < n->schema.count; i++)
+                adjust_value (n->schema.items[i].name);
 
             prop_infer_reqvals_empty (L(n)); /* recursion param */
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (R(n), MAP_LIST(n));
             return; /* only infer once */
 
         case la_rec_param:
@@ -1133,53 +976,30 @@ prop_infer_reqvals (PFla_op_t *n,
             return; /* only infer once */
 
         case la_rec_arg:
-            /* infer no required values */
-            rv.name = empty_list;
-            rv.val = empty_list;
+            for (unsigned int i = 0; i < n->schema.count; i++)
+                adjust_value (n->schema.items[i].name);
 
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc  = cols;
-
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (L(n), MAP_LIST(n));
+            prop_infer_reqvals (R(n), MAP_LIST(n));
             return; /* only infer once */
 
         case la_rec_base:
             break;
 
         case la_fun_call:
-            /* infer no required values */
-            rv.name = empty_list;
-            rv.val = empty_list;
+        {
+            PFarray_t *lmap = PFarray (sizeof (req_val_t), 1);
+            adjust_value_ (lmap, n->sem.fun_call.iter);
 
-            /* to make up for the schema change
-               we add the input columns by hand */
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            cols = union_ (empty_list, n->sem.fun_call.iter);
-            vc   = cols;
-
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (L(n), lmap);
             prop_infer_reqvals_empty (R(n)); /* function param */
-            return; /* only infer once */
+        }   return; /* only infer once */
 
         case la_fun_param:
-            /* infer no required values */
-            rv.name = empty_list;
-            rv.val = empty_list;
+            for (unsigned int i = 0; i < n->schema.count; i++)
+                adjust_value (n->schema.items[i].name);
 
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc   = cols;
-
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
+            prop_infer_reqvals (L(n), MAP_LIST(n));
             prop_infer_reqvals_empty (R(n)); /* function param */
             return; /* only infer once */
 
@@ -1189,45 +1009,27 @@ prop_infer_reqvals (PFla_op_t *n,
             return; /* only infer once */
 
         case la_cross_mvd:
-            PFoops (OOPS_FATAL,
-                    "clone column aware cross product operator is "
-                    "only allowed inside mvd optimization!");
-
         case la_eqjoin_unq:
             PFoops (OOPS_FATAL,
-                    "clone column aware equi-join operator is "
-                    "only allowed with unique attribute names!");
+                    "internal optimization operator is not allowed here");
 
         case la_string_join:
-            rv.name = empty_list;
-            rv.val = empty_list;
+        {
+            PFarray_t *lmap = PFarray (sizeof (req_val_t), 3),
+                      *rmap = PFarray (sizeof (req_val_t), 2);
+            adjust_value_ (lmap, n->sem.string_join.iter);
+            adjust_value_ (lmap, n->sem.string_join.pos);
+            adjust_value_ (lmap, n->sem.string_join.item);
+            adjust_value_ (rmap, n->sem.string_join.iter_sep);
+            adjust_value_ (rmap, n->sem.string_join.item_sep);
 
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (union_ (union_ (empty_list,
-                                           n->sem.string_join.iter),
-                                   n->sem.string_join.pos),
-                           n->sem.string_join.item);
-            oc   = empty_list;
-            bc   = empty_list;
-            mc   = empty_list;
-            fc   = empty_list;
-            vc   = cols;
-
-            prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
-
-            /* to make up for the schema change
-               we add the input columns by hand */
-            cols = union_ (union_ (empty_list, n->sem.string_join.iter_sep),
-                           n->sem.string_join.item_sep);
-            vc   = cols;
-
-            prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
-            return; /* only infer once */
+            prop_infer_reqvals (L(n), lmap);
+            prop_infer_reqvals (R(n), rmap);
+        }   return; /* only infer once */
     }
 
-    if (L(n)) prop_infer_reqvals (L(n), rv, cols, oc, bc, mc, fc, vc);
-    if (R(n)) prop_infer_reqvals (R(n), rv, cols, oc, bc, mc, fc, vc);
+    if (L(n)) prop_infer_reqvals (L(n), MAP_LIST(n));
+    if (R(n)) prop_infer_reqvals (R(n), MAP_LIST(n));
 }
 
 /* worker for PFprop_infer_reqval */
@@ -1253,35 +1055,29 @@ prop_infer (PFla_op_t *n)
 
     SEEN(n) = true;
 
-    /* reset required values properties */
-    n->prop->req_bool_vals.name = empty_list;
-    n->prop->req_bool_vals.val  = empty_list;
-    n->prop->req_order_cols     = empty_list;
-    n->prop->req_bijective_cols = empty_list;
-    n->prop->req_multi_col_cols = empty_list;
-    n->prop->req_value_cols     = empty_list;
+    /* reset required values property list
+       (reuse already existing lists if already available
+        as this increases the performance of the compiler a lot) */
+    if (MAP_LIST(n))
+        PFarray_last (MAP_LIST(n)) = 0;
 }
 
 /**
  * Infer required values properties for a DAG rooted in @a root
  */
 void
-PFprop_infer_reqval (PFla_op_t *root) {
-    /* initial empty list of required values */
-    req_bool_val_t init = { .name = empty_list, .val = empty_list };
-
+PFprop_infer_reqval (PFla_op_t *root)
+{
     /* We need the domain property to detect more bijective
        columns (in operators with two children). */
-       PFprop_infer_nat_dom (root);
+    PFprop_infer_nat_dom (root);
 
     /* collect number of incoming edges (parents) */
     prop_infer (root);
     PFla_dag_reset (root);
 
     /* second run infers required values properties */
-    prop_infer_reqvals (root, init, schema2collist(root),
-                        empty_list, empty_list, empty_list,
-                        empty_list, empty_list);
+    prop_infer_reqvals (root, NULL);
     PFla_dag_reset (root);
 }
 

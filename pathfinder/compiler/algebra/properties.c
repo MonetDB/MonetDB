@@ -82,12 +82,7 @@ PFprop (void)
     ret->card = 0;
 
     /* initialize required value lists */
-    ret->req_bool_vals.name = empty_list;
-    ret->req_bool_vals.val  = empty_list;
-    ret->req_order_cols     = empty_list;
-    ret->req_bijective_cols = empty_list;
-    ret->req_multi_col_cols = empty_list;
-    ret->req_value_cols     = empty_list;
+    ret->reqvals = NULL;
 
     /* initialize required node value lists */
     ret->req_node_vals      = NULL;
