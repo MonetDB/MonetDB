@@ -46,6 +46,9 @@
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
+/** mnemonic algebra constructors */
+#include "logical_mnemonic.h"
+
 /* worker for PFalgopt_reqval */
 static void
 opt_reqvals (PFla_op_t *p)
@@ -130,7 +133,14 @@ opt_reqvals (PFla_op_t *p)
        does not harm it.  */
     if (p->kind == la_rowrank &&
         !PFprop_req_value_col (p->prop, p->sem.sort.res))
-        *p = *PFla_rank (L(p), p->sem.sort.res, p->sem.sort.sortby);
+        *p = *rank (L(p), p->sem.sort.res, p->sem.sort.sortby);
+    
+    /* Replace rownumber operators without partitioning criterion
+       that are used for sorting only by rank operators. */
+    if (p->kind == la_rownum &&
+        !p->sem.sort.part &&
+        PFprop_req_order_col (p->prop, p->sem.sort.res))
+        *p = *rank (L(p), p->sem.sort.res, p->sem.sort.sortby);
     
     /* if the resulting value of fn:number is only used in a predicate
        we can use the lax variant that ignores NaN values */
