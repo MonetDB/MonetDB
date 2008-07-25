@@ -281,6 +281,8 @@ enum PFmil_kind_t {
     , m_declare      /**< declare variable */
     , m_nop          /**< `no operation', do nothing.
                           (This may be produced during compilation.) */
+    , m_use          /**< `no operation', do nothing but consume
+                           an argument and mark it as used */
     , m_arg          /**< helper node to list arguments for variable length
                           argument functions (e.g., merged_union) */
 
@@ -495,6 +497,10 @@ PFmil_t * PFmil_type (PFmil_type_t);
 
 /** MIL `no operation' (statement that does nothing) */
 PFmil_t * PFmil_nop (void);
+
+/** MIL `use' (statement consumes an expression and
+    tells the optimizer that all variable references are needed) */
+PFmil_t * PFmil_use (const PFmil_t *);
 
 /** MIL keyword `nil' */
 PFmil_t * PFmil_nil (void);

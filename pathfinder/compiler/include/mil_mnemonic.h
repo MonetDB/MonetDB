@@ -60,6 +60,9 @@
 /** `no operation' */
 #define nop() PFmil_nop ()
 
+/** `use operation' */
+#define use(e) PFmil_use (e)
+
 /** `nil' */
 #define nil() PFmil_nil ()
 

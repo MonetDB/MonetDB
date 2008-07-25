@@ -12,6 +12,7 @@
                  | 'while (' Expr ') {' stmts '}'           <m_while>
                  | 'break'                                  <m_break>
                  | <nothing>                                <m_nop>
+                 | <nothing> ( expression )                 <m_use>
                  | '#' c                                    <m_comment>
                  | statement ';'                            <otherwise>
 
@@ -466,6 +467,9 @@ print_statements (PFmil_t *n)
             milprintf ("# ");
             /* FIXME: What if c contains \n's? */
             milprintf ("%s\n", n->sem.s);
+            break;
+
+        case m_use:
             break;
 
         /* statements : statement ';' */

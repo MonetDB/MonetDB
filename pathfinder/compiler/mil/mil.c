@@ -410,6 +410,17 @@ PFmil_nop (void)
 }
 
 /**
+ * MIL `use'. Consumes an expression and tells the optimizer
+ * that all variable references are needed, nothing is printed
+ * in milprint.c
+ */
+PFmil_t *
+PFmil_use (const PFmil_t *e)
+{
+    return wire1 (m_use, e);
+}
+
+/**
  * MIL keyword `nil'.
  */
 PFmil_t *

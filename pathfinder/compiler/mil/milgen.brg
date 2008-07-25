@@ -2855,6 +2855,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 /* execute update_tape */
                 execute (
+                    use (var (PF_MIL_VAR_XRPC_QID)),
                     update_tape (
                         arg (var (PF_MIL_VAR_WS),
                             arg (var (upd_kind->name),
