@@ -33,7 +33,9 @@
 #endif
 
 /* Visual Studio 8 has deprecated lots of stuff: suppress warnings */
+#ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE 1
+#endif
 
 #if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 /* In this case, malloc and friends are redefined in crtdbg.h to debug

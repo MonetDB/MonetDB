@@ -17,7 +17,9 @@
  */
 
 /* Visual Studio 8 has deprecated lots of stuff: suppress warnings */
+#ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE 1
+#endif
 
 #include "clients_config.h"
 #include <windows.h>
