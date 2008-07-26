@@ -714,9 +714,10 @@ static void rdf_datetime_fromString(rdf_datetime *dt, str string)
 #define RDF_POSITIVE_MASK 0x8000000000000000
 static void RDFdoubleToHexString(str ret, double val)
 {
-    unsigned long long l;
+    unsigned long long l, *l_;
     bool firstCharFound = false;
-    l = *((unsigned long long*)(dbl*)&val);
+    l_ = (unsigned long long*)(dbl*)&val;
+    l = *l_;
     if (val == 0)
         return;/* 0 is a special case in Monet/RDF and it has not to be converted to string here */
     if (val<0)
@@ -734,7 +735,7 @@ static void RDFdoubleToHexString(str ret, double val)
 
 static double RDFhexStringToDouble(str string)
 {
-    double ret;
+    double *ret;
     unsigned long long l, ispos;
     l = strtoull(string, NULL, 16);
     ispos = l >> 63; /* sign bit is the first, so shift 63 */
@@ -742,8 +743,8 @@ static double RDFhexStringToDouble(str string)
         l ^= RDF_POSITIVE_MASK;
     else
         l ^= RDF_NEGATIVE_MASK;
-    ret = *((double*)(lng*)&l);
-    return ret;
+    ret = (double*)(lng*)&l;
+    return *ret;
 }
 
 static str RDFisDigitSequence(str string)
