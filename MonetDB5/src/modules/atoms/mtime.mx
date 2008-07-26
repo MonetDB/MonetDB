@@ -3925,7 +3925,6 @@ str MTIME@1_extract_@2_bulk(int *ret, int *bid)
 		 throw(MAL, "bbp.get@1", "Cannot access descriptor");
 	}
 
-
 	bn= BATnew(BAThtype(b),TYPE_@3, BATcount(b));
 
 	bi = bat_iterator(b);
@@ -3935,6 +3934,9 @@ str MTIME@1_extract_@2_bulk(int *ret, int *bid)
 		BUNfastins(bn,BUNhead(bi,p),&v);
 	}
 	BBPkeepref(*ret = bn->batCacheid);
+	bn->H->nonil = b->H->nonil;
+	bn->hsorted = b->hsorted;
+	BATkey(bn, BAThkey(b));
 	bn->tsorted = FALSE;
 	bn->T->nonil = FALSE;
 
