@@ -2164,7 +2164,7 @@ STRfindUnescapedOccurrence(str b, str c, str esc){
 	t= strstr(b,c);
 	while( t){
 		/* check for escaped version */
-		if( t>b && *esc == *(t-1) ) {
+		if (t>b && *esc == *(t-1) ) {
 			t= strstr(t+1,c);
 		} else return t;
 	}
