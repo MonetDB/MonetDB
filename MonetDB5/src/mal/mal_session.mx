@@ -484,7 +484,7 @@ At this stage we should clean out the MAL block
 	c->curprg->def = 0;
 
 	if (c->mode > FINISHING) {
-		if (isAdministrator(c)) {
+		if (isAdministrator(c) && moreClients(0)==0) {
 			if (c->scenario) {
 				exitScenario(c);
 			}
