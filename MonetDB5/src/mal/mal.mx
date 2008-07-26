@@ -271,6 +271,7 @@ mal_export MT_Lock  mal_contextLock;
 
 mal_export int mal_init(void);
 mal_export void mal_exit(void);
+mal_export int moreClients();
 
 /* This should be here, but cannot, as "Client" isn't known, yet ... |-(
  * For now, we move the prototype declaration to src/mal/mal_client.c,
@@ -360,6 +361,29 @@ Upon exit we should attempt to remove all allocated memory explicitly.
 This seemingly superflous action is necessary to simplify analyis of
 memory leakage problems later on.
 @c
+int 
+moreClients(int reruns)
+{
+	int freeclient=0, finishing=0, claimed=0, awaiting=0;
+	Client cntxt = mal_clients;
+
+	freeclient=0; finishing=0; claimed=0; awaiting=0;
+	for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
+		freeclient += (cntxt->mode == FREECLIENT);
+		finishing += (cntxt->mode == FINISHING);
+		claimed += (cntxt->mode == CLAIMED);
+		awaiting += (cntxt->mode == AWAITING);
+		if( cntxt->mode & FINISHING)
+			printf("#Client %d %d\n",(int)(cntxt - mal_clients), cntxt->idx);
+	}
+	if( reruns == 3){
+		stream_printf(mal_clients->fdout,"#MALexit: server forced exit"
+			" %d finishing %d claimed %d waiting\n", 
+				finishing,claimed,awaiting);
+		return 0;
+	}
+	return finishing+claimed+awaiting;
+}
 void mal_exit(void){
  	int t = 0;
 	str err;
@@ -376,29 +400,13 @@ Before continuing we should make sure that all clients
 	}
 #if 0
 {
-	int reruns=0;
-	int freeclient=0, finishing=0, claimed=0, awaiting=0;
-	Client cntxt = mal_clients;
-
+	int reruns=0, goon;
 	do{
-		freeclient=0; finishing=0; claimed=0; awaiting=0;
-		for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
-			freeclient += (cntxt->mode == FREECLIENT);
-			finishing += (cntxt->mode == FINISHING);
-			claimed += (cntxt->mode == CLAIMED);
-			awaiting += (cntxt->mode == AWAITING);
-			if( cntxt->mode & FINISHING)
-				printf("#Client %d %d\n",(int)(cntxt - mal_clients), cntxt->idx);
-		}
-		if( finishing+claimed+awaiting)
+		if ( (goon=moreClients(reruns)) )
 			MT_sleep_ms(1000);
 		if(reruns) 
 			stream_printf(mal_clients->fdout,"#MALexit: clients still active\n");
-	} while (++reruns<3 && finishing+claimed+awaiting );
-	if( reruns == 3)
-		stream_printf(mal_clients->fdout,"#MALexit: server forced exit"
-			" %d finishing %d claimed %d waiting\n", 
-				finishing,claimed,awaiting);
+	} while (++reruns<3 && goon);
 }
 #endif
 @c
