@@ -120,6 +120,11 @@ ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
 @include prelude.mx
 @c
 #include "mal_config.h"
+#ifdef HAVE_STRCASESTR
+#define _GNU_SOURCE
+#endif
+#include <string.h>
+
 #include "mal.h"
 #include "mal_exception.h"
 
@@ -365,6 +370,125 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 	return MAL_SUCCEED;
 }
 
+/* current implementation assumes simple %keyword% [keyw%]* */
+typedef struct RE {
+	char *k;
+	int search;
+	int skip;
+	int len;
+	struct RE *n;
+} RE;
+
+#ifndef HAVE_STRCASESTR
+char *
+strcasestr (char *haystack, char *needle)
+{
+	char *p, *startn = 0, *np = 0;
+
+	for (p = haystack; *p; p++) {
+		if (np) {
+			if (toupper(*p) == toupper(*np)) {
+				if (!*++np)
+					return startn;
+			} else
+				np = 0;
+		} else if (toupper(*p) == toupper(*needle)) {
+			np = needle + 1;
+			startn = p;
+		}
+	}
+
+	return 0;
+}
+#endif
+
+static int 
+re_match(str s, RE *pattern )
+{
+	RE *r;
+
+	for(r = pattern; r; r = r->n) {
+		if (!*s || 
+			(!r->search && strncasecmp(s, r->k, r->len) != 0) ||
+			(r->search && (s = strcasestr(s, r->k)) == NULL))
+			return 0;
+		s += r->len;
+	}
+	return 1;
+}
+
+static RE *
+re_create( char *pat, int nr)
+{
+	char *x = GDKstrdup(pat);
+	RE *r = (RE*)GDKmalloc(sizeof(RE)), *n = r;
+	char *p = x, *q = x;
+
+	r->n = NULL;
+	r->search = 0;
+	r->skip = 0;
+
+	if (*p == '%') {
+		p++; /* skip % */
+		r->search = 1;
+	}
+	q = p;
+	while((q = strchr(p, '%')) != NULL) {
+		*q = 0;
+		n->k = GDKstrdup(p);
+		n->len = strlen(n->k);
+		n->n = NULL;
+		if ((--nr) > 0) {
+			n = n->n = (RE*)GDKmalloc(sizeof(RE));
+			n->search = 1;
+			n->skip = 0;
+		}
+		p = q+1;
+	}
+	GDKfree(x);
+	return r;
+}
+
+static void
+re_destroy( RE *p)
+{
+	while(p) {
+		RE *n = p->n;
+
+		GDKfree(p->k);
+		GDKfree(p);
+		p = n;
+	}
+}
+
+BAT *
+re_uselect(RE *pattern, BAT *strs)
+{
+	BATiter strsi = bat_iterator(strs);
+	BAT *r;
+	BUN p, q;
+
+	if (strs->htype == TYPE_void)
+		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
+	else
+		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
+	
+	BATloop(strs, p, q) {
+		str s = BUNtail(strsi, p);
+
+		if (re_match(s, pattern)) 
+			BUNfastins(r, BUNhead(strsi, p), NULL);
+	}
+	r->H->nonil = strs->H->nonil;
+	r->hsorted = strs->hsorted;
+	BATkey(r, BAThkey(strs));
+	r->T->nonil = FALSE;
+	r->tsorted = FALSE;
+
+	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
+	return r;
+}
+
 str
 pcre_uselect(BAT **res, str pattern, BAT *strs)
 {
@@ -374,6 +498,7 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 	BAT *r;
 	BUN p, q;
 	pcre *re = NULL;
+	pcre_extra *pe = NULL;
 
 	if (strs->htype == TYPE_void)
 		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
@@ -383,13 +508,25 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 		throw(MAL, "pcre_uselect", "pcre compile of pattern (%s) failed at %d with\n'%s'.",
 			pattern, errpos, err_p);
 	}
+	err_p = NULL;
+	pe = pcre_study( re, 0, &err_p);
+	if (err_p) 
+		throw(MAL, "pcre_uselect", "pcre compile of pattern (%s) failed with\n'%s'.", pattern, err_p);
+
 	BATloop(strs, p, q) {
 		str s = BUNtail(strsi, p);
+		int l = (int) strlen(s);
 
-		if (pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(r, BUNhead(strsi, p), NULL, FALSE);
+		if (pcre_exec(re, pe, s, l, 0, 0, NULL, 0) >= 0) {
+			BUNfastins(r, BUNhead(strsi, p), NULL);
 		}
 	}
+	r->H->nonil = strs->H->nonil;
+	r->hsorted = strs->hsorted;
+	BATkey(r, BAThkey(strs));
+	r->T->nonil = FALSE;
+	r->tsorted = FALSE;
+
 	my_pcre_free(re);
 	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
 	*res = r;
@@ -1124,11 +1261,49 @@ BATPCRElike2(bat *ret, int *bid, str *pat)
 	return BATPCRElike(ret, bid, pat, &esc);
 }
 
+static int 
+re_simple(char *pat)
+{
+	int nr = 0;
+	char *s = pat;
+
+//	if (*s++ != '%') 
+//		return 0;
+	if (*s == '%') 
+		s++;
+	while(*s) {
+		if (*s == '_')
+			return 0;
+		if (*s++ == '%')
+			nr++;
+	}
+	if (*(s-1) != '%')
+		return 0;
+	return nr;
+}
+
 str
 PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc)
 {
 	char *ppat = NULL;
-	str r = PCREsql2pcre(&ppat, pat, esc);
+	str r; 
+	int nr;
+
+	/* no escape, try if a simple list of keywords works */
+	if (strlen(*esc) == 0 && (nr = re_simple(*pat)) > 0) { 
+		RE *re = re_create(*pat, nr);
+
+		BAT *bp = BATdescriptor(*b);
+		BAT *res = re_uselect(re, bp);
+			
+		re_destroy(re);
+		*ret = res->batCacheid;
+		BBPkeepref(res->batCacheid);
+		BBPreleaseref(bp->batCacheid);
+		return MAL_SUCCEED;
+	}
+		
+	r = PCREsql2pcre(&ppat, pat, esc);
 
 	if (!r) {
 		if (strcmp(ppat, (char*)str_nil) == 0) {
