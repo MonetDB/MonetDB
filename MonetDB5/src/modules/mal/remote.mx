@@ -344,7 +344,8 @@ static INLINE str RMTinternalget(Mapi mconn, str ident, ValPtr v) {
 		snprintf(qbuf, 511, "io.print(%s);", ident);
 		rethrow("remote.get", tmp, RMTquery(&mhdl, "remote.get", mconn, qbuf));
 
-		b = BATnew(h, t, len);
+		assert(0 < len && len <= (lng)GDK_oid_max);
+		b = BATnew(h, t, (size_t)len);
 
 		/* some checks maybe ... */
 		while (len-- > 0) {

@@ -2662,19 +2662,21 @@ TABshowRow(Tablet * t)
 void
 TABshowRange(Tablet * t, lng first, lng last)
 {
-	lng i;
-	size_t j;
+	size_t i,j;
 	oid k;
 	BATiter pi;
 
+	assert(first <= (lng)GDK_oid_max);
+	assert(last  <= (lng)GDK_oid_max);
+
 	i = BATcount(t->columns[0].c);
-	if (last < 0 || last > i)
-		last = i;
-	if (first <= 0)
+	if (last < 0 || last > (lng) i)
+		last = (lng) i;
+	if (first < 0)
 		first = 0;
 
 	pi = bat_iterator(t->pivot);
-	for (i = first; i < last; i++) {
+	for (i = (size_t) first; i < (size_t) last; i++) {
 		if (t->pivot) {
 			k = *(oid *) BUNtail(pi, i);
 		} else
