@@ -124,7 +124,6 @@ mal_export void RECYCLEversion(Client cntxt, MalBlkPtr mb);
 mal_export void RECYCLEinit();
 mal_export int RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEexit(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export void RECYCLEexitImpl(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEshutdown(void);
 mal_export int RECYCLEinterest(MalBlkPtr mb,InstrPtr p);
@@ -141,6 +140,7 @@ MT_Lock recycleLock ;
 int recycleVersion = 1;  /* version of recycle table */
 MalBlkPtr recycleBlk = NULL;
 
+static void RECYCLEexitImpl(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 @-
 The retention policies currently implemented are:
 RETAIN_ALL, where all results are in retained until
@@ -951,7 +951,9 @@ We execute it in place and safe the result upon need.
 		s->keepAlive= TRUE;
 		k= p->recycle;
 		p->recycle= 0;
+		mal_unset_lock(recycleLock,"recycle");
 		(void) reenterMAL(cntxt,mb,i,i+1,s,0,0);
+		mal_set_lock(recycleLock,"recycle");
 		p->recycle= k;
 		RECYCLEexitImpl(cntxt, mb, s, p);
 		/* restore the situation */

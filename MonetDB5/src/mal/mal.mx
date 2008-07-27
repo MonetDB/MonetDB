@@ -271,7 +271,7 @@ mal_export MT_Lock  mal_contextLock;
 
 mal_export int mal_init(void);
 mal_export void mal_exit(void);
-mal_export int moreClients();
+mal_export int moreClients(int reruns);
 
 /* This should be here, but cannot, as "Client" isn't known, yet ... |-(
  * For now, we move the prototype declaration to src/mal/mal_client.c,
