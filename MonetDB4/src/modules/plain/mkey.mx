@@ -354,7 +354,9 @@ CMDhash_str(int *res, str val)
 {
 /* 64bit: if CMDhash continues to return int, then this should
  * probably be changed to not throw away the top bits of the result */
-	*res = strHash(val);
+	hash_t h = strHash(val);
+	assert(h < GDK_int_max);
+	*res = (int) h;
 	return GDK_SUCCEED;
 }
 
