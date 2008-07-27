@@ -350,6 +350,7 @@ int mal_init(){
 	memset((char*)mal_clients, 0, sizeof(ClientRec)*MAL_MAXCLIENTS);
 	initNamespace();
 	initParser();
+	RECYCLEinit();
 	if( malBootstrap() == 0) {
 		showErrors(MCgetClient());
 		return -1;

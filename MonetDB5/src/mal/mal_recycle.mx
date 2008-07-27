@@ -121,8 +121,10 @@ mal_export int monitorRecycler;
 mal_export int recycleRecent;
 
 mal_export void RECYCLEversion(Client cntxt, MalBlkPtr mb);
+mal_export void RECYCLEinit();
 mal_export int RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEexit(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export void RECYCLEexitImpl(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEshutdown(void);
 mal_export int RECYCLEinterest(MalBlkPtr mb,InstrPtr p);
@@ -232,27 +234,23 @@ static void RECYCLEspace()
 {
 	if (recycleBlk == NULL) {
 		/* parallel threads ? */
-/*		mal_set_lock(recycleLock,"recycle");*/
 		if (recycleBlk == NULL) {
 			recycleBlk = newMalBlk(MAXVARS, STMT_INCREMENT);
 			recycleBlk->profiler = (ProfPtr) GDKzalloc(
 				recycleBlk->ssize*sizeof(ProfRecord));
 		}
-/*		mal_unset_lock(recycleLock,"recycle");*/
 	}
+}
+
+void RECYCLEinit(){
+	MT_init_lock(recycleLock,"recycleLock");
 }
 
 void RECYCLEversion(Client cntxt, MalBlkPtr mb)
 {
-	static int recycleLockInitialized = 0;
 	int i;
 
-	if (!recycleLockInitialized) {
-		MT_init_lock(recycleLock,"recycleLock");
-		recycleLockInitialized = 1;
-	}
 	if ( mb->version && mb->version != recycleVersion) { 
-		mal_set_lock(recycleLock,"recycle");
 		/* all re-used instructions are dropped */
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(cntxt->fdout,"RECYCLE get version %d\n", recycleVersion);
@@ -262,7 +260,6 @@ void RECYCLEversion(Client cntxt, MalBlkPtr mb)
 		for(i=1; i<mb->stop; i++)
 			if (getInstrPtr(mb,i)->recycle)
 				getInstrPtr(mb,i)->recycle = -1;
-		mal_unset_lock(recycleLock,"recycle");
 	}	
 	mb->version = recycleVersion;
 }
@@ -416,7 +413,6 @@ RECYCLEcache(int target, int wr)
 #ifdef _DEBUG_RECYCLE_
 		stream_printf(cntxt->fdout,"RECYCLE cache, remove %d \n",victim);
 #endif
-/*		mal_set_lock(recycleLock,"recycle");*/
 		recyclerUsedMemory -= recycleBlk->profiler[victim].obytes;
 		RECYCLEremove(victim);
 		if (monitorRecycler == 1)
@@ -428,7 +424,6 @@ RECYCLEcache(int target, int wr)
 	stream_printf(cntxt->fdout,"RECYCLE new version %d\n", recycleVersion);
 #endif
 		recycleVersion++;
-/*		mal_unset_lock(recycleLock,"recycle");*/
 	}
 }
 
@@ -642,7 +637,6 @@ newpass:
 	for (v = 0; v < vtop; v++)
 		dmask[vm[v]] = 1;
 
-/*	mal_set_lock(recycleLock,"recycle");*/
 	old = recycleBlk->stmt;
 	limit = recycleBlk->stop;
 	newMalBlkStmt(recycleBlk,recycleBlk->ssize);
@@ -665,7 +659,6 @@ newpass:
 	/* remove all un-used variables as well */
 	trimMalVariables(recycleBlk);
 	recycleVersion++;
-/*	mal_unset_lock(recycleLock,"recycle");*/
 	if (cont) goto newpass;
 }
 
@@ -960,7 +953,7 @@ We execute it in place and safe the result upon need.
 		p->recycle= 0;
 		(void) reenterMAL(cntxt,mb,i,i+1,s,0,0);
 		p->recycle= k;
-		RECYCLEexit(cntxt, mb, s, p);
+		RECYCLEexitImpl(cntxt, mb, s, p);
 		/* restore the situation */
 		s->keepAlive= j;
 		s->stk[getArg(p,1)].val.bval = nbid;
@@ -983,9 +976,9 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	stk->clk= GDKusec();
 	if (recycleVersion == 0 || recycleBlk == NULL )
 		return 0;
+	mal_set_lock(recycleLock,"recycle");
 	RECYCLEversion(cntxt,mb);
 
-	mal_set_lock(recycleLock,"recycle");
 	if (RECYCLEcall(stk,p)) {
 		recycled++;
 		q= getInstrPtr(recycleBlk, p->recycle);
@@ -1026,7 +1019,7 @@ It can use the timing information gathered from the previous call,
 which is stored in the stack frame to avoid concurrency problems.
 @c
 void
-RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng clk = 0;
 	lng memLimit, cacheLimit;
 	lng rd = getVolume(stk,p, 1)/ RU +1;
@@ -1045,7 +1038,6 @@ RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	if (wr > memLimit)
 		return;
-	mal_set_lock(recycleLock,"recycle");
 	if (recycleBlk)
 		if ( recyclerUsedMemory + wr > memLimit ||
 	    		recycleBlk->stop >= cacheLimit ){
@@ -1103,6 +1095,12 @@ RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			RECYCLEnew(mb, stk, p, rd, wr);
 		}
 	}
+}
+
+void
+RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	mal_set_lock(recycleLock,"recycle");
+	RECYCLEexitImpl(cntxt,mb,stk,p);
 	mal_unset_lock(recycleLock,"recycle");
 }
 
@@ -1158,7 +1156,6 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 
 	dropped = (int *) alloca(sizeof(int)*recycleBlk->vtop);
 	memset(dropped, 0, sizeof(int)*recycleBlk->vtop);
-/*	mal_set_lock(recycleLock,"recycle");*/
 
 	for( i=0; i<btop; i++)
 		dropped[top++] = bats[i];
@@ -1199,7 +1196,6 @@ we only have to make one step back in the look.
 		recycleVersion++; /* warn other threads */
 		trimMalVariables(recycleBlk);
 	}
-/*	mal_unset_lock(recycleLock,"recycle");*/
 }
 
 @-
@@ -1223,7 +1219,6 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		return;
 	b = (int *)alloca(sizeof(int)*recycleBlk->stop);
 
-/*	mal_set_lock(recycleLock,"recycle");*/
 	if (p->argc == 2){
 		if(getArgType(mb,p,1)==TYPE_bat || 
 			isaBatType(getArgType(mb, p,1)) ){
@@ -1247,7 +1242,6 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 		}
 	}
-/*	mal_unset_lock(recycleLock,"recycle");*/
 	if (btop)
 		RECYCLEevict(cntxt,b,btop);
 
