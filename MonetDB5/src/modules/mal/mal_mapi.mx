@@ -746,7 +746,7 @@ errno == WSAEADDRINUSE &&
 
 	/* seed the randomiser such that our challenges aren't
 	 * predictable... */
-	srand(time(NULL));
+	srand((int)time(NULL));
 
 	SERVERannounce(server.sin_addr, port, 0);
 	return MAL_SUCCEED;
