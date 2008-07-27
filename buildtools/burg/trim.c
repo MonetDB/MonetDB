@@ -14,6 +14,26 @@ static void siblings ARGS((int, int));
 static void findAllNexts ARGS((void));
 static Relation *newAllPairs ARGS((void));
 
+/* define printf format for printing pointer values */
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
+#define PTRFMT		"%p"
+#define PTRFMTCAST		/* no cast needed */
+#elif SIZEOF_VOID_P == SIZEOF_INT
+#define PTRFMT		"%x"
+#define PTRFMTCAST	(unsigned int)
+#elif SIZEOF_VOID_P == SIZEOF_LONG
+#define PTRFMT		"%lx"
+#define PTRFMTCAST	(unsigned long)
+#elif SIZEOF_VOID_P == SIZEOF_LONG_LONG
+#define PTRFMT		"%llx"
+#define PTRFMTCAST	(unsigned long long)
+#elif SIZEOF_VOID_P == SIZEOF___INT64
+#define PTRFMT		"%I64x"
+#define PTRFMTCAST	(unsigned __int64)
+#else
+#error no definition for PTRFMT
+#endif
+
 static void
 siblings(i, j) int i; int j;
 {
@@ -395,7 +415,7 @@ trim(t) Item_Set t;
 void
 dumpRelation(r) Relation r;
 {
-	printf("{ %d %ld %d %ld }", r->rule->erulenum, (long) r->chain, r->sibFlag, (long) r->sibling);
+	printf("{ %d " PTRFMT " %d " PTRFMT " }", r->rule->erulenum, PTRFMTCAST r->chain, r->sibFlag, PTRFMTCAST r->sibling);
 }
 
 void

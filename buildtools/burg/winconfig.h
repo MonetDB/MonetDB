@@ -87,8 +87,44 @@
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "1.0"
 
+/* Define to 1 if the system has the type `long long'. */
+#if defined(__ICL) && __ICL >= 1010
+#define HAVE_LONG_LONG 1
+#else
+#if _MSC_VER >= 1300
+/* Visual Studio .NET 2003 does have long long, but the printf %lld
+ * format is interpreted the same as %ld, i.e. useless
+ */
+/* #define HAVE_LONG_LONG 1 */
+#else
+/* #undef HAVE_LONG_LONG */
+#endif
+#endif
+
+/* Define to 1 if the system has the type `__int64'. */
+#define HAVE___INT64 1
+
+#ifdef _WIN64
+/* The size of a `void *', as computed by sizeof. */
+#define SIZEOF_VOID_P 8
+#else
 /* The size of `void *', as computed by sizeof. */
 #define SIZEOF_VOID_P 4
+#endif
+
+/* The size of a `int', as computed by sizeof. */
+#define SIZEOF_INT 4
+
+/* The size of a `long', as computed by sizeof. */
+#define SIZEOF_LONG 4
+
+#ifdef HAVE_LONG_LONG
+/* The size of a `long long', as computed by sizeof. */
+#define SIZEOF_LONG_LONG 8
+#endif
+
+/* The size of a `__int64', as computed by sizeof. */
+#define SIZEOF___INT64 8
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1

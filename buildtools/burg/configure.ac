@@ -45,7 +45,13 @@ AC_CHECK_HEADERS([stdbool.h stdlib.h string.h])
 AC_HEADER_STDBOOL
 AC_C_CONST
 AC_TYPE_SIZE_T
+AC_CHECK_TYPES(long long)
+AC_CHECK_TYPES(__int64)
 AC_CHECK_SIZEOF(void *)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(__int64)
 
 # Checks for library functions.
 AC_FUNC_MALLOC
