@@ -214,7 +214,7 @@ CHPbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*cursor = BUNfirst(b);
 
 	/* get head = ... tail = ... */
-	assert(0 < *cursor && *cursor <= (lng)GDK_oid_max);
+	assert(0 <= *cursor && *cursor <= (lng)GDK_oid_max);
 	yy = (BUN)*cursor;
  	bi = bat_iterator(b);
 	if( b->htype == TYPE_void){
@@ -251,7 +251,7 @@ CHPbunHasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	/* get head = ... tail = ... */
-	assert(0 < *cursor && *cursor < (lng)GDK_oid_max);
+	assert(0 <= *cursor && *cursor < (lng)GDK_oid_max);
 	yy = (BUN)*cursor + 1;
 	*cursor = yy;
 
