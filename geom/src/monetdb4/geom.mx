@@ -285,11 +285,11 @@ mbrTOSTR(
 			atom->xmax, atom->ymax
 		);
 		dstStrLen = strlen(tempWkt);
+		assert(dstStrLen < GDK_int_max);
 	}
 	
 	if (*len < (int) dstStrLen + 1) { 
 		if (*dst) GDKfree(*dst);
-		assert(dstStrLen < GDK_int_max);
 		*dst = GDKmalloc(*len = (int) dstStrLen + 1);
 	}
 	
@@ -297,7 +297,6 @@ mbrTOSTR(
 		strcpy(*dst, tempWkt);
 	else
 		strcpy(*dst, "nil");
-	assert(dstStrLen < GDK_int_max);
 	return (int) dstStrLen;
 }
 
@@ -454,6 +453,8 @@ wkbFROMSTR(
 		wkb = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
 		GEOSGeom_destroy(geosGeometry);
 	}
+	assert(wkbLen <= GDK_int_max);
+	assert(wkb_size(wkbLen) <= GDK_int_max);
 	if (*len < (int)wkb_size(wkbLen)) {
 		if (*atom) GDKfree(*atom);
 		*atom = GDKmalloc(*len = (int)wkb_size(wkbLen));
@@ -461,13 +462,12 @@ wkbFROMSTR(
 	if (!wkb) {
 		**atom = *wkbNULL();
 	} else {
-		assert(wkbLen < GDK_int_max);
 		(*atom)->len = (int) wkbLen;
 		memcpy(&(*atom)->data, wkb, wkbLen);
 		free(wkb);
 	}
 	wkbLen = strlen(src);
-	assert(wkbLen < GDK_int_max);
+	assert(wkbLen <= GDK_int_max);
 	return (int) wkbLen;
 }
 
@@ -570,7 +570,7 @@ int
 wkbLENGTH(wkb *p)
 {
 	size_t len = wkb_size(p->len);
-	assert(len < GDK_int_max);
+	assert(len <= GDK_int_max);
 	return (int) len;
 }
 
@@ -635,7 +635,7 @@ geos2wkb( GEOSGeom geosGeometry )
 	if (!w) {
 		*atom = *wkbNULL();
 	} else {
-		assert(wkbLen < GDK_int_max);
+		assert(wkbLen <= GDK_int_max);
 		atom->len = (int) wkbLen;
 		memcpy(&atom->data, w, wkbLen);
 		free(w);
