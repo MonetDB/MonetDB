@@ -784,7 +784,9 @@ CMDbbpNames(int *ret)
 str
 CMDbbpDiskSpace(int *ret)
 {
-	*ret= getDiskSpace();
+	lng s = getDiskSpace();
+	assert(GDK_int_min <= s && s <= GDK_int_max);
+	*ret= (int) s;
 	return MAL_SUCCEED;
 }
 
