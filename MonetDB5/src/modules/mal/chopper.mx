@@ -192,7 +192,7 @@ CHPbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	lng *cursor;
 	int *bid;
-	lng yy;
+	BUN yy;
 	ValPtr head, tail;
 	oid o;
 
@@ -214,7 +214,8 @@ CHPbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*cursor = BUNfirst(b);
 
 	/* get head = ... tail = ... */
-	yy = *cursor;
+	assert(0 < *cursor && *cursor <= (lng)GDK_oid_max);
+	yy = (BUN)*cursor;
  	bi = bat_iterator(b);
 	if( b->htype == TYPE_void){
 		o= b->hseqbase;
@@ -250,7 +251,8 @@ CHPbunHasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	/* get head = ... tail = ... */
-	yy = *cursor + 1;
+	assert(0 < *cursor && *cursor < (lng)GDK_oid_max);
+	yy = (BUN)*cursor + 1;
 	*cursor = yy;
 
 	if (yy >= BUNlast(b)) {
@@ -306,11 +308,11 @@ CHPgetHead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* get head = ... */
 	if( getArgType(mb,pci,3) == TYPE_void){
-		o = *cursor +  b->hseqbase;
+		o = (oid)*cursor +  b->hseqbase;
 		VALinit(head, TYPE_oid, &o);
 	} else {
  		BATiter bi = bat_iterator(b);
-		VALinit(head, getArgType(mb, pci, 3), BUNhead(bi, *cursor));
+		VALinit(head, getArgType(mb, pci, 3), BUNhead(bi, (BUN)*cursor));
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -342,7 +344,7 @@ CHPgetTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* get tail = ... */
 	bi = bat_iterator(b);
-	VALinit(tail, getArgType(mb, pci, 3), BUNtail(bi, *cursor));
+	VALinit(tail, getArgType(mb, pci, 3), BUNtail(bi, (BUN)*cursor));
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

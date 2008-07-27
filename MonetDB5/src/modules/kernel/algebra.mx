@@ -1838,6 +1838,7 @@ fetch(ptr ret, BAT *b, lng i)
 		return GDK_FAIL;
 	}
 	i += BUNfirst(b);
+	assert(i <= (lng)GDK_oid_max);
 	@:putTail((BUN)i)@
 @= putTail
 	if (b->ttype && b->theap) {
@@ -3427,15 +3428,16 @@ doALGfetch(ptr ret, BAT *b, lng *pos)
 		throw(MAL, "algebra.fetch", " idx out of range\n");
 	i += BUNfirst(b);
 	
+	assert(i <= (lng)GDK_oid_max);
 	if( b->ttype== TYPE_bat){
 		res= (int*) ret;
 		ret= &bn;
-		@:putTail(i)@
+		@:putTail((BUN)i)@
 		if( bn)
 			BBPkeepref(*res = bn->batCacheid);
 		else *res = 0;
 	} else {
-		@:putTail(i)@
+		@:putTail((BUN)i)@
 	}
 	return MAL_SUCCEED;
 }
