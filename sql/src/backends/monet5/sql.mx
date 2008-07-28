@@ -876,6 +876,7 @@ First introduce the routines to be called by the front-end.
 #include <store_sequence.h>
 #include <sql_datetime.h>
 #include <rel_optimizer.h>
+#include <rel_dump.h>
 #include <rel_bin.h>
 #include <math.h>
 
@@ -937,8 +938,12 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 			}
 		} else {
 			r = rel_optimizer(c, r);
+			if (c->emode == m_plan) {
+				c->emode = m_inplace;
+				rel_print(c, r, 0);
+			}
 			s = rel_bin(c, r);
-			if (s){
+			if (s) {
 				stmt *opt;
 
 				/* only needed for delta tables */

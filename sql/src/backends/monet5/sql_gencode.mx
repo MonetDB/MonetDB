@@ -1995,15 +1995,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			setVarUDFtype(curBlk,varid);
 		}
 	}
-	/* keep the query for tracing and inspection */
-/* not yet used
-	profile = sql_get_var(be->mvc,"profile");
-	if(profile  && strcmp(profile ,"true")==0){
-		q= newStmt(curBlk,sqlRef,putName("startQuery",10));
-		pushStr(curBlk,q, msg=sql_escape_str(QUERY(m->scanner)));
-		GDKfree(msg);
-	}
-*/
 
 	backend_dumpstmt(be, curBlk, s);
 	pushEndInstruction(curBlk);
@@ -2014,12 +2005,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		be->mvc->Toptimize = GDKusec()- be->mvc->Toptimize;
 	}
 	
-/* not yet used
-	if(profile  && strcmp(profile ,"true")==0){
-		newStmt(curBlk,sqlRef,putName("exitQuery",9));
-	}
-*/
-
 	curPrg = c->curprg;
 	if (backup) 
 		c->curprg = backup;
