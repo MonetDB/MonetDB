@@ -137,6 +137,35 @@ opt_join_graph (PFla_op_t *p)
                 *p = *PFla_project_ (L(p), p->schema.count, proj_list);
                 break;
             }
+            /* Get rid of a rowid operator that is only used to maintain
+               the correct cardinality. In case other columns provide
+               a compound key we replace the rowid operator by a rank
+               operator consuming the compound key. */
+            else if (PFprop_req_unique_col (p->prop, p->sem.rowid.res)) {
+                PFalg_attlist_t attlist;
+                unsigned int    count = PFprop_ckeys_count (p->prop),
+                                i,
+                                j;
+                for (i = 0; i < count; i++) {
+                    attlist = PFprop_ckey_at (p->prop, i);
+                    /* make sure the result is not part of the compound key
+                       and all columns of the new key are already used
+                       elsewhere. */
+                    for (j = 0; j < attlist.count; j++)
+                        if (attlist.atts[j] == p->sem.rowid.res ||
+                            !PFprop_icol (p->prop, attlist.atts[j]))
+                            break;
+                    if (j == attlist.count) {
+                        PFord_ordering_t sortby = PFordering ();
+                        for (j = 0; j < attlist.count; j++)
+                            sortby = PFord_refine (sortby,
+                                                   attlist.atts[j],
+                                                   DIR_ASC);
+                        *p = *PFla_rank (L(p), p->sem.rowid.res, sortby);
+                        break;
+                    }
+                }
+            }
         }   break;
 
         /* Replace all step operators by step_join operators
@@ -434,6 +463,7 @@ PFalgopt_join_graph (PFla_op_t *root, PFguide_list_t *guide_list)
 
     /* Infer key, icols, set, and composite key
        properties first */
+    PFprop_infer_reqval (root);
     PFprop_infer_composite_key (root);
     PFprop_infer_icol (root);
     PFprop_infer_set (root);
