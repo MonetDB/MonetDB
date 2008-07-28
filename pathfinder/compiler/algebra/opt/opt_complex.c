@@ -1385,12 +1385,25 @@ opt_complex (PFla_op_t *p)
                 if (L(fcns)->kind == la_content &&
                     /* Make sure that all iterations of the parent
                        are present (no subdomain relationship). */
-                    PFprop_subdom (
-                        p->prop,
-                        PFprop_dom (p->prop,
-                                    p->sem.iter_item.iter),
-                        PFprop_dom (L(fcns)->prop,
-                                    L(fcns)->sem.iter_pos_item.iter)) &&
+                    (PFprop_subdom (
+                         p->prop,
+                         PFprop_dom (p->prop,
+                                     p->sem.iter_item.iter),
+                         PFprop_dom (L(fcns)->prop,
+                                     L(fcns)->sem.iter_pos_item.iter)) ||
+                     (PFprop_card (p->prop) == 1 &&
+                      PFprop_card (L(fcns)->prop) == 1 &&
+                      PFprop_const (p->prop, p->sem.iter_item.iter) &&
+                      PFprop_const (L(fcns)->prop,
+                                    L(fcns)->sem.iter_pos_item.iter) &&
+                      PFalg_atom_comparable (
+                          PFprop_const_val (p->prop, p->sem.iter_item.iter),
+                          PFprop_const_val (L(fcns)->prop,
+                                            L(fcns)->sem.iter_pos_item.iter)) &&
+                      !PFalg_atom_cmp (
+                          PFprop_const_val (p->prop, p->sem.iter_item.iter),
+                          PFprop_const_val (L(fcns)->prop,
+                                            L(fcns)->sem.iter_pos_item.iter)))) &&
                     LR(fcns)->kind == la_attach &&
                     LRL(fcns)->kind == la_roots &&
                     LRLL(fcns)->kind == la_twig &&
@@ -1455,6 +1468,15 @@ opt_complex (PFla_op_t *p)
                 RL(p)->kind == la_merge_adjacent &&
                 PFprop_key_right (RL(p)->prop,
                                   RL(p)->sem.merge_adjacent.iter_in))
+                *p = *PFla_dummy (L(p));
+            /* remove unreferenced twig constructors */
+            else if (L(p)->kind == la_fragment &&
+                     LL(p)->kind == la_twig &&
+                     PFprop_refctr (LL(p)) == 1)
+                *p = *PFla_dummy (R(p));
+            else if (R(p)->kind == la_fragment &&
+                     RL(p)->kind == la_twig &&
+                     PFprop_refctr (RL(p)) == 1)
                 *p = *PFla_dummy (L(p));
             break;
 
