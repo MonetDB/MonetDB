@@ -170,6 +170,10 @@ void PFprop_infer (bool card, bool const_, bool set,
  * Reset the property of an operator.
  */
 void PFprop_reset (PFla_op_t *root, void (*reset_fun) (PFla_op_t *));
+/**
+ * Make the reset function also usable for other contexts.
+ */
+#define PFla_map_fun(r,f) PFprop_reset ((r),(f))
 
 /**
  * Create new property fields for a DAG rooted in @a root

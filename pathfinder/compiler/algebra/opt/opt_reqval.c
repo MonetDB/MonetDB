@@ -37,6 +37,7 @@
 #include "pathfinder.h"
 #include <assert.h>
 #include <stdio.h>
+#include "logdebug.h"
 
 #include "algopt.h"
 #include "properties.h"
@@ -48,6 +49,36 @@
 
 /** mnemonic algebra constructors */
 #include "logical_mnemonic.h"
+
+/**
+ * Worker for map_fun creating copies for project, not, attach,
+ * and union operators.
+ */
+static PFla_op_t *
+plan_copy (PFla_op_t *p)
+{
+    if (p->kind == la_project ||
+        p->kind == la_bool_not ||
+        p->kind == la_attach)
+        return duplicate (p, plan_copy (L(p)), NULL);
+    else if (p->kind == la_disjunion)
+        return duplicate (p, plan_copy (L(p)), plan_copy (R(p)));
+    else return p;
+}
+
+/**
+ * Copy parts of the subtree of a select operator
+ * to split up references in an if-then-else setting.
+ *
+ * In case the plan splitting is of no use in opt_reqvals() the
+ * following CSE phase will merge splitted nodes again.
+ */
+static void
+map_fun (PFla_op_t *p)
+{
+    if (p->kind == la_select)
+        L(p) = plan_copy (L(p));
+}
 
 /* worker for PFalgopt_reqval */
 static void
@@ -87,45 +118,6 @@ opt_reqvals (PFla_op_t *p)
 
     }
 
-    /* if we look for exactly one required value and
-       a child of the current operator is a union operator
-       that produces two different constant values in
-       the required value column in its children then
-       we can directly link to the operator that produces
-       the required value. */
-    if (count == 1) {
-        if (p->kind == la_project)
-            for (unsigned int i = 0; i < p->sem.proj.count; i++)
-                if (att == p->sem.proj.items[i].new) {
-                    att = p->sem.proj.items[i].old;
-                    break;
-                }
-
-        if (L(p) && L(p)->kind == la_disjunion &&
-            PFprop_req_bool_val (L(p)->prop, att) &&
-            PFprop_const (LL(p)->prop, att) &&
-            PFprop_const (LR(p)->prop, att) &&
-            (PFprop_const_val (LL(p)->prop, att)).val.bln !=
-            (PFprop_const_val (LR(p)->prop, att)).val.bln) {
-            if ((PFprop_const_val (LL(p)->prop, att)).val.bln == val)
-                L(p) = LL(p);
-            else
-                L(p) = LR(p);
-        }
-
-        if (R(p) && R(p)->kind == la_disjunion &&
-            PFprop_req_bool_val (R(p)->prop, att) &&
-            PFprop_const (RL(p)->prop, att) &&
-            PFprop_const (RR(p)->prop, att) &&
-            (PFprop_const_val (RL(p)->prop, att)).val.bln !=
-            (PFprop_const_val (RR(p)->prop, att)).val.bln) {
-            if ((PFprop_const_val (RL(p)->prop, att)).val.bln == val)
-                R(p) = RL(p);
-            else
-                R(p) = RR(p);
-        }
-    }
-
     /* Replace rowrank operators whose real values
        are not needed by rank operators.
        Note that we do not need to check for the order
@@ -139,8 +131,12 @@ opt_reqvals (PFla_op_t *p)
        that are used for sorting only by rank operators. */
     if (p->kind == la_rownum &&
         !p->sem.sort.part &&
-        PFprop_req_order_col (p->prop, p->sem.sort.res))
-        *p = *rank (L(p), p->sem.sort.res, p->sem.sort.sortby);
+        PFprop_req_order_col (p->prop, p->sem.sort.res)) {
+        if (PFord_count (p->sem.sort.sortby) > 0)
+            *p = *rank (L(p), p->sem.sort.res, p->sem.sort.sortby);
+        else
+            *p = *rowid (L(p), p->sem.sort.res);
+    }
     
     /* if the resulting value of fn:number is only used in a predicate
        we can use the lax variant that ignores NaN values */
@@ -164,6 +160,10 @@ opt_reqvals (PFla_op_t *p)
 PFla_op_t *
 PFalgopt_reqval (PFla_op_t *root)
 {
+    /* Split up plans where two select operators (then + else setting)
+       reference the same call to fn:boolean (@att:false U @att:true) */
+    PFla_map_fun (root, map_fun);
+
     /* Infer reqval properties first */
     PFprop_infer_reqval (root);
     /* infer constants to simplify required value analysis */
