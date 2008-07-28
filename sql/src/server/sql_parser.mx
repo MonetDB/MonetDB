@@ -674,7 +674,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE 
-%token SQL_EXPLAIN SQL_PROFILE SQL_RECORD SQL_DEBUG SQL_TRACE PREPARE EXECUTE
+%token SQL_EXPLAIN SQL_PLAN SQL_PROFILE SQL_RECORD SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
 %token PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -717,6 +717,14 @@ sqlstmt:
 			  m->scanner.key = 0;
 			}
    sql SCOLON 		{ mvc *m = (mvc*)parm;
+		  	  m->sym = $$ = $3; YYACCEPT; 
+			}
+ | SQL_PLAN 		{ mvc *m = (mvc*)parm;
+		  	  m->emode = m_plan;
+			  m->scanner.as = m->scanner.yycur; 
+			  m->scanner.key = 0;
+			}
+	sql SCOLON 	{ mvc *m = (mvc*)parm;
 		  	  m->sym = $$ = $3; YYACCEPT; 
 			}
  | SQL_EXPLAIN 		{ mvc *m = (mvc*)parm;

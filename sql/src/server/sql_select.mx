@@ -363,7 +363,13 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 		char *cname = l->h->next->data.sval;
 
 		if (!(cs = scope_bind(scp, tname, cname))) {
-			return sql_error(sql, 02, "SELECT: no such column '%s.%s'", tname, cname);
+			tvar *tv = scope_bind_table(scp, tname);
+			if (tv && strcmp(cname, "OID")) {
+				cvar *cv = tv->columns->h->data;
+				cs = stmt_mirror(stmt_dup(cv->s));
+			} else {
+				return sql_error(sql, 02, "SELECT: no such column '%s.%s'", tname, cname);
+			}
 		}
 	} else if (dlist_length(l) >= 3) {
 		return sql_error(sql, 02, "TODO: column names of level >= 3");

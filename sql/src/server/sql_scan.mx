@@ -311,6 +311,7 @@ scanner_init_keywords(void)
 	keywords_insert("LANGUAGE", LANGUAGE);
 
 	keywords_insert("EXPLAIN", SQL_EXPLAIN);
+	keywords_insert("PLAN", SQL_PLAN);
 	keywords_insert("PROFILE", SQL_PROFILE);
 	keywords_insert("RECORD", SQL_RECORD);
 	keywords_insert("DEBUG", SQL_DEBUG);

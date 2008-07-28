@@ -50,6 +50,7 @@
 #define m_prepare 3
 #define m_instantiate 4
 #define m_explain 5 
+#define m_plan 6 
 
 /* different query execution modifiers (emod) */
 #define mod_none 0
@@ -171,6 +172,7 @@ extern sql_schema *mvc_create_schema(mvc *m, char *name, int auth_id, int owner)
 extern size_t mvc_clear_table(mvc *m, sql_table *t);
 extern void mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz);
+extern sql_table *mvc_create_cluster(mvc *c, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz);
 extern sql_table *mvc_create_view(mvc *c, sql_schema *s, char *name, char *sql, bit system);
 extern sql_table *mvc_create_generated(mvc *c, sql_schema *s, char *name, char *sql, bit system);
 
@@ -1131,7 +1133,20 @@ mvc_create_table(mvc *m, sql_schema *s, char *name, bit system, int persistence,
 		/* declared tables should not end up in the catalog */
 		t = create_sql_table(name, tt_table, system, persistence, commit_action);
 	else
-		t = sql_trans_create_table(m->session->tr, s, name, system, persistence, commit_action, sz);
+		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt_table, system, persistence, commit_action, sz);
+	m->type = Q_SCHEMA;
+	return t;
+}
+
+sql_table *
+mvc_create_cluster(mvc *m, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz)
+{
+	sql_table *t = NULL;
+
+	if (mvc_debug)
+		fprintf(stderr, "mvc_create_cluster %s %s %d %d %d\n", s->base.name, name, system, persistence, commit_action);
+
+	t = sql_trans_create_table(m->session->tr, s, name, NULL, tt_cluster, system, persistence, commit_action, sz);
 	m->type = Q_SCHEMA;
 	return t;
 }
@@ -1145,7 +1160,7 @@ mvc_create_view(mvc *m, sql_schema *s, char *name, char *sql, bit system)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_view %s %s %s\n", s->base.name, name, sql);
 
-	t = sql_trans_create_view(m->session->tr, s, name, sql, system);
+	t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0);
 	m->type = Q_SCHEMA;
 	return t;
 }
@@ -1158,7 +1173,7 @@ mvc_create_generated(mvc *m, sql_schema *s, char *name, char *sql, bit system)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_generated %s %s %s\n", s->base.name, name, sql);
 
-	t = sql_trans_create_generated(m->session->tr, s, name, sql, system);
+	t = sql_trans_create_table(m->session->tr, s, name, sql, tt_generated, system, SQL_PERSIST, 0, 0);
 	m->type = Q_SCHEMA;
 	return t;
 }
@@ -1515,7 +1530,7 @@ stack_find_rel_view(mvc *sql, char *name)
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (sql->vars[i].s && sql->vars[i].view &&
 			strcmp(sql->vars[i].name, name)==0)
-			return rel_copy(sql->vars[i].s);
+			return rel_dup(sql->vars[i].s);
 	}
 	return NULL;
 }
