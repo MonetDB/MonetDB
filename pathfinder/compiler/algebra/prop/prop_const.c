@@ -583,6 +583,14 @@ infer_const (PFla_op_t *n)
                                 n->prop,
                                 n->sem.type.res,
                                 PFalg_lit_bln (true));
+                    /* a node type test with only one node kind as input
+                       is correct too */
+                    else if (n->sem.type.ty == aat_node &&
+                             !(~aat_node & n->schema.items[i].type))
+                        PFprop_mark_const (
+                                n->prop,
+                                n->sem.type.res,
+                                PFalg_lit_bln (true));
                     else if (!(n->sem.type.ty & n->schema.items[i].type))
                         PFprop_mark_const (
                                 n->prop,
