@@ -175,8 +175,126 @@ pcre_export str BATPCRElike2(int *ret, int *b, str *pat);
 pcre_export str PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str pcre_init(void);
 
-#ifndef HAVE_LIBPCRE
+/* current implementation assumes simple %keyword% [keyw%]* */
+typedef struct RE {
+	char *k;
+	int search;
+	int skip;
+	int len;
+	struct RE *n;
+} RE;
 
+#ifndef HAVE_STRCASESTR
+char *
+strcasestr (char *haystack, char *needle)
+{
+	char *p, *startn = 0, *np = 0;
+
+	for (p = haystack; *p; p++) {
+		if (np) {
+			if (toupper(*p) == toupper(*np)) {
+				if (!*++np)
+					return startn;
+			} else
+				np = 0;
+		} else if (toupper(*p) == toupper(*needle)) {
+			np = needle + 1;
+			startn = p;
+		}
+	}
+
+	return 0;
+}
+#endif
+
+static int 
+re_match(str s, RE *pattern )
+{
+	RE *r;
+
+	for(r = pattern; r; r = r->n) {
+		if (!*s || 
+			(!r->search && strncasecmp(s, r->k, r->len) != 0) ||
+			(r->search && (s = strcasestr(s, r->k)) == NULL))
+			return 0;
+		s += r->len;
+	}
+	return 1;
+}
+
+static RE *
+re_create( char *pat, int nr)
+{
+	char *x = GDKstrdup(pat);
+	RE *r = (RE*)GDKmalloc(sizeof(RE)), *n = r;
+	char *p = x, *q = x;
+
+	r->n = NULL;
+	r->search = 0;
+	r->skip = 0;
+
+	if (*p == '%') {
+		p++; /* skip % */
+		r->search = 1;
+	}
+	q = p;
+	while((q = strchr(p, '%')) != NULL) {
+		*q = 0;
+		n->k = GDKstrdup(p);
+		n->len = strlen(n->k);
+		n->n = NULL;
+		if ((--nr) > 0) {
+			n = n->n = (RE*)GDKmalloc(sizeof(RE));
+			n->search = 1;
+			n->skip = 0;
+		}
+		p = q+1;
+	}
+	GDKfree(x);
+	return r;
+}
+
+static void
+re_destroy( RE *p)
+{
+	while(p) {
+		RE *n = p->n;
+
+		GDKfree(p->k);
+		GDKfree(p);
+		p = n;
+	}
+}
+
+static BAT *
+re_uselect(RE *pattern, BAT *strs)
+{
+	BATiter strsi = bat_iterator(strs);
+	BAT *r;
+	BUN p, q;
+
+	if (strs->htype == TYPE_void)
+		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
+	else
+		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
+	
+	BATloop(strs, p, q) {
+		str s = BUNtail(strsi, p);
+
+		if (re_match(s, pattern)) 
+			BUNfastins(r, BUNhead(strsi, p), NULL);
+	}
+	r->H->nonil = strs->H->nonil;
+	r->hsorted = strs->hsorted;
+	BATkey(r, BAThkey(strs));
+	r->T->nonil = FALSE;
+	r->tsorted = FALSE;
+
+	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
+	return r;
+}
+
+#ifndef HAVE_LIBPCRE
 str
 pcre_compile_wrap(pcre ** res, str pattern)
 {
@@ -368,125 +486,6 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 	my_pcre_free(re);
 	*res = r;
 	return MAL_SUCCEED;
-}
-
-/* current implementation assumes simple %keyword% [keyw%]* */
-typedef struct RE {
-	char *k;
-	int search;
-	int skip;
-	int len;
-	struct RE *n;
-} RE;
-
-#ifndef HAVE_STRCASESTR
-char *
-strcasestr (char *haystack, char *needle)
-{
-	char *p, *startn = 0, *np = 0;
-
-	for (p = haystack; *p; p++) {
-		if (np) {
-			if (toupper(*p) == toupper(*np)) {
-				if (!*++np)
-					return startn;
-			} else
-				np = 0;
-		} else if (toupper(*p) == toupper(*needle)) {
-			np = needle + 1;
-			startn = p;
-		}
-	}
-
-	return 0;
-}
-#endif
-
-static int 
-re_match(str s, RE *pattern )
-{
-	RE *r;
-
-	for(r = pattern; r; r = r->n) {
-		if (!*s || 
-			(!r->search && strncasecmp(s, r->k, r->len) != 0) ||
-			(r->search && (s = strcasestr(s, r->k)) == NULL))
-			return 0;
-		s += r->len;
-	}
-	return 1;
-}
-
-static RE *
-re_create( char *pat, int nr)
-{
-	char *x = GDKstrdup(pat);
-	RE *r = (RE*)GDKmalloc(sizeof(RE)), *n = r;
-	char *p = x, *q = x;
-
-	r->n = NULL;
-	r->search = 0;
-	r->skip = 0;
-
-	if (*p == '%') {
-		p++; /* skip % */
-		r->search = 1;
-	}
-	q = p;
-	while((q = strchr(p, '%')) != NULL) {
-		*q = 0;
-		n->k = GDKstrdup(p);
-		n->len = strlen(n->k);
-		n->n = NULL;
-		if ((--nr) > 0) {
-			n = n->n = (RE*)GDKmalloc(sizeof(RE));
-			n->search = 1;
-			n->skip = 0;
-		}
-		p = q+1;
-	}
-	GDKfree(x);
-	return r;
-}
-
-static void
-re_destroy( RE *p)
-{
-	while(p) {
-		RE *n = p->n;
-
-		GDKfree(p->k);
-		GDKfree(p);
-		p = n;
-	}
-}
-
-BAT *
-re_uselect(RE *pattern, BAT *strs)
-{
-	BATiter strsi = bat_iterator(strs);
-	BAT *r;
-	BUN p, q;
-
-	if (strs->htype == TYPE_void)
-		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
-	else
-		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
-	
-	BATloop(strs, p, q) {
-		str s = BUNtail(strsi, p);
-
-		if (re_match(s, pattern)) 
-			BUNfastins(r, BUNhead(strsi, p), NULL);
-	}
-	r->H->nonil = strs->H->nonil;
-	r->hsorted = strs->hsorted;
-	BATkey(r, BAThkey(strs));
-	r->T->nonil = FALSE;
-	r->tsorted = FALSE;
-
-	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
-	return r;
 }
 
 str
