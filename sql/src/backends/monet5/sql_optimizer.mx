@@ -339,10 +339,10 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				mode = getVarConstant(mb, getArg(p,4)).val.ival;
 			}
 
-			if( f == bindidxRef) {
+			if (s && f == bindidxRef) {
 				sql_idx *i = mvc_bind_idx(m, s, cname);
 
-				if (active_store_type == store_bpm) {
+				if (active_store_type == store_bpm && i->data) {
 					bpm = i->data;
 					if (mode == RDONLY || mode == RD_UPD)
 						part = bpm->ins;
@@ -359,7 +359,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 
 				not_null = !c->null;
 
-				if (active_store_type == store_bpm) {
+				if (active_store_type == store_bpm && c->data) {
 					bpm = c->data;
 					if (mode == RDONLY || mode == RD_UPD)
 						part = bpm->ins;
@@ -374,7 +374,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_lng, &rows));
 			if (not_null)
 				varSetProp(mb, k, notnilProp, op_eq, NULL);
-			if (active_store_type == store_bpm && part && 
+			if (0 && active_store_type == store_bpm && part && 
 			    f != binddbatRef) {
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, constraintsRef);
@@ -386,7 +386,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				pushInstruction(mb,q);
 			}
 			if (part <= 1) {
-				pushInstruction(mb,p);
+				pushInstruction(mb, p);
 				if (bpm) {
 					oid low = 0, high = 1;
 
@@ -457,16 +457,16 @@ str defaultPlan=
 	"accessmode,"
 	"aliases,"
 	/* "crack," */
-	"joinPath," 
+//	"joinPath," 
 	"mergetable," 
 	"commonTerms,"
 /*	"replicator," */
 	"accumulators,"
 	"deadcode,"
-	"recycle," 
+//	"recycle,"  
 	"reduce,"
 	"garbageCollector," 
-	/* "dataflow,"*/
+	"dataflow," 
 	"multiplex";
 static str minimalPlan=
 	"multiplex";
