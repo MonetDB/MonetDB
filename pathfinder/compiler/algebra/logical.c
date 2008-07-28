@@ -1150,16 +1150,12 @@ PFla_select (const PFla_op_t *n, PFalg_att_t att)
 PFla_op_t *
 PFla_pos_select (const PFla_op_t *n, int pos, PFord_ordering_t s, PFalg_att_t p)
 {
-    PFla_op_t    *ret = la_op_wire1 (la_pos_select, n);
-    unsigned int  i;
-    unsigned int  j;
+    PFord_ordering_t sortby = PFordering ();
+    PFla_op_t       *ret    = la_op_wire1 (la_pos_select, n);
+    unsigned int     i;
+    unsigned int     j;
 
     assert (s);
-
-    /* copy parameters into semantic content of return node */
-    ret->sem.pos_sel.pos = pos;
-    ret->sem.pos_sel.sortby = s;
-    ret->sem.pos_sel.part = p;
 
     /* result schema is input schema plus the new attribute */
     ret->schema.count = n->schema.count;
@@ -1170,18 +1166,16 @@ PFla_pos_select (const PFla_op_t *n, int pos, PFord_ordering_t s, PFalg_att_t p)
         ret->schema.items[i] = n->schema.items[i];
 
     /* see if we can find all sort specifications */
-    for (i = 0; i < PFord_count (ret->sem.pos_sel.sortby); i++) {
+    for (i = 0; i < PFord_count (s); i++) {
 
         for (j = 0; j < n->schema.count; j++)
-            if (n->schema.items[j].name ==
-                         PFord_order_col_at (ret->sem.pos_sel.sortby, i))
+            if (n->schema.items[j].name == PFord_order_col_at (s, i))
                 break;
 
         if (j == n->schema.count)
             PFoops (OOPS_FATAL,
                     "could not find sort attribute `%s'",
-                    PFatt_str (PFord_order_col_at (
-                                   ret->sem.pos_sel.sortby, i)));
+                    PFatt_str (PFord_order_col_at (s, i)));
 
         if (!monomorphic (n->schema.items[j].type))
             PFoops (OOPS_FATAL,
@@ -1190,12 +1184,16 @@ PFla_pos_select (const PFla_op_t *n, int pos, PFord_ordering_t s, PFalg_att_t p)
                     n->schema.items[j].type,
                     PFatt_str (n->schema.items[j].name));
 
-        if (ret->sem.pos_sel.part
-            && PFord_order_col_at (ret->sem.pos_sel.sortby, i)
-               == ret->sem.pos_sel.part)
-            PFoops (OOPS_FATAL,
-                    "partitioning attribute must not appear in sort clause");
+        if (!p || PFord_order_col_at (s, i) != p)
+            sortby = PFord_refine (sortby,
+                                   PFord_order_col_at (s, i),
+                                   PFord_order_dir_at (s, i));
     }
+
+    /* copy parameters into semantic content of return node */
+    ret->sem.pos_sel.pos = pos;
+    ret->sem.pos_sel.sortby = sortby;
+    ret->sem.pos_sel.part = p;
 
     return ret;
 }
@@ -2175,16 +2173,12 @@ static PFla_op_t *
 sort_col (const PFla_op_t *n, PFla_op_kind_t kind, char *name,
           PFalg_att_t a, PFord_ordering_t s, PFalg_att_t p)
 {
-    PFla_op_t    *ret = la_op_wire1 (kind, n);
-    unsigned int  i;
-    unsigned int  j;
+    PFord_ordering_t sortby = PFordering ();
+    PFla_op_t       *ret    = la_op_wire1 (kind, n);
+    unsigned int     i;
+    unsigned int     j;
 
     assert (s);
-
-    /* copy parameters into semantic content of return node */
-    ret->sem.sort.res = a;
-    ret->sem.sort.sortby = s;
-    ret->sem.sort.part = p;
 
     /* result schema is input schema plus the new attribute */
     ret->schema.count = n->schema.count + 1;
@@ -2216,11 +2210,16 @@ sort_col (const PFla_op_t *n, PFla_op_kind_t kind, char *name,
                     "could not find sort attribute `%s'",
                     PFatt_str (PFord_order_col_at (s, i)));
 
-        if (ret->sem.sort.part &&
-            PFord_order_col_at (s, i) == ret->sem.sort.part)
-            PFoops (OOPS_FATAL,
-                    "partitioning attribute must not appear in sort clause");
+        if (!p || PFord_order_col_at (s, i) != p)
+            sortby = PFord_refine (sortby,
+                                   PFord_order_col_at (s, i),
+                                   PFord_order_dir_at (s, i));
     }
+
+    /* copy parameters into semantic content of return node */
+    ret->sem.sort.res = a;
+    ret->sem.sort.sortby = sortby;
+    ret->sem.sort.part = p;
 
     return ret;
 }
