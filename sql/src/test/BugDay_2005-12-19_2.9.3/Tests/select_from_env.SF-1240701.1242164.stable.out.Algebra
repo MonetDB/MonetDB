@@ -68,6 +68,7 @@ Over..
 [ "xrpc_options"	]
 [ "xrpc_admin"	]
 [ "xrpc_user"	]
+[ "xrpc_http_docroot"	]
 [ "xrpc_trusted"	]
 [ "monet_cwd"	]
 [ "monet_version"	]
