@@ -65,7 +65,7 @@ which inspects the variable table for alternative results.
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-/*#define _DEBUG_RECYCLE_
+/* #define _DEBUG_RECYCLE_
 #define _DEBUG_RECYCLE_REUSE 
 #define _DEBUG_CACHE_ */
 @-
@@ -121,11 +121,11 @@ mal_export int monitorRecycler;
 mal_export int recycleRecent;
 
 mal_export void RECYCLEversion(Client cntxt, MalBlkPtr mb);
-mal_export void RECYCLEinit();
+mal_export void RECYCLEinit(void);
 mal_export int RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEexit(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export void RECYCLEshutdown(void);
+mal_export void RECYCLEshutdown(Client cntxt);
 mal_export int RECYCLEinterest(MalBlkPtr mb,InstrPtr p);
 #endif
 @-
@@ -242,7 +242,7 @@ static void RECYCLEspace()
 	}
 }
 
-void RECYCLEinit(){
+void RECYCLEinit(void){
 	MT_init_lock(recycleLock,"recycleLock");
 }
 
@@ -676,7 +676,7 @@ RECYCLEinterest(MalBlkPtr mb, InstrPtr p){
 }
 
 static void 
-RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr)
+RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr)
 {
 	int i, j, c;
 	ValRecord *v;
@@ -705,6 +705,8 @@ RECYCLEnew(MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr)
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(cntxt->fdout,"RECYCLE keep ");
 	printTraceCall( cntxt->fdout,mb, s, getPC(mb,p),LIST_MAL_ALL);
+#else
+	(void) cntxt;
 #endif
 @-
 The instruction is copied and the variables are
@@ -789,7 +791,7 @@ Furthermore, we should only search for instructions if
 we are dealing with a function call.
 @c
 static int
-RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
+RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
 	int i, j;
 	InstrPtr q;
@@ -804,6 +806,8 @@ RECYCLEfind(MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(cntxt->fdout,"search\n");
 	printInstruction(cntxt->fdout,mb,p, LIST_MAL_ALL);
+#else 
+	(void) cntxt;
 #endif
 	if ( RECYCLEinterest(mb,p))
 	for (i=1; i<recycleBlk->stop; i++) {
@@ -1054,20 +1058,20 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		break;
 	case RETAIN_ALL:
 		/* RETAIN_ALL: infinite case, retain all new instructions */
-		if (RECYCLEfind(mb,stk,p)<0 )
-			(void) RECYCLEnew(mb, stk, p, rd, wr);
+		if (RECYCLEfind(cntxt,mb,stk,p)<0 )
+			(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr);
 		break;
 	case RETAIN_TIME:
 		/* RETAIN_TIME: time-based semantics, retain if beneficial */
-		if (clk > ABS(recycleTime) && RECYCLEfind(mb,stk,p)< 0)
-			(void) RECYCLEnew(mb, stk, p, rd, wr);
+		if (clk > ABS(recycleTime) && RECYCLEfind(cntxt,mb,stk,p)< 0)
+			(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr);
 		break;
 	case RETAIN_SIZE:
 	{
 		/* RETAIN_SIZE: size cost model */
-		if (recycleVolume && RECYCLEfind(mb,stk,p)<0){
+		if (recycleVolume && RECYCLEfind(cntxt,mb,stk,p)<0){
 			if (rd+wr > recycleVolume){
-				(void) RECYCLEnew(mb, stk, p, rd, wr);
+				(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
 				stream_printf(cntxt->fdout,"RECYCLEexit size %d %d\n",rd,wr);
 #endif
@@ -1078,9 +1082,9 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	case RETAIN_VOL:
 	{
 		/* RETAIN_VOL: volumetric cost model (time x size )*/
-		if (recycleVolume && RECYCLEfind(mb,stk,p)<0 ){
+		if (recycleVolume && RECYCLEfind(cntxt,mb,stk,p)<0 ){
 			if (recycleAlpha *(rd+wr) + (1-recycleAlpha)* clk > (recycleVolume+1) * (recycleTime+1)){
-				(void) RECYCLEnew(mb, stk, p, rd, wr);
+				(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
 				stream_printf(cntxt->fdout,"RECYCLEexit volume %d %d %d \n",clk,rd,wr,(rd+wr)*clk);
 				stream_printf(cntxt->fdout,"RECYCLEexit volume %d %d\n", recycleVolume, recycleTime);
@@ -1091,10 +1095,10 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	}
 	case RETAIN_ADAPT:
 		/* RETAIN_ADAPT: searching the cache may take too long? */
-		if ( RECYCLEfind(mb,stk,p)< 0){
+		if ( RECYCLEfind(cntxt,mb,stk,p)< 0){
 			if (recycleSearchTime > recycleTime)
 				RECYCLEcleanCache(wr);
-			RECYCLEnew(mb, stk, p, rd, wr);
+			RECYCLEnew(cntxt,mb, stk, p, rd, wr);
 		}
 	}
 }
@@ -1111,7 +1115,7 @@ At the end of session we should remove all
 knowledge from the recycle cache.
 @c
 void
-RECYCLEshutdown(){
+RECYCLEshutdown(Client cntxt){
 	MalBlkPtr mb= recycleBlk;
 	int i;
 	
@@ -1122,6 +1126,8 @@ RECYCLEshutdown(){
 	stream_printf(cntxt->fdout,"RECYCLE shutdown\n");
 	printFunction(cntxt->fdout,recycleBlk,0);
 	printStack(cntxt->fdout,mb,0);
+#else
+	(void) cntxt;
 #endif
 	mal_set_lock(recycleLock,"recycle");
 	recycleBlk= NULL;
