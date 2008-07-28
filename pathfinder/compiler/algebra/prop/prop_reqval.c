@@ -149,9 +149,11 @@ PFprop_req_bool_val_val (const PFprop_t *prop, PFalg_att_t col)
 
     if (!reqval)
         return false;
-    else if (reqval->sel_name == false)
+    else if (reqval->sel_name == false) {
         PFoops (OOPS_FATAL,
                 "cannot look up required value property");
+        return false; /* dummy return */
+    }
     else
         return reqval->sel_val;
 }
