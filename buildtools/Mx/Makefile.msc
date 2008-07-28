@@ -20,9 +20,9 @@ prefix = ..\NT
 bindir = $(prefix)\bin
 
 !IFDEF DEBUG
-CFLAGS = -I. -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
+CFLAGS = -I. -GF -W3 -WX -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
 !ELSE
-CFLAGS = -I. -GF -W3 -MD -nologo
+CFLAGS = -I. -GF -W3 -WX -MD -nologo
 !ENDIF
 
 COPY=copy
