@@ -936,23 +936,6 @@ str CMDunaryAccum@1(int *ret,int *did, int *bid)
 	@:getBATdescriptor(bid,b,"batcalc.@1")@
 
 	switch(BATttype(bn)){
-	case TYPE_oid: if (  strcmp("@2","+")== 0){
-			oid* p = (oid*)Tloc(b,BUNfirst(b));
-			oid *q = (oid*)Tloc(b,BUNlast(b));
-			oid *o = (oid*)Tloc(bn,BUNfirst(bn));
-
-			for(; p<q; p++, o++){
-				/* this code is better as x?nil:y  */
-#ifdef NULLTST
-				if(*p == oid_nil )
-					*o = oid_nil;
-				else 
-#endif
-					*o = *p;
-			}
-		} else
-			throw(MAL, "batcalc.@1", "unexpected operator");
-		break;
 	case TYPE_bte: @:accumUnary(bte,@2)@ break;
 	case TYPE_sht: @:accumUnary(sht,@2)@ break;
 	case TYPE_int: @:accumUnary(int,@2)@ break;
