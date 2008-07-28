@@ -3052,8 +3052,8 @@ void findQuantHisto(ValPtr vp, BAT * b, lng sp, int msz, int maxno)
 
 	c = BATcount(b);
 	if ((c==0) || (msz>=sp)) return ;
-	pertpl = ceil((sp - sizeof(BATstore))/c);
-	quan = floor((msz- sizeof(BATstore))/ pertpl);
+	pertpl = ceil((sp - sizeof(BATstore))/ (double)c);
+	quan = floor((msz- sizeof(BATstore))/  (double)pertpl);
 
 	tpe = b->ttype;
 	bh = BAThistogram(b);
@@ -3127,7 +3127,7 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 			continue;  
 		}
 
-		sf = ceil(space/msz) + 3;
+		sf = ceil(space/(double)msz) + 3;
 		sep= (ValPtr) GDKzalloc( sizeof(ValRecord) * sf);
 		for (k=0; k<sf; k++)
 			VALinit(sep+k,tpe,nilptr);

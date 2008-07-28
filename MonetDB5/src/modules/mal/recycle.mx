@@ -86,7 +86,7 @@ pattern reset(sname:str...):void
 address RECYCLEresetCMD
 comment "Reset off all recycled variables";
 
-command shutdown():void
+pattern shutdown():void
 address RECYCLEshutdownWrap
 comment "Clear the recycle cache";
 
@@ -132,7 +132,7 @@ recycle_export str RECYCLEsetCache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 recycle_export str RECYCLEgetRetain(int *p);
 recycle_export str RECYCLEgetReuse(int *p);
 recycle_export str RECYCLEgetCache(int *p);
-recycle_export str RECYCLEshutdownWrap(int *ret);
+recycle_export str RECYCLEshutdownWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEmonitor(int *d, int *p);
 recycle_export str RECYCLElog(int *d, str *nm);
 recycle_export str RECYCLEprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -363,9 +363,12 @@ RECYCLEgetCache(int *p)
 At the end of the session we have to cleanup the recycle cache.
 @c
 str
-RECYCLEshutdownWrap(int *ret){
-	(void) ret;
-	RECYCLEshutdown();
+RECYCLEshutdownWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+
+	(void) mb;
+	(void) stk;
+	(void) p;
+	RECYCLEshutdown(cntxt);
 	return MAL_SUCCEED;
 }
 str 
