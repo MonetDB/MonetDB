@@ -793,33 +793,30 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	int ok = LOG_OK;
 	BAT *b;
 	sql_bpm *p = ni->data;
+	int type = TYPE_int;
+
+	if (ni->type == join_idx)
+		type = TYPE_oid;
 
 	/* create bats for a loaded idx structure */
 	if (ni->base.flag == TR_OLD && !isTempTable(ni->t)){
-		if (ni->type == join_idx || list_length(ni->columns) > 1 ) {
-			int type = TYPE_int;
-			if (ni->type == join_idx)
-				type = TYPE_oid;
-			ni->data = load_bat( ni->t->s->base.name, ni->t->base.name, ni->base.name, type, ni->t->sz, &ni->t->cnt);
-		}
+		ni->data = load_bat( ni->t->s->base.name, ni->t->base.name, ni->base.name, type, ni->t->sz, &ni->t->cnt);
 	} else if (p && p->ins != p->nr) { /* create bats for a new persistent idx */
 		return new_persistent_bat( tr, ni->data, ni->t->s->base.name, ni->t->base.name, ni->base.name, &ni->t->cnt);
 	} else {
-		if (ni->type == join_idx || list_length(ni->columns) > 1 ) {
-			int type = (ni->type == join_idx)?TYPE_oid:TYPE_int;
 
-			if (!p) {
- 				p = ni->data = ZNEW(sql_bpm);
-				create_parts(p, type);
-			}
-			if (!p->nr) {
-				b = bat_new(TYPE_void, type, ni->t->sz);
-				if (!b) 
-					return LOG_ERR;
-				extend_part(p, b, 0);
-				bat_destroy(b);
-			}
+		if (!p) {
+ 			p = ni->data = ZNEW(sql_bpm);
+			create_parts(p, type);
 		}
+		if (!p->nr) {
+			b = bat_new(TYPE_void, type, ni->t->sz);
+			if (!b) 
+				return LOG_ERR;
+			extend_part(p, b, 0);
+			bat_destroy(b);
+		}
+/*
 		if (ni->type == hash_idx && 
 		    ni->key != NULL && list_length(ni->key->columns)==1) {
 			sql_kc *c = ni->columns->h->data;
@@ -828,6 +825,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 			BATkey(BATmirror(b), BOUND2BTRUE);
 			bat_destroy(b);
 		}
+*/
 	}
 	return ok;
 }

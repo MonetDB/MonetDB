@@ -255,6 +255,8 @@ typedef enum idx_type {
 	new_idx_types
 } idx_type;
 
+#define idx_is_column(t) 	(t == hash_idx || t == join_idx)
+
 typedef struct sql_idx {
 	sql_base base;
 	idx_type type;		/* unique */
@@ -364,12 +366,14 @@ typedef struct sql_column {
 typedef enum table_types {
 	tt_table = 0, 		/* table */
 	tt_view = 1, 		/* view */
-	tt_generated = 2	/* generated (functions can be sql or c-code) */
+	tt_generated = 2,	/* generated (functions can be sql or c-code) */
+	tt_cluster = 3		/* table supporting the clustered index */
 } table_types;
 
-#define isTable(x) (x->type==tt_table)
-#define isView(x)  (x->type==tt_view)
+#define isTable(x) 	(x->type==tt_table||x->type==tt_cluster)
+#define isView(x)  	(x->type==tt_view)
 #define isGenerated(x)  (x->type==tt_generated)
+#define isCluster(x)  	(x->type==tt_cluster)
 
 typedef struct sql_table {
 	sql_base base;

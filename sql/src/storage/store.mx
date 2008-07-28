@@ -391,7 +391,7 @@ load_idx(sql_trans *tr, sql_table *t, ssize_t rid)
 	ni->t = t;
 	ni->key = NULL;
 
-	if (isTable(ni->t))
+	if (isTable(ni->t) && idx_is_column(ni->type))
 		store_funcs.create_idx(tr, ni);
 
 	kc_id = find_sql_column(keycolumns, "id");
@@ -2031,7 +2031,7 @@ static sql_idx *
 rollforward_create_idx(sql_trans *tr, sql_idx * i, int mode)
 {
 
-	if (isTable(i->t)) {
+	if (isTable(i->t) && idx_is_column(i->type)) {
 		int p = (tr->parent == gtrans && !isTempTable(i->t));
 
 		if ((p && mode == R_SNAPSHOT && store_funcs.snapshot_create_idx(tr, i) != LOG_OK) ||
@@ -3367,75 +3367,37 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 }
 
 sql_table *
-sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz)
+sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int tt, bit system, int persistence, int commit_action, int sz)
 {
-	sql_table *t = create_sql_table(name, tt_table, system, persistence, commit_action);
+	sql_table *t = create_sql_table(name, tt, system, persistence, commit_action);
 	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
 	sql_table *systable = find_sql_table(syss, "_tables");
 	sht ca;
 
-	/* temps all belong to a special tmp schema */
-	assert( !isTempTable(t) || (strcmp(s->base.name, "tmp") == 0)
-	        || isDeclaredTable(t));
+	/* temps all belong to a special tmp schema and only views
+	   have a query */
+	assert( (isTable(t) ||
+		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql));
 
+	t->query = sql ? _strdup(sql) : NULL;
 	t->s = s;
 	t->sz = sz;
 	if (sz < 0)
 		t->sz = COLSIZE;
-
-	store_funcs.create_del(tr, t);
 	cs_add(&s->tables, t, TR_NEW);
-	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+
+	if (isTable(t))
+		store_funcs.create_del(tr, t);
+
 	ca = t->commit_action;
 	if (!isDeclaredTable(t))
-		table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->type, &t->system, &ca);
-	if (isGlobalTable(t)) 
-		tr->schema_updates ++;
-	return t;
-}
-
-sql_table *
-sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system)
-{
-	sql_table *t = create_sql_table(name, tt_view, system, SQL_PERSIST, 0);
-	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *systable = find_sql_table(syss, "_tables");
-	sht ca;
-
-	t->query = sql ? _strdup(sql) : NULL;
-	assert(sql);
-	t->s = s;
-	cs_add(&s->tables, t, TR_NEW);
-
-	ca = t->commit_action;
-	table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id,
+		table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id,
 			(t->query) ? t->query : ATOMnilptr(TYPE_str), &t->type,
 			&t->system, &ca);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
-	tr->schema_updates ++;
-	return t;
-}
-
-sql_table *
-sql_trans_create_generated(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system)
-{
-	sql_table *t = create_sql_table(name, tt_generated, system, SQL_PERSIST, 0);
-	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *systable = find_sql_table(syss, "_tables");
-	sht ca;
-
-	t->query = sql ? _strdup(sql) : NULL;
-	t->s = s;
-	cs_add(&s->tables, t, TR_NEW);
-
-	ca = t->commit_action;
-	table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id,
-			ATOMnilptr(TYPE_str), &t->type,
-			&t->system, &ca);
-
-	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
-	tr->schema_updates ++;
+	if (isGlobalTable(t)) 
+		tr->schema_updates ++;
 	return t;
 }
 
@@ -3823,7 +3785,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 	cs_add(&t->idxs, ni, TR_NEW);
 	list_append(t->s->idxs, ni);
 
-	if (isTable(ni->t))
+	if (isTable(ni->t) && idx_is_column(ni->type))
 		store_funcs.create_idx(tr, ni);
 	table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
 	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
