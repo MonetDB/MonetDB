@@ -653,8 +653,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             if (n->sem.step.spec.axis == alg_attr &&
                 n->sem.step.spec.kind == node_kind_attr &&
                 ! (PFQNAME_NS_WILDCARD (n->sem.step.spec.qname)
-                   || PFQNAME_LOC_WILDCARD (n->sem.step.spec.qname)) &&
-                PFprop_key (R(n)->prop, n->sem.step.item))
+                   || PFQNAME_LOC_WILDCARD (n->sem.step.spec.qname)))
                 copy (n->prop->keys, R(n)->prop->keys);
 
             /* the self axis can be only a filter */

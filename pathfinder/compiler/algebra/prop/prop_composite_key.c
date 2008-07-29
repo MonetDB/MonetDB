@@ -639,10 +639,19 @@ infer_ckey (PFla_op_t *n)
                 union_ (n->prop->ckeys,
                         ckey | n->sem.step.item_res);
                 
-                /* the self axis can be only a filter */
-                if (n->sem.step.spec.axis == alg_self)
-                    union_ (n->prop->ckeys, ckey);
             }
+
+            /* if attribute step is only a 'filter' (at most a single
+               attribute for each context node) we can copy all keys */
+            if (n->sem.step.spec.axis == alg_attr &&
+                n->sem.step.spec.kind == node_kind_attr &&
+                ! (PFQNAME_NS_WILDCARD (n->sem.step.spec.qname)
+                   || PFQNAME_LOC_WILDCARD (n->sem.step.spec.qname)))
+                copy (n->prop->ckeys, right);
+
+            /* the self axis can be only a filter */
+            if (n->sem.step.spec.axis == alg_self)
+                copy (n->prop->ckeys, right);
 
             if (PFprop_card (R(n)->prop) == 1)
                 union_ (n->prop->ckeys, n->sem.step.item_res);
