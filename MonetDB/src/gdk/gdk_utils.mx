@@ -270,7 +270,6 @@ It should be extended to cope with the specifics of the interrupt
 received.
 @{
 @c
-#ifndef NATIVE_WIN32
 #include <signal.h>
 #if 0				/* these are unused */
 static RETSIGTYPE
@@ -278,7 +277,9 @@ BATSIGignore(int nr)
 {
 	GDKsyserror("! ERROR signal %d caught by thread %lx\n", nr, (size_t) MT_getpid());
 }
+#endif
 
+#ifdef WIN32
 static RETSIGTYPE
 BATSIGabort(int nr)
 {
@@ -286,6 +287,7 @@ BATSIGabort(int nr)
 }
 #endif
 
+#ifndef NATIVE_WIN32
 static RETSIGTYPE
 BATSIGinterrupt(int nr)
 {
@@ -1479,6 +1481,10 @@ GDKinit(opt *set, int setlen)
 	THRinit();
 #ifndef NATIVE_WIN32
 	BATSIGinit();
+#endif
+#ifdef WIN32
+	(void) signal(SIGABRT, BATSIGabort);
+	_set_abort_behavior(0, _CALL_REPORTFAULT|_WRITE_ABORT_MSG);
 #endif
 	GDKlockHome();
 
