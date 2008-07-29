@@ -195,9 +195,6 @@ C qualifier and the operands
 	address CMDunaryPLUSPLUS
 	comment "Unary minus over the tail of the bat";
 
-	command isnil(b:bat[:any_1,:@1]):bat[:any_1,:bit] 
-	address CMDunaryISNIL
-	comment "Unary check for nil over the tail of the bat";
 @-
 Not used yet
 	#command -(a:bat[:any_1,:@1],b:bat[:any_1,:@1])
@@ -215,13 +212,16 @@ Not used yet
 	#address CMDunaryAccumPLUSPLUS 
 	#comment "Unary ++ over the tail of the bat";
 @mal
-@:unary(oid)@
 @:unary(bte)@
 @:unary(sht)@
 @:unary(int)@
 @:unary(lng)@
 @:unary(flt)@
 @:unary(dbl)@
+
+	command isnil(b:bat[:any_1,:oid]):bat[:any_1,:bit] 
+	address CMDunaryISNIL
+	comment "Unary check for nil over the tail of the bat";
 	command isnil(b:bat[:any_1,:str]):bat[:any_1,:bit] 
 	address CMDunaryISNIL
 	comment "Unary check for nil over the tail of the bat";

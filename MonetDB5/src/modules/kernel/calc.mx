@@ -311,8 +311,8 @@ The unary operators include coercion routines for built-in types
 		command -(x:@1) :@1 
 		address CALCunary@1NEG 
 		comment "negative value";
-		command length(x:@1):int
-		address CALClength@1;
+		command sizeof(x:@1):int
+		address CALCsizeof@1;
 		command sign(x:@1) :@1 
 		address CALCunary@1SIGN 
 		comment "Returns +1, 0, -1 based on the sign of the given expression";
@@ -574,8 +574,8 @@ the string representations.
 #define calc_sign(s) ((s) < 0 ? -1 : (s) == 0 ? 0 : 1)
 
 @= calc_length
-calc_export str CALClength@1(int *res , @1 *a );
-str CALClength@1(int *res , @1 *a ) {
+calc_export str CALCsizeof@1(int *res , @1 *a );
+str CALCsizeof@1(int *res , @1 *a ) {
    *res = sizeof(*a);
    return(MAL_SUCCEED);
 }
