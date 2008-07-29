@@ -129,7 +129,7 @@ void setAtomName(InstrPtr pci){
 
 int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
 	str name= getFunctionId(pci);
-	int tpe = getTypeIndex(getModuleId(pci), strlen(getModuleId(pci)), TYPE_any);
+	int tpe = getTypeIndex(getModuleId(pci), (int) strlen(getModuleId(pci)), TYPE_any);
 	(void) mb; /* fool compilers */
 	if( pci->fcn == 0)
 		GDKwarning("malAtomProperty:function not bound\n");
@@ -330,7 +330,7 @@ int malAtomArray(int tpe, int size){
 
 	nme = getTypeName(tpe);
 	snprintf(name,IDLENGTH,"%s_", nme);
-	i= strlen(name);
+	i= (int) strlen(name);
 	snprintf(name+i,IDLENGTH-i,"%d", size);
 	GDKfree(nme);
 	if(strlen(name) >= IDLENGTH){

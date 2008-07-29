@@ -901,7 +901,7 @@ AUTHdecypherValue(str *ret, str *value) {
 	if (vaultKey == NULL)
 		throw(MAL, "decypherValue", "The vault is still locked!");
 
-	keylen = strlen(vaultKey);
+	keylen = (int) strlen(vaultKey);
 
 	/* XOR all characters.  If we encounter a 'one' char after the XOR
 	 * operation, it is an escape, so replace it with the next char. */
@@ -940,7 +940,7 @@ AUTHcypherValue(str *ret, str *value) {
 	if (vaultKey == NULL)
 		throw(MAL, "cypherValue", "The vault is still locked!");
 
-	keylen = strlen(vaultKey);
+	keylen = (int) strlen(vaultKey);
 
 	/* XOR all characters.  If we encounter a 'zero' char after the XOR
 	 * operation, escape it with an 'one' char. */

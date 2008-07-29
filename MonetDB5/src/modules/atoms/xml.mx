@@ -214,7 +214,7 @@ XMLisdocument(bit *x, str *s){
 
 str
 XMLcomment(xml *x, str *s){
-	int len = strlen(*s) + 10;
+	int len = (int) strlen(*s) + 10;
 	str buf = (str) GDKmalloc(len);
 
 	snprintf(buf, len, "<!-- %s -->", *s);
@@ -243,7 +243,7 @@ XMLroot(str *ret, str *val, str *version, str *standalone)
 {
 	int len;
 	str buf = (str) GDKmalloc(len= strlen(*val) + 
-		strlen("<? version=\"\" standalone=\"\"?>"));
+		(int) strlen("<? version=\"\" standalone=\"\"?>"));
 	snprintf(buf,len,"<? version=\"%s\" stanalone=\"%s\"?>%s",
 		*version,*standalone,*val);
 	*ret= buf;
@@ -254,7 +254,7 @@ str
 XMLattribute(xml *ret, str *name, str *val)
 {
 	int len;
-	str buf= (str) GDKmalloc(len=2*strlen(*name)+strlen(*val)+5);
+	str buf= (str) GDKmalloc(len= (int)(2*strlen(*name)+strlen(*val)+5));
 	snprintf(buf,len," %s=\"%s\"",*name,*val);
 	*ret = buf;
 	return MAL_SUCCEED;
@@ -267,7 +267,7 @@ XMLelement(xml *ret, str *name, str *nspace, xml *attr, xml *Val)
 	int len;
 	str buf= (str) GDKmalloc(len=2*strlen(*name) +
 				strlen(*nspace) + strlen(*attr)+
-				strlen("<></> ")+strlen(val)+1);
+				(int)strlen("<></> ")+strlen(val)+1);
 	if (strNil(val))  /* todo short hand <elementname /> */
 		val = "";
 	if( strNil(*nspace) && strNil(*attr))
@@ -292,7 +292,7 @@ XMLelementSmall(xml *ret, str *name, xml *val)
 {
 	int len;
 	str buf= (str) GDKmalloc(len=2*strlen(*name) +
-				strlen("<></> ")+strlen(*val));
+				(int)strlen("<></> ")+strlen(*val));
 	snprintf(buf,len,"<%s>%s</%s>",*name, *val, *name);
 	*ret= buf;
 	return MAL_SUCCEED;
@@ -301,8 +301,9 @@ XMLelementSmall(xml *ret, str *name, xml *val)
 str
 XMLconcat(xml *ret, xml *left, xml *right)
 {
-	int len;
-	str buf= (str) GDKmalloc(len=strlen(*left)+strlen(*right)+1);
+	size_t len;
+	str buf= (str) GDKmalloc(len= strlen(*left)+strlen(*right)+1);
+	assert(len <INT_MAX);
 	snprintf(buf,len,"%s%s",*left,*right);
 	*ret= buf;
 	return MAL_SUCCEED;
@@ -312,15 +313,17 @@ str
 XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	str *ret= (str*) getArgReference(stk,p,0);
-	int i, len=0;
+	int i;
+	size_t len=0;
 	str buf;
 
 	(void) cntxt;
 	for( i=p->retc; i<p->argc; i++)
 		len += strlen(*(str*)getArgReference(stk,p,i));
-	buf= (str) GDKmalloc(len+1);
+	buf= (str) GDKmalloc( (int) (len+1));
 	buf[0]=0;
 	
+	assert(len <INT_MAX);
 	for( i=p->retc; i<p->argc; i++)
 		strcat(buf,*(str*)getArgReference(stk,p,i));
 	*ret= buf;
@@ -342,7 +345,7 @@ int XMLfromString(str src, int *len, xml *x)
 	if (*x)
 		GDKfree(*x);
 	XMLstr2xml(x, &src);
-	*len = strlen(*x);
+	*len = (int) strlen(*x);
 	return *len;
 }
 
@@ -354,7 +357,7 @@ int XMLtoString(str *s, int *len, str src)
 		*s = GDKstrdup("nil");
 		return 0;
 	}
-	l = src == 0 ? 3 : strlen(src) + 1;
+	l = src == 0 ? 3 :(int) strlen(src) + 1;
 	if (l >= *len) {
 		GDKfree(*s);
 		*s = (str) GDKmalloc(l);

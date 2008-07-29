@@ -3152,7 +3152,7 @@ MTIMEtimestamp_tostr(str *s, timestamp *d)
 str
 MTIMEtimestamp_fromstr(timestamp *ret, str *d)
 {
-	int len = strlen(*d);
+	int len = (int) strlen(*d);
 
 	timestamp_fromstr(*d, &len, &ret);
 	return MAL_SUCCEED;

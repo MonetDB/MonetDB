@@ -193,7 +193,7 @@ idLength(Client cntxt)
 	s++;
 	while (idCharacter2[(int) (*s)] ) 
 		s++;
-	return s-t;
+	return (int) (s-t);
 }
 @-
 Simple type identifiers can not be marked with a type variable.

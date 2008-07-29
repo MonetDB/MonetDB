@@ -178,7 +178,7 @@ mal_command_generator(const char *text, int state)
 	if (!state) {
 		index = 0;
 		last = 0;
-		len = strlen(text);
+		len = (int) strlen(text);
 		if( msg){
 			for(i=0; msg[i]; i++)
 				GDKfree(msg[i]);
@@ -496,7 +496,7 @@ readConsole(Client cntxt)
 #endif
 	buf= getConsoleInput(cntxt->prompt, 0, 1);
 	if( buf) {
-		int len= strlen(buf);
+		int len= (int) strlen(buf);
 		if( len >= (int) cntxt->fdin->size) {
 			/* extremly dirty inplace buffer overwriting */
 			cntxt->fdin->buf= realloc(cntxt->fdin->buf, len+1);

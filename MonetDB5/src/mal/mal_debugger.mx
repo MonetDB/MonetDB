@@ -707,7 +707,8 @@ We rely on the buffersize of instruction2str.
 str
 call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 {
-	int k,len;
+	int k;
+	size_t len;
 	str msg,w;
 	str s;
 	InstrPtr p;

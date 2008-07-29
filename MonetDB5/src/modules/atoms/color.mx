@@ -233,7 +233,7 @@ color_fromstr(char *colorStr, int *len, color **c)
 	printf("  = *len: %d\n", *len);
 #endif
 
-	return p - colorStr;
+	return (int) (p - colorStr);
 }
 
 int
@@ -265,7 +265,7 @@ color_tostr(char **colorStr, int *len, color *c)
 	printf("  = *colorStr: %s\n", *colorStr);
 	printf("  = *len: %d\n", *len);
 #endif
-	return strlen(*colorStr);
+	return (int) strlen(*colorStr);
 }
 
 str
@@ -522,7 +522,7 @@ CLRcb(int *cb, color *c)
 str
 CLRcolor(color *c, str *val)
 {
-	int len = strlen(*val);
+	int len = (int) strlen(*val);
 
 	color_fromstr(*val, &len, &c);
 	return MAL_SUCCEED;

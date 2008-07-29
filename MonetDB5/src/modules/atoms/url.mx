@@ -894,7 +894,7 @@ URLfromString(str src, int *len, str *url)
 	if (*url !=0)
 		GDKfree(url);
 
-	*len = strlen(src);
+	*len = (int) strlen(src);
 	*url = GDKstrdup(src);
 
 	return *len;
@@ -909,7 +909,7 @@ URLtoString(str *s, int *len, str src)
 		*s = GDKstrdup("nil");
 		return 0;
 	}
-	l = src == 0 ? 3 : strlen(src) + 3;
+	l = src == 0 ? 3 : (int) strlen(src) + 3;
 	/* if( !*s) *s= (str)GDKmalloc(*len = l); */
 
 	if (l >= *len) {
@@ -1050,12 +1050,12 @@ URLnew3(str *url, str *protocol, str *server, str *file)
 {
 	int l, i;
 
-	l = GDK_STRLEN(*file) + GDK_STRLEN(*server) + GDK_STRLEN(*protocol) + 10;
+	l = (int) (GDK_STRLEN(*file) + GDK_STRLEN(*server) + GDK_STRLEN(*protocol) + 10);
 	*url = (str) GDKmalloc(l);
 	snprintf(*url, l, "%s://", *protocol);
-	i = strlen(*url);
+	i = (int) strlen(*url);
 	snprintf(*url +i, l - i, "%s", *server);
-	i = strlen(*url);
+	i = (int) strlen(*url);
 	snprintf(*url +i, l - i, "/%s", *file);
 
 	return MAL_SUCCEED;
@@ -1075,16 +1075,15 @@ URLnew4(str *url, str *protocol, str *server, int *port, str *file)
 		Server = "";
 	if (GDK_STRNIL(protocol))
 		Protocol = "";
-	l = strlen(File) + strlen(Server) + strlen(Protocol) + 20;
+	l = (int) (strlen(File) + strlen(Server) + strlen(Protocol) + 20);
 	*url = (str) GDKmalloc(l);
 	snprintf(*url, l, "%s://", Protocol);
-	i = strlen(*url);
+	i = (int) strlen(*url);
 	snprintf(*url +i, l - i, "%s", Server);
-	i = strlen(*url);
+	i = (int) strlen(*url);
 	snprintf(*url +i, l - i, ":%d", *port);
-	i = strlen(*url);
+	i = (int) strlen(*url);
 	snprintf(*url +i, l - i, "/%s", File);
-
 	return MAL_SUCCEED;
 }
 

@@ -136,7 +136,7 @@ newComment(MalBlkPtr mb, const char *val)
 
 	cst.vtype= TYPE_str;
 	cst.val.sval= GDKstrdup(val);
-	cst.len= strlen(cst.val.sval);
+	cst.len= (int) strlen(cst.val.sval);
 	getArg(q,0) = defConstant(mb,TYPE_str,&cst);
 	clrVarConstant(mb,getArg(q,0));
 	setVarDisabled(mb,getArg(q,0));
@@ -263,7 +263,7 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 
 	cst.vtype= TYPE_str;
 	cst.val.sval= GDKstrdup(Val);
-	cst.len= strlen(cst.val.sval);
+	cst.len= (int) strlen(cst.val.sval);
 	_t = defConstant(mb,TYPE_str,&cst);
 	return pushArgument(mb, q, _t);
 }

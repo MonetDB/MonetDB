@@ -178,7 +178,7 @@ updateBigFoot(Client cntxt, int bid, int add)
 	BAT *b;
 
 	if (bid != bat_nil && BBP_lrefs(bid) == 1){
-		int cnt = 0;
+		size_t cnt = 0;
 		b= BATdescriptor(bid);
 		if (b == NULL) 
 			return;
