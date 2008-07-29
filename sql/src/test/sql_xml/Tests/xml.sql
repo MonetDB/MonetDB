@@ -40,7 +40,8 @@ select
          xmlforest(p.Name as name)))
         from Projects p
        where p.CustId = c.CustId) )) as "customer_projects"
-from Customers c;
+from Customers c
+order by c.CustId;
 
 select 
   xmlelement(name "Customer",
