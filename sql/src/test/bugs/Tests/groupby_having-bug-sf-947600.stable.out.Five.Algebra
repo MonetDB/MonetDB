@@ -54,12 +54,12 @@ Over..
 % name # name
 % varchar # type
 % 10 # length
-[ "args"	]
 [ "functions"	]
+[ "args"	]
+[ "sequences"	]
+[ "keys"	]
 [ "idxs"	]
 [ "keycolumns"	]
-[ "keys"	]
-[ "sequences"	]
 % sys.tables # table_name
 % name # name
 % varchar # type
