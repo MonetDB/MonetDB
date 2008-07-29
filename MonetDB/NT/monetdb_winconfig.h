@@ -303,6 +303,9 @@
 
 /* Define to 1 if you have the `pipe' function. */
 #define HAVE_PIPE 1
+#ifdef pipe
+#undef pipe
+#endif
 #define pipe(p) _pipe(p, 8192, O_BINARY)
 
 /* Define to 1 if you have the `popen' function. */
