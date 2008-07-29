@@ -74,6 +74,8 @@
 /* store the number of incoming edges for each operator
    in the refctr field */
 #define EDGE(n) ((n)->refctr)
+/* store if an operator contains multiple input edges */
+#define MULTIPLE_INPUT_EDGES(n) ((n)->bit_in)
 
 /* required value property list */
 struct req_val_t {
@@ -385,7 +387,7 @@ static void
 prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
 {
     req_val_t *map;
-    
+
     assert (n);
 
     /* initialize the mapping list if we need it
@@ -441,6 +443,19 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
         EDGE(n)--;
         return;
     }
+
+    /* In case there are multiple incoming edges we are conservative
+       and do not allow required Boolean values to be inferred.
+
+       This check is necessary to make sure that the rewrites don't
+       change the cardinality for unaffected branches (e.g. a difference
+       operator referencing the result of a Boolean expression). */
+    if (MULTIPLE_INPUT_EDGES(n) && MAP_LIST(n))
+        for (unsigned int i = 0; i < PFarray_last (MAP_LIST(n)); i++) {
+            map = (req_val_t *) PFarray_at (MAP_LIST(n), i);
+            map->sel_name = false;
+            map->sel_val  = false;
+        }
 
     /* Adjust the properties of the algebra operators based
        on the current mapping list (MAP_LIST(n)). The adjust_*()
@@ -568,18 +583,25 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
                     ADD(new_map, map_item);
                 }
             }
+
             prop_infer_reqvals (L(n), new_map);
         }   return; /* only infer once */
 
         case la_select:
             /* introduce new required value column */
             adjust_sel (n->sem.select.att);
+
+            /* overrule any previous negative setting
+               (which may be introduced by multiple parent edges) */
+            map = find_map (MAP_LIST(n), n->sem.select.att);
+            map->sel_name = true;
+            map->sel_val  = true;
             break;
 
         case la_pos_select:
         {
             PFord_ordering_t sortby = n->sem.pos_sel.sortby;
-            for (unsigned int i = 0; i < PFord_count (sortby); i++)                
+            for (unsigned int i = 0; i < PFord_count (sortby); i++)
                  /* for the order criteria we only have to ensure
                     the correct order */
                 adjust_order (PFord_order_col_at (sortby, i));
@@ -597,10 +619,10 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
             for (unsigned int i = 0; i < n->schema.count; i++) {
                 PFalg_att_t cur = n->schema.items[i].name;
                 req_val_t  *map = find_map (MAP_LIST(n), cur);
-                
+
                 if (map && map->value)
                     continue;
-                
+
                 /* Keep order, join, and part columns if they stem from
                    the same operator.  For all other columns we require
                    the real values. */
@@ -619,17 +641,17 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
         case la_difference:
         {
             PFarray_t *rmap;
-            
+
             /* We have to apply a natural join here which means
                the values should be comparable. (Including domain
                information might improve this inference.) */
             for (unsigned int i = 0; i < n->schema.count; i++) {
                 PFalg_att_t cur = n->schema.items[i].name;
                 req_val_t  *map = find_map (MAP_LIST(n), cur);
-                
+
                 if (map && map->value)
                     continue;
-                
+
                 /* Keep order, join, and part columns if they stem from
                    the same operator.  For all other columns we require
                    the real values. */
@@ -685,7 +707,7 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
                 adjust_value (n->sem.binary.att2);
             }
             break;
-            
+
         case la_num_gt:
         case la_to:
             adjust_value (n->sem.binary.att1);
@@ -755,7 +777,7 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
         case la_rank:    /* therefore never needs to be removed */
         {
             PFord_ordering_t sortby = n->sem.sort.sortby;
-            for (unsigned int i = 0; i < PFord_count (sortby); i++)                
+            for (unsigned int i = 0; i < PFord_count (sortby); i++)
                  /* for the order criteria we only have to ensure
                     the correct order */
                 adjust_order (PFord_order_col_at (sortby, i));
@@ -851,7 +873,7 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
         case la_twig:
             prop_infer_reqvals_empty (L(n)); /* constructor */
             return; /* only infer once */
-            
+
         case la_fcns:
             prop_infer_reqvals_empty (L(n)); /* constructor */
             prop_infer_reqvals_empty (R(n)); /* constructor */
@@ -1042,13 +1064,16 @@ prop_infer (PFla_op_t *n)
     /* count number of incoming edges
        (during first run) */
     EDGE(n)++;
+    MULTIPLE_INPUT_EDGES(n) = true;
 
     /* nothing to do if we already visited that node */
     if (SEEN(n))
         return;
     /* otherwise initialize edge counter (first occurrence) */
-    else
-        EDGE(n) = 1;
+    else {
+        EDGE(n)                 = 1;
+        MULTIPLE_INPUT_EDGES(n) = false;
+    }
 
     /* infer properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
@@ -1079,7 +1104,8 @@ PFprop_infer_reqval (PFla_op_t *root)
 
     /* second run infers required values properties */
     prop_infer_reqvals (root, NULL);
-    PFla_dag_reset (root);
+    /* reset the multiple input edges flag */
+    PFla_in_reset (root);
 }
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */
