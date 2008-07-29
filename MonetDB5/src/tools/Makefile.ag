@@ -44,7 +44,7 @@ lib_embeddedmal = {
 
 bin_Mbeddedmal = {
 	SOURCES = prog.c
-	LIBS = libembeddedmal ../mal/libmonetdb5 @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream $(CLIENTS_LIBS) -lMapi \
+	LIBS = libembeddedmal @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
