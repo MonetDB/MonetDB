@@ -3042,10 +3042,11 @@ BPMsaveCatalog(int *r)
 
 
 
-void findQuantHisto(ValPtr vp, BAT * b, lng sp, int msz, int maxno)
+void findQuantHisto(ValPtr vp, BAT * b, lng sp, lng msz, lng maxno)
 {
 	BUN p, pprev, stop; 
-	int c, tpe, quan, pertpl, s=0, cn, it =0;
+	int c, tpe, s=0, cn, it =0;
+	lng pertpl, quan;
 	BATiter bsi;
 	BAT *bh, *bs;
 	ValPtr v = vp;
@@ -3089,11 +3090,10 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 	Partition ps, p, pprev;
 	ValPtr sep, v;
 	bat *bb;
-	int i, n=0, tpe, *cnts;
+	int k,nxt, i, n=0, tpe, *cnts;
 	ptr nilptr;
 	int (*cmp) (ptr, ptr);
-	int sf, k, nxt;
-	lng msz, space;
+	lng sf, msz, space;
 	(void) ret;
 
 	BPMopen();
