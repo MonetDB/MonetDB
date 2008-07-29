@@ -84,10 +84,6 @@ map_fun (PFla_op_t *p)
 static void
 opt_reqvals (PFla_op_t *p)
 {
-    unsigned int count = 0;
-    PFalg_att_t  att = 0;
-    bool         val = false;
-
     assert (p);
 
     /* nothing to do if we already visited that node */
@@ -109,13 +105,6 @@ opt_reqvals (PFla_op_t *p)
             *p = *PFla_empty_tbl_ (p->schema);
             return;
         }
-
-        if (PFprop_req_bool_val (p->prop, cur_att)) {
-            count++;
-            att = cur_att;
-            val = PFprop_req_bool_val_val (p->prop, cur_att);
-        }
-
     }
 
     /* Replace rowrank operators whose real values
