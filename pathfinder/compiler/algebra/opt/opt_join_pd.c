@@ -414,6 +414,23 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                          llp->sem.rowid.res == proj_at (rproj, 0).old &&
                          llp->sem.rowid.res == proj_at (llproj, 0).old)
                     ;
+                else if (rp->kind == la_rowid &&
+                         latt == proj_at (lrproj, 0).new &&
+                         lrp->kind == la_rowid &&
+                         rp == lrp &&
+                         lrp->sem.rowid.res == proj_at (rproj, 0).old &&
+                         lrp->sem.rowid.res == proj_at (llproj, 0).old) {
+                    PFla_op_t *tmp_op;
+                    PFarray_t *tmp_proj;
+                   
+                    tmp_op = llp;
+                    llp    = lrp;
+                    lrp    = tmp_op;
+                    
+                    tmp_proj = llproj;
+                    llproj   = lrproj;
+                    lrproj   = tmp_proj;
+                }
                 else
                     break;
                     
