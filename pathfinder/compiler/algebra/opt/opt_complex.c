@@ -66,175 +66,127 @@ find_old_name (PFla_op_t *op, PFalg_att_t att)
  * find_last_base checks for the following
  * small DAG fragment:
  *
- *         pi*_1
- *         |
- *        |X|_1
- *        /  \
- *    count  pi*_2    This fragment has to fulfill some additional
- *      |     |       conditions:
- *     pi*_3  |       o |X|_1.att1 == #.res (part)
- *      |     |       o |X|_2.att2 == #.res (num)
- *     |X|_2  |       o count.res == last
- *     / \    |       o count.part == #.res (part)
- *    |  pi*_4|       o |X|_2.att1 == iter
- *    |    \ /        o |X|_2.att2 == iter
- *   pi*_5  #
- *     \    |         Furthermore the rowid operator (#) forms
- *      \  pi*_6      the output and the variables (iter, item,
- *       \  /         and map) are updated to refer to the correct
- *       (..)         columns at op #.
- *
+ *     /   pi*  \*
+ *    |    |     |
+ *     \  |X|   /     Note: All joins |X| are mapping joins
+ *        / \               (the right join column is key).
+ *      |X|  \
+ *      / \_______
+ *      |         \
+ *     pi*        U
+ *      |     ___/ \________
+ *      |    /              \
+ *      |  count_last/iter  @last:0
+ *      |   |                |
+ *      |  pi*
+ *      \  /
+ *      (..)
  */
-static PFla_op_t *
+static bool
 find_last_base (PFla_op_t *op,
-                PFalg_att_t *item,
-                PFalg_att_t *iter,
-                PFalg_att_t last,
-                PFalg_proj_t *map,
-                unsigned int map_count)
+                PFalg_att_t item,
+                PFalg_att_t iter,
+                PFalg_att_t last)
 {
-    PFla_op_t  *count     = NULL,
-               *rowid     = NULL,
-               *eqjoin    = NULL,
-               *base      = NULL;
-    PFalg_att_t part      = att_NULL,
-                iter1     = att_NULL,
-                iter2     = att_NULL,
-                num       = att_NULL,
-                part_backup;
-    bool        base_left = true /* dummy value */;
+    PFla_op_t  *base = NULL;
+    PFalg_att_t base_iter = att_NULL;
 
-    /* pi*_1: update the column names */
+    /* ignore projections */
     while (op->kind == la_project) {
-        for (unsigned int i = 0; i < map_count; i++) {
-            map[i].old = find_old_name (op, map[i].old);
-            if (!map[i].old) return NULL;
+        iter = find_old_name (op, iter); if (!iter) return false;
+        item = find_old_name (op, item); if (!item) return false;
+        last = find_old_name (op, last); if (!last) return false;
+        op = L(op);
+    }
+
+    if (op->kind != la_eqjoin ||
+        (op->sem.eqjoin.att1 != iter &&
+         op->sem.eqjoin.att2 != iter))
+        return false;
+
+    /* Ensure that the join is a mapping join (and decide
+       based on column item where to look for the aggregate). */
+    if (PFprop_ocol (L(op), item) &&
+        PFprop_key_right (op->prop, op->sem.eqjoin.att2) &&
+        PFprop_subdom (op->prop,
+                       PFprop_dom_left (op->prop,
+                                        op->sem.eqjoin.att1),
+                       PFprop_dom_right (op->prop,
+                                         op->sem.eqjoin.att2))) {
+        base_iter = op->sem.eqjoin.att1;
+        iter = op->sem.eqjoin.att2;
+        base = L(op);
+        op   = R(op);
+    }
+    else if (PFprop_ocol (R(op), item) &&
+             PFprop_key_left (op->prop, op->sem.eqjoin.att1) &&
+             PFprop_subdom (op->prop,
+                            PFprop_dom_right (op->prop,
+                                              op->sem.eqjoin.att2),
+                            PFprop_dom_left (op->prop,
+                                             op->sem.eqjoin.att1))) {
+        base_iter = op->sem.eqjoin.att2;
+        iter = op->sem.eqjoin.att1;
+        base = R(op);
+        op   = L(op);
+    }
+    else
+        return false;
+
+    /* operator union marks the begininng of the count aggregate */
+    if (op->kind == la_disjunion) {
+        /* follow the projection list to the base operator */
+        while (base->kind == la_project) {
+            base_iter = find_old_name (base, base_iter);
+            if (!base_iter) return false;
+            base = L(base);
         }
-        *iter = find_old_name (op, *iter); if (!*iter) return NULL;
-        *item = find_old_name (op, *item); if (!*item) return NULL;
-        last = find_old_name (op, last); if (!last) return NULL;
-        op = L(op);
-    }
 
-    /* |X|_1 */
-    if (op->kind != la_eqjoin)
-        return NULL;
+        /**
+         * check for the following pattern
+         * (where the left and the right side can be switched):
+         *
+         *            U
+         *      _____/ \_____
+         *     /             \
+         * count_last/iter   @last:0
+         *
+         */
+        if (L(op)->kind == la_count &&
+            R(op)->kind == la_attach &&
+            L(op)->sem.aggr.part &&
+            L(op)->sem.aggr.part == iter &&
+            L(op)->sem.aggr.res  == last &&
+            R(op)->sem.attach.res == last &&
+            R(op)->sem.attach.value.type == aat_int &&
+            R(op)->sem.attach.value.val.int_ == 0)
+            op = LL(op);
+        else if (R(op)->kind == la_count &&
+                 L(op)->kind == la_attach &&
+                 R(op)->sem.aggr.part &&
+                 R(op)->sem.aggr.part == iter &&
+                 R(op)->sem.aggr.res  == last &&
+                 L(op)->sem.attach.res == last &&
+                 L(op)->sem.attach.value.type == aat_int &&
+                 L(op)->sem.attach.value.val.int_ == 0)
+            op = RL(op);
+        else
+            return false;
 
-    /* count */
-    if (L(op)->kind == la_count) {
-        count  = L(op);
-        rowid  = R(op);
-        part   = op->sem.eqjoin.att1;
-        num    = op->sem.eqjoin.att2;
-    } else if (R(op)->kind == la_count) {
-        count  = R(op);
-        rowid  = L(op);
-        part   = op->sem.eqjoin.att2;
-        num    = op->sem.eqjoin.att1;
-    } else
-        return NULL;
-
-    if (!count->sem.aggr.part ||
-        count->sem.aggr.part != part ||
-        count->sem.aggr.res != last)
-        return NULL;
-
-    /* ensure that last does not appear
-       in the list of output variables */
-    for (unsigned int i = 0; i < map_count; i++)
-        if (map[i].old == last)
-            return NULL;
-
-    /* align the name of the join attribute we don't follow with map */
-    for (unsigned int i = 0; i < map_count; i++)
-        if (map[i].old == part)
-            map[i].old = num;
-
-    /* pi*_2: update the column names */
-    op = rowid;
-    while (op->kind == la_project) {
-        for (unsigned int i = 0; i < map_count; i++) {
-            map[i].old = find_old_name (op, map[i].old);
-            if (!map[i].old) return NULL;
+        /* follow the projections underneath the count operator */
+        while (op->kind == la_project) {
+            iter = find_old_name (op, iter); if (!iter) return false;
+            op = L(op);
         }
-        *iter = find_old_name (op, *iter); if (!*iter) return NULL;
-        *item = find_old_name (op, *item); if (!*item) return NULL;
-        num  = find_old_name (op, num);  if (!num)  return NULL;
-        op = L(op);
-    }
-    rowid = op;
 
-    /* # */
-    if (rowid->kind != la_rowid || rowid->sem.rowid.res != num)
-        return NULL;
-
-    op = L(op);
-    iter1 = *iter;
-
-    /* pi*_6: update a copy of the iter column name */
-    while (op->kind == la_project) {
-        iter1 = find_old_name (op, iter1); if (!iter1) return NULL;
-        op = L(op);
+        /* ensure that the count operator stems from the same input
+           as the order column (and refers to the same iterations) */
+        return op == base && iter == base_iter;
     }
-    base = op;
-
-    /* pi*_3: update a copy of the |X|_1 join column name */
-    op = L(count);
-    while (op->kind == la_project) {
-        part = find_old_name (op, part); if (!part) return NULL;
-        op = L(op);
-    }
-
-    /* |X|_2 */
-    if (op->kind != la_eqjoin)
-        return NULL;
-    eqjoin = op;
-
-    /* pi*_[4|5]: update a copies of the |X|_[1|2] join column names */
-    /* make sure the left side matches */
-    op = L(eqjoin);
-    iter2 = eqjoin->sem.eqjoin.att1;
-    part_backup = part;
-    while (op->kind == la_project) {
-        part  = find_old_name (op, part);
-        iter2 = find_old_name (op, iter2); if (!iter2) return NULL;
-        op = L(op);
-    }
-    /* check for the correct operator: # or (..) */
-    if (op == base) {
-        if (iter2 != iter1) return NULL;
-        else base_left = true;
-    }
-    else if (op == rowid) {
-        if (num != part || *iter != iter2) return NULL;
-        else base_left = false;
-    }
-    else if (op != base && op != rowid)
-        return NULL;
-
-    /* pi*_[4|5]: update a copies of the |X|_[1|2] join column names */
-    /* make sure the right side matches */
-    op = R(eqjoin);
-    iter2 = eqjoin->sem.eqjoin.att2;
-    part = part_backup;
-    while (op->kind == la_project) {
-        part  = find_old_name (op, part);
-        iter2 = find_old_name (op, iter2); if (!iter2) return NULL;
-        op = L(op);
-    }
-    /* check for the correct 'other' operator: # or (..) */
-    if (op == base) {
-        if (iter2 != iter1) return NULL;
-        if (base_left == true) return NULL;
-    }
-    else if (op == rowid) {
-        if (num != part || *iter != iter2) return NULL;
-        if (base_left == false) return NULL;
-    }
-    else if (op != base && op != rowid)
-        return NULL;
-
-    return rowid;
+    else
+        /* recursively call find_last_base() to ignore projections
+           AND mapping joins */
+        return find_last_base (base, item, base_iter, last);
 }
 
 /**
@@ -392,12 +344,8 @@ replace_pos_predicate (PFla_op_t *p)
     item = PFord_order_col_at (op->sem.sort.sortby, 0);
 
     if (!pos) {
-        if (!part) return;
-
-        /* find the base operator and update the columns in
-           variables: item, part and map */
-        base = find_last_base (base, &item, &part, last, map, count);
-        if (!base) return;
+        if (!part ||
+            !find_last_base (base, item, part, last)) return;
         pos = -1;
     }
 
@@ -1052,7 +1000,7 @@ opt_complex (PFla_op_t *p)
 
         case la_rank:
             /* first of all try to replace a rank with a single
-               ascending order criterion by a projection match 
+               ascending order criterion by a projection match
                match the pattern rank - (project -) rank and
                try to merge both rank operators if the nested
                one only prepares some columns for the outer rank.
@@ -1352,7 +1300,7 @@ opt_complex (PFla_op_t *p)
                     /* rewrite child into descendant
                        and discard descendant-or-self step */
                     *p = *PFla_step_join_simple (
-                              L(p), 
+                              L(p),
                               PFla_project_ (RLR(p), R(p)->schema.count, proj),
                               spec, item_in, item_res);
                     break;
