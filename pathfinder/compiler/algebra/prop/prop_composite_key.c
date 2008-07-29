@@ -624,8 +624,24 @@ infer_ckey (PFla_op_t *n)
             PFalg_att_t ckey;
             for (unsigned int i = 0; i < PFarray_last (right); i++) {
                 ckey = *(PFalg_att_t *) PFarray_at (right, i);
+
+                if ((ckey & n->sem.step.item &&
+                     (n->sem.step.spec.axis == alg_attr ||
+                      n->sem.step.spec.axis == alg_chld ||
+                      n->sem.step.spec.axis == alg_self)) ||
+                    (PFprop_level_right (n->prop, n->sem.step.item) >= 0 &&
+                     ckey & n->sem.step.item &&
+                     (n->sem.step.spec.axis == alg_desc ||
+                      n->sem.step.spec.axis == alg_desc_s)))
+                    union_ (n->prop->ckeys, 
+                            (ckey & ~n->sem.step.item) | n->sem.step.item_res);
+                
                 union_ (n->prop->ckeys,
                         ckey | n->sem.step.item_res);
+                
+                /* the self axis can be only a filter */
+                if (n->sem.step.spec.axis == alg_self)
+                    union_ (n->prop->ckeys, ckey);
             }
 
             if (PFprop_card (R(n)->prop) == 1)
