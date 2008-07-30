@@ -313,7 +313,10 @@ blob_convert(blob *b, int direction)
 int
 blob_length(blob *p)
 {
-	return blobsize(p->nitems); /* 64bit: check for overflow */
+	size_t len;
+	len = blobsize(p->nitems); /* 64bit: check for overflow */
+	assert(len <INT_MAX);
+	return (int) len;
 }
 
 
@@ -924,7 +927,7 @@ SQLBLOBfromstr(char *s, int *l, blob **val)
 str 
 BLOBblob_blob(blob **d, blob **s)
 {
-	int len = blobsize((*s)->nitems);
+	size_t len = blobsize((*s)->nitems);
 	blob *b;
 
 	if( (*s)->nitems == ~(size_t) 0){

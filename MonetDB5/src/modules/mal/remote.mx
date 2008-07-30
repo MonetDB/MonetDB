@@ -316,7 +316,7 @@ static INLINE str RMTinternalget(Mapi mconn, str ident, ValPtr v) {
 		throw(MAL, "remote.get", "missing first column in tuple");
 	}
 
-	vtype = getTypeIndex(type, strlen(type), -1);
+	vtype = getTypeIndex(type, (int) strlen(type), -1);
 	if (vtype == TYPE_bat) {
 		int h, t, s;
 		ptr l, r;
@@ -326,9 +326,9 @@ static INLINE str RMTinternalget(Mapi mconn, str ident, ValPtr v) {
 
 		/* no checks on the existence of the values */
 		val = mapi_fetch_field(mhdl, 1);
-		h = getTypeIndex(val, strlen(val), -1);
+		h = getTypeIndex(val, (int) strlen(val), -1);
 		val = mapi_fetch_field(mhdl, 2);
-		t = getTypeIndex(val, strlen(val), -1);
+		t = getTypeIndex(val, (int) strlen(val), -1);
 		vtype = newBatType(h, t);
 		val = mapi_fetch_field(mhdl, 3);
 		len = atol(val);
@@ -674,7 +674,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		mapi_close_handle(mhdl);
 		throw(MAL, "remote.exec", "missing first column in tuple");
 	}
-	i = strlen(tmp) + 1;
+	i = (int) strlen(tmp) + 1;
 	ident = alloca(sizeof(char) * i);
 	memcpy(ident, tmp, i);
 
@@ -737,7 +737,7 @@ str RMTcreate(
 
 	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.create", "connection name is NULL or nil");
-	if ((s = strlen(*conn)) > 15)
+	if ((s = (int) strlen(*conn)) > 15)
 		throw(ILLARG, "remote.create", "connection name may not exceed 15 characters");
 	if (host == NULL || *host == NULL || strcmp(*host, (str)str_nil) == 0)
 		throw(ILLARG, "remote.create", "hostname is NULL or nil");

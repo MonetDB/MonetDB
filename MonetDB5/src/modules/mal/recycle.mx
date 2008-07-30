@@ -160,19 +160,7 @@ RECYCLEstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	(void) stk;
 
-	if( recycleVersion == 0){	
-		MT_lock_init(&recycleLock,"recycle");
-		recycleVersion =1 ;
-	}
-	if( mb->version ) {
-		/* upgrade to a new version by dropping old info */
-		RECYCLEversion(cntxt, mb);
-	} else {
-		mal_set_lock(recycleLock,"recycle");
-		mb->version= recycleVersion;
-		recycleClaim++;
-		mal_unset_lock(recycleLock,"recycle");
-	}
+	RECYCLEversion(cntxt, mb);
 	return MAL_SUCCEED;
 }
 
@@ -186,10 +174,8 @@ RECYCLEstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	if( recycleBlk == 0)
 		return MAL_SUCCEED;
-	mal_set_lock(recycleLock,"recycle");
 	recycleBlk->version = 0;
 	recycleClaim--;
-	mal_unset_lock(recycleLock,"recycle");
 	return MAL_SUCCEED;
 }
 

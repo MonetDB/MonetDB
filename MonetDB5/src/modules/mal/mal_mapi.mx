@@ -458,7 +458,7 @@ doChallenge(str cmd, stream *in, stream *out) {
 		GDKfree(algos);
 		stream_flush(fdout);
 		/* get response */
-		if ((len = stream_read_block(fdin, buf, 1, BLOCK)) < 0 || 
+		if ((len = (int) stream_read_block(fdin, buf, 1, BLOCK)) < 0 || 
 			/* in embedded mode we allow just one client */
 			(GDKembedded && MCcountClients() > 1)) {
 			/* FIXME: tell the client in a normal way! */
@@ -496,7 +496,7 @@ SERVERlistenThread(int *Sock)
 {
 	char *msg = 0;
 	char *cmd = threadcommand;
-	int sock = *Sock;
+	SOCKET sock = *Sock;
 
 	GDKfree(Sock);
 	if( lastlistener < 8 )
@@ -604,7 +604,7 @@ str
 SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 {
 	struct sockaddr_in server;
-	int sock = -1;
+	SOCKET sock = -1;
 	int *Sock = GDKmalloc(sizeof(int));
 	int accept_any=0;
 #ifdef HAVE_SYS_UN_H
@@ -1828,10 +1828,10 @@ void SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 	case TYPE_str:
 		if(fld==0 || strcmp(fld,"nil")==0){
 			v->val.sval= GDKstrdup(str_nil);
-			v->len= strlen(v->val.sval);
+			v->len= (int) strlen(v->val.sval);
 		} else {
 			v->val.sval= GDKstrdup(fld);
-			v->len= strlen(fld);
+			v->len= (int) strlen(fld);
 		}
 		break;
 	}
@@ -2001,7 +2001,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		ht = getTypeName(getHeadType(tpe));
 		tt = getTypeName(getTailType(tpe));
 		snprintf(buf,BUFSIZ,"%s:= bat.new(:%s,%s);", *nme, ht,tt );
-		len = strlen(buf);
+		len = (int) strlen(buf);
 		snprintf(buf+len,BUFSIZ-len,"%s:= io.import(%s,tuples);", *nme, *nme);
 
 		/* and execute the request */

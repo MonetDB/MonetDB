@@ -1601,7 +1601,7 @@ strConcat(str *res, str s, ptr val, int t)
 			val = (ptr) valstr;
 		}
 	} else 
-		l2 = strlen((str) val);
+		l2 = (int) strlen((str) val);
 
 	if (* (str) val == chr_nil || *s == chr_nil)
 		*res = GDKstrdup(str_nil);
@@ -1625,7 +1625,7 @@ strLength(int *res, str s)
 	RETURN_NIL_IF(strNil(s), TYPE_int);
 	l=  UTF8_strlen(s);
 	assert(l <INT_MAX);
-	*res = l;
+	*res = (int) l;
 	return GDK_SUCCEED;
 }
 
@@ -1679,7 +1679,7 @@ strSubString(str *res, str s, int *offset, int *length)
 		return GDK_SUCCEED;
 	}
 	s = UTF8_strtail(s, MAX(0, off));
-	len = UTF8_strtail(s, l) - s;
+	len = (int)(UTF8_strtail(s, l) - s);
 	if (off < 0) {
 		len += off;
 		off = 0;

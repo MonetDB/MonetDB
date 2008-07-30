@@ -592,7 +592,7 @@ str CALCsizeof@1(int *res , @1 *a ) {
 
 calc_export str CALClengthstr(int *res , str *a );
 str CALClengthstr(int *res , str *a ) {
-   *res = strlen(*a);
+   *res = (int) strlen(*a);
    return(MAL_SUCCEED);
 }
 @:any_binary_minmax(MIN,<=)@
@@ -662,7 +662,7 @@ str
 CALCstrConcatInt(str *ret, str *l, int *r)
 {
 	str s;
-	int len = strlen(*l) + 32;
+	int len = (int) strlen(*l) + 32;
 
 	s = GDKmalloc(len);
 	snprintf(s, len, "%s%d", *l, *r);
@@ -1344,7 +1344,7 @@ calc_export str CALCstr2oid(oid *ret, str *val);
 str
 CALCstr2oid(oid *ret, str *val)
 {
-	int l = strlen(*val);
+	int l = (int) strlen(*val);
 
 	(void) OIDfromStr(*val, &l, (ptr) ret);
 	return MAL_SUCCEED;

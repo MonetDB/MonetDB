@@ -259,7 +259,7 @@ BATXMLstr2xml(int *ret, int *bid)
 		ptr h= BUNhead(bi,p);
 		str t= (str) BUNtail(bi,p);
 		if( (elm=BATXMLcountEscape(t)) ){
-			if( (len=strlen(t)+6*elm+1) >= size){
+			if( (len= (int) strlen(t)+6*elm+1) >= size){
 				assert(0);
 				buf= GDKrealloc(buf, len);
 				size= len;
@@ -330,7 +330,7 @@ BATXMLtag(int *ret, str *name, int *bid)
 	BAT *b,*bn;
 	BUN p,q;
 	str buf= GDKmalloc(BUFSIZ);
-	int tlen= strlen(*name)+2, len, size= BUFSIZ;
+	int tlen= (int) strlen(*name)+2, len, size= BUFSIZ;
 	BATiter bi;
 
 	prepareOperand(b,bid,"tag");
@@ -341,7 +341,7 @@ BATXMLtag(int *ret, str *name, int *bid)
 	BATloop(b,p,q){
 		ptr h= BUNhead(bi,p);
 		str t= (str) BUNtail(bi,p);
-		if( (len=strlen(t) + 2*tlen+10) >= size){
+		if( (len = (int) strlen(t) + 2*tlen+10) >= size){
 			buf= GDKrealloc(buf,len);
 			snprintf(buf,size,"<%s>",*name);
 			size= len;
@@ -377,7 +377,7 @@ BATXMLoptions(int *ret, str *name, str *options, int *bid)
 	BUN p,q;
 	str buf= GDKmalloc(BUFSIZ);
 	str val= GDKmalloc(BUFSIZ);
-	int size= BUFSIZ, len=strlen(*name);
+	int size= BUFSIZ, len= (int) strlen(*name);
 	BATiter bi;
 
 	prepareOperand(b,bid,"options");
@@ -407,7 +407,7 @@ BATXMLoptions(int *ret, str *name, str *options, int *bid)
 			bunfastins(bn,h,buf);
 		} else {
 			if( (int)strlen(t)> size-2*len-6){
-				size+= strlen(t);
+				size+= (int) strlen(t);
 				val= (char*) GDKrealloc(val, size+strlen(t));
 			}
 			snprintf(val+len+2,size-len,"%s</%s>",t,*name);
@@ -439,7 +439,7 @@ BATXMLcomment(int *ret, int *bid)
 	BATloop(b,p,q){
 		ptr h= BUNhead(bi,p);
 		str t= (str) BUNtail(bi,p);
-		if( (len=strlen(t)) >= size){
+		if( (len= (int) strlen(t)) >= size){
 			buf= GDKrealloc(buf,len+20);
 			size= len+20;
 		}
@@ -498,12 +498,12 @@ BATXMLroot(int *ret, int *bid, str *version, str *standalone)
 	prepareResult(bn,b,TYPE_xml,"root");
 
 	len= strlen(*version)+strlen(*standalone)+
-			strlen("<? version=\"\" standalone=\"\"?>");
+			(int) strlen("<? version=\"\" standalone=\"\"?>");
 	bi = bat_iterator(b);
 	BATloop(b,p,q){
 		ptr h= BUNhead(bi,p);
 		str t= (str) BUNtail(bi,p);
-		if( (len=strlen(t)) >= size){
+		if( (len=(int) strlen(t)) >= size){
 			buf= GDKrealloc(buf,len+20);
 			size= len+20;
 		}
@@ -536,7 +536,7 @@ BATXMLattribute(int *ret, str *name, int *bid)
 	BATloop(b,p,q){
 		ptr h= BUNhead(bi,p);
 		str t= (str) BUNtail(bi,p);
-		if( (len=strlen(t)) >= size){
+		if( (len=(int) strlen(t)) >= size){
 			buf= GDKrealloc(buf,len+20);
 			size= len+20;
 		}
@@ -580,23 +580,23 @@ BATXMLelement(int *ret, str *name, str *namespace, str *attributes, int *bid)
 
 		/* include attributes */
 		if( attributes) {
-			if( (len=strlen(t)) >= size){
+			if( (len=(int) strlen(t)) >= size){
 				buf= GDKrealloc(buf,len+strlen(*name)+BUFSIZ);
-				size= len+strlen(*name)+BUFSIZ;
+				size= (int) (len+strlen(*name)+BUFSIZ);
 			}
 			snprintf(buf,size,"<%s %s>",*name,*attributes);
 		} else 
 			snprintf(buf,size,"<%s>",*name);
-		elm= offset= strlen(buf);
+		elm= offset= (int) strlen(buf);
 
 		/* fetch the elements */
-		if( (len=strlen(t)+elm) >= size-offset){
+		if( (len=(int) strlen(t)+elm) >= size-offset){
 			buf= GDKrealloc(buf,size+2*elm);
 			size= len+2*elm;
 		}
 		if (!strNil(t)) {
 			snprintf(buf+offset,size-offset,"%s",t);
-			offset+= strlen(buf+offset);
+			offset+= (int) strlen(buf+offset);
 		}
 		snprintf(buf + offset,size-offset, "</%s>\n",*name);
 		bunfastins(bn,h,buf);
@@ -713,7 +713,7 @@ BATXMLconcat(int *ret, int *bid, int *rid)
 		str t= (str) BUNtail(bi,p);
 		oid *h= (oid*) BUNhead(bi,p);
 		str v= (str) BUNtail(ri,rp);
-		len= strlen(t)+strlen(v)+2;
+		len= (int) strlen(t)+strlen(v)+2;
 
 		if( len >= size){
 			if(buf) GDKfree(buf);
@@ -783,7 +783,7 @@ BATXMLagg3(int *ret, int *bid,int *grp, int *ext)
 		}
 		gid=o;
 		first=0;
-		len= strlen(t)+1;
+		len= (int) strlen(t)+1;
 		if( len >= size-offset){
 			if(buf) GDKfree(buf);
 			buf= GDKrealloc(buf,size+len);
@@ -858,7 +858,7 @@ BATXMLagg(int *ret, int *bid,int *grp)
 		}
 		gid=o;
 		first=0;
-		len= strlen(t)+1;
+		len= (int) strlen(t)+1;
 		if( len >= size-offset){
 			if(buf) GDKfree(buf);
 			buf= GDKrealloc(buf,size+len);

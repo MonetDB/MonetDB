@@ -241,7 +241,7 @@ re_create( char *pat, int nr)
 	while((q = strchr(p, '%')) != NULL) {
 		*q = 0;
 		n->k = GDKstrdup(p);
-		n->len = strlen(n->k);
+		n->len = (int) strlen(n->k);
 		n->n = NULL;
 		if ((--nr) > 0) {
 			n = n->n = (RE*)GDKmalloc(sizeof(RE));
@@ -909,7 +909,7 @@ pcre_put(Heap *h, var_t *bun, pcre * val)
 int
 pcre_length(pcre * p)
 {
-	return (pcresize(p));
+	return (int) (pcresize(p));
 }
 
 void

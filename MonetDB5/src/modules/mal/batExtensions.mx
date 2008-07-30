@@ -219,7 +219,7 @@ CMDBATclone(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	res = (int *) getArgReference(s, p, 0);
 	ht = getArgType(m, p, 1);
 	tt = getArgType(m, p, 2);
-	cap = BATcount(b) + 64;
+	cap = (int) BATcount(b) + 64;
 @-
 Cloning should include copying of the properties.
 @c
@@ -291,7 +291,7 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	if (p->argc > 2)
 		cap = *(int *) getArgReference(s, p, 2);
 	else
-		cap = BATcount(b);
+		cap = (int) BATcount(b);
 	o = b->hseqbase;
 	BBPunfix(b->batCacheid);
 

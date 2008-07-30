@@ -242,7 +242,7 @@ str
 XMLroot(str *ret, str *val, str *version, str *standalone)
 {
 	int len;
-	str buf = (str) GDKmalloc(len= strlen(*val) + 
+	str buf = (str) GDKmalloc(len= (int) strlen(*val) + 
 		(int) strlen("<? version=\"\" standalone=\"\"?>"));
 	snprintf(buf,len,"<? version=\"%s\" stanalone=\"%s\"?>%s",
 		*version,*standalone,*val);
@@ -265,8 +265,8 @@ XMLelement(xml *ret, str *name, str *nspace, xml *attr, xml *Val)
 {
 	char *val = *Val;
 	int len;
-	str buf= (str) GDKmalloc(len=2*strlen(*name) +
-				strlen(*nspace) + strlen(*attr)+
+	str buf= (str) GDKmalloc(len=2* (int)strlen(*name) +
+				(int)strlen(*nspace) + (int)strlen(*attr)+
 				(int)strlen("<></> ")+strlen(val)+1);
 	if (strNil(val))  /* todo short hand <elementname /> */
 		val = "";
@@ -291,7 +291,7 @@ str
 XMLelementSmall(xml *ret, str *name, xml *val)
 {
 	int len;
-	str buf= (str) GDKmalloc(len=2*strlen(*name) +
+	str buf= (str) GDKmalloc(len=2*(int)strlen(*name) +
 				(int)strlen("<></> ")+strlen(*val));
 	snprintf(buf,len,"<%s>%s</%s>",*name, *val, *name);
 	*ret= buf;

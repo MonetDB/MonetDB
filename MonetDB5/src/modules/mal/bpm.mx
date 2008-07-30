@@ -1335,7 +1335,7 @@ BPMcountInternal(bat bid)
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
 		materializePartition(bpmcat[i]);
 		b= BATdescriptor(bpmcat[i]->bid);
-		if( BATcount(b) != bpmcat[i]->cnt)
+		if( (size_t) BATcount(b) != bpmcat[i]->cnt)
 			printf("wrong count administration\n");
 		BBPunfix(b->batCacheid);
 		ret= ret + bpmcat[i]->cnt;
@@ -1368,7 +1368,7 @@ BPMemptySet(int *ret, bat *bid)
 		b= BATdescriptor(*bid);
 		if(b==0)
 			throw(MAL,"bpm.emptySet","Can not access BAT");
-		cnt = BATcount(b);
+		cnt = (int) BATcount(b);
 		BBPunfix(b->batCacheid);
 		if (cnt)
 			throw(OPTIMIZER, "mal.assert", "emptySet");
@@ -1377,7 +1377,7 @@ BPMemptySet(int *ret, bat *bid)
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
 		b = BATdescriptor(bpmcat[i]->bid);
 		if (b)
-			cnt = BATcount(b);
+			cnt = (int) BATcount(b);
 		BBPunfix(b->batCacheid);
 		if (cnt)
 			throw(OPTIMIZER, "mal.assert", "emptySet");
@@ -1505,7 +1505,7 @@ BPMaddPartition(int *ret, bat *bid, bat *src){
 	}
 
 	BBPunfix(ba->batCacheid); 
-	cnt = BATcount(b);
+	cnt = (int) BATcount(b);
 #ifdef _DEBUG_BPM_
 	printf("addPartition %d -> %d\n",*bid, *src);
 #endif
@@ -1768,7 +1768,7 @@ spread( bat *ret, int *cnt, BAT *b, ValPtr sep, int n, int skip)
 	for(i=0; i<=k; i++)
 		if (i!=skip){
 			ret[i]= bs[i]->batCacheid;
-			cnt[i]= BATcount(bs[i]);
+			cnt[i]= (int) BATcount(bs[i]);
 			BBPkeepref(bs[i]->batCacheid);
 		#ifdef _DEBUG_BPM_
 			stream_printf(GDKout,"New bat %d\n",ret[i]);
@@ -1819,7 +1819,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 
 	if(policy == ORACLEPOLICY ) {
 		cnt= BPMcountInternal(b->batCacheid);
-		bcnt = BATcount(b);
+		bcnt = (int) BATcount(b);
 		if ( (cnt ==0) || (bcnt ==0) || (BATcount(bs) ==0) ) or =0;
 		else or=BPMoraclePolicy((double)BATcount(bs)/bcnt, (double)bcnt/cnt);
 	
@@ -1875,7 +1875,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	if ( (skip >-1) && (skip <n-1) ){
 		bb[skip]= bs->batCacheid;
 		BBPincref(bs->batCacheid,TRUE);
-		cnts[skip]= BATcount(bs);
+		cnts[skip]= (int) BATcount(bs);
 	}
 	BBPunfix(bs->batCacheid);
 
@@ -3051,7 +3051,7 @@ void findQuantHisto(ValPtr vp, BAT * b, lng sp, lng msz, lng maxno)
 	BAT *bh, *bs;
 	ValPtr v = vp;
 
-	c = BATcount(b);
+	c = (int) BATcount(b);
 	if ((c==0) || (msz>=sp)) return ;
 	pertpl = (lng) ceil((sp - sizeof(BATstore))/ (double)c);
 	quan = (lng) floor((msz- sizeof(BATstore))/  (double)pertpl);

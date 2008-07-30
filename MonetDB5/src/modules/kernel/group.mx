@@ -382,7 +382,7 @@ map2histo(BAT *map)
 			BBPreclaim(map);
 		return NULL;
 	}
-	sz = BATcount(map);
+	sz = (int) BATcount(map);
 	bn = BATnew(TYPE_oid,TYPE_int,sz);
 	BATloop(map, p, q) {
 		bunfastins(bn, 
@@ -705,7 +705,7 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 	BAT *map;
 	declare_@4
 	hash_t mask = derive_mask(ct_map, ct_histo, b); 
-	int custom_rng = BATcount(ct_histo); /* expected number of groups */
+	int custom_rng = (int) BATcount(ct_histo); /* expected number of groups */
 	hash_t custom_MASK = mask;
 
 	map_init_CUSTOM(map,hash,mask,entry,mapsize);
@@ -1028,7 +1028,7 @@ sort_flush(var_t *off, oid *o, size_t size, int tpe, char *base, oid *hdst, oid 
 	}
 	*idp = id;
 
-	return i;
+	return (int) i;
 }
 
 static int
@@ -1360,7 +1360,7 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 	if (BATcount(b) > 32*1024 &&
 	    (ATOMstorage(b->ttype) == TYPE_int || 
 	     ATOMstorage(b->ttype) == TYPE_lng)) { 
-		int N = BATcount(b), one = 1;
+		int N = (int) BATcount(b), one = 1;
 		assert(N);
 		if (b->ttype == TYPE_int) {
 			int h, l;

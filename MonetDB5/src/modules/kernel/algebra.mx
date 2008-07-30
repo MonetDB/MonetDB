@@ -1568,7 +1568,7 @@ int
 CMDcount(int *result, BAT *b)
 {
 /* 64bit: should return wrd */
-	*result = BATcount(b);
+	*result = (int)  BATcount(b);
 	return GDK_SUCCEED;
 }
 
@@ -1577,9 +1577,9 @@ CMDcount_nil(int *result, BAT *b, bit *ignore_nils)
 {
 /* 64bit: should return wrd */
 	if (*ignore_nils)
-		*result = BATcount_no_nil(b);
+		*result = (int) BATcount_no_nil(b);
 	else
-		*result = BATcount(b);
+		*result = (int) BATcount(b);
 	return GDK_SUCCEED;
 }
 
@@ -3099,13 +3099,11 @@ str
 ALGcount_bat(int *result, int *bid)
 {
 	BAT *b;
-	size_t cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "aggr.count", "Cannot access descriptor");
 	}
-	cnt = (int)  BATcount(b);
-	*result = cnt;
+	*result = (int) BATcount(b);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -3569,7 +3567,7 @@ str
 ALGhashjoin(int *result, int *lid, int *rid)
 {
 	BAT *left, *right, *bn;
-	int lsize, rsize;
+	size_t lsize, rsize;
 
 	if ((left = BATdescriptor(*lid)) == NULL) {
 		throw(MAL, "algebra.hashjoin", "Cannot access descriptor");
@@ -3796,7 +3794,7 @@ The avg aggregate only works for int and float fields.
 int
 CMDavg_@1(dbl* res, BAT *b)
 {
-	int cnt = BATcount(b);
+	size_t cnt = BATcount(b);
 
 	if (cnt) {
 		bit t = TRUE;

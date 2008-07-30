@@ -552,7 +552,7 @@ static Tablet *tableReports[MAL_MAXCLIENTS];
 static void
 TABformatPrepare(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int rnr = cntxt - mal_clients;
+	int rnr = (int) (cntxt - mal_clients);
 	Tablet *t;
 	int anr = 0, i, tpe, k=0;
 	ptr val;
@@ -565,7 +565,7 @@ TABformatPrepare(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		t->rrbrk = GDKstrdup("]");
 	if (t->sep == 0)
 		t->sep = GDKstrdup("\t");
-	t->rowwidth = strlen(t->rlbrk) + strlen(t->rrbrk) - 2;
+	t->rowwidth = (int) (strlen(t->rlbrk) + strlen(t->rrbrk) - 2);
 
 	for (i = pci->retc; i < pci->argc; anr++, i++) {
 		/* The type should be taken from the stack ! */
@@ -589,7 +589,7 @@ TABsetFormat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 TABheader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 
 	TABformatPrepare(cntxt, mb, stk, pci);
 	TABshowHeader(tableReports[rnr]);
@@ -599,7 +599,7 @@ TABheader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 TABdisplayTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 	Tablet *t;
 
 	TABheader(cntxt, mb, stk, pci);
@@ -617,7 +617,7 @@ TABdisplayTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 TABdisplayRow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 	Tablet *t;
 
 	TABheader(cntxt, mb, stk, pci);
@@ -636,7 +636,7 @@ TABdisplayRow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 TABpage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 	Tablet *t;
 
 	TABformatPrepare(cntxt, mb, stk, pci);
@@ -659,7 +659,7 @@ str
 TABsetProperties(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *prop= (str*) getArgReference(stk,pci,1);
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 
 	(void) mb;		/* fool compiler */
 	if (tableReports[rnr] == 0)
@@ -682,7 +682,7 @@ TABdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 TABfinishReport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 
 	(void) mb;		/* fool compiler */
 	(void) stk;
@@ -700,7 +700,7 @@ str
 TABsetStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	stream **s = (stream **) getArgReference(stk,pci,1);
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 
 	(void) mb;		/* fool compiler */
 	if (tableReports[rnr] == 0)
@@ -713,7 +713,7 @@ str
 TABsetPivot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *bid= (int*) getArgReference(stk,pci,1);
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 	BAT *b;
 
 	(void) mb;		/* fool compiler */
@@ -729,7 +729,7 @@ str
 TABsetComplaints(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *bid= (int*) getArgReference(stk,pci,1);
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 	BAT *b;
 
 	(void) mb;		/* fool compiler */
@@ -746,7 +746,7 @@ str
 TABsetDelimiter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *sep= (str *) getArgReference(stk,pci,1);
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 
 	(void) mb;		/* fool compiler */
 	if (tableReports[rnr] == 0)
@@ -770,7 +770,7 @@ TABsetColumnName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *idx= (int *) getArgReference(stk,pci,1);
 	str *s= (str *) getArgReference(stk,pci,2);
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
@@ -783,7 +783,7 @@ TABsetTableBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *lbrk= (str *) getArgReference(stk,pci,1);
 	str *rbrk= (str *) getArgReference(stk,pci,2);
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, MAXARG);
@@ -797,7 +797,7 @@ TABsetRowBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *lbrk= (str *) getArgReference(stk,pci,1);
 	str *rbrk= (str *) getArgReference(stk,pci,2);
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, MAXARG);
@@ -812,7 +812,7 @@ TABsetColumnBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *idx= (int *) getArgReference(stk,pci,1);
 	str *lbrk= (str *) getArgReference(stk,pci,2);
 	str *rbrk= (str *) getArgReference(stk,pci,3);
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
@@ -826,7 +826,7 @@ TABsetColumnNull(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *idx= (int *) getArgReference(stk,pci,1);
 	str *nullstr= (str *) getArgReference(stk,pci,2);
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
@@ -839,7 +839,7 @@ TABsetColumnWidth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *idx= (int *) getArgReference(stk,pci,1);
 	int *width= (int *) getArgReference(stk,pci,2);
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
@@ -853,7 +853,7 @@ TABsetColumnPosition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *idx= (int *) getArgReference(stk,pci,1);
 	int *first= (int *) getArgReference(stk,pci,2);
 	int *width= (int *) getArgReference(stk,pci,3);
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 
 	(void) mb;
 	(void) first;		/* fool compiler */
@@ -869,7 +869,7 @@ TABsetColumnDecimal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *idx= (int *) getArgReference(stk,pci,1);
 	int *scale= (int *) getArgReference(stk,pci,2);
 	int *prec= (int *) getArgReference(stk,pci,3);
-	int rnr = cntxt - mal_clients;
+	int rnr = (int)(cntxt - mal_clients);
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
@@ -1046,7 +1046,7 @@ TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 		if (GDK_STRNIL(src)) {
 			src = "nil";
 		}
-		l = strlen(src);
+		l = (int) strlen(src);
 		if (l + 3 > *len) {
 			GDKfree(buf);
 			*len = 2 * l + 3;
@@ -1488,7 +1488,7 @@ insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 			e = line;
 		if (e) {
 			if (i>= col1 && i< col2)
-				(void) insert_val(&fmt[i], s, e, quote, key, &as->error, i);
+				(void) insert_val(&fmt[i], s, e, quote, key, &as->error, (int)i);
 			quote = 0;
 			line = e + fmt[i].seplen;
 			if (as->error) {
@@ -1537,7 +1537,7 @@ dump_line(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attrs, size_
 			p = (char *) bun_tail(f->c, id);
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
-				l = strlen(f->nullstr);
+				l = (int) strlen(f->nullstr);
 				if (stream_write(fd, f->nullstr, 1, l) != l)
 					return TABLET_error(fd);
 			} else {
@@ -1576,7 +1576,7 @@ output_line(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attrs, ptr
 				p = BUNtail(f->ci, f->p);
 
 				if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
-					l = strlen(f->nullstr);
+					l = (int) strlen(f->nullstr);
 					if (stream_write(fd, f->nullstr, 1, l) != l)
 						return TABLET_error(fd);
 				} else {
@@ -1604,7 +1604,7 @@ output_line_dense(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attr
 			char *p = BUNtail(f->ci, f->p);
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
-				int l = strlen(f->nullstr);
+				int l = (int) strlen(f->nullstr);
 				if (stream_write(fd, f->nullstr, 1, l) != l)
 					return TABLET_error(fd);
 			} else {
@@ -2394,7 +2394,7 @@ isBATVector(Tablet * t)
 
 	if (t->columns[0].c == 0)
 		return 0;
-	cnt = BATcount(t->columns[0].c);
+	cnt =(int) BATcount(t->columns[0].c);
 	for (i = 0; i < t->nr_attrs; i++)
 		if (t->columns[i].c == 0)
 			return 0;
@@ -2416,7 +2416,7 @@ bindVariable(Tablet * t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 	c->name = GDKstrdup(nme);
 	if (c->rbrk == 0)
 		c->rbrk = GDKstrdup(",");
-	c->width = strlen(nme);	/* plus default bracket(s) */
+	c->width = (int) strlen(nme);	/* plus default bracket(s) */
 
 	if (anr >= t->nr_attrs)
 		t->nr_attrs = anr + 1;
@@ -2440,22 +2440,22 @@ bindVariable(Tablet * t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 		if (ATOMstorage(tpe) == TYPE_str || ATOMstorage(tpe) > TYPE_str)
 			val = *(str *) val;	/* V5 */
 		(*BATatoms[tpe].atomToStr) (&buf, k, val);
-		c->width = MAX(c->width, strlen(buf));
+		c->width = MAX(c->width, (unsigned int)strlen(buf));
 		if (c->lbrk)
-			c->width += strlen(c->lbrk);
+			c->width += (int) strlen(c->lbrk);
 		if (c->rbrk)
-			c->width += strlen(c->rbrk);
+			c->width += (int) strlen(c->rbrk);
 	}
 	GDKfree(buf);
 
 	c->data = val;
 	if (c->scale)
 		c->width = c->scale + 2;	/* decimal point  and '-' */
-	c->width += (c->rbrk ? strlen(c->rbrk) : 0) + (c->lbrk ? strlen(c->lbrk) : 0);
+	c->width += (c->rbrk ? (int) strlen(c->rbrk) : 0) + (c->lbrk ? strlen(c->lbrk) : 0);
 	if (c->maxwidth && c->maxwidth < c->width)
 		c->width = c->maxwidth;
 	if (t->columns == c)
-		c->width += t->rlbrk ? strlen(t->rlbrk) : 0;
+		c->width += t->rlbrk ? (int) strlen(t->rlbrk) : 0;
 	c->tabs = 1 + (c->width) / 8;
 	t->rowwidth += 8 * c->tabs;
 	*k = c->width;
@@ -2561,16 +2561,16 @@ break;
 					}
 				}
 			}
-			len = prop ? strlen(prop) : 0;
+			len = prop ? (int) strlen(prop) : 0;
 			if (c->maxwidth && len > c->maxwidth)
 				len = c->maxwidth;
 			if (c->lbrk)
-				stream_write(t->fd, c->lbrk, 1, u = strlen(c->lbrk));
+				stream_write(t->fd, c->lbrk, 1, u = (int) strlen(c->lbrk));
 			stream_write(t->fd, prop, len, 1);
 			if (c->rbrk && i + 1 < t->nr_attrs)
-				stream_write(t->fd, c->rbrk, 1, v = strlen(c->rbrk));
+				stream_write(t->fd, c->rbrk, 1, v = (int) strlen(c->rbrk));
 			if (c == t->columns)
-				len += t->rlbrk ? strlen(t->rlbrk) : 0;
+				len += t->rlbrk ? (int) strlen(t->rlbrk) : 0;
 			TABS(t->fd, c->tabs - ((len + u + v) / 8));
 			if (prop) {
 				GDKfree(prop);
@@ -2579,7 +2579,7 @@ break;
 
 		}
 		stream_write(t->fd, "# ", 1, 2);
-		stream_write(t->fd, p, 1, strlen(p));
+		stream_write(t->fd, p, 1, (int) strlen(p));
 		stream_write(t->fd, "\n", 1, 1);
 		if (q) {
 			*q = ',';
@@ -2591,7 +2591,7 @@ break;
 	if (t->tbotbrk == 0) {
 		LINE(t->fd, t->rowwidth);
 	} else
-		stream_write(t->fd, t->tbotbrk, 1, strlen(t->tbotbrk));
+		stream_write(t->fd, t->tbotbrk, 1, (int) strlen(t->tbotbrk));
 }
 
 void
@@ -2636,14 +2636,14 @@ TABshowRow(Tablet * t)
 				}
 				}
 		}
-		len = strlen(buf);
+		len = (int) strlen(buf);
 		if (c->maxwidth && len > c->maxwidth)
 			len = c->maxwidth;
 		if (c->lbrk)
-			stream_write(t->fd, c->lbrk, 1, u = strlen(c->lbrk));
+			stream_write(t->fd, c->lbrk, 1, u = (int) strlen(c->lbrk));
 		stream_write(t->fd, buf, 1, len);
 		if (c->rbrk) {
-			v = strlen(c->rbrk);
+			v = (int) strlen(c->rbrk);
 			if (i + 1 < t->nr_attrs) {
 				stream_write(t->fd, c->rbrk, 1, v);
 			} else if (*c->rbrk != ',')
@@ -2651,7 +2651,7 @@ TABshowRow(Tablet * t)
 		}
 
 		if (c == t->columns)
-			len += t->rlbrk ? strlen(t->rlbrk) : 0;
+			len += t->rlbrk ? (int) strlen(t->rlbrk) : 0;
 		TABS(t->fd, c->tabs - ((len + u + v - 1) / 8));
 	}
 	if (t->rrbrk)
@@ -2739,11 +2739,11 @@ setTabwidth(Column * c)
 	buf = (char *) GDKmalloc(ret = strLen(title));
 	max = MAX((int) strlen(c->type), ret);
 	if (c->nullstr)
-		max = MAX(max, strlen(c->nullstr));
+		max = MAX(max, (unsigned int) strlen(c->nullstr));
 	if (c->lbrk)
-		max += strlen(c->lbrk);
+		max += (int) strlen(c->lbrk);
 	if (c->rbrk)
-		max += strlen(c->rbrk);
+		max += (int) strlen(c->rbrk);
 
 	if (t >= 0 && t < GDKatomcnt && tostr) {
 		size_t off = BUNfirst(c->c);
@@ -2754,7 +2754,7 @@ setTabwidth(Column * c)
 				break;
 			j = off + ((cnt < probe) ? i : (rand() % cnt));
 			(*tostr) (&buf, &ret, BUNtail(c->ci, j));
-			max = MAX(max, strlen(buf));
+			max = MAX(max, (unsigned int) strlen(buf));
 		}
 	}
 	c->width = max;
