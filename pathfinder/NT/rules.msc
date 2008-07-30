@@ -16,6 +16,9 @@
 # Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
+# treat warnings as errors
+W_CFLAGS = -WX
+
 RULESMSC = $(MONETDB_PREFIX)\share\MonetDB\winrules.msc
 !INCLUDE $(RULESMSC)
 

@@ -6,8 +6,6 @@ MKDIR = mkdir
 ECHO = echo
 CD = cd
 
-W_CFLAGS = -WX
-
 prefix = $(MAKEDIR)
 
 !INCLUDE "$(TOPDIR)\rules.msc"
