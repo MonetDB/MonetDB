@@ -965,7 +965,6 @@ str CMDunary@1(int *ret, int *bid)
 	@:voidresultBAT(b->ttype,"batcalc.@1")@
 
 	switch(BATttype(bn)){
-	case TYPE_oid: @:accumUnary(oid,@2)@ break;
 	case TYPE_bte: @:accumUnary(bte,@2)@ break;
 	case TYPE_sht: @:accumUnary(sht,@2)@ break;
 	case TYPE_int: @:accumUnary(int,@2)@ break;
