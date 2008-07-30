@@ -453,8 +453,8 @@ CMDgetEvent( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	pc= getPC(mb,pci)-1; /* take previous instruction */
 	assert(GDK_int_min <= mb->profiler[pc].ticks && mb->profiler[pc].ticks <= GDK_int_max);
-	assert(GDK_int_min <= mb->profiler[pc].ibytes && mb->profiler[pc].ibytes <= GDK_int_max);
-	assert(GDK_int_min <= mb->profiler[pc].obytes && mb->profiler[pc].obytes <= GDK_int_max);
+	assert(mb->profiler[pc].ibytes <= GDK_int_max);
+	assert(mb->profiler[pc].obytes <= GDK_int_max);
 	*clk = (int) mb->profiler[pc].ticks;
 	*reads = (int) mb->profiler[pc].ibytes;
 	*writes = (int) mb->profiler[pc].obytes;

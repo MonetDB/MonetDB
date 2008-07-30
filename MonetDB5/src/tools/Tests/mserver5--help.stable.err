@@ -16,8 +16,8 @@ Usage: mserver5 [options] [scripts]
     --dbinit=<stmt>           Server prepare statement
     --config=<config_file> 
     --daemon=yes|no           run in background [no]
-    --single-user=yes|no      permit one user to access [no]
-    --readonly=yes|no         safeguard database [no]
+    --single-user             permit one user to access [no]
+    --readonly                safeguard database [no]
     --set <option>=<value>    set environment value
     --help                    this list of options 
     --version                 version and compile time info
