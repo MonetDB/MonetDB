@@ -2042,7 +2042,7 @@ if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if (lock)
 		MT_set_lock(*lock, "timing");
 	if( cntxt->flags & timerFlag)
-		stream_printf(cntxt->fdout,"[%6d usec \@%2d ",GDKusec()-cntxt->timer,tid);
+		stream_printf(cntxt->fdout,"[%6d usec \@%d ",GDKusec()-cntxt->timer,tid);
 #ifdef HAVE_SYS_RESOURCE_H
 	if( cntxt-> flags & ioFlag){
 		struct  rusage resource;

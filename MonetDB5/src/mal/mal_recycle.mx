@@ -955,17 +955,15 @@ We execute it in place and safe the result upon need.
 		s->keepAlive= TRUE;
 		k= p->recycle;
 		p->recycle= 0;
-		mal_unset_lock(recycleLock,"recycle");
 		(void) reenterMAL(cntxt,mb,i,i+1,s,0,0);
-		mal_set_lock(recycleLock,"recycle");
 		p->recycle= k;
-		RECYCLEexitImpl(cntxt, mb, s, p);
 		/* restore the situation */
 		s->keepAlive= j;
 		s->stk[getArg(p,1)].val.bval = nbid;
 		BBPincref(nbid, TRUE);
 		savedTime += recycleBlk->profiler[pc].ticks;
 		recycleBlk->profiler[pc].counter++;
+		RECYCLEexit(cntxt, mb, s, p);
 		return i;
 	}
 	return pc;
@@ -1009,11 +1007,12 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
                 prof->clk = GDKusec();
 		savedTime += prof->ticks;
 		recycleRecent = p->recycle;
+		mal_unset_lock(recycleLock,"recycle");
 		return 1;
 	} 
 	statements++;
-	i=  RECYCLEreuse(cntxt,mb,stk,p) >= 0;
 	mal_unset_lock(recycleLock,"recycle");
+	i=  RECYCLEreuse(cntxt,mb,stk,p) >= 0;
 	return i;
 }
 
