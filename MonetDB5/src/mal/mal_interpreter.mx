@@ -57,7 +57,7 @@ mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb,
 mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
-mal_export int getVolume(MalStkPtr stk, InstrPtr pci, int rd);
+mal_export size_t getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 
 mal_export ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k);
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
@@ -76,7 +76,7 @@ static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 static void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd);
-static void displayVolume(Client cntxt, lng vol);
+static void displayVolume(Client cntxt, size_t vol);
 @-
 We can speed up the copying, provided we ignore copying ptr-based
 objects.
@@ -2093,9 +2093,10 @@ maximal amount of bytes read/written. The actual
 amount is harder to guess, because it too much
 depends on the operation.
 @c
-int getVolume(MalStkPtr stk, InstrPtr pci, int rd)
+size_t getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 {
-	int i, limit, vol=0;
+	int i, limit;
+	size_t vol=0;
 	BAT *b;
 	int isview = 0;
 
@@ -2126,7 +2127,7 @@ int getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	return vol;
 }
 
-void displayVolume(Client cntxt, lng vol){
+void displayVolume(Client cntxt, size_t vol){
 	if( vol <1024)
 		stream_printf(cntxt->fdout,LLFMT,vol);
 	else
@@ -2139,7 +2140,7 @@ void displayVolume(Client cntxt, lng vol){
 		stream_printf(cntxt->fdout, LLFMT "G",vol/1024/1024/1024);
 }
 void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd){
-	int vol;
+	size_t vol;
 	vol= getVolume(stk,pci,rd);
 	displayVolume(cntxt,vol);
 }

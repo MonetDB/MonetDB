@@ -209,6 +209,7 @@ void delName(str nme, size_t len){
 str putName(str nme, size_t len)
 {
 	size_t i,k=0,l,top;
+	int h;
 	char buf[1024];
 	str s;
 
@@ -227,8 +228,8 @@ str putName(str nme, size_t len)
 				mal_set_lock(mal_contextLock,"putName");
 				s= namespace.nme[l]; namespace.nme[l]= namespace.nme[k];
 				namespace.nme[k]=s;
-				i= namespace.hit[l]; namespace.hit[l]=namespace.hit[k];
-				namespace.hit[k]= i;
+				h= namespace.hit[l]; namespace.hit[l]=namespace.hit[k];
+				namespace.hit[k]= h;
 				i= namespace.length[l]; namespace.length[l]=namespace.length[k];
 				namespace.length[k]= (int)i;
 

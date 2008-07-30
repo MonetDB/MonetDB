@@ -142,7 +142,7 @@ mal_export str SABAOTHmarchScenario(int *ret, str *lang);
 str SABAOTHmarchScenario(int *ret, str *lang) {
 	FILE *f;
 	str buf = alloca(sizeof(char) * 256);	/* should be enough for now */
-	int len;
+	size_t len;
 	str path = alloca(sizeof(char) * (PATHLENGTH + 1));
 	str tmp;
 	(void)ret;

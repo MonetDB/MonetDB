@@ -431,7 +431,7 @@ int cstToken(Client cntxt, ValPtr cst)
 		cst->vtype= TYPE_str;
 		i= stringLength(cntxt);
 		cst->val.sval = strCopy(cntxt, i);
-		cst->len = strlen(cst->val.sval);
+		cst->len = (int) strlen(cst->val.sval);
 		return i;
 	case '\'':
 		return charCst(cntxt,cst);
@@ -1804,7 +1804,7 @@ The deadcode optimizer removes all comment information.
 @c
 				curInstr= newInstruction(NULL, REMsymbol);
 				cst.vtype= TYPE_str;
-				cst.len = strlen(start);
+				cst.len = (int) strlen(start);
 				cst.val.sval= GDKstrdup(start);
 				getArg(curInstr,0)= defConstant(curBlk, TYPE_str,&cst);
 				clrVarConstant(curBlk, getArg(curInstr,0));

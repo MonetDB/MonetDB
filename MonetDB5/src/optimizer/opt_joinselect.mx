@@ -147,7 +147,7 @@ OPTjoinselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if (start== -1) goto end;
 
 	/*if not more than one attributes in the where clause then keep the same plan*/
-	attr = (ps -scr_s)/xx;
+	attr = (int) ((ps -scr_s)/xx);
 	if (attr <= 1){
 		for (i = start; i < limit; i++) 
 			pushInstruction(mb, old[i]);

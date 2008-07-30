@@ -454,7 +454,7 @@ int chooseVictims(lng *lvs, int ltop, lng wr)
 	for(newtop =ltop; newtop>0; newtop--){
 		maxwc = 0; mpos = newtop-1;
 		for(l = 0; l<newtop; l++){
-			if ( recycleBlk->profiler[lvs[l]].obytes > targmem - smem  )
+			if ( recycleBlk->profiler[lvs[l]].obytes > (size_t) (targmem - smem  ))
 				wcrd[l] = -1;
 			if (maxwc <= wcrd[l]){
 				maxwc = wcrd[l];

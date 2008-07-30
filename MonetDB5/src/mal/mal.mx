@@ -389,7 +389,6 @@ void mal_exit(void){
  	int t = 0;
 	str err;
 
-	RECYCLEshutdown(MCgetClient()); /* remove any left over intermediates */
 @-
 Before continuing we should make sure that all clients
 (except the console) have left the scene.
@@ -399,6 +398,7 @@ Before continuing we should make sure that all clients
 		stream_printf(mal_clients->fdout,"#MALexit: non-admin attempt\n");
 		return;
 	}
+	RECYCLEshutdown(MCgetClient()); /* remove any left over intermediates */
 #if 0
 {
 	int reruns=0, goon;
