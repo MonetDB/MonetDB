@@ -355,8 +355,11 @@ CMDhash_str(int *res, str val)
 /* 64bit: if CMDhash continues to return int, then this should
  * probably be changed to not throw away the top bits of the result */
 	hash_t h = strHash(val);
-	assert(h <= GDK_int_max);
+#if SIZEOF_OID == SIZEOF_INT
 	*res = (int) h;
+#else
+	*res = (int) (h >> 32) ^ (int) h;
+#endif
 	return GDK_SUCCEED;
 }
 
@@ -364,6 +367,7 @@ int
 CMDhash(int *res, ptr val, int tpe)
 {
 	int code;		/* 64-bits on 64 systems; we truncate it here to save space */
+	hash_t h;
 
 	switch (ATOMstorage(tpe)) {
 	case TYPE_void:
@@ -387,10 +391,20 @@ CMDhash(int *res, ptr val, int tpe)
 		code = ((int *) val)[0] ^ ((int *) val)[1];
 		break;
 	case TYPE_str:
-		code = (int) strHash((char*)val); /* 64bit: truncating top bits */
+		h = strHash((char*)val);
+#if SIZEOF_OID == SIZEOF_INT
+		code = (int) h;
+#else
+		code = (int) (h >> 32) ^ (int) h;
+#endif
 		break;
 	default:
-		code = (int) (*BATatoms[tpe].atomHash)(val); /* 64bit: truncating top bits */
+		h = (*BATatoms[tpe].atomHash)(val);
+#if SIZEOF_OID == SIZEOF_INT
+		code = (int) h;
+#else
+		code = (int) (h >> 32) ^ (int) h;
+#endif
 	}
 	*res = code;
 	return GDK_SUCCEED;
@@ -461,10 +475,15 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 
 		while (cur < end) {
                         str src = base + *cur;
-			hash_t val;
-			GDK_STRHASH(src, val);
-			assert(val <= GDK_int_max);
-			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ (int) val;
+			hash_t h;
+			int val;
+			GDK_STRHASH(src, h);
+#if SIZEOF_OID == SIZEOF_INT
+			val = (int) h;
+#else
+			val = (int) (h >> 32) ^ (int) h;
+#endif
+			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
 			cur++;
 			dst++;
 		}
@@ -480,7 +499,13 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 		BUN p, q;
 
 		BATloop(b, p, q) {
-			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ (int) (*hash)(BUNtail(bi, p)); /* 64bit: truncating top bits */
+			hash_t h = (*hash)(BUNtail(bi, p));
+#if SIZEOF_OID == SIZEOF_INT
+			int val = (int) h;
+#else
+			int val = (int) (h >> 32) ^ (int) h;
+#endif
+			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
 			dst++;
 		}
 	}
