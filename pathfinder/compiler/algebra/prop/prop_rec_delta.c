@@ -43,6 +43,13 @@
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
+/* C:\Program Files\Microsoft Visual Studio 8\VC\PlatformSDK\include\windef.h
+ * says "#define IN"
+ */
+#ifdef IN
+#undef IN
+#endif
+
 #define ITER(n) ((n)->prop->left_cols)
 #define POS(n) ((n)->prop->right_cols)
 #define IN(n) ((n)->prop->set)
