@@ -38,3 +38,6 @@ VERSION=4.25.0
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+
+# disable warnings in generated code
+monet_parse_CFLAGS = -wd4267 -wd4244
