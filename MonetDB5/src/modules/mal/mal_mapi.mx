@@ -486,7 +486,9 @@ doChallenge(str cmd, stream *in, stream *out) {
 }
 
 static char *threadcommand;
+#ifdef HAVE_SYS_UN_H
 static SOCKET usock = INVALID_SOCKET;
+#endif
 static MT_Id listener[8]; 
 static int lastlistener=0;
 static int serveractive=TRUE;
@@ -501,7 +503,6 @@ SERVERlistenThread(int *Sock)
 	GDKfree(Sock);
 	if( lastlistener < 8 )
 		listener[lastlistener++] = MT_getpid();
-	(void)usock;
 	do {
 		int retval;
 		struct timeval tv;
