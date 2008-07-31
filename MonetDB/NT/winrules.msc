@@ -46,6 +46,12 @@ DEBUGLIB=d
 DEBUGLIB=
 !ENDIF
 
+!IFDEF DEBUG
+# force W_CFLAGS off in debug builds: using icc, you get way more
+# warnings about casts which results in the code being uncompilable
+W_CFLAGS =
+!ENDIF
+
 # This is the location of pthreads for Win32, 
 # see http://sources.redhat.com/pthreads-win32/
 PTHREAD = C:\Pthreads
