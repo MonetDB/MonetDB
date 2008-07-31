@@ -64,8 +64,6 @@
 #define SO_EXT ".dll"
 #define SO_PREFIX "lib"
 
-#define isatty _isatty
-
 /* Define to 1 if you have the <alloca.h> header file. */
 /* #undef HAVE_ALLOCA_H */
 
@@ -745,3 +743,5 @@ typedef int ssize_t;
 
 /* Define to `unsigned' if <sys/types.h> does not define. */
 /* #undef size_t */
+
+#define __SIZE_TYPE__ size_t
