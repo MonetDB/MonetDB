@@ -109,8 +109,18 @@ comment "Release the resources held by the remote module";
 #define remote_export extern
 #endif
 
+typedef struct _connection {
+	char               name[16];  /* name of the connection,
+                                     15 chars should be enough for everyone */
+	Mapi               mconn;     /* the Mapi handle for the connection */
+	struct _connection *next;     /* the next connection in the list */
+} *connection;
+
 remote_export str RMTprelude(int *ret);
 remote_export str RMTepilogue(int *ret);
+remote_export str RMTinternalput(str *ret, Mapi mconn, int type, ptr value);
+remote_export str RMTinternalget(Mapi mconn, str ident, ValPtr v);
+remote_export str RMTfindconn(connection *ret, str conn);
 
 #endif
 @-
@@ -124,13 +134,6 @@ remote_export str RMTepilogue(int *ret);
 #include <mapilib/Mapi.h>
 #include "remote.h"	/* for the implementation of the functions */
 
-typedef struct _connection {
-	char               name[16];  /* name of the connection,
-                                     15 chars should be enough for everyone */
-	Mapi               mconn;     /* the Mapi handle for the connection */
-	struct _connection *next;     /* the next connection in the list */
-} *connection;
-
 static connection connections = NULL;
 
 /**
@@ -139,7 +142,8 @@ static connection connections = NULL;
  * made sure that it is usable.  If the connection cannot be made
  * useable, an error is returned.
  */
-static INLINE str RMTfindconn(connection *ret, str conn) {
+str 
+RMTfindconn(connection *ret, str conn) {
 	connection c = connections;
 
 	/* conn should be passed as valid variable here */
@@ -204,7 +208,8 @@ static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
  * set in ret if no problems occur, on which an error is returned.  The
  * id can be used to reference the object put on the remote host.
  */
-static INLINE str RMTinternalput(str *ret, Mapi mconn, int type, ptr value) {
+str 
+RMTinternalput(str *ret, Mapi mconn, int type, ptr value) {
 	str tmp;
 	str ident;
 	MapiHdl mhdl = NULL;
@@ -300,7 +305,8 @@ static INLINE str RMTinternalput(str *ret, Mapi mconn, int type, ptr value) {
  * Helper function to return a remote object via the given connection as
  * a local object.
  */
-static INLINE str RMTinternalget(Mapi mconn, str ident, ValPtr v) {
+str 
+RMTinternalget(Mapi mconn, str ident, ValPtr v) {
 	str type, tmp;
 	int vtype;
 	char qbuf[512];
