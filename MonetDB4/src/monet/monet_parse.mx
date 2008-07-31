@@ -52,6 +52,11 @@ C	[!<>]
  */
 #define YYLMAX 100000
 
+#ifdef _MSC_VER
+/* avoid deprecation warning on Windows */
+#define isatty _isatty
+#endif
+
 extern YYSTYPE yylval;
 #define YY_NEVER_INTERACTIVE	1 /* workaround to flex bug */
 #define YY_USE_PROTOS		/* make sure ANSI-C prototyes are used */
