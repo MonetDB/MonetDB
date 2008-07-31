@@ -76,6 +76,11 @@
 /* import tokens from parser specification */
 #include "parser.tab.h"
 
+#ifdef _MSC_VER
+/* avoid deprecation warning on Windows */
+#define isatty _isatty
+#endif
+
 /* bison 1.33 does not include this line in XQuery.tab.h. So we do it here. */
 extern YYLTYPE pflloc;
 
