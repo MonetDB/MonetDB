@@ -363,7 +363,7 @@ str SABAOTHregisterStart(int *ret) {
 			getDBPath(&path, PATHLENGTH, UPLOGFILE));
 	if ((f = fopen(path, "a")) != NULL) {
 		/* append to the file */
-		fprintf(f, SZFMT "\t", (size_t)time(NULL));
+		fprintf(f, LLFMT "\t", (lng)time(NULL));
 		(void)fflush(f);
 		(void)fclose(f);
 		return(MAL_SUCCEED);
@@ -395,7 +395,7 @@ str SABAOTHregisterStop(int *ret) {
 			getDBPath(&path, PATHLENGTH, UPLOGFILE));
 	if ((f = fopen(path, "a")) != NULL) {
 		/* append to the file */
-		fprintf(f, SZFMT "\n", (size_t)time(NULL));
+		fprintf(f, LLFMT "\n", (lng)time(NULL));
 		(void)fflush(f);
 		(void)fclose(f);
 		return(MAL_SUCCEED);
@@ -738,11 +738,10 @@ str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
 						*p = '\0';
 						stop = (time_t)atol(data);
 						p = data;
-						i = (int) (stop - start);
 						if (i > ret->maxuptime)
 							ret->maxuptime = i;
-						if (ret->minuptime == -1 || ret->minuptime > i)
-							ret->minuptime = i;
+						if (ret->minuptime == -1 || ret->minuptime > stop - start)
+							ret->minuptime = stop - start;
 						up += i;
 						start = 0;
 					break;
