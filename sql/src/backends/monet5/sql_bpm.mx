@@ -264,18 +264,18 @@ inc_parts_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 send_part(sql_column *col, int part, BAT *b, str *conn)
 {
-	str tmp, ident;
+	str tmp = NULL, ident = "romulo";
 	connection c;
 	sql_bpm *bpm;
 	
 	/* lookup conn */
-	rethrow("mat.send_part",tmp, RMTfindconn(&c, *conn));
+	if ((tmp= RMTfindconn(&c, *conn)) != MAL_SUCCEED)
+		throw(SQL,"mat.send_part",tmp);
 	
-	/*send the fragment to the remote site */
-	rethrow("mat.send_part", tmp, RMTinternalput(&ident,
-                                c->mconn,
-                                TYPE_bat,
-                                b));	
+	/*send the fragment to the remote site*/ 
+	if ((tmp = RMTinternalput(&ident, c->mconn, TYPE_bat, b)) != MAL_SUCCEED)
+		throw(SQL,"mat.send_part",tmp);
+	
 	/*store the information about the fragment location*/
 	bpm = col->data;
 	if (!bpm_set_part_location(bpm, part, *conn, ident))
@@ -337,13 +337,13 @@ get_part(sql_column *col, int part, BAT *b)
 	bpm_get_part_location(bpm, part, &host, &remote);
 
 	/* lookup conn */
-	rethrow("mat.send_part",tmp, RMTfindconn(&c, host));
+	if ((tmp = RMTfindconn(&c, host)) != MAL_SUCCEED)
+		throw(SQL,"mat.get_part",tmp);
 	
 	/*get a fragment from the remote site */
-	rethrow("mat.send_part", tmp, RMTinternalget(
-                                c->mconn,
-                                remote,
-                                (ptr) &b));	
+	if ((tmp = RMTinternalget(c->mconn, remote, (ptr) &b)) != MAL_SUCCEED)	
+		throw(SQL,"mat.get_part",tmp);
+
 	if(!b)
 		throw(SQL, "mat.get_part", sql_message("Get remote part %d for column %s", part, col->base.name));
 	return MAL_SUCCEED;
