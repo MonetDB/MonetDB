@@ -145,8 +145,8 @@ bpm_set_part_location(sql_bpm *pp, int part, char *host, char* remote)
 	BAT *part_name = bpm_part_name();
 
 	if (p) {
-		p->host = host;
-		p->remote = remote;
+		p->host = _strdup(host);
+		p->remote = _strdup(remote);
 	
 		part_namei = bat_iterator(part_name);
 		id = BUNhead(part_namei,BUNfnd(part_name, p->name));
@@ -171,6 +171,7 @@ bpm_get_part_location(sql_bpm *pp, int part, str *host, str* remote)
 	if (p->host) {
 		*host = p->host;
 		*remote= p->remote;
+		return 1;
 	}
 
 	/* error */
@@ -187,14 +188,14 @@ bpm_del_part_location(sql_bpm *pp, int part)
 	Part p = &(pp->parts[part]);
 
 	if (p->host) {
-		p->host = NULL;
-		p->remote = NULL;
+		_DELETE(p->host);
+		_DELETE(p->remote);
+		part_namei = bat_iterator(part_name);
+		id = BUNhead(part_namei,BUNfnd(part_name, p->name));
+		BUNins(part_host, (ptr)&id, NULL, TRUE);
+		BUNins(part_remote, (ptr)&id, NULL, TRUE);
 		return 1;
 	}
-	part_namei = bat_iterator(part_name);
-	id = BUNhead(part_namei,BUNfnd(part_name, p->name));
-	BUNins(part_host, (ptr)&id, NULL, TRUE);
-	BUNins(part_remote, (ptr)&id, NULL, TRUE);
 
 	/* error */
 	assert(0);
