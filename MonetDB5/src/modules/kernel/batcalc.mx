@@ -198,22 +198,6 @@ C qualifier and the operands
 	command isnil(b:bat[:any_1,:@1]):bat[:any_1,:bit] 
 	address CMDunaryISNIL
 	comment "Unary check for nil over the tail of the bat";
-@-
-Not used yet
-	#command -(a:bat[:any_1,:@1],b:bat[:any_1,:@1])
-	#		:bat[:any_1,:@1] 
-	#address CMDunaryAccumMIN 
-	#comment "Unary - over the tail of the bat";
-
-	#command --(a:bat[:any_1,:@1],b:bat[:any_1,:@1])
-	#		:bat[:any_1,:@1] 
-	#address CMDunaryAccumMINMIN 
-	#comment "Unary -- over the tail of the bat";
-	#
-	#command ++(a:bat[:any_1,:@1],b:bat[:any_1,:@1])
-	#		:bat[:any_1,:@1] 
-	#address CMDunaryAccumPLUSPLUS 
-	#comment "Unary ++ over the tail of the bat";
 @mal
 @:unary(bte)@
 @:unary(sht)@
@@ -930,32 +914,6 @@ str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 Unary accummulators are only called indirectly. They cannot
 always be defined without signature clashes, eg. -(batA,batC).
 @= unary_impl
-batcalc_export str CMDunaryAccum@1(int *ret,int *did, int *bid);
-str CMDunaryAccum@1(int *ret,int *did, int *bid)
-{
-	BAT *b,*bn;
-	
-	@:getBATdescriptor(did,bn,"batcalc.@1")@
-	@:getBATdescriptor(bid,b,"batcalc.@1")@
-
-	switch(BATttype(bn)){
-	case TYPE_bte: @:accumUnary(bte,@2)@ break;
-	case TYPE_sht: @:accumUnary(sht,@2)@ break;
-	case TYPE_int: @:accumUnary(int,@2)@ break;
-	case TYPE_lng: @:accumUnary(lng,@2)@ break;
-	case TYPE_flt: @:accumUnary(flt,@2)@ break;
-	case TYPE_dbl: @:accumUnary(dbl,@2)@ break;
-	default: throw(MAL, "batcalc.@1", "unexpected type");
-	}
-	bn->tsorted = 0;
-	BATkey(BATmirror(bn),FALSE);
-
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
-
-	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
 batcalc_export str CMDunary@1(int *ret, int *bid);
 str CMDunary@1(int *ret, int *bid)
 {
