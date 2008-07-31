@@ -676,7 +676,7 @@ RECYCLEinterest(MalBlkPtr mb, InstrPtr p){
 }
 
 static void 
-RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr)
+RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, size_t rd, size_t wr)
 {
 	int i, j, c;
 	ValRecord *v;
@@ -1027,8 +1027,8 @@ void
 RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng clk = 0;
 	lng memLimit, cacheLimit;
-	lng rd = getVolume(stk,p, 1)/ RU +1;
-	lng wr = getVolume(stk,p, 0)/ RU +1;
+	size_t rd = getVolume(stk,p, 1)/ RU +1;
+	size_t wr = getVolume(stk,p, 0)/ RU +1;
 	ValRecord *v;
 
 	RECYCLEversion(cntxt,mb);
@@ -1072,7 +1072,7 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			if (rd+wr > recycleVolume){
 				(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
-				stream_printf(cntxt->fdout,"RECYCLEexit size %d %d\n",rd,wr);
+				stream_printf(cntxt->fdout,"RECYCLEexit size " SZFMT " " SZFMT "\n",rd,wr);
 #endif
 			}
 		}
@@ -1085,8 +1085,8 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			if (recycleAlpha *(rd+wr) + (1-recycleAlpha)* clk > (recycleVolume+1) * (recycleTime+1)){
 				(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
-				stream_printf(cntxt->fdout,"RECYCLEexit volume %d %d %d \n",clk,rd,wr,(rd+wr)*clk);
-				stream_printf(cntxt->fdout,"RECYCLEexit volume %d %d\n", recycleVolume, recycleTime);
+				stream_printf(cntxt->fdout,"RECYCLEexit volume " LLFMT " " SZFMT " " SZFMT " " LLFMT " \n",clk,rd,wr,(rd+wr)*clk);
+				stream_printf(cntxt->fdout,"RECYCLEexit volume " LLFMT " " LLFMT "\n", recycleVolume, recycleTime);
 #endif
 			}
 		}
