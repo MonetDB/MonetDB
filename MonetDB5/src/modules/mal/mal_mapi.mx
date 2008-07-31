@@ -486,7 +486,7 @@ doChallenge(str cmd, stream *in, stream *out) {
 }
 
 static char *threadcommand;
-static int usock = -1;
+static SOCKET usock = INVALID_SOCKET;
 static MT_Id listener[8]; 
 static int lastlistener=0;
 static int serveractive=TRUE;
@@ -512,7 +512,7 @@ SERVERlistenThread(int *Sock)
 		if (sock != INVALID_SOCKET)
 			FD_SET(sock, &fds);
 #ifdef HAVE_SYS_UN_H
-		if (usock >= 0)
+		if (usock != INVALID_SOCKET)
 			FD_SET(usock, &fds);
 #endif
 		/* Wait up to 0.5 seconds. */
@@ -522,7 +522,7 @@ SERVERlistenThread(int *Sock)
 		/* temporarily use msgsock to record the larger of sock and usock */
 		msgsock = sock;
 #ifdef HAVE_SYS_UN_H
-		if (usock > sock)
+		if (usock != INVALID_SOCKET )
 			msgsock = usock;
 #endif
 		retval = select(msgsock + 1, &fds, NULL, NULL, &tv);
@@ -546,7 +546,7 @@ SERVERlistenThread(int *Sock)
 				continue;
 			}
 #ifdef HAVE_SYS_UN_H
-		} else if (usock >= 0 && FD_ISSET(usock, &fds)) {
+		} else if (usock != INVALID_SOCKET && FD_ISSET(usock, &fds)) {
 			if ((msgsock = accept(usock, (SOCKPTR) 0, (socklen_t *) 0)) == INVALID_SOCKET) {
 				if (MT_geterrno() != EINTR) {
 					msg = "accept failed\n";
@@ -604,7 +604,7 @@ str
 SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 {
 	struct sockaddr_in server;
-	int sock = -1;
+	SOCKET sock = INVALID_SOCKET;
 	int *Sock = GDKmalloc(sizeof(int));
 	int accept_any=0;
 #ifdef HAVE_SYS_UN_H
@@ -645,7 +645,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 
 	if (port >= 0) {
 		sock = socket(AF_INET, SOCK_STREAM, 0);
-		if (sock < 0)
+		if (sock == INVALID_SOCKET)
 			throw(IO, "mal_mapi.listen",
 					"Creation of stream socket failed: %s",
 					strerror(errno));
@@ -704,7 +704,7 @@ errno == WSAEADDRINUSE &&
 #ifdef HAVE_SYS_UN_H
 	if (usockfile) {
 		usock = socket(AF_UNIX, SOCK_STREAM, 0);
-		if (usock < 0) {
+		if (usock == INVALID_SOCKET ) {
 			unlink(usockfile);
 			throw(IO, "mal_mapi.listen",
 					"Creation of Unix socket failed: %s",
