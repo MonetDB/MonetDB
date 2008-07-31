@@ -32,48 +32,37 @@ pattern inc_parts(sname:str, tname:str):void
 address inc_parts_wrap
 comment "Increment the number of partions";
 
+pattern send_part(host:str, sname:str, tname:str, column:str, part:int):void
+address send_part_wrap
+comment "Send part to a remote host";
+
+pattern get_part(sname:str, tname:str, column:str, part:int):void
+address get_part_wrap
+comment "Get part from a remote host";
+
+pattern print_part(sname:str, tname:str, column:str, part:int):void
+address print_part_wrap
+comment "Get part from a remote host";
+
 module constraints;
 
 pattern parts(sname:str, tname:str, cname:str, access:int, nrparts:int):void
 address Cparts
 comment "Check if the number of partions is still valid";
 
-module distribution;
-
-pattern bindHost(sname:str, tname:str, cname:str, part:int):int
-address dist_bindHost_wrap
-comment "Bind location id for a partition fragment";
-
-pattern setHost(sname:str, tname:str, cname:str, part:int, host:int):int
-address dist_setHost_wrap
-comment "Set location id for a partition fragment";
-
-command addHost(host:str, por:int, dbname:str, user:str, passwd:str):int
-address dist_addHost_wrap
-comment "Add a location for a partition fragment";
-
-command reconnect(id:int):int
-address dist_reconnect_wrap
-comment "Reconnect to a remote host using the location information associated to id";
-
-pattern send(mid:int, sname:str, tname:str, cname:str, part:int):int
-address dist_send_wrap
-comment "Send a fragment to a remote location";
-
 @h
 #ifndef _SQL_BPM_H_
 #define _SQL_BPM_H_
 #include "sql.h"
+#include "remote.h"
 
 sql5_export str mat_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mat_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str inc_parts_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str send_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str get_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str print_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str Cparts(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str dist_bindHost_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str dist_setHost_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str dist_addHost_wrap(int *id, str *host, int *port, str *dbname, str *user, str *passwd);
-sql5_export str dist_reconnect_wrap(int *mid, int *id);
-sql5_export str dist_send_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_BPM_H_ */
 
@@ -272,134 +261,167 @@ inc_parts_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-static int
-dist_bind(mvc *m, char *sname, char *tname, char *cname, int part)
+str
+send_part(sql_column *col, int part, BAT *b, str *conn)
 {
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
-	sql_column *c = mvc_bind_column(m, t, cname);
-	sql_bpm *p = c->data;
-
-	if (p->nr <= part) {
-		return 0;
-	} else {
-		return *(int *) p->parts[part].host;
-	}
+	str tmp, ident;
+	connection c;
+	sql_bpm *bpm;
+	
+	/* lookup conn */
+	rethrow("mat.send_part",tmp, RMTfindconn(&c, *conn));
+	
+	/*send the fragment to the remote site */
+	rethrow("mat.send_part", tmp, RMTinternalput(&ident,
+                                c->mconn,
+                                TYPE_bat,
+                                b));	
+	/*store the information about the fragment location*/
+	bpm = col->data;
+	if (!bpm_set_part_location(bpm, part, *conn, ident))
+		throw(SQL, "mat.send_part", "The storage of the remote location information failed!!");
+	return MAL_SUCCEED;
 }
 
-/* str dist_bindHost_wrap(int *host, str *sname, str *tname, str *cname, int *part); */
+/* str send_part_wrap(str *host, str *sname, str *tname, str *col, int part); */
 str
-dist_bindHost_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+send_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
+	BAT *b = NULL;
 	str msg = getContext(cntxt, mb, &m, NULL);
-	int *host = (int *)getArgReference(stk, pci, 0);
-	str *sname = (str *)getArgReference(stk, pci, 1);
-	str *tname = (str *)getArgReference(stk, pci, 2);
-	str *cname = (str *)getArgReference(stk, pci, 3);
-	int *part = (int *)getArgReference(stk, pci, 4);
+	sql_schema *s;
+	sql_table *t;
+	sql_column *c;
+	str *host  = (str *)getArgReference(stk, pci, 1);
+	str *sname = (str *)getArgReference(stk, pci, 2);
+	str *tname = (str *)getArgReference(stk, pci, 3);
+	str *cname = (str *)getArgReference(stk, pci, 4);
+	int *part = (int *)getArgReference(stk, pci, 5);
+	int *access;
+	*access = 0;
 
 	if (msg)
 		return msg;
-	if ((*host = dist_bind(m, *sname, *tname, *cname, *part)))
-		return MAL_SUCCEED;
-	throw(SQL, "dist.bindHost", "limitation in transaction scope");
+
+	s = mvc_bind_schema(m, *sname);
+	if (!s)
+		throw(SQL, "mat.send_part", 
+			sql_message("schema %s unknown", *sname));
+ 	t = mvc_bind_table(m, s, *tname);
+	if (!t)
+		throw(SQL, "mat.send_part", 
+			sql_message("table %s unknown", *tname));
+	c = mvc_bind_column(m, t, *cname);
+	if (!c)
+		throw(SQL, "mat.send_part", 
+			sql_message("column %s unknown", *cname));
+
+	b = mat_bind(m, *sname, *tname, *cname, *access, *part);
+	if (!b) 
+		throw(SQL, "mat.send_part", 
+				sql_message("table %s with column %s does not contain part %d", *tname, *cname, *part));
+
+	send_part(c, *part, b, host);
+	return MAL_SUCCEED;
 }
 
-static int
-dist_set(mvc *m, char *sname, char *tname, char *cname, int part, int host)
+str
+get_part(sql_column *col, int part, BAT *b)
 {
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
-	sql_column *c = mvc_bind_column(m, t, cname);
-	sql_bpm *p = c->data;
+	str tmp, host, remote;
+	connection c;
+	sql_bpm *bpm;
+	bpm = col->data;
+	
+	bpm_get_part_location(bpm, part, &host, &remote);
 
-	if (p->nr <= part) {
-		return 0;
-	} else {
-		
-		return bpm_set_part_location(p, part, host, NULL, 0, NULL, NULL, NULL);
-	}
+	/* lookup conn */
+	rethrow("mat.send_part",tmp, RMTfindconn(&c, host));
+	
+	/*get a fragment from the remote site */
+	rethrow("mat.send_part", tmp, RMTinternalget(
+                                c->mconn,
+                                remote,
+                                (ptr) &b));	
+	if(!b)
+		throw(SQL, "mat.get_part", sql_message("Get remote part %d for column %s", part, col->base.name));
+	return MAL_SUCCEED;
 }
 
-/* str dist_setHost_wrap(int *bid, str *sname, str *tname, str *cname, int *part, int *host); */
-str 
-dist_setHost_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+/* str get_part_wrap(int *bid, str *sname, str *tname, str *col, int part); */
+str
+get_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
+	BAT *b = NULL;
 	str msg = getContext(cntxt, mb, &m, NULL);
+	sql_schema *s;
+	sql_table *t;
+	sql_column *c;
 	int *bid = (int *)getArgReference(stk, pci, 0);
 	str *sname = (str *)getArgReference(stk, pci, 1);
 	str *tname = (str *)getArgReference(stk, pci, 2);
 	str *cname = (str *)getArgReference(stk, pci, 3);
 	int *part = (int *)getArgReference(stk, pci, 4);
-	int *host = (int *)getArgReference(stk, pci, 5);
-	
+
 	if (msg)
 		return msg;
-	if ((*bid = dist_set(m, *sname, *tname, *cname, *part, *host)))
+
+	s = mvc_bind_schema(m, *sname);
+	if (!s)
+		throw(SQL, "mat.send_part", 
+			sql_message("schema %s unknown", *sname));
+ 	t = mvc_bind_table(m, s, *tname);
+	if (!t)
+		throw(SQL, "mat.send_part", 
+			sql_message("table %s unknown", *tname));
+	c = mvc_bind_column(m, t, *cname);
+	if (!c)
+		throw(SQL, "mat.send_part", 
+			sql_message("column %s unknown", *cname));
+	get_part(c, *part, b);
+	if (b) {
+		BBPkeepref( *bid = b->batCacheid);
 		return MAL_SUCCEED;
-	throw(SQL, "dist.setHost", "limitation in transaction scope");
-}
-
-str 
-dist_addHost_wrap(int *id, str *host, int *port, str *dbname, str *user, str *passwd)
-{
-	bpmHost bpmH = bpm_host_create(*host, *port, *dbname, *user, *passwd);
-	if (bpmH && (*id = bpmH->id))
-		return MAL_SUCCEED;
-	throw(SQL, "dist.addHost", "limitation in transaction scope");
-
-}
-
-str 
-dist_reconnect_wrap(int *mid, int *id)
-{
-	bpmHost bpmH = bpm_host_get(*id);
-	char *lng = "mal";
-	str msg = SERVERreconnectAlias(mid, &bpmH->host, &bpmH->port, &bpmH->dbname, &bpmH->user, &bpmH->passwd, &lng); 
-	if (msg)
-		return msg;
-	return MAL_SUCCEED;
-}
-
-static str 
-dist_send(mvc *m, int *mid, str sname, str tname, str cname, int part)
-{
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
-	sql_column *c = mvc_bind_column(m, t, cname);
-	sql_bpm *p = c->data;
-	BAT *b = NULL;
-
-	if (p->nr <= part) {
-		return NULL;
-	} else {
-		int bid = logger_find_bat(bpm_logger, p->parts[part].name);
-                b = temp_descriptor(bid);
-		(void) b;
-		(void) mid;
-		/*return SERVERsend(*mid, &p->parts[part].name, b);	*/
 	}
-	
-	return NULL;	
+	throw(SQL, "mat.get_part", "limitation in transaction scope");
 }
 
-/* str dist_send_wrap(int *mid, str *sname, str *tname, str *cname, int *part); */
-str 
-dist_send_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+/* str print_part_wrap(int *bid, str *sname, str *tname, str *col, int part); */
+str
+print_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
+	BAT *b = NULL;
 	str msg = getContext(cntxt, mb, &m, NULL);
-	int *mid = (int *)getArgReference(stk, pci, 0);
+	sql_schema *s;
+	sql_table *t;
+	sql_column *c;
 	str *sname = (str *)getArgReference(stk, pci, 1);
 	str *tname = (str *)getArgReference(stk, pci, 2);
 	str *cname = (str *)getArgReference(stk, pci, 3);
 	int *part = (int *)getArgReference(stk, pci, 4);
-	
+
 	if (msg)
 		return msg;
-	if ((msg = dist_send(m, mid, *sname, *tname, *cname, *part)))
+
+	s = mvc_bind_schema(m, *sname);
+	if (!s)
+		throw(SQL, "mat.send_part", 
+			sql_message("schema %s unknown", *sname));
+ 	t = mvc_bind_table(m, s, *tname);
+	if (!t)
+		throw(SQL, "mat.send_part", 
+			sql_message("table %s unknown", *tname));
+	c = mvc_bind_column(m, t, *cname);
+	if (!c)
+		throw(SQL, "mat.send_part", 
+			sql_message("column %s unknown", *cname));
+	get_part(c, *part, b);
+	if (b) {
+		BATprint(b);
 		return MAL_SUCCEED;
-	throw(SQL, "dist.put", msg);
+	}
+	throw(SQL, "mat.get_part", "limitation in transaction scope");
 }
