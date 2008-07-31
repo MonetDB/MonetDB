@@ -362,7 +362,7 @@ static Client MCnewClient()
 
 	if (c == mal_clients+MAL_MAXCLIENTS) 
 		return NULL;
-	c->idx= c - mal_clients;
+	c->idx= (int)(c - mal_clients);
 #ifdef MAL_CLIENT_DEBUG
 	printf("New client created %d\n", (int)(c-mal_clients));
 #endif

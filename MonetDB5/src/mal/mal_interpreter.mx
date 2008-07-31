@@ -76,7 +76,7 @@ static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 static void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd);
-static void displayVolume(Client cntxt, size_t vol);
+static void displayVolume(Client cntxt, lng vol);
 @-
 We can speed up the copying, provided we ignore copying ptr-based
 objects.
@@ -2127,7 +2127,7 @@ size_t getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	return vol;
 }
 
-void displayVolume(Client cntxt, size_t vol){
+void displayVolume(Client cntxt, lng vol){
 	if( vol <1024)
 		stream_printf(cntxt->fdout,LLFMT,vol);
 	else
@@ -2142,7 +2142,7 @@ void displayVolume(Client cntxt, size_t vol){
 void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd){
 	size_t vol;
 	vol= getVolume(stk,pci,rd);
-	displayVolume(cntxt,vol);
+	displayVolume(cntxt, (lng) vol);
 }
 @h
 #endif /*  _MAL_INTERPRET_H*/
