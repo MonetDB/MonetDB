@@ -919,9 +919,10 @@ response2bat(int sock,
         strstr(respStatus, "HTTP/1.1 ") != respStatus ||
         respStatus[12] != ' ' ||
         respStatus[ret -1] != '\r' ) { /* the '\n' is not returned by stream_readline() */
-        GDKerror("response2bat: invalid response from %s%d\n", host, port);
+        GDKerror("response2bat: invalid response from \"%s:%d\":\n", host, port);
         do{ /* read and print everything we can receive */
-            respStatus[ret -1] = '\0'; /* overwrite '\r' */
+            if(respStatus[ret-1] == '\r')
+                respStatus[ret -1] = '\0'; /* overwrite '\r' */
             GDKerror("%s\n", respStatus);
             ret = stream_readline(in, respStatus, 1024);
         } while (ret > 0);
