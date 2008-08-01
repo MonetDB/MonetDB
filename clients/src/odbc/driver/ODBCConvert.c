@@ -2547,13 +2547,13 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 #endif
 		case SQL_C_BINARY:
 			for (i = 0; i < slen; i++) {
-				char c = sval[i];
+				unsigned char c = (unsigned char) sval[i];
 
-				if (c < 0x20 || c >= 0x7F) {
+				if (c < 0x20 /* || c >= 0x7F */) {
 					assign(buf, bufpos, buflen, '\\', stmt);
-					assign(buf, bufpos, buflen, c >> 6, stmt);
-					assign(buf, bufpos, buflen, (c >> 3) & 0x7, stmt);
-					assign(buf, bufpos, buflen, c & 0x7, stmt);
+					assign(buf, bufpos, buflen, '0' + (c >> 6), stmt);
+					assign(buf, bufpos, buflen, '0' + ((c >> 3) & 0x7), stmt);
+					assign(buf, bufpos, buflen, '0' + (c & 0x7), stmt);
 				} else if (c == '\\') {
 					assign(buf, bufpos, buflen, '\\', stmt);
 					assign(buf, bufpos, buflen, '\\', stmt);
