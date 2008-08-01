@@ -932,10 +932,10 @@ phase 2: interpret the actual params
 			argv = opcache->yyval.val.pval; 
 		}
 		argc = interpret_params(stk, lt->yysons[0], argv, fcn_nme);
-		if (argc < 0)
-			return -1;
 		res->vtype = TYPE_void;
 		res->val.oval = void_nil;
+		if (argc < 0)
+			return -1;
 @-
 phase 3: check if we have this already in expanded form
 @c
