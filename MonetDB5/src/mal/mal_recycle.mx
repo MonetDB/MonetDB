@@ -745,7 +745,7 @@ compare by value.
 	recyclerUsedMemory += wr;
 	if (monitorRecycler == 1 ) 
 		fprintf(stderr, 
-			"#memory=%lu, stop=%d, recycled=%d, retained=%d executed=%d saved=" LLFMT "\n",
+			"#memory=%lu, stop=%d, recycled=" SZFMT", retained=%d executed=%d saved=" LLFMT "\n",
 			recyclerUsedMemory, recycleBlk->stop,
 			recycled, retained, statements, savedTime);
 	retained++;

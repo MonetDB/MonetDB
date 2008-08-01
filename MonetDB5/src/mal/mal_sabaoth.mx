@@ -689,7 +689,7 @@ str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
 	time_t start, stop, up;
 	int avg10[10];
 	int avg30[30];
-	int i;
+	int i=0;
 
 	memset(avg10, 0, sizeof(int) * 10);
 	memset(avg30, 0, sizeof(int) * 30);
