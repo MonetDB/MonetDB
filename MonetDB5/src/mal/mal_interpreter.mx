@@ -2025,7 +2025,7 @@ It simply skips the barrier block upon return.
 	{
 		newclk= GDKusec();
 		mb->profiler[ppc].counter++;
-		mb->profiler[ppc].ticks = (long) (newclk - stk->clk);
+		mb->profiler[ppc].ticks = newclk - stk->clk;
 		mb->profiler[ppc].clk += mb->profiler[ppc].clk;
 		if( pci){
 			mb->profiler[ppc].ibytes= getVolume(stk,pci,0);
