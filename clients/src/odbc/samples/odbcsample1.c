@@ -199,9 +199,9 @@ main(int argc, char **argv)
 	f5.second = 0;
 	for (i = 0; i < 2000; i++) {
 		f1 = i;
-		/* \xdf\xa2 is the UTF-8 encoding of U+2018 Left Single Quotation Mark;
-		   \xdf\xa3 is the UTF-8 encoding of U+2019 Right Single Quotation Mark */
-		snprintf(f2, sizeof(f2), "value \xdf\xa2%d\xdf\xa3", i);
+		/* \342\200\230 is the UTF-8 encoding of U+2018 Left Single Quotation Mark;
+		   \342\200\231 is the UTF-8 encoding of U+2019 Right Single Quotation Mark */
+		snprintf(f2, sizeof(f2), "value \342\200\230%d\342\200\231", i);
 		f3 = i * 1.5;
 		f4.day++;
 		if ((f4.day == 29 && f4.month == 2) || (f4.day == 31 && (f4.month == 4 || f4.month == 6 || f4.month == 9 || f4.month == 11)) || f4.day == 32) {
