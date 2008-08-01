@@ -36,7 +36,7 @@ pattern send_part(host:str, sname:str, tname:str, column:str, part:int):void
 address send_part_wrap
 comment "Send part to a remote host";
 
-pattern get_part(sname:str, tname:str, column:str, part:int):void
+pattern get_part(sname:str, tname:str, column:str, part:int):bat[:oid,:any_1]
 address get_part_wrap
 comment "Get part from a remote host";
 
@@ -273,7 +273,7 @@ send_part(sql_column *col, int part, BAT *b, str *conn)
 		throw(SQL,"mat.send_part",tmp);
 	
 	/*send the fragment to the remote site*/ 
-	if ((tmp = RMTinternalput(&ident, c->mconn, TYPE_bat, b)) != MAL_SUCCEED)
+	if ((tmp = RMTinternalput(&ident, c->mconn, newBatType(b->H->type, b->T->type), &b->batCacheid)) != MAL_SUCCEED)
 		throw(SQL,"mat.send_part",tmp);
 	
 	/*store the information about the fragment location*/
@@ -298,8 +298,7 @@ send_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *tname = (str *)getArgReference(stk, pci, 3);
 	str *cname = (str *)getArgReference(stk, pci, 4);
 	int *part = (int *)getArgReference(stk, pci, 5);
-	int *access;
-	*access = 0;
+	int access = 0;
 
 	if (msg)
 		return msg;
@@ -317,7 +316,7 @@ send_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "mat.send_part", 
 			sql_message("column %s unknown", *cname));
 
-	b = mat_bind(m, *sname, *tname, *cname, *access, *part);
+	b = mat_bind(m, *sname, *tname, *cname, access, *part);
 	if (!b) 
 		throw(SQL, "mat.send_part", 
 				sql_message("table %s with column %s does not contain part %d", *tname, *cname, *part));
@@ -327,7 +326,7 @@ send_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-get_part(sql_column *col, int part, BAT *b)
+get_part(sql_column *col, int part, ptr b)
 {
 	str tmp, host, remote;
 	connection c;
@@ -341,7 +340,7 @@ get_part(sql_column *col, int part, BAT *b)
 		throw(SQL,"mat.get_part",tmp);
 	
 	/*get a fragment from the remote site */
-	if ((tmp = RMTinternalget(c->mconn, remote, (ptr) &b)) != MAL_SUCCEED)	
+	if ((tmp = RMTinternalget(c->mconn, remote, b)) != MAL_SUCCEED)	
 		throw(SQL,"mat.get_part",tmp);
 
 	if(!b)
@@ -354,12 +353,10 @@ str
 get_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	BAT *b = NULL;
 	str msg = getContext(cntxt, mb, &m, NULL);
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
-	int *bid = (int *)getArgReference(stk, pci, 0);
 	str *sname = (str *)getArgReference(stk, pci, 1);
 	str *tname = (str *)getArgReference(stk, pci, 2);
 	str *cname = (str *)getArgReference(stk, pci, 3);
@@ -380,11 +377,9 @@ get_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!c)
 		throw(SQL, "mat.send_part", 
 			sql_message("column %s unknown", *cname));
-	get_part(c, *part, b);
-	if (b) {
-		BBPkeepref( *bid = b->batCacheid);
+	get_part(c, *part,  &stk->stk[getArg(pci, 0)]);
+	if (&stk->stk[getArg(pci, 0)])
 		return MAL_SUCCEED;
-	}
 	throw(SQL, "mat.get_part", "limitation in transaction scope");
 }
 
@@ -393,7 +388,7 @@ str
 print_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	BAT *b = NULL;
+	ValPtr val;
 	str msg = getContext(cntxt, mb, &m, NULL);
 	sql_schema *s;
 	sql_table *t;
@@ -418,9 +413,11 @@ print_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!c)
 		throw(SQL, "mat.send_part", 
 			sql_message("column %s unknown", *cname));
-	get_part(c, *part, b);
-	if (b) {
-		BATprint(b);
+	 
+	VALinit(val, newBatType(TYPE_oid, TYPE_any), NULL);
+	get_part(c, *part,  &val);
+	if (val) {
+		/*BATprint(b);*/
 		return MAL_SUCCEED;
 	}
 	throw(SQL, "mat.get_part", "limitation in transaction scope");
