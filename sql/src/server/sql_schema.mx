@@ -1264,10 +1264,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		if (alter) {
 			atom *a = NULL;
 
-			if (!cs->null && !cs->def) {
-				return sql_error(sql, 02, "CREATE TABLE: column default value is NULL, but column has NOT NULL constraint\n");
-			}
-			if (cs->null && !cs->def) {
+			if (!cs->def) {
 				a = atom_general(&cs->type, NULL, 0);
 				if (a)
 					res = stmt_append_col(cs, stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), stmt_atom(a)));
@@ -1517,7 +1514,21 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		if (!c) 
 			return sql_error(sql, 02, "column '%s' not found\n", cname);
 		mvc_null(sql, c, null);
-		res = stmt_none();
+		if (alter && !c->null) {
+			char *msg;
+			sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
+			stmt *bt = stmt_basetable(c->t, c->t->base.name);
+			stmt *cs = stmt_bat(c, bt, RDONLY);
+			stmt *s = stmt_atom(atom_general(&c->type, NULL, 0));
+
+			s = stmt_uselect(cs, s, cmp_equal);
+			s = stmt_aggr(s, NULL, sql_dup_aggr(cnt), 1);
+			msg = sql_message( "ALTER TABLE: NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
+
+			res = stmt_exception(s, msg, 00001);
+		} else {
+			res = stmt_none();
+		}
 	}
 	break;
 	case SQL_DROP_DEFAULT:
