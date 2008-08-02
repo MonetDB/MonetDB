@@ -345,26 +345,31 @@ static INLINE str RMTinternalget(Mapi mconn, str ident, ValPtr v) {
 
 		b = BATnew(h, t, len);
 
-		/* some checks maybe ... */
 		while (len-- > 0) {
 			mapi_fetch_row(mhdl);
 			val = mapi_fetch_field(mhdl, 0); /* should be there */
 			var = mapi_fetch_field(mhdl, 1);
 			if (ATOMvarsized(h)) {
-				l = (ptr)val;
+				l = (ptr)(val == NULL ? str_nil : val);
 			} else {
 				s = 0;
 				l = NULL;
+				if (val == NULL)
+					val = "nil";
 				ATOMfromstr(h, &l, &s, val);
 			}
 			if (ATOMvarsized(t)) {
-				r = (ptr)var;
+				r = (ptr)(var == NULL ? str_nil : var);
 			} else {
 				s = 0;
 				r = NULL;
+				if (var == NULL)
+					var = "nil";
 				ATOMfromstr(t, &r, &s, var);
 			}
+
 			BUNins(b, l, r, FALSE);
+
 			if (!ATOMvarsized(h)) GDKfree(l);
 			if (!ATOMvarsized(t)) GDKfree(r);
 		}
@@ -817,6 +822,3 @@ str RMTdestroy(int *ret, str *conn) {
 
 	throw(MAL, "remote.destroy", "no such connection with name '%s'", *conn);
 }
-
-/* vim: set foldmethod=syntax: */
-

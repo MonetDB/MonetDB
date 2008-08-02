@@ -1,20 +1,14 @@
 stdout of test 'remote02` in directory 'src/modules/mal` itself:
 
 
-# 14:16:07 >  
-# 14:16:07 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/xquerylog" --set mapi_open=true --set mapi_port=35191 --set xrpc_port=49347 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  remote02.mal
-# 14:16:07 >  
+# 20:41:49 >  
+# 20:41:49 >   mserver5 "--config=/ufs/fabian/scratch/monetdb/stable/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib/MonetDB5:/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib/MonetDB5/lib:/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-pegasus.ins.cwi.nl/five/xquerylog" --set mapi_open=true --set xrpc_open=true --set mapi_port=34745 --set xrpc_port=43774 --set monet_prompt= --trace  --dbname=mTests_src_modules_mal  remote02.mal
+# 20:41:49 >  
 
 
 
-
-
-
-
-
-
-# MonetDB Server v5.1.0
-# Copyright (c) 1993-2007 CWI, all rights reserved
+# MonetDB server v5.6.1, based on kernel v1.24.1
+# Serving database 'mTests_src_modules_mal'
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
 # dbname:mTests_src_modules_mal
 # Visit http://monetdb.cwi.nl/ for further information
@@ -69,25 +63,27 @@ function user.main():void;              #  0 main:void := user.main() {G}
     c := 12;                            # 18 c:int := _24:int 
     d := bat.new(:str,:int);            # 19 d:bat[:str,:int] := CMDBATnew(_26:str, _27:int) {G}
     bat.insert(d,"bla",1);              # 20 _28:void := BKCinsert_bun(d:bat[:str,:int], _29:str, _30:int) 
+    bat.insert(d,nil:str,2);            # 21 _31:void := BKCinsert_bun(d:bat[:str,:int], _17:str, _32:int) 
+    bat.insert(d,"boe",nil:int);        # 22 _33:void := BKCinsert_bun(d:bat[:str,:int], _34:str, _35:int) 
 # store the values 
-    i := remote.put("test",a);          # 22 i:str := RMTput(_16:str, a:str) {G}
-    j := remote.put("test",b);          # 23 j:str := RMTput(_16:str, b:flt) {G}
-    k := remote.put("test",c);          # 24 k:str := RMTput(_16:str, c:int) {G}
-    l := remote.put("test",d);          # 25 l:str := RMTput(_16:str, d:bat[:str,:int]) {G}
+    i := remote.put("test",a);          # 24 i:str := RMTput(_16:str, a:str) {G}
+    j := remote.put("test",b);          # 25 j:str := RMTput(_16:str, b:flt) {G}
+    k := remote.put("test",c);          # 26 k:str := RMTput(_16:str, c:int) {G}
+    l := remote.put("test",d);          # 27 l:str := RMTput(_16:str, d:bat[:str,:int]) {G}
 # retrieve the value 
-    r := remote.get("test",i);          # 27 r:any := RMTget(_16:str, i:str) 
-    s := remote.get("test",j);          # 28 s:any := RMTget(_16:str, j:str) 
-    t := remote.get("test",k);          # 29 t:any := RMTget(_16:str, k:str) 
-    u := remote.get("test",l);          # 30 u:any := RMTget(_16:str, l:str) 
+    r := remote.get("test",i);          # 29 r:any := RMTget(_16:str, i:str) 
+    s := remote.get("test",j);          # 30 s:any := RMTget(_16:str, j:str) 
+    t := remote.get("test",k);          # 31 t:any := RMTget(_16:str, k:str) 
+    u := remote.get("test",l);          # 32 u:any := RMTget(_16:str, l:str) 
 # see if it really is here 
-    io.print(r);                        # 32 _42:void := IOprint_val(r:any) 
-    io.print(s);                        # 33 _43:void := IOprint_val(s:any) 
-    io.print(t);                        # 34 _44:void := IOprint_val(t:any) 
-    io.print(u);                        # 35 _45:void := IOprint_val(u:any) 
+    io.print(r);                        # 34 _47:void := IOprint_val(r:any) 
+    io.print(s);                        # 35 _48:void := IOprint_val(s:any) 
+    io.print(t);                        # 36 _49:void := IOprint_val(t:any) 
+    io.print(u);                        # 37 _50:void := IOprint_val(u:any) 
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
-    remote.destroy("test");             # 38 _48:void := RMTdestroy(_49:str) 
-end main;	# 39  
+    remote.destroy("test");             # 40 _53:void := RMTdestroy(_54:str) 
+end main;                               # 41  
 [ "Fabian!" ]
 [ 4.30000019 ]
 [ 12 ]
@@ -96,7 +92,8 @@ end main;	# 39
 # str	int	  # type
 #-----------------#
 [ "bla",  1	  ]
-#MALexit: clients still active
+[ nil,	  2	  ]
+[ "boe",  nil	  ]
 
 # 16:03:25 >  
 # 16:03:25 >  Done.
