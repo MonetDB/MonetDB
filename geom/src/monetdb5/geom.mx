@@ -21,7 +21,9 @@
 @mal
 module geom;
 
-atom mbr:lng;
+@' overwrite lng needed for fixed size! Sizes are fixed in geom.prelude 
+@mal
+atom mbr:lng;	
 
 command tostr() :str 		address mbrTOSTR;
 command fromstr() :mbr		address mbrFROMSTR;
@@ -48,8 +50,8 @@ command del() :int		address wkbDEL;
 command length() :int		address wkbLENGTH;
 command heap() :int		address wkbHEAP;
 
-command wkb(v:str) :wkb address wkbFromString;
-command FromText(w:str, type:int) :wkb	address wkbFromText;
+command wkb{unsafe}(v:str) :wkb address wkbFromString;
+command FromText{unsafe}(w:str, type:int) :wkb	address wkbFromText;
 
 module geom;
 
@@ -224,13 +226,13 @@ geom.prelude();
 
 module calc;
 
-command mbr(v:str) :mbr address mbrFromString;
+command mbr{unsafe}(v:str) :mbr address mbrFromString;
 command mbr(v:mbr) :mbr address mbrFromMBR;
-command wkb(v:str) :wkb address wkbFromString;
+command wkb{unsafe}(v:str) :wkb address wkbFromString;
 command wkb(v:wkb) :wkb address wkbFromWKB;
 
 @= ctypes
-function @2( wkt:str ) :wkb;
+function @2{unsafe}( wkt:str ) :wkb;
 	x := wkb.FromText(wkt,@3);
 	return x;
 end @2;
@@ -494,10 +496,9 @@ mbrWRITE(mbr *c, stream *s, size_t cnt)
 	size_t i;
 
 	for(i=0;i<cnt;i++, c++) {
-		assert(GDK_int_min <= c->xmin && c->xmin <= GDK_int_max);
-		assert(GDK_int_min <= c->ymin && c->ymin <= GDK_int_max);
-		assert(GDK_int_min <= c->xmax && c->xmax <= GDK_int_max);
-		assert(GDK_int_min <= c->ymax && c->ymax <= GDK_int_max);
+		/* use binary writeInt (as sizeof (flt) == sizeof(int)); */
+		/* We want to write nil's here too. 
+		   So no overflow checking needed */
 		if (!stream_writeInt(s, (int) c->xmin) ||
 		    !stream_writeInt(s, (int) c->ymin) ||
 		    !stream_writeInt(s, (int) c->xmax) ||
