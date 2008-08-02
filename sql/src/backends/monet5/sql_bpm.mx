@@ -388,7 +388,7 @@ str
 print_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	ValPtr val;
+	ValPtr val = NULL;
 	str msg = getContext(cntxt, mb, &m, NULL);
 	sql_schema *s;
 	sql_table *t;
