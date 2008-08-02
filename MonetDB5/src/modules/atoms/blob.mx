@@ -856,7 +856,8 @@ BLOBget(Heap *h, int *bun, int *l, blob **val)
 int
 BLOBnitems(int *ret, blob *b)
 {
-	*ret = b->nitems;
+	assert(b->nitems <INT_MAX);
+	*ret = (int) b->nitems; 
 	return GDK_SUCCEED;
 }
 
