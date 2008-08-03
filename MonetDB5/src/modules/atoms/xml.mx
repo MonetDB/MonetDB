@@ -214,7 +214,7 @@ XMLisdocument(bit *x, str *s){
 
 str
 XMLcomment(xml *x, str *s){
-	int len = (int) strlen(*s) + 10;
+	size_t len = strlen(*s) + 10;
 	str buf = (str) GDKmalloc(len);
 
 	snprintf(buf, len, "<!-- %s -->", *s);
@@ -241,9 +241,9 @@ XMLpi(str *ret, str *operator, str *bid)
 str
 XMLroot(str *ret, str *val, str *version, str *standalone)
 {
-	int len;
-	str buf = (str) GDKmalloc(len= (int) strlen(*val) + 
-		(int) strlen("<? version=\"\" standalone=\"\"?>"));
+	size_t len;
+	str buf = (str) GDKmalloc(len= strlen(*val) + 
+		strlen("<? version=\"\" standalone=\"\"?>"));
 	snprintf(buf,len,"<? version=\"%s\" stanalone=\"%s\"?>%s",
 		*version,*standalone,*val);
 	*ret= buf;
@@ -253,8 +253,8 @@ XMLroot(str *ret, str *val, str *version, str *standalone)
 str
 XMLattribute(xml *ret, str *name, str *val)
 {
-	int len;
-	str buf= (str) GDKmalloc(len= (int)(2*strlen(*name)+strlen(*val)+5));
+	size_t len;
+	str buf= (str) GDKmalloc(len= (2*strlen(*name)+strlen(*val)+5));
 	snprintf(buf,len," %s=\"%s\"",*name,*val);
 	*ret = buf;
 	return MAL_SUCCEED;
@@ -264,8 +264,8 @@ str
 XMLelement(xml *ret, str *name, str *nspace, xml *attr, xml *Val)
 {
 	char *val = *Val;
-	int len;
-	str buf= (str) GDKmalloc(len=2* (int)(strlen(*name) +
+	size_t len;
+	str buf= (str) GDKmalloc(len=2* (strlen(*name) +
 				strlen(*nspace) + strlen(*attr)+
 				strlen("<></> ")+strlen(val)+1));
 	if (strNil(val))  /* todo short hand <elementname /> */
@@ -290,8 +290,8 @@ XMLelement(xml *ret, str *name, str *nspace, xml *attr, xml *Val)
 str
 XMLelementSmall(xml *ret, str *name, xml *val)
 {
-	int len;
-	str buf= (str) GDKmalloc(len=2*(int) (strlen(*name) +
+	size_t len;
+	str buf= (str) GDKmalloc(len=2*(strlen(*name) +
 				strlen("<></> ")+strlen(*val)));
 	snprintf(buf,len,"<%s>%s</%s>",*name, *val, *name);
 	*ret= buf;
@@ -320,7 +320,7 @@ XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	for( i=p->retc; i<p->argc; i++)
 		len += strlen(*(str*)getArgReference(stk,p,i));
-	buf= (str) GDKmalloc( (int) (len+1));
+	buf= (str) GDKmalloc( len+1);
 	buf[0]=0;
 	
 	assert(len <INT_MAX);
