@@ -158,6 +158,7 @@ include mal_io;
 include tablet;
 include factory;
 include recycle;
+include rmtobj;
 include remote;
 
 @-

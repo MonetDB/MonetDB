@@ -1,4 +1,3 @@
-include remote;
 # for testweb, we need to ask the server itself how it is available, use
 # sabaoth for that
 include sabaoth;

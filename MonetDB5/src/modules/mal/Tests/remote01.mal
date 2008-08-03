@@ -1,4 +1,3 @@
-include remote;
 # for testweb, we need to ask the server itself how it is available, use
 # sabaoth for that
 include sabaoth;
@@ -10,7 +9,7 @@ p := sabaoth.getLocalConnectionPort();
 remote.create("test", h, p, nil:str, "monetdb", "monetdb");
 
 # retrieve a value (that for sure won't exist)
-remote.get("test", "b1");
+remote.get("test", "b1":rmtobj);
 catch MALException:str;
 	io.printf("!%s\n",MALException);
 exit MALException;

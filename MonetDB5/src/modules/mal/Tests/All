@@ -37,6 +37,7 @@ remote00
 remote01
 remote02
 remote03
+remote04
 
 #some mapi related tests
 #mapi01 this one generates different output always

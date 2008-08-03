@@ -76,6 +76,30 @@ memory and not made persistent.  This could be changed in the
 future to allow created connections to exist over server
 restarts.
 
+@h
+
+#ifndef _REMOTE_DEF
+#define _REMOTE_DEF
+
+#ifdef WIN32
+#ifndef LIBREMOTE
+#define remote_export extern __declspec(dllimport)
+#else
+#define remote_export extern __declspec(dllexport)
+#endif
+#else
+#define remote_export extern
+#endif
+
+@c
+#include "mal_config.h"
+#include <mal.h>
+#include <mal_exception.h>
+#include <mal_interpreter.h>
+#include <mal_function.h> /* for printFunction */
+#include <mapilib/Mapi.h>
+#include "remote.h"	/* for the implementation of the functions */
+
 @mal
 module remote;
 
@@ -93,22 +117,7 @@ comment "Release the resources held by the remote module";
 @-
 
 @- Implementation
-
 @h
-
-#ifndef _REMOTE_DEF
-#define _REMOTE_DEF
-
-#ifdef WIN32
-#ifndef LIBREMOTE
-#define remote_export extern __declspec(dllimport)
-#else
-#define remote_export extern __declspec(dllexport)
-#endif
-#else
-#define remote_export extern
-#endif
-
 typedef struct _connection {
 	char               name[16];  /* name of the connection,
                                      15 chars should be enough for everyone */
@@ -126,14 +135,6 @@ remote_export str RMTfindconn(connection *ret, str conn);
 @-
 
 @c
-#include "mal_config.h"
-#include <mal.h>
-#include <mal_exception.h>
-#include <mal_interpreter.h>
-#include <mal_function.h> /* for printFunction */
-#include <mapilib/Mapi.h>
-#include "remote.h"	/* for the implementation of the functions */
-
 static connection connections = NULL;
 
 /**
@@ -521,7 +522,7 @@ str RMTserveget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 @}
 
 @mal
-pattern get(conn:str, ident:str):any
+pattern get(conn:str, ident:rmtobj):any
 address RMTget
 comment "Retrieves and returns the object referenced by ident from conn";
 @h
@@ -585,7 +586,7 @@ str RMTgetnextid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 @mal
-pattern put(conn:str, object:any):str
+pattern put(conn:str, object:any):rmtobj
 address RMTput
 comment "Stores object on host and returns its identifier on host";
 @h
@@ -596,7 +597,8 @@ remote_export str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
  * object on the remote host is returned for later use.
  */
 str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str conn, tmp, ident;
+	str conn, tmp;
+	str ident;
 	connection c;
 	ValPtr v;
 
@@ -631,7 +633,10 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #	return(ret);
 #end exec;
 
-pattern exec(conn:str, mod:str, func:str...):any
+pattern exec(conn:str, mod:str, func:str):any
+address RMTexec
+comment "Executes function mod.func over conn using the given arguments and returns its result";
+pattern exec(conn:str, mod:str, func:str, :any...):any
 address RMTexec
 comment "Executes function mod.func over conn using the given arguments and returns its result";
 @h
@@ -650,7 +655,7 @@ remote_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
  */
 str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, mod, func, ident, arg, tmp;
-	int i, len;
+	int i, len, tpe;
 	connection c;
 	char qbuf[512];	/* FIXME: make this dynamic */
 	MapiHdl mhdl;
@@ -695,12 +700,19 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* put the arguments one by one, and dynamically build the
 	 * invocation string */
 	for (i = 4; i < pci->argc; i++) {
-		rethrow("remote.exec", tmp, RMTinternalput(&arg,
-					c->mconn,
-					getArgType(mb, pci, i),
-					getArgReference(stk, pci, i)));
-		len += snprintf(&qbuf[len], 511 - len, "%s%s",
-				(i > 4 ? ", " : ""), arg);
+		tpe = getArgType(mb, pci, i);
+		if (tpe > TYPE_str && strcmp(ATOMname(tpe), "rmtobj") == 0) {
+			len += snprintf(&qbuf[len], 511 - len, "%s%s",
+					(i > 4 ? ", " : ""),
+					*((str *)getArgReference(stk, pci, i)));
+		} else {
+			rethrow("remote.exec", tmp, RMTinternalput(&arg,
+						c->mconn,
+						tpe,
+						getArgReference(stk, pci, i)));
+			len += snprintf(&qbuf[len], 511 - len, "%s%s",
+					(i > 4 ? ", " : ""), arg);
+		}
 	}
 
 	/* finish end execute the invocation string */

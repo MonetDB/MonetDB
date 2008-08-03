@@ -71,8 +71,9 @@ end main;	# 14
 [ 26,	  "zrule"	  ]
 [ 27,	  "inet"	  ]
 [ 28,	  "pcre"	  ]
-[ 29,	  "xml"		  ]
-[ 30,	  "mapentry"	  ]
+[ 29,	  "rmtobj"	  ]
+[ 30,	  "xml"		  ]
+[ 31,	  "mapentry"	  ]
 #-------------------------#
 # t	h		  # name
 # oid	str		  # type
@@ -121,6 +122,7 @@ end main;	# 14
 [ "profiler",	  nil	  ]
 [ "recycle",	  nil	  ]
 [ "remote",	  nil	  ]
+[ "rmtobj",	  nil	  ]
 [ "scheduler",	  nil	  ]
 [ "sema",	  nil	  ]
 [ "sqlblob",	  nil	  ]

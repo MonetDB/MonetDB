@@ -45,35 +45,35 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # for testweb, we need to ask the server itself how it is available, use 
 # sabaoth for that 
 #sabaoth.prelude(); 
-    h := sabaoth.getLocalConnectionHost();# 12 h:str := SABgetLocalConnectionHost() {G}
-    p := sabaoth.getLocalConnectionPort();# 13 p:int := SABgetLocalConnectionPort() 
+    h := sabaoth.getLocalConnectionHost();#  4 h:str := SABgetLocalConnectionHost() {G}
+    p := sabaoth.getLocalConnectionPort();#  5 p:int := SABgetLocalConnectionPort() 
 # create a connecton to ourself 
-    remote.create("test",h,p,nil:str,"monetdb","monetdb");# 15 _15:void := RMTcreate(_16:str, h:str, p:int, _17:str, _18:str, _18:str) 
+    remote.create("test",h,p,nil:str,"monetdb","monetdb");#  7 _7:void := RMTcreate(_8:str, h:str, p:int, _9:str, _10:str, _10:str) 
 # now do it with a function that returns something (a BAT in this case) 
-    b := remote.exec("test","inspect","getAtomNames");# 17 b:any := RMTexec(_16:str, _21:str, _22:str) 
-    io.print(b);                        # 18 _23:void := IOprint_val(b:any) 
-catch MALException:str ;                # 19 MALException:str {J21}
-    io.printf("!first\n");              # 20 _25:void := IOprint_str(_26:str) 
-exit MALException:str ;                 # 21 MALException:str 
+    b := remote.exec("test","inspect","getAtomNames");#  9 b:any := RMTexec(_8:str, _13:str, _14:str) 
+    io.print(b);                        # 10 _15:void := IOprint_val(b:any) 
+catch MALException:str ;                # 11 MALException:str {J13}
+    io.printf("!first\n");              # 12 _17:void := IOprint_str(_18:str) 
+exit MALException:str ;                 # 13 MALException:str 
 # this is invalid, as io.print is an invalid module, and bla will be 
 # taken as function 
-    io.printf("sent invalid request\n");# 24 _29:void := IOprint_str(_30:str) 
-    f := remote.exec("test","io.print","bla");# 25 f:any := RMTexec(_16:str, _32:str, _33:str) 
-    io.print(f);                        # 26 _34:void := IOprint_val(f:any) 
-catch MALException:str ;                # 27 MALException:str {J29}
-    io.printf("!second\n");             # 28 _35:void := IOprint_str(_36:str) 
-exit MALException:str ;                 # 29 MALException:str 
-    io.printf("sent request\n");        # 30 _37:void := IOprint_str(_38:str) 
+    io.printf("sent invalid request\n");# 16 _21:void := IOprint_str(_22:str) 
+    f := remote.exec("test","io.print","bla");# 17 f:any := RMTexec(_8:str, _24:str, _25:str) 
+    io.print(f);                        # 18 _26:void := IOprint_val(f:any) 
+catch MALException:str ;                # 19 MALException:str {J21}
+    io.printf("!second\n");             # 20 _27:void := IOprint_str(_28:str) 
+exit MALException:str ;                 # 21 MALException:str 
+    io.printf("sent request\n");        # 22 _29:void := IOprint_str(_30:str) 
 # io.print only outputs things, but returns nothing 
-    a := remote.exec("test","io","print","bla");# 32 a:any := RMTexec(_16:str, _41:str, _42:str, _33:str) 
-catch MALException:str ;                # 33 MALException:str {J35}
-    io.printf("!third:\n");             # 34 _43:void := IOprint_str(_44:str) 
-exit MALException:str ;                 # 35 MALException:str 
-    io.print(a);                        # 36 _45:void := IOprint_val(a:any) 
+    a := remote.exec("test","io","print","bla");# 24 a:any := RMTexec(_8:str, _33:str, _34:str, _25:str) 
+catch MALException:str ;                # 25 MALException:str {J27}
+    io.printf("!third:\n");             # 26 _35:void := IOprint_str(_36:str) 
+exit MALException:str ;                 # 27 MALException:str 
+    io.print(a);                        # 28 _37:void := IOprint_val(a:any) 
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
-    remote.destroy("test");             # 39 _48:void := RMTdestroy(_49:str) 
-end main;                               # 40  
+    remote.destroy("test");             # 31 _40:void := RMTdestroy(_41:str) 
+end main;                               # 32  
 #-------------------------#
 # h	t		  # name
 # int	str		  # type
@@ -107,8 +107,9 @@ end main;                               # 40
 [ 26,	  "zrule"	  ]
 [ 27,	  "inet"	  ]
 [ 28,	  "pcre"	  ]
-[ 29,	  "xml"		  ]
-[ 30,	  "mapentry"	  ]
+[ 29,	  "rmtobj"	  ]
+[ 30,	  "xml"		  ]
+[ 31,	  "mapentry"	  ]
 sent invalid request
 !second
 sent request

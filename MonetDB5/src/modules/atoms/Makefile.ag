@@ -21,7 +21,8 @@ MTSAFE
 LIBS = {
 	DIR = libdir/MonetDB5
 	SEP = _
-	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx xml.mx
+	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx \
+			  xml.mx rmtobj.mx
 
 	#SCRIPTS = mal
 	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
@@ -43,8 +44,8 @@ lib__str = {
 
 headers_h = {
 	DIR = includedir/MonetDB5/atoms
-	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx xml.mx \
-		str.mx
+	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx \
+			  xml.mx str.mx rmtobj.mx
 	HEADERS = h 
 }
 
@@ -52,7 +53,8 @@ headers_h = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
-	SOURCES = str.mx blob.mx url.mx mtime.mx streams.mx inet.mx color.mx xml.mx
+	SOURCES = str.mx blob.mx url.mx mtime.mx streams.mx inet.mx color.mx \
+			  xml.mx rmtobj.mx
 }
 
 EXTRA_DIST_DIR = Tests
