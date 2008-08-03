@@ -17,7 +17,19 @@
 # All Rights Reserved.
 
 # treat warnings as errors
-#W_CFLAGS = -WX
+# (for now for 32-bits, only, as 64-bits still triggers too many ("non-crucial"?) warnings; cf.,
+#  http://monetdb.cwi.nl/testing/projects/monetdb/Current/clients/.Int.64.64.d.1-Windows5.2/make.out.html
+#  http://monetdb.cwi.nl/testing/projects/monetdb/Current/clients/.Mic.64.64.d.1-Windows5.2/make.out.html
+# )
+!IFNDEF bits
+!IFNDEF BITS64
+W_CFLAGS = -WX
+!ENDIF
+!ELSE
+!IF $(bits) == 32
+W_CFLAGS = -WX
+!ENDIF
+!ENDIF
 
 RULESMSC = $(MONETDB_PREFIX)\share\MonetDB\winrules.msc
 !INCLUDE $(RULESMSC)
