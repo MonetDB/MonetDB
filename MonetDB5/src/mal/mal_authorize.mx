@@ -37,7 +37,6 @@ usernames, passwords and allowed scenarios for users of the server.
 #include "mal_client.h"
 
 mal_export str AUTHcheckCredentials(oid *ret, str *user, str *passwd, str *challenge, str *algo, str *scenario);
-mal_export str AUTHcheckUser(int *ret, str *user, str *passwd);
 mal_export str AUTHaddUser(oid *ret, str *user, str *pass, bat *scenarios);
 mal_export str AUTHremoveUser(str *username);
 mal_export str AUTHchangeUsername(str *olduser, str *newuser);
@@ -114,12 +113,12 @@ static BAT *scen = NULL;
 str
 AUTHrequireAdmin() {
 	oid id;
-	if( MCgetClient()== NULL)
+	if (MCgetClient() == NULL)
 			return(MAL_SUCCEED);
 	id = MCgetClient()->user;
 
 	if (id != 0) {
-		char u[BUFSIZ]="";
+		char u[BUFSIZ] = "";
 		str user = u;
 		str tmp;
 		
@@ -138,12 +137,13 @@ AUTHrequireAdmin() {
 str
 AUTHrequireAdminOrUser(str *username) {
 	oid id = MCgetClient()->user;
-	char u[BUFSIZ]= "";
+	char u[BUFSIZ] = "";
 	str user = u;
 	str tmp = MAL_SUCCEED;
 
 	/* root?  then all is well */
-	if (id == 0) return(MAL_SUCCEED);
+	if (id == 0)
+		return(MAL_SUCCEED);
 
 	rethrow("requireAdminOrUser", tmp, AUTHresolveUser(&user, &id));
 	if (username == NULL || *username == NULL || strcmp(*username, user) != 0) {
@@ -153,14 +153,6 @@ AUTHrequireAdminOrUser(str *username) {
 	return(MAL_SUCCEED);
 }
 
-@-
-Localize the authorization tables in the database.  The authorization
-tables are a set of aligned BATs that store username, password (hashed)
-and scenario permissions.
-If the BATs do not exist, they are created, and the monetdb/monetdb
-administrator account is added.  Initialising the authorization tables
-can only be done after the GDK kernel has been initialized.
-@c
 void
 AUTHcommit() {
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 3);
@@ -176,6 +168,14 @@ AUTHcommit() {
 	BBPreclaim(b);
 }
 
+@-
+Localize the authorization tables in the database.  The authorization
+tables are a set of aligned BATs that store username, password (hashed)
+and scenario permissions.
+If the BATs do not exist, they are created, and the monetdb/monetdb
+administrator account is added.  Initialising the authorization tables
+can only be done after the GDK kernel has been initialized.
+@c
 str
 AUTHinitTables() {
 	bat bid;
@@ -257,24 +257,6 @@ AUTHinitTables() {
 	}
 
 	return(MAL_SUCCEED);
-}
-
-/**
- * Check if the user/password combination aligns with
- * a given uid.
-*/
-
-str
-AUTHcheckUser(
-	int *ret,
-	str *username,
-	str *passwd)
-{
-
-	/* to be filled */
-	(void) username; (void) passwd;
-	*ret =1;
-	return MAL_SUCCEED;
 }
 
 /**
