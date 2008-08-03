@@ -17,7 +17,15 @@
 # All Rights Reserved.
 
 # treat warnings as errors
-#W_CFLAGS = -WX
+# (for now only for Intel's icc, as the Microsoft compiler still triggers too many ("non-crucial"?) warnings; cf.,
+#  http://monetdb.cwi.nl/testing/projects/monetdb/Current/sql/.Mic.32.32.d.1-Windows5.1/make.out.html
+#  http://monetdb.cwi.nl/testing/projects/monetdb/Current/sql/.Mic.64.64.d.1-Windows5.2/make.out.html
+# )
+!IFDEF compiler
+!IF $(compiler) == icc
+W_CFLAGS = -WX
+!ENDIF
+!ENDIF
 
 RULESMSC = $(MONETDB_PREFIX)\share\MonetDB\winrules.msc
 !INCLUDE $(RULESMSC)
