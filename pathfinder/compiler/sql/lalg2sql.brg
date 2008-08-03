@@ -251,13 +251,15 @@ Rel:    guide_step (Frag, Rel)                       =  56 (10);
 Rel:    step_join (Frag, Rel)                        =  57 (10);
 Rel:    guide_step_join (Frag, Rel)                  =  58 (10);
 
-Rel:    doc_access (Frag, Rel)                       =  59 (10);
+Rel:    doc_index_join (Frag, Rel)                   =  59 (10);
+Rel:    doc_access (Frag, Rel)                       =  60 (10);
 
-Rel:    roots_ (Constr)                              =  60 (10);
-Frag:   fragment (Constr)                            =  61 (10);
-Frag:   frag_union (Frag, Frag)                      =  62 (10);
-Frag:   frag_union (empty_frag, Frag)                =  63 (10);
-Frag:   empty_frag                                   =  64 (10);
+Rel:    roots_ (Constr)                              =  61 (10);
+Frag:   fragment (Constr)                            =  62 (10);
+Frag:   frag_extract (Rel)                           =  63 (10);
+Frag:   frag_union (Frag, Frag)                      =  64 (10);
+Frag:   frag_union (empty_frag, Frag)                =  65 (10);
+Frag:   empty_frag                                   =  66 (10);
 
 Constr: doc_tbl (Rel)                                =  70 (10);
 Constr: twig (Twig)                                  =  71 (10);
@@ -308,6 +310,11 @@ Rel:    rec_fix (
 Rel:    dummy (Rel)                                  = 115 (10);
 Rel:    proxy (Rel)                                  = 116 (10);
 Rel:    proxy_base (Rel)                             = 117 (10);
+
+Rel:    fun_call (Rel, Param)                        = 118 (10);
+Param:  fun_param (Rel, Param)                       = 119 (10);
+Param:  fun_frag_param (Frag, Param)                 = 120 (10);
+Param:  nil                                          = 121 (10);
 
 %%
 
@@ -1745,6 +1752,11 @@ rec_allowed (PFla_op_t *p)
             return false;
         case la_roots:
         case la_fragment:
+            return true;
+        case la_frag_extract:
+            /* FIXME */
+            assert (!"not yet implemented");
+            break;
         case la_frag_union:
         case la_empty_frag:
         case la_error:
@@ -4602,8 +4614,17 @@ reduce (PFla_op_t * p, int goalnt)
                               PRE(stepalias), stepalias, leaf);
         }   break;
 
-        /* Rel:    doc_access (Frag, Rel) */
+        /* Rel:    doc_index_join (Frag, Rel) */
         case 59:
+            /* FIXME: implementation is missing */
+            PFoops (OOPS_FATAL,
+                    "SQLgen: Translation for the logical "
+                    "algebra pattern (%s) is still missing.",
+                    PFlalg2sql_string[rule]);
+            break;
+
+        /* Rel:    doc_access (Frag, Rel) */
+        case 60:
         {
             PFalg_att_t item = p->sem.doc_access.att,
                         item_res = p->sem.doc_access.res;
@@ -4630,11 +4651,11 @@ reduce (PFla_op_t * p, int goalnt)
                 case doc_text:
                 case doc_comm:
                 case doc_pi_text:
-					col_env_add (COLMAP(p), item_res, item_res_ty, VALUE(ctxalias));
+                    col_env_add (COLMAP(p), item_res, item_res_ty, VALUE(ctxalias));
                     break;
                 case doc_qname:
-					col_env_add (COLMAP(p), item_res, aat_qname_loc, NAME(ctxalias));
-					col_env_add (COLMAP(p), item_res, aat_qname_uri, NS_URI(ctxalias));
+                    col_env_add (COLMAP(p), item_res, aat_qname_loc, NAME(ctxalias));
+                    col_env_add (COLMAP(p), item_res, aat_qname_uri, NS_URI(ctxalias));
                     break;
                 default: PFoops (OOPS_FATAL,
                                     "SQLgen: Unknown access identifier in "
@@ -4645,18 +4666,27 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    roots_ (Constr) */
-        case 60:
+        case 61:
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, L(p));
             break;
 
         /* Frag:   fragment (Constr) */
-        case 61:
+        case 62:
             FRAG(p) = FRAG(L(p));
             break;
 
+        /* Frag:   frag_extract (Rel) */
+        case 63:
+            /* FIXME: implementation is missing */
+            PFoops (OOPS_FATAL,
+                    "SQLgen: Translation for the logical "
+                    "algebra pattern (%s) is still missing.",
+                    PFlalg2sql_string[rule]);
+            break;
+
         /* Frag:   frag_union (Frag, Frag) */
-        case 62:
+        case 64:
             /* Try to keep simple references (and thus merge
                equal document references into a single one). */
             if (FRAG(L(p))->kind == sql_tbl_name &&
@@ -4670,12 +4700,12 @@ reduce (PFla_op_t * p, int goalnt)
             break;
 
         /* Frag:   frag_union (empty_frag, Frag) */
-        case 63:
+        case 65:
             FRAG(p) = FRAG(R(p));
             break;
 
         /* Frag:   empty_frag */
-        case 64:
+        case 66:
             FRAG(p) = table_name (PF_SQL_TABLE_FRAG);
             break;
 
@@ -5485,6 +5515,14 @@ reduce (PFla_op_t * p, int goalnt)
         case 116:
         /* Rel:    proxy_base (Rel) */
         case 117:
+        /* Rel:    fun_call (Rel, Param) */
+        case 118:
+        /* Param:  fun_param (Rel, Param) */
+        case 119:
+        /* Param:  fun_frag_param (Frag, Param) */
+        case 120:
+        /* Param:  nil */
+        case 121:
 
         default:
             PFoops (OOPS_FATAL,
