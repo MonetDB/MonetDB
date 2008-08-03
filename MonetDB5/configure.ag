@@ -161,16 +161,25 @@ if test "x$have_raptor" != xno; then
 	AC_PATH_PROG(RAPTOR_CONFIG,raptor-config,,$XPATH)
 	if test "x$RAPTOR_CONFIG" = x; then
 		wrong="raptor-config could not be found in $XPATH"
+		if test "x$have_raptor" != xauto; then
+			AC_MSG_ERROR([$wrong])
+		fi
 		have_raptor=no
 	fi
 fi
 if test "x$have_raptor" != xno; then
 	AC_MSG_CHECKING([for raptor >= $RAPTOR_VERSION_REQUIRED_MIN])
 	RAPTOR_VERSION="`$RAPTOR_CONFIG --version`"
-	AC_MSG_RESULT(found $RAPTOR_VERSION)
 	if test MONETDB_VERSION_TO_NUMBER(echo $RAPTOR_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo $RAPTOR_VERSION_REQUIRED_MIN); then
+		AC_MSG_RESULT(no, found $RAPTOR_VERSION)
 		wrong="raptor version $RAPTOR_VERSION is older than $RAPTOR_VERSION_REQUIRED_MIN"
+		if test "x$have_raptor" != xauto; then
+			AC_MSG_ERROR([$wrong])
+		fi
 		have_raptor=no
+	else
+		have_raptor=yes
+		AC_MSG_RESULT(yes, found $RAPTOR_VERSION)
 	fi
 fi
 if test "x$have_raptor" != xno; then
@@ -178,17 +187,20 @@ if test "x$have_raptor" != xno; then
 	RAPTOR_INCS="`$RAPTOR_CONFIG --cflags`"
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $RAPTOR_INCS"
-	AC_CHECK_HEADER(raptor.h, AC_DEFINE(HAVE_RAPTOR_H, 1, [Define to 1 if you have the <raptor.h> header file.]), [wrong="raptor.h could not be found/used"; have_raptor=no])
+	AC_CHECK_HEADER(raptor.h, AC_DEFINE(HAVE_RAPTOR_H, 1, [Define to 1 if you have the <raptor.h> header file.]), AC_MSG_ERROR([raptor.h could not be found/used]))
 	CPPFLAGS="$save_CPPFLAGS"
 fi
 if test "x$have_raptor" != xno; then
 	save_LIBS="$LIBS"
     	LIBS="$LIBS $RAPTOR_LIBS"
-    	AC_CHECK_LIB(raptor, raptor_uri_as_string, :, [wrong="-lraptor could not be found/used"; have_raptor=no])
+    	AC_CHECK_LIB(raptor, raptor_uri_as_string, :, AC_MSG_ERROR([-lraptor could not be found/used]))
     	LIBS="$save_LIBS"
 fi
+AC_MSG_CHECKING([whether to use raptor for rdf])
 if test "x$have_raptor" = xno; then
-	AC_MSG_WARN([module rdf will NOT be compiled as $wrong.])
+	AC_MSG_RESULT([no])
+else
+	AC_MSG_RESULT([yes])
 fi
 AC_SUBST(RAPTOR_INCS)
 AC_SUBST(RAPTOR_LIBS)
