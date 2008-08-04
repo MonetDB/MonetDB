@@ -56,7 +56,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # create a connecton to ourself 
     remote.create("test",h,p,nil:str,"monetdb","monetdb");#  7 _7:void := RMTcreate(_8:str, h:str, p:int, _9:str, _10:str, _10:str) 
 # retrieve a value (that for sure won't exist) 
-    remote.get("test",b1хо<:rmtobj);    #  9 _12:any := RMTget(_8:str, _13:rmtobj) 
+    remote.get("test",b1:rmtobj);       #  9 _12:any := RMTget(_8:str, _13:rmtobj) 
 catch MALException:str ;                # 10 MALException:str {J12}
     io.printf("!%s\n",MALException);    # 11 _15:void := IOprint_formatted_str(_16:str, MALException:str) 
 exit MALException:str ;                 # 12 MALException:str 
