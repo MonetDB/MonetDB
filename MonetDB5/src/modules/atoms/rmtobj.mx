@@ -65,7 +65,7 @@ RMTOfromString(str src, int *len, str *retval)
 		*retval = GDKstrdup(str_nil);
 	} else {
 		*retval = GDKstrdup(src);
-		*len = (int) strlen(src);
+		*len = (int)strlen(src);
 	}
 
 	return(*len);
@@ -86,11 +86,11 @@ rmtobj_export int RMTOtoString(str *retval, int *len, str handle);
 int
 RMTOtoString(str *retval, int *len, str handle)
 {
-	int hl = (int) strlen(handle)+1;
+	int hl = (int)strlen(handle) + 1;
 	if (*len < hl) {
 		if (*retval != NULL)
 			GDKfree(*retval);
-		*retval = GDKmalloc(hl);
+		*retval = GDKmalloc(sizeof(char) * hl);
 	}
 	*len = hl;
 	memcpy(*retval, handle, hl);
@@ -114,7 +114,7 @@ RMTOnew(str *retval, str *in)
 {
 	int len = 0;
 
-	(void) RMTOfromString(*in, &len, retval);
+	(void)RMTOfromString(*in, &len, retval);
 	if (len == 0)
 		throw(PARSE, "rmtobj.new", "Error while parsing %s", *in);
 
