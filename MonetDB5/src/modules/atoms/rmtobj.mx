@@ -90,7 +90,7 @@ RMTOtoString(str *retval, int *len, str handle)
 	if (*len < hl) {
 		if (*retval != NULL)
 			GDKfree(*retval);
-		*retval = GDKmalloc(sizeof(str) * (*len = hl));
+		*retval = GDKmalloc(hl);
 	}
 	*len = hl;
 	memcpy(*retval, handle, hl);
