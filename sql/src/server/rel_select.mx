@@ -723,7 +723,10 @@ rel_select(sql_rel *l, sql_exp *e)
 {
 	sql_rel *rel = rel_create();
 	
-	assert(rel->op != op_select);
+	if (l && l->op == op_select) { /* refine old select */
+		rel_select_add_exp(l, e);
+		return l;
+	}
 	rel->name = (l && l->name)?_strdup(l->name):NULL;
 	rel->l = l;
 	rel->r = NULL;
@@ -885,10 +888,6 @@ rel_push_select(sql_rel *rel, sql_exp *ls, sql_exp *e)
 	if (!l) {
 		/* expression has no clear parent relation, so filter current 
 		   with it */
-		if (rel && rel->op == op_select) { /* refine old select */
-			rel_select_add_exp(rel, e);
-			return rel;
-		}
 		return rel_select(rel, e);
 	}
 
@@ -1838,6 +1837,8 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, int f)
 	sql_rel *rel;
 
 	(void)f;
+	l = rel_project(l, rel_projections(sql, l, NULL, 1));
+	r = rel_project(r, rel_projections(sql, r, NULL, 1));
 	rel = rel_setop(l, r, op_union);
 	rel->exps = rel_projections(sql, rel, NULL, 1);
 	return rel;
@@ -1852,7 +1853,6 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 
 	if (!sc)
 		return NULL;
-	//assert(f >= sql_sel);
 	switch (sc->token) {
 	case SQL_OR:
 	case SQL_AND:
@@ -2250,7 +2250,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		ek.card = card_set;
 		/* first remove the NULLs */
-		if (l->card != CARD_ATOM && has_nil(l)) {
+		if (sc->token == SQL_NOT_IN && l->card != CARD_ATOM && has_nil(l)) {
 			e = rel_unop_(sql, exp_dup(l), NULL, "isnull");
 			e = exp_compare( e, exp_atom_bool(0), cmp_equal);
 			if (!is_select(rel->op))

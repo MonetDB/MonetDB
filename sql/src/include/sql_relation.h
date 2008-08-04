@@ -92,10 +92,18 @@ typedef enum operator_type {
 	(op == op_left || op == op_right || op == op_full)
 #define is_join(op) \
 	(op == op_join || is_outerjoin(op))
+#define is_semi(op) \
+	(op == op_semi || op == op_anti)
 #define is_select(op) \
 	(op == op_select || op == op_semi || op == op_anti)
 #define is_set(op) \
 	(op == op_union || op == op_inter || op == op_except)
+#define is_union(op) \
+	(op == op_union)
+#define is_inter(rel) \
+	(op == op_inter)
+#define is_except(rel) \
+	(op == op_except)
 #define is_project(op) \
 	(op == op_project || op == op_groupby || is_set(op))
 #define is_groupby(op) \

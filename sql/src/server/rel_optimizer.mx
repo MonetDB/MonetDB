@@ -275,8 +275,7 @@ get_tables(mvc *sql, sql_rel *rel, list *tables)
 static void
 get_relations(sql_rel *rel, list *rels)
 {
-	if (rel->op == op_join) {
-		assert(rel->exps == NULL);
+	if (rel->op == op_join && rel->exps == NULL) {
 		get_relations(rel->l, rels);
 		get_relations(rel->r, rels);
 		rel->l = NULL;
@@ -591,7 +590,7 @@ find_fk(list *rels, list *exps)
 static sql_rel *
 order_joins(list *rels, list *exps)
 {
-	sql_rel *top = NULL, *l, *r;
+	sql_rel *top = NULL, *l = NULL, *r = NULL;
 	sql_exp *cje;
 	node *djn;
 	list *sdje, *n_rels = list_create(NULL);
@@ -599,14 +598,16 @@ order_joins(list *rels, list *exps)
 
 	sdje = find_fk(rels, exps);
 
-	/* get the first expression */
-	cje = sdje->h->data;
-	list_remove_data(sdje, cje);
-	list_remove_data(exps, cje);
+	if (sdje->h) {
+		/* get the first expression */
+		cje = sdje->h->data;
+		list_remove_data(sdje, cje);
+		list_remove_data(exps, cje);
 
-	/* find the involved relations */
-	l = find_rel(rels, cje->l);
-	r = find_rel(rels, cje->r);
+		/* find the involved relations */
+		l = find_rel(rels, cje->l);
+		r = find_rel(rels, cje->r);
+	}
 	if (l && r) {
 		list_remove_data(rels, l);
 		list_remove_data(rels, r);
@@ -637,7 +638,7 @@ order_joins(list *rels, list *exps)
 	while(list_length(exps) && fnd) {
 		fnd = 0;
 		/* find the first expression which could be added */
-		for(djn = sdje->h; djn && !fnd; djn = djn->next) {
+		for(djn = sdje->h; djn && !fnd; djn = (!fnd)?djn->next:NULL) {
 			node *ln, *rn, *en;
 			
 			cje = djn->data;
@@ -702,6 +703,52 @@ order_joins(list *rels, list *exps)
 	return top;
 }
 
+static void
+push_in_join_down(list *rels, list *exps)
+{
+	node *n;
+	int restart = 1;
+
+	/* one of the rels should be a op_union with nrcols == 0 */
+	while(restart) {
+	    for(n = rels->h; n; n = n->next) {
+		sql_rel *r = n->data;
+	
+		restart = 0;
+		if (is_union(r->op) && r->nrcols == 0) {
+			/* next step find expression on this relation */
+			node *m;
+			sql_rel *l = NULL;
+			sql_exp *je = NULL;
+
+			for(m = exps->h; !je && m; m = m->next) {
+				sql_exp *e = m->data;
+
+				if (e->type == e_cmp && e->flag == cmp_equal) {
+					/* in values are on 
+						the right of the join */
+					if (rel_has_exp(r, e->r) >= 0) 
+						je = e;
+				}
+			}
+			/* with this expression find other relation */
+			if (je && (l = find_rel(rels, je->l)) != NULL) {
+				sql_rel *nr = rel_crossproduct(l, r, op_join);
+
+				rel_join_add_exp(nr, exp_dup(je));
+				list_append(rels, nr); 
+				list_remove_data(rels, l);
+				list_remove_data(rels, r);
+				list_remove_data(exps, je);
+				restart = 1;
+				break;
+			}
+
+		}
+	    }
+	}
+}
+
 static sql_rel *
 reorder_join(mvc *sql, sql_rel *rel)
 {
@@ -727,6 +774,8 @@ reorder_join(mvc *sql, sql_rel *rel)
 		for(n = rels->h; n; n = n->next) 
 			rel_print(sql, n->data, 0);
 #endif
+		push_in_join_down(rels, exps);
+
 		rel = order_joins(rels, exps);
 	}
 	list_destroy(rels);
@@ -748,7 +797,8 @@ push_up_join_exps( sql_rel *rel)
 			list_destroy(r);
 		}
 		if (rel->exps) {
-			r = l;
+			if (l && !r)
+				r = l;
 			l = list_merge(rel->exps, r, (fdup)&exp_dup);
 			list_destroy(r);
 		}
@@ -1023,7 +1073,7 @@ rel_push_join_down(mvc *sql, sql_rel *rel)
 	sql_rel *gb = NULL, *l = NULL;
 
 	(void)sql;
-	if (is_join(rel->op) && rel->l) {
+	if ((is_join(rel->op) || is_semi(rel->op)) && rel->l) {
 		gb = rel->r;
 		exps = rel->exps;
 		if (gb->op == op_groupby && gb->r) { 
@@ -1062,13 +1112,20 @@ rel_push_join_down(mvc *sql, sql_rel *rel)
 					return rel;
 				}
 			}
-			/* push join's left side (as semijoin) down group by */
-			l = rel_copy(rel->l);
-			/* now we need to translate the names using the join
-			   expressions */
-			gb->l = rel_crossproduct(gb->l, l, op_semi);
-			l = gb->l;
-			l->exps = jes;
+			if (is_join(rel->op)) {
+				/* push join's left side (as semijoin) down group by */
+				l = rel_copy(rel->l);
+				/* now we need to translate the names using the join
+			   	expressions */
+				gb->l = rel_crossproduct(gb->l, l, op_semi);
+				l = gb->l;
+				l->exps = jes;
+			} else { /* semi join */
+				/* rewrite group by into project */
+				gb->op = op_project;
+				list_destroy(gb->r);
+				gb->r = NULL;
+			}
 			return rel;
 		} 
 	}
@@ -1328,10 +1385,15 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	/* TODO add optimizer which removes unions 
 		(for example common rels, with only one different expression) */
+
 	/* TODO common sub relation/expression optimizer */
 
 	if (gp.cnt[op_select])
 		rel = rewrite(sql, rel, &rel_push_select_down); 
+
+	/* TODO push select up. Sounds bad, but isn't. In case of an join-idx we want the selection on
+	   the 'unique/primary (right hand side)' done before the (fake)-join and the selections on the foreign 
+	   part done after. */
 
 	if (gp.cnt[op_join] && gp.cnt[op_groupby])
 		rel = rewrite(sql, rel, &rel_push_join_down); 
