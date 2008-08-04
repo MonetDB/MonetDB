@@ -563,23 +563,28 @@ MT_check_nr_cores_(void)
 int
 MT_check_nr_cores(void)
 {
-        int ncpus = -1;
+	int ncpus = -1;
 
+	/* this works on Linux, Solaris and AIX */
 #if defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
-        ncpus = sysconf(_SC_NPROCESSORS_ONLN);
+	ncpus = sysconf(_SC_NPROCESSORS_ONLN);
 #endif
 
-#if defined(__FreeBSD__) || defined(__MACH__)
-        size_t len = sizeof(int);
-        sysctlbyname("hw.ncpu", &ncpus, &len, NULL, 0);
+	/* sysctl should work on all BSDs (includes Darwin) */
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__MACH__)
+	size_t len = sizeof(int);
+	sysctlbyname("hw.ncpu", &ncpus, &len, NULL, 0);
 #endif
+
+	/* if we ever need HPUX or OSF/1 (hope not), see
+	 * http://ndevilla.free.fr/threads/ */
 
 #ifdef WIN32
-	ncpus = 1
+	ncpus = 1;
 #endif
 	if (ncpus <= 0)
 		return MT_check_nr_cores_();
-        return ncpus;
+	return ncpus;
 }
 
 @}
