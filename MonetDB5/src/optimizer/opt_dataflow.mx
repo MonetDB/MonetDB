@@ -69,7 +69,6 @@ The statemens are all checked for being eligible for dataflow.
 			if (old[j] == NULL)
 				continue;
 			pushInstruction(mb,old[j]);
-			//mb->profiler[j].trace = TRUE;
 		}
 		if (entries>1){
 			q= newAssignment(mb);
@@ -94,10 +93,15 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int flowblock= 0, dumbcopy=0;
 	InstrPtr *old, q;
 	int limit;
-	Lifespan span = newLifespan(mb);
+	Lifespan span;
+
+	/* don't use dataflow on single processor systems */
+	if (GDKnr_threads <= 1)
+		return 0;
 
 	(void) cntxt;
 	(void) stk;
+ 	span = newLifespan(mb);
 	setLifespan(mb,span);
 #ifdef DEBUG_DATAFLOW_OPT
 	printFunction(GDKstdout, mb, LIST_MAL_ALL);

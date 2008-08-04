@@ -131,7 +131,6 @@ remote_export str RMTinternalput(str *ret, Mapi mconn, int type, ptr value);
 remote_export str RMTinternalget(Mapi mconn, str ident, ValPtr v);
 remote_export str RMTfindconn(connection *ret, str conn);
 
-#endif
 @-
 
 @c
@@ -843,3 +842,5 @@ str RMTdestroy(int *ret, str *conn) {
 
 /* vim: set foldmethod=syntax: */
 
+@h
+#endif
