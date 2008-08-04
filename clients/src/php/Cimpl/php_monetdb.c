@@ -23,13 +23,22 @@
  
 /* $Id$ */
 
-#include "clients_config.h"
-
 #define SMART_STR_PREALLOC 512
 
 #ifdef _MSC_VER
+/* Visual Studio 8 has deprecated lots of stuff: suppress warnings */
+#ifndef _CRT_SECURE_NO_DEPRECATE
+#define _CRT_SECURE_NO_DEPRECATE 1
+#endif
+
 #define WIN32 1
 #define WINNT 1
+
+#define _USE_32BIT_TIME_T 1
+
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#define HAVE_SOCKLEN_T 1
 #endif
 
 #include "php.h"
