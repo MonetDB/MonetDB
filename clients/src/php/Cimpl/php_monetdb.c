@@ -884,6 +884,7 @@ PHP_FUNCTION(monetdb_query)
 {
 	zval **query, **monetdb_link = NULL;
 	int id = -1;
+	size_t len;
 	char *myq;
 	Mconn *monetdb;
 	Mresult *monetdb_result;
@@ -915,9 +916,11 @@ PHP_FUNCTION(monetdb_query)
 	/* append ; to the query so it is terminated in those cases where
 	 * the user forgot it */
 	convert_to_string_ex(query);
-	myq = alloca(sizeof(char) * (strlen(Z_STRVAL_PP(query)) + 2));
-	memcpy(myq, Z_STRVAL_PP(query), strlen(Z_STRVAL_PP(query)) + 1);
-	strcat(myq, ";");
+	len = strlen(Z_STRVAL_PP(query));
+	myq = alloca(sizeof(char) * (len + 2));
+	memcpy(myq, Z_STRVAL_PP(query), len + 1);
+	myq[len++] = ';';
+	myq[len] = '\0';
 	monetdb_result = mapi_query(monetdb, myq);
 	if ((MG(auto_reset_persistent) & 2) && monetdb_result == NULL) {
 		mapi_reconnect(monetdb);
