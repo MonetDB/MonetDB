@@ -534,7 +534,8 @@ smp_thread(void *data)
 	(void)s;
 }
 
-int MT_check_nr_cores(void)
+static int 
+MT_check_nr_cores_(void)
 {
 	int i,curr=1,cores = 1;
 	double lasttime=0,thistime;
@@ -557,6 +558,28 @@ int MT_check_nr_cores(void)
 		curr *= 2; /* only check for powers of 2 */
 	}
 	return cores;
+}
+
+int
+MT_check_nr_cores(void)
+{
+        int ncpus = -1;
+
+#if defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
+        ncpus = sysconf(_SC_NPROCESSORS_ONLN);
+#endif
+
+#if defined(__FreeBSD__) || defined(__MACH__)
+        size_t len = sizeof(int);
+        sysctlbyname("hw.ncpu", &ncpus, &len, NULL, 0);
+#endif
+
+#ifdef WIN32
+	ncpus = 1
+#endif
+	if (ncpus <= 0)
+		return MT_check_nr_cores_();
+        return ncpus;
 }
 
 @}
