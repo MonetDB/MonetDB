@@ -86,7 +86,7 @@ rmtobj_export int RMTOtoString(str *retval, int *len, str handle);
 int
 RMTOtoString(str *retval, int *len, str handle)
 {
-	int hl = (int) strlen(handle);
+	int hl = (int) strlen(handle)+1;
 	if (*len < hl) {
 		if (*retval != NULL)
 			GDKfree(*retval);
