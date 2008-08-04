@@ -23,6 +23,8 @@
  
 /* $Id$ */
 
+#include "clients_config.h"
+
 #define SMART_STR_PREALLOC 512
 
 #ifdef _MSC_VER
