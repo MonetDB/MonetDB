@@ -544,8 +544,8 @@ files that are provided by the compilers:
 When using the Intel compiler, you also need to set the ``CC`` and
 ``CXX`` variables::
 
- set CC=icl -Qstd=c99 -GR- -Qsafeseh- -wd279
- set CXX=icl -Qstd=c99 -GR- -Qsafeseh- -wd279
+ set CC=icl -Qstd=c99 -GR- -Qsafeseh-
+ set CXX=icl -Qstd=c99 -GR- -Qsafeseh-
 
 (These are the values for the 10.1 version, for 9.1 replace
 ``-Qstd=c99`` with ``-Qc99``.)
