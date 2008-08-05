@@ -1130,7 +1130,11 @@ def isexecutable(TST, ext = '.sh') :
 ### isexecutable(TST, ext = '.sh') #
 
 # this function is a slightly modified copy of the posixpath version
-# the difference is the doubling of \'s in the replacement value
+# the difference is the doubling of \'s in the replacement value under
+# a very specific condition: when the variable name starts with a Q
+# and the variable name (with Q prefix) does not occur in the
+# environment and the variable name minus the Q prefix does occur in
+# the environment.
 _varprog = None
 def expandvars(path):
     """Expand shell variables of form $var and ${var}.  Unknown variables
@@ -1152,7 +1156,13 @@ def expandvars(path):
             name = name[1:-1]
         if name in os.environ:
             tail = path[j:]
-            val = os.environ[name].replace('\\', '\\\\')
+            val = os.environ[name]
+            path = path[:i] + val
+            i = len(path)
+            path += tail
+        elif name[:1] == 'Q' and name[1:] in os.environ:
+            tail = path[j:]
+            val = os.environ[name[1:]].replace('\\', '\\\\')
             path = path[:i] + val
             i = len(path)
             path += tail
