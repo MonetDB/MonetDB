@@ -46,13 +46,14 @@ mathematical functions are directly supported.
 
 @+ NULL semantics
 The batcalc arithmetic is already constraint to BATs of equal size.
-Another improvement can be obtained when we do not have to check
+Another improvement is obtained when we do not have to check
 for NULLs in each and every basic operation +,-,/,* and comparisons.
-This variant can be obtained using a compile time flag (NULLTST) for the time
-being. If it turns out to be effective, we will derive a new
-version of batcalc.
-Experiments show that ignoring the NULLS saves about 15%
-for larger instructions.
+A problem is to propagate the general 'nonil' property, because
+this depends on the semantics of the operator. Checking the result
+for a nil value depleats most of the expected gain.
+
+Currently only set for the NOT operation and comparisons operators when
+neither argument has nils.
 @{
 @mal
 module batcalc;
@@ -286,7 +287,6 @@ comment "Return a BAT with the negated tail";
 #define batcalc_export extern
 #endif
 
-#define NULLTST
 @-
 The accumulator operators are relatively straight forward,
 when the target BAT is known and we only have to deal with
@@ -299,18 +299,35 @@ fixed-sized types.
 	@3 *q = (@3*)Tloc(b, BUNlast(b));
 	@4 *r = (@4*)Tloc(right, BUNfirst(right));
 
-#ifdef NULLTST
-	for (; p<q; o++, p++, r++){
-		/* this code is better as x?nil:y  */
-		if(*p == @3_nil || *r == @4_nil)
-			*o = @1_nil;
-		else 
+	if (b->T->nonil && right->T->nonil)
+		for (; p<q; o++, p++, r++)
 			*o = (@1) (*p @2 *r);
-	}
-#else
-	for (; p<q; o++, p++, r++)
-		*o = (@1) (*p @2 *r);
-#endif
+	else
+	if (b->T->nonil)
+		for (; p<q; o++, p++, r++){
+			/* this code is better as x?nil:y  */
+			if(*r == @4_nil)
+				*o = @1_nil;
+			else 
+				*o = (@1) (*p @2 *r);
+		}
+	else
+	if (right->T->nonil)
+		for (; p<q; o++, p++, r++){
+			/* this code is better as x?nil:y  */
+			if(*p == @3_nil )
+				*o = @1_nil;
+			else 
+				*o = (@1) (*p @2 *r);
+		}
+	else
+		for (; p<q; o++, p++, r++){
+			/* this code is better as x?nil:y  */
+			if(*p == @3_nil || *r == @4_nil)
+				*o = @1_nil;
+			else 
+				*o = (@1) (*p @2 *r);
+		}
 }
 @= accumCst
 {
@@ -318,21 +335,21 @@ fixed-sized types.
 	@3 *p = (@3*)Tloc(b, BUNfirst(b));
 	@3 *q = (@3*)Tloc(b, BUNlast(b));
 	@4 c  = *(@4*)cst;
-#ifdef NULLTST
+
 	if( c == @4_nil){
 		for (;p<q; o++, p++)
 			*o = @1_nil;
 	} else
-	for (;p<q; o++, p++) {
-		if (*p == @3_nil )
-			*o = @1_nil;
-		else 
+	if (b->T->nonil)
+		for (;p<q; o++, p++)
 			*o = *p @2 c;
-	}
-#else
-	for (;p<q; o++, p++)
-		*o = *p @2 c;
-#endif
+	else
+		for (;p<q; o++, p++) {
+			if (*p == @3_nil )
+				*o = @1_nil;
+			else 
+				*o = *p @2 c;
+		}
 }
 @= accumCstLeft
 {
@@ -340,21 +357,21 @@ fixed-sized types.
 	@3 c  = *(@3*)cst;
 	@4 *p = (@4*)Tloc(b, BUNfirst(b));
 	@4 *q = (@4*)Tloc(b, BUNlast(b));
-#ifdef NULLTST
+
 	if (c == @3_nil)
 		for (; p<q; o++, p++)
 			*o = @1_nil;
 	else
-	for (; p<q; o++, p++) {
-		if (*p == @4_nil )
-			*o = @1_nil;
-		else 
+	if (b->T->nonil)
+		for (; p<q; o++, p++)
 			*o = c @2 *p;
-	}
-#else
-	for (; p<q; o++, p++)
-		*o = c @2 *p;
-#endif
+	else
+		for (; p<q; o++, p++) {
+			if (*p == @4_nil )
+				*o = @1_nil;
+			else 
+				*o = c @2 *p;
+		}
 }
 @= accumCstDIV
 {
@@ -366,17 +383,16 @@ fixed-sized types.
 	if (c == 0)
 		res = createException(ARITH, "batcalc.@1", "Division by zero");
 	else 
-#ifdef NULLTST
-	for (; p<q; o++, p++) {
-		if (c == @3_nil || *p == @4_nil)
-			*o = @1_nil;
-		else 
+	if (b->T->nonil)
+		for (; p<q; o++, p++)
 			*o = c @2 *p;
-	}
-#else
-	for (; p<q; o++, p++)
-		*o = c @2 *p;
-#endif
+	else
+		for (; p<q; o++, p++) {
+			if (*p == @4_nil)
+				*o = @1_nil;
+			else 
+				*o = c @2 *p;
+		}
 }
 @-
 A general assumption in all cases is the bats are synchronized on their
@@ -403,34 +419,82 @@ The similar code base is produced for dealing with a constant argument.
 	@5 *r = (@5*)Tloc(right, BUNfirst(right));
 
 	if( '@1' == '/'){ 
-	if (*r == 0)
-		res = createException(ARITH, "batcalc.@1", "Division by zero");
-	else 
-#ifdef NULLTST
+		if (b->T->nonil && right->T->nonil)
+			for(; p<q; o++, p++, r++)
+			if (*r == 0) {
+				res = createException(ARITH, "batcalc.@1", "Division by zero");
+				break;
+			} else 
+				*o = (@3)(*p / *r);
+		else
+		if (b->T->nonil )
 		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
-			if (*p == @4_nil || *r == @5_nil)
+			if (*r == @5_nil)
 				*o = @3_nil;
 			else 
+			if (*r == 0) {
+				res = createException(ARITH, "batcalc.@1", "Division by zero");
+				break;
+			} else 
 				*o = (@3)(*p / *r);
 		}
-#else
-		for(; p<q; o++, p++, r++)
-			*o = (@3)(*p / *r);
-#endif
-	} else {
-#ifdef NULLTST
-		for(; p<q; o++, p++, r++) {
-			/* this code is better as x?nil:y  */
-			if (*p == @4_nil || *r == @5_nil)
-				*o = @3_nil;
-			else 
-				*o = (@3) (*p @1 *r);
+		else
+		if (right->T->nonil )
+			for(; p<q; o++, p++, r++) {
+				/* this code is better as x?nil:y  */
+				if (*p == @4_nil )
+					*o = @3_nil;
+				else 
+				if (*r == 0) {
+					res = createException(ARITH, "batcalc.@1", "Division by zero");
+					break;
+			} else 
+				*o = (@3)(*p / *r);
 		}
-#else
-		for(; p<q; o++, p++, r++)
-			*o = (@3) (*p @1 *r);
-#endif
+		else
+			for(; p<q; o++, p++, r++) {
+				/* this code is better as x?nil:y  */
+				if (*p == @4_nil || *r == @5_nil)
+					*o = @3_nil;
+				else 
+				if (*r == 0) {
+					res = createException(ARITH, "batcalc.@1", "Division by zero");
+					break;
+			} else 
+				*o = (@3)(*p / *r);
+		}
+
+	} else {
+		if (b->T->nonil && right->T->nonil)
+			for(; p<q; o++, p++, r++)
+				*o = (@3) (*p @1 *r);
+		else
+		if (b->T->nonil )
+			for(; p<q; o++, p++, r++) {
+				/* this code is better as x?nil:y  */
+				if (*r == @5_nil)
+					*o = @3_nil;
+				else 
+					*o = (@3) (*p @1 *r);
+			}
+		else
+		if (right->T->nonil )
+			for(; p<q; o++, p++, r++) {
+				/* this code is better as x?nil:y  */
+				if (*p == @4_nil )
+					*o = @3_nil;
+				else 
+					*o = (@3) (*p @1 *r);
+			}
+		else
+			for(; p<q; o++, p++, r++) {
+				/* this code is better as x?nil:y  */
+				if (*p == @4_nil || *r == @5_nil)
+					*o = @3_nil;
+				else 
+					*o = (@3) (*p @1 *r);
+			}
 	}
 }
 @= arithmeticImpl
@@ -904,18 +968,17 @@ str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 		@1 *q = (@1*)Tloc(b,BUNlast(b));
 		@1 *o = (@1*)Tloc(bn,BUNfirst(bn));
 
-#ifdef NULLTST
-		for(; p<q; p++, o++){
-			/* this code is better as x?nil:y  */
-			if(*p == @1_nil )
-				*o = @1_nil;
-			else 
+		if (b->T->nonil)
+			for(; p<q; p++, o++)
 				*o = @2 *p;
-		}
-#else
-		for(; p<q; p++, o++)
-				*o = @2 *p;
-#endif
+		else
+			for(; p<q; p++, o++){
+				/* this code is better as x?nil:y  */
+				if(*p == @1_nil )
+					*o = @1_nil;
+				else 
+					*o = @2 *p;
+			}
 	}
 @-
 Unary accummulators are only called indirectly. They cannot
@@ -991,15 +1054,14 @@ str CMDunaryISNIL(int *ret, int *bid)
 			BATiter bi = bat_iterator(b);
 			BUN p,q;
 
-#ifdef NULLTST
+			if (b->T->nonil){
+				BATloop(b, p, q)
+					*o++ = FALSE;
+			} else
 			BATloop(b, p, q) {
 				str t = (str) BUNtail(bi,p);
 				*o++ = strcmp(t, str_nil) == 0;
 			}
-#else
-			BATloop(b, p, q)
-				*o++ = FALSE;
-#endif
 		} break;
 	default: throw(MAL, "batcalc.isnil", "unexpected type");
 	}
@@ -1020,7 +1082,7 @@ str CMDunaryISNIL(int *ret, int *bid)
 	return MAL_SUCCEED;
 }
 
-@- Operator implementation
+@- Comparison operator implementation
 The structure of this code is copied from the arithmetic scheme.
 @= baselineCode
 batcalc_export str CMD_@1_@3(int *ret, int *l, int *r);
@@ -1040,17 +1102,34 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 	q = (@3*)Tloc(b,BUNlast(b));
 	t = (@3*)Tloc(right,BUNfirst(right));
 		
-#ifdef NULLTST
-	for (;p<q; p++, t++, o++) {
-		if (*p == @3_nil || *t == @3_nil)
-			*o = bit_nil;
-		else 
+	if (b->T->nonil && right->T->nonil) {
+		for (;p<q; p++, t++, o++)
 			*o = (*p @2 *t);
-	}
-#else
-	for (;p<q; p++, t++, o++)
-		*o = (*p @2 *t);
-#endif
+		bn->T->nonil= TRUE;
+	} else
+	if (b->T->nonil)
+		for (;p<q; p++, t++, o++) {
+			if (*t == @3_nil)
+				*o = bit_nil;
+			else 
+				*o = (*p @2 *t);
+		}
+	else
+	if (right->T->nonil)
+		for (;p<q; p++, t++, o++) {
+			if (*p == @3_nil)
+				*o = bit_nil;
+			else 
+				*o = (*p @2 *t);
+		}
+	else
+		for (;p<q; p++, t++, o++) {
+			if (*p == @3_nil || *t == @3_nil)
+				*o = bit_nil;
+			else 
+				*o = (*p @2 *t);
+		}
+
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -1087,17 +1166,34 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 	q = (@3*)Tloc(b,BUNlast(b));
 	t = (@3*)Tloc(right,BUNfirst(right));
 		
-#ifdef NULLTST
-	for (;p<q; p++, t++, o++) {
-		if (*p == @3_nil || *t == @3_nil)
-			*o = bit_nil;
-		else 
+	if (b->T->nonil && right->T->nonil) {
+		for (;p<q; p++, t++, o++)
 			*o = (*p @2 *t);
-	}
-#else
-	for (;p<q; p++, t++, o++)
-		*o = (*p @2 *t);
-#endif
+		bn->T->nonil= TRUE;
+	} else
+	if (b->T->nonil)
+		for (;p<q; p++, t++, o++) {
+			if (*t == @3_nil)
+				*o = bit_nil;
+			else 
+				*o = (*p @2 *t);
+		}
+	else
+	if (right->T->nonil)
+		for (;p<q; p++, t++, o++) {
+			if (*p == @3_nil )
+				*o = bit_nil;
+			else 
+				*o = (*p @2 *t);
+		}
+	else
+		for (;p<q; p++, t++, o++) {
+			if (*p == @3_nil || *t == @3_nil)
+				*o = bit_nil;
+			else 
+				*o = (*p @2 *t);
+		}
+
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -1122,17 +1218,21 @@ str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
 	p = (@3*)Tloc(b,BUNfirst(b));
 	q = (@3*)Tloc(b,BUNlast(b));
 		
-#ifdef NULLTST
-	for (;p<q; p++, o++) {
-		if( *p == @3_nil || *cst == @3_nil)
-			*o = bit_nil;
-		else 
+	if (*cst == @3_nil)
+		for (;p<q; p++, o++) 
+				*o = bit_nil;
+	else
+	if (b->T->nonil )
+		for (;p<q; p++, o++)
 			*o = (*p @2 *cst);
-	}
-#else
-	for (;p<q; p++, o++)
-		*o = (*p @2 *cst);
-#endif
+	else
+		for (;p<q; p++, o++) {
+			if( *p == @3_nil )
+				*o = bit_nil;
+			else 
+				*o = (*p @2 *cst);
+		}
+
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -1170,17 +1270,20 @@ str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst)
 	p = (@3*)Tloc(b,BUNfirst(b));
 	q = (@3*)Tloc(b,BUNlast(b));
 		
-#ifdef NULLTST
-	for (;p<q; p++, o++) {
-		if (*p == @3_nil || *cst == @3_nil)
+	if (*cst == @3_nil)
+		for (;p<q; p++, o++)
 			*o = bit_nil;
-		else 
+	else
+	if (b->T->nonil)
+		for (;p<q; p++, o++)
 			*o = (*p @2 *cst);
-	}
-#else
-	for (;p<q; p++, o++)
-		*o = (*p @2 *cst);
-#endif
+	else
+		for (;p<q; p++, o++) {
+			if (*p == @3_nil )
+				*o = bit_nil;
+			else 
+				*o = (*p @2 *cst);
+		}
 
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -1248,17 +1351,18 @@ CMDbitbataccumNOT(int *ret, int *d, int *l)
 	q = (bit*) Tloc(bn,BUNlast(bn));
 	o = (bit*) Tloc(b,BUNfirst(b));
 
-#ifdef NULLTST
+	if (b->T->nonil) {
+		for (;p<q; p++, o++)
+			*p = ! *o;
+		bn->T->nonil = TRUE;
+	} else
 	for (;p<q; p++, o++) {
 		if (*o == bit_nil)
 			*p = bit_nil;
 		else 
 			*p = ! *o;
 	}
-#else
-	for (;p<q; p++, o++)
-		*p = ! *o;
-#endif
+
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 
@@ -1281,17 +1385,18 @@ CMDbitbatNOT(int *ret, int *bid)
 	p = (bit*) Tloc(b,BUNfirst(b));
 	q = (bit*) Tloc(b,BUNlast(b));
 
-#ifdef NULLTST
-	for (;p<q; p++, o++) {
-		if (*p == bit_nil)
-			*o = bit_nil;
-		else 
+	if (b->T->nonil) {
+		for (;p<q; p++, o++)
 			*o = ! *p;
-	}
-#else
-	for (;p<q; p++, o++)
-		*o = ! *p;
-#endif
+		bn->T->nonil= TRUE;
+	} else
+		for (;p<q; p++, o++) {
+			if (*p == bit_nil)
+				*o = bit_nil;
+			else 
+				*o = ! *p;
+		}
+
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);

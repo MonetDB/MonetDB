@@ -66,7 +66,6 @@ module batmath;
 @h
 #ifdef _BATMATH_H
 #define _BATMATH_H
-#define NULLTST
 
 #endif  /* _BATMATH_H */
 @- Implementations of scientific functions
@@ -102,14 +101,13 @@ str CMDscience_bat_@1(int *ret, int *bid)
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
 
-#ifdef NULLTST
-	for(;p<q; o++, p++){
-		*o = *p == dbl_nil? dbl_nil: @1(*p);
-	}
-#else
-	for(;p<q; o++, p++)
-		*o = @1(*p);
-#endif
+	if (b->T->nonil){
+		for(;p<q; o++, p++)
+			*o = @1(*p);
+	} else
+		for(;p<q; o++, p++){
+			*o = *p == dbl_nil? dbl_nil: @1(*p);
+		}
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),0);           
@@ -140,14 +138,14 @@ str CMDscience_bat_cst_@1(int *ret, int *bid, @2 *d)
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
 
-#ifdef NULLTST
-	for(;p<q; o++, p++){
-		*o = *p == dbl_nil? dbl_nil: @1(*p,*d);
-	}
-#else
-	for(;p<q; o++, p++)
-		*o = @1(*p,*d);
-#endif
+	if (b->T->nonil){
+		for(;p<q; o++, p++)
+			*o = @1(*p,*d);
+	} else
+		for(;p<q; o++, p++){
+			*o = *p == dbl_nil? dbl_nil: @1(*p,*d);
+		}
+
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),0);           
