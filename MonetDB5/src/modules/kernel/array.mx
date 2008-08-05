@@ -356,7 +356,8 @@ str
 ARRAYproject(int *ret, int *bid, int *cst)
 {
 	BAT *bn, *b;
-	int *ptr,  i;
+	int *ptr;
+	size_t i;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "array.project", "Cannot access descriptor");
