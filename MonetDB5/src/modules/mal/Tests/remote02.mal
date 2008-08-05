@@ -13,6 +13,8 @@ b := 4.3;
 c := 12;
 d := bat.new(:str, :int);
 bat.insert(d, "bla", 1);
+bat.insert(d, nil:str, 2);
+bat.insert(d, "boe", nil:int);
 
 # store the values
 i := remote.put("test", a);
