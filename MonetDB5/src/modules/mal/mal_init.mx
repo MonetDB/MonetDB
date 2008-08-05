@@ -134,6 +134,7 @@ include str;
 include url;
 include mtime;
 include inet;
+include identifier;
 
 @-
 The hardwired multiplex extensions
