@@ -1,0 +1,127 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2008 CWI.
+@' All Rights Reserved.
+
+@f identifier
+@a Fabian Groffen, Martin Kersten
+@+ Identifier Wrapper
+The identifier atom is a shallow wrapper that contains an object's id.
+Due to it being wrapped by this atom, methods can distinguish
+it from a normal string.
+The variable of this time can be further extended with properties
+to further qualify the identifier referenced.
+@see remote module
+
+@h
+#ifndef _IDtype_DEF
+#define _IDtype_DEF
+
+#ifdef WIN32
+#ifndef LIBIDtype
+#define identifier_export extern __declspec(dllimport)
+#else
+#define identifier_export extern __declspec(dllexport)
+#endif
+#else
+#define identifier_export extern
+#endif
+
+@c
+#include "mal_config.h"
+#include <mal.h>
+#include <mal_exception.h>
+#include "identifier.h"	/* for the implementation of the functions */
+
+@mal
+atom identifier:str;
+
+command fromstr() 
+address IDfromString
+comment "Convert a string to an identifier without any check";
+@h
+identifier_export int IDfromString(str src, int *len, str *retval);
+@c
+/**
+ * Creates a new identifier from the given string (stupid string copy).
+ * Warning: GDK function, does NOT pass a string by reference, and wants
+ * a pointer to a pointer for the retval!
+ * Returns the number of chars read
+ */
+int
+IDfromString(str src, int *len, str *retval)
+{
+	if (src == NULL) {
+		*len = 0;
+		*retval = GDKstrdup(str_nil);
+	} else {
+		*retval = GDKstrdup(src);
+		*len = (int)strlen(src);
+	}
+
+	return(*len);
+}
+
+@mal
+command tostr() 
+address IDtoString
+comment "Convert identifier to string equivalent";
+@h
+identifier_export int IDtoString(str *retval, int *len, str handle);
+@c
+/**
+ * Returns the string representation of the given identifier.
+ * Warning: GDK function
+ * Returns the length of the string
+ */
+int
+IDtoString(str *retval, int *len, str handle)
+{
+	int hl = (int)strlen(handle) + 1;
+	if (*len < hl) {
+		if (*retval != NULL)
+			GDKfree(*retval);
+		*retval = GDKmalloc(sizeof(char) * hl);
+	}
+	*len = hl;
+	memcpy(*retval, handle, hl);
+
+	return(*len);
+}
+@mal
+command identifie(s:str):identifier 
+address IDentifier
+comment "Cast a string to an identifer ";
+@h
+identifier_export str IDentifier(str *retval, str *in);
+@c
+@{
+/**
+ * Returns an identifier, parsed from a string.  The fromStr function is used
+ * to parse the string.
+ */
+str
+IDentifier(str *retval, str *in)
+{
+	int len = 0;
+
+	(void)IDfromString(*in, &len, retval);
+	if (len == 0)
+		throw(PARSE, "identifier.identifier", "Error while parsing %s", *in);
+
+	return (MAL_SUCCEED);
+}
+
+@h
+#endif
