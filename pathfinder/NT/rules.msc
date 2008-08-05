@@ -18,8 +18,12 @@
 
 # treat warnings as errors
 # ignore warning #279 (controlling expression is constant) that occurs
-# in many asserts
+# in many asserts (and only there, i.e., only if assertions are enabled)
+!IFNDEF NDEBUG
 W_CFLAGS = -WX -wd279
+!ELSE
+W_CFLAGS = -WX
+!ENDIF
 
 RULESMSC = $(MONETDB_PREFIX)\share\MonetDB\winrules.msc
 !INCLUDE $(RULESMSC)
