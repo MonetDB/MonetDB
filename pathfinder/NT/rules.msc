@@ -17,7 +17,9 @@
 # All Rights Reserved.
 
 # treat warnings as errors
-W_CFLAGS = -WX
+# ignore warning #279 (controlling expression is constant) that occurs
+# in many asserts
+W_CFLAGS = -WX -wd279
 
 RULESMSC = $(MONETDB_PREFIX)\share\MonetDB\winrules.msc
 !INCLUDE $(RULESMSC)
