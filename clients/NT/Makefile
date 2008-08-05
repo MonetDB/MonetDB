@@ -59,6 +59,7 @@ unistd.h:
 	$(ECHO) #define read _read >> unistd.h
 	$(ECHO) #define write _write >> unistd.h
 	$(ECHO) #define close _close >> unistd.h
+	$(ECHO) #undef getpid >> unistd.h
 	$(ECHO) #define getpid _getpid >> unistd.h
 	$(ECHO) #define umask _umask >> unistd.h
 	$(ECHO) #endif >> unistd.h
