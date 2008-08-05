@@ -135,3 +135,4 @@ mdb_starts_with_sql_debug_64.SF-1999354
 bat_descriptor_problem.SF-1997643
 between_on_strings.SF-2021508
 assert_fails_on_algebra_version.SF-2019349
+alter_table_set_not_null.SF-1997030
