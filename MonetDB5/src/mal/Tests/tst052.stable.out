@@ -32,10 +32,9 @@ function user.main():void;              #  0 main:void := user.main() {G}
     bat.insert(b,7,127:wrd);            #  5 _9:void := BKCinsert_bun(b:bat[:int,:wrd], _10:int, _11:wrd) 
     bat.insert(b,15,32768:wrd);         #  6 _12:void := BKCinsert_bun(b:bat[:int,:wrd], _13:int, _14:wrd) 
     bat.insert(b,31,2147483647:wrd);    #  7 _15:void := BKCinsert_bun(b:bat[:int,:wrd], _16:int, _17:wrd) 
-    bat.insert(b,63,9223372036854775807:wrd);#  8 _18:void := BKCinsert_bun(b:bat[:int,:wrd], _19:int, _20:wrd) 
-    io.print(b);                        #  9 _21:void := IOprint_val(b:bat[:int,:wrd]) 
-end main;                               # 10  
-#---------------------------------#
+    io.print(b);                        #  8 _18:void := IOprint_val(b:bat[:int,:wrd]) 
+end main;                               #  9  
+#-------------------------#
 # h	t			  # name
 # int	wrd			  # type
 #---------------------------------#
@@ -43,7 +42,6 @@ end main;                               # 10
 [ 7,	  127			  ]
 [ 15,	  32768			  ]
 [ 31,	  2147483647		  ]
-[ 63,	  9223372036854775807	  ]
 
 # 08:54:36 >  
 # 08:54:36 >  Done.
