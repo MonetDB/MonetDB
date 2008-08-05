@@ -50,7 +50,6 @@ Another improvement can be obtained when we do not have to check
 for NULLs in each and every basic operation +,-,/,* and comparisons.
 This variant can be obtained using a compile time flag (NULLTST) for the time
 being. If it turns out to be effective, we will derive a new
-
 version of batcalc.
 Experiments show that ignoring the NULLS saves about 15%
 for larger instructions.
@@ -300,15 +299,18 @@ fixed-sized types.
 	@3 *q = (@3*)Tloc(b, BUNlast(b));
 	@4 *r = (@4*)Tloc(right, BUNfirst(right));
 
+#ifdef NULLTST
 	for (; p<q; o++, p++, r++){
 		/* this code is better as x?nil:y  */
-#ifdef NULLTST
 		if(*p == @3_nil || *r == @4_nil)
 			*o = @1_nil;
 		else 
-#endif
 			*o = (@1) (*p @2 *r);
 	}
+#else
+	for (; p<q; o++, p++, r++)
+		*o = (@1) (*p @2 *r);
+#endif
 }
 @= accumCst
 {
@@ -318,9 +320,8 @@ fixed-sized types.
 	@4 c  = *(@4*)cst;
 #ifdef NULLTST
 	if( c == @4_nil){
-		for (;p<q; o++, p++) {
+		for (;p<q; o++, p++)
 			*o = @1_nil;
-		}
 	} else
 	for (;p<q; o++, p++) {
 		if (*p == @3_nil )
@@ -329,9 +330,8 @@ fixed-sized types.
 			*o = *p @2 c;
 	}
 #else
-	for (;p<q; o++, p++) {
+	for (;p<q; o++, p++)
 		*o = *p @2 c;
-	}
 #endif
 }
 @= accumCstLeft
@@ -342,9 +342,8 @@ fixed-sized types.
 	@4 *q = (@4*)Tloc(b, BUNlast(b));
 #ifdef NULLTST
 	if (c == @3_nil)
-		for (; p<q; o++, p++) {
+		for (; p<q; o++, p++)
 			*o = @1_nil;
-		}
 	else
 	for (; p<q; o++, p++) {
 		if (*p == @4_nil )
@@ -353,9 +352,8 @@ fixed-sized types.
 			*o = c @2 *p;
 	}
 #else
-	for (; p<q; o++, p++) {
+	for (; p<q; o++, p++)
 		*o = c @2 *p;
-	}
 #endif
 }
 @= accumCstDIV
@@ -365,18 +363,20 @@ fixed-sized types.
 	@4 *p = (@4*)Tloc(b, BUNfirst(b));
 	@4 *q = (@4*)Tloc(b, BUNlast(b));
 
-	for (; p<q; o++, p++) {
+	if (c == 0)
+		res = createException(ARITH, "batcalc.@1", "Division by zero");
+	else 
 #ifdef NULLTST
+	for (; p<q; o++, p++) {
 		if (c == @3_nil || *p == @4_nil)
 			*o = @1_nil;
 		else 
-#endif
-		if (c == 0) { 
-			res = createException(ARITH, "batcalc.@1", "Division by zero");
-			break;
-		} else 
 			*o = c @2 *p;
 	}
+#else
+	for (; p<q; o++, p++)
+		*o = c @2 *p;
+#endif
 }
 @-
 A general assumption in all cases is the bats are synchronized on their
@@ -403,30 +403,34 @@ The similar code base is produced for dealing with a constant argument.
 	@5 *r = (@5*)Tloc(right, BUNfirst(right));
 
 	if( '@1' == '/'){ 
+	if (*r == 0)
+		res = createException(ARITH, "batcalc.@1", "Division by zero");
+	else 
+#ifdef NULLTST
 		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
-#ifdef NULLTST
 			if (*p == @4_nil || *r == @5_nil)
 				*o = @3_nil;
 			else 
-#endif
-			if (*r == 0) {
-				res = createException(ARITH, "batcalc.@1", "Division by zero");
-				break;
-				
-			} else 
 				*o = (@3)(*p / *r);
 		}
+#else
+		for(; p<q; o++, p++, r++)
+			*o = (@3)(*p / *r);
+#endif
 	} else {
+#ifdef NULLTST
 		for(; p<q; o++, p++, r++) {
 			/* this code is better as x?nil:y  */
-#ifdef NULLTST
 			if (*p == @4_nil || *r == @5_nil)
 				*o = @3_nil;
 			else 
-#endif
 				*o = (@3) (*p @1 *r);
 		}
+#else
+		for(; p<q; o++, p++, r++)
+			*o = (@3) (*p @1 *r);
+#endif
 	}
 }
 @= arithmeticImpl
@@ -900,15 +904,18 @@ str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 		@1 *q = (@1*)Tloc(b,BUNlast(b));
 		@1 *o = (@1*)Tloc(bn,BUNfirst(bn));
 
+#ifdef NULLTST
 		for(; p<q; p++, o++){
 			/* this code is better as x?nil:y  */
-#ifdef NULLTST
 			if(*p == @1_nil )
 				*o = @1_nil;
 			else 
-#endif
 				*o = @2 *p;
 		}
+#else
+		for(; p<q; p++, o++)
+				*o = @2 *p;
+#endif
 	}
 @-
 Unary accummulators are only called indirectly. They cannot
@@ -956,12 +963,8 @@ str CMDunary@1(int *ret, int *bid)
 {
 	@1 *p = (@1*)Tloc(b,BUNfirst(b)); 
 	@1 *q = (@1*)Tloc(b,BUNlast(b)); 
-	for(; p<q; p++, o++ ){
-		if (*p == @1_nil)
-			*o = TRUE;
-		else 
-			*o = FALSE;
-	}
+	for(; p<q; p++, o++ )
+		*o = (*p == @1_nil);
 }
 @c
 batcalc_export str CMDunaryISNIL(int *ret, int *bid);
@@ -988,14 +991,15 @@ str CMDunaryISNIL(int *ret, int *bid)
 			BATiter bi = bat_iterator(b);
 			BUN p,q;
 
+#ifdef NULLTST
 			BATloop(b, p, q) {
 				str t = (str) BUNtail(bi,p);
-				if (strcmp(t, str_nil) == 0)
-					*o = TRUE;
-				else 
-					*o = FALSE;
-				o++;
+				*o++ = strcmp(t, str_nil) == 0;
 			}
+#else
+			BATloop(b, p, q)
+				*o++ = FALSE;
+#endif
 		} break;
 	default: throw(MAL, "batcalc.isnil", "unexpected type");
 	}
@@ -1036,12 +1040,17 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 	q = (@3*)Tloc(b,BUNlast(b));
 	t = (@3*)Tloc(right,BUNfirst(right));
 		
+#ifdef NULLTST
 	for (;p<q; p++, t++, o++) {
 		if (*p == @3_nil || *t == @3_nil)
 			*o = bit_nil;
 		else 
 			*o = (*p @2 *t);
 	}
+#else
+	for (;p<q; p++, t++, o++)
+		*o = (*p @2 *t);
+#endif
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -1078,12 +1087,17 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 	q = (@3*)Tloc(b,BUNlast(b));
 	t = (@3*)Tloc(right,BUNfirst(right));
 		
+#ifdef NULLTST
 	for (;p<q; p++, t++, o++) {
 		if (*p == @3_nil || *t == @3_nil)
 			*o = bit_nil;
 		else 
 			*o = (*p @2 *t);
 	}
+#else
+	for (;p<q; p++, t++, o++)
+		*o = (*p @2 *t);
+#endif
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -1108,12 +1122,17 @@ str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
 	p = (@3*)Tloc(b,BUNfirst(b));
 	q = (@3*)Tloc(b,BUNlast(b));
 		
+#ifdef NULLTST
 	for (;p<q; p++, o++) {
 		if( *p == @3_nil || *cst == @3_nil)
 			*o = bit_nil;
 		else 
 			*o = (*p @2 *cst);
 	}
+#else
+	for (;p<q; p++, o++)
+		*o = (*p @2 *cst);
+#endif
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -1151,12 +1170,17 @@ str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst)
 	p = (@3*)Tloc(b,BUNfirst(b));
 	q = (@3*)Tloc(b,BUNlast(b));
 		
+#ifdef NULLTST
 	for (;p<q; p++, o++) {
 		if (*p == @3_nil || *cst == @3_nil)
 			*o = bit_nil;
 		else 
 			*o = (*p @2 *cst);
 	}
+#else
+	for (;p<q; p++, o++)
+		*o = (*p @2 *cst);
+#endif
 
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -1224,12 +1248,17 @@ CMDbitbataccumNOT(int *ret, int *d, int *l)
 	q = (bit*) Tloc(bn,BUNlast(bn));
 	o = (bit*) Tloc(b,BUNfirst(b));
 
+#ifdef NULLTST
 	for (;p<q; p++, o++) {
 		if (*o == bit_nil)
 			*p = bit_nil;
 		else 
 			*p = ! *o;
 	}
+#else
+	for (;p<q; p++, o++)
+		*p = ! *o;
+#endif
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 
@@ -1252,12 +1281,17 @@ CMDbitbatNOT(int *ret, int *bid)
 	p = (bit*) Tloc(b,BUNfirst(b));
 	q = (bit*) Tloc(b,BUNlast(b));
 
+#ifdef NULLTST
 	for (;p<q; p++, o++) {
 		if (*p == bit_nil)
 			*o = bit_nil;
 		else 
 			*o = ! *p;
 	}
+#else
+	for (;p<q; p++, o++)
+		*o = ! *p;
+#endif
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);

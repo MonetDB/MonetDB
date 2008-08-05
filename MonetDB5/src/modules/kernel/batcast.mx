@@ -121,6 +121,7 @@ against overflow.
 #define batcast_export extern
 #endif
 
+#define NULLTST
 @- Implementation of coercions
 
 The different coercion implementations exploit the fact
@@ -178,9 +179,14 @@ str CMDconvert_@1_@2(int *ret, int *bid)
 		@1 *p = (@1*)Tloc(b, BUNfirst(b));
 		@1 *q = (@1*)Tloc(b, BUNlast(b));
 
+#ifdef NULLTST
 		for(; p<q; o++, p++) {
 			*o = *p == @1_nil ?  @2_nil: (@2) *p;
 		}
+#else
+		for(; p<q; o++, p++)
+			*o = (@2) *p;
+#endif
 	}
 	BATsetcount(bn, BATcount(b));
 	@:wrapup@
