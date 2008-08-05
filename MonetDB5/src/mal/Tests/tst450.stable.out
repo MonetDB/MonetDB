@@ -70,10 +70,11 @@ end main;	# 14
 [ 25,	  "timezone"	  ]
 [ 26,	  "zrule"	  ]
 [ 27,	  "inet"	  ]
-[ 28,	  "pcre"	  ]
-[ 29,	  "rmtobj"	  ]
-[ 30,	  "xml"		  ]
-[ 31,	  "mapentry"	  ]
+[ 28,	  "identifier"	  ]
+[ 29,	  "pcre"	  ]
+[ 30,	  "rmtobj"	  ]
+[ 31,	  "xml"		  ]
+[ 32,	  "mapentry"	  ]
 #-------------------------#
 # t	h		  # name
 # oid	str		  # type
@@ -103,6 +104,7 @@ end main;	# 14
 [ "daytime",	  nil	  ]
 [ "factory",	  nil	  ]
 [ "group",	  nil	  ]
+[ "identifier",	  nil	  ]
 [ "inet",	  nil	  ]
 [ "inspect",	  nil	  ]
 [ "io",		  nil	  ]
