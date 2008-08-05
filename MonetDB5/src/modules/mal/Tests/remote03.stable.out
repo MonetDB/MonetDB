@@ -106,10 +106,11 @@ end main;                               # 32
 [ 25,	  "timezone"	  ]
 [ 26,	  "zrule"	  ]
 [ 27,	  "inet"	  ]
-[ 28,	  "pcre"	  ]
-[ 29,	  "rmtobj"	  ]
-[ 30,	  "xml"		  ]
-[ 31,	  "mapentry"	  ]
+[ 28,	  "identifier"	  ]
+[ 29,	  "pcre"	  ]
+[ 30,	  "rmtobj"	  ]
+[ 31,	  "xml"		  ]
+[ 32,	  "mapentry"	  ]
 sent invalid request
 !second
 sent request
