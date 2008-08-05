@@ -5830,9 +5830,6 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
 #ifdef LIBPF
 #define LIBPF_SUPPORT LIBPF
 #endif
-#ifdef LIBSERIALIZE
-#define LIBPF_SUPPORT LIBSERIALIZE
-#endif
 #include "pf_support.proto.h"
 #include <monet_interpreter.h>
 #include <monettime.h>
