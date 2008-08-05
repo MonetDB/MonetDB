@@ -36,6 +36,9 @@
 #include "serialize_pftijah.h"
 #include <ctype.h>
 #include <string.h>
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
 
 static char *c, *e;
 

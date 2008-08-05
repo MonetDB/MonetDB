@@ -34,6 +34,9 @@
 
 #include <stdio.h>
 #include "nexi.h"
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
 
 #define CO 1
 #define CAS 2

@@ -5854,9 +5854,6 @@ extern MT_Lock pf_runtime_lock[7];
 #define PF_MODE_UPDATE 2 /* updating query */
 #define PF_MODE_RETRY  3 /* updating query run for the second time (exclusive mode) */
 
-pf_support_export stream* xrpc_log_message(str msg, lng xrpc_seqnr);
-pf_support_export char*   xrpc_log_dir(void);
-
 #endif
 @c
 
@@ -8736,6 +8733,12 @@ void pf_support_epilogue() {
     MT_destroy_sema(pf_runtime_sema[0]);
     MT_destroy_sema(pf_runtime_sema[1]);
     MT_destroy_sema(pf_runtime_sema[2]);
+}
+
+int
+CMDfn_deep_eq(BAT** resbat, BAT* ws, BAT* litem, BAT* lkind, BAT* ritem, BAT* rkind)
+{
+    return do_fn_deep_eq(resbat, ws, litem, lkind, ritem, rkind);
 }
 
 @- PROCs required by the algebraic translation ###

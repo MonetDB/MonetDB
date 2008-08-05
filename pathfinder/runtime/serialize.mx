@@ -100,6 +100,19 @@
 #define MODE_TYPED     (1 << 8)
 #define MODE_XRPC      (1 << 9)
 
+#ifdef WIN32
+#ifndef LIBSERIALIZE
+#define serialize_export extern __declspec(dllimport)
+#else
+#define serialize_export extern __declspec(dllexport)
+#endif
+#else
+#define serialize_export extern
+#endif
+
+serialize_export stream* xrpc_log_message(str msg, lng xrpc_seqnr);
+extern int do_fn_deep_eq(BAT** resbat, BAT* ws, BAT* litem, BAT* lkind, BAT* ritem, BAT* rkind);
+
 struct XmlNsFrame; /* forward */
 typedef struct XmlNsFrame {
     char              *prefix;
@@ -317,6 +330,8 @@ xquery_print_result_driver (
 #include <pf_config.h>
 #include "serialize.h"
 #include "pf_support.h"
+
+static char* xrpc_log_dir(void);
 
 /**
  *
@@ -2086,8 +2101,8 @@ draw_queryflow(
 
 
 char xrpc_logdir_buf[1024], *xrpc_logdir = NULL;
-char*
-xrpc_log_dir() {
+static char*
+xrpc_log_dir(void) {
     char *logdir;
     if (xrpc_logdir == NULL && (logdir = GDKgetenv("datadir")) != NULL) {
         snprintf(xrpc_logdir_buf, 1024, "%s%cMonetDB%cxrpc%clogs%c", logdir, DIR_SEP, DIR_SEP, DIR_SEP, DIR_SEP);
@@ -2578,7 +2593,7 @@ fn_deep_eq_node(XqueryCtx* ctx, int lcont, oid loid, int rcont, oid roid) {
 }
 
 int
-CMDfn_deep_eq(BAT** resbat, BAT* ws, BAT* litem, BAT* lkind, BAT* ritem, BAT* rkind)
+do_fn_deep_eq(BAT** resbat, BAT* ws, BAT* litem, BAT* lkind, BAT* ritem, BAT* rkind)
 {
     /* TODO
      * - ignore namespaces and URI's, surprising?
