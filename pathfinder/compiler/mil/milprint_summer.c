@@ -6433,7 +6433,7 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
         counter, counter, counter,
         strcmp(bulkRPC, "yes") == 0 ? "doLoopLiftedRPC" : "doIterativeRPC",
         isoLevel, timeout,
-        PFqname_uri (fun->qname), fun->atURI?fun->atURI:f->url, PFqname_loc (fun->qname),
+        PFqname_uri (fun->qname), PFesc_string(fun->atURI?fun->atURI:f->url), PFqname_loc (fun->qname),
         updCall, fun->arity,
         counter, counter, counter, counter);
 }
