@@ -851,7 +851,7 @@ yes-*-*)
 	X_CFLAGS="$X_CFLAGS -Werror"
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
-	X_CFLAGS="$X_CFLAGS -wd1418,1419,279,981,810,193,111,1357"
+	X_CFLAGS="$X_CFLAGS -wd1418,1419,981,810,193,111,1357"
 	case $icc_ver in
 	8.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572" ;;
 	9.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572,1599" ;;
@@ -859,7 +859,6 @@ yes-*-*)
 	esac
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
-	dnl  # 279: controlling expression is constant
 	dnl  # 981: operands are evaluated in unspecified order
 	dnl  # 810: conversion from "." to "." may lose significant bits
 	dnl  # 193: zero used for undefined preprocessing identifier
