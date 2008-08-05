@@ -174,7 +174,7 @@ comment "Utility for debugging MAL interpreter";
 command getLRefCount(b:bat[:any_1,:any_2]) :int
 address CMDgetBATlrefcnt
 comment "Utility for debugging MAL interpreter";
-command getDiskSpace() :wrd
+command getDiskSpace() :lng
 address CMDbbpDiskSpace
 comment "Estimate the amount of disk space occupied by dbfarm";
 @-
@@ -221,7 +221,7 @@ bbp_export str CMDbbpdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 bbp_export str CMDbbptoStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpGetObjects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpDiskSpace(size_t *ret);
+bbp_export str CMDbbpDiskSpace(lng *ret);
 bbp_export str CMDbbpNames(int *ret);
 bbp_export str CMDbbpName(str *ret, int *bid);
 bbp_export str CMDbbpRNames(int *ret);
@@ -782,10 +782,9 @@ CMDbbpNames(int *ret)
 	return MAL_SUCCEED;
 }
 str
-CMDbbpDiskSpace(size_t *ret)
+CMDbbpDiskSpace(lng *ret)
 {
-	size_t s = getDiskSpace();
-	*ret=  s;
+	*ret=  getDiskSpace();
 	return MAL_SUCCEED;
 }
 

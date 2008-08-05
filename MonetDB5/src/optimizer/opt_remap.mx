@@ -136,7 +136,7 @@ arguments whose actual is a BAT and its formal
 is a scalar.
 This seems sufficient for the SQL generated PSM code,
 but does in general not hold.
-Forexample,
+For example,
 
 function foo(b:int,c:bat[:oid,:int])
 	... d:= batcalc.+(b,c)

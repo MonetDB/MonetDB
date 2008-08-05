@@ -57,7 +57,7 @@ mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb,
 mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
-mal_export size_t getVolume(MalStkPtr stk, InstrPtr pci, int rd);
+mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 
 mal_export ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k);
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
@@ -2093,10 +2093,10 @@ maximal amount of bytes read/written. The actual
 amount is harder to guess, because it too much
 depends on the operation.
 @c
-size_t getVolume(MalStkPtr stk, InstrPtr pci, int rd)
+lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 {
 	int i, limit;
-	size_t vol=0;
+	lng vol=0;
 	BAT *b;
 	int isview = 0;
 
@@ -2140,9 +2140,7 @@ void displayVolume(Client cntxt, lng vol){
 		stream_printf(cntxt->fdout, LLFMT "G",vol/1024/1024/1024);
 }
 void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd){
-	size_t vol;
-	vol= getVolume(stk,pci,rd);
-	displayVolume(cntxt, (lng) vol);
+	displayVolume(cntxt, getVolume(stk,pci,rd));
 }
 @h
 #endif /*  _MAL_INTERPRET_H*/
