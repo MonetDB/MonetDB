@@ -1893,7 +1893,7 @@ int
 CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 {
 	BATiter mapi = bat_iterator(map), bni;
-	size_t cnt = BATcount(map), n = BATcount(b), max = 1 + (((ssize_t) n) - 1) / REMAP_PAGE_SIZE;
+	size_t cnt = BATcount(map), n = BATcount(b), max = 1 + (((ssize_t) n) - 1) / (size_t) REMAP_PAGE_SIZE;
 	int (*fix) (ptr) = BATatoms[b->ttype].atomFix;
         int mode = (MMAP_READ|MMAP_SEQUENTIAL) | ((*force)?MMAP_WRITE:MMAP_COPY);
 	oid* pid = (oid*) alloca(cnt*sizeof(oid));
@@ -2244,7 +2244,7 @@ CMDisolate(BAT *b, BAT *dirty, bit *pageids) {
 			BATloop(dirty, p, q) {
 				/* oid is a page number, calculate absolute oid */
 				pos = (*(oid*) BUNtail(dirtyi,p)) << REMAP_PAGE_BITS;
-				lim = pos + REMAP_PAGE_SIZE;
+				lim = pos + (size_t) REMAP_PAGE_SIZE;
 	
 				if (lim > cnt) lim = cnt; /* out of bounds!! */
 
