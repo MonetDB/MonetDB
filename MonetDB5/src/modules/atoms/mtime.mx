@@ -856,6 +856,7 @@ of the calendar).
 
 typedef int date;
 #define date_nil ((date) int_nil)
+#define date_isnil(X)  (X == date_nil)
 @c
 #include "mal_config.h"
 #include "mtime.h"
@@ -866,6 +867,7 @@ the start of the day (i.e. midnight).
 @h
 typedef int daytime;
 #define daytime_nil ((daytime) int_nil)
+#define daytime_isnil(X) ( X == (daytime) int_nil)
 
 @- timestamp
 Timestamp is implemented as a record that contains a date and a time (GMT).
@@ -921,6 +923,10 @@ typedef struct {
 tzone tzone_local;
 @h
 mtime_export tzone tzone_local;
+mtime_export timestamp *timestamp_nil;
+#define timestamp_isnil(X) ts_isnil(X)
+#define tz_isnil(z)   (get_offset(&(z)) == get_offset(tzone_nil))
+#define ts_isnil(t)   ((t).days == timestamp_nil->days && (t).msecs == timestamp_nil->msecs)
 
 mtime_export void fromdate(int n, int *d, int *m, int *y);
 mtime_export void fromtime(int n, int *hour, int *min, int *sec, int *msec);
@@ -1111,8 +1117,6 @@ date DATE_MAX, DATE_MIN;	/* often used dates; computed once */
 @+ auxiliary functions
 @c
 
-#define tz_isnil(z)   (get_offset(&(z)) == get_offset(tz_nilptr))
-#define ts_isnil(t)   ((t).days == ts_nilptr->days && (t).msecs == ts_nilptr->msecs)
 
 static union {
 	timestamp ts;
@@ -1122,8 +1126,8 @@ static union {
 	tzone tz;
 	lng nilval;
 } tz_nil;
-static timestamp *ts_nilptr = NULL;
-static tzone *tz_nilptr = NULL;
+timestamp *timestamp_nil = NULL;
+static tzone *tzone_nil = NULL;
 
 static void date_prelude(void);
 
@@ -1139,8 +1143,8 @@ monettime_prelude(void)
 	ts_nil.nilval = lng_nil;
 	tz_nil.nilval = lng_nil;
 
-	ts_nilptr = &ts_nil.ts;
-	tz_nilptr = &tz_nil.tz;
+	timestamp_nil = &ts_nil.ts;
+	tzone_nil = &tz_nil.tz;
 
 	TYPE_date = ATOMindex("date");
 	TYPE_daytime = ATOMindex("daytime");
@@ -1159,13 +1163,13 @@ monettime_epilogue(void)
 timestamp *
 timestamp_null(void)
 {
-	return (ts_nilptr);
+	return (timestamp_nil);
 }
 
 tzone *
 tzone_null(void)
 {
-	return (tz_nilptr);
+	return (tzone_nil);
 }
 
 static int synonyms = TRUE;
@@ -1633,7 +1637,7 @@ timestamp_fromstr(str buf, int *len, timestamp **ret)
 		(*ret)->msecs = daytime_nil;
 	}
 	if (s <= buf || (*ret)->days == date_nil || (*ret)->msecs == daytime_nil) {
-		**ret = *ts_nilptr;
+		**ret = *timestamp_nil;
 	} else {
 		lng offset = 0;
 
@@ -1860,7 +1864,7 @@ tzone_fromstr(str buf, int *len, tzone **d)
 			GDKfree(*d);
 		*d = (tzone *) GDKzalloc(*len = sizeof(tzone));
 	}
-	**d = *tz_nilptr;
+	**d = *tzone_nil;
 
 	/* syntax checks */
 	if (fleximatch(cur, "gmt", 0) == 0) {
@@ -2127,7 +2131,7 @@ static INLINE int
 timestamp_create(timestamp *ret, date *d, daytime *t, tzone *z)
 {
 	if (*d == date_nil || *t == daytime_nil || tz_isnil(*z)) {
-		*ret = *ts_nilptr;
+		*ret = *timestamp_nil;
 	} else {
 		lng add = get_offset(z) * (lng) -60000;
 
@@ -2477,11 +2481,11 @@ timestamp_add(timestamp *ret, timestamp *v, lng *msecs)
 		if (days) {
 			date_adddays(&ret->days, &ret->days, &days);
 			if (ret->days == int_nil) {
-				*ret = *ts_nilptr;
+				*ret = *timestamp_nil;
 			}
 		}
 	} else {
-		*ret = *ts_nilptr;
+		*ret = *timestamp_nil;
 	}
 	return GDK_SUCCEED;
 }
@@ -2536,7 +2540,7 @@ rule_create(rule *ret, int *month, int *day, int *weekday, int *minutes)
 static INLINE int
 tzone_create_dst(tzone *ret, int *minutes, rule *start, rule *end)
 {
-	*ret = *tz_nilptr;
+	*ret = *tzone_nil;
 	if (*minutes != int_nil && ABS(*minutes) < 24 * 60 && start->asint != int_nil && end->asint != int_nil) {
 		set_offset(ret, *minutes);
 		ret->dst = TRUE;
@@ -2550,7 +2554,7 @@ tzone_create_dst(tzone *ret, int *minutes, rule *start, rule *end)
 static INLINE int
 tzone_create(tzone *ret, int *minutes)
 {
-	*ret = *tz_nilptr;
+	*ret = *tzone_nil;
 	if (*minutes != int_nil && ABS(*minutes) < 24 * 60) {
 		set_offset(ret, *minutes);
 		ret->dst = FALSE;
@@ -2695,6 +2699,20 @@ static INLINE int @1_comp_@2(bit *retval, @1 *val1, @1 *val2)
 		*retval = *val1 @3 *val2;
 	return GDK_SUCCEED;
 }
+@h
+#define dateEQ(X,Y,Z) *X = *Y == *Z
+#define dateNEQ(X,Y,Z) *X = *Y != *Z
+#define dateLT(X,Y,Z) *X = *Y < *Z
+#define dateLE(X,Y,Z) *X = *Y <= *Z
+#define dateGT(X,Y,Z) *X = *Y > *Z
+#define dateGE(X,Y,Z) *X = *Y >= *Z
+
+#define daytimeEQ(X,Y,Z) *X = *Y == *Z
+#define daytimeNEQ(X,Y,Z) *X = *Y != *Z
+#define daytimeLT(X,Y,Z) *X = *Y < *Z
+#define daytimeLE(X,Y,Z) *X = *Y <= *Z
+#define daytimeGT(X,Y,Z) *X = *Y > *Z
+#define daytimeGE(X,Y,Z) *X = *Y >= *Z
 @c
 @:compare(date,EQ,==)@
 @:compare(date,NE,!=)@
@@ -2710,7 +2728,7 @@ static INLINE int @1_comp_@2(bit *retval, @1 *val1, @1 *val2)
 @:compare(daytime,GE,>=)@
 
 static INLINE int
-timestamp_isnil(bit *retval, timestamp *val)
+timestamp_isnil_internal(bit *retval, timestamp *val)
 {
 	*retval = ts_isnil(*val);
 	return GDK_SUCCEED;
@@ -2931,7 +2949,7 @@ MTIMEprelude()
 	tzone tz;
 
 	monettime_prelude();
-	tz = *tz_nilptr; /* to ensure initialized variables */
+	tz = *tzone_nil; /* to ensure initialized variables */
 
 	/* here we should initialize the time box as well */
 	box = openBox("time");
@@ -3342,7 +3360,7 @@ str
 MTIMEtimestamp_min(timestamp *ret, timestamp *v, timestamp *w)
 {
 	if (ts_isnil(*v) || ts_isnil(*w))
-		*ret = *ts_nilptr;
+		*ret = *timestamp_nil;
 	else 
 	if( v->days < w->days || (v->days == w->days && v->msecs < w->msecs))
 		*ret= *v;
@@ -3354,7 +3372,7 @@ str
 MTIMEtimestamp_max(timestamp *ret, timestamp *v, timestamp *w)
 {
 	if (ts_isnil(*v) || ts_isnil(*w))
-		*ret = *ts_nilptr;
+		*ret = *timestamp_nil;
 	else 
 	if( !( v->days < w->days || (v->days == w->days && v->msecs < w->msecs)))
 		*ret= *v;
@@ -3363,13 +3381,21 @@ MTIMEtimestamp_max(timestamp *ret, timestamp *v, timestamp *w)
 	return MAL_SUCCEED;
 }
 
+@h
+#define timestampEQ(X,Y,Z) *X = Y->days == Z->days && Y->msecs == Z->msecs
+#define timestampNEQ(X,Y,Z) *X = Y->days != Z->days || Y->msecs != Z->msecs
+#define timestampLT(X,Y,Z) *X = Y->days < Z->days || (Y->days == Z->days && Y->msecs < Z->msecs)
+#define timestampLE(X,Y,Z) *X = Y->days < Z->days || (Y->days == Z->days && Y->msecs <= Z->msecs)
+#define timestampGT(X,Y,Z) *X = Y->days > Z->days || (Y->days == Z->days && Y->msecs > Z->msecs)
+#define timestampGE(X,Y,Z) *X = Y->days > Z->days || (Y->days == Z->days && Y->msecs >= Z->msecs)
+@c
 str
 MTIMEtimestamp_EQ(bit *retval, timestamp *val1, timestamp *val2)
 {
 	if (ts_isnil(*val1) || ts_isnil(*val2))
 		*retval = bit_nil;
 	else
-		*retval = val1->days == val2->days && val1->msecs == val2->msecs;
+		timestampEQ(retval,val1,val2);
 	return MAL_SUCCEED;
 }
 
@@ -3379,7 +3405,7 @@ MTIMEtimestamp_NEQ(bit *retval, timestamp *val1, timestamp *val2)
 	if (ts_isnil(*val1) || ts_isnil(*val2))
 		*retval = bit_nil;
 	else
-		*retval = val1->days != val2->days || val1->msecs != val2->msecs;
+		timestampNEQ(retval,val1,val2);
 	return MAL_SUCCEED;
 }
 
@@ -3389,7 +3415,7 @@ MTIMEtimestamp_LT(bit *retval, timestamp *val1, timestamp *val2)
 	if (ts_isnil(*val1) || ts_isnil(*val2))
 		*retval = bit_nil;
 	else
-		*retval = val1->days < val2->days || (val1->days == val2->days && val1->msecs < val2->msecs);
+		timestampLT(retval,val1,val2);
 	return MAL_SUCCEED;
 }
 
@@ -3399,7 +3425,7 @@ MTIMEtimestamp_LE(bit *retval, timestamp *val1, timestamp *val2)
 	if (ts_isnil(*val1) || ts_isnil(*val2))
 		*retval = bit_nil;
 	else
-		*retval = val1->days < val2->days || (val1->days == val2->days && val1->msecs <= val2->msecs);
+		timestampLE(retval,val1,val2);
 	return MAL_SUCCEED;
 }
 
@@ -3409,7 +3435,7 @@ MTIMEtimestamp_GT(bit *retval, timestamp *val1, timestamp *val2)
 	if (ts_isnil(*val1) || ts_isnil(*val2))
 		*retval = bit_nil;
 	else
-		*retval = val1->days > val2->days || (val1->days == val2->days && val1->msecs > val2->msecs);
+		timestampGT(retval,val1,val2);
 	return MAL_SUCCEED;
 }
 
@@ -3419,7 +3445,7 @@ MTIMEtimestamp_GE(bit *retval, timestamp *val1, timestamp *val2)
 	if (ts_isnil(*val1) || ts_isnil(*val2))
 		*retval = bit_nil;
 	else
-		*retval = val1->days > val2->days || (val1->days == val2->days && val1->msecs >= val2->msecs);
+		timestampGE(retval,val1,val2);
 	return MAL_SUCCEED;
 }
 

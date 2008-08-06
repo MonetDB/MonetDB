@@ -449,8 +449,8 @@ The similar code base is produced for dealing with a constant argument.
 				if (*r == 0) {
 					res = createException(ARITH, "batcalc.@1", "Division by zero");
 					break;
-			} else 
-				*o = (@3)(*p / *r);
+				} else 
+					*o = (@3)(*p / *r);
 		}
 		else
 			for(; p<q; o++, p++, r++) {
@@ -461,8 +461,8 @@ The similar code base is produced for dealing with a constant argument.
 				if (*r == 0) {
 					res = createException(ARITH, "batcalc.@1", "Division by zero");
 					break;
-			} else 
-				*o = (@3)(*p / *r);
+				} else 
+					*o = (@3)(*p / *r);
 		}
 
 	} else {

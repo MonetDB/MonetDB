@@ -17,7 +17,7 @@
 @f batmtime
 @a M.L. Kersten
 @+ Time/Date multiplexes
-[TODO: property propagations]
+[TODO: arithmetic multiplexes]
 The collection of routines provided here are map operations
 for the atom time and date primitives. 
 
@@ -29,15 +29,26 @@ the GRPsplit operation.
 @{
 @= compareOp
 command batcalc.@2( l:bat[:oid,:@1], r:bat[:oid,:@1]) :bat[:oid,:bit]
-address MTIME@1bat_@3;
+address MTIMEbat_@1_@3;
+
 command batcalc.@2( l:bat[:void,:@1], r:bat[:void,:@1]) :bat[:void,:bit]
-address MTIME@1bat_@3
+address MTIMEbat_@1_@3
 comment "Compare a bat of @1 against each other";
 command batcalc.@2( l:bat[:oid,:@1], r:@1) :bat[:oid,:bit]
-address MTIME@1bat_@3cst;
+address MTIMEbat_@1_@3_cst;
 command batcalc.@2( l:bat[:void,:@1], r:@1) :bat[:void,:bit]
-address MTIME@1bat_@3cst
+address MTIMEbat_@1_cst_@3
 comment "Compare a bat of @1 against a singleton";
+
+command batcalc.@2(a:bat[:void,:bit], l:bat[:void,:@1], r:bat[:void,:@1]) :bat[:void,:bit]
+address MTIMEaccum_@1_@3
+comment "Compare a bat of @1 against each other";
+command batcalc.@2(a:bat[:void,:bit], l:bat[:oid,:@1], r:@1) :bat[:oid,:bit]
+address MTIMEaccum_@1_@3_cst;
+command batcalc.@2(a:bat[:void,:bit], l:bat[:void,:@1], r:@1) :bat[:void,:bit]
+address MTIMEaccum_@1_cst_@3
+comment "Compare a bat of @1 against a singleton";
+
 
 @= compareGrp
 @:compareOp(@1,==,EQ)@
@@ -53,129 +64,329 @@ comment "Compare a bat of @1 against a singleton";
 @:compareGrp(timestamp)@
 
 @+ Implementation
-@c
+@h
 #include "mal_config.h"
-#include <gdk.h>
+#include "gdk.h"
 #include "ctype.h"
 #include "mal_exception.h"
 #include "mtime.h"
+
+#ifdef WIN32
+#ifndef LIBBATMTIME
+#define batmtime_export extern __declspec(dllimport)
+#else
+#define batmtime_export extern __declspec(dllexport)
+#endif
+#else
+#define batmtime_export extern
+#endif
+
+@c
 #include "batmtime.h"
 
-#define prepareOperand(X,Y,Z) \
-	if( (X= BATdescriptor(*Y)) == NULL ) \
-		throw(MAL, "batstr." Z, "Cannot access descriptor");
-#define prepareOperand2(X,Y,A,B,Z) \
-	if( (X= BATdescriptor(*Y)) == NULL ) \
-		throw(MAL, "batstr." Z, "Cannot access descriptor"); \
-	if( (A= BATdescriptor(*B)) == NULL ){\
-		BBPreleaseref(X->batCacheid); \
-		throw(MAL, "batstr."Z, "Cannot access descriptor"); \
-	}
-#define prepareResult(X,Y,T,Z) \
-	X= BATnew(Y->htype,T,BATcount(Y)); \
-	if( Y->htype== TYPE_void) \
-		BATseqbase(X, Y->hseqbase); \
-	if( X == NULL){ \
-		BBPreleaseref(Y->batCacheid); \
-		throw(MAL, "batstr." Z, "no space available "); \
-	} \
-	X->hsorted=Y->hsorted; \
-	X->tsorted=0; 
-#define prepareResult2(X,Y,A,T,Z) \
-	X= BATnew(Y->htype,T,BATcount(Y)); \
-	if( Y->htype== TYPE_void) \
-		BATseqbase(X, Y->hseqbase); \
-	if( X == NULL){ \
-		BBPreleaseref(Y->batCacheid); \
-		BBPreleaseref(A->batCacheid); \
-		throw(MAL, "batstr." Z, "no space available "); \
-	} \
-	X->hsorted=Y->hsorted; \
-	X->tsorted=0; 
-#define finalizeResult(X,Y,Z) \
-	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ); \
-	*X = (Y)->batCacheid; \
-	BBPkeepref(*(X));\
-	BBPreleaseref(Z->batCacheid);
 @-
 A general assumption in all cases is the bats are synchronized on their
 head column. This is not checked and may be mis-used to deploy the
 implementation for shifted window arithmetic as well.
 @= chkSize
 	if( BATcount(@1) != BATcount(@2) )
-	throw(MAL, "batcalc.@3", "requires bats of identical size");
+		throw(MAL, "batcalc.@3", "requires bats of identical size");
 
 @= implDef
-batmtime_export str MTIME@1bat_@2(int *ret, int *l, int *r);
-batmtime_export str MTIME@1bat_@2cst(int *ret, int *l, @1 *cst);
+batmtime_export str MTIMEbat_@1_@2(int *ret, int *l, int *r);
+batmtime_export str MTIMEbat_@1_@2_cst(int *ret, int *l, @1 *cst);
+batmtime_export str MTIMEbat_@1_cst_@2(int *ret, @1 *cst, int *l);
+batmtime_export str MTIMEaccum_@1_@2(int *ret, int *d, int *l, int *r);
+batmtime_export str MTIMEaccum_@1_@2_cst(int *ret, int *r, int *l, @1 *cst);
+batmtime_export str MTIMEaccum_@1_cst_@2(int *ret, int *r, @1 *cst, int *l);
 
-@= implCmpOp
-str MTIME@1bat_@3(int *ret, int *l, int *r)
-{   
-	BATiter lefti, righti;
-	BAT *bn, *left, *right;
-	BUN p,q;
+@- Comparison operator implementation for temporal objects
+The structure of this code is copied from the arithmetic scheme.
+@-
+@include kprelude.mx
 
-	prepareOperand2(left,l,right,r,"batcalc.@2");
-	@:chkSize(left,right,CMDcompare@1)@
-	prepareResult2(bn,left,right,TYPE_bit,"batcalc.@2");
+The basic wrappers code structures.
+@= unarybaselineCode
+str MTIMEbat_@1_@2_@3(int *ret, int *l)
+{	
+	BAT *bn, *b;
+	@1 *p, *q, *t;
+	bit *o;
 
-	p = BUNfirst(right);
-	q = BUNlast(right);
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
+	@:getBATdescriptor(l,b,"batcalc.@2")@
+	@:voidresultBAT(@3,"batcalc.@2")@
 
-	for(;p<q; p++) {
-		bit y = TRUE;
-		ptr h = BUNhead(lefti, p);
-		ptr tl = BUNtail(lefti, p);
-		ptr tr = BUNtail(righti, p);
+	o = (bit*)Tloc(bn,BUNfirst(bn));
+	p = (@1*)Tloc(b,BUNfirst(b));
+	q = (@1*)Tloc(b,BUNlast(b));
+	t = (@1*)Tloc(right,BUNfirst(right));
+		
+	if (b->T->nonil)
+		for (;p<q; p++, t++, o++)
+			@1@2(o,p,t);
+	else
+		for (;p<q; p++, t++, o++) 
+			if ( @1_isnil(*p))
+				*o = bit_nil;
+			else @1@2(o,p,t);
 
-		MTIME@1_@3(&y, (@1*)tl, (@1*)tr);
-		bunfastins(bn, h, &y);
-	}
-	bn->T->nonil = 0;
-	BBPreleaseref(right->batCacheid);
-	finalizeResult(ret,bn,left);
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+
+	BATsetcount(bn, BATcount(b));
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),FALSE);
+	BBPkeepref(*ret= bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batcalc.@2", "bunins failed");
 }
 
-str MTIME@1bat_@3cst(int *ret, int *l, @1 *cst)
-{   
-	BATiter lefti;
-	BAT *bn, *left;
-	BUN p,q;
+@= baselineCode
+str MTIMEbat_@1_@2(int *ret, int *l, int *r)
+{	
+	BAT *bn, *b, *right;
+	@1 *p, *q, *t;
+	bit *o;
 
-	prepareOperand(left,l,"batcalc.@2");
-	prepareResult(bn,left,TYPE_bit,"batcalc.@2");
+	@:getBATdescriptor(l,b,"batcalc.@2")@
+	@:getBATdescriptor(r,right,"batcalc.@2", BBPreleaseref(b->batCacheid);)@
+	@:chkSize(b,right,batcalc.@2)@
+	@:voidresultBAT(TYPE_bit,"batcalc.@2")@
 
-	p  = BUNfirst(left);
-	q  = BUNlast(left);
-	lefti = bat_iterator(left);
+	o = (bit*)Tloc(bn,BUNfirst(bn));
+	p = (@1*)Tloc(b,BUNfirst(b));
+	q = (@1*)Tloc(b,BUNlast(b));
+	t = (@1*)Tloc(right,BUNfirst(right));
+		
+	if (b->T->nonil && right->T->nonil) {
+		for (;p<q; p++, t++, o++)
+			@1@2(o,p,t);
+		bn->T->nonil= TRUE;
+	} else
+	if (b->T->nonil)
+		for (;p<q; p++, t++, o++)
+			if (@1_isnil(*t))
+				*o = bit_nil;
+			else @1@2(o,p,t);
+	else
+	if (right->T->nonil)
+		for (;p<q; p++, t++, o++)
+			if ( @1_isnil(*p))
+				*o = bit_nil;
+			else @1@2(o,p,t);
+	else
+		for (;p<q; p++, t++, o++) 
+			if ( @1_isnil(*p) || @1_isnil(*t))
+				*o = bit_nil;
+			else @1@2(o,p,t);
 
-	for(;p<q; p++) {
-		bit y = TRUE;
-		ptr h = BUNhead(lefti, p);
-		ptr tl = BUNtail(lefti, p);
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
-		MTIME@1_@3(&y, (@1*)tl, cst);
-		bunfastins(bn, h, &y);
-	}
-    	bn->H->nonil = left->H->nonil;
-	finalizeResult(ret,bn,left);
+	BBPreleaseref(right->batCacheid);
+
+	BATsetcount(bn, BATcount(b));
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),FALSE);
+	BBPkeepref(*ret= bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
-
-bunins_failed:
-	BBPreleaseref(left->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batcalc.@2", "bunins failed");
 }
+
+str MTIMEaccum_@1_@2(int *ret, int *d, int *l, int *r)
+{	
+	BAT *bn, *b, *right;
+	@1 *p, *q, *t;
+	bit *o;
+
+	@:getBATdescriptor(l,b,"batcalc.@2")@
+	@:getBATdescriptor(r,right,"batcalc.@2", BBPreleaseref(b->batCacheid);)@
+	@:getBATdescriptor(d,bn,"batcalc.@2", BBPreleaseref(b->batCacheid);BBPreleaseref(right->batCacheid);)@
+	@:chkSize(bn,b,batcalc.@2)@
+	@:chkSize(bn,right,batcalc.@2)@
+
+	o = (bit*)Tloc(bn,BUNfirst(bn));
+	p = (@1*)Tloc(b,BUNfirst(b));
+	q = (@1*)Tloc(b,BUNlast(b));
+	t = (@1*)Tloc(right,BUNfirst(right));
+		
+	if (b->T->nonil && right->T->nonil) {
+		for (;p<q; p++, t++, o++)
+			@1@2(o,p,t);
+		bn->T->nonil= TRUE;
+	} else
+	if (b->T->nonil)
+		for (;p<q; p++, t++, o++) 
+			if ( @1_isnil(*t))
+				*o = bit_nil;
+			else @1@2(o,p,t);
+	else
+	if (right->T->nonil)
+		for (;p<q; p++, t++, o++)
+			if ( @1_isnil(*p) )
+				*o = bit_nil;
+			else @1@2(o,p,t);
+	else
+		for (;p<q; p++, t++, o++) 
+			if ( @1_isnil(*p) || @1_isnil(*t))
+				*o = bit_nil;
+			else @1@2(o,p,t);
+
+	BBPreleaseref(right->batCacheid);
+
+	BATsetcount(bn, BATcount(b));
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),FALSE);
+	BBPkeepref(*ret= bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str MTIMEbat_@1_@2_cst(int *ret, int *l, @1 *cst)
+{	
+	BAT *bn, *b;
+	@1 *p, *q;
+	bit *o;
+
+	@:getBATdescriptor(l,b,"batcalc.@2")@
+	@:voidresultBAT(TYPE_bit,"batcalc.@2")@
+	BATsetcount(bn, BATcount(b));
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+
+	o = (bit*)Tloc(bn,BUNfirst(bn));
+	p = (@1*)Tloc(b,BUNfirst(b));
+	q = (@1*)Tloc(b,BUNlast(b));
+		
+	if ( @1_isnil(*cst))
+		for (;p<q; p++, o++) 
+				*o = bit_nil;
+	else
+	if (b->T->nonil )
+		for (;p<q; p++, o++)
+			@1@2(o,p,cst);
+	else
+		for (;p<q; p++, o++)
+			if( @1_isnil(*p) )
+				*o = bit_nil;
+			else @1@2(o,p,cst);
+
+
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),FALSE);
+	BBPkeepref(*ret= bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str MTIMEbat_@1_cst_@2(int *ret, @1 *cst, int *l)
+{	
+	BAT *bn, *b;
+	@1 *p, *q;
+	bit *o;
+
+	@:getBATdescriptor(l,b,"batcalc.@2")@
+	@:voidresultBAT(TYPE_bit,"batcalc.@2")@
+	BATsetcount(bn, BATcount(b));
+
+	o = (bit*)Tloc(bn,BUNfirst(bn));
+	p = (@1*)Tloc(b,BUNfirst(b));
+	q = (@1*)Tloc(b,BUNlast(b));
+		
+	if (@1_isnil(*cst))
+		for (;p<q; p++, o++) 
+				*o = bit_nil;
+	else
+	if (b->T->nonil )
+		for (;p<q; p++, o++)
+			@1@2(o,cst,p);
+	else
+		for (;p<q; p++, o++)
+			if( @1_isnil(*p) )
+				*o = bit_nil;
+			else @1@2(o,cst,p);
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
+
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),FALSE);
+	BBPkeepref(*ret= bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str MTIMEaccum_@1_@2_cst(int *ret, int *r, int *l, @1 *cst)
+{	
+	BAT *bn, *b;
+	@1 *p, *q;
+	bit *o;
+
+	@:getBATdescriptor(r,bn,"batcalc.@2")@
+	@:getBATdescriptor(l,b,"batcalc.@2", BBPreleaseref(bn->batCacheid);)@
+	@:chkSize(bn,b,batcalc.@2)@
+
+	o = (bit*)Tloc(bn,BUNfirst(bn));
+	p = (@1*)Tloc(b,BUNfirst(b));
+	q = (@1*)Tloc(b,BUNlast(b));
+		
+	if ( @1_isnil(*cst))
+		for (;p<q; p++, o++)
+			*o = bit_nil;
+	else
+	if (b->T->nonil)
+		for (;p<q; p++, o++)
+			@1@2(o,p,cst);
+	else
+		for (;p<q; p++, o++)
+			if ( @1_isnil(*p) )
+				*o = bit_nil;
+			else @1@2(o,p,cst);
+
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),FALSE);
+	BBPkeepref(*ret= bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str MTIMEaccum_@1_cst_@2(int *ret, int *r, @1 *cst, int *l)
+{
+	BAT *bn, *b;
+	@1 *p, *q;
+	bit *o;
+
+	@:getBATdescriptor(r,bn,"batcalc.@2")@
+	@:getBATdescriptor(l,b,"batcalc.@2", BBPreleaseref(bn->batCacheid);)@
+	@:chkSize(bn,b,batcalc.@2)@
+
+	o = (bit*)Tloc(bn,BUNfirst(bn));
+	p = (@1*)Tloc(b,BUNfirst(b));
+	q = (@1*)Tloc(b,BUNlast(b));
+		
+	if ( @1_isnil(*cst))
+		for (;p<q; p++, o++)
+			*o = bit_nil;
+	else
+	if (b->T->nonil)
+		for (;p<q; p++, o++)
+			@1@2(o,cst,p);
+	else
+		for (;p<q; p++, o++)
+			if ( @1_isnil(*p) )
+				*o = bit_nil;
+			else @1@2(o,cst,p);
+
+	bn->tsorted = 0;
+	BATkey(BATmirror(bn),FALSE);
+	BBPkeepref(*ret= bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
 @-
 The implementation section.
 
@@ -187,30 +398,38 @@ The implementation section.
 @:implDef(@1,GT)@
 @:implDef(@1,GE)@
 
-@= implCmpGrp
-@:implCmpOp(@1,==,EQ)@
-@:implCmpOp(@1,!=,NEQ)@
-@:implCmpOp(@1,<,LT)@
-@:implCmpOp(@1,<=,LE)@
-@:implCmpOp(@1,>,GT)@
-@:implCmpOp(@1,>=,GE)@
-
 @h
-#ifdef WIN32
-#ifndef LIBBATMTIME
-#define batmtime_export extern __declspec(dllimport)
-#else
-#define batmtime_export extern __declspec(dllexport)
-#endif
-#else
-#define batmtime_export extern
-#endif
-
 @:implCmpGrpDef(date)@
 @:implCmpGrpDef(daytime)@
 @:implCmpGrpDef(timestamp)@
 @c
-@:implCmpGrp(daytime)@
-@:implCmpGrp(date)@
-@:implCmpGrp(timestamp)@
+@:baselineCode(date,EQ)@
+@:baselineCode(date,NEQ)@
+@:baselineCode(date,LT)@
+@:baselineCode(date,LE)@
+@:baselineCode(date,GT)@
+@:baselineCode(date,GE)@
+
+@:baselineCode(daytime,EQ)@
+@:baselineCode(daytime,NEQ)@
+@:baselineCode(daytime,LT)@
+@:baselineCode(daytime,LE)@
+@:baselineCode(daytime,GT)@
+@:baselineCode(daytime,GE)@
+
+@:baselineCode(timestamp,EQ)@
+@:baselineCode(timestamp,NEQ)@
+@:baselineCode(timestamp,LT)@
+@:baselineCode(timestamp,LE)@
+@:baselineCode(timestamp,GT)@
+@:baselineCode(timestamp,GE)@
+
+@-
+@:implCmpOp(timestamp,==,EQ)@
+@:implCmpOp(timestamp,!=,NEQ)@
+@:implCmpOp(timestamp,<,LT)@
+@:implCmpOp(timestamp,<=,LE)@
+@:implCmpOp(timestamp,>,GT)@
+@:implCmpOp(timestamp,>=,GE)@
+
 @}

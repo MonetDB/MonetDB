@@ -1,17 +1,13 @@
 stdout of test 'time01` in directory 'src/modules/kernel` itself:
 
 
-# 17:14:57 >  
-# 17:14:57 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/xquery_logs" --set mapi_port=32946 --set xrpc_port=46227 --set monet_prompt= --trace --dbname=mTests_src_modules_kernel  time01.mal
-# 17:14:57 >  
+# 14:29:57 >  
+# 14:29:57 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30929 --set xrpc_port=43470 --set monet_prompt= --trace  --dbname=mTests_src_modules_kernel  time01.mal
+# 14:29:57 >  
 
 
 
-
-
-
-
-# MonetDB server v5.5.0, based on kernel v1.23.0
+# MonetDB server v5.7.0, based on kernel v1.25.0
 # Serving database 'mTests_src_modules_kernel'
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
@@ -53,7 +49,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     bat.append(b1,x2);                  # 12 _20:void := BKCappend_val_wrap(b1:bat[:oid,:daytime], x2:daytime) 
     io.print(b2);                       # 13 _21:void := IOprint_val(b2:bat[:oid,:daytime]) 
     io.print(b1);                       # 14 _22:void := IOprint_val(b1:bat[:oid,:daytime]) 
-    c := batcalc.==(b2,b1);             # 15 c:bat[:oid,:bit] := MTIMEdaytimebat_EQ(b2:bat[:oid,:daytime], b1:bat[:oid,:daytime]) {G}
+    c := batcalc.==(b2,b1);             # 15 c:bat[:oid,:bit] := MTIMEbat_daytime_EQ(b2:bat[:oid,:daytime], b1:bat[:oid,:daytime]) {G}
     io.print(c);                        # 16 _24:void := IOprint_val(c:bat[:oid,:bit]) 
 end main;	# 17  
 #-------------------------#
