@@ -219,6 +219,9 @@ can be gotten from http://www.zlatkovic.com/libxml.en.html.  Click on
 Win32 Binaries on the right, and download libxml2, iconv, and zlib.
 Install these in e.g. ``C:\``.
 
+Note that we hit a bug in version 2.6.31 of libxml2.  See the
+bugreport__.  Use version 2.6.30 or 2.6.32.
+
 On Windows64 you will have to compile libxml2 yourself (with its
 optional prerequisites iconv_ and zlib_, for which see below).
 
@@ -237,6 +240,7 @@ After this, you may want to move the file ``libxml2.dll`` from the
 ``lib`` directory to the ``bin`` directory.
 
 __ http://xmlsoft.org/
+__ https://sourceforge.net/tracker/index.php?func=detail&aid=1899258&group_id=56967&atid=482468
 
 geos (Geometry Engine Open Souce)
 ---------------------------------
@@ -365,7 +369,7 @@ Perl__ is only needed to create an interface that can be used from a
 Perl program to communicate with a MonetDB server.
 
 We have used ActiveState__'s ActivePerl__ distribution (release
-5.10.0.1001).  Just install the 32 or 64 bit version and compile the
+5.10.0.1003).  Just install the 32 or 64 bit version and compile the
 clients component with the additional ``nmake`` flags ``HAVE_PERL=1
 HAVE_PERL_DEVEL=1 HAVE_PERL_SWIG=1`` (the latter flag only if SWIG_
 is also installed).
