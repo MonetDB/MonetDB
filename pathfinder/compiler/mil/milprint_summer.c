@@ -6376,7 +6376,7 @@ translateXRPCCall (opt_t *f, int cur_level, int counter, PFcnode_t *xrpc)
             "  }\n"
             "} # end of XRPC function call\n",
         counter, counter, counter,
-        PFqname_uri (fun->qname), fun->atURI?fun->atURI:f->url, PFqname_loc (fun->qname),
+        PFqname_uri (fun->qname), PFesc_string(fun->atURI?fun->atURI:f->url), PFqname_loc (fun->qname),
         updCall ? "true" : "false", fun->arity,
         counter, counter, counter, counter);
 }

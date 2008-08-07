@@ -616,6 +616,14 @@ AC_TRY_COMPILE([$ac_includes_default
 [AC_DEFINE(HAVE_CTIME_R3, 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)])], [ctime_r3=no])
 AC_MSG_RESULT($ctime_r3)
 
+dnl  Disabling the following warning is only required for the Intel compiler
+dnl  and if assertions are enabled.
+case "$GCC-$CC-$enable_assert" in
+-*icc*-yes|-*ecc*-yes)
+	dnl  # 279: controlling expression is constant
+	X_CFLAGS="$X_CFLAGS -wd279";;
+esac
+
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
 dnl  pathfinder code is not (yet?) up to this
