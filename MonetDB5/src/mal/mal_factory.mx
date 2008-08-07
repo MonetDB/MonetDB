@@ -265,7 +265,7 @@ mal_export int yieldResult(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str shutdownFactory(MalBlkPtr mb);
-mal_export str shutdownFactoryByName(Module m,str nme);
+mal_export str shutdownFactoryByName(Client cntxt, Module m,str nme);
 mal_export str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag);
 mal_export int factoryHasFreeSpace(void);
 #endif /*  _MAL_FACTORY_H */
@@ -587,7 +587,7 @@ shutdownFactory(MalBlkPtr mb)
 }
 
 str
-shutdownFactoryByName(Module m, str nme){
+shutdownFactoryByName(Client cntxt, Module m, str nme){
 	Plant pl, plim;
 	InstrPtr p;
 	Symbol s;
@@ -606,7 +606,7 @@ shutdownFactoryByName(Module m, str nme){
 					getName(nme, strlen(nme)));
 			}
 			stk = pl->stk;
-			MSresetVariables(pl->factory, stk, 0);
+			MSresetVariables(cntxt, pl->factory, stk, 0);
 			shutdownFactory(pl->factory);
 			freeStack(stk);
 			deleteSymbol(m,s);

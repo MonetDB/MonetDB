@@ -517,6 +517,7 @@ int
 discardBox(Box box, str name)
 {
 	int i, j;
+	Client cntxt= MCgetClient();
 
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout, "discardBox:%s from %s\n", name, box->name);
@@ -524,7 +525,7 @@ discardBox(Box box, str name)
 	i = findVariable(box->sym, name);
 	if (i < 0)
 		return i;
-	garbageElement(&box->val->stk[i]);
+	garbageElement(cntxt, &box->val->stk[i]);
 	for (j = i; j < box->sym->vtop - 2; j++) {
 		box->sym->var[j] = box->sym->var[j + 1];
 

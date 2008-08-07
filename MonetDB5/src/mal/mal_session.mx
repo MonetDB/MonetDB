@@ -45,7 +45,7 @@ mal_export str MALexitClient(Client c);
 mal_export str MALparser(Client c);
 mal_export str MALengine(Client c);
 mal_export void MSresetInstructions(MalBlkPtr mb, int start);
-mal_export void MSresetVariables(MalBlkPtr mb, MalStkPtr glb, int start);
+mal_export void MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start);
 mal_export int MALcommentsOnly(MalBlkPtr mb);
 
 #endif /*  _MAL_SESSION_H */
@@ -400,7 +400,7 @@ static int unknownType(int tpe){
 }
 
 void
-MSresetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
+MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i, j;
 
@@ -408,7 +408,7 @@ MSresetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 		if (isTmpVar(mb, i) || unknownType(getVarType(mb,i)) ) {
 			if (glb) {
 				if (!isVarConstant(mb,i))
-					garbageElement(&glb->stk[i]);
+					garbageElement(cntxt, &glb->stk[i]);
 				/* clean stack entry */
 				glb->stk[i].vtype = TYPE_int;
 				glb->stk[i].val.ival = 0;
@@ -512,7 +512,7 @@ table may have grown in size.
 /*
 	MSresetInstructions(c->curprg->def, oldstate.stop);
 */
-	MSresetVariables(c->curprg->def, 0, oldstate.vtop);
+	MSresetVariables(c,c->curprg->def, 0, oldstate.vtop);
 @c
 str
 MALinitClient(Client c)
@@ -670,7 +670,7 @@ and marking all non-temporary variables as being (potentially) used.
 		showErrors(c);
 	}
 	resetMalBlk(prg->def,1);
-	MSresetVariables(prg->def, c->glb, 0);
+	MSresetVariables(c,prg->def, c->glb, 0);
 	if( prg->def->profiler){
 		GDKfree(prg->def->profiler);
 		prg->def->profiler= NULL;

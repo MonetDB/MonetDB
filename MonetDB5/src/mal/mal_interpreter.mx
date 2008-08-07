@@ -54,7 +54,7 @@ mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc,
 	int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, 
 	ValPtr argv[], char debug);
-mal_export void garbageElement(ValPtr v);
+mal_export void garbageElement(Client cntxt, ValPtr v);
 mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
@@ -171,17 +171,24 @@ void showErrors(Client cntxt) {
 @-
 The bigfoot memory tracker keeps track on the space occupancy of BATs. 
 It ignores for the time being the heaps for the variable sized atoms.
+Moreover, it is not thread safe and it can not correctly handle
+aliases embedded in MAL assignments.
+This means that the footprint is only to be used as indicative.
 @c
 static INLINE void 
 updateBigFoot(Client cntxt, int bid, int add)
 {
 	BAT *b;
 
-	if (bid != bat_nil && BBP_lrefs(bid) == 1){
+	if (bid != bat_nil ){
 		size_t cnt = 0;
 		b= BATdescriptor(bid);
 		if (b == NULL) 
 			return;
+		if ( b->P->sharecnt){
+			BBPunfix(b->batCacheid);
+			return;
+		}
 		/* count it once ! */
 		cntxt->cnt = cnt = BATcount(b);
 		if (add) {
@@ -191,6 +198,9 @@ updateBigFoot(Client cntxt, int bid, int add)
 			cntxt->vmfoot -= VIEWhparent(b)?0:headsize(b,cnt);
 			cntxt->vmfoot -= VIEWtparent(b)?0:tailsize(b,cnt);
 		}
+		/* correct for limitations by resetting */
+		if (cntxt->vmfoot < 0)
+			cntxt->vmfoot = 0;
 		if (cntxt->vmfoot > cntxt->bigfoot)
 			cntxt->bigfoot = cntxt->vmfoot;
 		BBPunfix(b->batCacheid);
@@ -673,8 +683,9 @@ q_dequeue(queue *q)
 	MT_set_lock(q->l, "q_dequeue");
 	if (q->first < 0) 
 		assert(0); 	/* nothing to dequeue */
-	r = q->data[q->first];
-	q->first = (q->first+1)&(q->size-1);
+	r = q->data[--q->last];	/*LIFO favors garbage collection*/
+/*	r = q->data[q->first];
+	q->first = (q->first+1)&(q->size-1); */
 	if (q->first == q->last) /* empty */
 		q->first = -1;
 	MT_unset_lock(q->l, "q_dequeue");
@@ -1415,12 +1426,16 @@ the bind(namespace, batname, mode) operation. [todo]
 #ifdef STACKTRACE
 	printf("restoreTarget %d\n", needsCleanup(pci));
 #endif
+	/* update the bigfoot information */
+	for(i=0; i<pci->retc; i++)
+	if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
+		bat bid = stk->stk[getArg(pci,i)].val.bval;
+		updateBigFoot(cntxt, bid, TRUE);
+	}
 	if( needsCleanup(pci) ){ 
 		for(i=0; i<pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			bat bid = stk->stk[getArg(pci,i)].val.bval;
-			/* update the bigfoot information */
-			updateBigFoot(cntxt, bid, TRUE);
 			if (backup[i]){
 				if (backup[i] != bid) {
 					/* possible garbage collect the variable */
@@ -1882,7 +1897,7 @@ before a function call is made.
 @{
 @-
 @c
-void garbageElement(ValPtr v)
+void garbageElement(Client cntxt, ValPtr v)
 {   
 	if( v->vtype == TYPE_str) {
 		if(v->val.pval) {
@@ -1910,6 +1925,7 @@ All references should be logical.
 		v->val.bval = 0;
 		if (bid == 0 || !BBP_lrefs(bid)) 
 			return;
+		updateBigFoot(cntxt, bid, FALSE);
 		BBPdecref(bid,TRUE);
 	}
 }
@@ -1943,7 +1959,7 @@ void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag)
 #endif
 	for(k=0;k<mb->vtop; k++) {
 		if(isVarCleanup(mb,k) && (flag || isTmpVar(mb,k) )){
-			garbageElement(v= &stk->stk[k]);
+			garbageElement(cntxt, v= &stk->stk[k]);
 			v->vtype= TYPE_int;
 			v->val.ival= int_nil;
 		}
@@ -2041,8 +2057,11 @@ It simply skips the barrier block upon return.
 if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
 	if (lock)
 		MT_set_lock(*lock, "timing");
+	stream_printf(cntxt->fdout,"[ ");
 	if( cntxt->flags & timerFlag)
-		stream_printf(cntxt->fdout,"[%6d usec \@%d ",GDKusec()-cntxt->timer,tid);
+		stream_printf(cntxt->fdout,"%6d usec ",GDKusec()-cntxt->timer);
+	if( cntxt->flags & threadFlag)
+		stream_printf(cntxt->fdout,"\@%d ",tid);
 #ifdef HAVE_SYS_RESOURCE_H
 	if( cntxt-> flags & ioFlag){
 		struct  rusage resource;
