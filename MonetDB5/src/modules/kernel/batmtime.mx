@@ -132,6 +132,13 @@ str MTIMEbat_@1_@2_@3(int *ret, int *l)
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
+    if (b->htype != bn->htype) {
+        BAT *r = VIEWcreate(b,bn);
+
+        BBPreleaseref(bn->batCacheid);
+        bn = r;
+    }
+
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -160,7 +167,6 @@ str MTIMEbat_@1_@2(int *ret, int *l, int *r)
 	if (b->T->nonil && right->T->nonil) {
 		for (;p<q; p++, t++, o++)
 			@1@2(o,p,t);
-		bn->T->nonil= TRUE;
 	} else
 	if (b->T->nonil)
 		for (;p<q; p++, t++, o++)
@@ -182,6 +188,13 @@ str MTIMEbat_@1_@2(int *ret, int *l, int *r)
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
 	BBPreleaseref(right->batCacheid);
+
+    if (b->htype != bn->htype) {
+        BAT *r = VIEWcreate(b,bn);
+
+        BBPreleaseref(bn->batCacheid);
+        bn = r;
+    }
 
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
@@ -211,7 +224,6 @@ str MTIMEaccum_@1_@2(int *ret, int *d, int *l, int *r)
 	if (b->T->nonil && right->T->nonil) {
 		for (;p<q; p++, t++, o++)
 			@1@2(o,p,t);
-		bn->T->nonil= TRUE;
 	} else
 	if (b->T->nonil)
 		for (;p<q; p++, t++, o++) 

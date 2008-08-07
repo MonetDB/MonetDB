@@ -1026,8 +1026,12 @@ str CMDunary@1(int *ret, int *bid)
 {
 	@1 *p = (@1*)Tloc(b,BUNfirst(b)); 
 	@1 *q = (@1*)Tloc(b,BUNlast(b)); 
-	for(; p<q; p++, o++ )
-		*o = (*p == @1_nil);
+	if (b->T->nonil){
+		for(; p<q; p++, o++ )
+			*o = FALSE;
+	} else 
+		for(; p<q; p++, o++ )
+			*o = (*p == @1_nil);
 }
 @c
 batcalc_export str CMDunaryISNIL(int *ret, int *bid);
@@ -1058,10 +1062,11 @@ str CMDunaryISNIL(int *ret, int *bid)
 				BATloop(b, p, q)
 					*o++ = FALSE;
 			} else
-			BATloop(b, p, q) {
-				str t = (str) BUNtail(bi,p);
-				*o++ = strcmp(t, str_nil) == 0;
-			}
+				BATloop(b, p, q) {
+					str t = (str) BUNtail(bi,p);
+					*o = strcmp(t, str_nil) == 0;
+					o++;
+				}
 		} break;
 	default: throw(MAL, "batcalc.isnil", "unexpected type");
 	}
@@ -1105,7 +1110,6 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 	if (b->T->nonil && right->T->nonil) {
 		for (;p<q; p++, t++, o++)
 			*o = (*p @2 *t);
-		bn->T->nonil= TRUE;
 	} else
 	if (b->T->nonil)
 		for (;p<q; p++, t++, o++) {
@@ -1169,7 +1173,6 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 	if (b->T->nonil && right->T->nonil) {
 		for (;p<q; p++, t++, o++)
 			*o = (*p @2 *t);
-		bn->T->nonil= TRUE;
 	} else
 	if (b->T->nonil)
 		for (;p<q; p++, t++, o++) {
@@ -1354,7 +1357,6 @@ CMDbitbataccumNOT(int *ret, int *d, int *l)
 	if (b->T->nonil) {
 		for (;p<q; p++, o++)
 			*p = ! *o;
-		bn->T->nonil = TRUE;
 	} else
 	for (;p<q; p++, o++) {
 		if (*o == bit_nil)
@@ -1388,7 +1390,6 @@ CMDbitbatNOT(int *ret, int *bid)
 	if (b->T->nonil) {
 		for (;p<q; p++, o++)
 			*o = ! *p;
-		bn->T->nonil= TRUE;
 	} else
 		for (;p<q; p++, o++) {
 			if (*p == bit_nil)
