@@ -121,7 +121,7 @@ lockToStr(char **dst, int *len, ptr *src)
 	}
 	/* sprintf(*dst,"%o", (ptr)*src); */
 	sprintf(*dst, "redo lockToStr");
-	return strlen(*dst);
+	return (int) strlen(*dst);
 }
 
 lock_export str LCKcreate(monet_lock *l);

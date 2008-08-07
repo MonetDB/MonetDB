@@ -106,8 +106,8 @@ mal_export int rcachePolicy;
 
 mal_export int recycleClaim;
 mal_export int recycleCacheLimit;
-mal_export size_t recycleMemory;	/* Units of memory permitted */
-mal_export size_t recyclerUsedMemory;
+mal_export lng recycleMemory;	/* Units of memory permitted */
+mal_export lng recyclerUsedMemory;
 mal_export MT_Lock recycleLock;
 mal_export MalBlkPtr recycleBlk;
 mal_export double recycleAlpha;
@@ -196,7 +196,7 @@ int rcachePolicy = RCACHE_LRU;  /* recycle cache management policy
 			RCACHE_MEMCRD: reduce the storage overhead */
 int recycleCacheLimit=0; /* No limit by default */
 int recycleClaim=0;	/* avoid stale tables by letting users mark it */
-size_t recycleMemory=0;	/* Units of memory permitted */
+lng recycleMemory=0;	/* Units of memory permitted */
 @-
 The profiler record is re-used to store recycler information.
 The clk is used by the LRU scheme, counter is the number of
@@ -214,7 +214,7 @@ double recycleFresh = 0.8; /* fresh instructions are protected from deletion */
 
 @- Monitoring the Recycler
 @c
-size_t recyclerUsedMemory = 0;
+lng recyclerUsedMemory = 0;
 int statements = 0;	/* total number of statements executed */
 int recycled = 0;	/* total number of statements recycled */
 int retained = 0;	/* total number of statements retained */
@@ -487,7 +487,7 @@ static void RECYCLEcleanCache(lng wr){
 	int cont, reserve;
 	lng oldclk, newclk;
 	dbl mincrd, crd;
-	size_t memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
+	lng memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
 #ifdef _DEBUG_CACHE_
 	Client cntxt= MCgetClient();
 #endif
@@ -676,13 +676,13 @@ RECYCLEinterest(MalBlkPtr mb, InstrPtr p){
 }
 
 static void 
-RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, size_t rd, size_t wr)
+RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr)
 {
 	int i, j, c;
 	ValRecord *v;
 	ValRecord cst;
 	InstrPtr q;
-	size_t memLimit;
+	lng memLimit;
 	lng cacheLimit;
 	
 	RECYCLEspace();
@@ -745,7 +745,7 @@ compare by value.
 	recyclerUsedMemory += wr;
 	if (monitorRecycler == 1 ) 
 		fprintf(stderr, 
-			"#memory="SZFMT", stop=%d, recycled=%d, retained=%d executed=%d saved=" LLFMT "\n",
+			"#memory="LLFMT", stop=%d, recycled=%d, retained=%d executed=%d saved=" LLFMT "\n",
 			recyclerUsedMemory, recycleBlk->stop,
 			recycled, retained, statements, savedTime);
 	retained++;
@@ -1027,10 +1027,10 @@ which is stored in the stack frame to avoid concurrency problems.
 void
 RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	lng clk = 0;
-	size_t memLimit;
+	lng memLimit;
 	lng cacheLimit;
-	size_t rd = getVolume(stk,p, 1)/ RU +1;
-	size_t wr = getVolume(stk,p, 0)/ RU +1;
+	lng rd = getVolume(stk,p, 1)/ RU +1;
+	lng wr = getVolume(stk,p, 0)/ RU +1;
 	ValRecord *v;
 
 	RECYCLEversion(cntxt,mb);
