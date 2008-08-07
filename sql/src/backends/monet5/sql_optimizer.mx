@@ -457,13 +457,13 @@ str defaultPlan=
 	"accessmode,"
 	"aliases,"
 	/* "crack," */
-/*	"joinPath," */
+	/*"joinPath,"*/ 
 	"mergetable," 
 	"commonTerms,"
 /*	"replicator," */
 	"accumulators,"
 	"deadcode,"
-/*	"recycle," */
+	/*"recycle,"*/
 	"reduce,"
 	"garbageCollector," 
 	"dataflow," 

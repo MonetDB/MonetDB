@@ -480,14 +480,14 @@ caching.
 @c
 
 static void
-freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
+freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i;
 
 	for (i = start; i < mb->vtop;) {
 		if (glb) {
 			if (isVarCleanup(mb,i))
-				garbageElement(&glb->stk[i]);
+				garbageElement(c,&glb->stk[i]);
 			/* clean stack entry */
 			glb->stk[i].vtype = TYPE_int;
 			glb->stk[i].val.ival = 0;
@@ -625,7 +625,7 @@ We don;t search the cache for a previous incarnation yet.
 			msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
 			c->state[MAL_SCENARIO_PARSER] = be;
 			MSresetInstructions(c->curprg->def, 1);
-			freeVariables(c->curprg->def, 0, 0);
+			freeVariables(c,c->curprg->def, 0, 0);
 			c->curprg= oldsym;
 		}
 	}
@@ -1109,7 +1109,7 @@ query block.
 			showErrors(c);
 			/* restore the state */
 			resetMalBlk(c->curprg->def, oldstop);
-			freeVariables(c->curprg->def, c->glb, oldvtop);
+			freeVariables(c,c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			msg = createException(PARSE, "SQLparser", "Semantic errors");
 		}
@@ -1203,7 +1203,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 			      LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
 	/* cleanup the arguments */
 	for(i=pci->retc; i<pci->argc; i++) {
-		garbageElement(v= &glb->stk[pci->argv[i]]);
+		garbageElement(c,v= &glb->stk[pci->argv[i]]);
 		v->vtype= TYPE_int;
 		v->val.ival= int_nil;
 	}
@@ -1346,7 +1346,7 @@ cleanup_engine:
 		if (getExceptionType(msg) == OPTIMIZER) {
 			resetMalBlk( c->curprg->def, 1);
 			/* resetInstructions(c->curprg->def, 1);*/
-			freeVariables(c->curprg->def, c->glb, be->vtop);
+			freeVariables(c,c->curprg->def, c->glb, be->vtop);
 			be->language = oldlang;
 			c->glb = oldglb;
 			return SQLrecompile(c, be);
@@ -1377,7 +1377,7 @@ be adjusted too.
 	sqlcleanup(be->mvc, 0);
 	resetMalBlk( c->curprg->def, 1);
 	/* resetInstructions(c->curprg->def, 1);*/
-	freeVariables(c->curprg->def, c->glb, be->vtop);
+	freeVariables(c,c->curprg->def, c->glb, be->vtop);
 	be->language = oldlang;
 @-
 Any error encountered during execution should block further processing
@@ -1416,7 +1416,7 @@ SQLrecompile(Client c, backend *be)
 		showErrors(c);
 		/* restore the state */
 		resetMalBlk(c->curprg->def, oldstop);
-		freeVariables(c->curprg->def, c->glb, oldvtop);
+		freeVariables(c,c->curprg->def, c->glb, oldvtop);
 		c->curprg->def->errors = 0;
 		throw(SQL, "SQLrecompile", "Semantic errors");
 	}
@@ -1487,7 +1487,7 @@ SQLCacheRemove(Client c, str nme)
 	if (s == NULL)
 		throw(MAL, "cache.remove", "internal error, symbol missing\n");
 	if( getInstrPtr(s->def,0)->token == FACTORYsymbol)
-		shutdownFactoryByName(c->nspace, nme);
+		shutdownFactoryByName(c,c->nspace, nme);
 	else
 		deleteSymbol(c->nspace,s);
 	return MAL_SUCCEED;
