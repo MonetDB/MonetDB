@@ -57,6 +57,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_50CCE1AE66AF4CF2909414830FE21BF6"
+        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_57FDC1C9741D4F84B385ADD284334165"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -99,7 +105,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_AD3326FC07AA462C9E1F02B1BDB0C1D9"
+        "MsmKey" = "8:_AF81C046F1BC492D8D2287A71D2B9980"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -113,12 +119,6 @@
         {
         "MsmKey" = "8:_C7D806A868AC43678F7B0FFC81D2C82C"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_C945598F178A4E9E8445C6208BAF26BF"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -507,9 +507,9 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AD3326FC07AA462C9E1F02B1BDB0C1D9"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AF81C046F1BC492D8D2287A71D2B9980"
             {
-            "SourcePath" = "8:C:\\libxml2-2.6.30.win32\\bin\\libxml2.dll"
+            "SourcePath" = "8:C:\\libxml2-2.6.32+.win32\\bin\\libxml2.dll"
             "TargetName" = "8:libxml2.dll"
             "Tag" = "8:"
             "Folder" = "8:_D262855B92DE4EC89E4AAE66EAE05B3C"
@@ -1374,7 +1374,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_C945598F178A4E9E8445C6208BAF26BF"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_50CCE1AE66AF4CF2909414830FE21BF6"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
