@@ -22,11 +22,38 @@ Due to it being wrapped by this atom, methods can distinguish
 it from a normal string.
 The variable of this time can be further extended with properties
 to further qualify the identifier referenced.
-@see remote module
 
+@mal
+atom identifier:str;
+
+command fromstr() 
+address IDfromString
+comment "Convert a string to an identifier without any check";
+
+command tostr() 
+address IDtoString
+comment "Convert identifier to string equivalent";
+
+command identifier(s:str):identifier 
+address IDentifier
+comment "Cast a string to an identifer ";
+
+command prelude():void
+address IDprelude
+comment "Initialize the module";
+
+identifier.prelude();
+
+@{
+@- Implementation
 @h
 #ifndef _IDtype_DEF
 #define _IDtype_DEF
+#include "mal_config.h"
+#include <mal.h>
+#include <mal_exception.h>
+
+typedef str identifier;
 
 #ifdef WIN32
 #ifndef LIBIDtype
@@ -38,20 +65,24 @@ to further qualify the identifier referenced.
 #define identifier_export extern
 #endif
 
+identifier_export int TYPE_identifier;
+identifier_export str IDprelude(void);
+identifier_export int IDfromString(str src, int *len, str *retval);
+identifier_export int IDtoString(str *retval, int *len, str handle);
+identifier_export str IDentifier(str *retval, str *in);
+#endif
+
 @c
-#include "mal_config.h"
-#include <mal.h>
-#include <mal_exception.h>
 #include "identifier.h"	/* for the implementation of the functions */
 
-@mal
-atom identifier:str;
+int TYPE_identifier;
 
-command fromstr() 
-address IDfromString
-comment "Convert a string to an identifier without any check";
-@h
-identifier_export int IDfromString(str src, int *len, str *retval);
+str IDprelude(void)
+{
+	TYPE_identifier = ATOMindex("identifier");
+	return MAL_SUCCEED;
+}
+	
 @c
 /**
  * Creates a new identifier from the given string (stupid string copy).
@@ -73,13 +104,6 @@ IDfromString(str src, int *len, str *retval)
 	return(*len);
 }
 
-@mal
-command tostr() 
-address IDtoString
-comment "Convert identifier to string equivalent";
-@h
-identifier_export int IDtoString(str *retval, int *len, str handle);
-@c
 /**
  * Returns the string representation of the given identifier.
  * Warning: GDK function
@@ -99,14 +123,6 @@ IDtoString(str *retval, int *len, str handle)
 
 	return(*len);
 }
-@mal
-command identifie(s:str):identifier 
-address IDentifier
-comment "Cast a string to an identifer ";
-@h
-identifier_export str IDentifier(str *retval, str *in);
-@c
-@{
 /**
  * Returns an identifier, parsed from a string.  The fromStr function is used
  * to parse the string.
@@ -122,6 +138,4 @@ IDentifier(str *retval, str *in)
 
 	return (MAL_SUCCEED);
 }
-
-@h
-#endif
+@}
