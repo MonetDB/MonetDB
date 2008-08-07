@@ -684,7 +684,7 @@ CMDbbptoStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (i < 0)
 		throw(MAL, "bbp.toString", "failed to take value from box");
 	v = &box->val->stk[i];
-	garbageElement(&stk->stk[getArg(pci, 0)]);
+	garbageElement(cntxt, &stk->stk[getArg(pci, 0)]);
 	if (VALconvert(TYPE_str, v) == ILLEGALVALUE)
 		throw(MAL, "bbp.toString", "illegal value conversion");
 	VALcopy(&stk->stk[getArg(pci, 0)], v);

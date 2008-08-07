@@ -81,9 +81,9 @@ pattern setTimer(b:bit):void
 address MDBsetTimer
 comment "Turn on/off performance timer for debugger";
 
-pattern setBigfoot(b:bit):void
+pattern setMemoryTrace(b:bit):void
 address MDBsetBigfoot
-comment "Turn on/off memory foot print for debugger";
+comment "Turn on/off memory foot print tracer for debugger";
 
 pattern setFlow(b:bit):void
 address MDBsetFlow
