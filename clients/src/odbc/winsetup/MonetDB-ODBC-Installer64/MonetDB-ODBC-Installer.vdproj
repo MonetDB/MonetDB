@@ -39,12 +39,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_432F5169492C4A639776EEC625B17321"
-        "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_53E87680864A4C9DB17A3856539DC3C5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -89,6 +83,12 @@
         {
         "MsmKey" = "8:_E78854C05F3D4756B29D929C6E751845"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_FCFAF65C4D4B4E049A681AE83DFDBE85"
+        "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -493,14 +493,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB ODBC Driver"
-        "ProductCode" = "8:{A37C6945-322E-4A54-985B-CDA27E2A50F6}"
-        "PackageCode" = "8:{7F8950B9-675C-48EB-8E95-C07944F5F8A2}"
+        "ProductCode" = "8:{D6486E69-40B8-4D8B-8F31-B765FE5CD217}"
+        "PackageCode" = "8:{D33ACC18-E669-4CEC-82A4-6B4659B6D362}"
         "UpgradeCode" = "8:{95ACBC8C-BC4B-4901-AF70-48B54A5C20F7}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:8.6.24"
+        "ProductVersion" = "8:8.8.5"
         "Manufacturer" = "8:CWI"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -1133,7 +1133,7 @@
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86_x64.msm"
+            "SourcePath" = "8:C:\\Program Files (x86)\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86_x64.msm"
                 "Properties"
                 {
                 }
@@ -1143,7 +1143,7 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_432F5169492C4A639776EEC625B17321"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_FCFAF65C4D4B4E049A681AE83DFDBE85"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
