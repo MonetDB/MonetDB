@@ -384,14 +384,9 @@ PHP
 PHP__ is only needed to create an interface that can be used from a PHP
 program to communicate with a MonetDB server.
 
-Download the Windows binaries in a ZIP package (i.e. not the Windows
-installer) and the source package of PHP 5 from http://www.php.net/.
-Unzip the binaries into e.g. ``C:\php-5`` (For PHP-5, the ZIP file
-does not contain a top-level directory, so create a new directory,
-e.g. ``C:\php-5``, and unzip the files there; for PHP-4, the ZIP file
-does contain a top-level directory, so you can unzip directly into
-``C:\``.)  Also extract the source distribution somewhere, e.g. into
-the directory where the ZIP package was extracted.
+Download the Windows binaries and the source package from
+http://www.php.net/.  Install the binaries and unpack the source
+somewhere.
 
 In order to get MonetDB to compile with these sources a few changes
 had to be made to the sources:
