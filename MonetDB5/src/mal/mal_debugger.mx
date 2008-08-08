@@ -1284,7 +1284,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			if( upper == 'P'){
 				for( i= 0; i<mb->vtop; i++)
 				if (isaBatType(getVarType(mb,i)) )
-					printBATelm(out, i, size, first);
+					printBATelm(out, stk->stk[i].val.bval, size, first);
 				continue;
 			}
 			/* search the symbol */
@@ -1574,7 +1574,8 @@ printBATelm(stream *f, int i, size_t cnt, size_t first)
 		if( b->H != b->T)
 			BATpropcheck(BATmirror(b),BATPROPS_QUICK);
 		BATpropcheck(b,BATPROPS_QUICK);
-		if( cnt){
+		stream_printf(f,"\n");
+		if( cnt && BATcount(b)>0){
 			if (cnt < BATcount(b)) {
 				stream_printf(f, "Sample %d out of %d\n", cnt, BATcount(b));
 			}

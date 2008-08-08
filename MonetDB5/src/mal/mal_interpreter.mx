@@ -1089,6 +1089,11 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	(void)env;
 	(void)pcicaller;
 
+	/* in debugging mode we should not start multiple threads */
+	if (stk->cmd) {
+		return MAL_SUCCEED;
+	}
+
 	assert(stoppc > startpc);
 	flow.cntxt = cntxt;
 	flow.start = startpc+1;
