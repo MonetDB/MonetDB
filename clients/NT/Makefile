@@ -31,9 +31,9 @@ install: targetdirs clients_config.h all $(INSTALLER_PREREQ)
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) mclient.bat "$(prefix)"
 	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
 	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
-	devenv "$(prefix)\$(INSTALLER)$(IBITS).sln" /build
+	-devenv "$(prefix)\$(INSTALLER)$(IBITS).sln" /build
 	if exist "$(prefix)\$(INSTALLER)$(IBITS).msi" del /f "$(prefix)\$(INSTALLER)$(IBITS).msi"
-	$(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER)$(IBITS).msi "$(prefix)"
+	if exist "$(prefix)\Debug\$(INSTALLER)$(IBITS).msi" $(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER)$(IBITS).msi "$(prefix)"
 	@-c:\cygwin\bin\chmod a+rx "$(prefix)\$(INSTALLER)$(IBITS).msi"
 
 "$(prefix)\banner.bmp":

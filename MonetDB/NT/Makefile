@@ -35,9 +35,9 @@ install: targetdirs monetdb_winconfig.h monetdb_config.h winrules.msc all
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) website.html "$(prefix)"
 	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
 	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
-	devenv "$(prefix)\$(INSTALLER)$(IBITS).sln" /build
+	-devenv "$(prefix)\$(INSTALLER)$(IBITS).sln" /build
 	if exist "$(prefix)\$(INSTALLER)$(IBITS).msi" del /f "$(prefix)\$(INSTALLER)$(IBITS).msi"
-	$(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER)$(IBITS).msi "$(prefix)"
+	if exist "$(prefix)\Debug\$(INSTALLER)$(IBITS).msi" $(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER)$(IBITS).msi "$(prefix)"
 	@-c:\cygwin\bin\chmod a+rx "$(prefix)\$(INSTALLER)$(IBITS).msi"
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
