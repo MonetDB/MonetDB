@@ -200,7 +200,7 @@ Note, each function returns at least one value.
 	){
 		s= s->peer; continue;
 	}
-	if( sig->retc != p->retc) {
+	if( sig->retc != p->retc && !(sig->varargs & VARRETS)) {
 		s= s->peer;
 		continue;
 	}
@@ -212,9 +212,10 @@ Note, each function returns at least one value.
 Most polymorphic functions don;t have a variable argument
 list. So we save some instructions factoring this caise out.
 @c
-	for(i=p->retc; i<sig->argc; i++){
+	for(k=sig->retc,i=p->retc; i<sig->argc; k++, i++){
 		int actual = getArgType(mb,p,i);
-		int formal = getArgType(s->def,sig,i);
+		int formal = getArgType(s->def,sig,k);
+		if (k== sig->retc-1 && sig->varargs & VARRETS) k--;
 @-
 Take care of variable argument lists. 
 They are allowed as the last in the signature only.
@@ -244,8 +245,8 @@ looking for.
 		}
 	}
 @-
-The last argument type could be a polymorphic variable list. It should only be
-allowed for patterns, where it can deal with the stack.
+The last argument/result type could be a polymorphic variable list. 
+It should only be allowed for patterns, where it can deal with the stack.
 If the type is specified as :any then any mix of arguments is allowed.
 If the type is a new numbered type variable then the first element
 in the list determines the required type of all.
@@ -253,17 +254,19 @@ in the list determines the required type of all.
 	  if( sig->varargs ) {
 		if( sig->token != PATTERNsymbol )
 			unmatched = i;
-		else
-		for(k=i-1; i<p->argc; i++){
-			/* the type of the last one has already been set */
-			int actual = getArgType(mb,p,i);
-			int formal = getArgType(s->def,sig,k);
-			formal= getPolyType(formal,polytype);
-			if( formal == actual || formal == TYPE_any) 
-				continue;
-			if( resolveType( formal,actual) == -1 ){
-				unmatched= i;
-				break;
+		else {
+			/* resolve the arguments */
+			for(k=i-1; i<p->argc; i++){
+				/* the type of the last one has already been set */
+				int actual = getArgType(mb,p,i);
+				int formal = getArgType(s->def,sig,k);
+				formal= getPolyType(formal,polytype);
+				if( formal == actual || formal == TYPE_any) 
+					continue;
+				if( resolveType( formal,actual) == -1 ){
+					unmatched= i;
+					break;
+				}
 			}
 		}
 	  }
@@ -330,9 +333,11 @@ the resulting type can not be determined.
 	s1 = 0;
 	returntype= (int*) alloca(p->retc * sizeof(int));
 	if( sig->polymorphic)
-	for(i=0; i < p->retc; i++){
+	for(k=i=0; i < p->retc; k++, i++){
 		int actual = getArgType(mb,p,i);
-		int formal = getArgType(s->def,sig,i);
+		int formal = getArgType(s->def,sig,k);
+
+		if (k== sig->retc-1 && sig->varargs & VARRETS) k--;
 
 		updateTypeMap(formal, actual, polytype);
 		s1= getPolyType(formal, polytype);
