@@ -749,7 +749,7 @@ call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 				b= BATdescriptor(val->val.ival);
 				if( b){
 					len= strlen(msg);
-					sprintf(msg+len,"{%d}",(int)BATcount(b));
+					sprintf(msg+len,"{" SZFMT "}",BATcount(b));
 					BBPunfix(b->batCacheid);
 				}
 				GDKfree(tpe);
@@ -789,8 +789,8 @@ printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 
 static void
 printBATproperties(stream *f, BAT *b){
-	stream_printf(f, " count=%d lrefs=%d ", 
-		(int) BATcount(b), BBP_lrefs(ABS(b->batCacheid)));
+	stream_printf(f, " count=%d lrefs=" SZFMT " ", 
+		BATcount(b), BBP_lrefs(ABS(b->batCacheid)));
 	if(  BBP_refs(ABS(b->batCacheid)) - 1)
 		stream_printf(f, " refs=%d ", BBP_refs(ABS(b->batCacheid)) - 1);
 	if( b->batSharecnt)

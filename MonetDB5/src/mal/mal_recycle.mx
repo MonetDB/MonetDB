@@ -889,15 +889,15 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 						pc = i;
 #ifdef _DEBUG_RECYCLE_
 	b1 = BBPquickdesc(bid, FALSE);
-	stream_printf(cntxt->fdout,"counts A %d -> %d \n", bid, (int)BATcount(b1));
+	stream_printf(cntxt->fdout,"counts A %d -> " SZFMT " \n", bid, BATcount(b1));
 #endif
 					} else {
 						b1 = BBPquickdesc(bid, FALSE);
 						b2 = BBPquickdesc(nbid, FALSE);
 
 #ifdef _DEBUG_RECYCLE_
-	stream_printf(cntxt->fdout,"counts B %d -> %d %d -> %d\n", 
-		bid, (int)BATcount(b1), nbid, (int)BATcount(b2));
+	stream_printf(cntxt->fdout,"counts B %d -> " SZFMT " %d -> " SZFMT "\n", 
+		bid, BATcount(b1), nbid, BATcount(b2));
 #endif
 						if (BATcount(b1) > BATcount(b2)){
 							bid = nbid;
