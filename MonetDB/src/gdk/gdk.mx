@@ -1354,7 +1354,16 @@ static INLINE BATiter bat_iterator(BAT *b)
 }
 
 #define BUNfirst(b)	((b)->batFirst)
-#define BUNlast(b)	((b)->batFirst + (b)->batCount)
+#ifdef NDEBUG
+#define BUNlast(b)	((BUN) ((b)->batFirst + (b)->batCount))
+#else
+static INLINE BUN BUNlast(BAT *b)
+{
+	size_t last = b->batFirst + b->batCount;
+	assert(last < BUN_NONE);
+	return (BUN) last;
+}
+#endif
 
 @
 @}
