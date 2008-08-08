@@ -299,7 +299,7 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 	rc = SQLGetDiagField_(HandleType, Handle, RecNumber, DiagIdentifier, ptr, n, &n);
 #ifdef ODBCDEBUG
 	if (ptr != DiagInfo)
-		ODBCLOG("SQLGetDiagFieldW: %s\n", ptr);
+		ODBCLOG("SQLGetDiagFieldW: %s\n", (char *) ptr);
 #endif
 
 	if (ptr != DiagInfo) {
