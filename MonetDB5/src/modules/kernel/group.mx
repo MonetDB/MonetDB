@@ -375,14 +375,14 @@ map2histo(BAT *map)
 {
 	BUN p, q;
 	BAT *bn;
-	int sz;
+	size_t sz;
 
 	if (map == NULL || map->htype != TYPE_mapentry || isVIEW(map) || map->batSharecnt > 1 || BATgetaccess(map) != BAT_WRITE) {
 		if (map)
 			BBPreclaim(map);
 		return NULL;
 	}
-	sz = (int) BATcount(map);
+	sz = BATcount(map);
 	bn = BATnew(TYPE_oid,TYPE_int,sz);
 	BATloop(map, p, q) {
 		bunfastins(bn, 
@@ -428,7 +428,7 @@ settings differ significantly from the original datamining application.
 @{
 @c
 #define group_params_STANDARD	/* fixed */
-#define group_params_CUSTOM   hash_t custom_MASK, int custom_rng,
+#define group_params_CUSTOM   hash_t custom_MASK, size_t custom_rng,
 
 @= groupAll
 BAT *
@@ -705,7 +705,7 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 	BAT *map;
 	declare_@4
 	hash_t mask = derive_mask(ct_map, ct_histo, b); 
-	int custom_rng = (int) BATcount(ct_histo); /* expected number of groups */
+	size_t custom_rng = BATcount(ct_histo); /* expected number of groups */
 	hash_t custom_MASK = mask;
 
 	map_init_CUSTOM(map,hash,mask,entry,mapsize);
@@ -998,7 +998,7 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 @c
 #define DEFAULT_SIZE 10000
 
-static INLINE int 
+static INLINE size_t
 sort_flush(var_t *off, oid *o, size_t size, int tpe, char *base, oid *hdst, oid *tdst, oid *idp, int reverse)
 {
 	int (*cmp) (ptr, ptr) = BATatoms[tpe].atomCmp;
@@ -1028,7 +1028,7 @@ sort_flush(var_t *off, oid *o, size_t size, int tpe, char *base, oid *hdst, oid 
 	}
 	*idp = id;
 
-	return (int) i;
+	return i;
 }
 
 static int
@@ -1062,7 +1062,8 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 	if (b->tkey) {		/* if key, no further refinements can take place */
 		bn = BATmark(b, 0);
 	} else {
-		int (*cmp) (ptr, ptr) = BATatoms[b->ttype].atomCmp, cnt = 0;
+		int (*cmp) (ptr, ptr) = BATatoms[b->ttype].atomCmp;
+		size_t cnt = 0;
 		BUN p, q, r, last = BUNfirst(b);
 		char *base = a->theap ? NULL : a->T->heap.base, *this = NULL;
 		size_t cur, end, off;
