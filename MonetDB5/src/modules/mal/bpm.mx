@@ -701,7 +701,7 @@ static void BPMprintPartition(stream *f, Partition p){
 	stream_printf(f,"partition: %s alias %d bid %d ",
 		bpmcat[p->alias]->name, p->alias, p->bid);
 	BPMprintInfo(f,p);
-	stream_printf(f,"] nxt %d prv %d cnt %d\n", p->nxt,p->prv,p->cnt);
+	stream_printf(f,"] nxt %d prv %d cnt " SZFMT "\n", p->nxt,p->prv,p->cnt);
 }
 
 static void BPMprintRing(stream *f, Partition p){
@@ -709,12 +709,12 @@ static void BPMprintRing(stream *f, Partition p){
 	if( p== 0) return;
 	stream_printf(f,"RING[%d] %s ", p->bid,BBPname(p->bid));
 	BPMprintInfo(f,p);
-	stream_printf(f,"] cnt %d\n", p->cnt);
+	stream_printf(f,"] cnt " SZFMT "\n", p->cnt);
 	base= p->alias;
 	for(i= p->nxt; bpmcat[i]->bid!= base; i= bpmcat[i]->nxt){
 		stream_printf(f,"[%d] %s ", bpmcat[i]->bid, BBPname(bpmcat[i]->bid));
 		BPMprintInfo(f,p);
-		stream_printf(f,"] cnt %d\n", bpmcat[i]->cnt);
+		stream_printf(f,"] cnt " SZFMT "\n", bpmcat[i]->cnt);
 	}
 }
 
@@ -1362,7 +1362,8 @@ for ordinary BATs.
 str
 BPMemptySet(int *ret, bat *bid)
 {
-	int i, cnt=0;
+	int i;
+	size_t cnt=0;
 	Partition ps;
 	BAT *b;
 
@@ -1371,7 +1372,7 @@ BPMemptySet(int *ret, bat *bid)
 		b= BATdescriptor(*bid);
 		if(b==0)
 			throw(MAL,"bpm.emptySet","Can not access BAT");
-		cnt = (int) BATcount(b);
+		cnt = BATcount(b);
 		BBPunfix(b->batCacheid);
 		if (cnt)
 			throw(OPTIMIZER, "mal.assert", "emptySet");
@@ -1380,7 +1381,7 @@ BPMemptySet(int *ret, bat *bid)
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
 		b = BATdescriptor(bpmcat[i]->bid);
 		if (b)
-			cnt = (int) BATcount(b);
+			cnt = BATcount(b);
 		BBPunfix(b->batCacheid);
 		if (cnt)
 			throw(OPTIMIZER, "mal.assert", "emptySet");
@@ -1445,7 +1446,7 @@ guessNewPartition(BAT *b){
 }
 
 static Partition 
-getAcceptor(bat ba, int maxcnt){
+getAcceptor(bat ba, size_t maxcnt){
 	Partition p;
 	int i;
 	BAT *b,*bn;
@@ -1463,7 +1464,7 @@ getAcceptor(bat ba, int maxcnt){
 	}
 	for(i=p->nxt; i!= p->bid && bpmcat[i]; i=bpmcat[i]->nxt){
 		materializePartition(bpmcat[i]);
-		if( (int)bpmcat[i]->cnt < maxcnt)
+		if( bpmcat[i]->cnt < maxcnt)
 			return bpmcat[i];
 	}
 	return 0;
@@ -1471,7 +1472,7 @@ getAcceptor(bat ba, int maxcnt){
 
 str
 BPMaddPartition(int *ret, bat *bid, bat *src){
-	int cnt=0, maxcnt;
+	size_t cnt=0, maxcnt;
 	Partition pa,p,px;
 	BAT *b,*bn, *ba;
 
@@ -1508,7 +1509,7 @@ BPMaddPartition(int *ret, bat *bid, bat *src){
 	}
 
 	BBPunfix(ba->batCacheid); 
-	cnt = (int) BATcount(b);
+	cnt = BATcount(b);
 #ifdef _DEBUG_BPM_
 	printf("addPartition %d -> %d\n",*bid, *src);
 #endif
@@ -1526,7 +1527,7 @@ BPMaddPartition(int *ret, bat *bid, bat *src){
 		p->alias = pa->alias;
 		@:defaultRange(p,b)@
 #ifdef _DEBUG_BPM_
-		printf("guess-> %d ring %d px %d\n",(int) p->cnt, emptyRing(pa), px!=0);
+		printf("guess-> " SZFMT " ring %d px %d\n",p->cnt, emptyRing(pa), px!=0);
 		BPMprintRing(GDKout,pa);
 #endif
 	} else {
@@ -1539,7 +1540,7 @@ BPMaddPartition(int *ret, bat *bid, bat *src){
 		BBPunfix(bn->batCacheid); 
 #ifdef _DEBUG_BPM_
 		@:defaultRange(px,bn)@
-		printf("no guess-> %d\n",(int)px->cnt);
+		printf("no guess-> " SZFMT "\n",px->cnt);
 		BPMprintRing(GDKout,px);
 #endif
 	}
@@ -1741,7 +1742,7 @@ BPMhybridPolicy( BAT *b, BAT *bs, int ov)
 @c
 
 static int 
-spread( bat *ret, int *cnt, BAT *b, ValPtr sep, int n, int skip)
+spread( bat *ret, size_t *cnt, BAT *b, ValPtr sep, int n, int skip)
 {	
 	int k=n-2, i;
 	BUN p,q;
@@ -1753,7 +1754,7 @@ spread( bat *ret, int *cnt, BAT *b, ValPtr sep, int n, int skip)
 
 	for(i=0; i<=k; i++)
 		if (i!=skip){
-			bs[i] = BATnew(b->htype, b->ttype, (size_t) BATcount(b)/k );
+			bs[i] = BATnew(b->htype, b->ttype, BATcount(b)/k );
 	}
 
 	BATloop(b, p, q) {
@@ -1772,7 +1773,7 @@ spread( bat *ret, int *cnt, BAT *b, ValPtr sep, int n, int skip)
 	for(i=0; i<=k; i++)
 		if (i!=skip){
 			ret[i]= bs[i]->batCacheid;
-			cnt[i]= (int) BATcount(bs[i]);
+			cnt[i]= BATcount(bs[i]);
 			BBPkeepref(bs[i]->batCacheid);
 		#ifdef _DEBUG_BPM_
 			stream_printf(GDKout,"New bat %d\n",ret[i]);
@@ -1790,7 +1791,8 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	ValPtr sep = NULL;
 	int cs=0, ov, or;
 	size_t cnt=0, bcnt;
-	int i, n=0, tpe, skip=-1, cnts[4]={0};
+	int i, n=0, tpe, skip=-1;
+	size_t cnts[4]={0};
 	lng space;
 	(void) ret;
 
@@ -1880,7 +1882,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	if ( (skip >-1) && (skip <n-1) ){
 		bb[skip]= bs->batCacheid;
 		BBPincref(bs->batCacheid,TRUE);
-		cnts[skip]= (int) BATcount(bs);
+		cnts[skip]= BATcount(bs);
 	}
 	BBPunfix(bs->batCacheid);
 
@@ -3051,13 +3053,14 @@ BPMsaveCatalog(int *r)
 void findQuantHisto(ValPtr vp, BAT * b, lng sp, lng msz, lng maxno)
 {
 	BUN p, pprev, stop; 
-	int c, tpe, s=0, cn, it =0;
+	size_t c;
+	int tpe, s=0, cn, it =0;
 	lng pertpl, quan;
 	BATiter bsi;
 	BAT *bh, *bs;
 	ValPtr v = vp;
 
-	c = (int) BATcount(b);
+	c = BATcount(b);
 	if ((c==0) || (msz>=sp)) return ;
 	pertpl = (lng) ceil((sp - sizeof(BATstore))/ (double)c);
 	quan = (lng) floor((msz- sizeof(BATstore))/  (double)pertpl);
@@ -3096,7 +3099,8 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 	Partition ps, p, pprev;
 	ValPtr sep, v;
 	bat *bb;
-	int k,nxt, i, n=0, tpe, *cnts;
+	int k,nxt, i, n=0, tpe;
+	size_t *cnts;
 	ptr nilptr;
 	int (*cmp) (ptr, ptr);
 	lng sf, msz, space;
@@ -3146,12 +3150,12 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 
 	/* spread values */		
 		bb= (bat *) GDKzalloc( sizeof(bat) * (n-1));
-		cnts= (int *) GDKzalloc( sizeof(int) * (n-1));
+		cnts= (size_t *) GDKzalloc( sizeof(size_t) * (n-1));
 		spread(bb,cnts,b,sep,n,-1);
 		
 #ifdef _DEBUG_BPM_
 		for(k=0;k<n-1; k++) 
-			stream_printf(GDKout," spread to partition %d size  %d\n", bb[k], cnts[k]);
+			stream_printf(GDKout," spread to partition %d size  " SZFMT "\n", bb[k], cnts[k]);
 #endif
 		pprev = getByNumber(bpmcat[i]->prv);
 		for(k=0; k<n-1; k++, pprev=p){
