@@ -30,6 +30,7 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 Requires(pre): shadow-utils
 BuildRequires: python
 BuildRequires: pcre-devel
+BuildRequires: raptor-devel >= 1.4.16
 
 # when we want MonetDB to run as system daemon, we need this
 # also see the scriptlets below
