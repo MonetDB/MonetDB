@@ -73,11 +73,19 @@ SQLErrorW(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLWCHAR * szSqlState, SQL
 	ODBCLOG("SQLErrorW " PTRFMT " " PTRFMT " " PTRFMT "\n", PTRFMTCAST hEnv, PTRFMTCAST hDbc, PTRFMTCAST hStmt);
 #endif
 
-	errmsg = (SQLCHAR *) malloc(nErrorMsgMax * 4);
-
 	/* use mapping as described in ODBC 3 SDK Help file */
-	rc = SQLGetDiagRec_(hStmt ? SQL_HANDLE_STMT : (hDbc ? SQL_HANDLE_DBC : SQL_HANDLE_ENV), hStmt ? hStmt : (hDbc ? hDbc : hEnv),
-			    (hStmt ? ++((ODBCStmt *) hStmt)->RetrievedErrors : (hDbc ? ++((ODBCDbc *) hDbc)->RetrievedErrors : ++((ODBCEnv *) hEnv)->RetrievedErrors)), state, pfNativeError, errmsg, nErrorMsgMax * 4, &n);
+	/* first try to figure out how big the buffer needs to be */
+	rc = SQLGetDiagRec_(hStmt ? SQL_HANDLE_STMT : (hDbc ? SQL_HANDLE_DBC : SQL_HANDLE_ENV),
+			    hStmt ? hStmt : (hDbc ? hDbc : hEnv),
+			    (hStmt ? ++((ODBCStmt *) hStmt)->RetrievedErrors : (hDbc ? ++((ODBCDbc *) hDbc)->RetrievedErrors : ++((ODBCEnv *) hEnv)->RetrievedErrors)),
+			    state, pfNativeError, NULL, 0, &n);
+
+	/* and now for real */
+	errmsg = (SQLCHAR *) malloc(n + 1);
+	rc = SQLGetDiagRec_(hStmt ? SQL_HANDLE_STMT : (hDbc ? SQL_HANDLE_DBC : SQL_HANDLE_ENV),
+			    hStmt ? hStmt : (hDbc ? hDbc : hEnv),
+			    (hStmt ? ((ODBCStmt *) hStmt)->RetrievedErrors : (hDbc ? ((ODBCDbc *) hDbc)->RetrievedErrors : ((ODBCEnv *) hEnv)->RetrievedErrors)),
+			    state, pfNativeError, errmsg, n + 1, &n);
 
 	if (SQL_SUCCEEDED(rc)) {
 		char *e = ODBCutf82wchar(state, 5, szSqlState, 6, NULL);
