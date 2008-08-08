@@ -428,21 +428,18 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid low= 0, hgh=0;
 
 	(void) mb;
-	bid = *(int *) getArgValue(stk, pci, 1);
+	(void) cntxt;
+	bid = *(int *) getArgValue(stk, pci, pci->retc);
 
 	if ((b = BATdescriptor(bid)) == NULL) {
 		throw(MAL, "bbp.partition", "Cannot access descriptor");
 	}
-	/* garbage collect the other arguments first */
-	for(i=2; i<pci->argc; i++)
-		garbageElement(cntxt, &stk->stk[getArg(pci,i)]);
-
 	/* create the slices slightly overshoot to make sure it all is taken*/
 	cnt = BATcount(b);
-	slice= (cnt+pci->argc)/ (pci->argc-2);
-	for(i=2; i<pci->argc; i++){
+	slice= (cnt+pci->argc)/ (pci->argc-1);
+	for(i=0; i<pci->retc; i++){
 		hgh= low+slice;
-		bn=  BATselect(b, &low, &hgh);
+		bn=  BATmirror(BATselect(BATmirror(b), &low, &hgh));
 		if (bn== NULL){
 			BBPunfix(b->batCacheid);
 			throw(MAL, "bbp.partition", "Partition slice not created");
