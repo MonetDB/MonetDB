@@ -441,7 +441,7 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b,*bn;
 	int i,bid;
 	lng cnt,slice;
-	oid low= 0, hgh=0;
+	size_t low= 0, hgh=0;
 
 	(void) mb;
 	(void) cntxt;
@@ -455,7 +455,8 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	slice= (cnt+pci->argc)/ (pci->argc-1);
 	for(i=0; i<pci->retc; i++){
 		hgh= low+slice;
-		bn=  BATmirror(BATselect(BATmirror(b), &low, &hgh));
+		bn=  BATslice(b, low, hgh);
+		BATseqbase(bn, low);
 		if (bn== NULL){
 			BBPunfix(b->batCacheid);
 			throw(MAL, "bbp.partition", "Partition slice not created");
