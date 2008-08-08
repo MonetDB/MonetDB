@@ -56,7 +56,7 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-#define _DEBUG_OPT_PARALYZER
+/* #define _DEBUG_OPT_PARALYZER*/
 
 @c
 #include "mal_config.h"

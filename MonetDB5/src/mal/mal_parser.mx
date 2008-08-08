@@ -1049,7 +1049,7 @@ during the final phase reshuffle the return values to the beginning (?)
 		/* we may be confronted by a variable target type list */
 		if( MALkeyword(cntxt,"...",3) ){
 			curInstr->varargs |= VARRETS;
-			setPolymorphic(curInstr,TYPE_any,FALSE);
+			setPolymorphic(curInstr,TYPE_any,TRUE);
 		}
 		
 		@:propList(curInstr->argv[0])@
