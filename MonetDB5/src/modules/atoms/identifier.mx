@@ -50,8 +50,8 @@ identifier.prelude();
 #ifndef _IDtype_DEF
 #define _IDtype_DEF
 #include "mal_config.h"
-#include <mal.h>
-#include <mal_exception.h>
+#include "mal.h"
+#include "mal_exception.h"
 
 typedef str identifier;
 
@@ -70,7 +70,7 @@ identifier_export str IDprelude(void);
 identifier_export int IDfromString(str src, int *len, str *retval);
 identifier_export int IDtoString(str *retval, int *len, str handle);
 identifier_export str IDentifier(str *retval, str *in);
-#endif
+#endif /* _IDTYPE_DEF */
 
 @c
 #include "identifier.h"	/* for the implementation of the functions */

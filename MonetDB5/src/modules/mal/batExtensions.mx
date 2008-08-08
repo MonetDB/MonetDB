@@ -67,7 +67,7 @@ address CMDBATsetGarbage
 comment "Designate a BAT as garbage.";
 
 pattern bat.partition(b:bat[:any_1,:any_2]...):void
-address CMbatpartition
+address CMDbatpartition
 comment "Create a series of cheap slices over the first argument";
 pattern bat.unpack(b:bat[:any_1,:any_2])(h:any_1,t:any_2)
 address CMDbatunpack
