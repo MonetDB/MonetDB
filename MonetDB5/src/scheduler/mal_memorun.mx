@@ -54,12 +54,12 @@ In this case it returns the total number of bytes uses as arguments.
 
 The target variable with the lowest
 cost is chosen for execution and remaining variables are turned into
-are into a temporary NOOP operation.(You may want to re-use the memo)
+a temporary NOOP operation.(You may want to re-use the memo)
 They are skipped by the interpreter, but also in subsequent
 calls to the scheduler. It reduces the alternatives as we proceed
 in the plan.
 
-A built-in cost function is used.
+A built-in naive cost function is used.
 It would be nice if the user could provide a
 private cost function defined as a @code{pattern}
 with a polymorphic argument for the target and a @code{:lng} result.
