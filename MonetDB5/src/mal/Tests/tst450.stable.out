@@ -125,6 +125,7 @@ end main;	# 14
 [ "recycle",	  nil	  ]
 [ "remote",	  nil	  ]
 [ "rmtobj",	  nil	  ]
+[ "sabaoth",	  nil	  ]
 [ "scheduler",	  nil	  ]
 [ "sema",	  nil	  ]
 [ "sqlblob",	  nil	  ]
