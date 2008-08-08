@@ -66,7 +66,7 @@ pattern bat.setGarbage(b:bat[:any_1,:any_2]):void
 address CMDBATsetGarbage
 comment "Designate a BAT as garbage.";
 
-pattern bat.partition(b:bat[:any_1,:any_2):void
+pattern bat.partition(b:bat[:any_1,:any_2]...):void
 address CMbatpartition
 comment "Create a series of cheap slices over the first argument";
 pattern bat.unpack(b:bat[:any_1,:any_2])(h:any_1,t:any_2)
@@ -422,9 +422,10 @@ CMDbatunpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b;
+	BAT *b,*bn;
 	int i,bid;
 	lng cnt,slice;
+	oid low= 0, hgh=0;
 
 	(void) mb;
 	bid = *(int *) getArgValue(stk, pci, 1);
@@ -436,11 +437,20 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for(i=2; i<pci->argc; i++)
 		garbageElement(cntxt, &stk->stk[getArg(pci,i)]);
 
-	/* create the slices */
+	/* create the slices slightly overshoot to make sure it all is taken*/
 	cnt = BATcount(b);
-	slice= cnt/ (pci->argc-2);
-	for(i=2; i<pci->argc; i++)
-		(void) slice/* TODO */;
+	slice= (cnt+pci->argc)/ (pci->argc-2);
+	for(i=2; i<pci->argc; i++){
+		hgh= low+slice;
+		bn=  BATselect(b, &low, &hgh);
+		if (bn== NULL){
+			BBPunfix(b->batCacheid);
+			throw(MAL, "bbp.partition", "Partition slice not created");
+		}
+		stk->stk[getArg(pci,i)].val.bval = bn->batCacheid;
+		BBPkeepref(bn->batCacheid);
+		low= hgh;
+	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
