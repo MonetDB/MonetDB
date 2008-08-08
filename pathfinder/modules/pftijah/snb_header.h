@@ -11,9 +11,6 @@
 
 #include "snb_api.h"
 
-#define MAXINT INT_MAX
-#define MININT INT_MIN
-
 #define HEAD 2*sizeof(int)
 
 #define SIZE(p)        ((int *)(p))[-1]
