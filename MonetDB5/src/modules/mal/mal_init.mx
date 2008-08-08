@@ -151,6 +151,7 @@ include batcolor;
 @-
 MAL related extensions
 @mal
+include sabaoth;
 include pcre;
 include clients;
 include const;
@@ -199,6 +200,7 @@ include opt_macro;
 include opt_accessmode;
 include opt_multiplex;
 include opt_mergetable;
+include opt_paralyzer;
 include opt_partitions;
 include opt_peephole;
 include opt_qep;

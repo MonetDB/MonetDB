@@ -66,6 +66,9 @@ pattern bat.setGarbage(b:bat[:any_1,:any_2]):void
 address CMDBATsetGarbage
 comment "Designate a BAT as garbage.";
 
+pattern bat.partition(b:bat[:any_1,:any_2):void
+address CMbatpartition
+comment "Create a series of cheap slices over the first argument";
 pattern bat.unpack(b:bat[:any_1,:any_2])(h:any_1,t:any_2)
 address CMDbatunpack
 comment "Extract the first tuple from a BAT.";
@@ -113,6 +116,7 @@ be_export str CMDBATnewint(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 be_export str CMDBBPproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDBBPprojectNil(int *ret, int *bid);
 be_export str CMDbatunpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+be_export str CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDbatpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDsetBase(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -412,6 +416,31 @@ CMDbatunpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		VALinit(tail, getArgType(mb, pci, 1), BUNtail(bi, p));
 	}
 
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+str
+CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b;
+	int i,bid;
+	lng cnt,slice;
+
+	(void) mb;
+	bid = *(int *) getArgValue(stk, pci, 1);
+
+	if ((b = BATdescriptor(bid)) == NULL) {
+		throw(MAL, "bbp.partition", "Cannot access descriptor");
+	}
+	/* garbage collect the other arguments first */
+	for(i=2; i<pci->argc; i++)
+		garbageElement(cntxt, &stk->stk[getArg(pci,i)]);
+
+	/* create the slices */
+	cnt = BATcount(b);
+	slice= cnt/ (pci->argc-2);
+	for(i=2; i<pci->argc; i++)
+		(void) slice/* TODO */;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
