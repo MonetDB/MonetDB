@@ -187,7 +187,7 @@ SQLGetDiagRecW(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, 
 		msg = (SQLCHAR *) malloc(n + 1);
 		rc = SQLGetDiagRec_(handleType, handle, recNumber, state, nativeErrorPtr, msg, n + 1, &n);
 #ifdef ODBCDEBUG
-		ODBCLOG("SQLGetDiagRecW: %s\n", msg);
+		ODBCLOG("SQLGetDiagRecW: %s\n", (char *) msg);
 #endif
 
 		if (SQL_SUCCEEDED(rc)) {
