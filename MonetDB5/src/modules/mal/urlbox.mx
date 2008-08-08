@@ -245,7 +245,8 @@ URLBOXinsert(char *tuple)
 	int i=0,depth;
 	BAT *b;
 	BUN p;
-	int idx= 0,prv=0;
+	size_t idx= 0;
+	int prv=0;
 	char buf[128];
 
 	depth= URLBOXchop(tuple, parts);
@@ -290,9 +291,10 @@ Insert the remainder as a new url string
 @c
 	for( ; i<depth; i++){
 		/* printf("update [%d]:%s\n",i,parts[i]);*/
-		idx= (int) BATcount(urlBAT[i]);
+		idx = BATcount(urlBAT[i]);
 		BUNins(urlBAT[i], (ptr) &prv, parts[i], FALSE);
-		prv=idx;
+		assert(idx <= GDK_int_max);
+		prv = (int) idx;
 	}
 	return MAL_SUCCEED;
 }
