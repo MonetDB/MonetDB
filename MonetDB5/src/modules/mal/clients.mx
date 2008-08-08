@@ -178,7 +178,8 @@ str
 CLTgetClientId(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
-	*(int*) getArgReference(stk,pci,0) = cntxt - mal_clients;
+	assert(cntxt - mal_clients <= INT_MAX);
+	*(int*) getArgReference(stk,pci,0) = (int) (cntxt - mal_clients);
 	return MAL_SUCCEED;
 }
 

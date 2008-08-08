@@ -491,19 +491,19 @@ BATXMLroot(int *ret, int *bid, str *version, str *standalone)
 	BAT *b,*bn;
 	BUN p,q;
 	str buf= GDKmalloc(BUFSIZ);
-	int len,size= BUFSIZ;
+	size_t len,size= BUFSIZ;
 	BATiter bi;
 
 	prepareOperand(b,bid,"root");
 	prepareResult(bn,b,TYPE_xml,"root");
 
 	len= strlen(*version)+strlen(*standalone)+
-			(int) strlen("<? version=\"\" standalone=\"\"?>");
+			strlen("<? version=\"\" standalone=\"\"?>");
 	bi = bat_iterator(b);
 	BATloop(b,p,q){
 		ptr h= BUNhead(bi,p);
 		str t= (str) BUNtail(bi,p);
-		if( (len=(int) strlen(t)) >= size){
+		if( (len=strlen(t)) >= size){
 			buf= GDKrealloc(buf,len+20);
 			size= len+20;
 		}
@@ -619,7 +619,8 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATiter *bi;
 	BUN *p,*q;
 	str buf= GDKmalloc(BUFSIZ);
-	int i,offset,len,size= BUFSIZ;
+	int i;
+	size_t offset,len,size= BUFSIZ;
 
 	(void)mb;
 	(void) cntxt;
@@ -686,7 +687,7 @@ BATXMLconcat(int *ret, int *bid, int *rid)
 	BAT *b,*r=0, *bn;
 	BUN p,q, rp = 0;
 	str buf= GDKmalloc(BUFSIZ);
-	int len,size= BUFSIZ;
+	size_t len,size= BUFSIZ;
 	BATiter bi, ri;
 
 	if( *rid && (r=  BATdescriptor( *rid)) ){
@@ -713,7 +714,7 @@ BATXMLconcat(int *ret, int *bid, int *rid)
 		str t= (str) BUNtail(bi,p);
 		oid *h= (oid*) BUNhead(bi,p);
 		str v= (str) BUNtail(ri,rp);
-		len= (int) strlen(t)+strlen(v)+2;
+		len= strlen(t)+strlen(v)+2;
 
 		if( len >= size){
 			if(buf) GDKfree(buf);

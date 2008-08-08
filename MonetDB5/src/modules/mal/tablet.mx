@@ -883,7 +883,7 @@ TABsetColumnDecimal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 TABsetTryAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int rnr = cntxt - mal_clients;
+	ptrdiff_t rnr = cntxt - mal_clients;
 	int flg = *(int*) getArgReference(stk,pci,1);
 
 	(void) mb;
@@ -1632,7 +1632,7 @@ output_line_lookup(char **buf, int *len, Column * fmt, stream *fd, size_t nr_att
 			char *p = BUNtail(f->ci, id + BUNfirst(f->c));
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
-				int l = strlen(f->nullstr);
+				size_t l = strlen(f->nullstr);
 				if (stream_write(fd, f->nullstr, 1, l) != l)
 					return TABLET_error(fd);
 			} else {
@@ -2451,7 +2451,7 @@ bindVariable(Tablet * t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 	c->data = val;
 	if (c->scale)
 		c->width = c->scale + 2;	/* decimal point  and '-' */
-	c->width += (c->rbrk ? (int) strlen(c->rbrk) : 0) + (c->lbrk ? strlen(c->lbrk) : 0);
+	c->width += (unsigned int) ((c->rbrk ? strlen(c->rbrk) : 0) + (c->lbrk ? strlen(c->lbrk) : 0));
 	if (c->maxwidth && c->maxwidth < c->width)
 		c->width = c->maxwidth;
 	if (t->columns == c)

@@ -307,7 +307,6 @@ address SERVERepilogue;
 #define SERVERSSLPORT		40000
 #define SERVERMAXUSERS 		5
 
-mal_mapi_export str SERVERlistenThread(int *Sock);
 mal_mapi_export str SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd);
 mal_mapi_export bat * SERVERprelude(void);
 mal_mapi_export void SERVERepilogue(void);
@@ -388,12 +387,6 @@ mal_mapi_export str SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 #define SOCKLEN socklen_t
 #else
 #define SOCKLEN int
-#endif
-
-#ifdef NATIVE_WIN32
-#define s_close(s)	closesocket(s)
-#else
-#define s_close(s)	close(s)
 #endif
 
 static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
@@ -493,8 +486,8 @@ static MT_Id listener[8];
 static int lastlistener=0;
 static int serveractive=TRUE;
 
-str
-SERVERlistenThread(int *Sock)
+static str
+SERVERlistenThread(SOCKET *Sock)
 {
 	char *msg = 0;
 	char *cmd = threadcommand;
@@ -507,7 +500,7 @@ SERVERlistenThread(int *Sock)
 		int retval;
 		struct timeval tv;
 		fd_set fds;
-		int msgsock;
+		SOCKET msgsock;
 
 		FD_ZERO(&fds);
 		if (sock != INVALID_SOCKET)
@@ -526,7 +519,7 @@ SERVERlistenThread(int *Sock)
 		if (usock != INVALID_SOCKET )
 			msgsock = usock;
 #endif
-		retval = select(msgsock + 1, &fds, NULL, NULL, &tv);
+		retval = select((int) msgsock + 1, &fds, NULL, NULL, &tv);
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -606,7 +599,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 {
 	struct sockaddr_in server;
 	SOCKET sock = INVALID_SOCKET;
-	int *Sock = GDKmalloc(sizeof(int));
+	SOCKET *Sock = GDKmalloc(sizeof(SOCKET));
 	int accept_any=0;
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
@@ -877,7 +870,7 @@ SERVERlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd)
 	int sock = -1;
 	SOCKLEN length = 0;
 	int on = 1;
-	int msgsock;
+	SOCKET msgsock;
 	int i = 0;
 
 	int port = *Port;

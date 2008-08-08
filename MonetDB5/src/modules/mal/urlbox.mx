@@ -326,7 +326,8 @@ URLBOXdepositFile(int *r, str *fnme){
 			while(t < bs->buf+bs->len && *t && *t != '\n') t++;
 			if(t== bs->buf+bs->len || *t != '\n'){
 				/* read next block if possible after shift  */
-				len = t-s;
+				assert(t-s <= INT_MAX);
+				len = (int) (t-s);
 				memcpy(bs->buf, s, len);
 				bs->len = len;
 				bs->pos = 0;

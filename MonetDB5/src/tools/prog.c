@@ -77,7 +77,7 @@ usage(char *prog)
 int
 main(int argc, char **av)
 {
-	int curlen = 0, maxlen = BUFSIZ * 8;
+	size_t curlen = 0, maxlen = BUFSIZ * 8;
 	char *prog = *av;
 	opt *set = NULL;
 	int setlen = 0, time = 0;
@@ -176,7 +176,7 @@ main(int argc, char **av)
 			fprintf(stderr, "could no open file %s\n", av[optind]);
 		}
 		while ((line = fgets(buf + curlen, 1024, fp)) != NULL) {
-			int n = strlen(line);
+			size_t n = strlen(line);
 
 			curlen += n;
 			if (curlen + 1024 > maxlen) {

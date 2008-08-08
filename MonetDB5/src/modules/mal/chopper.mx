@@ -288,7 +288,7 @@ CHPgetHead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	lng *cursor;
 	int *bid;
-	int limit;
+	BUN limit;
 	ValPtr head;
 	oid o;
 
@@ -301,7 +301,7 @@ CHPgetHead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "chop.getHead", "Cannot access 'bid' descriptor");
 	}
 	limit = BUNlast(b);
-	if (*cursor < 0 || *cursor >= limit) {
+	if (*cursor < 0 || *cursor >= (lng) limit) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "mal.getHead", "range error");
 	}
@@ -325,7 +325,7 @@ CHPgetTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	lng *cursor;
 	int *bid;
-	int limit;
+	BUN limit;
 	ValPtr tail;
 
 	(void) cntxt;
@@ -337,7 +337,7 @@ CHPgetTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "chop.getTail", "Cannot access 'bid' descriptor");
 	}
 	limit = BUNlast(b);
-	if (*cursor < 0 || *cursor >= limit) {
+	if (*cursor < 0 || *cursor >= (lng) limit) {
 		BBPunfix(b->batCacheid);
 		throw(OUTOFBNDS, "mal.getTail", "range error: %d", *cursor);
 	}

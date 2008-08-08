@@ -1323,10 +1323,11 @@ BPMisPartitioned(bat bid){
 	return getAlias(bid)!= 0;
 }
 
-static int
+static size_t
 BPMcountInternal(bat bid)
 {
-	int ret=0, i;
+	size_t ret=0;
+	int i;
 	Partition ps;
 	BAT *b;
 
@@ -1335,10 +1336,10 @@ BPMcountInternal(bat bid)
 	for(i= ps->nxt ; i!=ps->bid && bpmcat[i] ; i= bpmcat[i]->nxt){
 		materializePartition(bpmcat[i]);
 		b= BATdescriptor(bpmcat[i]->bid);
-		if( (size_t) BATcount(b) != bpmcat[i]->cnt)
+		if( BATcount(b) != bpmcat[i]->cnt)
 			printf("wrong count administration\n");
 		BBPunfix(b->batCacheid);
-		ret= ret + bpmcat[i]->cnt;
+		ret += bpmcat[i]->cnt;
 	}
 #ifdef _DEBUG_BPM_
 	printf("bpmcountInternal %d ->%d\n",bid,ret);
@@ -1348,7 +1349,9 @@ BPMcountInternal(bat bid)
 
 str
 BPMcount(int *ret, bat *bid){
-	*ret= BPMcountInternal(*bid);
+	size_t cnt = BPMcountInternal(*bid);
+	assert(cnt <= INT_MAX);
+	*ret= (int) cnt;
 	return MAL_SUCCEED;
 }
 
@@ -1693,7 +1696,8 @@ BPMoraclePolicy(double x, double sigma)
 static int 
 BPMhybridPolicy( BAT *b, BAT *bs, int ov)
 {
-	int cs=0, or, cnt=0;
+	int cs=0, or;
+	size_t cnt=0;
 	lng space, space1, space2=0;
 
 	space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(hash_t)) + sizeof(BATstore);
@@ -1784,7 +1788,8 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	Partition ps, p, pprev;
 	bat *bb;
 	ValPtr sep = NULL;
-	int cs=0, ov, or, cnt=0, bcnt;
+	int cs=0, ov, or;
+	size_t cnt=0, bcnt;
 	int i, n=0, tpe, skip=-1, cnts[4]={0};
 	lng space;
 	(void) ret;
@@ -1819,12 +1824,12 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 
 	if(policy == ORACLEPOLICY ) {
 		cnt= BPMcountInternal(b->batCacheid);
-		bcnt = (int) BATcount(b);
+		bcnt = BATcount(b);
 		if ( (cnt ==0) || (bcnt ==0) || (BATcount(bs) ==0) ) or =0;
 		else or=BPMoraclePolicy((double)BATcount(bs)/bcnt, (double)bcnt/cnt);
 	
 #ifdef _DEBUG_BPM_
-/*	stream_printf(GDKout,"Oracle %d bcnt %d cnt %d \n",or, bcnt,cnt);*/
+/*	stream_printf(GDKout,"Oracle %d bcnt " SZFMT " cnt " SZFMT " \n",or, bcnt,cnt);*/
 #endif
 		if (or) cs= ov; 
 	}
@@ -2212,7 +2217,8 @@ should be sought for bulk updates.
 @c
 str
 BPMfold(bat *ret, bat *bid){
-	int i,cnt=0,j;
+	int i,j;
+	size_t cnt=0;
 	Partition ps;
 	BAT *b,*bn;
 	str msg= MAL_SUCCEED;
