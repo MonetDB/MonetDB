@@ -960,6 +960,9 @@ yes-*-*)
 -*pgcc*-linux*)
 	CFLAGS="$CFLAGS -c9x"
 	;;
+-*-solaris*)
+	CFLAGS="$CFLAGS -xc99"
+	;;
 esac
 
 AC_TRY_COMPILE([], [
@@ -1957,8 +1960,19 @@ if test "x$enable_optim" = xyes; then
       esac
     else
       case "$host-$icc_ver" in
-      dnl Portland Group compiler (pgcc/pgCC) has $icc_ver=""
-      *-*-*-)    ;;
+      dnl handle non-Intel compilers ($icc_ver=""), first
+      *solaris*-)      CFLAGS="$CFLAGS -xO5"
+                       CFLAGS_NO_OPT="-xO0"
+                       ;;
+#     *irix*-)         CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
+      *irix*-)         CFLAGS="$CFLAGS -O3 -OPT:div_split=ON:fast_complex=ON:fast_exp=ON:fast_nint=ON:Olimit=2147483647:roundoff=3 -TARG:processor=r10k -IPA"
+                       LDFLAGS="$LDFLAGS -IPA"
+                       ;;
+      *aix*-)          CFLAGS="$CFLAGS -O3"
+                       NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -qnooptimize"
+                       ;;
+      *-*-*-)          ;;
+
       dnl  With icc-8.*, Interprocedural (IP) Optimization does not seem to work with MonetDB:
       dnl  With "-ipo -ipo_obj", pass-through linker options ("-Wl,...") are not handled correctly,
       dnl  and with "-ip -ipo_obj", the resulting Mserver segfaults immediately.
@@ -2010,16 +2024,6 @@ if test "x$enable_optim" = xyes; then
                        dnl  With "-O3", ecc does not seem to produce stable/correct? binaries under Linux64
                        dnl  (Mserver produces some incorrect BATpropcheck warnings);
                        dnl  hence, we use only "-O2", here.
-                       ;;
-#      *irix*)         CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
-      *irix*)          CFLAGS="$CFLAGS -O3 -OPT:div_split=ON:fast_complex=ON:fast_exp=ON:fast_nint=ON:Olimit=2147483647:roundoff=3 -TARG:processor=r10k -IPA"
-                       LDFLAGS="$LDFLAGS -IPA"
-                       ;;
-      *-sun-solaris*)  CFLAGS="$CFLAGS -xO5"
-                       CFLAGS_NO_OPT="-xO0"
-                       ;;
-      *aix*)           CFLAGS="$CFLAGS -O3"
-                       NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -qnooptimize"
                        ;;
       esac   
     fi
