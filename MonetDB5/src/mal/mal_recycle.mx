@@ -1071,10 +1071,10 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	{
 		/* RETAIN_SIZE: size cost model */
 		if (recycleVolume && RECYCLEfind(cntxt,mb,stk,p)<0){
-			if ((lng) (rd+wr) > recycleVolume){
+			if (rd+wr > recycleVolume){
 				(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
-				stream_printf(cntxt->fdout,"RECYCLEexit size " SZFMT " " SZFMT "\n",rd,wr);
+				stream_printf(cntxt->fdout,"RECYCLEexit size " LLFMT " " LLFMT "\n",rd,wr);
 #endif
 			}
 		}
@@ -1087,7 +1087,7 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			if (recycleAlpha *(rd+wr) + (1-recycleAlpha)* clk > (recycleVolume+1) * (recycleTime+1)){
 				(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr);
 #ifdef _DEBUG_RECYCLE_
-				stream_printf(cntxt->fdout,"RECYCLEexit volume " LLFMT " " SZFMT " " SZFMT " " LLFMT " \n",clk,rd,wr,(rd+wr)*clk);
+				stream_printf(cntxt->fdout,"RECYCLEexit volume " LLFMT " " LLFMT " " LLFMT " " LLFMT " \n",clk,rd,wr,(rd+wr)*clk);
 				stream_printf(cntxt->fdout,"RECYCLEexit volume " LLFMT " " LLFMT "\n", recycleVolume, recycleTime);
 #endif
 			}
