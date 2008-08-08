@@ -68,7 +68,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k, limit, estimate=0, tpe;
 	str schema=0, table=0;
-	lng r,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
+	lng r=0,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old;
 	VarPtr v;
 	int *parts= (int*) alloca(sizeof(int)* GDKnr_threads);
