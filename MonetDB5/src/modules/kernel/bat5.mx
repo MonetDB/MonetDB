@@ -45,23 +45,6 @@ This calls for knowledge on the underlying BAT types`s
 @-
 The code speaks for itself
 
-#command bat(ht:int, tt:int) :bat[:any_1,:any_2] 
-#address BKCnewBat_default
-#comment "Creates a new empty transient BAT with head- and tail-types 
-#        as indicated.";
-#
-#command bat(ht:int, tt:int, size:lng) :bat[:any_1,:any_2] 
-#address BKCnewBat
-#comment "Creates a new empty BAT, allocating 'size' elements.";
-#
-#command bat(ht:int, tt:int, size:int) :bat[:any_1,:any_2] 
-#address BKCnewBATint
-#comment "Creates a new empty BAT, allocating 'size' elements.";
-#
-#command bat(ht:int, tt:int, size:lng) :bat[:any_1,:any_2] 
-#address BKCnewBATlng
-#comment "Creates a new empty BAT, allocating 'size' elements.";
-
 #command access( b:bat[:any_1,:any_2], mode:int) :bat[:any_1,:any_2]
 #address BKCaccess;
 
@@ -599,10 +582,7 @@ bat5_export char *BKCdelete_bun(int *r, int *bid, ptr h, ptr t);
 bat5_export char *BKCdestroy(signed char *r, int *bid);
 bat5_export char *BKCbat_append_void_bat_wrap(int *r, int *bid, int *uid);
 bat5_export char * BKCbat_append_val_wrap(int *r, int *bid, ptr u);
-bat5_export str BKCnewBATlng(int *res, int *ht, int *tt, lng *cap);
-bat5_export str BKCnewBATint(int *res, int *ht, int *tt, int *cap);
-bat5_export str BKCnewBat(int *res, int *ht, int *tt, wrd *cap);
-bat5_export str BKCnewBat_default(int *res, int *ht, int *tt);
+bat5_export str BKCnewBAT(int *res, int *ht, int *tt, size_t *cap);
 bat5_export str BKCreverse(int *ret, int *bid);
 bat5_export str BKCmirror(int *ret, int *bid);
 bat5_export str BKCrevert(int *ret, int *bid);
@@ -695,45 +675,13 @@ bat5_export int CMDbatsize(lng *tot, BAT *b);
 @+ Information Functions
 @c
 
-int
-CMDnew_lng(BAT **ret, int *ht, int *tt, lng *cap)
+static int
+CMDnew(BAT **ret, int *ht, int *tt, size_t *cap)
 {
-	if (*cap < 0)
-		*cap = 0;
-	*ret = BATnew(*ht, *tt, (size_t) * cap);
+	*ret = BATnew(*ht, *tt, *cap);
 	if (*ret)
 		(*ret)->batDirty |= 2;
 	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-int
-CMDnew_int(BAT **ret, int *ht, int *tt, int *cap)
-{
-	if (*cap < 0)
-		*cap = 0;
-	*ret = BATnew(*ht, *tt, (size_t) * cap);
-	if (*ret)
-		(*ret)->batDirty |= 2;
-	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-int
-CMDnew(BAT **ret, int *ht, int *tt, wrd *cap)
-{
-	if (*cap < 0)
-		*cap = 0;
-	*ret = BATnew(*ht, *tt, (size_t) * cap);
-	if (*ret)
-		(*ret)->batDirty |= 2;
-	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-int
-CMDnew_default(BAT **ret, int *ht, int *tt)
-{
-	wrd default_size = 0;
-
-	return CMDnew(ret, ht, tt, &default_size);
 }
 
 int
@@ -2330,14 +2278,15 @@ The logical head type :oid is mapped to a TYPE_void
 with sequenceBase. It represents the old fashioned :vid
 @c
 
-char *
-BKCnewBATint(int *res, int *ht, int *tt, int *cap)
+
+str
+BKCnewBAT(int *res, int *ht, int *tt, size_t *cap)
 {
 	BAT *b;
 
 	if( *ht == TYPE_oid){
 		int tpe= TYPE_void;
-		if (CMDnew_int(&b, &tpe, tt, cap) == GDK_SUCCEED) {
+		if (CMDnew(&b, &tpe, tt, cap) == GDK_SUCCEED) {
 			oid o= 0;
 			BATseqbase(b, o);
 			*res = b->batCacheid;
@@ -2345,44 +2294,12 @@ BKCnewBATint(int *res, int *ht, int *tt, int *cap)
 			return MAL_SUCCEED;
 		}
 	} else
-	if (CMDnew_int(&b, ht, tt, cap) == GDK_SUCCEED) {
+	if (CMDnew(&b, ht, tt, cap) == GDK_SUCCEED) {
 		*res = b->batCacheid;
 		BBPkeepref(*res);
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "bat.new", "GDKerror in BAT construction");
-}
-
-str
-BKCnewBATlng(int *res, int *ht, int *tt, lng *cap)
-{
-	BAT *b;
-
-	if( *ht == TYPE_oid){
-		int tpe= TYPE_void;
-		if (CMDnew_lng(&b, &tpe, tt, cap) == GDK_SUCCEED) {
-			oid o=0;
-			BATseqbase(b, o);
-			*res = b->batCacheid;
-			BBPkeepref(*res);
-			return MAL_SUCCEED;
-		}
-	} else
-	if (CMDnew_lng(&b, ht, tt, cap) == GDK_SUCCEED) {
-		*res = b->batCacheid;
-		BBPkeepref(*res);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "bat.new", "GDKerror in BAT construction");
-
-}
-
-str
-BKCnewBat(int *res, int *ht, int *tt, wrd *Cap)
-{
-	lng cap = *Cap;
-
-	return BKCnewBATlng(res, ht, tt, &cap);
 }
 
 str
