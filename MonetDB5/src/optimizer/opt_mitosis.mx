@@ -56,7 +56,7 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define _DEBUG_OPT_PARALYZER*/
+/*#define _DEBUG_OPT_PARALYZER*/
 
 @c
 #include "mal_config.h"
@@ -107,7 +107,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (schema == 0)
 		return 0;
 #ifdef _DEBUG_OPT_PARALYZER
-	stream_printf(cntxt->fdout,"opt_mitosis: target is %s.%s\n",schema,table);
+	stream_printf(cntxt->fdout,"opt_mitosis: target is %s.%s on %d threads\n",
+		schema,table,GDKnr_threads);
 		printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
 #endif
 	/* inject the MAT versions for the largest table */
@@ -137,7 +138,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		pushInstruction(mb,p);
 
 		q= newStmt(mb,"bat","partition");
-		q->retc=0;
+		q->argc=0;
 		for(j=0;j<GDKnr_threads;j++){
 			parts[j]= newTmpVariable(mb,tpe);
 			setVarUsed(mb,parts[j]);
