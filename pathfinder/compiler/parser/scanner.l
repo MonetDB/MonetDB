@@ -755,7 +755,7 @@ _                                {S}
 "*"                                { gotoState (DEFAULT); pf_yield (star); }
 "div"                              { gotoState (DEFAULT); pf_yield (div_); }
 "idiv"                             { gotoState (DEFAULT); pf_yield (idiv); }
-"mod"                              { gotoState (DEFAULT); pf_yield (mod); }
+"mod"                              { gotoState (DEFAULT); pf_yield (mod_); }
 "instance"{_}"of"                  { gotoState (ITEMTYPE); pf_yield (instance_of);}
 "treat"{_}"as"                     { gotoState (ITEMTYPE); pf_yield (treat_as); }
 "castable"{_}"as"                  { gotoState (SINGLETYPE);

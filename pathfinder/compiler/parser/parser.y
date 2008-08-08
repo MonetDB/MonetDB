@@ -394,7 +394,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token lt_question_mark                "<?"
 %token lt_slash                        "</"
 %token minus                           "-"
-%token mod                             "mod"
+%token mod_                            "mod"
 %token modify                          "modify"
 %token module_namespace                "module namespace"
 %token namespace                       "namespace"
