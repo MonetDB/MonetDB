@@ -1371,7 +1371,7 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 		/* string needs the quotes included */
 		s = find_quote(s, quote);
 		if (!s) {
-			snprintf(buf,BUFSIZ, "quote '%c' expected but not found in \"%s\" from line %d\n", quote, s, (int) BATcount(fmt->c));
+			snprintf(buf,BUFSIZ, "quote '%c' expected but not found in \"%s\" from line " SZFMT "\n", quote, s, BATcount(fmt->c));
 			*err= GDKstrdup(buf);
 			return -1;
 		}
@@ -1394,7 +1394,7 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 		char *val = (s!=e)?GDKstrdup(s):GDKstrdup("");
 
 		*end = bak;
-		snprintf(buf,BUFSIZ, "value '%s' while parsing '%s' from line %d field %d not inserted, expecting type %s\n", val, s, (int) BATcount(fmt->c), c, fmt->type);
+		snprintf(buf,BUFSIZ, "value '%s' while parsing '%s' from line " SZFMT " field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c), c, fmt->type);
 		*err= GDKstrdup(buf);
 		GDKfree(val);
 		return -1;
@@ -1405,7 +1405,7 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 	bunfastins(fmt->c, key, adt);
 	return 0;
 bunins_failed:
-	snprintf(buf,BUFSIZ, "while parsing '%s' from line %d field %d not inserted\n", s, (int) BATcount(fmt->c), c);
+	snprintf(buf,BUFSIZ, "while parsing '%s' from line " SZFMT " field %d not inserted\n", s, BATcount(fmt->c), c);
 	*err= GDKstrdup(buf);
 	return -1;
 }
@@ -1456,7 +1456,7 @@ insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 			line = skip_string(line, quote);
 			if (!line) {
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
-					"in %s at line %d\n", quote, s, (int) BATcount(fmt->c));
+					"in %s at line " SZFMT "\n", quote, s, BATcount(fmt->c));
 				as->error = GDKstrdup(errmsg);
 				if (!as->tryall)
 					return -1;
@@ -1497,8 +1497,8 @@ insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 				BUNins(as->complaints, NULL, as->error, TRUE);
 			}
 		} else {
-			snprintf(errmsg,BUFSIZ, "missing sep %s line %d field %d\n", 
-				fmt->sep, (int)BATcount(fmt->c), (int)i);
+			snprintf(errmsg,BUFSIZ, "missing sep %s line " SZFMT " field " SZFMT "\n", 
+				fmt->sep, BATcount(fmt->c), i);
 			as->error = GDKstrdup(errmsg);
 			if (!as->tryall)
 				return -1;
@@ -2390,11 +2390,12 @@ isScalarVector(Tablet * t)
 static int
 isBATVector(Tablet * t)
 {
-	unsigned int i, cnt;
+	unsigned int i;
+	size_t cnt;
 
 	if (t->columns[0].c == 0)
 		return 0;
-	cnt =(int) BATcount(t->columns[0].c);
+	cnt = BATcount(t->columns[0].c);
 	for (i = 0; i < t->nr_attrs; i++)
 		if (t->columns[i].c == 0)
 			return 0;
