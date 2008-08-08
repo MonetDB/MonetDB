@@ -835,7 +835,7 @@ Parse a line. Copy it into a buffer. Concat broken lines with a slash.
 @-
 @= memcpy
 		if (buf+bufsize < dst+l) {
-			int len = dst - buf;
+			size_t len = dst - buf;
 			size_t inc = (size_t) ((dst+l) - buf);
 			buf = (char*) GDKrealloc((void*) buf, bufsize = MAX(inc,bufsize)*2);
 			dst = buf + len;

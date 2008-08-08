@@ -89,6 +89,7 @@ library optimizer;
 library chopper;
 library txtsim;
 
+library sabaoth;
 @-
 library logger;
 @mal
@@ -212,6 +213,7 @@ include opt_trace;
 
 include chopper;
 include txtsim;
+library sabaoth;
 
 @-
 include logger;

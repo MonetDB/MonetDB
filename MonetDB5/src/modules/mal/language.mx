@@ -99,11 +99,17 @@ address CMDregisterFunction
 comment"Compile the code string and register it as a MAL function.";
 
 pattern setMemoryTrace(flg:bit):void
-address CMDsetBigFoot
+address CMDsetMemoryTrace
 comment "Set the flag to trace the memory footprint";
-pattern setThreadFlag(flg:bit):void
-address CMDsetThreadFlag
+pattern setThreadTrace(flg:bit):void
+address CMDsetThreadTrace
 comment "Set the flag to trace the interpreter threads";
+pattern setTimerTrace(flg:bit):void
+address CMDsetTimerTrace
+comment "Set the flag to trace the execution time";
+pattern setIOTrace(flg:bit):void
+address CMDsetIOTrace
+comment "Set the flag to trace the IO";
 
 pattern call(s:str):void
 address CMDcallString
@@ -147,8 +153,9 @@ language_export str MALassertInt(int *ret, int *val, str *msg);
 language_export str MALassertLng(int *ret, lng *val, str *msg);
 language_export str MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDsetBigFoot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDsetThreadFlag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str CMDsetMemoryTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str CMDsetThreadTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+language_export str CMDsetTimerTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -408,30 +415,67 @@ There are a few more atom-airy storage types we have to introduce here:
 OID, str, void, bit, ptr
 @c
 str
-CMDsetBigFoot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDsetMemoryTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
     bit *flag= (bit*) getArgReference(stk,pci,1);
 
     (void) mb;
-	(void) cntxt;
-    if( *flag)
+    if( *flag) {
+		cntxt->flags |= bigfootFlag;
         MCdefault |= bigfootFlag;
-    else
+    } else {
+		cntxt->flags &= bigfootFlag;
         MCdefault &= ~bigfootFlag;
+	}
     return MAL_SUCCEED;
 }
 
 str
-CMDsetThreadFlag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDsetTimerTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
     bit *flag= (bit*) getArgReference(stk,pci,1);
 
     (void) mb;
-	(void) cntxt;
-    if( *flag)
+    if( *flag) {
+		cntxt->flags |= timerFlag;
+        MCdefault |= timerFlag;
+    } else {
+		cntxt->flags &= timerFlag;
+        MCdefault &= ~timerFlag;
+	}
+    return MAL_SUCCEED;
+}
+
+str
+CMDsetThreadTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+    bit *flag= (bit*) getArgReference(stk,pci,1);
+
+    (void) mb;
+    if( *flag){
+		cntxt->flags |= threadFlag;
         MCdefault |= threadFlag;
-    else
+    }else{
+		cntxt->flags &= threadFlag;
         MCdefault &= ~threadFlag;
+	}
+    return MAL_SUCCEED;
+}
+
+
+str
+CMDsetIOTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+    bit *flag= (bit*) getArgReference(stk,pci,1);
+
+    (void) mb;
+    if( *flag){
+		cntxt->flags |= ioFlag;
+        MCdefault |= ioFlag;
+    }else{
+		cntxt->flags &= ioFlag;
+        MCdefault &= ~ioFlag;
+	}
     return MAL_SUCCEED;
 }
 
