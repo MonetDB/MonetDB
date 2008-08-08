@@ -18,6 +18,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     c := bat.new(:int,:int,-5000);      #  1 c:bat[:int,:int] := CMDBATnewint(_2:int, _2:int, _3:int) {G}
     io.print(c);                        #  2 _4:void := IOprint_val(c:bat[:int,:int]) 
 end main;	# 3  
+!MALException:bbp.new:requested BAT size must not be negative
 
 
 # 13:48:42 >  
