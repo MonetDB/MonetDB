@@ -1633,7 +1633,7 @@ output_line_lookup(char **buf, int *len, Column * fmt, stream *fd, size_t nr_att
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) ==0) {
 				size_t l = strlen(f->nullstr);
-				if (stream_write(fd, f->nullstr, 1, l) != (int) l)
+				if (stream_write(fd, f->nullstr, 1, l) != (ssize_t) l)
 					return TABLET_error(fd);
 			} else {
 				int l = f->tostr(f->extra, buf, len, f->adt, p);
