@@ -14,15 +14,16 @@
 @' Portions created by CWI are Copyright (C) 1997-2008 CWI.
 @' All Rights Reserved.
 
-@f opt_paralyzer
+@f opt_mitosis
 @a M. Kersten
-@- Parallelize Plan
+@- Mitosis
 The SQL plans are produced without knowledge of possible 
-benefits of parallel execution. It is the task of the parallelizer
-to detect interesting cases and prepare the plan for this.
+benefits of parallel execution. It is the task of the mitosis
+optimizer to detect interesting cases and prepare the plan 
+where a large table is broken into identical pieces.
 
-There are two main direction to consider. The first concerns
-parallel execution on a single machine using all the cores
+There are two main direction to consider for mitosis.
+The first concerns parallel execution on a single machine using all the cores
 available. The second concerns using an MPP solution, where
 part of the plan is executed at remote sites.
 
@@ -31,22 +32,22 @@ It inspects the plan for SQL bind statements and localises
 the largest table involved. This table becomes the target
 for cheap partitioning based on the OID ranges.
 The pieces are conceptually glued together using a MAT structure
-and the MAT optimizer expands the plan to be run.
+and the mergetable optimizer expands the plan to be run.
 The effect of this step can be a sizeable MAL program.
 
-To avoid a parallel program with too small pieces,
+To avoid a program based on too small pieces,
 we issue a low-water mark. Its value should be
-preferrably dynamically identifier. Experiments will tell
+preferrably dynamically identified. Experiments will tell
 us hopefully in the future.
 
 This optimizer should be called early in the
-optimizer pipeline, before the MAT optimizer.
+optimizer pipeline, before the mergetable optimizer.
 @{
 @mal
-pattern optimizer.paralyzer():str
-address OPTparalyzer;
-pattern optimizer.paralyzer(mod:str, fcn:str):str
-address OPTparalyzer
+pattern optimizer.mitosis():str
+address OPTmitosis;
+pattern optimizer.mitosis(mod:str, fcn:str):str
+address OPTmitosis
 comment "Modify the plan to exploit parallel processing on multiple cores";
 
 @h
@@ -59,11 +60,11 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 
 @c
 #include "mal_config.h"
-#include "opt_paralyzer.h"
+#include "opt_mitosis.h"
 #include "mal_interpreter.h"
 
 static int
-OPTparalyzerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k, limit, estimate=0, tpe;
 	str schema=0, table=0;
@@ -106,7 +107,7 @@ OPTparalyzerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if (schema == 0)
 		return 0;
 #ifdef _DEBUG_OPT_PARALYZER
-	stream_printf(cntxt->fdout,"opt_paralyzer: target is %s.%s\n",schema,table);
+	stream_printf(cntxt->fdout,"opt_mitosis: target is %s.%s\n",schema,table);
 #endif
 	/* inject the MAT versions for the largest table */
 
@@ -158,9 +159,9 @@ OPTparalyzerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 }
 @include optimizerWrapper.mx
 @h
-@:exportOptimizer(paralyzer)@
+@:exportOptimizer(mitosis)@
 #endif
 @c
 #include "opt_statistics.h"
-@:wrapOptimizer(paralyzer,OPT_CHECK_ALL)@
+@:wrapOptimizer(mitosis,OPT_CHECK_ALL)@
 @}
