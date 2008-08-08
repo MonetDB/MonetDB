@@ -789,7 +789,7 @@ printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 
 static void
 printBATproperties(stream *f, BAT *b){
-	stream_printf(f, " count=%d lrefs=" SZFMT " ", 
+	stream_printf(f, " count=" SZFMT " lrefs=%d ", 
 		BATcount(b), BBP_lrefs(ABS(b->batCacheid)));
 	if(  BBP_refs(ABS(b->batCacheid)) - 1)
 		stream_printf(f, " refs=%d ", BBP_refs(ABS(b->batCacheid)) - 1);
