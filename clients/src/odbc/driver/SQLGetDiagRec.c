@@ -153,7 +153,7 @@ SQLRETURN SQL_API
 SQLGetDiagRec(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, SQLCHAR *sqlState, SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText, SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagRec %s " PTRFMT " %d\n", handleType == SQL_HANDLE_ENV ? "Env" : handleType == SQL_HANDLE_DBC ? "Dbc" : handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST handle, recNumber);
+	ODBCLOG("SQLGetDiagRec %s " PTRFMT " %d %d\n", handleType == SQL_HANDLE_ENV ? "Env" : handleType == SQL_HANDLE_DBC ? "Dbc" : handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST handle, recNumber, bufferLength);
 #endif
 
 	return SQLGetDiagRec_(handleType, handle, recNumber, sqlState, nativeErrorPtr, messageText, bufferLength, textLengthPtr);
@@ -171,33 +171,42 @@ SQLGetDiagRecW(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, 
 {
 	SQLRETURN rc;
 	SQLCHAR state[6];
-	SQLCHAR *msg;
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagRecW %s " PTRFMT " %d\n", handleType == SQL_HANDLE_ENV ? "Env" : handleType == SQL_HANDLE_DBC ? "Dbc" : handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST handle, recNumber);
+	ODBCLOG("SQLGetDiagRecW %s " PTRFMT " %d %d\n", handleType == SQL_HANDLE_ENV ? "Env" : handleType == SQL_HANDLE_DBC ? "Dbc" : handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST handle, recNumber, bufferLength);
 #endif
 
-	msg = (SQLCHAR *) malloc(bufferLength * 4);
-
-	rc = SQLGetDiagRec_(handleType, handle, recNumber, state, nativeErrorPtr, msg, bufferLength * 4, &n);
-
-	if (SQL_SUCCEEDED(rc)) {
-		char *e = ODBCutf82wchar(state, 5, sqlState, 6, NULL);
-
-		if (e)
-			rc = SQL_ERROR;
-	}
+	/* figure out how much space we need */
+	rc = SQLGetDiagRec_(handleType, handle, recNumber, state, nativeErrorPtr, NULL, 0, &n);
 
 	if (SQL_SUCCEEDED(rc)) {
-		char *e = ODBCutf82wchar(msg, n, messageText, bufferLength, &n);
+		SQLCHAR *msg;
 
-		if (e)
-			rc = SQL_ERROR;
-		if (textLengthPtr)
-			*textLengthPtr = n;
+		/* then try for real */
+		msg = (SQLCHAR *) malloc(n + 1);
+		rc = SQLGetDiagRec_(handleType, handle, recNumber, state, nativeErrorPtr, msg, n + 1, &n);
+#ifdef ODBCDEBUG
+		ODBCLOG("SQLGetDiagRecW: %s\n", msg);
+#endif
+
+		if (SQL_SUCCEEDED(rc)) {
+			char *e = ODBCutf82wchar(state, 5, sqlState, 6, NULL);
+
+			if (e)
+				rc = SQL_ERROR;
+		}
+
+		if (SQL_SUCCEEDED(rc)) {
+			char *e = ODBCutf82wchar(msg, n, messageText, bufferLength, &n);
+
+			if (e)
+				rc = SQL_ERROR;
+			if (textLengthPtr)
+				*textLengthPtr = n;
+		}
+		free(msg);
 	}
-	free(msg);
 
 	return rc;
 }

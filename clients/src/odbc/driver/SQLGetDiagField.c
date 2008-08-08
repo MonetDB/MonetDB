@@ -54,9 +54,16 @@
 		} while (0)
 
 static SQLRETURN
-SQLGetDiagField_(SQLSMALLINT HandleType, SQLHANDLE Handle, SQLSMALLINT RecNumber, SQLSMALLINT DiagIdentifier, SQLPOINTER DiagInfo, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength)
+SQLGetDiagField_(SQLSMALLINT HandleType,
+		 SQLHANDLE Handle,
+		 SQLSMALLINT RecNumber,
+		 SQLSMALLINT DiagIdentifier,
+		 SQLPOINTER DiagInfo,
+		 SQLSMALLINT BufferLength,
+		 SQLSMALLINT *StringLength)
 {
 	ODBCError *err;
+	ODBCDbc *dbc = NULL;
 
 	/* input & output parameters validity checks */
 
@@ -69,21 +76,24 @@ SQLGetDiagField_(SQLSMALLINT HandleType, SQLHANDLE Handle, SQLSMALLINT RecNumber
 		break;
 	case SQL_HANDLE_DBC:
 		/* Check if this struct is still valid/alive */
-		if (!isValidDbc((ODBCDbc *) Handle))
+		dbc = (ODBCDbc *) Handle;
+		if (!isValidDbc(dbc))
 			return SQL_INVALID_HANDLE;
-		err = ((ODBCDbc *) Handle)->Error;
+		err = dbc->Error;
 		break;
 	case SQL_HANDLE_STMT:
 		/* Check if this struct is still valid/alive */
 		if (!isValidStmt((ODBCStmt *) Handle))
 			return SQL_INVALID_HANDLE;
 		err = ((ODBCStmt *) Handle)->Error;
+		dbc = ((ODBCStmt *) Handle)->Dbc;
 		break;
 	case SQL_HANDLE_DESC:
 		/* Check if this struct is still valid/alive */
 		if (!isValidDesc((ODBCDesc *) Handle))
 			return SQL_INVALID_HANDLE;
 		err = ((ODBCDesc *) Handle)->Error;
+		dbc = ((ODBCDesc *) Handle)->Dbc;
 		break;
 	default:
 		return SQL_INVALID_HANDLE;
@@ -139,6 +149,77 @@ SQLGetDiagField_(SQLSMALLINT HandleType, SQLHANDLE Handle, SQLSMALLINT RecNumber
 			return SQL_ERROR;
 		*(SQLINTEGER *) DiagInfo = SQL_COLUMN_NUMBER_UNKNOWN;
 		return SQL_SUCCESS;
+	case SQL_DIAG_CONNECTION_NAME:{
+		char *msg = "MonetDB ODBC/Mapi";
+
+		copyDiagString(msg, DiagInfo, BufferLength, StringLength);
+		return SQL_SUCCESS;
+	}
+	case SQL_DIAG_SERVER_NAME:{
+		char *msg = dbc && dbc->Connected && dbc->dsn ? dbc->dsn : "";
+
+		copyDiagString(msg, DiagInfo, BufferLength, StringLength);
+		return SQL_SUCCESS;
+	}
+	case SQL_DIAG_SQLSTATE:{
+		char *msg = getSqlState(err);
+
+		copyDiagString(msg, DiagInfo, BufferLength, StringLength);
+		return SQL_SUCCESS;
+	}
+	case SQL_DIAG_SUBCLASS_ORIGIN:{
+		char *state = getSqlState(err);
+		char *msg;
+
+		if (strcmp(state, "01S00") == 0 ||
+		    strcmp(state, "01S01") == 0 ||
+		    strcmp(state, "01S02") == 0 ||
+		    strcmp(state, "01S06") == 0 ||
+		    strcmp(state, "01S07") == 0 ||
+		    strcmp(state, "07S01") == 0 ||
+		    strcmp(state, "08S01") == 0 ||
+		    strcmp(state, "21S01") == 0 ||
+		    strcmp(state, "21S02") == 0 ||
+		    strcmp(state, "25S01") == 0 ||
+		    strcmp(state, "25S02") == 0 ||
+		    strcmp(state, "25S03") == 0 ||
+		    strcmp(state, "42S01") == 0 ||
+		    strcmp(state, "42S02") == 0 ||
+		    strcmp(state, "42S11") == 0 ||
+		    strcmp(state, "42S12") == 0 ||
+		    strcmp(state, "42S21") == 0 ||
+		    strcmp(state, "42S22") == 0 ||
+		    strcmp(state, "HY095") == 0 ||
+		    strcmp(state, "HY097") == 0 ||
+		    strcmp(state, "HY098") == 0 ||
+		    strcmp(state, "HY099") == 0 ||
+		    strcmp(state, "HY100") == 0 ||
+		    strcmp(state, "HY101") == 0 ||
+		    strcmp(state, "HY105") == 0 ||
+		    strcmp(state, "HY107") == 0 ||
+		    strcmp(state, "HY109") == 0 ||
+		    strcmp(state, "HY110") == 0 ||
+		    strcmp(state, "HY111") == 0 ||
+		    strcmp(state, "HYT00") == 0 ||
+		    strcmp(state, "HYT01") == 0 ||
+		    strcmp(state, "IM001") == 0 ||
+		    strcmp(state, "IM002") == 0 ||
+		    strcmp(state, "IM003") == 0 ||
+		    strcmp(state, "IM004") == 0 ||
+		    strcmp(state, "IM005") == 0 ||
+		    strcmp(state, "IM006") == 0 ||
+		    strcmp(state, "IM007") == 0 ||
+		    strcmp(state, "IM008") == 0 ||
+		    strcmp(state, "IM010") == 0 ||
+		    strcmp(state, "IM011") == 0 ||
+		    strcmp(state, "IM012") == 0)
+			msg = "ODBC 3.0";
+		else
+			msg = "ISO 9075";
+
+		copyDiagString(msg, DiagInfo, BufferLength, StringLength);
+		return SQL_SUCCESS;
+	}
 	}
 
 	/* Currently no Diagnostic Fields are supported.
@@ -147,10 +228,16 @@ SQLGetDiagField_(SQLSMALLINT HandleType, SQLHANDLE Handle, SQLSMALLINT RecNumber
 }
 
 SQLRETURN SQL_API
-SQLGetDiagField(SQLSMALLINT HandleType, SQLHANDLE Handle, SQLSMALLINT RecNumber, SQLSMALLINT DiagIdentifier, SQLPOINTER DiagInfo, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength)
+SQLGetDiagField(SQLSMALLINT HandleType,
+		SQLHANDLE Handle,
+		SQLSMALLINT RecNumber,
+		SQLSMALLINT DiagIdentifier,
+		SQLPOINTER DiagInfo,
+		SQLSMALLINT BufferLength,
+		SQLSMALLINT *StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagField %s " PTRFMT "\n", HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST Handle);
+	ODBCLOG("SQLGetDiagField %s " PTRFMT " %d %d %d\n", HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST Handle, RecNumber, DiagIdentifier, BufferLength);
 #endif
 
 	return SQLGetDiagField_(HandleType, Handle, RecNumber, DiagIdentifier, DiagInfo, BufferLength, StringLength);
@@ -158,27 +245,49 @@ SQLGetDiagField(SQLSMALLINT HandleType, SQLHANDLE Handle, SQLSMALLINT RecNumber,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetDiagFieldA(SQLSMALLINT HandleType, SQLHANDLE Handle, SQLSMALLINT RecNumber, SQLSMALLINT DiagIdentifier, SQLPOINTER DiagInfo, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength)
+SQLGetDiagFieldA(SQLSMALLINT HandleType,
+		 SQLHANDLE Handle,
+		 SQLSMALLINT RecNumber,
+		 SQLSMALLINT DiagIdentifier,
+		 SQLPOINTER DiagInfo,
+		 SQLSMALLINT BufferLength,
+		 SQLSMALLINT *StringLength)
 {
 	return SQLGetDiagField(HandleType, Handle, RecNumber, DiagIdentifier, DiagInfo, BufferLength, StringLength);
 }
 
 SQLRETURN SQL_API
-SQLGetDiagFieldW(SQLSMALLINT HandleType, SQLHANDLE Handle, SQLSMALLINT RecNumber, SQLSMALLINT DiagIdentifier, SQLPOINTER DiagInfo, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength)
+SQLGetDiagFieldW(SQLSMALLINT HandleType,
+		 SQLHANDLE Handle,
+		 SQLSMALLINT RecNumber,
+		 SQLSMALLINT DiagIdentifier,
+		 SQLPOINTER DiagInfo,
+		 SQLSMALLINT BufferLength,
+		 SQLSMALLINT *StringLength)
 {
 	SQLRETURN rc;
-	SQLPOINTER ptr;
+	SQLPOINTER ptr = NULL;
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagFieldW %s " PTRFMT "\n", HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST Handle);
+	ODBCLOG("SQLGetDiagFieldW %s " PTRFMT " %d %d %d\n",
+		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
+		PTRFMTCAST Handle, RecNumber, DiagIdentifier, BufferLength);
 #endif
 
 	switch (DiagIdentifier) {
 		/* all string attributes */
 	case SQL_DIAG_DYNAMIC_FUNCTION:
 	case SQL_DIAG_CLASS_ORIGIN:
-		n = BufferLength * 4;
+	case SQL_DIAG_CONNECTION_NAME:
+	case SQL_DIAG_MESSAGE_TEXT:
+	case SQL_DIAG_SERVER_NAME:
+	case SQL_DIAG_SQLSTATE:
+	case SQL_DIAG_SUBCLASS_ORIGIN:
+		rc = SQLGetDiagField_(HandleType, Handle, RecNumber, DiagIdentifier, NULL, 0, &n);
+		if (!SQL_SUCCEEDED(rc))
+			return rc;
+		n++;		/* account for NUL byte */
 		ptr = (SQLPOINTER) malloc(n);
 		break;
 	default:
@@ -188,15 +297,19 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType, SQLHANDLE Handle, SQLSMALLINT RecNumber
 	}
 
 	rc = SQLGetDiagField_(HandleType, Handle, RecNumber, DiagIdentifier, ptr, n, &n);
+#ifdef ODBCDEBUG
+	if (ptr != DiagInfo)
+		ODBCLOG("SQLGetDiagFieldW: %s\n", ptr);
+#endif
 
-	if (ptr !=DiagInfo) {
+	if (ptr != DiagInfo) {
 		if (SQL_SUCCEEDED(rc)) {
-			char *e = ODBCutf82wchar(ptr, n, DiagInfo, BufferLength, &n);
+			char *e = ODBCutf82wchar(ptr, n, DiagInfo, BufferLength / 2, &n);
 
 			if (e)
 				rc = SQL_ERROR;
 			if (StringLength)
-				*StringLength = n;
+				*StringLength = n * 2;
 		}
 		free(ptr);
 	}

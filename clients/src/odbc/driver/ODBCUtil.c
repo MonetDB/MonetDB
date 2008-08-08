@@ -180,18 +180,22 @@ ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR * buf, SQLINTEGER b
 	SQLWCHAR *p;
 	int i, m, n;
 	unsigned int c;
+	SQLSMALLINT len = 0;
 
-	if (buflenout)
-		*buflenout = 0;
-	if (s == NULL || length == SQL_NULL_DATA || buf == NULL) {
+	if (s == NULL || length == SQL_NULL_DATA) {
 		if (buf && buflen > 0)
 			*buf = 0;
+		if (buflenout)
+			*buflenout = 0;
 		return NULL;
 	}
 	if (length == SQL_NTS)
 		length = (SQLINTEGER) strlen((const char *) s);
 	else if (length < 0)
 		return "Invalid length parameter";
+
+	if (buf == NULL)
+		buflen = 0;
 
 	for (p = buf, i = 0; i < length; i++) {
 		c = *s++;
@@ -208,29 +212,28 @@ ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR * buf, SQLINTEGER b
 		}
 		if ((c & 0xF8) == 0xD8) {
 			/* UTF-8 encoded high or low surrogate */
-			free(buf);
 			return "Illegal code point";
 		}
 		if (c > 0x10FFFF) {
 			/* cannot encode as UTF-16 */
-			free(buf);
 			return "Codepoint too large to be representable in UTF-16";
 		}
 		if (c <= 0xFFFF) {
-			if (--buflen > 0)
+			if (--buflen > 0 && p != NULL)
 				*p++ = c;
-			if (buflenout)
-				(*buflenout)++;
+			len++;
 		} else {
-			if ((buflen -= 2) > 0) {
+			if ((buflen -= 2) > 0 && p != NULL) {
 				*p++ = LEAD_OFFSET + (c >> 10);
 				*p++ = 0xDC00 + (c & 0x3FF);
 			}
-			if (buflenout)
-				*buflenout += 2;
+			len += 2;
 		}
 	}
-	*p = 0;
+	if (p != NULL)
+		*p = 0;
+	if (buflenout)
+		*buflenout = len;
 	return NULL;
 }
 #endif /* WITH_WCHAR */

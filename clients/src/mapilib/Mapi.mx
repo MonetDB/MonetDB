@@ -2205,11 +2205,6 @@ connect_to_server(Mapi mid)
 	}
 
 	if (connect(s, serv, servsize) < 0) {
-#ifdef NATIVE_WIN32
-		fprintf(stderr, "!ERROR mapi_reconnect: connect: error %d\n", WSAGetLastError());
-#else
-		perror("!ERROR mapi_reconnect: connect");
-#endif
 		return mapi_setError(mid, "Setup connection failed", "mapi_reconnect", MERROR);
 	}
 #ifdef HAVE_OPENSSL

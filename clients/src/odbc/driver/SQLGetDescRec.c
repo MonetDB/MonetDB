@@ -126,9 +126,12 @@ SQLGetDescRecW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLWCHAR * N
 	if (!isValidDesc(desc))
 		return SQL_INVALID_HANDLE;
 
-	name = (SQLCHAR *) malloc(BufferLength * 4);
+	/* dry run: figure out how much data we'll get */
+	rc = SQLGetDescRec_(desc, RecordNumber, NULL, 0, &n, Type, SubType, Length, Precision, Scale, Nullable);
 
-	rc = SQLGetDescRec_(desc, RecordNumber, name, BufferLength, &n, Type, SubType, Length, Precision, Scale, Nullable);
+	/* get the data */
+	name = (SQLCHAR *) malloc(n + 1);
+	rc = SQLGetDescRec_(desc, RecordNumber, name, n + 1, &n, Type, SubType, Length, Precision, Scale, Nullable);
 
 	if (SQL_SUCCEEDED(rc)) {
 		char *e = ODBCutf82wchar(name, n, Name, BufferLength, &n);

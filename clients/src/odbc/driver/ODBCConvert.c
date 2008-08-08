@@ -1145,7 +1145,9 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 #ifdef WITH_WCHAR
 		if (type == SQL_C_WCHAR) {
 			/* allocate temporary space */
-			buflen *= 4;
+			buflen = 511; /* should be enough for most types */
+			if (sql_type == SQL_CHAR && data != NULL)
+				buflen = strlen(data); /* but this is certainly enough for strings */
 			ptr = malloc(buflen + 1);
 
 			lenp = NULL;
