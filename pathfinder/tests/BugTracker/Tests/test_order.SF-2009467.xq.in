@@ -1,0 +1,22 @@
+for $p in ("test_order_1" ,"test_order_3", "test_order_2")
+  let $name := concat("$TSTSRCDIR/", $p,".xml")
+  return pf:add-doc($name, $name)
+<>
+element result {
+  for $p in ("test_order_1" ,"test_order_3", "test_order_2")
+  return element test {
+    attribute name {$p},
+    let $dn := concat("$TSTSRCDIR/", $p, ".xml")
+    return if (exists(pf:documents()[.=$dn]))
+    then
+      let $dc := doc($dn)
+      for $i in $dc//mies
+      return
+        element mies {$i/text()}
+    else ()
+  }
+}
+<>
+for $p in ("test_order_1" ,"test_order_3", "test_order_2")
+  let $name := concat("$TSTSRCDIR/", $p,".xml")
+  return pf:del-doc($name)

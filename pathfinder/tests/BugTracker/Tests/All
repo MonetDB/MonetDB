@@ -154,5 +154,6 @@ compilation_or_runtime_choice.SF-1991738_0_MPS
 #type error: can't cast type 'untypedAtomic*' to type 'integer?'
 untypedAtomic?compilation_or_runtime_choice.SF-1991738_1_MPS
 compilation_or_runtime_choice.SF-1991738_1_ALG
+test_order.SF-2009467
 Zombie_document.SF-2009556
 NOT_ALGEBRA?pfmil_prints_garbage.SF-2015232
