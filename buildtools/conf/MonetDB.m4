@@ -656,7 +656,7 @@ yes-*-*)
 	case "$host_os" in
 	cygwin*|freebsd*|irix*|darwin*)
 		;;
-	solaris*)
+	solaris2.10|solaris2.?)
 		AC_DEFINE(__EXTENSIONS__, 1, [Compiler flag])
 		dnl also add __EXTENSIONS__ to the CFLAGS as the Mapi swig 
 		dnl clients include monetdb_config to late
