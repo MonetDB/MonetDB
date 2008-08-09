@@ -1393,13 +1393,13 @@ if test "x$have_python" != xno; then
 		have_python_incdir=yes
 		;;
 	esac
-	if test "x$have_python_incdir" != no -a ! -f "$PYTHON_INCS/Python.h"; then
+	if test "x$have_python_incdir" != xno -a ! -f "$PYTHON_INCS/Python.h"; then
 		if test "x$have_python_incdir" = yes; then
 			AC_MSG_ERROR([No Python.h found, is Python installed properly?])
 		fi
 		have_python_incdir=no
 	fi
-	if test "x$have_python_incdir" != no; then
+	if test "x$have_python_incdir" != xno; then
 		PYTHON_INCS="-I$PYTHON_INCS"
 	fi
 
