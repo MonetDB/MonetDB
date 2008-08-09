@@ -307,19 +307,19 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("var s:=new(int,int);"); 
     s := bat.new(nil:int,nil:int);      # 72 s:bat[:int,:int] := CMDBATnew(_73:int, _73:int) {G}
 #	io.print("insert(s,5,5);"); 
-    aa_a := bat.insert(s,5,5);          # 74 aa_a:void := BKCinsert_bun(s:bat[:int,:int], _76:int, _76:int) 
+    aa_a := bat.insert(s,5,5);          # 74 aa_a:bat[:int,:int] := BKCinsert_bun(s:bat[:int,:int], _76:int, _76:int) {G}
 #	io.print("insert(s,3,3);"); 
-    ba_a := bat.insert(s,3,3);          # 76 ba_a:void := BKCinsert_bun(s:bat[:int,:int], _79:int, _79:int) 
+    ba_a := bat.insert(s,3,3);          # 76 ba_a:bat[:int,:int] := BKCinsert_bun(s:bat[:int,:int], _79:int, _79:int) {G}
 #	io.print("insert(s,4,2);"); 
-    ca_a := bat.insert(s,4,2);          # 78 ca_a:void := BKCinsert_bun(s:bat[:int,:int], _82:int, _83:int) 
+    ca_a := bat.insert(s,4,2);          # 78 ca_a:bat[:int,:int] := BKCinsert_bun(s:bat[:int,:int], _82:int, _83:int) {G}
 #	io.print("insert(s,2,1);"); 
-    da_a := bat.insert(s,2,1);          # 80 da_a:void := BKCinsert_bun(s:bat[:int,:int], _83:int, _86:int) 
+    da_a := bat.insert(s,2,1);          # 80 da_a:bat[:int,:int] := BKCinsert_bun(s:bat[:int,:int], _83:int, _86:int) {G}
 #	io.print("insert(s,1,1);"); 
-    ea_a := bat.insert(s,1,1);          # 82 ea_a:void := BKCinsert_bun(s:bat[:int,:int], _86:int, _86:int) 
+    ea_a := bat.insert(s,1,1);          # 82 ea_a:bat[:int,:int] := BKCinsert_bun(s:bat[:int,:int], _86:int, _86:int) {G}
 #	io.print("insert(s,4,2);"); 
-    fa_a := bat.insert(s,4,2);          # 84 fa_a:void := BKCinsert_bun(s:bat[:int,:int], _82:int, _83:int) 
+    fa_a := bat.insert(s,4,2);          # 84 fa_a:bat[:int,:int] := BKCinsert_bun(s:bat[:int,:int], _82:int, _83:int) {G}
 #	io.print("insert(s,4,3);"); 
-    ga_a := bat.insert(s,4,3);          # 86 ga_a:void := BKCinsert_bun(s:bat[:int,:int], _82:int, _79:int) 
+    ga_a := bat.insert(s,4,3);          # 86 ga_a:bat[:int,:int] := BKCinsert_bun(s:bat[:int,:int], _82:int, _79:int) {G}
 #	io.print("s.print();"); 
     ha_a := io.print(s);                # 88 ha_a:void := IOprint_val(s:bat[:int,:int]) 
 #	io.print("s.select(1).print();"); 

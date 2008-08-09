@@ -143,16 +143,16 @@ end main;	# 14
 [ "user",	  nil	  ]
 [ "xml",	  nil	  ]
 [ "zrule",	  nil	  ]
-command bat.insert(b:bat[:any_1,:any_2],h:any_1,t:any_2,force:bit):void address BKCinsert_bun_force;
+command bat.insert(b:bat[:any_1,:any_2],h:any_1,t:any_2,force:bit):bat[:any_1,:any_2] address BKCinsert_bun_force;
 #Insert one BUN[h,t] in a BAT.
 
-command bat.insert(b:bat[:any_1,:any_2],h:any_1,t:any_2):void address BKCinsert_bun;
+command bat.insert(b:bat[:any_1,:any_2],h:any_1,t:any_2):bat[:any_1,:any_2] address BKCinsert_bun;
 #Insert one BUN[h,t] in a BAT.
 
-command bat.insert(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2],force:bit):void address BKCinsert_bat_force;
+command bat.insert(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2],force:bit):bat[:any_1,:any_2] address BKCinsert_bat_force;
 #Insert all BUNs of the second BAT into the first.
 
-command bat.insert(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):void address BKCinsert_bat;
+command bat.insert(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_2] address BKCinsert_bat;
 #Insert all BUNs of the second BAT into the first.
 
 command bat.setSet(b:bat[:any_1,:any_2],mode:bit):bat[:any_1,:any_2] address BKCsetSet;

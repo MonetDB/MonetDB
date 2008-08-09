@@ -32,18 +32,18 @@ stdout of test 'recycle01` in directory 'src/mal` itself:
 #end bind;
 function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];#  0 bind:bat[:oid,:int] := user.bind(s:str, t:str, c:str, i:int) {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_6:oid, _7:int) {G}
-    bat.insert(b,0@0,0);                #  2 _8:void := BKCinsert_bun(b:bat[:oid,:int], _9:oid, _10:int) 
-    bat.insert(b,1@0,1);                #  3 _11:void := BKCinsert_bun(b:bat[:oid,:int], _12:oid, _13:int) 
-    bat.insert(b,2@0,2);                #  4 _14:void := BKCinsert_bun(b:bat[:oid,:int], _15:oid, _16:int) 
-    bat.insert(b,3@0,3);                #  5 _17:void := BKCinsert_bun(b:bat[:oid,:int], _18:oid, _19:int) 
-    bat.insert(b,4@0,4);                #  6 _20:void := BKCinsert_bun(b:bat[:oid,:int], _21:oid, _22:int) 
-    bat.insert(b,5@0,5);                #  7 _23:void := BKCinsert_bun(b:bat[:oid,:int], _24:oid, _25:int) 
-    bat.insert(b,6@0,6);                #  8 _26:void := BKCinsert_bun(b:bat[:oid,:int], _27:oid, _28:int) 
-    bat.insert(b,7@0,7);                #  9 _29:void := BKCinsert_bun(b:bat[:oid,:int], _30:oid, _31:int) 
-    bat.insert(b,8@0,8);                # 10 _32:void := BKCinsert_bun(b:bat[:oid,:int], _33:oid, _34:int) 
-    bat.insert(b,9@0,9);                # 11 _35:void := BKCinsert_bun(b:bat[:oid,:int], _36:oid, _37:int) 
-    bat.insert(b,10@0,10);              # 12 _38:void := BKCinsert_bun(b:bat[:oid,:int], _39:oid, _40:int) 
-    bat.insert(b,11@0,11);              # 13 _41:void := BKCinsert_bun(b:bat[:oid,:int], _42:oid, _43:int) 
+    bat.insert(b,0@0,0);                #  2 _8:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _9:oid, _10:int) {G}
+    bat.insert(b,1@0,1);                #  3 _11:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _12:oid, _13:int) {G}
+    bat.insert(b,2@0,2);                #  4 _14:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _15:oid, _16:int) {G}
+    bat.insert(b,3@0,3);                #  5 _17:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _18:oid, _19:int) {G}
+    bat.insert(b,4@0,4);                #  6 _20:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _21:oid, _22:int) {G}
+    bat.insert(b,5@0,5);                #  7 _23:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _24:oid, _25:int) {G}
+    bat.insert(b,6@0,6);                #  8 _26:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _27:oid, _28:int) {G}
+    bat.insert(b,7@0,7);                #  9 _29:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _30:oid, _31:int) {G}
+    bat.insert(b,8@0,8);                # 10 _32:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _33:oid, _34:int) {G}
+    bat.insert(b,9@0,9);                # 11 _35:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _36:oid, _37:int) {G}
+    bat.insert(b,10@0,10);              # 12 _38:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _39:oid, _40:int) {G}
+    bat.insert(b,11@0,11);              # 13 _41:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _42:oid, _43:int) {G}
     return bind := b;                   # 14 bind:bat[:oid,:int] := b:bat[:oid,:int] {G}
 end bind;	# 15  
 #

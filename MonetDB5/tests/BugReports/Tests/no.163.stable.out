@@ -292,8 +292,8 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print(""); 
 #	io.print(""); 
     b1 := bat.new(:oid,nil:int);        #116 b1:bat[:oid,:int] := CMDBATnew(_118:oid, _119:int) {G}
-    fa_a := bat.insert(b1,0@0,0);       #117 fa_a:void := BKCinsert_bun(b1:bat[:oid,:int], _121:oid, _122:int) 
-    ga_a := bat.insert(b1,0@0,1);       #118 ga_a:void := BKCinsert_bun(b1:bat[:oid,:int], _121:oid, _124:int) 
+    fa_a := bat.insert(b1,0@0,0);       #117 fa_a:bat[:oid,:int] := BKCinsert_bun(b1:bat[:oid,:int], _121:oid, _122:int) {G}
+    ga_a := bat.insert(b1,0@0,1);       #118 ga_a:bat[:oid,:int] := BKCinsert_bun(b1:bat[:oid,:int], _121:oid, _124:int) {G}
     bn := user.tst(b1);                 #119 bn:bat[:oid,:int] := user.tst(b1:bat[:oid,:int]) {G}
     ha_a := io.print(bn);               #120 ha_a:void := IOprint_val(bn:bat[:oid,:int]) 
     ia_a := clients.quit();             #121 ia_a:void := CLTquit() 

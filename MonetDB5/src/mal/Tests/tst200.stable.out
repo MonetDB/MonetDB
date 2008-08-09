@@ -55,18 +55,18 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #binfo:= info(b); 
 #err:= print(binfo);  
     io.printf("#~EndVariableOutput~#\n");# 12 _16:void := IOprint_str(_17:str) 
-    err := bat.insert(b,1,15);          # 13 err:void := BKCinsert_bun(b:bat[:int,:int], _19:int, _20:int) 
-    err := bat.insert(b,2,4);           # 14 err:void := BKCinsert_bun(b:bat[:int,:int], _21:int, _22:int) 
+    err := bat.insert(b,1,15);          # 13 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _19:int, _20:int) {G}
+    err := bat.insert(b,2,4);           # 14 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _21:int, _22:int) {G}
     n0 := calc.int(nil:void);           # 15 n0:int := CALCnil2int(_24:void) 
-    err := bat.insert(b,3,n0);          # 16 err:void := BKCinsert_bun(b:bat[:int,:int], _25:int, n0:int) 
-    err := bat.insert(b,4,16);          # 17 err:void := BKCinsert_bun(b:bat[:int,:int], _22:int, _26:int) 
-    err := bat.insert(b,5,25);          # 18 err:void := BKCinsert_bun(b:bat[:int,:int], _27:int, _28:int) 
-    err := bat.insert(b,6,36);          # 19 err:void := BKCinsert_bun(b:bat[:int,:int], _29:int, _30:int) 
-    err := bat.insert(b,7,49);          # 20 err:void := BKCinsert_bun(b:bat[:int,:int], _31:int, _32:int) 
-    err := bat.insert(b,8,64);          # 21 err:void := BKCinsert_bun(b:bat[:int,:int], _33:int, _34:int) 
-    err := bat.insert(b,9,n0);          # 22 err:void := BKCinsert_bun(b:bat[:int,:int], _35:int, n0:int) 
-    err := bat.insert(b,n0,n0);         # 23 err:void := BKCinsert_bun(b:bat[:int,:int], n0:int, n0:int) 
-    err := bat.insert(b,n0,81);         # 24 err:void := BKCinsert_bun(b:bat[:int,:int], n0:int, _36:int) 
+    err := bat.insert(b,3,n0);          # 16 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _25:int, n0:int) {G}
+    err := bat.insert(b,4,16);          # 17 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _22:int, _26:int) {G}
+    err := bat.insert(b,5,25);          # 18 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _27:int, _28:int) {G}
+    err := bat.insert(b,6,36);          # 19 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _29:int, _30:int) {G}
+    err := bat.insert(b,7,49);          # 20 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _31:int, _32:int) {G}
+    err := bat.insert(b,8,64);          # 21 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _33:int, _34:int) {G}
+    err := bat.insert(b,9,n0);          # 22 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _35:int, n0:int) {G}
+    err := bat.insert(b,n0,n0);         # 23 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], n0:int, n0:int) {G}
+    err := bat.insert(b,n0,81);         # 24 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], n0:int, _36:int) {G}
     io.print(b);                        # 25 _37:void := IOprint_val(b:bat[:int,:int]) 
     io.print(b,b,b);                    # 26 _38:void := IOtable(b:bat[:int,:int], b:bat[:int,:int], b:bat[:int,:int]) 
 end main;	# 27  

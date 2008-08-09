@@ -73,7 +73,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #create a persistent bat and destroy it in test 612 
     b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
 #refs(); 
-    bat.insert(b,23,32);                #  5 _6:void := BKCinsert_bun(b:bat[:int,:int], _7:int, _8:int) 
+    bat.insert(b,23,32);                #  5 _6:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _7:int, _8:int) {G}
 #refs(); 
     bat.setName(b,"tasks");             #  7 _10:void := BKCsetName(b:bat[:int,:int], _11:str) 
 #refs(); 

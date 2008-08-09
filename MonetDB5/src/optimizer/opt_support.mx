@@ -944,9 +944,7 @@ isUpdated(MalBlkPtr mb, int pc)
 @-
 If the operation involves an update of the operand it should told.
 @c
-				if (getFunctionId(q) == insertRef ||
-					getFunctionId(q) == appendRef ||
-					getFunctionId(q) == deleteRef)
+				if ( isUpdateInstruction(q) )
 					return TRUE;
 				if (getFunctionId(q) && idcmp("destroy", getFunctionId(q)) == 0)
 					return TRUE;

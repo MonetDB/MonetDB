@@ -94,7 +94,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     i := calc.*(ci,3);                  #  9 i:int := CALCbinaryMULintint(ci:int, _15:int) 
 barrier go := calc.>(i,0);              # 10 go:bit := CALCcompGTintint(i:int, _17:int) {J15}
     o := calc.oid(i);                   # 11 o:oid := CALCint2oid(i:int) 
-    bat.insert(b,o,o);                  # 12 _18:void := BKCinsert_bun(b:bat[:oid,:oid], o:oid, o:oid) 
+    bat.insert(b,o,o);                  # 12 _18:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], o:oid, o:oid) {G}
     i := calc.-(i,1);                   # 13 i:int := CALCbinarySUBintint(i:int, _13:int) 
     redo go := calc.>(i,0);             # 14 go:bit := CALCcompGTintint(i:int, _17:int) {J11}
 exit go;                                # 15 go:bit 
@@ -102,7 +102,7 @@ exit go;                                # 15 go:bit
     i := calc.*(ci,2);                  # 17 i:int := CALCbinaryMULintint(ci:int, _20:int) 
 barrier go := calc.>(i,0);              # 18 go:bit := CALCcompGTintint(i:int, _17:int) {J23}
     o := calc.oid(i);                   # 19 o:oid := CALCint2oid(i:int) 
-    bat.delete(b,o);                    # 20 _21:void := BKCdelete(b:bat[:oid,:oid], o:oid) 
+    bat.delete(b,o);                    # 20 _21:bat[:oid,:oid] := BKCdelete(b:bat[:oid,:oid], o:oid) {G}
     i := calc.-(i,1);                   # 21 i:int := CALCbinarySUBintint(i:int, _13:int) 
     redo go := calc.>(i,0);             # 22 go:bit := CALCcompGTintint(i:int, _17:int) {J19}
 exit go;                                # 23 go:bit 
@@ -110,11 +110,11 @@ exit go;                                # 23 go:bit
     i := calc.*(ci,2);                  # 25 i:int := CALCbinaryMULintint(ci:int, _20:int) 
 barrier go := calc.>(i,0);              # 26 go:bit := CALCcompGTintint(i:int, _17:int) {J31}
     o := calc.oid(i);                   # 27 o:oid := CALCint2oid(i:int) 
-    bat.insert(c,o,o);                  # 28 _25:void := BKCinsert_bun(c:bat[:oid,:oid], o:oid, o:oid) 
+    bat.insert(c,o,o);                  # 28 _25:bat[:oid,:oid] := BKCinsert_bun(c:bat[:oid,:oid], o:oid, o:oid) {G}
     i := calc.-(i,1);                   # 29 i:int := CALCbinarySUBintint(i:int, _13:int) 
     redo go := calc.>(i,0);             # 30 go:bit := CALCcompGTintint(i:int, _17:int) {J27}
 exit go;                                # 31 go:bit 
-    bat.insert(b,c);                    # 32 _26:void := BKCinsert_bat(b:bat[:oid,:oid], c:bat[:oid,:oid]) 
+    bat.insert(b,c);                    # 32 _26:bat[:oid,:oid] := BKCinsert_bat(b:bat[:oid,:oid], c:bat[:oid,:oid]) {G}
     user.check_cap(b);                  # 33 _27:void := user.check_cap(b:bat[:oid,:oid]) 
     bat.setPersistent(b,false);         # 34 _28:void := BKCpersists(b:bat[:oid,:oid], _29:bit) 
     transaction.commit();               # 35 _30:bit := TRNglobal_commit() 

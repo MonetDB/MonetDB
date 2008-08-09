@@ -171,32 +171,32 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("var b:= bat.new(flt,flt);"); 
     b := bat.new(nil:flt,nil:flt);      # 19 b:bat[:flt,:flt] := CMDBATnew(_22:flt, _22:flt) {G}
 #	io.print("b.insert(1.2, 15.6);"); 
-    da_a := bat.insert(b,1.20000005,15.6000004);# 21 da_a:void := BKCinsert_bun(b:bat[:flt,:flt], _25:flt, _26:flt) 
+    da_a := bat.insert(b,1.20000005,15.6000004);# 21 da_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _25:flt, _26:flt) {G}
 #	io.print("b.insert(2.3, 4.5);"); 
-    ea_a := bat.insert(b,2.29999995,4.5);# 23 ea_a:void := BKCinsert_bun(b:bat[:flt,:flt], _29:flt, _30:flt) 
+    ea_a := bat.insert(b,2.29999995,4.5);# 23 ea_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _29:flt, _30:flt) {G}
 #	io.print("b.insert(3.0, calc.flt(nil));"); 
     fa_a := calc.flt(nil:void);         # 25 fa_a:flt := CALCnil2flt(_33:void) 
-    ga_a := bat.insert(b,3,fa_a);       # 26 ga_a:void := BKCinsert_bun(b:bat[:flt,:flt], _35:flt, fa_a:flt) 
+    ga_a := bat.insert(b,3,fa_a);       # 26 ga_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _35:flt, fa_a:flt) {G}
 #	io.print("b.insert(4.5, 16.7);"); 
-    ha_a := bat.insert(b,4.5,16.7000008);# 28 ha_a:void := BKCinsert_bun(b:bat[:flt,:flt], _30:flt, _38:flt) 
+    ha_a := bat.insert(b,4.5,16.7000008);# 28 ha_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _30:flt, _38:flt) {G}
 #	io.print("b.insert(5.6, 25.6);"); 
-    ia_a := bat.insert(b,5.5999999,25.6000004);# 30 ia_a:void := BKCinsert_bun(b:bat[:flt,:flt], _41:flt, _42:flt) 
+    ia_a := bat.insert(b,5.5999999,25.6000004);# 30 ia_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _41:flt, _42:flt) {G}
 #	io.print("b.insert(6.6, 36.7);"); 
-    ja_a := bat.insert(b,6.5999999,36.7000008);# 32 ja_a:void := BKCinsert_bun(b:bat[:flt,:flt], _45:flt, _46:flt) 
+    ja_a := bat.insert(b,6.5999999,36.7000008);# 32 ja_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _45:flt, _46:flt) {G}
 #	io.print("b.insert(7.8, 49.0);"); 
-    ka_a := bat.insert(b,7.80000019,49);# 34 ka_a:void := BKCinsert_bun(b:bat[:flt,:flt], _49:flt, _50:flt) 
+    ka_a := bat.insert(b,7.80000019,49);# 34 ka_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _49:flt, _50:flt) {G}
 #	io.print("b.insert(8.9, 64.5);"); 
-    la_a := bat.insert(b,8.89999962,64.5);# 36 la_a:void := BKCinsert_bun(b:bat[:flt,:flt], _53:flt, _54:flt) 
+    la_a := bat.insert(b,8.89999962,64.5);# 36 la_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _53:flt, _54:flt) {G}
 #	io.print("b.insert(9.0, calc.flt(nil));"); 
     ma_a := calc.flt(nil:void);         # 38 ma_a:flt := CALCnil2flt(_33:void) 
-    na_a := bat.insert(b,9,ma_a);       # 39 na_a:void := BKCinsert_bun(b:bat[:flt,:flt], _58:flt, ma_a:flt) 
+    na_a := bat.insert(b,9,ma_a);       # 39 na_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _58:flt, ma_a:flt) {G}
 #	io.print("b.insert(flt(nil),flt(nil));"); 
     oa_a := calc.flt(nil:void);         # 41 oa_a:flt := CALCnil2flt(_33:void) 
     pa_a := calc.flt(nil:void);         # 42 pa_a:flt := CALCnil2flt(_33:void) 
-    qa_a := bat.insert(b,oa_a,pa_a);    # 43 qa_a:void := BKCinsert_bun(b:bat[:flt,:flt], oa_a:flt, pa_a:flt) 
+    qa_a := bat.insert(b,oa_a,pa_a);    # 43 qa_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], oa_a:flt, pa_a:flt) {G}
 #	io.print("b.insert(flt(nil),81.2);"); 
     ra_a := calc.flt(nil:void);         # 45 ra_a:flt := CALCnil2flt(_33:void) 
-    sa_a := bat.insert(b,ra_a,81.1999969);# 46 sa_a:void := BKCinsert_bun(b:bat[:flt,:flt], ra_a:flt, _66:flt) 
+    sa_a := bat.insert(b,ra_a,81.1999969);# 46 sa_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], ra_a:flt, _66:flt) {G}
 #	io.print("b.print();"); 
     ta_a := io.print(b);                # 48 ta_a:void := IOprint_val(b:bat[:flt,:flt]) 
 #	io.print("# Testing simple retrievals\n"); 
@@ -213,21 +213,21 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #ignore	cb_a := algebra.find(b,10.1); 
 #ignore	db_a := io.print(cb_a); 
 #	io.print("# Can we delete them and re-insert them later on\n"); 
-    eb_a := bat.delete(b,4.5,16.7000008);# 63 eb_a:void := BKCdelete_bun(b:bat[:flt,:flt], _75:flt, _87:flt) 
+    eb_a := bat.delete(b,4.5,16.7000008);# 63 eb_a:bat[:flt,:flt] := BKCdelete_bun(b:bat[:flt,:flt], _75:flt, _87:flt) {G}
 #	io.print("b.delete(1.2, 15.6);"); 
-    fb_a := bat.delete(b,1.20000005,15.6000004);# 65 fb_a:void := BKCdelete_bun(b:bat[:flt,:flt], _71:flt, _90:flt) 
+    fb_a := bat.delete(b,1.20000005,15.6000004);# 65 fb_a:bat[:flt,:flt] := BKCdelete_bun(b:bat[:flt,:flt], _71:flt, _90:flt) {G}
 #	io.print("b.delete(flt(nil),81.2);"); 
     gb_a := calc.flt(nil:void);         # 67 gb_a:flt := CALCnil2flt(_79:void) 
-    hb_a := bat.delete(b,gb_a,81.1999969);# 68 hb_a:void := BKCdelete_bun(b:bat[:flt,:flt], gb_a:flt, _66:flt) 
+    hb_a := bat.delete(b,gb_a,81.1999969);# 68 hb_a:bat[:flt,:flt] := BKCdelete_bun(b:bat[:flt,:flt], gb_a:flt, _66:flt) {G}
 #	io.print("b.print();"); 
     ib_a := io.print(b);                # 70 ib_a:void := IOprint_val(b:bat[:flt,:flt]) 
 #	io.print("b.insert(4.5, 16.7);"); 
-    jb_a := bat.insert(b,4.5,16.7000008);# 72 jb_a:void := BKCinsert_bun(b:bat[:flt,:flt], _75:flt, _87:flt) 
+    jb_a := bat.insert(b,4.5,16.7000008);# 72 jb_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _75:flt, _87:flt) {G}
 #	io.print("b.insert(1.2, 15.6);"); 
-    kb_a := bat.insert(b,1.20000005,15.6000004);# 74 kb_a:void := BKCinsert_bun(b:bat[:flt,:flt], _71:flt, _90:flt) 
+    kb_a := bat.insert(b,1.20000005,15.6000004);# 74 kb_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _71:flt, _90:flt) {G}
 #	io.print("b.insert(flt(nil),81.2);"); 
     lb_a := calc.flt(nil:void);         # 76 lb_a:flt := CALCnil2flt(_79:void) 
-    mb_a := bat.insert(b,lb_a,81.1999969);# 77 mb_a:void := BKCinsert_bun(b:bat[:flt,:flt], lb_a:flt, _103:flt) 
+    mb_a := bat.insert(b,lb_a,81.1999969);# 77 mb_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], lb_a:flt, _103:flt) {G}
 #	io.print("b.count().print();"); 
     nb_a := aggr.count(b);              # 79 nb_a:int := ALGcount_bat(b:bat[:flt,:flt]) 
     ob_a := io.print(nb_a);             # 80 ob_a:void := IOprint_val(nb_a:int) 

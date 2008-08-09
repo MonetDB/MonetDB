@@ -80,13 +80,13 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #</books> 
 # the intermediate tabular result produced by SQL 
     a := bat.new(:oid,:str);            # 13 a:bat[:oid,:str] := CMDBATnew(_14:oid, _15:str) {G}
-    bat.insert(a,0@0,"john");           # 14 _16:void := BKCinsert_bun(a:bat[:oid,:str], _17:oid, _18:str) 
-    bat.insert(a,1@0,"john");           # 15 _19:void := BKCinsert_bun(a:bat[:oid,:str], _20:oid, _18:str) 
-    bat.insert(a,2@0,"marie");          # 16 _21:void := BKCinsert_bun(a:bat[:oid,:str], _22:oid, _23:str) 
+    bat.insert(a,0@0,"john");           # 14 _16:bat[:oid,:str] := BKCinsert_bun(a:bat[:oid,:str], _17:oid, _18:str) {G}
+    bat.insert(a,1@0,"john");           # 15 _19:bat[:oid,:str] := BKCinsert_bun(a:bat[:oid,:str], _20:oid, _18:str) {G}
+    bat.insert(a,2@0,"marie");          # 16 _21:bat[:oid,:str] := BKCinsert_bun(a:bat[:oid,:str], _22:oid, _23:str) {G}
     t := bat.new(:oid,:str);            # 17 t:bat[:oid,:str] := CMDBATnew(_14:oid, _25:str) {G}
-    bat.insert(t,0@0,"spring");         # 18 _26:void := BKCinsert_bun(t:bat[:oid,:str], _17:oid, _27:str) 
-    bat.insert(t,1@0,"summer");         # 19 _28:void := BKCinsert_bun(t:bat[:oid,:str], _20:oid, _29:str) 
-    bat.insert(t,2@0,"autum");          # 20 _30:void := BKCinsert_bun(t:bat[:oid,:str], _22:oid, _31:str) 
+    bat.insert(t,0@0,"spring");         # 18 _26:bat[:oid,:str] := BKCinsert_bun(t:bat[:oid,:str], _17:oid, _27:str) {G}
+    bat.insert(t,1@0,"summer");         # 19 _28:bat[:oid,:str] := BKCinsert_bun(t:bat[:oid,:str], _20:oid, _29:str) {G}
+    bat.insert(t,2@0,"autum");          # 20 _30:bat[:oid,:str] := BKCinsert_bun(t:bat[:oid,:str], _22:oid, _31:str) {G}
 # SQL rendering request 
 #xmlelement('books', 
 #	xmlelement('author',a, 
@@ -97,9 +97,9 @@ function user.main():void;              #  0 main:void := user.main() {G}
     tx := xml.xml(t);                   # 28 tx:bat[:oid,:xml] := BATXMLstr2xml(t:bat[:oid,:str]) {G}
     te := xml.element("title",tx);      # 29 te:bat[:oid,:xml] := BATXMLtag(_41:str, tx:bat[:oid,:xml]) {G}
     g := bat.new(:oid,:oid);            # 30 g:bat[:oid,:oid] := CMDBATnew(_14:oid, _14:oid) {G}
-    bat.insert(g,0@0,0@0);              # 31 _43:void := BKCinsert_bun(g:bat[:oid,:oid], _17:oid, _17:oid) 
-    bat.insert(g,1@0,0@0);              # 32 _44:void := BKCinsert_bun(g:bat[:oid,:oid], _20:oid, _17:oid) 
-    bat.insert(g,2@0,1@0);              # 33 _45:void := BKCinsert_bun(g:bat[:oid,:oid], _22:oid, _20:oid) 
+    bat.insert(g,0@0,0@0);              # 31 _43:bat[:oid,:oid] := BKCinsert_bun(g:bat[:oid,:oid], _17:oid, _17:oid) {G}
+    bat.insert(g,1@0,0@0);              # 32 _44:bat[:oid,:oid] := BKCinsert_bun(g:bat[:oid,:oid], _20:oid, _17:oid) {G}
+    bat.insert(g,2@0,1@0);              # 33 _45:bat[:oid,:oid] := BKCinsert_bun(g:bat[:oid,:oid], _22:oid, _20:oid) {G}
     k := algebra.join(g,te);            # 34 k:bat[:oid,:xml] := ALGjoin(g:bat[:oid,:oid], te:bat[:oid,:xml]) {G}
     io.print(k);                        # 35 _47:void := IOprint_val(k:bat[:oid,:xml]) 
     l := algebra.sort(k);               # 36 l:bat[:oid,:xml] := ALGhsort(k:bat[:oid,:xml]) {G}

@@ -52,7 +52,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #some join operations 
     b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
 barrier (k,v):= language.newRange(0:int);#  3 (k:bit, v:int) := RNGnewRange_int(_6:int) {J6}
-    bat.insert(b,v,v);                  #  4 _7:void := BKCinsert_bun(b:bat[:int,:int], v:int, v:int) 
+    bat.insert(b,v,v);                  #  4 _7:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], v:int, v:int) {G}
     redo (k,v):= language.nextElement(1:int,100:int);#  5 (k:bit, v:int) := RNGnextElement_int(_8:int, _9:int) {J4}
 exit (k,v);                             #  6 (k:bit, v:int) 
     i := aggr.count(b);                 #  7 i:int := ALGcount_bat(b:bat[:int,:int]) 

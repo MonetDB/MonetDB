@@ -54,7 +54,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     i := 0;                             #  6 i:int := _8:int 
 barrier go := calc.<(i,12);             #  7 go:bit := CALCcompLTintint(i:int, _10:int) {J12}
     o := calc.oid(i);                   #  8 o:oid := CALCint2oid(i:int) 
-    bat.append(left,o);                 #  9 _12:void := BKCappend_val_wrap(left:bat[:oid,:oid], o:oid) 
+    bat.append(left,o);                 #  9 _12:bat[:oid,:any] := BKCappend_val_wrap(left:bat[:oid,:oid], o:oid) {G}
     i := calc.+(i,1);                   # 10 i:int := CALCbinaryADDintint(i:int, _13:int) 
     redo go := calc.<(i,12);            # 11 go:bit := CALCcompLTintint(i:int, _10:int) {J8}
 exit go;                                # 12 go:bit 
@@ -62,7 +62,7 @@ exit go;                                # 12 go:bit
 barrier go := calc.<(i,200);            # 14 go:bit := CALCcompLTintint(i:int, _14:int) {J20}
     j := calc.*(i,2);                   # 15 j:int := CALCbinaryMULintint(i:int, _16:int) 
     oj := calc.oid(j);                  # 16 oj:oid := CALCint2oid(j:int) 
-    bat.insert(right,oj,nil:oid);       # 17 _18:void := BKCinsert_bun(right:bat[:oid,:oid], oj:oid, _19:oid) 
+    bat.insert(right,oj,nil:oid);       # 17 _18:bat[:oid,:oid] := BKCinsert_bun(right:bat[:oid,:oid], oj:oid, _19:oid) {G}
     i := calc.+(i,1);                   # 18 i:int := CALCbinaryADDintint(i:int, _13:int) 
     redo go := calc.<(i,200);           # 19 go:bit := CALCcompLTintint(i:int, _14:int) {J15}
 exit go;                                # 20 go:bit 

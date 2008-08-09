@@ -41,19 +41,19 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #turn the debugger on to see details 
 #mdb.setDebug(19); 
     b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
-    bat.insert(b,1,2);                  #  4 _5:void := BKCinsert_bun(b:bat[:int,:int], _6:int, _7:int) 
+    bat.insert(b,1,2);                  #  4 _5:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _6:int, _7:int) {G}
     bat.setName(b,"b");                 #  5 _8:void := BKCsetName(b:bat[:int,:int], _9:str) 
     bat.setPersistent(b,true);          #  6 _10:void := BKCpersists(b:bat[:int,:int], _11:bit) 
     transaction.commit();               #  7 _12:bit := TRNglobal_commit() 
     c := bat.new(:int,:int);            #  8 c:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
-    bat.insert(c,3,4);                  #  9 _14:void := BKCinsert_bun(c:bat[:int,:int], _15:int, _16:int) 
+    bat.insert(c,3,4);                  #  9 _14:bat[:int,:int] := BKCinsert_bun(c:bat[:int,:int], _15:int, _16:int) {G}
     bat.setName(c,"a");                 # 10 _17:void := BKCsetName(c:bat[:int,:int], _18:str) 
     bat.setPersistent(c,true);          # 11 _19:void := BKCpersists(c:bat[:int,:int], _11:bit) 
     d := bat.new(:int,:str);            # 12 d:bat[:int,:str] := CMDBATnew(_4:int, _21:str) {G}
-    bat.insert(d,0,"a");                # 13 _22:void := BKCinsert_bun(d:bat[:int,:str], _23:int, _18:str) 
+    bat.insert(d,0,"a");                # 13 _22:bat[:int,:str] := BKCinsert_bun(d:bat[:int,:str], _23:int, _18:str) {G}
     transaction.subcommit(d);           # 14 _24:bit := TRNsubcommit(d:bat[:int,:str]) 
     tmp := bat.new(:int,:str);          # 15 tmp:bat[:int,:str] := CMDBATnew(_4:int, _26:str) {G}
-    bat.insert(tmp,0,"a");              # 16 _27:void := BKCinsert_bun(tmp:bat[:int,:str], _23:int, _18:str) 
+    bat.insert(tmp,0,"a");              # 16 _27:bat[:int,:str] := BKCinsert_bun(tmp:bat[:int,:str], _23:int, _18:str) {G}
     da:bat[:int,:int]  := bbp.bind("a");# 17 da:bat[:int,:int] := CMDbbpbind(_18:str) {G}
     bat.setPersistent(da,false);        # 18 _29:void := BKCpersists(da:bat[:int,:int], _30:bit) 
     transaction.subcommit(tmp);         # 19 _31:bit := TRNsubcommit(tmp:bat[:int,:str]) 

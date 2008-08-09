@@ -40,7 +40,7 @@ end bar;	# 3
 #end qry;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.insert(b,0@0,1);                #  2 _4:void := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) 
+    bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
     zz := user.bar(1,2);                #  3 zz:int := user.bar(_6:int, _8:int) 
 # base line test for inlining 
     z:bat[:oid,:int]  := mal.multiplex("user","bar",b,b);#  5 z:bat[:oid,:int] := OPTremapMultiplex(_11:str, _12:str, b:bat[:oid,:int], b:bat[:oid,:int]) {G}

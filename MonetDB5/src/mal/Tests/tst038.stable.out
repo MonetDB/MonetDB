@@ -17,7 +17,7 @@ stdout of test 'tst038` in directory 'src/mal` itself:
 #	bat.insert(b,"hello",1);
 #end tst2;
 function user.tst2(b:bat[:any_1,:any_2]):void;#  0 tst2:void := user.tst2(b:bat[:any_1,:any_2]) {PG}
-    bat.insert(b,"hello",1);            #  1 _2:void := BKCinsert_bun(b:bat[:any_1,:any_2], _3:str, _4:int) {P}
+    bat.insert(b,"hello",1);            #  1 _2:bat[:str,:int] := BKCinsert_bun(b:bat[:any_1,:any_2], _3:str, _4:int) {PG}
 end tst2;	# 2  
 #
 #b:=new(:int,:str);
@@ -25,8 +25,7 @@ end tst2;	# 2
 ##The call to tst2 fails at runtime
 #tst2(b);
 #
-!TypeException:user.tst2[1]:'bat.insert' undefined in: _2:void := bat.insert(b:bat[:int,:str], _3:str, _4:int)
-
+!TypeException:user.tst2[1]:'bat.insert' undefined in: _2:bat[:str,:int] := bat.insert(b:bat[:int,:str], _3:str, _4:int)
 !MALException:user.tst2[0]:Error in cloned function
 
 !TypeException:user.main[4]:'user.tst2' undefined in: _6:void := user.tst2(b:bat[:int,:str])

@@ -50,8 +50,8 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # don;t use 09@0 
     i9 := 9@0;                          # 17 i9:oid := _31:oid 
     io.print(i9);                       # 18 _32:void := IOprint_val(i9:oid) 
-    bd_a := bat.insert(tzone_bat,8@0,tzone_08);# 19 bd_a:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _26:oid, tzone_08:timezone) 
-    cd_a := bat.insert(tzone_bat,9@0,tzone_09);# 20 cd_a:void := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _31:oid, tzone_09:timezone) 
+    bd_a := bat.insert(tzone_bat,8@0,tzone_08);# 19 bd_a:bat[:oid,:timezone] := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _26:oid, tzone_08:timezone) {G}
+    cd_a := bat.insert(tzone_bat,9@0,tzone_09);# 20 cd_a:bat[:oid,:timezone] := BKCinsert_bun(tzone_bat:bat[:oid,:timezone], _31:oid, tzone_09:timezone) {G}
     bat.setColumn(tzone_bat,"timezone");# 21 _35:void := BKCsetColumn(tzone_bat:bat[:oid,:timezone], _36:str) 
     jd_a := io.print(tzone_bat);        # 22 jd_a:void := IOprint_val(tzone_bat:bat[:oid,:timezone]) 
 end main;	# 23  

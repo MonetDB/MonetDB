@@ -188,33 +188,33 @@ function user.main():void;              #  0 main:void := user.main() {G}
     v2 := bat.new(:str,:oid);           # 11 v2:bat[:str,:oid] := CMDBATnew(_13:str, _14:oid) {G}
     b := v2;                            # 12 b:bat[:str,:oid] := v2:bat[:str,:oid] {G}
 #b:= new(str,int); 
-    v3 := bat.insert(b,"the",1@0);      # 14 v3:void := BKCinsert_bun(b:bat[:str,:oid], _18:str, _19:oid) 
+    v3 := bat.insert(b,"the",1@0);      # 14 v3:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _18:str, _19:oid) {G}
 #b.insert("the",1); 
-    v4 := bat.insert(b,"quick",2@0);    # 16 v4:void := BKCinsert_bun(b:bat[:str,:oid], _22:str, _23:oid) 
+    v4 := bat.insert(b,"quick",2@0);    # 16 v4:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _22:str, _23:oid) {G}
 #b.insert("quick",2); 
-    v5 := bat.insert(b,"brown",3@0);    # 18 v5:void := BKCinsert_bun(b:bat[:str,:oid], _26:str, _27:oid) 
+    v5 := bat.insert(b,"brown",3@0);    # 18 v5:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _26:str, _27:oid) {G}
 #b.insert("brown",3); 
-    v6 := bat.insert(b,"fox",4@0);      # 20 v6:void := BKCinsert_bun(b:bat[:str,:oid], _30:str, _31:oid) 
+    v6 := bat.insert(b,"fox",4@0);      # 20 v6:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _30:str, _31:oid) {G}
 #b.insert("fox",4); 
-    v7 := bat.insert(b,"jumps",5@0);    # 22 v7:void := BKCinsert_bun(b:bat[:str,:oid], _34:str, _35:oid) 
+    v7 := bat.insert(b,"jumps",5@0);    # 22 v7:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _34:str, _35:oid) {G}
 #b.insert("jumps",5); 
-    v8 := bat.insert(b,"over",6@0);     # 24 v8:void := BKCinsert_bun(b:bat[:str,:oid], _38:str, _39:oid) 
+    v8 := bat.insert(b,"over",6@0);     # 24 v8:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _38:str, _39:oid) {G}
 #b.insert("over",6); 
-    v9 := bat.insert(b,"lazy",7@0);     # 26 v9:void := BKCinsert_bun(b:bat[:str,:oid], _42:str, _43:oid) 
+    v9 := bat.insert(b,"lazy",7@0);     # 26 v9:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _42:str, _43:oid) {G}
 #b.insert("lazy",7); 
-    v10 := bat.insert(b,"dog",8@0);     # 28 v10:void := BKCinsert_bun(b:bat[:str,:oid], _46:str, _47:oid) 
+    v10 := bat.insert(b,"dog",8@0);     # 28 v10:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _46:str, _47:oid) {G}
 #b.insert("dog",8); 
     v11 := calc.str(nil:void);          # 30 v11:str := CALCnil2str(_50:void) {G}
-    v12 := bat.insert(b,v11,9@0);       # 31 v12:void := BKCinsert_bun(b:bat[:str,:oid], v11:str, _52:oid) 
+    v12 := bat.insert(b,v11,9@0);       # 31 v12:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], v11:str, _52:oid) {G}
 #b.insert(str(nil),9); 
-    v13 := bat.insert(b,".",10@0);      # 33 v13:void := BKCinsert_bun(b:bat[:str,:oid], _55:str, _56:oid) 
+    v13 := bat.insert(b,".",10@0);      # 33 v13:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _55:str, _56:oid) {G}
 #b.insert(".",10); 
     v14 := calc.oid(nil:void);          # 35 v14:oid := CALCnil2oid(_50:void) 
-    v15 := bat.insert(b,"",v14);        # 36 v15:void := BKCinsert_bun(b:bat[:str,:oid], _60:str, v14:oid) 
+    v15 := bat.insert(b,"",v14);        # 36 v15:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _60:str, v14:oid) {G}
 #b.insert("",int(nil)); 
     v16 := calc.str(nil:void);          # 38 v16:str := CALCnil2str(_50:void) {G}
     v17 := calc.oid(nil:void);          # 39 v17:oid := CALCnil2oid(_50:void) 
-    v18 := bat.insert(b,v16,v17);       # 40 v18:void := BKCinsert_bun(b:bat[:str,:oid], v16:str, v17:oid) 
+    v18 := bat.insert(b,v16,v17);       # 40 v18:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], v16:str, v17:oid) {G}
 #b.insert(str(nil),int(nil)); 
     v19 := io.print(b);                 # 42 v19:void := IOprint_val(b:bat[:str,:oid]) 
 #b.print; 
@@ -237,19 +237,19 @@ catch MALException:str ;                # 58 MALException:str {J60}
 exit MALException:str ;                 # 60 MALException:str 
 #b.find("cat").print; 
 ## Can we bat.delete them and re-insert them later on 
-    v29 := bat.delete(b,"fox",4@0);     # 63 v29:void := BKCdelete_bun(b:bat[:str,:oid], _74:str, _90:oid) 
+    v29 := bat.delete(b,"fox",4@0);     # 63 v29:bat[:str,:oid] := BKCdelete_bun(b:bat[:str,:oid], _74:str, _90:oid) {G}
 #b.delete("fox",4); 
-    v30 := bat.delete(b,"the",1@0);     # 65 v30:void := BKCdelete_bun(b:bat[:str,:oid], _70:str, _93:oid) 
+    v30 := bat.delete(b,"the",1@0);     # 65 v30:bat[:str,:oid] := BKCdelete_bun(b:bat[:str,:oid], _70:str, _93:oid) {G}
 #b.delete("the",1); 
-    v31 := bat.delete(b,".",10@0);      # 67 v31:void := BKCdelete_bun(b:bat[:str,:oid], _96:str, _97:oid) 
+    v31 := bat.delete(b,".",10@0);      # 67 v31:bat[:str,:oid] := BKCdelete_bun(b:bat[:str,:oid], _96:str, _97:oid) {G}
 #b.delete(".",10); 
     v32 := io.print(b);                 # 69 v32:void := IOprint_val(b:bat[:str,:oid]) 
 #b.print; 
-    v33 := bat.insert(b,"fox",4@0);     # 71 v33:void := BKCinsert_bun(b:bat[:str,:oid], _74:str, _90:oid) 
+    v33 := bat.insert(b,"fox",4@0);     # 71 v33:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _74:str, _90:oid) {G}
 #b.insert("fox",4); 
-    v34 := bat.insert(b,"the",1@0);     # 73 v34:void := BKCinsert_bun(b:bat[:str,:oid], _104:str, _93:oid) 
+    v34 := bat.insert(b,"the",1@0);     # 73 v34:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _104:str, _93:oid) {G}
 #b.insert("the",1); 
-    v35 := bat.insert(b,".",10@0);      # 75 v35:void := BKCinsert_bun(b:bat[:str,:oid], _96:str, _97:oid) 
+    v35 := bat.insert(b,".",10@0);      # 75 v35:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _96:str, _97:oid) {G}
 #b.insert(".",10); 
     v36 := aggr.count(b);               # 77 v36:int := ALGcount_bat(b:bat[:str,:oid]) 
     v37 := io.print(v36);               # 78 v37:void := IOprint_val(v36:int) 

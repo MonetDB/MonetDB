@@ -127,11 +127,11 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("var s:=new(int,str,100);"); 
     s := bat.new(nil:int,nil:str,100);  # 45 s:bat[:int,:str] := CMDBATnewint(_54:int, _55:str, _56:int) {G}
 #	io.print("s.insert(2,\" single quote ' got it\");"); 
-    na_a := bat.insert(s,2," single quote ' got it");# 47 na_a:void := BKCinsert_bun(s:bat[:int,:str], _59:int, _60:str) 
+    na_a := bat.insert(s,2," single quote ' got it");# 47 na_a:bat[:int,:str] := BKCinsert_bun(s:bat[:int,:str], _59:int, _60:str) {G}
 #	io.print("s.insert(4,\" backslash  \\ \");"); 
-    oa_a := bat.insert(s,4," backslash   ");# 49 oa_a:void := BKCinsert_bun(s:bat[:int,:str], _63:int, _64:str) 
+    oa_a := bat.insert(s,4," backslash   ");# 49 oa_a:bat[:int,:str] := BKCinsert_bun(s:bat[:int,:str], _63:int, _64:str) {G}
 #	io.print("s.insert(3,\" single quote ' \");"); 
-    pa_a := bat.insert(s,3," single quote ' ");# 51 pa_a:void := BKCinsert_bun(s:bat[:int,:str], _67:int, _68:str) 
+    pa_a := bat.insert(s,3," single quote ' ");# 51 pa_a:bat[:int,:str] := BKCinsert_bun(s:bat[:int,:str], _67:int, _68:str) {G}
 #	io.print("s.print();"); 
     qa_a := io.print(s);                # 53 qa_a:void := IOprint_val(s:bat[:int,:str]) 
 #	io.print("# Monet printf should behave as in C\n"); 

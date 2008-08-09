@@ -26,8 +26,8 @@ stdout of test 'CTrefine_not_sorted.981374` in directory 'tests/BugDay_2005-10-0
 #
 function user.main():void;              #  0 main:void := user.main() {G}
     var_usage := bat.new(:oid,:oid);    #  1 var_usage:bat[:oid,:oid] := CMDBATnew(_2:oid, _2:oid) {G}
-    bat.insert(var_usage,0@0,1@0);      #  2 _3:void := BKCinsert_bun(var_usage:bat[:oid,:oid], _4:oid, _5:oid) 
-    bat.insert(var_usage,1@0,1@0);      #  3 _6:void := BKCinsert_bun(var_usage:bat[:oid,:oid], _5:oid, _5:oid) 
+    bat.insert(var_usage,0@0,1@0);      #  2 _3:bat[:oid,:oid] := BKCinsert_bun(var_usage:bat[:oid,:oid], _4:oid, _5:oid) {G}
+    bat.insert(var_usage,1@0,1@0);      #  3 _6:bat[:oid,:oid] := BKCinsert_bun(var_usage:bat[:oid,:oid], _5:oid, _5:oid) {G}
 # without the next line it doesn't crash 
     var_usage0 := algebra.unique(var_usage);#  5 var_usage0:bat[:oid,:oid] := ALGsunique(var_usage:bat[:oid,:oid]) {G}
     var_usage := bat.reverse(var_usage0);#  6 var_usage:bat[:oid,:oid] := BKCreverse(var_usage0:bat[:oid,:oid]) {G}

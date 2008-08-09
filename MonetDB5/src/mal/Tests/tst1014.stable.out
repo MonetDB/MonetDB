@@ -37,7 +37,7 @@ function user.test():void;              #  0 test:void := user.test() {G}
     io.print(x);                        #  4 _5:void := IOprint_val(x:bat[:int,:str]) 
     io.print("test");                   #  5 _6:void := IOprint_val(_2:str) 
     b := bat.new(:int,:int);            #  6 b:bat[:int,:int] := CMDBATnew(_8:int, _8:int) {G}
-    bat.insert(b,1,2);                  #  7 _9:void := BKCinsert_bun(b:bat[:int,:int], _10:int, _11:int) 
+    bat.insert(b,1,2);                  #  7 _9:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _10:int, _11:int) {G}
     bbp.deposit("myfirstbat",b);        #  8 _12:void := CMDbbpdeposit(_13:str, b:bat[:int,:int]) 
     c := bbp.take("myfirstbat");        #  9 c:bat[:any,:any] := CMDbbptake(_13:str) {G}
     io.print(c);                        # 10 _15:void := IOprint_val(c:bat[:any,:any]) 

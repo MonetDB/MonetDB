@@ -41,7 +41,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.printf("refcount =%d\n",i);      #  5 _7:void := IOprint_formatted_int(_8:str, i:int) 
     j := bbp.getLRefCount(b);           #  6 j:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
     io.printf("lrefcount =%d\n",j);     #  7 _10:void := IOprint_formatted_int(_11:str, j:int) 
-    bat.insert(b,1,"bat B");            #  8 _12:void := BKCinsert_bun(b:bat[:int,:str], _13:int, _14:str) 
+    bat.insert(b,1,"bat B");            #  8 _12:bat[:int,:str] := BKCinsert_bun(b:bat[:int,:str], _13:int, _14:str) {G}
     io.print(b);                        #  9 _15:void := IOprint_val(b:bat[:int,:str]) 
     i := bbp.getRefCount(b);            # 10 i:int := CMDgetBATrefcnt(b:bat[:int,:str]) 
     io.printf("refcount =%d\n",i);      # 11 _16:void := IOprint_formatted_int(_8:str, i:int) 
@@ -61,7 +61,7 @@ lrefcount =1
 #-------------------------#
 [ 1,	  "bat B"	  ]
 refcount =1
-lrefcount =1
+lrefcount =2
 [ "bat was destroyed" ]
 
 # 08:01:03 >  

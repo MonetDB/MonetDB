@@ -76,16 +76,16 @@ stdout of test 'qsort` in directory 'tests/gdkTests` itself:
 #
 function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:int,:int,10);         #  1 b:bat[:int,:int] := CMDBATnewint(_2:int, _2:int, _3:int) {G}
-    bat.insert(b,2,3);                  #  2 _4:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) 
-    bat.insert(b,1,9);                  #  3 _7:void := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) 
-    bat.insert(b,9,8);                  #  4 _10:void := BKCinsert_bun(b:bat[:int,:int], _9:int, _11:int) 
-    bat.insert(b,6,4);                  #  5 _12:void := BKCinsert_bun(b:bat[:int,:int], _13:int, _14:int) 
-    bat.insert(b,5,2);                  #  6 _15:void := BKCinsert_bun(b:bat[:int,:int], _16:int, _5:int) 
-    bat.insert(b,3,0);                  #  7 _17:void := BKCinsert_bun(b:bat[:int,:int], _6:int, _18:int) 
-    bat.insert(b,0,1);                  #  8 _19:void := BKCinsert_bun(b:bat[:int,:int], _18:int, _8:int) 
-    bat.insert(b,8,6);                  #  9 _20:void := BKCinsert_bun(b:bat[:int,:int], _11:int, _13:int) 
-    bat.insert(b,4,5);                  # 10 _21:void := BKCinsert_bun(b:bat[:int,:int], _14:int, _16:int) 
-    bat.insert(b,7,7);                  # 11 _22:void := BKCinsert_bun(b:bat[:int,:int], _23:int, _23:int) 
+    bat.insert(b,2,3);                  #  2 _4:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) {G}
+    bat.insert(b,1,9);                  #  3 _7:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) {G}
+    bat.insert(b,9,8);                  #  4 _10:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _9:int, _11:int) {G}
+    bat.insert(b,6,4);                  #  5 _12:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _13:int, _14:int) {G}
+    bat.insert(b,5,2);                  #  6 _15:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _16:int, _5:int) {G}
+    bat.insert(b,3,0);                  #  7 _17:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _6:int, _18:int) {G}
+    bat.insert(b,0,1);                  #  8 _19:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _18:int, _8:int) {G}
+    bat.insert(b,8,6);                  #  9 _20:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _11:int, _13:int) {G}
+    bat.insert(b,4,5);                  # 10 _21:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _14:int, _16:int) {G}
+    bat.insert(b,7,7);                  # 11 _22:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _23:int, _23:int) {G}
     bat.setReadMode(b);                 # 12 _24:bat[:int,:int] := BKCsetReadMode(b:bat[:int,:int]) {G}
     io.print(b);                        # 13 _25:void := IOprint_val(b:bat[:int,:int]) 
     ma := algebra.markT(b,nil:oid);     # 14 ma:bat[:int,:oid] := ALGtmark(b:bat[:int,:int], _27:oid) {G}

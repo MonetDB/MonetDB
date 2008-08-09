@@ -47,7 +47,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # make sure you can bind to a BAT through the box 
     bbp.open();                         #  3 _3:void := CMDbbpopen() 
     b := bat.new(:int,:int);            #  4 b:bat[:int,:int] := CMDBATnew(_5:int, _5:int) {G}
-    bat.insert(b,1,2);                  #  5 _6:void := BKCinsert_bun(b:bat[:int,:int], _7:int, _8:int) 
+    bat.insert(b,1,2);                  #  5 _6:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _7:int, _8:int) {G}
     bat.setName(b,"myfirstlocalbat");   #  6 _9:void := BKCsetName(b:bat[:int,:int], _10:str) 
     c := bbp.bind("myfirstbat");        #  7 c:bat[:any,:any] := CMDbbpbind(_12:str) {G}
     io.print(c);                        #  8 _13:void := IOprint_val(c:bat[:any,:any]) 

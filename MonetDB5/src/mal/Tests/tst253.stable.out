@@ -32,8 +32,8 @@ stdout of test 'tst253` in directory 'src/mal` itself:
 function user.main():void;              #  0 main:void := user.main() {G}
 # testing void bats 
     b := bat.new(:oid,:str);            #  2 b:bat[:oid,:str] := CMDBATnew(_3:oid, _4:str) {G}
-    bat.insert(b,nil:oid,"hello");      #  3 _5:void := BKCinsert_bun(b:bat[:oid,:str], _6:oid, _7:str) 
-    bat.insert(b,nil:oid,"world");      #  4 _8:void := BKCinsert_bun(b:bat[:oid,:str], _6:oid, _9:str) 
+    bat.insert(b,nil:oid,"hello");      #  3 _5:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _6:oid, _7:str) {G}
+    bat.insert(b,nil:oid,"world");      #  4 _8:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _6:oid, _9:str) {G}
     io.print(b);                        #  5 _10:void := IOprint_val(b:bat[:oid,:str]) 
 #materialize header 
     c := bat.reverse(b);                #  7 c:bat[:str,:oid] := BKCreverse(b:bat[:oid,:str]) {G}

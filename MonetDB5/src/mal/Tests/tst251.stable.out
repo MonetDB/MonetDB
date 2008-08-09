@@ -36,13 +36,13 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # The first and foremost BAT operations 
 # String iterator stuff 
     c := bat.new(:int,:str);            #  4 c:bat[:int,:str] := CMDBATnew(_5:int, _6:str) {G}
-    bat.insert(c,1,"hello");            #  5 _7:void := BKCinsert_bun(c:bat[:int,:str], _8:int, _9:str) 
-    bat.insert(c,2,"brave");            #  6 _10:void := BKCinsert_bun(c:bat[:int,:str], _11:int, _12:str) 
-    bat.insert(c,3,"world");            #  7 _13:void := BKCinsert_bun(c:bat[:int,:str], _14:int, _15:str) 
-    bat.insert(c,4,"");                 #  8 _16:void := BKCinsert_bun(c:bat[:int,:str], _17:int, _18:str) 
+    bat.insert(c,1,"hello");            #  5 _7:bat[:int,:str] := BKCinsert_bun(c:bat[:int,:str], _8:int, _9:str) {G}
+    bat.insert(c,2,"brave");            #  6 _10:bat[:int,:str] := BKCinsert_bun(c:bat[:int,:str], _11:int, _12:str) {G}
+    bat.insert(c,3,"world");            #  7 _13:bat[:int,:str] := BKCinsert_bun(c:bat[:int,:str], _14:int, _15:str) {G}
+    bat.insert(c,4,"");                 #  8 _16:bat[:int,:str] := BKCinsert_bun(c:bat[:int,:str], _17:int, _18:str) {G}
     x := calc.str(nil:void);            #  9 x:str := CALCnil2str(_20:void) {G}
-    bat.insert(c,5,x);                  # 10 _21:void := BKCinsert_bun(c:bat[:int,:str], _22:int, x:str) 
-    bat.insert(c,6,"!");                # 11 _23:void := BKCinsert_bun(c:bat[:int,:str], _24:int, _25:str) 
+    bat.insert(c,5,x);                  # 10 _21:bat[:int,:str] := BKCinsert_bun(c:bat[:int,:str], _22:int, x:str) {G}
+    bat.insert(c,6,"!");                # 11 _23:bat[:int,:str] := BKCinsert_bun(c:bat[:int,:str], _24:int, _25:str) {G}
     io.print(c);                        # 12 _26:void := IOprint_val(c:bat[:int,:str]) 
 barrier (v,h,ts):= bat.newIterator(c);  # 13 (v:lng, h:int, ts:str) := CHPbunIterator(c:bat[:int,:str]) {GJ18}
     io.print(v);                        # 14 _30:void := IOprint_val(v:lng) 

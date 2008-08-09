@@ -24,8 +24,8 @@ stdout of test 'tst285` in directory 'src/mal` itself:
 #
 function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
-    bat.append(b,"hello");              #  2 _4:void := BKCappend_val_wrap(b:bat[:oid,:str], _5:str) 
-    bat.append(b,"goodbye");            #  3 _6:void := BKCappend_val_wrap(b:bat[:oid,:str], _7:str) 
+    bat.append(b,"hello");              #  2 _4:bat[:str,:any] := BKCappend_val_wrap(b:bat[:oid,:str], _5:str) {G}
+    bat.append(b,"goodbye");            #  3 _6:bat[:str,:any] := BKCappend_val_wrap(b:bat[:oid,:str], _7:str) {G}
     z1 := batstr.like_uselect(b,"%hel%");#  4 z1:bat[:oid,:oid] := STRbatlike_uselect2(b:bat[:oid,:str], _9:str) {G}
     io.print(z1);                       #  5 _10:void := IOprint_val(z1:bat[:oid,:oid]) 
     z2 := pcre.uselect(".*[ly].*",b);   #  6 z2:bat[:oid,:void] := PCREuselect(_12:str, b:bat[:oid,:str]) {G}

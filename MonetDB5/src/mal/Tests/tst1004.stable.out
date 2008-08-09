@@ -47,7 +47,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.print("Start test");             #  2 _2:void := IOprint_val(_3:str) 
     bbp.open();                         #  3 _4:void := CMDbbpopen() 
     b := bat.new(:int,:int);            #  4 b:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
-    bat.insert(b,1,2);                  #  5 _7:void := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) 
+    bat.insert(b,1,2);                  #  5 _7:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) {G}
     bbp.deposit("myfirstbat",b);        #  6 _10:void := CMDbbpdeposit(_11:str, b:bat[:int,:int]) 
     c := bbp.take("myfirstbat");        #  7 c:bat[:any,:any] := CMDbbptake(_11:str) {G}
 catch MALException:str ;                #  8 MALException:str {J10}

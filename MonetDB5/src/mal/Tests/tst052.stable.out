@@ -28,10 +28,10 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #dealing with wrd BATs 
 # -1 + 2^n 
     b := bat.new(:int,:wrd);            #  3 b:bat[:int,:wrd] := CMDBATnew(_4:int, _5:wrd) {G}
-    bat.insert(b,1,1:wrd);              #  4 _6:void := BKCinsert_bun(b:bat[:int,:wrd], _7:int, _8:wrd) 
-    bat.insert(b,7,127:wrd);            #  5 _9:void := BKCinsert_bun(b:bat[:int,:wrd], _10:int, _11:wrd) 
-    bat.insert(b,15,32768:wrd);         #  6 _12:void := BKCinsert_bun(b:bat[:int,:wrd], _13:int, _14:wrd) 
-    bat.insert(b,31,2147483647:wrd);    #  7 _15:void := BKCinsert_bun(b:bat[:int,:wrd], _16:int, _17:wrd) 
+    bat.insert(b,1,1:wrd);              #  4 _6:bat[:int,:wrd] := BKCinsert_bun(b:bat[:int,:wrd], _7:int, _8:wrd) {G}
+    bat.insert(b,7,127:wrd);            #  5 _9:bat[:int,:wrd] := BKCinsert_bun(b:bat[:int,:wrd], _10:int, _11:wrd) {G}
+    bat.insert(b,15,32768:wrd);         #  6 _12:bat[:int,:wrd] := BKCinsert_bun(b:bat[:int,:wrd], _13:int, _14:wrd) {G}
+    bat.insert(b,31,2147483647:wrd);    #  7 _15:bat[:int,:wrd] := BKCinsert_bun(b:bat[:int,:wrd], _16:int, _17:wrd) {G}
     io.print(b);                        #  8 _18:void := IOprint_val(b:bat[:int,:wrd]) 
 end main;                               #  9  
 #-------------------------#

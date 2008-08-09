@@ -41,7 +41,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.printf("refcount =%d\n",i);      #  4 _6:void := IOprint_formatted_int(_7:str, i:int) 
     j := bbp.getLRefCount(b);           #  5 j:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
     io.printf("lrefcount =%d\n",j);     #  6 _9:void := IOprint_formatted_int(_10:str, j:int) 
-    bat.insert(b,1,"bat B");            #  7 _11:void := BKCinsert_bun(b:bat[:int,:str], _12:int, _13:str) 
+    bat.insert(b,1,"bat B");            #  7 _11:bat[:int,:str] := BKCinsert_bun(b:bat[:int,:str], _12:int, _13:str) {G}
     io.print(b);                        #  8 _14:void := IOprint_val(b:bat[:int,:str]) 
     i := bbp.getRefCount(b);            #  9 i:int := CMDgetBATrefcnt(b:bat[:int,:str]) 
     io.printf("second refcount =%d\n",i);# 10 _15:void := IOprint_formatted_int(_16:str, i:int) 
@@ -62,9 +62,9 @@ lrefcount =1
 #-------------------------#
 [ 1,	  "bat B"	  ]
 second refcount =1
-lrefcount =1
-after reverse assignment refcount =1
 lrefcount =2
+after reverse assignment refcount =1
+lrefcount =3
 
 # 08:01:02 >  
 # 08:01:02 >  Done.

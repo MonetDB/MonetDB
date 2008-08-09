@@ -85,16 +85,16 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # use local cost functions, which leads to a hill-climber 
 # Use the backward scheduling. 
     A := bat.new(:int,:int);            #  4 A:bat[:int,:int] := CMDBATnew(_5:int, _5:int) {G}
-    bat.insert(A,1,1);                  #  5 _6:void := BKCinsert_bun(A:bat[:int,:int], _7:int, _7:int) 
+    bat.insert(A,1,1);                  #  5 _6:bat[:int,:int] := BKCinsert_bun(A:bat[:int,:int], _7:int, _7:int) {G}
     B := algebra.copy(A);               #  6 B:bat[:int,:int] := ALGcopy(A:bat[:int,:int]) {G}
     bat.setWriteMode(B);                #  7 _9:bat[:int,:int] := BKCsetWriteMode(B:bat[:int,:int]) {G}
-    bat.insert(B,2,2);                  #  8 _10:void := BKCinsert_bun(B:bat[:int,:int], _11:int, _11:int) 
+    bat.insert(B,2,2);                  #  8 _10:bat[:int,:int] := BKCinsert_bun(B:bat[:int,:int], _11:int, _11:int) {G}
     C := algebra.copy(B);               #  9 C:bat[:int,:int] := ALGcopy(B:bat[:int,:int]) {G}
     bat.setWriteMode(C);                # 10 _13:bat[:int,:int] := BKCsetWriteMode(C:bat[:int,:int]) {G}
-    bat.insert(C,3,3);                  # 11 _14:void := BKCinsert_bun(C:bat[:int,:int], _15:int, _15:int) 
+    bat.insert(C,3,3);                  # 11 _14:bat[:int,:int] := BKCinsert_bun(C:bat[:int,:int], _15:int, _15:int) {G}
     D := algebra.copy(C);               # 12 D:bat[:int,:int] := ALGcopy(C:bat[:int,:int]) {G}
     bat.setWriteMode(D);                # 13 _17:bat[:int,:int] := BKCsetWriteMode(D:bat[:int,:int]) {G}
-    bat.insert(D,3,3);                  # 14 _18:void := BKCinsert_bun(D:bat[:int,:int], _15:int, _15:int) 
+    bat.insert(D,3,3);                  # 14 _18:bat[:int,:int] := BKCinsert_bun(D:bat[:int,:int], _15:int, _15:int) {G}
     Acost := aggr.count(A);             # 15 Acost:int := ALGcount_bat(A:bat[:int,:int]) 
     Bcost := aggr.count(B);             # 16 Bcost:int := ALGcount_bat(B:bat[:int,:int]) 
     Ccost := aggr.count(C);             # 17 Ccost:int := ALGcount_bat(C:bat[:int,:int]) 

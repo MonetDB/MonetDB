@@ -49,11 +49,11 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # create a connecton to ourself 
     remote.create("test",h,p,nil:str,"monetdb","monetdb");#  7 _7:void := RMTcreate(_8:str, h:str, p:int, _9:str, _10:str, _10:str) 
     b := bat.new(:str,:int);            #  8 b:bat[:str,:int] := CMDBATnew(_12:str, _13:int) {G}
-    bat.insert(b,"bla",1);              #  9 _14:void := BKCinsert_bun(b:bat[:str,:int], _15:str, _16:int) 
-    bat.insert(b,"boe",2);              # 10 _17:void := BKCinsert_bun(b:bat[:str,:int], _18:str, _19:int) 
-    bat.insert(b,"foo",3);              # 11 _20:void := BKCinsert_bun(b:bat[:str,:int], _21:str, _22:int) 
-    bat.insert(b,"bar",4);              # 12 _23:void := BKCinsert_bun(b:bat[:str,:int], _24:str, _25:int) 
-    bat.insert(b,"baz",5);              # 13 _26:void := BKCinsert_bun(b:bat[:str,:int], _27:str, _28:int) 
+    bat.insert(b,"bla",1);              #  9 _14:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _15:str, _16:int) {G}
+    bat.insert(b,"boe",2);              # 10 _17:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _18:str, _19:int) {G}
+    bat.insert(b,"foo",3);              # 11 _20:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _21:str, _22:int) {G}
+    bat.insert(b,"bar",4);              # 12 _23:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _24:str, _25:int) {G}
+    bat.insert(b,"baz",5);              # 13 _26:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _27:str, _28:int) {G}
     j := remote.put("test",b);          # 14 j:rmtobj := RMTput(_8:str, b:bat[:str,:int]) {G}
 # perform a selection remote, and get the result back 
     t := remote.exec("test","algebra","select",j,3,10);# 16 t:any := RMTexec(_8:str, _32:str, _33:str, j:rmtobj, _22:int, _34:int) 

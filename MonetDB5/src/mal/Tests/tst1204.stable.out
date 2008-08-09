@@ -43,7 +43,7 @@ barrier lf_a := true;                   #  7 lf_a:bit := _13:bit {J17}
 barrier mf_a := of_a;                   # 10 mf_a:bit := of_a:bit {J16}
 #while ((i :+= 1) < 375) { 
     pf_a := mtime.adddays(date_00,i);   # 12 pf_a:date := MTIMEdate_adddays(date_00:date, i:int) 
-    bat.insert(date_seq,i,pf_a);        # 13 _19:void := BKCinsert_bun(date_seq:bat[:int,:date], i:int, pf_a:date) 
+    bat.insert(date_seq,i,pf_a);        # 13 _19:bat[:int,:date] := BKCinsert_bun(date_seq:bat[:int,:date], i:int, pf_a:date) {G}
 #	date_seq.bat.insert(i,adddays(date_00,i)); 
     redo lf_a;                          # 15 lf_a:bit {J8}
 exit mf_a;                              # 16 mf_a:bit 

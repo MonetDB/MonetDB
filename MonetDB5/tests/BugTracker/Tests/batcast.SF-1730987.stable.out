@@ -35,17 +35,17 @@ stdout of test 'batcast.SF-1730987` in directory 'tests/BugTracker` itself:
 #
 function user.main():void;              #  0 main:void := user.main() {G}
     v := bat.new(:oid,:bit);            #  1 v:bat[:oid,:bit] := CMDBATnew(_2:oid, _3:bit) {G}
-    bat.append(v,true);                 #  2 _4:void := BKCappend_val_wrap(v:bat[:oid,:bit], _5:bit) 
-    bat.append(v,false);                #  3 _6:void := BKCappend_val_wrap(v:bat[:oid,:bit], _7:bit) 
-    bat.append(v,true);                 #  4 _8:void := BKCappend_val_wrap(v:bat[:oid,:bit], _5:bit) 
-    bat.append(v,true);                 #  5 _9:void := BKCappend_val_wrap(v:bat[:oid,:bit], _5:bit) 
-    bat.append(v,true);                 #  6 _10:void := BKCappend_val_wrap(v:bat[:oid,:bit], _5:bit) 
-    bat.append(v,true);                 #  7 _11:void := BKCappend_val_wrap(v:bat[:oid,:bit], _5:bit) 
-    bat.append(v,true);                 #  8 _12:void := BKCappend_val_wrap(v:bat[:oid,:bit], _5:bit) 
-    bat.append(v,false);                #  9 _13:void := BKCappend_val_wrap(v:bat[:oid,:bit], _7:bit) 
-    bat.append(v,false);                # 10 _14:void := BKCappend_val_wrap(v:bat[:oid,:bit], _7:bit) 
-    bat.append(v,false);                # 11 _15:void := BKCappend_val_wrap(v:bat[:oid,:bit], _7:bit) 
-    bat.append(v,false);                # 12 _16:void := BKCappend_val_wrap(v:bat[:oid,:bit], _7:bit) 
+    bat.append(v,true);                 #  2 _4:bat[:bit,:any] := BKCappend_val_wrap(v:bat[:oid,:bit], _5:bit) {G}
+    bat.append(v,false);                #  3 _6:bat[:bit,:any] := BKCappend_val_wrap(v:bat[:oid,:bit], _7:bit) {G}
+    bat.append(v,true);                 #  4 _8:bat[:bit,:any] := BKCappend_val_wrap(v:bat[:oid,:bit], _5:bit) {G}
+    bat.append(v,true);                 #  5 _9:bat[:bit,:any] := BKCappend_val_wrap(v:bat[:oid,:bit], _5:bit) {G}
+    bat.append(v,true);                 #  6 _10:bat[:bit,:any] := BKCappend_val_wrap(v:bat[:oid,:bit], _5:bit) {G}
+    bat.append(v,true);                 #  7 _11:bat[:bit,:any] := BKCappend_val_wrap(v:bat[:oid,:bit], _5:bit) {G}
+    bat.append(v,true);                 #  8 _12:bat[:bit,:any] := BKCappend_val_wrap(v:bat[:oid,:bit], _5:bit) {G}
+    bat.append(v,false);                #  9 _13:bat[:bit,:any] := BKCappend_val_wrap(v:bat[:oid,:bit], _7:bit) {G}
+    bat.append(v,false);                # 10 _14:bat[:bit,:any] := BKCappend_val_wrap(v:bat[:oid,:bit], _7:bit) {G}
+    bat.append(v,false);                # 11 _15:bat[:bit,:any] := BKCappend_val_wrap(v:bat[:oid,:bit], _7:bit) {G}
+    bat.append(v,false);                # 12 _16:bat[:bit,:any] := BKCappend_val_wrap(v:bat[:oid,:bit], _7:bit) {G}
     io.print(v);                        # 13 _17:void := IOprint_val(v:bat[:oid,:bit]) 
     algebra.reuse(v);                   # 14 _18:bat[:oid,:bit] := ALGreuse(v:bat[:oid,:bit]) {G}
     v := batcalc.and(v,v,v);            # 15 v:bat[:oid,:bit] := CMDaccum_AND_bit(v:bat[:oid,:bit], v:bat[:oid,:bit], v:bat[:oid,:bit]) {G}

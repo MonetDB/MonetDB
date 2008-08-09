@@ -95,17 +95,17 @@ stdout of test 'tst049` in directory 'src/mal` itself:
 #
 function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
-    bat.insert(b,1@0,"");               #  2 _4:void := BKCinsert_bun(b:bat[:oid,:str], _5:oid, _6:str) 
-    bat.insert(b,2@0,"t");              #  3 _7:void := BKCinsert_bun(b:bat[:oid,:str], _8:oid, _9:str) 
-    bat.insert(b,3@0,"ts");             #  4 _10:void := BKCinsert_bun(b:bat[:oid,:str], _11:oid, _12:str) 
-    bat.insert(b,4@0,"tsz");            #  5 _13:void := BKCinsert_bun(b:bat[:oid,:str], _14:oid, _15:str) 
-    bat.insert(b,5@0,"a math assignment");#  6 _16:void := BKCinsert_bun(b:bat[:oid,:str], _17:oid, _18:str) 
-    bat.insert(b,6@0,"pathfined is fun!");#  7 _19:void := BKCinsert_bun(b:bat[:oid,:str], _20:oid, _21:str) 
-    bat.insert(b,7@0,"123123123");      #  8 _22:void := BKCinsert_bun(b:bat[:oid,:str], _23:oid, _24:str) 
-    bat.insert(b,8@0,"123123456123");   #  9 _25:void := BKCinsert_bun(b:bat[:oid,:str], _26:oid, _27:str) 
-    bat.insert(b,9@0,"199993456123");   # 10 _28:void := BKCinsert_bun(b:bat[:oid,:str], _29:oid, _30:str) 
-    bat.insert(b,10@0,"123456123456");  # 11 _31:void := BKCinsert_bun(b:bat[:oid,:str], _32:oid, _33:str) 
-    bat.insert(b,11@0,"123454321");     # 12 _34:void := BKCinsert_bun(b:bat[:oid,:str], _35:oid, _36:str) 
+    bat.insert(b,1@0,"");               #  2 _4:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _5:oid, _6:str) {G}
+    bat.insert(b,2@0,"t");              #  3 _7:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _8:oid, _9:str) {G}
+    bat.insert(b,3@0,"ts");             #  4 _10:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _11:oid, _12:str) {G}
+    bat.insert(b,4@0,"tsz");            #  5 _13:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _14:oid, _15:str) {G}
+    bat.insert(b,5@0,"a math assignment");#  6 _16:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _17:oid, _18:str) {G}
+    bat.insert(b,6@0,"pathfined is fun!");#  7 _19:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _20:oid, _21:str) {G}
+    bat.insert(b,7@0,"123123123");      #  8 _22:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _23:oid, _24:str) {G}
+    bat.insert(b,8@0,"123123456123");   #  9 _25:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _26:oid, _27:str) {G}
+    bat.insert(b,9@0,"199993456123");   # 10 _28:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _29:oid, _30:str) {G}
+    bat.insert(b,10@0,"123456123456");  # 11 _31:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _32:oid, _33:str) {G}
+    bat.insert(b,11@0,"123454321");     # 12 _34:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _35:oid, _36:str) {G}
     io.print(b);                        # 13 _37:void := IOprint_val(b:bat[:oid,:str]) 
     i := str.like("hello","hello");     # 14 i:bit := PCRElike2(_39:str, _39:str) 
     io.print(i);                        # 15 _40:void := IOprint_val(i:bit) 

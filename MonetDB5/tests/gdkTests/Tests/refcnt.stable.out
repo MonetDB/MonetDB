@@ -41,7 +41,7 @@ end tmp;	# 5
 function user.addBAT(b:bat[:str,:BAT],name:str):void;#  0 addBAT:void := user.addBAT(b:bat[:str,:BAT], name:str) {G}
     add := bat.new(:int,:int);          #  1 add:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
     bat.setName(add,name);              #  2 _5:void := BKCsetName(add:bat[:int,:int], name:str) 
-    bat.insert(b,name,add);             #  3 _6:void := BKCinsert_bun(b:bat[:str,:BAT], name:str, add:bat[:int,:int]) 
+    bat.insert(b,name,add);             #  3 _6:bat[:str,:BAT] := BKCinsert_bun(b:bat[:str,:BAT], name:str, add:bat[:int,:int]) {G}
 end addBAT;	# 4  
 ##
 ###BUG: bat(name) will not be deleted in the garbage collection
@@ -53,7 +53,7 @@ end addBAT;	# 4
 #	bat.delete(b,name);
 #end delBAT;
 function user.delBAT(b:bat[:any_1,:any_2],name:str):void;#  0 delBAT:void := user.delBAT(b:bat[:any_1,:any_2], name:str) {PG}
-    bat.delete(b,name);                 #  1 _3:void := BKCdelete(b:bat[:any_1,:any_2], name:str) {P}
+    bat.delete(b,name);                 #  1 _3:bat[:str,:any] := BKCdelete(b:bat[:any_1,:any_2], name:str) {PG}
 end delBAT;	# 2  
 ##
 ##PROC createBAT(str name) : bat[int,int] {
@@ -179,15 +179,15 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #VAR i := new(oid,str); 
     m := bat.new(:oid,:str);            # 42 m:bat[:oid,:str] := CMDBATnew(_49:oid, _50:str) {G}
 #i.insert(oid(10),"ten"); 
-    bat.insert(m,10@0:oid,"ten");       # 44 _52:void := BKCinsert_bun(m:bat[:oid,:str], _53:oid, _54:str) 
+    bat.insert(m,10@0:oid,"ten");       # 44 _52:bat[:oid,:str] := BKCinsert_bun(m:bat[:oid,:str], _53:oid, _54:str) {G}
 #i.insert(oid(20),"twenty"); 
-    bat.insert(m,20@0:oid,"twenty");    # 46 _56:void := BKCinsert_bun(m:bat[:oid,:str], _57:oid, _58:str) 
+    bat.insert(m,20@0:oid,"twenty");    # 46 _56:bat[:oid,:str] := BKCinsert_bun(m:bat[:oid,:str], _57:oid, _58:str) {G}
 #VAR res := [createBAT](i); 
     io.print("do multiplex");           # 48 _60:void := IOprint_val(_61:str) 
     _84 := bat.new(nil:oid,nil:BAT);    # 49 _84:bat[:oid,:BAT] := CMDBATnew(_85:oid, _86:BAT) {G}
 barrier (_88,_89,_90):= bat.newIterator(m);# 50 (_88:lng, _89:oid, _90:str) := CHPbunIterator(m:bat[:oid,:str]) {GJ54}
     _92 := user.createBAT(_90);         # 51 _92:BAT := user.createBAT(_90:str) {G}
-    bat.insert(_84,_89,_92);            # 52 _93:void := BKCinsert_bun(_84:bat[:oid,:BAT], _89:oid, _92:BAT) 
+    bat.insert(_84,_89,_92);            # 52 _93:bat[:oid,:BAT] := BKCinsert_bun(_84:bat[:oid,:BAT], _89:oid, _92:BAT) {G}
     redo (_88,_89,_90):= bat.hasMoreElements(m);# 53 (_88:lng, _89:oid, _90:str) := CHPbunHasMoreElements(m:bat[:oid,:str]) {GJ51}
 exit (_88,_89,_90);                     # 54 (_88:lng, _89:oid, _90:str) 
     r:bat[:oid,:BAT]  := _84;           # 55 r:bat[:oid,:BAT] := _84:bat[:oid,:BAT] {G}

@@ -103,7 +103,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("var a := bat.new(int,int);"); 
     a := bat.new(nil:int,nil:int);      # 36 a:bat[:int,:int] := CMDBATnew(_37:int, _37:int) {G}
 #	io.print("a.insert(1,1);"); 
-    aa_a := bat.insert(a,1,1);          # 38 aa_a:void := BKCinsert_bun(a:bat[:int,:int], _40:int, _40:int) 
+    aa_a := bat.insert(a,1,1);          # 38 aa_a:bat[:int,:int] := BKCinsert_bun(a:bat[:int,:int], _40:int, _40:int) {G}
 #	io.print("a.print();"); 
     ba_a := io.print(a);                # 40 ba_a:void := IOprint_val(a:bat[:int,:int]) 
 #	io.print("a.export(\"testt\");"); 

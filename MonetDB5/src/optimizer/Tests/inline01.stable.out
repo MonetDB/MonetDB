@@ -32,7 +32,7 @@ function user.help{inline}():void;      #  0 help:void := user.help() {G}
     b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     c := bat.new(:int,:int);            #  2 c:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     z:int  := 1;                        #  3 z:int := _5:int 
-    bat.insert(b,1,1);                  #  4 _6:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _5:int) 
+    bat.insert(b,1,1);                  #  4 _6:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _5:int, _5:int) {G}
 barrier (x,y,z:int ):= bat.newIterator(b);#  5 (x:lng, y:int, z:int) := CHPbunIterator(b:bat[:int,:int]) {J9}
     io.print(x);                        #  6 _9:void := IOprint_val(x:lng) 
 catch MALException:str ;                #  7 MALException:str {J8}

@@ -105,7 +105,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 barrier (go,i):= language.newRange(0:lng);#  4 (go:bit, i:lng) := RNGnewRange_lng(_8:lng) {J9}
     k := mmath.rand();                  #  5 k:int := MATHrandint() 
     l := calc.lng(k);                   #  6 l:lng := CALCint2lng(k:int) 
-    bat.insert(b,nil:oid,l);            #  7 _11:void := BKCinsert_bun(b:bat[:oid,:lng], _12:oid, l:lng) 
+    bat.insert(b,nil:oid,l);            #  7 _11:bat[:oid,:lng] := BKCinsert_bun(b:bat[:oid,:lng], _12:oid, l:lng) {G}
     redo (go,i):= language.nextElement(1:lng,1000000:lng);#  8 (go:bit, i:lng) := RNGnextElement_lng(_13:lng, _14:lng) {J5}
 exit (go,i);                            #  9 (go:bit, i:lng) 
     t0 := alarm.usec();                 # 10 t0:lng := ALARMusec() 

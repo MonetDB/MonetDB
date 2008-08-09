@@ -27,7 +27,7 @@ stdout of test 'tst4015` in directory 'src/optimizer` itself:
 function user.main():void;              #  0 main:void := user.main() {G}
 # testing repeatative reverse optimalisation 
     r := bat.new(:int,:int);            #  2 r:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
-    bat.insert(r,5:int,1:int);          #  3 _4:void := BKCinsert_bun(r:bat[:int,:int], _5:int, _6:int) 
+    bat.insert(r,5:int,1:int);          #  3 _4:bat[:int,:int] := BKCinsert_bun(r:bat[:int,:int], _5:int, _6:int) {G}
     o := 0@0:oid;                       #  4 o:oid := _8:oid 
     rr := bat.reverse(r);               #  5 rr:bat[:int,:int] := BKCreverse(r:bat[:int,:int]) {G}
     z := algebra.markT(rr,o);           #  6 z:bat[:int,:oid] := ALGtmark(rr:bat[:int,:int], o:oid) {G}

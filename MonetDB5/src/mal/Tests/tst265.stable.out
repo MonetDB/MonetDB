@@ -36,15 +36,15 @@ stdout of test 'tst265` in directory 'src/mal` itself:
 function user.main():void;              #  0 main:void := user.main() {G}
 # Grouped sums 
     b := bat.new(:oid,:int);            #  2 b:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
-    bat.append(b,1);                    #  3 _5:void := BKCappend_val_wrap(b:bat[:oid,:int], _6:int) 
-    bat.append(b,2);                    #  4 _7:void := BKCappend_val_wrap(b:bat[:oid,:int], _8:int) 
-    bat.append(b,3);                    #  5 _9:void := BKCappend_val_wrap(b:bat[:oid,:int], _10:int) 
-    bat.append(b,4);                    #  6 _11:void := BKCappend_val_wrap(b:bat[:oid,:int], _12:int) 
-    bat.append(b,5);                    #  7 _13:void := BKCappend_val_wrap(b:bat[:oid,:int], _14:int) 
-    bat.append(b,6);                    #  8 _15:void := BKCappend_val_wrap(b:bat[:oid,:int], _16:int) 
-    bat.append(b,7);                    #  9 _17:void := BKCappend_val_wrap(b:bat[:oid,:int], _18:int) 
-    bat.append(b,8);                    # 10 _19:void := BKCappend_val_wrap(b:bat[:oid,:int], _20:int) 
-    bat.append(b,9);                    # 11 _21:void := BKCappend_val_wrap(b:bat[:oid,:int], _22:int) 
+    bat.append(b,1);                    #  3 _5:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _6:int) {G}
+    bat.append(b,2);                    #  4 _7:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _8:int) {G}
+    bat.append(b,3);                    #  5 _9:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _10:int) {G}
+    bat.append(b,4);                    #  6 _11:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _12:int) {G}
+    bat.append(b,5);                    #  7 _13:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _14:int) {G}
+    bat.append(b,6);                    #  8 _15:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _16:int) {G}
+    bat.append(b,7);                    #  9 _17:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _18:int) {G}
+    bat.append(b,8);                    # 10 _19:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _20:int) {G}
+    bat.append(b,9);                    # 11 _21:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _22:int) {G}
     io.print(b);                        # 12 _23:void := IOprint_val(b:bat[:oid,:int]) 
     g := group.sum(b,3);                # 13 g:bat[:oid,:int] := GRPwindowsum_int(b:bat[:oid,:int], _10:int) {G}
     io.print(g);                        # 14 _25:void := IOprint_val(g:bat[:oid,:int]) 

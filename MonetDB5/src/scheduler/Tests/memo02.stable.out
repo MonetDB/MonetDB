@@ -46,16 +46,16 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # The first memo driven execution 
 # use a generic cost function 
     A := bat.new(:int,:int);            #  3 A:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
-    bat.insert(A,1,1);                  #  4 _5:void := BKCinsert_bun(A:bat[:int,:int], _6:int, _6:int) 
+    bat.insert(A,1,1);                  #  4 _5:bat[:int,:int] := BKCinsert_bun(A:bat[:int,:int], _6:int, _6:int) {G}
     B := algebra.copy(A);               #  5 B:bat[:int,:int] := ALGcopy(A:bat[:int,:int]) {G}
     bat.setWriteMode(B);                #  6 _8:bat[:int,:int] := BKCsetWriteMode(B:bat[:int,:int]) {G}
-    bat.insert(B,2,2);                  #  7 _9:void := BKCinsert_bun(B:bat[:int,:int], _10:int, _10:int) 
+    bat.insert(B,2,2);                  #  7 _9:bat[:int,:int] := BKCinsert_bun(B:bat[:int,:int], _10:int, _10:int) {G}
     C := algebra.copy(B);               #  8 C:bat[:int,:int] := ALGcopy(B:bat[:int,:int]) {G}
     bat.setWriteMode(C);                #  9 _12:bat[:int,:int] := BKCsetWriteMode(C:bat[:int,:int]) {G}
-    bat.insert(C,3,3);                  # 10 _13:void := BKCinsert_bun(C:bat[:int,:int], _14:int, _14:int) 
+    bat.insert(C,3,3);                  # 10 _13:bat[:int,:int] := BKCinsert_bun(C:bat[:int,:int], _14:int, _14:int) {G}
     D := algebra.copy(C);               # 11 D:bat[:int,:int] := ALGcopy(C:bat[:int,:int]) {G}
     bat.setWriteMode(D);                # 12 _16:bat[:int,:int] := BKCsetWriteMode(D:bat[:int,:int]) {G}
-    bat.insert(D,3,3);                  # 13 _17:void := BKCinsert_bun(D:bat[:int,:int], _14:int, _14:int) 
+    bat.insert(D,3,3);                  # 13 _17:bat[:int,:int] := BKCinsert_bun(D:bat[:int,:int], _14:int, _14:int) {G}
     scheduler.choice();                 # 14 _18:void := RUNchoice() 
     T1 := algebra.join(A,B);            # 15 T1:bat[:int,:int] := ALGjoin(A:bat[:int,:int], B:bat[:int,:int]) {G}
     T2 := algebra.join(B,C);            # 16 T2:bat[:int,:int] := ALGjoin(B:bat[:int,:int], C:bat[:int,:int]) {G}

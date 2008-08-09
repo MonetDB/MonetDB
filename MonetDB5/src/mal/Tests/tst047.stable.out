@@ -32,9 +32,9 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #testing copying and counting reversals 
 #to test reversal handling 
     b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
-    bat.insert(b,1,1);                  #  4 _5:void := BKCinsert_bun(b:bat[:int,:int], _6:int, _6:int) 
-    bat.insert(b,2,4);                  #  5 _7:void := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) 
-    bat.insert(b,3,9);                  #  6 _10:void := BKCinsert_bun(b:bat[:int,:int], _11:int, _12:int) 
+    bat.insert(b,1,1);                  #  4 _5:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _6:int, _6:int) {G}
+    bat.insert(b,2,4);                  #  5 _7:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) {G}
+    bat.insert(b,3,9);                  #  6 _10:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _11:int, _12:int) {G}
     io.print(b);                        #  7 _13:void := IOprint_val(b:bat[:int,:int]) 
     br := bat.reverse(b);               #  8 br:bat[:int,:int] := BKCreverse(b:bat[:int,:int]) {G}
     io.print(br);                       #  9 _15:void := IOprint_val(br:bat[:int,:int]) 

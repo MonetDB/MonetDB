@@ -71,17 +71,17 @@ function user.main():void;              #  0 main:void := user.main() {G}
     tablet.setName(0,"Eerste");         #  9 _14:void := TABsetColumnName(_15:int, _16:str) 
 #tablet.setRowBracket("|","|"); 
     b1 := bat.new(:oid,:int);           # 11 b1:bat[:oid,:int] := CMDBATnew(_19:oid, _20:int) {G}
-    bat.append(b1,42);                  # 12 _21:void := BKCappend_val_wrap(b1:bat[:oid,:int], _22:int) 
-    bat.append(b1,49);                  # 13 _23:void := BKCappend_val_wrap(b1:bat[:oid,:int], _24:int) 
+    bat.append(b1,42);                  # 12 _21:bat[:int,:any] := BKCappend_val_wrap(b1:bat[:oid,:int], _22:int) {G}
+    bat.append(b1,49);                  # 13 _23:bat[:int,:any] := BKCappend_val_wrap(b1:bat[:oid,:int], _24:int) {G}
     b2 := bat.new(:oid,:str);           # 14 b2:bat[:oid,:str] := CMDBATnew(_19:oid, _26:str) {G}
-    bat.append(b2,"hello world");       # 15 _27:void := BKCappend_val_wrap(b2:bat[:oid,:str], _28:str) 
-    bat.append(b2,"goodbye world");     # 16 _29:void := BKCappend_val_wrap(b2:bat[:oid,:str], _30:str) 
+    bat.append(b2,"hello world");       # 15 _27:bat[:str,:any] := BKCappend_val_wrap(b2:bat[:oid,:str], _28:str) {G}
+    bat.append(b2,"goodbye world");     # 16 _29:bat[:str,:any] := BKCappend_val_wrap(b2:bat[:oid,:str], _30:str) {G}
     tablet.setProperties("name,type,dense,sorted,key,min,max");# 17 _31:int := TABsetProperties(_32:str) 
     tablet.display(b1,b2);              # 18 _33:int := TABdisplayTable(b1:bat[:oid,:int], b2:bat[:oid,:str]) 
     in := calc.int(nil:void);           # 19 in:int := CALCnil2int(_35:void) 
     sn := calc.str(nil:void);           # 20 sn:str := CALCnil2str(_35:void) {G}
-    bat.append(b1,in);                  # 21 _37:void := BKCappend_val_wrap(b1:bat[:oid,:int], in:int) 
-    bat.append(b2,sn);                  # 22 _38:void := BKCappend_val_wrap(b2:bat[:oid,:str], sn:str) 
+    bat.append(b1,in);                  # 21 _37:bat[:int,:any] := BKCappend_val_wrap(b1:bat[:oid,:int], in:int) {G}
+    bat.append(b2,sn);                  # 22 _38:bat[:str,:any] := BKCappend_val_wrap(b2:bat[:oid,:str], sn:str) {G}
     tablet.setProperties(sn);           # 23 _39:int := TABsetProperties(sn:str) 
     tablet.setDecimal(0,3,1);           # 24 _40:void := TABsetColumnDecimal(_15:int, _41:int, _42:int) 
     tablet.setNull(1,"unknown");        # 25 _43:void := TABsetColumnNull(_42:int, _44:str) 

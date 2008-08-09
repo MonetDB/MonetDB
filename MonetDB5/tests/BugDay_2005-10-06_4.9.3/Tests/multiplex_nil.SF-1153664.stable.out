@@ -24,16 +24,16 @@ stdout of test 'multiplex_nil.SF-1153664` in directory 'tests/BugDay_2005-10-06_
 #
 function user.main():void;              #  0 main:void := user.main() {G}
     a := bat.new(:int,:int);            #  1 a:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    bat.insert(a,1,2);                  #  2 _3:void := BKCinsert_bun(a:bat[:int,:int], _4:int, _5:int) 
-    bat.insert(a,2,3);                  #  3 _6:void := BKCinsert_bun(a:bat[:int,:int], _5:int, _7:int) 
+    bat.insert(a,1,2);                  #  2 _3:bat[:int,:int] := BKCinsert_bun(a:bat[:int,:int], _4:int, _5:int) {G}
+    bat.insert(a,2,3);                  #  3 _6:bat[:int,:int] := BKCinsert_bun(a:bat[:int,:int], _5:int, _7:int) {G}
     b := bat.new(:int,:int);            #  4 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    bat.insert(b,1,4);                  #  5 _9:void := BKCinsert_bun(b:bat[:int,:int], _4:int, _10:int) 
-    bat.insert(b,2,9);                  #  6 _11:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _12:int) 
+    bat.insert(b,1,4);                  #  5 _9:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _4:int, _10:int) {G}
+    bat.insert(b,2,9);                  #  6 _11:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _5:int, _12:int) {G}
     io.print(a,b);                      #  7 _13:void := IOtable(a:bat[:int,:int], b:bat[:int,:int]) 
     b := bat.new(:int,:int);            #  8 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    bat.insert(b,nil:int,nil:int);      #  9 _14:void := BKCinsert_bun(b:bat[:int,:int], _15:int, _15:int) 
-    bat.insert(b,1,4);                  # 10 _16:void := BKCinsert_bun(b:bat[:int,:int], _4:int, _10:int) 
-    bat.insert(b,2,9);                  # 11 _17:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _12:int) 
+    bat.insert(b,nil:int,nil:int);      #  9 _14:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _15:int, _15:int) {G}
+    bat.insert(b,1,4);                  # 10 _16:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _4:int, _10:int) {G}
+    bat.insert(b,2,9);                  # 11 _17:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _5:int, _12:int) {G}
     io.print(a,b);                      # 12 _18:void := IOtable(a:bat[:int,:int], b:bat[:int,:int]) 
 end main;	# 13  
 #-------------------------#

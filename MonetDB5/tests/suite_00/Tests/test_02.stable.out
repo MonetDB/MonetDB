@@ -92,24 +92,24 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("var s:= bat.new(str,int);"); 
     s := bat.new(nil:str,nil:int);      # 14 s:bat[:str,:int] := CMDBATnew(_16:str, _17:int) {G}
 #	io.print("insert(s,\"hello\",1);"); 
-    ca_a := bat.insert(s,"hello",1);    # 16 ca_a:void := BKCinsert_bun(s:bat[:str,:int], _20:str, _21:int) 
+    ca_a := bat.insert(s,"hello",1);    # 16 ca_a:bat[:str,:int] := BKCinsert_bun(s:bat[:str,:int], _20:str, _21:int) {G}
 #	io.print("print(find(s,\"hello\"));"); 
     da_a := algebra.find(s,"hello");    # 18 da_a:int := ALGfind(s:bat[:str,:int], _20:str) 
     ea_a := io.print(da_a);             # 19 ea_a:void := IOprint_val(da_a:int) 
 #	io.print("insert(s,\"bello\",2);"); 
-    fa_a := bat.insert(s,"bello",2);    # 21 fa_a:void := BKCinsert_bun(s:bat[:str,:int], _27:str, _28:int) 
+    fa_a := bat.insert(s,"bello",2);    # 21 fa_a:bat[:str,:int] := BKCinsert_bun(s:bat[:str,:int], _27:str, _28:int) {G}
 #	io.print("insert(s,\"cello\",3);"); 
-    ga_a := bat.insert(s,"cello",3);    # 23 ga_a:void := BKCinsert_bun(s:bat[:str,:int], _31:str, _32:int) 
+    ga_a := bat.insert(s,"cello",3);    # 23 ga_a:bat[:str,:int] := BKCinsert_bun(s:bat[:str,:int], _31:str, _32:int) {G}
 #	io.print("insert(s,\"dello\",4);"); 
-    ha_a := bat.insert(s,"dello",4);    # 25 ha_a:void := BKCinsert_bun(s:bat[:str,:int], _35:str, _36:int) 
+    ha_a := bat.insert(s,"dello",4);    # 25 ha_a:bat[:str,:int] := BKCinsert_bun(s:bat[:str,:int], _35:str, _36:int) {G}
 #	io.print("insert(s,\"eello\",5);"); 
-    ia_a := bat.insert(s,"eello",5);    # 27 ia_a:void := BKCinsert_bun(s:bat[:str,:int], _39:str, _40:int) 
+    ia_a := bat.insert(s,"eello",5);    # 27 ia_a:bat[:str,:int] := BKCinsert_bun(s:bat[:str,:int], _39:str, _40:int) {G}
 #	io.print("insert(s,\"fello\",6);"); 
-    ja_a := bat.insert(s,"fello",6);    # 29 ja_a:void := BKCinsert_bun(s:bat[:str,:int], _43:str, _44:int) 
+    ja_a := bat.insert(s,"fello",6);    # 29 ja_a:bat[:str,:int] := BKCinsert_bun(s:bat[:str,:int], _43:str, _44:int) {G}
 #	io.print("insert(s,\"gello\",7);"); 
-    ka_a := bat.insert(s,"gello",7);    # 31 ka_a:void := BKCinsert_bun(s:bat[:str,:int], _47:str, _48:int) 
+    ka_a := bat.insert(s,"gello",7);    # 31 ka_a:bat[:str,:int] := BKCinsert_bun(s:bat[:str,:int], _47:str, _48:int) {G}
 #	io.print("insert(s,\"hello\",8);"); 
-    la_a := bat.insert(s,"hello",8);    # 33 la_a:void := BKCinsert_bun(s:bat[:str,:int], _20:str, _51:int) 
+    la_a := bat.insert(s,"hello",8);    # 33 la_a:bat[:str,:int] := BKCinsert_bun(s:bat[:str,:int], _20:str, _51:int) {G}
 #	io.print("printf(\"#~BeginVariableOutput~#\\n\"); info(s).print(); printf(\"#~EndVariableOutput~#\\n\");"); 
     ma_a := io.printf("#~BeginVariableOutput~#\n");# 35 ma_a:void := IOprint_str(_54:str) 
     na_a := bat.info(s);                # 36 na_a:bat[:str,:str] := BKCinfo(s:bat[:str,:int]) {G}
@@ -119,7 +119,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     qa_a := algebra.find(s,"cello");    # 40 qa_a:int := ALGfind(s:bat[:str,:int], _31:str) 
     ra_a := io.print(qa_a);             # 41 ra_a:void := IOprint_val(qa_a:int) 
 #	io.print("delete(s,\"cello\",3);"); 
-    sa_a := bat.delete(s,"cello",3);    # 43 sa_a:void := BKCdelete_bun(s:bat[:str,:int], _64:str, _65:int) 
+    sa_a := bat.delete(s,"cello",3);    # 43 sa_a:bat[:str,:int] := BKCdelete_bun(s:bat[:str,:int], _64:str, _65:int) {G}
 #	io.print("print(s);"); 
     ta_a := io.print(s);                # 45 ta_a:void := IOprint_val(s:bat[:str,:int]) 
 #	io.print("var sn:= algebra.select(s,1,5);"); 
@@ -163,7 +163,7 @@ end main;	# 62
 [ "batPersistence",	  "transient"	  ]
 [ "batRestricted",	  "updatable"	  ]
 [ "batRefcnt",		  "1"		  ]
-[ "batLRefcnt",		  "1"		  ]
+[ "batLRefcnt",		  "9"		  ]
 [ "batDirty",		  "dirty"	  ]
 [ "batSet",		  "0"		  ]
 [ "hsorted",		  "0"		  ]
@@ -196,7 +196,7 @@ end main;	# 62
 [ "htop",		  "64"		  ]
 [ "ttop",		  "32"		  ]
 [ "batStamp",		  "4"		  ]
-[ "lastUsed",		  "171"		  ]
+[ "lastUsed",		  "159"		  ]
 [ "curStamp",		  "5"		  ]
 [ "batCopiedtodisk",	  "0"		  ]
 [ "batDirtydesc",	  "dirty"	  ]

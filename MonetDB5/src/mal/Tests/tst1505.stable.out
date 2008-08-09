@@ -64,21 +64,21 @@ stdout of test 'tst1505` in directory 'src/mal` itself:
 function user.main():void;              #  0 main:void := user.main() {G}
     y := bat.new(:oid,:dbl);            #  1 y:bat[:oid,:dbl] := CMDBATnew(_2:oid, _3:dbl) {G}
     le_a := calc.dbl(1);                #  2 le_a:dbl := CALCflt2dbl(_5:flt) 
-    bat.append(y,le_a);                 #  3 _6:void := BKCappend_val_wrap(y:bat[:oid,:dbl], le_a:dbl) 
+    bat.append(y,le_a);                 #  3 _6:bat[:dbl,:any] := BKCappend_val_wrap(y:bat[:oid,:dbl], le_a:dbl) {G}
     ne_a := calc.dbl(2);                #  4 ne_a:dbl := CALCflt2dbl(_8:flt) 
-    bat.append(y,ne_a);                 #  5 _9:void := BKCappend_val_wrap(y:bat[:oid,:dbl], ne_a:dbl) 
+    bat.append(y,ne_a);                 #  5 _9:bat[:dbl,:any] := BKCappend_val_wrap(y:bat[:oid,:dbl], ne_a:dbl) {G}
     pe_a := calc.dbl(2);                #  6 pe_a:dbl := CALCflt2dbl(_8:flt) 
-    bat.append(y,pe_a);                 #  7 _11:void := BKCappend_val_wrap(y:bat[:oid,:dbl], pe_a:dbl) 
+    bat.append(y,pe_a);                 #  7 _11:bat[:dbl,:any] := BKCappend_val_wrap(y:bat[:oid,:dbl], pe_a:dbl) {G}
     re_a := calc.dbl(2);                #  8 re_a:dbl := CALCflt2dbl(_8:flt) 
-    bat.append(y,re_a);                 #  9 _13:void := BKCappend_val_wrap(y:bat[:oid,:dbl], re_a:dbl) 
+    bat.append(y,re_a);                 #  9 _13:bat[:dbl,:any] := BKCappend_val_wrap(y:bat[:oid,:dbl], re_a:dbl) {G}
     te_a := calc.dbl(2);                # 10 te_a:dbl := CALCflt2dbl(_8:flt) 
-    bat.append(y,te_a);                 # 11 _15:void := BKCappend_val_wrap(y:bat[:oid,:dbl], te_a:dbl) 
+    bat.append(y,te_a);                 # 11 _15:bat[:dbl,:any] := BKCappend_val_wrap(y:bat[:oid,:dbl], te_a:dbl) {G}
     ve_a := calc.dbl(3);                # 12 ve_a:dbl := CALCflt2dbl(_17:flt) 
-    bat.append(y,ve_a);                 # 13 _18:void := BKCappend_val_wrap(y:bat[:oid,:dbl], ve_a:dbl) 
+    bat.append(y,ve_a);                 # 13 _18:bat[:dbl,:any] := BKCappend_val_wrap(y:bat[:oid,:dbl], ve_a:dbl) {G}
     xe_a := calc.dbl(1);                # 14 xe_a:dbl := CALCflt2dbl(_5:flt) 
-    bat.append(y,xe_a);                 # 15 _20:void := BKCappend_val_wrap(y:bat[:oid,:dbl], xe_a:dbl) 
+    bat.append(y,xe_a);                 # 15 _20:bat[:dbl,:any] := BKCappend_val_wrap(y:bat[:oid,:dbl], xe_a:dbl) {G}
     af_a := calc.dbl(1);                # 16 af_a:dbl := CALCflt2dbl(_5:flt) 
-    bat.append(y,af_a);                 # 17 _22:void := BKCappend_val_wrap(y:bat[:oid,:dbl], af_a:dbl) 
+    bat.append(y,af_a);                 # 17 _22:bat[:dbl,:any] := BKCappend_val_wrap(y:bat[:oid,:dbl], af_a:dbl) {G}
     io.print(y);                        # 18 _23:void := IOprint_val(y:bat[:oid,:dbl]) 
     z := batcalc.<(y,2:dbl);            # 19 z:bat[:oid,:bit] := CMD_LT_dbl_cst(y:bat[:oid,:dbl], _25:dbl) {G}
     io.print(z);                        # 20 _26:void := IOprint_val(z:bat[:oid,:bit]) 
@@ -86,16 +86,16 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.print("count");                  # 22 _28:void := IOprint_val(_29:str) 
     io.print(c);                        # 23 _30:void := IOprint_val(c:int) 
     x := bat.new(:oid,:bit);            # 24 x:bat[:oid,:bit] := CMDBATnew(_2:oid, _32:bit) {G}
-    bat.append(x,true);                 # 25 _33:void := BKCappend_val_wrap(x:bat[:oid,:bit], _34:bit) 
-    bat.append(x,false);                # 26 _35:void := BKCappend_val_wrap(x:bat[:oid,:bit], _36:bit) 
-    bat.append(x,true);                 # 27 _37:void := BKCappend_val_wrap(x:bat[:oid,:bit], _34:bit) 
-    bat.append(x,false);                # 28 _38:void := BKCappend_val_wrap(x:bat[:oid,:bit], _36:bit) 
+    bat.append(x,true);                 # 25 _33:bat[:bit,:any] := BKCappend_val_wrap(x:bat[:oid,:bit], _34:bit) {G}
+    bat.append(x,false);                # 26 _35:bat[:bit,:any] := BKCappend_val_wrap(x:bat[:oid,:bit], _36:bit) {G}
+    bat.append(x,true);                 # 27 _37:bat[:bit,:any] := BKCappend_val_wrap(x:bat[:oid,:bit], _34:bit) {G}
+    bat.append(x,false);                # 28 _38:bat[:bit,:any] := BKCappend_val_wrap(x:bat[:oid,:bit], _36:bit) {G}
     io.print(x);                        # 29 _39:void := IOprint_val(x:bat[:oid,:bit]) 
     A := bat.new(:oid,:bit);            # 30 A:bat[:oid,:bit] := CMDBATnew(_2:oid, _32:bit) {G}
-    bat.append(A,true);                 # 31 _41:void := BKCappend_val_wrap(A:bat[:oid,:bit], _34:bit) 
-    bat.append(A,true);                 # 32 _42:void := BKCappend_val_wrap(A:bat[:oid,:bit], _34:bit) 
-    bat.append(A,false);                # 33 _43:void := BKCappend_val_wrap(A:bat[:oid,:bit], _36:bit) 
-    bat.append(A,false);                # 34 _44:void := BKCappend_val_wrap(A:bat[:oid,:bit], _36:bit) 
+    bat.append(A,true);                 # 31 _41:bat[:bit,:any] := BKCappend_val_wrap(A:bat[:oid,:bit], _34:bit) {G}
+    bat.append(A,true);                 # 32 _42:bat[:bit,:any] := BKCappend_val_wrap(A:bat[:oid,:bit], _34:bit) {G}
+    bat.append(A,false);                # 33 _43:bat[:bit,:any] := BKCappend_val_wrap(A:bat[:oid,:bit], _36:bit) {G}
+    bat.append(A,false);                # 34 _44:bat[:bit,:any] := BKCappend_val_wrap(A:bat[:oid,:bit], _36:bit) {G}
     io.print(A);                        # 35 _45:void := IOprint_val(A:bat[:oid,:bit]) 
     xn := batcalc.not(x);               # 36 xn:bat[:oid,:bit] := CMDbitbatNOT(x:bat[:oid,:bit]) {G}
     io.print(x,xn);                     # 37 _47:void := IOtable(x:bat[:oid,:bit], xn:bat[:oid,:bit]) 

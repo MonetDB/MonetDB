@@ -101,9 +101,9 @@ function user.testcolor():void;         #  0 testcolor:void := user.testcolor() 
     V94 := color.blue(c);               # 44 V94:int := CLRblue(c:color) 
     io.print(V94);                      # 45 _48:void := IOprint_val(V94:int) 
     bc := bat.new(:oid,:color);         # 46 bc:bat[:oid,:color] := CMDBATnew(_50:oid, _51:color) {G}
-    bat.append(bc,0x00000000:color);    # 47 _52:void := BKCappend_val_wrap(bc:bat[:oid,:color], _53:color) 
-    bat.append(bc,0x0033FF44:color);    # 48 _54:void := BKCappend_val_wrap(bc:bat[:oid,:color], _55:color) 
-    bat.append(bc,0x00003F44:color);    # 49 _56:void := BKCappend_val_wrap(bc:bat[:oid,:color], _57:color) 
+    bat.append(bc,0x00000000:color);    # 47 _52:bat[:color,:any] := BKCappend_val_wrap(bc:bat[:oid,:color], _53:color) {G}
+    bat.append(bc,0x0033FF44:color);    # 48 _54:bat[:color,:any] := BKCappend_val_wrap(bc:bat[:oid,:color], _55:color) {G}
+    bat.append(bc,0x00003F44:color);    # 49 _56:bat[:color,:any] := BKCappend_val_wrap(bc:bat[:oid,:color], _57:color) {G}
     io.print(bc);                       # 50 _58:void := IOprint_val(bc:bat[:oid,:color]) 
     z := batcolor.red(bc);              # 51 z:bat[:oid,:int] := CLRbatRed(bc:bat[:oid,:color]) {G}
     io.print(z);                        # 52 _60:void := IOprint_val(z:bat[:oid,:int]) 

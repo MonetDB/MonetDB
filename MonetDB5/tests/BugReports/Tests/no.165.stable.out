@@ -230,33 +230,33 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("var b:= bat.new(str,int);"); 
     b := bat.new(nil:str,nil:int);      # 88 b:bat[:str,:int] := CMDBATnew(_90:str, _91:int) {G}
 #	io.print("b.insert(\"the\",1);"); 
-    ca_a := bat.insert(b,"the",1);      # 90 ca_a:void := BKCinsert_bun(b:bat[:str,:int], _94:str, _95:int) 
+    ca_a := bat.insert(b,"the",1);      # 90 ca_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _94:str, _95:int) {G}
 #	io.print("b.insert(\"quick\",20);"); 
-    da_a := bat.insert(b,"quick",20);   # 92 da_a:void := BKCinsert_bun(b:bat[:str,:int], _98:str, _99:int) 
+    da_a := bat.insert(b,"quick",20);   # 92 da_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _98:str, _99:int) {G}
 #	io.print("b.insert(\"brown\",30);"); 
-    ea_a := bat.insert(b,"brown",30);   # 94 ea_a:void := BKCinsert_bun(b:bat[:str,:int], _102:str, _103:int) 
+    ea_a := bat.insert(b,"brown",30);   # 94 ea_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _102:str, _103:int) {G}
 #	io.print("b.insert(\"fox\",40);"); 
-    fa_a := bat.insert(b,"fox",40);     # 96 fa_a:void := BKCinsert_bun(b:bat[:str,:int], _106:str, _107:int) 
+    fa_a := bat.insert(b,"fox",40);     # 96 fa_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _106:str, _107:int) {G}
 #	io.print("b.insert(\"jumps\",50);"); 
-    ga_a := bat.insert(b,"jumps",50);   # 98 ga_a:void := BKCinsert_bun(b:bat[:str,:int], _110:str, _111:int) 
+    ga_a := bat.insert(b,"jumps",50);   # 98 ga_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _110:str, _111:int) {G}
 #	io.print("b.insert(\"over\",60);"); 
-    ha_a := bat.insert(b,"over",60);    #100 ha_a:void := BKCinsert_bun(b:bat[:str,:int], _114:str, _115:int) 
+    ha_a := bat.insert(b,"over",60);    #100 ha_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _114:str, _115:int) {G}
 #	io.print("b.insert(\"lazy\",70);"); 
-    ia_a := bat.insert(b,"lazy",70);    #102 ia_a:void := BKCinsert_bun(b:bat[:str,:int], _118:str, _119:int) 
+    ia_a := bat.insert(b,"lazy",70);    #102 ia_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _118:str, _119:int) {G}
 #	io.print("b.insert(\"dog\",80);"); 
-    ja_a := bat.insert(b,"dog",80);     #104 ja_a:void := BKCinsert_bun(b:bat[:str,:int], _122:str, _123:int) 
+    ja_a := bat.insert(b,"dog",80);     #104 ja_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _122:str, _123:int) {G}
 #	io.print("b.insert(str(nil),90);"); 
     ka_a := calc.str(nil:void);         #106 ka_a:str := CALCnil2str(_126:void) {G}
-    la_a := bat.insert(b,ka_a,90);      #107 la_a:void := BKCinsert_bun(b:bat[:str,:int], ka_a:str, _128:int) 
+    la_a := bat.insert(b,ka_a,90);      #107 la_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], ka_a:str, _128:int) {G}
 #	io.print("b.insert(\".\",100);"); 
-    ma_a := bat.insert(b,".",100);      #109 ma_a:void := BKCinsert_bun(b:bat[:str,:int], _131:str, _132:int) 
+    ma_a := bat.insert(b,".",100);      #109 ma_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _131:str, _132:int) {G}
 #	io.print("b.insert(\"\",int(nil));"); 
     na_a := calc.int(nil:void);         #111 na_a:int := CALCnil2int(_126:void) 
-    oa_a := bat.insert(b,"",na_a);      #112 oa_a:void := BKCinsert_bun(b:bat[:str,:int], _136:str, na_a:int) 
+    oa_a := bat.insert(b,"",na_a);      #112 oa_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _136:str, na_a:int) {G}
 #	io.print("b.insert(str(nil),int(nil));"); 
     pa_a := calc.str(nil:void);         #114 pa_a:str := CALCnil2str(_126:void) {G}
     qa_a := calc.int(nil:void);         #115 qa_a:int := CALCnil2int(_126:void) 
-    ra_a := bat.insert(b,pa_a,qa_a);    #116 ra_a:void := BKCinsert_bun(b:bat[:str,:int], pa_a:str, qa_a:int) 
+    ra_a := bat.insert(b,pa_a,qa_a);    #116 ra_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], pa_a:str, qa_a:int) {G}
 #	io.print("b.print();"); 
     sa_a := io.print(b);                #118 sa_a:void := IOprint_val(b:bat[:str,:int]) 
 #	io.print("var c:= mark(b,oid(20000050));"); 

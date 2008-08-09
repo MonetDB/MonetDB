@@ -126,7 +126,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("b.insert(oid(1),oid(2));"); 
     ca_a := calc.oid(1);                # 49 ca_a:oid := CALCint2oid(_52:int) 
     da_a := calc.oid(2);                # 50 da_a:oid := CALCint2oid(_54:int) 
-    ea_a := bat.insert(b,ca_a,da_a);    # 51 ea_a:void := BKCinsert_bun(b:bat[:oid,:oid], ca_a:oid, da_a:oid) 
+    ea_a := bat.insert(b,ca_a,da_a);    # 51 ea_a:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], ca_a:oid, da_a:oid) {G}
 #	io.print("b.select(oid(3)).print();"); 
     fa_a := calc.oid(3);                # 53 fa_a:oid := CALCint2oid(_58:int) 
     ga_a := algebra.select(b,fa_a);     # 54 ga_a:bat[:oid,:oid] := ALGselect1(b:bat[:oid,:oid], fa_a:oid) {G}

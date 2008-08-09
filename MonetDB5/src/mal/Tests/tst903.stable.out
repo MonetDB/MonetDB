@@ -135,7 +135,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 barrier (go,i):= language.newRange(0:lng);#  4 (go:bit, i:lng) := RNGnewRange_lng(_8:lng) {J9}
     k := mmath.rand();                  #  5 k:int := MATHrandint() 
     l := calc.lng(k);                   #  6 l:lng := CALCint2lng(k:int) 
-    bat.insert(b,nil:oid,l);            #  7 _11:void := BKCinsert_bun(b:bat[:oid,:lng], _12:oid, l:lng) 
+    bat.insert(b,nil:oid,l);            #  7 _11:bat[:oid,:lng] := BKCinsert_bun(b:bat[:oid,:lng], _12:oid, l:lng) {G}
     redo (go,i):= language.nextElement(1:lng,1000000:lng);#  8 (go:bit, i:lng) := RNGnextElement_lng(_13:lng, _14:lng) {J5}
 exit (go,i);                            #  9 (go:bit, i:lng) 
     t1 := alarm.usec();                 # 10 t1:lng := ALARMusec() 
@@ -241,7 +241,7 @@ exit (go,i);                            #  9 (go:bit, i:lng)
 barrier (_91,_92,_93):= bat.newIterator(b);#110 (_91:lng, _92:oid, _93:lng) := CHPbunIterator(b:bat[:oid,:lng]) {J115}
     _95 := algebra.find(c,_92);         #111 _95:lng := ALGfind(c:bat[:oid,:lng], _92:oid) 
     _97 := calc.+(_93,_95);             #112 _97:lng := CALCbinaryADDlnglng(_93:lng, _95:lng) 
-    bat.insert(_87,_92,_97);            #113 _98:void := BKCinsert_bun(_87:bat[:oid,:lng], _92:oid, _97:lng) 
+    bat.insert(_87,_92,_97);            #113 _98:bat[:oid,:lng] := BKCinsert_bun(_87:bat[:oid,:lng], _92:oid, _97:lng) {G}
     redo (_91,_92,_93):= bat.hasMoreElements(b);#114 (_91:lng, _92:oid, _93:lng) := CHPbunHasMoreElements(b:bat[:oid,:lng]) {J111}
 exit (_91,_92,_93);                     #115 (_91:lng, _92:oid, _93:lng) 
     x:bat[:oid,:lng]  := _87;           #116 x:bat[:oid,:lng] := _87:bat[:oid,:lng] {G}

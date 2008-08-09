@@ -84,22 +84,22 @@ function user.main():void;              #  0 main:void := user.main() {G}
 barrier (go,i):= language.newRange(0:lng);#  6 (go:bit, i:lng) := RNGnewRange_lng(_11:lng) {J11}
     k := mmath.rand();                  #  7 k:int := MATHrandint() 
     l := calc.sht(k);                   #  8 l:sht := CALCint2sht(k:int) 
-    bat.append(large,l);                #  9 _13:void := BKCappend_val_wrap(large:bat[:oid,:sht], l:sht) 
+    bat.append(large,l);                #  9 _13:bat[:sht,:any] := BKCappend_val_wrap(large:bat[:oid,:sht], l:sht) {G}
     redo (go,i):= language.nextElement(1:lng,1000000:lng);# 10 (go:bit, i:lng) := RNGnextElement_lng(_14:lng, _15:lng) {J7}
 exit (go,i);                            # 11 (go:bit, i:lng) 
     small := bat.new(:oid,:sht);        # 12 small:bat[:oid,:sht] := CMDBATnew(_7:oid, _17:sht) {G}
 #m:= aggr.min(b); 
     m := mmath.rand();                  # 14 m:int := MATHrandint() 
     l := calc.sht(m);                   # 15 l:sht := CALCint2sht(m:int) 
-    bat.insert(small,1@0,l);            # 16 _20:void := BKCinsert_bun(small:bat[:oid,:sht], _21:oid, l:sht) 
+    bat.insert(small,1@0,l);            # 16 _20:bat[:oid,:sht] := BKCinsert_bun(small:bat[:oid,:sht], _21:oid, l:sht) {G}
 #m:= aggr.max(b); 
     m := mmath.rand();                  # 18 m:int := MATHrandint() 
     l := calc.sht(m);                   # 19 l:sht := CALCint2sht(m:int) 
-    bat.insert(small,4@0,l);            # 20 _23:void := BKCinsert_bun(small:bat[:oid,:sht], _24:oid, l:sht) 
+    bat.insert(small,4@0,l);            # 20 _23:bat[:oid,:sht] := BKCinsert_bun(small:bat[:oid,:sht], _24:oid, l:sht) {G}
 #disturb order 
     m := mmath.rand();                  # 22 m:int := MATHrandint() 
     l := calc.sht(m);                   # 23 l:sht := CALCint2sht(m:int) 
-    bat.insert(small,3@0,l);            # 24 _26:void := BKCinsert_bun(small:bat[:oid,:sht], _27:oid, l:sht) 
+    bat.insert(small,3@0,l);            # 24 _26:bat[:oid,:sht] := BKCinsert_bun(small:bat[:oid,:sht], _27:oid, l:sht) {G}
     largeR := bat.reverse(large);       # 25 largeR:bat[:sht,:oid] := BKCreverse(large:bat[:oid,:sht]) {G}
     smallR := bat.reverse(small);       # 26 smallR:bat[:sht,:oid] := BKCreverse(small:bat[:oid,:sht]) {G}
     t0 := alarm.usec();                 # 27 t0:lng := ALARMusec() 

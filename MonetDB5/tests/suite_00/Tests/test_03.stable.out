@@ -60,7 +60,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("var b:= bat.new(int,str);"); 
     b := bat.new(nil:int,nil:str);      # 16 b:bat[:int,:str] := CMDBATnew(_18:int, _19:str) {G}
 #	io.print("b.insert(1,\"15\");"); 
-    ca_a := bat.insert(b,1,"15");       # 18 ca_a:void := BKCinsert_bun(b:bat[:int,:str], _22:int, _23:str) 
+    ca_a := bat.insert(b,1,"15");       # 18 ca_a:bat[:int,:str] := BKCinsert_bun(b:bat[:int,:str], _22:int, _23:str) {G}
 #	io.print("b.print();"); 
     da_a := io.print(b);                # 20 da_a:void := IOprint_val(b:bat[:int,:str]) 
 #	io.print("b.reverse().print();"); 

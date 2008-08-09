@@ -64,15 +64,15 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # head: oid 
 # a:=microbenchmark.uniform(0:oid,9,9); platform dependent 
     a := bat.new(:oid,:int);            #  3 a:bat[:oid,:int] := CMDBATnew(_4:oid, _5:int) {G}
-    bat.insert(a,3@0,0);                #  4 _6:void := BKCinsert_bun(a:bat[:oid,:int], _7:oid, _8:int) 
-    bat.insert(a,0@0,1);                #  5 _9:void := BKCinsert_bun(a:bat[:oid,:int], _10:oid, _11:int) 
-    bat.insert(a,2@0,2);                #  6 _12:void := BKCinsert_bun(a:bat[:oid,:int], _13:oid, _14:int) 
-    bat.insert(a,5@0,3);                #  7 _15:void := BKCinsert_bun(a:bat[:oid,:int], _16:oid, _17:int) 
-    bat.insert(a,7@0,4);                #  8 _18:void := BKCinsert_bun(a:bat[:oid,:int], _19:oid, _20:int) 
-    bat.insert(a,8@0,5);                #  9 _21:void := BKCinsert_bun(a:bat[:oid,:int], _22:oid, _23:int) 
-    bat.insert(a,1@0,6);                # 10 _24:void := BKCinsert_bun(a:bat[:oid,:int], _25:oid, _26:int) 
-    bat.insert(a,6@0,7);                # 11 _27:void := BKCinsert_bun(a:bat[:oid,:int], _28:oid, _29:int) 
-    bat.insert(a,4@0,8);                # 12 _30:void := BKCinsert_bun(a:bat[:oid,:int], _31:oid, _32:int) 
+    bat.insert(a,3@0,0);                #  4 _6:bat[:oid,:int] := BKCinsert_bun(a:bat[:oid,:int], _7:oid, _8:int) {G}
+    bat.insert(a,0@0,1);                #  5 _9:bat[:oid,:int] := BKCinsert_bun(a:bat[:oid,:int], _10:oid, _11:int) {G}
+    bat.insert(a,2@0,2);                #  6 _12:bat[:oid,:int] := BKCinsert_bun(a:bat[:oid,:int], _13:oid, _14:int) {G}
+    bat.insert(a,5@0,3);                #  7 _15:bat[:oid,:int] := BKCinsert_bun(a:bat[:oid,:int], _16:oid, _17:int) {G}
+    bat.insert(a,7@0,4);                #  8 _18:bat[:oid,:int] := BKCinsert_bun(a:bat[:oid,:int], _19:oid, _20:int) {G}
+    bat.insert(a,8@0,5);                #  9 _21:bat[:oid,:int] := BKCinsert_bun(a:bat[:oid,:int], _22:oid, _23:int) {G}
+    bat.insert(a,1@0,6);                # 10 _24:bat[:oid,:int] := BKCinsert_bun(a:bat[:oid,:int], _25:oid, _26:int) {G}
+    bat.insert(a,6@0,7);                # 11 _27:bat[:oid,:int] := BKCinsert_bun(a:bat[:oid,:int], _28:oid, _29:int) {G}
+    bat.insert(a,4@0,8);                # 12 _30:bat[:oid,:int] := BKCinsert_bun(a:bat[:oid,:int], _31:oid, _32:int) {G}
     as := algebra.sortTail(a);          # 13 as:bat[:oid,:int] := ALGtsort(a:bat[:oid,:int]) {G}
     io.print(as);                       # 14 _34:void := IOprint_val(as:bat[:oid,:int]) 
     b := batcalc.sht(a);                # 15 b:bat[:oid,:sht] := CMDconvert_int_sht(a:bat[:oid,:int]) {G}

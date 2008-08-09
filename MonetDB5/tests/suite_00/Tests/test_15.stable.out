@@ -119,32 +119,32 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("#testing the set operations;\n"); 
     b := bat.new(nil:int,nil:int);      # 14 b:bat[:int,:int] := CMDBATnew(_16:int, _16:int) {G}
 #	io.print("b.insert(1,15);"); 
-    ca_a := bat.insert(b,1,15);         # 16 ca_a:void := BKCinsert_bun(b:bat[:int,:int], _19:int, _20:int) 
+    ca_a := bat.insert(b,1,15);         # 16 ca_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _19:int, _20:int) {G}
 #	io.print("b.insert(2,4);"); 
-    da_a := bat.insert(b,2,4);          # 18 da_a:void := BKCinsert_bun(b:bat[:int,:int], _23:int, _24:int) 
+    da_a := bat.insert(b,2,4);          # 18 da_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _23:int, _24:int) {G}
 #	io.print("b.insert(3,int(nil));"); 
     ea_a := calc.int(nil:void);         # 20 ea_a:int := CALCnil2int(_27:void) 
-    fa_a := bat.insert(b,3,ea_a);       # 21 fa_a:void := BKCinsert_bun(b:bat[:int,:int], _29:int, ea_a:int) 
+    fa_a := bat.insert(b,3,ea_a);       # 21 fa_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _29:int, ea_a:int) {G}
 #	io.print("b.insert(4,16);"); 
-    ga_a := bat.insert(b,4,16);         # 23 ga_a:void := BKCinsert_bun(b:bat[:int,:int], _24:int, _32:int) 
+    ga_a := bat.insert(b,4,16);         # 23 ga_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _24:int, _32:int) {G}
 #	io.print("b.insert(5,25);"); 
-    ha_a := bat.insert(b,5,25);         # 25 ha_a:void := BKCinsert_bun(b:bat[:int,:int], _35:int, _36:int) 
+    ha_a := bat.insert(b,5,25);         # 25 ha_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _35:int, _36:int) {G}
 #	io.print("b.insert(6,36);"); 
-    ia_a := bat.insert(b,6,36);         # 27 ia_a:void := BKCinsert_bun(b:bat[:int,:int], _39:int, _40:int) 
+    ia_a := bat.insert(b,6,36);         # 27 ia_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _39:int, _40:int) {G}
 #	io.print("b.insert(7,49);"); 
-    ja_a := bat.insert(b,7,49);         # 29 ja_a:void := BKCinsert_bun(b:bat[:int,:int], _43:int, _44:int) 
+    ja_a := bat.insert(b,7,49);         # 29 ja_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _43:int, _44:int) {G}
 #	io.print("b.insert(8,64);"); 
-    ka_a := bat.insert(b,8,64);         # 31 ka_a:void := BKCinsert_bun(b:bat[:int,:int], _47:int, _48:int) 
+    ka_a := bat.insert(b,8,64);         # 31 ka_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _47:int, _48:int) {G}
 #	io.print("b.insert(9,int(nil));"); 
     la_a := calc.int(nil:void);         # 33 la_a:int := CALCnil2int(_27:void) 
-    ma_a := bat.insert(b,9,la_a);       # 34 ma_a:void := BKCinsert_bun(b:bat[:int,:int], _52:int, la_a:int) 
+    ma_a := bat.insert(b,9,la_a);       # 34 ma_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _52:int, la_a:int) {G}
 #	io.print("b.insert(int(nil),int(nil));"); 
     na_a := calc.int(nil:void);         # 36 na_a:int := CALCnil2int(_27:void) 
     oa_a := calc.int(nil:void);         # 37 oa_a:int := CALCnil2int(_27:void) 
-    pa_a := bat.insert(b,na_a,oa_a);    # 38 pa_a:void := BKCinsert_bun(b:bat[:int,:int], na_a:int, oa_a:int) 
+    pa_a := bat.insert(b,na_a,oa_a);    # 38 pa_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], na_a:int, oa_a:int) {G}
 #	io.print("b.insert(int(nil),81);"); 
     qa_a := calc.int(nil:void);         # 40 qa_a:int := CALCnil2int(_27:void) 
-    ra_a := bat.insert(b,qa_a,81);      # 41 ra_a:void := BKCinsert_bun(b:bat[:int,:int], qa_a:int, _60:int) 
+    ra_a := bat.insert(b,qa_a,81);      # 41 ra_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], qa_a:int, _60:int) {G}
 #	io.print("var c:= b.copy();"); 
     c := algebra.copy(b);               # 43 c:bat[:int,:int] := ALGcopy(b:bat[:int,:int]) {G}
 #	io.print("var t:= b.select(80,int(nil)); io.print(t);"); 
@@ -155,18 +155,18 @@ function user.main():void;              #  0 main:void := user.main() {G}
     BAT_WRITE := 0;                     # 49 BAT_WRITE:int := _71:int 
     ua_a := bat.setWriteMode(c);        # 50 ua_a:bat[:int,:int] := BKCsetWriteMode(c:bat[:int,:int]) {G}
 #	io.print("insert(c,t);print(c);"); 
-    va_a := bat.insert(c,t);            # 52 va_a:void := BKCinsert_bat(c:bat[:int,:int], t:bat[:int,:int]) 
+    va_a := bat.insert(c,t);            # 52 va_a:bat[:int,:int] := BKCinsert_bat(c:bat[:int,:int], t:bat[:int,:int]) {G}
     wa_a := io.print(c);                # 53 wa_a:void := IOprint_val(c:bat[:int,:int]) 
 #	io.print("var z:= bat.new(int,int);"); 
     z := bat.new(nil:int,nil:int);      # 55 z:bat[:int,:int] := CMDBATnew(_78:int, _78:int) {G}
 #	io.print("b.replace(1,1);"); 
-    xa_a := bat.replace(b,1,1);         # 57 xa_a:void := BKCreplace_bun(b:bat[:int,:int], _81:int, _81:int) 
+    xa_a := bat.replace(b,1,1);         # 57 xa_a:bat[:int,:int] := BKCreplace_bun(b:bat[:int,:int], _81:int, _81:int) {G}
 #	io.print("z.insert(2,4);"); 
-    ya_a := bat.insert(z,2,4);          # 59 ya_a:void := BKCinsert_bun(z:bat[:int,:int], _84:int, _85:int) 
+    ya_a := bat.insert(z,2,4);          # 59 ya_a:bat[:int,:int] := BKCinsert_bun(z:bat[:int,:int], _84:int, _85:int) {G}
 #	io.print("z.insert(3,9);"); 
-    ab_a := bat.insert(z,3,9);          # 61 ab_a:void := BKCinsert_bun(z:bat[:int,:int], _88:int, _89:int) 
+    ab_a := bat.insert(z,3,9);          # 61 ab_a:bat[:int,:int] := BKCinsert_bun(z:bat[:int,:int], _88:int, _89:int) {G}
 #	io.print("b.replace(z);"); 
-    bb_a := bat.replace(b,z);           # 63 bb_a:void := BKCreplace_bat(b:bat[:int,:int], z:bat[:int,:int]) 
+    bb_a := bat.replace(b,z);           # 63 bb_a:bat[:int,:int] := BKCreplace_bat(b:bat[:int,:int], z:bat[:int,:int]) {G}
 #	io.print("b.print();"); 
     cb_a := io.print(b);                # 65 cb_a:void := IOprint_val(b:bat[:int,:int]) 
 #	io.print("c.reverse().print();"); 

@@ -45,7 +45,7 @@ stdout of test 'statistics00` in directory 'src/modules/mal` itself:
 function user.main():void;              #  0 main:void := user.main() {G}
 # Testing the statistics table 
     b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
-    bat.insert(b,1,2);                  #  3 _4:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) 
+    bat.insert(b,1,2);                  #  3 _4:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) {G}
     bat.setName(b,"dummy");             #  4 _7:void := BKCsetName(b:bat[:int,:int], _8:str) 
     statistics.open();                  #  5 _9:void := STATopen() 
     statistics.dump();                  #  6 _10:void := STATdump() 

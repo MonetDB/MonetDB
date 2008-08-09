@@ -30,7 +30,7 @@ function user.tst():void;               #  0 tst:void := user.tst() {G}
     V12 := algebra.kdifference(V7,V11); #  5 V12:bat[:oid,:int] := ALGkdiff(V7:bat[:oid,:int], V11:bat[:oid,:int]) {G}
     V16 := algebra.markT(V12);          #  6 V16:bat[:oid,:oid] := ALGtmark_default(V12:bat[:oid,:int]) {G}
     V17 := algebra.join(V16,V7);        #  7 V17:bat[:oid,:int] := ALGjoin(V16:bat[:oid,:oid], V7:bat[:oid,:int]) {G}
-    bat.append(V1,V17);                 #  8 _11:void := BKCappend_wrap(V1:bat[:oid,:int], V17:bat[:oid,:int]) 
+    bat.append(V1,V17);                 #  8 _11:bat[:oid,:int] := BKCappend_wrap(V1:bat[:oid,:int], V17:bat[:oid,:int]) {G}
 end tst;	# 9  
 #    optimizer.costModel("user","tst");
 #    optimizer.emptySet("user","tst");

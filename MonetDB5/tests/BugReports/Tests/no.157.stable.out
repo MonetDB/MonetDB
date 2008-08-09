@@ -275,15 +275,15 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("test.insert(oid(53991617),lng(60000401));"); 
     ca_a := calc.oid(53991617);         #107 ca_a:oid := CALCint2oid(_111:int) 
     da_a := calc.lng(60000401);         #108 da_a:lng := CALCint2lng(_113:int) 
-    ea_a := bat.insert(test,ca_a,da_a); #109 ea_a:void := BKCinsert_bun(test:bat[:oid,:lng], ca_a:oid, da_a:lng) 
+    ea_a := bat.insert(test,ca_a,da_a); #109 ea_a:bat[:oid,:lng] := BKCinsert_bun(test:bat[:oid,:lng], ca_a:oid, da_a:lng) {G}
 #	io.print("test.insert(oid(53996584),lng(60000400));"); 
     fa_a := calc.oid(53996584);         #111 fa_a:oid := CALCint2oid(_117:int) 
     ga_a := calc.lng(60000400);         #112 ga_a:lng := CALCint2lng(_119:int) 
-    ha_a := bat.insert(test,fa_a,ga_a); #113 ha_a:void := BKCinsert_bun(test:bat[:oid,:lng], fa_a:oid, ga_a:lng) 
+    ha_a := bat.insert(test,fa_a,ga_a); #113 ha_a:bat[:oid,:lng] := BKCinsert_bun(test:bat[:oid,:lng], fa_a:oid, ga_a:lng) {G}
 #	io.print("test.insert(oid(55526089),lng(50015637));"); 
     ia_a := calc.oid(55526089);         #115 ia_a:oid := CALCint2oid(_123:int) 
     ja_a := calc.lng(50015637);         #116 ja_a:lng := CALCint2lng(_125:int) 
-    ka_a := bat.insert(test,ia_a,ja_a); #117 ka_a:void := BKCinsert_bun(test:bat[:oid,:lng], ia_a:oid, ja_a:lng) 
+    ka_a := bat.insert(test,ia_a,ja_a); #117 ka_a:bat[:oid,:lng] := BKCinsert_bun(test:bat[:oid,:lng], ia_a:oid, ja_a:lng) {G}
 #	io.print("test.print();"); 
     la_a := io.print(test);             #119 la_a:void := IOprint_val(test:bat[:oid,:lng]) 
 #	io.print("test.select(lng(0)).print();"); 
@@ -302,7 +302,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("test.insert(oid(1),lng(1));"); 
     wa_a := calc.oid(1);                #134 wa_a:oid := CALCint2oid(_141:int) 
     xa_a := calc.lng(1);                #135 xa_a:lng := CALCint2lng(_141:int) 
-    ya_a := bat.insert(test,wa_a,xa_a); #136 ya_a:void := BKCinsert_bun(test:bat[:oid,:lng], wa_a:oid, xa_a:lng) 
+    ya_a := bat.insert(test,wa_a,xa_a); #136 ya_a:bat[:oid,:lng] := BKCinsert_bun(test:bat[:oid,:lng], wa_a:oid, xa_a:lng) {G}
 #	io.print("test.select(lng(0)).print();"); 
     ab_a := calc.lng(0);                #138 ab_a:lng := CALCint2lng(_131:int) 
     bb_a := algebra.select(test,ab_a);  #139 bb_a:bat[:oid,:lng] := ALGselect1(test:bat[:oid,:lng], ab_a:lng) {G}

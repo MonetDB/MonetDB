@@ -29,12 +29,12 @@ stdout of test 'BATpropcheck_after_outerjoin.SF-936469` in directory 'tests/BugD
 #
 function user.main():void;              #  0 main:void := user.main() {G}
     x := bat.new(:oid,:int);            #  1 x:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.insert(x,nil:oid,1);            #  2 _4:void := BKCinsert_bun(x:bat[:oid,:int], _5:oid, _6:int) 
-    bat.insert(x,nil:oid,2);            #  3 _7:void := BKCinsert_bun(x:bat[:oid,:int], _5:oid, _8:int) 
-    bat.insert(x,nil:oid,3);            #  4 _9:void := BKCinsert_bun(x:bat[:oid,:int], _5:oid, _10:int) 
+    bat.insert(x,nil:oid,1);            #  2 _4:bat[:oid,:int] := BKCinsert_bun(x:bat[:oid,:int], _5:oid, _6:int) {G}
+    bat.insert(x,nil:oid,2);            #  3 _7:bat[:oid,:int] := BKCinsert_bun(x:bat[:oid,:int], _5:oid, _8:int) {G}
+    bat.insert(x,nil:oid,3);            #  4 _9:bat[:oid,:int] := BKCinsert_bun(x:bat[:oid,:int], _5:oid, _10:int) {G}
     y := bat.new(:oid,:int);            #  5 y:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.insert(y,1@0,14);               #  6 _12:void := BKCinsert_bun(y:bat[:oid,:int], _13:oid, _14:int) 
-    bat.insert(y,3@0,34);               #  7 _15:void := BKCinsert_bun(y:bat[:oid,:int], _16:oid, _17:int) 
+    bat.insert(y,1@0,14);               #  6 _12:bat[:oid,:int] := BKCinsert_bun(y:bat[:oid,:int], _13:oid, _14:int) {G}
+    bat.insert(y,3@0,34);               #  7 _15:bat[:oid,:int] := BKCinsert_bun(y:bat[:oid,:int], _16:oid, _17:int) {G}
 #error here 
     x1 := bat.mirror(x);                #  9 x1:bat[:oid,:oid] := BKCmirror(x:bat[:oid,:int]) {G}
     x2 := algebra.outerjoin(x1,y);      # 10 x2:bat[:oid,:int] := ALGouterjoin(x1:bat[:oid,:oid], y:bat[:oid,:int]) {G}

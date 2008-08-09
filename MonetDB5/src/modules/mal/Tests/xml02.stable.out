@@ -33,11 +33,11 @@ stdout of test 'xml02` in directory 'src/modules/mal` itself:
 #
 function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
-    bat.insert(b,0@0,"Mary Ann Walker");#  2 _4:void := BKCinsert_bun(b:bat[:oid,:str], _5:oid, _6:str) 
-    bat.insert(b,1@0,"Annie Chapman");  #  3 _7:void := BKCinsert_bun(b:bat[:oid,:str], _8:oid, _9:str) 
+    bat.insert(b,0@0,"Mary Ann Walker");#  2 _4:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _5:oid, _6:str) {G}
+    bat.insert(b,1@0,"Annie Chapman");  #  3 _7:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _8:oid, _9:str) {G}
     h := bat.new(:oid,:str);            #  4 h:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
-    bat.insert(h,0@0,"brown");          #  5 _11:void := BKCinsert_bun(h:bat[:oid,:str], _5:oid, _12:str) 
-    bat.insert(h,1@0,"curly dark brown");#  6 _13:void := BKCinsert_bun(h:bat[:oid,:str], _8:oid, _14:str) 
+    bat.insert(h,0@0,"brown");          #  5 _11:bat[:oid,:str] := BKCinsert_bun(h:bat[:oid,:str], _5:oid, _12:str) {G}
+    bat.insert(h,1@0,"curly dark brown");#  6 _13:bat[:oid,:str] := BKCinsert_bun(h:bat[:oid,:str], _8:oid, _14:str) {G}
     io.print(b);                        #  7 _15:void := IOprint_val(b:bat[:oid,:str]) 
     bc := xml.attribute("name",b);      #  8 bc:bat[:oid,:xml] := BATXMLattribute(_17:str, b:bat[:oid,:str]) {G}
     hc := xml.attribute("hair",h);      #  9 hc:bat[:oid,:xml] := BATXMLattribute(_19:str, h:bat[:oid,:str]) {G}

@@ -83,7 +83,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:int,:str);            #  2 b:bat[:int,:str] := CMDBATnew(_3:int, _4:str) {G}
     i := bbp.getLRefCount(b);           #  3 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
     io.printf("refcount =%d[1]\n",i);   #  4 _6:void := IOprint_formatted_int(_7:str, i:int) 
-    bat.insert(b,1,"bat B");            #  5 _8:void := BKCinsert_bun(b:bat[:int,:str], _9:int, _10:str) 
+    bat.insert(b,1,"bat B");            #  5 _8:bat[:int,:str] := BKCinsert_bun(b:bat[:int,:str], _9:int, _10:str) {G}
     io.print(b);                        #  6 _11:void := IOprint_val(b:bat[:int,:str]) 
     i := bbp.getLRefCount(b);           #  7 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
     io.printf("refcount =%d[1]\n",i);   #  8 _12:void := IOprint_formatted_int(_7:str, i:int) 
@@ -127,25 +127,25 @@ refcount =1[1]
 # int	str		  # type
 #-------------------------#
 [ 1,	  "bat B"	  ]
-refcount =1[1]
-after assignment refcount =2[2]
-after 2nd assignment refcount =3[3]
-after 3rd assignment refcount =2[2]
+refcount =2[1]
+after assignment refcount =3[2]
+after 2nd assignment refcount =4[3]
+after 3rd assignment refcount =3[2]
 assignment refcount =1[1]
 #-----------------#
 # h	t	  # name
 # int	str	  # type
 #-----------------#
-after 4rd assignment refcount =2[2]
-after 5rd assignment refcount =1[1]
+after 4rd assignment refcount =3[2]
+after 5rd assignment refcount =2[1]
 call function
-enter function refcount =2[2,3]
-local in function refcount =3[3,4]
-return from function refcount =2[2]
-check self replacement, overrule refcount!
 enter function refcount =3[2,3]
 local in function refcount =4[3,4]
-return from function refcount =2[2]
+return from function refcount =3[2]
+check self replacement, overrule refcount!
+enter function refcount =4[2,3]
+local in function refcount =5[3,4]
+return from function refcount =3[2]
 
 # 08:01:01 >  
 # 08:01:01 >  Done.

@@ -43,7 +43,7 @@ stdout of test 'find_nil_in_void.SF-921814` in directory 'tests/BugDay_2005-10-0
 #
 function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
-    bat.append(b,"zero");               #  2 _4:void := BKCappend_val_wrap(b:bat[:oid,:str], _5:str) 
+    bat.append(b,"zero");               #  2 _4:bat[:str,:any] := BKCappend_val_wrap(b:bat[:oid,:str], _5:str) {G}
     io.print(b);                        #  3 _6:void := IOprint_val(b:bat[:oid,:str]) 
     z := algebra.find(b,0@0:oid);       #  4 z:str := ALGfind(b:bat[:oid,:str], _8:oid) {G}
     zs := str.str(z);                   #  5 zs:str := STRtostr(z:str) {G}
@@ -54,7 +54,7 @@ exit MALException:str ;                 #  8 MALException:str
     z := algebra.find(b,nil:oid);       # 10 z:str := ALGfind(b:bat[:oid,:str], _14:oid) {G}
     zs := str.str(z);                   # 11 zs:str := STRtostr(z:str) {G}
     io.printf("oid(nil) -> %s\n",zs);   # 12 _15:void := IOprint_formatted_str(_16:str, zs:str) 
-    bat.append(b,"zero");               # 13 _17:void := BKCappend_val_wrap(b:bat[:oid,:str], _5:str) 
+    bat.append(b,"zero");               # 13 _17:bat[:str,:any] := BKCappend_val_wrap(b:bat[:oid,:str], _5:str) {G}
     io.print(b);                        # 14 _18:void := IOprint_val(b:bat[:oid,:str]) 
     z := algebra.find(b,0@0:oid);       # 15 z:str := ALGfind(b:bat[:oid,:str], _8:oid) {G}
     zs := str.str(z);                   # 16 zs:str := STRtostr(z:str) {G}

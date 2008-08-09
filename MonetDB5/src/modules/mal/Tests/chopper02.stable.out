@@ -40,17 +40,17 @@ stdout of test 'chopper02` in directory 'src/modules/mal` itself:
 function user.main():void;              #  0 main:void := user.main() {G}
     t := bat.new(:int,:url);            #  1 t:bat[:int,:url] := CMDBATnew(_2:int, _3:url) {G}
     cb_a := url.url("http://www.cwi.nl");#  2 cb_a:url := URLnew(_5:str) {G}
-    db_a := bat.insert(t,1,cb_a);       #  3 db_a:void := BKCinsert_bun(t:bat[:int,:url], _7:int, cb_a:url) 
+    db_a := bat.insert(t,1,cb_a);       #  3 db_a:bat[:int,:url] := BKCinsert_bun(t:bat[:int,:url], _7:int, cb_a:url) {G}
     eb_a := url.url("http://www.cwi.nl/~monet");#  4 eb_a:url := URLnew(_9:str) {G}
-    fb_a := bat.insert(t,2,eb_a);       #  5 fb_a:void := BKCinsert_bun(t:bat[:int,:url], _11:int, eb_a:url) 
+    fb_a := bat.insert(t,2,eb_a);       #  5 fb_a:bat[:int,:url] := BKCinsert_bun(t:bat[:int,:url], _11:int, eb_a:url) {G}
     gb_a := url.url("http://www.cwi.nl/~mk/Acoi/doc/features.html");#  6 gb_a:url := URLnew(_13:str) {G}
-    hb_a := bat.insert(t,3,gb_a);       #  7 hb_a:void := BKCinsert_bun(t:bat[:int,:url], _15:int, gb_a:url) 
+    hb_a := bat.insert(t,3,gb_a);       #  7 hb_a:bat[:int,:url] := BKCinsert_bun(t:bat[:int,:url], _15:int, gb_a:url) {G}
     ib_a := url.url("http://www.educ.uva.nl/schoolweb/rocloka.htm");#  8 ib_a:url := URLnew(_17:str) {G}
-    jb_a := bat.insert(t,4,ib_a);       #  9 jb_a:void := BKCinsert_bun(t:bat[:int,:url], _19:int, ib_a:url) 
+    jb_a := bat.insert(t,4,ib_a);       #  9 jb_a:bat[:int,:url] := BKCinsert_bun(t:bat[:int,:url], _19:int, ib_a:url) {G}
     kb_a := url.url("http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium");# 10 kb_a:url := URLnew(_21:str) {G}
-    lb_a := bat.insert(t,5,kb_a);       # 11 lb_a:void := BKCinsert_bun(t:bat[:int,:url], _23:int, kb_a:url) 
+    lb_a := bat.insert(t,5,kb_a);       # 11 lb_a:bat[:int,:url] := BKCinsert_bun(t:bat[:int,:url], _23:int, kb_a:url) {G}
     mb_a := url.url("http://www.edgeonline.com/");# 12 mb_a:url := URLnew(_25:str) {G}
-    nb_a := bat.insert(t,6,mb_a);       # 13 nb_a:void := BKCinsert_bun(t:bat[:int,:url], _27:int, mb_a:url) 
+    nb_a := bat.insert(t,6,mb_a);       # 13 nb_a:bat[:int,:url] := BKCinsert_bun(t:bat[:int,:url], _27:int, mb_a:url) {G}
     qb_a := io.print("build a table finished");# 14 qb_a:void := IOprint_val(_29:str) 
     io.print(t);                        # 15 _30:void := IOprint_val(t:bat[:int,:url]) 
     rb := bat.new(:int,:url);           # 16 rb:bat[:int,:url] := CMDBATnew(_2:int, _3:url) {G}
@@ -58,7 +58,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 barrier (mloop:lng ,h:int ,B2:url ):= bat.newIterator(t);# 18 (mloop:lng, h:int, B2:url) := CHPbunIterator(t:bat[:int,:url]) {GJ23}
     io.print(h);                        # 19 _37:void := IOprint_val(h:int) 
     io.print(B2);                       # 20 _38:void := IOprint_val(B2:url) 
-    bat.insert(rb,h,B2);                # 21 _39:void := BKCinsert_bun(rb:bat[:int,:url], h:int, B2:url) 
+    bat.insert(rb,h,B2);                # 21 _39:bat[:int,:url] := BKCinsert_bun(rb:bat[:int,:url], h:int, B2:url) {G}
     redo (mloop:lng ,h:int ,B2:url ):= bat.hasMoreElements(t);# 22 (mloop:lng, h:int, B2:url) := CHPbunHasMoreElements(t:bat[:int,:url]) {GJ19}
 exit mloop:lng ;                        # 23 mloop:lng 
     io.print(rb);                       # 24 _40:void := IOprint_val(rb:bat[:int,:url]) 

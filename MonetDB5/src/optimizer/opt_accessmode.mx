@@ -81,10 +81,7 @@ OPTaccessmodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				writeable[getArg(p,0)]= getArg(p,0);
 			}
 		} else
-		if( getModuleId(p)== batRef &&
-			( getFunctionId(p) == insertRef ||
-			  getFunctionId(p) == deleteRef ||
-			  getFunctionId(p) == appendRef ) ){
+		if( isUpdateInstruction(p) ){
 				for(j=k=0; j<top;j++)
 				if( getArg(p,1) != getArg(candidate[j],0) )
 					candidate[k++]= candidate[j];

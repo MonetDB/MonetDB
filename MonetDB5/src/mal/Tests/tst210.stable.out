@@ -24,7 +24,7 @@ stdout of test 'tst210` in directory 'src/mal` itself:
 function user.main():void;              #  0 main:void := user.main() {G}
 # simple renaming of a bat; 
     b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
-    bat.insert(b,1,1);                  #  3 _4:void := BKCinsert_bun(b:bat[:int,:int], _5:int, _5:int) 
+    bat.insert(b,1,1);                  #  3 _4:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _5:int, _5:int) {G}
     io.print(b);                        #  4 _6:void := IOprint_val(b:bat[:int,:int]) 
     bat.setName(b,"myhome");            #  5 _7:void := BKCsetName(b:bat[:int,:int], _8:str) 
     bat.setColumn(b,"first","last");    #  6 _9:void := BKCsetColumns(b:bat[:int,:int], _10:str, _11:str) 

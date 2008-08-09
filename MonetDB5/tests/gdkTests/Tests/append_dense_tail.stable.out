@@ -47,22 +47,22 @@ stdout of test 'append_dense_tail` in directory 'tests/gdkTests` itself:
 function user.main():void;              #  0 main:void := user.main() {G}
 # create an empty [void,oid] BAT with dense tail 
     a := bat.new(:oid,:oid);            #  2 a:bat[:oid,:oid] := CMDBATnew(_3:oid, _3:oid) {G}
-    bat.append(a,1@0);                  #  3 _4:void := BKCappend_val_wrap(a:bat[:oid,:oid], _5:oid) 
-    bat.delete(a,0@0);                  #  4 _6:void := BKCdelete(a:bat[:oid,:oid], _7:oid) 
+    bat.append(a,1@0);                  #  3 _4:bat[:oid,:any] := BKCappend_val_wrap(a:bat[:oid,:oid], _5:oid) {G}
+    bat.delete(a,0@0);                  #  4 _6:bat[:oid,:oid] := BKCdelete(a:bat[:oid,:oid], _7:oid) {G}
 # create a non-empty [void,oid] BAT with non-dense tail 
     b := bat.new(:oid,:oid);            #  6 b:bat[:oid,:oid] := CMDBATnew(_3:oid, _3:oid) {G}
-    bat.append(b,0@0);                  #  7 _10:void := BKCappend_val_wrap(b:bat[:oid,:oid], _7:oid) 
-    bat.append(b,0@0);                  #  8 _11:void := BKCappend_val_wrap(b:bat[:oid,:oid], _7:oid) 
-    bat.append(b,0@0);                  #  9 _12:void := BKCappend_val_wrap(b:bat[:oid,:oid], _7:oid) 
+    bat.append(b,0@0);                  #  7 _10:bat[:oid,:any] := BKCappend_val_wrap(b:bat[:oid,:oid], _7:oid) {G}
+    bat.append(b,0@0);                  #  8 _11:bat[:oid,:any] := BKCappend_val_wrap(b:bat[:oid,:oid], _7:oid) {G}
+    bat.append(b,0@0);                  #  9 _12:bat[:oid,:any] := BKCappend_val_wrap(b:bat[:oid,:oid], _7:oid) {G}
 # append the latter to the former 
-    bat.append(a,b);                    # 11 _14:void := BKCappend_wrap(a:bat[:oid,:oid], b:bat[:oid,:oid]) 
+    bat.append(a,b);                    # 11 _14:bat[:oid,:oid] := BKCappend_wrap(a:bat[:oid,:oid], b:bat[:oid,:oid]) {G}
     io.print(a);                        # 12 _15:void := IOprint_val(a:bat[:oid,:oid]) 
 # check important properties 
     f := bat.new(:void,:str);           # 14 f:bat[:void,:str] := CMDBATnew(_18:void, _19:str) {G}
-    bat.append(f,"hseqbase");           # 15 _20:void := BKCappend_val_wrap(f:bat[:void,:str], _21:str) 
-    bat.append(f,"hdense");             # 16 _22:void := BKCappend_val_wrap(f:bat[:void,:str], _23:str) 
-    bat.append(f,"tseqbase");           # 17 _24:void := BKCappend_val_wrap(f:bat[:void,:str], _25:str) 
-    bat.append(f,"tdense");             # 18 _26:void := BKCappend_val_wrap(f:bat[:void,:str], _27:str) 
+    bat.append(f,"hseqbase");           # 15 _20:bat[:str,:any] := BKCappend_val_wrap(f:bat[:void,:str], _21:str) {G}
+    bat.append(f,"hdense");             # 16 _22:bat[:str,:any] := BKCappend_val_wrap(f:bat[:void,:str], _23:str) {G}
+    bat.append(f,"tseqbase");           # 17 _24:bat[:str,:any] := BKCappend_val_wrap(f:bat[:void,:str], _25:str) {G}
+    bat.append(f,"tdense");             # 18 _26:bat[:str,:any] := BKCappend_val_wrap(f:bat[:void,:str], _27:str) {G}
     fr := bat.reverse(f);               # 19 fr:bat[:str,:void] := BKCreverse(f:bat[:void,:str]) {G}
     fm := bat.mirror(fr);               # 20 fm:bat[:str,:str] := BKCmirror(fr:bat[:str,:void]) {G}
     i := bat.info(a);                   # 21 i:bat[:str,:str] := BKCinfo(a:bat[:oid,:oid]) {G}

@@ -43,7 +43,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # check detection of the underlying fast implementations 
     b := bat.new(:oid,:lng);            #  3 b:bat[:oid,:lng] := CMDBATnew(_4:oid, _5:lng) {G}
 barrier (v,i):= language.newRange(0:lng);#  4 (v:bit, i:lng) := RNGnewRange_lng(_8:lng) {J7}
-    bat.append(b,i);                    #  5 _9:void := BKCappend_val_wrap(b:bat[:oid,:lng], i:lng) 
+    bat.append(b,i);                    #  5 _9:bat[:lng,:any] := BKCappend_val_wrap(b:bat[:oid,:lng], i:lng) {G}
     redo (v,i):= language.nextElement(1:lng,10:lng);#  6 (v:bit, i:lng) := RNGnextElement_lng(_10:lng, _11:lng) {J5}
 exit (v,i);                             #  7 (v:bit, i:lng) 
     c := algebra.copy(b);               #  8 c:bat[:oid,:lng] := ALGcopy(b:bat[:oid,:lng]) {G}

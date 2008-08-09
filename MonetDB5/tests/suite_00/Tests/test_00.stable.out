@@ -185,32 +185,32 @@ function user.main():void;              #  0 main:void := user.main() {G}
     ea_a := io.print(da_a);             # 21 ea_a:void := IOprint_val(da_a:bat[:str,:str]) 
     fa_a := io.printf("#~EndVariableOutput~#\n");# 22 fa_a:void := IOprint_str(_26:str) 
 #	io.print("b.insert(1,15);"); 
-    ga_a := bat.insert(b,1,15);         # 24 ga_a:void := BKCinsert_bun(b:bat[:int,:int], _29:int, _30:int) 
+    ga_a := bat.insert(b,1,15);         # 24 ga_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _29:int, _30:int) {G}
 #	io.print("b.insert(2,4);"); 
-    ha_a := bat.insert(b,2,4);          # 26 ha_a:void := BKCinsert_bun(b:bat[:int,:int], _33:int, _34:int) 
+    ha_a := bat.insert(b,2,4);          # 26 ha_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _33:int, _34:int) {G}
 #	io.print("b.insert(3,int(nil));"); 
     ia_a := calc.int(nil:void);         # 28 ia_a:int := CALCnil2int(_37:void) 
-    ja_a := bat.insert(b,3,ia_a);       # 29 ja_a:void := BKCinsert_bun(b:bat[:int,:int], _39:int, ia_a:int) 
+    ja_a := bat.insert(b,3,ia_a);       # 29 ja_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _39:int, ia_a:int) {G}
 #	io.print("b.insert(4,16);"); 
-    ka_a := bat.insert(b,4,16);         # 31 ka_a:void := BKCinsert_bun(b:bat[:int,:int], _34:int, _42:int) 
+    ka_a := bat.insert(b,4,16);         # 31 ka_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _34:int, _42:int) {G}
 #	io.print("b.insert(5,25);"); 
-    la_a := bat.insert(b,5,25);         # 33 la_a:void := BKCinsert_bun(b:bat[:int,:int], _45:int, _46:int) 
+    la_a := bat.insert(b,5,25);         # 33 la_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _45:int, _46:int) {G}
 #	io.print("b.insert(6,36);"); 
-    ma_a := bat.insert(b,6,36);         # 35 ma_a:void := BKCinsert_bun(b:bat[:int,:int], _49:int, _50:int) 
+    ma_a := bat.insert(b,6,36);         # 35 ma_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _49:int, _50:int) {G}
 #	io.print("b.insert(7,49);"); 
-    na_a := bat.insert(b,7,49);         # 37 na_a:void := BKCinsert_bun(b:bat[:int,:int], _53:int, _54:int) 
+    na_a := bat.insert(b,7,49);         # 37 na_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _53:int, _54:int) {G}
 #	io.print("b.insert(8,64);"); 
-    oa_a := bat.insert(b,8,64);         # 39 oa_a:void := BKCinsert_bun(b:bat[:int,:int], _57:int, _58:int) 
+    oa_a := bat.insert(b,8,64);         # 39 oa_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _57:int, _58:int) {G}
 #	io.print("b.insert(9,int(nil));"); 
     pa_a := calc.int(nil:void);         # 41 pa_a:int := CALCnil2int(_37:void) 
-    qa_a := bat.insert(b,9,pa_a);       # 42 qa_a:void := BKCinsert_bun(b:bat[:int,:int], _62:int, pa_a:int) 
+    qa_a := bat.insert(b,9,pa_a);       # 42 qa_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _62:int, pa_a:int) {G}
 #	io.print("b.insert(int(nil),int(nil));"); 
     ra_a := calc.int(nil:void);         # 44 ra_a:int := CALCnil2int(_37:void) 
     sa_a := calc.int(nil:void);         # 45 sa_a:int := CALCnil2int(_37:void) 
-    ta_a := bat.insert(b,ra_a,sa_a);    # 46 ta_a:void := BKCinsert_bun(b:bat[:int,:int], ra_a:int, sa_a:int) 
+    ta_a := bat.insert(b,ra_a,sa_a);    # 46 ta_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], ra_a:int, sa_a:int) {G}
 #	io.print("b.insert(int(nil),81);"); 
     ua_a := calc.int(nil:void);         # 48 ua_a:int := CALCnil2int(_37:void) 
-    va_a := bat.insert(b,ua_a,81);      # 49 va_a:void := BKCinsert_bun(b:bat[:int,:int], ua_a:int, _70:int) 
+    va_a := bat.insert(b,ua_a,81);      # 49 va_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], ua_a:int, _70:int) {G}
 #	io.print("b.print();"); 
     wa_a := io.print(b);                # 51 wa_a:void := IOprint_val(b:bat[:int,:int]) 
 #	io.print("# Testing simple retrievals\n"); 
@@ -227,21 +227,21 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #ignore	fb_a := find(b,10); 
 #ignore	gb_a := io.print(fb_a); 
 #	io.print("# Can we delete them and re-insert them later on\n"); 
-    hb_a := bat.delete(b,4,16);         # 66 hb_a:void := BKCdelete_bun(b:bat[:int,:int], _79:int, _91:int) 
+    hb_a := bat.delete(b,4,16);         # 66 hb_a:bat[:int,:int] := BKCdelete_bun(b:bat[:int,:int], _79:int, _91:int) {G}
 #	io.print("b.delete(1,15);"); 
-    ib_a := bat.delete(b,1,15);         # 68 ib_a:void := BKCdelete_bun(b:bat[:int,:int], _75:int, _94:int) 
+    ib_a := bat.delete(b,1,15);         # 68 ib_a:bat[:int,:int] := BKCdelete_bun(b:bat[:int,:int], _75:int, _94:int) {G}
 #	io.print("b.delete(int(nil),81);"); 
     jb_a := calc.int(nil:void);         # 70 jb_a:int := CALCnil2int(_83:void) 
-    kb_a := bat.delete(b,jb_a,81);      # 71 kb_a:void := BKCdelete_bun(b:bat[:int,:int], jb_a:int, _70:int) 
+    kb_a := bat.delete(b,jb_a,81);      # 71 kb_a:bat[:int,:int] := BKCdelete_bun(b:bat[:int,:int], jb_a:int, _70:int) {G}
 #	io.print("b.print();"); 
     lb_a := io.print(b);                # 73 lb_a:void := IOprint_val(b:bat[:int,:int]) 
 #	io.print("b.insert(4,16);"); 
-    mb_a := bat.insert(b,4,16);         # 75 mb_a:void := BKCinsert_bun(b:bat[:int,:int], _79:int, _91:int) 
+    mb_a := bat.insert(b,4,16);         # 75 mb_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _79:int, _91:int) {G}
 #	io.print("b.insert(int(nil),81);"); 
     nb_a := calc.int(nil:void);         # 77 nb_a:int := CALCnil2int(_83:void) 
-    ob_a := bat.insert(b,nb_a,81);      # 78 ob_a:void := BKCinsert_bun(b:bat[:int,:int], nb_a:int, _105:int) 
+    ob_a := bat.insert(b,nb_a,81);      # 78 ob_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], nb_a:int, _105:int) {G}
 #	io.print("b.insert(1,15);"); 
-    pb_a := bat.insert(b,1,15);         # 80 pb_a:void := BKCinsert_bun(b:bat[:int,:int], _108:int, _94:int) 
+    pb_a := bat.insert(b,1,15);         # 80 pb_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _108:int, _94:int) {G}
 #	io.print("b.count().print();"); 
     qb_a := aggr.count(b);              # 82 qb_a:int := ALGcount_bat(b:bat[:int,:int]) 
     rb_a := io.print(qb_a);             # 83 rb_a:void := IOprint_val(qb_a:int) 

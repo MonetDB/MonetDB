@@ -27,7 +27,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # initialization of BATs on the stack 
 # caused a problem when executed in interactve mode 
     RKA := bat.new(:int,:int,1048576);  #  3 RKA:bat[:int,:int] := CMDBATnewint(_4:int, _4:int, _5:int) {G}
-    bat.insert(RKA,1:int,360:int);      #  4 _6:void := BKCinsert_bun(RKA:bat[:int,:int], _7:int, _8:int) 
+    bat.insert(RKA,1:int,360:int);      #  4 _6:bat[:int,:int] := BKCinsert_bun(RKA:bat[:int,:int], _7:int, _8:int) {G}
     io.print(RKA);                      #  5 _9:void := IOprint_val(RKA:bat[:int,:int]) 
 #the next one should fail 
     bat.setWriteMode(RKB);              #  7 _11:any := bat.setWriteMode(RKB:any) {U}

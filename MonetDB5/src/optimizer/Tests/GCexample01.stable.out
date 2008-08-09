@@ -28,7 +28,7 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     c := bat.new(:int,:int);            #  2 c:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     d := bat.new(:int,:int);            #  3 d:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    bat.insert(b,1,1);                  #  4 _5:void := BKCinsert_bun(b:bat[:int,:int], _6:int, _6:int) 
+    bat.insert(b,1,1);                  #  4 _5:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _6:int, _6:int) {G}
 barrier (x,y,z):= bat.newIterator(b);   #  5 (x:lng, y:int, z:int) := CHPbunIterator(b:bat[:int,:int]) {J7}
     io.print(x);                        #  6 _10:void := IOprint_val(x:lng) 
 exit (x,y,z);                           #  7 (x:lng, y:int, z:int) 

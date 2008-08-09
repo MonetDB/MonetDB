@@ -41,13 +41,13 @@ stdout of test 'saveload` in directory 'src/mal` itself:
 function user.main():void;              #  0 main:void := user.main() {G}
 # save/load tests 
     a := bat.new(:int,:int);            #  2 a:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
-    bat.insert(a,0,123);                #  3 _4:void := BKCinsert_bun(a:bat[:int,:int], _5:int, _6:int) 
-    bat.insert(a,0,321);                #  4 _7:void := BKCinsert_bun(a:bat[:int,:int], _5:int, _8:int) 
+    bat.insert(a,0,123);                #  3 _4:bat[:int,:int] := BKCinsert_bun(a:bat[:int,:int], _5:int, _6:int) {G}
+    bat.insert(a,0,321);                #  4 _7:bat[:int,:int] := BKCinsert_bun(a:bat[:int,:int], _5:int, _8:int) {G}
     bat.setName(a,"aaa");               #  5 _9:void := BKCsetName(a:bat[:int,:int], _10:str) 
     io.print(a);                        #  6 _11:void := IOprint_val(a:bat[:int,:int]) 
     b := bat.new(:oid,:str);            #  7 b:bat[:oid,:str] := CMDBATnew(_13:oid, _14:str) {G}
-    bat.insert(b,0@0,"hello");          #  8 _15:void := BKCinsert_bun(b:bat[:oid,:str], _16:oid, _17:str) 
-    bat.insert(b,1@0,"world");          #  9 _18:void := BKCinsert_bun(b:bat[:oid,:str], _19:oid, _20:str) 
+    bat.insert(b,0@0,"hello");          #  8 _15:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _16:oid, _17:str) {G}
+    bat.insert(b,1@0,"world");          #  9 _18:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _19:oid, _20:str) {G}
     bat.setName(b,"bbb");               # 10 _21:void := BKCsetName(b:bat[:oid,:str], _22:str) 
     io.print(b);                        # 11 _23:void := IOprint_val(b:bat[:oid,:str]) 
     bat.save(a);                        # 12 _24:void := BKCsave2(a:bat[:int,:int]) 

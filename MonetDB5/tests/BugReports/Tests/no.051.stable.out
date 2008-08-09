@@ -166,7 +166,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("b.insert(oid(1),flt(2));"); 
     fa_a := calc.oid(1);                # 50 fa_a:oid := CALCint2oid(_53:int) 
     ga_a := calc.flt(2);                # 51 ga_a:flt := CALCint2flt(_55:int) 
-    ha_a := bat.insert(b,fa_a,ga_a);    # 52 ha_a:void := BKCinsert_bun(b:bat[:oid,:flt], fa_a:oid, ga_a:flt) 
+    ha_a := bat.insert(b,fa_a,ga_a);    # 52 ha_a:bat[:oid,:flt] := BKCinsert_bun(b:bat[:oid,:flt], fa_a:oid, ga_a:flt) {G}
 #	io.print("b.print();"); 
     ia_a := io.print(b);                # 54 ia_a:void := IOprint_val(b:bat[:oid,:flt]) 
 #	io.print("var c := create(b);"); 

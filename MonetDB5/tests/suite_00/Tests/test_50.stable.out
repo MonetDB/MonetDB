@@ -94,9 +94,9 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("var bd:=new(int,int);"); 
     bd := bat.new(nil:int,nil:int);     # 19 bd:bat[:int,:int] := CMDBATnew(_17:int, _17:int) {G}
 #	io.print("insert(b,1,2);"); 
-    ca_a := bat.insert(b,1,2);          # 21 ca_a:void := BKCinsert_bun(b:bat[:int,:int], _24:int, _25:int) 
+    ca_a := bat.insert(b,1,2);          # 21 ca_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _24:int, _25:int) {G}
 #	io.print("insert(b,2,3);"); 
-    da_a := bat.insert(b,2,3);          # 23 da_a:void := BKCinsert_bun(b:bat[:int,:int], _25:int, _28:int) 
+    da_a := bat.insert(b,2,3);          # 23 da_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _25:int, _28:int) {G}
 #	io.print("bd:=b.delta();"); 
     bd := transaction.delta(b);         # 25 bd:bat[:int,:int] := TRNtrans_delta(b:bat[:int,:int]) {G}
 #	io.print("print(bd);"); 
@@ -106,16 +106,16 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("a.print();"); 
     fa_a := io.print(a);                # 31 fa_a:void := IOprint_val(a:bat[:int,:int]) 
 #	io.print("#commit the changes and repeat the action\n"); 
-    ga_a := bat.delete(bd);             # 33 ga_a:void := BKCdelete_all(bd:bat[:int,:int]) 
+    ga_a := bat.delete(bd);             # 33 ga_a:bat[:int,:int] := BKCdelete_all(bd:bat[:int,:int]) {G}
 #	io.print("commit(b);"); 
     ha_a := transaction.commit(b);      # 35 ha_a:void := TRNtrans_commit(b:bat[:int,:int]) 
 #	io.print("b.alpha().print();"); 
     ia_a := transaction.alpha(b);       # 37 ia_a:bat[:int,:int] := TRNtrans_alpha(b:bat[:int,:int]) {G}
     ja_a := io.print(ia_a);             # 38 ja_a:void := IOprint_val(ia_a:bat[:int,:int]) 
 #	io.print("insert(b,4,5);"); 
-    ka_a := bat.insert(b,4,5);          # 40 ka_a:void := BKCinsert_bun(b:bat[:int,:int], _45:int, _46:int) 
+    ka_a := bat.insert(b,4,5);          # 40 ka_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _45:int, _46:int) {G}
 #	io.print("delete(b,2,3);"); 
-    la_a := bat.delete(b,2,3);          # 42 la_a:void := BKCdelete_bun(b:bat[:int,:int], _25:int, _28:int) 
+    la_a := bat.delete(b,2,3);          # 42 la_a:bat[:int,:int] := BKCdelete_bun(b:bat[:int,:int], _25:int, _28:int) {G}
 #	io.print("print(b);"); 
     ma_a := io.print(b);                # 44 ma_a:void := IOprint_val(b:bat[:int,:int]) 
 #	io.print("bd:=b.delta();"); 

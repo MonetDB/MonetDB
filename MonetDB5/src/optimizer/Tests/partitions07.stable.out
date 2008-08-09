@@ -64,7 +64,7 @@ function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     x31 := bat.new(nil:oid,nil:flt);    # 10 x31:bat[:oid,:flt] := CMDBATnew(_25:oid, _26:flt) {G}
 barrier (x35,x36,x37):= bat.newIterator(x14);# 11 (x35:lng, x36:oid, x37:flt) := CHPbunIterator(x14:bat[:oid,:flt]) {J18}
     x39 := mmath.sin(x37);              # 12 x39:flt := MATHunary_SINflt(x37:flt) 
-    bat.insert(x31,x36,x39);            # 13 _31:void := BKCinsert_bun(x31:bat[:oid,:flt], x36:oid, x39:flt) 
+    bat.insert(x31,x36,x39);            # 13 _31:bat[:oid,:flt] := BKCinsert_bun(x31:bat[:oid,:flt], x36:oid, x39:flt) {G}
     redo (x35,x36,x37):= bat.hasMoreElements(x14);# 14 (x35:lng, x36:oid, x37:flt) := CHPbunHasMoreElements(x14:bat[:oid,:flt]) {J12}
 catch MALException:str ;                # 15 MALException:str {J17}
     redo (x35,x36,x37):= bat.hasMoreElements(x14);# 16 (x35:lng, x36:oid, x37:flt) := CHPbunHasMoreElements(x14:bat[:oid,:flt]) {J12}

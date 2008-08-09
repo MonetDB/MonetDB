@@ -48,7 +48,7 @@ function user.tst():void;               #  0 tst:void := user.tst() {G}
     V12 := algebra.kdifference(V7,V11); #  5 V12:bat[:oid,:int] := ALGkdiff(V7:bat[:oid,:int], V11:bat[:oid,:int]) {G}
     V16 := algebra.markT(V12);          #  6 V16:bat[:oid,:oid] := ALGtmark_default(V12:bat[:oid,:int]) {G}
     V17 := algebra.join(V16,V7);        #  7 V17:bat[:oid,:int] := ALGjoin(V16:bat[:oid,:oid], V7:bat[:oid,:int]) {G}
-    bat.append(V1,V17);                 #  8 _11:void := BKCappend_wrap(V1:bat[:oid,:int], V17:bat[:oid,:int]) 
+    bat.append(V1,V17);                 #  8 _11:bat[:oid,:int] := BKCappend_wrap(V1:bat[:oid,:int], V17:bat[:oid,:int]) {G}
     user.do(V1);                        #  9 _12:void := user.do(V1:bat[:oid,:int]) 
     io.print("done");                   # 10 _13:void := IOprint_val(_14:str) 
 end tst;	# 11  
@@ -69,7 +69,7 @@ function user.tst():void;               #  0 tst:void := user.tst() {G}
     V12 := V7;                          #  5 V12:bat[:oid,:int] := V7:bat[:oid,:int] {G}
     V16 := algebra.markT(V12);          #  6 V16:bat[:oid,:oid] := ALGtmark_default(V12:bat[:oid,:int]) {G}
     V17 := algebra.join(V16,V7);        #  7 V17:bat[:oid,:int] := ALGjoin(V16:bat[:oid,:oid], V7:bat[:oid,:int]) {G}
-    bat.append(V1,V17);                 #  8 _11:void := BKCappend_wrap(V1:bat[:oid,:int], V17:bat[:oid,:int]) 
+    bat.append(V1,V17);                 #  8 _11:bat[:oid,:int] := BKCappend_wrap(V1:bat[:oid,:int], V17:bat[:oid,:int]) {G}
 barrier (_17,_18,_19):= bat.newIterator(V1);#  9 (_17:lng, _18:oid, _19:int) := CHPbunIterator(V1:bat[:oid,:int]) {J14}
     io.print("loop");                   # 10 _20:void := IOprint_val(_21:str) 
 catch MALException:str ;                # 11 MALException:str {J13}

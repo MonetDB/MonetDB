@@ -57,7 +57,7 @@ barrier (mloop,m):= language.newRange(0:lng);#  6 (mloop:bit, m:lng) := RNGnewRa
     B3 := algebra.fetch(A3,m);          # 10 B3:int := ALGfetch(A3:bat[:oid,:int], m:lng) 
     io.printf("B3 value %d\n",B3);      # 11 _20:void := IOprint_formatted_int(_21:str, B3:int) 
     cr := user.pow(B2,B3);              # 12 cr:int := user.pow(B2:int, B3:int) 
-    bat.append(resB,cr);                # 13 _23:void := BKCappend_val_wrap(resB:bat[:oid,:int], cr:int) 
+    bat.append(resB,cr);                # 13 _23:bat[:int,:any] := BKCappend_val_wrap(resB:bat[:oid,:int], cr:int) {G}
     redo (mloop,m):= language.nextElement(1:lng,l);# 14 (mloop:bit, m:lng) := RNGnextElement_lng(_24:lng, l:lng) {J7}
 catch MALException:str ;                # 15 MALException:str {J16}
 exit MALException:str ;                 # 16 MALException:str 
@@ -68,8 +68,8 @@ end tst;	# 19
 #
 function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.append(b,1);                    #  2 _4:void := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) 
-    bat.append(b,2);                    #  3 _6:void := BKCappend_val_wrap(b:bat[:oid,:int], _7:int) 
+    bat.append(b,1);                    #  2 _4:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
+    bat.append(b,2);                    #  3 _6:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _7:int) {G}
     e := algebra.fetch(b,1:lng);        #  4 e:int := ALGfetch(b:bat[:oid,:int], _9:lng) 
     io.print(e);                        #  5 _10:void := IOprint_val(e:int) 
     io.print(b);                        #  6 _11:void := IOprint_val(b:bat[:oid,:int]) 

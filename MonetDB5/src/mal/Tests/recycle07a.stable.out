@@ -26,7 +26,7 @@ stdout of test 'recycle07a` in directory 'src/mal` itself:
 function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];#  0 bind:bat[:oid,:int] := user.bind(s:str, t:str, c:str, i:int) {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_6:oid, _7:int) {G}
 barrier (go,i):= language.newRange(0:int);#  2 (go:bit, i:int) := RNGnewRange_int(_9:int) {J5}
-    bat.append(b,i);                    #  3 _10:void := BKCappend_val_wrap(b:bat[:oid,:int], i:int) 
+    bat.append(b,i);                    #  3 _10:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], i:int) {G}
     redo (go,i):= language.nextElement(1:int,1000:int);#  4 (go:bit, i:int) := RNGnextElement_int(_11:int, _12:int) {J3}
 exit (go,i);                            #  5 (go:bit, i:int) 
     return bind := b;                   #  6 bind:bat[:oid,:int] := b:bat[:oid,:int] {G}

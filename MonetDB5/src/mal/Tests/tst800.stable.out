@@ -40,7 +40,7 @@ stdout of test 'tst800` in directory 'src/mal` itself:
 function user.main():void;              #  0 main:void := user.main() {G}
 #testing simple stuff around type BAT 
     z := bat.new(:int,:int);            #  2 z:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
-    bat.insert(z,1,2);                  #  3 _4:void := BKCinsert_bun(z:bat[:int,:int], _5:int, _6:int) 
+    bat.insert(z,1,2);                  #  3 _4:bat[:int,:int] := BKCinsert_bun(z:bat[:int,:int], _5:int, _6:int) {G}
     io.print(z);                        #  4 _7:void := IOprint_val(z:bat[:int,:int]) 
     b := bat.new(:int,:BAT);            #  5 b:bat[:int,:BAT] := CMDBATnew(_3:int, _9:BAT) {G}
     zid := calc.getBATidentifier(z);    #  6 zid:BAT := CALCbat2batid(z:bat[:int,:int]) {G}
@@ -51,7 +51,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.print("zid done");               # 11 _16:void := IOprint_val(_17:str) 
     i := calc.getBAT(zid);              # 12 i:bat[:any,:any] := CALCbatid2bat(zid:BAT) {G}
     io.print(i);                        # 13 _19:void := IOprint_val(i:bat[:any,:any]) 
-    bat.insert(b,0,zid);                # 14 _20:void := BKCinsert_bun(b:bat[:int,:BAT], _21:int, zid:BAT) 
+    bat.insert(b,0,zid);                # 14 _20:bat[:int,:BAT] := BKCinsert_bun(b:bat[:int,:BAT], _21:int, zid:BAT) {G}
 #io.print(b); 
     a := algebra.fetch(b,0);            # 16 a:BAT := ALGfetchint(b:bat[:int,:BAT], _21:int) {G}
     io.print("fetch it");               # 17 _24:void := IOprint_val(_25:str) 

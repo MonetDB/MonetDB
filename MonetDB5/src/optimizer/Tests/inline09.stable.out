@@ -56,7 +56,7 @@ end bar;	# 7
 #end qry;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
-    bat.insert(b,0@0,"2");              #  2 _4:void := BKCinsert_bun(b:bat[:oid,:str], _5:oid, _6:str) 
+    bat.insert(b,0@0,"2");              #  2 _4:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _5:oid, _6:str) {G}
     z:bat[:oid,:str]  := mal.multiplex("user","bar",b,b);#  3 z:bat[:oid,:str] := OPTremapMultiplex(_8:str, _9:str, b:bat[:oid,:str], b:bat[:oid,:str]) {G}
 end qry;	# 4  
 #

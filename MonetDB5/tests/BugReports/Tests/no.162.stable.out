@@ -166,23 +166,23 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("VAR left := bat.new(int,int);"); 
     left := bat.new(nil:int,nil:int);   # 63 left:bat[:int,:int] := CMDBATnew(_65:int, _65:int) {G}
 #	io.print("left.insert(4,-3);"); 
-    ca_a := bat.insert(left,4,-3);      # 65 ca_a:void := BKCinsert_bun(left:bat[:int,:int], _68:int, _69:int) 
+    ca_a := bat.insert(left,4,-3);      # 65 ca_a:bat[:int,:int] := BKCinsert_bun(left:bat[:int,:int], _68:int, _69:int) {G}
 #	io.print("left.insert(3,-2);"); 
-    da_a := bat.insert(left,3,-2);      # 67 da_a:void := BKCinsert_bun(left:bat[:int,:int], _72:int, _73:int) 
+    da_a := bat.insert(left,3,-2);      # 67 da_a:bat[:int,:int] := BKCinsert_bun(left:bat[:int,:int], _72:int, _73:int) {G}
 #	io.print("left.insert(2,-1);"); 
-    ea_a := bat.insert(left,2,-1);      # 69 ea_a:void := BKCinsert_bun(left:bat[:int,:int], _76:int, _77:int) 
+    ea_a := bat.insert(left,2,-1);      # 69 ea_a:bat[:int,:int] := BKCinsert_bun(left:bat[:int,:int], _76:int, _77:int) {G}
 #	io.print("left.insert(1,0);"); 
-    fa_a := bat.insert(left,1,0);       # 71 fa_a:void := BKCinsert_bun(left:bat[:int,:int], _80:int, _81:int) 
+    fa_a := bat.insert(left,1,0);       # 71 fa_a:bat[:int,:int] := BKCinsert_bun(left:bat[:int,:int], _80:int, _81:int) {G}
 #	io.print("VAR right := bat.new(int,str);"); 
     right := bat.new(nil:int,nil:str);  # 73 right:bat[:int,:str] := CMDBATnew(_65:int, _84:str) {G}
 #	io.print("right.insert(-3,\"vier\");"); 
-    ga_a := bat.insert(right,-3,"vier");# 75 ga_a:void := BKCinsert_bun(right:bat[:int,:str], _69:int, _87:str) 
+    ga_a := bat.insert(right,-3,"vier");# 75 ga_a:bat[:int,:str] := BKCinsert_bun(right:bat[:int,:str], _69:int, _87:str) {G}
 #	io.print("right.insert(-2,\"drie\");"); 
-    ha_a := bat.insert(right,-2,"drie");# 77 ha_a:void := BKCinsert_bun(right:bat[:int,:str], _73:int, _90:str) 
+    ha_a := bat.insert(right,-2,"drie");# 77 ha_a:bat[:int,:str] := BKCinsert_bun(right:bat[:int,:str], _73:int, _90:str) {G}
 #	io.print("right.insert(-1,\"twee\");"); 
-    ia_a := bat.insert(right,-1,"twee");# 79 ia_a:void := BKCinsert_bun(right:bat[:int,:str], _77:int, _93:str) 
+    ia_a := bat.insert(right,-1,"twee");# 79 ia_a:bat[:int,:str] := BKCinsert_bun(right:bat[:int,:str], _77:int, _93:str) {G}
 #	io.print("right.insert(0,\"een\");"); 
-    ja_a := bat.insert(right,0,"een");  # 81 ja_a:void := BKCinsert_bun(right:bat[:int,:str], _81:int, _96:str) 
+    ja_a := bat.insert(right,0,"een");  # 81 ja_a:bat[:int,:str] := BKCinsert_bun(right:bat[:int,:str], _81:int, _96:str) {G}
 #	io.print("join(left,right).print();"); 
     ka_a := algebra.join(left,right);   # 83 ka_a:bat[:int,:str] := ALGjoin(left:bat[:int,:int], right:bat[:int,:str]) {G}
     la_a := io.print(ka_a);             # 84 la_a:void := IOprint_val(ka_a:bat[:int,:str]) 

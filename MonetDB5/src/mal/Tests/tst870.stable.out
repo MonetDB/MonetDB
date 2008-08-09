@@ -36,15 +36,15 @@ stdout of test 'tst870` in directory 'src/mal` itself:
 function user.main():void;              #  0 main:void := user.main() {G}
 #testing the multiplex operations on simple groups 
     b := bat.new(:oid,:oid);            #  2 b:bat[:oid,:oid] := CMDBATnew(_3:oid, _3:oid) {G}
-    bat.insert(b,0@0,0@0);              #  3 _4:void := BKCinsert_bun(b:bat[:oid,:oid], _5:oid, _5:oid) 
-    bat.insert(b,1@0,1@0);              #  4 _6:void := BKCinsert_bun(b:bat[:oid,:oid], _7:oid, _7:oid) 
-    bat.insert(b,1@0,2@0);              #  5 _8:void := BKCinsert_bun(b:bat[:oid,:oid], _7:oid, _9:oid) 
-    bat.insert(b,1@0,3@0);              #  6 _10:void := BKCinsert_bun(b:bat[:oid,:oid], _7:oid, _11:oid) 
-    bat.insert(b,2@0,2@0);              #  7 _12:void := BKCinsert_bun(b:bat[:oid,:oid], _9:oid, _9:oid) 
-    bat.insert(b,2@0,0@0);              #  8 _13:void := BKCinsert_bun(b:bat[:oid,:oid], _9:oid, _5:oid) 
-    bat.insert(b,2@0,3@0);              #  9 _14:void := BKCinsert_bun(b:bat[:oid,:oid], _9:oid, _11:oid) 
-    bat.insert(b,3@0,nil:oid);          # 10 _15:void := BKCinsert_bun(b:bat[:oid,:oid], _11:oid, _16:oid) 
-    bat.insert(b,3@0,1@0);              # 11 _17:void := BKCinsert_bun(b:bat[:oid,:oid], _11:oid, _7:oid) 
+    bat.insert(b,0@0,0@0);              #  3 _4:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _5:oid, _5:oid) {G}
+    bat.insert(b,1@0,1@0);              #  4 _6:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _7:oid, _7:oid) {G}
+    bat.insert(b,1@0,2@0);              #  5 _8:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _7:oid, _9:oid) {G}
+    bat.insert(b,1@0,3@0);              #  6 _10:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _7:oid, _11:oid) {G}
+    bat.insert(b,2@0,2@0);              #  7 _12:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _9:oid, _9:oid) {G}
+    bat.insert(b,2@0,0@0);              #  8 _13:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _9:oid, _5:oid) {G}
+    bat.insert(b,2@0,3@0);              #  9 _14:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _9:oid, _11:oid) {G}
+    bat.insert(b,3@0,nil:oid);          # 10 _15:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _11:oid, _16:oid) {G}
+    bat.insert(b,3@0,1@0);              # 11 _17:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _11:oid, _7:oid) {G}
     io.print(b);                        # 12 _18:void := IOprint_val(b:bat[:oid,:oid]) 
     ma_a := io.printf("#~BeginVariableOutput~#\n");# 13 ma_a:void := IOprint_str(_20:str) 
     na_a := bat.info(b);                # 14 na_a:bat[:str,:str] := BKCinfo(b:bat[:oid,:oid]) {G}
@@ -83,7 +83,7 @@ end main;	# 21
 [ "batPersistence",	  "transient"	  ]
 [ "batRestricted",	  "updatable"	  ]
 [ "batRefcnt",		  "1"		  ]
-[ "batLRefcnt",		  "1"		  ]
+[ "batLRefcnt",		  "10"		  ]
 [ "batDirty",		  "dirty"	  ]
 [ "batSet",		  "0"		  ]
 [ "hsorted",		  "65"		  ]
@@ -116,7 +116,7 @@ end main;	# 21
 [ "htop",		  "72"		  ]
 [ "ttop",		  "72"		  ]
 [ "batStamp",		  "5"		  ]
-[ "lastUsed",		  "174"		  ]
+[ "lastUsed",		  "160"		  ]
 [ "curStamp",		  "6"		  ]
 [ "batCopiedtodisk",	  "0"		  ]
 [ "batDirtydesc",	  "dirty"	  ]

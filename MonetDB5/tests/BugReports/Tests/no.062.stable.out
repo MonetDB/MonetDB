@@ -158,17 +158,17 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("var t:= bat.new(int,int);"); 
     t := bat.new(nil:int,nil:int);      # 63 t:bat[:int,:int] := CMDBATnew(_65:int, _65:int) {G}
 #	io.print("t.insert(0,0);"); 
-    ca_a := bat.insert(t,0,0);          # 65 ca_a:void := BKCinsert_bun(t:bat[:int,:int], _68:int, _68:int) 
+    ca_a := bat.insert(t,0,0);          # 65 ca_a:bat[:int,:int] := BKCinsert_bun(t:bat[:int,:int], _68:int, _68:int) {G}
 #	io.print("t.insert(1+1,0);"); 
     da_a := calc.+(1,1);                # 67 da_a:int := CALCbinaryADDintint(_71:int, _71:int) 
-    ea_a := bat.insert(t,da_a,0);       # 68 ea_a:void := BKCinsert_bun(t:bat[:int,:int], da_a:int, _68:int) 
+    ea_a := bat.insert(t,da_a,0);       # 68 ea_a:bat[:int,:int] := BKCinsert_bun(t:bat[:int,:int], da_a:int, _68:int) {G}
 #	io.print("t.insert(-1,-0);"); 
-    fa_a := bat.insert(t,-1,0);         # 70 fa_a:void := BKCinsert_bun(t:bat[:int,:int], _75:int, _68:int) 
+    fa_a := bat.insert(t,-1,0);         # 70 fa_a:bat[:int,:int] := BKCinsert_bun(t:bat[:int,:int], _75:int, _68:int) {G}
 #	io.print("t.insert(0,0);"); 
-    ga_a := bat.insert(t,0,0);          # 72 ga_a:void := BKCinsert_bun(t:bat[:int,:int], _68:int, _68:int) 
+    ga_a := bat.insert(t,0,0);          # 72 ga_a:bat[:int,:int] := BKCinsert_bun(t:bat[:int,:int], _68:int, _68:int) {G}
 #	io.print("t.insert(-1+1,0);"); 
     ha_a := calc.+(-1,1);               # 74 ha_a:int := CALCbinaryADDintint(_75:int, _71:int) 
-    ia_a := bat.insert(t,ha_a,0);       # 75 ia_a:void := BKCinsert_bun(t:bat[:int,:int], ha_a:int, _68:int) 
+    ia_a := bat.insert(t,ha_a,0);       # 75 ia_a:bat[:int,:int] := BKCinsert_bun(t:bat[:int,:int], ha_a:int, _68:int) {G}
 #	io.print("print(t);"); 
     ja_a := io.print(t);                # 77 ja_a:void := IOprint_val(t:bat[:int,:int]) 
 #	io.print("# alles zover is goed\n"); 
