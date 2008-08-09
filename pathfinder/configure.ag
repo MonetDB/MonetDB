@@ -616,6 +616,15 @@ AC_TRY_COMPILE([$ac_includes_default
 [AC_DEFINE(HAVE_CTIME_R3, 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)])], [ctime_r3=no])
 AC_MSG_RESULT($ctime_r3)
 
+dnl  (At least) on (Open)Solaris (2.)11, /opt/csw/include/libxml2/libxml/xmlversion.h
+dnl  of (at least) libxml2 v2.6.26 seems to expect that _POSIX_C_SOURCE is defined,
+dnl  but it seems to be undefined when compiling with gcc (v3.4.3); hence we define it:
+case "$GCC-$host_os" in
+yes-solaris2.11)
+	AC_DEFINE(_POSIX_C_SOURCE, 199506L, [Compiler flag])
+	;;
+esac
+
 dnl  Disabling the following warning is only required for the Intel compiler
 dnl  and if assertions are enabled.
 case "$GCC-$CC-$enable_assert" in
