@@ -440,7 +440,7 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b,*bn;
 	int i,bid;
-	lng cnt,slice;
+	size_t cnt,slice;
 	size_t low= 0, hgh=0;
 
 	(void) mb;
@@ -454,7 +454,7 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	cnt = BATcount(b);
 	slice= (cnt+pci->argc)/ (pci->argc-1);
 	for(i=0; i<pci->retc; i++){
-		hgh= low+slice;
+		hgh= low+ slice;
 		bn=  BATslice(b, low, hgh);
 		BATseqbase(bn, low);
 		if (bn== NULL){
