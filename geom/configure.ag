@@ -92,7 +92,7 @@ if test "x$have_monetdb4" != xyes -a "x$have_monetdb5" != xyes; then
 fi
 
 dnl geos
-GEOS_VERSION_REQUIRED_MIN=2.0.0
+GEOS_VERSION_REQUIRED_MIN=2.2.0
 dnl GEOS_VERSION_REQUIRED_MAX=3.0.0
 have_geos=auto
 GEOS_CONFIG=''
