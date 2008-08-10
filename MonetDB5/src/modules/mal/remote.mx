@@ -579,8 +579,8 @@ static unsigned int _remote_object_counter = 0;
  */
 str RMTgetnextid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret= (int*) getArgReference(stk,pci,0);
-	(void) mb;
+	int *ret = (int *)getArgReference(stk,pci,0);
+	(void)mb;
 
 	stream_printf(cntxt->fdout, "[ \"remote_put_object_%d\"\t]\n",
 			_remote_object_counter++);
@@ -637,34 +637,32 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #	return(ret);
 #end exec;
 
-pattern exec(conn:str, mod:str, func:str):any
+pattern exec(conn:str, mod:str, func:str):rmtobj
 address RMTexec
-comment "Executes function mod.func over conn using the given arguments and returns its result";
-pattern exec(conn:str, mod:str, func:str, :any...):any
+comment "Executes function mod.func over conn using the given arguments and returns the handle to its result";
+pattern exec(conn:str, mod:str, func:str, :rmtobj...):rmtobj
 address RMTexec
-comment "Executes function mod.func over conn using the given arguments and returns its result";
+comment "Executes function mod.func over conn using the given arguments and returns the handle to its result";
 @h
 remote_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 /**
  * exec executes the function with its given arguments on the remote
- * host, returning the function's return value.  exec is more of a
- * convenience wrapper than a primitive.  It basically first ships all
- * arguments to the remote server using put calls.  It continues by
- * calling the function with the given arguments, and assiging the
- * return value to a variable.  This variable is finally returned using
- * a get call.  The exec method exists because the middle action (actual
- * calling of the function on the remote site) is not possible using get
- * or put calls.
+ * host, returning the function's return value.  exec is purposely kept
+ * very spartan.  All arguments need to handles to previously put()
+ * values.  It calls the function with the given arguments at the remote
+ * site, and returns the handle which stores the return value of the
+ * remotely executed function.  This return value can be retrieved using
+ * a get call.
  */
 str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str conn, mod, func, ident, arg, tmp;
+	str conn, mod, func, ident, tmp;
 	int i, len, tpe;
 	connection c;
 	char qbuf[512];	/* FIXME: make this dynamic */
 	MapiHdl mhdl;
 
-	(void) cntxt;
+	(void)cntxt;
 	(void)mb;
 
 	conn = (str)getArgValue(stk, pci, 1);
@@ -705,18 +703,12 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	 * invocation string */
 	for (i = 4; i < pci->argc; i++) {
 		tpe = getArgType(mb, pci, i);
-		if (tpe > TYPE_str && strcmp(ATOMname(tpe), "rmtobj") == 0) {
-			len += snprintf(&qbuf[len], 511 - len, "%s%s",
-					(i > 4 ? ", " : ""),
-					*((str *)getArgReference(stk, pci, i)));
-		} else {
-			rethrow("remote.exec", tmp, RMTinternalput(&arg,
-						c->mconn,
-						tpe,
-						getArgReference(stk, pci, i)));
-			len += snprintf(&qbuf[len], 511 - len, "%s%s",
-					(i > 4 ? ", " : ""), arg);
-		}
+		/* all arguments are of type rmtobj, at least we blindly trust
+		 * the parser that it makes sure, we can cast to a string
+		 * pointer as long as rmtobj is nothing more than that */
+		len += snprintf(&qbuf[len], 511 - len, "%s%s",
+				(i > 4 ? ", " : ""),
+				*((str *)getArgReference(stk, pci, i)));
 	}
 
 	/* finish end execute the invocation string */
@@ -724,10 +716,9 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	rethrow("remote.exec", tmp, RMTquery(&mhdl, "remote.exec", c->mconn, qbuf));
 	mapi_close_handle(mhdl);  /* we don't care at all about what it outputs */
 
-	/* get the rident value, and return it */
-	rethrow("remote.exec", tmp, RMTinternalget(c->mconn,
-				ident, &stk->stk[getArg(pci, 0)]));
-
+	/* return the rident */
+	VALset(&stk->stk[getArg(pci, 0)],
+			stk->stk[getArg(pci, 0)].vtype, GDKstrdup(ident));
 	return(MAL_SUCCEED);
 }
 

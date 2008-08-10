@@ -15,11 +15,14 @@ bat.insert(b, "foo", 3);
 bat.insert(b, "bar", 4);
 bat.insert(b, "baz", 5);
 
-j := remote.put("test", b);
+k := remote.put("test", b);
+l := remote.put("test", 3);
+m := remote.put("test", 10);
 
 # perform a selection remote, and get the result back
-t := remote.exec("test", "algebra", "select", j, 3, 10);
-io.print(t);
+t := remote.exec("test", "algebra", "select", k, l, m);
+j := remote.get("test", t);
+io.print(j);
 
 # help testweb a bit, since currently no cleanup is done on server
 # shutdown

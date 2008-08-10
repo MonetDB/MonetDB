@@ -5,8 +5,10 @@ stdout of test 'remote03` in directory 'src/modules/mal` itself:
 # 15:28:56 >  Mtimeout -timeout 60  mserver5 "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/lib:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/sqllog" --set "xquery_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-current-pegasus.ins.cwi.nl/five/xquerylog" --set mapi_open=true --set mapi_port=34439 --set xrpc_port=43409 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  remote03.mal
 # 15:28:56 >  
 
-# MonetDB server v5.1.0, based on kernel v1.19.0
-# Serving database 'mTests_src_modules_mal'
+
+
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_modules_mal', using 2 threads
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
 # dbname:mTests_src_modules_mal
 # Visit http://monetdb.cwi.nl/ for further information
@@ -49,31 +51,26 @@ function user.main():void;              #  0 main:void := user.main() {G}
     p := sabaoth.getLocalConnectionPort();#  5 p:int := SABgetLocalConnectionPort() 
 # create a connecton to ourself 
     remote.create("test",h,p,nil:str,"monetdb","monetdb");#  7 _7:void := RMTcreate(_8:str, h:str, p:int, _9:str, _10:str, _10:str) 
-# now do it with a function that returns something (a BAT in this case) 
-    b := remote.exec("test","inspect","getAtomNames");#  9 b:any := RMTexec(_8:str, _13:str, _14:str) 
-    io.print(b);                        # 10 _15:void := IOprint_val(b:any) 
-catch MALException:str ;                # 11 MALException:str {J13}
-    io.printf("!first\n");              # 12 _17:void := IOprint_str(_18:str) 
-exit MALException:str ;                 # 13 MALException:str 
 # this is invalid, as io.print is an invalid module, and bla will be 
 # taken as function 
-    io.printf("sent invalid request\n");# 16 _21:void := IOprint_str(_22:str) 
-    f := remote.exec("test","io.print","bla");# 17 f:any := RMTexec(_8:str, _24:str, _25:str) 
-    io.print(f);                        # 18 _26:void := IOprint_val(f:any) 
-catch MALException:str ;                # 19 MALException:str {J21}
-    io.printf("!second\n");             # 20 _27:void := IOprint_str(_28:str) 
-exit MALException:str ;                 # 21 MALException:str 
-    io.printf("sent request\n");        # 22 _29:void := IOprint_str(_30:str) 
+    f := remote.exec("test","io.print","bla");# 10 f:rmtobj := RMTexec(_8:str, _14:str, _15:str) {G}
+catch MALException:str ;                # 11 MALException:str {J13}
+    io.printf(MALException);            # 12 _17:void := IOprint_str(MALException:str) 
+exit MALException:str ;                 # 13 MALException:str 
+# now do it with a function that returns something (a BAT in this case) 
+    b := remote.exec("test","inspect","getAtomNames");# 15 b:rmtobj := RMTexec(_8:str, _20:str, _21:str) {G}
+    c := remote.get("test",b);          # 16 c:any := RMTget(_8:str, b:rmtobj) 
+    io.print(c);                        # 17 _23:void := IOprint_val(c:any) 
 # io.print only outputs things, but returns nothing 
-    a := remote.exec("test","io","print","bla");# 24 a:any := RMTexec(_8:str, _33:str, _34:str, _25:str) 
-catch MALException:str ;                # 25 MALException:str {J27}
-    io.printf("!third:\n");             # 26 _35:void := IOprint_str(_36:str) 
-exit MALException:str ;                 # 27 MALException:str 
-    io.print(a);                        # 28 _37:void := IOprint_val(a:any) 
+    a := remote.exec("test","io","print",b);# 19 a:rmtobj := RMTexec(_8:str, _26:str, _27:str, b:rmtobj) {G}
+    d := remote.get("test",a);          # 20 d:any := RMTget(_8:str, a:rmtobj) 
+    io.print(d);                        # 21 _29:void := IOprint_val(d:any) 
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
-    remote.destroy("test");             # 31 _40:void := RMTdestroy(_41:str) 
-end main;                               # 32  
+    remote.destroy("test");             # 24 _32:void := RMTdestroy(_8:str) 
+end main;                               # 25  
+MALException:remote.exec:remote_put_object_0 := io.print.bla();
+!SyntaxException:parseError:                              ^'(' expected
 #-------------------------#
 # h	t		  # name
 # int	str		  # type
@@ -111,9 +108,6 @@ end main;                               # 32
 [ 30,	  "rmtobj"	  ]
 [ 31,	  "xml"		  ]
 [ 32,	  "mapentry"	  ]
-sent invalid request
-!second
-sent request
 [ nil ]
 
 # 19:22:53 >  
