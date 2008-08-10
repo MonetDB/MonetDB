@@ -68,7 +68,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k, limit, estimate=0, tpe;
 	str schema=0, table=0;
-	lng r=0,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
+	VarRecord low,hgh;
+	oid slice;
+	size_t r=0,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old;
 	VarPtr v;
 	int *parts= (int*) alloca(sizeof(int)* GDKnr_threads);
@@ -139,10 +141,21 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		q= newStmt(mb,"bat","partition");
 		q->argc=0;
+		slice= (rowcnt+GDKnr_threads)/ GDKnr_threads;
+		hgh.value.vtype= low.value.vtype= TYPE_oid;
+		low.value.val.oval= 0;
 		for(j=0;j<GDKnr_threads;j++){
+			if (j+1<GDKnr_threads)
+				hgh.value.val.oval= low.value.val.oval+slice;
+			else
+				hgh.value.val.oval= oid_nil;
+
 			parts[j]= newTmpVariable(mb,tpe);
 			setVarUsed(mb,parts[j]);
 			q= pushArgument(mb,q, parts[j]);
+			varSetProp(mb, getArg(q,j), PropertyIndex("hlb"), op_gte, (ptr) &low.value);
+			varSetProp(mb, getArg(q,j), PropertyIndex("hub"), op_lt, (ptr) &hgh.value);
+			low.value.val.oval += slice;
 		}
 		q->retc= q->argc;
 		q= pushArgument(mb,q, getArg(p,0));
@@ -151,9 +164,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		getArg(p,0)=k;
 		for(j=0; j<GDKnr_threads; j++)
 			p= pushArgument(mb,p,parts[j]);
-		if(estimate++ ==0)
-			q= newStmt(mb,"optimizer","mergetable");
-	}
+			if(estimate++ ==0)
+				q= newStmt(mb,"optimizer","mergetable");
+		}
 #ifdef _DEBUG_OPT_PARALYZER
 		printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
 #endif
