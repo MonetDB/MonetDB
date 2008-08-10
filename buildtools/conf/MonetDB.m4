@@ -1965,7 +1965,7 @@ if test "x$enable_optim" = xyes; then
     else
       case "$host-$icc_ver" in
       dnl handle non-Intel compilers ($icc_ver=""), first
-      *solaris*-)      CFLAGS="$CFLAGS -xO5"
+      *solaris*-)      CFLAGS="$CFLAGS -xO3"
                        CFLAGS_NO_OPT="-xO0"
                        ;;
 #     *irix*-)         CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
