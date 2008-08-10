@@ -2428,7 +2428,7 @@ BKCinsert_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
 	int param=0;
 	(void) r;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((i = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.insert", "Cannot access descriptor");
 	}
 	CMDsetaccess(&b,i,&param);
