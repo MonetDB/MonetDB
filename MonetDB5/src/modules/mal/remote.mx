@@ -190,9 +190,9 @@ static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 			return(err);
 		}
 	} else {
-		if (mapi_result_error(mhdl) != NULL) {
-			throw(IO, func, "an error occurred on connection %s: %s",
-					conn, mapi_result_error(mhdl));
+		if (mapi_error(conn) != MOK) {
+			throw(IO, func, "an error occurred on connection: %s",
+					mapi_error_str(conn));
 		} else {
 			throw(IO, func, "remote function invocation didn't return a result");
 		}
