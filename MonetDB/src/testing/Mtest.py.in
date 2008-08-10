@@ -1363,6 +1363,8 @@ def StopAt(ATJOB,ME) :
         time.sleep(9)
     if SYST == "IRIX" or SYST == "IRIX64":
         ATRM = 'at -r '
+    elif SYST == "SunOS":
+        ATRM = 'atrm -f '
     else:
         ATRM = 'atrm '
     os.system(ATRM+ATJOB)
