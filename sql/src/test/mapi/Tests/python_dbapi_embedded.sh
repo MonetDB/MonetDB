@@ -19,7 +19,8 @@ PYTHONPATH="$TSTBLDBASE/src/backends/python/monet$v/:$PYTHONPATH"
 PYTHONPATH="$TSTBLDBASE/src/backends/python/monet$v/.libs:$PYTHONPATH"
 export PYTHONPATH
 # make sure we find module sql[_server]
-sed -i.BAK -e "s|^monet_mod_path=.*$|monet_mod_path=$MONETDB_MOD_PATH|" $c
+mv $c $c.BAK
+sed -e "s|^monet_mod_path=.*$|monet_mod_path=$MONETDB_MOD_PATH|" $c.BAK > $c
 
 Mlog -x "sqlsample.py $GDK_DBFARM $TSTDB $v"
 
