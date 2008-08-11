@@ -911,6 +911,11 @@ yes-*-*)
 	dnl  treat warnings as errors
 	X_CFLAGS="$X_CFLAGS -w2"
 	;;
+-*-solaris*)
+	dnl  Sun compiler on Solaris
+	dnl  treat warnings as errors
+	X_CFLAGS="$X_CFLAGS -errwarn=%all"
+	;;
 esac
 fi
 AC_SUBST(CFLAGS)
