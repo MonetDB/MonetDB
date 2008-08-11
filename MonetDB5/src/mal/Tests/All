@@ -44,7 +44,7 @@ tst045
 tst046
 tst047
 tst048
-tst049
+HAVE_PCRE?tst049
 tst050
 tst051
 tst055
