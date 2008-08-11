@@ -4000,8 +4000,9 @@ MTIMEstrptime(date *d, str *s, str *format)
 		throw(MAL, "mtime.str_to_date", "format '%s', doesn't match date '%s'\n", *format, *s);
 	*d = todate(t.tm_mday, t.tm_mon+1, t.tm_year+1900);
 	return MAL_SUCCEED;
-#endif
+#else
 	throw(MAL, "mtime.str_to_date", "strptime support missing");
+#endif
 }
 
 str MTIMEstrftime(str *s, date *d, str *format)
@@ -4021,7 +4022,8 @@ str MTIMEstrftime(str *s, date *d, str *format)
 	*s = GDKmalloc(sz+1);
 	strncpy(*s, buf, sz+1);
 	return MAL_SUCCEED;
-#endif
+#else 
 	throw(MAL, "mtime.str_to_date", "strptime support missing");
+#endif
 }
 @}
