@@ -1377,7 +1377,6 @@ chrToStr(str *dst, int *len, chr *src)
 		*p = 0;
 		return (int) (p - *dst);
 	}
-	return 1;
 }
 
 chr *
