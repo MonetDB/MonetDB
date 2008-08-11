@@ -286,7 +286,7 @@ end:
 
 	GDKfree(old);
 #ifdef DEBUG_OPT_JOINSEL
-	printFunction(cntxt->fdout, mb, LIST_MAL_ALL | LIST_MAL_PROPS);
+	printFunction(cntxt->fdout, mb, LIST_MAL_DEBUG);
 #endif
 	return 1;
 }

@@ -176,9 +176,9 @@ from Bi (or type(Bi)==type(Xi)).
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) {
 	stream_printf(GDKout,"-->resolving\n");
-	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+	printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
 	stream_printf(GDKout,"++> test against signature\n");
-	printInstruction(GDKout,s->def,getSignature(s),LIST_MAL_ALL);
+	printInstruction(GDKout,s->def,0,getSignature(s),LIST_MAL_ALL);
 	stream_printf(GDKout," %s \n", sig->polymorphic?"polymorphic":"");
 	}
 #endif
@@ -311,9 +311,9 @@ An optimizer may at a later stage automatically insert such coercion requests.
 			stream_printf(GDKout,"poly %d %s\n",l,getTypeName(polytype[l]));
 		}
 		stream_printf(GDKout,"-->resolving\n");
-		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+		printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
 		stream_printf(GDKout,"++> test against signature\n");
-		printInstruction(GDKout,s->def,getSignature(s),LIST_MAL_ALL);
+		printInstruction(GDKout,s->def,0,getSignature(s),LIST_MAL_ALL);
 		stream_printf(GDKout,"\nmismatch unmatched %d test %s poly %s\n",
 			unmatched, getTypeName(getArgType(mb,p,unmatched)),
 			getTypeName(getArgType(s->def,sig,unmatched)));
@@ -476,7 +476,7 @@ set the garbagge collection flag.
 @c
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) {
-		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+		printInstruction(GDKout,mb,0mp,LIST_MAL_ALL);
 		stream_printf(GDKout,"Finished matching\n");
 	}
 #endif
@@ -714,7 +714,7 @@ InstrPtr dynamicTypeChecker(Module scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	int i;
 
 	stream_printf(GDKout,"Start dynamic type check on:\n");
-	printInstruction(GDKout, mb, p,LIST_MAL_ALL);
+	printInstruction(GDKout, mb, 0, p,LIST_MAL_ALL);
 
 	pci = copyInstruction(p);
 	if( getFunctionId(pci) && (i=findVariable(mb,getFunctionId(pci))) != -1){
@@ -734,7 +734,7 @@ InstrPtr dynamicTypeChecker(Module scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	typeChecker(scope, mb,pci,FALSE);
 #ifdef DEBUG_MAL_RESOLVE
 	stream_printf(GDKout,"type checked version:\n");
-	printInstruction(GDKout, mb, pci,LIST_MAL_ALL);
+	printInstruction(GDKout, mb, 0, pci,LIST_MAL_ALL);
 #endif
 
 	return pci;

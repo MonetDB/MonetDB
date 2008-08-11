@@ -18,8 +18,8 @@ stdout of test 'tst3060` in directory 'src/mal` itself:
 #	return tst:=a;
 #end tst;
 function user.tst(a:any_1{type="int,flt"}):any_1;#  0 tst:any_1 := user.tst(a:any_1) {UP}
-    io.print(a);                        #  1 _3:void := IOprint_val(a:any_1) {P}
-    return tst := a;                    #  2 tst:any_1 := a:any_1 {P}
+    io.print(a{type="int,flt"});        #  1 _3:void := IOprint_val(a:any_1) {P}
+    return tst := a{type="int,flt"};    #  2 tst:any_1 := a:any_1 {P}
 end tst;	# 3  
 #
 #user.tst(1);

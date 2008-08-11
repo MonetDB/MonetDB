@@ -1083,7 +1083,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 
 #ifdef DEBUG_FLOW
 	stream_printf(GDKstdout, "runMALdataflow for block %d - %d\n", startpc,stoppc);
-	printFunction(GDKstdout, mb, 0);
+	printFunction(GDKstdout, mb, stk, 0);
 #endif
 
 	(void)env;

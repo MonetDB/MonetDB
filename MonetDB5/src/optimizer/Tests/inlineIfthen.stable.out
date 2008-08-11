@@ -23,7 +23,7 @@ function user.foo{inline}(b:int):int;   #  0 foo:int := user.foo(b:int)
 barrier go := calc.<(b,10);             #  2 go:bit := CALCcompLTintint(b:int, _4:int) {J4}
     foo{inline} := 1;                   #  3 foo:int := _5:int 
 exit go;                                #  4 go:bit 
-    return foo{inline} := foo;          #  5 foo:int := foo:int 
+    return foo{inline} := foo{inline};  #  5 foo:int := foo:int 
 end foo;	# 6  
 #
 #function qry();
@@ -56,7 +56,7 @@ function user.qry():void;
     bat.append(b,10);
     bat.append(b,20);
     r:bat[:oid,:int]{inline}  := mal.multiplex("user","foo",b);
-    io.print(r);
+    io.print(r{inline});
 end qry;
 
 # 11:53:01 >  

@@ -548,10 +548,10 @@ mal_export malType destinationType(MalBlkPtr mb, InstrPtr p);
 mal_export void setPolymorphic(InstrPtr p, int tpe, int force);
 mal_export str fcnClass(InstrPtr p);
 mal_export str fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len);
-mal_export void printInstruction(stream *fd, MalBlkPtr mb, InstrPtr p, int flg);
+mal_export void printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg);
 mal_export str instructionCall(MalBlkPtr mb, InstrPtr p, str s, str base, size_t len);
-mal_export void promptInstruction(stream *fd, MalBlkPtr mb, InstrPtr p, int flg);
-mal_export str instruction2str(MalBlkPtr mb, InstrPtr p, int hidden);
+mal_export void promptInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg);
+mal_export str instruction2str(MalBlkPtr mb, MalStkPtr stl, InstrPtr p, int hidden);
 mal_export str function2str(MalBlkPtr mb, int flg);
 mal_export void pushEndInstruction(MalBlkPtr mb);	/* used in src/mal/mal_parser.c */
 /* Utility macros to inspect an instruction */
@@ -1646,7 +1646,7 @@ trimMalVariables(MalBlkPtr mb)
 	}
 #ifdef DEBUG_REDUCE
 	stream_printf(GDKout, "After reduction \n");
-	printFunction(GDKout,mb,0);
+	printFunction(GDKout,mb,0,0);
 #endif
 	mb->vtop = cnt;
 }
@@ -2471,7 +2471,7 @@ operatorName(int i)
 
 
 str
-instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
+instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 {
 	int i, tab = 4;
 	str base, s, t, nme;
@@ -2481,6 +2481,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 	str pstring = 0;
 	char *tnme;
 
+	(void) stk;
 	base = s = GDKmalloc(len);
 	if (flg) {
 		if( p->token<0){
@@ -2682,6 +2683,13 @@ Dump the type and value information.
 			GDKfree(tnme);
 			advance(t,base,len);
 		} 
+		if (flg & LIST_MAL_PROPS)
+			pstring = varGetPropStr(mb, getArg(p, i));
+		else 
+			pstring = GDKstrdup("");
+		snprintf(t,(len-(t-base)), "%s", pstring);
+		GDKfree(pstring);
+		advance(t,base,len);
 		if (i + 1 < high)
 			snprintf(t,(len-(t-base)), ",");
 	}
@@ -2710,7 +2718,7 @@ function2str(MalBlkPtr mb, int flg)
 	txt = GDKmalloc(sizeof(str) * mb->stop);
 	len = GDKmalloc(sizeof(int) * mb->stop);
 	for (i = 0; i < mb->stop; i++) {
-		txt[i] = instruction2str(mb, getInstrPtr(mb, i), flg);
+		txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), flg);
 		totlen += len[i] = (int)strlen(txt[i]);
 	}
 	ps = GDKmalloc(totlen + mb->stop + 1);
@@ -2728,22 +2736,22 @@ function2str(MalBlkPtr mb, int flg)
 }
 
 void
-promptInstruction(stream *fd, MalBlkPtr mb, InstrPtr p, int flg)
+promptInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 {
 	str ps;
 
 	if (fd == 0)
 		GDKfatal("printInstruction:no file\n");
-	ps = instruction2str(mb, p, flg);
+	ps = instruction2str(mb, stk, p, flg);
 	/* ps[strlen(ps)-1] = 0; remove '\n' */
 	stream_printf(fd, "%s%s", (flg & LIST_MAPI ? "=" : ""), ps);
 	GDKfree(ps);
 }
 
 void
-printInstruction(stream *fd, MalBlkPtr mb, InstrPtr p, int flg)
+printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 {
-	promptInstruction(fd, mb, p, flg);
+	promptInstruction(fd, mb, stk, p, flg);
 	stream_printf(fd, "\n");
 }
 
@@ -2776,7 +2784,7 @@ void showMalBlkHistory(MalBlkPtr mb)
 	while(m){
 		p= getInstrPtr(m,m->stop-1);
 		if( p->token == REMsymbol){
-			msg= instruction2str(m,p, FALSE);
+			msg= instruction2str(m, 0, p, FALSE);
 			stream_printf(GDKout,"%s.%s[%2d] %s\n", 
 				getModuleId(sig), getFunctionId(sig),j++,msg+3);
 			GDKfree(msg);
@@ -2785,7 +2793,7 @@ void showMalBlkHistory(MalBlkPtr mb)
 	}
 	p=getInstrPtr(mb,mb->stop-1);
 	if( p->token == REMsymbol){
-		msg= instruction2str(mb,p, FALSE);
+		msg= instruction2str(mb, 0, p, FALSE);
 		stream_printf(GDKout,"%s.%s[%2d] %s\n", 
 			getModuleId(sig), getFunctionId(sig),j++,msg+3);
 			GDKfree(msg);

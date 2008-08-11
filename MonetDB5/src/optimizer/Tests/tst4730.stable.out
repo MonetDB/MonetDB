@@ -116,17 +116,17 @@ factory user.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):bit;#  0 qry1:bit := user
     V75:bat[:oid,:flt]{rows=1000:lng}  := user.bind("sys","lineitem","l_discount",0);#  7 V75:bat[:oid,:flt] := user.bind(_8:str, _9:str, _22:str, _11:int) {G}
     V105:bat[:oid,:flt]{rows=1000:lng}  := user.bind("sys","lineitem","l_tax",0);#  8 V105:bat[:oid,:flt] := user.bind(_8:str, _9:str, _24:str, _11:int) {G}
 barrier always := true;                 #  9 always:bit := _26:bit {J72}
-    V12 := bat.reverse(V11);            # 10 V12:bat[:oid,:oid] := BKCreverse(V11:bat[:oid,:oid]) {G}
-    V13 := algebra.kdifference(V6,V12); # 11 V13:bat[:oid,:date] := ALGkdiff(V6:bat[:oid,:date], V12:bat[:oid,:oid]) {G}
+    V12 := bat.reverse(V11{rows=1000:lng});# 10 V12:bat[:oid,:oid] := BKCreverse(V11:bat[:oid,:oid]) {G}
+    V13 := algebra.kdifference(V6{rows=1000:lng},V12);# 11 V13:bat[:oid,:date] := ALGkdiff(V6:bat[:oid,:date], V12:bat[:oid,:oid]) {G}
     V16 := mtime.date_sub_sec_interval(A3,A4);# 12 V16:date := MTIMEdate_sub_sec_interval_wrap(A3:date, A4:int) 
     a := mtime.date(nil:void);          # 13 a:date := MTIMEnil2date(_31:void) 
     V17 := algebra.uselect(V13,a,V16);  # 14 V17:bat[:oid,:oid] := ALGuselect(V13:bat[:oid,:date], a:date, V16:date) {G}
     V20 := algebra.markT(V17,0@0);      # 15 V20:bat[:oid,:oid] := ALGtmark(V17:bat[:oid,:oid], _34:oid) {G}
     V21 := bat.reverse(V20);            # 16 V21:bat[:oid,:oid] := BKCreverse(V20:bat[:oid,:oid]) {G}
-    V26 := algebra.kdifference(V22,V12);# 17 V26:bat[:oid,:bit] := ALGkdiff(V22:bat[:oid,:bit], V12:bat[:oid,:oid]) {G}
+    V26 := algebra.kdifference(V22{rows=1000:lng},V12);# 17 V26:bat[:oid,:bit] := ALGkdiff(V22:bat[:oid,:bit], V12:bat[:oid,:oid]) {G}
     V27 := algebra.join(V21,V26);       # 18 V27:bat[:oid,:bit] := ALGjoin(V21:bat[:oid,:oid], V26:bat[:oid,:bit]) {G}
     (h,V28):= group.new(V27);           # 19 (h:bat[:oid,:int], V28:bat[:oid,:oid]) := GRPgroup(V27:bat[:oid,:bit]) {G}
-    V33 := algebra.kdifference(V29,V12);# 20 V33:bat[:oid,:bit] := ALGkdiff(V29:bat[:oid,:bit], V12:bat[:oid,:oid]) {G}
+    V33 := algebra.kdifference(V29{rows=1000:lng},V12);# 20 V33:bat[:oid,:bit] := ALGkdiff(V29:bat[:oid,:bit], V12:bat[:oid,:oid]) {G}
     V34 := algebra.join(V21,V33);       # 21 V34:bat[:oid,:bit] := ALGjoin(V21:bat[:oid,:oid], V33:bat[:oid,:bit]) {G}
     (Ext,V35):= group.derive(h,V28,V34);# 22 (Ext:bat[:oid,:int], V35:bat[:oid,:oid]) := GRPderive(h:bat[:oid,:int], V28:bat[:oid,:oid], V34:bat[:oid,:bit]) {G}
     V36 := algebra.tunique(Ext);        # 23 V36:bat[:oid,:int] := ALGtunique(Ext:bat[:oid,:int]) {G}
@@ -135,15 +135,15 @@ barrier always := true;                 #  9 always:bit := _26:bit {J72}
     V43 := algebra.sort(V42);           # 26 V43:bat[:oid,:bit] := ALGhsort(V42:bat[:oid,:bit]) {G}
     V51 := algebra.join(V37,V34);       # 27 V51:bat[:oid,:bit] := ALGjoin(V37:bat[:oid,:oid], V34:bat[:oid,:bit]) {G}
     V52 := group.refine(V43,V51);       # 28 V52:bat[:oid,:oid] := GRPrefine(V43:bat[:oid,:bit], V51:bat[:oid,:bit]) {G}
-    V57 := algebra.kdifference(V53,V12);# 29 V57:bat[:oid,:int] := ALGkdiff(V53:bat[:oid,:int], V12:bat[:oid,:oid]) {G}
+    V57 := algebra.kdifference(V53{rows=1000:lng},V12);# 29 V57:bat[:oid,:int] := ALGkdiff(V53:bat[:oid,:int], V12:bat[:oid,:oid]) {G}
     V58 := algebra.join(V21,V57);       # 30 V58:bat[:oid,:int] := ALGjoin(V21:bat[:oid,:oid], V57:bat[:oid,:int]) {G}
     V59 := aggr.sum(V58,V35,V37);       # 31 V59:bat[:oid,:lng] := AX3aggrX3_sum3_int_lng(V58:bat[:oid,:int], V35:bat[:oid,:oid], V37:bat[:oid,:oid]) {G}
-    V64 := algebra.kdifference(V60,V12);# 32 V64:bat[:oid,:flt] := ALGkdiff(V60:bat[:oid,:flt], V12:bat[:oid,:oid]) {G}
+    V64 := algebra.kdifference(V60{rows=1000:lng},V12);# 32 V64:bat[:oid,:flt] := ALGkdiff(V60:bat[:oid,:flt], V12:bat[:oid,:oid]) {G}
     V65 := algebra.join(V21,V64);       # 33 V65:bat[:oid,:flt] := ALGjoin(V21:bat[:oid,:oid], V64:bat[:oid,:flt]) {G}
     V66 := aggr.sum(V65,V35,V37);       # 34 V66:bat[:oid,:dbl] := AX3aggrX3_sum3_flt_dbl(V65:bat[:oid,:flt], V35:bat[:oid,:oid], V37:bat[:oid,:oid]) {G}
     V72 := calc.lng(A0);                # 35 V72:lng := CALCsht2lng(A0:sht) 
     V74 := calc.*(V72,100);             # 36 V74:lng := CALCbinaryMULlngint(V72:lng, _58:int) 
-    V82 := algebra.kdifference(V75,V12);# 37 V82:bat[:oid,:flt] := ALGkdiff(V75:bat[:oid,:flt], V12:bat[:oid,:oid]) {G}
+    V82 := algebra.kdifference(V75{rows=1000:lng},V12);# 37 V82:bat[:oid,:flt] := ALGkdiff(V75:bat[:oid,:flt], V12:bat[:oid,:oid]) {G}
     V83 := algebra.join(V21,V82);       # 38 V83:bat[:oid,:flt] := ALGjoin(V21:bat[:oid,:oid], V82:bat[:oid,:flt]) {G}
     V84:bat[:oid,:flt]  := mal.multiplex("calc.-",V74,V83);# 39 V84:bat[:oid,:flt] := OPTremapMultiplex(_62:str, V74:lng, V83:bat[:oid,:flt]) {G}
     V86 := batcalc.*(V65,V84);          # 40 V86:bat[:oid,:flt] := CMDbatMUL_flt_flt_flt(V65:bat[:oid,:flt], V84:bat[:oid,:flt]) {G}
@@ -154,7 +154,7 @@ barrier always := true;                 #  9 always:bit := _26:bit {J72}
     V101 := batcalc.*(V65,V100);        # 45 V101:bat[:oid,:flt] := CMDbatMUL_flt_flt_flt(V65:bat[:oid,:flt], V100:bat[:oid,:flt]) {G}
     V103 := calc.lng(A2);               # 46 V103:lng := CALCsht2lng(A2:sht) 
     V104 := calc.*(V103,100);           # 47 V104:lng := CALCbinaryMULlngint(V103:lng, _58:int) 
-    V109 := algebra.kdifference(V105,V12);# 48 V109:bat[:oid,:flt] := ALGkdiff(V105:bat[:oid,:flt], V12:bat[:oid,:oid]) {G}
+    V109 := algebra.kdifference(V105{rows=1000:lng},V12);# 48 V109:bat[:oid,:flt] := ALGkdiff(V105:bat[:oid,:flt], V12:bat[:oid,:oid]) {G}
     V110 := algebra.join(V21,V109);     # 49 V110:bat[:oid,:flt] := ALGjoin(V21:bat[:oid,:oid], V109:bat[:oid,:flt]) {G}
     V111:bat[:oid,:flt]  := mal.multiplex("calc.+",V104,V110);# 50 V111:bat[:oid,:flt] := OPTremapMultiplex(_74:str, V104:lng, V110:bat[:oid,:flt]) {G}
     V113 := batcalc.*(V101,V111);       # 51 V113:bat[:oid,:flt] := CMDbatMUL_flt_flt_flt(V101:bat[:oid,:flt], V111:bat[:oid,:flt]) {G}
@@ -201,54 +201,54 @@ factory user.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):bit;
     V75:bat[:oid,:flt]{rows=1000:lng}  := user.bind("sys","lineitem","l_discount",0);
     V105:bat[:oid,:flt]{rows=1000:lng}  := user.bind("sys","lineitem","l_tax",0);
 barrier always := true;
-    V12{rows=1000:lng} := bat.reverse(V11);
-    V13{rows=1:lng} := algebra.kdifference(V6,V12);
+    V12{rows=1000:lng} := bat.reverse(V11{rows=1000:lng});
+    V13{rows=1:lng} := algebra.kdifference(V6{rows=1000:lng},V12{rows=1000:lng});
     V16 := mtime.date_sub_sec_interval(A3,A4);
     a := mtime.date(nil:void);
-    V17{rows=1:lng} := algebra.uselect(V13,a,V16);
-    V20{rows=1:lng} := algebra.markT(V17,0@0);
-    V21{rows=1:lng} := bat.reverse(V20);
-    V26{rows=1:lng} := algebra.kdifference(V22,V12);
-    V27{rows=1:lng} := algebra.join(V21,V26);
-    (h,V28):= group.new(V27);
-    V33{rows=1:lng} := algebra.kdifference(V29,V12);
-    V34{rows=1:lng} := algebra.join(V21,V33);
-    (Ext,V35):= group.derive(h,V28,V34);
+    V17{rows=1:lng} := algebra.uselect(V13{rows=1:lng},a,V16);
+    V20{rows=1:lng} := algebra.markT(V17{rows=1:lng},0@0);
+    V21{rows=1:lng} := bat.reverse(V20{rows=1:lng});
+    V26{rows=1:lng} := algebra.kdifference(V22{rows=1000:lng},V12{rows=1000:lng});
+    V27{rows=1:lng} := algebra.join(V21{rows=1:lng},V26{rows=1:lng});
+    (h,V28):= group.new(V27{rows=1:lng});
+    V33{rows=1:lng} := algebra.kdifference(V29{rows=1000:lng},V12{rows=1000:lng});
+    V34{rows=1:lng} := algebra.join(V21{rows=1:lng},V33{rows=1:lng});
+    (Ext,V35):= group.derive(h,V28,V34{rows=1:lng});
     V36 := algebra.tunique(Ext);
     V37 := bat.mirror(V36);
-    V42 := algebra.join(V37,V27);
+    V42 := algebra.join(V37,V27{rows=1:lng});
     V43 := algebra.sort(V42);
-    V51 := algebra.join(V37,V34);
+    V51 := algebra.join(V37,V34{rows=1:lng});
     V52 := group.refine(V43,V51);
-    V57{rows=1:lng} := algebra.kdifference(V53,V12);
-    V58{rows=1:lng} := algebra.join(V21,V57);
-    V59{rows=1:lng} := aggr.sum(V58,V35,V37);
-    V64{rows=1:lng} := algebra.kdifference(V60,V12);
-    V65{rows=1:lng} := algebra.join(V21,V64);
-    V66{rows=1:lng} := aggr.sum(V65,V35,V37);
+    V57{rows=1:lng} := algebra.kdifference(V53{rows=1000:lng},V12{rows=1000:lng});
+    V58{rows=1:lng} := algebra.join(V21{rows=1:lng},V57{rows=1:lng});
+    V59{rows=1:lng} := aggr.sum(V58{rows=1:lng},V35,V37);
+    V64{rows=1:lng} := algebra.kdifference(V60{rows=1000:lng},V12{rows=1000:lng});
+    V65{rows=1:lng} := algebra.join(V21{rows=1:lng},V64{rows=1:lng});
+    V66{rows=1:lng} := aggr.sum(V65{rows=1:lng},V35,V37);
     V72 := calc.lng(A0);
     V74 := calc.*(V72,100);
-    V82{rows=1:lng} := algebra.kdifference(V75,V12);
-    V83{rows=1:lng} := algebra.join(V21,V82);
-    V84:bat[:oid,:flt]  := mal.multiplex("calc.-",V74,V83);
-    V86{rows=1:lng} := batcalc.*(V65,V84);
-    V88{rows=1:lng} := aggr.sum(V86,V35,V37);
+    V82{rows=1:lng} := algebra.kdifference(V75{rows=1000:lng},V12{rows=1000:lng});
+    V83{rows=1:lng} := algebra.join(V21{rows=1:lng},V82{rows=1:lng});
+    V84:bat[:oid,:flt]  := mal.multiplex("calc.-",V74,V83{rows=1:lng});
+    V86{rows=1:lng} := batcalc.*(V65{rows=1:lng},V84);
+    V88{rows=1:lng} := aggr.sum(V86{rows=1:lng},V35,V37);
     V94 := calc.lng(A1);
     V95 := calc.*(V94,100);
-    V100:bat[:oid,:flt]  := mal.multiplex("calc.-",V95,V83);
-    V101{rows=1:lng} := batcalc.*(V65,V100);
+    V100:bat[:oid,:flt]  := mal.multiplex("calc.-",V95,V83{rows=1:lng});
+    V101{rows=1:lng} := batcalc.*(V65{rows=1:lng},V100);
     V103 := calc.lng(A2);
     V104 := calc.*(V103,100);
-    V109{rows=1:lng} := algebra.kdifference(V105,V12);
-    V110{rows=1:lng} := algebra.join(V21,V109);
-    V111:bat[:oid,:flt]  := mal.multiplex("calc.+",V104,V110);
-    V113{rows=1:lng} := batcalc.*(V101,V111);
-    V114{rows=1:lng} := aggr.sum(V113,V35,V37);
-    V122{rows=1:lng} := aggr.avg(V58,V35,V37);
-    V127{rows=1:lng} := aggr.avg(V65,V35,V37);
-    V129 := mal.multiplex("calc.round",V127,100);
-    V135{rows=1:lng} := aggr.avg(V83,V35,V37);
-    V136 := mal.multiplex("calc.round",V135,100);
+    V109{rows=1:lng} := algebra.kdifference(V105{rows=1000:lng},V12{rows=1000:lng});
+    V110{rows=1:lng} := algebra.join(V21{rows=1:lng},V109{rows=1:lng});
+    V111:bat[:oid,:flt]  := mal.multiplex("calc.+",V104,V110{rows=1:lng});
+    V113{rows=1:lng} := batcalc.*(V101{rows=1:lng},V111);
+    V114{rows=1:lng} := aggr.sum(V113{rows=1:lng},V35,V37);
+    V122{rows=1:lng} := aggr.avg(V58{rows=1:lng},V35,V37);
+    V127{rows=1:lng} := aggr.avg(V65{rows=1:lng},V35,V37);
+    V129 := mal.multiplex("calc.round",V127{rows=1:lng},100);
+    V135{rows=1:lng} := aggr.avg(V83{rows=1:lng},V35,V37);
+    V136 := mal.multiplex("calc.round",V135{rows=1:lng},100);
     V137 := aggr.count(V35,V35,V37);
 #sql.column(V42,"l_returnflag","varchar",1,0); 
 #sql.column(V51,"l_linestatus","varchar",1,0); 

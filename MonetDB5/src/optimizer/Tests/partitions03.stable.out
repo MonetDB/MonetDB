@@ -51,19 +51,19 @@ pattern sql.exportValue(b:any...):void address MDBdummy;#  0 exportValue:void :=
 function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     x1:bat[:oid,:int]{notnil=true,rows=1,bid=1489}  := sql.bind("sys","y","i",0);#  1 x1:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _9:int) {G}
     x6:bat[:oid,:int]{notnil=true,rows=0,bid=1485}  := sql.bind("sys","y","i",1);#  2 x6:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _4:int) {G}
-    constraints.emptySet(x6);           #  3 _12:void := CemptySet(x6:bat[:oid,:int]) 
+    constraints.emptySet(x6{notnil=true,rows=0,bid=1485});#  3 _12:void := CemptySet(x6:bat[:oid,:int]) 
     x8:bat[:oid,:int]{notnil=true,rows=0,bid=1491}  := sql.bind("sys","y","i",2);#  4 x8:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _15:int) {G}
-    constraints.emptySet(x8);           #  5 _16:void := CemptySet(x8:bat[:oid,:int]) 
+    constraints.emptySet(x8{notnil=true,rows=0,bid=1491});#  5 _16:void := CemptySet(x8:bat[:oid,:int]) 
     x16:bat[:oid,:int]{notnil=true,rows=1,bid=1492}  := sql.bind("sys","y","j",0);#  6 x16:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _19:str, _9:int) {G}
-    x11{rows=1} := algebra.markT(x1,0@0);#  7 x11:bat[:oid,:oid] := ALGtmark(x1:bat[:oid,:int], _21:oid) {G}
-    x12{rows=1} := bat.reverse(x11);    #  8 x12:bat[:oid,:oid] := BKCreverse(x11:bat[:oid,:oid]) {G}
-    x13{rows=1} := algebra.join(x12,x1);#  9 x13:bat[:oid,:int] := ALGjoin(x12:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
-    (ext23,grp21):= group.new(x13);     # 10 (ext23:bat[:oid,:int], grp21:bat[:oid,:oid]) := GRPgroup(x13:bat[:oid,:int]) {G}
-    x18{rows=1} := algebra.join(x12,x16);# 11 x18:bat[:oid,:int] := ALGjoin(x12:bat[:oid,:oid], x16:bat[:oid,:int]) {G}
-    (ext34,grp32):= group.derive(ext23,grp21,x18);# 12 (ext34:bat[:oid,:int], grp32:bat[:oid,:oid]) := GRPderive(ext23:bat[:oid,:int], grp21:bat[:oid,:oid], x18:bat[:oid,:int]) {G}
+    x11{rows=1} := algebra.markT(x1{notnil=true,rows=1,bid=1489},0@0);#  7 x11:bat[:oid,:oid] := ALGtmark(x1:bat[:oid,:int], _21:oid) {G}
+    x12{rows=1} := bat.reverse(x11{rows=1});#  8 x12:bat[:oid,:oid] := BKCreverse(x11:bat[:oid,:oid]) {G}
+    x13{rows=1} := algebra.join(x12{rows=1},x1{notnil=true,rows=1,bid=1489});#  9 x13:bat[:oid,:int] := ALGjoin(x12:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
+    (ext23,grp21):= group.new(x13{rows=1});# 10 (ext23:bat[:oid,:int], grp21:bat[:oid,:oid]) := GRPgroup(x13:bat[:oid,:int]) {G}
+    x18{rows=1} := algebra.join(x12{rows=1},x16{notnil=true,rows=1,bid=1492});# 11 x18:bat[:oid,:int] := ALGjoin(x12:bat[:oid,:oid], x16:bat[:oid,:int]) {G}
+    (ext34,grp32):= group.derive(ext23,grp21,x18{rows=1});# 12 (ext34:bat[:oid,:int], grp32:bat[:oid,:oid]) := GRPderive(ext23:bat[:oid,:int], grp21:bat[:oid,:oid], x18:bat[:oid,:int]) {G}
     x21 := bat.mirror(ext34);           # 13 x21:bat[:oid,:oid] := BKCmirror(ext34:bat[:oid,:int]) {G}
-    x22 := algebra.joinPath(x21,x12,x1);# 14 x22:bat[:any,:any] := ALGjoinPath(x21:bat[:oid,:oid], x12:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
-    x23 := algebra.joinPath(x21,x12,x16);# 15 x23:bat[:any,:any] := ALGjoinPath(x21:bat[:oid,:oid], x12:bat[:oid,:oid], x16:bat[:oid,:int]) {G}
+    x22 := algebra.joinPath(x21,x12{rows=1},x1{notnil=true,rows=1,bid=1489});# 14 x22:bat[:any,:any] := ALGjoinPath(x21:bat[:oid,:oid], x12:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
+    x23 := algebra.joinPath(x21,x12{rows=1},x16{notnil=true,rows=1,bid=1492});# 15 x23:bat[:any,:any] := ALGjoinPath(x21:bat[:oid,:oid], x12:bat[:oid,:oid], x16:bat[:oid,:int]) {G}
     x24 := sql.resultSet(2,1,x22);      # 16 x24:void := MDBdummy(_15:int, _4:int, x22:bat[:any,:any]) 
     sql.rsColumn(x24,"sys.y","i","int",32,0,x22);# 17 _33:void := MDBdummy(x24:void, _34:str, _8:str, _35:str, _36:int, _9:int, x22:bat[:any,:any]) 
     sql.rsColumn(x24,"sys.y","j","int",32,0,x23);# 18 _37:void := MDBdummy(x24:void, _34:str, _19:str, _35:str, _36:int, _9:int, x23:bat[:any,:any]) 
@@ -82,21 +82,21 @@ end main;	# 6
 function sql.query(A0:sht):void;
     x1:bat[:oid,:int]{notnil=true,rows=1,bid=1489}  := sql.bind("sys","y","i",0);
     x6:bat[:oid,:int]{notnil=true,rows=0,bid=1485}  := sql.bind("sys","y","i",1);
-    bpm10:bat[:oid,:int]  := bpm.unfold(x6);
+    bpm10:bat[:oid,:int]  := bpm.unfold(x6{notnil=true,rows=0,bid=1485});
     bpm.emptySet(bpm10);
     x8:bat[:oid,:int]{notnil=true,rows=0,bid=1491}  := sql.bind("sys","y","i",2);
-    bpm13:bat[:oid,:int]  := bpm.unfold(x8);
+    bpm13:bat[:oid,:int]  := bpm.unfold(x8{notnil=true,rows=0,bid=1491});
     bpm.emptySet(bpm13);
     x16:bat[:oid,:int]{notnil=true,rows=1,bid=1492}  := sql.bind("sys","y","j",0);
-    x11{rows=1} := algebra.markT(x1,0@0);
-    x12{rows=1} := bat.reverse(x11);
-    x13{rows=1} := algebra.join(x12,x1);
-    (ext23,grp21):= group.new(x13);
-    x18{rows=1} := algebra.join(x12,x16);
-    (ext34,grp32):= group.derive(ext23,grp21,x18);
+    x11{rows=1} := algebra.markT(x1{notnil=true,rows=1,bid=1489},0@0);
+    x12{rows=1} := bat.reverse(x11{rows=1});
+    x13{rows=1} := algebra.join(x12{rows=1},x1{notnil=true,rows=1,bid=1489});
+    (ext23,grp21):= group.new(x13{rows=1});
+    x18{rows=1} := algebra.join(x12{rows=1},x16{notnil=true,rows=1,bid=1492});
+    (ext34,grp32):= group.derive(ext23,grp21,x18{rows=1});
     x21 := bat.mirror(ext34);
-    x22 := algebra.joinPath(x21,x12,x1);
-    x23 := algebra.joinPath(x21,x12,x16);
+    x22 := algebra.joinPath(x21,x12{rows=1},x1{notnil=true,rows=1,bid=1489});
+    x23 := algebra.joinPath(x21,x12{rows=1},x16{notnil=true,rows=1,bid=1492});
     x24 := sql.resultSet(2,1,x22);
     sql.rsColumn(x24,"sys.y","i","int",32,0,x22);
     sql.rsColumn(x24,"sys.y","j","int",32,0,x23);

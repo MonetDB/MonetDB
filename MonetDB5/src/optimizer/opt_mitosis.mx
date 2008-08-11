@@ -105,7 +105,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #ifdef _DEBUG_OPT_MITOSIS
 	stream_printf(cntxt->fdout,"opt_mitosis: target is %s.%s on %d threads\n",
 		schema,table,GDKnr_threads);
-		printFunction(cntxt->fdout,mb,LIST_MAL_ALL | LIST_MAL_PROPS);
+		printFunction(cntxt->fdout,mb,LIST_MAL_DEBUG);
 #endif
 	/* inject the MAT versions for the largest table */
 
@@ -171,7 +171,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				q= newStmt(mb,"optimizer","mergetable");
 		}
 #ifdef _DEBUG_OPT_MITOSIS
-		printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
+		printFunction(cntxt->fdout,mb,LIST_MAL_DEBUG);
 #endif
 	return 1;
 }

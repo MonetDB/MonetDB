@@ -60,7 +60,7 @@ function user.qry():void;
     bat.append(b,20);
     _16 := 213;
     r:bat[:oid,:int]{inline}  := algebra.project(b,_16);
-    io.print(r);
+    io.print(r{inline});
 end qry;
 
 # 20:07:33 >  

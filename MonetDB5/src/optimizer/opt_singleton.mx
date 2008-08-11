@@ -165,7 +165,7 @@ variables on the stack.
 	for (i = 0; i < top; i++)
 		stream_printf(cntxt->fdout, "[%d,%d,%d] ", vars[i], tuples[i].hidx, tuples[i].tidx);
 	stream_printf(cntxt->fdout, "\n");
-	printFunction(cntxt->fdout, mb, LIST_MAL_ALL | LIST_MAL_PROPS);
+	printFunction(cntxt->fdout, mb, LIST_MAL_DEBUG );
 	stream_printf(cntxt->fdout, "START OPTIMIZER ");
 #endif
 	newMalBlkStmt(mb, mb->ssize);
@@ -318,7 +318,7 @@ variables on the stack.
 #ifdef DEBUG_OPT_SINGLETON
 	if (actions) {
 		printf("FINAL STAGE actions=%d\n", actions);
-		printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
+		printFunction(cntxt->fdout, mb, LIST_MAL_DEBUG);
 		for (i = 0; i < top; i++)
 			stream_printf(cntxt->fdout, "[%d,%d:%s,%d:%s] ", tuples[i].vidx, tuples[i].hidx, getTypeName(tuples[i].htpe), tuples[i].tidx, getTypeName(tuples[i].ttpe));
 		stream_printf(cntxt->fdout, "\n");
@@ -327,7 +327,7 @@ variables on the stack.
 
 #ifdef DEBUG_OPT_SINGLETON
 	printf("FINAL STAGE SINGLETON errors=%d\n", mb->errors);
-	printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, mb, LIST_MAL_DEBUG);
 #endif
 	return actions;
 }

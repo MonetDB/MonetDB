@@ -448,7 +448,7 @@ to be shipped should be simple.
 #ifdef DEBUG_OPT_REMOTE
 	if (doit) {
 		stream_printf(cntxt->fdout, "remoteQueries %d\n", doit);
-		printFunction(cntxt->fdout, mb, LIST_MAL_ALL | LIST_MAL_PROPS);
+		printFunction(cntxt->fdout, mb, LIST_MAL_DEBUG);
 	}
 #endif
 	return doit;

@@ -448,7 +448,7 @@ int displayModule(stream *f, Module v, str fcn, int listing){
 	s= v->subscope[(int)(*fcn)];
 	while(s!=NULL){
 		if( idcmp(s->name,fcn)==0 ) {
-			printFunction(f,s->def,listing);
+			printFunction(f,s->def,0,listing);
 			k++;
 		}
 		s= s->peer;
@@ -567,7 +567,7 @@ void dumpManual(stream *f, Module s, int recursive){
 			    endtag= fcnClass(sig);
 			}
 
-			ps= instruction2str(t->def,sig,0);
+			ps= instruction2str(t->def,0,sig,0);
 			lnk= strrchr(ps,'=');
 			if(lnk && *(lnk+1)!='(') *lnk=0;
 
@@ -605,7 +605,7 @@ void dumpManualSection(stream *f, Module s){
 	if(s->subscope[j]){
 		for(t= s->subscope[j];t!=NULL;t=t->peer) {
 			sig= getSignature(t);
-			ps= instruction2str(t->def,sig,0);
+			ps= instruction2str(t->def,0,sig,0);
 			pt= strchr(ps,')');
 			if(pt){
 				pt++;

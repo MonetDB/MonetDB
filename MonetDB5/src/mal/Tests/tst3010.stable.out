@@ -18,8 +18,8 @@ stdout of test 'tst3010` in directory 'src/mal` itself:
 #	return j;
 #end add;
 function user.add{writeable,safe}(i:int{readonly},j:int{readonly}):int;#  0 add:int := user.add(i:int, j:int) 
-    j{readonly} := calc.+(j,i);         #  1 j:int := CALCbinaryADDintint(j:int, i:int) 
-    return add{writeable,safe} := j;    #  2 add:int := j:int 
+    j{readonly} := calc.+(j{readonly},i{readonly});#  1 j:int := CALCbinaryADDintint(j:int, i:int) 
+    return add{writeable,safe} := j{readonly};#  2 add:int := j:int 
 end add;	# 3  
 #
 #function add2(i:int,j:int):int{safe};
@@ -38,9 +38,9 @@ end add2;	# 3
 function user.main():void;              #  0 main:void := user.main() 
 #Parsing properties and keeping them around 
     i{cost=23} := 23;                   #  2 i:int := _3:int 
-    z := user.add(i,i);                 #  3 z:int := user.add(i:int, i:int) 
+    z := user.add(i{cost=23},i{cost=23});#  3 z:int := user.add(i:int, i:int) 
 #violates properties 
-    kk := user.add2(i,i);               #  5 kk:int := user.add2(i:int, i:int) 
+    kk := user.add2(i{cost=23},i{cost=23});#  5 kk:int := user.add2(i:int, i:int) 
 end main;	# 6  
 
 # 07:49:49 >  

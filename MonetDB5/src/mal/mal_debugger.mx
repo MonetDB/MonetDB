@@ -715,7 +715,7 @@ call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 	InstrPtr p;
 
 	p= getInstrPtr(mb,pc);
-	msg = instruction2str(mb, p, FALSE);
+	msg = instruction2str(mb, stk, p, FALSE);
 	s = strchr(msg, '(');
 	if (p->retc > 1 && s) {
 		s = strchr(s + 1, '(');
@@ -1357,16 +1357,16 @@ signatures satisfying the pattern.
 					for (i = 0; i < MAXSCOPE; i++) {
 						fs = fsym->subscope[i];
 						while (fs != NULL) {
-							printFunction(out, fs->def, lstng);
+							printFunction(out, fs->def, stk, lstng);
 							fs = fs->peer;
 						}
 					}
 					continue;
 				}
 				if( m) 
-					printFunction(out, m, lstng);
+					printFunction(out, m, stk, lstng);
 			} else 
-				printFunction(out, mb, lstng);
+				printFunction(out, mb, stk, lstng);
 			continue;
 		}
 		case '?':
@@ -1409,7 +1409,7 @@ void
 mdbDump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int i= getPC(mb,pci);
 	stream_printf(cntxt->fdout,"!MDB dump of instruction %d\n",i);
-	printFunction(cntxt->fdout, mb, LIST_MAL_ALL | LIST_MAL_PROPS);
+	printFunction(cntxt->fdout, mb, stk, LIST_MAL_ALL | LIST_MAL_PROPS);
 	mdbBacktrace(cntxt, stk, i);
 	printStack(cntxt->fdout,mb,stk);
 }

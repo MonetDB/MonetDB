@@ -288,7 +288,9 @@ mal_export int moreClients(int reruns);
 #define LIST_MAL_TYPE   4       /* show type resolutoin */
 #define LIST_MAL_PROPS  8       /* show optimizer properties */
 #define LIST_MAPI      16       /* output Mapi compatible output */
-#define LIST_MAL_ALL    (LIST_MAL_INSTR | LIST_MAL_TYPE | LIST_MAL_PROPS )
+#define LIST_MAL_VALUE 32       /* output values if available */
+#define LIST_MAL_DEBUG (LIST_MAL_INSTR | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_VALUE)
+#define LIST_MAL_ALL   (LIST_MAL_INSTR | LIST_MAL_TYPE | LIST_MAL_PROPS )
 
 #define STRUCT_ALIGNED
 

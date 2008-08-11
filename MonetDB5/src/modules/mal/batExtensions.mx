@@ -440,8 +440,7 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b,*bn;
 	int i,bid;
-	size_t cnt,slice;
-	size_t low= 0, hgh=0;
+	VarPtr low, hgh;
 
 	(void) mb;
 	(void) cntxt;
@@ -451,12 +450,11 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bbp.partition", "Cannot access descriptor");
 	}
 	/* create the slices slightly overshoot to make sure it all is taken*/
-	cnt = BATcount(b);
-	slice= (cnt+pci->argc)/ (pci->argc-1);
 	for(i=0; i<pci->retc; i++){
-		hgh= low+ slice;
-		bn=  BATslice(b, low, hgh);
-		BATseqbase(bn, low);
+		low= varGetProp(mb, getArg(pci,i),PropertyIndex("hlb") );
+		hgh= varGetProp(mb, getArg(pci,i),PropertyIndex("hub") );
+		bn=  BATslice(b, low->value.val.oval, hgh->value.val.oval);
+		BATseqbase(bn, low->value.val.oval);
 		if (bn== NULL){
 			BBPunfix(b->batCacheid);
 			throw(MAL, "bbp.partition", "Partition slice not created");

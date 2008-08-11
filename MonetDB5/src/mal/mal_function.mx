@@ -88,7 +88,7 @@ mal_export int getBlockBegin(MalBlkPtr mb,int pc);
 mal_export void setLifespan(MalBlkPtr mb, Lifespan span);
 mal_export void debugLifespan(MalBlkPtr mb, Lifespan span);
 
-mal_export void printFunction(stream *fd, MalBlkPtr mb, int listing);
+mal_export void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
 mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
 
 #include "mal_exception.h"
@@ -356,7 +356,7 @@ void chkFlow(MalBlkPtr mb)
 				if( p->token == REMsymbol){
 					/* do nothing */
 				} else if( i) {
-					str msg=instruction2str(mb,p,TRUE);
+					str msg=instruction2str(mb,0,p,TRUE);
 					showScriptException(mb,i,SYNTAX,"signature misplaced\n!%s",msg);
 					GDKfree(msg);
 					mb->errors++;
@@ -504,7 +504,7 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	for(j=0; j<mb->stop; j++){
 	    p= getInstrPtr(mb,j);
 #ifdef DEBUG_MAL_FCN
-		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+		printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
 #endif 
 	if( p->polymorphic)
 	for(i=0;i<p->argc; i++)
@@ -544,7 +544,7 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 #endif 
 	}
 #ifdef DEBUG_MAL_FCN
-		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+		printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
 #endif 
 	}
 }
@@ -560,7 +560,7 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 #ifdef DEBUG_CLONE
 	stream_printf(GDKout,"clone the function %s to scope %s\n",
 			proc->name,scope->name);
-	printInstruction(GDKout,mb, p,LIST_MAL_ALL);
+	printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
 #endif
 	new= newFunction(putName(proc->name,strlen(proc->name)), 
 	            getSignature(proc)->token );
@@ -626,7 +626,7 @@ For commands we do not have to clone the routine. We merely have to
 assure that the type-constraints are obeyed. The resulting type
 is returned.
 @c
-void printFunction(stream *fd, MalBlkPtr mb, int flg) {
+void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg) {
 	int i;
 	if( mb == NULL){
 		stream_printf(fd, "# function definition missing\n");
@@ -642,7 +642,7 @@ void printFunction(stream *fd, MalBlkPtr mb, int flg) {
 		stream_printf(fd, "%% 76 # length\n");	/* terminal width */
 	}
 	for (i = 0; i < mb->stop; i++)
-		printInstruction(fd, mb, getInstrPtr(mb, i), flg);
+		printInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
 }
 @- Lifespan analysis
 Optimizers may be interested in the characteristic of the
@@ -1013,7 +1013,7 @@ showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 	int i;
 
 	(void) stk;		/* fool the compiler */
-	msg = instruction2str(mb, p, 0);
+	msg = instruction2str(mb,stk, p, 0);
 	stream_printf(f, "n%d [fontsize=8, shape=box, label=\"", pc);
 	for (s = msg+1; *s; s++)
 		if (*s == '"')

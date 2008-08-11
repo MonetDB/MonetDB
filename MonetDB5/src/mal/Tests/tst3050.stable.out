@@ -35,7 +35,7 @@ function user.main():void;              #  0 main:void := user.main()
 #Parsing properties and keeping them around 
     a{sorted=true} := 0;                #  2 a:int := _3:int 
     b{sequence=true} := 2;              #  3 b:int := _5:int 
-    t := user.dummy(a,b);               #  4 t:int := user.dummy(a:int, b:int) 
+    t := user.dummy(a{sorted=true},b{sequence=true});#  4 t:int := user.dummy(a:int, b:int) 
     mdb.var("user","myprint");          #  5 _8:void := MDBvar3(_9:str, _10:str) 
 end main;	# 6  
 #[0] myprint	= nil:void  {optimizer,unsafe}

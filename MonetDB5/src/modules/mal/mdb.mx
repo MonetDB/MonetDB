@@ -632,7 +632,7 @@ MDBlist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
 	(void) stk;
-	printFunction(cntxt->fdout, mb, LIST_MAL_INSTR | LIST_MAL_PROPS);
+	printFunction(cntxt->fdout, mb, stk, LIST_MAL_INSTR | LIST_MAL_PROPS);
 	return MAL_SUCCEED;
 }
 
@@ -670,7 +670,7 @@ MDBlistMapi(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
 	(void) stk;
-	printFunction(cntxt->fdout, mb, LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
+	printFunction(cntxt->fdout, mb, stk, LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
 	return MAL_SUCCEED;
 }
 
@@ -685,7 +685,7 @@ MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (s == NULL)
 		showException(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	else
-		printFunction(cntxt->fdout, s->def, LIST_MAL_INSTR | LIST_MAL_PROPS);
+		printFunction(cntxt->fdout, s->def, stk, LIST_MAL_INSTR | LIST_MAL_PROPS);
 	(void) mb;		/* fool compiler */
 	return MAL_SUCCEED;
 }
@@ -695,7 +695,7 @@ MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
 	(void) stk;
-	printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, mb, stk, LIST_MAL_ALL);
 	return MAL_SUCCEED;
 }
 
@@ -710,7 +710,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (s == NULL)
 		showException(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	else
-		printFunction(cntxt->fdout, s->def, LIST_MAL_ALL);
+		printFunction(cntxt->fdout, s->def, stk, LIST_MAL_ALL);
 	(void) mb;		/* fool compiler */
 	return NULL;
 }
@@ -756,7 +756,7 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "mdb.getDefinition", "Failed to create BAT");
 
 	for (i = 0; i < m->stop; i++) {
-		ps = instruction2str(m, getInstrPtr(m, i), 1);
+		ps = instruction2str(m,stk, getInstrPtr(m, i), 1);
 		BUNins(b, &i, ps, FALSE);
 		GDKfree(ps);
 	}

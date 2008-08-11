@@ -26,7 +26,7 @@ function user.tst():void;               #  0 tst:void := user.tst() {G}
     V1 := bat.new(:oid,:int);           #  1 V1:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     V7 := bat.new(:oid,:int);           #  2 V7:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     V10{rows=0} := bat.new(:int,:oid);  #  3 V10:bat[:int,:oid] := CMDBATnew(_3:int, _2:oid) {G}
-    V11 := bat.reverse(V10);            #  4 V11:bat[:oid,:int] := BKCreverse(V10:bat[:int,:oid]) {G}
+    V11 := bat.reverse(V10{rows=0});    #  4 V11:bat[:oid,:int] := BKCreverse(V10:bat[:int,:oid]) {G}
     V12 := algebra.kdifference(V7,V11); #  5 V12:bat[:oid,:int] := ALGkdiff(V7:bat[:oid,:int], V11:bat[:oid,:int]) {G}
     V16 := algebra.markT(V12);          #  6 V16:bat[:oid,:oid] := ALGtmark_default(V12:bat[:oid,:int]) {G}
     V17 := algebra.join(V16,V7);        #  7 V17:bat[:oid,:int] := ALGjoin(V16:bat[:oid,:oid], V7:bat[:oid,:int]) {G}

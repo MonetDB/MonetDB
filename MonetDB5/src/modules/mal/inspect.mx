@@ -365,7 +365,7 @@ INSPECTgetDefinition(int *ret, str *mod, str *fcn)
 		str ps;
 
 		for (i = 0; i < s->def->stop; i++) {
-			ps = instruction2str(s->def, getInstrPtr(s->def, i), 0);
+			ps = instruction2str(s->def,0, getInstrPtr(s->def, i), 0);
 			BUNins(b, buf, ps + 1, FALSE);
 			GDKfree(ps);
 		}
@@ -398,7 +398,7 @@ INSPECTgetSignature(int *ret, str *mod, str *fcn)
 		if (idcmp(s->name, *fcn) == 0) {
 			char *c, *w;
 
-			ps = instruction2str(s->def, getSignature(s), 0);
+			ps = instruction2str(s->def, 0, getSignature(s), 0);
 			c = strchr(ps, '(');
 			if (c == 0)
 				continue;
@@ -437,7 +437,7 @@ INSPECTgetAddress(int *ret, str *mod, str *fcn)
 		if (idcmp(s->name, *fcn) == 0) {
 			char *c,*w;
 
-			ps = instruction2str(s->def, getSignature(s), 0);
+			ps = instruction2str(s->def, 0, getSignature(s), 0);
 			c = strchr(ps, '(');
 			if (c == 0)
 				continue;
@@ -507,7 +507,7 @@ INSPECTgetSource(str *ret, str *mod, str *fcn)
 		str ps;
 
 		for (i = 0; i < s->def->stop; i++) {
-			ps = instruction2str(s->def, getInstrPtr(s->def, i), 0);
+			ps = instruction2str(s->def, 0, getInstrPtr(s->def, i), 0);
 			if( strlen(ps) >= lim-len){
 				/* expand the buffer */
 				char *bn;
@@ -708,8 +708,7 @@ str
 INSPECTshowFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
-	(void) stk;
-	printFunction(cntxt->fdout, mb, LIST_INPUT);
+	printFunction(cntxt->fdout, mb, stk, LIST_INPUT);
 	return MAL_SUCCEED;
 }
 
@@ -727,8 +726,7 @@ INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		snprintf(buf,BUFSIZ,"Could not find %s.%s\n", modnme, fcnnme);
 		throw(MAL, "inspect.showSource",buf);
 	} else
-		printFunction(cntxt->fdout, s->def, LIST_INPUT);
-	(void) stk;		/* fool compiler */
+		printFunction(cntxt->fdout, s->def, stk, LIST_INPUT);
 	return MAL_SUCCEED;
 }
 

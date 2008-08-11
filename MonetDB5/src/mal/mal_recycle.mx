@@ -135,6 +135,7 @@ mal_export int RECYCLEinterest(MalBlkPtr mb,InstrPtr p);
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_function.h"
+#include "mal_client.h"
 
 MT_Lock recycleLock ;
 int recycleVersion = 1;  /* version of recycle table */
@@ -307,7 +308,7 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q){
 }
 
 @-
-static void RECYCLEremove(int pc){
+static void RECYCLEremove(Client cntxt, int pc){
 	int k,j,i,v;
 	InstrPtr p;
 	InstrPtr *old;
@@ -361,7 +362,7 @@ static void RECYCLEremove(int pc){
 	}
 	GDKfree(old);
 	/* remove all un-used variables as well */
-	trimMalVariables(recycleBlk);
+	trimMalVariables(cntxt,recycleBlk);
 }
 
 static lng lruclock=0;
@@ -370,7 +371,7 @@ static lng lruclock=0;
 entry is protected from eviction */
 
 static void 
-RECYCLEcache(int target, int wr)
+RECYCLEcache(Client cntxt, int target, int wr)
 {
 	int i, victim = 0, mem, size;
 
@@ -414,7 +415,7 @@ RECYCLEcache(int target, int wr)
 		stream_printf(cntxt->fdout,"RECYCLE cache, remove %d \n",victim);
 #endif
 		recyclerUsedMemory -= recycleBlk->profiler[victim].obytes;
-		RECYCLEremove(victim);
+		RECYCLEremove(cntxt, victim);
 		if (monitorRecycler == 1)
 			fprintf(stderr, 
 				"#memory=%lld, stop=%d, recycled=%d, retained=%d executed=%d saved=%d\n",
@@ -1125,7 +1126,7 @@ RECYCLEshutdown(Client cntxt){
 
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(cntxt->fdout,"RECYCLE shutdown\n");
-	printFunction(cntxt->fdout,recycleBlk,0);
+	printFunction(cntxt->fdout, 0, recycleBlk,0);
 	printStack(cntxt->fdout,mb,0);
 #else
 	(void) cntxt;
@@ -1158,7 +1159,7 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 
 #ifdef _DEBUG_RECYCLE_ 
 	stream_printf(cntxt->fdout,"RECYCLE evict\n");
-	printFunction(cntxt->fdout,recycleBlk,0);
+	printFunction(cntxt->fdout, 0, recycleBlk, 0);
 #else
 	(void) cntxt;
 #endif

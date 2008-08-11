@@ -507,7 +507,7 @@ table may have grown in size.
 
 @= restoreState
 	if( c->listing) 
-		printFunction(c->fdout,c->curprg->def, c->listing);
+		printFunction(c->fdout,c->curprg->def, 0, c->listing);
 	resetMalBlk(c->curprg->def,oldstate.stop);
 /*
 	MSresetInstructions(c->curprg->def, oldstate.stop);
@@ -647,7 +647,7 @@ MALengine(Client c)
 	}
 
 	if (c->listing)
-		printFunction(c->fdout, c->curprg->def, c->listing);
+		printFunction(c->fdout, c->curprg->def, 0, c->listing);
 @-
 In interactive mode we should avoid early garbage collection of values.
 This can be controlled by the clean up control at the instruction level
@@ -666,7 +666,7 @@ and marking all non-temporary variables as being (potentially) used.
 		showException(getExceptionType(msg), place, getExceptionMessage(msg));
 		GDKfree(place);
 		if (!c->listing)
-			printFunction(c->fdout, c->curprg->def, c->listing);
+			printFunction(c->fdout, c->curprg->def, 0, c->listing);
 		showErrors(c);
 	}
 	resetMalBlk(prg->def,1);

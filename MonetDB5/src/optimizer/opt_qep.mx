@@ -272,7 +272,7 @@ QEPdump(stream *f, QEP qep, int indent){
 	str s;
 	if( qep->p){
 		for(i=0;i<indent; i++) stream_printf(f," ");
-		s= instruction2str(qep->mb,qep->p,0);
+		s= instruction2str(qep->mb, 0,qep->p,0);
 		stream_printf(f,"%s\n",s+1);
 		GDKfree(s);
 		inc = 4;

@@ -138,7 +138,7 @@ comment "Resolve the multi-table definitions";
 #include "mal_interpreter.h"
 #include "mal_builder.h"
 
-#define DEBUG_OPT_MERGETABLE     /* show partial result */
+/* #define DEBUG_OPT_MERGETABLE     show partial result */
 @c
 #include "mal_config.h"
 #include "opt_mergetable.h"
@@ -1434,7 +1434,7 @@ For the time being, they are no-ops.
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(cntxt->fdout,"Result of multi table optimizer\n");
 	optimizerCheck(cntxt,mb,"merge test",1,0,0);
-	printFunction(cntxt->fdout, mb, LIST_MAL_ALL| LIST_MAL_PROPS);
+	printFunction(cntxt->fdout, mb, stk, LIST_MAL_DEBUG);
 #endif
 
 	return actions;

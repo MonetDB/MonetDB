@@ -181,8 +181,8 @@ multiple occurrences of the same constant in the symbol table.
 				if (safetyBarrier(p, q = getInstrPtr(mb, j)))
 					break;
 #ifdef DEBUG_OPT_COMMONTERMS
-				printInstruction(cntxt->fdout, mb, q, LIST_MAL_ALL);
-				printInstruction(cntxt->fdout, mb, p, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout, mb, stk, q, LIST_MAL_DEBUG);
+				printInstruction(cntxt->fdout, mb, stk, p, LIST_MAL_DEBUG);
 				printf("%d, %d  %d %d ", i, j, 
 					hasSameSignature(mb, p, q), 
 					hasSameArguments(mb, p, q));
@@ -218,7 +218,7 @@ handled by the alias removal part
 						p->argv[p->retc + k] =  q->argv[k];
 #ifdef DEBUG_OPT_COMMONTERMS
 					stream_printf(cntxt->fdout, "common modified expression");
-					printInstruction(cntxt->fdout, mb, p, LIST_MAL_ALL);
+					printInstruction(cntxt->fdout, mb, stk, p, LIST_MAL_DEBUG);
 #endif
 					actions++;
 					if( p->argc== 2 &&

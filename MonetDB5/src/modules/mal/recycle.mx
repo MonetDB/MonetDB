@@ -214,7 +214,7 @@ RECYCLEdump(stream *s)
 			recycleBlk->profiler[i].ticks,
 			recycleBlk->profiler[i].ibytes,
 			recycleBlk->profiler[i].obytes,
-			instruction2str(recycleBlk,getInstrPtr(recycleBlk,i),TRUE));
+			instruction2str(recycleBlk,0,getInstrPtr(recycleBlk,i),TRUE));
 	}
 	}
 }

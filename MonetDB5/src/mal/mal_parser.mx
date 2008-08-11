@@ -1289,7 +1289,7 @@ This scheme is intended for just-in-time compilation.
 	@:helpInfo(curBlk->help)@
 	showErrors(cntxt);
 	if(curBlk && cntxt->listing) 
-		printFunction(cntxt->fdout, curBlk, cntxt->listing);
+		printFunction(cntxt->fdout, curBlk, 0, cntxt->listing);
 	return curBlk;
 }
 
@@ -1368,7 +1368,7 @@ int parseEnd(Client cntxt)
 		showit= TRUE;
 		skipToEnd(cntxt);
 		if(showit && cntxt->listing) 
-			printFunction(cntxt->fdout, curBlk, cntxt->listing);
+			printFunction(cntxt->fdout, curBlk, 0, cntxt->listing);
 		showErrors(cntxt);
 		return 1;
 	}
