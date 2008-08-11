@@ -468,7 +468,7 @@ INET_comp_CW(bit *retval, inet * val1, inet * val2)
 		*retval = 0;
 	} else {
 		int mask;
-		unsigned char m[4] = { -1, -1, -1, -1 };
+		unsigned char m[4] = { 255, 255, 255, 255 };
 
 		/* all operations here are done byte based, to avoid byte sex
 		 * problems */
@@ -591,7 +591,7 @@ INETbroadcast(inet * retval, inet * val)
 	*retval = *val;
 	if (!in_isnil(val) && val->mask != 32) {
 		int mask;
-		unsigned char m[4] = { -1, -1, -1, -1 };
+		unsigned char m[4] = { 255, 255, 255, 255 };
 
 		/* all operations here are done byte based, to avoid byte sex
 		 * problems */
@@ -719,7 +719,7 @@ INETnetmask(inet * retval, inet * val)
 	*retval = *val;
 	if (!in_isnil(val)) {
 		int mask;
-		unsigned char m[4] = { -1, -1, -1, -1 };
+		unsigned char m[4] = { 255, 255, 255, 255 };
 
 		/* all operations here are done byte based, to avoid byte sex
 		 * problems */
@@ -803,7 +803,7 @@ INETnetwork(inet * retval, inet * val)
 	*retval = *val;
 	if (!in_isnil(val)) {
 		int mask;
-		unsigned char m[4] = { -1, -1, -1, -1 };
+		unsigned char m[4] = { 255, 255, 255, 255 };
 
 		/* all operations here are done byte based, to avoid byte sex
 		 * problems */
@@ -887,7 +887,7 @@ INETabbrev(str *retval, inet * val)
 		*retval = GDKstrdup(str_nil);
 	} else {
 		int mask = 32 - val->mask;
-		unsigned char m[4] = { -1, -1, -1, -1 };
+		unsigned char m[4] = { 255, 255, 255, 255 };
 
 		/* Zero all bits that are allowed to be in there according to
 		 * the netmask length.  Afterwards it is easy to see if there
