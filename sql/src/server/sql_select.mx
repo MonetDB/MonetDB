@@ -185,7 +185,6 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 	default:
 		return query_exp_optname(sql, scp, tableref);
 	}
-	return NULL;
 }
 
 stmt *
@@ -1095,7 +1094,6 @@ sql_op(mvc *sql, symbol *se)
 		return sql_error(sql, 02, 
 			"SELECT: no such operator '%s()'", fname);
 	}
-	return NULL;
 }
 
 stmt *
@@ -1245,7 +1243,6 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		stmt_destroy(s);
 		return sql_error(sql, 02, "%s: no such operator '%s(%s)'", toUpper(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr, type);
 	}
-	return NULL;
 }
 
 static group *
@@ -1769,7 +1766,6 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 	default:
 		return sql_logical_exp(sql, scp, se, grp, subset, f, ek);
 	}
-	return NULL;
 }
 
 /* turns a stmt set (or a set of stmt_sets) into a pivot table 
@@ -2966,7 +2962,6 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 			return stmt_filter(cmp);
 		}
 	}
-	return NULL;
 }
 
 /*
@@ -3610,7 +3605,6 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 	default:
 		return sql_error(sql, 02, "predicate %s %d: time to implement some more", token2string(sc->token), sc->token);
 	}
-	return sql_error(sql, 02, "predicate: time to implement some more");
 }
 
 stmt *

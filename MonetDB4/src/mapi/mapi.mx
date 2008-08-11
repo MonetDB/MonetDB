@@ -946,11 +946,11 @@ Get the new information for the server socket and start listening.
 			PARDEBUG THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
 		}
 	} while (1);
-#ifdef HAVE_SYS_UN_H
-	if (usockfile)
-		unlink(usockfile);
-#endif
-	return GDK_SUCCEED;
+/*
+   MAPIlisten() implements an endless loop,
+   and hence should/does never come here,
+   unless there was an error.
+*/
 error:
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)

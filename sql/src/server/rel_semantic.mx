@@ -67,7 +67,6 @@ swap_compare( comp_type t )
 	default:
 		return cmp_equal;
 	}
-	return cmp_equal;
 }
 
 sql_rel *
@@ -248,5 +247,4 @@ rel_semantic(mvc *sql, symbol *s)
 	default:
 		return sql_error(sql, 02, "symbol type not found");
 	}
-	return sql_error(sql, 02, "symbol type not found");
 }

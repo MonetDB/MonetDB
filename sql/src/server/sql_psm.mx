@@ -342,7 +342,6 @@ psm_case( mvc *sql, scope *scp, sql_subtype *res, dnode *case_when, int is_func 
 			cur_if->op3.stval = else_stmt;
 		return top;
 	}
-	return NULL;
 }
 
 /* return val;

@@ -126,7 +126,6 @@ char *compare_func( comp_type t )
 	default:
 		return NULL;
 	}
-	return NULL;
 }
 
 static stmt *

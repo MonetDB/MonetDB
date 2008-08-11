@@ -345,8 +345,6 @@ CRKhselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, 
 		return CRKRangeSidewaysRightNull_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
 	else
 		return CRKRangeSideways_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
-
-        throw(MAL, "crackers.CRKhselectBoundsSideways_@1_@2", "case not handled");
 }
 
 /* take the tail as a view */
@@ -358,8 +356,6 @@ CRKtselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, 
 		return CRKRangeSidewaysRightNull_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
 	else
 		return CRKRangeSideways_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
-
-        throw(MAL, "crackers.CRKtselectBoundsSideways_@1_@2", "case not handled");
 }
 
 str
@@ -370,8 +366,6 @@ CRKdselectBoundsSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, 
         	throw(MAL, "crackers.CRKdselectBoundsSideways_@1_@2", "case not handled");
 	else
 		return CRKdRangeSideways_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, low2, hgh2, inclusiveLow2, inclusiveHgh2);
-
-        throw(MAL, "crackers.CRKdselectBoundsSideways_@1_@2", "case not handled");
 }
 
 /* JoinSelectFunctionsSideways */

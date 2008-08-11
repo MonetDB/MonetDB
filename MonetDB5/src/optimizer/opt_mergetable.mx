@@ -186,8 +186,6 @@ int overlap( MalBlkPtr mb, int lv, int rv)
 	    (lub->value.val.lval == (lng)oid_nil &&
 	     llb->value.val.lval > rub->value.val.lval)) {
                 return 0;
-
-		return 0;
 	}
 	return 1;
 }

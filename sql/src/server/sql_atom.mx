@@ -130,7 +130,6 @@ atom_int(sql_subtype *tpe, lng val)
 			fprintf(stderr, "atom_int(%s,"LLFMT")\n", tpe->type->sqlname, val);
 		return a;
 	}
-	return NULL;
 }
 
 atom *

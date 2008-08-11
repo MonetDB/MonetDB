@@ -159,7 +159,6 @@ headcolumn(stmt *st)
 	default:
 		return NULL;
 	}
-	return NULL;
 }
 
 /* getcolumn is used by rangejoin detection */
@@ -1343,7 +1342,6 @@ is_jdx( stmt *j )
 	default:
 		return 0;
 	}
-	return 0;
 }
 
 /* TODO: we do not need a mark on 1-1 joins, then the old head is unique */

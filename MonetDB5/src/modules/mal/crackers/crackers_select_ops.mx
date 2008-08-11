@@ -91,8 +91,6 @@ CRKselectBounds2_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit
 		return CRKRangeRightNilTree_@1(vid, bid, low, inclusiveLow, TRUE);
 	else
 		return CRKRangeTree2_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
-
-       	throw(MAL, "crackers.CRKselectBounds_@1", "case not handled");
 }
 
 str
@@ -103,8 +101,6 @@ CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit 
 		return CRKRangeRightNilTree_@1(vid, bid, low, inclusiveLow, TRUE);
 	else
 		return CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
-
-       	throw(MAL, "crackers.CRKselectBounds_@1", "case not handled");
 }
 
 str
@@ -115,8 +111,6 @@ CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit
 		return CRKRangeRightNilTree_@1(vid, bid, low, inclusiveLow, FALSE);
 	else
 		return CRKRangeTree_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
-
-        throw(MAL, "crackers.CRKuselectBounds_@1", "case not handled");
 }
 
 str

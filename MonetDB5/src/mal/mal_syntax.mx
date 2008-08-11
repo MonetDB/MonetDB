@@ -90,9 +90,3 @@ Lexical tokens are illustrated in small capitals.
 @item args
 @tab : factor [',' factor]*
 @end multitable
-
-@-
-@{
-@c
-/* dummy C stuff */
-@}

@@ -761,8 +761,6 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 		r = stmt_alias(r, tname, _strdup(c->base.name));
 		return stmt_table(r, temp);
 	}
-	stmt_destroy(s);
-	return NULL;
 }
 
 /* check_types tries to match the ct type with the type of s if they don't

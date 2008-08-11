@@ -325,7 +325,6 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 	default:
 		return -5;
 	}
-	return -5;
 }
 
 static int
@@ -808,7 +807,6 @@ push_up_join_exps( sql_rel *rel)
 	default:
 		return NULL;
 	}
-	return NULL;
 }
 
 static sql_rel *

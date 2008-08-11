@@ -69,7 +69,6 @@ insert_value(mvc *sql, scope *scp, sql_column *c, symbol *s)
 		}
 		return n;
 	}
-	return NULL;
 }
 
 void
@@ -1672,7 +1671,6 @@ sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *a
 		cleanup_stmts(updates, len);
 		return s;
 	}
-	return NULL;
 }
 
 static stmt *
@@ -1957,7 +1955,6 @@ delete_table(mvc *sql, scope *scp, dlist *qname, symbol *opt_where)
 		scp = scope_close(scp);
 		return s;
 	}
-	return NULL;
 }
 
 stmt *

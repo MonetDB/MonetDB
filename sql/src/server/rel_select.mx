@@ -247,7 +247,6 @@ rel_bind_table( sql_rel **p, sql_rel *rel, char *tname )
 	default:
 		return NULL;
 	}
-	return NULL;
 }
 
 /* find the path to the relation containing the base of the expression 
@@ -435,7 +434,6 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname )
 	default:
 		return NULL;
 	}
-	return NULL;
 }
 
 sql_rel *
@@ -781,7 +779,6 @@ rel_project2groupby(mvc *sql, sql_rel **g)
 				} else {
 					return sql_error(sql, 02, "cannot use non GROUP BY column in query results without an aggregate function");
 				}
-				return NULL;
 			}
 		}
 		return rel_project(r, rel_projections(sql, r, NULL, 1));
@@ -871,8 +868,6 @@ static char * rel_get_name( sql_rel *rel )
 	default:
 		return rel_get_name(rel->l);
 	}
-	assert(0);
-	return NULL;
 }
 
 /* ls is the left expression of the select, rs is a simple atom, e is the
@@ -1729,7 +1724,6 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 	} else { /* join */
 		return rel_push_join(rel, L, R, e);
 	}
-	return rel;
 }
 
 static sql_rel *
@@ -2190,7 +2184,6 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 	default:
 		return sql_error(sql, 02, "Predicate %s %d: time to implement some more", token2string(sc->token), sc->token);
 	}
-	return sql_error(sql, 02, "Predicate: time to implement some more");
 }
 
 static sql_rel *
@@ -2498,7 +2491,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 	default:
 		return sql_error(sql, 02, "Predicate %s %d: time to implement some more", token2string(sc->token), sc->token);
 	}
-	return sql_error(sql, 02, "Predicate: time to implement some more");
 }
 
 static sql_exp *
@@ -2519,7 +2511,6 @@ rel_op(mvc *sql, symbol *se )
 		return sql_error(sql, 02, 
 			"SELECT: no such operator '%s'", fname);
 	}
-	return NULL;
 }
 
 sql_exp *
@@ -2891,7 +2882,6 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		exp_destroy(e);
 		return sql_error(sql, 02, "%s: no such operator '%s(%s)'", toUpper(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr, type);
 	}
-	return NULL;
 }
 
 static sql_exp *
@@ -3459,7 +3449,6 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	default: 
 		return rel_logical_value_exp(sql, rel, se, f);
 	}
-	return NULL;
 }
 
 static sql_exp *

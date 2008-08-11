@@ -339,7 +339,6 @@ grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant,
 	default:
 		return sql_error(sql, 02, "Grant: unknown token %d", token);
 	}
-	return sql_error(sql, 02, "Grant: unknown token %d", token);
 }
 
 static stmt *
@@ -501,7 +500,6 @@ revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant
 	default:
 		return sql_error(sql, 02, "Grant: unknown token %d", token);
 	}
-	return NULL;
 }
 
 
@@ -855,7 +853,6 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 		}
 		return stmt_none();
 	}
-	return NULL;
 }
 
 static stmt *

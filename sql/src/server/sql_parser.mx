@@ -2055,7 +2055,6 @@ while_statement:
 			$$ = NULL;
 			yyerror("Labels of while should match");
 			YYABORT;
-			YYERROR; /* just to silence intel compiler */
 		  }
  		  l = L();
 		  append_symbol(l, $3); /* condition */
