@@ -192,7 +192,7 @@ test = (
                 # src/gdk/cast:
                     r'^\[ (?:\-|)0 \]$',
                 # MonetDB4/src/modules/plain/Tests/mmath.milS (SunOS/Solaris: GNU vs. Sun compiler):
-                    r'^\[ (?:\-|)[Ii]infinity \]$',
+                    r'^\[ (?:\-|)[Ii]nfinity \]$',
                 # src/monet/modrefcnt1 & tests/BugDay_2005-11-09_4.9.3/double_load_double_drop.SF-1082293 (on Itanium)
                     r"^!ERROR: DESCload: atom 'lock' unknown, in BAT '[0-9]+'.$",
                 # pathfinder/tests/XQuery/fn_aps:
