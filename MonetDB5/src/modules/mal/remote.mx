@@ -657,7 +657,7 @@ remote_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
  */
 str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, mod, func, ident, tmp;
-	int i, len, tpe;
+	int i, len;
 	connection c;
 	char qbuf[512];	/* FIXME: make this dynamic */
 	MapiHdl mhdl;
@@ -702,7 +702,6 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* put the arguments one by one, and dynamically build the
 	 * invocation string */
 	for (i = 4; i < pci->argc; i++) {
-		tpe = getArgType(mb, pci, i);
 		/* all arguments are of type rmtobj, at least we blindly trust
 		 * the parser that it makes sure, we can cast to a string
 		 * pointer as long as rmtobj is nothing more than that */
