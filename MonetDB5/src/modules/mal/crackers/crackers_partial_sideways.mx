@@ -128,8 +128,6 @@ CRKselectBoundsIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low,
         	throw(MAL, "crackers.CRKtselectBoundsIncrementalSideways_@1_@2", "case not handled");
 	else
 		return CRKRangeIncrementalSideways_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh, low2, hgh2, inclusiveLow2, inclusiveHgh2);
-
-        throw(MAL, "crackers.CRKtselectBoundsIncrementalSideways_@1_@2", "case not handled");
 }
 
 /* Get directly the qualifying tail tuples */
@@ -141,8 +139,6 @@ CRKselectBoundsTailIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *
         	throw(MAL, "crackers.CRKtselectBoundsIncrementalSideways_@1_@2", "case not handled");
 	else
 		return CRKRangeTailIncrementalSideways_@1_@2(vid, bid, pbid, low, hgh, inclusiveLow, inclusiveHgh);
-
-        throw(MAL, "crackers.CRKtselectBoundsIncrementalSideways_@1_@2", "case not handled");
 }
 
 
@@ -154,8 +150,6 @@ CRKjoinSelectIncrementalSideways_@1_@2(int *res, int *bid, int *pbid, int *pivot
        		throw(MAL, "crackers.CRKjoinSelectIncrementalSideways_@1_@2", "case not handled");
         else
                	return JoinSelectRangeIncrementalSideways_@1_@2(res, bid, pbid, pivot, low1, hgh1, inclusiveLow1, inclusiveHgh1, low, hgh, inclusiveLow, inclusiveHgh);
-	
-        throw(MAL, "crackers.JoinSelectIncrementalSideways", "case not handled");
 }
 
 str                     
@@ -166,8 +160,6 @@ CRKProjectIncrementalSideways_@1_@2(int *res, int *bid, int *pbid, int *pivot, @
        		throw(MAL, "crackers.CRKProjectIncrementalSideways_@1_@2", "case not handled");
         else
                	return ProjectIncrementalSideways_@1_@2(res, bid, pbid, pivot, low1, hgh1, inclusiveLow1, inclusiveHgh1);
-	
-        throw(MAL, "crackers.CRKProjectIncrementalSideways", "case not handled");
 }
 
 str                     
@@ -178,8 +170,6 @@ CRKMaxTailIncrementalSideways_@1_@2(int *res, int *bid, int *pbid, @1 *low1, @1 
        		throw(MAL, "crackers.CRKMaxTailIncrementalSideways_@1_@2", "case not handled");
         else
                	return MaxTailIncrementalSideways_@1_@2(res, bid, pbid, low1, hgh1, inclusiveLow1, inclusiveHgh1);
-	
-        throw(MAL, "crackers.CRKMaxTailIncrementalSideways", "case not handled");
 }
 @
 
