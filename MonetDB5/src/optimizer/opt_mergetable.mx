@@ -138,7 +138,7 @@ comment "Resolve the multi-table definitions";
 #include "mal_interpreter.h"
 #include "mal_builder.h"
 
-/*#define DEBUG_OPT_MERGETABLE     show partial result */
+#define DEBUG_OPT_MERGETABLE     /* show partial result */
 @c
 #include "mal_config.h"
 #include "opt_mergetable.h"
@@ -159,16 +159,12 @@ typedef struct mat {
 	mat_type type;	/* type of operation */
 } mat_t;
 
-@-
-The oid range of MATs is maintained in property structures, because it permits
-symbolic overlap evaluation and thereby reducing the plan size.
-@= overlap
-static int overlap_@1( MalBlkPtr mb, int lv, int rv)
+int overlap( MalBlkPtr mb, int lv, int rv)
 {
-	VarPtr llb = varGetProp(mb, lv, @1lbProp); 
-	VarPtr lub = varGetProp(mb, lv, @1ubProp); 
-	VarPtr rlb = varGetProp(mb, rv, @1lbProp); 
-	VarPtr rub = varGetProp(mb, rv, @1ubProp); 
+	VarPtr llb = varGetProp(mb, lv, tlbProp); 
+	VarPtr lub = varGetProp(mb, lv, tubProp); 
+	VarPtr rlb = varGetProp(mb, rv, hlbProp); 
+	VarPtr rub = varGetProp(mb, rv, hubProp); 
 
 	if (!llb || !rlb) {
 		/* unknown lower bound ie overlap */
@@ -196,9 +192,36 @@ static int overlap_@1( MalBlkPtr mb, int lv, int rv)
 	return 1;
 }
 
-@c
-@:overlap(t)@
-@:overlap(h)@
+int Hoverlap( MalBlkPtr mb, int lv, int rv)
+{
+	VarPtr llb = varGetProp(mb, lv, hlbProp); 
+	VarPtr lub = varGetProp(mb, lv, hubProp); 
+	VarPtr rlb = varGetProp(mb, rv, hlbProp); 
+	VarPtr rub = varGetProp(mb, rv, hubProp); 
+	if (!llb || !rlb) {
+		/* unknown ie overlap */
+		return 1;
+	}
+	/* perfect match */
+	if (lub->value.val.lval == rub->value.val.lval &&
+	    llb->value.val.lval == rlb->value.val.lval) 
+		return 1;
+
+	if ((rub->value.val.lval != (lng)oid_nil && 
+	      rub->value.val.lval <= llb->value.val.lval) || 
+ 	     (lub->value.val.lval != (lng)oid_nil &&
+	      lub->value.val.lval <= rlb->value.val.lval))
+		return 0;
+
+	if ((rub->value.val.lval == (lng)oid_nil && 
+	      rlb->value.val.lval > lub->value.val.lval) || 
+ 	     (lub->value.val.lval == (lng)oid_nil &&
+	      llb->value.val.lval > rub->value.val.lval)) {
+		return 0;
+	}
+	return 1;
+}
+
 
 static void
 propagateMarkProp(MalBlkPtr mb, InstrPtr q, int ivar, oid l, oid h)
@@ -351,9 +374,9 @@ mat_fanout(mat_t *mat, int m, int n, MalBlkPtr mb, int isjoin)
 
 	for(k=1; k<mat[m].mi->argc; k++) {
 		for(j=1; j<mat[n].mi->argc; j++) {
-			if (isjoin && overlap_t(mb, getArg(mat[m].mi,k), getArg(mat[n].mi,j))) {
+			if (isjoin && overlap(mb, getArg(mat[m].mi,k), getArg(mat[n].mi,j))) {
 				cnt++;
-			} else if (!isjoin && overlap_h(mb, getArg(mat[m].mi,k), getArg(mat[n].mi,j))) {
+			} else if (!isjoin && Hoverlap(mb, getArg(mat[m].mi,k), getArg(mat[n].mi,j))) {
 				cnt++;
 			}
 		}
@@ -397,9 +420,9 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var, int reuse)
 		    /* join + overlap */
 		    /* or calc + hoverlap */
 		    ((getFunctionId(p) == joinRef &&
-                    overlap_t(mb, getArg(mat[m].mi,k), getArg(p, bvar)))  ||
+                    overlap(mb, getArg(mat[m].mi,k), getArg(p, bvar)))  ||
 		    (getFunctionId(p) != joinRef &&
-                    overlap_h(mb, getArg(mat[m].mi,k), getArg(p, bvar))))) {
+                    Hoverlap(mb, getArg(mat[m].mi,k), getArg(p, bvar))))) {
 			InstrPtr q = copyInstruction(p);
 
 			getArg(q,var) = getArg(mat[m].mi,k);
@@ -469,7 +492,7 @@ mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int *mtop, int a1, int a2, int 
 		int vm = getArg(mat[m].mi, j);
 		for(k=1; k<mat[n].mi->argc; k++) {
 			int vn = getArg(mat[n].mi, k);
-			if (overlap_h(mb, vm, vn)) {
+			if (Hoverlap(mb, vm, vn)) {
 				InstrPtr q = copyInstruction(p);
 				if (!reuse)
 					getArg(q,0) = newTmpVariable(mb, tpe);
@@ -518,10 +541,10 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, mat_t *mat, int a1, int a2, int a3, int reu
 		int vi = getArg(mat[a1].mi, i);
 		for(j=1; j<mat[a2].mi->argc; j++) {
 			int vj = getArg(mat[a2].mi, j);
-			if (overlap_h(mb, vi, vj)) {
+			if (Hoverlap(mb, vi, vj)) {
 				for(k=1; k<mat[a3].mi->argc; k++) {
 					int vk = getArg(mat[a3].mi, k);
-					if (overlap_h(mb, vi, vk)) {
+					if (Hoverlap(mb, vi, vk)) {
 						InstrPtr q = copyInstruction(p);
 						if (!reuse) 
 							getArg(q,0) = newTmpVariable(mb, tpe);
@@ -614,7 +637,7 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n)
 		if (m >= 0 && n >= 0) {
 		    for(k=1; k<mat[m].mi->argc; k++) {
 			for (j=1; j<mat[n].mi->argc; j++) {
-				if (overlap_t(mb, getArg(mat[m].mi, k), getArg(mat[n].mi, j))){
+				if (overlap(mb, getArg(mat[m].mi, k), getArg(mat[n].mi, j))){
 					InstrPtr q = copyInstruction(p);
 
 					getArg(q,0) = newTmpVariable(mb, tpe);
@@ -638,7 +661,7 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n)
 
 		    if (bv == 2) {
 		    	for(k=1; k<mat[mv].mi->argc; k++) {
-		 	    if (overlap_t(mb, getArg(mat[mv].mi, k), getArg(p, bv))){
+		 	    if (overlap(mb, getArg(mat[mv].mi, k), getArg(p, bv))){
 				InstrPtr q = copyInstruction(p);
 
 				getArg(q,0) = newTmpVariable(mb, tpe);
@@ -654,7 +677,7 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n)
 			}
 		    } else {
 		    	for(k=1; k<mat[mv].mi->argc; k++) {
-		 	    if (overlap_t(mb, getArg(p, bv), getArg(mat[mv].mi, k))){
+		 	    if (overlap(mb, getArg(p, bv), getArg(mat[mv].mi, k))){
 				InstrPtr q = copyInstruction(p);
 
 				getArg(q,0) = newTmpVariable(mb, tpe);
@@ -861,7 +884,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		else
 			setFunctionId(q, plusRef);
 		getArg(q,0) = getArg(r,0);
-		q = pushArgument(mb, q, getArg(r,0));
+		//q = pushArgument(mb, q, getArg(r,0));
 		q = pushArgument(mb, q, v);
 		pushInstruction(mb, q);
 	}
@@ -878,6 +901,8 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int g, int ext)
 	setFunctionId(ai1,packRef);
 	getArg(ai1,0) = newTmpVariable(mb, tp);
 
+assert(mat[m].mi->argc == mat[g].mi->argc);
+assert(mat[g].mi->argc == mat[ext].mi->argc);
 	for(k=1; k<mat[m].mi->argc; k++) {
 		InstrPtr q = copyInstruction(p);
 		getArg(q,0) = newTmpVariable(mb, tp);
@@ -958,7 +983,7 @@ mat_group_derive(InstrPtr *exti, MalBlkPtr mb, InstrPtr p, mat_t *mat, int ext, 
 	/* we need overlapping ranges */
 	for(i=1; i<mat[ext].mi->argc; i++) {
 	    for(k=1; k<mat[attr].mi->argc; k++) {
- 	   	if (overlap_h(mb, getArg(mat[ext].mi, i), getArg(mat[attr].mi, k))){
+ 	   	if (Hoverlap(mb, getArg(mat[ext].mi, i), getArg(mat[attr].mi, k))){
 			InstrPtr q = copyInstruction(p);
 			getArg(q,0) = newTmpVariable(mb, tp0);
 			getArg(q,1) = newTmpVariable(mb, tp1);
@@ -1410,8 +1435,8 @@ For the time being, they are no-ops.
 	(void) stk; 
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(cntxt->fdout,"Result of multi table optimizer\n");
-	optimizerCheck(mb,"merge test",1,0,0);
-	printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
+	optimizerCheck(cntxt,mb,"merge test",1,0,0);
+	printFunction(cntxt->fdout, mb, LIST_MAL_ALL| LIST_MAL_PROPS);
 #endif
 
 	return actions;

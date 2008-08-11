@@ -165,7 +165,7 @@ variables on the stack.
 	for (i = 0; i < top; i++)
 		stream_printf(cntxt->fdout, "[%d,%d,%d] ", vars[i], tuples[i].hidx, tuples[i].tidx);
 	stream_printf(cntxt->fdout, "\n");
-	printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, mb, LIST_MAL_ALL | LIST_MAL_PROPS);
 	stream_printf(cntxt->fdout, "START OPTIMIZER ");
 #endif
 	newMalBlkStmt(mb, mb->ssize);

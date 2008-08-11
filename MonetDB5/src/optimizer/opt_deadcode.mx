@@ -98,7 +98,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 #ifdef DEBUG_OPT_DEAD
 	stream_printf(cntxt->fdout,"ENTERING DEAD CODE ELIMINATION\n");
-	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
+	printFunction(cntxt->fdout,mb,LIST_MAL_ALL | LIST_MAL_PROPS);
 #else
 	(void) cntxt;
 #endif
@@ -145,7 +145,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		actions += OPTdeadcodeImplementation(cntxt,mb, stk, pci);
 #ifdef DEBUG_OPT_DEAD
 	stream_printf(cntxt->fdout,"LEAVING DEAD CODE ELIMINATION\n");
-	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
+	printFunction(cntxt->fdout,mb,LIST_MAL_ALL | LIST_MAL_PROPS);
 #endif
 	for(; i<slimit; i++)
 		if( old[i])

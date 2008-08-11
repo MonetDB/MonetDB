@@ -89,7 +89,7 @@ Check if the function definition is tagged as being inlined.
 				actions++;
 #ifdef DEBUG_OPT_INLINE
 				stream_printf(cntxt->fdout,"inline function at %d\n",i);
-				printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
+				printFunction(cntxt->fdout, mb, LIST_MAL_ALL | LIST_MAL_PROPS);
 #endif
 			} else 
 @-
@@ -101,7 +101,7 @@ Check if the local call is tagged as being inlined.
 				actions++;
 #ifdef DEBUG_OPT_INLINE
 				stream_printf(cntxt->fdout,"inlined called at %d\n",i);
-				printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
+				printFunction(cntxt->fdout, mb, LIST_MAL_ALL | LIST_MAL_PROPS);
 #endif
 			} 
 		}
@@ -133,7 +133,7 @@ In general, this is a hard problem. For now, we just expand.
 				inlineProp) != NULL;
 #ifdef DEBUG_OPT_INLINE
 	stream_printf(cntxt->fdout,"result of inline operation\n");
-	printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, mb, LIST_MAL_ALL | LIST_MAL_PROPS);
 #endif
 	return res;
 }

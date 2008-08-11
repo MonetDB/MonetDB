@@ -86,7 +86,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		q= getInstrPtr(mb,i);
 		if (getModuleId(q)!= sqlRef || 
 				!(getFunctionId(q)==bindRef ||
-				  getFunctionId(q)==binddbatRef ||
 				  getFunctionId(q)==bindidxRef ))
 			continue;
 		v= varGetProp(mb, getArg(q,0), rowsProp);
@@ -106,7 +105,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #ifdef _DEBUG_OPT_MITOSIS
 	stream_printf(cntxt->fdout,"opt_mitosis: target is %s.%s on %d threads\n",
 		schema,table,GDKnr_threads);
-		printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
+		printFunction(cntxt->fdout,mb,LIST_MAL_ALL | LIST_MAL_PROPS);
 #endif
 	/* inject the MAT versions for the largest table */
 
@@ -119,11 +118,15 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		p= old[i];
 		if (getModuleId(p)!= sqlRef || 
 				!(getFunctionId(p)==bindRef ||
-				  getFunctionId(p)==binddbatRef ||
 				  getFunctionId(p)==bindidxRef )){
 			pushInstruction(mb,p);
 			continue;
 		}
+		if (getVarConstant(mb, getArg(p,4)).val.ival == 2){
+			pushInstruction(mb,p);
+			continue;
+		}
+		
 		if (strcmp(schema, getVarConstant(mb, getArg(p,1)).val.sval) ||
 			strcmp(table, getVarConstant(mb, getArg(p,2)).val.sval) ){
 			pushInstruction(mb,p);
@@ -148,8 +151,13 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			parts[j]= newTmpVariable(mb,tpe);
 			setVarUsed(mb,parts[j]);
 			q= pushArgument(mb,q, parts[j]);
-			varSetProp(mb, getArg(q,j), PropertyIndex("hlb"), op_gte, (ptr) &low.value);
-			varSetProp(mb, getArg(q,j), PropertyIndex("hub"), op_lt, (ptr) &hgh.value);
+			if (getFunctionId(p) == binddbatRef) {
+				varSetProp(mb, getArg(q,j), PropertyIndex("tlb"), op_gte, (ptr) &low.value);
+				varSetProp(mb, getArg(q,j), PropertyIndex("tub"), op_lt, (ptr) &hgh.value);
+			} else {
+				varSetProp(mb, getArg(q,j), PropertyIndex("hlb"), op_gte, (ptr) &low.value);
+				varSetProp(mb, getArg(q,j), PropertyIndex("hub"), op_lt, (ptr) &hgh.value);
+			}
 			low.value.val.oval += slice;
 		}
 		q->retc= q->argc;
