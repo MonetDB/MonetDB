@@ -652,16 +652,16 @@ AM_MONETDB_LINUX_DIST()
 
 dnl MonetDB code requires some POSIX and XOPEN extensions 
 case "$GCC-$CC-$host_os" in
+*-*-solaris*)
+	AC_DEFINE(_XPG6, 1, [Compiler flag])
+	AC_DEFINE(__EXTENSIONS__, 1, [Compiler flag])
+	dnl also add __EXTENSIONS__ to the CFLAGS as the Mapi swig 
+	dnl clients include monetdb_config to late
+	CFLAGS="$CFLAGS -D__EXTENSIONS__"
+	;;
 yes-*-*)
 	case "$host_os" in
 	cygwin*|freebsd*|irix*|darwin*)
-		;;
-	solaris*)
-		AC_DEFINE(_XPG6, 1, [Compiler flag])
-		AC_DEFINE(__EXTENSIONS__, 1, [Compiler flag])
-		dnl also add __EXTENSIONS__ to the CFLAGS as the Mapi swig 
-		dnl clients include monetdb_config to late
-		CFLAGS="$CFLAGS -D__EXTENSIONS__"
 		;;
 	*)
 		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
@@ -682,9 +682,6 @@ yes-*-*)
 	AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
 	AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
 	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
-	;;
--*-solaris*)
-	AC_DEFINE(_XPG6, 1, [Compiler flag])
 	;;
 esac
 
