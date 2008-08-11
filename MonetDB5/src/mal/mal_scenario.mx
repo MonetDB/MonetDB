@@ -299,7 +299,7 @@ defined.
 
 @c
 static void
-print_scenarioCommand(stream *f, str cmd, void *funcptr)
+print_scenarioCommand(stream *f, str cmd, MALfcn funcptr)
 {
     if (cmd) 
 	stream_printf(f," \"%s%s\",", cmd, (funcptr?"":"?"));
