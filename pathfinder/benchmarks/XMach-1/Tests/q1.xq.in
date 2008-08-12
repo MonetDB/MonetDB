@@ -1,6 +1,0 @@
-let $doc :=
-	for $d in doc("$TSTTRGDIR/load_docs.xml")//doc/text()
-	return doc($d)
-let $a := $doc/directory/host[@name="chost3"]/host[@name="bhost2"]/host[@name="ahost1"]/path[@name="001_loader1.xml"]/doc_info/@doc_id,
-    $b := $doc/*[@doc_id = $a]
-return $b

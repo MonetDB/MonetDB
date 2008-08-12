@@ -1,8 +1,0 @@
-module("pathfinder");
-module("unix");
-
-var TSTSRCDIR := getenv("TSTSRCBASE") + "/benchmarks/Music/Tests";
-
-shred_doc(TSTSRCDIR + "/" + "music.xml", "music.xml");
-
-commit();
