@@ -56,9 +56,9 @@ Preparation of a Major Release
 - Create a new branch for the release on this tag (e.g. ``cvs tag -b
   MonetDB_1-24``).
 - Set version numbers in the current branch (e.g. ``vertoo.py -m
-  MonetDB set 1.17.0``)
+  MonetDB set 1.25.0``)
 - Create a tag on the head of the current branch for propagation
-  purposes (e.g. ``cvs tag MonetDB_1-17_sync``).
+  purposes (e.g. ``cvs tag MonetDB_1-25_sync``).
 - Check out the new branch (e.g. ``cvs co -rMonetDB_1-24 MonetDB``).
 - Set version numbers in the new stable branch (e.g. ``vertoo.py -m
   MonetDB set 1.24.0``).
