@@ -52,25 +52,25 @@ Preparation of a Major Release
 ------------------------------
 
 - Create a tag on the head of the current branch to identify the
-  branch point (e.g. ``cvs tag MonetDB_1-16_root``).
+  branch point (e.g. ``cvs tag MonetDB_1-24_root``).
 - Create a new branch for the release on this tag (e.g. ``cvs tag -b
-  MonetDB_1-16``).
+  MonetDB_1-24``).
 - Set version numbers in the current branch (e.g. ``vertoo.py -m
-  MonetDB set 1.17.0``)
+  MonetDB set 1.25.0``)
 - Create a tag on the head of the current branch for propagation
-  purposes (e.g. ``cvs tag MonetDB_1-17_sync``).
-- Check out the new branch (e.g. ``cvs co -rMonetDB_1-16 MonetDB``).
+  purposes (e.g. ``cvs tag MonetDB_1-25_sync``).
+- Check out the new branch (e.g. ``cvs co -rMonetDB_1-24 MonetDB``).
 - Set version numbers in the new stable branch (e.g. ``vertoo.py -m
-  MonetDB set 1.16.0``).
+  MonetDB set 1.24.0``).
 - Change defaults in ``buildtools/conf/MonetDB.m4`` for release builds
   (``dft_strict=no``, ``dft_assert=no``, ``dft_optimi=yes``,
   ``dft_netcdf=no``).
 - Create a tag on the head of the new branch for propagation purposes
-  (e.g. ``cvs tag MonetDB_1-16_sync``).
+  (e.g. ``cvs tag MonetDB_1-24_sync``).
 - Update the nightly testing setup to use the new branch for nightly
   testing.
 - Where necessary, update the "TestWeb" pages of the MonetDB web site to
-  point to the new branch's nighly testing results.
+  point to the new branch's nightly testing results.
 
 After this, it's **bug fixes only** on the new branch.
 
@@ -83,34 +83,53 @@ Preparation for a Minor Release
   number.
 - Update the propagation synchronization tags on the stable branch for
   the files that were changed in the previous step (e.g. ``cvs tag -F
-  MonetDB_1-16_sync vertoo.data``).
+  MonetDB_1-24_sync vertoo.data``).
 
 Releasing
 ---------
 
-- Wait for the next overnight test to get the daily builds.
 - Create a tag on the tested version of the release branches to mark the
-  released code base (e.g. ``cvs tag MonetDB_1-16-0``).
+  released code base (e.g. ``cvs tag MonetDB_1-24-0``).
+- Create RPMs using ``mock`` (using e.g. Sjoerd's script
+  ``mockbuild``).
+
+  After building the RPMs, use commands similar to these to prepare
+  the source distribution::
+
+    for i in *.fc9.oid64.src.rpm; do mv $i ${i%.fc9.oid64.src.rpm}.src.rpm; done
+    rm *.fc?.oid??.src.rpm
+    for i in *.src.rpm; do rpm2cpio $i | cpio -im \*.tar.gz; done
+
+    SSB=Aug2008
+    mkdir ~/src/MonetDB/virgin-stable/TestTools/$SSB
+    cp -p *.tar.gz ~/src/MonetDB/virgin-stable/TestTools/$SSB
+    cd ~/src/MonetDB/virgin-stable/TestTools
+    ./mksuperball.sh $SSB
+    rm -r $SSB
+    mv MonetDB-$SSB-SuperBall.tar.* $OLDPWD
+
 - Build Windows installers, making sure they are all compiled with the
-  correct options:
+  correct compiler and options:
 
-  + MonetDB4/SQL using Visual Studio on 32-bit Windows (``nmake``
-    options ``NEED_MX=1 HAVE_JAVA=1 HAVE_PYTHON=1 HAVE_PYTHON_SWIG=1
-    HAVE_PHP=1 NDEBUG=1``);
-  + MonetDB5/SQL using Visual Studio on 32-bit Windows (``nmake``
-    options ``NEED_MX=1 HAVE_JAVA=1 HAVE_PYTHON=1 HAVE_PYTHON_SWIG=1
-    HAVE_PHP=1 NDEBUG=1 NO_MONETDB4=1 HAVE_MONETDB5=1``);
-  + MonetDB4/SQL using Visual Studio on 64-bit Windows (``nmake``
-    options ``NEED_MX=1 HAVE_JAVA=1 HAVE_PYTHON=1 HAVE_PYTHON_SWIG=1
-    NDEBUG=1``);
-  + MonetDB5/SQL using Visual Studio on 64-bit Windows (``nmake``
-    options ``NEED_MX=1 HAVE_JAVA=1 HAVE_PYTHON=1 HAVE_PYTHON_SWIG=1
-    NDEBUG=1 NO_MONETDB4=1 HAVE_MONETDB5=1``);
-  + MonetDB/ODBC using Visual Studio on 32-bit Windows;
-  + MonetDB4/XQuery using Intel C++ on 32- & 64-bit Windows.
+  + MonetDB5/SQL (MonetDB, clients, MonetDB5, sql, geom) using
+    Microsoft Visual Studio 8;
+  + MonetDB4/XQuery (MonetDB, clients, MonetDB4, pathfinder) using
+    Intel C++ 10.1.022.
 
-- Copy the daily builds and Windows installers and upload to
-  SourceForge using the ``releaseforge`` program.
+  In both cases, use these ``nmake`` options for a 32 bit compile:
+  ``NDEBUG=1 HAVE_JAVA=1 HAVE_JAVAJDBC=1 HAVE_JAVAXRPC=1 HAVE_PYTHON=1
+  HAVE_PYTHON_SWIG=1 HAVE_PYTHON_DEVEL=1 HAVE_SWIG=1 HAVE_PHP=1
+  HAVE_PCRE=1 HAVE_MONETDB4=1 HAVE_MONETDB5=1 HAVE_PERL=1
+  HAVE_PERL_SWIG=1 HAVE_PERL_DEVEL=1``
+
+  Use these ``nmake`` options for a 64 bit compile: ``bits=64 NDEBUG=1
+  HAVE_MONETDB4=1 HAVE_MONETDB5=1 HAVE_JAVA=1 HAVE_JAVAJDBC=1
+  HAVE_JAVAXRPC=1 HAVE_PYTHON=1 HAVE_PYTHON_SWIG=1 HAVE_PYTHON_DEVEL=1
+  HAVE_SWIG=1 HAVE_PCRE=1 HAVE_PERL=1 HAVE_PERL_SWIG=1
+  HAVE_PERL_DEVEL=1``
+
+- Copy the builds and Windows installers and upload to SourceForge
+  using the ``releaseforge`` program.
 
 Post Release
 ------------
@@ -120,7 +139,7 @@ Post Release
   set the release to an odd number.
 - Update the propagation synchronization tags on the stable branch for
   the files that were changed in the previous step (e.g. ``cvs tag -F
-  MonetDB_1-16_sync vertoo.data``).
+  MonetDB_1-24_sync vertoo.data``).
 
 
 Post Minor Release
@@ -135,7 +154,10 @@ Post Major Release
 
 - Roll forward the MonetDB web to reflect the changes.
 - Announce the availability of the release through the MonetDB mail
-  channels.
+  channels: ``monetdb-announce@lists.sourceforge.net``,
+  ``monetdb-users@lists.sourceforge.net``,
+  ``monetdb-developers@lists.sourceforge.net``.
+
 - Announce the availability on http://www.dbworld.org/,
   http://www.freshmeat.net/, http://www.hollandopen.nl/,
   http://www.eosj.com/, http://www.freesoftwaremagazine.com/,
