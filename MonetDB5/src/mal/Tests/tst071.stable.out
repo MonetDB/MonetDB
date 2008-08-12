@@ -21,7 +21,7 @@ stdout of test 'tst071` in directory 'src/mal` itself:
 function user.swap(x:int,y:int) (a:int,b:int);#  0 (a:int, b:int) := user.swap(x:int, y:int) 
     a := y;                             #  1 a:int := y:int 
     b := x;                             #  2 b:int := x:int 
-    return (a,b):= (a,b);               #  3 (a:int, b:int) := a:int, b:int 
+    return (a,b) := (a,b);              #  3 (a:int, b:int) := a:int, b:int 
 end swap;	# 4  
 #
 #(x,y):= swap(1,2);
@@ -33,7 +33,7 @@ end swap;	# 4
 !TypeException:user.main[5]:'user.swap' undefined in: a:any := user.swap(_9:int, _10:int)
 function user.main():void;              #  0 main:void := user.main() 
 # parsing operations with multi-assignments 
-    (x,y):= user.swap(1,2);             #  2 (x:int, y:int) := user.swap(_4:int, _5:int) 
+    (x,y) := user.swap(1,2);            #  2 (x:int, y:int) := user.swap(_4:int, _5:int) 
     io.print(x);                        #  3 _6:void := IOprint_val(x:int) 
     io.print(y);                        #  4 _7:void := IOprint_val(y:int) 
     a := user.swap(3,4);                #  5 a:any := user.swap(_9:int, _10:int) {U}

@@ -40,7 +40,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.print("group x");                # 10 _23:void := IOprint_val(_24:str) 
     io.print(x);                        # 11 _25:void := IOprint_val(x:bat[:oid,:chr]) 
 #b1 := group.new(x); 
-    (hb1,b1):= group.new(x);            # 13 (hb1:bat[:oid,:int], b1:bat[:oid,:oid]) := GRPgroup(x:bat[:oid,:chr]) {G}
+    (hb1,b1) := group.new(x);           # 13 (hb1:bat[:oid,:int], b1:bat[:oid,:oid]) := GRPgroup(x:bat[:oid,:chr]) {G}
     io.print("b1 becomes");             # 14 _29:void := IOprint_val(_30:str) 
     io.print(b1);                       # 15 _31:void := IOprint_val(b1:bat[:oid,:oid]) 
     io.print("hb1 becomes");            # 16 _32:void := IOprint_val(_33:str) 

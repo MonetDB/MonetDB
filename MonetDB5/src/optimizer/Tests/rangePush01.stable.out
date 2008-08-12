@@ -36,18 +36,18 @@ function user.main():void;              #  0 main:void := user.main() {G}
     s7{rows=0:lng} := bat.new(:void,:int);#  9 s7:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
     mdb.list();                         # 10 _17:void := MDBlist() 
 end main;	# 11  
-function user.main():void;
+function user.main():void;              #  0 main:void := user.main() {G}
 # detect empty ranges 
-    b := bat.new(:void,:int);
-    s1 := algebra.select(b,80,90);
-    s2{rows=0:lng} := bat.new(:void,:int);
-    s3 := algebra.select(b,80,80);
-    s4 := algebra.select(b,80,80,true,true);
-    s5{rows=0:lng} := bat.new(:void,:int);
-    s6{rows=0:lng} := bat.new(:void,:int);
-    s7{rows=0:lng} := bat.new(:void,:int);
-    mdb.list();
-end main;
+    b := bat.new(:void,:int);           #  2 b:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
+    s1 := algebra.select(b,80,90);      #  3 s1:bat[:void,:int] := ALGselect(b:bat[:void,:int], _6:int, _7:int) {G}
+    s2{rows=0:lng} := bat.new(:void,:int);#  4 s2:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
+    s3 := algebra.select(b,80,80);      #  5 s3:bat[:void,:int] := ALGselect(b:bat[:void,:int], _6:int, _6:int) {G}
+    s4 := algebra.select(b,80,80,true,true);#  6 s4:bat[:void,:int] := ALGselectInclusive(b:bat[:void,:int], _6:int, _6:int, _11:bit, _11:bit) {G}
+    s5{rows=0:lng} := bat.new(:void,:int);#  7 s5:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
+    s6{rows=0:lng} := bat.new(:void,:int);#  8 s6:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
+    s7{rows=0:lng} := bat.new(:void,:int);#  9 s7:bat[:void,:int] := CMDBATnew(_3:void, _4:int) {G}
+    mdb.list();                         # 10 _17:void := MDBlist() 
+end main;                               # 11  
 
 # 17:31:49 >  
 # 17:31:49 >  Done.

@@ -20,7 +20,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #CTgroup(new(void,int).insert(nil,0).seqbase(0@0)).print(); 
     b := bat.new(:oid,:int);            #  2 b:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
     bat.insert(b,0@0,0);                #  3 _5:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _6:oid, _7:int) {G}
-    (histo,grp):= group.new(b);         #  4 (histo:bat[:oid,:int], grp:bat[:oid,:oid]) := GRPgroup(b:bat[:oid,:int]) {G}
+    (histo,grp) := group.new(b);        #  4 (histo:bat[:oid,:int], grp:bat[:oid,:oid]) := GRPgroup(b:bat[:oid,:int]) {G}
     io.print(b);                        #  5 _10:void := IOprint_val(b:bat[:oid,:int]) 
     io.print(histo);                    #  6 _11:void := IOprint_val(histo:bat[:oid,:int]) 
     io.print(grp);                      #  7 _12:void := IOprint_val(grp:bat[:oid,:oid]) 

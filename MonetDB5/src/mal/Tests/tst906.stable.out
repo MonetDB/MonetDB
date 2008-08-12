@@ -42,9 +42,9 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # the multiplex code blocks. 
 # check detection of the underlying fast implementations 
     b := bat.new(:oid,:lng);            #  3 b:bat[:oid,:lng] := CMDBATnew(_4:oid, _5:lng) {G}
-barrier (v,i):= language.newRange(0:lng);#  4 (v:bit, i:lng) := RNGnewRange_lng(_8:lng) {J7}
+barrier (v,i) := language.newRange(0:lng);#  4 (v:bit, i:lng) := RNGnewRange_lng(_8:lng) {J7}
     bat.append(b,i);                    #  5 _9:bat[:lng,:any] := BKCappend_val_wrap(b:bat[:oid,:lng], i:lng) {G}
-    redo (v,i):= language.nextElement(1:lng,10:lng);#  6 (v:bit, i:lng) := RNGnextElement_lng(_10:lng, _11:lng) {J5}
+    redo (v,i) := language.nextElement(1:lng,10:lng);#  6 (v:bit, i:lng) := RNGnextElement_lng(_10:lng, _11:lng) {J5}
 exit (v,i);                             #  7 (v:bit, i:lng) 
     c := algebra.copy(b);               #  8 c:bat[:oid,:lng] := ALGcopy(b:bat[:oid,:lng]) {G}
     io.print(c);                        #  9 _13:void := IOprint_val(c:bat[:oid,:lng]) 

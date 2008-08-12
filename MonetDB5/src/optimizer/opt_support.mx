@@ -636,7 +636,7 @@ optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int 
 	fd= open_wastream(nme);
 	if( fd == NULL)
 		printf("Error in %s\n",nme);
-	printFunction(fd,mb,LIST_MAL_ALL | LIST_MAL_PROPS);
+	printFunction(fd,mb,0,LIST_MAL_ALL | LIST_MAL_PROPS);
 	stream_close(fd);
 	}
 	*/

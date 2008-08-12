@@ -176,10 +176,10 @@ function user.main():void;              #  0 main:void := user.main() {G}
     a1s := algebra.sort(a1);            # 61 a1s:bat[:int,:oid] := ALGhsort(a1:bat[:int,:oid]) {G}
     c1 := bat.new(:int,:oid);           # 62 c1:bat[:int,:oid] := CMDBATnew(_3:int, _2:oid) {G}
     bat.insert(c1,nil:int,nil:oid);     # 63 _93:bat[:int,:oid] := BKCinsert_bun(c1:bat[:int,:oid], _90:int, _91:oid) {G}
-barrier (mloop,i):= language.newRange(1);# 64 (mloop:bit, i:int) := RNGnewRange_int(_84:int) {J68}
+barrier (mloop,i) := language.newRange(1);# 64 (mloop:bit, i:int) := RNGnewRange_int(_84:int) {J68}
     oi := calc.oid(i);                  # 65 oi:oid := CALCint2oid(i:int) 
     bat.insert(c1,i,oi);                # 66 _97:bat[:int,:oid] := BKCinsert_bun(c1:bat[:int,:oid], i:int, oi:oid) {G}
-    redo (mloop,i):= language.nextElement(1,100);# 67 (mloop:bit, i:int) := RNGnextElement_int(_84:int, _98:int) {J65}
+    redo (mloop,i) := language.nextElement(1,100);# 67 (mloop:bit, i:int) := RNGnextElement_int(_84:int, _98:int) {J65}
 exit mloop;                             # 68 mloop:bit 
     c1s := algebra.sort(c1);            # 69 c1s:bat[:int,:oid] := ALGhsort(c1:bat[:int,:oid]) {G}
     io.print("slices");                 # 70 _100:void := IOprint_val(_101:str) 

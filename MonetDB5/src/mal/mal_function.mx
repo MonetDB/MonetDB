@@ -368,7 +368,7 @@ void chkFlow(MalBlkPtr mb)
 		showScriptException(mb,lastInstruction,SYNTAX,
 			"instructions after END");
 #ifdef DEBUG_MAL_FCN
-		printFunction(GDKout, mb, LIST_MAL_ALL);
+		printFunction(GDKout, mb, 0, LIST_MAL_ALL);
 #endif
 		mb->errors++;
 	}
@@ -568,7 +568,7 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 	/* now change the definition of the original proc */
 #ifdef DEBUG_CLONE
 	stream_printf(GDKout,"CLONED VERSION\n");
-	printFunction(GDKout, new->def, LIST_MAL_ALL);
+	printFunction(GDKout, new->def, 0, LIST_MAL_ALL);
 #endif
 	/* check for errors after fixation , TODO*/
 	pp = getSignature(new);
@@ -601,7 +601,7 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 
 #ifdef DEBUG_MAL_FCN
 	stream_printf(GDKout,"FUNCTION TO BE CHECKED\n");
-	printFunction(GDKout, new->def, LIST_MAL_ALL);
+	printFunction(GDKout, new->def, 0, LIST_MAL_ALL);
 #endif
 
 	/* check for errors after fixation , TODO*/
@@ -611,13 +611,13 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 		if( new->def->errors){
 			showScriptException(new->def,0,MAL,"Error in cloned function");
 #ifdef DEBUG_MAL_FCN
-			printFunction(GDKout,new->def, LIST_MAL_ALL);
+			printFunction(GDKout,new->def, 0, LIST_MAL_ALL);
 #endif
 		}
 	}
 #ifdef DEBUG_CLONE
 	stream_printf(GDKout,"newly cloned function added to %s %d \n",scope->name,i);
-	printFunction(GDKout,new->def, LIST_MAL_ALL);
+	printFunction(GDKout,new->def, 0, LIST_MAL_ALL);
 #endif
 	return new;
 }
@@ -855,8 +855,6 @@ void chkDeclarations(MalBlkPtr mb){
 	p= getInstrPtr(mb,0);
 	for(k=0;k<p->argc; k++)
 		decl[getArg(p,k)]= blkId;
-
-	/* printFunction(GDKout,mb, LIST_MAL_ALL);*/
 
 	for(pc=1;pc<mb->stop; pc++){
 		p= getInstrPtr(mb,pc);

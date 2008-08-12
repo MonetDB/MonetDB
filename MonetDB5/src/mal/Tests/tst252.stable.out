@@ -32,11 +32,11 @@ function user.main():void;              #  0 main:void := user.main() {G}
     bat.insert(b,"one","red");          #  3 _5:bat[:str,:str] := BKCinsert_bun(b:bat[:str,:str], _6:str, _7:str) {G}
     bat.insert(b,"two","green");        #  4 _8:bat[:str,:str] := BKCinsert_bun(b:bat[:str,:str], _9:str, _10:str) {G}
     io.print(b);                        #  5 _11:void := IOprint_val(b:bat[:str,:str]) 
-barrier (v,h,t):= bat.newIterator(b);   #  6 (v:lng, h:str, t:str) := CHPbunIterator(b:bat[:str,:str]) {GJ11}
+barrier (v,h,t) := bat.newIterator(b);  #  6 (v:lng, h:str, t:str) := CHPbunIterator(b:bat[:str,:str]) {GJ11}
     io.print(v);                        #  7 _15:void := IOprint_val(v:lng) 
     io.print(h);                        #  8 _16:void := IOprint_val(h:str) 
     io.print(t);                        #  9 _17:void := IOprint_val(t:str) 
-    redo (v,h,t):= bat.hasMoreElements(b);# 10 (v:lng, h:str, t:str) := CHPbunHasMoreElements(b:bat[:str,:str]) {GJ7}
+    redo (v,h,t) := bat.hasMoreElements(b);# 10 (v:lng, h:str, t:str) := CHPbunHasMoreElements(b:bat[:str,:str]) {GJ7}
 exit v;                                 # 11 v:lng 
 end main;	# 12  
 #-------------------------#

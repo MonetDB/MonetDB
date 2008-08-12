@@ -41,13 +41,13 @@ end tst;	# 9
 function user.main():void;              #  0 main:void := user.main() {G}
     mdb.list("user","tst");             #  1 _7:void := MDBlist3(_2:str, _3:str) 
 end main;	# 2  
-function user.tst():void;
-    V1 := bat.new(:oid,:int);
-    V7 := bat.new(:oid,:int);
-    V16 := algebra.markT(V7);
-    V17 := algebra.join(V16,V7);
-    bat.append(V1,V17);
-end tst;
+function user.tst():void;               #  0 tst:void := user.tst() {G}
+    V1 := bat.new(:oid,:int);           #  1 V1:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    V7 := bat.new(:oid,:int);           #  2 V7:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    V16 := algebra.markT(V7);           #  3 V16:bat[:oid,:oid] := ALGtmark_default(V7:bat[:oid,:int]) {G}
+    V17 := algebra.join(V16,V7);        #  4 V17:bat[:oid,:int] := ALGjoin(V16:bat[:oid,:oid], V7:bat[:oid,:int]) {G}
+    bat.append(V1,V17);                 #  5 _11:bat[:oid,:int] := BKCappend_wrap(V1:bat[:oid,:int], V17:bat[:oid,:int]) {G}
+end tst;                                #  6  
 
 # 22:08:09 >  
 # 22:08:09 >  Done.

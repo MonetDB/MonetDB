@@ -101,7 +101,7 @@ OPTaccessmodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	} 
 #ifdef DEBUG_OPT_MODES
 	stream_printf(cntxt->fdout,"OPTIMIZE MODES\n");
-	printFunction(cntxt->fdout,mb,LIST_MAL_DEBUG);
+	printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG);
 #else
 	(void) cntxt;
 #endif

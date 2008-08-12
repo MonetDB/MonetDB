@@ -17,7 +17,7 @@ stdout of test 'tst3030` in directory 'src/mal` itself:
 #function newsemijoin(A:bat[:int,:any_1], 
 #end newsemijoin;
 function user.newsemijoin(A:bat[:int,:any_1],B:bat[:int,:any_2]):bat[:int,:any_1];#  0 newsemijoin:bat[:int,:any_1] := user.newsemijoin(A:bat[:int,:any_1], B:bat[:int,:any_2]) {UPG}
-    return newsemijoin := nil;          #  1 newsemijoin:bat[:int,:any_1] := _4:BAT {G}
+    return newsemijoin := nil:BAT;      #  1 newsemijoin:bat[:int,:any_1] := _4:BAT {G}
 end newsemijoin;	# 2  
 #z:= bat.new(:int{sorted=true},:int);
 #w:= bat.new(:int{sequence=true},:int);
@@ -33,11 +33,11 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #Parsing properties and keeping them around 
 # note the use of the first parameter to obtain property set 
     z := bat.new(:int{sorted=true,sequence=true},:int{sorted=true,sequence=true});#  3 z:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
-    w:bat[:int,:int]{sorted=true,dense=true}  := bat.new(:int{sorted=true,sequence=true},:int{sorted=true,sequence=true});#  4 w:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
-    w:bat[:int,:int]{sorted=true,dense=true}  := bat.new(:int{sorted=true,sequence=true},:int{sorted=true,sequence=true});#  5 w:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
-    y:int{sorted=true}  := algebra.sort(w{sorted=true,dense=true});#  6 y:int := algebra.sort(w:bat[:int,:int]) {U}
+    w:bat[:int,:int] {sorted=true,dense=true} := bat.new(:int{sorted=true,sequence=true},:int{sorted=true,sequence=true});#  4 w:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
+    w:bat[:int,:int] {sorted=true,dense=true} := bat.new(:int{sorted=true,sequence=true},:int{sorted=true,sequence=true});#  5 w:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
+    y:int {sorted=true} := algebra.sort(w{sorted=true,dense=true});#  6 y:int := algebra.sort(w:bat[:int,:int]) {U}
     io.print(1);                        #  7 _8:void := IOprint_val(_9:int) 
-    y:int{sorted=true}  := algebra.sort(w{sorted=true,dense=true});#  8 y:int := algebra.sort(w:bat[:int,:int]) {U}
+    y:int {sorted=true} := algebra.sort(w{sorted=true,dense=true});#  8 y:int := algebra.sort(w:bat[:int,:int]) {U}
 end main;	# 9  
 
 # 08:01:16 >  

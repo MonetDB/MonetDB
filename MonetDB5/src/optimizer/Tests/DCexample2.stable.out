@@ -10,17 +10,15 @@ stdout of test 'DCexample2` in directory 'src/optimizer` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information
-##Suggested by Nayden.
-#
-#b:= bat.new(:int,:int);
-#bat.insert(b,4,2);
-#bat.insert(b,9,5);
-#bat.insert(b,6,3);
-#b:= algebra.sort(b);
-##should throw out the last statement
-#optimizer.deadcode();
-#mdb.list();
-#
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:31366/
+function user.main():void;              #  0 main:void := user.main() {G}
+    b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    bat.insert(b,4,2);                  #  2 _4:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) {G}
+    bat.insert(b,9,5);                  #  3 _7:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) {G}
+    bat.insert(b,6,3);                  #  4 _10:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _11:int, _12:int) {G}
+    b := algebra.sort(b);               #  5 b:bat[:int,:int] := ALGhsort(b:bat[:int,:int]) {G}
+    mdb.list();                         #  6 _15:void := MDBlist() 
+end main;                               #  7  
 function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     bat.insert(b,4,2);                  #  2 _4:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) {G}
@@ -29,14 +27,6 @@ function user.main():void;              #  0 main:void := user.main() {G}
     b := algebra.sort(b);               #  5 b:bat[:int,:int] := ALGhsort(b:bat[:int,:int]) {G}
     mdb.list();                         #  6 _15:void := MDBlist() 
 end main;	# 7  
-function user.main():void;
-    b := bat.new(:int,:int);
-    bat.insert(b,4,2);
-    bat.insert(b,9,5);
-    bat.insert(b,6,3);
-    b := algebra.sort(b);
-    mdb.list();
-end main;
 
 # 22:31:27 >  
 # 22:31:27 >  Done.

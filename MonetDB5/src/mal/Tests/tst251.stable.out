@@ -44,11 +44,11 @@ function user.main():void;              #  0 main:void := user.main() {G}
     bat.insert(c,5,x);                  # 10 _21:bat[:int,:str] := BKCinsert_bun(c:bat[:int,:str], _22:int, x:str) {G}
     bat.insert(c,6,"!");                # 11 _23:bat[:int,:str] := BKCinsert_bun(c:bat[:int,:str], _24:int, _25:str) {G}
     io.print(c);                        # 12 _26:void := IOprint_val(c:bat[:int,:str]) 
-barrier (v,h,ts):= bat.newIterator(c);  # 13 (v:lng, h:int, ts:str) := CHPbunIterator(c:bat[:int,:str]) {GJ18}
+barrier (v,h,ts) := bat.newIterator(c); # 13 (v:lng, h:int, ts:str) := CHPbunIterator(c:bat[:int,:str]) {GJ18}
     io.print(v);                        # 14 _30:void := IOprint_val(v:lng) 
     io.printf("[%d,",h);                # 15 _31:void := IOprint_formatted_int(_32:str, h:int) 
     io.printf("%s]\n",ts);              # 16 _33:void := IOprint_formatted_str(_34:str, ts:str) 
-    redo (v,h,ts):= bat.hasMoreElements(c);# 17 (v:lng, h:int, ts:str) := CHPbunHasMoreElements(c:bat[:int,:str]) {GJ14}
+    redo (v,h,ts) := bat.hasMoreElements(c);# 17 (v:lng, h:int, ts:str) := CHPbunHasMoreElements(c:bat[:int,:str]) {GJ14}
 exit v;                                 # 18 v:lng 
 end main;	# 19  
 #-------------------------#

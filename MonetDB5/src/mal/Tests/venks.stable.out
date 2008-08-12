@@ -81,11 +81,11 @@ function user.main():void;              #  0 main:void := user.main() {G}
     t0 := alarm.usec();                 #  3 t0:lng := ALARMusec() 
     l := 0:sht;                         #  4 l:sht := _5:sht 
     large := bat.new(:oid,:sht);        #  5 large:bat[:oid,:sht] := CMDBATnew(_7:oid, _8:sht) {G}
-barrier (go,i):= language.newRange(0:lng);#  6 (go:bit, i:lng) := RNGnewRange_lng(_11:lng) {J11}
+barrier (go,i) := language.newRange(0:lng);#  6 (go:bit, i:lng) := RNGnewRange_lng(_11:lng) {J11}
     k := mmath.rand();                  #  7 k:int := MATHrandint() 
     l := calc.sht(k);                   #  8 l:sht := CALCint2sht(k:int) 
     bat.append(large,l);                #  9 _13:bat[:sht,:any] := BKCappend_val_wrap(large:bat[:oid,:sht], l:sht) {G}
-    redo (go,i):= language.nextElement(1:lng,1000000:lng);# 10 (go:bit, i:lng) := RNGnextElement_lng(_14:lng, _15:lng) {J7}
+    redo (go,i) := language.nextElement(1:lng,1000000:lng);# 10 (go:bit, i:lng) := RNGnextElement_lng(_14:lng, _15:lng) {J7}
 exit (go,i);                            # 11 (go:bit, i:lng) 
     small := bat.new(:oid,:sht);        # 12 small:bat[:oid,:sht] := CMDBATnew(_7:oid, _17:sht) {G}
 #m:= aggr.min(b); 

@@ -113,7 +113,7 @@ the replacement is aborted.
 		actions++;
 	}
 #ifdef DEBUG_OPT_OPTIMIZER
-	printInstruction(cntxt->fdout, mb, stk, p, LIST_MAL_DEBUG);
+	printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_DEBUG);
 #endif
 @c
 	for (i = 0; i < limit; i++) {
@@ -159,7 +159,7 @@ the replacement is aborted.
 			stream_printf(cntxt->fdout, "Found accumulation candidate ");
 			stream_printf(cntxt->fdout, "%d: %d(%d,%d) valid=%d isaBat=%d \n", 
 				i, b,a,getArg(p,2), valid, isaBatType(v->type));
-			printInstruction(cntxt->fdout, mb, stk, p, LIST_MAL_DEBUG);
+			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_DEBUG);
 #endif
 @-
 Beware, we may only use temporary BATs as accumulators, otherwise
@@ -188,7 +188,7 @@ sure it becomes one.
 			
 #ifdef DEBUG_OPT_OPTIMIZER
 			stream_printf(cntxt->fdout, "Found unary accumulation candidate\n");
-			printInstruction(cntxt->fdout, mb, stk, p, LIST_MAL_DEBUG);
+			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_DEBUG);
 #endif
 			q= copyInstruction(p);
 			p= pushArgument(mb, p, a);

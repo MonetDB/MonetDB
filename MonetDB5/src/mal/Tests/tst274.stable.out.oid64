@@ -54,11 +54,11 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #watch out, the random generator on SUN has a limited range. 
     t0 := alarm.usec();                 #  3 t0:lng := ALARMusec() 
     b := bat.new(:oid,:lng);            #  4 b:bat[:oid,:lng] := CMDBATnew(_5:oid, _6:lng) {G}
-barrier (go,i):= language.newRange(0:lng);#  5 (go:bit, i:lng) := RNGnewRange_lng(_9:lng) {J10}
+barrier (go,i) := language.newRange(0:lng);#  5 (go:bit, i:lng) := RNGnewRange_lng(_9:lng) {J10}
     k := mmath.rand();                  #  6 k:int := MATHrandint() 
     l := calc.lng(k);                   #  7 l:lng := CALCint2lng(k:int) 
     bat.insert(b,nil:oid,l);            #  8 _12:bat[:oid,:lng] := BKCinsert_bun(b:bat[:oid,:lng], _13:oid, l:lng) {G}
-    redo (go,i):= language.nextElement(1:lng,10000:lng);#  9 (go:bit, i:lng) := RNGnextElement_lng(_14:lng, _15:lng) {J6}
+    redo (go,i) := language.nextElement(1:lng,10000:lng);#  9 (go:bit, i:lng) := RNGnextElement_lng(_14:lng, _15:lng) {J6}
 exit (go,i);                            # 10 (go:bit, i:lng) 
     profiler.activate("ticks");         # 11 _16:void := CMDactivateProfiler(_17:str) 
     profiler.activate("statement");     # 12 _18:void := CMDactivateProfiler(_19:str) 

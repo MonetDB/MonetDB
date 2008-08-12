@@ -637,37 +637,37 @@ function user.main():void;              #  0 main:void := user.main() {G}
     ma_a := bat.setColumn(rule_bat,"rule");# 54 ma_a:void := BKCsetColumn(rule_bat:bat[:str,:zrule], _91:str) 
 #io.print(rule_bat.bat.setColumn("rule"), 
     _823 := bat.new(nil:str,nil:int);   # 56 _823:bat[:str,:int] := CMDBATnew(_824:str, _825:int) {G}
-barrier (_827,_828,_829):= bat.newIterator(rule_bat);# 57 (_827:lng, _828:str, _829:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ61}
+barrier (_827,_828,_829) := bat.newIterator(rule_bat);# 57 (_827:lng, _828:str, _829:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ61}
     _831 := mtime.month(_829);          # 58 _831:int := MTIMErule_extract_month(_829:zrule) 
     bat.insert(_823,_828,_831);         # 59 _832:bat[:str,:int] := BKCinsert_bun(_823:bat[:str,:int], _828:str, _831:int) {G}
-    redo (_827,_828,_829):= bat.hasMoreElements(rule_bat);# 60 (_827:lng, _828:str, _829:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ58}
+    redo (_827,_828,_829) := bat.hasMoreElements(rule_bat);# 60 (_827:lng, _828:str, _829:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ58}
 exit (_827,_828,_829);                  # 61 (_827:lng, _828:str, _829:zrule) 
     na_a:bat[:str,:int]  := _823;       # 62 na_a:bat[:str,:int] := _823:bat[:str,:int] {G}
     oa_a := bat.setColumn(na_a,"month");# 63 oa_a:void := BKCsetColumn(na_a:bat[:str,:int], _95:str) 
 #      [month](rule_bat).bat.setColumn("month"), 
     _836 := bat.new(nil:str,nil:int);   # 65 _836:bat[:str,:int] := CMDBATnew(_824:str, _825:int) {G}
-barrier (_838,_839,_840):= bat.newIterator(rule_bat);# 66 (_838:lng, _839:str, _840:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ70}
+barrier (_838,_839,_840) := bat.newIterator(rule_bat);# 66 (_838:lng, _839:str, _840:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ70}
     _842 := mtime.weekday(_840);        # 67 _842:int := MTIMErule_extract_weekday(_840:zrule) 
     bat.insert(_836,_839,_842);         # 68 _843:bat[:str,:int] := BKCinsert_bun(_836:bat[:str,:int], _839:str, _842:int) {G}
-    redo (_838,_839,_840):= bat.hasMoreElements(rule_bat);# 69 (_838:lng, _839:str, _840:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ67}
+    redo (_838,_839,_840) := bat.hasMoreElements(rule_bat);# 69 (_838:lng, _839:str, _840:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ67}
 exit (_838,_839,_840);                  # 70 (_838:lng, _839:str, _840:zrule) 
     pa_a:bat[:str,:int]  := _836;       # 71 pa_a:bat[:str,:int] := _836:bat[:str,:int] {G}
     qa_a := bat.setColumn(pa_a,"weekday");# 72 qa_a:void := BKCsetColumn(pa_a:bat[:str,:int], _99:str) 
 #      [weekday](rule_bat).bat.setColumn("weekday"), 
     _847 := bat.new(nil:str,nil:int);   # 74 _847:bat[:str,:int] := CMDBATnew(_824:str, _825:int) {G}
-barrier (_849,_850,_851):= bat.newIterator(rule_bat);# 75 (_849:lng, _850:str, _851:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ79}
+barrier (_849,_850,_851) := bat.newIterator(rule_bat);# 75 (_849:lng, _850:str, _851:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ79}
     _853 := mtime.day(_851);            # 76 _853:int := MTIMErule_extract_day(_851:zrule) 
     bat.insert(_847,_850,_853);         # 77 _854:bat[:str,:int] := BKCinsert_bun(_847:bat[:str,:int], _850:str, _853:int) {G}
-    redo (_849,_850,_851):= bat.hasMoreElements(rule_bat);# 78 (_849:lng, _850:str, _851:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ76}
+    redo (_849,_850,_851) := bat.hasMoreElements(rule_bat);# 78 (_849:lng, _850:str, _851:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ76}
 exit (_849,_850,_851);                  # 79 (_849:lng, _850:str, _851:zrule) 
     ra_a:bat[:str,:int]  := _847;       # 80 ra_a:bat[:str,:int] := _847:bat[:str,:int] {G}
     sa_a := bat.setColumn(ra_a,"day");  # 81 sa_a:void := BKCsetColumn(ra_a:bat[:str,:int], _103:str) 
 #      [day](rule_bat).bat.setColumn("day"), 
     _858 := bat.new(nil:str,nil:int);   # 83 _858:bat[:str,:int] := CMDBATnew(_859:str, _860:int) {G}
-barrier (_862,_863,_864):= bat.newIterator(rule_bat);# 84 (_862:lng, _863:str, _864:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ88}
+barrier (_862,_863,_864) := bat.newIterator(rule_bat);# 84 (_862:lng, _863:str, _864:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ88}
     _866 := mtime.minutes(_864);        # 85 _866:int := MTIMErule_extract_minutes(_864:zrule) 
     bat.insert(_858,_863,_866);         # 86 _867:bat[:str,:int] := BKCinsert_bun(_858:bat[:str,:int], _863:str, _866:int) {G}
-    redo (_862,_863,_864):= bat.hasMoreElements(rule_bat);# 87 (_862:lng, _863:str, _864:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ85}
+    redo (_862,_863,_864) := bat.hasMoreElements(rule_bat);# 87 (_862:lng, _863:str, _864:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ85}
 exit (_862,_863,_864);                  # 88 (_862:lng, _863:str, _864:zrule) 
     ta_a:bat[:str,:int]  := _858;       # 89 ta_a:bat[:str,:int] := _858:bat[:str,:int] {G}
     ua_a := bat.setColumn(ta_a,"minutes");# 90 ua_a:void := BKCsetColumn(ta_a:bat[:str,:int], _107:str) 
@@ -677,97 +677,97 @@ exit (_862,_863,_864);                  # 88 (_862:lng, _863:str, _864:zrule)
     bat.setColumn(rule_bat,"rule");     # 94 _113:void := BKCsetColumn(rule_bat:bat[:str,:zrule], _91:str) 
 #io.print(rule_bat.bat.setColumn("rule"), 
     _871 := bat.new(nil:str,nil:date);  # 96 _871:bat[:str,:date] := CMDBATnew(_859:str, _872:date) {G}
-barrier (_874,_875,_876):= bat.newIterator(rule_bat);# 97 (_874:lng, _875:str, _876:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ101}
+barrier (_874,_875,_876) := bat.newIterator(rule_bat);# 97 (_874:lng, _875:str, _876:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ101}
     _878 := mtime.compute(_876,2001);   # 98 _878:date := MTIMEcompute_rule_foryear(_876:zrule, _117:int) 
     bat.insert(_871,_875,_878);         # 99 _879:bat[:str,:date] := BKCinsert_bun(_871:bat[:str,:date], _875:str, _878:date) {G}
-    redo (_874,_875,_876):= bat.hasMoreElements(rule_bat);#100 (_874:lng, _875:str, _876:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ98}
+    redo (_874,_875,_876) := bat.hasMoreElements(rule_bat);#100 (_874:lng, _875:str, _876:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ98}
 exit (_874,_875,_876);                  #101 (_874:lng, _875:str, _876:zrule) 
     xa_a:bat[:str,:date]  := _871;      #102 xa_a:bat[:str,:date] := _871:bat[:str,:date] {G}
     ya_a := bat.setColumn(xa_a,"2001"); #103 ya_a:void := BKCsetColumn(xa_a:bat[:str,:date], _119:str) 
 #      [compute](rule_bat, 2001).bat.setColumn("2001"), 
     _883 := bat.new(nil:str,nil:date);  #105 _883:bat[:str,:date] := CMDBATnew(_859:str, _872:date) {G}
-barrier (_885,_886,_887):= bat.newIterator(rule_bat);#106 (_885:lng, _886:str, _887:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ110}
+barrier (_885,_886,_887) := bat.newIterator(rule_bat);#106 (_885:lng, _886:str, _887:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ110}
     _889 := mtime.compute(_887,2001);   #107 _889:date := MTIMEcompute_rule_foryear(_887:zrule, _117:int) 
     bat.insert(_883,_886,_889);         #108 _890:bat[:str,:date] := BKCinsert_bun(_883:bat[:str,:date], _886:str, _889:date) {G}
-    redo (_885,_886,_887):= bat.hasMoreElements(rule_bat);#109 (_885:lng, _886:str, _887:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ107}
+    redo (_885,_886,_887) := bat.hasMoreElements(rule_bat);#109 (_885:lng, _886:str, _887:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ107}
 exit (_885,_886,_887);                  #110 (_885:lng, _886:str, _887:zrule) 
     ab_a:bat[:str,:date]  := _883;      #111 ab_a:bat[:str,:date] := _883:bat[:str,:date] {G}
     _894 := bat.new(nil:str,nil:int);   #112 _894:bat[:str,:int] := CMDBATnew(_895:str, _896:int) {G}
-barrier (_898,_899,_900):= bat.newIterator(ab_a);#113 (_898:lng, _899:str, _900:date) := CHPbunIterator(ab_a:bat[:str,:date]) {GJ117}
+barrier (_898,_899,_900) := bat.newIterator(ab_a);#113 (_898:lng, _899:str, _900:date) := CHPbunIterator(ab_a:bat[:str,:date]) {GJ117}
     _902 := mtime.dayofweek(_900);      #114 _902:int := MTIMEdate_extract_dayofweek(_900:date) 
     bat.insert(_894,_899,_902);         #115 _903:bat[:str,:int] := BKCinsert_bun(_894:bat[:str,:int], _899:str, _902:int) {G}
-    redo (_898,_899,_900):= bat.hasMoreElements(ab_a);#116 (_898:lng, _899:str, _900:date) := CHPbunHasMoreElements(ab_a:bat[:str,:date]) {GJ114}
+    redo (_898,_899,_900) := bat.hasMoreElements(ab_a);#116 (_898:lng, _899:str, _900:date) := CHPbunHasMoreElements(ab_a:bat[:str,:date]) {GJ114}
 exit (_898,_899,_900);                  #117 (_898:lng, _899:str, _900:date) 
     bb_a:bat[:str,:int]  := _894;       #118 bb_a:bat[:str,:int] := _894:bat[:str,:int] {G}
     _907 := bat.new(nil:str,nil:str);   #119 _907:bat[:str,:str] := CMDBATnew(_895:str, _895:str) {G}
-barrier (_909,_910,_911):= bat.newIterator(bb_a);#120 (_909:lng, _910:str, _911:int) := CHPbunIterator(bb_a:bat[:str,:int]) {GJ124}
+barrier (_909,_910,_911) := bat.newIterator(bb_a);#120 (_909:lng, _910:str, _911:int) := CHPbunIterator(bb_a:bat[:str,:int]) {GJ124}
     _913 := mtime.dayname(_911);        #121 _913:str := MTIMEday_to_str(_911:int) {G}
     bat.insert(_907,_910,_913);         #122 _914:bat[:str,:str] := BKCinsert_bun(_907:bat[:str,:str], _910:str, _913:str) {G}
-    redo (_909,_910,_911):= bat.hasMoreElements(bb_a);#123 (_909:lng, _910:str, _911:int) := CHPbunHasMoreElements(bb_a:bat[:str,:int]) {GJ121}
+    redo (_909,_910,_911) := bat.hasMoreElements(bb_a);#123 (_909:lng, _910:str, _911:int) := CHPbunHasMoreElements(bb_a:bat[:str,:int]) {GJ121}
 exit (_909,_910,_911);                  #124 (_909:lng, _910:str, _911:int) 
     cb_a:bat[:str,:str]  := _907;       #125 cb_a:bat[:str,:str] := _907:bat[:str,:str] {G}
     bat.setColumn(cb_a,"2001");         #126 _126:void := BKCsetColumn(cb_a:bat[:str,:str], _119:str) 
 #      [dayname]([dayofweek]([compute](rule_bat, 2001))).bat.setColumn("2001"), 
     _918 := bat.new(nil:str,nil:date);  #128 _918:bat[:str,:date] := CMDBATnew(_895:str, _919:date) {G}
-barrier (_921,_922,_923):= bat.newIterator(rule_bat);#129 (_921:lng, _922:str, _923:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ133}
+barrier (_921,_922,_923) := bat.newIterator(rule_bat);#129 (_921:lng, _922:str, _923:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ133}
     _925 := mtime.compute(_923,1999);   #130 _925:date := MTIMEcompute_rule_foryear(_923:zrule, _130:int) 
     bat.insert(_918,_922,_925);         #131 _926:bat[:str,:date] := BKCinsert_bun(_918:bat[:str,:date], _922:str, _925:date) {G}
-    redo (_921,_922,_923):= bat.hasMoreElements(rule_bat);#132 (_921:lng, _922:str, _923:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ130}
+    redo (_921,_922,_923) := bat.hasMoreElements(rule_bat);#132 (_921:lng, _922:str, _923:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ130}
 exit (_921,_922,_923);                  #133 (_921:lng, _922:str, _923:zrule) 
     eb_a:bat[:str,:date]  := _918;      #134 eb_a:bat[:str,:date] := _918:bat[:str,:date] {G}
     bat.setColumn(eb_a,"1999");         #135 _131:void := BKCsetColumn(eb_a:bat[:str,:date], _132:str) 
 #      [compute](rule_bat, 1999).bat.setColumn("1999"), 
     _930 := bat.new(nil:str,nil:date);  #137 _930:bat[:str,:date] := CMDBATnew(_931:str, _919:date) {G}
-barrier (_933,_934,_935):= bat.newIterator(rule_bat);#138 (_933:lng, _934:str, _935:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ142}
+barrier (_933,_934,_935) := bat.newIterator(rule_bat);#138 (_933:lng, _934:str, _935:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ142}
     _937 := mtime.compute(_935,1999);   #139 _937:date := MTIMEcompute_rule_foryear(_935:zrule, _130:int) 
     bat.insert(_930,_934,_937);         #140 _938:bat[:str,:date] := BKCinsert_bun(_930:bat[:str,:date], _934:str, _937:date) {G}
-    redo (_933,_934,_935):= bat.hasMoreElements(rule_bat);#141 (_933:lng, _934:str, _935:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ139}
+    redo (_933,_934,_935) := bat.hasMoreElements(rule_bat);#141 (_933:lng, _934:str, _935:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ139}
 exit (_933,_934,_935);                  #142 (_933:lng, _934:str, _935:zrule) 
     gb_a:bat[:str,:date]  := _930;      #143 gb_a:bat[:str,:date] := _930:bat[:str,:date] {G}
     _942 := bat.new(nil:str,nil:int);   #144 _942:bat[:str,:int] := CMDBATnew(_931:str, _943:int) {G}
-barrier (_945,_946,_947):= bat.newIterator(gb_a);#145 (_945:lng, _946:str, _947:date) := CHPbunIterator(gb_a:bat[:str,:date]) {GJ149}
+barrier (_945,_946,_947) := bat.newIterator(gb_a);#145 (_945:lng, _946:str, _947:date) := CHPbunIterator(gb_a:bat[:str,:date]) {GJ149}
     _949 := mtime.dayofweek(_947);      #146 _949:int := MTIMEdate_extract_dayofweek(_947:date) 
     bat.insert(_942,_946,_949);         #147 _950:bat[:str,:int] := BKCinsert_bun(_942:bat[:str,:int], _946:str, _949:int) {G}
-    redo (_945,_946,_947):= bat.hasMoreElements(gb_a);#148 (_945:lng, _946:str, _947:date) := CHPbunHasMoreElements(gb_a:bat[:str,:date]) {GJ146}
+    redo (_945,_946,_947) := bat.hasMoreElements(gb_a);#148 (_945:lng, _946:str, _947:date) := CHPbunHasMoreElements(gb_a:bat[:str,:date]) {GJ146}
 exit (_945,_946,_947);                  #149 (_945:lng, _946:str, _947:date) 
     hb_a:bat[:str,:int]  := _942;       #150 hb_a:bat[:str,:int] := _942:bat[:str,:int] {G}
     _954 := bat.new(nil:str,nil:str);   #151 _954:bat[:str,:str] := CMDBATnew(_931:str, _931:str) {G}
-barrier (_956,_957,_958):= bat.newIterator(hb_a);#152 (_956:lng, _957:str, _958:int) := CHPbunIterator(hb_a:bat[:str,:int]) {GJ156}
+barrier (_956,_957,_958) := bat.newIterator(hb_a);#152 (_956:lng, _957:str, _958:int) := CHPbunIterator(hb_a:bat[:str,:int]) {GJ156}
     _960 := mtime.dayname(_958);        #153 _960:str := MTIMEday_to_str(_958:int) {G}
     bat.insert(_954,_957,_960);         #154 _961:bat[:str,:str] := BKCinsert_bun(_954:bat[:str,:str], _957:str, _960:str) {G}
-    redo (_956,_957,_958):= bat.hasMoreElements(hb_a);#155 (_956:lng, _957:str, _958:int) := CHPbunHasMoreElements(hb_a:bat[:str,:int]) {GJ153}
+    redo (_956,_957,_958) := bat.hasMoreElements(hb_a);#155 (_956:lng, _957:str, _958:int) := CHPbunHasMoreElements(hb_a:bat[:str,:int]) {GJ153}
 exit (_956,_957,_958);                  #156 (_956:lng, _957:str, _958:int) 
     ib_a:bat[:str,:str]  := _954;       #157 ib_a:bat[:str,:str] := _954:bat[:str,:str] {G}
     bat.setColumn(ib_a,"1999");         #158 _137:void := BKCsetColumn(ib_a:bat[:str,:str], _132:str) 
 #      [dayname]([dayofweek]([compute](rule_bat, 1999))).bat.setColumn("1999"), 
     _965 := bat.new(nil:str,nil:date);  #160 _965:bat[:str,:date] := CMDBATnew(_966:str, _967:date) {G}
-barrier (_969,_970,_971):= bat.newIterator(rule_bat);#161 (_969:lng, _970:str, _971:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ165}
+barrier (_969,_970,_971) := bat.newIterator(rule_bat);#161 (_969:lng, _970:str, _971:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ165}
     _973 := mtime.compute(_971,1992);   #162 _973:date := MTIMEcompute_rule_foryear(_971:zrule, _140:int) 
     bat.insert(_965,_970,_973);         #163 _974:bat[:str,:date] := BKCinsert_bun(_965:bat[:str,:date], _970:str, _973:date) {G}
-    redo (_969,_970,_971):= bat.hasMoreElements(rule_bat);#164 (_969:lng, _970:str, _971:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ162}
+    redo (_969,_970,_971) := bat.hasMoreElements(rule_bat);#164 (_969:lng, _970:str, _971:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ162}
 exit (_969,_970,_971);                  #165 (_969:lng, _970:str, _971:zrule) 
     kb_a:bat[:str,:date]  := _965;      #166 kb_a:bat[:str,:date] := _965:bat[:str,:date] {G}
     bat.setColumn(kb_a,"1992");         #167 _141:void := BKCsetColumn(kb_a:bat[:str,:date], _142:str) 
 #      [compute](rule_bat, 1992).bat.setColumn("1992"), 
     _978 := bat.new(nil:str,nil:date);  #169 _978:bat[:str,:date] := CMDBATnew(_966:str, _967:date) {G}
-barrier (_980,_981,_982):= bat.newIterator(rule_bat);#170 (_980:lng, _981:str, _982:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ174}
+barrier (_980,_981,_982) := bat.newIterator(rule_bat);#170 (_980:lng, _981:str, _982:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ174}
     _984 := mtime.compute(_982,1992);   #171 _984:date := MTIMEcompute_rule_foryear(_982:zrule, _140:int) 
     bat.insert(_978,_981,_984);         #172 _985:bat[:str,:date] := BKCinsert_bun(_978:bat[:str,:date], _981:str, _984:date) {G}
-    redo (_980,_981,_982):= bat.hasMoreElements(rule_bat);#173 (_980:lng, _981:str, _982:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ171}
+    redo (_980,_981,_982) := bat.hasMoreElements(rule_bat);#173 (_980:lng, _981:str, _982:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ171}
 exit (_980,_981,_982);                  #174 (_980:lng, _981:str, _982:zrule) 
     mb_a:bat[:str,:date]  := _978;      #175 mb_a:bat[:str,:date] := _978:bat[:str,:date] {G}
     _989 := bat.new(nil:str,nil:int);   #176 _989:bat[:str,:int] := CMDBATnew(_966:str, _990:int) {G}
-barrier (_992,_993,_994):= bat.newIterator(mb_a);#177 (_992:lng, _993:str, _994:date) := CHPbunIterator(mb_a:bat[:str,:date]) {GJ181}
+barrier (_992,_993,_994) := bat.newIterator(mb_a);#177 (_992:lng, _993:str, _994:date) := CHPbunIterator(mb_a:bat[:str,:date]) {GJ181}
     _996 := mtime.dayofweek(_994);      #178 _996:int := MTIMEdate_extract_dayofweek(_994:date) 
     bat.insert(_989,_993,_996);         #179 _997:bat[:str,:int] := BKCinsert_bun(_989:bat[:str,:int], _993:str, _996:int) {G}
-    redo (_992,_993,_994):= bat.hasMoreElements(mb_a);#180 (_992:lng, _993:str, _994:date) := CHPbunHasMoreElements(mb_a:bat[:str,:date]) {GJ178}
+    redo (_992,_993,_994) := bat.hasMoreElements(mb_a);#180 (_992:lng, _993:str, _994:date) := CHPbunHasMoreElements(mb_a:bat[:str,:date]) {GJ178}
 exit (_992,_993,_994);                  #181 (_992:lng, _993:str, _994:date) 
     nb_a:bat[:str,:int]  := _989;       #182 nb_a:bat[:str,:int] := _989:bat[:str,:int] {G}
     _1001 := bat.new(nil:str,nil:str);  #183 _1001:bat[:str,:str] := CMDBATnew(_1002:str, _1002:str) {G}
-barrier (_1004,_1005,_1006):= bat.newIterator(nb_a);#184 (_1004:lng, _1005:str, _1006:int) := CHPbunIterator(nb_a:bat[:str,:int]) {GJ188}
+barrier (_1004,_1005,_1006) := bat.newIterator(nb_a);#184 (_1004:lng, _1005:str, _1006:int) := CHPbunIterator(nb_a:bat[:str,:int]) {GJ188}
     _1008 := mtime.dayname(_1006);      #185 _1008:str := MTIMEday_to_str(_1006:int) {G}
     bat.insert(_1001,_1005,_1008);      #186 _1009:bat[:str,:str] := BKCinsert_bun(_1001:bat[:str,:str], _1005:str, _1008:str) {G}
-    redo (_1004,_1005,_1006):= bat.hasMoreElements(nb_a);#187 (_1004:lng, _1005:str, _1006:int) := CHPbunHasMoreElements(nb_a:bat[:str,:int]) {GJ185}
+    redo (_1004,_1005,_1006) := bat.hasMoreElements(nb_a);#187 (_1004:lng, _1005:str, _1006:int) := CHPbunHasMoreElements(nb_a:bat[:str,:int]) {GJ185}
 exit (_1004,_1005,_1006);               #188 (_1004:lng, _1005:str, _1006:int) 
     ob_a:bat[:str,:str]  := _1001;      #189 ob_a:bat[:str,:str] := _1001:bat[:str,:str] {G}
     bat.setColumn(ob_a,"1992");         #190 _147:void := BKCsetColumn(ob_a:bat[:str,:str], _142:str) 
@@ -777,97 +777,97 @@ exit (_1004,_1005,_1006);               #188 (_1004:lng, _1005:str, _1006:int)
     rb_a := bat.setColumn(rule_bat,"rule");#194 rb_a:void := BKCsetColumn(rule_bat:bat[:str,:zrule], _153:str) 
 #io.print(rule_bat.bat.setColumn("rule"), 
     _1013 := bat.new(nil:str,nil:date); #196 _1013:bat[:str,:date] := CMDBATnew(_1002:str, _1014:date) {G}
-barrier (_1016,_1017,_1018):= bat.newIterator(rule_bat);#197 (_1016:lng, _1017:str, _1018:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ201}
+barrier (_1016,_1017,_1018) := bat.newIterator(rule_bat);#197 (_1016:lng, _1017:str, _1018:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ201}
     _1020 := mtime.compute(_1018,1572); #198 _1020:date := MTIMEcompute_rule_foryear(_1018:zrule, _157:int) 
     bat.insert(_1013,_1017,_1020);      #199 _1021:bat[:str,:date] := BKCinsert_bun(_1013:bat[:str,:date], _1017:str, _1020:date) {G}
-    redo (_1016,_1017,_1018):= bat.hasMoreElements(rule_bat);#200 (_1016:lng, _1017:str, _1018:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ198}
+    redo (_1016,_1017,_1018) := bat.hasMoreElements(rule_bat);#200 (_1016:lng, _1017:str, _1018:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ198}
 exit (_1016,_1017,_1018);               #201 (_1016:lng, _1017:str, _1018:zrule) 
     sb_a:bat[:str,:date]  := _1013;     #202 sb_a:bat[:str,:date] := _1013:bat[:str,:date] {G}
     tb_a := bat.setColumn(sb_a,"1572"); #203 tb_a:void := BKCsetColumn(sb_a:bat[:str,:date], _159:str) 
 #      [compute](rule_bat, 1572).bat.setColumn("1572"), 
     _1025 := bat.new(nil:str,nil:date); #205 _1025:bat[:str,:date] := CMDBATnew(_1002:str, _1014:date) {G}
-barrier (_1027,_1028,_1029):= bat.newIterator(rule_bat);#206 (_1027:lng, _1028:str, _1029:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ210}
+barrier (_1027,_1028,_1029) := bat.newIterator(rule_bat);#206 (_1027:lng, _1028:str, _1029:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ210}
     _1031 := mtime.compute(_1029,1572); #207 _1031:date := MTIMEcompute_rule_foryear(_1029:zrule, _157:int) 
     bat.insert(_1025,_1028,_1031);      #208 _1032:bat[:str,:date] := BKCinsert_bun(_1025:bat[:str,:date], _1028:str, _1031:date) {G}
-    redo (_1027,_1028,_1029):= bat.hasMoreElements(rule_bat);#209 (_1027:lng, _1028:str, _1029:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ207}
+    redo (_1027,_1028,_1029) := bat.hasMoreElements(rule_bat);#209 (_1027:lng, _1028:str, _1029:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ207}
 exit (_1027,_1028,_1029);               #210 (_1027:lng, _1028:str, _1029:zrule) 
     ub_a:bat[:str,:date]  := _1025;     #211 ub_a:bat[:str,:date] := _1025:bat[:str,:date] {G}
     _1036 := bat.new(nil:str,nil:int);  #212 _1036:bat[:str,:int] := CMDBATnew(_1037:str, _1038:int) {G}
-barrier (_1040,_1041,_1042):= bat.newIterator(ub_a);#213 (_1040:lng, _1041:str, _1042:date) := CHPbunIterator(ub_a:bat[:str,:date]) {GJ217}
+barrier (_1040,_1041,_1042) := bat.newIterator(ub_a);#213 (_1040:lng, _1041:str, _1042:date) := CHPbunIterator(ub_a:bat[:str,:date]) {GJ217}
     _1044 := mtime.dayofweek(_1042);    #214 _1044:int := MTIMEdate_extract_dayofweek(_1042:date) 
     bat.insert(_1036,_1041,_1044);      #215 _1045:bat[:str,:int] := BKCinsert_bun(_1036:bat[:str,:int], _1041:str, _1044:int) {G}
-    redo (_1040,_1041,_1042):= bat.hasMoreElements(ub_a);#216 (_1040:lng, _1041:str, _1042:date) := CHPbunHasMoreElements(ub_a:bat[:str,:date]) {GJ214}
+    redo (_1040,_1041,_1042) := bat.hasMoreElements(ub_a);#216 (_1040:lng, _1041:str, _1042:date) := CHPbunHasMoreElements(ub_a:bat[:str,:date]) {GJ214}
 exit (_1040,_1041,_1042);               #217 (_1040:lng, _1041:str, _1042:date) 
     vb_a:bat[:str,:int]  := _1036;      #218 vb_a:bat[:str,:int] := _1036:bat[:str,:int] {G}
     _1049 := bat.new(nil:str,nil:str);  #219 _1049:bat[:str,:str] := CMDBATnew(_1037:str, _1037:str) {G}
-barrier (_1051,_1052,_1053):= bat.newIterator(vb_a);#220 (_1051:lng, _1052:str, _1053:int) := CHPbunIterator(vb_a:bat[:str,:int]) {GJ224}
+barrier (_1051,_1052,_1053) := bat.newIterator(vb_a);#220 (_1051:lng, _1052:str, _1053:int) := CHPbunIterator(vb_a:bat[:str,:int]) {GJ224}
     _1055 := mtime.dayname(_1053);      #221 _1055:str := MTIMEday_to_str(_1053:int) {G}
     bat.insert(_1049,_1052,_1055);      #222 _1056:bat[:str,:str] := BKCinsert_bun(_1049:bat[:str,:str], _1052:str, _1055:str) {G}
-    redo (_1051,_1052,_1053):= bat.hasMoreElements(vb_a);#223 (_1051:lng, _1052:str, _1053:int) := CHPbunHasMoreElements(vb_a:bat[:str,:int]) {GJ221}
+    redo (_1051,_1052,_1053) := bat.hasMoreElements(vb_a);#223 (_1051:lng, _1052:str, _1053:int) := CHPbunHasMoreElements(vb_a:bat[:str,:int]) {GJ221}
 exit (_1051,_1052,_1053);               #224 (_1051:lng, _1052:str, _1053:int) 
     wb_a:bat[:str,:str]  := _1049;      #225 wb_a:bat[:str,:str] := _1049:bat[:str,:str] {G}
     xb_a := bat.setColumn(wb_a,"1572"); #226 xb_a:void := BKCsetColumn(wb_a:bat[:str,:str], _159:str) 
 #      [dayname]([dayofweek]([compute](rule_bat, 1572))).bat.setColumn("1572"), 
     _1060 := bat.new(nil:str,nil:date); #228 _1060:bat[:str,:date] := CMDBATnew(_1037:str, _1061:date) {G}
-barrier (_1063,_1064,_1065):= bat.newIterator(rule_bat);#229 (_1063:lng, _1064:str, _1065:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ233}
+barrier (_1063,_1064,_1065) := bat.newIterator(rule_bat);#229 (_1063:lng, _1064:str, _1065:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ233}
     _1067 := mtime.compute(_1065,1);    #230 _1067:date := MTIMEcompute_rule_foryear(_1065:zrule, _170:int) 
     bat.insert(_1060,_1064,_1067);      #231 _1068:bat[:str,:date] := BKCinsert_bun(_1060:bat[:str,:date], _1064:str, _1067:date) {G}
-    redo (_1063,_1064,_1065):= bat.hasMoreElements(rule_bat);#232 (_1063:lng, _1064:str, _1065:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ230}
+    redo (_1063,_1064,_1065) := bat.hasMoreElements(rule_bat);#232 (_1063:lng, _1064:str, _1065:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ230}
 exit (_1063,_1064,_1065);               #233 (_1063:lng, _1064:str, _1065:zrule) 
     yb_a:bat[:str,:date]  := _1060;     #234 yb_a:bat[:str,:date] := _1060:bat[:str,:date] {G}
     ac_a := bat.setColumn(yb_a,"1");    #235 ac_a:void := BKCsetColumn(yb_a:bat[:str,:date], _172:str) 
 #      [compute](rule_bat, 1).bat.setColumn("1"), 
     _1072 := bat.new(nil:str,nil:date); #237 _1072:bat[:str,:date] := CMDBATnew(_1073:str, _1061:date) {G}
-barrier (_1075,_1076,_1077):= bat.newIterator(rule_bat);#238 (_1075:lng, _1076:str, _1077:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ242}
+barrier (_1075,_1076,_1077) := bat.newIterator(rule_bat);#238 (_1075:lng, _1076:str, _1077:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ242}
     _1079 := mtime.compute(_1077,1);    #239 _1079:date := MTIMEcompute_rule_foryear(_1077:zrule, _170:int) 
     bat.insert(_1072,_1076,_1079);      #240 _1080:bat[:str,:date] := BKCinsert_bun(_1072:bat[:str,:date], _1076:str, _1079:date) {G}
-    redo (_1075,_1076,_1077):= bat.hasMoreElements(rule_bat);#241 (_1075:lng, _1076:str, _1077:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ239}
+    redo (_1075,_1076,_1077) := bat.hasMoreElements(rule_bat);#241 (_1075:lng, _1076:str, _1077:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ239}
 exit (_1075,_1076,_1077);               #242 (_1075:lng, _1076:str, _1077:zrule) 
     bc_a:bat[:str,:date]  := _1072;     #243 bc_a:bat[:str,:date] := _1072:bat[:str,:date] {G}
     _1084 := bat.new(nil:str,nil:int);  #244 _1084:bat[:str,:int] := CMDBATnew(_1073:str, _1085:int) {G}
-barrier (_1087,_1088,_1089):= bat.newIterator(bc_a);#245 (_1087:lng, _1088:str, _1089:date) := CHPbunIterator(bc_a:bat[:str,:date]) {GJ249}
+barrier (_1087,_1088,_1089) := bat.newIterator(bc_a);#245 (_1087:lng, _1088:str, _1089:date) := CHPbunIterator(bc_a:bat[:str,:date]) {GJ249}
     _1091 := mtime.dayofweek(_1089);    #246 _1091:int := MTIMEdate_extract_dayofweek(_1089:date) 
     bat.insert(_1084,_1088,_1091);      #247 _1092:bat[:str,:int] := BKCinsert_bun(_1084:bat[:str,:int], _1088:str, _1091:int) {G}
-    redo (_1087,_1088,_1089):= bat.hasMoreElements(bc_a);#248 (_1087:lng, _1088:str, _1089:date) := CHPbunHasMoreElements(bc_a:bat[:str,:date]) {GJ246}
+    redo (_1087,_1088,_1089) := bat.hasMoreElements(bc_a);#248 (_1087:lng, _1088:str, _1089:date) := CHPbunHasMoreElements(bc_a:bat[:str,:date]) {GJ246}
 exit (_1087,_1088,_1089);               #249 (_1087:lng, _1088:str, _1089:date) 
     cc_a:bat[:str,:int]  := _1084;      #250 cc_a:bat[:str,:int] := _1084:bat[:str,:int] {G}
     _1096 := bat.new(nil:str,nil:str);  #251 _1096:bat[:str,:str] := CMDBATnew(_1073:str, _1073:str) {G}
-barrier (_1098,_1099,_1100):= bat.newIterator(cc_a);#252 (_1098:lng, _1099:str, _1100:int) := CHPbunIterator(cc_a:bat[:str,:int]) {GJ256}
+barrier (_1098,_1099,_1100) := bat.newIterator(cc_a);#252 (_1098:lng, _1099:str, _1100:int) := CHPbunIterator(cc_a:bat[:str,:int]) {GJ256}
     _1102 := mtime.dayname(_1100);      #253 _1102:str := MTIMEday_to_str(_1100:int) {G}
     bat.insert(_1096,_1099,_1102);      #254 _1103:bat[:str,:str] := BKCinsert_bun(_1096:bat[:str,:str], _1099:str, _1102:str) {G}
-    redo (_1098,_1099,_1100):= bat.hasMoreElements(cc_a);#255 (_1098:lng, _1099:str, _1100:int) := CHPbunHasMoreElements(cc_a:bat[:str,:int]) {GJ253}
+    redo (_1098,_1099,_1100) := bat.hasMoreElements(cc_a);#255 (_1098:lng, _1099:str, _1100:int) := CHPbunHasMoreElements(cc_a:bat[:str,:int]) {GJ253}
 exit (_1098,_1099,_1100);               #256 (_1098:lng, _1099:str, _1100:int) 
     dc_a:bat[:str,:str]  := _1096;      #257 dc_a:bat[:str,:str] := _1096:bat[:str,:str] {G}
     ec_a := bat.setColumn(dc_a,"1");    #258 ec_a:void := BKCsetColumn(dc_a:bat[:str,:str], _172:str) 
 #      [dayname]([dayofweek]([compute](rule_bat, 1))).bat.setColumn("1"), 
     _1107 := bat.new(nil:str,nil:date); #260 _1107:bat[:str,:date] := CMDBATnew(_1108:str, _1109:date) {G}
-barrier (_1111,_1112,_1113):= bat.newIterator(rule_bat);#261 (_1111:lng, _1112:str, _1113:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ265}
+barrier (_1111,_1112,_1113) := bat.newIterator(rule_bat);#261 (_1111:lng, _1112:str, _1113:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ265}
     _1115 := mtime.compute(_1113,-2000);#262 _1115:date := MTIMEcompute_rule_foryear(_1113:zrule, _180:int) 
     bat.insert(_1107,_1112,_1115);      #263 _1116:bat[:str,:date] := BKCinsert_bun(_1107:bat[:str,:date], _1112:str, _1115:date) {G}
-    redo (_1111,_1112,_1113):= bat.hasMoreElements(rule_bat);#264 (_1111:lng, _1112:str, _1113:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ262}
+    redo (_1111,_1112,_1113) := bat.hasMoreElements(rule_bat);#264 (_1111:lng, _1112:str, _1113:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ262}
 exit (_1111,_1112,_1113);               #265 (_1111:lng, _1112:str, _1113:zrule) 
     fc_a:bat[:str,:date]  := _1107;     #266 fc_a:bat[:str,:date] := _1107:bat[:str,:date] {G}
     gc_a := bat.setColumn(fc_a,"-2000");#267 gc_a:void := BKCsetColumn(fc_a:bat[:str,:date], _182:str) 
 #      [compute](rule_bat, -2000).bat.setColumn("-2000"), 
     _1120 := bat.new(nil:str,nil:date); #269 _1120:bat[:str,:date] := CMDBATnew(_1108:str, _1109:date) {G}
-barrier (_1122,_1123,_1124):= bat.newIterator(rule_bat);#270 (_1122:lng, _1123:str, _1124:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ274}
+barrier (_1122,_1123,_1124) := bat.newIterator(rule_bat);#270 (_1122:lng, _1123:str, _1124:zrule) := CHPbunIterator(rule_bat:bat[:str,:zrule]) {GJ274}
     _1126 := mtime.compute(_1124,-2000);#271 _1126:date := MTIMEcompute_rule_foryear(_1124:zrule, _180:int) 
     bat.insert(_1120,_1123,_1126);      #272 _1127:bat[:str,:date] := BKCinsert_bun(_1120:bat[:str,:date], _1123:str, _1126:date) {G}
-    redo (_1122,_1123,_1124):= bat.hasMoreElements(rule_bat);#273 (_1122:lng, _1123:str, _1124:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ271}
+    redo (_1122,_1123,_1124) := bat.hasMoreElements(rule_bat);#273 (_1122:lng, _1123:str, _1124:zrule) := CHPbunHasMoreElements(rule_bat:bat[:str,:zrule]) {GJ271}
 exit (_1122,_1123,_1124);               #274 (_1122:lng, _1123:str, _1124:zrule) 
     hc_a:bat[:str,:date]  := _1120;     #275 hc_a:bat[:str,:date] := _1120:bat[:str,:date] {G}
     _1131 := bat.new(nil:str,nil:int);  #276 _1131:bat[:str,:int] := CMDBATnew(_1108:str, _1132:int) {G}
-barrier (_1134,_1135,_1136):= bat.newIterator(hc_a);#277 (_1134:lng, _1135:str, _1136:date) := CHPbunIterator(hc_a:bat[:str,:date]) {GJ281}
+barrier (_1134,_1135,_1136) := bat.newIterator(hc_a);#277 (_1134:lng, _1135:str, _1136:date) := CHPbunIterator(hc_a:bat[:str,:date]) {GJ281}
     _1138 := mtime.dayofweek(_1136);    #278 _1138:int := MTIMEdate_extract_dayofweek(_1136:date) 
     bat.insert(_1131,_1135,_1138);      #279 _1139:bat[:str,:int] := BKCinsert_bun(_1131:bat[:str,:int], _1135:str, _1138:int) {G}
-    redo (_1134,_1135,_1136):= bat.hasMoreElements(hc_a);#280 (_1134:lng, _1135:str, _1136:date) := CHPbunHasMoreElements(hc_a:bat[:str,:date]) {GJ278}
+    redo (_1134,_1135,_1136) := bat.hasMoreElements(hc_a);#280 (_1134:lng, _1135:str, _1136:date) := CHPbunHasMoreElements(hc_a:bat[:str,:date]) {GJ278}
 exit (_1134,_1135,_1136);               #281 (_1134:lng, _1135:str, _1136:date) 
     ic_a:bat[:str,:int]  := _1131;      #282 ic_a:bat[:str,:int] := _1131:bat[:str,:int] {G}
     _1143 := bat.new(nil:str,nil:str);  #283 _1143:bat[:str,:str] := CMDBATnew(_1144:str, _1144:str) {G}
-barrier (_1146,_1147,_1148):= bat.newIterator(ic_a);#284 (_1146:lng, _1147:str, _1148:int) := CHPbunIterator(ic_a:bat[:str,:int]) {GJ288}
+barrier (_1146,_1147,_1148) := bat.newIterator(ic_a);#284 (_1146:lng, _1147:str, _1148:int) := CHPbunIterator(ic_a:bat[:str,:int]) {GJ288}
     _1150 := mtime.dayname(_1148);      #285 _1150:str := MTIMEday_to_str(_1148:int) {G}
     bat.insert(_1143,_1147,_1150);      #286 _1151:bat[:str,:str] := BKCinsert_bun(_1143:bat[:str,:str], _1147:str, _1150:str) {G}
-    redo (_1146,_1147,_1148):= bat.hasMoreElements(ic_a);#287 (_1146:lng, _1147:str, _1148:int) := CHPbunHasMoreElements(ic_a:bat[:str,:int]) {GJ285}
+    redo (_1146,_1147,_1148) := bat.hasMoreElements(ic_a);#287 (_1146:lng, _1147:str, _1148:int) := CHPbunHasMoreElements(ic_a:bat[:str,:int]) {GJ285}
 exit (_1146,_1147,_1148);               #288 (_1146:lng, _1147:str, _1148:int) 
     jc_a:bat[:str,:str]  := _1143;      #289 jc_a:bat[:str,:str] := _1143:bat[:str,:str] {G}
     kc_a := bat.setColumn(jc_a,"-2000");#290 kc_a:void := BKCsetColumn(jc_a:bat[:str,:str], _182:str) 
@@ -957,28 +957,28 @@ exit (_1146,_1147,_1148);               #288 (_1146:lng, _1147:str, _1148:int)
     io.print(tzone_bat);                #374 _309:void := IOprint_val(tzone_bat:bat[:oid,:timezone]) 
 #io.print(tzone_bat.bat.setColumn("tzone")); 
     _1155 := bat.new(nil:oid,nil:int);  #376 _1155:bat[:oid,:int] := CMDBATnew(_1156:oid, _1132:int) {G}
-barrier (_1158,_1159,_1160):= bat.newIterator(tzone_bat);#377 (_1158:lng, _1159:oid, _1160:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J381}
+barrier (_1158,_1159,_1160) := bat.newIterator(tzone_bat);#377 (_1158:lng, _1159:oid, _1160:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J381}
     _1162 := mtime.minutes(_1160);      #378 _1162:int := MTIMEtzone_extract_minutes(_1160:timezone) 
     bat.insert(_1155,_1159,_1162);      #379 _1163:bat[:oid,:int] := BKCinsert_bun(_1155:bat[:oid,:int], _1159:oid, _1162:int) {G}
-    redo (_1158,_1159,_1160):= bat.hasMoreElements(tzone_bat);#380 (_1158:lng, _1159:oid, _1160:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J378}
+    redo (_1158,_1159,_1160) := bat.hasMoreElements(tzone_bat);#380 (_1158:lng, _1159:oid, _1160:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J378}
 exit (_1158,_1159,_1160);               #381 (_1158:lng, _1159:oid, _1160:timezone) 
     kd_a:bat[:oid,:int]  := _1155;      #382 kd_a:bat[:oid,:int] := _1155:bat[:oid,:int] {G}
     bat.setColumn(kd_a,"minutes");      #383 _314:void := BKCsetColumn(kd_a:bat[:oid,:int], _313:str) 
 #io.print([minutes](tzone_bat).bat.setColumn("minutes"), 
     _1167 := bat.new(nil:oid,nil:zrule);#385 _1167:bat[:oid,:zrule] := CMDBATnew(_1156:oid, _1168:zrule) {G}
-barrier (_1170,_1171,_1172):= bat.newIterator(tzone_bat);#386 (_1170:lng, _1171:oid, _1172:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J390}
+barrier (_1170,_1171,_1172) := bat.newIterator(tzone_bat);#386 (_1170:lng, _1171:oid, _1172:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J390}
     _1174 := mtime.start_dst(_1172);    #387 _1174:zrule := MTIMEtzone_extract_start(_1172:timezone) 
     bat.insert(_1167,_1171,_1174);      #388 _1175:bat[:oid,:zrule] := BKCinsert_bun(_1167:bat[:oid,:zrule], _1171:oid, _1174:zrule) {G}
-    redo (_1170,_1171,_1172):= bat.hasMoreElements(tzone_bat);#389 (_1170:lng, _1171:oid, _1172:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J387}
+    redo (_1170,_1171,_1172) := bat.hasMoreElements(tzone_bat);#389 (_1170:lng, _1171:oid, _1172:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J387}
 exit (_1170,_1171,_1172);               #390 (_1170:lng, _1171:oid, _1172:timezone) 
     md_a:bat[:oid,:zrule]  := _1167;    #391 md_a:bat[:oid,:zrule] := _1167:bat[:oid,:zrule] {G}
     bat.setColumn(md_a,"start_dst");    #392 _318:void := BKCsetColumn(md_a:bat[:oid,:zrule], _317:str) 
 #      [start_dst](tzone_bat).bat.setColumn("start_dst"), 
     _1179 := bat.new(nil:oid,nil:zrule);#394 _1179:bat[:oid,:zrule] := CMDBATnew(_1156:oid, _1168:zrule) {G}
-barrier (_1181,_1182,_1183):= bat.newIterator(tzone_bat);#395 (_1181:lng, _1182:oid, _1183:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J399}
+barrier (_1181,_1182,_1183) := bat.newIterator(tzone_bat);#395 (_1181:lng, _1182:oid, _1183:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J399}
     _1185 := mtime.end_dst(_1183);      #396 _1185:zrule := MTIMEtzone_extract_end(_1183:timezone) 
     bat.insert(_1179,_1182,_1185);      #397 _1186:bat[:oid,:zrule] := BKCinsert_bun(_1179:bat[:oid,:zrule], _1182:oid, _1185:zrule) {G}
-    redo (_1181,_1182,_1183):= bat.hasMoreElements(tzone_bat);#398 (_1181:lng, _1182:oid, _1183:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J396}
+    redo (_1181,_1182,_1183) := bat.hasMoreElements(tzone_bat);#398 (_1181:lng, _1182:oid, _1183:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J396}
 exit (_1181,_1182,_1183);               #399 (_1181:lng, _1182:oid, _1183:timezone) 
     od_a:bat[:oid,:zrule]  := _1179;    #400 od_a:bat[:oid,:zrule] := _1179:bat[:oid,:zrule] {G}
     bat.setColumn(od_a,"end_dst");      #401 _322:void := BKCsetColumn(od_a:bat[:oid,:zrule], _321:str) 
@@ -1064,58 +1064,58 @@ exit (_1181,_1182,_1183);               #399 (_1181:lng, _1182:oid, _1183:timezo
     ne_a := bat.setColumn(date_bat,"date");#481 ne_a:void := BKCsetColumn(date_bat:bat[:oid,:date], _450:str) 
 #io.print(date_bat.bat.setColumn("date"), 
     _1190 := bat.new(nil:oid,nil:int);  #483 _1190:bat[:oid,:int] := CMDBATnew(_1191:oid, _1192:int) {G}
-barrier (_1194,_1195,_1196):= bat.newIterator(date_bat);#484 (_1194:lng, _1195:oid, _1196:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J488}
+barrier (_1194,_1195,_1196) := bat.newIterator(date_bat);#484 (_1194:lng, _1195:oid, _1196:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J488}
     _1198 := mtime.year(_1196);         #485 _1198:int := MTIMEdate_extract_year(_1196:date) 
     bat.insert(_1190,_1195,_1198);      #486 _1199:bat[:oid,:int] := BKCinsert_bun(_1190:bat[:oid,:int], _1195:oid, _1198:int) {G}
-    redo (_1194,_1195,_1196):= bat.hasMoreElements(date_bat);#487 (_1194:lng, _1195:oid, _1196:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J485}
+    redo (_1194,_1195,_1196) := bat.hasMoreElements(date_bat);#487 (_1194:lng, _1195:oid, _1196:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J485}
 exit (_1194,_1195,_1196);               #488 (_1194:lng, _1195:oid, _1196:date) 
     oe_a:bat[:oid,:int]  := _1190;      #489 oe_a:bat[:oid,:int] := _1190:bat[:oid,:int] {G}
     pe_a := bat.setColumn(oe_a,"year"); #490 pe_a:void := BKCsetColumn(oe_a:bat[:oid,:int], _454:str) 
 #      [year](date_bat).bat.setColumn("year"), 
     _1203 := bat.new(nil:oid,nil:int);  #492 _1203:bat[:oid,:int] := CMDBATnew(_1191:oid, _1192:int) {G}
-barrier (_1205,_1206,_1207):= bat.newIterator(date_bat);#493 (_1205:lng, _1206:oid, _1207:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J497}
+barrier (_1205,_1206,_1207) := bat.newIterator(date_bat);#493 (_1205:lng, _1206:oid, _1207:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J497}
     _1209 := mtime.day(_1207);          #494 _1209:int := MTIMEdate_extract_day(_1207:date) 
     bat.insert(_1203,_1206,_1209);      #495 _1210:bat[:oid,:int] := BKCinsert_bun(_1203:bat[:oid,:int], _1206:oid, _1209:int) {G}
-    redo (_1205,_1206,_1207):= bat.hasMoreElements(date_bat);#496 (_1205:lng, _1206:oid, _1207:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J494}
+    redo (_1205,_1206,_1207) := bat.hasMoreElements(date_bat);#496 (_1205:lng, _1206:oid, _1207:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J494}
 exit (_1205,_1206,_1207);               #497 (_1205:lng, _1206:oid, _1207:date) 
     qe_a:bat[:oid,:int]  := _1203;      #498 qe_a:bat[:oid,:int] := _1203:bat[:oid,:int] {G}
     re_a := bat.setColumn(qe_a,"day");  #499 re_a:void := BKCsetColumn(qe_a:bat[:oid,:int], _458:str) 
 #      [day](date_bat).bat.setColumn("day"), 
     _1214 := bat.new(nil:oid,nil:int);  #501 _1214:bat[:oid,:int] := CMDBATnew(_1191:oid, _1192:int) {G}
-barrier (_1216,_1217,_1218):= bat.newIterator(date_bat);#502 (_1216:lng, _1217:oid, _1218:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J506}
+barrier (_1216,_1217,_1218) := bat.newIterator(date_bat);#502 (_1216:lng, _1217:oid, _1218:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J506}
     _1220 := mtime.month(_1218);        #503 _1220:int := MTIMEdate_extract_month(_1218:date) 
     bat.insert(_1214,_1217,_1220);      #504 _1221:bat[:oid,:int] := BKCinsert_bun(_1214:bat[:oid,:int], _1217:oid, _1220:int) {G}
-    redo (_1216,_1217,_1218):= bat.hasMoreElements(date_bat);#505 (_1216:lng, _1217:oid, _1218:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J503}
+    redo (_1216,_1217,_1218) := bat.hasMoreElements(date_bat);#505 (_1216:lng, _1217:oid, _1218:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J503}
 exit (_1216,_1217,_1218);               #506 (_1216:lng, _1217:oid, _1218:date) 
     se_a:bat[:oid,:int]  := _1214;      #507 se_a:bat[:oid,:int] := _1214:bat[:oid,:int] {G}
     _1225 := bat.new(nil:oid,nil:str);  #508 _1225:bat[:oid,:str] := CMDBATnew(_1226:oid, _1227:str) {G}
-barrier (_1229,_1230,_1231):= bat.newIterator(se_a);#509 (_1229:lng, _1230:oid, _1231:int) := CHPbunIterator(se_a:bat[:oid,:int]) {J513}
+barrier (_1229,_1230,_1231) := bat.newIterator(se_a);#509 (_1229:lng, _1230:oid, _1231:int) := CHPbunIterator(se_a:bat[:oid,:int]) {J513}
     _1233 := mtime.monthname(_1231);    #510 _1233:str := MTIMEmonth_to_str(_1231:int) {G}
     bat.insert(_1225,_1230,_1233);      #511 _1234:bat[:oid,:str] := BKCinsert_bun(_1225:bat[:oid,:str], _1230:oid, _1233:str) {G}
-    redo (_1229,_1230,_1231):= bat.hasMoreElements(se_a);#512 (_1229:lng, _1230:oid, _1231:int) := CHPbunHasMoreElements(se_a:bat[:oid,:int]) {J510}
+    redo (_1229,_1230,_1231) := bat.hasMoreElements(se_a);#512 (_1229:lng, _1230:oid, _1231:int) := CHPbunHasMoreElements(se_a:bat[:oid,:int]) {J510}
 exit (_1229,_1230,_1231);               #513 (_1229:lng, _1230:oid, _1231:int) 
     te_a:bat[:oid,:str]  := _1225;      #514 te_a:bat[:oid,:str] := _1225:bat[:oid,:str] {G}
     ue_a := bat.setColumn(te_a,"monthname");#515 ue_a:void := BKCsetColumn(te_a:bat[:oid,:str], _464:str) 
 #      [monthname]([month](date_bat)).bat.setColumn("monthname"), 
     _1238 := bat.new(nil:oid,nil:int);  #517 _1238:bat[:oid,:int] := CMDBATnew(_1226:oid, _1239:int) {G}
-barrier (_1241,_1242,_1243):= bat.newIterator(date_bat);#518 (_1241:lng, _1242:oid, _1243:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J522}
+barrier (_1241,_1242,_1243) := bat.newIterator(date_bat);#518 (_1241:lng, _1242:oid, _1243:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J522}
     _1245 := mtime.month(_1243);        #519 _1245:int := MTIMEdate_extract_month(_1243:date) 
     bat.insert(_1238,_1242,_1245);      #520 _1246:bat[:oid,:int] := BKCinsert_bun(_1238:bat[:oid,:int], _1242:oid, _1245:int) {G}
-    redo (_1241,_1242,_1243):= bat.hasMoreElements(date_bat);#521 (_1241:lng, _1242:oid, _1243:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J519}
+    redo (_1241,_1242,_1243) := bat.hasMoreElements(date_bat);#521 (_1241:lng, _1242:oid, _1243:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J519}
 exit (_1241,_1242,_1243);               #522 (_1241:lng, _1242:oid, _1243:date) 
     ve_a:bat[:oid,:int]  := _1238;      #523 ve_a:bat[:oid,:int] := _1238:bat[:oid,:int] {G}
     _1250 := bat.new(nil:oid,nil:str);  #524 _1250:bat[:oid,:str] := CMDBATnew(_1226:oid, _1227:str) {G}
-barrier (_1252,_1253,_1254):= bat.newIterator(ve_a);#525 (_1252:lng, _1253:oid, _1254:int) := CHPbunIterator(ve_a:bat[:oid,:int]) {J529}
+barrier (_1252,_1253,_1254) := bat.newIterator(ve_a);#525 (_1252:lng, _1253:oid, _1254:int) := CHPbunIterator(ve_a:bat[:oid,:int]) {J529}
     _1256 := mtime.monthname(_1254);    #526 _1256:str := MTIMEmonth_to_str(_1254:int) {G}
     bat.insert(_1250,_1253,_1256);      #527 _1257:bat[:oid,:str] := BKCinsert_bun(_1250:bat[:oid,:str], _1253:oid, _1256:str) {G}
-    redo (_1252,_1253,_1254):= bat.hasMoreElements(ve_a);#528 (_1252:lng, _1253:oid, _1254:int) := CHPbunHasMoreElements(ve_a:bat[:oid,:int]) {J526}
+    redo (_1252,_1253,_1254) := bat.hasMoreElements(ve_a);#528 (_1252:lng, _1253:oid, _1254:int) := CHPbunHasMoreElements(ve_a:bat[:oid,:int]) {J526}
 exit (_1252,_1253,_1254);               #529 (_1252:lng, _1253:oid, _1254:int) 
     we_a:bat[:oid,:str]  := _1250;      #530 we_a:bat[:oid,:str] := _1250:bat[:oid,:str] {G}
     _1261 := bat.new(nil:oid,nil:int);  #531 _1261:bat[:oid,:int] := CMDBATnew(_1262:oid, _1239:int) {G}
-barrier (_1264,_1265,_1266):= bat.newIterator(we_a);#532 (_1264:lng, _1265:oid, _1266:str) := CHPbunIterator(we_a:bat[:oid,:str]) {GJ536}
+barrier (_1264,_1265,_1266) := bat.newIterator(we_a);#532 (_1264:lng, _1265:oid, _1266:str) := CHPbunIterator(we_a:bat[:oid,:str]) {GJ536}
     _1268 := mtime.monthnum(_1266);     #533 _1268:int := MTIMEmonth_from_str(_1266:str) 
     bat.insert(_1261,_1265,_1268);      #534 _1269:bat[:oid,:int] := BKCinsert_bun(_1261:bat[:oid,:int], _1265:oid, _1268:int) {G}
-    redo (_1264,_1265,_1266):= bat.hasMoreElements(we_a);#535 (_1264:lng, _1265:oid, _1266:str) := CHPbunHasMoreElements(we_a:bat[:oid,:str]) {GJ533}
+    redo (_1264,_1265,_1266) := bat.hasMoreElements(we_a);#535 (_1264:lng, _1265:oid, _1266:str) := CHPbunHasMoreElements(we_a:bat[:oid,:str]) {GJ533}
 exit (_1264,_1265,_1266);               #536 (_1264:lng, _1265:oid, _1266:str) 
     xe_a:bat[:oid,:int]  := _1261;      #537 xe_a:bat[:oid,:int] := _1261:bat[:oid,:int] {G}
     ye_a := bat.setColumn(xe_a,"monthnum");#538 ye_a:void := BKCsetColumn(xe_a:bat[:oid,:int], _470:str) 
@@ -1123,18 +1123,18 @@ exit (_1264,_1265,_1266);               #536 (_1264:lng, _1265:oid, _1266:str)
     af_a := io.print(date_bat,oe_a,qe_a,te_a,xe_a);#540 af_a:void := IOtable(date_bat:bat[:oid,:date], oe_a:bat[:oid,:int], qe_a:bat[:oid,:int], te_a:bat[:oid,:str], xe_a:bat[:oid,:int]) 
 #      [monthnum]([monthname]([month](date_bat))).bat.setColumn("monthnum")); 
     _1273 := bat.new(nil:oid,nil:date); #542 _1273:bat[:oid,:date] := CMDBATnew(_1262:oid, _1274:date) {G}
-barrier (_1276,_1277,_1278):= bat.newIterator(date_bat);#543 (_1276:lng, _1277:oid, _1278:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J547}
+barrier (_1276,_1277,_1278) := bat.newIterator(date_bat);#543 (_1276:lng, _1277:oid, _1278:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J547}
     _1280 := mtime.addyears(_1278,-100);#544 _1280:date := MTIMEdate_addyears(_1278:date, _478:int) 
     bat.insert(_1273,_1277,_1280);      #545 _1281:bat[:oid,:date] := BKCinsert_bun(_1273:bat[:oid,:date], _1277:oid, _1280:date) {G}
-    redo (_1276,_1277,_1278):= bat.hasMoreElements(date_bat);#546 (_1276:lng, _1277:oid, _1278:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J544}
+    redo (_1276,_1277,_1278) := bat.hasMoreElements(date_bat);#546 (_1276:lng, _1277:oid, _1278:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J544}
 exit (_1276,_1277,_1278);               #547 (_1276:lng, _1277:oid, _1278:date) 
     date_addyears:bat[:oid,:date]  := _1273;#548 date_addyears:bat[:oid,:date] := _1273:bat[:oid,:date] {G}
 #var date_addyears := [addyears](date_bat, -100); 
     _1285 := bat.new(nil:oid,nil:date); #550 _1285:bat[:oid,:date] := CMDBATnew(_1262:oid, _1274:date) {G}
-barrier (_1287,_1288,_1289):= bat.newIterator(date_bat);#551 (_1287:lng, _1288:oid, _1289:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J555}
+barrier (_1287,_1288,_1289) := bat.newIterator(date_bat);#551 (_1287:lng, _1288:oid, _1289:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J555}
     _1291 := mtime.addmonths(_1289,1);  #552 _1291:date := MTIMEdate_addmonths(_1289:date, _482:int) 
     bat.insert(_1285,_1288,_1291);      #553 _1292:bat[:oid,:date] := BKCinsert_bun(_1285:bat[:oid,:date], _1288:oid, _1291:date) {G}
-    redo (_1287,_1288,_1289):= bat.hasMoreElements(date_bat);#554 (_1287:lng, _1288:oid, _1289:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J552}
+    redo (_1287,_1288,_1289) := bat.hasMoreElements(date_bat);#554 (_1287:lng, _1288:oid, _1289:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J552}
 exit (_1287,_1288,_1289);               #555 (_1287:lng, _1288:oid, _1289:date) 
     date_addmonths:bat[:oid,:date]  := _1285;#556 date_addmonths:bat[:oid,:date] := _1285:bat[:oid,:date] {G}
 #var date_addmonths := [addmonths](date_bat, 1); 
@@ -1143,11 +1143,11 @@ exit (_1287,_1288,_1289);               #555 (_1287:lng, _1288:oid, _1289:date)
     bat.setColumn(date_addyears,"min100y");#560 _487:void := BKCsetColumn(date_addyears:bat[:oid,:date], _488:str) 
 #      date_addyears.bat.setColumn("min100y"), 
     _1296 := bat.new(nil:oid,nil:int);  #562 _1296:bat[:oid,:int] := CMDBATnew(_1297:oid, _1298:int) {G}
-barrier (_1300,_1301,_1302):= bat.newIterator(date_addyears);#563 (_1300:lng, _1301:oid, _1302:date) := CHPbunIterator(date_addyears:bat[:oid,:date]) {J568}
+barrier (_1300,_1301,_1302) := bat.newIterator(date_addyears);#563 (_1300:lng, _1301:oid, _1302:date) := CHPbunIterator(date_addyears:bat[:oid,:date]) {J568}
     _1304 := algebra.find(date_bat,_1301);#564 _1304:date := ALGfind(date_bat:bat[:oid,:date], _1301:oid) 
     _1306 := mtime.diff(_1302,_1304);   #565 _1306:int := MTIMEdate_diff(_1302:date, _1304:date) 
     bat.insert(_1296,_1301,_1306);      #566 _1307:bat[:oid,:int] := BKCinsert_bun(_1296:bat[:oid,:int], _1301:oid, _1306:int) {G}
-    redo (_1300,_1301,_1302):= bat.hasMoreElements(date_addyears);#567 (_1300:lng, _1301:oid, _1302:date) := CHPbunHasMoreElements(date_addyears:bat[:oid,:date]) {J564}
+    redo (_1300,_1301,_1302) := bat.hasMoreElements(date_addyears);#567 (_1300:lng, _1301:oid, _1302:date) := CHPbunHasMoreElements(date_addyears:bat[:oid,:date]) {J564}
 exit (_1300,_1301,_1302);               #568 (_1300:lng, _1301:oid, _1302:date) 
     df_a:bat[:oid,:int]  := _1296;      #569 df_a:bat[:oid,:int] := _1296:bat[:oid,:int] {G}
     bat.setColumn(df_a,"diff");         #570 _493:void := BKCsetColumn(df_a:bat[:oid,:int], _492:str) 
@@ -1159,11 +1159,11 @@ exit (_1300,_1301,_1302);               #568 (_1300:lng, _1301:oid, _1302:date)
     bat.setColumn(date_addmonths,"plus1m");#576 _500:void := BKCsetColumn(date_addmonths:bat[:oid,:date], _501:str) 
 #      date_addmonths.bat.setColumn("plus1m"), 
     _1311 := bat.new(nil:oid,nil:int);  #578 _1311:bat[:oid,:int] := CMDBATnew(_1297:oid, _1298:int) {G}
-barrier (_1313,_1314,_1315):= bat.newIterator(date_addmonths);#579 (_1313:lng, _1314:oid, _1315:date) := CHPbunIterator(date_addmonths:bat[:oid,:date]) {J584}
+barrier (_1313,_1314,_1315) := bat.newIterator(date_addmonths);#579 (_1313:lng, _1314:oid, _1315:date) := CHPbunIterator(date_addmonths:bat[:oid,:date]) {J584}
     _1317 := algebra.find(date_bat,_1314);#580 _1317:date := ALGfind(date_bat:bat[:oid,:date], _1314:oid) 
     _1319 := mtime.diff(_1315,_1317);   #581 _1319:int := MTIMEdate_diff(_1315:date, _1317:date) 
     bat.insert(_1311,_1314,_1319);      #582 _1320:bat[:oid,:int] := BKCinsert_bun(_1311:bat[:oid,:int], _1314:oid, _1319:int) {G}
-    redo (_1313,_1314,_1315):= bat.hasMoreElements(date_addmonths);#583 (_1313:lng, _1314:oid, _1315:date) := CHPbunHasMoreElements(date_addmonths:bat[:oid,:date]) {J580}
+    redo (_1313,_1314,_1315) := bat.hasMoreElements(date_addmonths);#583 (_1313:lng, _1314:oid, _1315:date) := CHPbunHasMoreElements(date_addmonths:bat[:oid,:date]) {J580}
 exit (_1313,_1314,_1315);               #584 (_1313:lng, _1314:oid, _1315:date) 
     if_a:bat[:oid,:int]  := _1311;      #585 if_a:bat[:oid,:int] := _1311:bat[:oid,:int] {G}
     bat.setColumn(if_a,"diff");         #586 _504:void := BKCsetColumn(if_a:bat[:oid,:int], _492:str) 
@@ -1190,58 +1190,58 @@ exit lf_a;                              #605 lf_a:bit
     rf_a := bat.setColumn(date_seq,"date");#607 rf_a:void := BKCsetColumn(date_seq:bat[:int,:date], _528:str) 
 #io.print(date_seq.bat.setColumn("date"), 
     _1324 := bat.new(nil:int,nil:int);  #609 _1324:bat[:int,:int] := CMDBATnew(_1298:int, _1298:int) {G}
-barrier (_1326,_1327,_1328):= bat.newIterator(date_seq);#610 (_1326:lng, _1327:int, _1328:date) := CHPbunIterator(date_seq:bat[:int,:date]) {J614}
+barrier (_1326,_1327,_1328) := bat.newIterator(date_seq);#610 (_1326:lng, _1327:int, _1328:date) := CHPbunIterator(date_seq:bat[:int,:date]) {J614}
     _1330 := mtime.weekofyear(_1328);   #611 _1330:int := MTIMEdate_extract_weekofyear(_1328:date) 
     bat.insert(_1324,_1327,_1330);      #612 _1331:bat[:int,:int] := BKCinsert_bun(_1324:bat[:int,:int], _1327:int, _1330:int) {G}
-    redo (_1326,_1327,_1328):= bat.hasMoreElements(date_seq);#613 (_1326:lng, _1327:int, _1328:date) := CHPbunHasMoreElements(date_seq:bat[:int,:date]) {J611}
+    redo (_1326,_1327,_1328) := bat.hasMoreElements(date_seq);#613 (_1326:lng, _1327:int, _1328:date) := CHPbunHasMoreElements(date_seq:bat[:int,:date]) {J611}
 exit (_1326,_1327,_1328);               #614 (_1326:lng, _1327:int, _1328:date) 
     sf_a:bat[:int,:int]  := _1324;      #615 sf_a:bat[:int,:int] := _1324:bat[:int,:int] {G}
     tf_a := bat.setColumn(sf_a,"weekofyear");#616 tf_a:void := BKCsetColumn(sf_a:bat[:int,:int], _532:str) 
 #      [weekofyear](date_seq).bat.setColumn("weekofyear"), 
     _1335 := bat.new(nil:int,nil:int);  #618 _1335:bat[:int,:int] := CMDBATnew(_1336:int, _1336:int) {G}
-barrier (_1338,_1339,_1340):= bat.newIterator(date_seq);#619 (_1338:lng, _1339:int, _1340:date) := CHPbunIterator(date_seq:bat[:int,:date]) {J623}
+barrier (_1338,_1339,_1340) := bat.newIterator(date_seq);#619 (_1338:lng, _1339:int, _1340:date) := CHPbunIterator(date_seq:bat[:int,:date]) {J623}
     _1342 := mtime.dayofweek(_1340);    #620 _1342:int := MTIMEdate_extract_dayofweek(_1340:date) 
     bat.insert(_1335,_1339,_1342);      #621 _1343:bat[:int,:int] := BKCinsert_bun(_1335:bat[:int,:int], _1339:int, _1342:int) {G}
-    redo (_1338,_1339,_1340):= bat.hasMoreElements(date_seq);#622 (_1338:lng, _1339:int, _1340:date) := CHPbunHasMoreElements(date_seq:bat[:int,:date]) {J620}
+    redo (_1338,_1339,_1340) := bat.hasMoreElements(date_seq);#622 (_1338:lng, _1339:int, _1340:date) := CHPbunHasMoreElements(date_seq:bat[:int,:date]) {J620}
 exit (_1338,_1339,_1340);               #623 (_1338:lng, _1339:int, _1340:date) 
     uf_a:bat[:int,:int]  := _1335;      #624 uf_a:bat[:int,:int] := _1335:bat[:int,:int] {G}
     _1347 := bat.new(nil:int,nil:str);  #625 _1347:bat[:int,:str] := CMDBATnew(_1336:int, _1348:str) {G}
-barrier (_1350,_1351,_1352):= bat.newIterator(uf_a);#626 (_1350:lng, _1351:int, _1352:int) := CHPbunIterator(uf_a:bat[:int,:int]) {J630}
+barrier (_1350,_1351,_1352) := bat.newIterator(uf_a);#626 (_1350:lng, _1351:int, _1352:int) := CHPbunIterator(uf_a:bat[:int,:int]) {J630}
     _1354 := mtime.dayname(_1352);      #627 _1354:str := MTIMEday_to_str(_1352:int) {G}
     bat.insert(_1347,_1351,_1354);      #628 _1355:bat[:int,:str] := BKCinsert_bun(_1347:bat[:int,:str], _1351:int, _1354:str) {G}
-    redo (_1350,_1351,_1352):= bat.hasMoreElements(uf_a);#629 (_1350:lng, _1351:int, _1352:int) := CHPbunHasMoreElements(uf_a:bat[:int,:int]) {J627}
+    redo (_1350,_1351,_1352) := bat.hasMoreElements(uf_a);#629 (_1350:lng, _1351:int, _1352:int) := CHPbunHasMoreElements(uf_a:bat[:int,:int]) {J627}
 exit (_1350,_1351,_1352);               #630 (_1350:lng, _1351:int, _1352:int) 
     vf_a:bat[:int,:str]  := _1347;      #631 vf_a:bat[:int,:str] := _1347:bat[:int,:str] {G}
     wf_a := bat.setColumn(vf_a,"dayofweek");#632 wf_a:void := BKCsetColumn(vf_a:bat[:int,:str], _536:str) 
 #      [dayname]([dayofweek](date_seq)).bat.setColumn("dayofweek"), 
     _1359 := bat.new(nil:int,nil:int);  #634 _1359:bat[:int,:int] := CMDBATnew(_1336:int, _1336:int) {G}
-barrier (_1361,_1362,_1363):= bat.newIterator(date_seq);#635 (_1361:lng, _1362:int, _1363:date) := CHPbunIterator(date_seq:bat[:int,:date]) {J639}
+barrier (_1361,_1362,_1363) := bat.newIterator(date_seq);#635 (_1361:lng, _1362:int, _1363:date) := CHPbunIterator(date_seq:bat[:int,:date]) {J639}
     _1365 := mtime.dayofweek(_1363);    #636 _1365:int := MTIMEdate_extract_dayofweek(_1363:date) 
     bat.insert(_1359,_1362,_1365);      #637 _1366:bat[:int,:int] := BKCinsert_bun(_1359:bat[:int,:int], _1362:int, _1365:int) {G}
-    redo (_1361,_1362,_1363):= bat.hasMoreElements(date_seq);#638 (_1361:lng, _1362:int, _1363:date) := CHPbunHasMoreElements(date_seq:bat[:int,:date]) {J636}
+    redo (_1361,_1362,_1363) := bat.hasMoreElements(date_seq);#638 (_1361:lng, _1362:int, _1363:date) := CHPbunHasMoreElements(date_seq:bat[:int,:date]) {J636}
 exit (_1361,_1362,_1363);               #639 (_1361:lng, _1362:int, _1363:date) 
     xf_a:bat[:int,:int]  := _1359;      #640 xf_a:bat[:int,:int] := _1359:bat[:int,:int] {G}
     _1370 := bat.new(nil:int,nil:str);  #641 _1370:bat[:int,:str] := CMDBATnew(_1371:int, _1348:str) {G}
-barrier (_1373,_1374,_1375):= bat.newIterator(xf_a);#642 (_1373:lng, _1374:int, _1375:int) := CHPbunIterator(xf_a:bat[:int,:int]) {J646}
+barrier (_1373,_1374,_1375) := bat.newIterator(xf_a);#642 (_1373:lng, _1374:int, _1375:int) := CHPbunIterator(xf_a:bat[:int,:int]) {J646}
     _1377 := mtime.dayname(_1375);      #643 _1377:str := MTIMEday_to_str(_1375:int) {G}
     bat.insert(_1370,_1374,_1377);      #644 _1378:bat[:int,:str] := BKCinsert_bun(_1370:bat[:int,:str], _1374:int, _1377:str) {G}
-    redo (_1373,_1374,_1375):= bat.hasMoreElements(xf_a);#645 (_1373:lng, _1374:int, _1375:int) := CHPbunHasMoreElements(xf_a:bat[:int,:int]) {J643}
+    redo (_1373,_1374,_1375) := bat.hasMoreElements(xf_a);#645 (_1373:lng, _1374:int, _1375:int) := CHPbunHasMoreElements(xf_a:bat[:int,:int]) {J643}
 exit (_1373,_1374,_1375);               #646 (_1373:lng, _1374:int, _1375:int) 
     yf_a:bat[:int,:str]  := _1370;      #647 yf_a:bat[:int,:str] := _1370:bat[:int,:str] {G}
     _1382 := bat.new(nil:int,nil:int);  #648 _1382:bat[:int,:int] := CMDBATnew(_1371:int, _1371:int) {G}
-barrier (_1384,_1385,_1386):= bat.newIterator(yf_a);#649 (_1384:lng, _1385:int, _1386:str) := CHPbunIterator(yf_a:bat[:int,:str]) {GJ653}
+barrier (_1384,_1385,_1386) := bat.newIterator(yf_a);#649 (_1384:lng, _1385:int, _1386:str) := CHPbunIterator(yf_a:bat[:int,:str]) {GJ653}
     _1388 := mtime.daynum(_1386);       #650 _1388:int := MTIMEday_from_str(_1386:str) 
     bat.insert(_1382,_1385,_1388);      #651 _1389:bat[:int,:int] := BKCinsert_bun(_1382:bat[:int,:int], _1385:int, _1388:int) {G}
-    redo (_1384,_1385,_1386):= bat.hasMoreElements(yf_a);#652 (_1384:lng, _1385:int, _1386:str) := CHPbunHasMoreElements(yf_a:bat[:int,:str]) {GJ650}
+    redo (_1384,_1385,_1386) := bat.hasMoreElements(yf_a);#652 (_1384:lng, _1385:int, _1386:str) := CHPbunHasMoreElements(yf_a:bat[:int,:str]) {GJ650}
 exit (_1384,_1385,_1386);               #653 (_1384:lng, _1385:int, _1386:str) 
     ag_a:bat[:int,:int]  := _1382;      #654 ag_a:bat[:int,:int] := _1382:bat[:int,:int] {G}
     bg_a := bat.setColumn(ag_a,"num");  #655 bg_a:void := BKCsetColumn(ag_a:bat[:int,:int], _546:str) 
 #      [daynum]([dayname]([dayofweek](date_seq))).bat.setColumn("num"), 
     _1393 := bat.new(nil:int,nil:int);  #657 _1393:bat[:int,:int] := CMDBATnew(_1371:int, _1371:int) {G}
-barrier (_1395,_1396,_1397):= bat.newIterator(date_seq);#658 (_1395:lng, _1396:int, _1397:date) := CHPbunIterator(date_seq:bat[:int,:date]) {J662}
+barrier (_1395,_1396,_1397) := bat.newIterator(date_seq);#658 (_1395:lng, _1396:int, _1397:date) := CHPbunIterator(date_seq:bat[:int,:date]) {J662}
     _1399 := mtime.dayofyear(_1397);    #659 _1399:int := MTIMEdate_extract_dayofyear(_1397:date) 
     bat.insert(_1393,_1396,_1399);      #660 _1400:bat[:int,:int] := BKCinsert_bun(_1393:bat[:int,:int], _1396:int, _1399:int) {G}
-    redo (_1395,_1396,_1397):= bat.hasMoreElements(date_seq);#661 (_1395:lng, _1396:int, _1397:date) := CHPbunHasMoreElements(date_seq:bat[:int,:date]) {J659}
+    redo (_1395,_1396,_1397) := bat.hasMoreElements(date_seq);#661 (_1395:lng, _1396:int, _1397:date) := CHPbunHasMoreElements(date_seq:bat[:int,:date]) {J659}
 exit (_1395,_1396,_1397);               #662 (_1395:lng, _1396:int, _1397:date) 
     cg_a:bat[:int,:int]  := _1393;      #663 cg_a:bat[:int,:int] := _1393:bat[:int,:int] {G}
     dg_a := bat.setColumn(cg_a,"dayofyear");#664 dg_a:void := BKCsetColumn(cg_a:bat[:int,:int], _549:str) 
@@ -1325,37 +1325,37 @@ exit (_1395,_1396,_1397);               #662 (_1395:lng, _1396:int, _1397:date)
     bat.setColumn(daytime_bat,"daytime");#742 _675:void := BKCsetColumn(daytime_bat:bat[:oid,:daytime], _676:str) 
 #io.print(daytime_bat.bat.setColumn("daytime"), 
     _1404 := bat.new(nil:oid,nil:int);  #744 _1404:bat[:oid,:int] := CMDBATnew(_1405:oid, _1406:int) {G}
-barrier (_1408,_1409,_1410):= bat.newIterator(daytime_bat);#745 (_1408:lng, _1409:oid, _1410:daytime) := CHPbunIterator(daytime_bat:bat[:oid,:daytime]) {J749}
+barrier (_1408,_1409,_1410) := bat.newIterator(daytime_bat);#745 (_1408:lng, _1409:oid, _1410:daytime) := CHPbunIterator(daytime_bat:bat[:oid,:daytime]) {J749}
     _1412 := mtime.hours(_1410);        #746 _1412:int := MTIMEdaytime_extract_hours(_1410:daytime) 
     bat.insert(_1404,_1409,_1412);      #747 _1413:bat[:oid,:int] := BKCinsert_bun(_1404:bat[:oid,:int], _1409:oid, _1412:int) {G}
-    redo (_1408,_1409,_1410):= bat.hasMoreElements(daytime_bat);#748 (_1408:lng, _1409:oid, _1410:daytime) := CHPbunHasMoreElements(daytime_bat:bat[:oid,:daytime]) {J746}
+    redo (_1408,_1409,_1410) := bat.hasMoreElements(daytime_bat);#748 (_1408:lng, _1409:oid, _1410:daytime) := CHPbunHasMoreElements(daytime_bat:bat[:oid,:daytime]) {J746}
 exit (_1408,_1409,_1410);               #749 (_1408:lng, _1409:oid, _1410:daytime) 
     bh_a:bat[:oid,:int]  := _1404;      #750 bh_a:bat[:oid,:int] := _1404:bat[:oid,:int] {G}
     bat.setColumn(bh_a,"hours");        #751 _681:void := BKCsetColumn(bh_a:bat[:oid,:int], _680:str) 
 #      [hours](daytime_bat).bat.setColumn("hours"), 
     _1417 := bat.new(nil:oid,nil:int);  #753 _1417:bat[:oid,:int] := CMDBATnew(_1405:oid, _1406:int) {G}
-barrier (_1419,_1420,_1421):= bat.newIterator(daytime_bat);#754 (_1419:lng, _1420:oid, _1421:daytime) := CHPbunIterator(daytime_bat:bat[:oid,:daytime]) {J758}
+barrier (_1419,_1420,_1421) := bat.newIterator(daytime_bat);#754 (_1419:lng, _1420:oid, _1421:daytime) := CHPbunIterator(daytime_bat:bat[:oid,:daytime]) {J758}
     _1423 := mtime.minutes(_1421);      #755 _1423:int := MTIMEdaytime_extract_minutes(_1421:daytime) 
     bat.insert(_1417,_1420,_1423);      #756 _1424:bat[:oid,:int] := BKCinsert_bun(_1417:bat[:oid,:int], _1420:oid, _1423:int) {G}
-    redo (_1419,_1420,_1421):= bat.hasMoreElements(daytime_bat);#757 (_1419:lng, _1420:oid, _1421:daytime) := CHPbunHasMoreElements(daytime_bat:bat[:oid,:daytime]) {J755}
+    redo (_1419,_1420,_1421) := bat.hasMoreElements(daytime_bat);#757 (_1419:lng, _1420:oid, _1421:daytime) := CHPbunHasMoreElements(daytime_bat:bat[:oid,:daytime]) {J755}
 exit (_1419,_1420,_1421);               #758 (_1419:lng, _1420:oid, _1421:daytime) 
     dh_a:bat[:oid,:int]  := _1417;      #759 dh_a:bat[:oid,:int] := _1417:bat[:oid,:int] {G}
     bat.setColumn(dh_a,"minutes");      #760 _685:void := BKCsetColumn(dh_a:bat[:oid,:int], _684:str) 
 #      [minutes](daytime_bat).bat.setColumn("minutes"), 
     _1428 := bat.new(nil:oid,nil:int);  #762 _1428:bat[:oid,:int] := CMDBATnew(_1405:oid, _1406:int) {G}
-barrier (_1430,_1431,_1432):= bat.newIterator(daytime_bat);#763 (_1430:lng, _1431:oid, _1432:daytime) := CHPbunIterator(daytime_bat:bat[:oid,:daytime]) {J767}
+barrier (_1430,_1431,_1432) := bat.newIterator(daytime_bat);#763 (_1430:lng, _1431:oid, _1432:daytime) := CHPbunIterator(daytime_bat:bat[:oid,:daytime]) {J767}
     _1434 := mtime.seconds(_1432);      #764 _1434:int := MTIMEdaytime_extract_seconds(_1432:daytime) 
     bat.insert(_1428,_1431,_1434);      #765 _1435:bat[:oid,:int] := BKCinsert_bun(_1428:bat[:oid,:int], _1431:oid, _1434:int) {G}
-    redo (_1430,_1431,_1432):= bat.hasMoreElements(daytime_bat);#766 (_1430:lng, _1431:oid, _1432:daytime) := CHPbunHasMoreElements(daytime_bat:bat[:oid,:daytime]) {J764}
+    redo (_1430,_1431,_1432) := bat.hasMoreElements(daytime_bat);#766 (_1430:lng, _1431:oid, _1432:daytime) := CHPbunHasMoreElements(daytime_bat:bat[:oid,:daytime]) {J764}
 exit (_1430,_1431,_1432);               #767 (_1430:lng, _1431:oid, _1432:daytime) 
     fh_a:bat[:oid,:int]  := _1428;      #768 fh_a:bat[:oid,:int] := _1428:bat[:oid,:int] {G}
     bat.setColumn(fh_a,"seconds");      #769 _689:void := BKCsetColumn(fh_a:bat[:oid,:int], _688:str) 
 #      [seconds](daytime_bat).bat.setColumn("seconds"), 
     _1439 := bat.new(nil:oid,nil:int);  #771 _1439:bat[:oid,:int] := CMDBATnew(_1440:oid, _1441:int) {G}
-barrier (_1443,_1444,_1445):= bat.newIterator(daytime_bat);#772 (_1443:lng, _1444:oid, _1445:daytime) := CHPbunIterator(daytime_bat:bat[:oid,:daytime]) {J776}
+barrier (_1443,_1444,_1445) := bat.newIterator(daytime_bat);#772 (_1443:lng, _1444:oid, _1445:daytime) := CHPbunIterator(daytime_bat:bat[:oid,:daytime]) {J776}
     _1447 := mtime.milliseconds(_1445); #773 _1447:int := MTIMEdaytime_extract_milliseconds(_1445:daytime) 
     bat.insert(_1439,_1444,_1447);      #774 _1448:bat[:oid,:int] := BKCinsert_bun(_1439:bat[:oid,:int], _1444:oid, _1447:int) {G}
-    redo (_1443,_1444,_1445):= bat.hasMoreElements(daytime_bat);#775 (_1443:lng, _1444:oid, _1445:daytime) := CHPbunHasMoreElements(daytime_bat:bat[:oid,:daytime]) {J773}
+    redo (_1443,_1444,_1445) := bat.hasMoreElements(daytime_bat);#775 (_1443:lng, _1444:oid, _1445:daytime) := CHPbunHasMoreElements(daytime_bat:bat[:oid,:daytime]) {J773}
 exit (_1443,_1444,_1445);               #776 (_1443:lng, _1444:oid, _1445:daytime) 
     hh_a:bat[:oid,:int]  := _1439;      #777 hh_a:bat[:oid,:int] := _1439:bat[:oid,:int] {G}
     bat.setColumn(hh_a,"milliseconds"); #778 _693:void := BKCsetColumn(hh_a:bat[:oid,:int], _692:str) 
@@ -1366,12 +1366,12 @@ exit (_1443,_1444,_1445);               #776 (_1443:lng, _1444:oid, _1445:daytim
 ## create timestamps in bulk from the above bats with dates, daytimes and tzones 
 # Skipped due to coercion implication 
     _1452 := bat.new(nil:oid,nil:timestamp);#785 _1452:bat[:oid,:timestamp] := CMDBATnew(_1440:oid, _1453:timestamp) {G}
-barrier (_1455,_1456,_1457):= bat.newIterator(date_bat);#786 (_1455:lng, _1456:oid, _1457:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J792}
+barrier (_1455,_1456,_1457) := bat.newIterator(date_bat);#786 (_1455:lng, _1456:oid, _1457:date) := CHPbunIterator(date_bat:bat[:oid,:date]) {J792}
     _1459 := algebra.find(daytime_bat,_1456);#787 _1459:daytime := ALGfind(daytime_bat:bat[:oid,:daytime], _1456:oid) 
     _1461 := algebra.find(tzone_bat,_1456);#788 _1461:timezone := ALGfind(tzone_bat:bat[:oid,:timezone], _1456:oid) 
     _1463 := mtime.timestamp(_1457,_1459,_1461);#789 _1463:timestamp := MTIMEtimestamp_create(_1457:date, _1459:daytime, _1461:timezone) 
     bat.insert(_1452,_1456,_1463);      #790 _1464:bat[:oid,:timestamp] := BKCinsert_bun(_1452:bat[:oid,:timestamp], _1456:oid, _1463:timestamp) {G}
-    redo (_1455,_1456,_1457):= bat.hasMoreElements(date_bat);#791 (_1455:lng, _1456:oid, _1457:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J787}
+    redo (_1455,_1456,_1457) := bat.hasMoreElements(date_bat);#791 (_1455:lng, _1456:oid, _1457:date) := CHPbunHasMoreElements(date_bat:bat[:oid,:date]) {J787}
 exit (_1455,_1456,_1457);               #792 (_1455:lng, _1456:oid, _1457:date) 
     kh_a:bat[:oid,:timestamp]  := _1452;#793 kh_a:bat[:oid,:timestamp] := _1452:bat[:oid,:timestamp] {G}
     timestamp_bat := kh_a;              #794 timestamp_bat:bat[:oid,:timestamp] := kh_a:bat[:oid,:timestamp] {G}
@@ -1384,21 +1384,21 @@ exit (_1455,_1456,_1457);               #792 (_1455:lng, _1456:oid, _1457:date)
     bat.setColumn(timestamp_bat,"timestamp");#801 _710:void := BKCsetColumn(timestamp_bat:bat[:oid,:timestamp], _702:str) 
 #io.print(timestamp_bat.bat.setColumn("timestamp"), 
     _1468 := bat.new(nil:oid,nil:date); #803 _1468:bat[:oid,:date] := CMDBATnew(_1440:oid, _1469:date) {G}
-barrier (_1471,_1472,_1473):= bat.newIterator(timestamp_bat);#804 (_1471:lng, _1472:oid, _1473:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J809}
+barrier (_1471,_1472,_1473) := bat.newIterator(timestamp_bat);#804 (_1471:lng, _1472:oid, _1473:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J809}
     _1475 := algebra.find(tzone_bat,_1472);#805 _1475:timezone := ALGfind(tzone_bat:bat[:oid,:timezone], _1472:oid) 
     _1477 := mtime.date(_1473,_1475);   #806 _1477:date := MTIMEtimestamp_extract_date(_1473:timestamp, _1475:timezone) 
     bat.insert(_1468,_1472,_1477);      #807 _1478:bat[:oid,:date] := BKCinsert_bun(_1468:bat[:oid,:date], _1472:oid, _1477:date) {G}
-    redo (_1471,_1472,_1473):= bat.hasMoreElements(timestamp_bat);#808 (_1471:lng, _1472:oid, _1473:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J805}
+    redo (_1471,_1472,_1473) := bat.hasMoreElements(timestamp_bat);#808 (_1471:lng, _1472:oid, _1473:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J805}
 exit (_1471,_1472,_1473);               #809 (_1471:lng, _1472:oid, _1473:timestamp) 
     mh_a:bat[:oid,:date]  := _1468;     #810 mh_a:bat[:oid,:date] := _1468:bat[:oid,:date] {G}
     bat.setColumn(mh_a,"date");         #811 _715:void := BKCsetColumn(mh_a:bat[:oid,:date], _714:str) 
 #      [date](timestamp_bat,tzone_bat).bat.setColumn("date"), 
     _1482 := bat.new(nil:oid,nil:daytime);#813 _1482:bat[:oid,:daytime] := CMDBATnew(_1483:oid, _1484:daytime) {G}
-barrier (_1486,_1487,_1488):= bat.newIterator(timestamp_bat);#814 (_1486:lng, _1487:oid, _1488:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J819}
+barrier (_1486,_1487,_1488) := bat.newIterator(timestamp_bat);#814 (_1486:lng, _1487:oid, _1488:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J819}
     _1490 := algebra.find(tzone_bat,_1487);#815 _1490:timezone := ALGfind(tzone_bat:bat[:oid,:timezone], _1487:oid) 
     _1492 := mtime.daytime(_1488,_1490);#816 _1492:daytime := MTIMEtimestamp_extract_daytime(_1488:timestamp, _1490:timezone) 
     bat.insert(_1482,_1487,_1492);      #817 _1493:bat[:oid,:daytime] := BKCinsert_bun(_1482:bat[:oid,:daytime], _1487:oid, _1492:daytime) {G}
-    redo (_1486,_1487,_1488):= bat.hasMoreElements(timestamp_bat);#818 (_1486:lng, _1487:oid, _1488:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J815}
+    redo (_1486,_1487,_1488) := bat.hasMoreElements(timestamp_bat);#818 (_1486:lng, _1487:oid, _1488:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J815}
 exit (_1486,_1487,_1488);               #819 (_1486:lng, _1487:oid, _1488:timestamp) 
     oh_a:bat[:oid,:daytime]  := _1482;  #820 oh_a:bat[:oid,:daytime] := _1482:bat[:oid,:daytime] {G}
     bat.setColumn(oh_a,"daytime");      #821 _719:void := BKCsetColumn(oh_a:bat[:oid,:daytime], _718:str) 
@@ -1412,39 +1412,39 @@ exit (_1486,_1487,_1488);               #819 (_1486:lng, _1487:oid, _1488:timest
     io.print(timezones);                #829 _730:void := IOprint_val(timezones:bat[:str,:timezone]) 
     sh_a:timezone  := algebra.find(timezones,"Wake Island");#830 sh_a:timezone := ALGfind(timezones:bat[:str,:timezone], _732:str) 
     _1497 := bat.new(nil:oid,nil:date); #831 _1497:bat[:oid,:date] := CMDBATnew(_1483:oid, _1469:date) {G}
-barrier (_1499,_1500,_1501):= bat.newIterator(timestamp_bat);#832 (_1499:lng, _1500:oid, _1501:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J836}
+barrier (_1499,_1500,_1501) := bat.newIterator(timestamp_bat);#832 (_1499:lng, _1500:oid, _1501:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J836}
     _1503 := mtime.date(_1501,sh_a);    #833 _1503:date := MTIMEtimestamp_extract_date(_1501:timestamp, sh_a:timezone) 
     bat.insert(_1497,_1500,_1503);      #834 _1504:bat[:oid,:date] := BKCinsert_bun(_1497:bat[:oid,:date], _1500:oid, _1503:date) {G}
-    redo (_1499,_1500,_1501):= bat.hasMoreElements(timestamp_bat);#835 (_1499:lng, _1500:oid, _1501:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J833}
+    redo (_1499,_1500,_1501) := bat.hasMoreElements(timestamp_bat);#835 (_1499:lng, _1500:oid, _1501:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J833}
 exit (_1499,_1500,_1501);               #836 (_1499:lng, _1500:oid, _1501:timestamp) 
     th_a:bat[:oid,:date]  := _1497;     #837 th_a:bat[:oid,:date] := _1497:bat[:oid,:date] {G}
     bat.setColumn(th_a,"Wake Island");  #838 _734:void := BKCsetColumn(th_a:bat[:oid,:date], _732:str) 
 #      [date](timestamp_bat,algebra.find(timezones,"Wake Island")).bat.setColumn("Wake Island"), 
     vh_a:timezone  := algebra.find(timezones,"Wake Island");#840 vh_a:timezone := ALGfind(timezones:bat[:str,:timezone], _732:str) 
     _1508 := bat.new(nil:oid,nil:daytime);#841 _1508:bat[:oid,:daytime] := CMDBATnew(_1483:oid, _1484:daytime) {G}
-barrier (_1510,_1511,_1512):= bat.newIterator(timestamp_bat);#842 (_1510:lng, _1511:oid, _1512:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J846}
+barrier (_1510,_1511,_1512) := bat.newIterator(timestamp_bat);#842 (_1510:lng, _1511:oid, _1512:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J846}
     _1514 := mtime.daytime(_1512,vh_a); #843 _1514:daytime := MTIMEtimestamp_extract_daytime(_1512:timestamp, vh_a:timezone) 
     bat.insert(_1508,_1511,_1514);      #844 _1515:bat[:oid,:daytime] := BKCinsert_bun(_1508:bat[:oid,:daytime], _1511:oid, _1514:daytime) {G}
-    redo (_1510,_1511,_1512):= bat.hasMoreElements(timestamp_bat);#845 (_1510:lng, _1511:oid, _1512:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J843}
+    redo (_1510,_1511,_1512) := bat.hasMoreElements(timestamp_bat);#845 (_1510:lng, _1511:oid, _1512:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J843}
 exit (_1510,_1511,_1512);               #846 (_1510:lng, _1511:oid, _1512:timestamp) 
     wh_a:bat[:oid,:daytime]  := _1508;  #847 wh_a:bat[:oid,:daytime] := _1508:bat[:oid,:daytime] {G}
 #      [daytime](timestamp_bat,algebra.find(timezones,"Wake Island")), 
     xh_a:timezone  := algebra.find(timezones,"American Samoa");#849 xh_a:timezone := ALGfind(timezones:bat[:str,:timezone], _740:str) 
     _1519 := bat.new(nil:oid,nil:date); #850 _1519:bat[:oid,:date] := CMDBATnew(_1520:oid, _1521:date) {G}
-barrier (_1523,_1524,_1525):= bat.newIterator(timestamp_bat);#851 (_1523:lng, _1524:oid, _1525:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J855}
+barrier (_1523,_1524,_1525) := bat.newIterator(timestamp_bat);#851 (_1523:lng, _1524:oid, _1525:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J855}
     _1527 := mtime.date(_1525,xh_a);    #852 _1527:date := MTIMEtimestamp_extract_date(_1525:timestamp, xh_a:timezone) 
     bat.insert(_1519,_1524,_1527);      #853 _1528:bat[:oid,:date] := BKCinsert_bun(_1519:bat[:oid,:date], _1524:oid, _1527:date) {G}
-    redo (_1523,_1524,_1525):= bat.hasMoreElements(timestamp_bat);#854 (_1523:lng, _1524:oid, _1525:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J852}
+    redo (_1523,_1524,_1525) := bat.hasMoreElements(timestamp_bat);#854 (_1523:lng, _1524:oid, _1525:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J852}
 exit (_1523,_1524,_1525);               #855 (_1523:lng, _1524:oid, _1525:timestamp) 
     yh_a:bat[:oid,:date]  := _1519;     #856 yh_a:bat[:oid,:date] := _1519:bat[:oid,:date] {G}
     ai_a := bat.setColumn(yh_a,"American Samoa");#857 ai_a:void := BKCsetColumn(yh_a:bat[:oid,:date], _740:str) 
 #      [date](timestamp_bat,algebra.find(timezones,"American Samoa")).bat.setColumn("American Samoa"), 
     bi_a:timezone  := algebra.find(timezones,"American Samoa");#859 bi_a:timezone := ALGfind(timezones:bat[:str,:timezone], _740:str) 
     _1532 := bat.new(nil:oid,nil:daytime);#860 _1532:bat[:oid,:daytime] := CMDBATnew(_1520:oid, _1533:daytime) {G}
-barrier (_1535,_1536,_1537):= bat.newIterator(timestamp_bat);#861 (_1535:lng, _1536:oid, _1537:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J865}
+barrier (_1535,_1536,_1537) := bat.newIterator(timestamp_bat);#861 (_1535:lng, _1536:oid, _1537:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J865}
     _1539 := mtime.daytime(_1537,bi_a); #862 _1539:daytime := MTIMEtimestamp_extract_daytime(_1537:timestamp, bi_a:timezone) 
     bat.insert(_1532,_1536,_1539);      #863 _1540:bat[:oid,:daytime] := BKCinsert_bun(_1532:bat[:oid,:daytime], _1536:oid, _1539:daytime) {G}
-    redo (_1535,_1536,_1537):= bat.hasMoreElements(timestamp_bat);#864 (_1535:lng, _1536:oid, _1537:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J862}
+    redo (_1535,_1536,_1537) := bat.hasMoreElements(timestamp_bat);#864 (_1535:lng, _1536:oid, _1537:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J862}
 exit (_1535,_1536,_1537);               #865 (_1535:lng, _1536:oid, _1537:timestamp) 
     ci_a:bat[:oid,:daytime]  := _1532;  #866 ci_a:bat[:oid,:daytime] := _1532:bat[:oid,:daytime] {G}
     io.print("print(timestamp_bat,th_a,wh_a,yh_a,ci_a)");#867 _747:void := IOprint_val(_748:str) 
@@ -1455,20 +1455,20 @@ exit (_1535,_1536,_1537);               #865 (_1535:lng, _1536:oid, _1537:timest
     gi_a := calc.*(23,fi_a);            #872 gi_a:int := CALCbinaryMULintint(_756:int, fi_a:int) 
     hi_a := calc.lng(gi_a);             #873 hi_a:lng := CALCint2lng(gi_a:int) 
     _1544 := bat.new(nil:oid,nil:timestamp);#874 _1544:bat[:oid,:timestamp] := CMDBATnew(_1520:oid, _1545:timestamp) {G}
-barrier (_1547,_1548,_1549):= bat.newIterator(timestamp_bat);#875 (_1547:lng, _1548:oid, _1549:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J879}
+barrier (_1547,_1548,_1549) := bat.newIterator(timestamp_bat);#875 (_1547:lng, _1548:oid, _1549:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J879}
     _1551 := mtime.add(_1549,hi_a);     #876 _1551:timestamp := MTIMEtimestamp_add(_1549:timestamp, hi_a:lng) 
     bat.insert(_1544,_1548,_1551);      #877 _1552:bat[:oid,:timestamp] := BKCinsert_bun(_1544:bat[:oid,:timestamp], _1548:oid, _1551:timestamp) {G}
-    redo (_1547,_1548,_1549):= bat.hasMoreElements(timestamp_bat);#878 (_1547:lng, _1548:oid, _1549:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J876}
+    redo (_1547,_1548,_1549) := bat.hasMoreElements(timestamp_bat);#878 (_1547:lng, _1548:oid, _1549:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J876}
 exit (_1547,_1548,_1549);               #879 (_1547:lng, _1548:oid, _1549:timestamp) 
     timestamp_plus:bat[:oid,:timestamp]  := _1544;#880 timestamp_plus:bat[:oid,:timestamp] := _1544:bat[:oid,:timestamp] {G}
 #var timestamp_plus := [add](timestamp_bat, calc.lng(23*60*60*1000)); 
     ii_a := calc.*(-60,1000);           #882 ii_a:int := CALCbinaryMULintint(_762:int, _753:int) 
     ji_a := calc.lng(ii_a);             #883 ji_a:lng := CALCint2lng(ii_a:int) 
     _1556 := bat.new(nil:oid,nil:timestamp);#884 _1556:bat[:oid,:timestamp] := CMDBATnew(_1557:oid, _1545:timestamp) {G}
-barrier (_1559,_1560,_1561):= bat.newIterator(timestamp_bat);#885 (_1559:lng, _1560:oid, _1561:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J889}
+barrier (_1559,_1560,_1561) := bat.newIterator(timestamp_bat);#885 (_1559:lng, _1560:oid, _1561:timestamp) := CHPbunIterator(timestamp_bat:bat[:oid,:timestamp]) {J889}
     _1563 := mtime.add(_1561,ji_a);     #886 _1563:timestamp := MTIMEtimestamp_add(_1561:timestamp, ji_a:lng) 
     bat.insert(_1556,_1560,_1563);      #887 _1564:bat[:oid,:timestamp] := BKCinsert_bun(_1556:bat[:oid,:timestamp], _1560:oid, _1563:timestamp) {G}
-    redo (_1559,_1560,_1561):= bat.hasMoreElements(timestamp_bat);#888 (_1559:lng, _1560:oid, _1561:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J886}
+    redo (_1559,_1560,_1561) := bat.hasMoreElements(timestamp_bat);#888 (_1559:lng, _1560:oid, _1561:timestamp) := CHPbunHasMoreElements(timestamp_bat:bat[:oid,:timestamp]) {J886}
 exit (_1559,_1560,_1561);               #889 (_1559:lng, _1560:oid, _1561:timestamp) 
     timestamp_minus:bat[:oid,:timestamp]  := _1556;#890 timestamp_minus:bat[:oid,:timestamp] := _1556:bat[:oid,:timestamp] {G}
 #var timestamp_minus := [add](timestamp_bat, calc.lng(-60*1000)); 
@@ -1479,11 +1479,11 @@ exit (_1559,_1560,_1561);               #889 (_1559:lng, _1560:oid, _1561:timest
     mi_a := bat.setColumn(timestamp_minus,"min1");#896 mi_a:void := BKCsetColumn(timestamp_minus:bat[:oid,:timestamp], _773:str) 
 #	timestamp_minus.bat.setColumn("min1"), 
     _1568 := bat.new(nil:oid,nil:lng);  #898 _1568:bat[:oid,:lng] := CMDBATnew(_1557:oid, _1569:lng) {G}
-barrier (_1571,_1572,_1573):= bat.newIterator(timestamp_plus);#899 (_1571:lng, _1572:oid, _1573:timestamp) := CHPbunIterator(timestamp_plus:bat[:oid,:timestamp]) {J904}
+barrier (_1571,_1572,_1573) := bat.newIterator(timestamp_plus);#899 (_1571:lng, _1572:oid, _1573:timestamp) := CHPbunIterator(timestamp_plus:bat[:oid,:timestamp]) {J904}
     _1575 := algebra.find(timestamp_minus,_1572);#900 _1575:timestamp := ALGfind(timestamp_minus:bat[:oid,:timestamp], _1572:oid) 
     _1577 := mtime.diff(_1573,_1575);   #901 _1577:lng := MTIMEtimestamp_diff(_1573:timestamp, _1575:timestamp) 
     bat.insert(_1568,_1572,_1577);      #902 _1578:bat[:oid,:lng] := BKCinsert_bun(_1568:bat[:oid,:lng], _1572:oid, _1577:lng) {G}
-    redo (_1571,_1572,_1573):= bat.hasMoreElements(timestamp_plus);#903 (_1571:lng, _1572:oid, _1573:timestamp) := CHPbunHasMoreElements(timestamp_plus:bat[:oid,:timestamp]) {J900}
+    redo (_1571,_1572,_1573) := bat.hasMoreElements(timestamp_plus);#903 (_1571:lng, _1572:oid, _1573:timestamp) := CHPbunHasMoreElements(timestamp_plus:bat[:oid,:timestamp]) {J900}
 exit (_1571,_1572,_1573);               #904 (_1571:lng, _1572:oid, _1573:timestamp) 
     ni_a:bat[:oid,:lng]  := _1568;      #905 ni_a:bat[:oid,:lng] := _1568:bat[:oid,:lng] {G}
     oi_a := calc.*(60,1000);            #906 oi_a:int := CALCbinaryMULintint(_752:int, _753:int) 
@@ -1496,36 +1496,36 @@ exit (_1571,_1572,_1573);               #904 (_1571:lng, _1572:oid, _1573:timest
 #	[/]([diff](timestamp_plus, timestamp_minus),calc.lng(60*60*1000)).bat.setColumn("diff")); 
     ui_a:timezone  := algebra.find(timezones,"West/Europe");#914 ui_a:timezone := ALGfind(timezones:bat[:str,:timezone], _787:str) 
     _1582 := bat.new(nil:int,nil:timestamp);#915 _1582:bat[:int,:timestamp] := CMDBATnew(_1583:int, _1584:timestamp) {G}
-barrier (_1586,_1587,_1588):= bat.newIterator(date_seq);#916 (_1586:lng, _1587:int, _1588:date) := CHPbunIterator(date_seq:bat[:int,:date]) {J920}
+barrier (_1586,_1587,_1588) := bat.newIterator(date_seq);#916 (_1586:lng, _1587:int, _1588:date) := CHPbunIterator(date_seq:bat[:int,:date]) {J920}
     _1590 := mtime.timestamp(_1588,daytime_00,ui_a);#917 _1590:timestamp := MTIMEtimestamp_create(_1588:date, daytime_00:daytime, ui_a:timezone) 
     bat.insert(_1582,_1587,_1590);      #918 _1591:bat[:int,:timestamp] := BKCinsert_bun(_1582:bat[:int,:timestamp], _1587:int, _1590:timestamp) {G}
-    redo (_1586,_1587,_1588):= bat.hasMoreElements(date_seq);#919 (_1586:lng, _1587:int, _1588:date) := CHPbunHasMoreElements(date_seq:bat[:int,:date]) {J917}
+    redo (_1586,_1587,_1588) := bat.hasMoreElements(date_seq);#919 (_1586:lng, _1587:int, _1588:date) := CHPbunHasMoreElements(date_seq:bat[:int,:date]) {J917}
 exit (_1586,_1587,_1588);               #920 (_1586:lng, _1587:int, _1588:date) 
     timestamp_eur:bat[:int,:timestamp]  := _1582;#921 timestamp_eur:bat[:int,:timestamp] := _1582:bat[:int,:timestamp] {G}
 #var timestamp_eur := [timestamp](date_seq, daytime_00, algebra.find(timezones,"West/Europe")); 
     vi_a:timezone  := algebra.find(timezones,"Andes/Brazil");#923 vi_a:timezone := ALGfind(timezones:bat[:str,:timezone], _792:str) 
     _1595 := bat.new(nil:int,nil:timestamp);#924 _1595:bat[:int,:timestamp] := CMDBATnew(_1583:int, _1584:timestamp) {G}
-barrier (_1597,_1598,_1599):= bat.newIterator(date_seq);#925 (_1597:lng, _1598:int, _1599:date) := CHPbunIterator(date_seq:bat[:int,:date]) {J929}
+barrier (_1597,_1598,_1599) := bat.newIterator(date_seq);#925 (_1597:lng, _1598:int, _1599:date) := CHPbunIterator(date_seq:bat[:int,:date]) {J929}
     _1601 := mtime.timestamp(_1599,daytime_00,vi_a);#926 _1601:timestamp := MTIMEtimestamp_create(_1599:date, daytime_00:daytime, vi_a:timezone) 
     bat.insert(_1595,_1598,_1601);      #927 _1602:bat[:int,:timestamp] := BKCinsert_bun(_1595:bat[:int,:timestamp], _1598:int, _1601:timestamp) {G}
-    redo (_1597,_1598,_1599):= bat.hasMoreElements(date_seq);#928 (_1597:lng, _1598:int, _1599:date) := CHPbunHasMoreElements(date_seq:bat[:int,:date]) {J926}
+    redo (_1597,_1598,_1599) := bat.hasMoreElements(date_seq);#928 (_1597:lng, _1598:int, _1599:date) := CHPbunHasMoreElements(date_seq:bat[:int,:date]) {J926}
 exit (_1597,_1598,_1599);               #929 (_1597:lng, _1598:int, _1599:date) 
     timestamp_bra:bat[:int,:timestamp]  := _1595;#930 timestamp_bra:bat[:int,:timestamp] := _1595:bat[:int,:timestamp] {G}
 #var timestamp_bra := [timestamp](date_seq, daytime_00, algebra.find(timezones,"Andes/Brazil")); 
     wi_a := bat.setColumn(date_seq,"date");#932 wi_a:void := BKCsetColumn(date_seq:bat[:int,:date], _796:str) 
 #io.print(date_seq.bat.setColumn("date"),  
     _1606 := bat.new(nil:int,nil:int);  #934 _1606:bat[:int,:int] := CMDBATnew(_1583:int, _1583:int) {G}
-barrier (_1608,_1609,_1610):= bat.newIterator(date_seq);#935 (_1608:lng, _1609:int, _1610:date) := CHPbunIterator(date_seq:bat[:int,:date]) {J939}
+barrier (_1608,_1609,_1610) := bat.newIterator(date_seq);#935 (_1608:lng, _1609:int, _1610:date) := CHPbunIterator(date_seq:bat[:int,:date]) {J939}
     _1612 := mtime.dayofweek(_1610);    #936 _1612:int := MTIMEdate_extract_dayofweek(_1610:date) 
     bat.insert(_1606,_1609,_1612);      #937 _1613:bat[:int,:int] := BKCinsert_bun(_1606:bat[:int,:int], _1609:int, _1612:int) {G}
-    redo (_1608,_1609,_1610):= bat.hasMoreElements(date_seq);#938 (_1608:lng, _1609:int, _1610:date) := CHPbunHasMoreElements(date_seq:bat[:int,:date]) {J936}
+    redo (_1608,_1609,_1610) := bat.hasMoreElements(date_seq);#938 (_1608:lng, _1609:int, _1610:date) := CHPbunHasMoreElements(date_seq:bat[:int,:date]) {J936}
 exit (_1608,_1609,_1610);               #939 (_1608:lng, _1609:int, _1610:date) 
     xi_a:bat[:int,:int]  := _1606;      #940 xi_a:bat[:int,:int] := _1606:bat[:int,:int] {G}
     _1617 := bat.new(nil:int,nil:str);  #941 _1617:bat[:int,:str] := CMDBATnew(_1618:int, _1619:str) {G}
-barrier (_1621,_1622,_1623):= bat.newIterator(xi_a);#942 (_1621:lng, _1622:int, _1623:int) := CHPbunIterator(xi_a:bat[:int,:int]) {J946}
+barrier (_1621,_1622,_1623) := bat.newIterator(xi_a);#942 (_1621:lng, _1622:int, _1623:int) := CHPbunIterator(xi_a:bat[:int,:int]) {J946}
     _1625 := mtime.dayname(_1623);      #943 _1625:str := MTIMEday_to_str(_1623:int) {G}
     bat.insert(_1617,_1622,_1625);      #944 _1626:bat[:int,:str] := BKCinsert_bun(_1617:bat[:int,:str], _1622:int, _1625:str) {G}
-    redo (_1621,_1622,_1623):= bat.hasMoreElements(xi_a);#945 (_1621:lng, _1622:int, _1623:int) := CHPbunHasMoreElements(xi_a:bat[:int,:int]) {J943}
+    redo (_1621,_1622,_1623) := bat.hasMoreElements(xi_a);#945 (_1621:lng, _1622:int, _1623:int) := CHPbunHasMoreElements(xi_a:bat[:int,:int]) {J943}
 exit (_1621,_1622,_1623);               #946 (_1621:lng, _1622:int, _1623:int) 
     yi_a:bat[:int,:str]  := _1617;      #947 yi_a:bat[:int,:str] := _1617:bat[:int,:str] {G}
     aj_a := bat.setColumn(yi_a,"day");  #948 aj_a:void := BKCsetColumn(yi_a:bat[:int,:str], _803:str) 
@@ -1534,10 +1534,10 @@ exit (_1621,_1622,_1623);               #946 (_1621:lng, _1622:int, _1623:int)
 #	timestamp_eur.bat.setColumn("West/Europe"), 
     cj_a:timezone  := algebra.find(timezones,"West/Europe");#952 cj_a:timezone := ALGfind(timezones:bat[:str,:timezone], _787:str) 
     _1630 := bat.new(nil:int,nil:bit);  #953 _1630:bat[:int,:bit] := CMDBATnew(_1618:int, _1631:bit) {G}
-barrier (_1633,_1634,_1635):= bat.newIterator(timestamp_eur);#954 (_1633:lng, _1634:int, _1635:timestamp) := CHPbunIterator(timestamp_eur:bat[:int,:timestamp]) {J958}
+barrier (_1633,_1634,_1635) := bat.newIterator(timestamp_eur);#954 (_1633:lng, _1634:int, _1635:timestamp) := CHPbunIterator(timestamp_eur:bat[:int,:timestamp]) {J958}
     _1637 := mtime.dst(_1635,cj_a);     #955 _1637:bit := MTIMEtimestamp_inside_dst(_1635:timestamp, cj_a:timezone) 
     bat.insert(_1630,_1634,_1637);      #956 _1638:bat[:int,:bit] := BKCinsert_bun(_1630:bat[:int,:bit], _1634:int, _1637:bit) {G}
-    redo (_1633,_1634,_1635):= bat.hasMoreElements(timestamp_eur);#957 (_1633:lng, _1634:int, _1635:timestamp) := CHPbunHasMoreElements(timestamp_eur:bat[:int,:timestamp]) {J955}
+    redo (_1633,_1634,_1635) := bat.hasMoreElements(timestamp_eur);#957 (_1633:lng, _1634:int, _1635:timestamp) := CHPbunHasMoreElements(timestamp_eur:bat[:int,:timestamp]) {J955}
 exit (_1633,_1634,_1635);               #958 (_1633:lng, _1634:int, _1635:timestamp) 
     dj_a:bat[:int,:bit]  := _1630;      #959 dj_a:bat[:int,:bit] := _1630:bat[:int,:bit] {G}
     ej_a := bat.setColumn(dj_a,"dst");  #960 ej_a:void := BKCsetColumn(dj_a:bat[:int,:bit], _809:str) 
@@ -1546,10 +1546,10 @@ exit (_1633,_1634,_1635);               #958 (_1633:lng, _1634:int, _1635:timest
 #	timestamp_bra.bat.setColumn("Andes/Brazil"), 
     gj_a:timezone  := algebra.find(timezones,"Andes/Brazil");#964 gj_a:timezone := ALGfind(timezones:bat[:str,:timezone], _792:str) 
     _1642 := bat.new(nil:int,nil:bit);  #965 _1642:bat[:int,:bit] := CMDBATnew(_1618:int, _1631:bit) {G}
-barrier (_1644,_1645,_1646):= bat.newIterator(timestamp_bra);#966 (_1644:lng, _1645:int, _1646:timestamp) := CHPbunIterator(timestamp_bra:bat[:int,:timestamp]) {J970}
+barrier (_1644,_1645,_1646) := bat.newIterator(timestamp_bra);#966 (_1644:lng, _1645:int, _1646:timestamp) := CHPbunIterator(timestamp_bra:bat[:int,:timestamp]) {J970}
     _1648 := mtime.dst(_1646,gj_a);     #967 _1648:bit := MTIMEtimestamp_inside_dst(_1646:timestamp, gj_a:timezone) 
     bat.insert(_1642,_1645,_1648);      #968 _1649:bat[:int,:bit] := BKCinsert_bun(_1642:bat[:int,:bit], _1645:int, _1648:bit) {G}
-    redo (_1644,_1645,_1646):= bat.hasMoreElements(timestamp_bra);#969 (_1644:lng, _1645:int, _1646:timestamp) := CHPbunHasMoreElements(timestamp_bra:bat[:int,:timestamp]) {J967}
+    redo (_1644,_1645,_1646) := bat.hasMoreElements(timestamp_bra);#969 (_1644:lng, _1645:int, _1646:timestamp) := CHPbunHasMoreElements(timestamp_bra:bat[:int,:timestamp]) {J967}
 exit (_1644,_1645,_1646);               #970 (_1644:lng, _1645:int, _1646:timestamp) 
     hj_a:bat[:int,:bit]  := _1642;      #971 hj_a:bat[:int,:bit] := _1642:bat[:int,:bit] {G}
     ij_a := bat.setColumn(hj_a,"dst");  #972 ij_a:void := BKCsetColumn(hj_a:bat[:int,:bit], _809:str) 

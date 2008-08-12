@@ -116,7 +116,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			stream_printf(cntxt->fdout,"Constants:%d\n",j);
 			stream_printf(cntxt->fdout,"retc %d var %s\n",p->retc,getVarName(mb,getArg(p,0)));
 			stream_printf(cntxt->fdout,"last update:%d\n", getLastUpdate(span,getArg(p,0)));
-			printInstruction(cntxt->fdout, mb, stk, p, LIST_MAL_DEBUG);	
+			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_DEBUG);	
 #endif
 			if( j && p->retc== 1 && p->barrier == 0 &&
 				getLastUpdate(span,getArg(p,0)) == i  && !isUnsafeFunction(p)){ msg = reenterMAL(cntxt,mb,i,i+1,env,0,0);

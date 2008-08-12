@@ -708,59 +708,13 @@ We rely on the buffersize of instruction2str.
 str
 call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 {
-	int k;
-	size_t len;
-	str msg,w;
-	str s;
+	str msg;
 	InstrPtr p;
 
+	(void) stk;
+	(void) flags;
 	p= getInstrPtr(mb,pc);
-	msg = instruction2str(mb, stk, p, FALSE);
-	s = strchr(msg, '(');
-	if (p->retc > 1 && s) {
-		s = strchr(s + 1, '(');
-	}
-	if (s) {
-		s++;
-		*s = 0;
-		len = strlen(msg);
-		for (k = p->retc; k < p->argc; k++) {
-			VarPtr v = getVar(mb, getArg(p, k));
-			ValPtr val = &stk->stk[getArg(p, k)];
-
-			if (v->tmpindex == 0)
-				sprintf(msg+len, "%s=", v->name);
-			else
-				sprintf(msg+len, "%c%d=", TMPMARKER, v->tmpindex);
-			w = 0;
-			ATOMformat(val->vtype, VALptr(val), &w);
-			strcat(msg,w);
-			GDKfree(w);
-			if( ATOMcmp(val->vtype, ATOMnilptr(val->vtype), VALptr(val))==0){
-				str tpe= getTypeName(v->type);
-				strcat(msg,":");
-				strcat(msg,tpe);
-				GDKfree(tpe);
-			}
-			/* in performance monitoring mode we show more details */
-			if( (flags || malProfileMode) && isaBatType(v->type)){
-				str tpe= getTypeName(v->type);
-				BAT *b;
-				strcat(msg,tpe);
-				b= BATdescriptor(val->val.ival);
-				if( b){
-					len= strlen(msg);
-					sprintf(msg+len,"{" SZFMT "}",BATcount(b));
-					BBPunfix(b->batCacheid);
-				}
-				GDKfree(tpe);
-			}
-			if (k < p->argc - 1)
-				strcat(msg,", ");
-			len= strlen(msg);
-		}
-		strcat(msg,")");
-	} 
+	msg = instruction2str(mb, stk, p, LIST_MAL_CALL);
 	return msg;
 }
 
@@ -768,7 +722,7 @@ void
 printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
-	msg = call2str(mb, stk, pc, cntxt->flags);
+	msg = instruction2str(mb, stk, getInstrPtr(mb,pc), LIST_MAL_CALL);
 	stream_printf(cntxt->fdout, "#%s at %s.%s[%d]\n", msg, 
 		getModuleId(getInstrPtr(mb,0)),
 		getFunctionId(getInstrPtr(mb,0)),pc);

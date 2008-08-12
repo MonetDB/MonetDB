@@ -125,11 +125,11 @@ stdout of test 'tst4700` in directory 'src/optimizer` itself:
 function user.tst903():void;            #  0 tst903:void := user.tst903() {G}
     t0 := alarm.usec();                 #  1 t0:lng := ALARMusec() 
     b := bat.new(:oid,:lng);            #  2 b:bat[:oid,:lng] := CMDBATnew(_3:oid, _4:lng) {G}
-barrier (go,i):= language.newRange(0:lng);#  3 (go:bit, i:lng) := RNGnewRange_lng(_7:lng) {J8}
+barrier (go,i) := language.newRange(0:lng);#  3 (go:bit, i:lng) := RNGnewRange_lng(_7:lng) {J8}
     k := mmath.rand();                  #  4 k:int := MATHrandint() 
     l := calc.lng(k);                   #  5 l:lng := CALCint2lng(k:int) 
     bat.insert(b,nil:oid,l);            #  6 _10:bat[:oid,:lng] := BKCinsert_bun(b:bat[:oid,:lng], _11:oid, l:lng) {G}
-    redo (go,i):= language.nextElement(1:lng,1000000:lng);#  7 (go:bit, i:lng) := RNGnextElement_lng(_12:lng, _13:lng) {J4}
+    redo (go,i) := language.nextElement(1:lng,1000000:lng);#  7 (go:bit, i:lng) := RNGnextElement_lng(_12:lng, _13:lng) {J4}
 exit (go,i);                            #  8 (go:bit, i:lng) 
     t1 := alarm.usec();                 #  9 t1:lng := ALARMusec() 
     d0 := calc.-(t1,t0);                # 10 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 

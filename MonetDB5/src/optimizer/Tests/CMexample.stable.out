@@ -31,15 +31,15 @@ function user.main():void;              #  0 main:void := user.main() {G}
     j{rows=100:lng} := algebra.join(rs{rows=501:lng},rr{rows=100:lng});#  6 j:bat[:oid,:oid] := ALGjoin(rs:bat[:oid,:int], rr:bat[:int,:oid]) {G}
     mdb.list();                         #  7 _14:void := MDBlist() 
 end main;	# 8  
-function user.main():void;
+function user.main():void;              #  0 main:void := user.main() {G}
 # Cost model example 
-    r{rows=100} := bat.new(:oid,:int);
-    s{rows=1000} := bat.new(:oid,:int);
-    rs{rows=501:lng} := algebra.select(s{rows=1000},1,1);
-    rr{rows=100:lng} := bat.reverse(r{rows=100});
-    j{rows=100:lng} := algebra.join(rs{rows=501:lng},rr{rows=100:lng});
-    mdb.list();
-end main;
+    r{rows=100} := bat.new(:oid,:int);  #  2 r:bat[:oid,:int] := CMDBATnew(_4:oid, _5:int) {G}
+    s{rows=1000} := bat.new(:oid,:int); #  3 s:bat[:oid,:int] := CMDBATnew(_4:oid, _8:int) {G}
+    rs{rows=501:lng} := algebra.select(s{rows=1000},1,1);#  4 rs:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], _10:int, _10:int) {G}
+    rr{rows=100:lng} := bat.reverse(r{rows=100});#  5 rr:bat[:int,:oid] := BKCreverse(r:bat[:oid,:int]) {G}
+    j{rows=100:lng} := algebra.join(rs{rows=501:lng},rr{rows=100:lng});#  6 j:bat[:oid,:oid] := ALGjoin(rs:bat[:oid,:int], rr:bat[:int,:oid]) {G}
+    mdb.list();                         #  7 _14:void := MDBlist() 
+end main;                               #  8  
 
 # 08:55:26 >  
 # 08:55:26 >  Done.

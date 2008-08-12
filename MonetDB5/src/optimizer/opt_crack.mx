@@ -64,7 +64,7 @@ OPTcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = old[i];
 #ifdef DEBUG_OPT_CRACK
 		printf("limit is at: %d and i is at: %d  ", limit, i);
-	        printInstruction(cntxt->fdout, mb, stk, p, LIST_MAL_DEBUG);	
+	        printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_DEBUG);	
 #endif
 		/* find and replace algebra select commands with crack select ones*/
 

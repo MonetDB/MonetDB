@@ -55,11 +55,11 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.print(t);                        # 15 _30:void := IOprint_val(t:bat[:int,:url]) 
     rb := bat.new(:int,:url);           # 16 rb:bat[:int,:url] := CMDBATnew(_2:int, _3:url) {G}
     io.print("start loop");             # 17 _32:void := IOprint_val(_33:str) 
-barrier (mloop:lng ,h:int ,B2:url ):= bat.newIterator(t);# 18 (mloop:lng, h:int, B2:url) := CHPbunIterator(t:bat[:int,:url]) {GJ23}
+barrier (mloop:lng ,h:int ,B2:url ) := bat.newIterator(t);# 18 (mloop:lng, h:int, B2:url) := CHPbunIterator(t:bat[:int,:url]) {GJ23}
     io.print(h);                        # 19 _37:void := IOprint_val(h:int) 
     io.print(B2);                       # 20 _38:void := IOprint_val(B2:url) 
     bat.insert(rb,h,B2);                # 21 _39:bat[:int,:url] := BKCinsert_bun(rb:bat[:int,:url], h:int, B2:url) {G}
-    redo (mloop:lng ,h:int ,B2:url ):= bat.hasMoreElements(t);# 22 (mloop:lng, h:int, B2:url) := CHPbunHasMoreElements(t:bat[:int,:url]) {GJ19}
+    redo (mloop:lng ,h:int ,B2:url ) := bat.hasMoreElements(t);# 22 (mloop:lng, h:int, B2:url) := CHPbunHasMoreElements(t:bat[:int,:url]) {GJ19}
 exit mloop:lng ;                        # 23 mloop:lng 
     io.print(rb);                       # 24 _40:void := IOprint_val(rb:bat[:int,:url]) 
 end main;	# 25  

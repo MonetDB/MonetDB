@@ -81,7 +81,7 @@ function user.create(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];#  0 create:bat[:a
 #	io.print("        var a := new (oid,flt);"); 
     a := bat.new(nil:oid,nil:flt);      #  2 a:bat[:oid,:flt] := CMDBATnew(_4:oid, _5:flt) {G}
 #	io.print("        b@batloop(){"); 
-barrier (aa_a,aa_aH,aa_aT):= bat.newIterator(b);#  4 (aa_a:lng, aa_aH:any, aa_aT:any) := CHPbunIterator(b:bat[:any_1,:any_2]) {PJ13}
+barrier (aa_a,aa_aH,aa_aT) := bat.newIterator(b);#  4 (aa_a:lng, aa_aH:any, aa_aT:any) := CHPbunIterator(b:bat[:any_1,:any_2]) {PJ13}
 #	io.print("                if (a.count() = 0)"); 
     ba_a := aggr.count(a);              #  6 ba_a:int := ALGcount_bat(a:bat[:oid,:flt]) 
 barrier ca_a := calc.==(ba_a,0);        #  7 ca_a:bit := CALCcompEQintint(ba_a:int, _13:int) {J11}
@@ -89,7 +89,7 @@ barrier ca_a := calc.==(ba_a,0);        #  7 ca_a:bit := CALCcompEQintint(ba_a:i
     return da_a := a;                   #  9 da_a:bat[:oid,:flt] := a:bat[:oid,:flt] {G}
 #	io.print("        }"); 
 exit ca_a;                              # 11 ca_a:bit 
-    redo (aa_a,aa_aH,aa_aT):= bat.hasMoreElements(b);# 12 (aa_a:lng, aa_aH:any, aa_aT:any) := CHPbunHasMoreElements(b:bat[:any_1,:any_2]) {PJ5}
+    redo (aa_a,aa_aH,aa_aT) := bat.hasMoreElements(b);# 12 (aa_a:lng, aa_aH:any, aa_aT:any) := CHPbunHasMoreElements(b:bat[:any_1,:any_2]) {PJ5}
 exit (aa_a,aa_aH,aa_aT);                # 13 (aa_a:lng, aa_aH:any, aa_aT:any) 
 #	io.print("        return a;"); 
     return ea_a := a;                   # 15 ea_a:bat[:oid,:flt] := a:bat[:oid,:flt] {G}

@@ -60,9 +60,9 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.print(t);                        # 17 _34:void := IOprint_val(t:bat[:int,:url]) 
     rb := bat.new(:int,:url);           # 18 rb:bat[:int,:url] := CMDBATnew(_2:int, _3:url) {G}
     io.print("start loop");             # 19 _36:void := IOprint_val(_37:str) 
-barrier (mloop:lng ,h:int ,B2:url ):= bat.newIterator(t);# 20 (mloop:lng, h:int, B2:url) := CHPbunIterator(t:bat[:int,:url]) {GJ23}
+barrier (mloop:lng ,h:int ,B2:url ) := bat.newIterator(t);# 20 (mloop:lng, h:int, B2:url) := CHPbunIterator(t:bat[:int,:url]) {GJ23}
     io.print(B2);                       # 21 _41:void := IOprint_val(B2:url) 
-    redo (mloop:lng ,h:int ,B2:url ):= bat.hasMoreElements(t);# 22 (mloop:lng, h:int, B2:url) := CHPbunHasMoreElements(t:bat[:int,:url]) {GJ21}
+    redo (mloop:lng ,h:int ,B2:url ) := bat.hasMoreElements(t);# 22 (mloop:lng, h:int, B2:url) := CHPbunHasMoreElements(t:bat[:int,:url]) {GJ21}
 exit mloop:lng ;                        # 23 mloop:lng 
 end main;	# 24  
 [ "build a table finished" ]

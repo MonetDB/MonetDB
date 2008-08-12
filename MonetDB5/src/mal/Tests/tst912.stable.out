@@ -27,14 +27,14 @@ stdout of test 'tst912` in directory 'src/mal` itself:
 #    return (bb,c):= (false,c);
 #end getChunk;
 factory user.getChunk(b:bat[:oid,:lng],size:lng) (bb:bit,c:bat[:oid,:lng]);#  0 (bb:bit, c:bat[:oid,:lng]) := user.getChunk(b:bat[:oid,:lng], size:lng) {G}
-    (chk,c):= bat.newIterator(b,size);  #  1 (chk:lng, c:bat[:oid,:lng]) := CHPnewChunkIterator(b:bat[:oid,:lng], size:lng) {G}
+    (chk,c) := bat.newIterator(b,size); #  1 (chk:lng, c:bat[:oid,:lng]) := CHPnewChunkIterator(b:bat[:oid,:lng], size:lng) {G}
 barrier allways := calc.>=(chk,0);      #  2 allways:bit := CALCcompGElngint(chk:lng, _7:int) {J6}
-    yield (bb,c):= (true,c);            #  3 (bb:bit, c:bat[:oid,:lng]) := _8:bit, c:bat[:oid,:lng] {G}
-    (chk,c):= bat.hasMoreElements(b,size);#  4 (chk:lng, c:bat[:oid,:lng]) := CHPhasMoreChunks(b:bat[:oid,:lng], size:lng) {G}
+    yield (bb,c) := (true,c);           #  3 (bb:bit, c:bat[:oid,:lng]) := _8:bit, c:bat[:oid,:lng] {G}
+    (chk,c) := bat.hasMoreElements(b,size);#  4 (chk:lng, c:bat[:oid,:lng]) := CHPhasMoreChunks(b:bat[:oid,:lng], size:lng) {G}
     redo allways := calc.>=(chk,0);     #  5 allways:bit := CALCcompGElngint(chk:lng, _7:int) {J3}
 exit allways;                           #  6 allways:bit 
     io.print("#factory done\n");        #  7 _9:void := IOprint_val(_10:str) 
-    return (bb,c):= (false,c);          #  8 (bb:bit, c:bat[:oid,:lng]) := _11:bit, c:bat[:oid,:lng] {G}
+    return (bb,c) := (false,c);         #  8 (bb:bit, c:bat[:oid,:lng]) := _11:bit, c:bat[:oid,:lng] {G}
 end getChunk;	# 9  
 #
 #function choptest(b:bat[:void,:lng], size:lng, base:lng);
@@ -58,9 +58,9 @@ end getChunk;	# 9
 #end choptest;
 function user.choptest(b:bat[:oid,:lng],size:lng,base:lng):void;#  0 choptest:void := user.choptest(b:bat[:oid,:lng], size:lng, base:lng) {G}
     t0 := alarm.usec();                 #  1 t0:lng := ALARMusec() 
-barrier (tst,c):= user.getChunk(b,size);#  2 (tst:bit, c:bat[:oid,:lng]) := user.getChunk(b:bat[:oid,:lng], size:lng) {GJ5}
+barrier (tst,c) := user.getChunk(b,size);#  2 (tst:bit, c:bat[:oid,:lng]) := user.getChunk(b:bat[:oid,:lng], size:lng) {GJ5}
     t := algebra.select(c,256000:lng,266000:lng);#  3 t:bat[:oid,:lng] := ALGselect(c:bat[:oid,:lng], _8:lng, _9:lng) {G}
-    redo (tst,c):= user.getChunk(b,size);#  4 (tst:bit, c:bat[:oid,:lng]) := user.getChunk(b:bat[:oid,:lng], size:lng) {GJ3}
+    redo (tst,c) := user.getChunk(b,size);#  4 (tst:bit, c:bat[:oid,:lng]) := user.getChunk(b:bat[:oid,:lng], size:lng) {GJ3}
 exit (tst,c);                           #  5 (tst:bit, c:bat[:oid,:lng]) 
     t1 := alarm.usec();                 #  6 t1:lng := ALARMusec() 
     d0 := calc.-(t1,t0);                #  7 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
@@ -102,11 +102,11 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # analyse the overhead of chopping a table 
 # the multiplex code blocks. 
     b := bat.new(:oid,:lng);            #  3 b:bat[:oid,:lng] := CMDBATnew(_4:oid, _5:lng) {G}
-barrier (go,i):= language.newRange(0:lng);#  4 (go:bit, i:lng) := RNGnewRange_lng(_8:lng) {J9}
+barrier (go,i) := language.newRange(0:lng);#  4 (go:bit, i:lng) := RNGnewRange_lng(_8:lng) {J9}
     k := mmath.rand();                  #  5 k:int := MATHrandint() 
     l := calc.lng(k);                   #  6 l:lng := CALCint2lng(k:int) 
     bat.insert(b,nil:oid,l);            #  7 _11:bat[:oid,:lng] := BKCinsert_bun(b:bat[:oid,:lng], _12:oid, l:lng) {G}
-    redo (go,i):= language.nextElement(1:lng,1000000:lng);#  8 (go:bit, i:lng) := RNGnextElement_lng(_13:lng, _14:lng) {J5}
+    redo (go,i) := language.nextElement(1:lng,1000000:lng);#  8 (go:bit, i:lng) := RNGnextElement_lng(_13:lng, _14:lng) {J5}
 exit (go,i);                            #  9 (go:bit, i:lng) 
     t0 := alarm.usec();                 # 10 t0:lng := ALARMusec() 
 barrier doit := true;                   # 11 doit:bit := _17:bit {J13}

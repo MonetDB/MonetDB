@@ -36,10 +36,10 @@ function user.main():void;              #  0 main:void := user.main() {G}
     profiler.setFilter("*","*");        #  2 _2:void := CMDsetFilterProfiler(_3:str, _3:str) 
     b := bat.new(:oid,:lng);            #  3 b:bat[:oid,:lng] := CMDBATnew(_5:oid, _6:lng) {G}
     t0 := alarm.usec();                 #  4 t0:lng := ALARMusec() 
-barrier (v,i):= language.newRange(0:lng);#  5 (v:bit, i:lng) := RNGnewRange_lng(_10:lng) {J9}
+barrier (v,i) := language.newRange(0:lng);#  5 (v:bit, i:lng) := RNGnewRange_lng(_10:lng) {J9}
     o := calc.oid(i);                   #  6 o:oid := CALClng2oid(i:lng) 
     bat.insert(b,o,i);                  #  7 _12:bat[:oid,:lng] := BKCinsert_bun(b:bat[:oid,:lng], o:oid, i:lng) {G}
-    redo (v,i):= language.nextElement(1:lng,1000000:lng);#  8 (v:bit, i:lng) := RNGnextElement_lng(_13:lng, _14:lng) {J6}
+    redo (v,i) := language.nextElement(1:lng,1000000:lng);#  8 (v:bit, i:lng) := RNGnextElement_lng(_13:lng, _14:lng) {J6}
 exit (v,i);                             #  9 (v:bit, i:lng) 
     t1 := alarm.usec();                 # 10 t1:lng := ALARMusec() 
     c := algebra.copy(b);               # 11 c:bat[:oid,:lng] := ALGcopy(b:bat[:oid,:lng]) {G}

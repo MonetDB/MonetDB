@@ -51,10 +51,10 @@ function user.main():void;              #  0 main:void := user.main() {G}
     bat.insert(m,10@0:oid,"ten");       #  3 _5:bat[:oid,:str] := BKCinsert_bun(m:bat[:oid,:str], _6:oid, _7:str) {G}
     bat.insert(m,20@0:oid,"twenty");    #  4 _8:bat[:oid,:str] := BKCinsert_bun(m:bat[:oid,:str], _9:oid, _10:str) {G}
     _15 := bat.new(nil:oid,nil:BAT);    #  5 _15:bat[:oid,:BAT] := CMDBATnew(_16:oid, _17:BAT) {G}
-barrier (_19,_20,_21):= bat.newIterator(m);#  6 (_19:lng, _20:oid, _21:str) := CHPbunIterator(m:bat[:oid,:str]) {GJ10}
+barrier (_19,_20,_21) := bat.newIterator(m);#  6 (_19:lng, _20:oid, _21:str) := CHPbunIterator(m:bat[:oid,:str]) {GJ10}
     _23 := user.createBAT(_21);         #  7 _23:BAT := user.createBAT(_21:str) {G}
     bat.insert(_15,_20,_23);            #  8 _24:bat[:oid,:BAT] := BKCinsert_bun(_15:bat[:oid,:BAT], _20:oid, _23:BAT) {G}
-    redo (_19,_20,_21):= bat.hasMoreElements(m);#  9 (_19:lng, _20:oid, _21:str) := CHPbunHasMoreElements(m:bat[:oid,:str]) {GJ7}
+    redo (_19,_20,_21) := bat.hasMoreElements(m);#  9 (_19:lng, _20:oid, _21:str) := CHPbunHasMoreElements(m:bat[:oid,:str]) {GJ7}
 exit (_19,_20,_21);                     # 10 (_19:lng, _20:oid, _21:str) 
     r:bat[:oid,:BAT]  := _15;           # 11 r:bat[:oid,:BAT] := _15:bat[:oid,:BAT] {G}
     io.print(r);                        # 12 _14:void := IOprint_val(r:bat[:oid,:BAT]) 

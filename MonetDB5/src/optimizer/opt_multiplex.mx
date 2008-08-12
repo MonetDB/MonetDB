@@ -139,9 +139,9 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #ifdef DEBUG_OPT_MULTIPLEX
 	stream_printf(cntxt->fdout,"calling the optimize multiplex script routine\n");
-	printFunction(cntxt->fdout,mb, stk, LIST_MAL_DEBUG );
+	printFunction(cntxt->fdout,mb, 0, LIST_MAL_DEBUG );
 	stream_printf(cntxt->fdout,"multiplex against operator %d %s\n",iter, getTypeName(getVarType(mb,iter)));
-	printInstruction(cntxt->fdout,mb, stk, pci,LIST_MAL_DEBUG);
+	printInstruction(cntxt->fdout,mb, 0, pci,LIST_MAL_DEBUG);
 #endif
 @-
 Beware, the operator constant (arg=1) is passed along as well,

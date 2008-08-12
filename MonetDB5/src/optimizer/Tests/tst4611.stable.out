@@ -42,13 +42,13 @@ function user.main():void;              #  0 main:void := user.main() {G}
     c := bat.new(:int,:int);            #  4 c:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     h := user.joinPath(a,b,c);          #  5 h:bat[:int,:int] := user.joinPath(a:bat[:int,:int], b:bat[:int,:int], c:bat[:int,:int]) {PG}
     mdb.list();                         #  6 _11:void := MDBlist() 
-function user.main():void;
+function user.main():void;              #  0 main:void := user.main() {G}
 # the first test for macro expansions and inversions 
-    a := bat.new(:int,:int);
-    b := bat.new(:int,:int);
-    c := bat.new(:int,:int);
-    h := user.joinPath(a,b,c);
-    mdb.list();
+    a := bat.new(:int,:int);            #  2 a:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    c := bat.new(:int,:int);            #  4 c:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    h := user.joinPath(a,b,c);          #  5 h:bat[:int,:int] := user.joinPath(a:bat[:int,:int], b:bat[:int,:int], c:bat[:int,:int]) {PG}
+    mdb.list();                         #  6 _11:void := MDBlist() 
 
 # 19:36:05 >  
 # 19:36:05 >  Done.

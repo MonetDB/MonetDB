@@ -59,7 +59,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.printf("%s\n",wt);               # 20 _30:void := IOprint_formatted_str(_20:str, wt:str) 
     Bt := inspect.getType(B);           # 21 Bt:str := INSPECTtypeName(B:bte) {G}
     io.printf("%s\n",Bt);               # 22 _32:void := IOprint_formatted_str(_20:str, Bt:str) 
-    (ht,tt):= inspect.getType(bb);      # 23 (ht:str, tt:str) := INSPECTtypeName(bb:bat[:oid,:str]) {G}
+    (ht,tt) := inspect.getType(bb);     # 23 (ht:str, tt:str) := INSPECTtypeName(bb:bat[:oid,:str]) {G}
     io.printf("bat  head %s\n",ht);     # 24 _35:void := IOprint_formatted_str(_36:str, ht:str) 
     io.printf("bat  head %s\n",tt);     # 25 _37:void := IOprint_formatted_str(_36:str, tt:str) 
 end main;	# 26  

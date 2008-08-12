@@ -13,6 +13,8 @@ stdout of test 'time01` in directory 'src/modules/kernel` itself:
 
 
 
+
+
 # MonetDB server v5.7.0, based on kernel v1.25.0
 # Serving database 'mTests_src_modules_kernel'
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked

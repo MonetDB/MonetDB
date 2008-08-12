@@ -67,15 +67,15 @@ They are produced by SQL compiler.
 @c
 #ifdef DEBUG_OPT_INLINE
 			stream_printf(cntxt->fdout,"check inline statement\n");
-			printInstruction(cntxt->fdout,mb,q,LIST_MAL_DEBUG);
-			printInstruction(cntxt->fdout,q->blk,sig,LIST_MAL_DEBUG);
+			printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_DEBUG);
+			printInstruction(cntxt->fdout,0,q->blk,sig,LIST_MAL_DEBUG);
 #endif
 			if( getModuleId(q) == malRef &&
 				getFunctionId(q)== multiplexRef &&
 				OPTinlineMultiplex(cntxt,mb,q)){
 #ifdef DEBUG_OPT_INLINE
 					stream_printf(cntxt->fdout,"multiplex inline function\n");
-					printInstruction(cntxt->fdout,mb,q,LIST_MAL_DEBUG);
+					printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_DEBUG);
 #endif
 			    varSetProp(mb, getArg(q,0), inlineProp, op_eq, NULL);
 			} else

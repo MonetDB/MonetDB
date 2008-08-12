@@ -1434,7 +1434,7 @@ For the time being, they are no-ops.
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(cntxt->fdout,"Result of multi table optimizer\n");
 	optimizerCheck(cntxt,mb,"merge test",1,0,0);
-	printFunction(cntxt->fdout, mb, stk, LIST_MAL_DEBUG);
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_DEBUG);
 #endif
 
 	return actions;

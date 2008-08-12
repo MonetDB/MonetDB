@@ -29,12 +29,12 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
     c := bat.new(:int,:int);            #  2 c:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     d := bat.new(:int,:int);            #  3 d:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     bat.insert(b,1,1);                  #  4 _5:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _6:int, _6:int) {G}
-barrier (x,y,z):= bat.newIterator(b);   #  5 (x:lng, y:int, z:int) := CHPbunIterator(b:bat[:int,:int]) {J7}
+barrier (x,y,z) := bat.newIterator(b);  #  5 (x:lng, y:int, z:int) := CHPbunIterator(b:bat[:int,:int]) {J7}
     io.print(x);                        #  6 _10:void := IOprint_val(x:lng) 
 exit (x,y,z);                           #  7 (x:lng, y:int, z:int) 
-barrier (x,y,z):= bat.newIterator(c);   #  8 (x:lng, y:int, z:int) := CHPbunIterator(c:bat[:int,:int]) {J11}
+barrier (x,y,z) := bat.newIterator(c);  #  8 (x:lng, y:int, z:int) := CHPbunIterator(c:bat[:int,:int]) {J11}
     io.print(x);                        #  9 _11:void := IOprint_val(x:lng) 
-    redo (x,y,z):= bat.hasMoreElements(c);# 10 (x:lng, y:int, z:int) := CHPbunHasMoreElements(c:bat[:int,:int]) {J9}
+    redo (x,y,z) := bat.hasMoreElements(c);# 10 (x:lng, y:int, z:int) := CHPbunHasMoreElements(c:bat[:int,:int]) {J9}
 exit (x,y,z);                           # 11 (x:lng, y:int, z:int) 
 # do not close d, it may be reused 
 barrier go := true;                     # 13 go:bit := _14:bit {J16}
@@ -50,27 +50,27 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #checking proper handling of scopes for the garbage collector 
     mdb.list("user","qry");             #  2 _5:void := MDBlist3(_3:str, _4:str) 
 end main;	# 3  
-function user.qry():void;
-    b := bat.new(:int,:int);
-    c := bat.new(:int,:int);
-    d := bat.new(:int,:int);
-    bat.insert(b,1,1);
-barrier (x,y,z):= bat.newIterator(b);
-    b := nil;
-    io.print(x);
-exit (x,y,z);
-barrier (x,y,z):= bat.newIterator(c);
-    io.print(x);
-    redo (x,y,z):= bat.hasMoreElements(c);
-    c := nil;
-exit (x,y,z);
+function user.qry():void;               #  0 qry:void := user.qry() {G}
+    b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
+    c := bat.new(:int,:int);            #  2 c:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
+    d := bat.new(:int,:int);            #  3 d:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
+    bat.insert(b,1,1);                  #  4 _5:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _6:int, _6:int) {G}
+barrier (x,y,z) := bat.newIterator(b);  #  5 (x:lng, y:int, z:int) := CHPbunIterator(b:bat[:int,:int]) {J8}
+    b := nil:BAT;                       #  6 b:bat[:int,:int] := _16:BAT {G}
+    io.print(x);                        #  7 _10:void := IOprint_val(x:lng) 
+exit (x,y,z);                           #  8 (x:lng, y:int, z:int) 
+barrier (x,y,z) := bat.newIterator(c);  #  9 (x:lng, y:int, z:int) := CHPbunIterator(c:bat[:int,:int]) {J13}
+    io.print(x);                        # 10 _11:void := IOprint_val(x:lng) 
+    redo (x,y,z) := bat.hasMoreElements(c);# 11 (x:lng, y:int, z:int) := CHPbunHasMoreElements(c:bat[:int,:int]) {J10}
+    c := nil:BAT;                       # 12 c:bat[:int,:int] := _16:BAT {G}
+exit (x,y,z);                           # 13 (x:lng, y:int, z:int) 
 # do not close d, it may be reused 
-barrier go := true;
-    io.print(d);
-    d := nil;
-    redo go := true;
-exit go;
-end qry;
+barrier go := true;                     # 15 go:bit := _14:bit {J19}
+    io.print(d);                        # 16 _15:void := IOprint_val(d:bat[:int,:int]) 
+    d := nil:BAT;                       # 17 d:bat[:int,:int] := _16:BAT {G}
+    redo go := true;                    # 18 go:bit := _14:bit {J16}
+exit go;                                # 19 go:bit 
+end qry;                                # 20  
 
 # 23:17:49 >  
 # 23:17:49 >  Done.

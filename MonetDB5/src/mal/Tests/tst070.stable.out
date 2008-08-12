@@ -22,8 +22,8 @@ stdout of test 'tst070` in directory 'src/mal` itself:
 !TypeException:user.foo[2]:'user.getName' undefined in: (initial:str, surname:str) := user.getName()
 !TypeException:user.foo[1]:'z' may not be used before being initialized
 function user.foo():void;               #  0 foo:void := user.foo() 
-    (x,y):= user.point(z);              #  1 (x:any, y:any) := user.point(z:int) {U}
-    (initial:str ,surname:str ):= user.getName();#  2 (initial:str, surname:str) := user.getName() {U}
+    (x,y) := user.point(z);             #  1 (x:any, y:any) := user.point(z:int) {U}
+    (initial:str ,surname:str ) := user.getName();#  2 (initial:str, surname:str) := user.getName() {U}
 end foo;	# 3  
 #
 function user.main():void;              #  0 main:void := user.main() 

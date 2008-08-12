@@ -212,7 +212,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 #ifdef DEBUG_OPT_GARBAGE
 	{
 		stream_printf(cntxt->fdout, "Garbage collected BAT variables \n");
-		printFunction(cntxt->fdout, mb, LIST_MAL_DEBUG);
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_DEBUG);
 		stream_printf(cntxt->fdout, "End of GCoptimizer\n");
 	}
 #endif

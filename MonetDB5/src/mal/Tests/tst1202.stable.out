@@ -301,28 +301,28 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.print(tzone_bat);                #125 _192:void := IOprint_val(tzone_bat:bat[:oid,:timezone]) 
 #io.print(tzone_bat.bat.setColumn("tzone")); 
     _210 := bat.new(nil:oid,nil:int);   #127 _210:bat[:oid,:int] := CMDBATnew(_211:oid, _212:int) {G}
-barrier (_214,_215,_216):= bat.newIterator(tzone_bat);#128 (_214:lng, _215:oid, _216:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J132}
+barrier (_214,_215,_216) := bat.newIterator(tzone_bat);#128 (_214:lng, _215:oid, _216:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J132}
     _218 := mtime.minutes(_216);        #129 _218:int := MTIMEtzone_extract_minutes(_216:timezone) 
     bat.insert(_210,_215,_218);         #130 _219:bat[:oid,:int] := BKCinsert_bun(_210:bat[:oid,:int], _215:oid, _218:int) {G}
-    redo (_214,_215,_216):= bat.hasMoreElements(tzone_bat);#131 (_214:lng, _215:oid, _216:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J129}
+    redo (_214,_215,_216) := bat.hasMoreElements(tzone_bat);#131 (_214:lng, _215:oid, _216:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J129}
 exit (_214,_215,_216);                  #132 (_214:lng, _215:oid, _216:timezone) 
     kd_a:bat[:oid,:int]  := _210;       #133 kd_a:bat[:oid,:int] := _210:bat[:oid,:int] {G}
     bat.setColumn(kd_a,"minutes");      #134 _197:void := BKCsetColumn(kd_a:bat[:oid,:int], _196:str) 
 #io.print([minutes](tzone_bat).bat.setColumn("minutes"), 
     _223 := bat.new(nil:oid,nil:zrule); #136 _223:bat[:oid,:zrule] := CMDBATnew(_211:oid, _224:zrule) {G}
-barrier (_226,_227,_228):= bat.newIterator(tzone_bat);#137 (_226:lng, _227:oid, _228:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J141}
+barrier (_226,_227,_228) := bat.newIterator(tzone_bat);#137 (_226:lng, _227:oid, _228:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J141}
     _230 := mtime.start_dst(_228);      #138 _230:zrule := MTIMEtzone_extract_start(_228:timezone) 
     bat.insert(_223,_227,_230);         #139 _231:bat[:oid,:zrule] := BKCinsert_bun(_223:bat[:oid,:zrule], _227:oid, _230:zrule) {G}
-    redo (_226,_227,_228):= bat.hasMoreElements(tzone_bat);#140 (_226:lng, _227:oid, _228:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J138}
+    redo (_226,_227,_228) := bat.hasMoreElements(tzone_bat);#140 (_226:lng, _227:oid, _228:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J138}
 exit (_226,_227,_228);                  #141 (_226:lng, _227:oid, _228:timezone) 
     md_a:bat[:oid,:zrule]  := _223;     #142 md_a:bat[:oid,:zrule] := _223:bat[:oid,:zrule] {G}
     bat.setColumn(md_a,"start_dst");    #143 _201:void := BKCsetColumn(md_a:bat[:oid,:zrule], _200:str) 
 #      [start_dst](tzone_bat).bat.setColumn("start_dst"), 
     _235 := bat.new(nil:oid,nil:zrule); #145 _235:bat[:oid,:zrule] := CMDBATnew(_211:oid, _224:zrule) {G}
-barrier (_237,_238,_239):= bat.newIterator(tzone_bat);#146 (_237:lng, _238:oid, _239:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J150}
+barrier (_237,_238,_239) := bat.newIterator(tzone_bat);#146 (_237:lng, _238:oid, _239:timezone) := CHPbunIterator(tzone_bat:bat[:oid,:timezone]) {J150}
     _241 := mtime.end_dst(_239);        #147 _241:zrule := MTIMEtzone_extract_end(_239:timezone) 
     bat.insert(_235,_238,_241);         #148 _242:bat[:oid,:zrule] := BKCinsert_bun(_235:bat[:oid,:zrule], _238:oid, _241:zrule) {G}
-    redo (_237,_238,_239):= bat.hasMoreElements(tzone_bat);#149 (_237:lng, _238:oid, _239:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J147}
+    redo (_237,_238,_239) := bat.hasMoreElements(tzone_bat);#149 (_237:lng, _238:oid, _239:timezone) := CHPbunHasMoreElements(tzone_bat:bat[:oid,:timezone]) {J147}
 exit (_237,_238,_239);                  #150 (_237:lng, _238:oid, _239:timezone) 
     od_a:bat[:oid,:zrule]  := _235;     #151 od_a:bat[:oid,:zrule] := _235:bat[:oid,:zrule] {G}
     bat.setColumn(od_a,"end_dst");      #152 _205:void := BKCsetColumn(od_a:bat[:oid,:zrule], _204:str) 

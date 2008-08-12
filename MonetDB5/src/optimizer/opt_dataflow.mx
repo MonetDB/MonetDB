@@ -104,7 +104,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  	span = newLifespan(mb);
 	setLifespan(mb,span);
 #ifdef DEBUG_DATAFLOW_OPT
-	printFunction(GDKstdout, mb, LIST_MAL_DEBUG);
+	printFunction(GDKstdout, mb,0, LIST_MAL_DEBUG);
 #endif
 	limit= mb->stop;
 	old = mb->stmt;

@@ -32,7 +32,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     i := nil:int;                       #  3 i:int := _13:int {G}
     io.print(i);                        #  4 _5:void := IOprint_val(i:int) 
     b := bat.new(:int,:int);            #  5 b:bat[:int,:int] := CMDBATnew(_7:int, _8:int) {G}
-    b := nil;                           #  6 b:bat[:int,:int] := _14:BAT {G}
+    b := nil:BAT;                       #  6 b:bat[:int,:int] := _14:BAT {G}
     io.print(b);                        #  7 _9:void := IOprint_val(b:bat[:int,:int]) 
     s := "hello";                       #  8 s:str := _11:str {G}
     s := nil:str;                       #  9 s:str := _15:str {G}

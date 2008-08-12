@@ -31,17 +31,17 @@ function user.main():void;              #  0 main:void := user.main() {G}
     clients.setListing(15);             #  2 _2:int := CLTsetListing(_3:int) 
     b := bat.new(:lng,:lng);            #  3 b:bat[:lng,:lng] := CMDBATnew(_5:lng, _5:lng) {G}
     i := -1:lng;                        #  4 i:lng := _7:lng 
-barrier (v,i):= language.newRange(0:lng);#  5 (v:bit, i:lng) := RNGnewRange_lng(_9:lng) {J8}
+barrier (v,i) := language.newRange(0:lng);#  5 (v:bit, i:lng) := RNGnewRange_lng(_9:lng) {J8}
     bat.insert(b,i,i);                  #  6 _10:bat[:lng,:lng] := BKCinsert_bun(b:bat[:lng,:lng], i:lng, i:lng) {G}
-    redo (v,i):= language.nextElement(1:lng,10:lng);#  7 (v:bit, i:lng) := RNGnextElement_lng(_11:lng, _12:lng) {J6}
+    redo (v,i) := language.nextElement(1:lng,10:lng);#  7 (v:bit, i:lng) := RNGnextElement_lng(_11:lng, _12:lng) {J6}
 exit (v,i);                             #  8 (v:bit, i:lng) 
     io.print(b);                        #  9 _13:void := IOprint_val(b:bat[:lng,:lng]) 
     c := 1;                             # 10 c:int := _15:int 
     _20 := bat.new(nil:lng,nil:lng);    # 11 _20:bat[:lng,:lng] := CMDBATnew(_21:lng, _21:lng) {G}
-barrier (_23,_24,_25):= bat.newIterator(b);# 12 (_23:lng, _24:lng, _25:lng) := CHPbunIterator(b:bat[:lng,:lng]) {J16}
+barrier (_23,_24,_25) := bat.newIterator(b);# 12 (_23:lng, _24:lng, _25:lng) := CHPbunIterator(b:bat[:lng,:lng]) {J16}
     _27 := calc.+(_25,c);               # 13 _27:lng := CALCbinaryADDlngint(_25:lng, c:int) 
     bat.insert(_20,_24,_27);            # 14 _28:bat[:lng,:lng] := BKCinsert_bun(_20:bat[:lng,:lng], _24:lng, _27:lng) {G}
-    redo (_23,_24,_25):= bat.hasMoreElements(b);# 15 (_23:lng, _24:lng, _25:lng) := CHPbunHasMoreElements(b:bat[:lng,:lng]) {J13}
+    redo (_23,_24,_25) := bat.hasMoreElements(b);# 15 (_23:lng, _24:lng, _25:lng) := CHPbunHasMoreElements(b:bat[:lng,:lng]) {J13}
 exit (_23,_24,_25);                     # 16 (_23:lng, _24:lng, _25:lng) 
     xz:bat[:lng,:lng]  := _20;          # 17 xz:bat[:lng,:lng] := _20:bat[:lng,:lng] {G}
     io.print(xz);                       # 18 _19:void := IOprint_val(xz:bat[:lng,:lng]) 

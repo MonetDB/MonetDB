@@ -52,10 +52,10 @@ function user.main():void;              #  0 main:void := user.main() {G}
     err := bat.insert(b,n0,n0);         # 14 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], n0:int, n0:int) {G}
     err := bat.insert(b,n0,81);         # 15 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], n0:int, _23:int) {G}
     io.print(b);                        # 16 _24:void := IOprint_val(b:bat[:int,:int]) 
-barrier (v,h,t):= bat.newIterator(b);   # 17 (v:lng, h:int, t:int) := CHPbunIterator(b:bat[:int,:int]) {J21}
+barrier (v,h,t) := bat.newIterator(b);  # 17 (v:lng, h:int, t:int) := CHPbunIterator(b:bat[:int,:int]) {J21}
     io.printf("%d,",h);                 # 18 _28:void := IOprint_formatted_int(_29:str, h:int) 
     io.printf("%d\n",t);                # 19 _30:void := IOprint_formatted_int(_31:str, t:int) 
-    redo (v,h,t):= bat.hasMoreElements(b);# 20 (v:lng, h:int, t:int) := CHPbunHasMoreElements(b:bat[:int,:int]) {J18}
+    redo (v,h,t) := bat.hasMoreElements(b);# 20 (v:lng, h:int, t:int) := CHPbunHasMoreElements(b:bat[:int,:int]) {J18}
 exit v;                                 # 21 v:lng 
 end main;	# 22  
 #-----------------#

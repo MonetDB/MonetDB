@@ -214,7 +214,7 @@ QOTshowPlan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		mb= s->def;
 	}
-	printFunction(cntxt->fdout, mb, stk, LIST_INPUT);
+	printFunction(cntxt->fdout, mb, 0, LIST_INPUT);
 	return MAL_SUCCEED;
 }
 

@@ -116,7 +116,7 @@ The cost formula are repetative
 		varSetProp(mb, getArg(p,@4), rowsProp, op_eq, VALset(&v,TYPE_lng,&k));
 #ifdef DEBUG_OPT_COSTMODEL
 		stream_printf(cntxt->fdout,"COST of @1 @2 into @4: " LLFMT "\n",k);
-		printInstruction(cntxt->fdout,mb,stk,p,0);
+		printInstruction(cntxt->fdout,mb,0,p,0);
 #endif
 }
 @= newRows1

@@ -185,10 +185,10 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #VAR res := [createBAT](i); 
     io.print("do multiplex");           # 48 _60:void := IOprint_val(_61:str) 
     _84 := bat.new(nil:oid,nil:BAT);    # 49 _84:bat[:oid,:BAT] := CMDBATnew(_85:oid, _86:BAT) {G}
-barrier (_88,_89,_90):= bat.newIterator(m);# 50 (_88:lng, _89:oid, _90:str) := CHPbunIterator(m:bat[:oid,:str]) {GJ54}
+barrier (_88,_89,_90) := bat.newIterator(m);# 50 (_88:lng, _89:oid, _90:str) := CHPbunIterator(m:bat[:oid,:str]) {GJ54}
     _92 := user.createBAT(_90);         # 51 _92:BAT := user.createBAT(_90:str) {G}
     bat.insert(_84,_89,_92);            # 52 _93:bat[:oid,:BAT] := BKCinsert_bun(_84:bat[:oid,:BAT], _89:oid, _92:BAT) {G}
-    redo (_88,_89,_90):= bat.hasMoreElements(m);# 53 (_88:lng, _89:oid, _90:str) := CHPbunHasMoreElements(m:bat[:oid,:str]) {GJ51}
+    redo (_88,_89,_90) := bat.hasMoreElements(m);# 53 (_88:lng, _89:oid, _90:str) := CHPbunHasMoreElements(m:bat[:oid,:str]) {GJ51}
 exit (_88,_89,_90);                     # 54 (_88:lng, _89:oid, _90:str) 
     r:bat[:oid,:BAT]  := _84;           # 55 r:bat[:oid,:BAT] := _84:bat[:oid,:BAT] {G}
     io.print(r);                        # 56 _65:void := IOprint_val(r:bat[:oid,:BAT]) 

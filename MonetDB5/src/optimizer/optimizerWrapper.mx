@@ -44,7 +44,7 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		removeInstruction(mb, p);
 #ifdef _DEBUG_OPTIMIZER_
 	stream_printf(cntxt->fdout,"apply @1\n");
-	printFunction(cntxt->fdout,mb,LIST_MAL_DEBUG);
+	printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG);
 #endif
 	if( p && p->argc > 1 ){
 #ifdef _DEBUG_OPTIMIZER_
@@ -84,7 +84,7 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	actions= OPT@1Implementation(cntxt, mb,stk,p);
 #ifdef _DEBUG_OPTIMIZER_
 	stream_printf(cntxt->fdout,"finished @1 %d\n",actions);
-	printFunction(cntxt->fdout,mb,LIST_MAL_DEBUG);
+	printFunction(cntxt->fdout,mb,0,LIST_MAL_DEBUG);
 #endif
     optimizerCheck(cntxt, mb, "optimizer.@1", actions, t=(GDKusec() - clk),@2);
 	QOTupdateStatistics("@1",actions,t);
