@@ -800,7 +800,7 @@ static void php_monetdb_get_link_info(INTERNAL_FUNCTION_PARAMETERS, int entry_ty
 			} else {
 				RETURN_STRINGL((*error)->message, (*error)->len, 1);
 			}
-		} return;
+		} break;
 		case PHP_MONETDB_HOST:
 			Z_STRVAL_P(return_value) = mapi_get_host(monetdb);
 		break;
