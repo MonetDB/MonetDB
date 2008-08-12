@@ -115,19 +115,27 @@ pattern restart{unsafe}( sname:str, sequence:str, start:lng ):lng
 address mvc_restart_seq
 comment "restart the sequence with value start";
 
-pattern bind_dbat(sname:str, tname:str, access:int):bat[:oid,:oid]
+pattern bind_dbat(schema:str, table:str, access:int):bat[:oid,:oid]
 address mvc_bind_dbat_wrap
-comment "Bind the table deletes bat, tname.delete 
-	with specific access modes";
+comment "Bind to 'schema.table' BAT with deleted objecs
+and with specific access kind:
+	0 - base table
+	1 - inserts
+	2 - updates";
 
-pattern bind_idxbat(sname:str, tname:str, iname:str, access:int):bat[:oid,:any_1]
+pattern bind_idxbat(schema:str, table:str, index:str, access:int):bat[:oid,:any_1]
 address mvc_bind_idxbat_wrap
-comment "Bind the idx bat, tname.idx
-	with specific accsess modes";
+comment "Bind the 'schema.table.index' BAT with access kind:
+	0 - base table
+	1 - inserts
+	2 - updates";
 
-pattern bind(sname:str, tname:str, cname:str, access:int ):bat[:oid,:any_1]
+pattern bind(schema:str, table:str, column:str, access:int ):bat[:oid,:any_1]
 address mvc_bind_wrap
-comment "Bind the bat tname.cname into the focus with specific access mode";
+comment "Bind the 'schema.table.column' BAT with access kind:
+	0 - base table
+	1 - inserts
+	2 - updates";
 
 pattern append{unsafe}(sname:str, tname:str, cname:str, ins:any ):void
 address mvc_append_wrap

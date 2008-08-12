@@ -614,7 +614,7 @@ We don;t search the cache for a previous incarnation yet.
 
 #ifdef _SQL_COMPILE
 		stream_printf(c->fdout,"result of sql.eval()\n");
-		printFunction(c->fdout, c->curprg->def, c->listing);
+		printFunction(c->fdout, c->curprg->def, 0, c->listing);
 #endif
 
 		if ( execute) {
@@ -1119,7 +1119,7 @@ Inspect the variables for post code-generation actions.
 @c
 finalize:
 	if (m->emode == m_explain  && be->q && be->q->code)
-		printFunction(GDKout, ((Symbol)(be->q->code))->def, LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI );
+		printFunction(GDKout, ((Symbol)(be->q->code))->def, 0, LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI );
 @-
 Gather the statistics for post analysis. It should preferably
 be stored in an SQL table
@@ -1151,7 +1151,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 
 #ifdef DEBUG_CALLMAL
 	stream_printf(GDKout,"SQLexecute\n");
-	printFunction(GDKout, ((Symbol)q->code)->def, LIST_MAL_ALL);
+	printFunction(GDKout, ((Symbol)q->code)->def, 0, LIST_MAL_ALL);
 #endif
 	mb = ((Symbol)q->code)->def;
 	pci = getInstrPtr(mb,0);
@@ -1199,7 +1199,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 	glb = (MalStkPtr)(q->stk);
 	ret= callMAL(c, mb, &glb, argv, (m->emod & mod_debug?'n':0));
 	if (ret && SQLdebug&16) 
-		printFunction(c->fdout, mb, 
+		printFunction(c->fdout, mb, 0,
 			      LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
 	/* cleanup the arguments */
 	for(i=pci->retc; i<pci->argc; i++) {
@@ -1324,7 +1324,7 @@ cached routine, which may be hidden . For now we take a shortcut.
 			InstrPtr p;
 			p = getInstrPtr(c->curprg->def,1);
 			if (p->blk)
-				printFunction(c->fdout, p->blk, c->listing | LIST_MAPI );
+				printFunction(c->fdout, p->blk, 0, c->listing | LIST_MAPI );
 		}
 		c->curprg->def->errors = -1; /* don;t execute */
 	} 

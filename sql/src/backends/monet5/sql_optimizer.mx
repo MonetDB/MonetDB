@@ -171,7 +171,7 @@ FXoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #ifdef _SQL_OPTIMIZER_DEBUG
 	stream_printf(GDKout, "First call to FXoptimizer\n");
-	printFunction(GDKout, mb, LIST_MAL_ALL);
+	printFunction(GDKout, mb, stk, LIST_MAL_ALL);
 #endif
 	(void) cntxt;
 	(void)stk;
@@ -269,7 +269,7 @@ This all works under the assumption that the SQL layer properly invalidates
 the cache when the underlying table is changed.
 @c
 #ifdef _SQL_OPTIMIZER_DEBUG
-	printFunction(GDKout, mb, LIST_MAL_INSTR);
+	printFunction(GDKout, mb, stk, LIST_MAL_INSTR);
 #endif
 	return MAL_SUCCEED;
 }
@@ -454,7 +454,8 @@ str defaultPlan=
 	"coercions,"
 	"emptySet,"
 	/* "joinselect," */
-	"accessmode,"
+	/* "accessmode," not needed after patches to BKCappend */
+	/*"mitosis,"*/
 	"aliases,"
 	/* "crack," */
 	/*"joinPath,"*/ 
@@ -465,8 +466,8 @@ str defaultPlan=
 	"deadcode,"
 	/*"recycle,"*/
 	"reduce,"
-	"garbageCollector," 
-	"dataflow," 
+	/* "garbageCollector," */
+	"dataflow,"
 	"multiplex";
 static str minimalPlan=
 	"multiplex";
@@ -528,7 +529,7 @@ addQueryToCache(Client c)
 	chkProgram(c->nspace, mb);
 #ifdef _SQL_OPTIMIZER_DEBUG
 	printf("ADD QUERY TO CACHE\n");
-	printFunction(GDKout,mb,LIST_MAL_ALL);
+	printFunction(GDKout,mb,0,LIST_MAL_ALL);
 #endif
 @-
 An error in the compilation should be reported to the user.
@@ -541,7 +542,7 @@ to allow inspection.
 		showErrors(c);
 
 		if (c->listing)
-			printFunction(c->fdout, mb, c->listing);
+			printFunction(c->fdout, mb,0, c->listing);
 		if ( m->debug )
 			runMALDebugger(c,c->curprg);
 		return;
@@ -611,7 +612,7 @@ SQLoptimizer(Client c)
 	(void) c;
 #ifdef _SQL_OPTIMIZER_DEBUG
 	stream_printf(GDKout, "SQLoptimizer\n");
-	printFunction(c->fdout, c->curprg->def, LIST_MAL_INSTR);
+	printFunction(c->fdout, c->curprg->def,0, LIST_MAL_INSTR);
 	stream_printf(GDKout, "done\n");
 #endif
 	return MAL_SUCCEED;
