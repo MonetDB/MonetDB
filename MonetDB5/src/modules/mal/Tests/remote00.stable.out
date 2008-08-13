@@ -45,17 +45,17 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #end exec; 
 # simply assign a simple value, and let serveget describe it 
     b := 1;                             #  2 b:int := _3:int 
-    remote.serveget("b");               #  3 _4:void := RMTserveget(_5:str) 
+    remote.describe("b");               #  3 _4:void := RMTdescribe(_5:str) 
 # this one might cause trouble on different platforms due to float 
 # handling, we might consider commenting this one out 
     c := 3.4000001;                     #  6 c:flt := _9:flt 
-    remote.serveget("c");               #  7 _10:void := RMTserveget(_11:str) 
+    remote.describe("c");               #  7 _10:void := RMTdescribe(_11:str) 
 # we can also describe "complexer" types (a BAT for now) 
     d := bat.new(:oid,:str);            #  9 d:bat[:oid,:str] := CMDBATnew(_14:oid, _15:str) {G}
-    remote.serveget("d");               # 10 _16:void := RMTserveget(_17:str) 
+    remote.describe("d");               # 10 _16:void := RMTdescribe(_17:str) 
 # and a varsized object (like a string) should work too 
     g := "Hello world!";                # 12 g:str := _20:str {G}
-    remote.serveget("g");               # 13 _21:void := RMTserveget(_22:str) 
+    remote.describe("g");               # 13 _21:void := RMTdescribe(_22:str) 
 end main;                               # 14  
 [ "int",	1	]
 [ "flt",	3.4000001	]
