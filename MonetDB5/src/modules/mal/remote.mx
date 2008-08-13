@@ -17,81 +17,62 @@
 @f remote
 @a Fabian Groffen
 @+ Remote querying functionality
-Communication with other mservers at the MAL level is a
-delicate task.  However, it is indispensable for any
-distributed functionality on MonetDB.  This module provides
-an abstract way to store and retrieve objects on a remote
-site.  Additionally, functions on a remote site can be
-executed using the semantics of a client session contxt.
-This yields in three primitive functions that
-form the basis for distribution methods: get, put and exec.
-A good way to setup and maintain a collection of MonetDB sites
-is the sabaoth module.
+Communication with other mservers at the MAL level is a delicate task.
+However, it is indispensable for any distributed functionality.  This
+module provides an abstract way to store and retrieve objects on a
+remote site.  Additionally, functions on a remote site can be executed
+using objects available in the remote session context.  This yields in
+three primitive functions that form the basis for distribution methods:
+get, put and exec.
 
-The get method simply retrieves a copy of a remote object.
-Objects can be simple values, strings or BATs.
-The same holds for the put method, but the other way
-around.  A local object can be stored on a remote site.  Upon
-a successful store, the put method returns the remote
-identifier for the stored object.  With this identifier the
-object can be addressed, e.g. using the get method to retrieve
-the object that was stored again.
+The get method simply retrieves a copy of a remote object.  Objects can
+be simple values, strings or BATs.  The same holds for the put method,
+but the other way around.  A local object can be stored on a remote
+site.  Upon a successful store, the put method returns the remote
+identifier for the stored object.  With this identifier the object can
+be addressed, e.g. using the get method to retrieve the object that was
+stored using put.
 
 The get and put methods are symmetric.  Performing a get on an
-identifier that was returned by put, will result in the same
-object to the one that was put.  The result of such an operation 
-is equivalent to making an (expensive) copy of the original object .
+identifier that was returned by put, results in an object with the same
+value as the one that was put.  The result of such an operation is
+equivalent to making an (expensive) copy of the original object.
 
-The choice to let exec only execute functions was made to avoid
-problems to decide what should be returned to the caller.  With
-a function it is clear and simple to return that what the
-function signature prescribes.  Any extra output (e.g.
-io.print calls) may cause havoc in the system, but are currently
-known to be ignored.
+The choice to let exec only execute functions was made to avoid problems
+to decide what should be returned to the caller.  With a function it is
+clear and simple to return that what the function signature prescribes.
+Any extra output (e.g.  io.print calls) may cause havoc in the system,
+but are currently known to be ignored.
 
-This leads to the final contract of this module.  The methods
-should be used correctly, by obeying their contract.  Failing
-to do so will result in errors and possibly undefined behaviour.
+This leads to the final contract of this module.  The methods should be
+used correctly, by obeying their contract.  Failing to do so will result
+in errors and possibly undefined behaviour.
 
 It is impossible to get and put MAL functions directly, as the
-semantical meaning of such operation is unclear.  A function
-cannot be assigned to a variable (such as get() would do).
-Storing a function on a remote site with put() could lead to
-conflicts if a function with the same name already exists there,
-let alone if the module the function comes from is accessible.
-Finally, C-implemented functions, such as io.print() cannot be
-remotely stored for obvious reasons and would require even more
-complicated (byte?) code shipping and remote compilation to
-make it work.  
+semantical meaning of such operation is unclear.  A function cannot be
+assigned to a variable (such as get would do).  Storing a function on
+a remote site with put could lead to conflicts if a function with the
+same name already exists there, let alone if the module the function
+comes from is accessible.  Finally, C-implemented functions, such as
+io.print() cannot be remotely stored for obvious reasons and would
+require even more complicated (byte?) code shipping and remote
+compilation to make it work.  
 
-A straw-man's solution is to serialize local MAL function
-to a string and use those in an exec call to remotely
-parse it into a function again.
-Of course this also works the other way around using
-an exec of the serialise function on the remote host for the
-remote function to acquire the string representation of the
-function locally. All possible name space conflicts that may
-arise should be handled explicitly.
+A straw-man's solution is to serialize local MAL function to a string
+and use those in an exec call to remotely parse it into a function
+again.  Of course this also works the other way around using an exec of
+the serialised function on the remote host for the remote function to
+acquire the string representation of the function locally.  All possible
+name space conflicts that may arise should be handled explicitly.
 
-The first argument to all three functions is the name of the
-connection the operation has to be performed on.  A connection
-has to be created before it can be used, otherwise a MAPexception
-is being raised. 
-During creation of such connection, details like credentials, hostname and
-database can be given.  Currently, connections are stored in
-memory and not made persistent.  This could be changed in the
-future to allow created connections to exist over server
-restarts.
+The first argument to all three functions is the name of the connection
+the operation has to be performed on.  A connection has to be created
+before it can be used, otherwise a MALexception is being raised.
+During creation of such connection, details like credentials, hostname
+and database can be given.  Currently, connections are stored in memory
+and not made persistent.  This could be changed in the future to allow
+created connections to be remembered over server restarts.
 
-Ideally we would like to do this, however that's unfortunately
-impossible since variadic stuff doesn't work in functions
-@verbatim
-function exec(conn:str, ident:str...):any;
-	id := remote.exec(conn, ident, ...);
-	ret := remote.get(conn, id);
-	return(ret);
-end exec;
-@end verbatim
 @mal
 module remote;
 
@@ -581,8 +562,8 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, ident, tmp;
 	connection c;
 
-	(void) cntxt;
-	(void) mb;
+	(void)cntxt;
+	(void)mb;
 
 	conn = (str)getArgValue(stk, pci, 1);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
