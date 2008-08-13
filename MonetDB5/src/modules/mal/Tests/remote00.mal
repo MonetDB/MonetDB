@@ -1,16 +1,16 @@
-# simply assign a simple value, and let serveget describe it
+# simply assign a simple value, and let describe describe it
 b := 1;
-remote.serveget("b");
+remote.describe("b");
 
 # this one might cause trouble on different platforms due to float
 # handling, we might consider commenting this one out
 c := 3.4;
-remote.serveget("c");
+remote.describe("c");
 
 # we can also describe "complexer" types (a BAT for now)
 d := bat.new(:oid, :str);
-remote.serveget("d");
+remote.describe("d");
 
 # and a varsized object (like a string) should work too
 g := "Hello world!";
-remote.serveget("g");
+remote.describe("g");
