@@ -2499,7 +2499,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 {
 	int i, tab = 4;
 	str base, s, t;
-	size_t len=  (mb->stop < 100? 100: mb->stop) * 128 /* max realistic line length estimate */;
+	size_t len=  (mb->stop < 1000? 1000: mb->stop) * 128 /* max realistic line length estimate */;
 	int low, high;
 	char nmebuf[PATHLENGTH];
 	str pstring = 0;
