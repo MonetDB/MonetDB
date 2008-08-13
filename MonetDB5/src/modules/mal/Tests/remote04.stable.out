@@ -54,14 +54,17 @@ function user.main():void;              #  0 main:void := user.main() {G}
     bat.insert(b,"foo",3);              # 11 _20:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _21:str, _22:int) {G}
     bat.insert(b,"bar",4);              # 12 _23:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _24:str, _25:int) {G}
     bat.insert(b,"baz",5);              # 13 _26:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _27:str, _28:int) {G}
-    j := remote.put("test",b);          # 14 j:rmtobj := RMTput(_8:str, b:bat[:str,:int]) {G}
+    k := remote.put("test",b);          # 14 k:rmtobj := RMTput(_8:str, b:bat[:str,:int]) {G}
+    l := remote.put("test",3);          # 15 l:rmtobj := RMTput(_8:str, _22:int) {G}
+    m := remote.put("test",10);         # 16 m:rmtobj := RMTput(_8:str, _32:int) {G}
 # perform a selection remote, and get the result back 
-    t := remote.exec("test","algebra","select",j,3,10);# 16 t:any := RMTexec(_8:str, _32:str, _33:str, j:rmtobj, _22:int, _34:int) 
-    io.print(t);                        # 17 _35:void := IOprint_val(t:any) 
+    t := remote.exec("test","algebra","select",k,l,m);# 18 t:rmtobj := RMTexec(_8:str, _35:str, _36:str, k:rmtobj, l:rmtobj, m:rmtobj) {G}
+    j := remote.get("test",t);          # 19 j:any := RMTget(_8:str, t:rmtobj) 
+    io.print(j);                        # 20 _38:void := IOprint_val(j:any) 
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
-    remote.destroy("test");             # 20 _38:void := RMTdestroy(_8:str) 
-end main;                               # 21  
+    remote.destroy("test");             # 23 _41:void := RMTdestroy(_42:str) 
+end main;                               # 24  
 #-----------------#
 # h	t	  # name
 # str	int	  # type
