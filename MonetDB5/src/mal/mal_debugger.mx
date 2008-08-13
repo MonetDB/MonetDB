@@ -92,7 +92,7 @@ mdb>help
 	down             -- go down the stack
 	up               -- go up the stack
 	trace <var>      -- trace assignment to variables
-	set @verb{ { }timer,flow,io,memory,bigfoot@verb{ } } -- set trace switches
+	set @verb{ { }timer,thread,flow,io,memory,bigfoot@verb{ } } -- set trace switches
 	unset            -- turn off switches
 	help             -- this message
 mdb>
@@ -738,7 +738,7 @@ printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 {
 	str msg;
 	msg= call2str(mb,stk,pc,flags);
-	stream_printf(out, "%s\n", msg);
+	stream_printf(out, "#%s\n", msg);
 	GDKfree(msg);
 }
 
@@ -949,6 +949,10 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 						(size_t) memory.fsmblks,
 						(size_t) memory.uordblks
 					);
+				}
+				if (strncmp("thread", b, 1) == 0) {
+					cntxt->flags |= threadFlag;
+					stk->cmd = 0;
 				}
 				if (strncmp("timer", b, 1) == 0) {
 					cntxt->flags |= timerFlag;
@@ -1824,7 +1828,7 @@ mdbHelp(stream *f)
 	stream_printf(f, "down             -- go down the stack\n");
 	stream_printf(f, "up               -- go up the stack\n");
 	stream_printf(f, "trace <var>      -- trace assignment to variables\n");
-	stream_printf(f, "set {timer,flow,io,memory} -- set trace switches\n");
+	stream_printf(f, "set {timer,thread,flow,io,memory} -- set trace switches\n");
 	stream_printf(f, "unset            -- turn off switches\n");
 	stream_printf(f, "help             -- this message\n");
 }

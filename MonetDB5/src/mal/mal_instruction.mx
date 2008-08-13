@@ -2498,7 +2498,7 @@ str
 instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 {
 	int i, tab = 4;
-	str base, s, t, nme;
+	str base, s, t;
 	size_t len= MAXLISTING;
 	int low, high;
 	char nmebuf[PATHLENGTH];
@@ -2531,9 +2531,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			snprintf(nmebuf, PATHLENGTH, "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, 0)));
 		} else
 			nmebuf[0] = 0;
-		nme = nmebuf;
-	} else
-		nme = getArgName(mb, p, 0);
+	} 
 	advance(t,base,len);
 	if (p->token == REMsymbol) {
 		/* do nothing */
