@@ -22,11 +22,12 @@ delicate task.  However, it is indispensable for any
 distributed functionality on MonetDB.  This module provides
 an abstract way to store and retrieve objects on a remote
 site.  Additionally, functions on a remote site can be
-executed.  This yields in three primitive functions that
+executed using the semantics of a client session contxt.
+This yields in three primitive functions that
 form the basis for distribution methods: get, put and exec.
 
-The get method simply retrieves a remote object, and returns
-it locally.  Objects can be simple values, strings or BATs.
+The get method simply retrieves a copy of a remote object.
+Objects can be simple values, strings or BATs.
 The same holds for the put method, but the other way
 around.  A local object can be stored on a remote site.  Upon
 a successful store, the put method returns the remote
@@ -35,14 +36,14 @@ object can be addressed, e.g. using the get method to retrieve
 the object that was stored again.
 
 The get and put methods are symmetric.  Performing a get on an
-identifier that was returned by put, will result in an equal
-object to the one that was put.  After such operation an
-(expensive) copy of the original object is made.
+identifier that was returned by put, will result in the same
+object to the one that was put.  The result of such an operation 
+is equivalent to making an (expensive) copy of the original object .
 
 The choice to let exec only execute functions was made to avoid
 problems to decide what should be returned to the caller.  With
 a function it is clear and simple to return that what the
-function being called would return.  Any extra output (e.g.
+function signature prescribes.  Any extra output (e.g.
 io.print calls) may cause havoc in the system, but are currently
 known to be ignored.
 
@@ -50,31 +51,38 @@ This leads to the final contract of this module.  The methods
 should be used correctly, by obeying their contract.  Failing
 to do so will result in errors and possibly undefined behaviour.
 
-It is impossible to get and put functions directly, as the
+It is impossible to get and put MAL functions directly, as the
 semantical meaning of such operation is unclear.  A function
 cannot be assigned to a variable (such as get() would do).
 Storing a function on a remote site with put() could lead to
 conflicts if a function with the same name already exists there,
 let alone if the module the function comes from is accessible.
 Finally, C-implemented functions, such as io.print() cannot be
-stored for obvious reasons and would require even more
+remotely stored for obvious reasons and would require even more
 complicated (byte?) code shipping and remote compilation to
-make it work.  As an alternative, a user can serialise local
-script-functions to strings and use those in an exec call to
-a remote function that can parse the string to turn it into a
-function.  Of course this also works the other way around using
+make it work.  
+
+A straw-man's solution is to serialize local MAL function
+to a string and use those in an exec call to remotely
+parse it into a function again.
+Of course this also works the other way around using
 an exec of the serialise function on the remote host for the
 remote function to acquire the string representation of the
-function locally.
+function locally. All possible name space conflicts that may
+arise should be handled explicitly.
 
 The first argument to all three functions is the name of the
 connection the operation has to be performed on.  A connection
-has to be created before it can be used.  During creation of
-such connection, details like credentials, hostname and
+has to be created before it can be used, otherwise a MAPexception
+is being raised. 
+During creation of such connection, details like credentials, hostname and
 database can be given.  Currently, connections are stored in
 memory and not made persistent.  This could be changed in the
 future to allow created connections to exist over server
 restarts.
+
+A good way to setup and maintain a collection of MonetDB sites
+is the sabaoth module.
 
 @h
 

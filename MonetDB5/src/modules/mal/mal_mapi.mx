@@ -32,6 +32,9 @@ of the client record initialization phase.
 This library internally uses pointer handles, which we replace with
 an index in a locally maintained table. It provides a handle
 to easily detect havoc clients.
+
+A cleaner and simplier interface for distributed processing is available in
+the module remote.
 @mal
 module mapi;
 

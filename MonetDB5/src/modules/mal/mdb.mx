@@ -606,7 +606,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	(void) cntxt;
 	msg = call2str(s->blk, s, pc=getPC(m, p),cntxt->flags);
-	snprintf(buf,8192,"%s at %s.%s[%d]", msg+5,
+	snprintf(buf,8192,"%s at %s.%s[%d]", msg,
 		getModuleId(getInstrPtr(m,0)),
 		getFunctionId(getInstrPtr(m,0)), pc);
 	BUNins(b, &k, buf, FALSE);
@@ -614,7 +614,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	for (s = s->up, k++; s != NULL; s = s->up, k++) {
 		msg = call2str(s->blk, s, s->pcup,cntxt->flags);
-		snprintf(buf,8192,"%s at %s.%s[%d]", msg+5,
+		snprintf(buf,8192,"%s at %s.%s[%d]", msg,
 			getModuleId(getInstrPtr(s->blk,0)),
 			getFunctionId(getInstrPtr(s->blk,0)), s->pcup);
 		BUNins(b, &k, buf, FALSE);
