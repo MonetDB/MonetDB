@@ -600,13 +600,16 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
 	str msg;
-	char buf[8192];
+	char *buf;
 	int *ret = (int *) getArgReference(s, p, 0);
 	int k = 0,pc;
+	size_t len,l;
 
 	(void) cntxt;
 	msg = call2str(s->blk, s, pc=getPC(m, p),cntxt->flags);
-	snprintf(buf,8192,"%s at %s.%s[%d]", msg,
+	len = strlen(msg);
+	buf = (char*) GDKmalloc(len +1024);
+	snprintf(buf,len+1024,"%s at %s.%s[%d]", msg,
 		getModuleId(getInstrPtr(m,0)),
 		getFunctionId(getInstrPtr(m,0)), pc);
 	BUNins(b, &k, buf, FALSE);
@@ -614,12 +617,19 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	for (s = s->up, k++; s != NULL; s = s->up, k++) {
 		msg = call2str(s->blk, s, s->pcup,cntxt->flags);
-		snprintf(buf,8192,"%s at %s.%s[%d]", msg,
+		l = strlen(msg);
+		if (l>len){
+			GDKfree(buf);
+			len=l;
+			buf = (char*) GDKmalloc(len +1024);
+		}
+		snprintf(buf,len+1024,"%s at %s.%s[%d]", msg,
 			getModuleId(getInstrPtr(s->blk,0)),
 			getFunctionId(getInstrPtr(s->blk,0)), s->pcup);
 		BUNins(b, &k, buf, FALSE);
 		GDKfree(msg);
 	}
+	GDKfree(buf);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(view,stk,trace)@
 	return MAL_SUCCEED;

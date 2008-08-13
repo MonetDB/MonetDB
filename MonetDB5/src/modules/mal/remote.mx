@@ -25,6 +25,8 @@ site.  Additionally, functions on a remote site can be
 executed using the semantics of a client session contxt.
 This yields in three primitive functions that
 form the basis for distribution methods: get, put and exec.
+A good way to setup and maintain a collection of MonetDB sites
+is the sabaoth module.
 
 The get method simply retrieves a copy of a remote object.
 Objects can be simple values, strings or BATs.
@@ -81,9 +83,64 @@ memory and not made persistent.  This could be changed in the
 future to allow created connections to exist over server
 restarts.
 
-A good way to setup and maintain a collection of MonetDB sites
-is the sabaoth module.
+Ideally we would like to do this, however that's unfortunately
+impossible since variadic stuff doesn't work in functions
+@verbatim
+function exec(conn:str, ident:str...):any;
+	id := remote.exec(conn, ident, ...);
+	ret := remote.get(conn, id);
+	return(ret);
+end exec;
+@end verbatim
+@mal
+module remote;
 
+command prelude():void
+address RMTprelude
+comment "Initialise the remote module.";
+
+command epilogue():void
+address RMTepilogue
+comment "Release the resources held by the remote module.";
+
+command create(conn:str, host:str, port:int, dbname:str, user:str, passwd:str):void
+address RMTcreate
+comment "Creates a new connection using host name, port, database name,
+user name and password given details.";
+
+command destroy(conn:str):void
+address RMTdestroy
+comment "Destroys a previously created connection.";
+
+pattern describe(ident:str):void
+address RMTdescribe
+comment "Prints a description of the given identifier";
+
+pattern get(conn:str, ident:rmtobj):any
+address RMTget
+comment "Retrieves a copy of a remote object.";
+
+pattern getnextid():void
+address RMTgetnextid
+comment "Prints the next unique local identifier";
+
+pattern put(conn:str, object:any):rmtobj
+address RMTput
+comment "Copy an object to a remote site and returns its identifier.";
+
+pattern exec(conn:str, mod:str, func:str):rmtobj
+address RMTexec
+comment "Remotely executes function mod.func using the argument list
+and returns the handle to its result";
+pattern exec(conn:str, mod:str, func:str, :rmtobj...):rmtobj
+address RMTexec
+comment "Remotely executes function mod.func using the argument list
+of remote objects and returns the handle to its result";
+
+@-
+@{
+TODO: this is not thread safe yet and we should check stability
+wrt broken communication lines.
 @h
 
 #ifndef _REMOTE_DEF
@@ -98,7 +155,6 @@ is the sabaoth module.
 #else
 #define remote_export extern
 #endif
-
 @c
 #include "mal_config.h"
 #include <mal.h>
@@ -108,20 +164,6 @@ is the sabaoth module.
 #include <mapilib/Mapi.h>
 #include "remote.h"	/* for the implementation of the functions */
 
-@mal
-module remote;
-
-command prelude():void
-address RMTprelude
-comment "Initialise the remote module";
-
-command epilogue():void
-address RMTepilogue
-comment "Release the resources held by the remote module";
-
-
-#remote.prelude();
-@{
 @-
 
 @- Implementation
@@ -320,7 +362,7 @@ RMTinternalget(Mapi mconn, str ident, ValPtr v) {
 	char qbuf[512];
 	MapiHdl mhdl;
 
-	snprintf(qbuf, 511, "remote.serveget(\"%s\");", ident);
+	snprintf(qbuf, 511, "remote.describe(\"%s\");", ident);
 	rethrow("remote.get", tmp, RMTquery(&mhdl, "remote.get", mconn, qbuf));
 
 	mapi_fetch_row(mhdl); /* should succeed */
@@ -452,16 +494,12 @@ str RMTepilogue(int *ret) {
 	return(MAL_SUCCEED);
 }
 
-@mal
-pattern serveget(ident:str):void
-address RMTserveget
-comment "Prints a description of the given identifier";
 @h
-remote_export str RMTserveget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+remote_export str RMTdescribe(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 /**
- * serveget prints a descriptive string for the given identifier ident.
- * This method is used by get() to retrieve an object.  serveget prints
+ * Describe() prints a descriptive string for the given identifier ident.
+ * This method is used by get() to retrieve an object.  Describe() prints
  * a single tuple with information on the object.  The first column in
  * the tuple is the MAL type of the object.  Depending on this, the
  * other columns are filled in.  For scalar data types, the second
@@ -472,7 +510,7 @@ remote_export str RMTserveget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
  * str tail and one BUN:
  * [ "bat", "oid", "str", 1 ]
  */
-str RMTserveget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+str RMTdescribe(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int i;
 	str name;
 	VarPtr n;
@@ -483,12 +521,12 @@ str RMTserveget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	name = (str)getArgValue(stk, pci, 1);
 	i = findVariable(mb, name);
 	if (i < 0)
-		throw(MAL, "remote.serveget", "no such object '%s'", name);
+		throw(MAL, "remote.describe", "no such object '%s'", name);
 
 	n = getVar(mb, i);
 	v = stk->stk + i;
 	if (n->type == TYPE_any || isAnyExpression(n->type)) {
-		throw(MAL, "remote.serveget", "cannot deal with '%s' type",
+		throw(MAL, "remote.describe", "cannot deal with '%s' type",
 				getTypeName(n->type));
 	} else if (isaBatType(n->type)) {
 		char head[10], tail[10];
@@ -510,7 +548,7 @@ str RMTserveget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		}
 
 		if ((b = BATdescriptor(v->val.ival)) == NULL)
-			throw(MAL, "remote.serveget",
+			throw(MAL, "remote.describe",
 					"invalid BAT descriptor for '%s'", name);
 		snprintf(ret, 255, "[ \"bat\",\t\"%s\",\t\"%s\",\t" SZFMT "\t]",
 				head, tail, BATcount(b));
@@ -533,10 +571,6 @@ str RMTserveget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 }
 @}
 
-@mal
-pattern get(conn:str, ident:rmtobj):any
-address RMTget
-comment "Retrieves and returns the object referenced by ident from conn";
 @h
 remote_export str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
@@ -567,10 +601,6 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return(MAL_SUCCEED);
 }
 
-@mal
-pattern getnextid():void
-address RMTgetnextid
-comment "Prints the next unique local identifier";
 @h
 remote_export str RMTgetnextid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
@@ -597,10 +627,6 @@ str RMTgetnextid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return(MAL_SUCCEED);
 }
 
-@mal
-pattern put(conn:str, object:any):rmtobj
-address RMTput
-comment "Stores object on host and returns its identifier on host";
 @h
 remote_export str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
@@ -635,22 +661,6 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return(MAL_SUCCEED);
 }
 
-@mal
-
-# ideally we would like to do this, however that's unfortunately
-# impossible since variadic stuff doesn't work in functions
-#function exec(conn:str, ident:str...):any;
-#	id := remote.exec(conn, ident, ...);
-#	ret := remote.get(conn, id);
-#	return(ret);
-#end exec;
-
-pattern exec(conn:str, mod:str, func:str):rmtobj
-address RMTexec
-comment "Executes function mod.func over conn using the given arguments and returns the handle to its result";
-pattern exec(conn:str, mod:str, func:str, :rmtobj...):rmtobj
-address RMTexec
-comment "Executes function mod.func over conn using the given arguments and returns the handle to its result";
 @h
 remote_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
@@ -729,10 +739,6 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return(MAL_SUCCEED);
 }
 
-@mal
-command create(conn:str, host:str, port:int, dbname:str, user:str, passwd:str):void
-address RMTcreate
-comment "Creates a new connection conn using the given details";
 @h
 remote_export str RMTcreate(
 		int *ret,
@@ -801,10 +807,6 @@ str RMTcreate(
 	return(MAL_SUCCEED);
 }
 
-@mal
-command destroy(conn:str):void
-address RMTdestroy
-comment "Destroys a previously created connection";
 @h
 remote_export str RMTdestroy(int *ret, str *conn);
 @c
@@ -844,3 +846,4 @@ str RMTdestroy(int *ret, str *conn) {
 }
 @h
 #endif
+@}
