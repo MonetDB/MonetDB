@@ -281,7 +281,7 @@ XQUERYengine(Client c)
 		return MAL_SUCCEED;
 
 	if( xb->mode == xquery_explain)
-		printFunction(c->fdout, c->curprg->def,0);
+		printFunction(c->fdout, c->curprg->def,0,0);
 	/* restore the initial state */
 	resetMalBlk(c->curprg->def, 1);
 	return MAL_SUCCEED;
