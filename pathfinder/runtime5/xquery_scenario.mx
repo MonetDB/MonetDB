@@ -249,7 +249,7 @@ XQUERYparser(Client c)
 	if( c->curprg->def->errors || err){
 		showErrors(c);
 		if( xb->mode == xquery_explain)
-			printFunction(c->fdout, c->curprg->def,LIST_MAL_ALL);
+			printFunction(c->fdout, c->curprg->def,0,LIST_MAL_ALL);
 		/* restore the state */
 		resetMalBlk(c->curprg->def, oldstop);
 		c->curprg->def->errors = 0;
