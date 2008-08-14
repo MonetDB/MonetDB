@@ -1,0 +1,44 @@
+stdout of test 'range_join_any.SF-2041785` in directory 'src/test/BugTracker` itself:
+
+
+# 17:04:51 >  
+# 17:04:51 >   mserver5 "--config=/home/lsidir/code/monetdb//prefix.Jun2008/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/home/lsidir/code/monetdb//prefix.Jun2008/lib/MonetDB5:/home/lsidir/code/monetdb//prefix.Jun2008/lib/MonetDB5/lib:/home/lsidir/code/monetdb//prefix.Jun2008/lib/MonetDB5/bin" --set "gdk_dbfarm=/home/lsidir/code/monetdb//prefix.Jun2008/var/MonetDB5/dbfarm" --set "sql_logdir=/home/lsidir/code/monetdb//prefix.Jun2008/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30080 --set xrpc_port=45585 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 17:04:51 >  
+
+
+
+# MonetDB server v5.6.1, based on kernel v1.24.1
+# Serving database 'mTests_src_test_BugTracker'
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://butters:30080/
+# MonetDB/SQL module v2.24.1 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 17:04:51 >  
+# 17:04:51 >  mclient -lsql -umonetdb -Pmonetdb --host=butters --port=30080 
+# 17:04:51 >  
+
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+% sys.s1 # table_name
+% id # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+
+# 17:04:51 >  
+# 17:04:51 >  Done.
+# 17:04:51 >  
+
