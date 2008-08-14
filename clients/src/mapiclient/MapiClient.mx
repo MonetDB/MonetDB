@@ -1378,7 +1378,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					for (line += 2; *line && isspace((int) *line); line++)
 						;
 					if (*line) {
-						dump_table(mid, NULL, line, toConsole, 1);
+						dump_table(mid, NULL, line, toConsole, 1, 1);
 					} else {
 						/* get all table names in current schema */
 						if ((hdl = mapi_query(mid,
@@ -1404,7 +1404,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 						;
 					if (*line) {
 						stream_printf(toConsole, "START TRANSACTION;\n");
-						dump_table(mid, NULL, line, toConsole, 0);
+						dump_table(mid, NULL, line, toConsole, 0, 1);
 						stream_printf(toConsole, "COMMIT;\n");
 					} else
 						dump_tables(mid, toConsole);

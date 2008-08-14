@@ -104,8 +104,167 @@ get_schema(Mapi mid)
 	return sname;
 }
 
+static void
+dump_foreign_keys(Mapi mid, char *schema, char *tname, stream *toConsole)
+{
+	MapiHdl hdl;
+	int cnt, i;
+	char *query;
+	size_t maxquerylen = 0;
+
+	if (tname != NULL) {
+		maxquerylen = BUFSIZ + strlen(tname) + strlen(schema);
+		query = malloc(maxquerylen);
+		snprintf(query, maxquerylen,
+			 "SELECT \"pkt\".\"name\","		/* 0 */
+				"\"pkkc\".\"column\","		/* 1 */
+				"\"fkkc\".\"column\","		/* 2 */
+				"\"fkkc\".\"nr\","		/* 3 */
+				"\"fkk\".\"name\","		/* 4 */
+				"\"fkk\".\"action\","		/* 5 */
+				"\"s\".\"name\","		/* 6 */
+				"\"fkt\".\"name\" "		/* 7 */
+			 "FROM \"sys\".\"_tables\" \"fkt\","
+			      "\"sys\".\"keycolumns\" \"fkkc\","
+			      "\"sys\".\"keys\" \"fkk\","
+			      "\"sys\".\"_tables\" \"pkt\","
+			      "\"sys\".\"keycolumns\" \"pkkc\","
+			      "\"sys\".\"keys\" \"pkk\","
+			      "\"sys\".\"schemas\" \"s\" "
+			 "WHERE \"fkt\".\"id\" = \"fkk\".\"table_id\" AND "
+			       "\"pkt\".\"id\" = \"pkk\".\"table_id\" AND "
+			       "\"fkk\".\"id\" = \"fkkc\".\"id\" AND "
+			       "\"pkk\".\"id\" = \"pkkc\".\"id\" AND "
+			       "\"fkk\".\"rkey\" = \"pkk\".\"id\" AND "
+			       "\"fkkc\".\"nr\" = \"pkkc\".\"nr\" AND "
+			       "\"fkt\".\"schema_id\" = \"s\".\"id\" AND "
+			       "\"s\".\"name\" = '%s' AND "
+			       "\"fkt\".\"name\" = '%s'"
+			 "ORDER BY \"fkk\".\"name\", \"nr\"", schema, tname);
+	} else {
+		query = "SELECT \"pkt\".\"name\","
+			       "\"pkkc\".\"column\","
+			       "\"fkkc\".\"column\","
+			       "\"fkkc\".\"nr\","
+			       "\"fkk\".\"name\","
+			       "\"fkk\".\"action\","
+			       "\"s\".\"name\","
+			       "\"fkt\".\"name\" "
+			"FROM \"sys\".\"_tables\" \"fkt\","
+			     "\"sys\".\"keycolumns\" \"fkkc\","
+			     "\"sys\".\"keys\" \"fkk\","
+			     "\"sys\".\"_tables\" \"pkt\","
+			     "\"sys\".\"keycolumns\" \"pkkc\","
+			     "\"sys\".\"keys\" \"pkk\","
+			     "\"sys\".\"schemas\" \"s\" "
+			"WHERE \"fkt\".\"id\" = \"fkk\".\"table_id\" AND "
+			      "\"pkt\".\"id\" = \"pkk\".\"table_id\" AND "
+			      "\"fkk\".\"id\" = \"fkkc\".\"id\" AND "
+			      "\"pkk\".\"id\" = \"pkkc\".\"id\" AND "
+			      "\"fkk\".\"rkey\" = \"pkk\".\"id\" AND "
+			      "\"fkkc\".\"nr\" = \"pkkc\".\"nr\" AND "
+			      "\"fkt\".\"schema_id\" = \"s\".\"id\" "
+			"ORDER BY \"s\".\"name\",\"fkt\".\"name\","
+			      "\"fkk\".\"name\", \"nr\"";
+	}
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		goto bailout;
+	}
+	cnt = mapi_fetch_row(hdl);
+	while (cnt != 0) {
+		char *c_name = mapi_fetch_field(hdl, 0);
+		char *c_pcolumn = mapi_fetch_field(hdl, 1);
+		char *c_fcolumn = mapi_fetch_field(hdl, 2);
+		char *c_nr = mapi_fetch_field(hdl, 3);
+		char *c_fkname = mapi_fetch_field(hdl, 4);
+		char *c_faction = mapi_fetch_field(hdl, 5);
+		char *c_sname = mapi_fetch_field(hdl, 6);
+		char *c_tname = mapi_fetch_field(hdl, 7);
+		char **fkeys, **pkeys;
+		int nkeys = 0;
+
+		if (mapi_error(mid)) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			goto bailout;
+		}
+		assert(strcmp(c_nr, "0") == 0);
+		(void) c_nr;	/* pacify compilers in case assertions are disabled */
+		nkeys = 1;
+		fkeys = malloc(nkeys * sizeof(*fkeys));
+		pkeys = malloc(nkeys * sizeof(*pkeys));
+		pkeys[nkeys - 1] = c_pcolumn;
+		fkeys[nkeys - 1] = c_fcolumn;
+		while ((cnt = mapi_fetch_row(hdl)) != 0 && strcmp(mapi_fetch_field(hdl, 3), "0") != 0) {
+			nkeys++;
+			pkeys = realloc(pkeys, nkeys * sizeof(*pkeys));
+			fkeys = realloc(fkeys, nkeys * sizeof(*fkeys));
+			pkeys[nkeys - 1] = mapi_fetch_field(hdl, 1);
+			fkeys[nkeys - 1] = mapi_fetch_field(hdl, 2);
+		}
+		if (tname == NULL) {
+			stream_printf(toConsole, "ALTER TABLE ");
+			quoted_print(toConsole, c_sname);
+			stream_printf(toConsole, ".");
+			quoted_print(toConsole, c_tname);
+			stream_printf(toConsole, " ");
+		} else {
+			stream_printf(toConsole, ",\n\t");
+		}
+		if (c_fkname) {
+			stream_printf(toConsole, "CONSTRAINT ");
+			quoted_print(toConsole, c_fkname);
+			stream_write(toConsole, " ", 1, 1);
+		}
+		stream_printf(toConsole, "FOREIGN KEY (");
+		for (i = 0; i < nkeys; i++) {
+			if (i > 0)
+				stream_printf(toConsole, ", ");
+			quoted_print(toConsole, fkeys[i]);
+		}
+		stream_printf(toConsole, ") REFERENCES ");
+		quoted_print(toConsole, c_name);
+		stream_printf(toConsole, " (");
+		for (i = 0; i < nkeys; i++) {
+			if (i > 0)
+				stream_printf(toConsole, ", ");
+			quoted_print(toConsole, pkeys[i]);
+		}
+		stream_printf(toConsole, ")");
+		free(fkeys);
+		free(pkeys);
+		if (c_faction) {
+			int action = atoi(c_faction);
+			int on_update = (action >> 8) & 255;
+			int on_delete = action & 255;
+
+			if (0 < on_delete && on_delete < NR_ACTIONS && on_delete != 2 /* RESTRICT -- default */)
+				stream_printf(toConsole, " ON DELETE %s", actions[on_delete]);
+			if (0 < on_update && on_update < NR_ACTIONS && on_delete != 2 /* RESTRICT -- default */)
+				stream_printf(toConsole, " ON UPDATE %s", actions[on_update]);
+		}
+		if (tname == NULL)
+			stream_printf(toConsole, ";\n");
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		goto bailout;
+	}
+	mapi_close_handle(hdl);
+
+  bailout:
+	if (query != NULL && maxquerylen != 0)
+		free(query);
+}
+
 int
-dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe)
+dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe, int foreign)
 {
 	int cnt, i;
 	MapiHdl hdl;
@@ -429,108 +588,8 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe)
 	}
 	mapi_close_handle(hdl);
 
-	snprintf(query, maxquerylen,
-		 "SELECT \"pkt\".\"name\","		/* 0 */
-			"\"pkkc\".\"column\","		/* 1 */
-			"\"fkkc\".\"column\","		/* 2 */
-			"\"fkkc\".\"nr\","		/* 3 */
-			"\"fkk\".\"name\","		/* 4 */
-			"\"fkk\".\"action\""		/* 5 */
-		 "FROM \"sys\".\"_tables\" \"fkt\","
-		      "\"sys\".\"keycolumns\" \"fkkc\","
-		      "\"sys\".\"keys\" \"fkk\","
-		      "\"sys\".\"_tables\" \"pkt\","
-		      "\"sys\".\"keycolumns\" \"pkkc\","
-		      "\"sys\".\"keys\" \"pkk\","
-		      "\"sys\".\"schemas\" \"s\" "
-		 "WHERE \"fkt\".\"id\" = \"fkk\".\"table_id\" AND "
-		       "\"pkt\".\"id\" = \"pkk\".\"table_id\" AND "
-		       "\"fkk\".\"id\" = \"fkkc\".\"id\" AND "
-		       "\"pkk\".\"id\" = \"pkkc\".\"id\" AND "
-		       "\"fkk\".\"rkey\" = \"pkk\".\"id\" AND "
-		       "\"fkkc\".\"nr\" = \"pkkc\".\"nr\" AND "
-		       "\"fkt\".\"schema_id\" = \"s\".\"id\" AND "
-		       "\"s\".\"name\" = '%s' AND "
-		       "\"fkt\".\"name\" = '%s'"
-		 "ORDER BY \"fkk\".\"name\", \"nr\"", schema, tname);
-	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
-		if (hdl) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-		} else
-			mapi_explain(mid, stderr);
-		goto bailout;
-	}
-	cnt = mapi_fetch_row(hdl);
-	while (cnt != 0) {
-		char *c_name = mapi_fetch_field(hdl, 0);
-		char *c_pcolumn = mapi_fetch_field(hdl, 1);
-		char *c_fcolumn = mapi_fetch_field(hdl, 2);
-		char *c_nr = mapi_fetch_field(hdl, 3);
-		char *c_fkname = mapi_fetch_field(hdl, 4);
-		char *c_faction = mapi_fetch_field(hdl, 5);
-		char **fkeys, **pkeys;
-		int nkeys = 0;
-
-		if (mapi_error(mid)) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-			goto bailout;
-		}
-		assert(strcmp(c_nr, "0") == 0);
-		(void) c_nr;	/* pacify compilers in case assertions are disabled */
-		nkeys = 1;
-		fkeys = malloc(nkeys * sizeof(*fkeys));
-		pkeys = malloc(nkeys * sizeof(*pkeys));
-		pkeys[nkeys - 1] = c_pcolumn;
-		fkeys[nkeys - 1] = c_fcolumn;
-		while ((cnt = mapi_fetch_row(hdl)) != 0 && strcmp(mapi_fetch_field(hdl, 3), "0") != 0) {
-			nkeys++;
-			pkeys = realloc(pkeys, nkeys * sizeof(*pkeys));
-			fkeys = realloc(fkeys, nkeys * sizeof(*fkeys));
-			pkeys[nkeys - 1] = mapi_fetch_field(hdl, 1);
-			fkeys[nkeys - 1] = mapi_fetch_field(hdl, 2);
-		}
-		stream_printf(toConsole, ",\n\t");
-		if (c_fkname) {
-			stream_printf(toConsole, "CONSTRAINT ");
-			quoted_print(toConsole, c_fkname);
-			stream_write(toConsole, " ", 1, 1);
-		}
-		stream_printf(toConsole, "FOREIGN KEY (");
-		for (i = 0; i < nkeys; i++) {
-			if (i > 0)
-				stream_printf(toConsole, ", ");
-			quoted_print(toConsole, fkeys[i]);
-		}
-		stream_printf(toConsole, ") REFERENCES ");
-		quoted_print(toConsole, c_name);
-		stream_printf(toConsole, " (");
-		for (i = 0; i < nkeys; i++) {
-			if (i > 0)
-				stream_printf(toConsole, ", ");
-			quoted_print(toConsole, pkeys[i]);
-		}
-		stream_printf(toConsole, ")");
-		free(fkeys);
-		free(pkeys);
-		if (c_faction) {
-			int action = atoi(c_faction);
-			int on_update = (action >> 8) & 255;
-			int on_delete = action & 255;
-
-			if (0 < on_delete && on_delete < NR_ACTIONS && on_delete != 2 /* RESTRICT -- default */)
-				stream_printf(toConsole, " ON DELETE %s", actions[on_delete]);
-			if (0 < on_update && on_update < NR_ACTIONS && on_delete != 2 /* RESTRICT -- default */)
-				stream_printf(toConsole, " ON UPDATE %s", actions[on_update]);
-		}
-	}
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-		goto bailout;
-	}
-	mapi_close_handle(hdl);
+	if (foreign)
+		dump_foreign_keys(mid, schema, tname, toConsole);
 
 	stream_printf(toConsole, "\n");
 
@@ -826,7 +885,7 @@ dump_tables(Mapi mid, stream *toConsole)
 
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
-		rc += dump_table(mid, schema, tname, toConsole, 0);
+		rc += dump_table(mid, schema, tname, toConsole, 0, 0);
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
@@ -834,6 +893,8 @@ dump_tables(Mapi mid, stream *toConsole)
 		return 1;
 	}
 	mapi_close_handle(hdl);
+
+	dump_foreign_keys(mid, NULL, NULL, toConsole);
 
 	/* dump sequences, part 2 */
 	if ((hdl = mapi_query(mid, sequences2)) == NULL || mapi_error(mid)) {
