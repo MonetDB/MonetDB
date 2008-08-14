@@ -411,8 +411,8 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 					garbageElement(cntxt, &glb->stk[i]);
 				/* clean stack entry */
 				glb->stk[i].vtype = TYPE_int;
-				glb->stk[i].val.ival = 0;
 				glb->stk[i].len = 0;
+				glb->stk[i].val.pval = 0;
 			}
 			clearVariable(mb, i);
 		} else {
