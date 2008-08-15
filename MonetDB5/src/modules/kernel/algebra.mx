@@ -707,7 +707,7 @@ address ALG@1_@2_@4
 comment @3;
 
 function @1 (b:bat[:any_1,:@2] ) :@4;
-	return @1(b, true); 
+	return @1 := @1(b, true); 
 end @1;
 @mal
 @= sumprod
