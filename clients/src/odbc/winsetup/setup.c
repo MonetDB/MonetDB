@@ -81,11 +81,13 @@ ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg, WOR
 	case ODBC_CONFIG_DRIVER:
 		break;
 	default:
-		SQLPostInstallerError(ODBC_ERROR_INVALID_REQUEST_TYPE, "Invalid request");
+		SQLPostInstallerError(ODBC_ERROR_INVALID_REQUEST_TYPE,
+				      "Invalid request");
 		return FALSE;
 	}
 	if (strcmp(driver, DriverName) != 0) {
-		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME, "Invalid driver name");
+		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME,
+				      "Invalid driver name");
 		return FALSE;
 	}
 	return TRUE;
@@ -189,7 +191,7 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			datap->database = strdup(buf);
 			/* fall through */
 		case IDCANCEL:
-			EndDialog(hwndDlg, wParam);
+			EndDialog(hwndDlg, LOWORD(wParam));
 			return TRUE;
 		}
 	default:
@@ -209,7 +211,8 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	ODBCLOG("ConfigDSN %d %s %s 0x%I64x\n", request, driver ? driver : "(null)", attributes ? attributes : "(null)", (unsigned __int64) (size_t) &data);
 
 	if (strcmp(driver, DriverName) != 0) {
-		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME, "Invalid driver name");
+		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME,
+				      "Invalid driver name");
 		return FALSE;
 	}
 	switch (request) {
@@ -218,7 +221,8 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	case ODBC_REMOVE_DSN:
 		break;
 	default:
-		SQLPostInstallerError(ODBC_ERROR_INVALID_REQUEST_TYPE, "Invalid request");
+		SQLPostInstallerError(ODBC_ERROR_INVALID_REQUEST_TYPE,
+				      "Invalid request");
 		return FALSE;
 	}
 
@@ -235,7 +239,8 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		char *value = strchr(attributes, '=');
 
 		if (value == NULL) {
-			SQLPostInstallerError(ODBC_ERROR_INVALID_KEYWORD_VALUE, "Invalid attributes string");
+			SQLPostInstallerError(ODBC_ERROR_INVALID_KEYWORD_VALUE,
+					      "Invalid attributes string");
 			return FALSE;
 		}
 		value++;
@@ -257,7 +262,8 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 
 	if (request == ODBC_REMOVE_DSN) {
 		if (data.dsn == NULL) {
-			SQLPostInstallerError(ODBC_ERROR_INVALID_KEYWORD_VALUE, "No DSN specified");
+			SQLPostInstallerError(ODBC_ERROR_INVALID_KEYWORD_VALUE,
+					      "No DSN specified");
 			return FALSE;
 		}
 		rc = SQLRemoveDSNFromIni(data.dsn);
@@ -279,81 +285,112 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		data.port ? data.port : "(null)",
 		data.database ? data.database : "(null)");
 
-	if (parent)
-		rc = DialogBoxParam(instance, MAKEINTRESOURCE(IDD_SETUP_DIALOG), parent, DialogProc, (LPARAM) &data) == IDOK;
-	else
-		rc = TRUE;
+	/* we're optimistic: default return value */
+	rc = TRUE;
 
-	if (rc) {
-		if (request == ODBC_ADD_DSN || strcmp(dsn, data.dsn) != 0) {
-			if (!SQLValidDSN(data.dsn)) {
-				rc = FALSE;
-				if (parent)
-					MessageBox(parent,
-						   "Invalid Datasource Name",
-						   NULL,
-						   MB_ICONERROR);
-				goto finish;
-			}
-			if (dsn == NULL || strcmp(dsn, data.dsn) != 0) {
-				char *drv = NULL;
+	if (parent) {
+		switch (DialogBoxParam(instance,
+				       MAKEINTRESOURCE(IDD_SETUP_DIALOG),
+				       parent,
+				       DialogProc,
+				       (LPARAM) &data)) {
+		case IDOK:
+			break;
+		default:
+			rc = FALSE;
+			SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED,
+					      "Error creating configuration dialog");
+			/* fall through */
+		case IDCANCEL:
+			goto finish;
+		}
+	}
 
-				/* figure out whether the new dsn already exists */
-				MergeFromProfileString(data.dsn, &drv, "driver", "");
-				if (drv && *drv) {
-					free(drv);
-					if (parent &&
-					    MessageBox(parent,
-						       "Replace existing Datasource Name?",
-						       NULL,
-						       MB_OKCANCEL | MB_ICONQUESTION) != IDOK) {
-						rc = FALSE;
-						goto finish;
-					}
-					ODBCLOG("ConfigDSN removing dsn %s\n", data.dsn);
-					if (!SQLRemoveDSNFromIni(data.dsn)) {
-						rc = FALSE;
-						MessageBox(parent,
-							   "Failed to remove old Datasource Name",
-							   NULL,
-							   MB_ICONERROR);
-						goto finish;
-					}
-				} else if (drv)
-					free(drv);
-			}
-			if (dsn && !SQLRemoveDSNFromIni(dsn)) {
-				rc = FALSE;
-				if (parent)
+	if (request == ODBC_ADD_DSN || strcmp(dsn, data.dsn) != 0) {
+		if (!SQLValidDSN(data.dsn)) {
+			rc = FALSE;
+			if (parent)
+				MessageBox(parent,
+					   "Invalid Datasource Name",
+					   NULL,
+					   MB_ICONERROR);
+			SQLPostInstallerError(ODBC_ERROR_INVALID_NAME,
+					      "Invalid driver name");
+			goto finish;
+		}
+		if (dsn == NULL || strcmp(dsn, data.dsn) != 0) {
+			char *drv = NULL;
+
+			/* figure out whether the new dsn already exists */
+			MergeFromProfileString(data.dsn, &drv, "driver", "");
+			if (drv && *drv) {
+				free(drv);
+				if (parent &&
+				    MessageBox(parent,
+					       "Replace existing Datasource Name?",
+					       NULL,
+					       MB_OKCANCEL | MB_ICONQUESTION) != IDOK) {
+					goto finish;
+				}
+				ODBCLOG("ConfigDSN removing dsn %s\n", data.dsn);
+				if (!SQLRemoveDSNFromIni(data.dsn)) {
+					rc = FALSE;
 					MessageBox(parent,
 						   "Failed to remove old Datasource Name",
 						   NULL,
 						   MB_ICONERROR);
-				goto finish;
-			}
-			if (!SQLWriteDSNToIni(data.dsn, driver)) {
-				rc = FALSE;
-				if (parent)
-					MessageBox(parent,
-						   "Failed to add new Datasource Name",
-						   NULL,
-						   MB_ICONERROR);
-				goto finish;
-			}
+					SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED,
+							      "Failed to remove old Datasource Name");
+					goto finish;
+				}
+			} else if (drv)
+				free(drv);
 		}
-		ODBCLOG("ConfigDSN writing values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s\n",
-			data.dsn ? data.dsn : "(null)",
-			data.uid ? data.uid : "(null)",
-			data.pwd ? data.pwd : "(null)",
-			data.host ? data.host : "(null)",
-			data.port ? data.port : "(null)",
-			data.database ? data.database : "(null)");
+		if (dsn && !SQLRemoveDSNFromIni(dsn)) {
+			rc = FALSE;
+			if (parent)
+				MessageBox(parent,
+					   "Failed to remove old Datasource Name",
+					   NULL,
+					   MB_ICONERROR);
+			SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED,
+					      "Failed to remove old Datasource Name");
+			goto finish;
+		}
+		if (!SQLWriteDSNToIni(data.dsn, driver)) {
+			rc = FALSE;
+			if (parent)
+				MessageBox(parent,
+					   "Failed to add new Datasource Name",
+					   NULL,
+					   MB_ICONERROR);
+			SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED,
+					      "Failed to add new Datasource Name");
+			goto finish;
+		}
+	}
+	ODBCLOG("ConfigDSN writing values: dsn=%s uid=%s pwd=%s host=%s port=%s database=%s\n",
+		data.dsn ? data.dsn : "(null)",
+		data.uid ? data.uid : "(null)",
+		data.pwd ? data.pwd : "(null)",
+		data.host ? data.host : "(null)",
+		data.port ? data.port : "(null)",
+		data.database ? data.database : "(null)");
 
-		SQLWritePrivateProfileString(data.dsn, "uid", data.uid, "odbc.ini");
-		SQLWritePrivateProfileString(data.dsn, "pwd", data.pwd, "odbc.ini");
-		SQLWritePrivateProfileString(data.dsn, "host", data.host, "odbc.ini");
-		SQLWritePrivateProfileString(data.dsn, "port", data.port, "odbc.ini");
-		SQLWritePrivateProfileString(data.dsn, "database", data.database, "odbc.ini");
+	if (!SQLWritePrivateProfileString(data.dsn, "uid", data.uid, "odbc.ini") ||
+	    !SQLWritePrivateProfileString(data.dsn, "pwd", data.pwd, "odbc.ini") ||
+	    !SQLWritePrivateProfileString(data.dsn, "host", data.host, "odbc.ini") ||
+	    !SQLWritePrivateProfileString(data.dsn, "port", data.port, "odbc.ini") ||
+	    !SQLWritePrivateProfileString(data.dsn, "database", data.database, "odbc.ini")) {
+		rc = FALSE;
+		if (parent)
+			MessageBox(parent,
+				   "Error writing configuration data to registry",
+				   NULL,
+				   MB_ICONERROR);
+		SQLPostInstallerError(ODBC_ERROR_REQUEST_FAILED,
+				      "Error writing configuration data to registry");
+		goto finish;
 	}
 
   finish:
