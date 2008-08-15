@@ -532,7 +532,7 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 		stream_printf(GDKout," %d replaced %s->%s \n",i,getTypeName(x),getTypeName(y));
 #endif 
 		} else
-		if(v>0 &&  getTailIndex(x) == v){
+		if(getTailIndex(x) == v){
 #ifdef DEBUG_MAL_FCN
 		stream_printf(GDKout," replace x= %s polymorphic\n",getTypeName(x));
 #endif 
