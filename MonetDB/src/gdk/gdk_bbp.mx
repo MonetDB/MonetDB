@@ -891,7 +891,7 @@ new_bbpentry(stream *s, bat i)
 }
 
 static int
-	BBPdir_header(stream *s, int n)
+BBPdir_header(stream *s, int n)
 {
 	if (stream_printf(s, "BBP.dir, GDKversion %d\n", GDKLIBRARY) < 0 ||
 	    stream_printf(s, "%d %d\n", SIZEOF_SIZE_T, SIZEOF_OID) < 0 ||
