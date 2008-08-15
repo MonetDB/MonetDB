@@ -589,6 +589,17 @@ static char *phases[] = {
     [22]  = "after the MIL program has been serialized"
 };
 
+#ifdef WIN32
+#include <signal.h>
+
+static RETSIGTYPE
+catchabort(int sig)
+{
+    (void) sig;
+    PFoops (OOPS_FATAL, "abort signal caught");
+}
+#endif
+
 #define MAIN_EXIT(rtrn) \
         fputs (PFerrbuf, stderr);\
         exit (rtrn);
@@ -611,6 +622,12 @@ main (int argc, char *argv[])
         PFmem_destroy ();
         MAIN_EXIT ( rtrn<0 ? -rtrn : rtrn );
     }
+
+#ifdef WIN32
+    /* when an assertion fails, we do not want a pop-up window */
+    (void) signal (SIGABRT, catchabort);
+    _set_abort_behavior (0, _CALL_REPORTFAULT|_WRITE_ABORT_MSG);
+#endif
 
  {
     /**
