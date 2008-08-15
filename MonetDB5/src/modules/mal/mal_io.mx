@@ -212,6 +212,8 @@ allow for any type to be assigned.
 #include "mal_config.h"
 #include "mal_io.h"
 
+#define MAXFORMAT 64*1024
+
 str
 io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -552,7 +554,7 @@ str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci
 	@1 *val = (@1 *) getArgReference(stk,pci,2);
 	stream *fd = cntxt->fdout;
 	char *format;
-	char buf[64*1025];
+	char buf[MAXFORMAT];
 
 	(void) cntxt;
 	(void) mv;
@@ -565,7 +567,7 @@ str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci
 
 	if( *val == @1_nil) 
 		return IOprint_formatted_nil(fd,* (str*) fmt);
-	if (snprintf(buf, 64*1025, *fmt,*val) < 0){
+	if (snprintf(buf, MAXFORMAT, *fmt,*val) < 0){
 		throw(MAL, "io.print", "Format error," @2 " expected and < 64K");
 	} else
 		stream_printf(fd,*fmt,*val);
@@ -588,7 +590,7 @@ IOprint_formatted_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ptr fmt = (ptr) getArgReference(stk,pci,1);
 	str *val = (str *) getArgReference(stk,pci,2);
 	char *format;
-	char buf[64*1024];
+	char buf[MAXFORMAT];
 	
 	(void) cntxt;
 	(void) mb;
@@ -602,7 +604,7 @@ IOprint_formatted_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (strNil(*val))
 		return IOprint_formatted_nil(fd, *(str *) fmt);
-	if (snprintf(buf, 64*1025, format,*val) < 0){
+	if (snprintf(buf, MAXFORMAT, format,*val) < 0){
 		throw(MAL, "io.print", "Format error, %s expected");
 	} else
 		stream_printf(fd,format,*val);
@@ -650,7 +652,7 @@ IOprint_formatted_bit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stream *fd = cntxt->fdout;
 	char *format;
 	str msg;
-	char buf[46*1024];
+	char buf[MAXFORMAT];
 
 	(void) cntxt;
 	(void) mb;
@@ -667,7 +669,7 @@ IOprint_formatted_bit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = "true";
 	else
 		msg = "false";
-	if (snprintf(buf, 64*1025, format,msg) < 0){
+	if (snprintf(buf, MAXFORMAT, format,msg) < 0){
 		throw(MAL, "io.print", "Format error, %s expected");
 	} else
 		stream_printf(fd,format,msg);
