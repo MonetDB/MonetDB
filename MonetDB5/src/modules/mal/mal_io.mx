@@ -169,7 +169,7 @@ io_export str IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 int i, int order, int printhead, int printorderby);
 io_export str IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
 str hd, str tl, int nobat);
-io_export str IOprint_formatted_nil(stream *fd, str format, char last);
+io_export str IOprint_formatted_nil(stream *fd, str format);
 io_export str IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
 str hd, str tl, int nobat);
 io_export str IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -185,7 +185,6 @@ io_export str IOftable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOttable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOprint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOprint_formatted_nil(stream *fd, str format, char last);
 io_export str IOprint_formatted_lng(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
 io_export str IOprint_formatted_str(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
 io_export str IOprint_oid(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
@@ -491,35 +490,70 @@ This to simplify error handling
 		if( *c=='\\'){
 			c++;
 			@:escaped@
-		} else 
-		if( *c== '%'){
-			char newformat[1024];
-			int i=0;
-
-			if(*(c+1)=='%'){ 
-				stream_printf(fd,"%c",*c);
-				c++; continue;
-			}
-			while(*c != '@1' && *c && i<1024)
-				 newformat[i++]= *c++;
-			newformat[i++]='@1';
-			newformat[i]=0;
-			if(*c!= '@1') 
-			throw(MAL, "io.print", "Format limitation");
-			else  stream_printf(fd,newformat,@2);
-		} else stream_printf(fd,"%c",*c);
+			continue;
+		} 
+		if( *c!= '%'){
+			stream_printf(fd,"%c",*c);
+			continue;
+		}
+		if(*(c+1)=='%'){ 
+			stream_printf(fd,"%c",*c);
+			c++; continue;
+		}
+		if (strncmp(@2,c,strlen(@2)))
+			throw(MAL, "io.print", "Format limitation," @2" expected");
+		stream_printf(fd,@2,@1);
+		c+= strlen(@2)-1;
 	}
 @-
+String nil testing is slightly different.
+@c
+str
+IOprint_formatted_nil(stream *fd, str format)
+{
+	str c,f;
 
+	for (c = format; *c; c++) {
+		if (*c == '\\') {
+			c++;
+			@:escaped@
+			continue;
+		} 
+		if (*c != '%') {
+			stream_printf(fd, "%c", *c);
+			continue;
+		}
+		if (*(c + 1) == '%') {
+			stream_printf(fd, "%c", *c);
+			c++;
+			continue;
+		}
+		f=c+1;
+		if (*f== '+' || *f== '-') f++;
+		while (isdigit((int) *f) ) f++;
+		if (*f =='.' ) f++;
+		while (isdigit((int) *f) ) f++;
+		if (*f =='l' ) f++;
+		if (*f =='d' || *f == 'f' || *f =='s' || *f == 'c'){
+			char old= *f;
+			*f='s';
+			stream_printf(fd,c,"nil");
+			*f=old;
+			break;
+		} else throw(MAL, "io.print", "Format limitation expected");
+	}
+	return MAL_SUCCEED;
+}
 @= printFormatted
 io_export str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci);
 str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci)
 {
-	ptr fmt = (ptr) getArgReference(stk,pci,1);
-	@1 *s = (@1 *) getArgReference(stk,pci,2);
+	str *fmt = (str *) getArgReference(stk,pci,1);
+	@1 *val = (@1 *) getArgReference(stk,pci,2);
 	stream *fd = cntxt->fdout;
 	char *format;
-	str c;
+	char buf[64*1025];
+
 	(void) cntxt;
 	(void) mv;
 	/* TODO: check format properly !!! including sizes */
@@ -529,105 +563,33 @@ str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci
 	if( formatMarker(format)!=1) 
 		throw(MAL, "io.print", "Too many %%");
 
-	if( *s == @1_nil) 
-		return IOprint_formatted_nil(fd,* (str*) fmt, '@2');
-	@:formatConversion(@2,*s)@
+	if( *val == @1_nil) 
+		return IOprint_formatted_nil(fd,* (str*) fmt);
+	if (snprintf(buf, 64*1025, *fmt,*val) < 0){
+		throw(MAL, "io.print", "Format error," @2 " expected and < 64K");
+	} else
+		stream_printf(fd,*fmt,*val);
 	return MAL_SUCCEED;
 }
 @c
-@:printFormatted(chr,c)@
-@:printFormatted(sht,d)@
-@:printFormatted(int,d)@
-@:printFormatted(flt,f)@
-@:printFormatted(dbl,f)@
+@:printFormatted(chr,"%c")@
+@:printFormatted(sht,"%d")@
+@:printFormatted(int,"%d")@
+@:printFormatted(lng,LLFMT)@
+@:printFormatted(flt,"%f")@
+@:printFormatted(dbl,"%f")@
+@:printFormatted(ptr,PTRFMT)@
 
-@-
-String nil testing is slightly different.
-@c
-str
-IOprint_formatted_nil(stream *fd, str format, char last)
-{
-	str c;
-
-	for (c = format; *c; c++) {
-		if (*c == '\\') {
-			c++;
-			@:escaped@
-		} else if (*c == '%') {
-			char newformat[1024];
-			int i = 0;
-
-			if (*(c + 1) == '%') {
-				stream_printf(fd, "%c", *c);
-				c++;
-				continue;
-			}
-			while (!isalpha((int) *c) && *c && *c != last && i < 1024)
-				newformat[i++] = *c++;
-			newformat[i++] = 's';
-			newformat[i] = 0;
-			stream_printf(fd, newformat, "nil");
-		} else
-			stream_printf(fd, "%c", *c);
-	}
-	return MAL_SUCCEED;
-}
-str
-IOprint_formatted_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str c;
-	str *format= (str*) getArgReference(stk,pci,1);
-	lng *val= (lng*) getArgReference(stk,pci,2);
-	stream *fd= cntxt->fdout;
-	(void) cntxt;
-	(void) mb;
-
-	for (c = *format; *c; c++) {
-		if (*c == '\\') {
-			c++;
-			@:escaped@
-		} else if (*c == '%') {
-			char newformat[1024];
-			int i = 0;
-
-			if (*(c + 1) == '%') {
-				stream_printf(fd, "%c", *c);
-				c++;
-				continue;
-			}
-			while (!isalpha((int) *c) && *c && i < 1024)
-			if( *c =='d' ) {
-				break;
-			} else
-			if( *c=='l' && c[1]=='d') {
-				c++;
-				break;
-			} else
-				newformat[i++] = *c++;
-
-			if( *val == lng_nil){
-				newformat[i++] = 's';
-				newformat[i] = 0;
-				stream_printf(fd, newformat, "nil");
-			} else {
-				char *f= LLFMT;
-				strcpy(newformat+i,f+1);
-				stream_printf(fd, newformat, *val);
-			}
-		} else
-			stream_printf(fd, "%c", *c);
-	}
-	return MAL_SUCCEED;
-}
 
 str
 IOprint_formatted_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	stream *fd = cntxt->fdout;
 	ptr fmt = (ptr) getArgReference(stk,pci,1);
-	str *s = (str *) getArgReference(stk,pci,2);
+	str *val = (str *) getArgReference(stk,pci,2);
 	char *format;
-	str c;
+	char buf[64*1024];
+	
 	(void) cntxt;
 	(void) mb;
 
@@ -638,9 +600,12 @@ IOprint_formatted_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (formatMarker(format) != 1)
 		throw(MAL, "io.print", "Too many %%");
 
-	if (strNil(*s))
-		return IOprint_formatted_nil(fd, *(str *) fmt, 's');
-	@:formatConversion(s,*s)@
+	if (strNil(*val))
+		return IOprint_formatted_nil(fd, *(str *) fmt);
+	if (snprintf(buf, 64*1025, format,*val) < 0){
+		throw(MAL, "io.print", "Format error, %s expected");
+	} else
+		stream_printf(fd,format,*val);
 	return MAL_SUCCEED;
 }
 
@@ -669,7 +634,7 @@ IOprint_oid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = (str) GDKmalloc(len);
 		OIDtoStr(&msg, &len, s);
 	}
-	@:formatConversion(s,msg)@
+	@:formatConversion(msg,"%s")@
 	GDKfree(msg);
 	if (*ret == EOF)
 		throw(MAL, "io.print", "End-of-file encountered");
@@ -685,7 +650,7 @@ IOprint_formatted_bit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stream *fd = cntxt->fdout;
 	char *format;
 	str msg;
-	str c;
+	char buf[46*1024];
 
 	(void) cntxt;
 	(void) mb;
@@ -697,12 +662,15 @@ IOprint_formatted_bit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "io.print", "Too many %%");
 
 	if (*s == bit_nil)
-		return IOprint_formatted_nil(fd, *(str *) fmt, 's');
+		return IOprint_formatted_nil(fd, *(str *) fmt);
 	if (*s)
 		msg = "true";
 	else
 		msg = "false";
-	@:formatConversion(s,msg)@
+	if (snprintf(buf, 64*1025, format,msg) < 0){
+		throw(MAL, "io.print", "Format error, %s expected");
+	} else
+		stream_printf(fd,format,msg);
 	if (*ret == EOF)
 		throw(MAL, "io.print", "End-of-file encountered");
 	return MAL_SUCCEED;

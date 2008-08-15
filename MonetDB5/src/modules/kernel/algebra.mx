@@ -3838,4 +3838,5 @@ str ALGavg_@1(dbl *res, int *bid) {
 @:avg_impl(lng)@
 @:avg_impl(flt)@
 @:avg_impl(dbl)@
+
 @}

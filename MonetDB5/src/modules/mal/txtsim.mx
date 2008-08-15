@@ -1079,7 +1079,7 @@ function str2qgrams(s:str):bat[:oid,:str];
     res := batcalc.+(c1, c2);
     res := batcalc.+(c0, res);
 
-    return res;
+    return str2qgrams := res;
 end str2qgrams;
 
 @}

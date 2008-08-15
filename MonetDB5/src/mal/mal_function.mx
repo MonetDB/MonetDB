@@ -229,6 +229,8 @@ void chkFlow(MalBlkPtr mb)
 	int fixed=1;    
 	InstrPtr p;
 
+	if ( mb->errors)
+		return;
 	lastInstruction = mb->stop-1;
 	for(i= 0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
