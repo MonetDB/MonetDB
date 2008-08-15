@@ -20,13 +20,14 @@ end typetest;                           #  3
 function user.main():void;              #  0 main:void := user.main() {G}
 # observed 13-08-2008: inspect.getType works fine local, but not in a 
 # function on an argument with type :any 
-    p := "string";                      #  3 p:str := _4:str {G}
-    t := inspect.getType(p);            #  4 t:str := INSPECTtypeName(p:str) {G}
+# SF bug #2051258 
+    p := "string";                      #  4 p:str := _5:str {G}
+    t := inspect.getType(p);            #  5 t:str := INSPECTtypeName(p:str) {G}
 # here it is still a "str" 
-    io.print(t);                        #  6 _7:void := IOprint_val(t:str) 
+    io.print(t);                        #  7 _8:void := IOprint_val(t:str) 
 # but now it is a "any", should be "str" 
-    user.typetest(p);                   #  8 _9:void := user.typetest(p:str) 
-end main;                               #  9  
+    user.typetest(p);                   #  9 _10:void := user.typetest(p:str) 
+end main;                               # 10  
 [ "str" ]
 [ "str" ]
 
