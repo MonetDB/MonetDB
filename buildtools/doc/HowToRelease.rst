@@ -128,6 +128,13 @@ Releasing
   HAVE_SWIG=1 HAVE_PCRE=1 HAVE_PERL=1 HAVE_PERL_SWIG=1
   HAVE_PERL_DEVEL=1``
 
+- Create PGP signatures and SHA1 checksums::
+
+    rpm --addsign --define '_gpg_name 0x3DFA3C42' *.rpm
+    sha1sum *.rpm *.tar.* *.msi *.jar > SHA1SUM
+    gpg --clearsign --local 0x3DFA3C42 SHA1SUM
+    mv SHA1SUM.asc SHA1SUM
+
 - Copy the builds and Windows installers and upload to SourceForge
   using the ``releaseforge`` program.
 
