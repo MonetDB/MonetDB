@@ -1441,18 +1441,6 @@ parseAssign(Client cntxt, int cntrl)
 				 return;
 			}
 			@:GETvariable@
-			/* take care of  target variables */
-			if( cntrl == RETURNsymbol || cntrl == YIELDsymbol ){
-				int d, fnd=0;
-				for (d=0; d< getInstrPtr(curBlk,0)->retc;d++)
-				if ( getArg(getInstrPtr(curBlk,0),d) == varid)
-					fnd++;
-				if (fnd == 0){
-					curBlk->errors++;
-					parseError(cntxt," target <identifier> expected\n"); 
-					return;
-				}
-			 }
 			if( currChar(cntxt)==':') {
 				setVarUDFtype(curBlk,varid);
 				type = typeElm(cntxt,getVarType(curBlk,varid));
@@ -1505,18 +1493,6 @@ parseAssign(Client cntxt, int cntrl)
 
 		/* Get target variable details*/
 		@:GETvariable@
-		/* take care of  target variables */
-		if( cntrl == RETURNsymbol || cntrl == YIELDsymbol ){
-			int d, fnd=0;
-			for (d=0; d< getInstrPtr(curBlk,0)->retc;d++)
-			if ( getArg(getInstrPtr(curBlk,0),d) == varid)
-				fnd++;
-			if (fnd == 0){
-				curBlk->errors++;
-				parseError(cntxt," target <identifier> expected\n"); 
-				return;
-				}
-		 }
 		if( !(currChar(cntxt)==':' && CURRENT(cntxt)[1]=='=') ){
 			if( currChar(cntxt)==':') {
 				setVarUDFtype(curBlk,varid);
