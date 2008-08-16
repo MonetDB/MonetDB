@@ -4,14 +4,15 @@
 
 function user.myfunc(i:int):bit;
 	barrier ifpart := i == 1;
-		return(true);
+		return myfunc:=true;
 	exit ifpart;
 	barrier ifpart := i == 2;
-		return(false);
+		return myfunc:=false;
 	exit ifpart;
 	barrier ifpart := i == 3;
-		return(nil:bit);
+		return myfunc:=nil:bit;
 	exit ifpart;
+	return myfunc:= nil:bit;
 end user.myfunc;
 #!TypeException:user.myfunc[2]:'true' may not be used before being initialized
 

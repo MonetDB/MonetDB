@@ -18,15 +18,16 @@ stdout of test 'notruefalsenil` in directory 'tests/BugReports` itself:
 
 function user.myfunc(i:int):bit;        #  0 myfunc:bit := user.myfunc(i:int) 
 barrier ifpart := calc.==(i,1);         #  1 ifpart:bit := CALCcompEQintint(i:int, _3:int) {J3}
-    return myfunc := true;              #  2 myfunc:bit := true:any 
+    return myfunc := true;              #  2 myfunc:bit := _4:bit 
 exit ifpart;                            #  3 ifpart:bit 
 barrier ifpart := calc.==(i,2);         #  4 ifpart:bit := CALCcompEQintint(i:int, _5:int) {J6}
-    return myfunc := false;             #  5 myfunc:bit := false:any 
+    return myfunc := false;             #  5 myfunc:bit := _6:bit 
 exit ifpart;                            #  6 ifpart:bit 
 barrier ifpart := calc.==(i,3);         #  7 ifpart:bit := CALCcompEQintint(i:int, _7:int) {J9}
-    return myfunc := nil;               #  8 myfunc:bit := nil:bit 
+    return myfunc := nil:bit;           #  8 myfunc:bit := _8:bit 
 exit ifpart;                            #  9 ifpart:bit 
-end myfunc;                             # 10  
+    return myfunc := nil:bit;           # 10 myfunc:bit := _8:bit 
+end myfunc;                             # 11  
 function user.main():void;              #  0 main:void := user.main() 
 # observed 14-08-2008: true, false and nil are not available in a 
 # function, whereas they are locally 
@@ -45,12 +46,15 @@ function user.main():void;              #  0 main:void := user.main()
     p := user.myfunc(4);                # 15 p:bit := user.myfunc(_19:int) 
     io.print(p);                        # 16 _20:void := IOprint_val(p:bit) 
 end main;                               # 17  
+[ true ]
+[ true ]
+[ false ]
+[ false ]
+[ nil ]
+[ nil ]
+[ nil ]
 
-
-***** SHOULD BE APPROVED ONCE IT WORKS *****
-
-
-# 13:22:37 >  
-# 13:22:37 >  Done.
-# 13:22:37 >  
+# 19:20:59 >  
+# 19:20:59 >  Done.
+# 19:20:59 >  
 
