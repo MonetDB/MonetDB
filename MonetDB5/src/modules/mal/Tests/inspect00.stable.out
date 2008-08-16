@@ -50,8 +50,8 @@ stack depth 2
 # view	stk						  # name
 # int	str						  # type
 #---------------------------------------------------------#
-[ 0,	  "t := mdb.getStackTrace() at user.tst[3]"	  ]
-[ 1,	  "user.tst() at user.main[2]"			  ]
+[ 0,	  "    t := mdb.getStackTrace(); at user.tst[3]"  ]
+[ 1,	  "    user.tst(); at user.main[2]"		  ]
 #-----------------------------------------#
 # view	stk				  # name
 # str	str				  # type
