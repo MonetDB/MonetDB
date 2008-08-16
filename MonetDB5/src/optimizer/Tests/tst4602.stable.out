@@ -31,14 +31,8 @@ barrier j := calc.<(i,lim);             #  2 j:bit := CALCcompLTintint(i:int, li
     redo j := calc.<(i,lim);            #  5 j:bit := CALCcompLTintint(i:int, lim:int) {J3}
     return welcome := i;                #  6 welcome:int := i:int 
 exit j;                                 #  7 j:bit 
-end welcome;	# 8  
-#
-#optimizer.macroExpansion("user","welcome");
-#
-#io.print("test expansion");
-#a:= user.welcome(2);
-#mdb.list();
-#
+    return welcome := i;                #  8 welcome:int := i:int 
+end welcome;                            #  9  
 !MALException:optimizer.MACROvalidate:RETURN statement is not the last one
 
 # 20:03:29 >  

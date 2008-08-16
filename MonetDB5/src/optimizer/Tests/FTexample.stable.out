@@ -43,7 +43,8 @@ barrier always := true;                 #  3 always:bit := _11:bit {J8}
     yield test := i;                    #  6 test:int := i:int 
     redo always;                        #  7 always:bit {J4}
 exit always;                            #  8 always:bit 
-end test;                               #  9  
+    return test := test;                #  9 test:int := test:int 
+end test;                               # 10  
 
 # 23:53:03 >  
 # 23:53:03 >  Done.

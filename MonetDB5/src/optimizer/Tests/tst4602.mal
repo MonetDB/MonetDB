@@ -8,6 +8,7 @@ barrier j:= i<lim;
     redo j:= i<lim;
     return i;
 exit j;
+	return i;
 end welcome;
 
 optimizer.macro("user","welcome");

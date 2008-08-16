@@ -358,7 +358,8 @@ barrier always := true;                 #147 always:bit := _131:bit {J164}
     yield f1;                           #162 f1:void 
     redo always;                        #163 always:bit {J148}
 exit always;                            #164 always:bit 
-end f1;                                 #165  
+    return f1 := f1;                    #165 f1:void := f1:void {G}
+end f1;                                 #166  
 
 # 23:53:01 >  
 # 23:53:01 >  Done.

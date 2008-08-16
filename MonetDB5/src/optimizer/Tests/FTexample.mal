@@ -4,7 +4,7 @@ function test(s:str):int;
 	bat.insert(b,1,"hello");
 	z:= algebra.select(b,s,s);
 	i:= aggr.count(z);
-	return i;
+	return test:=i;
 end test;
 optimizer.factorize("user","test");
 mdb.list("user","test");
