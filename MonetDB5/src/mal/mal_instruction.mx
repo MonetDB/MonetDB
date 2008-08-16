@@ -1700,7 +1700,13 @@ convertConstant(malType type, ValPtr vr)
 		ptr d = NULL;
 
 		ATOMfromstr(type, &d, &ll, vr->val.sval);
-		if (d == NULL) {
+		if (d == NULL ) {
+			showException(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
+			VALinit(vr, type, ATOMnilptr(type));
+			return 1;
+		}
+		if ( strncmp(vr->val.sval,"nil",3)!= 0 &&
+                ATOMcmp(type, vr, ATOMnilptr(type)) ==0){
 			showException(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
 			VALinit(vr, type, ATOMnilptr(type));
 			return 1;

@@ -347,7 +347,8 @@ void chkFlow(MalBlkPtr mb)
 	            }
 			    if(ps->typechk != TYPE_RESOLVED) fixed =0;
 			}
-			retseen = 1;
+			if (btop==0)
+				retseen = 1;
 			break;
 	    case RAISEsymbol:
 	        break;
