@@ -1,3 +1,10 @@
+# tests related to bug reports
+# should no longer be added here,
+# but rather in
+# ../../BugTracker/Tests/
+# i.e.
+# .../MonetDB5/tests/BugTracker/Tests/
+
 #DOES_NOT_TERMINATE?no.011
 no.016
 #no.024	replaced by tst017.mal
@@ -46,3 +53,10 @@ gettype_in_function
 notruefalsenil
 printfacceptsmismatch
 lngssaretruncated
+
+# tests related to bug reports
+# should no longer be added here,
+# but rather in
+# ../../BugTracker/Tests/
+# i.e.
+# .../MonetDB5/tests/BugTracker/Tests/

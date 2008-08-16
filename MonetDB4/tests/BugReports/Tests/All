@@ -1,3 +1,10 @@
+# tests related to bug reports
+# should no longer be added here,
+# but rather in
+# ../../BugTracker/Tests/
+# i.e.
+# .../MonetDB4/tests/BugTracker/Tests/
+
 no.011
 no.016
 no.024
@@ -39,3 +46,10 @@ no.168
 no.169
 no.171
 no.172
+
+# tests related to bug reports
+# should no longer be added here,
+# but rather in
+# ../../BugTracker/Tests/
+# i.e.
+# .../MonetDB4/tests/BugTracker/Tests/
