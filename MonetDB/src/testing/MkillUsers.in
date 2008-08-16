@@ -27,8 +27,10 @@ THISFILE=${0##*/}
 CHILD=$$
 PARENT=""
 LOCKFILE="$$"
+CONCURRENT=''
 while [ "${1#-}" != "$1" ] ; do
-  if      [ "$1" =       -l   ] ; then  LOCKFILE="$2"      ; shift ; shift
+  if    [ "$1" = --concurrent ] ; then  CONCURRENT='yes'   ; shift
+    elif  [ "$1" =       -l   ] ; then  LOCKFILE="$2"      ; shift ; shift
     elif  [ "$1" != "${1#-l}" ] ; then  LOCKFILE="${1#-l}" ; shift 
     elif  [ "$1" =       -p   ] ; then  PARENT="$2"        ; shift ; shift
     elif  [ "$1" != "${1#-p}" ] ; then  PARENT="${1#-p}"   ; shift 
@@ -62,11 +64,13 @@ if [ "$PARENT" ] ; then
 fi
 
 BINPATH="$THISPATH"
-if [    "$CLIENTS_PREFIX" ] ; then BINPATH="$BINPATH    $CLIENTS_PREFIX/bin" ; fi
-if [    "$MONETDB_PREFIX" ] ; then BINPATH="$BINPATH    $MONETDB_PREFIX/bin" ; fi
-if [   "$MONETDB4_PREFIX" ] ; then BINPATH="$BINPATH   $MONETDB4_PREFIX/bin" ; fi
-if [   "$MONETDB5_PREFIX" ] ; then BINPATH="$BINPATH   $MONETDB5_PREFIX/bin" ; fi
-if [     "$MONET5_PREFIX" ] ; then BINPATH="$BINPATH     $MONET5_PREFIX/bin" ; fi
+if [ ! "$CONCURRENT" ] ; then
+	if [    "$CLIENTS_PREFIX" ] ; then BINPATH="$BINPATH    $CLIENTS_PREFIX/bin" ; fi
+	if [    "$MONETDB_PREFIX" ] ; then BINPATH="$BINPATH    $MONETDB_PREFIX/bin" ; fi
+	if [   "$MONETDB4_PREFIX" ] ; then BINPATH="$BINPATH   $MONETDB4_PREFIX/bin" ; fi
+	if [   "$MONETDB5_PREFIX" ] ; then BINPATH="$BINPATH   $MONETDB5_PREFIX/bin" ; fi
+	if [     "$MONET5_PREFIX" ] ; then BINPATH="$BINPATH     $MONET5_PREFIX/bin" ; fi
+fi
 if [       "$ACOI_PREFIX" ] ; then BINPATH="$BINPATH       $ACOI_PREFIX/bin" ; fi
 if [        "$SQL_PREFIX" ] ; then BINPATH="$BINPATH        $SQL_PREFIX/bin" ; fi
 if [       "$SQL5_PREFIX" ] ; then BINPATH="$BINPATH       $SQL5_PREFIX/bin" ; fi
