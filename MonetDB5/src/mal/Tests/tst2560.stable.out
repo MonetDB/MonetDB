@@ -65,16 +65,8 @@ barrier available := true;              #  9 available:bit := _9:bit {J15}
 exit available;                         # 15 available:bit 
     redo always;                        # 16 always:bit {J4}
 exit always;                            # 17 always:bit 
-end view1;	# 18  
-#
-#e:= user.view1(0,2);
-#io.print(e);
-#e:= user.view1(0,2);
-#io.print(e);
-#e:= user.view1(0,4);
-#io.print(e);
-#
-#
+    return view1 := nil:bat[:oid,:str]; # 18 view1:bat[:oid,:str] := _19:bat[:oid,:str] {G}
+end view1;                              # 19  
 function user.main():void;              #  0 main:void := user.main() {G}
 #materialized views example 
     r := bat.new(:oid,:int);            #  2 r:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}

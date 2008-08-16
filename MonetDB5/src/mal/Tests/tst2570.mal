@@ -10,6 +10,7 @@ barrier go:= true;
 	yield step1:= cnt;
 	redo go:= true;
 exit go;
+	return step1:= 0;
 end step1;
 
 factory step2():int;
@@ -22,6 +23,7 @@ barrier go:= true;
 	yield step2:= cnt;
 	redo go:= true;
 exit go;
+	return step2:= 0;
 end step2;
 
 i:= user.step1();

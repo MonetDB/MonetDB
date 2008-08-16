@@ -30,6 +30,7 @@ barrier always:= true;
 	exit available;
 	redo always;
 exit always;
+	return view1:= nil:bat[:oid,:str];
 end view1;
 
 e:= user.view1(0,2);
