@@ -90,9 +90,7 @@ CREATE TABLE "sys"."foreign" (
 	"id" int NOT NULL,
 	"subject" int NOT NULL,
 	"predicate" int NOT NULL,
-	"object" int NOT NULL,
-	CONSTRAINT "foreign_id_fkey" FOREIGN KEY ("id") REFERENCES "allnewtriples" ("id"),
-	CONSTRAINT "foreign_subject_predicate_object_fkey" FOREIGN KEY ("subject", "predicate", "object") REFERENCES "allnewtriples" ("subject", "predicate", "object")
+	"object" int NOT NULL
 );
 COPY 7 RECORDS INTO "sys"."foreign" FROM stdin USING DELIMITERS '\t';
 1	1	1	1
@@ -117,6 +115,8 @@ CREATE INDEX "triples_subject_idx" ON "sys"."triples" ("subject");
 CREATE INDEX "triples_subject_object_idx" ON "sys"."triples" ("subject", "object");
 CREATE INDEX "triples_subject_predicate_idx" ON "sys"."triples" ("subject", "predicate");
 COPY 0 RECORDS INTO "sys"."triples" FROM stdin USING DELIMITERS '\t';
+ALTER TABLE "sys"."foreign" CONSTRAINT "foreign_id_fkey" FOREIGN KEY ("id") REFERENCES "allnewtriples" ("id");
+ALTER TABLE "sys"."foreign" CONSTRAINT "foreign_subject_predicate_object_fkey" FOREIGN KEY ("subject", "predicate", "object") REFERENCES "allnewtriples" ("subject", "predicate", "object");
 COMMIT;
 
 # 15:55:38 >  

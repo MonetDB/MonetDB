@@ -79,8 +79,9 @@ stderr of test 'alter_table_add_column` in directory 'src/test/bugs` itself:
 # 18:35:20 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=39702 
 # 18:35:20 >  
 
-MAPI  = monetdb@alf:39702
+MAPI  = monetdb@alf:38580
 QUERY = insert into t_not_null (a) values (1);
+ERROR = !SQLException:assert:INSERT INTO: NOT NULL constraint violated for column t_not_null.foo
 
 
 # 18:35:20 >  

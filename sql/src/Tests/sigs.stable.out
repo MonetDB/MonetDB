@@ -158,6 +158,7 @@ module 'sql_server'
 [ "mvc_declared_table_column(mvc, int, str, str, str, int, int) : void"				  ]
 [ "mvc_delete(mvc, str, str, any) : void"						  ]
 [ "mvc_destroy(mvc, int) : void"					  ]
+[ "mvc_drop_declared_table(mvc, str) : void"							  ]
 [ "mvc_export_result(mvc, Stream, int, str) : void"					  ]
 [ "mvc_export_value(mvc, Stream, int, str, str, str, int, int, int, any, str) : void"	  ]
 [ "mvc_get_value(mvc, str, str) : lng"							  ]
