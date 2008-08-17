@@ -44,7 +44,6 @@ A dummy module is needed to load properly.
 #include <sql_mvc.h>
 #include <mal_function.h>
 
-sql5_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
 sql5_export Symbol backend_dumpproc(backend *be, Client c, cq *q, stmt *s);
 sql5_export void backend_callinline(backend *be, Client c, stmt *s);
 sql5_export void backend_call(backend *be, Client c, cq *q);
@@ -1879,17 +1878,23 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 	return s->nr;
 }
 
-int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
+static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 {
 	int nr = _dumpstmt(be, mb, s);
 	mvc *c = be->mvc;
+	InstrPtr q;
 
 	if (c->cache && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
-		InstrPtr q = newStmt2(mb, sqlRef, exportOperationRef);
+		q = newStmt2(mb, sqlRef, exportOperationRef);
 		q = pushStr(mb, q, ""); /* warning */
-		return getDestVar(q);
 	}
-	return nr;
+	/* generate a dummy return assignment for functions */
+	if ( (nr= getArgType(mb,getInstrPtr(mb,0),0)) != TYPE_void){
+		q = newAssignment(mb);
+		getArg(q,0) = getArg(getInstrPtr(mb,0),0);
+		q->barrier = RETURNsymbol;
+	}
+	pushEndInstruction(mb);
 }
 
 void
@@ -1927,7 +1932,6 @@ backend_callinline(backend *be, Client c, stmt *s )
 		}
 	}
 	backend_dumpstmt(be, curBlk, s);
-	pushEndInstruction(curBlk);
 	c->curprg->def = curBlk;
 }
 
@@ -1991,7 +1995,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	}
 
 	backend_dumpstmt(be, curBlk, s);
-	pushEndInstruction(curBlk);
 
 	if (cq){
 		be->mvc->Toptimize = GDKusec();
@@ -2116,7 +2119,6 @@ backend_create_func(backend *be, sql_func *f)
 	}
 	backend_dumpstmt(be, curBlk, s);
 	stmt_destroy(s);
-	pushEndInstruction(curBlk);
 	addQueryToCache(c);
 	if (backup) 
 		c->curprg = backup;
