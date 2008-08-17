@@ -29,10 +29,10 @@ PARENT=""
 LOCKFILE="$$"
 CONCURRENT=''
 while [ "${1#-}" != "$1" ] ; do
-  if    [ "$1" = --concurrent ] ; then  CONCURRENT='yes'   ; shift
-    elif  [ "$1" =       -l   ] ; then  LOCKFILE="$2"      ; shift ; shift
+  if  [ "$1" = "--concurrent" ] ; then  CONCURRENT='yes'   ; shift
+    elif  [ "$1" =      "-l"  ] ; then  LOCKFILE="$2"      ; shift ; shift
     elif  [ "$1" != "${1#-l}" ] ; then  LOCKFILE="${1#-l}" ; shift 
-    elif  [ "$1" =       -p   ] ; then  PARENT="$2"        ; shift ; shift
+    elif  [ "$1" =      "-p"  ] ; then  PARENT="$2"        ; shift ; shift
     elif  [ "$1" != "${1#-p}" ] ; then  PARENT="${1#-p}"   ; shift 
   fi
 done
@@ -165,8 +165,11 @@ esac
 if [ "$pids1" ] ; then
 	LOG1 "BEGIN"
 	pids2="(`echo $pids1 | perl -pe 's/ +/|/g'`)"
+	echo CONCURRENT=$CONCURRENT	>&2
+	echo LOCKFILE=$LOCKFILE	>&2
 	echo PARENT=$PARENT	>&2
 	echo CHILD=$CHILD	>&2
+	echo BINPATH=$BINPATH	>&2
 	echo files=$files	>&2
 	echo cpids=$cpids	>&2
 	echo pids1=$pids1	>&2
