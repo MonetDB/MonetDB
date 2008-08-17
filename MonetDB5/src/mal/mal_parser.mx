@@ -1439,7 +1439,8 @@ parseAssign(Client cntxt, int cntrl)
 		curInstr->retc=0;
 		while( currChar(cntxt)  != ')' && currChar(cntxt)) {
 			l= idLength(cntxt);
-			if( l==0) {
+			i= cstToken(cntxt,&cst);
+			if( l==0 || i) {
 				 parseError(cntxt,"<identifier> expected\n"); 
 				 skipToEnd(cntxt);
 				 if( curInstr->retc )
@@ -1472,7 +1473,8 @@ parseAssign(Client cntxt, int cntrl)
 	} else { 
 		/* are we dealing with a simple assignment? */
 		l= idLength(cntxt);
-		if( l==0){
+		i= cstToken(cntxt,&cst);
+		if( l==0 || i){
 			/* we haven't seen a target variable */
 			/* flow of control statements may end here. */
 			/* shouldn;t allow for nameless controls todo*/
@@ -1646,7 +1648,8 @@ of a function call.
 @c
 FCNcallparse:
 	if( (l=idLength(cntxt)) && CURRENT(cntxt)[l] == '(') {
-		setModuleId(curInstr,putName("user",4));
+		/*  parseError(cntxt,"<module> expected\n");*/
+		setModuleId(curInstr,getModuleId(getInstrPtr(curBlk,0)));
 		i= l;
 		goto FCNcallparse2;
 	} else

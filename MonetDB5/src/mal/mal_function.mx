@@ -33,10 +33,12 @@ function user.helloWorld(msg:str):str;
 end user.helloWorld;
 @end example
 
-The module name designates the collection to which this function
+The module name 'user' designates the collection to which this function
 belongs.
+A missing module name is considered a reference to the current module,
+i.e. the last module or atom context openend.
 All user defined functions are assembled in the module @sc{user}
-by default. It may be dropped without affecting the intended semantics.
+by default. 
 
 The functional abstraction scheme comes with several variations:
  @sc{commands}, @sc{patterns}, and @sc{factories}.
