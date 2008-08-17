@@ -634,19 +634,18 @@ typeAlias(Client cntxt, int tpe)
 {
 	int t;
 
-	if (currChar(cntxt) != TMPMARKER || tpe !=TYPE_any){
-		/* if( tpe == TYPE_any && currChar(cntxt)!='.' )
-			parseError(cntxt, "[1-9] or '...' expected\n"); */
+	if (tpe != TYPE_any)
 		return -1;
+	if (currChar(cntxt) == TMPMARKER  ){
+		nextChar(cntxt);
+		t = currChar(cntxt) - '0';
+		if( t<=0 || t>9)
+			parseError(cntxt, "[1-9] expected\n");
+		else
+			nextChar(cntxt);
+		return t;
 	}
-	nextChar(cntxt);
-	t = currChar(cntxt) - '0';
-	if( t>9){
-		parseError(cntxt, "[1-9] expected\n");
-		return -1;
-	}
-	advance(cntxt,1);
-	return t;
+	return -1;
 }
 @-
 The simple type analysis currently assumes a proper type identifier.
