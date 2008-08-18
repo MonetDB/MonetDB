@@ -240,7 +240,7 @@ function sql_environment():bat[:str,:bat];
 	v := algebra.markH(e, 0:oid);
 	bat.insert(b, "name", r);
 	bat.insert(b, "value", v);
-	return b;
+	return sql_environment := b;
 end sql_environment;
 
 function clients():bat[:str,:bat];
@@ -255,7 +255,7 @@ function clients():bat[:str,:bat];
 	bat.insert(b,"actions",a);
 	t:= clients.getTime();
 	bat.insert(b,"seconds",t);
-	return b;
+	return clients := b;
 end clients;
 
 function bbp():bat[:str,:bat];
@@ -296,7 +296,7 @@ function bbp():bat[:str,:bat];
 	ikind := bbp.getKind();
 	kind := algebra.markH(ikind, 0:oid);
 	bat.insert(b, "kind", kind);
-	return b;
+	return bbp := b;
 end bbp;
 
 pattern sql_variables():bat[:str,:bat]
@@ -606,13 +606,13 @@ function sql.zero_or_one{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat
 	msg := str.+("zero_or_one: cardinality violation (", ms);
 	msg := str.+(msg, ">1)");
 	sql.assert(c1, msg);
-	return b;
+	return zero_or_one := b;
 end sql.zero_or_one;
 
 
 function mmath.rand{inline}( v:int ) :int;
 	x := mmath.rand();
-	return x;
+	return rand := x;
 end mmath.rand;
 
 @mal
