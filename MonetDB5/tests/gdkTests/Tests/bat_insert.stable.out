@@ -25,11 +25,11 @@ stdout of test 'bat_insert` in directory 'tests/gdkTests` itself:
 #exit errors;
 #end check_cap;
 function user.check_cap(b:bat[:any_1,:any_2]):void;#  0 check_cap:void := user.check_cap(b:bat[:any_1,:any_2]) {PG}
-    inserted := aggr.count(b);          #  1 inserted:int := ALGcount_bat(b:bat[:any_1,:any_2]) {P}
-    d := bat.getDelta(b);               #  2 d:bat[:any,:any] := BKCgetDelta(b:bat[:any_1,:any_2]) {PG}
+    inserted := aggr.count(b);          #  1 inserted:int := ALGcount_bat(b:bat[:any_1,:any_2]) 
+    d := bat.getDelta(b);               #  2 d:bat[:any,:any] := BKCgetDelta(b:bat[:any_1,:any_2]) {G}
     d1 := aggr.count(d);                #  3 d1:int := ALGcount_bat(d:bat[:any,:any]) 
     deleted := calc.lng(d1);            #  4 deleted:lng := CALCint2lng(d1:int) 
-    cap := bat.getCapacity(b);          #  5 cap:lng := BKCgetCapacity(b:bat[:any_1,:any_2]) {P}
+    cap := bat.getCapacity(b);          #  5 cap:lng := BKCgetCapacity(b:bat[:any_1,:any_2]) 
     overflow := calc.+(inserted,deleted);#  6 overflow:lng := CALCbinaryADDintlng(inserted:int, deleted:lng) 
     overflow := calc.-(overflow,cap);   #  7 overflow:lng := CALCbinarySUBlnglng(overflow:lng, cap:lng) 
 barrier errors := calc.>(overflow,0:lng);#  8 errors:bit := CALCcompGTlnglng(overflow:lng, _9:lng) {J10}

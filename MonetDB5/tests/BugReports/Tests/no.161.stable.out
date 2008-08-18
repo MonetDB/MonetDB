@@ -89,10 +89,10 @@ end test_inner;	# 4
 #end test_outer;
 function user.test_outer(in:any_1):void;#  0 test_outer:void := user.test_outer(in:any_1) {P}
 #	io.print("   printf(\"test_outer.in: %s\\n\",str(in));"); 
-    ea_a := calc.str(in);               #  2 ea_a:any := calc.str(in:any_1) {P}
+    ea_a := calc.str(in);               #  2 ea_a:any := calc.str(in:any_1) 
     fa_a := io.printf("test_outer.in: %s\n",ea_a);#  3 fa_a:void := IOprint_formatted_str(_5:str, ea_a:any) 
 #	io.print("   test_inner(in);"); 
-    ga_a := user.test_inner(in);        #  5 ga_a:any := user.test_inner(in:any_1) {P}
+    ga_a := user.test_inner(in);        #  5 ga_a:any := user.test_inner(in:any_1) 
 end test_outer;	# 6  
 ##	mil.line("test_outer(\"chr\");");
 #	ha_a := user.test_outer("chr");

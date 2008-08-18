@@ -20,8 +20,8 @@ stdout of test 'tst4610` in directory 'src/optimizer` itself:
 #    return zz;
 #end joinPath;
 function user.joinPath(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];#  0 joinPath:bat[:any_1,:any_4] := user.joinPath(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], c:bat[:any_3,:any_4]) {UPG}
-    z := algebra.join(a,b);             #  1 z:bat[:any,:any] := ALGjoin(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3]) {PG}
-    zz := algebra.join(z,c);            #  2 zz:bat[:any,:any] := ALGjoin(z:bat[:any,:any], c:bat[:any_3,:any_4]) {PG}
+    z := algebra.join(a,b);             #  1 z:bat[:any,:any] := ALGjoin(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3]) {G}
+    zz := algebra.join(z,c);            #  2 zz:bat[:any,:any] := ALGjoin(z:bat[:any,:any], c:bat[:any_3,:any_4]) {G}
     return joinPath := zz;              #  3 joinPath:bat[:any_1,:any_4] := zz:bat[:any,:any] {G}
 end joinPath;	# 4  
 #

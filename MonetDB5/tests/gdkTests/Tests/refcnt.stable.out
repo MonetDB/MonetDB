@@ -53,7 +53,7 @@ end addBAT;	# 4
 #	bat.delete(b,name);
 #end delBAT;
 function user.delBAT(b:bat[:any_1,:any_2],name:str):void;#  0 delBAT:void := user.delBAT(b:bat[:any_1,:any_2], name:str) {PG}
-    bat.delete(b,name);                 #  1 _3:bat[:str,:any] := BKCdelete(b:bat[:any_1,:any_2], name:str) {PG}
+    bat.delete(b,name);                 #  1 _3:bat[:str,:any] := BKCdelete(b:bat[:any_1,:any_2], name:str) {G}
 end delBAT;	# 2  
 ##
 ##PROC createBAT(str name) : bat[int,int] {
