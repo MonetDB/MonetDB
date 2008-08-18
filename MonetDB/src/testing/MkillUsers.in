@@ -107,11 +107,15 @@ if type -p fuser >/dev/null
   else	FUSER=''
 fi
 
+fuser_pids=''
+fuser_procs=''
 case `uname` in
   Linux)
-	if [ "$FUSER" ]
-	  then	pids1="`fuser $files | cut -d: -f2- | perl -pe 's|[a-z]||g'`"
-	  else	pids1=''
+	if [ "$FUSER" ] ; then
+		fuser_pids="`fuser $files 2>&1`"
+		pids1="`fuser $files | cut -d: -f2- | perl -pe 's|[a-z]||g'`"
+	  else
+		pids1=''
 	fi
 	pids1="`echo "$pids1" | perl -pe 's| *'"$CHILD"'||g'`"
 	if [ "$PARENT" ] ; then
@@ -119,16 +123,21 @@ case `uname` in
 	fi
 	pids1="$cpids$pids1"
 	PS="ps -f $pids1"
+	if [ "$pids1" ] ; then
+		fuser_procs="`$PS 2>&1`"
+	fi
 	if [ "$FUSER" ]
 	  then	FUSER_V='fuser -v'
 	  else	FUSER_V=''
 	fi
 	;;
   IRIX|IRIX64)
-  	if [ "$FUSER" ]
-  	  then	pids0="`fuser -q $files`"
-  	  else	pids0=''
-  	fi
+	if [ "$FUSER" ] ; then
+		fuser_pids="`fuser -q $files 2>&1`"
+		pids0="`fuser -q $files`"
+	  else
+		pids0=''
+	fi
 	pids0="`echo "$pids0" | perl -pe 's|,*'"$CHILD"'||g'`"
 	if [ "$PARENT" ] ; then
 		pids0="`echo "$pids0" | perl -pe 's|,*'"$PARENT"'||g'`"
@@ -136,15 +145,20 @@ case `uname` in
 	pids0="`echo $cpids | perl -pe 's| +|,|g'`${pids0#,}"
   	pids1="`echo $pids0 | perl -pe 's|,| |g'`"
 	PS="ps -fp $pids0"
+	if [ "$pids1" ] ; then
+		fuser_procs="`$PS 2>&1`"
+	fi
 	if [ "$FUSER" ]
 	  then	FUSER_V='fuser'
 	  else	FUSER_V=''
 	fi
 	;;
   SunOS)
-	if [ "$FUSER" ]
-	  then	pids1="`fuser $files 2>/dev/null`"
-	  else	pids1=''
+	if [ "$FUSER" ] ; then
+		fuser_pids="`fuser $files 2>&1`"
+		pids1="`fuser $files 2>/dev/null`"
+	  else
+		pids1=''
 	fi
 	pids1="`echo "$pids1" | perl -pe 's| *'"$CHILD"'||g'`"
 	if [ "$PARENT" ] ; then
@@ -153,6 +167,9 @@ case `uname` in
 	pids1="$cpids$pids1"
 	pids0="`echo $pids1 | perl -pe 's| +|,|g'`"
 	PS="ps -fp $pids0"
+	if [ "$pids1" ] ; then
+		fuser_procs="`$PS 2>&1`"
+	fi
 	if [ "$FUSER" ]
 	  then	FUSER_V='fuser'
 	  else	FUSER_V=''
@@ -174,6 +191,8 @@ if [ "$pids1" ] ; then
 	echo cpids=$cpids	>&2
 	echo pids1=$pids1	>&2
 	echo pids2=$pids2	>&2
+	echo "fuser_pids=$fuser_pids"	>&2
+	echo "fuser_procs=$fuser_procs"	>&2
 	LOG1x	$PS
 	if [ "$FUSER_V" ] ; then
 		LOG1x	$FUSER_V $files
