@@ -105,7 +105,7 @@ catch MALException:str ;                # 33 MALException:str {J35}
     io.print("BAT was destroyed");      # 34 _38:void := IOprint_val(_39:str) 
 exit MALException:str ;                 # 35 MALException:str 
     z:bat[:any,:any]  := bbp.bind("tasks");# 36 z:bat[:any,:any] := CMDbbpbind(_11:str) {PG}
-    io.print(z);                        # 37 _41:void := IOprint_val(z:bat[:any,:any]) {P}
+    io.print(z);                        # 37 _41:void := IOprint_val(z:bat[:any,:any]) 
 #it is not in the box anymore either 
 catch MALException:str ;                # 39 MALException:str {J41}
     io.print("BAT was removed from the box");# 40 _43:void := IOprint_val(_44:str) 

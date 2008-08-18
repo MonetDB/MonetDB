@@ -26,10 +26,10 @@ command user.lookup(nme:str):bat[:str,:str] address CMDlookup;#  0 lookup:bat[:s
 function user.sample(nme:str,val:any_1):bit;#  0 sample:bit := user.sample(nme:str, val:any_1) {PG}
     b := user.lookup(nme);              #  1 b:bat[:str,:str] := user.lookup(nme:str) {G}
 #find a bat 
-    h := algebra.select(b,val,val);     #  3 h:any := algebra.select(b:bat[:str,:str], val:any_1, val:any_1) {P}
+    h := algebra.select(b,val,val);     #  3 h:any := algebra.select(b:bat[:str,:str], val:any_1, val:any_1) 
     t := aggr.count(h);                 #  4 t:any := aggr.count(h:any) 
     x := io.print(t);                   #  5 x:void := IOprint_val(t:any) 
-    y := io.print(val);                 #  6 y:void := IOprint_val(val:any_1) {P}
+    y := io.print(val);                 #  6 y:void := IOprint_val(val:any_1) 
     return sample := true;              #  7 sample:bit := _9:bit 
 end sample;	# 8  
 #user.sample("hello","world");

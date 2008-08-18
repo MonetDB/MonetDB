@@ -7,6 +7,6 @@ end newsemijoin;
 z:= bat.new(:int{sorted=true},:int);
 w:= bat.new(:int{sequence=true},:int);
 w:bat[:int,:int]:= bat.new(:int,:int);
-y:= algebra.sort(w:bat[:int,:int]{sorted=true,dense=true});
+y:= algebra.sort(w{sorted=true,dense=true});
 io.print(1);
 y:int{sorted=true}:= algebra.sort(w);

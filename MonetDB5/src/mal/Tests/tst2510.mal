@@ -1,7 +1,8 @@
 # A exception in a factory should terminate it 
 
 factory tryme():bit;
-    bat.setWriteMode(b:bat[:any_1,:any_2]);
+	b:= bat.new(:oid,:int);
+    bat.setWriteMode(b);
 barrier always:= true;
     yield always;
     redo always;

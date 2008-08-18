@@ -1593,18 +1593,10 @@ This code is used in both positions of the expression
 	} else if( (i= idLength(cntxt))){
 		if( (idx=findVariableLength(curBlk,CURRENT(cntxt),i)) == -1){
 			v= idCopy(cntxt,i);
-			i= typeElm(cntxt,TYPE_any);
-			if( i<0)
-				goto part3;
-			setPolymorphic(curInstr,i, FALSE);
-			idx = newVariable(curBlk, v, i);
+			idx = newVariable(curBlk, v, TYPE_any);
 			@:propList(idx)@
 		} else {
 			advance(cntxt,i);
-			i = typeElm(cntxt,getVarType(curBlk,idx));
-			if( i<0)
-				goto part3;
-			setPolymorphic(curInstr,i,FALSE);
 			@:propList(idx)@
 		}
 		curInstr= pushArgument(curBlk,curInstr,idx);

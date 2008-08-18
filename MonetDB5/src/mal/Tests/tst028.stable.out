@@ -14,13 +14,13 @@ stdout of test 'tst028` in directory 'src/mal` itself:
 #	io.print(a);
 #end f;
 function user.f(a:bat[:int,:any]):void; #  0 f:void := user.f(a:bat[:int,:any]) {G}
-    io.print(a);                        #  1 _2:void := IOprint_val(a:bat[:int,:any]) {P}
+    io.print(a);                        #  1 _2:void := IOprint_val(a:bat[:int,:any]) 
 end f;	# 2  
 #function h(a:bat[:any,:int]):void;
 #	io.print(a);
 #end h;
 function user.h(a:bat[:any,:int]):void; #  0 h:void := user.h(a:bat[:any,:int]) {G}
-    io.print(a);                        #  1 _2:void := IOprint_val(a:bat[:any,:int]) {P}
+    io.print(a);                        #  1 _2:void := IOprint_val(a:bat[:any,:int]) 
 end h;	# 2  
 ##function g(b:bat[:int,:any]):void;
 #	#f(b);

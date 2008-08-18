@@ -16,19 +16,19 @@ stdout of test 'tst770` in directory 'src/mal` itself:
 #        reduce := batcalc./(b,c); 
 #end test;
 function user.test(b:bat[:any_1,:any_2],c:any_2):void;#  0 test:void := user.test(b:bat[:any_1,:any_2], c:any_2) {PG}
-    reduce := batcalc./(b,c);           #  1 reduce:any := batcalc./(b:bat[:any_1,:any_2], c:any_2) {P}
+    reduce := batcalc./(b,c);           #  1 reduce:any := batcalc./(b:bat[:any_1,:any_2], c:any_2) 
 end test;	# 2  
 #function test(b:bat[:any_1,:any_2],c:any_1):void;
 #        reduce := batcalc./(b,c); 
 #end test;
 function user.test(b:bat[:any_1,:any_2],c:any_1):void;#  0 test:void := user.test(b:bat[:any_1,:any_2], c:any_1) {PG}
-    reduce := batcalc./(b,c);           #  1 reduce:any := batcalc./(b:bat[:any_1,:any_2], c:any_1) {P}
+    reduce := batcalc./(b,c);           #  1 reduce:any := batcalc./(b:bat[:any_1,:any_2], c:any_1) 
 end test;	# 2  
 #function test(b:bat[:any_1,:any_2]):void;
 #        reduce := batcalc./(b,1); 
 #end test;
 function user.test(b:bat[:any_1,:any_2]):void;#  0 test:void := user.test(b:bat[:any_1,:any_2]) {PG}
-    reduce := batcalc./(b,1);           #  1 reduce:bat[:oid,:int] := CMDbatDIVcst_int_int_int(b:bat[:any_1,:any_2], _3:int) {PG}
+    reduce := batcalc./(b,1);           #  1 reduce:bat[:oid,:int] := CMDbatDIVcst_int_int_int(b:bat[:any_1,:any_2], _3:int) {G}
 end test;	# 2  
 #
 

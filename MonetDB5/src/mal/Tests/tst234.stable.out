@@ -36,9 +36,9 @@ end dir;	# 6
 #	return tmp1;
 #end tmp1;
 function user.tmp1(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];#  0 tmp1:bat[:any_1,:any_2] := user.tmp1(b:bat[:any_1,:any_2]) {UPG}
-    tmp1 := algebra.copy(b);            #  1 tmp1:bat[:any_1,:any_2] := ALGcopy(b:bat[:any_1,:any_2]) {PG}
+    tmp1 := algebra.copy(b);            #  1 tmp1:bat[:any_1,:any_2] := ALGcopy(b:bat[:any_1,:any_2]) {G}
     io.print("inside tmp1");            #  2 _2:void := IOprint_val(_3:str) 
-    i := bbp.getLRefCount(b);           #  3 i:int := CMDgetBATlrefcnt(b:bat[:any_1,:any_2]) {P}
+    i := bbp.getLRefCount(b);           #  3 i:int := CMDgetBATlrefcnt(b:bat[:any_1,:any_2]) 
     io.print(i);                        #  4 _5:void := IOprint_val(i:int) 
     return tmp1 := tmp1;                #  5 tmp1:bat[:any_1,:any_2] := tmp1:bat[:any_1,:any_2] {G}
 end tmp1;	# 6  

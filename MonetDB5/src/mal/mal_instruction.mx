@@ -1717,6 +1717,8 @@ convertConstant(malType type, ValPtr vr)
 #else
 		showException(SYNTAX, "convertConstant", "missing implementation");
 #endif
+		if ( vr->vtype != type)
+			showException(SYNTAX, "convertConstant", "coercion failed in '%s'", vr->val.sval);
 		return vr->vtype != type;
 	}
 	

@@ -5,45 +5,29 @@ stdout of test 'tst2510` in directory 'src/mal` itself:
 # 08:01:07 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst2510.mal </dev/null
 # 08:01:07 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## A exception in a factory should terminate it 
-#
-#factory tryme():void;
-#    a:= bat.setWriteMode(b);
-#barrier always:= true;
-#    yield a;
-#    redo always;
-#exit always;
-##catch MALException;
-#    #print("exception");
-##exit MALException;
-#end tryme;
-!TypeException:user.tryme[1]:'b' may not be used before being initialized
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33085/
 factory user.tryme():bit;               #  0 tryme:bit := user.tryme() {G}
-    bat.setWriteMode(b);                #  1 _1:bat[:any,:any] := BKCsetWriteMode(b:bat[:any_1,:any_2]) {PG}
-barrier always := true;                 #  2 always:bit := _4:bit {J5}
-    yield tryme := always;              #  3 tryme:bit := always:bit 
-    redo always;                        #  4 always:bit {J3}
-exit always;                            #  5 always:bit 
+    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    bat.setWriteMode(b);                #  2 _4:bat[:oid,:int] := BKCsetWriteMode(b:bat[:oid,:int]) {G}
+barrier always := true;                 #  3 always:bit := _6:bit {J6}
+    yield tryme := always;              #  4 tryme:bit := always:bit 
+    redo always;                        #  5 always:bit {J4}
+exit always;                            #  6 always:bit 
 #catch MALException:str; 
 #print("exception"); 
 #exit MALException; 
-    return tryme := false;              #  9 tryme:bit := _8:bit 
-end tryme;	# 10  
-#user.tryme();    # shouldn;t hang when you forget the exception
-#
+    return tryme := false;              # 10 tryme:bit := _10:bit 
+end tryme;                              # 11  
 function user.main():void;              #  0 main:void := user.main() 
 # A exception in a factory should terminate it  
     user.tryme();                       #  2 _2:bit := user.tryme() 
 # shouldn;t hang when you forget the exception 
 end main;	# 4  
-!MALException:factory.call:Factory contains errors
 
 # 08:58:58 >  
 # 08:58:58 >  Done.
