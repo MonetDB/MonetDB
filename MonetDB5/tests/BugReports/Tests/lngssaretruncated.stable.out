@@ -12,17 +12,19 @@ stdout of test 'lngssaretruncated` in directory 'tests/BugReports` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:36135/
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33397/
+!SyntaxException:convertConstant:integer parse error
 function user.main():void;              #  0 main:void := user.main() {G}
 # observed 14-08-2008: the parser already truncates e in the parsed 
 # program, additionally, l is not a lng, but a string. 
-    s := "89437487923647823647862387462378468723634":str;#  3 s:str := _4:str {G}
-    io.print(s);                        #  4 _5:void := IOprint_val(s:str) 
-    l := s;                             #  5 l:str := s:str {G}
-    io.print(l);                        #  6 _7:void := IOprint_val(l:str) 
-    e := 89437487923647823647862387462378468723634:lng;       #  7 e:lng := _9:lng 
-    io.print(e);                        #  8 _10:void := IOprint_val(e:lng) 
-end main;                               #  9  
+# SF bug #2051309 
+    s := "89437487923647823647862387462378468723634":str;#  4 s:str := _5:str {G}
+    io.print(s);                        #  5 _6:void := IOprint_val(s:str) 
+    l := s;                             #  6 l:str := s:str {G}
+    io.print(l);                        #  7 _8:void := IOprint_val(l:str) 
+    e := nil:lng;                       #  8 e:lng := _10:lng 
+    io.print(e);                        #  9 _11:void := IOprint_val(e:lng) 
+end main;                               # 10  
 [ "89437487923647823647862387462378468723634" ]
 [ "89437487923647823647862387462378468723634" ]
 [ nil ]
