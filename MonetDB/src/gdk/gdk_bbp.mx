@@ -2540,7 +2540,7 @@ batcache_del(batcache_t * bc)
 	} else {
 		bc->batbin[bin] = -1;	/* had a single entry only */
 	}
-	assert(bc->elt[i].bin_next < 0);	/* LRU: we are always deleting the last */
+	assert(bc->elt[i].bin_next < 0);	/* LRU: we always delete the last */
 
 	/* manage fifo-list */
 	bc->first = bc->elt[i].fifo_next;
