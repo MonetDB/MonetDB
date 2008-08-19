@@ -2396,6 +2396,9 @@ reduce3 (PFpa_op_t * p, int goalnt)
  * for the above burg patterns.
  */
 static void
+do_reduce (PFpa_op_t * p, int goalnt, int rule, short *nts, PFpa_op_t *kids[], bool topdown);
+
+static void
 reduce (PFpa_op_t * p, int goalnt)
 { /* fold( */
     int           rule;           /* rule number that matches for this node */
@@ -2475,6 +2478,12 @@ reduce (PFpa_op_t * p, int goalnt)
     execute (comment ("Begin rule: \"%s\"", PFmilgen_string[rule]));
 #endif
 
+    do_reduce (p, goalnt, rule, nts, kids, topdown);
+}
+
+static void
+do_reduce (PFpa_op_t * p, int goalnt, int rule, short *nts, PFpa_op_t *kids[], bool topdown)
+{
     switch (rule) {
         /* Query:   serialize (Rel) */
         case 1: /* fold( */
