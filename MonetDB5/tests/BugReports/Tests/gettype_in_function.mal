@@ -13,3 +13,14 @@ t := inspect.getType(p);
 io.print(t);
 # but now it is a "any", should be "str"
 user.typetest(p);
+
+# more fun with a BAT
+b := bat.new(:str, :int);
+t := inspect.getType(b);
+# here it is what we expect
+io.print(t);
+# now it is "any" even though the above problem was fixed
+user.typetest(b);
+
+# even cooler, now suddenly a string is "any" too
+user.typetest(p);

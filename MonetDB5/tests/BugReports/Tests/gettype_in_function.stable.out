@@ -7,6 +7,8 @@ stdout of test 'gettype_in_function` in directory 'tests/BugReports` itself:
 
 
 
+
+
 # MonetDB server v5.7.0, based on kernel v1.25.0
 # Serving database 'mTests_tests_BugReports', using 2 threads
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
@@ -27,8 +29,20 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.print(t);                        #  7 _8:void := IOprint_val(t:str) 
 # but now it is a "any", should be "str" 
     user.typetest(p);                   #  9 _10:void := user.typetest(p:str) 
-end main;                               # 10  
+# more fun with a BAT 
+    b := bat.new(:str,:int);            # 11 b:bat[:str,:int] := CMDBATnew(_13:str, _14:int) {G}
+    t := inspect.getType(b);            # 12 t:str := INSPECTtypeName(b:bat[:str,:int]) {G}
+# here it is what we expect 
+    io.print(t);                        # 14 _16:void := IOprint_val(t:str) 
+# now it is "any" even though the above problem was fixed 
+    user.typetest(b);                   # 16 _18:void := user.typetest(b:bat[:str,:int]) 
+# even cooler, now suddenly a string is "any" too 
+    user.typetest(p);                   # 18 _20:void := user.typetest(p:str) 
+end main;                               # 19  
 [ "str" ]
+[ "str" ]
+[ "bat[:str,:int]" ]
+[ "bat[:str,:int]" ]
 [ "str" ]
 
 # 13:09:36 >  
