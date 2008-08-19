@@ -310,30 +310,9 @@ BATSIGchild(int nr)
 }
 #endif
 
-
-static RETSIGTYPE
-BATSIGcrash(int nr)
-{
-	static int crash = 0;
-
-	if (!crash++) {
-		GDKerror("BATSIGcrash: Mserver internal error (%s), please restart.\n" "(One potential cause could be that your disk might be full...)\n",
-#ifdef SIGBUS
-			 nr == SIGBUS ? "Bus error" :
-#endif
-			 (nr == SIGSEGV ? "Segmentation fault" : "unknown"));
-		GDKlog(GDKCRASH);
-		MT_global_exit(1);
-	}
-}
-
 static int
 BATSIGinit(void)
 {
-#ifdef SIGBUS
-	(void) signal(SIGBUS, BATSIGcrash);
-#endif
-	(void) signal(SIGSEGV, BATSIGcrash);
 #ifdef SIGCHLD
 	(void) signal(SIGCHLD, BATSIGchild);
 #endif
