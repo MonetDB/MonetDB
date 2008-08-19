@@ -151,6 +151,19 @@ command rtrim( s:str ) :str
 address STRRtrim
 comment "Strip whitespaces from end of a string.";
 
+command max(s:str, t:str):str
+address STRmax
+comment "Select the maximum string in lexicographic order";
+command max_no_nil(s:str, t:str):str
+address STRmax_no_nil
+comment "Select the maximum string in lexicographic order, ignoring nils";
+command min(s:str, t:str):str
+address STRmin
+comment "Select the minimum string in lexicographic order";
+command min_no_nil(s:str, t:str):str
+address STRmin
+comment "Select the minimum string in lexicographic order, ignoring nils";
+
 command substitute(s:str,src:str,dst:str,rep:bit) :str 
 address STRSubstitute
 comment "Substitute first occurrence of 'src' by 
@@ -269,6 +282,10 @@ str_export str STRReverseChrSearch(int *res, str *arg1, chr *c);
 str_export str STRStrip(str *res, str *arg1);
 str_export str STRLtrim(str *res, str *arg1);
 str_export str STRRtrim(str *res, str *arg1);
+str_export str STRmin_no_nil(str *res, str *left, str *right);
+str_export str STRmin(str *res, str *left, str *right);
+str_export str STRmax(str *res, str *left, str *right);
+str_export str STRmax_no_nil(str *res, str *left, str *right);
 str_export str STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g);
 
 str_export int strConcat(str *res, str s, ptr val, int t);
@@ -2387,6 +2404,62 @@ str
 STRLtrim(str *res, str *arg1)
 {
 	strLtrim(res, *arg1);
+	return MAL_SUCCEED;
+}
+
+
+str
+STRmax(str *res, str *left, str *right){
+	if (strcmp(*left, str_nil) == 0 ||
+		strcmp(*right, str_nil) == 0 )
+		*res = GDKstrdup(str_nil);
+	else
+	if (strcmp(*left,*right)< 0 )
+		*res = GDKstrdup(*right);
+	else
+		*res = GDKstrdup(*left);
+	return MAL_SUCCEED;
+}
+
+str
+STRmax_no_nil(str *res, str *left, str *right){
+	if (strcmp(*left, str_nil) == 0)
+		*res = GDKstrdup(*right);
+	else
+	if (strcmp(*right, str_nil) == 0)
+		*res = GDKstrdup(*left);
+	else
+	if (strcmp(*left,*right)< 0 )
+		*res = GDKstrdup(*right);
+	else
+		*res = GDKstrdup(*left);
+	return MAL_SUCCEED;
+}
+
+str
+STRmin(str *res, str *left, str *right){
+	if (strcmp(*left, str_nil) == 0 ||
+		strcmp(*right, str_nil) == 0 )
+		*res = GDKstrdup(str_nil);
+	else
+	if (strcmp(*left,*right)< 0 )
+		*res = GDKstrdup(*left);
+	else
+		*res = GDKstrdup(*right);
+	return MAL_SUCCEED;
+}
+str
+STRmin_no_nil(str *res, str *left, str *right){
+	if (strcmp(*left, str_nil) == 0)
+		*res = GDKstrdup(*right);
+	else
+	if (strcmp(*right, str_nil) == 0)
+		*res = GDKstrdup(*left);
+	else
+	if (strcmp(*left,*right)< 0 )
+		*res = GDKstrdup(*left);
+	else
+		*res = GDKstrdup(*right);
 	return MAL_SUCCEED;
 }
 
