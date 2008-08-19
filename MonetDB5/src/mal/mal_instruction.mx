@@ -2640,9 +2640,11 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		if ( (isVarConstant(mb, getArg(p, i)) || stk) && !isVarTypedef(mb,getArg(p,i)) ){
 			str cv = NULL;
 
-			if (stk)
+			if (stk){
+				snprintf(t,(len-(t-base)),"%s", getArgName(mb, p, i));
+				advance(t,base,len);
 				VALformat(&cv, &stk->stk[getArg(p, i)]);
-			else
+			} else
 				VALformat(&cv, &getVar(mb, getArg(p, i))->value);
 			if (strlen(cv) > ((size_t) len) - (t - s)) {
 				char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 2);
@@ -2677,10 +2679,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			}
 		} else {
 			if( ! isVarTypedef(mb,getArg(p,i)) ){
-				if (isTmpVar(mb, getArg(p, i)))
-					snprintf(t,(len-(t-base)), "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, i)));
-				else
-					snprintf(t,(len-(t-base)), "%s", mb->var[getArg(p, i)]->name);
+				snprintf(t,(len-(t-base)),"%s", getArgName(mb, p, i));
 				advance(t,base,len);
 				@:showVariableProperties(0)@
 			} else {
