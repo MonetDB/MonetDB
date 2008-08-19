@@ -289,6 +289,10 @@ The coercions described below ensure that there is never any information loss.
 		address CALCbinaryMAX@2; 
 		command min(l:@1, r:@1) :@1 
 		address CALCbinaryMIN@2;
+		command max_no_nil(l:@1, r:@1) :@1 
+		address CALCbinaryMAX_NO_NIL@2; 
+		command min_no_nil(ll:@1, r:@1) :@1 
+		address CALCbinaryMIN_NO_NIL@2;
 @-
 @mal
 	@:mal_binary_ops(chr,chr)@
@@ -597,6 +601,8 @@ str CALClengthstr(int *res , str *a ) {
 }
 @:any_binary_minmax(MIN,<=)@
 @:any_binary_minmax(MAX,>)@
+@:any_binary_minmax_no_nil(MIN,<=)@
+@:any_binary_minmax_no_nil(MAX,>)@
 
 @-
 @= calc_macrobinop
@@ -613,25 +619,41 @@ str CALCbinary@1@3(@3 *res , @3 *a, @3 *b ) {
    return(MAL_SUCCEED);
 }
 @c
+@-
+@= calc_macrobinop_no_nil
+calc_export str CALCbinary@1_NO_NIL@3(@3 *res , @3 *a, @3 *b );
+str CALCbinary@1_NO_NIL@3(@3 *res , @3 *a, @3 *b ) {
+#ifdef DEBUG
+	printf( "CALCbinary@1_NO_NIL@3\n");
+#endif
+   *res = @2 (*a,*b);
+   return(MAL_SUCCEED);
+}
+@c
 #define calc_max(s1,s2) ((s1)>(s2))?(s1):(s2)
-@:calc_macrobinop(MAX,calc_max,chr)@
-@:calc_macrobinop(MAX,calc_max,bte)@
-@:calc_macrobinop(MAX,calc_max,sht)@
-@:calc_macrobinop(MAX,calc_max,int)@
-@:calc_macrobinop(MAX,calc_max,oid)@
-@:calc_macrobinop(MAX,calc_max,flt)@
-@:calc_macrobinop(MAX,calc_max,dbl)@
-@:calc_macrobinop(MAX,calc_max,lng)@
-
 #define calc_min(s1,s2) ((s1)<(s2))?(s1):(s2)
-@:calc_macrobinop(MIN,calc_min,chr)@
-@:calc_macrobinop(MIN,calc_min,bte)@
-@:calc_macrobinop(MIN,calc_min,sht)@
-@:calc_macrobinop(MIN,calc_min,int)@
-@:calc_macrobinop(MIN,calc_min,oid)@
-@:calc_macrobinop(MIN,calc_min,flt)@
-@:calc_macrobinop(MIN,calc_min,dbl)@
-@:calc_macrobinop(MIN,calc_min,lng)@
+
+@= max_min_def
+#define calc_max_no_nil_@1(s1,s2) (s1==@1_nil)?(s2):(s2==@1_nil)?(s1):calc_max(s1,s2) 
+#define calc_min_no_nil_@1(s1,s2) (s1==@1_nil)?(s2):(s2==@1_nil)?(s1):calc_min(s1,s2) 
+@c
+
+@= calc_min_max
+@:calc_macrobinop(MAX,calc_max,@1)@
+@:calc_macrobinop(MIN,calc_min,@1)@
+@:max_min_def(@1)@
+@:calc_macrobinop_no_nil(MAX,calc_max_no_nil_@1,@1)@
+@:calc_macrobinop_no_nil(MIN,calc_min_no_nil_@1,@1)@
+@c
+
+@:calc_min_max(chr)@
+@:calc_min_max(bte)@
+@:calc_min_max(sht)@
+@:calc_min_max(int)@
+@:calc_min_max(oid)@
+@:calc_min_max(flt)@
+@:calc_min_max(dbl)@
+@:calc_min_max(lng)@
 
 @:c_bitwise_ops(chr)@
 @:c_bitwise_ops(bte)@
@@ -794,6 +816,28 @@ str CALCbinary@1any(ptr ret, ptr v1, int t, ptr v2){
 	ptr src, nil = ATOMnilptr(t);
 	if ((*cmp)(v1, nil) == 0 || (*cmp)(v2, nil) == 0) {
 		src = nil;
+	} else {
+		src = ((*cmp)(v1, v2) @2 0)?v1:v2;
+	}
+	if (ATOMextern(t)) {
+		int s = ATOMlen(t, src);
+		str buf = *(str*) ret = (char*) GDKmalloc(s);
+		memcpy(buf, src, s);
+	} else {
+		memcpy(ret, src, ATOMsize(t));
+	}
+	return MAL_SUCCEED;
+}
+
+@= any_binary_minmax_no_nil
+calc_export str CALCbinary@1_no_nilany(ptr ret, ptr v1, int t, ptr v2);
+str CALCbinary@1_no_nilany(ptr ret, ptr v1, int t, ptr v2){
+	int (*cmp)(ptr,ptr) = BATatoms[t].atomCmp;
+	ptr src, nil = ATOMnilptr(t);
+	if ((*cmp)(v1, nil) == 0)
+		src = v2;
+	else if ((*cmp)(v2, nil) == 0) {
+		src = v1;
 	} else {
 		src = ((*cmp)(v1, v2) @2 0)?v1:v2;
 	}

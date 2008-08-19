@@ -1061,8 +1061,11 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_count(b=%s,e=%s);\n", 
 		BATgetId(b),BATgetId(e));
 
-	if (e->htype == TYPE_void && e->ttype == TYPE_void &&
-	    b->htype == TYPE_void && BATcount(b) == BATcount(e)) {
+	if (e->htype == TYPE_void && 
+	    e->ttype == TYPE_void &&
+	    b->htype == TYPE_void && 
+	    BATcount(b) == BATcount(e) &&
+	    (!ignore_nils || b->T->nonil)) {
 		/* simply return counts with one */
 		int one = 1;
 		bn = BATconst(b, TYPE_int, &one);
@@ -2162,7 +2165,8 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 	if (e->htype == TYPE_void && 
 	    b->htype == TYPE_void && 
 	    g->htype == TYPE_void && 
-	    g->ttype == TYPE_void) {
+	    g->ttype == TYPE_void &&
+	    (!ignore_nils || b->T->nonil)) {
 		/* simply return counts with one */
 		int one = 1;
 		bn = BATconst(b, TYPE_int, &one);
