@@ -223,8 +223,8 @@ def msc_find_hdrs(target, deps, hdrs):
             pf = f
     return pf
 
-def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref = 'lib', dll = '.dll'):
-    deps = pref+sep+name+dll+": "
+def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref, ext):
+    deps = pref+sep+name+ext+": "
     if type == "BIN":
         add = name.replace('-','_')+"_LIBS ="
     elif type == "LIB":
@@ -591,7 +591,7 @@ def msc_binary(fd, var, binmap, msc):
     if binmap.has_key("WINLIBS"):
         binlist = binlist + binmap["WINLIBS"]
     if binlist:
-        msc_additional_libs(fd, binname, "", "BIN", binlist, [], msc)
+        msc_additional_libs(fd, binname, "", "BIN", binlist, [], msc, '', '.exe')
 
     srcs = binname2+"_OBJS ="
     for target in binmap['TARGETS']:
@@ -667,7 +667,7 @@ def msc_bins(fd, var, binsmap, msc):
         msc['BINS'].append((bin, bin, ''))
 
         if binsmap.has_key(bin + "_LIBS"):
-            msc_additional_libs(fd, bin, "", "BIN", binsmap[bin + "_LIBS"], [], msc)
+            msc_additional_libs(fd, bin, "", "BIN", binsmap[bin + "_LIBS"], [], msc, '', '.exe')
         else:
             binslist = []
             if binsmap.has_key("LIBS"):
@@ -675,7 +675,7 @@ def msc_bins(fd, var, binsmap, msc):
             if binsmap.has_key("WINLIBS"):
                 binslist = binslist + binsmap["WINLIBS"]
             if binslist:
-                msc_additional_libs(fd, bin, "", "BIN", binslist, [], msc)
+                msc_additional_libs(fd, bin, "", "BIN", binslist, [], msc, '', '.exe')
 
         srcs = bin+"_OBJS ="
         for target in binsmap['TARGETS']:
@@ -716,7 +716,7 @@ def msc_bins(fd, var, binsmap, msc):
 def msc_mods_to_libs(fd, var, modmap, msc):
     modname = var[:-4]+"LIBS"
     msc_assignment(fd, var, modmap, msc)
-    msc_additional_libs(fd, modname, "", "MOD", modmap, [], msc)
+    msc_additional_libs(fd, modname, "", "MOD", modmap, [], msc, 'lib', '.dll')
 
 def msc_library(fd, var, libmap, msc):
 
@@ -925,7 +925,7 @@ def msc_libs(fd, var, libsmap, msc):
         if libsmap.has_key(libname + "_DLIBS"):
             dlib = libsmap[libname+"_DLIBS"]
         if libsmap.has_key(libname + "_LIBS"):
-            msc_additional_libs(fd, libname, sep, "LIB", libsmap[libname + "_LIBS"], dlib, msc)
+            msc_additional_libs(fd, libname, sep, "LIB", libsmap[libname + "_LIBS"], dlib, msc, 'lib', '.dll')
         else:
             libslist = []
             if libsmap.has_key("LIBS"):
@@ -933,7 +933,7 @@ def msc_libs(fd, var, libsmap, msc):
             if libsmap.has_key("WINLIBS"):
                 libslist = libslist + libsmap["WINLIBS"]
             if libslist:
-                msc_additional_libs(fd, libname, sep, "LIB", libslist, dlib, msc)
+                msc_additional_libs(fd, libname, sep, "LIB", libslist, dlib, msc, 'lib', '.dll')
 
         srcs = "lib%s%s_OBJS =" % (sep, libname)
         deps = "lib%s%s_DEPS = $(lib%s%s_OBJS)" % (sep, libname, sep, libname)
