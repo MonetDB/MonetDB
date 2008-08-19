@@ -215,6 +215,12 @@ comment "Minimum test for @1 value";
 command calc.max(v:@1,w:@1):@1 
 address MTIME@1_max
 comment "Maximum test for @1 value";
+command calc.min_no_nil(v:@1,w:@1):@1 
+address MTIME@1_min_no_nil
+comment "Minimum test for @1 value";
+command calc.max_no_nil(v:@1,w:@1):@1 
+address MTIME@1_max_no_nil
+comment "Maximum test for @1 value";
 @}
 @mal
 
@@ -991,6 +997,8 @@ mtime_export str MTIMEtimestamp_inside_dst(bit *ret, timestamp *p, tzone *z);
 mtime_export str MTIMEtimestamp_isnil(bit *retval, timestamp *val);
 mtime_export str MTIMEtimestamp_min(timestamp *ret, timestamp *v, timestamp *w);
 mtime_export str MTIMEtimestamp_max(timestamp *ret, timestamp *v, timestamp *w);
+mtime_export str MTIMEtimestamp_min_no_nil(timestamp *ret, timestamp *v, timestamp *w);
+mtime_export str MTIMEtimestamp_max_no_nil(timestamp *ret, timestamp *v, timestamp *w);
 mtime_export str MTIMEtimestamp_EQ(bit *retval, timestamp *val1, timestamp *val2);
 mtime_export str MTIMEtimestamp_NEQ(bit *retval, timestamp *val1, timestamp *val2);
 
@@ -2889,6 +2897,8 @@ str MTIME@3_@1(bit *ret, @3 *v, @3 *w){
 mtime_export str MTIME@1_isnil(bit *ret, @1 *v);
 mtime_export str MTIME@1_min(@1 *ret, @1 *v, @1 *w);
 mtime_export str MTIME@1_max(@1 *ret, @1 *v, @1 *w);
+mtime_export str MTIME@1_min_no_nil(@1 *ret, @1 *v, @1 *w);
+mtime_export str MTIME@1_max_no_nil(@1 *ret, @1 *v, @1 *w);
 	    @:compareDef(EQ,==,@1)@
 	    @:compareDef(NEQ,!=,@1)@
 	    @:compareDef(LT,<,@1)@
@@ -2913,6 +2923,26 @@ str MTIME@1_max(@1 *ret, @1 *v, @1 *w)
 {
 	if (*v == @1_nil || *w == @1_nil)
 		*ret = @1_nil;
+	else
+		*ret = *v>*w ? *v: *w;
+	return MAL_SUCCEED;
+}
+str MTIME@1_min_no_nil(@1 *ret, @1 *v, @1 *w)
+{
+	if (*v == @1_nil)
+		*ret= *w;
+ 	else if (*w == @1_nil)
+		*ret= *v;
+	else
+		*ret = *v<*w ? *v: *w;
+	return MAL_SUCCEED;
+}
+str MTIME@1_max_no_nil(@1 *ret, @1 *v, @1 *w)
+{
+	if (*v == @1_nil)
+		*ret= *w;
+ 	else if (*w == @1_nil)
+		*ret= *v;
 	else
 		*ret = *v>*w ? *v: *w;
 	return MAL_SUCCEED;
@@ -3380,6 +3410,34 @@ MTIMEtimestamp_max(timestamp *ret, timestamp *v, timestamp *w)
 		*ret= *w;
 	return MAL_SUCCEED;
 }
+
+str
+MTIMEtimestamp_min_no_nil(timestamp *ret, timestamp *v, timestamp *w)
+{
+	if (ts_isnil(*v))
+		*ret = *w;
+	else if (ts_isnil(*w))
+		*ret = *v;
+	else if( v->days < w->days || (v->days == w->days && v->msecs < w->msecs))
+		*ret = *v;
+	else
+		*ret = *w;
+	return MAL_SUCCEED;
+}
+str
+MTIMEtimestamp_max_no_nil(timestamp *ret, timestamp *v, timestamp *w)
+{
+	if (ts_isnil(*v))
+		*ret = *w;
+	else if (ts_isnil(*w))
+		*ret = *v;
+	else if( !( v->days < w->days || (v->days == w->days && v->msecs < w->msecs)))
+		*ret = *v;
+	else
+		*ret = *w;
+	return MAL_SUCCEED;
+}
+
 
 @h
 #define timestampEQ(X,Y,Z) *X = Y->days == Z->days && Y->msecs == Z->msecs
