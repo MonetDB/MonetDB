@@ -90,23 +90,23 @@ typedef enum
 
 typedef enum
 {
-    RDF_SEC_BLANK = '0',
-    RDF_SEC_IRI = '1',
-    RDF_SEC_NEG_INF = '2',
-    RDF_SEC_NEG_NUM = '3',
-    RDF_SEC_FALSE = '4',
-    RDF_SEC_ZERO = '5',
-    RDF_SEC_EMPTY_STRING = '6',
-    RDF_SEC_LANG_EMPTY_STRING = '7',
-    RDF_SEC_STRING = '8',
-    RDF_SEC_LANG_STRING = '9',
-    RDF_SEC_TRUE = 'A',
-    RDF_SEC_POS_NUM = 'B',
-    RDF_SEC_POS_INF = 'C',
-    RDF_SEC_DATETIME = 'D',
-    RDF_SEC_XML_LITERAL = 'E',
-    RDF_SEC_OTHER = 'F',
-    RDF_SEC_NAN = 'Z'
+	RDF_SEC_BLANK			=	'0',
+	RDF_SEC_IRI			=	'1',
+	RDF_SEC_NEG_INF			=	'2',
+	RDF_SEC_NEG_NUM			=	'3',
+	RDF_SEC_FALSE			=	'4',
+	RDF_SEC_ZERO			=	'5',
+	RDF_SEC_NAN			=	'6',
+	RDF_SEC_EMPTY_STRING		=	'7',
+	RDF_SEC_LANG_EMPTY_STRING	=	'8',
+	RDF_SEC_STRING			=	'9',
+	RDF_SEC_LANG_STRING		=	'A',
+	RDF_SEC_TRUE			=	'B',
+	RDF_SEC_POS_NUM			=	'C',
+	RDF_SEC_POS_INF			=	'D',
+	RDF_SEC_DATETIME		=	'E',
+	RDF_SEC_XML_LITERAL		=	'F',
+	RDF_SEC_OTHER			=	'G'
 } rdf_section;
 
 typedef struct {

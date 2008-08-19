@@ -76,12 +76,16 @@ _:doubleINF <ex:value> "INF"^^xsd:double .
 
 <ex:stringTyped0> <ex:value> "this is a typed string"^^xsd:string .
 <ex:stringTyped1> <ex:value> "ciao"^^xsd:string .
+<ex:emptyTypedString> <ex:value> ""^^xsd:string .
 
 <ex:stringLang0> <ex:value> "this is a string with lang tag"@en .
 <ex:stringLang1> <ex:value> "ciao"@it .
+<ex:emptyStringLang0> <ex:value> ""@it .
+<ex:emptyStringLang1> <ex:value> ""@en .
 
 <ex:stringPlain0> <ex:value> "this is a plain string" .
 <ex:stringPlain1> <ex:value> "ciao" .
+<ex:emptyPlainString> <ex:value> "" .
 
 <ex:datetime01> <ex:value> "1236-12-15T00:00:00"^^xsd:dateTime .
 <ex:datetime02> <ex:value> "1236-12-15T00:00:00"^^xsd:dateTime .
