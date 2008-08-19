@@ -1186,6 +1186,7 @@ and should be conservative.
 @c
 int isFragmentGroup(InstrPtr p){
 	return		(getModuleId(p)== batcalcRef) ||
+			(getModuleId(p)== batmtimeRef) ||
 			(getModuleId(p)== batstrRef) ||
 			(getModuleId(p)== constraintsRef && 
 				getFunctionId(p)== getName("emptySet",8)) ||
