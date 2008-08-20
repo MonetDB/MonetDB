@@ -7,6 +7,10 @@ stdout of test 'remote01` in directory 'src/modules/mal` itself:
 
 
 
+
+
+
+
 # MonetDB server v5.7.0, based on kernel v1.25.0
 # Serving database 'mTests_src_modules_mal'
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked using 2 threads
@@ -56,7 +60,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # create a connecton to ourself 
     remote.create("test",h,p,nil:str,"monetdb","monetdb");#  7 _7:void := RMTcreate(_8:str, h:str, p:int, _9:str, _10:str, _10:str) 
 # retrieve a value (that for sure won't exist) 
-    remote.get("test",b1:rmtobj);       #  9 _12:any := RMTget(_8:str, _13:rmtobj) 
+    x:void  := remote.get("test",b1:rmtobj);#  9 x:void := RMTget(_8:str, _13:rmtobj) 
 catch MALException:str ;                # 10 MALException:str {J12}
     io.printf("!%s\n",MALException);    # 11 _15:void := IOprint_formatted_str(_16:str, MALException:str) 
 exit MALException:str ;                 # 12 MALException:str 
@@ -74,7 +78,7 @@ catch MALException:str ;                # 23 MALException:str {J25}
     io.printf("!%s\n",MALException);    # 24 _27:void := IOprint_formatted_str(_16:str, MALException:str) 
 exit MALException:str ;                 # 25 MALException:str 
 end main;                               # 26  
-!MALException:remote.get:no such object 'b1'
+!MALException:remote.get:'b1' may not be used before being initialized
 
 !MALException:remote.create:a connection with name 'test' already exists
 !MALException:remote.destroy:no such connection with name 'test'

@@ -21,7 +21,7 @@ m := remote.put("test", 10);
 
 # perform a selection remote, and get the result back
 t := remote.exec("test", "algebra", "select", k, l, m);
-j := remote.get("test", t);
+j:bat[:str,:int] := remote.get("test", t);
 io.print(j);
 
 # help testweb a bit, since currently no cleanup is done on server

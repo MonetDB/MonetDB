@@ -7,6 +7,8 @@ stdout of test 'remote04` in directory 'src/modules/mal` itself:
 
 
 
+
+
 # MonetDB server v5.7.0, based on kernel v1.25.0
 # Serving database 'mTests_src_modules_mal'
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked using 2 threads
@@ -59,8 +61,8 @@ function user.main():void;              #  0 main:void := user.main() {G}
     m := remote.put("test",10);         # 16 m:rmtobj := RMTput(_8:str, _32:int) {G}
 # perform a selection remote, and get the result back 
     t := remote.exec("test","algebra","select",k,l,m);# 18 t:rmtobj := RMTexec(_8:str, _35:str, _36:str, k:rmtobj, l:rmtobj, m:rmtobj) {G}
-    j := remote.get("test",t);          # 19 j:any := RMTget(_8:str, t:rmtobj) 
-    io.print(j);                        # 20 _38:void := IOprint_val(j:any) 
+    j:bat[:str,:int]  := remote.get("test",t);# 19 j:bat[:str,:int] := RMTget(_8:str, t:rmtobj) {G}
+    io.print(j);                        # 20 _38:void := IOprint_val(j:bat[:str,:int]) 
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
     remote.destroy("test");             # 23 _41:void := RMTdestroy(_42:str) 

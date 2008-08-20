@@ -10,19 +10,19 @@ remote.create("test", h, p, nil:str, "monetdb", "monetdb");
 
 # this is invalid, as io.print is an invalid module, and bla will be
 # taken as function
-f := remote.exec("test", "io.print", "bla");
+f:rmtobj := remote.exec("test", "io.print", "bla");
 catch MALException:str;
 	io.printf(MALException);
 exit MALException;
 
 # now do it with a function that returns something (a BAT in this case)
-b := remote.exec("test", "inspect", "getAtomNames");
-c := remote.get("test", b);
+b:rmtobj := remote.exec("test", "inspect", "getAtomNames");
+c:bat[:int,:str] := remote.get("test", b);
 io.print(c);
 
 # io.print only outputs things, but returns nothing
-a := remote.exec("test", "io", "print", b);
-d := remote.get("test", a);
+a:rmtobj := remote.exec("test", "io", "print", b);
+d:void := remote.get("test", a);
 io.print(d);
 
 # help testweb a bit, since currently no cleanup is done on server

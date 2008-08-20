@@ -9,7 +9,7 @@ p := sabaoth.getLocalConnectionPort();
 remote.create("test", h, p, nil:str, "monetdb", "monetdb");
 
 # retrieve a value (that for sure won't exist)
-remote.get("test", "b1":rmtobj);
+x:void := remote.get("test", "b1":rmtobj);
 catch MALException:str;
 	io.printf("!%s\n",MALException);
 exit MALException;
