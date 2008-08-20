@@ -43,3 +43,11 @@ rev:= bat.reverse(d);
 rid:= inspect.getTypeIndex(rev);
 tns:=inspect.getTypeName(rid);
 io.print(tns);
+
+#type tests
+z1:= inspect.equalType(i,:int);
+io.print(z1);
+z1:= inspect.equalType(d,:bat[:str,:flt]);
+io.print(z1);
+z1:= inspect.equalType(d,:int);
+io.print(z1);

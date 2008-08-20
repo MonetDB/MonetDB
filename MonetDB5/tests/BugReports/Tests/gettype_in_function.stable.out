@@ -55,7 +55,14 @@ function user.main():void;              #  0 main:void := user.main() {G}
     rid := inspect.getTypeIndex(rev);   # 33 rid:int := INSPECTtypeIndex(rev:bat[:flt,:str]) 
     tns := inspect.getTypeName(rid);    # 34 tns:str := INSPECTtypename(rid:int) {G}
     io.print(tns);                      # 35 _41:void := IOprint_val(tns:str) 
-end main;                               # 36  
+#type tests 
+    z1 := inspect.equalType(i,:int);    # 37 z1:bit := INSPECTequalType(i:int, _14:int) 
+    io.print(z1);                       # 38 _44:void := IOprint_val(z1:bit) 
+    z1 := inspect.equalType(d,:bat[:str,:flt]);# 39 z1:bit := INSPECTequalType(d:bat[:str,:flt], _45:bat[:str,:flt]) 
+    io.print(z1);                       # 40 _46:void := IOprint_val(z1:bit) 
+    z1 := inspect.equalType(d,:int);    # 41 z1:bit := INSPECTequalType(d:bat[:str,:flt], _14:int) 
+    io.print(z1);                       # 42 _47:void := IOprint_val(z1:bit) 
+end main;                               # 43  
 [ "str" ]
 [ "str" ]
 [ "bat[:str,:int]" ]
@@ -67,8 +74,11 @@ end main;                               # 36
 [ 13, 10]
 [ "flt" ]
 [ "str" ]
+[ true ]
+[ true ]
+[ false ]
 
-# 13:09:36 >  
-# 13:09:36 >  Done.
-# 13:09:36 >  
+# 12:26:33 >  
+# 12:26:33 >  Done.
+# 12:26:33 >  
 
