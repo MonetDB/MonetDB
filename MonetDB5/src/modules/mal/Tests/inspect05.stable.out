@@ -945,6 +945,7 @@ end main;                               # 11
 [ "summary",				  "command",	  "manual",	  "():void ",														  "MANUALcreateSummary;"		  ]
 [ "section",				  "pattern",	  "manual",	  "(mod:str):void ",													  "MANUALcreateSection;"		  ]
 [ "search",				  "pattern",	  "manual",	  "(text:str):void ",													  "MANUALsearch;"			  ]
+[ "equalType",				  "pattern",	  "inspect",	  "(l:any,r:any):bit ",																  "INSPECTequalType;"					  ]
 [ "getStatistics",			  "command",	  "inspect",	  "(nme:str):bat[:any_1,:any_2] ",											  "QOTgetStatistics;"			  ]
 [ "getEnvironment",			  "command",	  "inspect",	  "():bat[:str,:str] ",													  "INSPECTgetEnvironment;"		  ]
 [ "getAtomSizes",			  "command",	  "inspect",	  "():bat[:int,:int] ",													  "INSPECTatom_sizes;"			  ]
