@@ -9,14 +9,14 @@
 prompt # $t $g  
 echo on
 
-%MIL_CLIENT% < %1.mil
-%MIL_CLIENT% < %1.mil
-%MIL_CLIENT% < %1.mil
-%MIL_CLIENT% < %1.mil
-%MIL_CLIENT% < %1.mil
-%MIL_CLIENT% < %1.mil
-%MIL_CLIENT% < %1.mil
-%MIL_CLIENT% < %1.mil
-%MIL_CLIENT% < %1.mil
-%MIL_CLIENT% < %1.mil
+call %MIL_CLIENT% < %1.mil
+call %MIL_CLIENT% < %1.mil
+call %MIL_CLIENT% < %1.mil
+call %MIL_CLIENT% < %1.mil
+call %MIL_CLIENT% < %1.mil
+call %MIL_CLIENT% < %1.mil
+call %MIL_CLIENT% < %1.mil
+call %MIL_CLIENT% < %1.mil
+call %MIL_CLIENT% < %1.mil
+call %MIL_CLIENT% < %1.mil
 
