@@ -38,11 +38,34 @@ function user.main():void;              #  0 main:void := user.main() {G}
     user.typetest(b);                   # 16 _18:void := user.typetest(b:bat[:str,:int]) 
 # even cooler, now suddenly a string is "any" too 
     user.typetest(p);                   # 18 _20:void := user.typetest(p:str) 
-end main;                               # 19  
+# extended 
+    i := 1:int;                         # 20 i:int := _23:int 
+    d := bat.new(:str,:flt);            # 21 d:bat[:str,:flt] := CMDBATnew(_25:str, _26:flt) {G}
+    tii := inspect.getTypeIndex(i);     # 22 tii:int := INSPECTtypeIndex(i:int) 
+    io.print(tii);                      # 23 _28:void := IOprint_val(tii:int) 
+    tni := inspect.getTypeName(tii);    # 24 tni:str := INSPECTtypename(tii:int) {G}
+    io.print(tni);                      # 25 _30:void := IOprint_val(tni:str) 
+    tib := inspect.getTypeIndex(d);     # 26 tib:int := INSPECTtypeIndex(d:bat[:str,:flt]) 
+    io.print(tib);                      # 27 _32:void := IOprint_val(tib:int) 
+    (ht,tt) := inspect.getTypeIndex(d); # 28 (ht:int, tt:int) := INSPECTtypeIndex(d:bat[:str,:flt]) 
+    io.print(ht,tt);                    # 29 _35:void := IOprint_val(ht:int, tt:int) 
+    tnb := inspect.getTypeName(tib);    # 30 tnb:str := INSPECTtypename(tib:int) {G}
+    io.print(tnb);                      # 31 _37:void := IOprint_val(tnb:str) 
+    rev := bat.reverse(d);              # 32 rev:bat[:flt,:str] := BKCreverse(d:bat[:str,:flt]) {G}
+    rid := inspect.getTypeIndex(rev);   # 33 rid:int := INSPECTtypeIndex(rev:bat[:flt,:str]) 
+    tns := inspect.getTypeName(rid);    # 34 tns:str := INSPECTtypename(rid:int) {G}
+    io.print(tns);                      # 35 _41:void := IOprint_val(tns:str) 
+end main;                               # 36  
 [ "str" ]
 [ "str" ]
 [ "bat[:str,:int]" ]
 [ "bat[:str,:int]" ]
+[ "str" ]
+[ 6 ]
+[ "int" ]
+[ 10 ]
+[ 13, 10]
+[ "flt" ]
 [ "str" ]
 
 # 13:09:36 >  
