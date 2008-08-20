@@ -1880,16 +1880,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 {
-	int nr = _dumpstmt(be, mb, s);
 	mvc *c = be->mvc;
 	InstrPtr q;
 
+	(void) _dumpstmt(be, mb, s);
 	if (c->cache && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		q = newStmt2(mb, sqlRef, exportOperationRef);
 		q = pushStr(mb, q, ""); /* warning */
 	}
 	/* generate a dummy return assignment for functions */
-	if ( (nr= getArgType(mb,getInstrPtr(mb,0),0)) != TYPE_void){
+	if ( getArgType(mb,getInstrPtr(mb,0),0) != TYPE_void){
 		q = newAssignment(mb);
 		getArg(q,0) = getArg(getInstrPtr(mb,0),0);
 		q->barrier = RETURNsymbol;
