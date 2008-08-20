@@ -423,8 +423,14 @@ nor does it contain polymorphic actual arguments.
 @-
 We found the proper function. Copy some properties. In particuler,
 determine the calling strategy, i.e. FCNcall, CMDcall, FACcall, PATcall
+Beware that polymorphic functions may produce type-incorrect clones.
 This piece of code may be shared by the separate binder
 @= bindFunction
+	if (s->def->errors){
+		p->typechk= TYPE_UNKNOWN;
+		mb->errors++;
+		return -3;
+	}
 	if( p->token == ASSIGNsymbol){
 		switch(getSignature(s)->token){
 		case COMMANDsymbol: 
