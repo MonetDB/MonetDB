@@ -177,6 +177,9 @@ comment "Utility for debugging MAL interpreter";
 command getDiskSpace() :lng
 address CMDbbpDiskSpace
 comment "Estimate the amount of disk space occupied by dbfarm";
+command getPageSize():lng
+address CMDgetPageSize
+comment "Obtain the memory page size";
 @-
 @{
 @include prelude.mx
@@ -222,6 +225,7 @@ bbp_export str CMDbbptoStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 bbp_export str CMDbbpiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpGetObjects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpDiskSpace(lng *ret);
+bbp_export str CMDgetPageSize(lng *ret);
 bbp_export str CMDbbpNames(int *ret);
 bbp_export str CMDbbpName(str *ret, int *bid);
 bbp_export str CMDbbpRNames(int *ret);
@@ -785,6 +789,13 @@ str
 CMDbbpDiskSpace(lng *ret)
 {
 	*ret=  getDiskSpace();
+	return MAL_SUCCEED;
+}
+
+str
+CMDgetPageSize(lng *ret)
+{
+	*ret=  MT_pagesize();
 	return MAL_SUCCEED;
 }
 

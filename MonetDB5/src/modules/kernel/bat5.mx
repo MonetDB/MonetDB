@@ -141,11 +141,18 @@ comment "Produce a BAT containing info about a BAT in [attribute,value] format.
 
 command getSize ( b:bat[:any_1,:any_2]) :lng
 address BKCbatsize
-comment "Calculate the size of the BAT.";
+comment "Calculate the size of the BAT descriptor, heaps and indices in bytes.";
+
+command getMemorySize ( b:bat[:any_1,:any_2]) :lng
+address BKCbatvmsize
+comment "Calculate the size of the BAT heaps and indices in bytes
+rounded to the memory page size (see bbp.getPageSize()).";
 
 command getDiskSize ( b:bat[:any_1,:any_2]) :lng
-address BKCbatsize
-comment "Calculate the size of the BAT.";
+address BKCbatdisksize
+comment "Approximate size of the (persistent) BAT heaps as stored on disk 
+in pages of 512 bytes. Indices are not included, as they only live temporarily
+in virtual memory.";
 
 command getCapacity(b:bat[:any_1,:any_2]):lng 
 address BKCgetCapacity
@@ -658,6 +665,8 @@ bat5_export ssize_t void_replace_bat5(BAT *b, BAT *u, bit force);
 bat5_export int void_inplace5(BAT *b, oid id, ptr val, bit force);
 
 bat5_export int CMDbatsize(lng *tot, BAT *b);
+bat5_export int CMDbatvmsize(lng *tot, BAT *b);
+bat5_export int CMDbatdisksize(lng *tot, BAT *b);
 #endif /*_BAT_H_*/
 
 @c
@@ -1468,13 +1477,13 @@ CMDinfo(BAT **retval, BAT *b)
 #define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
 
 int
-CMDbatdsksize(lng *tot, BAT *b)
+CMDbatdisksize(lng *tot, BAT *b)
 {
 	size_t blksize = 512;
 	size_t size = 0;
 
 	if (!isVIEW(b)) {
-		size += ROUND_UP(sizeof(BAT), blksize);
+		/* size += ROUND_UP(sizeof(BAT), blksize);*/
 		size += ROUND_UP(b->H->heap.free, blksize);
 		size += ROUND_UP(b->T->heap.free, blksize);
 		if (b->hheap)
@@ -1487,10 +1496,10 @@ CMDbatdsksize(lng *tot, BAT *b)
 }
 
 int
-CMDbatsize(lng *tot, BAT *b)
+CMDbatvmsize(lng *tot, BAT *b)
 {
 	size_t blksize = MT_pagesize();
-	size_t size = ROUND_UP(sizeof(BATstore), blksize);
+	size_t size = 0;
 
 	if (!isVIEW(b)) {
 		size_t cnt = BATcapacity(b);
@@ -1505,6 +1514,29 @@ CMDbatsize(lng *tot, BAT *b)
 			size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
 		if (b->T->hash)
 			size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
+	}
+	*tot = size;
+	return GDK_SUCCEED;
+}
+
+int
+CMDbatsize(lng *tot, BAT *b)
+{
+	size_t size = 0;
+
+	if (!isVIEW(b)) {
+		size_t cnt = BATcapacity(b);
+
+		size += b->H->heap.size;
+		size += b->T->heap.size;
+		if (b->hheap)
+			size += b->hheap->size;
+		if (b->theap)
+			size += b->theap->size;
+		if (b->H->hash)
+			size += sizeof(hash_t) * cnt;
+		if (b->T->hash)
+			size += sizeof(hash_t) * cnt;
 	}
 	*tot = size;
 	return GDK_SUCCEED;
@@ -3304,12 +3336,23 @@ BKCinfo(int *retval, int *bid)
 }
 
 str
-BKCbatdsksize(lng *tot, int *bid){
+BKCbatdisksize(lng *tot, int *bid){
 	BAT *b;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.getDiskSize", "Cannot access descriptor");
 	}
-	CMDbatdsksize(tot,b);
+	CMDbatdisksize(tot,b);
+	BBPreleaseref(*bid);
+	return MAL_SUCCEED;
+}
+
+str
+BKCbatvmsize(lng *tot, int *bid){
+	BAT *b;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "bat.getDiskSize", "Cannot access descriptor");
+	}
+	CMDbatvmsize(tot,b);
 	BBPreleaseref(*bid);
 	return MAL_SUCCEED;
 }

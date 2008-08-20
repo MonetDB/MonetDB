@@ -149,8 +149,6 @@ In Monet 5 we have a different notion on how to administer BATs.
 		*retval= b->batCacheid;
 @* Implementation Code
 The URLs are stored as strings without further optimization.
-A more compact representation is feasible, but not considered yet to
-invest energy.
 @= Pseudo
 		BATrename(b,"@1_@2");
 		BATroles(b,"@1","@2");
