@@ -89,7 +89,8 @@ address INSPECTtypename
 comment "Get the type name associated with a type id.";
 pattern getTypeIndex(v:any_1):int 
 address INSPECTtypeIndex
-comment "Return the type index of a variable.";
+comment "Return the type index of a variable. For BATs, return
+the type index for its tail.";
 
 
 command getAtomNames():bat[:int,:str] 
