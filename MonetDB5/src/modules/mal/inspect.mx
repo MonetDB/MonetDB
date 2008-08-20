@@ -87,11 +87,13 @@ comment "Return the type of a variable (expression).";
 command getTypeName(v:int):str 
 address INSPECTtypename
 comment "Get the type name associated with a type id.";
+pattern getTypeIndex(v:bat[:any_1,:any_2]) (ht:int, tt:int)
+address INSPECTtypeIndex
+comment "Return the type index of a BAT head and tail.";
 pattern getTypeIndex(v:any_1):int 
 address INSPECTtypeIndex
 comment "Return the type index of a variable. For BATs, return
 the type index for its tail.";
-
 
 command getAtomNames():bat[:int,:str] 
 address INSPECTatom_names
@@ -743,8 +745,15 @@ INSPECTtypeIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *ret;
 
 	(void) cntxt;
-	ret = (int *) getArgReference(stk, pci, 0);
-	*ret = getTailType(getArgType(mb, pci, 1));
+	if( pci->retc== 2){
+		ret = (int *) getArgReference(stk, pci, 0);
+		*ret = getHeadType(getArgType(mb, pci, 2));
+		ret = (int *) getArgReference(stk, pci, 1);
+		*ret = getTailType(getArgType(mb, pci, 2));
+	}else {
+		ret = (int *) getArgReference(stk, pci, 0);
+		*ret = getTailType(getArgType(mb, pci, 1));
+	}
 	return MAL_SUCCEED;
 }
 

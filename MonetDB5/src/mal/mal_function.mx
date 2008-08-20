@@ -579,11 +579,13 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 	if( isPolymorphic(v= getArgType(new->def,pp,i)) ){
 		int t = getArgType(mb,p,i);
 
-		if( isaBatType(t) ){
+		if ( v== TYPE_any)
+			replaceTypeVar(new->def, pp, v, t);
+		if( isaBatType(v) ){
 			if( getHeadIndex(v) )
-	            replaceTypeVar(new->def, pp, getHeadIndex(v), getHeadType(t));
+				replaceTypeVar(new->def, pp, getHeadIndex(v), getHeadType(t));
 			if( getTailIndex(v) )
-	            replaceTypeVar(new->def, pp, getTailIndex(v), getTailType(t));
+				replaceTypeVar(new->def, pp, getTailIndex(v), getTailType(t));
 		} else
 			replaceTypeVar(new->def, pp, getTailIndex(v), t);
 	} 

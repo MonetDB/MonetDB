@@ -951,6 +951,7 @@ end main;                               # 11
 [ "getAtomSuper",			  "command",	  "inspect",	  "():bat[:int,:str] ",													  "INSPECTatom_sup_names;"		  ]
 [ "getAtomNames",			  "command",	  "inspect",	  "():bat[:int,:str] ",													  "INSPECTatom_names;"			  ]
 [ "getTypeIndex",			  "pattern",	  "inspect",	  "(v:any_1):int ",													  "INSPECTtypeIndex;"			  ]
+[ "getTypeIndex",		  "pattern",	  "inspect",	  "(v:bat[:any_1,:any_2]) (ht:int,tt:int) ",												  "INSPECTtypeIndex;"					  ]
 [ "getTypeName",			  "command",	  "inspect",	  "(v:int):str ",													  "INSPECTtypename;"			  ]
 [ "getType",				  "pattern",	  "inspect",	  "(v:any_1):str ",													  "INSPECTtypeName;"			  ]
 [ "getType",				  "pattern",	  "inspect",	  "(v:bat[:any_1,:any_2]) (ht:str,tt:str) ",										  "INSPECTtypeName;"			  ]
