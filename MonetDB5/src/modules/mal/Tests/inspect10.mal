@@ -3,7 +3,7 @@ function dummy(i:int);
 	io.print(i);
 	b:= mdb.getDefinition();
 	io.print(b);
-	mdb.showFunction();
+	mdb.list();
 end dummy;
 
 user.dummy(1);
@@ -12,4 +12,4 @@ io.printf("get function properties\n");
 l:= inspect.getSignature("user","dummy");
 io.print(l);
 
-mdb.showFunction("user","dummy");
+mdb.list("user","dummy");

@@ -20,6 +20,7 @@
 @+ Inspection 
 This module introduces a series of commands that provide access
 to information stored within the interpreter data structures.
+It's primary use is debugging.
 In all cases, the pseudo BAT operation is returned that
 should be garbage collected after being used.
 
@@ -27,10 +28,6 @@ The main performance drain would be to use a pseudo BAT directly to
 successively access it components. This can be avoided by first assigning
 the pseudo BAT to a variable.
 
-Inspection is organized for two purposes, for interactive use
-and as a bases for reflective code. The latter needs BATs
-to work with. The former merely dumps the result in a table
-for the front-ends to consume.
 @mal
 module inspect;
 
