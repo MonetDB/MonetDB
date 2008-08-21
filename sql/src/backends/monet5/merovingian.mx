@@ -619,7 +619,7 @@ forkMserver(str database, sabdb** stats, int force)
 					pdp->next = NULL;
 					return(newErr(
 								"database '%s' either needs a longer timeout "
-								"to start up, or appears to cleanly shut "
+								"to start up, or appears to shut "
 								"itself down after starting", database));
 				default:
 					/* remove from the list again */
