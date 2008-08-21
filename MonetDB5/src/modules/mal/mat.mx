@@ -157,10 +157,14 @@ MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BATins(bn,b,FALSE);
 		BBPunfix(b->batCacheid);
 	}
+	if (bn->htype == TYPE_oid && !BAThordered(bn)) {
+		BAT *b = BATsort(bn);
+		BBPunfix(bn->batCacheid);
+		bn = b;
+	}
 	(void) mb;
 	ret= (int*) getArgReference(stk,p,0);
-	*ret= bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 

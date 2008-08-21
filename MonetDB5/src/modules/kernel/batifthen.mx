@@ -141,6 +141,7 @@ CMDifThen_@1(int *ret, int *bid, int *tid)
 		t++;
 	}
 	BBPreleaseref(tb->batCacheid);
+	bn->T->nonil = (b->T->nonil && tb->T->nonil);
 	@:wrapup@
 }
 
@@ -166,6 +167,7 @@ str CMDifThenCst_@1(int *ret, int *bid, @1 *tid)
 			BUNfastins(bn, BUNhead(bi,p), (ptr) tid);
 		t++;
 	}
+	bn->T->nonil = (b->T->nonil && *tid != nilval);
 	@:wrapup@
 }
 
@@ -195,6 +197,7 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 		else
 			dst[p] = *eid;
 	}
+	bn->T->nonil = (b->T->nonil && *tid != nilval && *eid != nilval);
 	BATsetcount(bn, p);
 	@:void_wrapup@
 }
@@ -231,6 +234,7 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 		else
 			dst[p] = ebv[p];
 	}
+	bn->T->nonil = (b->T->nonil && tb->T->nonil && eb->T->nonil);
 	BATsetcount(bn, p);
 	BBPreleaseref(tb->batCacheid);
 	BBPreleaseref(eb->batCacheid);
@@ -266,6 +270,7 @@ CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 		else
 			dst[p] = ebv[p];
 	}
+	bn->T->nonil = (b->T->nonil && eb->T->nonil && *val != nilval);
 	BATsetcount(bn, p);
 	BBPreleaseref(eb->batCacheid);
 	@:void_wrapup@
@@ -300,6 +305,7 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 		else 
 			dst[p] = *val;
 	}
+	bn->T->nonil = (b->T->nonil && tb->T->nonil && *val != nilval);
 	BATsetcount(bn, p);
 	BBPreleaseref(tb->batCacheid);
 	@:void_wrapup@
@@ -350,6 +356,7 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 			BUNfastins(bn, BUNhead(bi,p), (ptr) eid);
 		t++;
 	}
+	bn->T->nonil = (b->T->nonil && *tid != nilval && *eid != nilval);
 	@:wrapup@
 }
 
@@ -390,6 +397,7 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 			BUNfastins(bn, BUNhead(bi,p), BUNtail(ebi, p));
 		t++;
 	}
+	bn->T->nonil = (b->T->nonil && tb->T->nonil && eb->T->nonil);
 	BBPreleaseref(tb->batCacheid);
 	BBPreleaseref(eb->batCacheid);
 	@:wrapup@
@@ -430,6 +438,7 @@ CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 			BUNfastins(bn, BUNhead(bi,p), BUNtail(ebi, p));
 		t++;
 	}
+	bn->T->nonil = (b->T->nonil && eb->T->nonil && *val != nilval);
 	BBPreleaseref(eb->batCacheid);
 	@:wrapup@
 }
@@ -469,6 +478,7 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 			BUNfastins(bn, BUNhead(bi,p), val);
 		t++;
 	}
+	bn->T->nonil = (b->T->nonil && tb->T->nonil && *val != nilval);
 	BBPreleaseref(tb->batCacheid);
 	@:wrapup@
 }

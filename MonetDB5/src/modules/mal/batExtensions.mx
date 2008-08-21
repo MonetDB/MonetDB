@@ -451,9 +451,13 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	/* create the slices slightly overshoot to make sure it all is taken*/
 	for(i=0; i<pci->retc; i++){
+		oid hval = 0;
 		low= varGetProp(mb, getArg(pci,i),PropertyIndex("hlb") );
 		hgh= varGetProp(mb, getArg(pci,i),PropertyIndex("hub") );
-		bn=  BATslice(b, low->value.val.oval, hgh->value.val.oval);
+		hval = hgh->value.val.oval;
+		if (i == pci->retc-1)
+			hval = BATcount(b);
+		bn =  BATslice(b, low->value.val.oval, hval);
 		BATseqbase(bn, low->value.val.oval);
 		if (bn== NULL){
 			BBPunfix(b->batCacheid);
