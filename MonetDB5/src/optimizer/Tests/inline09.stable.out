@@ -88,7 +88,7 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
     _16 := b;                           # 17 _16:bat[:oid,:str] := b:bat[:oid,:str] {G}
     _16 := batstr.substring(_16,1,3);   # 18 _16:bat[:oid,:str] := STRbatsubstringcst(_16:bat[:oid,:str], _14:int, _17:int) {G}
     _18 := batcalc.+(_13,_16);          # 19 _18:bat[:oid,:str] := STRbatConcat(_13:bat[:oid,:str], _16:bat[:oid,:str]) {G}
-    z{inline} := _18;                   # 20 z:bat[:oid,:str] := _18:bat[:oid,:str] {G}
+    z:bat[:oid,:str] {inline} := _18;   # 20 z:bat[:oid,:str] := _18:bat[:oid,:str] {G}
 end qry;                                # 21  
 
 # 11:53:00 >  

@@ -64,7 +64,7 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
 # base line test for inlining 
     _28 := batcalc.+(b,b);              #  7 _28:bat[:oid,:int] := CMDbatADD_int_int_int(b:bat[:oid,:int], b:bat[:oid,:int]) {G}
     _24 := _28;                         #  8 _24:bat[:oid,:int] := _28:bat[:oid,:int] {G}
-    z{inline} := _24;                   #  9 z:bat[:oid,:int] := _24:bat[:oid,:int] {G}
+    z:bat[:oid,:int] {inline} := _24;   #  9 z:bat[:oid,:int] := _24:bat[:oid,:int] {G}
 end qry;                                # 10  
 
 # 11:53:01 >  

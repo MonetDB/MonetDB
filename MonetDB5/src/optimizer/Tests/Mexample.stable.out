@@ -38,7 +38,7 @@ barrier (_13,_14,_15) := bat.newIterator(b);#  4 (_13:lng, _14:int, _15:int) := 
     bat.insert(_10,_14,_17);            #  6 _18:bat[:int,:int] := BKCinsert_bun(_10:bat[:int,:int], _14:int, _17:int) {G}
     redo (_13,_14,_15) := bat.hasMoreElements(b);#  7 (_13:lng, _14:int, _15:int) := CHPbunHasMoreElements(b:bat[:int,:int]) {J5}
 exit (_13,_14,_15);                     #  8 (_13:lng, _14:int, _15:int) 
-    c := _10;                           #  9 c:bat[:int,:int] := _10:bat[:int,:int] {G}
+    c:bat[:int,:int]  := _10;           #  9 c:bat[:int,:int] := _10:bat[:int,:int] {G}
     mdb.list();                         # 10 _9:void := MDBlist() 
 end main;                               # 11  
 

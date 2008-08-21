@@ -39,7 +39,7 @@ end main;	# 9
 #-----------------#
 function user.main():void;              #  0 main:void := user.main() {G}
 # testing repeatative reverse optimalisation 
-    r := bat.new(:int,:int);            #  2 r:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
+    r:bat[:int,:int]  := bat.new(:int,:int);#  2 r:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
     o := calc.oid(0@0);                 #  3 o:oid := CALCoid2oid(_5:oid) 
     z := algebra.markT(r,o);            #  4 z:bat[:int,:oid] := ALGtmark(r:bat[:int,:int], o:oid) {G}
     rr := bat.reverse(z);               #  5 rr:bat[:oid,:int] := BKCreverse(z:bat[:int,:oid]) {G}
