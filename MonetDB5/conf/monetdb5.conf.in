@@ -194,7 +194,7 @@ mero_discoveryttl=600
 # Monet Virtual Machine
 #====================================
 mal_init=@libdir@@DIRSEP@MonetDB5/mal_init.mal
-mal_listing = 26           # List everything
+mal_listing = 18           # List everything
 #    1 = List the original input
 #    2 = List the MAL instruction
 #    4 = List the MAL type information
