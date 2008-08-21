@@ -1636,16 +1636,18 @@ def RunTest(env, TST, BusyPorts, COND) :
         TIMEOUT = par['TIMEOUT']
         if os.path.isfile(TST+".timeout"):
             for f in open(TST+".timeout"):
-                TOf = int(f.strip())
-                if TOf > 1:
-                    TIMEOUT = TIMEOUT * TOf
+                TOf = float(f.strip())
+                if TOf > 0:
+                    TIMEOUT = int(TIMEOUT * TOf)
+                if TIMEOUT < 1:
+                    TIMEOUT = 1
         if env['exe']['Mtimeout'][0]:
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(TIMEOUT)
             SetExecEnv(env['exe'],0)
         CTIMEOUT = 0
         if   CALL in ["other", "python"]:
             if TIMEOUT > 0:
-                CTIMEOUT = CTIMEOUT + 60
+                CTIMEOUT = CTIMEOUT + min(TIMEOUT, par['TIMEOUT'])
             for l in open(TST+EXT):
                 TOm = test.match(l)
                 if TOm:
@@ -1667,7 +1669,7 @@ def RunTest(env, TST, BusyPorts, COND) :
             CTIMEOUT = TIMEOUT
         STIMEOUT = CTIMEOUT
         if  SERVER in ["MIL", "MAL", "SQL", "XQUERY"] and TIMEOUT > 0:
-            STIMEOUT = STIMEOUT + TIMEOUT + 60
+            STIMEOUT = STIMEOUT + TIMEOUT + min(TIMEOUT, par['TIMEOUT'])
 
         ME = ""
         ATJOB1 = ""
