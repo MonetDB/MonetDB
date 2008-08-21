@@ -2477,13 +2477,13 @@ operatorName(int i)
 
 @= showVariableProperties
 {
-	if (flg & LIST_MAL_TYPE ){
+	if ( flg & LIST_MAL_TYPE ){
 		str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 		snprintf(t,(len-(t-base)), ":%s ", tpe);
 		GDKfree(tpe);
 		advance(t,base,len);
 	} else
-	if (flg & LIST_UDF_TYPE && @1 ){
+	if (flg & LIST_UDF_TYPE || @1 ){
 		if ( isVarUDFtype(mb, getArg(p, i))) {
 			str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 			snprintf(t,(len-(t-base)), ":%s ", tpe);
@@ -2491,7 +2491,7 @@ operatorName(int i)
 			advance(t,base,len);
 		} 
 	}
-	if (flg & LIST_MAL_PROPS){
+	if (flg & LIST_MAL_PROPS || @1){
 		pstring = varGetPropStr(mb, getArg(p, i));
 		if (pstring){
 			snprintf(t,(len-(t-base)),"%s", pstring);
