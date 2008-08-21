@@ -1881,8 +1881,20 @@ pft_create_pfop (PFpa_op_t *p, PFalg_simple_type_t t)
                     assgn (var (p_frag->name), lit_int(0))
 		);
 	    }
-	    mvar_t *p_pos  = env_mvar (p->env, p->schema.items[1].name /* item */, aat_nat);
-
+	    PFalg_simple_type_t postype = aat_nat;
+	    if ( p->schema.items[1].name != att_pos ) {
+	        /* INCOMPLETE. Temporary fix for Hennings document startnodes
+		 * problem.
+		 * When startnodes are delivered in document order like in
+		 * fn:doc("d")//article
+		 * the normal schema (iter,pos(aat_nat),item) is replaced by
+		 * (iter,item(aat_pre),item). This will crash our previous
+		 * implementation which will look for an item(aat_nat) which 
+		 * is not there. 
+		 */
+		postype = aat_pre;
+	    }
+	    mvar_t *p_pos  = env_mvar (p->env, p->schema.items[1].name /* pos */, postype);
 	    if ( !(p_iter && p_item && p_frag && p_pos) )
 		PFoops(OOPS_FATAL,"pft_create_pfop: missing [iter|item|frag|pos] child");
 	    execute (
