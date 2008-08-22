@@ -65,8 +65,6 @@ strsplit(char **in, const char *del)
             }
         } while (sc != 0);
     }
-    
-    return NULL;
 }
 
 #ifndef HAVE_STRDUP

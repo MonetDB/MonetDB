@@ -1291,7 +1291,6 @@ PFsql_table_str (PFsql_tident_t name)
             return res;
         }
     }
-    return NULL; /* satisfy picky compilers */
 }
 
 /**
@@ -1323,7 +1322,6 @@ PFsql_alias_name_str (PFsql_aident_t name)
             return res;
         }
     }
-    return NULL; /* satisfy picky compilers */
 }
 
 /**

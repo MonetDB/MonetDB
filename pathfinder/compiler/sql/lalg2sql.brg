@@ -5702,9 +5702,6 @@ collect_twigs (PFla_op_t * p, PFarray_t *frags)
             return false;
     }
 
-    /* we should never reach this point */
-    assert (0);
-    return false;
 }
 
 #define IS_LEAF(p) (!L(p) && !R(p))

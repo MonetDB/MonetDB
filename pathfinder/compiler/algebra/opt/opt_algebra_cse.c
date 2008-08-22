@@ -236,12 +236,12 @@ lookup_cse (PFarray_t *map, PFla_op_t *ori)
 
 #ifndef NDEBUG
     return NULL;
-#endif
-
+#else
     PFoops (OOPS_FATAL, "Could not look up node (%s) (cse subtrees)",
             ID[ori->kind]);
 
     return NULL; /* satisfy picky compilers */
+#endif
 }
 
 /**
@@ -314,12 +314,12 @@ lookup_ori (PFarray_t *map, PFla_op_t *cse)
 
 #ifndef NDEBUG
     return NULL;
-#endif
-
+#else
     PFoops (OOPS_FATAL, "Could not look up node (%s) (ori subtrees)",
             ID[cse->kind]);
 
     return NULL; /* satisfy picky compilers */
+#endif
 }
 
 /* Worker for 'INORI(c,o)'.
@@ -509,12 +509,12 @@ lookup_actatts (PFarray_t *map, PFla_op_t *ori)
 
 #ifndef NDEBUG
     return NULL;
-#endif
-
+#else
     PFoops (OOPS_FATAL, "actual attributes of the "
                         "%s operator not found", ID[ori->kind]);
 
     return NULL; /* satisfy picky compilers */
+#endif
 }
 
 /**
@@ -579,11 +579,11 @@ act_attribute_ (PFarray_t *map, PFalg_att_t att)
 
 #ifndef NDEBUG
     return att_NULL;
-#endif
-
+#else
     PFoops (OOPS_FATAL, "Attribute %s not found", PFatt_str (att));
 
     return att_NULL; /* pacify picky compilers */
+#endif
 }
 
 /**
@@ -636,12 +636,12 @@ rev_act_attribute_ (PFarray_t *map, PFalg_att_t att)
 
 #ifndef NDEBUG
     return att_NULL;
-#endif
-
+#else
     PFoops (OOPS_FATAL, "Attribute %s not found", PFatt_str (att));
 
     /* assert ("name not found"); */
     return att_NULL; /* pacify picky compilers */
+#endif
 }
 
 #ifndef NDEBUG

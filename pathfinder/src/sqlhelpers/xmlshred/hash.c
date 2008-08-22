@@ -87,9 +87,6 @@ bucket_insert (bucket_t *bucket, const xmlChar *key, int id)
     }
     else
         return bucket;
-
-    /* satisfy picky compilers */
-    return NULL;
 }
 
 /**

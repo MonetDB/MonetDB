@@ -735,8 +735,10 @@ attr_occurs (PFarray_t *atts, PFty_t partial_type)
                     "use should be `required', `prohibited' or `optional'");
     }
 
+#ifdef __INTEL_COMPILER
     /* just to pacify picky compilers; never reached due to "exit" in PFoops */
     return PFty_empty ();
+#endif
 }
 
 /**
