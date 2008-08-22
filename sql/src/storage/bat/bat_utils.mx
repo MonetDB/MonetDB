@@ -42,6 +42,19 @@ extern size_t copy_inserted(BAT *b, BAT *i );
 
 extern void leaks(void);
 
+extern BAT *ebats[MAXATOMS];
+extern BAT *eubats[MAXATOMS];
+
+#define isEbat(b) 	(ebats[b->ttype] && ebats[b->ttype] == b) 
+#define isEUbat(b) 	(eubats[b->ttype] && eubats[b->ttype] == b) 
+
+extern log_bid ebat2real(log_bid b, oid ibase);
+extern log_bid e_bat(int type);
+extern log_bid e_ubat(int type);
+extern log_bid ebat_copy(log_bid b, oid ibase, int temp);
+extern log_bid eubat_copy(log_bid b, int temp);
+extern void bat_utils_init(void);
+
 #endif /* BAT_UTILS_H */
 @c
 #include "sql_config.h"
@@ -191,4 +204,108 @@ copy_inserted(BAT *b, BAT *i )
        		nr++;
 	}
 	return nr;
+}
+
+BAT *ebats[MAXATOMS] = { NULL };
+BAT *eubats[MAXATOMS] = { NULL };
+
+log_bid 
+ebat2real(log_bid b, oid ibase)
+{
+	/* make a copy of b */
+	BAT *o = temp_descriptor(b);
+	BAT *c = BATcopy(o, TYPE_void, ATOMtype(o->ttype), TRUE);
+	log_bid r;
+
+	BATseqbase(c, ibase );
+	c->batDirty |= 2;
+	r = temp_create(c);
+	bat_destroy(c);
+	bat_destroy(o);
+	return r;
+}
+
+log_bid 
+e_bat(int type)
+{
+	if (!ebats[type]) 
+		ebats[type] = BATnew(TYPE_void, type, 0);
+	return temp_create(ebats[type]);
+}
+
+log_bid 
+e_ubat(int type)
+{
+	if (!eubats[type]) 
+		eubats[type] = BATnew(TYPE_oid, type, 0);
+	return temp_create(eubats[type]);
+}
+
+
+log_bid 
+ebat_copy(log_bid b, oid ibase, int temp)
+{
+	/* make a copy of b */
+	BAT *o = temp_descriptor(b);
+	BAT *c;
+	log_bid r;
+
+	if (!ebats[o->ttype]) 
+		ebats[o->ttype] = BATnew(TYPE_void, o->ttype, 0);
+
+	if (!temp && BATcount(o)) {
+		c = BATcopy(o, TYPE_void, o->ttype, TRUE);
+		BATseqbase(c, ibase );
+		c->batDirty |= 2;
+		BATcommit(c);
+		bat_set_access(c, BAT_READ);
+		r = temp_create(c);
+		bat_destroy(c);
+	} else {
+		c = ebats[o->ttype];
+		r = temp_create(c);
+	}
+	bat_destroy(o);
+	return r;
+}
+
+log_bid 
+eubat_copy(log_bid b, int temp)
+{
+	/* make a copy of b */
+	BAT *o = temp_descriptor(b);
+	BAT *c;
+	log_bid r;
+
+	if (!eubats[o->ttype]) 
+		eubats[o->ttype] = BATnew(TYPE_oid, o->ttype, 0);
+
+	if (!temp && BATcount(o)) {
+		c = BATcopy(o, TYPE_oid, o->ttype, TRUE);
+		BATcommit(c);
+		r = temp_create(c);
+		bat_set_access(c, BAT_READ);
+		bat_destroy(c);
+	} else {
+		c = eubats[o->ttype];
+		r = temp_create(c);
+	}
+	bat_destroy(o);
+	return r;
+}
+
+void
+bat_utils_init(void)
+{
+	int t;
+
+	for (t=1; t<GDKatomcnt; t++) {
+		if (BATatoms[t].name[0]) {
+			eubats[t] = BATnew(TYPE_oid, t, 0);
+			ebats[t] = BATnew(TYPE_void, t, 0);
+			BATseqbase(ebats[t],0);
+			bat_set_access(eubats[t], BAT_READ);
+			bat_set_access(ebats[t], BAT_READ);
+		}
+	}
 }

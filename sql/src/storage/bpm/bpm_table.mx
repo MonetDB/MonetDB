@@ -46,59 +46,15 @@ operators.
 @c
 #include "sql_config.h"
 #include "bpm_table.h"
+#include "bat/bat_table.h"
 #include "bpm_storage.h"
-#include "bat/bat_utils.h"
 
 static BAT *
 full_column(sql_column *c, BAT *d, BAT *s )
 {
 	sql_bpm *p = c->data;
-	/* return full normalized column bat
 
-		if (s) {
-			b := b.semijoin(s);
-			i := i.semijoin(s);
-			u := u.semijoin(s);
-		}
-		b := b.kunion(i);
-		b := b.kdiff(u);
-		b := b.kunion(u);
-		b := b.kdiff(reverse(d));
-	*/
-	BAT *r, *b, *u, *i = temp_descriptor(p->parts[p->ins].bid);
-
-	if (p->ins==0) {
-		r = i; 
-		if (s) {
-			r = BATsemijoin(i,s);
-			bat_destroy(i);
-		}
-		return r;
-	}
-	b = temp_descriptor(p->parts[0].bid);
-	u = temp_descriptor(p->parts[0].ubid);
-	if (s) {
-		BAT *t;
-
-		t = BATsemijoin(b,s); bat_destroy(b); b = t;
-		t = BATsemijoin(i,s); bat_destroy(i); i = t;
-		t = BATsemijoin(u,s); bat_destroy(u); u = t;
-	}
-	assert(b->ttype == i->ttype);
-	if (BATcount(i)) {
-		r = BATkunion(b,i); bat_destroy(b); b = r;
-	}
-	bat_destroy(i); 
-	if (BATcount(u)) {
-		r = BATkdiff(b,u); bat_destroy(b); b = r;
-		assert(b->ttype == u->ttype);
-		r = BATkunion(b,u); bat_destroy(b); b = r;
-	}
-	bat_destroy(u); 
-	if (d && BATcount(d)) {
-		r = BATkdiff(b,BATmirror(d)); bat_destroy(b); b = r;
-	}
-	return b;
+	return delta_full_bat( &p->parts[0], isTemp(c), d, s);
 }
 
 static ssize_t
@@ -197,7 +153,6 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		store_funcs.append_col(tr, c, val, c->type.type->localtype);
 		cnt++;
 	}
-	t->cnt ++;
 	if (n) {
 		fprintf(stderr, "called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
 		assert(0);

@@ -24,6 +24,7 @@
 #include "store_connections.h"
 #include "store_sequence.h"
 
+#include <bat/bat_utils.h>
 #include <bat/bat_storage.h>
 #include <bat/bat_table.h>
 #include <bat/bat_logger.h>
@@ -34,8 +35,8 @@
 
 #include <m4/bpm.h>
 
-/* version 04.00.00 of catalog */
-#define CATALOG_VERSION 40000
+/* version 04.00.10 of catalog */
+#define CATALOG_VERSION 40010
 
 static MT_Lock bs_lock;
 static int store_oid = 0;
@@ -559,7 +560,6 @@ load_table(sql_trans *tr, sql_schema *s, ssize_t rid)
 	t->pkey = NULL;
 	t->s = s;
 	t->sz = COLSIZE;
-	t->cnt = 0;
 
 	cs_init(&t->columns, (fdestroy) &column_destroy);
 	cs_init(&t->idxs, (fdestroy) &idx_destroy);
@@ -1097,7 +1097,6 @@ create_sql_table(char *name, sht type, bit system, int persistence, int commit_a
 	cs_init(&t->triggers, (fdestroy) &trigger_destroy);
 	t->pkey = NULL;
 	t->sz = COLSIZE;
-	t->cnt = 0;
 	t->cleared = 0;
 	t->s = NULL;
 	return t;
@@ -1168,8 +1167,12 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 	sql_schema *s, *p = NULL;
 	sql_table *t, *types, *funcs, *args;
 	sql_trans *tr;
+	int v = 1;
 
 	bs_debug = debug;
+
+	/* initialize empty bats */
+	bat_utils_init();
 	if (store == store_bat) {
 		bat_storage_init(&store_funcs);
 		bat_table_init(&table_funcs);
@@ -1189,11 +1192,12 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 	} else if (store == store_bpm) {
 		bpm_storage_init(&store_funcs);
 		bpm_table_init(&table_funcs);
-		bpm_logger_init(&logger_funcs);
+		bat_logger_init(&logger_funcs);
+		v<<=1;
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
-	    logger_funcs.create(logdir, dbname, CATALOG_VERSION) == LOG_ERR)
+	    logger_funcs.create(logdir, dbname, CATALOG_VERSION*v) == LOG_ERR)
 		return -1;
 
 	MT_lock_init(&bs_lock, "SQL_bs_lock");
@@ -1659,7 +1663,6 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 
 	t->s = s;
 	t->sz = ot->sz;
-	t->cnt = ot->cnt;
 	t->cleared = 0;
 
 	if (ot->columns.set) {
@@ -3475,7 +3478,6 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 			(void)store_funcs.clear_idx(tr, ci);
 		}
 	}
-	t->cnt = 0;
 	return sz;
 }
 

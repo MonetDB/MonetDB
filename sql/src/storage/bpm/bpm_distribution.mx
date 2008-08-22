@@ -44,7 +44,7 @@ extern bpmHost bpm_set_default_host(void);
 @c
 #include "sql_config.h"
 #include "bpm_distribution.h"
-#include "bpm_logger.h"
+#include "bat/bat_logger.h"
 #include "bat/bat_utils.h"
 #include <sql_string.h>
 
@@ -199,9 +199,9 @@ bpm_init_host(void)
 {
 	int p;
 
-        if (!dist_id && (p = logger_find_bat(bpm_logger, "dist_id"))) {
+        if (!dist_id && (p = logger_find_bat(bat_logger, "dist_id"))) {
                 #define get_bat(nme) \
-                        temp_descriptor(logger_find_bat(bpm_logger, nme))
+                        temp_descriptor(logger_find_bat(bat_logger, nme))
                 dist_id = temp_descriptor(p);
                 dist_host = get_bat("dist_host");
                 dist_port = get_bat("dist_port");
@@ -219,12 +219,12 @@ bpm_init_host(void)
 		dist_passwd = bat_new(TYPE_oid, TYPE_str, 0);
 
 #define log_P(l, b, n) logger_add_bat(l, b, n); log_bat_persists(l, b, n)
-                log_P(bpm_logger, dist_id, "dist_id");
-                log_P(bpm_logger, dist_host, "dist_host");
-                log_P(bpm_logger, dist_port, "dist_port");
-                log_P(bpm_logger, dist_dbname, "dist_dbname");
-                log_P(bpm_logger, dist_user, "dist_user");
-                log_P(bpm_logger, dist_passwd, "dist_passwd");
+                log_P(bat_logger, dist_id, "dist_id");
+                log_P(bat_logger, dist_host, "dist_host");
+                log_P(bat_logger, dist_port, "dist_port");
+                log_P(bat_logger, dist_dbname, "dist_dbname");
+                log_P(bat_logger, dist_user, "dist_user");
+                log_P(bat_logger, dist_passwd, "dist_passwd");
         }
 }
 

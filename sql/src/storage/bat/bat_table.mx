@@ -41,21 +41,23 @@ operators.
 #define BAT_TABLE_H
 
 #include "sql_storage.h"
+#include "bat/bat_storage.h"
+#include "bat/bat_utils.h"
 
 /* initialize bat storage call back functions interface */
 extern int bat_table_init( table_functions *tf );
+
+extern BAT* delta_full_bat( sql_delta *bat, int temp, BAT *d, BAT *s);
 
 #endif /*BAT_TABLE_H*/
 @c
 #include "sql_config.h"
 #include "bat_table.h"
 #include "bat_utils.h"
-#include "bat_storage.h"
 
-static BAT *
-full_column(sql_column *c, BAT *d, BAT *s )
+BAT *
+delta_full_bat( sql_delta *bat, int temp, BAT *d, BAT *s)
 {
-	sql_delta *bat = c->data;
 	/* return full normalized column bat
 
 		if (s) {
@@ -70,7 +72,7 @@ full_column(sql_column *c, BAT *d, BAT *s )
 	*/
 	BAT *r, *b, *u, *i = temp_descriptor(bat->ibid);
 	r = i; 
-	if (isTemp(c)) {
+	if (temp) {
 		if (s) {
 			r = BATsemijoin(i,s);
 			bat_destroy(i);
@@ -101,6 +103,12 @@ full_column(sql_column *c, BAT *d, BAT *s )
 		r = BATkdiff(b,BATmirror(d)); bat_destroy(b); b = r;
 	}
 	return b;
+}
+
+static BAT *
+full_column(sql_column *c, BAT *d, BAT *s )
+{
+	return delta_full_bat(c->data, isTemp(c), d, s);
 }
 
 static ssize_t
@@ -199,7 +207,6 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		store_funcs.append_col(tr, c, val, c->type.type->localtype);
 		cnt++;
 	}
-	t->cnt ++;
 	if (n) {
 		fprintf(stderr, "called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
 		assert(0);

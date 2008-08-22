@@ -27,6 +27,7 @@ typedef struct sql_bat {
 	char *name;	/* name of the main bat */
 	int bid;
 	int ubid;	/* bat with old updated values (su only) */
+	size_t cnt;		/* number of tuples (excluding the deletes) */
 } sql_bat;
 
 #define bat_set_access(b,access) b->P->restricted = access
@@ -189,6 +190,7 @@ append_bat( sql_bat *bat, BAT *i )
 {
 	BAT *b = temp_descriptor(bat->bid);
 
+	bat->cnt += BATcount(i);
 	if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void){
 		temp_destroy(bat->bid);
 		bat->bid = temp_create(i);
@@ -206,6 +208,7 @@ append_val( sql_bat *bat, void *i )
 	BAT *b = temp_descriptor(bat->bid);
 
 	BUNappend(b, i, TRUE);
+	bat->cnt ++;
 	bat_destroy(b);
 }
 
@@ -272,14 +275,28 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 		delete_val(bat, ib);
 }
 
+static size_t
+count_col(sql_column *col)
+{
+	sql_bat *b = col->data;
+	return b->cnt;
+}
+
+static size_t
+count_idx(sql_idx *idx)
+{
+	sql_bat *b = idx->data;
+	return b->cnt;
+}
+
 static int 
-load_bat( sql_bat *bat, lng *cnt ) 
+load_bat( sql_bat *bat) 
 {
 	BAT *b;
 
 	b = quick_descriptor(logger_find_bat(restrict_logger, bat->name));
 	bat->bid = temp_create(b);
-	*cnt = BATcount(b);
+	bat->cnt = (size_t)BATcount(b);
 	return LOG_OK;
 }
 
@@ -313,12 +330,11 @@ snapshot_new_persistent_bat(sql_trans *tr, sql_bat *bat)
 }
 
 static int
-new_persistent_bat(sql_trans *tr, sql_bat *bat, lng *cnt) 
+new_persistent_bat(sql_trans *tr, sql_bat *bat) 
 {
 	BAT *b = temp_descriptor(bat->bid);
 
 	(void)tr;
-	*cnt = BATcount(b);
 	BATcommit(b);
 	bat_destroy(b);
 	return LOG_OK;
@@ -337,10 +353,10 @@ create_col(sql_trans *tr, sql_column *c)
 
 	(void)tr;
 	if (c->base.flag == TR_OLD && !isTempTable(c->t)){
-		return load_bat(bat, &c->t->cnt);
+		return load_bat(bat);
 	} else if (bat->bid && !isTempTable(c->t)) {
 		assert(active_store_type == store_su);
-		return new_persistent_bat( tr, c->data, &c->t->cnt);
+		return new_persistent_bat( tr, c->data);
 	} else {
 		if (!bat)
  			bat = c->data = ZNEW(sql_bat);
@@ -403,10 +419,10 @@ create_idx(sql_trans *tr, sql_idx *ni)
 
 	/* create bats for a loaded idx structure */
 	if (ni->base.flag == TR_OLD && !isTempTable(ni->t)){
-		return load_bat( bat, &ni->t->cnt);
+		return load_bat( bat);
 	} else if (bat->bid && !isTempTable(ni->t)) { 
 		assert(active_store_type == store_su);
-		return new_persistent_bat( tr, ni->data, &ni->t->cnt);
+		return new_persistent_bat( tr, ni->data);
 	} else if (!bat->bid) {
 		BAT *b = bat_new(TYPE_void, type, ni->t->sz);
 		if (!b) 
@@ -450,7 +466,6 @@ create_del(sql_trans *tr, sql_table *t)
 		assert(active_store_type == store_su);
 		b = temp_descriptor(bat->bid);
 		bat->bid = temp_create(b);
-		t->cnt -= BATcount(b);
 		bat_destroy(b);
 	} else if (!bat->bid) {
 		b = bat_new(TYPE_void, TYPE_oid, t->sz);
@@ -498,6 +513,7 @@ dup_bat(sql_trans *tr, sql_bat *obat, sql_bat *bat)
 	if (!obat)
 		return LOG_OK;
 	bat->bid = obat->bid;
+	bat->cnt = obat->cnt;
 	if (bat->bid)
 		temp_dup(bat->bid);
 	bat->name = _strdup(obat->name);
@@ -657,6 +673,7 @@ clear_bat(sql_trans *tr, sql_bat *bat)
 		BATcommit(b);
 		bat_destroy(b);
 	}
+	bat->cnt = 0;
 	return sz;
 }
 
@@ -685,19 +702,18 @@ clear_del(sql_trans *tr, sql_table *t)
 }
 
 static int 
-tr_update_bat( sql_trans *tr, sql_bat *obat, sql_bat *cbat, lng *cnt)
+tr_update_bat( sql_trans *tr, sql_bat *obat, sql_bat *cbat)
 {
 	int ok = LOG_OK;
 	BAT *cb = temp_descriptor(cbat->bid);
 
 	(void)tr;
-	(void)obat;
 	if (cbat->ubid) {
 		temp_destroy(cbat->ubid);
 		cbat->ubid = 0;
 	}
+	obat->cnt = cbat->cnt;
 	BATcommit(cb);
-	*cnt = BATcount(cb);
 	bat_destroy(cb);
 	return ok;
 }
@@ -707,7 +723,6 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 {
 	int ok = LOG_OK;
 	node *n, *m;
-	lng deleted = 0;
 
 	if (ft->cleared) {
 		(void)store_funcs.clear_del(tr->parent, tt);
@@ -717,15 +732,14 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			for (n = tt->idxs.set->h; n; n = n->next) 
 				(void)store_funcs.clear_idx(tr->parent, n->data);
 	}
-	tr_update_bat(tr, tt->data, ft->data, &deleted);
+	tr_update_bat(tr, tt->data, ft->data);
 	for (n = ft->columns.set->h, m = tt->columns.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
 		sql_column *cc = n->data;
 		sql_column *oc = m->data;
 
 		if (!cc->base.wtime) 
 			continue;
-		tr_update_bat(tr, oc->data, cc->data, &cc->t->cnt);
-		tt->cnt = cc->t->cnt;
+		tr_update_bat(tr, oc->data, cc->data);
 
 		if (cc->base.rtime)
 			oc->base.rtime = tr->stime;
@@ -744,7 +758,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 			if (!ci->base.wtime) 
 				continue;
-			tr_update_bat(tr, oi->data, ci->data, &ci->t->cnt);
+			tr_update_bat(tr, oi->data, ci->data);
 
 			if (ci->base.rtime)
 				oi->base.rtime = tr->stime;
@@ -752,7 +766,6 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			ci->base.rtime = ci->base.wtime = 0;
 		}
 	}
-	tt->cnt -= deleted;
 	return ok;
 }
 
@@ -897,6 +910,9 @@ su_storage_init( store_functions *sf)
 	sf->update_idx = (update_idx_fptr)&update_idx;
 	sf->delete_tab = (delete_tab_fptr)&delete_tab;
 
+	sf->count_col = (count_col_fptr)&count_col;
+	sf->count_idx = (count_idx_fptr)&count_idx;
+
 	sf->create_col = (create_col_fptr)&create_col;
 	sf->create_idx = (create_idx_fptr)&create_idx;
 	sf->create_del = (create_del_fptr)&create_del;
@@ -943,6 +959,9 @@ ro_storage_init( store_functions *sf)
 	sf->update_col = (update_col_fptr)NULL;
 	sf->update_idx = (update_idx_fptr)NULL;
 	sf->delete_tab = (delete_tab_fptr)NULL;
+
+	sf->count_col = (count_col_fptr)&count_col;
+	sf->count_idx = (count_idx_fptr)&count_idx;
 
 	sf->create_col = (create_col_fptr)&create_col;
 	sf->create_idx = (create_idx_fptr)&create_idx;

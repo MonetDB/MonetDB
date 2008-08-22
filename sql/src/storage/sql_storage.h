@@ -104,6 +104,12 @@ typedef void (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *d, int t);
 typedef void (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 
 /*
+-- count number of rows in column (excluding the deletes)
+ */
+typedef size_t (*count_col_fptr) (sql_column *c);
+typedef size_t (*count_idx_fptr) (sql_idx *i);
+
+/*
 -- create the necessary storage resources for columns, indices and tables
 -- returns LOG_OK, LOG_ERR
 */
@@ -168,6 +174,9 @@ typedef struct store_functions {
 	update_col_fptr update_col;
 	update_idx_fptr update_idx;
 	delete_tab_fptr delete_tab;
+
+	count_col_fptr count_col;
+	count_idx_fptr count_idx;
 
 	create_col_fptr create_col;
 	create_idx_fptr create_idx;

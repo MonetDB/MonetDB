@@ -152,7 +152,6 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		store_funcs.append_col(tr, c, val, c->type.type->localtype);
 		cnt++;
 	}
-	t->cnt ++;
 	if (n) {
 		fprintf(stderr, "called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
 		assert(0);

@@ -20,8 +20,6 @@
 #define M4_BPM_H
 
 /* initialize bpm call back functions interfaces */
-
-extern int bpm_logger_init( logger_functions *lf );
 extern int bpm_table_init( table_functions *tf );
 extern int bpm_storage_init( store_functions *sf );
 
@@ -34,10 +32,6 @@ extern int bpm_storage_init( store_functions *sf );
 #include "bpm.h"
 
 /* stubs simply call bat version */
-int 
-bpm_logger_init( logger_functions *lf ) {
-	return bat_logger_init(lf);
-}
 int 
 bpm_table_init( table_functions *tf ) {
 	return bat_table_init(tf);
