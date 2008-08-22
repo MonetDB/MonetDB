@@ -26,6 +26,10 @@
 
 INCLUDES = ../include $(MONETDB_INCS)
 
+# ignore warning "null dimension: sizeof()"
+# with Sun Studio 12 compiler
+milgen_CFLAGS = $(SUN_NOERR_CFLAGS)
+
 lib_mil = {
 	NOINST
 	DIR = libdir

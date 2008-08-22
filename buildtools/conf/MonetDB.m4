@@ -712,6 +712,7 @@ GCC_BISON_CFLAGS=""
 ICC_BISON_CFLAGS=""
 GCC_SWIG_CFLAGS=""
 ICC_SWIG_CFLAGS=""
+SUN_NOERR_CFLAGS=""
 CFLAGS_NO_OPT="-O0"
 if test "x$enable_strict" = xyes; then
 case "$GCC-$CC-$host_os" in
@@ -915,6 +916,13 @@ yes-*-*)
 	dnl  Sun compiler on Solaris
 	dnl  treat warnings as errors
 	X_CFLAGS="$X_CFLAGS -errwarn=%all"
+	dnl  Some pathfinder code triggers warnings that we cannot avoid (yet?);
+	dnl  hence, we do not treat warnings as errors for these files, only:
+	dnl  compiler/mil/milgen.brg: "null dimension: sizeof()"
+	dnl  compiler/sql/lalg2sql.brg: "null dimension: sizeof()"
+	dnl  compiler/algebra/planner.c: "null dimension: sizeof()"
+	dnl  modules/pftijah/pftijah_stem.mx: "too many struct/union initializers"
+	SUN_NOERR_CFLAGS="-errwarn=%none"
 	;;
 esac
 fi
