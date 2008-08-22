@@ -380,7 +380,7 @@ static InstrPtr
 MATpackAll2(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 {
 	int j;
-	InstrPtr r;
+	InstrPtr r = NULL;
 
 	if (mat[m].type == mat_none) {
 		r = mat_pack_mat(mb, mi, mat, m, mtop);
@@ -1248,6 +1248,7 @@ group_broken( InstrPtr p, int mtpe, int pack_mirror)
 	return 0;
 }
 
+#ifndef NDEBUG
 static int
 check_instr(MalBlkPtr mb, InstrPtr p)
 {
@@ -1259,6 +1260,7 @@ check_instr(MalBlkPtr mb, InstrPtr p)
 	}
 	return 0;
 }
+#endif
 
 static int
 OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) 
