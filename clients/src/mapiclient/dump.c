@@ -212,7 +212,7 @@ dump_foreign_keys(Mapi mid, char *schema, char *tname, stream *toConsole)
 			quoted_print(toConsole, c_sname);
 			stream_printf(toConsole, ".");
 			quoted_print(toConsole, c_tname);
-			stream_printf(toConsole, " ");
+			stream_printf(toConsole, " ADD ");
 		} else {
 			stream_printf(toConsole, ",\n\t");
 		}
