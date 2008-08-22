@@ -323,7 +323,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			int not_null = 0;
 			lng rows = 1;
 			int mode = 0;
-			int part = 0, off = 0;
+			int part = 0;
 			int k = getArg(p,0);
 			sql_bpm *bpm = NULL;
 			sql_schema *s = mvc_bind_schema(m, sname);
@@ -339,20 +339,15 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				mode = getVarConstant(mb, getArg(p,4)).val.ival;
 			}
 
+
 			if (s && f == bindidxRef) {
 				sql_idx *i = mvc_bind_idx(m, s, cname);
 
 				if (active_store_type == store_bpm && i->data) {
 					bpm = i->data;
-					if (mode == RDONLY || mode == RD_UPD)
-						part = bpm->ins;
-					else if (mode == RD_INS) {
-						part = bpm->nr - bpm->ins;
-						off = bpm->ins;
-					}
+					part = bpm->nr;
 				}
-				if (i->t->cnt && (mode == RDONLY || mode == RD_UPD))
-					rows = i->t->cnt;
+				rows = store_funcs.count_idx(i);
 			} else if (s && f == bindRef) {
 				sql_table *t = mvc_bind_table(m, s, tname);
 				sql_column *c = mvc_bind_column(m, t, cname);
@@ -361,17 +356,12 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 
 				if (active_store_type == store_bpm && c->data) {
 					bpm = c->data;
-					if (mode == RDONLY || mode == RD_UPD)
-						part = bpm->ins;
-					else if (mode == RD_INS) {
-						part = bpm->nr - bpm->ins;
-						off = bpm->ins;
-					}
+					part = bpm->nr;
 				}
-				if (c->t->cnt && (mode == RDONLY || mode == RD_UPD))
-					rows = c->t->cnt;
+				rows = store_funcs.count_col(c);
 			}	
-			varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_lng, &rows));
+			if (rows > 1 && mode != RD_INS)
+				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_lng, &rows));
 			if (not_null)
 				varSetProp(mb, k, notnilProp, op_eq, NULL);
 			if (0 && active_store_type == store_bpm && part && 
@@ -386,31 +376,23 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				pushInstruction(mb,q);
 			}
 			if (part <= 1) {
+				oid low = 0, high = low + rows;
 				pushInstruction(mb, p);
-				if (bpm) {
-					oid low = 0, high = 1;
 
-					low = bpm->parts[off].hlow;
-					assert(low != (oid)-1);
-					high = bpm->parts[off].hhgh;
-					if (high == (oid)-1)
-						high = oid_nil;
-					varSetProp(mb, getArg(p,0), hlbProp, op_gte, VALset(&vr, TYPE_oid, &low));
-					varSetProp(mb, getArg(p,0), hubProp, op_lt, VALset(&vr, TYPE_oid, &high));
+				if (mode == RD_INS) {
+					low = high;
+					high += BPM_SPLIT;
 				}
+				varSetProp(mb, getArg(p,0), hlbProp, op_gte, VALset(&vr, TYPE_oid, &low));
+				varSetProp(mb, getArg(p,0), hubProp, op_lt, VALset(&vr, TYPE_oid, &high));
 			} else {
 				int i, v = getArg(p,0);
 				int tpe = getVarType(mb, v);
 				int top = mb->stop;
+				oid low = 0, high = 0;
 
 				for(i=0; i<part; i++){
-					oid low = 0, high = 1;
-
-					low = bpm->parts[off+i].hlow;
-					assert(low != (oid)-1);
-					high = bpm->parts[off+i].hhgh;
-					if (high == (oid)-1)
-						high = oid_nil;
+					high += BPM_SPLIT;
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, matRef);
 					setFunctionId(q, f);
@@ -422,6 +404,8 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 
 					varSetProp(mb, getArg(q,0), hlbProp, op_gte, VALset(&vr, TYPE_oid, &low));
 					varSetProp(mb, getArg(q,0), hubProp, op_lt, VALset(&vr, TYPE_oid, &high));
+
+					low = high;
 				}
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q,matRef);
@@ -455,7 +439,7 @@ str defaultPlan=
 	"emptySet,"
 	/* "joinselect," */
 	/* "accessmode," not needed after patches to BKCappend */
-	/* "mitosis,"*/
+	//"mitosis,"
 	"aliases,"
 	/* "crack," */
 	/*"joinPath,"*/ 

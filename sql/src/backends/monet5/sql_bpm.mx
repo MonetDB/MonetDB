@@ -88,8 +88,6 @@ mat_bind(mvc *m, char *sname, char *tname, char *cname, int access, int part)
 	if (p->nr <= part) {
 		return NULL;
 	} else {
-		if (access == RD_INS)
-			part += p->ins;
 		if (access == RD_UPD){
 			assert(p->parts[part].ubid);
 			return temp_descriptor(p->parts[part].ubid);
@@ -133,8 +131,6 @@ mat_bind_idxbat(mvc *m, char *sname, char *cname, int access, int part)
 	if (p->nr <= part) {
 		return NULL;
 	} else {
-		if (access == RD_INS)
-			part += p->ins;
 		if (access == RD_UPD)
 			return temp_descriptor(p->parts[part].ubid);
 		return temp_descriptor(p->parts[part].bid);
@@ -181,7 +177,6 @@ Cparts(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *sname = (str *)getArgReference(stk, pci, 1);
 	str *tname = (str *)getArgReference(stk, pci, 2);
 	str *cname = (str *)getArgReference(stk, pci, 3);
-	int *access = (int *)getArgReference(stk, pci, 4);
 	int *parts = (int *)getArgReference(stk, pci, 5);
 
 	(void)d;
@@ -197,12 +192,8 @@ Cparts(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_idx *i = mvc_bind_idx(m, s, *cname);
 		p = i->data;
 	}
-	if (*access == RD_INS)
-		err = *parts != (p->nr-p->ins);
-	else
-		err = *parts != (p->ins);
-		    /* HACK ALERT */
-	if (!err || *access == RD_UPD) 
+	err = *parts != (p->nr);
+	if (!err) 
 		return MAL_SUCCEED;
 	throw(OPTIMIZER, "mal.assert", "parts changed");
 }
@@ -221,14 +212,14 @@ inc_parts(sql_table *t)
 	if (isTempTable(t) || isView(t))
 		return ;
 	for (n=t->columns.set->h; n; n = n->next) {
-		sql_column *c = n->data;
-		if (c->data && !bpm_add_partition(c->data))
-			return;
+		//sql_column *c = n->data;
+		//if (c->data && !bpm_add_partition(c->data))
+		//	return;
 	}
 	if (t->idxs.set) for (n=t->idxs.set->h; n; n = n->next) {
-		sql_idx *i = n->data;
-		if (i->data && !bpm_add_partition(i->data))
-			return;
+		//sql_idx *i = n->data;
+		//if (i->data && !bpm_add_partition(i->data))
+		//	return;
 	}
 }
 
@@ -264,22 +255,29 @@ inc_parts_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 send_part(sql_column *col, int part, BAT *b, str *conn)
 {
-	str tmp = NULL, ident = "romulo";
-	connection c;
-	sql_bpm *bpm;
+//	str tmp = NULL, ident = "romulo";
+//	connection c;
+//	sql_bpm *bpm = col->data;
 	
+	(void)col;
+	(void)part;
+	(void)b;
+	(void)conn;
 	/* lookup conn */
+/*
 	if ((tmp= RMTfindconn(&c, *conn)) != MAL_SUCCEED)
 		throw(SQL,"mat.send_part",tmp);
+*/
 	
 	/*send the fragment to the remote site*/ 
+/*
 	if ((tmp = RMTinternalput(&ident, c->mconn, newBatType(b->H->type, b->T->type), &b->batCacheid)) != MAL_SUCCEED)
 		throw(SQL,"mat.send_part",tmp);
 	
+*/
 	/*store the information about the fragment location*/
-	bpm = col->data;
-	if (!bpm_set_part_location(bpm, part, *conn, ident))
-		throw(SQL, "mat.send_part", "The storage of the remote location information failed!!");
+	//if (!bpm_set_part_location(bpm, part, *conn, ident))
+		//throw(SQL, "mat.send_part", "The storage of the remote location information failed!!");
 	return MAL_SUCCEED;
 }
 
@@ -328,20 +326,24 @@ send_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 get_part(sql_column *col, int part, ptr b)
 {
-	str tmp, host, remote;
-	connection c;
-	sql_bpm *bpm;
-	bpm = col->data;
+//	str tmp, host = NULL, remote = NULL;
+//	connection c;
+//	sql_bpm *bpm = col->data;
 	
-	bpm_get_part_location(bpm, part, &host, &remote);
+	(void)col;
+	//bpm_get_part_location(bpm, part, &host, &remote);
 
 	/* lookup conn */
+/*
 	if ((tmp = RMTfindconn(&c, host)) != MAL_SUCCEED)
 		throw(SQL,"mat.get_part",tmp);
+*/
 	
 	/*get a fragment from the remote site */
+/*
 	if ((tmp = RMTinternalget(c->mconn, remote, b)) != MAL_SUCCEED)	
 		throw(SQL,"mat.get_part",tmp);
+*/
 
 	if(!b)
 		throw(SQL, "mat.get_part", sql_message("Get remote part %d for column %s", part, col->base.name));
