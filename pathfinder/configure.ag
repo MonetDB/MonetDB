@@ -277,20 +277,34 @@ dnl hints about a function (style of variable argument list, functions
 dnl that never return, etc.)
 AC_MSG_CHECKING([if your compiler understands `__attribute__'])
 
+save_CFLAGS="$CFLAGS"
+case "$GCC-$CC-$host_os" in
+-*-solaris*)
+        dnl  Sun compiler on Solaris:
+	dnl  treat warnings as errors to fail on
+	dnl  'warning: attribute parameter "printf" is undefined'
+        CFLAGS="$CFLAGS -errwarn=%all"
+        ;;
+esac
+
 AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
 #include <stdlib.h>
 
-void foo (void) __attribute__ ((noreturn));
+static void foo (const char *a, ...)
+	__attribute__ ((format (printf, 1, 2)));
 
-void foo (void) { exit (0); }
+static void foo (const char *a, ...)
+	{ (void)a; }
 
 ]],
-[[ foo (); ]]
+[[ foo ("%s", ""); ]]
 ),
 [AC_DEFINE([HAVE_FUNCTION_ATTRIBUTES], 1,
   [Does your compiler support function attributes (__attribute__)?])
 AC_MSG_RESULT(yes)],
 AC_MSG_RESULT(no))
+
+CFLAGS="$save_CFLAGS"
 
 AH_VERBATIM([__attribute__],
 [ /* If the compiler does not support function attributes via __attribute__,
