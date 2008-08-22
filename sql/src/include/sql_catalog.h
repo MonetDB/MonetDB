@@ -387,7 +387,6 @@ typedef struct sql_table {
 					a type definition
 				*/
 	int  sz;
-	lng  cnt;		/* number of tuples */
 
 	sql_ukey *pkey;
 	changeset columns;
