@@ -493,10 +493,12 @@ rel_find_exp( sql_rel *rel, sql_exp *e)
 		case op_except:
 		case op_inter:
 		{
-			if (rel->l)
-				ne = rel_find_exp(rel->l, e);
-			else if (rel->exps)
-				ne = exps_bind_column(rel->exps, e->r);
+			if (!rel->name) {
+				if (rel->l)
+					ne = rel_find_exp(rel->l, e);
+				else if (rel->exps)
+					ne = exps_bind_column(rel->exps, e->r);
+			}
 		}
 		break;
 		case op_basetable: 

@@ -1448,7 +1448,7 @@ refs_find_rel(list *refs, sql_rel *rel)
 		stmt *s = n->data;
 		char *name = table_name(s->op1.lval->h->data);
 		
-		if (strcmp(name, rel->name) == 0) {
+		if (rel->name && strcmp(name, rel->name) == 0) {
 			_DELETE(name);
 			return stmt_dup(s);
 		}

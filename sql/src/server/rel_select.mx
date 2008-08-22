@@ -888,6 +888,9 @@ rel_push_select(sql_rel *rel, sql_exp *ls, sql_exp *e)
 
 	for (n = l->h; n; n = n->next ) {
 		lrel = n->data;
+
+		if (rel_is_ref(lrel))
+			break;
 		
 		/* push down as long as the operators allow this */
 		if (!is_select(lrel->op) && lrel->op != op_join && 
@@ -945,6 +948,9 @@ rel_push_join(sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
 		lrel = ln->data;
 		rrel = rn->data;
 		
+		if (rel_is_ref(lrel) || rel_is_ref(rrel))
+			break;
+
 		/* push down as long as the operators allow this
 			and the relation is equal.
 		 */
@@ -2007,7 +2013,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				}
 				right = rl;
 			}
-			if (!right->name)
+			if (right->processed && !right->name)
 				rel_label(right, ++sql->label);
 			right = rel_distinct(right);
 		} else {
@@ -2198,15 +2204,35 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 	{
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
-		sql_rel *ls = rel;
-		sql_rel *rs = rel_copy(rel);
 
-		ls = rel_logical_exp(sql, ls, lo, f);
-		rs = rel_logical_exp(sql, rs, ro, f);
+		sql_rel *lr = rel;
+		sql_rel *rr = rel_copy(rel);
 
-		if (!ls || !rs)
+		lr = rel_logical_exp(sql, lr, lo, f);
+		rr = rel_logical_exp(sql, rr, ro, f);
+
+		if (!lr || !rr)
 			return NULL;
-		return rel_or(sql, ls, rs, f);
+		return rel_or(sql, lr, rr, f);
+
+/*
+		char *name;
+		sql_rel *lr, *rr;
+
+		rel_label(rel, ++sql->label);
+		name = rel->name;
+		stack_push_rel_view(sql, name, rel);
+		lr = stack_find_rel_view(sql, name);
+		rr = stack_find_rel_view(sql, name);
+		
+		lr = rel_logical_exp(sql, lr, lo, f);
+		rr = rel_logical_exp(sql, rr, ro, f);
+
+		if (!lr || !rr)
+			return NULL;
+		
+		return rel_or(sql, lr, rr, f);
+*/
 	}
 	case SQL_AND:
 	{
@@ -2284,7 +2310,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				}
 				right = rl;
 			}
-			rel_label(right, ++sql->label);
+			if (right->processed && !right->name)
+				rel_label(right, ++sql->label);
 			right = rel_distinct(right);
 		} else {
 			return sql_error(sql, 02, "IN: missing inner query");

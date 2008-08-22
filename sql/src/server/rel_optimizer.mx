@@ -702,11 +702,30 @@ order_joins(list *rels, list *exps)
 	return top;
 }
 
-static void
+static int
+rel_neg_in_size(sql_rel *r)
+{
+	if (is_union(r->op) && r->nrcols == 0) 
+		return -1 + rel_neg_in_size(r->l);
+	if (is_project(r->op) && r->nrcols == 0) 
+		return -1;
+	return 0;
+}
+
+static list *
 push_in_join_down(list *rels, list *exps)
 {
 	node *n;
 	int restart = 1;
+	list *nrels;
+
+	/* we should sort these first, ie small in's before large one's */
+	nrels = list_sort(rels, (fkeyvalue)&rel_neg_in_size, (fdup)&rel_dup);
+
+	/* we need to cleanup, the new refs ! */
+	rels->destroy = (fdestroy)rel_destroy;
+	list_destroy(rels);
+	rels = nrels;
 
 	/* one of the rels should be a op_union with nrcols == 0 */
 	while(restart) {
@@ -714,7 +733,7 @@ push_in_join_down(list *rels, list *exps)
 		sql_rel *r = n->data;
 	
 		restart = 0;
-		if (is_union(r->op) && r->nrcols == 0) {
+		if ((is_union(r->op) || is_project(r->op)) && r->nrcols == 0) {
 			/* next step find expression on this relation */
 			node *m;
 			sql_rel *l = NULL;
@@ -746,6 +765,7 @@ push_in_join_down(list *rels, list *exps)
 		}
 	    }
 	}
+	return rels;
 }
 
 static sql_rel *
@@ -773,8 +793,7 @@ reorder_join(mvc *sql, sql_rel *rel)
 		for(n = rels->h; n; n = n->next) 
 			rel_print(sql, n->data, 0);
 #endif
-		push_in_join_down(rels, exps);
-
+		rels = push_in_join_down(rels, exps);
 		rel = order_joins(rels, exps);
 	}
 	list_destroy(rels);
