@@ -70,10 +70,12 @@ opt_export  str intRef;
 opt_export  str ioRef;
 opt_export  str joinRef;
 opt_export  str bandjoinRef;
+opt_export  str thetajoinRef;
 opt_export  str kdifferenceRef;
 opt_export  str kunionRef;
 opt_export  str languageRef;
 opt_export  str likeselectRef;
+opt_export  str likeuselectRef;
 opt_export  str listRef;
 opt_export  str lockRef;
 opt_export  str lookupRef;
@@ -120,6 +122,7 @@ opt_export  str semaRef;
 opt_export  str semijoinRef;
 opt_export  str setAccessRef;
 opt_export  str setWriteModeRef;
+opt_export  str sliceRef;
 opt_export  str sortHRef;
 opt_export  str sortHTRef;
 opt_export  str sortRef;
@@ -140,6 +143,7 @@ opt_export  str unpackRef;
 opt_export  str updateRef;
 opt_export  str uselectRef;
 opt_export  str antiuselectRef;
+opt_export  str antijoinRef;
 
 opt_export int canBeCrackedProp;	/* binary */
 opt_export int inlineProp;		/* binary */
@@ -214,10 +218,12 @@ str intRef;
 str ioRef;
 str joinRef;
 str bandjoinRef;
+str thetajoinRef;
 str kdifferenceRef;
 str kunionRef;
 str languageRef;
 str likeselectRef;
+str likeuselectRef;
 str listRef;
 str lockRef;
 str lookupRef;
@@ -264,6 +270,7 @@ str semaRef;
 str semijoinRef;
 str setAccessRef;
 str setWriteModeRef;
+str sliceRef;
 str sortHRef;
 str sortHTRef;
 str sortRef;
@@ -284,6 +291,7 @@ str unpackRef;
 str updateRef;
 str uselectRef;
 str antiuselectRef;
+str antijoinRef;
 
 int canBeCrackedProp;
 int inlineProp;
@@ -354,10 +362,12 @@ void optimizerInit(){
 		ioRef = putName("io",2);
 		joinRef = putName("join",4);
 		bandjoinRef = putName("bandjoin",8);
+		thetajoinRef = putName("thetajoin",9);
 		kdifferenceRef= putName("kdifference",11);
 		kunionRef= putName("kunion",6);
 		languageRef= putName("language",8);
-		likeselectRef = putName("likeselect",10);
+		likeselectRef = putName("like_select",11);
+		likeuselectRef = putName("like_uselect",12);
 		listRef = putName("list",4);
 		lockRef = putName("lock",4);
 		lookupRef = putName("lookup",6);
@@ -404,6 +414,8 @@ void optimizerInit(){
 		semijoinRef = putName("semijoin",8);
 		setAccessRef = putName("setAccess",9);
 		setWriteModeRef= putName("setWriteMode",12);
+		sliceRef = putName("slice",5);
+		sortHRef = putName("sortH",5);
 		sortHTRef = putName("sortHT",6);
 		sortRef = putName("sort",4);
 		sortReverseTailRef = putName("sortReverseTail",15);
@@ -423,6 +435,7 @@ void optimizerInit(){
 		updateRef = putName("update",6);
 		uselectRef = putName("uselect",7);
 		antiuselectRef = putName("antiuselect",11);
+		antijoinRef = putName("antijoin",8);
 
 		canBeCrackedProp = PropertyIndex("canBeCracked");
 		inlineProp = PropertyIndex("inline");
