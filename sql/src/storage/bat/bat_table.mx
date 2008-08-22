@@ -41,8 +41,8 @@ operators.
 #define BAT_TABLE_H
 
 #include "sql_storage.h"
-#include "bat/bat_storage.h"
-#include "bat/bat_utils.h"
+#include "bat_storage.h"
+#include "bat_utils.h"
 
 /* initialize bat storage call back functions interface */
 extern int bat_table_init( table_functions *tf );
