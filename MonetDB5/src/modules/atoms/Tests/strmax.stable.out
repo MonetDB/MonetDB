@@ -15,21 +15,21 @@ function user.main():void;              #  0 main:void := user.main() {G}
     s1 := "hello";                      #  1 s1:str := _2:str {G}
     s2 := "world";                      #  2 s2:str := _4:str {G}
     s3 := nil:str;                      #  3 s3:str := _6:str {G}
-    a1 := str.max(s1,s2);               #  4 a1:str := STRmax(s1:str, s2:str) {G}
+    a1 := calc.max(s1,s2);              #  4 a1:str := STRmax(s1:str, s2:str) {G}
     io.print(a1);                       #  5 _8:void := IOprint_val(a1:str) 
-    a2 := str.max(s1,s3);               #  6 a2:str := STRmax(s1:str, s3:str) {G}
+    a2 := calc.max(s1,s3);              #  6 a2:str := STRmax(s1:str, s3:str) {G}
     io.print(a2);                       #  7 _10:void := IOprint_val(a2:str) 
-    b1 := str.min(s1,s2);               #  8 b1:str := STRmin(s1:str, s2:str) {G}
+    b1 := calc.min(s1,s2);              #  8 b1:str := STRmin(s1:str, s2:str) {G}
     io.print(b1);                       #  9 _12:void := IOprint_val(b1:str) 
-    b2 := str.min(s1,s3);               # 10 b2:str := STRmin(s1:str, s3:str) {G}
+    b2 := calc.min(s1,s3);              # 10 b2:str := STRmin(s1:str, s3:str) {G}
     io.print(b2);                       # 11 _14:void := IOprint_val(b2:str) 
-    c1 := str.max_no_nil(s1,s2);        # 12 c1:str := STRmax_no_nil(s1:str, s2:str) {G}
+    c1 := calc.max_no_nil(s1,s2);       # 12 c1:str := STRmax_no_nil(s1:str, s2:str) {G}
     io.print(c1);                       # 13 _16:void := IOprint_val(c1:str) 
-    c2 := str.max_no_nil(s1,s3);        # 14 c2:str := STRmax_no_nil(s1:str, s3:str) {G}
+    c2 := calc.max_no_nil(s1,s3);       # 14 c2:str := STRmax_no_nil(s1:str, s3:str) {G}
     io.print(c2);                       # 15 _18:void := IOprint_val(c2:str) 
-    d1 := str.min_no_nil(s1,s2);        # 16 d1:str := STRmin(s1:str, s2:str) {G}
+    d1 := calc.min_no_nil(s1,s2);       # 16 d1:str := STRmin_no_nil(s1:str, s2:str) {G}
     io.print(d1);                       # 17 _20:void := IOprint_val(d1:str) 
-    d2 := str.min_no_nil(s1,s3);        # 18 d2:str := STRmin(s1:str, s3:str) {G}
+    d2 := calc.min_no_nil(s1,s3);       # 18 d2:str := STRmin_no_nil(s1:str, s3:str) {G}
     io.print(d2);                       # 19 _22:void := IOprint_val(d2:str) 
 end main;                               # 20  
 [ "world" ]
@@ -39,7 +39,7 @@ end main;                               # 20
 [ "world" ]
 [ "hello" ]
 [ "hello" ]
-[ nil ]
+[ "hello" ]
 
 # 09:36:24 >  
 # 09:36:24 >  Done.
