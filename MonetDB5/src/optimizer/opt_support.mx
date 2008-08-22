@@ -531,6 +531,9 @@ opt_export int hasSideEffects(InstrPtr p, int strict);
 opt_export int isSideEffectFree(MalBlkPtr mb);
 opt_export int isBlocking(InstrPtr p);
 opt_export int isFragmentGroup(InstrPtr q);
+opt_export int isMatJoinOp(InstrPtr q);
+opt_export int isMapOp(InstrPtr q);
+opt_export int isDiffOp(InstrPtr q);
 opt_export int allTargetsVisible(MalBlkPtr mb, Lifespan span, int pc,int qc);
 @}
 @-
@@ -1184,12 +1187,33 @@ isBlocking(InstrPtr p)
 Used in the merge table optimizer. It is build incrementally
 and should be conservative.
 @c
+int isMapOp(InstrPtr p){
+	return	(getModuleId(p)== batcalcRef) ||
+		(getModuleId(p)== batmtimeRef) ||
+		(getModuleId(p)== batstrRef) ||
+		(getModuleId(p)== mkeyRef); 
+}
+
+int isDiffOp(InstrPtr p){
+	return (getModuleId(p) == algebraRef &&
+	    	(getFunctionId(p) == semijoinRef || 
+ 	     	 getFunctionId(p) == kdifferenceRef));
+}
+ 
+int isMatJoinOp(InstrPtr p){
+	return (getModuleId(p) == algebraRef && 
+                (getFunctionId(p) == joinRef || 
+//               getFunctionId(p) == antijoinRef || is not mat save
+                 getFunctionId(p) == thetajoinRef ||
+                 getFunctionId(p) == bandjoinRef));
+}
+ 
 int isFragmentGroup(InstrPtr p){
-	return		(getModuleId(p)== batcalcRef) ||
-			(getModuleId(p)== batmtimeRef) ||
-			(getModuleId(p)== batstrRef) ||
+	return		
+/*
 			(getModuleId(p)== constraintsRef && 
 				getFunctionId(p)== getName("emptySet",8)) ||
+*/
 			(getModuleId(p)== algebraRef && (
 				getFunctionId(p)== selectRef ||
 				getFunctionId(p)== selectNotNilRef ||
@@ -1197,16 +1221,18 @@ int isFragmentGroup(InstrPtr p){
 				getFunctionId(p)== projectRef ||
 				getFunctionId(p)== antiuselectRef ||
 				getFunctionId(p)== likeselectRef ||
-				getFunctionId(p)== joinRef ||
-				getFunctionId(p)== semijoinRef ||
-				getFunctionId(p)== kdifferenceRef ||
+				getFunctionId(p)== likeuselectRef ||
 				getFunctionId(p)== reuseRef
+			)	)  ||
+			(getModuleId(p)== pcreRef && (
+				getFunctionId(p)== likeselectRef ||
+				getFunctionId(p)== likeuselectRef 
 			)	)  ||
 			(getModuleId(p)== batRef && (
 				getFunctionId(p)== reverseRef ||
-				getFunctionId(p)== mirrorRef ||
-				getFunctionId(p)== setAccessRef ||
-				getFunctionId(p)== setWriteModeRef 
+				getFunctionId(p)== mirrorRef //||
+//				getFunctionId(p)== setAccessRef ||
+//				getFunctionId(p)== setWriteModeRef 
 			) );
 }
 @h
