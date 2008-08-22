@@ -41,6 +41,38 @@ comment "export a graph in a named rdf db";
 
 
 @c
+/* TODO
+ * simple literals and typed strings (literals with type xsd:string) order inconsistency
+ * 
+ * The current SPARQL standard (15 January 2008)  presents an inconsistency in
+ * section 9.1 (http://www.w3.org/TR/2008/REC-rdf-sparql-query-20080115/#modOrderBy)
+ * in defining the order between those literals. It states that:
+ * 
+ * a) A plain literal is lower than an RDF literal
+ * 	  with type xsd:string of the same lexical form.
+ * b) SPARQL does not define a total ordering of all possible RDF terms. Here are
+ *    a few examples of pairs of terms for which the relative order is undefined:
+ *    - ...
+ *    - "a" and "a"^^xsd:string (a simple literal and an xsd:string)
+ *    - ...
+ * 
+ * A discussion on this topic can be found in the w3c mailing list at:
+ * http://lists.w3.org/Archives/Public/public-sparql-dev/2008JulSep/0010.html
+ * 
+ * At the moment in MonetDB simple literals and typed strings with same lexical form
+ * are considered equals and mapped to the same integer, thus complying to statement b)
+ * (consider them equals is an extension of consider the order undefined).
+ * 
+ * In case in the next SPARQL specification or errata would turn in favor of
+ * statement a), instead of ordering the data tables on SPO, SOP, PSO, POS,
+ * OSP, OPS, and then applying this order to the T column for each permutation,
+ * we have to assign to RDF_TYPE_PLAIN a lower value than RDF_TYPE_STRING,
+ * and then order on SPOT, SOTP, PSOT, POTS, OTSP, OTPS, i.e. sort also on the T column
+ * just after O in every permutation.
+ * This approach would assign the same integer to simple literals and typed
+ * strings with same lexical form but also order them properly in the data tables.
+ */
+
 #include "mal_config.h"
 #include "mal.h"
 #include "mal_exception.h"
