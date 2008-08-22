@@ -922,7 +922,7 @@ bin_arith (struct PFla_pair_t *args,
                                   (PFalg_simple_type_t [3])
                                       { aat_int, aat_dbl, aat_dec },
                                   bin_arith_callback,
-                                  OP);
+                                  (void*) OP);
     return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
 }
 
