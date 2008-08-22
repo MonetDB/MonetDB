@@ -1630,7 +1630,7 @@ xquery_print_doc_DRIVER (
 		} else { /* the new container implementation */
                   getWsValue(p, ctx, docIndex, PRE_SIZE, start_oid);
 		  /* oid sz = *(int*) p; */
-		  oid sz = (*(int*) p) & ~(1<<31);
+		  oid sz = (*(int*) p) & ~(1U<<31);
                   if (emitNodesInRange (ctx, start_oid,start_oid+sz, NULL, docIndex)) {
                     if (ctx->driverFun->handle_endDocument(ctx)) {
                         res = GDK_SUCCEED;
@@ -2524,7 +2524,6 @@ fn_deep_eq_range(
 	lpre++;
 	rpre++;
     } while ( 1 );
-    return 1; /* range is equal */
 }
 
 static int 

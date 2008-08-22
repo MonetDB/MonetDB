@@ -101,7 +101,7 @@ PFll_following_sibling(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size,
 @= init
     BATiter iter_bati = bat_iterator(iter_bat), ctx_bati = bat_iterator(ctx_bat);
     char *name = "PFll_@1";
-    const int sz_msk = ~(1<<31);
+    const int sz_msk = ~(1U<<31);
     int *size = 0, sz = 0;
     chr *level = 0;
     chr *kind = 0, kind_test = *_kind_test;

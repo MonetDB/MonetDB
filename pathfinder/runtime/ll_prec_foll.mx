@@ -299,7 +299,7 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
                             cur_following++;
                         } else { 
                             /* this node has been deleted! skip the hole */
-                            cur_following += 1 + (sz & ~(1<<31)); 
+                            cur_following += 1 + (sz & ~(1U<<31)); 
                         }
                     }
                 } else {
@@ -319,7 +319,7 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
                                 cur_following++;
                             } else { 
                                 /* this node has been deleted! skip the hole */
-                                cur_following += 1 + (sz & ~(1<<31)); 
+                                cur_following += 1 + (sz & ~(1U<<31)); 
                             }
                         }
                     } else {
@@ -342,7 +342,7 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
                                 cur_following++;
                             } else { 
                                 /* this node has been deleted! skip the hole */
-                                cur_following += 1 + (sz & ~(1<<31)); 
+                                cur_following += 1 + (sz & ~(1U<<31)); 
                             }
                         }
                     }
@@ -387,7 +387,7 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
                         cur_following++;
                     } else { 
                         /* this node has been deleted! skip the hole */
-                        cur_following += 1 + (sz & ~(1<<31)); 
+                        cur_following += 1 + (sz & ~(1U<<31)); 
                     }
                 }
                 /* mark the end point of the BUNs section in the BUNheap */
@@ -459,7 +459,7 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
                         cur_following++;
                     } else { 
                         /* this node has been deleted! skip the hole */
-                        cur_following += 1 + (sz & ~(1<<31)); 
+                        cur_following += 1 + (sz & ~(1U<<31)); 
                     }
                 }
                 /* mark the end point of the BUNs section in the BUNheap */
@@ -544,7 +544,7 @@ PFll_preceding(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
                     ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, 1 iter\n", name);
                     while(cur_preceding < boundary) {
                         int sz = size[cur_preceding];
-                        oid new_preceding = cur_preceding + 1 + (sz & ~(1<<31));
+                        oid new_preceding = cur_preceding + 1 + (sz & ~(1U<<31));
                         if (sz < 0) {
                             cur_preceding = new_preceding; /* skip hole */
                         } else
@@ -564,7 +564,7 @@ PFll_preceding(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
                         ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, n iter (key)\n", name);
                         while(cur_preceding < boundary) {
                             int sz = size[cur_preceding];
-                            oid new_preceding = cur_preceding + 1 + (sz & ~(1<<31));
+                            oid new_preceding = cur_preceding + 1 + (sz & ~(1U<<31));
                             if (sz < 0) {
                                 cur_preceding = new_preceding; /* skip hole */
                             } else
@@ -586,7 +586,7 @@ PFll_preceding(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
                         ALGODEBUG THRprintf(GDKout, "%s: 1 ctx, n iter\n", name);
                         while(cur_preceding < boundary) {
                             int sz = size[cur_preceding];
-                            oid new_preceding = cur_preceding + 1 + (sz & ~(1<<31));
+                            oid new_preceding = cur_preceding + 1 + (sz & ~(1U<<31));
                             if (sz < 0) {
                                 cur_preceding = new_preceding; /* skip hole */
                             } else
@@ -639,7 +639,7 @@ PFll_preceding(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
                 PFll_check_BAT_capacity(res, grow, res_scur, res_hcur, res_tcur);
                 while(cur_preceding < boundary) {
                     int sz = size[cur_preceding];
-                    oid new_preceding = cur_preceding + 1 + (sz & ~(1<<31));
+                    oid new_preceding = cur_preceding + 1 + (sz & ~(1U<<31));
                     if (sz < 0) {
                         cur_preceding = new_preceding; /* skip hole */
                     } else
@@ -693,7 +693,7 @@ PFll_preceding(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
                 PFll_check_BAT_capacity(res, grow, res_scur, res_hcur, res_tcur);
                 while(cur_preceding < boundary) {
                     int sz = size[cur_preceding];
-                    oid new_preceding = cur_preceding + 1 + (sz & ~(1<<31));
+                    oid new_preceding = cur_preceding + 1 + (sz & ~(1U<<31));
                     if (sz < 0) {
                         cur_preceding = new_preceding; /* skip hole */
                     } else

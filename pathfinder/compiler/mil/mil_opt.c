@@ -558,7 +558,7 @@ static void opt_assign(opt_t *o, opt_name_t *name, unsigned int stmt) {
                 }
                 if (o->vars[i].setmax == OPT_REFS) {
                         /* overflow; keep this statement no matter what */
-                        o->stmts[stmt].used = 1<<31;
+                        o->stmts[stmt].used = 1U<<31;
                         o->vars[i].setlo[cond] = o->vars[i].sethi[cond] = 0;
                 } else {
                         o->vars[i].lastset[o->vars[i].setmax] = stmt;

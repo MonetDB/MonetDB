@@ -104,8 +104,8 @@ typedef struct {
 
 static INLINE oid 
 skipholes(oid pre, unsigned int *pre_size) {
-     while(pre_size[pre] & (1<<31)) 
-         pre += 1 + (pre_size[pre] & ~(1<<31)); /* skip over holes */
+     while(pre_size[pre] & (1U<<31)) 
+         pre += 1 + (pre_size[pre] & ~(1U<<31)); /* skip over holes */
      return pre; 
 }
 

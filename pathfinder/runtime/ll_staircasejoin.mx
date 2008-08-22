@@ -77,13 +77,13 @@ const int PF_SOFTWARE_PREFETCH = 128;
 @:ll_head(descendant,FALSE)@
     self = FALSE;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
-@:ll_main(descendant, (size[pre] & (1<<31)))@
+@:ll_main(descendant, (size[pre] & (1U<<31)))@
 
 /* DESCENDANT-OR-SELF STEP */
 @:ll_head(descendant_or_self,FALSE)@
     self = TRUE;
     res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
-@:ll_main(descendant, (size[pre] & (1<<31)))@
+@:ll_main(descendant, (size[pre] & (1U<<31)))@
 
 /* CHILD STEP */
 @:ll_proto(child)@
@@ -237,7 +237,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
         oid *sdst = 0, *hdst = 0, *tdst = 0;
         size_t max_size = 0;
 
-        assert((size[fst_ctx] & (1<<31)) == 0);
+        assert((size[fst_ctx] & (1U<<31)) == 0);
         max_size = res_size = (size_t)(size[fst_ctx] + (int)self);
         if ( cand_bat ) {
             if ( BATcount(cand_bat) < res_size ) {
@@ -538,7 +538,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_ba
             for (; pre <= @1 && pre < *fst_pre; pre += (size[pre]&GDK_int_max) + 1) { 
             }
             for (;              pre <= lst_pre; pre += (size[pre]&GDK_int_max) + 1)
-              if ((size[pre] & (1<<31)) == 0) {
+              if ((size[pre] & (1U<<31)) == 0) {
 
                 /* poor man's binary search / exploiting forward scan */
                 while (fst_pre+1048576 <= cand_lst && *(oid*) (fst_pre+1048576) < pre)
@@ -562,13 +562,13 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_ba
         }
     } else if (kind) {
         for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
-            if ((size[pre] & (1<<31)) == 0 && kind[pre] == kind_test) {
+            if ((size[pre] & (1U<<31)) == 0 && kind[pre] == kind_test) {
                 @:inner_loop_child_body(@2,@3)@
             }
         }
     } else {
         for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
-            if ((size[pre] & (1<<31)) == 0) {
+            if ((size[pre] & (1U<<31)) == 0) {
                 @:inner_loop_child_body(@2,@3)@
             }
         }
@@ -866,7 +866,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *ca
             }
         } else {
             for ( ; pre <= @1 ; pre++ ) {
-                if ((kind && kind[pre] != kind_test) || (size[pre] & (1<<31))) continue; 
+                if ((kind && kind[pre] != kind_test) || (size[pre] & (1U<<31))) continue; 
                 for (j = 0 ; j < stack_top ; j++ ) {
                     *hdst++ = iters_on_stack[j];
                     *tdst++ = pre;

@@ -587,7 +587,7 @@ createHole(shredCtxStruct *shredCtx)
     stream_printf(GDKout, "CREATEHOLE: pre=%d\n", shredCtx->nnode_pre);
 #endif
     while(cnt--) { 
-       int sizefill = cnt |(1<<31);
+       int sizefill = cnt |(1U<<31);
 #ifdef DEBUG
        stream_printf(GDKout, "SHRHOLE: FILL HOLE[%d, rest=%d]\n", shredCtx->nnode_pre, cnt);
 #endif
@@ -1837,7 +1837,7 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
     size_t newsize = shredCtx->nnode_pre;
     if (shredCtx->updatable && newsize > (size_t) REMAP_PAGE_SIZE) {
         /* we fill out memory mapped (big) rid_* bats to the next page boundary, as this speeds up remap */
-        int delsize = (1<<31) + REMAP_PAGE_SIZE - (1+(newsize & REMAP_PAGE_MASK));
+        int delsize = (1U<<31) + REMAP_PAGE_SIZE - (1+(newsize & REMAP_PAGE_MASK));
         while(newsize & REMAP_PAGE_MASK) {
             shredCtx->dstBAT[PRE_SIZE].cast.intCAST[newsize] = delsize;
             shredCtx->dstBAT[PRE_LEVEL].cast.chrCAST[newsize] = chr_nil;
@@ -1845,7 +1845,7 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
             shredCtx->dstBAT[PRE_KIND].cast.chrCAST[newsize] = chr_nil;
             shredCtx->dstBAT[PRE_NID].cast.oidCAST[newsize] = oid_nil;
             newsize++;
-            delsize++; /* it is negated by |(1<<31), so -- becomes ++ */
+            delsize++; /* it is negated by |(1U<<31), so -- becomes ++ */
         }
     }
     for(i=PRE_SIZE; i<=PRE_NID; i++) {
