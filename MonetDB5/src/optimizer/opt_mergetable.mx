@@ -321,7 +321,7 @@ mat_pack_mat(MalBlkPtr mb, InstrPtr r, mat_t *mat, int m, int *mtop)
 {
 	int l,k;
 
-assert(mat[m].type != mat_grp);
+	assert(mat[m].type != mat_grp);
 	if( mat[m].mi->argc-mat[m].mi->retc == 1){
 		/* simple assignment is sufficient */
 		r = newInstruction(mb, ASSIGNsymbol);
@@ -566,7 +566,7 @@ mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int *mtop, int a1, int a2, int 
 	setFunctionId(r,newRef);
 	getArg(r,0) = getArg(p,0);
 
-assert(mat[m].mi1 == NULL);
+	assert(mat[m].mi1 == NULL);
 	for(j=1; j<mat[m].mi->argc; j++) {
 		int used = 0;
 		int vm = getArg(mat[m].mi, j);
@@ -1196,31 +1196,23 @@ assert(mat[m].mi1 == NULL);
 
 		/* increment oid */
 		if (k < mat[m].mi->argc-1) {
-			InstrPtr ca, c, bc = newInstruction(mb, ASSIGNsymbol);
+			InstrPtr ca, c, bc;
 			
 			/* bc = bat.count */
-			setModuleId(bc, aggrRef);
-			setFunctionId(bc, countRef);
-			getArg(bc, 0) = newTmpVariable(mb, TYPE_int);
+			bc = newStmt(mb,aggrRef,countRef);
+			setArgType(mb,bc,0,TYPE_int);
 			bc = pushArgument(mb, bc, getArg(mat[m].mi,k));
-			pushInstruction(mb, bc);
 
 			/* convert int to oid */
-			c = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(c, calcRef);
-			setFunctionId(c, oidRef);
-			getArg(c, 0) = newTmpVariable(mb, TYPE_oid);
+			c = newStmt(mb, calcRef,oidRef);
+			setArgType(mb,bc,0,TYPE_oid);
 			c = pushArgument(mb, c, getArg(bc,0));
-			pushInstruction(mb, c);
 
 			/* ca = calc.add */
-			ca = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(ca, calcRef);
-			setFunctionId(ca, plusRef);
+			ca = newStmt(mb, calcRef,plusRef);
 			getArg(ca, 0) = o;
 			ca = pushArgument(mb, ca, o);
 			ca = pushArgument(mb, ca, getArg(c, 0));
-			pushInstruction(mb, ca);
 		}
 	}
 	return r;
@@ -1265,7 +1257,7 @@ check_instr(MalBlkPtr mb, InstrPtr p)
 static int
 OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) 
 {
-	InstrPtr *old=0, r;
+	InstrPtr *old=0;
 	mat_t *mat;
 	int oldtop, fm, i, k, m, mtop=0, slimit;
 	int size, match, actions=0;
@@ -1492,7 +1484,9 @@ group them and check for them individually.
 			int pack_mirror = 0;
 			InstrPtr r;
 
-			printf("# %s.%s\n", getModuleId(p), getFunctionId(p));
+#ifdef DEBUG_OPT_MERGETABLE
+			stream_printf(cntxt->fdout, "# %s.%s\n", getModuleId(p), getFunctionId(p));
+#endif
 			if (getFunctionId(p) == mirrorRef && 
 	    			mat[m].type == mat_grp) 
 				pack_mirror = 1;
@@ -1518,10 +1512,12 @@ group them and check for them individually.
 All other instructions should be checked for remaining MAT dependencies.
 It requires MAT materialization. 
 @c
-		printf("# %s.%s %d\n", getModuleId(p), getFunctionId(p), match);
+#ifdef DEBUG_OPT_MERGETABLE
+		stream_printf(cntxt->fdout, "# %s.%s %d\n", getModuleId(p), getFunctionId(p), match);
+#endif
 		for (k = p->retc; k<p->argc; k++) {
 			if((m=isMATalias(getArg(p,k), mat, mtop)) >= 0){
-				r= MATpackAll2(mb, NULL, mat, m, &mtop);
+				MATpackAll2(mb, NULL, mat, m, &mtop);
 				actions++;
 				//break;
 			}
@@ -1550,7 +1546,9 @@ For the time being, they are no-ops.
 #endif
 
 fail:
-	printf("## %s.%s\n", getModuleId(p), getFunctionId(p));
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(cntxt->fdout, "## %s.%s\n", getModuleId(p), getFunctionId(p));
+#endif
 	for(i=0; i<mb->stop; i++)
 		if (mb->stmt[i])
 			freeInstruction(mb->stmt[i]);
