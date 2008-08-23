@@ -357,7 +357,7 @@ static InstrPtr
 MATpackAll(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 {
 	int j;
-	InstrPtr r;
+	InstrPtr r = NULL;
 
 	if (mat[m].type == mat_none) {
 		r = mat_pack_mat(mb, mi, mat, m, mtop);
