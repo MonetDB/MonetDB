@@ -712,6 +712,7 @@ GCC_BISON_CFLAGS=""
 ICC_BISON_CFLAGS=""
 GCC_SWIG_CFLAGS=""
 ICC_SWIG_CFLAGS=""
+SUN_NOOPT_CFLAGS=""
 CFLAGS_NO_OPT="-O0"
 if test "x$enable_strict" = xyes; then
 case "$GCC-$CC-$host_os" in
@@ -910,6 +911,12 @@ yes-*-*)
 	dnl  MIPS compiler on IRIX64
 	dnl  treat warnings as errors
 	X_CFLAGS="$X_CFLAGS -w2"
+	;;
+-*-solaris*)
+	dnl  pathfinder/compiler/semantics/subtyping.c causes
+	dnl  "[PFty_is2ns]:ube: error: Assert has been violated at '/set/mars_patch/builds.intel-S2/nightly.Fri/intel-S2/lang/ube/hf/src/type.c 1583'"
+	dnl  with -xOn & n>1
+	SUN_NOOPT_CFLAGS="-xO1"
 	;;
 esac
 fi
@@ -1860,6 +1867,9 @@ if test "x$enable_debug" = xyes; then
       yes-aix*)
         CFLAGS="$CFLAGS -gxcoff"
         ;;
+      -solaris*)
+        SUN_NOOPT_CFLAGS="-xO0"
+        ;;
     esac
   fi
 elif test "x$enable_debug" = xno; then
@@ -2036,6 +2046,7 @@ AC_SUBST(GCC_BISON_CFLAGS)
 AC_SUBST(ICC_BISON_CFLAGS)
 AC_SUBST(GCC_SWIG_CFLAGS)
 AC_SUBST(ICC_SWIG_CFLAGS)
+AC_SUBST(SUN_NOOPT_CFLAGS)
 
 dnl --enable-warning (only gcc & icc/ecc)
 AC_ARG_ENABLE(warning,
