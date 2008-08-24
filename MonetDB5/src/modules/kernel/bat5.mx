@@ -631,7 +631,8 @@ bat5_export str BKCsetAccess(int *res, int *bid, str *param);
 bat5_export str BKCgetAccess(str *res, int *bid);
 bat5_export str BKCinfo(int *retval, int *bid);
 bat5_export str BKCbatsize(lng *tot, int *bid);
-bat5_export str BKCbatdsksize(lng *tot, int *bid);
+bat5_export str BKCbatvmsize(lng *tot, int *bid);
+bat5_export str BKCbatdisksize(lng *tot, int *bid);
 bat5_export str BKCgetSpaceReserved(lng *tot, int *bid);
 bat5_export str BKCgetSpaceUsed(lng *tot, int *bid);
 bat5_export str BKCgetSpaceReserved_str(lng *tot, str batname);
@@ -664,9 +665,6 @@ bat5_export str BKCgetSequenceBase(oid *r, int *bid);
 bat5_export ssize_t void_replace_bat5(BAT *b, BAT *u, bit force);
 bat5_export int void_inplace5(BAT *b, oid id, ptr val, bit force);
 
-bat5_export int CMDbatsize(lng *tot, BAT *b);
-bat5_export int CMDbatvmsize(lng *tot, BAT *b);
-bat5_export int CMDbatdisksize(lng *tot, BAT *b);
 #endif /*_BAT_H_*/
 
 @c
@@ -1476,7 +1474,7 @@ CMDinfo(BAT **retval, BAT *b)
 
 #define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
 
-int
+static int
 CMDbatdisksize(lng *tot, BAT *b)
 {
 	size_t blksize = 512;
@@ -1495,7 +1493,7 @@ CMDbatdisksize(lng *tot, BAT *b)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDbatvmsize(lng *tot, BAT *b)
 {
 	size_t blksize = MT_pagesize();
@@ -1519,7 +1517,7 @@ CMDbatvmsize(lng *tot, BAT *b)
 	return GDK_SUCCEED;
 }
 
-int
+static int
 CMDbatsize(lng *tot, BAT *b)
 {
 	size_t size = 0;
