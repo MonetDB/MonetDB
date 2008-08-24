@@ -453,7 +453,11 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for(i=0; i<pci->retc; i++){
 		oid hval = 0;
 		low= varGetProp(mb, getArg(pci,i),PropertyIndex("hlb") );
+		if (low== NULL )
+			throw(MAL,"bbp.partition","property hlb:oid missing");
 		hgh= varGetProp(mb, getArg(pci,i),PropertyIndex("hub") );
+		if (hgh== NULL )
+			throw(MAL,"bbp.partition","property hub:oid missing");
 		hval = hgh->value.val.oval;
 		if (i == pci->retc-1)
 			hval = BATcount(b);
