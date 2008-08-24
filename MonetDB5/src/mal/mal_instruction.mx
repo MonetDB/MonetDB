@@ -499,6 +499,7 @@ mal_export MalBlkPtr getMalBlkMarker(MalBlkPtr mb, str marker);
 mal_export void expandMalBlk(MalBlkPtr mb, int lines);
 mal_export void trimMalBlk(MalBlkPtr mb);
 mal_export void trimMalVariables(MalBlkPtr mb);
+mal_export void trimMalVariables_(MalBlkPtr mb, int *used, MalStkPtr glb);
 mal_export void moveInstruction(MalBlkPtr mb, int pc, int target);
 mal_export void insertInstruction(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export void removeInstruction(MalBlkPtr mb, InstrPtr p);
@@ -1576,31 +1577,20 @@ freeVariable(MalBlkPtr mb, int varid)
 @-
 A special action is to reduce the variable space by removing
 all that do not contribute.
+Beware that properties are represented as variables as well.
+They must be retained and the references must be corrected
+after the stack has been reduced.
 @c
 void
-trimMalVariables(MalBlkPtr mb)
+trimMalVariables_(MalBlkPtr mb, int *used, MalStkPtr glb)
 {
-	int *vars, *used;
-	int cnt = 0, i, j;
+	int *vars, cnt = 0, i, j;
 	InstrPtr q;
-	int actions = 0;
+	int actions;
 
 	vars= (int *) alloca(mb->vtop * sizeof(int));
-	used= (int *) alloca(mb->vtop * sizeof(int));
 	memset((char*) vars, 0, mb->vtop * sizeof(int));
-	memset((char*) used, 0, mb->vtop * sizeof(int));
 
-	/* build the use table */
-	for(i=0; i<mb->stop; i++){
-		q= getInstrPtr(mb,i);
-
-		for(j=0; j<q->argc; j++)
-			used[getArg(q,j)] = 1;
-	}
-	for (i=0; i<mb->ptop; i++) {
-		if (mb->prps[i].var)
-			used[mb->prps[i].var] = 1;
-	}
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
 		if (used[i] == 0){
@@ -1621,6 +1611,9 @@ trimMalVariables(MalBlkPtr mb)
 			resetVarName(mb,cnt);
 		}
 		vars[i] = cnt;
+		if (glb)
+			glb->stk[cnt]= glb->stk[i];
+		
 		cnt++;
 	}
 	actions = mb->vtop - cnt;
@@ -1650,6 +1643,29 @@ trimMalVariables(MalBlkPtr mb)
 #endif
 	mb->vtop = cnt;
 }
+void
+trimMalVariables(MalBlkPtr mb){
+	int *used;
+	int i, j;
+	InstrPtr q;
+
+	used= (int *) alloca(mb->vtop * sizeof(int));
+	memset((char*) used, 0, mb->vtop * sizeof(int));
+
+	/* build the use table */
+	for(i=0; i<mb->stop; i++){
+		q= getInstrPtr(mb,i);
+
+		for(j=0; j<q->argc; j++)
+			used[getArg(q,j)] = 1;
+	}
+	for (i=0; i<mb->ptop; i++) {
+		if (mb->prps[i].var)
+			used[mb->prps[i].var] = 1;
+	}
+	trimMalVariables_(mb, used, 0);
+}
+
 @+ MAL constants
 Constants are stored in the symbol table and referenced
 by a variable identifier.
@@ -2834,8 +2850,11 @@ varSetProp(MalBlkPtr mb, int var, int prop, int op, ValPtr cst)
 	}
 
 	mb->prps[propid].var = 0;
-	if (cst != NULL) 
+	if (cst != NULL) {
 		mb->prps[propid].var = defConstant(mb, cst->vtype, cst);
+		/* beware, property constants should not be garbage collected */
+		setVarUsed(mb,mb->prps[propid].var);
+	}
 	mb->prps[propid].idx = prop;
 	mb->prps[propid].op = op;
 

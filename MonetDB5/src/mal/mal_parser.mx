@@ -1618,9 +1618,9 @@ while( currChar(cntxt)!= ')'){
 	 else { 
 		idx = 0;
 		parseError(cntxt,"<factor> expected\n");
-		skipToEnd(cntxt);
 		pushInstruction(curBlk,curInstr);
-		return @1;
+		skipToEnd(cntxt);
+		return;
 	}
 	if (currChar(cntxt) == ',') 
 		advance(cntxt,1);

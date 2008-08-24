@@ -392,48 +392,38 @@ MSresetInstructions(MalBlkPtr mb, int start)
 	mb->stop = start;
 }
 
-static int unknownType(int tpe){
-	return tpe == TYPE_any || 
-		(isaBatType(tpe) && (
-			getHeadType(tpe) == TYPE_any || 
-			getTailType(tpe) == TYPE_any ));
-}
-
+@-
+Determine the variable alias and used.
+@c
 void
 MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
-	int i, j;
+	int i, k;
+	int *used= alloca(mb->vtop * sizeof(int));
+	memset(used,0,sizeof(int)*mb->vtop);
 
-	for (i = j = start; i < mb->vtop; i++) {
-		if (isTmpVar(mb, i) || unknownType(getVarType(mb,i)) ) {
-			if (glb) {
-				if (!isVarConstant(mb,i))
-					garbageElement(cntxt, &glb->stk[i]);
-				/* clean stack entry */
-				glb->stk[i].vtype = TYPE_int;
-				glb->stk[i].len = 0;
-				glb->stk[i].val.pval = 0;
-			}
-			clearVariable(mb, i);
-		} else {
+	for (i=0; i<start; i++)
+		used[i]=1;
+	for (i = start; i < mb->vtop; i++) {
+		if (used[i] || !isTmpVar(mb,i) ){
+			VarPtr v = getVar(mb,i);
 			assert(!mb->var[i]->value.vtype || isVarConstant(mb,i) );
-			if (i != j) {
-				VarPtr v = getVar(mb,j);
-				getVar(mb,j) = getVar(mb,i);
-				getVar(mb,i) = v;
-				if (glb) {
-					/* save stack state */
-					glb->stk[j] = glb->stk[i];
-					/* clean stack entry */
-					glb->stk[i].vtype = TYPE_int;
-					glb->stk[i].val.ival = 0;
-					glb->stk[i].len = 0;
-				}
-			}
-			j++;
+
+			/* keep all properties as well */
+			for (k=0; k< v->propc; k++)
+				used[mb->prps[k].var]=1;
+			used[i]= 1;
+		}
+		if (glb && !used[i]) {
+			if (!isVarConstant(mb,i))
+				garbageElement(cntxt, &glb->stk[i]);
+			/* clean stack entry */
+			glb->stk[i].vtype = TYPE_int;
+			glb->stk[i].len = 0;
+			glb->stk[i].val.pval = 0;
 		}
 	}
-	mb->vtop = j;
+	trimMalVariables_(mb,used,glb);
 }
 
 @-
@@ -509,9 +499,6 @@ table may have grown in size.
 	if( c->listing) 
 		printFunction(c->fdout,c->curprg->def, 0, c->listing);
 	resetMalBlk(c->curprg->def,oldstate.stop);
-/*
-	MSresetInstructions(c->curprg->def, oldstate.stop);
-*/
 	MSresetVariables(c,c->curprg->def, 0, oldstate.vtop);
 @c
 str
