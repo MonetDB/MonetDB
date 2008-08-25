@@ -142,7 +142,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		setVarUsed(mb,getArg(p,0));
 		pushInstruction(mb,p);
 
-		q= newStmt(mb,"bat","partition");
+		q= newStmt(mb,batRef,partitionRef);
 		q->argc=0;
 		slice= (BUN) (rowcnt/GDKnr_threads);
 		hgh.value.vtype= low.value.vtype= TYPE_oid;

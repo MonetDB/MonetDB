@@ -1,0 +1,19 @@
+#check the partition type resolution;
+
+function q();
+a:bat[:oid,:int]{rows=1000,hlb=0@0,hub=1000@0}:= bat.new(:oid,:int);
+(b:bat[:oid,:int]{hlb=0@0,hub=1000@0},c:bat[:oid,:int]{hlb=0@0,hub=1000@0},d:bat[:oid,:int]{hlb=0@0,hub=1000@0},e:bat[:oid,:int]{hlb=0@0,hub=1000@0}):= bat.partition(a);
+b1:= algebra.select(b,0,10);
+c1:= algebra.select(c,11,20);
+d1:= algebra.select(d,21,30);
+e1:= algebra.select(e,31,40);
+
+u1:= algebra.union(b1,d1);
+u2:= algebra.union(c1,e1);
+
+u:= algebra.kunion(u1,u2);
+io.print(u);
+end q;
+
+optimizer.octopus("user","q");
+mdb.list("user","q");

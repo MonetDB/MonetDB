@@ -1,13 +1,13 @@
-stderr of test 'mitosis00` in directory 'src/optimizer` itself:
+stderr of test 'octopus00` in directory 'src/optimizer` itself:
 
 
 # 20:45:24 >  
-# 20:45:24 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36084 --set xrpc_port=47798 --set monet_prompt= --trace  --dbname=mTests_src_optimizer  mitosis00.mal
+# 20:45:24 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36084 --set xrpc_port=47798 --set monet_prompt= --trace  --dbname=mTests_src_optimizer  octopus00.mal
 # 20:45:24 >  
 
 # builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
 # builtin opt 	gdk_version = 1.25.0
-# builtin opt 	monet_pid = 13605
+# builtin opt 	monet_pid = 13616
 # builtin opt 	prefix = /ufs/mk/monet5//Linux
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
