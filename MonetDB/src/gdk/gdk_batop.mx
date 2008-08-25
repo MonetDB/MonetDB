@@ -1055,7 +1055,7 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 	if (equi && tail) {
 		BATsetprop_wrd(bn, GDK_AGGR_CARD, (wrd) (BATcount(bn) > 0));
 		if (b->ttype == TYPE_bit) {
-			BATsetprop_wrd(bn, GDK_AGGR_SIZE, (*(bit *) tl == TRUE) ? BATcount(bn) : 0);
+			BATsetprop_wrd(bn, GDK_AGGR_SIZE, (*(bit *) tl == TRUE) ? (wrd) BATcount(bn) : 0);
 		}
 	}
 	if (equi && b->T->hash) {
@@ -2601,7 +2601,7 @@ BATconst(BAT *b, int tailtype, ptr v)
 	bn->T->nonil = (ATOMcmp(tailtype, v, ATOMnilptr(tailtype)) != 0);
 	BATsetprop_wrd(bn, GDK_AGGR_CARD, (wrd) (BATcount(b) > 0));
 	if (tailtype == TYPE_bit) {
-		BATsetprop_wrd(bn, GDK_AGGR_SIZE, (*(bit *) v == TRUE) ? BATcount(b) : 0);
+		BATsetprop_wrd(bn, GDK_AGGR_SIZE, (*(bit *) v == TRUE) ? (wrd) BATcount(b) : 0);
 	}
 	return bn;
       bunins_failed:
@@ -2892,7 +2892,7 @@ by bulk copying the heap as well
 
 		BATsetprop_wrd(b, GDK_AGGR_SIZE, (p != BUN_NONE)? *(int *) BUNtloc(bni, p) : 0);
 	}
-	BATsetprop_wrd(b, GDK_AGGR_CARD, BATcount(bn));
+	BATsetprop_wrd(b, GDK_AGGR_CARD, (wrd) BATcount(bn));
 	return bn;
 }
 

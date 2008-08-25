@@ -1016,7 +1016,7 @@ TABLETstrFrStr(Column *c, char *s, char *e)
 
 	if (s == e) {
 		*(char*)c->data = 0;
-	} else if (GDKstrFromStr(c->data, (unsigned char *) s, e - s) < 0) {
+	} else if (GDKstrFromStr(c->data, (unsigned char *) s, (ssize_t) (e - s)) < 0) {
 		return NULL;
 	}
 	return c->data;
@@ -1731,7 +1731,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 			char *e = strstr(s, sep);
 
 			if (e) {
-				limit -= (e-s) + seplen;
+				limit -= (ssize_t) (e - s) + seplen;
 				*e = '\0';
 				if (started && i>=offset && insert_line(as, s, NULL, col1,col2) < 0) {
 					s = e + seplen;
@@ -1809,7 +1809,7 @@ static void TABLETload_chunk(void *data){
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKstdout,"starting loader child (bytes) %d %d\n", p->bytes, p->tid);
 #endif
-	TABLETload_bulk(p, p->input, p->output, 0, p->nr_attrs, p->partid, p->bytes);
+	TABLETload_bulk(p, p->input, p->output, 0, p->nr_attrs, p->partid, (ssize_t) p->bytes);
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKstdout,"exit of loader child (bytes) %d %d\n", p->bytes, p->tid);
 	{ int i;

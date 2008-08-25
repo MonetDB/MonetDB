@@ -332,7 +332,7 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 			if (ret) {
 				/* read in chunks, some OSs do not give you all at once
 				   and Windows only accepts int */
-				for (n_expected = size; n_expected > 0; n_expected -= n) {
+				for (n_expected = (ssize_t) size; n_expected > 0; n_expected -= n) {
 					n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
 					IODEBUG THRprintf(GDKout, "#read(dst " PTRFMT ", n_expected " SSZFMT ", fd %d) = " SSZFMT "\n", PTRFMTCAST(void *)dst, n_expected, fd, n);
 

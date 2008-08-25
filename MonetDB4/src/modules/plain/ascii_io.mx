@@ -390,7 +390,7 @@ ASCIIstrFrStr(ascii_io *c, char *s, char *e)
 
 	if (s == e) {
 		*(char*)c->data = 0;
-	} else if (GDKstrFromStr(c->data, (unsigned char *) s, e - s) < 0) {
+	} else if (GDKstrFromStr(c->data, (unsigned char *) s, (ssize_t) (e - s)) < 0) {
 		return NULL;
 	}
 	return c->data;

@@ -1002,7 +1002,7 @@ GDKssort@1(void *h, void *t, void *heap, size_t nitems, int hs, int ts, int tpe)
 	ms.th = (size_t) hs <= sizeof(ms.tempstorageh) ? ms.tempstorageh : alloca(hs);
 	ms.tt = (size_t) ts <= sizeof(ms.tempstoraget) ? ms.tempstoraget : alloca(ts);
 
-	nremaining = nitems;
+	nremaining = (ssize_t) nitems;
 
 	if (nremaining < 2)
 		goto succeed;

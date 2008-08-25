@@ -1364,27 +1364,27 @@ view_gdk_mem(BAT **retval)
 	if (memincr == NULL) {
 		memincr = MT_heapbase;
 	}
-	i = (MT_heapcur() - memincr);
+	i = (wrd) (MT_heapcur() - memincr);
 
 	memincr = MT_heapcur();
 	b = BUNins(b, "memincr", &i, FALSE);
-	i = m.arena;
+	i = (wrd) m.arena;
 	b = BUNins(b, "arena", &i, FALSE);
-	i = m.ordblks;
+	i = (wrd) m.ordblks;
 	b = BUNins(b, "ordblks", &i, FALSE);
-	i = m.smblks;
+	i = (wrd) m.smblks;
 	b = BUNins(b, "smblks", &i, FALSE);
-	i = m.hblkhd;
+	i = (wrd) m.hblkhd;
 	b = BUNins(b, "hblkhd", &i, FALSE);
-	i = m.hblks;
+	i = (wrd) m.hblks;
 	b = BUNins(b, "hblks", &i, FALSE);
-	i = m.usmblks;
+	i = (wrd) m.usmblks;
 	b = BUNins(b, "usmblks", &i, FALSE);
-	i = m.fsmblks;
+	i = (wrd) m.fsmblks;
 	b = BUNins(b, "fsmblks", &i, FALSE);
-	i = m.uordblks;
+	i = (wrd) m.uordblks;
 	b = BUNins(b, "uordblks", &i, FALSE);
-	i = m.fordblks;
+	i = (wrd) m.fordblks;
 	b = BUNins(b, "fordblks", &i, FALSE);
 	@:Pseudo(gdk,mem)@
 	return GDK_SUCCEED;

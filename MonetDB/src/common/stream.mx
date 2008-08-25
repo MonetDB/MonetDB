@@ -409,6 +409,12 @@ stream_init(void)
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 #define PTRFMT		"%p"
 #define PTRFMTCAST		/* no cast needed */
+#elif defined(_MSC_VER)
+/* On Windows, always use 64 bit integers (even on 32-bit architectures)
+ * to not get the warning C4311: 'type cast' : pointer truncation from
+ * 'void *' to 'unsigned int' */
+#define PTRFMT		"%I64x"
+#define PTRFMTCAST	(unsigned __int64)
 #elif SIZEOF_VOID_P == SIZEOF_INT
 #define PTRFMT		"%x"
 #define PTRFMTCAST	(unsigned int)
@@ -418,9 +424,6 @@ stream_init(void)
 #elif SIZEOF_VOID_P == SIZEOF_LONG_LONG
 #define PTRFMT		"%llx"
 #define PTRFMTCAST	(unsigned long long)
-#elif SIZEOF_VOID_P == SIZEOF___INT64
-#define PTRFMT		"%I64x"
-#define PTRFMTCAST	(unsigned __int64)
 #else
 #error no definition for PTRFMT
 #endif
@@ -458,7 +461,7 @@ stream_readline(stream *s, void *buf, size_t maxcnt)
 			start++;
 		}
 		if (s->errnr) return s->errnr;
-		return (start - b);
+		return (ssize_t) (start - b);
 	} else
 		return (*s->readline) (s, buf, maxcnt);
 }
@@ -721,7 +724,7 @@ file_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 		if (ferror(fp))
 			s->errnr = READ_ERROR;
 	}
-	return rc;
+	return (ssize_t) rc;
 }
 
 static ssize_t
@@ -734,7 +737,7 @@ file_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 			s->errnr = WRITE_ERROR;
 		return (ssize_t) rc;
 	}
-	return cnt;
+	return (ssize_t) cnt;
 }
 
 static void
@@ -872,7 +875,7 @@ stream_gzread(stream *s, void *buf, size_t elmsize, size_t cnt)
 	if (!gzeof(fp)) {
 		size = gzread(fp, buf, size);
 		if (size)
-			return size / elmsize;
+			return (ssize_t) (size / elmsize);
 	}
 	return 0;
 }
@@ -884,9 +887,9 @@ stream_gzwrite(stream *s, const void *buf, size_t elmsize, size_t cnt)
 
 	if (size) {
 		size = gzwrite((gzFile *) s->stream_data.p, (void *) buf, size);
-		return size / elmsize;
+		return (ssize_t) (size / elmsize);
 	}
-	return cnt;
+	return (ssize_t) cnt;
 }
 
 static void
@@ -1516,13 +1519,13 @@ open_urlstream(const char *url)
 static ssize_t
 socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
-	ssize_t nr = 0, res = 0, size = elmsize * cnt;
+	ssize_t nr = 0, res = 0, size = (ssize_t) (elmsize * cnt);
 
 	if (!s || s->errnr) 
 		return -1;
 
 	if (size == 0 || elmsize == 0)
-		return cnt;
+		return (ssize_t) cnt;
 
 	errno = 0;
 	while (res < size && (
@@ -1543,7 +1546,7 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 		return nr;
 	}
 	if (res > 0)
-		return res / elmsize;
+		return (ssize_t) (res / elmsize);
 	s->errnr = WRITE_ERROR;
 	return -1;
 }
@@ -1551,7 +1554,7 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 static ssize_t
 socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
-	ssize_t nr = 0, res = 0, size = elmsize * cnt;
+	ssize_t nr = 0, res = 0, size = (ssize_t) (elmsize * cnt);
 
 	if (!s || s->errnr) 
 		return(-1);
@@ -1574,7 +1577,7 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 		s->errnr = READ_ERROR;
 		return nr;
 	}
-	return res / elmsize;
+	return (ssize_t) (res / elmsize);
 }
 
 /* Read one line (seperated by \n) of at most maxcnt characters from the 
@@ -1590,7 +1593,7 @@ socket_readline(stream *s, void *buf, size_t maxcnt)
 		start++;
 	}
 	if (s->errnr) return s->errnr;
-	return (start - b);
+	return (ssize_t) (start - b);
 }
 
 static void
@@ -1752,7 +1755,7 @@ typedef struct udp_stream {
 static ssize_t
 udp_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
-	ssize_t res = 0, size = elmsize * cnt;
+	ssize_t res = 0, size = (ssize_t) (elmsize * cnt);
 	udp_stream *udp;
 	int addrlen;
 
@@ -1760,7 +1763,7 @@ udp_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 		return -1;
 
 	if (size == 0 || elmsize == 0)
-		return cnt;
+		return (ssize_t) cnt;
  	udp = s->stream_data.p;
  	addrlen = sizeof(udp->addr);
 	errno = 0;
@@ -1773,14 +1776,14 @@ udp_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 		return res;
 	}
 	if (res > 0)
-		return res / elmsize;
+		return (ssize_t) (res / elmsize);
 	return 0;
 }
 
 static ssize_t
 udp_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
-	ssize_t res = 0, size = elmsize * cnt;
+	ssize_t res = 0, size = (ssize_t) (elmsize * cnt);
 	struct sockaddr_in from;
 	socklen_t fromlen = sizeof(struct sockaddr_in);
 	udp_stream *udp;
@@ -1799,7 +1802,7 @@ udp_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 		return res;
 	}
 	if (res > 0)
-		return res / elmsize;
+		return (ssize_t) (res / elmsize);
 	return 0;
 }
 
@@ -2355,7 +2358,7 @@ ic_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 				}
 				memcpy(ic->buffer, inbuf, inbytesleft);
 				ic->buflen = inbytesleft;
-				return cnt;
+				return (ssize_t) cnt;
 			case E2BIG:
 				/* not enough space in output buffer */
 				break;
@@ -2367,7 +2370,7 @@ ic_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 		}
 		stream_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft);
 	}
-	return cnt;
+	return (ssize_t) cnt;
 }
 
 static ssize_t
@@ -2444,7 +2447,7 @@ exit_func:
 		   underlying stream to be read again */
 		ic->eof = 0;
 	}
-	return (elmsize * cnt - outbytesleft) / elmsize;
+	return (ssize_t) ((elmsize * cnt - outbytesleft) / elmsize);
 }
 
 static int
@@ -2597,7 +2600,7 @@ buffer_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	if (b->pos + size <= b->len) {
 		memcpy(buf, b->buf + b->pos, size);
 		b->pos += size;
-		return size / elmsize;
+		return (ssize_t) (size / elmsize);
 	} else {
 		s->errnr = READ_ERROR;
 		return 0;
@@ -2624,7 +2627,7 @@ buffer_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	}
 	memcpy(b->buf + b->pos, buf, size);
 	b->pos += size;
-	return cnt;
+	return (ssize_t) cnt;
 }
 
 static void
@@ -2775,7 +2778,7 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 			s->nr = 0;
 		}
 	}
-	return cnt;
+	return (ssize_t) cnt;
 }
 
 /* If the internal buffer is partially filled, write it to the
@@ -2944,7 +2947,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 	   read */
 	if (todo > 0 && cnt == 0)
 		s->nr = 0;
-	return cnt / elmsize;
+	return (ssize_t) (cnt / elmsize);
 }
 
 /* Read the next bit of a block.  If this was the last bit of the
@@ -3351,7 +3354,7 @@ static ssize_t
 bstream_readline(bstream *s)
 {
 	size_t size = STREAM_LINE_MAX;
-	ssize_t rd;
+	size_t rd;
 
 	if (s->eof)
 		return 0;
@@ -3385,7 +3388,7 @@ bstream_readline(bstream *s)
 	}
 	s->len += rd;
 	s->buf[s->len] = 0;	/* fill in the spare with EOS */
-	return rd;
+	return (ssize_t) rd;
 }
 
 
@@ -3428,7 +3431,7 @@ typedef struct {
 
 static int wbs_flush(stream *s) {
        wbs_stream *wbs = (wbs_stream*) s->stream_data.p;
-       ssize_t len = wbs->pos; 
+       size_t len = wbs->pos; 
        wbs->pos = 0;
        if ((*wbs->s->write)(wbs->s, wbs->buf, 1, len) != len) 
 		return -1;
@@ -3453,7 +3456,7 @@ static ssize_t wbs_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
                 wbs->pos += nbytes;
                 if (flush && wbs_flush(s) < 0) return -1;
         }
-        return cnt;
+        return (ssize_t) cnt;
 }
 
 static void wbs_close(stream *s) {
@@ -3505,14 +3508,14 @@ pipe_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 		return -1;
 
 	if (size == 0 || elmsize == 0)
-		return cnt;
+		return (ssize_t) cnt;
 	sz = write(s->stream_data.i, buf,
 #ifdef NATIVE_WIN32
 		   (unsigned int) /* on Windows, the length is an unsigned int... */
 #endif
 		   size);
 	if (sz > 0)
-		return sz / elmsize;
+		return (ssize_t) (sz / elmsize);
 	if (sz < 0)
 		s->errnr = WRITE_ERROR;
 	return sz;
@@ -3539,7 +3542,7 @@ pipe_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 		return nr;
 	}
 	if (res)
-		return res / elmsize;
+		return (ssize_t) (res / elmsize);
 	return 0;
 }
 

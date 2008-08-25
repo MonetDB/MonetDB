@@ -1969,7 +1969,7 @@ dynamically linked.
 A simple string matcher is included. It should be refined later on
 @c
 static INLINE int
-like(char *x, char *y, int ylen)
+like(char *x, char *y, BUN ylen)
 {
 	char *r;
 
@@ -2077,7 +2077,7 @@ CMDposition(wrd *retval, BAT *b, ptr val)
 		GDKerror("CMDposition: item not found\n");
 		return GDK_FAIL;
 	}
-	*retval = v - BUNfirst(b);
+	*retval = (wrd) (v - BUNfirst(b));
 	return GDK_SUCCEED;
 }
 
@@ -2092,7 +2092,7 @@ CMDpositionBUN(wrd *retval, BAT *b, ptr val, ptr tval)
 		GDKerror("CMDposition: item not found\n");
 		return GDK_FAIL;
 	}
-	*retval = v - BUNfirst(b);
+	*retval = (wrd) (v - BUNfirst(b));
 	return GDK_SUCCEED;
 }
 

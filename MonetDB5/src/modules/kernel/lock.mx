@@ -114,7 +114,6 @@ int
 lockToStr(char **dst, int *len, ptr *src)
 {
 	(void) len;		/* fool compiler */
-	(void) src;		/* fool compiler */
 	if (src == ptr_nil) {
 		strcpy(*dst, "nil");
 		return 3;

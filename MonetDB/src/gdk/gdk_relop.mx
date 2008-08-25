@@ -530,7 +530,7 @@ densefetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		return NULL;
 	dst = BUNfirst(bn);
 	base = BUNfirst(r);
-	offset = (ssize_t) base - r->hseqbase; /* cast first, subtract second */
+	offset = (ssize_t) base - (ssize_t) r->hseqbase; /* cast first, subtract second */
 	r_cur = (BUN) (offset + *(oid *) BUNtail(li, BUNfirst(l)));
 
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: densefetchjoin(@1,@2);\n");
@@ -564,7 +564,7 @@ orderedfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		return NULL;
 	dst = BUNfirst(bn);
 	base = BUNfirst(r);
-	offset = (ssize_t) base - r->hseqbase; /* cast first, subtract second */
+	offset = (ssize_t) base - (ssize_t) r->hseqbase; /* cast first, subtract second */
 
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedfetchjoin(@1,@2);\n");
 
@@ -599,7 +599,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		return NULL;
 	dst = BUNfirst(bn);
 	base = BUNfirst(r);
-	offset = (ssize_t) base - r->hseqbase; /* cast first, subtract second */
+	offset = (ssize_t) base - (ssize_t) r->hseqbase; /* cast first, subtract second */
 	end = base + BATcount(r);
 
 	BATmmap_pin(r);
@@ -882,7 +882,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: 1\n");
 
 	base = BUNfirst(r);
-	offset = (ssize_t) base - r->hseqbase; /* cast first, subtract second */
+	offset = (ssize_t) base - (ssize_t) r->hseqbase; /* cast first, subtract second */
 	end = base + rcount;
 	/* only BUNhead crashes on empty bats with TYPE != virtual oid */
 	seqbase = l->htype == TYPE_void ?
@@ -1972,7 +1972,7 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 		return NULL;
 	}
 	if (denselookup) {
-		offset = (ssize_t) base - r->hseqbase;	/* translate oid to BUN position */
+		offset = (ssize_t) base - (ssize_t) r->hseqbase;	/* translate oid to BUN position */
 	} else {
 		offset = (ssize_t) base;	/* fetch by hard BUNindex */
 	}
@@ -2627,7 +2627,7 @@ order columns by their size (smallest first)
 		c[i].b = argv[i];
 		c[i].bi = bat_iterator(c[i].b);
 		c[i].nhits = 1;	/* default value */
-		c[i].offset = BUNfirst(c[i].b);
+		c[i].offset = (ssize_t) BUNfirst(c[i].b);
 		c[i].size = BATcount(c[i].b);
 
 		/* positional lookup possible => ignore other alternatives */

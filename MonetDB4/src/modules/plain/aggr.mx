@@ -1113,7 +1113,7 @@ CMDcard(wrd *result, BAT *b, wrd *maxelements)
 			if (maxsize <= (wrd) BATcount(b)) {
 				@:card_bound(BOUNDED)@
 			} else {
-				maxsize = BATcount(b);	/* reducing maxsize limits memory consumption in hash table */
+				maxsize = (wrd) BATcount(b);	/* reducing maxsize limits memory consumption in hash table */
 				@:card_bound(UNBOUNDED)@	/* UNBOUNDED = no overhead for checking maxsize */
 			}
 		}

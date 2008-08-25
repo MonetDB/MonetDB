@@ -549,26 +549,26 @@ ATOMproperty(str id, str property, GDKfcn arg)
 		BATatoms[t].deleting = 1;	/* not yet usable */
 	}
 	if (strcmp("size", property) == 0) {
-		if ((int) (ssize_t) arg) {
-			assert((ssize_t) arg <= INT_MAX);
-			BATatoms[t].size = (int) (ssize_t) arg;
+		if (arg) {
+			assert((lng) arg <= INT_MAX);
+			BATatoms[t].size = (int) (lng) arg;
 			BATatoms[t].varsized = 0;
-			BATatoms[t].align = align((int) (ssize_t) arg);
+			BATatoms[t].align = align((int) (lng) arg);
 		} else {
 			BATatoms[t].size = sizeof(var_t);
 			BATatoms[t].varsized = 1;
 			BATatoms[t].align = sizeof(var_t);
 		}
 	} else if (strcmp("linear", property) == 0) {
-		assert((ssize_t) arg <= INT_MAX);
-		BATatoms[t].linear = (int) (ssize_t) arg;
+		assert((lng) arg <= INT_MAX);
+		BATatoms[t].linear = (int) (lng) arg;
 	} else if (strcmp("align", property) == 0) {
-		assert((ssize_t) arg <= INT_MAX);
-		BATatoms[t].align = (int) (ssize_t) arg;
+		assert((lng) arg <= INT_MAX);
+		BATatoms[t].align = (int) (lng) arg;
 	} else if (strcmp("storage", property) == 0) {
-		int tpe = (int) (ssize_t) arg;
+		int tpe = (int) (lng) arg;
 
-		assert((ssize_t) arg <= INT_MAX);
+		assert((lng) arg <= INT_MAX);
 		BATatoms[t] = BATatoms[tpe];	/* copy from example */
 		strcpy(BATatoms[t].name, id);	/* restore name */
 	} else if (strcmp("fromstr", property) == 0) {
@@ -762,11 +762,7 @@ gdk_export const char str_nil[2];
 
 /* derived NIL values - OIDDEPEND */
 #define bit_nil	((bit) chr_nil)
-#if SIZEOF_VOID_P == SIZEOF_INT
-#define ptr_nil	((ptr) int_nil)
-#else /* SIZEOF_VOID_P == SIZEOF_LNG */
-#define ptr_nil	((ptr) lng_nil)
-#endif
+#define ptr_nil ((ptr) NULL)
 #define bat_nil	((bat) int_nil)
 #if SIZEOF_WRD == SIZEOF_INT
 #define GDK_wrd_max ((wrd) GDK_int_max)
@@ -1618,38 +1614,10 @@ lngToStr(char **dst, int *len, lng *src)
 int
 ptrFromStr(char *src, int *len, ptr **dst)
 {
-	int error = 0;
-	size_t base = 0;
-	str p = src;
-
+	/* don't allow unsafe str->ptr conversion */
 	@:atommem(ptr,sizeof(ptr))@
-
-	while (GDKisspace(*p))
-		p++;
-	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-		error = 1;
-		p += 3;
-	} else {
-		if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
-			p += 2;
-		}
-		if (!num16(*p)) {
-			error = 1;
-			p = src;
-		}
-		while (error == 0) {
-			size_t val = mult16(base) + base16(*p);
-
-			if (val < base)
-				error = 1;
-			base = val;
-			p++;
-			if (!num16(*p))
-				break;
-		}
-	}
-	**dst = error ? ((ptr) ptr_nil) : ((ptr) base);
-	return (int) (p - src);
+	**dst = ptr_nil;
+	return 0;
 }
 
 @:atomtostr(ptr,SZFMT,size_t)@
@@ -2295,7 +2263,7 @@ strFromStr(char *src, int *len, char **dst)
 	*dst = (char *) p;
 
 	assert(cur - start <= INT_MAX);	/* 64bit */
-	if ((res = GDKstrFromStr((unsigned char *) *dst, start, cur - start)) >= 0)
+	if ((res = GDKstrFromStr((unsigned char *) *dst, start, (ssize_t) (cur - start))) >= 0)
 		return (int) res;
 
       error:

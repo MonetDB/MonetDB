@@ -3138,7 +3138,7 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 		}
 
 		sf = (lng) ceil(space/(double)msz) + 3;
-		sep= (ValPtr) GDKzalloc( sizeof(ValRecord) * sf);
+		sep= (ValPtr) GDKzalloc( (size_t) (sizeof(ValRecord) * sf));
 		for (k=0; k<sf; k++)
 			VALinit(sep+k,tpe,nilptr);
 	/* form array of separators */

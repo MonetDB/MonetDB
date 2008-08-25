@@ -142,7 +142,7 @@ typedef struct {
 #define void_multi_SWAP(TYPE, a, b, n, nt)
 
 #define tpe_SWAP(TYPE, a, b, n) {			\
-	ssize_t _i = (n);				\
+	ssize_t _i = (ssize_t) (n);			\
 	TYPE *_pa = (TYPE*)(a);				\
 	TYPE *_pb = (TYPE*)(b);				\
 	while (--_i >= 0) {				\
