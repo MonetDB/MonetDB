@@ -42,8 +42,25 @@ mergetable optimizers. They break the table into pieces
 based on the head and propagate the effect through the plan.
 The octopus modifies the plan into remote calls, i.e. a single
 sites controls the actions in the octopus tentacles.
+The octopus needs a collection of sites to play with,
+which can be obtained dynamically from the merovingian.
+Alternatively, we built a list of possible sites explicitly. [todo]
+
 The octopus is called just after the dataflow optimizer, such
 that dataflow dependencies have already been handled.
+The threads walking the dataflow are serialized when hitting
+the same connection. [todo]
+
+The octopus interferes with the recycler as follows.
+Let the query command center be C and two tentacles A and B.
+Then at C we can built a list of recycled instructions, which
+need not be executed twice. Inclusing remote requests.
+However, in that case we should be
+sure that the recycler cache at A,B, and C are synchronized.
+This can be guaranteed if all remote sites are under control of C
+solely and the protocols for eviction are serialzed.
+An option is to explicitly evict remote instructions, but 
+an implicit is more elegant. [Work todo]
 @{
 CAVEAT, check that two flows do not interfere on the rmtobj.
 @mal
