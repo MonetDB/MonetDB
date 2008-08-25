@@ -301,6 +301,10 @@ propagateProp(MalBlkPtr mb, InstrPtr q, int ivar)
 		if (tlb) varSetProp(mb, ovar, tlbProp, op_gte, &tlb->value);
 		if (tub) varSetProp(mb, ovar, tubProp, op_lt, &tub->value);
 	}
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, propageProp\n");
+	printInstruction(GDKout, mb, 0, q, LIST_MAL_DEBUG);
+#endif
 }
 
 static int
@@ -320,8 +324,12 @@ static InstrPtr
 mat_pack_mat(MalBlkPtr mb, InstrPtr r, mat_t *mat, int m, int *mtop)
 {
 	int l,k;
-
 	assert(mat[m].type != mat_grp);
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_pack_mat\n");
+	printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_DEBUG);
+#endif
+
 	if( mat[m].mi->argc-mat[m].mi->retc == 1){
 		/* simple assignment is sufficient */
 		r = newInstruction(mb, ASSIGNsymbol);
@@ -359,6 +367,10 @@ MATpackAll(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 	int j;
 	InstrPtr r = NULL;
 
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_packAll\n");
+	printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_DEBUG);
+#endif
 	if (mat[m].type == mat_none) {
 		r = mat_pack_mat(mb, mi, mat, m, mtop);
 		pushInstruction(mb,r);
@@ -382,6 +394,10 @@ MATpackAll2(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 	int j;
 	InstrPtr r = NULL;
 
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_packAll2\n");
+	printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_DEBUG);
+#endif
 	if (mat[m].type == mat_none) {
 		r = mat_pack_mat(mb, mi, mat, m, mtop);
 		pushInstruction(mb,r);
@@ -430,6 +446,10 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var, int reuse)
 	InstrPtr r = NULL, mi = mat[m].mi;
 
 	assert(reuse == 0);
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_apply1\n");
+	printInstruction(GDKout, mb, 0, p, LIST_MAL_DEBUG);
+#endif
 	(void)reuse;
 	if (var == 2 && isDiffOp(p)) {
 		tpe = getArgType(mb,p,0);
@@ -496,6 +516,10 @@ disjoint(mat_t *mat, int *mtop, int m, MalBlkPtr mb)
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
 	int tpe = getVarType(mb,getArg(mat[m].mi, 0));
 	int vj, vi;
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_disjoint\n");
+	printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_DEBUG);
+#endif
 
 	memset(used, 0, mat[m].mi->argc);
 
@@ -546,6 +570,10 @@ mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int *mtop, int a1, int a2, int 
 	int k,j,m,n,Am,An;
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
 
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_apply2\n");
+	printInstruction(GDKout, mb, 0, p, LIST_MAL_DEBUG);
+#endif
 	if (reuse) {
 		if (a1 == a2) { 
 			a2 = -1;
@@ -639,6 +667,10 @@ mat_map(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop)
 	int m = -1, a, j, reuse = -1, reuse_var = -1;
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
 
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_map\n");
+	printInstruction(GDKout, mb, 0, p, LIST_MAL_DEBUG);
+#endif
 	for(a=p->retc; a<p->argc && m < 0; a++) 
 		if (isaBatType(getArgType(mb,p,a))) 
 			m = isMATalias(getArg(p,a), mat, mtop);
@@ -688,6 +720,10 @@ mat_join(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 	int j,k;
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
 
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_join\n");
+	printInstruction(GDKout, mb, 0, p, LIST_MAL_DEBUG);
+#endif
 	setModuleId(r,matRef);
 	setFunctionId(r,newRef);
 	getArg(r,0) = getArg(p,0);
@@ -899,6 +935,10 @@ mat_pack_group_(MalBlkPtr mb, mat_t *mat, int g, int ext)
 	int *attrs = alloca(cnt * sizeof(int) * mat[ext].mi->argc), k, i;
 	InstrPtr cur = NULL;
 
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_pack_group\n");
+	printInstruction(GDKout, mb, 0, mat[ext].mi, LIST_MAL_DEBUG);
+#endif
 	for(k=1; k<mat[ext].mi->argc; k++) 
 		group_attrs(attrs+k*cnt, mb, getArg(mat[g].mi1, k), getArg(mat[ext].mi, k), mat[ext].type != mat_ext);
 	for(i=cnt-1; i>=0; i--) {
@@ -958,6 +998,10 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	int isSum = (getFunctionId(p) == sumRef); 
 	InstrPtr r = NULL;
 
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_aggr\n");
+	printInstruction(GDKout, mb, 0, p, LIST_MAL_DEBUG);
+#endif
 	for(k=1; k< mat[m].mi->argc; k++){
 		int v = newTmpVariable(mb, tp);
 		InstrPtr q = newInstruction(mb,ASSIGNsymbol);
@@ -1001,6 +1045,10 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int g, int ext)
 	InstrPtr ai1 = newInstruction(mb, ASSIGNsymbol), ai2, cur = NULL;
 	InstrPtr mi = mat[m].mi;
 
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_group_aggr\n");
+	printInstruction(GDKout, mb, 0, p, LIST_MAL_DEBUG);
+#endif
 	if (mat[m].type == mat_grp)
 		mi = mat[m].mi1;
 
@@ -1046,6 +1094,10 @@ mat_group_new(InstrPtr *ext, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	InstrPtr r0 = newInstruction(mb, ASSIGNsymbol);
 	InstrPtr r1 = newInstruction(mb, ASSIGNsymbol);
 
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_group_new\n");
+	printInstruction(GDKout, mb, 0, p, LIST_MAL_DEBUG);
+#endif
 	setModuleId(r0,matRef);
 	setFunctionId(r0,newRef);
 	getArg(r0,0) = getArg(p,0);
@@ -1079,6 +1131,10 @@ mat_group_derive(InstrPtr *exti, MalBlkPtr mb, InstrPtr p, mat_t *mat, int ext, 
 	InstrPtr r0 = newInstruction(mb, ASSIGNsymbol);
 	InstrPtr r1 = newInstruction(mb, ASSIGNsymbol);
 
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_group_derive\n");
+	printInstruction(GDKout, mb, 0, p, LIST_MAL_DEBUG);
+#endif
 	setModuleId(r0,matRef);
 	setFunctionId(r0,newRef);
 	getArg(r0,0) = getArg(p,0);
@@ -1116,6 +1172,10 @@ mat_union(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 	int k,j;
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
 
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_group_union\n");
+	printInstruction(GDKout, mb, 0, p, LIST_MAL_DEBUG);
+#endif
 	setModuleId(r,matRef);
 	setFunctionId(r,newRef);
 	getArg(r,0) = getArg(p,0);
@@ -1170,6 +1230,10 @@ mat_mark(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	InstrPtr q, r = newInstruction(mb, ASSIGNsymbol);
 	oid cur = 0;
 	
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_group_union\n");
+	printInstruction(GDKout, mb, 0, p, LIST_MAL_DEBUG);
+#endif
 	getArg(r,0) = o;
 	/* get the mark base id */
 	r = pushArgument(mb, r, getArg(p, 2));
@@ -1180,7 +1244,7 @@ mat_mark(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	setFunctionId(r,newRef);
 	getArg(r,0) = getArg(p,0);
 	
-assert(mat[m].mi1 == NULL);
+	assert(mat[m].mi1 == NULL);
 	for(k=1; k<mat[m].mi->argc; k++) {
 		q = copyInstruction(p);
 		getArg(q,0) = newTmpVariable(mb, tpe);
@@ -1260,10 +1324,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	InstrPtr *old=0;
 	mat_t *mat;
 	int oldtop, fm, i, k, m, mtop=0, slimit;
-	int size, match, actions=0;
+	int size, match, actions=0, error=0;
 
 #ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(cntxt->fdout,"Start MAT optimizer\n");
+	stream_printf(GDKout,"Start MAT optimizer\n");
+	printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
 #else
 	(void) cntxt;
 #endif
@@ -1386,6 +1451,7 @@ Now we handle group, derive and aggregation statements.
 					continue;
 				}
 				/* two phase group.new on group result */
+				error++;
 				goto fail;
 			}
 			
@@ -1402,8 +1468,10 @@ Now we handle group, derive and aggregation statements.
 			InstrPtr ext, grp;
 		
 			/* Found a derive after an aggr statement (distinct). */
-			if (mat[m].mm) 
+			if (mat[m].mm) {
+				error++;
 				goto fail;
+			}
 
 			grp = mat_group_derive(&ext, mb, p, mat, m, n, o);
 			mtop = mat_add(mat, mtop, ext, grp, mat_grp);
@@ -1419,8 +1487,10 @@ Now we handle group, derive and aggregation statements.
 		   ((m=isMATalias(getArg(p,1), mat, mtop)) >= 0) &&
 		   ((n=isMATalias(getArg(p,2), mat, mtop)) >= 0) &&
 		   ((o=isMATalias(getArg(p,3), mat, mtop)) >= 0)) {
-			if (!mat_group_aggr(mb, p, mat, m, n, o))
+			if (!mat_group_aggr(mb, p, mat, m, n, o)){
+				error++;
 				goto fail;
+			}
 			actions++;
 			continue;
 		}
@@ -1448,6 +1518,7 @@ And the min/max is as easy
 				getFunctionId(p) == sliceRef) ||
 		   (getModuleId(p) == algebraRef && 
 				getFunctionId(p) == sortTailRef)) { 
+			error++;
 			goto fail;
 		}
 @-
@@ -1485,14 +1556,16 @@ group them and check for them individually.
 			InstrPtr r;
 
 #ifdef DEBUG_OPT_MERGETABLE
-			stream_printf(cntxt->fdout, "# %s.%s\n", getModuleId(p), getFunctionId(p));
+			stream_printf(GDKout, "# %s.%s\n", getModuleId(p), getFunctionId(p));
 #endif
 			if (getFunctionId(p) == mirrorRef && 
 	    			mat[m].type == mat_grp) 
 				pack_mirror = 1;
 
-			if (group_broken(p, mat[m].type, pack_mirror)) 
+			if (group_broken(p, mat[m].type, pack_mirror)) {
+				error++;
 				goto fail;
+			}
 
 			if ((r = mat_apply1(mb, p, mat, m, fm, 0)) != NULL)
 				mtop = mat_add(mat, mtop, r, NULL, mat_none);
@@ -1513,7 +1586,7 @@ All other instructions should be checked for remaining MAT dependencies.
 It requires MAT materialization. 
 @c
 #ifdef DEBUG_OPT_MERGETABLE
-		stream_printf(cntxt->fdout, "# %s.%s %d\n", getModuleId(p), getFunctionId(p), match);
+		stream_printf(GDKout, "# %s.%s %d\n", getModuleId(p), getFunctionId(p), match);
 #endif
 		for (k = p->retc; k<p->argc; k++) {
 			if((m=isMATalias(getArg(p,k), mat, mtop)) >= 0){
@@ -1532,7 +1605,6 @@ It requires MAT materialization.
 			freeInstruction(old[i]);
 		}
 	GDKfree(old);
-	return actions;
 @-
 As a final optimization, we could remove the mal.new definitions,
 because they are not needed for the execution.
@@ -1540,28 +1612,36 @@ For the time being, they are no-ops.
 @c
 	(void) stk; 
 #ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(cntxt->fdout,"Result of multi table optimizer\n");
+	stream_printf(GDKout,"Result of multi table optimizer\n");
 	optimizerCheck(cntxt,mb,"merge test",1,0,0);
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_DEBUG);
+	printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
 #endif
 
 fail:
+	if( error){
+		actions= 0;
 #ifdef DEBUG_OPT_MERGETABLE
-	stream_printf(cntxt->fdout, "## %s.%s\n", getModuleId(p), getFunctionId(p));
+		stream_printf(GDKout, "## %s.%s\n", getModuleId(p), getFunctionId(p));
 #endif
-	for(i=0; i<mb->stop; i++)
-		if (mb->stmt[i])
-			freeInstruction(mb->stmt[i]);
-	GDKfree(mb->stmt);
-	mb->stmt = old;
-	mb->ssize = slimit;
-	mb->stop = oldtop;
-	for(i=0; i<mb->stop; i++) {
-		InstrPtr p = mb->stmt[i];
-		if (p && getModuleId(p) == matRef && getFunctionId(p) == newRef)
-			getFunctionId(p) = packRef;
+		for(i=0; i<mb->stop; i++)
+			if (mb->stmt[i])
+				freeInstruction(mb->stmt[i]);
+		GDKfree(mb->stmt);
+		mb->stmt = old;
+		mb->ssize = slimit;
+		mb->stop = oldtop;
+		for(i=0; i<mb->stop; i++) {
+			InstrPtr p = mb->stmt[i];
+			if (p && getModuleId(p) == matRef && getFunctionId(p) == newRef)
+				getFunctionId(p) = packRef;
+		}
+#ifdef DEBUG_OPT_MERGETABLE
+		stream_printf(GDKout,"Result of multi table optimizer FAILED\n");
+		optimizerCheck(cntxt,mb,"merge test",1,0,0);
+		printFunction(GDKout, mb, 0, LIST_MAL_DEBUG);
+#endif
 	}
-	return 0;
+	return actions;
 }
 @include optimizerWrapper.mx
 @h
