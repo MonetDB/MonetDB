@@ -201,6 +201,7 @@ include opt_accessmode;
 include opt_multiplex;
 include opt_mergetable;
 include opt_mitosis;
+include opt_octopus;
 include opt_partitions;
 include opt_peephole;
 include opt_qep;
