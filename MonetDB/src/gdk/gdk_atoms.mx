@@ -1615,6 +1615,7 @@ int
 ptrFromStr(char *src, int *len, ptr **dst)
 {
 	/* don't allow unsafe str->ptr conversion */
+	(void) src;
 	@:atommem(ptr,sizeof(ptr))@
 	**dst = ptr_nil;
 	return 0;
