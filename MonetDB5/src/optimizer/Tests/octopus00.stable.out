@@ -55,8 +55,9 @@ function user.q():void;                 #  0 q:void := user.q() {G}
     u1 := remote.get("A",_53);          # 25 u1:bat[:oid,:int] := RMTget(_30:str, _53:rmtobj) {G}
     _57 := remote.put("B",u1);          # 26 _57:rmtobj := RMTput(_34:str, u1:bat[:oid,:int]) {G}
     _58 := remote.exec("B","algebra","kunion",_57,_55);# 27 _58:rmtobj := RMTexec(_34:str, _42:str, _59:str, _57:rmtobj, _55:rmtobj) {G}
-    remote.exec("B","io","print",_58);  # 28 _60:rmtobj := RMTexec(_34:str, _61:str, _62:str, _58:rmtobj) {G}
-end q;                                  # 29  
+    u := remote.get("B",_58);           # 28 u:bat[:oid,:int] := RMTget(_34:str, _58:rmtobj) {G}
+    io.print(u);                        # 29 _26:void := IOprint_val(u:bat[:oid,:int]) 
+end q;                                  # 30  
 
 # 20:45:24 >  
 # 20:45:24 >  Done.
