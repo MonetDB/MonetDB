@@ -3433,7 +3433,7 @@ static int wbs_flush(stream *s) {
        wbs_stream *wbs = (wbs_stream*) s->stream_data.p;
        size_t len = wbs->pos; 
        wbs->pos = 0;
-       if ((*wbs->s->write)(wbs->s, wbs->buf, 1, len) != len) 
+       if ((*wbs->s->write)(wbs->s, wbs->buf, 1, len) != (ssize_t) len) 
 		return -1;
        if (wbs->s->flush)
 		return (*wbs->s->flush)(wbs->s);
