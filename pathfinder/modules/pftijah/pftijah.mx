@@ -4231,10 +4231,10 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart)
     oid D_cur_pre;
 
     si *stack; 
-    int stack_top = 0, i;
+    BUN stack_top = 0, i;
 	
     int *size;
-    int free;	
+    BUN free;	
     oid *sdst = NULL, *hdst = NULL, *tdst = NULL;
     
     /* ------------------------------- checks ---------------------------------------- */
@@ -4317,12 +4317,11 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart)
       /* output everything that is on the stack (the ancestors) */
       /* It has started before Dstart and since it's a tree, */
       /* it has to end after Dend. */
-      free -= stack_top;
-      if (free < 0)
+      if (free < stack_top)
       {
      	BATsetcount(res, hdst - sdst);
-	size_t sz = BATgrows(res);
-	if (BATextend(res, sz) == NULL)
+        BUN sz = BATgrows(res);
+        if (BATextend(res, sz) == NULL)
     	{ 
        	  GDKerror("%s: could not extend result BAT.\n", name);
           return(GDK_FAIL);
@@ -4330,7 +4329,9 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart)
         sdst = (oid*)Hloc(res, BUNfirst(res));
         hdst = (oid*)Hloc(res, BUNlast(res));
         tdst = (oid*)Tloc(res, BUNlast(res));
-	free = sz - BATcount(res) - stack_top;
+        free = sz - BATcount(res) - stack_top;
+      } else {
+          free -= stack_top;
       }
      
       for (i=0;i<stack_top;i++) {

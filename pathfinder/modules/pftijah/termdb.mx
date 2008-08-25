@@ -68,7 +68,7 @@ typedef struct termDbCtx {
 	//
 	int*	buckets;
 	BAT**	hashbat;
-	size_t* hashbatSize;
+	BUN*	hashbatSize;
 } termDbCtx;
 
 extern int termdb_prelude(void);
@@ -188,7 +188,7 @@ int termdb_prelude() {
 	    BAT* fb = pftu_lookup_bat(hashbatName(TERMDBBAT,i));
 
             if ( !fb || !BUNappend(rt, &BBPcacheid(fb), 0) ) {
-                stream_printf(GDKout,"#termdb_prelude: fail to add fragbat[%i] to rt bat.\n");
+                stream_printf(GDKout,"#termdb_prelude: fail to add fragbat[%i] to rt bat.\n",i);
 	        return GDK_FAIL;
 	    }
 	}
@@ -383,7 +383,7 @@ termDbCtx* tdb_open(char* name) {
     if ( tdb->maxFragSize == oid_nil) {
     	tdb->hashbatSize = NULL;
     } else {
-    	tdb->hashbatSize = GDKmalloc((int)tdb->curFrag* sizeof(size_t));
+    	tdb->hashbatSize = GDKmalloc((int)tdb->curFrag* sizeof(BUN));
 	if ( !tdb->hashbatSize ) {
 	    stream_printf(GDKout,"#ERROR:tdb_open: out of memory on hashbatSize malloc.\n");
 	    return NULL;
@@ -522,7 +522,7 @@ int tdb_splitBucket(termDbCtx* tdb, int frag) {
     }
     tdb->hashbat[new_fragIdx] = 0;
     if (tdb->hashbatSize) {
-        tdb->hashbatSize = GDKrealloc(tdb->hashbatSize,1+(int)tdb->curFrag* sizeof(size_t));
+        tdb->hashbatSize = GDKrealloc(tdb->hashbatSize,1+(int)tdb->curFrag* sizeof(BUN));
         if ( !tdb->hashbatSize ) {
 	    stream_printf(GDKout,"tdb_splitBucket: realloc fails.\n");
             return 0;
@@ -566,7 +566,7 @@ int tdb_insertTerm(termDbCtx* tdb, char* term, oid o, int check) {
     	    return 0;
         } 
 	if ( tdb->hashbatSize ) {
-	    if ( (size_t)++tdb->hashbatSize[frag] > (size_t)tdb->maxFragSize)
+	    if ( ++tdb->hashbatSize[frag] > tdb->maxFragSize)
 	        if ( !tdb_splitBucket(tdb,frag) )
 		    return 0;
 	}
@@ -598,7 +598,7 @@ oid tdb_lookupTerm(termDbCtx* tdb, char* term) {
     	    return oid_nil;
         }  
 	if ( tdb->hashbatSize ) {
-	    if ( (size_t)++tdb->hashbatSize[frag] > (size_t)tdb->maxFragSize)
+	    if ( ++tdb->hashbatSize[frag] > tdb->maxFragSize)
 	        if ( !tdb_splitBucket(tdb,frag) )
 	            return oid_nil;
 	}

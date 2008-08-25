@@ -168,7 +168,7 @@ monet_hello(opt *set, int setlen)
 				GDKgetenv("gdk_dbname"),
 				GDKnr_threads, (GDKnr_threads > 1) ? "s" : "");
 		printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked\n",
-				HOST, (size_t) (sizeof(ptr) * 8), (size_t) (sizeof(oid) * 8), linkinfo);
+				HOST, sizeof(ptr) * 8, sizeof(oid) * 8, linkinfo);
 #ifdef MONET_GLOBAL_DEBUG
 		printf("# Configuration:%s\n", GDKgetenv("config"));
 		printf("# Database farm:%s\n", GDKgetenv("gdk_dbfarm"));

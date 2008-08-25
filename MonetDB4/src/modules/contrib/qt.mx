@@ -391,7 +391,7 @@ qt_makecross(int *crossid, BAT *qt_hue, BAT *qt_sat, BAT *qt_val, int *cspace)
 	}
 
 	if (BATcount(qt_hue) != BATcount(qt_sat) || BATcount(qt_hue) != BATcount(qt_val)) {
-		GDKerror("[qt_makecross]: (h) Table sizes " SZFMT ", " SZFMT ", " SZFMT "\n", BATcount(qt_hue), BATcount(qt_sat), BATcount(qt_val));
+		GDKerror("[qt_makecross]: (h) Table sizes " BUNFMT ", " BUNFMT ", " BUNFMT "\n", BATcount(qt_hue), BATcount(qt_sat), BATcount(qt_val));
 		return GDK_FAIL;
 	}
 
@@ -648,30 +648,30 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *
 		delta = now();
 
 	if (debug)
-		printf("qt_match: " SZFMT ", image_oid " SZFMT "\n", (size_t) * (oid *) BUNhead(qt_id, BUNfirst(qt_id)), (size_t) * ioid);
+		printf("qt_match: " OIDFMT ", image_oid " OIDFMT "\n", * (oid *) BUNhead(qt_id, BUNfirst(qt_id)), * ioid);
 
 	/* Check the consistency of the tables */
 	soid = *(oid *) BUNhead(qt_id, BUNfirst(qt_id));
 	if (soid != *(oid *) BUNhead(qt_hue, BUNfirst(qt_hue)) || soid != *(oid *) BUNhead(qt_sat, BUNfirst(qt_sat)) || soid != *(oid *) BUNhead(qt_val, BUNfirst(qt_val))) {
-		GDKerror("[qt_match]: Heads differ " SZFMT " " SZFMT " " SZFMT " " SZFMT "\n", (size_t) soid, (size_t) * (oid *) BUNhead(qt_hue, BUNfirst(qt_hue)), (size_t) * (oid *) BUNhead(qt_sat, BUNfirst(qt_sat)),
-			 (size_t) * (oid *) BUNhead(qt_val, BUNfirst(qt_val)));
+		GDKerror("[qt_match]: Heads differ " OIDFMT " " OIDFMT " " OIDFMT " " OIDFMT "\n", soid, * (oid *) BUNhead(qt_hue, BUNfirst(qt_hue)), * (oid *) BUNhead(qt_sat, BUNfirst(qt_sat)),
+			 * (oid *) BUNhead(qt_val, BUNfirst(qt_val)));
 		return GDK_FAIL;
 	}
 
 	if (BATcount(qt_id) != BATcount(qt_hue) || BATcount(qt_id) != BATcount(qt_sat) || BATcount(qt_id) != BATcount(qt_val)) {
-		GDKerror("[qt_match]: Table sizes differ " SZFMT " " SZFMT " " SZFMT " " SZFMT "\n", BATcount(qt_id), BATcount(qt_hue), BATcount(qt_sat), BATcount(qt_val));
+		GDKerror("[qt_match]: Table sizes differ " BUNFMT " " BUNFMT " " BUNFMT " " BUNFMT "\n", BATcount(qt_id), BATcount(qt_hue), BATcount(qt_sat), BATcount(qt_val));
 		return GDK_FAIL;
 	}
 
 	/* Find the starting oid and the number of features in the quad tree */
 	_ioid = *(int *) BUNhead(qt_ioffs, BUNfirst(qt_ioffs));
 	if (_ioid != (oid) *(int *) BUNhead(qt_inum, BUNfirst(qt_inum)) || BATcount(qt_ioffs) != BATcount(qt_inum)) {
-		GDKerror("[qt_match]: Inconsistent IOFFS/INUM tables %d %d (head), count " SZFMT " " SZFMT "\n", _ioid, *(int *) BUNhead(qt_inum, BUNfirst(qt_inum)), BATcount(qt_ioffs), BATcount(qt_inum));
+		GDKerror("[qt_match]: Inconsistent IOFFS/INUM tables " OIDFMT " %d (head), count " BUNFMT " " BUNFMT "\n", _ioid, *(int *) BUNhead(qt_inum, BUNfirst(qt_inum)), BATcount(qt_ioffs), BATcount(qt_inum));
 		return GDK_FAIL;
 	}
 
 	if (*ioid - _ioid > BATcount(qt_ioffs)) {
-		GDKerror("[qt_match]: Image oid " SZFMT " too large, BATcount " SZFMT "\n", (size_t) (*ioid - _ioid), BATcount(qt_ioffs));
+		GDKerror("[qt_match]: Image oid " OIDFMT " too large, BATcount " BUNFMT "\n", *ioid - _ioid, BATcount(qt_ioffs));
 		return GDK_FAIL;
 	}
 
@@ -681,11 +681,11 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *
 	hsv_size = BUNsize(qt_hue);
 
 	if (debug)
-		printf("qt_match: soid " SZFMT ", noid %d\n", (size_t) soid, noid);
+		printf("qt_match: soid " OIDFMT ", noid %d\n", soid, noid);
 
 	/* Make sure the soid and eoid are part of the tables */
 	if (noid < 0 || soid >= BATcount(qt_id) || soid + noid > BATcount(qt_id)) {
-		GDKerror("[qt_match]: soid %d, eoid %d, table size " SZFMT "\n", soid, soid + noid, BATcount(qt_id));
+		GDKerror("[qt_match]: soid " OIDFMT ", eoid " OIDFMT ", table size " BUNFMT "\n", soid, soid + noid, BATcount(qt_id));
 		return GDK_FAIL;
 	}
 
@@ -754,7 +754,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *
 		soid++;
 	}
 	if (debug)
-		printf("match: Starting oid " SZFMT "\n", (size_t) soid);
+		printf("match: Starting oid " OIDFMT "\n", soid);
 
 	for (i = nfeatures - 1; i >= 0; i--) {
 		int ncolors;
@@ -1023,7 +1023,7 @@ qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *qt_hue, BAT *qt_sat,
 
 	/* Validity checks */
 	if (BATcount(qt_ioffs) != BATcount(qt_inum) || BATcount(qt_id) != BATcount(qt_hue) || BATcount(qt_id) != BATcount(qt_sat) || BATcount(qt_id) != BATcount(qt_val)) {
-		GDKerror("[qt_ir_cluster]: Table sizes differ " SZFMT " " SZFMT " " SZFMT " " SZFMT " " SZFMT " " SZFMT "\n", BATcount(qt_inum), BATcount(qt_ioffs), BATcount(qt_id), BATcount(qt_hue), BATcount(qt_sat), BATcount(qt_val));
+		GDKerror("[qt_ir_cluster]: Table sizes differ " BUNFMT " " BUNFMT " " BUNFMT " " BUNFMT " " BUNFMT " " BUNFMT "\n", BATcount(qt_inum), BATcount(qt_ioffs), BATcount(qt_id), BATcount(qt_hue), BATcount(qt_sat), BATcount(qt_val));
 		return GDK_FAIL;
 	}
 

@@ -318,8 +318,8 @@ typedef struct {
 #define convert_dbl long_long_SWAP
 
 @= varsized_c
-    static size_t @1ssize(int dim) {
-      return(sizeof(@1s) + (((dim > 0) ? (dim - 1) : (0)) * sizeof(@1)));
+    static var_t @1ssize(int dim) {
+      return (var_t) (sizeof(@1s) + (dim > 0 ? dim - 1 : 0) * sizeof(@1));
     }
 
     @1s* @1screate(int dim) {
@@ -446,7 +446,7 @@ typedef struct {
     }
 
     void atom_@1s_del(Heap* h,var_t* idx) {
-        HEAP_free(h,(size_t)*idx);
+        HEAP_free(h,*idx);
     }
 
     @1s *atom_@1s_null(void) {
@@ -474,8 +474,8 @@ typedef struct {
         HEAP_initialize(heap, capacity, 0, @5);
     }
 
-    hash_t atom_@1s_hash(@1s* p) {
-        return (hash_t) (@1ssize(p->dimension));
+    BUN atom_@1s_hash(@1s* p) {
+        return (BUN) (@1ssize(p->dimension));
     }
 
     /************ Commands follow *************/

@@ -131,9 +131,9 @@ CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule)
 	first = BUNfirst(b);
 	view = VIEWcreate_(b, b, TRUE);
 
-	/*  printf("set bat chunk bound to %d %d - %d\n",
-	 *granule, first, MIN(cnt,(size_t) *granule)); */
-	VIEWbounds(view, (size_t) first, first + MIN(cnt, (size_t) * granule) - 1);
+	/*  printf("set bat chunk bound to " LLFMT " " BUNFMT " - " BUNFMT "\n",
+	 *granule, first, MIN(cnt,(BUN) *granule)); */
+	VIEWbounds(view, (BUN) first, first + MIN(cnt, (BUN) * granule) - 1);
 	BATseqbase(view, first - 1);
 	*vid = view->batCacheid;
 	BBPkeepref(view->batCacheid); 
@@ -167,9 +167,9 @@ CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule)
 		BBPunfix(view->batCacheid);
 		return MAL_SUCCEED;
 	}
-	/* printf("set bat chunk bound to %d - %d \n",
-	   i, i+(size_t) *granule-1); */
-	VIEWbounds(view, i, i + (size_t) * granule - 1);
+	/* printf("set bat chunk bound to " BUNFMT " - " BUNFMT " \n",
+	   i, i+(BUN) *granule-1); */
+	VIEWbounds(view, i, i + (BUN) * granule - 1);
 	BATseqbase(view, i - 1);
 	BBPunfix(b->batCacheid);
 	BBPkeepref(view->batCacheid);
@@ -339,7 +339,7 @@ CHPgetTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	limit = BUNlast(b);
 	if (*cursor < 0 || *cursor >= (lng) limit) {
 		BBPunfix(b->batCacheid);
-		throw(OUTOFBNDS, "mal.getTail", "range error: %d", *cursor);
+		throw(OUTOFBNDS, "mal.getTail", "range error: " LLFMT "", *cursor);
 	}
 
 	/* get tail = ... */

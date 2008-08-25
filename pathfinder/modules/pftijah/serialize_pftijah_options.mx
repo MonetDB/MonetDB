@@ -29,7 +29,7 @@
 extern int serialize_pftijah_options_DRIVER(
 	BAT**			res;
         BAT*			ws,
-        size_t			niters,
+        BUN			niters,
         BAT*			loop,
         BAT*			iter,
         BAT*			item, 
@@ -177,7 +177,7 @@ static struct serializeFunStruct pftijah_optionsSerializeFun = {
 int serialize_pftijah_options_DRIVER(
 	BAT**			res,
         BAT*			ws,
-        size_t			niters,
+        BUN			niters,
         BAT*			loop,
         BAT*			iter,
         BAT*			item, 

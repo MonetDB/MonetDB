@@ -323,10 +323,10 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #endif
 		/* FIXME: len < 0 ???? */
 
-		assert(0 <= len && len <= (lng)GDK_oid_max);
+		assert(0 <= len && len <= BUN_MAX);
 		h = getHeadType(rtype);
 		t = getTailType(rtype);
-		b = BATnew(h, t, (size_t)len);
+		b = BATnew(h, t, (BUN)len);
 
 		while (len-- > 0) {
 			if (mapi_fetch_row(mhdl) == 0) {
@@ -468,7 +468,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			throw(MAL, "remote.put", "cannot access BAT descriptor");
 
 		qbuf[511] = '\0';
-		snprintf(qbuf, 511, "%s := bat.new(:%s, :%s, " SZFMT ");",
+		snprintf(qbuf, 511, "%s := bat.new(:%s, :%s, " BUNFMT ");",
 				ident, head, tail, BATcount(b));
 
 		rethrow("remote.put", tmp, RMTquery(&mhdl, "remote.put", c->mconn, qbuf));

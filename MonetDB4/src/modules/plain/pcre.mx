@@ -21,8 +21,8 @@
 The  PCRE library is a set of functions that implement regular expres-
 sion pattern matching using the same syntax  and  semantics  as  Perl,
 with  just  a  few  differences.  The  current  implementation of PCRE
-(release 4.x) corresponds approximately with Perl 5.8, including  sup-
-port  for  UTF-8  encoded  strings.   However,  this support has to be
+(release 4.x) corresponds approximately with Perl 5.8, including  support
+for  UTF-8  encoded  strings.   However,  this support has to be
 explicitly enabled; it is not the default.
 
 
@@ -230,8 +230,7 @@ pcre_match(bit *ret, str val, str pat)
 void *
 my_pcre_malloc(size_t s)
 {
-	char *r = GDKmalloc(s + sizeof(size_t));
-	size_t *sz = (size_t *) r;
+	size_t *sz = (size_t *) GDKmalloc(s + sizeof(size_t));
 
 	*sz = s + sizeof(size_t);
 	return (void *) (sz + 1);
@@ -325,6 +324,7 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 	BAT *r;
 	BUN p, q;
 	pcre *re = NULL;
+	pcre_extra *pe = NULL;
 
 	if (strs->htype == TYPE_void)
 		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
@@ -335,13 +335,27 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 			pattern, errpos, err_p);
 		return GDK_FAIL;
 	}
+	err_p = NULL;
+	pe = pcre_study( re, 0, &err_p);
+	if (err_p) {
+		GDKerror("pcre_uselect", "pcre compile of pattern (%s) failed with\n'%s'.", pattern, err_p);
+		return GDK_FAIL;
+	}
+
 	BATloop(strs, p, q) {
 		str s = BUNtail(strsi, p);
+		int l = (int) strlen(s);
 
-		if (pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(r, BUNhead(strsi, p), NULL, FALSE);
+		if (pcre_exec(re, pe, s, l, 0, 0, NULL, 0) >= 0) {
+			BUNfastins(r, BUNhead(strsi, p), NULL);
 		}
 	}
+	r->H->nonil = strs->H->nonil;
+	r->hsorted = strs->hsorted;
+	BATkey(r, BAThkey(strs));
+	r->T->nonil = FALSE;
+	r->tsorted = FALSE;
+
 	my_pcre_free(re);
 	*res = r;
 	return GDK_SUCCEED;
@@ -366,8 +380,10 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 	for (i = 0; i < (int)strlen(flags); i++) {
 		if (flags[i] == 'e') {
 			exec_options -= PCRE_NOTEMPTY;
-			stream_printf(GDKout, "exec_options %d, PCRE_NOTEMPTY %d\n",
+/*
+			GDKwarning("exec_options %d, PCRE_NOTEMPTY %d\n",
 					exec_options, PCRE_NOTEMPTY);
+*/
 		} else if (flags[i] == 'i') {
 			compile_options |= PCRE_CASELESS;
 		} else if (flags[i] == 'm') {
@@ -684,7 +700,7 @@ pcre_nequal(pcre * l, pcre * r)
 		return 1;
 }
 
-hash_t
+BUN
 pcre_hash(pcre * b)
 {
 	return *(sht *) b;
@@ -713,7 +729,8 @@ pcre_put(Heap *h, var_t *bun, pcre * val)
 {
 	char *base;
 
-	*bun = HEAP_malloc(h, pcresize(val));
+	assert(pcresize(val) <= VAR_MAX);
+	*bun = HEAP_malloc(h, (var_t) pcresize(val));
 	base = h->base;
 	if (*bun)
 		memcpy(&base[*bun], (char *) val, pcresize(val));

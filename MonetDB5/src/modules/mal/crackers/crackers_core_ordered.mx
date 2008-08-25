@@ -339,8 +339,8 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_la
 	}
 	/*Middle piece is empty and lt = ht + 1*/
 	if (lowShrinked + hghShrinked == scr_size){
-		*posl = lt - t0;
-		*posh = ht - t0;
+		*posl = (oid) (lt - t0);
+		*posh = (oid) (ht - t0);
 		return MAL_SUCCEED;
 	}
 
@@ -417,7 +417,7 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_la
 		}
 	}
 	
-	pos1 = lt - t0; 
+	pos1 = (oid) (lt - t0); 
 
 	tmph = hh;
 	tmpt = ht;
@@ -476,7 +476,7 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_la
 		}
 	}
 
-	pos2 = tmpt - t0; 
+	pos2 = (oid) (tmpt - t0); 
 
 	i = 0;
 	for (; i < mmids; i++){
@@ -562,7 +562,7 @@ CRKcrackOrderedThreeL_@2_@3_@1(BAT *b, @1 low, @1 hgh, oid idx_first, oid idx_la
 		tmpt @5= 2;
 	
 		/* Take the position where the last BUN of the left piece is. */
-		*pos = (ct - t0) @7; 
+		*pos = (oid) (ct - t0) @7; 
 
 		ct  @2= hil;
 		/* Extreme case where all lows(or all but one, or all but two) where in the hgh partition 
@@ -708,7 +708,7 @@ CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, oid idx_first, oid idx_last, oid *pos)
 		*tmph = *hh;
 		*tmpt = *ht;
 
-		*pos = tmpt - t0; 
+		*pos = (oid) (tmpt - t0); 
 
 		*hh = dh;
 		*ht = dt;
@@ -717,7 +717,7 @@ CRKcrackOrderedZero_@2_@1(BAT *b, @1 mid, oid idx_first, oid idx_last, oid *pos)
 	}
 
 	if (ht == tmpt - 1){
-		*pos = ht - t0; 
+		*pos = (oid) (ht - t0); 
 		return MAL_SUCCEED;
 	}	
 

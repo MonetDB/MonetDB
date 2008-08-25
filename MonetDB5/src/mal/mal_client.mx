@@ -143,7 +143,7 @@ usage patterns.
 	lng     timer;   /* trace time in usec */
 	lng	bigfoot; /* maximum virtual memory use */
 	lng	vmfoot;  /* virtual memory use */
-	size_t	cnt;	/* bat count */
+	BUN	cnt;	/* bat count */
 
 #define timerFlag	1
 #define memoryFlag	2
@@ -215,7 +215,7 @@ is retained here for access by others (=father).
 @h
 	MT_Sema 	s;	    /* sema to (de)activate thread */ 
 	Thread      	mythread;
-	size_t		mypid;
+	MT_Id		mypid;
 	str     	errbuf;     /* location of GDK exceptions */
 	struct CLIENT   *father;    
 @-
@@ -382,7 +382,7 @@ allocation and lookup scheme.
 Client MCgetClient()
 {
 	Client c;
-	size_t pid= MT_getpid();
+	MT_Id pid= MT_getpid();
 	Thread tid;
 
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
@@ -543,7 +543,7 @@ void MCinitClientThread(Client c)
 	Thread t;
 	char cname[11 + 1];
 
-	snprintf(cname, 11, SZFMT, (size_t)(c->user));
+	snprintf(cname, 11, OIDFMT, c->user);
 	cname[11] = '\0';
 	c->mypid = MT_getpid();
 	c->mythread = t = THRnew(c->mypid,cname);

@@ -94,7 +94,7 @@ CRKcrack@4Zero_validate_@1 (bit *res, int *bid, @1 *_mid){
 	@:validate_check_1(@1,2,> ,mid,@4)@
 
 	@:validate_end(@1,z,\
-		printf("|b|="SZFMT" ; |tail<=%f|="SZFMT", |tail>%f|="SZFMT" !\n",\
+		printf("|b|="BUNFMT" ; |tail<=%f|="BUNFMT", |tail>%f|="BUNFMT" !\n",\
 		       count[0], (dbl)mid, count[1], (dbl)mid, count[2]);\
 	)@
 }
@@ -109,7 +109,7 @@ CRKcrack@4One_validate_@1 (int *res, int *bid, @1 *_mid){
 	@:validate_check_1(@1,3,> ,mid,@4)@
 	
 	@:validate_end(@1,,\
-		printf("|b|="SZFMT" ; |tail<%f|="SZFMT", |tail==%f|="SZFMT", |tail>%f|="SZFMT" !\n",\
+		printf("|b|="BUNFMT" ; |tail<%f|="BUNFMT", |tail==%f|="BUNFMT", |tail>%f|="BUNFMT" !\n",\
 		       count[0], (dbl)mid, count[1], (dbl)mid, count[2], (dbl)mid, count[3]);\
 	)@
 }
@@ -127,7 +127,7 @@ CRKcrack@4Two_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh){
 	@:validate_check_1(@1,5,> ,hgh,@4)@
 
 	@:validate_end(@1,,\
-		printf("|b|="SZFMT" ; |tail<%f|="SZFMT", |tail==%f|="SZFMT", |%f<tail<%f|="SZFMT", |tail==%f|="SZFMT", |tail>%f|="SZFMT" !\n",\
+		printf("|b|="BUNFMT" ; |tail<%f|="BUNFMT", |tail==%f|="BUNFMT", |%f<tail<%f|="BUNFMT", |tail==%f|="BUNFMT", |tail>%f|="BUNFMT" !\n",\
 		       count[0], (dbl)low, count[1], (dbl)low, count[2], (dbl)low, (dbl)hgh, count[3], (dbl)hgh, count[4], (dbl)hgh, count[5]);\
 	)@
 }
@@ -143,7 +143,7 @@ CRKcrack@4Three_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh){
 	@:validate_check_1(@1,3,> ,hgh,@4)@
 
 	@:validate_end(@1,z,\
-		printf("|b|="SZFMT" ; |tail<=%f|="SZFMT", |%f<tail<=%f|="SZFMT", |tail>%f|="SZFMT" !\n",\
+		printf("|b|="BUNFMT" ; |tail<=%f|="BUNFMT", |%f<tail<=%f|="BUNFMT", |tail>%f|="BUNFMT" !\n",\
 		       count[0], (dbl)low, count[1], (dbl)low, (dbl)hgh, count[2], (dbl)hgh, count[3]);\
 	)@
 }
@@ -274,7 +274,7 @@ CRKverifyCrackerIndex_@1(int *k, int *bid){
 @= validate_init_1
 	BAT *b,*c,*w;
 	BUN fst_bn, lst_bn, bn;
-	size_t count[6] = {0,0,0,0,0,0};
+	BUN count[6] = {0,0,0,0,0,0};
 
 	/* initialization */
 	*res = FALSE;

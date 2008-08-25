@@ -271,7 +271,7 @@ xquery_print_result_DRIVER (
     serializeFunStruct *driverFun, /* unused */
     char               *driverArg, /* unused */
     BAT                *ws,
-    size_t              niters,
+    BUN                 niters,
     BAT                *loop,
     BAT                *iter,
     BAT                *item, 
@@ -299,7 +299,7 @@ xquery_print_result_driver (
     serializeFunStruct *driverFun, /* unused */
     char               *driverArg, /* unused */
     BAT                *ws,
-    size_t              niters,
+    BUN                 niters,
     BAT                *loop,
     BAT                *iter,
     BAT                *item, 
@@ -1114,7 +1114,7 @@ static bool
 process_node_attr (XqueryCtx* ctx, int cont, oid pre) {
     BAT     *pre_nid, *attr_own_shr, *attr_own_prv, *attr_own_chk;
     BATiter pre_nidi, attr_own_shri, attr_own_prvi, attr_own_chki;
-    hash_t idx;
+    BUN idx;
     oid base, nid = oid_nil, *attr_own;
     BUN p;
     
@@ -1124,9 +1124,9 @@ process_node_attr (XqueryCtx* ctx, int cont, oid pre) {
     if ( p != BUN_NONE ) {
         nid = *(oid*)BUNtail(pre_nidi,p);
     } else {
-        fatal_err(ctx,"process_node_attr: "SZFMT" not within ["SZFMT","SZFMT"]", 
-                  (size_t)pre, (size_t)(*(oid*)BUNhead(pre_nidi,BUNfirst(pre_nid))), 
-                  (size_t)(*(oid*)BUNhead(pre_nidi,BUNlast(pre_nid)-1)));
+        fatal_err(ctx,"process_node_attr: "OIDFMT" not within ["OIDFMT","OIDFMT"]", 
+                  pre, *(oid*)BUNhead(pre_nidi,BUNfirst(pre_nid)), 
+                  *(oid*)BUNhead(pre_nidi,BUNlast(pre_nid)-1));
         return PROBLEM;
     }
 
@@ -1559,7 +1559,7 @@ ws_documentIndex (BAT* ws, str docName)
         BUN p;
         HASHfnd_str(p, open_namei, docName);
         if (p != BUN_NONE) {
-            size_t idx = p - BUNfirst(open_name);
+            BUN idx = p - BUNfirst(open_name);
             p = BUNfirst(open_cont) + idx;
             if (p < BUNlast(open_cont)) {
                 res = *(oid*) BUNtail(open_conti, p); 
@@ -1703,7 +1703,7 @@ xquery_print_result_driver (
     serializeFunStruct *driverFun, /* unused */
     char               *driverArg, /* unused */
     BAT                *ws,
-    size_t              niters,
+    BUN                 niters,
     BAT                *loop,
     BAT                *iter,
     BAT                *item, 
@@ -1727,7 +1727,7 @@ xquery_print_result_driver (
 
     BATiter loopi = bat_iterator(loop), iteri = bat_iterator(iter);
     BATiter itemi = bat_iterator(item);
-    size_t yy, curcnt, maxcnt, buncnt;
+    BUN yy, curcnt, maxcnt, buncnt;
     XqueryCtx ctx_struct, *ctx = &ctx_struct;
     static BUN (*fun_k) (BAT *, oid);
 
@@ -2138,7 +2138,7 @@ xquery_print_result_DRIVER (
     serializeFunStruct *driverFun,
     char               *driverArg,
     BAT                *ws,
-    size_t              niters,
+    BUN                 niters,
     BAT                *loop,
     BAT                *iter,
     BAT                *item, 

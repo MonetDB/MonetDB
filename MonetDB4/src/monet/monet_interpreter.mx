@@ -527,7 +527,7 @@ setProfilerMode(int mode)
 		/* check existence of the BAT */
 		profilerCount = BATdescriptor(BBPindex("monet_profiler_count"));
 		if (profilerCount == NULL) {
-			profilerCount = BATnew(TYPE_str, TYPE_int, (size_t) 1000);
+			profilerCount = BATnew(TYPE_str, TYPE_int, (BUN) 1000);
 			BBPrename(profilerCount->batCacheid, "monet_profiler_count");
 			BATroles(profilerCount, "name", "count");
 			BATmode(profilerCount, PERSISTENT);
@@ -536,7 +536,7 @@ setProfilerMode(int mode)
 			BBPincref(profilerCount->batCacheid, TRUE);
 		profilerTicks = BATdescriptor(BBPindex("monet_profiler_ticks"));
 		if (profilerTicks == NULL) {
-			profilerTicks = BATnew(TYPE_str, TYPE_lng, (size_t) 1000);
+			profilerTicks = BATnew(TYPE_str, TYPE_lng, (BUN) 1000);
 			BBPrename(profilerTicks->batCacheid, "monet_profiler_ticks");
 			BATroles(profilerTicks, "name", "count");
 			BATmode(profilerTicks, PERSISTENT);
@@ -1609,7 +1609,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			BUN q = BUNlast(b);
 			BUN p = BUNfirst(b);
 			BUN r = BUNfirst(bn);
-			size_t hs = Hsize(bn), ts = Tsize(bn);
+			unsigned short hs = Hsize(bn), ts = Tsize(bn);
 
 			if (tpe == TYPE_oid && b->ttype == TYPE_void) {
 				/* void => oid materialization is a special case */

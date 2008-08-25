@@ -421,17 +421,17 @@ mbrTOSTR(
 
 /* HASH: compute a hash value. */
 /* returns a positive integer hash value */
-geom_export hash_t
+geom_export BUN
 mbrHASH(
    mbr*	atom	/* IN: to-be-hashed mbr. */
 );
 
-hash_t
+BUN
 mbrHASH(
    mbr*	atom	/* IN: to-be-hashed mbr. */
 )
 {
-	return (hash_t) ( (((int) atom->xmin) * ((int) atom->ymin)) * (((int) atom->xmax) * ((int) atom->ymax)) );
+	return (BUN) ( (((int) atom->xmin) * ((int) atom->ymin)) * (((int) atom->xmax) * ((int) atom->ymax)) );
 }
 
 /* COMP: compare two mbrs. */
@@ -536,12 +536,13 @@ mbrFromMBR(mbr **w, mbr **src)
  * Implementation of variable-sized atom wkb.
  */
 
-static size_t
+static var_t
 wkb_size(size_t len)
 {
 	if (len == ~(size_t) 0)
 		len = 0;
-	return sizeof(wkb) - 1 + len;
+	assert(sizeof(wkb) - 1 + len <= VAR_MAX);
+	return (var_t) (sizeof(wkb) - 1 + len);
 }
 
 /* TOSTR: print atom in a string. */
@@ -695,14 +696,14 @@ wkbFromText(wkb **w, str *wkt, int *tpe)
 	throw(MAL, "wkb.FromText", GDKerrbuf);
 }
 
-geom_export hash_t
+geom_export BUN
 wkbHASH(wkb *w);
 
-hash_t
+BUN
 wkbHASH(wkb *w)
 {
 	int i;
-	hash_t h = 0;
+	BUN h = 0;
 
 	for (i = 0; i<(w->len-1); i+=2) {
 		int a = w->data[i], b = w->data[i+1];
@@ -815,7 +816,7 @@ wkbLENGTH(wkb *p);
 int
 wkbLENGTH(wkb *p)
 {
-	size_t len = wkb_size(p->len);
+	var_t len = wkb_size(p->len);
 	assert(len <= GDK_int_max);
 	return (int) len;
 }
@@ -905,7 +906,7 @@ geos2wkb( GEOSGeom geosGeometry )
 {
 	size_t wkbLen = 0; 
 	unsigned char *w = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
-	wkb *atom = GDKmalloc((int)wkb_size(wkbLen));
+	wkb *atom = GDKmalloc(wkb_size(wkbLen));
 
 	if (!w) {
 		*atom = *wkbNULL();

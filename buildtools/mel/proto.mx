@@ -269,7 +269,7 @@ proto::gen_atomops(ostream &o, const Atomops &d)
 		break;
         case OP_HASH 	:
 		o << mod_export;
-		o << " hash_t\n";
+		o << " BUN\n";
 		o << d.Name() << "(\n";
 		o << "   " << name;
 		if (!hasPtr)

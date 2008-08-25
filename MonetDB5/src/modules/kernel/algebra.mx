@@ -1189,7 +1189,7 @@ BAT@1(BAT *b, ptr aggr)
 {
 	BATiter bi = bat_iterator(b);
 	int t;
-	size_t s;
+	BUN s;
 	ptr v, x;
 
 	BATcheck(b, "BAT@1");
@@ -1461,7 +1461,7 @@ CMDfragment(BAT **result, BAT *b, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 int
 CMDthetajoin(BAT **result, BAT *left, BAT *right, int *mode, lng *estimate)
 {
-	return (*result = BATthetajoin(left, right, *mode, (*estimate == lng_nil) ? oid_nil : (size_t) * estimate)) ? GDK_SUCCEED : GDK_FAIL;
+	return (*result = BATthetajoin(left, right, *mode, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= BUN_MAX ? BUN_MAX : (BUN) *estimate))) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
@@ -1500,7 +1500,7 @@ CMD@1(BAT **result, BAT *left, BAT* right)
 int
 CMD@1(BAT **result, BAT *left, BAT* right, lng *estimate)
 {
-	return (*result = @2(left, right, *estimate==lng_nil?(size_t)oid_nil:(size_t)*estimate))?GDK_SUCCEED:GDK_FAIL;
+	return (*result = @2(left, right, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= BUN_MAX ? BUN_MAX : (BUN) *estimate))) ? GDK_SUCCEED : GDK_FAIL;
 }
 @= binaryint
 int
@@ -1724,7 +1724,7 @@ CMDlike(BAT **ret, BAT *b, str s)
 	BAT *c = BATnew(BAThtype(b), TYPE_str, BATcount(b) / 10);
 	str t = GDKstrdup(s);
 	BUN u, v;
-	int yy = 0;
+	BUN yy = 0;
 
 	if (c == NULL)
 		return GDK_FAIL;
@@ -1764,15 +1764,12 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 		GDKerror("CMDslice: start position of slice should >= 0\n");
 		return GDK_FAIL;
 	}
-#if SIZEOF_SIZE_T < SIZEOF_LNG
-	if (start >= ((lng) 1 << (8 * SIZEOF_SIZE_T)) ||
-	    end >= ((lng) 1 << (8 * SIZEOF_SIZE_T))) {
+	if (start > BUN_MAX || end >= BUN_MAX) {
 		GDKerror("CMDslice: argument out of range\n");
 		return GDK_FAIL;
 	}
-#endif
 
-	return (*retval = BATslice(b, (size_t) start, (size_t) end + 1)) ? GDK_SUCCEED : GDK_FAIL;
+	return (*retval = BATslice(b, (BUN) start, (BUN) end + 1)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
@@ -1840,7 +1837,7 @@ fetch(ptr ret, BAT *b, lng i)
 		return GDK_FAIL;
 	}
 	i += BUNfirst(b);
-	assert(i <= (lng)GDK_oid_max);
+	assert(i <= BUN_MAX);
 	@:putTail((BUN)i)@
 @= putTail
 	if (b->ttype && b->theap) {
@@ -1879,7 +1876,7 @@ fetch(ptr ret, BAT *b, lng i)
 int
 CMDfetch_int(ptr ret, BAT *b, int *pos)
 {
-	return fetch(ret, b, (size_t) *pos);
+	return fetch(ret, b, *pos);
 }
 
 int
@@ -1933,7 +1930,8 @@ CMDfind_oid(ptr ret, BAT *b, oid* val)
 int
 CMDr@1_summary(BAT **ret, BAT* b, int *quantiles)
 {
-	ssize_t cnt = BATcount(b), n = MIN(cnt,*quantiles);
+	BUN cnt = BATcount(b);
+	BUN n = *quantiles < 0 ? 0 : MIN(cnt,(BUN) *quantiles);
 	dbl threshold =0, delta = ((dbl) cnt) / (dbl) (MAX(1,n)-1);
 	BAT *bn = *ret = BATnew(b->ttype, TYPE_oid, n);
 	int (*cmp)(ptr,ptr) = BATatoms[b->ttype].atomCmp;
@@ -1947,7 +1945,7 @@ CMDr@1_summary(BAT **ret, BAT* b, int *quantiles)
 
 	if (cnt > 0) {
 		BATiter bi = bat_iterator(b);
-		ssize_t yy = 0;
+		BUN yy = 0;
 		BUN p, bnds[2];
 		ptr v;
 
@@ -1985,7 +1983,7 @@ CMDr@1_@2(oid* ret, BAT *b, ptr v)
 	} else if (BATcount(b) > 0) {
 		BATiter bi = bat_iterator(b);
 		BUN p = BUN_NONE;
-		ssize_t idx;
+		oid idx;
 
 		switch(ATOMstorage(b->htype)) {
 		case TYPE_chr:
@@ -2022,13 +2020,13 @@ CMDr@1_@2(oid* ret, BAT *b, ptr v)
 			p--;
 		}
 		if (p < BUNfirst(b)) {
-			idx = *(ssize_t*) BUNtail(bi,p) - 1;
+			idx = *(oid*) BUNtail(bi,p) - 1;
 		} else if (p >= BUNlast(b)) {
-			idx = (*(ssize_t*) BUNtail(bi,BUNlast(b)-1)) + 1;
+			idx = *(oid*) BUNtail(bi,BUNlast(b)-1) + 1;
 		} else {
-			idx = (*(ssize_t*) BUNtail(bi,p)) @5 1;
+			idx = *(oid*) BUNtail(bi,p) @5 1;
 		}
-		*ret = (idx < 0)?0:idx;
+		*ret = idx;
 	} else {
 		*ret = oid_nil;
 	}
@@ -2038,7 +2036,7 @@ CMDr@1_@2(oid* ret, BAT *b, ptr v)
 int
 CMDfind_@2(oid *ret, BAT *b, ptr v)
 {
-	ssize_t idx = (ssize_t) oid_nil;
+	oid idx = oid_nil;
 
 	if ((BAThordered(b)&1) == 0) {
 		GDKerror("CMDfind_@2: %s should be sorted on head\n", BATgetId(b));
@@ -2077,11 +2075,11 @@ CMDfind_@2(oid *ret, BAT *b, ptr v)
 		}
 		if (p != BUN_NONE) {
 			BATiter bi = bat_iterator(b);
-			idx = *(ssize_t*) BUNtail(bi,p);
+			idx = *(oid*) BUNtail(bi,p);
 			@6;
 		}
 	}
-	*ret = (oid) idx;
+	*ret = idx;
 	return GDK_SUCCEED;
 }
 @c
@@ -2091,7 +2089,7 @@ CMDfind_@2(oid *ret, BAT *b, ptr v)
 int
 CMDmerge(BAT **ret, BAT *b)
 {
-	size_t n = BATcount(b);
+	BUN n = BATcount(b);
 	BAT *bn = *ret = BATnew(TYPE_lng, TYPE_void, n);
 	BATiter bni = bat_iterator(bn), bi = bat_iterator(b);
 	BUN p, q;
@@ -2121,9 +2119,9 @@ int
 CMDsplit(BAT **ret, BAT *b)
 {
 	BATiter bi = bat_iterator(b);
-	size_t n = BATcount(b);
+	BUN n = BATcount(b);
 	BAT *bn = *ret = BATnew(TYPE_oid, TYPE_oid, n);
-	size_t i;
+	BUN i;
 	lng *r = (lng *) BUNhead(bi, BUNfirst(b));
 
 	for (i = 0; i < n; i++, r++) {
@@ -2312,7 +2310,7 @@ ALGtopN(int *res, int *bid, lng *top)
 		throw(MAL, "algebra.top", "Cannot access descriptor");
 	}
 	/* TOP N works inplace, ie deletes ... */
-	(void) BATtopN(b, (size_t) *top);
+	(void) BATtopN(b, (BUN) *top);
 	*res = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -3115,7 +3113,7 @@ str
 ALGcount_nil(int *result, int *bid, bit *ignore_nils)
 {
 	BAT *b;
-	size_t cnt;
+	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "aggr.count", "Cannot access descriptor");
@@ -3584,9 +3582,9 @@ ALGhashjoin(int *result, int *lid, int *rid)
 	rsize = right->H->heap.size + right->T->heap.size + (right->hheap ? right->hheap->size : 0) + (right->theap ? right->theap->size : 0);
 
 	if (rsize < lsize)
-		bn = BATmirror(BAThashjoin(BATmirror(right), BATmirror(left), oid_nil));
+		bn = BATmirror(BAThashjoin(BATmirror(right), BATmirror(left), BUN_NONE));
 	else
-		bn = BAThashjoin(left, right, oid_nil);
+		bn = BAThashjoin(left, right, BUN_NONE);
 
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
@@ -3616,7 +3614,7 @@ ALGmergejoin(int *result, int *lid, int *rid)
 
 	if ((left->ttype == TYPE_void) || (right->htype == TYPE_void))
 		throw(MAL, "algebra.mergejoin", "Cannot perform mergejoin on void fields.\n");
-	bn = BATmergejoin(left, right, oid_nil);
+	bn = BATmergejoin(left, right, BUN_NONE);
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
 	if (bn) {
@@ -3641,7 +3639,7 @@ ALGindexjoin(int *result, int *lid, int *rid)
 		throw(MAL, "algebra.indexjoin", "Cannot access descriptor");
 	}
 
-	bn = BATthetajoin(left, right, JOIN_EQ, oid_nil);
+	bn = BATthetajoin(left, right, JOIN_EQ, BUN_NONE);
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
 	if (bn) {
@@ -3797,7 +3795,7 @@ The avg aggregate only works for int and float fields.
 int
 CMDavg_@1(dbl* res, BAT *b)
 {
-	size_t cnt = BATcount(b);
+	BUN cnt = BATcount(b);
 
 	if (cnt) {
 		bit t = TRUE;

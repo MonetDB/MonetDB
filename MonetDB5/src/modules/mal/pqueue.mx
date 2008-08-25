@@ -129,7 +129,7 @@ pqueue_export str PQinit(int *ret, int *bid, wrd *maxsize);
 #include "mal_interpreter.h"
 
 /*returns the parent of a pqueue position*/
-static INLINE size_t parent(size_t posel)
+static INLINE BUN parent(BUN posel)
 {
   if (posel%2) /*odd*/
 	return posel/2;
@@ -139,7 +139,7 @@ static INLINE size_t parent(size_t posel)
 
 /*initialize pqueue*/
 static void
-do_pqueue_init(BAT **h, BAT *b, size_t maxsize)
+do_pqueue_init(BAT **h, BAT *b, BUN maxsize)
 {
 	*h = BATnew(TYPE_oid, b->ttype, maxsize);
         if (*h)
@@ -149,7 +149,7 @@ do_pqueue_init(BAT **h, BAT *b, size_t maxsize)
 int 
 pqueue_init(BAT **h, BAT *b, wrd *maxsize)
 {
-	do_pqueue_init(h, b, (size_t) *maxsize);
+	do_pqueue_init(h, b, (BUN) *maxsize);
   	return GDK_SUCCEED;
 }
 
@@ -185,7 +185,7 @@ int pqueue_enqueue_@1@2(BAT *h,
   BUN ins,cur;
 
   BUN hbase = BUNfirst(h);
-  size_t p, posel = BATcount(h); /*last position*/
+  BUN p, posel = BATcount(h); /*last position*/
  
   BUNins(h, (ptr)idx, (ptr)el, FALSE);
   ins = hbase+posel;
@@ -212,8 +212,8 @@ static int pqueue_movedowntop_@1@2(BAT *h)
 {
   BATiter hi = bat_iterator(h);
   BUN swp, cur, hbase = BUNfirst(h);
-  size_t swap, num_elems = BATcount(h);
-  size_t posel = 0;
+  BUN swap, num_elems = BATcount(h);
+  BUN posel = 0;
 
   cur = hbase;
   
@@ -247,7 +247,7 @@ int pqueue_dequeue_@1@2(BAT *h)
 {
   BATiter hi = bat_iterator(h);
   BUN hbase;
-  size_t num_elements;
+  BUN num_elements;
 
   if (!(num_elements = BATcount(h))) {
     GDKerror("pqueue_dequeue: Cannot dequeue from empty queue\n");
@@ -292,11 +292,11 @@ int pqueue_topn_void@1@2(BAT **H, BAT *t, int *N)
 {
   BATiter ti = bat_iterator(t);
   @1 *v;
-  size_t i, n = BATcount(t);
+  BUN i, n = BATcount(t);
   oid idx = t->hseqbase;
 
-  if ((size_t) *N < n)
-	  n = (size_t) *N;
+  if ((BUN) *N < n)
+	  n = (BUN) *N;
   do_pqueue_init(H,t,n);
   v = (@1*)BUNtail(ti,BUNfirst(t));
 
@@ -313,11 +313,11 @@ int pqueue_topn_void@1@2(BAT **H, BAT *t, int *N)
 int pqueue_topn_@1@2(BAT **H, BAT *t, int *N)
 {
   BATiter ti = bat_iterator(t);
-  size_t i, n = BATcount(t);
+  BUN i, n = BATcount(t);
   BUN p = BUNfirst(t);
 
-  if ((size_t) *N < n)
-	  n = (size_t) *N;
+  if ((BUN) *N < n)
+	  n = (BUN) *N;
   do_pqueue_init(H,t,n);
 
   for(i=0; i<n; i++, p++) {
@@ -354,7 +354,8 @@ int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
   BATiter hi = bat_iterator(h);
   BUN hbase;
   BUN ins,cur;
-  size_t p, posel, ts = Tsize(h);
+  BUN p, posel;
+  unsigned short ts = Tsize(h);
 
   hbase = BUNfirst(h);
 
@@ -386,8 +387,9 @@ static int pqueue_movedowntop_any@1(BAT *h)
   BUN hbase;
   BUN swp,cur;
   int tpe = BATttype(h);
-  size_t swap, num_elems;
-  size_t posel, ts = Tsize(h);
+  BUN swap, num_elems;
+  BUN posel;
+  unsigned short ts = Tsize(h);
 
   hbase = BUNfirst(h);
 
@@ -428,8 +430,8 @@ int pqueue_dequeue_any@1(BAT *h)
 {
   BATiter hi = bat_iterator(h);
   BUN hbase;
-  size_t num_elements;
-  size_t ts = Tsize(h);
+  BUN num_elements;
+  unsigned short ts = Tsize(h);
 
   if (!(num_elements = BATcount(h))) {
 	GDKerror("pqueue_dequeue: Cannot dequeue from empty queue\n");
@@ -468,13 +470,13 @@ int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe)
 int pqueue_topn_voidany@1(BAT **H, BAT *t, int *N)
 {
   BATiter ti = bat_iterator(t);
-  size_t i, n = BATcount(t);
+  BUN i, n = BATcount(t);
   oid idx = t->hseqbase;
   BUN p = BUNfirst(t);
   int tpe = BATttype(t);
 
-  if ((size_t) *N < n)
-   	n = (size_t) *N;
+  if ((BUN) *N < n)
+   	n = (BUN) *N;
   do_pqueue_init(H,t,n);
 
   for(i=0; i<n; i++, idx++, p++) {
@@ -490,12 +492,12 @@ int pqueue_topn_voidany@1(BAT **H, BAT *t, int *N)
 int pqueue_topn_any@1(BAT **H, BAT *t, int *N)
 {
   BATiter ti = bat_iterator(t);
-  size_t i, n = BATcount(t);
+  BUN i, n = BATcount(t);
   BUN p = BUNfirst(t);
   int tpe = BATttype(t);
 
-  if ((size_t) *N < n)
-   	n = (size_t) *N;
+  if ((BUN) *N < n)
+   	n = (BUN) *N;
   do_pqueue_init(H,t,n);
 
   for(i=0; i<n; i++, p++) {

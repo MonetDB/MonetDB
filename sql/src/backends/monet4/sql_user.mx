@@ -67,7 +67,7 @@ monet4_create_user(list *l, char *user, char *passwd, char *fullname, sqlid sche
 	size_t user_id;
 
 	/* create two SQL statements that insert the user in the SQL
-	 * adminsitration */
+	 * administration */
 	user_id = (size_t)store_next_oid();
 	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"db_users\" VALUES('%s','%s','%s',%d);", user, passwd, fullname, schema_id);
 	list_append(l, stmt_sql(_strdup(buf)));

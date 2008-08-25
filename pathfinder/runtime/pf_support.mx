@@ -5940,7 +5940,7 @@ XQUERY_HASH(" foo bar ")       = XQUERY_HASH("foo")
        _len = dblFromStr(_val, &_dummy, &_ref);      \
     }                                                \
     if (_len == 0) {                                 \
-       hash_t _hsh;                                  \
+       BUN _hsh;                                  \
        XQUERY_STRHASH(_val, _hsh);                   \
        _tmp = (dbl) _hsh;                            \
     }                                                \
@@ -5955,7 +5955,7 @@ int CMDxquery_hash(int *dst, char* val) {
     return GDK_SUCCEED;
 }
 int CMDxquery_hash_bat(BAT **res, BAT* b) {
-    size_t cnt = BATcount(b);
+    BUN cnt = BATcount(b);
     BAT *bn = *res = BATnew(TYPE_void, TYPE_int, cnt);
     int *dst = (int*) Tloc(bn, BUNfirst(bn));
     BUN p, q;
@@ -6026,7 +6026,7 @@ int
 CMDfetchConvert_@1(ptr res, int *tpe, BAT* b, @1* pos) 
 {
 	int ret = GDK_FAIL;
-	if (@3 ((size_t) *pos) < BATcount(b)) {
+	if (@3 ((BUN) *pos) < BATcount(b)) {
 		BATiter bi = bat_iterator(b);
 		bat bid = *(bat*) BUNtail(bi, BUNfirst(b)+*pos);
 		int fix = BBPfix(bid);
@@ -6100,16 +6100,16 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	bit mat[ntabs];
 	int ttpe[ncols];	/* sht / bte ? */
 	oid hsqb[ntabs];
-	size_t Bcnt[ntabs], inc[2];
+	BUN Bcnt[ntabs], inc[2];
 	int t, c, var, fix, non_empty[ntabs+1];
 	bit concat01 = FALSE, concat10 = FALSE, void_fix = FALSE;
 	bte *w = NULL, *ww[2], *wt, *ws[2];
-	size_t res_count = 0, h = 0;
+	BUN res_count = 0, h = 0;
 
 	BAT *src[2];
 	BATiter srci[2];
 	BUN csr[2];
-	size_t idx[2], cnt[2], hs[2], ht;
+	BUN idx[2], cnt[2], hs[2], ht;
 	
 	assert(ncols > 0);
 	assert(ntabs > 1);
@@ -6128,7 +6128,7 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	for (t=0; t<ntabs; t++) {
 		mat[t]  = FALSE;
 		hsqb[t] = oid_nil;
-		Bcnt[t] = (size_t)-1;
+		Bcnt[t] = BUN_NONE;
 	}
 	for (c=0; c<ncols; c++) {
 		ttpe[c] = int_nil;
@@ -6163,11 +6163,11 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 					return GDK_FAIL;
 				}
 			}
-			if (Bcnt[t] == (size_t)-1) {
+			if (Bcnt[t] == BUN_NONE) {
 				Bcnt[t] = BATcount(b[t][c]);
 			} else {
 				if (Bcnt[t] != BATcount(b[t][c])) {
-					GDKerror("merged_union: BAT/column %d of table %d ("SZFMT" BUNs) must have the same size as all other BATs/columns of table %d ("SZFMT" BUNs).\n", 
+					GDKerror("merged_union: BAT/column %d of table %d ("BUNFMT" BUNs) must have the same size as all other BATs/columns of table %d ("BUNFMT" BUNs).\n", 
 							c+1, t+1, BATcount(b[t][c]), t+1, Bcnt[t]);
 					return GDK_FAIL;
 				}
@@ -6192,14 +6192,14 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	}
 	temp = BATnew(TYPE_void, ATOMtype(ttpe[0]), res_count);
 	if (temp == NULL) {
-		GDKerror("merged_union: BATnew(TYPE_void, %s, " SZFMT ") failed.\n", ATOMname(ATOMtype(ttpe[0])), res_count);
+		GDKerror("merged_union: BATnew(TYPE_void, %s, " BUNFMT ") failed.\n", ATOMname(ATOMtype(ttpe[0])), res_count);
 		BBPreclaim(BN);
 		return GDK_FAIL;
 	}
 	for (c=0; c<ncols; c++) {
 		bn[c] = BATnew(TYPE_void, ATOMtype(ttpe[c]), res_count);
 		if (bn[c] == NULL) {
-			GDKerror("merged_union: BATnew(TYPE_void, %s, " SZFMT ") failed.\n", ATOMname(ATOMtype(ttpe[c])), res_count);
+			GDKerror("merged_union: BATnew(TYPE_void, %s, " BUNFMT ") failed.\n", ATOMname(ATOMtype(ttpe[c])), res_count);
 			while (c>0) {
 				BBPreclaim(bn[--c]);
 			}
@@ -6210,7 +6210,7 @@ merged_union( BAT** res, int ntabs, int ncols, BAT ***b)
 	}
 	w = (bte*)GDKmalloc(2*res_count + 1);
 	if (w == NULL) {
-		GDKerror("merged_union: GDKmalloc(" SZFMT ") failed.\n", 2*res_count + 1);
+		GDKerror("merged_union: GDKmalloc(" BUNFMT ") failed.\n", 2*res_count + 1);
 		goto cleanup;
 	}
 
@@ -6622,7 +6622,7 @@ int CMDmulti_merged_union( BAT** res, BAT *Bt)
 			GDKerror("multi_merged_union: tail-type of BAT holding table %d must be BAT, not %s.\n", t+1, ATOMname(Bc[t]->ttype));
 			ret = GDK_FAIL;
 		} else if (t == 0) {
-			assert(BATcount(Bc[t]) <= (size_t)GDK_int_max);
+			assert(BATcount(Bc[t]) <= (BUN)GDK_int_max);
 			if ((ncols = (int)BATcount(Bc[t])) < 1) {
 				GDKerror("multi_merged_union: first table must consist of at least 1 column.\n");
 				ret = GDK_FAIL;
@@ -6686,7 +6686,8 @@ CMDll_strSplit(BAT **res, BAT *strs, BAT *seps)
 	BATiter strsi = bat_iterator(strs), sepsi = bat_iterator(seps);
         BAT *bn;
         BUN p_str, p_sep, last_str_row;
-        size_t cnt, seplen;
+        BUN cnt;
+        size_t seplen;
         oid base;
         char *actual_str;
         bit triv_prop;
@@ -6849,7 +6850,8 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 	BATiter iteri = bat_iterator(iter), kindi = bat_iterator(kind), str_valuei = bat_iterator(str_value);
 	BAT *bn;
 	BUN qi, pi, pk, ps;
-	size_t cnt, len, strsize = 1024;
+	BUN cnt;
+	size_t len, strsize = 1024;
 	oid base0, base, i0, k0;
 	str actual_str = NULL;
 	bit triv_prop;
@@ -7180,7 +7182,7 @@ int CMDenumerate ( BAT** res, BAT *startval, BAT *length )
         BAT *bn;
         BUN cur_bun, length_bun, bun_last;
 	lng number, counter, result_size;
-        size_t cnt;
+        BUN cnt;
         oid base, head_oid;
         bit triv_prop;
 	BATiter startvali = bat_iterator(startval);
@@ -7258,7 +7260,8 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	BAT *bn, **batlist = NULL, *the_cont_bat = NULL;
 	BUN q, pp, pf, pw, dst;
 	int bsf = 0, ii = 0, tt = 0;
-	size_t cnt, len;
+	BUN cnt;
+	size_t len;
 	oid base, wl, wh;
 	bit triv_prop;
 	bit fake_cont = FALSE;
@@ -7316,7 +7319,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 			*res = bn = BATleftfetchjoin(pre, batlist[0], oid_nil);
 			@:mpos_free_batlist(0)@
 			if (bn == NULL) {
-				GDKerror("mposjoin: BATleftfetchjoin(pre, ws_item["SZFMT"]) failed.\n",
+				GDKerror("mposjoin: BATleftfetchjoin(pre, ws_item["OIDFMT"]) failed.\n",
 					 the_cont_id);
 				return GDK_FAIL;
 			}
@@ -7370,7 +7373,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 
 	bn = BATnew(TYPE_void, ATOMtype(tt), cnt);
 	if (bn == NULL) {
-		GDKerror("mposjoin: BATnew(TYPE_void, %s, " SZFMT ") failed.\n", ATOMname(ATOMtype(tt)), cnt);
+		GDKerror("mposjoin: BATnew(TYPE_void, %s, " BUNFMT ") failed.\n", ATOMname(ATOMtype(tt)), cnt);
 		@:mpos_free_batlist(0)@
 		return GDK_FAIL;
 	}
@@ -7477,7 +7480,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
     /* check result size */
     if (BATcount(pre) > BATcount(bn)) {
 		GDKerror("mposjoin: missing matches. The result requires the "
-                 "same number of tuples as the first two input arguments: "SZFMT" < "SZFMT".", BATcount(bn), BATcount(pre));
+                 "same number of tuples as the first two input arguments: "BUNFMT" < "BUNFMT".", BATcount(bn), BATcount(pre));
 		@:mpos_free_batlist(bn)@
 		return GDK_FAIL;
 	}
@@ -7530,7 +7533,8 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	BAT *bn, **batlist = NULL, *the_cont_bat = NULL;
 	BUN q, pp, pf, pw;
 	int ii = 0;
-	size_t cnt, len, sze;
+	BUN cnt;
+	size_t len, sze;
 	oid base, wl, wh;
 	bit triv_prop, all_hash, all_sort, some_hash, some_sort, all_key, fake_cont = FALSE;
 	
@@ -7580,7 +7584,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 		*res = bn = BATleftjoin(pre, BATmirror(batlist[0]), oid_nil);
 		@:mval_free_batlist@
 		if (bn == NULL) {
-			GDKerror("mvaljoin: BATleftjoin(pre, BATmirror(ws_item["SZFMT"])) failed.\n",
+			GDKerror("mvaljoin: BATleftjoin(pre, BATmirror(ws_item["OIDFMT"])) failed.\n",
 				 the_cont_id);
 			return GDK_FAIL;
 		}
@@ -7634,7 +7638,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 
 	bn = BATnew(TYPE_oid, TYPE_oid, sze);
 	if (bn == NULL) {
-		GDKerror("mvaljoin: BATnew(TYPE_oid, TYPE_oid, " SZFMT ") failed.\n", sze);
+		GDKerror("mvaljoin: BATnew(TYPE_oid, TYPE_oid, " BUNFMT ") failed.\n", sze);
 		@:mval_free_batlist@
 		return GDK_FAIL;
 	}
@@ -7650,7 +7654,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 	pf = BUNfirst(cont);
 
 @= hash_only
-	hash_t h;
+	BUN h;
 	BATiter bi;
 	bi.b = b = BATmirror(b);
 	HASHloop_oid(bi, b->H->hash, h, (ptr)(&p)) {
@@ -7776,7 +7780,7 @@ BATebv (BAT *b)
     BUN p = 0, q = 0;   /* BUN variables for iteration */
     oid old;            /* Last head value we had seen */
     bit val;            /* Boolean result value that belongs to `old' */
-    size_t cnt = 0;     /* "guess" of result cardinality */
+    BUN cnt = 0;        /* "guess" of result cardinality */
     bit trivial;        /* indicator for "trivial" result properties */
 
     /* Just in case BATebv might be called from elsewhere than CMDebv:
@@ -7969,7 +7973,7 @@ CMDcorrect_sizes(BAT **ret, BAT *bat_iter, BAT *bat_item, BAT *bat_size) {
 	BUN cur_iter, cur_item, cur_size;
 	BUN fst_size, lst_size;
 	int bs_iter;
-	size_t cnt;
+	BUN cnt;
 	oid base;
 	oid prev_iter, prev_item, pre;
 	bit fake_iter;
@@ -8052,16 +8056,16 @@ CMDSplitBat(BAT **res, BAT *b, str sep)
 {
 	BATiter bi = bat_iterator(b);
 	BATiter *bn;
-	size_t nbats = 0;
-	size_t maxbats = 16;
+	BUN nbats = 0;
+	BUN maxbats = 16;
 	BUN p, q, r;
 	str s, e;
 	size_t seplen = strlen(sep);
 	char *buf = GDKmalloc(BUFSIZ);
 	size_t buflen = BUFSIZ;
 	size_t l;
-	size_t i;
-	size_t bs = BATcount(b);
+	BUN i;
+	BUN bs = BATcount(b);
 	oid base, o;
 
 	if (buf == NULL)
@@ -8091,7 +8095,7 @@ CMDSplitBat(BAT **res, BAT *b, str sep)
 			if ((e = strstr(s, sep)) != NULL)
 				*e = 0;
 			if (i >= nbats) {
-				size_t j;
+				BUN j;
 
 				if (nbats >= maxbats) {
 					bn = GDKrealloc(bn, maxbats + 16*sizeof(BATiter));
@@ -8147,7 +8151,7 @@ CMDSplitBat(BAT **res, BAT *b, str sep)
 int
 CMDSplitKind(BAT **res, BAT *b)
 {
-	size_t i, n = BATcount(b);
+	BUN i, n = BATcount(b);
 	BAT *bn[MAXKIND];
 	oid *cur[MAXKIND];
 
@@ -8454,7 +8458,7 @@ CMDdocsused(BAT** res, BAT* input, BAT* frag_root, BAT* nid_rid, BAT* map_pid, B
     BATiter inputi = bat_iterator(input);
     oid* map = (oid*) Tloc(map_pid, BUNfirst(map_pid));
     oid* rid = (oid*) Tloc(nid_rid, BUNfirst(nid_rid));
-    size_t i=0,j=0, n=BATcount(input), m=BATcount(frag_root);
+    BUN i=0,j=0, n=BATcount(input), m=BATcount(frag_root);
 
     *res = BATnew(TYPE_oid, TYPE_oid, 100);
     if (*res == NULL)
@@ -8520,7 +8524,7 @@ xquery_print_result_loop (
     lng  *xrpc_timeout,
     lng  *xrpc_start)
 {
-    size_t niters = BATcount (loop);
+    BUN niters = BATcount (loop);
     return xquery_print_result_DRIVER (
                mode,
                NULL, /* set of printing callback function */

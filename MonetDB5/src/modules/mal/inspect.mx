@@ -615,7 +615,7 @@ str
 INSPECTatom_sizes(int *ret)
 {
 	int i;
-	size_t s;
+	int s;
 	BAT *b = BATnew(TYPE_int, TYPE_int, 256);
 
 	if (b == 0)

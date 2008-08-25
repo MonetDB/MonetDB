@@ -170,7 +170,7 @@ str CMDconvert_@1_@2(int *ret, int *bid)
 
 	if (b->ttype == TYPE_void) {
 		oid t = b->tseqbase;
-		size_t i, cnt = BATcount(b);
+		BUN i, cnt = BATcount(b);
 
 		for(i=0; i<cnt; i++) 
 			*o++ = (@2)t++;

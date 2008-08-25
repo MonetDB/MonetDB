@@ -66,7 +66,6 @@ BAT *
 BATins(BAT *b, BAT *n, bit force)
 {
 	BAT *tmp = NULL, *res = NULL;
-	ssize_t needed = 0;
 	int fastpath = 0;
 	int countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 
@@ -76,15 +75,20 @@ BATins(BAT *b, BAT *n, bit force)
 	ALIGNins(b, "BATins", force);
 	BATcompatible(b, n);
 
+	if (BUNlast(b) + BATcount(n) > BUN_MAX) {
+		GDKerror("BATins: combined BATs too large\n");
+		return NULL;
+	}
+
 	if (b->htype != TYPE_void && (b->ttype == TYPE_void || (!b->H->hash && b->T->hash && ATOMstorage(b->ttype) == TYPE_int))) {	/* OIDDEPEND */
 		return BATmirror(BATins(BATmirror(b), BATmirror(n), force));
 	}
 
-	needed = BATcount(n) - (BATcapacity(b) - BUNlast(b));
-	if (needed > 0) {
-		/* if needed exceeds a normal growth extend just with needed */
-		size_t ncap = BATcapacity(b) + needed;
-		size_t grows = BATgrows(b);
+	if (BUNlast(b) + BATcount(n) > BATcapacity(b)) {
+		/* if needed space exceeds a normal growth extend just
+		 * with what's needed */
+		BUN ncap = BUNlast(b) + BATcount(n);
+		BUN grows = BATgrows(b);
 
 		if (ncap > grows)
 			grows = ncap;
@@ -94,13 +98,13 @@ BATins(BAT *b, BAT *n, bit force)
 
 	if (b->htype == TYPE_void && b->hseqbase != oid_nil) {
 		BATiter ni = bat_iterator(n);
-		oid t = b->hseqbase + BATcount(b) - 1;
+		BUN t = (BUN) b->hseqbase + BATcount(b) - 1;
 		oid h = *(oid *) BUNhead(ni, BUNfirst(n));
 
 		if (BATcount(b) == 0 && (BATcount(n) == 1 || BAThdense(n))) {
 			b->hseqbase = h;
 			BATmirror(b)->tseqbase = h;
-		} else if ((t + 1) != h || !BAThdense(n)) {
+		} else if (t + 1 != (BUN) h || !BAThdense(n)) {
 			b = BATmaterialize(b);
 			countonly = 0;
 			if (b == NULL)
@@ -109,13 +113,13 @@ BATins(BAT *b, BAT *n, bit force)
 	}
 	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
 		BATiter ni = bat_iterator(n);
-		oid t = b->tseqbase + BATcount(b) - 1;
+		BUN t = (BUN) b->tseqbase + BATcount(b) - 1;
 		oid h = *(oid *) BUNtail(ni, BUNfirst(n));
 
 		if (BATcount(b) == 0 && (BATcount(n) == 1 || BATtdense(n))) {
 			b->tseqbase = h;
 			BATmirror(b)->hseqbase = h;
-		} else if ((t + 1) != h || !BATtdense(n)) {
+		} else if (t + 1 != (BUN) h || !BATtdense(n)) {
 			b = BATmaterializet(b);
 			countonly = 0;
 			if (b == NULL)
@@ -140,7 +144,7 @@ BATins(BAT *b, BAT *n, bit force)
 	b->batDirty = 1;
 	if (fastpath) {
 		BUN p, q, r = BUNlast(b);
-		size_t ts = Tsize(b);
+		unsigned short ts = Tsize(b);
 
 		if (BATcount(b) == 0) {
 			ALIGNset(b, n);
@@ -200,19 +204,20 @@ BATins(BAT *b, BAT *n, bit force)
 				r++;
 			}
 		} else if (b->H->hash) {
-			size_t i = BUNlast(b), hs = Hsize(b);
+			BUN i = BUNlast(b);
+			unsigned short hs = Hsize(b);
 			BATiter ni = bat_iterator(n);
 
 			BATloop(n, p, q) {
 				ptr v = BUNhead(ni, p);
 
 				bunfastins_nocheck(b, r, v, BUNtail(ni, p), hs, ts);
-				HASHins_int(b->H->hash, (hash_t) i, v);
+				HASHins_int(b->H->hash, i, v);
 				r++;
 				i++;
 			}
 		} else {
-			size_t hs = Hsize(b);
+			unsigned short hs = Hsize(b);
 			BATiter ni = bat_iterator(n);
 
 			BATloop(n, p, q) {
@@ -235,8 +240,7 @@ BATins(BAT *b, BAT *n, bit force)
 BAT *
 BATappend(BAT *b, BAT *n, bit force)
 {
-	ssize_t sz = BATcount(n);
-	ssize_t needed = 0;
+	BUN sz = BATcount(n);
 	int fastpath = 1;
 
 	if (b == NULL || n == NULL || sz == 0) {
@@ -245,13 +249,18 @@ BATappend(BAT *b, BAT *n, bit force)
 	ALIGNapp(b, "BATappend", force);
 	BATcompatible(b, n);
 
+	if (BUNlast(b) + BATcount(n) > BUN_MAX) {
+		GDKerror("BATappend: combined BATs too large\n");
+		return NULL;
+	}
+
 	b->batDirty = 1;
 
-	needed = sz - (BATcapacity(b) - BUNlast(b));
-	if (needed > 0) {
-		/* if needed exceeds a normal growth extend just with needed */
-		size_t ncap = BATcapacity(b) + needed;
-		size_t grows = BATgrows(b);
+	if (sz > BATcapacity(b) - BUNlast(b)) {
+		/* if needed space exceeds a normal growth extend just
+		 * with what's needed */
+		BUN ncap = BUNlast(b) + sz;
+		BUN grows = BATgrows(b);
 
 		if (ncap > grows)
 			grows = ncap;
@@ -271,12 +280,16 @@ BATappend(BAT *b, BAT *n, bit force)
 		if (BATtdense(n) && BATcount(b) + b->tseqbase == f) {
 			if (b->htype != TYPE_void) {
 				BUN r = BUNlast(b);
-				size_t hs = Hsize(b);
+				unsigned short hs = Hsize(b);
 				oid m;
 
 				f = MAXoid(b);
 				f++;
-				m = f + sz;
+				if (f + sz >= GDK_oid_max) {
+					GDKerror("BATappend: overflow of head value\n");
+					return 0;
+				}
+				m = (oid) (f + sz);
 				for (; f < m; f++, r++) {
 					bunfastins_nocheck(b, r, (ptr) &f, NULL, hs, 0);
 				}
@@ -304,7 +317,7 @@ BATappend(BAT *b, BAT *n, bit force)
 
 	if (fastpath) {
 		BUN p, q, r = BUNlast(b);
-		size_t hs, ts;
+		unsigned short hs, ts;
 
 		if (BATcount(b) == 0) {
 			BATiter ni = bat_iterator(n);
@@ -370,7 +383,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		}
 	} else {
 		BUN p, q;
-		size_t i = BUNlast(b);
+		BUN i = BUNlast(b);
 		BAT *bm = BBP_cache(-b->batCacheid);
 		BATiter ni = bat_iterator(n);
 
@@ -385,7 +398,7 @@ BATappend(BAT *b, BAT *n, bit force)
 					if (BUNfnd(bm, t) == BUN_NONE) {
 						bunfastins(b, &h, t);
 						if (b->T->hash) {
-							HASHins(bm, (hash_t) i, t);
+							HASHins(bm, i, t);
 						}
 						h++;
 						i++;
@@ -399,7 +412,7 @@ BATappend(BAT *b, BAT *n, bit force)
 					if (BUNfnd(bm, t) == BUN_NONE) {
 						bunfastins(b, &on, t);
 						if (b->T->hash) {
-							HASHins(bm, (hash_t) i, t);
+							HASHins(bm, i, t);
 						}
 						i++;
 					}
@@ -408,14 +421,20 @@ BATappend(BAT *b, BAT *n, bit force)
 				b->hdense = b->hsorted = 0;
 			}
 		} else if (b->hseqbase != oid_nil) {
-			oid h = b->hseqbase + BATcount(b);
+			oid h;
+
+			if (b->hseqbase + BATcount(b) + BATcount(n) >= GDK_oid_max) {
+				GDKerror("BATappend: overflow of head value\n");
+				return NULL;
+			}
+			h = (oid) (b->hseqbase + BATcount(b));
 
 			BATloop(n, p, q) {
 				ptr t = BUNtail(ni, p);
 
 				bunfastins(b, &h, t);
 				if (b->T->hash) {
-					HASHins(bm, (hash_t) i, t);
+					HASHins(bm, i, t);
 				}
 				i++;
 				h++;
@@ -430,7 +449,7 @@ BATappend(BAT *b, BAT *n, bit force)
 
 				bunfastins(b, &on, t);
 				if (b->T->hash) {
-					HASHins(bm, (hash_t) i, t);
+					HASHins(bm, i, t);
 				}
 				i++;
 			}
@@ -523,9 +542,9 @@ NOTE new semantics, the selected range is excluding the high value.
 @{
 @c
 BAT *
-BATslice(BAT *b, size_t l, size_t h)
+BATslice(BAT *b, BUN l, BUN h)
 {
-	size_t low = l;
+	BUN low = l;
 	BAT *bn;
 	BATiter bni, bi = bat_iterator(b);
 
@@ -537,12 +556,17 @@ BATslice(BAT *b, size_t l, size_t h)
 	l += BUNfirst(b);
 	h += BUNfirst(b);
 
+	if (l > BUN_MAX || h > BUN_MAX) {
+		GDKerror("BATslice: boundary out of range\n");
+		return NULL;
+	}
+
 @-
 If the source BAT is readonly, then we can obtain a VIEW
 that just reuses the memory of the source.
 @c
 	if (BAThrestricted(b) == BAT_READ && BATtrestricted(b) == BAT_READ) {
-		size_t cnt = h-l;
+		BUN cnt = h-l;
 		bn = VIEWcreate_(b, b, TRUE);
 		bn->batFirst = bn->batDeleted = bn->batInserted = 0;
 		bn->H->heap.base = (bn->htype)?BUNhloc(bi,l):NULL;
@@ -555,8 +579,8 @@ that just reuses the memory of the source.
 We have to do it: create a new BAT and put everything into it.
 @c
 	} else {
-		BUN p = l;
-		BUN q = h;
+		BUN p = (BUN) l;
+		BUN q = (BUN) h;
 
 		bn = BATnew(b->htype, b->ttype, h - l);
 		if (bn == NULL) {
@@ -579,7 +603,7 @@ We have to do it: create a new BAT and put everything into it.
 	bn->T->nonil = b->T->nonil;
 	if (BAThdense(b)) {
 		bn->hdense = TRUE;
-		BATseqbase(bn, b->hseqbase + low);
+		BATseqbase(bn, (oid) (b->hseqbase + low));
 	} else if (bn->hkey && bn->htype == TYPE_oid) {
 		if (BATcount(bn) == 0) {
 			bn->hdense = TRUE;
@@ -591,7 +615,7 @@ We have to do it: create a new BAT and put everything into it.
 	}
 	if (BATtdense(b)) {
 		bn->tdense = TRUE;
-		BATseqbase(BATmirror(bn), b->tseqbase + low);
+		BATseqbase(BATmirror(bn), (oid) (b->tseqbase + low));
 	} else if (bn->tkey && bn->ttype == TYPE_oid) {
 		if (BATcount(bn) == 0) {
 			bn->tdense = TRUE;
@@ -608,7 +632,7 @@ We have to do it: create a new BAT and put everything into it.
 }
 
 BAT *
-BATslice2(BAT *b, size_t l1, size_t h1, size_t l2, size_t h2)
+BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 {
 	BUN p,q;
 	BAT *bn;
@@ -627,15 +651,20 @@ BATslice2(BAT *b, size_t l1, size_t h1, size_t l2, size_t h2)
 	h1 += BUNfirst(b);
 	h2 += BUNfirst(b);
 
+	if (l1 > BUN_MAX || l2 > BUN_MAX || h1 > BUN_MAX || h2 > BUN_MAX) {
+		GDKerror("BATslice2: boundary out of range\n");
+		return NULL;
+	}
+
 	if (tt == TYPE_void && b->T->seq != oid_nil)
 		tt = TYPE_oid;
 	bn = BATnew(ATOMtype(b->htype), tt, h1 - l1 + h2 - l2);
 	if (bn == NULL) 
 		return bn;
-	for (p = l1, q = h1; p < q; p++ ) {
+	for (p = (BUN) l1, q = (BUN) h1; p < q; p++ ) {
 		bunfastins(bn, BUNhead(bi, p), BUNtail(bi, p));
 	}
-	for (p = l2, q = h2; p < q; p++ ) {
+	for (p = (BUN) l2, q = (BUN) h2; p < q; p++ ) {
 		bunfastins(bn, BUNhead(bi, p), BUNtail(bi, p));
 	}
 	bn->hsorted = BAThordered(b);
@@ -752,8 +781,8 @@ static BAT *
 BAT_hashselect(BAT *b, BAT *bn, ptr tl)
 {
 	int ht = bn->htype, tt = bn->ttype;
-	size_t size = BATcount(bn);
-	hash_t i;
+	BUN size = BATcount(bn);
+	BUN i;
 
 	BATcheck(b, "BAT_hashselect");
 	b = BATmirror(b);
@@ -764,10 +793,13 @@ BAT_hashselect(BAT *b, BAT *bn, ptr tl)
 	}
 	while (bn) {
 		BUN q = BUNfirst(bn);
-		BUN r = BATcapacity(bn);
+		BUN r;
 		BATiter bi = bat_iterator(b);
-		size_t hs = Hsize(bn);
-		size_t ts = Tsize(bn);
+		unsigned short hs = Hsize(bn);
+		unsigned short ts = Tsize(bn);
+
+		assert(BATcapacity(bn) <= BUN_MAX);
+		r = (BUN) BATcapacity(bn);
 
 		if (b->tvarsized) {
 			@:hashselect(var)@
@@ -802,7 +834,7 @@ BAT *
 BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit anti, bit preserve_order)
 {
 	int hval, lval, equi, nequi=anti, t, ht, tt, lnil = 0;
-	size_t offset, batcnt, estimate = 0;
+	BUN offset, batcnt, estimate = 0;
 	ptr nil;
 	BAT *bn;
 	BUN p, q;
@@ -868,13 +900,13 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 @c
 	if (BATtordered(b) & 1) {
 		BAT *v = tail ? b : VIEWhead_(b, b->batRestricted);
-		size_t high = batcnt;
-		size_t low = 0;
+		BUN high = batcnt;
+		BUN low = 0;
 
 		if (BATtdense(b)) {
 			/* Selections on voids are positional. */
 			if (hval) {
-				size_t h = (*(oid *) th) + (hi ? 1 : 0);
+				BUN h = (*(oid *) th) + (hi ? 1 : 0);
 
 				if (h > b->tseqbase)
 					h -= b->tseqbase;
@@ -886,7 +918,7 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 			}
 			if (lval) {
 				if (*(oid *) tl != oid_nil) {
-					size_t l = (*(oid *) tl) + (li ? 0 : 1);
+					BUN l = (*(oid *) tl) + (li ? 0 : 1);
 
 					if (l > b->tseqbase)
 						l -= b->tseqbase;
@@ -932,7 +964,7 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 					high = 0;
 			}
 		}
-		ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BATslice(v=%s, low=" SZFMT ", high=" SZFMT ");\n", BATgetId(b), BATgetId(v), low, high);
+		ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BATslice(v=%s, low=" BUNFMT ", high=" BUNFMT ");\n", BATgetId(b), BATgetId(v), low, high);
 
 		if (nequi) {
 			BUN first = SORTfndlast(b, nil);
@@ -944,12 +976,14 @@ give back a 'view' on the memory of the existing BAT. See BATslice().
 			BBPreclaim(v);
 		}
 		/* selected no nils */
-		bn->H->nonil = b->H->nonil;
-		bn->T->nonil = b->T->nonil & tail;
-		if (!equi && !lval && !hval && lnil)
-			bn->T->nonil = tail;
-		else if (equi && !lnil)
-			bn->T->nonil = tail;
+		if (bn != NULL) {
+			bn->H->nonil = b->H->nonil;
+			bn->T->nonil = b->T->nonil & tail;
+			if (!equi && !lval && !hval && lnil)
+				bn->T->nonil = tail;
+			else if (equi && !lnil)
+				bn->T->nonil = tail;
+		}
 		return bn;
 	}
 @-
@@ -958,9 +992,9 @@ Use sampling to determine a good result size, when the bat is large.
 	if (BATtkey(b)) {
 		estimate = 1;
 	} else if (batcnt > 100000) {
-		size_t _lo = batcnt / 2, _hi = _lo + 105;
+		BUN _lo = batcnt / 2, _hi = _lo + 105;
 		BAT *tmp1;
-		ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=" SZFMT ", _hi=" SZFMT ");\n", BATgetId(b), BATgetId(b), _lo, _hi);
+		ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=" BUNFMT ", _hi=" BUNFMT ");\n", BATgetId(b), BATgetId(b), _lo, _hi);
 
 		tmp1 = BATslice(b, _lo, _hi);	/* slice keeps all parent properties */
 		if (tmp1) {
@@ -970,7 +1004,7 @@ Use sampling to determine a good result size, when the bat is large.
 			tmp2 = BAT_select_(tmp1, tl, th, li, hi, tail, FALSE, FALSE);
 			if (tmp2) {
 				/* reserve 105% of what has been estimated */
-				estimate = (size_t) ((((lng) BATcount(tmp2)) * (lng) batcnt) / LL_CONSTANT(100));
+				estimate = (BUN) ((((lng) BATcount(tmp2)) * (lng) batcnt) / LL_CONSTANT(100));
 				BBPreclaim(tmp2);
 			}
 			BBPreclaim(tmp1);
@@ -1040,7 +1074,7 @@ Hash changes the order; IDX yields ordered tail; scan respects original order.
 	else if (equi && !lnil)
 		bn->T->nonil = tail;
 	ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): %s: hkey=%d, tkey=%d, hsorted=%d, tsorted=%d.\n", BATgetId(b), BATgetId(bn), bn->hkey, bn->tkey, bn->hsorted, bn->tsorted);
-	ESTIDEBUG THRprintf(GDKout, "#BAT_select_(b=%s): resultsize: estimated " SZFMT ", got " SZFMT ".\n", BATgetId(b), estimate, BATcount(bn));
+	ESTIDEBUG THRprintf(GDKout, "#BAT_select_(b=%s): resultsize: estimated " BUNFMT ", got " BUNFMT ".\n", BATgetId(b), estimate, BATcount(bn));
 
 	return bn;
 }
@@ -1091,8 +1125,8 @@ adjustment of the free space labels. Other BATs require
 a loop through the tuples to be deleted. [todo]
 @{
 @c
-size_t
-BATtopN(BAT *b, size_t topN)
+int
+BATtopN(BAT *b, BUN topN)
 {
 	BATcheck(b, "BATtopN");
 	if (topN > BATcount(b)) {
@@ -1111,25 +1145,33 @@ BATtopN(BAT *b, size_t topN)
 @- Random Selections
 @c
 BAT *
-BATsample(BAT *b, size_t size)
+BATsample(BAT *b, BUN size)
 {
-	size_t cnt, i, r = 0, n, j;
-	size_t *choice = NULL, *dst;
+	BUN cnt, i, r = 0, n, j;
+	BUN *choice = NULL, *dst;
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
+	BUN bun;
 
 	BATcheck(b, "BATsample: source BAT");
 
-	cnt = BATcount(b);
-	n = MIN(size, BATcount(b));
+	assert(BATcount(b) <= BUN_MAX);
+
+	if (size > BUN_MAX) {
+		GDKerror("BATsample: sample too large\n");
+		return NULL;
+	}
+
+	cnt = (BUN) BATcount(b);
+	n = (BUN) MIN(size, BATcount(b));
 
 	bn = BATnew(BAThtype(b), BATttype(b), n);
 	BATcheck(bn, "BATsample: dest BAT");
 
 	if (n == 0)
 		return bn;
-	dst = choice = (size_t *) GDKmalloc(n * sizeof(size_t));
-	if (!choice)
+	dst = choice = (BUN *) GDKmalloc(n * sizeof(BUN));
+	if (choice == NULL)
 		goto bunins_failed;
 
 	if (n * 2 < BATcount(b)) {	/* nondense sample */
@@ -1169,7 +1211,7 @@ BATsample(BAT *b, size_t size)
 		}
 		GDKfree(vec);
 	} else {
-		size_t *vec = (size_t *) GDKmalloc(cnt * sizeof(size_t));
+		BUN *vec = (BUN *) GDKmalloc(cnt * sizeof(BUN));
 
 		if (vec == NULL)
       			goto bunins_failed;
@@ -1185,8 +1227,8 @@ BATsample(BAT *b, size_t size)
 	}
 
 	/* merge all positions into a sorted list */
-	qsort((void *) choice, n, sizeof(size_t),
-#if SIZEOF_SIZE_T == SIZEOF_INT
+	qsort((void *) choice, n, sizeof(BUN),
+#if SIZEOF_BUN == SIZEOF_INT
 	      (int (*)(const void *, const void *)) intCmp
 #else
 	      (int (*)(const void *, const void *)) lngCmp
@@ -1194,9 +1236,9 @@ BATsample(BAT *b, size_t size)
 	    );
 
 	/* insert the sorted sample */
-	cnt = BUNfirst(b);
+	bun = BUNfirst(b);
 	for (j = 0; j < n; j++) {
-		BUN p = cnt + choice[j];
+		BUN p = bun + choice[j];
 
 		bunfastins(bn, BUNhead(bi, p), BUNtail(bi, p));
 	}
@@ -1298,7 +1340,7 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 	BAT *bn;
 	BUN p = 0, l;
 	BUN *mark, *m, *i;
-	size_t s;
+	BUN s;
 	int t;
 
 	BATcheck(hl, "BATrestrict:hl is null");
@@ -1306,7 +1348,7 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 	BATcheck(tl, "BATrestrict:tl is null");
 	BATcheck(th, "BATrestrict:th is null");
 	bn = BATnew(BAThtype(b), BATttype(b), BATguess(b));
-	ESTIDEBUG THRprintf(GDKout, "#BATrestrict: estimated resultsize: " SZFMT "\n", BATguess(b));
+	ESTIDEBUG THRprintf(GDKout, "#BATrestrict: estimated resultsize: " BUNFMT "\n", BATguess(b));
 
 	if (bn == NULL) {
 		return NULL;
@@ -1320,7 +1362,7 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 
 	s = BATcount(b);
 	if (s == 0) {
-		ESTIDEBUG THRprintf(GDKout, "#BATrestrict: actual resultsize: " SZFMT "\n", BATcount(bn));
+		ESTIDEBUG THRprintf(GDKout, "#BATrestrict: actual resultsize: " BUNFMT "\n", BATcount(bn));
 
 		return bn;
 	}
@@ -1466,7 +1508,7 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 	if (BATcount(bn) == BATcount(b))
 		ALIGNset(bn, b);
 
-	ESTIDEBUG THRprintf(GDKout, "#BATrestrict: actual resultsize: " SZFMT "\n", BATcount(bn));
+	ESTIDEBUG THRprintf(GDKout, "#BATrestrict: actual resultsize: " BUNFMT "\n", BATcount(bn));
 
 	return bn;
 
@@ -1572,7 +1614,7 @@ chk_order@1@3_@4(@4*__r col)
 int
 BATordered@3(BAT* b)
 {
-	size_t cnt = BATcount(b);
+	BUN cnt = BATcount(b);
 	bit key = (cnt < 2);
 
 	if ((BAThordered(b) & @1) == 0 && cnt > 0) {
@@ -1584,7 +1626,7 @@ BATordered@3(BAT* b)
 		key = TRUE;
 
 		/* we may have negative information already; this saves a scan */
-		if (b->H->nosorted@3 > cur && b->H->nosorted@3 < end && cmp(BUNhead(bi, b->H->nosorted@3 - 1), BUNhead(bi, b->H->nosorted@3)) @5 0) {
+		if (b->H->nosorted@3 > cur && b->H->nosorted@3 < end && cmp(BUNhead(bi, (BUN) (b->H->nosorted@3 - 1)), BUNhead(bi, (BUN) b->H->nosorted@3)) @5 0) {
 			return FALSE;
 		}
 
@@ -1783,7 +1825,7 @@ BAT@6order@3(BAT *b)
 BAT *
 BATrevert(BAT *b)
 {
-	size_t hs, ts;
+	unsigned short hs, ts;
 	char *h, *t;
 	BUN p, q;
 	BATiter bi = bat_iterator(b);
@@ -1796,7 +1838,7 @@ BATrevert(BAT *b)
 			return NULL;
 	}
 	ALIGNdel(b, "BATrevert", FALSE);
-	if ((hs = (size_t) Hsize(b)) > 0) {
+	if ((hs = Hsize(b)) > 0) {
 		h = (char *) GDKmalloc(hs);
 		if (!h) {
 			return NULL;
@@ -1811,7 +1853,7 @@ BATrevert(BAT *b)
 		}
 		GDKfree(h);
 	}
-	if ((ts = (size_t) Tsize(b)) > 0) {
+	if ((ts = Tsize(b)) > 0) {
 		t = (char *) GDKmalloc(ts);
 		if (!t) {
 			return NULL;
@@ -1855,9 +1897,9 @@ partitioning operators: @%BATsplithash@ and @%BATsplitrange@.
 The @%part_bat@ function creates a partition BAT.
 @c
 static BAT *
-part_bat(BAT *b, int ht, int tt, size_t expected_size, int respect_order)
+part_bat(BAT *b, int ht, int tt, BUN expected_size, int respect_order)
 {
-	BAT *bn = BATnew(ht, tt, (size_t) ((double) expected_size * BATMARGIN));
+	BAT *bn = BATnew(ht, tt, (BUN) ((double) expected_size * BATMARGIN));
 
 	if (bn) {
 		BATkey(bn, BAThkey(b));
@@ -1881,18 +1923,18 @@ part_bat(BAT *b, int ht, int tt, size_t expected_size, int respect_order)
 	}
 
 BAT *
-BAThashsplit(BAT *b, size_t n, int unary)
+BAThashsplit(BAT *b, BUN n, int unary)
 {
 	BAT *metabat, *bn, *bf;
 	BUN r;
 	Hash h;
-	size_t cnt;
+	BUN cnt;
 	int i = 0;
 
 	/* assert(n <= 0x40000000); */
 	BATcheck(b, "BAThashsplit");
 	if (n > BATcount(b)) {
-		GDKwarning("BAThashsplit: reduced number of ranges (" SZFMT ") to number of tuples (" SZFMT ").", n, BATcount(b));
+		GDKwarning("BAThashsplit: reduced number of ranges (" BUNFMT ") to number of tuples (" BUNFMT ").", n, BATcount(b));
 		n = BATcount(b);
 	}
 	if (n < 1) {
@@ -1915,7 +1957,7 @@ BAThashsplit(BAT *b, size_t n, int unary)
 			;
 		h.mask = i - 1;
 		h.type = BATttype(b);
-		cnt = (size_t) (BATMARGIN * (double) BATbuncount(b) / (double) n);
+		cnt = (BUN) (BATMARGIN * (double) BATbuncount(b) / (double) n);
 		for (i = 0; i < (int) n; i++) {
 			bf = part_bat(bn, BAThtype(bn), BATttype(bn), cnt, TRUE);
 			if (bf == NULL) {
@@ -1947,21 +1989,21 @@ uniform size.
 @{
 @c
 BAT *
-BATrangesplit(BAT *b, size_t n, int unary)
+BATrangesplit(BAT *b, BUN n, int unary)
 {
 	BAT *metabat, *slice, *histo, *bf = NULL, *bn, *m;
 	int target, tpe, *sizes;
 	int zz = 0;
-	size_t yy = 0;
+	BUN yy = 0;
 	ptr *seps, nilval;
 	BUN r, s;
 	BATiter histoi, bi = bat_iterator(b);
 	dbl scale;
-	size_t thorough = (n <= 1 || BATtvoid(b) || (BATtordered(b) & 1)) ? 1 : 10;
+	BUN thorough = (n <= 1 || BATtvoid(b) || (BATtordered(b) & 1)) ? 1 : 10;
 
 	BATcheck(b, "BATrangesplit");
 	if (n > BATcount(b)) {
-		GDKwarning("BATrangesplit: reduced number of ranges (" SZFMT ") to number of tuples (" SZFMT ").", n, BATcount(b));
+		GDKwarning("BATrangesplit: reduced number of ranges (" BUNFMT ") to number of tuples (" BUNFMT ").", n, BATcount(b));
 		n = BATcount(b);
 	}
 	if (n < 1) {
@@ -2042,7 +2084,7 @@ Virtual oids (void) is a special subcase with positional lookup instead
 of binary search.
 @c
 	} else if (BATtvoid(b) || (BATtordered(b) & 1)) {
-		size_t l, h = 0, o = BUNfirst(b);
+		BUN l, h = 0, o = BUNfirst(b);
 
 		for (yy = 0; yy < n; yy++) {
 			l = h;
@@ -2077,8 +2119,8 @@ that this routine also works efficiently on many buckets.
 @= rangesplit
 	BATloop(b, r, s) {
 		ptr val = BUNt@2(bi, r);
-		size_t lo = 0;
-		size_t hi = n - 1;
+		BUN lo = 0;
+		BUN hi = n - 1;
 		for (;;) {
 			yy = (lo + hi) / 2;
 			if (yy < n - 1 && @1_GT(val, seps[yy], @3)) {
@@ -2204,7 +2246,7 @@ BAT *
 BATnumber(BAT *b)
 {
 /* 64bit: BATnumber should return a [any,wrd] bat instead of [any,int] */
-	size_t hs, ts;
+	unsigned short hs, ts;
 	int i = 0;
 	BAT *bn;
 	BUN r;
@@ -2236,7 +2278,7 @@ BATgroup(BAT *b, int start, int incr, int grpsize)
 /* 64bit: this should probably use wrd instead of int */
 	BUN p, q, r;
 	int ngroups = 1, i = 0;
-	size_t hs, ts;
+	unsigned short hs, ts;
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
 
@@ -2475,7 +2517,8 @@ BATconst(BAT *b, int tailtype, ptr v)
 {
 	BAT *bn = NULL;
 	BUN p, q, r;
-	size_t hs, ts, cnt = BATcount(b);
+	unsigned short hs, ts;
+	BUN cnt = BATcount(b);
 	BATiter bi = bat_iterator(b);
 
 	BATcheck(b, "BATconst");
@@ -2753,7 +2796,7 @@ found@3@2:		(* (int *) BUNtloc(bni, r))++;
 	}
 @= histoloop
 {
-	hash_t r;
+	BUN r;
 	int yy = 0, tt = 0;
 	BUN p, q;
 	BATiter bi = bat_iterator(b);
@@ -2862,12 +2905,12 @@ The @%BATcount_no_nil@ function counts all BUN in a BAT that have a non-nil tail
 		}
 	}
 @c
-size_t
+BUN
 BATcount_no_nil(BAT *b)
 {
-	size_t cnt = (size_t) 0;
+	BUN cnt = 0;
 	BUN p, q;
-	hash_t tt;
+	BUN tt;
 	ptr nil;
 	BATiter bi = bat_iterator(b);
 

@@ -1217,7 +1217,7 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	}
 
 	default:
-		res = sql_error(sql, 01, "sql_stmt symbol(%ld)->token = %s", (long) s, token2string(s->token));
+		res = sql_error(sql, 01, "sql_stmt symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 	return res;
 }

@@ -571,10 +571,10 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 		o << "}\n\n";
 		break;
 	case OP_HASH:
-		o << "static hash_t " << atom;
+		o << "static BUN " << atom;
 
 		o << "_hash( unsigned char *v ){\n";
-		o << "   hash_t i=0,s=" << len << ";\n";
+		o << "   BUN i=0,s=" << len << ";\n";
 		o << "   unsigned char *p;\n";
 		o << "   for(p=v+" << len << "; v<p; v+=s)\n";
 		o << "      i = 19*i + *v;\n";
@@ -1609,7 +1609,7 @@ typecheck::gen_atomops(ostream &o, const Atomops &d)
 		o << "( unsigned char *v1, unsigned char *v2 );\n";
 		break;
 	case OP_HASH:
-		o << "extern hash_t " << fcn << "( unsigned char *v );\n";
+		o << "extern BUN " << fcn << "( unsigned char *v );\n";
 		break;
 	case OP_NULL:
 		o << "extern ptr " << fcn << "();\n";

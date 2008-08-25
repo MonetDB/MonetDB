@@ -54,7 +54,7 @@ called atomHeap.
 #include "gdk.h"
 
 gdk_export void BATinit_idents(BAT *bn);
-gdk_export ssize_t void_replace_bat(BAT *b, BAT *u, bit force);
+gdk_export BUN void_replace_bat(BAT *b, BAT *u, bit force);
 gdk_export int void_inplace(BAT *b, oid id, ptr val, bit force);
 
 extern int default_ident(char *s);
@@ -229,11 +229,12 @@ In case of huge bats, we want HEAPalloc to write a file to disk, and memory map
 it. To make this possible, we must provide it with filenames.
 @c
 static BATstore *
-BATnewstorage(int ht, int tt, size_t cap)
+BATnewstorage(int ht, int tt, BUN cap)
 {
 	BATstore *bs, *recycled;
 	BAT *bn;
 
+	assert(cap <= BUN_MAX);
 	bs = recycled = BBPrecycle(ht, tt, cap);
 	if (!bs)
 		bs = BATcreatedesc(ht, tt, (ht || tt));
@@ -279,10 +280,11 @@ BATnewstorage(int ht, int tt, size_t cap)
 }
 
 BAT *
-BATnew(int ht, int tt, size_t cap)
+BATnew(int ht, int tt, BUN cap)
 {
 	BATstore *bs;
 
+	assert(cap <= BUN_MAX);
 	ERRORcheck((ht < 0) || (ht > GDKatomcnt), "BATnew:ht error\n");
 	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "BATnew:tt error\n");
 
@@ -296,7 +298,7 @@ BATnew(int ht, int tt, size_t cap)
 The routine BATclone creates a bat with the same types as b.
 @c
 BAT *
-BATclone(BAT *b, size_t cap)
+BATclone(BAT *b, BUN cap)
 {
 	BAT *c = BATnew(b->htype, b->ttype, cap);
 
@@ -321,10 +323,10 @@ Small results BATs are more likely then 100M BATs.
 
 Likewise, the routines @%Hgrows@ and @%Tgrows@  provides a heuristic to enlarge the space.
 @c
-size_t
+BUN
 BATguess(BAT *b)
 {
-	size_t newcap;
+	BUN newcap;
 
 	BATcheck(b, "BATguess");
 	newcap = BATcount(b);
@@ -337,10 +339,10 @@ BATguess(BAT *b)
 	return newcap / 100;
 }
 
-size_t
+BUN
 BATgrows(BAT *b)
 {
-	size_t oldcap, newcap;
+	BUN oldcap, newcap;
 
 	BATcheck(b, "BATgrows");
 
@@ -351,10 +353,16 @@ BATgrows(BAT *b)
 		newcap = 4 * newcap;
 	else if (newcap < 50 * BATTINY)
 		newcap = 2 * newcap;
-	else
-		newcap = (size_t) ((double) newcap * BATMARGIN);
-	if (newcap == oldcap)
-		newcap += 10;
+	else if ((double) newcap * BATMARGIN <= (double) BUN_MAX)
+		newcap = (BUN) ((double) newcap * BATMARGIN);
+	else 
+		newcap = BUN_MAX;
+	if (newcap == oldcap) {
+		if (newcap <= BUN_MAX - 10)
+			newcap += 10;
+		else
+			newcap = BUN_MAX;
+	}
 	return newcap;
 }
 
@@ -367,10 +375,11 @@ Here we merely copy their references into the new administration space.
 
 @c
 BAT *
-BATextend(BAT *b, size_t newcap)
+BATextend(BAT *b, BUN newcap)
 {
 	size_t hheap_size, theap_size;
 
+	assert(newcap <= BUN_MAX);
 	BATcheck(b, "BATextend");
 @- 
 The main issue is to properly predict the new BAT size.
@@ -675,8 +684,8 @@ do inline array[T] inserts.
 BAT *
 BATcopy(BAT *b, int ht, int tt, int writable)
 {
-	ssize_t bunstocopy = -1;
-	size_t cnt;
+	BUN bunstocopy = BUN_NONE;
+	BUN cnt;
 	BAT *bn = NULL;
 
 	BATcheck(b, "BATcopy");
@@ -715,7 +724,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			bn->tseqbase = b->tseqbase;
 		}
 	} else {
-		/* check whether we need case (4); BUN-by-BUN copy (by setting bunstocopy >=0) */
+		/* check whether we need case (4); BUN-by-BUN copy (by setting bunstocopy != BUN_NONE) */
 		if (ATOMsize(ht) != ATOMsize(b->htype) ||
 		    ATOMsize(tt) != ATOMsize(b->ttype)) {	/* oops, void materialization */
 			bunstocopy = cnt;
@@ -732,7 +741,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 				bunstocopy = cnt;
 		}
 
-		bn = BATnew(ht, tt, MAX(1, bunstocopy));
+		bn = BATnew(ht, tt, MAX(1, bunstocopy==BUN_NONE?0:bunstocopy));
 		if (bn == NULL)
 			return NULL;
 
@@ -740,14 +749,14 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			/* case (2): a void,void result => nothing to copy! */
 			bn->H->heap.free = 0;
 			bn->T->heap.free = 0;
-		} else if (bunstocopy < 0) {
+		} else if (bunstocopy == BUN_NONE) {
 			/* case (3): just copy the heaps; if possible with copy-on-write VM support */
 			int remap = writable == 2;
 			int hremap = remap && BAThrestricted(b) != BAT_WRITE && ht != TYPE_void;
 			int tremap = remap && BATtrestricted(b) != BAT_WRITE && tt != TYPE_void;
 			int hvremap = hremap && ATOMstorage(ht) == TYPE_str && !GDK_ELIMDOUBLES(b->H->vheap);
 			int tvremap = tremap && ATOMstorage(tt) == TYPE_str && !GDK_ELIMDOUBLES(b->T->vheap);
-			size_t hcap = 0, tcap = 0;
+			BUN hcap = 0, tcap = 0;
 			Heap bhhp, bthp, hhp, thp;
 			memset(&bhhp, 0, sizeof(Heap));
 			memset(&bthp, 0, sizeof(Heap));
@@ -774,8 +783,8 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 				heapfree(bn->T->vheap, &thp);
 
 			/* make sure we use the correct capacity */
-			hcap = (bn->htype)?bn->H->heap.size>>bn->H->shift:0;
-			tcap = (bn->ttype)?bn->T->heap.size>>bn->T->shift:0;
+			hcap = (BUN) (bn->htype ? bn->H->heap.size >> bn->H->shift : 0);
+			tcap = (BUN) (bn->ttype ? bn->T->heap.size >> bn->T->shift : 0);
 			if (hcap && tcap)
 				bn->U->capacity = MIN(hcap,tcap);
 			else if (hcap)
@@ -801,7 +810,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			/* case (4): one-by-one BUN insert (really slow) */
 			BUN p, q, r = BUNfirst(bn);
 			BATiter bi = bat_iterator(b);
-			size_t hs = Hsize(b), ts = Tsize(b);
+			unsigned short hs = Hsize(b), ts = Tsize(b);
 
 			BATloop(b, p, q) {
 				ptr h = BUNhead(bi, p);
@@ -927,7 +936,7 @@ around and adapt search accelerator structures.
 @= tacc_update
 {
 	if (b->T->hash) {
-		hash@1(b->T->hash, (hash_t)@4, BUN@2(bi, @3), @3 < last); 
+		hash@1(b->T->hash, (BUN)@4, BUN@2(bi, @3), @3 < last); 
 	}
 }
 @= acc_move
@@ -936,10 +945,10 @@ around and adapt search accelerator structures.
 	char *ttmp = alloca(ts);
 
 	if (b->H->hash) {
-		HASHmove(b->H->hash, (hash_t) @3, (hash_t) @4, BUNhead(bi, @1), @1 < last); 
+		HASHmove(b->H->hash, @3, @4, BUNhead(bi, @1), @1 < last); 
 	}
 	if (b->T->hash) {
-		HASHmove(b->T->hash, (hash_t) @3, (hash_t) @4, BUNtail(bi, @1), @1 < last); 
+		HASHmove(b->T->hash, @3, @4, BUNtail(bi, @1), @1 < last); 
 	}
 
 	/* move first to tmp); */
@@ -1008,6 +1017,7 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 
 	BATcheck(b, "BUNins");
 	BATcheck(h, "BUNins: head value is nil\n");
+
  	countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 	bm = BBP_cache(-b->batCacheid);
 
@@ -1024,19 +1034,24 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 		if (BUNinplace(bm, p, t, h, 0) == NULL)
 			return NULL;
 	} else {
-		size_t i;
+		BUN i;
 		size_t hsize = 0, tsize = 0;
 		BATiter bi = bat_iterator(b);
 
+		p = BUNlast(b);	/* insert at end */
+		if (p == BUN_MAX || BATcount(b) == BUN_MAX) {
+			GDKerror("BUNins: bat too large\n");
+			return NULL;
+		}
+
+		ALIGNins(b, "BUNins", force);
+		b->batDirty = 1;
+		i = p;
 		if (b->H->hash && b->H->vheap)
 			hsize = b->H->vheap->size;
 		if (b->T->hash && b->T->vheap)
 			tsize = b->T->vheap->size;
 
-		ALIGNins(b, "BUNins", force);
-		b->batDirty = 1;
-		p = BUNlast(b);	/* insert at end */
-		i = p;
 		if (p > b->batFirst) {
 			if (b->htype != TYPE_void) {
 				int cmp = 0;
@@ -1165,12 +1180,12 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 		}
 
 		if (b->H->hash) {
-			HASHins(b, (hash_t) i, h);
+			HASHins(b, i, h);
 			if (hsize && hsize != b->H->vheap->size)
 				HEAPwarm(b->H->vheap);
 		}
 		if (b->T->hash) {
-			HASHins(bm, (hash_t) i, t);
+			HASHins(bm, i, t);
 
 			if (tsize && tsize != b->T->vheap->size)
 				HEAPwarm(b->T->vheap);
@@ -1209,7 +1224,7 @@ headed bats. The new head value will be a unique number, (max(bat)+1).
 BAT *
 BUNappend(BAT *b, ptr t, bit force)
 {
-	size_t i;
+	BUN i;
 	BUN p;
 	BAT *bm;
 	ptr h = NULL;
@@ -1218,26 +1233,32 @@ BUNappend(BAT *b, ptr t, bit force)
 	size_t hsize = 0, tsize = 0;
 
 	BATcheck(b, "BUNappend");
-	if (b->H->hash && b->H->vheap)
-		hsize = b->H->vheap->size;
-	if (b->T->hash && b->T->vheap)
-		tsize = b->T->vheap->size;
 
-	bm = BBP_cache(-b->batCacheid);
-
-	countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
 	if (b->htype != TYPE_void && b->htype != TYPE_oid) {
 		GDKerror("BUNappend: can only append to void and oid bats\n");
 		return NULL;
 	}
 
-	ALIGNapp(b, "BUNappend", force);
-	b->batDirty = 1;
-	p = BUNlast(b);		/* insert at end */
-	i = p;
+	bm = BBP_cache(-b->batCacheid);
 	if ((b->tkey & BOUND2BTRUE) && BUNfnd(bm, t) != BUN_NONE) {
 		return b;
 	}
+
+	p = BUNlast(b);		/* insert at end */
+	if (p == BUN_MAX || BATcount(b) == BUN_MAX) {
+		GDKerror("BUNappend: bat too large\n");
+		return NULL;
+	}
+
+	i = p;
+	ALIGNapp(b, "BUNappend", force);
+	b->batDirty = 1;
+	countonly = (b->htype == TYPE_void && b->ttype == TYPE_void);
+	if (b->H->hash && b->H->vheap)
+		hsize = b->H->vheap->size;
+	if (b->T->hash && b->T->vheap)
+		tsize = b->T->vheap->size;
+
 	if (p > b->batFirst) {
 		BATiter bi = bat_iterator(b);
 
@@ -1295,7 +1316,7 @@ BUNappend(BAT *b, ptr t, bit force)
 			}
 		} else if (b->tseqbase != oid_nil) {	/* virtual ids */
 			if (b->tseqbase + BATcount(b) != *(oid *) t) {
-				size_t cnt = BATcount(b);
+				BUN cnt = BATcount(b);
 
 				b = BATmaterializet(b);
 				countonly = 0;
@@ -1366,12 +1387,12 @@ BUNappend(BAT *b, ptr t, bit force)
 	 * REASON: some accelerator updates (qsignature) use the hashes! 
 	 */
 	if (b->H->hash && h) {
-		HASHins(b, (hash_t) i, h);
+		HASHins(b, i, h);
 		if (hsize && hsize != b->H->vheap->size)
 			HEAPwarm(b->H->vheap);
 	}
 	if (b->T->hash) {
-		HASHins(bm, (hash_t) i, t);
+		HASHins(bm, i, t);
 
 		if (tsize && tsize != b->T->vheap->size)
 			HEAPwarm(b->T->vheap);
@@ -1407,7 +1428,7 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	BATiter bi = bat_iterator(b);
 	BAT *bm = BBP_cache(-b->batCacheid);
 	BUN l, last = BUNlast(b) - 1;
-	size_t idx1, idx2;
+	BUN idx1, idx2;
 
 	ALIGNdel(b, "BUNdelete", force);	/* zap alignment info */
 
@@ -1427,7 +1448,7 @@ Deleting a (committed) bun the first and deleted swap position.
 				bm->hseqbase = ++b->tseqbase;
 			}
 		} else {
-			size_t hs = Hsize(b), ts = Tsize(b);
+			unsigned short hs = Hsize(b), ts = Tsize(b);
 
 			@:hacc_update(del,head,p,idx1)@
 			@:tacc_update(del,tail,p,idx1)@
@@ -1486,7 +1507,7 @@ last inserted bun (if present) is copied over it.
 		@:tacc_update(del,tail,p,idx1)@
 		idx2 = last;
 		if (p != last) {
-			size_t hs = Hsize(b), ts = Tsize(b);
+			unsigned short hs = Hsize(b), ts = Tsize(b);
 
 			@:acc_move(last,p,idx2,idx1)@
 			if (b->hsorted & 1) {
@@ -1632,7 +1653,7 @@ BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
 		/* uncommitted BUN elements */
 		BUN last = BUNlast(b) - 1;
 		BAT *bm = BBP_cache(-b->batCacheid);
-		size_t pit = p;
+		BUN pit = p;
 		BATiter bi = bat_iterator(b);
 
 		ALIGNinp(b, "BUNreplace", force);	/* zap alignment info */
@@ -1680,7 +1701,7 @@ BUNreplace(BAT *b, ptr h, ptr t, bit force)
 		return b;
 	}
 	if (b->ttype == TYPE_void) {
-		size_t i;
+		BUN i;
 
 		/* no need to materialize if value doesn't change */
 		if (b->tseqbase == oid_nil || (b->hseqbase+p) == *(oid *) t)
@@ -1719,10 +1740,10 @@ void_inplace(BAT *b, oid id, ptr val, bit force)
 	return res;
 }
 
-ssize_t
+BUN
 void_replace_bat(BAT *b, BAT *u, bit force)
 {
-	size_t nr = 0;
+	BUN nr = 0;
 	BUN r, s;
 	BATiter ui = bat_iterator(u);
 
@@ -1731,7 +1752,7 @@ void_replace_bat(BAT *b, BAT *u, bit force)
 		ptr val = BUNtail(ui, r);
 
 		if (void_inplace(b, updid, val, force) == GDK_FAIL)
-			return -1;
+			return BUN_NONE;
 		nr++;
 	}
 	return nr;
@@ -1838,9 +1859,9 @@ BUNlocate(BAT *b, ptr x, ptr y)
 	if(BATtdense(b))
 		@:swap()@
 	if (BAThdense(b)) {
-		oid i = *(oid *) x - b->hseqbase;
+		BUN i = (BUN) (*(oid *) x - b->hseqbase);
 
-		if ((size_t) i < BATcount(b)) {
+		if (i < BATcount(b)) {
 			i += BUNfirst(b);
 			p = i;
 			if ((*tcmp) (y, BUNtail(bi, p)) == 0)
@@ -1883,12 +1904,13 @@ BUNlocate(BAT *b, ptr x, ptr y)
 			if (@:dohash(v,t)@)
 				(void) BATprepareHash(BATmirror(v));
 			if (v->H->hash && v->T->hash) {	/* we can choose between two hash tables */
-				size_t hcnt = 0, tcnt = 0, i;
+				BUN hcnt = 0, tcnt = 0;
+				BUN i;
 
 				for (i = 0; i <= v->H->hash->mask; i++)
-					hcnt += (v->H->hash->hash[i] != HASH_MAX);
+					hcnt += (v->H->hash->hash[i] != BUN_NONE);
 				for (i = 0; i <= v->T->hash->mask; i++)
-					tcnt += (v->T->hash->hash[i] != HASH_MAX);
+					tcnt += (v->T->hash->hash[i] != BUN_NONE);
 				if (hcnt < tcnt) {
 					@:swap()@
 					v = BATmirror(v);
@@ -1944,7 +1966,7 @@ BUNlocate(BAT *b, ptr x, ptr y)
 
 	/* hashloop over head values, check tail values */
 	if (b->H->hash) {
-		hash_t h;
+		BUN h;
 
 		if (hint && tint) {
 			HASHloop_int(bi, b->H->hash, h, x)
@@ -2016,7 +2038,7 @@ It can be implemented quickly, because the system ensures a dense
 BUN list.
 @{
 @c
-size_t
+BUN
 BATcount(BAT *b)
 {
 	BATcheck(b, "BATcount");
@@ -2024,14 +2046,14 @@ BATcount(BAT *b)
 }
 
 void
-BATsetcapacity(BAT *b, size_t cnt)
+BATsetcapacity(BAT *b, BUN cnt)
 {
 	b->U->capacity = cnt;			
 	assert(b->batCount <= cnt);
 }
 
 void
-BATsetcount(BAT *b, size_t cnt)
+BATsetcount(BAT *b, BUN cnt)
 {
 	b->batCount = cnt;			
 	b->batDirtydesc = TRUE; 			
@@ -2046,7 +2068,7 @@ BATsetcount(BAT *b, size_t cnt)
 The alternative routine is @%BATbuncount@, which calculates the
 total buns in use.
 @c
-size_t
+BUN
 BATbuncount(BAT *b)
 {
 	BATcheck(b, "BATbuncount");
@@ -2845,7 +2867,7 @@ BATpropcheck(BAT *b, int mode)
 	int disprove_dense, disprove_sorted, disprove_key = TRUE, disprove_nonil = b->H->nonil;
 	int dense_bak = 0, key_bak = 0, sorted_bak = 0, nonil_bak = 0;
 	oid seq_bak = 0;
-	size_t xx, yy;
+	BUN xx, yy;
 	int zz, tpe;
 	BUN p, q, r;
 	ptr last;
@@ -2909,7 +2931,7 @@ check if duplicated properties are equal
 			b->H->key = bm->T->key = b->batDirty = TRUE;
 		}
 		if (BAThdense(b) && !b->hkey) {
-			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples is dense but not key!?\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples is dense but not key!?\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 		}
 	}
 	if (BAThdense(b) && !b->hkey)
@@ -2921,18 +2943,18 @@ quick check on trivial cases (void columns, 0 or 1 tuple bats).
 		return b;
 	}
 	if (yy > xx && BAThdense(b) && b->htype == TYPE_oid && *(oid *) BUNhloc(bi, BUNfirst(b)) != b->hseqbase) {
-		GDKerror("BATpropcheck: BAT %s(%d) with "SZFMT" tuples seqbase of dense oid bat is wrong! " OIDFMT " != " OIDFMT "\n",
+		GDKerror("BATpropcheck: BAT %s(%d) with "BUNFMT" tuples seqbase of dense oid bat is wrong! " OIDFMT " != " OIDFMT "\n",
 			 BATgetId(b), b->batCacheid, BATcount(b), b->hseqbase, *(oid *) BUNhloc(bi, BUNfirst(b)));
 	}
 	if (yy + 1 >= xx) {	/* BATcount(b) <= 1 */
 		if (ATOMlinear(tpe) && !(b->hsorted & 1)) {
-			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples is (h)sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples is (h)sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 
 			b->batDirtydesc = TRUE;
 			b->hsorted = GDK_SORTED;
 		}
 		if (!b->hkey) {
-			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples is (h)key!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples is (h)key!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 
 			BATkey(b, TRUE);
 		}
@@ -2945,7 +2967,7 @@ quick check on trivial cases (void columns, 0 or 1 tuple bats).
 				hsb = *(oid *) BUNhloc(bi, BUNfirst(b));
 			}
 			if (hsb != oid_nil) {
-				XPROPDEBUG GDKwarning("BATpropcheck: [oid,?]-BAT %s(%d)[%s,%s] with "SZFMT" tuples is (h)dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+				XPROPDEBUG GDKwarning("BATpropcheck: [oid,?]-BAT %s(%d)[%s,%s] with "BUNFMT" tuples is (h)dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 
 				b->hdense = b->batDirtydesc = TRUE;
 				BATseqbase(b, hsb);
@@ -2959,18 +2981,18 @@ first propagate already known properties. that will save some effort.
 	if (VIEWparentcol(b) && ALIGNsynced(parent = BBP_cache(VIEWhparent(b)), b)) {
 		/* quickly propagate properties from parent to child */
 		if (((BAThordered(parent) & 1) && !(BAThordered(b) & 1)) && !b->H->heap.copied) {
-			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples inherits (h)sorted from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BATgetId(parent), parent->batCacheid);
+			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples inherits (h)sorted from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BATgetId(parent), parent->batCacheid);
 
 			b->batDirtydesc = TRUE;
 			b->hsorted = GDK_SORTED;
 		}
 		if (parent->hkey && !b->hkey) {
-			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples inherits (h)key from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BATgetId(parent), parent->batCacheid);
+			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples inherits (h)key from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BATgetId(parent), parent->batCacheid);
 
 			BATkey(b, TRUE);
 		}
 		if (BAThdense(parent) && tpe == TYPE_oid && !BAThdense(b)) {
-			XPROPDEBUG GDKwarning("BATpropcheck: [oid,?]-BAT %s(%d)[%s,%s] with "SZFMT" tuples inherits (h)dense from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BATgetId(parent), parent->batCacheid);
+			XPROPDEBUG GDKwarning("BATpropcheck: [oid,?]-BAT %s(%d)[%s,%s] with "BUNFMT" tuples inherits (h)dense from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BATgetId(parent), parent->batCacheid);
 
 			b->hdense = b->batDirtydesc = TRUE;
 			BATseqbase(b, *(oid *) BUNhloc(bi, BUNfirst(b)));
@@ -3151,8 +3173,8 @@ for determining which algebra commands set properties sub-optimally.
 @c
 	if (disprove_key || disprove_nonil) {
 		if (p < q) {
-			size_t cnt = BATcount(b);
-			size_t lim = (size_t) ((mode & BATPROPS_ALL) ? GDK_int_max : 16000);
+			BUN cnt = BATcount(b);
+			BUN lim = (BUN) ((mode & BATPROPS_ALL) ? GDK_int_max : 16000);
 
 			lim = MIN(cnt, lim);
 			q = yy + lim;
@@ -3196,7 +3218,7 @@ for determining which algebra commands set properties sub-optimally.
 					default:
 						@:hash_disprove(_any,ead)@
 					}
-					BATDEBUG THRprintf(GDKout, "#BATpropcheck: BAT %s(%d): used hashtable of size " SZFMT "\n", BATgetId(b), b->batCacheid, lim);
+					BATDEBUG THRprintf(GDKout, "#BATpropcheck: BAT %s(%d): used hashtable of size " BUNFMT "\n", BATgetId(b), b->batCacheid, lim);
 				}
 				BBPreclaim(bv);
 			}
@@ -3255,28 +3277,28 @@ failed to disprove on exhaustive check => succeeded to prove
       exit:
 	if (mode & BATPROPS_CHECK) {
 		if ((sorted_bak & 1) && !(BAThordered(b) & 1)) {
-			GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was incorrectly marked sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+			GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was incorrectly marked sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 			if (BAThordered(b))
-				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples remains marked radix-clustered on %d bits; not checked!", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BAThordered(b) >> 1);
+				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples remains marked radix-clustered on %d bits; not checked!", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BAThordered(b) >> 1);
 		}
 		if (key_bak && !b->hkey)
-			GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was incorrectly marked keyed!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+			GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was incorrectly marked keyed!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 		if (nonil_bak && !b->H->nonil)
-			GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was incorrectly marked nonil!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+			GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was incorrectly marked nonil!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 		if (dense_bak && disprove_dense) {
 			if (!BAThdense(b))
-				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was incorrectly marked dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was incorrectly marked dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 			if (seq_bak != b->hseqbase)
-				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples had incorrect seqbase!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples had incorrect seqbase!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 		}
 		XPROPDEBUG {
 			if (!(sorted_bak & 1) && (BAThordered(b) & 1))	/* StM: GDK_SORTED_REV ? */
-				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was not marked sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was not marked sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 			if (!key_bak && b->hkey)
-				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was not marked keyed!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+				GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was not marked keyed!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 			if (!dense_bak && disprove_dense) {
 				if (BAThdense(b))
-					GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "SZFMT" tuples was not marked dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
+					GDKwarning("BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was not marked dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 			}
 		}
 	}

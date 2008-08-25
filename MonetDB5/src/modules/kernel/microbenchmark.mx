@@ -69,7 +69,7 @@ mb_export str MBMmix(int *ret, int *batid);
 int
 BATuniform(BAT **bn, oid *base, int *size, int *domain)
 {
-	size_t n = (size_t) * size, i, r;
+	BUN n = (BUN) * size, i, r;
 	BAT *b = NULL;
 	BUN firstbun, p, q;
 	int j = 0;
@@ -105,11 +105,11 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 
 	/* mix BUNs randomly */
 	for (r = i = 0; i < n; i++) {
-		size_t idx = i + ((r += rand()) % (n - i));
+		BUN idx = i + ((r += (BUN) rand()) % (n - i));
 		int val;
 
-		p = (BUN) (firstbun + i);
-		q = (BUN) (firstbun + idx);
+		p = firstbun + i;
+		q = firstbun + idx;
 		val = *(int *) Tloc(b, p);
 		*(int *) Tloc(b, p) = *(int *) Tloc(b, q);
 		*(int *) Tloc(b, q) = val;
@@ -137,9 +137,9 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 int
 BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 {
-	size_t n = (size_t) * size, i;
+	BUN n = (BUN) * size, i;
 	unsigned int r = (unsigned int) n;
-	size_t d = (size_t) * domain;
+	BUN d = (BUN) (*domain < 0 ? 0 : *domain);
 	BAT *b = NULL;
 	BUN firstbun, p, q;
 	int m = *mean, s = *stddev;
@@ -198,7 +198,7 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 
 	/* mix BUNs randomly */
 	for (r = 0, i = 0; i < n; i++) {
-		size_t idx = i + ((r += rand()) % (n - i));
+		BUN idx = i + ((r += (BUN) rand()) % (n - i));
 		int val;
 
 		p = firstbun + i;
@@ -248,7 +248,7 @@ MBMnormal(int *ret, oid *base, int *size, int *domain, int *stddev, int *mean){
 str
 MBMmix(int *bn, int *batid)
 {
-	size_t n, r, i;
+	BUN n, r, i;
 	BUN firstbun, p, q;
 	BAT *b;
 
@@ -259,11 +259,11 @@ MBMmix(int *bn, int *batid)
 	firstbun = BUNfirst(b);
 	/* mix BUNs randomly */
 	for (r = i = 0; i < n; i++) {
-		size_t idx = i + ((r += rand()) % (n - i));
+		BUN idx = i + ((r += (BUN) rand()) % (n - i));
 		int val;
 
-		p = (BUN) (firstbun + i);
-		q = (BUN) (firstbun + idx);
+		p = firstbun + i;
+		q = firstbun + idx;
 		val = *(int *) Tloc(b, p);
 		*(int *) Tloc(b, p) = *(int *) Tloc(b, q);
 		*(int *) Tloc(b, q) = val;

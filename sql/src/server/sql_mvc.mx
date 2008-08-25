@@ -169,7 +169,7 @@ extern void mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_a
 
 extern void mvc_drop_schema(mvc *c, sql_schema *s, int drop_action);
 extern sql_schema *mvc_create_schema(mvc *m, char *name, int auth_id, int owner);
-extern size_t mvc_clear_table(mvc *m, sql_table *t);
+extern BUN mvc_clear_table(mvc *m, sql_table *t);
 extern void mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz);
 extern sql_table *mvc_create_cluster(mvc *c, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz);
@@ -1027,7 +1027,7 @@ mvc_create_fkey(mvc *m, sql_table *t, char *name, key_type kt, sql_key *rkey, in
 	sql_fkey *fk;
 
 	if (mvc_debug)
-		fprintf(stderr, "mvc_create_fkey %s %u %ld\n", t->base.name, kt, (long) rkey);
+		fprintf(stderr, "mvc_create_fkey %s %u " PTRFMT "\n", t->base.name, kt, PTRFMTCAST rkey);
 	fk = sql_trans_create_fkey(m->session->tr, t, name, kt, rkey, on_delete, on_update);
 	m->type = Q_SCHEMA;
 	return fk;
@@ -1188,7 +1188,7 @@ mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 	m->type = Q_SCHEMA;
 }
 
-size_t
+BUN
 mvc_clear_table(mvc *m, sql_table *t)
 {
 	m->type = Q_UPDATE;

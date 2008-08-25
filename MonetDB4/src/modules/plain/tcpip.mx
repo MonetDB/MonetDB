@@ -1473,7 +1473,7 @@ TCPexport(int *conn_id,		/* pointer to integer. */
 	char buf[BIG_MESSAGE], *p;
 	int hdrlen, len = BIG_MESSAGE;
 	SOCKET fd;
-	size_t batlen;
+	BUN batlen;
 	int ret = GDK_SUCCEED;
 
 	if (*conn_id < 0 || *conn_id >= MAX_CONN || !connections[*conn_id].me) {
@@ -1493,8 +1493,12 @@ TCPexport(int *conn_id,		/* pointer to integer. */
 #ifndef WORDS_BIGENDIAN
 		BATconvert(b, CONV_HTON);
 #endif
-		sprintf(buf, "bat:%s:" SZFMT "*%d:%s\@%d%s%s:%s\@%d%s%s:" SZFMT ":" SZFMT ":", name, BATcount(b), BUNsize(b), atom_name(b->htype), b->hloc, b->hsorted ? "+" : "", b->hkey ? "k" : "", atom_name(b->ttype), b->tloc, b->tsorted ? "+" : "",
-			b->tkey ? "k" : "", b->hheap ? b->hheap->free : 0, b->theap ? b->theap->free : 0);
+		sprintf(buf, "bat:%s:" BUNFMT "*%d:%s\@%d%s%s:%s\@%d%s%s:" BUNFMT ":" BUNFMT ":",
+			name, BATcount(b), BUNsize(b), atom_name(b->htype),
+			b->hloc, b->hsorted ? "+" : "", b->hkey ? "k" : "",
+			atom_name(b->ttype), b->tloc, b->tsorted ? "+" : "",
+			b->tkey ? "k" : "", b->hheap ? b->hheap->free : 0,
+			b->theap ? b->theap->free : 0);
 
 		p = buf + strlen(buf);
 		p += OIDtoStr(&p, &len, &b->halign);

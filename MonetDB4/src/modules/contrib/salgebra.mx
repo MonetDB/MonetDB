@@ -515,7 +515,7 @@ typedef struct {
 static INLINE int
 DICTclustersize(clusterhash *ch, ptr v)
 {
-	hash_t bucket = DICTprobe(ch, v);
+	BUN bucket = DICTprobe(ch, v);
 	int s = DICTentry(ch, bucket).s;
 
 	if (s == -1)
@@ -655,8 +655,8 @@ salgebra_CHbuild(clusterhash *ch, BAT *b)
 	BAT *bt = NULL, *hv = NULL, *tv = NULL;
 	dict_entry *dict = NULL;
 	int cstart = 0, cend = 0;
-	hash_t hb = 0, chlen = 0, cur = 0, cluster = 0;
-	size_t xx = 0;
+	BUN hb = 0, chlen = 0, cur = 0, cluster = 0;
+	BUN xx = 0;
 	int isPerfect = 1, bid = BBPcacheid(b);
 	oid *hvs = NULL;
 
@@ -711,11 +711,11 @@ salgebra_CHbuild(clusterhash *ch, BAT *b)
 
 		/* Any values for this cluster? */
 		cluster = h->hash[cur];
-		if (cluster == HASH_MAX)
+		if (cluster == BUN_NONE)
 			continue;
 
 		/* determine size of cluster and set pointers */
-		for (hb = cluster; hb != HASH_MAX; hb = h->link[hb])
+		for (hb = cluster; hb != BUN_NONE; hb = h->link[hb])
 			ncur++;
 		cc = 0;
 		cstart = cend;
@@ -726,7 +726,7 @@ salgebra_CHbuild(clusterhash *ch, BAT *b)
 		dict[cur].e = cend - 1;
 
 		/* printf( "dict entry[%d]=<%d,%d>\n", cur, cstart, cend - 1 ); */
-		for (hb = cluster; hb != HASH_MAX; hb = h->link[hb]) {
+		for (hb = cluster; hb != BUN_NONE; hb = h->link[hb]) {
 			/* and create the output bat */
 			ptr tl = NULL;
 			oid hoid = (oid) hb;
@@ -756,7 +756,7 @@ salgebra_CHbuild(clusterhash *ch, BAT *b)
 
 	if (!(ch->isPerfect = isPerfect)) {
 		/* set tv := join( hv.reverse, b ).reverse.seqbase(0@0); */
-		tv = BATjoin(BATmirror(hv), b, oid_nil);
+		tv = BATjoin(BATmirror(hv), b, BUN_NONE);
 		tv = BATmirror(tv);
 		ch->tv = BBPcacheid(tv);
 	}
@@ -805,7 +805,7 @@ salgebra_mergesort_matches(oid *res, oid *a, int na, oid *b, int nb)
 */
 
 static int
-salgebra_collect_matches_imperfect(oid *res, clusterhash *ch, hash_t bucket, ptr v)
+salgebra_collect_matches_imperfect(oid *res, clusterhash *ch, BUN bucket, ptr v)
 {
 	BAT *hv = BBPdescriptor(ch->hv), *tv = BBPdescriptor(ch->tv);
 	BATiter tvi = bat_iterator(tv);
@@ -813,7 +813,7 @@ salgebra_collect_matches_imperfect(oid *res, clusterhash *ch, hash_t bucket, ptr
 	int i = 0, j = DICTentry(ch, bucket).s, n = DICTentry(ch, bucket).e - j + 1, nres = 0;
 
 #ifdef DEBUG
-	printf("cm_imperfect: ch[" SZFMT "]=<%d,%d>\n", (size_t) bucket, DICTentry(ch, bucket).s, DICTentry(ch, bucket).e);
+	printf("cm_imperfect: ch[" BUNFMT "]=<%d,%d>\n", bucket, DICTentry(ch, bucket).s, DICTentry(ch, bucket).e);
 #endif
 	if (j == -1)
 		return 0;	/* no matches */
@@ -829,14 +829,14 @@ salgebra_collect_matches_imperfect(oid *res, clusterhash *ch, hash_t bucket, ptr
 }
 
 static int
-salgebra_collect_matches_perfect(oid *res, clusterhash *ch, hash_t bucket)
+salgebra_collect_matches_perfect(oid *res, clusterhash *ch, BUN bucket)
 {
 	BAT *hv = BBPdescriptor(ch->hv);
 	oid *hvs = (oid *)Hloc(hv, BUNfirst(hv));
 	int i = 0, j = DICTentry(ch, bucket).s, n = DICTentry(ch, bucket).e - j + 1;
 
 #ifdef DEBUG
-	printf("cm_perfect: ch[" SZFMT "]=<%d,%d>\n", (size_t) bucket, DICTentry(ch, bucket).s, DICTentry(ch, bucket).e);
+	printf("cm_perfect: ch[" BUNFMT "]=<%d,%d>\n", bucket, DICTentry(ch, bucket).s, DICTentry(ch, bucket).e);
 #endif
 	if (j == -1)
 		return 0;	/* no matches */
@@ -849,7 +849,7 @@ static int
 salgebra_collect_matches(oid *res, clusterhash *ch, ptr v)
 {
 	int nres = 0;
-	hash_t bucket = DICTprobe(ch, v);
+	BUN bucket = DICTprobe(ch, v);
 
 	if (ch->isPerfect)
 		nres = salgebra_collect_matches_perfect(res, ch, bucket);

@@ -883,12 +883,12 @@ string, but may only differ by trailing zeros. The hash function ignores series 
 digits, hence is immune for such differences. The compare function adds imaginary zeros at
 the shorter digit string to obtain the same effect.
 @c
-hash_t
+BUN
 decimal_hash(decimal *d)
 {
 	unsigned int *src = d->num;
 	unsigned int *dst = src + NUMLEN(PREC(d));
-	hash_t y = PREC(d) + SCALE(d);
+	BUN y = PREC(d) + SCALE(d);
 
 	while (src < dst) {
 		unsigned int val = *src++;
@@ -908,7 +908,7 @@ decimal_hash(decimal *d)
 	}
 	if (d->negative)
 		y = ~y;
-	DECIMAL_DEBUG(d, FORMAT("decimal_hash(->" SSZFMT ") input", (ssize_t) y), 1);
+	DECIMAL_DEBUG(d, FORMAT("decimal_hash(->" BUNFMT ") input", y), 1);
 	return y;
 }
 
@@ -989,7 +989,7 @@ decimal_heap(Heap *h, size_t capacity)
 void
 decimal_del(Heap *h, var_t *idx)
 {
-	HEAP_free(h, (size_t) * idx);
+	HEAP_free(h, *idx);
 }
 
 var_t
@@ -1876,7 +1876,7 @@ int
 decimal_bulkdivide(BAT **ret, BAT *b, decimal *dv, int *prec)
 {
 	BATiter bi = bat_iterator(b);
-	size_t xx = BATcount(b);
+	BUN xx = BATcount(b);
 	int yy = 10;
 	BAT *bn = *ret = BATnew(b->htype, TYPE_var, xx);
 	BAT *bm;

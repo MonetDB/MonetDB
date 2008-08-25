@@ -623,8 +623,8 @@ BBPinit(void)
 		bs->U.inserted = (BUN) inserted;
 		bs->U.deleted = (BUN) deleted;
 		bs->U.first = (BUN) first;
-		bs->U.count = (size_t) count;
-		bs->U.capacity = (size_t) capacity;
+		bs->U.count = (BUN) count;
+		bs->U.capacity = (BUN) capacity;
 		bs->P.map_head = (char) map_head;
 		bs->P.map_tail = (char) map_tail;
 		bs->P.map_hheap = (char) map_hheap;
@@ -662,14 +662,14 @@ BBPinit(void)
 			bs->@1.width = width;
 			bs->@1.varsized = var != 0;
 			bs->@1.shift = ATOMelmshift(width);
-			bs->@1.nokey[0] = (size_t) nokey0;
-			bs->@1.nokey[1] = (size_t) nokey1;
+			bs->@1.nokey[0] = (BUN) nokey0;
+			bs->@1.nokey[1] = (BUN) nokey1;
 			bs->@1.sorted = (bit) (properties & 0x00FF);
 			bs->@1.key = (properties & 0x0100) != 0;
 			bs->@1.dense = (properties & 0x0200) != 0;
 			bs->@1.nonil = (properties & 0x0400) != 0;
 			bs->@1.nil = (properties & 0x0800) != 0;
-			bs->@1.nosorted = (size_t) nosorted;
+			bs->@1.nosorted = (BUN) nosorted;
 			bs->@1.seq = base < 0 ? oid_nil : (oid) base;
 			bs->@1.align = (oid) align;
 			bs->@1.heap.maxsize = (size_t) size;
@@ -838,7 +838,7 @@ new_bbpentry(stream *s, bat i)
 	assert(BBP[i].cache);
 	assert(BBP[i].cache->B.batCacheid == i);
 
-	if (stream_printf(s, SSZFMT " %d %s %s %s %d %u " SZFMT " " SZFMT " " SZFMT " " SZFMT " " SZFMT " %u %u %u %u", /* BAT info */
+	if (stream_printf(s, SSZFMT " %d %s %s %s %d %u " BUNFMT " " BUNFMT " " BUNFMT " " BUNFMT " " BUNFMT " %u %u %u %u", /* BAT info */
 			  (ssize_t) i,
 			  BBP[i].status & BBPPERSISTENT,
 			  BBP[i].nme[0],
@@ -858,16 +858,16 @@ new_bbpentry(stream *s, bat i)
 		return -1;
 @= columnprint
 	t = BBP[i].cache->@1.type;
-	if (stream_printf(s, " %s %u %u %u " SZFMT " " SZFMT " " SZFMT " " SSZFMT " " SZFMT " " SZFMT " " SZFMT " %d",
+	if (stream_printf(s, " %s %u %u %u " BUNFMT " " BUNFMT " " BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
 			  t >= 0 ? BATatoms[t].name : ATOMunknown_name(t),
 			  BBP[i].cache->@1.width,
 			  BBP[i].cache->@1.varsized,
 			  ((unsigned short) BBP[i].cache->@1.sorted & 0xFF) | (((unsigned short) BBP[i].cache->@1.key & 0x01) << 8) | (((unsigned short) BBP[i].cache->@1.dense & 0x01) << 9) | (((unsigned short) BBP[i].cache->@1.nonil & 0x01) << 10) | (((unsigned short) BBP[i].cache->@1.nil & 0x01) << 11),
 			  BBP[i].cache->@1.nokey[0],
 			  BBP[i].cache->@1.nokey[1],
-			  (size_t) BBP[i].cache->@1.nosorted,
-			  (ssize_t) BBP[i].cache->@1.seq,
-			  (size_t) BBP[i].cache->@1.align,
+			  BBP[i].cache->@1.nosorted,
+			  BBP[i].cache->@1.seq,
+			  BBP[i].cache->@1.align,
 			  BBP[i].cache->@1.heap.free,
 			  BBP[i].cache->@1.heap.size,
 			  BBP[i].cache->@1.heap.newstorage) < 0)
@@ -2055,7 +2055,7 @@ field where the candidates are sorted on.
 typedef struct {
 	int lastused;		/* bat lastused stamp; sort on this field */
 	bat bid;		/* bat id */
-	ssize_t cnt;		/* bat count */
+	BUN cnt;		/* bat count */
 	int next;		/* next position in list */
 #if SIZEOF_SIZE_T == 8
 	size_t dummy;		/* round up */
@@ -2082,7 +2082,7 @@ BBPtrim_scan(int mem, int vm, bat bbppos, bat bbplim)
 					 * rationale: I/O penalty for cache miss is relatively higher for small bats 
 					 */
 					int swap_first = 0;
-					ssize_t cnt = -1;
+					BUN cnt = BUN_NONE;
 
 					if (b) {
 						cnt = BATcount(b);
@@ -2109,7 +2109,7 @@ BBPtrim_scan(int mem, int vm, bat bbppos, bat bbplim)
 		int i;
 		GDKqsort(bbptrim, NULL, NULL, bbptrimlast, sizeof(bbptrim_t), 0, TYPE_int);
 		for (i = bbptrimfirst = 0; i < bbptrimlast; i++) {
-			MEMDEBUG THRprintf(GDKout, "#TRIMSCAN: %11d%c %9d=%s\t(#" SSZFMT ")\n", BBPLASTUSED(bbptrim[i].lastused), (bbptrim[i].lastused & 0x80000000) ? '*' : ' ', i, BBPname(bbptrim[i].bid), bbptrim[i].cnt);
+			MEMDEBUG THRprintf(GDKout, "#TRIMSCAN: %11d%c %9d=%s\t(#" BUNFMT ")\n", BBPLASTUSED(bbptrim[i].lastused), (bbptrim[i].lastused & 0x80000000) ? '*' : ' ', i, BBPname(bbptrim[i].bid), bbptrim[i].cnt);
 
 			bbptrim[i].next = i + 1;
 		}
@@ -2144,7 +2144,7 @@ BBPtrim_select(size_t * memtarget, size_t * vmtarget, int dirty)
 		MEMDEBUG if (b) {
 			THRprintf(GDKout, "#TRIMSELECT: candidate=%s BAT*=" PTRFMT "\n", BBPname(bbptrim[cur].bid), PTRFMTCAST(void *)b);
 
-			THRprintf(GDKout, "#            (cnt=" SSZFMT ", mode=%d, refs=%d, wait=%d, parent=%d,%d, lastused=%d,%d,%d)\n",
+			THRprintf(GDKout, "#            (cnt=" BUNFMT ", mode=%d, refs=%d, wait=%d, parent=%d,%d, lastused=%d,%d,%d)\n",
 				  bbptrim[cur].cnt, b->batPersistence,
 				  BBP_refs(b->batCacheid),
 				  (BBP_status(b->batCacheid) & BBPWAITING) != 0,

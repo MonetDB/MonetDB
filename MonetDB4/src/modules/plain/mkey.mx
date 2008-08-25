@@ -354,7 +354,7 @@ CMDhash_str(int *res, str val)
 {
 /* 64bit: if CMDhash continues to return int, then this should
  * probably be changed to not throw away the top bits of the result */
-	hash_t h = strHash(val);
+	BUN h = strHash(val);
 #if SIZEOF_OID == SIZEOF_INT
 	*res = (int) h;
 #else
@@ -367,7 +367,7 @@ int
 CMDhash(int *res, ptr val, int tpe)
 {
 	int code;		/* 64-bits on 64 systems; we truncate it here to save space */
-	hash_t h;
+	BUN h;
 
 	switch (ATOMstorage(tpe)) {
 	case TYPE_void:
@@ -475,7 +475,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 
 		while (cur < end) {
                         str src = base + *cur;
-			hash_t h;
+			BUN h;
 			int val;
 			GDK_STRHASH(src, h);
 #if SIZEOF_OID == SIZEOF_INT
@@ -495,11 +495,11 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 			dst++;
 		}
 	} else {
-		hash_t (*hash)(ptr) = BATatoms[b->ttype].atomHash;
+		BUN (*hash)(ptr) = BATatoms[b->ttype].atomHash;
 		BUN p, q;
 
 		BATloop(b, p, q) {
-			hash_t h = (*hash)(BUNtail(bi, p));
+			BUN h = (*hash)(BUNtail(bi, p));
 #if SIZEOF_OID == SIZEOF_INT
 			int val = (int) h;
 #else

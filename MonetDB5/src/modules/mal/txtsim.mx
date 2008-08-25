@@ -957,7 +957,7 @@ fstrcmp0_impl(dbl *ret, str *string1, str *string2)
 str
 CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int *k)
 {
-	size_t n = BATcount(qgram);
+	BUN n = BATcount(qgram);
 	unsigned int i, j;
 	BAT *bn;
 

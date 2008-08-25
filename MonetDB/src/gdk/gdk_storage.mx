@@ -595,7 +595,8 @@ BATload_intern(bat i)
 		if (HEAPload(&b->H->heap, nme, "head", b->batRestricted == BAT_READ) < 0) {
 			return NULL;
 		}
-		b->batCapacity = b->H->heap.size >> b->H->shift;
+		assert(b->H->heap.size >> b->H->shift <= BUN_MAX);
+		b->batCapacity = (BUN) (b->H->heap.size >> b->H->shift);
 	} else {
 		b->H->heap.base = NULL;
 	}
@@ -604,12 +605,14 @@ BATload_intern(bat i)
 			HEAPfree(&b->H->heap);
 			return NULL;
 		}
-		if (b->htype == TYPE_void)
-			b->batCapacity = b->T->heap.size >> b->T->shift;
+		if (b->htype == TYPE_void) {
+			assert(b->T->heap.size >> b->T->shift <= BUN_MAX);
+			b->batCapacity = (BUN) (b->T->heap.size >> b->T->shift);
+		}
 		if (b->batCapacity != (b->T->heap.size >> b->T->shift)) {
-			size_t cap = b->batCapacity;
+			BUN cap = b->batCapacity;
 			if (cap < (b->T->heap.size >> b->T->shift)) {
-				cap = b->T->heap.size >> b->T->shift;
+				cap = (BUN) (b->T->heap.size >> b->T->shift);
 				HEAPextend(&b->H->heap, headsize(b,cap));
 				b->batCapacity = cap;
 			} else {
@@ -848,7 +851,7 @@ static int
 print_tabwidth(BAT *b, str title, col_format_t *c)
 {
 	strFcn tostr = printfcn(b);
-	size_t cnt = BATcount(b);
+	BUN cnt = BATcount(b);
 	int max, t = BATttype(b);
 
 	c->tpe = ATOMname(b->ttype);
@@ -857,9 +860,9 @@ print_tabwidth(BAT *b, str title, col_format_t *c)
 
 	if (t >= 0 && t < GDKatomcnt && tostr) {
 		BATiter bi = bat_iterator(b);
-		size_t off = BUNfirst(b);
+		BUN off = BUNfirst(b);
 		int k;
-		size_t j, i, probe = MIN(cnt, MAX(200, MIN(1024, cnt / 100)));
+		BUN j, i, probe = MIN(cnt, MAX(200, MIN(1024, cnt / 100)));
 
 		for (i = 0; i < probe; i++) {
 			j = off + ((probe == cnt) ? i : (rand() % MIN(16384, cnt)));

@@ -178,7 +178,7 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 	BAT *b, *bn;
 	@1 nilval= (@1) @1_nil, *dst;
 	bit *t;
-	size_t cnt, p;
+	BUN cnt, p;
 
 	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
 	@:voidresultBAT(TYPE_@1,"batcalc.ifThenElse")@
@@ -209,7 +209,7 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 	BAT *b, *tb, *eb, *bn;
 	@1 nilval= (@1) @1_nil, *dst, *tbv, *ebv;
 	bit *t;
-	size_t cnt, p;
+	BUN cnt, p;
 
 	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
 	@:getBATdescriptor(tid,tb,"batcalc.ifThenElse",BBPreleaseref(b->batCacheid);)@
@@ -248,7 +248,7 @@ CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 	BAT *b, *eb, *bn;
 	@1 nilval= (@1) @1_nil, *dst, *ebv;
 	bit *t;
-	size_t cnt, p;
+	BUN cnt, p;
 
 	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
 	@:getBATdescriptor(eid,eb,"batcalc.ifThenElse", BBPreleaseref(b->batCacheid);)@
@@ -283,7 +283,7 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 	BAT *b, *tb, *bn;
 	@1 nilval= (@1) @1_nil, *dst, *tbv;
 	bit *t;
-	size_t cnt, p;
+	BUN cnt, p;
 
 	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
 	@:getBATdescriptor(tid,tb,"batcalc.ifThenElse",BBPreleaseref(b->batCacheid);)@

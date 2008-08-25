@@ -1391,7 +1391,7 @@ view_gdk_mem(BAT **retval)
 }
 
 @-
-To avoid complains about signed/unsigned comparisons between lng & size_t,
+To avoid complaints about signed/unsigned comparisons between lng & size_t,
 we cast  lng *num  to  size_t sze,
 after checking that there is no under-/overflow.
 @c
@@ -1580,7 +1580,7 @@ get_mem_usage(BAT **ret, lng *minsize)
 
 	/* how much *used* bytes in heap? */
 	m = MT_mallinfo();
-	sz = (size_t) (m.usmblks + m.uordblks + m.hblkhd);
+	sz = (size_t) m.usmblks + (size_t) m.uordblks + (size_t) m.hblkhd;
 	BUNins(bn, "_tot/malloc", &sz, FALSE);
 
 	/* measure actual heap size, includes wasted fragmented space and anon mmap space used by malloc() */

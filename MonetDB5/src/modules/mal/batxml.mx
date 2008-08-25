@@ -763,7 +763,7 @@ BATXMLagg3(int *ret, int *bid,int *grp, int *ext)
 
 	/* this will not work as it will corrupt the order of the column, ie
 	   the order in which the data will be generated */
-	j= BATjoin(BATmirror(g),b,oid_nil);
+	j= BATjoin(BATmirror(g),b,BUN_NONE);
 	r= BATsort(j);
 
 	/* now we can perform a simple scan and emit the group*/
@@ -838,7 +838,7 @@ BATXMLagg(int *ret, int *bid,int *grp)
 		throw(MAL,"xml.agg","Could not create BAT");
 	}
 
-	j= BATjoin(BATmirror(g),b,oid_nil);
+	j= BATjoin(BATmirror(g),b,BUN_NONE);
 	r= BATsort(j);
 
 	/* now we can perform a simple scan and emit the group*/

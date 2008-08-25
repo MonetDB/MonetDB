@@ -2047,7 +2047,7 @@ strSplit(BAT **Res, str s, str sep)
 	x = d = GDKstrdup(s);
 	if (d == NULL)
 		return GDK_FAIL;
-	res = BATnew(TYPE_void, TYPE_str, BUFSIZ);
+	res = BATnew(TYPE_void, TYPE_str, 0);
 	if (res == NULL) {
 		GDKfree(x);
 		return GDK_FAIL;
@@ -2080,7 +2080,7 @@ chrSplit(BAT **Res, str s)
 {
 	char * d = s;
 	oid n = oid_nil;
-	BAT *res = BATnew(TYPE_void, TYPE_chr, strlen(s));
+	BAT *res = BATnew(TYPE_void, TYPE_chr, (BUN) strlen(s));
 	BATseqbase(res,(oid) 0);
 	if (res == NULL)
 		return GDK_FAIL;

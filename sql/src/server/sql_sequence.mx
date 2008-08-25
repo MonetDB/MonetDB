@@ -221,7 +221,7 @@ sequences(mvc *sql, symbol *s)
 		}
 		break;
 		default:
-			return sql_error(sql, 01, "sql_stmt Symbol(%ld)->token = %s", (long) s, token2string(s->token));
+			return sql_error(sql, 01, "sql_stmt Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 	return res;
 }

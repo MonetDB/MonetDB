@@ -153,7 +153,7 @@ batbat_@1_@3(BAT **ret, BAT *l, BAT *r)
 		bnp++;
 	}
 
-	BATsetcount(bn, bnp-s);
+	BATsetcount(bn, (BUN) (bnp - s));
 	if (!bn->batDirty) bn->batDirty = TRUE;
 
 	*ret = bn;
@@ -227,7 +227,7 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 			*bnp = vv;
 		}
 	}
-	BATsetcount(bn, bnp-s);
+	BATsetcount(bn, (BUN) (bnp - s));
 	if (!bn->batDirty) bn->batDirty = TRUE;
 
 	if (@6 & 2) {
@@ -332,7 +332,7 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 			*bnp = vv;
 		}
 	}
-	BATsetcount(bn, bnp-s);
+	BATsetcount(bn, (BUN) (bnp - s));
 	if (!bn->batDirty) bn->batDirty = TRUE;
 
 	if (@6 & 1) {

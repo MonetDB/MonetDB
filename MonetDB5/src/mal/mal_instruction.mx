@@ -2662,7 +2662,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				VALformat(&cv, &stk->stk[getArg(p, i)]);
 			} else
 				VALformat(&cv, &getVar(mb, getArg(p, i))->value);
-			if (strlen(cv) > ((size_t) len) - (t - s)) {
+			if (strlen(cv) > len - (t - s)) {
 				char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 2);
 
 				*t = 0;
@@ -2688,7 +2688,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				} else
 					d= BATdescriptor(getVarConstant(mb,getArg(p,i)).val.ival);
 				if( d){
-					snprintf(t,(len-(t-base)),"[" SZFMT "]", BATcount(d));
+					snprintf(t,(len-(t-base)),"[" BUNFMT "]", BATcount(d));
 					BBPreleaseref(d->batCacheid);
 					advance(t,base,len);
 				}

@@ -91,19 +91,20 @@ typedef struct blob {
 
 #include "blob.proto.h"
 
-blob_export size_t blobsize(size_t nitems);
+blob_export var_t blobsize(size_t nitems);
 
 #endif /* __BLOB_H__ */
 @c
 #include "monetdb4_config.h"
 #include "blob.h"
 
-size_t
+var_t
 blobsize(size_t nitems)
 {
 	if (nitems == ~(size_t) 0)
 		nitems = 0;
-	return (sizeof(size_t) + nitems);
+	assert(sizeof(size_t) + nitems <= VAR_MAX);
+	return (var_t) (sizeof(size_t) + nitems);
 }
 
 var_t
@@ -123,7 +124,7 @@ int
 blob_get(Heap *h, int *bun, int *l, blob **val)
 {
 	blob *from = HEAP_index(h, *bun, blob);
-	size_t size = blobsize(from->nitems);
+	var_t size = blobsize(from->nitems);
 
 	if (*val == NULL) {
 		*val = (blob *) GDKmalloc(size);
@@ -135,7 +136,7 @@ blob_get(Heap *h, int *bun, int *l, blob **val)
 	}
 	memcpy(*val, from, size);
 
-	return (size);
+	return size;
 }
 #endif
 
@@ -159,10 +160,10 @@ blob_del(Heap *h, var_t *idx)
 	HEAP_free(h, *idx);
 }
 
-hash_t
+BUN
 blob_hash(blob *b)
 {
-	return (hash_t) b->nitems;
+	return (BUN) b->nitems;
 }
 
 blob *
@@ -195,7 +196,7 @@ blob_read(blob *a, stream *s, size_t cnt)
 void
 blob_write(blob *a, stream *s, size_t cnt)
 {
-	size_t len = blobsize(a->nitems);
+	var_t len = blobsize(a->nitems);
 
 	(void) cnt;
 	assert(cnt == 1);
@@ -219,7 +220,7 @@ blob_convert(blob *b, int direction)
 int
 blob_length(blob *p)
 {
-	size_t l = blobsize(p->nitems); /* 64bit: check for overflow */
+	var_t l = blobsize(p->nitems); /* 64bit: check for overflow */
 	assert(l <= GDK_int_max);
 	return (int) l; /* 64bit: check for overflow */
 }
@@ -317,7 +318,7 @@ blob_fromstr(char *instr, int *l, blob **val)
 {
 	size_t i;
 	size_t nitems;
-	size_t nbytes;
+	var_t nbytes;
 	blob *result;
 	char *s = instr;
 
@@ -416,9 +417,10 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 {
 	size_t i;
 	size_t nitems;
-	size_t nbytes;
+	var_t nbytes;
 	blob *result;
 	char *s = instr;
+	int nil = 0;
 
 	/* since the string is built of (only) hexits the number of bytes
 	 * required for it is the length of the string divided by two
@@ -426,9 +428,10 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 	i = strlen(instr);
 	if (i % 2 == 1) {
 		GDKerror("sqlblob_fromstr: Illegal blob length '%d' (should be even)\n", i);
-		return -1;
+		instr = 0;
+		nil = 1;
 	}
-	nitems = strlen(instr) / 2;
+	nitems = i / 2;
 	nbytes = blobsize(nitems);
 
 	if (*val == (blob *) NULL) {
@@ -438,6 +441,10 @@ sqlblob_fromstr(char *instr, int *l, blob **val)
 		GDKfree(*val);
 		*val = (blob *) GDKmalloc(nbytes);
 		*l = (int) nbytes;
+	}
+	if (nil) {
+		**val = *blob_null();
+		return 0;
 	}
 	result = *val;
 	result->nitems = nitems;

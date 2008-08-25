@@ -205,7 +205,7 @@ logbat_destroy(BAT *b)
 }
 
 static BAT *
-logbat_new(int ht, int tt, size_t size)
+logbat_new(int ht, int tt, BUN size)
 {
 	BAT *nb = BATnew(ht, tt, size);
 
@@ -266,10 +266,11 @@ log_read_string(logger *l)
 static int
 log_write_string(logger *l, char *n)
 {
-	int len = (int) strlen(n) + 1;	/* log including EOS */
+	size_t len = strlen(n) + 1;	/* log including EOS */
 
 	assert(len > 1);
-	if (!stream_writeInt(l->log, len) ||
+	assert(len <= INT_MAX);
+	if (!stream_writeInt(l->log, (int) len) ||
 	    stream_write(l->log, n, 1, len) != (ssize_t) len)
 		return LOG_ERR;
 	return LOG_OK;
@@ -1314,7 +1315,7 @@ log_bat_persists(logger *lg, BAT *b, char *name)
 		return LOG_ERR;
 
 	if (lg->debug & 1)
-		fprintf(stderr, "Logged new bat [%s,%s] %s " SZFMT " (%d)\n", ha, ta, name, BATcount(b), b->batCacheid);
+		fprintf(stderr, "Logged new bat [%s,%s] %s " BUNFMT " (%d)\n", ha, ta, name, BATcount(b), b->batCacheid);
 	return log_bat(lg, b, name);
 }
 
@@ -1350,7 +1351,7 @@ log_delta(logger *lg, BAT *b, char *name)
 	int ok = GDK_SUCCEED;
 	logformat l;
 	BUN p;
-	size_t nr;
+	BUN nr;
 
 	if (lg->debug & 128) {
 		/* logging is switched off */
@@ -1674,7 +1675,7 @@ bm_commit(logger *lg)
 		BAT *lb = BATdescriptor(bid);
 
 		BATmode(lb, PERSISTENT);
-		if (BATcount(lb) > (size_t) REMAP_PAGE_MAXSIZE)
+		if (BATcount(lb) > (BUN) REMAP_PAGE_MAXSIZE)
 			BATmmap(lb, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 		logbat_destroy(lb);
 

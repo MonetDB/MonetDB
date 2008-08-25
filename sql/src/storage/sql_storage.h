@@ -53,7 +53,7 @@ typedef int (*table_insert_fptr)(sql_trans *tr, sql_table *t, ...);
 typedef int (*table_delete_fptr)(sql_trans *tr, sql_table *t, ssize_t rid);
 
 typedef struct rids {
-	size_t cur;
+	BUN cur;
 	void *data;
 } rids;
 
@@ -137,9 +137,9 @@ typedef int (*destroy_del_fptr) (sql_trans *tr, sql_table *t);
 -- clear any storage resources for columns, indices and tables
 -- returns number of removed tuples
 */
-typedef size_t (*clear_col_fptr) (sql_trans *tr, sql_column *c); 
-typedef size_t (*clear_idx_fptr) (sql_trans *tr, sql_idx *i); 
-typedef size_t (*clear_del_fptr) (sql_trans *tr, sql_table *t); 
+typedef BUN (*clear_col_fptr) (sql_trans *tr, sql_column *c); 
+typedef BUN (*clear_idx_fptr) (sql_trans *tr, sql_idx *i); 
+typedef BUN (*clear_del_fptr) (sql_trans *tr, sql_table *t); 
 
 /*
 -- update_table rollforward the changes made from table ft to table tt 
@@ -303,7 +303,7 @@ extern sql_table *create_sql_table(char *name, sht type, bit system, int persist
 extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int tt, bit system, int persistence, int commit_action, int sz);
 
 extern void sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action);
-extern size_t sql_trans_clear_table(sql_trans *tr, sql_table *t);
+extern BUN sql_trans_clear_table(sql_trans *tr, sql_table *t);
 
 extern sql_column *create_sql_column(sql_table *t, char *nme, sql_subtype *tpe);
 extern sql_column *sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe);

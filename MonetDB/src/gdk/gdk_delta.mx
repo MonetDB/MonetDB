@@ -47,7 +47,7 @@ This optimizes processing on such BATs (DDBENCH).
 	(P1)->H->shift = ATOMelmshift(Hsize(P1));		      \
 	(P1)->T->shift = ATOMelmshift(Tsize(P1));		      \
 	DELTAprintf(						      \
-	 	"#DELTAinit %s free " SZFMT "," SZFMT " ins " OIDFMT " del " OIDFMT " first " OIDFMT " base " PTRFMT "," PTRFMT "\n", \
+	 	"#DELTAinit %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n", \
 		BATgetId(P1),				      \
 		(P1)->H->heap.free,			      \
 		(P1)->T->heap.free,			      \
@@ -93,7 +93,15 @@ BAT *
 BATcommit(BAT *b)
 {
 	BATcheck(b, "BATcommit");
-	DELTAprintf("#BATcommit1 %s free " SZFMT "," SZFMT " ins " OIDFMT " del " OIDFMT " first " OIDFMT " base " PTRFMT "," PTRFMT "\n", BATgetId(b), b->H->heap.free, b->T->heap.free, b->batInserted, b->batDeleted, b->batFirst, PTRFMTCAST b->H->heap.base, PTRFMTCAST b->T->heap.base);
+	DELTAprintf("#BATcommit1 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
+			    BATgetId(b),
+			    b->H->heap.free,
+			    b->T->heap.free,
+			    b->batInserted,
+			    b->batDeleted,
+			    b->batFirst,
+			    PTRFMTCAST b->H->heap.base,
+			    PTRFMTCAST b->T->heap.base);
 	ALIGNcommit(b);
 	if (b->batDeleted < b->batFirst && BBP_cache(b->batCacheid)) {
 		BATiter bi = bat_iterator(b);
@@ -131,7 +139,15 @@ BATcommit(BAT *b)
 	}
 	b->batDeleted = b->batFirst;
 	b->batInserted = BUNlast(b);
-	DELTAprintf("#BATcommit2 %s free " SZFMT "," SZFMT " ins " OIDFMT " del " OIDFMT " first " OIDFMT " base " PTRFMT "," PTRFMT "\n", BATgetId(b), b->H->heap.free, b->T->heap.free, b->batInserted, b->batDeleted, b->batFirst, PTRFMTCAST b->H->heap.base, PTRFMTCAST b->T->heap.base);
+	DELTAprintf("#BATcommit2 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
+			    BATgetId(b),
+			    b->H->heap.free,
+			    b->T->heap.free,
+			    b->batInserted,
+			    b->batDeleted,
+			    b->batFirst,
+			    PTRFMTCAST b->H->heap.base,
+			    PTRFMTCAST b->T->heap.base);
 	return b;
 }
 
@@ -185,7 +201,7 @@ BATundo(BAT *b)
 	bunfirst = b->batInserted;
 	bunlast = BUNlast(b) - 1;
 	if (bunlast >= b->batInserted) {
-		size_t i = bunfirst;
+		BUN i = bunfirst;
 		int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
 		int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
 		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
@@ -223,7 +239,7 @@ BATundo(BAT *b)
 	bunfirst = b->batDeleted;
 	bunlast = b->batFirst;
 	if (bunlast > b->batDeleted) {
-		size_t i = bunfirst;
+		BUN i = bunfirst;
 		BAT *bm = BBP_cache(-b->batCacheid);
 
 		/* elements are 'inserted' => zap properties */

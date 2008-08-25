@@ -1630,16 +1630,16 @@ RDFsort(BAT *commit,
             BAT *piv = BATmirror(BATmark(SPO, 0));
             BBPreclaim(SPO);
             if (piv) {
-                /*BATleftfetchjoin wants also a size_t estimate
+                /*BATleftfetchjoin wants also a BUN estimate
                  * BATmalleftfetchjoin not. Which has to be used?
                  * TODO*/ 
-                *Spot = BATleftfetchjoin(piv, sb, oid_nil);
+                *Spot = BATleftfetchjoin(piv, sb, BUN_NONE);
                 if (*Spot) {
-                    *sPot = BATleftfetchjoin(piv, pb, oid_nil);
+                    *sPot = BATleftfetchjoin(piv, pb, BUN_NONE);
                     if (*sPot) {
-                        *spOt = BATleftfetchjoin(piv, ob, oid_nil);
+                        *spOt = BATleftfetchjoin(piv, ob, BUN_NONE);
                         if (*spOt) {
-                            *spoT = BATleftfetchjoin(piv, tb, oid_nil);
+                            *spoT = BATleftfetchjoin(piv, tb, BUN_NONE);
                             if (*spoT) {
                                 char Spot_buf[1024], sPot_buf[1024], spOt_buf[1024], spoT_buf[1024];
                                 snprintf(Spot_buf, 1024, "%s_%s_%s", db, graph, Spot_nme);
@@ -1681,19 +1681,19 @@ RDFsort(BAT *commit,
                                 BBPreclaim(*spoT);
                             }
                             else
-                                ret = "BATleftfetchjoin(piv, tb, oid_nil) failed";
+                                ret = "BATleftfetchjoin(piv, tb, BUN_NONE) failed";
                             BBPreclaim(*spOt);
                         }
                         else
-                            ret = "BATleftfetchjoin(piv, ob, oid_nil) failed";
+                            ret = "BATleftfetchjoin(piv, ob, BUN_NONE) failed";
                         BBPreclaim(*sPot);
                     }
                     else
-                        ret = "BATleftfetchjoin(piv, pb, oid_nil) failed";
+                        ret = "BATleftfetchjoin(piv, pb, BUN_NONE) failed";
                     BBPreclaim(*Spot);
                 }
                 else
-                    ret = "BATleftfetchjoin(piv, sb, oid_nil) failed";
+                    ret = "BATleftfetchjoin(piv, sb, BUN_NONE) failed";
                 BBPreclaim(piv);
             }
             else

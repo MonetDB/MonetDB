@@ -731,7 +731,7 @@ is turned off.
 
 @= QMstatistics
 	int qm_puttid, qm_gettid;
-	ssize_t qm_enter, qm_start, qm_finish;
+	int qm_enter, qm_start, qm_finish;
 	char qm_cmd[IDLENGTH];
 @
 @c
@@ -765,7 +765,7 @@ QMenqueueStat(Request q)
 	if (qm_profile == 0)
 		return;
 	q->qm_puttid = THRgettid();
-	q->qm_enter = (ssize_t) GDKms();
+	q->qm_enter = GDKms();
 }
 
 void
@@ -805,8 +805,15 @@ QMprintStat(void)
 	THRprintf(fd, "# key   | put   | get  | wakeup  | enter | start | duration | action     #\n");
 	THRprintf(fd, "#------------------------------------------------------------------------#\n");
 	for (q = qm_top; q; q = q->ev_next) {
-		/* XXX SSZFMT was %7ld, i.e. 7 chars wide */
-		THRprintf(fd, "[ %5d, %6d, %6d, %6d, " SSZFMT ", " SSZFMT ", " SSZFMT ", \"%s\"]\n", q->ev_seqnr, q->qm_puttid, q->qm_gettid, (q->ev_wakeup ? q->ev_wakeup->ev_seqnr : 0), q->qm_enter, q->qm_start, q->qm_finish, q->qm_cmd);
+		THRprintf(fd, "[ %5d, %6d, %6d, %6d, %6d, %6d, %6d, \"%s\"]\n",
+			  q->ev_seqnr,
+			  q->qm_puttid,
+			  q->qm_gettid,
+			  q->ev_wakeup ? q->ev_wakeup->ev_seqnr : 0,
+			  q->qm_enter,
+			  q->qm_start,
+			  q->qm_finish,
+			  q->qm_cmd);
 	}
 }
 

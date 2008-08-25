@@ -124,7 +124,7 @@ Implementation is either merge- or hash-based.
 		ptr h = BUNh@2(bi, p);
 		ptr t = BUNt@3(bi, p);
 		int ins = 1;
-		hash_t yy;
+		BUN yy;
 
 		if (BATprepareHash(bn)) {
 			BBPreclaim(bn);
@@ -139,14 +139,14 @@ Implementation is either merge- or hash-based.
 		if (ins) {
 			bunfastins(bn, h, t);
 			if (bn->H->hash)
-				HASHins@4(bn->H->hash, (hash_t) zz, h);
+				HASHins@4(bn->H->hash, zz, h);
 			zz++;
 		}
 	}
 @= elim
 	{
 		int (*cmp)(ptr, ptr) = BATatoms[b->ttype].atomCmp;
-		size_t zz;
+		BUN zz;
 		BUN p, q, r;
 
 		if (BAThordered(b) & 1) {
@@ -295,7 +295,7 @@ BATkunique(BAT *b)
 		if (bn == NULL)
 			return NULL;
 	} else {
-		size_t cnt = BATcount(b);
+		BUN cnt = BATcount(b);
 
 		if (cnt > 10000) {
 			BAT *tmp2 = NULL, *tmp1, *tmp0 = VIEWhead_(b, BAT_WRITE);
@@ -305,7 +305,7 @@ BATkunique(BAT *b)
 				if (tmp1) {
 					tmp2 = BATkunique(tmp1);
 					if (tmp2) {
-						cnt = (size_t) ((((lng) BATcount(tmp2)) * cnt) / 900);
+						cnt = (BUN) ((((lng) BATcount(tmp2)) * cnt) / 900);
 						BBPreclaim(tmp2);
 					}
 					BBPreclaim(tmp1);
@@ -357,7 +357,7 @@ BATsunique(BAT *b)
 	if (b->hkey || b->tkey || b->batSet) {
 		bn = BATcopy(b, b->htype, b->ttype, FALSE);
 	} else {
-		size_t cnt = BATcount(b);
+		BUN cnt = BATcount(b);
 
 		if (cnt > 10000) {
 			BAT *tmp2 = NULL, *tmp1 = BATsample(b, 1000);
@@ -449,7 +449,7 @@ TODO synced/key case..
 @= hashcheck
 	BUN p1, q1;
 	int ins;
-	hash_t s2;
+	BUN s2;
 	ptr h, t, h2 = hnil;
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
@@ -602,7 +602,7 @@ TODO synced/key case..
 			oid ll = * (oid *) BUNhead(li, (p1 = BUNfirst(l)));
 			oid lh = ll + BATcount(l);
 			BUN hit_start = (q1 = BUNlast(l)), hit_end = q1, w = BUNfirst(r);
-			size_t off = p1;
+			BUN off = p1;
 
 			h = (ptr) &ll;
 
@@ -640,7 +640,7 @@ TODO synced/key case..
 				p1++;
 			}
 		} else {
-			size_t off = p1;
+			BUN off = p1;
 
 			BATloop(l, p1, q1) {
 				oid o = * (oid *) BUNhloc(li, p1);
@@ -770,7 +770,7 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 BAT *
 BAT@1@2(BAT *l, BAT *r)
 {
-	size_t	smaller;
+	BUN	smaller;
 	BAT	*bn;
 
 	ERRORcheck(l == NULL, "BAT@1@2: left is null");
@@ -840,7 +840,7 @@ double elimination.
 #define KEYs	FALSE
 
 static BAT *
-BATmaterialize_(BAT *b, size_t size)
+BATmaterialize_(BAT *b, BUN size)
 {
 	BAT *bn = BATnew(TYPE_oid, b->ttype, size);
 	BUN p, q;

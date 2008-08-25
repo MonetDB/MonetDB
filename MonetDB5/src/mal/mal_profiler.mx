@@ -1161,7 +1161,7 @@ getDiskSpace()
 			if( b){
 				size += sizeof(BAT);
 				if (!isVIEW(b)) {
-					size_t cnt = BATcount(b);
+					BUN cnt = BATcount(b);
 
 					size += headsize(b,cnt);
 					size += tailsize(b,cnt);
@@ -1171,9 +1171,9 @@ getDiskSpace()
 					if (b->theap)
 						size += b->theap->size;
 					if (b->H->hash)
-						size += sizeof(hash_t) * cnt;
+						size += sizeof(BUN) * cnt;
 					if (b->T->hash)
-						size += sizeof(hash_t) * cnt;
+						size += sizeof(BUN) * cnt;
 				}
 				BBPunfix(i);
 			}

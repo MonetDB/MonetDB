@@ -577,7 +577,7 @@ getBoxNames(int *bid)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_str, (size_t) MAXSPACES);
+	b = BATnew(TYPE_int, TYPE_str, (BUN) MAXSPACES);
 	for (i = 0; i < MAXSPACES; i++)
 		if (box[i] != NULL) {
 			BUNins(b, &i, box[i]->name, FALSE);

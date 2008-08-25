@@ -1587,7 +1587,7 @@ CALCnewoidInclng(oid *res, lng *inc)
 	if (*inc <= 0)
 		*res = OIDnew(1);
 	else {
-		*res = OIDnew((size_t) *inc);
+		*res = OIDnew((oid) *inc);
 	}
 	return MAL_SUCCEED;
 }

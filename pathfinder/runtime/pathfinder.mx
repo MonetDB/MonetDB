@@ -4876,24 +4876,24 @@ xquery_parse_val(int t, char* v, BAT* item, BAT* kind, BAT* int_values, BAT* dbl
     }
     if (mt == TYPE_bit) {
         id = (*(bit*) val == TRUE);
-        @:bunappend(item, &id, (size_t) *(oid*), SZFMT, "@0")@
+        @:bunappend(item, &id, *(oid*), OIDFMT, "@0")@
     } else if (mt == TYPE_lng) {
         @:bunappend(int_values, val, *(lng*), LLFMT, "LL")@
         BATiter ivi = bat_iterator(int_values);
         id = *(oid*) BUNhead(ivi, BUNfnd(BATmirror(int_values), val));
-        @:bunappend(item, &id, (size_t) *(oid*), SZFMT, "@0")@
+        @:bunappend(item, &id, *(oid*), OIDFMT, "@0")@
     } else if (mt == TYPE_dbl) {
         @:bunappend(dbl_values, val, *(dbl*), "%g")@
         BATiter idi = bat_iterator(dbl_values);
         id = *(oid*) BUNhead(idi, BUNfnd(BATmirror(dbl_values), val));
-        @:bunappend(item, &id , (size_t) *(oid*), SZFMT, "@0")@
+        @:bunappend(item, &id , *(oid*), OIDFMT, "@0")@
     } else if (mt == TYPE_str) {
         @:bunappend(str_values, val, (str), "\"%s\"")@
         BATiter isi = bat_iterator(str_values);
         id = *(oid*) BUNhead(isi, BUNfnd(BATmirror(str_values), val));
-        @:bunappend(item, &id, (size_t) *(oid*), SZFMT, "@0")@
+        @:bunappend(item, &id, *(oid*), OIDFMT, "@0")@
     } else {
-        @:bunappend(item, val, (size_t) *(oid*), SZFMT, "@0")@
+        @:bunappend(item, val, *(oid*), OIDFMT, "@0")@
         k = (cont << 6) | ((t == XS_ATTRIBUTE)?ATTR:ELEM);
     }
     @:bunappend(kind, &k, *(int*), "%d")@
@@ -5025,7 +5025,7 @@ xquery_function_call(xquery_client *ctx,
         for(i=0; i<argc; i++) {
             oid vid = i + fun->vid, iter = j+1;
             if (i == 0 && j > 0) {
-                @:bunappend(loop000, &iter, (size_t) *(oid*), SZFMT, "@0", ctx->)@
+                @:bunappend(loop000, &iter, *(oid*), OIDFMT, "@0", ctx->)@
             }
             for(k=0; k<argcnt[j][i]; k++,l++) {
                 /* 'hack': perform simple atomic casts using Monet's ATOMfromstr */
@@ -5040,8 +5040,8 @@ xquery_function_call(xquery_client *ctx,
                 cur = xquery_parse_val(t, argval[l], ctx->fun_item000, ctx->fun_kind000, 
                                        ctx->int_values, ctx->dbl_values, ctx->str_values, mil, 1); 
                 if (cur) return cur;
-                @:bunappend(fun_vid000, &vid, (size_t) *(oid*), SZFMT, "@0", ctx->)@
-                @:bunappend(fun_iter000, &iter, (size_t) *(oid*), SZFMT, "@0", ctx->)@
+                @:bunappend(fun_vid000, &vid, *(oid*), OIDFMT, "@0", ctx->)@
+                @:bunappend(fun_iter000, &iter, *(oid*), OIDFMT, "@0", ctx->)@
             }
         }
     }

@@ -55,7 +55,7 @@ str
 CemptySet(int *k, int *bid)
 {
 	BAT *b = BATdescriptor(*bid);
-	size_t cnt = 0;
+	BUN cnt = 0;
 
 	(void)k;
 	if (b)

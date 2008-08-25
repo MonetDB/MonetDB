@@ -651,7 +651,7 @@ selectMergeDeletionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit *
 		return NULL; /* no qualifying values in the deletions */ 	
 	}
 
-	updatesStart = lt-t0;	
+	updatesStart = (oid) (lt-t0);	
 	
 	/* binary search to find the position of the highest requested value in the deletions */
         l = SORTfndfirst_@4(u, hgh);
@@ -670,7 +670,7 @@ selectMergeDeletionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit *
 	}
 
 	if (lt == updLast) lt--;
-	updatesEnd = lt-t0;
+	updatesEnd = (oid) (lt-t0);
 
 	BBPunfix(u->batCacheid);
 		
@@ -738,7 +738,7 @@ selectMergeInsertionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit 
 		BBPunfix(u->batCacheid);	
 		return NULL; /* no qualifying values in the insertions */ 	
 	}
-	updatesStart = lt-t0;	
+	updatesStart = (oid) (lt-t0);	
 	
 	/* binary search to find the position of the highest requested value in the insertions */
         l  = SORTfndfirst_@4(u, hgh);
@@ -757,7 +757,7 @@ selectMergeInsertionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit 
 	}
 
 	if (lt == updLast) lt--;
-	updatesEnd = lt-t0;	
+	updatesEnd = (oid) (lt-t0);	
 	if (CrackerIndex[position].mergeInsertions == 0){	
 		/* merge completely */
 		BBPunfix(u->batCacheid);

@@ -127,7 +127,7 @@ symbol_create(sql_allocator *sa, int token, char *data)
 		symbol_init(s, token, type_string);
 		s->data.sval = data;
 		if (symbol_debug)
-			fprintf(stderr, "%ld = symbol_create_string(%s,%s)\n", (long) s, token2string(s->token), s->data.sval);
+			fprintf(stderr, "" PTRFMT " = symbol_create_string(%s,%s)\n", PTRFMTCAST s, token2string(s->token), s->data.sval);
 	}
 	return s;
 }
@@ -141,7 +141,7 @@ symbol_create_list(sql_allocator *sa, int token, dlist *data)
 		symbol_init(s, token, type_list);
 		s->data.lval = data;
 		if (symbol_debug)
-			fprintf(stderr, "%ld = symbol_create_list(%s,%ld)\n", (long) s, token2string(s->token), (long) s->data.lval);
+			fprintf(stderr, "" PTRFMT " = symbol_create_list(%s,%ld)\n", PTRFMTCAST s, token2string(s->token), (long) s->data.lval);
 	}
 	return s;
 }
@@ -155,7 +155,7 @@ symbol_create_int(sql_allocator *sa, int token, lng data)
 		symbol_init(s, token, type_int);
 		s->data.ival = data;
 		if (symbol_debug)
-			fprintf(stderr, "%ld = symbol_create_int(%s,"LLFMT")\n", (long) s, token2string(s->token), data);
+			fprintf(stderr, "" PTRFMT " = symbol_create_int(%s,"LLFMT")\n", PTRFMTCAST s, token2string(s->token), data);
 	}
 	return s;
 }
@@ -169,7 +169,7 @@ symbol_create_symbol(sql_allocator *sa, int token, symbol *data)
 		symbol_init(s, token, type_symbol);
 		s->data.sym = data;
 		if (symbol_debug)
-			fprintf(stderr, "%ld = symbol_create_symbol(%s,%s)\n", (long) s, token2string(s->token), token2string(data->token));
+			fprintf(stderr, "" PTRFMT " = symbol_create_symbol(%s,%s)\n", PTRFMTCAST s, token2string(s->token), token2string(data->token));
 	}
 	return s;
 }

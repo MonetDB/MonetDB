@@ -245,7 +245,7 @@ URLBOXinsert(char *tuple)
 	int i=0,depth;
 	BAT *b;
 	BUN p;
-	size_t idx= 0;
+	BUN idx= 0;
 	int prv=0;
 	char buf[128];
 
@@ -606,7 +606,7 @@ URLBOXgetSize(int *r){
 		bn= urlBAT[i];
 		size = ROUND_UP(sizeof(BATstore), blksize);
 		if (!isVIEW(bn)) {
-			size_t cnt = BATcapacity(bn);
+			BUN cnt = BATcapacity(bn);
 
 			size += ROUND_UP(bn->H->heap.size, blksize);
 			size += ROUND_UP(bn->T->heap.size, blksize);
@@ -615,9 +615,9 @@ URLBOXgetSize(int *r){
 			if (b->theap)
 				size += ROUND_UP(bn->theap->size, blksize);
 			if (bn->H->hash)
-				size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
+				size += ROUND_UP(sizeof(BUN) * cnt, blksize);
 			if (bn->T->hash)
-				size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
+				size += ROUND_UP(sizeof(BUN) * cnt, blksize);
 		}
 		tot = size;
 		BBPunfix(bn->batCacheid);

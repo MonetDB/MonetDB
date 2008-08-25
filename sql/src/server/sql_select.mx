@@ -1898,7 +1898,7 @@ set2table( mvc *sql, scope *scp, stmt *s)
 static int 
 cvar_cmp(cvar *c1, cvar *c2)
 {
-	return c1-c2;
+	return (int) (c1-c2);
 }
 
 static stmt *
@@ -4293,7 +4293,7 @@ selects(mvc *sql, scope *scp, symbol *s)
 		break;
 
 	default:
-		return sql_error(sql, 01, "SELECT statement unknown symbol(%ld)->token = %s", (long) s, token2string(s->token));
+		return sql_error(sql, 01, "SELECT statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 	return ret;
 }

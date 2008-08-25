@@ -876,11 +876,11 @@ closure_@1_@2_@3_@4( BAT *bn, BAT *delta )
 {
 	int tpe = bn->htype;
 	while (BATcount(delta) > 0) {
-        	BAT *new = BATjoin(delta,bn,oid_nil);
+        	BAT *new = BATjoin(delta,bn,BUN_NONE);
         	BAT *dst = BATnew(tpe, tpe, BATcount(new));
         	BATins(bn, delta, FALSE);
         	INSERT_ANTICHECK_@1_@2_@3_@4(dst, new, bn);
-        	new = BATmirror(BATjoin(BATmirror(delta), BATmirror(bn), oid_nil));
+        	new = BATmirror(BATjoin(BATmirror(delta), BATmirror(bn), BUN_NONE));
         	BBPreclaim(delta);
         	delta = BATnew(tpe, tpe, BATcount(dst)+BATcount(new));
         	delta->hsorted = delta->tsorted = 0;

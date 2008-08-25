@@ -2004,7 +2004,7 @@ updates(mvc *sql, scope *scp, symbol *s)
 	}
 		break;
 	default:
-		return sql_error(sql, 01, "Updates statement unknown Symbol(%ld)->token = %s", (long) s, token2string(s->token));
+		return sql_error(sql, 01, "Updates statement unknown Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 
 	return ret;

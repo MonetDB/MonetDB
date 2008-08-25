@@ -733,7 +733,7 @@ static int
 getparams(oid fid, str argv[])
 {
 	str *s = argv, *t = s;
-	hash_t i;
+	BUN i;
 	int j = 0;
 	oid *fidp = &fid;
 	BATiter fpi = bat_iterator(TBL_fcn_pro);
@@ -1110,7 +1110,7 @@ TBL_atomname(int atm)
 We expect this function NOT to be called if the module is already
 in use. (That is <name>_Module_Install should not even be called.)
 @c
-size_t TBL_fcn_pro_size = 0;
+BUN TBL_fcn_pro_size = 0;
 oid TBL_oid = 10000;		/* we cannot use the db oids, as the user may change
 				   the current number. This will turn around the order
 				   of the functions in the function tables, corrupting
@@ -1121,7 +1121,7 @@ TBL_Install_Info(TBLinstall *inst, str owner, str name)
 {
 	oid mid = 0;
 
-	dlFPRINTF(GDKerr, "  TBL_Install_Info(%s, %s) = " SZFMT "\n", owner, name, (size_t) mid);
+	dlFPRINTF(GDKerr, "  TBL_Install_Info(%s, %s) = " OIDFMT "\n", owner, name, mid);
 @-
 if it is already loaded then we delete it, this implies
 that the TBL_Install_Info is the same as reload (delete)
@@ -1382,7 +1382,7 @@ TBL_delproc(Client client, str nme)
 {
 	BATiter cfi = bat_iterator(client->fcntbl);
 	BATiter fti = bat_iterator(TBL_fcn_tpe);
-	hash_t i;
+	BUN i;
 
 	TBL_M_lock(client);
 	if (BATprepareHash(client->fcntbl))
@@ -1610,7 +1610,7 @@ TBL_M_client_install(Client client, oid mid)
 {
 	char *nme, s[80];
 	BAT *fcn_mid = BATmirror(TBL_fcn_mid);
-	hash_t i;
+	BUN i;
 	int aid, j;
 	oid fid;
 	oid *midp = &mid;
@@ -1711,7 +1711,7 @@ TBL_M_countref(oid mid)
 
 	/*debug */
 	if (xx != yy)
-		GDKwarning("TBL_M_countref: mod(" SZFMT ") refcnt %d: should be %d.\n", (size_t) mid, xx, yy);
+		GDKwarning("TBL_M_countref: mod(" OIDFMT ") refcnt %d: should be %d.\n", mid, xx, yy);
 
 	return yy;
 }
@@ -1739,7 +1739,7 @@ TBL_M_decref(Client client, oid mid)
 	int i = TBL_M_countref(mid);
 
 	if (i <= 0) {
-		GDKwarning("TBL_M_decref: mod(" SZFMT ") cannot decrease refcnt\n", (size_t) mid);
+		GDKwarning("TBL_M_decref: mod(" OIDFMT ") cannot decrease refcnt\n", mid);
 	} else {
 		BUN p = BUNlocate(TBL_mod_use, &mid, &cid);
 
@@ -1853,7 +1853,7 @@ Lets do the things in the right order, see above!
 		}
 		BBPreclaim(b);
 	}
-	dlFPRINTF(GDKerr, "  loaded = %d, mid = " SZFMT "\n", loaded, (size_t) mid);
+	dlFPRINTF(GDKerr, "  loaded = %d, mid = " OIDFMT "\n", loaded, mid);
 
 	if (loaded) {
 		cinstalled = TBL_M_cinstalled(client, mid);
@@ -1980,7 +1980,7 @@ unloadmod_check_use(oid mid, str module, int ntpes, int *tpes )
 static int
 TBL_module_atoms(Client client, oid mid, int **Tpes) 
 {
-	hash_t i;
+	BUN i;
 	size_t j;
 	int mtpes = MAXATOMS, ntpes = 0;
 	int *tpes = (int *) GDKmalloc(mtpes * sizeof(int));
@@ -2014,7 +2014,7 @@ TBL_unloadmod(Client client, str module, int level)
 	BAT *b, *fcntbl = BATmirror(client->fcntbl);
 	int refcnt = 0, (*addr) (void), ntpes, *tpes;
 	oid fid, *fidp = &fid, mid, *midp = &mid;
-	hash_t j;
+	BUN j;
 	int i;
 	ptr hdl = NULL;
 	BUN p, q;
@@ -2278,7 +2278,7 @@ The type check is a function call derived from the module spec.
 int
 TBL_normal_resolve(str name, int argc, ValPtr argv, monet_sig_t *sig, Cntxt stk)
 {
-	hash_t i;
+	BUN i;
 	int ret = TBL_RESOLVE_NOFCN;
 	paramcheck_t pt;
 	Client c;
@@ -2641,7 +2641,7 @@ formatsig(str s, str nme, oid fid)
 void
 TBL_printsigs(str s, int stk, str nme)
 {
-	hash_t i;
+	BUN i;
 	int j = 0;
 	BAT *b;
 	Client c;
@@ -2698,7 +2698,7 @@ TBL_iterator(Cntxt stk, str name, int argc, ValPtr argv)
 {
 	paramcheck_t pt;
 	Client c;
-	hash_t i;
+	BUN i;
 	BATiter cfi;
 
 	CNTXTclient(stk, &c);
@@ -3038,7 +3038,7 @@ TBL_Install_Function(oid mid, str name, int tpe,	/* some sort of type? fcn_table
 
 	(void) type_imp;
 
-	dlFPRINTF(GDKerr, "  TBL_Install_Function(" SZFMT ",%s) = " SZFMT "\n", (size_t) mid, name, (size_t) fid);
+	dlFPRINTF(GDKerr, "  TBL_Install_Function(" OIDFMT ",%s) = " OIDFMT "\n", mid, name, fid);
 
 	if (name[0] == 'b' && name[1] == 'a' && name[2] == 't' && name[3] == 0) {
 		name = "BAT";	/* sorry */
@@ -3125,7 +3125,7 @@ TBL_Deinstall_Function(oid pid)
 void
 TBL_Install_Function_Vararg(oid fid, str tpe)
 {
-	dlFPRINTF(GDKerr, "    TBL_Install_Function_Vararg(" SZFMT ",%s)\n", (size_t) fid, tpe);
+	dlFPRINTF(GDKerr, "    TBL_Install_Function_Vararg(" OIDFMT ",%s)\n", fid, tpe);
 	if (BUNins(TBL_fcn_pro, &fid, tpe, FALSE) == NULL)
 		assert(0);
 }
@@ -3136,7 +3136,7 @@ TBL_Install_Function_Vararg(oid fid, str tpe)
 void
 TBL_Install_Function_Arg(oid fid, str tpe)
 {
-	dlFPRINTF(GDKerr, "    TBL_Install_Function_Arg(" SZFMT ",%s)\n", (size_t) fid, tpe);
+	dlFPRINTF(GDKerr, "    TBL_Install_Function_Arg(" OIDFMT ",%s)\n", fid, tpe);
 	if (BUNins(TBL_fcn_pro, &fid, tpe, FALSE) == NULL)
 		assert(0);
 }
@@ -3145,7 +3145,7 @@ TBL_Install_Function_Arg(oid fid, str tpe)
 void
 TBL_Install_Function_Res(oid fid, str tpe)
 {
-	dlFPRINTF(GDKerr, "    TBL_Install_Function_Res(" SZFMT ",%s)\n", (size_t) fid, tpe);
+	dlFPRINTF(GDKerr, "    TBL_Install_Function_Res(" OIDFMT ",%s)\n", fid, tpe);
 	if (BUNins(TBL_fcn_pro, &fid, tpe, FALSE) == NULL)
 		assert(0);
 }
@@ -3157,7 +3157,7 @@ TBL_Install_DropRefs(oid mid, bat *batrefs)
 	if (batrefs == NULL)
 		return;
 	while (*batrefs) {
-		dlFPRINTF(GDKerr, "  TBL_Install_DropRefs(" SZFMT ",%s)\n", (size_t) mid, BBPname(*batrefs));
+		dlFPRINTF(GDKerr, "  TBL_Install_DropRefs(" OIDFMT ",%s)\n", mid, BBPname(*batrefs));
 		if (BUNins(TBL_mod_drop, &mid, batrefs, FALSE) == NULL)
 			assert(0);
 		batrefs++;

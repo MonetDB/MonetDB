@@ -907,7 +907,7 @@ load_trans(sql_trans* tr, sqlid id)
 static sqlid
 next_oid(void)
 {
-	lng id = 0;
+	int id = 0;
 	MT_set_lock(bs_lock, "next_oid");
 	id = store_oid++;
 	MT_unset_lock(bs_lock, "next_oid");
@@ -3450,12 +3450,12 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	}
 }
 
-size_t
+BUN
 sql_trans_clear_table(sql_trans *tr, sql_table *t)
 {
 	node *n = t->columns.set->h;
 	sql_column *c = n->data;
-	size_t sz = 0;
+	BUN sz = 0;
 
 	t->cleared = 1;
 	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
@@ -4013,7 +4013,7 @@ sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng
 		table_funcs.column_update_value(tr, c, rid, &seq->cacheinc);
 	}
 	if (seq->cycle != cycle) {
-		seq->cycle = cycle; 
+		seq->cycle = cycle != 0; 
 		changed = 1;
 		c = find_sql_column(seqs, "cycle");
 		table_funcs.column_update_value(tr, c, rid, &seq->cycle);

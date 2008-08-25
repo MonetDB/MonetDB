@@ -161,7 +161,7 @@ pcre_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
 pcre_export int pcre_tostr(str *tostr, int *l, pcre * p);
 pcre_export int pcre_fromstr(str instr, int *l, pcre ** val);
 pcre_export int pcre_nequal(pcre * l, pcre * r);
-pcre_export hash_t pcre_hash(pcre * b);
+pcre_export BUN pcre_hash(pcre * b);
 pcre_export pcre * pcre_null(void);
 pcre_export void pcre_del(Heap *h, var_t *index);
 pcre_export int pcre_length(pcre * p);
@@ -402,8 +402,7 @@ pcre_match(bit *ret, str val, str pat)
 void *
 my_pcre_malloc(size_t s)
 {
-	char *r = GDKmalloc(s + sizeof(size_t));
-	size_t *sz = (size_t *) r;
+	size_t *sz = (size_t *) GDKmalloc(s + sizeof(size_t));
 
 	*sz = s + sizeof(size_t);
 	return (void *) (sz + 1);
@@ -870,7 +869,7 @@ pcre_nequal(pcre * l, pcre * r)
 		return 1;
 }
 
-hash_t
+BUN
 pcre_hash(pcre * b)
 {
 	return *(sht *) b;
@@ -899,7 +898,8 @@ pcre_put(Heap *h, var_t *bun, pcre * val)
 {
 	char *base;
 
-	*bun = HEAP_malloc(h, pcresize(val));
+	assert(pcresize(val) <= VAR_MAX);
+	*bun = HEAP_malloc(h, (var_t) pcresize(val));
 	base = h->base;
 	if (*bun)
 		memcpy(&base[*bun], (char *) val, pcresize(val));

@@ -58,27 +58,27 @@
 /* check, if result buffer is big enough; otherwise extend it */
 #define PFll_check_BAT_capacity(b,grow,res_scur,res_hcur,res_tcur) \
 {\
-        size_t _oldcap = BATcapacity(b);\
-        size_t _reqcap = BATcount(b) + grow;\
-        size_t _bunsize = Hsize(b) + Tsize(b);\
+        BUN _oldcap = BATcapacity(b);\
+        BUN _reqcap = BATcount(b) + grow;\
+        unsigned short _bunsize = Hsize(b) + Tsize(b);\
         if (_oldcap < _reqcap) {\
-            size_t _newcap = MAX(_reqcap, BATgrows(b));\
+            BUN _newcap = MAX(_reqcap, BATgrows(b));\
             if (BATextend((b), _newcap) == NULL) {\
                 GDKerror("%s: BATextend of BAT '%s' (#%d) failed "\
-                         "for " SZFMT " buns (" SZFMT " bytes).\n",\
+                         "for " BUNFMT " buns (" SZFMT " bytes).\n",\
                          __func__, BATgetId(b), (b)->batCacheid,\
-                         _newcap, _newcap * _bunsize);\
+                         _newcap, (size_t) _newcap * _bunsize);\
                 BBPreclaim(b);\
                 return GDK_FAIL;\
             }\
             _newcap = BATcapacity(b);\
             if (_newcap < _reqcap) {\
                 GDKerror("%s: BATextend of BAT '%s' (#%d) failed: "\
-                         "required " SZFMT " buns (" SZFMT " bytes), "\
-                         "got only " SZFMT " buns (" SZFMT " bytes).\n",\
+                         "required " BUNFMT " buns (" SZFMT " bytes), "\
+                         "got only " BUNFMT " buns (" SZFMT " bytes).\n",\
                          __func__, BATgetId(b), (b)->batCacheid,\
-                         _reqcap, _reqcap * _bunsize,\
-                         _newcap, _newcap * _bunsize);\
+                         _reqcap, (size_t) _reqcap * _bunsize,\
+                         _newcap, (size_t) _newcap * _bunsize);\
                 BBPreclaim(b);\
                 return GDK_FAIL;\
             }\
@@ -102,7 +102,7 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
     int *size = 0;
     chr *kind = 0, kind_test = *_kind_test;
 
-    size_t res_size = 0, grow = 0;
+    BUN res_size = 0, grow = 0;
     BAT *res = 0;
     oid *iter_cur = 0, *iter_end = 0, *ctx_cur = 0, *ctx_end = 0;
     oid *res_scur = 0, *res_hcur = 0, *res_tcur = 0;
@@ -258,7 +258,7 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
     res = BATnew(TYPE_oid, TYPE_oid, res_size);
     if (res == NULL) 
     { 
-        GDKerror("%s: could not allocate a result BAT of size "SZFMT".\n", name, res_size);
+        GDKerror("%s: could not allocate a result BAT of size "BUNFMT".\n", name, res_size);
         return GDK_FAIL;
     }
     res_scur = res_hcur = (oid*) Hloc(res, BUNlast(res)); 

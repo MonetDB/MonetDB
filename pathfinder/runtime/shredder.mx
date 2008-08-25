@@ -307,9 +307,9 @@ static shredBATdef shredbatdef[SHRED_BATS] = {
 typedef struct shredBAT {
     shredBATdef     *def; /* pointer to static properties */
     oid             dupl; /* the number of duplicate BUNins so far */
-    size_t          size; /* current maximum size of the BAT */
+    BUN             size; /* current maximum size of the BAT */
     BAT             *bat; /* the physical BAT */
-    size_t     abortSize; /* size previous to shredding */ 
+    BUN        abortSize; /* size previous to shredding */ 
     size_t      heapSize; /* size of string tail heap(->free) */
     void     *heapBackup; /* image of the internal str-heap hash-table */
     /* */
@@ -362,9 +362,9 @@ typedef struct shredCtxStruct {
     char     *content_buf;       /* character buffer */
     /* */
     size_t   fileSize;           /* size of the input file */
-    size_t   estSize;            /* extimated number of pre nodes */
+    BUN      estSize;            /* extimated number of pre nodes */
     shredBAT dstBAT[SHRED_BATS]; /* all the result BATs */
-    size_t   pageFree;           /* number of tuples per page to leave empty */
+    BUN   pageFree;              /* number of tuples per page to leave empty */
 
     /* attributes for shred into collection */
     int      incremental;         /* boolean: incremental shred? */
@@ -416,8 +416,8 @@ shredBAT_setcount(shredBAT *sb,
 }
 
 
-static size_t 
-shredBAT_newsize(shredBAT *sb, size_t newsize)
+static BUN 
+shredBAT_newsize(shredBAT *sb, BUN newsize)
 {
     newsize = MAX(sb->size, newsize + MAX(BATTINY, newsize/4));
     if (sb->def->table == PRE_SIZE && (newsize & REMAP_PAGE_MASK)) { 
@@ -441,14 +441,14 @@ shredBAT_newsize(shredBAT *sb, size_t newsize)
 
 static int 
 shredBAT_extend(shredBAT *sb, 
-                size_t newsize)
+                BUN newsize)
 {
     shredBAT_setcount(sb, sb->size);
     sb->size = newsize;
     if (sb->bat->ttype == TYPE_void) {
         return GDK_SUCCEED;
     }
-    if (newsize+newsize > (size_t) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
+    if (newsize+newsize > (BUN) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
         BATmmap(sb->bat, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     }
     if (!(sb->bat = BATextend(sb->bat, newsize))) {
@@ -466,7 +466,7 @@ shredBAT_append_str(shredCtxStruct *shredCtx,
                     str v)
 {
     shredBAT *sb = & shredCtx->dstBAT[idx];
-    size_t oldsize, newsize;
+    BUN oldsize, newsize;
 
     if ( v == 0 )
         v = (str)str_nil;
@@ -545,7 +545,7 @@ emit_tuple(shredCtxStruct* shredCtx,
 
     /* make sure the rid_* and nid_* bats have enough room */
     if (pre >= shredCtx->dstBAT[PRE_SIZE].size) {
-        size_t newsize = shredBAT_newsize(&shredCtx->dstBAT[PRE_SIZE], pre);
+        BUN newsize = shredBAT_newsize(&shredCtx->dstBAT[PRE_SIZE], pre);
         int err = 0;
         MT_sema_down(shredCtx->extend_sema, "shredder_extend"); 
         err = 
@@ -562,7 +562,7 @@ emit_tuple(shredCtxStruct* shredCtx,
     if (shredCtx->updatable) {
         if (nid != oid_nil) {
             if (nid >= shredCtx->dstBAT[NID_RID].size) {
-                size_t newsize = shredBAT_newsize(&shredCtx->dstBAT[NID_RID], nid);
+                BUN newsize = shredBAT_newsize(&shredCtx->dstBAT[NID_RID], nid);
                 if (newsize == 0 || !shredBAT_extend(&shredCtx->dstBAT[NID_RID], newsize)) {
                     return GDK_FAIL;
                 }
@@ -1019,7 +1019,7 @@ shred_start_element(void *xmlCtx,
             BAILOUT(shredCtx);
         }
         if (nattr >= shredCtx->dstBAT[ATTR_OWN].size) {
-            size_t newsize = shredBAT_newsize(&shredCtx->dstBAT[ATTR_OWN], nattr);
+            BUN newsize = shredBAT_newsize(&shredCtx->dstBAT[ATTR_OWN], nattr);
             if (!(newsize &&
                   shredBAT_extend(&shredCtx->dstBAT[ATTR_OWN],  newsize) &&
                   shredBAT_extend(&shredCtx->dstBAT[ATTR_QN],   newsize) &&
@@ -1544,7 +1544,7 @@ shredder_free(shredCtxStruct *shredCtx,
 static shredCtxStruct*
 shredder_create(char *location, 
                 size_t fileSize, 
-                size_t pageFree, 
+                BUN pageFree, 
                 struct serializeFunStruct *serFun, 
                 struct XqueryCtx *serCtx, 
                 BAT *docBAT,
@@ -1565,7 +1565,7 @@ shredder_create(char *location,
     memset(shredCtx, 0, sizeof(shredCtxStruct)); 
     shredCtx->location  = location;
     shredCtx->fileSize  = fileSize;
-    shredCtx->estSize   = (size_t) MIN(MAX(BATTINY, fileSize/20), INT_MAX);
+    shredCtx->estSize   = (BUN) MIN(MAX(BATTINY, fileSize/20), INT_MAX);
     shredCtx->serFun    = serFun;
     shredCtx->serCtx    = serCtx;
     shredCtx->coll_lock = coll_lock;
@@ -1674,7 +1674,7 @@ shredder_create(char *location,
         oid tab_size = shredCtx->dstBAT[sb->def->table].size;
         if (tab_size == 0) {
             tab_size = BATcount(sb->bat) + (sb->def->sizeFact * shredCtx->estSize);
-            if (tab_size > (size_t) REMAP_PAGE_SIZE && sb->def->table == PRE_SIZE) 
+            if (tab_size > (BUN) REMAP_PAGE_SIZE && sb->def->table == PRE_SIZE) 
                tab_size = (((tab_size - 1) >> REMAP_PAGE_BITS) + 1) << REMAP_PAGE_BITS;
         }
         /* make sure the bat is at least as big as its leader (that is later used to check overflow) */
@@ -1746,8 +1746,8 @@ shredder_create(char *location,
         oid pre_min = 1;
         if (shredCtx->updatable) {
             /* go back over unused nodes inside the last strech of *used* pages */ 
-            size_t  off = BUNfirst(map_pid);
-            ssize_t pos = BATcount(map_pid);
+            BUN off = BUNfirst(map_pid);
+            BUN pos = BATcount(map_pid);
             while(pos-- > 0) {
                 BUN p = off+pos; 
                 if (*(oid*) Tloc(map_pid, p) == oid_nil) { /* nil = unused */
@@ -1795,7 +1795,7 @@ shredder_stats(shredCtxStruct *shredCtx)
     stream_printf(GDKout, "# STATISTICS of shredding \"%s\":\n", shredCtx->location);
     for(i=0; i<SHRED_BATS; i++) {
         shredBAT *sb = &shredCtx->dstBAT[i];
-        size_t cnt = BATcount(sb->bat);
+        BUN cnt = BATcount(sb->bat);
 
         stream_printf(GDKout, "# [%9s, ", sb->def->name);
         stream_printf(GDKout, "cnt=%d", cnt);
@@ -1834,8 +1834,8 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
         }
     }
     /* set the bats to their final size */
-    size_t newsize = shredCtx->nnode_pre;
-    if (shredCtx->updatable && newsize > (size_t) REMAP_PAGE_SIZE) {
+    BUN newsize = (BUN) shredCtx->nnode_pre;
+    if (shredCtx->updatable && newsize > (BUN) REMAP_PAGE_SIZE) {
         /* we fill out memory mapped (big) rid_* bats to the next page boundary, as this speeds up remap */
         int delsize = (1U<<31) + REMAP_PAGE_SIZE - (1+(newsize & REMAP_PAGE_MASK));
         while(newsize & REMAP_PAGE_MASK) {
@@ -1949,12 +1949,12 @@ shred(BAT *docBAT,
     start = GDKusec();
 
 
-    /* compute amount of free nodes per block from a percentage(opt string param) */
-    size_t pageFree = percentage;
+    /* compute number of free nodes per block from a percentage(opt string param) */
     if (percentage < 0 || percentage > 99) {
         GDKerror("shred: free-space percentage should be from range [0,99].\n");
         return GDK_FAIL;
     }
+    BUN pageFree = (BUN) percentage;
 
     size_t estimatedSize = DEFAULT_ESTIMATE;
     if (location) {

@@ -174,7 +174,7 @@ CRKextendCrackerBAT(int *k, int *bid, lng positions){
 	if ((b = BATdescriptor(CrackerIndex[position].cbid)) == NULL)
                 throw(MAL, "crackers.CRKextendCrackerBAT", "Cannot access cracker BAT");
 
-	if (BATextend(b, (size_t)positions) == NULL)
+	if (BATextend(b, (BUN)positions) == NULL)
                 throw(MAL, "crackers.CRKextendCrackerBAT", "Failed to extend the cracker BAT");	
 
 	BBPunfix(b->batCacheid);
@@ -435,8 +435,8 @@ mergeInsertionsBRipple_@1(BAT *b, BAT *u, oid startPosition, oid endPosition, @1
 
 	/* make room for the new tuples */
 	if ( insertions > BATcapacity(b) - BATcount(b) ){
-		size_t ncap;
-		size_t grows;
+		BUN ncap;
+		BUN grows;
 		needed = insertions - (BATcapacity(b) - BATcount(b));
                 ncap = BATcapacity(b) + needed;
                 grows = BATgrows(b);
@@ -636,16 +636,16 @@ mergeInsertionsBRipple_@1(BAT *b, BAT *u, oid startPosition, oid endPosition, @1
 		}
 		
 		if (rt < crkLast && inst == insLast){
-			int i;
-			for(i = 0; (size_t)i<BATcount(ripple)-(size_t)consumedRipple; i++){
+			BUN i;
+			for(i = 0; i<BATcount(ripple)-(BUN)consumedRipple; i++){
 				*crkh = *rh;
                                 *crkt = *rt;
 				 rh++; rt++;crkh++; crkt++;
 			}
 		} else	
 		if (rt == crkLast && inst < insLast){
-			int i;
-			for(i = 0; (size_t)i<BATcount(u)-(size_t)endPosition -(size_t)consumedInsertions; i++){
+			BUN i;
+			for(i = 0; i<BATcount(u)-(BUN)endPosition -(BUN)consumedInsertions; i++){
                                 *crkh = *insh;
                                 *crkt = *inst;
                                  insh++; inst++;crkh++; crkt++;
@@ -853,7 +853,7 @@ mergeDeletionsGraduallyRipple_@1(int *bid, int *del, oid startPosition, oid endP
 				buns =  HposCr - LposCr;
 				
 				while(pos<=posLast){
-					if (*posLast != (size_t)buns){
+					if (*posLast != buns){
 						startH = (oid*)Hloc(b,crkFirst+(LposCr+(*pos)));
 						startT = (@1 *)Tloc(b,crkFirst+(LposCr+(*pos)));
 						endH  = (oid*)Hloc(b,crk);
@@ -971,7 +971,7 @@ sizeCrackerDeletions(int bid){
                 fprintf(stderr, " the crack index does not exist \n");
         if (CrackerIndex[i].did > 0){
                 u = BATdescriptor(CrackerIndex[i].did);
-                printf("\n pending deletions size: "SZFMT"\n",BATcount(u));
+                printf("\n pending deletions size: "BUNFMT"\n",BATcount(u));
                 BBPunfix(u->batCacheid);
         }
         else
@@ -987,7 +987,7 @@ sizeCrackerInsertions(int bid){
 		fprintf(stderr, " the crack index does not exist \n");
 	if (CrackerIndex[i].iid > 0){
 		u = BATdescriptor(CrackerIndex[i].iid);
-		printf("\n pending insertions size: "SZFMT" \n",BATcount(u));
+		printf("\n pending insertions size: "BUNFMT" \n",BATcount(u));
 		BBPunfix(u->batCacheid);
 	}
 	else
@@ -1144,8 +1144,8 @@ appendDeletions(int *del, int position){
 
 	/* make room for the new tuples */
 	if ( insertions > BATcapacity(b) - BATcount(b) ){
-		size_t ncap;
-		size_t grows;
+		BUN ncap;
+		BUN grows;
 		needed = insertions - (BATcapacity(b) - BATcount(b));
                 ncap = BATcapacity(b) + needed;
                 grows = BATgrows(b);
@@ -1258,10 +1258,10 @@ appendDeletions(int *del, int position){
 @
 
 @= shrinkInsertions
-	if (startPosition == 0 && (size_t)endPosition == BATcount(u)){
+	if (startPosition == 0 && (BUN)endPosition == BATcount(u)){
         	BATmode(u, TRANSIENT);
                 CrackerIndex[position].iid = -1;
-        } else  if ((size_t)endPosition == BATcount(u)){
+        } else  if ((BUN)endPosition == BATcount(u)){
                 BATsetcount(u,insFirst + startPosition);
         } else {
 		oid *startH = (oid*)Hloc(u,insFirst+startPosition);
@@ -1439,7 +1439,7 @@ appendDeletions(int *del, int position){
 				crk  = crkFirst + HposCr;
 				buns = HposCr - LposCr;
 				while(pos<=posLast){
-					if (*posLast != (size_t)buns){
+					if (*posLast != buns){
 						startH = (oid*)Hloc(b,crkFirst+(LposCr+(*pos)));
 						startT = (@1 *)Tloc(b,crkFirst+(LposCr+(*pos)));
 						endH  = (oid*)Hloc(b,crk);

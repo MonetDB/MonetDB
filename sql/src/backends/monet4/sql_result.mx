@@ -32,7 +32,7 @@ extern int mvc_export_operation(mvc *m, stream *s, str w);
 extern int mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype, str w, str ns);
 extern int mvc_export_result(mvc *c, stream *s, int res_id, str w);
 extern int mvc_export_prepare(mvc *c, stream *s, cq *q, str w);
-extern int mvc_export_chunk(mvc *m, stream *s, int res_id, size_t offset, size_t nr);
+extern int mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr);
 
 extern BAT *mvc_import_table(mvc *c, bstream *s, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, int nr, int offset);
 extern int mvc_result_table(mvc *m, int nr_cols, int type, BAT *order);
@@ -474,7 +474,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			}
 		}
 		if (ASCIIcreate_bats(&as) >= 0) {
-			if (ASCIIload_file(&as, bs, out) >= 0)
+			if (ASCIIload_file(&as, bs, out) != BUN_NONE)
 				bats = ASCIIcollect_bats(&as);
 		}
 		GDKfree(dec);
@@ -661,8 +661,8 @@ export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p
 static int
 mvc_export_row(mvc *m, stream *s, res_table *t, str btag, str sep, str rsep, str ssep, str ns)
 {
-	int seplen = strlen(sep);
-	int rseplen= strlen(rsep);
+	size_t seplen = strlen(sep);
+	size_t rseplen= strlen(rsep);
 	char *buf = NULL;
 	int len = 0;
 	int i, ok = 1;
@@ -694,11 +694,11 @@ mvc_export_row(mvc *m, stream *s, res_table *t, str btag, str sep, str rsep, str
 }
 
 static int
-mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, size_t offset, size_t nr, char *btag, char *sep, char *rsep, char *ssep, char *ns )
+mvc_export_table(mvc *m, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, char *btag, char *sep, char *rsep, char *ssep, char *ns )
 {
 	ascii as;
 	ascii_io *fmt;
-	ssize_t i;
+	int i;
 
 	if (!t)
 		return -1;
@@ -967,7 +967,7 @@ static int
 mvc_export_file(mvc *m, stream *s, res_table *t) 
 {
 	int res = 0;
-	size_t count;
+	BUN count;
 	BAT *order = NULL;
 
 	if (!t->order) {
@@ -986,7 +986,7 @@ int
 mvc_export_result(mvc *m, stream *s, int res_id, str w)
 {
 	int i, clean = 0, res = 0;
-	size_t count;
+	BUN count;
 	res_table *t = res_tables_find(m->results, res_id);
 	BAT *order = NULL;
 
@@ -1024,7 +1024,7 @@ mvc_export_result(mvc *m, stream *s, int res_id, str w)
 		return export_error(order);
 
 	/* row count, min(count, reply_size) */
-	if (!mvc_send_int(s, (size_t) m->reply_size < count ? m->reply_size : (int) count)) 
+	if (!mvc_send_int(s, (BUN) m->reply_size < count ? m->reply_size : (int) count)) 
 		return export_error(order);
 
 	if (stream_write(s, "\n% ", 3, 1) != 1)
@@ -1095,12 +1095,12 @@ mvc_export_result(mvc *m, stream *s, int res_id, str w)
 }
 
 int
-mvc_export_chunk(mvc *m, stream *s, int res_id, size_t offset, size_t nr)
+mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr)
 {
 	int res = 0;
 	res_table *t = res_tables_find(m->results, res_id);
 	BAT *order = NULL;
-	size_t cnt;
+	BUN cnt;
 
 	if (!s || !t)
 		return 0;

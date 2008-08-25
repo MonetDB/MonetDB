@@ -669,7 +669,7 @@ typedef struct PARTITIONREC {
 	ValRecord tlow,thgh; /* tail range */
 	int hbits, tbits; /* linear hashing bits */
 	int nxt, prv;	/* list of all related partitions*/
-	size_t cnt;	/* how many tuples */
+	BUN cnt;	/* how many tuples */
 @-
 Each partition may be designated as delayed,
 which is materialized only when you need it completely needed.
@@ -699,9 +699,9 @@ static void BPMprintInfo(stream *f, Partition p){
 
 static void BPMprintPartition(stream *f, Partition p){
 	stream_printf(f,"partition: %s alias %d bid %d ",
-		bpmcat[p->alias]->name, p->alias, p->bid);
+		bpmcat[p->alias]->name, (int) p->alias, (int) p->bid);
 	BPMprintInfo(f,p);
-	stream_printf(f,"] nxt %d prv %d cnt " SZFMT "\n", p->nxt,p->prv,p->cnt);
+	stream_printf(f,"] nxt %d prv %d cnt " BUNFMT "\n", p->nxt,p->prv,p->cnt);
 }
 
 static void BPMprintRing(stream *f, Partition p){
@@ -709,12 +709,12 @@ static void BPMprintRing(stream *f, Partition p){
 	if( p== 0) return;
 	stream_printf(f,"RING[%d] %s ", p->bid,BBPname(p->bid));
 	BPMprintInfo(f,p);
-	stream_printf(f,"] cnt " SZFMT "\n", p->cnt);
+	stream_printf(f,"] cnt " BUNFMT "\n", p->cnt);
 	base= p->alias;
 	for(i= p->nxt; bpmcat[i]->bid!= base; i= bpmcat[i]->nxt){
 		stream_printf(f,"[%d] %s ", bpmcat[i]->bid, BBPname(bpmcat[i]->bid));
 		BPMprintInfo(f,p);
-		stream_printf(f,"] cnt " SZFMT "\n", bpmcat[i]->cnt);
+		stream_printf(f,"] cnt " BUNFMT "\n", bpmcat[i]->cnt);
 	}
 }
 
@@ -1323,10 +1323,10 @@ BPMisPartitioned(bat bid){
 	return getAlias(bid)!= 0;
 }
 
-static size_t
+static BUN
 BPMcountInternal(bat bid)
 {
-	size_t ret=0;
+	BUN ret=0;
 	int i;
 	Partition ps;
 	BAT *b;
@@ -1342,14 +1342,14 @@ BPMcountInternal(bat bid)
 		ret += bpmcat[i]->cnt;
 	}
 #ifdef _DEBUG_BPM_
-	printf("bpmcountInternal %d ->%d\n",bid,ret);
+	printf("bpmcountInternal %d ->" BUNFMT "\n",bid,ret);
 #endif
 	return ret;
 }
 
 str
 BPMcount(int *ret, bat *bid){
-	size_t cnt = BPMcountInternal(*bid);
+	BUN cnt = BPMcountInternal(*bid);
 	assert(cnt <= INT_MAX);
 	*ret= (int) cnt;
 	return MAL_SUCCEED;
@@ -1363,7 +1363,7 @@ str
 BPMemptySet(int *ret, bat *bid)
 {
 	int i;
-	size_t cnt=0;
+	BUN cnt=0;
 	Partition ps;
 	BAT *b;
 
@@ -1446,7 +1446,7 @@ guessNewPartition(BAT *b){
 }
 
 static Partition 
-getAcceptor(bat ba, size_t maxcnt){
+getAcceptor(bat ba, BUN maxcnt){
 	Partition p;
 	int i;
 	BAT *b,*bn;
@@ -1472,7 +1472,7 @@ getAcceptor(bat ba, size_t maxcnt){
 
 str
 BPMaddPartition(int *ret, bat *bid, bat *src){
-	size_t cnt=0, maxcnt;
+	BUN cnt=0, maxcnt;
 	Partition pa,p,px;
 	BAT *b,*bn, *ba;
 
@@ -1527,7 +1527,7 @@ BPMaddPartition(int *ret, bat *bid, bat *src){
 		p->alias = pa->alias;
 		@:defaultRange(p,b)@
 #ifdef _DEBUG_BPM_
-		printf("guess-> " SZFMT " ring %d px %d\n",p->cnt, emptyRing(pa), px!=0);
+		printf("guess-> " BUNFMT " ring %d px %d\n",p->cnt, emptyRing(pa), px!=0);
 		BPMprintRing(GDKout,pa);
 #endif
 	} else {
@@ -1540,7 +1540,7 @@ BPMaddPartition(int *ret, bat *bid, bat *src){
 		BBPunfix(bn->batCacheid); 
 #ifdef _DEBUG_BPM_
 		@:defaultRange(px,bn)@
-		printf("no guess-> " SZFMT "\n",px->cnt);
+		printf("no guess-> " BUNFMT "\n",px->cnt);
 		BPMprintRing(GDKout,px);
 #endif
 	}
@@ -1652,10 +1652,10 @@ BPMsizePolicy( BAT *b, BAT *bs, int ov)
 	int cs=0;
 	lng space, space1, space2=0;
 
-	space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(hash_t)) + sizeof(BATstore);
-	space1 = BATcount(bs)* (Hsize(b) + Tsize(b) + sizeof(hash_t)) + sizeof(BATstore);
+	space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(BUN)) + sizeof(BATstore);
+	space1 = BATcount(bs)* (Hsize(b) + Tsize(b) + sizeof(BUN)) + sizeof(BATstore);
 
-/*	stream_printf(GDKout,"tuples %d size  %d selection %d \n", BATcount(b),space, space1); */
+/*	stream_printf(GDKout,"tuples " BUNFMT " size  " LLFMT " selection " LLFMT "\n", BATcount(b),space, space1); */
 	if(ov <3) {
 		space2 = space -space1;
 	}
@@ -1698,11 +1698,11 @@ static int
 BPMhybridPolicy( BAT *b, BAT *bs, int ov)
 {
 	int cs=0, or;
-	size_t cnt=0;
+	BUN cnt=0;
 	lng space, space1, space2=0;
 
-	space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(hash_t)) + sizeof(BATstore);
-	space1 = BATcount(bs)* (Hsize(b) + Tsize(b) + sizeof(hash_t)) + sizeof(BATstore);
+	space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(BUN)) + sizeof(BATstore);
+	space1 = BATcount(bs)* (Hsize(b) + Tsize(b) + sizeof(BUN)) + sizeof(BATstore);
 
 	if(ov <3) {
 		space2 = space -space1;
@@ -1711,7 +1711,7 @@ BPMhybridPolicy( BAT *b, BAT *bs, int ov)
 	 	space2 = (space -space1)/2; /* rough estimate of two remainders*/
 	}
 #ifdef _DEBUG_BPM_
-	stream_printf(GDKout,"Space1  %d Space2 %d\n",space1,space2);
+	stream_printf(GDKout,"Space1  " LLFMT " Space2 " LLFMT "\n",space1,space2);
 #endif
 
 	if ((space1 < Mmin) || (space2 < Mmin)) {
@@ -1742,7 +1742,7 @@ BPMhybridPolicy( BAT *b, BAT *bs, int ov)
 @c
 
 static int 
-spread( bat *ret, size_t *cnt, BAT *b, ValPtr sep, int n, int skip)
+spread( bat *ret, BUN *cnt, BAT *b, ValPtr sep, int n, int skip)
 {	
 	int k=n-2, i;
 	BUN p,q;
@@ -1790,9 +1790,9 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	bat *bb;
 	ValPtr sep = NULL;
 	int cs=0, ov, or;
-	size_t cnt=0, bcnt;
+	BUN cnt=0, bcnt;
 	int i, n=0, tpe, skip=-1;
-	size_t cnts[4]={0};
+	BUN cnts[4]={0};
 	lng space;
 	(void) ret;
 
@@ -1805,7 +1805,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	tpe = rngType(b->ttype);
 
 /* baseline size, too small BATs are never broken*/
-	space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(hash_t)) + sizeof(BATstore);
+	space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(BUN)) + sizeof(BATstore);
 	if (space < Mmin) { /* no re-org.*/
 		BBPkeepref(*ret = b->batCacheid);
 		return MAL_SUCCEED;
@@ -1831,7 +1831,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 		else or=BPMoraclePolicy((double)BATcount(bs)/bcnt, (double)bcnt/cnt);
 	
 #ifdef _DEBUG_BPM_
-/*	stream_printf(GDKout,"Oracle %d bcnt " SZFMT " cnt " SZFMT " \n",or, bcnt,cnt);*/
+/*	stream_printf(GDKout,"Oracle %d bcnt " BUNFMT " cnt " BUNFMT " \n",or, bcnt,cnt);*/
 #endif
 		if (or) cs= ov; 
 	}
@@ -1908,7 +1908,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 		#ifdef _DEBUG_BPM_
 			stream_printf(GDKout,"Inserted partition: \n ");
 			BPMprintPartition(GDKout,p);
-			stream_printf(GDKout,"Lrefs %d: refs \n ",BBP_lrefs(bb[i]),BBP_refs(bb[i]));
+			stream_printf(GDKout,"Lrefs %d: refs %d\n ",BBP_lrefs(bb[i]),BBP_refs(bb[i]));
 		#endif
 	}
 
@@ -2220,7 +2220,7 @@ should be sought for bulk updates.
 str
 BPMfold(bat *ret, bat *bid){
 	int i,j;
-	size_t cnt=0;
+	BUN cnt=0;
 	Partition ps;
 	BAT *b,*bn;
 	str msg= MAL_SUCCEED;
@@ -3053,7 +3053,7 @@ BPMsaveCatalog(int *r)
 void findQuantHisto(ValPtr vp, BAT * b, lng sp, lng msz, lng maxno)
 {
 	BUN p, pprev, stop; 
-	size_t c;
+	BUN c;
 	int tpe, s=0, cn, it =0;
 	lng pertpl, quan;
 	BATiter bsi;
@@ -3100,7 +3100,7 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 	ValPtr sep, v;
 	bat *bb;
 	int k,nxt, i, n=0, tpe;
-	size_t *cnts;
+	BUN *cnts;
 	ptr nilptr;
 	int (*cmp) (ptr, ptr);
 	lng sf, msz, space;
@@ -3125,11 +3125,11 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 	/*	materializePartition(bpmcat[i]); */
 		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.splitquantile");
 		
-		space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(hash_t)) + sizeof(BATstore);
+		space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(BUN)) + sizeof(BATstore);
 		if ((b->htype == TYPE_void) || (b->ttype == TYPE_void))
 			space += BATcount(b)* sizeof(oid);
 	#ifdef _DEBUG_BPM_
-		stream_printf(GDKout," partition '%d' size  %d\n", i, space);
+		stream_printf(GDKout," partition '%d' size  " LLFMT "\n", i, space);
 	#endif
 		if (space <= msz) {
 	 		BBPunfix(b->batCacheid);
@@ -3138,7 +3138,7 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 		}
 
 		sf = (lng) ceil(space/(double)msz) + 3;
-		sep= (ValPtr) GDKzalloc( (size_t) (sizeof(ValRecord) * sf));
+		sep= (ValPtr) GDKzalloc( sizeof(ValRecord) * sf);
 		for (k=0; k<sf; k++)
 			VALinit(sep+k,tpe,nilptr);
 	/* form array of separators */
@@ -3150,12 +3150,12 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 
 	/* spread values */		
 		bb= (bat *) GDKzalloc( sizeof(bat) * (n-1));
-		cnts= (size_t *) GDKzalloc( sizeof(size_t) * (n-1));
+		cnts= (BUN *) GDKzalloc( sizeof(BUN) * (n-1));
 		spread(bb,cnts,b,sep,n,-1);
 		
 #ifdef _DEBUG_BPM_
 		for(k=0;k<n-1; k++) 
-			stream_printf(GDKout," spread to partition %d size  " SZFMT "\n", bb[k], cnts[k]);
+			stream_printf(GDKout," spread to partition %d size  " BUNFMT "\n", bb[k], cnts[k]);
 #endif
 		pprev = getByNumber(bpmcat[i]->prv);
 		for(k=0; k<n-1; k++, pprev=p){

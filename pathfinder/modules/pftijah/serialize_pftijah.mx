@@ -73,7 +73,7 @@ extern int CMDtj_normalizeTerm(char** res, char *term, char *stemmer);
 typedef struct dbat_struct {
 	const char*	name;
 	BAT*		bat;
-	oid		raw_max;
+	BUN		raw_max;
 	oid		seqbase;
 	oid		seq_max;
         union { /* cast to perform direct indexe insert in [void,any] BATs */
@@ -96,8 +96,8 @@ int dbat_init(const char* name, dbat* dbat, BAT* b) {
 	    return 0;
 	}
         dbat->seqbase = (oid)b->hseqbase;
-	dbat->raw_max = (oid)BATcount(dbat->bat);
-	dbat->seq_max = dbat->raw_max + dbat->seqbase;
+	dbat->raw_max = BATcount(dbat->bat);
+	dbat->seq_max = (oid) (dbat->raw_max + dbat->seqbase);
         dbat->cast.voidCAST = (void*)Tloc(dbat->bat,BUNfirst(dbat->bat));
 	/* */
 	return 1;
@@ -127,7 +127,8 @@ int dbat_finalize(dbat* dbat, int topidx) {
 	/* */
 	dbat->name  = NULL;
 	dbat->bat   = NULL;
-	dbat->raw_max = dbat->seqbase = 0;
+	dbat->raw_max = 0;
+	dbat->seqbase = 0;
 	/* */
 	return 1;
 }
@@ -147,14 +148,14 @@ dbat_setcount(dbat *dbat, oid n)
 }
 
 static int
-dbat_extend(dbat* dbat, oid min_i /*raw-index*/, size_t forced_size) {
-    size_t newsize;
+dbat_extend(dbat* dbat, oid min_i /*raw-index*/, BUN forced_size) {
+    BUN newsize;
     
     dbat_setcount(dbat, dbat->raw_max);
     if ( forced_size ) {
        newsize = forced_size;
     } else {
-       newsize = MAX(MIN(MAX(MINCHUNK,dbat->raw_max*2),(size_t)(dbat->raw_max+MAXCHUNK)),(size_t)min_i);
+       newsize = MAX(MIN(MAX(MINCHUNK,dbat->raw_max*2),(BUN)(dbat->raw_max+MAXCHUNK)),(BUN)min_i);
     }
 
     /* first check if the number of BUN's < INT_MAX. If this was the case
@@ -171,20 +172,20 @@ dbat_extend(dbat* dbat, oid min_i /*raw-index*/, size_t forced_size) {
     }
 #if 1
     /* copied this form shredder.mx, keep it here ??? */
-    if (newsize+newsize > (size_t) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
+    if (newsize+newsize > (BUN) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
         BATmmap(dbat->bat, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     }
 
 #endif
 
 #if 0
-    stream_printf(GDKout,"dbat_extend[%s](%d -> %d)\n",dbat->name,dbat->raw_max,newsize);
+    stream_printf(GDKout,"dbat_extend[%s](" BUNFMT " -> " BUNFMT ")\n",dbat->name,dbat->raw_max,newsize);
 #endif
 
     dbat->raw_max = newsize;
-    dbat->seq_max = dbat->raw_max + dbat->seqbase;
+    dbat->seq_max = (oid) (dbat->raw_max + dbat->seqbase);
     if ( !(dbat->bat = BATextend(dbat->bat,newsize)) ) {
-        GDKerror("dbat_extend: BATextend[\"%s\"](to %d) fails\n","incomplete",newsize);
+        GDKerror("dbat_extend: BATextend[\"%s\"](to " BUNFMT ") fails\n","incomplete",newsize);
         return -1;
     }
     dbat->cast.voidCAST = (void*)Tloc(dbat->bat,BUNfirst(dbat->bat));
@@ -195,7 +196,7 @@ dbat_extend(dbat* dbat, oid min_i /*raw-index*/, size_t forced_size) {
 static int
 dbat_sizeHint(dbat* dbat, int sizeHint_mark) {
         int sizeHint = sizeHint_mark - dbat->seqbase;
-	int estimate = dbat->raw_max + sizeHint;
+	BUN estimate = dbat->raw_max + sizeHint;
 
 	return dbat_extend(dbat, estimate, 0);
 }

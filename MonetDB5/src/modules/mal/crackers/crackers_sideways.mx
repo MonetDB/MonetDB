@@ -192,7 +192,7 @@ CRKsizePendingInsertions(int *k, int *bid, int *pbid){
                 fprintf(stderr, " the crack index does not exist \n");
         if (CrackerIndex[i].iid > 0){
                 u = BATdescriptor(CrackerIndex[i].iid);
-                printf("\n pending insertions size: "SZFMT" \n",BATcount(u));
+                printf("\n pending insertions size: "BUNFMT" \n",BATcount(u));
                 BBPunfix(u->batCacheid);
         }
         else
@@ -1631,7 +1631,7 @@ createView:
 				int remap = 0;
 				int tremap = remap && BATtrestricted(bp) != BAT_WRITE && tt != TYPE_void;
 				int tvremap = tremap && ATOMstorage(tt) == TYPE_str && !GDK_ELIMDOUBLES(bp->T->vheap);
-				size_t  tcap = 0;
+				BUN  tcap = 0;
 				Heap bthp, thp;
 				memset(&bthp, 0, sizeof(Heap));
 				memset(&thp, 0, sizeof(Heap));
@@ -1650,7 +1650,7 @@ createView:
 					heapfree(b->T->vheap, &thp);
 
 				/* make sure we use the correct capacity */
-				tcap = (b->ttype)?b->T->heap.size>>b->T->shift:0;
+				tcap = (BUN) (b->ttype?b->T->heap.size>>b->T->shift:0);
 				b->batCapacity = tcap;
 
 
@@ -1764,7 +1764,7 @@ selectMergeInsertionsPart_@1Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *
 		BBPunfix(u->batCacheid);	
 		return NULL; /* no qualifying values in the insertions */ 	
 	}
-	updatesStart = lt - t0;	
+	updatesStart = (oid) (lt - t0);	
 	
 	/* binary search to find the position of the highest requested value in the insertions */
         l = SORTfndfirst_@5(u, hgh);
@@ -1783,7 +1783,7 @@ selectMergeInsertionsPart_@1Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *
 	}
 
 	if (lt == updLast) lt--;
-	updatesEnd = lt - t0;
+	updatesEnd = (oid) (lt - t0);
 
 	if ((b = BATdescriptor(CrackerIndex[position].cbid)) == NULL)
                 throw(MAL, "crackers.crackRangeInsertionPart", "Cannot access cracker map");

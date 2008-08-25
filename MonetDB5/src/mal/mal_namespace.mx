@@ -62,7 +62,7 @@ typedef struct NAMESPACE{
 	str  *nme;
 	int  *link;
 	int  *hit;
-	int	 *length;
+	size_t	 *length;
 	int	 totalhit;
 } Namespace;
 
@@ -74,7 +74,8 @@ static Namespace backup;
 
 static void expandNamespace(int incr){
 	str *nme;
-	int *length, *link, *hit, newsize;
+	size_t *length;
+	int *link, *hit, newsize;
 
 	if(incr < 0){
 		GDKwarning("expandNamespace:illegal increment\n");
@@ -87,11 +88,11 @@ static void expandNamespace(int incr){
 	nme= (str *) GDKmalloc(sizeof(str *) * newsize);
 	link= (int *) GDKmalloc(sizeof(int) * newsize);
 	hit = (int *) GDKmalloc(sizeof(int) * newsize);
-	length = (int *) GDKmalloc(sizeof(int) * newsize);
+	length = (size_t *) GDKmalloc(sizeof(size_t) * newsize);
 	memcpy(nme, namespace.nme, sizeof(str *) * namespace.nmetop);
 	memcpy(link, namespace.link, sizeof(int) * namespace.nmetop);
 	memcpy(hit, namespace.hit, sizeof(int) * namespace.nmetop);
-	memcpy(length, namespace.length, sizeof(int) * namespace.nmetop);
+	memcpy(length, namespace.length, sizeof(size_t) * namespace.nmetop);
 
 	namespace.size += incr;
 	namespace.totalhit= 0;
@@ -104,11 +105,11 @@ static void expandNamespace(int incr){
 	nme= (str *) GDKmalloc(sizeof(str *) * (backup.nmetop+incr));
 	link= (int *) GDKmalloc(sizeof(int) * (backup.nmetop+incr));
 	hit = (int *) GDKmalloc(sizeof(int) * (backup.nmetop+incr));
-	length = (int *) GDKmalloc(sizeof(int) * (backup.nmetop+incr));
+	length = (size)t *) GDKmalloc(sizeof(size_t) * (backup.nmetop+incr));
 	memcpy(nme, backup.nme, sizeof(str *) * backup.nmetop);
 	memcpy(link, backup.link, sizeof(int) * backup.nmetop);
 	memcpy(hit, backup.hit, sizeof(int) * backup.nmetop);
-	memcpy(length, backup.hit, sizeof(int) * backup.nmetop);
+	memcpy(length, backup.hit, sizeof(size_t) * backup.nmetop);
 
 	backup.size += incr;
 	backup.totalhit= 0;
@@ -123,7 +124,7 @@ void initNamespace() {
 	namespace.nme= (str *) GDKzalloc(sizeof(str *) * MAXIDENTIFIERS);
 	namespace.link= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
 	namespace.hit= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
-	namespace.length= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
+	namespace.length= (size_t *) GDKzalloc(sizeof(size_t) * MAXIDENTIFIERS);
 	namespace.size = MAXIDENTIFIERS;
 	namespace.nmetop= 256; /* hash overflow */
 
@@ -179,7 +180,7 @@ str getName(str nme, size_t len)
 #ifdef _BACKUP_
 		chkName(l);
 #endif
-	    if (namespace.length[l] == (int)len  &&
+		if (namespace.length[l] == len  &&
 			strncmp(nme,namespace.nme[l],len)==0) {
 	        namespace.hit[l]++;
 			namespace.totalhit++;
@@ -219,7 +220,7 @@ str putName(str nme, size_t len)
 #ifdef _BACKUP_
 		chkName(l);
 #endif
-	    if( namespace.length[l] == (int)len  &&
+	    if( namespace.length[l] == len  &&
 			strncmp(nme,namespace.nme[l],len) == 0 ) {
 	        namespace.hit[l]++;
 			namespace.totalhit++;
@@ -231,7 +232,7 @@ str putName(str nme, size_t len)
 				h= namespace.hit[l]; namespace.hit[l]=namespace.hit[k];
 				namespace.hit[k]= h;
 				i= namespace.length[l]; namespace.length[l]=namespace.length[k];
-				namespace.length[k]= (int)i;
+				namespace.length[k]= i;
 
 #ifdef _BACKUP_
 				s= backup.nme[l]; backup.nme[l]= backup.nme[k];
@@ -239,7 +240,7 @@ str putName(str nme, size_t len)
 				i= backup.hit[l]; backup.hit[l]=backup.hit[k];
 				backup.hit[k]= i;
 				i= backup.length[l]; backup.length[l]=backup.length[k];
-				backup.length[k]= (int)i;
+				backup.length[k]= i;
 #endif
 				mal_unset_lock(mal_contextLock,"putName");
 				l=k;
@@ -250,7 +251,7 @@ str putName(str nme, size_t len)
 	}
 
 	if(len>=1024) GDKfatal("Identifier too long");
-	memcpy(buf, nme, (size_t) len); 
+	memcpy(buf, nme, len); 
 	buf[len]=0;
 
 	mal_set_lock(mal_contextLock,"putName");
@@ -263,7 +264,7 @@ str putName(str nme, size_t len)
 	if ((int)top == namespace.nmetop)
 		namespace.link[l] = (int)top;
 	namespace.hit[top]= 0;
-	namespace.length[top]= (int)len;
+	namespace.length[top]= len;
 	namespace.nmetop++;
 
 #ifdef _BACKUP_

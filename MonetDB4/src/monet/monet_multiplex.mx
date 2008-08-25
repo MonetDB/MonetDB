@@ -186,9 +186,7 @@ interpret_interpret(Cntxt stk, YYSTREE tt, ValPtr argv)
 @:interpret_multiplex_array(special)@
 
 @c
-#define REALLY_REALLY_BIG	2000000000
-
-static int interpret_multiplex_fcn(str s, int argc, ValPtr argv, ValPtr res, int assignop, int stk, size_t size, int tpe, int ret, GDKfcn imp);
+static int interpret_multiplex_fcn(str s, int argc, ValPtr argv, ValPtr res, int assignop, int stk, BUN size, int tpe, int ret, GDKfcn imp);
 
 int
 interpret_multiplex(str s, int argc, ValPtr argv, ValPtr res, YYSTREE t, Cntxt stk)
@@ -200,8 +198,8 @@ interpret_multiplex(str s, int argc, ValPtr argv, ValPtr res, YYSTREE t, Cntxt s
 	int all_unique = TRUE;
 	int all_sorted = TRUE;
 	int any_dense = FALSE;
-	size_t max_size = 0;
-	size_t min_size = REALLY_REALLY_BIG;
+	BUN max_size = 0;
+	BUN min_size = BUN_MAX;
 	char name[128];
 
 	strcpy(name, s);
@@ -219,10 +217,10 @@ operator are a special case.
 	for (i = 1; i < argc; i++) {
 		if (argv[i].vtype == TYPE_bat && argv[i].len != int_nil) {
 			BAT *b = BBPdescriptor(argv[i].val.bval);
-			size_t sz = BATcount(b);
+			BUN sz = BATcount(b);
 
 			any_dense |= BAThdense(b);
-			if (min_size == REALLY_REALLY_BIG) {
+			if (min_size == BUN_MAX) {
 				all_synced = b;
 				tpe = BAThtype(b);
 				if (sig->assignop && b->batRestricted) {
@@ -324,7 +322,7 @@ typedef struct {
 	int (*unfix) (ptr);	/* unfix function for produced atoms */
 	int need_unfix;		/* indicates if an unfix function is needed */
 	ValRecord id;		/* current head value */
-	size_t cap;		/* capacity of the result */
+	BUN cap;		/* capacity of the result */
 	BAT *b;			/* result bat */
 	BAT *piv[MAXPARAMS];	/* bats to be joined */
 	int nbats;		/* actual number of involved bats */
@@ -416,7 +414,7 @@ interpret_multiplex_fcn(str s,		/* operator name */
 			ValPtr res,	/* result value (to store bat) */
 			int assignop,	/* project away result head */
 			int stk,	/* -1 if no proc */
-			size_t size,	/* expected result size */
+			BUN size,	/* expected result size */
 			int tpe,	/* head column type */
 			int ret,	/* return type; <0 if unknown */
 			GDKfcn imp	/* command pack address or proc YYSTREE */
@@ -824,7 +822,7 @@ and @`interpret_special_array@5.
 @= interpret_multiplex_array
 static int
 interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
-		   size_t size, int ret_tpe, int assignop, int special)
+		   BUN size, int ret_tpe, int assignop, int special)
 {
 	BATiter b1i, b2i, b3i, bhi;
 	str  a1, a2 = NULL, a3 = NULL, ah = NULL; /* heap bases */
@@ -1124,7 +1122,7 @@ and @`interpret_multiplex_merge@5.
 @= interpret_multiplex_merge
 static int
 interpret_@1_merge(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
-		   size_t size, int ret_tpe, int assignop, int special)
+		   BUN size, int ret_tpe, int assignop, int special)
 {
 	BATiter b1i, b2i, b3i;
 	BAT *b1, *b2, *b3 = NULL; /* BATs */
@@ -1461,14 +1459,14 @@ interpret_setaggr(str name, int argc, ValPtr argv, ValPtr res, YYSTREE tt, int s
 {
 	monet_sig_t *sig = (monet_sig_t *) tt->yyval.val.pval;
 	BAT *b, *nested, *nested_rev, *histo = 0, *extent = 0, *ret = 0;
-	size_t minpos;
+	BUN minpos;
 	int ret_val = -1, varsize, head_type, hidden_vartype = 0;
 	int prop_key, prop_sorted = 0, restore = 1;
 	GDKfcn direct_call = NULL, packed_call = NULL;
 	ValRecord argv_bak;
 	BUN p, q, r, s;
-	size_t zz;
-	hash_t hh;
+	BUN zz;
+	BUN hh;
 	str buf = NULL;
 	bulkerror_t bulkerror;
 	BATstore nested_bak;

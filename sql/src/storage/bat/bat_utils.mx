@@ -34,11 +34,11 @@ extern log_bid temp_create(BAT *b);
 extern log_bid temp_copy(log_bid b, int temp);
 
 extern void bat_destroy(BAT *b);
-extern BAT *bat_new(int ht, int tt, size_t size);
+extern BAT *bat_new(int ht, int tt, BUN size);
 
 extern void update_table_bat(BAT *b, BAT *ub);
-extern size_t append_inserted(BAT *b, BAT *i );
-extern size_t copy_inserted(BAT *b, BAT *i );
+extern BUN append_inserted(BAT *b, BAT *i );
+extern BUN copy_inserted(BAT *b, BAT *i );
 
 extern void leaks(void);
 
@@ -106,7 +106,7 @@ bat_destroy(BAT *b)
 }
 
 BAT *
-bat_new(int ht, int tt, size_t size)
+bat_new(int ht, int tt, BUN size)
 {
 	BAT *nb = BATnew(ht, tt, size);
 
@@ -178,10 +178,10 @@ update_table_bat(BAT *b, BAT *ub)
 	}
 }
 
-size_t
+BUN
 append_inserted(BAT *b, BAT *i )
 {
-	size_t nr = 0;
+	BUN nr = 0;
 	BUN r;
        	BATiter ii = bat_iterator(i);
 
@@ -192,10 +192,10 @@ append_inserted(BAT *b, BAT *i )
 	return nr;
 }
 
-size_t
+BUN
 copy_inserted(BAT *b, BAT *i )
 {
-	size_t nr = 0;
+	BUN nr = 0;
 	BUN r;
        	BATiter ii = bat_iterator(i);
 

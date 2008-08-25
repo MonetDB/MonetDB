@@ -74,35 +74,35 @@ This was shown to be inferior to direct hashing with integer anding. The new imp
 reflects this.
 @{
 @h
-gdk_export Hash *HASHnew(Heap *hp, int tpe, size_t size, hash_t mask);
-gdk_export hash_t HASHmask(size_t cnt);
+gdk_export Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);
+gdk_export BUN HASHmask(BUN cnt);
 gdk_export BAT *HASHprint(BAT *b);
 gdk_export void HASHremove(BAT *b);
 gdk_export void HASHdestroy(BAT *b);
 gdk_export int HASHgonebad(BAT *b, ptr v);
-gdk_export hash_t HASHprobe(Hash *h, ptr v);
-gdk_export hash_t HASHlist(Hash *h, size_t i);
+gdk_export BUN HASHprobe(Hash *h, ptr v);
+gdk_export BUN HASHlist(Hash *h, BUN i);
 
 #define mix_sht(X)            (((X)>>7)^(X))
 #define mix_int(X)            (((X)>>7)^((X)>>13)^((X)>>21)^(X))
 #define hash_loc(H,V)         hash_any(H,V)
 #define hash_var(H,V)         hash_any(H,V)
 #define hash_any(H,V)         (ATOMhash((H)->type, (V)) & (H)->mask)
-#define hash_bte(H,V)         ((hash_t) (*(unsigned char*) (V)) & (H)->mask)
+#define hash_bte(H,V)         ((BUN) (*(unsigned char*) (V)) & (H)->mask)
 #define hash_chr(H,V)         hash_bte(H,V)
-#define hash_sht(H,V)         ((hash_t) mix_sht(*((unsigned short*) (V))) & (H)->mask)
-#define hash_int(H,V)         ((hash_t) mix_int(*((unsigned int*) (V))) & (H)->mask)
+#define hash_sht(H,V)         ((BUN) mix_sht(*((unsigned short*) (V))) & (H)->mask)
+#define hash_int(H,V)         ((BUN) mix_int(*((unsigned int*) (V))) & (H)->mask)
 /* XXX return size_t-sized value for 8-byte oid? */
-#define hash_lng(H,V)         ((hash_t) mix_int((unsigned int) (*(lng *)(V) ^ (*(lng *)(V) >> 32))) & (H)->mask)
+#define hash_lng(H,V)         ((BUN) mix_int((unsigned int) (*(lng *)(V) ^ (*(lng *)(V) >> 32))) & (H)->mask)
 #if SIZEOF_OID == SIZEOF_INT
-#define hash_oid(H,V)         ((hash_t) mix_int((unsigned int) *((oid*) (V))) & (H)->mask)
+#define hash_oid(H,V)         ((BUN) mix_int((unsigned int) *((oid*) (V))) & (H)->mask)
 #else
-#define hash_oid(H,V)         ((hash_t) mix_int((unsigned int) (*(oid *)(V) ^ (*(oid *)(V) >> 32))) & (H)->mask)
+#define hash_oid(H,V)         ((BUN) mix_int((unsigned int) (*(oid *)(V) ^ (*(oid *)(V) >> 32))) & (H)->mask)
 #endif
 #if SIZEOF_WRD == SIZEOF_INT
-#define hash_wrd(H,V)         ((hash_t) mix_int((unsigned int) *((wrd*) (V))) & (H)->mask)
+#define hash_wrd(H,V)         ((BUN) mix_int((unsigned int) *((wrd*) (V))) & (H)->mask)
 #else
-#define hash_wrd(H,V)         ((hash_t) mix_int((unsigned int) (*(wrd *)(V) ^ (*(wrd *)(V) >> 32))) & (H)->mask)
+#define hash_wrd(H,V)         ((BUN) mix_int((unsigned int) (*(wrd *)(V) ^ (*(wrd *)(V) >> 32))) & (H)->mask)
 #endif
 
 #define hash_flt(H,V)         hash_int(H,V)
@@ -111,7 +111,7 @@ gdk_export hash_t HASHlist(Hash *h, size_t i);
 
 @= hashfnd
 #define HASHfnd_@1(x,y,z)	{					\
-	hash_t _i;							\
+	BUN _i;							\
 	(x) = BUN_NONE;							\
 	if ((y).b->H->hash || BAThash((y).b, 0) || GDKfatal("HASHfnd_@1: hash build failed on %s.\n", BATgetId((y).b))) \
 		HASHloop_@1((y), (y).b->H->hash, _i, (z)) {		\
@@ -121,7 +121,7 @@ gdk_export hash_t HASHlist(Hash *h, size_t i);
 }
 @h
 #define HASHfnd_str(x,y,z)	{					\
-	hash_t _i;							\
+	BUN _i;							\
 	(x) = BUN_NONE;							\
 	if ((y).b->H->hash || BAThash((y).b, 0) || GDKfatal("HASHfnd_str: hash build failed on %s.\n", BATgetId((y).b))) \
 		HASHloop_str((y), (y).b->H->hash, _i, (z)) {		\
@@ -130,7 +130,7 @@ gdk_export hash_t HASHlist(Hash *h, size_t i);
 		}							\
 }
 #define HASHfnd(x,y,z)	{						\
-	size_t _i;							\
+	BUN _i;							\
 	(x) = BUN_NONE;							\
 	if ((y).b->H->hash || BAThash((y).b, 0) || GDKfatal("HASHfnd: hash build failed on %s.\n", BATgetId((y).b))) \
 		HASHloop((y), (y).b->H->hash, _i, (z)) {			\
@@ -161,13 +161,13 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 
 @= hashins
 #define HASHins_@1(h, i, v) {			\
-	hash_t _c = hash_@1(h,v);		\
+	BUN _c = hash_@1(h,v);		\
 	h->link[i] = h->hash[_c];		\
 	h->hash[_c] = i;			\
 }
 @h
 #define HASHins_str(h,i,v) {			\
-	hash_t _c;				\
+	BUN _c;				\
 	GDK_STRHASH(v,_c);			\
 	_c &= (h)->mask;			\
 	h->link[i] = h->hash[_c];		\
@@ -175,7 +175,7 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 }
 
 #define HASHins_any(h,i,v) {			\
-	hash_t _c = HASHprobe(h, v);		\
+	BUN _c = HASHprobe(h, v);		\
 	h->link[i] = h->hash[_c];		\
 	h->hash[_c] = i;			\
 }
@@ -211,11 +211,11 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 	if (next && h->link[i+1] == i) {				\
 		h->link[i+1] = h->link[i];				\
 	} else {							\
-		size_t _c = HASHprobe(h, v);				\
+		BUN _c = HASHprobe(h, v);				\
 		if (h->hash[_c] == i) {					\
 			h->hash[_c] = h->link[i];			\
 		} else {						\
-			for(_c = h->hash[_c]; _c != HASH_MAX; 		\
+			for(_c = h->hash[_c]; _c != BUN_NONE; 		\
 					_c = h->link[_c]){ 		\
 				if (h->link[_c] == i) {			\
 					h->link[_c] = h->link[i];	\
@@ -223,18 +223,18 @@ and a pointer to the value to be stored. An entry is removed by @%HASdel@.
 				}					\
 			}						\
 		}							\
-	} h->link[i] = HASH_MAX;					\
+	} h->link[i] = BUN_NONE;					\
 }
 
 #define HASHmove(h, i, j, v, next) {					\
 	if (next && h->link[i+1] == i) {				\
 		h->link[i+1] = j;					\
 	} else {							\
-		size_t _c = HASHprobe(h, v);				\
+		BUN _c = HASHprobe(h, v);				\
 		if (h->hash[_c] == i) {					\
 			h->hash[_c] = j;				\
 		} else {						\
-			for(_c = h->hash[_c]; _c != HASH_MAX; 		\
+			for(_c = h->hash[_c]; _c != BUN_NONE; 		\
 					_c = h->link[_c]){ 		\
 				if (h->link[_c] == i) {			\
 					h->link[_c] = j;		\
@@ -269,10 +269,10 @@ larger. This converges after three cycles to direct hashing.
 #include "monetdb_config.h"
 #include "gdk.h"
 
-hash_t
-HASHmask(size_t cnt)
+BUN
+HASHmask(BUN cnt)
 {
-	size_t m = 8;		/* minumum size */
+	BUN m = 8;		/* minimum size */
 
 	while (m + m < cnt)
 		m += m;
@@ -284,25 +284,25 @@ HASHmask(size_t cnt)
 static void
 HASHclear(Hash *h)
 {
-	hash_t *i, *j;
+	BUN *i, *j;
 
 	for (i = h->hash, j = i + h->mask; i <= j; i++) {
-		*i = HASH_MAX;
+		*i = BUN_NONE;
 	}
 }
 
 Hash *
-HASHnew(Heap *hp, int tpe, size_t size, hash_t mask)
+HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 {
 	Hash *h = NULL;
-	if (HEAPalloc(hp, mask + size, sizeof(hash_t)) < 0)
+	if (HEAPalloc(hp, mask + size, sizeof(BUN)) < 0)
 		return NULL;
 	h = (Hash *) GDKmalloc(sizeof(Hash));
 	if (!h)
 		return h;
 	h->lim = size;
 	h->mask = mask - 1;
-	h->link = (hash_t *) hp->base;
+	h->link = (BUN *) hp->base;
 	h->hash = h->link + h->lim;
 	h->type = tpe;
 	h->heap = hp;
@@ -314,12 +314,12 @@ HASHnew(Heap *hp, int tpe, size_t size, hash_t mask)
 	{
 		@1 *v = (@1*)BUNhloc(bi, 0);
 		for (; r < p; r++) {
-			hash_t c = hash_@1(h, v+r);
+			BUN c = hash_@1(h, v+r);
 
-			if (h->hash[c] == HASH_MAX && nslots-- == 0) 
+			if (h->hash[c] == BUN_NONE && nslots-- == 0) 
 				break; /* mask too full */
 			h->link[r] = h->hash[c];
-			h->hash[c] = (hash_t)r;
+			h->hash[c] = r;
 		}
 	}
 	break;
@@ -327,10 +327,10 @@ HASHnew(Heap *hp, int tpe, size_t size, hash_t mask)
 	{
 		@1 *v = (@1*)BUNhloc(bi, 0);
 		for (; p < q; p++) {
-			hash_t c = hash_@1(h, v+p);
+			BUN c = hash_@1(h, v+p);
 	
 			h->link[p] = h->hash[c];
-			h->hash[c] = (hash_t)p;
+			h->hash[c] = p;
 		}
 	}
 	break;
@@ -340,7 +340,7 @@ Its argument is the element type and the maximum number of BUNs
 be stored under the hash function.
 @c
 BAT *
-BAThash(BAT *b, size_t masksize)
+BAThash(BAT *b, BUN masksize)
 {
 	BAT *o = NULL;
 
@@ -357,8 +357,8 @@ BAThash(BAT *b, size_t masksize)
 	gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
 	if (b->H->hash == NULL) {
 		unsigned int tpe = ATOMstorage(b->htype);
-		size_t cnt = BATcount(b);
-		hash_t mask;
+		BUN cnt = BATcount(b);
+		BUN mask;
 		BUN p = BUNfirst(b), q = BUNlast(b), r;
 		Hash *h = NULL;
 		Heap *hp = NULL;
@@ -398,7 +398,7 @@ BAThash(BAT *b, size_t masksize)
 		if (mask < 1024)
 			mask = 1024;
 		do {
-			size_t nslots = mask >> 3;	/* 1/8 full is too full */
+			BUN nslots = mask >> 3;	/* 1/8 full is too full */
 
 			r = BUNfirst(b);
 			if (hp) {
@@ -413,7 +413,7 @@ BAThash(BAT *b, size_t masksize)
 				sprintf(hp->filename, "%s.%chash", nme, b->batCacheid > 0 ? 'h' : 't');
 			if (hp == NULL || 
 			    hp->filename == NULL ||
-			    (h = HASHnew(hp, ATOMtype(b->htype), BATcapacity(b), (size_t) mask)) == NULL) {
+			    (h = HASHnew(hp, ATOMtype(b->htype), BATcapacity(b), mask)) == NULL) {
 				gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
 				GDKfree(hp->filename);
 				GDKfree(hp);
@@ -448,13 +448,13 @@ BAThash(BAT *b, size_t masksize)
 			default:
 				for (; r < p; r++) {
 					ptr v = BUNhead(bi, r);
-					hash_t c = hash_any(h, v);
+					BUN c = hash_any(h, v);
 
-					if (h->hash[c] == HASH_MAX && 
+					if (h->hash[c] == BUN_NONE && 
 					    nslots-- == 0) 
 						break; /* mask too full */
 					h->link[r] = h->hash[c];
-					h->hash[c] = (hash_t)r;
+					h->hash[c] = r;
 				}
 	break;
 			}
@@ -488,10 +488,10 @@ BAThash(BAT *b, size_t masksize)
 		default:
 			for (; p < q; p++) {
 				ptr v = BUNhead(bi, p);
-				hash_t c = hash_any(h, v);
+				BUN c = hash_any(h, v);
 
 				h->link[p] = h->hash[c];
-				h->hash[c] = (hash_t)p;
+				h->hash[c] = p;
 			}
 			break;
 		}
@@ -512,7 +512,7 @@ BAThash(BAT *b, size_t masksize)
 The entry on which a value hashes can be calculated with the
 routine @%HASHprobe@.
 @c
-hash_t
+BUN
 HASHprobe(Hash *h, ptr v)
 {
 	switch (ATOMstorage(h->type)) {
@@ -560,7 +560,7 @@ HASHprint(BAT *b)
 	if (bn == NULL)
 		return NULL;
 	BATloop(b, p, q) {
-		size_t i = HASHprobe(b->H->hash, BUNhead(bi, p));
+		BUN i = HASHprobe(b->H->hash, BUNhead(bi, p));
 
 		bunfastins(bn, BUNhead(bi, p), &i);
 	}
@@ -572,17 +572,17 @@ HASHprint(BAT *b)
 	return NULL;
 }
 
-hash_t
-HASHlist(Hash *h, size_t i)
+BUN
+HASHlist(Hash *h, BUN i)
 {
-	hash_t j;
-	hash_t c = 1;
+	BUN j;
+	BUN c = 1;
 
-	while ((j = h->link[i]) != HASH_MAX) {
+	while ((j = h->link[i]) != BUN_NONE) {
 		c++;
 		i = j;
 		if (i > h->lim) {
-			stream_printf(GDKout, "hash inconsistency link " SZFMT "\n", i);
+			stream_printf(GDKout, "hash inconsistency link " BUNFMT "\n", i);
 			break;
 		}
 	}
@@ -632,9 +632,9 @@ HASHgonebad(BAT *b, ptr v)
 
 	if (h->mask * 2 < BATcount(b)) {
 		int (*cmp) (ptr, ptr) = BATatoms[b->htype].atomCmp;
-		hash_t cnt, hit, i = h->hash[HASHprobe(h, v)];
+		BUN cnt, hit, i = h->hash[HASHprobe(h, v)];
 
-		for (cnt = hit = 1; i != HASH_MAX; i = h->link[i], cnt++)
+		for (cnt = hit = 1; i != BUN_NONE; i = h->link[i], cnt++)
 			hit += ((*cmp) (v, BUNhead(bi, i)) == 0);
 
 		if (cnt / hit > 4)
@@ -727,7 +727,7 @@ BUN
 SORTfndfirst_@2(BAT *b, ptr v)
 {
 	BUN end = BUNfirst(b), cur = end;
-	size_t lo = end, hi = BUNlast(b);
+	BUN lo = end, hi = BUNlast(b);
 	int cmp = 1;
 	BATiter bi = bat_iterator(b);
 
@@ -737,7 +737,7 @@ SORTfndfirst_@2(BAT *b, ptr v)
 		return cur;
 	}
 	while (lo < hi) {
-		size_t mid = (lo + hi) >> 1;
+		BUN mid = (lo + hi) >> 1;
 
 		cur = mid;
 		cmp = @3_CMP(BUNt@1(bi, cur), v, @4);
@@ -764,7 +764,7 @@ BUN
 SORTfndlast_@2(BAT *b, ptr v)
 {
 	BUN end = BUNlast(b), cur = end;
-	size_t lo = BUNfirst(b), hi = end;
+	BUN lo = BUNfirst(b), hi = end;
 	int cmp = 1;
 	BATiter bi = bat_iterator(b);
 
@@ -774,7 +774,7 @@ SORTfndlast_@2(BAT *b, ptr v)
 		return cur;
 	}
 	while (lo < hi) {
-		size_t mid = (lo + hi) >> 1;
+		BUN mid = (lo + hi) >> 1;
 		cur = mid;
 		cmp = @3_CMP(BUNt@1(bi, cur), v, @4);
 		if (cmp < 0) {
@@ -801,13 +801,13 @@ BUN
 SORTfnd_@2(BAT *m, ptr v)
 {
 	BAT *b = BATmirror(m);
-	size_t lo = BUNfirst(b), hi = BUNlast(b);
+	BUN lo = BUNfirst(b), hi = BUNlast(b);
 	int cmp = 1;
 	BUN cur = BUN_NONE;
 	BATiter bi = bat_iterator(b);
 
 	while (lo < hi) {
-		size_t mid = (lo + hi) >> 1;
+		BUN mid = (lo + hi) >> 1;
 		cur = mid;
 		cmp = @3_CMP(BUNt@1(bi, cur), v, @4);
 		if (cmp < 0) {

@@ -263,7 +263,7 @@ The result is a [oid,void] bat. */
 		}
 	}
 
-    	BATsetcount(d, dt - (oid*)Hloc(d,BUNfirst(d)));
+    	BATsetcount(d, (BUN) (dt - (oid*)Hloc(d,BUNfirst(d))));
 	d->hsorted = (BATcount(d)<2 || BAThordered(l)&1) ? GDK_SORTED : 0;
 	d->hdense = BATcount(d)<2 || d_hdense;
 	if (d->hdense) {

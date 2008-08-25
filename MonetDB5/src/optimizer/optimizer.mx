@@ -84,7 +84,7 @@ opt_export str QOTclrdebugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 opt_export str QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str QOTshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 opt_export str QOTshowPlan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_export size_t QOTjoinEstimate(BAT *l, BAT *r);
+opt_export BUN QOTjoinEstimate(BAT *l, BAT *r);
 
 #endif /* _OPTIMIZER_H */
 @c

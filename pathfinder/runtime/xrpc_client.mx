@@ -901,7 +901,7 @@ byvalue_request(
         /* we allocate at least _one_ argcnt for each parameter, so that
          * we have a place to note that a function has zero parameter */
         if (!(argcnt[i] = GDKmalloc((arity>0?arity:1) * sizeof(lng)))) {
-            GDKerror("byvalue_request: failed to malloc argcnt[" SZFMT "]\n", i);
+            GDKerror("byvalue_request: failed to malloc argcnt[" LLFMT "]\n", i);
             return clean_up(bs, argcnt, iterc);
         }
         argcnt[i][0] = 0;

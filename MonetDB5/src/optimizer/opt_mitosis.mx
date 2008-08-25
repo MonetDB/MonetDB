@@ -70,7 +70,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str schema=0, table=0;
 	VarRecord low,hgh;
 	oid slice;
-	ssize_t r=0,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
+	BUN r=0,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old;
 	VarPtr v;
 	int *parts= (int*) alloca(sizeof(int)* GDKnr_threads);
@@ -89,8 +89,12 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				  getFunctionId(q)==bindidxRef ))
 			continue;
 		v= varGetProp(mb, getArg(q,0), rowsProp);
-		if (v)
-			r= v->value.val.ival;
+		if (v && v->value.val.ival >= 0
+#if SIZEOF_BUN <= SIZEOF_INT
+		    && v->value.val.ival <= BUN_MAX
+#endif
+		   )
+			r= (BUN) v->value.val.ival;
 		if (r >= rowcnt){
 			schema = getVarConstant(mb, getArg(q,1)).val.sval;
 			table = getVarConstant(mb, getArg(q,2)).val.sval;
@@ -100,7 +104,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 	}
 
-	if (schema == 0 || rowcnt < GDKnr_threads)
+	if (schema == 0 || (size_t) rowcnt < (size_t) GDKnr_threads)
 		return 0;
 #ifdef _DEBUG_OPT_MITOSIS
 	stream_printf(cntxt->fdout,"opt_mitosis: target is %s.%s on %d threads\n",
@@ -140,14 +144,14 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		q= newStmt(mb,"bat","partition");
 		q->argc=0;
-		slice= rowcnt/GDKnr_threads;
+		slice= (BUN) (rowcnt/GDKnr_threads);
 		hgh.value.vtype= low.value.vtype= TYPE_oid;
 		low.value.val.oval= 0;
 		for(j=0;j<GDKnr_threads;j++){
 			if (j+1<GDKnr_threads)
 				hgh.value.val.oval= low.value.val.oval+slice;
 			else
-				hgh.value.val.oval= rowcnt;
+				hgh.value.val.oval= (oid) rowcnt;
 
 			parts[j]= newTmpVariable(mb,tpe);
 			setVarUsed(mb,parts[j]);

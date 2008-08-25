@@ -252,7 +252,7 @@ static int
 table_check(sql_trans *tr, sql_table *t)
 {
 	node *n = cs_first_node(&t->columns);
-	ssize_t cnt = -1;
+	BUN cnt = BUN_NONE;
 
 	(void)tr;
 	for (; n; n = n->next) {
@@ -260,9 +260,9 @@ table_check(sql_trans *tr, sql_table *t)
 		sql_delta *bat = c->data;
 		BAT *b = temp_descriptor(bat->bid);
 
-		if (cnt == -1) {
+		if (cnt == BUN_NONE) {
 			cnt = BATcount(b);
-		} else if (cnt != (ssize_t)BATcount(b)) {
+		} else if (cnt != BATcount(b)) {
 			assert(0);
 			return (int)(cnt - BATcount(b));
 		}

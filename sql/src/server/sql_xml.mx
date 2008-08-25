@@ -362,7 +362,7 @@ sql_xml(mvc *sql, scope *scp, symbol *s, group *grp, stmt *subset, int f, exp_ki
 		ret = sql_xmltext(sql, scp, s, grp, subset, f, knd);
 		break;
 	default:
-		return sql_error(sql, 01, "XML statement unknown symbol(%ld)->token = %s", (long) s, token2string(s->token));
+		return sql_error(sql, 01, "XML statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 	return ret;
 }

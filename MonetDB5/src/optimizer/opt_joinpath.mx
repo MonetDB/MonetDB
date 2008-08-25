@@ -250,12 +250,12 @@ For the time being we limit ourself to a default of 1Kelements
 @c
 /*#define SAMPLE_THRESHOLD_lOG 17*/
 #define SMALL_OPERAND	1024
-size_t
+BUN
 ALGjoinCost(BAT *l, BAT *r)
 {
-	size_t lc, rc;
+	BUN lc, rc;
 #if 0
-	size_t lsize,rsize;
+	BUN lsize,rsize;
 	BAT *lsample, *rsample, *j; 
 #endif
 
@@ -287,6 +287,8 @@ ALGjoinCost(BAT *l, BAT *r)
 		return rc;
 	if (lc < SMALL_OPERAND )
 		return lc;
+	if (lc * rc >= BUN_MAX)
+		return BUN_MAX;
 	return lc * rc;
 }
 @-
@@ -300,7 +302,7 @@ BAT *
 ALGjoinPathBody(Client cntxt, int top, BAT **joins)
 {
 	BAT *b;
-	size_t estimate, e;
+	BUN estimate, e;
 	int i, j;
 
 	/* solve the join by pairing the smallest first */
@@ -328,7 +330,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins)
 BEWARE. you may not use a size estimation, because it
 may fire a BATproperty check in a few cases.
 @c
-		b = BATjoin(joins[j], joins[j + 1], oid_nil);
+		b = BATjoin(joins[j], joins[j + 1], BUN_NONE);
 		if (b==NULL)
 			return NULL;
 #ifdef DEBUG_OPT_JOINPATH
@@ -346,7 +348,7 @@ may fire a BATproperty check in a few cases.
 #ifdef DEBUG_OPT_JOINPATH
 	stream_printf(cntxt->fdout, "final join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
 #endif
-	b = BATjoin(joins[0], joins[1], oid_nil);
+	b = BATjoin(joins[0], joins[1], BUN_NONE);
 	BBPdecref(joins[0]->batCacheid, FALSE);
 	BBPdecref(joins[1]->batCacheid, FALSE);
 	if (b && !(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);

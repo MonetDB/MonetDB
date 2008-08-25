@@ -143,7 +143,7 @@ bitvector_set(BAT *b_src, wrd *bnum)
 
 	entry = *bnum / (sizeof(lng) * 8);
 	if (BATcount(b_src) < entry + 1) {
-		GDKerror("bitvector_set: BAT too small " SZFMT " < " SZFMT "\n", BATcount(b_src), entry + 1);
+		GDKerror("bitvector_set: BAT too small " BUNFMT " < " SZFMT "\n", BATcount(b_src), entry + 1);
 		return GDK_FAIL;
 	}
 
@@ -161,7 +161,7 @@ bitvector_isset(bit *rv, BAT *b_src, wrd *bnum)
 
 	entry = *bnum / (sizeof(lng) * 8);
 	if (BATcount(b_src) < entry + 1) {
-		GDKerror("bitvector_isset: BAT too small " SZFMT " < " SZFMT "\n", BATcount(b_src), entry + 1);
+		GDKerror("bitvector_isset: BAT too small " BUNFMT " < " SZFMT "\n", BATcount(b_src), entry + 1);
 		return GDK_FAIL;
 	}
 
@@ -178,7 +178,7 @@ bitvector_clr(BAT *b_src, wrd *bnum)
 
 	entry = *bnum / (sizeof(lng) * 8);
 	if (BATcount(b_src) < entry + 1) {
-		GDKerror("bitvector_clr: BAT too small " SZFMT " < " SZFMT "\n", BATcount(b_src), entry + 1);
+		GDKerror("bitvector_clr: BAT too small " BUNFMT " < " SZFMT "\n", BATcount(b_src), entry + 1);
 		return GDK_FAIL;
 	}
 
@@ -196,7 +196,7 @@ bitvector_isclr(bit *rv, BAT *b_src, wrd *bnum)
 
 	entry = *bnum / (sizeof(lng) * 8);
 	if (BATcount(b_src) < entry + 1) {
-		GDKerror("bitvector_isclr: BAT too small " SZFMT " < " SZFMT "\n", BATcount(b_src), entry + 1);
+		GDKerror("bitvector_isclr: BAT too small " BUNFMT " < " SZFMT "\n", BATcount(b_src), entry + 1);
 		return GDK_FAIL;
 	}
 

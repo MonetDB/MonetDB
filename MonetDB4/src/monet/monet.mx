@@ -401,7 +401,7 @@ monet_hello(stream *out)
 		stream_printf(out, "# Copyright (c) 1993-2008, CWI. "
 			      "All rights reserved.\n");
 		stream_printf(out, "# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs; %s linked.\n", 
-		                   monet_arch, (size_t) (sizeof(ptr) * 8), (size_t) (sizeof(oid) * 8), linkinfo);
+		                   monet_arch, sizeof(ptr) * 8, sizeof(oid) * 8, linkinfo);
 		stream_printf(out, "# Visit http://monetdb.cwi.nl/ for further information.\n");
 	}
 }

@@ -344,8 +344,8 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
         GDKfree(prods);
 @c
 @= large_aggr_avg
-	cnt  = (size_t*) GDKmalloc(BATcount(e)*sizeof(size_t));
-	memset(cnt, 0, BATcount(e)*sizeof(size_t));
+	cnt  = (BUN*) GDKmalloc(BATcount(e)*sizeof(BUN));
+	memset(cnt, 0, BATcount(e)*sizeof(BUN));
 	if (BATprepareHash(bn)) {
 		GDKfree(cnt);
 		BBPreclaim(bn);
@@ -375,16 +375,17 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 			*dst = dbl_nil;
 		} else if (*dst != dbl_nil) {
 			*dst = (dbl) (*dst / cnt[yy]);
-		} yy++;
+		}
+		yy++;
 	}
 	GDKfree(cnt);
 @c
 @= small_aggr_avg
 	sums = (dbl*) GDKmalloc(range*sizeof(dbl));
-	cnt  = (size_t*) GDKmalloc(range*sizeof(size_t));
+	cnt  = (BUN*) GDKmalloc(range*sizeof(BUN));
 	for (i = 0; i < range; i++)
 		sums[i] = zero;
-	memset(cnt, 0, range*sizeof(size_t));
+	memset(cnt, 0, range*sizeof(BUN));
 	BATloop(b, p, q) {
 		oid h = (*(oid*) BUNhead(bi,p)) - min;
 		@1 *t = (@1*) BUN@2(bi,p);
@@ -458,10 +459,10 @@ CMDaggr_sum_@1_@3(BAT **ret, BAT *b, BAT *e)
 
 	/* scan b, and add values to sums in-place */
 	if (range > SMALL_AGGR_MAX) {
-		ALGODEBUG THRprintf(GDKout, "#CMDaggr_sum_@1_@3: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  => large_aggr_sum\n",(size_t) range,SMALL_AGGR_MAX);
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_sum_@1_@3: range(=" OIDFMT ") > SMALL_AGGR_MAX(=%d)  => large_aggr_sum\n",range,SMALL_AGGR_MAX);
 		@:large_aggr_sum(@1,@2,@3)@
 	} else {
-		ALGODEBUG THRprintf(GDKout, "#CMDaggr_sum_@1_@3: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  => small_aggr_sum\n",(size_t) range,SMALL_AGGR_MAX);
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_sum_@1_@3: range(=" OIDFMT ") <= SMALL_AGGR_MAX(=%d)  => small_aggr_sum\n",range,SMALL_AGGR_MAX);
 		@:small_aggr_sum(@1,@2,@3)@
 	}
 	*ret = bn;
@@ -510,10 +511,10 @@ CMDaggr_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 
 	/* scan b, and mul values to prods in-place */
 	if (range > SMALL_AGGR_MAX) {
-		ALGODEBUG THRprintf(GDKout, "#CMDaggr_prod_@1_@3: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  => large_aggr_prod\n",(size_t) range,SMALL_AGGR_MAX);
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_prod_@1_@3: range(=" OIDFMT ") > SMALL_AGGR_MAX(=%d)  => large_aggr_prod\n",range,SMALL_AGGR_MAX);
 		@:large_aggr_prod(@1,@2,@3)@
 	} else {
-		ALGODEBUG THRprintf(GDKout, "#CMDaggr_prod_@1_@3: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  => small_aggr_prod\n",(size_t) range,SMALL_AGGR_MAX);
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_prod_@1_@3: range(=" OIDFMT ") <= SMALL_AGGR_MAX(=%d)  => small_aggr_prod\n",range,SMALL_AGGR_MAX);
 		@:small_aggr_prod(@1,@2,@3)@
 	}
 	*ret = bn;
@@ -545,8 +546,8 @@ CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e)
 {
 	BAT *bn = BATnew(e->htype, TYPE_dbl, BATcount(e));
 	BATiter ei = bat_iterator(e), bi = bat_iterator(b), bni = bat_iterator(bn);
-	size_t yy = 0, off;
-	size_t *cnt;
+	BUN yy = 0, off;
+	BUN *cnt;
 	oid i, range, min, max;
 	dbl zero = (dbl) 0, *sums;
 	BUN p, q, r;
@@ -585,10 +586,10 @@ CMDaggr_avg_@1(BAT **ret, BAT *b, BAT *e)
 
 	/* scan b, adding sums, and incrementing counts */
 	if (range > SMALL_AGGR_MAX) {
-		ALGODEBUG THRprintf(GDKout, "#CMDaggr_avg_@1: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_avg\n",(size_t) range,SMALL_AGGR_MAX);
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_avg_@1: range(=" OIDFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_avg\n",range,SMALL_AGGR_MAX);
 		@:large_aggr_avg(@1,@2)@
 	} else {
-		ALGODEBUG THRprintf(GDKout, "#CMDaggr_avg_@1: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_avg\n",(size_t) range,SMALL_AGGR_MAX);
+		ALGODEBUG THRprintf(GDKout, "#CMDaggr_avg_@1: range(=" OIDFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_avg\n",range,SMALL_AGGR_MAX);
 		@:small_aggr_avg(@1,@2)@
 	}
 	*ret = bn;
@@ -611,10 +612,10 @@ TODO: add ALGODEBUG and optimize further?
 int
 CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 {
-	size_t nElements = BATcount(e);
+	BUN nElements = BATcount(e);
 	BAT *bn = *ret = BATnew(e->htype, BATttype(b), nElements);
 	BATiter ei = bat_iterator(e), bi = bat_iterator(b);
-	size_t off, idx = 0;
+	BUN off, idx = 0;
 	int *cnt ;
 	dbl *sum ;
 	dbl *sumsquares ;
@@ -735,7 +736,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 	BATiter ei = bat_iterator(e), bi = bat_iterator(b);
 	int (*cmp)(ptr,ptr);
 	ptr nil;
-	size_t yy = 0, off;
+	BUN yy = 0, off;
 	@3 *extremes;
 	BUN p, q, r;
 
@@ -874,7 +875,7 @@ CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 {
 /* XXX in a large BAT, it is conceivable that there are head elements
    that occur more often than fits in an "int", so the return BAT
-   should really have a tail type of size_t.
+   should really have a tail type of BUN.
  */
 	BAT *bn = BATnew(e->htype, TYPE_int, BATcount(e));
 	BATiter ei = bat_iterator(e), bi = bat_iterator(b), bni = bat_iterator(bn);
@@ -921,21 +922,21 @@ CMDaggr_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	/* scan b, and add increment totals for true values */
 	if (range > SMALL_AGGR_MAX) {
 		if (*ignore_nils) {
-			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (size_t) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" OIDFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", range, SMALL_AGGR_MAX);
 
 			@:large_aggr_count(if(ATOMcmp(btt,t,bt_nil)))@
 		} else {
-			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" SZFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n", (size_t) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" OIDFMT ") > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n", range, SMALL_AGGR_MAX);
 
 			@:large_aggr_count()@
 		}
 	} else {
 		if (*ignore_nils) {
-			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (size_t) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" OIDFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", range, SMALL_AGGR_MAX);
 
 			@:small_aggr_count(if(ATOMcmp(btt,t,bt_nil)))@
 		} else {
-			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" SZFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n", (size_t) range, SMALL_AGGR_MAX);
+			ALGODEBUG THRprintf(GDKout, "#CMDaggr_count: range(=" OIDFMT ") <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n", range, SMALL_AGGR_MAX);
 
 			@:small_aggr_count()@
 		}
@@ -1084,7 +1085,7 @@ int
 CMDcard(wrd *result, BAT *b, wrd *maxelements)
 {
 	BATiter bi = bat_iterator(b);
-	wrd maxsize = *maxelements, cursize = BATcount(b);
+	wrd maxsize = *maxelements, cursize = (wrd) BATcount(b);
 
 	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
 		cursize = 1;
@@ -1109,7 +1110,7 @@ CMDcard(wrd *result, BAT *b, wrd *maxelements)
 			}
 #if 0
 #endif
-			if (maxsize <= (ssize_t) BATcount(b)) {
+			if (maxsize <= (wrd) BATcount(b)) {
 				@:card_bound(BOUNDED)@
 			} else {
 				maxsize = BATcount(b);	/* reducing maxsize limits memory consumption in hash table */

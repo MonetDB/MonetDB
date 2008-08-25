@@ -117,7 +117,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
     chr *kind = NULL, kind_test = *_kind_test;
     BAT *res = NULL;
     BAT *del = NULL;
-    size_t res_size = 0;
+    BUN res_size = 0;
     int *size;
 
     /* --------------------------- checks ---------------------------------- */
@@ -235,10 +235,10 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
         oid fst_ctx = *(oid*)BUNtail(ctx_bati, BUNfirst(ctx_bat));
         oid lst_ctx = 0;
         oid *sdst = 0, *hdst = 0, *tdst = 0;
-        size_t max_size = 0;
+        BUN max_size = 0;
 
         assert((size[fst_ctx] & (1U<<31)) == 0);
-        max_size = res_size = (size_t)(size[fst_ctx] + (int)self);
+        max_size = res_size = (BUN)(size[fst_ctx] + (int)self);
         if ( cand_bat ) {
             if ( BATcount(cand_bat) < res_size ) {
                 res_size = BATcount(cand_bat);
@@ -248,7 +248,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
         res = BATnew(TYPE_oid, TYPE_oid, res_size);
         if (res == NULL) 
         { 
-            GDKerror("%s: could not allocate a result BAT[oid,void] of size " SZFMT ".\n", name, res_size);
+            GDKerror("%s: could not allocate a result BAT[oid,void] of size " BUNFMT ".\n", name, res_size);
             @:ll_return(GDK_FAIL)@
         }
         res_size /= BATcount(iter_bat);
@@ -318,7 +318,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
         res = BATnew(TYPE_oid, TYPE_oid, res_size);
         if (res == NULL) 
         { 
-            GDKerror("%s: could not allocate a result BAT[oid,oid] of size " SZFMT ".\n", name, res_size);
+            GDKerror("%s: could not allocate a result BAT[oid,oid] of size " BUNFMT ".\n", name, res_size);
             @:ll_return(GDK_FAIL)@
         }
 
@@ -379,14 +379,14 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
 
 #define PFll_check_BAT_capacity(b,grow) \
 {\
-        size_t _oldcap = BATcapacity(b);\
-        size_t _reqcap = BATcount(b) + grow;\
-        size_t _bunsize = Hsize(b) + Tsize(b);\
+        BUN _oldcap = BATcapacity(b);\
+        BUN _reqcap = BATcount(b) + grow;\
+        unsigned short _bunsize = Hsize(b) + Tsize(b);\
         if (_oldcap < _reqcap) {\
-            size_t _newcap = MAX(_reqcap, BATgrows(b));\
+            BUN _newcap = MAX(_reqcap, BATgrows(b));\
             if (BATextend((b), _newcap) == NULL) {\
                 GDKerror("%s: BATextend of BAT '%s' (#%d) failed "\
-                         "for " SZFMT " buns (" SZFMT " bytes).\n",\
+                         "for " BUNFMT " buns (" BUNFMT " bytes).\n",\
                          __func__, BATgetId(b), (b)->batCacheid,\
                          _newcap, _newcap * _bunsize);\
                 goto bunins_failed;\
@@ -394,8 +394,8 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
             _newcap = BATcapacity(b);\
             if (_newcap < _reqcap) {\
                 GDKerror("%s: BATextend of BAT '%s' (#%d) failed: "\
-                         "required " SZFMT " buns (" SZFMT " bytes), "\
-                         "got only " SZFMT " buns (" SZFMT " bytes).\n",\
+                         "required " BUNFMT " buns (" BUNFMT " bytes), "\
+                         "got only " BUNFMT " buns (" BUNFMT " bytes).\n",\
                          __func__, BATgetId(b), (b)->batCacheid,\
                          _reqcap, _reqcap * _bunsize,\
                          _newcap, _newcap * _bunsize);\
@@ -413,8 +413,8 @@ typedef struct stack_item_C si_C;
 struct stack_item_C {
     oid eocs;           /* end of ctx scope (pre + size) */
     oid next_child;     /* preorder rank of the next child node */
-    size_t first;       /* first iter row of the actual ctx node */
-    size_t last;        /* last iter row of the actual ctx node */
+    BUN first;          /* first iter row of the actual ctx node */
+    BUN last;           /* last iter row of the actual ctx node */
 };
 
 static int
@@ -427,7 +427,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_ba
     si_C *stack = 0;
     int stack_top = 0;
     oid pre = 0, ctx = 0, cur_ctx = 0;
-    size_t cur_idx = 0, iter_idx = 0;
+    BUN cur_idx = 0, iter_idx = 0;
     BUN ctx_bun = 0, ctx_last = 0;
     oid *cand_cur = (oid*)(cand_bat?Tloc(cand_bat,BUNfirst(cand_bat)):NULL);
     oid *cand_lst = (oid*)(cand_bat?Tloc(cand_bat,BUNlast(cand_bat)-1):NULL);
@@ -601,7 +601,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_ba
 @
 @= inner_loop_child_body
         @1
-        size_t grow = (stack[stack_top-1].last - stack[stack_top-1].first) + 1;
+        BUN grow = (stack[stack_top-1].last - stack[stack_top-1].first) + 1;
         oid *sdst, *hdst, *tdst;
 
         /* check, if result buffer is big enough; otherwise extend it */
@@ -836,12 +836,12 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *ca
 @
 @= inner_loop_descendant
 {
-    size_t grow = 0;
+    BUN grow = 0;
     oid *sdst = NULL, *hdst, *tdst;
 
     @:skip_cands_before_pre@
     if (cnd <= @1) {
-        grow = (size_t)stack_top * ((@1 - cnd) + 1);
+        grow = (BUN)stack_top * ((@1 - cnd) + 1);
 
         /* check, if result buffer is big enough; otherwise extend it */
         PFll_check_BAT_capacity(res, grow);

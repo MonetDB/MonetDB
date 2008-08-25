@@ -253,8 +253,8 @@ replacing their generic versions there.
 #define @1@4_bunfastins(b, h, t)					\
 	do {								\
 		REGISTER BUN _p = BUNlast(b);				\
-		REGISTER size_t _hsize = Hsize(b);			\
-		REGISTER size_t _tsize = Tsize(b);			\
+		REGISTER unsigned short _hsize = Hsize(b);		\
+		REGISTER unsigned short _tsize = Tsize(b);		\
 		if (BATcount(b) + 1 > BATcapacity(b)){			\
 			if (BATextend(b, BATgrows(b)) == NULL)  	\
 				goto bunins_failed; 			\

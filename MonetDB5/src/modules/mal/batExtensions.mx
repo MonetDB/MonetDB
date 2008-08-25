@@ -190,9 +190,9 @@ CMDBATreduce(int *ret, int *bid)
 	if( !isVIEW(b) && b->batSharecnt==0){
 #ifdef TRACE_ADVICE
 		if(b->hhash)
-			printf("found hhash %s %d\n",BBP_logical(b->batCacheid), (int)(BATcount(b) * sizeof(hash_t)));
+			printf("found hhash %s " SZFMT "\n",BBP_logical(b->batCacheid), (size_t) BATcount(b) * sizeof(BUN));
 		if(b->thash)
-			printf("found thash %s %d\n",BBP_logical(b->batCacheid), (int)(BATcount(b) * sizeof(hash_t)));
+			printf("found thash %s " SZFMT "\n",BBP_logical(b->batCacheid), (size_t) BATcount(b) * sizeof(BUN));
 #endif
 		/* disable DeadBeef production */
 		GDKdebug &= ~33554432;
@@ -212,7 +212,7 @@ CMDBATclone(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	BAT *b, *bn;
 	int bid = 0, ht, tt;
 	int *res;
-	size_t cap;
+	BUN cap;
 
 	(void) m;
 	(void) cntxt;
@@ -248,7 +248,7 @@ str
 CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	int ht, tt;
-	size_t cap = 0;
+	BUN cap = 0;
 	int *res;
 
 	(void) cntxt;
@@ -259,9 +259,9 @@ CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		lng lcap = *(lng*) getArgReference(s, p, 3);
 		if (lcap < 0)
 			throw(MAL, "bbp.new", "requested BAT size must not be negative");
-		if (lcap > (lng) GDK_wrd_max)
+		if (lcap > (lng) BUN_MAX)
 			throw(MAL, "bbp.new", "requested BAT exceeds limit");
-		cap = (size_t) lcap;
+		cap = (BUN) lcap;
 	}
 
 	if (ht == TYPE_any || tt == TYPE_any)
@@ -277,7 +277,7 @@ str
 CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
 	int bid, ht, tt;
-	size_t cap = 0;
+	BUN cap = 0;
 	int *res;
 	BAT *b;
 	str msg;
@@ -303,9 +303,9 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 		lng lcap = *(lng *) getArgReference(s, p, 2);
 		if (lcap < 0)
 			throw(MAL, "bbp.new", "requested BAT size must not be negative");
-		if (lcap > (lng) GDK_wrd_max)
+		if (lcap > (lng) BUN_MAX)
 			throw(MAL, "bbp.new", "requested BAT exceeds limit");
-		cap = (size_t) lcap;
+		cap = (BUN) lcap;
 	}
 	else
 		cap = BATcount(b);
@@ -341,7 +341,7 @@ str
 CMDBATnewint(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	int ht, tt, icap;
-	size_t cap = 0;
+	BUN cap = 0;
 	int *res;
 
 	(void) cntxt;
@@ -351,7 +351,7 @@ CMDBATnewint(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	icap = *(int *) getArgReference(s, p, 3);
 	if (icap < 0)
 		throw(MAL, "bbp.new", "requested BAT size must not be negative");
-	cap = (size_t) icap;
+	cap = (BUN) icap;
 	res = (int *) getArgReference(s, p, 0);
 
 	return (str) BKCnewBAT(res, &ht, &tt, &cap);
@@ -481,7 +481,7 @@ CMDbatpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	int *ret;
 	int ht, tt;
-	size_t cap = 0;
+	BUN cap = 0;
 
 	(void) cntxt;
 	ht = getArgType(mb, pci, 1);

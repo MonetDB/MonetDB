@@ -435,11 +435,11 @@ typedef struct Table_t {
 	str rlbrk, rrbrk;	/* row brackets */
 	str properties;		/* of header to display */
 	str title, footer;	/* alternatives */
-	size_t offset;
-	size_t nr;		/* allocated space for table loads */
+	BUN offset;
+	BUN nr;		/* allocated space for table loads */
 	size_t pageLimit;
 	size_t firstrow, lastrow;	/* last window to print */
-	size_t nr_attrs;	/* attributes found sofar */
+	BUN nr_attrs;	/* attributes found sofar */
 	size_t max_attrs;
 	Column *format;		/* remove later */
 	stream *fd;
@@ -457,13 +457,13 @@ typedef struct Table_t {
 } Tablet;
 
 tablet_export BAT *TABLETload(Tablet *as, char *datafile);
-tablet_export size_t TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
-tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr);
+tablet_export BUN TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
+tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, BUN nr);
 
 /* The low level routines are primarilly used by the SQL front-end.*/
-tablet_export int TABLETcreate_bats(Tablet * as, size_t est);
-tablet_export size_t TABLETassign_BATs(Tablet * as, BAT *bats);
-tablet_export ssize_t TABLETload_file(Tablet * as, bstream *b, stream *out);
+tablet_export int TABLETcreate_bats(Tablet * as, BUN est);
+tablet_export BUN TABLETassign_BATs(Tablet * as, BAT *bats);
+tablet_export BUN TABLETload_file(Tablet * as, bstream *b, stream *out);
 tablet_export BAT *TABLETcollect_bats(Tablet * as);
 tablet_export void TABLETdestroy_format(Tablet * as);
 tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
@@ -471,7 +471,7 @@ tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
 tablet_export ptr *TABLETstrFrStr(Column *c, char *s, char *e);
 tablet_export ptr *TABLETadt_frStr(Column *c, int type, char *s, char *e, char quote);
 tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
-tablet_export int insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 );
+tablet_export int insert_line(Tablet * as, char *line, ptr key, BUN col1, BUN col2 );
 tablet_export int output_file_dense(Tablet * as, stream *fd);
 tablet_export int has_whitespace(char *sep);
 
@@ -937,17 +937,17 @@ TABgetPageCnt(int *ret)
 }
 
 static ptr
-bun_tail(BAT *b, size_t nr)
+bun_tail(BAT *b, BUN nr)
 {
 	BATiter bi = bat_iterator(b);
-	REGISTER size_t _i = BUNfirst(b);
+	REGISTER BUN _i = BUNfirst(b);
 
 	return (ptr) BUNtail(bi, _i + nr);
 }
 
 
 static BAT *
-void_bat_create(int adt, size_t nr)
+void_bat_create(int adt, BUN nr)
 {
 	BAT *b = BATnew(TYPE_void, adt, BATTINY);
 
@@ -956,7 +956,7 @@ void_bat_create(int adt, size_t nr)
 		return b;
 	if (BATmirror(b))
 		BATseqbase(b, 0);
-	if (nr > (size_t) REMAP_PAGE_MAXSIZE)
+	if (nr > (BUN) REMAP_PAGE_MAXSIZE)
         	BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 	if (nr > BATTINY && adt)
 		b = BATextend(b, nr);
@@ -1085,7 +1085,7 @@ static Tablet *
 copy_loadformat(Tablet *as){
 	Tablet *ns = (Tablet *) GDKzalloc(sizeof(Tablet));
 	Column *fmt = (Column *) GDKzalloc(sizeof(Column) * (as->nr_attrs + 1));
-	size_t p;
+	BUN p;
 
 	*ns = *as;
 	ns->format = fmt;
@@ -1127,11 +1127,11 @@ copy_loadformat(Tablet *as){
 	}
 	return ns;
 }
-static size_t
+static BUN
 create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 {
-	size_t p;
-	size_t nr_attrs = BATcount(names);
+	BUN p;
+	BUN nr_attrs = BATcount(names);
 	Column *fmt = as->format = (Column *) GDKmalloc(sizeof(Column) * (nr_attrs + 1));
 
 	as->offset = 0;
@@ -1169,12 +1169,11 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 	return as->nr_attrs;
 }
 
-static
-size_t
+static BUN
 create_dumpformat(Tablet * as, BAT *names, BAT *seps, BAT *bats)
 {
-	size_t p;
-	size_t nr_attrs = BATcount(bats);
+	BUN p;
+	BUN nr_attrs = BATcount(bats);
 	Column *fmt = as->format = (Column *) GDKmalloc(sizeof(Column) * (nr_attrs + 1));
 
 	as->offset = 0;
@@ -1189,7 +1188,7 @@ create_dumpformat(Tablet * as, BAT *names, BAT *seps, BAT *bats)
 		BAT *b = (BAT *) BATdescriptor(*(bat *) bun_tail(bats, p));
 
 		if (!b)
-			return ~(size_t) 0;	/* (size_t)(-1) */
+			return BUN_NONE;
 		fmt[p].name = NULL;
 		if (names)
 			fmt[p].name = (char *) bun_tail(names, p);
@@ -1213,7 +1212,7 @@ create_dumpformat(Tablet * as, BAT *names, BAT *seps, BAT *bats)
 void
 TABLETdestroy_format(Tablet * as)
 {
-	size_t p;
+	BUN p;
 	Column *fmt = as->format;
 
 	for (p = 0; p < as->nr_attrs; p++) {
@@ -1230,19 +1229,19 @@ TABLETdestroy_format(Tablet * as)
 	GDKfree(fmt);
 }
 
-size_t
+BUN
 TABLETassign_BATs(Tablet * as, BAT *bats)
 {
 	Column *fmt = as->format;
-	size_t res = as->nr;
-	size_t i;
+	BUN res = as->nr;
+	BUN i;
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		BAT *b = (BAT *) BATdescriptor(*(bat *) bun_tail(bats, i));
 
 		fmt[i].c = (b);
 		fmt[i].ci = bat_iterator(b);
-		if (res == ~(size_t) 0 || BATcount(fmt[i].c) < res)
+		if (res == BUN_NONE || BATcount(fmt[i].c) < res)
 			res = BATcount(fmt[i].c);
 	}
 	as->nr = res;
@@ -1253,8 +1252,8 @@ static oid
 check_BATs(Tablet * as)
 {
 	Column *fmt = as->format;
-	size_t i = 0;
-	size_t cnt;
+	BUN i = 0;
+	BUN cnt;
 	oid base;
 
 	if (fmt[i].c == NULL)
@@ -1267,7 +1266,7 @@ check_BATs(Tablet * as)
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		BAT *b;
-		size_t offset;
+		BUN offset;
 
 		b = fmt[i].c;
 		if (b == NULL)
@@ -1283,16 +1282,16 @@ check_BATs(Tablet * as)
 }
 
 int
-TABLETcreate_bats(Tablet * as, size_t est)
+TABLETcreate_bats(Tablet * as, BUN est)
 {
 	Column *fmt = as->format;
-	size_t i;
+	BUN i;
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		fmt[i].c = void_bat_create(fmt[i].adt, est);
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		if (!fmt[i].c) {
-			GDKerror("TABLETcreate_bats: Failed to create bat of size " SZFMT "\n", as->nr);
+			GDKerror("TABLETcreate_bats: Failed to create bat of size " BUNFMT "\n", as->nr);
 			return -1;
 		}
 	}
@@ -1304,8 +1303,8 @@ TABLETcollect_bats(Tablet * as)
 {
 	BAT *bats = BATnew(TYPE_str, TYPE_bat, as->nr_attrs);
 	Column *fmt = as->format;
-	size_t i;
-	size_t cnt = BATcount(fmt[0].c);
+	BUN i;
+	BUN cnt = BATcount(fmt[0].c);
 
 	if (bats == NULL)
 		return NULL;
@@ -1371,7 +1370,7 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 		/* string needs the quotes included */
 		s = find_quote(s, quote);
 		if (!s) {
-			snprintf(buf,BUFSIZ, "quote '%c' expected but not found in \"%s\" from line " SZFMT "\n", quote, s, BATcount(fmt->c));
+			snprintf(buf,BUFSIZ, "quote '%c' expected but not found in \"%s\" from line " BUNFMT "\n", quote, s, BATcount(fmt->c));
 			*err= GDKstrdup(buf);
 			return -1;
 		}
@@ -1394,7 +1393,7 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 		char *val = (s!=e)?GDKstrdup(s):GDKstrdup("");
 
 		*end = bak;
-		snprintf(buf,BUFSIZ, "value '%s' while parsing '%s' from line " SZFMT " field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c), c, fmt->type);
+		snprintf(buf,BUFSIZ, "value '%s' while parsing '%s' from line " BUNFMT " field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c), c, fmt->type);
 		*err= GDKstrdup(buf);
 		GDKfree(val);
 		return -1;
@@ -1405,7 +1404,7 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 	bunfastins(fmt->c, key, adt);
 	return 0;
 bunins_failed:
-	snprintf(buf,BUFSIZ, "while parsing '%s' from line " SZFMT " field %d not inserted\n", s, BATcount(fmt->c), c);
+	snprintf(buf,BUFSIZ, "while parsing '%s' from line " BUNFMT " field %d not inserted\n", s, BATcount(fmt->c), c);
 	*err= GDKstrdup(buf);
 	return -1;
 }
@@ -1432,11 +1431,11 @@ skip_string(char *s, char quote)
 }
 
 INLINE int
-insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
+insert_line(Tablet * as, char *line, ptr key, BUN col1, BUN col2 )
 {
 	Column *fmt = as->format;
 	char *s, *e = 0, quote=0, seperator = 0;
-	size_t i;
+	BUN i;
 	char errmsg[BUFSIZ];
 
 	for (i = 0; i < as->nr_attrs ; i++) {
@@ -1456,7 +1455,7 @@ insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 			line = skip_string(line, quote);
 			if (!line) {
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
-					"in %s at line " SZFMT "\n", quote, s, BATcount(fmt->c));
+					"in %s at line " BUNFMT "\n", quote, s, BATcount(fmt->c));
 				as->error = GDKstrdup(errmsg);
 				if (!as->tryall)
 					return -1;
@@ -1497,7 +1496,7 @@ insert_line(Tablet * as, char *line, ptr key, size_t col1, size_t col2 )
 				BUNins(as->complaints, NULL, as->error, TRUE);
 			}
 		} else {
-			snprintf(errmsg,BUFSIZ, "missing sep %s line " SZFMT " field " SZFMT "\n", 
+			snprintf(errmsg,BUFSIZ, "missing sep %s line " BUNFMT " field " BUNFMT "\n", 
 				fmt->sep, BATcount(fmt->c), i);
 			as->error = GDKstrdup(errmsg);
 			if (!as->tryall)
@@ -1523,9 +1522,9 @@ TABLET_error(stream *s)
 }
 
 static INLINE int
-dump_line(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attrs, size_t id)
+dump_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, BUN id)
 {
-	size_t i;
+	BUN i;
 
 	for (i = 0; i < nr_attrs; i++) {
 		Column *f;
@@ -1553,9 +1552,9 @@ dump_line(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attrs, size_
 }
 
 static INLINE int
-output_line(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attrs, ptr id)
+output_line(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, ptr id)
 {
-	size_t i;
+	BUN i;
 
 	for (i = 0; i < nr_attrs; i++) {
 		if (fmt[i].c == NULL)
@@ -1593,9 +1592,9 @@ output_line(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attrs, ptr
 }
 
 static INLINE int
-output_line_dense(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attrs)
+output_line_dense(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs)
 {
-	size_t i;
+	BUN i;
 
 	for (i = 0; i < nr_attrs; i++) {
 		Column *f = fmt + i;
@@ -1621,9 +1620,9 @@ output_line_dense(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attr
 }
 
 static INLINE int
-output_line_lookup(char **buf, int *len, Column * fmt, stream *fd, size_t nr_attrs, size_t id)
+output_line_lookup(char **buf, int *len, Column * fmt, stream *fd, BUN nr_attrs, BUN id)
 {
-	size_t i;
+	BUN i;
 
 	for (i = 0; i < nr_attrs; i++) {
 		Column *f = fmt + i;
@@ -1693,15 +1692,15 @@ otherwise we end up with a gross concurrency control problem.
 The resulting BATs should be glued at the final phase.
 @c
 
-static ssize_t
-TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, int start, ssize_t limit)
+static BUN
+TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int start, ssize_t limit)
 {
 	int res = 0, done = 0;
-	size_t i = 0;
+	BUN i = 0;
 	char *sep = as->format[as->nr_attrs - 1].sep;
 	int seplen = as->format[as->nr_attrs - 1].seplen;
-	size_t offset = as->offset;
-	size_t nr = offset + as->nr;
+	BUN offset = as->offset;
+	BUN nr = offset + as->nr;
 	int started = !start;
 
 	if (tablet_debug)
@@ -1710,12 +1709,12 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKstdout,"load_bulk %d\n",start);
 #endif
-	while ((b->pos < b->len || !b->eof) && res == 0 && limit >= 0 && (nr == ~(size_t) 0 || i < nr)) {
+	while ((b->pos < b->len || !b->eof) && res == 0 && limit >= 0 && (nr == BUN_NONE || i < nr)) {
 		char *s, *end;
 
 
 		if (b->pos >= b->len && read_more(b, out, b->size - (b->len - b->pos)) == EOF) {
-			if (nr != ~(size_t)0 && i < nr) {
+			if (nr != BUN_NONE && i < nr) {
 				res = 1; 
 				if (b->len > b->pos) {
 					GDKerror("TABLETload_bulk: read error (after loading %d records)\n", BATcount(as->format[0].c));
@@ -1778,10 +1777,10 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 			/* ignored partial record from previous block */
 			started = 1;
 			if (tablet_debug && (i % 100000) == 0)
-				stream_printf(GDKerr, "inserted " SZFMT "\n", i);
+				stream_printf(GDKerr, "inserted " BUNFMT "\n", i);
 			if ((i % 100000) == 0)
 				sync_bats(as);
-			if (nr != ~(size_t) 0 && i >= nr)
+			if (nr != BUN_NONE && i >= nr)
 				break;
 		}
 	}
@@ -1791,8 +1790,8 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, size_t col1, size_t col2, 
 #endif
 	as->nr = i-offset;
 	if (res < 0)
-		return res;
-	return (ssize_t) as->nr;
+		return BUN_NONE;
+	return as->nr;
 }
 @-
 To speed up loading ascii files we have to determine the number of blocks.
@@ -1822,11 +1821,11 @@ static void TABLETload_chunk(void *data){
 
 static int nway = 0;
 
-ssize_t
+BUN
 TABLETload_file(Tablet * as, bstream *b, stream *out)
 {
 	char *error = NULL;
-	size_t piece, cnt=0, size;
+	BUN piece, cnt=0, size;
 	int i,j;
 	FILE *f;
 	Tablet **partition = NULL;
@@ -1836,7 +1835,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 	partition = (Tablet**)alloca(sizeof(Tablet*)*nway);	
 
 	/* Detect the block streams over files */
-	if (as->offset || (as->nr != ~(size_t)0 && as->nr < 10000) || 
+	if (as->offset || (as->nr != BUN_NONE && as->nr < 10000) || 
 	    (f = getFile(b->s)) == NULL)
 		return TABLETload_bulk(as, b, out, 0, as->nr_attrs, 0, INT_MAX);
 
@@ -1856,7 +1855,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 
 	/* prepare the tablet descriptors */
 	for( i=0; i<nway; i++) {
-		size_t sz = (as->nr != ~(size_t)0)?as->nr/nway:0;
+		BUN sz = (as->nr != BUN_NONE)?as->nr/nway:0;
 		partition[i] = copy_loadformat(as);
 		/* private copy of stream is needed */
 		partition[i]->input = bstream_create(dupFileStream(b->s),SIZE);
@@ -1867,7 +1866,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 				TABLETdestroy_format(partition[i]);
 			}
 			GDKerror("TABLETload_file:could not allocate bats \n");
-			return -1;
+			return BUN_NONE;
 		}
 	}
 
@@ -1929,15 +1928,15 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 	}
 	if (error) {
 		as->error = GDKstrdup(error);
-		return -1;
+		return BUN_NONE;
 	}
-	return (ssize_t) cnt;
+	return cnt;
 }
 
 static int
 dump_file(Tablet * as, stream *fd)
 {
-	size_t i = 0;
+	BUN i = 0;
 	int len = BUFSIZ;
 	char *buf = GDKmalloc(len);
 
@@ -1947,7 +1946,7 @@ dump_file(Tablet * as, stream *fd)
 			return -1;
 		}
 		if (tablet_debug && (i % 1000000) == 0)
-			stream_printf(GDKerr, "dumped " SZFMT " lines\n", i);
+			stream_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
 	}
 	GDKfree(buf);
 	return 0;
@@ -1959,8 +1958,8 @@ output_file_default(Tablet * as, BAT *order, stream *fd)
 	int len = BUFSIZ, res = 0;
 	char *buf = GDKmalloc(len);
 	BUN p, q;
-	size_t i = 0;
-	size_t offset = BUNfirst(order) + as->offset;
+	BUN i = 0;
+	BUN offset = BUNfirst(order) + as->offset;
 	BATiter orderi = bat_iterator(order);
 
 	for (q = offset + as->nr, p = offset; p < q; p++) {
@@ -1972,7 +1971,7 @@ output_file_default(Tablet * as, BAT *order, stream *fd)
 		}
 		i++;
 		if (tablet_debug && (i % 1000000) == 0)
-			stream_printf(GDKerr, "dumped " SZFMT " lines\n", i);
+			stream_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
 	}
 	GDKfree(buf);
 	return res;
@@ -1983,7 +1982,7 @@ output_file_dense(Tablet * as, stream *fd)
 {
 	int len = BUFSIZ, res = 0;
 	char *buf = GDKmalloc(len);
-	size_t i = 0;
+	BUN i = 0;
 
 	for (i = 0; i < as->nr; i++) {
 		if ((res = output_line_dense(&buf, &len, as->format, fd, as->nr_attrs)) < 0) {
@@ -1991,7 +1990,7 @@ output_file_dense(Tablet * as, stream *fd)
 			return res;
 		}
 		if (tablet_debug && (i % 1000000) == 0)
-			stream_printf(GDKerr, "dumped " SZFMT " lines\n", i);
+			stream_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
 	}
 	GDKfree(buf);
 	return res;
@@ -2003,19 +2002,19 @@ output_file_ordered(Tablet * as, BAT *order, stream *fd, oid base)
 	int len = BUFSIZ, res = 0;
 	char *buf = GDKmalloc(len);
 	BUN p, q;
-	size_t i = 0;
-	size_t offset = BUNfirst(order) + as->offset;
+	BUN i = 0;
+	BUN offset = BUNfirst(order) + as->offset;
 	BATiter orderi = bat_iterator(order);
 
-	for (q = offset + as->nr, p = offset; p < q; p++) {
-		size_t h = *(oid *) BUNhead(orderi, p) - base;
+	for (q = offset + as->nr, p = offset; p < q; p++, i++) {
+		BUN h = (BUN) (*(oid *) BUNhead(orderi, p) - base);
 
 		if ((res = output_line_lookup(&buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
 			GDKfree(buf);
 			return res;
 		}
 		if (tablet_debug && (i % 1000000) == 0)
-			stream_printf(GDKerr, "dumped " SZFMT " lines\n", i);
+			stream_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
 	}
 	GDKfree(buf);
 	return res;
@@ -2024,7 +2023,7 @@ output_file_ordered(Tablet * as, BAT *order, stream *fd, oid base)
 @-
 Estimate the size of a BAT to avoid multiple extends.
 @c
-static size_t
+static BUN
 estimator(char *datafile){
 	long size;
 	char buf[BUFSIZ+1],*s=buf;
@@ -2046,8 +2045,8 @@ estimator(char *datafile){
 	size= ftell(f);
 	fclose(f);
 	if( nr == 0) 
-		return size/BUFSIZ;
-	return size/BUFSIZ/nr;
+		return (BUN) (size/BUFSIZ);
+	return (BUN) (size/BUFSIZ/nr);
 }
 
 BAT *
@@ -2056,7 +2055,7 @@ TABLETload(Tablet *as, char *datafile)
 	BAT *res= NULL;
 	stream *s = open_rastream(datafile);
 	bstream *b = NULL;
-	size_t est = as->nr;
+	BUN est = as->nr;
 
 	if (s == NULL || stream_errnr(s)) {
 		GDKerror("could not open file %s\n", datafile);
@@ -2064,11 +2063,11 @@ TABLETload(Tablet *as, char *datafile)
 			stream_destroy(s);
 		return NULL;
 	}
-	if (as->nr == ~(size_t) 0)
+	if (as->nr == BUN_NONE)
 		est = estimator(datafile);
 
-	if ( TABLETcreate_bats(as, est) >= 0 &&
-		 TABLETload_file(as, b = bstream_create(s, SIZE), NULL) >= 0)
+	if ( TABLETcreate_bats(as, est) == 0 &&
+		 TABLETload_file(as, b = bstream_create(s, SIZE), NULL) != BUN_NONE)
 		res = TABLETcollect_bats(as);
 	bstream_destroy(b);
 	stream_close(s);
@@ -2078,13 +2077,13 @@ TABLETload(Tablet *as, char *datafile)
 }
 
 void
-TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr)
+TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, BUN nr)
 {
 	Tablet as;
 
 	as.nr_attrs = 0;
 	as.nr = nr;
-	if (create_dumpformat(&as, names, seps, bats) != ~(size_t) 0 && TABLETassign_BATs(&as, bats) != ~(size_t) 0) {
+	if (create_dumpformat(&as, names, seps, bats) != BUN_NONE && TABLETassign_BATs(&as, bats) != BUN_NONE) {
 		stream *s = open_wastream(datafile);
 
 		if (s != NULL && !stream_errnr(s) && dump_file(&as, s) >= 0) {
@@ -2104,14 +2103,14 @@ int
 TABLEToutput_file(Tablet * as, BAT *order, stream *s)
 {
 	oid base = oid_nil;
-	size_t maxnr = BATcount(order);
+	BUN maxnr = BATcount(order);
 
 	/* only set nr if it is zero or lower (bogus) to the maximum value
 	 * possible (BATcount), if already set within BATcount range,
 	 * preserve value such that for instance SQL's reply_size still
 	 * works
 	 */
-	if (as->nr == ~(size_t)0 || as->nr > maxnr)
+	if (as->nr == BUN_NONE || as->nr > maxnr)
 		as->nr = maxnr;
 
 	if ((base = check_BATs(as)) != oid_nil) {
@@ -2124,27 +2123,27 @@ TABLEToutput_file(Tablet * as, BAT *order, stream *s)
 	}
 }
 
-size_t
+BUN
 TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s)
 {
 	int res = 0;
 	Tablet as;
 
 	as.nr_attrs = 0;
-	as.nr = ~(size_t) 0;
-	if (create_dumpformat(&as, NULL, seps, bats) != ~(size_t) 0 && TABLETassign_BATs(&as, bats) != ~(size_t) 0) {
+	as.nr = BUN_NONE;
+	if (create_dumpformat(&as, NULL, seps, bats) != BUN_NONE && TABLETassign_BATs(&as, bats) != BUN_NONE) {
 		res = TABLEToutput_file(&as, order, s);
 	}
 	TABLETdestroy_format(&as);
 	if (res >= 0)
 		return as.nr;
-	return ~(size_t) 0;
+	return BUN_NONE;
 }
 
 static void
 tablet_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *N)
 {
-	size_t nr = ~(size_t)0;
+	BUN nr = BUN_NONE;
 	Tablet as;
 
 	if (*N >= 0)
@@ -2156,7 +2155,7 @@ tablet_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *N)
 	as.input = NULL;
 	as.output = NULL;
 
-	if (create_loadformat(&as, names, seps, types) != ~(size_t) 0 )
+	if (create_loadformat(&as, names, seps, types) != BUN_NONE )
 		*bats = TABLETload(&as, datafile);
 }
 
@@ -2257,9 +2256,9 @@ CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *
 	as.input = NULL;
 	as.output = NULL;
 
-	if (create_loadformat(&as, names, seps, types) != ~(size_t) 0 && 
-		TABLETcreate_bats(&as, (size_t) 0) >= 0  &&
-		TABLETload_file(&as, bs = bstream_create(*(stream **) s,SIZE), NULL) >= 0)
+	if (create_loadformat(&as, names, seps, types) != BUN_NONE && 
+		TABLETcreate_bats(&as, (BUN) 0) == 0  &&
+		TABLETload_file(&as, bs = bstream_create(*(stream **) s,SIZE), NULL) != BUN_NONE)
 			bn = TABLETcollect_bats(&as);
 	TABLETdestroy_format(&as);
 
@@ -2391,7 +2390,7 @@ static int
 isBATVector(Tablet * t)
 {
 	unsigned int i;
-	size_t cnt;
+	BUN cnt;
 
 	if (t->columns[0].c == 0)
 		return 0;
@@ -2507,7 +2506,7 @@ TABshowHeader(Tablet * t)
 				if (strcmp(p, "base") == 0) {
 					char buf[BUFSIZ];
 
-					sprintf(buf, SZFMT, (size_t)c->c->hseqbase);
+					sprintf(buf, OIDFMT, c->c->hseqbase);
 					prop = GDKstrdup(buf);
 				}
 				if (strcmp(p, "sorted") == 0) {
@@ -2663,12 +2662,12 @@ TABshowRow(Tablet * t)
 void
 TABshowRange(Tablet * t, lng first, lng last)
 {
-	size_t i,j;
+	BUN i,j;
 	oid k;
 	BATiter pi;
 
-	assert(first <= (lng)GDK_oid_max);
-	assert(last  <= (lng)GDK_oid_max);
+	assert(first <= (lng)BUN_MAX);
+	assert(last  <= (lng)BUN_MAX);
 
 	i = BATcount(t->columns[0].c);
 	if (last < 0 || last > (lng) i)
@@ -2677,7 +2676,7 @@ TABshowRange(Tablet * t, lng first, lng last)
 		first = 0;
 
 	pi = bat_iterator(t->pivot);
-	for (i = (size_t) first; i < (size_t) last; i++) {
+	for (i = (BUN) first; i < (BUN) last; i++) {
 		if (t->pivot) {
 			k = *(oid *) BUNtail(pi, i);
 		} else
@@ -2724,7 +2723,7 @@ static int
 setTabwidth(Column * c)
 {
 	strFcn tostr = printfcn(c->c);
-	size_t cnt = BATcount(c->c);
+	BUN cnt = BATcount(c->c);
 	int ret = 0;
 	unsigned int max;
 	int t = BATttype(c->c);
@@ -2747,13 +2746,13 @@ setTabwidth(Column * c)
 		max += (int) strlen(c->rbrk);
 
 	if (t >= 0 && t < GDKatomcnt && tostr) {
-		size_t off = BUNfirst(c->c);
-		size_t j, i, probe = MIN(10000, MAX(200, cnt / 100));
+		BUN off = BUNfirst(c->c);
+		BUN j, i, probe = MIN(10000, MAX(200, cnt / 100));
 
 		for (i = 0; i < probe; i++) {
 			if (i >= cnt)
 				break;
-			j = off + ((cnt < probe) ? i : (rand() % cnt));
+			j = off + ((cnt < probe) ? i : ((BUN) rand() % cnt));
 			(*tostr) (&buf, &ret, BUNtail(c->ci, j));
 			max = MAX(max, (unsigned int) strlen(buf));
 		}

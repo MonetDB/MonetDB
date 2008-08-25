@@ -1095,7 +1095,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 	}
 
 	if (res == SQL_ERR) {
-		(void) sql_error(sql, 02, "unknown constraint (%ld)->token = %s\n", (long) s, token2string(s->token));
+		(void) sql_error(sql, 02, "unknown constraint (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
 	}
 	return res;
 }
@@ -1245,7 +1245,7 @@ column_option(
 		break;
 	}
 	if (res == SQL_ERR) {
-		(void) sql_error(sql, 02, "unknown column option (%ld)->token = %s\n", (long) s, token2string(s->token));
+		(void) sql_error(sql, 02, "unknown column option (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
 	}
 	return res;
 }
@@ -1451,7 +1451,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			break;
 	}
 	if (!res) {
-		return sql_error(sql, 02, "table constraint type: wrong token (%ld) = %s\n", (long) s, token2string(s->token));
+		return sql_error(sql, 02, "table constraint type: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
 	}
 	return res;
 }
@@ -1472,7 +1472,7 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	}
 
 	if (!res) {
-		return sql_error(sql, 02, "table constraint: wrong token (%ld) = %s\n", (long) s, token2string(s->token));
+		return sql_error(sql, 02, "table constraint: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
 	}
 	return res;
 }
@@ -1634,7 +1634,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	} break;
 	}
 	if (!res) {
-		return sql_error(sql, 02, "unknown table element (%ld)->token = %s\n", (long) s, token2string(s->token));
+		return sql_error(sql, 02, "unknown table element (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
 	}
 	return res;
 }
@@ -2113,7 +2113,7 @@ schemas(mvc *sql, scope *scp, symbol *s)
 		break;
 
 	default:
-		return sql_error(sql, 01, "schema statement unknown symbol(%ld)->token = %s", (long) s, token2string(s->token));
+		return sql_error(sql, 01, "schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 	sql->last = NULL;
 	return ret;

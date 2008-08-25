@@ -434,7 +434,7 @@ size_t
 GDKvm_heapsize(void)
 {
 #ifdef _CYGNUS_H_
-	return ((size_t) (96 << 20));
+	return (size_t) 96 << 20;
 #else
 	size_t ret = GDKmem_heapsize();
 
@@ -449,7 +449,7 @@ GDKvm_heapsize(void)
 size_t
 GDKmem_heapsize(void)
 {
-	size_t heapsize = (MT_heapcur() - MT_heapbase);
+	size_t heapsize = MT_heapcur() - MT_heapbase;
 
 	return (size_t) SEG_SIZE(heapsize, MT_VMUNITLOG);
 }

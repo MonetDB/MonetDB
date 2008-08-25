@@ -502,6 +502,16 @@ typedef unsigned int oid;
 #define SIZEOF_OID	SIZEOF_SIZE_T
 typedef size_t oid;
 #endif
+#if SIZEOF_OID == SIZEOF_SIZE_T
+#define OIDFMT		SZFMT
+#else
+#if SIZEOF_OID == SIZEOF_INT
+#define OIDFMT		"%u"
+#else
+#define OIDFMT		ULLFMT
+#endif
+#endif
+
 #define SIZEOF_WRD      SIZEOF_SSIZE_T
 typedef ssize_t wrd;
 typedef int bat;		/* Index into BBP */
@@ -576,37 +586,35 @@ typedef __int64 gdk_int64;
 #error no definition for PTRFMT
 #endif
 
-typedef oid BUN;		/* BUN position */
 typedef char long_str[IDLENGTH];	/* standard GDK static string */
 typedef char short_str[OLDLENGTH];	/* old GDK small static string */
 
-#if SIZEOF_OID == SIZEOF_INT
+typedef oid var_t;		/* type used for heap index of var-sized BAT */
+#define SIZEOF_VAR_T	SIZEOF_OID
+#define VARFMT		OIDFMT
+
+#if SIZEOF_VAR_T == SIZEOF_INT	/* a type compatible with var_t */
+#define TYPE_var	TYPE_int
+#define VAR_MAX		INT_MAX
+#else
+#define TYPE_var	TYPE_lng
+#define VAR_MAX		LLONG_MAX
+#endif
+
+typedef oid BUN;		/* BUN position */
+#define SIZEOF_BUN	SIZEOF_OID
+#define BUNFMT		OIDFMT
+/* alternatively:
+typedef size_t BUN;
+#define SIZEOF_BUN	SIZEOF_SIZE_T
+#define BUNFMT		SZFMT
+*/
+#if SIZEOF_BUN == SIZEOF_INT
 #define BUN_NONE INT_MAX
 #else
 #define BUN_NONE LLONG_MAX
 #endif
-
-typedef oid hash_t;		/* type used for hash tables */
-
-#if SIZEOF_OID == SIZEOF_INT
-#define HASH_MAX INT_MAX
-#else
-#define HASH_MAX LLONG_MAX
-#endif
-
-typedef oid var_t;		/* type used for heap index of var-sized BAT */
-
-#if SIZEOF_OID == SIZEOF_INT	/* a type compatible with var_t */
-#define TYPE_var	TYPE_int
-#if SIZEOF_SIZE_T == SIZEOF_INT
-#define OIDFMT		SZFMT
-#else
-#define OIDFMT		"%u"
-#endif
-#else
-#define TYPE_var	TYPE_lng
-#define OIDFMT		SZFMT
-#endif
+#define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
 
 @- Checking and Error definitions:
 @h
@@ -674,10 +682,10 @@ typedef struct {
 
 typedef struct {
 	int type;		/* type of index entity */
-	size_t lim;		/* collision list size */
-	hash_t mask;		/* number of hash buckets-1 (power of 2) */
-	hash_t *hash;		/* hash table */
-	hash_t *link;		/* collision list */
+	BUN lim;		/* collision list size */
+	BUN mask;		/* number of hash buckets-1 (power of 2) */
+	BUN *hash;		/* hash table */
+	BUN *link;		/* collision list */
 	Heap *heap;		/* heap where the hash is stored */
 } Hash;
 
@@ -804,7 +812,7 @@ typedef struct {
           BUN    batDeleted;       /* first deleted BUN */
           BUN    batFirst;         /* empty BUN before the first alive BUN */
           BUN    batInserted;      /* first inserted BUN */
-          size_t batCount;         /* Tuple count */
+          BUN    batCount;         /* Tuple count */
           /* Head properties */
           int    htype;            /* Head type number */
           str    hident;           /* name for head column */
@@ -878,8 +886,8 @@ typedef struct {
 	BUN deleted;		/* start of deleted elements */
 	BUN first;		/* to store next deletion */
 	BUN inserted;		/* start of inserted elements */
-	size_t count;		/* tuple count */
-	size_t capacity;	/* tuple capacity */
+	BUN count;		/* tuple count */
+	BUN capacity;		/* tuple capacity */
 } BUNrec;
 
 typedef struct PROPrec {
@@ -903,10 +911,10 @@ typedef struct {
 	 nil:1,			/* nil is set when we found one nil (propcheck) */
 	 unused:2; 
 	oid align;		/* OID for sync alignment */
-	size_t nosorted_rev;	/* position that proves sorted_rev==FALSE */
-	size_t nokey[2];	/* positions that prove key ==FALSE */
-	size_t nosorted;	/* position that proves sorted==FALSE */
-	size_t nodense;		/* position that proves dense==FALSE */
+	BUN nosorted_rev;	/* position that proves sorted_rev==FALSE */
+	BUN nokey[2];		/* positions that prove key ==FALSE */
+	BUN nosorted;		/* position that proves sorted==FALSE */
+	BUN nodense;		/* position that proves dense==FALSE */
 	oid seq;		/* start of dense head sequence */
 
 	Heap heap;		/* space for the column. */
@@ -1054,8 +1062,8 @@ atoms in this heap. A standard implementation is provided here.
 HEAP_initialize  (Heap* h, size_t nbytes, size_t nprivate, int align )
 @item void
 HEAP_destroy     (Heap* h)
-@item int
-HEAP_malloc      (Heap* heap, size_t nbytes)
+@item var_t
+HEAP_malloc      (Heap* heap, var_t nbytes)
 @item void
 HEAP_free        (Heap *heap, size_t block)
 @item int
@@ -1079,7 +1087,7 @@ typedef struct {
 	size_t minpos;		/* minimum block byte-index */
 	size_t maxpos;		/* maximum block byte-index */
 	int alignment;		/* block index alignment */
-	size_t *validmask;	/* bitmap with all valid byte-indices
+	int *validmask;		/* bitmap with all valid byte-indices
 				 * first bit corresponds with 'minpos';
 				 * 2nd bit with 'minpos+alignment', etc
 				 */
@@ -1098,9 +1106,9 @@ gdk_export void HEAP_initialize_compact(Heap *heap,	/* nbytes -- Initial size of
 					int (*sizefcn) (ptr) /* BATatoms[].atomLen function */
     );
 
-gdk_export var_t HEAP_malloc(Heap *heap, size_t nbytes);
+gdk_export var_t HEAP_malloc(Heap *heap, var_t nbytes);
 gdk_export void HEAP_free(Heap *heap, var_t block);
-gdk_export size_t HEAP_private(Heap *h);
+gdk_export var_t HEAP_private(Heap *h);
 gdk_export void HEAP_checkformat(Heap *h);
 gdk_export int HEAP_check(Heap *h, HeapRepair *hr);
 gdk_export void HEAP_init(Heap *heap, int tpe);
@@ -1112,11 +1120,9 @@ gdk_export int HEAP_mmappable(Heap *heap);
 @- BAT construction
 @multitable @columnfractions 0.08 0.7
 @item @code{BAT* }
-@tab BATnew (int headtype, int tailtype, size_t cap)
+@tab BATnew (int headtype, int tailtype, BUN cap)
 @item @code{BAT* }
-@tab BATclone (BAT *c, size_t cap)
-@item @code{BAT* }
-@tab BATextend (BAT *b, size_t newcap)
+@tab BATextend (BAT *b, BUN newcap)
 @end multitable
 @
 A temporary BAT is instantiated using @%BATnew@ with the type aliases of
@@ -1133,9 +1139,9 @@ inherited from its argument.
 @h
 #define BATDELETE	-9999
 
-gdk_export BAT *BATnew(int hdtype, int tltype, size_t capacity);
-gdk_export BAT *BATclone(BAT *b, size_t capacity);
-gdk_export BAT *BATextend(BAT *b, size_t newcap);
+gdk_export BAT *BATnew(int hdtype, int tltype, BUN capacity);
+gdk_export BAT *BATclone(BAT *b, BUN capacity);
+gdk_export BAT *BATextend(BAT *b, BUN newcap);
 
 /* internal */
 gdk_export BATstore *BATcreatedesc(int ht, int tt, int heapnames);
@@ -1257,18 +1263,22 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 		(b)->batCount++;				\
 	}
 
-#define bunfastins(b, h, t) {					\
-		REGISTER BUN _p = BUNlast(b);			\
-		REGISTER size_t _hsize = Hsize(b);		\
-		REGISTER size_t _tsize = Tsize(b);		\
-		if (BUNlast(b) + 1 > BATcapacity(b)){		\
-			if (BATextend(b, BATgrows(b)) == NULL)  \
-				goto bunins_failed; 		\
-		}						\
-		hfastins_nocheck(b, _p, h, _hsize);		\
-		tfastins_nocheck(b, _p, t, _tsize);		\
-		(b)->batCount++;				\
-	}
+#define bunfastins(b, h, t) do {					\
+		REGISTER BUN _p = BUNlast(b);				\
+		REGISTER unsigned short _hsize = Hsize(b);		\
+		REGISTER unsigned short _tsize = Tsize(b);		\
+		if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {		\
+			GDKerror("bunfastins: bat too large\n");	\
+			goto bunins_failed;				\
+		}							\
+		if (_p + 1 > BATcapacity(b)) {				\
+			if (BATextend(b, BATgrows(b)) == NULL)		\
+				goto bunins_failed;			\
+		}							\
+		hfastins_nocheck((b), _p, (h), _hsize);			\
+		tfastins_nocheck((b), _p, (t), _tsize);			\
+		(b)->batCount++;					\
+	} while (0)
 
 #define bunfastins_check(b, p, h, t) {                                  \
 		bunfastins(b, h, t);                                    \
@@ -1299,14 +1309,14 @@ gdk_export BAT *BATreplace(BAT *b, BAT *n, bit force);
 gdk_export BUN BUNlocate(BAT *b, ptr left, ptr right);
 gdk_export BUN BUNfnd(BAT *b, ptr left);
 
-#define BUNfndVOID(p,bi,v) {                                            \
-    BUN result = BUNfirst((bi).b) + (*(oid*)(v) - (bi).b->hseqbase);	\
-    ssize_t check = 							\
+#define BUNfndVOID(p,bi,v) do {						\
+    BUN result = BUNfirst((bi).b) + (BUN) (*(oid*)(v) - (bi).b->hseqbase); \
+    int check = 							\
 	(((*(oid*)(v) == oid_nil) ^ ((bi).b->hseqbase == oid_nil)) |    \
-        (*(oid*) v < (bi).b->hseqbase) |                           	\
-        (*(oid*) v >= (bi).b->hseqbase + (bi).b->batCount));       	\
-    p = (check)?BUN_NONE:result; /* and with 0xFF...FF or 0x00..00 */   \
-}
+        (*(oid*) (v) < (bi).b->hseqbase) |                           	\
+        (*(oid*) (v) >= (bi).b->hseqbase + (bi).b->batCount));       	\
+    (p) = check?BUN_NONE:result; /* and with 0xFF...FF or 0x00..00 */	\
+} while (0)
 
 #define BUNfndOID(p,bi,v)			\
 	if (BAThdense(bi.b)) {			\
@@ -1355,12 +1365,15 @@ static INLINE BATiter bat_iterator(BAT *b)
 
 #define BUNfirst(b)	((b)->batFirst)
 #ifdef NDEBUG
-#define BUNlast(b)	((BUN) ((b)->batFirst + (b)->batCount))
+#define BUNlast(b)	((b)->batFirst + (b)->batCount)
 #else
 static INLINE BUN BUNlast(BAT *b)
 {
-	size_t last = b->batFirst + b->batCount;
-	assert(last < BUN_NONE);
+	BUN last;
+	assert(b->batFirst <= BUN_MAX);
+	assert(b->batCount <= BUN_MAX);
+	last = b->batFirst + b->batCount;
+	assert(last <= BUN_MAX);
 	return (BUN) last;
 }
 #endif
@@ -1370,13 +1383,13 @@ static INLINE BUN BUNlast(BAT *b)
 
 @- BAT properties
 @multitable @columnfractions 0.08 0.7
-@item size_t
+@item BUN
 @tab BATcount (BAT *b)
 @item void
-@tab BATsetcapacity (BAT *b, size_t cnt)
+@tab BATsetcapacity (BAT *b, BUN cnt)
 @item void
-@tab BATsetcount (BAT *b, size_t cnt)
-@item size_t
+@tab BATsetcount (BAT *b, BUN cnt)
+@item BUN
 @tab BATbuncount (BAT *b)
 @item str
 @tab BATrename (BAT *b, str nme)
@@ -1436,13 +1449,13 @@ was in there.
 @{
 @h
 gdk_export str BATrename(BAT *b, str nme);
-gdk_export size_t BATcount(BAT *b);
-gdk_export size_t BATcount_no_nil(BAT *b);
-gdk_export void BATsetcapacity(BAT *b, size_t cnt);
-gdk_export void BATsetcount(BAT *b, size_t cnt);
-gdk_export size_t BATbuncount(BAT *b);
-gdk_export size_t BATguess(BAT *b);
-gdk_export size_t BATgrows(BAT *b);
+gdk_export BUN BATcount(BAT *b);
+gdk_export BUN BATcount_no_nil(BAT *b);
+gdk_export void BATsetcapacity(BAT *b, BUN cnt);
+gdk_export void BATsetcount(BAT *b, BUN cnt);
+gdk_export BUN BATbuncount(BAT *b);
+gdk_export BUN BATguess(BAT *b);
+gdk_export BUN BATgrows(BAT *b);
 gdk_export BAT *BATkey(BAT *b, int onoff);
 gdk_export BAT *BATset(BAT *b, int onoff);
 gdk_export BAT *BATmode(BAT *b, int onoff);
@@ -2039,7 +2052,7 @@ typedef struct {
 	void *(*atomRead) (ptr a, stream *s, size_t cnt);
 	int (*atomWrite) (ptr a, stream *s, size_t cnt);
 	int (*atomCmp) (ptr v1, ptr v2);
-	hash_t (*atomHash) (ptr v);
+	BUN (*atomHash) (ptr v);
 	/* optional functions */
 	void (*atomConvert) (ptr v, int direction);
 	int (*atomFix) (ptr atom);
@@ -2083,7 +2096,7 @@ gdk_export ptr ATOMdup(int id, ptr val);
 OIDseed (oid seed);
 @item oid
 @tab
-OIDnew (size_t inc);
+OIDnew (oid inc);
 @end multitable
 
 OIDs are special kinds of unsigned integers because the system
@@ -2101,7 +2114,7 @@ gdk_export int OIDinit(void);
 gdk_export oid OIDrand(void);
 gdk_export oid OIDbase(oid base);
 gdk_export oid OIDseed(oid seed);
-gdk_export oid OIDnew(size_t inc);
+gdk_export oid OIDnew(oid inc);
 gdk_export oid OIDread(str buf);
 gdk_export int OIDwrite(stream *fp);
 gdk_export int OIDdirty(void);
@@ -2114,10 +2127,10 @@ gdk_export int OIDdirty(void);
 @multitable @columnfractions 0.08 0.7
 @item BAT*
 @tab
- BAThash (BAT *b, size_t masksize)
+ BAThash (BAT *b, BUN masksize)
 @item BAT *
 @tab
- BAThashsplit (BAT *b, size_t n, int unary)
+ BAThashsplit (BAT *b, BUN n, int unary)
 @item BAT *
 @tab
  BATrangesplit  (BAT *b, int n)
@@ -2136,10 +2149,10 @@ pointers.  Similarly, a range partitioning based is supported.
 
 @{
 @h
-gdk_export BAT *BAThash(BAT *b, size_t masksize);
-gdk_export BAT *BAThashsplit(BAT *b, size_t n, int unary);
-gdk_export BAT *BATrangesplit(BAT *b, size_t n, int unary);
-gdk_export BAT *BAThashjoin(BAT *l, BAT *r, size_t estimate);
+gdk_export BAT *BAThash(BAT *b, BUN masksize);
+gdk_export BAT *BAThashsplit(BAT *b, BUN n, int unary);
+gdk_export BAT *BATrangesplit(BAT *b, BUN n, int unary);
+gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
 
 /* low level functions */
 gdk_export BUN SORTfnd(BAT *b, ptr v);
@@ -2704,7 +2717,7 @@ gdk_export BAT *BATprev(BAT *b);
 @item BAT*
 @tab VIEWreset    (BAT *b)
 @item BAT*
-@tab BATmaterialize  (BAT *b, size_t size)
+@tab BATmaterialize  (BAT *b)
 @end multitable
 @
 Alignments of two columns of a BAT means that the system knows
@@ -2759,7 +2772,7 @@ gdk_export BAT *BATmaterialize(BAT *b);
 gdk_export BAT *BATmaterializeh(BAT *b);
 gdk_export BAT *BATmaterializet(BAT *b);
 gdk_export void VIEWdestroy(BAT *b);
-gdk_export void VIEWbounds(BAT *view, size_t l, size_t h);
+gdk_export void VIEWbounds(BAT *view, BUN l, BUN h);
 gdk_export void VIEWunlink(BAT *b);
 
 /* low level functions */
@@ -2924,10 +2937,10 @@ head column of `b'). The 'hb' is an integer index, pointing out the
 #define GDK_STREQ(l,r) (*(char*) (l) == *(char*) (r) && !strcmp(l,r))
 
 #define HASHloop(bi, h, hb, v)						\
-	for (hb = h->hash[HASHprobe(h, v)]; hb != HASH_MAX; hb = h->link[hb])	\
+	for (hb = h->hash[HASHprobe(h, v)]; hb != BUN_NONE; hb = h->link[hb])	\
 		if (ATOMcmp(h->type, v, BUNhead(bi, hb)) == 0)
 #define HASHloop_str(bi, h, hb, v)					\
-	for (hb = h->hash[strHash(v)&h->mask]; hb != HASH_MAX; hb = h->link[hb])	\
+	for (hb = h->hash[strHash(v)&h->mask]; hb != BUN_NONE; hb = h->link[hb])	\
 		if (GDK_STREQ(v, BUNhvar(bi, hb)))
 @-
 For string search, we can optimize if the string heap has eliminated
@@ -2937,7 +2950,7 @@ If so, we can just compare integer index numbers instead of strings:
 @h
 #define HASHloop_fstr(bi, h, hb, idx, v)					\
 	for (hb = h->hash[strHash(v)&h->mask], idx = strLocate((bi.b)->hheap,v); \
-	     hb != HASH_MAX; hb = h->link[hb])				\
+	     hb != BUN_NONE; hb = h->link[hb])				\
 		     if (*(var_t*) BUNhloc(bi, hb) == idx)
 @
 The following example shows how the hashloop is used:
@@ -2947,7 +2960,7 @@ void
 print_books(BAT *author_books, str author)
 {
         BAT *b = author_books;
-        size_t i;
+        BUN i;
 
         printf("%s\n==================\n", author);
         HASHloop(b, (b)->H->hash, i, author)
@@ -2968,10 +2981,10 @@ above, to specialized versions (for speed) where the type is known
 (@%HASHlooploc@) or variable-sized (@%HASHloopvar@).
 @h
 #define HASHlooploc(bi,	h, hb, v)					\
-	for (hb = h->hash[HASHprobe(h, v)]; hb != HASH_MAX; hb = h->link[hb])	\
+	for (hb = h->hash[HASHprobe(h, v)]; hb != BUN_NONE; hb = h->link[hb])	\
 		if (ATOMcmp(h->type, v, BUNhloc(bi, hb)) == 0)
 #define HASHloopvar(bi,	h, hb, v)					\
-	for (hb = h->hash[HASHprobe(h, v)]; hb != HASH_MAX; hb = h->link[hb])	\
+	for (hb = h->hash[HASHprobe(h, v)]; hb != BUN_NONE; hb = h->link[hb])	\
 		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) == 0)
 @
 @{
@@ -2998,7 +3011,7 @@ above, to specialized versions (for speed) where the type is known
 
 @= hashloop
 #define HASHloop_@1(bi,h,hb,v)						   \
-	for (hb = h->hash[hash_@2(h,v)]; hb != HASH_MAX; hb = h->link[hb]) \
+	for (hb = h->hash[hash_@2(h,v)]; hb != BUN_NONE; hb = h->link[hb]) \
 		if (@3_EQ(v, BUN@5(bi, hb), @4))
 @}
 @- loop over a BAT with ordered tail
@@ -3072,7 +3085,7 @@ Much used, but not necessarily kernel-operations on BATs.
  BAThistogram(BAT *b)
 @item BAT*
 @tab
- BATsample(BAT* b,size_t n)
+ BATsample(BAT* b,BUN n)
 @end multitable
 
 The routine @%BAThistogram@ produces a new BAT with a frequency distribution
@@ -3099,9 +3112,9 @@ gdk_export void BATsetprop_int(BAT *b, int idx, int val);
 gdk_export void BATsetprop_wrd(BAT *b, int idx, wrd val);
 gdk_export void BATsetprop_str(BAT *b, int idx, str val);
 gdk_export void BATpropagate(BAT *dst, BAT *src, int idx);
-gdk_export BAT *BATsample(BAT *b, size_t n);
+gdk_export BAT *BATsample(BAT *b, BUN n);
 gdk_export BAT *BAThistogram(BAT *b);
-gdk_export size_t BATtopN(BAT *b, size_t topN);	/* used in monet5/src/modules/kernel/algebra.mx */
+gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/algebra.mx */
 
 @}
 @- Alignment transformations
@@ -3131,11 +3144,11 @@ the fetch.
 @- BAT relational operators
  @multitable @columnfractions 0.08 0.7
 @item BAT *
-@tab BATjoin (BAT *l, BAT *r, size_t estimate)
+@tab BATjoin (BAT *l, BAT *r, BUN estimate)
 @item BAT *
-@tab BATouterjoin (BAT *l, BAT *r, size_t estimate)
+@tab BATouterjoin (BAT *l, BAT *r, BUN estimate)
 @item BAT *
-@tab BATthetajoin (BAT *l, BAT *r, int mode, size_t estimate)
+@tab BATthetajoin (BAT *l, BAT *r, int mode, BUN estimate)
 @item BAT *
 @tab BATsemijoin (BAT *l, BAT *r)
 @item BAT *
@@ -3217,22 +3230,22 @@ gdk_export BAT *BATuselect(BAT *b, ptr tl, ptr th);
 gdk_export BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th);
 
 gdk_export BAT *BATconst(BAT *l, int tt, ptr val);
-gdk_export BAT *BATthetajoin(BAT *l, BAT *r, int mode, size_t estimate);
-gdk_export BAT *BATleftthetajoin(BAT *l, BAT *r, int mode, size_t estimate);
-gdk_export BAT *BATnlthetajoin(BAT *l, BAT *r, int mode, size_t estimate);
+gdk_export BAT *BATthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
+gdk_export BAT *BATleftthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
+gdk_export BAT *BATnlthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
 gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
-gdk_export BAT *BATmergejoin(BAT *l, BAT *r, size_t estimate);
-gdk_export BAT *BATleftmergejoin(BAT *l, BAT *r, size_t estimate);
-gdk_export BAT *BATjoin(BAT *l, BAT *r, size_t estimate);
+gdk_export BAT *BATmergejoin(BAT *l, BAT *r, BUN estimate);
+gdk_export BAT *BATleftmergejoin(BAT *l, BAT *r, BUN estimate);
+gdk_export BAT *BATjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATantijoin(BAT *l, BAT *r);
-gdk_export BAT *BATleftjoin(BAT *l, BAT *r, size_t estimate);
-gdk_export BAT *BATouterjoin(BAT *l, BAT *r, size_t estimate);
+gdk_export BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);
+gdk_export BAT *BATouterjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATcross(BAT *l, BAT *r);
 
-gdk_export BAT *BATslice(BAT *b, size_t low, size_t high);
+gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 gdk_export BAT *BATfetch(BAT *b, BAT *s);
-gdk_export BAT *BATfetchjoin(BAT *b, BAT *s, size_t estimate);
-gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, size_t estimate);
+gdk_export BAT *BATfetchjoin(BAT *b, BAT *s, BUN estimate);
+gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, BUN estimate);
 
 gdk_export BAT *BATins_kunique(BAT *bn, BAT *b);
 gdk_export BAT *BATsunique(BAT *b);

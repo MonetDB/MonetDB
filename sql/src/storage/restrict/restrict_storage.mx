@@ -323,7 +323,7 @@ snapshot_new_persistent_bat(sql_trans *tr, sql_bat *bat)
 	/* snapshot large bats */
 	if (BATcount(b) > SNAPSHOT_MINSIZE) 
 		BATmode(b, PERSISTENT);
-	if (BATcount(b) > (size_t) REMAP_PAGE_MAXSIZE)
+	if (BATcount(b) > (BUN) REMAP_PAGE_MAXSIZE)
        		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 	bat_destroy(b);
 	return ok;
@@ -500,7 +500,7 @@ snapshot_create_del(sql_trans *tr, sql_table *t)
 	/* snapshot large bats */
 	if (BATcount(b) > SNAPSHOT_MINSIZE) 
 		BATmode(b, PERSISTENT);
-	if (BATcount(b) > (size_t) REMAP_PAGE_MAXSIZE)
+	if (BATcount(b) > (BUN) REMAP_PAGE_MAXSIZE)
        		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 	bat_destroy(b);
 	return LOG_OK;
@@ -660,10 +660,10 @@ log_destroy_del(sql_trans *tr, sql_table *t)
 	return ok;
 }
 
-static size_t 
+static BUN 
 clear_bat(sql_trans *tr, sql_bat *bat)
 {
-	size_t sz = 0;
+	BUN sz = 0;
 
 	(void)tr;
 	if (bat->bid) {
@@ -677,7 +677,7 @@ clear_bat(sql_trans *tr, sql_bat *bat)
 	return sz;
 }
 
-static size_t 
+static BUN 
 clear_col(sql_trans *tr, sql_column *c)
 {
 	if (c->data)
@@ -685,7 +685,7 @@ clear_col(sql_trans *tr, sql_column *c)
 	return 0;
 }
 
-static size_t
+static BUN
 clear_idx(sql_trans *tr, sql_idx *i)
 {
 	if (i->data)
@@ -693,7 +693,7 @@ clear_idx(sql_trans *tr, sql_idx *i)
 	return 0;
 }
 
-static size_t
+static BUN
 clear_del(sql_trans *tr, sql_table *t)
 {
 	if (t->data && isTempTable(t))
@@ -860,7 +860,7 @@ tr_snapshot_bat( sql_trans *tr, sql_bat *cbat, sql_bat *obat)
 	}
 	if (BATcount(cur) > SNAPSHOT_MINSIZE) 
 		BATmode(cur, PERSISTENT);
-	if (BATcount(cur) > (size_t) REMAP_PAGE_MAXSIZE) 
+	if (BATcount(cur) > (BUN) REMAP_PAGE_MAXSIZE) 
        		BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 	bat_destroy(cur);
 	return LOG_OK;

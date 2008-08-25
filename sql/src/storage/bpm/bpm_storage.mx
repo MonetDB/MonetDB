@@ -272,7 +272,7 @@ update_bat( sql_bpm *p, BAT *upd)
 static void
 update_val( sql_bpm *p, ssize_t rid, void *upd) 
 {
-	sht nr = (rid)?rid/(BPM_SPLIT):0;
+	sht nr = (sht) (rid?rid/BPM_SPLIT:0);
 
 	assert(rid != -1);
 
@@ -336,7 +336,7 @@ append_bat( sql_bpm *p, BAT *i )
 			l += sz;
 			sz = BPM_SPLIT;
 			while(todo > 0) {
-				v = BATslice(i, l, l + sz);
+				v = BATslice(i, (BUN) l, (BUN) (l + sz));
 				ni = BATcopy(v, TYPE_void, v->ttype, TRUE);
 				ni->batDirty |= 2;
 				bat_destroy(v);
@@ -417,7 +417,7 @@ delete_bat( sql_dbpm *p, BAT *del )
 static void
 delete_val( sql_dbpm *p, ssize_t rid ) 
 {
-	sht nr = (rid)?rid/(BPM_SPLIT):0;
+	sht nr = (sht) (rid?rid/BPM_SPLIT:0);
 
 	assert(rid != -1);
 	if (nr >= p->nr)
@@ -855,10 +855,10 @@ log_destroy_del(sql_trans *tr, sql_table *t)
 	return log_destroy_dbpm(t->data);
 }
 
-static size_t 
+static BUN
 clear_bpm(sql_trans *tr, sql_bpm *p)
 {
-	size_t sz = 0;
+	BUN sz = 0;
 	int i;
 
 	for (i=0; i<p->nr; i++) {
@@ -867,7 +867,7 @@ clear_bpm(sql_trans *tr, sql_bpm *p)
 	return sz;
 }
 
-static size_t 
+static BUN 
 clear_col(sql_trans *tr, sql_column *c)
 {
 	if (c->data)
@@ -875,7 +875,7 @@ clear_col(sql_trans *tr, sql_column *c)
 	return 0;
 }
 
-static size_t
+static BUN
 clear_idx(sql_trans *tr, sql_idx *i)
 {
 	if (i->data)
@@ -883,11 +883,11 @@ clear_idx(sql_trans *tr, sql_idx *i)
 	return 0;
 }
 
-static size_t
+static BUN
 clear_del(sql_trans *tr, sql_table *t)
 {
 	sql_dbpm *p = t->data;
-	size_t sz = 0;
+	BUN sz = 0;
 	int i;
 
 	for (i=0; i<p->nr; i++) {

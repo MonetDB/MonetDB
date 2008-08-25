@@ -816,7 +816,7 @@ psm(mvc *sql, symbol *s)
 		sql->type = Q_UPDATE;
 		break;
 	default:
-		return sql_error(sql, 01, "schema statement unknown symbol(%ld)->token = %s", (long) s, token2string(s->token));
+		return sql_error(sql, 01, "schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 	return ret;
 }

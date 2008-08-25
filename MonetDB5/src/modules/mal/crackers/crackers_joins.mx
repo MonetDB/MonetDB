@@ -76,7 +76,7 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 
 @= hashjoin
 	{
-                hash_t yy;
+                BUN yy;
 
                 BATloop(l, p, q) {
                         v = BUN@3(li, p);

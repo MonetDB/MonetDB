@@ -68,9 +68,9 @@ extern int destroy_delta(sql_delta *b);
 extern int destroy_dbat(sql_dbat *bat);
 extern int log_destroy_delta(sql_delta *b);
 extern int log_destroy_dbat(sql_dbat *bat);
-extern size_t clear_delta(sql_trans *tr, sql_delta *bat);
-extern size_t clear_dbat(sql_trans *tr, sql_dbat *bat);
-extern int tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, size_t snapshot_minsize);
+extern BUN clear_delta(sql_trans *tr, sql_delta *bat);
+extern BUN clear_dbat(sql_trans *tr, sql_dbat *bat);
+extern int tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, BUN snapshot_minsize);
 extern int tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared);
 extern int tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared);
 extern int tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared);
@@ -83,7 +83,7 @@ extern int tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared);
 #include "bat_utils.h"
 #include <sql_string.h>
 
-#define SNAPSHOT_MINSIZE (1024)
+#define SNAPSHOT_MINSIZE ((BUN) 1024)
 
 BAT *
 delta_bind_ubat(sql_delta *bat, int access)
@@ -228,7 +228,7 @@ delta_update_val( sql_delta *bat, ssize_t rid, void *upd)
 		BUNins(b, (ptr) &rid, upd, TRUE);
 	} else {
 		b = temp_descriptor(bat->ibid);
-		void_inplace(b, rid, upd, TRUE);
+		void_inplace(b, (oid) rid, upd, TRUE);
 	}
 	bat_destroy(b);
 }
@@ -272,7 +272,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		i->batDirty |= 2;
 	} else if (!isEbat(b)){
 		/* try to use mmap() */
-		if (BATcount(b)+BATcount(i) > (size_t) REMAP_PAGE_MAXSIZE) { 
+		if (BATcount(b)+BATcount(i) > (BUN) REMAP_PAGE_MAXSIZE) { 
        			BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     		}
 		BATappend(b, i, TRUE);
@@ -401,7 +401,7 @@ load_delta(sql_delta *bat, int bid, int ubid, int type)
 	b = quick_descriptor(bid);
 	bat->bid = temp_create(b);
 	bat->ibase = BATcount(b);
-	bat->cnt = (size_t)bat->ibase; 
+	bat->cnt = bat->ibase; 
 	
 	u = quick_descriptor(ubid);
 	if (!u) {
@@ -475,7 +475,7 @@ snapshot_new_persistent_bat(sql_trans *tr, sql_delta *bat)
 	bat_set_access(b, BAT_READ);
 	if (BATcount(b) > SNAPSHOT_MINSIZE) 
 		BATmode(b, PERSISTENT);
-	if (BATcount(b) > (size_t) REMAP_PAGE_MAXSIZE)
+	if (BATcount(b) > (BUN) REMAP_PAGE_MAXSIZE)
        		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 	bat_destroy(b);
 	return ok;
@@ -712,7 +712,7 @@ snapshot_create_del(sql_trans *tr, sql_table *t)
 	bat_set_access(b, BAT_READ);
 	if (BATcount(b) > SNAPSHOT_MINSIZE) 
 		BATmode(b, PERSISTENT);
-	if (BATcount(b) > (size_t) REMAP_PAGE_MAXSIZE)
+	if (BATcount(b) > (BUN) REMAP_PAGE_MAXSIZE)
        		BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 	bat_destroy(b);
 	return LOG_OK;
@@ -964,11 +964,11 @@ log_destroy_del(sql_trans *tr, sql_table *t)
 	return log_destroy_dbat(t->data);
 }
 
-size_t 
+BUN
 clear_delta(sql_trans *tr, sql_delta *bat)
 {
 	BAT *b;
-	size_t sz = 0;
+	BUN sz = 0;
 
 	if (bat->ibid) {
 		b = temp_descriptor(bat->ibid);
@@ -1001,7 +1001,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 	return sz;
 }
 
-static size_t 
+static BUN 
 clear_col(sql_trans *tr, sql_column *c)
 {
 	if (c->data)
@@ -1009,7 +1009,7 @@ clear_col(sql_trans *tr, sql_column *c)
 	return 0;
 }
 
-static size_t
+static BUN
 clear_idx(sql_trans *tr, sql_idx *i)
 {
 	if (i->data)
@@ -1017,10 +1017,10 @@ clear_idx(sql_trans *tr, sql_idx *i)
 	return 0;
 }
 
-size_t
+BUN
 clear_dbat(sql_trans *tr, sql_dbat *bat)
 {
-	size_t sz = 0;
+	BUN sz = 0;
 
 	(void)tr;
 	if (bat->dbid) {
@@ -1035,14 +1035,14 @@ clear_dbat(sql_trans *tr, sql_dbat *bat)
 	return sz;
 }
 
-static size_t
+static BUN
 clear_del(sql_trans *tr, sql_table *t)
 {
 	return clear_dbat(tr, t->data);
 }
 
 int 
-tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, size_t snapshot_minsize)
+tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, BUN snapshot_minsize)
 {
 	int ok = LOG_OK;
 	BAT *ups, *ins, *cur;
@@ -1081,7 +1081,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, s
 				bat_destroy(cur);
 				cur = newcur;
 			} else {
-				if (BATcount(cur)+BATcount(ins) > (size_t) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
+				if (BATcount(cur)+BATcount(ins) > (BUN) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
        					BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     				}
 				BATappend(cur,ins,TRUE);
@@ -1302,7 +1302,7 @@ tr_snapshot_bat( sql_trans *tr, sql_delta *cbat)
 				cur = temp_descriptor(cbat->bid);
 		        if ((!cur || !BATcount(cur)) && BATcount(ins) > SNAPSHOT_MINSIZE) {
 				BATmode(ins, PERSISTENT);
-				if (BATcount(ins) > (size_t) REMAP_PAGE_MAXSIZE)
+				if (BATcount(ins) > (BUN) REMAP_PAGE_MAXSIZE)
        					BATmmap(ins, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
 			}
 			if (cur)

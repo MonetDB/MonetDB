@@ -105,7 +105,7 @@ BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi)
 	bn->hsorted = BAThordered(l);
 	bn->tsorted = FALSE;
 
-	ESTIDEBUG THRprintf(GDKout, "#BATrangejoin: actual resultsize: " SZFMT "\n", BATcount(bn));
+	ESTIDEBUG THRprintf(GDKout, "#BATrangejoin: actual resultsize: " BUNFMT "\n", BATcount(bn));
 
 	return bn;
 }
@@ -247,7 +247,7 @@ BATbandjoin_nl(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	bn->H->nonil = l->H->nonil;
 	bn->T->nonil = r->T->nonil;
 
-	ESTIDEBUG THRprintf(GDKout, "#BATbandjoin: actual resultsize: " SZFMT "\n", BATcount(bn));
+	ESTIDEBUG THRprintf(GDKout, "#BATbandjoin: actual resultsize: " BUNFMT "\n", BATcount(bn));
 
 	return bn;
 }

@@ -135,7 +135,7 @@ comment "grouped tail sum";
 static BAT *
 BATmalleftjoin(BAT *l, BAT *r)
 {
-	return BATleftjoin(l, r, oid_nil);
+	return BATleftjoin(l, r, BUN_NONE);
 }
 
 static BAT *
@@ -145,9 +145,9 @@ BATmalfetchjoin(BAT *l, BAT *r)
 	int lfetch = (BATtdense(l) && ATOMstorage(r->htype) <= ATOMstorage(TYPE_oid));
 
 	if (lfetch && !(rfetch && BATcount(l) < BATcount(r))) {
-		return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), oid_nil));
+		return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), BUN_NONE));
 	} else if (rfetch) {
-		return BATfetchjoin(l, r, oid_nil);
+		return BATfetchjoin(l, r, BUN_NONE);
 	}
 	GDKerror("BATmalfetchjoin: Cannot perform fetchjoin: neither left tail nor right head are dense OID columns.\n");
 	return NULL;
@@ -160,7 +160,7 @@ BATmalleftfetchjoin(BAT *l, BAT *r)
 	int rfetch = (BAThdense(r) && ATOMstorage(l->ttype) <= ATOMstorage(TYPE_oid));
 
 	if (rfetch) {
-		return BATleftfetchjoin(l, r, oid_nil);
+		return BATleftfetchjoin(l, r, BUN_NONE);
 	}
 	GDKerror("BATmalleftfetchjoin: Cannot perform leftfetchjoin: right head is no dense OID column.\n");
 	return NULL;
@@ -173,16 +173,16 @@ BATmalhashjoin(BAT *l, BAT *r)
 	size_t rsize = r->H->heap.size + r->T->heap.size + (r->hheap ? r->hheap->size : 0) + (r->theap ? r->theap->size : 0);
 
 	if (rsize < lsize) {
-		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), oid_nil));
+		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), BUN_NONE));
 	}
-	return BAThashjoin(l, r, oid_nil);
+	return BAThashjoin(l, r, BUN_NONE);
 }
 
 /* don't reorder! */
 static BAT *
 BATmallefthashjoin(BAT *l, BAT *r)
 {
-	return BAThashjoin(l, r, oid_nil);
+	return BAThashjoin(l, r, BUN_NONE);
 }
 
 static BAT *
@@ -200,7 +200,7 @@ BATmalmergejoin(BAT *l, BAT *r)
 	return NULL;
   }
 */
-	return BATmergejoin(l, r, oid_nil);
+	return BATmergejoin(l, r, BUN_NONE);
 }
 
 /* don't reorder! */
@@ -211,7 +211,7 @@ BATmalleftmergejoin(BAT *l, BAT *r)
 		GDKerror("BATmalleftmergejoin: Cannot perform leftmergejoin: right head is ordered.\n");
 		return NULL;
 	}
-	return BATleftmergejoin(l, r, oid_nil);
+	return BATleftmergejoin(l, r, BUN_NONE);
 }
 
 BAT *
@@ -221,7 +221,7 @@ BATmalindexjoin(BAT *l, BAT *r)
 		GDKerror("BATmalindexjoin: Cannot perform indexjoin on void columns.\n");
 		return NULL;
 	}
-	return BATindexjoin(l, r, oid_nil);
+	return BATindexjoin(l, r, BUN_NONE);
 }
 
 /* don't reorder! */
@@ -232,7 +232,7 @@ BATmalleftindexjoin(BAT *l, BAT *r)
 		GDKerror("BATmalleftindexjoin: Cannot perform leftindexjoin: right head must not be void.\n");
 		return NULL;
 	}
-	return BATleftindexjoin(l, r, oid_nil);
+	return BATleftindexjoin(l, r, BUN_NONE);
 }
 
 @= joincmd
@@ -260,7 +260,7 @@ CMDleftthetajoin(BAT **result, BAT *l, BAT *r, int *mode)
 int
 CMDnlthetajoin(BAT **result, BAT *l, BAT *r, int *mode, lng *estimate)
 {
-	return (*result = BATnlthetajoin(l, r, *mode, (size_t) * estimate)) ? GDK_SUCCEED : GDK_FAIL;
+	return (*result = BATnlthetajoin(l, r, *mode, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= BUN_MAX ? BUN_MAX : (BUN) *estimate))) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 @= selectcmd
@@ -405,7 +405,7 @@ AL2nlthetajoin(int *ret, int *lid, int *rid, int *mode, lng *estimate)
 		BBPreleaseref(l->batCacheid);
 		return throwMessage("algebra.@1join", "Cannot access descriptor");
 	}
-	bn = BATnlthetajoin(l, r, *mode, (size_t) * estimate);
+	bn = BATnlthetajoin(l, r, *mode, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= BUN_MAX ? BUN_MAX : (BUN) *estimate));
 	BBPreleaseref(l->batCacheid);
 	BBPreleaseref(r->batCacheid);
 	if (bn == NULL)

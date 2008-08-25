@@ -93,7 +93,7 @@ transactions(mvc *sql, symbol *s)
 		(void) mvc_trans(sql);
 	} break;
 	default:
-		return sql_error(sql, 01, "transaction unknown Symbol(%ld)->token = %s", (long) s, token2string(s->token));
+		return sql_error(sql, 01, "transaction unknown Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 	return stmt_none();
 }
