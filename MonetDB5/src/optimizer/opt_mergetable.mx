@@ -47,7 +47,7 @@ To illustrate, consider:
 	m2:= bat.new(:oid,:int);
 	b := mat.new(m0,m1,m2);
 	s := algebra.select(b,1,3);
-	i := algebra.count(s);
+	i := aggr.count(s);
 	io.print(s);
 	io.print(i);
 	c0 := bat.new(:int,:int);
@@ -1198,14 +1198,14 @@ assert(mat[m].mi1 == NULL);
 		if (k < mat[m].mi->argc-1) {
 			InstrPtr ca, c, bc;
 			
-			/* bc = bat.count */
+			/* bc = aggr.count */
 			bc = newStmt(mb,aggrRef,countRef);
 			setArgType(mb,bc,0,TYPE_int);
 			bc = pushArgument(mb, bc, getArg(mat[m].mi,k));
 
 			/* convert int to oid */
 			c = newStmt(mb, calcRef,oidRef);
-			setArgType(mb,bc,0,TYPE_oid);
+			setArgType(mb,c,0,TYPE_oid);
 			c = pushArgument(mb, c, getArg(bc,0));
 
 			/* ca = calc.add */
