@@ -74,7 +74,7 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			throw(MAL, "optimizer.@1",buf);
 		}
 #ifdef _DEBUG_OPTIMIZER_
-		stream_printf(cntxt->fdout,"@1 %s %d\n",modnme,fcnnme);
+		stream_printf(cntxt->fdout,"@1 %s %s\n",modnme,fcnnme);
 #endif
 		mb = s->def;
 		stk= 0;

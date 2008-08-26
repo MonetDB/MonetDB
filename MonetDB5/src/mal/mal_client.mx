@@ -679,7 +679,7 @@ raised has already lost its file descriptors.
 void MCcloseClient(Client c) {
 
 #ifdef MAL_DEBUG_CLIENT
-	printf("closeClient %d %d\n",c-mal_clients,c->user);
+		printf("closeClient %d " OIDFMT "\n",(int) (c-mal_clients),c->user);
 #endif
 	/* free resources of a single thread */
 	if( !isAdministrator(c)) {
@@ -799,7 +799,7 @@ int MCreadClient(Client c){
 	bstream *in = c->fdin;
 
 #ifdef MAL_CLIENT_DEBUG
-	printf("# streamClient %d\n",(int)c->user);
+	printf("# streamClient " OIDFMT "\n",c->user);
 #endif
 
 	while (in->pos < in->len && 

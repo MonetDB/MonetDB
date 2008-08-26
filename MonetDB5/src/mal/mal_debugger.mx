@@ -1534,7 +1534,7 @@ printBATelm(stream *f, int i, BUN cnt, BUN first)
 		stream_printf(f,"\n");
 		if( cnt && BATcount(b)>0){
 			if (cnt < BATcount(b)) {
-				stream_printf(f, "Sample %d out of %d\n", cnt, BATcount(b));
+				stream_printf(f, "Sample " BUNFMT " out of " BUNFMT "\n", cnt, BATcount(b));
 			}
 			/* cut out a portion of the BAT for display */
 			bs = BATslice(b, first, first + cnt);
@@ -1620,7 +1620,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 			return;
 		}
 		if (cnt <= BATcount(b)) {
-			stream_printf(f, "Sample %d out of %d\n", cnt, BATcount(b));
+			stream_printf(f, "Sample " BUNFMT " out of " BUNFMT "\n", cnt, BATcount(b));
 		}
 		/* cut out a portion of the BAT for display */
 		bs = BATslice(b, first, first + cnt);
@@ -1705,12 +1705,12 @@ asses for memory fragmentation.
 @= heapinfo
 hp= @1;
 if(hp && hp->base){
-	stream_printf(out,"\t@2=%d size=%d\n",hp->base, hp->size);}
+	stream_printf(out,"\t@2=" PTRFMT " size=" SZFMT "\n",PTRFMTCAST hp->base, hp->size);}
 @= hashinfo
 h= @1;
 if(h && h->mask){
-	    stream_printf(out,"\t@2=%d size=%d\n",h, sizeof(*h));
-	    stream_printf(out,"\t@2link=%d size=%d\n",h->link,
+	    stream_printf(out,"\t@2=" PTRFMT " size=" SZFMT "\n",PTRFMTCAST h, sizeof(*h));
+	    stream_printf(out,"\t@2link=" BUNFMT " size=" SZFMT "\n",h->link,
 	            (h->mask+h->lim+1)*sizeof(int));
 }
 @-
@@ -1722,7 +1722,7 @@ More then 9 elements makes it full.
 @= setVector
 	start= (((long)@1)-min)/granule;
 	lim= (((long)@1)-min + @2)/granule;
-	stream_printf(out,"start %d lim %d\n",start,lim);
+	stream_printf(out,"start %ld lim %ld\n",start,lim);
 
 @c
 str
@@ -1757,7 +1757,7 @@ memProfileVector(stream *out, int cells)
 			long start, lim;
 #endif
 
-			stream_printf(out, "\tdesc=%d size=%d\n", b, sizeof(*b));
+			stream_printf(out, "\tdesc=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST b, sizeof(*b));
 			@:heapinfo(&b->H->heap,tail)@
 			@:heapinfo(&b->T->heap,head)@
 #ifdef HAVE_SBRK
@@ -1765,7 +1765,7 @@ memProfileVector(stream *out, int cells)
 				min = (long) b;
 				max = min + GDKmem_heapsize();
 				granule = (max - min) / cells;
-				stream_printf(out, "granule %dK\n", granule / 1024);
+				stream_printf(out, "granule %ldK\n", granule / 1024);
 			}
 			@:setVector(b, sizeof(*b))@
 			@:setVector(hp->base, hp->size)@
@@ -1786,7 +1786,7 @@ printBBPinfo(stream *out)
 	str v;
 
 	stream_printf(out, "#BBP memory layout\n");
-	stream_printf(out, "#heap maximum =%d/M\n", GDKmem_heapsize() / (1024 * 1024));
+	stream_printf(out, "#heap maximum =" SZFMT "/M\n", GDKmem_heapsize() / (1024 * 1024));
 	v = memProfileVector(out,32);
 	stream_printf(out, "#%s\n", v);
 	GDKfree(v);

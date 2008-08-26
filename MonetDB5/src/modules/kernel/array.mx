@@ -473,7 +473,7 @@ print_array(BAT *val, ...)
 				register BUN p = BUNfnd(batptr[i], o);
 
 				if (p == BUN_NONE) {
-					GDKerror("print_array: Index %d missing for oid %d.\n", i, *o);
+					GDKerror("print_array: Index %d missing for oid " OIDFMT ".\n", i, *o);
 					goto exit_err_full;
 				}
 				offset = (offset * lenvector[i]) + ((*((int *) Tloc(batptr[i],p))) - minvector[i]);
@@ -519,11 +519,11 @@ print_array(BAT *val, ...)
 			register BUN p = BUNfnd(val, &arrayindex[offset]);
 
 			if (p == BUN_NONE) {
-				GDKerror("print_array: Value missing for oid %d.\n", arrayindex[offset]);
+				GDKerror("print_array: Value missing for oid " OIDFMT ".\n", arrayindex[offset]);
 				goto exit_err_full;
 			}
 #ifdef EXCESSIVE_DEBUGGING
-			fprintf(stderr, "%d\@0", arrayindex[offset]);
+			fprintf(stderr, OIDFMT "\@0", arrayindex[offset]);
 #endif
 			ATOMprint(type_id, BUNtail(vali, p), st);
 			if (stream_errnr(st))

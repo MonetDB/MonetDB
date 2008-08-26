@@ -2188,7 +2188,7 @@ radix_cluster_va(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, va_list ap)
 			prev = cur;
 		}
 		if (n == 0 || tot != BATcount(b)) {
-			GDKerror("radix_cluster: total number size %d of all limits %s does not end up to size %d of %s!\n", tot, nme, BATcount(b), BATgetId(b));
+			GDKerror("radix_cluster: total number size " SZFMT " of all limits %s does not end up to size " BUNFMT " of %s!\n", tot, nme, BATcount(b), BATgetId(b));
 			BBPunfix(limitid);
 			GDKfree(lim);
 			return GDK_FAIL;
@@ -3719,7 +3719,7 @@ M4_RDX_posjoin_tuple(BAT **res, BAT *proj, BAT *attr)
 	int xx, yy;
 
 	if (bn == NULL) {
-		GDKerror("posjoin_tuple: could not alloc BAT[void,%s] of size %d.\n", ATOMname(attr->ttype), BATcount(proj));
+		GDKerror("posjoin_tuple: could not alloc BAT[void,%s] of size " BUNFMT ".\n", ATOMname(attr->ttype), BATcount(proj));
 		return GDK_FAIL;
 	}
 	s = BUNfirst(bn);
@@ -3785,7 +3785,7 @@ M4_RDX_jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, 
 	BUN p, q, r, s;
 
 	if (bn == NULL || cluster == NULL) {
-		GDKerror("jivejoin0: could not alloc BAT[void,%s] of size %d.\n", ATOMname(attr->ttype), BATcount(proj));
+		GDKerror("jivejoin0: could not alloc BAT[void,%s] of size " BUNFMT ".\n", ATOMname(attr->ttype), BATcount(proj));
 		return GDK_FAIL;
 	}
 	*res = NULL;
@@ -3884,7 +3884,7 @@ M4_RDX_jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int
 	BUN p, q, r, bobak;
 
 	if (bn == NULL || cluster == NULL) {
-		GDKerror("jivejoin1: could not alloc BAT[void,%s] of size %d.\n", ATOMname(attr->ttype), BATcount(proj));
+		GDKerror("jivejoin1: could not alloc BAT[void,%s] of size " BUNFMT ".\n", ATOMname(attr->ttype), BATcount(proj));
 		return GDK_FAIL;
 	}
 	*res = NULL;
@@ -3918,7 +3918,7 @@ M4_RDX_jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int
 	xx = cluster[yy] - cluster[0];
 	if (xx != BATcount(proj)) {
 		BBPreclaim(bn);
-		GDKerror("jivejoin1: total cluster entries %d in %s does not match size %d of %s.\n", xx, BATgetId(radix_count), BATcount(proj), BATgetId(proj));
+		GDKerror("jivejoin1: total cluster entries " SZFMT " in %s does not match size " BUNFMT " of %s.\n", xx, BATgetId(radix_count), BATcount(proj), BATgetId(proj));
 		return GDK_FAIL;
 	}
 	yy = (yy - 1) << zz;	/* yy is mask, zz is shift */
@@ -4011,7 +4011,7 @@ M4_RDX_jivejoin2(BAT **res, BAT *proj, BAT *attr)
 	int xx;
 
 	if (bn == NULL) {
-		GDKerror("jivejoin2: could not alloc BAT[void,%s] of size %d.\n", ATOMname(attr->ttype), BATcount(proj));
+		GDKerror("jivejoin2: could not alloc BAT[void,%s] of size " BUNFMT ".\n", ATOMname(attr->ttype), BATcount(proj));
 		return GDK_FAIL;
 	}
 	/* make BUNptr(0) point to BUNfirst */

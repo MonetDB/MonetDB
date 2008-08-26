@@ -173,7 +173,7 @@ mal_command_generator(const char *text, int state)
 	int i;
 
 #ifdef _MAL_READLINE_DEBUG
-	printf("expand:%d [%d] %s \n",state,(int)strlen(text),text);
+	printf("expand:%d [" SZFMT "] %s \n",state,strlen(text),text);
 #endif
 	if (!state) {
 		index = 0;

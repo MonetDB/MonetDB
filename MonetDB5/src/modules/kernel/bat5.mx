@@ -1318,7 +1318,7 @@ HASHinfo(BAT *bn, Hash *h, str s)
 		if (h->hash[i] == BUN_NONE) {
 			cnt[0]++;
 		} else if (h->hash[i] > h->lim) {
-			GDKerror("HASHinfo: hash consistency problem %d\n", i);
+			GDKerror("HASHinfo: hash consistency problem " BUNFMT "\n", i);
 		} else {
 			j = HASHlist(h, h->hash[i]);
 			for (k = 0; j; k++)
@@ -2430,7 +2430,7 @@ may emerge internally as well.
 if (b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
     *(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b))))
 {
-printf("val %d seqbase %d pos %d\n", *(oid*)@1,
+printf("val " OIDFMT " seqbase " OIDFMT " pos " BUNFMT "\n", *(oid*)@1,
 	b->@1seqbase,  BUNgetpos(b, BUNlast(b)) );
       throw(MAL, "bat.insert", " insert non-nil values in a void column.");
 }
