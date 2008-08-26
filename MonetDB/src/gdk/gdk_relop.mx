@@ -1493,7 +1493,7 @@ nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r)
 	oid *rt = (oid *) (r->ttype == TYPE_void ? 0 : BUNtloc(rbi, ri));
 
 	for (ri = li = 0; li < lhi; li++, ri = 0) {
-		oid off = r->ttype == TYPE_void ? 0 : r->tseqbase;
+		oid off = r->ttype == TYPE_void ? r->tseqbase : 0;
 		BUN len = cur;
 		@1 v = la[li];
 		oid o;
