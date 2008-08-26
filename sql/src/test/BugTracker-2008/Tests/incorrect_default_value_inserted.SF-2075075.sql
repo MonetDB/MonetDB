@@ -1,0 +1,10 @@
+
+CREATE TABLE A
+(a NUMERIC(4,1) DEFAULT 98.6,
+b NUMERIC(5) DEFAULT -55555);
+
+INSERT INTO A(a) VALUES (99.0);
+
+select * from A;
+
+drop table A;
