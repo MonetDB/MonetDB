@@ -1,0 +1,16 @@
+# tests related to bug reports:
+# <descriptive-name>.SF-<bug-report-id>[.<ext>]
+alter_add_constraint_should_check_existing_data.SF-2075241
+alter_view_not_allowed.SF-2075195
+auto_coersion_bug.SF-2075157
+correlated_exists.SF-2075147
+decimal_cast_in_view.SF-2075223
+extract_bug.SF-2075266
+incorrect_default_value_inserted.SF-2075075
+insert_into_unique_column.SF-2075180
+mul_div_bug.SF-2075135
+string_length_not_checked.SF-2075078
+update_set_negative.SF-2075197
+varchar_char_semantics.SF-2075085
+view_reply_incorrect.SF-2075097
+year_overflow_bug.SF-2075133
