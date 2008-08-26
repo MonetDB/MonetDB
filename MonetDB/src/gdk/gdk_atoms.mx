@@ -550,25 +550,25 @@ ATOMproperty(str id, str property, GDKfcn arg)
 	}
 	if (strcmp("size", property) == 0) {
 		if (arg) {
-			assert((lng) arg <= INT_MAX);
-			BATatoms[t].size = (int) (lng) arg;
+			assert((size_t) arg <= INT_MAX);
+			BATatoms[t].size = (int) (size_t) arg;
 			BATatoms[t].varsized = 0;
-			BATatoms[t].align = align((int) (lng) arg);
+			BATatoms[t].align = align((int) (size_t) arg);
 		} else {
 			BATatoms[t].size = sizeof(var_t);
 			BATatoms[t].varsized = 1;
 			BATatoms[t].align = sizeof(var_t);
 		}
 	} else if (strcmp("linear", property) == 0) {
-		assert((lng) arg <= INT_MAX);
-		BATatoms[t].linear = (int) (lng) arg;
+		assert((size_t) arg <= INT_MAX);
+		BATatoms[t].linear = (int) (size_t) arg;
 	} else if (strcmp("align", property) == 0) {
-		assert((lng) arg <= INT_MAX);
-		BATatoms[t].align = (int) (lng) arg;
+		assert((size_t) arg <= INT_MAX);
+		BATatoms[t].align = (int) (size_t) arg;
 	} else if (strcmp("storage", property) == 0) {
-		int tpe = (int) (lng) arg;
+		int tpe = (int) (size_t) arg;
 
-		assert((lng) arg <= INT_MAX);
+		assert((size_t) arg <= INT_MAX);
 		BATatoms[t] = BATatoms[tpe];	/* copy from example */
 		strcpy(BATatoms[t].name, id);	/* restore name */
 	} else if (strcmp("fromstr", property) == 0) {
