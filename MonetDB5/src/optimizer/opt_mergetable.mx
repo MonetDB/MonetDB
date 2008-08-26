@@ -1513,11 +1513,13 @@ And the min/max is as easy
 			actions++;
 			continue;
 		} 
-		if (getModuleId(p) == groupRef || 
+		if (match > 0 && (
+		    getModuleId(p) == groupRef || 
+		    getModuleId(p) == aggrRef || 
 		   (getModuleId(p) == batRef && 
 				getFunctionId(p) == sliceRef) ||
 		   (getModuleId(p) == algebraRef && 
-				getFunctionId(p) == sortTailRef)) { 
+				getFunctionId(p) == sortTailRef))) { 
 			error++;
 			goto fail;
 		}

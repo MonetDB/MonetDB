@@ -89,18 +89,18 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				  getFunctionId(q)==bindidxRef ))
 			continue;
 		v= varGetProp(mb, getArg(q,0), rowsProp);
-		if (v && v->value.val.ival >= 0
+		if (v && v->value.val.lval >= 0
 #if SIZEOF_BUN <= SIZEOF_INT
-		    && v->value.val.ival <= BUN_MAX
+		    && v->value.val.lval <= BUN_MAX
 #endif
 		   )
-			r= (BUN) v->value.val.ival;
+			r= (BUN) v->value.val.lval;
 		if (r >= rowcnt){
 			schema = getVarConstant(mb, getArg(q,1)).val.sval;
 			table = getVarConstant(mb, getArg(q,2)).val.sval;
 			rowcnt = r;
 			estimate++;
-			r = -1;
+			r = 0;
 		}
 	}
 
