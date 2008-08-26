@@ -1894,7 +1894,7 @@ The atomic types over which the binary associations are maintained
 are described by an atom descriptor.
  @multitable @columnfractions 0.08 0.7
 @item void
-@tab ATOMproperty    (str   nme, char *property, int (*fcn)()));
+@tab ATOMproperty    (str   nme, char *property, int (*fcn)(), int val);
 @item int
 @tab ATOMindex       (char *nme);
 @item int
@@ -2075,7 +2075,7 @@ gdk_export atomDesc BATatoms[];
 gdk_export int GDKatomcnt;
 
 gdk_export void ATOMdelete(int id);
-gdk_export void ATOMproperty(char *nme, char *property, GDKfcn fcn);
+gdk_export void ATOMproperty(char *nme, char *property, GDKfcn fcn, int val);
 gdk_export int ATOMindex(char *nme);
 gdk_export int ATOMisdescendant(int id, int parentid);
 gdk_export int ATOMdump(void);
@@ -2504,7 +2504,7 @@ BBPcheck(REGISTER bat x, REGISTER const char *y)
 		REGISTER bat z = ABS(x);
 
 		if (z >= BBPsize || BBP[z].nme[0] == NULL) {
-			GDKwarning("%s: range error %d\n", y, x);
+			GDKwarning("%s: range error %d\n", y, (int) x);
 		} else {
 			return z;
 		}

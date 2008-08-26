@@ -2893,7 +2893,7 @@ check if duplicated properties are equal
 
 		if (BAThvoid(b) && b->hseqbase != bm->tseqbase) {
 			oid o = (b->htype && yy != xx) ? *(oid *) BUNhloc(bi, BUNfirst(b)) : oid_nil;
-			GDKerror("BATpropcheck: BAT %s(%d) set inconsistent hseqbase: %d != %d => %d\n", BATgetId(b), b->batCacheid, b->hseqbase, bm->tseqbase, o);
+			GDKerror("BATpropcheck: BAT %s(%d) set inconsistent hseqbase: " OIDFMT " != " OIDFMT " => " OIDFMT "\n", BATgetId(b), b->batCacheid, b->hseqbase, bm->tseqbase, o);
 			b->hseqbase = bm->tseqbase = o;
 
 			b->batDirty = TRUE;

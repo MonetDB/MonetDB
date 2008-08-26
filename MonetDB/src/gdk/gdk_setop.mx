@@ -531,7 +531,7 @@ TODO synced/key case..
 			oid *bnt;
 			BUN o = BUNfirst(bn);
 
-			ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: directcheck[@1, @2, @3, _@4, @5][void tail]; %d %d\n", BATcount(l), BATcount(r));
+			ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: directcheck[@1, @2, @3, _@4, @5][void tail]; " BUNFMT " " BUNFMT "\n", BATcount(l), BATcount(r));
 			p1 = 0;
 			q1 = BATcount(l);
 			while(p1 < q1) {
@@ -561,7 +561,7 @@ TODO synced/key case..
 			@4 *h = (@4*)BUNhloc(li, 0);
 			@4 *rh = (@4*)BUNhloc(ri, 0);
 
-			ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: directcheck[@1, @2, @3, _@4, @5]; %d %d\n", BATcount(l), BATcount(r));
+			ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: directcheck[@1, @2, @3, _@4, @5]; " BUNFMT " " BUNFMT "\n", BATcount(l), BATcount(r));
 			p1 = BUNfirst(l);
 			q1 = BUNlast(l);
 			while(p1 < q1) {

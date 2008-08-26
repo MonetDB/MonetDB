@@ -418,16 +418,16 @@ enum_load(int *retval, BAT *h)
 			char *name = BATgetId(h);
 
 			if (BATcount(h) < 255) { /* without bte_nil ! */
-				ATOMproperty(name, "storage", (GDKfcn) (ssize_t) TYPE_bte);
-				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tobte);
-				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].frombte);
+				ATOMproperty(name, "storage", (GDKfcn) NULL, TYPE_bte);
+				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tobte, 0);
+				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].frombte, 0);
 			} else if (BATcount(h) < 65535) { /* without sht_nil ! */
-				ATOMproperty(name, "storage", (GDKfcn) (ssize_t) TYPE_sht);
-				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tosht);
-				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].fromsht);
+				ATOMproperty(name, "storage", (GDKfcn) (ssize_t) NULL, TYPE_sht);
+				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tosht, 0);
+				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].fromsht, 0);
 			} else {
 				MT_unset_lock(enum_lock, "enum_load");
-				GDKerror("enum_load: too many values (%d) for enum types.\n", BATcount(h));
+				GDKerror("enum_load: too many values (" BUNFMT ") for enum types.\n", BATcount(h));
 				return GDK_FAIL;
 			}
 			enum_tpe[i] = *retval = ATOMindex(name);

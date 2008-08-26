@@ -150,7 +150,7 @@ CLKsignal(int nr)
 	if (signal(SIGALRM, CLKsignal) == SIG_ERR) {
 		GDKsyserror("CLKsignal: call failed\n");
 	}
-	TRGDEBUG THRprintf(GDKout, "#alarm signal (timeTop=%d)\n", timerTop);
+	TRGDEBUG THRprintf(GDKout, "#alarm signal (timerTop=%d)\n", timerTop);
 
 	if (timerTop == 0) {
 		return;

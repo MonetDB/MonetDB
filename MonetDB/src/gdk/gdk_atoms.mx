@@ -470,7 +470,7 @@ Some routines are required for coercion and to support the BAT
 administration.
 
 A new type is incrementally build using the 
-routine @%ATOMproperty(id, property, value)@.
+routine @%ATOMproperty(id, property, function, value)@.
 The parameter @%id@ denotes the type name; an entry is created if the type
 is so far unknown. The @%property@ argument is a string identifying the
 type description property to be updated. Valid property
@@ -526,7 +526,7 @@ align(int n)
 }
 
 void
-ATOMproperty(str id, str property, GDKfcn arg)
+ATOMproperty(str id, str property, GDKfcn arg, int val)
 {
 	int t;
 
@@ -549,27 +549,22 @@ ATOMproperty(str id, str property, GDKfcn arg)
 		BATatoms[t].deleting = 1;	/* not yet usable */
 	}
 	if (strcmp("size", property) == 0) {
-		if (arg) {
-			assert((size_t) arg <= INT_MAX);
-			BATatoms[t].size = (int) (size_t) arg;
+		if (val) {
+			assert(val <= SHRT_MAX);
+			BATatoms[t].size = val;
 			BATatoms[t].varsized = 0;
-			BATatoms[t].align = align((int) (size_t) arg);
+			BATatoms[t].align = align(val);
 		} else {
 			BATatoms[t].size = sizeof(var_t);
 			BATatoms[t].varsized = 1;
 			BATatoms[t].align = sizeof(var_t);
 		}
 	} else if (strcmp("linear", property) == 0) {
-		assert((size_t) arg <= INT_MAX);
-		BATatoms[t].linear = (int) (size_t) arg;
+		BATatoms[t].linear = val;
 	} else if (strcmp("align", property) == 0) {
-		assert((size_t) arg <= INT_MAX);
-		BATatoms[t].align = (int) (size_t) arg;
+		BATatoms[t].align = val;
 	} else if (strcmp("storage", property) == 0) {
-		int tpe = (int) (size_t) arg;
-
-		assert((size_t) arg <= INT_MAX);
-		BATatoms[t] = BATatoms[tpe];	/* copy from example */
+		BATatoms[t] = BATatoms[val];	/* copy from example */
 		strcpy(BATatoms[t].name, id);	/* restore name */
 	} else if (strcmp("fromstr", property) == 0) {
 		BATatoms[t].atomFromStr = (int (*)(char *, int *, void **)) arg;

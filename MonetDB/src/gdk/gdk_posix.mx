@@ -1109,7 +1109,7 @@ MT_madvise(void *p, size_t len, int advise)
 	int ret = posix_madvise(p, len, advise);
 
 #ifdef MMAP_DEBUG
-	stream_printf(GDKerr, "posix_madvise(" LLFMT "," LLFMT ",%d) = %d\n", (long long) p, (long long) len, advise, ret);
+	stream_printf(GDKerr, "posix_madvise(" PTRFMT "," SZFMT ",%d) = %d\n", PTRFMTCAST p, len, advise, ret);
 #endif
 	if (MT_fadvise(p, len, advise))
 		ret = -1;

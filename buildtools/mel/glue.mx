@@ -379,7 +379,6 @@ glue::gen_module(ostream &o, const Module &d)
 	o << "#ifdef __cplusplus\n";
 	o << "extern \"C\" {\n";
 	o << "#endif\n\n";
-	o << "typedef int (*fptr)();\n\n";
 
 	o << d.Name() << "_export oid _" << d.Name();
 	o << "_Module_Install( TBLinstall *inst, str user );\n";
@@ -440,7 +439,7 @@ glue::gen_module(ostream &o, const Module &d)
 	o << "\n";
 	delete(l);
 
-	o << "    TBL_Install_Functions( mid, " << modulename << "_fcns, user, " << modulename << "_compile_time );\n";
+	o << "   TBL_Install_Functions( mid, " << modulename << "_fcns, user, " << modulename << "_compile_time );\n";
 
 	/* execute prelude as *last* step */
 	l = new install_prelude();
@@ -1272,7 +1271,7 @@ install::gen_dependency(ostream &o, const Dependency &d)
 ostream &
 atom_property(ostream &o, const char *name, const char *property)
 {
-	o << "   ATOMproperty(\"" << name << "\", \"" << property << "\",(fptr)";
+	o << "   ATOMproperty(\"" << name << "\", \"" << property << "\",(GDKfcn)";
 	return o;
 }
 
@@ -1300,7 +1299,8 @@ install::gen_atom(ostream &o, const Atom &d)
 		Atom *p = d.parent();
 
 		atom_property(o, d.Name(), "storage");
-		o << "(ssize_t)ATOMindex(\"";
+		o << "NULL, ";
+		o << "ATOMindex(\"";
 		if (p->type()) {
 			o << p->type()->toString();
 		} else
@@ -1309,15 +1309,16 @@ install::gen_atom(ostream &o, const Atom &d)
 	}
 	if (d.type()) {
 		atom_property(o, d.Name(), "storage");
-		o << "(ssize_t)ATOMindex(\"" << d.type()->toString() << "\"));\n";
+		o << "NULL, ";
+		o << "ATOMindex(\"" << d.type()->toString() << "\"));\n";
 	}
 	if (!a && !t && d.isFixed()) {
 		atom_property(o, d.Name(), "size");
-		o << " (ssize_t)";
+		o << "NULL, ";
 		print_size(o, d.size(), d.type(), d.Name());
 		o << ");\n";
 		atom_property(o, d.Name(), "align");
-		o << " (ssize_t)";
+		o << "NULL, ";
 		print_align(o, d.size(), d.align(), d.type(), d.Name());
 		o << ");\n";
 	}
@@ -1338,9 +1339,8 @@ install::gen_atom(ostream &o, const Atom &d)
 			if (s) {
 				atom_property(o, d.Name(), Atomops::string(i));
 
-				o << "(ptr)&";
 				o << s->Name();
-				o << ");\n";
+				o << ", 0);\n";
 				found = 1;
 			}
 			if (!found && (d.type() || d.parent())) {
@@ -1349,26 +1349,24 @@ install::gen_atom(ostream &o, const Atom &d)
 			if (!found && d.isFixed() && i > OP_UNFIX) {
 				atom_property(o, d.Name(), Atomops::string(i));
 
-				o << "(ptr)&";
 				if (!d.parent())
 					o << d.Name();
 				else
 					o << d.top_parent()->Name();
 				o << "_" << Atomops::string(i);
 
-				o << ");\n";
+				o << ", 0);\n";
 			}
 		}
 		if (cmp_atom->cmds()[OP_NEQUAL]) {
 			atom_property(o, d.Name(), "linear");
-			o << "(ssize_t) 0);\n";
+			o << "NULL, 0);\n";
 		}
 	} else if (d.isFixed() && !d.type() && !d.parent()) {
 		for (int i = OP_TOSTR; i < OP_PUT; i++) {
 			atom_property(o, d.Name(), Atomops::string(i));
-			o << "(ptr)&" << d.Name() << "_" << Atomops::string(i);
-
-			o << ");\n";
+			o << d.Name() << "_" << Atomops::string(i);
+			o << ", 0);\n";
 		}
 	}
 	o << "   BATatoms[TYPE_" << d.Name() << " = ATOMindex(\"" << d.Name() << "\")].deleting = 0;\n";

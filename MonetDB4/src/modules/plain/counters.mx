@@ -2862,7 +2862,7 @@ start_count(counter *retval, int *event0, int *event1)
 				unsigned int i;
 
 				for (i = 0; i < pfmInfo->evt.pfp_event_count; i++)
-					printf("pmd%d: 0x%x\n", i, pfmInfo->pd[i].reg_flags);
+					printf("pmd%u: 0x%x\n", i, pfmInfo->pd[i].reg_flags);
 			}
 			GDKerror("start_count: perfmonctl error PFM_WRITE_PMDS errno %d: %s\n", errno, strerror(errno));
 			return GDK_FAIL;

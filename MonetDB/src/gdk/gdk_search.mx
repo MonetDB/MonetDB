@@ -365,7 +365,7 @@ BAThash(BAT *b, BUN masksize)
 		str nme = BBP_physical(b->batCacheid);
 		BATiter bi = bat_iterator(b);
 
-		ALGODEBUG THRprintf(GDKout, "#BAThash: create hash(%d);\n", BATcount(b));
+		ALGODEBUG THRprintf(GDKout, "#BAThash: create hash(" BUNFMT ");\n", BATcount(b));
 		/* cnt = 0, hopefully there is a proper capacity from which
 		 * we can derive enough information */
 		if (!cnt)

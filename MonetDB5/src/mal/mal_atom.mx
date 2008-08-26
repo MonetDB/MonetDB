@@ -282,13 +282,12 @@ void malAtomDefinition(str name, int tpe){
 		return;
 	}
 	
-	ATOMproperty(name,"",  (int (*)()) 0);
+	ATOMproperty(name,"",  (int (*)()) 0, 0);
 	i= ATOMindex(name);
 	/* overload atom ? */
 	if (tpe) { 
-		memcpy((char*)(BATatoms+i),
-			(char*)(BATatoms+tpe), sizeof(BATatoms[tpe]));
-		strncpy(BATatoms[i].name, name, IDLENGTH);
+		BATatoms[i] = BATatoms[tpe];
+		strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
 		BATatoms[i].storage= BATatoms[tpe].storage;
 	} else { /* cannot overload void atoms */ 
 		BATatoms[i].storage = i;
@@ -302,11 +301,10 @@ int malAtomFixed(int size, int align, char *name)
 {
 	int i = 0;
 
-	ATOMproperty(name,"",  (int (*)()) 0);
+	ATOMproperty(name,"",  (int (*)()) 0, 0);
 	i= ATOMindex(name);
-	memcpy((char*)(BATatoms+i),
-		(char*)(BATatoms+TYPE_chr), sizeof(BATatoms[TYPE_chr]));
-	strncpy(BATatoms[i].name, name, IDLENGTH);
+	BATatoms[i] = BATatoms[TYPE_chr];
+	strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
 	BATatoms[i].storage= i;
 	BATatoms[i].size = size;
 	BATatoms[i].align = align;
@@ -337,11 +335,10 @@ int malAtomArray(int tpe, int size){
 		showException(SYNTAX,"atomArray", "Atom name '%s' too long", name);
 		return -1;  /* ERROR! */
 	}
-	ATOMproperty(name,"",  (int (*)()) 0);
+	ATOMproperty(name,"",  (int (*)()) 0, 0);
 	i= ATOMindex(name);
-	memcpy((char*)(BATatoms+i),
-		(char*)(BATatoms+tpe), sizeof(BATatoms[tpe]));
-	strncpy(BATatoms[i].name, name, IDLENGTH);
+	BATatoms[i] = BATatoms[tpe];
+	strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
 	BATatoms[i].storage= tpe;
 	BATatoms[i].size *= size;
 	BATatoms[i].linear = FALSE;

@@ -1275,7 +1275,7 @@ HASHinfo(BAT *bn, Hash *h, str s)
 		if (h->hash[i] == BUN_NONE) {
 			cnt[0]++;
 		} else if (h->hash[i] > h->lim) {
-			GDKerror("HASHinfo: hash consistency problem %d\n", i);
+			GDKerror("HASHinfo: hash consistency problem " BUNFMT "\n", i);
 		} else {
 			j = HASHlist(h, h->hash[i]);
 			for (k = 0; j; k++)

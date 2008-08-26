@@ -275,7 +275,7 @@ received.
 static RETSIGTYPE
 BATSIGignore(int nr)
 {
-	GDKsyserror("! ERROR signal %d caught by thread %lx\n", nr, (size_t) MT_getpid());
+	GDKsyserror("! ERROR signal %d caught by thread " SZFMT "\n", nr, (size_t) MT_getpid());
 }
 #endif
 
@@ -283,7 +283,7 @@ BATSIGignore(int nr)
 static RETSIGTYPE
 BATSIGabort(int nr)
 {
-	GDKfatal("BATSIGabort: signal %d caught by thread %lx\n", nr, (size_t) MT_getpid());
+	GDKfatal("BATSIGabort: signal %d caught by thread " SZFMT "\n", nr, (size_t) MT_getpid());
 }
 #endif
 
@@ -2113,7 +2113,7 @@ THRnew(MT_Id pid, str name)
 		for (s = GDKthreads, t = s + THREADS; s < t; s++) {
 			if (s->pid == pid) {
 				gdk_unset_lock(GDKthreadLock, "THRnew");
-				GDKwarning("THRnew:duplicate %d\n", pid);
+				GDKwarning("THRnew:duplicate " SZFMT "\n", (size_t) pid);
 				return s;
 			}
 		}
