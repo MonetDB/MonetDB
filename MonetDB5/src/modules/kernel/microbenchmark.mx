@@ -198,7 +198,7 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 
 	/* mix BUNs randomly */
 	for (r = 0, i = 0; i < n; i++) {
-		BUN idx = i + ((r += (BUN) rand()) % (n - i));
+			BUN idx = i + (BUN) ((r += (unsigned int) rand()) % (n - i));
 		int val;
 
 		p = firstbun + i;
