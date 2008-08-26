@@ -41,7 +41,7 @@ is used to access the latest known version quickly.
 
 Upon execution, the Recycler first checks for
 an up to date result to be picked up at no cost,
-other then matching the arguments.
+other than matching the arguments.
 Otherwise, it evaluates the instruction and calls upon
 policy functions to decide if it is worthwhile to
 keep.
@@ -50,10 +50,10 @@ The Recycler comes with a few policy controlling operators
 to experiment with its effect in concrete settings.
 
 Caveats:
-Updates in general should immediately invalidate the cache
+Updates in general should immediately invalidate the cache lines depending on the updated Bats. These are all instructions directly operating on the updates, as well as all instructions consuming the result of the first.
 @{
 @-
-The Recycler should be a variation of the interpreter
+The Recycler is a variation of the interpreter
 which inspects the variable table for alternative results.
 
 @h
@@ -104,7 +104,6 @@ mal_export int rcachePolicy;
 #define RCACHE_MEMLRU 	3
 #define RCACHE_MEMCRD 	4
 
-mal_export int recycleClaim;
 mal_export int recycleCacheLimit;
 mal_export lng recycleMemory;	/* Units of memory permitted */
 mal_export lng recyclerUsedMemory;
@@ -116,7 +115,6 @@ mal_export double recycleFresh;
 mal_export int statements;	/* total number of statements executed */
 mal_export int recycled;	/* total number of statements recycled */
 mal_export int retained;	/* total number of statements retained */
-mal_export lng savedTime;	/* sum of all recycled clk's */
 mal_export int monitorRecycler;
 mal_export int recycleRecent;
 
@@ -196,7 +194,6 @@ int rcachePolicy = RCACHE_LRU;  /* recycle cache management policy
 			RCACHE_MEMLRU: reduce the storage overhead 
 			RCACHE_MEMCRD: reduce the storage overhead */
 int recycleCacheLimit=0; /* No limit by default */
-int recycleClaim=0;	/* avoid stale tables by letting users mark it */
 lng recycleMemory=0;	/* Units of memory permitted */
 @-
 The profiler record is re-used to store recycler information.
@@ -211,7 +208,8 @@ storage cost. Often there is a direct relationship,
 double recycleAlpha = 0.5;
 double recycleFresh = 0.8; /* fresh instructions are protected from deletion */
 
-#define recycleCost(X) recycleAlpha * recycleBlk->profiler[X].ticks + (1-recycleAlpha)* (recycleBlk->profiler[X].ibytes+recycleBlk->profiler[X].obytes)
+#define recycleCost(X) recycleAlpha * recycleBlk->profiler[X].ticks + (1-recycleAlpha)* (recycleBlk->profiler[X].ibytes+recycleBlk->profiler[X].obytes)/100.0
+#define recycleCrd(X) (recycleCost(X)) * (recycleBlk->profiler[X].counter +9) /100.0
 
 @- Monitoring the Recycler
 @c
@@ -219,7 +217,6 @@ lng recyclerUsedMemory = 0;
 int statements = 0;	/* total number of statements executed */
 int recycled = 0;	/* total number of statements recycled */
 int retained = 0;	/* total number of statements retained */
-lng savedTime = 0;	/* sum of all recycled clk's */
 int monitorRecycler = 0; /* 1: print cache stat after each RECYCLEnew call */
 			 /* 2: print cache stat at the end of query */
 int recycleRecent;     /* the most recent entry in cache touched by current query execution */
@@ -307,129 +304,6 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q){
 	}
 }
 
-@-
-static void RECYCLEremove(Client cntxt, int pc){
-	int k,j,i,v;
-	InstrPtr p;
-	InstrPtr *old;
-	int limit;
-	char *used;
-
-	old = recycleBlk->stmt;
-	limit = recycleBlk->stop;
-	newMalBlkStmt(recycleBlk,recycleBlk->ssize);
-
-	used= alloca(recycleBlk->vtop);
-	memset(used,0, recycleBlk->vtop);
-
-	/* set all used variables */
-	for (i = 0; i < pc; i++){
-		p= old[i];
-		pushInstruction(recycleBlk,p);
-		for( j = 0 ; j< p->argc; j++)
-			used[getArg(p,j)] = 1;
-	}
-
-	/* ditch the selected one */
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(cntxt->fdout,"RECYCLEremove %d ",i);
-	printInstruction(cntxt->fdout,recycleBlk, old[i], LIST_MAL_ALL);
-#endif
-	RECYCLEgarbagecollect(recycleBlk,old[i]);
-	for (v=0; v< old[i]->retc; v++)
-			used[getArg(old[i],v)] = 0; /* invalidate return variables */
-	freeInstruction(old[i]);
-	k= i;
-
-	/* propagate the droppings, in the current setup this is not needed
-	  because all instructions are independently cached */
-	for (i ++; i < limit; i++){
-		p= old[i];
-		for( j = p->retc; j< p->argc; j++)
-		if( used[getArg(p,j)] ==0){
-			RECYCLEgarbagecollect(recycleBlk,old[i]);
-			for (v=0; v< old[i]->retc; v++)
-					used[getArg(p,v)] = 0; /* invalidate return variables */
-			freeInstruction(old[i]);
-			goto skip;
-		}
-		pushInstruction(recycleBlk,p);
-		recycleBlk->profiler[k++]= recycleBlk->profiler[i];
-		/* the instruction args are safed */
-		for( j = 0 ; j< p->retc; j++)
-			used[getArg(p,j)] = 1;
-	skip:;
-	}
-	GDKfree(old);
-	/* remove all un-used variables as well */
-	trimMalVariables(cntxt,recycleBlk);
-}
-
-static lng lruclock=0;
-
-/* evict entry from recycler cache to make space for wr RUnits. Target
-entry is protected from eviction */
-
-static void 
-RECYCLEcache(Client cntxt, int target, int wr)
-{
-	int i, victim = 0, mem, size;
-
-	if (!recycleBlk) 
-		return;
-	mem = (recycleMemory && recyclerUsedMemory + wr > recycleMemory);
-	size = (recycleCacheLimit && recycleBlk->stop + (target>0) > recycleCacheLimit);
-	if (!mem && !size)
-		return;
-
-	if (target>=0) {
-		recycleBlk->profiler[target].clk= ++lruclock; /* most recently used */
-		return;
-	}
-
-	for(i=1; i< recycleBlk->stop; i++)
-	if (i != target){
-		switch(rcachePolicy){
-		case RCACHE_LRU:
-			/* find oldest instruction */
-			if( recycleBlk->profiler[victim].clk >recycleBlk->profiler[i].clk)
-				victim = i;
-			break;
-		case RCACHE_CREDIT:
-			/* find least expensive instruction to reconstruct */
-			if (recycleBlk->profiler[victim].counter * recycleCost(victim) > recycleBlk->profiler[i].counter * recycleCost(i))
-					victim = i;
-			break;
-		case RCACHE_MEMLRU:
-			if (mem && recycleBlk->profiler[victim].clk >recycleBlk->profiler[i].clk)
-				victim = i;
-			break;
-		case RCACHE_MEMCRD:
-			if(mem && recycleBlk->profiler[victim].counter * recycleCost(victim) > recycleBlk->profiler[i].counter * recycleCost(i) )
-				victim = i;
-		}
-	}
-
-	if (victim!= target && (mem || (size && recycleClaim <= 1)) ){
-#ifdef _DEBUG_RECYCLE_
-		stream_printf(cntxt->fdout,"RECYCLE cache, remove %d \n",victim);
-#endif
-		recyclerUsedMemory -= recycleBlk->profiler[victim].obytes;
-		RECYCLEremove(cntxt, victim);
-		if (monitorRecycler == 1)
-			fprintf(stderr, 
-				"#memory=%lld, stop=%d, recycled=%d, retained=%d executed=%d saved=%d\n",
-				recyclerUsedMemory, recycleBlk->stop,
-				recycled, retained, statements, savedTime);
-#ifdef _DEBUG_RECYCLE_
-	stream_printf(cntxt->fdout,"RECYCLE new version %d\n", recycleVersion);
-#endif
-		recycleVersion++;
-	}
-}
-
-@c
-
 int chooseVictims(lng *lvs, int ltop, lng wr)
 {
 	dbl *wcrd, maxwc, tmp;
@@ -440,7 +314,8 @@ int chooseVictims(lng *lvs, int ltop, lng wr)
 	memset(wcrd,0, sizeof(dbl)*ltop);
 	for (l = 0; l < ltop; l++){
 		w = recycleBlk->profiler[lvs[l]].obytes;
-		wcrd[l] = w? recycleCost(lvs[l])* recycleBlk->profiler[lvs[l]].counter/ w :0;
+/*		wcrd[l] = w? recycleCost(lvs[l])* recycleBlk->profiler[lvs[l]].counter/ w :0; */
+		wcrd[l] = w? recycleCrd(lvs[l]) / w :0;
 		totmem +=w;
 	} 
 	if (totmem <= wr) /* all leaves need to be dropped */
@@ -591,12 +466,14 @@ newpass:
 			else lvs = lvs1; 
 
 			if (!mem) { /* evict the cheapest entry */
-				mincrd = recycleBlk->profiler[lvs[0]].counter *
-					  recycleCost(lvs[0]);
+				mincrd = recycleCrd(lvs[0]);
+/*				mincrd = recycleBlk->profiler[lvs[0]].counter *
+                                          recycleCost(lvs[0]); */
 				cheap = 0;
 				for (l = 0; l < ltop; l++){
 					k = lvs[l];
-					crd = recycleBlk->profiler[k].counter * recycleCost(k);
+					/*crd = recycleBlk->profiler[k].counter * recycleCost(k); */
+					crd = recycleCrd(k);
 					if( crd < mincrd) {
 						mincrd = crd;
 						cheap = l;
@@ -626,7 +503,7 @@ newpass:
 	for(v=0; v<vtop;v++){
 		printInstruction(cntxt->fdout,recycleBlk, recycleBlk->stmt[vm[v]], LIST_MAL_ALL);
 		stream_printf(cntxt->fdout," Cost %f \n", recycleCost(vm[v]));}
-	stream_printf(cntxt->fdout,"policy=%d mem=%ld usedmem=%ld\n",
+	stream_printf(cntxt->fdout,"policy=%d mem="LLFMT" usedmem="LLFMT"\n",
 		rcachePolicy,recycleMemory,recyclerUsedMemory);
 #endif
 
@@ -746,9 +623,9 @@ compare by value.
 	recyclerUsedMemory += wr;
 	if (monitorRecycler == 1 ) 
 		fprintf(stderr, 
-			"#memory="LLFMT", stop=%d, recycled=%d, retained=%d executed=%d saved=" LLFMT "\n",
+			"#memory="LLFMT", stop=%d, recycled=%d, retained=%d executed=%d \n",
 			recyclerUsedMemory, recycleBlk->stop,
-			recycled, retained, statements, savedTime);
+			recycled, retained, statements);
 	retained++;
 	recycleRecent = i;
 }
@@ -930,7 +807,6 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			p->recycle = i;
 			recycled++;
 			recycleRecent = i;
-			savedTime += recycleBlk->profiler[i].ticks;
 			return i;
 			notfound: 
 				continue;
@@ -963,7 +839,6 @@ We execute it in place and safe the result upon need.
 		s->keepAlive= j;
 		s->stk[getArg(p,1)].val.bval = nbid;
 		BBPincref(nbid, TRUE);
-		savedTime += recycleBlk->profiler[pc].ticks;
 		recycleBlk->profiler[pc].counter++;
 		RECYCLEexit(cntxt, mb, s, p);
 		return i;
@@ -1007,7 +882,6 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			prof->ticks =  GDKusec()- stk->clk;
 		prof->counter++;
                 prof->clk = GDKusec();
-		savedTime += prof->ticks;
 		recycleRecent = p->recycle;
 		mal_unset_lock(recycleLock,"recycle");
 		return 1;
@@ -1135,7 +1009,7 @@ RECYCLEshutdown(Client cntxt){
 	recycleBlk= NULL;
 	recycleVersion++;
 	recycled = statements = 0;
-	savedTime = recycleSearchTime = 0;
+	recycleSearchTime = 0;
 	recyclerUsedMemory = 0;
 	mal_unset_lock(recycleLock,"recycle");
 	for (i=mb->stop-1; i>=0; i--)

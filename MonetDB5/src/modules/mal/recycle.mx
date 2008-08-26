@@ -111,6 +111,7 @@ comment "Called at the start of a recycle controlled function";
 
 #include "mal.h"
 #include "mal_instruction.h"
+#include "bat5.h"
 
 #ifdef WIN32
 #ifndef LIBRECYCLE
@@ -175,7 +176,6 @@ RECYCLEstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( recycleBlk == 0)
 		return MAL_SUCCEED;
 	recycleBlk->version = 0;
-	recycleClaim--;
 	return MAL_SUCCEED;
 }
 
@@ -191,24 +191,37 @@ void
 RECYCLEdump(stream *s)
 {
 	int i, incache;
+	str msg;
+	lng sz, persmem=0;
+	ValPtr v;
 
+	for(i=1; i< recycleBlk->stop; i++){
+		v = &getVarConstant(recycleBlk,getArg(recycleBlk->stmt[i],0));
+		if ((v->vtype == TYPE_bat) &&
+			 (BBP_status( *(int*)VALget(v)) & BBPPERSISTENT)) {
+			msg = BKCbatsize(&sz, (int*)VALget(v));
+			if ( msg == MAL_SUCCEED )
+				persmem += sz;
+		}
+	}
+	persmem = (lng) persmem/RU;
 	stream_printf(s,"#Recycler  catalog\n");
 	stream_printf(s,"#retain= %d time =%d sze= %d alpha= %4.3f\n",
 		retainPolicy, recycleTime, recycleVolume, recycleAlpha);
 	stream_printf(s,"#reuse= %d\n", reusePolicy);
-	stream_printf(s,"#rcache= %d limit= %d memlimit=%d\n", rcachePolicy, recycleCacheLimit, recycleMemory);
-	stream_printf(s,"#hard stmt = %d hard var = %d hard mem= %d\n",
+	stream_printf(s,"#rcache= %d limit= %d memlimit="LLFMT"\n", rcachePolicy, recycleCacheLimit, recycleMemory);
+	stream_printf(s,"#hard stmt = %d hard var = %d hard mem="LLFMT"\n",
 		 HARDLIMIT_STMT, HARDLIMIT_VAR, HARDLIMIT_MEM);
 	incache = recycleBlk? recycleBlk->stop-1:0;
-	stream_printf(s,"#recycled = %d incache= %d executed = %d saved time(ms)= %8.2f memory(KB)= %d\n",
-		 recycled, incache,statements, savedTime/1000.0,recyclerUsedMemory);
+	stream_printf(s,"#recycled = %d incache= %d executed = %d memory(KB)= "LLFMT" PersBat memory="LLFMT"\n",
+		 recycled, incache,statements, recyclerUsedMemory, persmem);
 	stream_printf(s,"#Cache search time= %d(usec)\n",recycleSearchTime);
 
 	/* and dump the statistics */
 	if (recycleBlk){
         stream_printf(s,"# CL\t   lru\t\tcnt\t ticks\t rd\t wr\t Instr\n");
 	for(i=1; i< recycleBlk->stop; i++){
-		stream_printf(s,"# %4d\t%d\t%d\t%d\t%d\t%d\t%s\n", i,
+		stream_printf(s,"# %4d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%s\n", i,
 			recycleBlk->profiler[i].clk,
 			recycleBlk->profiler[i].counter,
 			recycleBlk->profiler[i].ticks,
@@ -251,6 +264,7 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 	stream *s;
 	InstrPtr p;
 	int potrec=0, instr=0, i;
+	lng recmem=0;
 
 	if (recycleLog == NULL) 
 		s = cntxt->fdout;
@@ -268,10 +282,14 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 		if ( p->token!= ASSIGNsymbol) instr++;
 	}
 
+	for(i=1; i< recycleBlk->stop; i++)
+		if ( recycleBlk->profiler[i].counter >1) 
+			recmem += recycleBlk->profiler[i].obytes;
+
 	stream_printf(s,"%d\t %d\t %d\t %d\t %8.2f\t",++q, mb->stop, potrec,
 		recycled-recycled0,(GDKusec()-time0)/1000.0);
-	stream_printf(s,"%d\t %d\t %d\t %d\t %d\n",
-		recycled,recycleBlk?recycleBlk->stop-1:0,statements,recyclerUsedMemory, instr);
+	stream_printf(s,"%d\t %d\t %d\t" LLFMT "\t" LLFMT "\t %d\n",
+		recycled,recycleBlk?recycleBlk->stop-1:0,statements,recyclerUsedMemory, recmem, instr);
 	if( s !=cntxt->fdout)
 		close_stream(s);
 }
@@ -373,7 +391,7 @@ RECYCLElog(int *ret, str *nm)
 	recycleLog = GDKstrdup(*nm);
 	s = open_wastream(recycleLog);
         if (s){
-        	stream_printf(s,"# Q\t InstrQ\t PotRecQ RecQ\t TimeQ(ms)\tRecTot\tincache\tInstrTot\tmemory(KB)\tInstrNoGBC\n");
+        	stream_printf(s,"# Q\t InstrQ\t PotRecQ RecQ\t TimeQ(ms)\tRecTot\tincache\tInstrTot\tMem(KB)\tReusedMem\tInstrNoGBC\n");
                 close_stream(s);
 	}
 
