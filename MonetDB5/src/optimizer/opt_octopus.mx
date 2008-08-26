@@ -46,6 +46,9 @@ The octopus needs a collection of sites to play with,
 which can be obtained dynamically from the merovingian.
 Alternatively, we built a list of possible sites explicitly. [todo]
 
+Currently the octopus delegates objects to the remote site
+and calls them back if needed. This can/should be avoided.
+
 The octopus is called just after the dataflow optimizer, such
 that dataflow dependencies have already been handled.
 The threads walking the dataflow are serialized when hitting
@@ -211,7 +214,7 @@ static int
 OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, *old;
-	int i, j, k, l, limit, slimit, doit=0;
+	int i, j, k, l, limit, doit=0;
 	DBalias *dbalias;
 	str *sites;
 	int sitecnt;
@@ -226,7 +229,6 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) pci;
 
 	limit = mb->stop;
-	slimit = mb->ssize;
 	old = mb->stmt;
 
 	dbalias= alloca(mb->vsize * sizeof(DBalias));
