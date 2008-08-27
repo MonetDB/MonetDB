@@ -32,7 +32,7 @@ EOF
 WARNING:
 
 The file "$dir/$f" should be kept identical in
-MonetDB, MonetDB4, MonetDB5, clients, template, sql, pathfinder, xml, geom, amdb, datacell, pruning !
+MonetDB, MonetDB4, MonetDB5, clients, java, template, sql, pathfinder, xml, geom, datacell, pruning !
 
 (If necessary, please contact Stefan.Manegold@cwi.nl for details.)
 
