@@ -43,6 +43,8 @@ stdout of test 'rdf` in directory 'src/modules/mal` itself:
 
 
 
+
+
 # MonetDB server v5.7.0, based on kernel v1.25.0
 # Serving database 'mTests_src_modules_mal'
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked running on 2 cores
@@ -216,23 +218,6 @@ exit correct;                           #  7 correct:bit
     tablet.page(o,s,p,ospT);            # 70 _94:int := TABpage(o:bat[:oid,:str], s:bat[:oid,:str], p:bat[:oid,:str], ospT:bat[:oid,:bte]) 
 end main;                               # 71  
 #source:/home/mark/programmi/MonetDB/mTests/src/modules/mal/rdf.testdata.ttl
-fraction: >0< , is_zero is 1
-fraction: >00< , is_zero is 1
-fraction: >1< , is_zero is 0
-fraction: >12< , is_zero is 0
-fraction: >123< , is_zero is 0
-fraction: >0< , is_zero is 1
-fraction: >00< , is_zero is 1
-fraction: >1< , is_zero is 0
-fraction: >12< , is_zero is 0
-fraction: >123< , is_zero is 0
-fraction: >0< , is_zero is 1
-fraction: >00< , is_zero is 1
-fraction: >1< , is_zero is 0
-fraction: >12< , is_zero is 0
-fraction: >123< , is_zero is 0
-fraction: >00123< , is_zero is 0
-fraction: >0123< , is_zero is 0
 [ "Datatypes" ]
 #-------------------------------------------------------------------------#
 # h	t								  # name
