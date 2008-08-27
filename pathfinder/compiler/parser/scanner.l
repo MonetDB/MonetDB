@@ -576,10 +576,8 @@ _                                {S}
                                                                    yyleng));
                                      gotoState (OPERATOR); 
                                      pf_yield (Star_Colon_NCName); }
-"document-node"{_}?"("/[^:]        { /* fake KINDTESTFORDOC that needs to allow
-                                        schema (, schema-element (, and needs to
-                                        end up in an OCCURRENCEINDICATOR state */ 
-                                     gotoState (ITEMTYPE);
+"document-node"{_}?"("/[^:]        { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTEST);
                                      pf_yield (document_node_lparen); }
 "text"{_}?"("/[^:]                 { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
@@ -849,7 +847,9 @@ _                                {S}
                                      gotoState (OCCURRENCEINDICATOR);
                                      pf_yield (QName);
                                    }
-"document-node"{_}?"("/[^:]        { pf_yield (document_node_lparen); }
+"document-node"{_}?"("/[^:]        { pushState (OCCURRENCEINDICATOR);
+                                     gotoState (KINDTEST);
+                                     pf_yield (document_node_lparen); }
 "text"{_}?"("/[^:]                 { pushState (OCCURRENCEINDICATOR);
                                      gotoState (KINDTEST);
                                      pf_yield (text_lparen); }
@@ -901,6 +901,10 @@ _                                {S}
                                                                    yyleng));
                                      pf_yield (QName);
                                    }
+"element"{_}?"("/[^:]              { pushState (KINDTEST);
+                                     pf_yield (element_lparen); }
+"schema-element"{_}?"("/[^:]       { pushState (KINDTEST);
+                                     pf_yield (element_lparen); }
 ","                                { pf_yield (comma); }
 "?"                                { pf_yield (question_mark); }
 ")"                                { popState (); pf_yield (rparen); }
