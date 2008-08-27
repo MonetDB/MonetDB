@@ -66,7 +66,7 @@ which inspects the variable table for alternative results.
 #include "mal_client.h"
 
 /* #define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE 
+#define _DEBUG_RECYCLE_REUSE  
 #define _DEBUG_CACHE_ */
 @-
 We need some hard limits to not run out of datastructure
@@ -118,6 +118,11 @@ mal_export int retained;	/* total number of statements retained */
 mal_export int monitorRecycler;
 mal_export int recycleRecent;
 
+#ifdef _DEBUG_CACHE_
+mal_export int recycleMiss;
+mal_export int recycleRem;
+#endif
+
 mal_export void RECYCLEversion(Client cntxt, MalBlkPtr mb);
 mal_export void RECYCLEinit(void);
 mal_export int RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -165,6 +170,12 @@ lng recycleTime = 0;
 lng recycleSearchTime = 0;	/* cache search time in ms*/
 lng recycleVolume = 0;
 
+#ifdef _DEBUG_CACHE_
+int recycleMiss = 0;
+int recycleRem = 0;
+#endif
+
+
 @-
 REUSE_EXACT only looks at precisely matching instructions.
 REUSE_COVER exploits potentional overlap in range selects
@@ -210,6 +221,11 @@ double recycleFresh = 0.8; /* fresh instructions are protected from deletion */
 
 #define recycleCost(X) recycleAlpha * recycleBlk->profiler[X].ticks + (1-recycleAlpha)* (recycleBlk->profiler[X].ibytes+recycleBlk->profiler[X].obytes)/100.0
 #define recycleCrd(X) (recycleCost(X)) * (recycleBlk->profiler[X].counter +9) /100.0
+#ifdef _DEBUG_CACHE_
+#define recycleSize recycleBlk->stop-recycleRem
+#else
+#define recycleSize recycleBlk->stop
+#endif
 
 @- Monitoring the Recycler
 @c
@@ -231,12 +247,9 @@ the block is never executed.
 static void RECYCLEspace()
 {
 	if (recycleBlk == NULL) {
-		/* parallel threads ? */
-		if (recycleBlk == NULL) {
-			recycleBlk = newMalBlk(MAXVARS, STMT_INCREMENT);
-			recycleBlk->profiler = (ProfPtr) GDKzalloc(
-				recycleBlk->ssize*sizeof(ProfRecord));
-		}
+		recycleBlk = newMalBlk(MAXVARS, STMT_INCREMENT);
+		recycleBlk->profiler = (ProfPtr) GDKzalloc(
+			recycleBlk->ssize*sizeof(ProfRecord));
 	}
 }
 
@@ -382,6 +395,9 @@ newpass:
 	/* set all used variables */
 	for (i = 0; i < recycleBlk->stop; i++){
 		p = recycleBlk->stmt[i];
+#ifdef _DEBUG_CACHE_
+                if ( p->token != NOOPsymbol )
+#endif
 		for( j = p->retc ; j< p->argc; j++)
 			used[getArg(p,j)]++;
 	}
@@ -391,6 +407,9 @@ newpass:
 	ltop = 0; reserve = 0;
 	for (i = 1; i < recycleBlk->stop; i++){
 		p = recycleBlk->stmt[i];
+#ifdef _DEBUG_CACHE_
+                if ( p->token == NOOPsymbol ) continue;
+#endif
 		for( j = 0; j < p->retc ; j++)
 			if (used[getArg(p,j)]) goto skip;
 		if (i == recycleRecent){
@@ -496,25 +515,40 @@ newpass:
 		cont = 1;
 
 #ifdef _DEBUG_CACHE_
-	stream_printf(cntxt->fdout,"RECYCLEcleanCache: candidates for eviction \n ");
+	stream_printf(cntxt->fdout,"RECYCLEcleanCache: policy=%d mem="LLFMT" usedmem="LLFMT"\n",
+                rcachePolicy,recycleMemory,recyclerUsedMemory);
+	stream_printf(cntxt->fdout,"Candidates for eviction (# LRU Crd)\n");
 	for (l = 0; l < ltop; l++)
-		stream_printf(cntxt->fdout,"%3d ",lvs[l]);
+		stream_printf(cntxt->fdout,"%3d "LLFMT" %f \n",
+			lvs[l],recycleBlk->profiler[lvs[l]].clk,recycleCrd(lvs[l]));
 	stream_printf(cntxt->fdout,"\nEvicted %d instruction(s) \n ",vtop);
 	for(v=0; v<vtop;v++){
-		printInstruction(cntxt->fdout,recycleBlk, recycleBlk->stmt[vm[v]], LIST_MAL_ALL);
-		stream_printf(cntxt->fdout," Cost %f \n", recycleCost(vm[v]));}
-	stream_printf(cntxt->fdout,"policy=%d mem="LLFMT" usedmem="LLFMT"\n",
-		rcachePolicy,recycleMemory,recyclerUsedMemory);
+		stream_printf(cntxt->fdout,"%d\t",vm[v]);
+		printInstruction(cntxt->fdout,recycleBlk,0,recycleBlk->stmt[vm[v]], LIST_MAL_ALL);
+	}
 #endif
 
-
-	/* drop wictims in one pass */
+	/* drop victims in one pass */
 
 	dmask = alloca(recycleBlk->stop);
 	memset(dmask,0,recycleBlk->stop);
 	for (v = 0; v < vtop; v++)
 		dmask[vm[v]] = 1;
 
+#ifdef _DEBUG_CACHE_
+	/* instructions are marked with NOOPsymbol in debug mode */
+	(void) old;
+	(void) limit;
+	for (i = 0; i < recycleBlk->stop ; i++){
+                p = getInstrPtr(recycleBlk,i);
+                if( dmask[i] ) {
+                        recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
+                        p->token = NOOPsymbol;
+			recycleRem ++;
+                }
+	}
+
+#else
 	old = recycleBlk->stmt;
 	limit = recycleBlk->stop;
 	newMalBlkStmt(recycleBlk,recycleBlk->ssize);
@@ -536,6 +570,7 @@ newpass:
 	GDKfree(old);
 	/* remove all un-used variables as well */
 	trimMalVariables(recycleBlk);
+#endif
 	recycleVersion++;
 	if (cont) goto newpass;
 }
@@ -565,7 +600,7 @@ RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr)
 	
 	RECYCLEspace();
 	cacheLimit = recycleCacheLimit?recycleCacheLimit:HARDLIMIT_STMT;
-	if ( recycleBlk->stop >= cacheLimit)
+	if ( recycleSize >= cacheLimit)
 		return ; /* no more caching */
 	memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
 	if ( recyclerUsedMemory + wr > memLimit)
@@ -651,6 +686,12 @@ RECYCLEcall(MalStkPtr stk, InstrPtr p){
         for ( i=p->retc; i< p->argc; i++)
                 if( VALcmp( &stk->stk[getArg(p,i)], &getVarConstant(recycleBlk, getArg(q,i))))
                 return 0;
+#ifdef _DEBUG_CACHE_
+        if ( q->token == NOOPsymbol ){
+		recycleMiss++;
+		return 0;
+	}
+#endif
         return 1;
 }
 
@@ -700,6 +741,9 @@ RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			if( VALcmp( &s->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 				break;
 		if (j == q->argc)
+#ifdef _DEBUG_CACHE_
+        		if ( q->token != NOOPsymbol )
+#endif
 			return i;
 	}
 #ifdef _DEBUG_RECYCLE_
@@ -793,6 +837,12 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			for (j = p->retc; j < p->argc; j++)
 				if (VALcmp(&s->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 					goto notfound;
+#ifdef _DEBUG_CACHE_
+		        if ( q->token == NOOPsymbol ){
+                		recycleMiss++;
+	                	goto notfound;
+        		}
+#endif
 			
 			/* found an exact match */
 			/* get the results on the stack */
@@ -920,13 +970,13 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	if ( wr > memLimit)
 		return;
-	if (recycleBlk)
+	if (recycleBlk){
 		if ( recyclerUsedMemory +  wr > memLimit ||
-	    		recycleBlk->stop >= cacheLimit ){
+	    		recycleSize >= cacheLimit ){
 			RECYCLEcleanCache(wr);
 			RECYCLEversion(cntxt,mb);
 		}
-
+	}
 	if ( RECYCLEinterest(mb,p))
 	switch(retainPolicy) {
 	case RETAIN_NONE:
@@ -1011,6 +1061,10 @@ RECYCLEshutdown(Client cntxt){
 	recycled = statements = 0;
 	recycleSearchTime = 0;
 	recyclerUsedMemory = 0;
+#ifdef _DEBUG_CACHE_
+	recycleMiss = 0;
+	recycleRem = 0;
+#endif
 	mal_unset_lock(recycleLock,"recycle");
 	for (i=mb->stop-1; i>=0; i--)
 		RECYCLEgarbagecollect(mb, getInstrPtr(mb,i));
@@ -1047,6 +1101,9 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 		action= 0;
 		for (i=1; i<recycleBlk->stop; i++){
 			p = getInstrPtr(recycleBlk,i);
+#ifdef _DEBUG_CACHE_
+                        if ( p->token == NOOPsymbol ) continue;                    
+#endif
 			for (j=p->retc; j<p->argc; j++)
 				if(getArgType(recycleBlk,p,j)==TYPE_bat || 
 					isaBatType(getArgType(recycleBlk, p,j)) ){
@@ -1062,8 +1119,16 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 				if(getArgType(recycleBlk,p,j)==TYPE_bat || 
 					isaBatType(getArgType(recycleBlk, p,j)) )
 					dropped[top++]= getVarConstant(recycleBlk, getArg(p,j)).val.bval; 
+#ifdef _DEBUG_CACHE_
+		        /* instructions are marked with NOOPsymbol in debug mode */
+                        	recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
+	                        p->token = NOOPsymbol;
+				recycleRem ++;
+#else
 				RECYCLEgarbagecollect(recycleBlk, p);
+				recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
 				removeInstruction(recycleBlk, p);
+#endif
 @-
 we assume that the variables defined are only used later on in the recycle
 cache. This can be enforced by never re-sorting it. Under this condition
@@ -1078,7 +1143,9 @@ we only have to make one step back in the look.
 	}
 	if (upd){
 		recycleVersion++; /* warn other threads */
+#ifndef _DEBUG_CACHE_
 		trimMalVariables(recycleBlk);
+#endif
 	}
 }
 
@@ -1114,6 +1181,9 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	} else if (p->argc > 2) {
 		for (i=1; i<recycleBlk->stop; i++) {
 			q = getInstrPtr(recycleBlk,i);
+#ifdef _DEBUG_CACHE_
+                        if ( q->token == NOOPsymbol ) continue;
+#endif
 			if (getName("bind",4)== getFunctionId(q) && getModuleId(q)==getName("sql",3)){
 				for (j=p->retc; j<p->argc; j++)
 					if( VALcmp( &stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
@@ -1126,8 +1196,10 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 		}
 	}
-	if (btop)
-		RECYCLEevict(cntxt,b,btop);
-
+	if (btop){
+		mal_set_lock(recycleLock,"recycle");
+	        RECYCLEevict(cntxt,b,btop);
+		mal_unset_lock(recycleLock,"recycle");
+	}
 }
 @}
