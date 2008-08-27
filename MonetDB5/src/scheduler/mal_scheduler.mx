@@ -41,7 +41,7 @@ runtime stack for the about-to-be-executed plan, and system resources,
 such as globally cached results. Moreover, a scheduler can be called at any time
 during a MAL interpreter loop to re-consider the actions to be taken.
 This gives many more opportunities to improve performance.
-This does not hold for e.g. compiled code, nor X100 back ends.
+This does not hold for e.g. compiled code.
 
 Much like the optimizer framework, there are many aspects you can deal with
 at scheduling time. The easiest is to simply do nothing and rely on
