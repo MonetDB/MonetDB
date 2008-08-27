@@ -326,16 +326,23 @@ static str RDFparseTimezone(str timezone)
     return ret;
 }
 
-static str RDFparseFractions(str fractions)
+static str RDFparseFractions(str fractions, bool *is_zero)
 {
     str ret = MAL_SUCCEED;
     int fractions_len = strlen(fractions);
-    int i = 0;
-    while (i<fractions_len)
+    int i;
+    for (i=0; i<fractions_len; i++)
+	if (!isdigit(fractions[i]))
+		ret = "A non-digit has been found parsing the second fractions";
+    if (ret==MAL_SUCCEED)
     {
-        if (!isdigit(fractions[i]))
-            ret = "A non-digit has been found parsing the second fractions";
-        i++;
+    	/* if fractions contains only zeros, do not save it */
+    	*is_zero = true;
+    	for (i=0; i<fractions_len && *is_zero; i++)
+    	{
+            if (fractions[i]!='0')
+                *is_zero = false;
+    	}
     }
     return ret;
 }
@@ -522,6 +529,8 @@ static str rdf_datetime_set_MTIMEtimestamp(rdf_datetime *dt, str year, str month
  * - to obtain the original timezone (if ever needed)
  * - to distinguish between d.t. that originally had a timezone and
  *       those who didn't had it.
+ * The problem with this is that datetime literals with same value but different
+ * timezone are stored twice, with different oids.
  * 
  * The final string, as will be found in the map bat, is:
  * 
@@ -574,7 +583,7 @@ static str RDFparseDateTime(rdf_datetime *dt, str date_string)
             {
                 date[i] = '\0';
                 month = &date[i+1];
-                /* find month separator */
+                /* find month to day separator */
                 while (date[i] != '-' && i<date_len)
                     i++;
             }
@@ -582,7 +591,7 @@ static str RDFparseDateTime(rdf_datetime *dt, str date_string)
             {
                 date[i] = '\0';
                 day = &date[i+1];
-                /* find day separator */
+                /* find day to hour separator */
                 while (date[i] != 'T' && i<date_len)
                     i++;
             }
@@ -590,7 +599,7 @@ static str RDFparseDateTime(rdf_datetime *dt, str date_string)
             {
                 date[i] = '\0';
                 hour = &date[i+1];
-                /* find hour separator */
+                /* find hour to minutes separator */
                 while (date[i] != ':' && i<date_len)
                     i++;
             }
@@ -598,7 +607,7 @@ static str RDFparseDateTime(rdf_datetime *dt, str date_string)
             {
                 date[i] = '\0';
                 minutes = &date[i+1];
-                /* find minutes separator */
+                /* find minutes to seconds separator */
                 while (date[i] != ':' && i<date_len)
                     i++;
             }
@@ -617,7 +626,7 @@ static str RDFparseDateTime(rdf_datetime *dt, str date_string)
                     int fractions_len = 0;
                     i++;
                     fractions_start = &date[i];
-                    /* find fractions separator */
+                    /* find fractions to timezone separator */
                     while(date[i] != '+' && date[i] != '-' && date[i] != 'Z' && i<date_len)
                     {
                         i++;
@@ -659,9 +668,17 @@ static str RDFparseDateTime(rdf_datetime *dt, str date_string)
                                     if (ret == MAL_SUCCEED)
                                     {
                                         if (fractions != NULL)
-                                            ret = RDFparseFractions(fractions);
-                                        if (ret == MAL_SUCCEED)
                                         {
+                                        	bool is_zero;
+                                        	ret = RDFparseFractions(fractions, &is_zero);
+                                        	if (ret == MAL_SUCCEED && is_zero)
+                                        	{
+                                        		GDKfree(fractions);
+                                        		fractions = NULL;
+                                        	}
+					}
+					if (ret == MAL_SUCCEED)
+					{
                                             if (timezone != NULL)
                                             {
                                                 ret = RDFparseTimezone(timezone);

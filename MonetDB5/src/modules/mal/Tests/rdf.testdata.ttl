@@ -107,6 +107,8 @@ _:doubleINF <ex:value> "INF"^^xsd:double .
 <ex:datetime18> <ex:value> "1236-12-14T21:00:00.1-03:00"^^xsd:dateTime .
 <ex:datetime19> <ex:value> "1236-12-14T20:00:00.12-04:00"^^xsd:dateTime .
 <ex:datetime20> <ex:value> "1236-12-14T19:00:00.123-05:00"^^xsd:dateTime .
+<ex:datetime21> <ex:value> "1236-12-14T19:00:00.00123-05:00"^^xsd:dateTime .
+<ex:datetime22> <ex:value> "1236-12-14T19:00:00.0123-05:00"^^xsd:dateTime .
 
 <ex:orderTest> <ex:v1> "A" .
 <ex:orderTest> <ex:v1> "B" .
