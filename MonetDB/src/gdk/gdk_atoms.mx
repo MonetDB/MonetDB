@@ -757,7 +757,11 @@ gdk_export const char str_nil[2];
 
 /* derived NIL values - OIDDEPEND */
 #define bit_nil	((bit) chr_nil)
-#define ptr_nil ((ptr) NULL)
+#if SIZEOF_VOID_P == SIZEOF_INT
+#define ptr_nil	((ptr) int_nil)
+#else /* SIZEOF_VOID_P == SIZEOF_LNG */
+#define ptr_nil	((ptr) lng_nil)
+#endif
 #define bat_nil	((bat) int_nil)
 #if SIZEOF_WRD == SIZEOF_INT
 #define GDK_wrd_max ((wrd) GDK_int_max)
