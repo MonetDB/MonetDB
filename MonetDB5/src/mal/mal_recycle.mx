@@ -66,7 +66,7 @@ which inspects the variable table for alternative results.
 #include "mal_client.h"
 
 /* #define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE  
+#define _DEBUG_RECYCLE_REUSE 
 #define _DEBUG_CACHE_ */
 @-
 We need some hard limits to not run out of datastructure
@@ -118,10 +118,8 @@ mal_export int retained;	/* total number of statements retained */
 mal_export int monitorRecycler;
 mal_export int recycleRecent;
 
-#ifdef _DEBUG_CACHE_
 mal_export int recycleMiss;
 mal_export int recycleRem;
-#endif
 
 mal_export void RECYCLEversion(Client cntxt, MalBlkPtr mb);
 mal_export void RECYCLEinit(void);
@@ -170,10 +168,8 @@ lng recycleTime = 0;
 lng recycleSearchTime = 0;	/* cache search time in ms*/
 lng recycleVolume = 0;
 
-#ifdef _DEBUG_CACHE_
 int recycleMiss = 0;
 int recycleRem = 0;
-#endif
 
 
 @-
@@ -588,6 +584,40 @@ RECYCLEinterest(MalBlkPtr mb, InstrPtr p){
 	return getFunctionId(p) != NULL;
 }
 
+#ifdef _DEBUG_CACHE_
+static void
+RECYCLEsync(InstrPtr p)
+{
+        int i, j, k;
+        InstrPtr q;
+	ValPtr pa, qa;
+
+        for (i=1; i<recycleBlk->stop; i++) {
+                q = getInstrPtr(recycleBlk,i);
+		if ( q->token != NOOPsymbol ) continue;
+                if ((getFunctionId(p) != getFunctionId(q)) ||
+			(p->argc != q->argc) ||
+			(getModuleId(p) != getModuleId(q)))
+                        continue;
+                for (j=p->retc; j<p->argc; j++)
+                        if( VALcmp( &getVarConstant(recycleBlk,getArg(p,j)),
+				 &getVarConstant(recycleBlk,getArg(q,j))))
+                                break;
+                if (j == p->argc) {
+			for(k=0; k< p->retc; k++){ 
+				pa = &getVarConstant(recycleBlk,getArg(p,k));
+		                qa = &getVarConstant(recycleBlk,getArg(q,k));
+				if (qa->vtype == TYPE_bat)
+		                        BBPdecref( *(int*)VALget(qa), TRUE);
+				VALcopy(qa,pa);
+				if (qa->vtype == TYPE_bat)
+                                        BBPincref( *(int*)VALget(qa), TRUE);
+			}
+		}
+	}
+}
+#endif
+
 static void 
 RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr)
 {
@@ -663,6 +693,10 @@ compare by value.
 			recycled, retained, statements);
 	retained++;
 	recycleRecent = i;
+
+#ifdef _DEBUG_CACHE_
+	RECYCLEsync(q);
+#endif	
 }
 
 @-
@@ -756,7 +790,7 @@ RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 static int
 RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
-	int i, j, nbid= -1, bid = -1, ridx, idx, pc = -1;
+	int i, j, nbid= -1, bid = -1, ridx, idx, pc = -1, evicted=0;
 	InstrPtr q;
 	static str selectRef;
 	
@@ -839,7 +873,8 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 					goto notfound;
 #ifdef _DEBUG_CACHE_
 		        if ( q->token == NOOPsymbol ){
-                		recycleMiss++;
+                		evicted = 1;
+				stream_printf(cntxt->fdout,"Miss of evicted instruction %d\n",i);
 	                	goto notfound;
         		}
 #endif
@@ -893,6 +928,11 @@ We execute it in place and safe the result upon need.
 		RECYCLEexit(cntxt, mb, s, p);
 		return i;
 	}
+#ifdef _DEBUG_CACHE_
+	if ( evicted ) recycleMiss++;
+#else
+	(void) evicted;
+#endif
 	return pc;
 }
 
