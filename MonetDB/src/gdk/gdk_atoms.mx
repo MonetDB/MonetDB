@@ -405,13 +405,13 @@ atomDesc BATatoms[MAXATOMS] = {
 	 0, 0},
 	{"ptr",
 #if SIZEOF_VOID_P == SIZEOF_INT
-	 TYPE_int, 1, sizeof(ptr), sizeof(@`ptr@7), 0, 0, (ptr) &int_nil,
+	 TYPE_ptr, 1, sizeof(ptr), sizeof(@`ptr@7), 0, 0, (ptr) &ptr_nil,
 	 (int (*)(str, int *, ptr *)) @`ptrFromStr@5, (int (*)(str *, int *, ptr)) @`ptrToStr@5,
 	 (void *(*)(void *, stream *, size_t)) ptrRead, (int (*)(void *, stream *, size_t)) ptrWrite,
 	 (int (*)(ptr, ptr)) intCmp,
 	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
-	 TYPE_lng, 1, sizeof(ptr), sizeof(@`ptr@7), 0, 0, (ptr) &lng_nil,
+	 TYPE_ptr, 1, sizeof(ptr), sizeof(@`ptr@7), 0, 0, (ptr) &ptr_nil,
 	 (int (*)(str, int *, ptr *)) @`ptrFromStr@5, (int (*)(str *, int *, ptr)) @`ptrToStr@5,
 	 (void *(*)(void *, stream *, size_t)) ptrRead, (int (*)(void *, stream *, size_t)) ptrWrite,
 	 (int (*)(ptr, ptr)) lngCmp,
@@ -754,14 +754,10 @@ gdk_export const lng lng_nil;
 gdk_export const oid oid_nil;
 gdk_export const wrd wrd_nil;
 gdk_export const char str_nil[2];
+gdk_export const ptr ptr_nil;
 
 /* derived NIL values - OIDDEPEND */
 #define bit_nil	((bit) chr_nil)
-#if SIZEOF_VOID_P == SIZEOF_INT
-#define ptr_nil	((ptr) int_nil)
-#else /* SIZEOF_VOID_P == SIZEOF_LNG */
-#define ptr_nil	((ptr) lng_nil)
-#endif
 #define bat_nil	((bat) int_nil)
 #if SIZEOF_WRD == SIZEOF_INT
 #define GDK_wrd_max ((wrd) GDK_int_max)
@@ -788,6 +784,7 @@ const lng lng_nil = GDK_lng_min;
 const oid oid_nil = (oid) 1 << (sizeof(oid) * 8 - 1);
 const wrd wrd_nil = GDK_wrd_min;
 const char str_nil[2] = { GDK_chr_min, 0 };
+const ptr ptr_nil = NULL;
 
 ptr
 ATOMnil(int t)
@@ -859,87 +856,79 @@ with atomic types that have logical references (e.g. BATs of BATs but
 also BATs of ODMG odSet) can never be persistent, as this would make
 the commit tremendously complicated.
 @h
-#define ATOMput(P1, P2, p3, p4)						\
-{									\
-	int t_ = (P1);							\
-	ptr P3 = (ptr) (p3);						\
-	ptr P4 = (ptr) (p4);						\
+#define ATOMput(type, heap, dst, src)					\
+do {									\
+	int t_ = (type);						\
+	ptr d_ = (ptr) (dst);						\
+	ptr s_ = (ptr) (src);						\
 									\
-	if (t_ == TYPE_oid || t_ == TYPE_wrd || t_ == TYPE_ptr || t_ > TYPE_str)		\
-		t_ = ATOMstorage(t_);					\
-	if (t_ <= TYPE_bat) {						\
-		if (t_ <= TYPE_bte) {					\
-			if (t_ != TYPE_void)				\
-				*(bte *) (P3) = *(bte *) (P4);		\
-		} else if (t_ == TYPE_sht) {				\
-			*(sht *) (P3) = *(sht *) (P4);			\
-		} else if (t_ == TYPE_bat) {				\
-			BBPincref(*(bat *) (P4), TRUE);			\
-			*(bat *) (P3) = *(bat *) (P4);			\
-		}							\
+	if (BATatoms[t_].atomPut) {					\
+		if ((*BATatoms[t_].atomPut)((heap), (var_t *) d_, s_) == 0) \
+			goto bunins_failed;				\
 	} else {							\
-		if (t_ <= TYPE_flt) {					\
-			*(int *) (P3) = *(int *) (P4);			\
-		} else if (t_ <= TYPE_lng) {				\
-			*(lng *) (P3) = *(lng *) (P4);			\
-		} else if (t_ == TYPE_str) {				\
-			if (strPut(P2, (var_t *) (P3), (str) (P4)) == 0)\
-				goto bunins_failed;			\
-		} else if (t_) {					\
-			if (BATatoms[t_].atomPut) {			\
-				if ((*BATatoms[t_].atomPut) (P2, (var_t *) P3, P4) == 0) \
-					goto bunins_failed;		\
-			} else {					\
-				memcpy(P3, P4, (size_t) ATOMsize(P1));	\
-			}						\
-			ATOMfix(t_, P4);				\
+		ATOMfix(t_, s_);					\
+		switch (BATatoms[t_].size) {				\
+		case 0:		/* void */				\
+			break;						\
+		case 1:							\
+			* (bte *) d_ = * (bte *) s_;			\
+			break;						\
+		case 2:							\
+			* (sht *) d_ = * (sht *) s_;			\
+			break;						\
+		case 4:							\
+			* (int *) d_ = * (int *) s_;			\
+			break;						\
+		case 8:							\
+			* (lng *) d_ = * (lng *) s_;			\
+			break;						\
+		default:						\
+			memcpy(d_, s_, (size_t) BATatoms[t_].size);	\
+			break;						\
 		}							\
 	}								\
-}
+} while (0)
 
-#define ATOMreplace(P1,	P2, P3, P4)					\
-{									\
-	int t_ = (P1);							\
+#define ATOMreplace(type, heap, dst, src)				\
+do {									\
+	int t_ = (type);						\
+	ptr d_ = (ptr) (dst);						\
+	ptr s_ = (ptr) (src);						\
 									\
-	if (t_ == TYPE_oid || t_ == TYPE_wrd || t_ == TYPE_ptr || t_ > TYPE_str)		\
-		t_ = ATOMstorage(t_);					\
-	if (t_ <= TYPE_bat) {						\
-		if (t_ <= TYPE_bte) {					\
-			if (t_ != TYPE_void)				\
-				*(bte *) (P3) = *(bte *) (P4);		\
-		} else if (t_ == TYPE_sht) {				\
-			*(sht *) (P3) = *(sht *) (P4);			\
-		} else if (t_ == TYPE_bat) {				\
-			BBPincref(*(bat *) (P4), TRUE);			\
-			BBPdecref(*(bat *) (P3), TRUE);			\
-			*(bat *) (P3) = *(bat *) (P4);			\
-		}							\
+	if (BATatoms[t_].atomPut) {					\
+		var_t loc_ = * (var_t *) d_;				\
+		Heap *h_ = (heap);					\
+									\
+		if ((*BATatoms[t_].atomPut)(h_, &loc_, s_) == 0)	\
+			goto bunins_failed;				\
+		ATOMunfix(t_, d_);					\
+		ATOMdel(t_, h_, d_);					\
+		* (var_t *) d_ = loc_;					\
+		ATOMfix(t_, s_);					\
 	} else {							\
-		if (t_ <= TYPE_flt) {					\
-			*(int *) (P3) = *(int *) (P4);			\
-		} else if (t_ <= TYPE_lng) {				\
-			*(lng *) (P3) = *(lng *) (P4);			\
-		} else if (t_ == TYPE_str) {				\
-			if (strPut(P2, (var_t *) (P3), (str) (P4)) == 0) \
-				goto bunins_failed;			\
-		} else if (BATatoms[t_].atomPut) {			\
-			var_t loc_ = *(var_t *) (P3);			\
-									\
-			if ((*BATatoms[t_].atomPut) (P2, &loc_, P4) == 0) \
-				goto bunins_failed;			\
-			ATOMunfix(t_, P3);				\
-			if (BATatoms[t_].atomDel) {			\
-				ATOMdel(t_, P2, (var_t *) P3);		\
-			}						\
-			*(var_t *) (P3) = loc_;				\
-			ATOMfix(t_, P4);				\
-		} else {						\
-			ATOMunfix(t_, P3);				\
-			memcpy(P3, P4, (size_t) ATOMsize(P1));		\
-			ATOMfix(t_, P4);				\
+		ATOMfix(t_, s_);					\
+		ATOMunfix(t_, d_);					\
+		switch (BATatoms[t_].size) {				\
+		case 0:		/* void */				\
+			break;						\
+		case 1:							\
+			* (bte *) d_ = * (bte *) s_;			\
+			break;						\
+		case 2:							\
+			* (sht *) d_ = * (sht *) s_;			\
+			break;						\
+		case 4:							\
+			* (int *) d_ = * (int *) s_;			\
+			break;						\
+		case 8:							\
+			* (lng *) d_ = * (lng *) s_;			\
+			break;						\
+		default:						\
+			memcpy(d_, s_, (size_t) BATatoms[t_].size);	\
+			break;						\
 		}							\
 	}								\
-}
+} while (0)
 
 #define GDK_STRHASHTABLE	(1<<10)
 #define GDK_STRHASHMASK		(GDK_STRHASHTABLE-1)
