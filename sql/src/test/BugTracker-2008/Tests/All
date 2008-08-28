@@ -18,3 +18,4 @@ select_not_wrong_result.SF-2080151
 select_in_wrong_result.SF-2080168
 select_between_wrong_result.SF-2080189
 table_update.SF-2080207
+constraint_with_schemas.SF-2080219
