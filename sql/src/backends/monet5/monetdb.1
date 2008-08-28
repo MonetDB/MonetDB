@@ -64,7 +64,7 @@ available again for normal use by any client, and is started on demand.
 Use the
 .B lock
 command to take a database under maintenance.
-.IP "status [\-lc] [database ...]"
+.IP "status [\-lc] [\-s<state>...] [database ...]"
 Shows the state of the given database(s) or, when none given, all known
 databases.  Three modes control the level of detail in the displayed
 output.  By default a condensed one-line output per database format is
@@ -86,6 +86,21 @@ Triggered by the
 flag, a long listing is used.  This listing spans many rows with on each
 row one property and its value separated by a colon (`:').  The long
 listing includes all information that is available.
+.IP \-s
+The
+.I \-s
+flag controls which databases are being shown, matching their state.
+The required argument to this flag can be a combination of any of the
+following characters.  Note that the order in which they are put also
+controls the order in which the databases are printed.
+.I r, s, c
+and
+.I l
+are used to print a started (running), stopped, crashed and locked
+database respectively.  The default order which is used when the
+.I \-s
+flag is absent, is
+.I rscl.
 .IP "start [\-aw] database [database ...]"
 .IP "stop [\-aw] database [database ...]"
 .IP "kill [\-aw] database [database ...]"

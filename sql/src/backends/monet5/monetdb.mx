@@ -119,6 +119,9 @@ command_help(int argc, char *argv[])
 		printf("Options:\n");
 		printf("  -l  extended information listing\n");
 		printf("  -c  crash statistics listing\n");
+		printf("  -s  only show databases matching a state, combination\n");
+		printf("      possible from r (running), s (stopped), c (crashed)\n");
+		printf("      and l (locked).\n");
 	} else if (strcmp(argv[1], "start") == 0) {
 		printf("Usage: monetdb start [-aw] database [database ...]\n");
 		printf("  Starts the given database, if the MonetDB Database Server\n");
@@ -390,10 +393,12 @@ command_status(int argc, char *argv[])
 {
 	int doall = 1; /* we default to showing all */
 	int mode = 1;  /* 0=crash, 1=short, 2=long */
+	char *state = "rscl"; /* contains states to show */
 	int i;
 	char *p;
 	str e;
 	sabdb *stats;
+	sabdb *orig;
 
 	if (argc == 0) {
 		exit(2);
@@ -409,6 +414,32 @@ command_status(int argc, char *argv[])
 					break;
 					case 'l':
 						mode = 2;
+					break;
+					case 's':
+						if (*(p + 1) != '\0') {
+							state = ++p;
+						} else if (i + 1 < argc && argv[i + 1][0] != '-') {
+							state = argv[++i];
+						} else {
+							fprintf(stderr, "status: -s needs an argument\n");
+							command_help(2, &argv[-1]);
+							exit(1);
+						}
+						for (p = state; *p != '\0'; p++) {
+							switch (*p) {
+								case 'r': /* running (started) */
+								case 's': /* stopped */
+								case 'c': /* crashed */
+								case 'l': /* locked */
+								break;
+								default:
+									fprintf(stderr, "status: unknown flag for -s: -%c\n", *p);
+									command_help(2, &argv[-1]);
+									exit(1);
+								break;
+							}
+						}
+						p--;
 					break;
 					case '-':
 						if (p[1] == '\0') {
@@ -432,49 +463,75 @@ command_status(int argc, char *argv[])
 		}
 	}
 
+	if (doall == 1) {
+		/* don't even look at the arguments, because we are instructed
+		 * to list all known databases */
+		if ((e = SABAOTHgetStatus(&orig, NULL)) != MAL_SUCCEED) {
+			fprintf(stderr, "status: internal error: %s\n", e);
+			GDKfree(e);
+			exit(2);
+		}
+	} else {
+		sabdb *w = NULL;
+		orig = NULL;
+		for (i = 1; i < argc; i++) {
+			if (argv[i] != NULL) {
+				if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
+					fprintf(stderr, "status: internal error: %s\n", e);
+					GDKfree(e);
+					exit(2);
+				}
+
+				if (stats == NULL) {
+					fprintf(stderr, "status: no such database: %s\n", argv[i]);
+					argv[i] = NULL;
+				} else {
+					if (orig == NULL) {
+						orig = stats;
+						w = stats;
+					} else {
+						w = w->next = stats;
+					}
+				}
+			}
+		}
+	}
+
 	if (mode == 1) {
 		/* print header for short mode */
 		/* demo | state uptime | crash lastcrash */
 		printf("      name       state     uptime       health       last crash\n");
 	}
 
-	if (doall == 1) {
-		sabdb *orig;
-		/* don't even look at the arguments, because we are instructed
-		 * to list all known databases */
-		if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
-			fprintf(stderr, "status: internal error: %s\n", e);
-			GDKfree(e);
-			exit(2);
+	for (p = state; *p != '\0'; p++) {
+		int curLock = 0;
+		SABdbState curMode = SABdbIllegal;
+		switch (*p) {
+			case 'r':
+				curMode = SABdbRunning;
+			break;
+			case 's':
+				curMode = SABdbInactive;
+			break;
+			case 'c':
+				curMode = SABdbCrashed;
+			break;
+			case 'l':
+				curLock = 1;
+			break;
 		}
-	
-		orig = stats;
+		stats = orig;
 		while (stats != NULL) {
-			printStatus(stats, mode);
+			if (stats->locked == curLock &&
+					(curLock == 1 || 
+					 (curLock == 0 && stats->state == curMode)))
+				printStatus(stats, mode);
 			stats = stats->next;
 		}
-
-		if (orig != NULL)
-			SABAOTHfreeStatus(&orig);
-		return;
 	}
 
-	for (i = 1; i < argc; i++) {
-		if (argv[i] != NULL) {
-			if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
-				fprintf(stderr, "status: internal error: %s\n", e);
-				GDKfree(e);
-				exit(2);
-			}
-
-			if (stats == NULL) {
-				fprintf(stderr, "status: no such database: %s\n", argv[i]);
-			} else {
-				printStatus(stats, mode);
-				SABAOTHfreeStatus(&stats);
-			}
-		}
-	}
+	if (orig != NULL)
+		SABAOTHfreeStatus(&orig);
 }
 
 typedef enum {
