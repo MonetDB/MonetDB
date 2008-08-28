@@ -10,49 +10,30 @@ stdout of test 'tst026` in directory 'src/mal` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2007 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:39517/
-#function foo();
-#	b:= bat.new(:oid,:int);
-#	cnt:= 0:int;
-#barrier d:=true;
-#	f:=1;
-#	cnt:= aggr.count(b);
-#	redo d:=false;
-#	barrier e:=true;
-#		g:=1;
-#	exit e;
-#	io.print(g);
-#exit d;
-#cnt:= aggr.count(b);
-#id := calc.oid(cnt);
-#io.print(f);
-#io.print(g);
-#end foo;
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:34102/
+
+
 function user.foo():void;               #  0 foo:void := user.foo() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    cnt := 0:int;                       #  2 cnt:int := _5:int 
+    cnt := 0:lng;                       #  2 cnt:lng := _5:lng 
 barrier d := true;                      #  3 d:bit := _7:bit {J11}
     f := 1;                             #  4 f:int := _9:int 
-    cnt := aggr.count(b);               #  5 cnt:int := ALGcount_bat(b:bat[:oid,:int]) 
+    cnt := aggr.count(b);               #  5 cnt:lng := aggr.count(b:bat[:oid,:int]) {U}
     redo d := false;                    #  6 d:bit := _10:bit {J4}
 barrier e := true;                      #  7 e:bit := _7:bit {J9}
     g := 1;                             #  8 g:int := _9:int 
 exit e;                                 #  9 e:bit 
     io.print(g);                        # 10 _13:void := IOprint_val(g:int) 
 exit d;                                 # 11 d:bit 
-    cnt := aggr.count(b);               # 12 cnt:int := ALGcount_bat(b:bat[:oid,:int]) 
-    id := calc.oid(cnt);                # 13 id:oid := CALCint2oid(cnt:int) 
+    cnt := aggr.count(b);               # 12 cnt:lng := aggr.count(b:bat[:oid,:int]) {U}
+    id := calc.oid(cnt);                # 13 id:oid := CALClng2oid(cnt:lng) 
     io.print(f);                        # 14 _15:void := IOprint_val(f:int) 
     io.print(g);                        # 15 _16:void := IOprint_val(g:int) 
 end foo;	# 16  
-#foo();
-#
+
 function user.main():void;              #  0 main:void := user.main() 
-    user.foo();                         #  1 _1:void := user.foo() 
+    user.foo();                         #  1 _1:void := user.foo() {U}
 end main;	# 2  
-[ 1 ]
-[ 1 ]
-[ 1 ]
 
 # 12:49:32 >  
 # 12:49:32 >  Done.
