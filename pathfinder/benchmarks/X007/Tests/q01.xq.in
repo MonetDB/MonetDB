@@ -1,4 +1,0 @@
-let $doc := doc("$TSTTRGDIR/load_docs.xml")//doc/text()
-
-for $a in doc(exactly-one($doc[1]))/ComplexAssembly/ComplexAssembly/ComplexAssembly/ComplexAssembly/BaseAssembly/CompositePart/Connection/AtomicPart[@MyID = 221 or @MyID = 1000 or @MyID = 535 or @MyID = 13 or @MyID = 2000]
-return $a

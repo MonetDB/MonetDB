@@ -1,7 +1,0 @@
-pf:add-doc("$TSTSRCDIR/replacevaluetest.xml", "replacevaluetest.xml", "replacevaluetest.xml", 10)
-<>
-let $d := doc("replacevaluetest.xml")
-return (do replace value of exactly-one($d//child) with "replacement",
-        do insert <stuff/> as first into exactly-one($d//content))
-<>
-doc("replacevaluetest.xml")
