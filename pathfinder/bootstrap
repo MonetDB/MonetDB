@@ -18,7 +18,7 @@
 
 #
 # ! this file should be kept identical in                                               !
-# ! MonetDB, MonetDB4, monet5, clients, template, sql, pathfinder, amdb, xml, pruning !
+# ! MonetDB, MonetDB4, MonetDB5, clients, java, template, sql, geom, pathfinder, etc. !
 #
 
 if [ ! "`type -p Mbootstrap`" ] ; then
