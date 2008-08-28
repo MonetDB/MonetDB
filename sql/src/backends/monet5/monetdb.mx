@@ -25,7 +25,7 @@ dbfarm.  Creating or deleting databases next to retrieving status
 information about them are the primary goals of this tool.
 
 @h
-#define TOOLKIT_VERSION   "0.3"
+#define TOOLKIT_VERSION   "0.4"
 
 @c
 #include "sql_config.h"
@@ -213,6 +213,7 @@ printStatus(sabdb *stats, int mode)
 		/* short one-line (default) mode */
 		char *state;
 		char uptime[12];
+		char avg[8];
 		char *crash;
 		char *dbname;
 		int len;
@@ -236,7 +237,7 @@ printStatus(sabdb *stats, int mode)
 			state = "locked ";
 
 		if (uplog.lastcrash == -1) {
-			crash = "";
+			crash = "-";
 		} else {
 			struct tm *t;
 			crash = alloca(sizeof(char) * 20);
@@ -258,11 +259,13 @@ printStatus(sabdb *stats, int mode)
 		} else {
 			dbname = stats->dbname;
 		}
-		/* demo | state | uptime | crash */
-		printf("%-14s  %s %12s  %d %s\n",
+		/* demo | state | uptime | health */
+		secondsToString(avg, uplog.avguptime, 0);
+		printf("%-14s  %s %12s  %3d%%, %3s  %s\n",
 				dbname,
 				state, uptime,
-				uplog.crashcntr, crash);
+				100 - (uplog.crashcntr * 100 / uplog.startcntr),
+				avg, crash);
 	} else if (mode == 2) {
 		/* long mode */
 		char *state;
@@ -432,7 +435,7 @@ command_status(int argc, char *argv[])
 	if (mode == 1) {
 		/* print header for short mode */
 		/* demo | state uptime | crash lastcrash */
-		printf("     name        state     uptime     crashes\n");
+		printf("      name       state     uptime       health       last crash\n");
 	}
 
 	if (doall == 1) {
