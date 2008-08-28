@@ -19,7 +19,7 @@ stdout of test 'tst161` in directory 'src/mal` itself:
 #    return l:= 0:mytype;
 #end l;
 function mytype.l():mytype;             #  0 l:mytype := mytype.l() 
-    return l := 0:mytype;               #  1 l:mytype := _1:mytype 
+    return l := nil:mytype;             #  1 l:mytype := _1:mytype 
 end l;	# 2  
 #
 #z:= l();
@@ -30,8 +30,7 @@ function user.main():void;              #  0 main:void := user.main()
     z := mytype.l();                    #  2 z:mytype := mytype.l() 
     io.print(z);                        #  3 _3:void := IOprint_val(z:mytype) 
 end main;	# 4  
-[ 0 ]
-#
+[ nil ]
 
 # 19:09:44 >  
 # 19:09:44 >  Done.
