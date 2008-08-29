@@ -167,7 +167,15 @@ secondsToString(char *buf, time_t t, int printlong)
 	time_t p;
 	size_t i = 0;
 
-	p = 1 * 60 * 60 * 24;
+	p = 1 * 60 * 60 * 24 * 7;
+	if (t > p) {
+		i += sprintf(buf, "%dw", (int)(t / p));
+		t -= (t / p) * p;
+		if (printlong == 0)
+			return;
+		buf[i++] = ' ';
+	}
+	p /= 7;
 	if (t > p) {
 		i += sprintf(buf, "%dd", (int)(t / p));
 		t -= (t / p) * p;
@@ -175,7 +183,7 @@ secondsToString(char *buf, time_t t, int printlong)
 			return;
 		buf[i++] = ' ';
 	}
-	p = 1 * 60 * 60;
+	p /= 24;
 	if (t > p) {
 		i += sprintf(buf + i, "%dh", (int)(t / p));
 		t -= (t / p) * p;
@@ -183,7 +191,7 @@ secondsToString(char *buf, time_t t, int printlong)
 			return;
 		buf[i++] = ' ';
 	}
-	p = 1 * 60;
+	p /= 60;
 	if (t > p) {
 		i += sprintf(buf + i, "%dm", (int)(t / p));
 		t -= (t / p) * p;
