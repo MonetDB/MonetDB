@@ -150,21 +150,25 @@ OCTOPUSexec(Client cntxt, MalBlkPtr mb, InstrPtr q, str nme, DBalias *dbalias){
 	p->argc= i;
 	cst.vtype= TYPE_str;
 	cst.val.sval= GDKstrdup(nme);
-	cst.len = (int) strlen(cst.val.sval);
+	cst.len = strlen(cst.val.sval);
 	i= defConstant(mb, TYPE_str, &cst);
 	p =pushArgument(mb,p,i);
 
-	cst.vtype= TYPE_str;
-	cst.val.sval= GDKstrdup(getModuleId(q));
-	cst.len = (int) strlen(cst.val.sval);
-	i= defConstant(mb, TYPE_str, &cst);
-	p =pushArgument(mb,p,i);
+	if( getModuleId(q)){
+		cst.vtype= TYPE_str;
+		cst.val.sval= GDKstrdup(getModuleId(q));
+		cst.len = strlen(cst.val.sval);
+		i= defConstant(mb, TYPE_str, &cst);
+		p =pushArgument(mb,p,i);
 
-	cst.vtype= TYPE_str;
-	cst.val.sval= GDKstrdup(getFunctionId(q));
-	cst.len = (int) strlen(cst.val.sval);
-	i= defConstant(mb, TYPE_str, &cst);
-	p= pushArgument(mb,p,i);
+		cst.vtype= TYPE_str;
+		cst.val.sval= GDKstrdup(getFunctionId(q));
+		cst.len = strlen(cst.val.sval);
+		i= defConstant(mb, TYPE_str, &cst);
+		p= pushArgument(mb,p,i);
+	} else {
+		/* handle remote assignments, TODO */
+	}
 
 	for(i=q->retc; i<q->argc; i++)
 		p= pushArgument(mb,p,dbalias[getArg(q,i)].dbhdl);
