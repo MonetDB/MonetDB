@@ -124,7 +124,7 @@ atom_int(sql_subtype *tpe, lng val)
 			printf("atom_int %d\n", a->data.vtype);
 			assert(0);
 		}
-		a->d = val;
+		a->d = (dbl) val;
 		a->data.len = 0;
 		if (atom_debug)
 			fprintf(stderr, "atom_int(%s,"LLFMT")\n", tpe->type->sqlname, val);
@@ -187,8 +187,10 @@ atom_float(sql_subtype *tpe, double val)
 	a->tpe = *tpe;
 	if (tpe->type->localtype == TYPE_dbl)
 		a->data.val.dval = val;
-	else
-		a->data.val.fval = val;
+	else {
+		assert((dbl) GDK_flt_min <= val && val <= (dbl) GDK_flt_max);
+		a->data.val.fval = (flt) val;
+	}
 	a->data.vtype = tpe->type->localtype;
 	a->data.len = 0;
 	if (atom_debug)
@@ -559,12 +561,18 @@ atom_cast(atom *a, sql_subtype *tp)
 			a->data.vtype = tp->type->localtype;
 			if (a->data.vtype == TYPE_lng)
 				a->data.val.lval *= mul;
-			else if (a->data.vtype == TYPE_int)
-				a->data.val.ival *= mul;
-			else if (a->data.vtype == TYPE_sht)
-				a->data.val.shval *= mul;
-			else if (a->data.vtype == TYPE_bte)
-				a->data.val.btval *= mul;
+			else if (a->data.vtype == TYPE_int) {
+				assert((lng) GDK_int_min <= (lng) a->data.val.ival * mul && (lng) a->data.val.ival * mul <= (lng) GDK_int_max);
+				a->data.val.ival *= (int) mul;
+			}
+			else if (a->data.vtype == TYPE_sht) {
+				assert((lng) GDK_sht_min <= (lng) a->data.val.shval * mul && (lng) a->data.val.shval * mul <= (lng) GDK_sht_max);
+				a->data.val.shval *= (sht) mul;
+			}
+			else if (a->data.vtype == TYPE_bte) {
+				assert((lng) GDK_bte_min <= (lng) a->data.val.btval * mul && (lng) a->data.val.btval * mul <= (lng) GDK_bte_max);
+				a->data.val.btval *= (bte) mul;
+			}
 			return 1;
 		}
 		if (at->type->eclass == EC_NUM && tp->type->eclass == EC_DEC &&
@@ -611,12 +619,18 @@ atom_cast(atom *a, sql_subtype *tp)
 			a->data.vtype = tp->type->localtype;
 			if (a->data.vtype == TYPE_lng)
 				a->data.val.lval *= mul;
-			else if (a->data.vtype == TYPE_int)
-				a->data.val.ival *= mul;
-			else if (a->data.vtype == TYPE_sht)
-				a->data.val.shval *= mul;
-			else if (a->data.vtype == TYPE_bte)
-				a->data.val.btval *= mul;
+			else if (a->data.vtype == TYPE_int) {
+				assert((lng) GDK_int_min <= (lng) a->data.val.ival * mul && (lng) a->data.val.ival * mul <= (lng) GDK_int_max);
+				a->data.val.ival *= (int) mul;
+			}
+			else if (a->data.vtype == TYPE_sht) {
+				assert((lng) GDK_sht_min <= (lng) a->data.val.shval * mul && (lng) a->data.val.shval * mul <= (lng) GDK_sht_max);
+				a->data.val.shval *= (sht) mul;
+			}
+			else if (a->data.vtype == TYPE_bte) {
+				assert((lng) GDK_bte_min <= (lng) a->data.val.btval * mul && (lng) a->data.val.btval * mul <= (lng) GDK_bte_max);
+				a->data.val.btval *= (bte) mul;
+			}
 			return 1;
 		}
 		if ((at->type->eclass == EC_DEC || 
@@ -653,8 +667,10 @@ atom_cast(atom *a, sql_subtype *tp)
 			}
 			if (tp->type->localtype == TYPE_dbl)
 				a->data.val.dval = a->d;
-			else
-				a->data.val.fval = a->d;
+			else {
+				assert((dbl) GDK_flt_min <= a->d && a->d <= (dbl) GDK_flt_max);
+				a->data.val.fval = (flt) a->d;
+			}
 			a->tpe = *tp;
 			a->data.vtype = tp->type->localtype;
 			return 1;

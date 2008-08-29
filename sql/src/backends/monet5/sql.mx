@@ -2237,17 +2237,23 @@ str
 	} else if (*r > 0 && *r < *s) {
 		int dff = *s - *r;
 		lng rnd = scales[dff]>>1;
+		lng lres;
 		if (*v > 0)
-			*res = (((*v + rnd)/scales[dff])*scales[dff]);
+			lres = (((*v + rnd)/scales[dff])*scales[dff]);
 		else
-			*res = (((*v - rnd)/scales[dff])*scales[dff]);
+			lres = (((*v - rnd)/scales[dff])*scales[dff]);
+		assert((lng) GDK_@1_min <= lres && lres <= (lng) GDK_@1_max);
+		*res = lres;
 	} else if (*r <= 0 && -*r + *s > 0) {
 		int dff = -*r + *s;
 		lng rnd = scales[dff]>>1;
+		lng lres;
 		if (*v > 0)
-			*res = (((*v + rnd)/scales[dff])*scales[dff]);
+			lres = (((*v + rnd)/scales[dff])*scales[dff]);
 		else
-			*res = (((*v - rnd)/scales[dff])*scales[dff]);
+			lres = (((*v - rnd)/scales[dff])*scales[dff]);
+		assert((lng) GDK_@1_min <= lres && lres <= (lng) GDK_@1_max);
+		*res = lres;
 	} else {
 		*res = *v;
 	}
@@ -2390,19 +2396,19 @@ str
 		*res = @1_nil;
 	} else if (*r < 0) {
 		int d = -*r;
-		@1 rnd = scales[d]>>1; 
+		@1 rnd = (@1) (scales[d]>>1); 
 
 		if (*v > 0)
-			*res = (floor(((*v + rnd)/((@1)(scales[d]))))*scales[d]);
+			*res = (@1) (floor(((*v + rnd)/((@1)(scales[d]))))*scales[d]);
 		else
-			*res = (floor(((*v + rnd)/((@1)(scales[d]))))*scales[d]);
+			*res = (@1) (floor(((*v + rnd)/((@1)(scales[d]))))*scales[d]);
 	} else if (*r > 0) {
 		int d = *r;
 
 		if (*v > 0)
-			*res = (floor(*v*(@1)scales[d]+.5)/scales[d]);
+			*res = (@1) (floor(*v*(@1)scales[d]+.5)/scales[d]);
 		else
-			*res = (floor(*v*(@1)scales[d]+.5)/scales[d]);
+			*res = (@1) (floor(*v*(@1)scales[d]+.5)/scales[d]);
 	} else {
 		*res = *v;
 	}
@@ -2634,7 +2640,7 @@ str bat@2_2_@1( int *res, int *bid )
 @= simpledowncast
 str @2_2_@1( @1 *res, @2 *v )
 {
-	lng val = *v;
+	@3 val = *v;
 
 	/* shortcut nil */
 	if (*v == @2_nil) {
@@ -2643,12 +2649,12 @@ str @2_2_@1( @1 *res, @2 *v )
 	}
 	
 	/* see if the number fits in the data type */
-	if (val >= GDK_@1_min && val <= GDK_@1_max)	{
+	if (val >= (@3) GDK_@1_min && val <= (@3) GDK_@1_max)	{
 		*res = (@1)val;
 		return(MAL_SUCCEED);
 	} else {
 		throw(SQL, "convert",
-			"value (" LLFMT ") exceeds limits of type @1", val);
+			"value (" @4 ") exceeds limits of type @1", val);
 	}
 }
 
@@ -2835,7 +2841,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 @:numcastup(lng,lng)@
 
 @= fnumcastdown
-@:simpledowncast(@1,@2)@
+@:simpledowncast(@1,@2,dbl,"%f")@
 
 /* when casting a floating point to an decimal we like to preserve the 
  * precision.  This means we first scale the float before converting.
@@ -3065,7 +3071,7 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 
 @c
 @= numcastdown
-@:simpledowncast(@1,@2)@
+@:simpledowncast(@1,@2,lng,LLFMT)@
 
 str 
 @2_dec2_@1( @1 *res, int *s1, @2 *v )
@@ -3231,7 +3237,8 @@ month_interval_str( int *ret, str *s, int *ek, int *sk )
 	if (interval_from_str( *s, *sk, *ek, &res ) < 0)
 		throw(SQL, "calc.month_interval",
 			"wrong format (%s)", *s);
-	*ret = res;
+	assert((lng) GDK_int_min <= res && res <= (lng) GDK_int_max);
+	*ret = (int) res;
 	return MAL_SUCCEED;
 }
 
