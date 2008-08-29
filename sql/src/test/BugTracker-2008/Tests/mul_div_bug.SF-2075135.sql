@@ -13,7 +13,7 @@ AS SELECT (TOT_PRICE * DOLLAR_EQUIV) / (UNITS * POUND_EQUIV), TOT_PRICE * DOLLAR
 INSERT INTO A VALUES (1411.5, 4000);
 INSERT INTO B VALUES (1.00, 2.20);
 
-trace select * from C;
+select * from C;
 
 drop view C;
 drop table B;
