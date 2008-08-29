@@ -530,6 +530,7 @@ opt_export int isUpdateInstruction(InstrPtr p);
 opt_export int hasSideEffects(InstrPtr p, int strict);
 opt_export int isSideEffectFree(MalBlkPtr mb);
 opt_export int isBlocking(InstrPtr p);
+opt_export int isAllScalar(MalBlkPtr mb, InstrPtr p);
 opt_export int isFragmentGroup(InstrPtr q);
 opt_export int isMatJoinOp(InstrPtr q);
 opt_export int isMapOp(InstrPtr q);
@@ -1183,6 +1184,16 @@ isBlocking(InstrPtr p)
 			return TRUE;
 	return FALSE;
 }
+
+int isAllScalar(MalBlkPtr mb, InstrPtr p)
+{
+	int i;
+	for (i=p->retc; i<p->argc; i++)
+	if (isaBatType(getArgType(mb,p,i)) || getArgType(mb,p,i)==TYPE_bat)
+		return FALSE;
+	return TRUE;
+}
+
 @-
 Used in the merge table optimizer. It is build incrementally
 and should be conservative.

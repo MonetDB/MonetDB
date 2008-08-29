@@ -46,7 +46,7 @@ The octopus needs a collection of sites to play with,
 which can be obtained dynamically from the merovingian.
 Alternatively, we built a list of possible sites explicitly. [todo]
 
-Currently the octopus delegates objects to the remote site
+Currently the octopus delegates non-scalar objects to the remote site
 and calls them back if needed. This can/should be avoided.
 
 The octopus is called just after the dataflow optimizer, such
@@ -199,6 +199,8 @@ static void
 OCTOPUSget(Client cntxt, MalBlkPtr mb, InstrPtr p, int i, DBalias *dbalias){
 	InstrPtr q;
 
+	if (dbalias[getArg(p,i)].dbname == 0)
+		return;
 	q= newStmt(mb,remoteRef,getRef);
 	getArg(q,0)= getArg(p,i);
 	q= pushStr(mb,q, dbalias[getArg(p,i)].dbname);
@@ -283,7 +285,7 @@ with the local policy and resources.
 Operations with side effects, e.g. io.print and updates,
 should be handled at the controlling site.
 @c
-		if (hasSideEffects(p,TRUE)){
+		if (hasSideEffects(p,TRUE) || isAllScalar(mb,p)){
 			for (j=p->retc; j<p->argc; j++)
 				OCTOPUSget(cntxt, mb, p, j, dbalias);
 			pushInstruction(mb,p);
