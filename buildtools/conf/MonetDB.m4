@@ -756,7 +756,7 @@ yes-*-*)
 	dnl  we use GCC_BISON_CFLAGS to disable the respective warning as
 	dnl  locally as possible via "-Wno-undef"
 	dnl  (see also MonetDB4/src/monet/Makefile.ag, sql/src/server/Makefile.ag,
-	dnl   pathfinder/modules/pftijah/Makefile.ag, amdb/src/lang/Makefile.ag).
+	dnl   pathfinder/modules/pftijah/Makefile.ag).
 	GCC_BISON_CFLAGS="$GCC_BISON_CFLAGS -Wno-undef"
 	dnl  Likewise, at least with gcc 4.3.0 and flex 2.5.33 and bison 2.3 on Gentoo 1.12.11.1,
 	dnl  gcc complains about some bison/flex-generated code that defines an unused static function:
@@ -872,10 +872,10 @@ yes-*-*)
 
 	dnl  (At least on Fedora Core 4,) bison 2.0 seems to generate code
 	dnl  that icc does not like; since the problem only occurs with
-	dnl  sql/src/server/sql_parser.mx & amdb/src/lang/parser.y, 
+	dnl  sql/src/server/sql_parser.mx, 
 	dnl  we use ICC_BISON_CFLAGS 
 	dnl  to disable the respective warning as locally as possible
-	dnl  (see also sql/src/server/Makefile.ag & amdb/src/lang/Makefile.ag).
+	dnl  (see also sql/src/server/Makefile.ag).
 	case "`bison -V | head -n1`" in
 	*2.0*)
 		ICC_BISON_CFLAGS="$ICC_BISON_CFLAGS -wd592"
