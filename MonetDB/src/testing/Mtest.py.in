@@ -1303,10 +1303,6 @@ def CheckMods(env, TST, SERVER, CALL) :
         for m in "pathfinder", "pf_support", "ascii_io", "alarm", "malalgebra", "aggrX3", "xtables", "mapi":
             if m not in env['TST_MODS']:
                 missing.append(m)
-    if CALL in ["x100", "x100Xs"]:
-        for m in "amdb", "storage":
-            if m not in env['TST_MODS']:
-                missing.append(m)
     return missing
 ### CheckMods(env, TST, SERVER, CALL) #
 
@@ -1501,10 +1497,6 @@ def RunTest(env, TST, BusyPorts, COND) :
         EXT = ".xq"         ; CALL = "xqXs"   ; SERVER = "XQUERY"
     elif os.path.isfile(TST+"_p00.xq")        or  os.path.isfile(TST+"_p00.xq.src")        or  os.path.isfile(TST+"_p00.xq.in"):
         EXT = ".xq"         ; CALL = "xqXp"   ; SERVER = "XQUERY"
-    elif os.path.isfile(TST+".x100")          or  os.path.isfile(TST+".x100.src")          or  os.path.isfile(TST+".x100.in"):
-        EXT = ".x100"       ; CALL = "x100"   ; SERVER = "MIL"
-    elif os.path.isfile(TST+"_s00.x100")      or  os.path.isfile(TST+"_s00.x100.src")      or  os.path.isfile(TST+"_s00.x100.in"):
-        EXT = ".x100"       ; CALL = "x100Xs" ; SERVER = "MIL"
         #TODO:
         #elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
         #elif [ -f "${TST}_s00.java" ] ; then  EXT="java" ; CALL="JavaXs "+TST+" "+EXT
@@ -1520,11 +1512,11 @@ def RunTest(env, TST, BusyPorts, COND) :
         elif COND and not CONDITIONALS[COND]:
             elem = SkipTest(env, TST, EXT, "as conditional '%s' does not hold." % COND)
         elif os.name == "nt":
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|milS|milC|sql|xq|x100)`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|milS|milC|sql|xq)`")
             #TODO:
             #elif os.name == "posix":
         else:
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.milS|.milC|.sql|.xq|.x100]`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.milS|.milC|.sql|.xq]`")
         return TX,Failed,Failed,elem
 
     if par['PACKAGE'] not in ('monetdb', 'monetdb-java', 'monetdb-clients'):
@@ -1554,8 +1546,6 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as "+env['SQLDUMP'].split(None, 1)[0]+" is not available.")
     elif EXT == ".xq" and  not env['exe']['XQuery_Client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['XQUERYCLIENT'].split(None, 1)[0]+" is not available.")
-    elif EXT == ".x100" and  not env['exe']['X100_Client'][0]:
-        elem = SkipTest(env, TST, EXT, "as "+env['X100CLIENT'].split(None, 1)[0]+" is not available.")
     elif CALL == "python"  and  not env['exe']['python'][0]:
         elem = SkipTest(env, TST, EXT, "as python is not available.")
         #TODO:
@@ -1639,8 +1629,8 @@ def RunTest(env, TST, BusyPorts, COND) :
             ACCURACYerr = 0
 
         PRELUDE = ""
-        #if EXT not in  ['.milC','.sql','.xq','.x100']:
-        if EXT not in  ['.sql','.xq','.x100']:
+        #if EXT not in  ['.milC','.sql','.xq']:
+        if EXT not in  ['.sql','.xq']:
             if os.path.isfile(TST+".prelude")  and  par['M4']:
                 PRELUDE = TST+".prelude"
             if os.path.isfile(TST+".prelude5")  and  par['M5']:
@@ -1674,13 +1664,13 @@ def RunTest(env, TST, BusyPorts, COND) :
                     else:
                         TOx = 1
                     CTIMEOUT = CTIMEOUT + ( TOx * TIMEOUT )
-        elif CALL in ["malXs", "milSXs", "milCXs", "sqlXs", "xqXs", "x100Xs"]:
+        elif CALL in ["malXs", "milSXs", "milCXs", "sqlXs", "xqXs"]:
             test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$", re.MULTILINE)
             d = os.listdir(os.getcwd())
             for f in d:
                 if test.match(f):
                     CTIMEOUT = CTIMEOUT + TIMEOUT
-        elif CALL in ["mal", "malC", "milS", "milC", "sql", "xq", "x100"]:
+        elif CALL in ["mal", "malC", "milS", "milC", "sql", "xq"]:
             CTIMEOUT = CTIMEOUT + TIMEOUT
         if  CTIMEOUT < TIMEOUT:
             CTIMEOUT = TIMEOUT
@@ -2011,14 +2001,12 @@ def CheckSocket2(env,SERVER) :  #,SrvrErr) :
         env['exe']['SQL_Client']    = env['exe']['SQL_Client'][0]    , env['exe']['SQL_Client'][1].replace(op, np)
         env['exe']['SQL_Dump']      = env['exe']['SQL_Dump'][0]      , env['exe']['SQL_Dump'][1].replace(op, np)
         env['exe']['XQuery_Client'] = env['exe']['XQuery_Client'][0] , env['exe']['XQuery_Client'][1].replace(op, np)
-        env['exe']['X100_Client']   = env['exe']['X100_Client'][0]   , env['exe']['X100_Client'][1].replace(op, np)
         os.environ['MSERVER']       = os.environ['MSERVER'].replace(op, np)
         os.environ['MIL_CLIENT']    = os.environ['MIL_CLIENT'].replace(op, np)
         os.environ['MAL_CLIENT']    = os.environ['MAL_CLIENT'].replace(op, np)
         os.environ['SQL_CLIENT']    = os.environ['SQL_CLIENT'].replace(op, np)
         os.environ['SQL_DUMP']      = os.environ['SQL_DUMP'].replace(op, np)
         os.environ['XQUERY_CLIENT'] = os.environ['XQUERY_CLIENT'].replace(op, np)
-        os.environ['X100_CLIENT']   = os.environ['X100_CLIENT'].replace(op, np)
         Smsg = Smsg + """
 ! Using new %sPORT=%s !
 """ % (SERVER, env[SERVER+'PORT'])
@@ -2352,24 +2340,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Clnt = exe['XQuery_Client'][1]+" "
             for f in TSTs:
                 killed = RunIt(Clnt+f, "", ClntOut, ClntErr, TIMEOUT)
-                if killed:
-                    break
-        elif CALL in ["x100", "x100Xs"]:
-            TSTs = []
-            if CALL == "x100":
-                X=""
-            else:
-                X="_s[0-9][0-9]"
-            test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-            d = os.listdir(os.getcwd())
-            d.sort()
-            for f in d:
-                if test.match(f):
-                    TSTs.append(f)
-
-            Clnt = exe['X100_Client'][1]
-            for f in TSTs:
-                killed = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
                 if killed:
                     break
     else:
@@ -2790,7 +2760,6 @@ _PackageDict = {
     'xquery':     'monetdb-xquery',
     'pathfinder': 'monetdb-xquery',
     'xml':        'monetdb-xml',
-    'amdb':       'monetdb-amdb',
     'geom':       'monetdb-geom',
     'datacell':   'monetdb-datacell',
     }
@@ -2850,7 +2819,7 @@ def main(argv) :
             'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  ,
             'SQL_PREFIX']
     if THISFILE == "Mtest.py":
-        vars = vars + [ 'MILCLIENT', 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'XQUERYCLIENT', 'X100CLIENT']    #, 'MONETDB_MOD_PATH' ]
+        vars = vars + [ 'MILCLIENT', 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'XQUERYCLIENT']    #, 'MONETDB_MOD_PATH' ]
 
     env = {}
 
@@ -2876,7 +2845,6 @@ def main(argv) :
         dft['SQLCLIENT']      = "'mclient -lsql'"
         dft['SQLDUMP']        = "'msqldump'"
         dft['XQUERYCLIENT']   = "'mclient -lxquery -fxml'"
-        dft['X100CLIENT']     = "'x100run_mapi'"
 
     #par = {}
     # get current environment
@@ -2890,7 +2858,7 @@ def main(argv) :
     cmd_options = [
         # long name, short name, GDK option, argument, comment
         ('package', 'p', 'package', '<package>',
-         "package to be tested, e.g.:\nmonetdb(|4|5), [monetdb-](java|clients|template|sql|xquery|xml|amdb|geom|datacell);\ndefault: %s" % par['PACKAGE']),
+         "package to be tested, e.g.:\nmonetdb(|4|5), [monetdb-](java|clients|template|sql|xquery|xml|geom|datacell);\ndefault: %s" % par['PACKAGE']),
         ('MonetDB4', '4', 'MonetDB4', None,
          "use Mserver of MonetDB Version 4 (default with <package> not in {monetdb5, monetdb-datacell})"),
         ('MonetDB5', '5', 'MonetDB5', None,
@@ -2951,8 +2919,6 @@ def main(argv) :
              'default: %s' % dft['SQLDUMP']),
             ('XQUERYCLIENT', None, 'XQUERYCLIENT', '<XQuery-client program>',
              'default: %s' % dft['XQUERYCLIENT']),
-            ('X100CLIENT', None, 'X100CLIENT', '<x100-client program>',
-             'default: %s' % dft['X100CLIENT']),
             ('at', None, 'use_at', None, 'Use at command as watchdog'),
             ('concurrent', None, 'concurrent', None,
              'There are concurrent Mtest runs using the same MonetDB installation'),
@@ -3367,7 +3333,6 @@ def main(argv) :
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -umonetdb -Pmonetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
         exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s -umonetdb -Pmonetdb --host=%s --port=%s %s' % (env['SQLDUMP'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
         exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s -umonetdb -Pmonetdb --host=%s --port=%s' % (env['XQUERYCLIENT'], HOST, env['MAPIPORT'])
-        exe['X100_Client']   = CheckExec(env['X100CLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb --host=%s --port=%s' % (env['X100CLIENT'], HOST, env['MAPIPORT'])
         if par['ALGEBRA']:
             exe['SQL_Client']    = exe['SQL_Client'][0]   , exe['SQL_Client'][1]   +' -G'
             exe['XQuery_Client'] = exe['XQuery_Client'][0], exe['XQuery_Client'][1]+' -G'
@@ -3614,15 +3579,6 @@ def main(argv) :
                 mod_load = 'module(%s);' % mod_name
             if Check('%s --dbname=%s "--dbinit=%s"' % (env['exe']['Mserver'][1], TSTPREF, mod_load), QUIT):
                 ErrXit('Stopping Geom testing as module "%s" fails to load!' % mod_name)
-
-        if par['PACKAGE'] == 'monetdb-amdb':
-            if not env['exe']['X100_Client'][0]:
-                ErrXit('Stopping X100/AmDB testing as "%s" is not available!' % env['X100CLIENT'].split(None, 1)[0])
-            if not env['exe']['MIL_Client'][0]:
-                ErrXit('Stopping X100/AmDB testing as "%s" is not available!' % env['MILCLIENT'].split(None, 1)[0])
-            MissingMods = CheckMods(env, '', '', 'x100')
-            if MissingMods:
-                ErrXit('Stopping X100/AmDB testing as modules "%s" are missing!' % str(MissingMods))
 
         if par['PACKAGE'][:8] == 'monetdb-' and par['PACKAGE'][8:] in ('sql','geom'):
             if not env['exe']['SQL_Client'][0]:

@@ -10,9 +10,10 @@ deal with the NIL values in url.
 
 *MonetDB 5.8 (Spring 2008)
 
-  23 Jul 2006; Martin Kersten <mlkersten>; OPEN
+  23 Jul 2006; Martin Kersten <mlkersten>; CLOSE
   The X100 subsystem with its buffer manager and
   compression scheme is integrated in the software stack.
+  The X100 project has been moved to VectorWise
 
 *MonetDB 5.4 (Spring 2008)
 
