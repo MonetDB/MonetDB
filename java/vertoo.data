@@ -1,0 +1,4 @@
+# The not distributed vertoo.data is required for configure to determine
+# whether we build from CVS source or from distributed source (tarball).
+# We currently do not use vertoo for MonetDB Java;
+# see version.sh, instead.
