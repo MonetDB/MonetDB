@@ -1,13 +1,13 @@
-stderr of test 'alter_view_not_allowed.SF-2075195` in directory 'src/test/BugTracker-2008` itself:
+stderr of test 'extract_bug.SF-2075266` in directory 'src/test/BugTracker-2008` itself:
 
 
-# 12:25:51 >  
-# 12:25:51 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=30598 --set xrpc_port=44185 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2008" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 12:25:51 >  
+# 13:27:40 >  
+# 13:27:40 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36215 --set xrpc_port=40937 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2008" --set sql_debug=16384 --set xquery_backend=algebra --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 13:27:40 >  
 
 # builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
 # builtin opt 	gdk_version = 1.24.0
-# builtin opt 	monet_pid = 2402
+# builtin opt 	monet_pid = 6390
 # builtin opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -66,24 +66,23 @@ stderr of test 'alter_view_not_allowed.SF-2075195` in directory 'src/test/BugTra
 # cmdline opt 	sql_logdir = /ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs
 # cmdline opt 	mapi_open = true
 # cmdline opt 	xrpc_open = true
-# cmdline opt 	mapi_port = 30598
-# cmdline opt 	xrpc_port = 44185
+# cmdline opt 	mapi_port = 36215
+# cmdline opt 	xrpc_port = 40937
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_test_BugTracker-2008
+# cmdline opt 	sql_debug = 16384
+# cmdline opt 	xquery_backend = algebra
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 10
 #warning: please don't forget to set your vault key!
 #(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
 
-# 12:25:51 >  
-# 12:25:51 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30598 
-# 12:25:51 >  
+# 13:27:40 >  
+# 13:27:40 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=36215  -G
+# 13:27:40 >  
 
-MAPI  = monetdb@alf:34730
-QUERY = alter table myview alter column a set null;
-ERROR = !ALTER TABLE: cannot set column options for VIEW 'myview'
 
-# 12:25:51 >  
-# 12:25:51 >  Done.
-# 12:25:51 >  
+# 13:27:40 >  
+# 13:27:40 >  Done.
+# 13:27:40 >  
 

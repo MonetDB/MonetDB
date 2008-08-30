@@ -2213,6 +2213,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		dnode *n = dl->h->next;
 		sql_exp *l = rel_value_exp(sql, &rel, lo, f, ek), *e;
 		sql_rel *left = rel, *right = NULL;
+		int correlated = 0;
 
 		if (!l)
 			return NULL;
@@ -2242,6 +2243,11 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				sql_exp *r = rel_value_exp(sql, &z, sval, f, ek);
 				sql_rel *rl;
 
+				if (!r) {
+					r = rel_value_exp(sql, &left, sval, f, ek);
+					z = left;
+					correlated = 1;
+				}
 				if (!r || !(r=rel_check_type(sql, st, r, type_equal))) {
 					if (r)
 						exp_destroy(r);
@@ -2261,18 +2267,22 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				}
 				right = rl;
 			}
-			rel_label(right, ++sql->label);
-			right = rel_distinct(right);
+			if (!correlated) {
+				rel_label(right, ++sql->label);
+				right = rel_distinct(right);
+			}
 		} else {
 			return sql_error(sql, 02, "IN: missing inner query");
 		}
-		/* right is a relation without correlations */
 		if (right) {
 			sql_exp *r = NULL;
 
 			r = rel_lastexp(sql, right);
 			rel_setsubquery(right);
-			rel = rel_crossproduct(left, right, op_join);
+			if (correlated)
+				rel = left;
+			else
+				rel = rel_crossproduct(left, right, op_join);
 			if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) {
 				exp_destroy(l);
 				exp_destroy(r);
@@ -2588,7 +2598,8 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s, char *fname)
 		sql_exp *ol = exp_dup(l);
 		sql_exp *or = exp_dup(r);
 
-		if ((f = sql_bind_member(s, fname, t1, 2)) != NULL) {
+		if (!EC_NUMBER(t1->type->eclass) &&
+		   (f = sql_bind_member(s, fname, t1, 2)) != NULL) {
 			/* try finding function based on first argument */
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
@@ -3524,6 +3535,7 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int all)
 {
 	int found = 0;
 	list *exps = rel_projections(sql, t1, NULL, 1);
+	list *r_exps = rel_projections(sql, t2, NULL, 1);
 	list *outexps = new_exp_list();
 	node *n;
 
@@ -3532,7 +3544,7 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int all)
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *lc = n->data;
 		char *nm = lc->name;
-		sql_exp *rc = rel_bind_column(sql, t2, nm);
+		sql_exp *rc = exps_bind_column(r_exps, nm);
 
 		if (rc) {
 			sql_exp *cond;
@@ -3542,9 +3554,12 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int all)
 			lc = rel_nop_(sql, cond, exp_dup(rc), exp_dup(lc), NULL, NULL, "ifthenelse");
 			exp_setname(lc, NULL, nm);
 			append(outexps, lc);
+			list_remove_data(r_exps, rc);
 		} else if (all) {
 			found = 0;
 			break;
+		} else {
+			append(outexps, exp_dup(lc));
 		}
 	}
 	list_destroy(exps);
@@ -3554,6 +3569,8 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int all)
 		rel_destroy(rel);
 		return NULL;
 	}
+	list_merge(outexps, r_exps, (fdup)&exp_dup);
+	list_destroy(r_exps);
 	return rel_project(rel, outexps);
 }
 
