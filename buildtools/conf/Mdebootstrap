@@ -65,8 +65,9 @@ elif [ -f autogen/autogen.py  -a  -f mel/mel.mx  -a  -f Mx/Mx.h  -a  -f burg/bur
 	# then, check for the existence of "characteristic" files
 	what="buildtools"
 else
-	# otherwise, use the current directory's (base)name to guess, 
-	# which of monet, sql, xml, acoi, template, ... we are.
+	# otherwise, use the current directory's (base)name to guess, which of
+	# buildtools java, MonetDB, clients, MonetDB4, MonetDB5, template, sql, geom, pathfinder, datacell
+	# we are.
 	what="`pwd`"
 	what="`basename $what`"
 fi
