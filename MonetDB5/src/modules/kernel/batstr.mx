@@ -310,17 +310,20 @@ STRbat@2Cst(int *ret, int *l, str *cst)
 	BUN p, q;
 	str x;
 	bit y;
+	int isnil = 0;
 
 	prepareOperand(b, l, "@1");
 	prepareResult(bn, b, TYPE_bit, "@1");
 
 	bi = bat_iterator(b);
 	
+	if (strcmp(*cst, str_nil) == 0) 
+		isnil = 1;
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi, p);
 
 		x = (str) BUNtail(bi, p);
-		if (x == 0 || strcmp(x, str_nil) == 0)
+		if (isnil || x == 0 || strcmp(x, str_nil) == 0)
 			y = bit_nil;
 		else
 			y = strcmp(x, *cst) @1 0;
