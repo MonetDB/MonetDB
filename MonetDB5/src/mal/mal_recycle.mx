@@ -790,7 +790,8 @@ RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 static int
 RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
-	int i, j, nbid= -1, bid = -1, ridx, idx, pc = -1, evicted=0;
+	int i, j, ridx, idx, pc = -1, evicted=0;
+	bat bid= -1, nbid= -1;
 	InstrPtr q;
 	static str selectRef;
 	
