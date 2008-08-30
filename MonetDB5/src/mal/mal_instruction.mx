@@ -2690,9 +2690,8 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			}
 			GDKfree(cv);
 			if( isaBatType(getVarType(mb,getArg(p,i)) ) ){
-				BAT *d;
-				if (stk){
-					assert(stk->stk[getArg(p,i)].vtype== TYPE_bat);
+				BAT *d = 0;
+				if (stk && stk->stk[getArg(p,i)].vtype== TYPE_bat){
 					d= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 				} else
 					d= BATdescriptor(getVarConstant(mb,getArg(p,i)).val.ival);

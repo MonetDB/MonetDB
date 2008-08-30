@@ -1322,7 +1322,7 @@ signatures satisfying the pattern.
 					continue;
 				}
 				if( m) 
-					printFunction(out, m, stk, lstng);
+					printFunction(out, m, 0, lstng);
 			} else 
 				printFunction(out, mb, stk, lstng);
 			continue;
