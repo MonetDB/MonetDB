@@ -50,32 +50,23 @@ as error to the connecting client.
 FIXME: actually implement that
 
 @h
-#define MEROV_VERSION   "0.7"
+#define MEROV_VERSION   "0.8"
 #define MEROV_PORT      50000
 
 @c
 #include "sql_config.h"
 #include "merovingian.h"
 #include "mal_sabaoth.h"
-#include <stream_socket.h>
 #include <stdlib.h> /* exit, getenv, rand, srand */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
 #include <sys/types.h>
 #include <sys/wait.h> /* wait */
-#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
-#endif
-#ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
-#endif
-#ifdef HAVE_NETDB_H
 #include <netdb.h>
 #include <netinet/in.h>
-#endif
-#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#endif
 #include <unistd.h>
 #include <string.h> /* strerror */
 #ifdef HAVE_ALLOCA_H
@@ -85,6 +76,8 @@ FIXME: actually implement that
 #include <signal.h> /* handle Ctrl-C, etc. */
 #include <pthread.h>
 #include <time.h>
+#include <stream.h>
+#include <stream_socket.h>
 
 #define SOCKPTR struct sockaddr *
 #ifdef HAVE_SOCKLEN_T
@@ -812,6 +805,19 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 	return(NO_ERR);
 }
 
+static void
+listDiscoveries(stream *fout)
+{
+	remotedb rdb;
+
+	rdb = _merovingian_remotedbs;
+	while (rdb != NULL) {
+		stream_printf(fout, "%s\t%s\t%d\n",
+				rdb->dbname, rdb->conn, rdb->ttl);
+		rdb = rdb->next;
+	}
+}
+
 static err
 handleClient(int sock)
 {
@@ -937,6 +943,15 @@ handleClient(int sock)
 		s = strchr(database, ':');
 		if (s)
 			*s = 0;
+	}
+
+	if (strcmp(lang, "eximius") == 0) {
+		/* return a list of remote databases from our Aranita */
+		listDiscoveries(fout);
+		stream_flush(fout);
+		close_stream(fout);
+		close_stream(fdin);
+		return(NO_ERR);
 	}
 
 	if (*database == '\0') {
@@ -1112,6 +1127,34 @@ openConnectionUDP(int *ret, unsigned short port)
 	return(NO_ERR);
 }
 
+static err
+openConnectionUNIX(int *ret, char *path)
+{
+	struct sockaddr_un server;
+	int sock = -1;
+
+	sock = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (sock < 0)
+		return(newErr("creation of UNIX stream socket failed: %s",
+					strerror(errno)));
+
+	memset(&server, 0, sizeof(struct sockaddr_un));
+	server.sun_family = AF_UNIX;
+	strncpy(server.sun_path, path, sizeof(server.sun_path) - 1);
+
+	if (bind(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) < 0)
+		return(newErr("binding to UNIX stream socket at %s failed: %s",
+				path, strerror(errno)));
+
+	/* keep queue of 5 */
+	listen(sock, 5);
+
+	merlog("listening for UNIX connections on %s", path);
+
+	*ret = sock;
+	return(NO_ERR);
+}
+
 static int _keepListening = 1;
 static str
 acceptConnections(int sock)
@@ -1126,8 +1169,7 @@ acceptConnections(int sock)
 	do {
 		/* handle socket connections */
 		FD_ZERO(&fds);
-		if (sock >= 0)
-			FD_SET(sock, &fds);
+		FD_SET(sock, &fds);
 
 		/* Wait up to 0.5 seconds. */
 		tv.tv_sec = 0;
@@ -1147,7 +1189,7 @@ acceptConnections(int sock)
 			}
 			continue;
 		}
-		if (sock >= 0 && FD_ISSET(sock, &fds)) {
+		if (FD_ISSET(sock, &fds)) {
 			if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
 				if (_keepListening == 0)
 					break;
@@ -1179,99 +1221,164 @@ error:
 static void
 controlRunner(void *d)
 {
+	int sock = *(int *)d;
 	char buf[256];
+	char buf2[256];
 	char *p, *q;
 	sabdb *stats;
-	int fd;
 	int pos = 0;
+	int retval;
+	struct timeval tv;
+	fd_set fds;
+	int msgsock;
+	size_t len;
+	err e;
 
 	/* Try to handle control signals.  We can get race conditions due to
 	 * clients coming in at the same time.  We might need to fix this
 	 * situation sometime. */
-	fd = open((char *)d, O_RDONLY); /* note: this blocks */
-	while (_keepListening == 1) {
-		if (pos == 0) {
-			if ((pos = read(fd, buf, 255)) == 0) {
-				/* ignore EOF, but don't spin-lock */
-				MT_sleep_ms(500);
-				continue;
-			} else if (pos == -1) {
-				/* we got interrupted ... so what? */
-				if (errno == EINTR) {
-					pos = 0;
-					continue;
-				}
-				/* hmmm error ... give up */
-				fprintf(stderr, "error reading from control channel: %s\n",
-						strerror(errno));
-				break;
-			} else {
-				buf[pos] = '\0';
-				pos = 0;
-			}
-		}
-		q = buf + pos;
-		p = strchr(q, '\n');
-		if (p == NULL) {
-			/* skip, must be garbage */
-			fprintf(stderr, "skipping garbage on control channel: %s\n", buf);
-			pos = 0;
+	do {
+		/* handle socket connections */
+		FD_ZERO(&fds);
+		FD_SET(sock, &fds);
+
+		/* Wait up to 0.5 seconds. */
+		tv.tv_sec = 0;
+		tv.tv_usec = 500;
+
+		retval = select(sock + 1, &fds, NULL, NULL, &tv);
+		if (retval == 0) {
+			/* nothing interesting has happened */
 			continue;
 		}
-		*p++ = '\0';
-		if (*p == '\0') {
-			pos = 0;
-		} else {
-			pos = p - buf;
+		if (retval < 0) {
+			if (_keepListening == 0)
+				break;
+			if (errno != EINTR) {
+				e = newErr("control runner: error during select: %s",
+						strerror(errno));
+				goto error;
+			}
+			continue;
 		}
+		if (FD_ISSET(sock, &fds)) {
+			if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
+				if (_keepListening == 0)
+					break;
+				if (errno != EINTR) {
+					e = newErr("control runner: error during accept: %s",
+							strerror(errno));
+					goto error;
+				}
+				continue;
+			}
+		} else
+			continue;
 
-		/* format is simple: database<space>command */
-		if ((p = strchr(q, ' ')) == NULL) {
-			fprintf(stderr, "malformed control signal: %s\n", q);
-		} else {
-			*p++ = '\0';
-			if (strcmp(p, "start") == 0) {
-				err e;
-				merlog("starting database %s due to control signal", q);
-				if ((e = forkMserver(q, &stats, 1)) != NO_ERR) {
-					fprintf(stderr, "failed to fork mserver: %s\n",
-							getErrMsg(e));
-					freeErr(e);
-				}
-				if (stats != NULL)
-					SABAOTHfreeStatus(&stats);
-			} else if (strcmp(p, "stop") == 0 ||
-					strcmp(p, "kill") == 0)
-			{
-				/* we need to find the right dpair, that is we
-				 * sort of assume the control signal is right */
-				dpair dp = topdp;
-				while (dp != NULL) {
-					if (strcmp(dp->dbname, q) == 0) {
-						if (strcmp(p, "stop") == 0) {
-							merlog("stopping database %s due to control "
-									"signal", q);
-							kill(dp->pid, SIGTERM);
-						} else {
-							merlog("killing database %s due to control "
-									"signal", q);
-							kill(dp->pid, SIGKILL);
-						}
-						break;
+		while (_keepListening) {
+			if (pos == 0) {
+				if ((pos = recv(msgsock, buf, sizeof(buf), 0)) == 0) {
+					/* EOF */
+					break;
+				} else if (pos == -1) {
+					/* we got interrupted ... so what? */
+					if (errno == EINTR) {
+						pos = 0;
+						continue;
 					}
-					dp = dp->next;
+					/* hmmm error ... give up */
+					fprintf(stderr, "error reading from control channel: %s\n",
+							strerror(errno));
+					break;
+				} else {
+					buf[pos] = '\0';
+					pos = 0;
 				}
-				if (dp == NULL) {
-					fprintf(stderr, "received control stop signal for "
-							"database not under merovingian control: %s\n",
-							q);
-				}
+			}
+			q = buf + pos;
+			p = strchr(q, '\n');
+			if (p == NULL) {
+				/* skip, must be garbage */
+				fprintf(stderr, "skipping garbage on control channel: %s\n", buf);
+				pos = 0;
+				continue;
+			}
+			*p++ = '\0';
+			if (*p == '\0') {
+				pos = 0;
 			} else {
-				fprintf(stderr, "unknown control command: %s", p);
+				pos = p - buf;
+			}
+
+			/* format is simple: database<space>command */
+			if ((p = strchr(q, ' ')) == NULL) {
+				fprintf(stderr, "malformed control signal: %s\n", q);
+			} else {
+				*p++ = '\0';
+				if (strcmp(p, "start") == 0) {
+					err e;
+					merlog("starting database %s due to control signal", q);
+					if ((e = forkMserver(q, &stats, 1)) != NO_ERR) {
+						fprintf(stderr, "failed to fork mserver: %s\n",
+								getErrMsg(e));
+						len = snprintf(buf2, sizeof(buf2), "starting %s failed: %s\n",
+								q, getErrMsg(e));
+						send(msgsock, buf2, len, 0);
+						freeErr(e);
+					} else {
+						len = snprintf(buf2, sizeof(buf2), "OK\n");
+						send(msgsock, buf2, len, 0);
+					}
+
+					if (stats != NULL)
+						SABAOTHfreeStatus(&stats);
+				} else if (strcmp(p, "stop") == 0 ||
+						strcmp(p, "kill") == 0)
+				{
+					/* we need to find the right dpair, that is we
+					 * sort of assume the control signal is right */
+					dpair dp = topdp;
+					while (dp != NULL) {
+						if (strcmp(dp->dbname, q) == 0) {
+							if (strcmp(p, "stop") == 0) {
+								merlog("stopping database %s due to control "
+										"signal", q);
+								kill(dp->pid, SIGTERM);
+							} else {
+								merlog("killing database %s due to control "
+										"signal", q);
+								kill(dp->pid, SIGKILL);
+							}
+							len = snprintf(buf2, sizeof(buf2), "OK\n");
+							send(msgsock, buf2, len, 0);
+							break;
+						}
+						dp = dp->next;
+					}
+					if (dp == NULL) {
+						fprintf(stderr, "received control stop signal for "
+								"database not under merovingian control: %s\n",
+								q);
+						len = snprintf(buf2, sizeof(buf2),
+								"%s is not controlled by merovingian\n", q);
+						send(msgsock, buf2, len, 0);
+					}
+				} else {
+					fprintf(stderr, "unknown control command: %s", p);
+					len = snprintf(buf2, sizeof(buf2),
+							"unknown command: %s\n", p);
+					send(msgsock, buf2, len, 0);
+				}
 			}
 		}
-	}
-	close(fd);
+		close(msgsock);
+		continue;
+
+error:
+		fprintf(stderr, "%s\n", e);
+	} while (_keepListening);
+	shutdown(sock, SHUT_RDWR);
+	close(sock);
 	merlog("control channel closed");
 }
 
@@ -1502,6 +1609,8 @@ discoveryRunner(void *d)
 							rdb->ttl = time(NULL) + atoi(ttl);
 						}
 						rdb = prv;
+						merlog("refresh from %s for database %s",
+								host, dbname);
 						break; /* skip duplicate entries */
 					}
 					prv = rdb;
@@ -1655,6 +1764,7 @@ main(int argc, char *argv[])
 	str p, prefix;
 	FILE *cnf = NULL, *pidfile = NULL;
 	char buf[1024];
+	char lockfile[512];
 	sabdb* stats = NULL;
 	dpair d;
 	int pfd[2];
@@ -1664,6 +1774,7 @@ main(int argc, char *argv[])
 	int ret;
 	int sock = -1;
 	int usock = -1;
+	int unsock = -1;
 	struct stat sb;
 	FILE *oerr = NULL;
 	unsigned short port = MEROV_PORT;
@@ -1824,9 +1935,9 @@ main(int argc, char *argv[])
 		return(1);
 	}
 
-	snprintf(buf, 1024, "%s/.merovingian_lock", dbfarm);
+	snprintf(lockfile, 512, "%s/.merovingian_lock", dbfarm);
 	/* lock such that we are alone on this world */
-	if ((ret = MT_lockf(buf, F_TLOCK, 4, 1)) == -1) {
+	if ((ret = MT_lockf(lockfile, F_TLOCK, 4, 1)) == -1) {
 		/* locking failed */
 		fprintf(stderr, "another merovingian is already running\n");
 		fflush(stderr);
@@ -1836,16 +1947,6 @@ main(int argc, char *argv[])
 		/* directory or something doesn't exist */
 		fprintf(stderr, "unable to create .merovingian_lock file in %s: %s\n",
 				dbfarm, strerror(errno));
-		fflush(stderr);
-		MERO_EXIT(1);
-		return(1);
-	}
-
-	snprintf(buf, 1024, "%s/.merovingian_control", dbfarm);
-	unlink(buf);
-	if ((ret = mkfifo(buf, S_IRUSR | S_IWUSR)) != 0) {
-		fprintf(stderr, "failed to create a control channel %s: %s\n",
-				buf, strerror(errno));
 		fflush(stderr);
 		MERO_EXIT(1);
 		return(1);
@@ -1985,13 +2086,21 @@ main(int argc, char *argv[])
 
 	SABAOTHinit(dbfarm, NULL);
 
-	/* open up a connection */
-	e = openConnectionTCP(&sock, port);
-	if (e == NO_ERR && (e = openConnectionUDP(&usock, port)) == NO_ERR) {
+	/* set up control channel path */
+	snprintf(buf, 1024, "%s/.merovingian_control", dbfarm);
+	unlink(buf);
+	GDKfree(dbfarm);
+
+	/* open up connections */
+	if (
+			(e = openConnectionTCP(&sock, port)) == NO_ERR &&
+			(e = openConnectionUDP(&usock, port)) == NO_ERR &&
+			(e = openConnectionUNIX(&unsock, buf)) == NO_ERR)
+	{
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
 
-		/* from this point merovingian considers itself to be in position to
+		/* From this point merovingian considers itself to be in position to
 		 * start running, so flag the parent we will have fun. */
 		MERO_EXIT(0);
 
@@ -2006,14 +2115,12 @@ main(int argc, char *argv[])
 		}
 
 		/* handle control commands */
-		snprintf(buf, 1024, "%s/.merovingian_control", dbfarm);
 		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner,
-					(void *)buf) < 0)
+					(void *)&unsock) < 0)
 		{
 			fprintf(stderr, "unable to create control command thread\n");
 			ctid = 0;
 		}
-		GDKfree(dbfarm);
 
 		/* start neighbour discovery and notification thread */ 
 		if (pthread_create(&dtid, NULL, (void *(*)(void *))discoveryRunner,
@@ -2026,17 +2133,15 @@ main(int argc, char *argv[])
 		/* handle external connections main loop */
 		e = acceptConnections(sock);
 
-		/* connect to ourself to avoid a hang when we close, and the
-		 * control channel hasn't been used */
-		fclose(fopen(buf, "a"));
+		/* wait for the control runner and discovery thread to have
+		 * finished announcing it's going down */
 		if (ctid != 0)
 			pthread_join(ctid, NULL);
-		/* wait for the discovery thread to have finished announcing
-		 * it's going down */
 		if (dtid != 0)
 			pthread_join(dtid, NULL);
 	}
 
+	unlink(lockfile);
 	unlink(buf);
 
 	if (e != NO_ERR) {

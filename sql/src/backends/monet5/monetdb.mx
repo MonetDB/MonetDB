@@ -40,10 +40,14 @@ information about them are the primary goals of this tool.
 #include <dirent.h> /* readdir */
 #include <unistd.h> /* stat, rmdir, unlink */
 #include <time.h> /* strftime */
+#include <sys/socket.h> /* socket */
+#include <sys/un.h> /* sockaddr_un */
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <errno.h>
+
+#define SOCKPTR struct sockaddr *
 
 typedef char* err;
 
@@ -552,17 +556,18 @@ static void
 command_merocom(int argc, char *argv[], merocom mode)
 {
 	int doall = 0;
-	int wait = 0;
 	char path[8096];
-	FILE *f;
+	int sock = -1;
+	struct sockaddr_un server;
 	char buf[256];
 	int i;
 	err e;
+	sabdb *orig;
 	sabdb *stats;
-	sabdb *waitstats = NULL;
 	char *type = NULL;
 	char *p;
 	int ret = 0;
+	int len;
 
 	snprintf(path, 8095, "%s/.merovingian_control", dbfarm);
 	path[8095] = '\0';
@@ -595,9 +600,6 @@ command_merocom(int argc, char *argv[], merocom mode)
 					case 'a':
 						doall = 1;
 					break;
-					case 'w':
-						wait = 1;
-					break;
 					case '-':
 						if (p[1] == '\0') {
 							if (argc - 1 > i) 
@@ -625,197 +627,110 @@ command_merocom(int argc, char *argv[], merocom mode)
 		exit(1);
 	}
 
-	if ((f = fopen(path, "a")) == NULL) {
-		fprintf(stderr, "%s: cannot write command: %s\n",
+	if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
+		fprintf(stderr, "%s: cannot open connection: %s\n",
+				type, strerror(errno));
+		exit(2);
+	}
+	memset(&server, 0, sizeof(struct sockaddr_un));
+	server.sun_family = AF_UNIX;
+	strncpy(server.sun_path, path, sizeof(server.sun_path) - 1);
+	if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un))) {
+		fprintf(stderr, "%s: cannot connect: %s\n",
 				type, strerror(errno));
 		exit(2);
 	}
 
 	if (doall == 1) {
-		sabdb *orig;
 		/* don't even look at the arguments, because we are instructed
-		 * to work on all known databases */
-		if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
+		 * to list all known databases */
+		if ((e = SABAOTHgetStatus(&orig, NULL)) != MAL_SUCCEED) {
 			fprintf(stderr, "%s: internal error: %s\n", type, e);
 			GDKfree(e);
 			exit(2);
 		}
-	
-		orig = stats;
-		while (stats != NULL) {
-			if (((mode == STOP || mode == KILL)
-				  && stats->state == SABdbRunning))
-			{
-				snprintf(buf, 256, "%s %s\n", stats->dbname, type);
-				fputs(buf, f);
-				fflush(f);
-				if (wait == 1) {
-					waitstats = NULL;
-					printf("%sing database '%s'... ", type, stats->dbname);
-					fflush(stdout);
-					do {
-						/* don't spinlock, just wait half a seconds ;) */
-						MT_sleep_ms(500);
-						if (waitstats != NULL)
-							SABAOTHfreeStatus(&waitstats);
-						if ((e = SABAOTHgetStatus(&waitstats, stats->dbname)) != MAL_SUCCEED) {
-							fprintf(stderr, "\n%s: internal error: %s\n", type, e);
-							GDKfree(e);
-							exit(2);
-						}
-					} while (waitstats->state == SABdbRunning);
-					if (waitstats->state == SABdbCrashed) {
-						printf("CRASHED after shutting down!\n");
-						ret = 1;
-					} else {
-						printf("done\n");
-					}
-					SABAOTHfreeStatus(&waitstats);
+	} else {
+		sabdb *w = NULL;
+		orig = NULL;
+		for (i = 1; i < argc; i++) {
+			if (argv[i] != NULL) {
+				if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
+					fprintf(stderr, "status: internal error: %s\n", e);
+					GDKfree(e);
+					exit(2);
 				}
-			} else if (mode == START && stats->state != SABdbRunning) {
-				snprintf(buf, 256, "%s %s\n", stats->dbname, type);
-				fputs(buf, f);
-				fflush(f);
-				if (wait == 1) {
-					waitstats = NULL;
-					printf("%sing database '%s'... ", type, stats->dbname);
-					fflush(stdout);
-					do {
-						/* don't spinlock, just wait half a seconds ;) */
-						MT_sleep_ms(500);
-						if (waitstats != NULL)
-							SABAOTHfreeStatus(&waitstats);
-						if ((e = SABAOTHgetStatus(&waitstats, stats->dbname)) != MAL_SUCCEED) {
-							fprintf(stderr, "\n%s: internal error: %s\n", type, e);
-							GDKfree(e);
-							exit(2);
-						}
-						if (waitstats->state == SABdbRunning &&
-								waitstats->conns != NULL &&
-								waitstats->conns->val != NULL)
-						{
-							break;
-						}
-						/* note: we cannot see the difference between a
-						 * still starting server (inactive) and a server
-						 * that shuts down after startup (inactive),
-						 * hence we don't check for that here */
-					} while (waitstats->state != SABdbCrashed);
-					if (waitstats->state == SABdbCrashed) {
-						printf("CRASHED during startup!\n");
-						ret = 1;
-					} else {
-						printf("done\n");
-					}
-					SABAOTHfreeStatus(&waitstats);
-				}
-			}
-			stats = stats->next;
-		}
 
-		fclose(f);
-
-		if (orig != NULL)
-			SABAOTHfreeStatus(&orig);
-
-		exit(ret);
-	}
-
-	for (i = 1; i < argc; i++) {
-		if (argv[i] != NULL) {
-			if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
-				fprintf(stderr, "%s: internal error: %s\n", type, e);
-				GDKfree(e);
-				exit(2);
-			}
-
-			if (stats == NULL) {
-				fprintf(stderr, "%s: no such database: %s\n", type, argv[i]);
-			} else {
-				if ((mode == STOP || mode == KILL) &&
-						stats->state != SABdbRunning)
-				{
-					printf("%s: database is not running: %s\n", type, argv[i]);
-				} else if (mode == START && stats->state == SABdbRunning) {
-					printf("%s: database is already running: %s\n",
-							type, argv[i]);
+				if (stats == NULL) {
+					fprintf(stderr, "status: no such database: %s\n", argv[i]);
+					argv[i] = NULL;
 				} else {
-					if (mode == STOP || mode == KILL) {
-						snprintf(buf, 256, "%s %s\n", stats->dbname, type);
-						fputs(buf, f);
-						fflush(f);
-						if (wait == 1) {
-							waitstats = NULL;
-							printf("%sing database '%s'... ",
-									type, stats->dbname);
-							fflush(stdout);
-							do {
-								/* don't spinlock, just wait half a seconds ;) */
-								MT_sleep_ms(500);
-								if (waitstats != NULL)
-									SABAOTHfreeStatus(&waitstats);
-								if ((e = SABAOTHgetStatus(&waitstats, stats->dbname)) != MAL_SUCCEED) {
-									fprintf(stderr, "\n%s: internal error: %s\n", type, e);
-									GDKfree(e);
-									exit(2);
-								}
-							} while (waitstats->state == SABdbRunning);
-							if (waitstats->state == SABdbCrashed) {
-								printf("CRASHED after shutting down!\n");
-								ret = 1;
-							} else {
-								printf("done\n");
-							}
-							SABAOTHfreeStatus(&waitstats);
-						}
-					} else if (mode == START) {
-						snprintf(buf, 256, "%s %s\n", stats->dbname, type);
-						fputs(buf, f);
-						fflush(f);
-						if (wait == 1) {
-							waitstats = NULL;
-							printf("%sing database '%s'... ",
-									type, stats->dbname);
-							fflush(stdout);
-							do {
-								/* don't spinlock, just wait half a seconds ;) */
-								MT_sleep_ms(500);
-								if (waitstats != NULL)
-									SABAOTHfreeStatus(&waitstats);
-								if ((e = SABAOTHgetStatus(&waitstats, stats->dbname)) != MAL_SUCCEED) {
-									fprintf(stderr, "\n%s: internal error: %s\n", type, e);
-									GDKfree(e);
-									exit(2);
-								}
-								if (waitstats->state == SABdbRunning &&
-										waitstats->conns != NULL &&
-										waitstats->conns->val != NULL)
-								{
-									break;
-								}
-								/* note: we cannot see the difference
-								 * between a still starting server
-								 * (inactive) and a server that shuts
-								 * down after startup (inactive), hence
-								 * we don't check for that here */
-							} while (waitstats->state != SABdbCrashed);
-							if (waitstats->state == SABdbCrashed) {
-								printf("CRASHED during startup!\n");
-								ret = 1;
-							} else {
-								printf("done\n");
-							}
-							SABAOTHfreeStatus(&waitstats);
-						}
+					if (orig == NULL) {
+						orig = stats;
+						w = stats;
+					} else {
+						w = w->next = stats;
 					}
 				}
-
-				SABAOTHfreeStatus(&stats);
 			}
 		}
 	}
+	
+	stats = orig;
+	while (stats != NULL) {
+		if (mode == STOP || mode == KILL) {
+			if (stats->state == SABdbRunning) {
+				printf("%sing database '%s'... ", type, stats->dbname);
+				fflush(stdout);
+				len = snprintf(buf, sizeof(buf),
+						"%s %s\n", stats->dbname, type);
+				send(sock, buf, len, 0);
+				if ((len = recv(sock, buf, sizeof(buf), 0)) <= 0) {
+					fprintf(stderr, "\n%s: no response from merovingian\n",
+							type);
+					exit(2);
+				}
+				buf[len] = '\0';
+				if (strcmp(buf, "OK\n") == 0) {
+					printf("done\n");
+				} else {
+					printf("FAILED:\n%s", buf);
+					ret = 1;
+				}
+			} else if (doall != 1) {
+				printf("%s: database is not running: %s\n", type, argv[i]);
+			}
+		} else if (mode == START) {
+			if (stats->state != SABdbRunning) {
+				printf("%sing database '%s'... ", type, stats->dbname);
+				fflush(stdout);
+				len = snprintf(buf, sizeof(buf),
+						"%s %s\n", stats->dbname, type);
+				send(sock, buf, len, 0);
+				if ((len = recv(sock, buf, sizeof(buf), 0)) <= 0) {
+					fprintf(stderr, "\n%s: no response from merovingian\n",
+							type);
+					exit(2);
+				}
+				buf[len] = '\0';
+				if (strcmp(buf, "OK\n") == 0) {
+					printf("done\n");
+				} else {
+					printf("FAILED:\n%s", buf);
+					ret = 1;
+				}
+			} else if (doall != 1 && stats->state == SABdbRunning) {
+				printf("%s: database is already running: %s\n",
+						type, stats->dbname);
+			}
+		}
+		stats = stats->next;
+	}
 
-	fclose(f);
+	close(sock);
+
+	if (orig != NULL)
+		SABAOTHfreeStatus(&orig);
+
 	exit(ret);
 }
 

@@ -101,9 +101,9 @@ database respectively.  The default order which is used when the
 .I \-s
 flag is absent, is
 .I rscl.
-.IP "start [\-aw] database [database ...]"
-.IP "stop [\-aw] database [database ...]"
-.IP "kill [\-aw] database [database ...]"
+.IP "start [\-a] database [database ...]"
+.IP "stop [\-a] database [database ...]"
+.IP "kill [\-a] database [database ...]"
 Starts, stops or kills the given database(s) or, when
 .I \-a
 is supplied, all known databases, if the MonetDB Database Server
@@ -115,13 +115,6 @@ respond any more to a
 .B stop
 command.  Killing a database may result in (partial) data loss.
 The
-.I \-w
-flag causes the command only to return once it knows the required action
-was taken.  In other words, it waits for the action to be applied.  This
-can be useful when starting large databases that have a long startup
-time.  When the
-.I \-w
-flag is used,
 .BR monetdb (1)
 will output diagnostic messages if the requested action failed.  When
 encountering an error, one should always consult the logfile of
