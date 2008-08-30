@@ -1738,7 +1738,13 @@ convertConstant(malType type, ValPtr vr)
 		return vr->vtype != type;
 	}
 	
-	switch (type) {
+	if (type== TYPE_bat ||isaBatType(type)){
+		/* BAT variables can only be set to nil */
+		vr->vtype = type;
+		vr->val.bval = 0;
+		return 0;
+	}
+	switch (ATOMstorage(type)) {
 	case TYPE_any:
 #ifdef DEBUG_MAL_INSTR
 		showException(SYNTAX, "convertConstant", "missing type");
@@ -1782,12 +1788,12 @@ convertConstant(malType type, ValPtr vr)
 		return 0;
 	case TYPE_ptr:
 		/* all coercions should be avoided to protect against memory probing */
-		/*
 		if (vr->vtype == TYPE_void) {
 			vr->vtype = type;
 			vr->val.pval = 0;
 			return 0;
 		}
+		/*
 		if (ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
 			vr->vtype = type;
 			vr->val.pval = 0;
@@ -1809,6 +1815,8 @@ convertConstant(malType type, ValPtr vr)
 				GDKfree(d);
 		}
 		*/
+		if (vr->vtype != type)
+			showException(SYNTAX, "convertConstant", "pointer conversion error");
 		return vr->vtype != type;
 @-
 Extended types are always represented as string literals
@@ -1857,6 +1865,7 @@ end.
 				GDKfree(w);
 				return 1;
 			}
+			memset((char*)vr, 0, sizeof(*vr));
 			VALset(vr, type, d);
 			if (ATOMextern(type) == 0)
 				GDKfree(d);
@@ -1872,12 +1881,12 @@ end.
 			VALset(vr, type, d);
 			if (ATOMextern(type) == 0)
 				GDKfree(d);
-#else
-			showException(SYNTAX, "convertConstant", "missing implementation");
 #endif
 		}
 	}
 	}
+	if (vr->vtype != type)
+		showException(SYNTAX, "convertConstant", "conversion error");
 	return vr->vtype != type;
 }
 
@@ -1894,7 +1903,7 @@ fndConstant(MalBlkPtr mb, ValPtr cst, int depth)
 		VarPtr v = getVar(mb, i);
 
 		if (v && isVarConstant(mb,i) &&
-			v->type == cst->vtype &&
+			v->type == cst->vtype && p &&
 			ATOMcmp(cst->vtype, VALget(&v->value), p) == 0)
 			return i;
 	}

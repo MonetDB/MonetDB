@@ -129,12 +129,12 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.print(f);                        # 64 _63:void := IOprint_val(f:chr) 
     o := nil:blob;                      # 65 o:blob := _65:blob 
     io.print(o);                        # 66 _66:void := IOprint_val(o:blob) 
-    o := calc.blob(nil:blob);           # 67 o:blob := BLOBblob_blob(_65:blob) 
-    io.print(o);                        # 68 _67:void := IOprint_val(o:blob) 
-    w := nil:wrd;                       # 69 w:wrd := _69:wrd 
-    io.print(w);                        # 70 _70:void := IOprint_val(w:wrd) 
-    B := nil:bte;                       # 71 B:bte := _72:bte 
-    io.print(B);                        # 72 _73:void := IOprint_val(B:bte) 
+    o := calc.blob(nil:blob);           # 67 o:blob := BLOBblob_blob(_67:blob) 
+    io.print(o);                        # 68 _68:void := IOprint_val(o:blob) 
+    w := nil:wrd;                       # 69 w:wrd := _70:wrd 
+    io.print(w);                        # 70 _71:void := IOprint_val(w:wrd) 
+    B := nil:bte;                       # 71 B:bte := _73:bte 
+    io.print(B);                        # 72 _74:void := IOprint_val(B:bte) 
 end main;	# 73  
 [ nil ]
 [ 23 ]

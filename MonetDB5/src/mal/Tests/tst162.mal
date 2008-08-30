@@ -3,7 +3,8 @@
 atom strtype:ptr;
 
 function l():strtype;
-    return l:= 0:strtype;
+	l:= 1:strtype;
+    return l:= nil:strtype;
 end l;
 
 z:= strtype.l();

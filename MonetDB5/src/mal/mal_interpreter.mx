@@ -1924,11 +1924,13 @@ All references should be logical.
 @-
 @{
 @c
-		int bid = ABS(v->val.bval);
+		bat bid = ABS(v->val.bval);
 		/* printf("garbage collecting: %d lrefs=%d refs=%d\n",
 		   bid, BBP_lrefs(bid),BBP_refs(bid));*/
 		v->val.bval = 0;
-		if (bid == 0 || !BBP_lrefs(bid)) 
+		if (bid == 0 )
+			return;
+		if (!BBP_lrefs(bid)) 
 			return;
 		updateBigFoot(cntxt, bid, FALSE);
 		BBPdecref(bid,TRUE);
