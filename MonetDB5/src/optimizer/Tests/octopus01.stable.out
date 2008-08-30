@@ -1,0 +1,48 @@
+stdout of test 'octopus01` in directory 'src/optimizer` itself:
+
+
+# 07:38:59 >  
+# 07:38:59 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39418 --set xrpc_port=42113 --set monet_prompt= --trace  --dbname=mTests_src_optimizer  octopus01.mal
+# 07:38:59 >  
+
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_optimizer', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:39418/
+function user.q():void;                 #  0 q:void := user.q() {G}
+    a:bat[:oid,:int] {rows=1000,hlb=0@0:oid,hub=1000@0:oid} := bat.new(:oid,:int);#  1 a:bat[:oid,:int] := CMDBATnew(_5:oid, _6:int) {G}
+    b:bat[:oid,:int] {hlb=0@0:oid,hub=1000@0:oid} := bat.partition(a{rows=1000,hlb=0@0:oid,hub=1000@0:oid});#  2 b:bat[:oid,:int] := CMDbatpartition(a:bat[:oid,:int]) {G}
+    b1 := algebra.select(b{hlb=0@0:oid,hub=1000@0:oid},0,10);#  3 b1:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], _9:int, _10:int) {G}
+    c1 := algebra.select(b{hlb=0@0:oid,hub=1000@0:oid},11,20);#  4 c1:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], _12:int, _13:int) {G}
+    u := algebra.kunion(b1,c1);         #  5 u:bat[:oid,:int] := ALGkunion(b1:bat[:oid,:int], c1:bat[:oid,:int]) {G}
+    io.print(u);                        #  6 _15:void := IOprint_val(u:bat[:oid,:int]) 
+end q;                                  #  7  
+function user.main():void;              #  0 main:void := user.main() {G}
+#octopus should not sent the same object twice. 
+    mdb.list("user","q");               #  2 _5:void := MDBlist3(_3:str, _4:str) 
+end main;                               #  3  
+function user.q():void;                 #  0 q:void := user.q() {G}
+    _16 := sabaoth.getLocalConnectionHost();#  1 _16:str := SABgetLocalConnectionHost() {G}
+    _17 := sabaoth.getLocalConnectionPort();#  2 _17:int := SABgetLocalConnectionPort() 
+    remote.create("A",_16,_17,nil:str,"monetdb","monetdb");#  3 _18:void := RMTcreate(_19:str, _16:str, _17:int, _20:str, _21:str, _21:str) 
+    remote.create("B",_16,_17,nil:str,"monetdb","monetdb");#  4 _22:void := RMTcreate(_23:str, _16:str, _17:int, _20:str, _21:str, _21:str) 
+    a:bat[:oid,:int] {rows=1000,hlb=0@0:oid,hub=1000@0:oid} := bat.new(:oid,:int);#  5 a:bat[:oid,:int] := CMDBATnew(_5:oid, _6:int) {G}
+    b:bat[:oid,:int] {hlb=0@0:oid,hub=1000@0:oid} := bat.partition(a{rows=1000,hlb=0@0:oid,hub=1000@0:oid});#  6 b:bat[:oid,:int] := CMDbatpartition(a:bat[:oid,:int]) {G}
+    _24 := remote.put("A",b{hlb=0@0:oid,hub=1000@0:oid});#  7 _24:rmtobj := RMTput(_19:str, b:bat[:oid,:int]) {G}
+    _25 := remote.put("A",0);           #  8 _25:rmtobj := RMTput(_19:str, _9:int) {G}
+    _26 := remote.put("A",10);          #  9 _26:rmtobj := RMTput(_19:str, _10:int) {G}
+    _27 := remote.exec("A","algebra","select",_24,_25,_26);# 10 _27:rmtobj := RMTexec(_19:str, _28:str, _29:str, _24:rmtobj, _25:rmtobj, _26:rmtobj) {G}
+    _30 := remote.put("A",11);          # 11 _30:rmtobj := RMTput(_19:str, _12:int) {G}
+    _31 := remote.put("A",20);          # 12 _31:rmtobj := RMTput(_19:str, _13:int) {G}
+    _32 := remote.exec("A","algebra","select",_24,_30,_31);# 13 _32:rmtobj := RMTexec(_19:str, _28:str, _29:str, _24:rmtobj, _30:rmtobj, _31:rmtobj) {G}
+    _33 := remote.exec("A","algebra","kunion",_27,_32);# 14 _33:rmtobj := RMTexec(_19:str, _28:str, _34:str, _27:rmtobj, _32:rmtobj) {G}
+    u := remote.get("A",_33);           # 15 u:bat[:oid,:int] := RMTget(_19:str, _33:rmtobj) {G}
+    io.print(u);                        # 16 _15:void := IOprint_val(u:bat[:oid,:int]) 
+end q;                                  # 17  
+
+# 07:38:59 >  
+# 07:38:59 >  Done.
+# 07:38:59 >  
+

@@ -150,20 +150,20 @@ OCTOPUSexec(Client cntxt, MalBlkPtr mb, InstrPtr q, str nme, DBalias *dbalias){
 	p->argc= i;
 	cst.vtype= TYPE_str;
 	cst.val.sval= GDKstrdup(nme);
-	cst.len = strlen(cst.val.sval);
+	cst.len = (int) strlen(cst.val.sval);
 	i= defConstant(mb, TYPE_str, &cst);
 	p =pushArgument(mb,p,i);
 
 	if( getModuleId(q)){
 		cst.vtype= TYPE_str;
 		cst.val.sval= GDKstrdup(getModuleId(q));
-		cst.len = strlen(cst.val.sval);
+		cst.len = (int) strlen(cst.val.sval);
 		i= defConstant(mb, TYPE_str, &cst);
 		p =pushArgument(mb,p,i);
 
 		cst.vtype= TYPE_str;
 		cst.val.sval= GDKstrdup(getFunctionId(q));
-		cst.len = strlen(cst.val.sval);
+		cst.len = (int) strlen(cst.val.sval);
 		i= defConstant(mb, TYPE_str, &cst);
 		p= pushArgument(mb,p,i);
 	} else {
