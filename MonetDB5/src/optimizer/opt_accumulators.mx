@@ -97,7 +97,7 @@ the replacement is aborted.
 		/* reset instruction */
 		cntxt->errbuf[0]=0;
 		freeInstruction(p);
-		p=q;
+		p=q; /* restore */
 	} else  {
 		freeInstruction(q);
 		if(available[a]==0){
@@ -125,6 +125,11 @@ the replacement is aborted.
 			getArg(p,j)= alias[getArg(p,j)];
 
 		if( getModuleId(p) != batcalcRef ) {
+			pushInstruction(mb,p);
+			continue;
+		}
+		if (p->retc==1 && p->argc == 2) {
+			/* unary operation, avoid clash with binary */
 			pushInstruction(mb,p);
 			continue;
 		}
@@ -176,28 +181,8 @@ sure it becomes one.
 			setArg(p,1,getArg(p,0));
 			setArg(p,0,getArg(p,0));
 			@:patchInstruction@
-	} else if (p->retc==1 && p->argc == 2) {
-			/* unary operation, check first argument  and return type */
-			v = getVar(mb, a = getArg(p, 1));
-			b = getArg(p, 0);
-			if( getLastUpdate(span,b) != i || getEndLifespan(span,a) > i ||
-				!isaBatType(v->type) || v->type!= getVarType(mb,b) ) {
-				pushInstruction(mb,p);
-				continue;
-			}
-			
-#ifdef DEBUG_OPT_OPTIMIZER
-			stream_printf(cntxt->fdout, "Found unary accumulation candidate\n");
-			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_DEBUG);
-#endif
-			q= copyInstruction(p);
-			p= pushArgument(mb, p, a);
-			setArg(p,1,getArg(p,0));
-			setArg(p,0,getArg(p,0));
-			@:patchInstruction@
-		} 
-		pushInstruction(mb,p);
-	}
+		}
+	} 
 	for (i = limit; i<slimit; i++) 
 		if(old[i])
 			freeInstruction(old[i]);

@@ -83,7 +83,7 @@ function user.f3():void;                #  0 f3:void := user.f3() {G}
     t3 := array.grid(4096,64,1,0);      #  2 t3:bat[:oid,:int] := ARRAYgrid_int(_4:int, _5:int, _6:int, _7:int) {G}
     t2 := array.grid(64,64,64,0);       #  3 t2:bat[:oid,:int] := ARRAYgrid_int(_5:int, _5:int, _5:int, _7:int) {G}
     _34 := algebra.reuse(t3);           #  4 _34:bat[:oid,:int] := ALGreuse(t3:bat[:oid,:int]) {G}
-    t4 := batcalc.*(_34,64,t3);         #  5 t4:bat[:oid,:int] := CMDbataccumMULcst2_int_int_int(_34:bat[:oid,:int], _5:int, t3:bat[:oid,:int]) {G}
+    t4 := batcalc.*(_34,64,t3);         #  5 t4:bat[:oid,:int] := CMDbataccumMULcst_int_int_int(_34:bat[:oid,:int], _5:int, t3:bat[:oid,:int]) {G}
     t4 := batcalc.+(t4,t2,t4);          #  6 t4:bat[:oid,:int] := CMDbataccumADD_int_int_int(t4:bat[:oid,:int], t2:bat[:oid,:int], t4:bat[:oid,:int]) {G}
     t6 := batcalc.oid(t4);              #  7 t6:bat[:oid,:oid] := CMDconvert_int_oid(t4:bat[:oid,:int]) {G}
     t7 := algebra.join(t6,t1);          #  8 t7:bat[:oid,:int] := ALGjoin(t6:bat[:oid,:oid], t1:bat[:oid,:int]) {G}
@@ -91,7 +91,7 @@ function user.f3():void;                #  0 f3:void := user.f3() {G}
     t9 := array.grid(4096,64,1,0);      # 10 t9:bat[:oid,:int] := ARRAYgrid_int(_4:int, _5:int, _6:int, _7:int) {G}
     t10 := array.grid(1,64,4096,0);     # 11 t10:bat[:oid,:int] := ARRAYgrid_int(_6:int, _5:int, _4:int, _7:int) {G}
     _35 := algebra.reuse(t10);          # 12 _35:bat[:oid,:int] := ALGreuse(t10:bat[:oid,:int]) {G}
-    t11 := batcalc.*(_35,64,t10);       # 13 t11:bat[:oid,:int] := CMDbataccumMULcst2_int_int_int(_35:bat[:oid,:int], _5:int, t10:bat[:oid,:int]) {G}
+    t11 := batcalc.*(_35,64,t10);       # 13 t11:bat[:oid,:int] := CMDbataccumMULcst_int_int_int(_35:bat[:oid,:int], _5:int, t10:bat[:oid,:int]) {G}
     t11 := batcalc.+(t11,t9,t11);       # 14 t11:bat[:oid,:int] := CMDbataccumADD_int_int_int(t11:bat[:oid,:int], t9:bat[:oid,:int], t11:bat[:oid,:int]) {G}
     t13 := batcalc.oid(t11);            # 15 t13:bat[:oid,:oid] := CMDconvert_int_oid(t11:bat[:oid,:int]) {G}
     t14 := algebra.join(t13,t8);        # 16 t14:bat[:oid,:int] := ALGjoin(t13:bat[:oid,:oid], t8:bat[:oid,:int]) {G}
@@ -100,7 +100,7 @@ function user.f3():void;                #  0 f3:void := user.f3() {G}
     t16 := array.grid(64,64,64,0);      # 19 t16:bat[:oid,:int] := ARRAYgrid_int(_5:int, _5:int, _5:int, _7:int) {G}
     t17 := array.grid(1,64,4096,0);     # 20 t17:bat[:oid,:int] := ARRAYgrid_int(_6:int, _5:int, _4:int, _7:int) {G}
     _37 := algebra.reuse(t17);          # 21 _37:bat[:oid,:int] := ALGreuse(t17:bat[:oid,:int]) {G}
-    t18 := batcalc.*(_37,64,t17);       # 22 t18:bat[:oid,:int] := CMDbataccumMULcst2_int_int_int(_37:bat[:oid,:int], _5:int, t17:bat[:oid,:int]) {G}
+    t18 := batcalc.*(_37,64,t17);       # 22 t18:bat[:oid,:int] := CMDbataccumMULcst_int_int_int(_37:bat[:oid,:int], _5:int, t17:bat[:oid,:int]) {G}
     t18 := batcalc.+(t18,t16,t18);      # 23 t18:bat[:oid,:int] := CMDbataccumADD_int_int_int(t18:bat[:oid,:int], t16:bat[:oid,:int], t18:bat[:oid,:int]) {G}
     t20 := batcalc.oid(t18);            # 24 t20:bat[:oid,:oid] := CMDconvert_int_oid(t18:bat[:oid,:int]) {G}
     t21 := array.grid(1,4096,1,0);      # 25 t21:bat[:oid,:int] := ARRAYgrid_int(_6:int, _4:int, _6:int, _7:int) {G}
