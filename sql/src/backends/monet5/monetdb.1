@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDB 1 "SEPTEMBER 2007" Application "MonetDB Applications"
+.TH MONETDB 1 "SEPTEMBER 2008" Application "MonetDB Applications"
 .SH NAME
 monetdb \- control a MonetDB Database Server instance
 .SH SYNOPSIS
@@ -17,7 +17,7 @@ running in the background for starting and stopping databases.
 The commands for the
 .B monetdb
 utility are
-.B create, destroy, lock, release, status, start, stop, kill, help, version.
+.B create, destroy, lock, release, status, start, stop, kill, discover, help, version.
 The commands facilitate adding, removing, maintaining, starting and
 stopping a database inside the MonetDB Database Server.
 .IP "create [\-l] database [database ...]"
@@ -129,6 +129,12 @@ the return code of
 .BR monetdb (1)
 indicates failure if one of the databases had a failure, even though
 other databases were successful.
+.IP discover
+Returns a list of remote databases that were discovered by
+.B merovingian (1).
+All databases listed can be connected to via the local MonetDB Database
+Server as if it were local databases.  The connection is redirected or
+proxied based on configuration settings.
 .IP \-h
 .IP "help [command]"
 Shows general help, or short help for a given command.

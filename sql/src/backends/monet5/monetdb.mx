@@ -87,7 +87,7 @@ command_help(int argc, char *argv[])
 		printf("  where command is one of:\n");
 		printf("    create, destroy, lock, release\n");
 		printf("    status, start, stop, kill\n");
-		printf("    help, version\n");
+		printf("    discover, help, version\n");
 		printf("  use the help command to get help for a particular command\n");
 	} else if (strcmp(argv[1], "create") == 0) {
 		printf("Usage: monetdb create [-l] database [database ...]\n");
@@ -149,6 +149,11 @@ command_help(int argc, char *argv[])
 		printf("Options:\n");
 		printf("  -a  kill all known databases\n");
 		printf("  -w  wait for a database to be killed instead of returning immediately\n");
+	} else if (strcmp(argv[1], "discover") == 0) {
+		printf("Usage: monetdb discover\n");
+		printf("  Lists the remote databases discovered by the MonetDB\n");
+		printf("  Database Server.  Databases in this list can be connected\n");
+		printf("  to as well.\n");
 	} else if (strcmp(argv[1], "help") == 0) {
 		printf("Yeah , help on help, how desparate can you be? ;)\n");
 	} else if (strcmp(argv[1], "version") == 0) {
@@ -544,6 +549,79 @@ command_status(int argc, char *argv[])
 
 	if (orig != NULL)
 		SABAOTHfreeStatus(&orig);
+}
+
+static void
+command_discover(int argc, char *argv[])
+{
+	char path[8096];
+	int sock = -1;
+	struct sockaddr_un server;
+	char buf[256];
+	char *p, *q;
+	int len;
+	int pos = 0;
+
+	(void)argc;
+	(void)argv;
+
+	/* if Merovingian isn't running, there's not much we can do */
+	if (mero_running == 0) {
+		fprintf(stderr, "discover: cannot perform: MonetDB Database Server "
+				"(merovingian) is not running\n");
+		exit(1);
+	}
+
+	snprintf(path, 8095, "%s/.merovingian_control", dbfarm);
+	path[8095] = '\0';
+
+	if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
+		fprintf(stderr, "discover: cannot open connection: %s\n",
+				strerror(errno));
+		exit(2);
+	}
+	memset(&server, 0, sizeof(struct sockaddr_un));
+	server.sun_family = AF_UNIX;
+	strncpy(server.sun_path, path, sizeof(server.sun_path) - 1);
+	if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un))) {
+		fprintf(stderr, "discover: cannot connect: %s\n", strerror(errno));
+		exit(2);
+	}
+
+	printf("      name                location\n");
+	/* Send the pass phrase to unlock the information available in
+	 * merovingian.  Anelosimus eximius is a social species of spiders,
+	 * which help each other, just like merovingians do among each
+	 * other. */
+	len = snprintf(buf, sizeof(buf), "anelosimus eximius\n");
+	send(sock, buf, len, 0);
+	while ((len = recv(sock, buf + pos, sizeof(buf) - 1 - pos, 0)) > 0) {
+		buf[pos + len] = '\0';
+		if ((p = strchr(buf, '\n')) == NULL) {
+			/* no newline in this block too large, warn and discard */
+			printf("discover: WARNING: discarding (too long?) line: %s\n", buf);
+			pos = 0;
+			continue;
+		}
+		*p++ = '\0';
+		if ((q = strchr(buf, '\t')) == NULL) {
+			/* doesn't look correct */
+			printf("discover: WARNING: discarding incorrect line: %s\n", buf);
+			memmove(buf, p, len - (p - buf));
+			pos = len - (p - buf);
+			continue;
+		}
+		*q++ = '\0';
+		printf("%-14s  %s\n", buf, q);
+		memmove(buf, p, len - (p - buf));
+		pos = len - (p - buf);
+	}
+	if (len < 0) {
+		fprintf(stderr, "discover: error while reading from from merovingian\n");
+		exit(2);
+	}
+
+	close(sock);
 }
 
 typedef enum {
@@ -1268,6 +1346,8 @@ main(int argc, char *argv[])
 		command_merocom(argc - 1, &argv[1], STOP);
 	} else if (strcmp(argv[1], "kill") == 0) {
 		command_merocom(argc - 1, &argv[1], KILL);
+	} else if (strcmp(argv[1], "discover") == 0) {
+		command_discover(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "-h") == 0) {
 		command_help(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "version") == 0 || strcmp(argv[1], "-v") == 0) {
