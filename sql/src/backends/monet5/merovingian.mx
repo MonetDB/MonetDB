@@ -805,19 +805,6 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 	return(NO_ERR);
 }
 
-static void
-listDiscoveries(stream *fout)
-{
-	remotedb rdb;
-
-	rdb = _merovingian_remotedbs;
-	while (rdb != NULL) {
-		stream_printf(fout, "%s\t%s\t%d\n",
-				rdb->dbname, rdb->conn, rdb->ttl);
-		rdb = rdb->next;
-	}
-}
-
 static err
 handleClient(int sock)
 {
@@ -943,15 +930,6 @@ handleClient(int sock)
 		s = strchr(database, ':');
 		if (s)
 			*s = 0;
-	}
-
-	if (strcmp(lang, "eximius") == 0) {
-		/* return a list of remote databases from our Aranita */
-		listDiscoveries(fout);
-		stream_flush(fout);
-		close_stream(fout);
-		close_stream(fdin);
-		return(NO_ERR);
 	}
 
 	if (*database == '\0') {
@@ -1363,6 +1341,22 @@ controlRunner(void *d)
 								"%s is not controlled by merovingian\n", q);
 						send(msgsock, buf2, len, 0);
 					}
+				} else if (strcmp(q, "anelosimus") == 0 &&
+						strcmp(p, "eximius") == 0)
+				{
+					/* return a list of remote databases from our Aranita */
+					remotedb rdb;
+
+					rdb = _merovingian_remotedbs;
+					while (rdb != NULL) {
+						len = snprintf(buf2, sizeof(buf2), "%s\t%s\n",
+								rdb->dbname, rdb->conn);
+						send(msgsock, buf2, len, 0);
+						rdb = rdb->next;
+					}
+					/* because this command is multi line, you can't
+					 * combine it, disconnect the client */
+					break;
 				} else {
 					fprintf(stderr, "unknown control command: %s", p);
 					len = snprintf(buf2, sizeof(buf2),
