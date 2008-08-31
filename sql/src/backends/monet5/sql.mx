@@ -1993,7 +1993,7 @@ str
 zero_or_one(ptr ret, int *bid) 
 {
 	BAT *b;
-	int c, _s;
+	BUN c, _s;
 	ptr p;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -2009,7 +2009,7 @@ zero_or_one(ptr ret, int *bid)
 		char buf[BUFSIZ];
 
 		p = NULL;
-                snprintf(buf, BUFSIZ, "cardinality violation (%d>1)", c);
+                snprintf(buf, BUFSIZ, "cardinality violation (" BUNFMT ">1)", c);
 		throw(SQL, "zero_or_one", buf);
 	}
 	_s = ATOMsize(ATOMtype(b->ttype));
@@ -2092,14 +2092,14 @@ voidbathash(int *res, BAT *b )
 
 		BATloop(b,p,q) {
 			ptr v = BUNtail(bi,p);
-			*r++ = (hash(v)) & 0xEFFFFFFF;
+			*r++ = (int) ((hash(v)) & 0x7FFFFFFF);
 		}
 	} else {
 		char *v = BUNtail(bi,BUNfirst(b)), *e = BUNtail(bi,BUNlast(b));
 		int sz = Tsize(b);
 
 		for(; v < e; v+=sz) {
-			*r++ = (hash(v)) & 0xEFFFFFFF;
+			*r++ = (int) ((hash(v)) & 0x7FFFFFFF);
 		}
 	}
 	BATsetcount(dst, (BUN) (r-f));
@@ -2138,7 +2138,7 @@ bathash_wrap(int *res, int *bid )
 
 		BATloop(b,p,q){
 			ptr v = BUNtail(bi,p);
-			int h = (hash(v)) & 0xEFFFFFFF;
+			int h = (int) ((hash(v)) & 0x7FFFFFFF);
 			BUNins(dst, BUNhead(bi,p), &h, FALSE);
 		}
 	} else {
@@ -2146,7 +2146,7 @@ bathash_wrap(int *res, int *bid )
 
 		BATloop(b,p,q){
 			ptr v = BUNtail(bi,p);
-			int h = (hash(v)) & 0xEFFFFFFF;
+			int h = (int) ((hash(v)) & 0x7FFFFFFF);
 			BUNins(dst, BUNhead(bi,p), &h, FALSE);
 		}
 	}
@@ -2171,9 +2171,9 @@ hash_wrap(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		return bathash_wrap(res, (int*)v); 
 
 	if (ATOMextern(tpe)) /* ugh */
-		*res = (ATOMhash(tpe, *(char**)v)) & 0xEFFFFFFF;
+		*res = (int) ((ATOMhash(tpe, *(char**)v)) & 0x7FFFFFFF);
 	else
-		*res = (ATOMhash(tpe, v)) & 0xEFFFFFFF;
+		*res = (int) ((ATOMhash(tpe, v)) & 0x7FFFFFFF);
 	return NULL;
 }
 
