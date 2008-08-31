@@ -375,7 +375,7 @@ SQLinitClient(Client c)
 	
 	if (sqlinit) { /* add sqlinit to the fdin stack */
 		buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
-		int len = strlen(sqlinit);
+		size_t len = strlen(sqlinit);
 		bstream *fdin;
 
 		buffer_init(b, _strdup(sqlinit), len);
@@ -512,7 +512,7 @@ SQLstatementIntern(str *expr, str nme, int execute, bit output)
 	str msg = MAL_SUCCEED;
 	Client c= MCgetClient();
 	backend *sql = ((backend *) c->state[MAL_SCENARIO_PARSER]);
-	int len = strlen(*expr);
+	size_t len = strlen(*expr);
 
 #ifdef _SQL_COMPILE
 	stream_printf(c->fdout, "#SQLstatement:%s\n", *expr);
