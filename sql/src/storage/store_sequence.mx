@@ -31,11 +31,11 @@ extern int seq_next_value(sql_sequence *seq, lng *val);
 typedef struct seqbulk {
 	void *internal_seq;
 	sql_sequence *seq;
-	int cnt;
+	BUN cnt;
 	int save; 
 } seqbulk;
 
-extern seqbulk *seqbulk_create(sql_sequence *seq, int cnt);
+extern seqbulk *seqbulk_create(sql_sequence *seq, BUN cnt);
 extern int seqbulk_next_value(seqbulk *seq, lng *val);
 extern void seqbulk_destroy(seqbulk *seq);
 
@@ -193,7 +193,7 @@ seq_next_value(sql_sequence *seq, lng *val)
 	return 1;
 }
 
-seqbulk *seqbulk_create(sql_sequence *seq, int cnt)
+seqbulk *seqbulk_create(sql_sequence *seq, BUN cnt)
 {
 	seqbulk *sb = NEW(seqbulk);
 	store_sequence *s;
