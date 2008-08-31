@@ -2243,7 +2243,7 @@ str
 		else
 			lres = (((*v - rnd)/scales[dff])*scales[dff]);
 		assert((lng) GDK_@1_min <= lres && lres <= (lng) GDK_@1_max);
-		*res = lres;
+		*res = (@1) lres;
 	} else if (*r <= 0 && -*r + *s > 0) {
 		int dff = -*r + *s;
 		lng rnd = scales[dff]>>1;
@@ -2253,7 +2253,7 @@ str
 		else
 			lres = (((*v - rnd)/scales[dff])*scales[dff]);
 		assert((lng) GDK_@1_min <= lres && lres <= (lng) GDK_@1_max);
-		*res = lres;
+		*res = (@1) lres;
 	} else {
 		*res = *v;
 	}
