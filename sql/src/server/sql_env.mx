@@ -86,7 +86,7 @@ sql_update_var(mvc *m, char *name)
 	if (strcmp(name, "debug") == 0) {
 		sgn = stack_get_number(m, "debug");
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
-		m->debug = sgn;
+		m->debug = (int) sgn;
 	} else if (strcmp(name, "current_schema") == 0) {
 		char *schema = stack_get_string(m, "current_schema");
 
@@ -102,11 +102,11 @@ sql_update_var(mvc *m, char *name)
 	} else if (strcmp(name, "current_timezone") == 0) {
 		sgn = stack_get_number(m, "current_timezone") / 60;
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
-		m->timezone = sgn;
+		m->timezone = (int) sgn;
 	} else if (strcmp(name, "cache") == 0) {
 		sgn = stack_get_number(m, "cache");
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
-		m->cache = sgn;
+		m->cache = (int) sgn;
 	}
 	return NULL;
 }
