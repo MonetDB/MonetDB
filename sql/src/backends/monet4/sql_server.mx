@@ -1000,8 +1000,10 @@ str_2dec_@1( @1 *res, str val, int *d, int *sc )
 	char *s = strip_extra_zeros(val);
 	char *dot = strchr(s, '.');
 	int digits = _strlen(s) - 1;
-	int scale = digits - (dot-s);
+	int scale = digits - (int)(dot-s);
 	lng value = 0;
+
+	assert((lng) GDK_int_min <= (lng) (dot-s) && (lng) (dot-s) <= (lng) GDK_int_max);
 
 	if (!dot) {
 		if (GDK_STRNIL(val)) {
@@ -1549,7 +1551,7 @@ int
 zero_or_one(ptr ret, BAT* b) 
 {
 	ptr p;
-	int c = BATcount(b);
+	BUN c = BATcount(b);
 	int _s = ATOMsize(ATOMtype(b->ttype));
 
 	if (c == 0) {
@@ -1559,7 +1561,7 @@ zero_or_one(ptr ret, BAT* b)
 		p = BUNtail(bi,BUNfirst(b));
 	} else {
 		p = NULL;
-		GDKerror("zero_or_one: cardinality violation (%d>1)", c);
+		GDKerror("zero_or_one: cardinality violation (" BUNFMT ">1)", c);
 		return GDK_FAIL;
 	}
 	if (ATOMextern(b->ttype)) {
