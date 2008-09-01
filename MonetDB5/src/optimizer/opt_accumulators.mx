@@ -94,6 +94,10 @@ the replacement is aborted.
 @= patchInstruction
 	typeChecker(scope, mb, p, TRUE);
 	if (mb->errors || p->typechk == TYPE_UNKNOWN) {
+	#ifdef DEBUG_OPT_OPTIMIZER
+		stream_printf(cntxt->fdout,"Failed typecheck");
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_DEBUG);
+	#endif
 		/* reset instruction */
 		cntxt->errbuf[0]=0;
 		freeInstruction(p);
@@ -182,6 +186,7 @@ sure it becomes one.
 			setArg(p,0,getArg(p,0));
 			@:patchInstruction@
 		}
+		pushInstruction(mb,p);
 	} 
 	for (i = limit; i<slimit; i++) 
 		if(old[i])
