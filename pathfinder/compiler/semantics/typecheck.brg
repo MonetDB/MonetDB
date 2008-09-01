@@ -318,6 +318,9 @@ static PFty_t specific (PFfun_t *fn, PFcnode_t *args);
  * contains all the action code for the above burg patterns.
  */
 static void
+do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[]);
+
+static void
 reduce (PFcnode_t * p, int goalnt)
 {
     int           rule;           /* rule number that matches for this node */
@@ -378,6 +381,12 @@ reduce (PFcnode_t * p, int goalnt)
                 reduce (kids[i], nts[i]);
     }
 
+    do_reduce (p, rule, nts, kids);
+}
+
+static void
+do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
+{
     switch (rule) {
 
         /* Query:              main (FunctionDecls, CoreExpr) */
