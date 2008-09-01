@@ -71,10 +71,10 @@ static void backend_create_func(backend *be, sql_func *f);
 		}
 @)
 
-static int 
+static size_t
 column_namelen( sql_column *c )
 {
-	int len = 0;
+	size_t len = 0;
 
 	if (c->t->s)
 		len += strlen(c->t->s->base.name);
@@ -83,10 +83,10 @@ column_namelen( sql_column *c )
 	return len + strlen(c->t->base.name) + strlen(c->base.name); 
 }
 
-static int 
+static size_t
 idx_namelen( sql_idx *i )
 {
-	int len = 0;
+	size_t len = 0;
 
 	if (i->t->s)
 		len += strlen(i->t->s->base.name);
@@ -95,10 +95,10 @@ idx_namelen( sql_idx *i )
 	return len + strlen(i->t->base.name) + strlen(i->base.name); 
 }
 
-static int 
+static size_t
 table_namelen( sql_table *t )
 {
-	int len = 0;
+	size_t len = 0;
 
 	if (t->s)
 		len += strlen(t->s->base.name);
@@ -301,7 +301,7 @@ range_join_convertable(stmt *s, stmt **base, stmt **L, stmt **H)
 }
 
 static void
-dump(backend *sql, char *buf, int len, int nr)
+dump(backend *sql, char *buf, ssize_t len, int nr)
 {
 	if (len == -1)
 		len = _strlen(buf);
