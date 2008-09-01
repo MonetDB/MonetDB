@@ -881,7 +881,7 @@ var ws_mem := [oid]([int](mirror(ws_dsk)).[-](_RID_SIZE - PRE_SIZE)).access(BAT_
               # of those, all master non-rid_* bats, and their (copy-on-write) updatable views 
 var ws_rid := ws_mem.slice(PRE_SIZE, PRE_NID).rename("ws_rid");
               # of those, all master rid_* bats, and their (remapped) pre_* views
-    ws_mem := ws_mem.slice(NID_RID, INT_MAX).rename("ws_mem");
+    ws_mem := ws_mem.slice(NID_RID, count(ws_mem)).rename("ws_mem");
 
 
 # scans for empty collections, and produces a list of kill-bats (fast - done inside the short lock)
