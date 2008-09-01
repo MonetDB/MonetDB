@@ -1667,25 +1667,57 @@ int CMDmark_grp_2( BAT** res, BAT *b, BAT *g, oid *s)
 int
 CMDhashsplit(BAT **res, BAT *b, int *nfrag)
 {
-	return (*res = BAThashsplit(b, *nfrag, FALSE)) ? GDK_SUCCEED : GDK_FAIL;
+	if (*nfrag < 0
+#if SIZEOF_INT >= SIZEOF_BUN
+	    || *nfrag > BUN_MAX
+#endif
+	   ) {
+		GDKerror("hashsplit: parameter out of range.\n");
+		return GDK_FAIL;
+	}
+	return (*res = BAThashsplit(b, (BUN) *nfrag, FALSE)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
 CMDuhashsplit(BAT **res, BAT *b, int *nfrag)
 {
-	return (*res = BAThashsplit(b, *nfrag, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
+	if (*nfrag < 0
+#if SIZEOF_INT >= SIZEOF_BUN
+	    || *nfrag > BUN_MAX
+#endif
+	   ) {
+		GDKerror("uhashsplit: parameter out of range.\n");
+		return GDK_FAIL;
+	}
+	return (*res = BAThashsplit(b, (BUN) *nfrag, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
 CMDrangesplit(BAT **res, BAT *b, int *nfrag)
 {
-	return (*res = BATrangesplit(b, *nfrag, FALSE)) ? GDK_SUCCEED : GDK_FAIL;
+	if (*nfrag < 0
+#if SIZEOF_INT >= SIZEOF_BUN
+	    || *nfrag > BUN_MAX
+#endif
+	   ) {
+		GDKerror("rangesplit: parameter out of range.\n");
+		return GDK_FAIL;
+	}
+	return (*res = BATrangesplit(b, (BUN) *nfrag, FALSE)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
 CMDurangesplit(BAT **res, BAT *b, int *nfrag)
 {
-	return (*res = BATrangesplit(b, *nfrag, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
+	if (*nfrag < 0
+#if SIZEOF_INT >= SIZEOF_BUN
+	    || *nfrag > BUN_MAX
+#endif
+	   ) {
+		GDKerror("urangesplit: parameter out of range.\n");
+		return GDK_FAIL;
+	}
+	return (*res = BATrangesplit(b, (BUN) *nfrag, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 @- Substring Select
