@@ -153,7 +153,10 @@ update_val( sql_bat *bat, ssize_t rid, void *upd, int isnew)
 		}
 		bat_destroy(u);
 	}
-	assert(rid > 0 && (lng) rid <= (lng) GDK_oid_max);
+	assert(rid > 0);
+#if SIZEOF_OID < SIZEOF_SSIZE_T
+	assert((lng) rid <= (lng) GDK_oid_max);
+#endif
 	void_inplace(b, (oid)rid, upd, TRUE);
 	bat_destroy(b);
 }
