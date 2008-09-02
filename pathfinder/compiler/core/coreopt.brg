@@ -395,7 +395,7 @@ static void relabel (PFcnode_t *p,  PFcnode_t **kids);
  * contains all the action code for the above burg patterns.
  */
 static bool
-do_reduce (PFcnode_t * p, int rule, PFpa_op_t *kids[]);
+do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[]);
 
 static bool
 reduce (PFcnode_t * p, int goalnt)
