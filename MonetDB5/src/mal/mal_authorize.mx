@@ -1054,8 +1054,8 @@ AUTHhashPassword(str *ret, str *algo, str *password, str *challenge) {
 
 		/* prepare the salt */
 		len = strlen(*challenge);
-		salt[0] = *challenge[len - 2];
-		salt[1] = *challenge[len - 1];
+		salt[0] = (*challenge)[len - 2];
+		salt[1] = (*challenge)[len - 1];
 		salt[2] = '\0';
 
 		/* call crypt to do the work */
