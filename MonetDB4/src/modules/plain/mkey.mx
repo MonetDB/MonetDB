@@ -192,7 +192,7 @@ proc ds_hash(BAT[bat,any] keys) : BAT[oid,int] {
   return filter.[ifthenelse](int(nil),res); # emit a nil for keys that contain a nil
 }
 
-const JOIN_BULK_SIZE := INT_MAX;	# 5000000;
+const JOIN_BULK_SIZE := INT_MAX - 1;	# 5000000;
 
 proc ds_eq(BAT[void,oid] l_slice, bat lb, BAT[void,oid] r_slice, bat rb) : BAT[void,bit] {
   var l := join(l_slice,bat(lb));
