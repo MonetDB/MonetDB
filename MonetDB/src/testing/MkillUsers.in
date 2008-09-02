@@ -82,7 +82,7 @@ if [   "$MONETDB4_BUILD" ] ; then BINPATH="$BINPATH   $MONETDB4_BUILD/src/tools 
 if [   "$MONETDB5_BUILD" ] ; then BINPATH="$BINPATH   $MONETDB5_BUILD/src/tools   $MONETDB5_BUILD/src/tools/.libs" ; fi
 if [   "$TEMPLATE_BUILD" ] ; then BINPATH="$BINPATH   $TEMPLATE_BUILD/src/tools   $TEMPLATE_BUILD/src/tools/.libs" ; fi
 if [        "$SQL_BUILD" ] ; then BINPATH="$BINPATH        $SQL_BUILD/src/tools        $SQL_BUILD/src/tools/.libs" ; fi
-if [       "$GEOM_BUILD" ] ; then BINPATH="$BINPATH       $GEOM_BUILD/src/tools       $SQL5_BUILD/src/tools/.libs" ; fi
+if [       "$GEOM_BUILD" ] ; then BINPATH="$BINPATH       $GEOM_BUILD/src/tools       $GEOM_BUILD/src/tools/.libs" ; fi
 if [ "$PATHFINDER_BUILD" ] ; then BINPATH="$BINPATH $PATHFINDER_BUILD/src/tools $PATHFINDER_BUILD/src/tools/.libs $PATHFINDER_BUILD/compiler $PATHFINDER_BUILD/compiler/.libs" ; fi
 if [   "$DATACELL_BUILD" ] ; then BINPATH="$BINPATH   $DATACELL_BUILD/src/tools   $DATACELL_BUILD/src/tools/.libs" ; fi
 for b in $BINPATH ; do
