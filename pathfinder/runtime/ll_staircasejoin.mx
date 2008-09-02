@@ -332,10 +332,9 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
     /* -------------------- set result properties ---------------------- */
 {
     BATiter resi = bat_iterator(res);
-    bit trivial  = (BATcount(res) < 2);
-    oid fst_item = *(oid*)BUNtail(resi, BUNfirst(res));
-    oid lst_item = *(oid*)BUNtail(resi, BUNlast(res) - 1);
-    bit one_item = (fst_item == lst_item);
+    bit trivial  = BATcount(res) < 2;
+    /* actually zero_or_one_item... */
+    bit one_item = trivial || (*(oid*)BUNtail(resi, BUNfirst(res)) == *(oid*)BUNtail(resi, BUNlast(res) - 1));
 
     res->batDirty = TRUE;
     res->hdense = (trivial||(res->htype==TYPE_void)); /* might be TRUE in some more cases... */
