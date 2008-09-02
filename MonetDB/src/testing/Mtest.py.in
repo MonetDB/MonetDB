@@ -1646,7 +1646,7 @@ def RunTest(env, TST, BusyPorts, COND) :
                 TOf = float(f.strip())
                 if TOf > 0:
                     TIMEOUT = int(TIMEOUT * TOf)
-                if TIMEOUT < 1:
+                if TIMEOUT < 1 and par['TIMEOUT'] > 0:
                     TIMEOUT = 1
         if env['exe']['Mtimeout'][0]:
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(TIMEOUT)
