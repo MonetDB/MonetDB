@@ -79,9 +79,9 @@ stderr of test 'alter_view_not_allowed.SF-2075195` in directory 'src/test/BugTra
 # 12:25:51 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30598 
 # 12:25:51 >  
 
-MAPI  = monetdb@alf:30598
+MAPI  = monetdb@alf:34730
 QUERY = alter table myview alter column a set null;
-ERROR = !ALTER TABLE: cannot SET COLUMN options for VIEW 'myview'
+ERROR = !ALTER TABLE: cannot set column options for VIEW 'myview'
 
 # 12:25:51 >  
 # 12:25:51 >  Done.

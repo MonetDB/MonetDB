@@ -688,8 +688,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			int r = _dumpstmt(sql, mb, s->op2.stval);
 
-			char *cmd = s->type == st_select ? "select" : "uselect";
-
 			if (s->op2.stval->nrcols >= 1) {
 				char *mod = calcRef;
 				char *op = "=";
@@ -795,6 +793,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, k);
 				s->nr = getDestVar(q);
 			} else {
+				char *cmd = s->type == st_select ? 
+						"select" : "uselect";
+
+				if (s->flag != cmp_equal)
+					cmd = s->type == st_select ? 
+						"thetaselect" : "thetauselect";
+
 				switch (s->flag) {
 				case cmp_like:{
 					int e = _dumpstmt(sql, mb, s->op3.stval);
@@ -846,30 +851,26 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				case cmp_lt:
 					q = newStmt1(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
-					q = pushNil(mb, q, tail_type(s)->type->localtype);
 					q = pushArgument(mb, q, r);
-					q = pushBit(mb, q, FALSE);
-					q = pushBit(mb, q, FALSE);
+					q = pushStr(mb, q, "<");
 					break;
 				case cmp_lte:
 					q = newStmt1(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
-					q = pushNil(mb, q, tail_type(s)->type->localtype);
 					q = pushArgument(mb, q, r);
+					q = pushStr(mb, q, "<=");
 					break;
 				case cmp_gt:
 					q = newStmt1(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
-					q = pushNil(mb, q, tail_type(s)->type->localtype);
-					q = pushBit(mb, q, FALSE);
-					q = pushBit(mb, q, FALSE);
+					q = pushStr(mb, q, ">");
 					break;
 				case cmp_gte:
 					q = newStmt1(mb, algebraRef, cmd);
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
-					q = pushNil(mb, q, tail_type(s)->type->localtype);
+					q = pushStr(mb, q, ">=");
 					break;
 				default:
 					showException(SQL,"sql","SQL2MAL: error impossible\n");
@@ -1180,7 +1181,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			    s->op4.typeval.type->eclass ==
 			    s->op3.typeval.type->eclass &&
 			    s->op3.typeval.type->eclass != EC_INTERVAL &&
-			    s->op3.typeval.type->eclass != EC_DEC 
+			    s->op3.typeval.type->eclass != EC_DEC &&
+			    s->op4.typeval.digits == 0
 			   ) {
 				s->nr = l;	
 				break;

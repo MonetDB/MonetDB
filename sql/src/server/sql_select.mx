@@ -916,7 +916,8 @@ sql_binop_(mvc *sql, scope *scp, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 		stmt *ors = stmt_dup(rs);
 
 		/* try finding function based on first argument */
-		if ((f = sql_bind_member(s, fname, t1, 2)) != NULL) {
+		if (!EC_NUMBER(t1->type->eclass) &&
+		   (f = sql_bind_member(s, fname, t1, 2)) != NULL) {
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
 
@@ -2091,7 +2092,6 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 		if (matching_columns) {
 			/* Natural join and join on columns list output the
 			   join columns once.  
-			   Natural join only outputs join columns.
 			 */
 			list *l2 = create_stmt_list();
 			node *o = NULL, *m = l1->h, *rm;
@@ -2117,20 +2117,18 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 					list_append(l2, ls);
 				}
 			}
-			if (js) {
-				t = tv1;
-				m = l1->h;
-				for (n = t->columns->h; n; n = n->next, m = m->next) {
-					cvar *cs = n->data;
-					if (!(o = list_find(matching_columns, cs, (fcmp)&cvar_cmp))) 
-						list_append(l2, stmt_dup(m->data));
-				}
-				t = tv2;
-				for (n = t->columns->h; n; n = n->next, m = m->next) {
-					cvar *cs = n->data;
-					if (!(o = list_find(matching_columns, cs, (fcmp)&cvar_cmp))) 
-						list_append(l2, stmt_dup(m->data));
-				}
+			t = tv1;
+			m = l1->h;
+			for (n = t->columns->h; n; n = n->next, m = m->next) {
+				cvar *cs = n->data;
+				if (!(o = list_find(matching_columns, cs, (fcmp)&cvar_cmp))) 
+					list_append(l2, stmt_dup(m->data));
+			}
+			t = tv2;
+			for (n = t->columns->h; n; n = n->next, m = m->next) {
+				cvar *cs = n->data;
+				if (!(o = list_find(matching_columns, cs, (fcmp)&cvar_cmp))) 
+					list_append(l2, stmt_dup(m->data));
 			}
 			/* add no join columns */
 			list_destroy(l1);
@@ -3557,7 +3555,11 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		break;
 	case SQL_NOT: {
 		symbol *lo = sc->data.sym;
-		stmt *ls = sql_logical_exp(sql, scp, lo, grp, subset, f, ek);
+		exp_kind iek = ek;
+		stmt *ls;
+
+		iek.reduce = 0;
+		ls = sql_logical_exp(sql, scp, lo, grp, subset, f, iek);
 
 		if (!ls)
 			return NULL;
@@ -3567,10 +3569,13 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		
 			return stmt_unop(ls, not);
 		} else { /* R.diff(ls) */
+			return stmt_select(ls, stmt_bool(0), cmp_equal);
+			/*
 			if (subset)
 				return stmt_diff(first_subset(subset), ls);
 			else
 				return stmt_diff(stmt_dup(scope_first_column(scp)->s), ls);
+			*/
 		}
 	}
 		break;

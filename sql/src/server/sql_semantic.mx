@@ -1030,6 +1030,7 @@ char *symbol2string(mvc *sql, symbol *se)
 		char *l = symbol2string(sql, lst->next->data.sym);
 		len = snprintf( buf+len, BUFSIZ-len, "%s(%s)", op, l); 
 		_DELETE(l);
+		break;
 	}
 	case SQL_NULL:
 		strcpy(buf,"NULL");

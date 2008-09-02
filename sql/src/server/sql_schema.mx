@@ -1277,6 +1277,9 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	dlist *opt_list = NULL;
 	stmt *res = NULL;
 
+	if (alter && !isTable(t)) {
+		return sql_error(sql, 02, "ALTER TABLE: cannot add column to VIEW '%s'\n", t->base.name);
+	}
 	if (l->h->next->next)
 		opt_list = l->h->next->next->data.lval;
 
@@ -1409,9 +1412,6 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 {
 	stmt *res = NULL;
 
-	if (!isTable(t)) {
-		return sql_error(sql, 02, "ALTER TABLE: cannot add constraint to VIEW '%s'\n", t->base.name);
-	}
 	if (isTempTable(t))
 		return sql_error(sql, 02, "CONSTRAINT: constraints on temporary tables are not supported\n");
 	switch (s->token) {
@@ -1481,6 +1481,35 @@ static stmt *
 table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	stmt *res = NULL;
+
+	if (alter && !isTable(t)) {
+		char *msg = "";
+
+		switch (s->token) {
+		case SQL_COLUMN: 	
+			msg = "add column to"; 
+			break;
+		case SQL_CONSTRAINT: 	
+			msg = "add constraint to"; 
+			break;
+		case SQL_COLUMN_OPTIONS:
+		case SQL_DEFAULT:
+		case SQL_NOT_NULL:
+		case SQL_NULL:
+			msg = "set column options for"; 
+			break;
+		case SQL_DROP_DEFAULT:
+			msg = "drop default column option from"; 
+			break;
+		case SQL_DROP_COLUMN:
+			msg = "drop column from"; 
+			break;
+		case SQL_DROP_CONSTRAINT:
+			msg = "drop constraint from"; 
+			break;
+		}
+		return sql_error(sql, 02, "ALTER TABLE: cannot %s VIEW '%s'\n", 			msg, t->base.name);
+	}
 
 	switch (s->token) {
 	case SQL_COLUMN:

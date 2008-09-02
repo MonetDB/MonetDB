@@ -2,7 +2,7 @@
 CREATE TABLE victim (
 name VARCHAR(50) PRIMARY KEY NOT NULL,
 date_of_birth VARCHAR(10),
-length CHAR(6),
+length CHAR(8),
 eyes CHAR(20),
 hair VARCHAR(30),
 date DATE,
