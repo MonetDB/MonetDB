@@ -1003,7 +1003,9 @@ str_2dec_@1( @1 *res, str val, int *d, int *sc )
 	int scale = digits - (int)(dot-s);
 	lng value = 0;
 
+#if SIZEOF_INT < SIZEOF_PTRDIFF_T
 	assert((lng) GDK_int_min <= (lng) (dot-s) && (lng) (dot-s) <= (lng) GDK_int_max);
+#endif
 
 	if (!dot) {
 		if (GDK_STRNIL(val)) {
