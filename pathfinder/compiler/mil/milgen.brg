@@ -2496,6 +2496,8 @@ reduce (PFpa_op_t * p, int goalnt)
 static void
 do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 {
+    mvar_t *v;
+
     switch (rule) {
         /* Query:   serialize (Rel) */
         case 1: /* fold( */
@@ -2596,7 +2598,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* We have a mixed set of result nodes here
                        and need to use the attr column to find
                        all non-attribute nodes.  */
-                    mvar_t *v = new_var (1);
+                    v = new_var (1);
                     execute (
                         assgn (var (v->name),
                                select2 (
@@ -2650,7 +2652,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* Because frag is shared for all nodes
                        we need the attr column to distinct
                        between attributes and non-attributes. */
-                    mvar_t *v = new_var (1);
+                    v = new_var (1);
                     execute (
                         assgn (var (v->name),
                                select2 (
@@ -2790,7 +2792,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* We have a mixed set of result nodes here
                        and need to use the attr column to find
                        all non-attribute nodes.  */
-                    mvar_t *v = new_var (1);
+                    v = new_var (1);
                     execute (
                         assgn (var (v->name),
                                select2 (
@@ -2844,7 +2846,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* Because frag is shared for all nodes
                        we need the attr column to distinct
                        between attributes and non-attributes. */
-                    mvar_t *v = new_var (1);
+                    v = new_var (1);
                     execute (
                         assgn (var (v->name),
                                select2 (
@@ -3050,7 +3052,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* Because frag is shared for all nodes
                        we need the attr column to distinct
                        between attributes and non-attributes. */
-                    mvar_t *v = new_var (1);
+                    v = new_var (1);
                     execute (
                         assgn (var (v->name),
                                select2 (
@@ -3084,7 +3086,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* We have a mixed set of result nodes here
                        and need to use the attr column to find
                        all non-attribute nodes.  */
-                    mvar_t *v = new_var (1);
+                    v = new_var (1);
                     execute (
                         assgn (var (v->name),
                                select2 (
@@ -3384,7 +3386,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         sorted = true;
                     }
                     else {
-                        mvar_t *v = new_var (1);
+                        v = new_var (1);
                         execute (
                             assgn (
                                 var (v->name),
@@ -3608,7 +3610,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             for (unsigned int col = 0; col < p->schema.count; col++)
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
                     if (t & TYPE_MASK(p->schema.items[col].type)) {
-                        mvar_t *v = new_var (p->refctr);
+                        v = new_var (p->refctr);
                         env_add (p->env, p->schema.items[col].name, t, v);
 
                         execute (
@@ -3665,7 +3667,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             }
             else {
                 /* now create the new column */
-                mvar_t *v = new_var (p->refctr);
+                v = new_var (p->refctr);
                 env_add (p->env, p->sem.attach.attname,
                          p->sem.attach.value.type, v);
 
@@ -3679,10 +3681,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      cross (Rel, Rel) */
         case 13: /* fold( */
         {
-            mvar_t *v  = new_var (1);
             mvar_t *v1 = new_var (1);
             mvar_t *v2 = new_var (1);
 
+            v = new_var (1);
             if (!env_count (L(p)->env) || !env_count (R(p)->env))
                 PFoops (OOPS_FATAL, "Cross does not cope with empty schemas");
 
@@ -3733,10 +3735,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             PFalg_simple_type_t rty = type_of (R(p), p->sem.eqjoin.att2);
             mvar_t *l  = NULL;
             mvar_t *r  = NULL;
-            mvar_t *v  = new_var (1);
             mvar_t *v1 = new_var (1);
             mvar_t *v2 = new_var (1);
 
+            v = new_var (1);
 
             if (type_bit_check (lty)) {
                 if (lty != rty)
@@ -3951,9 +3953,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                    *r     = NULL,
                    *ldist = NULL,
                    *rdist = NULL,
-                   *v     = new_var (1),
                    *v1,
                    *v2;
+
+            v = new_var (1);
 
             latt      = p->sem.unq_thetajoin.left;
             ratt      = p->sem.unq_thetajoin.right;
@@ -4056,7 +4059,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
                     if (t & TYPE_MASK(type_of (L(p),
                                                p->sem.proj.items[i].old))) {
-                        mvar_t *v = env_mvar (L(p)->env,
+                        v = env_mvar (L(p)->env,
                                               p->sem.proj.items[i].old,
                                               t);
                         env_add (p->env, p->sem.proj.items[i].new, t, v);
@@ -4067,7 +4070,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      select (Rel) */
         case 21: /* fold( */
         {
-            mvar_t *v = new_var (1);
+            v = new_var (1);
 
             /*
              * For the predicate column c do
@@ -4093,7 +4096,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      val_select (Rel) */
         case 22: /* fold( */
         {
-            mvar_t *v = new_var (1);
+            v = new_var (1);
 
             assert (type_of (p, p->sem.attach.attname) ==
                     p->sem.attach.value.type);
@@ -4140,7 +4143,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
                     if (t & TYPE_MASK(p->schema.items[i].type)) {
 
-                        mvar_t *v = new_var (p->refctr);
+                        v = new_var (p->refctr);
 
                         /*
                          * Type t is in the result relation. See if it
@@ -4198,7 +4201,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             PFalg_att_t         grp_att;
             PFalg_simple_type_t grp_ty;
             PFmil_t            *args;
-            mvar_t             *v = new_var (1);
+            v = new_var (1);
 
             if (PFord_count (p->sem.merge_union.ord) != 1 ||
                 PFord_order_dir_at (p->sem.merge_union.ord, 0) != DIR_ASC)
@@ -4417,7 +4420,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
              */
             PFord_ordering_t    ord = p->sem.sort_distinct.ord;
             PFpa_op_t          *rel;
-            mvar_t             *v = new_var (1);
+            v = new_var (1);
 
             if (L(p)->kind == pa_std_sort || L(p)->kind == pa_refine_sort)
                 rel = LL(p);
@@ -4464,7 +4467,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 env_copy (p, L(p)->env);
             else {
                 PFord_ordering_t ord = p->sem.sortby.required;
-                mvar_t          *v   = new_var (1);
+
+                v = new_var (1);
 
                 /* create the MIL code that stores
                    the ordered extend in variable v */
@@ -4499,9 +4503,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         case 34: /* fold( */
         {
             PFord_ordering_t ord = p->sem.sortby.required;
-            mvar_t          *v   = new_var (1);
             unsigned int     i,
                              j;
+            v = new_var (1);
 
             /* create the MIL code that stores
                the ordered extend in variable v */
@@ -5579,8 +5583,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      to (Rel) */
         case 64: /* fold( */
         {
-            mvar_t *v   = new_var (1);
             mvar_t *res = new_var (p->refctr);
+
+            v = new_var (1);
 
             execute (
                 /* v := in2.[-](in1).[+](1LL).[max](0LL);
@@ -5622,10 +5627,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      count_ext (Rel, Rel) */
         case 65: /* fold( */
         {
-            mvar_t *v    = new_var (1);
             mvar_t *res  = new_var (p->refctr);
             mvar_t *part = new_var (p->refctr);
             PFalg_simple_type_t ty = type_of (p, p->sem.count.part);
+
+            v = new_var (1);
 
             if (!type_bit_check (ty))
                 PFoops (OOPS_FATAL,
@@ -5663,10 +5669,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      count (Rel) */
         case 66: /* fold( */
             if (p->sem.count.part != att_NULL) {
-                mvar_t *v              = new_var (1);
                 mvar_t *res            = new_var (p->refctr);
                 mvar_t *part           = new_var (p->refctr);
                 PFalg_simple_type_t ty = type_of (L(p), p->sem.count.part);
+
+                v = new_var (1);
 
                 if (!type_bit_check (ty))
                     PFoops (OOPS_FATAL,
@@ -5701,7 +5708,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 unpin (v, 1);
             }
             else {
-                mvar_t *v = new_var (p->refctr);
+                v = new_var (p->refctr);
                 execute (
                     assgn (var (v->name),
                            count (var (env_at (L(p)->env, 0).mvar->name))),
@@ -5779,8 +5786,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
              */
             PFord_ordering_t    ord = p->sem.rank.ord;
             PFpa_op_t          *rel;
-            mvar_t             *v   = new_var (1),
-                               *res = new_var (p->refctr);
+            mvar_t             *res = new_var (p->refctr);
+
+            v = new_var (1);
 
             if (L(p)->kind == pa_std_sort || L(p)->kind == pa_refine_sort)
                 rel = LL(p);
@@ -6186,9 +6194,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                      type_of (p, res) == aat_bln);
 
              if (part != att_NULL) {
-                 mvar_t *v    = new_var (1);
                  mvar_t *res_var  = new_var (p->refctr);
                  mvar_t *part_var = new_var (p->refctr);
+
+                 v = new_var (1);
 
                  part_ty = type_of (L(p), part);
 
@@ -6219,7 +6228,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                  unpin (v, 1);
              }
              else {
-                  mvar_t *v = new_var (p->refctr);
+                  v = new_var (p->refctr);
                   execute (
                       assgn (var (v->name), VAR (L(p)->env, att, aat_bln)),
                       assgn (var (v->name),
@@ -6250,9 +6259,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                      type_of (p, res) == aat_bln);
 
              if (part != att_NULL) {
-                 mvar_t *v    = new_var (1);
                  mvar_t *res_var  = new_var (p->refctr);
                  mvar_t *part_var = new_var (p->refctr);
+
+                 v = new_var (1);
 
                  part_ty = type_of (L(p), part);
 
@@ -6282,7 +6292,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                  unpin (v, 1);
              }
              else {
-                  mvar_t *v = new_var (p->refctr);
+                  v = new_var (p->refctr);
                   execute (
                       assgn (var (v->name), VAR (L(p)->env, att, aat_bln)),
                       assgn (var (v->name),
@@ -6309,10 +6319,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         {
             /* temporary variables */
             mvar_t *time = new_var (1),
-                   *v    = new_var (1),
                     /* result BATs */
                    *frag = new_var (p->refctr),
                    *pre  = new_var (p->refctr);
+
+            v = new_var (1);
 
             env_add (p->env, p->sem.unary.res, aat_pre, pre);
             env_add (p->env, p->sem.unary.res, aat_frag, frag);
@@ -7219,9 +7230,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                operators underneath */
             if (env_count (L(p)->env) &&
                 env_count (R(p)->env)) {
-                mvar_t *v = new_var (1);
                 mvar_t *l = env_at (L(p)->env, 0).mvar;
                 mvar_t *r = env_at (R(p)->env, 0).mvar;
+                v = new_var (1);
 
                 assert (env_count (L(p)->env) == 1);
                 assert (env_count (R(p)->env) == 1);
@@ -7274,8 +7285,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         case 107: /* fold( */
             assert (type_of (L(p), p->sem.ii.iter) == aat_nat);
         {
-            mvar_t  *v = new_var (1);
             PFmil_t *iter = VAR (L(p)->env, p->sem.ii.iter, aat_nat);
+            v = new_var (1);
 
             execute (
                 assgn (var (v->name),
@@ -7323,9 +7334,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             unsigned int old_twig_state_pre,
                          old_twig_state_parent,
                          old_twig_state_size;
-            mvar_t  *v = new_var (1);
             mvar_t  *size = new_var (1);
             PFmil_t *iter;
+            v = new_var (1);
 
             /* translate the qnames */
             reduce(kids[0], nts[0]);
@@ -7446,9 +7457,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             assert (type_of (L(p), p->sem.ii.iter) == aat_nat);
             assert (type_of (L(p), p->sem.ii.item) == aat_qname);
         {
-            mvar_t  *v     = new_var (1),
-                    *qn_id = new_var (1);
+            mvar_t  *qn_id = new_var (1);
             PFmil_t *iter  = VAR (L(p)->env, p->sem.ii.iter, aat_nat);
+
+            v = new_var (1);
 
             /* Ensure that the QNames are stored in the WS container
                and copy them if they reside in a different container. */
@@ -7505,10 +7517,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             unsigned int old_twig_state_pre,
                          old_twig_state_parent,
                          old_twig_state_size;
-            mvar_t  *v     = new_var (1),
-                    *qn_id = new_var (1),
+            mvar_t  *qn_id = new_var (1),
                     *size  = new_var (1);
             PFmil_t *iter;
+
+            v = new_var (1);
 
             /* translate the qnames */
             reduce(kids[0], nts[0]);
@@ -7637,8 +7650,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             assert (type_of (L(p), p->sem.iter_item1_item2.item1) == aat_qname);
             assert (type_of (L(p), p->sem.iter_item1_item2.item2) == aat_str);
         {
-            mvar_t     *v      = new_var (1),
-                       *qn_id  = new_var (1),
+            mvar_t     *qn_id  = new_var (1),
                        *prop   = new_var (1);
             PFmil_t    *iter   = VAR (L(p)->env,
                                       p->sem.iter_item1_item2.iter,
@@ -7647,6 +7659,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             PFmil_t    *val    = VAR (L(p)->env,
                                       p->sem.iter_item1_item2.item2,
                                       aat_str);
+
+            v = new_var (1);
 
             /* Ensure that the QNames are stored in the WS container
                and copy them if they reside in a different container. */
@@ -7688,10 +7702,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             assert (type_of (L(p), p->sem.ii.iter) == aat_nat);
             assert (type_of (L(p), p->sem.ii.item) == aat_str);
         {
-            mvar_t  *v    = new_var (1),
-                    *prop = new_var (1),
+            mvar_t  *prop = new_var (1),
                     *iter = new_var (1),
                     *item = new_var (1);
+
+            v = new_var (1);
 
             /* check for constant non-empty string */
             if (PFprop_const (p->prop, p->sem.ii.item) &&
@@ -7811,10 +7826,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             assert (type_of (L(p), p->sem.ii.iter) == aat_nat);
             assert (type_of (L(p), p->sem.ii.item) == aat_str);
         {
-            mvar_t  *v = new_var (1);
             mvar_t  *prop = new_var (1);
             PFmil_t *iter = VAR (L(p)->env, p->sem.ii.iter, aat_nat);
             PFmil_t *item = VAR (L(p)->env, p->sem.ii.item, aat_str);
+            v = new_var (1);
 
             execute (
                 assgn (var (prop->name),
@@ -7961,7 +7976,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
             /* first handle root attributes */
             if (treat_attr) {
-                mvar_t  *v = new_var (1);
+                v = new_var (1);
 
                 /* collect attribute names, values, and container... */
                 execute (
@@ -8005,7 +8020,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 mvar_t  *iter = new_var (1);
                 mvar_t  *item = new_var (1);
                 mvar_t  *cont = new_var (1);
-                mvar_t  *v    = new_var (1);
+
+                v = new_var (1);
 
                 unq_iter = new_var (1);
                 scj_res  = new_var (1);
@@ -8219,7 +8235,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 }
             }
             else if (treat_pre && p->kind == pa_slim_content) {
-                mvar_t  *v    = new_var (1);
+                v = new_var (1);
 
                 /* add the node references into list of twig constructors
                    (size = 0, kind = REFERENCE, prop = p_prop, cont = p_cont):
@@ -8549,7 +8565,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & TYPE_MASK(ty)) {
                             /* create new variable */
-                            mvar_t *v  = new_var (p->refctr);
+                            v = new_var (p->refctr);
                             /* dummy assignment */
                             execute (
                                 assgn (var (v->name),
@@ -9035,7 +9051,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* dummy stub to fill the environment */
 
                     /* create dummy temp variable */
-                    mvar_t *v  = new_var (1);
+                    v = new_var (1);
                     /* add more references to v */
                     pin (v, 1);
                     /* release all pins */
@@ -9046,7 +9062,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         for (PFalg_simple_type_t t = 1; t; t <<= 1)
                             if (t & TYPE_MASK(p->schema.items[i].type)) {
                                 /* create new variable */
-                                mvar_t *v  = new_var (p->refctr);
+                                v = new_var (p->refctr);
                                 /* dummy assignment */
                                 execute (
                                     assgn (var (v->name),
