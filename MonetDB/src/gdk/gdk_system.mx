@@ -566,6 +566,9 @@ MT_check_nr_cores_(void)
 int
 MT_check_nr_cores(void)
 {
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__MACH__)
+	size_t len = sizeof(int);
+#endif
 	int ncpus = -1;
 
 	/* this works on Linux, Solaris and AIX */
@@ -575,7 +578,6 @@ MT_check_nr_cores(void)
 
 	/* sysctl should work on all BSDs (includes Darwin) */
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__MACH__)
-	size_t len = sizeof(int);
 	sysctlbyname("hw.ncpu", &ncpus, &len, NULL, 0);
 #endif
 
