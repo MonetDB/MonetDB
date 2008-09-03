@@ -219,6 +219,7 @@ static char *pager = 0;		/* use external pager */
 #endif
 static int rowsperpage = 0;	/* for SQL pagination */
 static int pagewidth = -1;	/* use raw mode for file input, tabular format in stdin */
+static int pagewidthset = 0;	/* whether the user set the width explicitly */
 static int interactive_stdin = 0;
 
 enum modifiers {
@@ -940,14 +941,16 @@ setFormatter(Mapi mid, char *s)
 static void
 setWidth(void)
 {
+	if (!pagewidthset) {
 #ifdef TIOCGWINSZ
-	struct winsize ws;
+		struct winsize ws;
 
-	if (ioctl(fileno(stdin), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
-		pagewidth = ws.ws_col;
-	else
+		if (ioctl(fileno(stdin), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
+			pagewidth = ws.ws_col;
+		else
 #endif
-	pagewidth = DEFWIDTH;
+		pagewidth = DEFWIDTH;
+	}
 }
 
 static int
@@ -978,6 +981,8 @@ format_result(MapiHdl hdl)
 		}
 	}
 #endif
+
+	setWidth();
 
 	do {
 		char *reply;
@@ -1410,6 +1415,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					continue;
 				case 'w':
 					pagewidth = atoi(line + 2);
+					pagewidthset = pagewidth > 0;
 					continue;
 				case 'r':
 					rowsperpage = atoi(line + 2);
@@ -1861,6 +1867,7 @@ main(int argc, char **argv)
 			break;
 		case 'w':
 			pagewidth = atoi(optarg);
+			pagewidthset = pagewidth > 0;
 			break;
 		case 'r':
 			rowsperpage = atoi(optarg);
@@ -1995,7 +2002,6 @@ main(int argc, char **argv)
 
 	if (command != NULL) {
 		/* execute from command-line */
-		setWidth();
 		c = doRequest(mid, command, interactive);
 	}
 
@@ -2024,7 +2030,6 @@ main(int argc, char **argv)
 			fromConsole = stdin;
 		}
 		/* use default rendering if not overruled at commandline */
-		setWidth();
 		c = doFileByLines(mid, stdin, prompt);
 
 #ifdef HAVE_LIBREADLINE
