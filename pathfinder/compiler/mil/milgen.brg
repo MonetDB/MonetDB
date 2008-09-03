@@ -9304,10 +9304,23 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 		    }
 
 		    /* copy the pos bat */
+	    	    PFalg_simple_type_t postype = aat_nat;
+	    	    if ( op1->schema.items[1].name != att_pos ) {
+	               /* INCOMPLETE. Temporary fix for Hennings document startnodes
+		 	* problem.
+		 	* When startnodes are delivered in document order like in
+		 	* fn:doc("d")//article
+		 	* the normal schema (iter,pos(aat_nat),item) is replaced by
+		 	* (iter,item(aat_pre),item). This will crash our previous
+		 	* implementation which will look for an item(aat_nat) which 
+		 	* is not there. 
+			*/
+		        postype = aat_pre;
+	    	    }
 	            mvar_t *p_pos  = env_mvar (
                                          op1->env,
                                          op1->schema.items[1].name /* pos */,
-                                         aat_nat);
+                                         postype);
 		    pin(p_pos,1);
                     env_add (p->env, fc_pos_a, aat_nat, p_pos);
 		} else if (strcmp(fcname,PFT_INFO) == 0 ) {
