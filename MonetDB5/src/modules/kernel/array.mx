@@ -168,7 +168,7 @@ grid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 
 	new_@1_bat(*out, (i * (n - o) * r));
 	if (out == NULL) {
-		GDKerror("grid: cannot create the bat (%ld BUNs)\n", (i * (n - o) * r));
+		GDKerror("grid: cannot create the bat (" @2 " BUNs)\n", (i * (n - o) * r));
 		return GDK_FAIL;
 	}
 	add_@1s(*out, (i * (n - o) * r));
@@ -195,8 +195,8 @@ gridShift_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, 
 }
 
 @c
-@:grid_impl(int)@
-@:grid_impl(lng)@
+@:grid_impl(int,"%d")@
+@:grid_impl(lng,LLFMT)@
 
 @+
 The M5 wrapper code
