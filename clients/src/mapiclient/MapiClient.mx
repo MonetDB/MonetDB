@@ -361,6 +361,39 @@ SQLsetSpecial(const char *command)
 	}
 }
 
+/* return the display length of a UTF-8 string */
+static size_t
+utf8strlen(const char *s)
+{
+	size_t len = 0;
+
+	if (s == NULL)
+		return 0;
+	while (*s) {
+		/* only count first byte of a sequence */
+		if ((*s & 0xC0) != 0x80)
+			len++;
+		s++;
+	}
+	return len;
+}
+
+/* skip the specified number of UTF-8 characters */
+static char *
+utf8skip(char *s, size_t i)
+{
+	while (*s && i > 0) {
+		if ((*s & 0xC0) == 0xC0) {
+			s++;
+			while ((*s & 0xC0) == 0x80)
+				s++;
+		} else
+			s++;
+		i--;
+	}
+	return s;
+}
+	
 static int
 SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 {
@@ -371,7 +404,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 	/* trim the text if needed */
 	if (trim) {
 		for (i = 0; i < fields; i++) {
-			if ((t = rest[i]) != NULL && strlen(t) > (size_t) len[i]) {
+			if ((t = rest[i]) != NULL && utf8strlen(t) > (size_t) len[i]) {
 				while (*t != 0 && isspace((int) *t))
 					t++;
 				rest[i] = t;
@@ -387,20 +420,31 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim)
 				stream_printf(toConsole, "%*s |", len[i], " ");
 			else {
 				/* break the string into pieces and left-adjust them in the column */
-				if (strlen(rest[i]) > (size_t) len[i]) {
-					t = rest[i] + len[i];
+				if (utf8strlen(rest[i]) > (size_t) len[i]) {
+					t = utf8skip(rest[i], len[i]);
 					while (t > rest[i] && !isspace((int) *t))
-						t--;
+						while ((*--t & 0xC0) == 0x80)
+							;
 					if (t == rest[i] && !isspace((int) *t))
-						t = rest[i] + len[i];
-					stream_printf(toConsole, "%*.*s |", first && numeric[i] ? len[i] : -len[i], (int) (t - rest[i]), rest[i]);
+						t = utf8skip(rest[i], len[i]);
+					if (first && numeric[i])
+						stream_printf(toConsole, "%*s", (int) (len[i] - (utf8strlen(rest[i]) - utf8strlen(t))), "");
+					stream_printf(toConsole, "%.*s", (int) (t - rest[i]), rest[i]);
+					if (!first || !numeric[i])
+						stream_printf(toConsole, "%*s", (int) (len[i] - (utf8strlen(rest[i]) - utf8strlen(t))), "");
+					stream_printf(toConsole, " |");
 					while (isspace((int) *t))
 						t++;
 					rest[i] = *t ? t : 0;
 					if (rest[i])
 						more = 1;
 				} else {
-					stream_printf(toConsole, "%*s |", first && numeric[i] ? len[i] : -len[i], rest[i]);
+					if (first && numeric[i])
+						stream_printf(toConsole, "%*s", (int) (len[i] - utf8strlen(rest[i])), "");
+					stream_printf(toConsole, "%s", rest[i]);
+					if (!first || !numeric[i])
+						stream_printf(toConsole, "%*s", (int) (len[i] - utf8strlen(rest[i])), "");
+					stream_printf(toConsole, " |");
 					rest[i] = 0;
 				}
 			}
