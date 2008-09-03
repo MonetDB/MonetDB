@@ -233,7 +233,7 @@ RECYCLEdump(stream *s)
 		if (getInstrPtr(recycleBlk,i)->token == NOOPsymbol)
 			stream_printf(s,"#NOOP ");
 		else stream_printf(s,"#     ");
-		stream_printf(s,"%4d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%s\n", i,
+		stream_printf(s,"%4d\t"LLFMT"\t%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%s\n", i,
 			recycleBlk->profiler[i].clk,
 			recycleBlk->profiler[i].counter,
 			recycleBlk->profiler[i].ticks,

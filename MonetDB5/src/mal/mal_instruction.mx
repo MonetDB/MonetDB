@@ -386,7 +386,7 @@ typedef struct PERF {
 #endif
 	time_t clock;		/* clock */
 	lng clk;		/* microseconds clock */
-	long counter;
+	int counter;
 	lng ticks;		/* micro seconds spent */
 	bit trace;		/* facilitate filter-based profiling */
 	lng ibytes;		/* bytes read by an instruction */
@@ -2386,7 +2386,7 @@ beginning of each line.
     if( mb->profiler ){
 		int pc= getPC(mb,p);
         double avg= (mb->profiler[pc].ticks+0.0)/mb->profiler[pc].counter;
-        snprintf(t,(len-(t-base)),"[%7ld, %5.2f] ",mb->profiler[pc].counter,avg);
+        snprintf(t,(len-(t-base)),"[%7d, %5.2f] ",mb->profiler[pc].counter,avg);
     }
     advance(t,base,len);
 #endif
