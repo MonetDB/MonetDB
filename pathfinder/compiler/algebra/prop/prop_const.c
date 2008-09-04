@@ -691,7 +691,21 @@ infer_const (PFla_op_t *n)
             break;
 
         case la_fun_call:
-            if (n->sem.fun_call.kind == alg_fun_call_xrpc &&
+            /* All the following operators store an iter column
+               in the first column which may not escape the domain
+               of the LOOP relation and thus stays constant if the
+               LOOP relation is constant. */
+            if ((n->sem.fun_call.kind == alg_fun_call_xrpc ||
+                 n->sem.fun_call.kind == alg_fun_call_pf_documents ||
+                 n->sem.fun_call.kind == alg_fun_call_pf_documents_unsafe ||
+                 n->sem.fun_call.kind == alg_fun_call_pf_documents_str ||
+                 n->sem.fun_call.kind == alg_fun_call_pf_documents_str_unsafe ||
+                 n->sem.fun_call.kind == alg_fun_call_pf_collections ||
+                 n->sem.fun_call.kind == alg_fun_call_pf_collections_unsafe ||
+                 n->sem.fun_call.kind == alg_fun_call_pf_collection ||
+                 n->sem.fun_call.kind == alg_fun_call_xrpc ||
+                 n->sem.fun_call.kind == alg_fun_call_xrpc_helpers ||
+                 n->sem.fun_call.kind == alg_fun_call_tijah) &&
                 PFprop_const (L(n)->prop, n->sem.fun_call.iter))
                 PFprop_mark_const (
                         n->prop,
