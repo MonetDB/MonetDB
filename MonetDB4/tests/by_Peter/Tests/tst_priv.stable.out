@@ -16,13 +16,10 @@ stdout of test 'tst_priv` in directory 'tests/by_Peter` itself:
 # compiled for i686-pc-win32/32bit; dynamically linked.
 # test change of private mmap -> malloced under extends
 new(void,str,1000000).persists(true).access(BAT_WRITE).rename("a");
-var d := new(void,int,1000);
-var i := 0;
-while(i < 1000) d.insert(nil,i :+= 1);
-d := [str](d).seqbase(0@0);
+var d := densebat(wrd(1000)).[int]().[+](1).[str]();
 bat("a").seqbase(0@0).insert(d);
 
-i := 0;
+var i := 0;
 while(i < 100) {
     bat("a").insert(d.seqbase(oid(bat("a").count())));
     i :+= 1;

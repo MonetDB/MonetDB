@@ -12,16 +12,9 @@ stdout of test 'tst_updatestr` in directory 'tests/by_Peter` itself:
 # test memory map of string heap under append
 vm_minsize(lng(128*1024));
 
-var i := 0;
 var b := 500000;
 #BIG := new(void,int,50000000); # claim 200MB
-var d := new(void,int,b).seqbase(0@0);
-
-# temporarily disable propmask in order to make this bearable
-var m := debugmask();
-debugmask(2);
-while(i < b) d.append(i :+= 1);
-debugmask(m);
+var d := densebat(wrd(b)).[int]().[+](1);
 
 {
  new(void,str,1000000).seqbase(0@0).access(BAT_WRITE).rename("ab").persists(true);
@@ -41,7 +34,7 @@ debugmask(m);
 
 commit();
 
-i := 0;
+var i := 0;
 while(true) { 
  bat("ab").info().reverse().select("theap.storage").reverse().print();
  var e := [str]([+](d,b));
