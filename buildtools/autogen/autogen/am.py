@@ -853,8 +853,9 @@ def am_libs(fd, var, libsmap, am):
 ##        if sep == '_':
 ##            fd.write(am_additional_flags(libname, sep, "LIB", ['-module'], am))
 
-        nsrcs = "nodist_"+"lib"+sep+libname+"_la_SOURCES ="
-        srcs = "dist_"+"lib"+sep+libname+"_la_SOURCES ="
+        fullpref = "lib"+sep+libname+'_la'
+        nsrcs = "nodist_"+fullpref+"_SOURCES ="
+        srcs = "dist_"+fullpref+" ="
         for target in libsmap['TARGETS']:
             t, ext = split_filename(target)
             if t == libname:
@@ -867,6 +868,10 @@ def am_libs(fd, var, libsmap, am):
                         srcs = srcs + " " + src
                     else:
                         nsrcs = nsrcs + " " + src
+                if target[-2:] == '.o' and libsmap['DEPS'].has_key(target):
+                    am_dep(fd, target, libsmap['DEPS'][target], am, fullpref+"-")
+                    basename = target[:-2]
+                    fd.write('\t$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(%s_CFLAGS) $(CFLAGS) $(%s_CFLAGS) -c -o %s-%s.lo `test -f \'%s.c\' || echo \'$(srcdir)/\'`%s.c\n' % (fullpref, basename, fullpref, basename, basename, basename))
         fd.write(nsrcs + "\n")
         fd.write(srcs + "\n")
 
