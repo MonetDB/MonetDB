@@ -21,7 +21,7 @@ end bind;
 function qry(low:int, hgh:int);
 	b:= user.bind("schema","table","column",0);
 	s1:= algebra.select(b,low,hgh);
-	m0:= algebra.markT(b, 0@0);
+	m0:= algebra.markT(s1, 0@0);
 	mr:= bat.reverse(m0);
 	j:= algebra.join(mr,s1);
 	io.print(j);

@@ -58,7 +58,7 @@ end bind;	# 15
 function user.qry(low:int,hgh:int):void;#  0 qry:void := user.qry(low:int, hgh:int) {G}
     b := user.bind("schema","table","column",0);#  1 b:bat[:oid,:int] := user.bind(_4:str, _5:str, _6:str, _7:int) {G}
     s1 := algebra.select(b,low,hgh);    #  2 s1:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], low:int, hgh:int) {G}
-    m0 := algebra.markT(b,0@0);         #  3 m0:bat[:oid,:oid] := ALGtmark(b:bat[:oid,:int], _10:oid) {G}
+    m0 := algebra.markT(s1,0@0);        #  3 m0:bat[:oid,:oid] := ALGtmark(s1:bat[:oid,:int], _10:oid) {G}
     mr := bat.reverse(m0);              #  4 mr:bat[:oid,:oid] := BKCreverse(m0:bat[:oid,:oid]) {G}
     j := algebra.join(mr,s1);           #  5 j:bat[:oid,:int] := ALGjoin(mr:bat[:oid,:oid], s1:bat[:oid,:int]) {G}
     io.print(j);                        #  6 _13:void := IOprint_val(j:bat[:oid,:int]) 
@@ -97,16 +97,16 @@ end main;	# 14
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 1@0,	  1	  ]
-[ 2@0,	  2	  ]
-[ 3@0,	  3	  ]
-[ 4@0,	  4	  ]
-[ 5@0,	  5	  ]
-[ 6@0,	  6	  ]
-[ 7@0,	  7	  ]
-[ 8@0,	  8	  ]
-[ 9@0,	  9	  ]
-[ 10@0,	  10	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  3	  ]
+[ 3@0,	  4	  ]
+[ 4@0,	  5	  ]
+[ 5@0,	  6	  ]
+[ 6@0,	  7	  ]
+[ 7@0,	  8	  ]
+[ 8@0,	  9	  ]
+[ 9@0,	  10	  ]
 [ "zoom in" ]
 #-----------------#
 # h	t	  # name
@@ -122,24 +122,24 @@ end main;	# 14
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 1@0,	  2	  ]
-[ 2@0,	  3	  ]
+[ 0@0,	  2	  ]
+[ 1@0,	  3	  ]
 [ "last" ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 1@0,	  1	  ]
-[ 2@0,	  2	  ]
-[ 3@0,	  3	  ]
-[ 4@0,	  4	  ]
-[ 5@0,	  5	  ]
-[ 6@0,	  6	  ]
-[ 7@0,	  7	  ]
-[ 8@0,	  8	  ]
-[ 9@0,	  9	  ]
-[ 10@0,	  10	  ]
-[ 11@0,	  11	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  3	  ]
+[ 3@0,	  4	  ]
+[ 4@0,	  5	  ]
+[ 5@0,	  6	  ]
+[ 6@0,	  7	  ]
+[ 7@0,	  8	  ]
+[ 8@0,	  9	  ]
+[ 9@0,	  10	  ]
+[ 10@0,	  11	  ]
 #Recycler  catalog
 #retain= 2 time =20 sze= 0 alpha= 0.500
 #reuse= 1

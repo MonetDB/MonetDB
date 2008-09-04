@@ -912,6 +912,7 @@ We execute it in place and safe the result upon need.
 	stream_printf(cntxt->fdout,">>>");
 	printTraceCall(cntxt->fdout, mb, s,i, LIST_MAL_ALL);
 #endif
+        nbid = s->stk[getArg(p,1)].val.bval;
 		s->stk[getArg(p,1)].val.bval = bid;
 		BBPincref(bid, TRUE);
 		/* make sure the garbage collector is not called */
@@ -924,10 +925,12 @@ We execute it in place and safe the result upon need.
 		/* restore the situation */
 		s->keepAlive= j;
 		s->stk[getArg(p,1)].val.bval = nbid;
-		BBPincref(nbid, TRUE);
-		recycleBlk->profiler[pc].counter++;
+		BBPdecref(bid, TRUE);
+        recycled++;
+        recycleBlk->profiler[pc].counter++;
+        recycleBlk->profiler[pc].clk = GDKusec();
 		RECYCLEexit(cntxt, mb, s, p);
-		return i;
+		return pc;
 	}
 #ifdef _DEBUG_CACHE_
 	if ( evicted ) recycleMiss++;
@@ -948,6 +951,8 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	stk->clk= GDKusec();
 	if (recycleVersion == 0 || recycleBlk == NULL )
 		return 0;
+    if (p->recycle == 0) /* don't scan RP for non-monitored instructions */
+        return 0;
 	mal_set_lock(recycleLock,"recycle");
 	RECYCLEversion(cntxt,mb);
 
