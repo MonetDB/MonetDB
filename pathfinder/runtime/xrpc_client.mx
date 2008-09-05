@@ -694,13 +694,11 @@ setup_connection(str dst, int *port)
     else strptr = dst;
 
     /* 'dst' has the form 'URL[:port]' */
-    errno = 0;
     if ((strptr = strchr(strptr, (int)':')) != NULL) {
         strptr[0] = '\0'; strptr++;
         p = strtol(strptr, (char **)NULL, 10);
-        if (errno) {
-            GDKerror("setup_connection: invalid port number: %s\n",
-                    strerror(errno));
+        if (p <= 0) {
+            GDKerror("setup_connection: invalid port number: %s\n", strptr);
             return -1;
         }
     } else { /* find the default port number from "monet_environment" */
@@ -717,15 +715,13 @@ setup_connection(str dst, int *port)
 
     if (isdigit((int)dst[0])) {
         if ((i = inet_addr(dst)) < 0) {
-            GDKerror("setup_connection: invalid IP address \"%s\": %s\n",
-                    dst, errno?strerror(errno):".");
+            GDKerror("setup_connection: invalid IP address \"%s\": %s\n", dst);
             return -1;
         }
         addr.s_addr = (unsigned) i;
     } else {
         if (!(resolv = gethostbyname(dst))) {
-            GDKerror("setup_connection: invalid IP address \"%s\": %s\n",
-                    dst, errno?strerror(errno):".");
+            GDKerror("setup_connection: invalid IP address \"%s\": %s\n", dst);
             return -1;
         }
         addr.s_addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
@@ -750,7 +746,6 @@ setup_connection(str dst, int *port)
     if (ret < 0) {
         GDKerror("setup_connection: failed to setup connection with "
                  "%s:%d\n", dst, p);
-        if(errno) GDKerror("setup_connection: %s", strerror(errno));
         close(sock);
         return -1;
     }
@@ -905,11 +900,9 @@ response2bat(int sock,
         return NULL;
     }
 
-    errno = 0;
     if( !(ret = stream_readline(in, respStatus, 1024)) ){
         GDKerror("response2bat: failed to receive response from %s:%d",
                 host, port);
-        if(errno) GDKerror("response2bat: %s", strerror(errno));
         stream_close(in); stream_destroy(in);
         return NULL;
     }
@@ -932,7 +925,6 @@ response2bat(int sock,
     respStatus[ret -1] = '\0';
 
     do{ /* read the HTTP header and throw it away */
-        errno = 0;
         ret = stream_readline(in, b->buf, 1024);
         if(ret == 1 && b->buf[0] == '\r')
             ret = 0; /* end-of-HTTP-header found */
@@ -940,7 +932,6 @@ response2bat(int sock,
     if (ret < 0) {
         GDKerror("response2bat: failed to receive response from %s:%d",
                 host, port);
-        if(errno) GDKerror("response2bat: %s", strerror(errno));
         stream_close(in); stream_destroy(in);
         return NULL;
     }
@@ -951,14 +942,12 @@ response2bat(int sock,
 
         b->pos = 0;
         do{ /* read the SOAP Fault message */
-            errno = 0;
             ret = stream_read(in, (b->buf + b->pos), 1, (b->len - b->pos));
             if (ret > 0) b->pos += ret;
         } while (ret > 0);
         if (ret < 0) {
             GDKerror("response2bat: failed to receive response from %s:%d",
                     host, port);
-            if(errno) GDKerror("response2bat: %s", strerror(errno));
             return NULL;
         }
         b->buf[b->pos] = 0;

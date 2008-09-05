@@ -392,23 +392,21 @@ get_val_type(oid  tpe_node_pre,
     return res;
 }
 
-/* Convert string to long int.  Set 'errno' if error occurs. */
+/* Convert string to a positive long int. Returns -1 on error. */
 static INLINE long int
-my_strtol(stream *out, bte isSigned, char *val_ptr, char *attr_name)
+my_strtol(stream *out, char *val_ptr, char *attr_name)
 {
     char errstr[1024];
+    char *end_ptr = val_ptr;
+    long int ret = strtoll(val_ptr, &end_ptr, 10);
 
-    errno = 0;
-    long int ret = strtoll(val_ptr, NULL, 10);
-
-    if(errno){
+    if(end_ptr == val_ptr){
         snprintf(errstr, 1024,
-                "Invalid value (\"%s\") of numeric attribute \"%s\": %s",
-                val_ptr, attr_name, strerror(errno));
+                "Invalid value (\"%s\") of numeric attribute \"%s\"",
+                val_ptr, attr_name);
         send_err(out, ERR404, "env:Sender", errstr);
         return 0;
-    } else if(ret < 0 && !isSigned){
-        errno = EINVAL;
+    } else if(ret < 0){
         snprintf(errstr, 1024,
                 "Invalid value (\"%s\") of numeric attribute \"%s\": "
                 "should not be negative",
@@ -546,8 +544,8 @@ getCallValues(stream *out,
     if(!isAdmin && !isTrusted(out, *location))
         return GDK_FAIL;
     if(itercnt_str){
-        iterc = my_strtol(out, FALSE, itercnt_str, "iter-count");
-        if(errno) {
+        iterc = my_strtol(out, itercnt_str, "iter-count");
+        if(iterc < 0) {
             clean_up(argcnt, argtpe, argval, iterc, nr_args);
             return GDK_FAIL;
         }
@@ -564,8 +562,8 @@ getCallValues(stream *out,
                         next_call_node_pre, req_node_pre + pre_sizeT[req_node_pre],
                         pre_propT, pre_kindT, qn_uri_loc)));
     }
-    argc = my_strtol(out, FALSE, arity_str, "arity");
-    if(errno) {
+    argc = my_strtol(out, arity_str, "arity");
+    if(argc < 0) {
         clean_up(argcnt, argtpe, argval, iterc, nr_args);
         return GDK_FAIL;
     }
@@ -744,7 +742,7 @@ getCallValues(stream *out,
                     level_diff = pre_levelT[val_node_pre];
                     if(strcmp(argtpe[nr_args], "xs:document") == 0)
                         level_diff++;
-                    unsigned long long l = val_node_pre;
+                    oid l = val_node_pre;
                     for( ; l <= (val_node_pre + pre_sizeT[val_node_pre]); l++){
                         pre_levelT[l] -= level_diff;
                     }
