@@ -158,3 +158,4 @@ test_order.SF-2009467
 Zombie_document.SF-2009556
 NOT_ALGEBRA?pfmil_prints_garbage.SF-2015232
 pathstep_on_incorrect_type.SF-2067585
+NOT_ALGEBRA?pfmil_loses_last_bun.SF-2015219
