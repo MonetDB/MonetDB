@@ -242,13 +242,16 @@ project_identical (PFla_op_t *a, PFla_op_t *b)
  * opt_mvd looks up an independent expression and
  * tries to move it up the DAG as much as possible.
  */
+static bool do_opt_mvd (PFla_op_t *p, bool modified);
+
 static bool
 opt_mvd (PFla_op_t *p)
 {
     bool modified = false;
-    bool cross_cross = false;
 
     assert (p);
+
+    PFrecursion_fence ();
 
     /* rewrite each node only once */
     if (SEEN(p))
@@ -259,6 +262,15 @@ opt_mvd (PFla_op_t *p)
     /* apply complex optimization for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         modified = opt_mvd (p->child[i]) || modified ;
+
+    return do_opt_mvd (p, modified);
+}
+
+static bool
+do_opt_mvd (PFla_op_t *p, bool modified)
+{
+    bool cross_cross = false;
+    unsigned int i, j;
 
     /**
      * In the following action code we try to propagate cross
@@ -418,7 +430,7 @@ opt_mvd (PFla_op_t *p)
             bool all_left = true,
                  all_right = true;
 
-            for (unsigned int i = 0; i < p->sem.thetajoin.count; i++) {
+            for (i = 0; i < p->sem.thetajoin.count; i++) {
                 all_left  = all_left &&
                             att_present (LL(p), p->sem.thetajoin.pred[i].left);
                 all_right = all_right &&
@@ -444,7 +456,7 @@ opt_mvd (PFla_op_t *p)
             bool all_left = true,
                  all_right = true;
 
-            for (unsigned int i = 0; i < p->sem.thetajoin.count; i++) {
+            for (i = 0; i < p->sem.thetajoin.count; i++) {
                 all_left  = all_left &&
                             att_present (RL(p), p->sem.thetajoin.pred[i].right);
                 all_right = all_right &&
@@ -478,8 +490,8 @@ opt_mvd (PFla_op_t *p)
             proj_list1 = PFmalloc (p->schema.count *
                                    sizeof (*(proj_list1)));
 
-            for (unsigned int i = 0; i < LL(p)->schema.count; i++)
-                for (unsigned int j = 0; j < p->sem.proj.count; j++)
+            for (i = 0; i < LL(p)->schema.count; i++)
+                for (j = 0; j < p->sem.proj.count; j++)
                     if (LL(p)->schema.items[i].name
                         == p->sem.proj.items[j].old) {
                         proj_list1[count1++] = p->sem.proj.items[j];
@@ -489,8 +501,8 @@ opt_mvd (PFla_op_t *p)
             proj_list2 = PFmalloc (p->schema.count *
                                    sizeof (*(proj_list1)));
 
-            for (unsigned int i = 0; i < LR(p)->schema.count; i++)
-                for (unsigned int j = 0; j < p->sem.proj.count; j++)
+            for (i = 0; i < LR(p)->schema.count; i++)
+                for (j = 0; j < p->sem.proj.count; j++)
                     if (LR(p)->schema.items[i].name
                         == p->sem.proj.items[j].old) {
                         proj_list2[count2++] = p->sem.proj.items[j];
@@ -533,10 +545,10 @@ opt_mvd (PFla_op_t *p)
             /* first check the dependencies of the left cross product input */
             part = false;
             sortby = false;
-            for (unsigned int i = 0; i < LL(p)->schema.count; i++) {
+            for (i = 0; i < LL(p)->schema.count; i++) {
                 if (LL(p)->schema.items[i].name == p->sem.pos_sel.part)
                     part = true;
-                for (unsigned int j = 0;
+                for (j = 0;
                      j < PFord_count (p->sem.pos_sel.sortby);
                      j++)
                     if (LL(p)->schema.items[i].name
@@ -562,10 +574,10 @@ opt_mvd (PFla_op_t *p)
             /* then check the dependencies of the right cross product input */
             part = false;
             sortby = false;
-            for (unsigned int i = 0; i < LR(p)->schema.count; i++) {
+            for (i = 0; i < LR(p)->schema.count; i++) {
                 if (LR(p)->schema.items[i].name == p->sem.pos_sel.part)
                     part = true;
-                for (unsigned int j = 0;
+                for (j = 0;
                      j < PFord_count (p->sem.pos_sel.sortby);
                      j++)
                     if (LR(p)->schema.items[i].name
@@ -782,7 +794,7 @@ opt_mvd (PFla_op_t *p)
             bool switch_left = true;
             bool switch_right = true;
 
-            for (unsigned int i = 0; i < p->sem.fun_1to1.refs.count; i++) {
+            for (i = 0; i < p->sem.fun_1to1.refs.count; i++) {
                 switch_left  = switch_left &&
                                att_present (LL(p),
                                             p->sem.fun_1to1.refs.atts[i]);
@@ -917,10 +929,10 @@ opt_mvd (PFla_op_t *p)
             /* first check the dependencies of the left cross product input */
             part = false;
             sortby = false;
-            for (unsigned int i = 0; i < LL(p)->schema.count; i++) {
+            for (i = 0; i < LL(p)->schema.count; i++) {
                 if (LL(p)->schema.items[i].name == p->sem.sort.part)
                     part = true;
-                for (unsigned int j = 0;
+                for (j = 0;
                      j < PFord_count (p->sem.sort.sortby);
                      j++)
                     if (LL(p)->schema.items[i].name
@@ -946,10 +958,10 @@ opt_mvd (PFla_op_t *p)
             /* then check the dependencies of the right cross product input */
             part = false;
             sortby = false;
-            for (unsigned int i = 0; i < LR(p)->schema.count; i++) {
+            for (i = 0; i < LR(p)->schema.count; i++) {
                 if (LR(p)->schema.items[i].name == p->sem.sort.part)
                     part = true;
-                for (unsigned int j = 0;
+                for (j = 0;
                      j < PFord_count (p->sem.sort.sortby);
                      j++)
                     if (LR(p)->schema.items[i].name
@@ -989,8 +1001,8 @@ opt_mvd (PFla_op_t *p)
 
             /* first check the dependencies of the left cross product input */
             sortby = false;
-            for (unsigned int i = 0; i < LL(p)->schema.count; i++)
-                for (unsigned int j = 0;
+            for (i = 0; i < LL(p)->schema.count; i++)
+                for (j = 0;
                      j < PFord_count (p->sem.sort.sortby);
                      j++)
                     if (LL(p)->schema.items[i].name
@@ -1012,8 +1024,8 @@ opt_mvd (PFla_op_t *p)
 
             /* then check the dependencies of the right cross product input */
             sortby = false;
-            for (unsigned int i = 0; i < LR(p)->schema.count; i++)
-                for (unsigned int j = 0;
+            for (i = 0; i < LR(p)->schema.count; i++)
+                for (j = 0;
                      j < PFord_count (p->sem.sort.sortby);
                      j++)
                     if (LR(p)->schema.items[i].name
@@ -1587,7 +1599,7 @@ opt_mvd (PFla_op_t *p)
             p->sem.proxy.kind == 1) {
             PFla_op_t *cross = L(p->sem.proxy.base1);
             PFla_op_t *lcross, *rcross;
-            unsigned int i, j, count = 0;
+            unsigned int count = 0;
             bool rewrite = false;
 
             /* first check the dependencies of the left cross product input */

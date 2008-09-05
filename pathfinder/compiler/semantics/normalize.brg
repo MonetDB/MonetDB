@@ -683,6 +683,9 @@ PFposition_safe_predicate(PFpnode_t *p, bool dots_allowed)
  * contains all the action code for the above burg patterns.
  */
 static bool
+do_reduce (PFpnode_t * p, unsigned int *varcount, int rule, PFpnode_t * kids[]);
+
+static bool
 reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
 {
     int           rule;           /* rule number that matches for this node */
@@ -691,9 +694,9 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
     PFpnode_t *   kids[MAX_KIDS]; /* leaf nodes of this rule */
     bool          rewritten;
     short         old_state_label;
-    PFpnode_t *   c;
+    unsigned short i;
 
-    /* guard against too dep recursion */
+    /* guard against too deep recursion */
     PFrecursion_fence();
 
     do {
@@ -703,7 +706,7 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
         /* PFinfo (OOPS_NOTICE, "match for rule %i", rule); */
 
         /* initialize the kids[] vector */
-        for (unsigned short i = 0; i < MAX_KIDS; i++)
+        for (i = 0; i < MAX_KIDS; i++)
             kids[i] = NULL;
 
         /*
@@ -716,7 +719,6 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
         /*
          * Recursively invoke compilation.  This means bottom-up compilation.
          */
-        unsigned short i;
         rewritten = false;
         for (i = 0; nts[i]; i++)
             if ((rewritten = reduce (kids[i], nts[i], varcount)))
@@ -745,20 +747,24 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
         }
     } while (rewritten);
 
-    rewritten = false;
+    return do_reduce (p, varcount, rule, kids);
+}
+
+static bool
+do_reduce (PFpnode_t * p, unsigned int *varcount, int rule, PFpnode_t * kids[])
+{
+    PFpnode_t * c;
 
     switch (rule) {
         /* DeclsImports: decl_imps (nil, DeclsImports) */
         case 8:
             *p = *R(p);
-            rewritten = true;
-            break;
+            return true;
 
         /* Expr: exprseq (empty_seq, ExprSingle) */
         case 55:
             *p = *(R(p));
-            rewritten = true;
-            break;
+            return true;
 
         /* Expr: exprseq (exprseq (Expr, OptExpr), OptExpr) */
         case 56:
@@ -767,8 +773,7 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
                        wire2 (p_exprseq, p->loc, LR(p), R(p)));
             *p = *c;
             relabel (p, kids);
-            rewritten = true;
-            break;
+            return true;
 
         /* QuantifiedExpr: some (binds (VarBinding, VarBindings),
                                  OptExpr) */
@@ -827,8 +832,7 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
             LR(c) = nil (p->loc);
             *p = *c;
             relabel (p, kids);
-            rewritten = true;
-            break;
+            return true;
 
         /* TypeswitchExpr: typeswitch (OptExpr,
                                        cases (CaseClause,
@@ -915,8 +919,8 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
                                      nil (RR(p)->loc))));
             *p = *c;
             relabel (p, kids);
-            rewritten = true;
-        } break;
+            return true;
+        }
 
 
         /* RelativePathExpr: step (NodeTest) */
@@ -931,8 +935,7 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
             c->child[0]->sem.axis = p->sem.axis;
             *p = *c;
             relabel (p, kids);
-            rewritten = true;
-            break;
+            return true;
 
         /* RelativePathExpr: locpath (StepExpr, RelativePathExpr) */
         case 171:
@@ -958,15 +961,14 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
                        LR(p));
                 *p = *c;
                 relabel (p, kids);
-                rewritten = true;
+                return true;
             } 
             break;
 
         /* OptContentExpr: contseq (empty_seq, empty_seq) */
         case 220:
             *p = *R(p);
-            rewritten = true;
-            break;
+            return true;
 
         /* OptContentExpr: contseq (contseq (OptContentExpr,
                                              OptContentExpr),
@@ -977,14 +979,13 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
                        wire2 (p_contseq, p->loc, LR(p), R(p)));
             *p = *c;
             relabel (p, kids);
-            rewritten = true;
-            break;
+            return true;
 
         default:
             break;
     }
 
-    return rewritten;
+    return false;
 }
 
 /*

@@ -163,12 +163,14 @@ binary_op (PFla_op_t *(*OP) (const PFla_op_t *, PFalg_att_t,
 }
 
 /* worker for PFmap_ori_names */
+static void do_map_ori_names (PFla_op_t *p, PFarray_t *map);
+
 static void
 map_ori_names (PFla_op_t *p, PFarray_t *map)
 {
-    PFla_op_t *res = NULL;
-
     assert (p);
+
+    PFrecursion_fence ();
 
     /* rewrite each node only once */
     if (SEEN(p))
@@ -179,6 +181,14 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
     /* apply name mapping for children bottom up */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         map_ori_names (p->child[i], map);
+
+    do_map_ori_names (p, map);
+}
+
+static void
+do_map_ori_names (PFla_op_t *p, PFarray_t *map)
+{
+    PFla_op_t *res = NULL;
 
     /* action code */
     switch (p->kind) {

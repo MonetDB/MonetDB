@@ -139,6 +139,8 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
     (void) dirty_vars;
 #endif
 
+    PFrecursion_fence ();
+
     switch (root->kind) {
 
         case m_seq:
@@ -477,12 +479,16 @@ mil_materialize_elimination (PFmil_t *n,
                              bool mark_used,
                              bool change)
 {
+    int i;
+
+    PFrecursion_fence ();
+
     assert (n);
     switch (n->kind) {
         case m_seq:
             /* descend in reverse pre-order, collect the used variables
              * from the end to beginning of the program. */
-            for (int i = MIL_MAXCHILD; --i >= 0;)
+            for (i = MIL_MAXCHILD; --i >= 0;)
                 if (n->child[i])
                     mil_materialize_elimination (n->child[i],
                                                  used_vars,
@@ -514,7 +520,7 @@ mil_materialize_elimination (PFmil_t *n,
         case m_mposjoin:
         case m_mvaljoin:
             /* The inputs to this operators may be un-materialized */
-            for (unsigned int i = 0; i < MIL_MAXCHILD && n->child[i]; i++)
+            for (i = 0; i < MIL_MAXCHILD && n->child[i]; i++)
                 mil_materialize_elimination (n->child[i],
                                              used_vars,
                                              false,
@@ -588,7 +594,7 @@ mil_materialize_elimination (PFmil_t *n,
             break;
 
         default:
-            for (unsigned int i = 0; i < MIL_MAXCHILD && n->child[i]; i++)
+            for (i = 0; i < MIL_MAXCHILD && n->child[i]; i++)
                 mil_materialize_elimination (n->child[i],
                                              used_vars,
                                              true,

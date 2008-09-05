@@ -614,10 +614,15 @@ modify_binary_op (PFla_op_t *p,
  * operator eventually collects other predicates and thus
  * becomes more selective.
  */
+static bool do_opt_mvd (PFla_op_t *p, bool modified);
+
 static bool
 opt_mvd (PFla_op_t *p)
 {
     bool modified = false;
+
+    PFrecursion_fence ();
+
     assert (p);
 
     /* rewrite each node only once */
@@ -629,6 +634,14 @@ opt_mvd (PFla_op_t *p)
     /* apply optimization for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         modified = opt_mvd (p->child[i]) || modified;
+
+    return do_opt_mvd (p, modified);
+}
+
+static bool
+do_opt_mvd (PFla_op_t *p, bool modified)
+{
+    unsigned i, j;
 
     /**
      * In the following action code we try to propagate thetajoin
@@ -764,9 +777,7 @@ opt_mvd (PFla_op_t *p)
             /* Split project operator and push it beyond the thetajoin. */
             if (is_tj (L(p))) {
                 PFarray_t    *pred = PFarray_copy (L(p)->sem.thetajoin_opt.pred);
-                unsigned int  i,
-                              j,
-                              count1 = 0,
+                unsigned int  count1 = 0,
                               count2 = 0;
                 PFalg_proj_t *proj_list1,
                              *proj_list2;
@@ -862,8 +873,8 @@ opt_mvd (PFla_op_t *p)
                                        sizeof (PFalg_proj_t));
                 count1 = 0;
 
-                for (unsigned int i = 0; i < LL(p)->schema.count; i++)
-                    for (unsigned int j = 0; j < p->sem.proj.count; j++)
+                for (i = 0; i < LL(p)->schema.count; i++)
+                    for (j = 0; j < p->sem.proj.count; j++)
                         if (LL(p)->schema.items[i].name
                             == p->sem.proj.items[j].old) {
                             proj_list1[count1++] = p->sem.proj.items[j];
@@ -874,8 +885,8 @@ opt_mvd (PFla_op_t *p)
                                        sizeof (PFalg_proj_t));
                 count2 = 0;
 
-                for (unsigned int i = 0; i < LR(p)->schema.count; i++)
-                    for (unsigned int j = 0; j < p->sem.proj.count; j++)
+                for (i = 0; i < LR(p)->schema.count; i++)
+                    for (j = 0; j < p->sem.proj.count; j++)
                         if (LR(p)->schema.items[i].name
                             == p->sem.proj.items[j].old) {
                             proj_list2[count2++] = p->sem.proj.items[j];
@@ -975,7 +986,7 @@ opt_mvd (PFla_op_t *p)
                     /* ... and update all the predicates
                        that are affected by the selection */
                     pred = p->sem.thetajoin_opt.pred;
-                    for (unsigned int i = 0; i < PFarray_last (pred); i++)
+                    for (i = 0; i < PFarray_last (pred); i++)
                         if (RES_VIS_AT (pred, i) && RES_AT (pred, i) == sel_att)
                             /* make the join condition persistent */
                             PERS_AT (pred, i) = true;
@@ -1000,10 +1011,10 @@ opt_mvd (PFla_op_t *p)
 
                 /* first check for the required columns
                    in the left thetajoin input */
-                for (unsigned int i = 0; i < LL(p)->schema.count; i++) {
+                for (i = 0; i < LL(p)->schema.count; i++) {
                     if (LL(p)->schema.items[i].name == p->sem.pos_sel.part)
                         lpart = true;
-                    for (unsigned int j = 0;
+                    for (j = 0;
                          j < PFord_count (p->sem.pos_sel.sortby);
                          j++)
                         if (LL(p)->schema.items[i].name
@@ -1016,10 +1027,10 @@ opt_mvd (PFla_op_t *p)
                 }
                 /* and then check for the required columns
                    in the right thetajoin input */
-                for (unsigned int i = 0; i < LR(p)->schema.count; i++) {
+                for (i = 0; i < LR(p)->schema.count; i++) {
                     if (LR(p)->schema.items[i].name == p->sem.pos_sel.part)
                         rpart = true;
-                    for (unsigned int j = 0;
+                    for (j = 0;
                          j < PFord_count (p->sem.pos_sel.sortby);
                          j++)
                         if (LR(p)->schema.items[i].name
@@ -1168,7 +1179,7 @@ opt_mvd (PFla_op_t *p)
                 bool switch_left = true;
                 bool switch_right = true;
 
-                for (unsigned int i = 0; i < p->sem.fun_1to1.refs.count; i++) {
+                for (i = 0; i < p->sem.fun_1to1.refs.count; i++) {
                     switch_left  = switch_left &&
                                    PFprop_ocol (LL(p),
                                                 p->sem.fun_1to1.refs.atts[i]);
@@ -1277,7 +1288,6 @@ opt_mvd (PFla_op_t *p)
                     PFalg_att_t res = p->sem.unary.res,
                                 att = p->sem.unary.att;
                     PFarray_t  *pred;
-                    unsigned int i;
                     PFalg_comp_t comp = alg_comp_eq;
 
                     /* make sure that column res is not used as join argument */
@@ -1415,10 +1425,10 @@ opt_mvd (PFla_op_t *p)
 
                 /* first check for the required columns
                    in the left thetajoin input */
-                for (unsigned int i = 0; i < LL(p)->schema.count; i++) {
+                for (i = 0; i < LL(p)->schema.count; i++) {
                     if (LL(p)->schema.items[i].name == p->sem.sort.part)
                         lpart = true;
-                    for (unsigned int j = 0;
+                    for (j = 0;
                          j < PFord_count (p->sem.sort.sortby);
                          j++)
                         if (LL(p)->schema.items[i].name
@@ -1431,10 +1441,10 @@ opt_mvd (PFla_op_t *p)
                 }
                 /* and then check for the required columns
                    in the right thetajoin input */
-                for (unsigned int i = 0; i < LR(p)->schema.count; i++) {
+                for (i = 0; i < LR(p)->schema.count; i++) {
                     if (LR(p)->schema.items[i].name == p->sem.sort.part)
                         rpart = true;
-                    for (unsigned int j = 0;
+                    for (j = 0;
                          j < PFord_count (p->sem.sort.sortby);
                          j++)
                         if (LR(p)->schema.items[i].name
@@ -1493,8 +1503,8 @@ opt_mvd (PFla_op_t *p)
 
                 /* first check for the required columns
                    in the left thetajoin input */
-                for (unsigned int i = 0; i < LL(p)->schema.count; i++)
-                    for (unsigned int j = 0;
+                for (i = 0; i < LL(p)->schema.count; i++)
+                    for (j = 0;
                          j < PFord_count (p->sem.sort.sortby);
                          j++)
                         if (LL(p)->schema.items[i].name
@@ -1507,8 +1517,8 @@ opt_mvd (PFla_op_t *p)
 
                 /* and then check for the required columns
                    in the right thetajoin input */
-                for (unsigned int i = 0; i < LR(p)->schema.count; i++)
-                    for (unsigned int j = 0;
+                for (i = 0; i < LR(p)->schema.count; i++)
+                    for (j = 0;
                          j < PFord_count (p->sem.sort.sortby);
                          j++)
                         if (LR(p)->schema.items[i].name
@@ -2024,7 +2034,7 @@ opt_mvd (PFla_op_t *p)
                 PFla_op_t *thetajoin = L(p->sem.proxy.base1);
                 PFla_op_t *lthetajoin, *rthetajoin;
                 PFla_op_t *ref = p->sem.proxy.ref;
-                unsigned int i, j, count = 0;
+                unsigned int count = 0;
                 bool rewrite = false;
                 bool t1_left = false;
                 PFarray_t *pred = thetajoin->sem.thetajoin_opt.pred;
