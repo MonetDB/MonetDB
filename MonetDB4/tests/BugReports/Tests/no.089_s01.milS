@@ -1,6 +1,0 @@
-module(url);
-bat("Server").print();
-bat("Server2").print();
-bat("Clients").print();
-bat("Clients2").print();
-quit();

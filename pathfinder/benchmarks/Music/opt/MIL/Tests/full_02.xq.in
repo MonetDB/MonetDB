@@ -1,3 +1,0 @@
-(: q2 'SELECT * FROM Assets WHERE TrackNr=1' :)
-import module namespace music = "http://www.cwi.nl/~boncz/music/opt/" at "$TSTTRGDIR/music.mil";
-music:AssetByTrackNr1("music.xml", 1000000000) 

@@ -1,9 +1,0 @@
-# The likeselect operation
-
-	t:= bat.new(:oid,:str);
-	bat.append(t,"hello world");
-	bat.append(t,"sleep well");
-	io.print(t);
-
-	b:bat[:oid,:bit]:= mal.multiplex("str","startsWith",t,"");
-	io.print(b);

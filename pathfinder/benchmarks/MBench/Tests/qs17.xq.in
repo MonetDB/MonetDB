@@ -1,6 +1,0 @@
-for $e in doc("$TSTTRGDIR/sf0.1.xml")//eNest[@aLevel=13] return
-  for $c in $e/eNest[@aSixteen=1 and position()=last()-1] return  
-  <parent aUnique1="{$e/@aUnique1}" aLevel="{$e/@aLevel}">
-    <child aUnique1="{$c/@aUnique1}" aLevel="{$c/@aLevel}" aSixteen="{$c/@aSixteen}">
-    </child>
-  </parent>
