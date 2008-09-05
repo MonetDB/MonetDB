@@ -1240,11 +1240,7 @@ isncnamechar (const unsigned char c)
             || (c >= (unsigned char) '\x61' && c <= (unsigned char) '\x7a')
             || (c >= (unsigned char) '\xc0' && c <= (unsigned char) '\xd6')
             || (c >= (unsigned char) '\xd8' && c <= (unsigned char) '\xf6')
-            || (c >= (unsigned char) '\xf8'
-#ifndef __CHAR_UNSIGNED__
-                && c <= (unsigned char) '\xff'
-#endif
-                )
+            || c >= (unsigned char) '\xf8'
             || (c >= (unsigned char) '\x30' && c <= (unsigned char) '\x39')
             || c == (unsigned char) '.'
             || c == (unsigned char) '-'
