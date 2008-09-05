@@ -3395,7 +3395,7 @@ PROC xmltab2(BAT[void,bat] ws, BAT[any,any] b) : BAT[void,oid]
   var attrid := new(void,oid,2*count(attr1)).seqbase(0@0).append(attr1.project(oid_nil)).append(attr1.project(oid_nil));
   attrid.replace(reverse([oid]([lng](reverse(attr_constr(attr1.project(at1qn),attr1,ws).fetch(1))).[*](2LL))));
   attrid.replace(reverse([oid]([lng](reverse(attr_constr(attr1.project(at2qn),attr2,ws).fetch(1))).[*](2LL).[+](1LL))));
-  return elem_constr(attr1.mark(1@0),attr1.project(eltqn), attrid.mirror().[lng]().[/](2LL).[oid](),
+  return elem_constr(attr1.mark(0@0),attr1.project(eltqn), attrid.mirror().[lng]().[/](2LL).[oid](),
                                                            attrid.project(oid_nil), attrid.project(oid_nil),
                                                            attrid, attrid.project(WS), ws).fetch(1);
 }
