@@ -46,10 +46,8 @@ sql_xmlelement(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int 
 	dnode *d = sym->data.lval->h;
 	char *tag = d->data.sval; 
 	dlist *ns_attrs_elms = d->next->data.lval; 
-	lng returning = d->next->next->data.ival;
 	stmt *ns_st = NULL, *attr_st = NULL, *res = NULL;
 
-	(void)returning;
 	if (ns_attrs_elms) {
 		symbol *ns = ns_attrs_elms->h->data.sym;
 		symbol *attr = ns_attrs_elms->h->next->data.sym;
@@ -59,9 +57,7 @@ sql_xmlelement(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int 
 		if (content) {
 			dnode *n;
 			dlist *cl = content->h->data.lval;
-			lng content_option = content->h->next->data.ival;
 
-			(void)content_option;
 			for (n=cl->h; n; n = n->next) {
 				symbol *c = n->data.sym;
 				sql_subtype *st; 
@@ -145,12 +141,7 @@ sql_xmlforest(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f
 	dnode *d = sym->data.lval->h;
 	symbol *ns = d->data.sym;
 	dlist *elms = d->next->data.lval;  
-	lng content_option = d->next->next->data.ival;
-	lng returning = d->next->next->next->data.ival;
 	stmt *ns_st, *attr_st, *res = NULL;
-
-	(void)content_option;
-	(void)returning;
 
 	if (ns) {
 		ns_st = sql_value_exp(sql, scp, ns, grp, subset, f, knd); 
@@ -216,10 +207,8 @@ sql_xmlcomment(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int 
 {
 	dnode *d = sym->data.lval->h;
 	symbol *comment = d->data.sym;
-	lng returning = d->next->data.ival;
 	stmt *comment_st;
 
-	(void)returning;
 	comment_st = sql_value_exp(sql, scp, comment, grp, subset, f, knd); 
 	if (!comment_st)
 		return NULL;
@@ -251,10 +240,8 @@ sql_xmlconcat(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f
 {
 	dnode *d = sym->data.lval->h;
 	dnode *en = d->data.lval->h;
-	lng returning = d->next->data.ival;
 	stmt *concat_st, *res = NULL;
 
-	(void)returning;
 	for (; en; en = en->next) {
 		symbol *c = en->data.sym;
 		concat_st = sql_value_exp(sql, scp, c, grp, subset, f, knd); 
@@ -275,10 +262,8 @@ sql_xmldocument(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int
 {
 	dnode *d = sym->data.lval->h;
 	symbol *val = d->data.sym;
-	lng returning = d->next->data.ival;
 	stmt *val_st;
 
-	(void)returning;
 	val_st = sql_value_exp(sql, scp, val, grp, subset, f, knd); 
 	if (!val_st)
 		return NULL;
@@ -291,10 +276,8 @@ sql_xmlpi(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f, ex
 	dnode *d = sym->data.lval->h;
 	char *target = d->data.sval;
 	symbol *val = d->next->data.sym;
-	lng returning = d->next->next->data.ival;
 	stmt *target_st, *val_st;
 
-	(void)returning;
 	target_st = stmt_atom_string(_strdup(target));
 	if (!val)
 		val_st = sql_value_exp(sql, scp, val, grp, subset, f, knd); 
@@ -313,10 +296,8 @@ sql_xmltext(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f, 
 {
 	dnode *d = sym->data.lval->h;
 	symbol *text = d->data.sym;
-	lng returning = d->next->data.ival;
 	stmt *text_st;
 
-	(void)returning;
 	text_st = sql_value_exp(sql, scp, text, grp, subset, f, knd); 
 	if (!text_st || (text_st = check_types(sql, &xml_type, text_st, type_equal)) == NULL) 
 		return NULL;
