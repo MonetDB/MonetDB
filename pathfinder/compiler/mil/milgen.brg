@@ -280,7 +280,7 @@ Twig:     content (Rel)                                            = 115 (10);
 Twig:     slim_content (Rel)                                       = 116 (10);
 Rel:      merge_adjacent (Rel)                                     = 117 (10);
 
-Rel:      error(Rel)                                               = 129 (10);
+Rel:      error (Rel)                                              = 129 (10);
 Rel:      cond_err (Rel, Rel)                                      = 130 (10);
 Rel:      cond_err (Rel, empty_tbl)                                = 131 (10);
 Rel:      trace (Rel, trace_msg (Rel, Map))                        = 135 (10);
@@ -475,6 +475,7 @@ impl_types (PFalg_simple_type_t ty)
         case aat_pre1:
         case aat_attr1:
         case aat_frag1:
+        case aat_error:
             return mty_oid;
 
         case aat_int:
@@ -8545,7 +8546,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             }
         }   break; /* fold) */
 
-        /* Rel:      error(Rel) */
+        /* Rel:      error (Rel) */
         case 129: /* fold( */
             execute (
                 if_ (eq (count (VAR (L(p)->env, p->sem.err.att, aat_str)),

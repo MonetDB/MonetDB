@@ -48,6 +48,9 @@
 #include "ordering.h"
 #include "properties.h"
 
+/* filter out dummy error columns */
+#define ERR_TYPE_MASK(t)  ((t) & ~aat_error)
+
 /** mnemonic for a sort specification list */
 #define sortby(...)     PFord_order_intro (__VA_ARGS__)
 
@@ -1061,9 +1064,11 @@ PFpa_append_union (const PFpa_op_t *n1, const PFpa_op_t *n2)
                  * different.
                  */
                 ret->schema.items[i] =
-                (struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
-                                             .type = n1->schema.items[i].type
-                                                 | n2->schema.items[j].type };
+                    (struct PFalg_schm_item_t)
+                        { .name = n1->schema.items[i].name,
+                          .type = ERR_TYPE_MASK (
+                                      n1->schema.items[i].type
+                                    | n2->schema.items[j].type) };
                 break;
             }
 
@@ -1165,9 +1170,11 @@ PFpa_merge_union (const PFpa_op_t *n1, const PFpa_op_t *n2,
                  * different.
                  */
                 ret->schema.items[i] =
-                (struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
-                                             .type = n1->schema.items[i].type
-                                                 | n2->schema.items[j].type };
+                    (struct PFalg_schm_item_t)
+                        { .name = n1->schema.items[i].name,
+                          .type = ERR_TYPE_MASK (
+                                      n1->schema.items[i].type
+                                    | n2->schema.items[j].type) };
                 break;
             }
 

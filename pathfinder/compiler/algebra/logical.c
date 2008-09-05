@@ -57,6 +57,8 @@
 /** include mnemonic names for constructor functions */
 #include "logical_mnemonic.h"
 
+/* filter out dummy error columns */
+#define ERR_TYPE_MASK(t)  ((t) & ~aat_error)
 
 /* Encapsulates initialization stuff common to binary comparison operators.  */
 static PFla_op_t *
@@ -1243,8 +1245,9 @@ set_operator (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
                     ret->schema.items[i] =
                         (struct PFalg_schm_item_t)
                             { .name = n1->schema.items[i].name,
-                              .type = n1->schema.items[i].type
-                                    | n2->schema.items[j].type };
+                              .type = ERR_TYPE_MASK (
+                                          n1->schema.items[i].type
+                                        | n2->schema.items[j].type) };
                 else if (kind == la_intersect) {
                     /* return empty table in case of
                        a complete column type mismatch */
@@ -3611,7 +3614,7 @@ PFla_error_ (const PFla_op_t *n, PFalg_att_t att, PFalg_simple_type_t att_ty)
 PFla_op_t *
 PFla_error (const PFla_op_t *n, PFalg_att_t att)
 {
-    return PFla_error_ (n, att, 0);
+    return PFla_error_ (n, att, aat_error);
 }
 
 /**

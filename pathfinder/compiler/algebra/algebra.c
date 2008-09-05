@@ -771,6 +771,7 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
         case aat_path:       return "docmgmt_path";
         case aat_docnm:      return "docmgmt_name";
         case aat_colnm:      return "docmgmt_coll";
+        case aat_error:      return "error";
         default:
             if (type & aat_update)
                 return "update";

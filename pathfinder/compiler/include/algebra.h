@@ -94,6 +94,8 @@
 
 #define aat_charseq     0x00100000 /**< this type represents the CHAR type in SQL */
 #define aat_update      0x00100000 /**< and it represents the update kind in MIL */
+#define aat_error       0x00200000 /**< this type represents an error */
+
 /**
  * The following types represent the first parameter of an update function
  * (which is a always of kind node). This allows an update item to correctly
