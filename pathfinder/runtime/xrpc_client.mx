@@ -390,7 +390,6 @@ PROC doRPC(
     #include <netinet/in.h> /* hton and ntoh */
     #include <arpa/inet.h>  /* dotted IP addr to and from 32-bits int */
     #include <netdb.h>      /* gethostbyname() */
-    #include <errno.h>
     #include <ctype.h>
 #endif
 #include "pathfinder.h"
