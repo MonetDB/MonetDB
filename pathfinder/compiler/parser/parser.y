@@ -172,7 +172,7 @@ typedef struct module_t {
  * abstract syntax tree must be altered, i.e., we do not
  * create a text node but an empty sequence node.
  */
-static bool is_whitespace (char *s);
+static bool is_whitespace (unsigned char *s);
 
 /* recursively flatten a location path @a p */
 static PFpnode_t *flatten_locpath (PFpnode_t *p, PFpnode_t *r);
@@ -2787,7 +2787,7 @@ XRPCCall                  : "execute at" "{" ExprSingle "}" "{" FunctionCall "}"
  * @return true if @c s consists of whitespace only
  */
 static bool
-is_whitespace (char *s)
+is_whitespace (unsigned char *s)
 {
     while (*s)
         if (! isspace (*s))
