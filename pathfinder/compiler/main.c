@@ -627,6 +627,12 @@ main (int argc, char *argv[])
     /* when an assertion fails, we do not want a pop-up window */
     (void) signal (SIGABRT, catchabort);
     _set_abort_behavior (0, _CALL_REPORTFAULT|_WRITE_ABORT_MSG);
+
+#ifndef NO_STACK_CHECK          /* define to not check for recursion depth */
+    /* the default Windows stack is 1 MiB, so give it 3/4 of that
+     * above (below) the address of our argument */
+    PFmaxstack = (char *)  &argc - (3 << 18);
+#endif
 #endif
 
  {

@@ -310,8 +310,8 @@ PFscanner_init (char *buf)
 /* forward declarations */
 static char * entity_ref (const char *s, char **endptr);
 static char *extract_string (const char *s);
-static PFqname_raw_t extract_qname (const char *s, unsigned int index);
-static char *extract_ncname (const char *s, unsigned int index);
+static PFqname_raw_t extract_qname (const unsigned char *s, unsigned int index);
+static char *extract_ncname (const unsigned char *s, unsigned int index);
 
 %}
 
@@ -628,17 +628,17 @@ _                                {S}
 "processing-instruction"{_}?"{"    { pushState (OPERATOR);
                                      pf_yield (pi_lbrace); }
 "element"{_}{QName}{_}?"{"         { pflval.qname_raw
-                                       = extract_qname (yytext, 1);
+                               = extract_qname ((unsigned char *) yytext, 1);
                                      pushState (OPERATOR);
                                      pf_yield (Element_QName_LBrace);
                                    }
 "attribute"{_}{QName}{_}?"{"       { pflval.qname_raw
-                                       = extract_qname (yytext, 1);
+                                       = extract_qname ((unsigned char *) yytext, 1);
                                      pushState (OPERATOR);
                                      pf_yield (Attribute_QName_LBrace);
                                    }
 "processing-instruction"{_}{NCName}{_}?"{" {
-                                     pflval.str = extract_ncname (yytext, 1);
+                                     pflval.str = extract_ncname ((unsigned char *) yytext, 1);
                                      pushState (OPERATOR);
                                      pf_yield (PI_NCName_LBrace);
                                    }
@@ -664,7 +664,7 @@ _                                {S}
 "transform"{_}"copy"{_}"$"         { pf_yield (transform_copy_dollar); }
 
 {QName}{_}?"("/[^:]                { pflval.qname_raw
-                                       = extract_qname (yytext, 0);
+                                       = extract_qname ((unsigned char *) yytext, 0);
                                      pf_yield (QName_LParen);
                                    }
 {IntegerLiteral}                   { pflval.num = strtoll (yytext, (char **) 0, 10);
@@ -1203,7 +1203,7 @@ extract_string (const char *s)
     end = start;
 
     while (s[++end]) {
-        /* test for quotes/apostrophs */
+        /* test for quotes/apostrophes */
         if (s[end] == s[start]) {
             if (s[end + 1] && s[end] == s[end+1])
                 *((char *) PFarray_at (ret, i++)) = s[end++];
@@ -1234,19 +1234,22 @@ extract_string (const char *s)
  * (See also the lex pattern `NCNameChar' above.)
  */
 static bool
-isncnamechar (const char c)
+isncnamechar (const unsigned char c)
 {
-    return ((c >= '\x41' && c <= '\x5a')
-            || (c >= '\x61' && c <= '\x7a')
-            || (c >= '\xc0' && c <= '\xd6')
-            || (c >= '\xd8' && c <= '\xf6')
-            || (c >= '\xf8'
+    return ((c >= (unsigned char) '\x41' && c <= (unsigned char) '\x5a')
+            || (c >= (unsigned char) '\x61' && c <= (unsigned char) '\x7a')
+            || (c >= (unsigned char) '\xc0' && c <= (unsigned char) '\xd6')
+            || (c >= (unsigned char) '\xd8' && c <= (unsigned char) '\xf6')
+            || (c >= (unsigned char) '\xf8'
 #ifndef __CHAR_UNSIGNED__
-                && c <= '\xff'
+                && c <= (unsigned char) '\xff'
 #endif
                 )
-            || (c >= '\x30' && c <= '\x39')
-            || c == '.' || c == '-' || c == '_' || c == '\xb7');
+            || (c >= (unsigned char) '\x30' && c <= (unsigned char) '\x39')
+            || c == (unsigned char) '.'
+            || c == (unsigned char) '-'
+            || c == (unsigned char) '_'
+            || c == (unsigned char) '\xb7');
 }
 
 /**
@@ -1254,7 +1257,7 @@ isncnamechar (const char c)
  * it as a QName.
  */
 static PFqname_raw_t
-extract_qname (const char *s, unsigned int index)
+extract_qname (const unsigned char *s, unsigned int index)
 {
     unsigned int start = 0;
     unsigned int end;
@@ -1305,7 +1308,7 @@ extract_qname (const char *s, unsigned int index)
                              && s[end] != '('; end++)
         /* do nothing */;
 
-    return PFqname_raw (PFstrndup (s + start, end - start));
+    return PFqname_raw (PFstrndup ((const char *) s + start, end - start));
 }
 
 /**
@@ -1313,7 +1316,7 @@ extract_qname (const char *s, unsigned int index)
  * it as a string.
  */
 static char *
-extract_ncname (const char *s, unsigned int index)
+extract_ncname (const unsigned char *s, unsigned int index)
 {
     unsigned int start = 0;
     unsigned int end;
@@ -1364,7 +1367,7 @@ extract_ncname (const char *s, unsigned int index)
                              && s[end] != '('; end++)
         /* do nothing */;
 
-    return PFstrndup (s + start, end - start);
+    return PFstrndup ((const char *) s + start, end - start);
 }
 
 /* vim:set shiftwidth=4 expandtab: */
