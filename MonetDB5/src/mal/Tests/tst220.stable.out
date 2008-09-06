@@ -93,7 +93,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.printf("after assignment refcount =%d[2]\n",i);# 12 _15:void := IOprint_formatted_int(_16:str, i:int) 
 #re-use a bat variable 
     b3 := b;                            # 14 b3:bat[:int,:str] := b:bat[:int,:str] {G}
-    cnt := aggr.count(b3);              # 15 cnt:lng := ALGcount_bat(b3:bat[:int,:str]) 
+    cnt := aggr.count(b3);              # 15 cnt:wrd := ALGcount_bat(b3:bat[:int,:str]) 
 # forced use 
     i := bbp.getLRefCount(b);           # 17 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
     io.printf("after 2nd assignment refcount =%d[3]\n",i);# 18 _21:void := IOprint_formatted_int(_22:str, i:int) 

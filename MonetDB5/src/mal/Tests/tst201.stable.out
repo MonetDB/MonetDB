@@ -251,8 +251,8 @@ exit MALException:str ;                 # 60 MALException:str
 #b.insert("the",1); 
     v35 := bat.insert(b,".",10@0);      # 75 v35:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _96:str, _97:oid) {G}
 #b.insert(".",10); 
-    v36 := aggr.count(b);               # 77 v36:int := ALGcount_bat(b:bat[:str,:oid]) 
-    v37 := io.print(v36);               # 78 v37:void := IOprint_val(v36:int) 
+    v36 := aggr.count(b);               # 77 v36:wrd := ALGcount_bat(b:bat[:str,:oid]) 
+    v37 := io.print(v36);               # 78 v37:void := IOprint_val(v36:wrd) 
 #b.count.print; 
 ## Lets cut out a few sections 
     v38 := algebra.select(b,2@0,4@0);   # 81 v38:bat[:str,:oid] := ALGselect(b:bat[:str,:oid], _113:oid, _90:oid) {G}

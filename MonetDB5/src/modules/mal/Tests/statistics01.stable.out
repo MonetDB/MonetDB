@@ -76,8 +76,8 @@ catch MALException:str ;                # 20 MALException:str {J24}
 exit MALException:str ;                 # 24 MALException:str 
     io.print("histogram");              # 25 _25:void := IOprint_val(_26:str) 
     io.print(h);                        # 26 _27:void := IOprint_val(h:bat[:any,:any]) 
-    hc := aggr.count(h);                # 27 hc:lng := ALGcount_bat(h:bat[:any,:any]) 
-    io.print(hc);                       # 28 _29:void := IOprint_val(hc:lng) 
+    hc := aggr.count(h);                # 27 hc:wrd := ALGcount_bat(h:bat[:any,:any]) 
+    io.print(hc);                       # 28 _29:void := IOprint_val(hc:wrd) 
     statistics.discard("timezones");    # 29 _30:void := STATdiscard(_3:str) 
     statistics.epilogue();              # 30 _31:void := STATepilogue() 
 #d:= bbp.getRefCount();

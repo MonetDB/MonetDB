@@ -1044,7 +1044,7 @@ function txtsim.str2qgrams(s:str):bat[:oid,:str];
     last := " ";
     bat.insert(b,"#",nil:oid);
     bat.insert(b,"#",nil:oid);
-	cnt:= 0:lng;
+	cnt:= 0:wrd;
     id := calc.oid(cnt);
     barrier B:= calc.<(i,len);
   	sstr := str.string(s,i,1);

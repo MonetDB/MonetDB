@@ -97,6 +97,8 @@ pattern printf(format:str,val:bit):void
 address IOprint_formatted_bit;
 pattern printf(format:str,val:chr):void
 address IOprint_formatted_chr;
+pattern printf(format:str,val:wrd):void
+address IOprint_formatted_int;
 pattern printf(format:str,val:int):void
 address IOprint_formatted_int;
 pattern printf(format:str,val:sht):void

@@ -188,10 +188,10 @@ command max(b:bat[:any_2,:any_1], e:bat[:any_2,:any_3]) :bat[:any_2,:any_1]
 address GRPmax
 comment "Grouped tail maximum";
 
-command count(b:bat[:any_2,:any_1], e:bat[:any_2,:any_3], nonils:bit) :bat[:any_2,:int] 
+command count(b:bat[:any_2,:any_1], e:bat[:any_2,:any_3], nonils:bit) :bat[:any_2,:lng] 
 address GRPaggr_count
 comment "Grouped count";
-command size(b:bat[:any_2,:bit], e:bat[:any_2,:any_1]) :bat[:any_2,:wrd] 
+command size(b:bat[:any_2,:bit], e:bat[:any_2,:any_1]) :bat[:any_2,:lng] 
 address GRPsize
 comment "Grouped count of true values";
 
@@ -2355,7 +2355,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 	}
 	@:chkHeader(e,GRPaggr_count)@
 
-	bn = BATnew(e->htype, TYPE_int, BATcount(e));
+	bn = BATnew(e->htype, TYPE_lng, BATcount(e));
 	if (bn == NULL)
 		throw(MAL, "group.count", "Cannot create descriptor");
 	btt = b->ttype;

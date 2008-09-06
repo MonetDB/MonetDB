@@ -87,7 +87,6 @@ comment "Grouped tail average on @1";
 
 @-
 We may have to extend the signatures to all possible {void,oid} combos
-The groupings still assume that each of them has less the 2^31 elements.
 @mal
 @:sum_avg_signatures(bte)@
 @:sum_avg_signatures(sht)@
@@ -111,29 +110,29 @@ command max(b:bat[:oid,:any_1], g:bat[:oid,:oid], e:bat[:oid,:any_2])
 address AX3aggrX3_max3;
 
 command count(b:bat[:oid,:any_1], e:bat[:oid,:any_2], ignorenils:bit)
-	:bat[:oid,:int] 
+	:bat[:oid,:wrd] 
 address AX3aggrX3_count
 comment "Grouped count";
 
 command count(b:bat[:oid,:any_1], g:bat[:oid,:oid], e:bat[:oid,:any_2], 
-		nonils:bit) :bat[:void,:int] 
+		nonils:bit) :bat[:void,:wrd] 
 address AX3aggrX3_count3;
 
 command size(b:bat[:void,:bit], e:bat[:void,:any_1]) :bat[:void,:wrd] 
 address AX3aggrX3_size
 comment "Grouped count of true values";
 
-command count(b:bat[:void,:any_1], e:bat[:oid,:any_2]) :bat[:void,:int] 
+command count(b:bat[:void,:any_1], e:bat[:oid,:any_2]) :bat[:void,:wrd] 
 address AX3aggrX3_count2Nils
 comment "Grouped count";
-command count(b:bat[:void,:any_1], e:bat[:void,:any_2]) :bat[:void,:int] 
+command count(b:bat[:void,:any_1], e:bat[:void,:any_2]) :bat[:void,:wrd] 
 address AX3aggrX3_count2Nils;
 
-command count_no_nil(b:bat[:oid,:any_1],e:bat[:oid,:any_1]):bat[:oid,:int]
+command count_no_nil(b:bat[:oid,:any_1],e:bat[:oid,:any_1]):bat[:oid,:wrd]
 address AX3count_no_nil2;
 
 command count(b:bat[:oid,:any_1], g:bat[:oid,:oid], e:bat[:oid,:any_2])
-	:bat[:oid,:int] 
+	:bat[:oid,:wrd] 
 address AX3aggrX3_count3Nils
 comment "Grouped count";
 
@@ -1073,12 +1072,12 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	    (!ignore_nils || b->T->nonil)) {
 		/* simply return counts with one */
 		int one = 1;
-		bn = BATconst(b, TYPE_int, &one);
+		bn = BATconst(b, TYPE_wrd, &one);
 		*ret = bn;
 		return GDK_SUCCEED;
 	}
 
- 	bn = BATnew(e->htype, TYPE_int, BATcount(e));
+ 	bn = BATnew(e->htype, TYPE_wrd, BATcount(e));
 	bni = bat_iterator(bn);
 	if (bn == NULL)
 		return GDK_FAIL;
@@ -2175,11 +2174,11 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 	    (!ignore_nils || b->T->nonil)) {
 		/* simply return counts with one */
 		int one = 1;
-		bn = BATconst(b, TYPE_int, &one);
+		bn = BATconst(b, TYPE_wrd, &one);
 		*ret = bn;
 		return GDK_SUCCEED;
 	}
- 	bn = BATnew(e->htype, TYPE_int, BATcount(e));
+ 	bn = BATnew(e->htype, TYPE_wrd, BATcount(e));
 	bni = bat_iterator(bn);
 	if (bn == NULL)
 		return GDK_FAIL;

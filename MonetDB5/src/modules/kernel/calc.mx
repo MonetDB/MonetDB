@@ -154,28 +154,39 @@ the least interesting one is pushed onto the symbol table stack first.
 		@:cmp_ops(chr,bte)@
 		@:cmp_ops(chr,sht)@
 		@:cmp_ops(chr,int)@
+		@:cmp_ops(chr,wrd)@
 		@:cmp_ops(chr,lng)@
 
 		@:cmp_ops(bte,chr)@
 		@:cmp_ops(bte,bte)@
 		@:cmp_ops(bte,sht)@
 		@:cmp_ops(bte,int)@
+		@:cmp_ops(bte,wrd)@
 		@:cmp_ops(bte,lng)@
 
 		@:cmp_ops(sht,chr)@
 		@:cmp_ops(sht,bte)@
 		@:cmp_ops(sht,sht)@
+		@:cmp_ops(sht,wrd)@
 		@:cmp_ops(sht,int)@
 		@:cmp_ops(sht,lng)@
 
+		@:cmp_ops(wrd,chr)@
+		@:cmp_ops(wrd,bte)@
+		@:cmp_ops(wrd,sht)@
+		@:cmp_ops(wrd,wrd)@
+		@:cmp_ops(wrd,int)@
+		@:cmp_ops(wrd,lng)@
+
 		@:cmp_ops(int,chr)@
+		@:cmp_ops(int,wrd)@
 		@:cmp_ops(int,bte)@
 		@:cmp_ops(int,sht)@
 		@:cmp_ops(int,int)@
 		@:cmp_ops(int,lng)@
 
 		@:cmp_ops(lng,chr)@
-		@:cmp_ops(lng,bte)@
+		@:cmp_ops(wrd,bte)@
 		@:cmp_ops(lng,sht)@
 		@:cmp_ops(lng,int)@
 		@:cmp_ops(lng,lng)@
@@ -299,6 +310,7 @@ The coercions described below ensure that there is never any information loss.
 	@:mal_binary_ops(bte,bte)@
 	@:mal_binary_ops(sht,sht)@
 	@:mal_binary_ops(int,int)@
+	@:mal_binary_ops(wrd,wrd)@
 	@:mal_binary_ops(oid,oid)@
 	@:mal_binary_ops(flt,flt)@
 	@:mal_binary_ops(lng,lng)@
@@ -355,13 +367,14 @@ Coercion functions are typical used in multiplex calls.
 	@:scalar_coercion(bit)@
 	@:scalar_coercion(chr)@
 	@:scalar_coercion(bte)@
-	@:scalar_coercion(bte)@
+	@:scalar_coercion(wrd)@
 	@:scalar_coercion(lng)@
 	@:scalar_coercion(int)@
 	@:scalar_coercion(sht)@
 
 	@:mal_coercion(oid,oid)@
 	@:mal_coercion(oid,lng)@
+	@:mal_coercion(oid,wrd)@
 	@:mal_coercion(oid,bte)@
 	@:mal_coercion(oid,sht)@
 	@:mal_coercion(oid,int)@
@@ -650,6 +663,7 @@ str CALCbinary@1_NO_NIL@3(@3 *res , @3 *a, @3 *b ) {
 @:calc_min_max(bte)@
 @:calc_min_max(sht)@
 @:calc_min_max(int)@
+@:calc_min_max(wrd)@
 @:calc_min_max(oid)@
 @:calc_min_max(flt)@
 @:calc_min_max(dbl)@
@@ -871,11 +885,13 @@ str CALCcomp@4@2@3(bit *retval, @2 *v1, @3 *v2){
 		@:c_comp_op(@1,chr,bte,@2)@
 		@:c_comp_op(@1,chr,sht,@2)@
 		@:c_comp_op(@1,chr,int,@2)@
+		@:c_comp_op(@1,chr,wrd,@2)@
 		@:c_comp_op(@1,chr,lng,@2)@
 
 		@:c_comp_op(@1,bte,chr,@2)@
 		@:c_comp_op(@1,bte,bte,@2)@
 		@:c_comp_op(@1,bte,sht,@2)@
+		@:c_comp_op(@1,bte,wrd,@2)@
 		@:c_comp_op(@1,bte,int,@2)@
 		@:c_comp_op(@1,bte,lng,@2)@
 
@@ -883,6 +899,7 @@ str CALCcomp@4@2@3(bit *retval, @2 *v1, @3 *v2){
 		@:c_comp_op(@1,bit,chr,@2)@
 		@:c_comp_op(@1,bit,bte,@2)@
 		@:c_comp_op(@1,bit,sht,@2)@
+		@:c_comp_op(@1,bit,wrd,@2)@
 		@:c_comp_op(@1,bit,int,@2)@
 		@:c_comp_op(@1,bit,lng,@2)@
 
@@ -890,18 +907,28 @@ str CALCcomp@4@2@3(bit *retval, @2 *v1, @3 *v2){
 		@:c_comp_op(@1,sht,bte,@2)@
 		@:c_comp_op(@1,sht,sht,@2)@
 		@:c_comp_op(@1,sht,int,@2)@
+		@:c_comp_op(@1,sht,wrd,@2)@
 		@:c_comp_op(@1,sht,lng,@2)@
 
 		@:c_comp_op(@1,int,chr,@2)@
 		@:c_comp_op(@1,int,bte,@2)@
 		@:c_comp_op(@1,int,sht,@2)@
 		@:c_comp_op(@1,int,int,@2)@
+		@:c_comp_op(@1,int,wrd,@2)@
 		@:c_comp_op(@1,int,lng,@2)@
+
+		@:c_comp_op(@1,wrd,chr,@2)@
+		@:c_comp_op(@1,wrd,bte,@2)@
+		@:c_comp_op(@1,wrd,sht,@2)@
+		@:c_comp_op(@1,wrd,int,@2)@
+		@:c_comp_op(@1,wrd,wrd,@2)@
+		@:c_comp_op(@1,wrd,lng,@2)@
 
 		@:c_comp_op(@1,lng,chr,@2)@
 		@:c_comp_op(@1,lng,bte,@2)@
 		@:c_comp_op(@1,lng,sht,@2)@
 		@:c_comp_op(@1,lng,int,@2)@
+		@:c_comp_op(@1,lng,wrd,@2)@
 		@:c_comp_op(@1,lng,lng,@2)@
 
 calc_export str CALCcomp@2strstr(bit *retval, str *s1, str *s2);
@@ -934,6 +961,7 @@ str CALCcomp@2any(bit *retval, ptr *v1, int tpe, ptr *v2){
 @:c_between_op(flt)@
 @:c_between_op(dbl)@
 @:c_between_op(lng)@
+@:c_between_op(wrd)@
 calc_export str CALCcompBetweenstr(bit *retval, str *val, str *low, str *high);
 str
 CALCcompBetweenstr(bit *retval, str *val, str *low, str *high)

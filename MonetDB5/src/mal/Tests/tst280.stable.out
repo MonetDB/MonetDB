@@ -47,9 +47,9 @@ end pow;	# 4
 function user.tst(A2:bat[:oid,:int],A3:bat[:oid,:int]):bat[:oid,:int];#  0 tst:bat[:oid,:int] := user.tst(A2:bat[:oid,:int], A3:bat[:oid,:int]) {G}
     io.print(A2);                       #  1 _3:void := IOprint_val(A2:bat[:oid,:int]) 
     resB := bat.new(:oid,:int);         #  2 resB:bat[:oid,:int] := CMDBATnew(_5:oid, _6:int) {G}
-    lim := aggr.count(A2);              #  3 lim:lng := ALGcount_bat(A2:bat[:oid,:int]) 
-    io.printf("count %d\n",lim);        #  4 _8:void := IOprint_formatted_lng(_9:str, lim:lng) 
-    l := calc.lng(lim);                 #  5 l:lng := CALClng2lng(lim:lng) 
+    lim := aggr.count(A2);              #  3 lim:wrd := ALGcount_bat(A2:bat[:oid,:int]) 
+    io.printf("count %d\n",lim);        #  4 _8:void := IOprint_formatted_int(_9:str, lim:wrd) 
+    l := calc.lng(lim);                 #  5 l:lng := CALCwrd2lng(lim:wrd) 
 barrier (mloop,m) := language.newRange(0:lng);#  6 (mloop:bit, m:lng) := RNGnewRange_lng(_13:lng) {J17}
     io.printf("loopindex %d\n",m);      #  7 _14:void := IOprint_formatted_lng(_15:str, m:lng) 
     B2 := algebra.fetch(A2,m);          #  8 B2:int := ALGfetch(A2:bat[:oid,:int], m:lng) 

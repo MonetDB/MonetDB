@@ -50,17 +50,17 @@ barrier (k,v) := language.newRange(0:lng);#  4 (k:bit, v:lng) := RNGnewRange_lng
     bat.insert(b,v,v);                  #  5 _8:bat[:lng,:lng] := BKCinsert_bun(b:bat[:lng,:lng], v:lng, v:lng) {G}
     redo (k,v) := language.nextElement(1:lng,100:lng);#  6 (k:bit, v:lng) := RNGnextElement_lng(_9:lng, _10:lng) {J5}
 exit (k,v);                             #  7 (k:bit, v:lng) 
-    i := aggr.count(b);                 #  8 i:lng := ALGcount_bat(b:bat[:lng,:lng]) 
-    io.print(i);                        #  9 _12:void := IOprint_val(i:lng) 
+    i := aggr.count(b);                 #  8 i:wrd := ALGcount_bat(b:bat[:lng,:lng]) 
+    io.print(i);                        #  9 _12:void := IOprint_val(i:wrd) 
     c := algebra.select(b,0:lng,9:lng); # 10 c:bat[:lng,:lng] := ALGselect(b:bat[:lng,:lng], _7:lng, _14:lng) {G}
-    i := aggr.count(c);                 # 11 i:lng := ALGcount_bat(c:bat[:lng,:lng]) 
-    io.print(i);                        # 12 _15:void := IOprint_val(i:lng) 
+    i := aggr.count(c);                 # 11 i:wrd := ALGcount_bat(c:bat[:lng,:lng]) 
+    io.print(i);                        # 12 _15:void := IOprint_val(i:wrd) 
     d := algebra.select(b,0:lng,49:lng);# 13 d:bat[:lng,:lng] := ALGselect(b:bat[:lng,:lng], _7:lng, _17:lng) {G}
-    i := aggr.count(d);                 # 14 i:lng := ALGcount_bat(d:bat[:lng,:lng]) 
-    io.print(i);                        # 15 _18:void := IOprint_val(i:lng) 
+    i := aggr.count(d);                 # 14 i:wrd := ALGcount_bat(d:bat[:lng,:lng]) 
+    io.print(i);                        # 15 _18:void := IOprint_val(i:wrd) 
     zz := algebra.joinPath(b,c,d);      # 16 zz:bat[:any,:any] := ALGjoinPath(b:bat[:lng,:lng], c:bat[:lng,:lng], d:bat[:lng,:lng]) {G}
-    i := aggr.count(zz);                # 17 i:lng := ALGcount_bat(zz:bat[:any,:any]) 
-    io.print(i);                        # 18 _20:void := IOprint_val(i:lng) 
+    i := aggr.count(zz);                # 17 i:wrd := ALGcount_bat(zz:bat[:any,:any]) 
+    io.print(i);                        # 18 _20:void := IOprint_val(i:wrd) 
 #to be detected by join inversion 
 #z:= joinPath(b,c); 
 #zz:= joinPath(zz,d); 
