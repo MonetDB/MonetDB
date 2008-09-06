@@ -18,24 +18,27 @@ function user.foo():void;               #  0 foo:void := user.foo() {G}
     cnt := 0:lng;                       #  2 cnt:lng := _5:lng 
 barrier d := true;                      #  3 d:bit := _7:bit {J11}
     f := 1;                             #  4 f:int := _9:int 
-    cnt := aggr.count(b);               #  5 cnt:lng := aggr.count(b:bat[:oid,:int]) {U}
+    cnt := aggr.count(b);               #  5 cnt:lng := ALGcount_bat(b:bat[:oid,:int]) 
     redo d := false;                    #  6 d:bit := _10:bit {J4}
 barrier e := true;                      #  7 e:bit := _7:bit {J9}
     g := 1;                             #  8 g:int := _9:int 
 exit e;                                 #  9 e:bit 
     io.print(g);                        # 10 _13:void := IOprint_val(g:int) 
 exit d;                                 # 11 d:bit 
-    cnt := aggr.count(b);               # 12 cnt:lng := aggr.count(b:bat[:oid,:int]) {U}
+    cnt := aggr.count(b);               # 12 cnt:lng := ALGcount_bat(b:bat[:oid,:int]) 
     id := calc.oid(cnt);                # 13 id:oid := CALClng2oid(cnt:lng) 
     io.print(f);                        # 14 _15:void := IOprint_val(f:int) 
     io.print(g);                        # 15 _16:void := IOprint_val(g:int) 
 end foo;	# 16  
 
 function user.main():void;              #  0 main:void := user.main() 
-    user.foo();                         #  1 _1:void := user.foo() {U}
+    user.foo();                         #  1 _1:void := user.foo() 
 end main;	# 2  
+[ 1 ]
+[ 1 ]
+[ 1 ]
 
-# 12:49:32 >  
-# 12:49:32 >  Done.
-# 12:49:32 >  
+# 08:57:31 >  
+# 08:57:31 >  Done.
+# 08:57:31 >  
 

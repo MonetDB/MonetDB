@@ -45,8 +45,8 @@ function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     constraints.emptySet(x8{notnil=true,rows=0,bid=771});#  5 _16:void := CemptySet(x8:bat[:oid,:int]) 
     x11{rows=0} := algebra.markT(x1{notnil=true,rows=0,bid=765},0@0);#  6 x11:bat[:oid,:oid] := ALGtmark(x1:bat[:oid,:int], _18:oid) {G}
     x12{rows=0} := bat.reverse(x11{rows=0});#  7 x12:bat[:oid,:oid] := BKCreverse(x11:bat[:oid,:oid]) {G}
-    x13{rows=1} := aggr.count(x12{rows=0});#  8 x13:int := ALGcount_bat(x12:bat[:oid,:oid]) 
-    sql.exportValue(1,"sys.","countx","int",32,0,6,x13{rows=1},"");#  9 _21:void := MDBdummy(_11:int, _22:str, _23:str, _24:str, _25:int, _4:int, _26:int, x13:int, _27:str) 
+    x13{rows=1} := aggr.count(x12{rows=0});#  8 x13:lng := ALGcount_bat(x12:bat[:oid,:oid]) 
+    sql.exportValue(1,"sys.","countx","int",32,0,6,x13{rows=1},"");#  9 _21:void := MDBdummy(_11:int, _22:str, _23:str, _24:str, _25:int, _4:int, _26:int, x13:lng, _27:str) 
 end query;	# 10  
 #optimizer.partitions("sql","query");
 #mdb.list("sql","query");
@@ -68,8 +68,8 @@ function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     bpm.emptySet(bpm13);                #  7 _16:void := BPMemptySet(bpm13:bat[:oid,:int]) 
     x11{rows=0} := algebra.markT(x1{notnil=true,rows=0,bid=765},0@0);#  8 x11:bat[:oid,:oid] := ALGtmark(x1:bat[:oid,:int], _18:oid) {G}
     x12{rows=0} := bat.reverse(x11{rows=0});#  9 x12:bat[:oid,:oid] := BKCreverse(x11:bat[:oid,:oid]) {G}
-    x13{rows=1} := aggr.count(x12{rows=0});# 10 x13:int := ALGcount_bat(x12:bat[:oid,:oid]) 
-    sql.exportValue(1,"sys.","countx","int",32,0,6,x13{rows=1},"");# 11 _21:void := MDBdummy(_11:int, _22:str, _23:str, _24:str, _25:int, _4:int, _26:int, x13:int, _27:str) 
+    x13{rows=1} := aggr.count(x12{rows=0});# 10 x13:lng := ALGcount_bat(x12:bat[:oid,:oid]) 
+    sql.exportValue(1,"sys.","countx","int",32,0,6,x13{rows=1},"");# 11 _21:void := MDBdummy(_11:int, _22:str, _23:str, _24:str, _25:int, _4:int, _26:int, x13:lng, _27:str) 
 catch SQLexception;                     # 12 SQLexception:str {J16}
     bpm.garbage(bpm9);                  # 13 _34:void := BPMgarbage(bpm9:bat[:oid,:int]) 
     bpm.garbage(bpm13);                 # 14 _35:void := BPMgarbage(bpm13:bat[:oid,:int]) 

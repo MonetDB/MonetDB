@@ -10,14 +10,13 @@ stdout of test 'FTexample` in directory 'src/optimizer` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:34102/
-!TypeException:user.test[5]:type mismatch lng := int
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30160/
 function user.test(s:str):lng;          #  0 test:lng := user.test(s:str) {G}
     b := bat.new(:int,:str);            #  1 b:bat[:int,:str] := CMDBATnew(_3:int, _4:str) {G}
     bat.insert(b,1,"hello");            #  2 _5:bat[:int,:str] := BKCinsert_bun(b:bat[:int,:str], _6:int, _7:str) {G}
     z := algebra.select(b,s,s);         #  3 z:bat[:int,:str] := ALGselect(b:bat[:int,:str], s:str, s:str) {G}
-    i := aggr.count(z);                 #  4 i:int := ALGcount_bat(z:bat[:int,:str]) 
-    return test := i;                   #  5 test:lng := i:int {U}
+    i := aggr.count(z);                 #  4 i:lng := ALGcount_bat(z:bat[:int,:str]) 
+    return test := i;                   #  5 test:lng := i:lng 
 end test;	# 6  
 #optimizer.factorize("user","test");
 #mdb.list("user","test");
@@ -26,13 +25,17 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #Code factorization 
     mdb.list("user","test");            #  2 _5:void := MDBlist3(_3:str, _4:str) 
 end main;	# 3  
-function user.test(s:str):lng;          #  0 test:lng := user.test(s:str) {G}
+factory user.test(s:str):lng;           #  0 test:lng := user.test(s:str) {G}
     b := bat.new(:int,:str);            #  1 b:bat[:int,:str] := CMDBATnew(_3:int, _4:str) {G}
     bat.insert(b,1,"hello");            #  2 _5:bat[:int,:str] := BKCinsert_bun(b:bat[:int,:str], _6:int, _7:str) {G}
-    z := algebra.select(b,s,s);         #  3 z:bat[:int,:str] := ALGselect(b:bat[:int,:str], s:str, s:str) {G}
-    i := aggr.count(z);                 #  4 i:int := ALGcount_bat(z:bat[:int,:str]) 
-    return test := i;                   #  5 test:lng := i:int {U}
-end test;                               #  6  
+barrier always := true;                 #  3 always:bit := _11:bit {J8}
+    z := algebra.select(b,s,s);         #  4 z:bat[:int,:str] := ALGselect(b:bat[:int,:str], s:str, s:str) {G}
+    i := aggr.count(z);                 #  5 i:lng := ALGcount_bat(z:bat[:int,:str]) 
+    yield test := i;                    #  6 test:lng := i:lng 
+    redo always;                        #  7 always:bit {J4}
+exit always;                            #  8 always:bit 
+    return test := test;                #  9 test:lng := test:lng 
+end test;                               # 10  
 
 # 23:53:03 >  
 # 23:53:03 >  Done.

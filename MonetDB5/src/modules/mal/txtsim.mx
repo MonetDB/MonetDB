@@ -957,7 +957,7 @@ fstrcmp0_impl(dbl *ret, str *string1, str *string2)
 str
 CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int *k)
 {
-	BUN n = BATcount(qgram);
+	size_t n = BATcount(qgram);
 	unsigned int i, j;
 	BAT *bn;
 
@@ -1036,14 +1036,15 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 function txtsim.str2qgrams(s:str):bat[:oid,:str];
     s := txtsim.qgramnormalize(s);
 
-    len := calc.length(s);
+    l := calc.length(s);
+	len := calc.lng(l);
     len := calc.+(len,4);
     b := bat.new(:str,:oid,len);
     i := 0;
     last := " ";
     bat.insert(b,"#",nil:oid);
     bat.insert(b,"#",nil:oid);
-	cnt:= 0:int;
+	cnt:= 0:lng;
     id := calc.oid(cnt);
     barrier B:= calc.<(i,len);
   	sstr := str.string(s,i,1);
@@ -1081,5 +1082,4 @@ function txtsim.str2qgrams(s:str):bat[:oid,:str];
 
     return str2qgrams := res;
 end str2qgrams;
-
 @}

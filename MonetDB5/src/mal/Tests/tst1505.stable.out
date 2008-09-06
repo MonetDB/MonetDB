@@ -82,9 +82,9 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.print(y);                        # 18 _23:void := IOprint_val(y:bat[:oid,:dbl]) 
     z := batcalc.<(y,2:dbl);            # 19 z:bat[:oid,:bit] := CMD_LT_dbl_cst(y:bat[:oid,:dbl], _25:dbl) {G}
     io.print(z);                        # 20 _26:void := IOprint_val(z:bat[:oid,:bit]) 
-    c := aggr.count(z);                 # 21 c:int := ALGcount_bat(z:bat[:oid,:bit]) 
+    c := aggr.count(z);                 # 21 c:lng := ALGcount_bat(z:bat[:oid,:bit]) 
     io.print("count");                  # 22 _28:void := IOprint_val(_29:str) 
-    io.print(c);                        # 23 _30:void := IOprint_val(c:int) 
+    io.print(c);                        # 23 _30:void := IOprint_val(c:lng) 
     x := bat.new(:oid,:bit);            # 24 x:bat[:oid,:bit] := CMDBATnew(_2:oid, _32:bit) {G}
     bat.append(x,true);                 # 25 _33:bat[:bit,:any] := BKCappend_val_wrap(x:bat[:oid,:bit], _34:bit) {G}
     bat.append(x,false);                # 26 _35:bat[:bit,:any] := BKCappend_val_wrap(x:bat[:oid,:bit], _36:bit) {G}
