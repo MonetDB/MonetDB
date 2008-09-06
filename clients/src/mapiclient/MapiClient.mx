@@ -905,8 +905,10 @@ SQLrenderer(MapiHdl hdl)
 	}
 	if (oldfields)
 		SQLseparator(len, oldfields, '-');
-	snprintf(buf, sizeof(buf), "%d rows", mapi_get_row_count(hdl));
+	rows = mapi_get_row_count(hdl);
+	snprintf(buf, sizeof(buf), "%d rows", rows);
 	mark2 = strdup(buf);
+	printf("%d tuple%s\n", rows, rows != 1 ? "s" : "");
 	if (len)
 		free(len);
 	if (rest)
