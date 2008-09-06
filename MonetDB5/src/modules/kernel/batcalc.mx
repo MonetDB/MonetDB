@@ -73,7 +73,7 @@ This is captured by a property to ease detection in dataflow.
 	comment "Binary BAT calculator function with accumulator BAT result";
 
 	command @1{target=1}(a:bat[:oid,:@4], cst:@4, b:bat[:oid,:@5]):bat[:oid,:@4]
-	address CMDbataccum@2cst_@3_@4_@5
+	address CMDbataccum@2cst2_@3_@4_@5
 	comment "(BAT,Constant) calculator function with accumulator BAT result";
 
 	command @1{target=1}(a:bat[:oid,:@4], b:bat[:oid,:@4], cst:@5) :bat[:oid,:@4]

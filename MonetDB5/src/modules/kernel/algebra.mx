@@ -661,15 +661,14 @@ over it.
 @mal
 module aggr;
 
-command count( b:bat[:any_1,:any] ) :int 
+command count( b:bat[:any_1,:any] ) :lng 
 address ALGcount_bat
 comment "Return the current size (in number of elements) in a BAT.";
-command count ( b:bat[:any_1,:any], ignore_nils:bit ) :int 
+command count ( b:bat[:any_1,:any], ignore_nils:bit ) :lng 
 address ALGcount_nil
 comment "Return the number of elements currently in a BAT ignores 
 		BUNs with nil-tail iff ignore_nils==TRUE.";
-
-command count_no_nil ( b:bat[:any_1,:any_2]) :int
+command count_no_nil ( b:bat[:any_1,:any_2]) :lng
 address ALGcount_no_nil
 comment "Return the number of elements currently 
 	in a BAT ignoring BUNs with nil-tail";
@@ -1011,9 +1010,9 @@ algebra_export str ALGthsort(int *result, int *lid);
 algebra_export str ALGssort(int *result, int *bid);
 algebra_export str ALGssort_rev(int *result, int *bid);
 algebra_export str ALGrevert(int *result, int *bid);
-algebra_export str ALGcount_bat(int *result, int *bid);
-algebra_export str ALGcount_nil(int *result, int *bid, bit *ignore_nils);
-algebra_export str ALGcount_no_nil(int *result, int *bid);
+algebra_export str ALGcount_bat(lng *result, int *bid);
+algebra_export str ALGcount_nil(lng *result, int *bid, bit *ignore_nils);
+algebra_export str ALGcount_no_nil(lng *result, int *bid);
 algebra_export str ALGtmark(int *result, int *bid, oid *base);
 algebra_export str ALGtmark_default(int *result, int *bid);
 algebra_export str ALGmarkHead(int *result, int *bid, oid *base);
@@ -3225,7 +3224,7 @@ ALGrevert(int *result, int *bid)
 }
 
 str
-ALGcount_bat(int *result, int *bid)
+ALGcount_bat(lng *result, int *bid)
 {
 	BAT *b;
 
@@ -3233,13 +3232,13 @@ ALGcount_bat(int *result, int *bid)
 		throw(MAL, "aggr.count", "Cannot access descriptor");
 	}
 	assert(BATcount(b) <= GDK_int_max);
-	*result = (int) BATcount(b);
+	*result = (lng) BATcount(b);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-ALGcount_nil(int *result, int *bid, bit *ignore_nils)
+ALGcount_nil(lng *result, int *bid, bit *ignore_nils)
 {
 	BAT *b;
 	BUN cnt;
@@ -3251,13 +3250,13 @@ ALGcount_nil(int *result, int *bid, bit *ignore_nils)
 		cnt = BATcount_no_nil(b);
 	else
 		cnt = BATcount(b);
-	*result = (int) cnt;
+	*result = (lng) cnt;
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-ALGcount_no_nil(int *result, int *bid)
+ALGcount_no_nil(lng *result, int *bid)
 {
 	bit ignore_nils = 1;
 

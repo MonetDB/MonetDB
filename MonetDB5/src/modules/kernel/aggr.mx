@@ -87,6 +87,7 @@ comment "Grouped tail average on @1";
 
 @-
 We may have to extend the signatures to all possible {void,oid} combos
+The groupings still assume that each of them has less the 2^31 elements.
 @mal
 @:sum_avg_signatures(bte)@
 @:sum_avg_signatures(sht)@
