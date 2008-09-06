@@ -96,12 +96,13 @@ sql_alter_seq(
 {
 	char* name = qname_table(qname);
 	char *sname = qname_schema(qname);
-	int start_type = start_list->h->data.ival;
+	int start_type = start_list->h->data.i_val;
 	sql_sequence *seq;
 	stmt *val = NULL, *ssname = NULL, *seqname = NULL;
 	sql_subtype *lng_t = sql_bind_localtype("lng");
 	sql_schema *s = NULL;
 
+	assert(start_list->h->type == type_int);
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "CREATE SEQUENCE: no such schema '%s'", sname);
 	if (!s)
@@ -133,7 +134,16 @@ sql_alter_seq(
 		if (!val || !(val = check_types(sql, lng_t, val, type_equal)))
 			return NULL;
 	} else if (start_type == 2) {
-		val = stmt_atom_lng(start_list->h->next->data.ival);
+		switch (start_list->h->next->type) {
+			case type_int:
+				val = stmt_atom_lng((lng)start_list->h->next->data.i_val);
+				break;
+			case type_lng:
+				val = stmt_atom_lng(start_list->h->next->data.l_val);
+				break;
+			default:
+				assert(0);
+		}
 	}
 	ssname = stmt_atom_string(_strdup(seq->s->base.name));
 	seqname = stmt_atom_string(_strdup(name));
@@ -183,17 +193,23 @@ sequences(mvc *sql, symbol *s)
 			dlist *l = s->data.lval;
 			dlist *h = l->h->next->next->data.lval;
 
+			assert(h->h->type == type_lng);
+			assert(h->h->next->type == type_lng);
+			assert(h->h->next->next->type == type_lng);
+			assert(h->h->next->next->next->type == type_lng);
+			assert(h->h->next->next->next->next->type == type_lng);
+			assert(h->h->next->next->next->next->next->type == type_int);
 			res = sql_create_seq(
 /* mvc* sql */		sql,
 /* sql_schema* s */	cur_schema(sql), 
 /* dlist* qname */	l->h->data.lval, 
 /* sql_subtype* t*/	&l->h->next->data.typeval, 
-/* lng start */		h->h->data.ival, 
-/* lng inc */		h->h->next->data.ival, 
-/* lng min */		h->h->next->next->data.ival, 
-/* lng max */		h->h->next->next->next->data.ival,
-/* lng cache */		h->h->next->next->next->next->data.ival,
-/* int cycle */		h->h->next->next->next->next->next->data.ival);
+/* lng start */		h->h->data.l_val, 
+/* lng inc */		h->h->next->data.l_val, 
+/* lng min */		h->h->next->next->data.l_val, 
+/* lng max */		h->h->next->next->next->data.l_val,
+/* lng cache */		h->h->next->next->next->next->data.l_val,
+/* int cycle */		h->h->next->next->next->next->next->data.i_val);
 		}
 		break;
 		case SQL_ALTER_SEQ:
@@ -201,17 +217,22 @@ sequences(mvc *sql, symbol *s)
 			dlist* l = s->data.lval;
 			dlist *h = l->h->next->next->data.lval;
 			
+			assert(h->h->next->type == type_lng);
+			assert(h->h->next->next->type == type_lng);
+			assert(h->h->next->next->next->type == type_lng);
+			assert(h->h->next->next->next->next->type == type_lng);
+			assert(h->h->next->next->next->next->next->type == type_int);
 			res = sql_alter_seq(
 /* mvc* sql */		sql,
 /* sql_schema* s */	cur_schema(sql), 
 /* dlist* qname */	l->h->data.lval, 
 /* sql_subtype* t*/	&l->h->next->data.typeval, 
 /* dlist start */	h->h->data.lval, 
-/* lng inc */		h->h->next->data.ival, 
-/* lng min */		h->h->next->next->data.ival, 
-/* lng max */		h->h->next->next->next->data.ival,
-/* lng cache */		h->h->next->next->next->next->data.ival,
-/* int cycle */		h->h->next->next->next->next->next->data.ival);
+/* lng inc */		h->h->next->data.l_val, 
+/* lng min */		h->h->next->next->data.l_val, 
+/* lng max */		h->h->next->next->next->data.l_val,
+/* lng cache */		h->h->next->next->next->next->data.l_val,
+/* int cycle */		h->h->next->next->next->next->next->data.i_val);
 		}
 		break;
 		case SQL_DROP_SEQ:

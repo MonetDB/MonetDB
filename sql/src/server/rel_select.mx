@@ -1349,8 +1349,9 @@ rel_column_ref(mvc *sql, sql_rel *rel, symbol *column_r)
 
 	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
 	if (dlist_length(l) == 1 && l->h->type == type_int) {
-		int nr = l->h->data.ival;
+		int nr = l->h->data.i_val;
 		atom *a;
+		assert(l->h->type == type_int);
 		if ((a = sql_bind_arg(sql, nr)) != NULL)
 			return exp_atom_ref(nr, atom_type(a));
 		return NULL;
@@ -2095,7 +2096,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 	case SQL_NOT_BETWEEN:
 	{
 		symbol *lo = sc->data.lval->h->data.sym;
-		int symmetric = sc->data.lval->h->next->data.ival;
+		int symmetric = sc->data.lval->h->next->data.i_val;
 		symbol *ro1 = sc->data.lval->h->next->next->data.sym;
 		symbol *ro2 = sc->data.lval->h->next->next->next->data.sym;
 		sql_exp *le = rel_value_exp(sql, rel, lo, f, ek);
@@ -2104,6 +2105,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		sql_exp *e1 = NULL, *e2 = NULL;
 		sql_subtype *ct = NULL;
 
+		assert(sc->data.lval->h->next->type == type_int);
 		if (!le || !re1 || !re2) {
 			exp_destroy(le);
 			exp_destroy(re1);
@@ -2434,7 +2436,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 	case SQL_NOT_BETWEEN:
 	{
 		symbol *lo = sc->data.lval->h->data.sym;
-		int symmetric = sc->data.lval->h->next->data.ival;
+		int symmetric = sc->data.lval->h->next->data.i_val;
 		symbol *ro1 = sc->data.lval->h->next->next->data.sym;
 		symbol *ro2 = sc->data.lval->h->next->next->next->data.sym;
 		sql_exp *le = rel_value_exp(sql, &rel, lo, f, ek);
@@ -2442,6 +2444,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		sql_exp *re2 = rel_value_exp(sql, &rel, ro2, f, ek);
 		sql_subtype *ct = NULL;
 
+		assert(sc->data.lval->h->next->type == type_int);
 		if (!le || !re1 || !re2) {
 			exp_destroy(le);
 			exp_destroy(re1);
@@ -2847,12 +2850,13 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 {
 	dlist *l = se->data.lval;
 	sql_subaggr *a = NULL;
-	int distinct = l->h->next->data.ival;
+	int distinct = l->h->next->data.i_val;
 	char *aggrstr = l->h->data.sval;
 	sql_exp *e = NULL, *exp = NULL;
 	sql_rel *groupby, *old;
 	int no_nil = 0;
 
+	assert(l->h->next->type == type_int);
 	groupby = *rel;
 
 	if (groupby->l && groupby->op == op_project) {
@@ -3304,9 +3308,10 @@ rel_order_by(mvc *sql, sql_rel *rel, symbol *orderby )
 
 		if (order->token == SQL_COLUMN) {
 			symbol *col = order->data.lval->h->data.sym;
-			int direction = order->data.lval->h->next->data.ival;
+			int direction = order->data.lval->h->next->data.i_val;
 			sql_exp *e = rel_column_ref(sql, rel, col);
 
+			assert(order->data.lval->h->next->type == type_int);
 			if (!e) {
 				/* reset error */
 				sql->session->status = 0;
@@ -3453,7 +3458,8 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	case SQL_PARAMETER:{
 		if (sql->emode != m_prepare) 
 			return sql_error(sql, 02, "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
-		return exp_atom_ref(se->data.ival, NULL);
+		assert(se->type == type_int);
+		return exp_atom_ref(se->data.i_val, NULL);
 	}
 	case SQL_NULL:
 		return exp_atom(atom_general(sql_bind_localtype("str"), NULL, 0));
@@ -4037,13 +4043,14 @@ rel_setquery(mvc *sql, sql_rel *rel, symbol *q)
 	sql_rel *res = NULL;
 	dnode *n = q->data.lval->h;
 	symbol *tab_ref1 = n->data.sym;
-	int dist = n->next->data.ival;
+	int dist = n->next->data.i_val;
 	dlist *corresponding = n->next->next->data.lval;
 	symbol *tab_ref2 = n->next->next->next->data.sym;
 
 	sql_rel *t1 = table_ref(sql, NULL, tab_ref1);
 	sql_rel *t2 = table_ref(sql, NULL, tab_ref2);
 
+	assert(n->next->type == type_int);
 	(void)rel; /* TODO coorelated unions */
 	if (!t1 || !t2) 
 		return NULL;
@@ -4198,11 +4205,13 @@ rel_joinquery(mvc *sql, sql_rel *rel, symbol *q)
 
 	dnode *n = q->data.lval->h;
 	symbol *tab_ref1 = n->data.sym;
-	int natural = n->next->data.ival;
-	jt jointype = (jt) n->next->next->data.ival;
+	int natural = n->next->data.i_val;
+	jt jointype = (jt) n->next->next->data.i_val;
 	symbol *tab_ref2 = n->next->next->next->data.sym;
 	symbol *joinspec = n->next->next->next->next->data.sym;
 
+	assert(n->next->type == type_int);
+	assert(n->next->next->type == type_int);
 	return rel_joinquery_(sql, rel, tab_ref1, natural, jointype, tab_ref2, joinspec);
 }
 
@@ -4228,11 +4237,12 @@ rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *q)
 	dnode *n = q->data.lval->h;
 	sql_rel *lv = table_ref(sql, rel, n->data.sym);
 	sql_rel *rv = table_ref(sql, rel, n->next->next->data.sym);
-	int all = n->next->data.ival; 
+	int all = n->next->data.i_val; 
 	list *lexps, *rexps;
 	node *m;
 	int found = 0;
 
+	assert(n->next->type == type_int);
 	if (!lv || !rv)
 		return NULL;
 

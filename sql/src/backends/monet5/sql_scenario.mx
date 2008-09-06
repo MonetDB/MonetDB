@@ -999,7 +999,8 @@ produce code.
 @c
 	be->q = NULL;
 	if (m->emode == m_execute) {
-		be->q = qc_find(m->qc, m->sym->data.lval->h->data.ival);
+		assert(m->sym->data.lval->h->type == type_int);
+		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
 		if (!be->q) {
 			err = -1;
 			sql_error(m, 2, "no prepared statement with the given id\n");

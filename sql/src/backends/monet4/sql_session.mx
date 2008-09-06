@@ -264,7 +264,8 @@ sqlexecute(backend *be, stream *out)
 	if (c->emod & mod_record)
 		Tparse = GDKusec();
 	if (c->emode == m_execute) {
-		q = qc_find(c->qc, c->sym->data.lval->h->data.ival);
+		assert(c->sym->data.lval->h->type == type_int);
+		q = qc_find(c->qc, c->sym->data.lval->h->data.i_val);
 		if (!q) {
 			err = -1;
 			sql_error(c, 2, "no prepared statement with the given id\n");

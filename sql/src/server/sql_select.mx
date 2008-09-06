@@ -334,8 +334,9 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 
 	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
 
+	assert(l->h->type != type_lng);
 	if (dlist_length(l) == 1 && l->h->type == type_int) {
-		return stmt_varnr(l->h->data.ival, atom_type(sql_bind_arg(sql, l->h->data.ival)));
+		return stmt_varnr(l->h->data.i_val, atom_type(sql_bind_arg(sql, l->h->data.i_val)));
 	} else if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
 
@@ -1156,12 +1157,13 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 {
 	dlist *l = se->data.lval;
 	sql_subaggr *a = NULL;
-	int distinct = l->h->next->data.ival;
+	int distinct = l->h->next->data.i_val;
 	stmt *s = NULL;
 	char *aggrstr = l->h->data.sval; 
 	int remove_nils = 0; 
 	sql_schema *schema = sql->session->schema;
 
+	assert(l->h->next->type == type_int);
 	if (f == sql_where) 
 		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpper(alloca(strlen(aggrstr) + 1), aggrstr));
 	
@@ -1460,9 +1462,10 @@ query_orderby(mvc *sql, scope *scp, symbol *orderby, stmt *sel, stmt *subset, gr
 
 		if (order->token == SQL_COLUMN) {
 			symbol *col = order->data.lval->h->data.sym;
-			int direction = order->data.lval->h->next->data.ival;
+			int direction = order->data.lval->h->next->data.i_val;
 			stmt *sc = NULL;
 
+			assert(order->data.lval->h->next->type == type_int);
 			if (sel)
 				sc = orderby_column_ref(sql, col, sel);
 			if (sel && !sc) {
@@ -1720,7 +1723,8 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 	case SQL_PARAMETER:{
 		if (sql->emode != m_prepare) 
 			return sql_error(sql, 02, "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
-		return stmt_varnr(se->data.ival, NULL);
+		assert(se->type == type_int);
+		return stmt_varnr(se->data.i_val, NULL);
 	}
 	case SQL_NULL:
 		return stmt_atom(atom_general(sql_bind_localtype("str"), NULL, 0));
@@ -2149,11 +2153,13 @@ sql_join(mvc *sql, scope *scp, symbol *q)
 {
 	dnode *n = q->data.lval->h;
 	symbol *tab_ref1 = n->data.sym;
-	int natural = n->next->data.ival;
-	jt jointype = (jt) n->next->next->data.ival;
+	int natural = n->next->data.i_val;
+	jt jointype = (jt) n->next->next->data.i_val;
 	symbol *tab_ref2 = n->next->next->next->data.sym;
 	symbol *joinspec = n->next->next->next->next->data.sym;
 
+	assert(n->next->type == type_int);
+	assert(n->next->next->type == type_int);
 	return sql_join_(sql, scp, tab_ref1, natural, jointype, tab_ref2, joinspec);
 }
 
@@ -2445,13 +2451,14 @@ sql_setop_(mvc *sql, scope *scp, symbol *q)
 	stmt *res = NULL;
 	dnode *n = q->data.lval->h;
 	symbol *tab_ref1 = n->data.sym;
-	int dist = n->next->data.ival;
+	int dist = n->next->data.i_val;
 	dlist *corresponding = n->next->next->data.lval;
 	symbol *tab_ref2 = n->next->next->next->data.sym;
 
 	tvar *tv1 = table_ref(sql, scp, tab_ref1);
 	tvar *tv2 = table_ref(sql, scp, tab_ref2);
 
+	assert(n->next->type == type_int);
 	if (!tv1 || !tv2) {
 		return NULL;
 	}
@@ -2595,11 +2602,12 @@ query_exp_optname(mvc *sql, scope *scp, symbol *q)
 		node *m;
 		dnode *n = q->data.lval->h;
 
-		/*int all = n->next->data.ival; */
+		/*int all = n->next->data.i_val; */
 		tvar *lv = table_ref(sql, nscp, n->data.sym);
 		tvar *rv = table_ref(sql, nscp, n->next->next->data.sym);
 		list *unions, *matching_columns;
 
+		/*assert(n->next->type == type_int);*/
 		if (!lv || !rv)
 			return NULL;
 
@@ -3210,7 +3218,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 	{
 		stmt *res = NULL;
 		symbol *lo = sc->data.lval->h->data.sym;
-		int symmetric = sc->data.lval->h->next->data.ival;
+		int symmetric = sc->data.lval->h->next->data.i_val;
 		symbol *ro1 = sc->data.lval->h->next->next->data.sym;
 		symbol *ro2 = sc->data.lval->h->next->next->next->data.sym;
 		stmt *ls = sql_value_exp(sql, scp, lo, grp, subset, f, iek);
@@ -3218,6 +3226,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		stmt *rs2 = sql_value_exp(sql, scp, ro2, grp, subset, f, iek);
 		sql_subtype *ct = NULL;
 
+		assert(sc->data.lval->h->next->type == type_int);
 		if (!ls || !rs1 || !rs2)
 			return NULL;
 		ct = tail_type(ls);

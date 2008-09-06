@@ -1056,8 +1056,9 @@ char *symbol2string(mvc *sql, symbol *se)
 	case SQL_COLUMN: {
 		/* can only be variables */ 
 		dlist *l = se->data.lval;
+		assert(l->h->type != type_lng);
 		if (dlist_length(l) == 1 && l->h->type == type_int) {
-			atom *a = sql_bind_arg(sql, l->h->data.ival);
+			atom *a = sql_bind_arg(sql, l->h->data.i_val);
 			return atom2sql(a);
 		}
 		return NULL;

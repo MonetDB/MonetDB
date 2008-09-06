@@ -537,7 +537,8 @@ create_trigger(mvc *sql, scope *scp, dlist *qname, int time, symbol *trigger_eve
 			/* list (new(1)/old(0)), char */
 			char *n = dl->data.lval->h->next->data.sval;
 
-			if (!dl->data.lval->h->data.ival) 
+			assert(dl->data.lval->h->type == type_int);
+			if (!dl->data.lval->h->data.i_val) /*?l_val?*/
 				old_name = n;
 			else
 				new_name = n;
@@ -557,10 +558,11 @@ create_trigger(mvc *sql, scope *scp, dlist *qname, int time, symbol *trigger_eve
 	if (!instantiate) {
 		int event = (trigger_event->token == SQL_INSERT)?0:
 			    (trigger_event->token == SQL_DELETE)?1:2;
-		int orientation = triggered_action->h->data.ival;
+		int orientation = triggered_action->h->data.i_val;
 		char *condition = triggered_action->h->next->data.sval;
 		char *q = QUERY(sql->scanner);
 
+		assert(triggered_action->h->type == type_int);
 		trigger = mvc_create_trigger(sql, t, tname, time, orientation, 
 			event, old_name, new_name, condition, q);
 	}
@@ -620,7 +622,8 @@ connect_catalog(mvc *sql, dlist *qname)
 	int *id = GDKmalloc(sizeof(int)), *port = GDKmalloc(sizeof(int));
 	symbol *user_symb = qname->h->next->next->next->next->data.sym;
 	char *default_dbalias;
-	*port = (int) qname->h->next->data.ival;
+	assert(qname->h->next->type == type_int);
+	*port = qname->h->next->data.i_val;
 	*id = -1;
 	server = GDKstrdup(qname->h->data.sval);
 	db = GDKstrdup(qname->h->next->next->data.sval);
@@ -1035,12 +1038,13 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 			{
 				dnode *n = s->data.lval->h;
 				char *rtname = qname_table(n->data.lval);
-				int ref_actions = n->next->next->next->data.ival; 
+				int ref_actions = n->next->next->next->data.i_val; 
 				sql_table *rt;
 				sql_fkey *fk;
 				list *cols;
 				sql_key *rk = NULL;
 
+				assert(n->next->next->next->type == type_int);
 				if (isTempTable(t)) {
 					(void) sql_error(sql, 02, "CONSTRAINT: constraints on temporary tables are not supported\n");
 					return res;
@@ -1360,8 +1364,9 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 		sql_fkey *fk;
 		dnode *nms = n->next->data.lval->h;
 		node *fnms;
-		int ref_actions = n->next->next->next->next->data.ival;
+		int ref_actions = n->next->next->next->next->data.i_val;
 
+		assert(n->next->next->next->next->type == type_int);
 		if (name && mvc_bind_key(sql, ss, name)) {
 			return sql_error(sql, 02, "Create Key failed, key %s allready exists", name);
 		}
@@ -1621,9 +1626,10 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	{
 		dlist *l = s->data.lval;
 		char *cname = l->h->data.sval;
-		int drop_action = l->h->next->data.ival;
+		int drop_action = l->h->next->data.i_val;
 		sql_column *col = mvc_bind_column(sql, t, cname);
 
+		assert(l->h->next->type == type_int);
 		if (col == NULL)
 			return sql_error(sql, 02, "cannot drop unknown column %s\n", cname);
 		if (cs_size(&t->columns) <= 1)
@@ -1653,9 +1659,10 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	{
 		dlist *l = s->data.lval;
 		char *kname = l->h->data.sval;
-		int drop_action = l->h->next->data.ival;
+		int drop_action = l->h->next->data.i_val;
 		sql_key * key = NULL;
 
+		assert(l->h->next->type == type_int);
 		if ((key = mvc_bind_key(sql, ss, kname )) == NULL)
 			return sql_error(sql, 02, "cannot drop unknown constraint %s\n", kname);
 		mvc_drop_key(sql, ss, key, drop_action);
@@ -1720,9 +1727,10 @@ sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table
 		dlist *as_sq = table_elements_or_subquery->data.lval;
 		dlist *column_spec = as_sq->h->data.lval;
 		symbol *subquery = as_sq->h->next->data.sym;
-		int with_data = as_sq->h->next->next->data.ival;
+		int with_data = as_sq->h->next->next->data.i_val;
 		sql_table *t = NULL; 
 
+		assert(as_sq->h->next->next->type == type_int);
 		sq = flat_subquery(sql, subquery);
 		if (!sq)
 			return NULL;
@@ -1879,11 +1887,15 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 			if (n->data.sym->token == SQL_CREATE_TABLE) {
 				dlist *l = n->data.sym->data.lval;
 
-				res = sql_create_table(sql, ss, l->h->data.ival, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
+				assert(l->h->type == type_int);
+				assert(l->h->next->next->next->type == type_int);
+				res = sql_create_table(sql, ss, l->h->data.i_val, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val);
 			} else if (n->data.sym->token == SQL_CREATE_VIEW) {
 				dlist *l = n->data.sym->data.lval;
 
-				res = create_view(sql, ss, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival, l->h->next->next->next->next->data.ival);
+				assert(l->h->next->next->next->type == type_int);
+				assert(l->h->next->next->next->next->type == type_int);
+				res = create_view(sql, ss, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
 			}
 			if (!res) {
 				list_destroy(table_elements);
@@ -1945,8 +1957,9 @@ schemas(mvc *sql, scope *scp, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
+		assert(l->h->next->type == type_int);
 		ret = drop_schema(sql, l->h->data.lval,	/* qname */
-				  l->h->next->data.ival);	/* drop_action */
+				  l->h->next->data.i_val);	/* drop_action */
 		sql->type = Q_SCHEMA;
 	}
 		break;
@@ -1954,7 +1967,8 @@ schemas(mvc *sql, scope *scp, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = drop_table(sql, l->h->data.lval, l->h->next->data.ival);
+		assert(l->h->next->type == type_int);
+		ret = drop_table(sql, l->h->data.lval, l->h->next->data.i_val);
 		sql->type = Q_SCHEMA;
 	}
 		break;
@@ -1962,7 +1976,8 @@ schemas(mvc *sql, scope *scp, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = drop_view(sql, l->h->data.lval, l->h->next->data.ival);
+		assert(l->h->next->type == type_int);
+		ret = drop_view(sql, l->h->data.lval, l->h->next->data.i_val);
 		sql->type = Q_SCHEMA;
 	}
 		break;
@@ -1971,7 +1986,9 @@ schemas(mvc *sql, scope *scp, symbol *s)
 
 		dlist *l = s->data.lval;
 
-		ret = sql_create_table(sql, cur_schema(sql), l->h->data.ival, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
+		assert(l->h->type == type_int);
+		assert(l->h->next->next->next->type == type_int);
+		ret = sql_create_table(sql, cur_schema(sql), l->h->data.i_val, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val);
 		sql->type = Q_SCHEMA;
 	}
 		break;
@@ -1979,7 +1996,9 @@ schemas(mvc *sql, scope *scp, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_view(sql, cur_schema(sql), l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival, l->h->next->next->next->next->data.ival);
+		assert(l->h->next->next->next->type == type_int);
+		assert(l->h->next->next->next->next->type == type_int);
+		ret = create_view(sql, cur_schema(sql), l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
 		sql->type = Q_SCHEMA;
 	}
 		break;
@@ -1987,7 +2006,8 @@ schemas(mvc *sql, scope *scp, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_index(sql, cur_schema(sql), l->h->data.sval, l->h->next->data.ival, l->h->next->next->data.lval, l->h->next->next->next->data.lval);
+		assert(l->h->next->type == type_int);
+		ret = create_index(sql, cur_schema(sql), l->h->data.sval, l->h->next->data.i_val, l->h->next->next->data.lval, l->h->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;
 	}
 		break;
@@ -2029,8 +2049,9 @@ schemas(mvc *sql, scope *scp, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
+		assert(l->h->next->type == type_int);
 		ret = create_role(sql, l->h->data.lval,	/* role name */
-				  l->h->next->data.ival);	/* role grantor */
+				  l->h->next->data.i_val);	/* role grantor */
 		sql->type = Q_SCHEMA;
 	}
 		break;
@@ -2055,10 +2076,12 @@ schemas(mvc *sql, scope *scp, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
+		assert(l->h->next->next->type == type_int);
+		assert(l->h->next->next->next->type == type_int);
 		ret = grant_roles(sql, cur_schema(sql), l->h->data.lval,	/* authids */
 				  l->h->next->data.lval,	/* grantees */
-				  l->h->next->next->data.ival,	/* admin? */
-				  l->h->next->next->next->data.ival ? sql->user_id : sql->role_id);
+				  l->h->next->next->data.i_val,	/* admin? */
+				  l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
 		/* grantor ? */
 		sql->type = Q_SCHEMA;
 	} break;
@@ -2066,10 +2089,12 @@ schemas(mvc *sql, scope *scp, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
+		assert(l->h->next->next->type == type_int);
+		assert(l->h->next->next->next->type == type_int);
 		ret = revoke_roles(sql, cur_schema(sql), l->h->data.lval,	/* authids */
 				  l->h->next->data.lval,	/* grantees */
-				  l->h->next->next->data.ival,	/* admin? */
-				  l->h->next->next->next->data.ival ? sql->user_id : sql->role_id);
+				  l->h->next->next->data.i_val,	/* admin? */
+				  l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
 		/* grantor ? */
 		sql->type = Q_SCHEMA;
 	} break;
@@ -2077,10 +2102,12 @@ schemas(mvc *sql, scope *scp, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
+		assert(l->h->next->next->type == type_int);
+		assert(l->h->next->next->next->type == type_int);
 		ret = grant_privs(sql, cur_schema(sql), l->h->data.lval,	/* privileges */
 				  l->h->next->data.lval,	/* grantees */
-				  l->h->next->next->data.ival,	/* grant ? */
-				  l->h->next->next->next->data.ival ? sql->user_id : sql->role_id);
+				  l->h->next->next->data.i_val,	/* grant ? */
+				  l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
 		/* grantor ? */
 		sql->type = Q_SCHEMA;
 	} break;
@@ -2088,10 +2115,12 @@ schemas(mvc *sql, scope *scp, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
+		assert(l->h->next->next->type == type_int);
+		assert(l->h->next->next->next->type == type_int);
 		ret = revoke_privs(sql, cur_schema(sql), l->h->data.lval,	/* privileges */
 				   l->h->next->data.lval,	/* grantees */
-				   l->h->next->next->data.ival,	/* grant ? */
-				   l->h->next->next->next->data.ival ? sql->user_id : sql->role_id);
+				   l->h->next->next->data.i_val,	/* grant ? */
+				   l->h->next->next->next->data.i_val ? sql->user_id : sql->role_id);
 		/* grantor ? */
 		sql->type = Q_SCHEMA;
 	} break;
@@ -2109,7 +2138,8 @@ schemas(mvc *sql, scope *scp, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_trigger(sql, scp, l->h->data.lval, l->h->next->data.ival, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval);
+		assert(l->h->next->type == type_int);
+		ret = create_trigger(sql, scp, l->h->data.lval, l->h->next->data.i_val, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;
 	}
 		break;

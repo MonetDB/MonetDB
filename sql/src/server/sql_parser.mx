@@ -210,6 +210,7 @@ extern int sqlparse(void *);
 #define _symbol_create(t,d)         symbol_create( SA, t, d)
 #define _symbol_create_list(t,d)    symbol_create_list( SA, t, d)
 #define _symbol_create_int(t,d)     symbol_create_int( SA, t, d)
+#define _symbol_create_lng(t,d)     symbol_create_lng( SA, t, d)
 #define _symbol_create_symbol(t,d)  symbol_create_symbol( SA, t, d)
 #define _symbol_create_hexa(t,d)    symbol_create_hexa( SA, t, d)
 #define _newAtomNode(d)		    newAtomNode( SA, d)
@@ -218,6 +219,7 @@ extern int sqlparse(void *);
 
 #define append_list(l,d)     dlist_append_list( SA, l, d)
 #define append_int(l,d)      dlist_append_int( SA, l, d)
+#define append_lng(l,d)      dlist_append_lng( SA, l, d)
 #define append_symbol(l,d)   dlist_append_symbol( SA, l, d)
 #define append_string(l,d)   dlist_append_string( SA, l, d)
 #define append_type(l,d)     dlist_append_type( SA, l, d)
@@ -1219,11 +1221,11 @@ opt_seq_params:
 	opt_cache
 	opt_cycle
 	{ dlist *l = L();
-	  append_int(l, $1);
-	  append_int(l, $2);
-	  append_int(l, $3);
-	  append_int(l, $4);
-	  append_int(l, $5);
+	  append_lng(l, $1);
+	  append_lng(l, $2);
+	  append_lng(l, $3);
+	  append_lng(l, $4);
+	  append_lng(l, $5);
 	  append_int(l, $6);
 	  $$ = l;
 	}
@@ -1238,10 +1240,10 @@ opt_alt_seq_params:
 	opt_cycle
 	{ dlist *l = L();
 	  append_list(l, $1);
-	  append_int(l, $2);
-	  append_int(l, $3);
-	  append_int(l, $4);
-	  append_int(l, $5);
+	  append_lng(l, $2);
+	  append_lng(l, $3);
+	  append_lng(l, $4);
+	  append_lng(l, $5);
 	  append_int(l, $6);
 	  $$ = l;
 	}
@@ -1472,11 +1474,11 @@ column_def:
 			sql_find_subtype(&it, "int", 32, 0);
 			append_type(l, &it);
 			/* finally all the options (no defaults here) */
-			append_int(o, 1); /* start */
-			append_int(o, 1); /* increment */
-			append_int(o, 1); /* min */
-			append_int(o, 0); /* max */
-			append_int(o, 1); /* cache */
+			append_lng(o, 1); /* start */
+			append_lng(o, 1); /* increment */
+			append_lng(o, 1); /* min */
+			append_lng(o, 0); /* max */
+			append_lng(o, 1); /* cache */
 			append_int(o, 0); /* cycle */
 			append_list(l, o);
 
@@ -1605,11 +1607,11 @@ generated_column:
 		sql_find_subtype(&it, "int", 32, 0);
 		append_type(l, &it);
 		/* finally all the options (no defaults here) */
-		append_int(o, 1); /* start */
-		append_int(o, 1); /* increment */
-		append_int(o, 1); /* min */
-		append_int(o, 0); /* max */
-		append_int(o, 1); /* cache */
+		append_lng(o, 1); /* start */
+		append_lng(o, 1); /* increment */
+		append_lng(o, 1); /* min */
+		append_lng(o, 0); /* max */
+		append_lng(o, 1); /* cache */
 		append_int(o, 0); /* cycle */
 		append_list(l, o);
 		if (m->scanner.schema)
@@ -1631,11 +1633,11 @@ serial_opt_params:
 	/* empty: return the defaults */
 	{ $$ = L();
 	  /* finally all the options (no defaults here) */
-	  append_int($$, 1); /* start */
-	  append_int($$, -1); /* increment */
-	  append_int($$, -1); /* min */
-	  append_int($$, -1); /* max */
-	  append_int($$, -1); /* cache */
+	  append_lng($$, 1); /* start */
+	  append_lng($$, -1); /* increment */
+	  append_lng($$, -1); /* min */
+	  append_lng($$, -1); /* max */
+	  append_lng($$, -1); /* cache */
 	  append_int($$, 0);  /* cycle */
 	}
   |	'(' opt_seq_params ')'	{ $$ = $2; }
@@ -3231,8 +3233,9 @@ simple_scalar_exp:
  |  '-' scalar_exp %prec UMINUS 
 			{ 
  			  $$ = NULL;
+			  assert($2->token != SQL_COLUMN || $2->data.lval->h->type != type_lng);
 			  if ($2->token == SQL_COLUMN && $2->data.lval->h->type == type_int) {
-				atom *a = sql_bind_arg(parm, $2->data.lval->h->data.ival);
+				atom *a = sql_bind_arg(parm, $2->data.lval->h->data.i_val);
 				if (!atom_neg(a))
 					$$ = $2;
 			  } 

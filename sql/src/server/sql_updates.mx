@@ -1411,9 +1411,11 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
 	char *ns = (null_string)?null_string:"null";
 	list *slist;
-	int nr = (nr_offset)?nr_offset->h->data.ival:-1;
-	int offset = (nr_offset)?nr_offset->h->next->data.ival:0;
+	int nr = (nr_offset)?nr_offset->h->data.i_val:-1;
+	int offset = (nr_offset)?nr_offset->h->next->data.i_val:0;
 
+	assert(!nr_offset || nr_offset->h->type == type_int);
+	assert(!nr_offset || nr_offset->h->next->type == type_int);
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
 		(void) sql_error(sql, 02, "COPY INTO: no such schema '%s'", sname);
 		return NULL;

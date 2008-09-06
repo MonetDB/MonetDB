@@ -60,7 +60,8 @@ transactions(mvc *sql, symbol *s)
 	case TR_COMMIT:
 		if (sql->session->auto_commit == 1) 
 			return sql_error(sql, 01, "COMMIT: not allowed in auto commit mode");
-		ret = mvc_commit(sql, s->data.ival, NULL);
+		assert(s->type == type_int);
+		ret = mvc_commit(sql, s->data.i_val, NULL);
 		if (ret < 0)
 			return sql_error(sql, 01, "COMMIT: failed");
 		break;
@@ -76,7 +77,8 @@ transactions(mvc *sql, symbol *s)
 
 		if (sql->session->auto_commit == 1) 
 			return sql_error(sql, 01, "ROLLBACK: not allowed in auto commit mode");
-		ret = mvc_rollback(sql, l->h->data.ival, l->h->next->data.sval);
+		assert(l->h->type == type_int);
+		ret = mvc_rollback(sql, l->h->data.i_val, l->h->next->data.sval);
 		if (ret < 0 && l->h->next->data.sval)
 			return sql_error(sql, 01, "ROLLBACK TO SAVEPOINT: (%s) failed", l->h->next->data.sval);
 	}
@@ -89,7 +91,8 @@ transactions(mvc *sql, symbol *s)
 			mvc_rollback(sql, 0, NULL);
 		sql->session->auto_commit = 0;
 		sql->session->ac_on_commit = 1;
-		sql->session->level = s->data.ival;
+		assert(s->type == type_int);
+		sql->session->level = s->data.i_val;
 		(void) mvc_trans(sql);
 	} break;
 	default:

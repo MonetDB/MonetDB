@@ -70,12 +70,14 @@ parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek)
 	if (pers) {
 		dlist *s = pers->h->data.lval;
 
-		*ek = *sk = s->h->data.ival;
+		assert(s->h->type == type_int);
+		*ek = *sk = s->h->data.i_val;
 
 		if (dlist_length(pers) == 2) {
 			dlist *e = pers->h->next->data.lval;
 
-			*ek = e->h->data.ival;
+			assert(e->h->type == type_int);
+			*ek = e->h->data.i_val;
 		}
 	}
 	if (*sk > *ek) {

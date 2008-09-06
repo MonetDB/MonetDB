@@ -27,6 +27,7 @@
 
 typedef enum symtype {
 	type_int,
+	type_lng,
 	type_string,
 	type_list,
 	type_symbol,
@@ -34,7 +35,8 @@ typedef enum symtype {
 } symtype;
 
 typedef union symbdata {
-	lng ival;
+	int i_val;
+	lng l_val;
 	char *sval;
 	struct dlist *lval;
 	struct symbol *sym;
@@ -59,6 +61,7 @@ extern int dlist_length(dlist *l);
 extern dlist *dlist_append_string(sql_allocator *sa, dlist *l, char *data);
 extern dlist *dlist_append_list(sql_allocator *sa, dlist *l, dlist *data);
 extern dlist *dlist_append_int(sql_allocator *sa, dlist *l, lng data);
+extern dlist *dlist_append_lng(sql_allocator *sa, dlist *l, lng data);
 extern dlist *dlist_append_symbol(sql_allocator *sa, dlist *l, struct symbol *data);
 extern dlist *dlist_append_type(sql_allocator *sa, dlist *l, struct sql_subtype *data);
 
@@ -92,6 +95,7 @@ typedef struct AtomNode {
 extern symbol *symbol_create(sql_allocator *sa, int token, char *data);
 extern symbol *symbol_create_list(sql_allocator *sa, int token, dlist *data);
 extern symbol *symbol_create_int(sql_allocator *sa, int token, lng data);
+extern symbol *symbol_create_lng(sql_allocator *sa, int token, lng data);
 extern symbol *symbol_create_symbol(sql_allocator *sa, int token, symbol *data);
 
 extern int symbol_cmp(symbol *s1, symbol *s2);
@@ -147,15 +151,31 @@ symbol_create_list(sql_allocator *sa, int token, dlist *data)
 }
 
 symbol *
-symbol_create_int(sql_allocator *sa, int token, lng data)
+symbol_create_int(sql_allocator *sa, int token, lng ldata)
+{
+	symbol *s = SA_NEW(sa, symbol);
+	int data = (int) ldata;
+
+	assert((lng) GDK_int_min <= ldata && ldata <= (lng) GDK_int_max);
+	if (s) {
+		symbol_init(s, token, type_int);
+		s->data.i_val = data;
+		if (symbol_debug)
+			fprintf(stderr, "" PTRFMT " = symbol_create_int(%s,%d)\n", PTRFMTCAST s, token2string(s->token), data);
+	}
+	return s;
+}
+
+symbol *
+symbol_create_lng(sql_allocator *sa, int token, lng data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
 	if (s) {
-		symbol_init(s, token, type_int);
-		s->data.ival = data;
+		symbol_init(s, token, type_lng);
+		s->data.l_val = data;
 		if (symbol_debug)
-			fprintf(stderr, "" PTRFMT " = symbol_create_int(%s,"LLFMT")\n", PTRFMTCAST s, token2string(s->token), data);
+			fprintf(stderr, "" PTRFMT " = symbol_create_lng(%s,"LLFMT")\n", PTRFMTCAST s, token2string(s->token), data);
 	}
 	return s;
 }
@@ -207,13 +227,24 @@ dnode_create_list(sql_allocator *sa, dlist *data)
 	return n;
 }
 static dnode *
-dnode_create_int(sql_allocator *sa, lng data)
+dnode_create_int(sql_allocator *sa, int data)
 {
 	dnode *n = dnode_create(sa);
 
 	if (n) {
-		n->data.ival = data;
+		n->data.i_val = data;
 		n->type = type_int;
+	}
+	return n;
+}
+static dnode *
+dnode_create_lng(sql_allocator *sa, lng data)
+{
+	dnode *n = dnode_create(sa);
+
+	if (n) {
+		n->data.l_val = data;
+		n->type = type_lng;
 	}
 	return n;
 }
@@ -296,9 +327,22 @@ dlist_append_list(sql_allocator *sa, dlist *l, dlist *data)
 }
 
 dlist *
-dlist_append_int(sql_allocator *sa, dlist *l, lng data)
+dlist_append_int(sql_allocator *sa, dlist *l, lng ldata)
 {
-	dnode *n = dnode_create_int(sa, data);
+	dnode *n;
+	int data = (int) ldata;
+
+	assert((lng) GDK_int_min <= ldata && ldata <= (lng) GDK_int_max);
+	n = dnode_create_int(sa, data);
+	if (!n)
+		return NULL;
+	return dlist_append_default(l, n);
+}
+
+dlist *
+dlist_append_lng(sql_allocator *sa, dlist *l, lng data)
+{
+	dnode *n = dnode_create_lng(sa, data);
 
 	if (!n)
 		return NULL;
@@ -375,7 +419,12 @@ dnode_cmp(dnode *d1, dnode *d2)
 	if (d1->type == d2->type) {
 		switch (d1->type) {
 		case type_int:
-			return (d1->data.ival - d2->data.ival);
+			return (d1->data.i_val - d2->data.i_val);
+		case type_lng: {
+			lng c = d1->data.l_val - d2->data.l_val;
+			assert((lng) GDK_int_min <= c && c <= (lng) GDK_int_max);
+			return (int) c;
+		}
 		case type_string:
 			if (d1->data.sval == d2->data.sval)
 				return 0;
@@ -452,7 +501,12 @@ symbol_cmp(symbol *s1, symbol *s2)
 	}
 	switch (s1->type) {
 	case type_int:
-		return (s1->data.ival - s2->data.ival);
+		return (s1->data.i_val - s2->data.i_val);
+	case type_lng: {
+		lng c = s1->data.l_val - s2->data.l_val;
+		assert((lng) GDK_int_min <= c && c <= (lng) GDK_int_max);
+		return (int) c;
+	}
 	case type_string:
 		if (s1->data.sval == s2->data.sval)
 			return 0;

@@ -156,7 +156,8 @@ psm_declare_table(mvc *sql, scope *scp, dnode *n)
 		return sql_error(sql, 01, "Variable '%s' allready declared", 
 			name);
 	
-	ret = sql_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, qname, n->next->next->data.sym, n->next->next->next->data.ival);
+	assert(n->next->next->next->type == type_int);
+	ret = sql_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, qname, n->next->next->data.sym, n->next->next->next->data.i_val);
 
 	if (!ret)
 		return NULL;
@@ -796,10 +797,12 @@ psm(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 		int is_func = (s->token == SQL_DROP_FUNC);
 
-		if (l->h->next->data.ival)
-			ret = drop_all_func(sql, l->h->data.lval, l->h->next->next->next->data.ival, is_func);
+		assert(l->h->next->type == type_int);
+		assert(l->h->next->next->next->type == type_int);
+		if (l->h->next->data.i_val) /*?l_val?*/
+			ret = drop_all_func(sql, l->h->data.lval, l->h->next->next->next->data.i_val, is_func);
 		else
-			ret = drop_func(sql, l->h->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.ival, is_func);
+			ret = drop_func(sql, l->h->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, is_func);
 
 		sql->type = Q_SCHEMA;
 	}	break;

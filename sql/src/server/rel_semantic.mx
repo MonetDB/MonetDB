@@ -231,8 +231,10 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_CREATE_VIEW:
 	{
 		dlist *l = s->data.lval;
-		sql_rel *ret = rel_view(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival, l->h->next->next->next->next->data.ival);
+		sql_rel *ret = rel_view(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
 
+		assert(l->h->next->next->next->type == type_int);
+		assert(l->h->next->next->next->next->type == type_int);
 		sql->type = Q_SCHEMA;
 		return ret;
 	} break;
