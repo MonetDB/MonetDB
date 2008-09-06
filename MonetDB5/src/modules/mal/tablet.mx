@@ -1778,7 +1778,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 			started = 1;
 			if (tablet_debug && (i % 100000) == 0)
 				stream_printf(GDKerr, "inserted " BUNFMT "\n", i);
-			if ((i % 100000) == 0)
+			if ( i && (i % 100000) == 0)
 				sync_bats(as);
 			if (nr != BUN_NONE && i >= nr)
 				break;
