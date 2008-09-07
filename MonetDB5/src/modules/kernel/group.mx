@@ -188,10 +188,10 @@ command max(b:bat[:any_2,:any_1], e:bat[:any_2,:any_3]) :bat[:any_2,:any_1]
 address GRPmax
 comment "Grouped tail maximum";
 
-command count(b:bat[:any_2,:any_1], e:bat[:any_2,:any_3], nonils:bit) :bat[:any_2,:lng] 
+command count(b:bat[:any_2,:any_1], e:bat[:any_2,:any_3], nonils:bit) :bat[:any_2,:wrd] 
 address GRPaggr_count
 comment "Grouped count";
-command size(b:bat[:any_2,:bit], e:bat[:any_2,:any_1]) :bat[:any_2,:lng] 
+command size(b:bat[:any_2,:bit], e:bat[:any_2,:any_1]) :bat[:any_2,:wrd] 
 address GRPsize
 comment "Grouped count of true values";
 
@@ -2301,15 +2301,15 @@ str GRP@1_oid_@2(int *retval, int *bid)
 			ptr t = BUNtail(bi,p);
 			(void) t; /* silence compiler about unused variable */
 			@1 {
-				int *dst = (int*) BUNtloc(bni, r);
+				wrd *dst = (wrd*) BUNtloc(bni, r);
 				(*dst)++;
 			}
 		}
 	}
 @c
 @= small_aggr_count
-	cnt  = (int*) GDKmalloc(range*sizeof(int));
-	memset(cnt, 0, range*sizeof(int));
+	cnt  = (wrd*) GDKmalloc(range*sizeof(wrd));
+	memset(cnt, 0, range*sizeof(wrd));
 	BATloop(b, p, q) {
 		oid h = (*(oid*) BUNhead(bi,p)) - min;
 
@@ -2323,7 +2323,7 @@ str GRP@1_oid_@2(int *retval, int *bid)
 	}
 	BATloop(bn, p, q) {
 		oid h = (*(oid*) BUNhead(bni,p)) - min;
-		*(int*)BUNtloc(bni, p) = cnt[h];
+		*(wrd*)BUNtloc(bni, p) = cnt[h];
 	}
         GDKfree(cnt);
 @c
@@ -2338,7 +2338,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
  */
 	BAT *bn, *b = NULL, *e = NULL;
 	BATiter ei, bi, bni;
-	int zero = 0, *cnt;
+	wrd zero = 0, *cnt;
 	BUN p, q, r;
 	oid i, range, min, max;
 	int btt;
@@ -2355,7 +2355,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 	}
 	@:chkHeader(e,GRPaggr_count)@
 
-	bn = BATnew(e->htype, TYPE_lng, BATcount(e));
+	bn = BATnew(e->htype, TYPE_wrd, BATcount(e));
 	if (bn == NULL)
 		throw(MAL, "group.count", "Cannot create descriptor");
 	btt = b->ttype;

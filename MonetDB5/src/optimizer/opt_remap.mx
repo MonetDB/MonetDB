@@ -433,7 +433,7 @@ geared at handling the PSM code.
 			setFunctionId(sum, sumRef);
 			setFunctionId(cnt, countRef);
 			getArg(sum,0) = newTmpVariable(mb, getArgType(mb, p, 1));
-			getArg(cnt,0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_int));
+			getArg(cnt,0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_wrd));
 			pushInstruction(mb, sum);
 			pushInstruction(mb, cnt);
 

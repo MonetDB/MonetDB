@@ -185,6 +185,7 @@ C qualifier and the operands
 @:unary(bte)@
 @:unary(sht)@
 @:unary(int)@
+@:unary(wrd)@
 @:unary(lng)@
 @:unary(flt)@
 @:unary(dbl)@
@@ -996,6 +997,7 @@ str CMDunary@1(int *ret, int *bid)
 	case TYPE_bte: @:accumUnary(bte,@2)@ break;
 	case TYPE_sht: @:accumUnary(sht,@2)@ break;
 	case TYPE_int: @:accumUnary(int,@2)@ break;
+	case TYPE_wrd: @:accumUnary(wrd,@2)@ break;
 	case TYPE_lng: @:accumUnary(lng,@2)@ break;
 	case TYPE_flt: @:accumUnary(flt,@2)@ break;
 	case TYPE_dbl: @:accumUnary(dbl,@2)@ break;
@@ -1051,6 +1053,7 @@ str CMDunaryISNIL(int *ret, int *bid)
 	case TYPE_oid: @:accumUnaryISNIL(oid)@ break;
 	case TYPE_sht: @:accumUnaryISNIL(sht)@ break;
 	case TYPE_int: @:accumUnaryISNIL(int)@ break;
+	case TYPE_wrd: @:accumUnaryISNIL(wrd)@ break;
 	case TYPE_lng: @:accumUnaryISNIL(lng)@ break;
 	case TYPE_flt: @:accumUnaryISNIL(flt)@ break;
 	case TYPE_dbl: @:accumUnaryISNIL(dbl)@ break;

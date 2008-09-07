@@ -99,8 +99,9 @@ module calc;
 	@:mal_isnil(sht)@
 	@:mal_isnil(int)@
 	@:mal_isnil(oid)@
-	@:mal_isnil(flt)@
+	@:mal_isnil(wrd)@
 	@:mal_isnil(lng)@
+	@:mal_isnil(flt)@
 	@:mal_isnil(dbl)@
 	@:mal_isnil(str)@
 	@:mal_isnil(bat)@
@@ -1028,8 +1029,9 @@ str CALCnil2@1(@1 *retval, ptr val){
 @:c_isnil(sht)@
 @:c_isnil(int)@
 @:c_isnil(oid)@
-@:c_isnil(flt)@
+@:c_isnil(wrd)@
 @:c_isnil(lng)@
+@:c_isnil(flt)@
 @:c_isnil(dbl)@
 @:c_isnil(ptr)@
 @:c_isnil(bat)@
