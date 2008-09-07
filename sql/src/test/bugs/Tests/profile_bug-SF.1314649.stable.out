@@ -37,7 +37,7 @@ Over..
 [ "select 1;",	"monetdb"	]
 % sys.t1314649 # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 1 # length
 [ 1	]
 % tmp.history,	. # table_name

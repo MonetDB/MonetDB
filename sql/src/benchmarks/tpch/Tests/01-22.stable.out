@@ -31,7 +31,7 @@ Over..
 
 % sys.lineitem,	sys.lineitem,	sys.lineitem,	sys.lineitem,	sys.,	sys.,	sys.lineitem,	sys.,	sys.,	sys.lineitem # table_name
 % l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
-% varchar,	varchar,	bigint,	decimal,	decimal,	decimal,	double,	double,	double,	int # type
+% varchar,	varchar,	bigint,	decimal,	decimal,	decimal,	double,	double,	double,	wrd # type
 % 1,	1,	6,	17,	21,	21,	22,	22,	22,	5 # length
 [ "A",	"F",	380456,	532348211.65,	505822441.4861,	526165934.000839,	25.575154611454693,	35785.709306937351,	0.050081339069642378,	14876	]
 [ "N",	"F",	8971,	12384801.37,	11798257.2080,	12282485.056933,	25.778735632183906,	35588.509683908051,	0.047758620689655168,	348	]
@@ -91,7 +91,7 @@ Over..
 
 % sys.orders,	sys.orders # table_name
 % o_orderpriority,	order_count # name
-% varchar,	int # type
+% varchar,	wrd # type
 % 15,	3 # length
 [ "1-URGENT",	93	]
 [ "2-HIGH",	103	]
@@ -789,7 +789,7 @@ Over..
 
 % sys.c_orders,	sys.c_orders # table_name
 % c_count,	custdist # name
-% int,	int # type
+% wrd,	wrd # type
 % 2,	3 # length
 [ 0,	500	]
 [ 11,	70	]
@@ -865,7 +865,7 @@ Over..
 
 % sys.part,	sys.part,	sys.part,	sys.partsupp # table_name
 % p_brand,	p_type,	p_size,	supplier_cnt # name
-% varchar,	varchar,	int,	int # type
+% varchar,	varchar,	int,	wrd # type
 % 8,	25,	2,	1 # length
 [ "Brand#14",	"PROMO BRUSHED STEEL",	9,	8	]
 [ "Brand#35",	"SMALL POLISHED COPPER",	14,	8	]
@@ -1236,7 +1236,7 @@ Over..
 
 % sys.supplier,	sys.supplier # table_name
 % s_name,	numwait # name
-% varchar,	int # type
+% varchar,	wrd # type
 % 18,	1 # length
 [ "Supplier#000000074",	9	]
 % .stats,	.stats # table_name
@@ -1251,7 +1251,7 @@ Over..
 
 % sys.custsale,	sys.custsale,	sys.custsale # table_name
 % cntrycode,	numcust,	totacctbal # name
-% varchar,	int,	decimal # type
+% varchar,	wrd,	decimal # type
 % 2,	2,	17 # length
 [ "13",	10,	75359.29	]
 [ "17",	8,	62288.98	]

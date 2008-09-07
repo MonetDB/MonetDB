@@ -64,7 +64,7 @@ Over..
 [ 1	]
 % sys.mytable # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 1 # length
 [ 1	]
 

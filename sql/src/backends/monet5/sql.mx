@@ -60,6 +60,10 @@ pattern assert{unsafe}(b:int,msg:str):void
 address SQLassertInt
 comment "Generate an exception when b!=0";
 
+pattern assert{unsafe}(b:wrd,msg:str):void
+address SQLassertWrd
+comment "Generate an exception when b!=0";
+
 pattern assert{unsafe}(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
@@ -145,7 +149,7 @@ pattern update{unsafe}(sname:str, tname:str, cname:str, ins:any ):void
 address mvc_update_wrap
 comment "Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname";
 
-pattern clear_table{unsafe}(sname:str, tname:str) :lng
+pattern clear_table{unsafe}(sname:str, tname:str) :wrd
 address mvc_clear_table_wrap
 comment "Clear table";
 
@@ -204,11 +208,7 @@ pattern exportOperation{unsafe}(w:str) :void
 address mvc_export_operation_wrap
 comment "Export result of schema/transaction queries"; 
 
-pattern affectedRows{unsafe}(nr:int, w:str) :void
-address mvc_affected_rows_wrap
-comment "export the number of affected rows by the current query";
-
-pattern affectedRows{unsafe}(nr:lng, w:str) :void
+pattern affectedRows{unsafe}(nr:wrd, w:str) :void
 address mvc_affected_rows_wrap
 comment "export the number of affected rows by the current query";
 
@@ -1550,7 +1550,7 @@ mvc_bind_dbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "mvc_bind_dbat_wrap", "error");
 }
 
-/* str mvc_clear_table_wrap(lng *res, str *sname, str *tname); */
+/* str mvc_clear_table_wrap(wrd *res, str *sname, str *tname); */
 str
 mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1809,7 +1809,6 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	return MAL_SUCCEED;
 }
 
-/* str mvc_affected_rows_wrap(int *r, lng *nr, str *w); */
 str
 mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 {
@@ -1847,6 +1846,7 @@ mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	return MAL_SUCCEED;
 }
 
+/* str mvc_affected_rows_wrap(int *r, wrd *nr, str *w); */
 str
 mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1855,17 +1855,15 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = getContext(cntxt,mb, &c, &b);
 	int *r  = (int *) getArgReference(stk, pci, 0);
 	int mtype = getArgType(mb, pci, 1);
-	lng nr;
+	wrd nr;
 	str *w = (str *) getArgReference(stk, pci, 2);
 
 	(void) cntxt;
 	if (msg)
 		return msg;
 	c->type = Q_UPDATE;
-	if (mtype == TYPE_int)
-		nr = *(int *) getArgReference(stk, pci, 1);
-	else
-		nr = *(lng *) getArgReference(stk, pci, 1);
+	assert (mtype == TYPE_wrd);
+	nr = *(wrd *) getArgReference(stk, pci, 1);
 	if (mvc_export_affrows(c, b->out, nr, *w)) {
 		throw(SQL, "sql.affectedRows", "failed");
 	}

@@ -229,6 +229,7 @@ extern stmt *stmt_atom(atom *op1);
 extern stmt *stmt_atom_string(char *s);
 extern stmt *stmt_atom_clob(char *S);
 extern stmt *stmt_atom_int(int i);
+extern stmt *stmt_atom_wrd(wrd i);
 extern stmt *stmt_atom_lng(lng l);
 extern stmt *stmt_bool(int b);
 extern stmt *stmt_filter(stmt *sel);
@@ -458,6 +459,18 @@ stmt_atom_int(int i)
 	sql_subtype t;
 
 	sql_find_subtype(&t, "int", 32, 0);
+	return stmt_atom(atom_int(&t, i));
+}
+
+stmt *
+stmt_atom_wrd(wrd i)
+{
+	sql_subtype t;
+
+	if (sizeof(wrd) == sizeof(int))
+		sql_find_subtype(&t, "wrd", 32, 0);
+	else
+		sql_find_subtype(&t, "wrd", 64, 0);
 	return stmt_atom(atom_int(&t, i));
 }
 

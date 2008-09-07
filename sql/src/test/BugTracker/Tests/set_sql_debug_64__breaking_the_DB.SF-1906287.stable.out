@@ -34,8 +34,8 @@ stdout of test 'set_sql_debug_64__breaking_the_DB.SF-1906287` in directory 'src/
 % sys.users,	sys.users,	sys.users # table_name
 % name,	fullname,	default_schema # name
 % varchar,	varchar,	int # type
-% 9,	10,	3 # length
-[ "skyserver",	"sky server",	978	]
+% 9,	10,	4 # length
+[ "skyserver",	"sky server",	1048	]
 
 # 16:28:05 >  
 # 16:28:05 >  Done.

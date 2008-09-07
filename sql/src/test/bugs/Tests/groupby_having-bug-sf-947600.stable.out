@@ -21,7 +21,7 @@ Over..
 
 % sys.a,	sys.b,	sys.b # table_name
 % name,	name,	count_name # name
-% varchar,	varchar,	int # type
+% varchar,	varchar,	wrd # type
 % 10,	10,	2 # length
 [ "args",	"columns",	6	]
 [ "args",	"idxs",	6	]

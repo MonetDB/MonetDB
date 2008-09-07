@@ -31,12 +31,12 @@ Over..
 [ 1	]
 % . # table_name
 % count_no_nil_single_value # name
-% int # type
+% wrd # type
 % 1 # length
 [ 1	]
 % . # table_name
 % count_no_nil_single_value # name
-% int # type
+% wrd # type
 % 1 # length
 [ 0	]
 % . # table_name

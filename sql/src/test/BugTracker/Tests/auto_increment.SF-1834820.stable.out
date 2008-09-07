@@ -52,12 +52,12 @@ Over..
 [ 2,	"fred",	"Fred Flintstone"	]
 % sys.sequences # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 1 # length
 [ 1	]
 % sys.sequences # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 1 # length
 [ 0	]
 

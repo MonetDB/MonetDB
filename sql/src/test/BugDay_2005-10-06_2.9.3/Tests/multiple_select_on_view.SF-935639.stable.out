@@ -28,12 +28,12 @@ Over..
 [ 1	]
 % sys.c # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 1 # length
 [ 2	]
 % sys.c # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 1 # length
 [ 2	]
 

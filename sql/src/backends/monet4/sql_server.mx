@@ -116,7 +116,7 @@ the updates to the persistent versions.
 @-
 A special clear table function is required for an efficient DELETE ALL implementation. A table clear requires global table knowledge. 
 @m
-	.COMMAND mvc_clear_table( mvc c, str sname, str tname ) :lng = mvc_clear_table_wrap;
+	.COMMAND mvc_clear_table( mvc c, str sname, str tname ) :wrd = mvc_clear_table_wrap;
 		"Clear table" 
 
 	.COMMAND mvc_delete( mvc c, str sname, str tname, any b ) :void = mvc_delete_wrap;
@@ -725,7 +725,7 @@ mvc_bind_idxbat_wrap(BAT **res, mvc *c, str sname, str tname, str iname, int *ac
 }
 
 int
-mvc_clear_table_wrap(lng *res, mvc *c, str sname, str tname)
+mvc_clear_table_wrap(wrd *res, mvc *c, str sname, str tname)
 {
 	mvc *m = *(mvc **) c;
 	sql_schema *s = mvc_bind_schema(m, sname);

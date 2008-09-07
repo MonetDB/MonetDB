@@ -53,7 +53,7 @@ Over..
 [ 6,	1,	1,	1,	1,	1,	"first row",	"first row",	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 % sys.proc_insert_into_t1 # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 1 # length
 [ 6	]
 % sys.proc_insert_into_t1 # table_name

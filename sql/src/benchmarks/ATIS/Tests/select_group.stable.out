@@ -1,18 +1,23 @@
 stdout of test 'select_group` in directory 'src/benchmarks/ATIS` itself:
 
 
-# 08:51:00 >  
-# 08:51:00 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5/lib:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5/lib:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dblogs" --set mapi_port=38979 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_ATIS" --dbinit='include sql;' ; echo ; echo Over..
-# 08:51:00 >  
+# 16:01:29 >  
+# 16:01:29 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=34442 --set xrpc_port=47029 --set monet_prompt= --trace  "--dbname=mTests_src_benchmarks_ATIS" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 16:01:29 >  
 
-printf("\nReady.\n");
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_benchmarks_ATIS', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34442/
+# MonetDB/SQL module v2.25.0 loaded
 
 Ready.
 
-
-
-
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -22,7 +27,7 @@ Over..
 
 % sys.day_name,	sys.day_name,	sys.day_name # table_name
 % day_name,	day_code,	count_day_code # name
-% char,	decimal,	int # type
+% char,	decimal,	wrd # type
 % 9,	2,	2 # length
 [ "MONDAY",	1,	64	]
 [ "TUESDAY",	2,	64	]
@@ -33,7 +38,7 @@ Over..
 [ "SUNDAY",	7,	64	]
 % sys.day_name,	sys.day_name # table_name
 % day_name,	count_day_name # name
-% char,	int # type
+% char,	wrd # type
 % 9,	2 # length
 [ "MONDAY",	64	]
 [ "TUESDAY",	64	]
@@ -52,7 +57,7 @@ Over..
 [ "JULY",	"SUNDAY"	]
 % sys.day_name,	sys.flight_day,	sys.day_name # table_name
 % day_name,	day_code,	count_day_name # name
-% char,	decimal,	int # type
+% char,	decimal,	wrd # type
 % 9,	2,	2 # length
 [ "MONDAY",	1,	64	]
 [ "TUESDAY",	2,	64	]
@@ -78,7 +83,7 @@ Over..
 [ 2.3760683760683761	]
 % sys.aircraft,	sys.aircraft,	sys.aircraft # table_name
 % count_,	min_pay_load,	max_pay_load # name
-% int,	int,	int # type
+% wrd,	int,	int # type
 % 2,	3,	6 # length
 [ 94,	240,	165710	]
 % sys.flight,	sys.flight # table_name
@@ -93,17 +98,17 @@ Over..
 [ "ATL",	"ATL"	]
 % sys.aircraft # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 2 # length
 [ 50	]
 % sys.aircraft # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 2 # length
 [ 94	]
 % sys.flight # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 3 # length
 [ 279	]
 % sys.flight,	sys.flight,	sys.flight # table_name
@@ -128,7 +133,7 @@ Over..
 [ "BBWI",	5	]
 % sys.ground_service,	sys.ground_service # table_name
 % count_city_code,	city_code # name
-% int,	char # type
+% wrd,	char # type
 % 1,	4 # length
 [ 3,	"MATL"	]
 [ 3,	"BBOS"	]
@@ -144,14 +149,14 @@ Over..
 [ 1,	""	]
 % sys.aircraft,	sys.aircraft # table_name
 % category,	totalnr # name
-% char,	int # type
+% char,	wrd # type
 % 10,	2 # length
 [ "JET",	15	]
 [ "PROPELLER",	16	]
 [ "TURBOPROP",	32	]
 % sys.aircraft,	sys.aircraft # table_name
 % category,	count_category # name
-% char,	int # type
+% char,	wrd # type
 % 10,	2 # length
 [ "JET",	15	]
 [ "PROPELLER",	16	]

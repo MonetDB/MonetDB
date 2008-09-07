@@ -3489,7 +3489,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			stmt *res, *s = ls->op1.lval->h->data;
 			sql_subaggr *cnt;
 			sql_subtype *bt = sql_bind_localtype("bit");
-			sql_subtype *it = sql_bind_localtype("int");
+			sql_subtype *it = sql_bind_localtype("wrd");
 
 			if (s->nrcols == 0) {
 				s = stmt_append(stmt_temp(tail_type(s)), stmt_dup(s));
@@ -3500,11 +3500,11 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			if (sc->token == SQL_EXISTS) {
 				sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
 
-				res = stmt_binop(res, stmt_atom_int(0), ne);
+				res = stmt_binop(res, stmt_atom_wrd(0), ne);
 			} else {	/* NOT EXISTS */
 				sql_subfunc *e = sql_bind_func_result(sql->session->schema, "=", it, it, bt);
 
-				res = stmt_binop(res, stmt_atom_int(0), e);
+				res = stmt_binop(res, stmt_atom_wrd(0), e);
 			}
 			stmt_destroy(ls);
 			return res;

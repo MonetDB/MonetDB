@@ -22,12 +22,12 @@ Over..
 
 % .,	. # table_name
 % single_value,	count_ # name
-% char,	int # type
+% char,	wrd # type
 % 9,	3 # length
 [ "transient",	198	]
 % .,	. # table_name
 % single_value,	count_ # name
-% char,	int # type
+% char,	wrd # type
 % 10,	3 # length
 [ "persistent",	227	]
 

@@ -117,6 +117,9 @@ atom_int(sql_subtype *tpe, lng val)
 		case TYPE_int:
 			a->data.val.ival = (int) val;
 			break;
+		case TYPE_wrd:
+			a->data.val.wval = (wrd) val;
+			break;
 		case TYPE_lng:
 			a->data.val.lval = val;
 			break;
@@ -269,6 +272,9 @@ atom2string(atom *a)
 	switch (a->data.vtype) { 
 	case TYPE_lng:
 		sprintf(buf, LLFMT, a->data.val.lval);
+		break;
+	case TYPE_wrd:
+		sprintf(buf, SZFMT, a->data.val.wval);
 		break;
 	case TYPE_int:
 		sprintf(buf, "%d", a->data.val.ival);

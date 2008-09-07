@@ -30,7 +30,7 @@ Over..
 [ 1	]
 % .bbp # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 2 # length
 [ 82	]
 % . # table_name
@@ -40,7 +40,7 @@ Over..
 [ 1	]
 % .bbp # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 2 # length
 [ 82	]
 

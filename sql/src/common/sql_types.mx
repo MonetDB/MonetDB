@@ -1243,7 +1243,7 @@ sqltypeinit(void)
 	sql_type *ts[100];
 	sql_type **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
-	sql_type *STR, *BTE, *INT, *LNG, *OID, *BIT, *DBL;
+	sql_type *STR, *BTE, *INT, *LNG, *OID, *BIT, *DBL, *WRD;
 	sql_type *SECINT, *MONINT, *DTE; 
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
 	sql_type *ANY;
@@ -1264,6 +1264,10 @@ sqltypeinit(void)
 	numerical = t;
 
 	OID = *t++ = sql_create_type("OID", 31, 0, 2, EC_NUM, "oid");
+	if (sizeof(wrd) == sizeof(int))
+		WRD = *t++ = sql_create_type("WRD", 32, SCALE_FIX, 2, EC_NUM, "wrd");
+	else
+		WRD = *t++ = sql_create_type("WRD", 64, SCALE_FIX, 2, EC_NUM, "wrd");
 	BTE = *t++ = sql_create_type("TINYINT",   8, SCALE_FIX, 2, EC_NUM, "bte");
 	      *t++ = sql_create_type("SMALLINT", 16, SCALE_FIX, 2, EC_NUM, "sht");
 	INT = *t++ = sql_create_type("INT",      32, SCALE_FIX, 2, EC_NUM, "int");
@@ -1328,7 +1332,9 @@ sqltypeinit(void)
 	sql_create_func3("ifthenelse", "calc", "ifthenelse", BIT, ANY, ANY, ANY, SCALE_FIX);
 
 	/* sum for numerical and decimals */
-	for (t = numerical+1; t < floats; t += 4) {
+	sql_create_aggr("sum", "aggr", "sum", WRD, WRD);
+	sql_create_aggr("sum", "aggr", "sum", WRD, LNG);
+	for (t = numerical+2 /* skipe OID/WRD */; t < floats; t += 4) {
 		sql_create_aggr("sum", "aggr", "sum", *(t), *(t + 1));
 		sql_create_aggr("sum", "aggr", "sum", *(t + 1), *(t + 2));
 		sql_create_aggr("sum", "aggr", "sum", *(t + 2), *(t + 3));
@@ -1347,8 +1353,8 @@ sqltypeinit(void)
 		sql_create_func("mod", "calc", "fmod", *t, *t, *t, SCALE_FIX);
 	}
 
-	sql_create_aggr("count_no_nil", "aggr", "count_no_nil", NULL, INT);
-	sql_create_aggr("count", "aggr", "count", NULL, INT);
+	sql_create_aggr("count_no_nil", "aggr", "count_no_nil", NULL, WRD);
+	sql_create_aggr("count", "aggr", "count", NULL, WRD);
 
 	sql_create_func("rank", "calc", "rank_grp", ANY, NULL, INT, SCALE_NONE);
 	sql_create_func("dense_rank", "calc", "dense_rank_grp", ANY, NULL, INT, SCALE_NONE);

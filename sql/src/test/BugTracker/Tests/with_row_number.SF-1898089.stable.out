@@ -27,7 +27,7 @@ Over..
 [ 32605	]
 % sys.tradedate # table_name
 % cnt # name
-% int # type
+% wrd # type
 % 5 # length
 [ 32605	]
 % sys.e,	.e # table_name
