@@ -5,15 +5,18 @@ stdout of test 'slam` in directory 'src/test/ADT2006` itself:
 # 14:13:27 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/stable/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib/MonetDB/lib:/ufs/fabian/scratch/monetdb/stable/program-x86_64/lib/MonetDB/bin" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-stable-monetdb-pegasus.ins.cwi.nl/sql/log" --set "sql_logdir=/ufs/fabian/scratch/monetdb/stable/program-x86_64/var/MonetDB/xquery_logs" --set mapi_port=34742 --set monet_prompt= --trace "--dbname=mTests_src_test_ADT2006" --dbinit=" module(sql_server);" ; echo ; echo Over..
 # 14:13:27 >  
 
-# Monet Database Server V4.14.0
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_test_ADT2006', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-2008 CWI, all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:39979/
+# MonetDB/SQL module v2.25.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -238,7 +241,7 @@ Over..
 [ "Whitehall Mystery",	NULL,	NULL	]
 % sys.i,	sys.si # table_name
 % name,	times # name
-% varchar,	int # type
+% varchar,	wrd # type
 % 45,	1 # length
 [ "Chief Constable Adolphus Frederick Williamson",	0	]
 [ "Chief Inspector Donald Swanson",	1	]
@@ -286,7 +289,7 @@ Over..
 [ "Pinchin Street Murder, possibly Lydia Hart",	"",	"",	"body, missing both head and legs"	]
 % sys.jtr_victim,	sys.jtr_victim # table_name
 % eyes,	times # name
-% varchar,	int # type
+% varchar,	wrd # type
 % 10,	1 # length
 [ "blue",	2	]
 [ "brown",	1	]
@@ -295,7 +298,7 @@ Over..
 [ "unknown",	1	]
 % sys.s,	sys.w,	sys.i,	sys.d,	sys.sp # table_name
 % victim,	witnesses,	inspectors,	doctors,	suspects # name
-% varchar,	int,	int,	int,	int # type
+% varchar,	wrd,	wrd,	wrd,	wrd # type
 % 42,	1,	1,	1,	1 # length
 [ "\"Fairy Fay\"",	0,	1,	0,	0	]
 [ "Ada Wilson",	2,	0,	0,	0	]

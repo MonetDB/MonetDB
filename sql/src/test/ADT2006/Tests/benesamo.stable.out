@@ -7,8 +7,8 @@ stdout of test 'benesamo` in directory 'src/test/ADT2006` itself:
 
 
 
-# MonetDB server v5.6.1, based on kernel v1.24.1
-# Serving database 'mTests_src_test_ADT2006'
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_test_ADT2006', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
@@ -192,17 +192,17 @@ Over..
 [ "Annie",	"Farmer",	"(survived the attack on 1888-11-20)"	]
 % sys.scene_witness # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 1 # length
 [ 6	]
 % sys.scene_inspector # table_name
 % count_inspector_id # name
-% int # type
+% wrd # type
 % 1 # length
 [ 2	]
 % sys.victim # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 1 # length
 [ 2	]
 % sys.victim,	sys.victim,	sys.victim # table_name
@@ -256,7 +256,7 @@ Over..
 [ "Dr.",	"George",	"Baxter",	"Phillips"	]
 % sys.victim # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 2 # length
 [ 18	]
 
