@@ -1007,37 +1007,6 @@ unlock_desc(bat bid)
 }
 
 int
-CMDcount_bat(wrd *res, int *bid)
-{
-	if (BBPcheck((bat) *bid, "CMDcount_bat")) {
-		BAT *b = lock_desc((bat) *bid);
-
-		if (b == NULL) {
-			*res = wrd_nil;
-		} else if (BBP_cache((bat) *bid)) {
-			*res = (wrd) BATcount(b);
-		} else {
-			/* BAT not loaded */
-			*res = (wrd) ((b->H->heap.free) / Hsize(b) - b->batFirst );
-		}
-		unlock_desc(*bid);
-	}
-	return GDK_SUCCEED;
-}
-
-int
-CMDsetcount_bat(wrd *res, BAT *b, lng *c)
-{
-	if (*c > BUN_MAX || *c < 0) {
-		GDKerror("CMDsetcount_bat: argument out of range\n");
-		return GDK_FAIL;
-	}
-	BATsetcount(b, (BUN) *c);
-	*res = *c;
-	return GDK_SUCCEED;
-}
-
-int
 CMDcapacity(lng *res, int *bid)
 {
 	if (BBPcheck((bat) *bid, "CMDcapacity")) {
