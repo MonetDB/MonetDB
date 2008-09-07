@@ -962,8 +962,8 @@ CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e)
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_count(@1,@2,@3,@4,@5,@6);\n");
 	if (@1) {
 		/* create tmp. cnt array */
-		cnt = (int*) GDKmalloc(range*sizeof(int));
-		memset(cnt, 0, range*sizeof(int));
+		cnt = (wrd*) GDKmalloc(range*sizeof(wrd));
+		memset(cnt, 0, range*sizeof(wrd));
 	}
 	if (@2 && BATprepareHash(bn)) {
 		if (@1)
@@ -1025,7 +1025,7 @@ CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e)
 		/* copy cnt array to final result */
 		BATloop(bn, p, q) {
 			oid h = (*(oid*) BUNh@4(bni,p)) - min;
-			*(int*)BUNtloc(bni, p) = cnt[h];
+			*(wrd*)BUNtloc(bni, p) = cnt[h];
 		}
 		GDKfree(cnt);
 	}
@@ -1042,7 +1042,7 @@ CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e)
 		@3(r, bni, h);
 		if (r != BUN_NONE) {
 			@7 {
-				int *dst = (int*) @6;
+				wrd *dst = (wrd*) @6;
 				(*dst)++;
 			}
 		}
@@ -1054,7 +1054,7 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 {
 	BATiter bni, bi = bat_iterator(b);
 	BAT *bn;
-	int zero = 0, *cnt;
+	wrd zero = 0, *cnt;
 	BUN p, q, r;
 	oid range;
 	oid min, max;
@@ -1071,7 +1071,7 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	    BATcount(b) == BATcount(e) &&
 	    (!ignore_nils || b->T->nonil)) {
 		/* simply return counts with one */
-		int one = 1;
+		wrd one = 1;
 		bn = BATconst(b, TYPE_wrd, &one);
 		*ret = bn;
 		return GDK_SUCCEED;
