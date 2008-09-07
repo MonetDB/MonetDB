@@ -1854,7 +1854,9 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *c = NULL;
 	str msg = getContext(cntxt,mb, &c, &b);
 	int *r  = (int *) getArgReference(stk, pci, 0);
+#ifndef NDEBUG
 	int mtype = getArgType(mb, pci, 1);
+#endif
 	wrd nr;
 	str *w = (str *) getArgReference(stk, pci, 2);
 
