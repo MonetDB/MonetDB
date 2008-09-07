@@ -1,0 +1,34 @@
+stdout of test 'pfmil_and_nil_in_results_2.SF-2015135` in directory 'tests/BugTracker` itself:
+
+
+# 18:19:36 >  
+# 18:19:36 >   Mserver "--config=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/lib:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/bin" --set "gdk_dbfarm=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/dbfarm" --set "sql_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=37395 --set xrpc_port=49227 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker"                       --set xquery_backend=milprint_summer "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 18:19:36 >  
+
+# MonetDB Server v4.24.1
+# based on GDK   v1.24.1
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.24.1 loaded (default back-end is 'milprint_summer')
+# XRPC administrative console at http://127.0.0.1:49227/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 18:19:36 >  
+# 18:19:36 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=jarl --port=37395 -g pfmil_and_nil_in_results_2.SF-2015135.xq
+# 18:19:36 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><bun tail="" head="abc"/><bun/></XQueryResult>
+
+# 18:19:36 >  
+# 18:19:36 >  Done.
+# 18:19:36 >  
+
