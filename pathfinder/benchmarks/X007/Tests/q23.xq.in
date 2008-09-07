@@ -1,7 +1,0 @@
-let $doc := doc("$TSTTRGDIR/load_docs.xml")//doc/text()
-
-let $d   := doc(exactly-one($doc[1]))/ComplexAssembly/ComplexAssembly/ComplexAssembly/ComplexAssembly/BaseAssembly/CompositePart/Document[@MyID = 25]
-return
-  <After_DOC>
-    {$doc/ComplexAssembly/ComplexAssembly/ComplexAssembly/ComplexAssembly/BaseAssembly/CompositePart/Document[. >> exactly-one($d)]}
-  </After_DOC>

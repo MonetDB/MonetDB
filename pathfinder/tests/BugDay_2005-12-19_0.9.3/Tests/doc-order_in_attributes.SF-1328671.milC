@@ -1,3 +1,0 @@
-xquery("dm","<a value=\"1\"><b value=\"2\"/><c value=\"3\"/></a>//*/@value[. > 1]").printf();
-xquery("dm","<a value=\"1\"><b value=\"2\" name=\"4\"/><c value=\"3\"/></a>//*/@*[. > 1]").printf();
-xquery("dm","<a value=\"1\"><b value=\"2\" name=\"4\"/><c value=\"3\"/></a>//*[@*[. > 1]]/@*").printf();

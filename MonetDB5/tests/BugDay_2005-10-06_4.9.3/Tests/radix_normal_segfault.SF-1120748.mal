@@ -1,2 +1,0 @@
-module(radix);
-normal(0).print();

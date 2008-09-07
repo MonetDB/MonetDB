@@ -1,4 +1,0 @@
-for $ent in doc("$TSTTRGDIR/small.dictionary.xml")/dictionary/e
-where $ent//hw = "or"
-return
-    $ent//qt
