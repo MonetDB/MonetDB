@@ -248,8 +248,8 @@ extern int sqlparse(void *);
 /* reentrant parser */
 %pure_parser
 %union {
-	int		i_val;
-	lng		l_val,operation,bval;
+	int		i_val,bval;
+	lng		l_val,operation;
 	double		fval;
 	char *		sval;
 	symbol*		sym;
@@ -4412,7 +4412,9 @@ intval:
 		      tpe->type->localtype == TYPE_int ||
 		      tpe->type->localtype == TYPE_sht ||
 		      tpe->type->localtype == TYPE_bte ) {
-			$$ = stack_get_number(m, name);
+			lng sgn = stack_get_number(m, name);
+			assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
+			$$ = (int) sgn;
 		  } else {
 			char *msg = sql_message("constant (%s) has wrong type (number expected)", $1);
 
