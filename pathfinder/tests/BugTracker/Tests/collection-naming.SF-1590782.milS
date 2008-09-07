@@ -1,9 +1,0 @@
-module(unix);
-module(pathfinder);
-var TST := getenv("TST");
-var TSTSRCDIR := getenv("TSTSRCDIR");
-
-shred_doc(TSTSRCDIR+"/"+TST+".xml","mies.xml","aap1",50LL);
-shred_doc(TSTSRCDIR+"/"+TST+".xml","mies.xml","aap2",50LL);
-shred_doc(TSTSRCDIR+"/"+TST+".xml","noot.xml","aap2",50LL);
-shred_doc(TSTSRCDIR+"/"+TST+".xml","noot.xml","aap1",50LL);

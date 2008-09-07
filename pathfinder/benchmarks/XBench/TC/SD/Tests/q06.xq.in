@@ -1,5 +1,0 @@
-for $word in doc("$TSTTRGDIR/small.dictionary.xml")/dictionary/e
-where some $item in $word/ss/s/qp/q
-    satisfies zero-or-one($item/qd) eq "1900"
-return
-    $word

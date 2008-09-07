@@ -1,8 +1,0 @@
-let $doc :=
-for $d in doc("$TSTTRGDIR/load_docs.xml")//doc/text()
-return doc($d)
-for $prolog in $doc/article/prolog
-where
-    $prolog/authors/author/name="Ben Yang"
-return
-    $prolog/title
