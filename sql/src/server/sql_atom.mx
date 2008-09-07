@@ -274,7 +274,7 @@ atom2string(atom *a)
 		sprintf(buf, LLFMT, a->data.val.lval);
 		break;
 	case TYPE_wrd:
-		sprintf(buf, SZFMT, a->data.val.wval);
+		sprintf(buf, SSZFMT, a->data.val.wval);
 		break;
 	case TYPE_int:
 		sprintf(buf, "%d", a->data.val.ival);
