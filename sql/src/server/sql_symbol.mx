@@ -60,7 +60,7 @@ extern int dlist_length(dlist *l);
 
 extern dlist *dlist_append_string(sql_allocator *sa, dlist *l, char *data);
 extern dlist *dlist_append_list(sql_allocator *sa, dlist *l, dlist *data);
-extern dlist *dlist_append_int(sql_allocator *sa, dlist *l, lng data);
+extern dlist *dlist_append_int(sql_allocator *sa, dlist *l, int data);
 extern dlist *dlist_append_lng(sql_allocator *sa, dlist *l, lng data);
 extern dlist *dlist_append_symbol(sql_allocator *sa, dlist *l, struct symbol *data);
 extern dlist *dlist_append_type(sql_allocator *sa, dlist *l, struct sql_subtype *data);
@@ -94,7 +94,7 @@ typedef struct AtomNode {
 
 extern symbol *symbol_create(sql_allocator *sa, int token, char *data);
 extern symbol *symbol_create_list(sql_allocator *sa, int token, dlist *data);
-extern symbol *symbol_create_int(sql_allocator *sa, int token, lng data);
+extern symbol *symbol_create_int(sql_allocator *sa, int token, int data);
 extern symbol *symbol_create_lng(sql_allocator *sa, int token, lng data);
 extern symbol *symbol_create_symbol(sql_allocator *sa, int token, symbol *data);
 
@@ -151,12 +151,10 @@ symbol_create_list(sql_allocator *sa, int token, dlist *data)
 }
 
 symbol *
-symbol_create_int(sql_allocator *sa, int token, lng ldata)
+symbol_create_int(sql_allocator *sa, int token, int data)
 {
 	symbol *s = SA_NEW(sa, symbol);
-	int data = (int) ldata;
 
-	assert((lng) GDK_int_min <= ldata && ldata <= (lng) GDK_int_max);
 	if (s) {
 		symbol_init(s, token, type_int);
 		s->data.i_val = data;
@@ -327,13 +325,10 @@ dlist_append_list(sql_allocator *sa, dlist *l, dlist *data)
 }
 
 dlist *
-dlist_append_int(sql_allocator *sa, dlist *l, lng ldata)
+dlist_append_int(sql_allocator *sa, dlist *l, int data)
 {
-	dnode *n;
-	int data = (int) ldata;
+	dnode *n = dnode_create_int(sa, data);
 
-	assert((lng) GDK_int_min <= ldata && ldata <= (lng) GDK_int_max);
-	n = dnode_create_int(sa, data);
 	if (!n)
 		return NULL;
 	return dlist_append_default(l, n);

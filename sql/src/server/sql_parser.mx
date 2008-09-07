@@ -248,7 +248,8 @@ extern int sqlparse(void *);
 /* reentrant parser */
 %pure_parser
 %union {
-	lng		ival,operation,bval;
+	int		i_val;
+	lng		l_val,operation,bval;
 	double		fval;
 	char *		sval;
 	symbol*		sym;
@@ -538,7 +539,7 @@ int yydebug=1;
 	XML_default_namespace_declaration_item
 	XML_value_expression_list
 
-%type <ival>
+%type <i_val>
 	any_all_some
 	opt_port
 	drop_action
@@ -568,11 +569,6 @@ int yydebug=1;
 	transaction_mode
 	transaction_mode_list
 	_transaction_mode_list
-	opt_start
-	opt_increment
-	opt_min
-	opt_max
-	opt_cache
 	opt_cycle
 	opt_ref_action
 	ref_on_delete
@@ -584,6 +580,13 @@ int yydebug=1;
 	opt_XML_content_option
 	XML_content_option
 	opt_XML_returning_clause
+
+%type <l_val>
+	opt_start
+	opt_increment
+	opt_min
+	opt_max
+	opt_cache
 
 %type <bval>
 	opt_brackets
