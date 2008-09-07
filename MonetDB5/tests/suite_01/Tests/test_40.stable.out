@@ -168,8 +168,8 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("b.delete();"); 
     ua_a := bat.delete(b);              # 49 ua_a:bat[:str,:int] := BKCdelete_all(b:bat[:str,:int]) {G}
 #	io.print("b.count().print();"); 
-    va_a := aggr.count(b);              # 51 va_a:int := ALGcount_bat(b:bat[:str,:int]) 
-    wa_a := io.print(va_a);             # 52 wa_a:void := IOprint_val(va_a:int) 
+    va_a := aggr.count(b);              # 51 va_a:wrd := ALGcount_bat(b:bat[:str,:int]) 
+    wa_a := io.print(va_a);             # 52 wa_a:void := IOprint_val(va_a:wrd) 
 #	io.print("b.import(\"monet2\");"); 
     xa_a := io.import(b,"monet2");      # 54 xa_a:bat[:str,:int] := IOimport(b:bat[:str,:int], _72:str) {G}
 #	io.print("b.print();"); 
@@ -210,8 +210,8 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("cb.delete();"); 
     sb_a := bat.delete(cb);             # 91 sb_a:bat[:int,:int] := BKCdelete_all(cb:bat[:int,:int]) {G}
 #	io.print("cb.count().print();"); 
-    tb_a := aggr.count(cb);             # 93 tb_a:int := ALGcount_bat(cb:bat[:int,:int]) 
-    ub_a := io.print(tb_a);             # 94 ub_a:void := IOprint_val(tb_a:int) 
+    tb_a := aggr.count(cb);             # 93 tb_a:wrd := ALGcount_bat(cb:bat[:int,:int]) 
+    ub_a := io.print(tb_a);             # 94 ub_a:void := IOprint_val(tb_a:wrd) 
 #	io.print("cb.import(\"monet1\");"); 
     vb_a := io.import(cb,"monet1");     # 96 vb_a:bat[:int,:int] := IOimport(cb:bat[:int,:int], _133:str) {G}
 #	io.print("cb.print();"); 

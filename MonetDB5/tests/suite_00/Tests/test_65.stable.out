@@ -120,7 +120,7 @@ end main;	# 45
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 6@0,	  36	  ]
+[ 7@0,	  49	  ]
 #~EndVariableOutput~#
 #printf(\"#~BeginVariableOutput~#\\n\"); b.sample(1).print(); io.printf(\"#~EndVariableOutput~#\\n\");
 #~BeginVariableOutput~#
@@ -128,7 +128,7 @@ end main;	# 45
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 8@0,	  64	  ]
+[ 7@0,	  49	  ]
 #~EndVariableOutput~#
 #printf(\"#~BeginVariableOutput~#\\n\"); b.sample(9).print(); ioprintf(\"#~EndVariableOutput~#\\n\");
 #~BeginVariableOutput~#

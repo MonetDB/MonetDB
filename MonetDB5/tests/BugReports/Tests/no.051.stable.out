@@ -83,8 +83,8 @@ function user.create(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];#  0 create:bat[:a
 #	io.print("        b@batloop(){"); 
 barrier (aa_a,aa_aH,aa_aT) := bat.newIterator(b);#  4 (aa_a:lng, aa_aH:any, aa_aT:any) := CHPbunIterator(b:bat[:any_1,:any_2]) {J13}
 #	io.print("                if (a.count() = 0)"); 
-    ba_a := aggr.count(a);              #  6 ba_a:int := ALGcount_bat(a:bat[:oid,:flt]) 
-barrier ca_a := calc.==(ba_a,0);        #  7 ca_a:bit := CALCcompEQintint(ba_a:int, _13:int) {J11}
+    ba_a := aggr.count(a);              #  6 ba_a:wrd := ALGcount_bat(a:bat[:oid,:flt]) 
+barrier ca_a := calc.==(ba_a,0);        #  7 ca_a:bit := CALCcompEQwrdint(ba_a:wrd, _13:int) {J11}
 #	io.print("                        return a;"); 
     return da_a := a;                   #  9 da_a:bat[:oid,:flt] := a:bat[:oid,:flt] {G}
 #	io.print("        }"); 

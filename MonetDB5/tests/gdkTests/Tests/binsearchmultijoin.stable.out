@@ -111,8 +111,8 @@ barrier (_52,_53,_54) := bat.newIterator(l2);# 25 (_52:lng, _53:oid, _54:int) :=
     redo (_52,_53,_54) := bat.hasMoreElements(l2);# 29 (_52:lng, _53:oid, _54:int) := CHPbunHasMoreElements(l2:bat[:oid,:int]) {J26}
 exit (_52,_53,_54);                     # 30 (_52:lng, _53:oid, _54:int) 
     z:bat[:oid,:int]  := _48;           # 31 z:bat[:oid,:int] := _48:bat[:oid,:int] {G}
-    c := aggr.count(z);                 # 32 c:int := ALGcount_bat(z:bat[:oid,:int]) 
-    io.print(c);                        # 33 _36:void := IOprint_val(c:int) 
+    c := aggr.count(z);                 # 32 c:wrd := ALGcount_bat(z:bat[:oid,:int]) 
+    io.print(c);                        # 33 _36:void := IOprint_val(c:wrd) 
 # the other case when binsearch is chosen, is if r is sorted, 
 # but l.count() > 40*r.count(): 
     n81 := user.Nseq(81);               # 36 n81:bat[:oid,:int] := user.Nseq(_40:int) {G}
@@ -128,8 +128,8 @@ barrier (_65,_66,_67) := bat.newIterator(nr);# 42 (_65:lng, _66:oid, _67:int) :=
     redo (_65,_66,_67) := bat.hasMoreElements(nr);# 46 (_65:lng, _66:oid, _67:int) := CHPbunHasMoreElements(nr:bat[:oid,:int]) {J43}
 exit (_65,_66,_67);                     # 47 (_65:lng, _66:oid, _67:int) 
     z:bat[:oid,:int]  := _63;           # 48 z:bat[:oid,:int] := _63:bat[:oid,:int] {G}
-    c := aggr.count(z);                 # 49 c:int := ALGcount_bat(z:bat[:oid,:int]) 
-    io.print(c);                        # 50 _45:void := IOprint_val(c:int) 
+    c := aggr.count(z);                 # 49 c:wrd := ALGcount_bat(z:bat[:oid,:int]) 
+    io.print(c);                        # 50 _45:void := IOprint_val(c:wrd) 
 #[+](Nseq(81).reverse().project(oid(0)).reverse(),r.sort()).count().print(); 
     clients.quit();                     # 52 _47:void := CLTquit() 
 end main;                               # 53  

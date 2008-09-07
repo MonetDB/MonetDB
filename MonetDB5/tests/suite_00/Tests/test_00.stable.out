@@ -243,8 +243,8 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("b.insert(1,15);"); 
     pb_a := bat.insert(b,1,15);         # 80 pb_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _108:int, _94:int) {G}
 #	io.print("b.count().print();"); 
-    qb_a := aggr.count(b);              # 82 qb_a:int := ALGcount_bat(b:bat[:int,:int]) 
-    rb_a := io.print(qb_a);             # 83 rb_a:void := IOprint_val(qb_a:int) 
+    qb_a := aggr.count(b);              # 82 qb_a:wrd := ALGcount_bat(b:bat[:int,:int]) 
+    rb_a := io.print(qb_a);             # 83 rb_a:void := IOprint_val(qb_a:wrd) 
 #	io.print("b.print();"); 
     sb_a := io.print(b);                # 85 sb_a:void := IOprint_val(b:bat[:int,:int]) 
 #	io.print("# Lets cut out a few sections\n"); 

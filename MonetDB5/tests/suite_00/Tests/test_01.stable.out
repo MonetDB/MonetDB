@@ -280,8 +280,8 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("b.insert(\".\",10);"); 
     jb_a := bat.insert(b,".",10);       # 74 jb_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _95:str, _96:int) {G}
 #	io.print("b.count().print();"); 
-    kb_a := aggr.count(b);              # 76 kb_a:int := ALGcount_bat(b:bat[:str,:int]) 
-    lb_a := io.print(kb_a);             # 77 lb_a:void := IOprint_val(kb_a:int) 
+    kb_a := aggr.count(b);              # 76 kb_a:wrd := ALGcount_bat(b:bat[:str,:int]) 
+    lb_a := io.print(kb_a);             # 77 lb_a:void := IOprint_val(kb_a:wrd) 
 #	io.print("# Lets cut out a few sections\n"); 
     mb_a := algebra.select(b,2,4);      # 79 mb_a:bat[:str,:int] := ALGselect(b:bat[:str,:int], _110:int, _89:int) {G}
     nb_a := io.print(mb_a);             # 80 nb_a:void := IOprint_val(mb_a:bat[:str,:int]) 

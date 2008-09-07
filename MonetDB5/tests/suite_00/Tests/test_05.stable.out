@@ -229,8 +229,8 @@ function user.main():void;              #  0 main:void := user.main() {G}
     lb_a := calc.flt(nil:void);         # 76 lb_a:flt := CALCnil2flt(_79:void) 
     mb_a := bat.insert(b,lb_a,81.1999969);# 77 mb_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], lb_a:flt, _103:flt) {G}
 #	io.print("b.count().print();"); 
-    nb_a := aggr.count(b);              # 79 nb_a:int := ALGcount_bat(b:bat[:flt,:flt]) 
-    ob_a := io.print(nb_a);             # 80 ob_a:void := IOprint_val(nb_a:int) 
+    nb_a := aggr.count(b);              # 79 nb_a:wrd := ALGcount_bat(b:bat[:flt,:flt]) 
+    ob_a := io.print(nb_a);             # 80 ob_a:void := IOprint_val(nb_a:wrd) 
 #	io.print("# Lets cut out a few sections\n"); 
     pb_a := algebra.select(b,25.6000004,64.5);# 82 pb_a:bat[:flt,:flt] := ALGselect(b:bat[:flt,:flt], _109:flt, _110:flt) {G}
     qb_a := io.print(pb_a);             # 83 qb_a:void := IOprint_val(pb_a:bat[:flt,:flt]) 
