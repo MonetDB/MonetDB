@@ -39,6 +39,7 @@ against overflow.
 	@:idempotent(sht)@
 	@:idempotent(int)@
 	@:idempotent(oid)@
+	@:idempotent(wrd)@
 	@:idempotent(lng)@
 	@:idempotent(flt)@
 	@:idempotent(dbl)@
@@ -47,6 +48,7 @@ against overflow.
 	@:coercion(bte,oid)@
 	@:coercion(bte,sht)@
 	@:coercion(bte,int)@
+	@:coercion(bte,wrd)@
 	@:coercion(bte,lng)@
 	@:coercion(bte,flt)@
 	@:coercion(bte,dbl)@
@@ -54,6 +56,7 @@ against overflow.
 	@:coercion(sht,oid)@
 	@:coercion(sht,bte)@
 	@:coercion(sht,int)@
+	@:coercion(sht,wrd)@
 	@:coercion(sht,lng)@
 	@:coercion(sht,flt)@
 	@:coercion(sht,dbl)@
@@ -61,20 +64,31 @@ against overflow.
 	@:coercion(int,bte)@
 	@:coercion(int,sht)@
 	@:coercion(int,oid)@
+	@:coercion(int,wrd)@
 	@:coercion(int,lng)@
 	@:coercion(int,flt)@
 	@:coercion(int,dbl)@
+
+	@:coercion(wrd,oid)@
+	@:coercion(wrd,bte)@
+	@:coercion(wrd,sht)@
+	@:coercion(wrd,int)@
+	@:coercion(wrd,lng)@
+	@:coercion(wrd,flt)@
+	@:coercion(wrd,dbl)@
 
 	@:coercion(lng,oid)@
 	@:coercion(lng,bte)@
 	@:coercion(lng,sht)@
 	@:coercion(lng,int)@
+	@:coercion(lng,wrd)@
 	@:coercion(lng,flt)@
 	@:coercion(lng,dbl)@
 
 	@:coercion(oid,bte)@
 	@:coercion(oid,sht)@
 	@:coercion(oid,int)@
+	@:coercion(oid,wrd)@
 	@:coercion(oid,lng)@
 	@:coercion(oid,flt)@
 	@:coercion(oid,dbl)@
@@ -82,23 +96,27 @@ against overflow.
 	@:coercion(flt,bte)@
 	@:coercion(flt,sht)@
 	@:coercion(flt,int)@
+	@:coercion(flt,wrd)@
 	@:coercion(flt,lng)@
 	@:coercion(flt,dbl)@
 
 	@:coercion(dbl,bte)@
 	@:coercion(dbl,sht)@
 	@:coercion(dbl,int)@
+	@:coercion(dbl,wrd)@
 	@:coercion(dbl,lng)@
 	@:coercion(dbl,flt)@
 
 	@:coercion(bit,bte)@
 	@:coercion(bit,sht)@
 	@:coercion(bit,int)@
+	@:coercion(bit,wrd)@
 	@:coercion(bit,lng)@
 
 	@:coercion(bte,bit)@
 	@:coercion(sht,bit)@
 	@:coercion(int,bit)@
+	@:coercion(wrd,bit)@
 	@:coercion(lng,bit)@
 	@:coercion(str,bit)@
 

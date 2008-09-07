@@ -1007,18 +1007,18 @@ unlock_desc(bat bid)
 }
 
 int
-CMDcount_bat(lng *res, int *bid)
+CMDcount_bat(wrd *res, int *bid)
 {
 	if (BBPcheck((bat) *bid, "CMDcount_bat")) {
 		BAT *b = lock_desc((bat) *bid);
 
 		if (b == NULL) {
-			*res = lng_nil;
+			*res = wrd_nil;
 		} else if (BBP_cache((bat) *bid)) {
-			*res = (lng) BATcount(b);
+			*res = (wrd) BATcount(b);
 		} else {
 			/* BAT not loaded */
-			*res = (lng) ((b->H->heap.free) / Hsize(b) - b->batFirst );
+			*res = (wrd) ((b->H->heap.free) / Hsize(b) - b->batFirst );
 		}
 		unlock_desc(*bid);
 	}
@@ -1026,7 +1026,7 @@ CMDcount_bat(lng *res, int *bid)
 }
 
 int
-CMDsetcount_bat(lng *res, BAT *b, lng *c)
+CMDsetcount_bat(wrd *res, BAT *b, lng *c)
 {
 	if (*c > BUN_MAX || *c < 0) {
 		GDKerror("CMDsetcount_bat: argument out of range\n");
