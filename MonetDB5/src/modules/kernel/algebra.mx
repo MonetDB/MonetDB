@@ -182,7 +182,7 @@ command topN( b:bat[:any_1,:any_2], top:lng ) :bat[:any_1,:any_2]
 address ALGtopN
 comment "Trim all but the top N tuples.";
 
-command groupby(b:bat[:any_1,:int]) :bat[:any_1,:oid] 
+command groupby(b:bat[:any_1,:wrd]) :bat[:any_1,:oid] 
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
 
@@ -1611,7 +1611,7 @@ CMDgen_group(BAT **result, BAT *b )
 
 	if (b->hvarsized) {
 		BATloop(b, u, v) {
-			int i, sz = *(int*)BUNtloc(bi, u);
+			wrd i, sz = *(wrd*)BUNtloc(bi, u);
 			for(i = 0; i < sz; i++) {
 				if (BUNfastins(r, BUNhvar(bi, u), NULL) == NULL) {
 					BBPreclaim(r);
@@ -1621,7 +1621,7 @@ CMDgen_group(BAT **result, BAT *b )
 		}
 	} else {
 		BATloop(b, u, v) {
-			int i, sz = *(int*)BUNtloc(bi, u);
+			wrd i, sz = *(wrd*)BUNtloc(bi, u);
 			for(i = 0; i < sz; i++) {
 				if (BUNfastins(r, BUNhloc(bi, u), NULL) == NULL) {
 					BBPreclaim(r);
