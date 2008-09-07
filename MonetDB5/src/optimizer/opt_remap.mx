@@ -442,7 +442,7 @@ geared at handling the PSM code.
 			setFunctionId(t, putName("==", strlen("==")));
 			getArg(t,0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_bit));
 			t = pushArgument(mb, t, getDestVar(cnt));
-			t = pushInt(mb, t, 0);
+			t = pushWrd(mb, t, 0);
 			pushInstruction(mb, t);
 			iszero = t;
 
