@@ -475,10 +475,12 @@ comment "cast number to decimal(@1) and check for overflow";
 @:mal_cast_2dec(bte,flt)@
 @:mal_cast_2dec(sht,flt)@
 @:mal_cast_2dec(int,flt)@
+@:mal_cast_2dec(wrd,flt)@
 @:mal_cast_2dec(lng,flt)@
 @:mal_cast_2dec(bte,dbl)@
 @:mal_cast_2dec(sht,dbl)@
 @:mal_cast_2dec(int,dbl)@
+@:mal_cast_2dec(wrd,dbl)@
 @:mal_cast_2dec(lng,dbl)@
 
 @= mal_cast_dec2
@@ -504,26 +506,36 @@ comment "cast decimal(@2) to decimal(@1) and check for overflow";
 @:mal_cast2(bte,bte)@
 @:mal_cast2(bte,sht)@
 @:mal_cast2(bte,int)@
+@:mal_cast2(bte,wrd)@
 @:mal_cast2(bte,lng)@
 @:mal_cast2(sht,bte)@
 @:mal_cast2(sht,sht)@
 @:mal_cast2(sht,int)@
+@:mal_cast2(sht,wrd)@
 @:mal_cast2(sht,lng)@
 @:mal_cast2(int,bte)@
 @:mal_cast2(int,sht)@
 @:mal_cast2(int,int)@
+@:mal_cast2(int,wrd)@
 @:mal_cast2(int,lng)@
+@:mal_cast2(wrd,bte)@
+@:mal_cast2(wrd,sht)@
+@:mal_cast2(wrd,int)@
+@:mal_cast2(wrd,wrd)@
 @:mal_cast2(lng,bte)@
 @:mal_cast2(lng,sht)@
 @:mal_cast2(lng,int)@
+@:mal_cast2(lng,wrd)@
 @:mal_cast2(lng,lng)@
 @:mal_cast2(flt,bte)@
 @:mal_cast2(flt,sht)@
 @:mal_cast2(flt,int)@
+@:mal_cast2(flt,wrd)@
 @:mal_cast2(flt,lng)@
 @:mal_cast2(dbl,bte)@
 @:mal_cast2(dbl,sht)@
 @:mal_cast2(dbl,int)@
+@:mal_cast2(dbl,wrd)@
 @:mal_cast2(dbl,lng)@
 
 @= mal_interval
@@ -540,6 +552,7 @@ comment "cast @1 to a month_interval and check for overflow";
 @:mal_interval(bte)@
 @:mal_interval(sht)@
 @:mal_interval(int)@
+@:mal_interval(wrd)@
 @:mal_interval(lng)@
 
 command calc.rowid(v:any_1, schema:str, table:str) :oid
@@ -764,6 +777,7 @@ sql5_export str batstr_2num_@1( int *res, int *v, int *len );
 @:round_export(bte)@
 @:round_export(sht)@
 @:round_export(int)@
+@:round_export(wrd)@
 @:round_export(lng)@
 @= cast_export
 sql5_export str str_2_@1( @1 *res, str *val );
@@ -819,9 +833,14 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @:numcastup_export(int,bte)@
 @:numcastup_export(int,sht)@
 @:numcastup_export(int,int)@
+@:numcastup_export(wrd,bte)@
+@:numcastup_export(wrd,sht)@
+@:numcastup_export(wrd,int)@
+@:numcastup_export(wrd,wrd)@
 @:numcastup_export(lng,bte)@
 @:numcastup_export(lng,sht)@
 @:numcastup_export(lng,int)@
+@:numcastup_export(lng,wrd)@
 @:numcastup_export(lng,lng)@
 @= fnumcastdown_export
 @:simpledowncast_export(@1,@2)@
@@ -831,10 +850,12 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @:fnumcastdown_export(bte,flt)@
 @:fnumcastdown_export(sht,flt)@
 @:fnumcastdown_export(int,flt)@
+@:fnumcastdown_export(wrd,flt)@
 @:fnumcastdown_export(lng,flt)@
 @:fnumcastdown_export(bte,dbl)@
 @:fnumcastdown_export(sht,dbl)@
 @:fnumcastdown_export(int,dbl)@
+@:fnumcastdown_export(wrd,dbl)@
 @:fnumcastdown_export(lng,dbl)@
 @= fnumcastup_export
 @:simpleupcast_export(@1,@2)@
@@ -848,10 +869,12 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @:fnumcastup_export(flt,bte)@
 @:fnumcastup_export(flt,sht)@
 @:fnumcastup_export(flt,int)@
+@:fnumcastup_export(flt,wrd)@
 @:fnumcastup_export(flt,lng)@
 @:fnumcastup_export(dbl,bte)@
 @:fnumcastup_export(dbl,sht)@
 @:fnumcastup_export(dbl,int)@
+@:fnumcastup_export(dbl,wrd)@
 @:fnumcastup_export(dbl,lng)@
 @= numcastdown_export
 @:simpledowncast_export(@1,@2)@
@@ -864,10 +887,14 @@ sql5_export str bat@2_num2dec_@1( int *res, int *v, int *d2, int *s2 );
 @h
 @:numcastdown_export(bte,sht)@
 @:numcastdown_export(bte,int)@
+@:numcastdown_export(bte,wrd)@
 @:numcastdown_export(bte,lng)@
 @:numcastdown_export(sht,int)@
+@:numcastdown_export(sht,wrd)@
 @:numcastdown_export(sht,lng)@
+@:numcastdown_export(int,wrd)@
 @:numcastdown_export(int,lng)@
+@:numcastdown_export(wrd,lng)@
 
 sql5_export str getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b );
 
@@ -2372,6 +2399,7 @@ batstr_2num_@1( int *res, int *bid, int *len )
 @:round(bte)@
 @:round(sht)@
 @:round(int)@
+@:round(wrd)@
 @:round(lng)@
 
 @= fround
@@ -2835,9 +2863,14 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 @:numcastup(int,bte)@
 @:numcastup(int,sht)@
 @:numcastup(int,int)@
+@:numcastup(wrd,bte)@
+@:numcastup(wrd,sht)@
+@:numcastup(wrd,int)@
+@:numcastup(wrd,wrd)@
 @:numcastup(lng,bte)@
 @:numcastup(lng,sht)@
 @:numcastup(lng,int)@
+@:numcastup(lng,wrd)@
 @:numcastup(lng,lng)@
 
 @= fnumcastdown
@@ -2908,10 +2941,12 @@ bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 @:fnumcastdown(bte,flt)@
 @:fnumcastdown(sht,flt)@
 @:fnumcastdown(int,flt)@
+@:fnumcastdown(wrd,flt)@
 @:fnumcastdown(lng,flt)@
 @:fnumcastdown(bte,dbl)@
 @:fnumcastdown(sht,dbl)@
 @:fnumcastdown(int,dbl)@
+@:fnumcastdown(wrd,dbl)@
 @:fnumcastdown(lng,dbl)@
 
 @= fnumcastup
@@ -3063,10 +3098,12 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 @:fnumcastup(flt,bte)@
 @:fnumcastup(flt,sht)@
 @:fnumcastup(flt,int)@
+@:fnumcastup(flt,wrd)@
 @:fnumcastup(flt,lng)@
 @:fnumcastup(dbl,bte)@
 @:fnumcastup(dbl,sht)@
 @:fnumcastup(dbl,int)@
+@:fnumcastup(dbl,wrd)@
 @:fnumcastup(dbl,lng)@
 
 @c
@@ -3224,10 +3261,14 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 @c
 @:numcastdown(bte,sht)@
 @:numcastdown(bte,int)@
+@:numcastdown(bte,wrd)@
 @:numcastdown(bte,lng)@
 @:numcastdown(sht,int)@
+@:numcastdown(sht,wrd)@
 @:numcastdown(sht,lng)@
+@:numcastdown(int,wrd)@
 @:numcastdown(int,lng)@
+@:numcastdown(wrd,lng)@
 
 str 
 month_interval_str( int *ret, str *s, int *ek, int *sk )
@@ -3293,6 +3334,7 @@ second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
 @:c_interval(bte)@
 @:c_interval(sht)@
 @:c_interval(int)@
+@:c_interval(wrd)@
 @:c_interval(lng)@
 
 /* str dump_cache(int *r); */

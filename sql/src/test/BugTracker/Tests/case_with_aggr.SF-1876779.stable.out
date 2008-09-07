@@ -26,7 +26,7 @@ Over..
 
 % sys.casebug # table_name
 % sum_a # name
-% bigint # type
+% wrd # type
 % 20 # length
 [ NULL	]
 % sys.casebug # table_name

@@ -56,7 +56,7 @@ Over..
 [ 1	]
 % . # table_name
 % sum_single_value # name
-% bigint # type
+% wrd # type
 % 20 # length
 [ NULL	]
 % . # table_name

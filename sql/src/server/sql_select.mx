@@ -2309,7 +2309,7 @@ sql_except(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 			rs = stmt_join(stmt_mark(s,0),rs,cmp_equal);
 
 			s = sql_binop_(sql, NULL, NULL, "sql_sub", ls, rs);
-			s = stmt_select(s, stmt_atom_int(0), cmp_gt);
+			s = stmt_select(s, stmt_atom_wrd(0), cmp_gt);
 
 			/* A ids */
 			s = stmt_join(stmt_reverse(lm), s, cmp_equal);
