@@ -233,6 +233,7 @@ The command signatures are similar to those above, producing a bit result.
 	@:compareGrp(bte)@
 	@:compareGrp(sht)@
 	@:compareGrp(int)@
+	@:compareGrp(wrd)@
 	@:compareGrp(lng)@
 	@:compareGrp(dbl)@
 	@:compareGrp(flt)@
@@ -1310,6 +1311,7 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 	@:baselineCode(@1,@2,bte)@
 	@:baselineCode(@1,@2,sht)@
 	@:baselineCode(@1,@2,int)@
+	@:baselineCode(@1,@2,wrd)@
 	@:baselineCode(@1,@2,lng)@
 	@:baselineCode(@1,@2,oid)@
 	@:baselineCode(@1,@2,flt)@
@@ -1319,6 +1321,7 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 	@:baselineCstCode(@1,@2,bte,@3)@
 	@:baselineCstCode(@1,@2,sht,@3)@
 	@:baselineCstCode(@1,@2,int,@3)@
+	@:baselineCstCode(@1,@2,wrd,@3)@
 	@:baselineCstCode(@1,@2,lng,@3)@
 	@:baselineCstCode(@1,@2,oid,@3)@
 	@:baselineCstCode(@1,@2,flt,@3)@
