@@ -65,9 +65,11 @@ which inspects the variable table for alternative results.
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-/* #define _DEBUG_RECYCLE_
+/*
+#define _DEBUG_RECYCLE_
 #define _DEBUG_RECYCLE_REUSE 
-#define _DEBUG_CACHE_ */
+#define _DEBUG_CACHE_
+*/
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -111,6 +113,8 @@ mal_export MT_Lock recycleLock;
 mal_export MalBlkPtr recycleBlk;
 mal_export double recycleAlpha;
 mal_export double recycleFresh;
+mal_export lng time0; /*start time of query */
+
 
 mal_export int statements;	/* total number of statements executed */
 mal_export int recycled;	/* total number of statements recycled */
@@ -202,6 +206,8 @@ int rcachePolicy = RCACHE_LRU;  /* recycle cache management policy
 			RCACHE_MEMCRD: reduce the storage overhead */
 int recycleCacheLimit=0; /* No limit by default */
 lng recycleMemory=0;	/* Units of memory permitted */
+lng time0 = 0; /*start time of query */
+
 @-
 The profiler record is re-used to store recycler information.
 The clk is used by the LRU scheme, counter is the number of
@@ -213,7 +219,7 @@ The cost function is a weighted balance between cpu and
 storage cost. Often there is a direct relationship,
 @c
 double recycleAlpha = 0.5;
-double recycleFresh = 0.8; /* fresh instructions are protected from deletion */
+double recycleFresh = 0.95; /* fresh instructions are protected from deletion */
 
 #define recycleCost(X) recycleAlpha * recycleBlk->profiler[X].ticks + (1-recycleAlpha)* (recycleBlk->profiler[X].ibytes+recycleBlk->profiler[X].obytes)/100.0
 #define recycleCrd(X) (recycleCost(X)) * (recycleBlk->profiler[X].counter +9) /100.0
@@ -437,6 +443,10 @@ newpass:
 			oldest = l;
 		}
 	}
+#ifdef _DEBUG_CACHE_
+        stream_printf(cntxt->fdout,"RECYCLEcleanCache: policy=%d mem="LLFMT" usedmem="LLFMT"\n",
+                rcachePolicy,recycleMemory,recyclerUsedMemory);
+#endif
 	switch(rcachePolicy){
 		case RCACHE_LRU:
 			if (!mem) /* evict 1 entry */
@@ -463,22 +473,38 @@ newpass:
 			break;
 
 		case RCACHE_CREDIT:
+#ifdef _DEBUG_CACHE_
+                        stream_printf(cntxt->fdout,"Oldest "LLFMT" Newest "LLFMT, oldclk,newclk);
+#endif
+
 			newclk = (lng)((1-recycleFresh)*oldclk + recycleFresh*newclk);
+#ifdef _DEBUG_CACHE_
+                        stream_printf(cntxt->fdout,"Fresh-protected "LLFMT"\n", time0);
+#endif
+			if (oldclk < time0) {
 			lvs1 = lvs;  	/* drop newest to avoid deletion */
 			assert(ltop > 0);
 			lvs = (lng *)alloca(sizeof(lng)*ltop);
 			for(j = 0; j < ltop; j++)
 				lvs[j] = 0;
+#ifdef _DEBUG_CACHE_
+      			stream_printf(cntxt->fdout,"All leaves:");
+		        for (l = 0; l < ltop; l++)
+                		stream_printf(cntxt->fdout,"%3d("LLFMT") \t",
+	                        lvs1[l],recycleBlk->profiler[lvs1[l]].clk);
+			stream_printf(cntxt->fdout,"\n");
+#endif			
 			l = 0;
 			for (j = 0; j < ltop; j++){
 				k = lvs1[j];
 				if (( recycleBlk->profiler[k].counter == 1) &&
-					recycleBlk->profiler[k].clk > newclk) 
+					recycleBlk->profiler[k].clk >= time0) 
 					continue; 
 				lvs[l++] = lvs1[j];
 			}
 			if (l) ltop = l;
 			else lvs = lvs1; 
+			}
 
 			if (!mem) { /* evict the cheapest entry */
 				mincrd = recycleCrd(lvs[0]);
@@ -511,8 +537,6 @@ newpass:
 		cont = 1;
 
 #ifdef _DEBUG_CACHE_
-	stream_printf(cntxt->fdout,"RECYCLEcleanCache: policy=%d mem="LLFMT" usedmem="LLFMT"\n",
-                rcachePolicy,recycleMemory,recyclerUsedMemory);
 	stream_printf(cntxt->fdout,"Candidates for eviction (# LRU Crd)\n");
 	for (l = 0; l < ltop; l++)
 		stream_printf(cntxt->fdout,"%3d "LLFMT" %f \n",
@@ -890,6 +914,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			}
 			recycleBlk->profiler[i].counter++;
 			recycleBlk->profiler[i].clk = GDKusec();
+                        recycleBlk->profiler[i].trace = TRUE;
 			p->recycle = i;
 			recycled++;
 			recycleRecent = i;
@@ -949,9 +974,10 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	ProfPtr prof;
 
 	stk->clk= GDKusec();
+	statements++;
 	if (recycleVersion == 0 || recycleBlk == NULL )
 		return 0;
-    if (p->recycle == 0) /* don't scan RP for non-monitored instructions */
+	if (p->recycle == 0) /* don't scan RP for non-monitored instructions */
         return 0;
 	mal_set_lock(recycleLock,"recycle");
 	RECYCLEversion(cntxt,mb);
@@ -982,7 +1008,6 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		mal_unset_lock(recycleLock,"recycle");
 		return 1;
 	} 
-	statements++;
 	mal_unset_lock(recycleLock,"recycle");
 	i=  RECYCLEreuse(cntxt,mb,stk,p) >= 0;
 	return i;

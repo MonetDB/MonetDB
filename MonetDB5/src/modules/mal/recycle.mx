@@ -20,7 +20,7 @@
 Just the interface to the recycler.
 @{
 @-
-The Recycler should be a variation of the interpreter
+The Recycler is a variation of the interpreter
 which inspects the variable table for alternative results.
 @mal
 module recycle;
@@ -150,7 +150,6 @@ recycle_export str RECYCLEepilogue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 
 str recycleLog = NULL; 
 int recycled0 = 0;
-lng time0 = 0; /*start time of query */
 @-
 The recycler is started when the first function is called for its support.
 Upon exit of the last function, the content of the recycle cache is destroyed.
