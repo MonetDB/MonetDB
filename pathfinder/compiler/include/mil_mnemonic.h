@@ -443,6 +443,10 @@
 #define ws_findnodes(a,b,c,d,e,f,g) \
   PFmil_ws_findnodes ((a),(b),(c),(d),(e),(f),(g))
 
+/** mil pf:text/attribute function */
+#define m_vx_lookup(a,b,c,d,e,f,g,h,i,k) \
+  PFmil_vx_lookup ((a),(b),(c),(d),(e),(f),(g),(h),(i),(k))
+
 
 #ifdef HAVE_PFTIJAH
 

@@ -3628,4 +3628,41 @@ PFpa_findnodes (const PFpa_op_t *n,
 
     return ret;
 }
+
+/**
+ * Constructor for finding nodes based on value index
+ */
+PFpa_op_t *
+PFpa_vx_lookup (const PFpa_op_t *n,
+                PFalg_att_t iter,
+                PFalg_att_t item,
+                PFalg_att_t item_doc,
+                PFalg_att_t item_res,
+                bool id)
+{
+    PFpa_op_t *ret = wire1 (pa_vx_lookup, n);
+
+    ret->sem.vx_lookup.id = id;
+    ret->sem.vx_lookup.iter = iter;
+    ret->sem.vx_lookup.item = item;
+    ret->sem.vx_lookup.item_doc = item_doc;
+    ret->sem.vx_lookup.item_res = item_res;
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 2;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+
+    ret->schema.items[0]
+        = (PFalg_schm_item_t) { .name = iter, .type = aat_nat };
+    ret->schema.items[1]
+        = (PFalg_schm_item_t) { .name = item_res, .type = aat_pnode };
+
+    /* the result is ordered on iter|item */
+    PFord_set_add (ret->orderings, sortby (iter, item));
+
+    ret->cost = DEFAULT_COST + n->cost;
+
+    return ret;
+}
 /* vim:set shiftwidth=4 expandtab: */

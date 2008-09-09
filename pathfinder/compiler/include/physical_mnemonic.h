@@ -165,4 +165,8 @@
 /* id/idref operator */
 #define findnodes(a,b,c,d,e,f) PFpa_findnodes ((a),(b),(c),(d),(e),(f))
 
+/* pf:text/attribute operator */
+#define vx_lookup(a,b,c,d,e,f) PFpa_vx_lookup ((a),(b),(c),(d),(e),(f))
+
+
 /* vim:set shiftwidth=4 expandtab: */

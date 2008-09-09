@@ -123,6 +123,7 @@ static char *a_id[]  = {
     , [pa_fun_param]       = "fun param"
     , [pa_string_join]     = "fn:string-join"
     , [pa_findnodes]       = "fn:id/idref"
+    , [pa_vx_lookup]       = "pf:text/attribute"
 };
 
 static char *
@@ -267,6 +268,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         , [pa_fun_param]       = "\"#BB00BB\""
         , [pa_string_join]     = "\"#C0C0C0\""
         , [pa_findnodes]       = "\"#CCCCFF\""
+        , [pa_vx_lookup]       = "\"#CCCCFF\""
     };
 
     /* open up label */
@@ -641,6 +643,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         case pa_rec_border:
         case pa_string_join:
         case pa_findnodes:
+        case pa_vx_lookup:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
     }

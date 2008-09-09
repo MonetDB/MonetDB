@@ -4771,7 +4771,7 @@ PFbui_pf_documents (const PFla_op_t *loop, bool ordering,
                     struct PFla_pair_t *args)
 {
     (void) ordering; (void) args;
-  
+
     PFla_op_t *res = fun_call (loop,                       /* loop relation */
                                nil(),                      /* param_list    */
                                ii_schema(aat_pnode),    /* iter_item schema */
@@ -4797,7 +4797,7 @@ PFbui_pf_documents_unsafe (const PFla_op_t *loop, bool ordering,
                            struct PFla_pair_t *args)
 {
     (void) ordering; (void) args;
-  
+
     PFla_op_t *res = fun_call (loop,
                                nil(),
                                ii_schema(aat_pnode),
@@ -4920,7 +4920,7 @@ PFbui_pf_collections (const PFla_op_t *loop, bool ordering,
                       struct PFla_pair_t *args)
 {
     (void) ordering; (void) args;
-  
+
     PFla_op_t *res = fun_call (loop,
                                nil(),
                                ii_schema(aat_pnode),
@@ -4946,7 +4946,7 @@ PFbui_pf_collections_unsafe (const PFla_op_t *loop, bool ordering,
                              struct PFla_pair_t *args)
 {
     (void) ordering; (void) args;
-  
+
     PFla_op_t *res = fun_call (loop,
                                nil(),
                                ii_schema(aat_pnode),

@@ -205,6 +205,7 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term fun_param      = 151
 %term string_join    = 160
 %term findnodes      = 170
+%term vx_lookup      = 171
 /* fold)  */
 
 /** @cond GRAMMAR */ /* make doxygen ignore the grammar */
@@ -302,6 +303,7 @@ Param:    nil                                                      = 154 (10);
 
 Rel:      string_join (Rel, Rel)                                   = 160 (10);
 Rel:      findnodes (Rel)                                          = 170 (10);
+Rel:      vx_lookup (Rel)                                          = 171 (10);
 /* fold) */
 
 %%
@@ -9471,6 +9473,55 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             env_add (p->env, p->sem.findnodes.iter, aat_nat, iter);
             env_add (p->env, p->sem.findnodes.item_res, aat_pre, item_res);
             env_add (p->env, p->sem.findnodes.item_res, aat_frag, frag_res);
+
+            unpin (nodes, 1);
+
+        }   break; /* fold) */
+
+        /* Rel:      vx_lookup (Rel) */
+        case 171: /* fold( */
+        {
+            mvar_t *nodes     = new_var (1);
+            mvar_t *iter      = new_var (p->refctr);
+            mvar_t *item_res  = new_var (p->refctr);
+            mvar_t *frag_res  = new_var (p->refctr);
+            PFmil_t *pre      = VAR (L(p)->env,
+                                     p->sem.vx_lookup.item_doc,
+                                     aat_pre),
+                    *pre_cont = VAR (L(p)->env,
+                                     p->sem.vx_lookup.item_doc,
+                                     aat_frag);
+
+            execute (
+                assgn (var (nodes->name),
+                       m_vx_lookup (
+                           var (PF_MIL_VAR_WS),
+                           VAR (L(p)->env, p->sem.vx_lookup.iter, aat_nat),
+                           pre,
+                           set_kind (pre_cont, var (PF_MIL_VAR_ELEM)),
+                           VAR (L(p)->env, p->sem.vx_lookup.item, aat_str),
+                           lit_str("*"),
+                           lit_str("*"),
+                           lit_str("*"),
+                           lit_str("*"),
+                           p->sem.vx_lookup.id == la_dj_text ? lit_bit (true) :
+                                                             lit_bit (false))));
+
+            execute (
+                assgn (var (iter->name),
+                       leftfetchjoin (hmark (var (nodes->name), lit_oid(0)),
+                                      VAR (L(p)->env,
+                                           p->sem.vx_lookup.iter,
+                                           aat_nat))),
+                assgn (var (item_res->name),
+                       tmark ( var (nodes->name), lit_oid(0))),
+                assgn (var (frag_res->name),
+                       leftfetchjoin (hmark (var (nodes->name), lit_oid(0)),
+                                      pre_cont)));
+
+            env_add (p->env, p->sem.vx_lookup.iter, aat_nat, iter);
+            env_add (p->env, p->sem.vx_lookup.item_res, aat_pre, item_res);
+            env_add (p->env, p->sem.vx_lookup.item_res, aat_frag, frag_res);
 
             unpin (nodes, 1);
 

@@ -179,6 +179,33 @@ wire8 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2, const PFmil_t *n3,
 }
 
 /**
+ * Construct a MIL tree node with given node kind.
+ */
+static PFmil_t *
+wire9 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2, const PFmil_t *n3,
+       const PFmil_t *n4, const PFmil_t *n5, const PFmil_t *n6,
+       const PFmil_t *n7, const PFmil_t *n8, const PFmil_t *n9)
+{
+    PFmil_t *ret = wire8 (k, n1, n2, n3, n4, n5, n6, n7, n8);
+    ret->child[8] = (PFmil_t *) n9;
+    return ret;
+}
+
+/**
+ * Construct a MIL tree node with given node kind.
+ */
+static PFmil_t *
+wire10 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2, const PFmil_t *n3,
+       const PFmil_t *n4, const PFmil_t *n5, const PFmil_t *n6,
+       const PFmil_t *n7, const PFmil_t *n8, const PFmil_t *n9,
+       const PFmil_t *n10)
+{
+    PFmil_t *ret = wire9 (k, n1, n2, n3, n4, n5, n6, n7, n8, n9);
+    ret->child[9] = (PFmil_t *) n10;
+    return ret;
+}
+
+/**
  * Create a MIL tree node representing a literal integer.
  * (The result will be a MIL leaf node, with kind #m_lit_int and
  * semantic value @a i.)
@@ -1807,6 +1834,15 @@ PFmil_ws_findnodes (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c,
                     const PFmil_t *g)
 {
     return wire7 (m_ws_findnodes, a, b, c, d, e, f, g);
+}
+
+PFmil_t *
+PFmil_vx_lookup (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c,
+                 const PFmil_t *d, const PFmil_t *e, const PFmil_t *f,
+                 const PFmil_t *g, const PFmil_t *h, const PFmil_t *i,
+                 const PFmil_t *j)
+{
+    return wire10 (m_vx_lookup, a, b, c, d, e, f, g, h, i, j);
 }
 
 #ifdef HAVE_PFTIJAH

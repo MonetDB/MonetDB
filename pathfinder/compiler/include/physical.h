@@ -124,7 +124,8 @@ enum PFpa_op_kind_t {
     , pa_fun_call       = 150 /**< function application */
     , pa_fun_param      = 151 /**< function application parameter */
     , pa_string_join    = 160 /**< Concatenation of multiple strings */
-    , pa_findnodes      = 170 /**< find nodes given the id/idref string */ 
+    , pa_findnodes      = 170 /**< find nodes given the id/idref string */
+    , pa_vx_lookup      = 171 /**< find nodes given the value index */
 };
 /** algebra operator kinds */
 typedef enum PFpa_op_kind_t PFpa_op_kind_t;
@@ -136,7 +137,7 @@ union PFpa_op_sem_t {
     struct {
         PFalg_att_t     item;     /**< name of attribute item */
     } serialize;
-    
+
     /* semantic content for literal table constr. */
     struct {
         unsigned int    count;    /**< number of tuples */
@@ -359,7 +360,17 @@ union PFpa_op_sem_t {
         PFalg_att_t     item_doc; /**< column to store the fragment info */
         PFalg_att_t     item_res; /**< column to store the resulting nodes */
     } findnodes;
+
+    /* semantic content for physical operator of function pf:text/attribute */
+    struct {
+        bool            id;       /**< id or idref */
+        PFalg_att_t     iter;     /**< the loop relation */
+        PFalg_att_t     item;     /**< column to look up the context nodes */
+        PFalg_att_t     item_doc; /**< column to store the fragment info */
+        PFalg_att_t     item_res; /**< column to store the resulting nodes */
+    } vx_lookup;
 };
+
 /** semantic content in physical algebra operators */
 typedef union PFpa_op_sem_t PFpa_op_sem_t;
 
@@ -833,7 +844,7 @@ PFpa_op_t *PFpa_fun_call (const PFpa_op_t *loop,
 PFpa_op_t *PFpa_fun_param (const PFpa_op_t *argument,
                            const PFpa_op_t *param_list,
                            PFalg_schema_t schema);
-                                   
+
 /****************************************************************/
 /* operators introduced by built-in functions */
 
@@ -850,6 +861,17 @@ PFpa_op_t * PFpa_string_join (const PFpa_op_t *n1,
  */
 PFpa_op_t *
 PFpa_findnodes (const PFpa_op_t *n,
+                PFalg_att_t iter,
+                PFalg_att_t item,
+                PFalg_att_t item_res,
+                PFalg_att_t item_doc,
+                bool id);
+
+/**
+ * Constructor for finding nodes based on value index
+ */
+PFpa_op_t *
+PFpa_vx_lookup (const PFpa_op_t *n,
                 PFalg_att_t iter,
                 PFalg_att_t item,
                 PFalg_att_t item_res,

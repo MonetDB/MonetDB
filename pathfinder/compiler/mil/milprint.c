@@ -177,6 +177,8 @@
                  | 'ws_collections('exp','exp')'           <m_ws_collections>
                  | 'ws_docavailable('exp','exp')'          <m_ws_docavailable>
                  | 'ws_findnodes('e','e','e','e','e','e','e')' <m_ws_findnodes>
+                 | 'vx_lookup('e','e','e','e','e','e','e','e','e','e')'
+                                                               <m_vx_lookup>
 
    args          : args ',' args                            <m_arg>
                  | expression                               <otherwise>
@@ -352,6 +354,7 @@ static char *ID[] = {
     , [m_ws_collections]     = "ws_collections"
     , [m_ws_docavailable]    = "ws_docavailable"
     , [m_ws_findnodes]       = "ws_findnodes"
+    , [m_vx_lookup]          = "vx_lookup"
 
     , [m_merge_adjacent]   = "merge_adjacent_text_nodes"
     , [m_string_join]      = "string_join"
@@ -1083,6 +1086,32 @@ print_expression (PFmil_t * n)
             print_expression (n->child[5]);
             milprintf (", ");
             print_expression (n->child[6]);
+            milprintf (")");
+            break;
+
+        /* expression : 'vx_lookup (' e ',' e ',' e ',' e ',' e ','
+         *                            e ',' e ',' e ',' e ',' e ')' */
+        case m_vx_lookup:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", ");
+            print_expression (n->child[5]);
+            milprintf (", ");
+            print_expression (n->child[6]);
+            milprintf (", ");
+            print_expression (n->child[7]);
+            milprintf (", ");
+            print_expression (n->child[8]);
+            milprintf (", ");
+            print_expression (n->child[9]);
             milprintf (")");
             break;
 

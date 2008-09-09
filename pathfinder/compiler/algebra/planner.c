@@ -2728,6 +2728,79 @@ plan_id_join (PFla_op_t *n)
 }
 
 /**
+ * Generate plans for the value index vx_lookup physical operator
+ */
+static PFplanlist_t *
+plan_vx_join (PFla_op_t *n)
+{
+    /* some assertions */
+    assert (n); assert (n->kind == la_doc_index_join);
+    assert (n->sem.doc_join.kind == la_dj_text ||
+            n->sem.doc_join.kind == la_dj_attr);
+    assert (R(n)); assert (R(n)->plans);
+
+    PFalg_att_t   item_res  = n->sem.doc_join.item_res,
+                  item      = n->sem.doc_join.item,
+                  item_doc  = n->sem.doc_join.item_doc,
+                  iter,
+                  iter2;
+    PFalg_att_t   used_cols = 0;
+    unsigned int  count     = n->schema.count + 1,
+                  count_in  = 2;
+    PFalg_proj_t *proj      = PFmalloc (count * sizeof (PFalg_proj_t)),
+                 *proj_in   = PFmalloc (count_in * sizeof (PFalg_proj_t));
+    PFplanlist_t *ret       = new_planlist ();
+    PFpa_op_t    *plan,
+                 *mark;
+
+    /* create the above projection list */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        proj[i] = PFalg_proj (n->schema.items[i].name,
+                              n->schema.items[i].name);
+    /* add the result column */
+    proj[n->schema.count] = PFalg_proj (item_res, item_res);
+
+    /* get ourselves two new attribute name
+       (for creating keys using mark and joining back) */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        used_cols |= n->schema.items[i].name;
+
+    iter  = new_name (att_iter, used_cols);
+    iter2 = new_name (att_iter, (used_cols|iter));
+
+
+    /* create the inner projection list */
+    proj_in[0] = PFalg_proj (iter2, iter);
+    proj_in[1] = PFalg_proj (item_res, item_res);
+
+    /* create the translation for every input plan */
+    for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++) {
+        plan = *(plan_t **) PFarray_at (R(n)->plans, i);
+        mark = mark (plan, iter);
+
+        add_plan (ret,
+                  project (
+                      leftjoin (
+                          iter,
+                          iter2,
+                          mark,
+                          project (
+                              vx_lookup (mark,
+                                         iter,
+                                         item,
+                                         item_doc,
+                                         item_res,
+                                         n->sem.doc_join.kind == la_dj_text),
+                               count_in,
+                               proj_in)),
+                      count,
+                      proj));
+    }
+
+    return ret;
+}
+
+/**
  * `recursion' operator(s) in the logical algebra just get a 1:1 mapping
  * into the physical recursion operator(s).
  */
@@ -3135,7 +3208,7 @@ plan_subexpression (PFla_op_t *n)
                                           PFla_distinct (n)));
                 }
             }
-            
+
             if (n->schema.count == 1 &&
                 L(n)->kind == la_step_join &&
                 n->sem.proj.items[0].old == L(n)->sem.step.item_res &&
@@ -3143,7 +3216,7 @@ plan_subexpression (PFla_op_t *n)
                  PFprop_set (L(n)->prop))) {
                 add_plans (plans, plan_step_join_to_step (n));
             }
-            
+
             if (n->schema.count == 1 &&
                 L(n)->kind == la_step_join &&
                 PFprop_type_of (n, n->sem.proj.items[0].new) == aat_nat &&
@@ -3151,7 +3224,7 @@ plan_subexpression (PFla_op_t *n)
                  PFprop_set (L(n)->prop))) {
                 add_plans (plans, plan_step_join_to_step_check (n));
             }
-            
+
             if (n->schema.count == 2 &&
                 L(n)->kind == la_step_join &&
                 (PFprop_key (L(n)->prop, L(n)->sem.step.item_res) ||
@@ -3198,7 +3271,7 @@ plan_subexpression (PFla_op_t *n)
                     add_plans (plans, plan_unique_thetajoin (n));
                 }
             }
-            
+
             if (n->schema.count == 2 &&
                 L(n)->kind == la_project &&
                 LL(n)->kind == la_step_join &&
@@ -3220,8 +3293,8 @@ plan_subexpression (PFla_op_t *n)
         case la_bool_and:
         case la_bool_or:
                                 plans = plan_binop (n);           break;
-                                                                  
-        case la_bool_not:                                         
+
+        case la_bool_not:
                                 plans = plan_unary (n);           break;
         case la_to:             plans = plan_to (n);              break;
         case la_count:          plans = plan_count (n);           break;
@@ -3243,7 +3316,7 @@ plan_subexpression (PFla_op_t *n)
         case la_cast:           plans = plan_cast (n);            break;
         case la_seqty1:         plans = plan_aggr (pa_seqty1, n); break;
         case la_all:            plans = plan_aggr (pa_all, n);    break;
-                                                                  
+
         case la_step:           plans = plan_step (n);            break;
         case la_step_join:      plans = plan_step_join (n);       break;
         case la_doc_tbl:        plans = plan_doc_tbl (n);         break;
@@ -3254,18 +3327,13 @@ plan_subexpression (PFla_op_t *n)
              * physical operator to construct                         */
             if (n->sem.doc_join.kind == la_dj_id ||
                 n->sem.doc_join.kind == la_dj_idref) {
-                plans = plan_id_join (n);                         break;
+                plans = plan_id_join (n);
             } else if (n->sem.doc_join.kind == la_dj_text ||
                        n->sem.doc_join.kind == la_dj_attr) {
-                PFoops (OOPS_FATAL,
-                    "physical algebra equivalent for logical algebra "
-                    "node kind %u,%u not implemented, yet",
-                    n->kind, n->sem.doc_join.kind);
-            } else {
-                 break;
-            }
+                plans = plan_vx_join (n);
+            }                                                     break;
         case la_doc_access:     plans = plan_doc_access (n);      break;
-                                                                  
+
         case la_twig:           plans = plan_twig (n);            break;
         case la_fcns:           plans = plan_fcns (n);            break;
         case la_docnode:        plans = plan_docnode (n);         break;
@@ -3275,25 +3343,25 @@ plan_subexpression (PFla_op_t *n)
         case la_comment:        plans = plan_comment (n);         break;
         case la_processi:       plans = plan_processi (n);        break;
         case la_content:        plans = plan_content (n);         break;
-                                                                  
+
         case la_merge_adjacent: plans = plan_merge_texts (n);     break;
-        /* copy the plans from the children */                    
+        /* copy the plans from the children */
         case la_roots:          plans = L(n)->plans;              break;
-        /* dummy plans (they are not used anyway) */              
-        case la_fragment:                                         
-        case la_frag_extract:                                     
-        case la_frag_union:                                       
-        case la_empty_frag:                                       
+        /* dummy plans (they are not used anyway) */
+        case la_fragment:
+        case la_frag_extract:
+        case la_frag_union:
+        case la_empty_frag:
                                 plans = new_planlist ();          break;
-                                                                  
+
         case la_error:          plans = plan_error (n);           break;
         case la_cond_err:       plans = plan_cond_err (n);        break;
-                                                                  
-        case la_nil:                                              
-            plans = new_planlist ();                              
-            add_plan (plans, nil ());                             
-            break;                                                
-                                                                  
+
+        case la_nil:
+            plans = new_planlist ();
+            add_plan (plans, nil ());
+            break;
+
         case la_trace:          plans = plan_trace (n);           break;
         case la_trace_msg:      plans = plan_trace_msg (n);       break;
         case la_trace_map:      plans = plan_trace_map (n);       break;
@@ -3542,7 +3610,7 @@ PFplan (PFla_op_t *root)
     assert (root->kind == la_serialize_seq);
 
     unq_column_names = PFalg_is_unq_name (root->sem.ser_seq.item);
-        
+
     /* compute all interesting plans for root */
     plan_subexpression (root);
 
