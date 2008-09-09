@@ -420,6 +420,10 @@ typedef struct Column_t {
 	bit ws; 	/* if set we need to skip white space */
 	bit quote; 	/* if set use this character for string quotes */
 	void *nildata;
+	str		batfile;	/* what is the BAT to be replaced */
+	str		rawfile;	/* where to find the raw file */
+	stream  *raw;	/* this column should be stored directly on stream*/
+	int	size;
 } Column; 
 
 @-
@@ -429,7 +433,7 @@ keep it in an ADT.
 @h
 
 typedef struct Table_t {
-	int signature;
+	int rawmode;	/* perform bypass load preparation */
 	char *sep;		/* default separator */
 	str ttopbrk, tbotbrk;	/* table brackets */
 	str rlbrk, rrbrk;	/* row brackets */
@@ -1124,6 +1128,9 @@ copy_loadformat(Tablet *as){
 		fmt[p].nullstr = GDKstrdup(as->format[p].nullstr);
 		if (tablet_debug)
 			stream_printf(GDKerr, "%s\n", fmt[p].name);
+		fmt[p].batfile = NULL;
+		fmt[p].rawfile = NULL;
+		fmt[p].raw = NULL;
 	}
 	return ns;
 }
@@ -1165,6 +1172,9 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 		fmt[p].nullstr = GDKstrdup("nil");
 		if (tablet_debug)
 			stream_printf(GDKerr, "%s\n", fmt[p].name);
+		fmt[p].batfile = NULL;
+		fmt[p].rawfile = NULL;
+		fmt[p].raw = NULL;
 	}
 	return as->nr_attrs;
 }
@@ -1225,6 +1235,10 @@ TABLETdestroy_format(Tablet * as)
 			GDKfree(fmt[p].data);
 		if (fmt[p].nildata)
 			GDKfree(fmt[p].nildata);
+		if (fmt[p].batfile)
+			GDKfree(fmt[p].batfile);
+		if (fmt[p].rawfile)
+			GDKfree(fmt[p].rawfile);
 	}
 	GDKfree(fmt);
 }
@@ -1287,12 +1301,26 @@ TABLETcreate_bats(Tablet * as, BUN est)
 	Column *fmt = as->format;
 	BUN i;
 
+	as->rawmode= TRUE; /* TRIAL CODE */
 	for (i = 0; i < as->nr_attrs; i++) {
 		fmt[i].c = void_bat_create(fmt[i].adt, est);
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		if (!fmt[i].c) {
 			GDKerror("TABLETcreate_bats: Failed to create bat of size " BUNFMT "\n", as->nr);
 			return -1;
+		}
+		if (as->rawmode){
+			char nme[BUFSIZ];
+			size_t len;
+			getcwd(nme,BUFSIZ);
+
+			len= strlen(nme);
+			assert(len <BUFSIZ-50);
+			fmt[i].batfile= GDKstrdup(BBP_physical(ABS(fmt[i].c->batCacheid)));
+			snprintf(nme+len,BUFSIZ-len,"/bat/"BUNFMT".raw",i);
+			fmt[i].rawfile= GDKstrdup(nme);
+			fmt[i].raw= open_wastream(fmt[i].rawfile);
+			stream_printf(GDKout,"#mv %s %s\n",fmt[i].rawfile,fmt[i].batfile);
 		}
 	}
 	return 0;
@@ -1401,7 +1429,11 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 	*end = bak;
 
 	/* key maybe NULL but thats not a problem, as long as we have void */
-	bunfastins(fmt->c, key, adt);
+	if (fmt->raw){
+		stream_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
+	} else {
+		bunfastins(fmt->c, key, adt);
+	}
 	return 0;
 bunins_failed:
 	snprintf(buf,BUFSIZ, "while parsing '%s' from line " BUNFMT " field %d not inserted\n", s, BATcount(fmt->c), c);
@@ -1672,6 +1704,8 @@ read_more(bstream *in, stream *out, size_t n)
 }
 
 @-
+@}
+@-Fast Load
 To speedup the CPU intensive loading of files we have to break
 the file into pieces and perform parallel analysis. Experimentation
 against lineitem SF1 showed that half of the time goes into very
@@ -1690,6 +1724,21 @@ record and stop at the record boundary.
 Beware, we should allocate Tablet descriptors for each file segment,
 otherwise we end up with a gross concurrency control problem.
 The resulting BATs should be glued at the final phase.
+
+@- Raw Load
+Front-ends can bypass most of the overhead in loading the BATs
+by preparing the corresponding files directly and replace those
+created by e.g. the SQL frontend.
+This strategy is only advisable for cases where we have very
+large files >200GB and/or are created by a well debugged code.
+
+To experiment with this approach, the code base responds
+on negative number of cores by dumping the data directly in BAT
+storage format into a collections of files on disk.
+It reports on the actions to be taken to replace BATs.
+This technique is initially only supported for fixed-sized columns.
+@{
+The rawmode() indicator acts as the internal switch.
 @c
 
 static BUN
