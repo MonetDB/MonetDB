@@ -209,7 +209,9 @@ are marked for re-use.
 		if(( getFunctionId(p)== selectRef || 
 		     getFunctionId(p)== antiuselectRef ||
 		     getFunctionId(p)== putName("like",4) || 
-		     getFunctionId(p)== putName("like_uselect",12)) &&
+		     getFunctionId(p)== putName("like_uselect",12) ||
+             getFunctionId(p)== putName("thetaselect",11) ||
+             getFunctionId(p)== putName("thetauselect",12) ) &&
 	      	    recycled[getArg(p,1)] ){
 			p->recycle = -1;
 			if (getLastUpdate(span, getArg(p,0)) == i)

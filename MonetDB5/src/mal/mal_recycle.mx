@@ -70,6 +70,7 @@ which inspects the variable table for alternative results.
 #define _DEBUG_RECYCLE_REUSE 
 #define _DEBUG_CACHE_
 */
+
 @-
 We need some hard limits to not run out of datastructure
 spaces.
@@ -222,7 +223,8 @@ double recycleAlpha = 0.5;
 double recycleFresh = 0.95; /* fresh instructions are protected from deletion */
 
 #define recycleCost(X) recycleAlpha * recycleBlk->profiler[X].ticks + (1-recycleAlpha)* (recycleBlk->profiler[X].ibytes+recycleBlk->profiler[X].obytes)/100.0
-#define recycleCrd(X) (recycleCost(X)) * (recycleBlk->profiler[X].counter +9) /100.0
+#define recycleCrd(X) (recycleCost(X)) * (recycleBlk->profiler[X].counter +9) * (1 + 0.5*(sht)recycleBlk->profiler[X].trace)/100.0
+/*#define recycleCrd(X) (recycleCost(X)) * (recycleBlk->profiler[X].counter +9) /100.0 */
 #ifdef _DEBUG_CACHE_
 #define recycleSize recycleBlk->stop-recycleRem
 #else
@@ -913,8 +915,9 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 					BBPincref( s->stk[getArg(p,j)].val.bval , TRUE);
 			}
 			recycleBlk->profiler[i].counter++;
+            if ( recycleBlk->profiler[i].clk < time0 )
+                recycleBlk->profiler[i].trace = TRUE;
 			recycleBlk->profiler[i].clk = GDKusec();
-                        recycleBlk->profiler[i].trace = TRUE;
 			p->recycle = i;
 			recycled++;
 			recycleRecent = i;
@@ -953,6 +956,8 @@ We execute it in place and safe the result upon need.
 		BBPdecref(bid, TRUE);
         recycled++;
         recycleBlk->profiler[pc].counter++;
+        if ( recycleBlk->profiler[pc].clk < time0 )
+            recycleBlk->profiler[pc].trace = TRUE;
         recycleBlk->profiler[pc].clk = GDKusec();
 		RECYCLEexit(cntxt, mb, s, p);
 		return pc;
@@ -999,11 +1004,14 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		/* don't count times saved from cached bats*/
 		prof = &recycleBlk->profiler[p->recycle];
-		if (prof->counter==1 && getName("bind",4)== getFunctionId(p) && 
+		if (prof->counter==1 && 
+                (getName("bind",4)== getFunctionId(p) || getName("bind_idxbat",11) == getFunctionId(p)) && 
 				getModuleId(p)==getName("sql",3))
-			prof->ticks =  GDKusec()- stk->clk;
+    		prof->ticks =  GDKusec()- stk->clk;
 		prof->counter++;
-                prof->clk = GDKusec();
+        if ( prof->clk < time0 )
+            prof->trace = TRUE;
+        prof->clk = GDKusec();
 		recycleRecent = p->recycle;
 		mal_unset_lock(recycleLock,"recycle");
 		return 1;
