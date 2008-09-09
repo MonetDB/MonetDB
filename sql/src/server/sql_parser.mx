@@ -2596,6 +2596,8 @@ insert_stmt:
 values_or_query_spec:
 /* empty values list */
 		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
+ |   DEFAULT VALUES
+		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
  |   VALUES row_commalist
 		{ $$ = _symbol_create_list( SQL_VALUES, $2); }
  |  select_no_parens_orderby
