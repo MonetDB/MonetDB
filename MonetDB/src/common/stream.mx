@@ -2512,7 +2512,7 @@ iconv_rstream(stream *ss, const char *charset, const char *name)
 #ifdef STREAM_DEBUG
 	printf("iconv_rstream %s %s\n", charset, name);
 #endif
-	cd = iconv_open(charset, "utf-8");
+	cd = iconv_open("utf-8", charset);
 	if (cd == (iconv_t) -1)
 		return NULL;
 	s = ic_open(cd, ss, name);
@@ -2529,7 +2529,7 @@ iconv_wstream(stream *ss, const char *charset, const char *name)
 #ifdef STREAM_DEBUG
 	printf("iconv_wstream %s %s\n", charset, name);
 #endif
-	cd = iconv_open("utf-8", charset);
+	cd = iconv_open(charset, "utf-8");
 	if (cd == (iconv_t) -1)
 		return NULL;
 	s = ic_open(cd, ss, name);
