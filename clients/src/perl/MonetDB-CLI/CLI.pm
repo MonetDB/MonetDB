@@ -26,7 +26,7 @@ MonetDB::CLI - MonetDB Call Level Interface
 
   my $cxn = MonetDB::CLI->connect( $host, $port, $user, $pass, $lang, $db );
 
-  my $req = $cxn->query('select * from env');
+  my $req = $cxn->query('select * from env() env');
   while ( my $cnt = $req->fetch ) {
     print $req->field( $_ ) for 0 .. $cnt-1;
   }
