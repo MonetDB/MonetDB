@@ -465,6 +465,10 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 				fmt[i].frstr = &dec_frstr;
 				fmt[i].extra = col;
 			}
+			fmt[i].raw = NULL;
+			fmt[i].rawfile = NULL;
+			fmt[i].batfile = NULL;
+			fmt[i].size = ATOMsize(fmt[i].adt);
 		}
 		if (TABLETcreate_bats(&as, (sz<0)?1000:sz) >= 0) {
 			if (TABLETload_file(&as, bs, out) != BUN_NONE)
