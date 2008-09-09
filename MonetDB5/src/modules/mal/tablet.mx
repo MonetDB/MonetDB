@@ -1838,6 +1838,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 	stream_printf(GDKstdout,"stream eof %d len " SZFMT " pos " SZFMT "\n", b->eof, b->len, b->pos);
 #endif
 	as->nr = i-offset;
+	sync_bats(as);
 	if (res < 0)
 		return BUN_NONE;
 	return as->nr;
@@ -1964,6 +1965,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 				for (j=0; j<nway; j++) {
 					assert (partition[j]->format[i].c);
 					BATappend(as->format[i].c, partition[j]->format[i].c,TRUE);
+					BATsave(as->format[i].c);
 					/* Throw away the temporary bats a.s.a.p. without saveing */
 					BBPunfix(partition[j]->format[i].c->batCacheid);
 					partition[j]->format[i].c= NULL;
