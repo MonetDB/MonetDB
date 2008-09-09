@@ -1301,7 +1301,7 @@ TABLETcreate_bats(Tablet * as, BUN est)
 	Column *fmt = as->format;
 	BUN i;
 
-	as->rawmode= TRUE; /* TRIAL CODE */
+/*	as->rawmode= TRUE;  TRIAL CODE */
 	for (i = 0; i < as->nr_attrs; i++) {
 		fmt[i].c = void_bat_create(fmt[i].adt, est);
 		fmt[i].ci = bat_iterator(fmt[i].c);
