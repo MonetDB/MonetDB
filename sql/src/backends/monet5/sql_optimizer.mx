@@ -321,7 +321,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			char *tname = getVarConstant(mb, getArg(p,2)).val.sval;
 			char *cname = NULL;
 			int not_null = 0;
-			lng rows = 1;
+			oid rows = 1;
 			int mode = 0;
 			int part = 0;
 			int k = getArg(p,0);
@@ -341,14 +341,18 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 
 
 			if (s && f == bindidxRef) {
+				size_t cnt;
 				sql_idx *i = mvc_bind_idx(m, s, cname);
 
 				if (active_store_type == store_bpm && i->data) {
 					bpm = i->data;
 					part = bpm->nr;
 				}
-				rows = store_funcs.count_idx(i);
+				cnt = store_funcs.count_idx(i);
+				assert(cnt <= (size_t) GDK_oid_max);
+				rows = (oid) cnt;
 			} else if (s && f == bindRef) {
+				size_t cnt;
 				sql_table *t = mvc_bind_table(m, s, tname);
 				sql_column *c = mvc_bind_column(m, t, cname);
 
@@ -358,10 +362,12 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 					bpm = c->data;
 					part = bpm->nr;
 				}
-				rows = store_funcs.count_col(c);
+				cnt = store_funcs.count_col(c);
+				assert(cnt <= (size_t) GDK_oid_max);
+				rows = (oid) cnt;
 			}	
 			if (rows > 1 && mode != RD_INS)
-				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_lng, &rows));
+				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_oid, &rows));
 			if (not_null)
 				varSetProp(mb, k, notnilProp, op_eq, NULL);
 			if (0 && active_store_type == store_bpm && part && 
