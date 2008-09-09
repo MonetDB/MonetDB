@@ -34,7 +34,7 @@ Over..
 [ 5,	"12345 ",	"12345"	]
 % sys. # table_name
 % count_ # name
-% int # type
+% wrd # type
 % 1 # length
 [ 1	]
 
