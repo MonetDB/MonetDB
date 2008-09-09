@@ -1755,8 +1755,14 @@ main(int argc, char **argv)
 		{0, 0, 0, 0}
 	};
 
+#ifndef WIN32
+	/* don't set locale on Windows: setting the locale like this
+	 * causes the output to be converted (we could set it to
+	 * ".OCP" if we knew for sure that we were running in a cmd
+	 * window) */
 #ifdef HAVE_SETLOCALE
 	setlocale(LC_ALL, "");
+#endif
 #endif
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
 	toConsole_raw = toConsole;

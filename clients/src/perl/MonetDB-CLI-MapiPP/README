@@ -8,7 +8,7 @@ SYNOPSIS
 
   my $cxn = MonetDB::CLI::MapiPP->connect( $host, $port, $user, $pass, $lang );
 
-  my $req = $cxn->query('select * from env');
+  my $req = $cxn->query('select * from env() env');
   while ( my $cnt = $req->fetch ) {
     print $req->field( $_ ) for 0 .. $cnt-1;
   }

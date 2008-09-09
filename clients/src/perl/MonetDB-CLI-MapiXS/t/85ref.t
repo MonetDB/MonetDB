@@ -39,13 +39,13 @@ ok(!$@,'connect') or print "# $@";
 ok( $cxn,"Connection object: $cxn");
 is( Devel::Peek::SvREFCNT( $cxn ), 1,'SvREFCNT cxn');
 
-my $req1 = eval { $cxn->query('select * from env') };
+my $req1 = eval { $cxn->query('select * from env() env') };
 ok(!$@,'query') or print "# $@";
 ok( $req1,"Request object: $req1");
 is( Devel::Peek::SvREFCNT( $req1 ), 1,'SvREFCNT req1');
 is( Devel::Peek::SvREFCNT( $cxn  ), 2,'SvREFCNT cxn' );
 
-my $req2 = eval { $cxn->query('select * from env') };
+my $req2 = eval { $cxn->query('select * from env() env') };
 ok(!$@,'query') or print "# $@";
 ok( $req2,"Request object: $req2");
 is( Devel::Peek::SvREFCNT( $req2 ), 1,'SvREFCNT req2');

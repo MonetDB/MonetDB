@@ -37,7 +37,7 @@ my $cxn = eval {
 ok(!$@,'connect') or print "# $@";
 ok( $cxn,"Connection object: $cxn");
 
-my $req = eval { $cxn->query('select * from env') };
+my $req = eval { $cxn->query('select * from env() env') };
 ok(!$@,'query') or print "# $@";
 ok( $req,"Request object: $req");
 

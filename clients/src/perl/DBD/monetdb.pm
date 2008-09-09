@@ -680,7 +680,7 @@ DBD::monetdb - MonetDB Driver for DBI
 
   my $dbh = DBI->connect('dbi:monetdb:');
 
-  my $sth = $dbh->prepare('SELECT * FROM env');
+  my $sth = $dbh->prepare('SELECT * FROM env() env');
   $sth->execute;
   $sth->dump_results;
 
