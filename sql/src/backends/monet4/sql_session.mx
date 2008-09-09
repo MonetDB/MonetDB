@@ -274,7 +274,7 @@ sqlexecute(backend *be, stream *out)
 		if (err)
 			return sqlcleanup(c, err);
 	} else if (c->emode == m_inplace || c->emode == m_explain || !c->cache || 
-	           !(q = qc_match(c->qc, c->sym, c->args, c->argc, c->scanner.key))) {
+	           !(q = qc_match(c->qc, c->sym, c->args, c->argc, c->scanner.key ^ c->session->schema->base.id))) {
 		stmt *s = sql_symbol2stmt(c);
 
 		if (!s && (err = mvc_status(c))) /* semantic errors */
@@ -284,7 +284,7 @@ sqlexecute(backend *be, stream *out)
 			err = backend_explain(be, s, out);
 		} else {
 			if (c->cache && s->type != st_none) {
-				q = qc_insert(c->qc, c->sa, c->sym, c->args, c->argc, c->scanner.key, c->type, sql_escape_str(QUERY(c->scanner)));
+				q = qc_insert(c->qc, c->sa, c->sym, c->args, c->argc, c->scanner.key ^ c->session->schema->base.id, c->type, sql_escape_str(QUERY(c->scanner)));
 				c->sa = NULL;
 				c->sym = NULL;
 			}

@@ -992,7 +992,7 @@ produce code.
 			goto finalize;
 		}
 		m->emode = m_inplace;
-	} else if ((be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key))) {
+	} else if ((be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id))) {
 		if (m->emod & mod_trace)
 			SQLsetTimer(c, TRUE);
 		if (m->emod & mod_debug)
@@ -1029,7 +1029,7 @@ produce code.
 					  m->sym,     /* the sql symbol tree */
 					  m->args,    /* the argument list */
 					  m->argc,
-					  m->scanner.key,/* the statement hash key */
+					  m->scanner.key ^ m->session->schema->base.id,/* the statement hash key */
 					  m->type,/* the type of the statement */
 					  sql_escape_str(QUERY(m->scanner)));
 
