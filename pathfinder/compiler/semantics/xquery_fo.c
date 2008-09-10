@@ -1933,8 +1933,19 @@ PFfun_xquery_fo (void)
         .alg = PFbui_pf_fragment }
     ,  /* pf:attribute (node()*, string) as node()* */
       { .ns = PFns_lib, .loc = "attribute",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()),
+                                   PFty_xs_string () },
+            .ret_ty = PFty_star( PFty_xs_anyNode ()) } },
+        .alg = PFbui_pf_attribute }
+    ,  /* pf:attribute (node()*, string, string, string, string, string) as node()* */
+      { .ns = PFns_lib, .loc = "attribute",
         .arity = 6, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()),
+                                   PFty_xs_string (),
+                                   PFty_xs_string (),
+                                   PFty_xs_string (),
+                                   PFty_xs_string (),
                                    PFty_xs_string () },
             .ret_ty = PFty_star( PFty_xs_anyNode ()) } },
         .alg = PFbui_pf_attribute }
