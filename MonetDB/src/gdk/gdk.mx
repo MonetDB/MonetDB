@@ -598,10 +598,10 @@ typedef oid var_t;		/* type used for heap index of var-sized BAT */
 
 #if SIZEOF_VAR_T == SIZEOF_INT	/* a type compatible with var_t */
 #define TYPE_var	TYPE_int
-#define VAR_MAX		INT_MAX
+#define VAR_MAX		((var_t) INT_MAX)
 #else
 #define TYPE_var	TYPE_lng
-#define VAR_MAX		LLONG_MAX
+#define VAR_MAX		((var_t) LLONG_MAX)
 #endif
 
 typedef oid BUN;		/* BUN position */
@@ -613,9 +613,9 @@ typedef size_t BUN;
 #define BUNFMT		SZFMT
 */
 #if SIZEOF_BUN == SIZEOF_INT
-#define BUN_NONE INT_MAX
+#define BUN_NONE ((BUN) INT_MAX)
 #else
-#define BUN_NONE LLONG_MAX
+#define BUN_NONE ((BUN) LLONG_MAX)
 #endif
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
 

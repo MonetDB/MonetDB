@@ -236,7 +236,7 @@ CMDleftthetajoin(BAT **result, BAT *l, BAT *r, int *mode)
 int
 CMDnlthetajoin(BAT **result, BAT *l, BAT *r, int *mode, lng *estimate)
 {
-	return (*result = BATnlthetajoin(l, r, *mode, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= BUN_MAX ? BUN_MAX : (BUN) *estimate))) ? GDK_SUCCEED : GDK_FAIL;
+	return (*result = BATnlthetajoin(l, r, *mode, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= (lng) BUN_MAX ? BUN_MAX : (BUN) *estimate))) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 @= selectcmd

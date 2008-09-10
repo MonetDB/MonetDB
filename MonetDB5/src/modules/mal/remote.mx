@@ -323,7 +323,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #endif
 		/* FIXME: len < 0 ???? */
 
-		assert(0 <= len && len <= BUN_MAX);
+		assert(0 <= len && len <= (lng) BUN_MAX);
 		h = getHeadType(rtype);
 		t = getTailType(rtype);
 		b = BATnew(h, t, (BUN)len);

@@ -694,8 +694,8 @@ CMDdensebat(BAT **ret, wrd *size)
 
 	if (*size < 0)
 		*size = 0;
-	if (*size > BUN_MAX)
-		*size = BUN_MAX;
+	if (*size > (wrd) BUN_MAX)
+		*size = (wrd) BUN_MAX;
 	*ret = b = BATnew(TYPE_void, TYPE_void, (BUN) *size);
 	if (b == NULL)
 		return GDK_FAIL;

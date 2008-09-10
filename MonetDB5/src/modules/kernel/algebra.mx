@@ -1471,7 +1471,7 @@ CMDfragment(BAT **result, BAT *b, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 int
 CMDthetajoin(BAT **result, BAT *left, BAT *right, int *mode, lng *estimate)
 {
-	return (*result = BATthetajoin(left, right, *mode, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= BUN_MAX ? BUN_MAX : (BUN) *estimate))) ? GDK_SUCCEED : GDK_FAIL;
+	return (*result = BATthetajoin(left, right, *mode, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= (lng) BUN_MAX ? BUN_MAX : (BUN) *estimate))) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
@@ -1510,7 +1510,7 @@ CMD@1(BAT **result, BAT *left, BAT* right)
 int
 CMD@1(BAT **result, BAT *left, BAT* right, lng *estimate)
 {
-	return (*result = @2(left, right, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= BUN_MAX ? BUN_MAX : (BUN) *estimate))) ? GDK_SUCCEED : GDK_FAIL;
+	return (*result = @2(left, right, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= (lng) BUN_MAX ? BUN_MAX : (BUN) *estimate))) ? GDK_SUCCEED : GDK_FAIL;
 }
 @= binaryint
 int
@@ -1679,7 +1679,7 @@ CMDhashsplit(BAT **res, BAT *b, int *nfrag)
 {
 	if (*nfrag < 0
 #if SIZEOF_INT >= SIZEOF_BUN
-	    || *nfrag > BUN_MAX
+	    || *nfrag > (int) BUN_MAX
 #endif
 	   ) {
 		GDKerror("hashsplit: parameter out of range.\n");
@@ -1693,7 +1693,7 @@ CMDuhashsplit(BAT **res, BAT *b, int *nfrag)
 {
 	if (*nfrag < 0
 #if SIZEOF_INT >= SIZEOF_BUN
-	    || *nfrag > BUN_MAX
+	    || *nfrag > (int) BUN_MAX
 #endif
 	   ) {
 		GDKerror("uhashsplit: parameter out of range.\n");
@@ -1707,7 +1707,7 @@ CMDrangesplit(BAT **res, BAT *b, int *nfrag)
 {
 	if (*nfrag < 0
 #if SIZEOF_INT >= SIZEOF_BUN
-	    || *nfrag > BUN_MAX
+	    || *nfrag > (int) BUN_MAX
 #endif
 	   ) {
 		GDKerror("rangesplit: parameter out of range.\n");
@@ -1721,7 +1721,7 @@ CMDurangesplit(BAT **res, BAT *b, int *nfrag)
 {
 	if (*nfrag < 0
 #if SIZEOF_INT >= SIZEOF_BUN
-	    || *nfrag > BUN_MAX
+	    || *nfrag > (int) BUN_MAX
 #endif
 	   ) {
 		GDKerror("urangesplit: parameter out of range.\n");
@@ -1806,7 +1806,7 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 		GDKerror("CMDslice: start position of slice should >= 0\n");
 		return GDK_FAIL;
 	}
-	if (start > BUN_MAX || end >= BUN_MAX) {
+	if (start > (lng) BUN_MAX || end >= (lng) BUN_MAX) {
 		GDKerror("CMDslice: argument out of range\n");
 		return GDK_FAIL;
 	}
@@ -1879,7 +1879,7 @@ fetch(ptr ret, BAT *b, lng i)
 		return GDK_FAIL;
 	}
 	i += BUNfirst(b);
-	assert(i <= BUN_MAX);
+	assert(i <= (lng) BUN_MAX);
 	@:putTail((BUN)i)@
 @= putTail
 	if (b->ttype && b->theap) {

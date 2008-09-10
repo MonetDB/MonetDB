@@ -431,7 +431,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 
 		memset((char*) &as, 0, sizeof(as));
 		as.nr_attrs = list_length(t->columns.set);
-		as.nr = (sz<1)?BUN_NONE:sz;
+		as.nr = (sz<1)?BUN_NONE:(BUN)sz;
 		as.offset = offset;
 		as.error = NULL;
 		as.tryall = 0;

@@ -646,8 +646,8 @@ CMDnew_lng(BAT **ret, int *ht, int *tt, lng *cap)
 {
 	if (*cap < 0)
 		*cap = 0;
-	if (*cap > BUN_MAX)
-		*cap = BUN_MAX;
+	if (*cap > (lng) BUN_MAX)
+		*cap = (lng) BUN_MAX;
 	*ret = BATnew(*ht, *tt, (BUN) * cap);
 	if (*ret)
 		(*ret)->batDirty |= 2;
@@ -660,8 +660,8 @@ CMDnew_int(BAT **ret, int *ht, int *tt, int *cap)
 	if (*cap < 0)
 		*cap = 0;
 #if SIZEOF_INT == SIZEOF_BUN
-	if (*cap > BUN_MAX)
-		*cap = BUN_MAX;
+  if (*cap > (int) BUN_MAX)
+	  *cap = (int) BUN_MAX;
 #endif
 	*ret = BATnew(*ht, *tt, (BUN) * cap);
 	if (*ret)
@@ -674,8 +674,8 @@ CMDnew(BAT **ret, int *ht, int *tt, wrd *cap)
 {
 	if (*cap < 0)
 		*cap = 0;
-	if (*cap > BUN_MAX)
-		*cap = BUN_MAX;
+	if (*cap > (wrd) BUN_MAX)
+		*cap = (wrd) BUN_MAX;
 	*ret = BATnew(*ht, *tt, (BUN) * cap);
 	if (*ret)
 		(*ret)->batDirty |= 2;
@@ -697,8 +697,8 @@ CMDdensebat(BAT **ret, wrd *size)
 
 	if (*size < 0)
 		*size = 0;
-	if (*size > BUN_MAX)
-		*size = BUN_MAX;
+	if (*size > (wrd) BUN_MAX)
+		*size = (wrd) BUN_MAX;
 	*ret = b = BATnew(TYPE_void, TYPE_void, (BUN) *size);
 	if (b == NULL)
 		return GDK_FAIL;
@@ -985,7 +985,7 @@ CMDcount_bat(lng *res, int *bid)
 int
 CMDsetcount_bat(lng *res, BAT *b, lng *c)
 {
-	if (*c > BUN_MAX || *c < 0) {
+	if (*c > (lng) BUN_MAX || *c < 0) {
 		GDKerror("CMDsetcount_bat: argument out of range\n");
 		return GDK_FAIL;
 	}
