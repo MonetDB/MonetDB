@@ -1046,6 +1046,7 @@ of simple SQL rewrites using the module name as the discriminator.
 * Inline Functions::
 * Join Paths::
 * Macro Processing::
+* Memo Execution::
 * Merge Tables ::
 * Multiplex Compiler::
 * Partitioned Tables::
@@ -1053,6 +1054,7 @@ of simple SQL rewrites using the module name as the discriminator.
 * Query Plans::
 * Range Propagation::
 * Recycler::
+* Remote::
 * Remote Queries::
 * Singleton Sets ::
 * Stack Reduction::
