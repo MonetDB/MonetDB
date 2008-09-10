@@ -809,7 +809,10 @@ load_schema(sql_trans *tr, sqlid id, ssize_t rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(ss, "id"), rid);
 	sid = *(sqlid *)v; 	_DELETE(v);
 	if (sid < id) {
-		s = find_sql_schema_node(tr, NULL, sid)->data;
+		node *n = find_sql_schema_node(tr, NULL, sid);
+		if (n==NULL) 
+			GDKfatal("SQL schema missing or incompatible, rebuilt from archive");
+		s = n->data;
 	} else {
 		s = ZNEW(sql_schema);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "name"), rid);
@@ -898,7 +901,7 @@ load_trans(sql_trans* tr, sqlid id)
 
 	for(rid = table_funcs.rids_next(schemas); rid>=0; rid = table_funcs.rids_next(schemas)) {
 		sql_schema *ns = load_schema(tr, id, rid);
-		if (ns->base.id > id)
+		if (ns && ns->base.id > id)
 			cs_add(&tr->schemas, ns, TR_OLD);
 	}
 	table_funcs.rids_destroy(schemas);
