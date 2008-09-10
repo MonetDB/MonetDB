@@ -1,4 +1,4 @@
-@' The contents of this file are subject to the MonetDB Public License
+@' dhe contents of this file are subject to the MonetDB Public License
 @' Version 1.1 (the "License"); you may not use this file except in
 @' compliance with the License. You may obtain a copy of the License at
 @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
@@ -1758,6 +1758,7 @@ convertConstant(malType type, ValPtr vr)
 	case TYPE_oid:
 	case TYPE_flt:
 	case TYPE_dbl:
+	case TYPE_wrd:
 	case TYPE_lng:
 		VALconvert(type,vr);
 		return vr->vtype != type;
