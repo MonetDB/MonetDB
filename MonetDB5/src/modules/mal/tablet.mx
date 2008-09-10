@@ -1312,7 +1312,10 @@ TABLETcreate_bats(Tablet * as, BUN est)
 		if (as->rawmode){
 			char nme[BUFSIZ];
 			size_t len;
-			getcwd(nme,BUFSIZ);
+			if ( getcwd(nme,BUFSIZ) == NULL){
+				GDKerror("TABLETcreate_bats: Failed to locate directory\n");
+				return -1;
+			}
 
 			len= strlen(nme);
 			assert(len <BUFSIZ-50);
