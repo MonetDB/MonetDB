@@ -1535,7 +1535,8 @@ BPMaddPartition(int *ret, bat *bid, bat *src){
 		bn= BATdescriptor(px->bid);
 		if( bn== NULL)
 			throw(MAL,"bpm.addPartition","Partition BAT not found");
-		BATappend(bn,b,TRUE);
+		bn= BATappend(bn,b,TRUE);
+		assert(bn!=NULL);
 		px ->cnt += BATcount(b);
 		BBPunfix(bn->batCacheid); 
 #ifdef _DEBUG_BPM_
@@ -2266,7 +2267,8 @@ BPMfold(bat *ret, bat *bid){
 		b= BATdescriptor(i);
 		if( b== NULL)
 			throw(MAL,"bpm.fold","Partitioned BAT not found");
-		BATappend(bn,b,FALSE);
+		bn= BATappend(bn,b,FALSE);
+		assert(bn!=NULL);
 		/* remove its persistency counter */
 		BBPdecref(b->batCacheid,TRUE);
 		BBPunfix(b->batCacheid);
