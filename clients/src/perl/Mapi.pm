@@ -60,6 +60,22 @@ sub new {
   # content_byteorder(BIG/LIT):user:{cypher_algo}mypasswordchallenge_cyphered:lang:database: 
   $self->putblock("LIT:$user:{plain}$passwd" . @challenge[0] . ":$lang:$db:\n");
   my $prompt = $self->getblock();
+  if ($prompt =~ /^\^mapi:monetdb:/) {
+    # full reconnect
+    $self->{socket}->close;
+    print "Following redirect: $prompt\n" if ($self->{trace});
+    my @tokens = split(/[\n\/:\?]+/, $prompt); # dirty, but it's Perl anyway
+    return new Mapi(@tokens[3], @tokens[4], $user, $passwd, $lang, @tokens[5], $trace);
+  } elsif ($prompt =~ /^\^mapi:merovingian:proxy/) {
+    # proxied redirect
+    do {
+      print "Being proxied by $host:$port\n" if ($self->{trace});
+      $block = $self->getblock();
+      @challenge = split(/:/, $block);
+      $self->putblock("LIT:$user:{plain}$passwd" . @challenge[0] . ":$lang:$db:\n");
+      $prompt = $self->getblock();
+    } while ($prompt =~ /^\^mapi:merovingian:proxy/);
+  } # TODO: don't die on warnings (#)
   die $prompt if ($prompt ne "");
   print "Logged on $user\@$db with $lang\n" if ($self->{trace});
   return $self;

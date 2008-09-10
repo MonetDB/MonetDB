@@ -18,8 +18,10 @@
 
 use Mapi;
 
+my $db = shift || '';
+
 my ($monet, $line);
-$monet = new Mapi('localhost', 50000, 'monetdb', 'monetdb', 'sql', '', 0);
+$monet = new Mapi('localhost', 50000, 'monetdb', 'monetdb', 'sql', $db, 0);
 
 print "> ";
 while ( !(($line=<>) =~ /\q/) ){
