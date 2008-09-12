@@ -1,14 +1,14 @@
 stdout of test 'Arjen_01` in directory 'tests/from_Twente/Bugs` itself:
 
 
-# 23:14:28 >  
-# 23:14:28 >   Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32851 --set xrpc_port=41440 --set monet_prompt= --trace  --dbname=mTests_tests_from_Twente_Bugs Arjen_01.prelude 
-# 23:14:28 >  
+# 15:26:13 >  
+# 15:26:13 >   Mserver "--config=/ufs/sjoerd/src/MonetDB/virgin/MonetDB4/x86_64-unknown-linux-gnu/conf/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/virgin/MonetDB4/x86_64-unknown-linux-gnu/src/modules/plain/.libs:/ufs/sjoerd/src/MonetDB/virgin/MonetDB4/x86_64-unknown-linux-gnu/src/modules/plain:/ufs/sjoerd/src/MonetDB/virgin/MonetDB4/x86_64-unknown-linux-gnu/src/modules/contrib/.libs:/ufs/sjoerd/src/MonetDB/virgin/MonetDB4/x86_64-unknown-linux-gnu/src/modules/contrib:/ufs/sjoerd/src/MonetDB/virgin/MonetDB4/x86_64-unknown-linux-gnu/src/modules/calibrator/.libs:/ufs/sjoerd/src/MonetDB/virgin/MonetDB4/x86_64-unknown-linux-gnu/src/modules/calibrator:/ufs/sjoerd/src/MonetDB/virgin/MonetDB4/x86_64-unknown-linux-gnu/src/mapi/.libs:/ufs/sjoerd/src/MonetDB/virgin/MonetDB4/x86_64-unknown-linux-gnu/src/mapi:/ufs/sjoerd/src/MonetDB/virgin/MonetDB4/scripts/tools" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/virgin/MonetDB4/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/virgin/MonetDB4/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/virgin/MonetDB4/x86_64-unknown-linux-gnu/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=38487 --set xrpc_port=46347 --set monet_prompt= --trace  --dbname=mTests_tests_from_Twente_Bugs Arjen_01.prelude 
+# 15:26:13 >  
 
 
 
-# MonetDB Server v4.23.0
-# based on GDK   v1.23.0
+# MonetDB Server v4.25.0
+# based on GDK   v1.25.0
 # Copyright (c) 1993-2008, CWI. All rights reserved.
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
@@ -150,7 +150,9 @@ print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").
 [ "T->heap.dirty",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
 [ "T->vheap->dirty",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
 [ "batCacheid",		  "26",		  "28",		  "29",		  "30",		  "32",		  "31",		  "-34",	  "35",		  "-37",	  "-35",	  "38"		  ]
+[ "batCapacity",	  "256",	  "256",	  "256",	  "3",		  "256",	  "256",	  "2",		  "2",		  "2",		  "2",		  "256"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "batCount",		  "4",		  "4",		  "4",		  "3",		  "4",		  "3",		  "2",		  "2",		  "2",		  "2",		  "2"		  ]
 [ "batDeleted",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batDirty",			  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtydesc",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
@@ -174,9 +176,11 @@ print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").
 [ "head.storage",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent",	  "malloced",	  "absent",	  "absent",	  "absent",	  "absent",	  "absent"	  ]
 [ "hident",		  "h",		  "h",		  "h",		  "h",		  "h",		  "h",		  "t",		  "h",		  "t",		  "t",		  "h"		  ]
 [ "hkey",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
+[ "hnil",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "hnodense",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "hnokey[0]",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "hnokey[1]",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "hnonil",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "hnosorted",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "hnosorted_rev",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "hparentid",		  "0",		  "0",		  "0",		  "0",		  "0",		  "33",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
@@ -195,9 +199,11 @@ print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").
 [ "tdense",			  "1",		  "0",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "0"		  ]
 [ "tident",		  "t",		  "t",		  "t",		  "t",		  "t",		  "t",		  "h",		  "t",		  "h",		  "h",		  "t"		  ]
 [ "tkey",			  "1",		  "1",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
+[ "tnil",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "tnodense",			  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "tnokey[0]",		  "0",		  "0",		  "1",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "tnokey[1]",		  "0",		  "0",		  "2",		  "0",		  "1",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
+[ "tnonil",		  "1",		  "1",		  "0",		  "1",		  "0",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1"		  ]
 [ "tnosorted",		  "0",		  "0",		  "0",		  "0",		  "3",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "tnosorted_rev",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "tparentid",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]

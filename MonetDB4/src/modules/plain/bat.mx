@@ -1363,6 +1363,8 @@ CMDinfo(BAT **retval, BAT *b)
 	BUNins(bn, "hparentid", local_itoa((ssize_t)(b->H->parentid)),FALSE);
 	BUNins(bn, "tparentid", local_itoa((ssize_t)(b->T->parentid)),FALSE);
 	BUNins(bn, "batSharecnt", local_itoa((ssize_t)(b->batSharecnt)),FALSE);
+	BUNins(bn, "batCount", local_utoa((size_t)b->batCount),FALSE);
+	BUNins(bn, "batCapacity", local_utoa((size_t)b->batCapacity),FALSE);
 	BUNins(bn, "head", ATOMname(b->htype),FALSE);
 	BUNins(bn, "tail", ATOMname(b->ttype),FALSE);
 	BUNins(bn, "batPersistence", mode,FALSE);
@@ -1384,6 +1386,8 @@ CMDinfo(BAT **retval, BAT *b)
 	BUNins(bn, "hnodense", local_utoa(b->H->nodense),FALSE);
 	BUNins(bn, "hnokey[0]", local_utoa(b->H->nokey[0]),FALSE);
 	BUNins(bn, "hnokey[1]", local_utoa(b->H->nokey[1]),FALSE);
+	BUNins(bn, "hnonil", local_utoa(b->H->nonil),FALSE);
+	BUNins(bn, "hnil", local_utoa(b->H->nil),FALSE);
 
 	BUNins(bn, "tident", b->tident,FALSE);
 	BUNins(bn, "tdense", local_itoa((ssize_t)(BATtdense(b))),FALSE);
@@ -1397,6 +1401,8 @@ CMDinfo(BAT **retval, BAT *b)
 	BUNins(bn, "tnodense", local_utoa(b->T->nodense),FALSE);
 	BUNins(bn, "tnokey[0]", local_utoa(b->T->nokey[0]),FALSE);
 	BUNins(bn, "tnokey[1]", local_utoa(b->T->nokey[1]),FALSE);
+	BUNins(bn, "tnonil", local_utoa(b->T->nonil),FALSE);
+	BUNins(bn, "tnil", local_utoa(b->T->nil),FALSE);
 
 	BUNins(bn, "batInserted", local_utoa(b->batInserted),FALSE);
 	BUNins(bn, "batDeleted", local_utoa(b->batDeleted),FALSE);
