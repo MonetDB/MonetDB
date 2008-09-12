@@ -4010,7 +4010,7 @@
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_6B7C5EAFC8B444758A0EB11039DABF20"
             {
             "Name" = "8:MonetDB SQL Client"
-            "Arguments" = "8:-lsql -umonetdb -Pmonetdb"
+            "Arguments" = "8:-lsql -umonetdb -Pmonetdb -Ecp437"
             "Description" = "8:"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"

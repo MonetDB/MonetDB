@@ -5873,7 +5873,7 @@
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_105BC55B7EC843888BD574A95670DAA6"
             {
             "Name" = "8:MonetDB SQL Client"
-            "Arguments" = "8:-lsql -umonetdb -Pmonetdb"
+            "Arguments" = "8:-lsql -umonetdb -Pmonetdb -Ecp437"
             "Description" = "8:"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
