@@ -813,6 +813,43 @@ RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	return -1;
 }
 
+
+#define boundcheck(flag,a) ((flag)?a<=0:a<0)
+/* check if instruction p at the stack is a subset selection of the RP instruction q */
+
+static int 
+selectSubset(InstrPtr p, InstrPtr q, MalStkPtr s)
+{
+	int lcomp, rcomp, cover=0;
+	bit li, hi, lip, hip;
+
+	lcomp = VALcmp(&getVar(recycleBlk,getArg(q,2))->value,
+			&s->stk[getArg(p,2)]);
+	if ( p->argc == 3)
+		rcomp = VALcmp( &s->stk[getArg(p,2)], 
+			&getVar(recycleBlk,getArg(q,3))->value);
+	else 
+		rcomp = VALcmp( &s->stk[getArg(p,3)], 
+			&getVar(recycleBlk,getArg(q,3))->value);
+	switch (q->argc) {
+		case 4:	cover = lcomp <=0 && rcomp <=0;
+			break;
+		case 6:
+			li = *(bit*)getVarValue(recycleBlk,getArg(q,4));
+			hi = *(bit*)getVarValue(recycleBlk,getArg(q,5));
+			if (p->argc <=4)
+				cover = boundcheck(li,lcomp) && boundcheck(hi,rcomp);
+			else {
+				lip = *(bit*)VALget(&s->stk[getArg(p,4)]);
+				hip = *(bit*)VALget(&s->stk[getArg(p,5)]);
+				cover = boundcheck(li || ~lip,lcomp) && boundcheck(hi || ~hip,rcomp);
+			}
+	}
+
+	return cover;
+}
+
+
 static int
 RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
@@ -830,8 +867,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	for (i = 1; i < recycleBlk->stop; i++){
 		q = getInstrPtr(recycleBlk,i);
 
-		if ((p->argc > q->argc) ||
-		    (getFunctionId(p) != getFunctionId(q)) ||
+		if ((getFunctionId(p) != getFunctionId(q)) ||
 		    (getModuleId(p) != getModuleId(q)))
 			continue;
 
@@ -843,28 +879,13 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			/* 1: reuse smallest range covering */
 			ridx= getArg(q,1);
 			idx= getArg(p,1);
-			if (q->argc > 3 && q->argc <= 4 && p->argc <= 4 &&
-			    getFunctionId(p) == selectRef   &&
+			if (q->argc > 3 && getFunctionId(p) == selectRef &&
 			    getVarConstant(recycleBlk, ridx).val.bval == s->stk[idx].val.bval &&
 				BATatoms[getArgType(recycleBlk,q,2)].linear )
 
 			{	
 				/* Time to check for the inclusion constraint */
-				int leftbound, rightbound;
-				leftbound= VALcmp( &s->stk[getArg(p,2)], 
-							&getVar(recycleBlk,getArg(q,2))->value) >=0;
-				rightbound = p->argc == 3 || 
-					VALcmp( &s->stk[getArg(p,3)], 
-							&getVar(recycleBlk,getArg(q,3))->value) <=0;
-
-				if (p->argc == 6){
-						/* inclusion bounds */
-						leftbound &= VALcmp( &s->stk[getArg(p,4)], 
-								&getVar(recycleBlk,getArg(q,4))->value)==0;
-						rightbound &= VALcmp( &s->stk[getArg(p,5)], 
-								&getVar(recycleBlk,getArg(q,5))->value)==0;
-				}
-				if (leftbound && rightbound){
+				if (selectSubset(p,q,s)){
 					BAT *b1, *b2;
 					nbid = getVarConstant(recycleBlk, getArg(q,0)).val.bval; 
 					if( bid == -1){
@@ -895,6 +916,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			}
 		case REUSE_EXACT:
 			/* 2: exact covering */
+			if (p->argc > q->argc) continue;
 			for (j = p->retc; j < p->argc; j++)
 				if (VALcmp(&s->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 					goto notfound;
