@@ -344,6 +344,7 @@ multiplex_copy_@1(ValPtr val, @1* v)
 @:multiplex_copy(sht,shval)@
 @:multiplex_copy(int,ival)@
 @:multiplex_copy(lng,lval)@
+@:multiplex_copy(ptr,pval)@
 
 static void
 multiplex_copy_var(ValPtr val, ptr v)
@@ -377,6 +378,8 @@ multiplex_fcn(int tpe)
 #if SIZEOF_OID == SIZEOF_LNG
 	case TYPE_void:
 #endif
+	case TYPE_ptr:
+		return (ColFcn) multiplex_copy_ptr;
 	case TYPE_lng:
 	case TYPE_dbl:
 		return (ColFcn) multiplex_copy_lng;
