@@ -491,6 +491,10 @@ tablet_export int has_whitespace(char *sep);
 #define CLEAR(X) if(X) {GDKfree(X);X = NULL;}
 #define isScalar(C)  C->adt != TYPE_bat
 
+#ifdef _MSC_VER
+#define getcwd _getcwd
+#endif
+
 tablet_export str TABsetFormat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABheader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 tablet_export str TABdisplayTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1300,6 +1304,16 @@ TABLETcreate_bats(Tablet * as, BUN est)
 {
 	Column *fmt = as->format;
 	BUN i;
+	char nme[BUFSIZ];
+	size_t len;
+
+	if ( getcwd(nme,BUFSIZ) == NULL){
+		GDKerror("TABLETcreate_bats: Failed to locate directory\n");
+		return -1;
+	}
+
+	len= strlen(nme);
+	assert(len <BUFSIZ-50);
 
 /*	as->rawmode= TRUE;  TRIAL CODE */
 	as->rawmode = 0;
@@ -1311,17 +1325,8 @@ TABLETcreate_bats(Tablet * as, BUN est)
 			return -1;
 		}
 		if (as->rawmode){
-			char nme[BUFSIZ];
-			size_t len;
-			if ( getcwd(nme,BUFSIZ) == NULL){
-				GDKerror("TABLETcreate_bats: Failed to locate directory\n");
-				return -1;
-			}
-
-			len= strlen(nme);
-			assert(len <BUFSIZ-50);
 			fmt[i].batfile= GDKstrdup(BBP_physical(ABS(fmt[i].c->batCacheid)));
-			snprintf(nme+len,BUFSIZ-len,"/bat/"BUNFMT".raw",i);
+			snprintf(nme+len,BUFSIZ-len,"%cbat%c"BUNFMT".raw",DIR_SEP,DIR_SEP,i);
 			fmt[i].rawfile= GDKstrdup(nme);
 			fmt[i].raw= open_wastream(fmt[i].rawfile);
 			stream_printf(GDKout,"#mv %s %s\n",fmt[i].rawfile,fmt[i].batfile);
