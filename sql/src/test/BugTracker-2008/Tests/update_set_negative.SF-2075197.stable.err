@@ -1,14 +1,14 @@
 stderr of test 'update_set_negative.SF-2075197` in directory 'src/test/BugTracker-2008` itself:
 
 
-# 22:10:55 >  
-# 22:10:55 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33080 --set xrpc_port=49447 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2008" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 22:10:55 >  
+# 13:00:43 >  
+# 13:00:43 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=37919 --set xrpc_port=45857 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2008" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 13:00:43 >  
 
 # builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
-# builtin opt 	gdk_version = 1.25.0
-# builtin opt 	monet_pid = 17885
-# builtin opt 	prefix = /ufs/mk/monet5//Linux
+# builtin opt 	gdk_version = 1.24.0
+# builtin opt 	monet_pid = 6794
+# builtin opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
@@ -33,9 +33,9 @@ stderr of test 'update_set_negative.SF-2075197` in directory 'src/test/BugTracke
 # builtin opt 	standoff_ns = http://monetdb.cwi.nl/standoff
 # builtin opt 	standoff_start = start
 # builtin opt 	standoff_end = end
-# config opt 	prefix = /ufs/mk/monet5//Linux
+# config opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
 # config opt 	config = ${prefix}/etc/monetdb5.conf
-# config opt 	prefix = /ufs/mk/monet5//Linux
+# config opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
 # config opt 	gdk_dbname = demo
@@ -53,35 +53,34 @@ stderr of test 'update_set_negative.SF-2075197` in directory 'src/test/BugTracke
 # config opt 	mero_doproxy = yes
 # config opt 	mero_discoveryttl = 600
 # config opt 	mal_init = ${exec_prefix}/lib/MonetDB5/mal_init.mal
-# config opt 	mal_listing = 18
+# config opt 	mal_listing = 15
 # config opt 	checkpoint_dir = ${prefix}/var/MonetDB5/chkpnt
 # config opt 	mapi_port = 50000
 # config opt 	mapi_open = false
 # config opt 	sql_debug = 0
 # config opt 	sql_logdir = ${prefix}/var/MonetDB5/sql_logs
 # config opt 	sql_init = ${exec_prefix}/lib/MonetDB5/sql_init.sql
-# cmdline opt 	config = /ufs/mk/monet5/Linux/etc/monetdb5.conf
-# cmdline opt 	gdk_nr_threads = 0
-# cmdline opt 	monet_mod_path = /ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin
-# cmdline opt 	gdk_dbfarm = /ufs/mk/monet5//Linux/var/MonetDB5/dbfarm
-# cmdline opt 	sql_logdir = /ufs/mk/monet5//Linux/var/MonetDB5/sql_logs
+# cmdline opt 	config = /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf
+# cmdline opt 	monet_mod_path = /ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin
+# cmdline opt 	gdk_dbfarm = /ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm
+# cmdline opt 	sql_logdir = /ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs
 # cmdline opt 	mapi_open = true
 # cmdline opt 	xrpc_open = true
-# cmdline opt 	mapi_port = 33080
-# cmdline opt 	xrpc_port = 49447
+# cmdline opt 	mapi_port = 37919
+# cmdline opt 	xrpc_port = 45857
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_test_BugTracker-2008
 # cmdline opt 	mal_listing = 0
 # cmdline opt 	gdk_debug = 10
 #warning: please don't forget to set your vault key!
-#(see /ufs/mk/monet5/Linux/etc/monetdb5.conf)
+#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
 
-# 22:10:55 >  
-# 22:10:55 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=33080 
-# 22:10:55 >  
+# 13:00:43 >  
+# 13:00:43 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=37919 
+# 13:00:43 >  
 
 
-# 22:10:55 >  
-# 22:10:55 >  Done.
-# 22:10:55 >  
+# 13:00:43 >  
+# 13:00:43 >  Done.
+# 13:00:43 >  
 
