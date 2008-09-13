@@ -265,14 +265,14 @@ BATappend(BAT *b, BAT *n, bit force)
 		if (ncap > grows)
 			grows = ncap;
 		if (BATextend(b, grows) == NULL)
-			fastpath = 0;
+			goto bunins_failed;
 	}
 
 	/* append two void,void bats */
 	if (b->ttype == TYPE_void && BATtdense(b)) {
 		oid f = n->tseqbase;
 
-		if (b->ttype != TYPE_void)
+		if (n->ttype != TYPE_void)
 			f = *(oid *) BUNtloc(bat_iterator(n), BUNfirst(n));
 
 		if (BATcount(b) == 0 && f != oid_nil)
