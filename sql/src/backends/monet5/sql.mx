@@ -811,6 +811,7 @@ sql5_export str second_interval_@1( lng *res, @1 *s, int *ek, int *sk );
 @:c_interval_export(bte)@
 @:c_interval_export(sht)@
 @:c_interval_export(int)@
+@:c_interval_export(wrd)@
 @:c_interval_export(lng)@
 @= simpleupcast_export
 sql5_export str @2_2_@1( @1 *res, @2 *v );
