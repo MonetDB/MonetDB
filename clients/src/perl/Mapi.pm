@@ -302,7 +302,7 @@ sub getReply {
     # get next slice
     my $rs = $self->{replysize};
     my $offset = $self->{offset} + $rs;
-    putblock("Xexport $self->{id} $offset $rs");
+    $self->putblock("Xexport $self->{id} $offset $rs");
     return $self->getBlock();
   } else {
     # close large results, but only send on next query

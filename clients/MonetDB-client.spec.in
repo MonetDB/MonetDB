@@ -38,6 +38,7 @@ BuildRequires: readline-devel, openssl-devel
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
 %{!?_with_perl: %{!?_without_perl: %define _with_perl --with-perl}}
 %{!?_with_ruby: %{!?_without_ruby: %define _with_ruby --with-ruby}}
+%{!?_with_unixODBC: %{!?_without_unixODBC: %define _with_unixODBC --with-unixodbc}}
 
 %if !%{?buildsystem}
 BuildRequires: MonetDB-devel >= 1.24
@@ -74,12 +75,17 @@ Requires: perl-devel
 Requires: ruby, swig
 Requires: ruby-devel
 %endif
-
+%if %{?_with_unixODBC:1}%{!?_with_unixODBC:0}
+Requires: unixODBC, unixODBC-devel
+%endif
 
 %package odbc
 Summary: MonetDB SQL odbc
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
+%if %{?_with_unixODBC:1}%{!?_with_unixODBC:0}
+BuildRequires: unixODBC-devel
+%endif
 
 %if %{?_with_php:1}%{!?_with_php:0}
 %package php
@@ -242,7 +248,8 @@ rm -rf $RPM_BUILD_ROOT
 	%{?_with_php} %{?_without_php} \
 	%{?_with_python} %{?_without_python} \
 	%{?_with_perl} %{?_without_perl} \
-	%{?_with_ruby} %{?_without_ruby}
+	%{?_with_ruby} %{?_without_ruby} \
+	%{?_with_unixODBC} %{?_without_unixODBC}
 
 make
 
