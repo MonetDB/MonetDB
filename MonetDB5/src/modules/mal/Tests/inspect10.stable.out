@@ -31,9 +31,9 @@ end main;	# 7
 # int	str					  # type
 #-------------------------------------------------#
 [ 0,	  "function user.dummy(i:int):void;"	  ]
-[ 1,	  "    io.print(i1);"			  ]
+[ 1,	  "    io.print(i);"			  ]
 [ 2,	  "    b := mdb.getDefinition();"	  ]
-[ 3,	  "    io.print(bnil:bat[:void,:str]);"	  ]
+[ 3,	  "    io.print(b);"			  ]
 [ 4,	  "    mdb.list();"			  ]
 [ 5,	  "end dummy;"				  ]
 function user.dummy(i:int):void;        #  0 dummy:void := user.dummy(i:int) {G}

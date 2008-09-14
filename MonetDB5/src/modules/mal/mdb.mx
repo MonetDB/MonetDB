@@ -766,7 +766,7 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "mdb.getDefinition", "Failed to create BAT");
 
 	for (i = 0; i < m->stop; i++) {
-		ps = instruction2str(m,stk, getInstrPtr(m, i), 1);
+		ps = instruction2str(m,0, getInstrPtr(m, i), 1);
 		BUNins(b, &i, ps, FALSE);
 		GDKfree(ps);
 	}
