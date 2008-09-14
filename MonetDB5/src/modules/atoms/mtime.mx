@@ -1636,7 +1636,7 @@ timestamp_fromstr(str buf, int *len, timestamp **ret)
 	t = &(*ret)->msecs;
 	(*ret)->msecs = 0;
 	s += date_fromstr(buf, len, &d);
-	if (s > buf && (*(s) == '@' || *s == ' ' || *s == '-')) {
+	if (s > buf && (*(s) == '@' || *s == ' ' || *s == '-' || *s == 'T')) {
 		while (*(++s) == ' ')
 			;
 		pos = daytime_fromstr(s, len, &t);
