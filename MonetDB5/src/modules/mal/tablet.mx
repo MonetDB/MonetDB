@@ -1971,14 +1971,18 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 			if (as->format[i].c) {
 				/* prepare enough space */
 				as->format[i].c = BATextend( as->format[i].c, cnt );
-				assert(as->format[i].c != NULL);
+				if (as->format[i].c == NULL){
+					GDKerror("TABLETload_file:could not extend bat\n");
+					return BUN_NONE;
+				}
 				for (j=0; j<nway; j++) {
 					assert (partition[j]->format[i].c);
 					as->format[i].c= BATappend(as->format[i].c, partition[j]->format[i].c,TRUE);
 					assert(as->format[i].c!= NULL);
 					BATsave(as->format[i].c);
 					/* Throw away the temporary bats a.s.a.p. without saveing */
-					BBPunfix(partition[j]->format[i].c->batCacheid);
+					if (BBPreclaim(partition[j]->format[i].c))
+						GDKerror("TABLETload_file:could not reclaim partition\n");
 					partition[j]->format[i].c= NULL;
 				}
 			}
