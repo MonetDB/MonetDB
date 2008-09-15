@@ -861,6 +861,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_AED25E60A81648DA8BE43E7FDDE23F67"
+        "OwnerKey" = "8:_819BD8650A494CC68BD064E23EF621BB"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_B088E1DFE9974B8FA8F35C6E5FF5D53A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -887,12 +893,6 @@
         {
         "MsmKey" = "8:_B44E4DBF28214C5F8E146367ED28914D"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_B490C654500F4AB4889ADE81557BA450"
-        "OwnerKey" = "8:_819BD8650A494CC68BD064E23EF621BB"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -1006,6 +1006,12 @@
         "Entry"
         {
         "MsmKey" = "8:_CAB7A58D2BCB49FF96773ED173A69B9A"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_CAC5B7295651493395CB5167D973DC01"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -4641,6 +4647,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CAC5B7295651493395CB5167D973DC01"
+            {
+            "SourcePath" = "8:monetdb.ico"
+            "TargetName" = "8:monetdb.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CB3C9EC9B4FF49E9815AC97E05BB8A46"
             {
             "SourcePath" = "8:lib\\libmutils.dll"
@@ -5881,7 +5907,7 @@
             "Target" = "8:_210ACB4F1EA444B4B72F5B60E9953FEE"
             "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
             "WorkingFolder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
-            "Icon" = "8:"
+            "Icon" = "8:_CAC5B7295651493395CB5167D973DC01"
             "Feature" = "8:"
             }
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_62C7C3A9750D44F5AB1BF3B18173082B"
@@ -5895,7 +5921,7 @@
             "Target" = "8:_2CA3CB676BC341B29AC6DDECF9B3AEBB"
             "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
             "WorkingFolder" = "8:_562B007DB0FC4C0D8EBC256D71FF091B"
-            "Icon" = "8:"
+            "Icon" = "8:_CAC5B7295651493395CB5167D973DC01"
             "Feature" = "8:"
             }
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_EB00F4DBF4DE4F7C8CABB7D97A29354A"
@@ -5909,7 +5935,7 @@
             "Target" = "8:_7DD6B44A167D4C0CB7784015E4AEC936"
             "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
             "WorkingFolder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
-            "Icon" = "8:"
+            "Icon" = "8:_CAC5B7295651493395CB5167D973DC01"
             "Feature" = "8:"
             }
         }
@@ -6428,7 +6454,7 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_B490C654500F4AB4889ADE81557BA450"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_AED25E60A81648DA8BE43E7FDDE23F67"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
