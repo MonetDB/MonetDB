@@ -88,10 +88,19 @@ Taking into account that in single-iterations the performance loss
 is limited, but is huge on multiple iterations, the new loop-lifted 
 algorithms for the upwards XPath axes seem a profitable addition for the 
 pathfinder runtime.
+
+@h
+#define PF_SIBLING_PROBES 64
+
+INLINE oid skipholes(oid, unsigned int *);
+oid speculate_skip(oid, oid, oid, int, unsigned int*, unsigned char*);
+
+
 @c
 #include "pf_config.h"
 #include <gdk.h>
 #include "shredder.h" /* for XML_DEPTH_MAX */
+#include "ll_upwards.h"
 
 static char LL_UPWARDS_PARENT[] = "parent";
 static char LL_UPWARDS_ANCESTOR[] = "ancestor";
@@ -102,7 +111,7 @@ typedef struct {
  oid pre; 
 } duple;
 
-static INLINE oid 
+INLINE oid
 skipholes(oid pre, unsigned int *pre_size) {
      while(pre_size[pre] & (1U<<31)) 
          pre += 1 + (pre_size[pre] & ~(1U<<31)); /* skip over holes */
@@ -151,11 +160,11 @@ skipholes(oid pre, unsigned int *pre_size) {
 @= upwards_core
 static int 
 ll_upwards_@1(                            /* OUTPUT: */
-	oid *result_iter,
+        oid *result_iter,
         oid *result_pre, 
-	oid result_size,   /* - pre-allocated result array */
+        oid result_size,   /* - pre-allocated result array */
         oid* bounds, oid *bounds_t,
-	oid** iter_stack,    /* - per iter bound */ 
+        oid** iter_stack,    /* - per iter bound */ 
                                           /* DOCUMENT: */
         unsigned int* pre_size,           /* - pre_size column */
         unsigned char* pre_level,         /* - pre_level column */
@@ -190,7 +199,7 @@ ll_upwards_@1(                            /* OUTPUT: */
             /* generate result for each iteration */
             while(context[cur].pre == pre) { /* can disregard cur<context_size, thanks to sentinel */         
                 oid iter = context[cur].iter;      
- 	        @:found_@1@
+                 @:found_@1@
                 cur++;
             }
 
@@ -199,7 +208,7 @@ ll_upwards_@1(                            /* OUTPUT: */
             /* next context node is in the descendants: go find it */
             stack[depth++] = pre;
             pre = skipholes(pre+1, pre_size);
-  	    if (depth == XML_DEPTH_MAX || pre > limit) break; /* SANITY */
+              if (depth == XML_DEPTH_MAX || pre > limit) break; /* SANITY */
 
         } else if (depth == 0 || context[cur].pre <= stack[depth-1] + pre_size[stack[depth-1]]) {
             oid off = pre;
@@ -209,18 +218,18 @@ ll_upwards_@1(                            /* OUTPUT: */
             /* in the branch that is on the stack, but in some sibling that we need to find */
             while(pre + pre_size[pre] < context[cur].pre) {
                 pre = skipholes(pre + pre_size[pre] + 1, pre_size); /* skip from sibling to sibling */
-  	        if (pre > limit) break; /* SANITY */
-  	        if (++cnt == budget) {
+                  if (pre > limit) break; /* SANITY */
+                  if (++cnt == budget) {
                     oid old = pre;
                     pre = speculate_skip(pre, context[cur].pre, pre-off, budget, pre_size, pre_level); 
                     if (pre == old) { 
-			budget += budget; /* skip failed: wait longer next time */
+                        budget += budget; /* skip failed: wait longer next time */
                     }
                     off = pre; cnt = 0;
                 }
             }
-	    if (depth == 0)
-		    root = pre;
+            if (depth == 0)
+                    root = pre;
         } else {
 
             /* pop the stack */
@@ -231,7 +240,6 @@ ll_upwards_@1(                            /* OUTPUT: */
 }
 
 @c
-#define PF_SIBLING_PROBES 64
 
 /* If an XML is regularly structured (contains "list" or "table" like data) such that we have
  * a subtree with very many siblings, the upwards steps will have to touch all the preceding
@@ -243,7 +251,7 @@ ll_upwards_@1(                            /* OUTPUT: */
  * to skip siblings. To recognize such speculative siblings, we also need the level column.
  * We take care not to waste more time speculating than we already did traversing preceding siblings. 
  */
-static oid
+oid
 speculate_skip(oid pre, oid dst, oid skip, int budget, unsigned int* pre_size, unsigned char* pre_level) {
     skip = skip << 6;
     if (pre + skip < dst) {
@@ -318,58 +326,58 @@ ll_upwards(               /* RESULT: */
 
     /* gather the context nodes and analyze them (order, min/max iter)  */
 @= ll_upwards_min_max
-	        if (context[i].iter < min_iter) min_iter = context[i].iter;
-	        if (context[i].iter > max_iter) max_iter = context[i].iter;
+                if (context[i].iter < min_iter) min_iter = context[i].iter;
+                if (context[i].iter > max_iter) max_iter = context[i].iter;
 @
 @= ll_upwards_copy
-	    while(p < q) {
+            while(p < q) {
                 context[i].iter = @1;
                 context[i].pre  = @2;
                 @3
-  	        i++; p++; r++;
+                  i++; p++; r++;
             }
 @
 @c
     if (p < q) {
-	if (!(BATtordered(iter_bat)&1)) {
-	    if (BATtdense(iter_bat) && BATtdense(ctx_bat)) {
-	        oid iter = iter_bat->tseqbase;
-	        oid pre  = ctx_bat->tseqbase;
-	        @:ll_upwards_copy(iter++, pre++, @:ll_upwards_min_max@)@
-	    } else
-	    if (BATtdense(iter_bat) && ctx_bat->ttype == TYPE_oid) {
-	        oid iter = iter_bat->tseqbase;
-	        @:ll_upwards_copy(iter++, *(oid*) Tloc(ctx_bat,r), @:ll_upwards_min_max@)@
-	    } else
-	    if (iter_bat->ttype == TYPE_oid && BATtdense(ctx_bat)) {
-	        oid pre  = ctx_bat->tseqbase;
-	        @:ll_upwards_copy(*(oid*) Tloc(iter_bat,p), pre++, @:ll_upwards_min_max@)@
-	    } else
-	    if (iter_bat->ttype == TYPE_oid  && ctx_bat->ttype == TYPE_oid) {
-	        @:ll_upwards_copy(*(oid*) Tloc(iter_bat,p), *(oid*) Tloc(ctx_bat,r), @:ll_upwards_min_max@)@
-	    } else {
-	        assert(0); /* should never happen */
-	    }
+        if (!(BATtordered(iter_bat)&1)) {
+            if (BATtdense(iter_bat) && BATtdense(ctx_bat)) {
+                oid iter = iter_bat->tseqbase;
+                oid pre  = ctx_bat->tseqbase;
+                @:ll_upwards_copy(iter++, pre++, @:ll_upwards_min_max@)@
+            } else
+            if (BATtdense(iter_bat) && ctx_bat->ttype == TYPE_oid) {
+                oid iter = iter_bat->tseqbase;
+                @:ll_upwards_copy(iter++, *(oid*) Tloc(ctx_bat,r), @:ll_upwards_min_max@)@
+            } else
+            if (iter_bat->ttype == TYPE_oid && BATtdense(ctx_bat)) {
+                oid pre  = ctx_bat->tseqbase;
+                @:ll_upwards_copy(*(oid*) Tloc(iter_bat,p), pre++, @:ll_upwards_min_max@)@
+            } else
+            if (iter_bat->ttype == TYPE_oid  && ctx_bat->ttype == TYPE_oid) {
+                @:ll_upwards_copy(*(oid*) Tloc(iter_bat,p), *(oid*) Tloc(ctx_bat,r), @:ll_upwards_min_max@)@
+            } else {
+                assert(0); /* should never happen */
+            }
         } else {
             /* ordered iters, so we know min and max */
-	    if (BATtdense(iter_bat) && BATtdense(ctx_bat)) {
-	        oid iter = iter_bat->tseqbase;
-	        oid pre  = ctx_bat->tseqbase;
-	        @:ll_upwards_copy(iter++, pre++,)@
-	    } else
-	    if (BATtdense(iter_bat) && ctx_bat->ttype == TYPE_oid) {
-	        oid iter = iter_bat->tseqbase;
-	        @:ll_upwards_copy(iter++, *(oid*) Tloc(ctx_bat,r),)@
-	    } else
-	    if (iter_bat->ttype == TYPE_oid && BATtdense(ctx_bat)) {
-	        oid pre  = ctx_bat->tseqbase;
-	        @:ll_upwards_copy(*(oid*) Tloc(iter_bat,p), pre++,)@
-	    } else
-	    if (iter_bat->ttype == TYPE_oid && ctx_bat->ttype == TYPE_oid) {
-	        @:ll_upwards_copy(*(oid*) Tloc(iter_bat,p), *(oid*) Tloc(ctx_bat,r),)@
-	    } else {
-	        assert(0); /* should never happen */
-	    }
+            if (BATtdense(iter_bat) && BATtdense(ctx_bat)) {
+                oid iter = iter_bat->tseqbase;
+                oid pre  = ctx_bat->tseqbase;
+                @:ll_upwards_copy(iter++, pre++,)@
+            } else
+            if (BATtdense(iter_bat) && ctx_bat->ttype == TYPE_oid) {
+                oid iter = iter_bat->tseqbase;
+                @:ll_upwards_copy(iter++, *(oid*) Tloc(ctx_bat,r),)@
+            } else
+            if (iter_bat->ttype == TYPE_oid && BATtdense(ctx_bat)) {
+                oid pre  = ctx_bat->tseqbase;
+                @:ll_upwards_copy(*(oid*) Tloc(iter_bat,p), pre++,)@
+            } else
+            if (iter_bat->ttype == TYPE_oid && ctx_bat->ttype == TYPE_oid) {
+                @:ll_upwards_copy(*(oid*) Tloc(iter_bat,p), *(oid*) Tloc(ctx_bat,r),)@
+            } else {
+                assert(0); /* should never happen */
+            }
             min_iter = context[0].iter;
             max_iter = context[i-1].iter;
         }
@@ -451,7 +459,7 @@ ll_upwards(               /* RESULT: */
                 if (ll_upwards_parent(
                     context_result_iter = (oid*) Hloc(bn, BUNfirst(bn)),
                     context_result_pre  = (oid*) Tloc(bn, BUNfirst(bn)),
-		    n, 
+                    n, 
                     bounds, NULL, iter_stack+1, 
                     pre_size, pre_level,
                     BATcount(size_bat), 
@@ -468,7 +476,7 @@ ll_upwards(               /* RESULT: */
                     status = GDK_SUCCEED;
 
                     /* for each context node, parent gives back 1 or 0 results */ 
-    	            if (iter_bat->tkey) BATkey(bn, TRUE);
+                        if (iter_bat->tkey) BATkey(bn, TRUE);
                 } else  {
                     GDKerror("%s: illegal data in size column or context list.\n", axis);
                 }
@@ -476,12 +484,12 @@ ll_upwards(               /* RESULT: */
             GDKfree(buf);
         }
     } else if ( (context_result_pre=GDKzalloc(MAX(1,n)*sizeof(oid))) != NULL &&
-		(context_result_iter=GDKzalloc(MAX(1,n)*sizeof(oid))) != NULL ) {
+                (context_result_iter=GDKzalloc(MAX(1,n)*sizeof(oid))) != NULL ) {
         /* in first pass, bounds contains a partitioning bound (=0 < root) */
         if (ll_upwards_ancestor_cnt(
                  context_result_iter, 
                  context_result_pre, 
-		 n, 
+                 n, 
                  bounds, NULL, NULL,
                  pre_size, pre_level,
                  BATcount(size_bat), 
@@ -521,13 +529,13 @@ ll_upwards(               /* RESULT: */
                         result_iter[pos] = context[i].iter;
                     }
                 }
-		if (ll_upwards_ancestor_gen(
+                if (ll_upwards_ancestor_gen(
                         context_result_iter, 
                         context_result_pre, 
-			m,
+                        m,
                         (oid*) Hloc(bn, BUNfirst(bn)), /* HACK, pass result as bounds */ 
                         (oid*) Tloc(bn, BUNfirst(bn)), /* HACK, pass result as bounds */ 
-			NULL,
+                        NULL,
                         pre_size, pre_level,
                         BATcount(size_bat), 
                         min_iter, context, n)) 
@@ -548,7 +556,7 @@ ll_upwards(               /* RESULT: */
 
     if (status == GDK_SUCCEED) {
         BATsetcount(bn, m);
-        bn->hsorted = 1;
+        bn->hsorted = GDK_SORTED;
         if (BATcount(bn) == BATcount(iter_bat)) {
             bn->hdense = BATtdense(iter_bat);
             BATseqbase(bn, iter_bat->tseqbase);
@@ -556,10 +564,10 @@ ll_upwards(               /* RESULT: */
         }
         bn->tsorted = 0;
         if (niters == 1) {
-            bn->tsorted = 1;
-	    BATkey(BATmirror(bn), 1);
+            bn->tsorted = GDK_SORTED;
+            BATkey(BATmirror(bn), 1);
         }
-	*ret = bn;
+        *ret = bn;
     } else if (bn) {
         BBPreclaim(bn);
     }
