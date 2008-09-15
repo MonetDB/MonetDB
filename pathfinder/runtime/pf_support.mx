@@ -259,6 +259,17 @@ if all are ok."
 
 .COMMAND xquery_hash2str(int) : str = CMD_XQH_STR; "debug routine that prints the components of the string index hash value"
 
+.COMMAND vx_create(BAT[void,oid],BAT[void,str],BAT[void,oid],BAT[void,int],BAT[void,chr],BAT[void,chr]): BAT[void,int] = CMD_vx_create;
+"PARAMETERS:
+BAT[void,oid] - the context nodes, should all be of kind TEXT.
+BAT[void,str] - prop_text
+BAT[void,oid] - prop_bat
+BAT[void,int] - size_bat
+BAT[void,chr] - level_bat
+BAT[void,chr] - kind_bat
+DESCRIPTION:
+create the [text] XML value index for a newly shredded document (BAT pre_hash)"
+
 @- Constant Columns
 
 In XQuery, we often have the case that BAT[void,T] all contain the same tail value
@@ -5914,11 +5925,7 @@ XQUERY_HASH("42")              = 42.0
 XQUERY_HASH(" foo bar ")       = XQUERY_HASH("foo")
 
 These are all soon to be deprecated, but not until the new implementation is
-up and running.
-
-@+ New hash functionality
-
-The text is to be added in the future.
+up and running (see file vx_idex.mx).
 
 @c
 /**** soon to be deprecated hash functions ***********/
@@ -5990,122 +5997,6 @@ int CMDxquery_hash_bat(BAT **res, BAT* b) {
     ALIGNsetH(bn, b);
     BATsetcount(bn, cnt);
     bn->tsorted = 0;
-    return GDK_SUCCEED;
-}
-
-/***** New hash functions ***********/
-#define XQH_UNSGN(v)  ((unsigned int) v)
-#define XQH_MASK5(c)  ((c) & 31)
-#define XQH_MASK7(c)  ((c) & 127)
-#define XQH_MASK27(c) ((c) & (~31))
-#define XQH_SHFT_l(v,o) (v << (o+5))
-#define XQH_SHFT_r(v,o) ((XQH_UNSGN(v) >> (7 - ((o+7)%27))) << 5)
-#define XQH_CLC_SHFT(v,o) ((v << o) | (XQH_MASK27(XQH_UNSGN(v) >> (27-o))))
-
-/* hash function H */
-
-INLINE int XQH_H(str v) {
-    int c;
-    int h_val = 0, ofs = 0;
-
-    for (; *v != '\0'; v++){
-        c = XQH_MASK7(*v);
-        /* cyclic_xor */
-        h_val ^= XQH_SHFT_l(c,ofs);
-        if (ofs > 20) {
-            h_val ^= XQH_SHFT_r(c,ofs);
-        }
-        /* update offset */
-        ofs = (ofs+5) % 27;
-    }
-    return (h_val |= ofs);
-}
-
-int CMD_XQH_H(int *res, str v) {
-    *res = XQH_H(v);
-    return GDK_SUCCEED;
-}
-
-int CMD_XQH_H_bat(BAT **res, BAT* b) {
-    size_t i = 0, cnt = BATcount(b);
-    BAT *bn = *res = BATnew(TYPE_void, TYPE_int, cnt);
-    char *base = (char*) b->T->vheap->base;
-    if (bn) {
-        var_t *src = (var_t*) Tloc(b, BUNfirst(b));
-        int *dst = (int*) Tloc(bn, BUNfirst(bn));
-        for(i=0; i<cnt; i++)
-            dst[i] =  XQH_H(base + src[i]);
-
-        ALIGNsetH(bn, b);
-        BATsetcount(bn, cnt);
-        bn->tsorted = 0;
-        return GDK_SUCCEED;
-    }
-    return GDK_FAIL;
-}
-
-/* Combine function C */
-
-INLINE int XQH_C(int l, int r) {
-    int h_comb = 0;
-
-    /* copy the left operand */
-    h_comb |= XQH_MASK27(l);
-
-    /* XOR the right operand after applying a cyclic shift */
-    h_comb ^= XQH_CLC_SHFT(XQH_MASK27(r),XQH_MASK5(l));
-
-    /* combine offsets */
-    h_comb |= (XQH_MASK5(l)+XQH_MASK5(r)) % 27;
-
-    return h_comb;
-}
-
-int CMD_XQH_C(int *res, int *l, int *r) {
-    *res = XQH_C(*l, *r);
-    return GDK_SUCCEED;
-}
-
-int CMD_XQH_C_bat(BAT **res, BAT *l, BAT *r) {
-    if (ALIGNsynced(l, r)) {
-        size_t i = 0, cnt = BATcount(l);
-        BAT *bn = *res = BATnew(TYPE_void, TYPE_int, cnt);
-        int *lval = (int*) Tloc(bn, BUNfirst(l));
-        int *rval = (int*) Tloc(bn, BUNfirst(r));
-        int *dst  = (int*) Tloc(bn, BUNfirst(bn));
-        if (bn == NULL) return GDK_FAIL;
-
-        for(i=0; i<cnt; i++)
-            dst[i] = XQH_C(lval[i], rval[i]);
-
-        ALIGNsetH(bn, l);
-        BATsetcount(bn, cnt);
-        bn->tsorted = 0;
-        return GDK_SUCCEED;
-    }
-    GDKerror("xquery_combine: (%s,%s): not synced on head.\n", BATgetId(l), BATgetId(r));
-    return GDK_FAIL;
-}
-
-/* debug function for the xquery string hash index */
-int CMD_XQH_STR(str *res, int *val) {
-    char *p = *res = (char*) GDKmalloc(128);
-    int v = *val;
-    int i;
-    if (p == NULL) return GDK_FAIL;
-
-    /* print c-array */
-    for (i = 31; i >= 5; i--) {
-        *p++ = '1' - !(v & (1 << i));
-    }
-    *p++ = '-';
-
-    /* print offset */
-    for (i = 4; i >= 0; i--) {
-        *p++ = '1' - !(v & (1 << i));
-    }
-
-    *p = 0;
     return GDK_SUCCEED;
 }
 
