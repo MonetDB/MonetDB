@@ -237,6 +237,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_39E7D4E02EFB4978809177F4A450B732"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_3A10565193E2432A946E6CD3ED052E96"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -255,12 +261,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_3D529852397544F9A331EF2C0FA422D6"
-        "OwnerKey" = "8:_EA668A9692344C8396B4176458706382"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_3F7C7290EE214ABFAA8B58AA27AF33D3"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -275,6 +275,12 @@
         {
         "MsmKey" = "8:_41E5DEC53121410C98AC41D63900E4DC"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_41F6AF37FD344288BC478221DA196E54"
+        "OwnerKey" = "8:_EA668A9692344C8396B4176458706382"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -1722,6 +1728,26 @@
             "TargetName" = "8:xrpcapi.jar"
             "Tag" = "8:"
             "Folder" = "8:_2E7A7A2A3AA7443EB1803999F76D6C26"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_39E7D4E02EFB4978809177F4A450B732"
+            {
+            "SourcePath" = "8:monetdb.ico"
+            "TargetName" = "8:monetdb.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -4272,7 +4298,7 @@
             "Target" = "8:_8358969987EE426699646FE7BA923F49"
             "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
             "WorkingFolder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
-            "Icon" = "8:"
+            "Icon" = "8:_39E7D4E02EFB4978809177F4A450B732"
             "Feature" = "8:"
             }
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_62C7C3A9750D44F5AB1BF3B18173082B"
@@ -4286,7 +4312,7 @@
             "Target" = "8:_2CA3CB676BC341B29AC6DDECF9B3AEBB"
             "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
             "WorkingFolder" = "8:_562B007DB0FC4C0D8EBC256D71FF091B"
-            "Icon" = "8:"
+            "Icon" = "8:_39E7D4E02EFB4978809177F4A450B732"
             "Feature" = "8:"
             }
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_FADEF69B58784586806CF8E1826524B3"
@@ -4300,7 +4326,7 @@
             "Target" = "8:_14A0495208064DCA9A6222547E8C9052"
             "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
             "WorkingFolder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
-            "Icon" = "8:"
+            "Icon" = "8:_39E7D4E02EFB4978809177F4A450B732"
             "Feature" = "8:"
             }
         }
@@ -4805,7 +4831,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_3D529852397544F9A331EF2C0FA422D6"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_41F6AF37FD344288BC478221DA196E54"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"

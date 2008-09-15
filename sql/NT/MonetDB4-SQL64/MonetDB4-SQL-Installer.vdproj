@@ -237,6 +237,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_3D242788D72F42C0B2BEA92C85E5C771"
+        "OwnerKey" = "8:_F2140ED9D2C04D0AB1367617B77EAE25"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_3E7918B7861A43AFAB8C0291036A2782"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -681,12 +687,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_D6226827E6764B13A8B52F1CDDC287B3"
-        "OwnerKey" = "8:_F2140ED9D2C04D0AB1367617B77EAE25"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_DAB135FA295E441FAE9C414910CFFFDB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -730,6 +730,12 @@
         "Entry"
         {
         "MsmKey" = "8:_E7E8DD7A95554D829C22E34BE45751F6"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EAF6188ECF014792A2B5FAEA1E230077"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -3286,6 +3292,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_EAF6188ECF014792A2B5FAEA1E230077"
+            {
+            "SourcePath" = "8:monetdb.ico"
+            "TargetName" = "8:monetdb.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_ECAEB856F1664BAB9BA4C5E0FC43D2C1"
             {
             "SourcePath" = "8:lib\\MonetDB4\\builtin.mil"
@@ -3904,7 +3930,7 @@
             "Target" = "8:_2CA3CB676BC341B29AC6DDECF9B3AEBB"
             "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
             "WorkingFolder" = "8:_562B007DB0FC4C0D8EBC256D71FF091B"
-            "Icon" = "8:"
+            "Icon" = "8:_EAF6188ECF014792A2B5FAEA1E230077"
             "Feature" = "8:"
             }
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_6B7C5EAFC8B444758A0EB11039DABF20"
@@ -3918,7 +3944,7 @@
             "Target" = "8:_3362D38C28CB469297FA00FC49DADE46"
             "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
             "WorkingFolder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
-            "Icon" = "8:"
+            "Icon" = "8:_EAF6188ECF014792A2B5FAEA1E230077"
             "Feature" = "8:"
             }
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_EB00F4DBF4DE4F7C8CABB7D97A29354A"
@@ -3932,7 +3958,7 @@
             "Target" = "8:_7DD6B44A167D4C0CB7784015E4AEC936"
             "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
             "WorkingFolder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
-            "Icon" = "8:"
+            "Icon" = "8:_EAF6188ECF014792A2B5FAEA1E230077"
             "Feature" = "8:"
             }
         }
@@ -4437,7 +4463,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_D6226827E6764B13A8B52F1CDDC287B3"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_3D242788D72F42C0B2BEA92C85E5C771"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
@@ -4455,7 +4481,7 @@
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86_x64.msm"
+            "SourcePath" = "8:C:\\Program Files (x86)\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86_x64.msm"
                 "Properties"
                 {
                 }
