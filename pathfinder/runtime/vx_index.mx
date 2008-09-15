@@ -1,0 +1,378 @@
+@' Copyright Notice:
+@' -----------------
+@'
+@' The contents of this file are subject to the Pathfinder Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License.  You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/PathfinderLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.  See
+@' the License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the Pathfinder system.
+@'
+@' The Original Code has initially been developed by the Database &
+@' Information Systems Group at the University of Konstanz, Germany and
+@' is now maintained by the Database Systems Group at the Technische
+@' Universitaet Muenchen, Germany.  Portions created by the University of
+@' Konstanz and the Technische Universitaet Muenchen are Copyright (C)
+@' 2000-2005 University of Konstanz and (C) 2005-2008 Technische
+@' Universitaet Muenchen, respectively.  All Rights Reserved.
+@'
+@f vx_index
+@a Lefteris Sidirourgos, Peter Boncz
+@t Single-pass XML Value Index Construction and Update
+
+@* XML value index support
+
+@+ Text Hash Function
+
+@c
+#include "pf_config.h"
+#include <gdk.h>
+
+#define XQH_UNSGN(v)  ((unsigned int) v)
+#define XQH_MASK5(c)  ((c) & 31)
+#define XQH_MASK7(c)  ((c) & 127)
+#define XQH_MASK27(c) ((c) & (~31))
+#define XQH_SHFT_l(v,o) (v << (o+5))
+#define XQH_SHFT_r(v,o) ((XQH_UNSGN(v) >> (7 - ((o+7)%27))) << 5)
+#define XQH_CLC_SHFT(v,o) ((v << o) | (XQH_MASK27(XQH_UNSGN(v) >> (27-o))))
+
+/* hash function H */
+INLINE int XQH_H(str v) {
+    int c;
+    int h_val = 0, ofs = 0;
+
+    /* the text values should be trimed
+       but then when two nodes are combined
+       a space should be introduced (???) */
+
+    for (; *v != '\0'; v++){
+        c = XQH_MASK7(*v);
+        /* cyclic_xor */
+        h_val ^= XQH_SHFT_l(c,ofs);
+        if (ofs > 20) {
+            h_val ^= XQH_SHFT_r(c,ofs);
+        }
+        /* update offset */
+        ofs = (ofs+5) % 27;
+    }
+    return (h_val |= ofs);
+}
+
+/* wrapper for mil command xquery_hash */
+int CMD_XQH_H(int *res, str v) {
+    *res = XQH_H(v);
+    return GDK_SUCCEED;
+}
+
+/* wrapper for mil command [xquery_hash] */
+int CMD_XQH_H_bat(BAT **res, BAT* b) {
+    size_t i = 0, cnt = BATcount(b);
+    BAT *bn = *res = BATnew(TYPE_void, TYPE_int, cnt);
+    char *base = (char*) b->T->vheap->base;
+    if (bn) {
+        var_t *src = (var_t*) Tloc(b, BUNfirst(b));
+        int *dst = (int*) Tloc(bn, BUNfirst(bn));
+        for(i=0; i<cnt; i++)
+            dst[i] =  XQH_H(base + src[i]);
+
+        ALIGNsetH(bn, b);
+        BATsetcount(bn, cnt);
+        bn->tsorted = 0;
+        return GDK_SUCCEED;
+    }
+    return GDK_FAIL;
+}
+
+/* Combine function C */
+INLINE int XQH_C(int l, int r) {
+    int h_comb = 0;
+
+    h_comb |= XQH_MASK27(l);                       /* copy the left operand */
+    /* XOR the right operand after applying a circular shift */
+    h_comb ^= XQH_CLC_SHFT(XQH_MASK27(r),XQH_MASK5(l));
+    h_comb |= (XQH_MASK5(l)+XQH_MASK5(r)) % 27;    /* combine offsets       */
+
+    return h_comb;
+}
+
+/* wrapper for mil command xquery_combine */
+int CMD_XQH_C(int *res, int *l, int *r) {
+    *res = XQH_C(*l, *r);
+    return GDK_SUCCEED;
+}
+
+/* wrapper for mil command [xquery_combine] */
+int CMD_XQH_C_bat(BAT **res, BAT *l, BAT *r) {
+    if (ALIGNsynced(l, r)) {
+        size_t i = 0, cnt = BATcount(l);
+        BAT *bn = *res = BATnew(TYPE_void, TYPE_int, cnt);
+        int *lval = (int*) Tloc(bn, BUNfirst(l));
+        int *rval = (int*) Tloc(bn, BUNfirst(r));
+        int *dst  = (int*) Tloc(bn, BUNfirst(bn));
+        if (bn == NULL) return GDK_FAIL;
+
+        for(i=0; i<cnt; i++)
+            dst[i] = XQH_C(lval[i], rval[i]);
+
+        ALIGNsetH(bn, l);
+        BATsetcount(bn, cnt);
+        bn->tsorted = 0;
+        return GDK_SUCCEED;
+    }
+    GDKerror("xquery_combine: (%s,%s): not synced on head.\n",
+            BATgetId(l), BATgetId(r));
+    return GDK_FAIL;
+}
+
+/* debug function for the xquery string hash index */
+int CMD_XQH_STR(str *res, int *val) {
+    char *p = *res = (char*) GDKmalloc(128);
+    int v = *val;
+    int i;
+    if (p == NULL) return GDK_FAIL;
+
+    /* print c-array */
+    for (i = 31; i >= 5; i--) {
+        *p++ = '1' - !(v & (1 << i));
+    }
+    *p++ = '-';
+
+    /* print offset */
+    for (i = 4; i >= 0; i--) {
+        *p++ = '1' - !(v & (1 << i));
+    }
+
+    *p = 0;
+    return GDK_SUCCEED;
+}
+
+@+ XML Value Index Construction
+
+We construct two updatable XML value indices, one supporting equi-lookup
+queries for string values, and one supporting range queries on double values.
+
+The construction is based an a bottom-up traversal of the XML tree...
+input context nodes
+text node := h function
+intermediate node := c function
+updates
+
+@- Equi-lookup on text
+
+The index is based on a hash function XQH_H and a combine function XQH_C
+(see pf_support.mx). It is stored in two BATs, namely pre_hash[void, int] and
+hash_nid[int, oid].
+
+    pre_hash is used during index creation and index update for fast accessing
+    the hash value of an (intermediate) node. The head is alligned with the nid
+    column of the PRE table.
+
+    hash_nid is used during query time to retrieve a candidate set of XML nodes
+    which hash values are equall with the hash value of the query text. The BAT
+    is sorted in hash value for fast lookup and retrieval. For read-only
+    documents we could drop the hash_nid BAt and relly on the hash table
+    created by Monet during query time. However, this is not true for updatable
+    documents, and moreover the storage overhead of either approaches is the
+    same.
+
+          pre_hash                 hash_nid
+          +-----+------------+     +------------+-----+
+          |     | hash value |     | hash value | nid |
+          |void |    int     |     |    int     | oid |
+          +-----+------------+     +------------+-----+
+
+@- Range queries on double values
+
+
+@c
+#include "shredder.h"   /* for XML_DEPTH_MAX */
+#include "ll_upwards.h" /* skipholes, speculate_skip, PF_SIBLING_PROBES */
+
+static
+int
+vx_index_create(                        /* OUTPUT:                     */
+        unsigned int* pre_hsh,            /* - pre_hsh column            */
+                                          /* DOCUMENT:                   */
+        oid* pre_prop,                    /* - pre_prop column           */
+        var_t* pre_text,                  /* - fixed-size offsets of the
+                                               pre_text string column    */
+        char* text_base,                  /* - base pointer of the
+                                               pre_text string heap      */
+        unsigned int* pre_size,           /* - pre_size column           */
+        unsigned char* pre_level,         /* - pre_level column          */
+        unsigned char* pre_kind,          /* - pre_kind column           */
+        oid limit,                        /* - valid range of pre ids in
+                                               the document              */
+                                          /* INPUT: */
+        oid* context, oid context_size)   /* - the context array and its size */
+{
+    oid buf[XML_DEPTH_MAX+1], *stack=buf; /* STACK CONTAINS pre NUMBERS */
+    oid root = 1; /* 0=collection node, 1=root of first fragment */
+    oid pre = root;
+    oid cur = 0;
+    oid pop = 0;
+    int depth = 0;
+    (void) pre_level;
+
+    *stack++ = oid_nil; /* bogus parent, filtered out later */
+
+    /* initialize all hash values to 0 for correct hash combination */
+    for (cur = 0; cur < limit; cur++) pre_hsh[cur] = 0;
+    cur = 0;
+
+    /* if the collection node is passed in, skip it */
+    while(cur < context_size && context[cur] == 0) cur++;
+
+    /* we perform a forwards scan with skipping, that carries out an *optimal*
+     * depth-first DOM tree traversal (where we visit nodes only if needed)
+     */
+    while(cur < context_size) { /* while still context nodes active */
+
+        if (context[cur] == pre) {
+            /* during creation of the index we expect the context nodes
+             * to be only of kind TEXT. This is not true during updates,
+             * since there might *not* be a text node (deleted).
+             */
+            if (pre_kind[pre] == TEXT) {
+                pre_hsh[pre] = XQH_H(text_base + pre_text[pre_prop[pre]]);
+                cur++;
+            }
+
+        } else if (context[cur] <= pre + pre_size[pre]) {
+
+            /* next context node is in the descendants: go find it */
+            stack[depth++] = pre;
+            pre = skipholes(pre+1, pre_size);
+            if (depth == XML_DEPTH_MAX || pre > limit) break; /* SANITY */
+
+        } else if (depth == 0 ||
+                context[cur] <= stack[depth-1] + pre_size[stack[depth-1]]) {
+            /* in the branch that is on the stack, but in some sibling
+               that we need to find */
+
+
+            /* first update father node */
+            pre_hsh[stack[depth-1]] = XQH_C(pre_hsh[stack[depth-1]],
+                    pre_hsh[pre]);
+
+            oid off = pre;
+            int budget = PF_SIBLING_PROBES;
+            int cnt = 0;
+
+            while(pre + pre_size[pre] < context[cur]) {
+                /* skip from sibling to sibling */
+                pre = skipholes(pre + pre_size[pre] + 1, pre_size);
+                if (pre > limit) break; /* SANITY */
+                if (++cnt == budget) {
+                    oid old = pre;
+                    pre = speculate_skip(pre, context[cur], pre-off,
+                            budget, pre_size, pre_level);
+                    if (pre == old) {
+                        /* skip failed: wait longer next time */
+                        budget += budget;
+                    }
+                    off = pre; cnt = 0;
+                }
+            }
+            if (depth == 0)
+                root = pre;
+        } else {
+            /* pop the stack */
+            pop = stack[--depth];
+            /* combine the popped hash value with the pre hash value */
+            pre_hsh[pop] = XQH_C(pre_hsh[pop], pre_hsh[pre]);
+            pre = pop;
+        }
+   }
+
+    while (depth > 0) { /* still nodes in the stack */
+        pop = stack[--depth];
+        pre_hsh[pop] = XQH_C(pre_hsh[pop], pre_hsh[pre]);
+        pre = pop;
+    }
+
+   return (cur == context_size);
+}
+
+int
+CMD_vx_create(          /* RESULT:   */
+        BAT **ret,      /* - [void,int] bat, hash column                   */
+                        /* INPUT:    */
+        BAT *ctx_bat,   /* - [void,oid] bat, context nodes, assuming all
+                             are of kind TEXT for create                   */
+                        /* DOCUMENT: */
+        BAT *prop_text, /* - [void,str] bat, doc representation with holes */
+        BAT *prop_bat,  /* - [void,oid] bat, doc representation with holes */
+        BAT *size_bat,  /* - [void,int] bat, doc representation with holes */
+        BAT *level_bat, /* - [void,chr] bat, doc representation with holes */
+        BAT *kind_bat)  /* - [void,chr] bat, doc representation with holes */
+{
+    int status = GDK_FAIL;
+    BAT *hash_bat = NULL;
+    oid limit = BATcount(size_bat);
+    unsigned int *pre_size = (unsigned int*)
+            Tloc(size_bat, BUNfirst(size_bat));
+    unsigned char *pre_level = (unsigned char*)
+            Tloc(level_bat, BUNfirst(level_bat));
+    unsigned char *pre_kind = (unsigned char*)
+            Tloc(kind_bat, BUNfirst(kind_bat));
+    oid *context = (oid *) Tloc(ctx_bat, BUNfirst(ctx_bat));
+    oid *pre_prop = (oid *) Tloc(prop_bat, BUNfirst(prop_bat));
+
+    /* some error checks */
+    if (!(BATtordered(ctx_bat) & 1))
+    {
+        GDKerror("vx_create: context bat must be ordered on tail.\n");
+        return status;
+    }
+    if (prop_text->hseqbase || !BAThdense(prop_text)) {
+        GDKerror("vx_create: illegal prop text bat passed in.\n");
+        return status;
+    }
+    if (prop_bat->hseqbase || !BAThdense(prop_bat)) {
+        GDKerror("vx_create: illegal prop bat passed in.\n");
+        return status;
+    }
+    if (size_bat->hseqbase || !BAThdense(size_bat)) {
+        GDKerror("vx_create: illegal size bat passed in.\n");
+        return status;
+    }
+    if (level_bat->hseqbase || !BAThdense(level_bat)) {
+        GDKerror("vx_create: illegal level bat passed in.\n");
+        return status;
+    }
+    if (kind_bat->hseqbase || !BAThdense(kind_bat)) {
+        GDKerror("vx_create: illegal kind bat passed in.\n");
+        return status;
+    }
+
+    hash_bat = BATnew(TYPE_void, TYPE_int, limit);
+    if (hash_bat) {
+        if (vx_index_create(
+                    (unsigned int*) Tloc(hash_bat, BUNfirst(hash_bat)),
+                    pre_prop,
+                    (var_t*) Tloc(prop_text, BUNfirst(prop_text)),
+                    (char*) prop_text->T->vheap->base,
+                    pre_size, pre_level, pre_kind, limit,
+                    context, BATcount(ctx_bat))) {
+            status = GDK_SUCCEED;
+        }
+    } else {
+        GDKerror("vx_create: could not allocate memory for hash bat.\n");
+    }
+
+    if (status == GDK_SUCCEED) {
+        BATsetcount(hash_bat, limit);
+        BATseqbase(hash_bat, 0);
+        hash_bat->tsorted = 0;
+        *ret = hash_bat;
+    } else if (hash_bat) {
+        BBPreclaim(hash_bat);
+    }
+    return status;
+}
