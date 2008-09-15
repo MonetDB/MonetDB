@@ -474,13 +474,16 @@ IOprint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 int
-formatMarker(str format)
+formatMarker(str format,str m)
 {
 	int i = 0;
 	str t = format;
 
 	while ((t = strchr(t, '%')) != NULL) {
 		t++;
+		while ( t && !isalpha((int) *t) ) t++;
+		if (*m && strstr(t,m+1) == NULL)
+			i++; /* indicate error */
 		i++;
 	}
 	return i;
@@ -564,7 +567,7 @@ str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci
 	format= *(str *)fmt;
 	if( format== NULL || format== str_nil) 
 		throw(MAL, "io.print", "Format missing");
-	if( formatMarker(format)!=1) 
+	if( formatMarker(format,@2)!=1) 
 		throw(MAL, "io.print", "Too many %%");
 
 	if( *val == @1_nil) 
@@ -579,10 +582,11 @@ str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci
 @:printFormatted(chr,"%c")@
 @:printFormatted(sht,"%d")@
 @:printFormatted(int,"%d")@
-@:printFormatted(lng,LLFMT)@
+@:printFormatted(wrd,"%d")@
+@:printFormatted(lng,"")@	/* ignore format */
 @:printFormatted(flt,"%f")@
 @:printFormatted(dbl,"%f")@
-@:printFormatted(ptr,PTRFMT)@
+@:printFormatted(ptr,"")@	/* ignore format */
 
 
 str
@@ -601,7 +605,7 @@ IOprint_formatted_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	format = *(str *) fmt;
 	if (format == NULL)
 		throw(MAL, "io.print", "Format missing");
-	if (formatMarker(format) != 1)
+	if (formatMarker(format,"%s") != 1)
 		throw(MAL, "io.print", "Too many %%");
 
 	if (strNil(*val))
@@ -629,8 +633,8 @@ IOprint_oid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (format == NULL)
 		throw(MAL, "io.print", "Format missing");
-	if (formatMarker(format) != 1)
-		throw(MAL, "io.print", "Too many %%");
+	if (formatMarker(format,"%d") != 1)
+		throw(MAL, "io.print", "Format error");
 
 	if (*s == oid_nil)
 		msg = GDKstrdup("nil");
@@ -662,8 +666,8 @@ IOprint_formatted_bit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	format = *(str *) fmt;
 	if (format == NULL)
 		throw(MAL, "io.print", "Format missing");
-	if (formatMarker(format) != 1)
-		throw(MAL, "io.print", "Too many %%");
+	if (formatMarker(format,"%s") != 1)
+		throw(MAL, "io.print", "Format error");
 
 	if (*s == bit_nil)
 		return IOprint_formatted_nil(fd, *(str *) fmt);
