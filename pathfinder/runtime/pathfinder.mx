@@ -209,7 +209,7 @@ if (monet_environment.exist("standoff"))
 #
 # The working set can have multiple documents open. Those multiple documents
 # may stem from a single, or multiple collections. The code is optimized to deal
-# with huge numers of (small) documents from a single collection efficiently. 
+# with huge numbers of (small) documents from a single collection efficiently. 
 #
 # Each open collection has a corresponding container in the working set,
 # administered in a table:
@@ -288,7 +288,7 @@ EXCEPT when (child-T == void)
 ('tpe' = void means it is a view; without persistent name)
 
 All ws entries starting with '_' are master bats, whereas 
-their versions with '_' copies/views. The latter ones
+their versions without '_' copies/views. The latter ones
 are used for querying, as they provide isolation against
 concurrent updates.
 
