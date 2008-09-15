@@ -21,7 +21,7 @@ function user.main():void;              #  0 main:void := user.main()
     io.printf("%d\n",f);                #  7 _10:void := IOprint_formatted_flt(_9:str, f:flt) 
 end main;                               #  8  
 12
-10
+
 
 # 13:35:19 >  
 # 13:35:19 >  Done.
