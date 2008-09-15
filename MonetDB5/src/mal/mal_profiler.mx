@@ -736,7 +736,7 @@ int
 instrFilter(InstrPtr pci, str mod, str fcn)
 {
 #ifdef MALprofiler
-	if (getFunctionId(pci) &&  fcn && mod &&
+	if (pci && getFunctionId(pci) &&  fcn && mod &&
 		(*fcn == '*' || fcn== getFunctionId(pci))  &&
 		(*mod == '*' || mod== getModuleId(pci))
 	)
