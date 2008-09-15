@@ -15,6 +15,12 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_14F4BC1A7F54458D91CFA4A0BD174604"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_17D7FB69076E415C8973295D502161C5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -51,6 +57,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_6D7E0B3E67B143EF9DC8FE4D803F2BEB"
+        "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_8ADC98E4D05143999FFC87CAB78E68C9"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -59,12 +71,6 @@
         {
         "MsmKey" = "8:_931FDCC4685C438DB61DFA8D32DF80D1"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_A9ABB69B549F45FBA7F6676E6CDD8763"
-        "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -196,6 +202,26 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_14F4BC1A7F54458D91CFA4A0BD174604"
+            {
+            "SourcePath" = "8:monetdb.ico"
+            "TargetName" = "8:monetdb.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_17D7FB69076E415C8973295D502161C5"
             {
             "SourcePath" = "8:C:\\iconv-1.11.win32\\bin\\iconv.dll"
@@ -624,7 +650,7 @@
             "Target" = "8:_CB89303C19364CECA36BDC911637BE9C"
             "Folder" = "8:_1CAF389F5D9043A1AEDFA7B5978DF66F"
             "WorkingFolder" = "8:_E71AEF246CD8428C98B2ECCFE2014056"
-            "Icon" = "8:"
+            "Icon" = "8:_14F4BC1A7F54458D91CFA4A0BD174604"
             "Feature" = "8:"
             }
         }
@@ -1143,7 +1169,7 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_A9ABB69B549F45FBA7F6676E6CDD8763"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_6D7E0B3E67B143EF9DC8FE4D803F2BEB"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
