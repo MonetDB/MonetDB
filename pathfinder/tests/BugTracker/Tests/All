@@ -157,7 +157,6 @@ compilation_or_runtime_choice.SF-1991738_1_ALG
 test_order.SF-2009467
 Zombie_document.SF-2009556
 NOT_ALGEBRA?pfmil_prints_garbage.SF-2015232
-pathstep_on_incorrect_type.SF-2067585
 NOT_ALGEBRA?pfmil_loses_last_bun.SF-2015219
 NOT_ALGEBRA?pfmil_and_nil_in_results_1.SF-2015135
 NOT_ALGEBRA?pfmil_and_nil_in_results_2.SF-2015135
