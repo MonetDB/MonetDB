@@ -90,11 +90,13 @@ algorithms for the upwards XPath axes seem a profitable addition for the
 pathfinder runtime.
 
 @h
+#ifndef LL_UPWARDS_H
+#define LL_UPWARDS_H
 #define PF_SIBLING_PROBES 64
 
 INLINE oid skipholes(oid, unsigned int *);
 oid speculate_skip(oid, oid, oid, int, unsigned int*, unsigned char*);
-
+#endif /* LL_UPWARDS_H */
 
 @c
 #include "pf_config.h"
