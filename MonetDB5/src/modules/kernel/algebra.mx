@@ -3533,7 +3533,7 @@ doALGfetch(ptr ret, BAT *b, lng *pos)
 		throw(MAL, "algebra.fetch", " idx out of range\n");
 	i += BUNfirst(b);
 	
-	assert(i <= (lng)GDK_oid_max);
+	assert(i <= (lng) BUN_MAX);
 	if( b->ttype== TYPE_bat){
 		res= (int*) ret;
 		ret= &bn;

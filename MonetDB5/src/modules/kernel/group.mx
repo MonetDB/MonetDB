@@ -1375,7 +1375,7 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 			BATmax(b,&h);
 			BATmin(b,&l);
 			if (h != lng_nil && l != lng_nil && h-l > 0 && (BUN) (h-l) < N) {
-				assert(h-l <= (lng) GDK_wrd_max);
+				assert(h-l <= (lng) BUN_MAX);
 				N = (BUN) (h-l);
 			}
 		}
