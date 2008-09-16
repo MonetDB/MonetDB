@@ -278,7 +278,7 @@ command pieces(b:bat[:any_1,:any_2]):int
 address BPMpieces
 comment "Count the number of partitions.";
 
-command count(b:bat[:any_1,:any_2]):int
+command count(b:bat[:any_1,:any_2]):wrd
 address BPMcount;
 command emptySet(b:bat[:any_1,:any_2]):void
 address BPMemptySet
@@ -528,7 +528,7 @@ bpm_export int BPMisPartitioned(bat src);
 bpm_export str BPMpieces(int *ret, bat *src);
 
 /* some primitives replacing the algebra/aggr versions */
-bpm_export str BPMcount(int *ret, bat *src);
+bpm_export str BPMcount(wrd *ret, bat *src);
 bpm_export str BPMemptySet(int *ret, bat *src);
 bpm_export str BPMsortTail(int *ret, bat *src);
 
@@ -1348,10 +1348,8 @@ BPMcountInternal(bat bid)
 }
 
 str
-BPMcount(int *ret, bat *bid){
-	BUN cnt = BPMcountInternal(*bid);
-	assert(cnt <= INT_MAX);
-	*ret= (int) cnt;
+BPMcount(wrd *ret, bat *bid){
+	*ret= (wrd) BPMcountInternal(*bid);
 	return MAL_SUCCEED;
 }
 
