@@ -94,8 +94,13 @@ pathfinder runtime.
 #define LL_UPWARDS_H
 #define PF_SIBLING_PROBES 64
 
-INLINE oid skipholes(oid, unsigned int *);
+#define SKIPHOLES(pre, pre_size) {                \
+    while(pre_size[pre] & (1U<<31))               \
+        pre += 1 + (pre_size[pre] & ~(1U<<31));   \
+}
+
 oid speculate_skip(oid, oid, oid, int, unsigned int*, unsigned char*);
+
 #endif /* LL_UPWARDS_H */
 
 @c
@@ -112,13 +117,6 @@ typedef struct {
  oid iter;
  oid pre; 
 } duple;
-
-INLINE oid
-skipholes(oid pre, unsigned int *pre_size) {
-     while(pre_size[pre] & (1U<<31)) 
-         pre += 1 + (pre_size[pre] & ~(1U<<31)); /* skip over holes */
-     return pre; 
-}
 
 @= found_parent
 
@@ -209,7 +207,8 @@ ll_upwards_@1(                            /* OUTPUT: */
 
             /* next context node is in the descendants: go find it */
             stack[depth++] = pre;
-            pre = skipholes(pre+1, pre_size);
+            pre = pre+1;
+            SKIPHOLES(pre, pre_size);
               if (depth == XML_DEPTH_MAX || pre > limit) break; /* SANITY */
 
         } else if (depth == 0 || context[cur].pre <= stack[depth-1] + pre_size[stack[depth-1]]) {
@@ -219,7 +218,8 @@ ll_upwards_@1(                            /* OUTPUT: */
 
             /* in the branch that is on the stack, but in some sibling that we need to find */
             while(pre + pre_size[pre] < context[cur].pre) {
-                pre = skipholes(pre + pre_size[pre] + 1, pre_size); /* skip from sibling to sibling */
+                pre = pre + pre_size[pre] + 1;
+                SKIPHOLES(pre, pre_size); /* skip from sibling to sibling */
                   if (pre > limit) break; /* SANITY */
                   if (++cnt == budget) {
                     oid old = pre;
@@ -255,10 +255,12 @@ ll_upwards_@1(                            /* OUTPUT: */
  */
 oid
 speculate_skip(oid pre, oid dst, oid skip, int budget, unsigned int* pre_size, unsigned char* pre_level) {
+
     skip = skip << 6;
     if (pre + skip < dst) {
-        oid cur = skipholes(pre+skip, pre_size);
+        oid cur = pre + skip;
         int cnt = 0, depth = pre_level[pre];
+        SKIPHOLES(cur, pre_size);
         while(cur < dst) {
             if (pre_level[cur] == depth) {
                 pre = cur; /* we found a sibling, without seeing all intermediate siblings!! */
@@ -271,7 +273,7 @@ speculate_skip(oid pre, oid dst, oid skip, int budget, unsigned int* pre_size, u
             } else {
                 cur += pre_size[cur] + 1; /* skip over this deeper node */
             }
-            cur = skipholes(cur, pre_size);
+            SKIPHOLES(cur, pre_size);
             if (cnt++ >= budget) return pre; /* could not find it quickly */
         }
     }

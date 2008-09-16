@@ -33,7 +33,7 @@
 #include "pf_config.h"
 #include <gdk.h>
 #include "shredder.h"   /* for XML_DEPTH_MAX */
-#include "ll_upwards.h" /* skipholes, speculate_skip, PF_SIBLING_PROBES */
+#include "ll_upwards.h" /* SKIPHOLES, speculate_skip, PF_SIBLING_PROBES */
 
 #define XQH_UNSGN(v)  ((unsigned int) v)
 #define XQH_MASK5(c)  ((c) & 31)
@@ -49,7 +49,7 @@ static INLINE int XQH_H(str v) {
     int h_val = 0, ofs = 0;
 
     /* the text values should be trimed
-       but then when two nodes are combined
+       but then, when two nodes are combined
        a space should be introduced (???) */
 
     for (; *v != '\0'; v++){
@@ -245,7 +245,8 @@ vx_index_create(                        /* OUTPUT:                     */
 
             /* next context node is in the descendants: go find it */
             stack[depth++] = pre;
-            pre = skipholes(pre+1, pre_size);
+            pre = pre+1;
+            SKIPHOLES(pre, pre_size);
             if (depth == XML_DEPTH_MAX || pre > limit) break; /* SANITY */
 
         } else if (depth == 0 ||
@@ -264,7 +265,8 @@ vx_index_create(                        /* OUTPUT:                     */
 
             while(pre + pre_size[pre] < context[cur]) {
                 /* skip from sibling to sibling */
-                pre = skipholes(pre + pre_size[pre] + 1, pre_size);
+                pre = pre + pre_size[pre] + 1;
+                SKIPHOLES(pre, pre_size);
                 if (pre > limit) break; /* SANITY */
                 if (++cnt == budget) {
                     oid old = pre;
