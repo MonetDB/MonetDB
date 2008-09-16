@@ -828,7 +828,7 @@ end main;                               # 11
 [ "closeStream",		  "command",	  "profiler",	  "():void ",																  "CMDcloseProfilerStream;"				  ]
 [ "dumpTrace",			  "command",	  "profiler",	  "():void ",																  "CMDdumpTrace;"					  ]
 [ "deactivate",			  "command",	  "profiler",	  "(name:str):void ",															  "CMDdeactivateProfiler;"				  ]
-[ "getEvent",			  "pattern",	  "profiler",	  "() (_1:lng,_2:int,_3:int) ",														  "CMDgetEvent;"					  ]
+[ "getEvent",			  "pattern",	  "profiler",	  "() (_1:lng,_2:lng,_3:lng) ",													  "CMDgetEvent;"				  ]
 [ "getTrace",			  "command",	  "profiler",	  "(e:str):bat[:int,:any_1] ",														  "CMDgetTrace;"					  ]
 [ "noop",			  "command",	  "profiler",	  "():void ",																  "CMDnoopProfiler;"					  ]
 [ "openStream",			  "pattern",	  "profiler",	  "(host:str,port:int):void ",														  "CMDsetProfilerStream;"				  ]

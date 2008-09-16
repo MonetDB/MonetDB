@@ -148,7 +148,7 @@ command getTrace(e:str):bat[:int,:any_1]
 address CMDgetTrace
 comment "Get the trace details of a specific event";
 
-pattern getEvent()(:lng, :int,:int)
+pattern getEvent()(:lng,:lng,:lng)
 address CMDgetEvent
 comment "Retrieve the performance indicators of the previous instruction";
 
@@ -442,22 +442,19 @@ CMDcleanup(int *ret){
 
 str
 CMDgetEvent( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int *clk, *reads, *writes, pc;
-	clk = (int *) getArgReference(stk,pci,0);
-	reads = (int *) getArgReference(stk,pci,1);
-	writes = (int *) getArgReference(stk,pci,2);
+	lng *clk, *reads, *writes, pc;
+	clk = (lng *) getArgReference(stk,pci,0);
+	reads = (lng *) getArgReference(stk,pci,1);
+	writes = (lng *) getArgReference(stk,pci,2);
 
 	(void) cntxt;
 	if( mb->profiler == 0)
 		throw(MAL,"profiler.getEvent","Monitor not active");
 
 	pc= getPC(mb,pci)-1; /* take previous instruction */
-	assert(GDK_int_min <= mb->profiler[pc].ticks && mb->profiler[pc].ticks <= GDK_int_max);
-	assert(mb->profiler[pc].ibytes <= GDK_int_max);
-	assert(mb->profiler[pc].obytes <= GDK_int_max);
-	*clk = (int) mb->profiler[pc].ticks;
-	*reads = (int) mb->profiler[pc].ibytes;
-	*writes = (int) mb->profiler[pc].obytes;
+	*clk = mb->profiler[pc].ticks;
+	*reads = mb->profiler[pc].ibytes;
+	*writes = mb->profiler[pc].obytes;
 	return MAL_SUCCEED;
 }
 @}
