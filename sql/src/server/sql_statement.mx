@@ -222,7 +222,7 @@ extern stmt *stmt_delete(sql_table *t, stmt *b);
 
 extern stmt *stmt_append(stmt *c, stmt *values);
 extern stmt *stmt_table_clear(sql_table *t);
-extern stmt *stmt_import(stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt *file, int nr, int offset);
+extern stmt *stmt_import(stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt *file, lng nr, lng offset);
 extern stmt *stmt_export(stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt *file);
 extern stmt *stmt_temp(sql_subtype *t);
 extern stmt *stmt_atom(atom *op1);
@@ -1873,10 +1873,10 @@ stmt_rs_column(stmt *rs, stmt *name, sql_subtype *tpe)
 }
 
 stmt *
-stmt_import(stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt *file, int nr, int offset)
+stmt_import(stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt *file, lng nr, lng offset)
 {
 	stmt *s = stmt_create(st_import);
-	int *l;
+	lng *l;
 
 	s->op1.stval = t;
 	s->op2.lval = list_create((fdestroy)& GDKfree);
@@ -1884,9 +1884,9 @@ stmt_import(stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt 
 	list_append(s->op2.lval, rsep);
 	list_append(s->op2.lval, ssep);
 	list_append(s->op2.lval, null_string);
-	l = NEW(int); *l = nr;
+	l = NEW(lng); *l = nr;
 	list_append(s->op2.lval, l);
-	l = NEW(int); *l = offset;
+	l = NEW(lng); *l = offset;
 	list_append(s->op2.lval, l);
 	s->op4.stval = file;
 	return s;

@@ -1378,7 +1378,7 @@ insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q
 }
 
 static stmt *
-sql_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, int nr, int offset)
+sql_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset)
 {
 	stmt *rs = NULL;
 	stmt *fname = (filename) ? stmt_atom_string(_strdup(filename)) : NULL;
@@ -1411,8 +1411,8 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
 	char *ns = (null_string)?null_string:"null";
 	list *slist;
-	lng nr = (nr_offset)?nr_offset->h->data.i_val:-1;
-	lng offset = (nr_offset)?nr_offset->h->next->data.i_val:0;
+	lng nr = (nr_offset)?nr_offset->h->data.l_val:-1;
+	lng offset = (nr_offset)?nr_offset->h->next->data.l_val:0;
 
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
