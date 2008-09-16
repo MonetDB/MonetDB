@@ -1575,27 +1575,6 @@ CMDtunique(BAT **result, BAT* b)
 }
 
 int
-CMDcount(int *result, BAT *b)
-{
-/* 64bit: should return wrd */
-	assert(BATcount(b) <= GDK_int_max);
-	*result = (int) BATcount(b);
-	return GDK_SUCCEED;
-}
-
-int
-CMDcount_nil(int *result, BAT *b, bit *ignore_nils)
-{
-/* 64bit: should return wrd */
-	assert(BATcount(b) <= GDK_int_max);
-	if (*ignore_nils)
-		*result = (int) BATcount_no_nil(b);
-	else
-		*result = (int) BATcount(b);
-	return GDK_SUCCEED;
-}
-
-int
 CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize)
 {
 	return (*result = BATgroup(b, *start, *incr, *grpsize)) ? GDK_SUCCEED : GDK_FAIL;
@@ -3231,7 +3210,6 @@ ALGcount_bat(wrd *result, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "aggr.count", "Cannot access descriptor");
 	}
-	assert(BATcount(b) <= GDK_int_max);
 	*result = (wrd) BATcount(b);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
