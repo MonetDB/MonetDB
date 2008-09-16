@@ -59,8 +59,6 @@ mal_export int parseMAL(Client cntxt, Symbol curPrg);
 mal_export void echoInput(Client cntxt);
 mal_export void debugParser(int i);
 mal_export str parseError(Client cntxt, str msg);
-mal_export void skipSpace(Client cntxt);
-mal_export void skipToEnd(Client cntxt);
 mal_export int idLength(Client cntxt);
 mal_export int stringLength(Client cntxt);
 mal_export str idCopy(Client cntxt, int len);
@@ -69,9 +67,6 @@ mal_export int cstToken(Client cntxt, ValPtr val);
 mal_export int charCst(Client cntxt, ValPtr val);
 mal_export int operatorLength(Client cntxt);
 mal_export str operatorCopy(Client cntxt, int length);
-mal_export int keyphrase(Client cntxt, str kw, int length);
-mal_export int keyphrase1(Client cntxt, str kw);
-mal_export int keyphrase2(Client cntxt, str kw);
 mal_export int MALkeyword(Client cntxt, str kw, int length);
 mal_export int MALlookahead(Client cntxt, str kw, int length);
 mal_export str lastline(Client cntxt);
@@ -112,7 +107,7 @@ void echoInput(Client cntxt)
 	}
 }
 
-INLINE void 
+static INLINE void 
 skipSpace(Client cntxt)
 {
 	char *s= &currChar(cntxt);
@@ -268,7 +263,7 @@ Keyphrase testing is limited to a few characters only
 (check manually). To speed this up we use a pipelined and
 inline macros.
 @c
-INLINE int 
+static INLINE int 
 keyphrase1(Client cntxt, str kw)
 {
 	skipSpace(cntxt);
@@ -279,7 +274,7 @@ keyphrase1(Client cntxt, str kw)
 	return 0;
 }
 
-INLINE int 
+static INLINE int 
 keyphrase2(Client cntxt, str kw)
 {
 	skipSpace(cntxt);
@@ -289,7 +284,7 @@ keyphrase2(Client cntxt, str kw)
 	}
 	return 0;
 }
-INLINE int 
+static INLINE int 
 keyphrase(Client cntxt, str kw,int length)
 {
 	skipSpace(cntxt);
@@ -407,7 +402,7 @@ extern long long strtoll(const char *, char **, int);
 Upon encountering an error we skip to the nearest semicolon,
 or comment terminated by a new line
 @c
-INLINE void 
+static INLINE void 
 skipToEnd(Client cntxt)
 {	char c;
 	while( (c= *CURRENT(cntxt)) != ';' && c && c !='\n') nextChar(cntxt);

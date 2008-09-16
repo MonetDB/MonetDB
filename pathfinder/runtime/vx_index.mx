@@ -44,7 +44,7 @@
 #define XQH_CLC_SHFT(v,o) ((v << o) | (XQH_MASK27(XQH_UNSGN(v) >> (27-o))))
 
 /* hash function H */
-INLINE int XQH_H(str v) {
+static INLINE int XQH_H(str v) {
     int c;
     int h_val = 0, ofs = 0;
 
@@ -91,7 +91,7 @@ int CMD_XQH_H_bat(BAT **res, BAT* b) {
 }
 
 /* Combine function C */
-INLINE int XQH_C(int l, int r) {
+static INLINE int XQH_C(int l, int r) {
     int h_comb = 0;
 
     h_comb |= XQH_MASK27(l);                       /* copy the left operand */
