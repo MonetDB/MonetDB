@@ -482,7 +482,7 @@ formatMarker(str format,str m)
 	while ((t = strchr(t, '%')) != NULL) {
 		t++;
 		while ( t && !isalpha((int) *t) ) t++;
-		if (*m && strstr(t,m+1) == NULL)
+		if (*m && strncmp(t,m+1, strlen(m+1)) )
 			i++; /* indicate error */
 		i++;
 	}
@@ -568,7 +568,7 @@ str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci
 	if( format== NULL || format== str_nil) 
 		throw(MAL, "io.print", "Format missing");
 	if( formatMarker(format,@2)!=1) 
-		throw(MAL, "io.print", "Too many %%");
+		throw(MAL, "io.print", "Format error");
 
 	if( *val == @1_nil) 
 		return IOprint_formatted_nil(fd,* (str*) fmt);
@@ -606,7 +606,7 @@ IOprint_formatted_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (format == NULL)
 		throw(MAL, "io.print", "Format missing");
 	if (formatMarker(format,"%s") != 1)
-		throw(MAL, "io.print", "Too many %%");
+		throw(MAL, "io.print", "Format error");
 
 	if (strNil(*val))
 		return IOprint_formatted_nil(fd, *(str *) fmt);
