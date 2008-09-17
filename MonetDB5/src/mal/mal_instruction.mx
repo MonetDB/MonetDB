@@ -2667,7 +2667,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			str cv = NULL;
 
 			if (stk){
-				snprintf(t,(len-(t-base)),"%s", getArgName(mb, p, i));
+				snprintf(t,(len-(t-base)),"%s=", getArgName(mb, p, i));
 				advance(t,base,len);
 				VALformat(&cv, &stk->stk[getArg(p, i)]);
 			} else
