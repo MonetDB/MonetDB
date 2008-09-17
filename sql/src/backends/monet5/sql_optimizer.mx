@@ -171,7 +171,7 @@ FXoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #ifdef _SQL_OPTIMIZER_DEBUG
 	stream_printf(GDKout, "First call to FXoptimizer\n");
-	printFunction(GDKout, mb, stk, LIST_MAL_ALL);
+	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
 #endif
 	(void) cntxt;
 	(void)stk;
@@ -269,7 +269,7 @@ This all works under the assumption that the SQL layer properly invalidates
 the cache when the underlying table is changed.
 @c
 #ifdef _SQL_OPTIMIZER_DEBUG
-	printFunction(GDKout, mb, stk, LIST_MAL_INSTR);
+	printFunction(GDKout, mb, 0, LIST_MAL_INSTR);
 #endif
 	return MAL_SUCCEED;
 }
@@ -458,6 +458,7 @@ str defaultPlan=
 	"reduce,"
 	"garbageCollector,"
 	"dataflow,"
+	//"octopus,"
 	"multiplex";
 static str minimalPlan=
 	"multiplex";

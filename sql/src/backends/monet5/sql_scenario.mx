@@ -1121,7 +1121,7 @@ Inspect the variables for post code-generation actions.
 @c
 finalize:
 	if (m->emode == m_explain  && be->q && be->q->code)
-		printFunction(GDKout, ((Symbol)(be->q->code))->def, 0, LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI );
+		printFunction(GDKout, ((Symbol)(be->q->code))->def, 0, LIST_MAL_INSTR );
 @-
 Gather the statistics for post analysis. It should preferably
 be stored in an SQL table
@@ -1201,8 +1201,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 	glb = (MalStkPtr)(q->stk);
 	ret= callMAL(c, mb, &glb, argv, (m->emod & mod_debug?'n':0));
 	if (ret && SQLdebug&16) 
-		printFunction(c->fdout, mb, 0,
-			      LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
+		printFunction(c->fdout, mb, 0, LIST_MAL_INSTR );
 	/* cleanup the arguments */
 	for(i=pci->retc; i<pci->argc; i++) {
 		garbageElement(c,v= &glb->stk[pci->argv[i]]);
