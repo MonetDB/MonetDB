@@ -2458,7 +2458,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 		snprintf(t,(len-(t-base))," address %s;", mb->binding);
 	else
 		sprintf(t, ";");
-	if (flg & LIST_MAL_INSTR) {
+	if (flg & LIST_MAL_DETAIL) {
 		advance(t,base,len);
 		hiddenInstructionArgs(mb, p, t,s, flg,base,len);
 	}
@@ -2729,7 +2729,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	if (p->token != REMsymbol){
 		snprintf(t,(len-(t-base)), ";");
 		advance(t,base,len);
-		if (flg & LIST_MAL_INSTR) {
+		if (flg & LIST_MAL_DETAIL) {
 			advance(t,base,len);
 			t = hiddenInstructionArgs(mb, p, t,s, flg,base,len);
 		}
