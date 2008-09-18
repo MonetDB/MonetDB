@@ -116,8 +116,8 @@ OPTpeepholeImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 					getEndLifespan(span,getArg(p,0)) == i + 1) {
 #ifdef DEBUG_OPT_PEEPHOLE
 			printf("PEEPHOLE reverse-reverse\n");
-			printInstruction(cntxt->fdout, mb, 0,  p, LIST_MAL_DEBUG);
-			printInstruction(cntxt->fdout, mb, 0,  q, LIST_MAL_DEBUG);
+			printInstruction(cntxt->fdout, mb, 0,  p, LIST_MAL_ALL);
+			printInstruction(cntxt->fdout, mb, 0,  q, LIST_MAL_ALL);
 #endif
 			r = newInstruction(mb,ASSIGNsymbol);
 			getArg(r, 0) = getArg(q, 0);
@@ -141,7 +141,7 @@ OPTpeepholeImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		chkProgram(cntxt->nspace, mb);
 #ifdef DEBUG_OPT_PEEPHOLE
 		stream_printf(cntxt->fdout, "PEEPHOLE %d\n", doit);
-		printFunction(cntxt->fdout, mb, 0,  LIST_MAL_DEBUG );
+		printFunction(cntxt->fdout, mb, 0,  LIST_MAL_ALL );
 #endif
 	}
 	GDKfree(span);

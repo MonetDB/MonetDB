@@ -67,15 +67,15 @@ They are produced by SQL compiler.
 @c
 #ifdef DEBUG_OPT_INLINE
 			stream_printf(cntxt->fdout,"check inline statement\n");
-			printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_DEBUG);
-			printInstruction(cntxt->fdout,0,q->blk,sig,LIST_MAL_DEBUG);
+			printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
+			printInstruction(cntxt->fdout,0,q->blk,sig,LIST_MAL_ALL);
 #endif
 			if( getModuleId(q) == malRef &&
 				getFunctionId(q)== multiplexRef &&
 				OPTinlineMultiplex(cntxt,mb,q)){
 #ifdef DEBUG_OPT_INLINE
 					stream_printf(cntxt->fdout,"multiplex inline function\n");
-					printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_DEBUG);
+					printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
 #endif
 			    varSetProp(mb, getArg(q,0), inlineProp, op_eq, NULL);
 			} else
@@ -89,7 +89,7 @@ Check if the function definition is tagged as being inlined.
 				actions++;
 #ifdef DEBUG_OPT_INLINE
 				stream_printf(cntxt->fdout,"inline function at %d\n",i);
-				printFunction(cntxt->fdout, mb, 0, LIST_MAL_DEBUG);
+				printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 #endif
 			} else 
 @-
@@ -101,7 +101,7 @@ Check if the local call is tagged as being inlined.
 				actions++;
 #ifdef DEBUG_OPT_INLINE
 				stream_printf(cntxt->fdout,"inlined called at %d\n",i);
-				printFunction(cntxt->fdout, mb, 0, LIST_MAL_DEBUG);
+				printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 #endif
 			} 
 		}
@@ -133,7 +133,7 @@ In general, this is a hard problem. For now, we just expand.
 				inlineProp) != NULL;
 #ifdef DEBUG_OPT_INLINE
 	stream_printf(cntxt->fdout,"result of inline operation\n");
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_DEBUG);
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 #endif
 	return res;
 }

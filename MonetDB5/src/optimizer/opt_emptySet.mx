@@ -281,7 +281,7 @@ of removal of superflous constructions.
 	}
 #ifdef DEBUG_OPT_EMPTYSET
 	printf("FINAL STAGE errors=%d\n", mb->errors);
-	printFunction(cntxt->fdout, mb,0, LIST_MAL_DEBUG);
+	printFunction(cntxt->fdout, mb,0, LIST_MAL_ALL);
 #endif
 	return actions;
 }
@@ -303,7 +303,7 @@ OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) p;
 #ifdef DEBUG_OPT_EMPTYSET
 	printf("ESoptimizer called, collect empty sets and process them\n");
-	printFunction(cntxt->fdout, mb,0, LIST_MAL_DEBUG);
+	printFunction(cntxt->fdout, mb,0, LIST_MAL_ALL);
 #endif
 	for (i = 0; i < mb->vtop; i++) {
 		VarPtr rowsp;

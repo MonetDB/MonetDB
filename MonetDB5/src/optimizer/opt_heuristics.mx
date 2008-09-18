@@ -122,7 +122,7 @@ OPTheuristicsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (SPcombi000(mb, i, k)) {
 #ifdef DEBUG_OPT_OPTIMIZER
 				stream_printf(cntxt->fdout, "Combinator found\n");
-				printInstructioncntxt->fdout, mb, 0, getInstrPtr(mb, i), LIST_MAL_DEBUG);
+				printInstructioncntxt->fdout, mb, 0, getInstrPtr(mb, i), LIST_MAL_ALL);
 #endif
 				combis++;
 				k--;	/* an instruction has been removed */
@@ -134,7 +134,7 @@ OPTheuristicsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (SPsqueezer000(mb, i, k)) {
 #ifdef DEBUG_OPT_OPTIMIZER
 				stream_printf(cntxt->fdout, "Squeezer found\n");
-				printInstruction(cntxt->fdout, mb, 0, getInstrPtr(mb, i), LIST_MAL_DEBUG);
+				printInstruction(cntxt->fdout, mb, 0, getInstrPtr(mb, i), LIST_MAL_ALL);
 #endif
 				squeeze++;
 				k--;	/* an instruction has been removed */

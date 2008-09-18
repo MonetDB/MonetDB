@@ -142,10 +142,10 @@ Try to expand its argument list
 				assert(r);
 #ifdef DEBUG_OPT_JOINPATH 
 				stream_printf(cntxt->fdout,"expand list \n");
-				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_DEBUG);
-				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_DEBUG);
+				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 				if(r)
-				printInstruction(cntxt->fdout,mb, r, LIST_MAL_DEBUG);
+				printInstruction(cntxt->fdout,mb, r, LIST_MAL_ALL);
 #endif
 				if( r &&  getModuleId(r)== algebraRef && 
 					( getFunctionId(r)== joinRef  || getFunctionId(r)== joinPathRef) ){
@@ -156,7 +156,7 @@ Try to expand its argument list
 			}
 #ifdef DEBUG_OPT_JOINPATH 
 			stream_printf(cntxt->fdout,"new joinPath instruction\n");
-			printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_DEBUG);
+			printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 #endif
 			if(q->argc<= p->argc){
 				/* no change */
@@ -197,8 +197,8 @@ The heuristics is sufficient for the code produced by SQL frontend
 				k--;
 #ifdef DEBUG_OPT_JOINPATH 
 				stream_printf(cntxt->fdout,"heuristic joinPath rule\n");
-				printInstruction(cntxt->fdout,mb, 0, r, LIST_MAL_DEBUG);
-				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_DEBUG);
+				printInstruction(cntxt->fdout,mb, 0, r, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 #endif
 			}
 

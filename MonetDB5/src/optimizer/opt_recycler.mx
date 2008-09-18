@@ -187,7 +187,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (cnt == p->argc-p->retc) {
 #ifdef DEBUG_OPT_RECYCLER  
 			stream_printf(cntxt->fdout,"recycle instruction\n");
-			printInstruction(cntxt->fdout,mb, 0, p,LIST_MAL_DEBUG);
+			printInstruction(cntxt->fdout,mb, 0, p,LIST_MAL_ALL);
 #endif
 			actions ++;
 			p->recycle = -1; /* this instruction is to be monitored */
