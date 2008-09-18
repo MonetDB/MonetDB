@@ -416,7 +416,7 @@ The constant structure is initialized for later use.
 int cstToken(Client cntxt, ValPtr cst)
 {   
 	int i = 0;
-	long long l;
+	lng l;
 	int hex=0;
 	str s = CURRENT(cntxt);
 
@@ -541,18 +541,14 @@ int cstToken(Client cntxt, ValPtr cst)
 	}
 handleInts:
 	if( cst->vtype == TYPE_int || cst->vtype == TYPE_lng){
-		errno= 0; /* not thread safe */
-		l = strtoll(CURRENT(cntxt),NULL,0);
-		if ( errno==ERANGE || errno==EINVAL){
-			cst->vtype= TYPE_lng;
-			cst->val.lval = lng_nil;
+		lngFromStr(CURRENT(cntxt),NULL,&l);
+		if (l == lng_nil)
 			showException(SYNTAX, "convertConstant", "integer parse error");
-		} else
-		if( l> INT_MIN && l<= INT_MAX ){
-			cst->vtype= TYPE_int;
-			cst->val.ival = (int)l;
+		else if (INT_MIN < l && l <= INT_MAX) {
+			cst->vtype = TYPE_int;
+			cst->val.ival = (int) l;
 		} else {
-			cst->vtype= TYPE_lng;
+			cst->vtype = TYPE_lng;
 			cst->val.lval = l;
 		}
 	}
