@@ -528,7 +528,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 {
 	int ok = LOG_OK;
 	sql_bpm *p = ni->data;
-	int type = TYPE_int;
+	int type = TYPE_wrd;
 
 	if (ni->type == join_idx)
 		type = TYPE_oid;
@@ -706,7 +706,7 @@ static int
 dup_idx(sql_trans *tr, sql_idx *oi, sql_idx *i )
 {
 	if (oi->data) {
-		int type = (i->type==join_idx)?TYPE_oid:TYPE_int;
+		int type = (i->type==join_idx)?TYPE_oid:TYPE_wrd;
 		sql_bpm *p = i->data = ZNEW(sql_bpm), *op = oi->data;
 		return dup_bpm(tr, i->t, op, p, type, isNew(oi), i->base.flag == TR_NEW);
 	}

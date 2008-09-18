@@ -396,7 +396,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 {
 	int ok = LOG_OK;
 	sql_bat *bat = ni->data;
-	int type = TYPE_int;
+	int type = TYPE_wrd;
 
 	if (ni->type == join_idx)
 		type = TYPE_oid;

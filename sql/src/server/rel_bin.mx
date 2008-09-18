@@ -1155,7 +1155,7 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en )
 {
 	sql_subtype *it = sql_bind_localtype("int");
 	stmt *h = NULL;
-	stmt *bits = stmt_atom_int(1 + 31/(list_length(i->columns)+2));
+	stmt *bits = stmt_atom_int(1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)));
 	sql_exp *e = en->data;
 	sql_exp *l = e->l;
 	stmt *idx = bin_find_column(sub, l->l, i->base.name);

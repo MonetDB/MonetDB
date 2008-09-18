@@ -324,12 +324,12 @@ The alternative is to extend modules with an alias.
 The routine below are added to the calc module to
 ease code generation.
 @mal
-pattern calc.rotate_xor_hash(h:int, nbits:int, v:any_1) :int address MKEYrotate_xor_hash;
-command batcalc.rotate_xor_hash(h:bat[:oid,:int], nbits:int, b:bat[:oid,:any_1]) :bat[:oid,:int] address MKEYbulk_rotate_xor_hash;
+pattern calc.rotate_xor_hash(h:wrd, nbits:int, v:any_1) :wrd address MKEYrotate_xor_hash;
+command batcalc.rotate_xor_hash(h:bat[:oid,:wrd], nbits:int, b:bat[:oid,:any_1]) :bat[:oid,:int] address MKEYbulk_rotate_xor_hash;
 
-pattern calc.hash( v:any ) :int address hash_wrap; 
+pattern calc.hash( v:any ) :wrd address hash_wrap; 
 
-command batcalc.hash( b:bat[:oid,:any_1] ) :bat[:oid,:int]
+command batcalc.hash( b:bat[:oid,:any_1] ) :bat[:oid,:wrd]
 address bathash_wrap 
 comment "calculate a hash value";
 
@@ -2103,7 +2103,7 @@ voidbathash(int *res, BAT *b )
 	int *r, *f;
 	BATiter bi, dsti;
 
-	dst = BATnew(TYPE_void,TYPE_int, BATcount(b));
+	dst = BATnew(TYPE_void, TYPE_wrd, BATcount(b));
 	if (!dst) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "bathash", "can not create bat");
@@ -2120,15 +2120,14 @@ voidbathash(int *res, BAT *b )
 
 		BATloop(b,p,q) {
 			ptr v = BUNtail(bi,p);
-			*r++ = (int) ((hash(v)) & 0x7FFFFFFF);
+			*r++ = hash(v);
 		}
 	} else {
 		char *v = BUNtail(bi,BUNfirst(b)), *e = BUNtail(bi,BUNlast(b));
 		int sz = Tsize(b);
 
-		for(; v < e; v+=sz) {
-			*r++ = (int) ((hash(v)) & 0x7FFFFFFF);
-		}
+		for(; v < e; v+=sz) 
+			*r++ = hash(v);
 	}
 	BATsetcount(dst, (BUN) (r-f));
 	BATkey(BATmirror(dst), 0);
@@ -2153,7 +2152,7 @@ bathash_wrap(int *res, int *bid )
 	if (b->htype == TYPE_void) 
 		return voidbathash(res, b);
 
-	dst= BATnew(TYPE_oid,TYPE_int, BATcount(b));
+	dst= BATnew(TYPE_oid, TYPE_wrd, BATcount(b));
 	if (!dst) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "bathash", "can not create bat");
@@ -2166,7 +2165,7 @@ bathash_wrap(int *res, int *bid )
 
 		BATloop(b,p,q){
 			ptr v = BUNtail(bi,p);
-			int h = (int) ((hash(v)) & 0x7FFFFFFF);
+			wrd h = hash(v);
 			BUNins(dst, BUNhead(bi,p), &h, FALSE);
 		}
 	} else {
@@ -2174,7 +2173,7 @@ bathash_wrap(int *res, int *bid )
 
 		BATloop(b,p,q){
 			ptr v = BUNtail(bi,p);
-			int h = (int) ((hash(v)) & 0x7FFFFFFF);
+			wrd h = hash(v);
 			BUNins(dst, BUNhead(bi,p), &h, FALSE);
 		}
 	}
@@ -2192,16 +2191,16 @@ hash_wrap(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	int *res, tpe = getArgType(m,p,1);
 
 	(void) cntxt;
-	res= (int *) getArgReference(s,p,0);
+	res= (wrd *) getArgReference(s,p,0);
 	v = getArgReference(s,p,1);
 
 	if (tpe == TYPE_bat)
 		return bathash_wrap(res, (int*)v); 
 
 	if (ATOMextern(tpe)) /* ugh */
-		*res = (int) ((ATOMhash(tpe, *(char**)v)) & 0x7FFFFFFF);
+		*res = ATOMhash(tpe, *(char**)v);
 	else
-		*res = (int) ((ATOMhash(tpe, v)) & 0x7FFFFFFF);
+		*res = ATOMhash(tpe, v);
 	return NULL;
 }
 

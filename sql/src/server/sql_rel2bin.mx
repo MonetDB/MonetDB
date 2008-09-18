@@ -638,7 +638,7 @@ select_hash_key( mvc *sql, sql_idx *i, list *l )
 {
 	sql_subtype *it;
 	stmt *h = NULL;
-	stmt *bits = stmt_atom_int(1 + 31/(list_length(l)+2));
+	stmt *bits = stmt_atom_int(1 + ((sizeof(wrd)*8)-1)/(list_length(l)));
 	node *icn;
 
 	it = sql_bind_localtype("int");
@@ -674,7 +674,7 @@ join_hash_key( mvc *sql, list *l )
 	node *m;
 	sql_subtype *it;
 	stmt *h = NULL;
-	stmt *bits = stmt_atom_int(1 + 31/(list_length(l)+2));
+	stmt *bits = stmt_atom_int(1 + ((sizeof(wrd)*8)-1)/(list_length(l)));
 	stmt *o = NULL;
 
 	it = sql_bind_localtype("int");

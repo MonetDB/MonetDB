@@ -257,7 +257,7 @@ hash_insert(mvc *sql, sql_idx * i, stmt **inserts)
 {
 	node *m;
 	sql_subtype *it;
-	int bits = 1 + 31/(list_length(i->columns)+2);
+	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns));
 	stmt *h = NULL;
 
 	if (list_length(i->columns) <= 1)
@@ -927,7 +927,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 	/* calculate new value */
 	node *m;
 	sql_subtype *it;
-	int bits = 1 + 31/(list_length(i->columns)+2);
+	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns));
 	stmt *h = NULL, *ts;
 
 	if (list_length(i->columns) <= 1)
