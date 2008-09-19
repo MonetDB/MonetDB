@@ -1773,8 +1773,8 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.print("2@0":str);                #861 _1197:void := IOprint_val(_1198:str) 
     io.print("2@0":str);                #862 _1199:void := IOprint_val(_1198:str) 
     io.print("2147483647@0":str);       #863 _1200:void := IOprint_val(_1201:str) 
-    io.print("nil":str);                #864 _1202:void := IOprint_val(_1203:str) 
-    io.print("nil":str);                #865 _1204:void := IOprint_val(_1203:str) 
+    io.print(nil:str);                #864 _1202:void := IOprint_val(_1203:str) 
+    io.print(nil:str);                #865 _1204:void := IOprint_val(_1203:str) 
     io.printf("# from str\n");          #866 _1205:void := IOprint_str(_1206:str) 
     io.print("0":str);                  #867 _1207:void := IOprint_val(_1208:str) 
     io.print("32767":str);              #868 _1209:void := IOprint_val(_1210:str) 
@@ -2501,7 +2501,7 @@ end main;                               #877
 [ nil ]
 [ nil ]
 [ nil ]
-[ 2147483649@0 ]
+[ nil ]
 [ nil ]
 [ nil ]
 [ nil ]
@@ -2628,8 +2628,8 @@ end main;                               #877
 [ "2@0" ]
 [ "2@0" ]
 [ "2147483647@0" ]
-[ "nil" ]
-[ "nil" ]
+[ nil ]
+[ nil ]
 # from str
 [ "0" ]
 [ "32767" ]
