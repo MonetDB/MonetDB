@@ -1255,31 +1255,39 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(lng,sht,, (lng) *a)@
 @:mal_coercion_impl(lng,int,, (lng) *a)@
 @:mal_coercion_impl(lng,wrd,, (lng) *a)@
-@:mal_coercion_impl(lng,lng,, (lng) *a)@
-@:mal_coercion_impl(lng,flt,, (lng) *a)@
-@:mal_coercion_impl(lng,dbl,, (lng) *a)@
+@:mal_coercion_impl(lng,lng,,       *a)@
+@:mal_coercion_impl(lng,flt, || *a < (flt) GDK_lng_min || *a > (flt) GDK_lng_max, (lng) *a)@
+@:mal_coercion_impl(lng,dbl, || *a < (flt) GDK_lng_min || *a > (flt) GDK_lng_max, (lng) *a)@
 
 @:mal_coercion_impl(sht,oid, , (sht) *a)@
 @:mal_coercion_impl(sht,bit, , (sht) *a)@
 @:mal_coercion_impl(sht,chr, , (sht) *a)@
 @:mal_coercion_impl(sht,bte, , (sht) *a)@
-@:mal_coercion_impl(sht,sht, , (sht) *a)@
-@:mal_coercion_impl(sht,int, , (sht) *a)@
-@:mal_coercion_impl(sht,wrd, , (sht) *a)@
-@:mal_coercion_impl(sht,lng, , (sht) *a)@
-@:mal_coercion_impl(sht,flt, , (sht) *a)@
-@:mal_coercion_impl(sht,dbl, , (sht) *a)@
+@:mal_coercion_impl(sht,sht, ,       *a)@
+@:mal_coercion_impl(sht,int, || *a < GDK_sht_min || *a > GDK_sht_max, (sht) *a)@
+@:mal_coercion_impl(sht,wrd, || *a < GDK_sht_min || *a > GDK_sht_max, (sht) *a)@
+@:mal_coercion_impl(sht,lng, || *a < GDK_sht_min || *a > GDK_sht_max, (sht) *a)@
+@:mal_coercion_impl(sht,flt, || *a < GDK_sht_min || *a > GDK_sht_max, (sht) *a)@
+@:mal_coercion_impl(sht,dbl, || *a < GDK_sht_min || *a > GDK_sht_max, (sht) *a)@
 
+#if SIZEOF_OID == SIZEOF_INT
 @:mal_coercion_impl(int,oid, , (int) *a)@
+#else
+@:mal_coercion_impl(int,oid, || *a < GDK_int_min || *a > GDK_int_max, (int) *a)@
+#endif
 @:mal_coercion_impl(int,bit, , (int) *a)@
 @:mal_coercion_impl(int,chr, , (int) *a)@
 @:mal_coercion_impl(int,bte, , (int) *a)@
 @:mal_coercion_impl(int,sht, , (int) *a)@
-@:mal_coercion_impl(int,int, , (int) *a)@
+@:mal_coercion_impl(int,int, ,       *a)@
+#if SIZEOF_WRD == SIZEOF_INT
 @:mal_coercion_impl(int,wrd, , (int) *a)@
-@:mal_coercion_impl(int,lng, , (int) *a)@
-@:mal_coercion_impl(int,flt, , (int) *a)@
-@:mal_coercion_impl(int,dbl, , (int) *a)@
+#else
+@:mal_coercion_impl(int,wrd, || *a < GDK_int_min || *a > GDK_int_max, (int) *a)@
+#endif
+@:mal_coercion_impl(int,lng, || *a < GDK_int_min || *a > GDK_int_max, (int) *a)@
+@:mal_coercion_impl(int,flt, || *a < GDK_int_min || *a > GDK_int_max, (int) *a)@
+@:mal_coercion_impl(int,dbl, || *a < GDK_int_min || *a > GDK_int_max, (int) *a)@
 
 @:mal_coercion_impl(wrd,oid, , (wrd) *a)@
 @:mal_coercion_impl(wrd,bit, , (wrd) *a)@
@@ -1287,24 +1295,32 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(wrd,bte, , (wrd) *a)@
 @:mal_coercion_impl(wrd,sht, , (wrd) *a)@
 @:mal_coercion_impl(wrd,int, , (wrd) *a)@
-@:mal_coercion_impl(wrd,wrd, , (wrd) *a)@
+@:mal_coercion_impl(wrd,wrd, ,       *a)@
+#if SIZEOF_WRD == SIZEOF_LNG
 @:mal_coercion_impl(wrd,lng, , (wrd) *a)@
-@:mal_coercion_impl(wrd,flt, , (wrd) *a)@
-@:mal_coercion_impl(wrd,dbl, , (wrd) *a)@
+#else
+@:mal_coercion_impl(wrd,lng, || *a < GDK_wrd_min || *a > GDK_wrd_max, (wrd) *a)@
+#endif
+@:mal_coercion_impl(wrd,flt, || *a < GDK_wrd_min || *a > GDK_wrd_max, (wrd) *a)@
+@:mal_coercion_impl(wrd,dbl, || *a < GDK_wrd_min || *a > GDK_wrd_max, (wrd) *a)@
 
 @:mal_coercion_impl(oid,bit, || *a < 0 , (oid) *a)@
 @:mal_coercion_impl(oid,chr, || *a < 0 , (oid) *a)@
 @:mal_coercion_impl(oid,bte, || *a < 0 , (oid) *a)@
-@:mal_coercion_impl(oid,oid, , (oid) *a)@
+@:mal_coercion_impl(oid,oid, , *a)@
+#if SIZEOF_OID == SIZEOF_LNG
 @:mal_coercion_impl(oid,lng, || *a < 0 , (oid) *a)@
+#else
+@:mal_coercion_impl(oid,lng, || *a < 0 || *a > GDK_oid_max, (oid) *a)@
+#endif
 @:mal_coercion_impl(oid,sht, || *a < 0 , (oid) *a)@
 @:mal_coercion_impl(oid,int, || *a < 0 , (oid) *a)@
 @:mal_coercion_impl(oid,wrd, || *a < 0 , (oid) *a)@
-@:mal_coercion_impl(oid,flt, || *a < 0 , (oid) *a)@
-@:mal_coercion_impl(oid,dbl, || *a < 0 , (oid) *a)@
+@:mal_coercion_impl(oid,flt, || *a < 0 || *a > GDK_oid_max, (oid) *a)@
+@:mal_coercion_impl(oid,dbl, || *a < 0 || *a > GDK_oid_max, (oid) *a)@
 
-@:mal_coercion_impl(flt,flt, , (flt) *a)@
-@:mal_coercion_impl(flt,dbl, , (flt) *a)@
+@:mal_coercion_impl(flt,flt, ,       *a)@
+@:mal_coercion_impl(flt,dbl, || *a < GDK_flt_min || *a > GDK_flt_max, (flt) *a)@
 @:mal_coercion_impl(flt,sht, , (flt) *a)@
 @:mal_coercion_impl(flt,chr, , (flt) *a)@
 @:mal_coercion_impl(flt,bte, , (flt) *a)@
@@ -1312,7 +1328,7 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(flt,wrd, , (flt) *a)@
 @:mal_coercion_impl(flt,lng, , (flt) *a)@
 
-@:mal_coercion_impl(dbl,dbl, , (dbl) *a)@
+@:mal_coercion_impl(dbl,dbl, ,       *a)@
 @:mal_coercion_impl(dbl,flt, , (dbl) *a)@
 @:mal_coercion_impl(dbl,sht, , (dbl) *a)@
 @:mal_coercion_impl(dbl,int, , (dbl) *a)@
@@ -1322,26 +1338,26 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(dbl,lng, , (dbl) *a)@
 
 @:mal_coercion_impl(chr,bit, , (chr) *a)@
-@:mal_coercion_impl(chr,chr, , (chr) *a)@
+@:mal_coercion_impl(chr,chr, ,       *a)@
 @:mal_coercion_impl(chr,bte, , (chr) *a)@
-@:mal_coercion_impl(chr,oid, , (chr) *a)@
-@:mal_coercion_impl(chr,flt, , (chr) *a)@
-@:mal_coercion_impl(chr,dbl, , (chr) *a)@
-@:mal_coercion_impl(chr,sht, , (chr) *a)@
-@:mal_coercion_impl(chr,int, , (chr) *a)@
-@:mal_coercion_impl(chr,wrd, , (chr) *a)@
-@:mal_coercion_impl(chr,lng, , (chr) *a)@
+@:mal_coercion_impl(chr,oid, || *a < GDK_chr_min || *a > GDK_chr_max, (chr) *a)@
+@:mal_coercion_impl(chr,flt, || *a < GDK_chr_min || *a > GDK_chr_max, (chr) *a)@
+@:mal_coercion_impl(chr,dbl, || *a < GDK_chr_min || *a > GDK_chr_max, (chr) *a)@
+@:mal_coercion_impl(chr,sht, || *a < GDK_chr_min || *a > GDK_chr_max, (chr) *a)@
+@:mal_coercion_impl(chr,int, || *a < GDK_chr_min || *a > GDK_chr_max, (chr) *a)@
+@:mal_coercion_impl(chr,wrd, || *a < GDK_chr_min || *a > GDK_chr_max, (chr) *a)@
+@:mal_coercion_impl(chr,lng, || *a < GDK_chr_min || *a > GDK_chr_max, (chr) *a)@
 
 @:mal_coercion_impl(bte,bit, , (bte) *a)@
 @:mal_coercion_impl(bte,chr, , (bte) *a)@
-@:mal_coercion_impl(bte,bte, , (bte) *a)@
-@:mal_coercion_impl(bte,oid, , (bte) *a)@
-@:mal_coercion_impl(bte,flt, , (bte) *a)@
-@:mal_coercion_impl(bte,dbl, , (bte) *a)@
-@:mal_coercion_impl(bte,sht, , (bte) *a)@
-@:mal_coercion_impl(bte,int, , (bte) *a)@
-@:mal_coercion_impl(bte,wrd, , (bte) *a)@
-@:mal_coercion_impl(bte,lng, , (bte) *a)@
+@:mal_coercion_impl(bte,bte, ,       *a)@
+@:mal_coercion_impl(bte,oid, || *a < GDK_bte_min || *a > GDK_bte_max, (bte) *a)@
+@:mal_coercion_impl(bte,flt, || *a < GDK_bte_min || *a > GDK_bte_max, (bte) *a)@
+@:mal_coercion_impl(bte,dbl, || *a < GDK_bte_min || *a > GDK_bte_max, (bte) *a)@
+@:mal_coercion_impl(bte,sht, || *a < GDK_bte_min || *a > GDK_bte_max, (bte) *a)@
+@:mal_coercion_impl(bte,int, || *a < GDK_bte_min || *a > GDK_bte_max, (bte) *a)@
+@:mal_coercion_impl(bte,wrd, || *a < GDK_bte_min || *a > GDK_bte_max, (bte) *a)@
+@:mal_coercion_impl(bte,lng, || *a < GDK_bte_min || *a > GDK_bte_max, (bte) *a)@
 
 calc_export str CALCbat2BAT(int *res, bat *bid);
 str CALCbat2BAT(int *res, bat *bid){
