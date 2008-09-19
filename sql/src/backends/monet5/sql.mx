@@ -745,7 +745,7 @@ sql5_export str mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 sql5_export str mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str bathash_wrap(int *res, int *bid );
+sql5_export str bathash_wrap(wrd *res, wrd *bid );
 sql5_export str hash_wrap(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 sql5_export str setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -2096,11 +2096,11 @@ str not_unique(bit *ret, int* bid)
 }
 
 static str
-voidbathash(int *res, BAT *b )
+voidbathash(wrd *res, BAT *b )
 {
 	BAT *dst;
 	BUN (*hash)(ptr v); 
-	int *r, *f;
+	wrd *r, *f;
 	BATiter bi, dsti;
 
 	dst = BATnew(TYPE_void, TYPE_wrd, BATcount(b));
@@ -2112,7 +2112,7 @@ voidbathash(int *res, BAT *b )
 
 	dsti = bat_iterator(dst);
 	bi = bat_iterator(b);
- 	r = (int*)BUNtail(dsti, BUNfirst(dst));
+ 	r = (wrd*)BUNtail(dsti, BUNfirst(dst));
 	f = r;
 	hash = BATatoms[b->ttype].atomHash;
 	if (ATOMvarsized(b->ttype)) { /* ugh */
@@ -2139,7 +2139,7 @@ voidbathash(int *res, BAT *b )
 }
 
 str
-bathash_wrap(int *res, int *bid )
+bathash_wrap(wrd *res, wrd *bid )
 {
 	BAT *b, *dst;
 	BUN (*hash)(ptr v); 
@@ -2188,14 +2188,14 @@ str
 hash_wrap(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	ptr v;
-	int *res, tpe = getArgType(m,p,1);
+	wrd *res, tpe = getArgType(m,p,1);
 
 	(void) cntxt;
 	res= (wrd *) getArgReference(s,p,0);
 	v = getArgReference(s,p,1);
 
 	if (tpe == TYPE_bat)
-		return bathash_wrap(res, (int*)v); 
+		return bathash_wrap(res, (wrd*)v); 
 
 	if (ATOMextern(tpe)) /* ugh */
 		*res = ATOMhash(tpe, *(char**)v);
