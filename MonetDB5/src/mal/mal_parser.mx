@@ -498,13 +498,18 @@ int cstToken(Client cntxt, ValPtr cst)
 		}
 	}
 	if (*s == '@') {
-		cst->vtype = TYPE_oid;
-		errno = 0;
-		cst->val.lval = strtoll(CURRENT(cntxt),NULL,0);
-		if( cst->val.lval <0 || errno== ERANGE )
+		int len = (int) sizeof(lng);
+		lng *pval = &l;
+		lngFromStr(CURRENT(cntxt),&len,&pval);
+		if (l == lng_nil || l < 0
+#if SIZEOF_OID < SIZEOF_LNG
+			|| l > GDK_oid_max
+#endif
+			)
 			cst->val.oval= oid_nil;
 		else
-			cst->val.oval= (oid) cst->val.lval;
+			cst->val.oval= (oid) l;
+		cst->vtype = TYPE_oid;
 		i++;
 		s++;
 		while (isdigit(*s)) {
@@ -544,7 +549,6 @@ handleInts:
 		int len = (int) sizeof(lng);
 		lng *pval = &l;
 		lngFromStr(CURRENT(cntxt),&len,&pval);
-		l = *pval;
 		if (INT_MIN < l && l <= INT_MAX) {
 			cst->vtype = TYPE_int;
 			cst->val.ival = (int) l;
