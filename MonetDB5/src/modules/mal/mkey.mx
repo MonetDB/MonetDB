@@ -200,7 +200,7 @@ values together. We create a hash and rotate command to do this.
 int
 CMDrotate(wrd *res, wrd *val, int *n)
 {
-	*res = GDK_ROTATE(*val, *n, ((sizeof(wrd)*8) - *n, (1 << *n) - 1);
+	*res = GDK_ROTATE(*val, *n, (sizeof(wrd)*8) - *n, (1 << *n) - 1);
 	return GDK_SUCCEED;
 }
 
@@ -270,7 +270,7 @@ CMDhash_str(wrd *res, str val)
 }
 
 int
-CMDhash(int *res, ptr val, int tpe)
+CMDhash(wrd *res, ptr val, int tpe)
 {
 	wrd code;
 	BUN h;
@@ -369,7 +369,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 	} else if (isVIEW(bn) || bn->batRestricted) {
 		GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): left operand not writeable.\n", BATgetId(bn), *rotate, BATgetId(b));
 		return GDK_FAIL;
-	} else if (*rotate < 0 || *rotate >= (sizeof(wrd)*8)) {
+	} else if (*rotate < 0 || *rotate >= (int)(sizeof(wrd)*8)) {
 		GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): illegal number of rotate bits.\n", BATgetId(bn), *rotate, BATgetId(b));
 		return GDK_FAIL;
 	} else if (tpe == TYPE_bte || tpe == TYPE_chr) {
@@ -423,13 +423,9 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 		while (cur < end) {
                         str src = base + *cur;
 			BUN h;
-			int val;
+			wrd val;
 			GDK_STRHASH(src, h);
-#if SIZEOF_OID == SIZEOF_INT
-			val = (int) h;
-#else
-			val = (int) (h >> (sizeof(wrd)*8)) ^ (int) h;
-#endif
+			val = (wrd) h;
 			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
 			cur++;
 			dst++;
