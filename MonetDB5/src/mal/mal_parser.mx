@@ -545,14 +545,14 @@ handleInts:
 		lng *pval = &l;
 		lngFromStr(CURRENT(cntxt),&len,&pval);
 		l = *pval;
-		if (l == lng_nil)
-			showException(SYNTAX, "convertConstant", "integer parse error");
-		else if (INT_MIN < l && l <= INT_MAX) {
+		if (INT_MIN < l && l <= INT_MAX) {
 			cst->vtype = TYPE_int;
 			cst->val.ival = (int) l;
 		} else {
 			cst->vtype = TYPE_lng;
 			cst->val.lval = l;
+			if (l == lng_nil)
+				showException(SYNTAX, "convertConstant", "integer parse error");
 		}
 	}
 	return i;
