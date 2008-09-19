@@ -1764,7 +1764,7 @@ convertConstant(malType type, ValPtr vr)
 		return vr->vtype != type;
 	case TYPE_str:
 		{ str w=0;
-		  if( vr->vtype == TYPE_void){
+		  if( vr->vtype == TYPE_void || ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0){
 			vr->vtype = type;
 			vr->val.sval = GDKstrdup(str_nil);
 			return 0;
