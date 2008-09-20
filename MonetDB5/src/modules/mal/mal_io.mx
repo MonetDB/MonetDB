@@ -573,7 +573,7 @@ str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci
 	if( *val == @1_nil) 
 		return IOprint_formatted_nil(fd,* (str*) fmt);
 	if (snprintf(buf, MAXFORMAT, *fmt,*val) < 0){
-		throw(MAL, "io.print", "Format error," @2 " expected and < 64K");
+		throw(MAL, "io.print", "Format error, %s expected and < 64K", @2);
 	} else
 		stream_printf(fd,*fmt,*val);
 	return MAL_SUCCEED;
