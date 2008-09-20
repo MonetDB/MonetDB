@@ -256,7 +256,7 @@ static stmt *
 hash_insert(mvc *sql, sql_idx * i, stmt **inserts)
 {
 	node *m;
-	sql_subtype *it;
+	sql_subtype *it, *wrd;
 	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns));
 	stmt *h = NULL;
 
@@ -264,11 +264,12 @@ hash_insert(mvc *sql, sql_idx * i, stmt **inserts)
 		return NULL;
 
 	it = sql_bind_localtype("int");
+	wrd = sql_bind_localtype("wrd");
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 
 		if (h) {
-			sql_subfunc *xor = sql_bind_func_result3(sql->session->schema, "rotate_xor_hash", it, it, &c->c->type, it);
+			sql_subfunc *xor = sql_bind_func_result3(sql->session->schema, "rotate_xor_hash", wrd, it, &c->c->type, wrd);
 
 			h = stmt_Nop(stmt_list( list_append( list_append(
 				list_append(create_stmt_list(), h), 
@@ -276,7 +277,7 @@ hash_insert(mvc *sql, sql_idx * i, stmt **inserts)
 				stmt_dup(inserts[c->c->colnr]->op2.stval))), 
 				xor);
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql->session->schema, "hash", &c->c->type, NULL, it);
+			sql_subfunc *hf = sql_bind_func_result(sql->session->schema, "hash", &c->c->type, NULL, wrd);
 			h = stmt_unop(stmt_dup(inserts[c->c->colnr]->op2.stval), hf);
 		}
 	}
@@ -926,7 +927,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 {
 	/* calculate new value */
 	node *m;
-	sql_subtype *it;
+	sql_subtype *it, *wrd;
 	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns));
 	stmt *h = NULL, *ts;
 
@@ -935,6 +936,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 
 	ts = stmt_basetable(i->t, i->t->base.name);
 	it = sql_bind_localtype("int");
+	wrd = sql_bind_localtype("wrd");
 	for (m = i->columns->h; m; m = m->next ) {
 		sql_kc *c = m->data;
 		stmt *upd;
@@ -947,7 +949,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 		}
 
 		if (h) {
-			sql_subfunc *xor = sql_bind_func_result3(sql->session->schema, "rotate_xor_hash", it, it, &c->c->type, it);
+			sql_subfunc *xor = sql_bind_func_result3(sql->session->schema, "rotate_xor_hash", wrd, it, &c->c->type, wrd);
 
 			h = stmt_Nop(stmt_list( list_append( list_append(
 				list_append(create_stmt_list(), h), 
@@ -955,7 +957,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 				upd)), 
 				xor);
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql->session->schema, "hash", &c->c->type, NULL, it);
+			sql_subfunc *hf = sql_bind_func_result(sql->session->schema, "hash", &c->c->type, NULL, wrd);
 			h = stmt_unop(upd, hf);
 		}
 	}

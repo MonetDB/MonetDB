@@ -1154,6 +1154,7 @@ static stmt *
 rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en ) 
 {
 	sql_subtype *it = sql_bind_localtype("int");
+	sql_subtype *wrd = sql_bind_localtype("wrd");
 	stmt *h = NULL;
 	stmt *bits = stmt_atom_int(1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)));
 	sql_exp *e = en->data;
@@ -1169,13 +1170,13 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en )
 		s = exp_bin(sql, e->r, NULL, NULL, NULL, NULL);
 
 		if (h) {
-			sql_subfunc *xor = sql_bind_func_result3(sql->session->schema, "rotate_xor_hash", it, it, tail_type(s), it);
+			sql_subfunc *xor = sql_bind_func_result3(sql->session->schema, "rotate_xor_hash", wrd, it, tail_type(s), wrd);
 
 			h = stmt_Nop(stmt_list( list_append( list_append(
 				list_append(create_stmt_list(), h), 
 				stmt_dup(bits)), s)), xor);
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql->session->schema, "hash", tail_type(s), NULL, it);
+			sql_subfunc *hf = sql_bind_func_result(sql->session->schema, "hash", tail_type(s), NULL, wrd);
 
 			h = stmt_unop(s, hf);
 		}
