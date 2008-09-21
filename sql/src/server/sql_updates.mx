@@ -93,11 +93,11 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int a
 	char *msg = NULL;
 	stmt *res;
 
-	sql_subtype *it = sql_bind_localtype("int");
+	sql_subtype *wrd = sql_bind_localtype("wrd");
 	sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
 	stmt *ts = stmt_basetable(k->t, k->t->base.name);
-	sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
+	sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", wrd, wrd, bt);
 
 	if (list_length(k->columns) > 1) {
 		node *m;
@@ -209,10 +209,10 @@ insert_check_fkey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 {
 	char *msg = NULL;
 	stmt *s = inserts[0]->op2.stval;
-	sql_subtype *it = sql_bind_localtype("int");
+	sql_subtype *wrd = sql_bind_localtype("wrd");
 	sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
+	sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", wrd, wrd, bt);
 
 	(void) sql;		/* unused! */
 
@@ -545,7 +545,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 	char *msg = NULL;
 	stmt *res = NULL;
 
-	sql_subtype *it = sql_bind_localtype("int");
+	sql_subtype *wrd = sql_bind_localtype("wrd");
 	sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne;
@@ -553,7 +553,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 	if (list_length(k->columns) > 1 && !idx_updates)
 		return NULL;
 
-	ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
+	ne = sql_bind_func_result(sql->session->schema, "<>", wrd, wrd, bt);
 	if (list_length(k->columns) > 1) {
 		stmt *ts = stmt_basetable(k->t, k->t->base.name);
 		node *m;
@@ -610,7 +610,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 			sum = sql_bind_aggr(sql->session->schema, "sum", tail_type(ss));
 			ssum = stmt_aggr(ss, NULL, sum, 1);
 			ssum = sql_Nop_(sql, "ifthenelse", sql_unop_(sql, NULL, "isnull", ssum), stmt_atom_wrd(0), stmt_dup(ssum), NULL);
-			count_sum = stmt_binop(stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt), 1), check_types(sql, it, ssum, type_equal), sql_dup_func(ne));
+			count_sum = stmt_binop(stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt), 1), check_types(sql, wrd, ssum, type_equal), sql_dup_func(ne));
 
 			/* combine results */
 			s = stmt_binop(s, count_sum, or);
@@ -668,10 +668,10 @@ update_check_fkey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 {
 	char *msg = NULL;
 	stmt *s;
-	sql_subtype *it = sql_bind_localtype("int");
+	sql_subtype *wrd = sql_bind_localtype("wrd");
 	sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
+	sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", wrd, wrd, bt);
 	stmt *cur;
 
 	if (!idx_updates)
@@ -694,10 +694,10 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt **updates, int updcol)
 	sql_idx *ri = ((sql_fkey*)k)->rkey->k.idx;
 	stmt *s = NULL, *ts = stmt_basetable(ri->t, ri->t->base.name), *fts;
 	stmt *null = NULL, *rows;
-	sql_subtype *it = sql_bind_localtype("int");
+	sql_subtype *wrd = sql_bind_localtype("wrd");
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
-	sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
+	sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", wrd, wrd, bt);
 
 	fts = stmt_basetable(k->idx->t, k->idx->t->base.name);
 	s = stmt_releqjoin_init();
@@ -1769,13 +1769,13 @@ sql_delete_ukey(mvc *sql, sql_schema *schema, stmt *deletes, sql_key *k, list *l
 	sql_ukey *uk = (sql_ukey*)k;
 
 	if (uk->keys && list_length(uk->keys) > 0) {
-		sql_subtype *it = sql_bind_localtype("int");
+		sql_subtype *wrd = sql_bind_localtype("wrd");
 		sql_subtype *bt = sql_bind_localtype("bit");
 		node *n;
 		for(n = uk->keys->h; n; n = n->next) {
 			char *msg = NULL;
 			sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
-			sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", it, it, bt);
+			sql_subfunc *ne = sql_bind_func_result(sql->session->schema, "<>", wrd, wrd, bt);
 			sql_key *fk = n->data;
 			stmt *s;
 
