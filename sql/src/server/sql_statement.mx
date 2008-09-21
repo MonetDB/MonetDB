@@ -2304,7 +2304,7 @@ tail_type(stmt *st)
 		return &st->op1.cval->type;
 	case st_idxbat:
 		if (st->op1.idxval->type == hash_idx) {
-			return sql_bind_localtype("int");
+			return sql_bind_localtype("wrd");
 		} else if (st->op1.idxval->type == join_idx) {
 			return sql_bind_localtype("oid");
 		}

@@ -2191,12 +2191,12 @@ hash_wrap(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	wrd *res, tpe = getArgType(m,p,1);
 
 	(void) cntxt;
-	res= (wrd *) getArgReference(s,p,0);
 	v = getArgReference(s,p,1);
 
 	if (tpe == TYPE_bat)
-		return bathash_wrap(res, (wrd*)v); 
+		return bathash_wrap((int*)getArgReference(s,p,0), (int*)v); 
 
+	res = (wrd *) getArgReference(s,p,0);
 	if (ATOMextern(tpe)) /* ugh */
 		*res = ATOMhash(tpe, *(char**)v);
 	else

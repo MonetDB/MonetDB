@@ -35,8 +35,8 @@
 
 #include <m4/bpm.h>
 
-/* version 04.00.10 of catalog */
-#define CATALOG_VERSION 40010
+/* version 05.00.00 of catalog */
+#define CATALOG_VERSION 50000
 
 static MT_Lock bs_lock;
 static int store_oid = 0;
