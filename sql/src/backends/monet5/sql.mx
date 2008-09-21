@@ -745,7 +745,7 @@ sql5_export str mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 sql5_export str mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str bathash_wrap(wrd *res, wrd *bid );
+sql5_export str bathash_wrap(bat *res, bat *bid );
 sql5_export str hash_wrap(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 sql5_export str setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -2096,7 +2096,7 @@ str not_unique(bit *ret, int* bid)
 }
 
 static str
-voidbathash(wrd *res, BAT *b )
+voidbathash(bat *res, BAT *b )
 {
 	BAT *dst;
 	BUN (*hash)(ptr v); 
@@ -2139,7 +2139,7 @@ voidbathash(wrd *res, BAT *b )
 }
 
 str
-bathash_wrap(wrd *res, wrd *bid )
+bathash_wrap(bat *res, bat *bid )
 {
 	BAT *b, *dst;
 	BUN (*hash)(ptr v); 
