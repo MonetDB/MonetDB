@@ -1039,6 +1039,7 @@ end main;                               # 11
 [ "#fromstr",			  "command",	  "rmtobj",	  "():void ",																  "RMTOfromString;"					  ]
 [ "new",			  "command",	  "rmtobj",	  "(s:str):rmtobj ",															  "RMTOnew;"						  ]
 [ "#tostr",			  "command",	  "rmtobj",	  "():void ",																  "RMTOtoString;"					  ]
+[ "dumpQPat",			  "pattern",	  "recycle",	  "():void ",														  "RECYCLEdumpQPatWrap;"			  ]
 [ "dump",			  "pattern",	  "recycle",	  "(n:str):void ",															  "RECYCLEdumpWrap;"					  ]
 [ "dump",			  "pattern",	  "recycle",	  "():void ",																  "RECYCLEdumpWrap;"					  ]
 [ "epilogue",			  "pattern",	  "recycle",	  "():void ",																  "RECYCLEepilogue;"					  ]
