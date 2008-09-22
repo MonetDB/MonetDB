@@ -254,6 +254,8 @@ if all are ok."
 .COMMAND xquery_hash_new(str) : int = CMD_XQH_H; "hash a string value"
 .COMMAND [xquery_hash_new](BAT[void,str]) : BAT[void,int] = CMD_XQH_H_bat; "hash a string value"
 
+.COMMAND xquery_dblfsm(str) : int = CMD_XQ_DBLFSM; "returns the state of the double finite state machine for the given string"
+
 .COMMAND xquery_combine(int,int) : int = CMD_XQH_C; "combine two hash values to produce a new one"
 .COMMAND [xquery_combine](BAT[void,int], BAT[void,int]) : BAT[void,int] = CMD_XQH_C_bat; "combine two hash values to produce a new one"
 

@@ -26,8 +26,15 @@
 @t Single-pass XML Value Index Construction and Update
 
 @* XML value index support
+We construct two updatable XML value indices, one supporting equi-lookup
+queries for string values, and one supporting range queries on double values,
+(aka numerics). Both indeces are build over the data associated to each element
+node. We do not support in for the time being attribute values, or
+attribute/element tags.
 
-@+ Text Hash Function
+@+ Text Hash Functions
+@- Hash function H()
+@- Combine function C()
 
 @c
 #include "pf_config.h"
@@ -48,13 +55,9 @@ static INLINE int XQH_H(str v) {
     int c;
     int h_val = 0, ofs = 0;
 
-    /* the text values should be trimed
-       but then, when two nodes are combined
-       a space should be introduced (???) */
-
     for (; *v != '\0'; v++){
         c = XQH_MASK7(*v);
-        /* cyclic_xor */
+        /* circular_XOR operation */
         h_val ^= XQH_SHFT_l(c,ofs);
         if (ofs > 20) {
             h_val ^= XQH_SHFT_r(c,ofs);
@@ -153,10 +156,253 @@ int CMD_XQH_STR(str *res, int *val) {
     return GDK_SUCCEED;
 }
 
-@+ XML Value Index Construction
+@+ XML Double Type Functions
+@- Double Finite State Machine (DFSM)
+@- State Transition Table (STT)
 
-We construct two updatable XML value indices, one supporting equi-lookup
-queries for string values, and one supporting range queries on double values.
+@= consume_digits
+    /* consume all digits */
+    for (; (*@1 != '\0') && isdigit(*@1); @1++);
+
+@= consume_spaces
+    /* consume all white spaces */
+    for (; (*@1 != '\0') && isspace(*@1); @1++);
+
+@c
+/* all possible states of a bbl value, not including -/+ INF */
+enum dblstates
+{ rej, e, dot, digit, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10,
+  minus = 14, /* minus + (digit, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10) */
+  plus  = 26, /* plus  + (digit, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10) */
+  ws    = 38, /* ws  + (digit, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10) */
+  s11   = 50, /* wsplus  + (digit, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10) */
+  s12   = 62, /* wsminus  + (digit, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10) */
+};  /* 74 states in total */
+
+/* Returns the state that str v resolves to. We do not use a big while loop.
+ * Instead, for efficiency we only allow sequential flow of the states. This
+ * is possible because of the acyclic nature of the FSM (there is no
+ * state that sends you back to a previous state). The depth of the if
+ * statements go until 4 in worst case. As a result this function never
+ * reaches the end.
+ */
+static INLINE int dbl_fsm(str v) {
+    int state = rej;
+    int lead  = 0;
+
+    /*decide the entry point in the FSM */
+    if (isspace(*v)) {
+        state = ws;
+    } else if (isdigit(*v)) {
+        state = digit;
+    } else if ((*v == 'e') || (*v == 'E')) {
+        state = e;
+    } else if (*v == '.') {
+        state = dot;
+    } else if (*v == '+') {
+        state = plus;
+    } else if (*v == '-') {
+        state = minus;
+    } else {
+        return state; /* not valid, return imediatly with rej */
+    }
+
+    /* Deal with states e, s1, s2, s3, s4.
+     * State e cannot have any leading whitespaces,
+     * so we dont deal with spaces yet */
+    if (state == e) {
+        /* consume character */
+        v++;
+        if (*v == '\0') {
+            return state;
+        } else if (*v == '+') {
+            state = s1;
+        } else if (*v == '-') {
+            state = s2;
+        } else if (isdigit(*v)) {
+            state = s3;
+        } else {
+            return rej;
+        }
+
+        /* state here is s1, s2, or s3 */
+        /* consume one more char */
+        v++;
+        if (*v == '\0') {
+            return state;
+        } else if ((state == s3) && isspace(*v)) { /* only s3 can have space */
+            state = s4;
+        } else if (isdigit(*v)) {
+            state = s3;
+        } else {
+            return rej;
+        }
+
+        /* state here is s3 or s4 */
+        if (state == s3) {
+            @:consume_digits(v):@
+            if (*v == '\0') {
+                return state;
+            } else if (isspace(*v)) {
+                state = s4;
+            } else  {
+                return rej;
+            }
+        }
+
+        /* state here is s4 */
+        assert (state == s4);
+        @:consume_spaces(v):@
+        if (*v == '\0') {
+            return state;
+        } else {
+            return rej;
+        }
+    }
+
+    if ((state == minus) || (state == plus)) {
+        /* consume one char */
+        v++;
+        if (*v == '\0') {
+            return state;
+        } else if (isdigit(*v)) {
+            lead = state; /* remember lead state */
+            state = digit;
+        } else {
+            return rej;
+        }
+    }
+
+    if (state == ws) {
+        /* consume all leading white spaces */
+        @:consume_spaces(v):@
+        if (*v == '\0') {
+            return state;
+        } else if (isdigit(*v)) {
+            lead = state;
+            state = digit;
+        } else if (*v == '+') {
+            state = s11;
+        } else if (*v == '-') {
+            state = s12;
+        } else {
+            return rej;
+        }
+
+        /* deal with states s11 and s12 */
+        if ((state == s11) || (state == s12)) {
+            /* consume one character */
+            v++;
+            if (*v == '\0') {
+                return state;
+            } else if (isdigit(*v)) {
+                lead = state;
+                state = digit;
+            } else {
+                return rej;
+            }
+        }
+
+        assert ((state == digit) && (lead != 0));
+    }
+
+    if (state == digit) {
+        @:consume_digits(v):@
+        if (*v == '\0') {
+            return state+lead; /* from now on return state + lead */
+        } else if (*v == '.') {
+            state = dot;
+        } else if (isspace(*v)) {
+            state = s10;
+        } else if ((*v == 'e') || (*v == 'E')) {
+            state = s6;
+        } else {
+            return rej;
+        }
+    }
+
+    if (state == dot) {
+        /* consume one more character */
+        v++;
+        if (*v == '\0') {
+            return state+lead;
+        } else if (isdigit(*v)) {
+            state = s5;
+            /* state s5 can be resolved here */
+            @:consume_digits(v):@
+            if (*v == '\0') {
+                return state+lead;
+            } else if (isspace(*v)) {
+                state = s10;
+            } else if ((*v == 'e') || (*v == 'E')) {
+                state = s6;
+            } else {
+                return rej;
+            }
+        } else {
+            return rej;
+        }
+    }
+
+    if (state == s6) {
+        /* consume one more character */
+        v++;
+        if (*v == '\0') {
+            return state+lead;
+        } else if (*v == '+') {
+            state = s7;
+        } else if (*v == '-') {
+            state = s8;
+        } else if (isdigit(*v)) {
+            state = s9;
+        } else {
+            return rej;
+        }
+    }
+
+    if ((state == s7) || (state == s8)) {
+        /* consume one more character */
+        v++;
+        if (*v == '\0') {
+            return state+lead;
+        } else if (isdigit(*v)) {
+            state = s9;
+        } else {
+            return rej;
+        }
+    }
+
+    if (state == s9) {
+        @:consume_digits(v):@
+        if (*v == '\0') {
+            return state+lead;
+        } else if (isspace(*v)) {
+            state = s10;
+        } else {
+            return rej;
+        }
+    }
+
+    if (state == s10) {
+        @:consume_spaces(v):@
+        if (*v == '\0') {
+            return state+lead;
+        } else {
+            return rej;
+        }
+    }
+
+    assert ("FSM should never reach this state of chaos");
+    return state+lead;
+}
+
+/* wrapper for mil command xquery_dbl */
+int CMD_XQ_DBLFSM(int *res, str v) {
+    *res = dbl_fsm(v);
+    return GDK_SUCCEED;
+}
+
+@+ XML Value Index Construction
 
 The construction is based an a bottom-up traversal of the XML tree...
 input context nodes
@@ -166,9 +412,9 @@ updates
 
 @- Equi-lookup on text
 
-The index is based on a hash function XQH_H and a combine function XQH_C
-(see pf_support.mx). It is stored in two BATs, namely pre_hash[void, int] and
-hash_nid[int, oid].
+The index is based on the hash function XQH_H and the combine function XQH_C.
+It is stored in two BATs, namely pre_hash[void, int] and hash_nid[int, oid]
+(shorted ion head).
 
     pre_hash is used during index creation and index update for fast accessing
     the hash value of an (intermediate) node. The head is alligned with the nid
@@ -189,6 +435,16 @@ hash_nid[int, oid].
           +-----+------------+     +------------+-----+
 
 @- Range queries on double values
+
+The index is based on the Finite State Machine that accepts the language that
+describes XML double type and a state transition table. It is stored in three
+bats, nid_state, value_nid, nid_lexical. All BATs are shorted on head.
+
+        nid_state         value_nid               nid_lexical
+       +-----+--------+  +--------------+-----+  +-----+---------------+
+       | nid | state  |  | double value | nid |  | nid | lexical value |
+       | oid |  byte  |  |     dbl      | oid |  | oid |      str      |
+       +-----+--------+  +--------------+-----+  +-----+---------------+
 
 
 @c
