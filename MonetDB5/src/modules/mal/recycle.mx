@@ -41,15 +41,17 @@ pattern dump(n:str):void
 address RECYCLEdumpWrap
 comment "Dump summary of recycle table into a file";
 
+pattern dumpQPat():void
+address RECYCLEdumpQPatWrap
+comment "Dump statistics of query patterns";
+
 pattern setRetainPolicy(p:int...):void
 address RECYCLEsetRetain
 comment "Set recycler retainment policy:
 0- RETAIN_NONE: baseline, keeps stat, no retain, no reuse
 1- RETAIN_ALL: infinite case, retain all
-2- RETAIN_TIME: time-based semantics, retain if beneficial
-3- RETAIN_SIZE: size cost model
-4- RETAIN_VOL: volumetric cost model (time x size )
-5- RETAIN_ADAP: adaptive temporal";
+2- RETAIN_CAT: time-based semantics, retain if beneficial
+3- RETAIN_ADAPT: adaptive temporal";
 
 command getRetainPolicy():int
 address RECYCLEgetRetain;
@@ -67,8 +69,7 @@ comment "Set recycler cache policy:
 0- RCACHE_ALL: baseline, do nothing
 1- RCACHE_LRU: throw LRU by setting the limit
 2- RCACHE_CREDIT: credit-based LRU scheme
-3- RCACHE_MEMLRU: reduce the storage overhead
-4- RCACHE_MEMCRD: reduce the storage overhead 
+3- RCACHE_CAT: use semantics of query patterns
 optional arguments are [ instruction-, [memory -]] limit";
 
 pattern setCachePolicy(p:int,cl:int,mem:int,alpha:flt):void
@@ -138,6 +139,7 @@ recycle_export str RECYCLEmonitor(int *d, int *p);
 recycle_export str RECYCLElog(int *d, str *nm);
 recycle_export str RECYCLEprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 recycle_export str RECYCLEepilogue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+recycle_export str RECYCLEdumpQPatWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
 @-
@@ -195,8 +197,8 @@ RECYCLEdump(stream *s)
 	ValPtr v;
 
 	stream_printf(s,"#Recycler  catalog\n");
-        stream_printf(s,"#retain= %d time =%d sze= %d alpha= %4.3f\n",
-                retainPolicy, recycleTime, recycleVolume, recycleAlpha);
+        stream_printf(s,"#retain= %d time =%d alpha= %4.3f\n",
+                retainPolicy, recycleTime, recycleAlpha);
         stream_printf(s,"#reuse= %d\n", reusePolicy);
         stream_printf(s,"#rcache= %d limit= %d memlimit="LLFMT"\n", rcachePolicy, recycleCacheLimit, recycleMemory);
         stream_printf(s,"#hard stmt = %d hard var = %d hard mem="LLFMT"\n",
@@ -265,6 +267,47 @@ RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+void
+RECYCLEdumpQPat(stream *s)
+{
+	int i;
+	QryStatPtr qs;
+
+	if (!recycleQPat) {
+		stream_printf(s,"#No query patterns\n");
+		return;
+	}
+
+	stream_printf(s,"#Query patterns %d\n",	recycleQPat->cnt);
+	stream_printf(s,"#Name\tcalls\tglobRec\tlocRec\tCat\n");
+	for(i=0; i< recycleQPat->cnt; i++){
+		qs = recycleQPat->ptrn[i];
+		stream_printf(s,"#%s\t%d\t%d\t%d\t%d\n",
+			qs->name, qs->calls, qs->greuse, qs->lreuse, RECYCLEgetQryCat(i));
+	}
+}
+
+str
+RECYCLEdumpQPatWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	stream *s = cntxt->fdout;
+	str fname;
+
+	(void) mb;
+	if (pci->argc >1){
+		fname = * (str*) getArgReference(stk, pci,1);
+		s = open_wastream(fname);
+		if (s == NULL || stream_errnr(s)) {
+        	        GDKerror("could not open file %s.\n", fname);
+			s = cntxt->fdout;
+		}
+	}
+	RECYCLEdumpQPat(s);
+	if( s != cntxt->fdout)
+		close_stream(s);
+	return MAL_SUCCEED;
+}
+
 @-
 Called to collect statistics at the end of each query.
 @c
@@ -319,19 +362,9 @@ RECYCLEsetRetain(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	retainPolicy = * (int*) getArgReference(stk, p,1);
 	if( p->argc > 2)
-	switch(retainPolicy){
-	case RETAIN_VOL:
-		if( p->argc > 3)
-			recycleVolume = * (int*) getArgReference(stk, p,3);
-	case RETAIN_TIME:
-	case RETAIN_ADAPT:
+	if (retainPolicy == RETAIN_ADAPT)
 		recycleTime = * (int*) getArgReference(stk, p,2);
-		break;
-	case RETAIN_SIZE:
-		recycleVolume = * (int*) getArgReference(stk, p,2);
-	}
-	if(p->argc >4)
-		recycleAlpha = 1.0/  *(int*) getArgReference(stk, p,4);
+	
 	return MAL_SUCCEED;
 }
 
@@ -428,6 +461,8 @@ RECYCLEprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	recycleRecent = -1;
 	recycled0 = recycled; 
 	time0 = GDKusec();
+	RECYCLEinitQPat(20);
+	recycleCurQ = RECYCLEnewQryStat(recycleQPat,getFunctionId(mb->stmt[0]));
 	return MAL_SUCCEED;
 }
 str 
