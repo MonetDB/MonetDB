@@ -490,7 +490,9 @@ formatMarker(str format,str m)
 	while ((t = strchr(t, '%')) != NULL) {
 		t++;
 		while ( t && !isalpha((int) *t) ) t++;
-		if (*m && strncmp(t,m+1, strlen(m+1)) )
+		/* gcc 4.0.0 on MacOS X 10.4 (Darwin 8.11.0) *
+		 * does not like "strlen(m+1)" in case m=="" */
+		if (*m && strncmp(t, m+1, strlen(m) - 1) )
 			i++; /* indicate error */
 		i++;
 	}
