@@ -197,7 +197,6 @@ io_export str IOprint_formatted_@1(Client cntxt, MalBlkPtr mb, MalStkPtr st, Ins
 @:PrintFormatted(lng)@
 @:PrintFormatted(flt)@
 @:PrintFormatted(dbl)@
-@:PrintFormatted(ptr)@
 @:PrintFormatted(str)@
 io_export str IOprint_oid(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
 io_export str IOexport(int *ret, int *bid, str *fnme);
@@ -594,7 +593,6 @@ str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci
 @:printFormatted(lng,"")@	/* ignore format */
 @:printFormatted(flt,"%f")@
 @:printFormatted(dbl,"%f")@
-@:printFormatted(ptr,"")@	/* ignore format */
 
 
 str
