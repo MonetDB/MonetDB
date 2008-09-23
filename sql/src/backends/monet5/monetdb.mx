@@ -557,7 +557,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 		exit(1);
 	}
 
-	if ((f = fopen(path, "a")) == NULL) {
+	if ((f = fopen(path, "w")) == NULL) {
 		fprintf(stderr, "%s: cannot write command: %s\n",
 				type, strerror(errno));
 		exit(2);
