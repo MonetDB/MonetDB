@@ -187,7 +187,17 @@ io_export str IOftable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOttable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOprint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOprint_formatted_lng(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
+@= PrintFormatted
+io_export str IOprint_formatted_@1(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
+@h
+@:PrintFormatted(chr)@
+@:PrintFormatted(sht)@
+@:PrintFormatted(int)@
+@:PrintFormatted(wrd)@
+@:PrintFormatted(lng)@
+@:PrintFormatted(flt)@
+@:PrintFormatted(dbl)@
+@:PrintFormatted(ptr)@
 io_export str IOprint_formatted_str(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
 io_export str IOprint_oid(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
 io_export str IOprint_formatted_bit(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
@@ -552,7 +562,6 @@ IOprint_formatted_nil(stream *fd, str format)
 	return MAL_SUCCEED;
 }
 @= printFormatted
-io_export str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci);
 str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci)
 {
 	str *fmt = (str *) getArgReference(stk,pci,1);
