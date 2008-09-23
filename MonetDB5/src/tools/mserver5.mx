@@ -524,7 +524,7 @@ faster system start.
 						GDKgetenv("monet_vault_key"), strerror(errno));
 				secret[1023] = '\0';
 				/* don't show this as a crash */
-				SABAOTHwildRetreat(&i);
+				SABAOTHregisterStop(&i);
 				GDKfatal(secret);
 			}
 			len = fread(secret, 1, 1023, secretf);
