@@ -97,12 +97,12 @@ pattern printf(format:str,val:bit):void
 address IOprint_formatted_bit;
 pattern printf(format:str,val:chr):void
 address IOprint_formatted_chr;
-pattern printf(format:str,val:wrd):void
-address IOprint_formatted_int;
-pattern printf(format:str,val:int):void
-address IOprint_formatted_int;
 pattern printf(format:str,val:sht):void
 address IOprint_formatted_sht;
+pattern printf(format:str,val:int):void
+address IOprint_formatted_int;
+pattern printf(format:str,val:wrd):void
+address IOprint_formatted_int;
 pattern printf(format:str,val:oid):void
 address IOprint_oid;
 pattern printf(format:str,val:lng):void
@@ -111,10 +111,10 @@ pattern printf(format:str,val:flt):void
 address IOprint_formatted_flt;
 pattern printf(format:str,val:dbl):void
 address IOprint_formatted_dbl;
-pattern printf(val:str):void
-address IOprint_str;
 pattern printf(format:str,val:str):void
 address IOprint_formatted_str;
+pattern printf(val:str):void
+address IOprint_str;
 
 command data(fname:str):str
 address IOdatafile
@@ -171,7 +171,6 @@ io_export str IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 int i, int order, int printhead, int printorderby);
 io_export str IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
 str hd, str tl, int nobat);
-io_export str IOprint_formatted_nil(stream *fd, str format);
 io_export str IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
 str hd, str tl, int nobat);
 io_export str IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -187,9 +186,11 @@ io_export str IOftable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOttable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOprint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str IOprint_formatted_nil(stream *fd, str format);
 @= PrintFormatted
 io_export str IOprint_formatted_@1(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
 @h
+@:PrintFormatted(bit)@
 @:PrintFormatted(chr)@
 @:PrintFormatted(sht)@
 @:PrintFormatted(int)@
@@ -198,9 +199,8 @@ io_export str IOprint_formatted_@1(Client cntxt, MalBlkPtr mb, MalStkPtr st, Ins
 @:PrintFormatted(flt)@
 @:PrintFormatted(dbl)@
 @:PrintFormatted(ptr)@
-io_export str IOprint_formatted_str(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
+@:PrintFormatted(str)@
 io_export str IOprint_oid(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
-io_export str IOprint_formatted_bit(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
 io_export str IOexport(int *ret, int *bid, str *fnme);
 io_export str IOdatafile(str *ret, str *fnme);
 io_export str IOimport(int *ret, int *bid, str *fnme);
