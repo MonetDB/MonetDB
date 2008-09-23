@@ -7887,6 +7887,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         case 115:
         /* Twig:     slim_content (Rel) */
         case 116: /* fold( */
+            /* ignore content if it contains an error */
+            if (type_of (L(p), p->sem.ii.item) == aat_error)
+                break;
+            
             assert (type_of (L(p), p->sem.ii.iter) == aat_nat);
             assert (!(type_of (L(p), p->sem.ii.item) & ~aat_node));
         {
