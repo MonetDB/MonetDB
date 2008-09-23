@@ -623,6 +623,12 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
         
           break;
         
+        case MODEL_PRF :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_PRF(terms, qenv);\n", com_num, com_nr_left);
+
+          break;
+
         case MODEL_OKAPI :
 
           MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_OKAPI(terms, qenv);\n", com_num, com_nr_left);

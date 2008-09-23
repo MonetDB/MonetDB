@@ -85,6 +85,7 @@
 #define MODEL_LMVLIN 10
 
 #define MODEL_NLLR 11
+#define MODEL_PRF 12
 
 #define MODEL_I_GMM 8
 

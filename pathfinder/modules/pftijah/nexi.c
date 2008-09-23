@@ -210,6 +210,7 @@ int old_main(BAT* optbat, char* startNodes_name)
     /** Text retrieval model parameters **/
     txt_retr_model->qnumber     = 0;
     txt_retr_model->model       = MODEL_NLLR;
+    txt_retr_model->model       = MODEL_PRF;
     txt_retr_model->or_comb     = OR_SUM;
     txt_retr_model->and_comb    = AND_PROD;
     txt_retr_model->up_prop     = UP_MAX;
@@ -340,6 +341,8 @@ int old_main(BAT* optbat, char* startNodes_name)
                 txt_retr_model->model = MODEL_LMVLIN;
             } else if ( strcasecmp(optVal,"NLLR") == 0 ) {
                 txt_retr_model->model = MODEL_NLLR;
+            } else if ( strcasecmp(optVal,"PRF") == 0 ) {
+                txt_retr_model->model = MODEL_PRF;
             }
             
         } else if ( strcmp(optName,"txtmodel_orcomb") == 0 ) {
@@ -524,6 +527,10 @@ int old_main(BAT* optbat, char* startNodes_name)
     fb = NULL;
     // Some special cases for NLLR, since NLLR only works with COARSE2 at the moment
     if ( txt_retr_model->model == MODEL_NLLR ) {
+        // Switch to COARSE2 algebra for NLLR
+        algebra_type = COARSE2;
+    }
+    if ( txt_retr_model->model == MODEL_PRF ) {
         // Switch to COARSE2 algebra for NLLR
         algebra_type = COARSE2;
     }

@@ -2767,6 +2767,90 @@ PROC p_containing_q_OKAPI(bat[oid,dbl] left, bat[void,str] Qterms, BAT[oid,str] 
     return res;
 }
 
+
+# Pseudo Relevance Feedback algorithm Implemented by 
+# Stefan Teijgeler and Jan-Willem Beusink (added by Djoerd.)
+#
+PROC p_containing_q_PRF(bat[oid,dbl] left, bat[void,str] Qterms, BAT[oid,str] qenv) : bat[oid,dbl] :=
+{
+    if ( trace ) tj_trace( "BEGIN p_containing_q_PRF" );
+    var t_total := 0;
+    t_total :-= time();
+
+
+    var qResults := left.p_containing_q_NLLR(Qterms, qenv);
+
+    qResults := tj_nid2pre(qResults, qenv);
+    qResults := qResults.tsort_rev();
+
+    #Initialize variables
+    var size, offset1, offset2, words, temp, score, tmp1, tmp2, test1, test2;
+    var test_terms := new(int,oid);
+    var new_terms := new(oid,dbl);
+    var prfLambda := 0.0;
+    var stopWoordLambda := 0.65;
+    var dSize := dbl(0);                                                        # Sum of relevant document size
+    var cSize := bat("tj_" + qenv.find(QENV_FTIBGNAME) + "_Terms").count();     # Total collection size
+    var qSize := Qterms.count();                                                # Query size
+
+    # Get new term candidates
+    qResults.slice(0,9)@batloop()
+    {
+            size := bat("tj_" + qenv.find(QENV_FTINAME) +"_size1").find($h);
+            dSize :+= size;
+            offset1 := int($h);
+            offset2 := offset1+size-1;
+            words := bat("tj_" + qenv.find(QENV_FTINAME) +"_size1").slice(offset1, offset2);
+            words := words.select(0,0);
+            temp := words.reverse().join(bat("tj_" + qenv.find(QENV_FTINAME) +"_tid1"));
+            test_terms.insert(temp);
+    }
+
+    # Calculate the score to the new terms, and select the top 10
+    test_terms.histogram()@batloop()
+    {
+
+            # Count of term in total collection
+            var c_tCnt := _getTermColCnt($h, qenv);
+
+            #test1 := bat("tj_" + qenv.find(QENV_FTINAME) +"_termdict").find($h);
+            test2 := (c_tCnt / dbl(cSize)) /  ($t / dSize);
+
+            if ( test2 < dbl(stopWoordLambda) ) {
+
+                    tmp1 := prfLambda * c_tCnt / dbl(cSize);
+                    tmp2 := dbl(1) - prfLambda;
+
+                    # Calculate score: ((1-prfLambda) * likeliness of t in d) + (prfLambda * likeliness of t in c)
+                    score := $t / dSize;
+                    score := score * tmp2;
+                    score := score + tmp1;
+            } else {
+                    score := dbl(0);
+            }
+
+            new_terms.insert($h, score);
+    }
+
+    new_terms := new_terms.tsort_rev();
+    #bat(new_terms).reverse().join(bat("tj_" + qenv.find(QENV_FTINAME) +"_termdict")).reverse().print();
+
+    #Qterms := new(void,str).seqbase(oid(0));
+
+    new_terms.slice(0,19)@batloop()
+    {
+            Qterms.append(find(bat("tj_" + qenv.find(QENV_FTINAME) +"_termdict"), $h));
+    }
+
+    qResults := left.p_containing_q_NLLR(Qterms, qenv);
+
+    t_total :+= time();
+    if (timing) printf("# PRF timing: total: %d\n", t_total);
+    if ( trace ) tj_trace( "END p_containing_q_PRF" );
+    return qResults;
+}
+
+
 ################################################################################
 # PROBABILISTIC CONTAINMENT
 ################################################################################
@@ -3050,27 +3134,32 @@ PROC prior_ls(BAT[oid,dbl] region, BAT[oid,str] qenv) : bat :=
 # OVERLAP REMOVAL
 ################################################################################
 
-PROC rm_overlap(bat ctx, BAT[oid,str] qenv) : bat{
+PROC rm_overlap(BAT ctx, BAT[oid,str] qenv) : bat := 
+{
+ if ( count( ctx ) = 0 ) {
+   return ctx;
+ }
+ else {
+   ctx := ctx.sort();
+   var AD:=anc_desc(ctx,ctx,qenv);
+   var maxD := AD.join(ctx).sort().{max}();
+   var maxA := AD.reverse().sort().join(ctx).{max}();
 
- ctx := ctx.sort();
- var AD:=anc_desc(ctx,ctx,qenv);
- var maxD := AD.join(ctx).sort().{max}();
- var maxA := AD.reverse().sort().join(ctx).{max}();
+   AD:=nil;
 
- AD:=nil;
+   # candidates are nodes that have no descendents or a higher score
+   # than all descendents
+   var candidates := ctx.kdiff(maxD).access(BAT_APPEND);
+   candidates.insert(ctx.[>](maxD).uselect(true).mirror().join(ctx));
 
- # candidates are nodes that have no descendents or a higher score
- # than all descendents
- var candidates := ctx.kdiff(maxD).access(BAT_APPEND);
- candidates.insert(ctx.[>](maxD).uselect(true).mirror().join(ctx));
+   # keep the candidates without ancestor and w score >= ancestor scores
+   var res := candidates.kdiff(maxA).access(BAT_APPEND);
+   res.insert(candidates.[>=](maxA).uselect(true).mirror().join(candidates));
 
- # keep the candidates without ancestor and w score >= ancestor scores
- var res := candidates.kdiff(maxA).access(BAT_APPEND);
- res.insert(candidates.[>=](maxA).uselect(true).mirror().join(candidates));
-
- candidates := nil;
- maxA:=nil;maxD:=nil;
- return res;
+   candidates := nil;
+   maxA:=nil;maxD:=nil;
+   return res;
+ }
 }
 #ADDHELP("rm_overlap","thijs", "August, 2007",
 #"Removes overlapping elements from result list.",
