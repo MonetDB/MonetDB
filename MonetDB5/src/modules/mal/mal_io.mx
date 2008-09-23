@@ -102,7 +102,7 @@ address IOprint_formatted_sht;
 pattern printf(format:str,val:int):void
 address IOprint_formatted_int;
 pattern printf(format:str,val:wrd):void
-address IOprint_formatted_int;
+address IOprint_formatted_wrd;
 pattern printf(format:str,val:oid):void
 address IOprint_oid;
 pattern printf(format:str,val:lng):void

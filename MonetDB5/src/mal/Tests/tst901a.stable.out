@@ -49,7 +49,7 @@ exit (v,i);                             #  9 (v:bit, i:lng)
     d1 := calc.-(t1,t0);                # 15 d1:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
     d2 := calc.-(t3,t2);                # 16 d2:lng := CALCbinarySUBlnglng(t3:lng, t2:lng) 
     xc := aggr.count(b);                # 17 xc:wrd := ALGcount_bat(b:bat[:oid,:lng]) 
-    io.printf("#count %d\n",xc);        # 18 _23:void := IOprint_formatted_int(_24:str, xc:wrd) 
+    io.printf("#count %d\n",xc);        # 18 _23:void := IOprint_formatted_wrd(_24:str, xc:wrd) 
     io.printf("#make %d \n",d1);        # 19 _25:void := IOprint_formatted_lng(_26:str, d1:lng) 
     io.printf("#multiplex %d\n",d2);    # 20 _27:void := IOprint_formatted_lng(_28:str, d2:lng) 
 end main;	# 21  
