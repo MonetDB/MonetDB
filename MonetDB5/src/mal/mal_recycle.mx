@@ -1208,7 +1208,6 @@ which is stored in the stack frame to avoid concurrency problems.
 @c
 void
 RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	lng clk = 0;
 	lng memLimit;
 	lng cacheLimit;
 	lng rd = getVolume(stk,p, 1)/ RU +1;
@@ -1216,7 +1215,6 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	ValRecord *v;
 
 	RECYCLEversion(cntxt,mb);
-	clk= GDKusec()-stk->clk;
 
 	memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
 	cacheLimit = recycleCacheLimit?recycleCacheLimit:HARDLIMIT_STMT;
