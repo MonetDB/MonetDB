@@ -186,7 +186,6 @@ io_export str IOftable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOttable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOprint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOprint_formatted_nil(stream *fd, str format);
 @= PrintFormatted
 io_export str IOprint_formatted_@1(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
 @h
@@ -525,7 +524,7 @@ This to simplify error handling
 @-
 String nil testing is slightly different.
 @c
-str
+static str
 IOprint_formatted_nil(stream *fd, str format)
 {
 	str c,f;
