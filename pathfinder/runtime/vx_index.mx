@@ -446,10 +446,36 @@ bats, nid_state, value_nid, nid_lexical. All BATs are shorted on head.
        | oid |  byte  |  |     dbl      | oid |  | oid |      str      |
        +-----+--------+  +--------------+-----+  +-----+---------------+
 
+@= found_create_string
+/* during creation of the index we expect the context nodes
+ * to be only of kind TEXT. This is not true during updates,
+ * since there might *not* be a text node (deleted).
+ */
+if (pre_kind[pre] == TEXT) {
+    pre_hsh[pre] = XQH_H(text_base + pre_text[pre_prop[pre]]);
+    cur++;
+} else {
+    GDKerror("index_create_string: Context node is not of kind TEXT.\n");
+    return 0;
+}
 
-@c
+@= pop_create_string
+/* pop the stack */
+pop = stack[--depth];
+/* combine the popped hash value with the pre hash value */
+pre_hsh[pop] = XQH_C(pre_hsh[pop], pre_hsh[pre]);
+pre = pop;
+
+@= empty_stack_create_string
+while (depth > 0) { /* still nodes in the stack */
+    pop = stack[--depth];
+    pre_hsh[pop] = XQH_C(pre_hsh[pop], pre_hsh[pre]);
+    pre = pop;
+}
+
+@= index_
 static int
-vx_index_create(                        /* OUTPUT:                     */
+index_@1_@2(                        /* OUTPUT:                     */
         unsigned int* pre_hsh,            /* - pre_hsh column            */
                                           /* DOCUMENT:                   */
         oid* pre_prop,                    /* - pre_prop column           */
@@ -488,14 +514,7 @@ vx_index_create(                        /* OUTPUT:                     */
     while(cur < context_size) { /* while still context nodes active */
 
         if (context[cur] == pre) {
-            /* during creation of the index we expect the context nodes
-             * to be only of kind TEXT. This is not true during updates,
-             * since there might *not* be a text node (deleted).
-             */
-            if (pre_kind[pre] == TEXT) {
-                pre_hsh[pre] = XQH_H(text_base + pre_text[pre_prop[pre]]);
-                cur++;
-            }
+            @:found_@1_@2():@
 
         } else if (context[cur] <= pre + pre_size[pre]) {
 
@@ -538,22 +557,17 @@ vx_index_create(                        /* OUTPUT:                     */
             if (depth == 0)
                 root = pre;
         } else {
-            /* pop the stack */
-            pop = stack[--depth];
-            /* combine the popped hash value with the pre hash value */
-            pre_hsh[pop] = XQH_C(pre_hsh[pop], pre_hsh[pre]);
-            pre = pop;
+            @:pop_@1_@2():@
         }
-   }
-
-    while (depth > 0) { /* still nodes in the stack */
-        pop = stack[--depth];
-        pre_hsh[pop] = XQH_C(pre_hsh[pop], pre_hsh[pre]);
-        pre = pop;
     }
 
-   return (cur == context_size);
+    @:empty_stack_@1_@2():@
+
+    return (cur == context_size);
 }
+
+@c
+@:index_(create,string):@
 
 int
 CMD_vx_create(          /* RESULT:   */
@@ -609,7 +623,7 @@ CMD_vx_create(          /* RESULT:   */
 
     hash_bat = BATnew(TYPE_void, TYPE_int, limit);
     if (hash_bat) {
-        if (vx_index_create(
+        if (index_create_string(
                     (unsigned int*) Tloc(hash_bat, BUNfirst(hash_bat)),
                     pre_prop,
                     (var_t*) Tloc(prop_text, BUNfirst(prop_text)),
@@ -617,6 +631,8 @@ CMD_vx_create(          /* RESULT:   */
                     pre_size, pre_level, pre_kind, limit,
                     context, BATcount(ctx_bat))) {
             status = GDK_SUCCEED;
+        } else {
+            GDKerror("index_creation: failed.\n");
         }
     } else {
         GDKerror("vx_create: could not allocate memory for hash bat.\n");
