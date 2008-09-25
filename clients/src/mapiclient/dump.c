@@ -749,7 +749,7 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 }
 
 int
-dump_tables(Mapi mid, stream *toConsole)
+dump_tables(Mapi mid, stream *toConsole, int describe)
 {
 	const char *start = "START TRANSACTION";
 	const char *end = "COMMIT";
@@ -797,7 +797,8 @@ dump_tables(Mapi mid, stream *toConsole)
 	int rc = 0;
 
 	/* start a transaction for the dump */
-	stream_printf(toConsole, "START TRANSACTION;\n");
+	if (!describe)
+		stream_printf(toConsole, "START TRANSACTION;\n");
 
 	if ((hdl = mapi_query(mid, start)) == NULL || mapi_error(mid)) {
 		if (hdl) {
@@ -885,7 +886,7 @@ dump_tables(Mapi mid, stream *toConsole)
 
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
-		rc += dump_table(mid, schema, tname, toConsole, 0, 0);
+		rc += dump_table(mid, schema, tname, toConsole, describe, describe);
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
@@ -894,45 +895,47 @@ dump_tables(Mapi mid, stream *toConsole)
 	}
 	mapi_close_handle(hdl);
 
-	dump_foreign_keys(mid, NULL, NULL, toConsole);
+	if (!describe) {
+		dump_foreign_keys(mid, NULL, NULL, toConsole);
 
-	/* dump sequences, part 2 */
-	if ((hdl = mapi_query(mid, sequences2)) == NULL || mapi_error(mid)) {
-		if (hdl) {
+		/* dump sequences, part 2 */
+		if ((hdl = mapi_query(mid, sequences2)) == NULL || mapi_error(mid)) {
+			if (hdl) {
+				mapi_explain_query(hdl, stderr);
+				mapi_close_handle(hdl);
+			} else
+				mapi_explain(mid, stderr);
+			return 1;
+		}
+
+		while (mapi_fetch_row(hdl) != 0) {
+			char *schema = mapi_fetch_field(hdl, 0);
+			char *name = mapi_fetch_field(hdl, 1);
+			char *restart = mapi_fetch_field(hdl, 2);
+			char *minvalue = mapi_fetch_field(hdl, 3);
+			char *maxvalue = mapi_fetch_field(hdl, 4);
+			char *increment = mapi_fetch_field(hdl, 5);
+			char *cycle = mapi_fetch_field(hdl, 6);
+
+			if (sname != NULL && strcmp(schema, sname) != 0)
+				continue;
+
+			stream_printf(toConsole, "ALTER SEQUENCE \"%s\".\"%s\" RESTART WITH %s", schema, name, restart);
+			if (strcmp(increment, "1") != 0)
+				stream_printf(toConsole, " INCREMENT BY %s", increment);
+			if (strcmp(minvalue, "0") != 0)
+				stream_printf(toConsole, " MINVALUE %s", minvalue);
+			if (strcmp(maxvalue, "0") != 0)
+				stream_printf(toConsole, " MAXVALUE %s", maxvalue);
+			stream_printf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
+		}
+		if (mapi_error(mid)) {
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
-		} else
-			mapi_explain(mid, stderr);
-		return 1;
-	}
-
-	while (mapi_fetch_row(hdl) != 0) {
-		char *schema = mapi_fetch_field(hdl, 0);
-		char *name = mapi_fetch_field(hdl, 1);
-		char *restart = mapi_fetch_field(hdl, 2);
-		char *minvalue = mapi_fetch_field(hdl, 3);
-		char *maxvalue = mapi_fetch_field(hdl, 4);
-		char *increment = mapi_fetch_field(hdl, 5);
-		char *cycle = mapi_fetch_field(hdl, 6);
-
-		if (sname != NULL && strcmp(schema, sname) != 0)
-			continue;
-
-		stream_printf(toConsole, "ALTER SEQUENCE \"%s\".\"%s\" RESTART WITH %s", schema, name, restart);
-		if (strcmp(increment, "1") != 0)
-			stream_printf(toConsole, " INCREMENT BY %s", increment);
-		if (strcmp(minvalue, "0") != 0)
-			stream_printf(toConsole, " MINVALUE %s", minvalue);
-		if (strcmp(maxvalue, "0") != 0)
-			stream_printf(toConsole, " MAXVALUE %s", maxvalue);
-		stream_printf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
-	}
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stderr);
+			return 1;
+		}
 		mapi_close_handle(hdl);
-		return 1;
 	}
-	mapi_close_handle(hdl);
 
 	/* dump views */
 	if ((hdl = mapi_query(mid, views)) == NULL || mapi_error(mid)) {
@@ -993,7 +996,8 @@ dump_tables(Mapi mid, stream *toConsole)
 	mapi_close_handle(hdl);
 
 	/* finally commit the whole transaction */
-	stream_printf(toConsole, "COMMIT;\n");
+	if (!describe)
+		stream_printf(toConsole, "COMMIT;\n");
 
 	return rc;
 }
