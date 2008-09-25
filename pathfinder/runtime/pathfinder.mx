@@ -938,7 +938,7 @@ PROC collection_cleanup(BAT[str,str] delBAT) : void
     if (bit(cnt)) {
         var commitBAT := bat(void,str,cnt);
         var logger_delBAT := logger_bats.join(delBAT);
-        # first remove the bats under control off the logger 
+        # first remove the bats under control of the logger 
         if (logger_delBAT.count() > 0) {
             lock_set(pf_wal);
             [logger_del_bat](pf_logger, [logger_find_bat](pf_logger, logger_delBAT));
@@ -1157,7 +1157,7 @@ This free-lock is also taken during the ws_destroy.
 @- WAL, subcommit and checkpoints
 
 For committing, queries write into the WAL. The WAL is therefore also
-protected by a separate pf_wal WAL lock (similar but separate to the 
+protected by a separate pf_wal WAL lock (similar to, but separate from the 
 short lock).
 
 However, for shredding, we use checkpoints. A partial checkpoint 
