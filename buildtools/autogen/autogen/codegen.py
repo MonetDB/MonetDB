@@ -387,8 +387,13 @@ def do_scan_target(target,targets,deps,incmap,cwd,incs):
                     elif incmap.has_key(fnd+incext):
                         if fnd+incext not in inc_files:
                             inc_files.append(os.path.join(incmap[fnd+incext],fnd+incext))
-##                    else:
-##                        print fnd + incext + " not in deps and incmap "
+                    elif os.path.exists(os.path.join(cwd, fnd+incext)):
+                        if fnd+incext not in inc_files:
+                            inc_files.append(fnd+incext)
+                        if not incs.has_key(fnd+incext):
+                            incs[fnd+incext] = []
+##                     else:
+##                         print fnd + incext + " not in deps or incmap"
                     res = pat.search(b,res.end(0))
         incs[target] = inc_files
 
