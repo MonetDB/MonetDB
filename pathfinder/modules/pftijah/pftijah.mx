@@ -706,7 +706,11 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
       # a very close cooperation with Pathfinder locks to make it safe.
       #
       if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") checking collection to index.\n",ftiName);
-      if ( v_pfc.count() > 0 ) {
+      # The 2 ALWAYS-JF statements are commented out to ensure even an empty
+      # index is finalized to ensure all index BATS are ready and queries on
+      # empty indices work. The comments can be removed if everyting works
+      # OK.
+      # ALWAYS-JF if ( v_pfc.count() > 0 ) {
         var doclist;
         if ( v_pfc.uselect("*").count() > 0 ) {
            doclist := bat("doc_name").reverse().project(str(nil)).reverse();
@@ -714,13 +718,13 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
            doclist := bat("doc_name").reverse().join(bat("doc_collection").join(bat("collection_name").join(v_pfc.reverse())));
            doclist := doclist.project(str(nil)).reverse();
 	}
-        if ( doclist.count() > 0 ) {
+        # ALWAYS-JF if ( doclist.count() > 0 ) {
 
             if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") indexing existing collections.\n",ftiName);
 	    tj_add2collection(ftiName,doclist,true);
             if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") finish indexing existing collections.\n",ftiName);
-        }
-      }
+        # }
+      # }
     }
     if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") finished.\n",ftiName);
 }
