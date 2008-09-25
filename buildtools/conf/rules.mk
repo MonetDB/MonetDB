@@ -34,6 +34,7 @@ HIDE=1
 
 %.yy.c: %.l
 	$(LEX) $(LFLAGS) $<
+	if [ -f lex.$*.c ]; then $(MV) lex.$*.c $*.yy.c ; fi
 	if [ -f lex.yy.c ]; then $(MV) lex.yy.c $*.yy.c ; fi
 	if [ -f lex.$(PARSERNAME).c ]; then $(MV) lex.$(PARSERNAME).c $*.yy.c ; fi
 	# make sure that "$(CONFIG_H)" is included first, also with [f]lex-generated files.
@@ -78,6 +79,7 @@ HIDE=1
 
 %.yy.cc: %.ll
 	$(LEX) $(LFLAGS) $<
+	if [ -f lex.$*.cc ]; then $(MV) lex.$*.cc $*.yy.c ; fi
 	if [ -f lex.yy.c ]; then $(MV) lex.yy.c $*.yy.cc ; fi
 	# make sure that "$(CONFIG_H)" is included first, also with [f]lex-generated files.
 	# This is crucial to prevent inconsistent (re-)definitions of macros.
