@@ -683,6 +683,14 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 	if (mapi_fetch_row(hdl)) {
 		char *cntfld = mapi_fetch_field(hdl, 0);
 
+		if (strcmp(cntfld, "0") == 0) {
+			/* no records to dump, so return early */
+			mapi_close_handle(hdl);
+			if (sname != NULL)
+				free(sname);
+			return 0;
+		}
+
 		stream_printf(toConsole, "COPY %s RECORDS INTO ", cntfld);
 		quoted_print(toConsole, schema);
 		stream_printf(toConsole, ".");
