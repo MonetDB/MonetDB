@@ -26,8 +26,9 @@
 
 EXTRA_DIST_DIR = Tests
 
-YFLAGS = -d -p pf
-LFLAGS = -Ppf -olex.yy.c
+PARSERNAME = pf
+YFLAGS = -d -p $(PARSERNAME)
+LFLAGS = -P$(PARSERNAME)
 
 #  Some versions of flex & bison seem to generate code
 #  that does not compile with `gcc -Wundef`;
