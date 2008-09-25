@@ -161,4 +161,5 @@ NOT_ALGEBRA?pfmil_prints_garbage.SF-2015232
 NOT_ALGEBRA?pfmil_loses_last_bun.SF-2015219
 NOT_ALGEBRA?pfmil_and_nil_in_results_1.SF-2015135
 NOT_ALGEBRA?pfmil_and_nil_in_results_2.SF-2015135
+distinct-values-triggers-assertion.SF-2122091_ALG
 
