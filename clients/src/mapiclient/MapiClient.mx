@@ -1460,7 +1460,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 						dump_table(mid, NULL, line, toConsole, 0, 1);
 						stream_printf(toConsole, "COMMIT;\n");
 					} else
-						dump_tables(mid, toConsole);
+						dump_tables(mid, toConsole, 0);
 					continue;
 				case '<':
 					/* read commands from file */
@@ -1968,7 +1968,7 @@ main(int argc, char **argv)
 	}
 	if (dump) {
 		if (mode == SQL) {
-			dump_tables(mid, toConsole);
+			dump_tables(mid, toConsole, 0);
 			exit(0);
 		} else {
 			fprintf(stderr, "Dump only supported for SQL\n");
