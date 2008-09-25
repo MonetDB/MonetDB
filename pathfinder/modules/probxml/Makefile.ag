@@ -26,16 +26,6 @@
 INCLUDES = ../../runtime ../../compiler/include $(MONETDB4_INCS) $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
-LFLAGS = -olex.yy.c
-YFLAGS = -d -p nexi
-
-#  Some versions of flex & bison seem to generate code that icc does not like;
-#  we use ICC_BISON_CFLAGS to disable the respective warning as
-#  locally as possible via "-wd177"
-#  (#177: label "." was declared but never referenced)
-#  (see also MonetDB/conf/monet.m4).
-CFLAGS = $(ICC_BISON_CFLAGS)
-
 lib__probxml = {
 	DIR = libdir/MonetDB4
 	SOURCES = probxml.mx
