@@ -28,9 +28,6 @@
 #SUBDIRS = hskparser
 SUBDIRS = opt prop map
 
-#YFLAGS = -d -p pf
-#LFLAGS = -Ppf -olex.yy.c
-
 INCLUDES = ../include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 
 # locally disable "-Werror"
