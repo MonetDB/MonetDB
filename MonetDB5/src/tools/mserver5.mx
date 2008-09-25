@@ -526,6 +526,8 @@ faster system start.
 				snprintf(secret, 1023, "unable to open vault_key_file %s: %s",
 						GDKgetenv("monet_vault_key"), strerror(errno));
 				secret[1023] = '\0';
+				/* don't show this as a crash */
+				SABAOTHregisterStop(&i);
 				GDKfatal(secret);
 			}
 			len = fread(secret, 1, 1023, secretf);
