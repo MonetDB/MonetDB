@@ -24,12 +24,6 @@
 #
 # Fri Oct 27 10:05:33 CEST 2006, Manuel Mayr
 
-#SUBDIRS = hskparser
-#SUBDIRS = #opt prop map
-
-#YFLAGS = -d -p pf
-#LFLAGS = -Ppf -olex.yy.c
-
 INCLUDES = ../include $(MONETDB_INCS)
 
 # locally disable "-Werror"
