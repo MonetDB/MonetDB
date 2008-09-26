@@ -588,8 +588,8 @@ yes-*-solaris*-*-*)
 	esac
 	CC="$CC -m$bits"
 	;;
--*-solaris*-*-64)
-	CC="$CC -xarch=v9"
+-*-solaris*-*-*)
+	CC="$CC -m$bits"
 	;;
 yes-*-irix*-*-*)
 	CC="$CC -mabi=$bits"
