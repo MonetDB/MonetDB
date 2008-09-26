@@ -10,7 +10,7 @@ stderr of test 'mclient--help` in directory 'src/mapiclient` itself:
 # 13:46:19 >  Mtimeout -timeout 60 mclient --help
 # 13:46:19 >  
 
-Usage: mclient --language=(sql|xquery|mal|mil) [ options ]
+Usage: /ufs/sjoerd/src/MonetDB/virgin/clients/x86_64-unknown-linux-gnu/src/mapiclient/.libs/lt-mclient --language=(sql|xquery|mal|mil) [ options ]
 
 Options are:
  -d database | --database=database  database to connect to

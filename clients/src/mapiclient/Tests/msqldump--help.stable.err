@@ -16,6 +16,7 @@ Options are:
  -P passwd   | --passwd=passwd  /* password */
  -p portnr   | --port=portnr    /* port to connect to */
  -d database | --database=database /* database to connect to */
+ -D          | --describe       /* describe database */
  -q          | --quiet          /* don't print welcome message */
  -t          | --trace          /* trace mapi network interaction */
  -u user     | --user=user      /* user id */
