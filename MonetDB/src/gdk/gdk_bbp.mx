@@ -602,6 +602,7 @@ BBPinit(void)
 			if (BBPsize >= BBPlimit)
 				BBPextend(BATMARGIN, FALSE);
 		}
+		assert(BBP[bid].cache == NULL);	 /* no duplicates in BBP.dir */
 		bs = GDKzalloc(sizeof(BATstore));
 		if (bs == NULL)
 			GDKfatal("BBPinit: cannot allocate memory for BATstore.");
@@ -974,7 +975,10 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 			}
 			if (i == n)
 				n = 0;  /* read new entry (i.e. skip this one from old BBP.dir */
-			j++;
+			do
+				/* go to next, skipping duplicates */
+				j++;
+			while (j < cnt && subcommit[j] == i);
 		} else {
 			i = n;
 			stream_printf(s, "%s", buf);
