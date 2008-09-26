@@ -135,3 +135,4 @@ bin_pfsql = {
              main_sql.c
 }
 
+EXTRA_DIST = win32_getopt.c
