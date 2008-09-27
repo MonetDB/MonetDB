@@ -1450,7 +1450,12 @@ if test "x$have_python" != xno; then
 		if test $cross_compiling = xyes; then
 			AC_MSG_ERROR([Must specify --with-python-incdir --with-python-libdir --with-python-library when cross compiling])
 		fi
-		PYTHON_LIBDIR=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")' 2>/dev/null`
+		case "$host_os-`"$PYTHON" -V 2>&1`" in
+		darwin9*-*2.5.1)
+			PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,1,"")' 2>/dev/null`/site-packages";;
+		*)
+			PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")' 2>/dev/null`";;
+		esac
 		;;
 	no)	;;
 	*)	PYTHON_LIBDIR="$have_python_libdir"
