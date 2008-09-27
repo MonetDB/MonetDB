@@ -43,6 +43,7 @@ install: all
 
 uninstall:
 	rm -rf "$(DESTDIR)$(PREFIX)"/"`@PYTHON@ -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")'`"/autogen \
+		"$(DESTDIR)$(PREFIX)"/"`@PYTHON@ -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"")'`"/site-packages/autogen \
 		"$(DESTDIR)$(PREFIX)"/bin/autogen.py
 
 clean:
