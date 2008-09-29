@@ -111,9 +111,10 @@ typedef struct logger {
 	BAT *seqs;		/* int, lng */
 	BAT *snapshots;		/* int, int the bid and tid of snapshot bat */
 	BAT *freed;		/* snapshots can be created and destroyed, 
-				   in a single logger transaction. Thse snapshot
-				   bats should be freed directly (on 
-				   transaction commit). */
+				   in a single logger transaction.
+				   These snapshot bats should be freed
+				   directly (on transaction
+				   commit). */
 } logger;
 
 #define BATSIZE 0
@@ -152,6 +153,7 @@ gdk_export int log_delta(logger *lg, BAT *b, char *n);
 
 gdk_export int log_tstart(logger *lg);	/* TODO return transaction id */
 gdk_export int log_tend(logger *lg);
+gdk_export int log_tend_extra(logger *lg, BAT *extra);
 gdk_export int log_abort(logger *lg);
 gdk_export int log_precommit(logger *lg, char *qid, char *cid);
 
@@ -185,6 +187,21 @@ log a posteriori to check what has happened.
 #define LOG_USE		8
 #define LOG_CLEAR	9
 #define LOG_SEQ		10
+
+static char *log_commands[] = {
+	NULL,
+	"LOG_START",
+	"LOG_END",
+	"LOG_INSERT",
+	"LOG_DELETE",
+	"LOG_UPDATE",
+	"LOG_CREATE",
+	"LOG_DESTROY",
+	"LOG_USE",
+	"LOG_CLEAR",
+	"LOG_SEQ",
+	"LOG_PRECOMMIT",
+};
 
 typedef struct logformat_t {
 	char flag;
@@ -517,8 +534,13 @@ la_bat_destroy(logger *lg, logaction *la)
 {
 	log_bid bid = logger_find_bat(lg, la->name);
 
-	if (bid)
+	if (bid) {
 		logger_del_bat(lg, bid);
+		if (BUNfnd(lg->snapshots, &bid) != BUN_NONE) {
+			BUNdelHead(lg->snapshots, &bid, FALSE);
+			BUNins(lg->snapshots, &bid, &lg->tid, FALSE);
+		}
+	}
 }
 
 static int
@@ -605,6 +627,9 @@ la_bat_use(logger *lg, logaction *la)
 		return;
 	}
 	logger_add_bat(lg, b, la->name);
+	if (BUNfnd(lg->snapshots, &b->batCacheid) != BUN_NONE) 
+		BUNdelHead(lg->snapshots, &b->batCacheid, FALSE);
+	BUNins(lg->snapshots, &b->batCacheid, &lg->tid, FALSE);
 	logbat_destroy(b);
 }
 
@@ -786,7 +811,7 @@ logger_readlog(logger *lg, char *filename)
 
 	lg->log = open_rstream(filename);
 
-	/* if the file doesn't exist, there is nothing to be readback */
+	/* if the file doesn't exist, there is nothing to be read back */
 	if (!lg->log || stream_errnr(lg->log)) {
 		if (lg->log)
 			stream_destroy(lg->log);
@@ -803,6 +828,17 @@ logger_readlog(logger *lg, char *filename)
 				err = -1;
 				break;
 			}
+		}
+		if (lg->debug & 1) {
+			fprintf(stderr, "logger_readlog: ");
+			if (l.flag > 0 && l.flag < (char) (sizeof(log_commands) / sizeof(log_commands[0])))
+				fprintf(stderr, "%s", log_commands[(int) l.flag]);
+			else
+				fprintf(stderr, "%d", l.flag);
+			fprintf(stderr, " %d %d", l.tid, l.nr);
+			if (name)
+				fprintf(stderr, " %s", name);
+			fprintf(stderr, "\n");
 		}
 		/* find proper transaction record */
 		if (l.flag != LOG_START)
@@ -931,10 +967,10 @@ check_version(logger *lg, FILE *fp)
 }
 
 static int
-bm_subcommit(BAT *list, BAT *catalog, int debug)
+bm_subcommit(BAT *list, BAT *catalog, BAT *extra, int debug)
 {
 	BUN p, q;
-	BAT *n = logbat_new(TYPE_void, TYPE_str, BATcount(list) * 2);
+	BAT *n = logbat_new(TYPE_void, TYPE_str, BATcount(list) * 2 + (extra ? BATcount(extra) : 0));
 	BAT *b = list;
 	BATiter bi = bat_iterator(b);
 	int res;
@@ -958,8 +994,18 @@ bm_subcommit(BAT *list, BAT *catalog, int debug)
 			fprintf(stderr, "commit new %s (%d) %s\n", name, col, (b==catalog)?BUNtail(bi,p):"snapshot");
 		BUNappend(n, name, FALSE);
 	}
-	BUNappend(n, BBPname(catalog->batCacheid), FALSE);
+	if (extra) {
+		bi = bat_iterator(extra);
+		BATloop(extra, p, q) {
+			str name = (str) BUNtail(bi, p);
+
+			if (debug & 1)
+				fprintf(stderr, "commit extra %s %s\n", name, (b==catalog)?BUNtail(bi,p):"snapshot");
+			BUNappend(n, name, FALSE);
+		}
+	}
 	/* now commit catalog, so it's also up to date on disk */
+	BUNappend(n, BBPname(catalog->batCacheid), FALSE);
 	BATcommit(catalog);
 	res = TMsubcommit(n);
 	BBPreclaim(n);
@@ -1012,7 +1058,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 		BATmode(lg->catalog, PERSISTENT);
 		BBPrename(lg->catalog->batCacheid, bak);
 
-		if (bm_subcommit(lg->catalog, lg->catalog, lg->debug) != 0)
+		if (bm_subcommit(lg->catalog, lg->catalog, NULL, lg->debug) != 0)
 			return NULL;
 	} else {
 		/* find the persistent catalog. As non persistent bats
@@ -1044,7 +1090,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 		snprintf(bak, BUFSIZ, "%s_snapshots", fn);
 		BBPrename(lg->snapshots->batCacheid, bak);
 		logger_add_bat(lg, lg->snapshots, "snapshots");
-		bm_subcommit(lg->catalog, lg->catalog, lg->debug);
+		bm_subcommit(lg->catalog, lg->catalog, NULL, lg->debug);
 	} else {
 		bat snapshots = logger_find_bat(lg, "snapshots");
 
@@ -1531,7 +1577,7 @@ pre_allocate(logger *lg)
 }
 
 int
-log_tend(logger *lg)
+log_tend_extra(logger *lg, BAT *extra)
 {
 	logformat l;
 	int res = 0;
@@ -1539,34 +1585,13 @@ log_tend(logger *lg)
 	if (lg->debug)
 		fprintf(stderr, "log_tend %d\n", lg->tid);
 
-	/* first subcommit the freed snapshots */
-	if (BATcount(lg->freed)) {
-		BUN p, q;
-		BAT *n = logbat_new(TYPE_void, TYPE_str, BATcount(lg->freed));
-
-		BATseqbase(n, 0);
-
-		BATloop(lg->freed, p, q) {
-			bat col = *(log_bid *) Hloc(lg->freed, p);
-			str name = BBPname(col);
-
-			if (lg->debug & 1)
-				fprintf(stderr, "commit deleted (snapshot) %s (%d)\n", name, col);
-			BUNappend(n, name, FALSE);
-		}
-		res = TMsubcommit(n);
-		BBPreclaim(n);
-		BATclear(lg->freed);
-		BATcommit(lg->freed);
-	}
-	/* then subcommit the new snapshots */
-	if (DELTAdirty(lg->snapshots)) {
+	if (DELTAdirty(lg->snapshots) || extra) {
 		/* sub commit all new snapshots */
 		BAT *b = BATselect(lg->snapshots, &lg->tid, &lg->tid);
 
 		if (b == NULL)
 			return LOG_ERR;
-		res = bm_subcommit(b, lg->snapshots, lg->debug);
+		res = bm_subcommit(b, lg->snapshots, extra, lg->debug);
 		BBPunfix(b->batCacheid);
 	}
 	l.flag = LOG_END;
@@ -1579,6 +1604,12 @@ log_tend(logger *lg)
 		return LOG_ERR;
 	pre_allocate(lg);
 	return LOG_OK;
+}
+
+int
+log_tend(logger *lg)
+{
+	return log_tend_extra(lg, NULL);
 }
 
 int
@@ -1652,9 +1683,11 @@ log_sequence(logger *lg, int seq, lng id)
 static int
 bm_commit(logger *lg)
 {
-	BUN p;
+	BUN p, q;
 	BAT *b = lg->catalog;
+	BAT *n = logbat_new(TYPE_void, TYPE_str, BATcount(lg->freed));
 	BATiter bi = bat_iterator(b);
+	int res;
 
 	/* remove the destroyed bats */
 	for (p = b->batDeleted; p < b->batFirst; p++) {
@@ -1670,6 +1703,21 @@ bm_commit(logger *lg)
 				bid, BBP[bid].lrefs);
 	}
 
+	/* subcommit the freed snapshots */
+	BATseqbase(n, 0);
+	if (BATcount(lg->freed)) {
+
+		BATloop(lg->freed, p, q) {
+			bat bid = *(log_bid *) Hloc(lg->freed, p);
+			str name = BBPname(bid);
+
+			if (lg->debug & 1)
+				fprintf(stderr, "commit deleted (snapshot) %s (%d)\n", name, bid);
+			BUNappend(n, name, FALSE);
+			BBPdecref(bid, TRUE);
+		}
+	}
+
 	for (p = b->batInserted; p < BUNlast(b); p++) {
 		log_bid bid = *(log_bid *) BUNhead(bi, p);
 		BAT *lb = BATdescriptor(bid);
@@ -1683,9 +1731,11 @@ bm_commit(logger *lg)
 			fprintf(stderr, "bm_commit: create %d (%d)\n", 
 				bid, BBP[bid].lrefs);
 	}
-	if (bm_subcommit(lg->catalog, lg->catalog, lg->debug) != 0)
-		return LOG_ERR;
-	return LOG_OK;
+	res = bm_subcommit(lg->catalog, lg->catalog, n, lg->debug);
+	BBPreclaim(n);
+	BATclear(lg->freed);
+	BATcommit(lg->freed);
+	return res != 0 ? LOG_ERR : LOG_OK;
 }
 
 log_bid
@@ -1695,23 +1745,7 @@ logger_add_bat(logger *lg, BAT *b, char *name)
 
 	if (bid) {
 		if (bid != b->batCacheid) {
-			/* if this is a not logger commited snapshot bat, 
-			   make it transient */
-			BUN p = BUNfnd(lg->catalog, &bid);
-
-			if (p >= lg->catalog->batInserted &&
-			    BUNfnd(lg->snapshots, &bid) != BUN_NONE) {
-				BAT *lb = BATdescriptor(bid);
-
-				BUNdelHead(lg->snapshots, &bid, FALSE);
-				BATmode(lb, TRANSIENT);
-				BBPdecref(bid, TRUE); /* from catalog */
-				if (lg->debug & 1)
-					fprintf(stderr, "logger_add_bat release snapshot %d (%d)\n", bid, BBP[bid].lrefs);
-				logbat_destroy(lb);
-				BUNins(lg->freed, &bid, NULL, FALSE);
-			}
-			BUNdelHead(lg->catalog, &bid, FALSE);
+			logger_del_bat(lg, bid);
 		} else {
 			return bid;
 		}
@@ -1729,6 +1763,22 @@ void
 logger_del_bat(logger *lg, log_bid bid)
 {
 	BAT *b = BATdescriptor(bid);
+	BUN p = BUNfnd(lg->catalog, &bid);
+
+	assert(p != BUN_NONE);
+
+	/* if this is a not logger commited snapshot bat, make it transient */
+	if (p >= lg->catalog->batInserted &&
+	    BUNfnd(lg->snapshots, &bid) != BUN_NONE) {
+
+		BUNdelHead(lg->snapshots, &bid, FALSE);
+		BATmode(b, TRANSIENT);
+		if (lg->debug & 1)
+			fprintf(stderr, "logger_del_bat release snapshot %d (%d)\n", bid, BBP[bid].lrefs);
+		BUNins(lg->freed, &bid, NULL, FALSE);
+	} else if (p >= lg->catalog->batInserted)
+		BBPdecref(bid, TRUE);
+
 	if (b) {
 		lg->changes += BATcount(b) + 1;
 		BBPunfix(b->batCacheid);

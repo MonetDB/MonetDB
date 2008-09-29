@@ -710,13 +710,10 @@ const ws_update := bat(int,str)
 # (i.e. these are the ones that need to be registered in the logger)
 const logger_bats := [+]("_", ws_update.tmark(0@0).slice(0,20)).rename("logger_bats");
 
-PROC pf_checkpoint(BAT[void,str] commitBAT) : bit 
+PROC pf_checkpoint(BAT[void,str] commitBAT, bit start_trans) : bit 
 {
-    if (count(commitBAT) = 0) return false;
+    if (start_trans and (count(commitBAT) = 0)) return false;
     commitBAT := commitBAT.access(BAT_WRITE);
-    commitBAT.append("xquery_catalog");
-    commitBAT.append("xquery_seqs");
-    commitBAT.append("xquery_snapshots");
     commitBAT.append("collection_name");
     commitBAT.append("collection_size");
     commitBAT.append("doc_name");
@@ -724,11 +721,13 @@ PROC pf_checkpoint(BAT[void,str] commitBAT) : bit
     commitBAT.append("doc_collection");
     commitBAT.append("doc_timestamp");
     commitBAT.append("uri_lifetime");
-    var ok := false;
-    lock_set(pf_wal);
-    var err := CATCH(ok := subcommit(commitBAT));
-    lock_unset(pf_wal);
-    if (not(ok)) {
+    if (start_trans)
+        lock_set(pf_wal);
+    var err := CATCH({ if (start_trans) log_trans_start(pf_logger);
+                       log_trans_end_extra(pf_logger, commitBAT); });
+    if (start_trans)
+        lock_unset(pf_wal);
+    if (not(isnil(err))) {
         var msg := "XQDY0062: checkpoint failed (in pf_checkpoint), query aborted.\n";
         if (not(isnil(err))) msg := err + msg;
         ERROR(msg);
@@ -802,40 +801,6 @@ var doc_undo := bat(oid,lng).rename("doc_undo");
 
 var uri_lifetime;     # caching rules
 
-
-# initialize persistent bats (use BBP as global mechanism to discover initialization)
-if (isnil(CATCH(bat("doc_name").count()))) {
-    collection_name  := bat("collection_name");
-    collection_size  := bat("collection_size");
-    doc_collection   := bat("doc_collection");
-    doc_name         := bat("doc_name");
-    doc_location     := bat("doc_location");
-    doc_timestamp    := bat("doc_timestamp");
-    uri_lifetime     := bat("uri_lifetime");
-
-    # check that this database was created with a compatible pagesize as requested now
-    var pagebits := 16; 
-    if (doc_collection.exist(DOCID_PGBIT_HACK)) 
-        pagebits := int(doc_collection.find(DOCID_PGBIT_HACK));
-    if (pagebits != REMAP_PAGE_BITS) pf_assert("", "Set gdk_mem_pagebits=" + str(pagebits));
-} else {
-    # create doc_name table in case it does not exist
-    collection_name := new(oid,str).persists(true).rename("collection_name");
-    collection_size := new(oid,lng).persists(true).rename("collection_size");
-    doc_collection  := new(oid,oid).persists(true).rename("doc_collection");
-    doc_name        := new(oid,str).persists(true).rename("doc_name");
-    doc_location    := new(oid,str).persists(true).rename("doc_location");
-    doc_timestamp   := new(oid,timestamp).persists(true).rename("doc_timestamp");
-    uri_lifetime    := new(str,lng).insert("tmp", 1LL).persists(true).rename("uri_lifetime");
-    doc_collection.insert(DOCID_CURID_HACK, DOCID_MIN); # hack: store next oid as in invalid tuple
-    doc_collection.insert(DOCID_PGBIT_HACK, oid(REMAP_PAGE_BITS)); # hack: store pagesize also
-    pf_checkpoint(bat(void,str).append("uri_lifetime"));
-}
-
-# initialize uri_lifetime
-{ var b := split(monet_environment.find("xquery_cacherules"),";").seqbase(0@0);
-  var i := [r_search](b,"=").select(2,int_nil);
-  uri_lifetime.insert(reverse(b.[string](0,[-](i,1))).leftfetchjoin([lng](b.[string]([+](i,1))))); }
 
 # runtime collection acccess control (TRANSIENT)
 var colname_runtime  := bat(str,bat).rename("colname_runtime"); 
@@ -937,17 +902,29 @@ PROC collection_cleanup(BAT[str,str] delBAT) : void
     var cnt := count(delBAT);
     if (bit(cnt)) {
         var commitBAT := bat(void,str,cnt);
+        # bats that are likely known by the logger
         var logger_delBAT := logger_bats.join(delBAT);
+        # bats that are definitely not known by the logger
+        var b := tdiff(delBAT, logger_delBAT).tmark(0@0).access(BAT_WRITE);
         # first remove the bats under control of the logger 
+        lock_set(pf_wal);
+        # bats not known by the logger after all (probably result of doc() queries of unknown documents)
+        var d := [logger_find_bat](pf_logger, logger_delBAT).ord_uselect(0).mirror().join(logger_delBAT);
+        # bats definitely known by the logger
+        logger_delBAT := logger_delBAT.tdiff(d);
+        # bats definitely unknown to the logger
+        b.append(d);
+        log_trans_start(pf_logger);
         if (logger_delBAT.count() > 0) {
-            lock_set(pf_wal);
             [logger_del_bat](pf_logger, [logger_find_bat](pf_logger, logger_delBAT));
-            lock_unset(pf_wal);
+            [log_bat_transient](pf_logger, logger_delBAT);
         }
-        delBAT@batloop() {
+        b@batloop() {
             if (isnil(CATCH(persists(bat($t), false)))) commitBAT.append($t); 
         }
-        pf_checkpoint(commitBAT);
+        var err := CATCH(pf_checkpoint(commitBAT, false));
+        lock_unset(pf_wal);
+        if (not(isnil(err))) ERROR(err);
     }
 }
 
@@ -2244,7 +2221,9 @@ PROC __runtime_index(oid coll_oid,
         # idx [qn,pre] lexico-ordered (thanks to stable-sort)
         idx := idx.access(BAT_WRITE).sorder().access(BAT_READ).rename(nme).mmap(1).persists(true);
         vxm.access(BAT_WRITE).insert(tmp).order().access(BAT_READ).rename(vx_nme).mmap(1).persists(true); 
-        if (pre = 1@0) CATCH(pf_checkpoint(bat(void,str).append(nme).append(vx_nme))); # immediate commit
+        if (pre = 1@0) {
+            CATCH(pf_checkpoint(bat(void,str).append(nme).append(vx_nme), true)); # immediate commit
+        }
     }
     return new(void,bat).insert(nil,idx).insert(nil,vxm);
 }
@@ -3272,7 +3251,7 @@ PROC ws_open(BAT[void,BAT] ws,
             commitBAT.append([bbpname](docBAT).tmark(0@0));
         
         # commit the new collections
-        pf_checkpoint(commitBAT);
+        pf_checkpoint(commitBAT, true);
         lock_set(pf_short);
         doc_undo.delete(doc_undo.select(wsid)); # if these remain, ws_destroy() would remove the new documents
         lock_unset(pf_short);
@@ -3754,25 +3733,33 @@ PROC shred_doc_base(bit cleanup,
         # save bats outside the lock
         if (pf_commit_docmgt) [save](docBAT);
 
-	if (isnil(coll_oid)) {
+        if (isnil(coll_oid)) {
             # register new bats with the logger
-	    newcoll.append([bbpname](logger_bats.join(docBAT)));
-	}
+            newcoll.append([bbpname](logger_bats.join(docBAT)));
+        }
         commitBAT.insert([bbpname](docBAT.tmark(oid_nil)));
     }
-    if (count(newcoll) > 0) {
-        lock_set(pf_wal);
-        [logger_add_bat](pf_logger, [bat](newcoll), newcoll);
-        lock_unset(pf_wal);
-    }
     # checkpoint the new bats
-    if (pf_commit_docmgt)
-    if (pf_checkpoint(commitBAT) or cleanup) {
-        # remove the in-memory undo log; and trim collection
-        lock_set(pf_short);
-        err := CATCH(commitBAT := _shred_doc_cleanup(wsid, cleanup));
-        lock_unset(pf_short);
-        if (isnil(err)) CATCH(collection_cleanup(commitBAT)); 
+    if (pf_commit_docmgt) {
+        var start_trans := true;
+        if (count(newcoll) > 0) {
+            start_trans := false;
+            lock_set(pf_wal);
+            log_trans_start(pf_logger);
+            [logger_add_bat](pf_logger, [bat](newcoll), newcoll);
+            [log_bat_persists](pf_logger, [bat](newcoll), newcoll);
+        }
+        var ok;
+        var err := CATCH(ok := pf_checkpoint(tdiff(commitBAT, newcoll), start_trans));
+        if (not(start_trans)) lock_unset(pf_wal);
+        if (not(isnil(err))) ERROR(err);
+        if (ok or cleanup) {
+            # remove the in-memory undo log; and trim collection
+            lock_set(pf_short);
+            err := CATCH(commitBAT := _shred_doc_cleanup(wsid, cleanup));
+            lock_unset(pf_short);
+            if (isnil(err)) CATCH(collection_cleanup(commitBAT)); 
+        }
     }
 }
 
@@ -4127,11 +4114,44 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 
 @- startup sequence
 @mil
-# start the query cache 
-xquery_start_query_cache(lng(monet_environment.find("xquery_procMB")) * 1024LL * 1024LL);
-
 var pf_logger := xquery_logger_create(0, "xquery", monet_environment.find("xquery_logdir"), 
                                             monet_environment.find("gdk_dbname"), LOGGER_VERSION);
+# initialize persistent bats (use BBP as global mechanism to discover initialization)
+if (isnil(CATCH(bat("doc_name").count()))) {
+    collection_name  := bat("collection_name");
+    collection_size  := bat("collection_size");
+    doc_collection   := bat("doc_collection");
+    doc_name         := bat("doc_name");
+    doc_location     := bat("doc_location");
+    doc_timestamp    := bat("doc_timestamp");
+    uri_lifetime     := bat("uri_lifetime");
+
+    # check that this database was created with a compatible pagesize as requested now
+    var pagebits := 16; 
+    if (doc_collection.exist(DOCID_PGBIT_HACK)) 
+        pagebits := int(doc_collection.find(DOCID_PGBIT_HACK));
+    if (pagebits != REMAP_PAGE_BITS) pf_assert("", "Set gdk_mem_pagebits=" + str(pagebits));
+} else {
+    # create doc_name table in case it does not exist
+    collection_name := new(oid,str).persists(true).rename("collection_name");
+    collection_size := new(oid,lng).persists(true).rename("collection_size");
+    doc_collection  := new(oid,oid).persists(true).rename("doc_collection");
+    doc_name        := new(oid,str).persists(true).rename("doc_name");
+    doc_location    := new(oid,str).persists(true).rename("doc_location");
+    doc_timestamp   := new(oid,timestamp).persists(true).rename("doc_timestamp");
+    uri_lifetime    := new(str,lng).insert("tmp", 1LL).persists(true).rename("uri_lifetime");
+    doc_collection.insert(DOCID_CURID_HACK, DOCID_MIN); # hack: store next oid as in invalid tuple
+    doc_collection.insert(DOCID_PGBIT_HACK, oid(REMAP_PAGE_BITS)); # hack: store pagesize also
+    pf_checkpoint(bat(str,void).key(true).reverse().append("uri_lifetime"), true);
+}
+
+# initialize uri_lifetime
+{ var b := split(monet_environment.find("xquery_cacherules"),";").seqbase(0@0);
+  var i := [r_search](b,"=").select(2,int_nil);
+  uri_lifetime.insert(reverse(b.[string](0,[-](i,1))).leftfetchjoin([lng](b.[string]([+](i,1))))); }
+
+# start the query cache 
+xquery_start_query_cache(lng(monet_environment.find("xquery_procMB")) * 1024LL * 1024LL);
 
 cleantmpdir(msec() / 1000LL);              # delete tmp files in DBFARM/DBNAME/tmp
 collection_cleanup(_collection_cleanup()); # silently clean up the repository

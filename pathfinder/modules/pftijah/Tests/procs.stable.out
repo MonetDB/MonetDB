@@ -514,7 +514,7 @@ procs();
 [ "parent(BAT[void,oid], BAT[void,oid], oid, BAT[void,BAT], int) : BAT[void,BAT]"									  ]
 [ "patindex(str, str) : int"																											  ]
 [ "pf_assert(str, str) : void"																  ]
-[ "pf_checkpoint(BAT[void,str]) : bit"														  ]
+[ "pf_checkpoint(BAT[void,str], bit) : bit"														  ]
 [ "pf_logflush(lng) : void"																  ]
 [ "pf_logmanager() : void"																						  ]
 [ "pf_ttype(BAT[any,any]) : int"																										  ]

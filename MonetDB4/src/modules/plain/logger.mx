@@ -92,6 +92,9 @@ the bats are made persistent, i.e. a bbp sub-commit is done.
 .COMMAND log_trans_end( logger l) : void = log_tend_wrap; 
 "write transaction end in the WAL"
 
+.COMMAND log_trans_end_extra( logger l, bat[void,str]) : void = log_tend_extra_wrap; 
+"write transaction end in the WAL"
+
 .COMMAND log_abort( logger l) : void = log_abort_wrap; 
 "write transaction aborted in the WAL"
 
@@ -205,6 +208,15 @@ log_tend_wrap(logger *L )
 {
 	logger *l = *(logger**)L;
 	if (l && log_tend(l) == LOG_OK) 
+		return GDK_SUCCEED;
+	return GDK_FAIL;
+}
+
+int 
+log_tend_extra_wrap(logger *L, BAT *b )
+{
+	logger *l = *(logger**)L;
+	if (l && log_tend_extra(l, b) == LOG_OK) 
 		return GDK_SUCCEED;
 	return GDK_FAIL;
 }
