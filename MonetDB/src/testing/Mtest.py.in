@@ -100,7 +100,7 @@ try:
     from MonetDB import monet_options
 except ImportError:
     import distutils.sysconfig
-    if SYSTVER[:7] == "Darwin9" and sys.version[:5] == "2.5.1":
+    if os.name != "nt" and os.uname()[0] + os.uname()[2][:1] == "Darwin9" and sys.version[:5] == "2.5.1":
         p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(1,1,""),'site-packages'))
     else:
         p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(1,0,"")))
