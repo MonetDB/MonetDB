@@ -96,6 +96,22 @@ def _configure(str):
             str = nstr
     return str
 
+try:
+    from MonetDB import monet_options
+except ImportError:
+    import distutils.sysconfig
+    if SYSTVER[:7] == "Darwin9" and sys.version[:5] == "2.5.1":
+        p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(1,1,""),'site-packages'))
+    else:
+        p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(1,0,"")))
+    sys.path.insert(0, p)
+    from MonetDB import monet_options
+    if os.environ.has_key('PYTHONPATH'):
+        p = p + os.pathsep + os.environ['PYTHONPATH']
+    os.environ['PYTHONPATH'] = p
+import MonetDB.subprocess26 as subprocess
+import threading, signal
+
 randomPortRepeat = 9
 
 F_SKIP = -1
@@ -152,114 +168,6 @@ CONDITIONALS = {
     'WITH_ALGEBRA'     : "",
     'NOT_ALGEBRA'      : "",
 }
-
-if os.name == "nt":
-    SYST    = "Windows"
-    RELEASE = "5.0"
-    r = re.compile('^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
-    proc = subprocess.Popen('cmd /c ver', stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
-    qOut, qErr = proc.communicate()
-    for l in qOut.split('\n'):
-        m = r.match(l.strip())
-        if m and m.group(2):
-            RELEASE = m.group(2)
-else:
-    SYST    = os.uname()[0].split("_NT-", 1)[0]
-    if SYST == "AIX":
-        RELEASE = os.uname()[3]+"."+os.uname()[2]
-    else:
-        RELEASE = os.uname()[2].split("(", 1)[0]
-
-# this is for the wine/mingw setup
-if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
-    SYST = 'Windows'
-    HOST = "WINE"
-    RELEASE = "5.2"
-
-if SYST == "Linux":
-    #  Please keep this aligned / in sync with buildtools/conf/MonetDB.m4 & TestTools/.Mconfig.rc & TestTools/MdoServer !
-    LINUX_DIST=''
-    if os.path.isfile('/etc/fedora-release'):
-        l = open('/etc/fedora-release').readline()
-        x = re.compile('^.*(Fedora).* release ([0-9][^ \n]*)( .*)*$').match(l)
-        if x:
-            LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
-    elif os.path.isfile('/etc/centos-release'):
-        l = open('/etc/centos-release').readline()
-        x = re.compile('^(CentOS) release ([0-9][^ \n]*)( .*)*$').match(l)
-        if x:
-            LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
-    elif os.path.isfile('/etc/yellowdog-release'):
-        l = open('/etc/yellowdog-release').readline()
-        x = re.compile('^(Yellow) Dog Linux release ([0-9][^ \n]*)( .*)*$').match(l)
-        if x:
-            LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
-    elif os.path.isfile('/etc/redhat-release'):
-        l = open('/etc/redhat-release').readline()
-        x0 = re.compile('^.*(Red) (Hat).* Linux *([A-Z]*) release ([0-9][^ \n]*)( .*)*$').match(l)
-        x1 = re.compile('^Red Hat Enterprise Linux ([AW]S) release ([0-9][^ \n]*)( .*)*$').match(l)
-        x2 = re.compile('^(CentOS) release ([0-9][^ \n]*)( .*)*$').match(l)
-        x3 = re.compile('^(Scientific) Linux SL release ([0-9][^ \n]*)( .*)*$').match(l)
-        if x0:
-            LINUX_DIST = '%s%s:%s%s' % (x0.group(1),x0.group(2),x0.group(4),x0.group(3))
-        elif x1:
-            LINUX_DIST = 'RHEL:%s%s' % (x1.group(2),x1.group(1))
-        elif x2:
-            LINUX_DIST = '%s:%s' % (x2.group(1),x2.group(2))
-        elif x3:
-            LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
-    elif os.path.isfile('/etc/SuSE-release'):
-        l = open('/etc/SuSE-release').readline()
-        x0 = re.compile('^.*(S[Uu]SE) LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$').match(l)
-        x1 = re.compile('^S[Uu]SE LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$').match(l)
-        x2 = re.compile('^.*(S[Uu]SE) [Ll][Ii][Nn][Uu][Xx].* ([0-9][^ \n]*)( .*)*$').match(l)
-        x3 = re.compile('^open(S[Uu]SE) ([0-9][^ \n]*)( .*)*$').match(l)
-        if x0:
-            LINUX_DIST = '%s:%sE%s' % (x0.group(1),x0.group(3),x0.group(2))
-        elif x1:
-            LINUX_DIST = 'SLE%s:%s' % (x1.group(1),x1.group(2))
-        elif x2:
-            LINUX_DIST = '%s:%s' % (x2.group(1),x2.group(2))
-        elif x3:
-            LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
-    elif os.path.isfile('/etc/gentoo-release'):
-        l = open('/etc/gentoo-release').readline()
-        x = re.compile('^.*(Gentoo) Base System.* [versionrelease]* ([0-9][^ \n]*)( .*)*$').match(l)
-        if x:
-            LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
-    elif os.path.isfile('/etc/debian_version'):
-        LINUX_DIST = "Debian:"+open('/etc/debian_version').readline().strip()
-    if not LINUX_DIST:
-        LINUX_DIST = SYST+':'+re.compile('^([0-9\.]*)([^0-9\.].*)$').match(RELEASE).group(1)
-    DIST,VERSION = LINUX_DIST.split(':', 1)
-else:
-    DIST = SYST
-    VERSION = RELEASE
-
-SYSTVER = SYST+RELEASE
-DISTVER = DIST+VERSION
-os.environ['SYST'] = SYST
-os.environ['SYSTVER'] = SYSTVER
-os.environ['RELEASE'] = RELEASE
-os.environ['DIST'] = DIST
-os.environ['DISTVER'] = DISTVER
-os.environ['VERSION'] = VERSION
-
-try:
-    from MonetDB import monet_options
-except ImportError:
-    import distutils.sysconfig
-    if SYSTVER[:7] == "Darwin9" and sys.version[:5] == "2.5.1":
-        p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(1,1,""),'site-packages'))
-    else:
-        p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(1,0,"")))
-    sys.path.insert(0, p)
-    from MonetDB import monet_options
-    if os.environ.has_key('PYTHONPATH'):
-        p = p + os.pathsep + os.environ['PYTHONPATH']
-    os.environ['PYTHONPATH'] = p
-import MonetDB.subprocess26 as subprocess
-import threading, signal
 
 # a bunch of classes to help with generating (X)HTML files
 class _Encode:
@@ -2737,6 +2645,98 @@ elif os.environ.has_key('COMPUTERNAME'):
 ##    HOST = "WIN2000"
 HOST = HOST.split('.', 1)[0]
 os.environ['HOST'] = HOST
+
+if os.name == "nt":
+    SYST    = "Windows"
+    RELEASE = "5.0"
+    r = re.compile('^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
+    proc = subprocess.Popen('cmd /c ver', stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
+    qOut, qErr = proc.communicate()
+    for l in qOut.split('\n'):
+        m = r.match(l.strip())
+        if m and m.group(2):
+            RELEASE = m.group(2)
+else:
+    SYST    = os.uname()[0].split("_NT-", 1)[0]
+    if SYST == "AIX":
+        RELEASE = os.uname()[3]+"."+os.uname()[2]
+    else:
+        RELEASE = os.uname()[2].split("(", 1)[0]
+
+# this is for the wine/mingw setup
+if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
+    SYST = 'Windows'
+    HOST = "WINE"
+    RELEASE = "5.2"
+
+if SYST == "Linux":
+    #  Please keep this aligned / in sync with buildtools/conf/MonetDB.m4 & TestTools/.Mconfig.rc & TestTools/MdoServer !
+    LINUX_DIST=''
+    if os.path.isfile('/etc/fedora-release'):
+        l = open('/etc/fedora-release').readline()
+        x = re.compile('^.*(Fedora).* release ([0-9][^ \n]*)( .*)*$').match(l)
+        if x:
+            LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
+    elif os.path.isfile('/etc/centos-release'):
+        l = open('/etc/centos-release').readline()
+        x = re.compile('^(CentOS) release ([0-9][^ \n]*)( .*)*$').match(l)
+        if x:
+            LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
+    elif os.path.isfile('/etc/yellowdog-release'):
+        l = open('/etc/yellowdog-release').readline()
+        x = re.compile('^(Yellow) Dog Linux release ([0-9][^ \n]*)( .*)*$').match(l)
+        if x:
+            LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
+    elif os.path.isfile('/etc/redhat-release'):
+        l = open('/etc/redhat-release').readline()
+        x0 = re.compile('^.*(Red) (Hat).* Linux *([A-Z]*) release ([0-9][^ \n]*)( .*)*$').match(l)
+        x1 = re.compile('^Red Hat Enterprise Linux ([AW]S) release ([0-9][^ \n]*)( .*)*$').match(l)
+        x2 = re.compile('^(CentOS) release ([0-9][^ \n]*)( .*)*$').match(l)
+        x3 = re.compile('^(Scientific) Linux SL release ([0-9][^ \n]*)( .*)*$').match(l)
+        if x0:
+            LINUX_DIST = '%s%s:%s%s' % (x0.group(1),x0.group(2),x0.group(4),x0.group(3))
+        elif x1:
+            LINUX_DIST = 'RHEL:%s%s' % (x1.group(2),x1.group(1))
+        elif x2:
+            LINUX_DIST = '%s:%s' % (x2.group(1),x2.group(2))
+        elif x3:
+            LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
+    elif os.path.isfile('/etc/SuSE-release'):
+        l = open('/etc/SuSE-release').readline()
+        x0 = re.compile('^.*(S[Uu]SE) LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$').match(l)
+        x1 = re.compile('^S[Uu]SE LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$').match(l)
+        x2 = re.compile('^.*(S[Uu]SE) [Ll][Ii][Nn][Uu][Xx].* ([0-9][^ \n]*)( .*)*$').match(l)
+        x3 = re.compile('^open(S[Uu]SE) ([0-9][^ \n]*)( .*)*$').match(l)
+        if x0:
+            LINUX_DIST = '%s:%sE%s' % (x0.group(1),x0.group(3),x0.group(2))
+        elif x1:
+            LINUX_DIST = 'SLE%s:%s' % (x1.group(1),x1.group(2))
+        elif x2:
+            LINUX_DIST = '%s:%s' % (x2.group(1),x2.group(2))
+        elif x3:
+            LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
+    elif os.path.isfile('/etc/gentoo-release'):
+        l = open('/etc/gentoo-release').readline()
+        x = re.compile('^.*(Gentoo) Base System.* [versionrelease]* ([0-9][^ \n]*)( .*)*$').match(l)
+        if x:
+            LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
+    elif os.path.isfile('/etc/debian_version'):
+        LINUX_DIST = "Debian:"+open('/etc/debian_version').readline().strip()
+    if not LINUX_DIST:
+        LINUX_DIST = SYST+':'+re.compile('^([0-9\.]*)([^0-9\.].*)$').match(RELEASE).group(1)
+    DIST,VERSION = LINUX_DIST.split(':', 1)
+else:
+    DIST = SYST
+    VERSION = RELEASE
+
+SYSTVER = SYST+RELEASE
+DISTVER = DIST+VERSION
+os.environ['SYST'] = SYST
+os.environ['SYSTVER'] = SYSTVER
+os.environ['RELEASE'] = RELEASE
+os.environ['DIST'] = DIST
+os.environ['DISTVER'] = DISTVER
+os.environ['VERSION'] = VERSION
 
 if os.environ.has_key('COMPBITSOIDSLINK'):
     COMPBITSOIDSLINK = os.environ['COMPBITSOIDSLINK']
