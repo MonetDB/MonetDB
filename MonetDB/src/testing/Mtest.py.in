@@ -2536,8 +2536,19 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     if TestErr is not None:
         TestErr.write(Prompt('Done.'))
         TestErr.close()
-    return killed
 
+    if not killed:
+        TO = re.compile("^!.*Mtimeout.*: Timeout: ", re.MULTILINE)
+        if os.path.isfile(TestErrFile):
+            for l in open(TestErrFile):
+                if TO.match(l):
+                    killed = True
+        if not killed and os.path.isfile(TestOutFile):
+            for l in open(TestErrFile):
+                if TO.match(l):
+                    killed = True
+
+    return killed
 
 ### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME, MAPIsockets, XRPCsockets) #
 
