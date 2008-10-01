@@ -639,6 +639,16 @@ PFmil_dce (PFmil_t *root)
     /* variable genType is used by the C code (so not visible at MIL level) */
     PFbitset_set (used_vars, PF_MIL_VAR_GENTYPE, true);
 
+    /* variables used by XRPC C code */
+    PFbitset_set (used_vars, PF_MIL_VAR_XRPC_QID, true);
+    PFbitset_set (used_vars, PF_MIL_VAR_XRPC_CALLER, true);
+    PFbitset_set (used_vars, PF_MIL_VAR_XRPC_HDL, true);
+    PFbitset_set (used_vars, PF_MIL_VAR_XRPC_SEQNR, true);
+    PFbitset_set (used_vars, PF_MIL_VAR_XRPC_TIMEOUT, true);
+    PFbitset_set (used_vars, PF_MIL_VAR_XRPC_MODE, true);
+    PFbitset_set (used_vars, PF_MIL_VAR_XRPC_MODULE, true);
+    PFbitset_set (used_vars, PF_MIL_VAR_XRPC_METHOD, true);
+
     PFmil_t *res = mil_dce_worker (root, used_vars, dirty_vars, true);
 
     return res;
