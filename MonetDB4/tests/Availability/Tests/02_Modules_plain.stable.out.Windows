@@ -730,8 +730,8 @@ Module: "lock"
 
 Module: "logger"
 
-[ 18 ]
-[ 18 ]
+[ 19 ]
+[ 19 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature							help													  # name
 # str			str		str								str													  # type
@@ -743,6 +743,7 @@ Module: "logger"
 [ "log_bat_transient",	  "COMMAND:   ",  "log_bat_transient(logger, str) : void",			  "log the bat destruction in the WAL (return success)"											  ]
 [ "log_delta",		  "COMMAND:   ",  "log_delta(logger, BAT[oid,any::1], str) : void",		  "log the updates in the WAL"														  ]
 [ "log_trans_end",	  "COMMAND:   ",  "log_trans_end(logger) : void",				  "write transaction end in the WAL"													  ]
+[ "log_trans_end_extra",  "COMMAND:   ",  "log_trans_end_extra(logger, BAT[void,str]) : void",		  "write transaction end in the WAL"													  ]
 [ "log_trans_start",	  "COMMAND:   ",  "log_trans_start(logger) : void",				  "Log a start of a transaction"													  ]
 [ "logger_add_bat",	  "COMMAND:   ",  "logger_add_bat(logger, BAT[oid,any::1], str) : int",		  "Register a bat name, return the bid"													  ]
 [ "logger_changes",	  "COMMAND:   ",  "logger_changes(logger) : int",				  "Return the number of logged changes."												  ]
