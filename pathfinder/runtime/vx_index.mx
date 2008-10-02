@@ -47,7 +47,7 @@ attribute/element tags.
 #define XQH_MASK7(c)  ((c) & 127)
 #define XQH_MASK27(c) ((c) & (~31))
 #define XQH_SHFT_l(v,o) (v << (o+5))
-#define XQH_SHFT_r(v,o) ((XQH_UNSGN(v) >> (7 - ((o+7)%27))) << 5)
+#define XQH_SHFT_r(v,o) ((XQH_UNSGN(v) >> (27-o)) << 5)
 #define XQH_CLC_SHFT(v,o) ((v << o) | (XQH_MASK27(XQH_UNSGN(v) >> (27-o))))
 
 /* hash function H */
@@ -63,7 +63,10 @@ static INLINE int XQH_H(str v) {
             h_val ^= XQH_SHFT_r(c,ofs);
         }
         /* update offset */
-        ofs = (ofs+5) % 27;
+        ofs = ofs+5;
+        if (ofs > 26) {
+            ofs -= 27;
+        }
     }
     return (h_val |= ofs);
 }
@@ -96,11 +99,16 @@ int CMD_XQH_H_bat(BAT **res, BAT* b) {
 /* Combine function C */
 static INLINE int XQH_C(int l, int r) {
     int h_comb = 0;
+    int ofs = 0;
 
-    h_comb |= XQH_MASK27(l);                       /* copy the left operand */
+    h_comb |= XQH_MASK27(l);  /* copy the left operand */
     /* XOR the right operand after applying a circular shift */
     h_comb ^= XQH_CLC_SHFT(XQH_MASK27(r),XQH_MASK5(l));
-    h_comb |= (XQH_MASK5(l)+XQH_MASK5(r)) % 27;    /* combine offsets       */
+    ofs = XQH_MASK5(l)+XQH_MASK5(r);
+    if (ofs > 26) {
+        ofs -= 27;
+    }
+    h_comb |= ofs;            /* combine offsets       */
 
     return h_comb;
 }
