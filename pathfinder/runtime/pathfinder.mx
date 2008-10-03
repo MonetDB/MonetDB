@@ -706,7 +706,7 @@ const ws_update := bat(int,str)
 	.insert(oid,"collected_attr_cont_ins")
 	.access(BAT_READ).rename("ws_update");
 
-# the bats that get changed using the logger in case of updates reach up until qn_histogram
+# the bats that get changed using the logger in case of updates reach up until qn_loc
 # (i.e. these are the ones that need to be registered in the logger)
 const logger_bats := [+]("_", ws_update.tmark(0@0).slice(0,20)).rename("logger_bats");
 
