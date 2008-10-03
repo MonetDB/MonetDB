@@ -1,0 +1,10 @@
+<testd>
+<test a="1"><sub1/><sub2/></test>
+<test a="1"><sub1/><sub2/></test>
+<test a="1" b="1"><sub1/><sub2/></test>
+<test a="1" b="1"><sub1/><sub2/></test>
+<test b="1"><sub1/><sub2/></test>
+<test b="1"><sub1/><sub2/></test>
+<test><sub1/><sub2/></test>
+<test><sub1/><sub2/></test>
+</testd>

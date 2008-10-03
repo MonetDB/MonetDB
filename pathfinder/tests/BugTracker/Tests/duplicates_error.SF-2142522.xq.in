@@ -1,0 +1,33 @@
+let $input1 := (doc("$TSTSRCDIR/duplicates_error.SF-2142522.xml")//test)
+let $hits1 := (doc("$TSTSRCDIR/duplicates_error.SF-2142522.xml")//test[@a])
+let $input2 := ($input1 intersect $hits1)
+let $input3 := for $raw in $input2 where not(empty(for $t in $raw//* return
+$t)) return $raw
+let $hits3 := (doc("$TSTSRCDIR/duplicates_error.SF-2142522.xml")//test[@a])
+let $result := ($input3 intersect $hits3)
+
+return element result {
+(:element input1 {count($input1)} ,
+element hits1 {count($hits1)} ,
+element input2 {count($input2)} ,
+element input3 {count($input3)} ,
+element hits3 {count($hits3)} ,:)
+element result {count($result)}
+}
+<>
+let $input1 := (doc("$TSTSRCDIR/duplicates_error.SF-2142522.xml")//test)
+let $hits1 := (doc("$TSTSRCDIR/duplicates_error.SF-2142522.xml")//test[@a])
+let $input2 := ($input1 intersect $hits1)
+let $input3 := for $raw in $input2 where not(empty(for $t in $raw//* return
+$t)) return $raw
+let $hits3 := (doc("$TSTSRCDIR/duplicates_error.SF-2142522.xml")//test[@a])
+let $result := ($input3 intersect $hits3)
+
+return element result {
+element input1 {count($input1)} ,
+element hits1 {count($hits1)} ,
+element input2 {count($input2)} ,
+element input3 {count($input3)} ,
+element hits3 {count($hits3)} ,
+element result {count($result)}
+}
