@@ -224,6 +224,11 @@ test = (
                  ])+')',  re.MULTILINE)
        )
 
+# differences in BBP.dir entries
+# 16: BAT fields, 12 column fields (head and tail)
+# we want to ignore differences in groups 6, 16+8, 16+12+8 (lastused, halign, talign)
+bbp_dir = re.compile('^' + ' '.join(['([^ ]+)'] * (16 + 2*12)) + '$', re.MULTILINE)
+
         # "normalize" differences in error messages caused by flex/bison:
         # matched groups from "norm_in" are replaced by the respective
         # element of "norm_out", unless the latter is "None" (then, the
@@ -348,6 +353,13 @@ def mFilter (FILE, IGNORE) :
 ##                ew = ew - w
 ##                ec = ec - c
 ##                ftmp[i] = "#~ " + ftmp[i]
+        elif bbp_dir.match(iline):
+            l = iline.split(' ')
+            l[6] = '<lastused>'
+            l[16+8] = '<halign>'
+            l[16+12+8] = '<talign>'
+            oline = ' '.join(l)
+            xline = norm_hint + iline
         elif norm_in.match(iline):
             # "normalize" differences in error messages caused by flex/bison; see above
             grps_in = norm_in.match(iline).groups()
