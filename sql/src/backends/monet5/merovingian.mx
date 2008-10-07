@@ -715,6 +715,7 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 	stream *sfdin, *sfout;
 	merovingian_proxy *pctos, *pstoc;
 	pthread_t ptid;
+	pthread_attr_t detachattr;
 
 	/* quick 'n' dirty parsing */
 	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) == 0) {
@@ -801,7 +802,9 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 	pctos->name   = GDKstrdup(client);
 	pctos->co_thr = ptid;
 
-	if (pthread_create(&ptid, NULL,
+	pthread_attr_init(&detachattr);
+	pthread_attr_setdetachstate(&detachattr, PTHREAD_CREATE_DETACHED);
+	if (pthread_create(&ptid, &detachattr,
 				(void *(*)(void *))proxyThread, (void *)pctos) < 0)
 	{
 		close_stream(sfout);
