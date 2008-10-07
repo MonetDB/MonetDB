@@ -21,7 +21,7 @@ bindir = $(prefix)\bin
 
 MX = ..\Mx\Mx.exe
 !IFDEF DEBUG
-CFLAGS = -I. -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
+CFLAGS = -I. -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -Od -D_DEBUG -RTC1
 !ELSE
 CFLAGS = -I. -GF -wd4273 -wd4102 -W3 -MD -nologo
 !ENDIF

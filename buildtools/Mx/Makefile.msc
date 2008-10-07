@@ -20,7 +20,7 @@ prefix = ..\NT
 bindir = $(prefix)\bin
 
 !IFDEF DEBUG
-CFLAGS = -I. -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
+CFLAGS = -I. -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1
 !ELSE
 CFLAGS = -I. -GF -W3 -MD -nologo
 !ENDIF
