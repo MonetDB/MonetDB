@@ -226,7 +226,7 @@ test = (
 
 # differences in BBP.dir entries
 # 16: BAT fields, 12 column fields (head and tail)
-# we want to ignore differences in groups 6, 16+8, 16+12+8 (lastused, halign, talign)
+# we want to ignore differences in groups 5, 16+8, 16+12+8 (lastused, halign, talign)
 bbp_dir = re.compile('^' + ' '.join(['([^ ]+)'] * (16 + 2*12)) + '$', re.MULTILINE)
 
         # "normalize" differences in error messages caused by flex/bison:
@@ -355,7 +355,7 @@ def mFilter (FILE, IGNORE) :
 ##                ftmp[i] = "#~ " + ftmp[i]
         elif bbp_dir.match(iline):
             l = iline.split(' ')
-            l[6] = '<lastused>'
+            l[5] = '<lastused>'
             l[16+8] = '<halign>'
             l[16+12+8] = '<talign>'
             oline = ' '.join(l)
