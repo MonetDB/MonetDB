@@ -17,7 +17,7 @@
 SUBDIRS = src conf
 # scripts tests 
 
-EXTRA_DIST = bootstrap configure.ag RunMtest.in \
+EXTRA_DIST = configure.ag RunMtest.in \
 		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
 		RunMserver.in RunMserver.bat.in \
 		rpm.mk.in MonetDB-server.spec MonetDB-server.spec.in
