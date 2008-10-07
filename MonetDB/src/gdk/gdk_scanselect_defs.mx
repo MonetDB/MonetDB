@@ -39,7 +39,7 @@ calls to these functions.
 	BUN p,q;
 	int t = b->ttype;
 	ptr nil = ATOMnilptr(t);
-	oid oid_ctr = b->hseqbase - BUNfirst(b);
+	oid oid_ctr = b->hseqbase;
 
 	(void) nil;
 	(void) tl;
