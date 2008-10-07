@@ -1602,11 +1602,38 @@ lngToStr(char **dst, int *len, lng *src)
 int
 ptrFromStr(char *src, int *len, ptr **dst)
 {
-	/* don't allow unsafe str->ptr conversion */
-	(void) src;
+	int error = 0;
+	size_t base = 0;
+	str p = src;
+
 	@:atommem(ptr,sizeof(ptr))@
-	**dst = ptr_nil;
-	return 0;
+
+	while (GDKisspace(*p))
+		p++;
+	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
+		error = 1;
+		p += 3;
+	} else {
+		if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
+			p += 2;
+		}
+		if (!num16(*p)) {
+			error = 1;
+			p = src;
+		}
+		while (error == 0) {
+			size_t val = mult16(base) + base16(*p);
+
+			if (val < base)
+				error = 1;
+			base = val;
+			p++;
+			if (!num16(*p))
+				break;
+		}
+	}
+	**dst = error ? (ptr) ptr_nil : (ptr) base;
+	return (int) (p - src);
 }
 
 @:atomtostr(ptr,SZFMT,size_t)@
