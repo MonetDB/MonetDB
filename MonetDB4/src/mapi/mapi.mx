@@ -1341,7 +1341,8 @@ client(Cntxt stk, YYSTREE lt, ValPtr res)
 	stream *in, *out;
 	mapi_client *mc;
 	Client klient;
-	char *old_in; 
+	char *old_in;
+	YYSTREE tree;
 
 	CNTXTclient((Cntxt) (ptrdiff_t) stk, &klient);
 	/* get the streams from the argument list */
@@ -1377,7 +1378,10 @@ client(Cntxt stk, YYSTREE lt, ValPtr res)
 	klient->limit = klient->input + 4096;
 	klient->top = klient->input;
 	*klient->top = 0;
+	tree = klient->tree;
+	klient->tree = NULL;
 	f->f_engine(mc);
+	klient->tree = tree;
 	GDKfree(klient->input);
 	klient->input = old_in;
 	mapi_client_end(mc); 	

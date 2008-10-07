@@ -82,7 +82,7 @@ bin_Mserver = {
 }
 
 lib_embeddedsql = {
-	SOURCES = embeddedclient.mx
+	SOURCES = embeddedclient.mx.in
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ lib_sql_server $(EXTRA_LIBS) \
 		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
 }
@@ -105,7 +105,7 @@ bin_embeddedExample = {
 headers_h = {
 	HEADERS = h
 	DIR = includedir/MonetDB4/sql
-	SOURCES = embeddedclient.mx
+	SOURCES = embeddedclient.mx.in
 }
 
 EXTRA_DIST_DIR = Tests

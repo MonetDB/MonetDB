@@ -39,7 +39,7 @@ lib__sql = {
 
 
 lib_embeddedsql5 = {
-	SOURCES = embeddedclient.mx
+	SOURCES = embeddedclient.mx.in
 	LIBS = ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/restrict/librestrictstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
 		$(MONETDB5_MODS) -l_logger -l_bat5 -l_tablet -l_bpm $(MONETDB5_LIBS) -lmonetdb5 \
 		$(CLIENTS_LIBS) $(MONETDB_LIBS) -lbat -lMapi -lmutils -lstream $(READLINE_LIBS) $(PTHREAD_LIBS)
@@ -55,7 +55,7 @@ bin_Mbeddedsql5 = {
 headers_h = {
 	HEADERS = h
 	DIR = includedir/MonetDB5/sql
-	SOURCES = embeddedclient.mx
+	SOURCES = embeddedclient.mx.in
 }
 
 headers_mal = {

@@ -16,8 +16,7 @@
  * All Rights Reserved.
  */
 
-#include "pf_config.h"
-#include <monet_options.h>
+#include <pf_config.h>
 #include "embeddedclient.h"
 
 #ifdef HAVE_STRING_H
@@ -40,6 +39,18 @@
 # endif
 #endif
 
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+
+#ifndef HAVE_GETOPT_LONG
+#  include "monet_getopt.h"
+#else
+# ifdef HAVE_GETOPT_H
+#  include "getopt.h"
+# endif
+#endif
+
 static long
 gettime(void)
 {
@@ -58,7 +69,7 @@ gettime(void)
 #endif
 }
 
-void
+static void
 usage(char *prog)
 {
 	fprintf(stderr, "Usage: %s [ options ] [ script+ ]                   \n", prog);
@@ -77,10 +88,10 @@ usage(char *prog)
 int
 main(int argc, char **av)
 {
-	int curlen = 0, maxlen = BUFSIZ*8;
+	size_t curlen = 0, maxlen = BUFSIZ * 8;
 	char *prog = *av;
 	opt *set = NULL;
-	int setlen = 0, time = 0;
+	int setlen = 0, timeflag = 0;
 	long t0 = 0;
 	Mapi mid;
 	MapiHdl hdl;
@@ -101,7 +112,7 @@ main(int argc, char **av)
 	if (!(setlen = mo_builtin_settings(&set)))
 		usage(prog);
 
-	/* needed, to prevent the MonetDB config file to be used */  
+	/* needed, to prevent the MonetDB/4 config file from being used */  
 	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDB4_PREFIX);
 	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDB4_CONFFILE);
 
@@ -127,7 +138,7 @@ main(int argc, char **av)
 			usage(prog);
 			break;
 		case 't':
-			time = 1;
+			timeflag = 1;
 			break;
 		case 'c':
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
@@ -171,22 +182,23 @@ main(int argc, char **av)
 	}
 	if (optind == argc)
 		fp = stdin;
-	while (optind < argc || fp) {
-		if (!fp && (fp=fopen(av[optind],"r")) == NULL){
-			fprintf(stderr,"could no open file %s\n", av[optind]);
+	while (optind < argc || fp != NULL) {
+		if (fp == NULL && (fp = fopen(av[optind], "r")) == NULL) {
+			fprintf(stderr, "could no open file %s\n", av[optind]);
 			break;
 		}
-		while ((line = fgets(buf+curlen, 1024, fp)) != NULL) {
-			int n = strlen(line);
-            		curlen += n;
-            		if (curlen+1024 > maxlen) {
-               			maxlen += 8*BUFSIZ;
-               			buf = realloc(buf, maxlen + 1);
+		while ((line = fgets(buf + curlen, 1024, fp)) != NULL) {
+			size_t n = strlen(line);
+
+			curlen += n;
+			if (curlen + 1024 > maxlen) {
+				maxlen += 8 * BUFSIZ;
+				buf = realloc(buf, maxlen + 1);
 				if (buf == NULL) {
 					fprintf(stderr, "Cannot allocate memory for query buffer\n");
 					return -1;
 				}
-            		}
+			}
 		}
 		if (fp != stdin) {
 			fclose(fp);
@@ -194,7 +206,7 @@ main(int argc, char **av)
 		fp = NULL;
 		optind++;
 		curlen = 0;
-		if (time)
+		if (timeflag)
 			t0 = gettime();
 		hdl = mapi_query(mid, buf);
 		do {
@@ -204,8 +216,8 @@ main(int argc, char **av)
 				printf("%s\n", line);
 		} while (mapi_next_result(hdl) == 1);
 		mapi_close_handle(hdl);
-		if (time)
-			printf("Timer: %ld (usec)\n", gettime()-t0);
+		if (timeflag)
+			printf("Timer: %ld (usec)\n", gettime() - t0);
 	}
 	free(buf);
 	mapi_destroy(mid);

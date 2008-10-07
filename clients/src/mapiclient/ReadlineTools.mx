@@ -45,6 +45,12 @@ void continue_completion(rl_completion_func_t * func);
 #include <strings.h>		/* for strncasecmp */
 #endif
 
+#ifndef NATIVE_WIN32
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+#endif
+
 #define PATHLENGTH	256	/* maximum file pathname length. */
 
 static const char *sql_commands[] = {

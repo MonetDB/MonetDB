@@ -16,8 +16,7 @@
  * All Rights Reserved.
  */
 
-#include "monetdb4_config.h"
-#include <monet_options.h>
+#include <monetdb4_config.h>
 #include "embeddedclient.h"
 
 #ifdef HAVE_STRING_H
@@ -37,6 +36,18 @@
 #  include <sys/time.h>
 # else
 #  include <time.h>
+# endif
+#endif
+
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+
+#ifndef HAVE_GETOPT_LONG
+#  include "monet_getopt.h"
+#else
+# ifdef HAVE_GETOPT_H
+#  include "getopt.h"
 # endif
 #endif
 
@@ -77,7 +88,7 @@ usage(char *prog)
 int
 main(int argc, char **av)
 {
-	int curlen = 0, maxlen = BUFSIZ*8;
+	size_t curlen = 0, maxlen = BUFSIZ * 8;
 	char *prog = *av;
 	opt *set = NULL;
 	int setlen = 0, timeflag = 0;
@@ -171,22 +182,23 @@ main(int argc, char **av)
 	}
 	if (optind == argc)
 		fp = stdin;
-	while (optind < argc || fp) {
-		if (!fp && (fp=fopen(av[optind],"r")) == NULL){
-			fprintf(stderr,"could no open file %s\n", av[optind]);
+	while (optind < argc || fp != NULL) {
+		if (fp == NULL && (fp = fopen(av[optind], "r")) == NULL) {
+			fprintf(stderr, "could no open file %s\n", av[optind]);
 			break;
 		}
-		while ((line = fgets(buf+curlen, 1024, fp)) != NULL) {
-			int n = (int) strlen(line);
-            		curlen += n;
-            		if (curlen+1024 > maxlen) {
-               			maxlen += 8*BUFSIZ;
-               			buf = realloc(buf, maxlen + 1);
+		while ((line = fgets(buf + curlen, 1024, fp)) != NULL) {
+			size_t n = strlen(line);
+
+			curlen += n;
+			if (curlen + 1024 > maxlen) {
+				maxlen += 8 * BUFSIZ;
+				buf = realloc(buf, maxlen + 1);
 				if (buf == NULL) {
 					fprintf(stderr, "Cannot allocate memory for query buffer\n");
 					return -1;
 				}
-            		}
+			}
 		}
 		if (fp != stdin) {
 			fclose(fp);
@@ -205,7 +217,7 @@ main(int argc, char **av)
 		} while (mapi_next_result(hdl) == 1);
 		mapi_close_handle(hdl);
 		if (timeflag)
-			printf("Timer: %ld (usec)\n", gettime()-t0);
+			printf("Timer: %ld (usec)\n", gettime() - t0);
 	}
 	free(buf);
 	mapi_destroy(mid);

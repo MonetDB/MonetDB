@@ -41,11 +41,10 @@ the various underlying storage types.
  * required for proper conversion on different byte order platforms.
  */
 
-#include <monet_utils.h>
-
 #include <unistd.h>
 #include <ctype.h>
 #include <assert.h>
+#include <stdio.h>
 
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
@@ -53,7 +52,8 @@ the various underlying storage types.
 #include <signal.h>
 #include <limits.h>
 
-#ifdef NATIVE_WIN32
+/* avoid using "#ifdef WIN32" so that this file does not need our config.h */
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
 #ifndef LIBSTREAM
 #define stream_export extern __declspec(dllimport)
 #else
@@ -76,9 +76,11 @@ the various underlying storage types.
 #define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
 	               ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
 
+#ifdef SIZEOF_LNG
 #define long_long_SWAP(l) \
 		((((lng)normal_int_SWAP(l))<<32) |\
 		 (0xffffffff&normal_int_SWAP(l>>32)))
+#endif
 
 typedef struct stream stream;
 
@@ -96,8 +98,10 @@ stream_export int stream_readSht(stream *s, short *val);
 stream_export int stream_writeSht(stream *s, short val);
 stream_export int stream_readInt(stream *s, int *val);
 stream_export int stream_writeInt(stream *s, int val);
+#ifdef SIZEOF_LNG
 stream_export int stream_readLng(stream *s, lng *val);
 stream_export int stream_writeLng(stream *s, lng val);
+#endif
 
 stream_export int stream_readBteArray(stream *s, signed char *val, size_t cnt);
 stream_export int stream_writeBteArray(stream *s, const signed char *val, size_t cnt);
@@ -105,8 +109,10 @@ stream_export int stream_readShtArray(stream *s, short *val, size_t cnt);
 stream_export int stream_writeShtArray(stream *s, const short *val, size_t cnt);
 stream_export int stream_readIntArray(stream *s, int *val, size_t cnt);
 stream_export int stream_writeIntArray(stream *s, const int *val, size_t cnt);
+#ifdef SIZEOF_LNG
 stream_export int stream_readLngArray(stream *s, lng *val, size_t cnt);
 stream_export int stream_writeLngArray(stream *s, const lng *val, size_t cnt);
+#endif
 stream_export int stream_printf(stream *s, const char *format, ...);
 stream_export ssize_t stream_read(stream *s, void *buf, size_t elmsize, size_t cnt);
 stream_export ssize_t stream_readline(stream *s, void *buf, size_t maxcnt);
@@ -274,6 +280,7 @@ typedef enum stream_errors {
 #endif /*_STREAM_H_*/
 @c
 #include "monetdb_config.h"
+#include <monet_utils.h>
 #include "stream.h"
 #include "stream_socket.h"
 #include <string.h>

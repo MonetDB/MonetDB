@@ -18,7 +18,6 @@
 
 #include "mal_config.h"
 #include "embeddedclient.h"
-#include <monet_options.h>
 
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -40,6 +39,18 @@
 # endif
 #endif
 
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+
+#ifndef HAVE_GETOPT_LONG
+#  include "monet_getopt.h"
+#else
+# ifdef HAVE_GETOPT_H
+#  include "getopt.h"
+# endif
+#endif
+
 static long
 gettime(void)
 {
@@ -58,7 +69,7 @@ gettime(void)
 #endif
 }
 
-void
+static void
 usage(char *prog)
 {
 	fprintf(stderr, "Usage: %s [ options ] [ script+ ]                   \n", prog);
@@ -80,7 +91,7 @@ main(int argc, char **av)
 	size_t curlen = 0, maxlen = BUFSIZ * 8;
 	char *prog = *av;
 	opt *set = NULL;
-	int setlen = 0, time = 0;
+	int setlen = 0, timeflag = 0;
 	long t0 = 0;
 	Mapi mid;
 	MapiHdl hdl;
@@ -116,18 +127,18 @@ main(int argc, char **av)
 
 		switch (c) {
 		case 0:
-			if (strcmp((char *) long_options[option_index].name, "dbname") == 0) {
+			if (strcmp(long_options[option_index].name, "dbname") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
 				break;
 			}
-			if (strcmp((char *) long_options[option_index].name, "dbfarm") == 0) {
+			if (strcmp(long_options[option_index].name, "dbfarm") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbfarm", optarg);
 				break;
 			}
 			usage(prog);
 			break;
 		case 't':
-			time = 1;
+			timeflag = 1;
 			break;
 		case 'c':
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
@@ -164,7 +175,7 @@ main(int argc, char **av)
 	/* now for each file given on the command line (or stdin) 
 	   read the query and execute it
 	 */
-	buf = GDKmalloc(maxlen);
+	buf = malloc(maxlen);
 	if (buf == NULL) {
 		fprintf(stderr, "Cannot allocate memory for query buffer\n");
 		return -1;
@@ -174,6 +185,7 @@ main(int argc, char **av)
 	while (optind < argc || fp != NULL) {
 		if (fp == NULL && (fp = fopen(av[optind], "r")) == NULL) {
 			fprintf(stderr, "could no open file %s\n", av[optind]);
+			break;
 		}
 		while ((line = fgets(buf + curlen, 1024, fp)) != NULL) {
 			size_t n = strlen(line);
@@ -181,7 +193,7 @@ main(int argc, char **av)
 			curlen += n;
 			if (curlen + 1024 > maxlen) {
 				maxlen += 8 * BUFSIZ;
-				buf = GDKrealloc(buf, maxlen + 1);
+				buf = realloc(buf, maxlen + 1);
 				if (buf == NULL) {
 					fprintf(stderr, "Cannot allocate memory for query buffer\n");
 					return -1;
@@ -194,7 +206,7 @@ main(int argc, char **av)
 		fp = NULL;
 		optind++;
 		curlen = 0;
-		if (time)
+		if (timeflag)
 			t0 = gettime();
 		hdl = mapi_query(mid, buf);
 		do {
@@ -204,9 +216,10 @@ main(int argc, char **av)
 				printf("%s\n", line);
 		} while (mapi_next_result(hdl) == 1);
 		mapi_close_handle(hdl);
-		if (time)
+		if (timeflag)
 			printf("Timer: %ld (usec)\n", gettime() - t0);
 	}
-	GDKfree(buf);
+	free(buf);
+	mapi_destroy(mid);
 	return 0;
 }

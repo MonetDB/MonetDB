@@ -22,6 +22,9 @@ and provides a baseline for footprint comparisons.
 */
 #include <sql_config.h>
 #include <embeddedclient.h>
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 
 #define die(dbh,hdl)	do {						\
 				if (hdl)				\

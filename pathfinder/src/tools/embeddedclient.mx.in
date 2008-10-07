@@ -35,9 +35,8 @@ between 25-50%.
 #ifndef _EMBEDDEDCLIENT_H_
 #define _EMBEDDEDCLIENT_H_
 
-#include "monet_options.h"
-
-#ifdef WIN32
+/* avoid using "#ifdef WIN32" so that this file does not need our config.h */
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
 #ifndef LIBEMBEDDEDXQ
 #define embeddedclient_export extern __declspec(dllimport)
 #else
@@ -47,30 +46,46 @@ between 25-50%.
 #define embeddedclient_export extern
 #endif
 
-#include <streams.h>
+#include <stdio.h>
+#include <stream.h>
 #include <mapilib/Mapi.h>
+#include <monet_options.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 embeddedclient_export Mapi embedded_xquery(opt *set, int len);
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _EMBEDDEDCLIENT_H_ */
 @c
-#include "pf_config.h"
-#include "monet.h"
+#include <pf_config.h>
 #include "embeddedclient.h"
-#include "initmodules.h"
 
+#include "gdk.h"
 #ifdef HAVE_PTHREAD_H
 /* pthread.h on Windows includes config.h if HAVE_CONFIG_H is set */
 #undef HAVE_CONFIG_H
+#ifdef pid_t
+#undef pid_t
+#endif
 #include <sched.h>
 #include <pthread.h>
 #endif
+
+#include "monet.h"
+#include "monet_options.h"
+#include "initmodules.h"
 
 static Client
 Monet_init(opt **set, int setlen)
 {
 	/* determine Monet's kernel settings. */
-	setlen = mo_add_option(set, setlen, opt_cmdline, "gdk_embedded", "yes");
+	setlen = mo_add_option(set, setlen, opt_config, "gdk_embedded", "yes");
 	if (!GDKinit(*set, setlen)) 
 		return NULL;
 
@@ -94,6 +109,8 @@ start_xq_server(void *arg)
 		if (embedded_set == NULL) {
 			int len = mo_builtin_settings(&embedded_set);
 			embedded_len = mo_system_config(&embedded_set, len);
+			embedded_len = mo_add_option(&embedded_set, embedded_len, opt_config, "monet_mod_path",
+						     "@QXlibdir@@DIRSEP@MonetDB4@PATHSEP@@QXlibdir@@DIRSEP@MonetDB4@DIRSEP@lib@PATHSEP@@QXlibdir@@DIRSEP@MonetDB4@DIRSEP@bin");
 		}
 		Monet_init(&embedded_set, embedded_len);
 		mo_free_options(embedded_set, embedded_len);
@@ -106,8 +123,7 @@ start_xq_server(void *arg)
 	out = ((stream **) arg)[1];
 	free(arg);
 	snprintf(buf, sizeof(buf), "client(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));", PTRFMTCAST in, PTRFMTCAST out);
-	monet_exec("module(pathfinder);");
-	monet_exec("xquery_start_query_cache(16000000LL);");
+	monet_exec("module(pathfinder);xquery_start_query_cache(16000000LL);");
 	monet_exec(buf);
 	return NULL;
 }

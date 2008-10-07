@@ -28,15 +28,6 @@ file, special config file or command line option).
 #ifndef _MO_H_
 #define _MO_H_
 
-#include "monet_utils.h"
-#ifndef HAVE_GETOPT_LONG
-#  include "monet_getopt.h"
-#else
-# ifdef HAVE_GETOPT_H
-#  include "getopt.h"
-# endif
-#endif
-
 typedef enum opt_kind {
 	opt_builtin = 0,
 	opt_config = 1,
@@ -51,6 +42,19 @@ typedef struct opt {
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifndef mutils_export
+/* avoid using "#ifdef WIN32" so that this file does not need our config.h */
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
+#ifndef LIBMUTILS
+#define mutils_export extern __declspec(dllimport)
+#else
+#define mutils_export extern __declspec(dllexport)
+#endif
+#else
+#define mutils_export extern
+#endif
 #endif
 
 /* mo_print_options will print the option set on stderr */
@@ -91,6 +95,14 @@ mutils_export void mo_free_options(opt *set, int setlen);
 @c
 #include "monetdb_config.h"
 #include "monet_options.h"
+#include "monet_utils.h"
+#ifndef HAVE_GETOPT_LONG
+#  include "monet_getopt.h"
+#else
+# ifdef HAVE_GETOPT_H
+#  include "getopt.h"
+# endif
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>

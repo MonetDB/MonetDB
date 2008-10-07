@@ -86,7 +86,7 @@ bin_Mserver = {
 }
 
 lib_embeddedmil = {
-	SOURCES = embeddedclient.mx
+	SOURCES = embeddedclient.mx.in
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		../monet/libmonet $(MONETDB_LIBS) $(CLIENTS_LIBS) -lbat -lmutils -lMapi -lstream
 }

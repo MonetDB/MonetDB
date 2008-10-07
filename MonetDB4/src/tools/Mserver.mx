@@ -85,6 +85,14 @@ The options have the following meaning:
 #include "initmodules.h"
 #include <locale.h>
 
+#ifndef HAVE_GETOPT_LONG
+#  include "monet_getopt.h"
+#else
+# ifdef HAVE_GETOPT_H
+#  include "getopt.h"
+# endif
+#endif
+
 #ifdef NATIVE_WIN32
 #define getcwd _getcwd
 #endif

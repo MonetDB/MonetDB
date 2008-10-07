@@ -79,6 +79,14 @@ The server options have the following meaning:
 #include <locale.h>
 #include "monet_version.h"
 
+#ifndef HAVE_GETOPT_LONG
+#  include "monet_getopt.h"
+#else
+# ifdef HAVE_GETOPT_H
+#  include "getopt.h"
+# endif
+#endif
+
 #ifdef _CRTDBG_MAP_ALLOC
 /* Windows only:
    our definition of new and delete clashes with the one if

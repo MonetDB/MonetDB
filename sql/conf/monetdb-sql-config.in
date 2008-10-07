@@ -25,8 +25,11 @@ prefix="@Qprefix@"
 exec_prefix="@Qexec_prefix@"
 
 libdir="@Qlibdir@"
+incdir="@Qincludedir@"
 M4libdir="${libdir}/MonetDB4"
 M5libdir="${libdir}/MonetDB5"
+M4incdir="${incdir}/MonetDB4"
+M5incdir="${incdir}/MonetDB5"
 pythonlibdir="${prefix}/@PYTHON_LIBDIR@"
 
 usage()
@@ -79,7 +82,7 @@ while test $# -gt 0; do
         echo 	$M4libdir:$M4libdir/lib:$M4libdir/bin
         ;;
 
-    --modpath5)
+    --modpath5|--modpath)
         echo 	$M5libdir:$M5libdir/lib:$M5libdir/bin
         ;;
 
@@ -93,6 +96,22 @@ while test $# -gt 0; do
 
     --help)
 	usage 0
+	;;
+
+    --cflags4)
+	echo -I$M4incdir/sql
+	;;
+
+    --cflags5|--cflags)
+	echo -I$M5incdir/sql
+	;;
+
+    --libs4)
+	echo -L$M4libdir/lib
+	;;
+
+    --libs5|--libs)
+	echo -L$M5libdir/lib
 	;;
 
     --conds)
