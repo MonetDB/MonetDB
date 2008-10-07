@@ -1355,7 +1355,7 @@ mapi_error_str(Mapi mid)
 static void
 clean_print(char *msg, const char *prefix, FILE *fd)
 {
-	int len = (int) strlen(prefix);
+	size_t len = strlen(prefix);
 
 	while (msg && *msg) {
 		/* cut by line */

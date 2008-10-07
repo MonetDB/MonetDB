@@ -35,7 +35,7 @@
 char *
 simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 {
-	int length = 0;
+	size_t length = 0;
 	char *destination = NULL;
 	FILE *termin = NULL, *termout = NULL;
 
@@ -79,15 +79,15 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 	if (fgets(destination, maxlen, termin) == NULL)
 		destination[0] = '\0';
 
-	length = (int) strlen(destination);
+	length = strlen(destination);
 	if (length > 0 && destination[length - 1] != '\n') {
 		char buf[128];
-		int buflen;
+		size_t buflen;
 
 		do {
 			if (fgets(buf, sizeof(buf), termin) == NULL)
 				break;
-			buflen = (int) strlen(buf);
+			buflen = strlen(buf);
 		} while (buflen > 0 && buf[buflen - 1] != '\n');
 	}
 
