@@ -31,6 +31,14 @@
 
 #include "monet_options.h"
 
+#ifndef HAVE_GETOPT_LONG
+#  include "monet_getopt.h"
+#else
+# ifdef HAVE_GETOPT_H
+#  include "getopt.h"
+# endif
+#endif
+
 static void
 showUsage(char *name)
 {
