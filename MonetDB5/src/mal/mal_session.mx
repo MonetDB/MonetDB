@@ -399,8 +399,7 @@ void
 MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i, k;
-	int *used= alloca(mb->vtop * sizeof(int));
-	memset(used,0,sizeof(int)*mb->vtop);
+	bit *used= GDKzalloc(mb->vtop);
 
 	for (i=0; i<start; i++)
 		used[i]=1;
@@ -424,6 +423,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 		}
 	}
 	trimMalVariables_(mb,used,glb);
+	GDKfree(used);
 }
 
 @-
