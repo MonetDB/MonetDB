@@ -2617,6 +2617,7 @@ PROC loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 
         var res_mu;
 	uniqueCont.slice(1,uniqueCont.count() - 1)@batloop () {
+	    kind_test := chr_nil; # reset kind_test for each cont
 	    contID := $h;
             result_part_cont := cont.ord_uselect(contID).hmark(0@0);
             result_part_iter := result_part_cont.leftfetchjoin(iter);
