@@ -110,7 +110,7 @@ start_xq_server(void *arg)
 			int len = mo_builtin_settings(&embedded_set);
 			embedded_len = mo_system_config(&embedded_set, len);
 			embedded_len = mo_add_option(&embedded_set, embedded_len, opt_config, "monet_mod_path",
-						     "@QXlibdir@@DIRSEP@MonetDB4@PATHSEP@@QXlibdir@@DIRSEP@MonetDB4@DIRSEP@lib@PATHSEP@@QXlibdir@@DIRSEP@MonetDB4@DIRSEP@bin");
+						     "@QXlibdir@@QDIRSEP@MonetDB4@PATHSEP@@QXlibdir@@QDIRSEP@MonetDB4@QDIRSEP@lib@PATHSEP@@QXlibdir@@QDIRSEP@MonetDB4@QDIRSEP@bin");
 		}
 		Monet_init(&embedded_set, embedded_len);
 		mo_free_options(embedded_set, embedded_len);

@@ -111,7 +111,7 @@ start_mal_server(void *arg)
 			int len = mo_builtin_settings(&embedded_set);
 			embedded_len = mo_system_config(&embedded_set, len);
 			embedded_len = mo_add_option(&embedded_set, len, opt_config, "monet_mod_path",
-						     "@QXlibdir@@DIRSEP@MonetDB5@PATHSEP@@QXlibdir@@DIRSEP@MonetDB5@DIRSEP@lib@PATHSEP@@QXlibdir@@DIRSEP@MonetDB5@DIRSEP@bin");
+						     "@QXlibdir@@QDIRSEP@MonetDB5@PATHSEP@@QXlibdir@@QDIRSEP@MonetDB5@QDIRSEP@lib@PATHSEP@@QXlibdir@@QDIRSEP@MonetDB5@QDIRSEP@bin");
 		}
 		Monet_init(&embedded_set, embedded_len);
 		/* you don;t need the commandline arguments anymore */

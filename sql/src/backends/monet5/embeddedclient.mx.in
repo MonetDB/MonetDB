@@ -112,7 +112,7 @@ start_sql_server(void *arg)
 			int len = mo_builtin_settings(&embedded_set);
 			embedded_len = mo_system_config(&embedded_set, len);
 			embedded_len = mo_add_option(&embedded_set, len, opt_config, "monet_mod_path",
-						     "@QXlibdir@@DIRSEP@MonetDB5@PATHSEP@@QXlibdir@@DIRSEP@MonetDB5@DIRSEP@lib@PATHSEP@@QXlibdir@@DIRSEP@MonetDB5@DIRSEP@bin");
+						     "@QXlibdir@@QDIRSEP@MonetDB5@PATHSEP@@QXlibdir@@QDIRSEP@MonetDB5@QDIRSEP@lib@PATHSEP@@QXlibdir@@QDIRSEP@MonetDB5@QDIRSEP@bin");
 		}
 		Monet_init(&embedded_set, embedded_len);
 		/* you don;t need the commandline arguments anymore */
@@ -191,7 +191,7 @@ monetdb_sql(char *dbfarm, char *dbname)
 	len = mo_add_option(&embedded_set, len, opt_config, "prefix", MONETDB5_PREFIX);
 	len = mo_add_option(&embedded_set, len, opt_config, "config", MONETDB5_CONFFILE);
 	len = mo_add_option(&embedded_set, len, opt_config, "monet_mod_path",
-			    "@QXlibdir@@DIRSEP@MonetDB5@PATHSEP@@QXlibdir@@DIRSEP@MonetDB5@DIRSEP@lib@PATHSEP@@QXlibdir@@DIRSEP@MonetDB5@DIRSEP@bin");
+			    "@QXlibdir@@QDIRSEP@MonetDB5@PATHSEP@@QXlibdir@@QDIRSEP@MonetDB5@QDIRSEP@lib@PATHSEP@@QXlibdir@@QDIRSEP@MonetDB5@QDIRSEP@bin");
 
 	embedded_len = mo_system_config(&embedded_set, len);
 	embedded_len = mo_add_option(&embedded_set, embedded_len, opt_cmdline, "gdk_dbfarm", dbfarm);
