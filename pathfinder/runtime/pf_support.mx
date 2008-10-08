@@ -2649,6 +2649,7 @@ PROC loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 
         var res_mu;
 	uniqueCont.slice(1,uniqueCont.count() - 1)@batloop () {
+	    kind_test := chr_nil; # reset kind_test for each cont
 	    contID := $h;
             result_part_cont := cont.ord_uselect(contID).hmark(0@0);
             result_part_iter := result_part_cont.leftfetchjoin(iter);
@@ -2658,15 +2659,19 @@ PROC loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 
             if ( and(order,2) = 2 )
 	    {
-	         res_mu := merged_union(result_item, result_part_item,
-	             		   result_iter, result_part_iter,
-	             		   result_cont, result_part_cont);
-                 result_part_iter := nil;
-                 result_part_item := nil;
+	         if (is_constant(result_cont))
+	             result_cont := result_item.project(result_cont.fetch(0));
+	         if (is_constant(result_part_cont))
+	             result_part_cont := result_part_item.project(result_part_cont.fetch(0));
+	         res_mu := merged_union(result_cont, result_part_cont,
+	             		   result_item, result_part_item,
+	             		   result_iter, result_part_iter);
                  result_part_cont := nil;
-                 result_item := res_mu.fetch(0);
-                 result_iter := res_mu.fetch(1);
-                 result_cont := res_mu.fetch(2);
+                 result_part_item := nil;
+                 result_part_iter := nil;
+                 result_cont := res_mu.fetch(0);
+                 result_item := res_mu.fetch(1);
+                 result_iter := res_mu.fetch(2);
                  res_mu := nil;
 	    }
 	    else
