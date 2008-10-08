@@ -1713,9 +1713,9 @@ convertConstant(malType type, ValPtr vr)
 	if( vr->vtype == TYPE_str){
 #ifdef STRUCT_ALIGNED
 		int ll = 0;
-		ptr *d = NULL;
+		ptr d = NULL;
 
-		ATOMfromstr(type, (ptr *) &d, &ll, vr->val.sval);
+		ATOMfromstr(type, &d, &ll, vr->val.sval);
 		if (d == NULL ) {
 			showException(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
 			VALinit(vr, type, ATOMnilptr(type));
@@ -1727,7 +1727,7 @@ convertConstant(malType type, ValPtr vr)
 			VALinit(vr, type, ATOMnilptr(type));
 			return 1;
 		}
-		VALset(vr, type, *d);
+		VALset(vr, type, *(ptr*)d);
 		if (ATOMextern(type) == 0)
 			GDKfree(d);
 #else
