@@ -35,6 +35,7 @@ Options:
 -l licensefile
 \tprovide alternative license text
 \t(handy for removing incorrect license text)
+-v\treport changed files on standard output
 
 If no file arguments, %(prog)s will read file names from standard input.
 
@@ -65,8 +66,9 @@ re_copyright = re.compile('Copyright Notice:\n(.*-------*\n)?')
 def main():
     func = addlicense
     pre = post = start = end = None
+    verbose = False
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'arl:',
+        opts, args = getopt.getopt(sys.argv[1:], 'arl:v',
                                    ['pre=', 'post=', 'start=', 'end='])
     except getopt.GetoptError:
         print >> sys.stderr, usage % {'prog': sys.argv[0]}
@@ -97,16 +99,18 @@ def main():
             start = a
         elif o == '--end':
             end = a
+        elif o == '-v':
+            verbose = True
 
     if args:
         for a in args:
-            func(a, pre=pre, post=post, start=start, end=end)
+            func(a, pre=pre, post=post, start=start, end=end, verbose=verbose)
     else:
         while True:
             filename = sys.stdin.readline()
             if not filename:
                 break
-            func(filename[:-1], pre=pre, post=post, start=start, end=end)
+            func(filename[:-1], pre=pre, post=post, start=start, end=end, verbose=verbose)
 
 suffixrules = {
     # suffix:(pre,     post,  start,  end)
@@ -139,7 +143,7 @@ suffixrules = {
     '.y':    ('/*',    ' */', ' * ',  ''),
     }
 
-def addlicense(file, pre = None, post = None, start = None, end = None):
+def addlicense(file, pre = None, post = None, start = None, end = None, verbose = False):
     if pre is None and post is None and start is None and end is None:
         root, ext = os.path.splitext(file)
         if ext == '.in':
@@ -244,6 +248,8 @@ def addlicense(file, pre = None, post = None, start = None, end = None):
         return
     try:
         os.rename(file + '.new', file)
+        if verbose:
+            print file
     except OSError:
         print >> sys.stderr, 'Cannot move file %s into position' % file
 
@@ -252,7 +258,7 @@ def normalize(s):
     # and replace multiple white space characters by a single space
     return ' '.join(s.split())
 
-def dellicense(file, pre = None, post = None, start = None, end = None):
+def dellicense(file, pre = None, post = None, start = None, end = None, verbose = False):
     if pre is None and post is None and start is None and end is None:
         root, ext = os.path.splitext(file)
         if ext == '.in':
@@ -417,6 +423,8 @@ def dellicense(file, pre = None, post = None, start = None, end = None):
         return
     try:
         os.rename(file + '.new', file)
+        if verbose:
+            print file
     except OSError:
         print >> sys.stderr, 'Cannot move file %s into position' % file
 
