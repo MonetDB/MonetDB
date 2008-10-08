@@ -484,7 +484,7 @@ static void RECYCLEcleanCache(lng wr){
 	int j,i,l,ltop,v,vtop;
 	InstrPtr p;
 	InstrPtr *old;
-	char *used, *dmask;
+	bit *used, *lmask, *dmask;
 	lng k, *lvs, *vm, *lvs1;
 	int limit, mem, idx;
 	int cont, reserve;
@@ -500,11 +500,8 @@ static void RECYCLEcleanCache(lng wr){
 
 newpass:
 	cont = 0;	
-	used = alloca(recycleBlk->vtop);
+	used = (bit*)malloc(recycleBlk->vtop);
 	memset(used,0, recycleBlk->vtop);
-
-	lvs = (lng *)alloca(sizeof(lng)*recycleBlk->stop);
-	memset(lvs,0, sizeof(lng)*recycleBlk->stop);
 
 	/* set all used variables */
 	for (i = 0; i < recycleBlk->stop; i++){
@@ -513,11 +510,13 @@ newpass:
                 if ( p->token != NOOPsymbol )
 #endif
 		for( j = p->retc ; j< p->argc; j++)
-			used[getArg(p,j)]++;
+			used[getArg(p,j)] = 1;
 	}
 
 	/* find the leaves, ignore the most recent instruction */
 
+	lmask = (bit*)malloc(recycleBlk->stop);
+	memset(lmask,0,recycleBlk->stop);
 	ltop = 0; reserve = 0;
 	for (i = 1; i < recycleBlk->stop; i++){
 		p = recycleBlk->stmt[i];
@@ -530,21 +529,28 @@ newpass:
 			reserve = i;
 			continue;
 		}
-		lvs[ltop++] = i;
+		lmask[i] = 1;
+		ltop++;
 		skip:;
 	}
 
-	/* find the victims */
-	if (ltop == 0 ){
-		if (reserve)
-			lvs[ltop++] = reserve;
-		else return;
+	free(used);
+	if (ltop == 0 ){  /* ensure at least 1 entry to evict */
+		if (reserve){
+			lmask[reserve] = 1;
+			ltop++;
+		}
+		else {	free(lmask);
+			return;
+		}
 	}
-	mem = recyclerUsedMemory + wr > memLimit;
-	vm = (lng *)alloca(sizeof(lng)*ltop);
-	memset(vm,0, sizeof(lng)*ltop);
-	vtop = 0;
+	lvs = (lng *)malloc(sizeof(lng)*ltop);
+	l = 0;
+	for (i = 1; i < recycleBlk->stop; i++)
+		if (lmask[i]) lvs[l++] = i;
+	free(lmask);
 
+	/* find the oldest */
 	oldclk = recycleBlk->profiler[lvs[0]].clk;
 	idx = 0;
 	for (l = 0; l < ltop; l++){
@@ -555,12 +561,14 @@ newpass:
 		}
 	}
 
+	/* protect leaves from current query invocation */
+
 	if ((rcachePolicy == RCACHE_CREDIT || rcachePolicy == RCACHE_CAT ) &&
-		oldclk < time0) {	/* protect leaves from current query invocation */
+		oldclk < time0) {	
 		lvs1 = lvs;  	
-		lvs = (lng *)alloca(sizeof(lng)*ltop);
-		for(j = 0; j < ltop; j++)
-			lvs[j] = 0;
+		lvs = (lng *)malloc(sizeof(lng)*ltop);
+		memset(lvs,0, sizeof(lng)*ltop);
+
 #ifdef _DEBUG_CACHE_
 			stream_printf(cntxt->fdout,"Fresh-protected "LLFMT"\n", time0);
       			stream_printf(cntxt->fdout,"All leaves:");
@@ -577,8 +585,13 @@ newpass:
 				continue; 
 			lvs[l++] = lvs1[j];
 		}
-		if (l) ltop = l;
-		else lvs = lvs1; 
+		if (l) {
+			ltop = l;
+			free(lvs1);
+		} else {
+			free(lvs);
+			lvs = lvs1; 
+		}
 	}
 
 
@@ -586,6 +599,12 @@ newpass:
         stream_printf(cntxt->fdout,"RECYCLEcleanCache: policy=%d mem="LLFMT" usedmem="LLFMT"\n",
                 rcachePolicy,recycleMemory,recyclerUsedMemory);
 #endif
+
+	/* find entries to evict */
+	mem = recyclerUsedMemory + wr > memLimit;
+	vm = (lng *)malloc(sizeof(lng)*ltop);
+	memset(vm,0, sizeof(lng)*ltop);
+	vtop = 0;
 
 	if (!mem){	 /* evict 1 entry */
 		switch(rcachePolicy){
@@ -690,12 +709,14 @@ newpass:
 	}
 #endif
 
+	free(lvs);
 	/* drop victims in one pass */
-	dmask = alloca(recycleBlk->stop);
+	dmask = (bit *)malloc(recycleBlk->stop);
 	memset(dmask,0,recycleBlk->stop);
 	for (v = 0; v < vtop; v++)
 		dmask[vm[v]] = 1;
-
+	free(vm);
+	
 #ifdef _DEBUG_CACHE_
 	/* instructions are marked with NOOPsymbol in debug mode */
 	(void) old;
@@ -732,6 +753,7 @@ newpass:
 	/* remove all un-used variables as well */
 	trimMalVariables(recycleBlk);
 #endif
+	free(dmask);
 	recycleVersion++;
 	if (cont) goto newpass;
 }
