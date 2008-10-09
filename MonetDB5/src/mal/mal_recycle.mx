@@ -606,6 +606,7 @@ newpass:
 
 	if (!mem){	 /* evict 1 entry */
 		switch(rcachePolicy){
+			case RCACHE_ALL:
 			case RCACHE_LRU:
 				vm[vtop++] = lvs[idx];
 				break;
@@ -643,6 +644,7 @@ newpass:
 
 	else { /* evict several to get enough mem */
 		switch(rcachePolicy){
+			case RCACHE_ALL:
 			case RCACHE_LRU:
 				vm[vtop++] = lvs[idx];
 				wr -= recycleBlk->profiler[lvs[idx]].obytes;
