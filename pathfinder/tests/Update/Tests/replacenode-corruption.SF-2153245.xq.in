@@ -1,0 +1,49 @@
+pf:add-doc("$TSTSRCDIR/replacenode-corruption.SF-2153245.xml","replacenode-corruption.SF-2153245.xml","replacenode-corruption.SF-2153245.xml",10)
+<>
+let $doc:= doc("replacenode-corruption.SF-2153245.xml")
+let $path := $doc/bookmarks
+return do insert <folder name="lsidir"/> as last into $path
+<>
+
+let $doc := doc("replacenode-corruption.SF-2153245.xml")
+let $path := $doc/bookmarks/folder[@name='Images']
+let $bm := $path/bookmark-definition[@name="First comment"]
+let $topath := $doc/bookmarks/folder[@name='lsidir']
+let $copy_bm := element bookmark-definition {
+    $bm/@*[not(name()='name')],
+    attribute name {'Second comment'},
+    $bm/*
+}
+return do insert $copy_bm as last into $topath
+<>
+
+let $doc := doc("replacenode-corruption.SF-2153245.xml")
+let $path := $doc/bookmarks/folder[@name='lsidir']
+let $bm := $path/bookmark-definition[@name="Second comment"]
+let $new_bm := element bookmark-definition {
+    attribute name {"Third comment"},
+    attribute project {"*"},
+    attribute shared {"true"},
+    $bm/query,
+    element description {"Description One"},
+    element note {"Note 1"}
+}
+return do replace $bm with $new_bm
+<>
+
+let $doc := doc("replacenode-corruption.SF-2153245.xml")
+let $path := $doc/bookmarks/folder[@name='lsidir']
+let $bm := $path/bookmark-definition[@name="Third comment"]
+let $topath := $doc/bookmarks/folder[@name='lsidir']
+let $copy_bm := element bookmark-definition {
+    $bm/@*[not(name()='name')],
+    attribute name {'CopyOf Third comment'},
+    $bm/*
+}
+return do insert $copy_bm as last into $topath
+<>
+
+doc("replacenode-corruption.SF-2153245.xml")
+<>
+
+pf:del-doc("replacenode-corruption.SF-2153245.xml")
