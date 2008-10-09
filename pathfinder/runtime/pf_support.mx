@@ -4854,7 +4854,7 @@ PROC do_update_insert_elements(bat[void, bat] ws,
           var ancestors_newpre := [swizzle](ancestors_newrid, [oid](map_pid_update));
           var ancestors_size := ancestors_oldpre.join(pre_size).access(BAT_WRITE).myupdate(ancestors_newrid.join(rid_size_update));
           # now figure out which ancestors *end* at the hole
-          var ancestors_end := [oid]([+]([lng](ancestors_newpre), ancestors_size)).uselect(docinsertafter_newpre).mirror();
+          var ancestors_end := [oid]([+]([lng](ancestors_newpre), ancestors_size)).uselect(docinsertafter_newpre,oid(int(docinsertafter_newpre)+insertsize)).mirror();
           # figure out the level and select those with level < docinsertlevel
           var upd_ancestors := ancestors_end.join(ancestors_oldpre).join(pre_level).access(BAT_WRITE).myupdate(ancestors_end.join(ancestors_newrid).join(rid_level_update)).uselect(chr_nil, docinsertlevel, true, false);
           # now update the sizes of these ancestors (if any)
@@ -5162,24 +5162,11 @@ PROC do_delete_nodes(bat[void, bat] ws, oid cont, oid newpre, int delsize) : voi
         # new hole ends at page boundary
         nsize := delsize;
       } else {
-        # room to spare after new hole, maybe coalesce with consecutive hole
-        var next_rid := oid((lng(rid) + delsize) + 1);
-        if (isoldpage) {
-          if (rid_size_update.exist(next_rid)) {
-            nsize := rid_size_update.find(next_rid);
-          } else {
-            nsize := pre_size.find(swizzle(next_rid, map_pid));
-          }
-        } else {
-          nsize := rid_size.find(next_rid);
-        }
-        if (isnil(niland(nsize, int_nil))) { # result of niland(nsize, int_nil) is either 0 or int_nil
-          # there is a following hole
-          nsize := (delsize + niland(nsize, INT_MAX)) + 1;
-        } else {
-          # no following hole
-          nsize := delsize;
-        }
+        # room to spare after new hole
+        # do not coalesce with possible following hole since we don't
+        # want any ancestor's extent end in the middle of a hole (it
+        # should then end on a hole boundary)
+        nsize := delsize;
       }
     }
 

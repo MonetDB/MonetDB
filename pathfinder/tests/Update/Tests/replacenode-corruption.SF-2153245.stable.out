@@ -1,0 +1,40 @@
+stdout of test 'replacenode-corruption.SF-2153245` in directory 'tests/Update` itself:
+
+
+# 11:25:40 >  
+# 11:25:40 >   Mserver "--config=/ufs/sjoerd/Monet-virgin-stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/runtime/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/runtime:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4/lib:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=30578 --set xrpc_port=48727 --set monet_prompt= --trace  "--dbname=mTests_tests_Update" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 11:25:40 >  
+
+# MonetDB Server v4.24.1
+# based on GDK   v1.24.1
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.24.1 loaded (default back-end is 'algebra')
+# XRPC administrative console at http://127.0.0.1:48727/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 11:25:40 >  
+# 11:25:40 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=ottar --port=30578 replacenode-corruption.SF-2153245.xq
+# 11:25:40 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><bookmarks>
+    <folder name="Images">
+        <bookmark-definition project="*" name="First comment">
+            <query/>
+        </bookmark-definition>
+    </folder>
+<folder name="lsidir"><bookmark-definition shared="true" project="*" name="Third comment"><query/><description>Description One</description><note>Note 1</note></bookmark-definition><bookmark-definition name="CopyOf Third comment" shared="true" project="*"><query/><description name="Third comment" project="*" shared="true">Description One</description><note>Note 1</note></bookmark-definition></folder></bookmarks></XQueryResult>
+
+# 11:25:41 >  
+# 11:25:41 >  Done.
+# 11:25:41 >  
+
