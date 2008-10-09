@@ -32,7 +32,7 @@ Over..
             <query/>
         </bookmark-definition>
     </folder>
-<folder name="lsidir"><bookmark-definition shared="true" project="*" name="Third comment"><query/><description>Description One</description><note>Note 1</note></bookmark-definition><bookmark-definition name="CopyOf Third comment" shared="true" project="*"><query/><description name="Third comment" project="*" shared="true">Description One</description><note>Note 1</note></bookmark-definition></folder></bookmarks></XQueryResult>
+<folder name="lsidir"><bookmark-definition shared="true" project="*" name="Third comment"><query/><description>Description One</description><note>Note 1</note></bookmark-definition><bookmark-definition name="CopyOf Third comment" shared="true" project="*"><query/><description>Description One</description><note>Note 1</note></bookmark-definition></folder></bookmarks></XQueryResult>
 
 # 11:25:41 >  
 # 11:25:41 >  Done.
