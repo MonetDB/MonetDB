@@ -3204,8 +3204,11 @@ PROC ws_collection(BAT[void,BAT] ws, BAT[oid,str] nms, BAT[void,oid] map) : BAT[
 
     lock_set(pf_short);
     err := CATCH({ var doc := nms.leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection)).tsort();
-                   idx_names := doc.leftjoin(doc_name);
-                   idx_doc := doc.tmark(0@0).tmark(0@0);
+                   var doch := doc.mark(0@0), doct := doc.tmark(0@0); # doc == doch.leftjoin(doct);
+                   var docs := doct.leftjoin(doc_name).select(str_nil,str_nil);  # selected existing docs
+                   doc := doch.leftjoin(docs.mirror().leftjoin(doct));  # reduced doc to existing docs
+                   idx_names := doch.leftjoin(docs);
+                   idx_doc := doc.tmark(0@0);
                    idx_coll := idx_doc.leftjoin(doc_collection).tmark(0@0);
                    idx_colname := idx_coll.leftjoin(collection_name).tmark(0@0); 
                    colname_pins.insert(reverse(nms).kunique().project(ws_id(ws))); });
