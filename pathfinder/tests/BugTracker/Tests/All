@@ -164,3 +164,4 @@ distinct-values-triggers-assertion.SF-2122091_ALG
 duplicates_error.SF-2142522
 order_by.SF-2140992
 combination_of_constructed_and_doc_elements.SF-2059394
+NOT_ALGEBRA?fn_collection_after_delete.SF-2141000

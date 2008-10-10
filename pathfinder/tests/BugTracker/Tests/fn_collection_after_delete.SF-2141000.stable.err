@@ -1,0 +1,17 @@
+stderr of test 'fn_collection_after_delete.SF-2141000` in directory 'tests/BugTracker` itself:
+
+
+# 17:31:46 >  
+# 17:31:46 >   Mserver "--config=/ufs/sjoerd/Monet-virgin-stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/runtime/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/runtime:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4/lib:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=33997 --set xrpc_port=41920 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker"                       --set xquery_backend=milprint_summer "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 17:31:46 >  
+
+
+# 17:31:46 >  
+# 17:31:46 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=ottar --port=33997 -g fn_collection_after_delete.SF-2141000.xq
+# 17:31:46 >  
+
+
+# 17:32:06 >  
+# 17:32:06 >  Done.
+# 17:32:06 >  
+
