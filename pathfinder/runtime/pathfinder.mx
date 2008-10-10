@@ -3751,6 +3751,11 @@ PROC shred_doc_base(bit cleanup,
             log_trans_start(pf_logger);
             [logger_add_bat](pf_logger, [bat](newcoll), newcoll);
             [log_bat_persists](pf_logger, [bat](newcoll), newcoll);
+        } else if (cleanup) {
+            # force checkpoint when documents were deleted (i.e. cleanup is set)
+            lock_set(pf_wal);
+            log_trans_start(pf_logger);
+            start_trans := false;
         }
         var ok;
         var err := CATCH(ok := pf_checkpoint(tdiff(commitBAT, newcoll), start_trans));
