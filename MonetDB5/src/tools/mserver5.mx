@@ -182,7 +182,7 @@ monet_hello(opt *set, int setlen)
 		printf("# Configuration:%s\n", GDKgetenv("config"));
 		printf("# Database farm:%s\n", GDKgetenv("gdk_dbfarm"));
 #endif
-		printf("# Copyright (c) 1993-July 2008 CWI, all rights reserved\n");
+		printf("# Copyright (c) 1993-July 2008 CWI.\n");
 		printf("# Copyright (c) August 2008- MonetDB B.V., all rights reserved\n");
 		printf("# Visit http://monetdb.cwi.nl/ for further information\n");
 	}
