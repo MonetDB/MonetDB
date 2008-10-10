@@ -13,7 +13,8 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2008 CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008- MonetDB B.V.
 # All Rights Reserved.
 
 # This script requires Python 2.2 or later.
@@ -57,11 +58,12 @@ license = [
     'The Original Code is the MonetDB Database System.',
     '',
     'The Initial Developer of the Original Code is CWI.',
-    'Portions created by CWI are Copyright (C) 1997-2008 CWI.',
+    'Portions created by CWI are Copyright (C) 1997-July 2008 CWI.',
+    'Copyright August 2008- MonetDB B.V.',
     'All Rights Reserved.',
     ]
 
-re_copyright = re.compile('Copyright Notice:\n(.*-------*\n)?')
+re_copyright = re.compile('(?:Copyright Notice:\n(.*-------*\n)?|=head1 COPYRIGHT AND LICENCE\n)')
 
 def main():
     func = addlicense
@@ -114,8 +116,11 @@ def main():
 
 suffixrules = {
     # suffix:(pre,     post,  start,  end)
+    '.ac':   ('',      '',    '# ',   ''),
     '.ag':   ('',      '',    '# ',   ''),
+    '.am':   ('',      '',    '# ',   ''),
     '.bash': ('',      '',    '# ',   ''),
+    '.bat':  ('',      '',    '@REM ',''),
     '.brg':  ('/*',    ' */', ' * ',  ''),
     '.c':    ('/*',    ' */', ' * ',  ''),
     '.cc':   ('',      '',    '// ',  ''),
@@ -137,13 +142,17 @@ suffixrules = {
     '.pl':   ('',      '',    '# ',   ''),
     '.pm':   ('',      '',    '# ',   ''),
     '.py':   ('',      '',    '# ',   ''),
+    '.rc':   ('',      '',    '# ',   ''),
     '.sh':   ('',      '',    '# ',   ''),
+    '.t':    ('',      '',    '# ',   ''),
     '.tcl':  ('',      '',    '# ',   ''),
     '.xml':  ('<!--',  '-->', '',     ''),
+    '.xs':   ('/*',    ' */', ' * ',  ''),
     '.y':    ('/*',    ' */', ' * ',  ''),
     }
 
 def addlicense(file, pre = None, post = None, start = None, end = None, verbose = False):
+    ext = ''
     if pre is None and post is None and start is None and end is None:
         root, ext = os.path.splitext(file)
         if ext == '.in':
@@ -161,6 +170,10 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
             if line[:2] == '#!':
                 ext = '.sh'
             else:
+                return
+        if ext == '.rc':
+            # .rc suffix only used for shell scripts in TestTools directory
+            if 'TestTools' not in file:
                 return
         pre, post, start, end = suffixrules[ext]
     if not pre:
@@ -186,6 +199,8 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
     if res is not None:
         pos = res.end(0)
         g.write(data[:pos])
+        if ext == '.pm':
+            start = pre = post = end = ''
         g.write(start.rstrip() + '\n')
     else:
         f.seek(0)
@@ -259,6 +274,7 @@ def normalize(s):
     return ' '.join(s.split())
 
 def dellicense(file, pre = None, post = None, start = None, end = None, verbose = False):
+    ext = ''
     if pre is None and post is None and start is None and end is None:
         root, ext = os.path.splitext(file)
         if ext == '.in':
@@ -276,6 +292,10 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
             if line[:2] == '#!':
                 ext = '.sh'
             else:
+                return
+        if ext == '.rc':
+            # .rc suffix only used for shell scripts in TestTools directory
+            if 'TestTools' not in file:
                 return
         pre, post, start, end = suffixrules[ext]
     if not pre:
@@ -305,6 +325,8 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
     if res is not None:
         pos = res.end(0)
         g.write(data[:pos])
+        if ext == '.pm':
+            start = pre = post = end = ''
         nl = data.find('\n', pos) + 1
         nstart = normalize(start)
         while normalize(data[pos:nl]) == nstart:
