@@ -1,5 +1,4 @@
 #                                               -*- Autoconf -*-
-# Process this file with autoconf to produce a configure script.
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -14,8 +13,11 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2008 CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008- MonetDB B.V.
 # All Rights Reserved.
+
+# Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
 AC_INIT([MonetDB Buildtools], 1.0, monet@cwi.nl)
