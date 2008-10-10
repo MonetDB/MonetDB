@@ -90,9 +90,14 @@ VALset(ValPtr v, int t, ptr p)
 	case TYPE_lng:
 		v->val.lval = *(lng *) p;
 		break;
-	default:
-		v->val.pval = p;
+	case TYPE_str:
+		v->val.sval = (str) p;
 		v->len = ATOMlen(t, p);
+		break;
+	default:
+		v->val.pval = *(ptr *) p;
+		v->len = ATOMlen(t, *(ptr *) p);
+		break;
 	}
 	return v;
 }
