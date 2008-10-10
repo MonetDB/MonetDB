@@ -1,4 +1,4 @@
-@' dhe contents of this file are subject to the MonetDB Public License
+@' The contents of this file are subject to the MonetDB Public License
 @' Version 1.1 (the "License"); you may not use this file except in
 @' compliance with the License. You may obtain a copy of the License at
 @' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
@@ -1728,7 +1728,7 @@ convertConstant(malType type, ValPtr vr)
 			VALinit(vr, type, ATOMnilptr(type));
 			return 1;
 		}
-		VALset(vr, type, *(ptr*)d);
+		VALset(vr, type, d);
 		if (ATOMextern(type) == 0)
 			GDKfree(d);
 #else
