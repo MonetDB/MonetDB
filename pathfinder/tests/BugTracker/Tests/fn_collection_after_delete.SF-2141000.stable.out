@@ -1,0 +1,53 @@
+stdout of test 'fn_collection_after_delete.SF-2141000` in directory 'tests/BugTracker` itself:
+
+
+# 17:29:21 >  
+# 17:29:21 >   Mserver "--config=/ufs/sjoerd/Monet-virgin-stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/runtime/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/runtime:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah/.libs:/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4/lib:/ufs/sjoerd/Monet-virgin-stable/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/virgin-stable/pathfinder/x86_64-unknown-linux-gnu/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=37227 --set xrpc_port=41549 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker"                       --set xquery_backend=milprint_summer "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 17:29:21 >  
+
+
+
+
+
+
+
+# MonetDB Server v4.24.1
+# based on GDK   v1.24.1
+# Copyright (c) 1993-July 2008, CWI. All rights reserved.
+# Copyright (c) August 2008-, MonetDB B.V.. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.24.1 loaded (default back-end is 'milprint_summer')
+# XRPC administrative console at http://127.0.0.1:41549/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 17:29:21 >  
+# 17:29:21 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=ottar --port=37227 -g fn_collection_after_delete.SF-2141000.xq
+# 17:29:21 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><a>
+<b/>
+</a><a>
+<b/>
+</a><a>
+<b/>
+</a></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><a>
+<b/>
+</a><a>
+<b/>
+</a></XQueryResult>
+
+# 17:29:21 >  
+# 17:29:21 >  Done.
+# 17:29:21 >  
+
