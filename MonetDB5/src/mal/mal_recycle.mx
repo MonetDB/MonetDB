@@ -488,7 +488,7 @@ static void RECYCLEcleanCache(lng wr){
 	InstrPtr p;
 	InstrPtr *old;
 	bit *used, *lmask, *dmask;
-	lng k, *lvs, *vm, *lvs1;
+	lng k, *lvs, *vm;
 	int limit, mem, idx;
 	int cont, reserve;
 	lng oldclk;
@@ -566,8 +566,6 @@ newpass:
 
 	if ((rcachePolicy == RCACHE_CREDIT || rcachePolicy == RCACHE_CAT ) &&
 		oldclk < time0) {	
-		lvs1 = lvs;  	
-		lvs = (lng *)GDKzalloc(sizeof(lng)*ltop);
 
 #ifdef _DEBUG_CACHE_
 			stream_printf(cntxt->fdout,"Fresh-protected "LLFMT"\n", time0);
@@ -579,19 +577,10 @@ newpass:
 #endif			
 		l = 0;
 		for (j = 0; j < ltop; j++){
-			k = lvs1[j];
-			if (( recycleBlk->profiler[k].counter == 1) &&
-				recycleBlk->profiler[k].clk >= time0) 
-				continue; 
-			lvs[l++] = lvs1[j];
+			if (recycleBlk->profiler[lvs[j]].clk < time0) 
+				lvs[l++] = lvs[j];
 		}
-		if (l) {
-			ltop = l;
-			free(lvs1);
-		} else {
-			free(lvs);
-			lvs = lvs1; 
-		}
+		ltop = l;
 	}
 
 
@@ -840,14 +829,13 @@ RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr)
 		setDestVar(q, newVariable(recycleBlk,GDKstrdup("recycler"),TYPE_any));
 		pushInstruction(recycleBlk,q);
 	}
-	if ( !RECYCLEinterest(mb,p))
-		return ;
 
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(cntxt->fdout,"RECYCLE keep ");
 	printTraceCall( cntxt->fdout,mb, s, getPC(mb,p),LIST_MAL_ALL);
 #else
 	(void) cntxt;
+	(void) mb;
 #endif
 @-
 The instruction is copied and the variables are
@@ -962,7 +950,6 @@ RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 #else 
 	(void) cntxt;
 #endif
-	if ( RECYCLEinterest(mb,p))
 	for (i=1; i<recycleBlk->stop; i++) {
 		q = getInstrPtr(recycleBlk,i);
 		if (
