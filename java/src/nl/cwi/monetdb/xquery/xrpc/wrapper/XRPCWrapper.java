@@ -1,20 +1,21 @@
-/**
+/*
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-
+ *
  * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
- * the License for the specific language governing rights and
- * limitations under the License.
-
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
  * The Original Code is the MonetDB Database System.
-
+ *
  * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2008 CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008- MonetDB B.V.
  * All Rights Reserved.
-**/
+ */
 
 package nl.cwi.monetdb.xquery.xrpc.wrapper;
 
@@ -51,7 +52,7 @@ public class XRPCWrapper {
 	public static final String WF_FILE = "wrapper_functions.xq";
 	public static final String WELCOME_MSG =
 		"# XRPC Wrapper v" + XRPC_WRAPPER_VERSION + "\n" +
-		"# Copyright (c) 1993-2007, CWI. All rights reserved.\n\n";
+		"# Copyright (c) 1993-July 2008, CWI.\n# Copyright (c) August 2008- MonetDB B.V.  All rights reserved.\n\n";
 
 	CmdLineOpts opts;
 
@@ -75,7 +76,7 @@ public class XRPCWrapper {
 			if(!opts.getOption("quiet").isPresent()){
 				System.out.println(
 						"# XRPC Wrapper v" + XRPC_WRAPPER_VERSION + "\n" +
-						"# Copyright (c) 1993-2007, CWI. All rights reserved.\n" +
+						"# Copyright (c) 1993-July 2008, CWI.\n# Copyright (c) August 2008- MonetDB B.V. All rights reserved.\n" +
 						"# Listening on port " + port + "\n" +
 						"# Type Ctrl-C to stop\n");
 			}
