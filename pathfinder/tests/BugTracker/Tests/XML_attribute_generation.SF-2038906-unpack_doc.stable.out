@@ -1,0 +1,14 @@
+stdout of test 'XML_attribute_generation.SF-2038906-unpack_doc` in directory 'tests/BugTracker` itself:
+
+
+# 13:12:44 >  
+# 13:12:44 >  /usr/bin/python XML_attribute_generation.SF-2038906-unpack_doc.py XML_attribute_generation.SF-2038906-unpack_doc 
+# 13:12:44 >  
+
+Archive:  XML_attribute_generation.SF-2038906-unpack_doc.zip
+  inflating: XML_attribute_generation.SF-2038906.xml
+
+# 13:12:44 >  
+# 13:12:44 >  Done.
+# 13:12:44 >  
+
