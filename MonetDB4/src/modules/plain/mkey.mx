@@ -266,7 +266,7 @@ proc ds_link(BAT[bat,bat] keys) : BAT[oid, oid]
 
     sel := sel.seqbase(0@0).uselect(true);
     if (sel.count() != res.count()) {
-      res := res.semijoin( res_l.semijoin(sel).reverse() );
+      res := res.fetch(sel);
     }
   }
   return res;
