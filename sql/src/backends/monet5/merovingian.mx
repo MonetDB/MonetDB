@@ -1761,7 +1761,7 @@ main(int argc, char *argv[])
 	err e;
 	int argp;
 	str dbfarm, msglog, errlog, pidfilename;
-	str p, prefix;
+	str p, prefix, c;
 	FILE *cnf = NULL, *pidfile = NULL;
 	char buf[1024];
 	char lockfile[512];
@@ -1935,7 +1935,13 @@ main(int argc, char *argv[])
 		return(1);
 	}
 
-	snprintf(lockfile, 512, "%s/.merovingian_lock", dbfarm);
+	/* the lock file is placed in the same directory as the pid */
+	strcpy(lockfile, pidfilename);
+	c= strrchr(lockfile,'/');
+	if (c)
+		strcpy(c+1,".merovingian_lock");
+	} else
+		strcat(lockfile, ".merovingian_lock");
 	/* lock such that we are alone on this world */
 	if ((ret = MT_lockf(lockfile, F_TLOCK, 4, 1)) == -1) {
 		/* locking failed */

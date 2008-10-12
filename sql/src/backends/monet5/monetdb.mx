@@ -24,7 +24,7 @@ Merovingian, which by itself does not allow any user interaction.
 The monetdb utility is designed to be the interface for the DBA to the
 dbfarm.  Creating or deleting databases next to retrieving status
 information about them are the primary goals of this tool.
-
+@{
 @h
 #define TOOLKIT_VERSION   "0.4"
 
@@ -282,11 +282,13 @@ printStatus(sabdb *stats, int mode)
 		}
 		/* demo | state | uptime | health */
 		secondsToString(avg, uplog.avguptime, 0);
-		printf("%-14s  %s %12s  %3d%%, %3s  %s\n",
-				dbname,
-				state, uptime,
-				100 - (uplog.crashcntr * 100 / uplog.startcntr),
-				avg, crash);
+			printf("%-14s  %s %12s",
+					dbname, state, uptime);
+		if (uplog.startcntr)
+			printf("  %3d%%, %3s  %s",
+					100 - (uplog.crashcntr * 100 / uplog.startcntr),
+					avg, crash);
+		printf("\n");
 	} else if (mode == 2) {
 		/* long mode */
 		char *state;
@@ -1076,9 +1078,10 @@ command_destroy(int argc, char *argv[])
 				printf("you are about to remove database '%s'\n", dbname);
 				printf("ALL data in this database will get lost, "
 						"are you sure? [y/N] ");
-				if (scanf("%c", &answ) >= 1 && (answ == 'y' || answ == 'Y')) {
-					/* do it! */
-				} else {
+				answ = getchar();
+				while (answ!= '\n' && getchar()!= '\n') 
+					;
+				if (answ != 'y' && answ != 'Y') {
 					printf("battle control terminated\n");
 					exit(0);
 				}
@@ -1361,4 +1364,5 @@ main(int argc, char *argv[])
 	return(0);
 }
 
+@}
 /* vim:set ts=4 sw=4 noexpandtab: */
