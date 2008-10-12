@@ -261,7 +261,7 @@ if all are ok."
 
 .COMMAND xquery_hash2str(int) : str = CMD_XQH_STR; "debug routine that prints the components of the string index hash value"
 
-.COMMAND vx_create(BAT[void,oid],BAT[void,str],BAT[void,oid],BAT[void,int],BAT[void,chr],BAT[void,chr]): BAT[void,int] = CMD_vx_create;
+.COMMAND vx_create_string(BAT[void,oid],BAT[void,str],BAT[void,oid],BAT[void,int],BAT[void,chr],BAT[void,chr]): BAT[void,int] = CMD_vx_create_string;
 "PARAMETERS:
 BAT[void,oid] - the context nodes, should all be of kind TEXT.
 BAT[void,str] - prop_text
@@ -271,6 +271,17 @@ BAT[void,chr] - level_bat
 BAT[void,chr] - kind_bat
 DESCRIPTION:
 create XML value index for a newly shredded document (BAT pre_hsh)"
+
+.COMMAND vx_create_dbl(BAT[void,oid],BAT[void,str],BAT[void,oid],BAT[void,int],BAT[void,chr],BAT[void,chr]): BAT[void,bte] = CMD_vx_create_dbl;
+"PARAMETERS:
+BAT[void,oid] - the context nodes, should all be of kind TEXT.
+BAT[void,str] - prop_text
+BAT[void,oid] - prop_bat
+BAT[void,int] - size_bat
+BAT[void,chr] - level_bat
+BAT[void,chr] - kind_bat
+DESCRIPTION:
+create XML value index for a newly shredded document (BAT pre_state)"
 
 @- Constant Columns
 

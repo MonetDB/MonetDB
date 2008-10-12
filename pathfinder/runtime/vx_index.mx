@@ -179,13 +179,138 @@ int CMD_XQH_STR(str *res, int *val) {
 @c
 /* all possible states of a bbl value, not including -/+ INF */
 enum dblstates
-{ rej, e, dot, digit, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10,
+{ rej, digit, dot, s5, s6, s7, s8, s9, s10, e, s1, s2, s3, s4,
   minus = 14, /* minus    + (digit, dot, s5, s6, s7, s8, s9, s10) */
   plus  = 23, /* plus     + (digit, dot, s5, s6, s7, s8, s9, s10) */
   ws    = 32, /* ws       + (digit, dot, s5, s6, s7, s8, s9, s10) */
   s11   = 41, /* wsplus   + (digit, dot, s5, s6, s7, s8, s9, s10) */
   s12   = 50, /* wsminus  + (digit, dot, s5, s6, s7, s8, s9, s10) */
-};  /* 58 states in total */
+  unseen= 59
+};  /* 60 states in total */
+
+/* state transition table */
+static unsigned char STT[60][59] = {
+/* rej */
+{rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* e */
+{rej, rej, rej, s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s8, s9, rej, rej, rej, rej, rej, rej, rej, s7, s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* dot */
+{rej, rej, rej, digit, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* digit */
+{rej, s1, dot, e, s2, s3, s4, s5, digit, s1, s2, s3, s4, s5, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s5, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s1 */
+{rej, rej, rej, s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s2 */
+{rej, rej, rej, s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s3 */
+{rej, rej, rej, s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s4 */
+{rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s5 */
+{rej, s1, rej, digit, s2, s3, s4, s5, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s5, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s6 */
+{rej, rej, rej, s4, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s3, s4, rej, rej, rej, rej, rej, rej, rej, s2, s4, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s7 */
+{rej, rej, rej, s4, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s8 */
+{rej, rej, rej, s4, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s9 */
+{rej, rej, rej, s4, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s5, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s10 */
+{rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s5, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* minus */
+{rej, rej, minus + dot, minus + digit, rej, rej, rej, rej, minus + s5, minus + s6, minus + s7, minus + s8, minus + s9, minus + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* minus + digit */
+{rej, minus + s6, minus + dot, minus + digit, minus + s7, minus + s8, minus + s9, minus + s10, minus + s5, minus + s6, minus + s7, minus + s8, minus + s9, minus + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, minus + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* minus + dot */
+{rej, rej, rej, minus + s5, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* minus + s5 */
+{rej, minus + s6, rej, minus + s5, minus + s7, minus + s8, minus + s9, minus + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, minus + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* minus + s6 */
+{rej, rej, rej, minus + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, minus + s8, minus + s9, rej, rej, rej, rej, rej, rej, rej, minus + s7, minus + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* minus + s7 */
+{rej, rej, rej, minus + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* minus + s8 */
+{rej, rej, rej, minus + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* minus + s9 */
+{rej, rej, rej, minus + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, minus + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* minus + s10 */
+{rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, minus + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* plus */
+{rej, rej, plus + dot, plus + digit, rej, rej, rej, rej, plus + s5, plus + s6, plus + s7, plus + s8, plus + s9, plus + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* plus + digit */
+{rej, plus + s6, plus + dot, plus + digit, plus + s7, plus + s8, plus + s9, plus + s10, plus + s5, plus + s6, plus + s7, plus + s8, plus + s9, plus + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, plus + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* plus + dot */
+{rej, rej, rej, plus + s5, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* plus + s5 */
+{rej, plus + s6, rej, plus + s5, plus + s7, plus + s8, plus + s9, plus + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, plus + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* plus + s6 */
+{rej, rej, rej, plus + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, plus + s8, plus + s9, rej, rej, rej, rej, rej, rej, rej, plus + s7, plus + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* plus + s7 */
+{rej, rej, rej, plus + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* plus + s8 */
+{rej, rej, rej, plus + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* plus + s9 */
+{rej, rej, rej, plus + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, plus + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* plus + s10 */
+{rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, plus + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* ws */
+{rej, rej, ws + dot, ws + digit, rej, rej, rej, rej, ws + s5, ws + s6, ws + s7, ws + s8, ws + s9, ws + s10, s12, s12 + digit, s12 + dot, s12 + s5, s12 + s6, s12 + s7, s12 + s8, s12 + s9, s12 + s10, s11, s11 + digit, s11 + dot, s11 + s5, s11 + s6, s11 + s7, s11 + s8, s11 + s9, s11 + s10, ws, ws + digit, ws + dot, ws + s5, ws + s6, ws + s7, ws + s8, ws + s9, ws + s10, s11, s11 + digit, s11 + dot, s11 + s5, s11 + s6, s11 + s7, s11 + s8, s11 + s9, s11 + s10, s12, s12 + digit, s12 + dot, s12 + s5, s12 + s6, s12 + s7, s12 + s8, s12 + s9, s12 + s10},
+/* ws + digit */
+{rej, ws + s6, ws + dot, ws + digit, ws + s7, ws + s8, ws + s9, ws + s10, ws + s5, ws + s6, ws + s7, ws + s8, ws + s9, ws + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, ws + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* ws + dot */
+{rej, rej, rej, ws + s5, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* ws + s5 */
+{rej, ws + s6, rej, ws + s5, ws + s7, ws + s8, ws + s9, ws + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, ws + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* ws + s6 */
+{rej, rej, rej, ws + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, ws + s8, ws + s9, rej, rej, rej, rej, rej, rej, rej, ws + s7, ws + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* ws + s7 */
+{rej, rej, rej, ws + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* ws + s8 */
+{rej, rej, rej, ws + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* ws + s9 */
+{rej, rej, rej, ws + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, ws + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* ws + s10 */
+{rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, ws + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s11 */
+{rej, rej, s11 + dot, s11 + digit, rej, rej, rej, rej, s11 + s5, s11 + s6, s11 + s7, s11 + s8, s11 + s9, s11 + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s11 + digit */
+{rej, s11 + s6, s11 + dot, s11 + digit, s11 + s7, s11 + s8, s11 + s9, s11 + s10, s11 + s5, s11 + s6, s11 + s7, s11 + s8, s11 + s9, s11 + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s11 + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s11 + dot */
+{rej, rej, rej, s11 + s5, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s11 + s5 */
+{rej, s11 + s6, rej, s11 + s5, s11 + s7, s11 + s8, s11 + s9, s11 + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s11 + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s11 + s6 */
+{rej, rej, rej, s11 + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s11 + s8, s11 + s9, rej, rej, rej, rej, rej, rej, rej, s11 + s7, s11 + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s11 + s7 */
+{rej, rej, rej, s11 + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s11 + s8 */
+{rej, rej, rej, s11 + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s11 + s9 */
+{rej, rej, rej, s11 + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s11 + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s11 + s10 */
+{rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s11 + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s12 */
+{rej, rej, s12 + dot, s12 + digit, rej, rej, rej, rej, s12 + s5, s12 + s6, s12 + s7, s12 + s8, s12 + s9, s12 + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s12 + digit */
+{rej, s12 + s6, s12 + dot, s12 + digit, s12 + s7, s12 + s8, s12 + s9, s12 + s10, s12 + s5, s12 + s6, s12 + s7, s12 + s8, s12 + s9, s12 + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s12 + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s12 + dot */
+{rej, rej, rej, s12 + s5, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s12 + s5 */
+{rej, s12 + s6, rej, s12 + s5, s12 + s7, s12 + s8, s12 + s9, s12 + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s12 + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s12 + s6 */
+{rej, rej, rej, s12 + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s12 + s8, s12 + s9, rej, rej, rej, rej, rej, rej, rej, s12 + s7, s12 + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s12 + s7 */
+{rej, rej, rej, s12 + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s12 + s8 */
+{rej, rej, rej, s12 + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s12 + s9 */
+{rej, rej, rej, s12 + s9, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s12 + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* s12 + s10 */
+{rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, s12 + s10, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej, rej},
+/* unseen */
+{rej, digit, dot, s5, s6, s7, s8, s9, s10, s1, s2, s3, s4, minus, minus + digit, minus + dot, minus + s5, minus + s6, minus + s7, minus + s8, minus + s9, minus + s10, plus, plus + digit, plus + dot, plus + s5, plus + s6, plus + s7, plus + s8, plus + s9, plus + s10, ws, ws + digit, ws + dot, ws + s5, ws + s6, ws + s7, ws + s8, ws + s9, ws + s10, s11, s11 + digit, s11 + dot, s11 + s5, s11 + s6, s11 + s7, s11 + s8, s11 + s9, s11 + s10, s12, s12 + digit, s12 + dot, s12 + s5, s12 + s6, s12 + s7, s12 + s8, s12 + s9, s12 + s10}
+};
 
 /* Returns the state that str v resolves to. We do not use a big while loop.
  * Instead, for efficiency we only allow sequential flow of the states. This
@@ -194,9 +319,9 @@ enum dblstates
  * statements go until 4 in worst case. As a result this function never
  * reaches the end.
  */
-static INLINE int dbl_fsm(str v) {
-    int state = rej;
-    int lead  = 0;
+static INLINE unsigned char dbl_fsm(str v) {
+    unsigned char state = rej;
+    unsigned char lead  = 0;
 
     /*decide the entry point in the FSM */
     if (isspace(*v)) {
@@ -248,7 +373,7 @@ static INLINE int dbl_fsm(str v) {
 
         /* state here is s3 or s4 */
         if (state == s3) {
-            @:consume_digits(v):@
+            @:consume_digits(v)@
             if (*v == '\0') {
                 return state;
             } else if (isspace(*v)) {
@@ -260,7 +385,7 @@ static INLINE int dbl_fsm(str v) {
 
         /* state here is s4 */
         assert (state == s4);
-        @:consume_spaces(v):@
+        @:consume_spaces(v)@
         if (*v == '\0') {
             return state;
         } else {
@@ -283,7 +408,7 @@ static INLINE int dbl_fsm(str v) {
 
     if (state == ws) {
         /* consume all leading white spaces */
-        @:consume_spaces(v):@
+        @:consume_spaces(v)@
         if (*v == '\0') {
             return state;
         } else if (isdigit(*v)) {
@@ -315,7 +440,7 @@ static INLINE int dbl_fsm(str v) {
     }
 
     if (state == digit) {
-        @:consume_digits(v):@
+        @:consume_digits(v)@
         if (*v == '\0') {
             return state+lead; /* from now on return state + lead */
         } else if (*v == '.') {
@@ -337,7 +462,7 @@ static INLINE int dbl_fsm(str v) {
         } else if (isdigit(*v)) {
             state = s5;
             /* state s5 can be resolved here */
-            @:consume_digits(v):@
+            @:consume_digits(v)@
             if (*v == '\0') {
                 return state+lead;
             } else if (isspace(*v)) {
@@ -381,7 +506,7 @@ static INLINE int dbl_fsm(str v) {
     }
 
     if (state == s9) {
-        @:consume_digits(v):@
+        @:consume_digits(v)@
         if (*v == '\0') {
             return state+lead;
         } else if (isspace(*v)) {
@@ -392,7 +517,7 @@ static INLINE int dbl_fsm(str v) {
     }
 
     if (state == s10) {
-        @:consume_spaces(v):@
+        @:consume_spaces(v)@
         if (*v == '\0') {
             return state+lead;
         } else {
@@ -459,12 +584,31 @@ bats, nid_state, value_nid, nid_lexical. All BATs are shorted on head.
  * to be only of kind TEXT. This is not true during updates,
  * since there might *not* be a text node (deleted).
  */
+pre_hsh[pre] = XQH_H(text_base + pre_text[pre_prop[pre]]);
+cur++;
+
+@= found_update_string
 if (pre_kind[pre] == TEXT) {
     pre_hsh[pre] = XQH_H(text_base + pre_text[pre_prop[pre]]);
     cur++;
 } else {
-    GDKerror("index_create_string: Context node is not of kind TEXT.\n");
-    return 0;
+    /* deal with non-text nodes */
+}
+
+@= found_create_dbl
+/* during creation of the index we expect the context nodes
+ * to be only of kind TEXT. This is not true during updates,
+ * since there might *not* be a text node (deleted).
+ */
+pre_state[pre] = dbl_fsm(text_base + pre_text[pre_prop[pre]]);
+cur++;
+
+@= found_update_dbl
+if (pre_kind[pre] == TEXT) {
+    pre_state[pre] = dbl_fsm(text_base + pre_text[pre_prop[pre]]);
+    cur++;
+} else {
+    /* deal with non-text nodes */
 }
 
 @= pop_create_string
@@ -474,6 +618,19 @@ pop = stack[--depth];
 pre_hsh[pop] = XQH_C(pre_hsh[pop], pre_hsh[pre]);
 pre = pop;
 
+@= pop_create_dbl
+/* pop the stack */
+pop = stack[--depth];
+/* combine the popped hash value with the pre hash value */
+pre_state[pop] = STT[pre_state[pop]][pre_state[pre]];
+pre = pop;
+
+@= father_create_string
+pre_hsh[stack[depth-1]] = XQH_C(pre_hsh[stack[depth-1]], pre_hsh[pre]);
+
+@= father_create_dbl
+pre_state[stack[depth-1]] = STT[pre_state[stack[depth-1]]][pre_state[pre]];
+
 @= empty_stack_create_string
 while (depth > 0) { /* still nodes in the stack */
     pop = stack[--depth];
@@ -481,10 +638,33 @@ while (depth > 0) { /* still nodes in the stack */
     pre = pop;
 }
 
+@= empty_stack_create_dbl
+while (depth > 0) { /* still nodes in the stack */
+    pop = stack[--depth];
+    pre_state[pop] = STT[pre_state[pop]][pre_state[pre]];
+    pre = pop;
+}
+
+@= decleration_create_string
+unsigned int* pre_hsh,            /* - pre_hsh column            */
+
+@= decleration_create_dbl
+unsigned char* pre_state,            /* - pre_state column            */
+
+@= init_create_string
+/* initialize all hash values to 0 for correct hash combination */
+for (cur = 0; cur < limit; cur++) pre_hsh[cur] = 0;
+cur = 0;
+
+@= init_create_dbl
+/* initialize all states to unseen for correct STT resolution */
+for (cur = 0; cur < limit; cur++) pre_state[cur] = unseen;
+cur = 0;
+
 @= index_
 static int
 index_@1_@2(                        /* OUTPUT:                     */
-        unsigned int* pre_hsh,            /* - pre_hsh column            */
+        @:decleration_@1_@2()@
                                           /* DOCUMENT:                   */
         oid* pre_prop,                    /* - pre_prop column           */
         var_t* pre_text,                  /* - fixed-size offsets of the
@@ -506,12 +686,12 @@ index_@1_@2(                        /* OUTPUT:                     */
     oid pop = 0;
     int depth = 0;
     (void) pre_level;
+    (void) pre_kind;
 
     *stack++ = oid_nil; /* bogus parent, filtered out later */
 
     /* initialize all hash values to 0 for correct hash combination */
-    for (cur = 0; cur < limit; cur++) pre_hsh[cur] = 0;
-    cur = 0;
+    @:init_@1_@2()@
 
     /* if the collection node is passed in, skip it */
     while(cur < context_size && context[cur] == 0) cur++;
@@ -522,7 +702,7 @@ index_@1_@2(                        /* OUTPUT:                     */
     while(cur < context_size) { /* while still context nodes active */
 
         if (context[cur] == pre) {
-            @:found_@1_@2():@
+            @:found_@1_@2()@
 
         } else if (context[cur] <= pre + pre_size[pre]) {
 
@@ -539,8 +719,7 @@ index_@1_@2(                        /* OUTPUT:                     */
 
 
             /* first update father node */
-            pre_hsh[stack[depth-1]] = XQH_C(pre_hsh[stack[depth-1]],
-                    pre_hsh[pre]);
+            @:father_@1_@2()@
 
             oid off = pre;
             int budget = PF_SIBLING_PROBES;
@@ -565,21 +744,31 @@ index_@1_@2(                        /* OUTPUT:                     */
             if (depth == 0)
                 root = pre;
         } else {
-            @:pop_@1_@2():@
+            @:pop_@1_@2()@
         }
     }
 
-    @:empty_stack_@1_@2():@
+    @:empty_stack_@1_@2()@
 
     return (cur == context_size);
 }
 
-@c
-@:index_(create,string):@
+@= create_string_bat
+res_bat = BATnew(TYPE_void, TYPE_int, limit);
 
+@= create_dbl_bat
+res_bat = BATnew(TYPE_void, TYPE_bte, limit);
+
+@= create_string_cast
+unsigned int*
+
+@= create_dbl_cast
+unsigned char*
+
+@= CMD_vx_create
 int
-CMD_vx_create(          /* RESULT:   */
-        BAT **ret,      /* - [void,int] bat, hash column                   */
+CMD_vx_create_@1(          /* RESULT:   */
+        BAT **ret,      /* - [void,int] bat, res column                   */
                         /* INPUT:    */
         BAT *ctx_bat,   /* - [void,oid] bat, context nodes, assuming all
                              are of kind TEXT for create                   */
@@ -591,7 +780,7 @@ CMD_vx_create(          /* RESULT:   */
         BAT *kind_bat)  /* - [void,chr] bat, doc representation with holes */
 {
     int status = GDK_FAIL;
-    BAT *hash_bat = NULL;
+    BAT *res_bat = NULL;
     oid limit = BATcount(size_bat);
     unsigned int *pre_size = (unsigned int*)
             Tloc(size_bat, BUNfirst(size_bat));
@@ -629,10 +818,11 @@ CMD_vx_create(          /* RESULT:   */
         return status;
     }
 
-    hash_bat = BATnew(TYPE_void, TYPE_int, limit);
-    if (hash_bat) {
-        if (index_create_string(
-                    (unsigned int*) Tloc(hash_bat, BUNfirst(hash_bat)),
+    //res_bat = BATnew(TYPE_void, TYPE_int, limit);
+    @:create_@1_bat@
+    if (res_bat) {
+        if (index_create_@1(
+                    (@:create_@1_cast()@) Tloc(res_bat, BUNfirst(res_bat)),
                     pre_prop,
                     (var_t*) Tloc(prop_text, BUNfirst(prop_text)),
                     (char*) prop_text->T->vheap->base,
@@ -640,19 +830,26 @@ CMD_vx_create(          /* RESULT:   */
                     context, BATcount(ctx_bat))) {
             status = GDK_SUCCEED;
         } else {
-            GDKerror("index_creation: failed.\n");
+            GDKerror("vx_creat: failed.\n");
         }
     } else {
-        GDKerror("vx_create: could not allocate memory for hash bat.\n");
+        GDKerror("vx_create: could not allocate memory for result bat.\n");
     }
 
     if (status == GDK_SUCCEED) {
-        BATsetcount(hash_bat, limit);
-        BATseqbase(hash_bat, 0);
-        hash_bat->tsorted = 0;
-        *ret = hash_bat;
-    } else if (hash_bat) {
-        BBPreclaim(hash_bat);
+        BATsetcount(res_bat, limit);
+        BATseqbase(res_bat, 0);
+        res_bat->tsorted = 0;
+        *ret = res_bat;
+    } else if (res_bat) {
+        BBPreclaim(res_bat);
     }
     return status;
 }
+
+@c
+@:index_(create,string)@
+@:index_(create,dbl)@
+@:CMD_vx_create(string)@
+@:CMD_vx_create(dbl)@
+
