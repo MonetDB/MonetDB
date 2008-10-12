@@ -2094,7 +2094,12 @@ main(int argc, char *argv[])
 	SABAOTHinit(dbfarm, NULL);
 
 	/* set up control channel path */
-	snprintf(buf, 1024, "%s/.merovingian_control", dbfarm);
+	strcpy(buf, pidfilename);
+	c= strrchr(buf,'/');
+	if (c)
+		strcpy(c+1,".merovingian_control");
+	else
+		strcpy(buf, ".merovingian_control");
 	unlink(buf);
 	GDKfree(dbfarm);
 
