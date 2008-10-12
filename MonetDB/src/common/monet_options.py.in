@@ -27,6 +27,54 @@ class Error(Exception):
     """Bad option."""
     pass
 
+_varprog = None
+def expandvars(self, path):
+    """Expand shell variables of form ${var} (and %var%).  Unknown variables
+    are left unchanged."""
+    global _varprog
+    if '$' not in path:
+        return path
+    if not _varprog:
+        import re
+        _varprog = re.compile(r'\$(\{[^}]*\})')
+    i = 0
+    while True:
+        m = _varprog.search(path, i)
+        if not m:
+            break
+        i, j = m.span(0)
+        name = m.group(1)
+        if name.startswith('{') and name.endswith('}'):
+            name = name[1:-1]
+        try:
+            val = getattr(self, name)
+        except AttributeError:
+            return path
+        tail = path[j:]
+        path = path[:i] + val
+        i = len(path)
+        path += tail
+    if os.name == "nt":
+        _varprog = re.compile(r'\%([^%]*%)')
+        i = 0
+        while True:
+            m = _varprog.search(path, i)
+            if not m:
+                break
+            i, j = m.span(0)
+            name = m.group(1)
+            if name.endswith('%'):
+                name = name[0:-1]
+            try:
+                val = getattr(self, name)
+            except AttributeError:
+                return path
+            tail = path[j:]
+            path = path[:i] + val
+            i = len(path)
+            path += tail
+    return path
+
 # By using a hierarchy of classes we can let Python do the searching
 # for the correct value.
 class BuiltinOptions:
@@ -53,28 +101,13 @@ class BuiltinOptions:
     def get(self, name, default = None):
         '''get(name, [default]) -> value
 
-        Return the value for name after substituting ${prefix} and
-        ${exec_prefix}.'''
+        Return the value for name after substituting ${variable}.'''
         try:
             val = getattr(self, name)
         except AttributeError:
             return default
-        changed = type(val) is type('') # only do this on string args
-        while changed:
-            changed = False
-            for var in 'prefix', 'exec_prefix':
-                dvar = '${%s}' % var
-                if string.find(val, dvar) >= 0:
-                    # replace variable with its value (recursive call)
-                    val = string.replace(val, dvar, self.get(var))
-                    changed = True
-                if os.name == 'nt':
-                    # on Windows, also replace %prefix% and %exec_prefix%
-                    dvar = '%%%s%%' % var
-                    if string.find(val, dvar) >= 0:
-                        # replace variable with its value (recursive call)
-                        val = string.replace(val, dvar, self.get(var))
-                        changed = True
+        if type(val) is type(''): # only do this on string args
+            return expandvars(self, val);
         return val
 
 class SystemOptions(BuiltinOptions):
