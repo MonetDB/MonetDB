@@ -180,12 +180,12 @@ int CMD_XQH_STR(str *res, int *val) {
 /* all possible states of a bbl value, not including -/+ INF */
 enum dblstates
 { rej, e, dot, digit, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10,
-  minus = 14, /* minus + (digit, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10) */
-  plus  = 26, /* plus  + (digit, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10) */
-  ws    = 38, /* ws  + (digit, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10) */
-  s11   = 50, /* wsplus  + (digit, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10) */
-  s12   = 62, /* wsminus  + (digit, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10) */
-};  /* 74 states in total */
+  minus = 14, /* minus    + (digit, dot, s5, s6, s7, s8, s9, s10) */
+  plus  = 23, /* plus     + (digit, dot, s5, s6, s7, s8, s9, s10) */
+  ws    = 32, /* ws       + (digit, dot, s5, s6, s7, s8, s9, s10) */
+  s11   = 41, /* wsplus   + (digit, dot, s5, s6, s7, s8, s9, s10) */
+  s12   = 50, /* wsminus  + (digit, dot, s5, s6, s7, s8, s9, s10) */
+};  /* 58 states in total */
 
 /* Returns the state that str v resolves to. We do not use a big while loop.
  * Instead, for efficiency we only allow sequential flow of the states. This
