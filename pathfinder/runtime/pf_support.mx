@@ -251,13 +251,13 @@ if all are ok."
 .COMMAND xquery_hash(str) : int = CMDxquery_hash; ""
 .COMMAND [xquery_hash](BAT[void,str]) : BAT[void,int] = CMDxquery_hash_bat; ""
 
-.COMMAND xquery_hash_new(str) : int = CMD_XQH_H; "hash a string value"
-.COMMAND [xquery_hash_new](BAT[void,str]) : BAT[void,int] = CMD_XQH_H_bat; "hash a string value"
+.COMMAND xquery_hash_str(str) : int = CMD_XQH_H; "hash a string value"
+.COMMAND [xquery_hash_str](BAT[void,str]) : BAT[void,int] = CMD_XQH_H_bat; "hash a string value"
 
 .COMMAND xquery_dblfsm(str) : int = CMD_XQ_DBLFSM; "returns the state of the double finite state machine for the given string"
 
-.COMMAND xquery_combine(int,int) : int = CMD_XQH_C; "combine two hash values to produce a new one"
-.COMMAND [xquery_combine](BAT[void,int], BAT[void,int]) : BAT[void,int] = CMD_XQH_C_bat; "combine two hash values to produce a new one"
+.COMMAND xquery_combine_str(int,int) : int = CMD_XQH_C; "combine two string hash values to produce a new one"
+.COMMAND [xquery_combine_str](BAT[void,int], BAT[void,int]) : BAT[void,int] = CMD_XQH_C_bat; "combine two string hash values to produce a new one"
 
 .COMMAND xquery_hash2str(int) : str = CMD_XQH_STR; "debug routine that prints the components of the string index hash value"
 
@@ -270,7 +270,7 @@ BAT[void,int] - size_bat
 BAT[void,chr] - level_bat
 BAT[void,chr] - kind_bat
 DESCRIPTION:
-create the [text] XML value index for a newly shredded document (BAT pre_hash)"
+create XML value index for a newly shredded document (BAT pre_hsh)"
 
 @- Constant Columns
 
