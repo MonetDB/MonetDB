@@ -1936,12 +1936,13 @@ main(int argc, char *argv[])
 	}
 
 	/* the lock file is placed in the same directory as the pid */
+	/* which we know exists by now */
 	strcpy(lockfile, pidfilename);
 	c= strrchr(lockfile,'/');
 	if (c)
 		strcpy(c+1,".merovingian_lock");
-	} else
-		strcat(lockfile, ".merovingian_lock");
+	else
+		strcpy(lockfile, ".merovingian_lock");
 	/* lock such that we are alone on this world */
 	if ((ret = MT_lockf(lockfile, F_TLOCK, 4, 1)) == -1) {
 		/* locking failed */
