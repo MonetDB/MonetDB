@@ -166,6 +166,9 @@
 /** combine_node_info PROC */
 #define zip_nodes(a,b,c,d,e,f) PFmil_zip_nodes ((a), (b), (c), (d), (e), (f))
 
+/** get_attr_own PROC */
+#define get_attr_own(a,b,c) PFmil_get_attr_own ((a), (b), (c))
+
 /** reverse() operator */
 #define reverse(a) PFmil_reverse(a)
 

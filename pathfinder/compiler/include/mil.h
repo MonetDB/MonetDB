@@ -192,6 +192,8 @@ enum PFmil_kind_t {
     , m_zip_nodes    /**< MIL combine_node_info PROC that compresses
                           the fragment, pre, and attribute ids into
                           a single filed. */
+    , m_attr_own     /**< MIL get_attr_own PROC that does a more efficient
+                          mvaljoin. */
 
     , m_reverse      /**< MIL reverse operator, swap head/tail */
     , m_mirror       /**< MIL mirror() operator, mirror head into tail */
@@ -597,6 +599,10 @@ PFmil_t * PFmil_unq1_thetajoin (const PFmil_t *, const PFmil_t *,
 PFmil_t * PFmil_zip_nodes (const PFmil_t *, const PFmil_t *,
                            const PFmil_t *, const PFmil_t *,
                            const PFmil_t *, const PFmil_t *);
+
+/** MIL get_attr_own PROC */
+PFmil_t * PFmil_get_attr_own (const PFmil_t *, const PFmil_t *,
+                              const PFmil_t *);
 
 /** MIL reverse() function, swap head/tail */
 PFmil_t * PFmil_reverse (const PFmil_t *);

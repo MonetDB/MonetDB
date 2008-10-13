@@ -54,6 +54,7 @@
                       exp ',' exp ', nil, nil)'             <m_unq1_tjoin>
                  | 'combine_node_info(' exp ',' exp ','
                       exp ',' exp ',' exp ',' exp ')'       <m_zip_nodes>
+                 | 'get_attr_own (' exp ',' exp ',' exp ')' <m_attr_own>
                  | expression '.kunion (' expression ')'    <m_kunion>
                  | expression '.kdiff (' expression ')'     <m_kdiff>
                  | expression '.kintersect (' expression ')'<m_kintersect>
@@ -260,6 +261,7 @@ static char *ID[] = {
     , [m_unq2_tjoin]   = "htordered_unique_thetajoin"
     , [m_unq1_tjoin]   = "ll_htordered_unique_thetajoin"
     , [m_zip_nodes]    = "combine_node_info"
+    , [m_attr_own]     = "get_attr_own"
     , [m_reverse]      = "reverse"
     , [m_mirror]       = "mirror"
     , [m_copy]         = "copy"
@@ -991,6 +993,8 @@ print_expression (PFmil_t * n)
         case m_mvaljoin:
         /* expression : 'add_content (' exp ',' exp ',' exp ')' */
         case m_add_content:
+        /* expression : 'get_attr_own (' exp ',' exp ',' exp ')' */
+        case m_attr_own:
             milprintf ("%s (", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");
