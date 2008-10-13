@@ -201,7 +201,7 @@ mo_substitute(opt *set, int setlen, char *val)
 		char *r = NULL;
 
 		if (q[1] == '{' && (r = strchr(q, '}')) != NULL) { 
-			int len = r - q;
+			size_t len = r - q;
 			char *p, *t;
 
 			*r = 0;
@@ -225,7 +225,7 @@ mo_substitute(opt *set, int setlen, char *val)
 		char *r = NULL;
 
 		if ((r = strchr(q+1, '%')) != NULL) { 
-			int len = r - q;
+			size_t len = r - q;
 			char *p, *t;
 
 			*r = 0;
