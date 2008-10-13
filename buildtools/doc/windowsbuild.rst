@@ -1,3 +1,20 @@
+.. The contents of this file are subject to the MonetDB Public License
+.. Version 1.1 (the "License"); you may not use this file except in
+.. compliance with the License. You may obtain a copy of the License at
+.. http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+..
+.. Software distributed under the License is distributed on an "AS IS"
+.. basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+.. License for the specific language governing rights and limitations
+.. under the License.
+..
+.. The Original Code is the MonetDB Database System.
+..
+.. The Initial Developer of the Original Code is CWI.
+.. Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+.. Copyright August 2008- MonetDB B.V.
+.. All Rights Reserved.
+
 Building MonetDB On Windows
 +++++++++++++++++++++++++++
 
@@ -24,6 +41,14 @@ order.  Unless you know the inter-component dependencies, it is better
 to stick to this order.  Also note that before the next component is
 built, the previous ones need to be installed.  The section names are
 the names of the CVS modules on SourceForge.
+
+buildtools
+----------
+
+The buildtools component is required in order to build the sources
+from the CVS repository.  If you get the pre-packaged sources
+(i.e. the one in tar balls), you don't need the buildtools component
+(although this has not been tested on Windows).
 
 MonetDB
 -------
@@ -201,9 +226,9 @@ only used during testing to terminate tests that take too long.
 
 PsKill is part of the `Windows Sysinternals`__.  Go to the Process
 Utilities, and get the PsKill package.  PsKill is also part of the
-PsTools package, so you can get that instead.  Extract the archive,
-and make sure that the folder is in your ``Path`` variable when you
-run the tests.
+PsTools package and the Sysinternals Suite, so you can get those
+instead.  Extract the archive, and make sure that the folder is in
+your ``Path`` variable when you run the tests.
 
 __ http://www.microsoft.com/technet/sysinternals/default.mspx
 
@@ -264,7 +289,7 @@ With the sources checked out, compile using::
  cd source
  nmake /f Makefile.vc
 
-Then install the sources somewhere, e.g. in ``C:\geos-3.0.win32``::
+Then install the library somewhere, e.g. in ``C:\geos-3.0.win32``::
 
  mkdir C:\geos-3.0.win32
  mkdir C:\geos-3.0.win32\lib
@@ -384,9 +409,10 @@ PHP
 PHP__ is only needed to create an interface that can be used from a PHP
 program to communicate with a MonetDB server.
 
-Download the Windows binaries and the source package from
-http://www.php.net/.  Install the binaries and unpack the source
-somewhere.
+Download the Windows installer and source
+package of PHP 5 from http://www.php.net/.
+Install the binary package and extract the sources somewhere (e.g. as
+a subdirectory of the binary installation).
 
 In order to get MonetDB to compile with these sources a few changes
 had to be made to the sources:
@@ -552,26 +578,26 @@ When using the Intel compiler, you also need to set the ``CC`` and
 Internal Variables
 ~~~~~~~~~~~~~~~~~~
 
-- ``MONETDB_SOURCE`` - source folder of the MonetDB package
-- ``CLIENTS_SOURCE`` - source folder of the clients package
-- ``MONETDB4_SOURCE`` - source folder of the MonetDB4 package
-- ``MONETDB5_SOURCE`` - source folder of the MonetDB5 package
-- ``SQL_SOURCE`` - source folder of the sql package
-- ``PATHFINDER_SOURCE`` - source folder of the pathfinder package
+- ``MONETDB_SOURCE`` - source folder of the MonetDB component
+- ``CLIENTS_SOURCE`` - source folder of the clients component
+- ``MONETDB4_SOURCE`` - source folder of the MonetDB4 component
+- ``MONETDB5_SOURCE`` - source folder of the MonetDB5 component
+- ``SQL_SOURCE`` - source folder of the sql component
+- ``PATHFINDER_SOURCE`` - source folder of the pathfinder component
 
-- ``MONETDB_BUILD`` - build folder of the MonetDB package (i.e. ``%MONETDB_SOURCE%\NT``)
-- ``CLIENTS_BUILD`` - build folder of the clients package (i.e. ``%CLIENTS_SOURCE%\NT``)
-- ``MONETDB4_BUILD`` - build folder of the MonetDB4 package (i.e. ``%MONETDB4_SOURCE%\NT``)
-- ``MONETDB5_BUILD`` - build folder of the MonetDB5 package (i.e. ``%MONETDB5_SOURCE%\NT``)
-- ``SQL_BUILD`` - build folder of the sql package (i.e. ``%SQL_SOURCE%\NT``)
-- ``PATHFINDER_BUILD`` - build folder of the pathfinder package (i.e. ``%PATHFINDER_SOURCE%\NT``)
+- ``MONETDB_BUILD`` - build folder of the MonetDB component (i.e. ``%MONETDB_SOURCE%\NT``)
+- ``CLIENTS_BUILD`` - build folder of the clients component (i.e. ``%CLIENTS_SOURCE%\NT``)
+- ``MONETDB4_BUILD`` - build folder of the MonetDB4 component (i.e. ``%MONETDB4_SOURCE%\NT``)
+- ``MONETDB5_BUILD`` - build folder of the MonetDB5 component (i.e. ``%MONETDB5_SOURCE%\NT``)
+- ``SQL_BUILD`` - build folder of the sql component (i.e. ``%SQL_SOURCE%\NT``)
+- ``PATHFINDER_BUILD`` - build folder of the pathfinder component (i.e. ``%PATHFINDER_SOURCE%\NT``)
 
-- ``MONETDB_PREFIX`` - installation folder of the MonetDB package
-- ``CLIENTS_PREFIX`` - installation folder of the clients package
-- ``MONETDB4_PREFIX`` - installation folder of the MonetDB4 package
-- ``MONETDB5_PREFIX`` - installation folder of the MonetDB5 package
-- ``SQL_PREFIX`` - installation folder of the sql package
-- ``PATHFINDER_PREFIX`` - installation folder of the pathfinder package
+- ``MONETDB_PREFIX`` - installation folder of the MonetDB component
+- ``CLIENTS_PREFIX`` - installation folder of the clients component
+- ``MONETDB4_PREFIX`` - installation folder of the MonetDB4 component
+- ``MONETDB5_PREFIX`` - installation folder of the MonetDB5 component
+- ``SQL_PREFIX`` - installation folder of the sql component
+- ``PATHFINDER_PREFIX`` - installation folder of the pathfinder component
 
 We recommend that the various ``PREFIX`` environment variables all
 point to the same location (all contain the same value) which is
@@ -626,7 +652,7 @@ need to be found by the Python interpreter::
  rem PCRE DLL
  set Path=C:\Program Files\PCRE\bin;%Path%
  rem PHP binary
- set Path=C:\php-5;%Path%
+ set Path=C:\Program Files\PHP;%Path%
  if not "%MONETDB_PREFIX%" == "%SQL_PREFIX%" set Path=%SQL_PREFIX%\bin;%SQL_PREFIX%\lib;%SQL_PREFIX%\lib\MonetDB4;%Path%
  set Path=%MONETDB4_PREFIX%\lib\MonetDB4;%Path%
  if not "%MONETDB_PREFIX%" == "%MONETDB4_PREFIX%" set Path=%MONETDB4_PREFIX%\bin;%MONETDB4_PREFIX%\lib;%Path%
@@ -693,6 +719,32 @@ available.  The following parameters are possible:
 - ``HAVE_PYTHON_SWIG=1`` - Python and SWIG are both available (also
   need ``HAVE_PYTHON=1``).
 
+In addition, you can add a parameter which points to a file with extra
+definitions for ``nmake``.  This is very convenient to define where
+all packages were installed that the build process depends on since
+you then don't have to edit any of the ``rules.msc`` files in the
+source tree:
+
+- ``"MAKE_INCLUDEFILE=..."`` - file with extra ``nmake`` definitions.
+
+It is recommended to at least put the ``MAKE_INCLUDEFILE`` parameter
+with argument in double quotes to protect any spaces that may appear
+in the file name.
+
+The contents of the file referred to with the ``MAKE_INCLUDEFILE``
+parameter may contain something like::
+
+ bits=32
+ PTHREAD_INCS=-IC:\Pthreads\include
+ PTHREAD_LIBS=C:\Pthreads\lib\pthreadVC2.lib
+ PHP_SRCDIR=C:\Program Files\PHP\php-5.2.6
+ PHP_INSTDIR=C:\Program Files\PHP
+ LIBPERL=C:\Perl
+ LIBPCRE=C:\Program Files\PCRE
+ LIBICONV=C:\iconv-1.11.win32
+ LIBZLIB=C:\zlib-1.2.3.win32
+ LIBXML2=C:\libxml2-2.6.32+.win32
+
 Building Installers
 ~~~~~~~~~~~~~~~~~~~
 
@@ -721,3 +773,27 @@ registry.  The code can be fixed by editing the generated installer
 (``.msi`` file) using e.g. the program ``orca`` from Microsoft.  Open
 the installer in ``orca`` and locate the table ``RegLocator``.  In the
 Type column, change the value from ``2`` to ``18`` and save the file.
+Alternatively, use the following Python script to fix the ``.msi``
+file::
+
+ # Fix a .msi (Windows Installer) file for a 64-bit registry search.
+ # Microsoft refuses to fix a bug in Visual Studio so that for a 64-bit
+ # build, the registry search will look in the 32-bit part of the
+ # registry instead of the 64-bit part of the registry.  This script
+ # fixes the .msi to look in the correct part.
+
+ import msilib
+ import sys
+ import glob
+
+ def fixmsi(f):
+     db = msilib.OpenDatabase(f, msilib.MSIDBOPEN_DIRECT)
+     v = db.OpenView('UPDATE RegLocator SET Type = 18 WHERE Type = 2')
+     v.Execute(None)
+     v.Close()
+     db.Commit()
+
+ if __name__ == '__main__':
+     for f in sys.argv[1:]:
+	 for g in glob.glob(f):
+	     fixmsi(g)
