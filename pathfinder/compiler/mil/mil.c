@@ -814,6 +814,15 @@ PFmil_t * PFmil_zip_nodes (const PFmil_t *a, const PFmil_t *b,
 }
 
 /**
+ * MIL get_attr_own PROC
+ */
+PFmil_t * PFmil_get_attr_own (const PFmil_t *a, const PFmil_t *b,
+                              const PFmil_t *c)
+{
+    return wire3 (m_attr_own, a, b, c);
+}
+
+/**
  * Monet reverse operator, swap head/tail
  */
 PFmil_t *

@@ -6875,23 +6875,40 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
             /* collect and update content attributes (mvaljoin) */
             if (twig_state->elem_content) {
+                mvar_t *oldPre = new_var (1);
+                mvar_t *oldCont=new_var (1);
+                mvar_t *oldNid = new_var (1);
                 mvar_t *attr = new_var (1);
                 mvar_t *item = new_var (1);
                 mvar_t *cont = new_var (1);
 
                 execute (
-                    /* lookup attribute ids for all subtree nodes:
-                       attr := mvaljoin (mmu_res.fetch(7),
-                                         mmu_res.fetch(8),
-                                         ws.fetch(ATTR_OWN)); */
+                    /* lookup attribute NIDs for all subtree nodes:
+                       oldPre  := select (mmu_res.fetch (7), oid_nil, oid_nil);
+                       oldCont := oldPre.hmark(0@0).leftfetchjoin(mmu_res.fetch (8));
+                       oldNid  := mposjoin (oldPre.tmark(0@0), oldCont, ws.fetch (PRE_NID));
+                       attr    := get_attr_own (ws, oldNid, oldCont);
+                     */
+                    assgn (
+                        var (oldPre->name),
+                        select2 (fetch (var (mmu_res->name), lit_int (7)),
+                                 cast (type (mty_oid), nil ()),
+                                 cast (type (mty_oid), nil ()))),
+                    assgn (
+                        var (oldCont->name),
+                        leftfetchjoin (hmark (var (oldPre->name), lit_oid (0)),
+                                       fetch (var (mmu_res->name), lit_int (8)))),
+                    assgn (
+                        var (oldNid->name),
+                        mposjoin (tmark (var (oldPre->name), lit_oid (0)),
+                                  var (oldCont->name),
+                                  fetch (var (PF_MIL_VAR_WS),
+                                         var (PF_MIL_VAR_PRE_NID)))),
                     assgn (
                         var (attr->name),
-                        mvaljoin (
-                            fetch (var (mmu_res->name), lit_int (7)),
-                            fetch (var (mmu_res->name), lit_int (8)),
-                            fetch (
-                                var (PF_MIL_VAR_WS),
-                                var (PF_MIL_VAR_ATTR_OWN)))),
+                        get_attr_own (var (PF_MIL_VAR_WS),
+                                      var (oldNid->name),
+                                      var (oldCont->name))),
 
                     /* align the resulting attribute ids and the fragment
                        information:
@@ -6971,6 +6988,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                      var (PF_MIL_VAR_WS),
                                      var (PF_MIL_VAR_ATTR_CONT)))),
                     );
+                unpin (oldPre, 1);
+                unpin (oldCont, 1);
+                unpin (oldNid, 1);
                 unpin (attr, 1);
                 unpin (item, 1);
                 unpin (cont, 1);
