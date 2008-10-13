@@ -333,8 +333,10 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 
 	for(i=0; i< mb->stop; i++){
 		p = mb->stmt[i];
-		if ( RECYCLEinterest(mb,p) ) potrec++;
-		if ( p->token!= ASSIGNsymbol) instr++;
+		if ( RECYCLEinterest(mb,p) ){
+			potrec++;
+			if (!isBindInstr(p)) instr++;
+		}
 	}
 
 	for(i=1; i< recycleBlk->stop; i++)

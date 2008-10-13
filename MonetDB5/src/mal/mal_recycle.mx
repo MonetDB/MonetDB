@@ -153,6 +153,7 @@ mal_export int RECYCLEinterest(MalBlkPtr mb,InstrPtr p);
 mal_export int RECYCLEnewQryStat(QryPatPtr qp, str nm);
 mal_export void RECYCLEinitQPat(int sz);
 mal_export bte RECYCLEgetQryCat(int qidx);
+mal_export bit isBindInstr(InstrPtr p);
 #endif
 @-
 @c
@@ -761,7 +762,7 @@ RECYCLEinterest(MalBlkPtr mb, InstrPtr p){
 }
 
 
-static bit 
+bit 
 isBindInstr(InstrPtr p)
 {
 	return (getModuleId(p)==getName("sql",3) &&
