@@ -36,7 +36,7 @@ bin_stethoscope = {
 }
 
 lib_embeddedmal = {
-	SOURCES = embeddedclient.mx.in
+	SOURCES = embeddedclient.c.in
 	LIBS = ../mal/libmonetdb5 @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
@@ -57,5 +57,5 @@ scripts_sh = {
 	SOURCES = mcheckpoint mrecover
 }
 
-
+EXTRA_DIST = embeddedclient.h
 EXTRA_DIST_DIR = Tests

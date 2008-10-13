@@ -1,69 +1,20 @@
-@' The contents of this file are subject to the MonetDB Public License
-@' Version 1.1 (the "License"); you may not use this file except in
-@' compliance with the License. You may obtain a copy of the License at
-@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-@'
-@' Software distributed under the License is distributed on an "AS IS"
-@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-@' License for the specific language governing rights and limitations
-@' under the License.
-@'
-@' The Original Code is the MonetDB Database System.
-@'
-@' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-@' Copyright August 2008- MonetDB B.V.
-@' All Rights Reserved.
+/*
+  The purpose of this Embedded MonetDB is to illustrate how the code
+  base can be easily linked with a stand-alone application.  The
+  current implementation uses a minimalistic approach, i.e.  using the
+  Mapi prototol to communicate between application thread and the
+  database kernel.
+  This communication is not optimized for speed. 
 
-@f embeddedclient
-@a K.S. Mullender
-@* Embedded MonetDB
-The purpose of this Embedded MonetDB is to illustrate how the
-code base can be easily linked with a stand-alone application.
-The current implementation uses a minimalistic approach, i.e.
-using the Mapi prototol to communicate between application thread
-and the database kernel.
-This communication is not optimized for speed. 
+  An area that has undergone some tweaking for performance improvement
+  are the large number of lock calls needed in the GDK kernel to
+  safely run multiple clients against the database.
+  For direct linkage to an application we suggest to use the
+  monet_embedded option, which allows just one mapi connection to be
+  set up. This allows for removal of all lock calls in the
+  kernel. This improves performance between 25-50%.
+*/
 
-An area that has undergone some tweaking for performance improvement
-are the large number of lock calls needed in the GDK kernel to safely run
-multiple clients against the database. 
-For direct linkage to an application we suggest to use the monet_embedded
-option, which allows just one mapi connection to be set up. This allows
-for removal of all lock calls in the kernel. This improves performance
-between 25-50%.
-@h
-#ifndef _EMBEDDEDCLIENT_H_
-#define _EMBEDDEDCLIENT_H_
-
-/* avoid using "#ifdef WIN32" so that this file does not need our config.h */
-#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
-#ifndef LIBEMBEDDEDMAL
-#define embeddedclient_export extern __declspec(dllimport)
-#else
-#define embeddedclient_export extern __declspec(dllexport)
-#endif
-#else
-#define embeddedclient_export extern
-#endif
-
-#include <stdio.h>
-#include <stream.h>
-#include <mapilib/Mapi.h>
-#include <monet_options.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-embeddedclient_export Mapi embedded_mal(opt *set, int len);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _EMBEDDEDCLIENT_H_ */
-@c
 #include <mal_config.h>
 #include "embeddedclient.h"
 #include "monet_options.h"

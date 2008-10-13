@@ -73,7 +73,7 @@ largeTOC_SHARED_MODS =	\
 	\
 	../modules/contrib/lib_vector
 
-EXTRA_DIST = static_modules.mx
+EXTRA_DIST = static_modules.mx embeddedclient.h
 
 lib_initmodules = {
 	NOINST
@@ -87,7 +87,7 @@ bin_Mserver = {
 }
 
 lib_embeddedmil = {
-	SOURCES = embeddedclient.mx.in
+	SOURCES = embeddedclient.c.in
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		../monet/libmonet $(MONETDB_LIBS) $(CLIENTS_LIBS) -lbat -lmutils -lMapi -lstream
 }

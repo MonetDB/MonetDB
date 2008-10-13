@@ -70,7 +70,7 @@ bin_Mserver = {
 }
 
 lib_embeddedxq = {
-	SOURCES = embeddedclient.mx.in
+	SOURCES = embeddedclient.c.in
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
 		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
 }
@@ -82,4 +82,5 @@ bin_Mbeddedxq = {
 		$(MONETDB_LIBS) -lbat -lmutils -lstream $(MONETDB4_LIBS) -lmonet $(CLIENTS_LIBS) -lMapi
 }
 
+EXTRA_DIST = embeddedclient.h
 EXTRA_DIST_DIR = Tests

@@ -212,8 +212,11 @@ main(int argc, char **av)
 		do {
 			if (mapi_result_error(hdl) != NULL)
 				mapi_explain_result(hdl, stderr);
-			while ((line = mapi_fetch_line(hdl)) != NULL)
+			while ((line = mapi_fetch_line(hdl)) != NULL) {
+                if (*line == '=')
+                    line++;
 				printf("%s\n", line);
+            }
 		} while (mapi_next_result(hdl) == 1);
 		mapi_close_handle(hdl);
 		if (timeflag)
