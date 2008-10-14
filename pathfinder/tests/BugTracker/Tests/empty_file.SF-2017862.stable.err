@@ -1,0 +1,30 @@
+stderr of test 'empty_file.SF-2017862` in directory 'tests/BugTracker` itself:
+
+
+# 18:02:17 >  
+# 18:02:17 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=38610 --set xrpc_port=46708 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 18:02:17 >  
+
+
+# 18:02:17 >  
+# 18:02:17 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=38610 empty_file.SF-2017862.xq
+# 18:02:17 >  
+
+MAPI  = monetdb@rig:38610
+QUERY = pf:add-doc("/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/source/pathfinder/tests/BugTracker/Tests/empty_file.SF-2017862-empty.xml","empty.xml")
+ERROR = !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
+        !ERROR: [shred_url]: first error was:
+        !ERROR: shred: cannot stat `/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/source/pathfinder/tests/BugTracker/Tests/empty_file.SF-2017862-empty.xml': No such file or directory
+        !ERROR: CMDshred_url: operation failed.
+MAPI  = monetdb@rig:38610
+QUERY = pf:add-doc("/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/source/pathfinder/tests/BugTracker/Tests/empty_file.SF-2017862-comment.xml","comment.xml")
+ERROR = !ERROR: Start tag expected, '<' not found
+        !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
+        !ERROR: [shred_url]: first error was:
+        !ERROR: shredder_parse: XML input not well-formed.
+        !ERROR: CMDshred_url: operation failed.
+
+# 18:02:18 >  
+# 18:02:18 >  Done.
+# 18:02:18 >  
+
