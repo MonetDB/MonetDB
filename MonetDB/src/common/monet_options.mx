@@ -229,7 +229,7 @@ mo_substitute(opt *set, int setlen, char *val)
 			char *p, *t;
 
 			*r = 0;
-			p = mo_find_option(set, setlen, q+2);
+			p = mo_find_option(set, setlen, q+1);
 			if (!p) {
 				*r = '%';
 				return s;
