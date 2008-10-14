@@ -86,7 +86,7 @@ PFmem_destroy(void)
 }
 
 #define round16(sz) ((sz+15)&~15)
-char *
+static char *
 mem_alloc (PFmem_allocator *pa, size_t sz)
 {
     char *r;
@@ -128,7 +128,7 @@ mem_alloc (PFmem_allocator *pa, size_t sz)
     return r;
 }
 
-char *
+static char *
 mem_realloc (PFmem_allocator *pa, char *p, size_t old_n, size_t n)
 {
         char *r = mem_alloc( pa, n);
@@ -154,6 +154,8 @@ PFmalloc_ (size_t n, const char *file, const char *func, const int line)
         PFexit(-OOPS_FATAL);
     }
 
+    memset(mem, 0, n);
+
     return mem;
 }
 
@@ -173,6 +175,9 @@ PFrealloc_ (void *mem, size_t old_n, size_t n,
                 n, file, func, line);
         PFexit(-OOPS_FATAL);
     }
+
+    if (n > old_n)
+        memset((char *) mem + old_n, 0, n - old_n);
 
     return mem;
 }
