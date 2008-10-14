@@ -84,7 +84,7 @@ while test $# -gt 0; do
 	;;
 
     --exec-prefix)
-	echo $exec-prefix
+	echo $exec_prefix
 	;;
 
     --build)
