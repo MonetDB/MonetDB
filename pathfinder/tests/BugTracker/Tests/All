@@ -167,3 +167,4 @@ combination_of_constructed_and_doc_elements.SF-2059394
 NOT_ALGEBRA?fn_collection_after_delete.SF-2141000
 XML_attribute_generation.SF-2038906-unpack_doc
 XML_attribute_generation.SF-2038906
+empty_file.SF-2017862
