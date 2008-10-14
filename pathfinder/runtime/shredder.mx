@@ -374,6 +374,7 @@ typedef struct shredCtxStruct {
     /* the database containing the ID|IDREF|IDREFS attributes */
     idrefAttrDBStr idrefAttrDB;        
 
+    int	     started;		 /* empty xml doc detector */
     int      err;                /* error during shred */
     void*    xmlCtx;             /* SAX2 context pointer */
 
@@ -790,6 +791,7 @@ shred_start_document(void *xmlCtx)
      * parameters are initizalized in the shredder_create() initialization 
      * function.
      */
+    shredCtx->started    = 1; /* indicate proper start of xml doc */
     shredCtx->level      = 0;
     shredCtx->depth      = 0;
     shredCtx->content    = 0;
@@ -818,6 +820,13 @@ shred_end_document(void *xmlCtx)
 {
     shredCtxStruct *shredCtx = (shredCtxStruct*) xmlCtx;
 
+    if ( !shredCtx->started ) {
+        /* due to an libxml2 feature this function may be called when the
+	 * document is empty and has not even been started. Bail out here
+	 * a.s.a.p
+	 */
+	 return;
+    }
     /* pop document node and enter into pre|size|level|prop|kind relation */
     if (!emit_node(shredCtx, &POP(shredCtx))) {
         BAILOUT(shredCtx);
@@ -1457,7 +1466,8 @@ shredder_parse(shredCtxStruct *shredCtx,
     }
     xmlCtx->sax      = &shredder;
     xmlCtx->userData = shredCtx; /* set the SHREDCTX() value */
-    shredCtx->xmlCtx = xmlCtx; /* point back */
+    shredCtx->started = 0; /* used to detext empty xml docs */
+    shredCtx->xmlCtx  = xmlCtx; /* point back */
     xmlSwitchEncoding(xmlCtx, XML_CHAR_ENCODING_UTF8);
     if (s) { 
         while(1) {
