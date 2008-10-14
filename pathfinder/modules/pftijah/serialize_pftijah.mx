@@ -1,4 +1,3 @@
-@' Copyright Notice:
 @' -----------------
 @'
 @' The contents of this file are subject to the PfTijah Public License
@@ -229,6 +228,8 @@ typedef struct tijahContextStruct {
 #ifdef USE_TERMDB
 	termDbCtx* tdb;
 #endif
+        oid  level_pre[MAXTAGDEPTH];
+
 	oid  n_globalTag;
 	BAT* b_globalTag;	/* global tag dictionary*/
 	BAT* hm_globalTag;	/* hashed mirrorred global tag dictionary*/
@@ -254,6 +255,16 @@ typedef struct tijahContextStruct {
 	dbat dbat_collSize;	/* Direct access struct for b_collSize */
 	/* */
 	BAT* b_collPfPre;	/* Tijah PRE-PF BAT for Pathinder link */
+	/* */
+	BAT* b_dict;
+	BAT* b_dict_tid;
+	BAT* b_dict_elem;
+	BAT* b_dict_score;
+
+	str  dict_handler;
+	str  dict_id;
+	str  dict_score;
+
 	/*
 	 */
 	int		doc_height;
@@ -633,7 +644,13 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	if ( res->stemCtx->init && !res->stemCtx->init(res->stemCtx,NULL) )
 			return NULL;
 
+        res->dict_handler = NULL;
+        res->dict_id      = NULL;
+        res->dict_score   = NULL;
+
 	res->emitting     = 1;
+	res->filterDepth  = 0;
+	res->whitelisting = 0;
         res->b_filtering  = NULL;
 
 	str wl = readCollParam(res,"whitelist");
@@ -729,7 +746,12 @@ loadTijahContext(BAT* tjCtx_BAT) {
 		return NULL;
 	if ( dbat_init("b_collSize", &res->dbat_collSize, res->b_collSize) < -1 )
 		return NULL;
-	if ( !(res->b_collPfPre   = getBAT(tjCtx_BAT,"_pfpre")) ) return NULL;
+	if ( !(res->b_collPfPre  = getBAT(tjCtx_BAT,"_pfpre")) ) return NULL;
+	/* */
+	if ( !(res->b_dict       = getBAT(tjCtx_BAT,"_dict")) )      return NULL;
+	if ( !(res->b_dict_tid   = getBAT(tjCtx_BAT,"_dict_tid")) )  return NULL;
+	if ( !(res->b_dict_elem  = getBAT(tjCtx_BAT,"_dict_elem")) ) return NULL;
+	if ( !(res->b_dict_score = getBAT(tjCtx_BAT,"_dict_score")) )return NULL;
 	/* */
 	res->tagStackPtr = 0;
 
@@ -839,6 +861,10 @@ freeTijahContext(tjCtx* tjctx) {
 		BATpropcheck(tjctx->b_collPre,BATPROPS_ALL);
 		BATpropcheck(tjctx->b_collSize,BATPROPS_ALL);
 		BATpropcheck(tjctx->b_collPfPre,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_dict,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_dict_tid,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_dict_elem,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_dict_score,BATPROPS_ALL);
 	}
 	BBPunfix(BBPcacheid(tjctx->b_globalTerm));
 	BBPunfix(BBPcacheid(tjctx->b_globalTag));
@@ -849,6 +875,10 @@ freeTijahContext(tjCtx* tjctx) {
 	BBPunfix(BBPcacheid(tjctx->b_collPre));
 	BBPunfix(BBPcacheid(tjctx->b_collSize));
 	BBPunfix(BBPcacheid(tjctx->b_collPfPre));
+	BBPunfix(BBPcacheid(tjctx->b_dict));
+	BBPunfix(BBPcacheid(tjctx->b_dict_tid));
+	BBPunfix(BBPcacheid(tjctx->b_dict_elem));
+	BBPunfix(BBPcacheid(tjctx->b_dict_score));
 	GDKfree(tjctx->tagswitch);
 	if ( tjctx->stemCtx->clear && !tjctx->stemCtx->clear(tjctx->stemCtx) )
 		return GDK_FAIL;
@@ -976,10 +1006,21 @@ pftijah_handle_endDocument(XqueryCtx* ctx) {
  */
 static bool
 pftijah_handle_attribute(XqueryCtx* ctx, str prefix, str loc, str value) {
-    (void)ctx;
+    tjCtx* tjctx = (tjCtx*)ctx->driverWs;
+
     (void)prefix;
-    (void)loc;
-    (void)value;
+    if ( tjctx->dict_handler ) {
+    	if ( strcmp(loc,"id")==0 ) 
+	    tjctx->dict_id = value;
+	else if ( strcmp(loc,"score")==0 )
+	    tjctx->dict_score = value;
+	else if ( strcmp(loc,"tijah")==0 ) {
+	    /* ignore xmlns attr */
+	} else {
+	    GDKerror("pftijah_handle_attribute: unknown pftijah dictionary attr[%s=%s]\n",loc,value);
+	    return  0;
+	}
+    }
     return 1;
 }
 
@@ -1008,6 +1049,7 @@ pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
     oid termOid, tjPre;
 
+
     if ( ++tjctx->doc_height > tjctx->max_doc_height )
         tjctx->max_doc_height = tjctx->doc_height;
 
@@ -1017,6 +1059,16 @@ pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
 	else
 	    checkFilterTag(tjctx,name);
     }
+    /* */
+    if ( ns && strcmp(ns,"tijah")==0 ) {
+        /* do not index "tijah" nodes, using blacklist to do this */
+	tjctx->emitting     = 0; 
+	tjctx->filterDepth  = 1;
+	tjctx->dict_handler = name;
+	tjctx->dict_id      = NULL;
+	tjctx->dict_score   = NULL;
+    }
+    /* */
     if ( DOEMIT(tjctx) ) {
         if ( (termOid = tj_tagOid(tjctx, name)) == oid_nil )
     	    return 0;
@@ -1024,12 +1076,62 @@ pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
     	    return 0;
         dbat_set_oid(&tjctx->dbat_collPre, tjPre, termOid);
         if ( tj_pushTag(tjctx,tjPre,termOid) < 0 ) return 0;
+        tjctx->level_pre[tjctx->doc_height] = tjPre;
 #ifdef TJ_TRACE
         if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:startElement: \"%s\", termoid=%d, Tijah pre#=%d, Pathfinder pre#=%d\n",tjctx->name,name,termOid,tjPre,pre);
 #endif
         if ( !BUNins(tjctx->b_collPfPre, &tjPre, &pre, FALSE) ) return 0;
     }
     return 1;
+}
+
+static bool
+handle_dictionary(tjCtx* tjctx, oid elem) {
+	if ( !tjctx->dict_id ) {
+	   tjctx->dict_handler = NULL;
+	   GDKerror("no id attr specified for \"tijah:%s\" node",tjctx->dict_handler);
+	}
+	double score;
+
+	if ( tjctx->dict_score ) {
+	   score = atof(tjctx->dict_score);
+	} else 
+	   score = 1.0;
+	char b[256];
+	sprintf(b,"%s:%s",tjctx->dict_handler,tjctx->dict_id);
+	char *key = &b[0];
+
+        BUN bun;
+	oid dict_oid;
+	
+        if ( (bun = BUNfnd(tjctx->b_dict,key)) != BUN_NONE ) {
+            BATiter ti = bat_iterator(tjctx->b_dict);
+            dict_oid = *(oid*)BUNtail(ti,bun);
+        } else {
+	    dict_oid = (oid)BATcount(tjctx->b_dict);
+
+    	    if ( !BUNins(tjctx->b_dict, (str)key, &dict_oid, FALSE)){
+    	        GDKerror("dictbat: insert \"%s\" in tagbat fails.\n",key);
+    	        return false;
+	    }
+        } 
+    	/* use dict_oid */
+	if ( 
+	      !BUNappend(tjctx->b_dict_tid,  &dict_oid, 0) || 
+	      !BUNappend(tjctx->b_dict_elem, &elem, 0)  ||
+	      !BUNappend(tjctx->b_dict_score, &score, 0) 
+	   ) {
+		GDKerror("dictbat: writing dict record fails.");
+		return false;
+	}
+
+#ifdef TJ_TRACE
+    	if ( TJ_TRACE ) fprintf(stdout,"!HANDLING DICTIONARY ITEM[%d@0][%s,id=%s,score=%s]\n",(int)dict_oid,tjctx->dict_handler,tjctx->dict_id,tjctx->dict_score);
+#endif
+
+	/* */
+	tjctx->dict_handler = NULL;
+	return true;
 }
 
 static bool
@@ -1045,7 +1147,7 @@ pftijah_complete_startElementEmpty(XqueryCtx* ctx) {
 #ifdef TJ_TRACE
     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:empty_endElement: \"%s\"\n", tjctx->name,"");
 #endif
-    if ( tjctx->b_filtering && tjctx->filterDepth ) {
+    if ( tjctx->filterDepth ) {
         /* a filter is currently 'on' */
         if ( --tjctx->filterDepth == 0 ) {
 		/* end of filter */
@@ -1053,6 +1155,8 @@ pftijah_complete_startElementEmpty(XqueryCtx* ctx) {
 
 	}
     }
+    if (tjctx->dict_handler && !handle_dictionary(tjctx,tjctx->level_pre[tjctx->doc_height]))
+	return 0;
     return 1;
 }
 
@@ -1074,13 +1178,15 @@ pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name) {
         if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:endElement: \"%s\"\n", tjctx->name,name);
 #endif
     }
-    if ( tjctx->b_filtering && tjctx->filterDepth ) {
+    if ( tjctx->filterDepth ) {
         /* a filter is currently 'on' */
         if ( --tjctx->filterDepth == 0 ) {
 		/* end of filter */
 	        tjctx->emitting = !(tjctx->whitelisting);
 	}
     }
+    if (tjctx->dict_handler && !handle_dictionary(tjctx,tjctx->level_pre[tjctx->doc_height]))
+	return 0;
     return 1;
 }
 
@@ -1268,6 +1374,12 @@ add2collection_handler(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName) {
         tjctx->b_collPre->batDirty   = TRUE;
         tjctx->b_collSize->batDirty  = TRUE;
         tjctx->b_collPfPre->batDirty = TRUE;
+	if ( 1 /* INCOMPLETE */ ) {
+            tjctx->b_dict->batDirty       = TRUE;
+            tjctx->b_dict_tid->batDirty   = TRUE;
+            tjctx->b_dict_elem->batDirty  = TRUE;
+            tjctx->b_dict_score->batDirty = TRUE;
+	}
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:FINALIZED DIRECT BATS\n",tjctx->name);
 #endif
