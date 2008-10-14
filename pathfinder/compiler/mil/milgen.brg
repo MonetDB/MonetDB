@@ -6898,7 +6898,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                        information:
                        item := attr.reverse().mark(0@0).reverse();
                        cont := attr.mark(0@0).reverse()
-                                   .leftjoin(mmu_res.fetch(8)); */
+                                   .leftjoin(oldCont); */
                     assgn (var (item->name),
                            reverse (
                                mark (
@@ -6911,7 +6911,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                    mark (
                                        var (attr->name),
                                        lit_oid (0))),
-                               fetch (var (mmu_res->name), lit_int (8)))),
+                               var (oldCont->name))),
 
                     /* fill the constructed attributes into the ws */
 
