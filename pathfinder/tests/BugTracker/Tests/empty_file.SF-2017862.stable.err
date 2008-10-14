@@ -10,14 +10,16 @@ stderr of test 'empty_file.SF-2017862` in directory 'tests/BugTracker` itself:
 # 18:02:17 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=38610 empty_file.SF-2017862.xq
 # 18:02:17 >  
 
-MAPI  = monetdb@rig:38610
-QUERY = pf:add-doc("/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/source/pathfinder/tests/BugTracker/Tests/empty_file.SF-2017862-empty.xml","empty.xml")
-ERROR = !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
+MAPI  = monetdb@rig:36874
+QUERY = 
+ERROR = !ERROR: Document is empty
+        !ERROR: Start tag expected, '<' not found
+        !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
         !ERROR: [shred_url]: first error was:
-        !ERROR: shred: cannot stat `/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/source/pathfinder/tests/BugTracker/Tests/empty_file.SF-2017862-empty.xml': No such file or directory
+        !ERROR: shredder_parse: XML input not well-formed.
         !ERROR: CMDshred_url: operation failed.
-MAPI  = monetdb@rig:38610
-QUERY = pf:add-doc("/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/source/pathfinder/tests/BugTracker/Tests/empty_file.SF-2017862-comment.xml","comment.xml")
+MAPI  = monetdb@rig:36874
+QUERY = 
 ERROR = !ERROR: Start tag expected, '<' not found
         !ERROR: [shred_url]: 1 times inserted nil due to errors at tuples 0@0.
         !ERROR: [shred_url]: first error was:
