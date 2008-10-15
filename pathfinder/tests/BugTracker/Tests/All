@@ -156,7 +156,6 @@ compilation_or_runtime_choice.SF-1991738_0_MPS
 untypedAtomic?compilation_or_runtime_choice.SF-1991738_1_MPS
 compilation_or_runtime_choice.SF-1991738_1_ALG
 test_order.SF-2009467
-Zombie_document.SF-2009556
 NOT_ALGEBRA?pfmil_prints_garbage.SF-2015232
 NOT_ALGEBRA?pfmil_loses_last_bun.SF-2015219
 NOT_ALGEBRA?pfmil_and_nil_in_results_1.SF-2015135
@@ -169,3 +168,7 @@ NOT_ALGEBRA?fn_collection_after_delete.SF-2141000
 XML_attribute_generation.SF-2038906-unpack_doc
 XML_attribute_generation.SF-2038906
 empty_file.SF-2017862
+#
+# Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list! 
+Zombie_document.SF-2009556
+# Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list!

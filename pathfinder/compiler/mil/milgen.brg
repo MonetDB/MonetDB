@@ -6885,6 +6885,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 execute (
                     /* lookup attribute NIDs for all subtree nodes:
                        oldPre  := select (mmu_res.fetch (7), oid_nil, oid_nil);
+                       # align all additional information to the selected list
+                       # (otherwise the head values are not in sync anymore)
+                       newPre  := oldPre.hmark(0@0).leftfetchjoin(newPre);
                        oldCont := oldPre.hmark(0@0).leftfetchjoin(mmu_res.fetch (8));
                        oldNid  := mposjoin (oldPre.tmark(0@0), oldCont, ws.fetch (PRE_NID));
                        attr    := get_attr_own (ws, oldNid, oldCont);
@@ -6894,6 +6897,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         select2 (fetch (var (mmu_res->name), lit_int (7)),
                                  cast (type (mty_oid), nil ()),
                                  cast (type (mty_oid), nil ()))),
+                    assgn (
+                        var (newPre->name),
+                        leftfetchjoin (hmark (var (oldPre->name), lit_oid (0)),
+                                       var (newPre->name))),
                     assgn (
                         var (oldCont->name),
                         leftfetchjoin (hmark (var (oldPre->name), lit_oid (0)),
