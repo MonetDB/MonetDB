@@ -31,7 +31,7 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 %{!?_with_monetdb5: %{!?_without_monetdb5: %define _with_monetdb5 --with-monetdb5}}
 
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.24
+BuildRequires: MonetDB-devel >= 1.25
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -77,12 +77,12 @@ extensions for MonetDB-SQL-server4.
 %package MonetDB5
 Summary: MonetDB5 SQL GIS modules
 Group: Applications/Databases
-Requires: MonetDB5-server >= 5.6
+Requires: MonetDB5-server >= 5.7
 #                            ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %if !%{?buildsystem}
-BuildRequires: MonetDB5-server-devel >= 5.6
+BuildRequires: MonetDB5-server-devel >= 5.7
 #                                       ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
