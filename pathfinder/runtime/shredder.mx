@@ -65,6 +65,8 @@ pf_support_export int CMDshred_stream(BAT *docBAT, Stream *s, lng *percentage, l
 #include <gdk.h>
 #include <monet.h>
 
+#include <libgen.h>
+
 #include "pathfinder.h"
 #include "pf_support.h"
 #include "shredder.h"
@@ -374,6 +376,8 @@ typedef struct shredCtxStruct {
     /* the database containing the ID|IDREF|IDREFS attributes */
     idrefAttrDBStr idrefAttrDB;        
 
+    char*    base_dir;		 /* base location of the shredded doc. Used to
+    				  * locate relative external subsets */
     int	     started;		 /* empty xml doc detector */
     int      err;                /* error during shred */
     void*    xmlCtx;             /* SAX2 context pointer */
@@ -1286,6 +1290,22 @@ shred_attribute_def(void *xmlCtx,
     }
 }
 
+/* simplistic check whether location is an URL:
+   protocols consist of more than one letter, so we consider location
+   a URL if it starts with at least two letters, followed by a
+   colon. */
+static int 
+isURL(char *location)
+{
+    int i = 0;
+    while(*location &&(('a' <= *location && *location <= 'z') ||
+                        ('A' <= *location && *location <= 'Z'))) {
+        location++;
+        i++;
+    }
+    return i > 1 && *location == ':';
+}
+
 static void 
 shred_external_subset(void *xmlCtx,
                       const xmlChar *name, 
@@ -1302,7 +1322,22 @@ shred_external_subset(void *xmlCtx,
     if (ExternalID || SystemID) { /* ignore dummy calls */
         xmlDtdPtr dtd;
 
-        if ((dtd=xmlParseDTD(ExternalID, SystemID))) {
+	const xmlChar *abs_SystemID;
+
+	char locbuff[FILENAME_MAX];
+
+	if (SystemID && shredCtx->base_dir && !isURL((char*)SystemID) && !((*SystemID=='/') || (*SystemID=='\\'))) {
+	   /* is is a relative name which should be prefixed with the
+	    * base location of the shredded xml document.
+	    */
+	    /* base_dir */
+	    locbuff[0] = '\0';
+	    strncat(&locbuff[0],shredCtx->base_dir,FILENAME_MAX);
+	    strncat(&locbuff[0],(char*)SystemID,FILENAME_MAX);
+	    abs_SystemID = (const xmlChar *)&locbuff[0];
+	} else
+	    abs_SystemID = SystemID;
+        if ((dtd=xmlParseDTD(ExternalID, abs_SystemID))) {
     	    if ( !ctx->myDoc ) {
 	        /* Mysteriously no myDoc is created by libxml2. For internal
 		 * subsets this is done automatically. For external subsets
@@ -1921,20 +1956,18 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
 
 #define DEFAULT_ESTIMATE        1048576
 
-/* simplistic check whether location is an URL:
-   protocols consist of more than one letter, so we consider location
-   a URL if it starts with at least two letters, followed by a
-   colon. */
-static int 
-isURL(char *location)
-{
-    int i = 0;
-    while(*location &&(('a' <= *location && *location <= 'z') ||
-                        ('A' <= *location && *location <= 'Z'))) {
-        location++;
-        i++;
-    }
-    return i > 1 && *location == ':';
+/* function which tries to determine the base location of a document from
+ * a URL or an absolute filename.
+ */
+static char*
+baseLOCATION(char* location) {
+    char *lc = GDKstrdup(location);
+    char *p = &lc[strlen(lc)-1];
+
+    while ( (p > lc) && (*p != '/') && (*p != '\\') && (*p != ':') )
+    	--p;
+    *++p = '\0';
+    return lc;
 }
 
 /* all routines share this common implementation */
@@ -1991,6 +2024,11 @@ shred(BAT *docBAT,
     /* shred it */
     shredCtxStruct* shredCtx = shredder_create(location, estimatedSize, pageFree, serFun, serCtx, docBAT, coll_lock, verbose);
     if (shredCtx) {
+        if ( location )
+	    /* determine base prefix to look for external subsets */
+	    shredCtx->base_dir = baseLOCATION(location);
+	else
+	    shredCtx->base_dir = NULL;
         if (shredder_parse(shredCtx, location, buffer, s)) {
             res = shredder_finalize(shredCtx, docBAT);
             if (verbose && res && !s && !buffer) {
@@ -2002,8 +2040,9 @@ shred(BAT *docBAT,
 
                 if (PRINT_STAT) shredder_stats(shredCtx);
             }
-        }
-        shredder_free(shredCtx, res?1:-shredCtx->updatable);
+          }
+	  if ( shredCtx->base_dir ) GDKfree(shredCtx->base_dir);
+          shredder_free(shredCtx, res?1:-shredCtx->updatable);
     }
     if (coll_lock) {
         MT_lock_unset(coll_lock, "shredder_end"); 
