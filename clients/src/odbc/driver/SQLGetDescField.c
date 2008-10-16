@@ -288,7 +288,7 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle,
 	clearDescErrors(desc);
 
 	switch (FieldIdentifier) {
-		/* all string attributes */
+	/* all string attributes */
 	case SQL_DESC_BASE_COLUMN_NAME:
 	case SQL_DESC_BASE_TABLE_NAME:
 	case SQL_DESC_CATALOG_NAME:
@@ -300,7 +300,10 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle,
 	case SQL_DESC_SCHEMA_NAME:
 	case SQL_DESC_TABLE_NAME:
 	case SQL_DESC_TYPE_NAME:
-		n = BufferLength * 4;
+		rc = SQLGetDescField_(desc, RecordNumber, FieldIdentifier, NULL, 0, &n);
+		if (!SQL_SUCCEEDED(rc))
+			return rc;
+		n++;		/* account for NUL byte */
 		ptr = (SQLPOINTER) malloc(n);
 		break;
 	default:

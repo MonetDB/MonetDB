@@ -121,7 +121,6 @@ extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR * buf,
 			exit;				\
 		}					\
 	} while (0)
-#define prepWcharOut(s, wsl)	 (s) = malloc((wsl) * 4)
 #define fixWcharOut(r, s, sl, ws, wsl, wslp, cw, errfunc, hdl)		\
 	do {								\
 		if (SQL_SUCCEEDED(r)) {					\

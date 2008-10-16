@@ -116,7 +116,7 @@ SQLGetConnectOptionW(SQLHDBC hDbc,
 	clearDbcErrors(dbc);
 
 	switch (nOption) {
-		/* all string attributes */
+	/* all string attributes */
 	case SQL_CURRENT_QUALIFIER:
 	case SQL_OPT_TRACEFILE:
 	case SQL_TRANSLATE_DLL:

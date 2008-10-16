@@ -110,7 +110,8 @@ SQLDriverConnect_(ODBCDbc *dbc,
 		  SQLCHAR *szConnStrOut,
 		  SQLSMALLINT cbConnStrOutMax,
 		  SQLSMALLINT *pnConnStrOut,
-		  SQLUSMALLINT nDriverCompletion)
+		  SQLUSMALLINT nDriverCompletion,
+		  int tryOnly)
 {
 	char *key, *attr;
 	char *dsn = 0, *uid = 0, *pwd = 0, *host = 0, *database = 0;
@@ -169,8 +170,13 @@ SQLDriverConnect_(ODBCDbc *dbc,
 		/* Data source name too long */
 		addDbcError(dbc, "IM010", NULL, 0);
 		rc = SQL_ERROR;
+	} else if (tryOnly) {
+		rc = SQL_SUCCESS;
 	} else {
-		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) uid, SQL_NTS, (SQLCHAR *) pwd, SQL_NTS, host, port, database);
+		rc = SQLConnect_(dbc, (SQLCHAR *) dsn, SQL_NTS,
+				 (SQLCHAR *) uid, SQL_NTS,
+				 (SQLCHAR *) pwd, SQL_NTS,
+				 host, port, database);
 	}
 
 	if (SQL_SUCCEEDED(rc)) {
@@ -297,7 +303,10 @@ SQLDriverConnect(SQLHDBC hDbc,
 
 	clearDbcErrors(dbc);
 
-	return SQLDriverConnect_(dbc, hWnd, szConnStrIn, nConnStrIn, szConnStrOut, cbConnStrOutMax, pnConnStrOut, nDriverCompletion);
+	return SQLDriverConnect_(dbc, hWnd,
+				 szConnStrIn, nConnStrIn, szConnStrOut,
+				 cbConnStrOutMax, pnConnStrOut,
+				 nDriverCompletion, 0);
 }
 
 #ifdef WITH_WCHAR
@@ -311,7 +320,9 @@ SQLDriverConnectA(SQLHDBC hDbc,
 		  SQLSMALLINT *pnConnStrOut,
 		  SQLUSMALLINT nDriverCompletion)
 {
-	return SQLDriverConnect(hDbc, hWnd, szConnStrIn, nConnStrIn, szConnStrOut, cbConnStrOutMax, pnConnStrOut, nDriverCompletion);
+	return SQLDriverConnect(hDbc, hWnd, szConnStrIn, nConnStrIn,
+				szConnStrOut, cbConnStrOutMax, pnConnStrOut,
+				nDriverCompletion);
 }
 
 SQLRETURN SQL_API
@@ -339,10 +350,15 @@ SQLDriverConnectW(SQLHDBC hDbc,
 	clearDbcErrors(dbc);
 
 	fixWcharIn(szConnStrIn, nConnStrIn, SQLCHAR, in, addDbcError, dbc, return SQL_ERROR);
-	prepWcharOut(out, cbConnStrOutMax);
 
-	rc = SQLDriverConnect_(dbc, hWnd, in, SQL_NTS, out, cbConnStrOutMax * 4, &n, nDriverCompletion);
-
+	rc = SQLDriverConnect_(dbc, hWnd, in, SQL_NTS, NULL, 0, &n,
+			       nDriverCompletion, 1);
+	if (!SQL_SUCCEEDED(rc))
+		return rc;
+	n++;			/* account for NUL byte */
+	out = malloc(n);
+	rc = SQLDriverConnect_(dbc, hWnd, in, SQL_NTS, out, n, &n,
+			       nDriverCompletion, 0);
 	fixWcharOut(rc, out, n, szConnStrOut, cbConnStrOutMax, pnConnStrOut, 1, addDbcError, dbc);
 	if (in)
 		free(in);

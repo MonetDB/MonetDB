@@ -266,8 +266,8 @@ SQLBrowseConnectW(SQLHDBC hDbc,
 	clearDbcErrors(dbc);
 
 	fixWcharIn(szConnStrIn, cbConnStrIn, SQLCHAR, in, addDbcError, dbc, return SQL_ERROR);
-	prepWcharOut(out, cbConnStrOutMax);
-	rc = SQLBrowseConnect_(dbc, in, SQL_NTS, out, cbConnStrOutMax * 4, &n);
+	out = malloc(100);	/* max 80 needed */
+	rc = SQLBrowseConnect_(dbc, in, SQL_NTS, out, 100, &n);
 	fixWcharOut(rc, out, n, szConnStrOut, cbConnStrOutMax, pcbConnStrOut, 1, addDbcError, dbc);
 	if (in)
 		free(in);

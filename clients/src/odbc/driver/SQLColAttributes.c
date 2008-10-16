@@ -137,7 +137,7 @@ SQLColAttributesW(SQLHSTMT hStmt,
 	clearStmtErrors(stmt);
 
 	switch (nDescType) {
-		/* all string atributes */
+	/* all string atributes */
 	case SQL_DESC_BASE_COLUMN_NAME:
 	case SQL_DESC_BASE_TABLE_NAME:
 	case SQL_DESC_CATALOG_NAME:	/* SQL_COLUMN_QUALIFIER_NAME */
@@ -149,7 +149,10 @@ SQLColAttributesW(SQLHSTMT hStmt,
 	case SQL_DESC_SCHEMA_NAME:	/* SQL_COLUMN_OWNER_NAME */
 	case SQL_DESC_TABLE_NAME:	/* SQL_COLUMN_TABLE_NAME */
 	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
-		n = nDescMax * 4;
+		rc = SQLColAttributes_(stmt, nCol, nDescType, NULL, 0, &n, pfDesc);
+		if (!SQL_SUCCEEDED(rc))
+			return rc;
+		n++;		/* account for NUL byte */
 		ptr = (SQLPOINTER) malloc(n);
 		break;
 	default:

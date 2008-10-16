@@ -51,13 +51,13 @@ SQLDataSources_(ODBCEnv *env,
 		SQLSMALLINT BufferLength2,
 		SQLSMALLINT *NameLength2)
 {
-	(void) Direction;	/* Stefan: unused!? */
-	(void) ServerName;	/* Stefan: unused!? */
-	(void) BufferLength1;	/* Stefan: unused!? */
-	(void) NameLength1;	/* Stefan: unused!? */
-	(void) Description;	/* Stefan: unused!? */
-	(void) BufferLength2;	/* Stefan: unused!? */
-	(void) NameLength2;	/* Stefan: unused!? */
+	(void) Direction;
+	(void) ServerName;
+	(void) BufferLength1;
+	(void) NameLength1;
+	(void) Description;
+	(void) BufferLength2;
+	(void) NameLength2;
 
 	if (env->sql_attr_odbc_version == 0) {
 		/* Function sequence error */
@@ -134,10 +134,10 @@ SQLDataSourcesW(SQLHENV EnvironmentHandle,
 
 	clearEnvErrors(env);
 
-	prepWcharOut(server, BufferLength1);
-	prepWcharOut(descr, BufferLength2);
+	server = malloc(100);
+	descr = malloc(100);
 
-	rc = SQLDataSources_(env, Direction, server, BufferLength1 * 4, &length1, descr, BufferLength2 * 4, &length2);
+	rc = SQLDataSources_(env, Direction, server, 100, &length1, descr, 100, &length2);
 
 	fixWcharOut(rc, server, length1, ServerName, BufferLength1, NameLength1, 1, addEnvError, env);
 	fixWcharOut(rc, descr, length2, Description, BufferLength2, NameLength2, 1, addEnvError, env);

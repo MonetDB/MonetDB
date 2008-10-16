@@ -167,9 +167,12 @@ SQLGetConnectAttrW(SQLHDBC hDbc,
 	clearDbcErrors(dbc);
 
 	switch (Attribute) {
-		/* all string attributes */
+	/* all string attributes */
 	case SQL_ATTR_CURRENT_CATALOG:
-		n = BufferLength * 4;
+		rc = SQLGetConnectAttr_(dbc, Attribute, NULL, 0, &n);
+		if (!SQL_SUCCEEDED(rc))
+			return rc;
+		n++;		/* account for NUL byte */
 		ptr = (SQLPOINTER) malloc(n);
 		break;
 	default:
