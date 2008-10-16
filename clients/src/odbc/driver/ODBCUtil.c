@@ -102,10 +102,10 @@ static int utf8chkmsk[] = {
 SQLCHAR *
 ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg)
 {
-	const SQLWCHAR *s1;
+	const SQLWCHAR *s1, *e;
 	unsigned long c;
 	SQLCHAR *buf, *p;
-	int i, l, n;
+	int l, n;
 
 	if (errmsg)
 		*errmsg = NULL;
@@ -121,15 +121,15 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg)
 			*errmsg = "Invalid length parameter";
 		return NULL;
 	}
+	e = s + length;
 	/* count necessary length */
 	l = 1;			/* space for NULL byte */
-	for (s1 = s, i = 0; i < length; s1++, i++) {
+	for (s1 = s; s1 < e; s1++) {
 		c = *s1;
 		if (0xD800 <= c && c <= 0xDBFF) {
 			/* high surrogate, must be followed by low surrogate */
 			s1++;
-			i++;
-			if (i >= length || *s1 < 0xDC00 || *s1 > 0xDFFF) {
+			if (s1 >= e || *s1 < 0xDC00 || *s1 > 0xDFFF) {
 				if (errmsg)
 					*errmsg = "High surrogate not followed by low surrogate";
 				return NULL;
@@ -148,12 +148,11 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg)
 	}
 	/* convert */
 	buf = (SQLCHAR *) malloc(l);
-	for (s1 = s, p = buf, i = 0; i < length; s1++, i++) {
+	for (s1 = s, p = buf; s1 < e; s1++) {
 		c = *s1;
 		if (0xD800 <= c && c <= 0xDBFF) {
 			/* high surrogate followed by low surrogate */
 			s1++;
-			i++;
 			c = (c << 10) + *s1 + SURROGATE_OFFSET;
 		}
 		for (n = 5; n > 0; n--)
@@ -183,7 +182,8 @@ ODBCutf82wchar(const SQLCHAR *s,
 	       SQLSMALLINT *buflenout)
 {
 	SQLWCHAR *p;
-	int i, m, n;
+	const SQLCHAR *e;
+	int m, n;
 	unsigned int c;
 	SQLSMALLINT len = 0;
 
@@ -202,15 +202,19 @@ ODBCutf82wchar(const SQLCHAR *s,
 	if (buf == NULL)
 		buflen = 0;
 
-	for (p = buf, i = 0; i < length; i++) {
+	for (p = buf, e = s + length; s < e; ) {
 		c = *s++;
 		if ((c & 0x80) != 0) {
-			for (n = 0, m = 0x40; c & m; n++, m >>= 1) ;
+			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
+				;
 			/* n now is number of 10xxxxxx bytes that
 			 * should follow */
+			if (n == 0 || n >= 6)
+				return "Illegal UTF-8 sequence";
+			if (s + n >= e)
+				return "Truncated UTF-8 sequence";
 			c &= ~(0xFFC0) >> n;
 			while (--n >= 0) {
-				i++;
 				c <<= 6;
 				c |= *s++ & 0x3F;
 			}
