@@ -1324,7 +1324,7 @@ shred_external_subset(void *xmlCtx,
 
 	const xmlChar *abs_SystemID;
 
-	char locbuff[FILENAME_MAX];
+	char locbuff[FILENAME_MAX+1];
 
 	if (SystemID && shredCtx->base_dir && !isURL((char*)SystemID) && !((*SystemID=='/') || (*SystemID=='\\'))) {
 	   /* is is a relative name which should be prefixed with the
@@ -1333,7 +1333,7 @@ shred_external_subset(void *xmlCtx,
 	    /* base_dir */
 	    locbuff[0] = '\0';
 	    strncat(&locbuff[0],shredCtx->base_dir,FILENAME_MAX);
-	    strncat(&locbuff[0],(char*)SystemID,FILENAME_MAX);
+	    strncat(&locbuff[0],(char*)SystemID,FILENAME_MAX-strlen(shredCtx->base_dir));
 	    abs_SystemID = (const xmlChar *)&locbuff[0];
 	} else
 	    abs_SystemID = SystemID;
