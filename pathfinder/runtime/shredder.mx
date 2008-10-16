@@ -1329,9 +1329,7 @@ shred_external_subset(void *xmlCtx,
 	    * base location of the shredded xml document.
 	    */
 	    /* base_dir */
-	    locbuff[0] = '\0';
-	    strncat(&locbuff[0],shredCtx->base_dir,FILENAME_MAX);
-	    strncat(&locbuff[0],(char*)SystemID,FILENAME_MAX-strlen(shredCtx->base_dir));
+	    snprintf(locbuff, sizeof(locbuff), "%s%s", shredCtx->base_dir, (char *) SystemID);
 	    abs_SystemID = (const xmlChar *)&locbuff[0];
 	} else
 	    abs_SystemID = SystemID;
