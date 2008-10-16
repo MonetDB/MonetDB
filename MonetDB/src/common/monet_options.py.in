@@ -15,7 +15,7 @@
 # Copyright August 2008- MonetDB B.V.
 # All Rights Reserved.
 
-import sys, os, getopt, string
+import sys, os, getopt, string, re
 
 try:
     True
@@ -27,16 +27,12 @@ class Error(Exception):
     """Bad option."""
     pass
 
-_varprog = None
+_varprog = re.compile(r'\$\{([^}]*)\}')
+_varprognt = re.compile(r'\%([^%]*)\%')
+
 def expandvars(self, path):
     """Expand shell variables of form ${var} (and %var%).  Unknown variables
     are left unchanged."""
-    global _varprog
-    if '$' not in path:
-        return path
-    if not _varprog:
-        import re
-        _varprog = re.compile(r'\$(\{[^}]*\})')
     i = 0
     while True:
         m = _varprog.search(path, i)
@@ -44,34 +40,27 @@ def expandvars(self, path):
             break
         i, j = m.span(0)
         name = m.group(1)
-        if name.startswith('{') and name.endswith('}'):
-            name = name[1:-1]
         try:
             val = getattr(self, name)
         except AttributeError:
             return path
         tail = path[j:]
         path = path[:i] + val
-        i = len(path)
         path += tail
     if os.name == "nt":
-        _varprog = re.compile(r'\%([^%]*%)')
         i = 0
         while True:
-            m = _varprog.search(path, i)
+            m = _varprognt.search(path, i)
             if not m:
                 break
             i, j = m.span(0)
             name = m.group(1)
-            if name.endswith('%'):
-                name = name[0:-1]
             try:
                 val = getattr(self, name)
             except AttributeError:
                 return path
             tail = path[j:]
             path = path[:i] + val
-            i = len(path)
             path += tail
     return path
 
