@@ -176,7 +176,11 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg)
    first two arguments describe the input, the last three arguments
    describe the output, both in the normal ODBC fashion. */
 char *
-ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR * buf, SQLINTEGER buflen, SQLSMALLINT *buflenout)
+ODBCutf82wchar(const SQLCHAR *s,
+	       SQLINTEGER length,
+	       SQLWCHAR * buf,
+	       SQLINTEGER buflen,
+	       SQLSMALLINT *buflenout)
 {
 	SQLWCHAR *p;
 	int i, m, n;

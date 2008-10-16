@@ -41,7 +41,11 @@
 
 
 SQLRETURN
-SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetStmtAttr_(ODBCStmt *stmt,
+		SQLINTEGER Attribute,
+		SQLPOINTER Value,
+		SQLINTEGER BufferLength,
+		SQLINTEGER *StringLength)
 {
 	/* TODO: check parameters: Value, BufferLength and StringLength */
 
@@ -140,7 +144,11 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 }
 
 SQLRETURN SQL_API
-SQLGetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetStmtAttr(SQLHSTMT hStmt,
+	       SQLINTEGER Attribute,
+	       SQLPOINTER Value,
+	       SQLINTEGER BufferLength,
+	       SQLINTEGER *StringLength)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetStmtAttr " PTRFMT " %d\n", PTRFMTCAST hStmt, Attribute);
@@ -156,13 +164,21 @@ SQLGetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGE
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetStmtAttrA(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetStmtAttrA(SQLHSTMT hStmt,
+		SQLINTEGER Attribute,
+		SQLPOINTER Value,
+		SQLINTEGER BufferLength,
+		SQLINTEGER *StringLength)
 {
 	return SQLGetStmtAttr(hStmt, Attribute, Value, BufferLength, StringLength);
 }
 
 SQLRETURN SQL_API
-SQLGetStmtAttrW(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetStmtAttrW(SQLHSTMT hStmt,
+		SQLINTEGER Attribute,
+		SQLPOINTER Value,
+		SQLINTEGER BufferLength,
+		SQLINTEGER *StringLength)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetStmtAttrW " PTRFMT " %d\n", PTRFMTCAST hStmt, Attribute);

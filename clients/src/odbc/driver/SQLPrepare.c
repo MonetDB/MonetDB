@@ -53,7 +53,9 @@ ODBCResetStmt(ODBCStmt *stmt)
 }
 
 SQLRETURN
-SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
+SQLPrepare_(ODBCStmt *stmt,
+	    SQLCHAR *szSqlStr,
+	    SQLINTEGER nSqlStrLength)
 {
 	char *query, *s;
 	MapiMsg ret;
@@ -255,7 +257,9 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 }
 
 SQLRETURN SQL_API
-SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
+SQLPrepare(SQLHSTMT hStmt,
+	   SQLCHAR *szSqlStr,
+	   SQLINTEGER nSqlStrLength)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLPrepare " PTRFMT "\n", PTRFMTCAST hStmt);
@@ -271,13 +275,17 @@ SQLPrepare(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLPrepareA(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
+SQLPrepareA(SQLHSTMT hStmt,
+	    SQLCHAR *szSqlStr,
+	    SQLINTEGER nSqlStrLength)
 {
 	return SQLPrepare(hStmt, szSqlStr, nSqlStrLength);
 }
 
 SQLRETURN SQL_API
-SQLPrepareW(SQLHSTMT hStmt, SQLWCHAR * szSqlStr, SQLINTEGER nSqlStrLength)
+SQLPrepareW(SQLHSTMT hStmt,
+	    SQLWCHAR * szSqlStr,
+	    SQLINTEGER nSqlStrLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLCHAR *sql;

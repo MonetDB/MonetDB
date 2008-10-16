@@ -40,7 +40,10 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLSetPos(SQLHSTMT hStmt, SQLUSMALLINT nRow, SQLUSMALLINT nOperation, SQLUSMALLINT nLockType)
+SQLSetPos(SQLHSTMT hStmt,
+	  SQLUSMALLINT nRow,
+	  SQLUSMALLINT nOperation,
+	  SQLUSMALLINT nLockType)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 

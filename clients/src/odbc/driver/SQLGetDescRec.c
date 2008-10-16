@@ -37,7 +37,17 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLGetDescRec_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLCHAR *Name, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength, SQLSMALLINT *Type, SQLSMALLINT *SubType, SQLINTEGER *Length, SQLSMALLINT *Precision, SQLSMALLINT *Scale, SQLSMALLINT *Nullable)
+SQLGetDescRec_(ODBCDesc *desc,
+	       SQLSMALLINT RecordNumber,
+	       SQLCHAR *Name,
+	       SQLSMALLINT BufferLength,
+	       SQLSMALLINT *StringLength,
+	       SQLSMALLINT *Type,
+	       SQLSMALLINT *SubType,
+	       SQLINTEGER *Length,
+	       SQLSMALLINT *Precision,
+	       SQLSMALLINT *Scale,
+	       SQLSMALLINT *Nullable)
 {
 	ODBCDescRec *rec;
 
@@ -88,7 +98,16 @@ SQLGetDescRec_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLCHAR *Name, SQLSMALL
 }
 
 SQLRETURN SQL_API
-SQLGetDescRec(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLCHAR *Name, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength, SQLSMALLINT *Type, SQLSMALLINT *SubType, SQLINTEGER *Length, SQLSMALLINT *Precision, SQLSMALLINT *Scale,
+SQLGetDescRec(SQLHDESC DescriptorHandle,
+	      SQLSMALLINT RecordNumber,
+	      SQLCHAR *Name,
+	      SQLSMALLINT BufferLength,
+	      SQLSMALLINT *StringLength,
+	      SQLSMALLINT *Type,
+	      SQLSMALLINT *SubType,
+	      SQLINTEGER *Length,
+	      SQLSMALLINT *Precision,
+	      SQLSMALLINT *Scale,
 	      SQLSMALLINT *Nullable)
 {
 	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
@@ -105,14 +124,32 @@ SQLGetDescRec(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLCHAR *Name
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetDescRecA(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLCHAR *Name, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength, SQLSMALLINT *Type, SQLSMALLINT *SubType, SQLINTEGER *Length, SQLSMALLINT *Precision, SQLSMALLINT *Scale,
+SQLGetDescRecA(SQLHDESC DescriptorHandle,
+	       SQLSMALLINT RecordNumber,
+	       SQLCHAR *Name,
+	       SQLSMALLINT BufferLength,
+	       SQLSMALLINT *StringLength,
+	       SQLSMALLINT *Type,
+	       SQLSMALLINT *SubType,
+	       SQLINTEGER *Length,
+	       SQLSMALLINT *Precision,
+	       SQLSMALLINT *Scale,
 	       SQLSMALLINT *Nullable)
 {
 	return SQLGetDescRec(DescriptorHandle, RecordNumber, Name, BufferLength, StringLength, Type, SubType, Length, Precision, Scale, Nullable);
 }
 
 SQLRETURN SQL_API
-SQLGetDescRecW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLWCHAR * Name, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength, SQLSMALLINT *Type, SQLSMALLINT *SubType, SQLINTEGER *Length, SQLSMALLINT *Precision, SQLSMALLINT *Scale,
+SQLGetDescRecW(SQLHDESC DescriptorHandle,
+	       SQLSMALLINT RecordNumber,
+	       SQLWCHAR * Name,
+	       SQLSMALLINT BufferLength,
+	       SQLSMALLINT *StringLength,
+	       SQLSMALLINT *Type,
+	       SQLSMALLINT *SubType,
+	       SQLINTEGER *Length,
+	       SQLSMALLINT *Precision,
+	       SQLSMALLINT *Scale,
 	       SQLSMALLINT *Nullable)
 {
 	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;

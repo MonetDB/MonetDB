@@ -38,7 +38,13 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLColAttributes_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType, SQLPOINTER pszDesc, SQLSMALLINT nDescMax, SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
+SQLColAttributes_(ODBCStmt *stmt,
+		  SQLUSMALLINT nCol,
+		  SQLUSMALLINT nDescType,
+		  SQLPOINTER pszDesc,
+		  SQLSMALLINT nDescMax,
+		  SQLSMALLINT *pcbDesc,
+		  SQLINTEGER *pfDesc)
 {
 	SQLRETURN rc;
 	SQLINTEGER value;
@@ -72,7 +78,13 @@ SQLColAttributes_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType, SQL
 }
 
 SQLRETURN SQL_API
-SQLColAttributes(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType, SQLPOINTER pszDesc, SQLSMALLINT nDescMax, SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
+SQLColAttributes(SQLHSTMT hStmt,
+		 SQLUSMALLINT nCol,
+		 SQLUSMALLINT nDescType,
+		 SQLPOINTER pszDesc,
+		 SQLSMALLINT nDescMax,
+		 SQLSMALLINT *pcbDesc,
+		 SQLINTEGER *pfDesc)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -90,13 +102,25 @@ SQLColAttributes(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType, SQLP
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLColAttributesA(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType, SQLPOINTER pszDesc, SQLSMALLINT nDescMax, SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
+SQLColAttributesA(SQLHSTMT hStmt,
+		  SQLUSMALLINT nCol,
+		  SQLUSMALLINT nDescType,
+		  SQLPOINTER pszDesc,
+		  SQLSMALLINT nDescMax,
+		  SQLSMALLINT *pcbDesc,
+		  SQLINTEGER *pfDesc)
 {
 	return SQLColAttributes(hStmt, nCol, nDescType, pszDesc, nDescMax, pcbDesc, pfDesc);
 }
 
 SQLRETURN SQL_API
-SQLColAttributesW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType, SQLPOINTER pszDesc, SQLSMALLINT nDescMax, SQLSMALLINT *pcbDesc, SQLINTEGER *pfDesc)
+SQLColAttributesW(SQLHSTMT hStmt,
+		  SQLUSMALLINT nCol,
+		  SQLUSMALLINT nDescType,
+		  SQLPOINTER pszDesc,
+		  SQLSMALLINT nDescMax,
+		  SQLSMALLINT *pcbDesc,
+		  SQLINTEGER *pfDesc)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLPOINTER ptr;
@@ -136,9 +160,8 @@ SQLColAttributesW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType, SQL
 
 	rc = SQLColAttributes_(stmt, nCol, nDescType, ptr, n, &n, pfDesc);
 
-	if (ptr !=pszDesc)
+	if (ptr != pszDesc)
 		fixWcharOut(rc, ptr, n, pszDesc, nDescMax, pcbDesc, 2, addStmtError, stmt);
-
 	else if (pcbDesc)
 		*pcbDesc = n;
 

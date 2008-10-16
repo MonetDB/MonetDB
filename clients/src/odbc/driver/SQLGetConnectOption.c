@@ -38,7 +38,9 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLGetConnectOption_(ODBCDbc *dbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
+SQLGetConnectOption_(ODBCDbc *dbc,
+		     SQLUSMALLINT nOption,
+		     SQLPOINTER pvParam)
 {
 	/* use mapping as described in ODBC 3 SDK Help file */
 	switch (nOption) {
@@ -69,7 +71,9 @@ SQLGetConnectOption_(ODBCDbc *dbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 }
 
 SQLRETURN SQL_API
-SQLGetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
+SQLGetConnectOption(SQLHDBC hDbc,
+		    SQLUSMALLINT nOption,
+		    SQLPOINTER pvParam)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
@@ -86,13 +90,17 @@ SQLGetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetConnectOptionA(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
+SQLGetConnectOptionA(SQLHDBC hDbc,
+		     SQLUSMALLINT nOption,
+		     SQLPOINTER pvParam)
 {
 	return SQLGetConnectOption(hDbc, nOption, pvParam);
 }
 
 SQLRETURN SQL_API
-SQLGetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
+SQLGetConnectOptionW(SQLHDBC hDbc,
+		     SQLUSMALLINT nOption,
+		     SQLPOINTER pvParam)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	SQLRETURN rc;
@@ -121,7 +129,7 @@ SQLGetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLPOINTER pvParam)
 
 	rc = SQLGetConnectOption_(dbc, nOption, ptr);
 
-	if (ptr !=pvParam) {
+	if (ptr != pvParam) {
 		SQLSMALLINT n = (SQLSMALLINT) strlen((char *) ptr);
 		SQLSMALLINT *nullp = NULL;
 

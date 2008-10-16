@@ -133,7 +133,8 @@ ODBCFreeDesc_(ODBCDesc *desc)
 }
 
 SQLRETURN
-SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
+SQLFreeHandle_(SQLSMALLINT handleType,
+	       SQLHANDLE handle)
 {
 	/* Check parameter handle */
 	if (handle == NULL) {
@@ -191,7 +192,8 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 }
 
 SQLRETURN SQL_API
-SQLFreeHandle(SQLSMALLINT handleType, SQLHANDLE handle)
+SQLFreeHandle(SQLSMALLINT handleType,
+	      SQLHANDLE handle)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLFreeHandle %s " PTRFMT "\n", handleType == SQL_HANDLE_ENV ? "Env" : handleType == SQL_HANDLE_DBC ? "Dbc" : handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST handle);

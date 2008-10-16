@@ -37,7 +37,12 @@
 #include "ODBCUtil.h"
 
 SQLRETURN
-SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetDescField_(ODBCDesc *desc,
+		 SQLSMALLINT RecordNumber,
+		 SQLSMALLINT FieldIdentifier,
+		 SQLPOINTER Value,
+		 SQLINTEGER BufferLength,
+		 SQLINTEGER *StringLength)
 {
 	ODBCDescRec *rec;
 
@@ -231,7 +236,12 @@ SQLGetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIden
 }
 
 SQLRETURN SQL_API
-SQLGetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetDescField(SQLHDESC DescriptorHandle,
+		SQLSMALLINT RecordNumber,
+		SQLSMALLINT FieldIdentifier,
+		SQLPOINTER Value,
+		SQLINTEGER BufferLength,
+		SQLINTEGER *StringLength)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetDescField " PTRFMT " %d %d\n", PTRFMTCAST DescriptorHandle, RecordNumber, FieldIdentifier);
@@ -246,13 +256,23 @@ SQLGetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetDescFieldA(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetDescFieldA(SQLHDESC DescriptorHandle,
+		 SQLSMALLINT RecordNumber,
+		 SQLSMALLINT FieldIdentifier,
+		 SQLPOINTER Value,
+		 SQLINTEGER BufferLength,
+		 SQLINTEGER *StringLength)
 {
 	return SQLGetDescField(DescriptorHandle, RecordNumber, FieldIdentifier, Value, BufferLength, StringLength);
 }
 
 SQLRETURN SQL_API
-SQLGetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetDescFieldW(SQLHDESC DescriptorHandle,
+		 SQLSMALLINT RecordNumber,
+		 SQLSMALLINT FieldIdentifier,
+		 SQLPOINTER Value,
+		 SQLINTEGER BufferLength,
+		 SQLINTEGER *StringLength)
 {
 	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
 	SQLRETURN rc;
@@ -291,7 +311,7 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLIN
 
 	rc = SQLGetDescField_(desc, RecordNumber, FieldIdentifier, ptr, n, &n);
 
-	if (ptr !=Value) {
+	if (ptr != Value) {
 		SQLSMALLINT nn = (SQLSMALLINT) n;
 
 		fixWcharOut(rc, ptr, nn, Value, BufferLength, StringLength, 2, addDescError, desc);

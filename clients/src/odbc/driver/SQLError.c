@@ -44,7 +44,14 @@
 #include "ODBCUtil.h"
 
 SQLRETURN SQL_API
-SQLError(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState, SQLINTEGER *pfNativeError, SQLCHAR *szErrorMsg, SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)
+SQLError(SQLHENV hEnv,
+	 SQLHDBC hDbc,
+	 SQLHSTMT hStmt,
+	 SQLCHAR *szSqlState,
+	 SQLINTEGER *pfNativeError,
+	 SQLCHAR *szErrorMsg,
+	 SQLSMALLINT nErrorMsgMax,
+	 SQLSMALLINT *pcbErrorMsg)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLError " PTRFMT " " PTRFMT " " PTRFMT "\n", PTRFMTCAST hEnv, PTRFMTCAST hDbc, PTRFMTCAST hStmt);
@@ -57,13 +64,27 @@ SQLError(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState, SQLINT
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLErrorA(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLCHAR *szSqlState, SQLINTEGER *pfNativeError, SQLCHAR *szErrorMsg, SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)
+SQLErrorA(SQLHENV hEnv,
+	  SQLHDBC hDbc,
+	  SQLHSTMT hStmt,
+	  SQLCHAR *szSqlState,
+	  SQLINTEGER *pfNativeError,
+	  SQLCHAR *szErrorMsg,
+	  SQLSMALLINT nErrorMsgMax,
+	  SQLSMALLINT *pcbErrorMsg)
 {
 	return SQLError(hEnv, hDbc, hStmt, szSqlState, pfNativeError, szErrorMsg, nErrorMsgMax, pcbErrorMsg);
 }
 
 SQLRETURN SQL_API
-SQLErrorW(SQLHENV hEnv, SQLHDBC hDbc, SQLHSTMT hStmt, SQLWCHAR * szSqlState, SQLINTEGER *pfNativeError, SQLWCHAR * szErrorMsg, SQLSMALLINT nErrorMsgMax, SQLSMALLINT *pcbErrorMsg)
+SQLErrorW(SQLHENV hEnv,
+	  SQLHDBC hDbc,
+	  SQLHSTMT hStmt,
+	  SQLWCHAR * szSqlState,
+	  SQLINTEGER *pfNativeError,
+	  SQLWCHAR * szErrorMsg,
+	  SQLSMALLINT nErrorMsgMax,
+	  SQLSMALLINT *pcbErrorMsg)
 {
 	SQLCHAR state[6];
 	SQLRETURN rc;

@@ -41,7 +41,12 @@
 #include "ODBCUtil.h"
 
 SQLRETURN SQL_API
-SQLGetData(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType, SQLPOINTER pTarget, SQLINTEGER nTargetLength, SQLINTEGER *pnLengthOrIndicator)
+SQLGetData(SQLHSTMT hStmt,
+	   SQLUSMALLINT nCol,
+	   SQLSMALLINT nTargetType,
+	   SQLPOINTER pTarget,
+	   SQLINTEGER nTargetLength,
+	   SQLINTEGER *pnLengthOrIndicator)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 

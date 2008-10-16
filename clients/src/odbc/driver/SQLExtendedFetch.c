@@ -40,7 +40,11 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLLEN nOffset, SQLULEN * pnRowCount, SQLUSMALLINT *pRowStatusArray)
+SQLExtendedFetch(SQLHSTMT hStmt,
+		 SQLUSMALLINT nOrientation,
+		 SQLLEN nOffset,
+		 SQLULEN * pnRowCount,
+		 SQLUSMALLINT *pRowStatusArray)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLUSMALLINT *array_status_ptr;

@@ -43,7 +43,8 @@
 
 
 SQLRETURN SQL_API
-SQLCopyDesc(SQLHDESC hSourceDescHandle, SQLHDESC hTargetDescHandle)
+SQLCopyDesc(SQLHDESC hSourceDescHandle,
+	    SQLHDESC hTargetDescHandle)
 {
 	ODBCDesc *src = (ODBCDesc *) hSourceDescHandle;
 	ODBCDesc *dst = (ODBCDesc *) hTargetDescHandle;

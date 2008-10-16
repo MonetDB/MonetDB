@@ -44,7 +44,14 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLForeignKeys_(ODBCStmt *stmt, SQLCHAR *szPKCatalogName, SQLSMALLINT nPKCatalogNameLength, SQLCHAR *szPKSchemaName, SQLSMALLINT nPKSchemaNameLength, SQLCHAR *szPKTableName, SQLSMALLINT nPKTableNameLength, SQLCHAR *szFKCatalogName,
+SQLForeignKeys_(ODBCStmt *stmt,
+		SQLCHAR *szPKCatalogName,
+		SQLSMALLINT nPKCatalogNameLength,
+		SQLCHAR *szPKSchemaName,
+		SQLSMALLINT nPKSchemaNameLength,
+		SQLCHAR *szPKTableName,
+		SQLSMALLINT nPKTableNameLength,
+		SQLCHAR *szFKCatalogName,
 		SQLSMALLINT nFKCatalogNameLength, SQLCHAR *szFKSchemaName, SQLSMALLINT nFKSchemaNameLength, SQLCHAR *szFKTableName, SQLSMALLINT nFKTableNameLength)
 {
 	RETCODE rc;
@@ -170,7 +177,14 @@ SQLForeignKeys_(ODBCStmt *stmt, SQLCHAR *szPKCatalogName, SQLSMALLINT nPKCatalog
 }
 
 SQLRETURN SQL_API
-SQLForeignKeys(SQLHSTMT hStmt, SQLCHAR *szPKCatalogName, SQLSMALLINT nPKCatalogNameLength, SQLCHAR *szPKSchemaName, SQLSMALLINT nPKSchemaNameLength, SQLCHAR *szPKTableName, SQLSMALLINT nPKTableNameLength, SQLCHAR *szFKCatalogName,
+SQLForeignKeys(SQLHSTMT hStmt,
+	       SQLCHAR *szPKCatalogName,
+	       SQLSMALLINT nPKCatalogNameLength,
+	       SQLCHAR *szPKSchemaName,
+	       SQLSMALLINT nPKSchemaNameLength,
+	       SQLCHAR *szPKTableName,
+	       SQLSMALLINT nPKTableNameLength,
+	       SQLCHAR *szFKCatalogName,
 	       SQLSMALLINT nFKCatalogNameLength, SQLCHAR *szFKSchemaName, SQLSMALLINT nFKSchemaNameLength, SQLCHAR *szFKTableName, SQLSMALLINT nFKTableNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
@@ -190,7 +204,14 @@ SQLForeignKeys(SQLHSTMT hStmt, SQLCHAR *szPKCatalogName, SQLSMALLINT nPKCatalogN
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLForeignKeysA(SQLHSTMT hStmt, SQLCHAR *szPKCatalogName, SQLSMALLINT nPKCatalogNameLength, SQLCHAR *szPKSchemaName, SQLSMALLINT nPKSchemaNameLength, SQLCHAR *szPKTableName, SQLSMALLINT nPKTableNameLength, SQLCHAR *szFKCatalogName,
+SQLForeignKeysA(SQLHSTMT hStmt,
+		SQLCHAR *szPKCatalogName,
+		SQLSMALLINT nPKCatalogNameLength,
+		SQLCHAR *szPKSchemaName,
+		SQLSMALLINT nPKSchemaNameLength,
+		SQLCHAR *szPKTableName,
+		SQLSMALLINT nPKTableNameLength,
+		SQLCHAR *szFKCatalogName,
 		SQLSMALLINT nFKCatalogNameLength, SQLCHAR *szFKSchemaName, SQLSMALLINT nFKSchemaNameLength, SQLCHAR *szFKTableName, SQLSMALLINT nFKTableNameLength)
 {
 	return SQLForeignKeys(hStmt, szPKCatalogName, nPKCatalogNameLength, szPKSchemaName, nPKSchemaNameLength, szPKTableName, nPKTableNameLength, szFKCatalogName, nFKCatalogNameLength, szFKSchemaName, nFKSchemaNameLength, szFKTableName,
@@ -198,7 +219,14 @@ SQLForeignKeysA(SQLHSTMT hStmt, SQLCHAR *szPKCatalogName, SQLSMALLINT nPKCatalog
 }
 
 SQLRETURN SQL_API
-SQLForeignKeysW(SQLHSTMT hStmt, SQLWCHAR * szPKCatalogName, SQLSMALLINT nPKCatalogNameLength, SQLWCHAR * szPKSchemaName, SQLSMALLINT nPKSchemaNameLength, SQLWCHAR * szPKTableName, SQLSMALLINT nPKTableNameLength, SQLWCHAR * szFKCatalogName,
+SQLForeignKeysW(SQLHSTMT hStmt,
+		SQLWCHAR * szPKCatalogName,
+		SQLSMALLINT nPKCatalogNameLength,
+		SQLWCHAR * szPKSchemaName,
+		SQLSMALLINT nPKSchemaNameLength,
+		SQLWCHAR * szPKTableName,
+		SQLSMALLINT nPKTableNameLength,
+		SQLWCHAR * szFKCatalogName,
 		SQLSMALLINT nFKCatalogNameLength, SQLWCHAR * szFKSchemaName, SQLSMALLINT nFKSchemaNameLength, SQLWCHAR * szFKTableName, SQLSMALLINT nFKTableNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

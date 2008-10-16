@@ -42,7 +42,9 @@
 
 
 static SQLRETURN
-SQLSetCursorName_(ODBCStmt *stmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
+SQLSetCursorName_(ODBCStmt *stmt,
+		  SQLCHAR *szCursor,
+		  SQLSMALLINT nCursorLength)
 {
 	fixODBCstring(szCursor, nCursorLength, SQLSMALLINT, addStmtError, stmt);
 
@@ -68,7 +70,9 @@ SQLSetCursorName_(ODBCStmt *stmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 }
 
 SQLRETURN SQL_API
-SQLSetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
+SQLSetCursorName(SQLHSTMT hStmt,
+		 SQLCHAR *szCursor,
+		 SQLSMALLINT nCursorLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -86,13 +90,17 @@ SQLSetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLSetCursorNameA(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
+SQLSetCursorNameA(SQLHSTMT hStmt,
+		  SQLCHAR *szCursor,
+		  SQLSMALLINT nCursorLength)
 {
 	return SQLSetCursorName(hStmt, szCursor, nCursorLength);
 }
 
 SQLRETURN SQL_API
-SQLSetCursorNameW(SQLHSTMT hStmt, SQLWCHAR * szCursor, SQLSMALLINT nCursorLength)
+SQLSetCursorNameW(SQLHSTMT hStmt,
+		  SQLWCHAR * szCursor,
+		  SQLSMALLINT nCursorLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc;

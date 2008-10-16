@@ -41,7 +41,8 @@
 
 
 SQLRETURN SQL_API
-SQLBulkOperations(SQLHSTMT hStmt, SQLSMALLINT nOperation)
+SQLBulkOperations(SQLHSTMT hStmt,
+		  SQLSMALLINT nOperation)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 

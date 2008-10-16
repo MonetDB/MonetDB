@@ -43,7 +43,8 @@
 
 
 SQLRETURN SQL_API
-SQLParamData(SQLHSTMT hStmt, SQLPOINTER *pValue)
+SQLParamData(SQLHSTMT hStmt,
+	     SQLPOINTER *pValue)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 

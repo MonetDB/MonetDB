@@ -41,7 +41,12 @@
 
 
 SQLRETURN SQL_API
-SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType, SQLPOINTER pTargetValue, SQLINTEGER nTargetValueMax, SQLINTEGER *pnLengthOrIndicator)
+SQLBindCol(SQLHSTMT hStmt,
+	   SQLUSMALLINT nCol,
+	   SQLSMALLINT nTargetType,
+	   SQLPOINTER pTargetValue,
+	   SQLINTEGER nTargetValueMax,
+	   SQLINTEGER *pnLengthOrIndicator)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	ODBCDesc *desc;		/* Application Row Descriptor */

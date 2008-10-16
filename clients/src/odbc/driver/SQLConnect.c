@@ -54,7 +54,16 @@
 #endif
 
 SQLRETURN
-SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD, SQLSMALLINT nPWDLength, char *host, int port, char *schema)
+SQLConnect_(ODBCDbc *dbc,
+	    SQLCHAR *szDataSource,
+	    SQLSMALLINT nDataSourceLength,
+	    SQLCHAR *szUID,
+	    SQLSMALLINT nUIDLength,
+	    SQLCHAR *szPWD,
+	    SQLSMALLINT nPWDLength,
+	    char *host,
+	    int port,
+	    char *schema)
 {
 	SQLRETURN rc = SQL_SUCCESS;
 	char *dsn = NULL;
@@ -186,7 +195,13 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 }
 
 SQLRETURN SQL_API
-SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD, SQLSMALLINT nPWDLength)
+SQLConnect(SQLHDBC hDbc,
+	   SQLCHAR *szDataSource,
+	   SQLSMALLINT nDataSourceLength,
+	   SQLCHAR *szUID,
+	   SQLSMALLINT nUIDLength,
+	   SQLCHAR *szPWD,
+	   SQLSMALLINT nPWDLength)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLConnect " PTRFMT "\n", PTRFMTCAST hDbc);
@@ -202,13 +217,25 @@ SQLConnect(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, S
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLConnectA(SQLHDBC hDbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, SQLCHAR *szUID, SQLSMALLINT nUIDLength, SQLCHAR *szPWD, SQLSMALLINT nPWDLength)
+SQLConnectA(SQLHDBC hDbc,
+	    SQLCHAR *szDataSource,
+	    SQLSMALLINT nDataSourceLength,
+	    SQLCHAR *szUID,
+	    SQLSMALLINT nUIDLength,
+	    SQLCHAR *szPWD,
+	    SQLSMALLINT nPWDLength)
 {
 	return SQLConnect(hDbc, szDataSource, nDataSourceLength, szUID, nUIDLength, szPWD, nPWDLength);
 }
 
 SQLRETURN SQL_API
-SQLConnectW(SQLHDBC hDbc, SQLWCHAR * szDataSource, SQLSMALLINT nDataSourceLength, SQLWCHAR * szUID, SQLSMALLINT nUIDLength, SQLWCHAR * szPWD, SQLSMALLINT nPWDLength)
+SQLConnectW(SQLHDBC hDbc,
+	    SQLWCHAR * szDataSource,
+	    SQLSMALLINT nDataSourceLength,
+	    SQLWCHAR * szUID,
+	    SQLSMALLINT nUIDLength,
+	    SQLWCHAR * szPWD,
+	    SQLSMALLINT nPWDLength)
 {
 	SQLCHAR *ds = NULL, *uid = NULL, *pwd = NULL;
 	SQLRETURN rc = SQL_ERROR;

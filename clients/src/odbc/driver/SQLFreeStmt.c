@@ -43,7 +43,8 @@
 #include "ODBCStmt.h"
 
 SQLRETURN
-SQLFreeStmt_(ODBCStmt *stmt, SQLUSMALLINT option)
+SQLFreeStmt_(ODBCStmt *stmt,
+	     SQLUSMALLINT option)
 {
 	switch (option) {
 	case SQL_CLOSE:
@@ -82,7 +83,8 @@ SQLFreeStmt_(ODBCStmt *stmt, SQLUSMALLINT option)
 }
 
 SQLRETURN SQL_API
-SQLFreeStmt(SQLHSTMT handle, SQLUSMALLINT option)
+SQLFreeStmt(SQLHSTMT handle,
+	    SQLUSMALLINT option)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLFreeStmt " PTRFMT " %d\n", PTRFMTCAST handle, option);

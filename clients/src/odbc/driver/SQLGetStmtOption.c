@@ -41,7 +41,9 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLGetStmtOption(SQLHSTMT hStmt, SQLUSMALLINT fOption, SQLPOINTER pvParam)
+SQLGetStmtOption(SQLHSTMT hStmt,
+		 SQLUSMALLINT fOption,
+		 SQLPOINTER pvParam)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 

@@ -736,7 +736,11 @@ SQLGetInfo_(ODBCDbc *dbc,
 }
 
 SQLRETURN SQL_API
-SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue, SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
+SQLGetInfo(SQLHDBC hDbc,
+	   SQLUSMALLINT nInfoType,
+	   SQLPOINTER pInfoValue,
+	   SQLSMALLINT nInfoValueMax,
+	   SQLSMALLINT *pnLength)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
@@ -754,13 +758,21 @@ SQLGetInfo(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue, SQLSMALL
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetInfoA(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue, SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
+SQLGetInfoA(SQLHDBC hDbc,
+	    SQLUSMALLINT nInfoType,
+	    SQLPOINTER pInfoValue,
+	    SQLSMALLINT nInfoValueMax,
+	    SQLSMALLINT *pnLength)
 {
 	return SQLGetInfo(hDbc, nInfoType, pInfoValue, nInfoValueMax, pnLength);
 }
 
 SQLRETURN SQL_API
-SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue, SQLSMALLINT nInfoValueMax, SQLSMALLINT *pnLength)
+SQLGetInfoW(SQLHDBC hDbc,
+	    SQLUSMALLINT nInfoType,
+	    SQLPOINTER pInfoValue,
+	    SQLSMALLINT nInfoValueMax,
+	    SQLSMALLINT *pnLength)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	SQLRETURN rc;
@@ -828,9 +840,8 @@ SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue, SQLSMAL
 
 	rc = SQLGetInfo_(dbc, nInfoType, ptr, n, &n);
 
-	if (ptr !=pInfoValue)
+	if (ptr != pInfoValue)
 		fixWcharOut(rc, ptr, n, pInfoValue, nInfoValueMax, pnLength, 2, addDbcError, dbc);
-
 	else if (pnLength)
 		*pnLength = n;
 

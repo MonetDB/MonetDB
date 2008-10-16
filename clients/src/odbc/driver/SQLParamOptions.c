@@ -37,7 +37,9 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLParamOptions(SQLHSTMT hStmt, SQLUINTEGER nRow, SQLUINTEGER *pnRow)
+SQLParamOptions(SQLHSTMT hStmt,
+		SQLUINTEGER nRow,
+		SQLUINTEGER *pnRow)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	RETCODE rc;

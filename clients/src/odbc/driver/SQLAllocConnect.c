@@ -40,7 +40,8 @@
 #include "ODBCGlobal.h"
 
 SQLRETURN SQL_API
-SQLAllocConnect(SQLHENV hEnv, SQLHDBC *phDbc)
+SQLAllocConnect(SQLHENV hEnv,
+		SQLHDBC *phDbc)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLAllocConnect " PTRFMT "\n", PTRFMTCAST hEnv);

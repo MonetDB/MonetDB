@@ -88,7 +88,9 @@ ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 }
 
 SQLRETURN
-SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
+SQLExecDirect_(ODBCStmt *stmt,
+	       SQLCHAR *szSqlStr,
+	       SQLINTEGER nSqlStr)
 {
 	SQLRETURN ret;
 	SQLINTEGER i;
@@ -115,7 +117,9 @@ SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 }
 
 SQLRETURN SQL_API
-SQLExecDirect(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
+SQLExecDirect(SQLHSTMT hStmt,
+	      SQLCHAR *szSqlStr,
+	      SQLINTEGER nSqlStr)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLExecDirect " PTRFMT "\n", PTRFMTCAST hStmt);
@@ -131,13 +135,17 @@ SQLExecDirect(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLExecDirectA(SQLHSTMT hStmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
+SQLExecDirectA(SQLHSTMT hStmt,
+	       SQLCHAR *szSqlStr,
+	       SQLINTEGER nSqlStr)
 {
 	return SQLExecDirect(hStmt, szSqlStr, nSqlStr);
 }
 
 SQLRETURN SQL_API
-SQLExecDirectW(SQLHSTMT hStmt, SQLWCHAR * szSqlStr, SQLINTEGER nSqlStr)
+SQLExecDirectW(SQLHSTMT hStmt,
+	       SQLWCHAR * szSqlStr,
+	       SQLINTEGER nSqlStr)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc;

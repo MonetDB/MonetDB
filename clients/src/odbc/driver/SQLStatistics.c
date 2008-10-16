@@ -45,7 +45,15 @@
 
 
 static SQLRETURN
-SQLStatistics_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLUSMALLINT nUnique, SQLUSMALLINT nReserved)
+SQLStatistics_(ODBCStmt *stmt,
+	       SQLCHAR *szCatalogName,
+	       SQLSMALLINT nCatalogNameLength,
+	       SQLCHAR *szSchemaName,
+	       SQLSMALLINT nSchemaNameLength,
+	       SQLCHAR *szTableName,
+	       SQLSMALLINT nTableNameLength,
+	       SQLUSMALLINT nUnique,
+	       SQLUSMALLINT nReserved)
 {
 	RETCODE rc;
 
@@ -173,7 +181,15 @@ SQLStatistics_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameL
 }
 
 SQLRETURN SQL_API
-SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLUSMALLINT nUnique, SQLUSMALLINT nReserved)
+SQLStatistics(SQLHSTMT hStmt,
+	      SQLCHAR *szCatalogName,
+	      SQLSMALLINT nCatalogNameLength,
+	      SQLCHAR *szSchemaName,
+	      SQLSMALLINT nSchemaNameLength,
+	      SQLCHAR *szTableName,
+	      SQLSMALLINT nTableNameLength,
+	      SQLUSMALLINT nUnique,
+	      SQLUSMALLINT nReserved)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -191,13 +207,29 @@ SQLStatistics(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLe
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLStatisticsA(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLUSMALLINT nUnique, SQLUSMALLINT nReserved)
+SQLStatisticsA(SQLHSTMT hStmt,
+	       SQLCHAR *szCatalogName,
+	       SQLSMALLINT nCatalogNameLength,
+	       SQLCHAR *szSchemaName,
+	       SQLSMALLINT nSchemaNameLength,
+	       SQLCHAR *szTableName,
+	       SQLSMALLINT nTableNameLength,
+	       SQLUSMALLINT nUnique,
+	       SQLUSMALLINT nReserved)
 {
 	return SQLStatistics(hStmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength, nUnique, nReserved);
 }
 
 SQLRETURN SQL_API
-SQLStatisticsW(SQLHSTMT hStmt, SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength, SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength, SQLWCHAR * szTableName, SQLSMALLINT nTableNameLength, SQLUSMALLINT nUnique, SQLUSMALLINT nReserved)
+SQLStatisticsW(SQLHSTMT hStmt,
+	       SQLWCHAR * szCatalogName,
+	       SQLSMALLINT nCatalogNameLength,
+	       SQLWCHAR * szSchemaName,
+	       SQLSMALLINT nSchemaNameLength,
+	       SQLWCHAR * szTableName,
+	       SQLSMALLINT nTableNameLength,
+	       SQLUSMALLINT nUnique,
+	       SQLUSMALLINT nReserved)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc = SQL_ERROR;

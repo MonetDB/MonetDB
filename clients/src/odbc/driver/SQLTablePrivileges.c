@@ -45,7 +45,13 @@
 
 
 static SQLRETURN
-SQLTablePrivileges_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+SQLTablePrivileges_(ODBCStmt *stmt,
+		    SQLCHAR *szCatalogName,
+		    SQLSMALLINT nCatalogNameLength,
+		    SQLCHAR *szSchemaName,
+		    SQLSMALLINT nSchemaNameLength,
+		    SQLCHAR *szTableName,
+		    SQLSMALLINT nTableNameLength)
 {
 	fixODBCstring(szCatalogName, nCatalogNameLength, SQLSMALLINT, addStmtError, stmt);
 	fixODBCstring(szSchemaName, nSchemaNameLength, SQLSMALLINT, addStmtError, stmt);
@@ -72,7 +78,13 @@ SQLTablePrivileges_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalog
 }
 
 SQLRETURN SQL_API
-SQLTablePrivileges(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+SQLTablePrivileges(SQLHSTMT hStmt,
+		   SQLCHAR *szCatalogName,
+		   SQLSMALLINT nCatalogNameLength,
+		   SQLCHAR *szSchemaName,
+		   SQLSMALLINT nSchemaNameLength,
+		   SQLCHAR *szTableName,
+		   SQLSMALLINT nTableNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -90,13 +102,25 @@ SQLTablePrivileges(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogN
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLTablePrivilegesA(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+SQLTablePrivilegesA(SQLHSTMT hStmt,
+		    SQLCHAR *szCatalogName,
+		    SQLSMALLINT nCatalogNameLength,
+		    SQLCHAR *szSchemaName,
+		    SQLSMALLINT nSchemaNameLength,
+		    SQLCHAR *szTableName,
+		    SQLSMALLINT nTableNameLength)
 {
 	return SQLTablePrivileges(hStmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength);
 }
 
 SQLRETURN SQL_API
-SQLTablePrivilegesW(SQLHSTMT hStmt, SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength, SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength, SQLWCHAR * szTableName, SQLSMALLINT nTableNameLength)
+SQLTablePrivilegesW(SQLHSTMT hStmt,
+		    SQLWCHAR * szCatalogName,
+		    SQLSMALLINT nCatalogNameLength,
+		    SQLWCHAR * szSchemaName,
+		    SQLSMALLINT nSchemaNameLength,
+		    SQLWCHAR * szTableName,
+		    SQLSMALLINT nTableNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc = SQL_ERROR;

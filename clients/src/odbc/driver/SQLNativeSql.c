@@ -41,7 +41,12 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLNativeSql_(ODBCStmt *stmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
+SQLNativeSql_(ODBCStmt *stmt,
+	      SQLCHAR *szSqlStrIn,
+	      SQLINTEGER cbSqlStrIn,
+	      SQLCHAR *szSqlStr,
+	      SQLINTEGER cbSqlStrMax,
+	      SQLINTEGER *pcbSqlStr)
 {
 	char *query;
 
@@ -64,7 +69,12 @@ SQLNativeSql_(ODBCStmt *stmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLCHA
 }
 
 SQLRETURN SQL_API
-SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
+SQLNativeSql(SQLHSTMT hStmt,
+	     SQLCHAR *szSqlStrIn,
+	     SQLINTEGER cbSqlStrIn,
+	     SQLCHAR *szSqlStr,
+	     SQLINTEGER cbSqlStrMax,
+	     SQLINTEGER *pcbSqlStr)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -82,13 +92,23 @@ SQLNativeSql(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLCHAR
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLNativeSqlA(SQLHSTMT hStmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
+SQLNativeSqlA(SQLHSTMT hStmt,
+	      SQLCHAR *szSqlStrIn,
+	      SQLINTEGER cbSqlStrIn,
+	      SQLCHAR *szSqlStr,
+	      SQLINTEGER cbSqlStrMax,
+	      SQLINTEGER *pcbSqlStr)
 {
 	return SQLNativeSql(hStmt, szSqlStrIn, cbSqlStrIn, szSqlStr, cbSqlStrMax, pcbSqlStr);
 }
 
 SQLRETURN SQL_API
-SQLNativeSqlW(SQLHSTMT hStmt, SQLWCHAR * szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLWCHAR * szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
+SQLNativeSqlW(SQLHSTMT hStmt,
+	      SQLWCHAR * szSqlStrIn,
+	      SQLINTEGER cbSqlStrIn,
+	      SQLWCHAR * szSqlStr,
+	      SQLINTEGER cbSqlStrMax,
+	      SQLINTEGER *pcbSqlStr)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc;

@@ -42,7 +42,13 @@
 
 
 SQLRETURN
-SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue, SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength, SQLPOINTER pnValue)
+SQLColAttribute_(ODBCStmt *stmt,
+		 SQLUSMALLINT nCol,
+		 SQLUSMALLINT nFieldIdentifier,
+		 SQLPOINTER pszValue,
+		 SQLSMALLINT nValueLengthMax,
+		 SQLSMALLINT *pnValueLength,
+		 SQLPOINTER pnValue)
 {
 	ODBCDescRec *rec;
 
@@ -194,7 +200,13 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 }
 
 SQLRETURN SQL_API
-SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue, SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength, SQLPOINTER pnValue)
+SQLColAttribute(SQLHSTMT hStmt,
+		SQLUSMALLINT nCol,
+		SQLUSMALLINT nFieldIdentifier,
+		SQLPOINTER pszValue,
+		SQLSMALLINT nValueLengthMax,
+		SQLSMALLINT *pnValueLength,
+		SQLPOINTER pnValue)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLColAttribute " PTRFMT " %d\n", PTRFMTCAST hStmt, nFieldIdentifier);
@@ -210,13 +222,25 @@ SQLColAttribute(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifier
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLColAttributeA(SQLHSTMT hStmt, SQLSMALLINT nCol, SQLSMALLINT nFieldIdentifier, SQLPOINTER pszValue, SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength, SQLPOINTER pnValue)
+SQLColAttributeA(SQLHSTMT hStmt,
+		 SQLSMALLINT nCol,
+		 SQLSMALLINT nFieldIdentifier,
+		 SQLPOINTER pszValue,
+		 SQLSMALLINT nValueLengthMax,
+		 SQLSMALLINT *pnValueLength,
+		 SQLPOINTER pnValue)
 {
 	return SQLColAttribute(hStmt, (SQLUSMALLINT) nCol, (SQLUSMALLINT) nFieldIdentifier, pszValue, nValueLengthMax, pnValueLength, pnValue);
 }
 
 SQLRETURN SQL_API
-SQLColAttributeW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifier, SQLPOINTER pszValue, SQLSMALLINT nValueLengthMax, SQLSMALLINT *pnValueLength, SQLPOINTER pnValue)
+SQLColAttributeW(SQLHSTMT hStmt,
+		 SQLUSMALLINT nCol,
+		 SQLUSMALLINT nFieldIdentifier,
+		 SQLPOINTER pszValue,
+		 SQLSMALLINT nValueLengthMax,
+		 SQLSMALLINT *pnValueLength,
+		 SQLPOINTER pnValue)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLPOINTER ptr;
@@ -256,9 +280,8 @@ SQLColAttributeW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 
 	rc = SQLColAttribute_(stmt, nCol, nFieldIdentifier, ptr, n, &n, pnValue);
 
-	if (ptr !=pszValue)
+	if (ptr != pszValue)
 		fixWcharOut(rc, ptr, n, pszValue, nValueLengthMax, pnValueLength, 2, addStmtError, stmt);
-
 	else if (pnValueLength)
 		*pnValueLength = n;
 

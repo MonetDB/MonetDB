@@ -424,7 +424,10 @@ ODBCDefaultType(ODBCDescRec *rec)
 }
 
 static SQLRETURN
-parseoptionalbracketednumber(char **svalp, SQLINTEGER *slenp, int *val1p, int *val2p)
+parseoptionalbracketednumber(char **svalp,
+			     SQLINTEGER *slenp,
+			     int *val1p,
+			     int *val2p)
 {
 	char *sval = *svalp;
 	int slen = *slenp;
@@ -494,7 +497,9 @@ parseoptionalbracketednumber(char **svalp, SQLINTEGER *slenp, int *val1p, int *v
 }
 	
 static SQLRETURN
-parsemonthintervalstring(char **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *ival)
+parsemonthintervalstring(char **svalp,
+			 SQLINTEGER *slenp,
+			 SQL_INTERVAL_STRUCT *ival)
 {
 	char *sval = *svalp;
 	int slen = slenp ? *slenp : (int) strlen(sval);
@@ -646,7 +651,10 @@ parsemonthintervalstring(char **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *i
 }
 
 static SQLRETURN
-parsesecondintervalstring(char **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *ival, int *secprecp)
+parsesecondintervalstring(char **svalp,
+			  SQLINTEGER *slenp,
+			  SQL_INTERVAL_STRUCT *ival,
+			  int *secprecp)
 {
 	char *sval = *svalp;
 	int slen = slenp ? *slenp : (int) strlen(sval);
@@ -936,10 +944,18 @@ parsesecondintervalstring(char **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *
 }
 
 SQLRETURN
-ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
-	  SQLINTEGER buflen, SQLINTEGER *lenp, SQLINTEGER *nullp,
-	  SQLSMALLINT precision, SQLSMALLINT scale,
-	  SQLINTEGER datetime_interval_precision, SQLINTEGER offset, int row)
+ODBCFetch(ODBCStmt *stmt,
+	  SQLUSMALLINT col,
+	  SQLSMALLINT type,
+	  SQLPOINTER ptr,
+	  SQLINTEGER buflen,
+	  SQLINTEGER *lenp,
+	  SQLINTEGER *nullp,
+	  SQLSMALLINT precision,
+	  SQLSMALLINT scale,
+	  SQLINTEGER datetime_interval_precision,
+	  SQLINTEGER offset,
+	  int row)
 {
 	char *data;
 	SQLSMALLINT sql_type;
@@ -1807,7 +1823,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(float) : bind_type));
 			*(float *) ptr = (float) fval;
 
-			if ((double) *(float *) ptr !=fval) {
+			if ((double) *(float *) ptr != fval) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
 				return SQL_ERROR;
@@ -2242,7 +2258,14 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 		} while (0)
 
 SQLRETURN
-ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char **bufp, size_t *bufposp, size_t *buflenp, char *sep)
+ODBCStore(ODBCStmt *stmt,
+	  SQLUSMALLINT param,
+	  SQLINTEGER offset,
+	  int row,
+	  char **bufp,
+	  size_t *bufposp,
+	  size_t *buflenp,
+	  char *sep)
 {
 	ODBCDescRec *ipdrec, *apdrec;
 	SQLPOINTER ptr;

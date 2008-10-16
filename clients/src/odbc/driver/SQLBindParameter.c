@@ -45,7 +45,8 @@
 #include "ODBCStmt.h"
 
 SQLRETURN
-SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
+SQLBindParameter_(ODBCStmt *stmt,
+		  SQLUSMALLINT ParameterNumber,
 		  SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
 		  SQLSMALLINT ParameterType, SQLUINTEGER ColumnSize,
 		  SQLSMALLINT DecimalDigits, SQLPOINTER ParameterValuePtr,
@@ -250,7 +251,8 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber,
 }
 
 SQLRETURN SQL_API
-SQLBindParameter(SQLHSTMT hStmt, SQLUSMALLINT ParameterNumber,
+SQLBindParameter(SQLHSTMT hStmt,
+		 SQLUSMALLINT ParameterNumber,
 		 SQLSMALLINT InputOutputType, SQLSMALLINT ValueType,
 		 SQLSMALLINT ParameterType, SQLUINTEGER ColumnSize,
 		 SQLSMALLINT DecimalDigits, SQLPOINTER ParameterValuePtr,

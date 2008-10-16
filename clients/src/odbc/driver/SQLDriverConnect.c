@@ -103,7 +103,14 @@ ODBCGetKeyAttr(SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr)
 }
 
 static SQLRETURN
-SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut, SQLUSMALLINT nDriverCompletion)
+SQLDriverConnect_(ODBCDbc *dbc,
+		  SQLHWND hWnd,
+		  SQLCHAR *szConnStrIn,
+		  SQLSMALLINT nConnStrIn,
+		  SQLCHAR *szConnStrOut,
+		  SQLSMALLINT cbConnStrOutMax,
+		  SQLSMALLINT *pnConnStrOut,
+		  SQLUSMALLINT nDriverCompletion)
 {
 	char *key, *attr;
 	char *dsn = 0, *uid = 0, *pwd = 0, *host = 0, *database = 0;
@@ -270,7 +277,14 @@ SQLDriverConnect_(ODBCDbc *dbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT 
 }
 
 SQLRETURN SQL_API
-SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut, SQLUSMALLINT nDriverCompletion)
+SQLDriverConnect(SQLHDBC hDbc,
+		 SQLHWND hWnd,
+		 SQLCHAR *szConnStrIn,
+		 SQLSMALLINT nConnStrIn,
+		 SQLCHAR *szConnStrOut,
+		 SQLSMALLINT cbConnStrOutMax,
+		 SQLSMALLINT *pnConnStrOut,
+		 SQLUSMALLINT nDriverCompletion)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
@@ -288,13 +302,27 @@ SQLDriverConnect(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT n
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLDriverConnectA(SQLHDBC hDbc, SQLHWND hWnd, SQLCHAR *szConnStrIn, SQLSMALLINT nConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut, SQLUSMALLINT nDriverCompletion)
+SQLDriverConnectA(SQLHDBC hDbc,
+		  SQLHWND hWnd,
+		  SQLCHAR *szConnStrIn,
+		  SQLSMALLINT nConnStrIn,
+		  SQLCHAR *szConnStrOut,
+		  SQLSMALLINT cbConnStrOutMax,
+		  SQLSMALLINT *pnConnStrOut,
+		  SQLUSMALLINT nDriverCompletion)
 {
 	return SQLDriverConnect(hDbc, hWnd, szConnStrIn, nConnStrIn, szConnStrOut, cbConnStrOutMax, pnConnStrOut, nDriverCompletion);
 }
 
 SQLRETURN SQL_API
-SQLDriverConnectW(SQLHDBC hDbc, SQLHWND hWnd, SQLWCHAR * szConnStrIn, SQLSMALLINT nConnStrIn, SQLWCHAR * szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pnConnStrOut, SQLUSMALLINT nDriverCompletion)
+SQLDriverConnectW(SQLHDBC hDbc,
+		  SQLHWND hWnd,
+		  SQLWCHAR * szConnStrIn,
+		  SQLSMALLINT nConnStrIn,
+		  SQLWCHAR * szConnStrOut,
+		  SQLSMALLINT cbConnStrOutMax,
+		  SQLSMALLINT *pnConnStrOut,
+		  SQLUSMALLINT nDriverCompletion)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	SQLCHAR *in = NULL, *out;

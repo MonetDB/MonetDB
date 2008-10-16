@@ -41,7 +41,10 @@
 
 
 SQLRETURN
-SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER StringLength)
+SQLSetStmtAttr_(ODBCStmt *stmt,
+		SQLINTEGER Attribute,
+		SQLPOINTER Value,
+		SQLINTEGER StringLength)
 {
 	/* TODO: check parameters: Value and StringLength */
 
@@ -223,7 +226,10 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 }
 
 SQLRETURN SQL_API
-SQLSetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER StringLength)
+SQLSetStmtAttr(SQLHSTMT hStmt,
+	       SQLINTEGER Attribute,
+	       SQLPOINTER Value,
+	       SQLINTEGER StringLength)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetStmtAttr " PTRFMT " %d\n", PTRFMTCAST hStmt, Attribute);
@@ -239,7 +245,10 @@ SQLSetStmtAttr(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGE
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLSetStmtAttrW(SQLHSTMT hStmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER StringLength)
+SQLSetStmtAttrW(SQLHSTMT hStmt,
+		SQLINTEGER Attribute,
+		SQLPOINTER Value,
+		SQLINTEGER StringLength)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetStmtAttrW " PTRFMT " %d\n", PTRFMTCAST hStmt, Attribute);

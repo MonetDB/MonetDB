@@ -40,7 +40,9 @@
 #include "ODBCGlobal.h"
 
 SQLRETURN SQL_API
-SQLTransact(SQLHENV hEnv, SQLHDBC hDbc, UWORD fType)
+SQLTransact(SQLHENV hEnv,
+	    SQLHDBC hDbc,
+	    UWORD fType)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLTransact " PTRFMT " " PTRFMT " %d\n", PTRFMTCAST hEnv, PTRFMTCAST hDbc, fType);

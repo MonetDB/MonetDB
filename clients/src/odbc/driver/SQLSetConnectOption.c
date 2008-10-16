@@ -42,7 +42,9 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLSetConnectOption_(ODBCDbc *dbc, SQLUSMALLINT nOption, SQLULEN vParam)
+SQLSetConnectOption_(ODBCDbc *dbc,
+		     SQLUSMALLINT nOption,
+		     SQLULEN vParam)
 {
 	/* use mapping as described in ODBC 3 SDK Help file */
 	switch (nOption) {
@@ -76,7 +78,9 @@ SQLSetConnectOption_(ODBCDbc *dbc, SQLUSMALLINT nOption, SQLULEN vParam)
 }
 
 SQLRETURN SQL_API
-SQLSetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
+SQLSetConnectOption(SQLHDBC hDbc,
+		    SQLUSMALLINT nOption,
+		    SQLULEN vParam)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
@@ -94,13 +98,17 @@ SQLSetConnectOption(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLSetConnectOptionA(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
+SQLSetConnectOptionA(SQLHDBC hDbc,
+		     SQLUSMALLINT nOption,
+		     SQLULEN vParam)
 {
 	return SQLSetConnectOption(hDbc, nOption, vParam);
 }
 
 SQLRETURN SQL_API
-SQLSetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
+SQLSetConnectOptionW(SQLHDBC hDbc,
+		     SQLUSMALLINT nOption,
+		     SQLULEN vParam)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	SQLPOINTER ptr = (SQLPOINTER) (size_t) vParam;

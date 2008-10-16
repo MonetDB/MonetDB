@@ -47,7 +47,9 @@
 
 
 SQLRETURN
-SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle, SQLSMALLINT nCompletionType)
+SQLEndTran_(SQLSMALLINT nHandleType,
+	    SQLHANDLE nHandle,
+	    SQLSMALLINT nCompletionType)
 {
 	ODBCEnv *env = NULL;
 	ODBCDbc *dbc = NULL;
@@ -164,7 +166,9 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle, SQLSMALLINT nCompletionT
 }
 
 SQLRETURN SQL_API
-SQLEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle, SQLSMALLINT nCompletionType)
+SQLEndTran(SQLSMALLINT nHandleType,
+	   SQLHANDLE nHandle,
+	   SQLSMALLINT nCompletionType)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLEndTran %s " PTRFMT " %d\n", nHandleType == SQL_HANDLE_ENV ? "Env" : nHandleType == SQL_HANDLE_DBC ? "Dbc" : nHandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST nHandle, nCompletionType);

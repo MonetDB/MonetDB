@@ -42,7 +42,14 @@
 
 
 static SQLRETURN
-SQLDataSources_(ODBCEnv *env, SQLUSMALLINT Direction, SQLCHAR *ServerName, SQLSMALLINT BufferLength1, SQLSMALLINT *NameLength1, SQLCHAR *Description, SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2)
+SQLDataSources_(ODBCEnv *env,
+		SQLUSMALLINT Direction,
+		SQLCHAR *ServerName,
+		SQLSMALLINT BufferLength1,
+		SQLSMALLINT *NameLength1,
+		SQLCHAR *Description,
+		SQLSMALLINT BufferLength2,
+		SQLSMALLINT *NameLength2)
 {
 	(void) Direction;	/* Stefan: unused!? */
 	(void) ServerName;	/* Stefan: unused!? */
@@ -66,7 +73,14 @@ SQLDataSources_(ODBCEnv *env, SQLUSMALLINT Direction, SQLCHAR *ServerName, SQLSM
 }
 
 SQLRETURN SQL_API
-SQLDataSources(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction, SQLCHAR *ServerName, SQLSMALLINT BufferLength1, SQLSMALLINT *NameLength1, SQLCHAR *Description, SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2)
+SQLDataSources(SQLHENV EnvironmentHandle,
+	       SQLUSMALLINT Direction,
+	       SQLCHAR *ServerName,
+	       SQLSMALLINT BufferLength1,
+	       SQLSMALLINT *NameLength1,
+	       SQLCHAR *Description,
+	       SQLSMALLINT BufferLength2,
+	       SQLSMALLINT *NameLength2)
 {
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
@@ -84,13 +98,27 @@ SQLDataSources(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction, SQLCHAR *Serve
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLDataSourcesA(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction, SQLCHAR *ServerName, SQLSMALLINT BufferLength1, SQLSMALLINT *NameLength1, SQLCHAR *Description, SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2)
+SQLDataSourcesA(SQLHENV EnvironmentHandle,
+		SQLUSMALLINT Direction,
+		SQLCHAR *ServerName,
+		SQLSMALLINT BufferLength1,
+		SQLSMALLINT *NameLength1,
+		SQLCHAR *Description,
+		SQLSMALLINT BufferLength2,
+		SQLSMALLINT *NameLength2)
 {
 	return SQLDataSources(EnvironmentHandle, Direction, ServerName, BufferLength1, NameLength1, Description, BufferLength2, NameLength2);
 }
 
 SQLRETURN SQL_API
-SQLDataSourcesW(SQLHENV EnvironmentHandle, SQLUSMALLINT Direction, SQLWCHAR * ServerName, SQLSMALLINT BufferLength1, SQLSMALLINT *NameLength1, SQLWCHAR * Description, SQLSMALLINT BufferLength2, SQLSMALLINT *NameLength2)
+SQLDataSourcesW(SQLHENV EnvironmentHandle,
+		SQLUSMALLINT Direction,
+		SQLWCHAR * ServerName,
+		SQLSMALLINT BufferLength1,
+		SQLSMALLINT *NameLength1,
+		SQLWCHAR * Description,
+		SQLSMALLINT BufferLength2,
+		SQLSMALLINT *NameLength2)
 {
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 	SQLRETURN rc;

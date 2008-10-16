@@ -42,7 +42,10 @@
 
 
 SQLRETURN
-SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength)
+SQLSetConnectAttr_(ODBCDbc *dbc,
+		   SQLINTEGER Attribute,
+		   SQLPOINTER ValuePtr,
+		   SQLINTEGER StringLength)
 {
 	(void) StringLength;	/* Stefan: unused!? */
 
@@ -95,7 +98,10 @@ SQLSetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLI
 }
 
 SQLRETURN SQL_API
-SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength)
+SQLSetConnectAttr(SQLHDBC ConnectionHandle,
+		  SQLINTEGER Attribute,
+		  SQLPOINTER ValuePtr,
+		  SQLINTEGER StringLength)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetConnectAttr " PTRFMT " %d\n", PTRFMTCAST ConnectionHandle, Attribute);
@@ -111,13 +117,19 @@ SQLSetConnectAttr(SQLHDBC ConnectionHandle, SQLINTEGER Attribute, SQLPOINTER Val
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLSetConnectAttrA(SQLHDBC ConnectionHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength)
+SQLSetConnectAttrA(SQLHDBC ConnectionHandle,
+		   SQLINTEGER Attribute,
+		   SQLPOINTER ValuePtr,
+		   SQLINTEGER StringLength)
 {
 	return SQLSetConnectAttr(ConnectionHandle, Attribute, ValuePtr, StringLength);
 }
 
 SQLRETURN SQL_API
-SQLSetConnectAttrW(SQLHDBC ConnectionHandle, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength)
+SQLSetConnectAttrW(SQLHDBC ConnectionHandle,
+		   SQLINTEGER Attribute,
+		   SQLPOINTER ValuePtr,
+		   SQLINTEGER StringLength)
 {
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 	SQLPOINTER ptr;
@@ -140,19 +152,17 @@ SQLSetConnectAttrW(SQLHDBC ConnectionHandle, SQLINTEGER Attribute, SQLPOINTER Va
 		if (StringLength > 0)	/* convert from bytes to characters */
 			StringLength /= 2;
 		fixWcharIn(ValuePtr, StringLength, SQLCHAR, ptr, addDbcError, dbc, return SQL_ERROR);
-
 		n = SQL_NTS;
 		break;
 	default:
 		ptr = ValuePtr;
-
 		n = StringLength;
 		break;
 	}
 
 	rc = SQLSetConnectAttr_(dbc, Attribute, ptr, n);
 
-	if (ptr &&ptr !=ValuePtr)
+	if (ptr && ptr != ValuePtr)
 		free(ptr);
 
 	return rc;

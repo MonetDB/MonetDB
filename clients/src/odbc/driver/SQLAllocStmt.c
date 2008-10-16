@@ -40,7 +40,8 @@
 #include "ODBCGlobal.h"
 
 SQLRETURN SQL_API
-SQLAllocStmt(SQLHDBC hDbc, SQLHSTMT *phStmt)
+SQLAllocStmt(SQLHDBC hDbc,
+	     SQLHSTMT *phStmt)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLAllocStmt " PTRFMT "\n", PTRFMTCAST hDbc);

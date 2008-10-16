@@ -42,7 +42,10 @@
 
 
 static SQLRETURN
-SQLGetCursorName_(ODBCStmt *stmt, SQLCHAR *szCursor, SQLSMALLINT nCursorMaxLength, SQLSMALLINT *pnCursorLength)
+SQLGetCursorName_(ODBCStmt *stmt,
+		  SQLCHAR *szCursor,
+		  SQLSMALLINT nCursorMaxLength,
+		  SQLSMALLINT *pnCursorLength)
 {
 	(void) szCursor;	/* Stefan: unused!? */
 	(void) nCursorMaxLength;	/* Stefan: unused!? */
@@ -58,7 +61,10 @@ SQLGetCursorName_(ODBCStmt *stmt, SQLCHAR *szCursor, SQLSMALLINT nCursorMaxLengt
 }
 
 SQLRETURN SQL_API
-SQLGetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorMaxLength, SQLSMALLINT *pnCursorLength)
+SQLGetCursorName(SQLHSTMT hStmt,
+		 SQLCHAR *szCursor,
+		 SQLSMALLINT nCursorMaxLength,
+		 SQLSMALLINT *pnCursorLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -76,13 +82,19 @@ SQLGetCursorName(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorMaxLength
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetCursorNameA(SQLHSTMT hStmt, SQLCHAR *szCursor, SQLSMALLINT nCursorMaxLength, SQLSMALLINT *pnCursorLength)
+SQLGetCursorNameA(SQLHSTMT hStmt,
+		  SQLCHAR *szCursor,
+		  SQLSMALLINT nCursorMaxLength,
+		  SQLSMALLINT *pnCursorLength)
 {
 	return SQLGetCursorName(hStmt, szCursor, nCursorMaxLength, pnCursorLength);
 }
 
 SQLRETURN SQL_API
-SQLGetCursorNameW(SQLHSTMT hStmt, SQLWCHAR * szCursor, SQLSMALLINT nCursorMaxLength, SQLSMALLINT *pnCursorLength)
+SQLGetCursorNameW(SQLHSTMT hStmt,
+		  SQLWCHAR * szCursor,
+		  SQLSMALLINT nCursorMaxLength,
+		  SQLSMALLINT *pnCursorLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc;

@@ -36,7 +36,16 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLSetDescRec(SQLHDESC hDescriptorHandle, SQLSMALLINT nRecordNumber, SQLSMALLINT nType, SQLSMALLINT nSubType, SQLINTEGER nLength, SQLSMALLINT nPrecision, SQLSMALLINT nScale, SQLPOINTER pData, SQLINTEGER *pnStringLength, SQLINTEGER *pnIndicator)
+SQLSetDescRec(SQLHDESC hDescriptorHandle,
+	      SQLSMALLINT nRecordNumber,
+	      SQLSMALLINT nType,
+	      SQLSMALLINT nSubType,
+	      SQLINTEGER nLength,
+	      SQLSMALLINT nPrecision,
+	      SQLSMALLINT nScale,
+	      SQLPOINTER pData,
+	      SQLINTEGER *pnStringLength,
+	      SQLINTEGER *pnIndicator)
 {
 	ODBCDesc *desc = (ODBCDesc *) hDescriptorHandle;
 

@@ -87,7 +87,15 @@ static const char *columntypes[NCOLUMNS] = {
 };
 
 static SQLRETURN
-SQLColumns_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+SQLColumns_(ODBCStmt *stmt,
+	    SQLCHAR *szCatalogName,
+	    SQLSMALLINT nCatalogNameLength,
+	    SQLCHAR *szSchemaName,
+	    SQLSMALLINT nSchemaNameLength,
+	    SQLCHAR *szTableName,
+	    SQLSMALLINT nTableNameLength,
+	    SQLCHAR *szColumnName,
+	    SQLSMALLINT nColumnNameLength)
 {
 	RETCODE rc;
 
@@ -392,7 +400,15 @@ SQLColumns_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLeng
 }
 
 SQLRETURN SQL_API
-SQLColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+SQLColumns(SQLHSTMT hStmt,
+	   SQLCHAR *szCatalogName,
+	   SQLSMALLINT nCatalogNameLength,
+	   SQLCHAR *szSchemaName,
+	   SQLSMALLINT nSchemaNameLength,
+	   SQLCHAR *szTableName,
+	   SQLSMALLINT nTableNameLength,
+	   SQLCHAR *szColumnName,
+	   SQLSMALLINT nColumnNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -410,13 +426,29 @@ SQLColumns(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLengt
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLColumnsA(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLCHAR *szColumnName, SQLSMALLINT nColumnNameLength)
+SQLColumnsA(SQLHSTMT hStmt,
+	    SQLCHAR *szCatalogName,
+	    SQLSMALLINT nCatalogNameLength,
+	    SQLCHAR *szSchemaName,
+	    SQLSMALLINT nSchemaNameLength,
+	    SQLCHAR *szTableName,
+	    SQLSMALLINT nTableNameLength,
+	    SQLCHAR *szColumnName,
+	    SQLSMALLINT nColumnNameLength)
 {
 	return SQLColumns(hStmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength, szColumnName, nColumnNameLength);
 }
 
 SQLRETURN SQL_API
-SQLColumnsW(SQLHSTMT hStmt, SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength, SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength, SQLWCHAR * szTableName, SQLSMALLINT nTableNameLength, SQLWCHAR * szColumnName, SQLSMALLINT nColumnNameLength)
+SQLColumnsW(SQLHSTMT hStmt,
+	    SQLWCHAR * szCatalogName,
+	    SQLSMALLINT nCatalogNameLength,
+	    SQLWCHAR * szSchemaName,
+	    SQLSMALLINT nSchemaNameLength,
+	    SQLWCHAR * szTableName,
+	    SQLSMALLINT nTableNameLength,
+	    SQLWCHAR * szColumnName,
+	    SQLSMALLINT nColumnNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL, *column = NULL;

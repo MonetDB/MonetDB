@@ -45,7 +45,15 @@
 
 
 static SQLRETURN
-SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLUSMALLINT nScope,
+SQLSpecialColumns_(ODBCStmt *stmt,
+		   SQLUSMALLINT nIdentifierType,
+		   SQLCHAR *szCatalogName,
+		   SQLSMALLINT nCatalogNameLength,
+		   SQLCHAR *szSchemaName,
+		   SQLSMALLINT nSchemaNameLength,
+		   SQLCHAR *szTableName,
+		   SQLSMALLINT nTableNameLength,
+		   SQLUSMALLINT nScope,
 		   SQLUSMALLINT nNullable)
 {
 	RETCODE rc;
@@ -206,7 +214,15 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCata
 }
 
 SQLRETURN SQL_API
-SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLUSMALLINT nScope,
+SQLSpecialColumns(SQLHSTMT hStmt,
+		  SQLUSMALLINT nIdentifierType,
+		  SQLCHAR *szCatalogName,
+		  SQLSMALLINT nCatalogNameLength,
+		  SQLCHAR *szSchemaName,
+		  SQLSMALLINT nSchemaNameLength,
+		  SQLCHAR *szTableName,
+		  SQLSMALLINT nTableNameLength,
+		  SQLUSMALLINT nScope,
 		  SQLUSMALLINT nNullable)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
@@ -225,14 +241,30 @@ SQLSpecialColumns(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCatal
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLSpecialColumnsA(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength, SQLUSMALLINT nScope,
+SQLSpecialColumnsA(SQLHSTMT hStmt,
+		   SQLUSMALLINT nIdentifierType,
+		   SQLCHAR *szCatalogName,
+		   SQLSMALLINT nCatalogNameLength,
+		   SQLCHAR *szSchemaName,
+		   SQLSMALLINT nSchemaNameLength,
+		   SQLCHAR *szTableName,
+		   SQLSMALLINT nTableNameLength,
+		   SQLUSMALLINT nScope,
 		   SQLUSMALLINT nNullable)
 {
 	return SQLSpecialColumns(hStmt, nIdentifierType, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength, nScope, nNullable);
 }
 
 SQLRETURN SQL_API
-SQLSpecialColumnsW(SQLHSTMT hStmt, SQLUSMALLINT nIdentifierType, SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength, SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength, SQLWCHAR * szTableName, SQLSMALLINT nTableNameLength, SQLUSMALLINT nScope,
+SQLSpecialColumnsW(SQLHSTMT hStmt,
+		   SQLUSMALLINT nIdentifierType,
+		   SQLWCHAR * szCatalogName,
+		   SQLSMALLINT nCatalogNameLength,
+		   SQLWCHAR * szSchemaName,
+		   SQLSMALLINT nSchemaNameLength,
+		   SQLWCHAR * szTableName,
+		   SQLSMALLINT nTableNameLength,
+		   SQLUSMALLINT nScope,
 		   SQLUSMALLINT nNullable)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;

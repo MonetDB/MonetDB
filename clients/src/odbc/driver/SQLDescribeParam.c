@@ -42,7 +42,12 @@
 #include "ODBCStmt.h"
 
 SQLRETURN SQL_API
-SQLDescribeParam(SQLHSTMT hStmt, SQLUSMALLINT nParmNumber, SQLSMALLINT *pnDataType, SQLUINTEGER *pnSize, SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
+SQLDescribeParam(SQLHSTMT hStmt,
+		 SQLUSMALLINT nParmNumber,
+		 SQLSMALLINT *pnDataType,
+		 SQLUINTEGER *pnSize,
+		 SQLSMALLINT *pnDecDigits,
+		 SQLSMALLINT *pnNullable)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	ODBCDescRec *rec;

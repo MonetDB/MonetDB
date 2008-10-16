@@ -42,7 +42,15 @@
 
 
 static SQLRETURN
-SQLDescribeCol_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLCHAR *szColName, SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength, SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize, SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
+SQLDescribeCol_(ODBCStmt *stmt,
+		SQLUSMALLINT nCol,
+		SQLCHAR *szColName,
+		SQLSMALLINT nColNameMax,
+		SQLSMALLINT *pnColNameLength,
+		SQLSMALLINT *pnSQLDataType,
+		SQLUINTEGER *pnColSize,
+		SQLSMALLINT *pnDecDigits,
+		SQLSMALLINT *pnNullable)
 {
 	ODBCDescRec *rec = NULL;
 
@@ -113,7 +121,15 @@ SQLDescribeCol_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLCHAR *szColName, SQLSMALLI
 }
 
 SQLRETURN SQL_API
-SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName, SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength, SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize, SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
+SQLDescribeCol(SQLHSTMT hStmt,
+	       SQLUSMALLINT nCol,
+	       SQLCHAR *szColName,
+	       SQLSMALLINT nColNameMax,
+	       SQLSMALLINT *pnColNameLength,
+	       SQLSMALLINT *pnSQLDataType,
+	       SQLUINTEGER *pnColSize,
+	       SQLSMALLINT *pnDecDigits,
+	       SQLSMALLINT *pnNullable)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -131,13 +147,29 @@ SQLDescribeCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName, SQLSMALLIN
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLDescribeColA(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLCHAR *szColName, SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength, SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize, SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
+SQLDescribeColA(SQLHSTMT hStmt,
+		SQLUSMALLINT nCol,
+		SQLCHAR *szColName,
+		SQLSMALLINT nColNameMax,
+		SQLSMALLINT *pnColNameLength,
+		SQLSMALLINT *pnSQLDataType,
+		SQLUINTEGER *pnColSize,
+		SQLSMALLINT *pnDecDigits,
+		SQLSMALLINT *pnNullable)
 {
 	return SQLDescribeCol(hStmt, nCol, szColName, nColNameMax, pnColNameLength, pnSQLDataType, pnColSize, pnDecDigits, pnNullable);
 }
 
 SQLRETURN SQL_API
-SQLDescribeColW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLWCHAR * szColName, SQLSMALLINT nColNameMax, SQLSMALLINT *pnColNameLength, SQLSMALLINT *pnSQLDataType, SQLUINTEGER *pnColSize, SQLSMALLINT *pnDecDigits, SQLSMALLINT *pnNullable)
+SQLDescribeColW(SQLHSTMT hStmt,
+		SQLUSMALLINT nCol,
+		SQLWCHAR * szColName,
+		SQLSMALLINT nColNameMax,
+		SQLSMALLINT *pnColNameLength,
+		SQLSMALLINT *pnSQLDataType,
+		SQLUINTEGER *pnColSize,
+		SQLSMALLINT *pnDecDigits,
+		SQLSMALLINT *pnNullable)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLCHAR *colname;

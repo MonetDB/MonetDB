@@ -61,7 +61,8 @@ SQLAllocEnv_(SQLHANDLE *pnOutputHandle)
 }
 
 static SQLRETURN
-SQLAllocDbc_(ODBCEnv *env, SQLHANDLE *pnOutputHandle)
+SQLAllocDbc_(ODBCEnv *env,
+	     SQLHANDLE *pnOutputHandle)
 {
 	if (env->sql_attr_odbc_version == 0) {
 		/* Function sequence error */
@@ -81,7 +82,8 @@ SQLAllocDbc_(ODBCEnv *env, SQLHANDLE *pnOutputHandle)
 }
 
 SQLRETURN
-SQLAllocStmt_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle)
+SQLAllocStmt_(ODBCDbc *dbc,
+	      SQLHANDLE *pnOutputHandle)
 {
 	if (!dbc->Connected) {
 		/* Connection does not exist */
@@ -101,7 +103,8 @@ SQLAllocStmt_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle)
 }
 
 static SQLRETURN
-SQLAllocDesc_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle)
+SQLAllocDesc_(ODBCDbc *dbc,
+	      SQLHANDLE *pnOutputHandle)
 {
 	if (!dbc->Connected) {
 		/* Connection does not exist */
@@ -121,7 +124,9 @@ SQLAllocDesc_(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle)
 }
 
 SQLRETURN
-SQLAllocHandle_(SQLSMALLINT nHandleType, SQLHANDLE nInputHandle, SQLHANDLE *pnOutputHandle)
+SQLAllocHandle_(SQLSMALLINT nHandleType,
+		SQLHANDLE nInputHandle,
+		SQLHANDLE *pnOutputHandle)
 {
 	switch (nHandleType) {
 	case SQL_HANDLE_ENV:

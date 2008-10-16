@@ -42,7 +42,11 @@
 
 
 SQLRETURN
-SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetConnectAttr_(ODBCDbc *dbc,
+		   SQLINTEGER Attribute,
+		   SQLPOINTER ValuePtr,
+		   SQLINTEGER BufferLength,
+		   SQLINTEGER *StringLength)
 {
 	/* check input parameters */
 	if (ValuePtr == NULL) {
@@ -112,7 +116,11 @@ SQLGetConnectAttr_(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLI
 }
 
 SQLRETURN SQL_API
-SQLGetConnectAttr(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetConnectAttr(SQLHDBC hDbc,
+		  SQLINTEGER Attribute,
+		  SQLPOINTER ValuePtr,
+		  SQLINTEGER BufferLength,
+		  SQLINTEGER *StringLength)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetConnectAttr " PTRFMT " %d\n", PTRFMTCAST hDbc, Attribute);
@@ -128,13 +136,21 @@ SQLGetConnectAttr(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLIN
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetConnectAttrA(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetConnectAttrA(SQLHDBC hDbc,
+		   SQLINTEGER Attribute,
+		   SQLPOINTER ValuePtr,
+		   SQLINTEGER BufferLength,
+		   SQLINTEGER *StringLength)
 {
 	return SQLGetConnectAttr(hDbc, Attribute, ValuePtr, BufferLength, StringLength);
 }
 
 SQLRETURN SQL_API
-SQLGetConnectAttrW(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER *StringLength)
+SQLGetConnectAttrW(SQLHDBC hDbc,
+		   SQLINTEGER Attribute,
+		   SQLPOINTER ValuePtr,
+		   SQLINTEGER BufferLength,
+		   SQLINTEGER *StringLength)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	SQLRETURN rc;
@@ -164,7 +180,7 @@ SQLGetConnectAttrW(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLI
 
 	rc = SQLGetConnectAttr_(dbc, Attribute, ptr, n, &n);
 
-	if (ptr !=ValuePtr) {
+	if (ptr != ValuePtr) {
 		SQLSMALLINT nn = (SQLSMALLINT) n;
 
 		fixWcharOut(rc, ptr, nn, ValuePtr, BufferLength, StringLength, 2, addDbcError, dbc);

@@ -41,7 +41,8 @@
 
 
 SQLRETURN SQL_API
-SQLRowCount(SQLHSTMT hStmt, SQLINTEGER *pnRowCount)
+SQLRowCount(SQLHSTMT hStmt,
+	    SQLINTEGER *pnRowCount)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 

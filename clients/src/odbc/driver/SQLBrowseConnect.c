@@ -54,7 +54,12 @@
 
 
 static SQLRETURN
-SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pcbConnStrOut)
+SQLBrowseConnect_(ODBCDbc *dbc,
+		  SQLCHAR *szConnStrIn,
+		  SQLSMALLINT cbConnStrIn,
+		  SQLCHAR *szConnStrOut,
+		  SQLSMALLINT cbConnStrOutMax,
+		  SQLSMALLINT *pcbConnStrOut)
 {
 	char *key, *attr;
 	char *dsn, *uid, *pwd, *host, *dbname;
@@ -205,7 +210,12 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, S
 }
 
 SQLRETURN SQL_API
-SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pcbConnStrOut)
+SQLBrowseConnect(SQLHDBC hDbc,
+		 SQLCHAR *szConnStrIn,
+		 SQLSMALLINT cbConnStrIn,
+		 SQLCHAR *szConnStrOut,
+		 SQLSMALLINT cbConnStrOutMax,
+		 SQLSMALLINT *pcbConnStrOut)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 
@@ -223,13 +233,23 @@ SQLBrowseConnect(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, SQ
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLBrowseConnectA(SQLHDBC hDbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, SQLCHAR *szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pcbConnStrOut)
+SQLBrowseConnectA(SQLHDBC hDbc,
+		  SQLCHAR *szConnStrIn,
+		  SQLSMALLINT cbConnStrIn,
+		  SQLCHAR *szConnStrOut,
+		  SQLSMALLINT cbConnStrOutMax,
+		  SQLSMALLINT *pcbConnStrOut)
 {
 	return SQLBrowseConnect(hDbc, szConnStrIn, cbConnStrIn, szConnStrOut, cbConnStrOutMax, pcbConnStrOut);
 }
 
 SQLRETURN SQL_API
-SQLBrowseConnectW(SQLHDBC hDbc, SQLWCHAR * szConnStrIn, SQLSMALLINT cbConnStrIn, SQLWCHAR * szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT *pcbConnStrOut)
+SQLBrowseConnectW(SQLHDBC hDbc,
+		  SQLWCHAR * szConnStrIn,
+		  SQLSMALLINT cbConnStrIn,
+		  SQLWCHAR * szConnStrOut,
+		  SQLSMALLINT cbConnStrOutMax,
+		  SQLSMALLINT *pcbConnStrOut)
 {
 	ODBCDbc *dbc = (ODBCDbc *) hDbc;
 	SQLCHAR *in = NULL, *out;

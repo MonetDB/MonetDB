@@ -44,7 +44,14 @@
 #include "ODBCUtil.h"
 
 SQLRETURN
-SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, SQLCHAR *sqlState, SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText, SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr)
+SQLGetDiagRec_(SQLSMALLINT handleType,
+	       SQLHANDLE handle,
+	       SQLSMALLINT recNumber,
+	       SQLCHAR *sqlState,
+	       SQLINTEGER *nativeErrorPtr,
+	       SQLCHAR *messageText,
+	       SQLSMALLINT bufferLength,
+	       SQLSMALLINT *textLengthPtr)
 {
 	ODBCError *err;
 	SQLRETURN retCode;
@@ -151,7 +158,14 @@ SQLGetDiagRec_(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, 
 }
 
 SQLRETURN SQL_API
-SQLGetDiagRec(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, SQLCHAR *sqlState, SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText, SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr)
+SQLGetDiagRec(SQLSMALLINT handleType,
+	      SQLHANDLE handle,
+	      SQLSMALLINT recNumber,
+	      SQLCHAR *sqlState,
+	      SQLINTEGER *nativeErrorPtr,
+	      SQLCHAR *messageText,
+	      SQLSMALLINT bufferLength,
+	      SQLSMALLINT *textLengthPtr)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLGetDiagRec %s " PTRFMT " %d %d\n", handleType == SQL_HANDLE_ENV ? "Env" : handleType == SQL_HANDLE_DBC ? "Dbc" : handleType == SQL_HANDLE_STMT ? "Stmt" : "Desc", PTRFMTCAST handle, recNumber, bufferLength);
@@ -162,13 +176,27 @@ SQLGetDiagRec(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, S
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetDiagRecA(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, SQLCHAR *sqlState, SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText, SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr)
+SQLGetDiagRecA(SQLSMALLINT handleType,
+	       SQLHANDLE handle,
+	       SQLSMALLINT recNumber,
+	       SQLCHAR *sqlState,
+	       SQLINTEGER *nativeErrorPtr,
+	       SQLCHAR *messageText,
+	       SQLSMALLINT bufferLength,
+	       SQLSMALLINT *textLengthPtr)
 {
 	return SQLGetDiagRec(handleType, handle, recNumber, sqlState, nativeErrorPtr, messageText, bufferLength, textLengthPtr);
 }
 
 SQLRETURN SQL_API
-SQLGetDiagRecW(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, SQLWCHAR * sqlState, SQLINTEGER *nativeErrorPtr, SQLWCHAR * messageText, SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr)
+SQLGetDiagRecW(SQLSMALLINT handleType,
+	       SQLHANDLE handle,
+	       SQLSMALLINT recNumber,
+	       SQLWCHAR * sqlState,
+	       SQLINTEGER *nativeErrorPtr,
+	       SQLWCHAR * messageText,
+	       SQLSMALLINT bufferLength,
+	       SQLSMALLINT *textLengthPtr)
 {
 	SQLRETURN rc;
 	SQLCHAR state[6];

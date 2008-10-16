@@ -37,7 +37,11 @@
 #include "ODBCUtil.h"
 
 SQLRETURN
-SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength)
+SQLSetDescField_(ODBCDesc *desc,
+		 SQLSMALLINT RecordNumber,
+		 SQLSMALLINT FieldIdentifier,
+		 SQLPOINTER Value,
+		 SQLINTEGER BufferLength)
 {
 	ODBCDescRec *rec;
 	struct sql_types *tp;
@@ -281,7 +285,11 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIden
 }
 
 SQLRETURN SQL_API
-SQLSetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength)
+SQLSetDescField(SQLHDESC DescriptorHandle,
+		SQLSMALLINT RecordNumber,
+		SQLSMALLINT FieldIdentifier,
+		SQLPOINTER Value,
+		SQLINTEGER BufferLength)
 {
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLSetDescField " PTRFMT " %d %d\n", PTRFMTCAST DescriptorHandle, RecordNumber, FieldIdentifier);
@@ -297,7 +305,11 @@ SQLSetDescField(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLSetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength)
+SQLSetDescFieldW(SQLHDESC DescriptorHandle,
+		 SQLSMALLINT RecordNumber,
+		 SQLSMALLINT FieldIdentifier,
+		 SQLPOINTER Value,
+		 SQLINTEGER BufferLength)
 {
 	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
 	SQLRETURN rc;
@@ -318,19 +330,17 @@ SQLSetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLIN
 		if (BufferLength > 0)	/* convert from bytes to characters */
 			BufferLength /= 2;
 		fixWcharIn(Value, BufferLength, SQLCHAR, ptr, addDescError, desc, return SQL_ERROR);
-
 		n = SQL_NTS;
 		break;
 	default:
 		ptr = Value;
-
 		n = BufferLength;
 		break;
 	}
 
 	rc = SQLSetDescField_(desc, RecordNumber, FieldIdentifier, ptr, n);
 
-	if (ptr &&ptr !=Value)
+	if (ptr && ptr != Value)
 		free(ptr);
 
 	return rc;

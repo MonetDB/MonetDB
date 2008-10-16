@@ -44,7 +44,10 @@
 
 
 SQLRETURN SQL_API
-SQLSetEnvAttr(SQLHENV EnvironmentHandle, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER StringLength)
+SQLSetEnvAttr(SQLHENV EnvironmentHandle,
+	      SQLINTEGER Attribute,
+	      SQLPOINTER Value,
+	      SQLINTEGER StringLength)
 {
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 

@@ -44,7 +44,13 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLPrimaryKeys_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+SQLPrimaryKeys_(ODBCStmt *stmt,
+		SQLCHAR *szCatalogName,
+		SQLSMALLINT nCatalogNameLength,
+		SQLCHAR *szSchemaName,
+		SQLSMALLINT nSchemaNameLength,
+		SQLCHAR *szTableName,
+		SQLSMALLINT nTableNameLength)
 {
 	RETCODE rc;
 
@@ -122,7 +128,13 @@ SQLPrimaryKeys_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogName
 }
 
 SQLRETURN SQL_API
-SQLPrimaryKeys(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+SQLPrimaryKeys(SQLHSTMT hStmt,
+	       SQLCHAR *szCatalogName,
+	       SQLSMALLINT nCatalogNameLength,
+	       SQLCHAR *szSchemaName,
+	       SQLSMALLINT nSchemaNameLength,
+	       SQLCHAR *szTableName,
+	       SQLSMALLINT nTableNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -140,13 +152,25 @@ SQLPrimaryKeys(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameL
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLPrimaryKeysA(SQLHSTMT hStmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLength, SQLCHAR *szSchemaName, SQLSMALLINT nSchemaNameLength, SQLCHAR *szTableName, SQLSMALLINT nTableNameLength)
+SQLPrimaryKeysA(SQLHSTMT hStmt,
+		SQLCHAR *szCatalogName,
+		SQLSMALLINT nCatalogNameLength,
+		SQLCHAR *szSchemaName,
+		SQLSMALLINT nSchemaNameLength,
+		SQLCHAR *szTableName,
+		SQLSMALLINT nTableNameLength)
 {
 	return SQLPrimaryKeys(hStmt, szCatalogName, nCatalogNameLength, szSchemaName, nSchemaNameLength, szTableName, nTableNameLength);
 }
 
 SQLRETURN SQL_API
-SQLPrimaryKeysW(SQLHSTMT hStmt, SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLength, SQLWCHAR * szSchemaName, SQLSMALLINT nSchemaNameLength, SQLWCHAR * szTableName, SQLSMALLINT nTableNameLength)
+SQLPrimaryKeysW(SQLHSTMT hStmt,
+		SQLWCHAR * szCatalogName,
+		SQLSMALLINT nCatalogNameLength,
+		SQLWCHAR * szSchemaName,
+		SQLSMALLINT nSchemaNameLength,
+		SQLWCHAR * szTableName,
+		SQLSMALLINT nTableNameLength)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 	SQLRETURN rc = SQL_ERROR;

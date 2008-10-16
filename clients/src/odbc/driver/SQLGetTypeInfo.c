@@ -825,7 +825,10 @@ static struct types {
 
 /* find some info about a type given the concise type */
 const char *
-ODBCGetTypeInfo(int concise_type, int *data_type, int *sql_data_type, int *sql_datetime_sub)
+ODBCGetTypeInfo(int concise_type,
+		int *data_type,
+		int *sql_data_type,
+		int *sql_datetime_sub)
 {
 	struct types *t;
 
@@ -844,7 +847,8 @@ ODBCGetTypeInfo(int concise_type, int *data_type, int *sql_data_type, int *sql_d
 }
 
 static SQLRETURN
-SQLGetTypeInfo_(ODBCStmt *stmt, SQLSMALLINT nSqlDataType)
+SQLGetTypeInfo_(ODBCStmt *stmt,
+		SQLSMALLINT nSqlDataType)
 {
 	const char **tuples[sizeof(types) / sizeof(types[0])];
 	struct types *t;
@@ -1049,7 +1053,8 @@ SQLGetTypeInfo_(ODBCStmt *stmt, SQLSMALLINT nSqlDataType)
 }
 
 SQLRETURN SQL_API
-SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
+SQLGetTypeInfo(SQLHSTMT hStmt,
+	       SQLSMALLINT nSqlDataType)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
@@ -1067,13 +1072,15 @@ SQLGetTypeInfo(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLGetTypeInfoA(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
+SQLGetTypeInfoA(SQLHSTMT hStmt,
+		SQLSMALLINT nSqlDataType)
 {
 	return SQLGetTypeInfo(hStmt, nSqlDataType);
 }
 
 SQLRETURN SQL_API
-SQLGetTypeInfoW(SQLHSTMT hStmt, SQLSMALLINT nSqlDataType)
+SQLGetTypeInfoW(SQLHSTMT hStmt,
+		SQLSMALLINT nSqlDataType)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 

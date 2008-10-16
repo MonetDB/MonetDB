@@ -43,7 +43,9 @@
 
 
 SQLRETURN
-SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation, SQLLEN FetchOffset)
+SQLFetchScroll_(ODBCStmt *stmt,
+		SQLSMALLINT FetchOrientation,
+		SQLLEN FetchOffset)
 {
 	assert(stmt->hdl);
 
@@ -161,7 +163,9 @@ SQLFetchScroll_(ODBCStmt *stmt, SQLSMALLINT FetchOrientation, SQLLEN FetchOffset
 }
 
 SQLRETURN SQL_API
-SQLFetchScroll(SQLHSTMT hStmt, SQLSMALLINT FetchOrientation, SQLLEN FetchOffset)
+SQLFetchScroll(SQLHSTMT hStmt,
+	       SQLSMALLINT FetchOrientation,
+	       SQLLEN FetchOffset)
 {
 	ODBCStmt *stmt = (ODBCStmt *) hStmt;
 
