@@ -65,8 +65,6 @@ pf_support_export int CMDshred_stream(BAT *docBAT, Stream *s, lng *percentage, l
 #include <gdk.h>
 #include <monet.h>
 
-#include <libgen.h>
-
 #include "pathfinder.h"
 #include "pf_support.h"
 #include "shredder.h"
