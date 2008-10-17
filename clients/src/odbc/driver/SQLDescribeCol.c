@@ -153,10 +153,12 @@ SQLDescribeColW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLWCHAR * szColName, SQLSMAL
 
 	clearStmtErrors(stmt);
 
-	prepWcharOut(colname, nColNameMax);
-
-	rc = SQLDescribeCol_(stmt, nCol, colname, nColNameMax * 4, &n, pnSQLDataType, pnColSize, pnDecDigits, pnNullable);
-
+	rc = SQLDescribeCol_(stmt, nCol, NULL, 0, &n, pnSQLDataType, pnColSize, pnDecDigits, pnNullable);
+	if (!SQL_SUCCEEDED(rc))
+		return rc;
+	n++;			/* account for NUL byte */
+	colname = malloc(n);
+	rc = SQLDescribeCol_(stmt, nCol, colname, n, &n, pnSQLDataType, pnColSize, pnDecDigits, pnNullable);
 	fixWcharOut(rc, colname, n, szColName, nColNameMax, pnColNameLength, 1, addStmtError, stmt);
 
 	return rc;

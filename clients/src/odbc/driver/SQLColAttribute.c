@@ -233,7 +233,7 @@ SQLColAttributeW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 	clearStmtErrors(stmt);
 
 	switch (nFieldIdentifier) {
-		/* all string atributes */
+	/* all string atributes */
 	case SQL_DESC_BASE_COLUMN_NAME:
 	case SQL_DESC_BASE_TABLE_NAME:
 	case SQL_DESC_CATALOG_NAME:	/* SQL_COLUMN_QUALIFIER_NAME */
@@ -245,7 +245,10 @@ SQLColAttributeW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 	case SQL_DESC_SCHEMA_NAME:	/* SQL_COLUMN_OWNER_NAME */
 	case SQL_DESC_TABLE_NAME:	/* SQL_COLUMN_TABLE_NAME */
 	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
-		n = nValueLengthMax * 4;
+		rc = SQLColAttribute_(stmt, nCol, nFieldIdentifier, NULL, 0, &n, pnValue);
+		if (!SQL_SUCCEEDED(rc))
+			return rc;
+		n++;		/* account for NUL byte */
 		ptr = (SQLPOINTER) malloc(n);
 		break;
 	default:

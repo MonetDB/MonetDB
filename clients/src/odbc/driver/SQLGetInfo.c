@@ -777,7 +777,7 @@ SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue, SQLSMAL
 	clearDbcErrors(dbc);
 
 	switch (nInfoType) {
-		/* all string attributes */
+	/* all string attributes */
 	case SQL_ACCESSIBLE_PROCEDURES:
 	case SQL_ACCESSIBLE_TABLES:
 	case SQL_CATALOG_NAME:
@@ -817,7 +817,10 @@ SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue, SQLSMAL
 	case SQL_TABLE_TERM:
 	case SQL_USER_NAME:
 	case SQL_XOPEN_CLI_YEAR:
-		n = nInfoValueMax * 4;
+		rc = SQLGetInfo_(dbc, nInfoType, NULL, 0, &n);
+		if (!SQL_SUCCEEDED(rc))
+			return rc;
+		n++;		/* account for NUL byte */
 		ptr = (SQLPOINTER) malloc(n);
 		break;
 	default:

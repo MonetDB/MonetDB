@@ -107,10 +107,12 @@ SQLNativeSqlW(SQLHSTMT hStmt, SQLWCHAR * szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLW
 
 	fixWcharIn(szSqlStrIn, cbSqlStrIn, SQLCHAR, sqlin, addStmtError, stmt, return SQL_ERROR);
 
-	prepWcharOut(sqlout, cbSqlStrMax);
-
-	rc = SQLNativeSql_(stmt, sqlin, SQL_NTS, sqlout, cbSqlStrMax * 4, &n);
-
+	rc = SQLNativeSql_(stmt, sqlin, SQL_NTS, NULL, 0, &n);
+	if (!SQL_SUCCEEDED(rc))
+		return rc;
+	n++;			/* account for NUL byte */
+	sqlout = malloc(n);
+	rc = SQLNativeSql_(stmt, sqlin, SQL_NTS, sqlout, n, &n);
 	nn = (SQLSMALLINT) n;
 	fixWcharOut(rc, sqlout, nn, szSqlStr, cbSqlStrMax, pcbSqlStr, 1, addStmtError, stmt);
 
