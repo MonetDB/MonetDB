@@ -272,7 +272,7 @@ def parse_options(argv, cmd_options = cmd_options, usage = usage, default_config
         elif long == 'help':
             usage(cmd_options)
     if default_config and not seen_config:
-        options.config = os.path.join(BuiltinOptions.get(BuiltinOptions(),'sysconfdir'),'MonetDB.conf')
+        options.config = os.path.join(BuiltinOptions().get('sysconfdir'),'MonetDB.conf')
         parse_config(options.config, SystemOptions)
     if debug:
         print_options(options)
