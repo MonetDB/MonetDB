@@ -6418,7 +6418,9 @@ xquery_method(mapi_client *mc,
 /*
  * module initialization
  */
-extern void xmlInitParser(void);
+#include <libxml/parser.h>
+#include <libxml/xmlmemory.h>
+
 bat *
 xquery_prelude(void)
 {
@@ -6439,6 +6441,7 @@ xquery_prelude(void)
     MT_init_lock(pf_module_lock, "pf_module_lock");
     MT_init_lock(pf_cache_lock, "pf_cache_lock");
 
+    xmlMemSetup(GDKfree, GDKmalloc, GDKrealloc, GDKstrdup);
     xmlInitParser();
    
     xquery_compiled_modules = NULL;
