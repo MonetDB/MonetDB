@@ -706,21 +706,17 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
       # a very close cooperation with Pathfinder locks to make it safe.
       #
       if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") checking collection to index.\n",ftiName);
-      if ( v_pfc.count() > 0 ) {
-        var doclist;
-        if ( v_pfc.uselect("*").count() > 0 ) {
-           doclist := bat("doc_name").reverse().project(str(nil)).reverse();
-	} else {
-           doclist := bat("doc_name").reverse().join(bat("doc_collection").join(bat("collection_name").join(v_pfc.reverse())));
-           doclist := doclist.project(str(nil)).reverse();
-	}
-        if ( doclist.count() > 0 ) {
-
-            if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") indexing existing collections.\n",ftiName);
-	    tj_add2collection(ftiName,doclist,true);
-            if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") finish indexing existing collections.\n",ftiName);
-        }
+      var doclist;
+      if ( v_pfc.uselect("*").count() > 0 ) {
+         doclist := bat("doc_name").reverse().project(str(nil)).reverse();
+      } else {
+         doclist := bat("doc_name").reverse().join(bat("doc_collection").join(bat("collection_name").join(v_pfc.reverse())));
+         doclist := doclist.project(str(nil)).reverse();
       }
+
+      if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") indexing existing collections.\n",ftiName);
+      tj_add2collection(ftiName,doclist,true);
+      if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") finish indexing existing collections.\n",ftiName);
     }
     if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") finished.\n",ftiName);
 }
@@ -3054,29 +3050,26 @@ PROC prior_ls(BAT[oid,dbl] region, BAT[oid,str] qenv) : bat :=
 
 PROC rm_overlap(bat ctx, BAT[oid,str] qenv) : bat{
 
- ctx := ctx.sort();
- var AD:=anc_desc(ctx,ctx,qenv);
- var maxD := AD.join(ctx).sort().{max}();
- var maxA := AD.reverse().sort().join(ctx).{max}();
+   var a_d := anc_desc(ctx, ctx, qenv);
+   var x_a := a_d.hmark(0@0);
+   var x_d := a_d.tmark(0@0);
+   var x_ascore := x_a.join(ctx);
+   var x_dscore := x_d.join(ctx);
 
- AD:=nil;
+   # deselect all ancestors having a higher scored descendant
+   var tmp := [<](x_ascore, x_dscore).uselect(true).mirror().join(x_a);
+   var res1 := ctx.kdiff(tmp.reverse());
 
- # candidates are nodes that have no descendents or a higher score
- # than all descendents
- var candidates := ctx.kdiff(maxD).access(BAT_APPEND);
- candidates.insert(ctx.[>](maxD).uselect(true).mirror().join(ctx));
+   # deselect all descendants having a higher scored ancestor
+   tmp := x_a.kdiff(tmp).semijoin(res1).mirror().join(x_d); # select descendants having a higher scored ancestor in res1
+   var res := res1.kdiff(tmp.reverse());
 
- # keep the candidates without ancestor and w score >= ancestor scores
- var res := candidates.kdiff(maxA).access(BAT_APPEND);
- res.insert(candidates.[>=](maxA).uselect(true).mirror().join(candidates));
-
- candidates := nil;
- maxA:=nil;maxD:=nil;
- return res;
+   return res;
 }
-#ADDHELP("rm_overlap","thijs", "August, 2007",
+#ADDHELP("rm_overlap","henning", "Oktober, 2008",
 #"Removes overlapping elements from result list.",
 #"TIJAH");
+
 
 ################################################################################
 # ORDER
