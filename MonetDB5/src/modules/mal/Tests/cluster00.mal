@@ -1,0 +1,22 @@
+#test clustering a small table
+include cluster;
+b:= bat.new(:oid,:int);
+c:= bat.new(:oid,:int);
+barrier (v,i):= language.newRange(0:int);
+	j:= mmath.rand();
+	bat.append(b,j);
+	j:= mmath.rand();
+	bat.append(c,j);
+	redo (v,i):= language.nextElement(1:int,10:int);
+exit (v,i);
+#bat.append(b,b);
+io.print(b,c);
+
+map := cluster.key(b);
+io.print(map);
+
+cluster.new(map,3);
+io.print(map);
+
+cluster.map(b,c);
+io.print(b,c);
