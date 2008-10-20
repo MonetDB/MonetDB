@@ -33,15 +33,16 @@ on the port number specified in the parameter file.
 @- Usage
 @verbatim
 usage: mserver5 [options] [scripts]
-    --dbname=<database_name>
-    --dbfarm=<directory>
-    --dbinit=<stmt>           Server prepare statement
-    --config=<config_file>
-    --debug=<number>          trace server actions[0]
-    --daemon=yes|no           run in background [no]
-    --set <option>=<value>    set environment value
-    --help                    this list of options
-    --version                 version and compile time info
+    --dbname=<database_name>  Specify database name
+    --dbfarm=<directory>      Specify database location
+    --dbinit=<stmt>           Execute statement at startup
+    --config=<config_file>    Specify location of configuration file
+    --daemon=yes|no           Do not read commands from standard input [no]
+    --single-user             Allow only one user at a time
+    --readonly                Safeguard database
+    --set <option>=<value>    Set configuration option
+    --help                    Print this list of options
+    --version                 Print version and compile time info
 @end verbatim
 
 The server options have the following meaning:
@@ -130,16 +131,16 @@ void
 usage(char *prog)
 {
 	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
-	fprintf(stderr, "    --dbname=<database_name> \n");
-	fprintf(stderr, "    --dbfarm=<directory> \n");
-	fprintf(stderr, "    --dbinit=<stmt>           Server prepare statement\n");
-	fprintf(stderr, "    --config=<config_file> \n");
-	fprintf(stderr, "    --daemon=yes|no           run in background [no]\n");
-	fprintf(stderr, "    --single-user             permit one user to access [no]\n");
-	fprintf(stderr, "    --readonly                safeguard database [no]\n");
-	fprintf(stderr, "    --set <option>=<value>    set environment value\n");
-	fprintf(stderr, "    --help                    this list of options \n");
-    fprintf(stderr, "    --version                 version and compile time info\n");
+	fprintf(stderr, "    --dbname=<database_name>  Specify database name\n");
+	fprintf(stderr, "    --dbfarm=<directory>      Specify database location\n");
+	fprintf(stderr, "    --dbinit=<stmt>           Execute statement at startup\n");
+	fprintf(stderr, "    --config=<config_file>    Specify location of configuration file\n");
+	fprintf(stderr, "    --daemon=yes|no           Do not read commands from standard input [no]\n");
+	fprintf(stderr, "    --single-user             Allow only one user at a time\n");
+	fprintf(stderr, "    --readonly                Safeguard database\n");
+	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
+	fprintf(stderr, "    --help                    Print this list of options\n");
+	fprintf(stderr, "    --version                 Print version and compile time info\n");
 
 	fprintf(stderr,"The debug options:\n");
 	fprintf(stderr,"     --threads\n");

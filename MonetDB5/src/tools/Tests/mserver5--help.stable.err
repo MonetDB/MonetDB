@@ -10,17 +10,17 @@ stderr of test 'mserver5--help` in directory 'src/tools` itself:
 # 16:36:12 >  Mtimeout -timeout 60 mserver5 --config= --help
 # 16:36:12 >  
 
-Usage: mserver5 [options] [scripts]
-    --dbname=<database_name>     
-    --dbfarm=<directory> 
-    --dbinit=<stmt>           Server prepare statement
-    --config=<config_file> 
-    --daemon=yes|no           run in background [no]
-    --single-user             permit one user to access [no]
-    --readonly                safeguard database [no]
-    --set <option>=<value>    set environment value
-    --help                    this list of options 
-    --version                 version and compile time info
+Usage: /ufs/sjoerd/src/MonetDB/virgin/MonetDB5/x86_64-unknown-linux-gnu/src/tools/.libs/lt-mserver5 [options] [scripts]
+    --dbname=<database_name>  Specify database name
+    --dbfarm=<directory>      Specify database location
+    --dbinit=<stmt>           Execute statement at startup
+    --config=<config_file>    Specify location of configuration file
+    --daemon=yes|no           Do not read commands from standard input [no]
+    --single-user             Allow only one user at a time
+    --readonly                Safeguard database
+    --set <option>=<value>    Set configuration option
+    --help                    Print this list of options
+    --version                 Print version and compile time info
 The debug options:
      --threads
      --memory
