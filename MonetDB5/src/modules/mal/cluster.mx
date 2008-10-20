@@ -197,7 +197,7 @@ continues until the amount of space to be redistribute is
 to small.
 @c
 typedef struct{
-	int low,hgh;
+	BUN low,hgh;
 	BUN base,limit;
 } Basket;
 
@@ -277,7 +277,7 @@ CLUSTER_new(bat *RB, bat *B, int *N)
 
 		/* start with a dumb linear search */
 		for (bnr = 0; bnr < *N -1 ; bnr++)
-		if ( wcur >= basket[bnr].low && wcur < basket[bnr].hgh)
+		if ( (BUN) wcur >= basket[bnr].low && (BUN) wcur < basket[bnr].hgh)
 			break;
 
 		/* is the element in the right basket already? */
