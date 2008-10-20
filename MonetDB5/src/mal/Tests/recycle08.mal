@@ -27,6 +27,6 @@ qry(700,720);
 qry(800,900);
 qry(700,720);
 recycle.dump();
-# The next query should evict the cheapest 2 selects. 
+# The next query should evict the cheapest 2 selects(#2 and #4). 
 qry(300,800);
 recycle.dump();

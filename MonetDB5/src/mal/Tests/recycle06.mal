@@ -18,13 +18,13 @@ end qry;
 
 recycle.setRetainPolicy(1);
 recycle.setReusePolicy(1);
-recycle.setCachePolicy(1,10);
+recycle.setCachePolicy(1,9);
 optimizer.recycle("user","qry");
 
 io.print("start");
 qry(100,120);
 qry(700,710);
 recycle.dump();
-# The next query should evict the oldest leaf ( #4 reverse)
+# The next query should evict the oldest leaf (CL #3 reverse)
 qry(400,700);
 recycle.dump();

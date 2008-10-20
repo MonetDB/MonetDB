@@ -56,7 +56,7 @@ potential reuse gain (e.g. reuse select results).
 And finally, the cache policy looks after the storage space for the 
 intermediate result pool.
 The details are described in the recycle module.
-@{
+
 @mal
 pattern optimizer.recycle():str
 address OPTrecycle;
@@ -71,6 +71,7 @@ The number of overloaded instructions is kept to a minimum.
 #define _OPT_RECYCLER_
 #include "opt_prelude.h"
 #include "opt_support.h"
+#include "mal_recycle.h"
 
 /* #define DEBUG_OPT_RECYCLER */
 @-
@@ -191,7 +192,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			printInstruction(cntxt->fdout,mb, 0, p,LIST_MAL_ALL);
 #endif
 			actions ++;
-			p->recycle = -1; /* this instruction is to be monitored */
+			p->recycle = REC_MAX_INTEREST; /* this instruction is to be monitored */
 			for (j= 0; j < p->retc; j++)
 				if (getLastUpdate(span, getArg(p,j)) == i)
 					recycled[getArg(p,j)] = 1;
@@ -211,10 +212,10 @@ are marked for re-use.
 		     getFunctionId(p)== antiuselectRef ||
 		     getFunctionId(p)== putName("like",4) || 
 		     getFunctionId(p)== putName("like_uselect",12) ||
-             getFunctionId(p)== putName("thetaselect",11) ||
-             getFunctionId(p)== putName("thetauselect",12) ) &&
-	      	    recycled[getArg(p,1)] ){
-			p->recycle = -1;
+	             getFunctionId(p)== putName("thetaselect",11) ||
+        	     getFunctionId(p)== putName("thetauselect",12) ) &&
+	      		recycled[getArg(p,1)] ){
+			p->recycle = REC_MAX_INTEREST;
 			if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
 		}
@@ -223,14 +224,14 @@ are marked for re-use.
 				q = copyInstruction(p);
 				getArg(q,0)= newTmpVariable(mb,TYPE_any); 
 				setFunctionId(q, selectRef); 
-				q->recycle = -1;
+				q->recycle = REC_MAX_INTEREST;
 				recycled[getArg(q,0)] = 1;
 				pushInstruction(mb,q);
 				getArg(p,1) = getArg(q,0);
 				setFunctionId(p,markTRef);
 				p->argc = 2;
 			}
-			p->recycle = -1; 
+			p->recycle = REC_MAX_INTEREST; 
 			if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
 		}
@@ -238,7 +239,7 @@ are marked for re-use.
 		if(getModuleId(p) == pcreRef) {
 			if (( getFunctionId(p)== selectRef && recycled[getArg(p,2)]) ||  
 			    ( getFunctionId(p)== uselectRef && recycled[getArg(p,2)])){
-				p->recycle = -1;
+				p->recycle = REC_MAX_INTEREST;
 				if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
 			}
@@ -254,7 +255,7 @@ with the transaction commits.
 				getVarConstant(mb, getArg(p,4)).val.ival != 0) ||
 			getFunctionId(p)== binddbatRef) ) {
 				recycled[getArg(p,0)]=0;
-				p->recycle = 0; /* this instruction is not monitored */
+				p->recycle = REC_NO_INTEREST; /* this instruction is not monitored */
 			}
 
 		if( p->token== ENDsymbol){
@@ -276,4 +277,4 @@ with the transaction commits.
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(recycle,OPT_CHECK_TYPES)@
-@}
+

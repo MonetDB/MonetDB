@@ -60,7 +60,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # Test of LRU cache policy in limited cache (10 lines, 1 is always taken by fake 0) 
     recycle.setRetainPolicy(1);         #  2 _2:void := RECYCLEsetRetain(_3:int) 
     recycle.setReusePolicy(1);          #  3 _4:void := RECYCLEsetReuse(_3:int) 
-    recycle.setCachePolicy(1,10);       #  4 _5:void := RECYCLEsetCache(_3:int, _6:int) 
+    recycle.setCachePolicy(1,9);        #  4 _5:void := RECYCLEsetCache(_3:int, _6:int) 
     io.print("start");                  #  5 _10:void := IOprint_val(_11:str) 
     user.qry(100,120);                  #  6 _12:void := user.qry(_13:int, _14:int) 
     user.qry(700,710);                  #  7 _15:void := user.qry(_16:int, _17:int) 

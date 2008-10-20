@@ -1,4 +1,4 @@
-# Test of CREDIT cache policy in limited cache (7 lines, 1 is always taken by fake 0)
+# Test of CREDIT cache policy in limited cache (6 lines)
 # Evicts the leaf instruction with smallest credit= cnt * cost
 
 function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
@@ -18,7 +18,7 @@ end qry;
 
 recycle.setRetainPolicy(1);
 recycle.setReusePolicy(1);
-recycle.setCachePolicy(2,7);
+recycle.setCachePolicy(2,6);
 optimizer.recycle("user","qry");
 
 io.print("start");
@@ -27,6 +27,6 @@ qry(700,710);
 qry(100,250);
 qry(700,710);
 recycle.dump();
-# The next query should evict the cheapest, although more recently used markT leaf ( #5)
+# The next query should evict the cheapest, although more recently used markT leaf ( #4)
 qry(400,700);
 recycle.dump();

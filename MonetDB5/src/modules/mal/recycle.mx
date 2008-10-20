@@ -162,8 +162,9 @@ RECYCLEstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) pci;
 	(void) stk;
+	(void) mb;
+	(void) cntxt;
 
-	RECYCLEversion(cntxt, mb);
 	return MAL_SUCCEED;
 }
 
@@ -175,9 +176,7 @@ RECYCLEstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	if( recycleBlk == 0)
-		return MAL_SUCCEED;
-	recycleBlk->version = 0;
+
 	return MAL_SUCCEED;
 }
 
@@ -207,7 +206,7 @@ RECYCLEdump(stream *s)
 
 	if (!recycleBlk) return;
 
-	for(i=1; i< recycleBlk->stop; i++){
+	for(i=0; i< recycleBlk->stop; i++){
 #ifdef _DEBUG_CACHE_
                 if ( getInstrPtr(recycleBlk,i)->token == NOOPsymbol ) continue;
 #endif
@@ -220,7 +219,7 @@ RECYCLEdump(stream *s)
 		}
 	}
 	persmem = (lng) persmem/RU;
-	incache = recycleBlk->stop-1;
+	incache = recycleBlk->stop;
 	stream_printf(s,"#recycled = %d incache= %d executed = %d memory(KB)= "LLFMT" PersBat memory="LLFMT"\n",
 		 recycled, incache,statements, recyclerUsedMemory, persmem);
 #ifdef _DEBUG_CACHE_
@@ -231,7 +230,7 @@ RECYCLEdump(stream *s)
 
 	/* and dump the statistics per instruction*/
         stream_printf(s,"# CL\t   lru\t\tcnt\t ticks\t rd\t wr\t Instr\n");
-	for(i=1; i< recycleBlk->stop; i++){
+	for(i=0; i< recycleBlk->stop; i++){
 		if (getInstrPtr(recycleBlk,i)->token == NOOPsymbol)
 			stream_printf(s,"#NOOP ");
 		else stream_printf(s,"#     ");
@@ -339,7 +338,7 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 		}
 	}
 
-	for(i=1; i< recycleBlk->stop; i++)
+	for(i=0; i< recycleBlk->stop; i++)
 #ifdef _DEBUG_CACHE_
                 if ( getInstrPtr(recycleBlk,i)->token != NOOPsymbol ) 
 #endif
@@ -348,7 +347,7 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 
 	stream_printf(s,"%d\t %d\t %d\t %d\t %8.2f\t",++q, mb->stop, potrec,
 		recycled-recycled0,(GDKusec()-time0)/1000.0);
-	stream_printf(s,"%d\t %d\t %d\t",recycled,statements,recycleBlk?recycleBlk->stop-1:0);
+	stream_printf(s,"%d\t %d\t %d\t",recycled,statements,recycleBlk?recycleBlk->stop:0);
 #ifdef _DEBUG_CACHE_
 	stream_printf(s,"%d\t %d\t ",recycleRem,recycleMiss);
 #endif
@@ -460,12 +459,12 @@ RECYCLEprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) stk;
 	(void) p;
-	RECYCLEversion(cntxt, mb);
+	(void) cntxt;
 	recycleRecent = -1;
 	recycled0 = recycled; 
 	time0 = GDKusec();
 	RECYCLEinitQPat(20);
-	recycleCurQ = RECYCLEnewQryStat(recycleQPat,getFunctionId(mb->stmt[0]));
+	recycleCurQ = RECYCLEnewQryStat(recycleQPat,getFunctionId(mb->stmt[0]),mb);
 	return MAL_SUCCEED;
 }
 str 

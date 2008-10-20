@@ -25,7 +25,7 @@ io.print("start");
 qry(100,120);
 qry(700,710);
 recycle.dump();
-# The next query should evict the oldest leaves (#3 mark an #4 reverse)
+# The next query should evict the oldest leaves (#2 mark an #3 reverse)
 qry(400,700);
 recycle.dump();
 
