@@ -1,5 +1,6 @@
 #test clustering a small table
 include cluster;
+mmath.srand(0);
 b:= bat.new(:oid,:int);
 c:= bat.new(:oid,:int);
 barrier (v,i):= language.newRange(0:int);
