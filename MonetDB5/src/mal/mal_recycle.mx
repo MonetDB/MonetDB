@@ -434,8 +434,8 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q){
 int chooseVictims(int *lvs, int ltop, lng wr)
 {
 	dbl *wcrd, maxwc, tmp;
-	int l, newtop, mpos;
-	lng w, tmpl, totmem = 0, targmem, smem;
+	int l, newtop, mpos, tmpl;
+	lng w, totmem = 0, targmem, smem;
 
 	wcrd = (dbl *)alloca(sizeof(dbl)*ltop);
 	memset(wcrd,0, sizeof(dbl)*ltop);
