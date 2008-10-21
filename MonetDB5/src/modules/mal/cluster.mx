@@ -38,8 +38,8 @@ elements together based on the hash key. This step is based
 on the assumption that values in the hash-key are uniformly
 distributed. We create as many buckets as we  consider
 justified in terms of the IO. The tuples are 'thrown' into
-their bucket until they become full and can not easily
-be extended by harvesting free space from their neighor buckets.
+their bucket until they become full or can be extended 
+by harvesting free space from its direct neighor buckets.
 If there is no free space left, we circularly look for a bucket
 with space, partly  polluting the clustering objective.
 
@@ -62,14 +62,14 @@ command key(b:bat[:oid,:any_1]) :bat[:oid,:oid]
 address CLUSTER_key
 comment "Create the hash key list";
 
-command new(b:bat[:oid,:oid], N:int) :bat[:oid,:oid]
+command new(b:bat[:oid,:oid]) :bat[:oid,:oid]
 address CLUSTER_new
-comment "Recluster hash key table into N partitions
-and produce a re-allocation map";
+comment "Recluster hash key table and produce a re-allocation map";
 
 pattern map(m:bat[:oid,:oid], b:bat[:oid,:any]...):void
 address CLUSTER_map
 comment "Reorder tail of bat b using a cluster map";
+@{
 @h
 #ifndef _CLUSTER_H
 #define _CLUSTER_H
@@ -78,7 +78,7 @@ comment "Reorder tail of bat b using a cluster map";
 #include "mal_interpreter.h"
 #include "mal_client.h"
 
-/* #define _CLUSTER_DEBUG	for local debugging */
+#define _CLUSTER_DEBUG	/* for local debugging */
 
 #ifdef WIN32
 #ifndef LIBCLUSTER
@@ -91,6 +91,7 @@ comment "Reorder tail of bat b using a cluster map";
 #endif
 
 cluster_export str  CLUSTER_key( bat *M, bat *B);
+cluster_export str  CLUSTER_new(bat *RB, bat *B);
 cluster_export str  CLUSTER_map( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _CLUSTER_H */
@@ -202,8 +203,9 @@ typedef struct{
 } Basket;
 
 str  
-CLUSTER_new(bat *RB, bat *B, int *N)
+CLUSTER_new(bat *RB, bat *B)
 {
+	int N= 3; /* number of buckets */
 	BAT *b, *map;
 	BATiter bi,mi;
 	BUN p,q;
@@ -211,11 +213,8 @@ CLUSTER_new(bat *RB, bat *B, int *N)
 	BUN rng;
 	int bnr=0, h,i;
 	BUN bsize;
-	Basket *basket = (Basket*) alloca((*N+1) * sizeof(Basket));
+	Basket *basket;
 	(void) RB;
-
-	if ( *N <= 0)
-		throw(MAL, "cluster.new", "Illegal basket count");
 
 	if ( (b = BATdescriptor(*B)) == NULL)
 		throw(MAL, "cluster.new", "Cannot access descriptor");
@@ -231,13 +230,31 @@ CLUSTER_new(bat *RB, bat *B, int *N)
 	map->tdense= FALSE;
 	BATsetcount(map, BATcount(b));
 	mi= bat_iterator(map);
-
 	bi= bat_iterator(b);
 	BATmax(b, (ptr) &rng); /* get the maximum hash key , could use mask !*/
-	bsize= rng / *N;
+@-
+The key challenge is to determine the number of clusters.
+A large number of clusters benefits subsequent performance,
+but also challenges the prepare phase. The clustering should
+work both for relatively small tables and those that do not
+fit in memory.
+
+The bottomline is the number of elements that fit in a single
+diskblock.
+@c
+	N= (int)MT_npages() /10;
+	bsize= MT_pagesize()/sizeof(lng);
+	if (N > (int) (rng/ bsize))
+		N = bsize;
+	bsize= rng / N;
 #ifdef _CLUSTER_DEBUG
-	stream_printf(GDKout,"bucket size %d max %d\n",bsize,rng);
+	N=3; bsize= rng / N; /* for debugging only */
+	stream_printf(GDKout,"bucket pages %d size %d max %d  N %d\n", 
+		(int)MT_npages(),bsize,rng,N);
 #endif
+	basket = (Basket*) alloca((N+1) * sizeof(Basket));
+	if (basket==NULL)
+		throw(MAL, "cluster.new", "Not enough space");
 
 	/* prepare buffers */
 	basket[0].base= basket[0].limit=0;
@@ -247,8 +264,8 @@ CLUSTER_new(bat *RB, bat *B, int *N)
 	stream_printf(GDKout,"basket %d %d-%d %d-%d\n",0, 
 		basket[0].base, basket[0].limit, basket[0].low, basket[0].hgh);
 #endif
-	for (h=1; h < *N; h++){
-		basket[h].base= basket[h].limit= basket[h-1].limit + BATcount(b) / *N;
+	for (h=1; h < N; h++){
+		basket[h].base= basket[h].limit= basket[h-1].limit + BATcount(b) / N;
 		basket[h].low= basket[h-1].hgh;
 		basket[h].hgh= basket[h-1].hgh + bsize;
 #ifdef _CLUSTER_DEBUG
@@ -266,7 +283,7 @@ CLUSTER_new(bat *RB, bat *B, int *N)
 		/* push it forward to the right basket using domino effect */
 
 		/* start with a dumb linear search */
-		for (bnr = 0; bnr < *N -1 ; bnr++)
+		for (bnr = 0; bnr < N -1 ; bnr++)
 		if ( ocur >= basket[bnr].low && ocur < basket[bnr].hgh)
 			break;
 
@@ -296,8 +313,8 @@ CLUSTER_new(bat *RB, bat *B, int *N)
 		}
 
 		/* find a free slot somewhere, but try to maintain clustering */
-		bnr= (bnr+3) % *N;
-		i= *N;
+		bnr= (bnr+3) % N;
+		i= N;
 		do {
 			if (basket[bnr].limit < basket[bnr+1].base){
 	#ifdef _CLUSTER_DEBUG
@@ -310,7 +327,7 @@ CLUSTER_new(bat *RB, bat *B, int *N)
 				basket[bnr].limit++;
 				goto cont;
 			}
-			bnr= (bnr+1) % *N;
+			bnr= (bnr+1) % N;
 		} while( --i );
 		cont: ;
 	}
@@ -322,7 +339,7 @@ The order of the tuples in the cluster map
 represent the read/write order. Under the assumption
 that those read/writes are already localized, it becomes
 opportune to simply rebuild the clustered column by 
-probing. This leads to ca 2N read/write hotspots.
+probing. 
 
 Extend this operation to accept a sequence of BATs.
 The code is not yet used.
@@ -354,7 +371,7 @@ CLUSTER_column(BAT *nb, BAT *cmap)
 	BBPunfix(b->batCacheid);
 }
 str  
-CLUSTER_remap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLUSTER_map( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *CMAP =(int *) getArgReference(stk, pci, pci->retc);
 	bat *B;
@@ -399,3 +416,4 @@ CLUSTER_remap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(*CMAP);
 	return MAL_SUCCEED;
 }
+@}

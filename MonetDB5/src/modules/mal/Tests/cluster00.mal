@@ -16,7 +16,7 @@ io.print(b,c);
 keys := cluster.key(b);
 io.print(keys);
 
-map:=cluster.new(keys,3);
+map:=cluster.new(keys);
 io.print(map);
 
 b1:= algebra.join(map,b);
