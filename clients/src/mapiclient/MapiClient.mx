@@ -1055,6 +1055,10 @@ format_result(MapiHdl hdl)
 		}
 		pagewidth = oldpagewidth;
 	} while ((rc = mapi_needmore(hdl)) == MOK && (rc = mapi_next_result(hdl)) == 1);
+	if (stream_errnr(toConsole)) {
+		stream_clearerr(toConsole);
+		fprintf(stderr, "write error\n");
+	}
 
 #ifdef HAVE_POPEN
 	if (saveFD) {
@@ -2011,6 +2015,18 @@ main(int argc, char **argv)
 	}
 
 	if (command != NULL) {
+#ifdef HAVE_ICONV
+		if (encoding != NULL && cd_in != (iconv_t) -1) {
+			ICONV_CONST char *from = command;
+			size_t fromlen = strlen(from);
+			size_t tolen = 4 * fromlen + 1;
+			char *to = malloc(tolen);
+
+			command = to;
+			iconv(cd_in, &from, &fromlen, &to, &tolen);
+			*to = 0;
+		}
+#endif
 		/* execute from command-line */
 		c = doRequest(mid, command, interactive);
 	}
