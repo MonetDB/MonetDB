@@ -21,3 +21,4 @@ select_between_wrong_result.SF-2080189
 table_update.SF-2080207
 constraint_with_schemas.SF-2080219
 groupby_with_NULL.SF-2155606
+invalid_qualified_column_name.SF-2183288.sql 
