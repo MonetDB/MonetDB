@@ -37,7 +37,7 @@ LIBS = {
 		cluster.mx
 		#radix.mx 
 
-	LIBS = ../../mal/libmonetdb5 ../atoms/lib_xml ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
+	LIBS = ../../mal/libmonetdb5 ../atoms/lib_xml ../kernel/lib_bat5 ../kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
                 $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)

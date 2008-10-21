@@ -12,11 +12,13 @@ exit (v,i);
 #bat.append(b,b);
 io.print(b,c);
 
-map := cluster.key(b);
+keys := cluster.key(b);
+io.print(keys);
+
+map:=cluster.new(keys,3);
 io.print(map);
 
-cluster.new(map,3);
-io.print(map);
+b1:= algebra.join(map,b);
+c1:= algebra.join(map,c);
+io.print(b1,c1);
 
-cluster.map(b,c);
-io.print(b,c);

@@ -32,26 +32,22 @@ to reorganize BATs based on their hash key. It is a linear-time,
 near-optimal N-way reclustering based on key ranges.
 
 We start with collecting all hash keys from the underlying 
-table into the table H[:oid,:int].
-The next step is an inplace reclustering step to bring
+table into the table H[:oid,:oid].
+The next step is a reclustering step to bring
 elements together based on the hash key. This step is based
 on the assumption that values in the hash-key are uniformly
 distributed. We create as many buckets as we  consider
 justified in terms of the IO. The tuples are 'thrown' into
 their bucket until they become full and can not easily
-be extended by harvesting free space from their neighor bucket.
-Then the bounds for all buckets are fine-tuned by 
-redistribution all remaining space evenly. 
-If there are not enough slots to redistribute, we keep the
-tuple in its place, polluting the clustering objective.
-We know that the number of out of bucket elemens <N.
-[For the purists, this could be solved by a clever
-re-shuffling over all buckets in the end]
+be extended by harvesting free space from their neighor buckets.
+If there is no free space left, we circularly look for a bucket
+with space, partly  polluting the clustering objective.
 
-The result is a oid-key table that represents an IO
+The result is a void-oid table that represents an IO
 'optimal' sequence of tuples. IO optimal, because 
 with determining N we have 2N read/write pointers
-in the table. Tuples are reclustered amongst those.
+in the table. Tuples are reclustered amongst those
+using an ordinary join operation.
 The outerloop touches each tuple once, causing
 the order in the oid list to represent the IO
 activity too. This means we can use it directly
@@ -62,21 +58,18 @@ for a large collection of BATs.
 @mal
 module cluster;
 
-command key(b:bat[:oid,:any_1]) :bat[:oid,:int]
+command key(b:bat[:oid,:any_1]) :bat[:oid,:oid]
 address CLUSTER_key
 comment "Create the hash key list";
 
-command new(b:bat[:oid,:int], N:int) :void
+command new(b:bat[:oid,:oid], N:int) :bat[:oid,:oid]
 address CLUSTER_new
-comment "Recluster hash key table in N partitions";
+comment "Recluster hash key table into N partitions
+and produce a re-allocation map";
 
-pattern remap(m:bat[:oid,:int], b:bat[:oid,:any]...):void
-address CLUSTER_remap
-comment "Reorder tail of bat b using a cluster map";
-
-pattern map(b:bat[:oid,:any]...):void
+pattern map(m:bat[:oid,:oid], b:bat[:oid,:any]...):void
 address CLUSTER_map
-comment "Recluster the bats after selecting a suitable number of baskets";
+comment "Reorder tail of bat b using a cluster map";
 @h
 #ifndef _CLUSTER_H
 #define _CLUSTER_H
@@ -98,7 +91,6 @@ comment "Recluster the bats after selecting a suitable number of baskets";
 #endif
 
 cluster_export str  CLUSTER_key( bat *M, bat *B);
-cluster_export str  CLUSTER_remap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 cluster_export str  CLUSTER_map( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _CLUSTER_H */
@@ -114,14 +106,14 @@ void
 CLUSTER_key_@1( BAT *map, BAT *b)
 {
 	@1 *bt, *be;
-	oid o= 0;
+	oid *o;
 
+	o = (oid*)Tloc(map, BUNfirst(map));
 	bt = (@1*)Tloc(b, BUNfirst(b));
 	be = bt + BATcount(b);
 	for ( ; bt < be; bt++){
-		int h = hash_@1(b->T->hash,bt);
-		BUNfastins(map, (ptr)&o, (ptr)&h);
-		o++;
+		BUN h = hash_@1(b->T->hash,bt);
+		*o++= h;
 	}
 }
 
@@ -162,14 +154,16 @@ CLUSTER_key( bat *M, bat *B){
 
 	if ((b = BATdescriptor(*B)) == NULL)
 		throw(MAL, "cluster.key", "Cannot access descriptor");
-	(void) BATprepareHash(BATmirror(b));
+	(void) BATprepareHash(BATmirror(b)); /* only produce the hash structure! */
 
-	if ((map = BATnew(TYPE_oid, TYPE_int, BATcount(b)+1)) == NULL) {
+	if ((map = BATnew(TYPE_void, TYPE_oid, BATcount(b)+1)) == NULL) {
 		BBPunfix(*B);
 		throw(MAL, "cluster.key", "Cannot create hash map");
 	}
 	map->tsorted= FALSE;
 	map->tdense= FALSE;
+	BATseqbase(map, b->H->seq);
+	BATsetcount(map, BATcount(b));
 
 	switch(ATOMstorage(b->ttype)) {
 		case TYPE_chr: CLUSTER_key_chr(map,b); break;
@@ -177,11 +171,13 @@ CLUSTER_key( bat *M, bat *B){
 		case TYPE_sht: CLUSTER_key_sht(map,b); break;
 		case TYPE_oid: CLUSTER_key_oid(map,b); break;
 		case TYPE_wrd: CLUSTER_key_wrd(map,b); break;
-		case TYPE_str:
 		case TYPE_int: CLUSTER_key_int(map,b); break;
 		case TYPE_lng: CLUSTER_key_lng(map,b); break;
 		case TYPE_flt: CLUSTER_key_flt(map,b); break;
-		case TYPE_dbl: CLUSTER_key_dbl(map,b); 
+		case TYPE_dbl: CLUSTER_key_dbl(map,b); break;
+		default:
+			throw(MAL, "cluster.key", "Cannot recluster on this type");
+		
 	}
 	BATsave(map);	/* dump dirty pages from memory */
 	BBPunfix(*B);
@@ -189,57 +185,55 @@ CLUSTER_key( bat *M, bat *B){
 	return MAL_SUCCEED;
 }
 @-
-Recluster the <oid,key> table into a number of buckets
+Recluster the <oid,hash> table into a number of buckets
 on the high order bits,
 If the baskets are full before we have moved everything
 in place, we redistribute the free space again. This process
 continues until the amount of space to be redistribute is
 to small.
+
+The self-organizing version should determine the optimal
+number of buckets. Thereafter it can just call the
+remapping;
 @c
 typedef struct{
-	BUN low,hgh;
+	oid low,hgh;
 	BUN base,limit;
 } Basket;
-
-static int
-CLUSTER_redistribute(Basket *basket, int N){
-	int i;
-	BUN j,slice, free=0;
-	for (i=0; i<N; i++)
-		free+= basket[i+1].base-basket[i].limit;
-
-#ifdef _CLUSTER_DEBUG
-	stream_printf(GDKout,"redistribute %d\n",(int) free);
-#endif
-	if ((int)free <= N) return 0;
-	slice= free/N;
-	for (i=0;i<N-1;i++){
-		j= basket[i+1].limit - basket[i+1].base;
-		basket[i+1].base = basket[i].limit + slice;
-		basket[i+1].limit = basket[i+1].base + j;
-	}
-	return 1;
-}
 
 str  
 CLUSTER_new(bat *RB, bat *B, int *N)
 {
-	BAT *b;
-	BATiter bi;
-	BUN i=0,p,q;
-	oid ocur,onxt;
-	int wcur, wnxt,rng;
-	int bnr=0, h;
+	BAT *b, *map;
+	BATiter bi,mi;
+	BUN p,q;
+	oid *mp, ocur,idx = 0;
+	BUN rng;
+	int bnr=0, h,i;
 	BUN bsize;
 	Basket *basket = (Basket*) alloca((*N+1) * sizeof(Basket));
 	(void) RB;
 
 	if ( *N <= 0)
-		throw(MAL, "cluster.cluster", "Illegal basket count");
+		throw(MAL, "cluster.new", "Illegal basket count");
+
 	if ( (b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.cluster", "Cannot access descriptor");
+		throw(MAL, "cluster.new", "Cannot access descriptor");
+
+	if ((map = BATnew(TYPE_void, TYPE_oid, BATcount(b)+1)) == NULL) {
+		BBPunfix(*B);
+		throw(MAL, "cluster.new", "Cannot create hash map");
+	}
+	map->hsorted= TRUE;
+	map->hdense= TRUE;
+	BATseqbase(map, 0);
+	map->tsorted= FALSE;
+	map->tdense= FALSE;
+	BATsetcount(map, BATcount(b));
+	mi= bat_iterator(map);
+
 	bi= bat_iterator(b);
-	BATmax(b, (ptr) &rng);
+	BATmax(b, (ptr) &rng); /* get the maximum hash key , could use mask !*/
 	bsize= rng / *N;
 #ifdef _CLUSTER_DEBUG
 	stream_printf(GDKout,"bucket size %d max %d\n",bsize,rng);
@@ -263,61 +257,64 @@ CLUSTER_new(bat *RB, bat *B, int *N)
 #endif
 	}
 	basket[h-1].hgh= rng;
-#ifdef _CLUSTER_DEBUG
-	stream_printf(GDKout,"basket %d %d-%d %d-%d\n",h-1, 
-		basket[h-1].base, basket[h-1].limit, basket[h-1].low, basket[h-1].hgh);
-#endif
 	basket[h].low= basket[h].hgh= rng;
 	basket[h].base= basket[h].limit= BATcount(b);
 
+	mp= (oid*) BUNtail(mi, BUNfirst(map));
 	BATloop(b,p,q){
-		ocur= *(oid*) BUNhead(bi,p);
-		wcur= *(int*) BUNtail(bi,p);
+		ocur= *(oid*) BUNtail(bi,p);
 		/* push it forward to the right basket using domino effect */
 
 		/* start with a dumb linear search */
 		for (bnr = 0; bnr < *N -1 ; bnr++)
-		if ( (BUN) wcur >= basket[bnr].low && (BUN) wcur < basket[bnr].hgh)
+		if ( ocur >= basket[bnr].low && ocur < basket[bnr].hgh)
 			break;
 
-		/* is the element in the right basket already? */
-		if ( i>= basket[bnr].base && i < basket[bnr].limit ){
-#ifdef _CLUSTER_DEBUG
-		printf("case 1 mov %d %d", (int) i, (int) wcur);
-		printf(" basket %d %d-%d %d-%d\n",bnr, 
-			(int) basket[bnr].base, (int) basket[bnr].limit, (int) basket[bnr].low, (int) basket[bnr].hgh);
-#endif
-			if ( i== basket[bnr+1].base)
-				basket[bnr+1].base++;
-			basket[bnr].limit++;
-			i++;
-			continue;
-		}
 
 		/* allocate space in the target basket */
 		if (basket[bnr].limit < basket[bnr+1].base){
 #ifdef _CLUSTER_DEBUG
-		printf("case 2 mov %d %d", (int) i, (int) wcur);
-		printf(" basket %d %d-%d %d-%d\n",bnr, 
-			(int) basket[bnr].base, (int) basket[bnr].limit, (int) basket[bnr].low, (int) basket[bnr].hgh);
+			printf("case 1 mov %d %d", (int) ocur, (int) idx);
+			printf(" basket %d %d-%d %d-%d\n",bnr, 
+				(int) basket[bnr].base, (int) basket[bnr].limit, 
+				(int) basket[bnr].low, (int) basket[bnr].hgh);
 #endif
-			onxt= *(oid*) BUNhloc(bi, basket[bnr].limit);
-			wnxt= *(int*) BUNtail(bi, basket[bnr].limit);
-			*(oid*) BUNhloc(bi, basket[bnr].limit)= ocur;
-			*(int*) BUNtloc(bi, basket[bnr].limit)= wcur;
-			*(oid*) BUNhead(bi,p)= onxt;
-			*(int*) BUNtail(bi,p)= wnxt;
+			mp[basket[bnr].limit]= idx++;
 			basket[bnr].limit++;
-			p--;
+			continue;
+		} else
+		if ( bnr>0 && basket[bnr-1].limit < basket[bnr].base){
+#ifdef _CLUSTER_DEBUG
+			printf("case 2 mov %d %d", (int) ocur, (int) idx);
+			printf(" basket %d %d-%d %d-%d\n",bnr, 
+				(int) basket[bnr].base, (int) basket[bnr].limit, 
+				(int) basket[bnr].low, (int) basket[bnr].hgh);
+#endif
+			basket[bnr].base--;
+			mp[basket[bnr].base]= idx++;
 			continue;
 		}
-		/* reallocate the free space */
-		if (CLUSTER_redistribute(basket, *N)){
-			p--;
-			continue;
-		}
-		i++;
+
+		/* find a free slot somewhere, but try to maintain clustering */
+		bnr= (bnr+3) % *N;
+		i= *N;
+		do {
+			if (basket[bnr].limit < basket[bnr+1].base){
+	#ifdef _CLUSTER_DEBUG
+				printf("case 3 mov %d %d", (int) ocur, (int) idx);
+				printf(" basket %d %d-%d %d-%d\n",bnr, 
+					(int) basket[bnr].base, (int) basket[bnr].limit, 
+					(int) basket[bnr].low, (int) basket[bnr].hgh);
+	#endif
+				mp[basket[bnr].limit]= idx++;
+				basket[bnr].limit++;
+				goto cont;
+			}
+			bnr= (bnr+1) % *N;
+		} while( --i );
+		cont: ;
 	}
+	BBPkeepref(*RB= map->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
@@ -328,6 +325,7 @@ opportune to simply rebuild the clustered column by
 probing. This leads to ca 2N read/write hotspots.
 
 Extend this operation to accept a sequence of BATs.
+The code is not yet used.
 @c
 void 
 CLUSTER_column(BAT *nb, BAT *cmap)
@@ -400,43 +398,4 @@ CLUSTER_remap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	BBPunfix(*CMAP);
 	return MAL_SUCCEED;
-}
-@-
-The self-organizing version should determine the optimal
-number of buckets. Thereafter it can just call the
-remapping;
-@c
-str  
-CLUSTER_map( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	bat map;
-	bat *B =(int *) getArgReference(stk, pci, 1);
-	BAT *nb, *cmap;
-	str msg;
-	int i;
-	int N=3; /* to be optimized based on size and # columns */
-	
-	(void) cntxt;
-	(void) mb;
-
-	msg= CLUSTER_key(&map, B);
-	if ( msg != MAL_SUCCEED)
-		return msg;
-	msg= CLUSTER_new(&map, &map,  &N);
-	if ( msg != MAL_SUCCEED)
-		return msg;
-
-	cmap= BATdescriptor(map);
-	if( cmap == NULL)
-			throw(MAL, "cluster.map", "Cannot access map descriptor");
-	for (i=pci->retc; i<pci->argc; i++){
-		B =(int *) getArgReference(stk, pci, i);
-		nb = BATdescriptor(*B);
-		if (nb == NULL)
-			throw(MAL, "cluster.map", "Cannot access column descriptor");
-		CLUSTER_column(nb,cmap);
-		BBPunfix(nb->batCacheid);
-	}
-	BBPunfix(map);
-	return msg;
 }
