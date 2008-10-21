@@ -127,6 +127,7 @@ stream_export int stream_fgetpos(stream *s, size_t *p);
 stream_export int stream_fsetpos(stream *s, size_t p);
 stream_export char *stream_name(stream *s);
 stream_export int stream_errnr(stream *s);
+stream_export void stream_clearerr(stream *s);
 stream_export int stream_type(stream *s);
 stream_export int stream_byteorder(stream *s);
 stream_export void stream_set_byteorder(stream *s, char bigendian);
@@ -586,6 +587,13 @@ stream_errnr(stream *s)
 	if (s == 0)
 		return READ_ERROR;
 	return s->errnr;
+}
+
+void
+stream_clearerr(stream *s)
+{
+	if (s != NULL)
+		s->errnr = NO__ERROR;
 }
 
 int
