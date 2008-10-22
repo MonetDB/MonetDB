@@ -93,7 +93,7 @@ comment "Stop sending the event records";
 pattern setAll():void
 address CMDsetAllProfiler
 comment "Short cut for setFilter(*,*).";
-command setNone():void
+pattern setNone():void
 address CMDsetNoneProfiler
 comment "Short cut for clrFilter(*,*).";
 
