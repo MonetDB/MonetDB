@@ -406,7 +406,7 @@ Second, for each (BAT) variable removed, we
 should also remove the dependent instructions.
 @c
 static void
-RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q){
+RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q, bte *used){
 	int j;
 	ValPtr v;
 
@@ -421,7 +421,7 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q){
 				}
 			}
 		}
-		if( v->vtype == TYPE_str) {
+		if( v->vtype == TYPE_str && used[getArg(q,j)]<=1) {
 			if(v->val.pval) {
 				GDKfree(v->val.pval);
 				v->val.pval = NULL;
@@ -484,13 +484,13 @@ static void RECYCLEcleanCache(lng wr){
 	int j,i,l,ltop,v,vtop;
 	InstrPtr p,r;
 	InstrPtr *old;
-	bit *used, *lmask, *dmask;
+	bit  *lmask, *dmask;
 	int k, *lvs, *vm;
 	int limit, mem, idx, pc;
 	int cont, reserve;
 	lng oldclk;
 	dbl mincrd, crd;
-	bte maxcat, cat;
+	bte maxcat, cat, *used;
 	lng memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
 #ifdef _DEBUG_CACHE_
 	Client cntxt= MCgetClient();
@@ -501,7 +501,7 @@ static void RECYCLEcleanCache(lng wr){
 
 newpass:
 	cont = 0;	
-	used = (bit*)GDKzalloc(recycleBlk->vtop);
+	used = (bte*)GDKzalloc(recycleBlk->vtop);
 
 	/* set all used variables */
 	for (i = 0; i < recycleBlk->stop; i++){
@@ -510,7 +510,7 @@ newpass:
                 if ( p->token != NOOPsymbol )
 #endif
 		for( j = p->retc ; j< p->argc; j++)
-			used[getArg(p,j)] = 1;
+			if (used[getArg(p,j)]<2)  used[getArg(p,j)]++;
 	}
 
 	/* find the leaves, ignore the most recent instruction */
@@ -533,7 +533,7 @@ newpass:
 		skip:;
 	}
 
-	GDKfree(used);
+
 	if (ltop == 0 ){  /* ensure at least 1 entry to evict */
 		if (reserve){
 			lmask[reserve] = 1;
@@ -726,7 +726,7 @@ newpass:
 	for (i = 0; i < limit ; i++){
 		p = old[i];
 		if( dmask[i] ) {
-			RECYCLEgarbagecollect(recycleBlk,p);
+			RECYCLEgarbagecollect(recycleBlk,p,used);
 			recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
 			if ( recycleBlk->profiler[i].counter >1) {
 				getIPtr(p,r,j,pc);
@@ -742,6 +742,7 @@ newpass:
 	}
 
 	GDKfree(old);
+	GDKfree(used);
 	/* remove all un-used variables as well */
 	trimMalVariables(recycleBlk);
 #endif
@@ -1213,6 +1214,7 @@ void
 RECYCLEshutdown(Client cntxt){
 	MalBlkPtr mb= recycleBlk;
 	int i;
+	bte *used;
 	
 	if( recycleBlk == NULL)
 		return ;
@@ -1224,6 +1226,8 @@ RECYCLEshutdown(Client cntxt){
 #else
 	(void) cntxt;
 #endif
+
+	used = (bte*)GDKzalloc(recycleBlk->vtop);
 	mal_set_lock(recycleLock,"recycle");
 	recycleBlk= NULL;
 	recycled = statements = 0;
@@ -1235,8 +1239,9 @@ RECYCLEshutdown(Client cntxt){
 #endif
 	mal_unset_lock(recycleLock,"recycle");
 	for (i=mb->stop-1; i>=0; i--)
-		RECYCLEgarbagecollect(mb, getInstrPtr(mb,i));
+		RECYCLEgarbagecollect(mb, getInstrPtr(mb,i),used);
 	freeMalBlk(mb);
+	GDKfree(used);
 }
 
 @-
@@ -1249,7 +1254,8 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 	int action = 1, upd = 0;
 	int *dropped;
 	InstrPtr p,r;
-	
+	bte *used;
+
 	if( recycleBlk == NULL)
 		return;
 
@@ -1261,9 +1267,17 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 #endif
 
 	dropped = (int *) GDKzalloc(sizeof(int)*recycleBlk->vtop);
-
+	used = (bte*)GDKzalloc(recycleBlk->vtop);
 	for( i=0; i<btop; i++)
 		dropped[top++] = bats[i];
+	for (i = 0; i < recycleBlk->stop; i++){
+		p = recycleBlk->stmt[i];
+#ifdef _DEBUG_CACHE_
+                if ( p->token != NOOPsymbol )
+#endif
+		for( j = 0 ; j< p->argc; j++)
+			if (used[getArg(p,j)]<2)  used[getArg(p,j)]++;
+	}
 	while (action){
 		action= 0;
 		for (i=0; i<recycleBlk->stop; i++){
@@ -1292,7 +1306,7 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 	                        p->token = NOOPsymbol;
 				recycleRem ++;
 #else
-				RECYCLEgarbagecollect(recycleBlk, p);
+				RECYCLEgarbagecollect(recycleBlk, p, used);
 				recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
 				if ( recycleBlk->profiler[i].counter >1) {
 					getIPtr(p,r,j,pc);
@@ -1314,6 +1328,7 @@ we only have to make one step back in the look.
 		if (action) upd++;
 	}
 	GDKfree(dropped);
+	GDKfree(used);
 	if (upd){
 #ifndef _DEBUG_CACHE_
 		trimMalVariables(recycleBlk);
