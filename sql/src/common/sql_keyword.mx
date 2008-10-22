@@ -63,6 +63,7 @@ keywords_insert(char *k, int token)
    with most usage patterns */
 
 	kw = NEW(keyword);
+	len =0;
 	bucket = keyword_key(k = toUpper(k), &len) & HASH_MASK;
 	kw->keyword = k;
 	kw->len = len;
