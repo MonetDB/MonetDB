@@ -1166,13 +1166,13 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 
 	assert(l->h->next->type == type_int);
 	if (f == sql_where) 
-		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpper(alloca(strlen(aggrstr) + 1), aggrstr));
+		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr));
 	
 	if (!l->h->next->next->data.sym) {	/* count(*) case */
 		cvar *cv;
 
 		if (strcmp(aggrstr, "count") != 0) {
-			return sql_error(sql, 02, "%s: unable to perform '%s(*)'", toUpper(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr);
+			return sql_error(sql, 02, "%s: unable to perform '%s(*)'", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr);
 		}
 		if (grp) {
 			a = sql_bind_aggr(schema, aggrstr, NULL);
@@ -1184,7 +1184,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 
 			assert(foundsubset);
 			if (!foundsubset) {
-				return sql_error(sql, 02, "%s: no subset for column '%s'", toUpper(alloca(strlen(aggrstr) + 1), aggrstr), cv->cname);
+				return sql_error(sql, 02, "%s: no subset for column '%s'", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr), cv->cname);
 			}
 			s = foundsubset;
 			if (s && distinct) {
@@ -1245,7 +1245,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		char *type = tail_type(s)->type->sqlname;
 
 		stmt_destroy(s);
-		return sql_error(sql, 02, "%s: no such operator '%s(%s)'", toUpper(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr, type);
+		return sql_error(sql, 02, "%s: no such operator '%s(%s)'", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr, type);
 	}
 }
 
@@ -1532,7 +1532,7 @@ sql_rankop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		return sql_error(sql, 02, "OVER: not supported in combination with GROUP BY");
 
 	if (f == sql_where) 
-		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpper(alloca(strlen(aggrstr) + 1), aggrstr));
+		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr));
 
 	/* Partition By */
 	if (window_specification->h->data.sym) {

@@ -2879,12 +2879,12 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		return NULL;
 
 	if (f == sql_where && !groupby) 
-		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpper(alloca(strlen(aggrstr) + 1), aggrstr));
+		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr));
 	
 	if (!l->h->next->next->data.sym) {	/* count(*) case */
 
 		if (strcmp(aggrstr, "count") != 0) {
-			return sql_error(sql, 02, "%s: unable to perform '%s(*)'", toUpper(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr);
+			return sql_error(sql, 02, "%s: unable to perform '%s(*)'", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr);
 		}
 		a = sql_bind_aggr(sql->session->schema, aggrstr, NULL);
 		/* add aggr expression to the groupby, and return a 
@@ -2923,7 +2923,7 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		char *type = exp_subtype(e)->type->sqlname;
 
 		exp_destroy(e);
-		return sql_error(sql, 02, "%s: no such operator '%s(%s)'", toUpper(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr, type);
+		return sql_error(sql, 02, "%s: no such operator '%s(%s)'", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr, type);
 	}
 }
 
@@ -3355,7 +3355,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	}
 
 	if (f == sql_where) 
-		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpper(alloca(strlen(aggrstr) + 1), aggrstr));
+		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr));
 
 	/* window operations are only allowed in the projection */
 	if (r->op != op_project)
