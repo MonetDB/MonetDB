@@ -58,36 +58,15 @@ keywords_insert(char *k, int token)
 	kw->token = token;
 	kw->next = keywords[bucket];
 	keywords[bucket] = kw;
-
-/* insert both lower case and upper case to cope
-   with most usage patterns */
-
-	kw = NEW(keyword);
-	len =0;
-	bucket = keyword_key(k = toUpper(k), &len) & HASH_MASK;
-	kw->keyword = k;
-	kw->len = len;
-	kw->token = token;
-	kw->next = keywords[bucket];
-	keywords[bucket] = kw;
 }
 
 keyword *
 find_keyword(char *text)
 {
 	int len = 0;
-	int bucket = keyword_key(text, &len) & HASH_MASK;
+	int bucket = keyword_key(mkLower(text), &len) & HASH_MASK;
 	keyword *k = keywords[bucket];
 
-	while (k) {
-		if (len == k->len && strcmp(k->keyword, text) == 0)
-			return k;
-
-		k = k->next;
-	}
-	/* see if recasting works */
-	bucket = keyword_key(mkLower(text), &len) & HASH_MASK;
-	k = keywords[bucket];
 	while (k) {
 		if (len == k->len && strcmp(k->keyword, text) == 0)
 			return k;

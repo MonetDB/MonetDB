@@ -992,7 +992,7 @@ sql_create_alias(char *name, char *alias)
 	a->name = _strdup(name);
 	a->alias = _strdup(alias);
 	list_append(aliases, a);
-	if (!keyword_exists(a->alias))
+	if (!keyword_exists(a->alias) )
 		keywords_insert(a->alias, KW_ALIAS);
 }
 
@@ -1033,7 +1033,7 @@ sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned
 	t->radix = radix;
 	t->eclass = eclass;
 	t->s = NULL;
-	if (!keyword_exists(mkLower(t->sqlname)) )
+	if (!keyword_exists(t->sqlname) )
 		keywords_insert(t->sqlname, KW_TYPE);
 	list_append(types, t);
 
