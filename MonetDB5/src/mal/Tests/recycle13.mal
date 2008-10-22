@@ -1,0 +1,69 @@
+#test the basics of the recycler
+# testing toll-based retention
+
+function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
+	b:= bat.new(:oid,:int);
+	bat.insert(b,0@0,0);
+	bat.insert(b,1@0,1);
+	bat.insert(b,2@0,2);
+	bat.insert(b,3@0,3);
+	bat.insert(b,4@0,4);
+	bat.insert(b,5@0,5);
+	bat.insert(b,6@0,6);
+	bat.insert(b,7@0,7);
+	bat.insert(b,8@0,8);
+	bat.insert(b,9@0,9);
+	bat.insert(b,10@0,10);
+	bat.insert(b,11@0,11);
+	return bind:=b;
+end bind;
+
+function qry(low:int, hgh:int);
+    b:= user.bind("schema","table","column",0);
+    s1:= algebra.select(b,low,hgh);
+    m0:= algebra.markT(s1, 0@0);
+    mr:= bat.reverse(m0);
+    j:= algebra.join(mr,s1);
+end qry;
+                        
+#inter-query commonality
+function qry1(val:int);
+    b:= user.bind("schema","table","column1",0);
+    s1:= algebra.select(b,val);
+    io.print(s1);
+end qry1;
+
+recycle.setRetainPolicy(3);
+recycle.setReusePolicy(1);
+recycle.setCachePolicy(1,5);
+optimizer.recycle("user","qry");
+optimizer.recycle("user","qry1");
+
+qry1(2);
+qry1(5);
+qry1(7);
+
+# selection is not reused: it is added maximum (MAX_INTEREST-Min_INTEREST = 3) number of times
+recycle.dump();
+io.print("3 select instances");
+
+#the following call does not add the select to RP, its tolls are finished
+qry1(10);
+recycle.dump();
+io.print("still 3 select instances, tolls are finished");
+
+#new execution can still re-use some of the existing instances in the RP
+qry1(5);
+recycle.dump();
+io.print("reuse of instruction #2 even when tolls are finished");
+
+#next call evicts all instructions from qry1 returning the tolls to the
+#reused ones
+qry(1,5);
+recycle.dump();
+io.print("all instructions from qry1 evicted");
+
+# new call adds the instructions with tolls back to RP
+qry1(10);
+recycle.dump();
+io.print("qry1 reused instructions added again");
