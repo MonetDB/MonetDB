@@ -1626,7 +1626,7 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 
 	/* remap all variable references to their new position. */
 	if (actions) {
-		for (i = 1; i < mb->stop; i++) {
+		for (i = 0; i < mb->stop; i++) {
 			q = getInstrPtr(mb, i);
 			for (j = 0; j < q->argc; j++)
 				getArg(q, j) = vars[getArg(q, j)];
