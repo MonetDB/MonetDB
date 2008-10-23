@@ -925,13 +925,13 @@ RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 		q = getInstrPtr(recycleBlk,i);
 		if (
 			(getFunctionId(p) != getFunctionId(q)) ||
-			(p->argc != q->argc) ||
+			(p->argc != q->argc-1) ||
 		   (getModuleId(p) != getModuleId(q)))
 			continue;
 		for (j=p->retc; j<p->argc; j++)
 			if( VALcmp( &s->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 				break;
-		if (j == q->argc)
+		if (j == p->argc)
 #ifdef _DEBUG_CACHE_
         		if ( q->token != NOOPsymbol )
 #endif
@@ -1134,8 +1134,8 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	statements++;
 	if ( recycleBlk == NULL )
 		return 0;
-	if (p->recycle == REC_NO_INTEREST) /* don't scan RP for non-monitored instructions */
-	        return 0;
+    if ( !RECYCLEinterest(mb,p) )  /* don't scan RP for non-monitored instructions */
+        return 0;
 	i = RECYCLEreuse(cntxt,mb,stk,p) >= 0;
 	return i;
 }
