@@ -78,7 +78,7 @@ comment "Reorder tail of bat b using a cluster map";
 #include "mal_interpreter.h"
 #include "mal_client.h"
 
-#define _CLUSTER_DEBUG	/* for local debugging */
+/* #define _CLUSTER_DEBUG	for local debugging */
 
 #ifdef WIN32
 #ifndef LIBCLUSTER
@@ -205,14 +205,12 @@ typedef struct{
 str  
 CLUSTER_new(bat *RB, bat *B)
 {
-	int N= 3; /* number of buckets */
+	BUN rng,bsize, bnr=0, h, N= 3; /* number of buckets */
 	BAT *b, *map;
 	BATiter bi,mi;
 	BUN p,q;
 	oid *mp, ocur,idx = 0;
-	BUN rng;
-	int bnr=0, h,i;
-	BUN bsize;
+	int i;
 	Basket *basket;
 	(void) RB;
 
@@ -242,9 +240,9 @@ fit in memory.
 The bottomline is the number of elements that fit in a single
 diskblock.
 @c
-	N= (int)MT_npages() /10;
+	N= (BUN)MT_npages() /10;
 	bsize= MT_pagesize()/sizeof(lng);
-	if (N > (int) (rng/ bsize))
+	if (N > (rng/ bsize))
 		N = bsize;
 	bsize= rng / N;
 #ifdef _CLUSTER_DEBUG
