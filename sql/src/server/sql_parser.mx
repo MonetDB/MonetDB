@@ -4569,6 +4569,14 @@ opt_comma_XML_namespace_declaration_attributes_element_content:
  	{ $$ = append_symbol(L(), $2);
 	  $$ = append_symbol($$, $4);
 	  $$ = append_list($$, NULL); }
+  |  ',' XML_namespace_declaration ',' XML_attributes ',' XML_element_content_and_option
+ 	{ $$ = append_symbol(L(), $2);
+	  $$ = append_symbol($$, $4);
+	  $$ = append_list($$, $6); }
+  |  ',' XML_namespace_declaration ',' XML_element_content_and_option
+ 	{ $$ = append_symbol(L(), $2);
+	  $$ = append_symbol($$, NULL);
+	  $$ = append_list($$, $4); }
   |  ',' XML_attributes					
  	{ $$ = append_symbol(L(), NULL);
 	  $$ = append_symbol($$, $2);
