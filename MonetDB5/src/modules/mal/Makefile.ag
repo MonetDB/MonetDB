@@ -20,7 +20,7 @@ SUBDIRS = crackers
 INCLUDES = -I../atoms -I../kernel \
         -I../../mal $(CLIENTS_INCS) $(MONETDB_INCS) \
         $(RAPTOR_INCS) \
-        $(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS) $(READLINE_INCS)
+        $(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS) $(READLINE_INCS) $(LIBXML2_CFLAGS)
 
 MTSAFE
 
@@ -33,11 +33,11 @@ LIBS = {
 		inspect.mx manual.mx pqueue.mx mkey.mx \
 		factory.mx mdb.mx  \
 		urlbox.mx mat.mx \
-		sabaoth.mx remote.mx batxml.mx txtsim.mx recycle.mx \
+		sabaoth.mx remote.mx txtsim.mx recycle.mx \
 		cluster.mx
 		#radix.mx 
 
-	LIBS = ../../mal/libmonetdb5 ../atoms/lib_xml ../kernel/lib_bat5 ../kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
+	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 ../kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
                 $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
@@ -50,6 +50,17 @@ lib_batExtensions = {
 	LIBS = ../../mal/libmonetdb5 ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream $(CLIENTS_LIBS) -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
+lib_batxml = {
+	DIR = libdir/MonetDB5
+	SEP = _
+	SOURCES = batxml.mx
+	LIBS = ../../mal/libmonetdb5 ../atoms/lib_xml ../kernel/lib_bat5 $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
+                $(CLIENTS_LIBS) -lMapi \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
+		$(LIBXML2_LIBS) $(ICONV_LIBS)
 }
 
 lib_bpm = {

@@ -6,7 +6,7 @@ bat.insert(b,2@0,"Annie Chapman");
 io.print(b);
 bx:= xml.xml(b);
 
-bc:= xml.options("author","abscent",bx);
+bc:= xml.options("author","absent",bx);
 io.print(bc);
 bc:= xml.options("author","empty",bx);
 io.print(bc);

@@ -16,14 +16,15 @@
 # All Rights Reserved.
 
 INCLUDES = -I../../mal $(MONETDB_INCS) \
-	 $(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) $(ICONV_CFLAGS)
+	$(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS) \
+	$(LIBXML2_CFLAGS) $(ICONV_CFLAGS)
 MTSAFE
 
 LIBS = {
 	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx \
-			  xml.mx rmtobj.mx identifier.mx
+			  rmtobj.mx identifier.mx
 
 	#SCRIPTS = mal
 	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
@@ -41,6 +42,18 @@ lib__str = {
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
 		$(ICONV_LIBS) ../../mal/libmonetdb5
+}
+
+lib__xml = {
+	DIR = libdir/MonetDB5
+	SEP = _
+	SOURCES = xml.mx 
+
+	#SCRIPTS = mal
+	LIBS = $(MONETDB_LIBS) -lbat -lstream \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
+		$(LIBXML2_LIBS) $(ICONV_LIBS) ../../mal/libmonetdb5
 }
 
 headers_h = {

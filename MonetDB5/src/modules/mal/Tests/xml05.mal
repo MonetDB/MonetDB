@@ -10,6 +10,6 @@ io.print(b);
 bs:= xml.xml(b);
 bc:= xml.element("name",bs);
 
-aa:= xml.root(bc,"version1.0","no");
+aa:= xml.root(bc,"1.0","no");
 as:= xml.str(aa);
 io.print(as);

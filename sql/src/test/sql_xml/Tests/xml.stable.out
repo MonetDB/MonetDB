@@ -36,7 +36,7 @@ Over..
 % . # table_name
 % element_Customer # name
 % xml # type
-% 97 # length
+% 98 # length
 [ <Customer><CustId>1</CustId><CustName>WoodWorks</CustName><City>Baltimore</City></Customer>	]
 [ <Customer><CustId>2</CustId><CustName>Software Solutions</CustName><City>Boston</City></Customer>	]
 [ <Customer><CustId>3</CustId><CustName>Food Supplies</CustName><City>New York</City></Customer>	]
@@ -45,7 +45,7 @@ Over..
 % . # table_name
 % element_Customer # name
 % xml # type
-% 97 # length
+% 98 # length
 [ <Customer><custid>1</custid><custname>WoodWorks</custname><city>Baltimore</city></Customer>	]
 [ <Customer><custid>2</custid><custname>Software Solutions</custname><city>Boston</city></Customer>	]
 [ <Customer><custid>3</custid><custname>Food Supplies</custname><city>New York</city></Customer>	]
@@ -62,7 +62,7 @@ Over..
 % . # table_name
 % element_CustomerProj # name
 % xml # type
-% 127 # length
+% 128 # length
 [ <CustomerProj><custid>1</custid><custname>WoodWorks</custname><projid>1</projid><projname>Medusa</projname></CustomerProj>	]
 [ <CustomerProj><custid>4</custid><custname>Hardware Shop</custname><projid>2</projid><projname>Pegasus</projname></CustomerProj>	]
 [ <CustomerProj><custid>4</custid><custname>Hardware Shop</custname><projid>8</projid><projname>Typhon</projname></CustomerProj>	]
@@ -78,23 +78,23 @@ Over..
 % . # table_name
 % customer_projects # name
 % xml # type
-% 192 # length
+% 190 # length
 [ <Customer  id="1"><name>WoodWorks</name><city>Baltimore</city><projects><project  id="1"><name>Medusa</name></project></projects></Customer>	]
-[ <Customer  id="2"><name>Software Solutions</name><city>Boston</city><projects></projects></Customer>	]
-[ <Customer  id="3"><name>Food Supplies</name><city>New York</city><projects></projects></Customer>	]
+[ <Customer id="2"><name>Software Solutions</name><city>Boston</city><projects/></Customer>	]
+[ <Customer id="3"><name>Food Supplies</name><city>New York</city><projects/></Customer>	]
 [ <Customer  id="4"><name>Hardware Shop</name><city>Washington</city><projects><project  id="2"><name>Pegasus</name></project><project  id="8"><name>Typhon</name></project></projects></Customer>	]
 [ <Customer  id="5"><name>Books Inc</name><city>New Orleans</city><projects><project  id="10"><name>Sphinx</name></project></projects></Customer>	]
 % . # table_name
 % element_Customer # name
 % xml # type
-% 57 # length
-[ <Customer  id="1"><!-- simple comment test --></Customer>	]
-[ <Customer  id="2"><!-- simple comment test --></Customer>	]
-[ <Customer  id="3"><!-- simple comment test --></Customer>	]
-[ <Customer  id="4"><!-- simple comment test --></Customer>	]
-[ <Customer  id="5"><!-- simple comment test --></Customer>	]
+% 55 # length
+[ <Customer id="1"><!--simple comment test--></Customer>	]
+[ <Customer id="2"><!--simple comment test--></Customer>	]
+[ <Customer id="3"><!--simple comment test--></Customer>	]
+[ <Customer id="4"><!--simple comment test--></Customer>	]
+[ <Customer id="5"><!--simple comment test--></Customer>	]
 
-# 18:26:50 >  
-# 18:26:50 >  Done.
-# 18:26:50 >  
+# 16:53:32 >  
+# 16:53:32 >  Done.
+# 16:53:32 >  
 

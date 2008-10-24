@@ -42,11 +42,11 @@ function user.main():void;              #  0 main:void := user.main() {G}
     bat.insert(h,1@0,"curly dark brown");#  6 _13:bat[:oid,:str] := BKCinsert_bun(h:bat[:oid,:str], _8:oid, _14:str) {G}
     io.print(b);                        #  7 _15:void := IOprint_val(b:bat[:oid,:str]) 
     bs := xml.xml(b);                   #  8 bs:bat[:oid,:xml] := BATXMLstr2xml(b:bat[:oid,:str]) {G}
-    bc := xml.element("name",bs);       #  9 bc:bat[:oid,:xml] := BATXMLtag(_18:str, bs:bat[:oid,:xml]) {G}
+    bc := xml.element("name",bs);       #  9 bc:bat[:oid,:xml] := BATXMLelementSmall(_18:str, bs:bat[:oid,:xml]) {G}
     bj := xml.str(bc);                  # 10 bj:bat[:oid,:str] := BATXMLxml2str(bc:bat[:oid,:xml]) {G}
     io.print(bj);                       # 11 _20:void := IOprint_val(bj:bat[:oid,:str]) 
     hs := xml.xml(h);                   # 12 hs:bat[:oid,:xml] := BATXMLstr2xml(h:bat[:oid,:str]) {G}
-    hc := xml.element("hair",hs);       # 13 hc:bat[:oid,:xml] := BATXMLtag(_23:str, hs:bat[:oid,:xml]) {G}
+    hc := xml.element("hair",hs);       # 13 hc:bat[:oid,:xml] := BATXMLelementSmall(_23:str, hs:bat[:oid,:xml]) {G}
     hj := xml.str(hc);                  # 14 hj:bat[:oid,:str] := BATXMLxml2str(hc:bat[:oid,:xml]) {G}
     io.print(hj);                       # 15 _25:void := IOprint_val(hj:bat[:oid,:str]) 
     aa := xml.forest(bc,hc);            # 16 aa:bat[:oid,:xml] := BATXMLforest(bc:bat[:oid,:xml], hc:bat[:oid,:xml]) {G}
@@ -61,22 +61,22 @@ end main;	# 19
 [ 1@0,	  "Annie Chapman"	  ]
 #-----------------------------------------#
 # h	t				  # name
-# void	xml				  # type
+# void	str				  # type
 #-----------------------------------------#
-[ 0@0,	  <name>Mary Ann Walker</name>	  ]
-[ 1@0,	  <name>Annie Chapman</name>	  ]
-#-----------------------------------------#
+[ 0@0,	  "<name>Mary Ann Walker</name>"  ]
+[ 1@0,	  "<name>Annie Chapman</name>"	  ]
+#-------------------------------------------------#
 # h	t				  # name
-# void	xml				  # type
-#-----------------------------------------#
-[ 0@0,	  <hair>brown</hair>		  ]
-[ 1@0,	  <hair>curly dark brown</hair>	  ]
+# void	str					  # type
+#-------------------------------------------------#
+[ 0@0,	  "<hair>brown</hair>"			  ]
+[ 1@0,	  "<hair>curly dark brown</hair>"	  ]
 #-------------------------------------------------------------------------#
 # h	t								  # name
 # void	xml								  # type
 #-------------------------------------------------------------------------#
-[ 0@0,	  <name>Mary Ann Walker</name><hair>brown</hair>		  ]
-[ 1@0,	  <name>Annie Chapman</name><hair>curly dark brown</hair>	  ]
+[ 0@0,	  "<name>Mary Ann Walker</name><hair>brown</hair>"		  ]
+[ 1@0,	  "<name>Annie Chapman</name><hair>curly dark brown</hair>"	  ]
 
 # 23:16:03 >  
 # 23:16:03 >  Done.

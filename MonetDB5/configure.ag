@@ -207,6 +207,61 @@ AC_SUBST(RAPTOR_INCS)
 AC_SUBST(RAPTOR_LIBS)
 AM_CONDITIONAL(HAVE_RAPTOR, test x"$have_raptor" != xno)
 
+have_libxml2="auto"
+AC_ARG_WITH(libxml2,
+    AC_HELP_STRING([--with-libxml2=DIR],[libxml2 library is installed in DIR]),
+    [have_libxml2="$withval"], [have_libxml2="auto"])
+if test "x$have_libxml2" != xno; then
+    XML2_CONFIG=""
+    XPATH="$PATH"
+    case "$have_libxml2" in
+    auto|yes)
+	;;
+    *)
+	XPATH="$have_libxml2/bin"
+	;;
+    esac
+
+    AC_PATH_PROG(XML2_CONFIG,xml2-config.${bits},,$XPATH)
+    if test "x$XML2_CONFIG" = x; then
+        AC_PATH_PROG(XML2_CONFIG,xml2-${bits}-config,,$XPATH)
+        if test "x$XML2_CONFIG" = x; then
+            AC_PATH_PROG(XML2_CONFIG,xml2-config,,$XPATH)
+        fi
+    fi
+
+    if test "x$XML2_CONFIG" != x; then
+        LIBXML2_CFLAGS="`$XML2_CONFIG --cflags`"
+        LIBXML2_LIBS="`$XML2_CONFIG --libs`"
+    else
+	case "$have_libxml2" in
+	auto|no|yes)
+	    ;;
+	*)
+	    LIBXML2_CFLAGS="-I$have_libxml2/include"
+	    LIBXML2_LIBS="-L$have_libxml2/lib"
+	    ;;
+	esac
+    fi
+    if test "x$have_libxml2" != xno; then
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
+	LDFLAGS="$LDFLAGS $LIBXML2_LIBS"
+	AC_CHECK_HEADER(libxml/parser.h,
+		AC_CHECK_LIB(xml2, xmlParseMemory,
+			AC_DEFINE(HAVE_LIBXML2, 1, [Define if you have the libxml2 library])
+			have_libxml2=yes,
+			[ if test "x$have_libxml2" != xauto; then AC_MSG_ERROR([-lxml2 library not found]); fi; have_libxml2=no ]),
+		[ if test "x$have_libxml2" != xauto; then AC_MSG_ERROR([libxml/parser.h header not found]); fi; have_libxml2=no ])
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+    fi
+fi
+AC_SUBST(LIBXML2_CFLAGS, $LIBXML2_CFLAGS)
+AC_SUBST(LIBXML2_LIBS, $LIBXML2_LIBS)
+AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
+
 
 dnl provide different versions of the paths derived above
 AM_MONETDB_XQ_VARS_2()

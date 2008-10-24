@@ -95,7 +95,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # every nesting implies a groupby 
     ax := xml.xml(a);                   # 27 ax:bat[:oid,:xml] := BATXMLstr2xml(a:bat[:oid,:str]) {G}
     tx := xml.xml(t);                   # 28 tx:bat[:oid,:xml] := BATXMLstr2xml(t:bat[:oid,:str]) {G}
-    te := xml.element("title",tx);      # 29 te:bat[:oid,:xml] := BATXMLtag(_41:str, tx:bat[:oid,:xml]) {G}
+    te := xml.element("title",tx);      # 29 te:bat[:oid,:xml] := BATXMLelementSmall(_41:str, tx:bat[:oid,:xml]) {G}
     g := bat.new(:oid,:oid);            # 30 g:bat[:oid,:oid] := CMDBATnew(_14:oid, _14:oid) {G}
     bat.insert(g,0@0,0@0);              # 31 _43:bat[:oid,:oid] := BKCinsert_bun(g:bat[:oid,:oid], _17:oid, _17:oid) {G}
     bat.insert(g,1@0,0@0);              # 32 _44:bat[:oid,:oid] := BKCinsert_bun(g:bat[:oid,:oid], _20:oid, _17:oid) {G}
@@ -113,12 +113,12 @@ function user.main():void;              #  0 main:void := user.main() {G}
     cc := xml.concat(k2,ag);            # 44 cc:bat[:oid,:xml] := BATXMLconcat(k2:bat[:oid,:xml], ag:bat[:oid,:xml]) {G}
     io.print(cc);                       # 45 _57:void := IOprint_val(cc:bat[:oid,:xml]) 
     io.print("author construction");    # 46 _58:void := IOprint_val(_59:str) 
-    ae := xml.element("author",cc);     # 47 ae:bat[:oid,:xml] := BATXMLtag(_61:str, cc:bat[:oid,:xml]) {G}
+    ae := xml.element("author",cc);     # 47 ae:bat[:oid,:xml] := BATXMLelementSmall(_61:str, cc:bat[:oid,:xml]) {G}
     io.print(ae);                       # 48 _62:void := IOprint_val(ae:bat[:oid,:xml]) 
     io.print("book construction");      # 49 _63:void := IOprint_val(_64:str) 
     be := xml.agg(ae);                  # 50 be:bat[:oid,:xml] := BATXMLgroup(ae:bat[:oid,:xml]) {G}
     io.print(be);                       # 51 _66:void := IOprint_val(be:bat[:oid,:xml]) 
-    doc := xml.element("books",be);     # 52 doc:bat[:oid,:xml] := BATXMLtag(_68:str, be:bat[:oid,:xml]) {G}
+    doc := xml.element("books",be);     # 52 doc:bat[:oid,:xml] := BATXMLelementSmall(_68:str, be:bat[:oid,:xml]) {G}
     io.print(doc);                      # 53 _69:void := IOprint_val(doc:bat[:oid,:xml]) 
 end main;	# 54  
 #---------------------------------#
