@@ -85,6 +85,10 @@ command getUsers( ):bat[:int,:str]
 address CLTusers
 comment "Pseudo bat of users logged in.";
 
+command stop(id:int)
+address CLTstop
+comment "Stop the query execution at the next eligble statement.";
+
 pattern suspend(id:int):void
 address CLTsuspend
 comment "Put a client process to sleep for some time.
@@ -139,6 +143,7 @@ clients_export str CLTTime(int *ret);
 clients_export str CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTgetUsername(str *ret);
 
+clients_export str CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTwakeup(int *ret, int *id);
 
@@ -414,6 +419,16 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( cntxt != mal_clients )
 		throw(MAL, "client.quit", "Server not stopped from console.");
 	throw(MAL, "client.quit", "Server stopped.");
+}
+
+str
+CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	cntxt->itrace='x';	/* this forces it to stop at the next instruction */
+    return MAL_SUCCEED;
 }
 
 str
