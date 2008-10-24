@@ -48,7 +48,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     xs := xml.str(xx);                  # 14 xs:str := XMLxml2str(xx:xml) {G}
     io.print(xs);                       # 15 _21:void := IOprint_val(xs:str) 
 end main;	# 16  
-[  ]
+[ nil ]
 [ nil ]
 [ <person>Mary Ann Walker</person> ]
 [ <hair>brown</hair> ]
