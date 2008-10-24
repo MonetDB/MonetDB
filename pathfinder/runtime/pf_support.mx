@@ -283,6 +283,32 @@ BAT[void,chr] - kind_bat
 DESCRIPTION:
 create XML value index for a newly shredded document (BAT pre_state)"
 
+.COMMAND vx_update_string(BAT[void,oid],BAT[void,int],BAT[void,str],BAT[void,oid],BAT[void,int],BAT[void,chr],BAT[void,chr]): BAT[void,int] = CMD_vx_update_string;
+"PARAMETERS:
+BAT[void,oid] - the context nodes, should all be of kind TEXT.
+BAT[void,int] - pre_hsh
+BAT[void,str] - prop_text
+BAT[void,oid] - prop_bat
+BAT[void,int] - size_bat
+BAT[void,chr] - level_bat
+BAT[void,chr] - kind_bat
+DESCRIPTION:
+update XML value index for a doc (BAT pre_hsh)"
+
+.COMMAND vx_update_dbl(BAT[void,oid],BAT[void,bte],BAT[void,str],BAT[void,oid],BAT[void,int],BAT[void,chr],BAT[void,chr]): BAT[void,bte] = CMD_vx_update_dbl;
+"PARAMETERS:
+BAT[void,oid] - the context nodes, should all be of kind TEXT.
+BAT[void,bte] - pre_state
+BAT[void,str] - prop_text
+BAT[void,oid] - prop_bat
+BAT[void,int] - size_bat
+BAT[void,chr] - level_bat
+BAT[void,chr] - kind_bat
+DESCRIPTION:
+update XML value index for a doc (BAT pre_state)"
+
+
+
 @- Constant Columns
 
 In XQuery, we often have the case that BAT[void,T] all contain the same tail value
