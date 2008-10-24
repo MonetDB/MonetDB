@@ -1877,7 +1877,7 @@ as much as possible.
 The recycler works for any variable and relies on policy functions
 registered.
 @= MALrecycleStart
-	if( !RECYCLEentry(cntxt, mb,stk,pci) || mb->version== 0 )
+	if( !RECYCLEentry(cntxt, mb,stk,pci) )
 @= MALrecycleExit
 	if( pci->recycle )
 		RECYCLEexit(cntxt, mb,stk,pci);

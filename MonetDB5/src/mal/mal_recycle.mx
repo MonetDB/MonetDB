@@ -92,7 +92,7 @@ mal_export int retainPolicy;
 #define RETAIN_ADAPT	4
 
 #define REC_NO_INTEREST 0
-#define REC_MAX_INTEREST 4
+#define REC_MAX_INTEREST 5
 #define REC_MIN_INTEREST 1
 
 mal_export lng recycleTime;		
@@ -666,7 +666,8 @@ newpass:
 				}
 				/* if leaves from category 2 and 3 exist but are not sufficient 
 				for wr memory, we start a new pass instead of evicting cat 0 and 1 */
-				if ( vtop )
+	
+				 if ( vtop )
 					break;
 				/* else all leaves are category 1 or 0, i.e. pot. reused:
 				continue with credit policy to choose the cheapest to evict */
@@ -828,6 +829,7 @@ RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr)
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(cntxt->fdout,"RECYCLE keep ");
 	printTraceCall( cntxt->fdout,mb, s, getPC(mb,p),LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"Tolls %d\n",p->recycle);
 #else
 	(void) cntxt;
 	(void) mb;
@@ -856,7 +858,7 @@ compare by value.
 	}
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(cntxt->fdout,"RECYCLE kept ");
-	printInstruction( cntxt->fdout,recycleBlk, q,LIST_MAL_ALL);
+	printInstruction( cntxt->fdout,recycleBlk, 0, q,LIST_MAL_ALL);
 #endif
 	if (p->recycle > REC_MIN_INTEREST)
 		p->recycle--;
@@ -917,7 +919,7 @@ RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(cntxt->fdout,"search\n");
-	printInstruction(cntxt->fdout,mb,p, LIST_MAL_ALL);
+	printInstruction(cntxt->fdout,mb,0,p, LIST_MAL_ALL);
 #else 
 	(void) cntxt;
 #endif
@@ -986,7 +988,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
 	int i, j, ridx, idx, pc = -1, evicted=0;
 	bat bid= -1, nbid= -1;
-	InstrPtr q;
+	InstrPtr q, r;
 	static str selectRef;
 	bit gluse = FALSE;
 	
@@ -1042,7 +1044,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 					}
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(cntxt->fdout,"Inclusive range bid=%d ", bid);
-	printInstruction(cntxt->fdout,recycleBlk,q, LIST_MAL_ALL);
+	printInstruction(cntxt->fdout,recycleBlk,0,q, LIST_MAL_ALL);
 #endif
 				}
 			}
@@ -1062,7 +1064,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			
 			/* found an exact match */
 			/* get the results on the stack */
-			for( j=0; j<q->retc; j++){
+			for( j=0; j<p->retc; j++){
 				VALcopy(&s->stk[getArg(p,j)],
 					&getVarConstant(recycleBlk,getArg(q,j)) );
 				if (s->stk[getArg(p,j)].vtype == TYPE_bat)
@@ -1071,6 +1073,11 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 			recycleBlk->profiler[i].counter++;
 			if ( recycleBlk->profiler[i].clk < time0 )
 		                gluse = recycleBlk->profiler[i].trace = TRUE;
+			else { /*local use - return the toll */
+                                getIPtr(q,r,j,pc);
+                                if (r && r->recycle <REC_MAX_INTEREST)
+                                        r->recycle++;
+                        }
 			recycleBlk->profiler[i].clk = GDKusec();
 			recycled++;
 			if (!isBindInstr(q)) updateQryStat(q->recycle,gluse);
@@ -1089,7 +1096,7 @@ We execute it in place and safe the result upon need.
 		i= getPC(mb,p);
 #ifdef _DEBUG_RECYCLE_REUSE
 	stream_printf(cntxt->fdout,"RECYCLEreuse subselect ");
-	printInstruction(cntxt->fdout, recycleBlk, getInstrPtr(recycleBlk,pc), LIST_MAL_ALL);
+	printInstruction(cntxt->fdout, recycleBlk, 0,getInstrPtr(recycleBlk,pc), LIST_MAL_ALL);
 
 	stream_printf(cntxt->fdout,">>>");
 	printTraceCall(cntxt->fdout, mb, s,i, LIST_MAL_ALL);
@@ -1137,6 +1144,10 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
     if ( !RECYCLEinterest(mb,p) )  /* don't scan RP for non-monitored instructions */
         return 0;
 	i = RECYCLEreuse(cntxt,mb,stk,p) >= 0;
+#ifdef _DEBUG_RECYCLE_
+        stream_printf(cntxt->fdout,"Reuse %d for ",i);
+        printInstruction(cntxt->fdout,mb,0,p, LIST_MAL_ALL);
+#endif
 	return i;
 }
 
@@ -1221,7 +1232,7 @@ RECYCLEshutdown(Client cntxt){
 
 #ifdef _DEBUG_RECYCLE_
 	stream_printf(cntxt->fdout,"RECYCLE shutdown\n");
-	printFunction(cntxt->fdout, 0, recycleBlk,0);
+	printFunction(cntxt->fdout, recycleBlk,0,0);
 	printStack(cntxt->fdout,mb,0);
 #else
 	(void) cntxt;
@@ -1261,7 +1272,7 @@ RECYCLEevict(Client cntxt, bat *bats, int btop){
 
 #ifdef _DEBUG_RECYCLE_ 
 	stream_printf(cntxt->fdout,"RECYCLE evict\n");
-	printFunction(cntxt->fdout, 0, recycleBlk, 0);
+	printFunction(cntxt->fdout, recycleBlk, 0,0);
 #else
 	(void) cntxt;
 #endif
